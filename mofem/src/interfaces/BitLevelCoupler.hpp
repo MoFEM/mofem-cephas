@@ -21,32 +21,34 @@
 
 namespace MoFEM {
 
-static const MOFEMuuid IDD_MOFEMBitLevelCoupler = MOFEMuuid( BitIntefaceId(BITLEVELCOUPLER_INTERFACE) );
+static const MOFEMuuid IDD_MOFEMBitLevelCoupler =
+    MOFEMuuid(BitIntefaceId(BITLEVELCOUPLER_INTERFACE));
 
 /** \brief Interface set parent for vertices, edges, triangles and tetrahedrons.
-  * \ingroup mofem
-  *
-  * FIXME: Not tested, slow, bugs
-  *
-  */
-struct BitLevelCoupler: public UnknownInterface {
+ * \ingroup mofem
+ *
+ * FIXME: Not tested, slow, bugs
+ *
+ */
+struct BitLevelCoupler : public UnknownInterface {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
+  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+                                 UnknownInterface **iface) const;
 
-  MoFEM::Core& cOre;
-  bool vErify;	///< by default is switched off, with it on to verify if existing parent is equal to parent set by interface
+  MoFEM::Core &cOre;
+  bool vErify; ///< by default is switched off, with it on to verify if existing
+               ///< parent is equal to parent set by interface
 
-  BitLevelCoupler(const MoFEM::Core& core):
-  cOre(const_cast<MoFEM::Core&>(core)),
-  vErify(false) {}
+  BitLevelCoupler(const MoFEM::Core &core)
+      : cOre(const_cast<MoFEM::Core &>(core)), vErify(false) {}
 
   /** \brief build adaptive kd-tree
-    */
-  MoFEMErrorCode buildTree(const BitRefLevel &parent_level,int verb = 0);
+   */
+  MoFEMErrorCode buildTree(const BitRefLevel &parent_level, int verb = 0);
 
   /** \brief reset adaptive kd-tree
-    */
-  MoFEMErrorCode resetTree(const BitRefLevel &parent_level,int verb = 0);
+   */
+  MoFEMErrorCode resetTree(const BitRefLevel &parent_level, int verb = 0);
 
   /** \brief get parent entity
 
@@ -60,14 +62,10 @@ struct BitLevelCoupler: public UnknownInterface {
     \param verbose level
 
     */
-  MoFEMErrorCode getParent(
-    const double *coords,
-    EntityHandle &parent,
-    bool tet_only = false,
-    const double iter_tol = 1.0e-10,
-    const double inside_tol = 1.0e-6,
-    int verb = 0
-  );
+  MoFEMErrorCode getParent(const double *coords, EntityHandle &parent,
+                           bool tet_only = false,
+                           const double iter_tol = 1.0e-10,
+                           const double inside_tol = 1.0e-6, int verb = 0);
 
   /** \brief finding parents for vertices
     *
@@ -91,14 +89,9 @@ struct BitLevelCoupler: public UnknownInterface {
 
     */
   MoFEMErrorCode buildAdjacenciesVerticesOnTets(
-    const BitRefLevel &parent_level,
-    Range &children,
-    bool vertex_elements = false,
-    const double iter_tol = 1.0e-10,
-    const double inside_tol = 1.0e-6,
-    bool throw_error = true,
-    int verb = 0
-  );
+      const BitRefLevel &parent_level, Range &children,
+      bool vertex_elements = false, const double iter_tol = 1.0e-10,
+      const double inside_tol = 1.0e-6, bool throw_error = true, int verb = 0);
 
   /** \brief finding parents for edegs, faces and tets
 
@@ -122,27 +115,27 @@ struct BitLevelCoupler: public UnknownInterface {
     \param verbose level
 
     */
-  MoFEMErrorCode buildAdjacenciesEdgesFacesVolumes(
-    const BitRefLevel &parent_level,
-    Range &children,
-    bool elements = true,
-    int verb = 0
-  );
+  MoFEMErrorCode
+  buildAdjacenciesEdgesFacesVolumes(const BitRefLevel &parent_level,
+                                    Range &children, bool elements = true,
+                                    int verb = 0);
 
   /** \brief reset parent entities
 
     This is needed for testing.
 
     */
-  MoFEMErrorCode resetParents(Range &children,bool elements = true,int verb = 0);
+  MoFEMErrorCode resetParents(Range &children, bool elements = true,
+                              int verb = 0);
 
   /**
    * \brief copy data from parents
    *
-   * This not approximate date from, simply copy DOFs values from one mesh to another.
-   * This is useful for special case of refinement, e.g. insertion of interface, where
-   * entities on the interface are doubled to create displacement jump.
-   * In general case use this function could lead to wrong results.
+   * This not approximate date from, simply copy DOFs values from one mesh to
+   * another. This is useful for special case of refinement, e.g. insertion of
+   * interface, where entities on the interface are doubled to create
+   * displacement jump. In general case use this function could lead to wrong
+   * results.
    *
    * \note Move data only if type of child and parent is the same.
    *
@@ -151,18 +144,18 @@ struct BitLevelCoupler: public UnknownInterface {
    * @param  verify if true verifi consistency with database
    * @return     error code
    */
-  MoFEMErrorCode copyFieldDataFromParentToChildren(
-    const std::vector<EntityHandle> &parents,
-    const std::vector<EntityHandle> &children,
-    const bool verify = true
-  );
+  MoFEMErrorCode
+  copyFieldDataFromParentToChildren(const std::vector<EntityHandle> &parents,
+                                    const std::vector<EntityHandle> &children,
+                                    const bool verify = true);
 
   /**
    * \brief copy data from parents
    *
-   * This not approximate date from, simply copy DOFs values from one mesh to another.
-   * This is useful for special case of refinement, e.g. insertion of interface, where
-   * entities on the interface are doubled to create displacement jump.
+   * This not approximate date from, simply copy DOFs values from one mesh to
+   * another. This is useful for special case of refinement, e.g. insertion of
+   * interface, where entities on the interface are doubled to create
+   * displacement jump.
    *
    * In general case use this function could lead to wrong results.
    *
@@ -173,28 +166,27 @@ struct BitLevelCoupler: public UnknownInterface {
    * @param  verify if true verifi consistency with database
    * @return     error code
    */
-  MoFEMErrorCode copyFieldDataFromParentToChildren(
-    const BitRefLevel bit,
-    const BitRefLevel mask,
-    const bool verify = true
-  );
+  MoFEMErrorCode copyFieldDataFromParentToChildren(const BitRefLevel bit,
+                                                   const BitRefLevel mask,
+                                                   const bool verify = true);
 
-  private:
+private:
+  MoFEMErrorCode chanegParent(RefEntity_multiIndex::iterator it,
+                              EntityHandle parent);
+  MoFEMErrorCode verifyParent(RefEntity_multiIndex::iterator it,
+                              EntityHandle parent);
 
-  MoFEMErrorCode chanegParent(RefEntity_multiIndex::iterator it,EntityHandle parent);
-  MoFEMErrorCode verifyParent(RefEntity_multiIndex::iterator it,EntityHandle parent);
-
-  double cOords[12+3];
-  double diffN[12],N[4];
+  double cOords[12 + 3];
+  double diffN[12], N[4];
   double locCoords[3];
   const EntityHandle *cOnn;
 
-  MoFEMErrorCode getLocCoordsOnTet(EntityHandle tet,const double *glob_coords,int verb = 0);
+  MoFEMErrorCode getLocCoordsOnTet(EntityHandle tet, const double *glob_coords,
+                                   int verb = 0);
 
   boost::scoped_ptr<AdaptiveKDTree> treePtr;
-
 };
 
-}
+} // namespace MoFEM
 
 #endif //__BITLEVELCOUPLER_HPP__
