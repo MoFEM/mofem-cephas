@@ -223,23 +223,12 @@ MoFEMErrorCode OpSetInvJacH1::doWork(int side, EntityType type,
     FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_inv_diff_n(
         t_inv_n_ptr, &t_inv_n_ptr[1], &t_inv_n_ptr[2]);
 
-    switch (type) {
-
-    case MBVERTEX:
-    case MBEDGE:
-    case MBTRI:
-    case MBTET: {
-      for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
-        for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
-          t_inv_diff_n(i) = t_diff_n(j) * tInvJac(j, i);
-          ++t_diff_n;
-          ++t_inv_diff_n;
-        }
+    for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
+      for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
+        t_inv_diff_n(i) = t_diff_n(j) * tInvJac(j, i);
+        ++t_diff_n;
+        ++t_inv_diff_n;
       }
-
-    } break;
-    default:
-      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
     }
 
     diff_n.data().swap(diffNinvJac.data());
@@ -272,7 +261,7 @@ OpSetInvJacHdivAndHcurl::doWork(int side, EntityType type,
                                 DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
 
-  if (type != MBEDGE && type != MBTRI && type != MBTET)
+  if (type == MBVERTEX)
     MoFEMFunctionReturnHot(0);
 
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
@@ -316,7 +305,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransform::doWork(
     int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
 
-  if (type != MBTRI && type != MBTET)
+  if (type == MBVERTEX || type == MBEDGE)
     MoFEMFunctionReturnHot(0);
 
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
@@ -382,7 +371,7 @@ OpSetCovariantPiolaTransform::doWork(int side, EntityType type,
                                      DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
 
-  if (type != MBEDGE && type != MBTRI && type != MBTET)
+  if (type == MBVERTEX)
     MoFEMFunctionReturnHot(0);
 
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {

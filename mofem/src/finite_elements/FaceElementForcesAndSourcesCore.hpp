@@ -51,8 +51,6 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
 protected:
   FaceElementForcesAndSourcesCoreBase(Interface &m_field);
 
-  MoFEMErrorCode getNumberOfNodes(int &num_nodes) const;
-
   /**
    * \brief Calculate element area and normal of the face at integration points
    *

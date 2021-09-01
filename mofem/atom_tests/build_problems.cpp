@@ -63,21 +63,24 @@ int main(int argc, char *argv[]) {
 
     // Fields
     CHKERR m_field.add_field("F1", L2, AINSWORTH_LEGENDRE_BASE, 1);
-    CHKERR m_field.add_field("F2", HDIV, AINSWORTH_LEGENDRE_BASE, 1);
+    CHKERR m_field.add_field("F2", HDIV, DEMKOWICZ_JACOBI_BASE, 1);
 
     // meshset consisting all entities in mesh
     EntityHandle root_set = moab.get_root_set();
     // add entities to field
-    CHKERR m_field.add_ents_to_field_by_type(root_set, MBTET, "F1");
-    CHKERR m_field.add_ents_to_field_by_type(root_set, MBTET, "F2");
+    CHKERR m_field.add_ents_to_field_by_dim(root_set, 3, "F1", VERBOSE);
+    CHKERR m_field.add_ents_to_field_by_dim(root_set, 3, "F2", VERBOSE);
 
     // set app. order
     // see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes
     // (Mark Ainsworth & Joe Coyle)
     int order = 2;
     CHKERR m_field.set_field_order(root_set, MBTET, "F1", order - 1);
+    CHKERR m_field.set_field_order(root_set, MBHEX, "F1", order - 1);
     CHKERR m_field.set_field_order(root_set, MBTET, "F2", order);
     CHKERR m_field.set_field_order(root_set, MBTRI, "F2", order);
+    CHKERR m_field.set_field_order(root_set, MBHEX, "F2", order);
+    CHKERR m_field.set_field_order(root_set, MBQUAD, "F2", order);
 
     CHKERR m_field.build_fields();
 
@@ -97,6 +100,9 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.add_ents_to_finite_element_by_type(root_set, MBTET, "E1");
     CHKERR m_field.add_ents_to_finite_element_by_type(root_set, MBTET, "E2");
     CHKERR m_field.add_ents_to_finite_element_by_type(root_set, MBTET, "E3");
+    CHKERR m_field.add_ents_to_finite_element_by_type(root_set, MBHEX, "E1");
+    CHKERR m_field.add_ents_to_finite_element_by_type(root_set, MBHEX, "E2");
+    CHKERR m_field.add_ents_to_finite_element_by_type(root_set, MBHEX, "E3");
 
     CHKERR m_field.build_finite_elements();
     CHKERR m_field.build_adjacencies(bit_level0);
@@ -130,7 +136,6 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.getInterface<MatrixManager>()
         ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>("P2", -1, -1,
                                                                    0);
-
     // compose problem
     CHKERR m_field.add_problem("P3");
     CHKERR m_field.modify_problem_ref_level_add_bit("P3", bit_level0);
@@ -142,7 +147,7 @@ int main(int argc, char *argv[]) {
     CHKERR prb_mng_ptr->partitionGhostDofs("P3");
     CHKERR m_field.getInterface<MatrixManager>()
         ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>("P3", -1, -1,
-                                                                   0);
+                                                                  0);
   }
   CATCH_ERRORS;
 

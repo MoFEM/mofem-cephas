@@ -91,11 +91,11 @@ struct RefElement_PRISM : public RefElement {
  * \brief keeps data about abstract TET finite element
  * \ingroup fe_multi_indices
  */
-struct RefElement_TET : public RefElement {
+struct RefElementVolume : public RefElement {
   BitRefEdges *tag_BitRefEdges;
   const int *tag_type_data;
-  RefElement_TET(const boost::shared_ptr<RefEntity> &ref_ents_ptr);
-  virtual ~RefElement_TET() = default;
+  RefElementVolume(const boost::shared_ptr<RefEntity> &ref_ents_ptr);
+  virtual ~RefElementVolume() = default;
 
   const boost::shared_ptr<SideNumber> &
   getSideNumberPtr(const EntityHandle ent) const;

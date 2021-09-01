@@ -39,7 +39,12 @@ extern "C" {
 /**
  * @brief Number of base functions on hexahedron for L2 space
  */
-#define NBVOLUMEHEX_L2(P) ((P + 1) * (P + 1) * (P + 1))
+#define NBVOLUMEHEX_L2_GENERAL(P, Q, R) ((P + 1) * (Q + 1) * (R + 1))
+
+/**
+ * @brief Number of base functions on hexahedron for L2 space
+ */
+#define NBVOLUMEHEX_L2(P) (NBVOLUMEHEX_L2_GENERAL(P, P, P))
 
 /**
  * @brief Number of base functions on triangle for L2 space
@@ -125,6 +130,16 @@ extern "C" {
 #define NBFACETRI_DEMKOWICZ_HDIV(P) ((P > 0) ? (P) * (P + 1) / 2 : 0)
 #define NBVOLUMETET_DEMKOWICZ_HDIV(P)                                          \
   (((P) > 1) ? (P) * (P - 1) * (P + 1) / 2 : 0)
+#define NBFACEQUAD_DEMKOWICZ_FAMILY_QUAD_HDIV(P, Q)                            \
+  (((P) > 0 && (Q) > 1) ? (2 * (P) * (Q)) : 0)
+#define NBFACEQUAD_DEMKOWICZ_HDIV(P)                                           \
+  (NBFACEQUAD_DEMKOWICZ_FAMILY_QUAD_HDIV(P, P))
+#define NBVOLUMEHEX_DEMKOWICZ_HDIV_GENERAL(P, Q, R)                            \
+  ((((P) > 0) && ((Q) > 0) && ((R) > 0))                                       \
+       ? ((P) * (Q) * ((R)-1) + (Q) * (R) * ((P)-1) + (R) * (Q) * ((Q)-1))     \
+       : 0)
+#define NBVOLUMEHEX_DEMKOWICZ_HDIV(P)                                          \
+  (NBVOLUMEHEX_DEMKOWICZ_HDIV_GENERAL(P, P, P))
 
 // Bubbles for H div space
 

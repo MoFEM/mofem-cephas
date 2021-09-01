@@ -140,7 +140,7 @@ MoFEMErrorCode DefaultElementAdjacency::defaultFace(moab::Interface &moab,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode DefaultElementAdjacency::defaultTet(moab::Interface &moab,
+MoFEMErrorCode DefaultElementAdjacency::defaultVolume(moab::Interface &moab,
                                                    const Field &field,
                                                    const EntFiniteElement &fe,
                                                    Range &adjacency) {
@@ -393,7 +393,8 @@ FiniteElement::FiniteElement(moab::Interface &moab, const EntityHandle _meshset)
   elementAdjacencyTable[MBEDGE] = DefaultElementAdjacency::defaultEdge;
   elementAdjacencyTable[MBTRI] = DefaultElementAdjacency::defaultFace;
   elementAdjacencyTable[MBQUAD] = DefaultElementAdjacency::defaultFace;
-  elementAdjacencyTable[MBTET] = DefaultElementAdjacency::defaultTet;
+  elementAdjacencyTable[MBTET] = DefaultElementAdjacency::defaultVolume;
+  elementAdjacencyTable[MBHEX] = DefaultElementAdjacency::defaultVolume;
   elementAdjacencyTable[MBPRISM] = DefaultElementAdjacency::defaultPrism;
   elementAdjacencyTable[MBENTITYSET] = DefaultElementAdjacency::defaultMeshset;
 
@@ -474,9 +475,8 @@ EntFiniteElement::getElementAdjacency(const boost::shared_ptr<Field> field_ptr,
   moab::Interface &moab = getRefEntityPtr()->getBasicDataPtr()->moab;
   MoFEMFunctionBegin;
   const EntFiniteElement *this_fe_ptr = this;
-  if (getFiniteElementPtr()->elementAdjacencyTable[getEntType()] == NULL) {
+  if (getFiniteElementPtr()->elementAdjacencyTable[getEntType()] == NULL)
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
-  }
   CHKERR getFiniteElementPtr()->elementAdjacencyTable[getEntType()](
       moab, *field_ptr, *this_fe_ptr, adjacency);
   MoFEMFunctionReturn(0);

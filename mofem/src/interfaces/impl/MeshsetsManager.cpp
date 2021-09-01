@@ -268,9 +268,9 @@ MoFEMErrorCode MeshsetsManager::printMaterialsSet() const {
     MOFEM_LOG("MeshsetMngWorld", Sev::inform) << *it;
     MOFEM_LOG("MeshsetMngWorld", Sev::inform) << data;
     Range tets;
-    CHKERR moab.get_entities_by_type(it->meshset, MBTET, tets, true);
+    CHKERR moab.get_entities_by_dimension(it->meshset, 3, tets, true);
     MOFEM_LOG("MeshsetMngWorld", Sev::inform)
-        << "MAT_ELATIC msId " << it->getMeshsetId() << " nb. tets "
+        << "MAT_ELATIC msId " << it->getMeshsetId() << " nb. volumes "
         << tets.size();
   }
 
@@ -1316,16 +1316,9 @@ MeshsetsManager::updateAllMeshsetsByEntitiesChildren(const BitRefLevel &bit) {
   BitRefManager *bit_mng = cOre.getInterface<BitRefManager>();
   for (_IT_CUBITMESHSETS_FOR_LOOP_((*this), iit)) {
     EntityHandle meshset = iit->getMeshset();
-    CHKERR bit_mng->updateMeshsetByEntitiesChildren(meshset, bit, meshset,
-                                                    MBVERTEX, true);
-    CHKERR bit_mng->updateMeshsetByEntitiesChildren(meshset, bit, meshset,
-                                                    MBEDGE, true);
-    CHKERR bit_mng->updateMeshsetByEntitiesChildren(meshset, bit, meshset,
-                                                    MBTRI, true);
-    CHKERR bit_mng->updateMeshsetByEntitiesChildren(meshset, bit, meshset,
-                                                    MBTET, true);
-    CHKERR bit_mng->updateMeshsetByEntitiesChildren(meshset, bit, meshset,
-                                                    MBPRISM, true);
+    for (EntityType t = MBVERTEX; t != MBENTITYSET; ++t)
+      CHKERR bit_mng->updateMeshsetByEntitiesChildren(meshset, bit, meshset, t,
+                                                      true);
   }
   MoFEMFunctionReturn(0);
 }

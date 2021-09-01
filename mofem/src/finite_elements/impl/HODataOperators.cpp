@@ -129,22 +129,13 @@ OpSetHOInvJacToScalarBases::doWork(int side, EntityType type,
       FTensor::Tensor1<double *, 3> t_inv_diff_n(t_inv_n_ptr, &t_inv_n_ptr[1],
                                                  &t_inv_n_ptr[2], 3);
 
-      switch (type) {
-      case MBVERTEX:
-      case MBEDGE:
-      case MBTRI:
-      case MBTET: {
-        for (unsigned int gg = 0; gg < nb_gauss_pts; ++gg) {
-          for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
-            t_inv_diff_n(i) = t_diff_n(j) * t_inv_jac(j, i);
-            ++t_diff_n;
-            ++t_inv_diff_n;
-          }
-          ++t_inv_jac;
+      for (unsigned int gg = 0; gg < nb_gauss_pts; ++gg) {
+        for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
+          t_inv_diff_n(i) = t_diff_n(j) * t_inv_jac(j, i);
+          ++t_diff_n;
+          ++t_inv_diff_n;
         }
-      } break;
-      default:
-        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
+        ++t_inv_jac;
       }
 
       diff_n.data().swap(diffNinvJac.data());

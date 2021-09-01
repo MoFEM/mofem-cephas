@@ -244,8 +244,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getNodesIndices(
           bit_number, get_id_for_max_type<MBVERTEX>());
       auto hi = std::upper_bound(lo, ents_field.end(), hi_uid, cmp_uid_hi);
 
-      int num_nodes;
-      CHKERR getNumberOfNodes(num_nodes);
+      const int num_nodes = getNumberOfNodes();
       const int nb_dofs_on_vert = (*field_it)->getNbOfCoeffs();
       const int max_nb_dofs = nb_dofs_on_vert * num_nodes;
 
@@ -497,8 +496,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getProblemNodesIndices(
   const Field *field_struture = mField.get_field_structure(field_name);
   if (field_struture->getSpace() == H1) {
 
-    int num_nodes;
-    CHKERR getNumberOfNodes(num_nodes);
+    const int num_nodes = getNumberOfNodes();
     nodes_indices.resize(field_struture->getNbOfCoeffs() * num_nodes, false);
     std::fill(nodes_indices.begin(), nodes_indices.end(), -1);
 
@@ -641,8 +639,7 @@ ForcesAndSourcesCore::getNodesFieldData(DataForcesAndSourcesCore &data,
 
           if (nb_dofs) {
 
-            int num_nodes;
-            CHKERR getNumberOfNodes(num_nodes);
+            const int num_nodes = getNumberOfNodes();
             bb_node_order.resize(num_nodes, false);
             bb_node_order.clear();
             const int max_nb_dofs = nb_dofs_on_vert * num_nodes;
@@ -1112,8 +1109,7 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
           if (auto first_e = it->lock()) {
             space = first_e->getSpace();
             base = first_e->getApproxBase();
-            int num_nodes;
-            CHKERR getNumberOfNodes(num_nodes);
+            const int num_nodes = getNumberOfNodes();
             bb_node_order.resize(num_nodes, false);
             bb_node_order.clear();
             const int nb_dof_idx = first_e->getNbOfCoeffs();

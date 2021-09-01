@@ -69,7 +69,7 @@ Field::Field(moab::Interface &moab, const EntityHandle meshset)
   CHKERR moab.tag_get_by_ptr(th_FieldRank, &meshSet, 1,
                              (const void **)&tagNbCoeffData);
 
-  auto get_all_tags= [&]() {
+  auto get_all_tags = [&]() {
     MoFEMFunctionBegin;
     // order
     ApproximationOrder def_approx_order = -1;
@@ -89,7 +89,7 @@ Field::Field(moab::Interface &moab, const EntityHandle meshset)
         MB_TAG_CREAT | MB_TAG_VARLEN | MB_TAG_SPARSE, NULL);
     if (rval == MB_ALREADY_ALLOCATED)
       rval = MB_SUCCESS;
-    MOAB_THROW(rval);	
+    MOAB_THROW(rval);
 
     std::string tag_data_name_verts = name_data_prefix + getName() + "_V";
     rval = moab.tag_get_handle(tag_data_name_verts.c_str(), th_FieldDataVerts);
@@ -134,7 +134,7 @@ Field::Field(moab::Interface &moab, const EntityHandle meshset)
         MB_TAG_CREAT | MB_TAG_VARLEN | MB_TAG_SPARSE, NULL);
     if (rval == MB_ALREADY_ALLOCATED)
       rval = MB_SUCCESS;
-    MOAB_THROW(rval);	
+    MOAB_THROW(rval);
 
     std::string tag_data_name_verts = name_data_prefix + getName() + "V";
     rval = moab.tag_get_handle(tag_data_name_verts.c_str(), th_FieldDataVerts);
@@ -165,7 +165,7 @@ Field::Field(moab::Interface &moab, const EntityHandle meshset)
   if (file_ver.majorVersion >= 0 && file_ver.minorVersion >= 12 &&
       file_ver.buildVersion >= 1) {
     ierr = get_all_tags();
-		CHKERRABORT(PETSC_COMM_SELF, ierr);
+    CHKERRABORT(PETSC_COMM_SELF, ierr);
   } else {
     ierr = get_all_tags_deprecated();
     CHKERRABORT(PETSC_COMM_SELF, ierr);
@@ -231,6 +231,7 @@ Field::Field(moab::Interface &moab, const EntityHandle meshset)
         forderTable[MBTRI] = [](int P) -> int { return NBFACETRI_L2(P); };
         forderTable[MBQUAD] = [](int P) -> int { return NBFACEQUAD_L2(P); };
         forderTable[MBTET] = [](int P) -> int { return NBVOLUMETET_L2(P); };
+        forderTable[MBHEX] = [](int P) -> int { return NBVOLUMEHEX_L2(P); };
         break;
       default:
         THROW_MESSAGE("unknown approximation space");
@@ -255,6 +256,7 @@ Field::Field(moab::Interface &moab, const EntityHandle meshset)
         forderTable[MBTRI] = [](int P) -> int { return NBFACETRI_L2(P); };
         forderTable[MBQUAD] = [](int P) -> int { return NBFACEQUAD_L2(P); };
         forderTable[MBTET] = [](int P) -> int { return NBVOLUMETET_L2(P); };
+        forderTable[MBHEX] = [](int P) -> int { return NBVOLUMEHEX_L2(P); };
         break;
       default:
         THROW_MESSAGE("unknown approximation space or not yet implemented");
@@ -300,8 +302,14 @@ Field::Field(moab::Interface &moab, const EntityHandle meshset)
         forderTable[MBTRI] = [](int P) -> int {
           return NBFACETRI_DEMKOWICZ_HDIV(P);
         };
+        forderTable[MBQUAD] = [](int P) -> int {
+          return NBFACEQUAD_DEMKOWICZ_HDIV(P);
+        };
         forderTable[MBTET] = [](int P) -> int {
           return NBVOLUMETET_DEMKOWICZ_HDIV(P);
+        };
+        forderTable[MBHEX] = [](int P) -> int {
+          return NBVOLUMEHEX_DEMKOWICZ_HDIV(P);
         };
         break;
       case L2:
@@ -313,6 +321,7 @@ Field::Field(moab::Interface &moab, const EntityHandle meshset)
         forderTable[MBTRI] = [](int P) -> int { return NBFACETRI_L2(P); };
         forderTable[MBQUAD] = [](int P) -> int { return NBFACEQUAD_L2(P); };
         forderTable[MBTET] = [](int P) -> int { return NBVOLUMETET_L2(P); };
+        forderTable[MBHEX] = [](int P) -> int { return NBVOLUMEHEX_L2(P); };
         break;
       default:
         THROW_MESSAGE("unknown approximation space or not yet implemented");

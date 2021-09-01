@@ -620,7 +620,14 @@ add_test(l2_check_approx_3d_bernstein_tet
   -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
   -log_no_color
 )
-
+add_test(l2_check_approx_3d_demkowicz_hex
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_3d
+  -file_name hex_cub.h5m
+  -base demkowicz -space l2 
+  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
+  -log_no_color
+)
 # Check approximation on Hcurl space in 2d
 build_test(hcurl_check_approx_in_2d 
   hcurl_check_approx_in_2d.cpp)
@@ -940,9 +947,15 @@ endif()
 #test for build problems
 build_test(build_problems build_problems.cpp)
 add_test(
-  build_problems_atom
+  build_problems_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 2
   ${CMAKE_CURRENT_BINARY_DIR}/build_problems -my_file disp01.h5m
+  -log_no_color
+)
+add_test(
+  build_problems_hex
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/build_problems -my_file hex_cub.h5m
   -log_no_color
 )
 

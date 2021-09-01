@@ -432,8 +432,7 @@ struct FEMethod : public BasicMethod {
     return numeredEntFiniteElementPtr->getColDofsPtr();
   };
 
-  /// \brief Get number of DOFs on element
-  MoFEMErrorCode getNumberOfNodes(int &num_nodes) const;
+  inline auto getNumberOfNodes() const;
 
   inline EntityHandle getFEEntityHandle() const;
 
@@ -512,6 +511,10 @@ struct FEMethod : public BasicMethod {
             FE->dataPtr->get<Unique_mi_tag>(),                                 \
             FieldEntity::getHiBitNumberUId(FE->getFieldBitNumber(NAME)));      \
   IT++
+};
+
+inline auto FEMethod::getNumberOfNodes() const {
+  return moab::CN::VerticesPerEntity(numeredEntFiniteElementPtr->getEntType());
 };
 
 inline EntityHandle FEMethod::getFEEntityHandle() const {

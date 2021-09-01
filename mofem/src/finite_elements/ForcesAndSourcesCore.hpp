@@ -655,7 +655,7 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
    *
    * @return int
    */
-  inline int getNumberOfNodesOnElement();
+  inline int getNumberOfNodesOnElement() const;
 
   /** \brief Get row indices
 
@@ -971,10 +971,8 @@ ForcesAndSourcesCore::UserDataOperator::getSideEntity(const int side_number,
     return 0;
 }
 
-int ForcesAndSourcesCore::UserDataOperator::getNumberOfNodesOnElement() {
-  int num_nodes;
-  CHKERR ptrFE->getNumberOfNodes(num_nodes);
-  return num_nodes;
+int ForcesAndSourcesCore::UserDataOperator::getNumberOfNodesOnElement() const {
+  return ptrFE->getNumberOfNodes();
 }
 
 const FEMethod *ForcesAndSourcesCore::UserDataOperator::getFEMethod() const {

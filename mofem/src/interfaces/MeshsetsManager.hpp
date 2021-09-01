@@ -823,26 +823,14 @@ MoFEMErrorCode MeshsetsManager::printBcSet(CUBIT_BC_DATA_TYPE &data,
     CHKERR it->getBcDataStructure(data);
     MOFEM_LOG("MeshsetMngWorld", Sev::inform) << *it;
     MOFEM_LOG("MeshsetMngWorld", Sev::inform) << data;
-    int tets, tris, edges, nodes, prisms, quads;
-    CHKERR moab.get_number_entities_by_type(it->meshset, MBTET, tets, true);
-    CHKERR moab.get_number_entities_by_type(it->meshset, MBTRI, tris, true);
-    CHKERR moab.get_number_entities_by_type(it->meshset, MBEDGE, edges, true);
-    CHKERR moab.get_number_entities_by_type(it->meshset, MBVERTEX, nodes, true);
-    CHKERR moab.get_number_entities_by_type(it->meshset, MBPRISM, prisms, true);
-    CHKERR moab.get_number_entities_by_type(it->meshset, MBQUAD, quads, true);
     MOFEM_LOG("MeshsetMngWorld", Sev::inform) << "name " << it->getName();
-    MOFEM_LOG("MeshsetMngWorld", Sev::inform)
-        << "msId " << it->getMeshsetId() << " nb. tets " << tets;
-    MOFEM_LOG("MeshsetMngWorld", Sev::inform)
-        << "msId " << it->getMeshsetId() << " nb. prisms " << prisms;
-    MOFEM_LOG("MeshsetMngWorld", Sev::inform)
-        << "msId " << it->getMeshsetId() << " nb. quads " << quads;
-    MOFEM_LOG("MeshsetMngWorld", Sev::inform)
-        << "msId " << it->getMeshsetId() << " nb. tris " << tris;
-    MOFEM_LOG("MeshsetMngWorld", Sev::inform)
-        << "msId " << it->getMeshsetId() << " nb. edges " << edges;
-    MOFEM_LOG("MeshsetMngWorld", Sev::inform)
-        << "msId " << it->getMeshsetId() << " nb. nodes " << nodes;
+    for (EntityType t = MBVERTEX; t != MBENTITYSET; ++t) {
+      int nb;
+      CHKERR moab.get_number_entities_by_type(it->meshset, t, nb, true);
+      MOFEM_LOG("MeshsetMngWorld", Sev::inform)
+          << "msId " << it->getMeshsetId() << " number of "
+          << moab::CN::EntityTypeName(t) << " " << nb;
+    }
   }
   MoFEMFunctionReturn(0);
 }

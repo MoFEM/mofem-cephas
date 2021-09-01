@@ -658,30 +658,6 @@ protected:
   add_ents_to_finite_element_by_MESHSET(const EntityHandle meshset,
                                         const std::string &name,
                                         const bool recursive = false);
-  DEPRECATED MoFEMErrorCode add_ents_to_finite_element_by_VERTICEs(
-      const Range &vert, const std::string &name);
-  DEPRECATED MoFEMErrorCode add_ents_to_finite_element_by_EDGEs(
-      const Range &vert, const std::string &name);
-  DEPRECATED MoFEMErrorCode add_ents_to_finite_element_by_EDGEs(
-      const EntityHandle meshset, const std::string &name,
-      const bool recursive = false);
-  DEPRECATED MoFEMErrorCode add_ents_to_finite_element_by_TRIs(
-      const Range &tris, const std::string &name);
-  DEPRECATED MoFEMErrorCode add_ents_to_finite_element_by_TRIs(
-      const EntityHandle meshset, const std::string &name,
-      const bool recursive = false);
-  DEPRECATED MoFEMErrorCode add_ents_to_finite_element_by_TETs(
-      const Range &tets, const std::string &name);
-  DEPRECATED MoFEMErrorCode add_ents_to_finite_element_by_TETs(
-      const EntityHandle meshset, const std::string &name,
-      const bool recursive = false);
-  DEPRECATED MoFEMErrorCode
-  add_ents_to_finite_element_by_PRISMs(const Range &prims, const BitFEId id);
-  DEPRECATED MoFEMErrorCode add_ents_to_finite_element_by_PRISMs(
-      const Range &prims, const std::string &name);
-  DEPRECATED MoFEMErrorCode add_ents_to_finite_element_by_PRISMs(
-      const EntityHandle meshset, const std::string &name,
-      const bool recursive = false);
   DEPRECATED MoFEMErrorCode add_ents_to_finite_element_EntType_by_bit_ref(
       const BitRefLevel &bit, const std::string &name, EntityType type,
       int verb = DEFAULT_VERBOSITY);

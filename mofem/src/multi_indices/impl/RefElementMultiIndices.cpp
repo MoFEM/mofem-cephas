@@ -293,7 +293,7 @@ RefElement_PRISM::getSideNumberPtr(const EntityHandle ent) const {
   return nullSideNumber;
 }
 
-RefElement_TET::RefElement_TET(const boost::shared_ptr<RefEntity> &ref_ents_ptr)
+RefElementVolume::RefElementVolume(const boost::shared_ptr<RefEntity> &ref_ents_ptr)
     : RefElement(ref_ents_ptr), tag_BitRefEdges(NULL) {
   Tag th_RefBitEdge;
   moab::Interface &moab = getRefEntityPtr()->getBasicDataPtr()->moab;
@@ -304,16 +304,17 @@ RefElement_TET::RefElement_TET(const boost::shared_ptr<RefEntity> &ref_ents_ptr)
   MOAB_THROW(rval);
   switch (ref_ents_ptr->getEntType()) {
   case MBTET:
+  case MBHEX:
     break;
   default:
-    THROW_MESSAGE("this work only for TETs");
+    THROW_MESSAGE("this work only for TETs or HEXs");
   }
   const_cast<SideNumber_multiIndex &>(side_number_table)
       .insert(boost::make_shared<SideNumber>(sPtr->ent, 0, 0, 0));
 }
 
 const boost::shared_ptr<SideNumber> &
-RefElement_TET::getSideNumberPtr(const EntityHandle ent) const {
+RefElementVolume::getSideNumberPtr(const EntityHandle ent) const {
   moab::Interface &moab = getRefEntityPtr()->getBasicDataPtr()->moab;
   auto miit = side_number_table.find(ent);
   if (miit != side_number_table.end())
@@ -342,7 +343,7 @@ RefElement_TET::getSideNumberPtr(const EntityHandle ent) const {
 
   return *miit;
 }
-std::ostream &operator<<(std::ostream &os, const RefElement_TET &e) {
+std::ostream &operator<<(std::ostream &os, const RefElementVolume &e) {
   os << "ref type " << e.tag_type_data[0] << " ref sub type "
      << e.tag_type_data[1];
   os << " ref egdes " << e.getBitRefEdges();

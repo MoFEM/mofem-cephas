@@ -197,40 +197,6 @@ EntityMethod::EntityMethod() : BasicMethod() {}
 // DofMethod
 DofMethod::DofMethod() : BasicMethod() {}
 
-MoFEMErrorCode FEMethod::getNumberOfNodes(int &num_nodes) const {
-  MoFEMFunctionBeginHot;
-
-  EntityHandle handle = numeredEntFiniteElementPtr->getEnt();
-  if (handle) {
-    switch (static_cast<EntityType>(handle >> MB_ID_WIDTH)) {
-    case MBVERTEX:
-      num_nodes = 1;
-      break;
-    case MBEDGE:
-      num_nodes = 2;
-      break;
-    case MBTRI:
-      num_nodes = 3;
-      break;
-    case MBQUAD:
-      num_nodes = 4;
-      break;
-    case MBTET:
-      num_nodes = 4;
-      break;
-    case MBPRISM:
-      num_nodes = 6;
-      break;
-    default:
-      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
-    }
-  } else {
-    num_nodes = 0;
-  }
-
-  MoFEMFunctionReturnHot(0);
-}
-
 MoFEMErrorCode FEMethod::getNodeData(const std::string field_name,
                                      VectorDouble &data,
                                      const bool reset_dofs) {
@@ -254,8 +220,7 @@ MoFEMErrorCode FEMethod::getNodeData(const std::string field_name,
 
         if (dit != hi_dit) {
           auto &first_dof = **dit;
-          int num_nodes;
-          CHKERR getNumberOfNodes(num_nodes);
+          const int num_nodes = getNumberOfNodes();
           const int nb_dof_idx = first_dof.getNbOfCoeffs();
           const int max_nb_dofs = nb_dof_idx * num_nodes;
           nodes_data.resize(max_nb_dofs, false);

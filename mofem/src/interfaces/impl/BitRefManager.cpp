@@ -242,22 +242,13 @@ struct SetBitRefLevelTool {
               boost::shared_ptr<RefElement>(ref_fe_vec, &ref_fe_vec->back()));
         }
       } break;
-      case MBTET: {
-        boost::shared_ptr<std::vector<RefElement_TET>> ref_fe_vec =
-            boost::make_shared<std::vector<RefElement_TET>>();
-        ref_fe_vec->reserve(pit->second - pit->first + 1);
-        for (; rit != hi_rit; ++rit) {
-          ref_fe_vec->push_back(RefElement_TET(*rit));
-          shared_ref_fe_vec.push_back(
-              boost::shared_ptr<RefElement>(ref_fe_vec, &ref_fe_vec->back()));
-        }
-      } break;
+      case MBTET:
       case MBHEX: {
-        boost::shared_ptr<std::vector<RefElement_HEX>> ref_fe_vec =
-            boost::make_shared<std::vector<RefElement_HEX>>();
+        boost::shared_ptr<std::vector<RefElementVolume>> ref_fe_vec =
+            boost::make_shared<std::vector<RefElementVolume>>();
         ref_fe_vec->reserve(pit->second - pit->first + 1);
         for (; rit != hi_rit; ++rit) {
-          ref_fe_vec->push_back(RefElement_HEX(*rit));
+          ref_fe_vec->push_back(RefElementVolume(*rit));
           shared_ref_fe_vec.push_back(
               boost::shared_ptr<RefElement>(ref_fe_vec, &ref_fe_vec->back()));
         }
@@ -303,7 +294,8 @@ MoFEMErrorCode BitRefManager::setBitRefLevel(const Range &ents,
   MoFEMFunctionBegin;
 
   MOFEM_LOG_FUNCTION();
-  MOFEM_LOG_C("BitRefSelf", Sev::noisy, "nb. entities to add %d", ents.size());
+  MOFEM_LOG_C("BitRefSelf", Sev::noisy, "Number of entities to add %d",
+              ents.size());
 
   CHKERR setElementsBitRefLevel(ents, bit, verb);
 
@@ -315,11 +307,22 @@ MoFEMErrorCode BitRefManager::setBitRefLevel(const Range &ents,
       } else {
         dim_ents = ents.subset_by_dimension(d);
       }
+
+      MOFEM_LOG_FUNCTION();
+      MOFEM_LOG_C("BitRefSelf", Sev::noisy,
+                  "\tNumber of dim %d entities to add %d", d, ents.size());
+
       if (!dim_ents.empty()) {
         for (int dd = 0; dd < d; ++dd) {
           Range adj_ents;
           rval = m_field.get_moab().get_adjacencies(
               dim_ents, dd, true, adj_ents, moab::Interface::UNION);
+
+          MOFEM_LOG_FUNCTION();
+          MOFEM_LOG_C("BitRefSelf", Sev::noisy,
+                      "\tNumber of dim %d adj entities for dim %d to add %d", d,
+                      dd, adj_ents.size());
+
           if (rval == MB_MULTIPLE_ENTITIES_FOUND) {
             auto log_message = [&](const auto sev) {
               MOFEM_LOG_FUNCTION();

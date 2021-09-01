@@ -31,10 +31,7 @@ VolumeElementForcesAndSourcesCoreBase::VolumeElementForcesAndSourcesCoreBase(
            &jAc(1, 2), &jAc(2, 0), &jAc(2, 1), &jAc(2, 2)),
       tInvJac(&invJac(0, 0), &invJac(0, 1), &invJac(0, 2), &invJac(1, 0),
               &invJac(1, 1), &invJac(1, 2), &invJac(2, 0), &invJac(2, 1),
-              &invJac(2, 2)) {
-  getElementPolynomialBase() =
-      boost::shared_ptr<BaseFunction>(new TetPolynomialBase());
-}
+              &invJac(2, 2)) {}
 
 MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::setIntegrationPts() {
   MoFEMFunctionBegin;

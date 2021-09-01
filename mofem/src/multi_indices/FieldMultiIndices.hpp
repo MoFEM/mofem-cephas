@@ -193,10 +193,26 @@ struct Field {
   inline FieldSpace getSpace() const { return *tagSpaceData; }
 
   /**
+   * \brief   Get field approximation space
+   * @return  approximation space name
+   */
+  inline auto getSpaceName() const {
+    return std::string(FieldSpaceNames[getSpace()]);
+  }
+
+  /**
    * \brief   Get approximation base
    * @return  Approximation base
    */
   inline FieldApproximationBase getApproxBase() const { return *tagBaseData; }
+
+  /**
+   * \brief   Get approximation base
+   * @return  Approximation base name
+   */
+  inline auto getApproxBaseName() const {
+    return std::string(ApproximationBaseNames[getApproxBase()]);
+  }
 
   /** \brief Get number of field coefficients
     *
@@ -394,6 +410,10 @@ struct interface_Field : public interface_FieldImpl<FIELD, REFENT> {
     return sFieldPtr->getFieldRawPtr();
   };
 
+  inline FieldOrderTable &getFieldOrderTable() {
+    return sFieldPtr->getFieldOrderTable();
+  };
+
 private:
   mutable boost::shared_ptr<FIELD> sFieldPtr;
 };
@@ -430,8 +450,16 @@ struct interface_Field<T, T> : public interface_FieldImpl<T, T> {
   }
 
   /// @return get approximation base
+  inline auto getSpaceName() const { return getFieldRawPtr()->getSpaceName(); }
+
+  /// @return get approximation base
   inline FieldApproximationBase getApproxBase() const {
     return getFieldRawPtr()->getApproxBase();
+  }
+
+  /// @return get approximation base
+  inline auto getApproxBaseName() const {
+    return getFieldRawPtr()->getApproxBaseName();
   }
 
   /// @return get number of coefficients for DOF
