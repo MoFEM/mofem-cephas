@@ -26,7 +26,7 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
-static constexpr int approx_order = 0;
+static constexpr int approx_order = 5;
 template <int DIM> struct ApproxFunctionsImpl {};
 
 template <int DIM> struct ElementsAndOps {};
