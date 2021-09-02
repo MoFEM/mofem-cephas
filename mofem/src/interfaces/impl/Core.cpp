@@ -53,25 +53,26 @@ WrapMPIComm::~WrapMPIComm() {
 constexpr const int CoreTmp<0>::value;
 constexpr const int CoreTmp<-1>::value;
 
-MoFEMErrorCode Core::query_interface(const MOFEMuuid &uuid,
+MoFEMErrorCode Core::query_interface(boost::typeindex::type_index type_index,
                                      UnknownInterface **iface) const {
   MoFEMFunctionBeginHot;
   *iface = NULL;
-  if (uuid == IDD_MOFEMCoreInterface) {
+  if (type_index == boost::typeindex::type_id<CoreInterface>()) {
     *iface = static_cast<CoreInterface *>(const_cast<Core *>(this));
     MoFEMFunctionReturnHot(0);
-  } else if (uuid == IDD_MOFEMDeprecatedCoreInterface) {
+  } else if (type_index ==
+             boost::typeindex::type_id<DeprecatedCoreInterface>()) {
     *iface = static_cast<DeprecatedCoreInterface *>(const_cast<Core *>(this));
     MoFEMFunctionReturnHot(0);
   }
+
   // Get sub-interface
-  unsigned long int id = uuid.uUId.to_ulong();
-  boost::ptr_map<unsigned long, UnknownInterface>::iterator it;
-  it = iFaces.find(id);
+  auto it = iFaces.find(type_index);
   if (it != iFaces.end()) {
     *iface = it->second;
     MoFEMFunctionReturnHot(0);
   }
+
   *iface = NULL;
   SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
   MoFEMFunctionReturnHot(0);
@@ -159,11 +160,9 @@ static auto get_sub_iface_options_imp(T *const ptr, long) -> MoFEMErrorCode {
   return 0;
 };
 
-template <class IFACE>
-MoFEMErrorCode Core::regSubInterface(const MOFEMuuid &uid) {
+template <class IFACE> MoFEMErrorCode Core::regSubInterface() {
   MoFEMFunctionBegin;
-  CHKERR registerInterface<IFACE>(uid, false);
-  unsigned long int id = uid.uUId.to_ulong();
+  CHKERR registerInterface<IFACE>(true);
   IFACE *ptr = new IFACE(*this);
 
   // If sub interface has function getSubInterfaceOptions run
@@ -177,7 +176,8 @@ MoFEMErrorCode Core::regSubInterface(const MOFEMuuid &uid) {
   };
   CHKERR get_sub_iface_options(ptr);
 
-  iFaces.insert(id, ptr);
+  auto type_idx = boost::typeindex::type_id<IFACE>();
+  iFaces.insert(type_idx, ptr);
   MoFEMFunctionReturn(0);
 }
 
@@ -202,10 +202,9 @@ MoFEMErrorCode Core::coreGenericConstructor(moab::Interface &moab,
     pComm = new ParallelComm(&moab, wrapMPIMOABComm->get_comm());
 
   // Register interfaces for this implementation
-  CHKERR registerInterface<UnknownInterface>(IDD_MOFEMUnknown);
-  CHKERR registerInterface<CoreInterface>(IDD_MOFEMCoreInterface);
-  CHKERR registerInterface<DeprecatedCoreInterface>(
-      IDD_MOFEMDeprecatedCoreInterface);
+  CHKERR registerInterface<UnknownInterface>();
+  CHKERR registerInterface<CoreInterface>();
+  CHKERR registerInterface<DeprecatedCoreInterface>();
 
   // Register MOFEM events in PETSc
   PetscLogEventRegister("FE_preProcess", 0, &MOFEM_EVENT_preProcess);
@@ -456,34 +455,33 @@ MoFEMErrorCode Core::registerSubInterfaces() {
   iFaces.clear();
 
   // Register sub interfaces
-  CHKERR regSubInterface<LogManager>(IDD_MOFEMLogManager);
-  CHKERR regSubInterface<Simple>(IDD_MOFEMSimple);
-  CHKERR regSubInterface<PipelineManager>(IDD_MOFEMBasic);
-  CHKERR regSubInterface<ProblemsManager>(IDD_MOFEMProblemsManager);
-  CHKERR regSubInterface<MatrixManager>(IDD_MOFEMMatrixManager);
-  CHKERR regSubInterface<ISManager>(IDD_MOFEMISManager);
-  CHKERR regSubInterface<VecManager>(IDD_MOFEMVEC);
-  CHKERR regSubInterface<FieldBlas>(IDD_MOFEMFieldBlas);
-  CHKERR regSubInterface<BitRefManager>(IDD_MOFEMBitRefManager);
-  CHKERR regSubInterface<Tools>(IDD_MOFEMTools);
-  CHKERR regSubInterface<CommInterface>(IDD_MOFEMComm);
-  CHKERR regSubInterface<MeshsetsManager>(IDD_MOFEMMeshsetsManager);
-  CHKERR regSubInterface<NodeMergerInterface>(IDD_MOFEMNodeMerger);
-  CHKERR regSubInterface<BitLevelCoupler>(IDD_MOFEMBitLevelCoupler);
-  CHKERR regSubInterface<PrismsFromSurfaceInterface>(
-      IDD_MOFEMPrismsFromSurface);
-  CHKERR regSubInterface<MeshRefinement>(IDD_MOFEMMeshRefine);
-  CHKERR regSubInterface<PrismInterface>(IDD_MOFEMPrismInterface);
-  CHKERR regSubInterface<CutMeshInterface>(IDD_MOFEMCutMesh);
-  CHKERR regSubInterface<SeriesRecorder>(IDD_MOFEMSeriesRecorder);
+  CHKERR regSubInterface<LogManager>();
+  CHKERR regSubInterface<Simple>();
+  CHKERR regSubInterface<PipelineManager>();
+  CHKERR regSubInterface<ProblemsManager>();
+  CHKERR regSubInterface<MatrixManager>();
+  CHKERR regSubInterface<ISManager>();
+  CHKERR regSubInterface<VecManager>();
+  CHKERR regSubInterface<FieldBlas>();
+  CHKERR regSubInterface<BitRefManager>();
+  CHKERR regSubInterface<Tools>();
+  CHKERR regSubInterface<CommInterface>();
+  CHKERR regSubInterface<MeshsetsManager>();
+  CHKERR regSubInterface<NodeMergerInterface>();
+  CHKERR regSubInterface<BitLevelCoupler>();
+  CHKERR regSubInterface<PrismsFromSurfaceInterface>();
+  CHKERR regSubInterface<MeshRefinement>();
+  CHKERR regSubInterface<PrismInterface>();
+  CHKERR regSubInterface<CutMeshInterface>();
+  CHKERR regSubInterface<SeriesRecorder>();
 #ifdef WITH_TETGEN
-  CHKERR regSubInterface<TetGenInterface>(IDD_MOFEMTetGegInterface);
+  CHKERR regSubInterface<TetGenInterface>();
 #endif
 #ifdef WITH_MED
-  CHKERR regSubInterface<MedInterface>(IDD_MOFEMMedInterface);
+  CHKERR regSubInterface<MedInterface>();
 #endif
-  CHKERR regSubInterface<FieldEvaluatorInterface>(IDD_MOFEMFieldEvaluator);
-  CHKERR regSubInterface<BcManager>(IDD_MOFEMBcManager);
+  CHKERR regSubInterface<FieldEvaluatorInterface>();
+  CHKERR regSubInterface<BcManager>();
 
   MoFEMFunctionReturn(0);
 };

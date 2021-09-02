@@ -22,17 +22,14 @@
 
 namespace MoFEM {
 
-static const MOFEMuuid IDD_JACOBI_BASE_FUNCTION =
-    MOFEMuuid(BitIntefaceId(JACOBI_BASE_FUNCTION_INTERFACE));
-
 /**
  * \brief Class used to give arguments to Legendre base functions
  * \ingroup mofem_base_functions
  */
 struct JacobiPolynomialCtx : public BaseFunctionCtx {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 BaseFunctionUnknownInterface **iface) const;
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
+                                 UnknownInterface **iface) const;
 
   int P;
   double *diffX;
@@ -51,8 +48,8 @@ struct JacobiPolynomialCtx : public BaseFunctionCtx {
 
   JacobiPolynomialCtx(int p, double *diff_x, double *diff_t, int dim,
                       double alpha,
-                      boost::shared_ptr<MatrixDouble>& base_fun_ptr,
-                      boost::shared_ptr<MatrixDouble>&  base_diff_fun_ptr)
+                      boost::shared_ptr<MatrixDouble> &base_fun_ptr,
+                      boost::shared_ptr<MatrixDouble> &base_diff_fun_ptr)
       : P(p), diffX(diff_x), diffT(diff_t), dIm(dim), aLpha(alpha),
         baseFunPtr(base_fun_ptr), baseDiffFunPtr(base_diff_fun_ptr),
         basePolynomialsType1(Jacobi_polynomials) {}
@@ -65,8 +62,8 @@ struct JacobiPolynomialCtx : public BaseFunctionCtx {
  */
 struct JacobiPolynomial : public BaseFunction {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 BaseFunctionUnknownInterface **iface) const;
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
+                                 UnknownInterface **iface) const;
 
   JacobiPolynomial() {}
   ~JacobiPolynomial() {}
@@ -75,18 +72,15 @@ struct JacobiPolynomial : public BaseFunction {
                           boost::shared_ptr<BaseFunctionCtx> ctx_ptr);
 };
 
-static const MOFEMuuid IDD_INTEGRATED_JACOBI_BASE_FUNCTION =
-    MOFEMuuid(BitIntefaceId(INTEGRATED_JACOBI_BASE_FUNCTION_INTERFACE));
-
 struct IntegratedJacobiPolynomialCtx : public JacobiPolynomialCtx {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 BaseFunctionUnknownInterface **iface) const;
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
+                                 UnknownInterface **iface) const;
 
   IntegratedJacobiPolynomialCtx(
       int p, double *diff_x, double *diff_t, int dim, double alpha,
-      boost::shared_ptr<MatrixDouble>& base_fun_ptr,
-      boost::shared_ptr<MatrixDouble>& base_diff_fun_ptr)
+      boost::shared_ptr<MatrixDouble> &base_fun_ptr,
+      boost::shared_ptr<MatrixDouble> &base_diff_fun_ptr)
       : JacobiPolynomialCtx(p, diff_x, diff_t, dim, alpha, base_fun_ptr,
                             base_diff_fun_ptr) {
     basePolynomialsType1 = IntegratedJacobi_polynomials;
@@ -96,8 +90,8 @@ struct IntegratedJacobiPolynomialCtx : public JacobiPolynomialCtx {
 
 struct IntegratedJacobiPolynomial : public JacobiPolynomial {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 BaseFunctionUnknownInterface **iface) const;
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
+                                 UnknownInterface **iface) const;
 
   IntegratedJacobiPolynomial() : JacobiPolynomial() {}
   ~IntegratedJacobiPolynomial() {}

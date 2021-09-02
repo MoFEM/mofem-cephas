@@ -22,9 +22,6 @@
 
 namespace MoFEM {
 
-static const MOFEMuuid IDD_FATPRISM_BASE_FUNCTION =
-    MOFEMuuid(BitIntefaceId(FATPRISM_BASE_FUNCTION_INTERFACE));
-
 struct NumeredEntFiniteElement;
 
 /**
@@ -37,8 +34,8 @@ struct NumeredEntFiniteElement;
  */
 struct FatPrismPolynomialBaseCtx : public EntPolynomialBaseCtx {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 BaseFunctionUnknownInterface **iface) const;
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
+                                 UnknownInterface **iface) const;
 
   DataForcesAndSourcesCore &dataTrianglesOnly;
   DataForcesAndSourcesCore &dataTroughThickness;
@@ -70,8 +67,8 @@ struct FatPrismPolynomialBaseCtx : public EntPolynomialBaseCtx {
  */
 struct FatPrismPolynomialBase : public BaseFunction {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 BaseFunctionUnknownInterface **iface) const;
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
+                                 UnknownInterface **iface) const;
 
   FatPrismPolynomialBase();
   ~FatPrismPolynomialBase();

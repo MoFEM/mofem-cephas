@@ -19,15 +19,11 @@
 
 namespace MoFEM {
 
-MoFEMErrorCode FieldBlas::query_interface(const MOFEMuuid &uuid,
-                                          UnknownInterface **iface) const {
+MoFEMErrorCode
+FieldBlas::query_interface(boost::typeindex::type_index type_index,
+                           UnknownInterface **iface) const {
   MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_MOFEMFieldBlas) {
-    *iface = const_cast<FieldBlas *>(this);
-    MoFEMFunctionReturnHot(0);
-  }
-  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
+  *iface = const_cast<FieldBlas *>(this);
   MoFEMFunctionReturnHot(0);
 }
 

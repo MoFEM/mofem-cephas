@@ -19,16 +19,10 @@
 
 namespace MoFEM {
 
-MoFEMErrorCode Tools::query_interface(const MOFEMuuid &uuid,
+MoFEMErrorCode Tools::query_interface(boost::typeindex::type_index type_index,
                                       UnknownInterface **iface) const {
-  MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_MOFEMNodeMerger) {
-    *iface = const_cast<Tools *>(this);
-    MoFEMFunctionReturnHot(0);
-  }
-  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
-  MoFEMFunctionReturnHot(0);
+  *iface = const_cast<Tools *>(this);
+  return 0;
 }
 
 double Tools::volumeLengthQuality(const double *coords) {

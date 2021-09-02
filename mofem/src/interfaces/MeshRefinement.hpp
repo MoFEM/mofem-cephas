@@ -21,9 +21,6 @@
 
 namespace MoFEM {
 
-static const MOFEMuuid IDD_MOFEMMeshRefine =
-    MOFEMuuid(BitIntefaceId(MESH_REFINE));
-
 /** \brief Mesh refinement interface
 
   Currently this class is abstraction to Core interface. In future should be
@@ -40,7 +37,7 @@ static const MOFEMuuid IDD_MOFEMMeshRefine =
   */
 struct MeshRefinement : public UnknownInterface {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
   MoFEM::Core &cOre;

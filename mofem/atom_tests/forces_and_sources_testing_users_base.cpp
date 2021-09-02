@@ -11,7 +11,7 @@
  * matrix and approximation base determines together with space the regularity
  * of approximation.
  *
-*/
+ */
 
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
@@ -40,51 +40,40 @@ static char help[] = "...\n\n";
 
 /**
  * @brief Class used to calculate base functions at integration points
- * 
+ *
  */
 struct SomeUserPolynomialBase : public BaseFunction {
 
-  SomeUserPolynomialBase() {}
-  ~SomeUserPolynomialBase() {}
+  SomeUserPolynomialBase() = default;
+  ~SomeUserPolynomialBase() = default;
 
-  /** 
+  /**
    * @brief Return interface to this class when one ask for for tetrahedron,
    * otherisw return interface class for generic class.
-   * 
-   * @param uuid Unique id
+   *
    * @param iface interface class
    * @return MoFEMErrorCode
    */
-   
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 BaseFunctionUnknownInterface **iface) const {
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
+                                 UnknownInterface **iface) const {
     MoFEMFunctionBegin;
-    *iface = NULL;
-    if (uuid == IDD_TET_BASE_FUNCTION) {
-      *iface = const_cast<SomeUserPolynomialBase *>(this);
-      MoFEMFunctionReturnHot(0);
-    } else {
-      SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "wrong interference");
-    }
-    CHKERR BaseFunction::query_interface(uuid, iface);
+    *iface = const_cast<SomeUserPolynomialBase *>(this);
     MoFEMFunctionReturn(0);
   }
 
   /**
    * @brief Calculate base functions at intergeneration points
-   * 
-   * @param pts 
-   * @param ctx_ptr 
-   * @return MoFEMErrorCode 
+   *
+   * @param pts
+   * @param ctx_ptr
+   * @return MoFEMErrorCode
    */
   MoFEMErrorCode getValue(MatrixDouble &pts,
                           boost::shared_ptr<BaseFunctionCtx> ctx_ptr) {
     MoFEMFunctionBeginHot;
 
-    BaseFunctionUnknownInterface *iface;
-    CHKERR ctx_ptr->query_interface(IDD_TET_BASE_FUNCTION, &iface);
-    cTx = reinterpret_cast<EntPolynomialBaseCtx *>(iface);
-
+    cTx = ctx_ptr->getInterface<EntPolynomialBaseCtx>();
+    
     int nb_gauss_pts = pts.size2();
     if (!nb_gauss_pts) {
       MoFEMFunctionReturnHot(0);
@@ -117,21 +106,21 @@ private:
 
     const FieldApproximationBase base = cTx->bAse;
     // This should be used only in case USER_BASE is selected
-    if(cTx->bAse!=USER_BASE) {
+    if (cTx->bAse != USER_BASE) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "Wrong base, should be USER_BASE");
     }
 
     // This is example, simply use Demkowicz HDiv base to generate base
     // functions
-    
+
     DataForcesAndSourcesCore &data = cTx->dAta;
     int nb_gauss_pts = pts.size2();
 
     // calculate shape functions, i.e. barycentric coordinates
     shapeFun.resize(nb_gauss_pts, 4, false);
-    CHKERR ShapeMBTET(&*shapeFun.data().begin(), &pts(0, 0),
-                      &pts(1, 0), &pts(2, 0), nb_gauss_pts);
+    CHKERR ShapeMBTET(&*shapeFun.data().begin(), &pts(0, 0), &pts(1, 0),
+                      &pts(2, 0), nb_gauss_pts);
     // direvatives of shape functions
     double diff_shape_fun[12];
     CHKERR ShapeDiffMBTET(diff_shape_fun);
@@ -190,12 +179,12 @@ private:
 
 int main(int argc, char *argv[]) {
 
-  // Initialise MoFEM, MPI and petsc 
+  // Initialise MoFEM, MPI and petsc
   MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
 
   try {
 
-    // create moab 
+    // create moab
     moab::Core mb_instance;
     // get interface to moab databse
     moab::Interface &moab = mb_instance;
@@ -237,12 +226,12 @@ int main(int argc, char *argv[]) {
 
     // get access to "FIELD_CGG" data structure
     auto field_ptr = m_field.get_field_structure("FILED_CGG");
-    // get table associating number of dofs to entities depending on 
+    // get table associating number of dofs to entities depending on
     // approximation order set on those entities.
     auto field_order_table =
         const_cast<Field *>(field_ptr)->getFieldOrderTable();
 
-    // function set zero number of dofs 
+    // function set zero number of dofs
     auto get_cgg_bubble_order_zero = [](int p) { return 0; };
     // function set non-zero number of dofs on tetrahedrons
     auto get_cgg_bubble_order_face = [](int p) {
@@ -282,8 +271,7 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.add_ents_to_field_by_type(root_set, MBTET, "FILED_CGG");
     CHKERR m_field.add_ents_to_field_by_type(root_set, MBTET, "FILED_RT");
     // add entities to finite element
-    CHKERR m_field.add_ents_to_finite_element_by_type(root_set, MBTET,
-                                                      "FE");
+    CHKERR m_field.add_ents_to_finite_element_by_type(root_set, MBTET, "FE");
 
     // set app. order
     int order = 3;
@@ -323,7 +311,7 @@ int main(int argc, char *argv[]) {
     /**
      * Simple user data operator which main purpose is to print values
      * of base functions at intergation points.
-     * 
+     *
      */
     struct MyOp1 : public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
@@ -339,7 +327,7 @@ int main(int argc, char *argv[]) {
       MoFEMErrorCode doWork(int side, EntityType type,
                             DataForcesAndSourcesCore::EntData &data) {
         MoFEMFunctionBeginHot;
-        if(data.getIndices().empty()) {
+        if (data.getIndices().empty()) {
           MoFEMFunctionReturnHot(0);
         }
         my_split << rowFieldName << endl;
@@ -355,9 +343,9 @@ int main(int argc, char *argv[]) {
                             DataForcesAndSourcesCore::EntData &row_data,
                             DataForcesAndSourcesCore::EntData &col_data) {
         MoFEMFunctionBeginHot;
-        if(row_data.getIndices().empty())
+        if (row_data.getIndices().empty())
           MoFEMFunctionReturnHot(0);
-        if(col_data.getIndices().empty())
+        if (col_data.getIndices().empty())
           MoFEMFunctionReturnHot(0);
         my_split << rowFieldName << " : " << colFieldName << endl;
         my_split << "row side: " << row_side << " row_type: " << row_type
@@ -385,7 +373,7 @@ int main(int argc, char *argv[]) {
         new MyOp1("FILED_CGG", "FILED_RT", my_split,
                   ForcesAndSourcesCore::UserDataOperator::OPROWCOL));
 
-    // iterate over finite elements, and execute user data operators on each 
+    // iterate over finite elements, and execute user data operators on each
     // of them
     CHKERR m_field.loop_finite_elements("PROBLEM", "FE", fe1);
   }

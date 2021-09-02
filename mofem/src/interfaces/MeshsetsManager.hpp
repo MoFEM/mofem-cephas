@@ -109,16 +109,13 @@ for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,"SOME_BLOCK_NAME",it) {
   IT != MESHSET_MANAGER.get_meshsets_manager_ptr()->getEnd(NAME);              \
   IT++
 
-static const MOFEMuuid IDD_MOFEMMeshsetsManager =
-    MOFEMuuid(BitIntefaceId(MESHSETSMANAGER_INTERFACE));
-
 /** \brief Interface for managing meshsets containing materials and boundary
  * conditions
  * \ingroup mofem_meshset_mng
  */
 struct MeshsetsManager : public UnknownInterface {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
   MoFEM::Core &cOre;

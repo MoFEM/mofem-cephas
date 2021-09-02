@@ -17,17 +17,10 @@
 
 namespace MoFEM {
 
-MoFEMErrorCode
-PrismsFromSurfaceInterface::query_interface(const MOFEMuuid &uuid,
-                                            UnknownInterface **iface) const {
-  MoFEMFunctionBegin;
-  *iface = NULL;
-  if (uuid == IDD_MOFEMPrismsFromSurface) {
-    *iface = const_cast<PrismsFromSurfaceInterface *>(this);
-    MoFEMFunctionReturnHot(0);
-  }
-  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
-  MoFEMFunctionReturn(0);
+MoFEMErrorCode PrismsFromSurfaceInterface::query_interface(
+    boost::typeindex::type_index type_index, UnknownInterface **iface) const {
+  *iface = const_cast<PrismsFromSurfaceInterface *>(this);
+  return 0;
 }
 
 DEPRECATED MoFEMErrorCode PrismsFromSurfaceInterface::createPrisms(

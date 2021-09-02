@@ -24,15 +24,10 @@
 namespace MoFEM {
 
 MoFEMErrorCode
-CutMeshInterface::query_interface(const MOFEMuuid &uuid,
+CutMeshInterface::query_interface(boost::typeindex::type_index type_index,
                                   UnknownInterface **iface) const {
   MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_MOFEMCutMesh) {
-    *iface = const_cast<CutMeshInterface *>(this);
-    MoFEMFunctionReturnHot(0);
-  }
-  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
+  *iface = const_cast<CutMeshInterface *>(this);
   MoFEMFunctionReturnHot(0);
 }
 

@@ -23,9 +23,6 @@
 
 namespace MoFEM {
 
-static const MOFEMuuid IDD_MOFEMISManager =
-    MOFEMuuid(BitIntefaceId(ISMANAGER_INTERFACE));
-
 /**
  * \brief Section manager is used to create indexes and sections
  * \ingroup mofem_is_managers
@@ -35,7 +32,7 @@ static const MOFEMuuid IDD_MOFEMISManager =
  */
 struct ISManager : public UnknownInterface {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
   const MoFEM::Interface &cOre;

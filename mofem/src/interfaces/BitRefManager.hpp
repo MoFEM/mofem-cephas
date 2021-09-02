@@ -23,9 +23,6 @@
 
 namespace MoFEM {
 
-static const MOFEMuuid IDD_MOFEMBitRefManager =
-    MOFEMuuid(BitIntefaceId(BITREFMANAGER_INTERFACE));
-
 /**
  * \brief Managing BitRefLevels
  * \ingroup mofem_bit_ref
@@ -33,7 +30,7 @@ static const MOFEMuuid IDD_MOFEMBitRefManager =
  */
 struct BitRefManager : public UnknownInterface {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
   MoFEM::Core &cOre;

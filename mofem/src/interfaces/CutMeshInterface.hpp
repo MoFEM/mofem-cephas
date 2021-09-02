@@ -21,9 +21,6 @@
 
 namespace MoFEM {
 
-static const MOFEMuuid IDD_MOFEMCutMesh =
-    MOFEMuuid(BitIntefaceId(CUTMESH_INTERFACE));
-
 /**
  *  \brief Interface to cut meshes
  *
@@ -31,8 +28,7 @@ static const MOFEMuuid IDD_MOFEMCutMesh =
  */
 struct CutMeshInterface : public UnknownInterface {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 UnknownInterface **iface) const;
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index, UnknownInterface **iface) const;
 
   MoFEM::Core &cOre;
   CutMeshInterface(const MoFEM::Core &core);

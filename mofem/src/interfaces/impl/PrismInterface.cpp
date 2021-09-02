@@ -21,16 +21,11 @@
 
 namespace MoFEM {
 
-MoFEMErrorCode PrismInterface::query_interface(const MOFEMuuid &uuid,
-                                               UnknownInterface **iface) const {
-  MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_MOFEMPrismInterface) {
-    *iface = const_cast<PrismInterface *>(this);
-    MoFEMFunctionReturnHot(0);
-  }
-  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
-  MoFEMFunctionReturnHot(0);
+MoFEMErrorCode
+PrismInterface::query_interface(boost::typeindex::type_index type_index,
+                                UnknownInterface **iface) const {
+  *iface = const_cast<PrismInterface *>(this);
+  return 0;
 }
 
 PrismInterface::PrismInterface(const Core &core)

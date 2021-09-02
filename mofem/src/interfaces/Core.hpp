@@ -196,8 +196,7 @@ template <> struct CoreTmp<0> : public Interface {
    * @param  iface returned pointer to interface
    * @return       error code
    */
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 UnknownInterface **iface) const;
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index, UnknownInterface **iface) const;
 
   /**@}*/
 
@@ -999,7 +998,7 @@ protected:
   /**
    * \brief Hash map of pointers to interfaces
    */
-  mutable boost::ptr_map<unsigned long, UnknownInterface> iFaces;
+  mutable boost::ptr_map<boost::typeindex::type_index, UnknownInterface> iFaces;
 
   mutable int *buildMoFEM; ///< keeps flags/semaphores for different stages
 
@@ -1069,10 +1068,9 @@ protected:
    * @brief Register subinterfac in core interface
    *
    * @tparam IFACE
-   * @param uid
    * @return MoFEMErrorCode
    */
-  template <class IFACE> MoFEMErrorCode regSubInterface(const MOFEMuuid &uid);
+  template <class IFACE> MoFEMErrorCode regSubInterface();
 };
 
 template <> struct CoreTmp<-1> : public CoreTmp<0> {

@@ -47,16 +47,11 @@ extern "C" {
 
 namespace MoFEM {
 
-MoFEMErrorCode MedInterface::query_interface(const MOFEMuuid &uuid,
-                                             UnknownInterface **iface) const {
-  MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_MOFEMMedInterface) {
-    *iface = const_cast<MedInterface *>(this);
-    MoFEMFunctionReturnHot(0);
-  }
-  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
-  MoFEMFunctionReturnHot(0);
+MoFEMErrorCode
+MedInterface::query_interface(boost::typeindex::type_index type_index,
+                              UnknownInterface **iface) const {
+  *iface = const_cast<MedInterface *>(this);
+  return 0;
 }
 
 MedInterface::MedInterface(const Core &core)

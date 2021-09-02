@@ -23,9 +23,6 @@
 
 namespace MoFEM {
 
-static const MOFEMuuid IDD_MOFEMFieldBlas =
-    MOFEMuuid(BitIntefaceId(FIELDBLAS_INTERFACE));
-
 /**
  * \brief Basic algebra on fields
  * \ingroup mofem_field_algebra
@@ -33,7 +30,7 @@ static const MOFEMuuid IDD_MOFEMFieldBlas =
  */
 struct FieldBlas : public UnknownInterface {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
   const MoFEM::Interface &cOre;

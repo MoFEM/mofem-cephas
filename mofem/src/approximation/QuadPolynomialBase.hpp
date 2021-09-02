@@ -32,8 +32,7 @@ namespace MoFEM {
  */
 struct QuadPolynomialBase : public BaseFunction {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 BaseFunctionUnknownInterface **iface) const;
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index, UnknownInterface **iface) const;
 
   QuadPolynomialBase() = default;
   ~QuadPolynomialBase() = default;

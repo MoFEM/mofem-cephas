@@ -20,25 +20,9 @@
 #define __LOOPMETHODS_HPP__
 
 namespace MoFEM {
-
-static const MOFEMuuid IDD_MOFEMPetscDataMethod =
-    MOFEMuuid(BitIntefaceId(PETSC_DATA_METHOD));
-static const MOFEMuuid IDD_MOFEMKspMethod =
-    MOFEMuuid(BitIntefaceId(KSP_METHOD));
-static const MOFEMuuid IDD_MOFEMSnesMethod =
-    MOFEMuuid(BitIntefaceId(SNES_METHOD));
-static const MOFEMuuid IDD_MOFEMTsMethod = MOFEMuuid(BitIntefaceId(TS_METHOD));
-static const MOFEMuuid IDD_MOFEMBasicMethod =
-    MOFEMuuid(BitIntefaceId(BASIC_METHOD));
-static const MOFEMuuid IDD_MOFEMFEMethod = MOFEMuuid(BitIntefaceId(FE_METHOD));
-static const MOFEMuuid IDD_MOFEMEntityMethod =
-    MOFEMuuid(BitIntefaceId(ENTITY_METHOD));
-static const MOFEMuuid IDD_MOFEMDofMethod =
-    MOFEMuuid(BitIntefaceId(DOF_METHOD));
-
 struct PetscData : public UnknownInterface {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
   PetscData();
@@ -87,8 +71,9 @@ struct PetscData : public UnknownInterface {
  */
 struct KspMethod : virtual public PetscData {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
+
   /**
    * \brief pass information about context of KSP/DM for with finite element is
    * computed
@@ -124,7 +109,7 @@ struct KspMethod : virtual public PetscData {
  */
 struct SnesMethod : virtual protected PetscData {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
   enum SNESContext { CTX_SNESSETFUNCTION, CTX_SNESSETJACOBIAN, CTX_SNESNONE };
@@ -166,7 +151,7 @@ MoFEMErrorCode SnesMethod::setSnesCtx(SNESContext ctx) {
  */
 struct TSMethod : virtual protected PetscData {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
   enum TSContext {
@@ -224,13 +209,11 @@ MoFEMErrorCode TSMethod::setTsCtx(TSContext ctx) {
  */
 struct BasicMethod : public KspMethod, SnesMethod, TSMethod {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const {
-    if (uuid == IDD_MOFEMBasicMethod) {
-      *iface = const_cast<BasicMethod *>(this);
-      MoFEMFunctionReturnHot(0);
-    }
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
+    MoFEMFunctionBeginHot;
+    *iface = const_cast<BasicMethod *>(this);
+    MoFEMFunctionReturnHot(0);
   }
 
   BasicMethod();
@@ -368,16 +351,10 @@ struct BasicMethod : public KspMethod, SnesMethod, TSMethod {
  */
 struct FEMethod : public BasicMethod {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const {
     MoFEMFunctionBeginHot;
-    if (uuid == IDD_MOFEMFEMethod) {
-      *iface = const_cast<FEMethod *>(this);
-      MoFEMFunctionReturnHot(0);
-    }
-
-    ierr = query_interface(uuid, iface);
-    CHKERRG(ierr);
+    *iface = const_cast<FEMethod *>(this);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -530,14 +507,10 @@ inline EntityHandle FEMethod::getFEEntityHandle() const {
  */
 struct EntityMethod : public BasicMethod {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const {
     MoFEMFunctionBegin;
-    if (uuid == IDD_MOFEMEntityMethod) {
-      *iface = const_cast<EntityMethod *>(this);
-      MoFEMFunctionReturnHot(0);
-    }
-    CHKERR query_interface(uuid, iface);
+    *iface = const_cast<EntityMethod *>(this);
     MoFEMFunctionReturn(0);
   }
 
@@ -556,15 +529,10 @@ struct EntityMethod : public BasicMethod {
  */
 struct DofMethod : public BasicMethod {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const {
     MoFEMFunctionBeginHot;
-    if (uuid == IDD_MOFEMDofMethod) {
-      *iface = const_cast<DofMethod *>(this);
-      MoFEMFunctionReturnHot(0);
-    }
-
-    CHKERR query_interface(uuid, iface);
+    *iface = const_cast<DofMethod *>(this);
     MoFEMFunctionReturnHot(0);
   }
 

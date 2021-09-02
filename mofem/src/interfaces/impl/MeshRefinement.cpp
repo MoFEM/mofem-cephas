@@ -19,16 +19,11 @@
 
 namespace MoFEM {
 
-MoFEMErrorCode MeshRefinement::query_interface(const MOFEMuuid &uuid,
-                                               UnknownInterface **iface) const {
-  MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_MOFEMMeshRefine) {
-    *iface = const_cast<MeshRefinement *>(this);
-    MoFEMFunctionReturnHot(0);
-  }
-  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
-  MoFEMFunctionReturnHot(0);
+MoFEMErrorCode
+MeshRefinement::query_interface(boost::typeindex::type_index type_index,
+                                UnknownInterface **iface) const {
+  *iface = const_cast<MeshRefinement *>(this);
+  return 0;
 }
 
 MeshRefinement::MeshRefinement(const Core &core)

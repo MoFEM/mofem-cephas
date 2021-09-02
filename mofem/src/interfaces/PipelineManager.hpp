@@ -26,16 +26,13 @@
 
 namespace MoFEM {
 
-static const MOFEMuuid IDD_MOFEMBasic =
-    MOFEMuuid(BitIntefaceId(BASIC_INTERFACE));
-
 /**
  * \brief PipelineManager interface
  * \ingroup mofem_basic_interface
  */
 struct PipelineManager : public UnknownInterface {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
   PipelineManager(const MoFEM::Core &core);

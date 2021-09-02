@@ -19,16 +19,10 @@
 
 namespace MoFEM {
 
-MoFEMErrorCode Simple::query_interface(const MOFEMuuid &uuid,
+MoFEMErrorCode Simple::query_interface(boost::typeindex::type_index type_index,
                                        UnknownInterface **iface) const {
-  MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_MOFEMSimple) {
-    *iface = const_cast<Simple *>(this);
-    MoFEMFunctionReturnHot(0);
-  }
-  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
-  MoFEMFunctionReturnHot(0);
+  *iface = const_cast<Simple *>(this);
+  return 0;
 }
 
 template <int DIM> MoFEMErrorCode Simple::setSkeletonAdjacency() {

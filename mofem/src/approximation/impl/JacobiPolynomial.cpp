@@ -17,34 +17,18 @@
 
 namespace MoFEM {
 
-MoFEMErrorCode JacobiPolynomialCtx::query_interface(
-    const MOFEMuuid &uuid, BaseFunctionUnknownInterface **iface) const {
-  MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_JACOBI_BASE_FUNCTION) {
-    *iface = const_cast<JacobiPolynomialCtx *>(this);
-    MoFEMFunctionReturnHot(0);
-  } else {
-    SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "wrong interference");
-  }
-  ierr = BaseFunctionCtx::query_interface(uuid, iface);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+MoFEMErrorCode
+JacobiPolynomialCtx::query_interface(boost::typeindex::type_index type_index,
+                                     UnknownInterface **iface) const {
+  *iface = const_cast<JacobiPolynomialCtx *>(this);
+  return 0;
 }
 
 MoFEMErrorCode
-JacobiPolynomial::query_interface(const MOFEMuuid &uuid,
-                                  BaseFunctionUnknownInterface **iface) const {
+JacobiPolynomial::query_interface(boost::typeindex::type_index type_index,
+                                  UnknownInterface **iface) const {
   MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_JACOBI_BASE_FUNCTION) {
-    *iface = const_cast<JacobiPolynomial *>(this);
-    MoFEMFunctionReturnHot(0);
-  } else {
-    SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "wrong interference");
-  }
-  ierr = BaseFunction::query_interface(uuid, iface);
-  CHKERRG(ierr);
+  *iface = const_cast<JacobiPolynomial *>(this);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -77,51 +61,28 @@ MoFEMErrorCode
 JacobiPolynomial::getValue(MatrixDouble &pts_x, MatrixDouble &pts_t,
                            boost::shared_ptr<BaseFunctionCtx> ctx_ptr) {
   MoFEMFunctionBegin;
-  BaseFunctionUnknownInterface *iface;
-  CHKERR ctx_ptr->query_interface(IDD_JACOBI_BASE_FUNCTION, &iface);
-  JacobiPolynomialCtx *ctx = reinterpret_cast<JacobiPolynomialCtx *>(iface);
+  auto ctx = ctx_ptr->getInterface<JacobiPolynomialCtx>();
   CHKERR get_value(pts_x, pts_t, ctx);
   MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode IntegratedJacobiPolynomialCtx::query_interface(
-    const MOFEMuuid &uuid, BaseFunctionUnknownInterface **iface) const {
-  MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_INTEGRATED_JACOBI_BASE_FUNCTION) {
-    *iface = const_cast<IntegratedJacobiPolynomialCtx *>(this);
-    MoFEMFunctionReturnHot(0);
-  } else {
-    SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "wrong interference");
-  }
-  ierr = BaseFunctionCtx::query_interface(uuid, iface);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+    boost::typeindex::type_index type_index, UnknownInterface **iface) const {
+  *iface = const_cast<IntegratedJacobiPolynomialCtx *>(this);
+  return 0;
 }
 
 MoFEMErrorCode IntegratedJacobiPolynomial::query_interface(
-    const MOFEMuuid &uuid, BaseFunctionUnknownInterface **iface) const {
-  MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_INTEGRATED_JACOBI_BASE_FUNCTION) {
-    *iface = const_cast<IntegratedJacobiPolynomial *>(this);
-    MoFEMFunctionReturnHot(0);
-  } else {
-    SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "wrong interference");
-  }
-  ierr = BaseFunction::query_interface(uuid, iface);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+    boost::typeindex::type_index type_index, UnknownInterface **iface) const {
+  *iface = const_cast<IntegratedJacobiPolynomial *>(this);
+  return 0;
 }
 
 MoFEMErrorCode IntegratedJacobiPolynomial::getValue(
     MatrixDouble &pts_x, MatrixDouble &pts_t,
     boost::shared_ptr<BaseFunctionCtx> ctx_ptr) {
   MoFEMFunctionBegin;
-  BaseFunctionUnknownInterface *iface;
-  CHKERR ctx_ptr->query_interface(IDD_INTEGRATED_JACOBI_BASE_FUNCTION, &iface);
-  IntegratedJacobiPolynomialCtx *ctx =
-      reinterpret_cast<IntegratedJacobiPolynomialCtx *>(iface);
+  auto ctx = ctx_ptr->getInterface<IntegratedJacobiPolynomialCtx>();
   CHKERR get_value(pts_x, pts_t, ctx);
   MoFEMFunctionReturn(0);
 }

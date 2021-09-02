@@ -859,8 +859,6 @@ PetscErrorCode DMMoFEMGetFieldIS(DM dm, RowColData rc, const char field_name[],
  */
 PetscErrorCode DMMoFEMSetVerbosity(DM dm, const int verb);
 
-static const MOFEMuuid IDD_DMCTX = MOFEMuuid(BitIntefaceId(DMCTX_INTERFACE));
-
 /**
  * \brief PETSc  Discrete Manager data structure
  *
@@ -876,7 +874,7 @@ static const MOFEMuuid IDD_DMCTX = MOFEMuuid(BitIntefaceId(DMCTX_INTERFACE));
  */
 struct DMCtx : public UnknownInterface {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
   Interface *mField_ptr;    ///< MoFEM interface

@@ -21,11 +21,6 @@ namespace MoFEM {
 
 struct MeshsetsManager;
 
-static const MOFEMuuid IDD_MOFEMCoreInterface =
-    MOFEMuuid(BitIntefaceId(CORE_INTERFACE));
-static const MOFEMuuid IDD_MOFEMDeprecatedCoreInterface =
-    MOFEMuuid(BitIntefaceId(DEPRECATED_CORE_INTERFACE));
-
 /**
  * \brief Interface
  * \nosubgrouping

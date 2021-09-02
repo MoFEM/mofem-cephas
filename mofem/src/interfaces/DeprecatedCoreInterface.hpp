@@ -27,25 +27,6 @@ struct DeprecatedCoreInterface : public CoreInterface {
 
   /** \name Interfaces */
 
-  /**@{*/
-
-  template <class IFace>
-  DEPRECATED MoFEMErrorCode query_interface(IFace *&ptr) const {
-    MoFEMFunctionBeginHot;
-    ierr = getInterface(ptr);
-    CHKERRG(ierr);
-    MoFEMFunctionReturnHot(0);
-  }
-
-  template <class IFace> DEPRECATED IFace *query_interface() const {
-    IFace *tmp_ptr;
-    ierr = getInterface(tmp_ptr);
-    CHKERRABORT(PETSC_COMM_SELF, ierr);
-    return tmp_ptr;
-  }
-
-  /**@}*/
-
   /**@}*/
 
   /** \name Seed entities */

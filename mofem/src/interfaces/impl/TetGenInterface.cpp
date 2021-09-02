@@ -41,17 +41,10 @@ static inline MoFEMErrorCode determinantTensor3by3(T1 &t, T2 &det) {
 namespace MoFEM {
 
 MoFEMErrorCode
-TetGenInterface::query_interface(const MOFEMuuid &uuid,
+TetGenInterface::query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const {
-  MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_MOFEMTetGegInterface) {
-    *iface = const_cast<TetGenInterface *>(this);
-    MoFEMFunctionReturnHot(0);
-  }
-  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
-
-  MoFEMFunctionReturnHot(0);
+  *iface = const_cast<TetGenInterface *>(this);
+  return 0;
 }
 
 MoFEMErrorCode

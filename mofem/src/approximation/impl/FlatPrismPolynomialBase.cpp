@@ -3,35 +3,25 @@
 */
 
 /* This file is part of MoFEM.
-* MoFEM is free software: you can redistribute it and/or modify it under
-* the terms of the GNU Lesser General Public License as published by the
-* Free Software Foundation, either version 3 of the License, or (at your
-* option) any later version.
-*
-* MoFEM is distributed in the hope that it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
-* License for more details.
-*
-* You should have received a copy of the GNU Lesser General Public
-* License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
-
+ * MoFEM is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MoFEM is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 using namespace MoFEM;
 
 MoFEMErrorCode FlatPrismPolynomialBaseCtx::query_interface(
-    const MOFEMuuid &uuid, BaseFunctionUnknownInterface **iface) const {
-
-  MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_FLATPRISM_BASE_FUNCTION) {
-    *iface = const_cast<FlatPrismPolynomialBaseCtx *>(this);
-    MoFEMFunctionReturnHot(0);
-  } else {
-    SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "wrong interference");
-  }
-  CHKERR EntPolynomialBaseCtx::query_interface(uuid, iface);
-  MoFEMFunctionReturnHot(0);
+    boost::typeindex::type_index type_index, UnknownInterface **iface) const {
+  *iface = const_cast<FlatPrismPolynomialBaseCtx *>(this);
+  return 0;
 }
 
 FlatPrismPolynomialBaseCtx::FlatPrismPolynomialBaseCtx(
@@ -47,18 +37,9 @@ FlatPrismPolynomialBaseCtx::FlatPrismPolynomialBaseCtx(
 FlatPrismPolynomialBaseCtx::~FlatPrismPolynomialBaseCtx() {}
 
 MoFEMErrorCode FlatPrismPolynomialBase::query_interface(
-    const MOFEMuuid &uuid, BaseFunctionUnknownInterface **iface) const {
-
-  MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_FLATPRISM_BASE_FUNCTION) {
-    *iface = const_cast<FlatPrismPolynomialBase *>(this);
-    MoFEMFunctionReturnHot(0);
-  } else {
-    SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "wrong interference");
-  }
-  CHKERR BaseFunction::query_interface(uuid, iface);
-  MoFEMFunctionReturnHot(0);
+    boost::typeindex::type_index type_index, UnknownInterface **iface) const {
+  *iface = const_cast<FlatPrismPolynomialBase *>(this);
+  return 0;
 }
 
 FlatPrismPolynomialBase::~FlatPrismPolynomialBase() {}
@@ -69,20 +50,19 @@ FlatPrismPolynomialBase::getValue(MatrixDouble &pts,
                                   boost::shared_ptr<BaseFunctionCtx> ctx_ptr) {
   MoFEMFunctionBeginHot;
 
-  BaseFunctionUnknownInterface *iface;
-  CHKERR ctx_ptr->query_interface(IDD_FLATPRISM_BASE_FUNCTION, &iface);
-  cTx = reinterpret_cast<FlatPrismPolynomialBaseCtx *>(iface);
-  if (!cTx->fePtr) 
+  cTx = ctx_ptr->getInterface<FlatPrismPolynomialBaseCtx>();
+
+  if (!cTx->fePtr)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-      "Pointer to element should be given "
-      "when EntPolynomialBaseCtx is constructed "
+            "Pointer to element should be given "
+            "when EntPolynomialBaseCtx is constructed "
             "(use different constructor)");
 
   int nb_gauss_pts = pts.size2();
-  if (!nb_gauss_pts) 
+  if (!nb_gauss_pts)
     MoFEMFunctionReturnHot(0);
 
-  if (pts.size1() < 1) 
+  if (pts.size1() < 1)
     SETERRQ(
         PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
         "Wrong dimension of pts, should be at least 3 rows with coordinates");
@@ -155,19 +135,19 @@ FlatPrismPolynomialBase::getValue(MatrixDouble &pts,
   }
 
   switch (cTx->sPace) {
-    case H1:
+  case H1:
     CHKERR getValueH1(pts);
     break;
-    case HDIV:
+  case HDIV:
     CHKERR getValueHdiv(pts);
     break;
-    case HCURL:
+  case HCURL:
     CHKERR getValueHcurl(pts);
     break;
-    case L2:
+  case L2:
     CHKERR getValueL2(pts);
     break;
-    default:
+  default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not yet implemented");
   }
 
@@ -186,7 +166,7 @@ MoFEMErrorCode FlatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
   int nb_gauss_pts = pts.size2();
 
   // edges
-  if (data.dataOnEntities[MBEDGE].size() != 9) 
+  if (data.dataOnEntities[MBEDGE].size() != 9)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
 
   int sense[9], order[9];
@@ -225,9 +205,9 @@ MoFEMErrorCode FlatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
   }
 
   // face
-  if (data.dataOnEntities[MBTRI].size() != 5) 
+  if (data.dataOnEntities[MBTRI].size() != 5)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
-  
+
   if ((data.spacesOnEntities[MBTRI]).test(H1)) {
     for (int ff = 3; ff <= 4; ff++) {
       int nb_dofs = NBFACETRI_H1(data.dataOnEntities[MBTRI][ff].getDataOrder());
@@ -238,8 +218,8 @@ MoFEMErrorCode FlatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
       CHKERR H1_FaceShapeFunctions_MBTRI(
           faceNodes[ff - 3], data.dataOnEntities[MBTRI][ff].getDataOrder(),
           &*N.data().begin(), &*diffN.data().begin(),
-        &*data.dataOnEntities[MBTRI][ff].getN(base).data().begin(),
-        &*data.dataOnEntities[MBTRI][ff].getDiffN(base).data().begin(),
+          &*data.dataOnEntities[MBTRI][ff].getN(base).data().begin(),
+          &*data.dataOnEntities[MBTRI][ff].getDiffN(base).data().begin(),
           nb_gauss_pts, base_polynomials);
     }
   }

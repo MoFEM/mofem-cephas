@@ -22,17 +22,14 @@
 
 namespace MoFEM {
 
-static const MOFEMuuid IDD_LEGENDRE_BASE_FUNCTION =
-    MOFEMuuid(BitIntefaceId(LEGENDRE_BASE_FUNCTION_INTERFACE));
-
 /**
  * \brief Class used to give arguments to Legendre base functions
  * \ingroup mofem_base_functions
  */
 struct LegendrePolynomialCtx : public BaseFunctionCtx {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 BaseFunctionUnknownInterface **iface) const;
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
+                                 UnknownInterface **iface) const;
 
   int P;
   double *diffS;
@@ -59,8 +56,8 @@ struct LegendrePolynomialCtx : public BaseFunctionCtx {
  */
 struct LegendrePolynomial : public BaseFunction {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 BaseFunctionUnknownInterface **iface) const;
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
+                                 UnknownInterface **iface) const;
 
   LegendrePolynomial() {}
   ~LegendrePolynomial() {}

@@ -20,17 +20,13 @@
 
 namespace MoFEM {
 
-static const MOFEMuuid IDD_MOFEMNodeMerger =
-    MOFEMuuid(BitIntefaceId(NODEMERGER_INTERFACE));
-
 /** \brief Merge node by collapsing edge between them
  *
  * \ingroup mofem_node_merger
  */
 struct NodeMergerInterface : public UnknownInterface {
 
-
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
   NodeMergerInterface(const MoFEM::Core &core);

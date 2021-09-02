@@ -24,9 +24,6 @@
 
 namespace MoFEM {
 
-static const MOFEMuuid IDD_MOFEMSeriesRecorder =
-    MOFEMuuid(BitIntefaceId(SERIES_RECORDER));
-
 /** Record (time) data series
  * \ingroup mofem_series
 
@@ -37,7 +34,7 @@ static const MOFEMuuid IDD_MOFEMSeriesRecorder =
  */
 struct SeriesRecorder : public UnknownInterface {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
   MoFEM::Core &cOre;

@@ -28,9 +28,6 @@ namespace expr = boost::log::expressions;
 
 namespace MoFEM {
 
-static const MOFEMuuid IDD_MOFEMLogManager =
-    MOFEMuuid(BitIntefaceId(LOGMANAGER_INTERFACE));
-
 /**
  * \brief Log manager is used to build and partition problems
  * \ingroup mofem_log_manager
@@ -62,7 +59,7 @@ struct LogManager : public UnknownInterface {
     BitScope = 1 << 1,
   };
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
   LogManager(const MoFEM::Core &core);

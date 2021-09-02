@@ -19,19 +19,11 @@
 
 using namespace MoFEM;
 
-
-MoFEMErrorCode QuadPolynomialBase::query_interface(
-    const MOFEMuuid &uuid, BaseFunctionUnknownInterface **iface) const {
-  MoFEMFunctionBegin;
-  *iface = NULL;
-  if (uuid == IDD_QUAD_BASE_FUNCTION) {
-    *iface = const_cast<QuadPolynomialBase *>(this);
-    MoFEMFunctionReturnHot(0);
-  } else
-    SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "wrong interference");
-
-  CHKERR BaseFunction::query_interface(uuid, iface);
-  MoFEMFunctionReturn(0);
+MoFEMErrorCode
+QuadPolynomialBase::query_interface(boost::typeindex::type_index type_index,
+                                    UnknownInterface **iface) const {
+  *iface = const_cast<QuadPolynomialBase *>(this);
+  return 0;
 }
 
 MoFEMErrorCode QuadPolynomialBase::getValueH1(MatrixDouble &pts) {
@@ -328,7 +320,7 @@ QuadPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
     auto &diff_face_n = data.dataOnEntities[MBQUAD][0].getDiffN(base);
     face_n.resize(nb_gauss_pts, 3 * nb_dofs, false);
     diff_face_n.resize(nb_gauss_pts, 3 * 2 * nb_dofs, false);
-    
+
     double *ptr_f0 = &face_family(0, 0);
     double *ptr_f1 = &face_family(1, 0);
     double *ptr = &face_n(0, 0);
@@ -396,9 +388,7 @@ QuadPolynomialBase::getValue(MatrixDouble &pts,
                              boost::shared_ptr<BaseFunctionCtx> ctx_ptr) {
   MoFEMFunctionBegin;
 
-  BaseFunctionUnknownInterface *iface;
-  CHKERR ctx_ptr->query_interface(IDD_QUAD_BASE_FUNCTION, &iface);
-  cTx = reinterpret_cast<EntPolynomialBaseCtx *>(iface);
+  cTx = ctx_ptr->getInterface<EntPolynomialBaseCtx>();
 
   int nb_gauss_pts = pts.size2();
   if (!nb_gauss_pts)

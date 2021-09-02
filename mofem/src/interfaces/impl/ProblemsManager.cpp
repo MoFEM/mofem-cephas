@@ -67,16 +67,10 @@ private:
 };
 
 MoFEMErrorCode
-ProblemsManager::query_interface(const MOFEMuuid &uuid,
+ProblemsManager::query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const {
-  MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_MOFEMProblemsManager) {
-    *iface = const_cast<ProblemsManager *>(this);
-    MoFEMFunctionReturnHot(0);
-  }
-  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
-  MoFEMFunctionReturnHot(0);
+  *iface = const_cast<ProblemsManager *>(this);
+  return 0;
 }
 
 ProblemsManager::ProblemsManager(const MoFEM::Core &core)

@@ -31,16 +31,9 @@ namespace MoFEM {
 bool MeshsetsManager::brodcastMeshsets = true;
 
 MoFEMErrorCode
-MeshsetsManager::query_interface(const MOFEMuuid &uuid,
-                                 UnknownInterface **iface) const {
-  MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_MOFEMMeshsetsManager) {
-    *iface = const_cast<MeshsetsManager *>(this);
-    MoFEMFunctionReturnHot(0);
-  }
-  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
-  MoFEMFunctionReturnHot(0);
+MeshsetsManager::query_interface(boost::typeindex::type_index type_index, UnknownInterface **iface) const {
+  *iface = const_cast<MeshsetsManager *>(this);
+  return 0;
 }
 
 MeshsetsManager::MeshsetsManager(const Core &core)

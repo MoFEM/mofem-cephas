@@ -19,32 +19,6 @@
 
 namespace MoFEM {
 
-/**
- * \brief MoFEM interface unique ID
- * \ingroup mofem
- */
-struct MOFEMuuid {
-
-  MOFEMuuid() { memset(this, 0, sizeof(MOFEMuuid)); }
-  MOFEMuuid(const BitIntefaceId &uuid) { uUId = uuid; }
-
-  /** \brief returns whether two uuid's are equal
-   **/
-  inline bool operator==(const MOFEMuuid &orig) const {
-    return (uUId & orig.uUId) == orig.uUId;
-  }
-
-  // uuid
-  BitIntefaceId uUId;
-};
-
-/** uuid for an unknown interface
- * this can be used to either return a default interface
- * or a NULL interface
- **/
-static const MOFEMuuid IDD_MOFEMUnknown =
-    MOFEMuuid(BitIntefaceId(UNKNOWNINTERFACE));
-
 struct Version {
   int majorVersion;
   int minorVersion;
@@ -56,20 +30,6 @@ struct Version {
       : majorVersion(v[0]), minorVersion(v[1]), buildVersion(v[2]) {}
   Version(const int minor, const int major, const int build)
       : majorVersion(minor), minorVersion(major), buildVersion(build) {}
-
-  /**
-   * @deprecated Prints version
-   */
-  DEPRECATED MoFEMErrorCode printVersion(std::string prefix = "",
-                                         MPI_Comm comm = PETSC_COMM_WORLD) {
-    MoFEMFunctionBegin;
-    if (!prefix.empty()) {
-      prefix += " ";
-    }
-    CHKERR PetscPrintf(comm, "%s%d.%d.%d\n", prefix.c_str(), majorVersion,
-                       minorVersion, buildVersion);
-    MoFEMFunctionReturn(0);
-  }
 
   std::string strVersion() {
     auto str = [](auto v) { return boost::lexical_cast<std::string>(v); };
@@ -83,8 +43,9 @@ struct Version {
  **/
 struct UnknownInterface {
 
-  virtual MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                         UnknownInterface **iface) const = 0;
+  virtual MoFEMErrorCode
+  query_interface(boost::typeindex::type_index type_index,
+                  UnknownInterface **iface) const = 0;
 
   /**
    * @brief Register interface
@@ -100,47 +61,15 @@ struct UnknownInterface {
    * @return MoFEMErrorCode
    */
   template <class IFACE>
-  MoFEMErrorCode registerInterface(const MOFEMuuid &uuid,
-                                   bool error_if_registration_failed = true) {
+  MoFEMErrorCode registerInterface(bool error_if_registration_failed = true) {
     MoFEMFunctionBeginHot;
-    auto p = iFaceTypeMap.insert(
-        UIdTypeMap(uuid, boost::typeindex::type_id<IFACE>()));
+    auto p =
+        iFaceTypeMap.insert(UIdTypeMap(boost::typeindex::type_id<IFACE>()));
     if (error_if_registration_failed && (!p.second)) {
       SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                "Registration of interface typeid(IFACE).name() = %s failed",
                typeid(IFACE).name());
     }
-    MoFEMFunctionReturnHot(0);
-  }
-
-  /**
-   * @brief Get interface by uuid and return reference to pointer of interface
-   *
-   * \note uuid of interface and interface are verified, if second template
-   * parameter is true. Function throw error if both do not match.
-   *
-   * \note Do not use this function directly, it is called by other overload
-   * getInterface methods.
-   *
-   * @param uuid
-   * @param iface reference to a interface pointer
-   * @return MoFEMErrorCode
-   */
-  template <class IFACE, bool VERIFY = false>
-  inline MoFEMErrorCode getInterface(const MOFEMuuid &uuid,
-                                     IFACE *&iface) const {
-    MoFEMFunctionBeginHot;
-    iface = NULL;
-    if (VERIFY) {
-      if (boost::typeindex::type_id<IFACE>() != getClassIdx(uuid)) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
-                "Inconsistency between interface Id and type");
-      }
-    }
-    UnknownInterface *ptr;
-    ierr = getInterface<UnknownInterface, false>(uuid, ptr);
-    CHKERRG(ierr);
-    iface = static_cast<IFACE *>(ptr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -163,7 +92,7 @@ struct UnknownInterface {
    * // easy construction of problem.
    * Simple *simple_interface;
    * // Query interface and get pointer to Simple interface
-   *  CHKERR m_field.getInterface(simple_interface);
+   * CHKERR m_field.getInterface(simple_interface);
    *
    * \endcode
    *
@@ -172,8 +101,12 @@ struct UnknownInterface {
    */
   template <class IFACE>
   inline MoFEMErrorCode getInterface(IFACE *&iface) const {
-    return getInterface<IFACE, false>(
-        getUId(boost::typeindex::type_id<IFACE>()), iface);
+    MoFEMFunctionBegin;
+    UnknownInterface *ptr;
+    CHKERR query_interface(boost::typeindex::type_id<IFACE>(), &ptr);
+    if (!(iface = dynamic_cast<IFACE *>(ptr)))
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Cast imposible");
+    MoFEMFunctionReturn(0);
   }
 
   /**
@@ -205,8 +138,7 @@ struct UnknownInterface {
    */
   template <class IFACE>
   inline MoFEMErrorCode getInterface(IFACE **const iface) const {
-    return getInterface<IFACE, false>(boost::typeindex::type_id<IFACE>(),
-                                      *iface);
+    return getInterface<IFACE>(*iface);
   }
 
   /**
@@ -226,7 +158,7 @@ struct UnknownInterface {
    * // Get interface
    * // Get simple interface is simplified version enabling quick and
    * // easy construction of problem.
-   * Simple *simple_interface = m_field.getInterface<Simple*,0>();
+   * Simple *simple_interface = m_field.getInterface<Simple*>();
    *
    * \endcode
    *
@@ -237,8 +169,7 @@ struct UnknownInterface {
   inline IFACE getInterface() const {
     typedef typename boost::remove_pointer<IFACE>::type IFaceType;
     IFaceType *iface = NULL;
-    ierr = getInterface<IFaceType, false>(
-        getUId(boost::typeindex::type_id<IFaceType>()), iface);
+    ierr = getInterface<IFACE>(iface);
     CHKERRABORT(PETSC_COMM_SELF, ierr);
     return iface;
   }
@@ -260,7 +191,7 @@ struct UnknownInterface {
    * // Get interface
    * // Get simple interface is simplified version enabling quick and
    * // easy construction of problem.
-   * Simple &simple_interface = m_field.getInterface<Simple&,0>();
+   * Simple &simple_interface = m_field.getInterface<Simple&>();
    *
    * \endcode
    *
@@ -271,8 +202,7 @@ struct UnknownInterface {
   inline IFACE getInterface() const {
     typedef typename boost::remove_reference<IFACE>::type IFaceType;
     IFaceType *iface = NULL;
-    ierr = getInterface<IFaceType, false>(
-        getUId(boost::typeindex::type_id<IFaceType>()), iface);
+    ierr = getInterface<IFaceType>(iface);
     CHKERRABORT(PETSC_COMM_SELF, ierr);
     return *iface;
   }
@@ -294,14 +224,17 @@ struct UnknownInterface {
    * // Get interface
    * // Get simple interface is simplified version enabling quick and
    * // easy construction of problem.
-   * Simple *simple_interface = m_field.getInterface<Simple,0>();
+   * Simple *simple_interface = m_field.getInterface<Simple>();
    *
    * \endcode
    *
    * @return IFACE*
    */
   template <class IFACE> inline IFACE *getInterface() const {
-    return getInterface<IFACE *, 0>();
+    IFACE *iface = NULL;
+    ierr = getInterface<IFACE>(iface);
+    CHKERRABORT(PETSC_COMM_SELF, ierr);
+    return iface;
   }
 
   virtual ~UnknownInterface() = default;
@@ -353,55 +286,16 @@ struct UnknownInterface {
 protected:
   struct NotKnownClass {};
 
-  /**
-   * \brief Get type name for interface Id
-   * @param  uid interface Id
-   * @return     class name
-   */
-  inline boost::typeindex::type_index getClassIdx(const MOFEMuuid &uid) const {
-    iFaceTypeMap_multiIndex::nth_index<0>::type::iterator it;
-    it = iFaceTypeMap.get<0>().find(uid);
-    if (it != iFaceTypeMap.get<0>().end()) {
-      return it->classIdx;
-    }
-    return boost::typeindex::type_id<NotKnownClass>();
-  }
-
-  /**
-   * \brief Get interface Id for class name
-   * @param  class_name
-   * @return            Id
-   */
-  inline MOFEMuuid getUId(const boost::typeindex::type_index &class_idx) const {
-    iFaceTypeMap_multiIndex::nth_index<1>::type::iterator it;
-    it = iFaceTypeMap.get<1>().find(class_idx);
-    if (it != iFaceTypeMap.get<1>().end()) {
-      return it->uID;
-    }
-    return IDD_MOFEMUnknown;
-  }
-
 private:
   struct UIdTypeMap {
-    MOFEMuuid uID;
     boost::typeindex::type_index classIdx;
-    UIdTypeMap(const MOFEMuuid &uid, const boost::typeindex::type_index &idx)
-        : uID(uid), classIdx(idx) {}
-  };
-
-  struct HashMOFEMuuid {
-    inline unsigned int operator()(const MOFEMuuid &value) const {
-      return value.uUId.to_ulong();
-    }
+    UIdTypeMap(const boost::typeindex::type_index &idx) : classIdx(idx) {}
   };
 
   /// Data structure for interfaces Id and class names
   typedef multi_index_container<
       UIdTypeMap,
       indexed_by<
-
-          hashed_unique<member<UIdTypeMap, MOFEMuuid, &UIdTypeMap::uID>,
-                        HashMOFEMuuid>,
 
           hashed_unique<member<UIdTypeMap, boost::typeindex::type_index,
                                &UIdTypeMap::classIdx>>
@@ -410,14 +304,9 @@ private:
       iFaceTypeMap_multiIndex;
 
   mutable iFaceTypeMap_multiIndex
-      iFaceTypeMap; ///< Maps MOFEMuuid to interface type name
+      iFaceTypeMap; ///< Maps implementation to interface type name
 };
 
-template <>
-inline MoFEMErrorCode UnknownInterface::getInterface<UnknownInterface, false>(
-    const MOFEMuuid &uuid, UnknownInterface *&iface) const {
-  return query_interface(uuid, &iface);
-}
 } // namespace MoFEM
 
 #endif // __MOFEMUNKNOWNINTERFACE_HPP__

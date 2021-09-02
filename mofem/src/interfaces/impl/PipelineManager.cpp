@@ -20,16 +20,10 @@
 namespace MoFEM {
 
 MoFEMErrorCode
-PipelineManager::query_interface(const MOFEMuuid &uuid,
+PipelineManager::query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const {
-  MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_MOFEMBasic) {
-    *iface = const_cast<PipelineManager *>(this);
-    MoFEMFunctionReturnHot(0);
-  }
-  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
-  MoFEMFunctionReturnHot(0);
+  *iface = const_cast<PipelineManager *>(this);
+  return 0;
 }
 
 PipelineManager::PipelineManager(const MoFEM::Core &core)

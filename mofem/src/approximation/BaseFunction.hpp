@@ -22,14 +22,13 @@
 
 namespace MoFEM {
 
-static const MOFEMuuid IDD_UNKNOWN_BASE_FUNCTION =
-    MOFEMuuid(BitIntefaceId(UNKNOWN_BASE_FUNCTION_INTERFACE));
+struct BaseFunctionUnknownInterface : public UnknownInterface {
 
-struct BaseFunctionUnknownInterface {
+  using UnknownInterface::UnknownInterface;
 
   virtual MoFEMErrorCode
-  query_interface(const MOFEMuuid &uuid,
-                  BaseFunctionUnknownInterface **iface) const = 0;
+  query_interface(boost::typeindex::type_index type_index,
+                  UnknownInterface **iface) const = 0;
 
   virtual ~BaseFunctionUnknownInterface() = default;
 };
@@ -40,10 +39,10 @@ struct BaseFunctionUnknownInterface {
  */
 struct BaseFunctionCtx : public BaseFunctionUnknownInterface {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 BaseFunctionUnknownInterface **iface) const;
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
+                                 UnknownInterface **iface) const;
 
-  BaseFunctionCtx() {}
+  using BaseFunctionUnknownInterface::BaseFunctionUnknownInterface;
 };
 
 /**
@@ -52,11 +51,10 @@ struct BaseFunctionCtx : public BaseFunctionUnknownInterface {
  */
 struct BaseFunction : public BaseFunctionUnknownInterface {
 
-  MoFEMErrorCode
-  query_interface(const MOFEMuuid &uuid,
-                  MoFEM::BaseFunctionUnknownInterface **iface) const;
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
+                                 MoFEM::UnknownInterface **iface) const;
 
-  BaseFunction() {}
+  using BaseFunctionUnknownInterface::BaseFunctionUnknownInterface;
 
   virtual MoFEMErrorCode getValue(MatrixDouble &pts,
                                   boost::shared_ptr<BaseFunctionCtx> ctx_ptr);

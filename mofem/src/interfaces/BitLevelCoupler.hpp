@@ -21,9 +21,6 @@
 
 namespace MoFEM {
 
-static const MOFEMuuid IDD_MOFEMBitLevelCoupler =
-    MOFEMuuid(BitIntefaceId(BITLEVELCOUPLER_INTERFACE));
-
 /** \brief Interface set parent for vertices, edges, triangles and tetrahedrons.
  * \ingroup mofem
  *
@@ -32,7 +29,7 @@ static const MOFEMuuid IDD_MOFEMBitLevelCoupler =
  */
 struct BitLevelCoupler : public UnknownInterface {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
   MoFEM::Core &cOre;

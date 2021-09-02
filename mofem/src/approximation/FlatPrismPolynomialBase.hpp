@@ -22,9 +22,6 @@
 
 namespace MoFEM {
 
-static const MOFEMuuid IDD_FLATPRISM_BASE_FUNCTION =
-    MOFEMuuid(BitIntefaceId(FLATPRISM_BASE_FUNCTION_INTERFACE));
-
 /**
  * \brief Class used to pass element data to calculate base functions on flat
  * prism
@@ -35,8 +32,8 @@ static const MOFEMuuid IDD_FLATPRISM_BASE_FUNCTION =
  */
 struct FlatPrismPolynomialBaseCtx : public EntPolynomialBaseCtx {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 BaseFunctionUnknownInterface **iface) const;
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
+                                 UnknownInterface **iface) const;
 
   moab::Interface &mOab;
   const NumeredEntFiniteElement *fePtr;
@@ -58,8 +55,8 @@ struct FlatPrismPolynomialBaseCtx : public EntPolynomialBaseCtx {
  */
 struct FlatPrismPolynomialBase : public BaseFunction {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 BaseFunctionUnknownInterface **iface) const;
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
+                                 UnknownInterface **iface) const;
 
   FlatPrismPolynomialBase();
   ~FlatPrismPolynomialBase();

@@ -30,9 +30,8 @@ namespace MoFEM {
  */
 struct HexPolynomialBase : public BaseFunction {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 BaseFunctionUnknownInterface **iface) const;
-
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
+                                 UnknownInterface **iface) const;
   HexPolynomialBase() = default;
   ~HexPolynomialBase() = default;
 

@@ -18,15 +18,12 @@
 
 namespace MoFEM {
 
-static const MOFEMuuid IDD_MOFEMPrismsFromSurface =
-    MOFEMuuid(BitIntefaceId(PRISMSFROMSURFACE_INTERFACE));
-
 /** \brief merge node from two bit levels
  * \ingroup mofem
  */
 struct PrismsFromSurfaceInterface : public UnknownInterface {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
   MoFEM::Core &cOre;

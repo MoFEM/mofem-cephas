@@ -20,16 +20,13 @@
 
 namespace MoFEM {
 
-static const MOFEMuuid IDD_MOFEMBcManager =
-    MOFEMuuid(BitIntefaceId(BC_MANAGER));
-
 /**
  * \brief Simple interface for fast problem set-up
  * \ingroup mofem_simple_interface
  */
 struct BcManager : public UnknownInterface {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
   BcManager(const MoFEM::Core &core);

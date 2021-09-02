@@ -23,9 +23,6 @@
 
 namespace MoFEM {
 
-static const MOFEMuuid IDD_MOFEMVEC =
-    MOFEMuuid(BitIntefaceId(VECMANAGER_INTERFACE));
-
 /**
  * \brief Vector manager is used to create vectors
  * \mofem_vectors
@@ -35,7 +32,7 @@ static const MOFEMuuid IDD_MOFEMVEC =
  */
 struct VecManager : public UnknownInterface {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
   const MoFEM::Interface &cOre;

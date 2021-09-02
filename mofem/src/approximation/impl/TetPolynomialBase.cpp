@@ -22,19 +22,11 @@ A l2, h1, h-div and h-curl spaces are implemented.
 using namespace MoFEM;
 
 MoFEMErrorCode
-TetPolynomialBase::query_interface(const MOFEMuuid &uuid,
-                                   BaseFunctionUnknownInterface **iface) const {
+TetPolynomialBase::query_interface(boost::typeindex::type_index type_index,
+                                   UnknownInterface **iface) const {
 
   MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_TET_BASE_FUNCTION) {
-    *iface = const_cast<TetPolynomialBase *>(this);
-    MoFEMFunctionReturnHot(0);
-  } else {
-    SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "wrong interference");
-  }
-  ierr = BaseFunction::query_interface(uuid, iface);
-  CHKERRG(ierr);
+  *iface = const_cast<TetPolynomialBase *>(this);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -1371,9 +1363,7 @@ TetPolynomialBase::getValue(MatrixDouble &pts,
                             boost::shared_ptr<BaseFunctionCtx> ctx_ptr) {
   MoFEMFunctionBegin;
 
-  BaseFunctionUnknownInterface *iface;
-  CHKERR ctx_ptr->query_interface(IDD_TET_BASE_FUNCTION, &iface);
-  cTx = reinterpret_cast<EntPolynomialBaseCtx *>(iface);
+  cTx = ctx_ptr->getInterface<EntPolynomialBaseCtx>();
 
   int nb_gauss_pts = pts.size2();
   if (!nb_gauss_pts)

@@ -26,16 +26,13 @@
 
 namespace MoFEM {
 
-static const MOFEMuuid IDD_MOFEMSimple =
-    MOFEMuuid(BitIntefaceId(SIMPLE_INTERFACE));
-
 /**
  * \brief Simple interface for fast problem set-up
  * \ingroup mofem_simple_interface
  */
 struct Simple : public UnknownInterface {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
   Simple(const MoFEM::Core &core);

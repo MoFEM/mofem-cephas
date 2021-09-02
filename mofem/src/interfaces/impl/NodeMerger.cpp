@@ -18,16 +18,10 @@
 namespace MoFEM {
 
 MoFEMErrorCode
-NodeMergerInterface::query_interface(const MOFEMuuid &uuid,
+NodeMergerInterface::query_interface(boost::typeindex::type_index type_index,
                                      UnknownInterface **iface) const {
-  MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_MOFEMNodeMerger) {
-    *iface = const_cast<NodeMergerInterface *>(this);
-    MoFEMFunctionReturnHot(0);
-  }
-  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
-  MoFEMFunctionReturnHot(0);
+  *iface = const_cast<NodeMergerInterface *>(this);
+  return 0;
 }
 
 static auto min_non_abs(const double a, const double b) {

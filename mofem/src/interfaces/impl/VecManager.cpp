@@ -17,16 +17,11 @@
 
 namespace MoFEM {
 
-MoFEMErrorCode VecManager::query_interface(const MOFEMuuid &uuid,
-                                           UnknownInterface **iface) const {
-  MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_MOFEMVEC) {
-    *iface = const_cast<VecManager *>(this);
-    MoFEMFunctionReturnHot(0);
-  }
-  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
-  MoFEMFunctionReturnHot(0);
+MoFEMErrorCode
+VecManager::query_interface(boost::typeindex::type_index type_index,
+                            UnknownInterface **iface) const {
+  *iface = const_cast<VecManager *>(this);
+  return 0;
 }
 
 VecManager::VecManager(const MoFEM::Core &core)

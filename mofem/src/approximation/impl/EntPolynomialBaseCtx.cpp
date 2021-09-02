@@ -19,20 +19,11 @@
 
 using namespace MoFEM;
 
-MoFEMErrorCode EntPolynomialBaseCtx::query_interface(
-    const MOFEMuuid &uuid, BaseFunctionUnknownInterface **iface) const {
-  MoFEMFunctionBegin;
-  *iface = NULL;
-  if (uuid == IDD_TET_BASE_FUNCTION || uuid == IDD_HEX_BASE_FUNCTION ||
-      uuid == IDD_TRI_BASE_FUNCTION || uuid == IDD_EDGE_BASE_FUNCTION ||
-      uuid == IDD_QUAD_BASE_FUNCTION) {
-    *iface = const_cast<EntPolynomialBaseCtx *>(this);
-    MoFEMFunctionReturnHot(0);
-  } else {
-    SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "wrong interference");
-  }
-  CHKERR BaseFunctionCtx::query_interface(uuid, iface);
-  MoFEMFunctionReturn(0);
+MoFEMErrorCode
+EntPolynomialBaseCtx::query_interface(boost::typeindex::type_index type_index,
+                                      UnknownInterface **iface) const {
+  *iface = const_cast<EntPolynomialBaseCtx *>(this);
+  return 0;
 }
 
 EntPolynomialBaseCtx::EntPolynomialBaseCtx(

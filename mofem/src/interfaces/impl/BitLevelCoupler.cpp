@@ -14,15 +14,10 @@
 namespace MoFEM {
 
 MoFEMErrorCode
-BitLevelCoupler::query_interface(const MOFEMuuid &uuid,
+BitLevelCoupler::query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const {
   MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_MOFEMBitLevelCoupler) {
-    *iface = const_cast<BitLevelCoupler *>(this);
-    MoFEMFunctionReturnHot(0);
-  }
-  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
+  *iface = const_cast<BitLevelCoupler *>(this);
   MoFEMFunctionReturnHot(0);
 }
 
