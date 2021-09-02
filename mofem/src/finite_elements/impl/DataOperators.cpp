@@ -46,7 +46,6 @@ DataOperator::DataOperator(const bool symm)
   doEntities[MBPOLYGON] = false;
   doEntities[MBPYRAMID] = false;
   doEntities[MBKNIFE] = false;
-  doEntities[MBHEX] = false;
   doEntities[MBPOLYHEDRON] = false;
 }
 

@@ -183,16 +183,12 @@ MoFEMErrorCode HexPolynomialBase::getValueL2DemkowiczBase(MatrixDouble &pts) {
 
   auto &base_fun = data.dataOnEntities[MBHEX][0].getN(base);
   auto &diff_base_fun = data.dataOnEntities[MBHEX][0].getDiffN(base);
-
-  base_fun.resize(nb_gauss_pts,
-                  NBVOLUMEHEX_L2(data.dataOnEntities[MBHEX][0].getDataOrder()),
-                  false);
-  diff_base_fun.resize(
-      nb_gauss_pts,
-      3 * NBVOLUMEHEX_L2(data.dataOnEntities[MBHEX][0].getDataOrder()), false);
-
   const int vol_order = data.dataOnEntities[MBHEX][0].getDataOrder();
   const std::array<int, 3> p{vol_order, vol_order, vol_order};
+
+  base_fun.resize(nb_gauss_pts, NBVOLUMEHEX_L2(vol_order), false);
+  diff_base_fun.resize(nb_gauss_pts, 3 * NBVOLUMEHEX_L2(vol_order), false);
+
   CHKERR DemkowiczHexAndQuad::L2_InteriorShapeFunctions_ONHEX(
       p.data(), &*copy_base_fun.data().begin(),
       &*copy_diff_base_fun.data().begin(), &*base_fun.data().begin(),

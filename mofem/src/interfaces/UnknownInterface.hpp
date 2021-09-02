@@ -104,7 +104,7 @@ struct UnknownInterface {
     MoFEMFunctionBegin;
     UnknownInterface *ptr;
     CHKERR query_interface(boost::typeindex::type_id<IFACE>(), &ptr);
-    if (!(iface = dynamic_cast<IFACE *>(ptr)))
+    if (!(iface = static_cast<IFACE *>(ptr)))
       SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Cast imposible");
     MoFEMFunctionReturn(0);
   }
