@@ -468,7 +468,6 @@ MoFEMErrorCode Core::registerSubInterfaces() {
   CHKERR regSubInterface<CommInterface>();
   CHKERR regSubInterface<MeshsetsManager>();
   CHKERR regSubInterface<NodeMergerInterface>();
-  CHKERR regSubInterface<BitLevelCoupler>();
   CHKERR regSubInterface<PrismsFromSurfaceInterface>();
   CHKERR regSubInterface<MeshRefinement>();
   CHKERR regSubInterface<PrismInterface>();

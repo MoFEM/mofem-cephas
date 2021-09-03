@@ -100,7 +100,6 @@ using Sev = MoFEM::LogManager::SeverityLevel;
 #include <MedInterface.hpp>
 #endif // WITH_MED
 #include <CutMeshInterface.hpp>
-#include <BitLevelCoupler.hpp>
 #include <NodeMerger.hpp>
 #include <PrismsFromSurfaceInterface.hpp>
 

@@ -109,33 +109,6 @@ int main(int argc, char *argv[]) {
     CHKERR moab.write_file("out_mesh_refine.vtk", "VTK", "", &out_meshset_tet,
                            1);
 
-    BitLevelCoupler *bit_ref_copuler_ptr;
-    CHKERR m_field.getInterface(bit_ref_copuler_ptr);
-
-    Range children;
-    CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(
-        bit_level1, BitRefLevel().set(), children);
-    if (children.empty()) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-              "it should not be empty");
-    }
-    bit_ref_copuler_ptr->vErify = true;
-    CHKERR bit_ref_copuler_ptr->buildAdjacenciesEdgesFacesVolumes(
-        bit_level0, children, true, 2);
-
-    // //reset entities
-    // bit_ref_copuler_ptr->vErify = false;
-    // Range children_new;
-    // ierr =
-    // m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(bit_level1,bit_level1,children_new);
-    // CHKERRG(ierr); ierr =
-    // bit_ref_copuler_ptr->resetParents(children_new,true); CHKERRG(ierr);
-    //
-    // ierr =
-    // bit_ref_copuler_ptr->buildAdjacenciesVerticesOnTets(bit_level0,children,true,1e-10,1e-6,true,0);
-    // CHKERRG(ierr); ierr =
-    // bit_ref_copuler_ptr->buildAdjacenciesEdgesFacesVolumes(bit_level0,children,true,2);
-    // CHKERRG(ierr);
   }
   CATCH_ERRORS;
 
