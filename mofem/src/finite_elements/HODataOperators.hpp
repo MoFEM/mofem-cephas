@@ -31,7 +31,8 @@ namespace MoFEM {
  * data.
  *
  */
-struct OpCalculateHOJacVolume : public ForcesAndSourcesCore::UserDataOperator {
+struct OpCalculateHOJacVolume
+    : public VolumeElementForcesAndSourcesCoreBase::UserDataOperator {
 
   OpCalculateHOJacVolume(boost::shared_ptr<MatrixDouble> jac_ptr);
 

@@ -22,7 +22,8 @@ namespace MoFEM {
 
 OpCalculateHOJacVolume::OpCalculateHOJacVolume(
     boost::shared_ptr<MatrixDouble> jac_ptr)
-    : ForcesAndSourcesCore::UserDataOperator(H1, OPLAST), jacPtr(jac_ptr) {
+    : VolumeElementForcesAndSourcesCoreBase::UserDataOperator(H1, OPLAST),
+      jacPtr(jac_ptr) {
 
   for (auto t = MBEDGE; t != MBMAXTYPE; ++t)
     doEntities[t] = false;
@@ -36,29 +37,31 @@ OpCalculateHOJacVolume::doWork(int side, EntityType type,
                                DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
 
-  auto &diff_base = data.getDiffN(NOBASE);
-  const auto nb_base_functions = diff_base.size2() / 3;
+  const auto nb_base_functions = data.getN(NOBASE).size2();
   if (nb_base_functions) {
 
-    const auto nb_gauss_pts = diff_base.size1();
-    auto t_diff_base = FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>{
-        &diff_base(0, 0), &diff_base(0, 1), &diff_base(0, 2)};
+    const auto nb_gauss_pts = data.getN(NOBASE).size1();
+    auto t_diff_base = data.getFTensor1DiffN<3>(NOBASE);
 
     jacPtr->resize(9, nb_gauss_pts, false);
     jacPtr->clear();
     auto t_jac = getFTensor2FromMat<3, 3>(*jacPtr);
+    auto t_vol_inv_jac = getInvJac();
 
     FTensor::Index<'i', 3> i;
     FTensor::Index<'j', 3> j;
+    FTensor::Index<'k', 3> k;
 
-    auto t_coord = getFTensor1CoordsAtGaussPts();
+    auto coords = getCoords();
     for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
+      FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords(
+          &coords[0], &coords[1], &coords[2]);
       for (size_t bb = 0; bb != nb_base_functions; ++bb) {
-        t_jac(i, j) += t_coord(i) * t_diff_base(j);
+        t_jac(i, j) += t_coords(i) * (t_vol_inv_jac(k, j) * t_diff_base(k));
         ++t_diff_base;
+        ++t_coords;
       }
       ++t_jac;
-      ++t_coord;
     }
   }
 

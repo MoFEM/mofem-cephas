@@ -116,12 +116,23 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::setIntegrationPts() {
                   &gaussPts(2, 0), 1);
       cblas_dcopy(nb_gauss_pts, QUAD_3D_TABLE[rule]->weights, 1,
                   &gaussPts(3, 0), 1);
-      dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 4,
-                                                             false);
-      double *shape_ptr =
-          &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
+
+      auto &base = dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE);
+      auto &diff_base = dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE);
+      base.resize(nb_gauss_pts, 4, false);
+      diff_base.resize(nb_gauss_pts, 12, false);
+      double *shape_ptr = &*base.data().begin();
       cblas_dcopy(4 * nb_gauss_pts, QUAD_3D_TABLE[rule]->points, 1, shape_ptr,
                   1);
+      double *diff_shape_ptr = &*diff_base.data().begin();
+      for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+        for (int nn = 0; nn != 4; ++nn) {
+          for (int dd = 0; dd != 3; ++dd, ++diff_shape_ptr) {
+            *diff_shape_ptr = Tools::diffShapeFunMBTET[3 * nn + dd];
+          }
+        }
+      }
+
     } else {
       SETERRQ2(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
                "rule > quadrature order %d < %d", rule, QUAD_3D_TABLE_SIZE);
@@ -148,13 +159,25 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::setIntegrationPts() {
     const size_t nb_gauss_pts = gaussPts.size2();
     if (nb_gauss_pts) {
       switch (type) {
-      case MBTET:
-        dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 4,
-                                                               false);
-        CHKERR Tools::shapeFunMBTET(
-            &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
-            &gaussPts(0, 0), &gaussPts(1, 0), &gaussPts(2, 0), nb_gauss_pts);
-        break;
+      case MBTET: {
+
+        auto &base = dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE);
+        auto &diff_base = dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE);
+        base.resize(nb_gauss_pts, 4, false);
+        diff_base.resize(nb_gauss_pts, 12, false);
+        CHKERR Tools::shapeFunMBTET(&*base.data().begin(), &gaussPts(0, 0),
+                                    &gaussPts(1, 0), &gaussPts(2, 0),
+                                    nb_gauss_pts);
+        double *diff_shape_ptr = &*diff_base.data().begin();
+        for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+          for (int nn = 0; nn != 4; ++nn) {
+            for (int dd = 0; dd != 3; ++dd, ++diff_shape_ptr) {
+              *diff_shape_ptr = Tools::diffShapeFunMBTET[3 * nn + dd];
+            }
+          }
+        }
+
+      } break;
       case MBHEX:
         CHKERR calc_base_for_hex();
         break;
@@ -203,9 +226,6 @@ VolumeElementForcesAndSourcesCoreBase::calculateVolumeAndJacobian() {
   FTensor::Index<'i', 3> i;
   FTensor::Index<'j', 3> j;
   jAc.clear();
-
-  
-
 
   for (size_t n = 0; n != num_nodes; ++n) {
     tJac(i, j) += t_coords(i) * t_diff_n(j);
