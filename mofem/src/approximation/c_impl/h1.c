@@ -1282,19 +1282,3 @@ PetscErrorCode H1_EdgeShapeFunctions_MBQUAD(
   }
   MoFEMFunctionReturnHot(0);
 }
-
-PetscErrorCode H1_EdgeGradientOfDeformation_hierachical(int p, double *diffN,
-                                                        double *dofs,
-                                                        double *F) {
-  return H1_EdgeGradientOfDeformation_hierarchical(p, diffN, dofs, F);
-}
-PetscErrorCode H1_FaceGradientOfDeformation_hierachical(int p, double *diffN,
-                                                        double *dofs,
-                                                        double *F) {
-  return H1_FaceGradientOfDeformation_hierarchical(p, diffN, dofs, F);
-}
-PetscErrorCode H1_VolumeGradientOfDeformation_hierachical(int p, double *diffN,
-                                                          double *dofs,
-                                                          double *F) {
-  return H1_VolumeGradientOfDeformation_hierarchical(p, diffN, dofs, F);
-}

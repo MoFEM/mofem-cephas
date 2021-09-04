@@ -181,28 +181,6 @@ PetscErrorCode L2_Ainsworth_ShapeFunctions_MBTET(
                                        const int dim));
 
 /**
- * \deprecated Use L2_Ainsworth_ShapeFunctions_MBTRI
- */
-DEPRECATED PetscErrorCode L2_ShapeFunctions_MBTRI(
-    int p, double *N, double *diffN, double *L2N, double *diff_L2N, int GDIM,
-    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
-                                       double *L, double *diffL,
-                                       const int dim));
-/**
- * \deprecated Use L2_Ainsworth_ShapeFunctions_MBTET
- */
-DEPRECATED PetscErrorCode L2_ShapeFunctions_MBTET(
-    int p, double *N, double *diffN, double *L2N, double *diff_L2N, int GDIM,
-    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
-                                       double *L, double *diffL,
-                                       const int dim));
-
-PetscErrorCode L2_VolumeShapeDiffMBTETinvJ(int base_p, int p,
-                                           double *volume_diffN, double *invJac,
-                                           double *volume_diffNinvJac,
-                                           int GDIM);
-
-/**
  * \brief H1_EdgeShapeFunctions_MBTRI
  *
  * \param sense of edges, it is array of integers dim 3 (3-edges of triangle)
@@ -258,24 +236,6 @@ PetscErrorCode H1_FaceGradientOfDeformation_hierarchical(int p, double *diffN,
 PetscErrorCode H1_VolumeGradientOfDeformation_hierarchical(int p, double *diffN,
                                                            double *dofs,
                                                            double *F);
-
-/**
- * \deprecated use H1_EdgeGradientOfDeformation_hierarchical
- */
-DEPRECATED PetscErrorCode H1_EdgeGradientOfDeformation_hierachical(
-    int p, double *diffN, double *dofs, double *F);
-
-/**
- * \deprecated use H1_FaceGradientOfDeformation_hierarchical
- */
-DEPRECATED PetscErrorCode H1_FaceGradientOfDeformation_hierachical(
-    int p, double *diffN, double *dofs, double *F);
-
-/**
- * \deprecated use H1_VolumeGradientOfDeformation_hierarchical
- */
-DEPRECATED PetscErrorCode H1_VolumeGradientOfDeformation_hierachical(
-    int p, double *diffN, double *dofs, double *F);
 
 PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
     int *faces_nodes, int *p, double *N, double *diffN, double *faceN[],
