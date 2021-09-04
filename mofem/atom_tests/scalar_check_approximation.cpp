@@ -135,12 +135,14 @@ struct OpValsDiffVals : public DomainEleOp {
       diffVals.clear();
     }
 
-    MOFEM_LOG("AT", Sev::noisy) << "Type  " << moab::CN::EntityTypeName(type)
-                                << " side " << side;
-    MOFEM_LOG("AT", Sev::noisy) << data.getN();
-
     const int nb_dofs = data.getIndices().size();
     if (nb_dofs) {
+
+      MOFEM_LOG("AT", Sev::noisy)
+          << "Type  " << moab::CN::EntityTypeName(type) << " side " << side;
+      MOFEM_LOG("AT", Sev::noisy) << data.getN();
+      MOFEM_LOG("AT", Sev::noisy) << data.getDiffN();
+
       auto t_vals = getFTensor0FromVec(vAls);
       auto t_base_fun = data.getFTensor0N();
       for (int gg = 0; gg != nb_gauss_pts; gg++) {
@@ -206,7 +208,7 @@ struct OpCheckValsDiffVals : public DomainEleOp {
 
       // Check user data operators
       err_val = std::abs(t_vals - t_ptr_vals);
-      MOFEM_LOG("AT", Sev::noisy) << "Val error " << err_val;
+      MOFEM_LOG("AT", Sev::noisy) << "Val op error " << err_val;
 
       if (err_val > eps)
         SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
@@ -243,7 +245,7 @@ struct OpCheckValsDiffVals : public DomainEleOp {
 
         t_delta_diff_val(i) = t_diff_vals(i) - t_ptr_diff_vals(i);
         err_diff_val = sqrt(t_delta_diff_val(i) * t_delta_diff_val(i));
-        MOFEM_LOG("AT", Sev::noisy) << "Diff val error " << err_diff_val;
+        MOFEM_LOG("AT", Sev::noisy) << "Diff val op error " << err_diff_val;
 
         if (err_diff_val > eps)
           SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
@@ -262,16 +264,22 @@ struct OpCheckValsDiffVals : public DomainEleOp {
           MOFEM_LOG("AT", Sev::noisy)
               << "Diff val " << err_diff_val << " : "
               << sqrt(t_diff_vals(i) * t_diff_vals(i)) << " :  "
-              << t_diff_vals(0) / t_diff_anal(0) << " "
-              << t_diff_vals(1) / t_diff_anal(1) << "  "
-              << t_diff_vals(2) /
-                     (t_diff_anal(2) + std::numeric_limits<double>::epsilon());
+              << t_diff_vals(0) << " (" << t_diff_anal(0) << ") "
+              << t_diff_vals(1) << " (" << t_diff_anal(1) << ")  "
+              << t_diff_vals(2) << " (" << t_diff_anal(2) << ")";
         else
           MOFEM_LOG("AT", Sev::noisy)
               << "Diff val " << err_diff_val << " : "
               << sqrt(t_diff_vals(i) * t_diff_vals(i)) << " :  "
-              << t_diff_vals(0) / t_diff_anal(0) << " "
-              << t_diff_vals(1) / t_diff_anal(1);
+              << t_diff_vals(0) << " (" << t_diff_anal(0) << ") "
+              << t_diff_vals(1) << " (" << t_diff_anal(1) << ")";
+
+        MOFEM_LOG("AT", Sev::verbose)
+            << getCoords()(3 * 1 + 0) - getCoords()(3 * 0 + 0);
+        MOFEM_LOG("AT", Sev::verbose)
+            << getCoords()(3 * 1 + 1) - getCoords()(3 * 0 + 1);
+        MOFEM_LOG("AT", Sev::verbose)
+            << getCoords()(3 * 1 + 2) - getCoords()(3 * 0 + 2);
 
         MOFEM_LOG("AT", Sev::verbose) << "Diff val error " << err_diff_val;
         if (err_diff_val > eps)
@@ -433,12 +441,12 @@ int main(int argc, char *argv[]) {
         auto jac_ptr = boost::make_shared<MatrixDouble>();
         auto det_ptr = boost::make_shared<VectorDouble>();
         auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
-        pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpCalculateHOJacVolume(jac_ptr));
-        pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpInvertMatrix<3>(jac_ptr, det_ptr, inv_jac_ptr));
-        pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpSetHOInvJacToScalarBases(space, inv_jac_ptr));
+        // pipeline_mng->getOpDomainRhsPipeline().push_back(
+        //     new OpCalculateHOJacVolume(jac_ptr));
+        // pipeline_mng->getOpDomainRhsPipeline().push_back(
+        //     new OpInvertMatrix<3>(jac_ptr, det_ptr, inv_jac_ptr));
+        // pipeline_mng->getOpDomainRhsPipeline().push_back(
+        //     new OpSetHOInvJacToScalarBases(space, inv_jac_ptr));
       }
 
       pipeline_mng->getOpDomainRhsPipeline().push_back(
