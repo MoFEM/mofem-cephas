@@ -448,7 +448,7 @@ MoFEMErrorCode monom_ordering(int perm[][3], int p, int q, int r = 0) {
 }
 
 static inline void get_ksi_hex(int shift, double *N, double *N_diff,
-                               double ksi[3], double diff_ksi[3][2]) {
+                               double ksi[3], double diff_ksi[3][3]) {
 
   constexpr std::array<size_t, 4> ksi_nodes[2][3] = {
 
@@ -468,12 +468,12 @@ static inline void get_ksi_hex(int shift, double *N, double *N_diff,
   for (size_t i = 0; i != 3; ++i) {
     for (auto n : ksi_nodes[0][i]) {
       for (auto d = 0; d != 3; ++d) {
-        diff_ksi[i][d] += N_diff[3 * shift + 3 * n + d];
+        diff_ksi[i][d] += N_diff[3 * (shift + n) + d];
       }
     }
     for (auto n : ksi_nodes[1][i]) {
       for (auto d = 0; d != 3; ++d) {
-        diff_ksi[i][d] -= N_diff[3 * shift + 3 * n + d];
+        diff_ksi[i][d] -= N_diff[3 * (shift + n) + d];
       }
     }
   }
@@ -1169,32 +1169,30 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::L2_InteriorShapeFunctions_ONHEX(
 
   for (int qq = 0; qq != nb_integration_pts; qq++) {
 
-    int shift = 8 * qq;
+    const int shift = 8 * qq;
     double ksi[3] = {0, 0, 0};
-    double diff_ksi[3][2] = {{0, 0}, {0, 0}, {0, 0}};
+    double diff_ksi[3][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
     ::DemkowiczHexAndQuad::get_ksi_hex(shift, N, N_diff, ksi, diff_ksi);
 
-    int qd_shift = qq * nb_bases;
     CHKERR Legendre_polynomials(p[0] + 1, ksi[0], diff_ksi[0], P0, diffL0, 3);
     CHKERR Legendre_polynomials(p[1] + 1, ksi[1], diff_ksi[1], P1, diffL1, 3);
     CHKERR Legendre_polynomials(p[2] + 1, ksi[2], diff_ksi[2], P2, diffL2, 3);
 
-    int n = 0;
-    for (; n != nb_bases; ++n) {
+    const int qd_shift = qq * nb_bases;
+    for (int n = 0; n != nb_bases; ++n) {
       const int ii = permute[n][0];
       const int jj = permute[n][1];
       const int kk = permute[n][2];
 
       const double p1p2 = P1[jj] * P2[kk];
       const double p0p1 = P0[ii] * P1[jj];
-      const double p0p2 = P1[jj] * P2[kk];
+      const double p0p2 = P0[ii] * P2[kk];
 
       volN[qd_shift + n] = p0p1 * P2[kk];
       for (int d = 0; d != 3; ++d) {
-        diff_volN[3 * qd_shift + 3 * n + d] =
-            diffL0[d * (p[0] + 2) + ii] * p1p2 +
-            p0p2 * diffL1[d * (p[1] + 2) + jj] +
-            p0p1 * diffL2[d * (p[2] + 2) + kk];
+        diff_volN[3 * (qd_shift + n) + d] = p1p2 * diffL0[d * (p[0] + 2) + ii] +
+                                            p0p2 * diffL1[d * (p[1] + 2) + jj] +
+                                            p0p1 * diffL2[d * (p[2] + 2) + kk];
       }
     }
   }
