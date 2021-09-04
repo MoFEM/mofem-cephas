@@ -358,6 +358,39 @@ VolumeElementForcesAndSourcesCoreBase::getSpaceBaseAndOrderOnElement() {
 MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::transformBaseFunctions() {
   MoFEMFunctionBegin;
 
+  if (numeredEntFiniteElementPtr->getEntType() == MBTET) {
+    // OK that code is not nice.
+    MatrixDouble new_diff_n;
+    for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
+      FTensor::Index<'i', 3> i;
+      FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
+      DataForcesAndSourcesCore::EntData &data =
+          dataH1.dataOnEntities[MBVERTEX][0];
+      if ((data.getDiffN(base).size1() == 4) &&
+          (data.getDiffN(base).size2() == 3)) {
+        const size_t nb_gauss_pts = gaussPts.size2();
+        const size_t nb_base_functions = 4;
+        new_diff_n.resize(nb_gauss_pts, 3 * nb_base_functions, false);
+        double *new_diff_n_ptr = &*new_diff_n.data().begin();
+        FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_new_diff_n(
+            new_diff_n_ptr, &new_diff_n_ptr[1], &new_diff_n_ptr[2]);
+        double *t_diff_n_ptr = &*data.getDiffN(base).data().begin();
+        for (unsigned int gg = 0; gg != nb_gauss_pts; gg++) {
+          FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_diff_n(
+              t_diff_n_ptr, &t_diff_n_ptr[1], &t_diff_n_ptr[2]);
+          for (unsigned int bb = 0; bb != nb_base_functions; bb++) {
+            t_new_diff_n(i) = t_diff_n(i);
+            ++t_new_diff_n;
+            ++t_diff_n;
+          }
+        }
+        data.getDiffN(base).resize(new_diff_n.size1(), new_diff_n.size2(),
+                                   false);
+        data.getDiffN(base).data().swap(new_diff_n.data());
+      }
+    }
+  }
+
   CHKERR opSetInvJacH1.opRhs(dataH1);
   if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
     CHKERR opCovariantPiolaTransform.opRhs(dataHcurl);
@@ -371,35 +404,6 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::transformBaseFunctions() {
   if (dataH1.spacesOnEntities[MBTET].test(L2) ||
       dataH1.spacesOnEntities[MBHEX].test(L2)) {
     CHKERR opSetInvJacH1.opRhs(dataL2);
-  }
-
-  MatrixDouble new_diff_n;
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
-    FTensor::Index<'i', 3> i;
-    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
-    DataForcesAndSourcesCore::EntData &data =
-        dataH1.dataOnEntities[MBVERTEX][0];
-    if ((data.getDiffN(base).size1() == 4) &&
-        (data.getDiffN(base).size2() == 3)) {
-      const size_t nb_gauss_pts = gaussPts.size2();
-      const size_t nb_base_functions = 4;
-      new_diff_n.resize(nb_gauss_pts, 3 * nb_base_functions, false);
-      double *new_diff_n_ptr = &*new_diff_n.data().begin();
-      FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_new_diff_n(
-          new_diff_n_ptr, &new_diff_n_ptr[1], &new_diff_n_ptr[2]);
-      double *t_diff_n_ptr = &*data.getDiffN(base).data().begin();
-      for (unsigned int gg = 0; gg != nb_gauss_pts; gg++) {
-        FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_diff_n(
-            t_diff_n_ptr, &t_diff_n_ptr[1], &t_diff_n_ptr[2]);
-        for (unsigned int bb = 0; bb != nb_base_functions; bb++) {
-          t_new_diff_n(i) = t_diff_n(i);
-          ++t_new_diff_n;
-          ++t_diff_n;
-        }
-      }
-      data.getDiffN(base).resize(new_diff_n.size1(), new_diff_n.size2(), false);
-      data.getDiffN(base).data().swap(new_diff_n.data());
-    }
   }
 
   MoFEMFunctionReturn(0);
