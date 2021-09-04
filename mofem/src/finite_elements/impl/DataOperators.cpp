@@ -200,8 +200,7 @@ MoFEMErrorCode OpSetInvJacH1::doWork(int side, EntityType type,
                                      DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
 
-  auto transform_base = [&](MatrixDouble &diff_n,
-                            const bool diff_at_gauss_ptr) {
+  auto transform_base = [&](MatrixDouble &diff_n) {
     MoFEMFunctionBeginHot;
 
     if (!diff_n.size1())
@@ -209,10 +208,8 @@ MoFEMErrorCode OpSetInvJacH1::doWork(int side, EntityType type,
     if (!diff_n.size2())
       MoFEMFunctionReturnHot(0);
 
-    const int nb_base_functions =
-        (diff_at_gauss_ptr || type != MBVERTEX) ? diff_n.size2() / 3 : 4;
-    const int nb_gauss_pts =
-        (diff_at_gauss_ptr || type != MBVERTEX) ? diff_n.size1() : 1;
+    const int nb_base_functions = diff_n.size2() / 3;
+    const int nb_gauss_pts = diff_n.size1();
     diffNinvJac.resize(diff_n.size1(), diff_n.size2(), false);
 
     double *t_diff_n_ptr = &*diff_n.data().begin();
@@ -236,20 +233,20 @@ MoFEMErrorCode OpSetInvJacH1::doWork(int side, EntityType type,
   };
 
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
-    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
-    CHKERR transform_base(data.getDiffN(base), false);
+    const auto base = static_cast<FieldApproximationBase>(b);
+    CHKERR transform_base(data.getDiffN(base));
   }
 
   switch (type) {
   case MBVERTEX:
     for (auto &m : data.getBBDiffNMap())
       if (m.second)
-        CHKERR transform_base(*(m.second), true);
+        CHKERR transform_base(*(m.second));
     break;
   default:
     for (auto &ptr : data.getBBDiffNByOrderArray())
       if (ptr)
-        CHKERR transform_base(*ptr, true);
+        CHKERR transform_base(*ptr);
   }
 
   MoFEMFunctionReturn(0);
