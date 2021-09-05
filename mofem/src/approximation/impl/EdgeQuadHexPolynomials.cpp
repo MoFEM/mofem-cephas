@@ -965,50 +965,85 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_EdgeShapeFunctions_ONHEX(
     int *sense, int *p, double *N, double *N_diff, double *edgeN[12],
     double *diff_edgeN[12], int nb_integration_pts) {
   MoFEMFunctionBeginHot;
-  RefHex ref_hex;
 
-  for (int q = 0; q != nb_integration_pts; q++) {
-    // General *******************************
-    int shift = 8 * q;
-    double quad_coords[3];
-    double Nq[8];
-    double Nq_diff[8][3];
-    for (int vv = 0; vv < 8; vv++) {
-      Nq[vv] = N[shift + vv];
-      Nq_diff[vv][0] = N_diff[3 * (shift + vv) + 0];
-      Nq_diff[vv][1] = N_diff[3 * (shift + vv) + 1];
-      Nq_diff[vv][2] = N_diff[3 * (shift + vv) + 2];
+  constexpr std::array<int, 2> opposite_edge[12] = {
+
+      {2, 8}, {3, 9},  {0, 10}, {1, 11}, {5, 7}, {4, 6}, {5, 7},
+      {4, 6}, {0, 10}, {1, 11}, {2, 8},  {9, 3}
+
+  };
+  constexpr std::array<int, 2> edge_conn[12] = {
+
+      {0, 1}, {1, 2}, {2, 3}, {3, 0}, {0, 4}, {1, 5}, {2, 6},
+      {3, 7}, {4, 5}, {5, 6}, {6, 7}, {7, 4}
+
+  };
+  constexpr std::array<int, 12> edge_direction = {0, 1, 0, 1, 2, 2,
+                                                  2, 2, 0, 1, 0, 1};
+
+  const std::array<int, 2> mu_direction[12] = {{1, 2}, {0, 2}, {1, 2}, {0, 2},
+                                               {9, 1}, {0, 1}, {0, 1}, {0, 1},
+                                               {1, 2}, {0, 2}, {1, 2}, {0, 2}};
+  const std::array<int, 2> mu_sense[12] = {{1, 1}, {1, 1},  {-1, 1},  {-1, 1},
+                                           {1, 1}, {-1, 1}, {-1, -1}, {1, -1},
+                                           {1, 1}, {1, 1},  {-1, 1},  {-1, 1}};
+
+  std::array<int, 12>
+      hex_edges_sense = {sense[0], sense[1], -sense[3],  -sense[3],
+                         sense[4], sense[5], sense[6],   sense[7],
+                         sense[8], sense[9], -sense[10], -sense[11]};
+
+  for (int qq = 0; qq != nb_integration_pts; ++qq) {
+
+    const int shift = 8 * qq;
+    double ksi_hex[3] = {0, 0, 0};
+    double diff_ksi_hex[3][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
+    ::DemkowiczHexAndQuad::get_ksi_hex(shift, N, N_diff, ksi_hex, diff_ksi_hex);
+
+    std::array<double, 12> ksi;
+    std::array<double, 3> diff_ksi[12];
+    for (int e = 0; e != 12; ++e) {
+      const int dir = edge_direction[e];
+      ksi[e] = hex_edges_sense[e] * ksi_hex[dir];
+      for (int d = 0; d != 3; ++d) {
+        diff_ksi[e][d] = hex_edges_sense[e] * diff_ksi_hex[dir][d];
+      }
     }
 
-    double mu[12][2];
-    ref_hex.get_edge_affines(Nq, mu);
+    std::array<double, 2> mu[12];
+    std::array<double, 3> diff_mu[12][2];
+    std::array<double, 12> mu01;
 
-    double diff_mu[12][2][3];
-    ref_hex.get_edge_diff_affines(Nq_diff, diff_mu);
+    for (int e = 0; e != 12; ++e) {
+      for (int v = 0; v != 2; ++v) {
+        const int dir = mu_direction[e][v];
+        const double sgn = mu_sense[e][v];
+        mu[e][v] = sgn * ksi[dir];
+        for (int d = 0; d != 3; ++d) {
+          diff_mu[e][v][d] = sgn * diff_ksi[dir][d];
+        }
+      }
+    }
 
-    double ksi[12];
-    ref_hex.get_edge_coords(sense, Nq, ksi);
-    double diff_ksi[12][3];
-    ref_hex.get_edge_diff_coords(sense, Nq_diff, diff_ksi);
-
-    int pp[12] = {p[0], p[1], p[0], p[1], p[2], p[2],
-                  p[2], p[2], p[0], p[1], p[0], p[1]};
+    for (int e = 0; e != 12; ++e) {
+      mu01[e] = mu[e][0] * mu[e][1];
+    }
 
     for (int e = 0; e != 12; e++) {
-      double L[pp[e] + 2];
-      double diffL[3 * (pp[e] + 2)];
 
-      CHKERR Lobatto_polynomials(pp[e] + 1, ksi[e], diff_ksi[e], L, diffL, 3);
+      double L[p[e] + 2];
+      double diffL[3 * (p[e] + 2)];
+      CHKERR Lobatto_polynomials(p[e] + 1, ksi[e], diff_ksi[e].data(), L, diffL,
+                                 3);
 
-      int qd_shift = (pp[e] - 1) * q;
-
-      for (int n = 0; n != pp[e] - 1; n++) {
-        edgeN[e][qd_shift + n] = mu[e][0] * mu[e][1] * L[n + 2];
+      int qd_shift = (p[e] - 1) * qq;
+      for (int n = 0; n != p[e] - 1; n++) {
+        edgeN[e][qd_shift + n] = mu01[e] * L[n + 1];
         for (int d = 0; d != 3; ++d) {
           diff_edgeN[e][3 * (qd_shift + n) + d] =
-              diff_mu[e][0][d] * mu[e][1] * L[n + 2] + mu[e][0] +
-              diff_mu[e][1][d] + L[n + 2] +
-              mu[e][0] * mu[e][1] * diffL[d * (p[e] + 2) + n + 2];
+              (diff_mu[e][0][d] * mu[e][1] + diff_mu[e][1][d] * mu[e][0]) *
+                  L[n + 1] +
+              mu01[e] * diffL[d * (p[e] + 2) + n + 1];
         }
       }
     }
