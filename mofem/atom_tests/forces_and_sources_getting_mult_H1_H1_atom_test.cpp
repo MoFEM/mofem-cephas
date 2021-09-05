@@ -263,8 +263,8 @@ int main(int argc, char *argv[]) {
         CHKERR getColNodesIndices(data_col, "FIELD2");
         CHKERR getEntityRowIndices(data_row, "FIELD1", MBEDGE);
         CHKERR getEntityColIndices(data_col, "FIELD2", MBEDGE);
-        CHKERR getFaceTriNodes(data_row);
-        CHKERR getFaceTriNodes(data_col);
+        CHKERR getFaceNodes(data_row);
+        CHKERR getFaceNodes(data_col);
 
         MatrixDouble gauss_pts(4, 4);
         for (int gg = 0; gg < 4; gg++) {

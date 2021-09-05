@@ -308,8 +308,8 @@ protected:
 
   /**@}*/
 
-  /// \brief Get nodes on triangles
-  MoFEMErrorCode getFaceTriNodes(DataForcesAndSourcesCore &data) const;
+  /// \brief Get nodes on faces
+  MoFEMErrorCode getFaceNodes(DataForcesAndSourcesCore &data) const;
 
   /// \brief Get field approximation space and base on entities
   MoFEMErrorCode

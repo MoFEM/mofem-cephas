@@ -276,7 +276,7 @@ VolumeElementForcesAndSourcesCoreBase::getSpaceBaseAndOrderOnElement() {
   MoFEMFunctionBegin;
 
   CHKERR getSpacesAndBaseOnEntities(dataH1);
-  CHKERR getFaceTriNodes(dataH1);
+  CHKERR getFaceNodes(dataH1);
   // H1
   if ((dataH1.spacesOnEntities[MBEDGE]).test(H1)) {
     CHKERR getEntitySense<MBEDGE>(dataH1);
