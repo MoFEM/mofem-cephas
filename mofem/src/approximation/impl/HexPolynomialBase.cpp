@@ -53,47 +53,10 @@ MoFEMErrorCode HexPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
   //                                    double *diffL, const int dim) =
   //     cTx->basePolynomialsType0;
 
-  // int nb_gauss_pts = pts.size2();
+};
 
-  // int sense[6], order[6];
-  // if (data.spacesOnEntities[MBEDGE].test(H1)) {
-  //   // edges
-  //   if (data.dataOnEntities[MBEDGE].size() != 6) {
-  //     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data
-  //     inconsistency");
-  //   }
-  //   double *h1_edge_n[6], *diff_h1_egde_n[6];
-  //   for (int ee = 0; ee != 6; ++ee) {
-  //     if (data.dataOnEntities[MBEDGE][ee].getSense() == 0) {
-  //       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-  //               "data inconsistency");
-  //     }
-  //     sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
-  //     order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
-  //     int nb_dofs =
-  //     NBEDGE_H1(data.dataOnEntities[MBEDGE][ee].getDataOrder());
-  //     data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,
-  //     nb_dofs,
-  //                                                       false);
-  //     data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_gauss_pts,
-  //                                                           3 * nb_dofs,
-  //                                                           false);
-  //     h1_edge_n[ee] =
-  //         &*data.dataOnEntities[MBEDGE][ee].getN(base).data().begin();
-  //     diff_h1_egde_n[ee] =
-  //         &*data.dataOnEntities[MBEDGE][ee].getDiffN(base).data().begin();
-  //   }
-  //   CHKERR H1_EdgeShapeFunctions_MBTET(
-  //       sense, order,
-  //       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
-  //       &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
-  //       h1_edge_n, diff_h1_egde_n, nb_gauss_pts, base_polynomials);
-  // } else {
-  //   for (int ee = 0; ee != 6; ++ee) {
-  //     data.dataOnEntities[MBEDGE][ee].getN(base).resize(0, 0, false);
-  //     data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(0, 0, false);
-  //   }
-  // }
+  CHKERR add_base_on_verts();
+  CHKERR add_base_on_deges();
 
   // if (data.spacesOnEntities[MBTRI].test(H1)) {
   //   // faces
@@ -135,10 +98,10 @@ MoFEMErrorCode HexPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
   //       h1_face_n, diff_h1_face_n, nb_gauss_pts, base_polynomials);
 
   // } else {
-  //   for (int ff = 0; ff != 4; ++ff) {
-  //     data.dataOnEntities[MBTRI][ff].getN(base).resize(0, false);
-  //     data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(0, 0, false);
-  //   }
+    for (int ff = 0; ff != 6; ++ff) {
+      data.dataOnEntities[MBQUAD][ff].getN(base).resize(0, false);
+      data.dataOnEntities[MBQUAD][ff].getDiffN(base).resize(0, 0, false);
+    }
   // }
 
   // if (data.spacesOnEntities[MBTET].test(H1)) {
@@ -159,8 +122,8 @@ MoFEMErrorCode HexPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
   //       &*data.dataOnEntities[MBTET][0].getDiffN(base).data().begin(),
   //       nb_gauss_pts, base_polynomials);
   // } else {
-  //   data.dataOnEntities[MBTET][0].getN(base).resize(0, 0, false);
-  //   data.dataOnEntities[MBTET][0].getDiffN(base).resize(0, 0, false);
+    data.dataOnEntities[MBHEX][0].getN(base).resize(0, 0, false);
+    data.dataOnEntities[MBHEX][0].getDiffN(base).resize(0, 0, false);
   // }
 
   MoFEMFunctionReturn(0);
