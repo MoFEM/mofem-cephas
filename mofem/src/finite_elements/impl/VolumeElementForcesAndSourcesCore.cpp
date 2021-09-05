@@ -391,19 +391,26 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::transformBaseFunctions() {
     }
   }
 
-  CHKERR opSetInvJacH1.opRhs(dataH1);
+  if (dataH1.spacesOnEntities[MBVERTEX].test(H1))
+    CHKERR opSetInvJacH1.opRhs(dataH1);
   if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
     CHKERR opCovariantPiolaTransform.opRhs(dataHcurl);
     CHKERR opSetInvJacHdivAndHcurl.opRhs(dataHcurl);
   }
-  if (dataH1.spacesOnEntities[MBTRI].test(HDIV) ||
-      dataH1.spacesOnEntities[MBQUAD].test(HDIV)) {
-    CHKERR opContravariantPiolaTransform.opRhs(dataHdiv);
-    CHKERR opSetInvJacHdivAndHcurl.opRhs(dataHdiv);
+  for (EntityType t = CN::TypeDimensionMap[2].first;
+       t <= CN::TypeDimensionMap[2].second; ++t) {
+    if (dataH1.spacesOnEntities[t].test(HDIV)) {
+      CHKERR opContravariantPiolaTransform.opRhs(dataHdiv);
+      CHKERR opSetInvJacHdivAndHcurl.opRhs(dataHdiv);
+      break;
+    }
   }
-  if (dataH1.spacesOnEntities[MBTET].test(L2) ||
-      dataH1.spacesOnEntities[MBHEX].test(L2)) {
-    CHKERR opSetInvJacH1.opRhs(dataL2);
+  for (EntityType t = CN::TypeDimensionMap[3].first;
+       t <= CN::TypeDimensionMap[3].second; ++t) {
+    if (dataH1.spacesOnEntities[t].test(L2)) {
+      CHKERR opSetInvJacH1.opRhs(dataL2);
+      break;
+    }
   }
 
   MoFEMFunctionReturn(0);
