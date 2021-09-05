@@ -89,6 +89,19 @@ extern "C" {
  */
 #define NBVOLUMEPRISM_H1(P) ((P > 3) ? ((P - 2) * (P - 2) * (P - 2)) : 0)
 
+/**
+ * @brief  Number of base functions on hex for H1 space
+ *
+ */
+#define NBVOLUMEHEX_H1_GENERAL(P, Q, R)                                        \
+  ((((P) > 1) && ((Q) > 1) && ((R) > 1)) ? (((P)-1) * ((Q)-1) * ((R)-1)) : 0)
+
+/**
+ * @brief  Number of base functions on hex for H1 space
+ *
+ */
+#define NBVOLUMEHEX_H1(P) (NBVOLUMEHEX_H1_GENERAL(P, P, P))
+
 // H curl
 
 #define NBEDGE_AINSWORTH_HCURL(P) (((P) > 0) ? (P + 1) : 0)
@@ -141,26 +154,28 @@ extern "C" {
 #define NBVOLUMEHEX_DEMKOWICZ_HDIV(P)                                          \
   (NBVOLUMEHEX_DEMKOWICZ_HDIV_GENERAL(P, P, P))
 
-// Bubbles for H div space
+    // Bubbles for H div space
 
-/**
- * @brief Get base functions on triangle for L2 space
- *
- * @param p polynomial order
- * @param N barycentric coordinates (shape functions) at integration points
- * @param diffN direvatives of barycentric coordinates, i.e. direvatives of
- * shape functions
- * @param L2N values of L2 base at integration points
- * @param diff_L2N dirvatives of base functions at integration points
- * @param GDIM number of integration points
- * @param base_polynomials polynomial base used to construct L2 base on element
- * @return PetscErrorCode
- */
-PetscErrorCode L2_Ainsworth_ShapeFunctions_MBTRI(
-    int p, double *N, double *diffN, double *L2N, double *diff_L2N, int GDIM,
-    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
-                                       double *L, double *diffL,
-                                       const int dim));
+    /**
+     * @brief Get base functions on triangle for L2 space
+     *
+     * @param p polynomial order
+     * @param N barycentric coordinates (shape functions) at integration points
+     * @param diffN direvatives of barycentric coordinates, i.e. direvatives of
+     * shape functions
+     * @param L2N values of L2 base at integration points
+     * @param diff_L2N dirvatives of base functions at integration points
+     * @param GDIM number of integration points
+     * @param base_polynomials polynomial base used to construct L2 base on
+     * element
+     * @return PetscErrorCode
+     */
+    PetscErrorCode L2_Ainsworth_ShapeFunctions_MBTRI(
+        int p, double *N, double *diffN, double *L2N, double *diff_L2N,
+        int GDIM,
+        PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                           double *L, double *diffL,
+                                           const int dim));
 /**
  * @brief Get base functions on tetrahedron for L2 space
  *

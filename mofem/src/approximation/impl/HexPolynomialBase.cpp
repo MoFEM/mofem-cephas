@@ -46,13 +46,71 @@ MoFEMErrorCode HexPolynomialBase::getValueH1(MatrixDouble &pts) {
 MoFEMErrorCode HexPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  // DataForcesAndSourcesCore &data = cTx->dAta;
-  // const FieldApproximationBase base = cTx->bAse;
-  // PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double
-  // *L,
-  //                                    double *diffL, const int dim) =
-  //     cTx->basePolynomialsType0;
+  auto &data = cTx->dAta;
+  const auto base = cTx->bAse;
+  const auto copy_base = cTx->copyNodeBase;
+  int nb_gauss_pts = pts.size2();
 
+  auto &copy_base_fun = data.dataOnEntities[MBVERTEX][0].getN(copy_base);
+  auto &copy_diff_base_fun =
+      data.dataOnEntities[MBVERTEX][0].getDiffN(copy_base);
+  if(copy_base_fun.size1() != nb_gauss_pts)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Inconsistent number of integration pts");
+
+  auto add_base_on_verts = [&] {
+    MoFEMFunctionBeginHot;
+    data.dataOnEntities[MBVERTEX][0].getN(base).resize(nb_gauss_pts,
+                                                       copy_base_fun.size2());
+    data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(
+        nb_gauss_pts, copy_diff_base_fun.size2());
+    noalias(data.dataOnEntities[MBVERTEX][0].getN(base)) = copy_base_fun;
+    noalias(data.dataOnEntities[MBVERTEX][0].getDiffN(base)) =
+        copy_diff_base_fun;
+    MoFEMFunctionReturnHot(0);
+  };
+
+  // Edges
+  auto add_base_on_deges = [&] {
+    MoFEMFunctionBeginHot;
+    std::array<int, 12> sense;
+    std::array<int, 12> order;
+    if (data.spacesOnEntities[MBEDGE].test(H1)) {
+      if (data.dataOnEntities[MBEDGE].size() != 12)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Expected 12 data on entities");
+
+      std::array<double *, 12> h1_edge_n;
+      std::array<double *, 12> diff_h1_egde_n;
+      for (int ee = 0; ee != 12; ++ee) {
+        if (data.dataOnEntities[MBEDGE][ee].getSense() == 0)
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "Sense of entity not set");
+
+        sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
+        order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
+
+        int nb_dofs = NBEDGE_H1(data.dataOnEntities[MBEDGE][ee].getDataOrder());
+        data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts, nb_dofs,
+                                                          false);
+        data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(
+            nb_gauss_pts, 3 * nb_dofs, false);
+        h1_edge_n[ee] =
+            &*data.dataOnEntities[MBEDGE][ee].getN(base).data().begin();
+        diff_h1_egde_n[ee] =
+            &*data.dataOnEntities[MBEDGE][ee].getDiffN(base).data().begin();
+      }
+      CHKERR DemkowiczHexAndQuad::H1_EdgeShapeFunctions_ONHEX(
+          sense.data(), order.data(), &*copy_base_fun.data().begin(),
+          &*copy_diff_base_fun.data().begin(), h1_edge_n.data(),
+          diff_h1_egde_n.data(), nb_gauss_pts);
+    } else {
+      for (int ee = 0; ee != 12; ++ee) {
+        data.dataOnEntities[MBEDGE][ee].getN(base).resize(0, 0, false);
+        data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(0, 0, false);
+      }
+    }
+    MoFEMFunctionReturnHot(0);
 };
 
   CHKERR add_base_on_verts();

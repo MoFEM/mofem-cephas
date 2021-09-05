@@ -189,6 +189,7 @@ Field::Field(moab::Interface &moab, const EntityHandle meshset)
         forderTable[MBTRI] = [](int P) -> int { return NBFACETRI_H1(P); };
         forderTable[MBQUAD] = [](int P) -> int { return NBFACEQUAD_H1(P); };
         forderTable[MBTET] = [](int P) -> int { return NBVOLUMETET_H1(P); };
+        forderTable[MBHEX] = [](int P) -> int { return NBVOLUMEHEX_H1(P); };
         forderTable[MBPRISM] = [](int P) -> int { return NBVOLUMEPRISM_H1(P); };
         break;
       case HCURL:
@@ -270,6 +271,7 @@ Field::Field(moab::Interface &moab, const EntityHandle meshset)
         forderTable[MBTRI] = [](int P) -> int { return NBFACETRI_H1(P); };
         forderTable[MBQUAD] = [](int P) -> int { return NBFACEQUAD_H1(P); };
         forderTable[MBTET] = [](int P) -> int { return NBVOLUMETET_H1(P); };
+        forderTable[MBHEX] = [](int P) -> int { return NBVOLUMEHEX_H1(P); };
         forderTable[MBPRISM] = [](int P) -> int { return NBVOLUMEPRISM_H1(P); };
         break;
       case HCURL:

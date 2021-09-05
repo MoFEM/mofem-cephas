@@ -1050,7 +1050,7 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_EdgeShapeFunctions_ONHEX(
   }
   MoFEMFunctionReturnHot(0);
 }
-// TODO
+
 MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONHEX(
     int *face_nodes[6], int *p, double *N, double *N_diff, double *faceN[6],
     double *diff_faceN[6], int nb_integration_pts) {

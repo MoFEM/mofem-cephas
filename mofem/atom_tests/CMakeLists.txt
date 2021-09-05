@@ -496,7 +496,8 @@ add_test(check_hcurl_demkowicz_base_functions_direvatives_tri
 )
 
 # Continuity check on tet for h1 space
-build_test(forces_and_sources_h1_continuity_check forces_and_sources_h1_continuity_check.cpp)
+build_test(forces_and_sources_h1_continuity_check 
+  forces_and_sources_h1_continuity_check.cpp)
 
 add_test(forces_and_sources_h1_continuity_check_atom
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
@@ -628,6 +629,16 @@ add_test(l2_check_approx_3d_demkowicz_hex
   -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
   -log_no_color
 )
+add_test(h1_check_approx_3d_demkowicz_hex
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_3d
+  -file_name hex_cub.h5m
+  -base demkowicz -space h1
+  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
+  -log_no_color
+)
+
+
 # Check approximation on Hcurl space in 2d
 build_test(hcurl_check_approx_in_2d 
   hcurl_check_approx_in_2d.cpp)
