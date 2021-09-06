@@ -885,25 +885,51 @@ ForcesAndSourcesCore::getFaceNodes(DataForcesAndSourcesCore &data) const {
   CHKERR mField.get_moab().get_connectivity(ent, conn_ele, num_nodes_ele, true);
   auto side_ptr_it = side_table.get<1>().lower_bound(
       boost::make_tuple(CN::TypeDimensionMap[2].first, 0));
-  auto hi_side_ptr_it = side_table.get<1>().lower_bound(
+  auto hi_side_ptr_it = side_table.get<1>().upper_bound(
       boost::make_tuple(CN::TypeDimensionMap[2].second, 100));
 
   for (; side_ptr_it != hi_side_ptr_it; ++side_ptr_it) {
     const auto side = (*side_ptr_it)->side_number;
+    const auto sense = (*side_ptr_it)->sense;
+    const auto offset = (*side_ptr_it)->offset;
     const auto face_ent = (*side_ptr_it)->ent;
-    const EntityHandle *conn_face;
+
+    EntityType face_type;
     int nb_nodes_face;
-    CHKERR mField.get_moab().get_connectivity(face_ent, conn_face,
-                                              nb_nodes_face, true);
+    auto face_indices =
+        CN::SubEntityVertexIndices(type, 2, side, face_type, nb_nodes_face);
     face_nodes.resize(nb_faces, nb_nodes_face);
-    for (int nn = 0; nn != nb_nodes_face; ++nn) {
-      face_nodes(side, nn) =
-          std::distance(conn_ele, std::find(conn_ele, &conn_ele[num_nodes_ele],
-                                            conn_face[nn]));
-      if (face_nodes(side, nn) == num_nodes_ele)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "Face node on element is not found");
-    }
+
+    if (sense == 1)
+      for (int n = 0; n != nb_nodes_face; ++n)
+        face_nodes(side, n) = face_indices[(n + offset) % nb_nodes_face];
+    else
+      for (int n = 0; n != nb_nodes_face; ++n)
+        face_nodes(side, n) =
+            face_indices[(nb_nodes_face - (n - offset) % nb_nodes_face) %
+                         nb_nodes_face];
+
+#ifndef NDEBUG
+    auto check = [&]() {
+      MoFEMFunctionBegin;
+      const EntityHandle *conn_face;
+      // int nb_nodes_face;
+      CHKERR mField.get_moab().get_connectivity(face_ent, conn_face,
+                                                nb_nodes_face, true);
+      face_nodes.resize(nb_faces, nb_nodes_face);
+      for (int nn = 0; nn != nb_nodes_face; ++nn) {
+        if (face_nodes(side, nn) !=
+            std::distance(
+                conn_ele,
+                std::find(conn_ele, &conn_ele[num_nodes_ele], conn_face[nn]))) {
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "Wrong face numeration");
+        }
+      }
+      MoFEMFunctionReturn(0);
+    };
+    CHKERR check();
+#endif
   }
   
   MoFEMFunctionReturn(0);
