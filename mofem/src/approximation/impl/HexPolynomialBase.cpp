@@ -54,7 +54,7 @@ MoFEMErrorCode HexPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
   auto &copy_base_fun = data.dataOnEntities[MBVERTEX][0].getN(copy_base);
   auto &copy_diff_base_fun =
       data.dataOnEntities[MBVERTEX][0].getDiffN(copy_base);
-  if(copy_base_fun.size1() != nb_gauss_pts)
+  if (copy_base_fun.size1() != nb_gauss_pts)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Inconsistent number of integration pts");
 
@@ -71,7 +71,7 @@ MoFEMErrorCode HexPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
   };
 
   // Edges
-  auto add_base_on_deges = [&] {
+  auto add_base_on_edges = [&] {
     MoFEMFunctionBeginHot;
     std::array<int, 12> sense;
     std::array<int, 12> order;
@@ -111,78 +111,90 @@ MoFEMErrorCode HexPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
       }
     }
     MoFEMFunctionReturnHot(0);
-};
+  };
+
+  // Face
+  auto add_base_on_quads = [&]() {
+    MoFEMFunctionBeginHot;
+    std::array<int, 6> order;
+    if (data.spacesOnEntities[MBQUAD].test(H1)) {
+      // faces
+      if (data.dataOnEntities[MBQUAD].size() != 6)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Expected six faces on hex");
+
+      std::array<double *, 6> h1_face_n;
+      std::array<double *, 6> diff_h1_face_n;
+      for (int ff = 0; ff != 6; ++ff) {
+
+        order[ff] = data.dataOnEntities[MBQUAD][ff].getDataOrder();
+        const int nb_dofs = NBFACEQUAD_H1(order[ff]);
+
+        data.dataOnEntities[MBQUAD][ff].getN(base).resize(nb_gauss_pts, nb_dofs,
+                                                          false);
+        data.dataOnEntities[MBQUAD][ff].getDiffN(base).resize(
+            nb_gauss_pts, 3 * nb_dofs, false);
+
+        h1_face_n[ff] =
+            &*data.dataOnEntities[MBQUAD][ff].getN(base).data().begin();
+        diff_h1_face_n[ff] =
+            &*data.dataOnEntities[MBQUAD][ff].getDiffN(base).data().begin();
+      }
+      if (data.facesNodes.size1() != 6)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Expected six face nodes");
+      if (data.facesNodes.size2() != 4)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Expected four nodes on face");
+
+      CHKERR DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONHEX(
+          &*data.facesNodes.data().begin(), order.data(),
+          &*copy_base_fun.data().begin(), &*copy_diff_base_fun.data().begin(),
+          h1_face_n.data(), diff_h1_face_n.data(), nb_gauss_pts);
+
+    } else {
+      for (int ff = 0; ff != 6; ++ff) {
+        data.dataOnEntities[MBQUAD][ff].getN(base).resize(0, false);
+        data.dataOnEntities[MBQUAD][ff].getDiffN(base).resize(0, 0, false);
+      }
+    }
+
+    MoFEMFunctionReturnHot(0);
+  };
+
+  // Face
+  auto add_base_on_volume = [&]() {
+    MoFEMFunctionBeginHot;
+
+    if (data.spacesOnEntities[MBHEX].test(H1)) {
+      // volume
+      int order = data.dataOnEntities[MBHEX][0].getDataOrder();
+      int nb_vol_dofs = NBVOLUMEHEX_H1(order);
+      data.dataOnEntities[MBHEX][0].getN(base).resize(nb_gauss_pts, nb_vol_dofs,
+                                                      false);
+      data.dataOnEntities[MBHEX][0].getDiffN(base).resize(
+          nb_gauss_pts, 3 * nb_vol_dofs, false);
+
+      const std::array<int, 3> p{order, order, order};
+
+      CHKERR DemkowiczHexAndQuad::H1_InteriorShapeFunctions_ONHEX(
+          p.data(), &*copy_base_fun.data().begin(),
+          &*copy_diff_base_fun.data().begin(),
+          &*data.dataOnEntities[MBHEX][0].getN(base).data().begin(),
+          &*data.dataOnEntities[MBHEX][0].getDiffN(base).data().begin(),
+          nb_gauss_pts);
+    } else {
+      data.dataOnEntities[MBHEX][0].getN(base).resize(0, 0, false);
+      data.dataOnEntities[MBHEX][0].getDiffN(base).resize(0, 0, false);
+    }
+
+    MoFEMFunctionReturnHot(0);
+  };
 
   CHKERR add_base_on_verts();
-  CHKERR add_base_on_deges();
-
-  // if (data.spacesOnEntities[MBTRI].test(H1)) {
-  //   // faces
-  //   if (data.dataOnEntities[MBTRI].size() != 4) {
-  //     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data
-  //     inconsistency");
-  //   }
-  //   double *h1_face_n[4], *diff_h1_face_n[4];
-  //   for (int ff = 0; ff != 4; ++ff) {
-  //     if (data.dataOnEntities[MBTRI][ff].getSense() == 0) {
-  //       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-  //               "data inconsistency");
-  //     }
-  //     int nb_dofs =
-  //     NBFACETRI_H1(data.dataOnEntities[MBTRI][ff].getDataOrder()); order[ff]
-  //     = data.dataOnEntities[MBTRI][ff].getDataOrder();
-  //     data.dataOnEntities[MBTRI][ff].getN(base).resize(nb_gauss_pts, nb_dofs,
-  //                                                      false);
-  //     data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(nb_gauss_pts,
-  //                                                          3 * nb_dofs,
-  //                                                          false);
-  //     h1_face_n[ff] =
-  //         &*data.dataOnEntities[MBTRI][ff].getN(base).data().begin();
-  //     diff_h1_face_n[ff] =
-  //         &*data.dataOnEntities[MBTRI][ff].getDiffN(base).data().begin();
-  //   }
-  //   if (data.facesNodes.size1() != 4) {
-  //     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data
-  //     inconsistency");
-  //   }
-  //   if (data.facesNodes.size2() != 3) {
-  //     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data
-  //     inconsistency");
-  //   }
-  //   CHKERR H1_FaceShapeFunctions_MBTET(
-  //       &*data.facesNodes.data().begin(), order,
-  //       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
-  //       &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
-  //       h1_face_n, diff_h1_face_n, nb_gauss_pts, base_polynomials);
-
-  // } else {
-    for (int ff = 0; ff != 6; ++ff) {
-      data.dataOnEntities[MBQUAD][ff].getN(base).resize(0, false);
-      data.dataOnEntities[MBQUAD][ff].getDiffN(base).resize(0, 0, false);
-    }
-  // }
-
-  // if (data.spacesOnEntities[MBTET].test(H1)) {
-  //   // volume
-  //   int order = data.dataOnEntities[MBTET][0].getDataOrder();
-  //   int nb_vol_dofs = NBVOLUMETET_H1(order);
-  //   data.dataOnEntities[MBTET][0].getN(base).resize(nb_gauss_pts,
-  //   nb_vol_dofs,
-  //                                                   false);
-  //   data.dataOnEntities[MBTET][0].getDiffN(base).resize(nb_gauss_pts,
-  //                                                       3 * nb_vol_dofs,
-  //                                                       false);
-  //   CHKERR H1_VolumeShapeFunctions_MBTET(
-  //       data.dataOnEntities[MBTET][0].getDataOrder(),
-  //       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
-  //       &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
-  //       &*data.dataOnEntities[MBTET][0].getN(base).data().begin(),
-  //       &*data.dataOnEntities[MBTET][0].getDiffN(base).data().begin(),
-  //       nb_gauss_pts, base_polynomials);
-  // } else {
-    data.dataOnEntities[MBHEX][0].getN(base).resize(0, 0, false);
-    data.dataOnEntities[MBHEX][0].getDiffN(base).resize(0, 0, false);
-  // }
+  CHKERR add_base_on_edges();
+  CHKERR add_base_on_quads();
+  CHKERR add_base_on_volume();
 
   MoFEMFunctionReturn(0);
 }
