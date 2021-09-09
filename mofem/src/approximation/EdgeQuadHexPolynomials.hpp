@@ -161,10 +161,10 @@ MoFEMErrorCode H1_EdgeShapeFunctions_ONHEX(int *sense, int *p, double *N,
                                            double *diff_edgeN[12],
                                            int nb_integration_pts);
 
-MoFEMErrorCode H1_FaceShapeFunctions_ONHEX(int *face_nodes, int *p, double *N,
-                                           double *N_diff, double *faceN[6],
-                                           double *diff_faceN[6],
-                                           int nb_integration_pts);
+MoFEMErrorCode
+H1_FaceShapeFunctions_ONHEX(int *face_nodes, int *face_nodes_order, int *p,
+                            double *N, double *N_diff, double *faceN[6],
+                            double *diff_faceN[6], int nb_integration_pts);
 
 MoFEMErrorCode H1_InteriorShapeFunctions_ONHEX(const int *p, double *N,
                                                double *N_diff, double *faceN,

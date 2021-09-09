@@ -1029,6 +1029,7 @@ struct DataForcesAndSourcesCore {
   std::bitset<LASTSPACE> sPace; ///< spaces on element
   std::bitset<LASTBASE> bAse;   ///< bases on element
   MatrixInt facesNodes;         ///< nodes on finite element faces
+  MatrixInt facesNodesOrder;    ///< order of face nodes on element
 
   std::array<std::bitset<LASTSPACE>, MBMAXTYPE>
       spacesOnEntities; ///< spaces on entity types

@@ -875,6 +875,7 @@ MoFEMErrorCode
 ForcesAndSourcesCore::getFaceNodes(DataForcesAndSourcesCore &data) const {
   MoFEMFunctionBegin;
   auto &face_nodes = data.facesNodes;
+  auto &face_nodes_order = data.facesNodesOrder;
   auto &side_table = const_cast<SideNumber_multiIndex &>(
       numeredEntFiniteElementPtr->getSideNumberTable());
   const auto ent = numeredEntFiniteElementPtr->getEnt();
@@ -899,15 +900,18 @@ ForcesAndSourcesCore::getFaceNodes(DataForcesAndSourcesCore &data) const {
     auto face_indices =
         CN::SubEntityVertexIndices(type, 2, side, face_type, nb_nodes_face);
     face_nodes.resize(nb_faces, nb_nodes_face);
+    face_nodes_order.resize(nb_faces, nb_nodes_face);
 
     if (sense == 1)
       for (int n = 0; n != nb_nodes_face; ++n)
-        face_nodes(side, n) = face_indices[(n + offset) % nb_nodes_face];
+        face_nodes_order(side, n) = (n + offset) % nb_nodes_face;
     else
       for (int n = 0; n != nb_nodes_face; ++n)
-        face_nodes(side, n) =
-            face_indices[(nb_nodes_face - (n - offset) % nb_nodes_face) %
-                         nb_nodes_face];
+        face_nodes_order(side, n) =
+            (nb_nodes_face - (n - offset) % nb_nodes_face) % nb_nodes_face;
+
+    for (int n = 0; n != nb_nodes_face; ++n)
+      face_nodes(side, n) = face_indices[face_nodes_order(side, n)];
 
 #ifndef NDEBUG
     auto check = [&]() {

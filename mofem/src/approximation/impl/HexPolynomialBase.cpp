@@ -148,7 +148,8 @@ MoFEMErrorCode HexPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
                 "Expected four nodes on face");
 
       CHKERR DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONHEX(
-          &*data.facesNodes.data().begin(), order.data(),
+          &*data.facesNodes.data().begin(),
+          &*data.facesNodesOrder.data().begin(), order.data(),
           &*copy_base_fun.data().begin(), &*copy_diff_base_fun.data().begin(),
           h1_face_n.data(), diff_h1_face_n.data(), nb_gauss_pts);
 

@@ -1052,12 +1052,28 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_EdgeShapeFunctions_ONHEX(
 }
 
 MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONHEX(
-    int *face_nodes, int *p, double *N, double *diffN, double *faceN[6],
-    double *diff_faceN[6], int nb_integration_pts) {
+    int *face_nodes, int *face_nodes_order, int *p, double *N, double *diffN,
+    double *faceN[6], double *diff_faceN[6], int nb_integration_pts) {
   MoFEMFunctionBeginHot;
 
   int permute[(p[0] - 1) * (p[1] - 1)][3];
   CHKERR ::DemkowiczHexAndQuad::monom_ordering(permute, p[0] - 2, p[1] - 2);
+
+  constexpr int opposite_face_node[6][4] = {
+
+      {3, 2, 6, 7},
+
+      {0, 3, 7, 4},
+
+      {1, 0, 4, 5},
+
+      {2, 1, 5, 6},
+
+      {4, 7, 6, 5},
+
+      {0, 1, 2, 3}
+
+  };
 
   for (int qq = 0; qq != nb_integration_pts; qq++) {
 
@@ -1065,27 +1081,52 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONHEX(
 
     for (int face = 0; face != 6; face++) {
 
+
       const int n0 = face_nodes[4 * face + 0];
       const int n1 = face_nodes[4 * face + 1];
       const int n2 = face_nodes[4 * face + 2];
       const int n3 = face_nodes[4 * face + 3];
 
+      const int o0 = opposite_face_node[face][face_nodes_order[4 * face + 0]];
+      const int o1 = opposite_face_node[face][face_nodes_order[4 * face + 1]];
+      const int o2 = opposite_face_node[face][face_nodes_order[4 * face + 2]];
+      const int o3 = opposite_face_node[face][face_nodes_order[4 * face + 3]];
+
       const double shape0 = N[shift + n0];
       const double shape1 = N[shift + n1];
       const double shape2 = N[shift + n2];
       const double shape3 = N[shift + n3];
-      const double ksi01 = (shape1 + shape2 - shape0 - shape3);
-      const double ksi12 = (shape2 + shape3 - shape1 - shape0);
+
+      const double o_shape0 = N[shift + o0];
+      const double o_shape1 = N[shift + o1];
+      const double o_shape2 = N[shift + o2];
+      const double o_shape3 = N[shift + o3];
+
+      const double ksi01 = (shape1 + shape2 - shape0 - shape3) +
+                           (o_shape1 + o_shape2 - o_shape0 - o_shape3);
+      const double ksi12 = (shape2 + shape3 - shape1 - shape0) +
+                           (o_shape2 + o_shape3 - o_shape1 - o_shape0);
+      const double mu = shape1 + shape2 + shape0 + shape3;
 
       const int diff_shift = 23 * shift;
-      double diff_ksi01[3], diff_ksi12[3];
+      double diff_ksi01[3], diff_ksi12[3], diff_mu[3];
       for (int d = 0; d != 3; d++) {
         const double diff_shape0 = diffN[diff_shift + 3 * n0 + d];
         const double diff_shape1 = diffN[diff_shift + 3 * n1 + d];
         const double diff_shape2 = diffN[diff_shift + 3 * n2 + d];
         const double diff_shape3 = diffN[diff_shift + 3 * n3 + d];
-        diff_ksi01[d] = (diff_shape1 + diff_shape2 - diff_shape0 - diff_shape3);
-        diff_ksi12[d] = (diff_shape2 + diff_shape3 - diff_shape1 - diff_shape0);
+        const double o_diff_shape0 = diffN[diff_shift + 3 * o0 + d];
+        const double o_diff_shape1 = diffN[diff_shift + 3 * o1 + d];
+        const double o_diff_shape2 = diffN[diff_shift + 3 * o2 + d];
+        const double o_diff_shape3 = diffN[diff_shift + 3 * o3 + d];
+
+        diff_ksi01[d] =
+            (diff_shape1 + diff_shape2 - diff_shape0 - diff_shape3) +
+            (o_diff_shape1 + o_diff_shape2 - o_diff_shape0 - o_diff_shape3);
+        diff_ksi12[d] =
+            (diff_shape2 + diff_shape3 - diff_shape1 - diff_shape0) +
+            (o_diff_shape2 + o_diff_shape3 - o_diff_shape1 - o_diff_shape0);
+        diff_mu[d] = (diff_shape2 + diff_shape3 + diff_shape1 + diff_shape0);
       }
 
       double L01[p[0] + 2];
@@ -1099,11 +1140,14 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONHEX(
       for (int n = 0; n != (p[face] - 1) * (p[face] - 1); ++n) {
         int s1 = permute[n][0];
         int s2 = permute[n][1];
-        faceN[face][qd_shift + n] = L01[s1 + 2] * L12[s2 + 2];
+        const double vol = L01[s1 + 2] * L12[s2 + 2];
+        faceN[face][qd_shift + n] = vol * mu;
         for (int d = 0; d != 3; ++d) {
           diff_faceN[face][3 * (qd_shift + n) + d] =
-              diffL01[d * (p[face] + 2) + s1 + 2] * L12[s2 + 2] +
-              L01[s1 + 2] * diffL12[d * (p[face] + 2) + s2 + 2];
+              (diffL01[d * (p[face] + 2) + s1 + 2] * L12[s2 + 2] +
+               L01[s1 + 2] * diffL12[d * (p[face] + 2) + s2 + 2]) *
+                  mu +
+              vol * diff_mu[d];
         }
       }
     }
