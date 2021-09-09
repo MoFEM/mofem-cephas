@@ -1135,12 +1135,12 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_InteriorShapeFunctions_ONHEX(
     double diff_ksi[3][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
     ::DemkowiczHexAndQuad::get_ksi_hex(shift, N, N_diff, ksi, diff_ksi);
 
-    double L0[p[0] + 1];
-    double diffL0[3 * (p[0] + 1)];
-    double L1[p[1] + 1];
-    double diffL1[3 * (p[1] + 1)];
-    double L2[p[2] + 1];
-    double diffL2[3 * (p[2] + 1)];
+    double L0[p[0] + 2];
+    double diffL0[3 * (p[0] + 2)];
+    double L1[p[1] + 2];
+    double diffL1[3 * (p[1] + 2)];
+    double L2[p[2] + 2];
+    double diffL2[3 * (p[2] + 2)];
 
     CHKERR Lobatto_polynomials(p[0] + 1, ksi[0], diff_ksi[0], L0, diffL0, 3);
     CHKERR Lobatto_polynomials(p[1] + 1, ksi[1], diff_ksi[1], L1, diffL1, 3);
@@ -1152,12 +1152,16 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_InteriorShapeFunctions_ONHEX(
       int s2 = permute[n][1];
       int s3 = permute[n][2];
 
-      faceN[qd_shift + n] = L0[s1] * L1[s2] * L2[s3];
+      const double l0l1 = L0[s1 + 2] * L1[s2 + 2];
+      const double l0l2 = L0[s1 + 2] * L2[s3 + 2];
+      const double l1l2 = L1[s2 + 2] * L2[s3 + 2];
+
+      faceN[qd_shift + n] = -l0l1 * L2[s3 + 2];
       for (int d = 0; d != 3; ++d) {
         diff_faceN[3 * (qd_shift + n) + d] =
-            diffL0[d * (p[0] + 2) + s1 + 2] * L1[s2 + 2] * L2[s3 + 2] +
-            L0[s1 + 2] * diffL1[d * (p[1] + 2) + s2 + 2] * L2[s3 + 2] +
-            L0[s1 + 2] * L1[s2 + 2] * diffL2[d * (p[2] + 2) + s3 + 2];
+            -(diffL0[d * (p[0] + 2) + s1 + 2] * l1l2 +
+              diffL1[d * (p[1] + 2) + s2 + 2] * l0l2 +
+              diffL2[d * (p[2] + 2) + s3 + 2] * l0l1);
       }
     }
   }
