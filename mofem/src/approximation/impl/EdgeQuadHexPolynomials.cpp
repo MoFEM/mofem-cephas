@@ -962,88 +962,82 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hdiv_FaceShapeFunctions_ONQUAD(
 */
 
 MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_EdgeShapeFunctions_ONHEX(
-    int *sense, int *p, double *N, double *N_diff, double *edgeN[12],
+    int *sense, int *p, double *N, double *diff_N, double *edgeN[12],
     double *diff_edgeN[12], int nb_integration_pts) {
   MoFEMFunctionBeginHot;
 
-  constexpr std::array<int, 2> opposite_edge[12] = {
+  EntityType sub_type;
+  int num_sub_ent_vertices;
+  const short int *edges_conn[12];
+  for (int e = 0; e != 12; ++e)
+    edges_conn[e] =
+        CN::SubEntityVertexIndices(MBHEX, 1, e, sub_type, num_sub_ent_vertices);
 
-      {2, 8}, {3, 9},  {0, 10}, {1, 11}, {5, 7}, {4, 6}, {5, 7},
-      {4, 6}, {0, 10}, {1, 11}, {2, 8},  {9, 3}
+  const short int *face_conn[6];
+  for (int f = 0; f != 6; ++f)
+    face_conn[f] =
+        CN::SubEntityVertexIndices(MBHEX, 2, f, sub_type, num_sub_ent_vertices);
 
-  };
-  constexpr std::array<int, 2> edge_conn[12] = {
-
-      {0, 1}, {1, 2}, {2, 3}, {3, 0}, {0, 4}, {1, 5}, {2, 6},
-      {3, 7}, {4, 5}, {5, 6}, {6, 7}, {7, 4}
-
-  };
-  constexpr std::array<int, 12> edge_direction = {0, 1, 0, 1, 2, 2,
-                                                  2, 2, 0, 1, 0, 1};
-
-  const std::array<int, 2> mu_direction[12] = {{1, 2}, {0, 2}, {1, 2}, {0, 2},
-                                               {9, 1}, {0, 1}, {0, 1}, {0, 1},
-                                               {1, 2}, {0, 2}, {1, 2}, {0, 2}};
-  const std::array<int, 2> mu_sense[12] = {{1, 1}, {1, 1},  {-1, 1},  {-1, 1},
-                                           {1, 1}, {-1, 1}, {-1, -1}, {1, -1},
-                                           {1, 1}, {1, 1},  {-1, 1},  {-1, 1}};
-
-  std::array<int, 12>
-      hex_edges_sense = {sense[0], sense[1], -sense[3],  -sense[3],
-                         sense[4], sense[5], sense[6],   sense[7],
-                         sense[8], sense[9], -sense[10], -sense[11]};
+  constexpr int quad_edge[12][2] = {{3, 1}, {0, 2}, {1, 3}, {2, 0},
+                                    {4, 5}, {4, 5}, {4, 5}, {4, 5},
+                                    {3, 1}, {0, 2}, {1, 3}, {2, 0}};
 
   for (int qq = 0; qq != nb_integration_pts; ++qq) {
 
     const int shift = 8 * qq;
-    double ksi_hex[3] = {0, 0, 0};
-    double diff_ksi_hex[3][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
-    ::DemkowiczHexAndQuad::get_ksi_hex(shift, N, N_diff, ksi_hex, diff_ksi_hex);
 
-    std::array<double, 12> ksi;
-    std::array<double, 3> diff_ksi[12];
+    double ksi[12];
+    double diff_ksi[12][3];
     for (int e = 0; e != 12; ++e) {
-      const int dir = edge_direction[e];
-      ksi[e] = hex_edges_sense[e] * ksi_hex[dir];
+
+      ksi[e] = 0;
+      for (int d = 0; d != 3; ++d)
+        diff_ksi[e][d] = 0;
+      for (int n = 0; n != 4; ++n) {
+        const auto n1 = shift + face_conn[quad_edge[e][1]][n];
+        const auto n0 = shift + face_conn[quad_edge[e][0]][n];
+        ksi[e] += N[n1] - N[n0];
+        const auto n03 = 3 * n0;
+        const auto n13 = 3 * n1;
+        for (int d = 0; d != 3; ++d)
+          diff_ksi[e][d] += diff_N[n13 + d] - diff_N[n03 + d];
+      }
+
+      ksi[e] *= sense[e];
+      for (int d = 0; d != 3; ++d)
+        diff_ksi[e][d] *= sense[e];
+    }
+
+    double mu[12];
+    double diff_mu[12][3];
+    for (int e = 0; e != 12; ++e) {
+      const auto n0 = shift + edges_conn[e][0];
+      const auto n1 = shift + edges_conn[e][1];
+      mu[e] = N[n0] + N[n1];
+      const auto n03 = 3 * n0;
+      const auto n13 = 3 * n1;
       for (int d = 0; d != 3; ++d) {
-        diff_ksi[e][d] = hex_edges_sense[e] * diff_ksi_hex[dir][d];
+        diff_mu[e][d] = diff_N[n03 + d] + diff_N[n13 + d];
       }
-    }
-
-    std::array<double, 2> mu[12];
-    std::array<double, 3> diff_mu[12][2];
-    std::array<double, 12> mu01;
-
-    for (int e = 0; e != 12; ++e) {
-      for (int v = 0; v != 2; ++v) {
-        const int dir = mu_direction[e][v];
-        const double sgn = mu_sense[e][v];
-        mu[e][v] = sgn * ksi[dir];
-        for (int d = 0; d != 3; ++d) {
-          diff_mu[e][v][d] = sgn * diff_ksi[dir][d];
-        }
-      }
-    }
-
-    for (int e = 0; e != 12; ++e) {
-      mu01[e] = mu[e][0] * mu[e][1];
     }
 
     for (int e = 0; e != 12; e++) {
 
       double L[p[e] + 2];
       double diffL[3 * (p[e] + 2)];
-      CHKERR Lobatto_polynomials(p[e] + 1, ksi[e], diff_ksi[e].data(), L, diffL,
-                                 3);
+      CHKERR Lobatto_polynomials(p[e] + 1, ksi[e], diff_ksi[e], L, diffL, 3);
 
       int qd_shift = (p[e] - 1) * qq;
       for (int n = 0; n != p[e] - 1; n++) {
-        edgeN[e][qd_shift + n] = mu01[e] * L[n + 1];
+        edgeN[e][qd_shift + n] = -mu[e] * L[n + 2];
         for (int d = 0; d != 3; ++d) {
-          diff_edgeN[e][3 * (qd_shift + n) + d] =
-              (diff_mu[e][0][d] * mu[e][1] + diff_mu[e][1][d] * mu[e][0]) *
-                  L[n + 1] +
-              mu01[e] * diffL[d * (p[e] + 2) + n + 1];
+          diff_edgeN[e][3 * (qd_shift + n + 2) + d] =
+
+              -diff_mu[e][d] * L[n + 2]
+
+              -
+
+              mu[e] * diffL[d * (p[e] + 2) + n + 2];
         }
       }
     }
@@ -1056,8 +1050,6 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONHEX(
     double *faceN[6], double *diff_faceN[6], int nb_integration_pts) {
   MoFEMFunctionBeginHot;
 
-  int permute[(p[0] - 1) * (p[1] - 1)][3];
-  CHKERR ::DemkowiczHexAndQuad::monom_ordering(permute, p[0] - 2, p[1] - 2);
 
   constexpr int opposite_face_node[6][4] = {
 
@@ -1075,22 +1067,24 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONHEX(
 
   };
 
-  for (int qq = 0; qq != nb_integration_pts; qq++) {
+  for (int face = 0; face != 6; face++) {
 
-    const int shift = 8 * qq;
+    const int n0 = face_nodes[4 * face + 0];
+    const int n1 = face_nodes[4 * face + 1];
+    const int n2 = face_nodes[4 * face + 2];
+    const int n3 = face_nodes[4 * face + 3];
 
-    for (int face = 0; face != 6; face++) {
+    const int o0 = opposite_face_node[face][face_nodes_order[4 * face + 0]];
+    const int o1 = opposite_face_node[face][face_nodes_order[4 * face + 1]];
+    const int o2 = opposite_face_node[face][face_nodes_order[4 * face + 2]];
+    const int o3 = opposite_face_node[face][face_nodes_order[4 * face + 3]];
 
+    int permute[(p[face] - 1) * (p[face] - 1)][3];
+    CHKERR ::DemkowiczHexAndQuad::monom_ordering(permute, p[0] - 2, p[1] - 2);
 
-      const int n0 = face_nodes[4 * face + 0];
-      const int n1 = face_nodes[4 * face + 1];
-      const int n2 = face_nodes[4 * face + 2];
-      const int n3 = face_nodes[4 * face + 3];
+    for (int qq = 0; qq != nb_integration_pts; qq++) {
 
-      const int o0 = opposite_face_node[face][face_nodes_order[4 * face + 0]];
-      const int o1 = opposite_face_node[face][face_nodes_order[4 * face + 1]];
-      const int o2 = opposite_face_node[face][face_nodes_order[4 * face + 2]];
-      const int o3 = opposite_face_node[face][face_nodes_order[4 * face + 3]];
+      const int shift = 8 * qq;
 
       const double shape0 = N[shift + n0];
       const double shape1 = N[shift + n1];
@@ -1162,8 +1156,8 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_InteriorShapeFunctions_ONHEX(
 
   const int nb_bases = (p[0] - 1) * (p[1] - 1) * (p[2] - 1);
   int permute[nb_bases][3];
-  CHKERR ::DemkowiczHexAndQuad::monom_ordering(permute, p[0] - 1, p[1] - 1,
-                                               p[2] - 1);
+  CHKERR ::DemkowiczHexAndQuad::monom_ordering(permute, p[0] - 2, p[1] - 2,
+                                               p[2] - 2);
 
   double P0[p[0] + 2];
   double diffL0[3 * (p[0] + 2)];
