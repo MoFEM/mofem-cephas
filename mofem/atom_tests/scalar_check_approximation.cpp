@@ -228,7 +228,6 @@ struct OpCheckValsDiffVals : public DomainEleOp {
         SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "Wrong value %4.3e",
                  err_val);
 
-
       ++t_vals;
       ++t_ptr_vals;
     }
@@ -283,9 +282,9 @@ struct OpCheckValsDiffVals : public DomainEleOp {
 
         MOFEM_LOG("AT", Sev::verbose) << "Diff val error " << err_diff_val;
         if (err_diff_val > eps)
-          SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                   "Wrong derivative of value %4.3e", err_diff_val);
-
+          SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                   "Wrong derivative of value %4.3e %4.3e", err_diff_val,
+                   t_diff_anal.l2());
 
         ++t_diff_vals;
         ++t_ptr_diff_vals;
@@ -389,6 +388,18 @@ int main(int argc, char *argv[]) {
         pipeline_mng->getOpDomainLhsPipeline().push_back(
             new OpSetHOWeigthsOnFace());
       }
+
+      if (SPACE_DIM == 3) {
+        auto jac_ptr = boost::make_shared<MatrixDouble>();
+        auto det_ptr = boost::make_shared<VectorDouble>();
+        pipeline_mng->getOpDomainLhsPipeline().push_back(
+            new OpCalculateHOJacVolume(jac_ptr));
+        pipeline_mng->getOpDomainLhsPipeline().push_back(
+            new OpInvertMatrix<3>(jac_ptr, det_ptr, nullptr));
+        pipeline_mng->getOpDomainLhsPipeline().push_back(
+            new OpSetHOWeights(det_ptr));
+      }
+
       using OpMass = FormsIntegrators<DomainEleOp>::Assembly<
           PETSC>::BiLinearForm<GAUSS>::OpMass<1, 1>;
       pipeline_mng->getOpDomainLhsPipeline().push_back(new OpMass(
@@ -441,12 +452,12 @@ int main(int argc, char *argv[]) {
         auto jac_ptr = boost::make_shared<MatrixDouble>();
         auto det_ptr = boost::make_shared<VectorDouble>();
         auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
-        // pipeline_mng->getOpDomainRhsPipeline().push_back(
-        //     new OpCalculateHOJacVolume(jac_ptr));
-        // pipeline_mng->getOpDomainRhsPipeline().push_back(
-        //     new OpInvertMatrix<3>(jac_ptr, det_ptr, inv_jac_ptr));
-        // pipeline_mng->getOpDomainRhsPipeline().push_back(
-        //     new OpSetHOInvJacToScalarBases(space, inv_jac_ptr));
+        pipeline_mng->getOpDomainRhsPipeline().push_back(
+            new OpCalculateHOJacVolume(jac_ptr));
+        pipeline_mng->getOpDomainRhsPipeline().push_back(
+            new OpInvertMatrix<3>(jac_ptr, det_ptr, inv_jac_ptr));
+        pipeline_mng->getOpDomainRhsPipeline().push_back(
+            new OpSetHOInvJacToScalarBases(space, inv_jac_ptr));
       }
 
       pipeline_mng->getOpDomainRhsPipeline().push_back(
