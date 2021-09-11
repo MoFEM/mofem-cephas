@@ -795,25 +795,24 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_EdgeShapeFunctions_ONQUAD(
       diff_mu[3][d] = diff_ksi30;
     }
 
-    int pp[4] = {p[0], p[1], p[2], p[3]};
     for (int e = 0; e != 4; e++) {
 
-      double L[pp[e]];
-      double diffL[2 * pp[e]];
+      double L[p[e]];
+      double diffL[2 * p[e]];
 
-      CHKERR Legendre_polynomials(pp[e] - 1, mu[e], diff_mu[e], L, diffL, 2);
+      CHKERR Legendre_polynomials(p[e] - 1, mu[e], diff_mu[e], L, diffL, 2);
 
-      int qd_shift = pp[e] * q;
+      int qd_shift = p[e] * q;
       double *t_n_ptr = &edgeN[e][3 * qd_shift];
       double *t_diff_n_ptr = &diff_edgeN[e][3 * 2 * qd_shift];
       auto t_n = getFTensor1FromPtr<3>(t_n_ptr);
       auto t_diff_n = getFTensor2FromPtr<3, 2>(t_diff_n_ptr);
 
-      for (int n = 0; n != pp[e]; ++n) {
+      for (int n = 0; n != p[e]; ++n) {
         const double a = mu_const[e] * L[n];
         const double d_a[] = {
-            diff_mu_const[e][0] * L[n] + mu_const[e] * diffL[0 * pp[e] + n],
-            diff_mu_const[e][1] * L[n] + mu_const[e] * diffL[1 * pp[e] + n]};
+            diff_mu_const[e][0] * L[n] + mu_const[e] * diffL[0 * p[e] + n],
+            diff_mu_const[e][1] * L[n] + mu_const[e] * diffL[1 * p[e] + n]};
 
         for (int d = 0; d != 2; ++d) {
           t_n(d) = (a / 2) * diff_mu[e][d];
