@@ -874,15 +874,15 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_FaceShapeFunctions_ONQUAD(
       const int pp = pq[family];
       const int qq = qp[family];
 
-      double Phi[pp + 2];
-      double diffPhi[2 * (pp + 2)];
+      double zeta[pp + 2];
+      double diff_zeta[2 * (pp + 2)];
       CHKERR Lobatto_polynomials(qq + 1, mu_ksi_eta[family],
-                                 diff_mu_ksi_eta[family], Phi, diffPhi, 2);
+                                 diff_mu_ksi_eta[family], zeta, diff_zeta, 2);
 
-      double E[qq];
-      double diffE[2 * qq];
+      double eta[qq];
+      double diff_eta[2 * qq];
       CHKERR Legendre_polynomials(pp - 1, mu_eta_ksi[family],
-                                  diff_mu_eta_ksi[family], E, diffE, 2);
+                                  diff_mu_eta_ksi[family], eta, diff_eta, 2);
 
       int permute[qq * (pp - 1)][3];
       CHKERR ::DemkowiczHexAndQuad::monom_ordering(permute, qq - 1, pp - 2);
@@ -897,14 +897,14 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_FaceShapeFunctions_ONQUAD(
         int i = permute[n][0];
         int j = permute[n][1];
 
-        const double phi = Phi[j + 2];
-        const double e = E[i];
+        const double phi = zeta[j + 2];
+        const double e = eta[i];
         const double a = phi * e;
         const double d_a[] = {
 
-            diffPhi[0 * (pp + 2) + j + 2] * e + phi * diffE[0 * qq + i],
+            diff_zeta[0 * (pp + 2) + j + 2] * e + phi * diff_eta[0 * qq + i],
 
-            diffPhi[1 * (pp + 2) + j + 2] * e + phi * diffE[1 * qq + i]};
+            diff_zeta[1 * (pp + 2) + j + 2] * e + phi * diff_eta[1 * qq + i]};
 
         for (int d = 0; d != 2; ++d) {
           t_n(d) = a * diff_mu_eta_ksi[family][d];
