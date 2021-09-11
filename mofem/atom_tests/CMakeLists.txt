@@ -634,7 +634,7 @@ add_test(h1_check_approx_3d_demkowicz_hex
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_3d
   -file_name hex_cub.h5m
   -base demkowicz -space h1
-  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
+  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-16 -ksp_rtol 0
   -log_no_color
 )
 
