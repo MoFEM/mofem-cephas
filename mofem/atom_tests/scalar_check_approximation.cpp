@@ -195,7 +195,7 @@ struct OpCheckValsDiffVals : public DomainEleOp {
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data) {
     MoFEMFunctionBegin;
-    const double eps = 1e-5;
+    const double eps = 1e-6;
     const int nb_gauss_pts = data.getN().size1();
 
     auto t_vals = getFTensor0FromVec(vAls);
