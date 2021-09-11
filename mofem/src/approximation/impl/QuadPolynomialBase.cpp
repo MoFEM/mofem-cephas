@@ -298,9 +298,9 @@ QuadPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
     int p = data.dataOnEntities[MBQUAD][0].getDataOrder();
 
     MatrixDouble face_family(
-        2, 3 * NBFACEQUAD_DEMKOWICZ_FAMILY_QUAD_HCURL(p, p) * nb_gauss_pts);
+        2, 3 * NBFACEQUAD_DEMKOWICZ_FAMILY_HCURL(p, p) * nb_gauss_pts);
     MatrixDouble diff_face_family(
-        2, 3 * 2 * NBFACEQUAD_DEMKOWICZ_FAMILY_QUAD_HCURL(p, p) * nb_gauss_pts);
+        2, 3 * 2 * NBFACEQUAD_DEMKOWICZ_FAMILY_HCURL(p, p) * nb_gauss_pts);
 
     int order[2] = {p, p};
     double *face_family_ptr[] = {&face_family(0, 0), &face_family(1, 0)};

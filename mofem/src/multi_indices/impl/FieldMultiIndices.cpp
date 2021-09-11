@@ -291,6 +291,9 @@ Field::Field(moab::Interface &moab, const EntityHandle meshset)
         forderTable[MBTET] = [](int P) -> int {
           return NBVOLUMETET_DEMKOWICZ_HCURL(P);
         };
+        forderTable[MBHEX] = [](int P) -> int {
+          return NBVOLUMEHEX_DEMKOWICZ_HCURL(P);
+        };
         break;
       case HDIV:
         forderTable[MBVERTEX] = [](int P) -> int {

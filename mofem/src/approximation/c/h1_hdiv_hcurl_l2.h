@@ -123,10 +123,16 @@ extern "C" {
 /**
  * @brief Number of base functions on quad for Hcurl space
  */
-#define NBFACEQUAD_DEMKOWICZ_FAMILY_QUAD_HCURL(P, Q)                           \
+#define NBFACEQUAD_DEMKOWICZ_FAMILY_HCURL(P, Q)                                \
   (((P) > 0 && (Q) > 1) ? P * (Q - 1) : 0)
 #define NBFACEQUAD_DEMKOWICZ_HCURL(P)                                          \
-  (2 * NBFACEQUAD_DEMKOWICZ_FAMILY_QUAD_HCURL(P, P))
+  (2 * NBFACEQUAD_DEMKOWICZ_FAMILY_HCURL(P, P))
+
+#define NBVOLUMEHEX_DEMKOWICZ_FAMILY_HCURL(P, Q, R)                            \
+  ((P > 0) && (Q > 1) && (R > 1) ? ((P) * (Q - 1) * (R - 1)) : 0)
+
+#define NBVOLUMEHEX_DEMKOWICZ_HCURL(P)                                         \
+  (3 * NBVOLUMEHEX_DEMKOWICZ_FAMILY_HCURL(P, P, P))
 
 // H div
 
