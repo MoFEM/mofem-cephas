@@ -1254,77 +1254,115 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::L2_InteriorShapeFunctions_ONHEX(
 }
 
 MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_EdgeShapeFunctions_ONHEX(
-    int *sense, int *p, double *N, double *N_diff, double *edgeN[12],
+    int *sense, int *p, double *N, double *diff_N, double *edgeN[12],
     double *diff_edgeN[12], int nb_integration_pts) {
+
+  FTensor::Index<'i', 3> i;
+  FTensor::Index<'j', 3> j;
+
   MoFEMFunctionBeginHot;
-  RefHex ref_hex;
+
+  EntityType sub_type;
+  int num_sub_ent_vertices;
+  const short int *edges_conn[12];
+  for (int e = 0; e != 12; ++e)
+    edges_conn[e] =
+        CN::SubEntityVertexIndices(MBHEX, 1, e, sub_type, num_sub_ent_vertices);
+
+  const short int *face_conn[6];
+  for (int f = 0; f != 6; ++f)
+    face_conn[f] =
+        CN::SubEntityVertexIndices(MBHEX, 2, f, sub_type, num_sub_ent_vertices);
+
+  constexpr int quad_edge[12][2] = {{3, 1}, {0, 2}, {1, 3}, {2, 0},
+                                    {4, 5}, {4, 5}, {4, 5}, {4, 5},
+                                    {3, 1}, {0, 2}, {1, 3}, {2, 0}};
 
   for (int qq = 0; qq != nb_integration_pts; qq++) {
-    // general ******************************
-    int shift = 8 * qq;
-    double Nq[8];
-    double Nq_diff[8][3];
-    for (int vv = 0; vv < 8; vv++) {
-      Nq[vv] = N[shift + vv];
-      Nq_diff[vv][0] = N_diff[3 * (shift + vv) + 0];
-      Nq_diff[vv][1] = N_diff[3 * (shift + vv) + 1];
-      Nq_diff[vv][2] = N_diff[3 * (shift + vv) + 2];
-    }
-
-    double mu[12][2];
-    ref_hex.get_edge_affines(Nq, mu);
-
-    double diff_mu[12][2][3];
-    ref_hex.get_edge_diff_affines(Nq_diff, diff_mu);
 
     double ksi[12];
-    ref_hex.get_edge_coords(sense, Nq, ksi);
-    double diff_ksi[12][3];
-    ref_hex.get_edge_diff_coords(sense, Nq_diff, diff_ksi);
+    double diff_ksi[12 * 3];
 
-    int pp[12] = {p[0], p[1], p[0], p[1], p[2], p[2],
-                  p[2], p[2], p[0], p[1], p[0], p[1]};
-    for (int ee = 0; ee != 12; ee++) {
+    const int shift = 8 * qq;
 
-      double L[pp[ee]];
-      double diffL[3 * (pp[ee] + 2)];
-      CHKERR Legendre_polynomials(pp[ee] - 1, ksi[ee], diff_ksi[ee], L, diffL,
-                                  3);
+    auto calc_ksi = [&]() {
+      auto t_diff_ksi = getFTensor1FromPtr<3>(diff_ksi);
+      for (int e = 0; e != 12; ++e) {
 
-      // CHKERR ::DemkowiczHexAndQuad::Legendre_polynomials01(pp[ee] - 1,
-      // ksi[ee], L);
-      int qd_shift = pp[ee] * qq;
-      double *t_n_ptr = &edgeN[ee][3 * qd_shift];
-      double *t_diff_n_ptr = &diff_edgeN[ee][3 * 3 * qd_shift];
-      auto t_n = getFTensor1FromPtr<3>(t_n_ptr);
-      auto t_diff_n = getFTensor2FromPtr<3, 3>(t_diff_n_ptr);
-
-      for (int ii = 0; ii != pp[ee]; ii++) {
-        const double a = mu[ee][0] * mu[ee][1] * L[ii];
-
-        const double d_a[] = {
-            diff_mu[ee][0][0] * mu[ee][1] * L[ii] +
-                mu[ee][0] * diff_mu[ee][1][0] * L[ii] +
-                mu[ee][0] * mu[ee][1] * diffL[0 * pp[ee] + ii],
-
-            diff_mu[ee][0][1] * mu[ee][1] * L[ii] +
-                mu[ee][0] * diff_mu[ee][1][1] * L[ii] +
-                mu[ee][0] * mu[ee][1] * diffL[1 * pp[ee] + ii],
-
-            diff_mu[ee][0][2] * mu[ee][1] * L[ii] +
-                mu[ee][0] * diff_mu[ee][1][2] * L[ii] +
-                mu[ee][0] * mu[ee][1] * diffL[2 * pp[ee] + ii]};
-
-        for (int d = 0; d != 3; ++d) {
-          t_n(d) = 0.5 * a * diff_ksi[ee][d];
-          for (int j = 0; j != 2; ++j) {
-            t_diff_n(d, j) = 0.5 * d_a[j] * diff_ksi[ee][d];
-          }
+        ksi[e] = 0;
+        t_diff_ksi(i) = 0;
+        for (int n = 0; n != 4; ++n) {
+          const auto n1 = shift + face_conn[quad_edge[e][1]][n];
+          const auto n0 = shift + face_conn[quad_edge[e][0]][n];
+          ksi[e] += N[n1] - N[n0];
+          const auto n03 = 3 * n0;
+          const auto n13 = 3 * n1;
+          for (int d = 0; d != 3; ++d)
+            t_diff_ksi(d) += diff_N[n13 + d] - diff_N[n03 + d];
         }
-        ++t_n;
-        ++t_diff_n;
+
+        ksi[e] *= sense[e];
+        t_diff_ksi(i) *= sense[e];
+
+        ++t_diff_ksi;
       }
-    }
+    };
+
+    double mu[12];
+    double diff_mu[12][3];
+    auto calc_mu = [&]() {
+      for (int e = 0; e != 12; ++e) {
+        const auto n0 = shift + edges_conn[e][0];
+        const auto n1 = shift + edges_conn[e][1];
+        mu[e] = N[n0] + N[n1];
+        const auto n03 = 3 * n0;
+        const auto n13 = 3 * n1;
+        for (int d = 0; d != 3; ++d) {
+          diff_mu[e][d] = diff_N[n03 + d] + diff_N[n13 + d];
+        }
+      }
+    };
+
+    auto calc_base = [&]() {
+      auto t_diff_ksi = getFTensor1FromPtr<3>(diff_ksi);
+      for (int ee = 0; ee != 12; ee++) {
+
+        double L[p[ee]];
+        double diffL[3 * (p[ee])];
+        CHKERR Legendre_polynomials(p[ee] - 1, ksi[ee], &(t_diff_ksi(0)), L,
+                                    diffL, 3);
+
+        int qd_shift = p[ee] * qq;
+        auto t_n = getFTensor1FromPtr<3>(&edgeN[ee][3 * qd_shift]);
+        auto t_diff_n = getFTensor2FromPtr<3, 3>(&diff_edgeN[ee][9 * qd_shift]);
+
+        for (int ii = 0; ii != p[ee]; ii++) {
+
+          const double a = mu[ee] * L[ii];
+          auto t_diff_a = FTensor::Tensor1<const double, 3>{
+
+              diff_mu[ee][0] * L[ii] + diffL[0 * p[ee] + ii],
+
+              diff_mu[ee][1] * L[ii] + diffL[1 * p[ee] + ii],
+
+              diff_mu[ee][2] * L[ii] + diffL[2 * p[ee] + ii]
+
+          };
+
+          t_n(i) = (a / 2) * t_diff_ksi(i);
+          t_diff_n(i, j) = (t_diff_a(j) / 2) * t_diff_ksi(i);
+
+          ++t_n;
+          ++t_diff_n;
+        }
+
+        ++t_diff_ksi;
+      }
+    };
+
+    calc_ksi();
+    calc_mu();
+    calc_base();
   }
   MoFEMFunctionReturnHot(0);
 }
