@@ -54,7 +54,7 @@ VolumeElementForcesAndSourcesCoreOnSideBase::setGaussPts(int order) {
     faceConnMap[nn] = std::distance(
         conn, find(conn, &conn[nb_nodes_on_ele], face_ptr_fe->conn[nn]));
     tetConnMap[faceConnMap[nn]] = nn;
-    if (faceConnMap[nn] > nb_nodes_on_face)
+    if (faceConnMap[nn] >= nb_nodes_on_ele)
       SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
               "No common node on face and element can not be found");
   }
