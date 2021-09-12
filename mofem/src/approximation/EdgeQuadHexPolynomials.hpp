@@ -122,9 +122,9 @@ MoFEMErrorCode Hcurl_FaceShapeFunctions_ONQUAD(int *face_nodes, int *p,
                                                double *diff_faceN[],
                                                int nb_integration_pts);
 
-MoFEMErrorCode Hdiv_FaceShapeFunctions_ONQUAD(int *p, double *N,
-                                              double *faceN[],
-                                              double *div_faceN[],
+MoFEMErrorCode Hdiv_FaceShapeFunctions_ONQUAD(int *face_nodes, int *p,
+                                              double *N, double *diffN,
+                                              double *faceN, double *diff_faceN,
                                               int nb_integration_pts);
 
 /* Reference Hex and its canonical vertex and edge numbering
