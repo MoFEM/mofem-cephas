@@ -85,23 +85,17 @@ private:
    */
   MoFEMErrorCode getValueHcurl(MatrixDouble &pts);
 
-  ublas::matrix<MatrixDouble> N_face_edge;
-  ublas::vector<MatrixDouble> N_face_bubble;
-  ublas::vector<MatrixDouble> N_volume_edge;
-  ublas::vector<MatrixDouble> N_volume_face;
-  MatrixDouble N_volume_bubble;
-
-  ublas::matrix<MatrixDouble> diffN_face_edge;
-  ublas::vector<MatrixDouble> diffN_face_bubble;
-  ublas::vector<MatrixDouble> diffN_volume_edge;
-  ublas::vector<MatrixDouble> diffN_volume_face;
-  MatrixDouble diffN_volume_bubble;
-
 private:
   MoFEMErrorCode getValueH1DemkowiczBase(MatrixDouble &pts);
   MoFEMErrorCode getValueL2DemkowiczBase(MatrixDouble &pts);
   MoFEMErrorCode getValueHdivDemkowiczBase(MatrixDouble &pts);
   MoFEMErrorCode getValueHcurlDemkowiczBase(MatrixDouble &pts);
+
+  std::array<MatrixDouble, 6> faceFamily;
+  std::array<MatrixDouble, 6> diffFaceFamily;
+
+  MatrixDouble volFamily;
+  MatrixDouble diffVolFamily;
 };
 
 } // namespace MoFEM

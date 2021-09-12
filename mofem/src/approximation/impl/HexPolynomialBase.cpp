@@ -82,6 +82,7 @@ MoFEMErrorCode HexPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
 
       std::array<double *, 12> h1_edge_n;
       std::array<double *, 12> diff_h1_egde_n;
+      bool nb_dofs_sum = false;
       for (int ee = 0; ee != 12; ++ee) {
         if (data.dataOnEntities[MBEDGE][ee].getSense() == 0)
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -99,11 +100,15 @@ MoFEMErrorCode HexPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
             &*data.dataOnEntities[MBEDGE][ee].getN(base).data().begin();
         diff_h1_egde_n[ee] =
             &*data.dataOnEntities[MBEDGE][ee].getDiffN(base).data().begin();
+
+        nb_dofs_sum |= (nb_dofs > 0);
       }
-      CHKERR DemkowiczHexAndQuad::H1_EdgeShapeFunctions_ONHEX(
-          sense.data(), order.data(), &*copy_base_fun.data().begin(),
-          &*copy_diff_base_fun.data().begin(), h1_edge_n.data(),
-          diff_h1_egde_n.data(), nb_gauss_pts);
+      if (nb_dofs_sum) {
+        CHKERR DemkowiczHexAndQuad::H1_EdgeShapeFunctions_ONHEX(
+            sense.data(), order.data(), &*copy_base_fun.data().begin(),
+            &*copy_diff_base_fun.data().begin(), h1_edge_n.data(),
+            diff_h1_egde_n.data(), nb_gauss_pts);
+      }
     } else {
       for (int ee = 0; ee != 12; ++ee) {
         data.dataOnEntities[MBEDGE][ee].getN(base).resize(0, 0, false);
@@ -125,6 +130,7 @@ MoFEMErrorCode HexPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
 
       std::array<double *, 6> h1_face_n;
       std::array<double *, 6> diff_h1_face_n;
+      bool nb_dofs_sum = false;
       for (int ff = 0; ff != 6; ++ff) {
 
         order[ff] = data.dataOnEntities[MBQUAD][ff].getDataOrder();
@@ -139,6 +145,8 @@ MoFEMErrorCode HexPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
             &*data.dataOnEntities[MBQUAD][ff].getN(base).data().begin();
         diff_h1_face_n[ff] =
             &*data.dataOnEntities[MBQUAD][ff].getDiffN(base).data().begin();
+
+        nb_dofs_sum |= (nb_dofs_sum > 0);
       }
       if (data.facesNodes.size1() != 6)
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -147,11 +155,13 @@ MoFEMErrorCode HexPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Expected four nodes on face");
 
-      CHKERR DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONHEX(
-          &*data.facesNodes.data().begin(),
-          &*data.facesNodesOrder.data().begin(), order.data(),
-          &*copy_base_fun.data().begin(), &*copy_diff_base_fun.data().begin(),
-          h1_face_n.data(), diff_h1_face_n.data(), nb_gauss_pts);
+      if (nb_dofs_sum) {
+        CHKERR DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONHEX(
+            &*data.facesNodes.data().begin(),
+            &*data.facesNodesOrder.data().begin(), order.data(),
+            &*copy_base_fun.data().begin(), &*copy_diff_base_fun.data().begin(),
+            h1_face_n.data(), diff_h1_face_n.data(), nb_gauss_pts);
+      }
 
     } else {
       for (int ff = 0; ff != 6; ++ff) {
@@ -176,14 +186,15 @@ MoFEMErrorCode HexPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
       data.dataOnEntities[MBHEX][0].getDiffN(base).resize(
           nb_gauss_pts, 3 * nb_vol_dofs, false);
 
-      const std::array<int, 3> p{order, order, order};
-
-      CHKERR DemkowiczHexAndQuad::H1_InteriorShapeFunctions_ONHEX(
-          p.data(), &*copy_base_fun.data().begin(),
-          &*copy_diff_base_fun.data().begin(),
-          &*data.dataOnEntities[MBHEX][0].getN(base).data().begin(),
-          &*data.dataOnEntities[MBHEX][0].getDiffN(base).data().begin(),
-          nb_gauss_pts);
+      if (nb_vol_dofs) {
+        const std::array<int, 3> p{order, order, order};
+        CHKERR DemkowiczHexAndQuad::H1_InteriorShapeFunctions_ONHEX(
+            p.data(), &*copy_base_fun.data().begin(),
+            &*copy_diff_base_fun.data().begin(),
+            &*data.dataOnEntities[MBHEX][0].getN(base).data().begin(),
+            &*data.dataOnEntities[MBHEX][0].getDiffN(base).data().begin(),
+            nb_gauss_pts);
+      }
     } else {
       data.dataOnEntities[MBHEX][0].getN(base).resize(0, 0, false);
       data.dataOnEntities[MBHEX][0].getDiffN(base).resize(0, 0, false);
@@ -238,15 +249,18 @@ MoFEMErrorCode HexPolynomialBase::getValueL2DemkowiczBase(MatrixDouble &pts) {
   auto &base_fun = data.dataOnEntities[MBHEX][0].getN(base);
   auto &diff_base_fun = data.dataOnEntities[MBHEX][0].getDiffN(base);
   const int vol_order = data.dataOnEntities[MBHEX][0].getDataOrder();
-  const std::array<int, 3> p{vol_order, vol_order, vol_order};
 
-  base_fun.resize(nb_gauss_pts, NBVOLUMEHEX_L2(vol_order), false);
-  diff_base_fun.resize(nb_gauss_pts, 3 * NBVOLUMEHEX_L2(vol_order), false);
+  const int nb_dofs = NBVOLUMEHEX_L2(vol_order);
+  base_fun.resize(nb_gauss_pts, nb_dofs, false);
+  diff_base_fun.resize(nb_gauss_pts, 3 * nb_dofs, false);
 
-  CHKERR DemkowiczHexAndQuad::L2_InteriorShapeFunctions_ONHEX(
-      p.data(), &*copy_base_fun.data().begin(),
-      &*copy_diff_base_fun.data().begin(), &*base_fun.data().begin(),
-      &*diff_base_fun.data().begin(), nb_gauss_pts);
+  if (nb_dofs) {
+    const std::array<int, 3> p{vol_order, vol_order, vol_order};
+    CHKERR DemkowiczHexAndQuad::L2_InteriorShapeFunctions_ONHEX(
+        p.data(), &*copy_base_fun.data().begin(),
+        &*copy_diff_base_fun.data().begin(), &*base_fun.data().begin(),
+        &*diff_base_fun.data().begin(), nb_gauss_pts);
+  }
 
   MoFEMFunctionReturn(0);
 }
@@ -351,127 +365,245 @@ MoFEMErrorCode
 HexPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  // DataForcesAndSourcesCore &data = cTx->dAta;
-  // const FieldApproximationBase base = cTx->bAse;
-  // PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double
-  // *L,
-  //                                    double *diffL, const int dim) =
-  //     cTx->basePolynomialsType0;
+  auto &data = cTx->dAta;
+  const auto base = cTx->bAse;
+  const auto copy_base = cTx->copyNodeBase;
+  const int nb_gauss_pts = pts.size2();
 
-  // int nb_gauss_pts = pts.size2();
+  auto &copy_base_fun = data.dataOnEntities[MBVERTEX][0].getN(copy_base);
+  auto &copy_diff_base_fun =
+      data.dataOnEntities[MBVERTEX][0].getDiffN(copy_base);
 
-  // // edges
-  // if (data.spacesOnEntities[MBEDGE].test(HCURL)) {
-  //   int sense[6], order[6];
-  //   if (data.dataOnEntities[MBEDGE].size() != 6) {
-  //     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data
-  //     inconsistency");
-  //   }
-  //   double *hcurl_edge_n[6], *diff_hcurl_edge_n[6];
-  //   for (int ee = 0; ee != 6; ee++) {
-  //     if (data.dataOnEntities[MBEDGE][ee].getSense() == 0) {
-  //       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-  //               "data inconsistency");
-  //     }
-  //     sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
-  //     order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
-  //     int nb_dofs = NBEDGE_AINSWORTH_HCURL(
-  //         data.dataOnEntities[MBEDGE][ee].getDataOrder());
-  //     data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,
-  //                                                       3 * nb_dofs, false);
-  //     data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_gauss_pts,
-  //                                                           9 * nb_dofs,
-  //                                                           false);
-  //     hcurl_edge_n[ee] =
-  //         &*data.dataOnEntities[MBEDGE][ee].getN(base).data().begin();
-  //     diff_hcurl_edge_n[ee] =
-  //         &*data.dataOnEntities[MBEDGE][ee].getDiffN(base).data().begin();
-  //   }
-  //   CHKERR Hcurl_Ainsworth_EdgeBaseFunctions_MBTET(
-  //       sense, order,
-  //       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
-  //       &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
-  //       hcurl_edge_n, diff_hcurl_edge_n, nb_gauss_pts, base_polynomials);
-  // } else {
-  //   for (int ee = 0; ee != 6; ee++) {
-  //     data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts, 0,
-  //     false);
-  //     data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_gauss_pts, 0,
-  //                                                           false);
-  //   }
-  // }
+  if (nb_gauss_pts != copy_base_fun.size1())
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Wrong number of gauss pts");
 
-  // // triangles
-  // if (data.spacesOnEntities[MBTRI].test(HCURL)) {
-  //   int order[4];
-  //   // faces
-  //   if (data.dataOnEntities[MBTRI].size() != 4) {
-  //     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data
-  //     inconsistency");
-  //   }
-  //   double *hcurl_base_n[4], *diff_hcurl_base_n[4];
-  //   for (int ff = 0; ff != 4; ff++) {
-  //     if (data.dataOnEntities[MBTRI][ff].getSense() == 0) {
-  //       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-  //               "data inconsistency");
-  //     }
-  //     order[ff] = data.dataOnEntities[MBTRI][ff].getDataOrder();
-  //     int nb_dofs = NBFACETRI_AINSWORTH_HCURL(order[ff]);
-  //     data.dataOnEntities[MBTRI][ff].getN(base).resize(nb_gauss_pts,
-  //                                                      3 * nb_dofs, false);
-  //     data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(nb_gauss_pts,
-  //                                                          9 * nb_dofs,
-  //                                                          false);
-  //     hcurl_base_n[ff] =
-  //         &*data.dataOnEntities[MBTRI][ff].getN(base).data().begin();
-  //     diff_hcurl_base_n[ff] =
-  //         &*data.dataOnEntities[MBTRI][ff].getDiffN(base).data().begin();
-  //   }
-  //   if (data.facesNodes.size1() != 4) {
-  //     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data
-  //     inconsistency");
-  //   }
-  //   if (data.facesNodes.size2() != 3) {
-  //     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data
-  //     inconsistency");
-  //   }
-  //   CHKERR Hcurl_Ainsworth_FaceFunctions_MBTET(
-  //       &*data.facesNodes.data().begin(), order,
-  //       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
-  //       &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
-  //       hcurl_base_n, diff_hcurl_base_n, nb_gauss_pts, base_polynomials);
-  // } else {
-  //   for (int ff = 0; ff != 4; ff++) {
-  //     data.dataOnEntities[MBTRI][ff].getN(base).resize(nb_gauss_pts, 0,
-  //     false);
-  //     data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(nb_gauss_pts, 0,
-  //                                                          false);
-  //   }
-  // }
+  if (nb_gauss_pts != copy_diff_base_fun.size1())
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Wrong number of gauss pts");
 
-  // if (data.spacesOnEntities[MBTET].test(HCURL)) {
+  // edges
+  if (data.spacesOnEntities[MBEDGE].test(HCURL)) {
+    std::array<int, 12> sense;
+    std::array<int, 12> order;
+    if (data.dataOnEntities[MBEDGE].size() != 12)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Expected 12 edges data structures on Hex");
 
-  //   // volume
-  //   int order = data.dataOnEntities[MBTET][0].getDataOrder();
-  //   int nb_vol_dofs = NBVOLUMETET_AINSWORTH_HCURL(order);
-  //   data.dataOnEntities[MBTET][0].getN(base).resize(nb_gauss_pts,
-  //                                                   3 * nb_vol_dofs, false);
-  //   data.dataOnEntities[MBTET][0].getDiffN(base).resize(nb_gauss_pts,
-  //                                                       9 * nb_vol_dofs,
-  //                                                       false);
-  //   CHKERR Hcurl_Ainsworth_VolumeFunctions_MBTET(
-  //       data.dataOnEntities[MBTET][0].getDataOrder(),
-  //       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
-  //       &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
-  //       &*data.dataOnEntities[MBTET][0].getN(base).data().begin(),
-  //       &*data.dataOnEntities[MBTET][0].getDiffN(base).data().begin(),
-  //       nb_gauss_pts, base_polynomials);
+    std::array<double *, 12> hcurl_edge_n;
+    std::array<double *, 12> diff_hcurl_edge_n;
+    bool sum_nb_dofs = false;
 
-  // } else {
-  //   data.dataOnEntities[MBTET][0].getN(base).resize(nb_gauss_pts, 0, false);
-  //   data.dataOnEntities[MBTET][0].getDiffN(base).resize(nb_gauss_pts, 0,
-  //   false);
-  // }
+    for (int ee = 0; ee != 12; ee++) {
+      if (data.dataOnEntities[MBEDGE][ee].getSense() == 0)
+        SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "Sense on edge <%d> on Hex not set", ee);
+
+      sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
+      order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
+      const int nb_dofs = NBEDGE_DEMKOWICZ_HCURL(order[ee]);
+      data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,
+                                                        3 * nb_dofs, false);
+      data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_gauss_pts,
+                                                            9 * nb_dofs, false);
+      hcurl_edge_n[ee] =
+          &*data.dataOnEntities[MBEDGE][ee].getN(base).data().begin();
+      diff_hcurl_edge_n[ee] =
+          &*data.dataOnEntities[MBEDGE][ee].getDiffN(base).data().begin();
+
+      sum_nb_dofs |= (nb_dofs > 0);
+    }
+
+    if (sum_nb_dofs) {
+      CHKERR DemkowiczHexAndQuad::H1_EdgeShapeFunctions_ONHEX(
+          sense.data(), order.data(), &*copy_base_fun.data().begin(),
+          &*copy_diff_base_fun.data().begin(), hcurl_edge_n.data(),
+          diff_hcurl_edge_n.data(), nb_gauss_pts);
+    }
+
+  } else {
+    for (int ee = 0; ee != 12; ee++) {
+      data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts, 0, false);
+      data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_gauss_pts, 0,
+                                                            false);
+    }
+  }
+
+  // Quad
+  double *face_family_ptr[6][2];
+  double *diff_face_family_ptr[6][2];
+  if (data.spacesOnEntities[MBQUAD].test(HCURL)) {
+
+    if (data.dataOnEntities[MBTRI].size() != 6)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Expected six data structures on Hex");
+
+    std::array<int, 6> order;
+    double *hcurl_base_n[6][2];
+    double *diff_hcurl_base_n[6][2];
+    bool sum_nb_dofs = false;
+    for (int ff = 0; ff != 6; ff++) {
+      if (data.dataOnEntities[MBTRI][ff].getSense() == 0)
+        SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "Sense pn quad <%d> not set", ff);
+
+      order[ff] = data.dataOnEntities[MBTRI][ff].getDataOrder();
+      if (data.facesNodes.size1() != 6)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Expected six faces");
+      if (data.facesNodes.size2() != 4)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Expected four  nodes on face");
+
+      const int nb_dofs =
+          NBFACEQUAD_DEMKOWICZ_FAMILY_HCURL(order[ff], order[ff]);
+      faceFamily[ff].resize(2, 3 * nb_dofs * nb_gauss_pts, false);
+      diffFaceFamily[ff].resize(2, 9 * nb_dofs * nb_gauss_pts, false);
+
+      face_family_ptr[ff][0] = &(faceFamily[ff](0, 0));
+      face_family_ptr[ff][1] = &(faceFamily[ff](1, 0));
+      diff_face_family_ptr[ff][0] = &(diffFaceFamily[ff](0, 0));
+      diff_face_family_ptr[ff][1] = &(diffFaceFamily[ff](1, 0));
+
+      sum_nb_dofs |= (nb_dofs > 0);
+    }
+
+    if (sum_nb_dofs) {
+      DemkowiczHexAndQuad::Hcurl_FaceShapeFunctions_ONHEX(
+          &*data.facesNodes.data().begin(),
+          &*data.facesNodesOrder.data().begin(), order.data(),
+          &*copy_base_fun.data().begin(), &*copy_diff_base_fun.data().begin(),
+          face_family_ptr, diff_face_family_ptr, nb_gauss_pts);
+
+      for (int ff = 0; ff != 6; ++ff) {
+
+        // put family back
+
+        int nb_dofs = NBFACEQUAD_DEMKOWICZ_HCURL(order[ff]);
+        if (nb_dofs) {
+          auto &face_n = data.dataOnEntities[MBQUAD][ff].getN(base);
+          auto &diff_face_n = data.dataOnEntities[MBQUAD][ff].getDiffN(base);
+          face_n.resize(nb_gauss_pts, 3 * nb_dofs, false);
+          diff_face_n.resize(nb_gauss_pts, 9 * nb_dofs, false);
+
+          auto ptr_f0 = &(faceFamily[ff](0, 0));
+          auto ptr_f1 = &(faceFamily[ff](1, 0));
+          double *ptr = &face_n(0, 0);
+          for (int n = 0; n != faceFamily[ff].size2() / 3; ++n) {
+            for (int j = 0; j != 3; ++j) {
+              *ptr = *ptr_f0;
+              ++ptr;
+              ++ptr_f0;
+            }
+            for (int j = 0; j != 3; ++j) {
+              *ptr = *ptr_f1;
+              ++ptr;
+              ++ptr_f1;
+            }
+          }
+
+          auto diff_ptr_f0 = &(diffFaceFamily[ff](0, 0));
+          auto diff_ptr_f1 = &(diffFaceFamily[ff](1, 0));
+          double *diff_ptr = &diff_face_n(0, 0);
+          for (int n = 0; n != diffFaceFamily[ff].size2() / 9; ++n) {
+            for (int j = 0; j != 9; ++j) {
+              *diff_ptr = *diff_ptr_f0;
+              ++diff_ptr;
+              ++diff_ptr_f0;
+            }
+            for (int j = 0; j != 9; ++j) {
+              *diff_ptr = *diff_ptr_f1;
+              ++diff_ptr;
+              ++diff_ptr_f1;
+            }
+          }
+        }
+      }
+    } else {
+      for (int ff = 0; ff != 6; ff++) {
+        data.dataOnEntities[MBTRI][ff].getN(base).resize(nb_gauss_pts, 0,
+                                                         false);
+        data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(nb_gauss_pts, 0,
+                                                             false);
+      }
+    }
+
+  } else {
+    for (int ff = 0; ff != 6; ff++) {
+      data.dataOnEntities[MBTRI][ff].getN(base).resize(nb_gauss_pts, 0, false);
+      data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(nb_gauss_pts, 0,
+                                                           false);
+    }
+  }
+
+  // Hex
+  if (data.spacesOnEntities[MBHEX].test(HCURL)) {
+
+    const int order = data.dataOnEntities[MBHEX][0].getDataOrder();
+    const int nb_dofs = NBVOLUMEHEX_DEMKOWICZ_FAMILY_HCURL(order, order, order);
+
+    volFamily.resize(3, 3 * nb_dofs * nb_gauss_pts);
+    diffVolFamily.resize(3, 9 * nb_dofs * nb_gauss_pts);
+    if (nb_dofs) {
+
+      std::array<double *, 3> family_ptr = {&volFamily(0, 0), &volFamily(1, 0),
+                                            &volFamily(2, 0)};
+      std::array<double *, 3> diff_family_ptr = {
+          &diffVolFamily(0, 0), &diffVolFamily(1, 0), &diffVolFamily(2, 0)};
+
+      std::array<int, 3> p{order, order, order};
+      DemkowiczHexAndQuad::Hcurl_InteriorShapeFunctions_ONHEX(
+          p.data(), &*copy_base_fun.data().begin(),
+          &*copy_diff_base_fun.data().begin(), family_ptr.data(),
+          diff_family_ptr.data(), nb_gauss_pts);
+
+      const int nb_vol_dofs = NBVOLUMEHEX_DEMKOWICZ_HCURL(order);
+      auto &face_n = data.dataOnEntities[MBHEX][0].getN(base);
+      auto &diff_face_n = data.dataOnEntities[MBHEX][0].getDiffN(base);
+      face_n.resize(nb_gauss_pts, 3 * nb_vol_dofs, false);
+      diff_face_n.resize(nb_gauss_pts, 9 * nb_vol_dofs, false);
+
+      auto ptr_f0 = &(volFamily(0, 0));
+      auto ptr_f1 = &(volFamily(1, 0));
+      double *ptr = &face_n(0, 0);
+      for (int n = 0; n != volFamily.size2() / 3; ++n) {
+        for (int j = 0; j != 3; ++j) {
+          *ptr = *ptr_f0;
+          ++ptr;
+          ++ptr_f0;
+        }
+        for (int j = 0; j != 3; ++j) {
+          *ptr = *ptr_f1;
+          ++ptr;
+          ++ptr_f1;
+        }
+      }
+
+      auto diff_ptr_f0 = &(diffVolFamily(0, 0));
+      auto diff_ptr_f1 = &(diffVolFamily(1, 0));
+      double *diff_ptr = &diff_face_n(0, 0);
+      for (int n = 0; n != diffVolFamily.size2() / 9; ++n) {
+        for (int j = 0; j != 9; ++j) {
+          *diff_ptr = *diff_ptr_f0;
+          ++diff_ptr;
+          ++diff_ptr_f0;
+        }
+        for (int j = 0; j != 9; ++j) {
+          *diff_ptr = *diff_ptr_f1;
+          ++diff_ptr;
+          ++diff_ptr_f1;
+        }
+      }
+    } else {
+      data.dataOnEntities[MBHEX][0].getN(base).resize(nb_gauss_pts, 0, false);
+      data.dataOnEntities[MBHEX][0].getDiffN(base).resize(nb_gauss_pts, 0,
+                                                          false);
+    }
+
+  } else {
+    data.dataOnEntities[MBHEX][0].getN(base).resize(nb_gauss_pts, 0, false);
+    data.dataOnEntities[MBHEX][0].getDiffN(base).resize(nb_gauss_pts, 0, false);
+  }
 
   MoFEMFunctionReturn(0);
 }
