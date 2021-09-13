@@ -1175,7 +1175,7 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_FaceShapeFunctions_ONHEX(
                          ze * diff_mu[d];
 
               for (int d = 0; d != 3; ++d) {
-                t_n(d) = /*a **/ diff_eta_ksi[family][d];
+                t_n(d) = a * diff_eta_ksi[family][d];
                 for (int m = 0; m != 3; ++m) {
                   t_diff_n(d, m) = d_a[m] * diff_eta_ksi[family][d];
                 }

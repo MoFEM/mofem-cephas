@@ -304,7 +304,8 @@ int main(int argc, char *argv[]) {
     /*PostProcVolumeOnRefinedMesh post_proc(m_field);
     CHKERR post_proc.generateReferenceElementMesh();
     CHKERR post_proc.addHdivFunctionsPostProc("HCURL");
-    CHKERR m_field.loop_finite_elements("TEST_PROBLEM","HCURL_TET_FE",post_proc);
+    CHKERR
+    m_field.loop_finite_elements("TEST_PROBLEM","HCURL_TET_FE",post_proc);
     CHKERR post_proc.postProcMesh.write_file("out.vtk","VTK",""); */
   }
   CATCH_ERRORS;

@@ -1,11 +1,11 @@
 /** \file continuity_check_on_skeleton_3d.cpp
  * \example continuity_check_on_skeleton_3d.cpp
- * 
- * \brief Testing integration on skeleton for 3D 
- * 
+ *
+ * \brief Testing integration on skeleton for 3D
+ *
  * Checking continuity of hdiv and hcurl spaces on faces, and testing methods
  * for integration on the skeleton.
- * 
+ *
  */
 
 /* This file is part of MoFEM.
@@ -30,6 +30,11 @@ static char help[] = "...\n\n";
 int main(int argc, char *argv[]) {
 
   MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
+
+  auto core_log = logging::core::get();
+  core_log->add_sink(
+      LogManager::createSink(LogManager::getStrmSelf(), "ATOM_TEST"));
+  LogManager::setLog("ATOM_TEST");
 
   try {
 
@@ -107,12 +112,14 @@ int main(int argc, char *argv[]) {
     // meshset consisting all entities in mesh
     EntityHandle root_set = moab.get_root_set();
     // add entities to field
-    CHKERR m_field.add_ents_to_field_by_type(root_set, MBTET, "F2");
+    CHKERR m_field.add_ents_to_field_by_dim(root_set, 3, "F2");
 
     // set app. order
-    int order = 2;
+    int order = 3;
     CHKERR m_field.set_field_order(root_set, MBTET, "F2", order);
+    CHKERR m_field.set_field_order(root_set, MBHEX, "F2", order);
     CHKERR m_field.set_field_order(root_set, MBTRI, "F2", order);
+    CHKERR m_field.set_field_order(root_set, MBQUAD, "F2", order);
     CHKERR m_field.set_field_order(root_set, MBEDGE, "F2", order);
 
     CHKERR m_field.build_fields();
@@ -127,11 +134,11 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.modify_finite_element_add_field_col("S2", "F2");
     CHKERR m_field.modify_finite_element_add_field_data("S2", "F2");
 
-    CHKERR m_field.add_ents_to_finite_element_by_type(root_set, MBTET, "V1");
+    CHKERR m_field.add_ents_to_finite_element_by_dim(root_set, 3, "V1");
     Range faces;
-    CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
-        bit_level0, BitRefLevel().set(), MBTRI, faces);
-    CHKERR m_field.add_ents_to_finite_element_by_type(faces, MBTRI, "S2");
+    CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByDimAndRefLevel(
+        bit_level0, BitRefLevel().set(), 2, faces);
+    CHKERR m_field.add_ents_to_finite_element_by_dim(faces, 2, "S2");
 
     CHKERR m_field.build_finite_elements();
     CHKERR m_field.build_adjacencies(bit_level0);
@@ -174,14 +181,23 @@ int main(int argc, char *argv[]) {
                               DataForcesAndSourcesCore::EntData &data) {
           MoFEMFunctionBeginHot;
 
-          if (type == MBTRI && side == getFaceSideNumber()) {
+          if (CN::Dimension(type) == 2 && side == getFaceSideNumber()) {
 
             MatrixDouble diff =
                 getCoordsAtGaussPts() - getFaceCoordsAtGaussPts();
+
+            MOFEM_LOG("ATOM_TEST", Sev::noisy)
+                << "getCoordsAtGaussPts() " << getCoordsAtGaussPts();
+            MOFEM_LOG("ATOM_TEST", Sev::noisy)
+                << "getFaceCoordsAtGaussPts() " << getFaceCoordsAtGaussPts();
+
             const double eps = 1e-12;
-            if (norm_inf(diff) > eps)
+            if (norm_inf(diff) > eps) {
+              MOFEM_LOG("ATOM_TEST", Sev::error) << "diff " << diff;
               SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
-                      "coordinates at integration pts are different");
+                      "Coordinates at integration pts are different");
+
+            }
 
             const size_t nb_dofs = data.getN().size2() / 3;
             const size_t nb_integration_pts = data.getN().size1();
@@ -227,7 +243,7 @@ int main(int argc, char *argv[]) {
                             DataForcesAndSourcesCore::EntData &data) {
 
         MoFEMFunctionBeginHot;
-        if (type == MBTRI && side == 0) {
+        if (CN::Dimension(type) == 2 && side == 0) {
           const size_t nb_dofs = data.getN().size2() / 3;
           const size_t nb_integration_pts = data.getN().size1();
 
