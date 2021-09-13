@@ -296,60 +296,62 @@ QuadPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
               "No data struture to keep base functions on face");
 
     int p = data.dataOnEntities[MBQUAD][0].getDataOrder();
+    const int nb_dofs_family = NBFACEQUAD_DEMKOWICZ_FAMILY_HCURL(p, p);
+    if (nb_dofs_family) {
+      faceFamily.resize(2, 3 * nb_dofs_family * nb_gauss_pts, false);
+      diffFaceFamily.resize(2, 6 * nb_dofs_family * nb_gauss_pts, false);
 
-    faceFamily.resize(
-        2, 3 * NBFACEQUAD_DEMKOWICZ_FAMILY_HCURL(p, p) * nb_gauss_pts, false);
-    diffFaceFamily.resize(
-        2, 6 * NBFACEQUAD_DEMKOWICZ_FAMILY_HCURL(p, p) * nb_gauss_pts, false);
-
-    int order[2] = {p, p};
-    double *face_family_ptr[] = {&faceFamily(0, 0), &faceFamily(1, 0)};
-    double *diff_face_family_ptr[] = {&diffFaceFamily(0, 0),
-                                      &diffFaceFamily(1, 0)};
-    int face_nodes[] = {0, 1, 2, 3};
-    CHKERR DemkowiczHexAndQuad::Hcurl_FaceShapeFunctions_ONQUAD(
-        face_nodes, order,
-        &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
-        &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
-        face_family_ptr, diff_face_family_ptr, nb_gauss_pts);
+      int order[2] = {p, p};
+      double *face_family_ptr[] = {&faceFamily(0, 0), &faceFamily(1, 0)};
+      double *diff_face_family_ptr[] = {&diffFaceFamily(0, 0),
+                                        &diffFaceFamily(1, 0)};
+      int face_nodes[] = {0, 1, 2, 3};
+      CHKERR DemkowiczHexAndQuad::Hcurl_FaceShapeFunctions_ONQUAD(
+          face_nodes, order,
+          &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+          &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
+          face_family_ptr, diff_face_family_ptr, nb_gauss_pts);
+    }
 
     // put family back
 
-    int nb_dofs = NBFACEQUAD_DEMKOWICZ_HCURL(p);
+    const int nb_dofs = NBFACEQUAD_DEMKOWICZ_HCURL(p);
     auto &face_n = data.dataOnEntities[MBQUAD][0].getN(base);
     auto &diff_face_n = data.dataOnEntities[MBQUAD][0].getDiffN(base);
     face_n.resize(nb_gauss_pts, 3 * nb_dofs, false);
     diff_face_n.resize(nb_gauss_pts, 3 * 2 * nb_dofs, false);
 
-    double *ptr_f0 = &faceFamily(0, 0);
-    double *ptr_f1 = &faceFamily(1, 0);
-    double *ptr = &face_n(0, 0);
-    for (int n = 0; n != faceFamily.size2() / 3; ++n) {
-      for (int j = 0; j != 3; ++j) {
-        *ptr = *ptr_f0;
-        ++ptr;
-        ++ptr_f0;
+    if (nb_dofs) {
+      double *ptr_f0 = &faceFamily(0, 0);
+      double *ptr_f1 = &faceFamily(1, 0);
+      double *ptr = &face_n(0, 0);
+      for (int n = 0; n != faceFamily.size2() / 3; ++n) {
+        for (int j = 0; j != 3; ++j) {
+          *ptr = *ptr_f0;
+          ++ptr;
+          ++ptr_f0;
+        }
+        for (int j = 0; j != 3; ++j) {
+          *ptr = *ptr_f1;
+          ++ptr;
+          ++ptr_f1;
+        }
       }
-      for (int j = 0; j != 3; ++j) {
-        *ptr = *ptr_f1;
-        ++ptr;
-        ++ptr_f1;
-      }
-    }
 
-    double *diff_ptr_f0 = &diffFaceFamily(0, 0);
-    double *diff_ptr_f1 = &diffFaceFamily(1, 0);
-    double *diff_ptr = &diff_face_n(0, 0);
-    for (int n = 0; n != diffFaceFamily.size2() / 6; ++n) {
-      for (int j = 0; j != 6; ++j) {
-        *diff_ptr = *diff_ptr_f0;
-        ++diff_ptr;
-        ++diff_ptr_f0;
-      }
-      for (int j = 0; j != 6; ++j) {
-        *diff_ptr = *diff_ptr_f1;
-        ++diff_ptr;
-        ++diff_ptr_f1;
+      double *diff_ptr_f0 = &diffFaceFamily(0, 0);
+      double *diff_ptr_f1 = &diffFaceFamily(1, 0);
+      double *diff_ptr = &diff_face_n(0, 0);
+      for (int n = 0; n != diffFaceFamily.size2() / 6; ++n) {
+        for (int j = 0; j != 6; ++j) {
+          *diff_ptr = *diff_ptr_f0;
+          ++diff_ptr;
+          ++diff_ptr_f0;
+        }
+        for (int j = 0; j != 6; ++j) {
+          *diff_ptr = *diff_ptr_f1;
+          ++diff_ptr;
+          ++diff_ptr_f1;
+        }
       }
     }
   }

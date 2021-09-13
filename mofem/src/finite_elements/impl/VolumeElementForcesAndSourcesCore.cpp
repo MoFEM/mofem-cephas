@@ -314,6 +314,7 @@ VolumeElementForcesAndSourcesCoreBase::getSpaceBaseAndOrderOnElement() {
   }
   if ((dataH1.spacesOnEntities[MBQUAD]).test(HCURL)) {
     dataHcurl.facesNodes = dataH1.facesNodes;
+    dataHcurl.facesNodesOrder = dataH1.facesNodesOrder;
     CHKERR getEntitySense<MBQUAD>(dataHcurl);
     CHKERR getEntityDataOrder<MBQUAD>(dataHcurl, HCURL);
     dataHcurl.spacesOnEntities[MBQUAD].set(HCURL);

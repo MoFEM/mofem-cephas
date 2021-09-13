@@ -30,10 +30,10 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
-struct OpTetCurl : public VolumeElementForcesAndSourcesCore::UserDataOperator {
+struct OpVolCurl : public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
   FTensor::Tensor1<double, 3> &tCurl;
-  OpTetCurl(FTensor::Tensor1<double, 3> &t_curl)
+  OpVolCurl(FTensor::Tensor1<double, 3> &t_curl)
       : VolumeElementForcesAndSourcesCore::UserDataOperator(
             "HCURL", UserDataOperator::OPROW),
         tCurl(t_curl) {}
@@ -112,8 +112,12 @@ int main(int argc, char *argv[]) {
       CHKERR simple_interface->addDataField("MESH_NODE_POSITIONS", H1,
                                             AINSWORTH_LEGENDRE_BASE, 3);
 
-    constexpr int order = 5;
+    constexpr int order = 3;
     CHKERR simple_interface->setFieldOrder("HCURL", order);
+    // Range ents;
+    // CHKERR moab.get_entities_by_dimension(0, 2, ents, true);
+    // CHKERR simple_interface->setFieldOrder("HCURL", 1, &ents);
+
     if (ho_geometry == PETSC_TRUE)
       CHKERR simple_interface->setFieldOrder("MESH_NODE_POSITIONS", 2);
     CHKERR simple_interface->setUp();
@@ -135,7 +139,7 @@ int main(int argc, char *argv[]) {
     boost::dynamic_pointer_cast<PipelineManager::FaceEle>(
         pipeline_mng->getBoundaryRhsFE())
         ->meshPositionsFieldName = "none";
-        
+
     if (ho_geometry) {
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpCalculateVectorFieldGradient<3, 3>("MESH_NODE_POSITIONS",
@@ -149,8 +153,7 @@ int main(int argc, char *argv[]) {
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpSetHOInvJacVectorBase(HCURL, material_inv_grad_mat));
     }
-    pipeline_mng->getOpDomainRhsPipeline().push_back(new OpTetCurl(t_curl_vol));
-
+    pipeline_mng->getOpDomainRhsPipeline().push_back(new OpVolCurl(t_curl_vol));
 
     if (m_field.check_field("MESH_NODE_POSITIONS"))
       pipeline_mng->getOpBoundaryRhsPipeline().push_back(
@@ -191,7 +194,7 @@ int main(int argc, char *argv[]) {
   MoFEM::Core::Finalize();
 }
 
-MoFEMErrorCode OpTetCurl::doWork(int side, EntityType type,
+MoFEMErrorCode OpVolCurl::doWork(int side, EntityType type,
                                  DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
 
@@ -232,10 +235,6 @@ MoFEMErrorCode OpFacesRot::doWork(int side, EntityType type,
   int nb_gauss_pts = data.getN().size1();
 
   auto t_curl_base = data.getFTensor1N<3>();
-  // double area = getArea();
-  double n0 = getNormal()[0] * 0.5;
-  double n1 = getNormal()[1] * 0.5;
-  double n2 = getNormal()[2] * 0.5;
 
   FTensor::Index<'i', 3> i;
   FTensor::Index<'j', 3> j;
@@ -243,16 +242,16 @@ MoFEMErrorCode OpFacesRot::doWork(int side, EntityType type,
   for (int gg = 0; gg < nb_gauss_pts; gg++) {
     for (int dd = 0; dd < nb_dofs; dd++) {
       double w = getGaussPts()(2, gg);
-      if (getNormalsAtGaussPts().size1() == (unsigned int)nb_gauss_pts) {
-        n0 = getNormalsAtGaussPts(gg)[0] * 0.5;
-        n1 = getNormalsAtGaussPts(gg)[1] * 0.5;
-        n2 = getNormalsAtGaussPts(gg)[2] * 0.5;
+      const double n0 = getNormalsAtGaussPts(gg)[0];
+      const double n1 = getNormalsAtGaussPts(gg)[1];
+      const double n2 = getNormalsAtGaussPts(gg)[2];
+      if (getFEType() == MBTRI) {
+        w *= 0.5;
       }
 
       tCurl(0) += (n1 * t_curl_base(2) - n2 * t_curl_base(1)) * w;
       tCurl(1) += (n2 * t_curl_base(0) - n0 * t_curl_base(2)) * w;
       tCurl(2) += (n0 * t_curl_base(1) - n1 * t_curl_base(0)) * w;
-
       ++t_curl_base;
     }
   }

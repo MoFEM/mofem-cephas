@@ -638,7 +638,6 @@ add_test(h1_check_approx_3d_demkowicz_hex
   -log_no_color
 )
 
-
 # Check approximation on Hcurl space in 2d
 build_test(hcurl_check_approx_in_2d 
   hcurl_check_approx_in_2d.cpp)
@@ -792,25 +791,30 @@ add_test(hdiv_divergence_operator_demkowicz_ho_geometry_atom
 # add test for hcurl curl operator
 build_test(hcurl_curl_operator hcurl_curl_operator.cpp)
 
-add_test(hcurl_curl_operator_ainsworth_atom
+add_test(hcurl_curl_operator_ainsworth_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/hcurl_curl_operator 
   -file_name sphere.h5m -base ainsworth
   -log_no_color)
-add_test(hcurl_curl_operator_demkowicz_atom
+add_test(hcurl_curl_operator_demkowicz_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/hcurl_curl_operator 
   -file_name sphere.h5m -base demkowicz
   -log_no_color)
-add_test(hcurl_curl_operator_ainsworth_ho_geometry_atom
+add_test(hcurl_curl_operator_ainsworth_ho_geometry_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/hcurl_curl_operator 
   -file_name sphere.h5m -base ainsworth -ho_geometry
   -log_no_color)
-add_test(hcurl_curl_operator_demkowicz_ho_geometry_atom
+add_test(hcurl_curl_operator_demkowicz_ho_geometry_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/hcurl_curl_operator 
   -file_name sphere.h5m -base demkowicz -ho_geometry
+  -log_no_color)
+add_test(hcurl_curl_operator_demkowicz_hex
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/hcurl_curl_operator 
+  -file_name hex_cub.h5m -base demkowicz
   -log_no_color)
 
 #test integration on skeleton
@@ -820,31 +824,38 @@ build_test(
 )
 
 add_test(
-  continuity_check_on_skeleton_3d_ainsworth_hdiv
+  continuity_check_on_skeleton_3d_ainsworth_hdiv_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_3d
   -my_file sphere.h5m -base ainsworth -space hdiv
   -log_no_color
 )
 add_test(
-  continuity_check_on_skeleton_3d_demkowicz_hdiv
+  continuity_check_on_skeleton_3d_demkowicz_hdiv_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_3d
   -my_file sphere.h5m -base demkowicz -space hdiv
   -log_no_color
 )
 add_test(
-  continuity_check_on_skeleton_3d_ainsworth_hcurl
+  continuity_check_on_skeleton_3d_ainsworth_hcurl_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_3d
   -my_file sphere.h5m -base ainsworth -space hcurl
   -log_no_color
 )
 add_test(
-  continuity_check_on_skeleton_3d_demkowicz_hcurl
+  continuity_check_on_skeleton_3d_demkowicz_hcurl_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_3d
   -my_file sphere.h5m -base demkowicz -space hcurl
+  -log_no_color
+)
+add_test(
+  continuity_check_on_skeleton_3d_demkowicz_hcurl_hex
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_3d
+  -my_file hex_cub.h5m -base demkowicz -space hcurl
   -log_no_color
 )
 

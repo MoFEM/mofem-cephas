@@ -394,7 +394,7 @@ HexPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
     std::array<double *, 12> diff_hcurl_edge_n;
     bool sum_nb_dofs = false;
 
-    for (int ee = 0; ee != 12; ee++) {
+    for (int ee = 0; ee != 12; ++ee) {
       if (data.dataOnEntities[MBEDGE][ee].getSense() == 0)
         SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Sense on edge <%d> on Hex not set", ee);
@@ -415,7 +415,7 @@ HexPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
     }
 
     if (sum_nb_dofs) {
-      CHKERR DemkowiczHexAndQuad::H1_EdgeShapeFunctions_ONHEX(
+      CHKERR DemkowiczHexAndQuad::Hcurl_EdgeShapeFunctions_ONHEX(
           sense.data(), order.data(), &*copy_base_fun.data().begin(),
           &*copy_diff_base_fun.data().begin(), hcurl_edge_n.data(),
           diff_hcurl_edge_n.data(), nb_gauss_pts);
@@ -430,24 +430,24 @@ HexPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
   }
 
   // Quad
-  double *face_family_ptr[6][2];
-  double *diff_face_family_ptr[6][2];
   if (data.spacesOnEntities[MBQUAD].test(HCURL)) {
 
-    if (data.dataOnEntities[MBTRI].size() != 6)
+    if (data.dataOnEntities[MBQUAD].size() != 6)
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "Expected six data structures on Hex");
 
     std::array<int, 6> order;
-    double *hcurl_base_n[6][2];
-    double *diff_hcurl_base_n[6][2];
+    double *face_family_ptr[6][2];
+    double *diff_face_family_ptr[6][2];
+
+
     bool sum_nb_dofs = false;
     for (int ff = 0; ff != 6; ff++) {
-      if (data.dataOnEntities[MBTRI][ff].getSense() == 0)
+      if (data.dataOnEntities[MBQUAD][ff].getSense() == 0)
         SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Sense pn quad <%d> not set", ff);
 
-      order[ff] = data.dataOnEntities[MBTRI][ff].getDataOrder();
+      order[ff] = data.dataOnEntities[MBQUAD][ff].getDataOrder();
       if (data.facesNodes.size1() != 6)
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Expected six faces");
@@ -455,17 +455,19 @@ HexPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Expected four  nodes on face");
 
-      const int nb_dofs =
+      const int nb_family_dofs =
           NBFACEQUAD_DEMKOWICZ_FAMILY_HCURL(order[ff], order[ff]);
-      faceFamily[ff].resize(2, 3 * nb_dofs * nb_gauss_pts, false);
-      diffFaceFamily[ff].resize(2, 9 * nb_dofs * nb_gauss_pts, false);
+      faceFamily[ff].resize(2, 3 * nb_family_dofs * nb_gauss_pts, false);
+      diffFaceFamily[ff].resize(2, 9 * nb_family_dofs * nb_gauss_pts, false);
 
-      face_family_ptr[ff][0] = &(faceFamily[ff](0, 0));
-      face_family_ptr[ff][1] = &(faceFamily[ff](1, 0));
-      diff_face_family_ptr[ff][0] = &(diffFaceFamily[ff](0, 0));
-      diff_face_family_ptr[ff][1] = &(diffFaceFamily[ff](1, 0));
+      if (nb_family_dofs) {
+        face_family_ptr[ff][0] = &(faceFamily[ff](0, 0));
+        face_family_ptr[ff][1] = &(faceFamily[ff](1, 0));
+        diff_face_family_ptr[ff][0] = &(diffFaceFamily[ff](0, 0));
+        diff_face_family_ptr[ff][1] = &(diffFaceFamily[ff](1, 0));
+      }
 
-      sum_nb_dofs |= (nb_dofs > 0);
+      sum_nb_dofs |= (nb_family_dofs > 0);
     }
 
     if (sum_nb_dofs) {
@@ -521,17 +523,17 @@ HexPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
       }
     } else {
       for (int ff = 0; ff != 6; ff++) {
-        data.dataOnEntities[MBTRI][ff].getN(base).resize(nb_gauss_pts, 0,
+        data.dataOnEntities[MBQUAD][ff].getN(base).resize(nb_gauss_pts, 0,
                                                          false);
-        data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(nb_gauss_pts, 0,
+        data.dataOnEntities[MBQUAD][ff].getDiffN(base).resize(nb_gauss_pts, 0,
                                                              false);
       }
     }
 
   } else {
     for (int ff = 0; ff != 6; ff++) {
-      data.dataOnEntities[MBTRI][ff].getN(base).resize(nb_gauss_pts, 0, false);
-      data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(nb_gauss_pts, 0,
+      data.dataOnEntities[MBQUAD][ff].getN(base).resize(nb_gauss_pts, 0, false);
+      data.dataOnEntities[MBQUAD][ff].getDiffN(base).resize(nb_gauss_pts, 0,
                                                            false);
     }
   }
@@ -565,6 +567,7 @@ HexPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
 
       auto ptr_f0 = &(volFamily(0, 0));
       auto ptr_f1 = &(volFamily(1, 0));
+      auto ptr_f2 = &(volFamily(2, 0));
       double *ptr = &face_n(0, 0);
       for (int n = 0; n != volFamily.size2() / 3; ++n) {
         for (int j = 0; j != 3; ++j) {
@@ -577,10 +580,16 @@ HexPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
           ++ptr;
           ++ptr_f1;
         }
+        for (int j = 0; j != 3; ++j) {
+          *ptr = *ptr_f2;
+          ++ptr;
+          ++ptr_f2;
+        }
       }
 
       auto diff_ptr_f0 = &(diffVolFamily(0, 0));
       auto diff_ptr_f1 = &(diffVolFamily(1, 0));
+      auto diff_ptr_f2 = &(diffVolFamily(2, 0));
       double *diff_ptr = &diff_face_n(0, 0);
       for (int n = 0; n != diffVolFamily.size2() / 9; ++n) {
         for (int j = 0; j != 9; ++j) {
@@ -592,6 +601,11 @@ HexPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
           *diff_ptr = *diff_ptr_f1;
           ++diff_ptr;
           ++diff_ptr_f1;
+        }
+        for (int j = 0; j != 9; ++j) {
+          *diff_ptr = *diff_ptr_f2;
+          ++diff_ptr;
+          ++diff_ptr_f2;
         }
       }
     } else {
