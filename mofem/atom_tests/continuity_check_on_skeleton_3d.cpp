@@ -160,9 +160,9 @@ int main(int argc, char *argv[]) {
     CHKERR prb_mng_ptr->partitionGhostDofs("P1");
 
     struct CommonData {
-      MatrixDouble dotNormalFace;
-      MatrixDouble dotNormalEleLeft;
-      MatrixDouble dotNormalEleRight;
+      VectorDouble dotNormalFace;
+      VectorDouble dotNormalEleLeft;
+      VectorDouble dotNormalEleRight;
     };
 
     struct SkeletonFE
@@ -181,8 +181,7 @@ int main(int argc, char *argv[]) {
                               DataForcesAndSourcesCore::EntData &data) {
           MoFEMFunctionBeginHot;
 
-          if (CN::Dimension(type) == 2 && side == getFaceSideNumber()) {
-
+          if (CN::Dimension(type) == 3) {
             MatrixDouble diff =
                 getCoordsAtGaussPts() - getFaceCoordsAtGaussPts();
 
@@ -191,16 +190,17 @@ int main(int argc, char *argv[]) {
             MOFEM_LOG("ATOM_TEST", Sev::noisy)
                 << "getFaceCoordsAtGaussPts() " << getFaceCoordsAtGaussPts();
 
-            const double eps = 1e-12;
+            constexpr double eps = 1e-12;
             if (norm_inf(diff) > eps) {
               MOFEM_LOG("ATOM_TEST", Sev::error) << "diff " << diff;
               SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                       "Coordinates at integration pts are different");
-
             }
+          }
 
-            const size_t nb_dofs = data.getN().size2() / 3;
-            const size_t nb_integration_pts = data.getN().size1();
+          const size_t nb_dofs = data.getFieldData().size();
+          if (nb_dofs) {
+            const size_t nb_integration_pts = getGaussPts().size2();
 
             FTensor::Index<'i', 3> i;
             auto t_to_do_dot = getFTensor1Normal();
@@ -210,19 +210,24 @@ int main(int argc, char *argv[]) {
               t_to_do_dot(i) = s1(i) + s2(i);
             }
 
-            auto t_hdiv_base = data.getFTensor1N<3>();
-            MatrixDouble *ptr_dot_elem_data = nullptr;
-            if (getFEMethod()->nInTheLoop == 0)
+            VectorDouble *ptr_dot_elem_data = nullptr;
+            if (getFEMethod()->nInTheLoop == 0) 
               ptr_dot_elem_data = &elemData.dotNormalEleLeft;
             else
               ptr_dot_elem_data = &elemData.dotNormalEleRight;
-            MatrixDouble &dot_elem_data = *ptr_dot_elem_data;
-            dot_elem_data.resize(nb_integration_pts, nb_dofs, false);
+            auto &dot_elem_data = *ptr_dot_elem_data;
+            if (dot_elem_data.size() == 0) {
+              dot_elem_data.resize(nb_integration_pts, false);
+              dot_elem_data.clear();
+            }
 
+            auto t_hdiv_base = data.getFTensor1N<3>();
             for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
+              auto t_data = data.getFTensor0FieldData();
               for (size_t bb = 0; bb != nb_dofs; ++bb) {
-                dot_elem_data(gg, bb) = t_to_do_dot(i) * t_hdiv_base(i);
+                dot_elem_data(gg) += (t_to_do_dot(i) * t_hdiv_base(i)) * t_data;
                 ++t_hdiv_base;
+                ++t_data;
               }
             }
           }
@@ -242,11 +247,17 @@ int main(int argc, char *argv[]) {
       MoFEMErrorCode doWork(int side, EntityType type,
                             DataForcesAndSourcesCore::EntData &data) {
 
-        MoFEMFunctionBeginHot;
-        if (CN::Dimension(type) == 2 && side == 0) {
-          const size_t nb_dofs = data.getN().size2() / 3;
-          const size_t nb_integration_pts = data.getN().size1();
+        MoFEMFunctionBegin;
 
+        const size_t nb_integration_pts = getGaussPts().size2();
+
+        if (side == 0 && type == MBEDGE) {
+          elemData.dotNormalFace.resize(nb_integration_pts, false);
+          elemData.dotNormalFace.clear();
+        }
+
+        const size_t nb_dofs = data.getFieldData().size();
+        if (nb_dofs) {
           FTensor::Index<'i', 3> i;
           auto t_to_do_dot = getFTensor1Normal();
           if (data.getSpace() == HCURL) {
@@ -254,61 +265,74 @@ int main(int argc, char *argv[]) {
             auto s2 = getFTensor1Tangent2();
             t_to_do_dot(i) = s1(i) + s2(i);
           }
-
           auto t_hdiv_base = data.getFTensor1N<3>();
-          elemData.dotNormalFace.resize(nb_integration_pts, nb_dofs, false);
-          elemData.dotNormalEleLeft.resize(nb_integration_pts, 0, false);
-          elemData.dotNormalEleRight.resize(nb_integration_pts, 0, false);
-
           for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
+            auto t_data = data.getFTensor0FieldData();
             for (size_t bb = 0; bb != nb_dofs; ++bb) {
-              elemData.dotNormalFace(gg, bb) = t_to_do_dot(i) * t_hdiv_base(i);
+              elemData.dotNormalFace(gg) +=
+                  (t_to_do_dot(i) * t_hdiv_base(i)) * t_data;
               ++t_hdiv_base;
+              ++t_data;
             }
           }
+        }
 
+        if (CN::Dimension(type) == 2) {
+
+          elemData.dotNormalEleLeft.resize(0, false);
+          elemData.dotNormalEleRight.resize(0, false);
           CHKERR loopSideVolumes("V1", volSideFe);
 
           auto check_continuity_of_base = [&](auto &vol_dot_data) {
             MoFEMFunctionBegin;
-
-            if (vol_dot_data.size1() != elemData.dotNormalFace.size1())
+            if (vol_dot_data.size() != elemData.dotNormalFace.size())
               SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                       "Inconsistent number of integration points");
-
-            if (vol_dot_data.size2() != elemData.dotNormalFace.size2())
-              SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                      "Inconsistent number of base functions");
             const double eps = 1e-12;
-            for (size_t gg = 0; gg != vol_dot_data.size1(); ++gg)
-              for (size_t bb = 0; bb != vol_dot_data.size2(); ++bb) {
-                const double error = std::abs(vol_dot_data(gg, bb) -
-                                              elemData.dotNormalFace(gg, bb));
-                if (error > eps)
-                  SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                           "Inconsistency %3.4e != %3.4e", vol_dot_data(gg, bb),
-                           elemData.dotNormalFace(gg, bb));
-              }
+            for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
+              const double error =
+                  std::abs(vol_dot_data(gg) - elemData.dotNormalFace(gg));
+              MOFEM_LOG("ATOM_TEST", Sev::noisy) << "Error: " << error;
+              if (error > eps)
+                SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                         "Inconsistency %3.4e != %3.4e", vol_dot_data(gg),
+                         elemData.dotNormalFace(gg));
+            }
             MoFEMFunctionReturn(0);
           };
-
-          if (elemData.dotNormalEleLeft.size2() != 0)
+          if (elemData.dotNormalEleLeft.size() != 0)
             CHKERR check_continuity_of_base(elemData.dotNormalEleLeft);
-          else if (elemData.dotNormalEleRight.size2() != 0)
+          else if (elemData.dotNormalEleRight.size() != 0)
             CHKERR check_continuity_of_base(elemData.dotNormalEleRight);
         }
-        MoFEMFunctionReturnHot(0);
+
+        MoFEMFunctionReturn(0);
       }
     };
 
     CommonData elem_data;
     FaceElementForcesAndSourcesCore face_fe(m_field);
+    face_fe.getRuleHook = [](int, int, int) { return 1; };
     face_fe.getOpPtrVector().push_back(
         new OpHOSetContravariantPiolaTransformOnFace3D(HDIV));
     face_fe.getOpPtrVector().push_back(
         new OpHOSetCovariantPiolaTransformOnFace3D(HCURL));
     face_fe.getOpPtrVector().push_back(new SkeletonFE(m_field, elem_data));
-    CHKERR m_field.loop_finite_elements("P1", "S2", face_fe);
+
+    auto field_ents_ptr = m_field.get_field_ents();
+
+    auto cache_ptr = boost::make_shared<CacheTuple>();
+    CHKERR m_field.cache_problem_entities("P1", cache_ptr);
+
+    for (auto &ent_ptr : (*field_ents_ptr)) {
+      MOFEM_LOG("ATOM_TEST", Sev::verbose) << *ent_ptr;
+      for(auto &v : ent_ptr->getEntFieldData())
+        v = 1;
+      CHKERR m_field.loop_finite_elements("P1", "S2", face_fe, 0, 1, nullptr,
+                                          MF_ZERO, cache_ptr);
+      for (auto &v : ent_ptr->getEntFieldData())
+        v = 0;
+    }
   }
   CATCH_ERRORS;
 
