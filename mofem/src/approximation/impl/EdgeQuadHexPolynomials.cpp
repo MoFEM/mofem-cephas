@@ -1225,23 +1225,24 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_InteriorShapeFunctions_ONHEX(
       const int nb_dofs = (ppp - 1) * qqq * (rrr - 1);
       if (nb_dofs > 0) {
 
-        double PhiJ[ppp + 2];
-        double diffPhiJ[3 * (ppp + 2)];
+        double phi_j[ppp + 2];
+        double diff_phi_j[3 * (ppp + 2)];
 
         CHKERR Lobatto_polynomials(ppp + 1, ksi_eta_gma[fam],
-                                   diff_ksi_eta_gma[fam], PhiJ, diffPhiJ, 3);
+                                   diff_ksi_eta_gma[fam], phi_j, diff_phi_j, 3);
 
-        double EI[qqq];
-        double diffEI[3 * qqq];
+        double eta_i[qqq];
+        double diff_eta_i[3 * qqq];
 
         CHKERR Legendre_polynomials(qqq - 1, eta_gma_ksi[fam],
-                                    diff_eta_gma_ksi[fam], EI, diffEI, 3);
+                                    diff_eta_gma_ksi[fam], eta_i, diff_eta_i,
+                                    3);
 
-        double PhiK[rrr + 2];
-        double diffPhiK[3 * (rrr + 2)];
+        double phi_k[rrr + 2];
+        double diff_phi_k[3 * (rrr + 2)];
 
         CHKERR Lobatto_polynomials(rrr + 1, gma_ksi_eta[fam],
-                                   diff_gma_ksi_eta[fam], PhiK, diffPhiK, 3);
+                                   diff_gma_ksi_eta[fam], phi_k, diff_phi_k, 3);
 
         int permute[nb_dofs][3];
         CHKERR ::DemkowiczHexAndQuad::monom_ordering(permute, ppp - 2, qqq - 1,
@@ -1259,23 +1260,23 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_InteriorShapeFunctions_ONHEX(
           int jj = permute[n][1];
           int kk = permute[n][2];
 
-          const double phiK = PhiK[kk + 2];
-          const double phiJ = PhiJ[jj + 2];
-          const double e = EI[ii];
-          const double a = phiJ * phiK * e;
+          const double p_k = phi_k[kk + 2];
+          const double p_j = phi_j[jj + 2];
+          const double e = eta_i[ii];
+          const double a = p_j * p_k * e;
 
           const double d_a[] = {
-              diffPhiK[0 * (ppp + 2) + kk + 2] * phiJ * e +
-                  phiK * diffPhiJ[0 * (rrr + 2) + jj + 2] * e +
-                  phiK * phiJ * diffEI[0 * qqq + ii],
+              diff_phi_k[0 * (ppp + 2) + kk + 2] * p_j * e +
+                  p_k * diff_phi_j[0 * (rrr + 2) + jj + 2] * e +
+                  p_k * p_j * diff_eta_i[0 * qqq + ii],
 
-              diffPhiK[1 * (ppp + 2) + kk + 2] * phiJ * e +
-                  phiK * diffPhiJ[1 * (rrr + 2) + jj + 2] * e +
-                  phiK * phiJ * diffEI[1 * qqq + ii],
+              diff_phi_k[1 * (ppp + 2) + kk + 2] * p_j * e +
+                  p_k * diff_phi_j[1 * (rrr + 2) + jj + 2] * e +
+                  p_k * p_j * diff_eta_i[1 * qqq + ii],
 
-              diffPhiK[2 * (ppp + 2) + kk + 2] * phiJ * e +
-                  phiK * diffPhiJ[2 * (rrr + 2) + jj + 2] * e +
-                  phiK * phiJ * diffEI[2 * qqq + ii]};
+              diff_phi_k[2 * (ppp + 2) + kk + 2] * p_j * e +
+                  p_k * diff_phi_j[2 * (rrr + 2) + jj + 2] * e +
+                  p_k * p_j * diff_eta_i[2 * qqq + ii]};
 
           for (int d = 0; d != 3; ++d) {
             t_n(d) = a * diff_eta_gma_ksi[fam][d];
