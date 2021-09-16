@@ -8,21 +8,93 @@ using namespace MoFEM;
 
 namespace DemkowiczHexAndQuad {
 
-MoFEMErrorCode monom_ordering(int perm[][3], int p, int q, int r = 0) {
+MoFEMErrorCode monom_ordering(int *perm, int p, int q, int r = 0) {
   MoFEMFunctionBeginHot;
-  int n = 0;
-  for (int m = 0; m != std::max(std::max(p, q), r) + 1; ++m) {
-    for (int i = 0; i != std::min(m, p) + 1; ++i) {
-      for (int j = 0; j != std::min(m, q) + 1; ++j) {
-        for (int k = 0; k != std::min(m, r) + 1; ++k) {
-          if (i == m || j == m || k == m) {
-            perm[n][0] = i;
-            perm[n][1] = j;
-            perm[n][2] = k;
-            ++n;
+
+  if (r > 0) {
+
+    for (int m = 0; m != std::max(std::max(p, q), r) + 1; ++m) {
+
+      const int i = std::min(m, p);
+      const int j = std::min(m, q);
+      const int k = std::min(m, r);
+
+      if (i == m)
+        for (int jj = 0; jj != j; ++jj) {
+          for (int kk = 0; kk != k; ++kk) {
+            *(perm++) = i;
+            *(perm++) = jj;
+            *(perm++) = kk;
           }
         }
-      }
+
+      if (j == m)
+        for (int ii = 0; ii != i; ++ii) {
+          for (int kk = 0; kk != k; ++kk) {
+            *(perm++) = ii;
+            *(perm++) = j;
+            *(perm++) = kk;
+          }
+        }
+
+      if (k == m)
+        for (int ii = 0; ii != i; ++ii) {
+          for (int jj = 0; jj != j; ++jj) {
+            *(perm++) = ii;
+            *(perm++) = jj;
+            *(perm++) = k;
+          }
+        }
+
+      if (j == m || k == m)
+        for (int ii = 0; ii != i; ++ii) {
+          *(perm++) = ii;
+          *(perm++) = j;
+          *(perm++) = k;
+        }
+
+      if (i == m || k == m)
+        for (int jj = 0; jj != j; ++jj) {
+          *(perm++) = i;
+          *(perm++) = jj;
+          *(perm++) = k;
+        }
+
+      if (i == m || j == m)
+        for (int kk = 0; kk != k; ++kk) {
+          *(perm++) = i;
+          *(perm++) = j;
+          *(perm++) = kk;
+        }
+
+      *(perm++) = i;
+      *(perm++) = j;
+      *(perm++) = k;
+    }
+  } else {
+
+    for (int m = 0; m != std::max(p, q) + 1; ++m) {
+
+      const int i = std::min(m, p);
+      const int j = std::min(m, q);
+
+      if (j == m)
+        for (int ii = 0; ii != i; ++ii) {
+          *(perm++) = ii;
+          *(perm++) = j;
+          *(perm++) = 0;
+        }
+
+      if (i == m)
+        for (int jj = 0; jj != j; ++jj) {
+          *(perm++) = i;
+          *(perm++) = jj;
+          *(perm++) = 0;
+        }
+
+      *(perm++) = i;
+      *(perm++) = j;
+      *(perm++) = 0;
     }
   }
   MoFEMFunctionReturnHot(0);
@@ -214,7 +286,8 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONQUAD(
 
     MoFEMFunctionBeginHot;
     int permute[(p[0] - 1) * (p[1] - 1)][3];
-    CHKERR ::DemkowiczHexAndQuad::monom_ordering(permute, p[0] - 2, p[1] - 2);
+    CHKERR ::DemkowiczHexAndQuad::monom_ordering(&permute[0][0], p[0] - 2,
+                                                 p[1] - 2);
     for (int q = 0; q != nb_integration_pts; q++) {
 
       const int shift = 4 * q;
@@ -267,7 +340,7 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::L2_FaceShapeFunctions_ONQUAD(
   if (nb_dofs > 0) {
 
     int permute[nb_dofs][3];
-    CHKERR ::DemkowiczHexAndQuad::monom_ordering(permute, p[0], p[1]);
+    CHKERR ::DemkowiczHexAndQuad::monom_ordering(&permute[0][0], p[0], p[1]);
 
     constexpr int n0 = 0;
     constexpr int n1 = 1;
