@@ -486,6 +486,21 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_FaceShapeFunctions_ONQUAD(
     double *diff_faceN[], int nb_integration_pts) {
   MoFEMFunctionBeginHot;
 
+  const int pq[2] = {p[0], p[1]};
+  const int qp[2] = {p[1], p[0]};
+
+  const int nb_dofs_fm0 = pq[0] * (qp[1] - 1);
+  const int nb_dofs_fm1 = (pq[0] - 1) * qp[1];
+  int permute_fm0[3 * nb_dofs_fm0];
+  int permute_fm1[3 * nb_dofs_fm1];
+
+  std::array<int *, 2> permute = {permute_fm0, permute_fm1};
+  for (int fm = 0; fm != 2; ++fm) {
+    const int pp = pq[fm];
+    const int qq = qp[fm];
+    CHKERR ::DemkowiczHexAndQuad::monom_ordering(permute[fm], qq - 1, pp - 2);
+  }
+
   const int n0 = face_nodes[0];
   const int n1 = face_nodes[1];
   const int n2 = face_nodes[2];
@@ -512,8 +527,6 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_FaceShapeFunctions_ONQUAD(
       diff_ksi12[d] = (diff_shape2 + diff_shape3 - diff_shape1 - diff_shape0);
     }
 
-    int pq[2] = {p[0], p[1]};
-    int qp[2] = {p[1], p[0]};
     double mu_ksi_eta[2] = {ksi01, ksi12};
     double mu_eta_ksi[2] = {ksi12, ksi01};
 
@@ -537,9 +550,6 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_FaceShapeFunctions_ONQUAD(
         CHKERR Legendre_polynomials(qq - 1, mu_eta_ksi[family],
                                     diff_eta_ksi[family], eta, diff_eta, 2);
 
-        int permute[nb_dofs][3];
-        CHKERR ::DemkowiczHexAndQuad::monom_ordering(permute, qq - 1, pp - 2);
-
         const int qd_shift = nb_dofs * q;
         double *t_n_ptr = &faceN[family][3 * qd_shift];
         double *t_diff_n_ptr = &diff_faceN[family][6 * qd_shift];
@@ -547,8 +557,8 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_FaceShapeFunctions_ONQUAD(
         auto t_diff_n = getFTensor2FromPtr<3, 2>(t_diff_n_ptr);
 
         for (int n = 0; n != nb_dofs; n++) {
-          int i = permute[n][0];
-          int j = permute[n][1];
+          int i = permute[family][3 * n + 0];
+          int j = permute[family][3 * n + 1];
 
           const double z = zeta[j + 2];
           const double e = eta[i];
@@ -585,6 +595,10 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hdiv_FaceShapeFunctions_ONQUAD(
   const int nb_dofs = (p[1] * p[2]);
 
   if (nb_dofs > 0) {
+
+    int permute[nb_dofs][3];
+    CHKERR ::DemkowiczHexAndQuad::monom_ordering(&permute[0][0], p[0] - 1,
+                                                 p[1] - 1);
 
     const int n0 = face_nodes[0];
     const int n1 = face_nodes[1];
@@ -638,17 +652,14 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hdiv_FaceShapeFunctions_ONQUAD(
       CHKERR Legendre_polynomials(p[1], ksi12, &t_diff_ksi12(0), eta, diff_eta,
                                   2);
 
-      int permute[nb_dofs][3];
-      CHKERR ::DemkowiczHexAndQuad::monom_ordering(permute, p[0] - 1, p[1] - 1);
-
       for (int n = 0; n != nb_dofs; ++n) {
         int ii = permute[n][0];
         int jj = permute[n][1];
 
         auto t_diff_zeta = FTensor::Tensor1<double, 2>{
-            diff_zeta[ii], diff_zeta[2 * p[0] + ii]};
+            diff_zeta[ii], diff_zeta[1 * p[0] + ii]};
         auto t_diff_eta =
-            FTensor::Tensor1<double, 2>{diff_eta[jj], diff_eta[2 * p[1] + jj]};
+            FTensor::Tensor1<double, 2>{diff_eta[jj], diff_eta[1 * p[1] + jj]};
 
         FTensor::Index<'J', 2> J;
         t_n(i) = t_cross(i) * zeta[ii] * eta[jj];
@@ -815,7 +826,8 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONHEX(
       const int o3 = opposite_face_node[face][face_nodes_order[4 * face + 3]];
 
       int permute[nb_dofs][3];
-      CHKERR ::DemkowiczHexAndQuad::monom_ordering(permute, p[0] - 2, p[1] - 2);
+      CHKERR ::DemkowiczHexAndQuad::monom_ordering(&permute[0][0], p[0] - 2,
+                                                   p[1] - 2);
 
       for (int qq = 0; qq != nb_integration_pts; qq++) {
 
@@ -897,8 +909,8 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_InteriorShapeFunctions_ONHEX(
   if (nb_bases > 0) {
 
     int permute[nb_bases][3];
-    CHKERR ::DemkowiczHexAndQuad::monom_ordering(permute, p[0] - 2, p[1] - 2,
-                                                 p[2] - 2);
+    CHKERR ::DemkowiczHexAndQuad::monom_ordering(&permute[0][0], p[0] - 2,
+                                                 p[1] - 2, p[2] - 2);
 
     double P0[p[0] + 2];
     double diffL0[3 * (p[0] + 2)];
@@ -957,7 +969,8 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::L2_InteriorShapeFunctions_ONHEX(
   if (nb_bases > 0) {
 
     int permute[nb_bases][3];
-    CHKERR ::DemkowiczHexAndQuad::monom_ordering(permute, p[0], p[1], p[2]);
+    CHKERR ::DemkowiczHexAndQuad::monom_ordering(&permute[0][0], p[0], p[1],
+                                                 p[2]);
 
     double P0[p[0] + 2];
     double diffL0[3 * (p[0] + 2)];
@@ -1155,7 +1168,7 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_FaceShapeFunctions_ONHEX(
       const int o3 = opposite_face_node[face][face_nodes_order[4 * face + 3]];
 
       int permute[(p[face] - 1) * p[face]][3];
-      CHKERR ::DemkowiczHexAndQuad::monom_ordering(permute, p[face] - 1,
+      CHKERR ::DemkowiczHexAndQuad::monom_ordering(&permute[0][0], p[face] - 1,
                                                    p[face] - 2);
 
       for (int q = 0; q != nb_integration_pts; ++q) {
@@ -1271,6 +1284,28 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_InteriorShapeFunctions_ONHEX(
     int nb_integration_pts) {
   MoFEMFunctionBeginHot;
 
+  int pqr[3] = {p[0], p[1], p[2]};
+  int qrp[3] = {p[1], p[2], p[0]};
+  int rpq[3] = {p[2], p[0], p[1]};
+
+  const int nb_dofs_fm0 = (p[0] - 1) * p[1] * p[2];
+  const int nb_dofs_fm1 = p[0] * (p[1] - 1) * p[2];
+  const int nb_dofs_fm2 = p[0] * p[1] * (p[2] - 1);
+  int permute_fm0[3 * nb_dofs_fm0];
+  int permute_fm1[3 * nb_dofs_fm1];
+  int permute_fm2[3 * nb_dofs_fm2];
+
+  std::array<int *, 3> permute = {&permute_fm0[0], &permute_fm1[0],
+                                  &permute_fm2[0]};
+
+  for (int fam = 0; fam != 3; ++fam) {
+    const int qqq = qrp[fam];
+    const int rrr = rpq[fam];
+    const int ppp = pqr[fam];
+    CHKERR ::DemkowiczHexAndQuad::monom_ordering(permute[fam], ppp - 2, qqq - 1,
+                                                 rrr - 2);
+  }
+
   for (int qq = 0; qq != nb_integration_pts; ++qq) {
 
     const int shift = 8 * qq;
@@ -1317,10 +1352,6 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_InteriorShapeFunctions_ONHEX(
         CHKERR Lobatto_polynomials(rrr + 1, gma_ksi_eta[fam],
                                    diff_gma_ksi_eta[fam], phi_k, diff_phi_k, 3);
 
-        int permute[nb_dofs][3];
-        CHKERR ::DemkowiczHexAndQuad::monom_ordering(permute, ppp - 2, qqq - 1,
-                                                     rrr - 2);
-
         int qd_shift = nb_dofs * qq;
         double *t_n_ptr = &volN[fam][3 * qd_shift];
         double *t_diff_n_ptr = &diff_volN[fam][3 * 3 * qd_shift];
@@ -1329,9 +1360,9 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_InteriorShapeFunctions_ONHEX(
 
         int n = 0;
         for (; n != nb_dofs; n++) {
-          int ii = permute[n][0];
-          int jj = permute[n][1];
-          int kk = permute[n][2];
+          int ii = permute[fam][3 * n + 0];
+          int jj = permute[fam][3 * n + 1];
+          int kk = permute[fam][3 * n + 2];
 
           const double p_k = phi_k[kk + 2];
           const double p_j = phi_j[jj + 2];
