@@ -1250,6 +1250,10 @@ auto get_temp_meshset_ptr = [](moab::Interface &moab) {
   return boost::make_shared<TempMeshset>(moab);
 };
 
+auto type_from_handle = [](const EntityHandle h) {
+  return static_cast<EntityType>(h >> MB_ID_WIDTH);
+};
+
 } // namespace MoFEM
 
 #endif //__TEMPLATES_HPP__

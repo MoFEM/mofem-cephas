@@ -189,10 +189,10 @@ MoFEMErrorCode Hcurl_InteriorShapeFunctions_ONHEX(int *p, double *N,
                                                   double *diff_volN[3],
                                                   int nb_integration_pts);
 
-MoFEMErrorCode Hdiv_FaceShapeFunctions_ONHEX(int *sense[6], int *p, double *N,
-                                             double *N_diff, double *faceN[6],
-                                             double *div_faceN[6],
-                                             int nb_integration_pts);
+MoFEMErrorCode
+Hdiv_FaceShapeFunctions_ONHEX(int *face_nodes, int *face_nodes_order, int *p,
+                              double *N, double *diffN, double *faceN[6],
+                              double *div_faceN[6], int nb_integration_pts);
 
 MoFEMErrorCode Hdiv_InteriorShapeFunctions_ONHEX(int *p, double *N,
                                                  double *N_diff,

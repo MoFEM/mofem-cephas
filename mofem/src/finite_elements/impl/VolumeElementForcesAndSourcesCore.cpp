@@ -336,6 +336,7 @@ VolumeElementForcesAndSourcesCoreBase::getSpaceBaseAndOrderOnElement() {
   }
   if ((dataH1.spacesOnEntities[MBQUAD]).test(HDIV)) {
     dataHdiv.facesNodes = dataH1.facesNodes;
+    dataHdiv.facesNodesOrder = dataH1.facesNodesOrder;
     CHKERR getEntitySense<MBQUAD>(dataHdiv);
     CHKERR getEntityDataOrder<MBQUAD>(dataHdiv, HDIV);
     dataHdiv.spacesOnEntities[MBQUAD].set(HDIV);
@@ -402,6 +403,18 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::transformBaseFunctions() {
        t <= CN::TypeDimensionMap[2].second; ++t) {
     if (dataH1.spacesOnEntities[t].test(HDIV)) {
       CHKERR opContravariantPiolaTransform.opRhs(dataHdiv);
+      // Fix for tetrahedrons
+      if (numeredEntFiniteElementPtr->getEntType() == MBTET) {
+        for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
+          FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
+          for (auto t : {MBTRI, MBTET}) {
+            for (auto &d : dataHdiv.dataOnEntities[t]) {
+              d.getN(base) /= 6;
+              d.getDiffN(base) /= 6;
+            }
+          }
+        }
+      }
       CHKERR opSetInvJacHdivAndHcurl.opRhs(dataHdiv);
       break;
     }

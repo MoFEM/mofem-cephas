@@ -362,32 +362,6 @@ template <>
 MoFEMErrorCode OpGetDataAndGradient<1, 3>::calculateValAndGrad(
     int side, EntityType type, DataForcesAndSourcesCore::EntData &data);
 
-/** \brief Calculate normals at Gauss points of triangle element
- * \ingroup mofem_forces_and_source
- */
-struct OpGetCoordsAndNormalsOnFace : public DataOperator {
-
-  MatrixDouble &cOords_at_GaussPt;
-  MatrixDouble &nOrmals_at_GaussPt;
-  MatrixDouble &tAngent1_at_GaussPt;
-  MatrixDouble &tAngent2_at_GaussPt;
-
-  OpGetCoordsAndNormalsOnFace(MatrixDouble &coords_at_gausspt,
-                              MatrixDouble &normals_at_gausspt,
-                              MatrixDouble &tangent1_at_gausspt,
-                              MatrixDouble &tangent2_at_gausspt)
-      : cOords_at_GaussPt(coords_at_gausspt),
-        nOrmals_at_GaussPt(normals_at_gausspt),
-        tAngent1_at_GaussPt(tangent1_at_gausspt),
-        tAngent2_at_GaussPt(tangent2_at_gausspt) {}
-
-  MatrixDouble sPin;
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
-
-  MoFEMErrorCode calculateNormals();
-};
-
 /** \brief calculate normals at Gauss points of triangle element
  * \ingroup mofem_forces_and_sources
  */

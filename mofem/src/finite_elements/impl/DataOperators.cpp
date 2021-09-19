@@ -301,61 +301,59 @@ MoFEMErrorCode OpSetContravariantPiolaTransform::doWork(
     int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
 
-  if (type == MBVERTEX || type == MBEDGE)
-    MoFEMFunctionReturnHot(0);
+  if (CN::Dimension(type) > 1) {
 
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
+    for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
-    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
+      FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
 
-    const unsigned int nb_base_functions = data.getN(base).size2() / 3;
-    if (!nb_base_functions)
-      continue;
+      const unsigned int nb_base_functions = data.getN(base).size2() / 3;
+      if (!nb_base_functions)
+        continue;
 
-    const double c = 1. / 6.;
-    const unsigned int nb_gauss_pts = data.getN(base).size1();
+      const unsigned int nb_gauss_pts = data.getN(base).size1();
+      double const a = 1. / vOlume;
 
-    double const a = c / vOlume;
-
-    piolaN.resize(nb_gauss_pts, data.getN(base).size2(), false);
-    if (data.getN(base).size2() > 0) {
-      auto t_n = data.getFTensor1N<3>(base);
-      double *t_transformed_n_ptr = &*piolaN.data().begin();
-      FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_transformed_n(
-          t_transformed_n_ptr, // HVEC0
-          &t_transformed_n_ptr[HVEC1], &t_transformed_n_ptr[HVEC2]);
-      for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
-        for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
-          t_transformed_n(i) = a * tJac(i, k) * t_n(k);
-          ++t_n;
-          ++t_transformed_n;
+      piolaN.resize(nb_gauss_pts, data.getN(base).size2(), false);
+      if (data.getN(base).size2() > 0) {
+        auto t_n = data.getFTensor1N<3>(base);
+        double *t_transformed_n_ptr = &*piolaN.data().begin();
+        FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_transformed_n(
+            t_transformed_n_ptr, // HVEC0
+            &t_transformed_n_ptr[HVEC1], &t_transformed_n_ptr[HVEC2]);
+        for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
+          for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
+            t_transformed_n(i) = a * (tJac(i, k) * t_n(k));
+            ++t_n;
+            ++t_transformed_n;
+          }
         }
+        data.getN(base).data().swap(piolaN.data());
       }
-      data.getN(base).data().swap(piolaN.data());
-    }
 
-    piolaDiffN.resize(nb_gauss_pts, data.getDiffN(base).size2(), false);
-    if (data.getDiffN(base).size2() > 0) {
-      auto t_diff_n = data.getFTensor2DiffN<3, 3>(base);
-      double *t_transformed_diff_n_ptr = &*piolaDiffN.data().begin();
-      FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
-          t_transformed_diff_n(t_transformed_diff_n_ptr,
-                               &t_transformed_diff_n_ptr[HVEC0_1],
-                               &t_transformed_diff_n_ptr[HVEC0_2],
-                               &t_transformed_diff_n_ptr[HVEC1_0],
-                               &t_transformed_diff_n_ptr[HVEC1_1],
-                               &t_transformed_diff_n_ptr[HVEC1_2],
-                               &t_transformed_diff_n_ptr[HVEC2_0],
-                               &t_transformed_diff_n_ptr[HVEC2_1],
-                               &t_transformed_diff_n_ptr[HVEC2_2]);
-      for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
-        for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
-          t_transformed_diff_n(i, k) = a * tJac(i, j) * t_diff_n(j, k);
-          ++t_diff_n;
-          ++t_transformed_diff_n;
+      piolaDiffN.resize(nb_gauss_pts, data.getDiffN(base).size2(), false);
+      if (data.getDiffN(base).size2() > 0) {
+        auto t_diff_n = data.getFTensor2DiffN<3, 3>(base);
+        double *t_transformed_diff_n_ptr = &*piolaDiffN.data().begin();
+        FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
+            t_transformed_diff_n(t_transformed_diff_n_ptr,
+                                 &t_transformed_diff_n_ptr[HVEC0_1],
+                                 &t_transformed_diff_n_ptr[HVEC0_2],
+                                 &t_transformed_diff_n_ptr[HVEC1_0],
+                                 &t_transformed_diff_n_ptr[HVEC1_1],
+                                 &t_transformed_diff_n_ptr[HVEC1_2],
+                                 &t_transformed_diff_n_ptr[HVEC2_0],
+                                 &t_transformed_diff_n_ptr[HVEC2_1],
+                                 &t_transformed_diff_n_ptr[HVEC2_2]);
+        for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
+          for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
+            t_transformed_diff_n(i, k) = a * tJac(i, j) * t_diff_n(j, k);
+            ++t_diff_n;
+            ++t_transformed_diff_n;
+          }
         }
+        data.getDiffN(base).data().swap(piolaDiffN.data());
       }
-      data.getDiffN(base).data().swap(piolaDiffN.data());
     }
   }
 
@@ -413,119 +411,6 @@ OpSetCovariantPiolaTransform::doWork(int side, EntityType type,
   // data.getBase() = base;
 
   MoFEMFunctionReturn(0);
-}
-
-MoFEMErrorCode
-OpGetCoordsAndNormalsOnFace::doWork(int side, EntityType type,
-                                    DataForcesAndSourcesCore::EntData &data) {
-  MoFEMFunctionBeginHot;
-
-  unsigned int nb_dofs = data.getFieldData().size();
-  if (nb_dofs == 0)
-    MoFEMFunctionReturnHot(0);
-
-  int nb_gauss_pts = data.getN().size1();
-  cOords_at_GaussPt.resize(nb_gauss_pts, 3, false);
-  tAngent1_at_GaussPt.resize(nb_gauss_pts, 3, false);
-  tAngent2_at_GaussPt.resize(nb_gauss_pts, 3, false);
-
-  auto get_ftensor1 = [](MatrixDouble &m) {
-    return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
-        &m(0, 0), &m(0, 1), &m(0, 2));
-  };
-  auto t_coords = get_ftensor1(cOords_at_GaussPt);
-  auto t_t1 = get_ftensor1(tAngent1_at_GaussPt);
-  auto t_t2 = get_ftensor1(tAngent2_at_GaussPt);
-  FTensor::Index<'i', 3> i;
-  FTensor::Number<0> N0;
-  FTensor::Number<1> N1;
-
-  switch (type) {
-  case MBVERTEX: {
-    cOords_at_GaussPt.clear();
-    tAngent1_at_GaussPt.clear();
-    tAngent2_at_GaussPt.clear();
-  }
-  case MBEDGE:
-  case MBTRI:
-  case MBQUAD: {
-    if (2 * data.getN().size2() != data.getDiffN().size2()) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
-    }
-    if (nb_dofs % 3 != 0) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
-    }
-    if (nb_dofs > 3 * data.getN().size2()) {
-      unsigned int nn = 0;
-      for (; nn != nb_dofs; nn++) {
-        if (!data.getFieldDofs()[nn]->getActive())
-          break;
-      }
-      if (nn > 3 * data.getN().size2()) {
-        SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                 "data inconsistency for base %s",
-                 ApproximationBaseNames[data.getBase()]);
-      } else {
-        nb_dofs = nn;
-        if (!nb_dofs)
-          MoFEMFunctionReturnHot(0);
-      }
-    }
-    const int nb_base_functions = data.getN().size2();
-    auto t_base = data.getFTensor0N();
-    auto t_diff_base = data.getFTensor1DiffN<2>();
-    for (int gg = 0; gg != nb_gauss_pts; ++gg) {
-      auto t_data = data.getFTensor1FieldData<3>();
-      int bb = 0;
-      for (; bb != nb_dofs / 3; ++bb) {
-        t_coords(i) += t_base * t_data(i);
-        t_t1(i) += t_data(i) * t_diff_base(N0);
-        t_t2(i) += t_data(i) * t_diff_base(N1);
-        ++t_data;
-        ++t_base;
-        ++t_diff_base;
-      }
-      for (; bb != nb_base_functions; ++bb) {
-        ++t_base;
-        ++t_diff_base;
-      }
-      ++t_coords;
-      ++t_t1;
-      ++t_t2;
-    }
-  } break;
-  default:
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
-  }
-
-  MoFEMFunctionReturnHot(0);
-}
-
-MoFEMErrorCode OpGetCoordsAndNormalsOnFace::calculateNormals() {
-  MoFEMFunctionBeginHot;
-
-  nOrmals_at_GaussPt.resize(tAngent1_at_GaussPt.size1(), 3, false);
-
-  auto get_ftensor1 = [](MatrixDouble &m) {
-    return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
-        &m(0, 0), &m(0, 1), &m(0, 2));
-  };
-  auto t_normal = get_ftensor1(nOrmals_at_GaussPt);
-  auto t_t1 = get_ftensor1(tAngent1_at_GaussPt);
-  auto t_t2 = get_ftensor1(tAngent2_at_GaussPt);
-
-  FTensor::Index<'i', 3> i;
-  FTensor::Index<'j', 3> j;
-  FTensor::Index<'k', 3> k;
-
-  for (unsigned int gg = 0; gg != tAngent1_at_GaussPt.size1(); ++gg) {
-    t_normal(j) = FTensor::levi_civita(i, j, k) * t_t1(k) * t_t2(i);
-    ++t_normal;
-    ++t_t1;
-    ++t_t2;
-  }
-
-  MoFEMFunctionReturnHot(0);
 }
 
 MoFEMErrorCode

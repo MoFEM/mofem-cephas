@@ -149,39 +149,37 @@ extern "C" {
 #define NBFACETRI_DEMKOWICZ_HDIV(P) ((P > 0) ? (P) * (P + 1) / 2 : 0)
 #define NBVOLUMETET_DEMKOWICZ_HDIV(P)                                          \
   (((P) > 1) ? (P) * (P - 1) * (P + 1) / 2 : 0)
-#define NBFACEQUAD_DEMKOWICZ_FAMILY_QUAD_HDIV(P, Q)                            \
-  (((P) > 0 && (Q) > 1) ? (2 * (P) * (Q)) : 0)
+#define NBFACEQUAD_DEMKOWICZ_QUAD_HDIV_GEMERAL(P, Q)                           \
+  (((P) > 0 && (Q) > 1) ? ((P) * (Q)) : 0)
+
 #define NBFACEQUAD_DEMKOWICZ_HDIV(P)                                           \
-  (NBFACEQUAD_DEMKOWICZ_FAMILY_QUAD_HDIV(P, P))
-#define NBVOLUMEHEX_DEMKOWICZ_HDIV_GENERAL(P, Q, R)                            \
-  ((((P) > 0) && ((Q) > 0) && ((R) > 0))                                       \
-       ? ((P) * (Q) * ((R)-1) + (Q) * (R) * ((P)-1) + (R) * (Q) * ((Q)-1))     \
-       : 0)
+  (NBFACEQUAD_DEMKOWICZ_QUAD_HDIV_GEMERAL(P, P))
+#define NBVOLUMEHEX_DEMKOWICZ_FAMILY_HDIV(P, Q, R)                             \
+  ((((P) > 0) && ((Q) > 0) && ((R) > 0)) ? ((P - 1) * Q * R) : 0)
 #define NBVOLUMEHEX_DEMKOWICZ_HDIV(P)                                          \
-  (NBVOLUMEHEX_DEMKOWICZ_HDIV_GENERAL(P, P, P))
+  (3 * NBVOLUMEHEX_DEMKOWICZ_FAMILY_HDIV(P, P, P))
 
-    // Bubbles for H div space
+// Bubbles for H div space
 
-    /**
-     * @brief Get base functions on triangle for L2 space
-     *
-     * @param p polynomial order
-     * @param N barycentric coordinates (shape functions) at integration points
-     * @param diffN direvatives of barycentric coordinates, i.e. direvatives of
-     * shape functions
-     * @param L2N values of L2 base at integration points
-     * @param diff_L2N dirvatives of base functions at integration points
-     * @param GDIM number of integration points
-     * @param base_polynomials polynomial base used to construct L2 base on
-     * element
-     * @return PetscErrorCode
-     */
-    PetscErrorCode L2_Ainsworth_ShapeFunctions_MBTRI(
-        int p, double *N, double *diffN, double *L2N, double *diff_L2N,
-        int GDIM,
-        PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
-                                           double *L, double *diffL,
-                                           const int dim));
+/**
+ * @brief Get base functions on triangle for L2 space
+ *
+ * @param p polynomial order
+ * @param N barycentric coordinates (shape functions) at integration points
+ * @param diffN direvatives of barycentric coordinates, i.e. direvatives of
+ * shape functions
+ * @param L2N values of L2 base at integration points
+ * @param diff_L2N dirvatives of base functions at integration points
+ * @param GDIM number of integration points
+ * @param base_polynomials polynomial base used to construct L2 base on
+ * element
+ * @return PetscErrorCode
+ */
+PetscErrorCode L2_Ainsworth_ShapeFunctions_MBTRI(
+    int p, double *N, double *diffN, double *L2N, double *diff_L2N, int GDIM,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim));
 /**
  * @brief Get base functions on tetrahedron for L2 space
  *

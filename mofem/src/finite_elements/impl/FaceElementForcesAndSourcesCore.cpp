@@ -23,9 +23,7 @@ namespace MoFEM {
 FaceElementForcesAndSourcesCoreBase::FaceElementForcesAndSourcesCoreBase(
     Interface &m_field)
     : ForcesAndSourcesCore(m_field),
-      meshPositionsFieldName("MESH_NODE_POSITIONS"),
-      opHOCoordsAndNormals(coordsAtGaussPts, normalsAtGaussPts,
-                           tangentOneAtGaussPts, tangentTwoAtGaussPts) {}
+      meshPositionsFieldName("MESH_NODE_POSITIONS") {}
 
 MoFEMErrorCode
 FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormalAtIntegrationPts() {

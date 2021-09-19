@@ -78,7 +78,7 @@ struct Projection10NodeCoordsOnField : public DofMethod {
       MoFEMFunctionReturnHot(0);
     }
     EntityHandle edge = dofPtr->getEnt();
-    if (mField.get_moab().type_from_handle(edge) != MBEDGE) {
+    if (type_from_handle(edge) != MBEDGE) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "this method works only elements which are type of MBEDGE");
     }
@@ -217,7 +217,7 @@ struct ProjectionFieldOn10NodeTet : public Projection10NodeCoordsOnField {
       MoFEMFunctionReturnHot(0);
     }
     EntityHandle edge = dofPtr->getEnt();
-    if (mField.get_moab().type_from_handle(edge) != MBEDGE) {
+    if (type_from_handle(edge) != MBEDGE) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "this method works only elements which are type of MBEDGE");
     }

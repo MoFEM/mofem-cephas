@@ -111,7 +111,7 @@ RefElement_PRISM::getSideNumberPtr(const EntityHandle ent) const {
   }
 
   // if ent is meshset
-  if (moab.type_from_handle(ent) == MBENTITYSET) {
+  if (type_from_handle(ent) == MBENTITYSET) {
     miit =
         const_cast<SideNumber_multiIndex &>(side_number_table)
             .insert(boost::shared_ptr<SideNumber>(new SideNumber(ent, 0, 0, 0)))
@@ -127,7 +127,7 @@ RefElement_PRISM::getSideNumberPtr(const EntityHandle ent) const {
   // it has to be degenerated prism, get sense from nodes topology
   if (side_number == -1 || rval != MB_SUCCESS) {
 
-    if (moab.type_from_handle(ent) == MBVERTEX) {
+    if (type_from_handle(ent) == MBVERTEX) {
       THROW_MESSAGE("Huston we have problem, vertex (specified by ent) is not "
                     "part of prism, that is impossible (top tip: check your "
                     "prisms)");
@@ -279,9 +279,8 @@ RefElement_PRISM::getSideNumberPtr(const EntityHandle ent) const {
       THROW_MESSAGE("Huston we have problem");
     }
     std::ostringstream sss;
-    sss << "this not working: " << ent
-        << " type: " << moab.type_from_handle(ent) << " " << MBEDGE << " "
-        << MBTRI << std::endl;
+    sss << "this not working: " << ent << " type: " << type_from_handle(ent)
+        << " " << MBEDGE << " " << MBTRI << std::endl;
     THROW_MESSAGE(sss.str().c_str());
   }
   miit = const_cast<SideNumber_multiIndex &>(side_number_table)
@@ -325,7 +324,7 @@ RefElementVolume::getSideNumberPtr(const EntityHandle ent) const {
                .first;
     return *miit;
   }
-  if (moab.type_from_handle(ent) == MBENTITYSET) {
+  if (type_from_handle(ent) == MBENTITYSET) {
     miit = const_cast<SideNumber_multiIndex &>(side_number_table)
                .insert(boost::make_shared<SideNumber>(ent, 0, 0, 0))
                .first;
@@ -404,7 +403,7 @@ RefElementFace::getSideNumberPtr(const EntityHandle ent) const {
             .first;
     return *miit;
   }
-  if (moab.type_from_handle(ent) == MBENTITYSET) {
+  if (type_from_handle(ent) == MBENTITYSET) {
     miit =
         const_cast<SideNumber_multiIndex &>(side_number_table)
             .insert(boost::shared_ptr<SideNumber>(new SideNumber(ent, 0, 0, 0)))
@@ -448,7 +447,7 @@ RefElement_EDGE::getSideNumberPtr(const EntityHandle ent) const {
             .first;
     return *miit;
   }
-  if (moab.type_from_handle(ent) == MBENTITYSET) {
+  if (type_from_handle(ent) == MBENTITYSET) {
     miit =
         const_cast<SideNumber_multiIndex &>(side_number_table)
             .insert(boost::shared_ptr<SideNumber>(new SideNumber(ent, 0, 0, 0)))
@@ -492,7 +491,7 @@ RefElement_VERTEX::getSideNumberPtr(const EntityHandle ent) const {
             .first;
     return *miit;
   }
-  if (moab.type_from_handle(ent) == MBENTITYSET) {
+  if (type_from_handle(ent) == MBENTITYSET) {
     miit =
         const_cast<SideNumber_multiIndex &>(side_number_table)
             .insert(boost::shared_ptr<SideNumber>(new SideNumber(ent, 0, 0, 0)))

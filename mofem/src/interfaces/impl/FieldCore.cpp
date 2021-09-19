@@ -493,22 +493,24 @@ MoFEMErrorCode Core::setFieldOrderImpl(boost::shared_ptr<Field> field_ptr,
     EntityHandle first = pit->first;
     EntityHandle second = pit->second;
 
+    const auto type = static_cast<EntityType>(first >> MB_ID_WIDTH);
+
     // Sanity check
     switch (field_ptr->getSpace()) {
     case H1:
       break;
     case HCURL:
-      if (get_moab().type_from_handle(first) == MBVERTEX)
+      if (type == MBVERTEX)
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Hcurl space on vertices makes no sense");
 
       break;
     case HDIV:
-      if (get_moab().type_from_handle(first) == MBVERTEX)
+      if (type == MBVERTEX)
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Hdiv space on vertices makes no sense");
 
-      if (get_moab().type_from_handle(first) == MBEDGE)
+      if (type == MBEDGE)
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Hdiv space on edges makes no sense");
 

@@ -491,7 +491,7 @@ MoFEMErrorCode TetGenInterface::setFaceData(
         int num_nodes;
         const EntityHandle *conn;
         tetgenio::polygon *p = &(f->polygonlist[jj]);
-        switch (m_field.get_moab().type_from_handle(*it)) {
+        switch (type_from_handle(*it)) {
         case MBVERTEX: {
           p->numberofvertices = 1;
           conn = &*it;
@@ -577,7 +577,7 @@ MoFEMErrorCode TetGenInterface::setRegionData(
   std::vector<std::pair<EntityHandle, int>>::iterator it = regions.begin();
   for (int ii = 0; it != regions.end(); it++, ii++) {
     double coords[3];
-    switch (m_field.get_moab().type_from_handle(it->first)) {
+    switch (type_from_handle(it->first)) {
     case MBVERTEX: {
       if (th) {
         rval = m_field.get_moab().tag_get_data(th, &it->first, 1, coords);

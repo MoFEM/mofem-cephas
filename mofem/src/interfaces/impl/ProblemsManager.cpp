@@ -179,7 +179,7 @@ MoFEMErrorCode ProblemsManager::partitionMesh(
         if (ii >= rend)
           break;
 
-        if (m_field.get_moab().type_from_handle(*fe_it) == MBENTITYSET) {
+        if (type_from_handle(*fe_it) == MBENTITYSET) {
           SETERRQ(
               PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
               "not yet implemented, don't know what to do for meshset element");

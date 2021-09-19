@@ -767,25 +767,30 @@ add_test(hdiv_continuity_check_demkowicz_base
 # add test for hdvi divergence operator
 build_test(hdiv_divergence_operator hdiv_divergence_operator.cpp)
 
-add_test(hdiv_divergence_operator_ainsworth_atom
+add_test(hdiv_divergence_operator_ainsworth_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hdiv_divergence_operator
   -file_name sphere.h5m -base ainsworth
   -log_no_color)
-add_test(hdiv_divergence_operator_demkowicz_atom
+add_test(hdiv_divergence_operator_demkowicz_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hdiv_divergence_operator
   -file_name sphere.h5m -base demkowicz
   -log_no_color)
-add_test(hdiv_divergence_operator_ainsworth_ho_geometry_atom
+add_test(hdiv_divergence_operator_ainsworth_ho_geometry_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hdiv_divergence_operator
   -file_name sphere.h5m -base ainsworth -ho_geometry
   -log_no_color)
-add_test(hdiv_divergence_operator_demkowicz_ho_geometry_atom
+add_test(hdiv_divergence_operator_demkowicz_ho_geometry_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hdiv_divergence_operator
   -file_name sphere.h5m -base demkowicz -ho_geometry
+  -log_no_color)
+add_test(hdiv_divergence_operator_demkowicz_hex
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/hdiv_divergence_operator
+  -file_name hex_cub.h5m -base demkowicz
   -log_no_color)
 
 # add test for hcurl curl operator
@@ -856,6 +861,13 @@ add_test(
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_3d
   -my_file hex_cub.h5m -base demkowicz -space hcurl
+  -log_no_color
+)
+add_test(
+  continuity_check_on_skeleton_3d_demkowicz_hdiv_hex
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_3d
+  -my_file hex_cub.h5m -base demkowicz -space hdiv
   -log_no_color
 )
 

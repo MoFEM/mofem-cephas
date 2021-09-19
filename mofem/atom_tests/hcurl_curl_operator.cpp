@@ -178,9 +178,6 @@ int main(int argc, char *argv[]) {
 
     std::cout.precision(12);
 
-    std::cout << "curl_vol " << t_curl_vol << std::endl;
-    std::cout << "curl_skin " << t_curl_skin << std::endl;
-
     t_curl_vol(i) -= t_curl_skin(i);
     double nrm2 = sqrt(t_curl_vol(i) * t_curl_vol(i));
 

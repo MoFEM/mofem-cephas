@@ -95,7 +95,6 @@ protected:
   MatrixDouble normalsAtGaussPts;
   MatrixDouble tangentOneAtGaussPts;
   MatrixDouble tangentTwoAtGaussPts;
-  OpGetCoordsAndNormalsOnFace opHOCoordsAndNormals;
 
   friend class UserDataOperator;
   friend class VolumeElementForcesAndSourcesCoreOnSideBase;

@@ -946,7 +946,7 @@ int ForcesAndSourcesCore::UserDataOperator::getFEDim() const {
 };
 
 EntityType ForcesAndSourcesCore::UserDataOperator::getFEType() const {
-  return ptrFE->mField.get_moab().type_from_handle(getFEEntityHandle());
+  return type_from_handle(getFEEntityHandle());
 };
 
 boost::weak_ptr<SideNumber>

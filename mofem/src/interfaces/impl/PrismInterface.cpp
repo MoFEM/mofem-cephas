@@ -832,7 +832,7 @@ MoFEMErrorCode PrismInterface::splitSides(
       }
     }
 
-    switch (moab.type_from_handle(*eit3d)) {
+    switch (type_from_handle(*eit3d)) {
     case MBTET: {
 
       RefEntity_multiIndex::iterator child_it;
@@ -1144,7 +1144,7 @@ MoFEMErrorCode PrismInterface::splitSides(
       EntityHandle parent_prism;
       CHKERR moab.tag_get_data(cOre.get_th_RefParentHandle(), &*pit, 1,
                                &parent_prism);
-      if (moab.type_from_handle(parent_prism) != MBPRISM)
+      if (type_from_handle(parent_prism) != MBPRISM)
         SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                 "this prism should have parent which is prism as well");
 

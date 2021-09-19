@@ -263,7 +263,7 @@ MoFEMErrorCode Tools::getTriNormal(const EntityHandle tri,
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab(m_field.get_moab());
   MoFEMFunctionBegin;
-  if (moab.type_from_handle(tri) != MBTRI) {
+  if (type_from_handle(tri) != MBTRI) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "Works only for triangle");
   }
   const EntityHandle *conn;
@@ -298,7 +298,7 @@ double Tools::getEdgeLength(const EntityHandle edge) {
   moab::Interface &moab(m_field.get_moab());
   auto get_edge_coords = [edge, &moab](double *const coords) {
     MoFEMFunctionBegin;
-    if (moab.type_from_handle(edge) != MBEDGE) {
+    if (type_from_handle(edge) != MBEDGE) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "Works only for edge");
     }
     const EntityHandle *conn;

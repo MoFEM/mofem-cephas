@@ -2,8 +2,8 @@
  * \file hdiv_divergence_operator.cpp
  * \example hdiv_divergence_operator.cpp
  *
- * Using PipelineManager interface calculate the divergence of base functions, and
- * integral of flux on the boundary. Since the h-div space is used, volume
+ * Using PipelineManager interface calculate the divergence of base functions,
+ * and integral of flux on the boundary. Since the h-div space is used, volume
  * integral and boundary integral should give the same result.
  */
 
@@ -27,11 +27,11 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
-struct OpTetDivergence
+struct OpVolDivergence
     : public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
   double &dIv;
-  OpTetDivergence(double &div)
+  OpVolDivergence(double &div)
       : VolumeElementForcesAndSourcesCore::UserDataOperator(
             "HDIV", UserDataOperator::OPROW),
         dIv(div) {}
@@ -95,21 +95,21 @@ int main(int argc, char *argv[]) {
     switch (choice_value) {
     case AINSWORTH:
       CHKERR simple_interface->addDomainField("HDIV", HDIV,
-                                             AINSWORTH_LEGENDRE_BASE, 1);
+                                              AINSWORTH_LEGENDRE_BASE, 1);
       CHKERR simple_interface->addBoundaryField("HDIV", HDIV,
-                                               AINSWORTH_LEGENDRE_BASE, 1);
+                                                AINSWORTH_LEGENDRE_BASE, 1);
       break;
     case DEMKOWICZ:
       CHKERR simple_interface->addDomainField("HDIV", HDIV,
-                                             DEMKOWICZ_JACOBI_BASE, 1);
+                                              DEMKOWICZ_JACOBI_BASE, 1);
       CHKERR simple_interface->addBoundaryField("HDIV", HDIV,
-                                               DEMKOWICZ_JACOBI_BASE, 1);
+                                                DEMKOWICZ_JACOBI_BASE, 1);
       break;
     }
 
     if (ho_geometry == PETSC_TRUE)
       CHKERR simple_interface->addDataField("MESH_NODE_POSITIONS", H1,
-                                           AINSWORTH_LEGENDRE_BASE, 3);
+                                            AINSWORTH_LEGENDRE_BASE, 3);
 
     constexpr int order = 5;
     CHKERR simple_interface->setFieldOrder("HDIV", order);
@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
     double divergence_vol = 0;
     double divergence_skin = 0;
     pipeline_mng->getOpDomainRhsPipeline().push_back(
-        new OpTetDivergence(divergence_vol));
+        new OpVolDivergence(divergence_vol));
 
     boost::dynamic_pointer_cast<PipelineManager::FaceEle>(
         pipeline_mng->getBoundaryRhsFE())
@@ -153,16 +153,17 @@ int main(int argc, char *argv[]) {
     }
     CHKERR pipeline_mng->loopFiniteElements();
 
-    std::cout.precision(12);
-
-    std::cout << "divergence_vol " << divergence_vol << std::endl;
-    std::cout << "divergence_skin " << divergence_skin << std::endl;
+    MOFEM_LOG("WORLD", Sev::inform)
+        << "divergence_vol " << std::setprecision(12) << divergence_vol;
+    MOFEM_LOG("WORLD", Sev::inform)
+        << "divergence_skin " << std::setprecision(12) << divergence_skin;
 
     constexpr double eps = 1e-8;
-    if (fabs(divergence_skin - divergence_vol) > eps)
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-               "invalid surface flux or divergence or both\n", divergence_skin,
-               divergence_vol);
+    const double error = divergence_skin - divergence_vol;
+    if (fabs(error) > eps)
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+               "invalid surface flux or divergence or both error = %3.4e",
+               error);
   }
   CATCH_ERRORS;
 
@@ -170,11 +171,11 @@ int main(int argc, char *argv[]) {
 }
 
 MoFEMErrorCode
-OpTetDivergence::doWork(int side, EntityType type,
+OpVolDivergence::doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
 
-  if (type != MBTRI && type != MBTET)
+  if (CN::Dimension(type) < 2)
     MoFEMFunctionReturnHot(0);
 
   if (data.getFieldData().size() == 0)
@@ -182,6 +183,7 @@ OpTetDivergence::doWork(int side, EntityType type,
 
   int nb_gauss_pts = data.getDiffN().size1();
   int nb_dofs = data.getFieldData().size();
+
 
   VectorDouble div_vec;
   div_vec.resize(nb_dofs, 0);
@@ -204,30 +206,27 @@ MoFEMErrorCode OpFacesFluxes::doWork(int side, EntityType type,
                                      DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBeginHot;
 
-  if (type != MBTRI)
+  if (CN::Dimension(type) != 2)
     MoFEMFunctionReturnHot(0);
 
   int nb_gauss_pts = data.getN().size1();
   int nb_dofs = data.getFieldData().size();
 
-  int gg = 0;
-  for (; gg < nb_gauss_pts; gg++) {
-    int dd = 0;
-    for (; dd < nb_dofs; dd++) {
-      double area;
-      VectorDouble n;
-      if (getNormalsAtGaussPts().size1() == (unsigned int)nb_gauss_pts) {
-        n = getNormalsAtGaussPts(gg);
-        area = norm_2(getNormalsAtGaussPts(gg)) * 0.5;
-      } else {
-        n = getNormal();
-        area = getArea();
+  for (int gg = 0; gg < nb_gauss_pts; gg++) {
+    for (int dd = 0; dd < nb_dofs; dd++) {
+
+      double w = getGaussPts()(2, gg);
+      const double n0 = getNormalsAtGaussPts(gg)[0];
+      const double n1 = getNormalsAtGaussPts(gg)[1];
+      const double n2 = getNormalsAtGaussPts(gg)[2];
+      if (getFEType() == MBTRI) {
+        w *= 0.5;
       }
-      n /= norm_2(n);
-      dIv += (n[0] * data.getVectorN<3>(gg)(dd, 0) +
-              n[1] * data.getVectorN<3>(gg)(dd, 1) +
-              n[2] * data.getVectorN<3>(gg)(dd, 2)) *
-             getGaussPts()(2, gg) * area;
+
+      dIv += (n0 * data.getVectorN<3>(gg)(dd, 0) +
+              n1 * data.getVectorN<3>(gg)(dd, 1) +
+              n2 * data.getVectorN<3>(gg)(dd, 2)) *
+             w;
     }
   }
 
