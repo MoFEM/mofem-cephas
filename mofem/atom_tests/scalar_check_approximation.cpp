@@ -152,6 +152,9 @@ struct OpValsDiffVals : public DomainEleOp {
           ++t_base_fun;
           ++t_data;
         }
+        const double v = t_vals;
+        if (!std::isnormal(v))
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "Not a number");
         ++t_vals;
       }
 
@@ -165,6 +168,9 @@ struct OpValsDiffVals : public DomainEleOp {
             ++t_diff_base_fun;
             ++t_data;
           }
+          for (int d = 0; d != SPACE_DIM; ++d)
+            if (!std::isnormal(t_diff_vals(d)))
+              SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "Not a number");
           ++t_diff_vals;
         }
       }
