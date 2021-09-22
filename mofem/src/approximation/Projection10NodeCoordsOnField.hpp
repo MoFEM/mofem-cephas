@@ -113,7 +113,7 @@ struct Projection10NodeCoordsOnField : public DofMethod {
       edge_shape_function_val *= LOBATTO_PHI0(0);
       break;
     case DEMKOWICZ_JACOBI_BASE:
-      edge_shape_function_val *= LOBATTO_PHI2(0);
+      edge_shape_function_val = LOBATTO_PHI2(0);
       break;
     default:
       SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not yet implemented");
