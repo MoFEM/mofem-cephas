@@ -1524,8 +1524,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
   CHKERR moab.get_connectivity(tets_skin, tets_skin_verts, true);
   // edges on the skin
   Range tets_skin_edges;
-  ErrorCode tmp_result;
-  tmp_result = moab.get_adjacencies(tets_skin, 1, false, tets_skin_edges,
+  CHKERR moab.get_adjacencies(tets_skin, 1, false, tets_skin_edges,
                               moab::Interface::UNION);
 
   // get edges on new surface
