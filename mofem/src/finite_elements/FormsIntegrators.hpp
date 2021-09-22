@@ -145,8 +145,8 @@ template <AssemblyType A, typename EleOp> struct OpBaseImpl : public EleOp {
    * \brief Do calculations for the left hand side
    * @param  row_side row side number (local number) of entity on element
    * @param  col_side column side number (local number) of entity on element
-   * @param  row_type type of row entity MBVERTEX, MBEDGE, MBTRI or MBTET
-   * @param  col_type type of column entity MBVERTEX, MBEDGE, MBTRI or MBTET
+   * @param  row_type type of row entity 
+   * @param  col_type type of column entity 
    * @param  row_data data for row
    * @param  col_data data for column
    * @return          error code
