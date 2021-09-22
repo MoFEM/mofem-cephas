@@ -146,7 +146,7 @@ MoFEMErrorCode HexPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
         diff_h1_face_n[ff] =
             &*data.dataOnEntities[MBQUAD][ff].getDiffN(base).data().begin();
 
-        nb_dofs_sum |= (nb_dofs_sum > 0);
+        nb_dofs_sum |= (nb_dofs > 0);
       }
       if (data.facesNodes.size1() != 6)
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,

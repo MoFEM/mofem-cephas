@@ -874,13 +874,13 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONHEX(
           diff_mu[d] = (diff_shape1 + diff_shape2 + diff_shape0 + diff_shape3);
         }
 
-        double L01[p[0] + 2];
-        double diffL01[3 * (p[0] + 2)];
-        CHKERR Lobatto_polynomials(p[0] + 1, ksi01, diff_ksi01, L01, diffL01,
+        double L01[p[face] + 2];
+        double diffL01[3 * (p[face] + 2)];
+        CHKERR Lobatto_polynomials(p[face] + 1, ksi01, diff_ksi01, L01, diffL01,
                                    3);
-        double L12[p[1] + 2];
-        double diffL12[3 * (p[1] + 2)];
-        CHKERR Lobatto_polynomials(p[1] + 1, ksi12, diff_ksi12, L12, diffL12,
+        double L12[p[face] + 2];
+        double diffL12[3 * (p[face] + 2)];
+        CHKERR Lobatto_polynomials(p[face] + 1, ksi12, diff_ksi12, L12, diffL12,
                                    3);
 
         int qd_shift = nb_dofs * qq;
