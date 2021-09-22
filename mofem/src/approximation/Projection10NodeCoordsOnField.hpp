@@ -103,13 +103,17 @@ struct Projection10NodeCoordsOnField : public DofMethod {
         midNodeCoord[dd] = aveMidCoord[dd];
       }
     }
-    double edge_shape_function_val = 0.25;
+
     FieldApproximationBase base = dofPtr->getApproxBase();
+    double edge_shape_function_val;
     switch (base) {
     case AINSWORTH_LEGENDRE_BASE:
-      break;
+      edge_shape_function_val = 0.25;
     case AINSWORTH_LOBATTO_BASE:
       edge_shape_function_val *= LOBATTO_PHI0(0);
+      break;
+    case DEMKOWICZ_JACOBI_BASE:
+      edge_shape_function_val *= LOBATTO_PHI2(0);
       break;
     default:
       SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not yet implemented");
