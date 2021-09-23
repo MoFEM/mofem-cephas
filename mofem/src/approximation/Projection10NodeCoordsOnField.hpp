@@ -111,7 +111,7 @@ struct Projection10NodeCoordsOnField : public DofMethod {
       edge_shape_function_val = 0.25;
       break;
     case AINSWORTH_LOBATTO_BASE:
-      edge_shape_function_val *= 0.25 * LOBATTO_PHI0(0);
+      edge_shape_function_val = 0.25 * LOBATTO_PHI0(0);
       break;
     case DEMKOWICZ_JACOBI_BASE:
       edge_shape_function_val = LOBATTO_PHI2(0);
