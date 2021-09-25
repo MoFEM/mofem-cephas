@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.add_ents_to_field_by_dim(root_set, 3, "F2");
 
     // set app. order
-    int order = 3;
+    int order = 2;
     CHKERR m_field.set_field_order(root_set, MBTET, "F2", order);
     CHKERR m_field.set_field_order(root_set, MBHEX, "F2", order);
     CHKERR m_field.set_field_order(root_set, MBTRI, "F2", order);
@@ -240,6 +240,19 @@ int main(int argc, char *argv[]) {
           : FaceElementForcesAndSourcesCore::UserDataOperator(
                 "F2", UserDataOperator::OPROW),
             volSideFe(m_field), elemData(elem_data) {
+
+        auto jac_ptr = boost::make_shared<MatrixDouble>();
+        auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
+        auto det_ptr = boost::make_shared<VectorDouble>();
+
+        volSideFe.getOpPtrVector().push_back(new OpCalculateHOJacVolume(jac_ptr));
+        volSideFe.getOpPtrVector().push_back(
+            new OpInvertMatrix<3>(jac_ptr, det_ptr, inv_jac_ptr));
+        volSideFe.getOpPtrVector().push_back(new OpSetHOWeights(det_ptr));
+        volSideFe.getOpPtrVector().push_back(
+            new OpSetHOCovariantPiolaTransform(HCURL, inv_jac_ptr));
+        volSideFe.getOpPtrVector().push_back(
+            new OpSetHOContravariantPiolaTransform(HDIV, det_ptr, jac_ptr));
         volSideFe.getOpPtrVector().push_back(
             new SkeletonFE::OpVolSide(elemData));
       }

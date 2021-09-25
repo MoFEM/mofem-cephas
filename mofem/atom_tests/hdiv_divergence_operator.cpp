@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
       CHKERR simple_interface->addDataField("MESH_NODE_POSITIONS", H1,
                                             AINSWORTH_LEGENDRE_BASE, 3);
 
-    constexpr int order = 5;
+    constexpr int order = 3;
     CHKERR simple_interface->setFieldOrder("HDIV", order);
     if (ho_geometry == PETSC_TRUE)
       CHKERR simple_interface->setFieldOrder("MESH_NODE_POSITIONS", 2);
@@ -131,12 +131,22 @@ int main(int argc, char *argv[]) {
 
     double divergence_vol = 0;
     double divergence_skin = 0;
+
+    auto jac_ptr = boost::make_shared<MatrixDouble>();
+    auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
+    auto det_ptr = boost::make_shared<VectorDouble>();
+    pipeline_mng->getOpDomainRhsPipeline().push_back(
+        new OpCalculateHOJacVolume(jac_ptr));
+    pipeline_mng->getOpDomainRhsPipeline().push_back(
+        new OpInvertMatrix<3>(jac_ptr, det_ptr, inv_jac_ptr));
+    pipeline_mng->getOpDomainRhsPipeline().push_back(
+        new OpSetHOContravariantPiolaTransform(HDIV, det_ptr, jac_ptr));
+    pipeline_mng->getOpDomainRhsPipeline().push_back(
+        new OpSetHOInvJacVectorBase(HDIV, inv_jac_ptr));
+    pipeline_mng->getOpDomainRhsPipeline().push_back(
+        new OpSetHOWeights(det_ptr));
     pipeline_mng->getOpDomainRhsPipeline().push_back(
         new OpVolDivergence(divergence_vol));
-
-    boost::dynamic_pointer_cast<PipelineManager::FaceEle>(
-        pipeline_mng->getBoundaryRhsFE())
-        ->meshPositionsFieldName = "none";
 
     if (m_field.check_field("MESH_NODE_POSITIONS"))
       pipeline_mng->getOpBoundaryRhsPipeline().push_back(

@@ -40,8 +40,24 @@ OpCalculateHOJacVolume::doWork(int side, EntityType type,
   const auto nb_base_functions = data.getN(NOBASE).size2();
   if (nb_base_functions) {
 
-    const auto nb_gauss_pts = data.getN(NOBASE).size1();
+    const auto nb_gauss_pts = getGaussPts().size2();
     auto t_diff_base = data.getFTensor1DiffN<3>(NOBASE);
+    auto &coords = getCoords();
+
+#ifndef NDEBUG
+    if (nb_gauss_pts != data.getDiffN().size1())
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Inconsistent number base functions and gauss points");
+    if (nb_base_functions != data.getDiffN().size2() / 3)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Inconsistent number of base functions");
+    if (coords.size() != 3 * nb_base_functions)
+      SETERRQ2(
+          PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+          "Number of vertex coordinates and base functions is inconsistent "
+          "%d != %d",
+          coords.size() / 3, nb_base_functions);
+#endif
 
     jacPtr->resize(9, nb_gauss_pts, false);
     jacPtr->clear();
@@ -52,7 +68,6 @@ OpCalculateHOJacVolume::doWork(int side, EntityType type,
     FTensor::Index<'j', 3> j;
     FTensor::Index<'k', 3> k;
 
-    auto coords = getCoords();
     for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
       FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords(
           &coords[0], &coords[1], &coords[2]);
@@ -103,10 +118,6 @@ OpSetHOInvJacToScalarBases::doWork(int side, EntityType type,
   FTensor::Index<'i', 3> i;
   FTensor::Index<'j', 3> j;
   MoFEMFunctionBegin;
-
-  if (!invJacPtr)
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "invJacPtr not allocated");
 
   auto transform_base = [&](MatrixDouble &diff_n) {
     MoFEMFunctionBeginHot;
@@ -179,10 +190,6 @@ OpSetHOInvJacVectorBase::doWork(int side, EntityType type,
   FTensor::Index<'j', 3> j;
   FTensor::Index<'k', 3> k;
 
-  if (!invJacPtr)
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "Pointer for invJacPtr not allocated");
-
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
     FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
@@ -251,14 +258,13 @@ MoFEMErrorCode OpSetHOWeights::doWork(int side, EntityType type,
                                       DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
 
-  if (!detPtr)
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "Pointer for detPtr not allocated");
-
   const auto nb_integration_pts = detPtr->size();
+
+#ifndef NDEBUG
   if (nb_integration_pts != getGaussPts().size2())
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Inconsistent number of data points");
+#endif
 
   auto t_w = getFTensor0IntegrationWeight();
   auto t_det = getFTensor0FromVec(*detPtr);
@@ -279,13 +285,14 @@ MoFEMErrorCode OpSetHOContravariantPiolaTransform::doWork(
   FTensor::Index<'j', 3> j;
   FTensor::Index<'k', 3> k;
 
+#ifndef NDEBUG
   if (!detPtr)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Pointer for detPtr not allocated");
-
   if (!jacPtr)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Pointer for jacPtr not allocated");
+#endif
 
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; ++b) {
 
@@ -294,6 +301,7 @@ MoFEMErrorCode OpSetHOContravariantPiolaTransform::doWork(
     auto nb_gauss_pts = data.getN(base).size1();
     auto nb_base_functions = data.getN(base).size2() / 3;
 
+#ifndef NDEBUG
     if (data.getDiffN(base).size1() != nb_gauss_pts)
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "Wrong number integration points");
@@ -302,6 +310,7 @@ MoFEMErrorCode OpSetHOContravariantPiolaTransform::doWork(
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Wrong number base functions %d != %d",
                data.getDiffN(base).size2(), nb_base_functions);
+#endif
 
     if (nb_gauss_pts && nb_base_functions) {
 
@@ -358,10 +367,6 @@ MoFEMErrorCode OpSetHOCovariantPiolaTransform::doWork(
   FTensor::Index<'i', 3> i;
   FTensor::Index<'j', 3> j;
   FTensor::Index<'k', 3> k;
-
-  if (!jacInvPtr)
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "Pointer for jacPtr not allocated");
 
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
@@ -441,6 +446,8 @@ OpGetHONormalsOnFace::doWork(int side, EntityType type,
     case MBEDGE:
     case MBTRI:
     case MBQUAD: {
+
+#ifndef NDEBUG
       if (2 * data.getN().size2() != data.getDiffN().size2()) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "data inconsistency");
@@ -449,6 +456,8 @@ OpGetHONormalsOnFace::doWork(int side, EntityType type,
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "data inconsistency");
       }
+#endif
+
       if (nb_dofs > 3 * data.getN().size2()) {
         unsigned int nn = 0;
         for (; nn != nb_dofs; nn++) {
@@ -653,8 +662,10 @@ MoFEMErrorCode OpHOSetCovariantPiolaTransformOnFace3D::doWork(
         ++t_m_at_pts;
       }
 
+#ifndef NDEBUG
       if (cc != nb_gauss_pts * nb_dofs)
         SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Data inconsistency");
+#endif
 
       baseN.data().swap(piolaN.data());
       diffBaseN.data().swap(diffPiolaN.data());
@@ -738,8 +749,10 @@ MoFEMErrorCode OpHOSetContravariantPiolaTransformOnEdge3D::doWork(
         ++t_m_at_pts;
       }
 
+#ifndef NDEBUG
       if (cc != nb_gauss_pts * nb_dofs)
         SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Data inconsistency");
+#endif
     }
   }
 
@@ -772,7 +785,6 @@ OpGetHOTangentsOnEdge::doWork(int side, EntityType type,
   double *dofs[] = {&data.getFieldData()[0], &data.getFieldData()[1],
                     &data.getFieldData()[2]};
 
-
   tangent.resize(nb_gauss_pts, 3, false);
 
   switch (type) {
@@ -784,10 +796,12 @@ OpGetHOTangentsOnEdge::doWork(int side, EntityType type,
     }
     break;
   case MBEDGE:
+#ifndef NDEBUG
     if (nb_dofs % 3) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
               "Approximated field should be rank 3, i.e. vector in 3d space");
     }
+#endif
     for (int dd = 0; dd != 3; dd++) {
       for (int gg = 0; gg != nb_gauss_pts; ++gg) {
         tangent(gg, dd) +=

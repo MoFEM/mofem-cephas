@@ -1521,16 +1521,14 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopSide(
     const string &fe_name, ForcesAndSourcesCore *side_fe, const size_t side_dim,
     const EntityHandle ent_for_side) {
   MoFEMFunctionBegin;
-  const EntityHandle ent = ent_for_side ? ent_for_side : getFEEntityHandle();
+  const auto ent = ent_for_side ? ent_for_side : getFEEntityHandle();
+  const auto *problem_ptr = getFEMethod()->problemPtr;
 
-  const Problem *problem_ptr = getFEMethod()->problemPtr;
   Range adjacent_ents;
   CHKERR ptrFE->mField.getInterface<BitRefManager>()->getAdjacenciesAny(
       ent, side_dim, adjacent_ents);
-  typedef NumeredEntFiniteElement_multiIndex::index<
-      Composite_Name_And_Ent_mi_tag>::type FEByComposite;
-  FEByComposite &numered_fe = problem_ptr->numeredFiniteElementsPtr
-                                  ->get<Composite_Name_And_Ent_mi_tag>();
+  auto &numered_fe = problem_ptr->numeredFiniteElementsPtr
+                         ->get<Composite_Name_And_Ent_mi_tag>();
 
   side_fe->feName = fe_name;
 
@@ -1544,10 +1542,8 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopSide(
 
   int nn = 0;
   side_fe->loopSize = adjacent_ents.size();
-  for (Range::iterator vit = adjacent_ents.begin(); vit != adjacent_ents.end();
-       vit++) {
-    FEByComposite::iterator miit =
-        numered_fe.find(boost::make_tuple(fe_name, *vit));
+  for (auto fe_ent : adjacent_ents) {
+    auto miit = numered_fe.find(boost::make_tuple(fe_name, fe_ent));
     if (miit != numered_fe.end()) {
       side_fe->nInTheLoop = nn++;
       side_fe->numeredEntFiniteElementPtr = *miit;

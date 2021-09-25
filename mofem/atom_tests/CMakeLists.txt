@@ -586,7 +586,8 @@ add_test(h1_check_approx_3d_ainsworth_tet
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_3d
   -file_name sphere.h5m
   -base ainsworth -space h1 
-  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
+  -pc_type lu -pc_factor_mat_solver_type mumps
+  -ksp_atol 1e-12 -ksp_rtol 0
   -log_no_color
 )
 add_test(h1_check_approx_3d_ainsworth_lobatto_tet
@@ -594,7 +595,7 @@ add_test(h1_check_approx_3d_ainsworth_lobatto_tet
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_3d
   -file_name sphere.h5m
   -base ainsworth_labatto -space h1 
-  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
+  -pc_type lu -pc_factor_mat_solver_type mumps
   -log_no_color
 )
 add_test(h1_check_approx_3d_bernstein_tet
@@ -602,7 +603,8 @@ add_test(h1_check_approx_3d_bernstein_tet
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_3d
   -file_name sphere.h5m
   -base bernstein -space h1 
-  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
+  -pc_type lu -pc_factor_mat_solver_type mumps 
+  -ksp_atol 1e-12 -ksp_rtol 0
   -log_no_color
 )
 add_test(l2_check_approx_3d_ainsworth_tet
@@ -610,7 +612,8 @@ add_test(l2_check_approx_3d_ainsworth_tet
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_3d
   -file_name sphere.h5m
   -base ainsworth -space l2 
-  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
+  -pc_type lu -pc_factor_mat_solver_type mumps
+  -ksp_atol 1e-12 -ksp_rtol 0
   -log_no_color
 )
 add_test(l2_check_approx_3d_bernstein_tet
@@ -618,7 +621,8 @@ add_test(l2_check_approx_3d_bernstein_tet
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_3d
   -file_name sphere.h5m
   -base bernstein -space l2 
-  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
+  -pc_type lu -pc_factor_mat_solver_type mumps
+  -ksp_atol 1e-12 -ksp_rtol 0
   -log_no_color
 )
 add_test(l2_check_approx_3d_demkowicz_hex
@@ -626,7 +630,8 @@ add_test(l2_check_approx_3d_demkowicz_hex
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_3d
   -file_name hex_cub.h5m
   -base demkowicz -space l2 
-  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
+  -pc_type lu -pc_factor_mat_solver_type mumps
+  -ksp_atol 1e-12 -ksp_rtol 0
   -log_no_color
 )
 add_test(h1_check_approx_3d_demkowicz_hex
@@ -634,7 +639,8 @@ add_test(h1_check_approx_3d_demkowicz_hex
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_3d
   -file_name hex_cub.h5m
   -base demkowicz -space h1
-  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-16 -ksp_rtol 0
+  -pc_type lu -pc_factor_mat_solver_type mumps
+  -ksp_atol 1e-16 -ksp_rtol 0
   -log_no_color
 )
 

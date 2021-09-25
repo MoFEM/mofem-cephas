@@ -26,7 +26,7 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
-static constexpr int approx_order = 5;
+static constexpr int approx_order = 4;
 template <int DIM> struct ApproxFunctionsImpl {};
 
 template <int DIM> struct ElementsAndOps {};
@@ -377,6 +377,7 @@ int main(int argc, char *argv[]) {
     VectorDouble vals;
     auto jac_ptr = boost::make_shared<MatrixDouble>();
     auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
+    auto det_ptr = boost::make_shared<VectorDouble>();
     MatrixDouble diff_vals;
 
     auto assemble_matrices_and_vectors = [&]() {
@@ -387,8 +388,6 @@ int main(int argc, char *argv[]) {
 
       using OpSource = FormsIntegrators<DomainEleOp>::Assembly<
           PETSC>::LinearForm<GAUSS>::OpSource<1, 1>;
-      pipeline_mng->getOpDomainRhsPipeline().push_back(
-          new OpSource("FIELD1", ApproxFunctions::fUn));
 
       if (SPACE_DIM == 2) {
         pipeline_mng->getOpDomainLhsPipeline().push_back(
@@ -398,13 +397,17 @@ int main(int argc, char *argv[]) {
       }
 
       if (SPACE_DIM == 3) {
-        auto jac_ptr = boost::make_shared<MatrixDouble>();
-        auto det_ptr = boost::make_shared<VectorDouble>();
         pipeline_mng->getOpDomainLhsPipeline().push_back(
             new OpCalculateHOJacVolume(jac_ptr));
         pipeline_mng->getOpDomainLhsPipeline().push_back(
             new OpInvertMatrix<3>(jac_ptr, det_ptr, nullptr));
         pipeline_mng->getOpDomainLhsPipeline().push_back(
+            new OpSetHOWeights(det_ptr));
+        pipeline_mng->getOpDomainRhsPipeline().push_back(
+            new OpCalculateHOJacVolume(jac_ptr));
+        pipeline_mng->getOpDomainRhsPipeline().push_back(
+            new OpInvertMatrix<3>(jac_ptr, det_ptr, nullptr));
+        pipeline_mng->getOpDomainRhsPipeline().push_back(
             new OpSetHOWeights(det_ptr));
       }
 
@@ -412,9 +415,11 @@ int main(int argc, char *argv[]) {
           PETSC>::BiLinearForm<GAUSS>::OpMass<1, 1>;
       pipeline_mng->getOpDomainLhsPipeline().push_back(new OpMass(
           "FIELD1", "FIELD1", [](double, double, double) { return 1.; }));
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
+          new OpSource("FIELD1", ApproxFunctions::fUn));
 
       auto integration_rule = [](int, int, int p_data) {
-        return 2 * p_data + 1;
+        return 3 * p_data;
       };
       CHKERR pipeline_mng->setDomainRhsIntegrationRule(integration_rule);
       CHKERR pipeline_mng->setDomainLhsIntegrationRule(integration_rule);
@@ -457,9 +462,6 @@ int main(int argc, char *argv[]) {
       }
 
       if(SPACE_DIM == 3) {
-        auto jac_ptr = boost::make_shared<MatrixDouble>();
-        auto det_ptr = boost::make_shared<VectorDouble>();
-        auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
         pipeline_mng->getOpDomainRhsPipeline().push_back(
             new OpCalculateHOJacVolume(jac_ptr));
         pipeline_mng->getOpDomainRhsPipeline().push_back(

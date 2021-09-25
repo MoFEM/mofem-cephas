@@ -132,6 +132,9 @@ int main(int argc, char *argv[]) {
     auto material_grad_mat = boost::make_shared<MatrixDouble>();
     auto material_det_vec = boost::make_shared<VectorDouble>();
     auto material_inv_grad_mat = boost::make_shared<MatrixDouble>();
+    auto jac_ptr = boost::make_shared<MatrixDouble>();
+    auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
+    auto det_ptr = boost::make_shared<VectorDouble>();
 
     boost::dynamic_pointer_cast<VolumeElementForcesAndSourcesCoreBase>(
         pipeline_mng->getDomainRhsFE())
@@ -139,6 +142,17 @@ int main(int argc, char *argv[]) {
     boost::dynamic_pointer_cast<PipelineManager::FaceEle>(
         pipeline_mng->getBoundaryRhsFE())
         ->meshPositionsFieldName = "none";
+
+    pipeline_mng->getOpDomainRhsPipeline().push_back(
+        new OpCalculateHOJacVolume(jac_ptr));
+    pipeline_mng->getOpDomainRhsPipeline().push_back(
+        new OpInvertMatrix<3>(jac_ptr, det_ptr, inv_jac_ptr));
+    pipeline_mng->getOpDomainRhsPipeline().push_back(
+        new OpSetHOWeights(det_ptr));
+    pipeline_mng->getOpDomainRhsPipeline().push_back(
+        new OpSetHOCovariantPiolaTransform(HCURL, inv_jac_ptr));
+    pipeline_mng->getOpDomainRhsPipeline().push_back(
+        new OpSetHOInvJacVectorBase(HCURL, inv_jac_ptr));
 
     if (ho_geometry) {
       pipeline_mng->getOpDomainRhsPipeline().push_back(
@@ -152,7 +166,7 @@ int main(int argc, char *argv[]) {
           new OpSetHOCovariantPiolaTransform(HCURL, material_inv_grad_mat));
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpSetHOInvJacVectorBase(HCURL, material_inv_grad_mat));
-    }
+    } 
     pipeline_mng->getOpDomainRhsPipeline().push_back(new OpVolCurl(t_curl_vol));
 
     if (m_field.check_field("MESH_NODE_POSITIONS"))

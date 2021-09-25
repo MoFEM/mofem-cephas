@@ -66,6 +66,10 @@ struct OpSetHOInvJacToScalarBases
   OpSetHOInvJacToScalarBases(const FieldSpace space,
                              boost::shared_ptr<MatrixDouble> inv_jac_ptr)
       : ForcesAndSourcesCore::UserDataOperator(space), invJacPtr(inv_jac_ptr) {
+
+    if(!inv_jac_ptr)
+      CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "invJacPtr not allocated");
+
     if (space == L2) {
       doVertices = false;
     }
@@ -91,6 +95,11 @@ struct OpSetHOInvJacVectorBase : public ForcesAndSourcesCore::UserDataOperator {
   OpSetHOInvJacVectorBase(const FieldSpace space,
                           boost::shared_ptr<MatrixDouble> inv_jac_ptr)
       : ForcesAndSourcesCore::UserDataOperator(space), invJacPtr(inv_jac_ptr) {
+
+    if (!invJacPtr)
+      CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY,
+                        "Pointer for invJacPtr not allocated");
+
     doVertices = false;
     if (space == HDIV)
       doEdges = false;
@@ -127,7 +136,11 @@ struct OpSetHOWeights : public ForcesAndSourcesCore::UserDataOperator {
 
   OpSetHOWeights(boost::shared_ptr<VectorDouble> det_ptr)
       : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPLAST),
-        detPtr(det_ptr) {}
+        detPtr(det_ptr) {
+    if (!detPtr)
+      CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY,
+                        "Pointer for detPtr not allocated");
+  }
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
@@ -176,6 +189,9 @@ struct OpSetHOCovariantPiolaTransform
     doVertices = false;
     if (space == HDIV)
       doEdges = false;
+    if (!jacInvPtr)
+      CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY,
+                        "Pointer for jacPtr not allocated");
   }
 
   MoFEMErrorCode doWork(int side, EntityType type,
@@ -429,11 +445,11 @@ MoFEMErrorCode addHOOpsVol(const std::string field, E &e, bool h1, bool hcurl,
     e.getOpPtrVector().push_back(new OpSetHOContravariantPiolaTransform(
         HDIV, material_det_vec, material_grad_mat));
     e.getOpPtrVector().push_back(
-        new OpSetHOCovariantPiolaTransform(HDIV, material_inv_grad_mat));
+        new OpSetHOInvJacVectorBase(HDIV, material_inv_grad_mat));
   }
   if (hcurl) {
     e.getOpPtrVector().push_back(
-        new OpSetHOInvJacVectorBase(HCURL, material_inv_grad_mat));
+        new OpSetHOCovariantPiolaTransform(HCURL, material_inv_grad_mat));
     e.getOpPtrVector().push_back(
         new OpSetHOInvJacVectorBase(HCURL, material_inv_grad_mat));
   }

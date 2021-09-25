@@ -450,6 +450,7 @@ MoFEMErrorCode OpMassImpl<1, 1, GAUSS, OpBase>::iNtegrate(
     // take into account Jacobian
     const double alpha = t_w * beta;
     // loop over rows base functions
+    auto a_mat_ptr = &*OpBase::locMat.data().begin();
     int rr = 0;
     for (; rr != OpBase::nbRows; rr++) {
       // get column base functions gradient at gauss point gg
@@ -457,8 +458,9 @@ MoFEMErrorCode OpMassImpl<1, 1, GAUSS, OpBase>::iNtegrate(
       // loop over columns
       for (int cc = 0; cc != OpBase::nbCols; cc++) {
         // calculate element of local matrix
-        OpBase::locMat(rr, cc) += alpha * (t_row_base * t_col_base);
+        *a_mat_ptr += alpha * (t_row_base * t_col_base);
         ++t_col_base;
+        ++a_mat_ptr;
       }
       ++t_row_base;
     }
@@ -552,6 +554,7 @@ MoFEMErrorCode OpMassImpl<BASE_DIM, BASE_DIM, GAUSS, OpBase>::iNtegrate(
     // take into account Jacobian
     const double alpha = t_w * beta;
     // loop over rows base functions
+    auto a_mat_ptr = &*OpBase::locMat.data().begin();
     int rr = 0;
     for (; rr != OpBase::nbRows; rr++) {
       // get column base functions gradient at gauss point gg
@@ -559,8 +562,9 @@ MoFEMErrorCode OpMassImpl<BASE_DIM, BASE_DIM, GAUSS, OpBase>::iNtegrate(
       // loop over columns
       for (int cc = 0; cc != OpBase::nbCols; cc++) {
         // calculate element of local matrix
-        OpBase::locMat(rr, cc) += alpha * (t_row_base(i) * t_col_base(i));
+        (*a_mat_ptr) += alpha * (t_row_base(i) * t_col_base(i));
         ++t_col_base;
+        ++a_mat_ptr;
       }
       ++t_row_base;
     }
