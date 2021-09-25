@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.add_ents_to_field_by_dim(root_set, 3, "F2");
 
     // set app. order
-    int order = 2;
+    int order = 3;
     CHKERR m_field.set_field_order(root_set, MBTET, "F2", order);
     CHKERR m_field.set_field_order(root_set, MBHEX, "F2", order);
     CHKERR m_field.set_field_order(root_set, MBTRI, "F2", order);
