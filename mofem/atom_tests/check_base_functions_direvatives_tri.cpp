@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
     PetscInt choice_value = H1TRI;
     CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-space", list_spaces, LASTOP,
                                 &choice_value, &flg);
-    
+
     if (flg != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "base not set");
     }
@@ -71,30 +71,28 @@ int main(int argc, char *argv[]) {
       base = DEMKOWICZ_JACOBI_BASE;
     }
 
-
     moab::Core mb_instance;
     moab::Interface &moab = mb_instance;
     int rank;
     MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
     // create one tet
-    double tri_coords[] = {0,   0,   0,
+    double tri_coords[] = {0,   0,  0,
 
-                           0.5, 0,   0,
+                           0.5, 0,  0,
 
                            0,   2., 0};
     EntityHandle nodes[3];
     for (int nn = 0; nn < 3; nn++) {
       CHKERR moab.create_vertex(&tri_coords[3 * nn], nodes[nn]);
-      
     }
     EntityHandle tri;
     CHKERR moab.create_element(MBTRI, nodes, 3, tri);
-    
+
     // Create adjacencies entities
     Range adj;
     CHKERR moab.get_adjacencies(&tri, 1, 1, true, adj);
-    
+
     // Create MoFEM database
     MoFEM::Core core(moab);
     MoFEM::Interface &m_field = core;
@@ -104,36 +102,32 @@ int main(int argc, char *argv[]) {
     bit_level0.set(0);
     CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
         0, 2, bit_level0);
-    
 
     // Fields
     CHKERR m_field.add_field("FIELD", space, base, 1);
-    
 
     // FE TET
     CHKERR m_field.add_finite_element("TRI_FE");
-    
+
     // Define rows/cols and element data
     CHKERR m_field.modify_finite_element_add_field_row("TRI_FE", "FIELD");
     CHKERR m_field.modify_finite_element_add_field_col("TRI_FE", "FIELD");
     CHKERR m_field.modify_finite_element_add_field_data("TRI_FE", "FIELD");
-    
 
     // Problem
     CHKERR m_field.add_problem("TEST_PROBLEM");
 
     // set finite elements for problem
     CHKERR m_field.modify_problem_add_finite_element("TEST_PROBLEM", "TRI_FE");
-    
+
     // set refinement level for problem
     CHKERR m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM", bit_level0);
-    
 
     // meshset consisting all entities in mesh
     EntityHandle root_set = moab.get_root_set();
     // add entities to field
     CHKERR m_field.add_ents_to_field_by_type(root_set, MBTRI, "FIELD");
-    
+
     // add entities to finite element
     CHKERR m_field.add_ents_to_finite_element_by_type(root_set, MBTRI,
                                                       "TRI_FE");
@@ -144,7 +138,6 @@ int main(int argc, char *argv[]) {
       CHKERR m_field.set_field_order(root_set, MBTRI, "FIELD", order);
       CHKERR m_field.set_field_order(root_set, MBEDGE, "FIELD", order);
       CHKERR m_field.set_field_order(root_set, MBVERTEX, "FIELD", 1);
-      
     }
     if (space == HCURL) {
       CHKERR m_field.set_field_order(root_set, MBTRI, "FIELD", order);
@@ -153,24 +146,23 @@ int main(int argc, char *argv[]) {
 
     // build field
     CHKERR m_field.build_fields();
-    
+
     // build finite elemnts
     CHKERR m_field.build_finite_elements();
-    
+
     // build adjacencies
     CHKERR m_field.build_adjacencies(bit_level0);
-    
+
     // build problem
     ProblemsManager *prb_mng_ptr;
     CHKERR m_field.getInterface(prb_mng_ptr);
-    
+
     CHKERR prb_mng_ptr->buildProblem("TEST_PROBLEM", true);
-    
 
     // partition
     CHKERR prb_mng_ptr->partitionSimpleProblem("TEST_PROBLEM");
     CHKERR prb_mng_ptr->partitionFiniteElements("TEST_PROBLEM");
-    
+
     // what are ghost nodes, see Petsc Manual
     CHKERR prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM");
 
@@ -343,21 +335,22 @@ int main(int argc, char *argv[]) {
 
     MyFE tri_fe(m_field);
 
-    MatrixDouble inv_jac;
-    tri_fe.getOpPtrVector().push_back(new OpCalculateInvJacForFace(inv_jac));
+    auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
+
+    tri_fe.getOpPtrVector().push_back(
+        new OpCalculateInvJacForFace(inv_jac_ptr));
     if (space == H1) {
-      tri_fe.getOpPtrVector().push_back(new OpSetInvJacH1ForFace(inv_jac));
+      tri_fe.getOpPtrVector().push_back(new OpSetInvJacH1ForFace(inv_jac_ptr));
     }
     if (space == HCURL) {
-      tri_fe.getOpPtrVector().push_back(new OpSetInvJacHcurlFace(inv_jac));
+      tri_fe.getOpPtrVector().push_back(new OpSetInvJacHcurlFace(inv_jac_ptr));
     }
     tri_fe.getOpPtrVector().push_back(new OpCheckingDirevatives(my_split));
     CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TRI_FE", tri_fe);
-    
-    cerr << inv_jac << endl;
+
+    cerr << *inv_jac_ptr << endl;
   }
   CATCH_ERRORS;
 
   CHKERR MoFEM::Core::Finalize();
-  
 }

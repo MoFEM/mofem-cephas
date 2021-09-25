@@ -204,13 +204,15 @@ int main(int argc, char *argv[]) {
       double div = 0;
       FaceEle fe_face(m_field);
       fe_face.getRuleHook = rule;
-      MatrixDouble inv_jac(2, 2), jac(2, 2);
-      fe_face.getOpPtrVector().push_back(new OpCalculateJacForFace(jac));
-      fe_face.getOpPtrVector().push_back(new OpCalculateInvJacForFace(inv_jac));
+      auto jac_ptr = boost::make_shared<MatrixDouble>();
+      auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
+      fe_face.getOpPtrVector().push_back(new OpCalculateJacForFace(jac_ptr));
+      fe_face.getOpPtrVector().push_back(
+          new OpCalculateInvJacForFace(inv_jac_ptr));
       fe_face.getOpPtrVector().push_back(new OpMakeHdivFromHcurl());
       fe_face.getOpPtrVector().push_back(
-          new OpSetContravariantPiolaTransformOnFace2D(jac));
-      fe_face.getOpPtrVector().push_back(new OpSetInvJacHcurlFace(inv_jac));
+          new OpSetContravariantPiolaTransformOnFace2D(jac_ptr));
+      fe_face.getOpPtrVector().push_back(new OpSetInvJacHcurlFace(inv_jac_ptr));
       fe_face.getOpPtrVector().push_back(
           new OpSetHOWeigthsOnFace());
       fe_face.getOpPtrVector().push_back(new OpDivergence(div));

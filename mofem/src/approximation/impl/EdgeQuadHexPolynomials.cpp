@@ -1429,7 +1429,7 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hdiv_FaceShapeFunctions_ONHEX(
 
   for (int face = 0; face != 6; face++) {
 
-    const int nb_dofs = (p[1] * p[2]);
+    const int nb_dofs = (p[face] * p[face]);
 
     if (nb_dofs > 0) {
 
@@ -1447,8 +1447,8 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hdiv_FaceShapeFunctions_ONHEX(
       const int o3 = opposite_face_node[face][face_nodes_order[4 * face + 3]];
 
       int permute[nb_dofs][3];
-      CHKERR ::DemkowiczHexAndQuad::monom_ordering(&permute[0][0], p[0] - 1,
-                                                   p[1] - 1);
+      CHKERR ::DemkowiczHexAndQuad::monom_ordering(&permute[0][0], p[face] - 1,
+                                                   p[face] - 1);
 
       for (int q = 0; q != nb_integration_pts; ++q) {
 

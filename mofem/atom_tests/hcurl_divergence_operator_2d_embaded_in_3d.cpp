@@ -203,17 +203,19 @@ int main(int argc, char *argv[]) {
       double div = 0;
       FaceEle fe_face(m_field);
       fe_face.getRuleHook = rule;
-      MatrixDouble inv_jac(2, 2), jac(2, 2);
+
+      auto jac_ptr = boost::make_shared<MatrixDouble>();
+      auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
 
       fe_face.getOpPtrVector().push_back(
-          new OpCalculateJacForFaceEmbeddedIn3DSpace(jac));
+          new OpCalculateJacForFaceEmbeddedIn3DSpace(jac_ptr));
       fe_face.getOpPtrVector().push_back(
-          new OpCalculateInvJacForFaceEmbeddedIn3DSpace(inv_jac));
+          new OpCalculateInvJacForFaceEmbeddedIn3DSpace(inv_jac_ptr));
       fe_face.getOpPtrVector().push_back(new OpMakeHdivFromHcurl());
       fe_face.getOpPtrVector().push_back(
-          new OpSetContravariantPiolaTransformOnFace2DEmbeddedIn3DSpace(jac));
+          new OpSetContravariantPiolaTransformOnFace2DEmbeddedIn3DSpace(jac_ptr));
       fe_face.getOpPtrVector().push_back(
-          new OpSetInvJacHcurlFaceEmbeddedIn3DSpace(inv_jac));
+          new OpSetInvJacHcurlFaceEmbeddedIn3DSpace(inv_jac_ptr));
       fe_face.getOpPtrVector().push_back(
           new OpSetHOWeigthsOnFace());
       fe_face.getOpPtrVector().push_back(new OpDivergence(div));

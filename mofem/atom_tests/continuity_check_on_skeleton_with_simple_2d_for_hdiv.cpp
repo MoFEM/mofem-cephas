@@ -88,16 +88,16 @@ struct SkeletonFE : public EdgeEleOp {
 
   CommonData &elemData;
   FaceEleOnSide faceSideFe;
-  MatrixDouble jac;
 
   SkeletonFE(MoFEM::Interface &m_field, CommonData &elem_data)
       : EdgeEle::UserDataOperator("FIELD", UserDataOperator::OPROW),
         faceSideFe(m_field), elemData(elem_data) {
 
-      faceSideFe.getOpPtrVector().push_back(new OpCalculateJacForFace(jac));
+      auto jac_ptr = boost::make_shared<MatrixDouble>();
+      faceSideFe.getOpPtrVector().push_back(new OpCalculateJacForFace(jac_ptr));
       faceSideFe.getOpPtrVector().push_back(new OpMakeHdivFromHcurl());
       faceSideFe.getOpPtrVector().push_back(
-          new OpSetContravariantPiolaTransformOnFace2D(jac));
+          new OpSetContravariantPiolaTransformOnFace2D(jac_ptr));
       faceSideFe.getOpPtrVector().push_back(
           new SkeletonFE::OpFaceSide(elemData));
 

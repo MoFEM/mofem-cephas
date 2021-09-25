@@ -375,7 +375,9 @@ int main(int argc, char *argv[]) {
     auto dm = simple_interface->getDM();
 
     VectorDouble vals;
-    MatrixDouble jac, inv_jac, diff_vals;
+    auto jac_ptr = boost::make_shared<MatrixDouble>();
+    auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
+    MatrixDouble diff_vals;
 
     auto assemble_matrices_and_vectors = [&]() {
       MoFEMFunctionBegin;
@@ -390,7 +392,7 @@ int main(int argc, char *argv[]) {
 
       if (SPACE_DIM == 2) {
         pipeline_mng->getOpDomainLhsPipeline().push_back(
-            new OpCalculateInvJacForFace(inv_jac));
+            new OpCalculateInvJacForFace(inv_jac_ptr));
         pipeline_mng->getOpDomainLhsPipeline().push_back(
             new OpSetHOWeigthsOnFace());
       }
@@ -449,9 +451,9 @@ int main(int argc, char *argv[]) {
 
       if (SPACE_DIM == 2) {
         pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpCalculateInvJacForFace(inv_jac));
+            new OpCalculateInvJacForFace(inv_jac_ptr));
         pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpSetInvJacSpaceForFaceImpl<2>(inv_jac, space));
+            new OpSetInvJacSpaceForFaceImpl<2>(inv_jac_ptr, space));
       }
 
       if(SPACE_DIM == 3) {

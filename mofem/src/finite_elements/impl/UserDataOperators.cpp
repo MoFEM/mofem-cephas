@@ -30,15 +30,15 @@ OpCalculateJacForFaceImpl<2>::doWork(int side, EntityType type,
   size_t nb_gauss_pts = getGaussPts().size2();
   auto &coords = getCoords();
   double *coords_ptr = &*coords.data().begin();
-  jac.resize(4, nb_gauss_pts, false);
-  jac.clear();
+  jacPtr->resize(4, nb_gauss_pts, false);
+  jacPtr->clear();
 
   auto cal_jac = [&]() {
     MoFEMFunctionBeginHot;
 
     auto t_t1 = getFTensor1Tangent1AtGaussPts();
     auto t_t2 = getFTensor1Tangent2AtGaussPts();
-    auto t_jac = getFaceJac(jac, FTensor::Number<2>());
+    auto t_jac = getFaceJac(*jacPtr, FTensor::Number<2>());
     for (size_t gg = 0; gg != nb_gauss_pts; ++gg, ++t_jac) {
 
       t_jac(0, 0) = t_t1(0);
@@ -70,8 +70,8 @@ OpCalculateJacForFaceImpl<3>::doWork(int side, EntityType type,
   size_t nb_gauss_pts = getGaussPts().size2();
   auto &coords = getCoords();
   double *coords_ptr = &*coords.data().begin();
-  jac.resize(9, nb_gauss_pts, false);
-  jac.clear();
+  jacPtr->resize(9, nb_gauss_pts, false);
+  jacPtr->clear();
 
   auto cal_jac_on_tri = [&]() {
     MoFEMFunctionBeginHot;
@@ -100,7 +100,7 @@ OpCalculateJacForFaceImpl<3>::doWork(int side, EntityType type,
     t_normal(j) = FTensor::levi_civita(i, j, k) * t_t1(k) * t_t2(i);
     t_normal(i) /= sqrt(t_normal(j) * t_normal(j));
 
-    auto t_jac = getFaceJac(jac, FTensor::Number<3>());
+    auto t_jac = getFaceJac(*jacPtr, FTensor::Number<3>());
     for (size_t gg = 0; gg != nb_gauss_pts; ++gg, ++t_jac) {
 
       t_jac(0, 0) = j00;
@@ -120,7 +120,7 @@ OpCalculateJacForFaceImpl<3>::doWork(int side, EntityType type,
   auto cal_jac_on_quad = [&]() {
     MoFEMFunctionBeginHot;
 
-    auto t_jac = getFaceJac(jac, FTensor::Number<3>());
+    auto t_jac = getFaceJac(*jacPtr, FTensor::Number<3>());
     double *ksi_ptr = &getGaussPts()(0, 0);
     double *zeta_ptr = &getGaussPts()(1, 0);
     for (size_t gg = 0; gg != nb_gauss_pts;
@@ -191,8 +191,8 @@ MoFEMErrorCode OpCalculateInvJacForFaceImpl<2>::doWork(
   size_t nb_gauss_pts = getGaussPts().size2();
   auto &coords = getCoords();
   double *coords_ptr = &*coords.data().begin();
-  invJac.resize(4, nb_gauss_pts, false);
-  invJac.clear();
+  invJacPtr->resize(4, nb_gauss_pts, false);
+  invJacPtr->clear();
 
   auto cal_inv_jac_on_tri = [&]() {
     MoFEMFunctionBeginHot;
@@ -219,7 +219,7 @@ MoFEMErrorCode OpCalculateInvJacForFaceImpl<2>::doWork(
     CHKERR determinantTensor2by2(t_jac, det);
     CHKERR invertTensor2by2(t_jac, det, t_inv_jac);
 
-    auto t_inv_jac_at_pts = getFaceJac(invJac, FTensor::Number<2>());
+    auto t_inv_jac_at_pts = getFaceJac(*invJacPtr, FTensor::Number<2>());
 
     for (size_t gg = 0; gg != nb_gauss_pts; ++gg, ++t_inv_jac_at_pts) {
       t_inv_jac_at_pts(i, j) = t_inv_jac(i, j);
@@ -234,7 +234,7 @@ MoFEMErrorCode OpCalculateInvJacForFaceImpl<2>::doWork(
     double *ksi_ptr = &getGaussPts()(0, 0);
     double *zeta_ptr = &getGaussPts()(1, 0);
     FTensor::Tensor2<double, 2, 2> t_jac;
-    auto t_inv_jac = getFaceJac(invJac, FTensor::Number<2>());
+    auto t_inv_jac = getFaceJac(*invJacPtr, FTensor::Number<2>());
     for (size_t gg = 0; gg != nb_gauss_pts;
          ++gg, ++t_inv_jac, ++ksi_ptr, ++zeta_ptr) {
       const double &ksi = *ksi_ptr;
@@ -291,8 +291,8 @@ MoFEMErrorCode OpCalculateInvJacForFaceImpl<3>::doWork(
   size_t nb_gauss_pts = getGaussPts().size2();
   auto &coords = getCoords();
   double *coords_ptr = &*coords.data().begin();
-  invJac.resize(9, nb_gauss_pts, false);
-  invJac.clear();
+  invJacPtr->resize(9, nb_gauss_pts, false);
+  invJacPtr->clear();
 
   auto cal_inv_jac_on_tri = [&]() {
     MoFEMFunctionBeginHot;
@@ -335,7 +335,7 @@ MoFEMErrorCode OpCalculateInvJacForFaceImpl<3>::doWork(
     CHKERR determinantTensor3by3(t_jac, det);
     CHKERR invertTensor3by3(t_jac, det, t_inv_jac);
 
-    auto t_inv_jac_at_pts = getFaceJac(invJac, FTensor::Number<3>());
+    auto t_inv_jac_at_pts = getFaceJac(*invJacPtr, FTensor::Number<3>());
 
     for (size_t gg = 0; gg != nb_gauss_pts; ++gg, ++t_inv_jac_at_pts) {
       t_inv_jac_at_pts(i, j) = t_inv_jac(i, j);
@@ -351,7 +351,7 @@ MoFEMErrorCode OpCalculateInvJacForFaceImpl<3>::doWork(
     double *zeta_ptr = &getGaussPts()(1, 0);
     FTensor::Tensor2<double, 3, 3> t_jac;
 
-    auto t_inv_jac = getFaceJac(invJac, FTensor::Number<3>());
+    auto t_inv_jac = getFaceJac(*invJacPtr, FTensor::Number<3>());
     for (size_t gg = 0; gg != nb_gauss_pts;
          ++gg, ++t_inv_jac, ++ksi_ptr, ++zeta_ptr) {
       const double &ksi = *ksi_ptr;
@@ -440,7 +440,7 @@ MoFEMErrorCode OpSetInvJacSpaceForFaceImpl<2>::doWork(
             &diffNinvJac(0, 0), &diffNinvJac(0, 1));
         FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2> t_diff_n_ref(
             &diff_n(0, 0), &diff_n(0, 1));
-        auto t_inv_jac = getFaceJac(invJac, FTensor::Number<2>());
+        auto t_inv_jac = getFaceJac(*invJacPtr, FTensor::Number<2>());
         for (size_t gg = 0; gg != nb_gauss_pts; ++gg, ++t_inv_jac) {
           for (size_t dd = 0; dd != nb_functions; ++dd) {
             t_diff_n(i) = t_inv_jac(k, i) * t_diff_n_ref(k);
@@ -504,7 +504,7 @@ MoFEMErrorCode OpSetInvJacSpaceForFaceImpl<3>::doWork(
             &diffNinvJac(0, 0), &diffNinvJac(0, 1), &diffNinvJac(0, 2));
         FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2> t_diff_n_ref(
             &diff_n(0, 0), &diff_n(0, 1));
-        auto t_inv_jac = getFaceJac(invJac, FTensor::Number<3>());
+        auto t_inv_jac = getFaceJac(*invJacPtr, FTensor::Number<3>());
         for (size_t gg = 0; gg != nb_gauss_pts; ++gg, ++t_inv_jac) {
           for (size_t dd = 0; dd != nb_functions; ++dd) {
             t_diff_n(i) = t_inv_jac(K, i) * t_diff_n_ref(K);
@@ -577,7 +577,7 @@ OpSetInvJacHcurlFaceImpl<2>::doWork(int side, EntityType type,
 
           &t_inv_diff_n_ptr[HVEC2_0], &t_inv_diff_n_ptr[HVEC2_1]);
 
-      auto t_inv_jac = getFaceJac(invJac, FTensor::Number<2>());
+      auto t_inv_jac = getFaceJac(*invJacPtr, FTensor::Number<2>());
       for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg, ++t_inv_jac) {
         for (unsigned int bb = 0; bb != nb_base_functions; bb++) {
           t_inv_diff_n(i, j) = t_diff_n(i, k) * t_inv_jac(k, j);
@@ -631,7 +631,7 @@ OpSetInvJacHcurlFaceImpl<3>::doWork(int side, EntityType type,
           &t_inv_diff_n_ptr[HVEC2_0], &t_inv_diff_n_ptr[HVEC2_1],
           &t_inv_diff_n_ptr[HVEC2_2]);
 
-      auto t_inv_jac = getFaceJac(invJac, FTensor::Number<3>());
+      auto t_inv_jac = getFaceJac(*invJacPtr, FTensor::Number<3>());
       for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg, ++t_inv_jac) {
         for (unsigned int bb = 0; bb != nb_base_functions; bb++) {
           t_inv_diff_n(i, j) = t_diff_n(i, K) * t_inv_jac(K, j);
@@ -720,7 +720,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransformOnFace2DImpl<2>::doWork(
         FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_transformed_n(
             t_transformed_n_ptr, // HVEC0
             &t_transformed_n_ptr[HVEC1], &t_transformed_n_ptr[HVEC2]);
-        auto t_jac = getFaceJac(jAc, FTensor::Number<2>());
+        auto t_jac = getFaceJac(*jacPtr, FTensor::Number<2>());
         for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg, ++t_jac) {
           double det;
           CHKERR determinantTensor2by2(t_jac, det);
@@ -746,7 +746,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransformOnFace2DImpl<2>::doWork(
 
                                  &t_transformed_diff_n_ptr[HVEC2_0],
                                  &t_transformed_diff_n_ptr[HVEC2_1]);
-        auto t_jac = getFaceJac(jAc, FTensor::Number<2>());
+        auto t_jac = getFaceJac(*jacPtr, FTensor::Number<2>());
         for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg, ++t_jac) {
           double det;
           CHKERR determinantTensor2by2(t_jac, det);
@@ -791,7 +791,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransformOnFace2DImpl<3>::doWork(
         FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_transformed_n(
             t_transformed_n_ptr, // HVEC0
             &t_transformed_n_ptr[HVEC1], &t_transformed_n_ptr[HVEC2]);
-        auto t_jac = getFaceJac(jAc, FTensor::Number<3>());
+        auto t_jac = getFaceJac(*jacPtr, FTensor::Number<3>());
         for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg, ++t_jac) {
           double det;
           CHKERR determinantTensor3by3(t_jac, det);
@@ -826,7 +826,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransformOnFace2DImpl<3>::doWork(
                                  &t_transformed_diff_n_ptr[HVEC2_0],
                                  &t_transformed_diff_n_ptr[HVEC2_1]);
 
-        auto t_jac = getFaceJac(jAc, FTensor::Number<3>());
+        auto t_jac = getFaceJac(*jacPtr, FTensor::Number<3>());
         for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg, ++t_jac) {
           double det;
           CHKERR determinantTensor3by3(t_jac, det);

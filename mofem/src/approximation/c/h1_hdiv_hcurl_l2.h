@@ -149,9 +149,9 @@ extern "C" {
 #define NBFACETRI_DEMKOWICZ_HDIV(P) ((P > 0) ? (P) * (P + 1) / 2 : 0)
 #define NBVOLUMETET_DEMKOWICZ_HDIV(P)                                          \
   (((P) > 1) ? (P) * (P - 1) * (P + 1) / 2 : 0)
-#define NBFACEQUAD_DEMKOWICZ_QUAD_HDIV_GEMERAL(P, Q)                           \
-  (((P) > 0 && (Q) > 1) ? ((P) * (Q)) : 0)
 
+#define NBFACEQUAD_DEMKOWICZ_QUAD_HDIV_GEMERAL(P, Q)                           \
+  (((P) > 0 && (Q) > 0) ? ((P) * (Q)) : 0)
 #define NBFACEQUAD_DEMKOWICZ_HDIV(P)                                           \
   (NBFACEQUAD_DEMKOWICZ_QUAD_HDIV_GEMERAL(P, P))
 #define NBVOLUMEHEX_DEMKOWICZ_FAMILY_HDIV(P, Q, R)                             \

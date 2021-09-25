@@ -2493,15 +2493,15 @@ template <>
 struct OpCalculateJacForFaceImpl<2>
     : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
 
-  OpCalculateJacForFaceImpl(MatrixDouble &jac)
+  OpCalculateJacForFaceImpl(boost::shared_ptr<MatrixDouble> jac_ptr)
       : FaceElementForcesAndSourcesCoreBase::UserDataOperator(NOSPACE),
-        jac(jac) {}
+        jacPtr(jac_ptr) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
 
 protected:
-  MatrixDouble &jac;
+  boost::shared_ptr<MatrixDouble> jacPtr;
 };
 
 template <>
@@ -2533,15 +2533,15 @@ template <>
 struct OpCalculateInvJacForFaceImpl<2>
     : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
 
-  OpCalculateInvJacForFaceImpl(MatrixDouble &inv_jac)
+  OpCalculateInvJacForFaceImpl(boost::shared_ptr<MatrixDouble> inv_jac_ptr)
       : FaceElementForcesAndSourcesCoreBase::UserDataOperator(NOSPACE),
-        invJac(inv_jac) {}
+        invJacPtr(inv_jac_ptr) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
 
 protected:
-  MatrixDouble &invJac;
+  boost::shared_ptr<MatrixDouble> invJacPtr;
 };
 
 template <>
@@ -2571,15 +2571,15 @@ template <>
 struct OpSetInvJacSpaceForFaceImpl<2>
     : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
 
-  OpSetInvJacSpaceForFaceImpl(MatrixDouble &inv_jac, FieldSpace space)
+  OpSetInvJacSpaceForFaceImpl(boost::shared_ptr<MatrixDouble> inv_jac_ptr, FieldSpace space)
       : FaceElementForcesAndSourcesCoreBase::UserDataOperator(space),
-        invJac(inv_jac) {}
+        invJacPtr(inv_jac_ptr) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
 
 protected:
-  MatrixDouble &invJac;
+  boost::shared_ptr<MatrixDouble> invJacPtr;
   MatrixDouble diffNinvJac;
 };
 
@@ -2593,25 +2593,25 @@ struct OpSetInvJacSpaceForFaceImpl<3> : public OpSetInvJacSpaceForFaceImpl<2> {
 };
 
 struct OpSetInvJacH1ForFace : public OpSetInvJacSpaceForFaceImpl<2> {
-  OpSetInvJacH1ForFace(MatrixDouble &inv_jac)
-      : OpSetInvJacSpaceForFaceImpl(inv_jac, H1) {}
+  OpSetInvJacH1ForFace(boost::shared_ptr<MatrixDouble> inv_jac_ptr)
+      : OpSetInvJacSpaceForFaceImpl(inv_jac_ptr, H1) {}
 };
 
 struct OpSetInvJacL2ForFace : public OpSetInvJacSpaceForFaceImpl<2> {
-  OpSetInvJacL2ForFace(MatrixDouble &inv_jac)
-      : OpSetInvJacSpaceForFaceImpl(inv_jac, L2) {}
+  OpSetInvJacL2ForFace(boost::shared_ptr<MatrixDouble> inv_jac_ptr)
+      : OpSetInvJacSpaceForFaceImpl(inv_jac_ptr, L2) {}
 };
 
 struct OpSetInvJacH1ForFaceEmbeddedIn3DSpace
     : public OpSetInvJacSpaceForFaceImpl<3> {
-  OpSetInvJacH1ForFaceEmbeddedIn3DSpace(MatrixDouble &inv_jac)
-      : OpSetInvJacSpaceForFaceImpl(inv_jac, H1) {}
+  OpSetInvJacH1ForFaceEmbeddedIn3DSpace(boost::shared_ptr<MatrixDouble> inv_jac_ptr)
+      : OpSetInvJacSpaceForFaceImpl(inv_jac_ptr, H1) {}
 };
 
 struct OpSetInvJacL2ForFaceEmbeddedIn3DSpace
     : public OpSetInvJacSpaceForFaceImpl<3> {
-  OpSetInvJacL2ForFaceEmbeddedIn3DSpace(MatrixDouble &inv_jac)
-      : OpSetInvJacSpaceForFaceImpl(inv_jac, L2) {}
+  OpSetInvJacL2ForFaceEmbeddedIn3DSpace(boost::shared_ptr<MatrixDouble> inv_jac_ptr)
+      : OpSetInvJacSpaceForFaceImpl(inv_jac_ptr, L2) {}
 };
 
 /**
@@ -2626,15 +2626,15 @@ template <>
 struct OpSetInvJacHcurlFaceImpl<2>
     : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
 
-  OpSetInvJacHcurlFaceImpl(MatrixDouble &inv_jac)
+  OpSetInvJacHcurlFaceImpl(boost::shared_ptr<MatrixDouble> inv_jac_ptr)
       : FaceElementForcesAndSourcesCoreBase::UserDataOperator(HCURL),
-        invJac(inv_jac) {}
+        invJacPtr(inv_jac_ptr) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
 
 protected:
-  MatrixDouble &invJac;
+  boost::shared_ptr<MatrixDouble> invJacPtr;
   MatrixDouble diffHcurlInvJac;
 };
 
@@ -2683,15 +2683,15 @@ template <>
 struct OpSetContravariantPiolaTransformOnFace2DImpl<2>
     : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
 
-  OpSetContravariantPiolaTransformOnFace2DImpl(MatrixDouble &jac)
-      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(HCURL), jAc(jac) {
+  OpSetContravariantPiolaTransformOnFace2DImpl(boost::shared_ptr<MatrixDouble> jac_ptr)
+      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(HCURL), jacPtr(jac_ptr) {
   }
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
 
 protected:
-  MatrixDouble &jAc;
+  boost::shared_ptr<MatrixDouble> jacPtr;
   MatrixDouble piolaN;
   MatrixDouble piolaDiffN;
 };
