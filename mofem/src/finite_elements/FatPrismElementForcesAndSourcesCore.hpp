@@ -131,7 +131,7 @@ struct FatPrismElementForcesAndSourcesCore
      * tautges2010canonical
      *
      */
-    inline MatrixDouble &getNormalsAtGaussPtF3();
+    inline MatrixDouble &getNormalsAtGaussPtsF3();
 
     /** \brief if higher order geometry return normals at face F4 at Gauss pts.
      *
@@ -139,7 +139,7 @@ struct FatPrismElementForcesAndSourcesCore
      * tautges2010canonical
      *
      */
-    inline MatrixDouble &getNormalsAtGaussPtF4();
+    inline MatrixDouble &getNormalsAtGaussPtsF4();
 
     /** \brief if higher order geometry return normals at Gauss pts.
      *
@@ -148,7 +148,7 @@ struct FatPrismElementForcesAndSourcesCore
      *
      * \param gg gauss point number
      */
-    inline ublas::matrix_row<MatrixDouble> getNormalsAtGaussPtF3(const int gg);
+    inline ublas::matrix_row<MatrixDouble> getNormalsAtGaussPtsF3(const int gg);
 
     /** \brief if higher order geometry return normals at Gauss pts.
      *
@@ -157,7 +157,7 @@ struct FatPrismElementForcesAndSourcesCore
      *
      * \param gg gauss point number
      */
-    inline ublas::matrix_row<MatrixDouble> getNormalsAtGaussPtF4(const int gg);
+    inline ublas::matrix_row<MatrixDouble> getNormalsAtGaussPtsF4(const int gg);
 
     /** \brief if higher order geometry return tangent vector to triangle at
      * Gauss pts.
@@ -293,19 +293,19 @@ inline MatrixDouble &FatPrismElementForcesAndSourcesCore::UserDataOperator::
 }
 
 inline MatrixDouble &
-FatPrismElementForcesAndSourcesCore::UserDataOperator::getNormalsAtGaussPtF3() {
+FatPrismElementForcesAndSourcesCore::UserDataOperator::getNormalsAtGaussPtsF3() {
   return static_cast<FatPrismElementForcesAndSourcesCore *>(ptrFE)
       ->nOrmals_at_GaussPtF3;
 }
 
 inline MatrixDouble &
-FatPrismElementForcesAndSourcesCore::UserDataOperator::getNormalsAtGaussPtF4() {
+FatPrismElementForcesAndSourcesCore::UserDataOperator::getNormalsAtGaussPtsF4() {
   return static_cast<FatPrismElementForcesAndSourcesCore *>(ptrFE)
       ->nOrmals_at_GaussPtF4;
 }
 
 inline ublas::matrix_row<MatrixDouble>
-FatPrismElementForcesAndSourcesCore::UserDataOperator::getNormalsAtGaussPtF3(
+FatPrismElementForcesAndSourcesCore::UserDataOperator::getNormalsAtGaussPtsF3(
     const int gg) {
   return ublas::matrix_row<MatrixDouble>(
       static_cast<FatPrismElementForcesAndSourcesCore *>(ptrFE)
@@ -314,7 +314,7 @@ FatPrismElementForcesAndSourcesCore::UserDataOperator::getNormalsAtGaussPtF3(
 }
 
 inline ublas::matrix_row<MatrixDouble>
-FatPrismElementForcesAndSourcesCore::UserDataOperator::getNormalsAtGaussPtF4(
+FatPrismElementForcesAndSourcesCore::UserDataOperator::getNormalsAtGaussPtsF4(
     const int gg) {
   return ublas::matrix_row<MatrixDouble>(
       static_cast<FatPrismElementForcesAndSourcesCore *>(ptrFE)

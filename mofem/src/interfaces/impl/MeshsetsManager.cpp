@@ -31,7 +31,8 @@ namespace MoFEM {
 bool MeshsetsManager::brodcastMeshsets = true;
 
 MoFEMErrorCode
-MeshsetsManager::query_interface(boost::typeindex::type_index type_index, UnknownInterface **iface) const {
+MeshsetsManager::query_interface(boost::typeindex::type_index type_index,
+                                 UnknownInterface **iface) const {
   *iface = const_cast<MeshsetsManager *>(this);
   return 0;
 }
