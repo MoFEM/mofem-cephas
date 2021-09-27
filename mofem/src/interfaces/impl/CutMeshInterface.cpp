@@ -466,8 +466,17 @@ MoFEMErrorCode CutMeshInterface::makeFront(const bool debug) {
   Range tets_skin;
   CHKERR skin.find_skin(0, vOlume, false, tets_skin);
   Range tets_skin_edges;
-  CHKERR moab.get_adjacencies(tets_skin, 1, false, tets_skin_edges,
-                              moab::Interface::UNION);
+  ErrorCode tmp_result;
+  tmp_result = moab.get_adjacencies(tets_skin, 1, false, tets_skin_edges,
+                                    moab::Interface::UNION);
+
+  if (MB_SUCCESS != tmp_result)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Duplicated edges: most likely the source of error is comming from "
+            "adding the vertices of the cracking "
+            "volume to a BLOCKSET rather than NODESET (corresponding to the "
+            "input parameter-vertex_block_set)");
+
   Range surface_skin;
   CHKERR skin.find_skin(0, sUrface, false, surface_skin);
   fRont = subtract(surface_skin, tets_skin_edges);
@@ -1512,6 +1521,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
   Range tets_skin_edges;
   CHKERR moab.get_adjacencies(tets_skin, 1, false, tets_skin_edges,
                               moab::Interface::UNION);
+
   // get edges on new surface
   Range cut_surface_edges;
   CHKERR moab.get_adjacencies(cutNewSurfaces, 1, false, cut_surface_edges,
