@@ -67,11 +67,13 @@ struct OpBaseTimesScalarFieldImpl<1, GAUSS, OpBase> : public OpBase {
 
   OpBaseTimesScalarFieldImpl(const std::string field_name,
                              boost::shared_ptr<VectorDouble> vec,
-                             const double beta_coeff)
+                             const double beta_coeff,
+                             boost::shared_ptr<Range> ents_ptr = nullptr)
       : OpBase(field_name, field_name, OpBase::OPROW), sourceVec(vec),
         betaCoeff(beta_coeff) {}
 
 protected:
+  boost::shared_ptr<Range> entsPtr;
   const double betaCoeff;
   boost::shared_ptr<VectorDouble> sourceVec;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
@@ -509,6 +511,12 @@ template <typename OpBase>
 MoFEMErrorCode OpBaseTimesScalarFieldImpl<1, GAUSS, OpBase>::iNtegrate(
     DataForcesAndSourcesCore::EntData &row_data) {
   MoFEMFunctionBegin;
+
+  if (entsPtr) {
+    if (entsPtr->find(OpBase::getFEEntityHandle()) == entsPtr->end())
+      MoFEMFunctionReturnHot(0);
+  }
+
   // get element volume
   const double vol = OpBase::getMeasure();
   // get integration weights
