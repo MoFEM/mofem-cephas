@@ -182,6 +182,11 @@ protected:
   int nbIntegrationPts;   ///< number of integration points
   int nbRowBaseFunctions; ///< number or row base functions
 
+  int rowSide;           ///< row side number
+  int colSide;           ///< column side number
+  EntityType rowType;    ///< row type
+  EntityType colType;    ///< column type
+
   bool assembleTranspose;
   bool onlyTranspose;
 
@@ -266,11 +271,15 @@ OpBaseImpl<A, EleOp>::doWork(int row_side, int col_side, EntityType row_type,
   // if no dofs on row, exit that work, nothing to do here
   if (!nbRows)
     MoFEMFunctionReturnHot(0);
+  rowSide = row_side;
+  rowType = row_type;
   // get number of dofs on column
   nbCols = col_data.getIndices().size();
   // if no dofs on Columbia, exit nothing to do here
   if (!nbCols)
     MoFEMFunctionReturnHot(0);
+  colSide = col_side;
+  colType = col_type;
   // get number of integration points
   nbIntegrationPts = EleOp::getGaussPts().size2();
   // get row base functions
@@ -305,6 +314,9 @@ MoFEMErrorCode OpBaseImpl<A, EleOp>::doWork(int row_side, EntityType row_type,
   MoFEMFunctionBegin;
   // get number of dofs on row
   nbRows = row_data.getIndices().size();
+  rowSide = row_side;
+  rowType = row_type;
+
   if (!nbRows)
     MoFEMFunctionReturnHot(0);
   // get number of integration points
