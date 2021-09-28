@@ -70,7 +70,7 @@ struct OpBaseTimesScalarFieldImpl<1, GAUSS, OpBase> : public OpBase {
                              const double beta_coeff,
                              boost::shared_ptr<Range> ents_ptr = nullptr)
       : OpBase(field_name, field_name, OpBase::OPROW), sourceVec(vec),
-        betaCoeff(beta_coeff) {}
+        betaCoeff(beta_coeff), entsPtr(ents_ptr) {}
 
 protected:
   boost::shared_ptr<Range> entsPtr;
