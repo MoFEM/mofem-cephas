@@ -1625,6 +1625,11 @@ FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
 DataForcesAndSourcesCore::EntData::getFTensor1N<3>(FieldApproximationBase base);
 
 template <>
+FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
+DataForcesAndSourcesCore::EntData::getFTensor1N<3>(FieldApproximationBase base,
+                                                   const int gg, const int bb);
+
+template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
 DataForcesAndSourcesCore::EntData::getFTensor2N<3, 3>(
     FieldApproximationBase base);
