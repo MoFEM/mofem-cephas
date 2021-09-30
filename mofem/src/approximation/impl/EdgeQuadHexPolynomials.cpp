@@ -830,8 +830,8 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONHEX(
       const int o3 = opposite_face_node[face][face_nodes_order[4 * face + 3]];
 
       int permute[nb_dofs][3];
-      CHKERR ::DemkowiczHexAndQuad::monom_ordering(&permute[0][0], p[0] - 2,
-                                                   p[1] - 2);
+      CHKERR ::DemkowiczHexAndQuad::monom_ordering(&permute[0][0], p[face] - 2,
+                                                   p[face] - 2);
 
       for (int qq = 0; qq != nb_integration_pts; qq++) {
 
