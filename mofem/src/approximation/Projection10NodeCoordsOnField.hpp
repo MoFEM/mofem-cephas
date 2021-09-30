@@ -104,7 +104,7 @@ struct Projection10NodeCoordsOnField : public DofMethod {
       }
     }
 
-    FieldApproximationBase base = dofPtr->getApproxBase();
+    const auto base = dofPtr->getApproxBase();
     double edge_shape_function_val;
     switch (base) {
     case AINSWORTH_LEGENDRE_BASE:
@@ -113,9 +113,11 @@ struct Projection10NodeCoordsOnField : public DofMethod {
     case AINSWORTH_LOBATTO_BASE:
       edge_shape_function_val = 0.25 * LOBATTO_PHI0(0);
       break;
-    case DEMKOWICZ_JACOBI_BASE:
-      edge_shape_function_val = LOBATTO_PHI2(0);
-      break;
+    case DEMKOWICZ_JACOBI_BASE: {
+      double L[3];
+      CHKERR Legendre_polynomials(2, 0, NULL, L, NULL, 1);
+      edge_shape_function_val = 0.125 * LOBATTO_PHI0(0);
+    }; break;
     default:
       SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not yet implemented");
     }
