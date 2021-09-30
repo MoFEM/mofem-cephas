@@ -75,6 +75,10 @@ int main(int argc, char *argv[]) {
     CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-ho_geometry", &ho_geometry,
                                PETSC_NULL);
 
+    PetscInt ho_choice_value = AINSWORTH;
+    CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-ho_base", list, LASTOP,
+                                &ho_choice_value, &flg);
+
     DMType dm_name = "DMMOFEM";
     CHKERR DMRegister_MoFEM(dm_name);
 
@@ -107,9 +111,16 @@ int main(int argc, char *argv[]) {
       break;
     }
 
-    if (ho_geometry == PETSC_TRUE)
-      CHKERR simple_interface->addDataField("MESH_NODE_POSITIONS", H1,
-                                            AINSWORTH_LEGENDRE_BASE, 3);
+    if (ho_geometry == PETSC_TRUE) {
+      switch (ho_choice_value) {
+      case AINSWORTH:
+        CHKERR simple_interface->addDataField("MESH_NODE_POSITIONS", H1,
+                                              AINSWORTH_LEGENDRE_BASE, 3);
+      case DEMKOWICZ:
+        CHKERR simple_interface->addDataField("MESH_NODE_POSITIONS", H1,
+                                              DEMKOWICZ_JACOBI_BASE, 3);
+      }
+    }
 
     constexpr int order = 3;
     CHKERR simple_interface->setFieldOrder("HDIV", order);
@@ -193,7 +204,6 @@ OpVolDivergence::doWork(int side, EntityType type,
 
   int nb_gauss_pts = data.getDiffN().size1();
   int nb_dofs = data.getFieldData().size();
-
 
   VectorDouble div_vec;
   div_vec.resize(nb_dofs, 0);
