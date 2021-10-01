@@ -608,8 +608,8 @@ MoFEMErrorCode OpMassImpl<3, 9, GAUSS, OpBase>::iNtegrate(
     std::array<double *, 3> ptrs;
     for (auto i = 0; i != 3; ++i)
       ptrs[i] = &OpBase::locMat(rr + i, i);
-    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_vec(&ptrs[0], &ptrs[1],
-                                                             &ptrs[2]);
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_vec(ptrs[0], ptrs[1],
+                                                             ptrs[2]);
     return t_vec;
   };
   size_t nb_base_functions = row_data.getN().size2() / 3;
