@@ -132,7 +132,7 @@ struct BcManager : public UnknownInterface {
    * @param field_name 
    * @param lo 
    * @param hi 
-   * @param get_low_dim_ents 
+   * @param is_expand is to extend
    * @return SmartPetscObj<IS> 
    */
   SmartPetscObj<IS>
