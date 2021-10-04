@@ -165,12 +165,14 @@ struct OpCalculateScalarFieldValues
  *
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
-struct OpCalculateScalarFieldValuesDot
+
+template <PetscData::DataContext CTX>
+struct OpCalculateScalarFieldValuesFromPetscVecImpl
     : public ForcesAndSourcesCore::UserDataOperator {
 
-  OpCalculateScalarFieldValuesDot(const std::string field_name,
-                                  boost::shared_ptr<VectorDouble> data_ptr,
-                                  const EntityType zero_at_type = MBVERTEX)
+  OpCalculateScalarFieldValuesFromPetscVecImpl(
+      const std::string field_name, boost::shared_ptr<VectorDouble> data_ptr,
+      const EntityType zero_at_type = MBVERTEX)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
         dataPtr(data_ptr), zeroAtType(zero_at_type) {
@@ -183,6 +185,7 @@ struct OpCalculateScalarFieldValuesDot
     MoFEMFunctionBegin;
 
     const size_t nb_gauss_pts = getGaussPts().size2();
+
     VectorDouble &vec = *dataPtr;
     if (type == zeroAtType) {
       vec.resize(nb_gauss_pts, false);
@@ -193,15 +196,56 @@ struct OpCalculateScalarFieldValuesDot
     const size_t nb_dofs = local_indices.size();
     if (nb_dofs) {
 
-      std::array<double, MAX_DOFS_ON_ENTITY> dot_dofs_vector;
       const double *array;
-      CHKERR VecGetArrayRead(getFEMethod()->ts_u_t, &array);
-      for (size_t i = 0; i != local_indices.size(); ++i)
+
+      auto get_array = [&](const auto ctx, auto vec) {
+        MoFEMFunctionBegin;
+        if ((getFEMethod()->data_ctx & ctx).none())
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Vector not set");
+        CHKERR VecGetArrayRead(vec, &array);
+        MoFEMFunctionReturn(0);
+      };
+
+      auto restore_array = [&](auto vec) {
+        return VecRestoreArrayRead(vec, &array);
+      };
+
+      switch (CTX) {
+      case PetscData::CTX_SET_X:
+        CHKERR get_array(PetscData::CtxSetX, getFEMethod()->ts_u);
+        break;
+      case PetscData::CTX_SET_X_T:
+        CHKERR get_array(PetscData::CtxSetX_T, getFEMethod()->ts_u_t);
+        break;
+      case PetscData::CTX_SET_X_TT:
+        CHKERR get_array(PetscData::CtxSetX_TT, getFEMethod()->ts_u_tt);
+        break;
+      default:
+        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                "That case is not implemented");
+      }
+
+      std::array<double, MAX_DOFS_ON_ENTITY> dot_dofs_vector;
+      for (int i = 0; i != local_indices.size(); ++i)
         if (local_indices[i] != -1)
           dot_dofs_vector[i] = array[local_indices[i]];
         else
           dot_dofs_vector[i] = 0;
-      CHKERR VecRestoreArrayRead(getFEMethod()->ts_u_t, &array);
+
+      switch (CTX) {
+      case PetscData::CTX_SET_X:
+        CHKERR restore_array(getFEMethod()->ts_u);
+        break;
+      case PetscData::CTX_SET_X_T:
+        CHKERR restore_array(getFEMethod()->ts_u_t);
+        break;
+      case PetscData::CTX_SET_X_TT:
+        CHKERR restore_array(getFEMethod()->ts_u_tt);
+        break;
+      default:
+        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                "That case is not implemented");
+      }
 
       const size_t nb_base_functions = data.getN().size2();
       auto base_function = data.getFTensor0N();
@@ -227,6 +271,11 @@ private:
   boost::shared_ptr<VectorDouble> dataPtr;
   const EntityHandle zeroAtType;
 };
+
+using OpCalculateScalarFieldValuesDot =
+    OpCalculateScalarFieldValuesFromPetscVecImpl<PetscData::CTX_SET_X_T>;
+using OpCalculateScalarFieldValuesDotDot =
+    OpCalculateScalarFieldValuesFromPetscVecImpl<PetscData::CTX_SET_X_TT>;
 
 /**
  * \depreacted Name inconstent with other operators
@@ -2571,7 +2620,8 @@ template <>
 struct OpSetInvJacSpaceForFaceImpl<2>
     : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
 
-  OpSetInvJacSpaceForFaceImpl(boost::shared_ptr<MatrixDouble> inv_jac_ptr, FieldSpace space)
+  OpSetInvJacSpaceForFaceImpl(boost::shared_ptr<MatrixDouble> inv_jac_ptr,
+                              FieldSpace space)
       : FaceElementForcesAndSourcesCoreBase::UserDataOperator(space),
         invJacPtr(inv_jac_ptr) {}
 
@@ -2604,13 +2654,15 @@ struct OpSetInvJacL2ForFace : public OpSetInvJacSpaceForFaceImpl<2> {
 
 struct OpSetInvJacH1ForFaceEmbeddedIn3DSpace
     : public OpSetInvJacSpaceForFaceImpl<3> {
-  OpSetInvJacH1ForFaceEmbeddedIn3DSpace(boost::shared_ptr<MatrixDouble> inv_jac_ptr)
+  OpSetInvJacH1ForFaceEmbeddedIn3DSpace(
+      boost::shared_ptr<MatrixDouble> inv_jac_ptr)
       : OpSetInvJacSpaceForFaceImpl(inv_jac_ptr, H1) {}
 };
 
 struct OpSetInvJacL2ForFaceEmbeddedIn3DSpace
     : public OpSetInvJacSpaceForFaceImpl<3> {
-  OpSetInvJacL2ForFaceEmbeddedIn3DSpace(boost::shared_ptr<MatrixDouble> inv_jac_ptr)
+  OpSetInvJacL2ForFaceEmbeddedIn3DSpace(
+      boost::shared_ptr<MatrixDouble> inv_jac_ptr)
       : OpSetInvJacSpaceForFaceImpl(inv_jac_ptr, L2) {}
 };
 
@@ -2683,9 +2735,10 @@ template <>
 struct OpSetContravariantPiolaTransformOnFace2DImpl<2>
     : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
 
-  OpSetContravariantPiolaTransformOnFace2DImpl(boost::shared_ptr<MatrixDouble> jac_ptr)
-      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(HCURL), jacPtr(jac_ptr) {
-  }
+  OpSetContravariantPiolaTransformOnFace2DImpl(
+      boost::shared_ptr<MatrixDouble> jac_ptr)
+      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(HCURL),
+        jacPtr(jac_ptr) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
