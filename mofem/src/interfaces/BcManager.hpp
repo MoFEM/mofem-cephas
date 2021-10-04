@@ -123,6 +123,23 @@ struct BcManager : public UnknownInterface {
    */
   inline BcMapByBlockName &getBcMapByBlockName() { return bcMapByBlockName; }
 
+
+  /**
+   * @brief Get block is
+   * 
+   * @param problem_name 
+   * @param block_name 
+   * @param field_name 
+   * @param lo 
+   * @param hi 
+   * @param get_low_dim_ents 
+   * @return SmartPetscObj<IS> 
+   */
+  SmartPetscObj<IS>
+  getBlockIS(const std::string problem_name, const std::string block_name,
+             const std::string field_name, int lo, int hi,
+             SmartPetscObj<IS> is_expand = SmartPetscObj<IS>());
+
 private:
   MoFEM::Core &cOre;
 

@@ -174,10 +174,12 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities(const std::string problem_name,
             << get_dim(bc->bcEdges);
 
         CHKERR mark_fix_dofs(bc->bcMarkers, lo, hi);
-        if (get_low_dim_ents)
+        if (get_low_dim_ents) {
+          auto low_dim_ents = get_adj_ents(bc->bcEdges);
           CHKERR prb_mng->markDofs(problem_name, ROW, ProblemsManager::AND,
-                                   get_adj_ents(bc->bcEdges), bc->bcMarkers);
-        else
+                                   low_dim_ents, bc->bcMarkers);
+          bc->bcEdges.swap(low_dim_ents);
+        } else
           CHKERR prb_mng->markDofs(problem_name, ROW, ProblemsManager::AND,
                                    bc->bcEdges, bc->bcMarkers);
 
@@ -201,6 +203,45 @@ BcManager::popMarkDOFsOnEntities(const std::string block_name) {
     return bc;
   }
   return boost::shared_ptr<BCs>();
+}
+
+SmartPetscObj<IS> BcManager::getBlockIS(const std::string problem_name,
+                                        const std::string block_name,
+                                        const std::string field_name, int lo,
+                                        int hi, SmartPetscObj<IS> is_expand) {
+  Interface &m_field = cOre;
+
+  const std::string bc_id =
+      problem_name + "_" + field_name + "_" + block_name + "(.*)";
+
+  Range bc_ents;
+  for (auto bc : getBcMapByBlockName()) {
+    if (std::regex_match(bc.first, std::regex(bc_id))) {
+      bc_ents.merge(*(bc.second->getBcEdgesPtr()));
+      MOFEM_LOG("BcMngSelf", Sev::noisy)
+          << "Get entities from block and add to IS. Block name " << bc.first;
+    }
+  }
+
+  SmartPetscObj<IS> is_bc;
+  auto get_is = [&]() {
+    MoFEMFunctionBegin;
+    CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(bc_ents);
+    CHKERR m_field.getInterface<ISManager>()->isCreateProblemFieldAndRank(
+        problem_name, ROW, field_name, lo, hi, is_bc, &bc_ents);
+    if (is_expand) {
+      IS is_tmp;
+      CHKERR ISExpand(is_bc, is_expand, &is_tmp);
+      is_bc = SmartPetscObj<IS>(is_tmp);
+    }
+    CHKERR ISSort(is_bc);
+    MoFEMFunctionReturn(0);
+  };
+
+  if(get_is())
+    CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "IS is not created");
+
+  return is_bc;
 }
 
 } // namespace MoFEM
