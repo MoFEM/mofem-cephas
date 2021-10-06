@@ -473,16 +473,17 @@ MoFEMErrorCode Core::loop_finite_elements(
     }
   }
 
+  PetscLogEventBegin(MOFEM_EVENT_operator, 0, 0, 0, 0);
+
   method.loopSize = std::distance(miit, hi_miit);
   for (int nn = 0; miit != hi_miit; miit++, nn++) {
 
     method.nInTheLoop = nn;
     method.numeredEntFiniteElementPtr = *miit;
-
-    PetscLogEventBegin(MOFEM_EVENT_operator, 0, 0, 0, 0);
     CHKERR method();
-    PetscLogEventEnd(MOFEM_EVENT_operator, 0, 0, 0, 0);
+
   }
+  PetscLogEventEnd(MOFEM_EVENT_operator, 0, 0, 0, 0);
 
   PetscLogEventBegin(MOFEM_EVENT_postProcess, 0, 0, 0, 0);
   CHKERR method.postProcess();
