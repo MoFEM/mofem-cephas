@@ -164,24 +164,24 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities(const std::string problem_name,
 
         auto bc = boost::make_shared<BCs>();
         CHKERR m_field.get_moab().get_entities_by_handle(it->meshset,
-                                                         bc->bcEdges, true);
+                                                         bc->bcEnts, true);
         CHKERR it->getAttributes(bc->bcAttributes);
 
         MOFEM_LOG("BcMngWorld", Sev::verbose)
             << "Found block " << block_name << " number of entities "
-            << bc->bcEdges.size() << " number of attributes "
+            << bc->bcEnts.size() << " number of attributes "
             << bc->bcAttributes.size() << " highest dim of entities "
-            << get_dim(bc->bcEdges);
+            << get_dim(bc->bcEnts);
 
         CHKERR mark_fix_dofs(bc->bcMarkers, lo, hi);
         if (get_low_dim_ents) {
-          auto low_dim_ents = get_adj_ents(bc->bcEdges);
+          auto low_dim_ents = get_adj_ents(bc->bcEnts);
           CHKERR prb_mng->markDofs(problem_name, ROW, ProblemsManager::AND,
                                    low_dim_ents, bc->bcMarkers);
-          bc->bcEdges.swap(low_dim_ents);
+          bc->bcEnts.swap(low_dim_ents);
         } else
           CHKERR prb_mng->markDofs(problem_name, ROW, ProblemsManager::AND,
-                                   bc->bcEdges, bc->bcMarkers);
+                                   bc->bcEnts, bc->bcMarkers);
 
         bcMapByBlockName[bc_id] = bc;
       }

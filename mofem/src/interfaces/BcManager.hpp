@@ -37,12 +37,19 @@ struct BcManager : public UnknownInterface {
    *
    */
   struct BCs : boost::enable_shared_from_this<BCs> {
-    Range bcEdges;
+    Range bcEnts;
     std::vector<double> bcAttributes;
     std::vector<unsigned char> bcMarkers;
-    inline auto getBcEdgesPtr() {
-      return boost::shared_ptr<Range>(shared_from_this(), &bcEdges);
+
+    /// \deprecated use getBcEntsPtr
+    DEPRECATED inline auto getBcEdgesPtr(){
+      return boost::shared_ptr<Range>(shared_from_this(), &bcEnts);
     }
+
+    inline auto getBcEntsPtr() {
+      return boost::shared_ptr<Range>(shared_from_this(), &bcEnts);
+    }
+
     inline auto getBcMarkersPtr() {
       return boost::shared_ptr<std::vector<unsigned char>>(shared_from_this(),
                                                            &bcMarkers);
@@ -123,22 +130,77 @@ struct BcManager : public UnknownInterface {
    */
   inline BcMapByBlockName &getBcMapByBlockName() { return bcMapByBlockName; }
 
-
   /**
-   * @brief Get block is
-   * 
-   * @param problem_name 
-   * @param block_name 
-   * @param field_name 
-   * @param lo 
-   * @param hi 
-   * @param is_expand is to extend
-   * @return SmartPetscObj<IS> 
+   * @brief Get the Merged Boundary Marker object
+   *
+   * @param bc_regex_vec boundary name regex vector
+   * @return boundaryMarker
    */
-  SmartPetscObj<IS>
-  getBlockIS(const std::string problem_name, const std::string block_name,
-             const std::string field_name, int lo, int hi,
-             SmartPetscObj<IS> is_expand = SmartPetscObj<IS>());
+  inline auto getMergedBoundaryMarker(std::vector<std::regex> bc_regex_vec) {
+    boost::shared_ptr<std::vector<char unsigned>> boundary_marker_ptr;
+    if (bcMapByBlockName.size()) {
+      boundary_marker_ptr = boost::make_shared<std::vector<char unsigned>>();
+      for (auto b : bcMapByBlockName) {
+        for (auto &reg_name : bc_regex_vec) {
+          if (std::regex_match(b.first, reg_name)) {
+            boundary_marker_ptr->resize(b.second->bcMarkers.size(), 0);
+            for (int i = 0; i != b.second->bcMarkers.size(); ++i) {
+              (*boundary_marker_ptr)[i] |= b.second->bcMarkers[i];
+            }
+          }
+        }
+      }
+    }
+    return boundary_marker_ptr;
+  }
+  /**
+   * @brief Get the Merged Boundary Marker object
+   *
+   * @param bc_regex boundary name regex
+   * @return boundaryMarker
+   */
+  inline auto getMergedBoundaryMarker(std::regex bc_regex) {
+    return getMergedBoundaryMarker(std::vector<std::regex>({bc_regex}));
+  }
+  /**
+   * @brief Get the Merged Boundary Marker object
+   *
+   * @param bc_names vector of boundary names
+   * @return boundaryMarker
+   */
+  inline auto getMergedBoundaryMarker(std::vector<string> bc_names) {
+    std::vector<std::regex> reg_vec(bc_names.size());
+    for (int i = 0; i != bc_names.size(); ++i) {
+      string full_name = string("(.*)_") + bc_names[i] + string("(.*)");
+      reg_vec[i] = std::regex(full_name);
+    }
+    return getMergedBoundaryMarker(reg_vec);
+  }
+  /**
+   * @brief Get the Merged Boundary Marker object
+   * 
+   * @param bc_name  boundary name
+   * @return boundaryMarker 
+   */
+  inline auto getMergedBoundaryMarker(string bc_name) {
+    return getMergedBoundaryMarker(std::vector<string>({bc_name}));
+  }
+
+/**
+ * @brief Get block is
+ *
+ * @param problem_name
+ * @param block_name
+ * @param field_name
+ * @param lo
+ * @param hi
+ * @param is_expand is to extend
+ * @return SmartPetscObj<IS>
+ */
+SmartPetscObj<IS>
+getBlockIS(const std::string problem_name, const std::string block_name,
+           const std::string field_name, int lo, int hi,
+           SmartPetscObj<IS> is_expand = SmartPetscObj<IS>());
 
 private:
   MoFEM::Core &cOre;
