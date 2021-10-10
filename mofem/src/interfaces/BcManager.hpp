@@ -153,8 +153,8 @@ struct BcManager : public UnknownInterface {
    * @param boundary_markers_ptr_vec vector of boundary markers to merge
    * @return BcMarkerPtr
    */
-  BcMarkerPtr
-  getMergedBlocksMarker(std::vector<BcMarkerPtr> boundary_markers_ptr_vec);
+  BcMarkerPtr getMergedBlocksMarker(
+      const std::vector<BcMarkerPtr> &boundary_markers_ptr_vec);
   /**
    * @brief check if given boundary condition name is in the map bc element
    *

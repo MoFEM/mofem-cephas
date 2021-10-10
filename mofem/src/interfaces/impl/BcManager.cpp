@@ -222,7 +222,7 @@ BcManager::BcMarkerPtr BcManager::getMergedBlocksMarker(std::regex bc_regex) {
 }
 
 BcManager::BcMarkerPtr BcManager::getMergedBlocksMarker(
-    std::vector<BcManager::BcMarkerPtr> boundary_markers_ptr_vec) {
+    const std::vector<BcManager::BcMarkerPtr> &boundary_markers_ptr_vec) {
   auto boundary_marker_ptr = boost::make_shared<std::vector<char unsigned>>();
   for (auto &bcm : boundary_markers_ptr_vec) {
     boundary_marker_ptr->resize(bcm->size(), 0);
