@@ -136,23 +136,8 @@ struct BcManager : public UnknownInterface {
    * @param bc_regex_vec boundary name regex vector
    * @return boundaryMarker
    */
-  inline auto getMergedBoundaryMarker(std::vector<std::regex> bc_regex_vec) {
-    boost::shared_ptr<std::vector<char unsigned>> boundary_marker_ptr;
-    if (bcMapByBlockName.size()) {
-      boundary_marker_ptr = boost::make_shared<std::vector<char unsigned>>();
-      for (auto b : bcMapByBlockName) {
-        for (auto &reg_name : bc_regex_vec) {
-          if (std::regex_match(b.first, reg_name)) {
-            boundary_marker_ptr->resize(b.second->bcMarkers.size(), 0);
-            for (int i = 0; i != b.second->bcMarkers.size(); ++i) {
-              (*boundary_marker_ptr)[i] |= b.second->bcMarkers[i];
-            }
-          }
-        }
-      }
-    }
-    return boundary_marker_ptr;
-  }
+  boost::shared_ptr<std::vector<char unsigned>>
+  getMergedBoundaryMarker(std::vector<std::regex> bc_regex_vec);
   /**
    * @brief Get the Merged Boundary Marker object
    *
