@@ -205,15 +205,18 @@ BcManager::popMarkDOFsOnEntities(const std::string block_name) {
   return boost::shared_ptr<BCs>();
 }
 
-BcManager::BcMarkerPtr BcManager::getMergedBlocksMarker(std::regex bc_regex) {
+BcManager::BcMarkerPtr
+BcManager::getMergedBlocksMarker(std::vector<std::regex> bc_regex_vec) {
   BcManager::BcMarkerPtr boundary_marker_ptr;
   if (bcMapByBlockName.size()) {
     boundary_marker_ptr = boost::make_shared<std::vector<char unsigned>>();
     for (auto b : bcMapByBlockName) {
-      if (std::regex_match(b.first, bc_regex)) {
-        boundary_marker_ptr->resize(b.second->bcMarkers.size(), 0);
-        for (int i = 0; i != b.second->bcMarkers.size(); ++i) {
-          (*boundary_marker_ptr)[i] |= b.second->bcMarkers[i];
+      for (auto &reg_name : bc_regex_vec) {
+        if (std::regex_match(b.first, reg_name)) {
+          boundary_marker_ptr->resize(b.second->bcMarkers.size(), 0);
+          for (int i = 0; i != b.second->bcMarkers.size(); ++i) {
+            (*boundary_marker_ptr)[i] |= b.second->bcMarkers[i];
+          }
         }
       }
     }

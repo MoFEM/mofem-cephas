@@ -136,16 +136,20 @@ struct BcManager : public UnknownInterface {
    * @param bc_regex_vec boundary name regex vector
    * @return boundaryMarker
    */
-  BcMarkerPtr getMergedBlocksMarker(std::regex bc_regex_vec);
+  BcMarkerPtr getMergedBlocksMarker(std::vector<std::regex> bc_regex_vec);
   /**
    * @brief Get the Merged Boundary Marker object
    *
    * @param bc_names vector of boundary names
    * @return boundaryMarker
    */
-  inline auto getMergedBlocksMarker(string bc_name) {
-    string full_name = string("(.*)_") + bc_name + string("(.*)");
-    return getMergedBlocksMarker(std::regex(full_name));
+  inline auto getMergedBlocksMarker(std::vector<string> bc_names) {
+    std::vector<std::regex> reg_vec(bc_names.size());
+    for (int i = 0; i != bc_names.size(); ++i) {
+      string full_name = string("(.*)_") + bc_names[i] + string("(.*)");
+      reg_vec[i] = std::regex(full_name);
+    }
+    return getMergedBlocksMarker(reg_vec);
   }
   /**
    * @brief Get the Merged Blocks Marker object
