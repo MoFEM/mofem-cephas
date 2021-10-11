@@ -43,8 +43,7 @@ struct MeshRefinement : public UnknownInterface {
   MoFEM::Core &cOre;
   MeshRefinement(const MoFEM::Core &core);
 
-  /// destructor
-  ~MeshRefinement() {}
+  virtual ~MeshRefinement() = default;
 
   /**
    * \brief make vertices in the middle of edges in meshset and add them to
@@ -65,15 +64,6 @@ struct MeshRefinement : public UnknownInterface {
       const EntityHandle meshset, const BitRefLevel &bit,
       const bool recursive = false, int verb = QUIET, EntityHandle start_v = 0);
 
-  /// \deprecated Use function with correct spelling
-  DEPRECATED MoFEMErrorCode add_verices_in_the_middel_of_edges(
-      const EntityHandle meshset, const BitRefLevel &bit,
-      const bool recursive = false, int verb = QUIET,
-      EntityHandle start_v = 0) {
-    return add_vertices_in_the_middle_of_edges(meshset, bit, recursive, verb,
-                                               start_v);
-  }
-
   /**
    * \brief make vertices in the middle of edges in meshset and add them to
    * Refinement levels defined by bit
@@ -93,13 +83,6 @@ struct MeshRefinement : public UnknownInterface {
   add_vertices_in_the_middle_of_edges(const Range &edges, const BitRefLevel &bit,
                                      int verb = QUIET,
                                      EntityHandle start_v = 0);
-
-  /// \deprecated Use function with correct spelling
-  DEPRECATED MoFEMErrorCode add_verices_in_the_middel_of_edges(
-      const Range &edges, const BitRefLevel &bit, int verb = QUIET,
-      EntityHandle start_v = 0) {
-    return add_vertices_in_the_middle_of_edges(edges, bit, verb, start_v);
-  }
 
   /**\brief refine TET in the meshset
    *
