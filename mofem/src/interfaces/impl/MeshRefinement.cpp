@@ -50,7 +50,7 @@ MeshRefinement::query_interface(boost::typeindex::type_index type_index,
 MeshRefinement::MeshRefinement(const Core &core)
     : cOre(const_cast<Core &>(core)) {}
 
-MoFEMErrorCode MeshRefinement::add_vertices_in_the_middle_of_edges(
+MoFEMErrorCode MeshRefinement::addVerticesInTheMiddleOfEdges(
     const EntityHandle meshset, const BitRefLevel &bit, const bool recursive,
     int verb, EntityHandle start_v) {
   Interface &m_field = cOre;
@@ -101,10 +101,10 @@ MoFEMErrorCode MeshRefinement::add_vertices_in_the_middle_of_edges(
       }
     }
   }
-  CHKERR add_vertices_in_the_middle_of_edges(edges, bit, verb, start_v);
+  CHKERR addVerticesInTheMiddleOfEdges(edges, bit, verb, start_v);
   MoFEMFunctionReturn(0);
 }
-MoFEMErrorCode MeshRefinement::add_vertices_in_the_middle_of_edges(
+MoFEMErrorCode MeshRefinement::addVerticesInTheMiddleOfEdges(
     const Range &ents, const BitRefLevel &bit, int verb, EntityHandle start_v) {
   Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
@@ -200,7 +200,7 @@ MoFEMErrorCode MeshRefinement::add_vertices_in_the_middle_of_edges(
   MoFEMFunctionReturn(0);
 } 
 
-MoFEMErrorCode MeshRefinement::refine_TET(const EntityHandle meshset,
+MoFEMErrorCode MeshRefinement::refineTets(const EntityHandle meshset,
                                           const BitRefLevel &bit,
                                           const bool respect_interface,
                                           int verb, Range *ref_edges_ptr,
@@ -210,11 +210,11 @@ MoFEMErrorCode MeshRefinement::refine_TET(const EntityHandle meshset,
   MoFEMFunctionBegin;
   Range tets;
   CHKERR moab.get_entities_by_type(meshset, MBTET, tets, false);
-  CHKERR refine_TET(tets, bit, respect_interface, verb, ref_edges_ptr, debug);
+  CHKERR refineTets(tets, bit, respect_interface, verb, ref_edges_ptr, debug);
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
+MoFEMErrorCode MeshRefinement::refineTets(const Range &_tets,
                                           const BitRefLevel &bit,
                                           const bool respect_interface,
                                           int verb, Range *ref_edges_ptr,
@@ -355,7 +355,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
 
   if (respect_interface) {
     SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-            "not implemented, set last parameter in refine_TET to false");
+            "not implemented, set last parameter in refineTets to false");
   }
 
   Range tets = _tets.subset_by_type(MBTET);
@@ -768,7 +768,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
 
   MoFEMFunctionReturn(0);
 }
-MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
+MoFEMErrorCode MeshRefinement::refinePrisms(const EntityHandle meshset,
                                             const BitRefLevel &bit, int verb) {
 
   Interface &m_field = cOre;
@@ -950,7 +950,7 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
   }
   MoFEMFunctionReturn(0);
 }
-MoFEMErrorCode MeshRefinement::refine_MESHSET(const EntityHandle meshset,
+MoFEMErrorCode MeshRefinement::refineMeshset(const EntityHandle meshset,
                                               const BitRefLevel &bit,
                                               const bool recursive, int verb) {
   Interface &m_field = cOre;
