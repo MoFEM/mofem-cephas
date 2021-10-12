@@ -27,18 +27,18 @@
 namespace MoFEM {
 
 // TET
-static const int edges_conn[] = {0, 1, 1, 2, 2, 0, 0, 3, 1, 3, 2, 3};
-static const int oposite_edge[] = {5, 3, 4, 1, 2, 0};
-static const int edge_permutations[6][6] = {
+static constexpr int edges_conn[] = {0, 1, 1, 2, 2, 0, 0, 3, 1, 3, 2, 3};
+static constexpr int oposite_edge[] = {5, 3, 4, 1, 2, 0};
+static constexpr int edge_permutations[6][6] = {
     {0, 1, 2, 3, 4, 5}, {1, 2, 0, 4, 5, 3}, {2, 0, 1, 5, 3, 4},
     {3, 4, 0, 2, 5, 1}, {4, 5, 1, 0, 3, 2}, {5, 3, 2, 1, 4, 0}};
-static const int edge_mirror_cross[6] = {0, 3, 4, 1, 2, 5};
-static const int edge_mirror_vertical[6] = {0, 4, 3, 2, 1, 5};
-static const int cyclic_node_rotate_face_3[3][4] = {
+static constexpr int edge_mirror_cross[6] = {0, 3, 4, 1, 2, 5};
+static constexpr int edge_mirror_vertical[6] = {0, 4, 3, 2, 1, 5};
+static constexpr int cyclic_node_rotate_face_3[3][4] = {
     {3, 1, 0, 2}, {0, 1, 2, 3}, {2, 1, 3, 0}}; // 2,0,1
-static const int cyclic_edge_rotate_face_3[3][6] = {
+static constexpr int cyclic_edge_rotate_face_3[3][6] = {
     {4, 0, 3, 5, 1, 2}, {0, 1, 2, 3, 4, 5}, {1, 4, 5, 2, 0, 3}};
-static const char edge_bits_mark[] = {1, 2, 4, 8, 16, 32};
+static constexpr char edge_bits_mark[] = {1, 2, 4, 8, 16, 32};
 
 void tet_type_6(moab::Interface &moab, const EntityHandle *conn,
                 const EntityHandle *edge_new_nodes,
@@ -1125,8 +1125,7 @@ MoFEMErrorCode tri_type_3(const EntityHandle *conn,
                           const EntityHandle *edge_new_nodes,
                           EntityHandle *new_tris_conn) {
   MoFEMFunctionBeginHot;
-  int ee = 0;
-  for (; ee < 3; ee++) {
+  for (int ee = 0; ee < 3; ee++) {
     if (!split_edges.test(ee)) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
     }
@@ -1300,5 +1299,15 @@ MoFEMErrorCode prism_type_3(const EntityHandle *conn,
   new_prism_conn[3 * 6 + 5] = edge_new_nodes[8 - 3];
   MoFEMFunctionReturnHot(0);
 }
+
+MoFEMErrorCode quad_split_all_edges(const EntityHandle *conn,
+                                    const BitRefEdges split_edges,
+                                    const EntityHandle *edge_new_nodes,
+                                    EntityHandle *new_quad_conn) {
+
+
+
+
+                                    }
 
 } // namespace MoFEM

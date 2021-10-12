@@ -208,7 +208,7 @@ enum VERBOSITY_LEVELS {
 #define MYPCOMM_INDEX 0 ///< default communicator number PCOMM
 
 #define MAX_CORE_TMP 1       ///< maximal number of cores
-#define BITREFEDGES_SIZE 6   ///< number of edges on tetrahedral
+#define BITREFEDGES_SIZE 32  ///< number refined edges
 #define BITREFLEVEL_SIZE 128 ///< max number of refinements
 #define BITFIELDID_SIZE 32   ///< max number of fields
 #define BITFEID_SIZE 32      ///< max number of finite elements

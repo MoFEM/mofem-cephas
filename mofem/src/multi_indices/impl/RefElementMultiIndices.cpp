@@ -343,8 +343,6 @@ RefElementVolume::getSideNumberPtr(const EntityHandle ent) const {
   return *miit;
 }
 std::ostream &operator<<(std::ostream &os, const RefElementVolume &e) {
-  os << "ref type " << e.tag_type_data[0] << " ref sub type "
-     << e.tag_type_data[1];
   os << " ref egdes " << e.getBitRefEdges();
   os << " " << *e.sPtr;
   return os;

@@ -1,5 +1,5 @@
-/** \file MeshRefinementCore.cpp
- * \brief FIXME this is not so good implementation
+/** \file MeshRefinement.cpp
+ * \brief Mesh refinement interface
  *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -18,6 +18,27 @@
 #include <EntityRefine.hpp>
 
 namespace MoFEM {
+
+typedef multi_index_container<
+    boost::shared_ptr<RefElement>,
+    // ptrWrapperRefElement,
+    indexed_by<
+        ordered_unique<tag<Ent_mi_tag>,
+                       const_mem_fun<RefElement::interface_type_RefEntity,
+                                     EntityHandle, &RefElement::getEnt>>,
+        ordered_non_unique<
+            tag<Ent_Ent_mi_tag>,
+            const_mem_fun<RefElement::interface_type_RefEntity, EntityHandle,
+                          &RefElement::getParentEnt>>,
+        ordered_non_unique<
+            tag<Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag>,
+            composite_key<
+                RefElement,
+                const_mem_fun<RefElement::interface_type_RefEntity,
+                              EntityHandle, &RefElement::getParentEnt>,
+                const_mem_fun<RefElement, int,
+                              &RefElement::getBitRefEdgesUlong>>>>>
+    RefElement_multiIndex_parents_view;
 
 MoFEMErrorCode
 MeshRefinement::query_interface(boost::typeindex::type_index type_index,
@@ -315,27 +336,20 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
   // nodes, this will allow parallelise algorithm in the future
 
   // Find all vertices which parent is edge
-  typedef const RefEntity_multiIndex::index<
-      Composite_EntType_and_ParentEntType_mi_tag>::type RefEntsByComposite;
-  RefEntsByComposite &ref_ents =
+  auto &ref_ents =
       refined_ents_ptr->get<Composite_EntType_and_ParentEntType_mi_tag>();
   RefEntity_multiIndex_view_by_hashed_parent_entity ref_parent_ents_view;
   ref_parent_ents_view.insert(
       ref_ents.lower_bound(boost::make_tuple(MBVERTEX, MBEDGE)),
       ref_ents.upper_bound(boost::make_tuple(MBVERTEX, MBEDGE)));
-  typedef const RefElement_multiIndex::index<Ent_mi_tag>::type RefElementByEnt;
-  RefElementByEnt &ref_finite_element =
-      refined_finite_elements_ptr->get<Ent_mi_tag>();
-  typedef const RefElement_multiIndex_parents_view::index<
-      Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag>::type
-      RefEntByParentAndRefEdges;
+  auto &ref_finite_element = refined_finite_elements_ptr->get<Ent_mi_tag>();
   RefElement_multiIndex_parents_view ref_ele_parent_view;
   ref_ele_parent_view.insert(
       refined_finite_elements_ptr->get<Ent_mi_tag>().lower_bound(
           get_id_for_min_type<MBTET>()),
       refined_finite_elements_ptr->get<Ent_mi_tag>().upper_bound(
           get_id_for_max_type<MBTET>()));
-  RefEntByParentAndRefEdges &ref_ele_by_parent_and_ref_edges =
+  auto &ref_ele_by_parent_and_ref_edges =
       ref_ele_parent_view
           .get<Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag>();
 
@@ -767,24 +781,17 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
 
   MoFEMFunctionBegin;
 
-  typedef const RefEntity_multiIndex::index<Ent_mi_tag>::type RefEntsByEnt;
-
-  typedef const RefElement_multiIndex_parents_view::index<
-      Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag>::type
-      RefEntByParentAndRefEdges;
   RefElement_multiIndex_parents_view ref_ele_parent_view;
   ref_ele_parent_view.insert(
       refined_finite_elements_ptr->get<Ent_mi_tag>().lower_bound(
           get_id_for_min_type<MBPRISM>()),
       refined_finite_elements_ptr->get<Ent_mi_tag>().upper_bound(
           get_id_for_max_type<MBPRISM>()));
-  RefEntByParentAndRefEdges &ref_ele_by_parent_and_ref_edges =
+  auto &ref_ele_by_parent_and_ref_edges =
       ref_ele_parent_view
           .get<Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag>();
   // find all vertices which parent is edge
-  typedef const RefEntity_multiIndex::index<
-      Composite_EntType_and_ParentEntType_mi_tag>::type RefEntsByComposite;
-  RefEntsByComposite &ref_ents_by_comp =
+  auto &ref_ents_by_comp =
       refined_ents_ptr->get<Composite_EntType_and_ParentEntType_mi_tag>();
   RefEntity_multiIndex_view_by_hashed_parent_entity ref_parent_ents_view;
   ref_parent_ents_view.insert(
@@ -794,8 +801,7 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
   CHKERR moab.get_entities_by_type(meshset, MBPRISM, prisms, false);
   Range::iterator pit = prisms.begin();
   for (; pit != prisms.end(); pit++) {
-    RefEntsByEnt::iterator miit_prism =
-        refined_ents_ptr->get<Ent_mi_tag>().find(*pit);
+    auto miit_prism = refined_ents_ptr->get<Ent_mi_tag>().find(*pit);
     if (miit_prism == refined_ents_ptr->end()) {
       SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
               "this prism is not in ref database");
@@ -873,13 +879,11 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
     }
     // find that prism
     std::bitset<4> ref_prism_bit(0);
-    RefEntByParentAndRefEdges::iterator it_by_ref_edges =
-        ref_ele_by_parent_and_ref_edges.lower_bound(
-            boost::make_tuple(*pit, split_edges.to_ulong()));
-    RefEntByParentAndRefEdges::iterator hi_it_by_ref_edges =
-        ref_ele_by_parent_and_ref_edges.upper_bound(
-            boost::make_tuple(*pit, split_edges.to_ulong()));
-    RefEntByParentAndRefEdges::iterator it_by_ref_edges2 = it_by_ref_edges;
+    auto it_by_ref_edges = ref_ele_by_parent_and_ref_edges.lower_bound(
+        boost::make_tuple(*pit, split_edges.to_ulong()));
+    auto hi_it_by_ref_edges = ref_ele_by_parent_and_ref_edges.upper_bound(
+        boost::make_tuple(*pit, split_edges.to_ulong()));
+    auto it_by_ref_edges2 = it_by_ref_edges;
     for (int pp = 0; it_by_ref_edges2 != hi_it_by_ref_edges;
          it_by_ref_edges2++, pp++) {
       // Add this tet to this ref
@@ -914,7 +918,7 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
                                    1, &bit);
           CHKERR moab.tag_set_data(cOre.get_th_RefBitEdge(), &ref_prisms[pp], 1,
                                    &split_edges);
-          std::pair<RefEntity_multiIndex::iterator, bool> p_ent =
+          auto p_ent =
               const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
                   ->insert(boost::shared_ptr<RefEntity>(new RefEntity(
                       m_field.get_basic_entity_data_ptr(), ref_prisms[pp])));
@@ -952,8 +956,7 @@ MoFEMErrorCode MeshRefinement::refine_MESHSET(const EntityHandle meshset,
   Interface &m_field = cOre;
   auto refined_ents_ptr = m_field.get_ref_ents();
   MoFEMFunctionBegin;
-  typedef const RefEntity_multiIndex::index<Ent_mi_tag>::type RefEntsByEnt;
-  RefEntsByEnt::iterator miit = refined_ents_ptr->find(meshset);
+  auto miit = refined_ents_ptr->find(meshset);
   if (miit == refined_ents_ptr->end()) {
     SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
             "this meshset is not in ref database");
