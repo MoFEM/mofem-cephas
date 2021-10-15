@@ -43,7 +43,6 @@ struct HangingNodes : public UnknownInterface {
    */
   MoFEMErrorCode addVerticesInTheMiddleOfEdges(const Range &edges,
                                                const BitRefLevel &bit,
-                                               int verb = QUIET,
                                                EntityHandle start_v = 0);
 
 	/**
@@ -56,7 +55,7 @@ struct HangingNodes : public UnknownInterface {
 	 * @return MoFEMErrorCode 
 	 */
   MoFEMErrorCode refineMesh(const Range &ents, const BitRefLevel &bit,
-                            int verb = QUIET, EntityHandle start_v = 0);
+                            EntityHandle start_v = 0);
 
 private:
   MoFEM::Core &cOre;
