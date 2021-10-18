@@ -873,11 +873,9 @@ DMMoFEMTSSetRHSJacobian(DM dm, const std::string fe_name,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode
-DMMoFEMTSSetI2Function(DM dm, const std::string fe_name,
-                       boost::shared_ptr<MoFEM::FEMethod> method,
-                       boost::shared_ptr<MoFEM::BasicMethod> pre_only,
-                       boost::shared_ptr<MoFEM::BasicMethod> post_only) {
+template <class S, class T0, class T1, class T2>
+static PetscErrorCode DMMoFEMTSSetI2Function(DM dm, S fe_name, T0 method,
+                                             T1 pre_only, T2 post_only) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
@@ -895,11 +893,32 @@ DMMoFEMTSSetI2Function(DM dm, const std::string fe_name,
   MoFEMFunctionReturn(0);
 }
 
+PetscErrorCode DMMoFEMTSSetI2Function(DM dm, const char fe_name[],
+                                      MoFEM::FEMethod *method,
+                                      MoFEM::BasicMethod *pre_only,
+                                      MoFEM::BasicMethod *post_only) {
+  return DMMoFEMTSSetI2Function<const char *, MoFEM::FEMethod *,
+                                MoFEM::BasicMethod *, MoFEM::BasicMethod *>(
+      dm, fe_name, method, pre_only, post_only);
+  MoFEMFunctionReturnHot(0);
+}
+
 PetscErrorCode
-DMMoFEMTSSetI2Jacobian(DM dm, const std::string fe_name,
+DMMoFEMTSSetI2Function(DM dm, const std::string fe_name,
                        boost::shared_ptr<MoFEM::FEMethod> method,
                        boost::shared_ptr<MoFEM::BasicMethod> pre_only,
                        boost::shared_ptr<MoFEM::BasicMethod> post_only) {
+  return DMMoFEMTSSetI2Function<const std::string,
+                                boost::shared_ptr<MoFEM::FEMethod>,
+                                boost::shared_ptr<MoFEM::BasicMethod>,
+                                boost::shared_ptr<MoFEM::BasicMethod>>(
+      dm, fe_name, method, pre_only, post_only);
+  MoFEMFunctionReturnHot(0);
+}
+
+template <class S, class T0, class T1, class T2>
+static PetscErrorCode DMMoFEMTSSetI2Jacobian(DM dm, S fe_name, T0 method,
+                                             T1 pre_only, T2 post_only) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
@@ -915,6 +934,27 @@ DMMoFEMTSSetI2Jacobian(DM dm, const std::string fe_name,
   }
   CHKERR DMTSSetI2Jacobian(dm, TsSetI2Jacobian, dm_field->tsCtx.get());
   MoFEMFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMTSSetI2Jacobian(DM dm, const char fe_name[],
+                                      MoFEM::FEMethod *method,
+                                      MoFEM::BasicMethod *pre_only,
+                                      MoFEM::BasicMethod *post_only) {
+  return DMMoFEMTSSetI2Jacobian<const char *, FEMethod *, MoFEM::BasicMethod *,
+                                MoFEM::BasicMethod *>(dm, fe_name, method,
+                                                      pre_only, post_only);
+}
+
+PetscErrorCode
+DMMoFEMTSSetI2Jacobian(DM dm, const std::string fe_name,
+                       boost::shared_ptr<MoFEM::FEMethod> method,
+                       boost::shared_ptr<MoFEM::BasicMethod> pre_only,
+                       boost::shared_ptr<MoFEM::BasicMethod> post_only) {
+  return DMMoFEMTSSetI2Jacobian<const std::string,
+                                boost::shared_ptr<MoFEM::FEMethod>,
+                                boost::shared_ptr<MoFEM::BasicMethod>,
+                                boost::shared_ptr<MoFEM::BasicMethod>>(
+      dm, fe_name, method, pre_only, post_only);
 }
 
 template <class S, class T0, class T1, class T2>

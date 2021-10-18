@@ -54,20 +54,26 @@ protected:
 
 template <int FIELD_DIM, typename OpBase>
 struct OpSourceImpl<1, FIELD_DIM, GAUSS, OpBase> : public OpBase {
-  OpSourceImpl(const std::string field_name, VectorFun<FIELD_DIM> source_fun)
-      : OpBase(field_name, field_name, OpBase::OPROW), sourceFun(source_fun) {}
+  OpSourceImpl(const std::string field_name, VectorFun<FIELD_DIM> source_fun,
+               boost::shared_ptr<Range> ents_ptr = nullptr)
+      : OpBase(field_name, field_name, OpBase::OPROW), sourceFun(source_fun),
+        entsPtr(ents_ptr) {}
 
 protected:
+  boost::shared_ptr<Range> entsPtr;
   VectorFun<FIELD_DIM> sourceFun;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
 };
 
 template <int BASE_DIM, typename OpBase>
 struct OpSourceImpl<BASE_DIM, BASE_DIM, GAUSS, OpBase> : public OpBase {
-  OpSourceImpl(const std::string field_name, VectorFun<BASE_DIM> source_fun)
-      : OpBase(field_name, field_name, OpBase::OPROW), sourceFun(source_fun) {}
+  OpSourceImpl(const std::string field_name, VectorFun<BASE_DIM> source_fun,
+               boost::shared_ptr<Range> ents_ptr = nullptr)
+      : OpBase(field_name, field_name, OpBase::OPROW), sourceFun(source_fun),
+        entsPtr(ents_ptr) {}
 
 protected:
+  boost::shared_ptr<Range> entsPtr;
   VectorFun<BASE_DIM> sourceFun;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
 };
@@ -518,6 +524,11 @@ MoFEMErrorCode OpSourceImpl<1, FIELD_DIM, GAUSS, OpBase>::iNtegrate(
     DataForcesAndSourcesCore::EntData &row_data) {
   FTensor::Index<'i', FIELD_DIM> i;
   MoFEMFunctionBegin;
+  if (entsPtr) {
+    if (entsPtr->find(OpBase::getFEEntityHandle()) == entsPtr->end())
+      MoFEMFunctionReturnHot(0);
+  }
+
   // get element volume
   const double vol = OpBase::getMeasure();
   // get integration weights
@@ -553,6 +564,11 @@ MoFEMErrorCode OpSourceImpl<BASE_DIM, BASE_DIM, GAUSS, OpBase>::iNtegrate(
     DataForcesAndSourcesCore::EntData &row_data) {
   FTensor::Index<'i', BASE_DIM> i;
   MoFEMFunctionBegin;
+  if (entsPtr) {
+    if (entsPtr->find(OpBase::getFEEntityHandle()) == entsPtr->end())
+      MoFEMFunctionReturnHot(0);
+  }
+
   const size_t nb_base_functions = row_data.getN().size2() / BASE_DIM;
   // get element volume
   const double vol = OpBase::getMeasure();
