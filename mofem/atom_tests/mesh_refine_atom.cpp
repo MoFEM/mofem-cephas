@@ -73,9 +73,9 @@ int main(int argc, char *argv[]) {
         CHKERR moab.add_entities(meshset_ref_edges, &*eit, 1);
       }
     }
-    CHKERR refine->add_vertices_in_the_middle_of_edges(
+    CHKERR refine->addVerticesInTheMiddleOfEdges(
         meshset_ref_edges, bit_level1, false, QUIET, 10000);
-    CHKERR refine->refine_TET(meshset_level0, bit_level1, false, QUIET);
+    CHKERR refine->refineTets(meshset_level0, bit_level1, false, QUIET);
 
     std::ofstream myfile;
     myfile.open("mesh_refine.txt");
