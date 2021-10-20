@@ -209,6 +209,9 @@ private:
   It is assumed that face element is XY plane. Applied
   only for 2d problems and 2d problems embedded in 3d space
 
+  \note If you push operators for HO normal befor this operator, HO geometry is
+  taken into account when you calculate jacobian.
+
 */
 template <int DIM> struct OpCalculateHOJacForFaceImpl;
 

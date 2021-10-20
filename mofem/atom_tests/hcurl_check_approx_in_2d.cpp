@@ -316,10 +316,11 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionBegin;
       auto jac_ptr = boost::make_shared<MatrixDouble>();
       auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
+      auto det_ptr = boost::make_shared<VectorDouble>();
 
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpCalculateHOJacForFace(jac_ptr));
-      pipeline_mng.getOpDomainRhsPipeline().push_back(
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpInvertMatrix<2>(jac_ptr, det_ptr, inv_jac_ptr));
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpMakeHdivFromHcurl());
@@ -329,7 +330,7 @@ int main(int argc, char *argv[]) {
 
       pipeline_mng->getOpDomainLhsPipeline().push_back(
           new OpCalculateHOJacForFace(jac_ptr));
-      pipeline_mng.getOpDomainLhsPipeline().push_back(
+      pipeline_mng->getOpDomainLhsPipeline().push_back(
           new OpInvertMatrix<2>(jac_ptr, det_ptr, inv_jac_ptr));
       pipeline_mng->getOpDomainLhsPipeline().push_back(
           new OpMakeHdivFromHcurl());
@@ -371,6 +372,7 @@ int main(int argc, char *argv[]) {
 
       auto jac_ptr = boost::make_shared<MatrixDouble>();
       auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
+      auto det_ptr = boost::make_shared<VectorDouble>();
 
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpCalculateHOJacForFace(jac_ptr));
