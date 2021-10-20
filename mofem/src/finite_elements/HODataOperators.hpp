@@ -39,8 +39,8 @@ struct OpCalculateHOJacVolume
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
 
-  private:
-    boost::shared_ptr<MatrixDouble> jacPtr;
+private:
+  boost::shared_ptr<MatrixDouble> jacPtr;
 };
 
 /**
@@ -67,7 +67,7 @@ struct OpSetHOInvJacToScalarBases
                              boost::shared_ptr<MatrixDouble> inv_jac_ptr)
       : ForcesAndSourcesCore::UserDataOperator(space), invJacPtr(inv_jac_ptr) {
 
-    if(!inv_jac_ptr)
+    if (!inv_jac_ptr)
       CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "invJacPtr not allocated");
 
     if (space == L2) {
@@ -203,6 +203,39 @@ private:
   MatrixDouble piolaN;
   MatrixDouble piolaDiffN;
 };
+
+/** \brief Calculate jacobian for face element
+
+  It is assumed that face element is XY plane. Applied
+  only for 2d problems and 2d problems embedded in 3d space
+
+*/
+template <int DIM> struct OpCalculateHOJacForFaceImpl;
+
+template <>
+struct OpCalculateHOJacForFaceImpl<2>
+    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+
+  OpCalculateHOJacForFaceImpl(boost::shared_ptr<MatrixDouble> jac_ptr);
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+
+protected:
+  boost::shared_ptr<MatrixDouble> jacPtr;
+};
+
+template <>
+struct OpCalculateHOJacForFaceImpl<3> : public OpCalculateHOJacForFaceImpl<2> {
+
+  using OpCalculateHOJacForFaceImpl<2>::OpCalculateHOJacForFaceImpl;
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+};
+
+using OpCalculateHOJacForFace = OpCalculateHOJacForFaceImpl<2>;
+using OpCalculateHOJacForFaceEmbeddedIn3DSpace = OpCalculateHOJacForFaceImpl<3>;
 
 /** \brief Calculate normals at Gauss points of triangle element
  * \ingroup mofem_forces_and_source

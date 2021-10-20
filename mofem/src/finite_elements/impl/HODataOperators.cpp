@@ -412,6 +412,77 @@ MoFEMErrorCode OpSetHOCovariantPiolaTransform::doWork(
   MoFEMFunctionReturn(0);
 }
 
+OpCalculateHOJacForFaceImpl<2>::OpCalculateHOJacForFaceImpl(
+    boost::shared_ptr<MatrixDouble> jac_ptr)
+    : FaceElementForcesAndSourcesCoreBase::UserDataOperator(NOSPACE),
+      jacPtr(jac_ptr) {}
+
+MoFEMErrorCode OpCalculateHOJacForFaceImpl<2>::doWork(
+    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+
+  MoFEMFunctionBegin;
+
+  const auto nb_gauss_pts = getGaussPts().size2();
+
+  jacPtr->resize(4, nb_gauss_pts, false);
+  auto t_jac = getFTensor2FromMat<2, 2>(*jacPtr);
+
+  FTensor::Index<'i', 2> i;
+  FTensor::Index<'j', 2> j;
+
+  auto t_t1 = getFTensor1Tangent1AtGaussPts();
+  auto t_t2 = getFTensor1Tangent2AtGaussPts();
+  FTensor::Number<0> N0;
+  FTensor::Number<1> N1;
+
+  for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
+    t_jac(i, N0) = t_t1(i);
+    t_jac(i, N1) = t_t2(i);
+    ++t_t1;
+    ++t_t2;
+    ++t_jac;
+  }
+
+  MoFEMFunctionReturn(0);
+};
+
+MoFEMErrorCode OpCalculateHOJacForFaceImpl<3>::doWork(
+    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+  MoFEMFunctionBegin;
+
+  FTensor::Index<'i', 3> i;
+  FTensor::Index<'j', 3> j;
+  FTensor::Index<'k', 3> k;
+
+  size_t nb_gauss_pts = getGaussPts().size2();
+  jacPtr->resize(9, nb_gauss_pts, false);
+
+  auto t_t1 = getFTensor1Tangent1AtGaussPts();
+  auto t_t2 = getFTensor1Tangent2AtGaussPts();
+  auto t_normal = getFTensor1NormalsAtGaussPts();
+
+  FTensor::Number<0> N0;
+  FTensor::Number<1> N1;
+  FTensor::Number<2> N2;
+
+  auto t_jac = getFTensor2FromMat<3, 3>(*jacPtr);
+  for (size_t gg = 0; gg != nb_gauss_pts; ++gg, ++t_jac) {
+
+    t_jac(i, N0) = t_t1(i);
+    t_jac(i, N1) = t_t2(i);
+
+    const double l = sqrt(t_normal(j) * t_normal(j));
+
+    t_jac(i, N2) = t_normal(i) / l;
+
+    ++t_t1;
+    ++t_t2;
+    ++t_normal;
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode
 OpGetHONormalsOnFace::doWork(int side, EntityType type,
                              DataForcesAndSourcesCore::EntData &data) {

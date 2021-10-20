@@ -3,7 +3,7 @@
  * \example hcurl_divergence_operator_2d.cpp
  *
  * Testing Hcurl base, transfromed to Hdiv base in 2d using Green theorem
- * 
+ *
  */
 
 /* This file is part of MoFEM.
@@ -206,18 +206,21 @@ int main(int argc, char *argv[]) {
 
       auto jac_ptr = boost::make_shared<MatrixDouble>();
       auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
+      auto det_ptr = boost::make_shared<VectorDouble>();
 
       fe_face.getOpPtrVector().push_back(
-          new OpCalculateJacForFaceEmbeddedIn3DSpace(jac_ptr));
-      fe_face.getOpPtrVector().push_back(
-          new OpCalculateInvJacForFaceEmbeddedIn3DSpace(inv_jac_ptr));
+          new OpCalculateHOJacForFaceEmbeddedIn3DSpace(jac_ptr));
       fe_face.getOpPtrVector().push_back(new OpMakeHdivFromHcurl());
       fe_face.getOpPtrVector().push_back(
-          new OpSetContravariantPiolaTransformOnFace2DEmbeddedIn3DSpace(jac_ptr));
+          new OpSetContravariantPiolaTransformOnFace2DEmbeddedIn3DSpace(
+              jac_ptr));
+
+      fe_face.getOpPtrVector().push_back(
+          new OpInvertMatrix<3>(jac_ptr, det_ptr, inv_jac_ptr));
+
       fe_face.getOpPtrVector().push_back(
           new OpSetInvJacHcurlFaceEmbeddedIn3DSpace(inv_jac_ptr));
-      fe_face.getOpPtrVector().push_back(
-          new OpSetHOWeigthsOnFace());
+      fe_face.getOpPtrVector().push_back(new OpSetHOWeigthsOnFace());
       fe_face.getOpPtrVector().push_back(new OpDivergence(div));
       CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "FACE_FE", fe_face);
       return div;

@@ -335,10 +335,13 @@ int main(int argc, char *argv[]) {
 
     MyFE tri_fe(m_field);
 
+    auto jac_ptr = boost::make_shared<MatrixDouble>();
     auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
+    auto det_ptr = boost::make_shared<VectorDouble>();
 
+    tri_fe.getOpPtrVector().push_back(new OpCalculateHOJacForFace(jac_ptr));
     tri_fe.getOpPtrVector().push_back(
-        new OpCalculateInvJacForFace(inv_jac_ptr));
+        new OpInvertMatrix<2>(jac_ptr, det_ptr, inv_jac_ptr));
     if (space == H1) {
       tri_fe.getOpPtrVector().push_back(new OpSetInvJacH1ForFace(inv_jac_ptr));
     }

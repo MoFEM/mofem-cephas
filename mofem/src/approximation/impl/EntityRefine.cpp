@@ -1305,9 +1305,7 @@ MoFEMErrorCode quad_split_all_edges(const EntityHandle *conn,
                                     const EntityHandle *edge_new_nodes,
                                     EntityHandle *new_quad_conn) {
 
-
-
-
+  return 0;
                                     }
 
 } // namespace MoFEM
