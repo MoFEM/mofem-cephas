@@ -334,14 +334,14 @@ struct OpConvectiveTermRhsImpl<1, 1, SPACE_DIM, GAUSS, OpBase> : public OpBase {
   OpConvectiveTermRhsImpl(const std::string field_name,
                           boost::shared_ptr<MatrixDouble> u_ptr,
                           boost::shared_ptr<MatrixDouble> y_grad_ptr,
-                          const double beta = 1)
+                          ScalarFun source_fun = []() { return 1; })
       : OpBase(field_name, field_name, OpBase::OPROW), uPtr(u_ptr),
-        yGradPtr(y_grad_ptr), betaConst(beta) {}
+        yGradPtr(y_grad_ptr), alphaConstant(source_fun) {}
 
 protected:
   boost::shared_ptr<MatrixDouble> uPtr;
   boost::shared_ptr<MatrixDouble> yGradPtr;
-  const double betaConst;
+  ScalarFun alphaConstant;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
 };
 
@@ -351,14 +351,14 @@ struct OpConvectiveTermRhsImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>
   OpConvectiveTermRhsImpl(const std::string field_name,
                           boost::shared_ptr<MatrixDouble> u_ptr,
                           boost::shared_ptr<MatrixDouble> y_grad_ptr,
-                          const double beta = 1)
+                          ScalarFun source_fun = []() { return 1; })
       : OpBase(field_name, field_name, OpBase::OPROW), uPtr(u_ptr),
-        yGradPtr(y_grad_ptr), betaConst(beta) {}
+        yGradPtr(y_grad_ptr), alphaConstant(source_fun) {}
 
 protected:
   boost::shared_ptr<MatrixDouble> uPtr;
   boost::shared_ptr<MatrixDouble> yGradPtr;
-  const double betaConst;
+  ScalarFun alphaConstant;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
 };
 
@@ -1178,12 +1178,12 @@ OpConvectiveTermRhsImpl<1, 1, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
   auto t_grad_y = getFTensor1FromMat<SPACE_DIM>(*yGradPtr);
 
   FTensor::Index<'i', SPACE_DIM> i;
-
+  const double alpha_constant = alphaConstant();
   for (size_t gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
 
     // get element volume
     const double vol = OpBase::getMeasure();
-    const double c = (t_grad_y(i) * t_u(i)) * (t_w * vol * betaConst);
+    const double c = (t_grad_y(i) * t_u(i)) * (t_w * vol * alpha_constant);
 
     // get element volume
     int rr = 0;
@@ -1217,14 +1217,14 @@ OpConvectiveTermRhsImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
 
   FTensor::Index<'i', SPACE_DIM> i;
   FTensor::Index<'j', FIELD_DIM> j;
-
+  const double alpha_constant = alphaConstant();
   for (size_t gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
 
     // get element volume
     const double vol = OpBase::getMeasure();
 
     FTensor::Tensor1<double, FIELD_DIM> t_c;
-    t_c(j) = (t_grad_y(j, i) * t_u(i)) * (t_w * vol * betaConst);
+    t_c(j) = (t_grad_y(j, i) * t_u(i)) * (t_w * vol * alpha_constant);
 
     auto t_nf = getFTensor1FromArray<FIELD_DIM, FIELD_DIM>(OpBase::locF);
     int rr = 0;

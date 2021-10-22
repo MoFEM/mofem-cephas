@@ -205,18 +205,18 @@ struct OpMixDivTimesVecImpl {};
 template <int SPACE_DIM, typename OpBase>
 struct OpMixDivTimesVecImpl<SPACE_DIM, GAUSS, OpBase> : public OpBase {
   OpMixDivTimesVecImpl(const std::string row_field_name,
-                       const std::string col_field_name, const double alpha = 1,
+                       const std::string col_field_name, ConstantFun alpha_fun,
                        const bool assemble_transpose = false,
                        const bool only_transpose = false)
       : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
-        alphaConstant(alpha) {
+        alphaConstant(alpha_fun) {
     this->assembleTranspose = assemble_transpose;
     this->onlyTranspose = only_transpose;
   }
 
 protected:
   FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
-  const double alphaConstant;
+  ConstantFun alphaConstant;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
                            DataForcesAndSourcesCore::EntData &col_data);
 };
@@ -228,11 +228,11 @@ template <int SPACE_DIM, typename OpBase>
 struct OpMixScalarTimesDivImpl<SPACE_DIM, GAUSS, OpBase> : public OpBase {
   OpMixScalarTimesDivImpl(const std::string row_field_name,
                           const std::string col_field_name,
-                          const double alpha = 1,
+                          ConstantFun alpha_fun,
                           const bool assemble_transpose = false,
                           const bool only_transpose = false)
       : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
-        alphaConstant(alpha) {
+        alphaConstant(alpha_fun) {
     this->assembleTranspose = assemble_transpose;
     this->onlyTranspose = only_transpose;
     this->sYmm = false;
@@ -240,7 +240,7 @@ struct OpMixScalarTimesDivImpl<SPACE_DIM, GAUSS, OpBase> : public OpBase {
 
 protected:
   FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
-  const double alphaConstant;
+  ConstantFun alphaConstant;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
                            DataForcesAndSourcesCore::EntData &col_data);
 };
@@ -254,18 +254,18 @@ struct OpMixVectorTimesGradImpl<3, SPACE_DIM, SPACE_DIM, GAUSS, OpBase>
     : public OpBase {
   OpMixVectorTimesGradImpl(const std::string row_field_name,
                            const std::string col_field_name,
-                           const double alpha = 1,
+                           ConstantFun alpha_fun,
                            const bool assemble_transpose = false,
                            const bool only_transpose = false)
       : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
-        alphaConstant(alpha) {
+        alphaConstant(alpha_fun) {
     this->assembleTranspose = assemble_transpose;
     this->onlyTranspose = only_transpose;
   }
 
 protected:
   FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
-  const double alphaConstant;
+  ConstantFun alphaConstant;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
                            DataForcesAndSourcesCore::EntData &col_data);
 };
@@ -275,18 +275,18 @@ struct OpMixVectorTimesGradImpl<1, SPACE_DIM, SPACE_DIM, GAUSS, OpBase>
     : public OpBase {
   OpMixVectorTimesGradImpl(const std::string row_field_name,
                            const std::string col_field_name,
-                           const double alpha = 1,
+                           ConstantFun alpha_fun,
                            const bool assemble_transpose = false,
                            const bool only_transpose = false)
       : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
-        alphaConstant(alpha) {
+        alphaConstant(alpha_fun) {
     this->assembleTranspose = assemble_transpose;
     this->onlyTranspose = only_transpose;
   }
 
 protected:
   FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
-  const double alphaConstant;
+  ConstantFun alphaConstant;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
                            DataForcesAndSourcesCore::EntData &col_data);
 };
@@ -298,11 +298,11 @@ template <int SPACE_DIM, typename OpBase>
 struct OpMixTensorTimesGradImpl<SPACE_DIM, GAUSS, OpBase> : public OpBase {
   OpMixTensorTimesGradImpl(const std::string row_field_name,
                            const std::string col_field_name,
-                           const double alpha = 1,
+                           ConstantFun alpha_fun,
                            const bool assemble_transpose = false,
                            const bool only_transpose = false)
       : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
-        alphaConstant(alpha) {
+        alphaConstant(alpha_fun) {
     this->assembleTranspose = assemble_transpose;
     this->onlyTranspose = only_transpose;
   }
@@ -310,7 +310,7 @@ struct OpMixTensorTimesGradImpl<SPACE_DIM, GAUSS, OpBase> : public OpBase {
 protected:
   FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
   FTensor::Index<'j', SPACE_DIM> j; ///< summit Index
-  const double alphaConstant;
+  ConstantFun alphaConstant;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
                            DataForcesAndSourcesCore::EntData &col_data);
 };
@@ -329,9 +329,9 @@ struct OpConvectiveTermLhsDuImpl<1, 1, SPACE_DIM, GAUSS, OpBase>
   OpConvectiveTermLhsDuImpl(const std::string field_name_row,
                             const std::string field_name_col,
                             boost::shared_ptr<MatrixDouble> y_grad_ptr,
-                            const double beta = 1)
+                            ConstantFun alpha_fun = []() { return 1; })
       : OpBase(field_name_row, field_name_col, OpBase::OPROWCOL),
-        yGradPtr(y_grad_ptr), betaConst(beta) {
+        yGradPtr(y_grad_ptr), alphaConstant(alpha_fun) {
 
     this->assembleTranspose = false;
     this->onlyTranspose = false;
@@ -340,7 +340,7 @@ struct OpConvectiveTermLhsDuImpl<1, 1, SPACE_DIM, GAUSS, OpBase>
 
 protected:
   boost::shared_ptr<MatrixDouble> yGradPtr;
-  const double betaConst;
+  ConstantFun alphaConstant;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
                            DataForcesAndSourcesCore::EntData &col_data);
 };
@@ -351,9 +351,9 @@ struct OpConvectiveTermLhsDyImpl<1, 1, SPACE_DIM, GAUSS, OpBase>
   OpConvectiveTermLhsDyImpl(const std::string field_name_row,
                             const std::string field_name_col,
                             boost::shared_ptr<MatrixDouble> u_ptr,
-                            const double beta = 1)
+                            ConstantFun alpha_fun = []() { return 1; })
       : OpBase(field_name_row, field_name_col, OpBase::OPROWCOL), uPtr(u_ptr),
-        betaConst(beta) {
+        alphaConstant(alpha_fun) {
 
     this->assembleTranspose = false;
     this->onlyTranspose = false;
@@ -361,7 +361,7 @@ struct OpConvectiveTermLhsDyImpl<1, 1, SPACE_DIM, GAUSS, OpBase>
   }
 
 protected:
-  const double betaConst;
+  ConstantFun alphaConstant;
   boost::shared_ptr<MatrixDouble> uPtr;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
                            DataForcesAndSourcesCore::EntData &col_data);
@@ -373,9 +373,9 @@ struct OpConvectiveTermLhsDuImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>
   OpConvectiveTermLhsDuImpl(const std::string field_name_row,
                             const std::string field_name_col,
                             boost::shared_ptr<MatrixDouble> y_grad_ptr,
-                            const double beta = 1)
+                             ConstantFun alpha_fun = []() { return 1; })
       : OpBase(field_name_row, field_name_col, OpBase::OPROWCOL),
-        yGradPtr(y_grad_ptr), betaConst(beta) {
+        yGradPtr(y_grad_ptr), alphaConstant(alpha_fun) {
 
     this->assembleTranspose = false;
     this->onlyTranspose = false;
@@ -383,7 +383,7 @@ struct OpConvectiveTermLhsDuImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>
   }
 
 protected:
-  const double betaConst;
+  ConstantFun alphaConstant;
   boost::shared_ptr<MatrixDouble> yGradPtr;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
                            DataForcesAndSourcesCore::EntData &col_data);
@@ -395,9 +395,9 @@ struct OpConvectiveTermLhsDyImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>
   OpConvectiveTermLhsDyImpl(const std::string field_name_row,
                             const std::string field_name_col,
                             boost::shared_ptr<MatrixDouble> u_ptr,
-                            const double beta = 1)
+                            ConstantFun alpha_fun = []() { return 1; })
       : OpBase(field_name_row, field_name_col, OpBase::OPROWCOL), uPtr(u_ptr),
-        betaConst(beta) {
+        alphaConstant(alpha_fun) {
 
     this->assembleTranspose = false;
     this->onlyTranspose = false;
@@ -405,7 +405,7 @@ struct OpConvectiveTermLhsDyImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>
   }
 
 protected:
-  const double betaConst;
+  ConstantFun alphaConstant;
   boost::shared_ptr<MatrixDouble> uPtr;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
                            DataForcesAndSourcesCore::EntData &col_data);
@@ -1066,10 +1066,10 @@ MoFEMErrorCode OpMixDivTimesVecImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
 
   size_t nb_base_functions = row_data.getN().size2() / 3;
   auto t_row_diff_base = row_data.getFTensor2DiffN<3, SPACE_DIM>();
-
+  const double alpha_constant = alphaConstant();
   for (size_t gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
 
-    const double alpha = alphaConstant * this->getMeasure() * t_w;
+    const double alpha = alpha_constant * this->getMeasure() * t_w;
 
     size_t rr = 0;
     for (; rr != OpBase::nbRows / SPACE_DIM; ++rr) {
@@ -1110,10 +1110,10 @@ MoFEMErrorCode OpMixScalarTimesDivImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
   auto t_w = this->getFTensor0IntegrationWeight();
   size_t nb_base_functions_row = row_data.getN().size2();
   auto t_row_base = row_data.getFTensor0N();
-
+  const double alpha_constant = alphaConstant();
   for (size_t gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
 
-    const double alpha = alphaConstant * this->getMeasure() * t_w;
+    const double alpha = alpha_constant * this->getMeasure() * t_w;
 
     size_t rr = 0;
     auto t_m = getFTensor1FromPtr<SPACE_DIM>(OpBase::locMat.data().data());
@@ -1147,10 +1147,10 @@ OpMixVectorTimesGradImpl<3, SPACE_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
   size_t nb_base_functions = row_data.getN().size2() / 3;
   auto t_row_base = row_data.getFTensor1N<3>();
   auto &mat = this->locMat;
-
+  const double alpha_constant = alphaConstant();
   for (size_t gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
 
-    const double alpha = alphaConstant * this->getMeasure() * t_w;
+    const double alpha = alpha_constant * this->getMeasure() * t_w;
 
     size_t rr = 0;
     for (; rr != OpBase::nbRows; ++rr) {
@@ -1189,9 +1189,10 @@ OpMixVectorTimesGradImpl<1, SPACE_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
     return FTensor::Tensor1<FTensor::PackPtr<double *, 1>, SPACE_DIM>(ptrs);
   };
 
+  const double alpha_constant = alphaConstant();
   for (size_t gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
 
-    const double alpha = alphaConstant * this->getMeasure() * t_w;
+    const double alpha = alpha_constant * this->getMeasure() * t_w;
 
     size_t rr = 0;
     for (; rr != OpBase::nbRows / SPACE_DIM; ++rr) {
@@ -1223,10 +1224,10 @@ MoFEMErrorCode OpMixTensorTimesGradImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
 
   size_t nb_base_functions = row_data.getN().size2() / 3;
   auto t_row_base = row_data.getFTensor1N<3>();
-
+  const double alpha_constant = alphaConstant();
   for (size_t gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
 
-    const double alpha = alphaConstant * this->getMeasure() * t_w;
+    const double alpha = alpha_constant * this->getMeasure() * t_w;
 
     size_t rr = 0;
     for (; rr != OpBase::nbRows / SPACE_DIM; ++rr) {
@@ -1276,10 +1277,11 @@ OpConvectiveTermLhsDuImpl<1, 1, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
   auto t_grad_y = getFTensor1FromMat<SPACE_DIM>(*yGradPtr);
   FTensor::Index<'i', SPACE_DIM> i;
 
+  const double alpha_constant = alphaConstant();
   // loop over integration points
   for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
     // take into account Jacobian
-    const double alpha = t_w * vol * betaConst;
+    const double alpha = t_w * vol * alpha_constant;
     // access local matrix
     auto t_vec = get_t_vec(0);
     // loop over rows base functions
@@ -1321,11 +1323,11 @@ OpConvectiveTermLhsDyImpl<1, 1, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
 
   auto t_u = getFTensor1FromMat<SPACE_DIM>(*uPtr);
   FTensor::Index<'i', SPACE_DIM> i;
-
+  const double alpha_constant = alphaConstant();
   // loop over integration points
   for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
     // take into account Jacobian
-    const double alpha = t_w * vol * betaConst;
+    const double alpha = t_w * vol * alpha_constant;
     // loop over rows base functions
     auto a_mat_ptr = &*OpBase::locMat.data().begin();
     int rr = 0;
@@ -1378,10 +1380,11 @@ OpConvectiveTermLhsDuImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
                             SPACE_DIM>(ptrs);
   };
 
+  const double alpha_constant = alphaConstant();
   // loop over integration points
   for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
     // take into account Jacobian
-    const double alpha = t_w * vol * betaConst;
+    const double alpha = t_w * vol * alpha_constant;
 
     // loop over rows base functions
     int rr = 0;
@@ -1437,10 +1440,11 @@ OpConvectiveTermLhsDyImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
   FTensor::Index<'j', FIELD_DIM> j;
   FTensor::Index<'k', FIELD_DIM> k;
 
+  const double alpha_constant = alphaConstant();
   // loop over integration points
   for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
     // take into account Jacobian
-    const double alpha = t_w * vol * betaConst;
+    const double alpha = t_w * vol * alpha_constant;
 
     // loop over rows base functions
     int rr = 0;
