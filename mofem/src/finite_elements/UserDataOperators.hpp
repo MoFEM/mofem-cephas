@@ -525,10 +525,13 @@ struct OpCalculateVectorFieldValuesFromPetscVecImpl
                         DataForcesAndSourcesCore::EntData &data) {
     MoFEMFunctionBegin;
     auto &local_indices = data.getLocalIndices();
-    const int nb_dofs = local_indices.size();
-    if (!nb_dofs && type == zeroAtType) {
-      dataPtr->resize(Tensor_Dim, 0, false);
-      MoFEMFunctionReturnHot(0);
+    const size_t nb_dofs = local_indices.size();
+    const size_t nb_gauss_pts = getGaussPts().size2();
+
+    MatrixDouble &mat = *dataPtr;
+    if (type == zeroAtType) {
+      mat.resize(Tensor_Dim, nb_gauss_pts, false);
+      mat.clear();
     }
     if (!nb_dofs)
       MoFEMFunctionReturnHot(0);
@@ -584,15 +587,10 @@ struct OpCalculateVectorFieldValuesFromPetscVecImpl
               "That case is not implemented");
     }
 
-    const size_t nb_gauss_pts = data.getN().size1();
     const size_t nb_base_functions = data.getN().size2();
-    MatrixDouble &mat = *dataPtr;
-    if (type == zeroAtType) {
-      mat.resize(Tensor_Dim, nb_gauss_pts, false);
-      mat.clear();
-    }
     auto base_function = data.getFTensor0N();
     auto values_at_gauss_pts = getFTensor1FromMat<Tensor_Dim>(mat);
+    
     FTensor::Index<'I', Tensor_Dim> I;
     const size_t size = nb_dofs / Tensor_Dim;
     if (nb_dofs % Tensor_Dim) {
@@ -1347,9 +1345,12 @@ struct OpCalculateVectorFieldGradientDot
 
     const auto &local_indices = data.getLocalIndices();
     const int nb_dofs = local_indices.size();
-    if (!nb_dofs && type == zeroAtType) {
-      dataPtr->resize(Tensor_Dim0 * Tensor_Dim1, 0, false);
-      MoFEMFunctionReturnHot(0);
+    const int nb_gauss_pts = this->getGaussPts().size2();
+
+    auto &mat = *this->dataPtr;
+    if (type == this->zeroAtType) {
+      mat.resize(Tensor_Dim0 * Tensor_Dim1, nb_gauss_pts, false);
+      mat.clear();
     }
     if (!nb_dofs)
       MoFEMFunctionReturnHot(0);
@@ -1364,13 +1365,8 @@ struct OpCalculateVectorFieldGradientDot
         dotVector[i] = 0;
     CHKERR VecRestoreArrayRead(getFEMethod()->ts_u_t, &array);
 
-    const int nb_gauss_pts = data.getN().size1();
+
     const int nb_base_functions = data.getN().size2();
-    ublas::matrix<double, ublas::row_major, DoubleAllocator> &mat = *dataPtr;
-    if (type == zeroAtType) {
-      mat.resize(Tensor_Dim0 * Tensor_Dim1, nb_gauss_pts, false);
-      mat.clear();
-    }
     auto diff_base_function = data.getFTensor1DiffN<Tensor_Dim1>();
     auto gradients_at_gauss_pts =
         getFTensor2FromMat<Tensor_Dim0, Tensor_Dim1>(mat);
@@ -1380,6 +1376,7 @@ struct OpCalculateVectorFieldGradientDot
     if (nb_dofs % Tensor_Dim0) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Data inconsistency");
     }
+    
     for (int gg = 0; gg < nb_gauss_pts; ++gg) {
       auto field_data = getFTensorDotData<Tensor_Dim0>();
       int bb = 0;
