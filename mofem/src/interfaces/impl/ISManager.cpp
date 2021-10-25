@@ -30,7 +30,7 @@ ISManager::query_interface(boost::typeindex::type_index type_index,
 ISManager::ISManager(const MoFEM::Core &core)
     : cOre(const_cast<MoFEM::Core &>(core)), dEbug(false) {}
 
-MoFEMErrorCode ISManager::sectionCreate(const std::string &problem_name,
+MoFEMErrorCode ISManager::sectionCreate(const std::string problem_name,
                                         PetscSection *s,
                                         const RowColData row_col) const {
   const MoFEM::Interface &m_field = cOre;
@@ -152,13 +152,13 @@ MoFEMErrorCode ISManager::sectionCreate(const std::string &problem_name,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode ISManager::isCreateProblemOrder(const std::string &problem,
+MoFEMErrorCode ISManager::isCreateProblemOrder(const std::string problem_name,
                                                RowColData rc, int min_order,
                                                int max_order, IS *is) const {
   const MoFEM::Interface &m_field = cOre;
   const Problem *problem_ptr;
   MoFEMFunctionBegin;
-  CHKERR m_field.get_problem(problem, &problem_ptr);
+  CHKERR m_field.get_problem(problem_name, &problem_ptr);
 
   typedef multi_index_container<
       boost::shared_ptr<NumeredDofEntity>,
@@ -209,24 +209,24 @@ MoFEMErrorCode ISManager::isCreateProblemOrder(const std::string &problem,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode ISManager::isCreateProblemOrder(const std::string &problem,
+MoFEMErrorCode ISManager::isCreateProblemOrder(const std::string problem_name,
                                                RowColData rc, int min_order,
                                                int max_order,
                                                SmartPetscObj<IS> &is) const {
   MoFEMFunctionBegin;
   IS raw_is;
-  CHKERR isCreateProblemOrder(problem, rc, min_order, max_order, &raw_is);
+  CHKERR isCreateProblemOrder(problem_name, rc, min_order, max_order, &raw_is);
   is = SmartPetscObj<IS>(raw_is);
   MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode ISManager::isCreateProblemFieldAndRank(
-    const std::string &problem, RowColData rc, const std::string &field,
+    const std::string problem_name, RowColData rc, const std::string field,
     int min_coeff_idx, int max_coeff_idx, IS *is, Range *ents_ptr) const {
   const MoFEM::Interface &m_field = cOre;
   const Problem *problem_ptr;
   MoFEMFunctionBegin;
-  CHKERR m_field.get_problem(problem, &problem_ptr);
+  CHKERR m_field.get_problem(problem_name, &problem_ptr);
   const auto bit_number = m_field.get_field_bit_number(field);
 
   typedef NumeredDofEntity_multiIndex::index<Unique_mi_tag>::type DofsByUId;
@@ -294,19 +294,19 @@ MoFEMErrorCode ISManager::isCreateProblemFieldAndRank(
 }
 
 MoFEMErrorCode ISManager::isCreateProblemFieldAndRank(
-    const std::string &problem, RowColData rc, const std::string &field,
+    const std::string problem_name, RowColData rc, const std::string field,
     int min_coeff_idx, int max_coeff_idx, SmartPetscObj<IS> &smart_is,
     Range *ents_ptr) const {
   MoFEMFunctionBegin;
   IS is;
-  CHKERR isCreateProblemFieldAndRank(problem, rc, field, min_coeff_idx,
+  CHKERR isCreateProblemFieldAndRank(problem_name, rc, field, min_coeff_idx,
                                      max_coeff_idx, &is, ents_ptr);
   smart_is = SmartPetscObj<IS>(is);
   MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode ISManager::isCreateProblemFieldAndEntityType(
-    const std::string &problem, RowColData rc, const std::string &field,
+    const std::string problem_name, RowColData rc, const std::string field,
     EntityType low_type, EntityType hi_type, int min_coeff_idx,
     int max_coeff_idx, IS *is, Range *ents_ptr) const {
   const MoFEM::Interface &m_field = cOre;
@@ -318,15 +318,15 @@ MoFEMErrorCode ISManager::isCreateProblemFieldAndEntityType(
                                                    ents, true);
   if (ents_ptr)
     ents = intersect(ents, *ents_ptr);
-  CHKERR isCreateProblemFieldAndRank(problem, rc, field, min_coeff_idx,
+  CHKERR isCreateProblemFieldAndRank(problem_name, rc, field, min_coeff_idx,
                                      max_coeff_idx, is, &ents);
   MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode ISManager::isCreateFromProblemFieldToOtherProblemField(
-    const std::string &x_problem, const std::string &x_field_name,
-    RowColData x_rc, const std::string &y_problem,
-    const std::string &y_field_name, RowColData y_rc, std::vector<int> &idx,
+    const std::string x_problem, const std::string x_field_name,
+    RowColData x_rc, const std::string y_problem,
+    const std::string y_field_name, RowColData y_rc, std::vector<int> &idx,
     std::vector<int> &idy) const {
   const MoFEM::Interface &m_field = cOre;
   const Problem *px_ptr;
@@ -427,9 +427,9 @@ MoFEMErrorCode ISManager::isCreateFromProblemFieldToOtherProblemField(
 }
 
 MoFEMErrorCode ISManager::isCreateFromProblemFieldToOtherProblemField(
-    const std::string &x_problem, const std::string &x_field_name,
-    RowColData x_rc, const std::string &y_problem,
-    const std::string &y_field_name, RowColData y_rc, IS *ix, IS *iy) const {
+    const std::string x_problem, const std::string x_field_name,
+    RowColData x_rc, const std::string y_problem,
+    const std::string y_field_name, RowColData y_rc, IS *ix, IS *iy) const {
   MoFEMFunctionBegin;
   std::vector<int> idx(0), idy(0);
   CHKERR isCreateFromProblemFieldToOtherProblemField(
@@ -448,7 +448,7 @@ MoFEMErrorCode ISManager::isCreateFromProblemFieldToOtherProblemField(
 }
 
 MoFEMErrorCode ISManager::isCreateFromProblemToOtherProblem(
-    const std::string &x_problem, RowColData x_rc, const std::string &y_problem,
+    const std::string x_problem, RowColData x_rc, const std::string y_problem,
     RowColData y_rc, std::vector<int> &idx, std::vector<int> &idy) const {
   const MoFEM::Interface &m_field = cOre;
   const Problem *px_ptr;
@@ -501,7 +501,7 @@ MoFEMErrorCode ISManager::isCreateFromProblemToOtherProblem(
 }
 
 MoFEMErrorCode ISManager::isCreateFromProblemToOtherProblem(
-    const std::string &x_problem, RowColData x_rc, const std::string &y_problem,
+    const std::string x_problem, RowColData x_rc, const std::string y_problem,
     RowColData y_rc, IS *ix, IS *iy) const {
   MoFEMFunctionBegin;
   std::vector<int> idx(0), idy(0);
