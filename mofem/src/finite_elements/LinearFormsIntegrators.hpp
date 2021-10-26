@@ -331,34 +331,34 @@ struct OpConvectiveTermRhsImpl;
 
 template <int SPACE_DIM, typename OpBase>
 struct OpConvectiveTermRhsImpl<1, 1, SPACE_DIM, GAUSS, OpBase> : public OpBase {
-  OpConvectiveTermRhsImpl(const std::string field_name,
-                          boost::shared_ptr<MatrixDouble> u_ptr,
-                          boost::shared_ptr<MatrixDouble> y_grad_ptr,
-                          ScalarFun source_fun = []() { return 1; })
+  OpConvectiveTermRhsImpl(
+      const std::string field_name, boost::shared_ptr<MatrixDouble> u_ptr,
+      boost::shared_ptr<MatrixDouble> y_grad_ptr,
+      ConstantFun source_fun = []() { return 1; })
       : OpBase(field_name, field_name, OpBase::OPROW), uPtr(u_ptr),
         yGradPtr(y_grad_ptr), alphaConstant(source_fun) {}
 
 protected:
   boost::shared_ptr<MatrixDouble> uPtr;
   boost::shared_ptr<MatrixDouble> yGradPtr;
-  ScalarFun alphaConstant;
+  ConstantFun alphaConstant;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
 };
 
 template <int FIELD_DIM, int SPACE_DIM, typename OpBase>
 struct OpConvectiveTermRhsImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>
     : public OpBase {
-  OpConvectiveTermRhsImpl(const std::string field_name,
-                          boost::shared_ptr<MatrixDouble> u_ptr,
-                          boost::shared_ptr<MatrixDouble> y_grad_ptr,
-                          ScalarFun source_fun = []() { return 1; })
+  OpConvectiveTermRhsImpl(
+      const std::string field_name, boost::shared_ptr<MatrixDouble> u_ptr,
+      boost::shared_ptr<MatrixDouble> y_grad_ptr,
+      ConstantFun source_fun = []() { return 1; })
       : OpBase(field_name, field_name, OpBase::OPROW), uPtr(u_ptr),
         yGradPtr(y_grad_ptr), alphaConstant(source_fun) {}
 
 protected:
   boost::shared_ptr<MatrixDouble> uPtr;
   boost::shared_ptr<MatrixDouble> yGradPtr;
-  ScalarFun alphaConstant;
+  ConstantFun alphaConstant;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
 };
 
