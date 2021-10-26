@@ -225,8 +225,12 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionBegin;
       Ele fe(m_field);
       fe.getRuleHook = rule;
+      auto jac_ptr = boost::make_shared<MatrixDouble>();
       auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
-      fe.getOpPtrVector().push_back(new OpCalculateInvJacForFace(inv_jac_ptr));
+      auto det_ptr = boost::make_shared<VectorDouble>();
+      fe.getOpPtrVector().push_back(new OpCalculateHOJacForFace(jac_ptr));
+      fe.getOpPtrVector().push_back(
+          new OpInvertMatrix<2>(jac_ptr, det_ptr, inv_jac_ptr));
       fe.getOpPtrVector().push_back(new OpSetInvJacH1ForFace(inv_jac_ptr));
       fe.getOpPtrVector().push_back(new OpSetInvJacL2ForFace(inv_jac_ptr));
       fe.getOpPtrVector().push_back(new OpSetHOWeigthsOnFace());
@@ -260,12 +264,17 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionBegin;
       Ele fe(m_field);
       fe.getRuleHook = rule;
-      boost::shared_ptr<VectorDouble> field_vals_ptr(new VectorDouble());
-      boost::shared_ptr<MatrixDouble> diff_field_vals_ptr(new MatrixDouble());
+      auto field_vals_ptr = boost::make_shared<VectorDouble>();
+      auto diff_field_vals_ptr = boost::make_shared<MatrixDouble>();
+      auto jac_ptr = boost::make_shared<MatrixDouble>();
       auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
+      auto det_ptr = boost::make_shared<VectorDouble>();
+
       fe.getOpPtrVector().push_back(
           new OpCalculateScalarFieldValues("FIELD1", field_vals_ptr));
-      fe.getOpPtrVector().push_back(new OpCalculateInvJacForFace(inv_jac_ptr));
+      fe.getOpPtrVector().push_back(new OpCalculateHOJacForFace(jac_ptr));
+      fe.getOpPtrVector().push_back(
+          new OpInvertMatrix<2>(jac_ptr, det_ptr, inv_jac_ptr));
       fe.getOpPtrVector().push_back(new OpSetInvJacH1ForFace(inv_jac_ptr));
       fe.getOpPtrVector().push_back(new OpSetInvJacL2ForFace(inv_jac_ptr));
       fe.getOpPtrVector().push_back(new OpSetHOWeigthsOnFace());

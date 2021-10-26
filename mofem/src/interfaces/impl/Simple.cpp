@@ -707,4 +707,31 @@ MoFEMErrorCode Simple::getDM(DM *dm) {
   MoFEMFunctionReturn(0);
 }
 
+/**
+ * @brief Delete dm
+ *
+ * @return MoFEMErrorCode
+ */
+MoFEMErrorCode Simple::deleteDM() {
+  MoFEMFunctionBegin;
+  dM.reset();
+  MoFEMFunctionReturn(0);
+}
+
+/**
+ * @brief Delete finite elements
+ *
+ * @return MoFEMErrorCode
+ */
+MoFEMErrorCode Simple::deleteFiniteElements() {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+  for (auto fe : {domainFE, boundaryFE, skeletonFE}) {
+    if (m_field.check_finite_element(fe)) {
+      CHKERR m_field.delete_finite_element(fe);
+    }
+  }
+  MoFEMFunctionReturn(0);
+}
+
 } // namespace MoFEM

@@ -415,7 +415,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * Search for refined entities of given type whose parent are entities in the
    * parent meshset. It can be used for example to transfer information about
    * boundary conditions to refined mesh or split mesh by interface
-   * elements. It is used by function refine_MESHSET, to update MESHSET finite
+   * elements. It is used by function refineMeshset, to update MESHSET finite
    *elements.
    *
    * \param parent meshset

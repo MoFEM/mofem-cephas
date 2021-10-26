@@ -47,6 +47,17 @@ namespace FTensor
     /* Initializations for varying numbers of elements. */
     template <class... U> Tensor2(U *... d) : data{d...}, inc(1) {}
 
+    template <class U>
+    Tensor2(std::array<U *, Tensor_Dim0 * Tensor_Dim1> &a, const int i = 1)
+        : inc(i) {
+      for (int i = 0; i != Tensor_Dim0; ++i) {
+        const int s = i * Tensor_Dim1;
+        for (int j = 0; j != Tensor_Dim1; ++j) {
+          data[i][j] = a[s + j];
+        }
+      }
+    }
+
     Tensor2() {}
 
 
@@ -219,6 +230,10 @@ namespace FTensor
     Tensor2(U *... d) : Tensor2<T *, Tensor_Dim0, Tensor_Dim1>(d...) {}
 
     Tensor2(): Tensor2<T, Tensor_Dim0, Tensor_Dim1>() {}
+
+    template <class U>
+    Tensor2(std::array<U *, Tensor_Dim0 * Tensor_Dim1> &a)
+        : Tensor2<T *, Tensor_Dim0, Tensor_Dim1>(a) {}
 
     /* The ++ operator increments the pointer, not the number that the
        pointer points to.  This allows iterating over a grid. */

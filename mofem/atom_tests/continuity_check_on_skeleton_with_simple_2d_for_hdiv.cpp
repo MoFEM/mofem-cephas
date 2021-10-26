@@ -94,7 +94,8 @@ struct SkeletonFE : public EdgeEleOp {
         faceSideFe(m_field), elemData(elem_data) {
 
       auto jac_ptr = boost::make_shared<MatrixDouble>();
-      faceSideFe.getOpPtrVector().push_back(new OpCalculateJacForFace(jac_ptr));
+      faceSideFe.getOpPtrVector().push_back(
+          new OpCalculateHOJacForFace(jac_ptr));
       faceSideFe.getOpPtrVector().push_back(new OpMakeHdivFromHcurl());
       faceSideFe.getOpPtrVector().push_back(
           new OpSetContravariantPiolaTransformOnFace2D(jac_ptr));

@@ -60,7 +60,7 @@ struct ISManager : public UnknownInterface {
    * @param  row_col      ROE or COL, default is ROW
    * @return              error code
    */
-  MoFEMErrorCode sectionCreate(const std::string &problem_name, PetscSection *s,
+  MoFEMErrorCode sectionCreate(const std::string problem_name, PetscSection *s,
                                const RowColData row_col = COL) const;
 
   /**
@@ -74,15 +74,16 @@ struct ISManager : public UnknownInterface {
     * \retval is out value
 
     */
-  MoFEMErrorCode isCreateProblemOrder(const std::string &problem, RowColData rc,
-                                      int min_order, int max_order,
-                                      IS *is) const;
+  MoFEMErrorCode isCreateProblemOrder(const std::string problem_name,
+                                      RowColData rc, int min_order,
+                                      int max_order, IS *is) const;
 
   /**
-   * @copydoc MoFEM::ISManager::isCreateProblemOrder	
+   * @copydoc MoFEM::ISManager::isCreateProblemOrder
    */
-  MoFEMErrorCode isCreateProblemOrder(const std::string &problem, RowColData rc,
-                                      int min_order, int max_order,
+  MoFEMErrorCode isCreateProblemOrder(const std::string problem_name,
+                                      RowColData rc, int min_order,
+                                      int max_order,
                                       SmartPetscObj<IS> &is) const;
 
   /**
@@ -98,9 +99,9 @@ struct ISManager : public UnknownInterface {
     * \retval is out value
 
     */
-  MoFEMErrorCode isCreateProblemFieldAndRank(const std::string &problem,
+  MoFEMErrorCode isCreateProblemFieldAndRank(const std::string problem_name,
                                              RowColData rc,
-                                             const std::string &field,
+                                             const std::string field,
                                              int min_coeff_idx,
                                              int max_coeff_idx, IS *is,
                                              Range *ents = nullptr) const;
@@ -118,8 +119,8 @@ struct ISManager : public UnknownInterface {
    * \retval is out value
    */
   MoFEMErrorCode
-  isCreateProblemFieldAndRank(const std::string &problem, RowColData rc,
-                              const std::string &field, int min_coeff_idx,
+  isCreateProblemFieldAndRank(const std::string problem_name, RowColData rc,
+                              const std::string field, int min_coeff_idx,
                               int max_coeff_idx, SmartPetscObj<IS> &smart_is,
                               Range *ents = nullptr) const;
 
@@ -139,7 +140,7 @@ struct ISManager : public UnknownInterface {
    * @return MoFEMErrorCode
    */
   MoFEMErrorCode isCreateProblemFieldAndEntityType(
-      const std::string &problem, RowColData rc, const std::string &field,
+      const std::string problem_name, RowColData rc, const std::string field,
       EntityType low_type, EntityType hi_type, int min_coeff_idx,
       int max_coeff_idx, IS *is, Range *ents = nullptr) const;
 
@@ -161,9 +162,9 @@ struct ISManager : public UnknownInterface {
 
     */
   MoFEMErrorCode isCreateFromProblemFieldToOtherProblemField(
-      const std::string &x_problem, const std::string &x_field_name,
-      RowColData x_rc, const std::string &y_problem,
-      const std::string &y_field_name, RowColData y_rc, std::vector<int> &idx,
+      const std::string x_problem, const std::string x_field_name,
+      RowColData x_rc, const std::string y_problem,
+      const std::string y_field_name, RowColData y_rc, std::vector<int> &idx,
       std::vector<int> &idy) const;
 
   /** \brief create IS for give two problems and field
@@ -183,9 +184,9 @@ struct ISManager : public UnknownInterface {
 
     */
   MoFEMErrorCode isCreateFromProblemFieldToOtherProblemField(
-      const std::string &x_problem, const std::string &x_field_name,
-      RowColData x_rc, const std::string &y_problem,
-      const std::string &y_field_name, RowColData y_rc, IS *ix, IS *iy) const;
+      const std::string x_problem, const std::string x_field_name,
+      RowColData x_rc, const std::string y_problem,
+      const std::string y_field_name, RowColData y_rc, IS *ix, IS *iy) const;
 
   /**
    * @brief Create is from one problem to other problem
@@ -199,12 +200,9 @@ struct ISManager : public UnknownInterface {
    * @param idy
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode isCreateFromProblemToOtherProblem(const std::string &x_problem,
-                                                   RowColData x_rc,
-                                                   const std::string &y_problem,
-                                                   RowColData y_rc,
-                                                   std::vector<int> &idx,
-                                                   std::vector<int> &idy) const;
+  MoFEMErrorCode isCreateFromProblemToOtherProblem(
+      const std::string x_problem, RowColData x_rc, const std::string y_problem,
+      RowColData y_rc, std::vector<int> &idx, std::vector<int> &idy) const;
 
   /**
    * @brief Create is from one problem to other problem
@@ -218,9 +216,9 @@ struct ISManager : public UnknownInterface {
    * @param iy
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode isCreateFromProblemToOtherProblem(const std::string &x_problem,
+  MoFEMErrorCode isCreateFromProblemToOtherProblem(const std::string x_problem,
                                                    RowColData x_rc,
-                                                   const std::string &y_problem,
+                                                   const std::string y_problem,
                                                    RowColData y_rc, IS *ix,
                                                    IS *iy) const;
 };

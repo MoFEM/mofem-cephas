@@ -363,6 +363,20 @@ struct Simple : public UnknownInterface {
    */
   inline std::vector<std::string> &getOtherFiniteElements() { return otherFEs; }
 
+  /**
+   * @brief Delete dm
+   * 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode deleteDM();
+
+   /**
+   * @brief Delete finite elements
+   * 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode deleteFiniteElements(); 
+
 private:
   MoFEM::Core &cOre;
 

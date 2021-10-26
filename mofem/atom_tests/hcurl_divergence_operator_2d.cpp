@@ -206,9 +206,10 @@ int main(int argc, char *argv[]) {
       fe_face.getRuleHook = rule;
       auto jac_ptr = boost::make_shared<MatrixDouble>();
       auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
-      fe_face.getOpPtrVector().push_back(new OpCalculateJacForFace(jac_ptr));
+      auto det_ptr = boost::make_shared<VectorDouble>();
+      fe_face.getOpPtrVector().push_back(new OpCalculateHOJacForFace(jac_ptr));
       fe_face.getOpPtrVector().push_back(
-          new OpCalculateInvJacForFace(inv_jac_ptr));
+          new OpInvertMatrix<2>(jac_ptr, det_ptr, inv_jac_ptr));
       fe_face.getOpPtrVector().push_back(new OpMakeHdivFromHcurl());
       fe_face.getOpPtrVector().push_back(
           new OpSetContravariantPiolaTransformOnFace2D(jac_ptr));
