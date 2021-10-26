@@ -165,23 +165,44 @@ struct PipelineManager : public UnknownInterface {
    */
   SmartPetscObj<SNES> createSNES(SmartPetscObj<DM> dm = nullptr);
 
-  /**
-   * @brief Create TS (time) solver
-   * @ingroup mofem_basic_interface
-   *
-   * @param dm
-   * @return SmartPetscObj<TS>
-   */
-  SmartPetscObj<TS> createTS(SmartPetscObj<DM> dm = nullptr);
+  enum TSType { EX, IM, IM2, IMEX };
 
   /**
-   * @brief Create TS (time) solver for scond orer equation in time
+   * @brief reate TS (time) solver
+   * 
+   * @param type Type of time solver PipelineManager:EX/IM/IM2/IMEX
+   * @param dm 
+   * @return SmartPetscObj<TS> 
+   */
+  SmartPetscObj<TS> createTS(const TSType type, SmartPetscObj<DM> dm = nullptr);
+
+  /**
+   * @brief Create TS (time) explit solver
    * @ingroup mofem_basic_interface
    *
    * @param dm
    * @return SmartPetscObj<TS>
    */
-  SmartPetscObj<TS> createTS2(SmartPetscObj<DM> dm = nullptr);
+  SmartPetscObj<TS> createTSEX(SmartPetscObj<DM> dm = nullptr);
+
+
+  /**
+   * @brief Create TS (time) implicit solver
+   * @ingroup mofem_basic_interface
+   *
+   * @param dm
+   * @return SmartPetscObj<TS>
+   */
+  SmartPetscObj<TS> createTSIM(SmartPetscObj<DM> dm = nullptr);
+
+  /**
+   * @brief Create TS (time) solver for second order equation in time
+   * @ingroup mofem_basic_interface
+   *
+   * @param dm
+   * @return SmartPetscObj<TS>
+   */
+  SmartPetscObj<TS> createTSIM2(SmartPetscObj<DM> dm = nullptr);
 
 private:
   MoFEM::Core &cOre;
