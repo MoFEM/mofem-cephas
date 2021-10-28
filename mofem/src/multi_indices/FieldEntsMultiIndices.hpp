@@ -252,7 +252,7 @@ struct FieldEntity : public interface_Field<Field, RefEntity> {
    * coefficients, are sorted in the way.
    *
    */
-  inline std::array<int, MAX_DOFS_ON_ENTITY> &getDofOrderMap() const {
+  inline const std::array<int, MAX_DOFS_ON_ENTITY> &getDofOrderMap() const {
     return this->getFieldRawPtr()->getDofOrderMap(this->getEntType());
   }
 
@@ -352,7 +352,7 @@ struct interface_FieldEntity : public interface_Field<T, T> {
    * coefficients, are sorted in the way.
    *
    */
-  inline std::array<int, MAX_DOFS_ON_ENTITY> &getDofOrderMap() const {
+  inline const std::array<int, MAX_DOFS_ON_ENTITY> &getDofOrderMap() const {
     return this->sPtr->getDofOrderMap();
   }
 

@@ -244,8 +244,13 @@ int main(int argc, char *argv[]) {
     field_order_table[MBEDGE] = get_cgg_bubble_order_zero;
     field_order_table[MBTRI] = get_cgg_bubble_order_face;
     field_order_table[MBTET] = get_cgg_bubble_order_tet;
+    const_cast<Field *>(field_ptr)->rebuildDofsOrderMap();
 
-    // add finite element
+    auto &dof_order_map = field_ptr->getDofOrderMap(MBTET);
+    for(auto d = 0; d!=10; ++d) {
+      MOFEM_LOG("WORLD", Sev::noisy) << "dof " << dof_order_map[d];
+    }
+
     CHKERR m_field.add_finite_element("FE");
 
     // define rows/cols and element data

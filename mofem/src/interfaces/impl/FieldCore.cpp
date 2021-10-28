@@ -271,6 +271,8 @@ MoFEMErrorCode Core::addField(const std::string &name, const FieldSpace space,
                Field(moab, meshset).getName().c_str());
   }
 
+  MOFEM_LOG_CHANNEL("WORLD");
+  MOFEM_LOG_CHANNEL("SYNC");
   MoFEMFunctionReturn(0);
 }
 

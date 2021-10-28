@@ -359,7 +359,7 @@ Field::Field(moab::Interface &moab, const EntityHandle meshset)
   CHKERRABORT(PETSC_COMM_SELF, ierr);
 };
 
-MoFEMErrorCode Field::rebuildDofsOrderMap() const {
+MoFEMErrorCode Field::rebuildDofsOrderMap() {
   MoFEMFunctionBegin;
 
   for (auto t = MBVERTEX; t != MBMAXTYPE; ++t) {
@@ -367,7 +367,6 @@ MoFEMErrorCode Field::rebuildDofsOrderMap() const {
     int DD = 0;
     int nb_last_order_dofs = 0;
     const int rank = (*tagNbCoeffData);
-
     if (forderTable[t]) {
 
       for (int oo = 0; oo < MAX_DOFS_ON_ENTITY; ++oo) {

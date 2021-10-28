@@ -293,7 +293,7 @@ struct Field {
    * coefficients, are sorted in the way.
    *
    */
-  inline std::array<ApproximationOrder, MAX_DOFS_ON_ENTITY> &
+  inline const std::array<ApproximationOrder, MAX_DOFS_ON_ENTITY> &
   getDofOrderMap(const EntityType type) const {
     return dofOrderMap[type];
   }
@@ -306,11 +306,9 @@ struct Field {
    * coefficients, are sorted in the way.
    *
    */
-  inline DofsOrderMap &getDofOrderMap() const {
-    return const_cast<DofsOrderMap &>(dofOrderMap);
-  }
+  inline const DofsOrderMap &getDofOrderMap() const { return dofOrderMap; }
 
-  MoFEMErrorCode rebuildDofsOrderMap() const;
+  MoFEMErrorCode rebuildDofsOrderMap();
 
   friend std::ostream &operator<<(std::ostream &os, const Field &e);
 
