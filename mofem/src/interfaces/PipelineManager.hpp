@@ -196,6 +196,13 @@ struct PipelineManager : public UnknownInterface {
   SmartPetscObj<TS> createTSIM(SmartPetscObj<DM> dm = nullptr);
 
   /**
+   * @deprecated  Use version with explicit TS solver type
+   */
+  DEPRECATED auto createTS(SmartPetscObj<DM> dm = nullptr) {
+    return createTSIM(dm);
+  }
+
+  /**
    * @brief Create TS (time) solver for second order equation in time
    * @ingroup mofem_basic_interface
    *
@@ -203,6 +210,13 @@ struct PipelineManager : public UnknownInterface {
    * @return SmartPetscObj<TS>
    */
   SmartPetscObj<TS> createTSIM2(SmartPetscObj<DM> dm = nullptr);
+
+  /**
+   * @deprecated  Change name. Use createTSIM2 instead.
+   */
+  inline DEPRECATED auto createTS2(SmartPetscObj<DM> dm = nullptr) {
+    return createTSIM2(dm);
+  }
 
 private:
   MoFEM::Core &cOre;
