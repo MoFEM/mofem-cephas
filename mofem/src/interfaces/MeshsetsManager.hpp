@@ -487,7 +487,11 @@ struct MeshsetsManager : public UnknownInterface {
   /**
     * \brief get cubit meshset
     * \ingroup mofem_meshset_mng
-
+    *
+    * \todo This function is obsolete, do not handle multiple blocks, etc.
+    Should be modified to work with regural expressions, and return vector of
+    pointers.
+    *
     */
   MoFEMErrorCode
   getCubitMeshsetPtr(const int ms_id, const CubitBCType cubit_bc_type,
@@ -496,7 +500,7 @@ struct MeshsetsManager : public UnknownInterface {
   /**
     * \brief get cubit meshset
     * \ingroup mofem_meshset_mng
-
+    * \deprecated  That funcion should not be used. 
     */
   MoFEMErrorCode
   getCubitMeshsetPtr(const string name,
