@@ -40,10 +40,7 @@ struct VecManager : public UnknownInterface {
 
   VecManager(const MoFEM::Core &core);
 
-  /**
-   * \brief Destructor
-   */
-  ~VecManager();
+  ~VecManager() = default;
 
   /** \brief create local vector for problem
    * \ingroup mofem_vectors

@@ -25,9 +25,7 @@ VecManager::query_interface(boost::typeindex::type_index type_index,
 }
 
 VecManager::VecManager(const MoFEM::Core &core)
-    : cOre(const_cast<MoFEM::Core &>(core)), dEbug(false) {}
-VecManager::~VecManager() {
-
+    : cOre(const_cast<MoFEM::Core &>(core)), dEbug(false) {
   if (!LogManager::checkIfChannelExist("VECWORLD")) {
     auto core_log = logging::core::get();
 
