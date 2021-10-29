@@ -346,6 +346,22 @@ PetscErrorCode PetscVFPrintfDefault(FILE *fd, const char *format, va_list Argp);
 #define MOFEM_LOG_SYNCHRONISE(comm)                                            \
   PetscSynchronizedFlush(comm, MoFEM::LogManager::dummy_mofem_fd);
 
+/**
+ * @brief Tag and log in channel
+ * 
+ */
+#define MOFEM_TAG_AND_LOG(channel, severity, tag)                              \
+  MOFEM_LOG_TAG(channel, tag)                                                  \
+  MOFEM_LOG(channel, severity)
+
+/**
+ * @brief Tag and log in channel
+ * 
+ */
+#define MOFEM_TAG_AND_LOG_C(channel, severity, tag, format, ...)               \
+  MOFEM_LOG_TAG(channel, tag)                                                  \
+  MOFEM_LOG_C(channel, severity, format, __VA_ARGS__)
+
 #endif //__LOGMANAGER_HPP__
 
 /**
