@@ -26,11 +26,11 @@ Projection10NodeCoordsOnField::Projection10NodeCoordsOnField(
 MoFEMErrorCode Projection10NodeCoordsOnField::preProcess() {
   MoFEMFunctionBeginHot;
   auto field_ptr = mField.get_field_structure(fieldName);
-  if (field_ptr->getApproxBase() == AINSWORTH_BERNSTEIN_BEZIER_BASE)
+  if (field_ptr->getApproxBase() == AINSWORTH_BERNSTEIN_BEZIER_BASE) {
     MOFEM_TAG_AND_LOG("WORLD", Sev::warning, "Projection10NodeCoordsOnField")
         << "Only working well for first order AINSWORTH_BERNSTEIN_BEZIER_BASE!";
-  MOFEM_LOG_CHANNEL("WORLD");
-
+    MOFEM_LOG_CHANNEL("WORLD");
+  }
   MoFEMFunctionReturnHot(0);
 }
 
