@@ -188,7 +188,7 @@ SmartPetscObj<TS> PipelineManager::createTS(const TSType type,
     return createTSEX(dm);
     break;
   case IM:
-    return createTSIM2(dm);
+    return createTSIM(dm);
     break;
   case IM2:
     return createTSIM2(dm);
