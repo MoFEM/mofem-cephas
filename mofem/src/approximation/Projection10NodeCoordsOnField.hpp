@@ -69,7 +69,6 @@ struct ProjectionFieldOn10NodeTet : public Projection10NodeCoordsOnField {
 
   MoFEMErrorCode operator()(); 
 
-protected:
 
   bool setNodes;
   bool onCoords;
@@ -78,6 +77,9 @@ protected:
   const int maxApproximationOrder;
 
   Tag th;
+
+protected:
+
   Field_multiIndex::index<FieldName_mi_tag>::type::iterator field_it;
   VectorDouble L;
   VectorDouble K;
