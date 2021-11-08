@@ -452,12 +452,6 @@ MoFEMErrorCode Core::loop_finite_elements(
     CHKERR cache_problem_entities(problem_ptr->getName(), tmp_cache_ptr);
   }
 
-  method.feName = fe_name;
-  SET_BASIC_METHOD(method, &*problem_ptr)
-  PetscLogEventBegin(MOFEM_EVENT_preProcess, 0, 0, 0, 0);
-  CHKERR method.preProcess();
-  PetscLogEventEnd(MOFEM_EVENT_preProcess, 0, 0, 0, 0);
-
   if (!fe_ptr)
     fe_ptr = problem_ptr->numeredFiniteElementsPtr;
 
@@ -473,12 +467,20 @@ MoFEMErrorCode Core::loop_finite_elements(
     }
   }
 
-  PetscLogEventBegin(MOFEM_EVENT_operator, 0, 0, 0, 0);
+  method.feName = fe_name;
+  method.loopSize =
+      std::distance(miit, hi_miit); // Set numbers of elements in the loop
 
-  method.loopSize = std::distance(miit, hi_miit);
+  SET_BASIC_METHOD(method, &*problem_ptr)
+  
+  PetscLogEventBegin(MOFEM_EVENT_preProcess, 0, 0, 0, 0);
+  CHKERR method.preProcess();
+  PetscLogEventEnd(MOFEM_EVENT_preProcess, 0, 0, 0, 0);
+
+  PetscLogEventBegin(MOFEM_EVENT_operator, 0, 0, 0, 0);
   for (int nn = 0; miit != hi_miit; miit++, nn++) {
 
-    method.nInTheLoop = nn;
+    method.nInTheLoop = nn; // Index of element in the loop
     method.numeredEntFiniteElementPtr = *miit;
     CHKERR method();
 
