@@ -1610,7 +1610,9 @@ MoFEMErrorCode ForcesAndSourcesCore::operator()() {
   } else {
 #ifndef NDEBUG
     MOFEM_LOG("SELF", Sev::warning)
-        << "No Function evaluating on element entity";
+        << "No method operator() overloaded on element entity on finite "
+           "element <"
+        << boost::typeindex::type_id_runtime(*this).pretty_name() << ">";
 #endif
   }
   MoFEMFunctionReturnHot(0);
