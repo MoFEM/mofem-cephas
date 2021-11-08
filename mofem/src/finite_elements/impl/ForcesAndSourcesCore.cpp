@@ -935,7 +935,7 @@ ForcesAndSourcesCore::getFaceNodes(DataForcesAndSourcesCore &data) const {
     CHKERR check();
 #endif
   }
-  
+
   MoFEMFunctionReturn(0);
 }
 
@@ -1607,6 +1607,11 @@ MoFEMErrorCode ForcesAndSourcesCore::operator()() {
   if (operatorHook) {
     ierr = operatorHook();
     CHKERRG(ierr);
+  } else {
+#ifndef NDEBUG
+    MOFEM_LOG("SELF", Sev::warning)
+        << "No Function evaluating on element entity";
+#endif
   }
   MoFEMFunctionReturnHot(0);
 }
