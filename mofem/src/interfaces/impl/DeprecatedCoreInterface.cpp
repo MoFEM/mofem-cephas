@@ -349,12 +349,6 @@ DeprecatedCoreInterface::delete_cubit_msId(const CubitBCType cubit_bc_type,
                                            const int ms_id) {
   return getInterface<MeshsetsManager>()->deleteMeshset(cubit_bc_type, ms_id);
 }
-MoFEMErrorCode DeprecatedCoreInterface::get_cubit_msId(
-    const int ms_id, const CubitBCType cubit_bc_type,
-    const CubitMeshSets **cubit_meshset_ptr) {
-  return getInterface<MeshsetsManager>()->getCubitMeshsetPtr(
-      ms_id, cubit_bc_type, cubit_meshset_ptr);
-}
 MoFEMErrorCode DeprecatedCoreInterface::get_cubit_msId_entities_by_dimension(
     const int ms_id, const CubitBCType cubit_bc_type, const int dimension,
     Range &entities, const bool recursive) {
