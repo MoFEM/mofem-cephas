@@ -177,7 +177,7 @@ VecManager::vecScatterCreate(Vec xin, const std::string x_problem,
   VecScatter newctx;
   CHKERR vecScatterCreate(xin, x_problem, x_field_name, x_rc, yin, y_problem,
                           y_field_name, y_rc, &newctx);
-  smart_newctx = newctx;
+  smart_newctx = SmartPetscObj<VecScatter>(newctx);
   MoFEMFunctionReturn(0);
 }
 
@@ -189,7 +189,7 @@ VecManager::vecScatterCreate(Vec xin, const std::string x_problem,
   MoFEMFunctionBegin;
   VecScatter newctx;
   CHKERR vecScatterCreate(xin, x_problem, x_rc, yin, y_problem, y_rc, &newctx);
-  smart_newctx = newctx;
+  smart_newctx = SmartPetscObj<VecScatter>(newctx);
   MoFEMFunctionReturn(0);
 }
 
