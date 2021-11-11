@@ -504,6 +504,20 @@ struct MeshsetsManager : public UnknownInterface {
                      const CubitMeshSets **cubit_meshset_ptr) const;
 
   /**
+   * @brief Get vector of poointer to blocksets with name satisfying regular
+   * expression.
+   *
+   * \ingroup mofem_meshset_mng
+   *
+   * @param reg_exp_name
+   * @param std::vector<const CubitMeshSets *>
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode
+  getCubitMeshsetPtr(const std::regex reg_exp_name,
+                     std::vector<const CubitMeshSets *> &vec_ptr) const;
+
+  /**
     * \brief get entities from CUBIT/meshset of a particular entity dimension
     * \ingroup mofem_meshset_mng
 

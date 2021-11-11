@@ -540,6 +540,22 @@ MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
+    const std::regex reg_exp_name,
+    std::vector<const CubitMeshSets *> &vec_ptr) const {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+  auto r =
+      cubitMeshsets.get<CubitMeshsetMaskedType_mi_tag>().equal_range(BLOCKSET);
+  for (; r.first != r.second; ++r.first) {
+    const auto name = r.first->getName();
+    if (std::regex_match(name, reg_exp_name)) {
+      vec_ptr.push_back(&*r.first);
+    }
+  }
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode MeshsetsManager::getEntitiesByDimension(
     const int msId, const unsigned int cubit_bc_type, const int dimension,
     Range &entities, const bool recursive) const {
