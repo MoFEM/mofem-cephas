@@ -53,12 +53,12 @@ MoFEMErrorCode PrismInterface::getSides(const int msId,
   MoFEMFunctionBegin;
   CHKERR m_field.getInterface(meshsets_manager_ptr);
   CubitMeshSet_multiIndex::index<
-      Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator miit =
+      Composite_Cubit_msId_And_MeshsetType_mi_tag>::type::iterator miit =
       meshsets_manager_ptr->getMeshsetsMultindex()
-          .get<Composite_Cubit_msId_And_MeshSetType_mi_tag>()
+          .get<Composite_Cubit_msId_And_MeshsetType_mi_tag>()
           .find(boost::make_tuple(msId, cubit_bc_type.to_ulong()));
   if (miit != meshsets_manager_ptr->getMeshsetsMultindex()
-                  .get<Composite_Cubit_msId_And_MeshSetType_mi_tag>()
+                  .get<Composite_Cubit_msId_And_MeshsetType_mi_tag>()
                   .end()) {
     CHKERR getSides(miit->meshset, mesh_bit_level, recursive, verb);
   } else {
@@ -542,12 +542,12 @@ MoFEMErrorCode PrismInterface::splitSides(const EntityHandle meshset,
   MoFEMFunctionBegin;
   CHKERR m_field.getInterface(meshsets_manager_ptr);
   CubitMeshSet_multiIndex::index<
-      Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator miit =
+      Composite_Cubit_msId_And_MeshsetType_mi_tag>::type::iterator miit =
       meshsets_manager_ptr->getMeshsetsMultindex()
-          .get<Composite_Cubit_msId_And_MeshSetType_mi_tag>()
+          .get<Composite_Cubit_msId_And_MeshsetType_mi_tag>()
           .find(boost::make_tuple(msId, cubit_bc_type.to_ulong()));
   if (miit != meshsets_manager_ptr->getMeshsetsMultindex()
-                  .get<Composite_Cubit_msId_And_MeshSetType_mi_tag>()
+                  .get<Composite_Cubit_msId_And_MeshsetType_mi_tag>()
                   .end()) {
     CHKERR splitSides(meshset, bit, miit->meshset, add_interface_entities,
                       recursive, verb);

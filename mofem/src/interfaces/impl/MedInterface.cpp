@@ -325,10 +325,10 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
     CHKERR meshsets_manager_ptr->addMeshset(BLOCKSET, max_id,
                                             std::string(mesh_name));
     CubitMeshSet_multiIndex::index<
-        Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator cit;
+        Composite_Cubit_msId_And_MeshsetType_mi_tag>::type::iterator cit;
     cit =
         meshsets_manager_ptr->getMeshsetsMultindex()
-            .get<Composite_Cubit_msId_And_MeshSetType_mi_tag>()
+            .get<Composite_Cubit_msId_And_MeshsetType_mi_tag>()
             .find(boost::make_tuple(max_id, CubitBCType(BLOCKSET).to_ulong()));
     max_id++;
     mesh_meshset = cit->getMeshset();
@@ -637,10 +637,10 @@ MedInterface::makeBlockSets(const std::map<string, Range> &group_elem_map,
        git != group_elem_map.end(); git++) {
     CHKERR meshsets_manager_ptr->addMeshset(BLOCKSET, max_id, git->first);
     CubitMeshSet_multiIndex::index<
-        Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator cit;
+        Composite_Cubit_msId_And_MeshsetType_mi_tag>::type::iterator cit;
     cit =
         meshsets_manager_ptr->getMeshsetsMultindex()
-            .get<Composite_Cubit_msId_And_MeshSetType_mi_tag>()
+            .get<Composite_Cubit_msId_And_MeshsetType_mi_tag>()
             .find(boost::make_tuple(max_id, CubitBCType(BLOCKSET).to_ulong()));
     EntityHandle meshsets = cit->getMeshset();
     if (!git->second.empty()) {
