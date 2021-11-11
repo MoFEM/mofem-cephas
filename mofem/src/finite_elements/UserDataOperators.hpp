@@ -2909,16 +2909,10 @@ struct OpCalculateTraceFromMat : public ForcesAndSourcesCore::UserDataOperator {
                         DataForcesAndSourcesCore::EntData &data);
 
 private:
+  FTensor::Index<'i', DIM> i;
   boost::shared_ptr<MatrixDouble> inPtr;
   boost::shared_ptr<VectorDouble> outPtr;
 
-  // MoFEMErrorCode doWorkImpl(int side, EntityType type,
-  //                           DataForcesAndSourcesCore::EntData &data,
-  //                           const FTensor::Number<DIM> &);
-
-  // MoFEMErrorCode doWorkImpl(int side, EntityType type,
-  //                           DataForcesAndSourcesCore::EntData &data,
-  //                           const FTensor::Number<2> &);
 };
 
 template <int DIM>
@@ -2932,11 +2926,64 @@ OpCalculateTraceFromMat<DIM>::doWork(int side, EntityType type,
             "Pointer for inPtr matrix not allocated");
 
   const auto nb_integration_pts = inPtr->size2();
-  FTensor::Index<'i', DIM> i;
   // Invert jacobian
   if (outPtr) {
     outPtr->resize(nb_integration_pts, false);
     auto t_in = getFTensor2FromMat<DIM, DIM>(*inPtr);
+    auto t_out = getFTensor0FromVec(*outPtr);
+
+    for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
+      t_out = t_in(i, i);
+      ++t_in;
+      ++t_out;
+    }
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+
+/**@}*/
+
+/** \brief Calculates the trace of an input matrix
+
+\ingroup mofem_forces_and_sources
+
+*/
+
+template <int DIM>
+struct OpCalculateTraceFromSymmMat : public ForcesAndSourcesCore::UserDataOperator {
+
+  OpCalculateTraceFromSymmMat(boost::shared_ptr<MatrixDouble> in_ptr,
+                 boost::shared_ptr<VectorDouble> out_ptr)
+      : ForcesAndSourcesCore::UserDataOperator(NOSPACE), inPtr(in_ptr),
+        outPtr(out_ptr) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+
+private:
+  FTensor::Index<'i', DIM> i;
+  boost::shared_ptr<MatrixDouble> inPtr;
+  boost::shared_ptr<VectorDouble> outPtr;
+
+};
+
+template <int DIM>
+MoFEMErrorCode
+OpCalculateTraceFromSymmMat<DIM>::doWork(int side, EntityType type,
+                                DataForcesAndSourcesCore::EntData &data) {
+  MoFEMFunctionBegin;
+
+  if (!inPtr)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Pointer for inPtr matrix not allocated");
+
+  const auto nb_integration_pts = inPtr->size2();
+  // Invert jacobian
+  if (outPtr) {
+    outPtr->resize(nb_integration_pts, false);
+    auto t_in = getFTensor2SymmetricFromMat<DIM>(*inPtr);
     auto t_out = getFTensor0FromVec(*outPtr);
 
     for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
