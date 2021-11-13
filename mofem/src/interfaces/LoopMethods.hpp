@@ -218,18 +218,30 @@ struct BasicMethod : public KspMethod, SnesMethod, TSMethod {
   inline int getLoopSize() const { return loopSize; }
 
   /**
-   * @brief lo and hi processor rank of iterated entities
+   * @brief Llo and hi processor rank of iterated entities
    * 
    */
   std::pair<int, int> loHiFERank;
 
   /**
-   * @brief Get the lo and hi range for 
+   * @brief Get lo and hi processor rank of iterated entities
    * 
-   * @return auto 
+   * @return raturn std::pair<int, int> loHiFERank
    */
   inline auto getLoHiFERank() const { return loHiFERank; }
+
+  /**
+   * @brief Get upper rank in loop for iterating elements
+   * 
+   * @return loHiFERank.first
+   */
   inline auto getLoFERank() const { return loHiFERank.first; }
+
+  /**
+   * @brief Get upper rank in loop for iterating elements
+   * 
+   * @return loHiFERank.first
+   */
   inline auto getHiFERank() const { return loHiFERank.second; }
 
   int rAnk; ///< processor rank
