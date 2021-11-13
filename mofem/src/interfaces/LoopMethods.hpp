@@ -125,22 +125,12 @@ struct SnesMethod : virtual protected PetscData {
 
   SNESContext snes_ctx;
 
-  /**
-   * @deprecated Avoid using values by hand.
-   */
-  DEPRECATED inline MoFEMErrorCode setSnesCtx(SNESContext ctx);
-
   SNES snes;   ///< snes solver
   Vec &snes_x; ///< state vector
   Vec &snes_f; ///< residual
   Mat &snes_A; ///< jacobian matrix
   Mat &snes_B; ///< preconditioner of jacobian matrix
 };
-
-MoFEMErrorCode SnesMethod::setSnesCtx(SNESContext ctx) {
-  snes_ctx = ctx;
-  return 0;
-}
 
 /**
  * \brief data structure for TS (time stepping) context
@@ -174,11 +164,6 @@ struct TSMethod : virtual protected PetscData {
 
   TSContext ts_ctx;
 
-  /**
-   * @deprecated Avoid using values by hand.
-   */
-  DEPRECATED inline MoFEMErrorCode setTsCtx(TSContext ctx);
-
   PetscInt ts_step; ///< time step
   PetscReal ts_a;   ///< shift for U_t (see PETSc Time Solver)
   PetscReal ts_aa;  ///< shift for U_tt shift for U_tt
@@ -193,11 +178,6 @@ struct TSMethod : virtual protected PetscData {
              ///< v*dF/dU_t + a*dF/dU_tt
   Mat &ts_B; ///< Preconditioner for ts_A
 };
-
-MoFEMErrorCode TSMethod::setTsCtx(TSContext ctx) {
-  ts_ctx = ctx;
-  return 0;
-}
 
 /**
  * \brief Data structure to exchange data between mofem and User Loop Methods.
@@ -236,6 +216,21 @@ struct BasicMethod : public KspMethod, SnesMethod, TSMethod {
   /** \brief get loop size
    */
   inline int getLoopSize() const { return loopSize; }
+
+  /**
+   * @brief lo and hi processor rank of iterated entities
+   * 
+   */
+  std::pair<int, int> loHiFERank;
+
+  /**
+   * @brief Get the lo and hi range for 
+   * 
+   * @return auto 
+   */
+  inline auto getLoHiFERank() const { return loHiFERank; }
+  inline auto getLoFERank() const { return loHiFERank.first; }
+  inline auto getHiFERank() const { return loHiFERank.second; }
 
   int rAnk; ///< processor rank
 
@@ -358,7 +353,7 @@ struct FEMethod : public BasicMethod {
     MoFEMFunctionReturnHot(0);
   }
 
-  FEMethod();
+  FEMethod() = default;
 
   std::string feName; ///< Name of finite element
 
@@ -514,7 +509,7 @@ struct EntityMethod : public BasicMethod {
     MoFEMFunctionReturn(0);
   }
 
-  EntityMethod();
+  EntityMethod() = default;
 
   boost::shared_ptr<Field> fieldPtr;
   boost::shared_ptr<FieldEntity> entPtr;
@@ -536,7 +531,7 @@ struct DofMethod : public BasicMethod {
     MoFEMFunctionReturnHot(0);
   }
 
-  DofMethod();
+  DofMethod() = default;
 
   boost::shared_ptr<Field> fieldPtr;
   boost::shared_ptr<DofEntity> dofPtr;

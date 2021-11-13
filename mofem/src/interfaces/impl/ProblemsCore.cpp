@@ -470,6 +470,7 @@ MoFEMErrorCode Core::loop_finite_elements(
   method.feName = fe_name;
   method.loopSize =
       std::distance(miit, hi_miit); // Set numbers of elements in the loop
+  method.loHiFERank = std::make_pair(lower_rank, upper_rank);
 
   SET_BASIC_METHOD(method, &*problem_ptr)
   
@@ -563,14 +564,21 @@ MoFEMErrorCode Core::loop_dofs(const Problem *problem_ptr,
   auto hi_miit = dofs->upper_bound(
       FieldEntity::getHiBitNumberUId((*field_it)->getBitNumber()));
 
+  method.loopSize = std::distance(miit, hi_miit);
+  method.loHiFERank = std::make_pair(lower_rank, upper_rank);      
+
   CHKERR method.preProcess();
-  for (; miit != hi_miit; miit++) {
+
+  int nn = 0;
+  for (; miit != hi_miit; miit++, nn++) {
     if ((*miit)->getPart() >= lower_rank && (*miit)->getPart() <= upper_rank) {
+      method.nInTheLoop = nn; // Index of element in the loop
       method.dofPtr = miit->get()->getDofEntityPtr();
       method.dofNumeredPtr = *miit;
       CHKERR method();
     }
   }
+
   CHKERR method.postProcess();
   MoFEMFunctionReturn(0);
 }
@@ -630,6 +638,8 @@ MoFEMErrorCode Core::loop_dofs(const std::string &field_name, DofMethod &method,
       FieldEntity::getHiBitNumberUId((*field_it)->getBitNumber()));
 
   method.loopSize = std::distance(miit, hi_miit);
+  method.loHiFERank = std::make_pair(0, get_comm_size());
+
   CHKERR method.preProcess();
   for (int nn = 0; miit != hi_miit; miit++, nn++) {
     method.nInTheLoop = nn;
@@ -692,8 +702,11 @@ MoFEMErrorCode Core::loop_entities(const Problem *problem_ptr,
     if ((*miit)->getPart() >= lower_rank && (*miit)->getPart() <= upper_rank)
       ents_view.emplace_hint(hint, (*miit)->getFieldEntityPtr());
 
-  method.loopSize = ents_view.size();
   SET_BASIC_METHOD(method, problem_ptr);
+
+  method.loopSize = ents_view.size();
+  method.loHiFERank = std::make_pair(lower_rank, upper_rank);
+
   CHKERR method.preProcess();
   method.nInTheLoop = 0;
   for (auto &field_ent : ents_view) {
@@ -761,6 +774,8 @@ MoFEMErrorCode Core::loop_entities(const std::string field_name,
   ents_view.insert(lo_eit, hi_eit);
 
   method.loopSize = ents_view.size();
+  method.loHiFERank = std::make_pair(0, get_comm_size());
+
   CHKERR method.preProcess();
   method.nInTheLoop = 0;
 
