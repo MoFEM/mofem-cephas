@@ -56,6 +56,12 @@ struct PipelineManager : public UnknownInterface {
 
   inline boost::shared_ptr<FEMethod> &getSkeletonRhsFE();
 
+  inline boost::shared_ptr<FEMethod> &getDomainExplicitRhsFE();
+
+  inline boost::shared_ptr<FEMethod> &getBoundaryExplicitRhsFE();
+
+  inline boost::shared_ptr<FEMethod> &getSkeletonExplicitRhsFE();
+
   template <int DIM = -1>
   inline MoFEMErrorCode setDomainLhsIntegrationRule(RuleHookFun rule);
 
@@ -73,6 +79,15 @@ struct PipelineManager : public UnknownInterface {
 
   template <int DIM = -1>
   inline MoFEMErrorCode setSkeletonRhsIntegrationRule(RuleHookFun rule);
+
+  template <int DIM = -1>
+  inline MoFEMErrorCode setDomainExplicitRhsIntegrationRule(RuleHookFun rule);
+
+  template <int DIM = -1>
+  inline MoFEMErrorCode setBoundaryExplicitRhsIntegrationRule(RuleHookFun rule);
+
+  template <int DIM = -1>
+  inline MoFEMErrorCode setSkeletonExplicitRhsIntegrationRule(RuleHookFun rule);
 
   /**
    * @brief Get the Op Domain Lhs Pipeline object
@@ -138,6 +153,37 @@ struct PipelineManager : public UnknownInterface {
   template <int DIM = -1>
   inline boost::ptr_vector<UserDataOperator> &
   getOpSkeletonRhsPipeline();
+
+  /**
+   * @brief Get the Op Domain Rhs Pipeline object for implicit-explicit G term
+   * @ingroup mofem_basic_interface
+   *
+   * @tparam -1
+   * @return boost::ptr_vector<UserDataOperator>&
+   */
+  template <int DIM = -1>
+  inline boost::ptr_vector<UserDataOperator> &
+  getOpDomainExplicitRhsPipeline();
+
+  /**
+   * @brief Get the Op Bondary Rhs Pipeline object for implicit-explicit G term
+   * @ingroup mofem_basic_interface
+   *
+   * @tparam -1
+   * @return boost::ptr_vector<UserDataOperator>&
+   */
+  template <int DIM = -1>
+  inline boost::ptr_vector<UserDataOperator> &getOpBoundaryExplicitRhsPipeline();
+
+  /**
+   * @brief Get the Op Skeleton Rhs Pipeline object for implicit-explicit G term
+   * @ingroup mofem_basic_interface
+   *
+   * @tparam -1
+   * @return boost::ptr_vector<UserDataOperator>&
+   */
+  template <int DIM = -1>
+  inline boost::ptr_vector<UserDataOperator> &getOpSkeletonExplicitRhsPipeline();
 
   /**
    * @brief Iterate finite elements
@@ -218,6 +264,15 @@ struct PipelineManager : public UnknownInterface {
     return createTSIM2(dm);
   }
 
+  /**
+   * @brief Create TS (time) implicit-explicit solver
+   * @ingroup mofem_basic_interface
+   *
+   * @param dm
+   * @return SmartPetscObj<TS>
+   */
+  SmartPetscObj<TS> createTSIMEX(SmartPetscObj<DM> dm = nullptr);
+
 private:
   MoFEM::Core &cOre;
 
@@ -233,6 +288,13 @@ private:
       feSkeletonRhs; ///< Element to assemble RHS side by integrating skeleton
   boost::shared_ptr<FEMethod>
       feSkeletonLhs; ///< Element to assemble LHS side by integrating skeleton
+
+  boost::shared_ptr<FEMethod>
+      feDomainExplicitRhs; ///< Element to assemble explict Rhs for IMEX solver
+  boost::shared_ptr<FEMethod>
+      feBoundaryExplicitRhs; ///< Element to assemble explict Rhs for IMEX solver
+  boost::shared_ptr<FEMethod>
+      feSkeletonExplicitRhs; ///< Element to assemble explict Rhs for IMEX solver
 
   template <int DIM>
   inline boost::shared_ptr<FEMethod> &
@@ -318,6 +380,18 @@ boost::shared_ptr<FEMethod> &PipelineManager::getBoundaryRhsFE() { return feBoun
 boost::shared_ptr<FEMethod> &PipelineManager::getSkeletonLhsFE() { return feSkeletonLhs; }
 
 boost::shared_ptr<FEMethod> &PipelineManager::getSkeletonRhsFE() { return feSkeletonRhs; }
+
+boost::shared_ptr<FEMethod> &PipelineManager::getDomainExplicitRhsFE() {
+  return feDomainExplicitRhs;
+}
+
+boost::shared_ptr<FEMethod> &PipelineManager::getBoundaryExplicitRhsFE() {
+  return feBoundaryExplicitRhs;
+}
+
+boost::shared_ptr<FEMethod> &PipelineManager::getSkeletonExplicitRhsFE() {
+  return feSkeletonExplicitRhs;
+}
 
 template <int DIM>
 MoFEMErrorCode PipelineManager::setDomainLhsIntegrationRule(PipelineManager::RuleHookFun rule) {
@@ -476,6 +550,36 @@ PipelineManager::setSkeletonRhsIntegrationRule<-1>(PipelineManager::RuleHookFun 
 }
 
 template <int DIM>
+MoFEMErrorCode PipelineManager::setDomainExplicitRhsIntegrationRule(
+    PipelineManager::RuleHookFun rule) {
+  MoFEMFunctionBegin;
+  boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
+      createBoundaryFEPipeline<DIM>(feDomainExplicitRhs))
+      ->getRuleHook = rule;
+  MoFEMFunctionReturn(0);
+}
+
+template <int DIM>
+MoFEMErrorCode PipelineManager::setBoundaryExplicitRhsIntegrationRule(
+    PipelineManager::RuleHookFun rule) {
+  MoFEMFunctionBegin;
+  boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
+      createBoundaryFEPipeline<DIM>(feBoundaryExplicitRhs))
+      ->getRuleHook = rule;
+  MoFEMFunctionReturn(0);
+}
+
+template <int DIM>
+MoFEMErrorCode PipelineManager::setSkeletonExplicitRhsIntegrationRule(
+    PipelineManager::RuleHookFun rule) {
+  MoFEMFunctionBegin;
+  boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
+      createBoundaryFEPipeline<DIM>(feSkeletonExplicitRhs))
+      ->getRuleHook = rule;
+  MoFEMFunctionReturn(0);
+}
+
+template <int DIM>
 boost::ptr_vector<PipelineManager::UserDataOperator> &
 PipelineManager::getOpDomainLhsPipeline() {
   return boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
@@ -617,6 +721,78 @@ PipelineManager::getOpSkeletonRhsPipeline<-1>() {
     THROW_MESSAGE("Not implemented");
   }
   return getOpSkeletonRhsPipeline<3>();
+}
+
+template <int DIM>
+boost::ptr_vector<PipelineManager::UserDataOperator> &
+PipelineManager::getOpDomainExplicitRhsPipeline() {
+  return boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
+             createDomainFEPipeline<DIM>(feDomainExplicitRhs))
+      ->getOpPtrVector();
+}
+
+template <>
+inline boost::ptr_vector<PipelineManager::UserDataOperator> &
+PipelineManager::getOpDomainExplicitRhsPipeline<-1>() {
+  switch (cOre.getInterface<Simple>()->getDim()) {
+  case 1:
+    return getOpDomainExplicitRhsPipeline<1>();
+  case 2:
+    return getOpDomainExplicitRhsPipeline<2>();
+  case 3:
+    break;
+  default:
+    THROW_MESSAGE("Not implemented");
+  }
+  return getOpDomainExplicitRhsPipeline<3>();
+}
+
+template <int DIM>
+boost::ptr_vector<PipelineManager::UserDataOperator> &
+PipelineManager::getOpBoundaryExplicitRhsPipeline() {
+  return boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
+             createBoundaryFEPipeline<DIM>(feSkeletonExplicitRhs))
+      ->getOpPtrVector();
+}
+
+template <>
+inline boost::ptr_vector<PipelineManager::UserDataOperator> &
+PipelineManager::getOpBoundaryExplicitRhsPipeline<-1>() {
+  switch (cOre.getInterface<Simple>()->getDim()) {
+  case 1:
+    return getOpBoundaryExplicitRhsPipeline<1>();
+  case 2:
+    return getOpBoundaryExplicitRhsPipeline<2>();
+  case 3:
+    break;
+  default:
+    THROW_MESSAGE("Not implemented");
+  }
+  return getOpBoundaryExplicitRhsPipeline<3>();
+}
+
+template <int DIM>
+boost::ptr_vector<PipelineManager::UserDataOperator> &
+PipelineManager::getOpSkeletonExplicitRhsPipeline() {
+  return boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
+             createBoundaryFEPipeline<DIM>(feSkeletonExplicitRhs))
+      ->getOpPtrVector();
+}
+
+template <>
+inline boost::ptr_vector<PipelineManager::UserDataOperator> &
+PipelineManager::getOpSkeletonExplicitRhsPipeline<-1>() {
+  switch (cOre.getInterface<Simple>()->getDim()) {
+  case 1:
+    return getOpSkeletonExplicitRhsPipeline<1>();
+  case 2:
+    return getOpSkeletonExplicitRhsPipeline<2>();
+  case 3:
+    break;
+  default:
+    THROW_MESSAGE("Not implemented");
+  }
+  return getOpSkeletonExplicitRhsPipeline<3>();
 }
 
 } // namespace MoFEM

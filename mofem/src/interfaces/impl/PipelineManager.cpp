@@ -193,6 +193,9 @@ SmartPetscObj<TS> PipelineManager::createTS(const TSType type,
   case IM2:
     return createTSIM2(dm);
     break;
+  case IMEX:
+    return createTSIMEX(dm);
+    break;
   default:
     CHK_THROW_MESSAGE(MOFEM_NOT_IMPLEMENTED,
                       "TS solver handling not implemented");
@@ -237,13 +240,13 @@ SmartPetscObj<TS> PipelineManager::createTSEX(SmartPetscObj<DM> dm) {
   // Add element to calculate rhs of stiff part
   if (feDomainRhs)
     CHKERR DMMoFEMTSSetRHSFunction(dm, simple_interface->getDomainFEName(),
-                                   feDomainRhs, null, null);
+                                   feDomainExplicitRhs, null, null);
   if (feBoundaryRhs)
     CHKERR DMMoFEMTSSetRHSFunction(dm, simple_interface->getBoundaryFEName(),
-                                   feBoundaryRhs, null, null);
+                                   feBoundaryExplicitRhs, null, null);
   if (feSkeletonRhs)
     CHKERR DMMoFEMTSSetRHSFunction(dm, simple_interface->getSkeletonFEName(),
-                                   feSkeletonRhs, null, null);
+                                   feSkeletonExplicitRhs, null, null);
 
   // Note: More cases for explit, and implicit time ingeration cases can be
   // implemented here.
@@ -370,6 +373,80 @@ SmartPetscObj<TS> PipelineManager::createTSIM2(SmartPetscObj<DM> dm) {
   if (feSkeletonRhs)
     CHKERR DMMoFEMTSSetI2Function(dm, simple_interface->getSkeletonFEName(),
                                   feSkeletonRhs, null, null);
+
+  // Note: More cases for explit, and implicit time ingeration cases can be
+  // implemented here.
+
+  auto ts = MoFEM::createTS(m_field.get_comm());
+  CHKERR TSSetDM(ts, dm);
+  return ts;
+}
+
+SmartPetscObj<TS> PipelineManager::createTSIMEX(SmartPetscObj<DM> dm) {
+  Interface &m_field = cOre;
+  Simple *simple_interface = m_field.getInterface<Simple>();
+
+  auto copy_dm_struture = [&](auto simple_dm) {
+    MPI_Comm comm;
+    CHKERR PetscObjectGetComm(getPetscObject(simple_dm.get()), &comm);
+    DMType type;
+    CHKERR DMGetType(simple_dm, &type);
+    dm = createSmartDM(comm, type);
+    CHKERR DMMoFEMDuplicateDMCtx(simple_interface->getDM(), dm);
+    return dm;
+  };
+
+  if (!dm)
+    dm = copy_dm_struture(simple_interface->getDM());
+  else
+    dm = copy_dm_struture(dm);
+
+  auto set_dm_section = [&](auto dm) {
+    MoFEMFunctionBegin;
+    PetscSection section;
+    CHKERR m_field.getInterface<ISManager>()->sectionCreate(
+        simple_interface->getProblemName(), &section);
+    CHKERR DMSetDefaultSection(dm, section);
+    CHKERR DMSetDefaultGlobalSection(dm, section);
+    CHKERR PetscSectionDestroy(&section);
+    MoFEMFunctionReturn(0);
+  };
+  CHKERR set_dm_section(dm);
+
+  boost::shared_ptr<FEMethod> null;
+
+  // Add element to calculate lhs of stiff part
+  if (feDomainLhs)
+    CHKERR DMMoFEMTSSetIJacobian(dm, simple_interface->getDomainFEName(),
+                                 feDomainLhs, null, null);
+  if (feBoundaryLhs)
+    CHKERR DMMoFEMTSSetIJacobian(dm, simple_interface->getBoundaryFEName(),
+                                 feBoundaryLhs, null, null);
+  if (feSkeletonLhs)
+    CHKERR DMMoFEMTSSetIJacobian(dm, simple_interface->getSkeletonFEName(),
+                                 feSkeletonLhs, null, null);
+
+  // Add element to calculate rhs of stiff part
+  if (feDomainRhs)
+    CHKERR DMMoFEMTSSetIFunction(dm, simple_interface->getDomainFEName(),
+                                 feDomainRhs, null, null);
+  if (feBoundaryRhs)
+    CHKERR DMMoFEMTSSetIFunction(dm, simple_interface->getBoundaryFEName(),
+                                 feBoundaryRhs, null, null);
+  if (feSkeletonRhs)
+    CHKERR DMMoFEMTSSetIFunction(dm, simple_interface->getSkeletonFEName(),
+                                 feSkeletonRhs, null, null);
+
+  // Add element to calculate rhs of stiff part
+  if (feDomainExplicitRhs)
+    CHKERR DMMoFEMTSSetRHSFunction(dm, simple_interface->getDomainFEName(),
+                                   feDomainExplicitRhs, null, null);
+  if (feBoundaryExplicitRhs)
+    CHKERR DMMoFEMTSSetRHSFunction(dm, simple_interface->getBoundaryFEName(),
+                                   feBoundaryExplicitRhs, null, null);
+  if (feSkeletonExplicitRhs)
+    CHKERR DMMoFEMTSSetRHSFunction(dm, simple_interface->getSkeletonFEName(),
+                                   feSkeletonExplicitRhs, null, null);
 
   // Note: More cases for explit, and implicit time ingeration cases can be
   // implemented here.
