@@ -554,7 +554,7 @@ MoFEMErrorCode PipelineManager::setDomainExplicitRhsIntegrationRule(
     PipelineManager::RuleHookFun rule) {
   MoFEMFunctionBegin;
   boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
-      createBoundaryFEPipeline<DIM>(feDomainExplicitRhs))
+      createDomainFEPipeline<DIM>(feDomainExplicitRhs))
       ->getRuleHook = rule;
   MoFEMFunctionReturn(0);
 }
