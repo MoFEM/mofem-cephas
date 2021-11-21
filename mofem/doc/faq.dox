@@ -464,6 +464,10 @@ c_cpp_properties configuration on Mac should look like follows:
             "cppStandard": "gnu++14",
             "intelliSenseMode": "macos-gcc-x64",
             "compileCommands": "${workspaceFolder}/um-build-Debug-l3ew3vn/compile_commands.json"
+            "browse": {
+                "databaseFilename": "${workspaceFolder}/.vscode/browse.vc.db",
+                "limitSymbolsToIncludedHeaders": false
+            }
         }
     ],
     "version": 4
