@@ -432,6 +432,46 @@ type. See \ref spack_developers, and setting `build_type` as explained in \ref
 spack_build_type. Now you can run code in docker container and use GDB or
 Vagrind to debug code.
 
+\subsection faq_how_to_view_matrix How to view matrix
+
+\note PETSc has to be compiled with X11 library if you like to draw matrix. 
+
+In command line put
+\code
+-mat_view draw -draw_pause -1 
+\endcode
+
+Or you can do that in the code
+\code
+CHKERR MatView(A, PETSC_VIEWER_DRAW_WORLD);
+\endcode
+
+
+\subsection petsc_print_matrix How to test and print jacobian matrix with PETSc?
+
+When debugging a nonlinear problem, it might be useful to test the jacobian matrix. The command below will print 'Explicit preconditioning Jacobian',
+ 'Finite difference Jacobian' and the most useful 'User-provided matrix minus finite difference Jacobian'.
+\code 
+-snes_compare_explicit
+\endcode
+
+To view those matrices in a graphical form, simply add:
+\code 
+-snes_test_jacobian
+-snes_compare_explicit_draw 
+-draw_save
+\endcode
+
+This will create a folder named \e Draw_0x7f86644**** with 3 image files: user-jacobian (0), finite difference jacobian (1) and the difference (2).
+The draw function works only with one processor.
+
+If you like to see diffrence of jacobians, add option:
+\code
+-snes_test_jacobian_display
+\endcode
+
+\section fq_visual_studio Visual Studio
+
 \subsection configure_vs_code How to configure MoFEM in Visual Studio Code?
 
 Basic support for C/C++ languages is provided with <a
@@ -492,9 +532,11 @@ l3ew3vn mofem-users-modules@develop+copy_user_modules~docker~ipo build_type=Debu
 
 where fisrt package has hash \p l3ew3vn.
 
+In settings (file .vscode/settings.json), by presing CMD-, (on mac), or CTRL-,
+on other systemsm you can choose intelliSenseEngine. "Default" setting for
+intelliSenseEngine, is not working or working slow; we recommend switching to
+"Tag Parser".
 
-"Default" setting for intelliSenseEngine, is not working or working slow; we
-recommend switching to "Tag Parser".
 \code
 "C_Cpp.intelliSenseEngine": "Tag Parser"
 \endcode
@@ -530,44 +572,6 @@ fracture module is presented below.
       "cwd": "/Users/User1/mofem_install/users_modules_debug/fracture_mechanics"
     }
   ]
-\endcode
-
-\subsection faq_how_to_view_matrix How to view matrix
-
-\note PETSc has to be compiled with X11 library if you like to draw matrix. 
-
-In command line put
-\code
--mat_view draw -draw_pause -1 
-\endcode
-
-Or you can do that in the code
-\code
-CHKERR MatView(A, PETSC_VIEWER_DRAW_WORLD);
-\endcode
-
-
-\subsection petsc_print_matrix How to test and print jacobian matrix with PETSc?
-
-When debugging a nonlinear problem, it might be useful to test the jacobian matrix. The command below will print 'Explicit preconditioning Jacobian',
- 'Finite difference Jacobian' and the most useful 'User-provided matrix minus finite difference Jacobian'.
-\code 
--snes_compare_explicit
-\endcode
-
-To view those matrices in a graphical form, simply add:
-\code 
--snes_test_jacobian
--snes_compare_explicit_draw 
--draw_save
-\endcode
-
-This will create a folder named \e Draw_0x7f86644**** with 3 image files: user-jacobian (0), finite difference jacobian (1) and the difference (2).
-The draw function works only with one processor.
-
-If you like to see diffrence of jacobians, add option:
-\code
--snes_test_jacobian_display
 \endcode
 
 */
