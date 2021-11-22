@@ -360,15 +360,19 @@ MoFEMErrorCode ProblemsManager::partitionMesh(
         }
       }
       if (debug) {
-        for (int rr = 0; rr != m_field.get_comm_size(); rr++) {
-          ostringstream ss;
-          ss << "out_part_" << rr << ".vtk";
-          EntityHandle meshset;
-          CHKERR m_field.get_moab().create_meshset(MESHSET_SET, meshset);
-          CHKERR m_field.get_moab().add_entities(meshset, parts_ents[rr]);
-          CHKERR m_field.get_moab().write_file(ss.str().c_str(), "VTK", "",
-                                               &meshset, 1);
-          CHKERR m_field.get_moab().delete_entities(&meshset, 1);
+        if (m_field.get_comm_rank() == 0) {
+          for (int rr = 0; rr != n_parts; rr++) {
+            ostringstream ss;
+            ss << "out_part_" << rr << ".vtk";
+            MOFEM_LOG("SELF", Sev::inform)
+                << "Save debug part mesh " << ss.str();
+            EntityHandle meshset;
+            CHKERR m_field.get_moab().create_meshset(MESHSET_SET, meshset);
+            CHKERR m_field.get_moab().add_entities(meshset, parts_ents[rr]);
+            CHKERR m_field.get_moab().write_file(ss.str().c_str(), "VTK", "",
+                                                 &meshset, 1);
+            CHKERR m_field.get_moab().delete_entities(&meshset, 1);
+          }
         }
       }
       for (int pp = 0; pp != n_parts; pp++) {
