@@ -462,7 +462,7 @@ c_cpp_properties configuration on Mac should look like follows:
             "compilerPath": "/usr/bin/clang",
             "cStandard": "gnu17",
             "cppStandard": "gnu++14",
-            "intelliSenseMode": "macos-gcc-x64",
+            "intelliSenseMode": "macos-clang-x64",
             "compileCommands": "${workspaceFolder}/um-build-Debug-l3ew3vn/compile_commands.json"
             "browse": {
                 "databaseFilename": "${default}",
@@ -479,9 +479,9 @@ Note line
 "compileCommands": "${workspaceFolder}/um-build-Debug-l3ew3vn/compile_commands.json"
 \endcode
 
-which points to particular build directory, i.e. um-build-Debug-l3ew3vn, which 
-is associated with spack package hash, i.e. \p l3ew3vn. In this particular case
-we can see 
+which points to the particular build directory, i.e. um-build-Debug-l3ew3vn,
+which is associated with spack package hash, i.e. \p l3ew3vn. In this particular
+case, we can see 
 
 \code
 ~ % spack find -lv mofem-users-modules 
@@ -491,6 +491,18 @@ l3ew3vn mofem-users-modules@develop+copy_user_modules~docker~ipo build_type=Debu
 \endcode
 
 where fisrt package has hash \p l3ew3vn.
+
+
+"Default" setting for intelliSenseEngine, is not working or working slow; we
+recommend switching to "Tag Parser".
+\code
+"C_Cpp.intelliSenseEngine": "Tag Parser"
+\endcode
+
+However,  "Default" IntelliSense engine is the new engine that provides
+semantic-aware IntelliSense features and will be the eventual replacement for
+the Tag Parser. So in the future, you can check if the "Default" IntelliSense
+engine works well for you. Using  Tag Parser is a temporary solution.
 
 \subsection vs_code_debug How to setup LLDB debugger in Visual Studio Code?
 
