@@ -379,18 +379,30 @@ MoFEMErrorCode ProblemsManager::partitionMesh(
         CHKERR m_field.get_moab().add_entities(tagged_sets[pp], parts_ents[pp]);
       }
 
-      // set gid to lower dimension entities
-      for (int dd = 0; dd <= dim; dd++) {
-        int gid = 1; // moab indexing from 1
+      // set gid and part tag
+      for (EntityType t = MBVERTEX; t != MBENTITYSET; ++t) {
+
+        void *ptr;
+        int count;
+
+        int gid = 1; // moab indexing from 1a
         for (int pp = 0; pp != n_parts; pp++) {
-          Range dim_ents = parts_ents[pp].subset_by_dimension(dd);
-          for (Range::iterator eit = dim_ents.begin(); eit != dim_ents.end();
-               eit++) {
-            if (dd > 0) {
-              CHKERR m_field.get_moab().tag_set_data(part_tag, &*eit, 1, &pp);
+          Range type_ents = parts_ents[pp].subset_by_type(t);
+          if (t != MBVERTEX) {
+            CHKERR m_field.get_moab().tag_clear_data(part_tag, type_ents, &pp);
+          }
+
+          auto eit = type_ents.begin();
+          for (; eit != type_ents.end();) {
+            CHKERR m_field.get_moab().tag_iterate(gid_tag, eit, type_ents.end(),
+                                                  count, ptr);
+            auto gid_tag_ptr = static_cast<int *>(ptr);
+            for (; count > 0; --count) {
+              *gid_tag_ptr = gid;
+              ++eit;
+              ++gid; 
+              ++gid_tag_ptr;
             }
-            CHKERR m_field.get_moab().tag_set_data(gid_tag, &*eit, 1, &gid);
-            gid++;
           }
         }
       }
