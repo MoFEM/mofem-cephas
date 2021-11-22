@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
     ProblemsManager *prb_mng_ptr;
     CHKERR m_field.getInterface(prb_mng_ptr);
     CHKERR prb_mng_ptr->partitionMesh(tets, 3, 2, 2, &th_vertex_weight, NULL,
-                                      NULL);
+                                      NULL, VERBOSE, false);
 
     EntityHandle meshset;
     CHKERR moab.create_meshset(MESHSET_SET, meshset);
