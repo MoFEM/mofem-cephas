@@ -1023,7 +1023,6 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
 
   {
 
-
     // rows
 
     // Computes the number of messages a node expects to receive
@@ -1087,15 +1086,15 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
   if (!square_matrix) {
 
     // Computes the number of messages a node expects to receive
-    CHKERR PetscGatherNumberOfMessages(comm, NULL,
-                                       &lengths_cols[0], &nrecvs_cols);
+    CHKERR PetscGatherNumberOfMessages(comm, NULL, &lengths_cols[0],
+                                       &nrecvs_cols);
 
     // Computes info about messages that a MPI-node will receive, including
     // (from-id,length) pairs for each message.
     int *onodes_cols;
-    CHKERR PetscGatherMessageLengths(comm, nsends_cols,
-                                     nrecvs_cols, &lengths_cols[0],
-                                     &onodes_cols, &olengths_cols);
+    CHKERR PetscGatherMessageLengths(comm, nsends_cols, nrecvs_cols,
+                                     &lengths_cols[0], &onodes_cols,
+                                     &olengths_cols);
 
     // Gets a unique new tag from a PETSc communicator.
     int tag_col;
@@ -1104,9 +1103,8 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
     // Allocate a buffer sufficient to hold messages of size specified in
     // olengths. And post Irecvs on these buffers using node info from onodes
     MPI_Request *r_waits_col; // must bee freed by user
-    CHKERR PetscPostIrecvInt(comm, tag_col, nrecvs_cols,
-                             onodes_cols, olengths_cols, &rbuf_col,
-                             &r_waits_col);
+    CHKERR PetscPostIrecvInt(comm, tag_col, nrecvs_cols, onodes_cols,
+                             olengths_cols, &rbuf_col, &r_waits_col);
     CHKERR PetscFree(onodes_cols);
 
     MPI_Request *s_waits_col; // status of sens messages
@@ -1136,7 +1134,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
 
   CHKERR PetscCommDestroy(&comm);
   CHKERR PetscFree(status);
- 
+
   DofEntity_multiIndex_global_uid_view dofs_glob_uid_view;
   auto hint = dofs_glob_uid_view.begin();
   for (auto dof : *m_field.get_dofs())
@@ -2841,8 +2839,7 @@ ProblemsManager::getProblemElementsLayout(const std::string name,
 MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
     const std::string problem_name, const std::string field_name,
     const Range ents, const int lo_coeff, const int hi_coeff,
-    const int lo_order, const int hi_order, int verb,
-    const bool debug) {
+    const int lo_order, const int hi_order, int verb, const bool debug) {
 
   MoFEM::Interface &m_field = cOre;
   ProblemManagerFunctionBegin;
