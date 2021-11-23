@@ -342,11 +342,11 @@ MoFEMErrorCode ProblemsManager::partitionMesh(
       // get lower dimension entities on each part
       for (int pp = 0; pp != n_parts; pp++) {
         Range dim_ents = parts_ents[pp].subset_by_dimension(dim);
-        for (int dd = dim - 1; dd != -1; dd--) {
+        for (int dd = dim - 1; dd >= 0; dd--) {
           Range adj_ents;
-          if (dim > 0) {
+          if (dd > 0) {
             CHKERR m_field.get_moab().get_adjacencies(
-                dim_ents, dd, true, adj_ents, moab::Interface::UNION);
+                dim_ents, dd, false, adj_ents, moab::Interface::UNION);
           } else {
             CHKERR m_field.get_moab().get_connectivity(dim_ents, adj_ents,
                                                        true);
