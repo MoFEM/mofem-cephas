@@ -783,11 +783,9 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
     SETERRQ(mofemComm, MOFEM_NOT_FOUND, "field not build");
   if (!((*buildMoFEM) & BUILD_FE))
     SETERRQ(mofemComm, MOFEM_NOT_FOUND, "fe not build");
-  for (Range::const_pair_iterator peit = ents.pair_begin();
-       peit != ents.pair_end(); ++peit) {
-    EntFiniteElement_multiIndex::index<Ent_mi_tag>::type::iterator fit, hi_fit;
-    fit = entsFiniteElements.get<Ent_mi_tag>().lower_bound(peit->first);
-    hi_fit = entsFiniteElements.get<Ent_mi_tag>().upper_bound(peit->second);
+  for (auto peit = ents.pair_begin(); peit != ents.pair_end(); ++peit) {
+    auto fit = entsFiniteElements.get<Ent_mi_tag>().lower_bound(peit->first);
+    auto hi_fit = entsFiniteElements.get<Ent_mi_tag>().upper_bound(peit->second);
     for (; fit != hi_fit; ++fit) {
       if ((*fit)->getBitFieldIdRow().none() &&
           (*fit)->getBitFieldIdCol().none() &&
