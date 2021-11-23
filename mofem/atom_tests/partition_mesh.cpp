@@ -29,6 +29,8 @@ int main(int argc, char *argv[]) {
   // initialize petsc
   MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
 
+  int nb_vertices;
+
   try {
 
     PetscBool flg = PETSC_TRUE;
@@ -55,6 +57,8 @@ int main(int argc, char *argv[]) {
     MoFEM::Core core(moab);
     MoFEM::Interface &m_field = core;
 
+    CHKERR moab.get_number_entities_by_dimension(0, 0, nb_vertices, true);
+
     EntityHandle root_set = moab.get_root_set();
     Range tets;
     moab.get_entities_by_type(root_set, MBTET, tets, false);
@@ -67,12 +71,10 @@ int main(int argc, char *argv[]) {
 
     ProblemsManager *prb_mng_ptr;
     CHKERR m_field.getInterface(prb_mng_ptr);
-    CHKERR prb_mng_ptr->partitionMesh(tets, 3, 2, 3, &th_vertex_weight, NULL,
-                                      NULL, VERBOSE, false);
+    CHKERR prb_mng_ptr->partitionMesh(tets, 3, 2, m_field.get_comm_size(),
+                                      &th_vertex_weight, NULL, NULL, VERBOSE,
+                                      false);
 
-    EntityHandle meshset;
-    CHKERR moab.create_meshset(MESHSET_SET, meshset);
-    CHKERR moab.add_entities(meshset, tets);
     if (!m_field.get_comm_rank()) {
       CHKERR moab.write_file("partitioned_mesh.h5m");
     }
@@ -96,16 +98,30 @@ int main(int argc, char *argv[]) {
 
     // Test build simple problem
     const char *option = "DEBUG_IO;"
-                         "PARALLEL=BCAST_DELETE;"
+                         "PARALLEL=READ_PART;"
                          "PARALLEL_RESOLVE_SHARED_ENTS;"
                          "PARTITION=PARALLEL_PARTITION;";
 
+    CHKERR m_field.getInterface<Simple>()->getOptions();
     CHKERR m_field.getInterface<Simple>()->loadFile(option,
                                                     "partitioned_mesh.h5m");
     CHKERR m_field.getInterface<Simple>()->addDomainField(
         "U", H1, AINSWORTH_LEGENDRE_BASE, 1);
     CHKERR m_field.getInterface<Simple>()->setFieldOrder("U", 1);
     CHKERR m_field.getInterface<Simple>()->setUp();
+
+    auto dm  = m_field.getInterface<Simple>()->getDM();
+
+    const MoFEM::Problem *problem_ptr;
+    CHKERR DMMoFEMGetProblemPtr(dm, &problem_ptr);
+
+    if(problem_ptr->nbDofsRow != nb_vertices)
+      SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+              "Number of vertices and DOFs is inconstent");
+
+    MOFEM_LOG_CHANNEL("WORLD");
+    MOFEM_TAG_AND_LOG("WORLD", Sev::inform, "Atom test")
+        << "All is good in this test";
   }
   CATCH_ERRORS;
 
