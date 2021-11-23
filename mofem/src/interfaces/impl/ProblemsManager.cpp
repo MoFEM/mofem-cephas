@@ -140,9 +140,26 @@ MoFEMErrorCode ProblemsManager::partitionMesh(
           >>
       AdjBridgeMap;
 
+  auto get_it = [&](auto i) {
+    auto it = ents.begin();
+    for (; i > 0; --i) {
+      if (it == ents.end())
+        break;
+      ++it;
+    }
+    return it;
+  };
+
+  Range proc_ents;
+  proc_ents.insert(get_it(rstart), get_it(rend));
+  if (proc_ents.size() != rend - rstart)
+    SETERRQ2(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+             "Wrong number of elements in range %d != %d", proc_ents.size(),
+             rend - rstart);
+
   Range all_dim_ents;
-  CHKERR m_field.get_moab().get_adjacencies(ents, adj_dim, true, all_dim_ents,
-                                            moab::Interface::UNION);
+  CHKERR m_field.get_moab().get_adjacencies(
+      proc_ents, adj_dim, true, all_dim_ents, moab::Interface::UNION);
 
   AdjBridgeMap adj_bridge_map;
   auto hint = adj_bridge_map.begin();
@@ -168,16 +185,8 @@ MoFEMErrorCode ProblemsManager::partitionMesh(
       Range::iterator fe_it;
       int ii, jj;
       size_t max_row_size;
-      for (
-
-          fe_it = ents.begin(), ii = 0, jj = 0, max_row_size = 0;
-
-          fe_it != ents.end(); ++fe_it, ++ii) {
-
-        if (ii < rstart)
-          continue;
-        if (ii >= rend)
-          break;
+      for (fe_it = proc_ents.begin(), ii = rstart, jj = 0, max_row_size = 0;
+           fe_it != proc_ents.end(); ++fe_it, ++ii) {
 
         if (type_from_handle(*fe_it) == MBENTITYSET) {
           SETERRQ(
