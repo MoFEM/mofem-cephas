@@ -522,4 +522,86 @@ MoFEMErrorCode CommInterface::exchangeFieldData(const std::string field_name,
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode CommInterface::deleteOffPartitionEntities(Tag part_tag) {
+  MoFEMFunctionBegin;
+  MoFEM::Interface &m_field = cOre;
+  auto &moab = m_field.get_moab();
+  auto pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
+
+  auto get_highest_ent_dim = [&](auto meshset) {
+    int dim = 0;
+    int nb_ents_3d;
+    CHKERR m_field.get_moab().get_number_entities_by_dimension(
+        meshset, 3, nb_ents_3d, true);
+    if (nb_ents_3d > 0) {
+      dim = 3;
+    } else {
+      int nb_ents_2d;
+      CHKERR m_field.get_moab().get_number_entities_by_dimension(
+          meshset, 2, nb_ents_2d, true);
+      if (nb_ents_2d > 0) {
+        dim = 2;
+      } else {
+        dim = 1;
+      }
+    }
+    return dim;
+  };
+
+  Range proc_ents;
+  Range all_proc_ents;
+  Range off_proc_ents;
+  Range tagged_sets;
+
+  EntityHandle part_set;
+  CHKERR moab.create_meshset(MESHSET_SET, part_set);
+  CHKERR moab.get_entities_by_type_and_tag(0, MBENTITYSET, &part_tag, NULL, 1,
+                                           tagged_sets, moab::Interface::UNION);
+
+  
+  for (auto &mit : tagged_sets) {
+    int part;
+    CHKERR moab.tag_get_data(part_tag, &mit, 1, &part);
+    if (part == m_field.get_comm_rank()) {
+      CHKERR moab.get_entities_by_dimension(mit, get_highest_ent_dim(mit),
+                                            proc_ents, true);
+      CHKERR moab.get_entities_by_handle(mit, all_proc_ents, true);
+    } else
+      CHKERR moab.get_entities_by_handle(mit, off_proc_ents, true);
+  }
+
+  CHKERR moab.add_entities(part_set, all_proc_ents);
+  auto dim = get_highest_ent_dim(part_set);
+
+  Skinner skin(&moab);
+  Range proc_ents_skin;
+
+  Range all_skin;
+
+  CHKERR skin.find_skin(0, proc_ents, false, proc_ents_skin);
+
+
+  for (int dd = 0; dd != dim - 1; dd++) {
+    Range adj;
+    CHKERR moab.get_adjacencies(proc_ents_skin, dd, false, adj,
+                                              moab::Interface::UNION);
+    off_proc_ents = subtract(off_proc_ents, adj);
+  }
+
+  Range meshsets;
+  CHKERR moab.get_entities_by_type(0, MBENTITYSET, meshsets, false);
+
+  for (auto m : meshsets) {
+    Range ents;
+    CHKERR moab.get_entities_by_handle(m, ents);
+    if (!ents.empty())
+      CHKERR moab.remove_entities(m, off_proc_ents);
+  }
+
+  CHKERR moab.delete_entities(off_proc_ents);
+  // CHKERR pcomm->resolve_shared_ents(0, proc_ents, 3, -1, proc_ents_skin);
+
+  MoFEMFunctionReturn(0);
+}
+
 } // namespace MoFEM
