@@ -1,5 +1,5 @@
 /** \file partition_mesh.cpp
-
+  \example partition_mesh.cpp
   \brief Atom testing mesh partitioning
 
 */
