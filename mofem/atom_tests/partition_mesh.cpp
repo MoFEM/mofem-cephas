@@ -1,5 +1,5 @@
 /** \file partition_mesh.cpp
-  \example partition_mesh.cpp
+  \example partition_mesh.cpp 
   \brief Atom testing mesh partitioning
 
 */
@@ -81,15 +81,33 @@ int main(int argc, char *argv[]) {
 
   PetscBarrier(PETSC_NULL);
 
-  moab::Core mb_instance2;
-  moab::Interface &moab2 = mb_instance2;
-  {
+  try {
+
+    moab::Core mb_instance2;
+    moab::Interface &moab2 = mb_instance2;
+
+
+    MoFEM::CoreTmp<1> core(moab2);
+    MoFEM::Interface &m_field = core;
+
+    // Register DM Manager
+    DMType dm_name = "DMMOFEM";
+    CHKERR DMRegister_MoFEM(dm_name);
+
+    // Test build simple problem
     const char *option = "DEBUG_IO;"
                          "PARALLEL=BCAST_DELETE;"
                          "PARALLEL_RESOLVE_SHARED_ENTS;"
                          "PARTITION=PARALLEL_PARTITION;";
-    CHKERR moab2.load_file("partitioned_mesh.h5m", 0, option);
+
+    CHKERR m_field.getInterface<Simple>()->loadFile(option,
+                                                    "partitioned_mesh.h5m");
+    CHKERR m_field.getInterface<Simple>()->addDomainField(
+        "U", H1, AINSWORTH_LEGENDRE_BASE, 1);
+    CHKERR m_field.getInterface<Simple>()->setFieldOrder("U", 1);
+    CHKERR m_field.getInterface<Simple>()->setUp();
   }
+  CATCH_ERRORS;
 
   CHKERR MoFEM::Core::Finalize();
 
