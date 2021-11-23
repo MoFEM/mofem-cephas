@@ -1133,7 +1133,7 @@ add_test(gauss_points_on_outer_product ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscri
 )
 
 build_test(partition_mesh partition_mesh.cpp)
-add_test(partition_mesh ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+add_test(partition_mesh ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 3
   ${CMAKE_CURRENT_BINARY_DIR}/partition_mesh -my_file disp01.h5m
   -log_no_color
 )
