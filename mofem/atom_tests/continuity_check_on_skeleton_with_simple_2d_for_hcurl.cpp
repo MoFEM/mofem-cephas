@@ -28,12 +28,8 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
-using FaceEleOnSide = MoFEM::FaceElementForcesAndSourcesCoreOnSideSwitch<
-    FaceElementForcesAndSourcesCore::NO_HO_GEOMETRY>;
-
-using EdgeEle = MoFEM::EdgeElementForcesAndSourcesCoreSwitch<
-    EdgeElementForcesAndSourcesCore::NO_HO_GEOMETRY>;
-
+using FaceEleOnSide = MoFEM::FaceElementForcesAndSourcesCoreOnSideSwitch<0>;
+using EdgeEle = MoFEM::EdgeElementForcesAndSourcesCore;
 using FaceEleOnSideOp = FaceEleOnSide::UserDataOperator;
 using EdgeEleOp = EdgeEle::UserDataOperator;
 
@@ -95,6 +91,8 @@ struct SkeletonFE : public EdgeEleOp {
   SkeletonFE(MoFEM::Interface &m_field, CommonData &elem_data)
       : EdgeEle::UserDataOperator("FIELD", UserDataOperator::OPROW),
         faceSideFe(m_field), elemData(elem_data) {
+    faceSideFe.getOpPtrVector().push_back(
+        new OpHOSetCovariantPiolaTransformOnFace3D(HCURL));
     faceSideFe.getOpPtrVector().push_back(new SkeletonFE::OpFaceSide(elemData));
   }
 
@@ -225,6 +223,9 @@ int main(int argc, char *argv[]) {
       CommonData elem_data;
       boost::shared_ptr<EdgeEle> skeleton_fe =
           boost::shared_ptr<EdgeEle>(new EdgeEle(m_field));
+
+      skeleton_fe->getOpPtrVector().push_back(
+          new OpHOSetContravariantPiolaTransformOnEdge3D(HCURL));
       skeleton_fe->getOpPtrVector().push_back(
           new SkeletonFE(m_field, elem_data));
 

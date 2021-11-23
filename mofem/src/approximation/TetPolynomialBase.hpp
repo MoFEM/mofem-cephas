@@ -30,11 +30,11 @@ namespace MoFEM {
  */
 struct TetPolynomialBase : public BaseFunction {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 BaseFunctionUnknownInterface **iface) const;
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
+                                 UnknownInterface **iface) const;
 
-  TetPolynomialBase();
-  ~TetPolynomialBase();
+  TetPolynomialBase() = default;
+  ~TetPolynomialBase() = default;
 
   MoFEMErrorCode getValue(MatrixDouble &pts,
                           boost::shared_ptr<BaseFunctionCtx> ctx_ptr);
@@ -42,13 +42,49 @@ struct TetPolynomialBase : public BaseFunction {
 private:
   EntPolynomialBaseCtx *cTx;
 
+  /**
+   * @brief Get base functions for H1 space
+   *
+   * @param pts matrix of intergation pts
+   * @return MoFEMErrorCode
+   *
+   * \note matrix of integration points on rows has local coordinates of finite
+   * element on columns are integration pts.
+   */
   MoFEMErrorCode getValueH1(MatrixDouble &pts);
-  MoFEMErrorCode getValueH1AinsworthBase(MatrixDouble &pts);
-  MoFEMErrorCode getValueH1BernsteinBezierBase(MatrixDouble &pts);
 
+  /**
+   * @brief Get base functions for L2 space
+   *
+   * @param pts matrix of intergation pts
+   * @return MoFEMErrorCode
+   *
+   * \note matrix of integration points on rows has local coordinates of finite
+   * element on columns are integration pts.
+   */
   MoFEMErrorCode getValueL2(MatrixDouble &pts);
-  MoFEMErrorCode getValueL2AinsworthBase(MatrixDouble &pts);
-  MoFEMErrorCode getValueL2BernsteinBezierBase(MatrixDouble &pts);
+
+  /**
+   * @brief Get base functions for Hdiv space
+   *
+   * @param pts matrix of intergation pts
+   * @return MoFEMErrorCode
+   *
+   * \note matrix of integration points on rows has local coordinates of finite
+   * element on columns are integration pts.
+   */
+  MoFEMErrorCode getValueHdiv(MatrixDouble &pts);
+
+  /**
+   * @brief Get base functions for Hcurl space
+   *
+   * @param pts matrix of intergation pts
+   * @return MoFEMErrorCode
+   *
+   * \note matrix of integration points on rows has local coordinates of finite
+   * element on columns are integration pts.
+   */
+  MoFEMErrorCode getValueHcurl(MatrixDouble &pts);
 
   ublas::matrix<MatrixDouble> N_face_edge;
   ublas::vector<MatrixDouble> N_face_bubble;
@@ -62,11 +98,13 @@ private:
   ublas::vector<MatrixDouble> diffN_volume_face;
   MatrixDouble diffN_volume_bubble;
 
-  MoFEMErrorCode getValueHdiv(MatrixDouble &pts);
-
-  MoFEMErrorCode getValueHcurl(MatrixDouble &pts);
-
 private:
+  MoFEMErrorCode getValueH1AinsworthBase(MatrixDouble &pts);
+  MoFEMErrorCode getValueH1BernsteinBezierBase(MatrixDouble &pts);
+
+  MoFEMErrorCode getValueL2AinsworthBase(MatrixDouble &pts);
+  MoFEMErrorCode getValueL2BernsteinBezierBase(MatrixDouble &pts);
+
   MoFEMErrorCode getValueHdivAinsworthBase(MatrixDouble &pts);
   MoFEMErrorCode getValueHcurlAinsworthBase(MatrixDouble &pts);
 

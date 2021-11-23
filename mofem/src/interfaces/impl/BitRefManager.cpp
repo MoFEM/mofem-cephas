@@ -19,15 +19,11 @@
 
 namespace MoFEM {
 
-MoFEMErrorCode BitRefManager::query_interface(const MOFEMuuid &uuid,
-                                              UnknownInterface **iface) const {
+MoFEMErrorCode
+BitRefManager::query_interface(boost::typeindex::type_index type_index,
+                               UnknownInterface **iface) const {
   MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_MOFEMBitRefManager) {
-    *iface = const_cast<BitRefManager *>(this);
-    MoFEMFunctionReturnHot(0);
-  }
-  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
+  *iface = const_cast<BitRefManager *>(this);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -160,15 +156,15 @@ struct SetBitRefLevelTool {
     MoFEMFunctionBeginHot;
 
     switch (mField.getValue()) {
-      case -1:
-        return addEntsToDatabaseImpl<-1>(seed_ents_range);
-      case 0:
-        return addEntsToDatabaseImpl<0>(seed_ents_range);
-      case 1:
-        return addEntsToDatabaseImpl<1>(seed_ents_range);
-      default:
-        SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-                 "Core index can vary from -1 to %d", MAX_CORE_TMP);
+    case -1:
+      return addEntsToDatabaseImpl<-1>(seed_ents_range);
+    case 0:
+      return addEntsToDatabaseImpl<0>(seed_ents_range);
+    case 1:
+      return addEntsToDatabaseImpl<1>(seed_ents_range);
+    default:
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+               "Core index can vary from -1 to %d", MAX_CORE_TMP);
     }
 
     MoFEMFunctionReturnHot(0);
@@ -242,12 +238,13 @@ struct SetBitRefLevelTool {
               boost::shared_ptr<RefElement>(ref_fe_vec, &ref_fe_vec->back()));
         }
       } break;
-      case MBTET: {
-        boost::shared_ptr<std::vector<RefElement_TET>> ref_fe_vec =
-            boost::make_shared<std::vector<RefElement_TET>>();
+      case MBTET:
+      case MBHEX: {
+        boost::shared_ptr<std::vector<RefElementVolume>> ref_fe_vec =
+            boost::make_shared<std::vector<RefElementVolume>>();
         ref_fe_vec->reserve(pit->second - pit->first + 1);
         for (; rit != hi_rit; ++rit) {
-          ref_fe_vec->push_back(RefElement_TET(*rit));
+          ref_fe_vec->push_back(RefElementVolume(*rit));
           shared_ref_fe_vec.push_back(
               boost::shared_ptr<RefElement>(ref_fe_vec, &ref_fe_vec->back()));
         }
@@ -293,7 +290,8 @@ MoFEMErrorCode BitRefManager::setBitRefLevel(const Range &ents,
   MoFEMFunctionBegin;
 
   MOFEM_LOG_FUNCTION();
-  MOFEM_LOG_C("BitRefSelf", Sev::noisy, "nb. entities to add %d", ents.size());
+  MOFEM_LOG_C("BitRefSelf", Sev::noisy, "Number of entities to add %d",
+              ents.size());
 
   CHKERR setElementsBitRefLevel(ents, bit, verb);
 
@@ -305,11 +303,22 @@ MoFEMErrorCode BitRefManager::setBitRefLevel(const Range &ents,
       } else {
         dim_ents = ents.subset_by_dimension(d);
       }
+
+      MOFEM_LOG_FUNCTION();
+      MOFEM_LOG_C("BitRefSelf", Sev::noisy,
+                  "\tNumber of dim %d entities to add %d", d, ents.size());
+
       if (!dim_ents.empty()) {
         for (int dd = 0; dd < d; ++dd) {
           Range adj_ents;
           rval = m_field.get_moab().get_adjacencies(
               dim_ents, dd, true, adj_ents, moab::Interface::UNION);
+
+          MOFEM_LOG_FUNCTION();
+          MOFEM_LOG_C("BitRefSelf", Sev::noisy,
+                      "\tNumber of dim %d adj entities for dim %d to add %d", d,
+                      dd, adj_ents.size());
+
           if (rval == MB_MULTIPLE_ENTITIES_FOUND) {
             auto log_message = [&](const auto sev) {
               MOFEM_LOG_FUNCTION();
@@ -320,8 +329,8 @@ MoFEMErrorCode BitRefManager::setBitRefLevel(const Range &ents,
                   << dd << " and dim of entities " << d;
               MOFEM_LOG_CHANNEL("BitRefSelf"); // reset channel
             };
-       
-			      if (verb <= QUIET)
+
+            if (verb <= QUIET)
               log_message(Sev::noisy);
             else
               log_message(Sev::warning);
@@ -379,6 +388,12 @@ MoFEMErrorCode BitRefManager::setElementsBitRefLevel(const Range &ents,
           .addElementsToDatabase(seed_fe_range);
     }
   }
+
+  MOFEM_LOG_FUNCTION();
+  MOFEM_LOG("BitRefSelf", Sev::noisy)
+      << "Number of entities in databse " << ref_ents_ptr->size();
+  MOFEM_LOG("BitRefSelf", Sev::noisy)
+      << "Number of finite element entities in databse " << ref_fe_ptr->size();
 
   MoFEMFunctionReturn(0);
 }

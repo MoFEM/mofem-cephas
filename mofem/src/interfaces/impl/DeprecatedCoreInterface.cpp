@@ -349,12 +349,6 @@ DeprecatedCoreInterface::delete_cubit_msId(const CubitBCType cubit_bc_type,
                                            const int ms_id) {
   return getInterface<MeshsetsManager>()->deleteMeshset(cubit_bc_type, ms_id);
 }
-MoFEMErrorCode DeprecatedCoreInterface::get_cubit_msId(
-    const int ms_id, const CubitBCType cubit_bc_type,
-    const CubitMeshSets **cubit_meshset_ptr) {
-  return getInterface<MeshsetsManager>()->getCubitMeshsetPtr(
-      ms_id, cubit_bc_type, cubit_meshset_ptr);
-}
 MoFEMErrorCode DeprecatedCoreInterface::get_cubit_msId_entities_by_dimension(
     const int ms_id, const CubitBCType cubit_bc_type, const int dimension,
     Range &entities, const bool recursive) {
@@ -490,66 +484,6 @@ DeprecatedCoreInterface::clear_ents_fields(const BitRefLevel &bit,
 MoFEMErrorCode DeprecatedCoreInterface::clear_finite_elements(
     const BitRefLevel &bit, const BitRefLevel &mask, int verb) {
   return clear_finite_elements_by_bit_ref(bit, mask, verb);
-}
-
-MoFEMErrorCode DeprecatedCoreInterface::add_ents_to_field_by_EDGEs(
-    const Range &edges, const std::string &name, int verb) {
-  return add_ents_to_field_by_type(edges, MBEDGE, name, verb);
-}
-
-MoFEMErrorCode DeprecatedCoreInterface::add_ents_to_field_by_EDGEs(
-    const EntityHandle meshset, const std::string &name, int verb) {
-  return add_ents_to_field_by_type(meshset, MBEDGE, name, true, verb);
-}
-
-MoFEMErrorCode DeprecatedCoreInterface::add_ents_to_field_by_TRIs(
-    const EntityHandle meshset, const std::string &name, int verb) {
-  return add_ents_to_field_by_type(meshset, MBTRI, name, true, verb);
-}
-
-MoFEMErrorCode DeprecatedCoreInterface::add_ents_to_field_by_TRIs(
-    const Range &tris, const std::string &name, int verb) {
-  return add_ents_to_field_by_type(tris, MBTRI, name, verb);
-}
-
-MoFEMErrorCode DeprecatedCoreInterface::add_ents_to_field_by_VERTICEs(
-    const Range &nodes, const std::string &name, int verb) {
-  return add_ents_to_field_by_type(nodes, MBVERTEX, name, verb);
-}
-
-MoFEMErrorCode DeprecatedCoreInterface::add_ents_to_field_by_VERTICEs(
-    const EntityHandle meshset, const std::string &name, int verb) {
-  return add_ents_to_field_by_type(meshset, MBVERTEX, name, true, verb);
-}
-
-MoFEMErrorCode DeprecatedCoreInterface::add_ents_to_field_by_TETs(
-    const Range &tets, const std::string &name, int verb) {
-  return add_ents_to_field_by_type(tets, MBTET, name, verb);
-}
-
-MoFEMErrorCode DeprecatedCoreInterface::add_ents_to_field_by_TETs(
-    const EntityHandle meshset, const std::string &name, int verb) {
-  return add_ents_to_field_by_type(meshset, MBTET, name, true, verb);
-}
-
-MoFEMErrorCode DeprecatedCoreInterface::add_ents_to_field_by_QUADs(
-    const Range &quads, const std::string &name, int verb) {
-  return add_ents_to_field_by_type(quads, MBQUAD, name, verb);
-}
-
-MoFEMErrorCode DeprecatedCoreInterface::add_ents_to_field_by_QUADs(
-    EntityHandle meshset, const std::string &name, int verb) {
-  return add_ents_to_field_by_type(meshset, MBQUAD, name, true, verb);
-}
-
-MoFEMErrorCode DeprecatedCoreInterface::add_ents_to_field_by_PRISMs(
-    const Range &prisms, const std::string &name, int verb) {
-  return add_ents_to_field_by_type(prisms, MBPRISM, name, verb);
-}
-
-MoFEMErrorCode DeprecatedCoreInterface::add_ents_to_field_by_PRISMs(
-    EntityHandle meshset, const std::string &name, int verb) {
-  return add_ents_to_field_by_type(meshset, MBPRISM, name, true, verb);
 }
 
 MoFEMErrorCode

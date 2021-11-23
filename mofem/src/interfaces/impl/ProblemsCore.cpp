@@ -452,12 +452,6 @@ MoFEMErrorCode Core::loop_finite_elements(
     CHKERR cache_problem_entities(problem_ptr->getName(), tmp_cache_ptr);
   }
 
-  method.feName = fe_name;
-  SET_BASIC_METHOD(method, &*problem_ptr)
-  PetscLogEventBegin(MOFEM_EVENT_preProcess, 0, 0, 0, 0);
-  CHKERR method.preProcess();
-  PetscLogEventEnd(MOFEM_EVENT_preProcess, 0, 0, 0, 0);
-
   if (!fe_ptr)
     fe_ptr = problem_ptr->numeredFiniteElementsPtr;
 
@@ -473,16 +467,26 @@ MoFEMErrorCode Core::loop_finite_elements(
     }
   }
 
-  method.loopSize = std::distance(miit, hi_miit);
+  method.feName = fe_name;
+  method.loopSize =
+      std::distance(miit, hi_miit); // Set numbers of elements in the loop
+  method.loHiFERank = std::make_pair(lower_rank, upper_rank);
+
+  SET_BASIC_METHOD(method, &*problem_ptr)
+  
+  PetscLogEventBegin(MOFEM_EVENT_preProcess, 0, 0, 0, 0);
+  CHKERR method.preProcess();
+  PetscLogEventEnd(MOFEM_EVENT_preProcess, 0, 0, 0, 0);
+
+  PetscLogEventBegin(MOFEM_EVENT_operator, 0, 0, 0, 0);
   for (int nn = 0; miit != hi_miit; miit++, nn++) {
 
-    method.nInTheLoop = nn;
+    method.nInTheLoop = nn; // Index of element in the loop
     method.numeredEntFiniteElementPtr = *miit;
-
-    PetscLogEventBegin(MOFEM_EVENT_operator, 0, 0, 0, 0);
     CHKERR method();
-    PetscLogEventEnd(MOFEM_EVENT_operator, 0, 0, 0, 0);
+
   }
+  PetscLogEventEnd(MOFEM_EVENT_operator, 0, 0, 0, 0);
 
   PetscLogEventBegin(MOFEM_EVENT_postProcess, 0, 0, 0, 0);
   CHKERR method.postProcess();
@@ -560,14 +564,21 @@ MoFEMErrorCode Core::loop_dofs(const Problem *problem_ptr,
   auto hi_miit = dofs->upper_bound(
       FieldEntity::getHiBitNumberUId((*field_it)->getBitNumber()));
 
+  method.loopSize = std::distance(miit, hi_miit);
+  method.loHiFERank = std::make_pair(lower_rank, upper_rank);      
+
   CHKERR method.preProcess();
-  for (; miit != hi_miit; miit++) {
+
+  int nn = 0;
+  for (; miit != hi_miit; miit++, nn++) {
     if ((*miit)->getPart() >= lower_rank && (*miit)->getPart() <= upper_rank) {
+      method.nInTheLoop = nn; // Index of element in the loop
       method.dofPtr = miit->get()->getDofEntityPtr();
       method.dofNumeredPtr = *miit;
       CHKERR method();
     }
   }
+
   CHKERR method.postProcess();
   MoFEMFunctionReturn(0);
 }
@@ -627,6 +638,8 @@ MoFEMErrorCode Core::loop_dofs(const std::string &field_name, DofMethod &method,
       FieldEntity::getHiBitNumberUId((*field_it)->getBitNumber()));
 
   method.loopSize = std::distance(miit, hi_miit);
+  method.loHiFERank = std::make_pair(0, get_comm_size());
+
   CHKERR method.preProcess();
   for (int nn = 0; miit != hi_miit; miit++, nn++) {
     method.nInTheLoop = nn;
@@ -689,8 +702,11 @@ MoFEMErrorCode Core::loop_entities(const Problem *problem_ptr,
     if ((*miit)->getPart() >= lower_rank && (*miit)->getPart() <= upper_rank)
       ents_view.emplace_hint(hint, (*miit)->getFieldEntityPtr());
 
-  method.loopSize = ents_view.size();
   SET_BASIC_METHOD(method, problem_ptr);
+
+  method.loopSize = ents_view.size();
+  method.loHiFERank = std::make_pair(lower_rank, upper_rank);
+
   CHKERR method.preProcess();
   method.nInTheLoop = 0;
   for (auto &field_ent : ents_view) {
@@ -758,6 +774,8 @@ MoFEMErrorCode Core::loop_entities(const std::string field_name,
   ents_view.insert(lo_eit, hi_eit);
 
   method.loopSize = ents_view.size();
+  method.loHiFERank = std::make_pair(0, get_comm_size());
+
   CHKERR method.preProcess();
   method.nInTheLoop = 0;
 

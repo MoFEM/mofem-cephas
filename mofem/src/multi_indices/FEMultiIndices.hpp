@@ -146,7 +146,7 @@ struct DefaultElementAdjacency {
   static MoFEMErrorCode defaultFace(Interface &moab, const Field &field,
                                     const EntFiniteElement &fe,
                                     Range &adjacency);
-  static MoFEMErrorCode defaultTet(Interface &moab, const Field &field,
+  static MoFEMErrorCode defaultVolume(Interface &moab, const Field &field,
                                    const EntFiniteElement &fe,
                                    Range &adjacency);
   static MoFEMErrorCode defaultPrism(Interface &moab, const Field &field,

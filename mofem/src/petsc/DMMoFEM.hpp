@@ -466,6 +466,14 @@ DMMoFEMTSSetI2Function(DM dm, const std::string fe_name,
                        boost::shared_ptr<MoFEM::FEMethod> method,
                        boost::shared_ptr<MoFEM::BasicMethod> pre_only,
                        boost::shared_ptr<MoFEM::BasicMethod> post_only);
+/**
+ * \brief set TS implicit function evaluation function
+ * \ingroup dm
+ */
+PetscErrorCode DMMoFEMTSSetI2Function(DM dm, const char fe_name[],
+                                      MoFEM::FEMethod *method,
+                                      MoFEM::BasicMethod *pre_only,
+                                      MoFEM::BasicMethod *post_only);
 
 /**
  * \brief set TS Jacobian evaluation function
@@ -476,6 +484,15 @@ DMMoFEMTSSetI2Jacobian(DM dm, const std::string fe_name,
                        boost::shared_ptr<MoFEM::FEMethod> method,
                        boost::shared_ptr<MoFEM::BasicMethod> pre_only,
                        boost::shared_ptr<MoFEM::BasicMethod> post_only);
+/**
+ * \brief set TS Jacobian evaluation function
+ * \ingroup dm
+ */
+PetscErrorCode
+DMMoFEMTSSetI2Jacobian(DM dm, const char fe_name[],
+                                     MoFEM::FEMethod *method,
+                                     MoFEM::BasicMethod *pre_only,
+                                     MoFEM::BasicMethod *post_only);
 
 /**
  * @brief Set Monitor To TS solver
@@ -859,8 +876,6 @@ PetscErrorCode DMMoFEMGetFieldIS(DM dm, RowColData rc, const char field_name[],
  */
 PetscErrorCode DMMoFEMSetVerbosity(DM dm, const int verb);
 
-static const MOFEMuuid IDD_DMCTX = MOFEMuuid(BitIntefaceId(DMCTX_INTERFACE));
-
 /**
  * \brief PETSc  Discrete Manager data structure
  *
@@ -876,7 +891,7 @@ static const MOFEMuuid IDD_DMCTX = MOFEMuuid(BitIntefaceId(DMCTX_INTERFACE));
  */
 struct DMCtx : public UnknownInterface {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
   Interface *mField_ptr;    ///< MoFEM interface

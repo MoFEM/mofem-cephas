@@ -23,8 +23,6 @@
 
 namespace MoFEM {
 
-static const MOFEMuuid IDD_MOFEMComm = MOFEMuuid(BitIntefaceId(COMM_INTERFACE));
-
 /**
  * \brief Managing BitRefLevels
  * \ingroup mofem_bit_ref
@@ -32,8 +30,7 @@ static const MOFEMuuid IDD_MOFEMComm = MOFEMuuid(BitIntefaceId(COMM_INTERFACE));
  */
 struct CommInterface : public UnknownInterface {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 UnknownInterface **iface) const;
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index, UnknownInterface **iface) const;
 
   MoFEM::Core &cOre;
   bool dEbug;

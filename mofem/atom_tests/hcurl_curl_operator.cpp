@@ -3,10 +3,10 @@
  * \brief Testich curl-curl operator by applying Stokes theorem
  * \example hcurl_curl_operator.cpp
  *
- * Using PipelineManager interface calculate the curl of base functions, and integral of
- * the vector tangent vector with normal on the boundary. Since the h-curl space
- * is used, volume integral and boundary integral should give the same result,
- * as a result, as we are applying Stokes theorem on h-curl space.
+ * Using PipelineManager interface calculate the curl of base functions, and
+ * integral of the vector tangent vector with normal on the boundary. Since the
+ * h-curl space is used, volume integral and boundary integral should give the
+ * same result, as a result, as we are applying Stokes theorem on h-curl space.
  *
  */
 
@@ -30,10 +30,10 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
-struct OpTetCurl : public VolumeElementForcesAndSourcesCore::UserDataOperator {
+struct OpVolCurl : public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
   FTensor::Tensor1<double, 3> &tCurl;
-  OpTetCurl(FTensor::Tensor1<double, 3> &t_curl)
+  OpVolCurl(FTensor::Tensor1<double, 3> &t_curl)
       : VolumeElementForcesAndSourcesCore::UserDataOperator(
             "HCURL", UserDataOperator::OPROW),
         tCurl(t_curl) {}
@@ -110,10 +110,14 @@ int main(int argc, char *argv[]) {
 
     if (ho_geometry == PETSC_TRUE)
       CHKERR simple_interface->addDataField("MESH_NODE_POSITIONS", H1,
-                                           AINSWORTH_LEGENDRE_BASE, 3);
+                                            AINSWORTH_LEGENDRE_BASE, 3);
 
-    constexpr int order = 5;
+    constexpr int order = 3;
     CHKERR simple_interface->setFieldOrder("HCURL", order);
+    // Range ents;
+    // CHKERR moab.get_entities_by_dimension(0, 2, ents, true);
+    // CHKERR simple_interface->setFieldOrder("HCURL", 1, &ents);
+
     if (ho_geometry == PETSC_TRUE)
       CHKERR simple_interface->setFieldOrder("MESH_NODE_POSITIONS", 2);
     CHKERR simple_interface->setUp();
@@ -125,8 +129,51 @@ int main(int argc, char *argv[]) {
     FTensor::Tensor1<double, 3> t_curl_vol;
     FTensor::Tensor1<double, 3> t_curl_skin;
 
+    auto material_grad_mat = boost::make_shared<MatrixDouble>();
+    auto material_det_vec = boost::make_shared<VectorDouble>();
+    auto material_inv_grad_mat = boost::make_shared<MatrixDouble>();
+    auto jac_ptr = boost::make_shared<MatrixDouble>();
+    auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
+    auto det_ptr = boost::make_shared<VectorDouble>();
+
+    boost::dynamic_pointer_cast<VolumeElementForcesAndSourcesCoreBase>(
+        pipeline_mng->getDomainRhsFE())
+        ->meshPositionsFieldName = "none";
+    boost::dynamic_pointer_cast<PipelineManager::FaceEle>(
+        pipeline_mng->getBoundaryRhsFE())
+        ->meshPositionsFieldName = "none";
+
     pipeline_mng->getOpDomainRhsPipeline().push_back(
-        new OpTetCurl(t_curl_vol));
+        new OpCalculateHOJacVolume(jac_ptr));
+    pipeline_mng->getOpDomainRhsPipeline().push_back(
+        new OpInvertMatrix<3>(jac_ptr, det_ptr, inv_jac_ptr));
+    pipeline_mng->getOpDomainRhsPipeline().push_back(
+        new OpSetHOWeights(det_ptr));
+    pipeline_mng->getOpDomainRhsPipeline().push_back(
+        new OpSetHOCovariantPiolaTransform(HCURL, inv_jac_ptr));
+    pipeline_mng->getOpDomainRhsPipeline().push_back(
+        new OpSetHOInvJacVectorBase(HCURL, inv_jac_ptr));
+
+    if (ho_geometry) {
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
+          new OpCalculateVectorFieldGradient<3, 3>("MESH_NODE_POSITIONS",
+                                                   material_grad_mat));
+      pipeline_mng->getOpDomainRhsPipeline().push_back(new OpInvertMatrix<3>(
+          material_grad_mat, material_det_vec, material_inv_grad_mat));
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
+          new OpSetHOWeights(material_det_vec));
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
+          new OpSetHOCovariantPiolaTransform(HCURL, material_inv_grad_mat));
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
+          new OpSetHOInvJacVectorBase(HCURL, material_inv_grad_mat));
+    } 
+    pipeline_mng->getOpDomainRhsPipeline().push_back(new OpVolCurl(t_curl_vol));
+
+    if (m_field.check_field("MESH_NODE_POSITIONS"))
+      pipeline_mng->getOpBoundaryRhsPipeline().push_back(
+          new OpGetHONormalsOnFace("MESH_NODE_POSITIONS"));
+    pipeline_mng->getOpBoundaryRhsPipeline().push_back(
+        new OpHOSetCovariantPiolaTransformOnFace3D(HCURL));
     pipeline_mng->getOpBoundaryRhsPipeline().push_back(
         new OpFacesRot(t_curl_skin));
 
@@ -145,9 +192,6 @@ int main(int argc, char *argv[]) {
 
     std::cout.precision(12);
 
-    std::cout << "curl_vol " << t_curl_vol << std::endl;
-    std::cout << "curl_skin " << t_curl_skin << std::endl;
-
     t_curl_vol(i) -= t_curl_skin(i);
     double nrm2 = sqrt(t_curl_vol(i) * t_curl_vol(i));
 
@@ -161,7 +205,7 @@ int main(int argc, char *argv[]) {
   MoFEM::Core::Finalize();
 }
 
-MoFEMErrorCode OpTetCurl::doWork(int side, EntityType type,
+MoFEMErrorCode OpVolCurl::doWork(int side, EntityType type,
                                  DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
 
@@ -173,20 +217,19 @@ MoFEMErrorCode OpTetCurl::doWork(int side, EntityType type,
 
   MatrixDouble curl_mat;
   FTensor::Index<'i', 3> i;
+  FTensor::Index<'j', 3> j;
+  FTensor::Index<'k', 3> k;
+
+  auto t_curl_base = data.getFTensor2DiffN<3, 3>();
 
   unsigned int gg = 0;
   for (; gg < nb_gauss_pts; gg++) {
     double w = getGaussPts()(3, gg) * getVolume();
-    if (getHoGaussPtsDetJac().size() == nb_gauss_pts) {
-      // if ho geometry is given
-      w *= getHoGaussPtsDetJac()(gg);
-    }
-    CHKERR getCurlOfHCurlBaseFunctions(side, type, data, gg, curl_mat);
-    FTensor::Tensor1<double *, 3> t_curl(&curl_mat(0, 0), &curl_mat(0, 1),
-                                         &curl_mat(0, 2), 3);
+    FTensor::Tensor1<double, 3> t_curl;
     for (unsigned int dd = 0; dd != nb_dofs; dd++) {
+      t_curl(i) = levi_civita(j, i, k) * t_curl_base(j, k);
       tCurl(i) += w * t_curl(i);
-      ++t_curl;
+      ++t_curl_base;
     }
   }
 
@@ -203,10 +246,6 @@ MoFEMErrorCode OpFacesRot::doWork(int side, EntityType type,
   int nb_gauss_pts = data.getN().size1();
 
   auto t_curl_base = data.getFTensor1N<3>();
-  // double area = getArea();
-  double n0 = getNormal()[0] * 0.5;
-  double n1 = getNormal()[1] * 0.5;
-  double n2 = getNormal()[2] * 0.5;
 
   FTensor::Index<'i', 3> i;
   FTensor::Index<'j', 3> j;
@@ -214,16 +253,16 @@ MoFEMErrorCode OpFacesRot::doWork(int side, EntityType type,
   for (int gg = 0; gg < nb_gauss_pts; gg++) {
     for (int dd = 0; dd < nb_dofs; dd++) {
       double w = getGaussPts()(2, gg);
-      if (getNormalsAtGaussPts().size1() == (unsigned int)nb_gauss_pts) {
-        n0 = getNormalsAtGaussPts(gg)[0] * 0.5;
-        n1 = getNormalsAtGaussPts(gg)[1] * 0.5;
-        n2 = getNormalsAtGaussPts(gg)[2] * 0.5;
+      const double n0 = getNormalsAtGaussPts(gg)[0];
+      const double n1 = getNormalsAtGaussPts(gg)[1];
+      const double n2 = getNormalsAtGaussPts(gg)[2];
+      if (getFEType() == MBTRI) {
+        w *= 0.5;
       }
 
       tCurl(0) += (n1 * t_curl_base(2) - n2 * t_curl_base(1)) * w;
       tCurl(1) += (n2 * t_curl_base(0) - n0 * t_curl_base(2)) * w;
       tCurl(2) += (n0 * t_curl_base(1) - n1 * t_curl_base(0)) * w;
-
       ++t_curl_base;
     }
   }

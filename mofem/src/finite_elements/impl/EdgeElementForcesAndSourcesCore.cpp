@@ -34,9 +34,7 @@ namespace MoFEM {
 EdgeElementForcesAndSourcesCoreBase::EdgeElementForcesAndSourcesCoreBase(
     Interface &m_field)
     : ForcesAndSourcesCore(m_field),
-      meshPositionsFieldName("MESH_NODE_POSITIONS"),
-      opGetHoTangentOnEdge(tangentAtGaussPts),
-      opCovariantTransform(dIrection, tangentAtGaussPts) {
+      meshPositionsFieldName("MESH_NODE_POSITIONS") {
   getElementPolynomialBase() =
       boost::shared_ptr<BaseFunction>(new EdgePolynomialBase());
 }
@@ -108,56 +106,37 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCoreBase::setIntegrationPts() {
 
 MoFEMErrorCode
 EdgeElementForcesAndSourcesCoreBase::calculateCoordsAtIntegrationPts() {
+  FTensor::Index<'i', 3> i;
   MoFEMFunctionBeginHot;
-  const int nb_gauss_pts = gaussPts.size2();
+  const auto nb_gauss_pts = gaussPts.size2();
   coordsAtGaussPts.resize(nb_gauss_pts, 3, false);
+  tangentAtGaussPts.resize(nb_gauss_pts, 3, false);
+
   if (nb_gauss_pts) {
     FTensor::Tensor0<FTensor::PackPtr<double *, 1>> t_ksi(
         &*gaussPts.data().begin());
     FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords(
         &coordsAtGaussPts(0, 0), &coordsAtGaussPts(0, 1),
         &coordsAtGaussPts(0, 2));
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_tangent(
+        &tangentAtGaussPts(0, 0), &tangentAtGaussPts(0, 1),
+        &tangentAtGaussPts(0, 2));
+
     FTensor::Tensor1<double, 3> t_coords_node0(cOords[0], cOords[1], cOords[2]);
     FTensor::Tensor1<double, 3> t_coords_node1(cOords[3], cOords[4], cOords[5]);
-    FTensor::Index<'i', 3> i;
+    FTensor::Tensor1<double, 3> t_dir;
+    t_dir(i) = t_coords_node1(i) - t_coords_node0(i);
+
     for (int gg = 0; gg != nb_gauss_pts; ++gg) {
       t_coords(i) = N_MBEDGE0(t_ksi) * t_coords_node0(i) +
                     N_MBEDGE1(t_ksi) * t_coords_node1(i);
+      t_tangent(i) = t_dir(i);
+      ++t_tangent;
       ++t_coords;
       ++t_ksi;
     }
   }
   MoFEMFunctionReturnHot(0);
-}
-
-MoFEMErrorCode
-EdgeElementForcesAndSourcesCoreBase::calculateHoCoordsAtIntegrationPts() {
-  MoFEMFunctionBegin;
-
-  auto check_field = [&]() {
-    auto field_it =
-        fieldsPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName);
-    if (field_it != fieldsPtr->get<FieldName_mi_tag>().end()) {
-      if (
-
-          (numeredEntFiniteElementPtr->getBitFieldIdData() &
-           (*field_it)->getId())
-              .any()
-
-      )
-        return true;
-    }
-    return false;
-  };
-
-  if (check_field()) {
-    CHKERR getNodesFieldData(dataH1, meshPositionsFieldName);
-    CHKERR getEntityFieldData(dataH1, meshPositionsFieldName, MBEDGE);
-    CHKERR opGetHoTangentOnEdge.opRhs(dataH1);
-  } else {
-    tangentAtGaussPts.resize(0, 3, false);
-  }
-  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode EdgeElementForcesAndSourcesCoreBase::UserDataOperator::setPtrFE(

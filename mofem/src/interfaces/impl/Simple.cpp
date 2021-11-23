@@ -19,16 +19,10 @@
 
 namespace MoFEM {
 
-MoFEMErrorCode Simple::query_interface(const MOFEMuuid &uuid,
+MoFEMErrorCode Simple::query_interface(boost::typeindex::type_index type_index,
                                        UnknownInterface **iface) const {
-  MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_MOFEMSimple) {
-    *iface = const_cast<Simple *>(this);
-    MoFEMFunctionReturnHot(0);
-  }
-  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
-  MoFEMFunctionReturnHot(0);
+  *iface = const_cast<Simple *>(this);
+  return 0;
 }
 
 template <int DIM> MoFEMErrorCode Simple::setSkeletonAdjacency() {
@@ -710,6 +704,33 @@ MoFEMErrorCode Simple::getDM(DM *dm) {
   MoFEMFunctionBegin;
   CHKERR PetscObjectReference(getPetscObject(dM.get()));
   *dm = dM.get();
+  MoFEMFunctionReturn(0);
+}
+
+/**
+ * @brief Delete dm
+ *
+ * @return MoFEMErrorCode
+ */
+MoFEMErrorCode Simple::deleteDM() {
+  MoFEMFunctionBegin;
+  dM.reset();
+  MoFEMFunctionReturn(0);
+}
+
+/**
+ * @brief Delete finite elements
+ *
+ * @return MoFEMErrorCode
+ */
+MoFEMErrorCode Simple::deleteFiniteElements() {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+  for (auto fe : {domainFE, boundaryFE, skeletonFE}) {
+    if (m_field.check_finite_element(fe)) {
+      CHKERR m_field.delete_finite_element(fe);
+    }
+  }
   MoFEMFunctionReturn(0);
 }
 

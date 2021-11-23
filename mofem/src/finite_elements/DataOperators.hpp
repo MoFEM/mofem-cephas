@@ -157,45 +157,6 @@ struct OpSetInvJacHdivAndHcurl : public DataOperator {
                         DataForcesAndSourcesCore::EntData &data);
 };
 
-/**
- * \brief transform local reference derivatives of shape function to global
- derivatives if higher order geometry is given
-
- * \ingroup mofem_forces_and_sources
-*/
-struct OpSetHoInvJacH1 : public DataOperator {
-
-  MatrixDouble &invHoJac;
-  FTensor::Index<'i', 3> i;
-  FTensor::Index<'j', 3> j;
-  OpSetHoInvJacH1(MatrixDouble &inv_ho_jac) : invHoJac(inv_ho_jac) {}
-
-  MatrixDouble diffNinvJac;
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
-};
-
-/**
- * \brief transform local reference derivatives of shape function to global
- derivatives if higher order geometry is given
- *
-
- * \ingroup mofem_forces_and_sources
-*/
-struct OpSetHoInvJacHdivAndHcurl : public DataOperator {
-
-  MatrixDouble &invHoJac;
-  FTensor::Index<'i', 3> i;
-  FTensor::Index<'j', 3> j;
-  FTensor::Index<'k', 3> k;
-
-  OpSetHoInvJacHdivAndHcurl(MatrixDouble &inv_ho_jac) : invHoJac(inv_ho_jac) {}
-
-  MatrixDouble diffHdivInvJac;
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
-};
-
 /** \brief apply contravariant (Piola) transfer to Hdiv space
 
 Contravariant Piola transformation
@@ -227,44 +188,6 @@ struct OpSetContravariantPiolaTransform : public DataOperator {
   MatrixDouble piolaN;
   MatrixDouble piolaDiffN;
 
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
-};
-
-/** \brief Apply contravariant (Piola) transfer to Hdiv space for HO geometr
-
-* \ingroup mofem_forces_and_sources
-*/
-struct OpSetHoContravariantPiolaTransform : public DataOperator {
-
-  VectorDouble &detHoJac;
-  MatrixDouble &hoJac;
-  FTensor::Index<'i', 3> i;
-  FTensor::Index<'j', 3> j;
-  FTensor::Index<'k', 3> k;
-
-  OpSetHoContravariantPiolaTransform(VectorDouble &det_jac, MatrixDouble &jac)
-      : detHoJac(det_jac), hoJac(jac) {}
-
-  MatrixDouble piolaN;
-  MatrixDouble piolaDiffN;
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
-};
-
-/** \brief Apply covariant (Piola) transfer to Hcurl space for HO geometry
- */
-struct OpSetHoCovariantPiolaTransform : public DataOperator {
-
-  MatrixDouble &hoInvJac;
-  FTensor::Index<'i', 3> i;
-  FTensor::Index<'j', 3> j;
-  FTensor::Index<'k', 3> k;
-
-  OpSetHoCovariantPiolaTransform(MatrixDouble &inv_jac) : hoInvJac(inv_jac) {}
-
-  MatrixDouble piolaN;
-  MatrixDouble piolaDiffN;
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
 };
@@ -439,32 +362,6 @@ template <>
 MoFEMErrorCode OpGetDataAndGradient<1, 3>::calculateValAndGrad(
     int side, EntityType type, DataForcesAndSourcesCore::EntData &data);
 
-/** \brief Calculate normals at Gauss points of triangle element
- * \ingroup mofem_forces_and_source
- */
-struct OpGetCoordsAndNormalsOnFace : public DataOperator {
-
-  MatrixDouble &cOords_at_GaussPt;
-  MatrixDouble &nOrmals_at_GaussPt;
-  MatrixDouble &tAngent1_at_GaussPt;
-  MatrixDouble &tAngent2_at_GaussPt;
-
-  OpGetCoordsAndNormalsOnFace(MatrixDouble &coords_at_gausspt,
-                              MatrixDouble &normals_at_gausspt,
-                              MatrixDouble &tangent1_at_gausspt,
-                              MatrixDouble &tangent2_at_gausspt)
-      : cOords_at_GaussPt(coords_at_gausspt),
-        nOrmals_at_GaussPt(normals_at_gausspt),
-        tAngent1_at_GaussPt(tangent1_at_gausspt),
-        tAngent2_at_GaussPt(tangent2_at_gausspt) {}
-
-  MatrixDouble sPin;
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
-
-  MoFEMErrorCode calculateNormals();
-};
-
 /** \brief calculate normals at Gauss points of triangle element
  * \ingroup mofem_forces_and_sources
  */
@@ -502,6 +399,9 @@ struct OpGetCoordsAndNormalsOnPrism : public DataOperator {
 
 /** \brief transform Hdiv base fluxes from reference element to physical
  * triangle \ingroup mofem_forces_and_sources
+ *
+ * \deprecated It is used in contact elements. Contact elements should be
+ * minified to work as face element,
  */
 struct OpSetContravariantPiolaTransformOnFace : public DataOperator {
 
@@ -540,6 +440,9 @@ struct OpSetContravariantPiolaTransformOnFace : public DataOperator {
 
 /** \brief transform Hcurl base fluxes from reference element to physical
  * triangle \ingroup mofem_forces_and_sources
+ * 
+ * \deprecated It is used in contact elements. Contact elements should be
+ * minified to work as face element,
  */
 struct OpSetCovariantPiolaTransformOnFace : public DataOperator {
 
@@ -567,11 +470,11 @@ struct OpSetCovariantPiolaTransformOnFace : public DataOperator {
 /** \brief Calculate tangent vector on edge form HO geometry approximation
  * \ingroup mofem_forces_and_sources
  */
-struct OpGetHoTangentOnEdge : public DataOperator {
+struct OpGetHOTangentOnEdge : public DataOperator {
 
   MatrixDouble &tAngent;
 
-  OpGetHoTangentOnEdge(MatrixDouble &tangent) : tAngent(tangent) {}
+  OpGetHOTangentOnEdge(MatrixDouble &tangent) : tAngent(tangent) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);

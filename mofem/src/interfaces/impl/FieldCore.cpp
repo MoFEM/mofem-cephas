@@ -271,6 +271,8 @@ MoFEMErrorCode Core::addField(const std::string &name, const FieldSpace space,
                Field(moab, meshset).getName().c_str());
   }
 
+  MOFEM_LOG_CHANNEL("WORLD");
+  MOFEM_LOG_CHANNEL("SYNC");
   MoFEMFunctionReturn(0);
 }
 
@@ -290,6 +292,11 @@ MoFEMErrorCode Core::addEntsToFieldByDim(const Range &ents, const int dim,
   EntityHandle idm = no_handle;
   if (verb == -1)
     verb = verbose;
+
+  MOFEM_LOG_CHANNEL("SYNC");
+  MOFEM_LOG_TAG("SYNC", "FieldCore");
+  MOFEM_LOG_FUNCTION();
+
   MoFEMFunctionBegin;
   idm = get_field_meshset(name);
   FieldSpace space;
@@ -298,13 +305,6 @@ MoFEMErrorCode Core::addEntsToFieldByDim(const Range &ents, const int dim,
   switch (space) {
   case L2:
     CHKERR get_moab().add_entities(idm, ents);
-    if (verb >= VERY_VERBOSE) {
-      std::ostringstream ss;
-      ss << "add entities to field " << name;
-      ss << " nb. add ents " << ents.size();
-      ss << std::endl;
-      PetscSynchronizedPrintf(mofemComm, ss.str().c_str());
-    }
     break;
   case H1:
     CHKERR get_moab().add_entities(idm, ents);
@@ -348,16 +348,13 @@ MoFEMErrorCode Core::addEntsToFieldByDim(const Range &ents, const int dim,
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "sorry, unknown space added to entity");
   }
-  if (verb >= VERY_VERBOSE) {
-    std::ostringstream ss;
-    ss << "add entities to field " << name;
-    ss << " nb. add ents " << ents.size();
-    ss << " nb. add faces " << nb_ents_on_dim[2];
-    ss << " nb. add edges " << nb_ents_on_dim[1];
-    ss << " nb. add nodes " << nb_ents_on_dim[0];
-    ss << std::endl;
-    PetscSynchronizedPrintf(mofemComm, ss.str().c_str());
-    PetscSynchronizedFlush(mofemComm, PETSC_STDOUT);
+  if (verb >= VERBOSE) {
+    MOFEM_LOG("SYNC", Sev::noisy) << "add entities to field " << name;
+    MOFEM_LOG("SYNC", Sev::noisy) << "\tnb. add ents " << ents.size();
+    MOFEM_LOG("SYNC", Sev::noisy) << "\tnb. add faces " << nb_ents_on_dim[2];
+    MOFEM_LOG("SYNC", Sev::noisy) << "\tnb. add edges " << nb_ents_on_dim[1];
+    MOFEM_LOG("SYNC", Sev::noisy) << "\tnb. add nodes " << nb_ents_on_dim[0];
+    MOFEM_LOG_SYNCHRONISE(mofemComm);
   }
   MoFEMFunctionReturn(0);
 }
@@ -464,10 +461,11 @@ MoFEMErrorCode Core::setFieldOrderImpl(boost::shared_ptr<Field> field_ptr,
   CHKERR get_moab().get_entities_by_handle(field_meshset, ents_of_id_meshset,
                                            false);
   Range field_ents = intersect(ents, ents_of_id_meshset);
-  if (verb > QUIET)
+  if (verb > QUIET) {
     MOFEM_LOG_C("SYNC", Sev::noisy,
                 "change nb. of ents for order in the field <%s> %d",
-                field_ptr->getName().c_str(), field_ents.size());
+                field_ptr->getName().c_str(), field_ents.size(), ents.size());
+  }
 
   // ent view by field id (in set all MoabEnts has the same FieldId)
   auto eiit = entsFields.get<Unique_mi_tag>().lower_bound(
@@ -497,22 +495,24 @@ MoFEMErrorCode Core::setFieldOrderImpl(boost::shared_ptr<Field> field_ptr,
     EntityHandle first = pit->first;
     EntityHandle second = pit->second;
 
+    const auto type = static_cast<EntityType>(first >> MB_ID_WIDTH);
+
     // Sanity check
     switch (field_ptr->getSpace()) {
     case H1:
       break;
     case HCURL:
-      if (get_moab().type_from_handle(first) == MBVERTEX)
+      if (type == MBVERTEX)
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Hcurl space on vertices makes no sense");
 
       break;
     case HDIV:
-      if (get_moab().type_from_handle(first) == MBVERTEX)
+      if (type == MBVERTEX)
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Hdiv space on vertices makes no sense");
 
-      if (get_moab().type_from_handle(first) == MBEDGE)
+      if (type == MBEDGE)
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Hdiv space on edges makes no sense");
 
@@ -582,9 +582,19 @@ MoFEMErrorCode Core::setFieldOrderImpl(boost::shared_ptr<Field> field_ptr,
     Range new_ents = subtract(Range(first, second), ents_in_database);
     for (Range::const_pair_iterator pit = new_ents.const_pair_begin();
          pit != new_ents.const_pair_end(); ++pit) {
-      EntityHandle first = pit->first;
-      EntityHandle second = pit->second;
-      const EntityType ent_type = get_moab().type_from_handle(first);
+      const auto first = pit->first;
+      const auto second = pit->second;
+      const auto ent_type = get_moab().type_from_handle(first);
+      
+      if (!field_ptr->getFieldOrderTable()[ent_type])
+        SETERRQ3(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "Number of degrees of freedom for entity %s for %s space on "
+                 "base %s can "
+                 "not be deduced",
+                 moab::CN::EntityTypeName(ent_type),
+                 field_ptr->getSpaceName().c_str(),
+                 field_ptr->getApproxBaseName().c_str());
+
       auto get_nb_dofs_on_order = [&](const int order) {
         return order >= 0 ? (field_ptr->getFieldOrderTable()[ent_type])(order)
                           : 0;
@@ -871,7 +881,8 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
   MOFEM_LOG("WORLD", Sev::noisy)
       << "Field " << (*field_it)->getName() << " core value < "
       << this->getValue() << " > field value ( "
-      << static_cast<int>((*field_it)->getBitNumber()) << " )";
+      << static_cast<int>((*field_it)->getBitNumber()) << " )"
+      << " nb. of ents " << ents.size();
 
   CHKERR this->setFieldOrderImpl(*field_it, ents, order, verb);
 
@@ -887,14 +898,7 @@ MoFEMErrorCode Core::set_field_order(const EntityHandle meshset,
   *buildMoFEM = 0;
   Range ents;
   CHKERR get_moab().get_entities_by_type(meshset, type, ents);
-  if (verb > VERBOSE) {
-    PetscSynchronizedPrintf(mofemComm, "nb. of ents for order change %d\n",
-                            ents.size());
-  }
   CHKERR this->set_field_order(ents, id, order, verb);
-  if (verb > VERBOSE) {
-    PetscSynchronizedFlush(mofemComm, PETSC_STDOUT);
-  }
   MoFEMFunctionReturn(0);
 }
 MoFEMErrorCode Core::set_field_order(const EntityHandle meshset,
@@ -1223,45 +1227,10 @@ MoFEMErrorCode Core::buildField(const boost::shared_ptr<Field> &field,
     int nb_added_dofs = 0;
     int nb_inactive_added_dofs = 0;
     for (auto const &it : dof_counter) {
-      switch (it.first) {
-      case MBVERTEX:
-        MOFEM_LOG("SYNC", Sev::verbose)
-            << "Nb. of dofs (vertices) " << it.second << " (inactive "
-            << inactive_dof_counter[it.first] << ")";
-        break;
-      case MBEDGE:
-        MOFEM_LOG("SYNC", Sev::verbose)
-            << "Nb. of dofs (edge) " << it.second << " (inactive "
-            << inactive_dof_counter[it.first] << ")";
-        break;
-      case MBTRI:
-        MOFEM_LOG("SYNC", Sev::verbose)
-            << "Nb. of dofs (triangles) " << it.second << " (inactive "
-            << inactive_dof_counter[it.first] << ")";
-        break;
-      case MBQUAD:
-        MOFEM_LOG("SYNC", Sev::verbose)
-            << "Nb. of dofs (quads) " << it.second << " (inactive "
-            << inactive_dof_counter[it.first] << ")";
-        break;
-      case MBTET:
-        MOFEM_LOG("SYNC", Sev::verbose)
-            << "Nb. of dofs (tetrahedra) " << it.second << " (inactive "
-            << inactive_dof_counter[it.first] << ")";
-        break;
-      case MBPRISM:
-        MOFEM_LOG("SYNC", Sev::verbose)
-            << "Nb. of dofs (prisms) " << it.second << " (inactive "
-            << inactive_dof_counter[it.first] << ")";
-        break;
-      case MBENTITYSET:
-        MOFEM_LOG("SYNC", Sev::verbose)
-            << "Nb. of dofs (meshsets) " << it.second << " (inactive "
-            << inactive_dof_counter[it.first] << ")";
-        break;
-      default:
-        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
-      }
+      MOFEM_LOG("SYNC", Sev::verbose)
+          << "Nb. of dofs (" << moab::CN::EntityTypeName(it.first) << ") "
+          << it.second << " (inactive " << inactive_dof_counter[it.first]
+          << ")";
       nb_added_dofs += it.second;
       nb_inactive_added_dofs += inactive_dof_counter[it.first];
     }

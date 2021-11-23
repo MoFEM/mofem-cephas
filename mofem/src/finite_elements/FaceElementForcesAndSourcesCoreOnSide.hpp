@@ -223,7 +223,7 @@ MatrixDouble &FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::
 template <int SWITCH>
 MoFEMErrorCode FaceElementForcesAndSourcesCoreOnSideSwitch<SWITCH>::
 operator()() {
-  return OpSwitch<SWITCH>();
+  return opSwitch<SWITCH>();
 }
 
 } // namespace MoFEM

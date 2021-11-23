@@ -165,12 +165,14 @@ struct OpCalculateScalarFieldValues
  *
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
-struct OpCalculateScalarFieldValuesDot
+
+template <PetscData::DataContext CTX>
+struct OpCalculateScalarFieldValuesFromPetscVecImpl
     : public ForcesAndSourcesCore::UserDataOperator {
 
-  OpCalculateScalarFieldValuesDot(const std::string field_name,
-                                  boost::shared_ptr<VectorDouble> data_ptr,
-                                  const EntityType zero_at_type = MBVERTEX)
+  OpCalculateScalarFieldValuesFromPetscVecImpl(
+      const std::string field_name, boost::shared_ptr<VectorDouble> data_ptr,
+      const EntityType zero_at_type = MBVERTEX)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
         dataPtr(data_ptr), zeroAtType(zero_at_type) {
@@ -183,6 +185,7 @@ struct OpCalculateScalarFieldValuesDot
     MoFEMFunctionBegin;
 
     const size_t nb_gauss_pts = getGaussPts().size2();
+
     VectorDouble &vec = *dataPtr;
     if (type == zeroAtType) {
       vec.resize(nb_gauss_pts, false);
@@ -193,15 +196,56 @@ struct OpCalculateScalarFieldValuesDot
     const size_t nb_dofs = local_indices.size();
     if (nb_dofs) {
 
-      std::array<double, MAX_DOFS_ON_ENTITY> dot_dofs_vector;
       const double *array;
-      CHKERR VecGetArrayRead(getFEMethod()->ts_u_t, &array);
-      for (size_t i = 0; i != local_indices.size(); ++i)
+
+      auto get_array = [&](const auto ctx, auto vec) {
+        MoFEMFunctionBegin;
+        if ((getFEMethod()->data_ctx & ctx).none())
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Vector not set");
+        CHKERR VecGetArrayRead(vec, &array);
+        MoFEMFunctionReturn(0);
+      };
+
+      auto restore_array = [&](auto vec) {
+        return VecRestoreArrayRead(vec, &array);
+      };
+
+      switch (CTX) {
+      case PetscData::CTX_SET_X:
+        CHKERR get_array(PetscData::CtxSetX, getFEMethod()->ts_u);
+        break;
+      case PetscData::CTX_SET_X_T:
+        CHKERR get_array(PetscData::CtxSetX_T, getFEMethod()->ts_u_t);
+        break;
+      case PetscData::CTX_SET_X_TT:
+        CHKERR get_array(PetscData::CtxSetX_TT, getFEMethod()->ts_u_tt);
+        break;
+      default:
+        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                "That case is not implemented");
+      }
+
+      std::array<double, MAX_DOFS_ON_ENTITY> dot_dofs_vector;
+      for (int i = 0; i != local_indices.size(); ++i)
         if (local_indices[i] != -1)
           dot_dofs_vector[i] = array[local_indices[i]];
         else
           dot_dofs_vector[i] = 0;
-      CHKERR VecRestoreArrayRead(getFEMethod()->ts_u_t, &array);
+
+      switch (CTX) {
+      case PetscData::CTX_SET_X:
+        CHKERR restore_array(getFEMethod()->ts_u);
+        break;
+      case PetscData::CTX_SET_X_T:
+        CHKERR restore_array(getFEMethod()->ts_u_t);
+        break;
+      case PetscData::CTX_SET_X_TT:
+        CHKERR restore_array(getFEMethod()->ts_u_tt);
+        break;
+      default:
+        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                "That case is not implemented");
+      }
 
       const size_t nb_base_functions = data.getN().size2();
       auto base_function = data.getFTensor0N();
@@ -227,6 +271,11 @@ private:
   boost::shared_ptr<VectorDouble> dataPtr;
   const EntityHandle zeroAtType;
 };
+
+using OpCalculateScalarFieldValuesDot =
+    OpCalculateScalarFieldValuesFromPetscVecImpl<PetscData::CTX_SET_X_T>;
+using OpCalculateScalarFieldValuesDotDot =
+    OpCalculateScalarFieldValuesFromPetscVecImpl<PetscData::CTX_SET_X_TT>;
 
 /**
  * \depreacted Name inconstent with other operators
@@ -383,62 +432,15 @@ struct OpCalculateVectorFieldValues
 
 /**@{*/
 
-/** \brief Calculate divergence of vector field values for tenor field rank 1,
- * i.e. vector field
- *
- */
-template <int Tensor_Dim, class T, class L, class A>
-struct OpCalculateDivergenceVectorFieldValues_General
-    : public ForcesAndSourcesCore::UserDataOperator {
-
-  OpCalculateDivergenceVectorFieldValues_General(
-      const std::string field_name,
-      boost::shared_ptr<ublas::matrix<T, L, A>> data_ptr,
-      const EntityType zero_type = MBVERTEX)
-      : ForcesAndSourcesCore::UserDataOperator(
-            field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
-        dataPtr(data_ptr), zeroType(zero_type) {
-    if (!dataPtr)
-      THROW_MESSAGE("Pointer is not set");
-  }
-
-  /**
-   * \brief calculate divergence values of vector field at integration points
-   * @param  side side entity number
-   * @param  type side entity type
-   * @param  data entity data
-   * @return      error code
-   */
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
-
-protected:
-  boost::shared_ptr<ublas::matrix<T, L, A>> dataPtr;
-  const EntityHandle zeroType;
-};
-
-template <int Tensor_Dim, class T, class L, class A>
-MoFEMErrorCode
-OpCalculateDivergenceVectorFieldValues_General<Tensor_Dim, T, L, A>::doWork(
-    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
-  MoFEMFunctionBeginHot;
-  SETERRQ2(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-           "Not implemented for T = %s and dim = %d",
-           typeid(T).name(), // boost::core::demangle(typeid(T).name()),
-           Tensor_Dim);
-  MoFEMFunctionReturnHot(0);
-}
-
 /** \brief Calculate field values (template specialization) for tensor field
  * rank 1, i.e. vector field
  *
  */
 template <int Tensor_Dim>
-struct OpCalculateDivergenceVectorFieldValues_General<
-    Tensor_Dim, double, ublas::row_major, DoubleAllocator>
+struct OpCalculateDivergenceVectorFieldValues
     : public ForcesAndSourcesCore::UserDataOperator {
 
-  OpCalculateDivergenceVectorFieldValues_General(
+  OpCalculateDivergenceVectorFieldValues(
       const std::string field_name, boost::shared_ptr<VectorDouble> data_ptr,
       const EntityType zero_type = MBVERTEX)
       : ForcesAndSourcesCore::UserDataOperator(
@@ -449,82 +451,59 @@ struct OpCalculateDivergenceVectorFieldValues_General<
   }
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        DataForcesAndSourcesCore::EntData &data) {
+    MoFEMFunctionBegin;
+
+    const size_t nb_gauss_pts = getGaussPts().size2();
+    auto &vec = *dataPtr;
+    if (type == zeroType) {
+      vec.resize(nb_gauss_pts, false);
+      vec.clear();
+    }
+
+    const size_t nb_dofs = data.getFieldData().size();
+    if (nb_dofs) {
+
+      if (nb_gauss_pts) {
+        const size_t nb_base_functions = data.getN().size2();
+        auto values_at_gauss_pts = getFTensor0FromVec(vec);
+        FTensor::Index<'I', Tensor_Dim> I;
+        const size_t size = nb_dofs / Tensor_Dim;
+#ifndef NDEBUG
+        if (nb_dofs % Tensor_Dim) {
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "Number of dofs should multiple of dimensions");
+        }
+#endif
+        auto diff_base_function = data.getFTensor1DiffN<Tensor_Dim>();
+        for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
+          auto field_data = data.getFTensor1FieldData<Tensor_Dim>();
+          size_t bb = 0;
+          for (; bb != size; ++bb) {
+            values_at_gauss_pts += field_data(I) * diff_base_function(I);
+            ++field_data;
+            ++diff_base_function;
+          }
+          // Number of dofs can be smaller than number of Tensor_Dim x base
+          // functions
+          for (; bb != nb_base_functions; ++bb)
+            ++diff_base_function;
+          ++values_at_gauss_pts;
+        }
+      }
+    }
+    MoFEMFunctionReturn(0);
+  }
 
 protected:
   boost::shared_ptr<VectorDouble> dataPtr;
   const EntityHandle zeroType;
 };
 
-/**
- * \brief Member function specialization calculating values for tenor field rank
- *
- */
-template <int Tensor_Dim>
-MoFEMErrorCode OpCalculateDivergenceVectorFieldValues_General<
-    Tensor_Dim, double, ublas::row_major,
-    DoubleAllocator>::doWork(int side, EntityType type,
-                             DataForcesAndSourcesCore::EntData &data) {
-  MoFEMFunctionBegin;
-
-  const size_t nb_gauss_pts = getGaussPts().size2();
-  auto &vec = *dataPtr;
-  if (type == zeroType) {
-    vec.resize(nb_gauss_pts, false);
-    vec.clear();
-  }
-
-  const size_t nb_dofs = data.getFieldData().size();
-  if (nb_dofs) {
-
-    if (nb_gauss_pts) {
-      const size_t nb_base_functions = data.getN().size2();
-      auto values_at_gauss_pts = getFTensor0FromVec(vec);
-      FTensor::Index<'I', Tensor_Dim> I;
-      const size_t size = nb_dofs / Tensor_Dim;
-      if (nb_dofs % Tensor_Dim) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "Data inconsistency");
-      }
-      auto diff_base_function = data.getFTensor1DiffN<Tensor_Dim>();
-      for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
-        auto field_data = data.getFTensor1FieldData<Tensor_Dim>();
-        size_t bb = 0;
-        for (; bb != size; ++bb) {
-          values_at_gauss_pts += field_data(I) * diff_base_function(I);
-          ++field_data;
-          ++diff_base_function;
-        }
-        // Number of dofs can be smaller than number of Tensor_Dim x base
-        // functions
-        for (; bb != nb_base_functions; ++bb)
-          ++diff_base_function;
-        ++values_at_gauss_pts;
-      }
-    }
-  }
-  MoFEMFunctionReturn(0);
-}
-
-/** \brief Get values at integration pts for tensor filed rank 1, i.e. vector
- * field
- *
- * \ingroup mofem_forces_and_sources_user_data_operators
- */
-template <int Tensor_Dim>
-struct OpCalculateDivergenceVectorFieldValues
-    : public OpCalculateDivergenceVectorFieldValues_General<
-          Tensor_Dim, double, ublas::row_major, DoubleAllocator> {
-
-  using OpCalculateDivergenceVectorFieldValues_General<
-      Tensor_Dim, double, ublas::row_major,
-      DoubleAllocator>::OpCalculateDivergenceVectorFieldValues_General;
-};
-
 /** \brief Approximate field valuse for given petsc vector
  *
  * \note Look at PetscData to see what vectors could be extarcted with that user
- * data opetaor.
+ * data operator.
  *
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
@@ -546,10 +525,13 @@ struct OpCalculateVectorFieldValuesFromPetscVecImpl
                         DataForcesAndSourcesCore::EntData &data) {
     MoFEMFunctionBegin;
     auto &local_indices = data.getLocalIndices();
-    const int nb_dofs = local_indices.size();
-    if (!nb_dofs && type == zeroAtType) {
-      dataPtr->resize(Tensor_Dim, 0, false);
-      MoFEMFunctionReturnHot(0);
+    const size_t nb_dofs = local_indices.size();
+    const size_t nb_gauss_pts = getGaussPts().size2();
+
+    MatrixDouble &mat = *dataPtr;
+    if (type == zeroAtType) {
+      mat.resize(Tensor_Dim, nb_gauss_pts, false);
+      mat.clear();
     }
     if (!nb_dofs)
       MoFEMFunctionReturnHot(0);
@@ -605,15 +587,10 @@ struct OpCalculateVectorFieldValuesFromPetscVecImpl
               "That case is not implemented");
     }
 
-    const size_t nb_gauss_pts = data.getN().size1();
     const size_t nb_base_functions = data.getN().size2();
-    MatrixDouble &mat = *dataPtr;
-    if (type == zeroAtType) {
-      mat.resize(Tensor_Dim, nb_gauss_pts, false);
-      mat.clear();
-    }
     auto base_function = data.getFTensor0N();
     auto values_at_gauss_pts = getFTensor1FromMat<Tensor_Dim>(mat);
+    
     FTensor::Index<'I', Tensor_Dim> I;
     const size_t size = nb_dofs / Tensor_Dim;
     if (nb_dofs % Tensor_Dim) {
@@ -1368,9 +1345,12 @@ struct OpCalculateVectorFieldGradientDot
 
     const auto &local_indices = data.getLocalIndices();
     const int nb_dofs = local_indices.size();
-    if (!nb_dofs && type == zeroAtType) {
-      dataPtr->resize(Tensor_Dim0 * Tensor_Dim1, 0, false);
-      MoFEMFunctionReturnHot(0);
+    const int nb_gauss_pts = this->getGaussPts().size2();
+
+    auto &mat = *this->dataPtr;
+    if (type == this->zeroAtType) {
+      mat.resize(Tensor_Dim0 * Tensor_Dim1, nb_gauss_pts, false);
+      mat.clear();
     }
     if (!nb_dofs)
       MoFEMFunctionReturnHot(0);
@@ -1385,13 +1365,8 @@ struct OpCalculateVectorFieldGradientDot
         dotVector[i] = 0;
     CHKERR VecRestoreArrayRead(getFEMethod()->ts_u_t, &array);
 
-    const int nb_gauss_pts = data.getN().size1();
+
     const int nb_base_functions = data.getN().size2();
-    ublas::matrix<double, ublas::row_major, DoubleAllocator> &mat = *dataPtr;
-    if (type == zeroAtType) {
-      mat.resize(Tensor_Dim0 * Tensor_Dim1, nb_gauss_pts, false);
-      mat.clear();
-    }
     auto diff_base_function = data.getFTensor1DiffN<Tensor_Dim1>();
     auto gradients_at_gauss_pts =
         getFTensor2FromMat<Tensor_Dim0, Tensor_Dim1>(mat);
@@ -1401,6 +1376,7 @@ struct OpCalculateVectorFieldGradientDot
     if (nb_dofs % Tensor_Dim0) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Data inconsistency");
     }
+    
     for (int gg = 0; gg < nb_gauss_pts; ++gg) {
       auto field_data = getFTensorDotData<Tensor_Dim0>();
       int bb = 0;
@@ -1705,10 +1681,10 @@ private:
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim0, class T, class L, class A>
-struct OpCalculateHdivVectorField_General
+struct OpCalculateHVecVectorField_General
     : public ForcesAndSourcesCore::UserDataOperator {
 
-  OpCalculateHdivVectorField_General(
+  OpCalculateHVecVectorField_General(
       const std::string field_name,
       boost::shared_ptr<ublas::matrix<T, L, A>> data_ptr,
       const EntityType zero_type = MBEDGE, const int zero_side = 0)
@@ -1736,7 +1712,7 @@ private:
 };
 
 template <int Tensor_Dim, class T, class L, class A>
-MoFEMErrorCode OpCalculateHdivVectorField_General<Tensor_Dim, T, L, A>::doWork(
+MoFEMErrorCode OpCalculateHVecVectorField_General<Tensor_Dim, T, L, A>::doWork(
     int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBeginHot;
   SETERRQ2(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
@@ -1750,11 +1726,11 @@ MoFEMErrorCode OpCalculateHdivVectorField_General<Tensor_Dim, T, L, A>::doWork(
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim>
-struct OpCalculateHdivVectorField_General<Tensor_Dim, double, ublas::row_major,
+struct OpCalculateHVecVectorField_General<Tensor_Dim, double, ublas::row_major,
                                           DoubleAllocator>
     : public ForcesAndSourcesCore::UserDataOperator {
 
-  OpCalculateHdivVectorField_General(const std::string field_name,
+  OpCalculateHVecVectorField_General(const std::string field_name,
                                      boost::shared_ptr<MatrixDouble> data_ptr,
                                      const EntityType zero_type = MBEDGE,
                                      const int zero_side = 0)
@@ -1782,7 +1758,7 @@ private:
 };
 
 template <int Tensor_Dim>
-MoFEMErrorCode OpCalculateHdivVectorField_General<
+MoFEMErrorCode OpCalculateHVecVectorField_General<
     Tensor_Dim, double, ublas::row_major,
     DoubleAllocator>::doWork(int side, EntityType type,
                              DataForcesAndSourcesCore::EntData &data) {
@@ -1819,22 +1795,22 @@ MoFEMErrorCode OpCalculateHdivVectorField_General<
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim>
-struct OpCalculateHdivVectorField
-    : public OpCalculateHdivVectorField_General<
+struct OpCalculateHVecVectorField
+    : public OpCalculateHVecVectorField_General<
           Tensor_Dim, double, ublas::row_major, DoubleAllocator> {
-  using OpCalculateHdivVectorField_General<
+  using OpCalculateHVecVectorField_General<
       Tensor_Dim, double, ublas::row_major,
-      DoubleAllocator>::OpCalculateHdivVectorField_General;
+      DoubleAllocator>::OpCalculateHVecVectorField_General;
 };
 
 /** \brief Get vector field for H-div approximation
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim>
-struct OpCalculateHdivVectorFieldDot
+struct OpCalculateHVecVectorFieldDot
     : public ForcesAndSourcesCore::UserDataOperator {
 
-  OpCalculateHdivVectorFieldDot(const std::string field_name,
+  OpCalculateHVecVectorFieldDot(const std::string field_name,
                                 boost::shared_ptr<MatrixDouble> data_ptr,
                                 const EntityType zero_type = MBEDGE,
                                 const int zero_side = 0)
@@ -1862,7 +1838,7 @@ private:
 };
 
 template <int Tensor_Dim>
-MoFEMErrorCode OpCalculateHdivVectorFieldDot<Tensor_Dim>::doWork(
+MoFEMErrorCode OpCalculateHVecVectorFieldDot<Tensor_Dim>::doWork(
     int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
   const size_t nb_integration_points = this->getGaussPts().size2();
@@ -2369,8 +2345,6 @@ struct OpCalculateHVecTensorTrace : public OpBase {
       auto t_normal = OpBase::getFTensor1Normal();
       t_normal(i) /= sqrt(t_normal(j) * t_normal(j));
       const size_t nb_base_functions = data.getN().size2() / 3;
-      FTensor::Index<'i', Tensor_Dim> i;
-      FTensor::Index<'j', Tensor_Dim> j;
       auto t_base = data.getFTensor1N<3>();
       auto t_data = getFTensor1FromMat<Tensor_Dim>(*dataPtr);
       for (size_t gg = 0; gg != nb_integration_points; ++gg) {
@@ -2397,193 +2371,76 @@ private:
   FTensor::Index<'j', Tensor_Dim> j;
 };
 
+template <>
+struct OpCalculateHVecTensorTrace<
+    3, FaceElementForcesAndSourcesCore::UserDataOperator>
+    : public FaceElementForcesAndSourcesCore::UserDataOperator {
+
+  OpCalculateHVecTensorTrace(const std::string field_name,
+                             boost::shared_ptr<MatrixDouble> data_ptr,
+                             const EntityType zero_type = MBEDGE,
+                             const int zero_side = 0)
+      : UserDataOperator(field_name, OPROW), dataPtr(data_ptr),
+        zeroType(zero_type), zeroSide(zero_side) {
+    if (!dataPtr)
+      THROW_MESSAGE("Pointer is not set");
+  }
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data) {
+    MoFEMFunctionBegin;
+    const size_t nb_integration_points = getGaussPts().size2();
+    if (type == zeroType && side == 0) {
+      dataPtr->resize(3, nb_integration_points, false);
+      dataPtr->clear();
+    }
+    const size_t nb_dofs = data.getFieldData().size();
+    if (nb_dofs) {
+      auto t_normal = getFTensor1Normal();
+      t_normal(i) /= sqrt(t_normal(j) * t_normal(j));
+      const size_t nb_base_functions = data.getN().size2() / 3;
+      auto t_base = data.getFTensor1N<3>();
+      auto t_data = getFTensor1FromMat<3>(*dataPtr);
+      for (size_t gg = 0; gg != nb_integration_points; ++gg) {
+        auto t_dof = data.getFTensor1FieldData<3>();
+        if (getNormalsAtGaussPts().size1() == nb_integration_points) {
+          VectorDouble n = getNormalsAtGaussPts(gg);
+          auto t_n = getFTensor1FromPtr<3>(&*n.data().begin());
+          t_normal(i) = t_n(i) / sqrt(t_n(j) * t_n(j));
+        }
+        size_t bb = 0;
+        for (; bb != nb_dofs / 3; ++bb) {
+          t_data(i) += t_dof(i) * (t_base(j) * t_normal(j));
+          ++t_base;
+          ++t_dof;
+        }
+        for (; bb < nb_base_functions; ++bb)
+          ++t_base;
+        ++t_data;
+      }
+    }
+    MoFEMFunctionReturn(0);
+  }
+
+private:
+  boost::shared_ptr<MatrixDouble> dataPtr;
+  const EntityHandle zeroType;
+  const int zeroSide;
+  FTensor::Index<'i', 3> i;
+  FTensor::Index<'j', 3> j;
+};
+
 /**@}*/
 
 /** \name Other operators */
 
 /**@{*/
 
-/**
- * @brief Scale base functions by inverses of measure of element
- *
- * @tparam OP
- */
-template <typename OP> struct OpScaleBaseBySpaceInverseOfMeasure : public OP {
-
-  OpScaleBaseBySpaceInverseOfMeasure(const FieldSpace space = L2)
-      : OP(space), fieldSpace(space) {}
-
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data) {
-    MoFEMFunctionBegin;
-
-    auto scale = [&]() {
-      for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
-        FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
-        data.getN(base) /= this->getMeasure();
-        data.getDiffN(base) /= this->getMeasure();
-      }
-    };
-
-    if (this->getFEDim() == 3) {
-      switch (fieldSpace) {
-      case H1:
-        scale();
-        break;
-      case HCURL:
-        if (type >= MBEDGE)
-          scale();
-        break;
-      case HDIV:
-        if (type >= MBTRI)
-          scale();
-        break;
-      case L2:
-        if (type >= MBTET)
-          scale();
-        break;
-      default:
-        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "impossible case");
-      }
-    } else if (this->getFEDim() == 2) {
-      switch (fieldSpace) {
-      case H1:
-        scale();
-        break;
-      case HCURL:
-        if (type >= MBEDGE)
-          scale();
-        break;
-      case HDIV:
-      case L2:
-        if (type >= MBTRI)
-          scale();
-        break;
-      default:
-        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "impossible case");
-      }
-    } else if (this->getFEDim() == 1) {
-      switch (fieldSpace) {
-      case H1:
-        scale();
-        break;
-      case HCURL:
-      case L2:
-        if (type >= MBEDGE)
-          scale();
-        break;
-      default:
-        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "impossible case");
-      }
-    } else {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "impossible case");
-    }
-
-    MoFEMFunctionReturn(0);
-  }
-
-private:
-  FieldSpace fieldSpace;
-};
-
 /**@}*/
-
-inline auto getFaceJac(MatrixDouble &jac, const FTensor::Number<2> &) {
-  return FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 2, 2>{
-      &jac(0, 0), &jac(1, 0), &jac(2, 0), &jac(3, 0)};
-}
-
-inline auto getFaceJac(MatrixDouble &jac, const FTensor::Number<3> &) {
-  return FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 3>{
-      &jac(0, 0), &jac(1, 0), &jac(4, 0), &jac(2, 0), &jac(3, 0),
-      &jac(5, 0), &jac(6, 0), &jac(7, 0), &jac(8, 0)};
-}
 
 /** \name Operators for faces */
 
 /**@{*/
-
-/** \brief Calculate jacobian for face element
-
-  It is assumed that face element is XY plane. Applied
-  only for 2d problems.
-
-  \todo Generalize function for arbitrary face orientation in 3d space
-
-  \ingroup mofem_forces_and_sources_tri_element
-
-*/
-template <int DIM> struct OpCalculateJacForFaceImpl;
-
-template <>
-struct OpCalculateJacForFaceImpl<2>
-    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
-
-  OpCalculateJacForFaceImpl(MatrixDouble &jac)
-      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(NOSPACE),
-        jac(jac) {}
-
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
-
-protected:
-  MatrixDouble &jac;
-};
-
-template <>
-struct OpCalculateJacForFaceImpl<3> : public OpCalculateJacForFaceImpl<2> {
-
-  using OpCalculateJacForFaceImpl<2>::OpCalculateJacForFaceImpl;
-
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
-};
-
-using OpCalculateJacForFace = OpCalculateJacForFaceImpl<2>;
-
-using OpCalculateJacForFaceEmbeddedIn3DSpace = OpCalculateJacForFaceImpl<3>;
-
-/** \brief Calculate inverse of jacobian for face element
-
-  It is assumed that face element is XY plane. Applied
-  only for 2d problems.
-
-  \todo Generalize function for arbitrary face orientation in 3d space
-
-  \ingroup mofem_forces_and_sources_tri_element
-
-*/
-template <int DIM> struct OpCalculateInvJacForFaceImpl;
-
-template <>
-struct OpCalculateInvJacForFaceImpl<2>
-    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
-
-  OpCalculateInvJacForFaceImpl(MatrixDouble &inv_jac)
-      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(NOSPACE),
-        invJac(inv_jac) {}
-
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
-
-protected:
-  MatrixDouble &invJac;
-};
-
-template <>
-struct OpCalculateInvJacForFaceImpl<3>
-    : public OpCalculateInvJacForFaceImpl<2> {
-
-  using OpCalculateInvJacForFaceImpl<2>::OpCalculateInvJacForFaceImpl;
-
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
-};
-
-using OpCalculateInvJacForFace = OpCalculateInvJacForFaceImpl<2>;
-
-using OpCalculateInvJacForFaceEmbeddedIn3DSpace =
-    OpCalculateInvJacForFaceImpl<3>;
 
 /** \brief Transform local reference derivatives of shape functions to global
 derivatives
@@ -2597,15 +2454,16 @@ template <>
 struct OpSetInvJacSpaceForFaceImpl<2>
     : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
 
-  OpSetInvJacSpaceForFaceImpl(MatrixDouble &inv_jac, FieldSpace space)
+  OpSetInvJacSpaceForFaceImpl(FieldSpace space,
+                              boost::shared_ptr<MatrixDouble> inv_jac_ptr)
       : FaceElementForcesAndSourcesCoreBase::UserDataOperator(space),
-        invJac(inv_jac) {}
+        invJacPtr(inv_jac_ptr) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
 
 protected:
-  MatrixDouble &invJac;
+  boost::shared_ptr<MatrixDouble> invJacPtr;
   MatrixDouble diffNinvJac;
 };
 
@@ -2619,25 +2477,27 @@ struct OpSetInvJacSpaceForFaceImpl<3> : public OpSetInvJacSpaceForFaceImpl<2> {
 };
 
 struct OpSetInvJacH1ForFace : public OpSetInvJacSpaceForFaceImpl<2> {
-  OpSetInvJacH1ForFace(MatrixDouble &inv_jac)
-      : OpSetInvJacSpaceForFaceImpl(inv_jac, H1) {}
+  OpSetInvJacH1ForFace(boost::shared_ptr<MatrixDouble> inv_jac_ptr)
+      : OpSetInvJacSpaceForFaceImpl(H1, inv_jac_ptr) {}
 };
 
 struct OpSetInvJacL2ForFace : public OpSetInvJacSpaceForFaceImpl<2> {
-  OpSetInvJacL2ForFace(MatrixDouble &inv_jac)
-      : OpSetInvJacSpaceForFaceImpl(inv_jac, L2) {}
+  OpSetInvJacL2ForFace(boost::shared_ptr<MatrixDouble> inv_jac_ptr)
+      : OpSetInvJacSpaceForFaceImpl(L2, inv_jac_ptr) {}
 };
 
 struct OpSetInvJacH1ForFaceEmbeddedIn3DSpace
     : public OpSetInvJacSpaceForFaceImpl<3> {
-  OpSetInvJacH1ForFaceEmbeddedIn3DSpace(MatrixDouble &inv_jac)
-      : OpSetInvJacSpaceForFaceImpl(inv_jac, H1) {}
+  OpSetInvJacH1ForFaceEmbeddedIn3DSpace(
+      boost::shared_ptr<MatrixDouble> inv_jac_ptr)
+      : OpSetInvJacSpaceForFaceImpl(H1, inv_jac_ptr) {}
 };
 
 struct OpSetInvJacL2ForFaceEmbeddedIn3DSpace
     : public OpSetInvJacSpaceForFaceImpl<3> {
-  OpSetInvJacL2ForFaceEmbeddedIn3DSpace(MatrixDouble &inv_jac)
-      : OpSetInvJacSpaceForFaceImpl(inv_jac, L2) {}
+  OpSetInvJacL2ForFaceEmbeddedIn3DSpace(
+      boost::shared_ptr<MatrixDouble> inv_jac_ptr)
+      : OpSetInvJacSpaceForFaceImpl(L2, inv_jac_ptr) {}
 };
 
 /**
@@ -2652,15 +2512,15 @@ template <>
 struct OpSetInvJacHcurlFaceImpl<2>
     : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
 
-  OpSetInvJacHcurlFaceImpl(MatrixDouble &inv_jac)
+  OpSetInvJacHcurlFaceImpl(boost::shared_ptr<MatrixDouble> inv_jac_ptr)
       : FaceElementForcesAndSourcesCoreBase::UserDataOperator(HCURL),
-        invJac(inv_jac) {}
+        invJacPtr(inv_jac_ptr) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
 
 protected:
-  MatrixDouble &invJac;
+  boost::shared_ptr<MatrixDouble> invJacPtr;
   MatrixDouble diffHcurlInvJac;
 };
 
@@ -2688,20 +2548,6 @@ struct OpMakeHdivFromHcurl
                         DataForcesAndSourcesCore::EntData &data);
 };
 
-/**
- * @brief Modify integration weights on face to take in account higher-order
- * geometry
- * @ingroup mofem_forces_and_sources_tri_element
- *
- */
-struct OpMakeHighOrderGeometryWeightsOnFace
-    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
-  OpMakeHighOrderGeometryWeightsOnFace()
-      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(NOSPACE) {}
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
-};
-
 /** \brief Apply contravariant (Piola) transfer to Hdiv space on face
  *
  * \note Hdiv space is generated by Hcurl space in 2d.
@@ -2717,39 +2563,40 @@ struct OpMakeHighOrderGeometryWeightsOnFace
  * \ingroup mofem_forces_and_sources
  *
  */
-template <int DIM> struct OpSetContravariantPiolaTransformFaceImpl;
+template <int DIM> struct OpSetContravariantPiolaTransformOnFace2DImpl;
 
 template <>
-struct OpSetContravariantPiolaTransformFaceImpl<2>
+struct OpSetContravariantPiolaTransformOnFace2DImpl<2>
     : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
 
-  OpSetContravariantPiolaTransformFaceImpl(MatrixDouble &jac)
-      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(HCURL), jAc(jac) {
-  }
+  OpSetContravariantPiolaTransformOnFace2DImpl(
+      boost::shared_ptr<MatrixDouble> jac_ptr)
+      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(HCURL),
+        jacPtr(jac_ptr) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
 
 protected:
-  MatrixDouble &jAc;
+  boost::shared_ptr<MatrixDouble> jacPtr;
   MatrixDouble piolaN;
   MatrixDouble piolaDiffN;
 };
 
 template <>
-struct OpSetContravariantPiolaTransformFaceImpl<3>
-    : public OpSetContravariantPiolaTransformFaceImpl<2> {
-  using OpSetContravariantPiolaTransformFaceImpl<
-      2>::OpSetContravariantPiolaTransformFaceImpl;
+struct OpSetContravariantPiolaTransformOnFace2DImpl<3>
+    : public OpSetContravariantPiolaTransformOnFace2DImpl<2> {
+  using OpSetContravariantPiolaTransformOnFace2DImpl<
+      2>::OpSetContravariantPiolaTransformOnFace2DImpl;
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
 };
 
-using OpSetContravariantPiolaTransformFace =
-    OpSetContravariantPiolaTransformFaceImpl<2>;
-using OpSetContravariantPiolaTransformFaceEmbeddedIn3DSpace =
-    OpSetContravariantPiolaTransformFaceImpl<3>;
+using OpSetContravariantPiolaTransformOnFace2D =
+    OpSetContravariantPiolaTransformOnFace2DImpl<2>;
+using OpSetContravariantPiolaTransformOnFace2DEmbeddedIn3DSpace =
+    OpSetContravariantPiolaTransformOnFace2DImpl<3>;
 
 /**@}*/
 
@@ -2757,21 +2604,24 @@ using OpSetContravariantPiolaTransformFaceEmbeddedIn3DSpace =
 
 /**@{*/
 
-struct OpSetContravariantPiolaTransformOnEdge
+struct OpSetContravariantPiolaTransformOnEdge2D
     : public EdgeElementForcesAndSourcesCoreBase::UserDataOperator {
 
-  OpSetContravariantPiolaTransformOnEdge()
-      : EdgeElementForcesAndSourcesCoreBase::UserDataOperator(HCURL) {}
+  OpSetContravariantPiolaTransformOnEdge2D(const FieldSpace space = HCURL)
+      : EdgeElementForcesAndSourcesCoreBase::UserDataOperator(space) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
+
+private:
+  std::vector<double> l1;
 };
 
 /**
  * @deprecated Name is deprecated and this is added for back compatibility
  */
 using OpSetContrariantPiolaTransformOnEdge =
-    OpSetContravariantPiolaTransformOnEdge;
+    OpSetContravariantPiolaTransformOnEdge2D;
 
 /**@}*/
 
@@ -2913,19 +2763,131 @@ private:
   MatrixDouble diffNinvJac;
 };
 
-/**
- * @brief Modify integration weights on volume to take in account higher-order
- * geometry
- * @ingroup mofem_forces_and_sources_user_data_operators
- *
- */
-struct OpMakeHighOrderGeometryWeightsOnVolume
-    : public VolumeElementForcesAndSourcesCoreBase::UserDataOperator {
-  OpMakeHighOrderGeometryWeightsOnVolume()
-      : VolumeElementForcesAndSourcesCoreBase::UserDataOperator(NOSPACE) {}
+/**@}*/
+
+/** \name Operation on matrices at integration points */
+
+/**@{*/
+
+template <int DIM>
+struct OpInvertMatrix : public ForcesAndSourcesCore::UserDataOperator {
+
+  OpInvertMatrix(boost::shared_ptr<MatrixDouble> in_ptr,
+                 boost::shared_ptr<VectorDouble> det_ptr,
+                 boost::shared_ptr<MatrixDouble> out_ptr)
+      : ForcesAndSourcesCore::UserDataOperator(NOSPACE), inPtr(in_ptr),
+        outPtr(out_ptr), detPtr(det_ptr) {}
+
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        DataForcesAndSourcesCore::EntData &data) {
+    return doWorkImpl(side, type, data, FTensor::Number<DIM>());
+  }
+
+private:
+  boost::shared_ptr<MatrixDouble> inPtr;
+  boost::shared_ptr<MatrixDouble> outPtr;
+  boost::shared_ptr<VectorDouble> detPtr;
+
+  MoFEMErrorCode doWorkImpl(int side, EntityType type,
+                            DataForcesAndSourcesCore::EntData &data,
+                            const FTensor::Number<3> &);
+
+  MoFEMErrorCode doWorkImpl(int side, EntityType type,
+                            DataForcesAndSourcesCore::EntData &data,
+                            const FTensor::Number<2> &);
 };
+
+template <int DIM>
+MoFEMErrorCode
+OpInvertMatrix<DIM>::doWorkImpl(int side, EntityType type,
+                                DataForcesAndSourcesCore::EntData &data,
+                                const FTensor::Number<3> &) {
+  MoFEMFunctionBegin;
+
+  if (!inPtr)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Pointer for inPtr matrix not allocated");
+  if (!detPtr)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Pointer for detPtr matrix not allocated");
+
+  const auto nb_rows = inPtr->size1();
+  const auto nb_integration_pts = inPtr->size2();
+
+  // Calculate determinant
+  {
+    detPtr->resize(nb_integration_pts, false);
+    auto t_in = getFTensor2FromMat<3, 3>(*inPtr);
+    auto t_det = getFTensor0FromVec(*detPtr);
+    for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
+      determinantTensor3by3(t_in, t_det);
+      ++t_in;
+      ++t_det;
+    }
+  }
+
+  // Invert jacobian
+  if (outPtr) {
+    outPtr->resize(nb_rows, nb_integration_pts, false);
+    auto t_in = getFTensor2FromMat<3, 3>(*inPtr);
+    auto t_out = getFTensor2FromMat<3, 3>(*outPtr);
+    auto t_det = getFTensor0FromVec(*detPtr);
+    for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
+      invertTensor3by3(t_in, t_det, t_out);
+      ++t_in;
+      ++t_out;
+      ++t_det;
+    }
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+template <int DIM>
+MoFEMErrorCode
+OpInvertMatrix<DIM>::doWorkImpl(int side, EntityType type,
+                                DataForcesAndSourcesCore::EntData &data,
+                                const FTensor::Number<2> &) {
+  MoFEMFunctionBegin;
+
+  if (!inPtr)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Pointer for inPtr matrix not allocated");
+  if (!detPtr)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Pointer for detPtr matrix not allocated");
+
+  const auto nb_rows = inPtr->size1();
+  const auto nb_integration_pts = inPtr->size2();
+
+  // Calculate determinant
+  {
+    detPtr->resize(nb_integration_pts, false);
+    auto t_in = getFTensor2FromMat<2, 2>(*inPtr);
+    auto t_det = getFTensor0FromVec(*detPtr);
+    for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
+      determinantTensor2by2(t_in, t_det);
+      ++t_in;
+      ++t_det;
+    }
+  }
+
+  // Invert jacobian
+  if (outPtr) {
+    outPtr->resize(nb_rows, nb_integration_pts, false);
+    auto t_in = getFTensor2FromMat<2, 2>(*inPtr);
+    auto t_out = getFTensor2FromMat<2, 2>(*outPtr);
+    auto t_det = getFTensor0FromVec(*detPtr);
+    for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
+      invertTensor2by2(t_in, t_det, t_out);
+      ++t_in;
+      ++t_out;
+      ++t_det;
+    }
+  }
+
+  MoFEMFunctionReturn(0);
+}
 
 /**@}*/
 

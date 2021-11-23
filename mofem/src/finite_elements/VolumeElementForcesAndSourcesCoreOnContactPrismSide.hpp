@@ -42,9 +42,9 @@ struct VolumeElementForcesAndSourcesCoreOnContactPrismSideBase
    *
    * \todo That this is not general, e.g., for quad number of nodes is 4.
    *
-   * @return const std::array<int, 3>&
+   * @return const std::array<int, 4>&
    */
-  inline const std::array<int, 3> &getFaceConnMap() const;
+  inline const std::array<int, 4> &getFaceConnMap() const;
 
   /**
    * @brief Get face nodes maped on volume
@@ -54,7 +54,7 @@ struct VolumeElementForcesAndSourcesCoreOnContactPrismSideBase
    *
    * @return const sdt::array<int, 4>&
    */
-  inline const std::array<int, 4> &getTetConnMap() const;
+  inline const std::array<int, 8> &getTetConnMap() const;
 
   /**
    * @brief Get node on volume opposite to volume element
@@ -130,8 +130,8 @@ struct VolumeElementForcesAndSourcesCoreOnContactPrismSideBase
 private:
   int faceSense;      ///< Sense of face, could be 1 or -1
   int faceSideNumber; ///< Face side number
-  std::array<int, 3> faceConnMap;
-  std::array<int, 4> tetConnMap;
+  std::array<int, 4> faceConnMap;
+  std::array<int, 8> tetConnMap;
   int oppositeNode;
 };
 
@@ -163,12 +163,12 @@ struct VolumeElementForcesAndSourcesCoreOnContactPrismSideSwitch
 using VolumeElementForcesAndSourcesCoreOnContactPrismSide =
     VolumeElementForcesAndSourcesCoreOnContactPrismSideSwitch<0>;
 
-const std::array<int, 3> &
+const std::array<int, 4> &
 VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::getFaceConnMap() const {
   return faceConnMap;
 }
 
-const std::array<int, 4> &
+const std::array<int, 8> &
 VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::getTetConnMap() const {
   return tetConnMap;
 }
@@ -223,7 +223,7 @@ int VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::UserDataOperator::
 template <int SWITCH>
 MoFEMErrorCode VolumeElementForcesAndSourcesCoreOnContactPrismSideSwitch<SWITCH>::
 operator()() {
-  return OpSwitch<SWITCH>();
+  return opSwitch<SWITCH>();
 }
 
 } // namespace MoFEM

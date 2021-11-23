@@ -169,7 +169,7 @@ int main(int argc, char *argv[]) {
         CHKERR getEntityDataOrder<MBEDGE>(data, H1);
         CHKERR getEntityDataOrder<MBTRI>(data, H1);
         CHKERR getEntityDataOrder<MBTET>(data, H1);
-        CHKERR getFaceTriNodes(data);
+        CHKERR getFaceNodes(data);
 
         MatrixDouble gauss_pts(4, 4);
         for (int gg = 0; gg < 4; gg++) {

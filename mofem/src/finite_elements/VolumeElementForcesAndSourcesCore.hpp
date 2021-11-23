@@ -37,197 +37,20 @@ namespace MoFEM {
  */
 struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
 
-  std::string meshPositionsFieldName;
+  std::string meshPositionsFieldName; ///< \deprecated DO NOT USE!
 
   /** \brief default operator for TET element
    * \ingroup mofem_forces_and_sources_volume_element
    */
-  struct UserDataOperator : public ForcesAndSourcesCore::UserDataOperator {
-
-    using ForcesAndSourcesCore::UserDataOperator::UserDataOperator;
-
-    /** \brief get element number of nodes
-     */
-    inline int getNumNodes();
-
-    /** \brief get element connectivity
-     */
-    inline const EntityHandle *getConn();
-
-    /** \brief element volume (linear geometry)
-     */
-    inline double getVolume() const;
-
-    /** \brief element volume (linear geometry)
-     */
-    inline double &getVolume();
-
-    /**
-     * \brief get element Jacobian
-     */
-    inline FTensor::Tensor2<double *, 3, 3> &getJac();
-
-    /**
-     * \brief get element inverse Jacobian
-     */
-    inline FTensor::Tensor2<double *, 3, 3> &getInvJac();
-
-    /**
-     * \brief get measure of element
-     * @return volume
-     */
-    inline double getMeasure() const;
-
-    /**
-     * \brief get measure of element
-     * @return volume
-     */
-    inline double &getMeasure();
-
-    /** \brief nodal coordinates
-     */
-    inline VectorDouble &getCoords();
-
-    /** \brief Gauss points and weight, matrix (nb. of points x 3)
-
-    Column 0-2 integration points coordinate x, y and z, respectively. At rows
-    are integration points.
-
-    */
-    inline MatrixDouble &getCoordsAtGaussPts();
-
-    /** \brief coordinate at Gauss points (if hierarchical approximation of
-     * element geometry)
-     */
-    inline MatrixDouble &getHoCoordsAtGaussPts();
-
-    inline MatrixDouble &getHoGaussPtsJac();
-
-    inline MatrixDouble &getHoGaussPtsInvJac();
-
-    inline VectorDouble &getHoGaussPtsDetJac();
-
-    inline auto getFTenosr0HoMeasure();
-
-    /**
-     * \brief Get coordinates at integration points assuming linear geometry
-     *
-     * \code
-     * auto t_coords = getFTensor1CoordsAtGaussPts();
-     * for(int gg = 0;gg!=nb_int_ptrs;gg++) {
-     *   // do something
-     *   ++t_coords;
-     * }
-     * \endcode
-     *
-     */
-    inline auto getFTensor1CoordsAtGaussPts();
-
-    /**
-     * \brief Get coordinates at integration points taking geometry from field
-     *
-     * This is HO geometry given by arbitrary order polynomial
-     * \code
-     * auto t_coords = getFTensor1HoCoordsAtGaussPts();
-     * for(int gg = 0;gg!=nb_int_ptrs;gg++) {
-     *   // do something
-     *   ++t_coords;
-     * }
-     * \endcode
-     *
-     */
-    inline auto getFTensor1HoCoordsAtGaussPts();
-
-    inline auto getFTensor2HoGaussPtsJac();
-
-    inline auto getFTensor2HoGaussPtsInvJac();
-
-    /** \brief return pointer to Generic Volume Finite Element object
-     */
-    inline VolumeElementForcesAndSourcesCoreBase *getVolumeFE() const;
-
-    /**
-     * \brief Get divergence of base functions at integration point
-     *
-     * Works only for H-div space.
-     *
-     * How to use it:
-     * \code
-     * VectorDouble div_vec(data.getFieldData().size());
-     * for(int gg = 0;gg<nb_gauss_pts;gg++) {
-     *  CHKERR getDivergenceOfHDivBaseFunctions(side,type,data,gg,div_vec);
-     *  // do something with vec_div
-     * }
-     * \endcode
-     * where vec_div has size of nb. of dofs, at each element represents
-     * divergence of base functions.
-     *
-     * @param  side side (local) number of entity on element
-     * @param  type type of entity
-     * @param  data data structure
-     * @param  gg   gauss pts
-     * @param  div  divergence vector, size of vector is equal to number of base
-     * functions
-     * @return      error code
-     */
-    MoFEMErrorCode
-    getDivergenceOfHDivBaseFunctions(int side, EntityType type,
-                                     DataForcesAndSourcesCore::EntData &data,
-                                     int gg, VectorDouble &div);
-
-    /**
-     * \brief Get curl of base functions at integration point
-     *
-     * \f[
-     * \nabla \times \mathbf{\phi}
-     * \f]
-     *
-     * Works only for H-curl and H-div space.
-     *
-     * How to use it:
-     * \code
-     * MatrixDouble curl_mat(data.getFieldData().size(),3);
-     * for(int gg = 0;gg<nb_gauss_pts;gg++) {
-     *  CHKERR getCurlOfHCurlBaseFunctions(side,type,data,gg,curl_mat);
-     *  FTensor::Tensor1<FTensor::PackPtr<double*, 3>, 3> t_curl(
-     *    &curl_mat(0,0), &curl_mat(0,1), &curl_mat(0,2)
-     *  );
-     *  // do something with curl
-     * }
-     * \endcode
-     * where curl_mat is matrix which number of rows is equal to nb. of base
-     * functions. Number of columns is 3, since we work in 3d here. Rows
-     * represents curl of base functions.
-     *
-     * @param  side side (local) number of entity on element
-     * @param  type type of entity
-     * @param  data data structure
-     * @param  gg   gauss pts
-     * @param  curl curl matrix, nb. of rows is equal to number of base
-     * functions, columns are curl of base vector
-     * @return      error code
-     */
-    MoFEMErrorCode
-    getCurlOfHCurlBaseFunctions(int side, EntityType type,
-                                DataForcesAndSourcesCore::EntData &data, int gg,
-                                MatrixDouble &curl);
-
-  protected:
-
-    MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
-
-  };
+  struct UserDataOperator;
 
   enum Switches {
-    NO_HO_GEOMETRY = 1 << 0 | 1 << 2,
     NO_TRANSFORM = 1 << 1 | 1 << 2,
-    NO_HO_TRANSFORM = 1 << 2
   };
 
-  template <int SWITCH> MoFEMErrorCode OpSwitch();
+  template <int SWITCH> MoFEMErrorCode opSwitch();
 
 protected:
-
   VolumeElementForcesAndSourcesCoreBase(Interface &m_field,
                                         const EntityType type = MBTET);
 
@@ -273,26 +96,6 @@ protected:
    */
   virtual MoFEMErrorCode transformBaseFunctions();
 
-  /** \brief Calculate Jacobian for HO geometry
-   *
-   * MoFEM use hierarchical approximate base to describe geometry of the body.
-   * This function transform derivatives of base functions when HO geometry is
-   * set and calculate Jacobian, inverse of Jacobian and determinant of
-   * transformation.
-   *
-   */
-  virtual MoFEMErrorCode calculateHoJacobian();
-
-  /**
-   * \brief Transform base functions based on ho-geometry element Jacobian.
-   *
-   * This function apply transformation to base functions and its derivatives.
-   * For example when base functions for H-div are present the
-   * Piola-Transformarion is applied to base functions and their derivatives.
-   *
-   * @return Error code
-   */
-  virtual MoFEMErrorCode transformHoBaseFunctions();
 
   VectorDouble coords;
   MatrixDouble3by3 jAc;
@@ -303,28 +106,57 @@ protected:
   OpSetCovariantPiolaTransform opCovariantPiolaTransform;
   OpSetInvJacHdivAndHcurl opSetInvJacHdivAndHcurl;
 
-  MatrixDouble hoCoordsAtGaussPts;
-  MatrixDouble hoGaussPtsJac;
-  MatrixDouble hoGaussPtsInvJac;
-  VectorDouble hoGaussPtsDetJac;
-
-  OpGetDataAndGradient<3, 3>
-      opHOatGaussPoints; ///< higher order geometry data at Gauss pts
-  OpSetHoInvJacH1 opSetHoInvJacH1;
-  OpSetHoContravariantPiolaTransform opHoContravariantTransform;
-  OpSetHoCovariantPiolaTransform opHoCovariantTransform;
-  OpSetHoInvJacHdivAndHcurl opSetHoInvJacHdivAndHcurl;
-
-  double vOlume;
+  double &vOlume;
 
   int num_nodes;
   const EntityHandle *conn;
   FTensor::Tensor2<double *, 3, 3> tJac;
   FTensor::Tensor2<double *, 3, 3> tInvJac;
 
-  MatrixDouble coordsAtGaussPts;
-
   friend class UserDataOperator;
+};
+
+struct VolumeElementForcesAndSourcesCoreBase::UserDataOperator
+    : public ForcesAndSourcesCore::UserDataOperator {
+
+  using ForcesAndSourcesCore::UserDataOperator::UserDataOperator;
+
+  /** \brief get element number of nodes
+   */
+  inline int getNumNodes();
+
+  /** \brief get element connectivity
+   */
+  inline const EntityHandle *getConn();
+
+  /** \brief element volume (linear geometry)
+   */
+  inline double getVolume() const;
+
+  /** \brief element volume (linear geometry)
+   */
+  inline double &getVolume();
+
+  /**
+   * \brief get element Jacobian
+   */
+  inline FTensor::Tensor2<double *, 3, 3> &getJac();
+
+  /**
+   * \brief get element inverse Jacobian
+   */
+  inline FTensor::Tensor2<double *, 3, 3> &getInvJac();
+
+  /** \brief nodal coordinates
+   */
+  inline VectorDouble &getCoords();
+
+  /** \brief return pointer to Generic Volume Finite Element object
+   */
+  inline VolumeElementForcesAndSourcesCoreBase *getVolumeFE() const;
+
+protected:
+  MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
 };
 
 /**
@@ -339,7 +171,8 @@ struct VolumeElementForcesAndSourcesCoreSwitch
     : public VolumeElementForcesAndSourcesCoreBase {
 
   VolumeElementForcesAndSourcesCoreSwitch(Interface &m_field,
-                                        const EntityType type = MBTET): VolumeElementForcesAndSourcesCoreBase(m_field, MBTET) {}
+                                          const EntityType type = MBTET)
+      : VolumeElementForcesAndSourcesCoreBase(m_field, MBTET) {}
   using UserDataOperator =
       VolumeElementForcesAndSourcesCoreBase::UserDataOperator;
 
@@ -354,12 +187,25 @@ using VolumeElementForcesAndSourcesCore =
     VolumeElementForcesAndSourcesCoreSwitch<0>;
 
 template <int SWITCH>
-MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::OpSwitch() {
+MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::opSwitch() {
   MoFEMFunctionBegin;
 
-  if (numeredEntFiniteElementPtr->getEntType() != MBTET)
-    MoFEMFunctionReturnHot(0);
-  CHKERR createDataOnElement();
+  const auto type = numeredEntFiniteElementPtr->getEntType();
+  if (type != lastEvaluatedElementEntityType) {
+    switch (type) {
+    case MBTET:
+      getElementPolynomialBase() =
+          boost::shared_ptr<BaseFunction>(new TetPolynomialBase());
+      break;
+    case MBHEX:
+      getElementPolynomialBase() =
+          boost::shared_ptr<BaseFunction>(new HexPolynomialBase());
+      break;
+    default:
+      MoFEMFunctionReturnHot(0);
+    }
+    CHKERR createDataOnElement();
+  }
 
   CHKERR calculateVolumeAndJacobian();
   CHKERR getSpaceBaseAndOrderOnElement();
@@ -373,12 +219,6 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::OpSwitch() {
   if (!(NO_TRANSFORM & SWITCH))
     CHKERR transformBaseFunctions();
 
-  if (!(NO_HO_GEOMETRY & SWITCH))
-    CHKERR calculateHoJacobian();
-
-  if (!(NO_HO_TRANSFORM & SWITCH))
-    CHKERR transformHoBaseFunctions();
-
   // Iterate over operators
   CHKERR loopOverOperators();
 
@@ -387,7 +227,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::OpSwitch() {
 
 template <int SWITCH>
 MoFEMErrorCode VolumeElementForcesAndSourcesCoreSwitch<SWITCH>::operator()() {
-  return OpSwitch<SWITCH>();
+  return opSwitch<SWITCH>();
 }
 
 int VolumeElementForcesAndSourcesCoreBase::UserDataOperator::getNumNodes() {
@@ -418,84 +258,9 @@ VolumeElementForcesAndSourcesCoreBase::UserDataOperator::getInvJac() {
   return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)->tInvJac;
 }
 
-double
-VolumeElementForcesAndSourcesCoreBase::UserDataOperator::getMeasure() const {
-  return getVolume();
-}
-
-double &VolumeElementForcesAndSourcesCoreBase::UserDataOperator::getMeasure() {
-  return getVolume();
-}
-
 VectorDouble &
 VolumeElementForcesAndSourcesCoreBase::UserDataOperator::getCoords() {
   return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)->coords;
-}
-
-MatrixDouble &
-VolumeElementForcesAndSourcesCoreBase::UserDataOperator::getCoordsAtGaussPts() {
-  return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)
-      ->coordsAtGaussPts;
-}
-
-MatrixDouble &VolumeElementForcesAndSourcesCoreBase::UserDataOperator::
-    getHoCoordsAtGaussPts() {
-  return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)
-      ->hoCoordsAtGaussPts;
-}
-
-MatrixDouble &
-VolumeElementForcesAndSourcesCoreBase::UserDataOperator::getHoGaussPtsJac() {
-  return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)
-      ->hoGaussPtsJac;
-}
-
-MatrixDouble &
-VolumeElementForcesAndSourcesCoreBase::UserDataOperator::getHoGaussPtsInvJac() {
-  return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)
-      ->hoGaussPtsInvJac;
-}
-
-VectorDouble &
-VolumeElementForcesAndSourcesCoreBase::UserDataOperator::getHoGaussPtsDetJac() {
-  return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)
-      ->hoGaussPtsDetJac;
-}
-
-auto VolumeElementForcesAndSourcesCoreBase::UserDataOperator::
-    getFTenosr0HoMeasure() {
-  return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(
-      &*getHoGaussPtsDetJac().data().begin());
-}
-
-auto VolumeElementForcesAndSourcesCoreBase::UserDataOperator::
-    getFTensor1CoordsAtGaussPts() {
-  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
-      &getCoordsAtGaussPts()(0, 0), &getCoordsAtGaussPts()(0, 1),
-      &getCoordsAtGaussPts()(0, 2));
-}
-
-auto VolumeElementForcesAndSourcesCoreBase::UserDataOperator::
-    getFTensor1HoCoordsAtGaussPts() {
-  double *ptr = &*getHoCoordsAtGaussPts().data().begin();
-  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, ptr + 1,
-                                                            ptr + 2);
-}
-
-auto VolumeElementForcesAndSourcesCoreBase::UserDataOperator::
-    getFTensor2HoGaussPtsJac() {
-  double *ptr = &*getHoGaussPtsJac().data().begin();
-  FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> jac(
-      ptr, ptr + 1, ptr + 2, ptr + 3, ptr + 4, ptr + 5, ptr + 6, ptr + 7,
-      ptr + 8);
-}
-
-auto VolumeElementForcesAndSourcesCoreBase::UserDataOperator::
-    getFTensor2HoGaussPtsInvJac() {
-  double *ptr = &*getHoGaussPtsInvJac().data().begin();
-  FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> jac(
-      ptr, ptr + 1, ptr + 2, ptr + 3, ptr + 4, ptr + 5, ptr + 6, ptr + 7,
-      ptr + 8);
 }
 
 VolumeElementForcesAndSourcesCoreBase *

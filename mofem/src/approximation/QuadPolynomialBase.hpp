@@ -32,11 +32,10 @@ namespace MoFEM {
  */
 struct QuadPolynomialBase : public BaseFunction {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 BaseFunctionUnknownInterface **iface) const;
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index, UnknownInterface **iface) const;
 
-  QuadPolynomialBase();
-  ~QuadPolynomialBase();
+  QuadPolynomialBase() = default;
+  ~QuadPolynomialBase() = default;
 
   MoFEMErrorCode getValue(MatrixDouble &pts,
                           boost::shared_ptr<BaseFunctionCtx> ctx_ptr);
@@ -55,10 +54,8 @@ private:
   MoFEMErrorCode getValueHcurlDemkowiczBase(MatrixDouble &pts);
   MoFEMErrorCode getValueHdivDemkowiczBase(MatrixDouble &pts);
 
-  ublas::matrix<MatrixDouble> N_face_edge;
-  ublas::vector<MatrixDouble> N_face_bubble;
-  ublas::matrix<MatrixDouble> diffN_face_edge;
-  ublas::vector<MatrixDouble> diffN_face_bubble;
+  MatrixDouble faceFamily;
+  MatrixDouble diffFaceFamily;
 
 };
 

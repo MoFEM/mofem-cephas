@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
         CHKERR getEntityDataOrder<MBEDGE>(data, H1);
         CHKERR getEntityDataOrder<MBTRI>(data, H1);
         CHKERR getEntityDataOrder<MBTET>(data, H1);
-        CHKERR getFaceTriNodes(data);
+        CHKERR getFaceNodes(data);
 
         CHKERR getRowNodesIndices(data, "FIELD1");
         CHKERR getEntityRowIndices(data, "FIELD1", MBEDGE);

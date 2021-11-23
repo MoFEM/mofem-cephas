@@ -65,8 +65,8 @@ extern "C" {
 
 // MBQUAD
 #define N_MBQUAD0(x, y) ((1. - x) * (1. - y)) ///< quad shape function
-#define N_MBQUAD1(x, y) (x * (1 - y))         ///< quad shape function
-#define N_MBQUAD2(x, y) (x * y)               ///< quad shape function
+#define N_MBQUAD1(x, y) ((x) * (1. - y))         ///< quad shape function
+#define N_MBQUAD2(x, y) ((x) * (y))             ///< quad shape function
 #define N_MBQUAD3(x, y) ((1. - x) * (y))      ///< quad shape function
 #define diffN_MBQUAD0x(y) (-(1. - y))
 #define diffN_MBQUAD0y(x) (-(1. - x))
@@ -76,6 +76,40 @@ extern "C" {
 #define diffN_MBQUAD2y(x) (x)
 #define diffN_MBQUAD3x(y) (-y)
 #define diffN_MBQUAD3y(x) ((1. - x))
+
+// MBHEX
+#define N_MBHEX0(x, y, z) (N_MBQUAD0(x, y) * (1 - z))
+#define N_MBHEX1(x, y, z) (N_MBQUAD1(x, y) * (1 - z))
+#define N_MBHEX2(x, y, z) (N_MBQUAD2(x, y) * (1 - z))
+#define N_MBHEX3(x, y, z) (N_MBQUAD3(x, y) * (1 - z))
+#define N_MBHEX4(x, y, z) (N_MBQUAD0(x, y) * (z))
+#define N_MBHEX5(x, y, z) (N_MBQUAD1(x, y) * (z))
+#define N_MBHEX6(x, y, z) (N_MBQUAD2(x, y) * (z))
+#define N_MBHEX7(x, y, z) (N_MBQUAD3(x, y) * (z))
+#define diffN_MBHEX0x(y, z) (diffN_MBQUAD0x(y) * (1 - z))
+#define diffN_MBHEX1x(y, z) (diffN_MBQUAD1x(y) * (1 - z))
+#define diffN_MBHEX2x(y, z) (diffN_MBQUAD2x(y) * (1 - z))
+#define diffN_MBHEX3x(y, z) (diffN_MBQUAD3x(y) * (1 - z))
+#define diffN_MBHEX4x(y, z) (diffN_MBQUAD0x(y) * (z))
+#define diffN_MBHEX5x(y, z) (diffN_MBQUAD1x(y) * (z))
+#define diffN_MBHEX6x(y, z) (diffN_MBQUAD2x(y) * (z))
+#define diffN_MBHEX7x(y, z) (diffN_MBQUAD3x(y) * (z))
+#define diffN_MBHEX0y(x, z) (diffN_MBQUAD0y(x) * (1 - z))
+#define diffN_MBHEX1y(x, z) (diffN_MBQUAD1y(x) * (1 - z))
+#define diffN_MBHEX2y(x, z) (diffN_MBQUAD2y(x) * (1 - z))
+#define diffN_MBHEX3y(x, z) (diffN_MBQUAD3y(x) * (1 - z))
+#define diffN_MBHEX4y(x, z) (diffN_MBQUAD0y(x) * (z))
+#define diffN_MBHEX5y(x, z) (diffN_MBQUAD1y(x) * (z))
+#define diffN_MBHEX6y(x, z) (diffN_MBQUAD2y(x) * (z))
+#define diffN_MBHEX7y(x, z) (diffN_MBQUAD3y(x) * (z))
+#define diffN_MBHEX0z(x, y) (-N_MBQUAD0(x, y))
+#define diffN_MBHEX1z(x, y) (-N_MBQUAD1(x, y))
+#define diffN_MBHEX2z(x, y) (-N_MBQUAD2(x, y))
+#define diffN_MBHEX3z(x, y) (-N_MBQUAD3(x, y))
+#define diffN_MBHEX4z(x, y) (N_MBQUAD0(x, y))
+#define diffN_MBHEX5z(x, y) (N_MBQUAD1(x, y))
+#define diffN_MBHEX6z(x, y) (N_MBQUAD2(x, y))
+#define diffN_MBHEX7z(x, y) (N_MBQUAD3(x, y))
 
 // MBEDGE
 #define N_MBEDGE0(x) (1. - (x)) ///< edge shape function

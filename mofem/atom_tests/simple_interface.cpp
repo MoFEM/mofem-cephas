@@ -41,14 +41,11 @@ struct OpVolume : public VolumeElementForcesAndSourcesCore::UserDataOperator {
     const int nb_int_pts = getGaussPts().size2();
     // cerr << nb_int_pts << endl;
     auto t_w = getFTensor0IntegrationWeight();
-    auto t_ho_det = getFTenosr0HoMeasure();
     double v = getMeasure();
     double vol = 0;
     for (int gg = 0; gg != nb_int_pts; gg++) {
-      vol += t_w * t_ho_det * v;
-      // cerr << t_ho_det << endl;
+      vol += t_w *  v;
       ++t_w;
-      ++t_ho_det;
     }
     CHKERR VecSetValue(vOl, 0, vol, ADD_VALUES);
     MoFEMFunctionReturn(0);
@@ -77,7 +74,7 @@ struct OpFace : public FaceElementForcesAndSourcesCore::UserDataOperator {
     const int nb_int_pts = getGaussPts().size2();
     auto t_normal = getFTensor1NormalsAtGaussPts();
     auto t_w = getFTensor0IntegrationWeight();
-    auto t_coords = getFTensor1HoCoordsAtGaussPts();
+    auto t_coords = getFTensor1CoordsAtGaussPts();
     FTensor::Index<'i', 3> i;
     double vol = 0;
     for (int gg = 0; gg != nb_int_pts; gg++) {
@@ -149,12 +146,11 @@ int main(int argc, char *argv[]) {
       // get dm
       auto dm = simple_interface->getDM();
       // create elements
-      boost::shared_ptr<ForcesAndSourcesCore> domain_fe =
-          boost::shared_ptr<ForcesAndSourcesCore>(
-              new VolumeElementForcesAndSourcesCore(m_field));
-      boost::shared_ptr<ForcesAndSourcesCore> boundary_fe =
-          boost::shared_ptr<ForcesAndSourcesCore>(
-              new FaceElementForcesAndSourcesCore(m_field));
+      auto domain_fe =
+          boost::make_shared<VolumeElementForcesAndSourcesCore>(m_field);
+      auto boundary_fe =
+          boost::make_shared<FaceElementForcesAndSourcesCore>(m_field);
+
       // set integration rule
       domain_fe->getRuleHook = VolRule();
       boundary_fe->getRuleHook = FaceRule();
@@ -167,9 +163,24 @@ int main(int argc, char *argv[]) {
       auto surf_vol = smartVectorDuplicate(vol);
 
       // set operator to the volume element
+      auto material_grad_mat = boost::make_shared<MatrixDouble>();
+      auto material_det_vec = boost::make_shared<VectorDouble>();
+
+      domain_fe->meshPositionsFieldName = "none";
+      domain_fe->getOpPtrVector().push_back(
+          new OpCalculateVectorFieldGradient<3, 3>("MESH_NODE_POSITIONS",
+                                                   material_grad_mat));
+      domain_fe->getOpPtrVector().push_back(new OpInvertMatrix<3>(
+          material_grad_mat, material_det_vec, nullptr));
+      domain_fe->getOpPtrVector().push_back(
+          new OpSetHOWeights(material_det_vec));
+      domain_fe->getOpPtrVector().push_back(
+          new OpCalculateHOCoords("MESH_NODE_POSITIONS"));
       domain_fe->getOpPtrVector().push_back(
           new OpVolume("MESH_NODE_POSITIONS", vol));
       // set operator to the face element
+      boundary_fe->getOpPtrVector().push_back(
+          new OpCalculateHOCoords("MESH_NODE_POSITIONS"));
       boundary_fe->getOpPtrVector().push_back(
           new OpFace("MESH_NODE_POSITIONS", surf_vol));
       // make integration in volume (here real calculations starts)

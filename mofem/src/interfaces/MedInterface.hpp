@@ -25,9 +25,6 @@
 
 namespace MoFEM {
 
-static const MOFEMuuid IDD_MOFEMMedInterface =
-    MOFEMuuid(BitIntefaceId(MED_INTERFACE));
-
 /** \brief Interface for load MED files
 
   * \ingroup mofem_med_files
@@ -35,7 +32,7 @@ static const MOFEMuuid IDD_MOFEMMedInterface =
 */
 struct MedInterface : public UnknownInterface {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
   MedInterface(const MoFEM::Core &core);

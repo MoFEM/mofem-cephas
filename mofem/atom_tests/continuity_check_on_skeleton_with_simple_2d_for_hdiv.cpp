@@ -28,13 +28,8 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
-using FaceEleOnSide = MoFEM::FaceElementForcesAndSourcesCoreOnSideSwitch<
-    FaceElementForcesAndSourcesCore::NO_CONTRAVARIANT_TRANSFORM_HDIV |
-    FaceElementForcesAndSourcesCore::NO_COVARIANT_TRANSFORM_HCURL>;
-
-using EdgeEle = MoFEM::EdgeElementForcesAndSourcesCoreSwitch<
-    EdgeElementForcesAndSourcesCore::NO_COVARIANT_TRANSFORM_HCURL>;
-
+using FaceEleOnSide = MoFEM::FaceElementForcesAndSourcesCoreOnSideSwitch<0>;
+using EdgeEle = MoFEM::EdgeElementForcesAndSourcesCore;
 using FaceEleOnSideOp = FaceEleOnSide::UserDataOperator;
 using EdgeEleOp = EdgeEle::UserDataOperator;
 
@@ -93,16 +88,17 @@ struct SkeletonFE : public EdgeEleOp {
 
   CommonData &elemData;
   FaceEleOnSide faceSideFe;
-  MatrixDouble jac;
 
   SkeletonFE(MoFEM::Interface &m_field, CommonData &elem_data)
       : EdgeEle::UserDataOperator("FIELD", UserDataOperator::OPROW),
         faceSideFe(m_field), elemData(elem_data) {
 
-      faceSideFe.getOpPtrVector().push_back(new OpCalculateJacForFace(jac));
+      auto jac_ptr = boost::make_shared<MatrixDouble>();
+      faceSideFe.getOpPtrVector().push_back(
+          new OpCalculateHOJacForFace(jac_ptr));
       faceSideFe.getOpPtrVector().push_back(new OpMakeHdivFromHcurl());
       faceSideFe.getOpPtrVector().push_back(
-          new OpSetContravariantPiolaTransformFace(jac));
+          new OpSetContravariantPiolaTransformOnFace2D(jac_ptr));
       faceSideFe.getOpPtrVector().push_back(
           new SkeletonFE::OpFaceSide(elemData));
 
@@ -230,7 +226,7 @@ int main(int argc, char *argv[]) {
           boost::shared_ptr<EdgeEle>(new EdgeEle(m_field));
 
       skeleton_fe->getOpPtrVector().push_back(
-          new OpSetContravariantPiolaTransformOnEdge());
+          new OpSetContravariantPiolaTransformOnEdge2D());
       skeleton_fe->getOpPtrVector().push_back(
           new SkeletonFE(m_field, elem_data));
 

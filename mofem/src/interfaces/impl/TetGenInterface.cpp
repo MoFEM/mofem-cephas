@@ -41,17 +41,10 @@ static inline MoFEMErrorCode determinantTensor3by3(T1 &t, T2 &det) {
 namespace MoFEM {
 
 MoFEMErrorCode
-TetGenInterface::query_interface(const MOFEMuuid &uuid,
+TetGenInterface::query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const {
-  MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_MOFEMTetGegInterface) {
-    *iface = const_cast<TetGenInterface *>(this);
-    MoFEMFunctionReturnHot(0);
-  }
-  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
-
-  MoFEMFunctionReturnHot(0);
+  *iface = const_cast<TetGenInterface *>(this);
+  return 0;
 }
 
 MoFEMErrorCode
@@ -498,7 +491,7 @@ MoFEMErrorCode TetGenInterface::setFaceData(
         int num_nodes;
         const EntityHandle *conn;
         tetgenio::polygon *p = &(f->polygonlist[jj]);
-        switch (m_field.get_moab().type_from_handle(*it)) {
+        switch (type_from_handle(*it)) {
         case MBVERTEX: {
           p->numberofvertices = 1;
           conn = &*it;
@@ -584,7 +577,7 @@ MoFEMErrorCode TetGenInterface::setRegionData(
   std::vector<std::pair<EntityHandle, int>>::iterator it = regions.begin();
   for (int ii = 0; it != regions.end(); it++, ii++) {
     double coords[3];
-    switch (m_field.get_moab().type_from_handle(it->first)) {
+    switch (type_from_handle(it->first)) {
     case MBVERTEX: {
       if (th) {
         rval = m_field.get_moab().tag_get_data(th, &it->first, 1, coords);

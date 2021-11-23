@@ -22,6 +22,8 @@ endif(PRECOMPILED_HEADRES)
 add_library(mofem_multi_indices
   impl/All.cpp
 )
+target_link_libraries(mofem_multi_indices PUBLIC ${MoFEM_PROJECT_LIBS})
+set_target_properties(mofem_multi_indices PROPERTIES VERSION ${PROJECT_VERSION})
 add_dependencies(mofem_multi_indices install_prerequisites)
 if(PRECOMPILED_HEADRES)
   add_dependencies(mofem_multi_indices Includes.hpp.pch_copy)

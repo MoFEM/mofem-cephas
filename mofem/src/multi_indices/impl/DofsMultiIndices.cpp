@@ -23,6 +23,7 @@ DofEntity::DofEntity(const boost::shared_ptr<FieldEntity> &entity_ptr,
                      const FieldCoefficientsNumber dof_rank, const DofIdx dof)
     : interface_FieldEntity<FieldEntity>(entity_ptr), dof(dof) {
 
+#ifndef NDEBUG
   if (PetscUnlikely(!entity_ptr))
     THROW_MESSAGE("FieldEntity pointer not initialized");
   if (PetscUnlikely(!sPtr))
@@ -30,16 +31,20 @@ DofEntity::DofEntity(const boost::shared_ptr<FieldEntity> &entity_ptr,
   if (PetscUnlikely(!getFieldEntityPtr()))
     THROW_MESSAGE("FieldEntity pointer not initialized");
   // verify dof order
-  if (PetscUnlikely(dof_order != getDofOrderMap()[dof]))
+  if (PetscUnlikely(dof_order != getDofOrderMap()[dof])) {
     THROW_MESSAGE(
         "Inconsistent DOF order with order set before for entity " +
-        boost::lexical_cast<std::string>(*entity_ptr) + " dof_order->" +
+        boost::lexical_cast<std::string>(*entity_ptr) + "\n" + "dof->" +
+        boost::lexical_cast<std::string>(dof) + " dof_order->" +
         boost::lexical_cast<std::string>(dof_order) +
         " != " + boost::lexical_cast<std::string>(getDofOrderMap()[dof]) +
         "<-getDofOrderMap()[dof]");
+  }
+
   // verify dof rank
   if (PetscUnlikely(dof_rank != dof % getNbOfCoeffs()))
     THROW_MESSAGE("Inconsistent DOFs rank with index of DOF on entity");
+#endif
 }
 
 std::ostream &operator<<(std::ostream &os, const DofEntity &e) {

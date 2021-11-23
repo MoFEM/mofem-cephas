@@ -22,19 +22,14 @@
 
 namespace MoFEM {
 
-static const MOFEMuuid IDD_LOBATTO_BASE_FUNCTION =
-    MOFEMuuid(BitIntefaceId(LOBATTO_BASE_FUNCTION_INTERFACE));
-static const MOFEMuuid IDD_KERNEL_BASE_FUNCTION =
-    MOFEMuuid(BitIntefaceId(KERNEL_BASE_FUNCTION_INTERFACE));
-
 /**
  * \brief Class used to give arguments to Lobatto base functions
  * \ingroup mofem_base_functions
  */
 struct LobattoPolynomialCtx : public LegendrePolynomialCtx {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 BaseFunctionUnknownInterface **iface) const;
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
+                                 UnknownInterface **iface) const;
 
   LobattoPolynomialCtx(int p, double *diff_s, int dim,
                        boost::shared_ptr<MatrixDouble> base_fun_ptr,
@@ -51,8 +46,8 @@ struct LobattoPolynomialCtx : public LegendrePolynomialCtx {
  */
 struct LobattoPolynomial : public LegendrePolynomial {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 BaseFunctionUnknownInterface **iface) const;
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
+                                 UnknownInterface **iface) const;
 
   LobattoPolynomial() {}
   ~LobattoPolynomial() {}
@@ -67,8 +62,8 @@ struct LobattoPolynomial : public LegendrePolynomial {
  */
 struct KernelLobattoPolynomialCtx : public LegendrePolynomialCtx {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 BaseFunctionUnknownInterface **iface) const;
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
+                                 UnknownInterface **iface) const;
 
   KernelLobattoPolynomialCtx(int p, double *diff_s, int dim,
                              boost::shared_ptr<MatrixDouble> base_fun_ptr,
@@ -85,8 +80,8 @@ struct KernelLobattoPolynomialCtx : public LegendrePolynomialCtx {
  */
 struct KernelLobattoPolynomial : public LegendrePolynomial {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 BaseFunctionUnknownInterface **iface) const;
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
+                                 UnknownInterface **iface) const;
 
   KernelLobattoPolynomial() {}
   ~KernelLobattoPolynomial() {}

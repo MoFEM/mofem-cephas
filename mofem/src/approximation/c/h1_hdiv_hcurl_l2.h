@@ -37,6 +37,16 @@ extern "C" {
 #define NBVOLUMETET_L2(P) ((P + 1) * (P + 2) * (P + 3) / 6)
 
 /**
+ * @brief Number of base functions on hexahedron for L2 space
+ */
+#define NBVOLUMEHEX_L2_GENERAL(P, Q, R) ((P + 1) * (Q + 1) * (R + 1))
+
+/**
+ * @brief Number of base functions on hexahedron for L2 space
+ */
+#define NBVOLUMEHEX_L2(P) (NBVOLUMEHEX_L2_GENERAL(P, P, P))
+
+/**
  * @brief Number of base functions on triangle for L2 space
  */
 #define NBFACETRI_L2(P) ((P + 1) * (P + 2) / 2)
@@ -79,6 +89,19 @@ extern "C" {
  */
 #define NBVOLUMEPRISM_H1(P) ((P > 3) ? ((P - 2) * (P - 2) * (P - 2)) : 0)
 
+/**
+ * @brief  Number of base functions on hex for H1 space
+ *
+ */
+#define NBVOLUMEHEX_H1_GENERAL(P, Q, R)                                        \
+  ((((P) > 1) && ((Q) > 1) && ((R) > 1)) ? (((P)-1) * ((Q)-1) * ((R)-1)) : 0)
+
+/**
+ * @brief  Number of base functions on hex for H1 space
+ *
+ */
+#define NBVOLUMEHEX_H1(P) (NBVOLUMEHEX_H1_GENERAL(P, P, P))
+
 // H curl
 
 #define NBEDGE_AINSWORTH_HCURL(P) (((P) > 0) ? (P + 1) : 0)
@@ -100,10 +123,16 @@ extern "C" {
 /**
  * @brief Number of base functions on quad for Hcurl space
  */
-#define NBFACEQUAD_DEMKOWICZ_FAMILY_QUAD_HCURL(P, Q)                           \
+#define NBFACEQUAD_DEMKOWICZ_FAMILY_HCURL(P, Q)                                \
   (((P) > 0 && (Q) > 1) ? P * (Q - 1) : 0)
 #define NBFACEQUAD_DEMKOWICZ_HCURL(P)                                          \
-  (2 * NBFACEQUAD_DEMKOWICZ_FAMILY_QUAD_HCURL(P, P))
+  (2 * NBFACEQUAD_DEMKOWICZ_FAMILY_HCURL(P, P))
+
+#define NBVOLUMEHEX_DEMKOWICZ_FAMILY_HCURL(P, Q, R)                            \
+  ((P > 0) && (Q > 1) && (R > 1) ? ((P) * (Q - 1) * (R - 1)) : 0)
+
+#define NBVOLUMEHEX_DEMKOWICZ_HCURL(P)                                         \
+  (3 * NBVOLUMEHEX_DEMKOWICZ_FAMILY_HCURL(P, P, P))
 
 // H div
 
@@ -121,6 +150,15 @@ extern "C" {
 #define NBVOLUMETET_DEMKOWICZ_HDIV(P)                                          \
   (((P) > 1) ? (P) * (P - 1) * (P + 1) / 2 : 0)
 
+#define NBFACEQUAD_DEMKOWICZ_QUAD_HDIV_GEMERAL(P, Q)                           \
+  (((P) > 0 && (Q) > 0) ? ((P) * (Q)) : 0)
+#define NBFACEQUAD_DEMKOWICZ_HDIV(P)                                           \
+  (NBFACEQUAD_DEMKOWICZ_QUAD_HDIV_GEMERAL(P, P))
+#define NBVOLUMEHEX_DEMKOWICZ_FAMILY_HDIV(P, Q, R)                             \
+  ((((P) > 0) && ((Q) > 0) && ((R) > 0)) ? ((P - 1) * Q * R) : 0)
+#define NBVOLUMEHEX_DEMKOWICZ_HDIV(P)                                          \
+  (3 * NBVOLUMEHEX_DEMKOWICZ_FAMILY_HDIV(P, P, P))
+
 // Bubbles for H div space
 
 /**
@@ -133,7 +171,8 @@ extern "C" {
  * @param L2N values of L2 base at integration points
  * @param diff_L2N dirvatives of base functions at integration points
  * @param GDIM number of integration points
- * @param base_polynomials polynomial base used to construct L2 base on element
+ * @param base_polynomials polynomial base used to construct L2 base on
+ * element
  * @return PetscErrorCode
  */
 PetscErrorCode L2_Ainsworth_ShapeFunctions_MBTRI(
@@ -159,28 +198,6 @@ PetscErrorCode L2_Ainsworth_ShapeFunctions_MBTET(
     PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
                                        double *L, double *diffL,
                                        const int dim));
-
-/**
- * \deprecated Use L2_Ainsworth_ShapeFunctions_MBTRI
- */
-DEPRECATED PetscErrorCode L2_ShapeFunctions_MBTRI(
-    int p, double *N, double *diffN, double *L2N, double *diff_L2N, int GDIM,
-    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
-                                       double *L, double *diffL,
-                                       const int dim));
-/**
- * \deprecated Use L2_Ainsworth_ShapeFunctions_MBTET
- */
-DEPRECATED PetscErrorCode L2_ShapeFunctions_MBTET(
-    int p, double *N, double *diffN, double *L2N, double *diff_L2N, int GDIM,
-    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
-                                       double *L, double *diffL,
-                                       const int dim));
-
-PetscErrorCode L2_VolumeShapeDiffMBTETinvJ(int base_p, int p,
-                                           double *volume_diffN, double *invJac,
-                                           double *volume_diffNinvJac,
-                                           int GDIM);
 
 /**
  * \brief H1_EdgeShapeFunctions_MBTRI
@@ -238,24 +255,6 @@ PetscErrorCode H1_FaceGradientOfDeformation_hierarchical(int p, double *diffN,
 PetscErrorCode H1_VolumeGradientOfDeformation_hierarchical(int p, double *diffN,
                                                            double *dofs,
                                                            double *F);
-
-/**
- * \deprecated use H1_EdgeGradientOfDeformation_hierarchical
- */
-DEPRECATED PetscErrorCode H1_EdgeGradientOfDeformation_hierachical(
-    int p, double *diffN, double *dofs, double *F);
-
-/**
- * \deprecated use H1_FaceGradientOfDeformation_hierarchical
- */
-DEPRECATED PetscErrorCode H1_FaceGradientOfDeformation_hierachical(
-    int p, double *diffN, double *dofs, double *F);
-
-/**
- * \deprecated use H1_VolumeGradientOfDeformation_hierarchical
- */
-DEPRECATED PetscErrorCode H1_VolumeGradientOfDeformation_hierachical(
-    int p, double *diffN, double *dofs, double *F);
 
 PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
     int *faces_nodes, int *p, double *N, double *diffN, double *faceN[],

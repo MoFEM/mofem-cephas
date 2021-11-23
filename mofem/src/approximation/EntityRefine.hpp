@@ -48,6 +48,11 @@ MoFEMErrorCode prism_type_3(const EntityHandle *conn,
                             const EntityHandle *edge_new_nodes,
                             EntityHandle *new_prism_conn);
 
+// Quad
+MoFEMErrorCode quad_split_all_edges(const EntityHandle *conn,
+                                    const EntityHandle *edge_new_nodes,
+                                    EntityHandle *new_quad_conn);
+
 } // namespace MoFEM
 
 #endif //__ENTITYREFINE_HPP__

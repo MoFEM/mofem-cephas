@@ -1029,6 +1029,7 @@ struct DataForcesAndSourcesCore {
   std::bitset<LASTSPACE> sPace; ///< spaces on element
   std::bitset<LASTBASE> bAse;   ///< bases on element
   MatrixInt facesNodes;         ///< nodes on finite element faces
+  MatrixInt facesNodesOrder;    ///< order of face nodes on element
 
   std::array<std::bitset<LASTSPACE>, MBMAXTYPE>
       spacesOnEntities; ///< spaces on entity types
@@ -1622,6 +1623,11 @@ MatSetValues<EntityStorage>(Mat M,
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
 DataForcesAndSourcesCore::EntData::getFTensor1N<3>(FieldApproximationBase base);
+
+template <>
+FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
+DataForcesAndSourcesCore::EntData::getFTensor1N<3>(FieldApproximationBase base,
+                                                   const int gg, const int bb);
 
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>

@@ -129,7 +129,7 @@ mpirun -np 4 ./elasticity \
   -my_order 1  -my_block_config block_congig.in   \
   -mofem_mg_verbose 1 -mofem_mg_coarse_order 1 -mofem_mg_levels 4  \
   -pc_type mg \
-  -mg_coarse_ksp_type preonly -mg_coarse_pc_type lu -mg_coarse_pc_factor_mat_solver_package mumps \
+  -mg_coarse_ksp_type preonly -mg_coarse_pc_type lu -mg_coarse_pc_factor_mat_solver_type mumps \
   -pc_mg_smoothup 20 -pc_mg_smoothdown 20  -pc_mg_type multiplicative
 \endcode
 
@@ -138,7 +138,7 @@ mpirun -np 4 ./elasticity \
 - Option \em -mofem_mg_levels 4 set number of multi-grid level. In that case maximal approx. order for some part of mesh is 4, thus 4 multi-grid levels.
 - Option -pc_mg_smoothup 20 -pc_mg_smoothdown 20 set number of smoothing iterations, for more details look to PETSc manual.
 - In line \code
--mg_coarse_ksp_type preonly -mg_coarse_pc_type lu -mg_coarse_pc_factor_mat_solver_package mumps
+-mg_coarse_ksp_type preonly -mg_coarse_pc_type lu -mg_coarse_pc_factor_mat_solver_type mumps
 \endcode a direct solver for coarse mesh is set.
 
 \subsection how_to_make_2nd_order_geometry How to make 2nd order geometry in cubit and transfer it to MoFEM?
@@ -286,7 +286,7 @@ instruments -v -t "Time Profiler" \
 ./elasticity -my_file LShape.h5m  -ksp_type fgmres -ksp_monitor -my_order 5 \
 -pc_type mg -mofem_mg_verbose 1 -mofem_mg_coarse_order 1 \
 -mofem_mg_levels 5 -mg_coarse_ksp_type preonly \
--mg_coarse_pc_type lu -mg_coarse_pc_factor_mat_solver_package mumps \
+-mg_coarse_pc_type lu -mg_coarse_pc_factor_mat_solver_type mumps \
 -pc_mg_smoothup 10 -pc_mg_smoothdown 10 -pc_mg_type multiplicative -log_view
 \endcode
 

@@ -523,9 +523,9 @@ int main(int argc, char *argv[]) {
                                            BitRefLevel(ll).set(), MBTET, tets);
         MeshRefinement *m_ref;
         CHKERR m_field_ref.getInterface(m_ref);
-        CHKERR m_ref->add_vertices_in_the_middle_of_edges(
+        CHKERR m_ref->addVerticesInTheMiddleOfEdges(
             edges, BitRefLevel().set(ll + 1));
-        CHKERR m_ref->refine_TET(tets, BitRefLevel().set(ll + 1));
+        CHKERR m_ref->refineTets(tets, BitRefLevel().set(ll + 1));
       }
 
       CHKERR m_field_ref.getInterface<BitRefManager>()

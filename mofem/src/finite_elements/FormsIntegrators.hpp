@@ -25,16 +25,22 @@ namespace MoFEM {
 
 //! [Storage and set boundary conditions]
 
-struct EssentialBcStorage;
+struct EssentialBcStorage : public EntityStorage {
+  EssentialBcStorage(VectorInt &indices) : entityIndices(indices) {}
+  VectorInt entityIndices;
+  using HashVectorStorage =
+      map<std::string, std::vector<boost::shared_ptr<EssentialBcStorage>>>;
+  static HashVectorStorage feStorage;
+};
 
 /**
  * @brief Set indices on entities on finite element
  * @ingroup mofem_forms
  *
- * If indices is marked, set its value to -1. DOF which such indice is not
- * assembled into system.
+ * If index is marked, its value is set to -1. DOF with such index is not
+ * assembled into the system.
  *
- * Indices are strored on on entity.
+ * Indices are stored on the entity.
  *
  */
 struct OpSetBc : public ForcesAndSourcesCore::UserDataOperator {
@@ -71,7 +77,7 @@ VecSetValues<EssentialBcStorage>(Vec V,
                                  const double *ptr, InsertMode iora);
 
 /**
- * @brief Set valyes to matrix in operator
+ * @brief Set values to matrix in operator
  *
  * @param M
  * @param row_data
@@ -89,14 +95,14 @@ MoFEMErrorCode MatSetValues<EssentialBcStorage>(
 //! [Storage and set boundary conditions]
 
 /**
- * @brief Form integrator assembly tpes
+ * @brief Form integrator assembly types
  * @ingroup mofem_forms
  *
  */
 enum AssemblyType { PETSC, USER_ASSEMBLE, LAST_ASSEMBLE };
 
 /**
- * @brief Fom integrayors inegrator types
+ * @brief Form integrator integration types
  * @ingroup mofem_forms
  *
  */
@@ -139,8 +145,8 @@ template <AssemblyType A, typename EleOp> struct OpBaseImpl : public EleOp {
    * \brief Do calculations for the left hand side
    * @param  row_side row side number (local number) of entity on element
    * @param  col_side column side number (local number) of entity on element
-   * @param  row_type type of row entity MBVERTEX, MBEDGE, MBTRI or MBTET
-   * @param  col_type type of column entity MBVERTEX, MBEDGE, MBTRI or MBTET
+   * @param  row_type type of row entity 
+   * @param  col_type type of column entity 
    * @param  row_data data for row
    * @param  col_data data for column
    * @return          error code
@@ -175,6 +181,11 @@ protected:
   int nbCols;             ///< number if dof on column
   int nbIntegrationPts;   ///< number of integration points
   int nbRowBaseFunctions; ///< number or row base functions
+
+  int rowSide;           ///< row side number
+  int colSide;           ///< column side number
+  EntityType rowType;    ///< row type
+  EntityType colType;    ///< column type
 
   bool assembleTranspose;
   bool onlyTranspose;
@@ -260,11 +271,15 @@ OpBaseImpl<A, EleOp>::doWork(int row_side, int col_side, EntityType row_type,
   // if no dofs on row, exit that work, nothing to do here
   if (!nbRows)
     MoFEMFunctionReturnHot(0);
+  rowSide = row_side;
+  rowType = row_type;
   // get number of dofs on column
   nbCols = col_data.getIndices().size();
   // if no dofs on Columbia, exit nothing to do here
   if (!nbCols)
     MoFEMFunctionReturnHot(0);
+  colSide = col_side;
+  colType = col_type;
   // get number of integration points
   nbIntegrationPts = EleOp::getGaussPts().size2();
   // get row base functions
@@ -299,6 +314,9 @@ MoFEMErrorCode OpBaseImpl<A, EleOp>::doWork(int row_side, EntityType row_type,
   MoFEMFunctionBegin;
   // get number of dofs on row
   nbRows = row_data.getIndices().size();
+  rowSide = row_side;
+  rowType = row_type;
+
   if (!nbRows)
     MoFEMFunctionReturnHot(0);
   // get number of integration points

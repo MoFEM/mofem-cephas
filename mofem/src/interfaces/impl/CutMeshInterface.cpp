@@ -24,15 +24,10 @@
 namespace MoFEM {
 
 MoFEMErrorCode
-CutMeshInterface::query_interface(const MOFEMuuid &uuid,
+CutMeshInterface::query_interface(boost::typeindex::type_index type_index,
                                   UnknownInterface **iface) const {
   MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_MOFEMCutMesh) {
-    *iface = const_cast<CutMeshInterface *>(this);
-    MoFEMFunctionReturnHot(0);
-  }
-  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
+  *iface = const_cast<CutMeshInterface *>(this);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -471,8 +466,17 @@ MoFEMErrorCode CutMeshInterface::makeFront(const bool debug) {
   Range tets_skin;
   CHKERR skin.find_skin(0, vOlume, false, tets_skin);
   Range tets_skin_edges;
-  CHKERR moab.get_adjacencies(tets_skin, 1, false, tets_skin_edges,
-                              moab::Interface::UNION);
+  ErrorCode tmp_result;
+  tmp_result = moab.get_adjacencies(tets_skin, 1, false, tets_skin_edges,
+                                    moab::Interface::UNION);
+
+  if (MB_SUCCESS != tmp_result)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Duplicated edges: most likely the source of error is comming from "
+            "adding the vertices of the cracking "
+            "volume to a BLOCKSET rather than NODESET (corresponding to the "
+            "input parameter-vertex_block_set)");
+
   Range surface_skin;
   CHKERR skin.find_skin(0, sUrface, false, surface_skin);
   fRont = subtract(surface_skin, tets_skin_edges);
@@ -858,8 +862,8 @@ MoFEMErrorCode CutMeshInterface::refineMesh(const int init_bit_level,
     CHKERR moab.get_adjacencies(verts, 1, true, ref_edges,
                                 moab::Interface::UNION);
 
-    CHKERR refiner->add_vertices_in_the_middle_of_edges(ref_edges, bit);
-    CHKERR refiner->refine_TET(vOlume, bit, false, verb);
+    CHKERR refiner->addVerticesInTheMiddleOfEdges(ref_edges, bit);
+    CHKERR refiner->refineTets(vOlume, bit, false, verb);
 
     CHKERR update_range(fixed_edges);
     CHKERR update_range(&vOlume);
@@ -1330,8 +1334,8 @@ MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit,
   auto refine_mesh = [&]() {
     MoFEMFunctionBegin;
     CHKERR m_field.getInterface(refiner);
-    CHKERR refiner->add_vertices_in_the_middle_of_edges(cutEdges, bit);
-    CHKERR refiner->refine_TET(vOlume, bit, false, QUIET,
+    CHKERR refiner->addVerticesInTheMiddleOfEdges(cutEdges, bit);
+    CHKERR refiner->refineTets(vOlume, bit, false, QUIET,
                                debug ? &cutEdges : NULL);
     MoFEMFunctionReturn(0);
   };
@@ -1517,6 +1521,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
   Range tets_skin_edges;
   CHKERR moab.get_adjacencies(tets_skin, 1, false, tets_skin_edges,
                               moab::Interface::UNION);
+
   // get edges on new surface
   Range cut_surface_edges;
   CHKERR moab.get_adjacencies(cutNewSurfaces, 1, false, cut_surface_edges,
@@ -1993,8 +1998,8 @@ MoFEMErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,
   CutMeshFunctionBegin;
 
   CHKERR m_field.getInterface(refiner);
-  CHKERR refiner->add_vertices_in_the_middle_of_edges(trimEdges, bit);
-  CHKERR refiner->refine_TET(cutNewVolumes, bit, false, QUIET,
+  CHKERR refiner->addVerticesInTheMiddleOfEdges(trimEdges, bit);
+  CHKERR refiner->refineTets(cutNewVolumes, bit, false, QUIET,
                              debug ? &trimEdges : NULL);
 
   trimNewVolumes.clear();

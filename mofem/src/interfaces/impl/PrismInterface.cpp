@@ -21,16 +21,11 @@
 
 namespace MoFEM {
 
-MoFEMErrorCode PrismInterface::query_interface(const MOFEMuuid &uuid,
-                                               UnknownInterface **iface) const {
-  MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_MOFEMPrismInterface) {
-    *iface = const_cast<PrismInterface *>(this);
-    MoFEMFunctionReturnHot(0);
-  }
-  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
-  MoFEMFunctionReturnHot(0);
+MoFEMErrorCode
+PrismInterface::query_interface(boost::typeindex::type_index type_index,
+                                UnknownInterface **iface) const {
+  *iface = const_cast<PrismInterface *>(this);
+  return 0;
 }
 
 PrismInterface::PrismInterface(const Core &core)
@@ -58,12 +53,12 @@ MoFEMErrorCode PrismInterface::getSides(const int msId,
   MoFEMFunctionBegin;
   CHKERR m_field.getInterface(meshsets_manager_ptr);
   CubitMeshSet_multiIndex::index<
-      Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator miit =
+      Composite_Cubit_msId_And_MeshsetType_mi_tag>::type::iterator miit =
       meshsets_manager_ptr->getMeshsetsMultindex()
-          .get<Composite_Cubit_msId_And_MeshSetType_mi_tag>()
+          .get<Composite_Cubit_msId_And_MeshsetType_mi_tag>()
           .find(boost::make_tuple(msId, cubit_bc_type.to_ulong()));
   if (miit != meshsets_manager_ptr->getMeshsetsMultindex()
-                  .get<Composite_Cubit_msId_And_MeshSetType_mi_tag>()
+                  .get<Composite_Cubit_msId_And_MeshsetType_mi_tag>()
                   .end()) {
     CHKERR getSides(miit->meshset, mesh_bit_level, recursive, verb);
   } else {
@@ -547,12 +542,12 @@ MoFEMErrorCode PrismInterface::splitSides(const EntityHandle meshset,
   MoFEMFunctionBegin;
   CHKERR m_field.getInterface(meshsets_manager_ptr);
   CubitMeshSet_multiIndex::index<
-      Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator miit =
+      Composite_Cubit_msId_And_MeshsetType_mi_tag>::type::iterator miit =
       meshsets_manager_ptr->getMeshsetsMultindex()
-          .get<Composite_Cubit_msId_And_MeshSetType_mi_tag>()
+          .get<Composite_Cubit_msId_And_MeshsetType_mi_tag>()
           .find(boost::make_tuple(msId, cubit_bc_type.to_ulong()));
   if (miit != meshsets_manager_ptr->getMeshsetsMultindex()
-                  .get<Composite_Cubit_msId_And_MeshSetType_mi_tag>()
+                  .get<Composite_Cubit_msId_And_MeshsetType_mi_tag>()
                   .end()) {
     CHKERR splitSides(meshset, bit, miit->meshset, add_interface_entities,
                       recursive, verb);
@@ -837,7 +832,7 @@ MoFEMErrorCode PrismInterface::splitSides(
       }
     }
 
-    switch (moab.type_from_handle(*eit3d)) {
+    switch (type_from_handle(*eit3d)) {
     case MBTET: {
 
       RefEntity_multiIndex::iterator child_it;
@@ -1149,7 +1144,7 @@ MoFEMErrorCode PrismInterface::splitSides(
       EntityHandle parent_prism;
       CHKERR moab.tag_get_data(cOre.get_th_RefParentHandle(), &*pit, 1,
                                &parent_prism);
-      if (moab.type_from_handle(parent_prism) != MBPRISM)
+      if (type_from_handle(parent_prism) != MBPRISM)
         SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                 "this prism should have parent which is prism as well");
 

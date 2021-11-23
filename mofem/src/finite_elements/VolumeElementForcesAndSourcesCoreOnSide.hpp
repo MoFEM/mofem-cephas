@@ -41,9 +41,9 @@ struct VolumeElementForcesAndSourcesCoreOnSideBase
    *
    * \todo That this is not general, e.g., for quad number of nodes is 4.
    *
-   * @return const std::array<int, 3>&
+   * @return const std::array<int, 4>&
    */
-  inline const std::array<int, 3> &getFaceConnMap() const;
+  inline const std::array<int, 4> &getFaceConnMap() const;
 
   /**
    * @brief Get face nodes maped on volume
@@ -53,7 +53,7 @@ struct VolumeElementForcesAndSourcesCoreOnSideBase
    *
    * @return const sdt::array<int, 4>&
    */
-  inline const std::array<int, 4> &getTetConnMap() const;
+  inline const std::array<int, 8> &getTetConnMap() const;
 
   /**
    * @brief Get node on volume opposite to volume element
@@ -82,98 +82,7 @@ struct VolumeElementForcesAndSourcesCoreOnSideBase
   /** \brief default operator for TET element
    * \ingroup mofem_forces_and_sources_volume_element
    */
-  struct UserDataOperator
-      : public VolumeElementForcesAndSourcesCore::UserDataOperator {
-
-    using VolumeElementForcesAndSourcesCore::UserDataOperator::UserDataOperator;
-
-    inline VolumeElementForcesAndSourcesCoreOnSideBase *getVolumeFE() const;
-
-    inline FaceElementForcesAndSourcesCoreBase *getFaceFE() const;
-
-    /**
-     * \brief get face sense in respect to volume
-     * @return error code
-     */
-    inline int getFaceSense() const;
-
-    /**
-     * \brief get face side number in respect to volume
-     * @return error code
-     */
-    inline int getFaceSideNumber() const;
-
-    inline bool getEdgeFace(const int ee) const;
-
-    /**
-     * get face normal on side which is this element
-     * @return face normal
-     */
-    inline VectorDouble &getNormal();
-
-    /** \brief get triangle tangent 1
-     */
-    inline VectorDouble &getTangent1();
-
-    /** \brief get triangle tangent 2
-     */
-    inline VectorDouble &getTangent2();
-
-    /** \brief get normal as tensor
-     */
-    inline auto getFTensor1Normal();
-
-    /** \brief get tangentOne as tensor
-     */
-    inline auto getFTensor1Tangent1();
-
-    /** \brief get tangentTwo as tensor
-     */
-    inline auto getFTensor1Tangent2();
-
-    /** \brief if higher order geometry return normals at Gauss pts.
-
-    Note: returned matrix has size 0 in rows and columns if no HO approximation
-    of geometry is available.
-
-     */
-    inline MatrixDouble &getNormalsAtGaussPts();
-
-    /** \brief if higher order geometry return normals at Gauss pts.
-     *
-     * \param gg gauss point number
-     */
-    inline ublas::matrix_row<MatrixDouble> getNormalsAtGaussPts(const int gg);
-
-    /** \brief get normal at integration points
-
-      Example:
-      \code
-      double nrm2;
-      FTensor::Index<'i',3> i;
-      auto t_normal = getFTensor1NormalsAtGaussPts();
-      for(int gg = gg!=data.getN().size1();gg++) {
-        nrm2 = sqrt(t_normal(i)*t_normal(i));
-        ++t_normal;
-      }
-      \endcode
-
-    */
-    inline auto getFTensor1NormalsAtGaussPts();
-
-    /** \brief get face coordinates at Gauss pts.
-
-    \note Coordinates should be the same what function getCoordsAtGaussPts
-    on tets is returning. If both coordinates are different it is error, or you
-    do something very unusual.
-
-     */
-    inline MatrixDouble &getFaceCoordsAtGaussPts();
-
-  protected:
-  
-    MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
-  };
+  struct UserDataOperator;
 
   int getRule(int order);
   MoFEMErrorCode setGaussPts(int order);
@@ -181,9 +90,104 @@ struct VolumeElementForcesAndSourcesCoreOnSideBase
 private:
   int faceSense;      ///< Sense of face, could be 1 or -1
   int faceSideNumber; ///< Face side number
-  std::array<int, 3> faceConnMap;
-  std::array<int, 4> tetConnMap;
+  std::array<int, 4> faceConnMap;
+  std::array<int, 8> tetConnMap;
   int oppositeNode;
+};
+
+/** \brief default operator for TET element
+ * \ingroup mofem_forces_and_sources_volume_element
+ */
+struct VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator
+    : public VolumeElementForcesAndSourcesCore::UserDataOperator {
+
+  using VolumeElementForcesAndSourcesCore::UserDataOperator::UserDataOperator;
+
+  inline VolumeElementForcesAndSourcesCoreOnSideBase *getVolumeFE() const;
+
+  inline FaceElementForcesAndSourcesCoreBase *getFaceFE() const;
+
+  /**
+   * \brief get face sense in respect to volume
+   * @return error code
+   */
+  inline int getFaceSense() const;
+
+  /**
+   * \brief get face side number in respect to volume
+   * @return error code
+   */
+  inline int getFaceSideNumber() const;
+
+  inline bool getEdgeFace(const int ee) const;
+
+  /**
+   * get face normal on side which is this element
+   * @return face normal
+   */
+  inline VectorDouble &getNormal();
+
+  /** \brief get triangle tangent 1
+   */
+  inline VectorDouble &getTangent1();
+
+  /** \brief get triangle tangent 2
+   */
+  inline VectorDouble &getTangent2();
+
+  /** \brief get normal as tensor
+   */
+  inline auto getFTensor1Normal();
+
+  /** \brief get tangentOne as tensor
+   */
+  inline auto getFTensor1Tangent1();
+
+  /** \brief get tangentTwo as tensor
+   */
+  inline auto getFTensor1Tangent2();
+
+  /** \brief if higher order geometry return normals at Gauss pts.
+
+  Note: returned matrix has size 0 in rows and columns if no HO approximation
+  of geometry is available.
+
+   */
+  inline MatrixDouble &getNormalsAtGaussPts();
+
+  /** \brief if higher order geometry return normals at Gauss pts.
+   *
+   * \param gg gauss point number
+   */
+  inline ublas::matrix_row<MatrixDouble> getNormalsAtGaussPts(const int gg);
+
+  /** \brief get normal at integration points
+
+    Example:
+    \code
+    double nrm2;
+    FTensor::Index<'i',3> i;
+    auto t_normal = getFTensor1NormalsAtGaussPts();
+    for(int gg = gg!=data.getN().size1();gg++) {
+      nrm2 = sqrt(t_normal(i)*t_normal(i));
+      ++t_normal;
+    }
+    \endcode
+
+  */
+  inline auto getFTensor1NormalsAtGaussPts();
+
+  /** \brief get face coordinates at Gauss pts.
+
+  \note Coordinates should be the same what function getCoordsAtGaussPts
+  on tets is returning. If both coordinates are different it is error, or you
+  do something very unusual.
+
+   */
+  inline MatrixDouble &getFaceCoordsAtGaussPts();
+
+protected:
+  MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
 };
 
 /**
@@ -213,12 +217,12 @@ struct VolumeElementForcesAndSourcesCoreOnSideSwitch
 using VolumeElementForcesAndSourcesCoreOnSide =
     VolumeElementForcesAndSourcesCoreOnSideSwitch<0>;
 
-const std::array<int, 3> &
+const std::array<int, 4> &
 VolumeElementForcesAndSourcesCoreOnSideBase::getFaceConnMap() const {
   return faceConnMap;
 }
 
-const std::array<int, 4> &
+const std::array<int, 8> &
 VolumeElementForcesAndSourcesCoreOnSideBase::getTetConnMap() const {
   return tetConnMap;
 }
@@ -325,9 +329,9 @@ ublas::matrix_row<MatrixDouble> VolumeElementForcesAndSourcesCoreOnSideBase::
 }
 
 template <int SWITCH>
-MoFEMErrorCode VolumeElementForcesAndSourcesCoreOnSideSwitch<SWITCH>::
-operator()() {
-  return OpSwitch<SWITCH>();
+MoFEMErrorCode
+VolumeElementForcesAndSourcesCoreOnSideSwitch<SWITCH>::operator()() {
+  return opSwitch<SWITCH>();
 }
 
 } // namespace MoFEM

@@ -25,15 +25,6 @@ namespace MoFEM {
 struct DataForcesAndSourcesCore;
 struct FEMethod;
 
-static const MOFEMuuid IDD_TET_BASE_FUNCTION =
-    MOFEMuuid(BitIntefaceId(TET_BASE_FUNCTION_INTERFACE));
-static const MOFEMuuid IDD_TRI_BASE_FUNCTION =
-    MOFEMuuid(BitIntefaceId(TRI_BASE_FUNCTION_INTERFACE));
-static const MOFEMuuid IDD_EDGE_BASE_FUNCTION =
-    MOFEMuuid(BitIntefaceId(EDGE_BASE_FUNCTION_INTERFACE));
-static const MOFEMuuid IDD_QUAD_BASE_FUNCTION =
-    MOFEMuuid(BitIntefaceId(QUAD_BASE_FUNCTION_INTERFACE));
-
 /**
  * \brief Class used to pass element data to calculate base functions on
  * tet,triangle,edge
@@ -42,8 +33,8 @@ static const MOFEMuuid IDD_QUAD_BASE_FUNCTION =
  */
 struct EntPolynomialBaseCtx : public BaseFunctionCtx {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 BaseFunctionUnknownInterface **iface) const;
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
+                                 UnknownInterface **iface) const;
 
   PetscErrorCode (*basePolynomialsType0)(int p, double s, double *diff_s,
                                          double *L, double *diffL,

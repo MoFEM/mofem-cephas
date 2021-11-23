@@ -21,20 +21,20 @@
 #ifndef __MOFEM_HPP__
 #define __MOFEM_HPP__
 
-//Include system and libraries files
+// Include system and libraries files
 #include <Includes.hpp>
 
-//SRC APPROXIMATION
+// SRC APPROXIMATION
 #include <config.h>
 #include <definitions.h>
 
-//FTensor
+// FTensor
 #include <FTensor.hpp>
 #include <Common.hpp>
 #include <UnknownInterface.hpp>
 #include <DeprecatedPetsc.hpp>
 
-//SRC/APPROXIMATION
+// SRC/APPROXIMATION
 #include <base_functions.h>
 #include <h1_hdiv_hcurl_l2.h>
 #include <Hdiv.hpp>
@@ -46,14 +46,16 @@
 #include <LobattoPolynomial.hpp>
 #include <JacobiPolynomial.hpp>
 #include <EntPolynomialBaseCtx.hpp>
+#include <QuadPolynomialBase.hpp>      // Base functions on quad
 #include <EdgePolynomialBase.hpp>
 #include <TriPolynomialBase.hpp>
 #include <TetPolynomialBase.hpp>
+#include <HexPolynomialBase.hpp>
 #include <FatPrismPolynomialBase.hpp>
 #include <FlatPrismPolynomialBase.hpp>
 #include <EdgeQuadHexPolynomials.hpp>
 
-//SRC/MULTI-INDICES
+// SRC/MULTI-INDICES
 #include <MaterialBlocks.hpp>
 #include <BCData.hpp>
 #include <TagMultiIndices.hpp>
@@ -68,7 +70,7 @@
 #include <BCMultiIndices.hpp>
 #include <SeriesMultiIndices.hpp>
 
-//SRC/INTERFACES
+// SRC/INTERFACES
 #include <LoopMethods.hpp>
 #include <Interface.hpp>
 #include <Core.hpp>
@@ -92,30 +94,23 @@ using Sev = MoFEM::LogManager::SeverityLevel;
 #include <PrismInterface.hpp>
 #include <MeshsetsManager.hpp>
 #ifdef WITH_TETGEN
-  #include <TetGenInterface.hpp>
-#endif //WITH_TETGEN
+#include <TetGenInterface.hpp>
+#endif // WITH_TETGEN
 #ifdef WITH_MED
-  #include <MedInterface.hpp>
-#endif //WITH_MED
+#include <MedInterface.hpp>
+#endif // WITH_MED
 #include <CutMeshInterface.hpp>
-#include <BitLevelCoupler.hpp>
 #include <NodeMerger.hpp>
 #include <PrismsFromSurfaceInterface.hpp>
 
-//SRC/PETSC
+// SRC/PETSC
 #include <KspCtx.hpp>
 #include <SnesCtx.hpp>
 #include <TsCtx.hpp>
 #include <DMMoFEM.hpp>
 
-//SRC/FINITE_ELEMENTS
+// SRC/FINITE_ELEMENTS
 #include <DataStructures.hpp>
-#include <EntPolynomialBaseCtx.hpp>
-#include <TetPolynomialBase.hpp>        // Base functions on tet
-#include <TriPolynomialBase.hpp>        // Base functions on tri
-#include <QuadPolynomialBase.hpp>       // Base functions on quad
-#include <EdgePolynomialBase.hpp>       // Base functions on edge
-#include <FlatPrismPolynomialBase.hpp>  // Base functions on prism
 #include <DataOperators.hpp>
 #include <ForcesAndSourcesCore.hpp>
 #include <VolumeElementForcesAndSourcesCore.hpp>
@@ -130,6 +125,7 @@ using Sev = MoFEM::LogManager::SeverityLevel;
 #include <FaceElementForcesAndSourcesCoreOnSide.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
 #include <UserDataOperators.hpp>
+#include <HODataOperators.hpp> // Manage HO order geometry
 #include <FormsIntegrators.hpp>
 #include <LinearFormsIntegrators.hpp>
 #include <BiLinearFormsIntegrators.hpp>
@@ -140,4 +136,4 @@ using Sev = MoFEM::LogManager::SeverityLevel;
 #include <FieldEvaluator.hpp>
 #include <BcManager.hpp>
 
-#endif //MOFEM_HPP__
+#endif // MOFEM_HPP__

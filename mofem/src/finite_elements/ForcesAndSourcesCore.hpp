@@ -60,373 +60,32 @@ struct ForcesAndSourcesCore : public FEMethod {
   GaussHookFun setRuleHook;
 
   /** \brief Data operator to do calculations at integration points.
-    * \ingroup mofem_forces_and_sources
+  * \ingroup mofem_forces_and_sources
 
-    Is inherited and implemented by user to do calculations. It can be used in
-    many different ways but typically is used to integrate matrices (f.e.
-    stiffness matrix) and the right hand vector (f.e. force vector).
+  Is inherited and implemented by user to do calculations. It can be used in
+  many different ways but typically is used to integrate matrices (f.e.
+  stiffness matrix) and the right hand vector (f.e. force vector).
 
-    Note: It is assumed that operator is executed for symmetric problem. That
-    means that is executed for not repeating entities on finite element. For
-    example on triangle we have nodes, 3 edges and one face. Because of symmetry
-    calculations are for: nodes-nodes, nodes-edge0, nodes-edge_1, nodes-edge_2,
-    nodes-face,
-    edges_1-edges_1, edges_1-edge_1, edge_1-edge_2,
-    edge_1-edge_1, edge_1-edge_2,
-    edge_2-edge_2,
-    edge_1-face, edge_1-face, edges_3-face,
-    face - face
+  Note: It is assumed that operator is executed for symmetric problem. That
+  means that is executed for not repeating entities on finite element. For
+  example on triangle we have nodes, 3 edges and one face. Because of symmetry
+  calculations are for: nodes-nodes, nodes-edge0, nodes-edge_1, nodes-edge_2,
+  nodes-face,
+  edges_1-edges_1, edges_1-edge_1, edge_1-edge_2,
+  edge_1-edge_1, edge_1-edge_2,
+  edge_2-edge_2,
+  edge_1-face, edge_1-face, edges_3-face,
+  face - face
 
-    In case of non symmetric problem in addition calculations of lower off
-    diagonal terms. F.e. edge_1-edge_0, esges_3-edge_0, edge_3-edge_1,
+  In case of non symmetric problem in addition calculations of lower off
+  diagonal terms. F.e. edge_1-edge_0, esges_3-edge_0, edge_3-edge_1,
 
-    In that case class variable UserDataOperator::sYmm = false;
+  In that case class variable UserDataOperator::sYmm = false;
 
-    NoteL: By default sYmm is set for symmetric problems
+  NoteL: By default sYmm is set for symmetric problems
 
   */
-  struct UserDataOperator : public DataOperator {
-
-    /**
-     * \brief Controls loop over entities on element
-     *
-     * OPROW is used if row vector is assembled
-     * OPCOL is usually used if column vector is assembled
-     * OPROWCOL is usually used for assemble matrices.
-     *
-     * For typical problem like Bubnov-Galerkin OPROW and OPCOL are the same. In
-     * more general case for example for non-square matrices columns and rows
-     * could have different numeration and/or different set of fields.
-     *
-     */
-    enum OpType {
-      OPROW = 1 << 0,
-      OPCOL = 1 << 1,
-      OPROWCOL = 1 << 2,
-      OPLAST = 1 << 3
-    };
-
-    char opType;
-    std::string rowFieldName;
-    std::string colFieldName;
-    FieldSpace sPace;
-
-    /**
-     * This Constructor is used typically when some modification base shape
-     * functions on some approx. space is applied. Operator is run for all data
-     * on space.
-     *
-     * User has no access to field data from this operator.
-     */
-    UserDataOperator(const FieldSpace space, const char type = OPLAST,
-                     const bool symm = true);
-
-    UserDataOperator(const std::string &field_name, const char type,
-                     const bool symm = true);
-
-    UserDataOperator(const std::string &row_field_name,
-                     const std::string &col_field_name, const char type,
-                     const bool symm = true);
-
-    /** \brief Return raw pointer to NumeredEntFiniteElement
-     */
-    inline boost::shared_ptr<const NumeredEntFiniteElement>
-    getNumeredEntFiniteElementPtr() const;
-
-    /**
-     * \brief Return finite element entity handle
-     * @return Finite element entity handle
-     */
-    inline EntityHandle getFEEntityHandle() const;
-
-    /**
-     * @brief Get dimension of finite element
-     * 
-     * @return int 
-     */
-    inline int getFEDim() const;
-
-    /**
-     * @brief Get the side number pointer
-     *
-     * \note For vertex is expection. Side basses in argument of function doWork
-     * is zero. For other entity types side can be used as argument of this
-     * function.
-     *
-     * @param side_number
-     * @param type
-     * @return boost::weak_ptr<SideNumber>
-     */
-    inline boost::weak_ptr<SideNumber> getSideNumberPtr(const int side_number,
-                                                        const EntityType type);
-
-    /**
-     * @brief Get the side entity
-     *
-     * \note For vertex is expection. Side basses in argument of function
-     * doWork is zero. For other entity types side can be used as argument of
-     * this function.
-     *
-     * \code
-     * MoFEMErrorCode doWork(int side, EntityType type,
-     *                     DataForcesAndSourcesCore::EntData &data) {
-     *  MoFEMFunctionBegin;
-     *
-     *  if (type == MBVERTEX) {
-     *    for (int n = 0; n != number_of_nodes; ++n)
-     *      EntityHandle ent = getSideEntity(n, type);
-     *
-     *      // Do somthing
-     *
-     *  } else {
-     *    EntityHandle ent = getSideEntity(side, type);
-     *
-     *    // Do somthing
-     *
-     *  }
-     *
-     *  MoFEMFunctionReturn(0);
-     * }
-     * \endcode
-     *
-     * @param side_number
-     * @param type
-     */
-    inline EntityHandle getSideEntity(const int side_number,
-                                      const EntityType type);
-
-    /**
-     * @brief Get the number of nodes on finite element
-     *
-     * @return int
-     */
-    inline int getNumberOfNodesOnElement();
-
-    /** \brief Get row indices
-
-    Field could be or not declared for this element but is declared for
-    problem
-
-    \param field_name
-    \param type entity type
-    \param side side number, any number if type is MBVERTEX
-    \return indices
-
-    NOTE: Using those indices to assemble matrix will result in error if new
-    non-zero values need to be created.
-
-    */
-    MoFEMErrorCode getProblemRowIndices(const std::string filed_name,
-                                        const EntityType type, const int side,
-                                        VectorInt &indices) const;
-
-    /** \brief Get col indices
-
-    Field could be or not declared for this element but is declared for
-    problem
-
-    \param field_name
-    \param type entity type
-    \param side side number, any number if type is MBVERTEX
-    \return indices
-
-    NOTE: Using those indices to assemble matrix will result in error if new
-    non-zero values need to be created.
-
-    */
-    MoFEMErrorCode getProblemColIndices(const std::string filed_name,
-                                        const EntityType type, const int side,
-                                        VectorInt &indices) const;
-
-    /** \brief Return raw pointer to Finite Element Method object
-     */
-    inline const FEMethod *getFEMethod() const;
-
-    /**
-     * \brief Get operator types
-     * @return Return operator type
-     */
-    inline int getOpType() const;
-
-    /**
-     * \brief Set operator type
-     * @param Operator type
-     */
-    inline void setOpType(const OpType type);
-
-    /**
-     * \brief Add operator type
-     */
-    inline void addOpType(const OpType type);
-
-    /**
-     * \brief get number of finite element in the loop
-     * @return number of finite element
-     */
-    inline int getNinTheLoop() const;
-
-    /**
-     * \brief get size of elements in the loop
-     * @return loop size
-     */
-    inline int getLoopSize() const;
-
-    /** \brief Get name of the element
-     */
-    inline const std::string &getFEName() const;
-
-    /** \name Accessing KSP */
-
-    /**@{*/
-
-    inline const PetscData::Switches &getDataCtx() const;
-
-    inline const KspMethod::KSPContext getKSPCtx() const;
-
-    inline const SnesMethod::SNESContext getSNESCtx() const;
-
-    inline const TSMethod::TSContext getTSCtx() const;
-
-    /**@}*/
-
-    /**@{*/
-
-    inline Vec getKSPf() const;
-
-    inline Mat getKSPA() const;
-
-    inline Mat getKSPB() const;
-
-    /**@}*/
-
-    /** \name Accessing SNES */
-
-    /**@{*/
-
-    inline Vec getSNESf() const;
-
-    inline Vec getSNESx() const;
-
-    inline Mat getSNESA() const;
-
-    inline Mat getSNESB() const;
-
-    //! \deprecated Use getSNESF intead
-    DEPRECATED inline Vec getSnesF() const { return getSNESf(); }
-
-    //! \deprecated Use getSNESX intead
-    DEPRECATED inline Vec getSnesX() const { return getSNESx(); }
-
-    //! \deprecated Use getSNESA intead
-    DEPRECATED inline Mat getSnesA() const { return getSNESA(); }
-
-    //! \deprecated Use getSNESB intead
-    DEPRECATED inline Mat getSnesB() const { return getSNESB(); }
-
-    /**@}*/
-
-    /** \name Accessing TS */
-
-    /**@{*/
-
-    inline Vec getTSu() const;
-
-    inline Vec getTSu_t() const;
-
-    inline Vec getTSu_tt() const;
-
-    inline Vec getTSf() const;
-
-    inline Mat getTSA() const;
-
-    inline Mat getTSB() const;
-
-    inline int getTSstep() const;
-
-    inline double getTStime() const;
-
-    inline double getTSa() const;
-
-    inline double getTSaa() const;
-
-    /**@}*/
-
-    /**@{*/
-
-    /** \name Base funtions and integration points */
-
-    /** \brief matrix of integration (Gauss) points for Volume Element
-     *
-     * For triangle: columns 0,1 are x,y coordinates respectively and column
-     * 2 is a weight value for example getGaussPts()(1,13) returns y
-     * coordinate of 13th Gauss point on particular volume element
-     *
-     * For tetrahedron: columns 0,1,2 are x,y,z coordinates respectively and
-     * column 3 is a weight value for example getGaussPts()(1,13) returns y
-     * coordinate of 13th Gauss point on particular volume element
-     *
-     */
-    inline MatrixDouble &getGaussPts();
-
-    /**
-     * @brief Get integration weights
-     *
-     * \code
-     * auto t_w = getFTensor0IntegrationWeight();
-     * for(int gg = 0; gg!=getGaussPts.size2(); ++gg) {
-     *  // integrate something
-     *  ++t_w;
-     * }
-     * \endcode
-     *
-     * @return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
-     */
-    inline auto getFTensor0IntegrationWeight();
-
-    /**@}*/
-
-    /**@{*/
-
-    /** \name Deprecated (do not use) */
-
-    // \deprecated Deprecated function with spelling mistake
-    DEPRECATED inline MoFEMErrorCode
-    getPorblemRowIndices(const std::string filed_name, const EntityType type,
-                         const int side, VectorInt &indices) const;
-
-    /**@}*/
-
-  protected:
-    ForcesAndSourcesCore *ptrFE;
-
-    virtual MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
-
-    inline ForcesAndSourcesCore *getPtrFE() const;
-
-    inline ForcesAndSourcesCore *getSidePtrFE() const;
-
-  private:
-    /**
-     * @brief User call this function to loop over elements on the side of
-     * face. This function calls finite element with is operator to do
-     * calculations.
-     *
-     * @param fe_name       name of the side element
-     * @param side_fe       pointer to the side element instance
-     * @param dim           dimension the of side element
-     * @param ent_for_side  entity handle for which adjacent volume or face will
-     * be accessed
-     * @return MoFEMErrorCode
-     */
-    MoFEMErrorCode loopSide(const string &fe_name,
-                            ForcesAndSourcesCore *side_fe, const size_t dim,
-                            const EntityHandle ent_for_side = 0);
-
-    friend class ForcesAndSourcesCore;
-    friend class EdgeElementForcesAndSourcesCoreBase;
-    friend class FaceElementForcesAndSourcesCoreBase;
-    friend class ContactPrismElementForcesAndSourcesCore;
-  };
+  struct UserDataOperator;
 
   /** \brief Use to push back operator for row operator
 
@@ -468,7 +127,7 @@ struct ForcesAndSourcesCore : public FEMethod {
 public:
   /** \brief Get max order of approximation for data fields
 
-  Method  getMaxDataOrder () return maximal order on entities, for
+  getMeasure  getMaxDataOrder () return maximal order on entities, for
   all data on the element. So for example if finite element is triangle, and
   triangle base function have order 4 and on edges base function have order
   2, this function return 4.
@@ -649,8 +308,8 @@ protected:
 
   /**@}*/
 
-  /// \brief Get nodes on triangles
-  MoFEMErrorCode getFaceTriNodes(DataForcesAndSourcesCore &data) const;
+  /// \brief Get nodes on faces
+  MoFEMErrorCode getFaceNodes(DataForcesAndSourcesCore &data) const;
 
   /// \brief Get field approximation space and base on entities
   MoFEMErrorCode
@@ -867,11 +526,411 @@ private:
   friend class VolumeElementForcesAndSourcesCoreOnSideBase;
   friend class FaceElementForcesAndSourcesCoreOnSideBase;
   friend class VolumeElementForcesAndSourcesCoreOnContactPrismSideBase;
+
+protected:
+  MatrixDouble coordsAtGaussPts; ///< coordinated at gauss points
+  double elementMeasure; ///< Depending on dimension of elements, stores length,
+                         ///< area or volume of element.
+};
+
+struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
+
+  /**
+   * \brief Controls loop over entities on element
+   *
+   * OPROW is used if row vector is assembled
+   * OPCOL is usually used if column vector is assembled
+   * OPROWCOL is usually used for assemble matrices.
+   *
+   * For typical problem like Bubnov-Galerkin OPROW and OPCOL are the same. In
+   * more general case for example for non-square matrices columns and rows
+   * could have different numeration and/or different set of fields.
+   *
+   */
+  enum OpType {
+    OPROW = 1 << 0,
+    OPCOL = 1 << 1,
+    OPROWCOL = 1 << 2,
+    OPLAST = 1 << 3
+  };
+
+  char opType;
+  std::string rowFieldName;
+  std::string colFieldName;
+  FieldSpace sPace;
+
+  /**
+   * This Constructor is used typically when some modification base shape
+   * functions on some approx. space is applied. Operator is run for all data
+   * on space.
+   *
+   * User has no access to field data from this operator.
+   */
+  UserDataOperator(const FieldSpace space, const char type = OPLAST,
+                   const bool symm = true);
+
+  UserDataOperator(const std::string &field_name, const char type,
+                   const bool symm = true);
+
+  UserDataOperator(const std::string &row_field_name,
+                   const std::string &col_field_name, const char type,
+                   const bool symm = true);
+
+  /** \brief Return raw pointer to NumeredEntFiniteElement
+   */
+  inline boost::shared_ptr<const NumeredEntFiniteElement>
+  getNumeredEntFiniteElementPtr() const;
+
+  /**
+   * \brief Return finite element entity handle
+   * @return Finite element entity handle
+   */
+  inline EntityHandle getFEEntityHandle() const;
+
+  /**
+   * @brief Get dimension of finite element
+   *
+   * @return int
+   */
+  inline int getFEDim() const;
+
+   /**
+   * @brief Get dimension of finite element
+   *
+   * @return int
+   */
+  inline EntityType getFEType() const;
+
+  /**
+   * @brief Get the side number pointer
+   *
+   * \note For vertex is expection. Side basses in argument of function doWork
+   * is zero. For other entity types side can be used as argument of this
+   * function.
+   *
+   * @param side_number
+   * @param type
+   * @return boost::weak_ptr<SideNumber>
+   */
+  inline boost::weak_ptr<SideNumber> getSideNumberPtr(const int side_number,
+                                                      const EntityType type);
+
+  /**
+   * @brief Get the side entity
+   *
+   * \note For vertex is expection. Side basses in argument of function
+   * doWork is zero. For other entity types side can be used as argument of
+   * this function.
+   *
+   * \code
+   * MoFEMErrorCode doWork(int side, EntityType type,
+   *                     DataForcesAndSourcesCore::EntData &data) {
+   *  MoFEMFunctionBegin;
+   *
+   *  if (type == MBVERTEX) {
+   *    for (int n = 0; n != number_of_nodes; ++n)
+   *      EntityHandle ent = getSideEntity(n, type);
+   *
+   *      // Do somthing
+   *
+   *  } else {
+   *    EntityHandle ent = getSideEntity(side, type);
+   *
+   *    // Do somthing
+   *
+   *  }
+   *
+   *  MoFEMFunctionReturn(0);
+   * }
+   * \endcode
+   *
+   * @param side_number
+   * @param type
+   */
+  inline EntityHandle getSideEntity(const int side_number,
+                                    const EntityType type);
+
+  /**
+   * @brief Get the number of nodes on finite element
+   *
+   * @return int
+   */
+  inline int getNumberOfNodesOnElement() const;
+
+  /** \brief Get row indices
+
+  Field could be or not declared for this element but is declared for
+  problem
+
+  \param field_name
+  \param type entity type
+  \param side side number, any number if type is MBVERTEX
+  \return indices
+
+  NOTE: Using those indices to assemble matrix will result in error if new
+  non-zero values need to be created.
+
+  */
+  MoFEMErrorCode getProblemRowIndices(const std::string filed_name,
+                                      const EntityType type, const int side,
+                                      VectorInt &indices) const;
+
+  /** \brief Get col indices
+
+  Field could be or not declared for this element but is declared for
+  problem
+
+  \param field_name
+  \param type entity type
+  \param side side number, any number if type is MBVERTEX
+  \return indices
+
+  NOTE: Using those indices to assemble matrix will result in error if new
+  non-zero values need to be created.
+
+  */
+  MoFEMErrorCode getProblemColIndices(const std::string filed_name,
+                                      const EntityType type, const int side,
+                                      VectorInt &indices) const;
+
+  /** \brief Return raw pointer to Finite Element Method object
+   */
+  inline const FEMethod *getFEMethod() const;
+
+  /**
+   * \brief Get operator types
+   * @return Return operator type
+   */
+  inline int getOpType() const;
+
+  /**
+   * \brief Set operator type
+   * @param Operator type
+   */
+  inline void setOpType(const OpType type);
+
+  /**
+   * \brief Add operator type
+   */
+  inline void addOpType(const OpType type);
+
+  /**
+   * \brief get number of finite element in the loop
+   * @return number of finite element
+   */
+  inline int getNinTheLoop() const;
+
+  /**
+   * \brief get size of elements in the loop
+   * @return loop size
+   */
+  inline int getLoopSize() const;
+
+  /** \brief Get name of the element
+   */
+  inline const std::string &getFEName() const;
+
+  /** \name Accessing KSP */
+
+  /**@{*/
+
+  inline const PetscData::Switches &getDataCtx() const;
+
+  inline const KspMethod::KSPContext getKSPCtx() const;
+
+  inline const SnesMethod::SNESContext getSNESCtx() const;
+
+  inline const TSMethod::TSContext getTSCtx() const;
+
+  /**@}*/
+
+  /**@{*/
+
+  inline Vec getKSPf() const;
+
+  inline Mat getKSPA() const;
+
+  inline Mat getKSPB() const;
+
+  /**@}*/
+
+  /** \name Accessing SNES */
+
+  /**@{*/
+
+  inline Vec getSNESf() const;
+
+  inline Vec getSNESx() const;
+
+  inline Mat getSNESA() const;
+
+  inline Mat getSNESB() const;
+
+  //! \deprecated Use getSNESF intead
+  DEPRECATED inline Vec getSnesF() const { return getSNESf(); }
+
+  //! \deprecated Use getSNESX intead
+  DEPRECATED inline Vec getSnesX() const { return getSNESx(); }
+
+  //! \deprecated Use getSNESA intead
+  DEPRECATED inline Mat getSnesA() const { return getSNESA(); }
+
+  //! \deprecated Use getSNESB intead
+  DEPRECATED inline Mat getSnesB() const { return getSNESB(); }
+
+  /**@}*/
+
+  /** \name Accessing TS */
+
+  /**@{*/
+
+  inline Vec getTSu() const;
+
+  inline Vec getTSu_t() const;
+
+  inline Vec getTSu_tt() const;
+
+  inline Vec getTSf() const;
+
+  inline Mat getTSA() const;
+
+  inline Mat getTSB() const;
+
+  inline int getTSstep() const;
+
+  inline double getTStime() const;
+
+  inline double getTSa() const;
+
+  inline double getTSaa() const;
+
+  /**@}*/
+
+  /**@{*/
+
+  /** \name Base funtions and integration points */
+
+  /** \brief matrix of integration (Gauss) points for Volume Element
+   *
+   * For triangle: columns 0,1 are x,y coordinates respectively and column
+   * 2 is a weight value for example getGaussPts()(1,13) returns y
+   * coordinate of 13th Gauss point on particular volume element
+   *
+   * For tetrahedron: columns 0,1,2 are x,y,z coordinates respectively and
+   * column 3 is a weight value for example getGaussPts()(1,13) returns y
+   * coordinate of 13th Gauss point on particular volume element
+   *
+   */
+  inline MatrixDouble &getGaussPts();
+
+  /**
+   * @brief Get integration weights
+   *
+   * \code
+   * auto t_w = getFTensor0IntegrationWeight();
+   * for(int gg = 0; gg!=getGaussPts.size2(); ++gg) {
+   *  // integrate something
+   *  ++t_w;
+   * }
+   * \endcode
+   *
+   * @return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
+   */
+  inline auto getFTensor0IntegrationWeight();
+
+  /**@}*/
+
+  /** \name Coordinates and access to internal data */
+
+  /**@{*/
+
+  /** \brief Gauss points and weight, matrix (nb. of points x 3)
+
+    Column 0-2 integration points coordinate x, y and z, respectively. At rows
+    are integration points.
+
+  */
+  inline MatrixDouble &getCoordsAtGaussPts();
+
+  /**
+   * \brief Get coordinates at integration points assuming linear geometry
+   *
+   * \code
+   * auto t_coords = getFTensor1CoordsAtGaussPts();
+   * for(int gg = 0;gg!=nb_int_ptrs;gg++) {
+   *   // do something
+   *   ++t_coords;
+   * }
+   * \endcode
+   *
+   */
+  inline auto getFTensor1CoordsAtGaussPts();
+
+  /**@}*/
+
+  /**@{*/
+
+  /** \name Deprecated (do not use) */
+
+  /**
+   * \brief get measure of element
+   * @return volume
+   */
+  inline double getMeasure() const;
+
+  /**
+   * \brief get measure of element
+   * @return volume
+   */
+  inline double &getMeasure();
+
+  /**}*/
+
+  /**@{*/
+
+  /** \name Deprecated (do not use) */
+
+  // \deprecated Deprecated function with spelling mistake
+  DEPRECATED inline MoFEMErrorCode
+  getPorblemRowIndices(const std::string filed_name, const EntityType type,
+                       const int side, VectorInt &indices) const;
+
+  /**@}*/
+
+protected:
+  ForcesAndSourcesCore *ptrFE;
+
+  virtual MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
+
+  inline ForcesAndSourcesCore *getPtrFE() const;
+
+  inline ForcesAndSourcesCore *getSidePtrFE() const;
+
+private:
+  /**
+   * @brief User call this function to loop over elements on the side of
+   * face. This function calls finite element with is operator to do
+   * calculations.
+   *
+   * @param fe_name       name of the side element
+   * @param side_fe       pointer to the side element instance
+   * @param dim           dimension the of side element
+   * @param ent_for_side  entity handle for which adjacent volume or face will
+   * be accessed
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode loopSide(const string &fe_name, ForcesAndSourcesCore *side_fe,
+                          const size_t dim,
+                          const EntityHandle ent_for_side = 0);
+
+  friend class ForcesAndSourcesCore;
+  friend class EdgeElementForcesAndSourcesCoreBase;
+  friend class FaceElementForcesAndSourcesCoreBase;
+  friend class ContactPrismElementForcesAndSourcesCore;
 };
 
 /// \deprecated Used ForcesAndSourcesCore instead
 DEPRECATED typedef ForcesAndSourcesCore ForcesAndSurcesCore;
-
 
 boost::shared_ptr<const NumeredEntFiniteElement>
 ForcesAndSourcesCore::UserDataOperator::getNumeredEntFiniteElementPtr() const {
@@ -884,6 +943,10 @@ EntityHandle ForcesAndSourcesCore::UserDataOperator::getFEEntityHandle() const {
 
 int ForcesAndSourcesCore::UserDataOperator::getFEDim() const {
   return ptrFE->mField.get_moab().dimension_from_handle(getFEEntityHandle());
+};
+
+EntityType ForcesAndSourcesCore::UserDataOperator::getFEType() const {
+  return type_from_handle(getFEEntityHandle());
 };
 
 boost::weak_ptr<SideNumber>
@@ -908,10 +971,8 @@ ForcesAndSourcesCore::UserDataOperator::getSideEntity(const int side_number,
     return 0;
 }
 
-int ForcesAndSourcesCore::UserDataOperator::getNumberOfNodesOnElement() {
-  int num_nodes;
-  CHKERR ptrFE->getNumberOfNodes(num_nodes);
-  return num_nodes;
+int ForcesAndSourcesCore::UserDataOperator::getNumberOfNodesOnElement() const {
+  return ptrFE->getNumberOfNodes();
 }
 
 const FEMethod *ForcesAndSourcesCore::UserDataOperator::getFEMethod() const {
@@ -1050,6 +1111,24 @@ ForcesAndSourcesCore *ForcesAndSourcesCore::UserDataOperator::getPtrFE() const {
 ForcesAndSourcesCore *
 ForcesAndSourcesCore::UserDataOperator::getSidePtrFE() const {
   return ptrFE->sidePtrFE;
+}
+
+MatrixDouble &ForcesAndSourcesCore::UserDataOperator::getCoordsAtGaussPts() {
+  return static_cast<ForcesAndSourcesCore *>(ptrFE)->coordsAtGaussPts;
+}
+
+auto ForcesAndSourcesCore::UserDataOperator::getFTensor1CoordsAtGaussPts() {
+  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
+      &getCoordsAtGaussPts()(0, 0), &getCoordsAtGaussPts()(0, 1),
+      &getCoordsAtGaussPts()(0, 2));
+}
+
+double ForcesAndSourcesCore::UserDataOperator::getMeasure() const {
+  return static_cast<ForcesAndSourcesCore *>(ptrFE)->elementMeasure;
+}
+
+double &ForcesAndSourcesCore::UserDataOperator::getMeasure() {
+  return static_cast<ForcesAndSourcesCore *>(ptrFE)->elementMeasure;
 }
 
 } // namespace MoFEM

@@ -1,6 +1,6 @@
 /**
- * \file scalar_check_approximation_2d.cpp
- * \example scalar_check_approximation_2d.cpp
+ * \file scalar_check_approximation.cpp
+ * \example scalar_check_approximation.cpp
  *
  * Approximate polynomial in 2D and check direvatives
  *
@@ -26,13 +26,13 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
-static constexpr int approx_order = 5;
+static constexpr int approx_order = 4;
 template <int DIM> struct ApproxFunctionsImpl {};
 
 template <int DIM> struct ElementsAndOps {};
 
 template <> struct ElementsAndOps<2> {
-  using DomainEle = PipelineManager::FaceEle2D;
+  using DomainEle = PipelineManager::FaceEle;
   using DomainEleOp = DomainEle::UserDataOperator;
 };
 
@@ -135,12 +135,14 @@ struct OpValsDiffVals : public DomainEleOp {
       diffVals.clear();
     }
 
-    MOFEM_LOG("AT", Sev::noisy) << "Type  " << moab::CN::EntityTypeName(type)
-                                << " side " << side;
-    MOFEM_LOG("AT", Sev::noisy) << data.getN();
-
     const int nb_dofs = data.getIndices().size();
     if (nb_dofs) {
+
+      MOFEM_LOG("AT", Sev::noisy)
+          << "Type  " << moab::CN::EntityTypeName(type) << " side " << side;
+      MOFEM_LOG("AT", Sev::noisy) << data.getN();
+      MOFEM_LOG("AT", Sev::noisy) << data.getDiffN();
+
       auto t_vals = getFTensor0FromVec(vAls);
       auto t_base_fun = data.getFTensor0N();
       for (int gg = 0; gg != nb_gauss_pts; gg++) {
@@ -150,6 +152,9 @@ struct OpValsDiffVals : public DomainEleOp {
           ++t_base_fun;
           ++t_data;
         }
+        const double v = t_vals;
+        if (!std::isnormal(v))
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "Not a number");
         ++t_vals;
       }
 
@@ -163,6 +168,9 @@ struct OpValsDiffVals : public DomainEleOp {
             ++t_diff_base_fun;
             ++t_data;
           }
+          for (int d = 0; d != SPACE_DIM; ++d)
+            if (!std::isnormal(t_diff_vals(d)))
+              SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "Not a number");
           ++t_diff_vals;
         }
       }
@@ -201,6 +209,18 @@ struct OpCheckValsDiffVals : public DomainEleOp {
     auto t_ptr_vals = getFTensor0FromVec(*ptrVals);
 
     for (int gg = 0; gg != nb_gauss_pts; gg++) {
+
+      double err_val;
+
+      // Check user data operators
+      err_val = std::abs(t_vals - t_ptr_vals);
+      MOFEM_LOG("AT", Sev::noisy) << "Val op error " << err_val;
+
+      if (err_val > eps)
+        SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                 "Wrong value from operator %4.3e", err_val);
+
+
       const double x = getCoordsAtGaussPts()(gg, 0);
       const double y = getCoordsAtGaussPts()(gg, 1);
       const double z = getCoordsAtGaussPts()(gg, 2);
@@ -208,18 +228,11 @@ struct OpCheckValsDiffVals : public DomainEleOp {
       // Check approximation
       const double delta_val = t_vals - ApproxFunctions::fUn(x, y, z);
 
-      double err_val = std::fabs(delta_val * delta_val);
+      err_val = std::fabs(delta_val * delta_val);
       MOFEM_LOG("AT", Sev::verbose) << err_val << " : " << t_vals;
       if (err_val > eps)
         SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "Wrong value %4.3e",
                  err_val);
-
-      // Check H1 user data operators
-      err_val = std::abs(t_vals - t_ptr_vals);
-
-      if (err_val > eps)
-        SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                 "Wrong value from operator %4.3e", err_val);
 
       ++t_vals;
       ++t_ptr_vals;
@@ -231,38 +244,53 @@ struct OpCheckValsDiffVals : public DomainEleOp {
       auto t_ptr_diff_vals = getFTensor1FromMat<SPACE_DIM>(*ptrDiffVals);
 
       for (int gg = 0; gg != nb_gauss_pts; gg++) {
+
+        FTensor::Tensor1<double, SPACE_DIM> t_delta_diff_val;
+        double err_diff_val;
+
+        t_delta_diff_val(i) = t_diff_vals(i) - t_ptr_diff_vals(i);
+        err_diff_val = sqrt(t_delta_diff_val(i) * t_delta_diff_val(i));
+        MOFEM_LOG("AT", Sev::noisy) << "Diff val op error " << err_diff_val;
+
+        if (err_diff_val > eps)
+          SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                   "Wrong direvatives from operator %4.3e", err_diff_val);
+
         const double x = getCoordsAtGaussPts()(gg, 0);
         const double y = getCoordsAtGaussPts()(gg, 1);
         const double z = getCoordsAtGaussPts()(gg, 2);
 
         // Check approximation
-        FTensor::Tensor1<double, SPACE_DIM> t_delta_diff_val;
         auto t_diff_anal = ApproxFunctions::diffFun(x, y, z);
         t_delta_diff_val(i) = t_diff_vals(i) - t_diff_anal(i);
 
-        double err_diff_val = sqrt(t_delta_diff_val(i) * t_delta_diff_val(i));
-        if(SPACE_DIM == 3)
-          MOFEM_LOG("AT", Sev::verbose)
-              << err_diff_val << " : " << sqrt(t_diff_vals(i) * t_diff_vals(i))
-              << " :  " << t_diff_vals(0) / t_diff_anal(0) << " "
-              << t_diff_vals(1) / t_diff_anal(1) << "  "
-              << t_diff_vals(2) /
-                     (t_diff_anal(2) + std::numeric_limits<double>::epsilon());
-        else
-          MOFEM_LOG("AT", Sev::verbose)
-              << err_diff_val << " : " << sqrt(t_diff_vals(i) * t_diff_vals(i))
-              << " :  " << t_diff_vals(0) / t_diff_anal(0) << " "
-              << t_diff_vals(1) / t_diff_anal(1);
-
-        if (err_diff_val > eps)
-          SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                   "Wrong derivative of value %4.3e", err_diff_val);
-
-        t_delta_diff_val(i) = t_diff_vals(i) - t_ptr_diff_vals(i);
         err_diff_val = sqrt(t_delta_diff_val(i) * t_delta_diff_val(i));
+        if(SPACE_DIM == 3)
+          MOFEM_LOG("AT", Sev::noisy)
+              << "Diff val " << err_diff_val << " : "
+              << sqrt(t_diff_vals(i) * t_diff_vals(i)) << " :  "
+              << t_diff_vals(0) << " (" << t_diff_anal(0) << ") "
+              << t_diff_vals(1) << " (" << t_diff_anal(1) << ")  "
+              << t_diff_vals(2) << " (" << t_diff_anal(2) << ")";
+        else
+          MOFEM_LOG("AT", Sev::noisy)
+              << "Diff val " << err_diff_val << " : "
+              << sqrt(t_diff_vals(i) * t_diff_vals(i)) << " :  "
+              << t_diff_vals(0) << " (" << t_diff_anal(0) << ") "
+              << t_diff_vals(1) << " (" << t_diff_anal(1) << ")";
+
+        MOFEM_LOG("AT", Sev::verbose)
+            << getCoords()(3 * 1 + 0) - getCoords()(3 * 0 + 0);
+        MOFEM_LOG("AT", Sev::verbose)
+            << getCoords()(3 * 1 + 1) - getCoords()(3 * 0 + 1);
+        MOFEM_LOG("AT", Sev::verbose)
+            << getCoords()(3 * 1 + 2) - getCoords()(3 * 0 + 2);
+
+        MOFEM_LOG("AT", Sev::verbose) << "Diff val error " << err_diff_val;
         if (err_diff_val > eps)
-          SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                   "Wrong direvatives from operator %4.3e", err_diff_val);
+          SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                   "Wrong derivative of value %4.3e %4.3e", err_diff_val,
+                   t_diff_anal.l2());
 
         ++t_diff_vals;
         ++t_ptr_diff_vals;
@@ -347,32 +375,53 @@ int main(int argc, char *argv[]) {
     auto dm = simple_interface->getDM();
 
     VectorDouble vals;
-    MatrixDouble jac, inv_jac, diff_vals;
+    auto jac_ptr = boost::make_shared<MatrixDouble>();
+    auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
+    auto det_ptr = boost::make_shared<VectorDouble>();
+    MatrixDouble diff_vals;
 
     auto assemble_matrices_and_vectors = [&]() {
       MoFEMFunctionBegin;
       if (SPACE_DIM == 2)
         pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpMakeHighOrderGeometryWeightsOnFace());
+            new OpSetHOWeigthsOnFace());
 
       using OpSource = FormsIntegrators<DomainEleOp>::Assembly<
           PETSC>::LinearForm<GAUSS>::OpSource<1, 1>;
-      pipeline_mng->getOpDomainRhsPipeline().push_back(
-          new OpSource("FIELD1", ApproxFunctions::fUn));
 
       if (SPACE_DIM == 2) {
         pipeline_mng->getOpDomainLhsPipeline().push_back(
-            new OpCalculateInvJacForFace(inv_jac));
+            new OpCalculateHOJacForFace(jac_ptr));
         pipeline_mng->getOpDomainLhsPipeline().push_back(
-            new OpMakeHighOrderGeometryWeightsOnFace());
+            new OpInvertMatrix<SPACE_DIM>(jac_ptr, det_ptr, inv_jac_ptr));
+        pipeline_mng->getOpDomainLhsPipeline().push_back(
+            new OpSetHOWeigthsOnFace());
       }
+
+      if (SPACE_DIM == 3) {
+        pipeline_mng->getOpDomainLhsPipeline().push_back(
+            new OpCalculateHOJacVolume(jac_ptr));
+        pipeline_mng->getOpDomainLhsPipeline().push_back(
+            new OpInvertMatrix<SPACE_DIM>(jac_ptr, det_ptr, nullptr));
+        pipeline_mng->getOpDomainLhsPipeline().push_back(
+            new OpSetHOWeights(det_ptr));
+        pipeline_mng->getOpDomainRhsPipeline().push_back(
+            new OpCalculateHOJacVolume(jac_ptr));
+        pipeline_mng->getOpDomainRhsPipeline().push_back(
+            new OpInvertMatrix<3>(jac_ptr, det_ptr, nullptr));
+        pipeline_mng->getOpDomainRhsPipeline().push_back(
+            new OpSetHOWeights(det_ptr));
+      }
+
       using OpMass = FormsIntegrators<DomainEleOp>::Assembly<
           PETSC>::BiLinearForm<GAUSS>::OpMass<1, 1>;
       pipeline_mng->getOpDomainLhsPipeline().push_back(new OpMass(
           "FIELD1", "FIELD1", [](double, double, double) { return 1.; }));
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
+          new OpSource("FIELD1", ApproxFunctions::fUn));
 
       auto integration_rule = [](int, int, int p_data) {
-        return 2 * p_data + 1;
+        return 3 * p_data;
       };
       CHKERR pipeline_mng->setDomainRhsIntegrationRule(integration_rule);
       CHKERR pipeline_mng->setDomainLhsIntegrationRule(integration_rule);
@@ -409,22 +458,31 @@ int main(int argc, char *argv[]) {
 
       if (SPACE_DIM == 2) {
         pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpCalculateInvJacForFace(inv_jac));
+            new OpCalculateHOJacForFace(jac_ptr));
         pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpSetInvJacH1ForFace(inv_jac));
+            new OpInvertMatrix<SPACE_DIM>(jac_ptr, det_ptr, inv_jac_ptr));
+        pipeline_mng->getOpDomainRhsPipeline().push_back(
+            new OpSetInvJacSpaceForFaceImpl<2>(space, inv_jac_ptr));
       }
+
+      if(SPACE_DIM == 3) {
+        pipeline_mng->getOpDomainRhsPipeline().push_back(
+            new OpCalculateHOJacVolume(jac_ptr));
+        pipeline_mng->getOpDomainRhsPipeline().push_back(
+            new OpInvertMatrix<SPACE_DIM>(jac_ptr, det_ptr, inv_jac_ptr));
+        pipeline_mng->getOpDomainRhsPipeline().push_back(
+            new OpSetHOInvJacToScalarBases(space, inv_jac_ptr));
+      }
+
       pipeline_mng->getOpDomainRhsPipeline().push_back(
-          new OpValsDiffVals(vals, diff_vals, choice_space_value == H1SPACE));
+          new OpValsDiffVals(vals, diff_vals, true));
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpCalculateScalarFieldValues("FIELD1", ptr_values));
-      if (choice_space_value == H1SPACE) {
-        pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpCalculateScalarFieldGradient<SPACE_DIM>("FIELD1",
-                                                          ptr_diff_vals));
-      }
       pipeline_mng->getOpDomainRhsPipeline().push_back(
-          new OpCheckValsDiffVals(vals, diff_vals, ptr_values, ptr_diff_vals,
-                                  choice_space_value == H1SPACE));
+          new OpCalculateScalarFieldGradient<SPACE_DIM>("FIELD1",
+                                                        ptr_diff_vals));
+      pipeline_mng->getOpDomainRhsPipeline().push_back(new OpCheckValsDiffVals(
+          vals, diff_vals, ptr_values, ptr_diff_vals, true));
 
       CHKERR pipeline_mng->loopFiniteElements();
 

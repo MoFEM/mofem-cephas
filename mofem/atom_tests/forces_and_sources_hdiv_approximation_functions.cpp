@@ -228,6 +228,9 @@ int main(int argc, char *argv[]) {
 
     tet_fe.getOpPtrVector().push_back(
         new OpPrintingHdivApproximationFunctions(my_split));
+
+    tri_fe.getOpPtrVector().push_back(
+        new OpHOSetContravariantPiolaTransformOnFace3D(HDIV));
     tri_fe.getOpPtrVector().push_back(
         new OpFacePrintingHdivApproximationFunctions(my_split));
 

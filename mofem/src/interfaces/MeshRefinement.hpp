@@ -17,12 +17,7 @@
 #ifndef __MESHREFINE_HPP__
 #define __MESHREFINE_HPP__
 
-#include "UnknownInterface.hpp"
-
 namespace MoFEM {
-
-static const MOFEMuuid IDD_MOFEMMeshRefine =
-    MOFEMuuid(BitIntefaceId(MESH_REFINE));
 
 /** \brief Mesh refinement interface
 
@@ -40,14 +35,13 @@ static const MOFEMuuid IDD_MOFEMMeshRefine =
   */
 struct MeshRefinement : public UnknownInterface {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
   MoFEM::Core &cOre;
   MeshRefinement(const MoFEM::Core &core);
 
-  /// destructor
-  ~MeshRefinement() {}
+  virtual ~MeshRefinement() = default;
 
   /**
    * \brief make vertices in the middle of edges in meshset and add them to
@@ -64,18 +58,11 @@ struct MeshRefinement : public UnknownInterface {
    * recursively.  Returns the contents of meshsets, but not the meshsets
    * themselves if true.
    */
-  virtual MoFEMErrorCode add_vertices_in_the_middle_of_edges(
-      const EntityHandle meshset, const BitRefLevel &bit,
-      const bool recursive = false, int verb = QUIET, EntityHandle start_v = 0);
-
-  /// \deprecated Use function with correct spelling
-  DEPRECATED MoFEMErrorCode add_verices_in_the_middel_of_edges(
-      const EntityHandle meshset, const BitRefLevel &bit,
-      const bool recursive = false, int verb = QUIET,
-      EntityHandle start_v = 0) {
-    return add_vertices_in_the_middle_of_edges(meshset, bit, recursive, verb,
-                                               start_v);
-  }
+  MoFEMErrorCode addVerticesInTheMiddleOfEdges(const EntityHandle meshset,
+                                               const BitRefLevel &bit,
+                                               const bool recursive = false,
+                                               int verb = QUIET,
+                                               EntityHandle start_v = 0);
 
   /**
    * \brief make vertices in the middle of edges in meshset and add them to
@@ -92,17 +79,10 @@ struct MeshRefinement : public UnknownInterface {
    * recursively.  Returns the contents of meshsets, but not the meshsets
    * themselves if true.
    */
-  virtual MoFEMErrorCode
-  add_vertices_in_the_middle_of_edges(const Range &edges, const BitRefLevel &bit,
-                                     int verb = QUIET,
-                                     EntityHandle start_v = 0);
-
-  /// \deprecated Use function with correct spelling
-  DEPRECATED MoFEMErrorCode add_verices_in_the_middel_of_edges(
-      const Range &edges, const BitRefLevel &bit, int verb = QUIET,
-      EntityHandle start_v = 0) {
-    return add_vertices_in_the_middle_of_edges(edges, bit, verb, start_v);
-  }
+  MoFEMErrorCode addVerticesInTheMiddleOfEdges(const Range &edges,
+                                               const BitRefLevel &bit,
+                                               int verb = QUIET,
+                                               EntityHandle start_v = 0);
 
   /**\brief refine TET in the meshset
    *
@@ -112,11 +92,10 @@ struct MeshRefinement : public UnknownInterface {
    * \param verb verbosity level
    * \param Range * pointer to range in not null check consistency of refinement
    */
-  virtual MoFEMErrorCode refine_TET(const EntityHandle meshset,
-                                    const BitRefLevel &bit,
-                                    const bool respect_interface = false,
-                                    int verb = QUIET, Range *ref_edges = NULL,
-                                    const bool debug = false);
+  MoFEMErrorCode refineTets(const EntityHandle meshset, const BitRefLevel &bit,
+                            const bool respect_interface = false,
+                            int verb = QUIET, Range *ref_edges = NULL,
+                            const bool debug = false);
 
   /**\brief refine TET in the meshset
    *
@@ -127,18 +106,18 @@ struct MeshRefinement : public UnknownInterface {
    * \param verb verbosity level
    * \param Range * pointer to range in not null check consistency of refinement
    */
-  virtual MoFEMErrorCode refine_TET(const Range &tets, const BitRefLevel &bit,
-                                    const bool respect_interface = false,
-                                    int verb = QUIET, Range *ref_edges = NULL,
-                                    const bool debug = false);
+  MoFEMErrorCode refineTets(const Range &tets, const BitRefLevel &bit,
+                            const bool respect_interface = false,
+                            int verb = QUIET, Range *ref_edges = NULL,
+                            const bool debug = false);
 
   /**\brief refine PRISM in the meshset
    *
    * \param EntityHandle meshset
    * \param BitRefLevel bitLevel
    */
-  virtual MoFEMErrorCode refine_PRISM(const EntityHandle meshset,
-                                      const BitRefLevel &bit, int verb = QUIET);
+  MoFEMErrorCode refinePrisms(const EntityHandle meshset,
+                              const BitRefLevel &bit, int verb = QUIET);
 
   /**\brief refine meshset, i.e. add child of refined entities to meshset
    *
@@ -148,10 +127,9 @@ struct MeshRefinement : public UnknownInterface {
    * recursively.  Returns the contents of meshsets, but not the meshsets
    * themselves if true.
    */
-  virtual MoFEMErrorCode refine_MESHSET(const EntityHandle meshset,
-                                        const BitRefLevel &bit,
-                                        const bool recursive = false,
-                                        int verb = QUIET);
+  MoFEMErrorCode refineMeshset(const EntityHandle meshset,
+                               const BitRefLevel &bit,
+                               const bool recursive = false, int verb = QUIET);
 };
 
 } // namespace MoFEM

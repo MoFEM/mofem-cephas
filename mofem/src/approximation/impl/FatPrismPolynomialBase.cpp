@@ -23,19 +23,9 @@ implementation do not take that opportunity. That can be viewed as a bug.
 using namespace MoFEM;
 
 MoFEMErrorCode FatPrismPolynomialBaseCtx::query_interface(
-    const MOFEMuuid &uuid, BaseFunctionUnknownInterface **iface) const {
-
-  MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_FATPRISM_BASE_FUNCTION) {
-    *iface = const_cast<FatPrismPolynomialBaseCtx *>(this);
-    MoFEMFunctionReturnHot(0);
-  } else {
-    SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "wrong interference");
-  }
-  ierr = EntPolynomialBaseCtx::query_interface(uuid, iface);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+    boost::typeindex::type_index type_index, UnknownInterface **iface) const {
+  *iface = const_cast<FatPrismPolynomialBaseCtx *>(this);
+  return 0;
 }
 
 FatPrismPolynomialBaseCtx::FatPrismPolynomialBaseCtx(
@@ -59,19 +49,11 @@ FatPrismPolynomialBaseCtx::FatPrismPolynomialBaseCtx(
 }
 FatPrismPolynomialBaseCtx::~FatPrismPolynomialBaseCtx() {}
 
-MoFEMErrorCode FatPrismPolynomialBase::query_interface(
-    const MOFEMuuid &uuid, BaseFunctionUnknownInterface **iface) const {
-  MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_FATPRISM_BASE_FUNCTION) {
-    *iface = const_cast<FatPrismPolynomialBase *>(this);
-    MoFEMFunctionReturnHot(0);
-  } else {
-    SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "wrong interference");
-  }
-  ierr = BaseFunction::query_interface(uuid, iface);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+MoFEMErrorCode
+FatPrismPolynomialBase::query_interface(boost::typeindex::type_index type_index,
+                                        UnknownInterface **iface) const {
+  *iface = const_cast<FatPrismPolynomialBase *>(this);
+  return 0;
 }
 
 FatPrismPolynomialBase::~FatPrismPolynomialBase() {}
@@ -83,9 +65,8 @@ FatPrismPolynomialBase::getValue(MatrixDouble &pts,
 
   MoFEMFunctionBegin;
 
-  BaseFunctionUnknownInterface *iface;
-  CHKERR ctx_ptr->query_interface(IDD_FATPRISM_BASE_FUNCTION, &iface);
-  cTx = reinterpret_cast<FatPrismPolynomialBaseCtx *>(iface);
+  cTx = ctx_ptr->getInterface<FatPrismPolynomialBaseCtx>();
+
   if (!cTx->fePtr)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Pointer to element should be given "

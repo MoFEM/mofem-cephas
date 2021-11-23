@@ -20,16 +20,10 @@
 namespace MoFEM {
 
 MoFEMErrorCode
-PipelineManager::query_interface(const MOFEMuuid &uuid,
+PipelineManager::query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const {
-  MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_MOFEMBasic) {
-    *iface = const_cast<PipelineManager *>(this);
-    MoFEMFunctionReturnHot(0);
-  }
-  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
-  MoFEMFunctionReturnHot(0);
+  *iface = const_cast<PipelineManager *>(this);
+  return 0;
 }
 
 PipelineManager::PipelineManager(const MoFEM::Core &core)
@@ -187,7 +181,79 @@ SmartPetscObj<SNES> PipelineManager::createSNES(SmartPetscObj<DM> dm) {
   return snes;
 }
 
-SmartPetscObj<TS> PipelineManager::createTS(SmartPetscObj<DM> dm) {
+SmartPetscObj<TS> PipelineManager::createTS(const TSType type,
+                                            SmartPetscObj<DM> dm) {
+  switch (type) {
+  case EX:
+    return createTSEX(dm);
+    break;
+  case IM:
+    return createTSIM(dm);
+    break;
+  case IM2:
+    return createTSIM2(dm);
+    break;
+  default:
+    CHK_THROW_MESSAGE(MOFEM_NOT_IMPLEMENTED,
+                      "TS solver handling not implemented");
+    break;
+  }
+  return SmartPetscObj<TS>();
+}
+
+SmartPetscObj<TS> PipelineManager::createTSEX(SmartPetscObj<DM> dm) {
+  Interface &m_field = cOre;
+  Simple *simple_interface = m_field.getInterface<Simple>();
+
+  auto copy_dm_struture = [&](auto simple_dm) {
+    MPI_Comm comm;
+    CHKERR PetscObjectGetComm(getPetscObject(simple_dm.get()), &comm);
+    DMType type;
+    CHKERR DMGetType(simple_dm, &type);
+    dm = createSmartDM(comm, type);
+    CHKERR DMMoFEMDuplicateDMCtx(simple_interface->getDM(), dm);
+    return dm;
+  };
+
+  if (!dm)
+    dm = copy_dm_struture(simple_interface->getDM());
+  else
+    dm = copy_dm_struture(dm);
+
+  auto set_dm_section = [&](auto dm) {
+    MoFEMFunctionBegin;
+    PetscSection section;
+    CHKERR m_field.getInterface<ISManager>()->sectionCreate(
+        simple_interface->getProblemName(), &section);
+    CHKERR DMSetDefaultSection(dm, section);
+    CHKERR DMSetDefaultGlobalSection(dm, section);
+    CHKERR PetscSectionDestroy(&section);
+    MoFEMFunctionReturn(0);
+  };
+  CHKERR set_dm_section(dm);
+
+  boost::shared_ptr<FEMethod> null;
+
+  // Add element to calculate rhs of stiff part
+  if (feDomainRhs)
+    CHKERR DMMoFEMTSSetRHSFunction(dm, simple_interface->getDomainFEName(),
+                                   feDomainRhs, null, null);
+  if (feBoundaryRhs)
+    CHKERR DMMoFEMTSSetRHSFunction(dm, simple_interface->getBoundaryFEName(),
+                                   feBoundaryRhs, null, null);
+  if (feSkeletonRhs)
+    CHKERR DMMoFEMTSSetRHSFunction(dm, simple_interface->getSkeletonFEName(),
+                                   feSkeletonRhs, null, null);
+
+  // Note: More cases for explit, and implicit time ingeration cases can be
+  // implemented here.
+
+  auto ts = MoFEM::createTS(m_field.get_comm());
+  CHKERR TSSetDM(ts, dm);
+  return ts;
+}
+
+SmartPetscObj<TS> PipelineManager::createTSIM(SmartPetscObj<DM> dm) {
   Interface &m_field = cOre;
   Simple *simple_interface = m_field.getInterface<Simple>();
 
@@ -250,7 +316,7 @@ SmartPetscObj<TS> PipelineManager::createTS(SmartPetscObj<DM> dm) {
   return ts;
 }
 
-SmartPetscObj<TS> PipelineManager::createTS2(SmartPetscObj<DM> dm) {
+SmartPetscObj<TS> PipelineManager::createTSIM2(SmartPetscObj<DM> dm) {
   Interface &m_field = cOre;
   Simple *simple_interface = m_field.getInterface<Simple>();
 

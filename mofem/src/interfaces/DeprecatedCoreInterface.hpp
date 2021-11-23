@@ -27,25 +27,6 @@ struct DeprecatedCoreInterface : public CoreInterface {
 
   /** \name Interfaces */
 
-  /**@{*/
-
-  template <class IFace>
-  DEPRECATED MoFEMErrorCode query_interface(IFace *&ptr) const {
-    MoFEMFunctionBeginHot;
-    ierr = getInterface(ptr);
-    CHKERRG(ierr);
-    MoFEMFunctionReturnHot(0);
-  }
-
-  template <class IFace> DEPRECATED IFace *query_interface() const {
-    IFace *tmp_ptr;
-    ierr = getInterface(tmp_ptr);
-    CHKERRABORT(PETSC_COMM_SELF, ierr);
-    return tmp_ptr;
-  }
-
-  /**@}*/
-
   /**@}*/
 
   /** \name Seed entities */
@@ -294,18 +275,6 @@ struct DeprecatedCoreInterface : public CoreInterface {
   DEPRECATED MoFEMErrorCode delete_cubit_msId(const CubitBCType cubit_bc_type,
                                               const int msId);
 
-  /**
-  * \brief get cubit meshset
-
-  \deprecated use MeshsetsManager
-  \todo All cubit interface functions should be outsourced to dedicated
-  interface
-
-  */
-  DEPRECATED MoFEMErrorCode
-  get_cubit_msId(const int msId, const CubitBCType cubit_bc_type,
-                 const CubitMeshSets **cubit_meshset_ptr);
-
   DEPRECATED MoFEMErrorCode get_cubit_msId_entities_by_dimension(
       const int ms_id, const CubitBCType cubit_bc_type, const int dimension,
       Range &entities, const bool recursive = false);
@@ -434,7 +403,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * Search for refined entities of given type whose parent are entities in the
    * parent meshset. It can be used for example to transfer information about
    * boundary conditions to refined mesh or split mesh by interface
-   * elements. It is used by function refine_MESHSET, to update MESHSET finite
+   * elements. It is used by function refineMeshset, to update MESHSET finite
    *elements.
    *
    * \param parent meshset
@@ -488,122 +457,6 @@ struct DeprecatedCoreInterface : public CoreInterface {
 
   /**@}*/
 
-  /** \brief add EDGES entities from range to finite element database given by
-   * name \ingroup mofem_fe
-   *
-   * \deprecated use add_ents_to_finite_element_by_type
-   *
-   * \param range contains tetrahedron
-   * \param name Finite Element name
-   */
-  DEPRECATED virtual MoFEMErrorCode
-  add_ents_to_finite_element_by_EDGEs(const Range &edge,
-                                      const std::string &name) = 0;
-
-  /**
-   * \brief add EDGES finite elements
-   *
-   * \deprecated use add_ents_to_finite_element_by_type
-   *
-   * @param  meshset
-   * @param  name      name of finite element
-   * @param  recursive take entities from meshsets in meshset
-   * @return           error code
-   */
-  DEPRECATED virtual MoFEMErrorCode
-  add_ents_to_finite_element_by_EDGEs(const EntityHandle meshset,
-                                      const std::string &name,
-                                      const bool recursive = false) = 0;
-
-  /** \brief add VERTICES entities from range to finite element database given
-   * by name \ingroup mofem_fe
-   *
-   * \deprecated use add_ents_to_finite_element_by_type
-   *
-   * \param range contains tetrahedron
-   * \param name Finite Element name
-   */
-  DEPRECATED virtual MoFEMErrorCode
-  add_ents_to_finite_element_by_VERTICEs(const Range &vert,
-                                         const std::string &name) = 0;
-
-  /** \brief add TRI entities from range to finite element database given by
-   * name \ingroup mofem_fe
-   *
-   * \deprecated use add_ents_to_finite_element_by_type
-   *
-   * \param range contains tetrahedron
-   * \param name Finite Element name
-   */
-  DEPRECATED virtual MoFEMErrorCode
-  add_ents_to_finite_element_by_TRIs(const Range &tris,
-                                     const std::string &name) = 0;
-
-  /** \brief add TRI entities from meshset to finite element database given by
-   * name \ingroup mofem_fe
-   *
-   * \deprecated use add_ents_to_finite_element_by_type
-   *
-   * \param range contains tetrahedron
-   * \param name Finite Element name
-   * \param recursive if true parent meshset is searched recursively
-   */
-  DEPRECATED virtual MoFEMErrorCode
-  add_ents_to_finite_element_by_TRIs(const EntityHandle meshset,
-                                     const std::string &name,
-                                     const bool recursive = false) = 0;
-
-  /** \brief add TET entities from range to finite element database given by
-   * name \ingroup mofem_fe
-   *
-   * \deprecated use add_ents_to_finite_element_by_type
-   *
-   * \param range contains tetrahedron
-   * \param name Finite Element name
-   */
-  DEPRECATED virtual MoFEMErrorCode
-  add_ents_to_finite_element_by_TETs(const Range &tets,
-                                     const std::string &name) = 0;
-
-  /** \brief add TET entities from meshset to finite element database given by
-   * name \ingroup mofem_fe
-   *
-   * \deprecated use add_ents_to_finite_element_by_type
-   *
-   * \param meshset contains tetrahedron
-   * \param name Finite Element name
-   * \param recursive if true parent meshset is searched recursively
-   */
-  DEPRECATED virtual MoFEMErrorCode
-  add_ents_to_finite_element_by_TETs(const EntityHandle meshset,
-                                     const std::string &name,
-                                     const bool recursive = false) = 0;
-
-  /** \brief add PRISM entities from meshset to finite element database given by
-   * name \ingroup mofem_fe
-   *
-   * \deprecated use add_ents_to_finite_element_by_type
-   *
-   * \param range contains tetrahedron
-   * \param name Finite Element name
-   */
-  DEPRECATED virtual MoFEMErrorCode
-  add_ents_to_finite_element_by_PRISMs(const Range &prims,
-                                       const std::string &name) = 0;
-
-  /** \brief add TET entities from meshset to finite element database given by
-   * name \ingroup mofem_fe
-   *
-   * \deprecated use add_ents_to_finite_element_by_type
-   *
-   * \param meshset contains tetrahedron
-   * \param name Finite Element name
-   * \param recursive if true parent meshset is searched recursively
-   */
-  DEPRECATED virtual MoFEMErrorCode
-  add_ents_to_finite_element_by_PRISMs(const EntityHandle meshset,
-                                       const std::string &name,
-                                       const bool recursive = false) = 0;
 
   /** \brief add TET elements from given refinement level to finite element
    * database given by name \ingroup mofem_fe

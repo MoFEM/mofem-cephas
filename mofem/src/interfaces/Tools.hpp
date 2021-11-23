@@ -20,8 +20,6 @@
 
 namespace MoFEM {
 
-static const MOFEMuuid IDD_MOFEMTools = MOFEMuuid(BitIntefaceId(TOOLS));
-
 /**
  * \brief Auxiliary tools
  * \nosubgrouping
@@ -29,7 +27,7 @@ static const MOFEMuuid IDD_MOFEMTools = MOFEMuuid(BitIntefaceId(TOOLS));
  */
 struct Tools : public UnknownInterface {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
   MoFEM::Core &cOre;
@@ -58,12 +56,10 @@ struct Tools : public UnknownInterface {
    * @param  min_quality mimimal quality
    * @return             error code
    */
-  MoFEMErrorCode minTetsQuality(const Range &tets, double &min_quality,
-                                Tag th = nullptr,
-                                boost::function<double(double, double)> f =
-                                    [](double a, double b) -> double {
-                                  return std::min(a, b);
-                                });
+  MoFEMErrorCode minTetsQuality(
+      const Range &tets, double &min_quality, Tag th = nullptr,
+      boost::function<double(double, double)> f =
+          [](double a, double b) -> double { return std::min(a, b); });
 
   static constexpr double diffN_MBEDGE0x = diffN_MBEDGE0;
   static constexpr double diffN_MBEDGE1x = diffN_MBEDGE1;
@@ -132,11 +128,88 @@ struct Tools : public UnknownInterface {
   static constexpr double diffShapeFunMBQUADAtCenter3y =
       diffN_MBQUAD3y(0.5); ///< derivative of quad shape function
 
+  static constexpr double diffShapeFunMBHEXAtCenter0x =
+      diffN_MBHEX0x(0.5, 0.5); ///< derivative of HEX shape function
+  static constexpr double diffShapeFunMBHEXAtCenter0y =
+      diffN_MBHEX0y(0.5, 0.5); ///< derivative of HEX shape function
+  static constexpr double diffShapeFunMBHEXAtCenter0z =
+      diffN_MBHEX0z(0.5, 0.5); ///< derivative of HEX shape function
+  static constexpr double diffShapeFunMBHEXAtCenter1x =
+      diffN_MBHEX1x(0.5, 0.5); ///< derivative of HEX shape function
+  static constexpr double diffShapeFunMBHEXAtCenter1y =
+      diffN_MBHEX1y(0.5, 0.5); ///< derivative of HEX shape function
+  static constexpr double diffShapeFunMBHEXAtCenter1z =
+      diffN_MBHEX1z(0.5, 0.5); ///< derivative of HEX shape function
+  static constexpr double diffShapeFunMBHEXAtCenter2x =
+      diffN_MBHEX2x(0.5, 0.5); ///< derivative of HEX shape function
+  static constexpr double diffShapeFunMBHEXAtCenter2y =
+      diffN_MBHEX2y(0.5, 0.5); ///< derivative of HEX shape function
+  static constexpr double diffShapeFunMBHEXAtCenter2z =
+      diffN_MBHEX2z(0.5, 0.5); ///< derivative of HEX shape function
+  static constexpr double diffShapeFunMBHEXAtCenter3x =
+      diffN_MBHEX3x(0.5, 0.5); ///< derivative of HEX shape function
+  static constexpr double diffShapeFunMBHEXAtCenter3y =
+      diffN_MBHEX3y(0.5, 0.5); ///< derivative of quad shape function
+  static constexpr double diffShapeFunMBHEXAtCenter3z =
+      diffN_MBHEX3z(0.5, 0.5); ///< derivative of quad shape function
+  static constexpr double diffShapeFunMBHEXAtCenter4x =
+      diffN_MBHEX4x(0.5, 0.5); ///< derivative of HEX shape function
+  static constexpr double diffShapeFunMBHEXAtCenter4y =
+      diffN_MBHEX4y(0.5, 0.5); ///< derivative of quad shape function
+  static constexpr double diffShapeFunMBHEXAtCenter4z =
+      diffN_MBHEX4z(0.5, 0.5); ///< derivative of quad shape function
+  static constexpr double diffShapeFunMBHEXAtCenter5x =
+      diffN_MBHEX5x(0.5, 0.5); ///< derivative of HEX shape function
+  static constexpr double diffShapeFunMBHEXAtCenter5y =
+      diffN_MBHEX5y(0.5, 0.5); ///< derivative of quad shape function
+  static constexpr double diffShapeFunMBHEXAtCenter5z =
+      diffN_MBHEX5z(0.5, 0.5); ///< derivative of quad shape function
+  static constexpr double diffShapeFunMBHEXAtCenter6x =
+      diffN_MBHEX6x(0.5, 0.5); ///< derivative of HEX shape function
+  static constexpr double diffShapeFunMBHEXAtCenter6y =
+      diffN_MBHEX6y(0.5, 0.5); ///< derivative of quad shape function
+  static constexpr double diffShapeFunMBHEXAtCenter6z =
+      diffN_MBHEX6z(0.5, 0.5); ///< derivative of quad shape function
+  static constexpr double diffShapeFunMBHEXAtCenter7x =
+      diffN_MBHEX7x(0.5, 0.5); ///< derivative of HEX shape function
+  static constexpr double diffShapeFunMBHEXAtCenter7y =
+      diffN_MBHEX7y(0.5, 0.5); ///< derivative of quad shape function
+  static constexpr double diffShapeFunMBHEXAtCenter7z =
+      diffN_MBHEX7z(0.5, 0.5); ///< derivative of quad shape function
+
   static constexpr std::array<double, 8> diffShapeFunMBQUADAtCenter = {
       diffShapeFunMBQUADAtCenter0x, diffShapeFunMBQUADAtCenter0y,
       diffShapeFunMBQUADAtCenter1x, diffShapeFunMBQUADAtCenter1y,
       diffShapeFunMBQUADAtCenter2x, diffShapeFunMBQUADAtCenter2y,
       diffShapeFunMBQUADAtCenter3x, diffShapeFunMBQUADAtCenter3y};
+
+  static constexpr std::array<double, 24> diffShapeFunMBHEXAtCenter = {
+
+      diffShapeFunMBHEXAtCenter0x, diffShapeFunMBHEXAtCenter0y,
+      diffShapeFunMBHEXAtCenter0z,
+
+      diffShapeFunMBHEXAtCenter1x, diffShapeFunMBHEXAtCenter1y,
+      diffShapeFunMBHEXAtCenter1z,
+
+      diffShapeFunMBHEXAtCenter2x, diffShapeFunMBHEXAtCenter2y,
+      diffShapeFunMBHEXAtCenter2z,
+
+      diffShapeFunMBHEXAtCenter3x, diffShapeFunMBHEXAtCenter3y,
+      diffShapeFunMBHEXAtCenter3z,
+
+      diffShapeFunMBHEXAtCenter4x, diffShapeFunMBHEXAtCenter4y,
+      diffShapeFunMBHEXAtCenter4z,
+
+      diffShapeFunMBHEXAtCenter5x, diffShapeFunMBHEXAtCenter5y,
+      diffShapeFunMBHEXAtCenter5z,
+
+      diffShapeFunMBHEXAtCenter6x, diffShapeFunMBHEXAtCenter6y,
+      diffShapeFunMBHEXAtCenter6z,
+
+      diffShapeFunMBHEXAtCenter7x, diffShapeFunMBHEXAtCenter7y,
+      diffShapeFunMBHEXAtCenter7z
+
+  };
 
   static constexpr double diffShapeFunMBTET0x =
       diffN_MBTET0x; ///< derivative of tetrahedral shape function
@@ -234,7 +307,6 @@ struct Tools : public UnknownInterface {
       shapeFunMBTET0AtOneThird, shapeFunMBTET1AtOneThird,
       shapeFunMBTET2AtOneThird, shapeFunMBTET3AtOneThird};
 
-
   /**
    * @brief Get the Local Coordinates On Reference Four Node Tet object
    *
@@ -268,14 +340,14 @@ struct Tools : public UnknownInterface {
    * @param f
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode
-  getTetsWithQuality(Range &out_tets, const Range &tets, Tag th = nullptr,
-                     boost::function<bool(double)> f = [](double q) -> bool {
-                       if (q <= 0)
-                         return true;
-                       else
-                         return false;
-                     });
+  MoFEMErrorCode getTetsWithQuality(
+      Range &out_tets, const Range &tets, Tag th = nullptr,
+      boost::function<bool(double)> f = [](double q) -> bool {
+        if (q <= 0)
+          return true;
+        else
+          return false;
+      });
   /**
    * @brief Write file with tetrahedral of given quality
    *
@@ -287,15 +359,15 @@ struct Tools : public UnknownInterface {
    * @param f
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode
-  writeTetsWithQuality(const char *file_name, const char *file_type,
-                       const char *options, const Range &tets, Tag th = nullptr,
-                       boost::function<bool(double)> f = [](double q) -> bool {
-                         if (q <= 0)
-                           return true;
-                         else
-                           return false;
-                       });
+  MoFEMErrorCode writeTetsWithQuality(
+      const char *file_name, const char *file_type, const char *options,
+      const Range &tets, Tag th = nullptr,
+      boost::function<bool(double)> f = [](double q) -> bool {
+        if (q <= 0)
+          return true;
+        else
+          return false;
+      });
 
   /**
    * @brief Check of point is in tetrahedral
@@ -446,9 +518,13 @@ struct Tools : public UnknownInterface {
 
   /**@}*/
 
-  static MoFEMErrorCode outerProductOfEdgeIntegrationPtsForQuad(MatrixDouble &pts,
-                                                              const int edge0,
-                                                              const int edge1);
+  static MoFEMErrorCode
+  outerProductOfEdgeIntegrationPtsForQuad(MatrixDouble &pts, const int edge0,
+                                          const int edge1);
+
+  static MoFEMErrorCode
+  outerProductOfEdgeIntegrationPtsForHex(MatrixDouble &pts, const int edge0,
+                                         const int edge1, const int edge2);
 };
 
 double Tools::shapeFunMBTRI0(const double x, const double y) {

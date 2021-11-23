@@ -193,10 +193,26 @@ struct Field {
   inline FieldSpace getSpace() const { return *tagSpaceData; }
 
   /**
+   * \brief   Get field approximation space
+   * @return  approximation space name
+   */
+  inline auto getSpaceName() const {
+    return std::string(FieldSpaceNames[getSpace()]);
+  }
+
+  /**
    * \brief   Get approximation base
    * @return  Approximation base
    */
   inline FieldApproximationBase getApproxBase() const { return *tagBaseData; }
+
+  /**
+   * \brief   Get approximation base
+   * @return  Approximation base name
+   */
+  inline auto getApproxBaseName() const {
+    return std::string(ApproximationBaseNames[getApproxBase()]);
+  }
 
   /** \brief Get number of field coefficients
     *
@@ -277,7 +293,7 @@ struct Field {
    * coefficients, are sorted in the way.
    *
    */
-  inline std::array<ApproximationOrder, MAX_DOFS_ON_ENTITY> &
+  inline const std::array<ApproximationOrder, MAX_DOFS_ON_ENTITY> &
   getDofOrderMap(const EntityType type) const {
     return dofOrderMap[type];
   }
@@ -290,11 +306,9 @@ struct Field {
    * coefficients, are sorted in the way.
    *
    */
-  inline DofsOrderMap &getDofOrderMap() const {
-    return const_cast<DofsOrderMap &>(dofOrderMap);
-  }
+  inline const DofsOrderMap &getDofOrderMap() const { return dofOrderMap; }
 
-  MoFEMErrorCode rebuildDofsOrderMap() const;
+  MoFEMErrorCode rebuildDofsOrderMap();
 
   friend std::ostream &operator<<(std::ostream &os, const Field &e);
 
@@ -394,6 +408,10 @@ struct interface_Field : public interface_FieldImpl<FIELD, REFENT> {
     return sFieldPtr->getFieldRawPtr();
   };
 
+  inline FieldOrderTable &getFieldOrderTable() {
+    return sFieldPtr->getFieldOrderTable();
+  };
+
 private:
   mutable boost::shared_ptr<FIELD> sFieldPtr;
 };
@@ -430,8 +448,16 @@ struct interface_Field<T, T> : public interface_FieldImpl<T, T> {
   }
 
   /// @return get approximation base
+  inline auto getSpaceName() const { return getFieldRawPtr()->getSpaceName(); }
+
+  /// @return get approximation base
   inline FieldApproximationBase getApproxBase() const {
     return getFieldRawPtr()->getApproxBase();
+  }
+
+  /// @return get approximation base
+  inline auto getApproxBaseName() const {
+    return getFieldRawPtr()->getApproxBaseName();
   }
 
   /// @return get number of coefficients for DOF

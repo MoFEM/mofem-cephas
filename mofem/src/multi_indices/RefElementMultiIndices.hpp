@@ -91,11 +91,10 @@ struct RefElement_PRISM : public RefElement {
  * \brief keeps data about abstract TET finite element
  * \ingroup fe_multi_indices
  */
-struct RefElement_TET : public RefElement {
+struct RefElementVolume : public RefElement {
   BitRefEdges *tag_BitRefEdges;
-  const int *tag_type_data;
-  RefElement_TET(const boost::shared_ptr<RefEntity> &ref_ents_ptr);
-  virtual ~RefElement_TET() = default;
+  RefElementVolume(const boost::shared_ptr<RefEntity> &ref_ents_ptr);
+  virtual ~RefElementVolume() = default;
 
   const boost::shared_ptr<SideNumber> &
   getSideNumberPtr(const EntityHandle ent) const;
@@ -193,26 +192,6 @@ typedef multi_index_container<
                                        EntityHandle, &RefElement::getEnt>>>>
     RefElement_multiIndex;
 
-typedef multi_index_container<
-    boost::shared_ptr<RefElement>,
-    // ptrWrapperRefElement,
-    indexed_by<
-        ordered_unique<tag<Ent_mi_tag>,
-                       const_mem_fun<RefElement::interface_type_RefEntity,
-                                     EntityHandle, &RefElement::getEnt>>,
-        ordered_non_unique<
-            tag<Ent_Ent_mi_tag>,
-            const_mem_fun<RefElement::interface_type_RefEntity, EntityHandle,
-                          &RefElement::getParentEnt>>,
-        ordered_non_unique<
-            tag<Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag>,
-            composite_key<
-                RefElement,
-                const_mem_fun<RefElement::interface_type_RefEntity,
-                              EntityHandle, &RefElement::getParentEnt>,
-                const_mem_fun<RefElement, int,
-                              &RefElement::getBitRefEdgesUlong>>>>>
-    RefElement_multiIndex_parents_view;
 
 
 } // namespace MoFEM

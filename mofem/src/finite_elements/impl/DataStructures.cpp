@@ -61,55 +61,36 @@ static void constructor_data(DataForcesAndSourcesCore *data,
 
   data->dataOnEntities[MBENTITYSET].push_back(new EntData());
 
+  auto set_default = [&]() {
+    std::array<size_t, MBMAXTYPE> count;
+    std::fill(count.begin(), count.end(), 0);
+    const int dim_type = moab::CN::Dimension(type);
+    data->dataOnEntities[MBVERTEX].push_back(new EntData());
+    if (type != MBVERTEX) {
+      data->dataOnEntities[type].push_back(new EntData());
+      if (type > MBEDGE) {
+        for (auto dd = dim_type - 1; dd > 0; --dd) {
+          int nb_ents = moab::CN::NumSubEntities(type, dd);
+          for (int ii = 0; ii != nb_ents; ++ii) {
+            auto sub_ent_type = moab::CN::SubEntityType(type, dd, ii);
+            count[sub_ent_type] = nb_ents;
+          }
+          for (auto tt = moab::CN::TypeDimensionMap[dd].first;
+               tt <= moab::CN::TypeDimensionMap[dd].second; ++tt) {
+            for (size_t n = 0; n != count[tt]; ++n)
+              data->dataOnEntities[tt].push_back(new EntData());
+          }
+        }
+      }
+    }
+  };
+
   switch (type) {
   case MBENTITYSET:
     break;
-  case MBTET:
-    data->dataOnEntities[MBVERTEX].push_back(new EntData());
-    for (int ee = 0; ee != 6; ++ee) {
-      data->dataOnEntities[MBEDGE].push_back(new EntData());
-    }
-    for (int ff = 0; ff != 4; ++ff) {
-      data->dataOnEntities[MBTRI].push_back(new EntData());
-    }
-    data->dataOnEntities[MBTET].push_back(new EntData());
-    break;
-  case MBTRI:
-    data->dataOnEntities[MBVERTEX].push_back(new EntData());
-    for (int ee = 0; ee != 3; ++ee) {
-      data->dataOnEntities[MBEDGE].push_back(new EntData());
-    }
-    data->dataOnEntities[MBTRI].push_back(new EntData());
-  break;
-  case MBQUAD:
-    data->dataOnEntities[MBVERTEX].push_back(new EntData());
-    for (int ee = 0; ee != 4; ++ee) {
-      data->dataOnEntities[MBEDGE].push_back(new EntData());
-    }
-    data->dataOnEntities[MBQUAD].push_back(new EntData());
-    break;
-  case MBEDGE:
-    data->dataOnEntities[MBVERTEX].push_back(new EntData());
-    data->dataOnEntities[MBEDGE].push_back(new EntData());
-    break;
-  case MBVERTEX:
-    data->dataOnEntities[MBVERTEX].push_back(new EntData());
-    break;
-  case MBPRISM:
-    data->dataOnEntities[MBVERTEX].push_back(new EntData());
-    for (int ee = 0; ee != 9; ++ee) {
-      data->dataOnEntities[MBEDGE].push_back(new EntData());
-    }
-    for (int qq = 0; qq != 5; ++qq) {
-      data->dataOnEntities[MBQUAD].push_back(new EntData());
-    }
-    for (int ff = 0; ff != 5; ++ff) {
-      data->dataOnEntities[MBTRI].push_back(new EntData());
-    }
-    data->dataOnEntities[MBPRISM].push_back(new EntData());
-    break;
+    
   default:
-    throw MoFEMException(MOFEM_NOT_IMPLEMENTED);
+    set_default();
   }
 }
 
@@ -277,7 +258,8 @@ std::ostream &operator<<(std::ostream &os,
      << "global indices: " << e.getIndices() << std::endl
      << "local indices: " << e.getLocalIndices() << std::endl;
   // FIXME: precision should not be set here
-  os << "fieldData: " << std::fixed << std::setprecision(2) << e.getFieldData() << std::endl;
+  os << "fieldData: " << std::fixed << std::setprecision(2) << e.getFieldData()
+     << std::endl;
   MatrixDouble base = const_cast<DataForcesAndSourcesCore::EntData &>(e).getN();
   MatrixDouble diff_base =
       const_cast<DataForcesAndSourcesCore::EntData &>(e).getDiffN();
@@ -300,21 +282,12 @@ std::ostream &operator<<(std::ostream &os,
 }
 
 std::ostream &operator<<(std::ostream &os, const DataForcesAndSourcesCore &e) {
-  for (unsigned int nn = 0; nn < e.dataOnEntities[MBVERTEX].size(); nn++) {
-    os << "dataOnEntities[MBVERTEX][" << nn << "]" << std::endl
-       << e.dataOnEntities[MBVERTEX][nn] << std::endl;
-  }
-  for (unsigned int ee = 0; ee < e.dataOnEntities[MBEDGE].size(); ee++) {
-    os << "dataOnEntities[MBEDGE][" << ee << "]" << std::endl
-       << e.dataOnEntities[MBEDGE][ee] << std::endl;
-  }
-  for (unsigned int ff = 0; ff < e.dataOnEntities[MBTRI].size(); ff++) {
-    os << "dataOnEntities[MBTRI][" << ff << "] " << std::endl
-       << e.dataOnEntities[MBTRI][ff] << std::endl;
-  }
-  for (unsigned int vv = 0; vv < e.dataOnEntities[MBTET].size(); vv++) {
-    os << "dataOnEntities[MBTET][" << vv << "]" << std::endl
-       << e.dataOnEntities[MBTET][vv] << std::endl;
+  for (EntityType t = MBVERTEX; t != MBENTITYSET; ++t) {
+    for (unsigned int nn = 0; nn < e.dataOnEntities[t].size(); nn++) {
+      os << "dataOnEntities[" << moab::CN::EntityTypeName(t) << "][" << nn
+         << "]" << std::endl
+         << e.dataOnEntities[t][nn] << std::endl;
+    }
   }
   return os;
 }

@@ -25,9 +25,6 @@
 
 namespace MoFEM {
 
-static const MOFEMuuid IDD_MOFEMPrismInterface =
-    MOFEMuuid(BitIntefaceId(PRISM_INTEFACE));
-
 /** 
  * \brief Create interface from given surface and insert flat prisms in-between 
  * 
@@ -35,7 +32,7 @@ static const MOFEMuuid IDD_MOFEMPrismInterface =
 */
 struct PrismInterface : public UnknownInterface {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
   MoFEM::Core &cOre;

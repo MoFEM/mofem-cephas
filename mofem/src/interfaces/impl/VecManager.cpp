@@ -17,22 +17,15 @@
 
 namespace MoFEM {
 
-MoFEMErrorCode VecManager::query_interface(const MOFEMuuid &uuid,
-                                           UnknownInterface **iface) const {
-  MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_MOFEMVEC) {
-    *iface = const_cast<VecManager *>(this);
-    MoFEMFunctionReturnHot(0);
-  }
-  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
-  MoFEMFunctionReturnHot(0);
+MoFEMErrorCode
+VecManager::query_interface(boost::typeindex::type_index type_index,
+                            UnknownInterface **iface) const {
+  *iface = const_cast<VecManager *>(this);
+  return 0;
 }
 
 VecManager::VecManager(const MoFEM::Core &core)
-    : cOre(const_cast<MoFEM::Core &>(core)), dEbug(false) {}
-VecManager::~VecManager() {
-
+    : cOre(const_cast<MoFEM::Core &>(core)), dEbug(false) {
   if (!LogManager::checkIfChannelExist("VECWORLD")) {
     auto core_log = logging::core::get();
 
@@ -184,7 +177,7 @@ VecManager::vecScatterCreate(Vec xin, const std::string x_problem,
   VecScatter newctx;
   CHKERR vecScatterCreate(xin, x_problem, x_field_name, x_rc, yin, y_problem,
                           y_field_name, y_rc, &newctx);
-  smart_newctx = newctx;
+  smart_newctx = SmartPetscObj<VecScatter>(newctx);
   MoFEMFunctionReturn(0);
 }
 
@@ -196,7 +189,7 @@ VecManager::vecScatterCreate(Vec xin, const std::string x_problem,
   MoFEMFunctionBegin;
   VecScatter newctx;
   CHKERR vecScatterCreate(xin, x_problem, x_rc, yin, y_problem, y_rc, &newctx);
-  smart_newctx = newctx;
+  smart_newctx = SmartPetscObj<VecScatter>(newctx);
   MoFEMFunctionReturn(0);
 }
 

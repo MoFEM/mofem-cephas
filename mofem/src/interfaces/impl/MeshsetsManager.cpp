@@ -31,16 +31,10 @@ namespace MoFEM {
 bool MeshsetsManager::brodcastMeshsets = true;
 
 MoFEMErrorCode
-MeshsetsManager::query_interface(const MOFEMuuid &uuid,
+MeshsetsManager::query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const {
-  MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_MOFEMMeshsetsManager) {
-    *iface = const_cast<MeshsetsManager *>(this);
-    MoFEMFunctionReturnHot(0);
-  }
-  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
-  MoFEMFunctionReturnHot(0);
+  *iface = const_cast<MeshsetsManager *>(this);
+  return 0;
 }
 
 MeshsetsManager::MeshsetsManager(const Core &core)
@@ -268,9 +262,9 @@ MoFEMErrorCode MeshsetsManager::printMaterialsSet() const {
     MOFEM_LOG("MeshsetMngWorld", Sev::inform) << *it;
     MOFEM_LOG("MeshsetMngWorld", Sev::inform) << data;
     Range tets;
-    CHKERR moab.get_entities_by_type(it->meshset, MBTET, tets, true);
+    CHKERR moab.get_entities_by_dimension(it->meshset, 3, tets, true);
     MOFEM_LOG("MeshsetMngWorld", Sev::inform)
-        << "MAT_ELATIC msId " << it->getMeshsetId() << " nb. tets "
+        << "MAT_ELATIC msId " << it->getMeshsetId() << " nb. volumes "
         << tets.size();
   }
 
@@ -295,10 +289,10 @@ MoFEMErrorCode MeshsetsManager::printMaterialsSet() const {
 bool MeshsetsManager::checkMeshset(const int ms_id,
                                    const CubitBCType cubit_bc_type) const {
   auto miit =
-      cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(
+      cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>().find(
           boost::make_tuple(ms_id, cubit_bc_type.to_ulong()));
   if (miit !=
-      cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
+      cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>().end()) {
     return true;
   }
   return false;
@@ -306,8 +300,8 @@ bool MeshsetsManager::checkMeshset(const int ms_id,
 
 bool MeshsetsManager::checkMeshset(const string name,
                                    int *const number_of_meshsets_ptr) const {
-  auto miit = cubitMeshsets.get<CubitMeshSets_name>().lower_bound(name);
-  auto hi_miit = cubitMeshsets.get<CubitMeshSets_name>().upper_bound(name);
+  auto miit = cubitMeshsets.get<CubitMeshsets_name>().lower_bound(name);
+  auto hi_miit = cubitMeshsets.get<CubitMeshsets_name>().upper_bound(name);
   if (std::distance(miit, hi_miit) == 0) {
     return false;
   }
@@ -356,10 +350,10 @@ MeshsetsManager::addEntitiesToMeshset(const CubitBCType cubit_bc_type,
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
   auto cit =
-      cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(
+      cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>().find(
           boost::make_tuple(ms_id, cubit_bc_type.to_ulong()));
   if (cit ==
-      cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
+      cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>().end()) {
     SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
              "Cannot find Cubit meshset with id: %d", ms_id);
   }
@@ -377,10 +371,10 @@ MeshsetsManager::addEntitiesToMeshset(const CubitBCType cubit_bc_type,
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
   auto cit =
-      cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(
+      cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>().find(
           boost::make_tuple(ms_id, cubit_bc_type.to_ulong()));
   if (cit ==
-      cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
+      cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>().end()) {
     SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
              "Cannot find Cubit meshset with id: %d", ms_id);
   }
@@ -398,10 +392,10 @@ MeshsetsManager::setAtributes(const CubitBCType cubit_bc_type, const int ms_id,
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
   auto cit =
-      cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(
+      cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>().find(
           boost::make_tuple(ms_id, cubit_bc_type.to_ulong()));
   if (cit ==
-      cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
+      cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>().end()) {
     SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
              "Cannot find Cubit meshset with id: %d", ms_id);
   }
@@ -438,10 +432,10 @@ MoFEMErrorCode MeshsetsManager::setAtributesByDataStructure(
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
   auto cit =
-      cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(
+      cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>().find(
           boost::make_tuple(ms_id, cubit_bc_type.to_ulong()));
   if (cit ==
-      cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
+      cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>().end()) {
     SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
              "Cannot find Cubit meshset with id: %d", ms_id);
   }
@@ -469,10 +463,10 @@ MoFEMErrorCode MeshsetsManager::setBcData(const CubitBCType cubit_bc_type,
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
   auto cit =
-      cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(
+      cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>().find(
           boost::make_tuple(ms_id, cubit_bc_type.to_ulong()));
   if (cit ==
-      cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
+      cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>().end()) {
     SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
              "Cubit meshset with id is already there", ms_id);
   }
@@ -492,10 +486,10 @@ MoFEMErrorCode MeshsetsManager::deleteMeshset(const CubitBCType cubit_bc_type,
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
   auto miit =
-      cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(
+      cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>().find(
           boost::make_tuple(ms_id, cubit_bc_type.to_ulong()));
   if (miit ==
-      cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
+      cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>().end()) {
     if (bh & MF_EXIST) {
       SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                "meshset not found", ms_id);
@@ -504,7 +498,7 @@ MoFEMErrorCode MeshsetsManager::deleteMeshset(const CubitBCType cubit_bc_type,
     }
   }
   EntityHandle meshset = miit->getMeshset();
-  cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().erase(miit);
+  cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>().erase(miit);
   CHKERR moab.delete_entities(&meshset, 1);
 
   MoFEMFunctionReturn(0);
@@ -516,10 +510,10 @@ MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
   auto miit =
-      cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(
+      cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>().find(
           boost::make_tuple(ms_id, cubit_bc_type.to_ulong()));
   if (miit !=
-      cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
+      cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>().end()) {
     *cubit_meshset_ptr = &*miit;
   } else {
     SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
@@ -532,17 +526,33 @@ MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
     const string name, const CubitMeshSets **cubit_meshset_ptr) const {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
-  auto miit = cubitMeshsets.get<CubitMeshSets_name>().lower_bound(name);
-  auto hi_miit = cubitMeshsets.get<CubitMeshSets_name>().upper_bound(name);
+  auto miit = cubitMeshsets.get<CubitMeshsets_name>().lower_bound(name);
+  auto hi_miit = cubitMeshsets.get<CubitMeshsets_name>().upper_bound(name);
   if (std::distance(miit, hi_miit) == 0) {
     SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-             "meshset name = %s is not there", name.c_str());
+             "meshset name <%s> is not there", name.c_str());
   }
   if (std::distance(miit, hi_miit) > 1) {
     SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-             "meshset name = %s is not there", name.c_str());
+             "more that one meshser of that name <%s>", name.c_str());
   }
   *cubit_meshset_ptr = &*miit;
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
+    const std::regex reg_exp_name,
+    std::vector<const CubitMeshSets *> &vec_ptr) const {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+  auto r =
+      cubitMeshsets.get<CubitMeshsetMaskedType_mi_tag>().equal_range(BLOCKSET);
+  for (; r.first != r.second; ++r.first) {
+    const auto name = r.first->getName();
+    if (std::regex_match(name, reg_exp_name)) {
+      vec_ptr.push_back(&*r.first);
+    }
+  }
   MoFEMFunctionReturn(0);
 }
 
@@ -553,10 +563,10 @@ MoFEMErrorCode MeshsetsManager::getEntitiesByDimension(
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
   auto miit =
-      cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(
+      cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>().find(
           boost::make_tuple(msId, cubit_bc_type));
   if (miit !=
-      cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
+      cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>().end()) {
     CHKERR miit->getMeshsetIdEntitiesByDimension(moab, dimension, entities,
                                                  recursive);
   } else {
@@ -573,10 +583,10 @@ MoFEMErrorCode MeshsetsManager::getEntitiesByDimension(
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
   auto miit =
-      cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(
+      cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>().find(
           boost::make_tuple(ms_id, cubit_bc_type));
   if (miit !=
-      cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
+      cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>().end()) {
     CHKERR miit->getMeshsetIdEntitiesByDimension(moab, entities, recursive);
   } else {
     SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
@@ -591,10 +601,10 @@ MoFEMErrorCode MeshsetsManager::getMeshset(const int ms_id,
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
   auto miit =
-      cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(
+      cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>().find(
           boost::make_tuple(ms_id, cubit_bc_type));
   if (miit !=
-      cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
+      cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>().end()) {
     meshset = miit->meshset;
   } else {
     SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
@@ -607,10 +617,10 @@ bool MeshsetsManager::checkIfMeshsetContainsEntities(
     const int ms_id, const unsigned int cubit_bc_type,
     const EntityHandle *entities, int num_entities, const int operation_type) {
   auto miit =
-      cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(
+      cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>().find(
           boost::make_tuple(ms_id, cubit_bc_type));
   if (miit !=
-      cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
+      cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>().end()) {
     Interface &m_field = cOre;
     return m_field.get_moab().contains_entities(miit->meshset, entities,
                                                 num_entities, operation_type);
@@ -623,9 +633,9 @@ MeshsetsManager::getMeshsetsByType(const unsigned int cubit_bc_type,
                                    Range &meshsets) const {
   MoFEMFunctionBegin;
   auto miit =
-      cubitMeshsets.get<CubitMeshSets_mi_tag>().lower_bound(cubit_bc_type);
+      cubitMeshsets.get<CubitMeshsetType_mi_tag>().lower_bound(cubit_bc_type);
   auto hi_miit =
-      cubitMeshsets.get<CubitMeshSets_mi_tag>().upper_bound(cubit_bc_type);
+      cubitMeshsets.get<CubitMeshsetType_mi_tag>().upper_bound(cubit_bc_type);
   for (; miit != hi_miit; miit++) {
     meshsets.insert(miit->meshset);
   }
@@ -1316,16 +1326,9 @@ MeshsetsManager::updateAllMeshsetsByEntitiesChildren(const BitRefLevel &bit) {
   BitRefManager *bit_mng = cOre.getInterface<BitRefManager>();
   for (_IT_CUBITMESHSETS_FOR_LOOP_((*this), iit)) {
     EntityHandle meshset = iit->getMeshset();
-    CHKERR bit_mng->updateMeshsetByEntitiesChildren(meshset, bit, meshset,
-                                                    MBVERTEX, true);
-    CHKERR bit_mng->updateMeshsetByEntitiesChildren(meshset, bit, meshset,
-                                                    MBEDGE, true);
-    CHKERR bit_mng->updateMeshsetByEntitiesChildren(meshset, bit, meshset,
-                                                    MBTRI, true);
-    CHKERR bit_mng->updateMeshsetByEntitiesChildren(meshset, bit, meshset,
-                                                    MBTET, true);
-    CHKERR bit_mng->updateMeshsetByEntitiesChildren(meshset, bit, meshset,
-                                                    MBPRISM, true);
+    for (EntityType t = MBVERTEX; t != MBENTITYSET; ++t)
+      CHKERR bit_mng->updateMeshsetByEntitiesChildren(meshset, bit, meshset, t,
+                                                      true);
   }
   MoFEMFunctionReturn(0);
 }

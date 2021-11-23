@@ -32,6 +32,8 @@ static constexpr double delta =
 static constexpr std::array<double, 3> d3 = {0, 0, 0};
 static constexpr std::array<double, 3> d4 = {0, 0, delta};
 
+using EdgeEle = EdgeElementForcesAndSourcesCore;
+
 struct CoordsAndHandle {
 
   inline static double getArg(double x) {
@@ -125,8 +127,7 @@ private:
   std::array<Range, 3> &edgeBlocks;
   EntityHandle prism;
 };
-
-struct EdgeFE : public EdgeElementForcesAndSourcesCore {
+struct EdgeFE : public EdgeEle {
 
   EdgeFE(MoFEM::Interface &m_field, std::array<Range, 3> &edges_blocks,
          EntityHandle prims);
@@ -533,7 +534,7 @@ MoFEMErrorCode QuadFE::setGaussPts(int order_row, int order_col,
 
 EdgeFE::EdgeFE(MoFEM::Interface &m_field, std::array<Range, 3> &edge_blocks,
                EntityHandle prism)
-    : EdgeElementForcesAndSourcesCore(m_field), edgeBlocks(edge_blocks),
+    : EdgeEle(m_field), edgeBlocks(edge_blocks),
       prism(prism) {}
 
 int EdgeFE::getRule(int order_row, int order_col, int order_data) { return -1; }

@@ -23,9 +23,6 @@
 
 namespace MoFEM {
 
-static const MOFEMuuid IDD_MOFEMMatrixManager =
-    MOFEMuuid(BitIntefaceId(MATRIX_MANAGER_INTERFACE));
-
 /**
  * \brief Matrix manager is used to build and partition problems
  * \ingroup mofem_mat_interface
@@ -33,7 +30,7 @@ static const MOFEMuuid IDD_MOFEMMatrixManager =
  */
 struct MatrixManager : public UnknownInterface {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
   MoFEM::Core &cOre;

@@ -10,7 +10,6 @@ const static int debug = 0;
 #include "impl/PrismInterface.cpp"
 #include "impl/SeriesRecorder.cpp"
 #include "impl/NodeMerger.cpp"
-#include "impl/BitLevelCoupler.cpp"
 #include "impl/PrismsFromSurfaceInterface.cpp"
 #include "impl/FieldEvaluator.cpp"
 #include "impl/Tools.cpp"

@@ -29,88 +29,6 @@
 #define DEPRECATED
 #endif
 
-/** \brief Interfaces IDs
- *
- * To manage different complexities related to field, finite elements mesh
- * refinements, etc. a appropriate interfaces related to each complexities are
- * created. Interfaces by itself could vary by functionality or the same
- * function can me managed with two interfaces with waring level of abstraction.
- *
- */
-enum Interfaces {
-  UNKNOWNINTERFACE = 1 << 0,
-
-  CORE_INTERFACE = 1 << 0 | 1 << 1,
-  DEPRECATED_CORE_INTERFACE = 1 << 0 | 1 << 2,
-  PROBLEMSMANAGER_INTERFACE = 1 << 0 | 1 << 3,
-  MATRIX_MANAGER_INTERFACE = 1 << 0 | 1 << 4,
-  SIMPLE_INTERFACE = 1 << 0 | 1 << 5,
-  BASIC_INTERFACE = 1 << 0 | 1 << 6,
-  COMM_INTERFACE = 1 << 0 | 1 << 7,
-  LOGMANAGER_INTERFACE = 1 << 0 | 1 << 8,
-  BC_MANAGER = 1 << 0 | 1 << 9,
-
-  MESH_REFINE = 1 << 1 | 1 << 2,
-  PRISM_INTEFACE = 1 << 1 | 1 << 3,
-  SERIES_RECORDER = 1 << 1 | 1 << 4,
-  ISMANAGER_INTERFACE = 1 << 1 | 1 << 5,
-  VECMANAGER_INTERFACE = 1 << 1 | 1 << 6,
-  FIELDBLAS_INTERFACE = 1 << 1 | 1 << 7,
-  BITREFMANAGER_INTERFACE = 1 << 1 | 1 << 8,
-
-  TOOLS = 1 << 1 | 1 << 10,
-
-  // Independent Interfaces
-  TETGEN_INTERFACE = 1 << 2 | 1 << 3,
-  MED_INTERFACE = 1 << 2 | 1 << 4,
-  NODEMERGER_INTERFACE = 1 << 2 | 1 << 5,
-  BITLEVELCOUPLER_INTERFACE = 1 << 2 | 1 << 6,
-  PRISMSFROMSURFACE_INTERFACE = 1 << 2 | 1 << 7,
-  MESHSETSMANAGER_INTERFACE = 1 << 2 | 1 << 8,
-  COORDSSYSTEMMANAGER_INTERFACE = 1 << 2 | 1 << 9,
-  CUTMESH_INTERFACE = 1 << 2 | 1 << 10,
-  FIELDEVALUATOR_INTERFACE = 1 << 2 | 1 << 11
-};
-
-enum LoopInterfaces {
-  // Loop Methods
-  PETSC_DATA_METHOD = 1 << 3,
-  KSP_METHOD = 1 << 3 | 1 << 4,
-  SNES_METHOD = 1 << 3 | 1 << 5,
-  TS_METHOD = 1 << 3 | 1 << 6,
-  BASIC_METHOD = 1 << 3 | 1 << 4 | 1 << 5 | 1 << 6,
-  FE_METHOD = 1 << 3 | 1 << 4 | 1 << 5 | 1 << 6 | 1 << 7,
-  ENTITY_METHOD = 1 << 3 | 1 << 4 | 1 << 5 | 1 << 6 | 1 << 9,
-  DOF_METHOD = 1 << 3 | 1 << 4 | 1 << 5 | 1 << 6 | 1 << 9,
-};
-
-/**
- * \brief interfaces for PETSc DM interfaces
- */
-enum DMInterfaces {
-  UNKNOWN_DM_INTERFACE = 1 << 4 | 1 << 5,
-  DMCTX_INTERFACE = 1 << 4 | 1 << 6
-};
-
-/**
- * \brief Interfaces uses to manage base functions
- */
-enum BaseIntefaces {
-  UNKNOWN_BASE_FUNCTION_INTERFACE = 1 << 5 | 1 << 6,
-  LEGENDRE_BASE_FUNCTION_INTERFACE = 1 << 5 | 1 << 7,
-  LOBATTO_BASE_FUNCTION_INTERFACE = 1 << 5 | 1 << 8,
-  KERNEL_BASE_FUNCTION_INTERFACE = 1 << 5 | 1 << 9,
-  JACOBI_BASE_FUNCTION_INTERFACE = 1 << 5 | 1 << 10,
-  INTEGRATED_JACOBI_BASE_FUNCTION_INTERFACE = 1 << 5 | 1 << 11,
-  ENT_BASE_FUNCTION_INTERFACE = 1 << 5 | 1 << 6 | 1 << 7,
-  TET_BASE_FUNCTION_INTERFACE = 1 << 5 | 1 << 6 | 1 << 8,
-  TRI_BASE_FUNCTION_INTERFACE = 1 << 5 | 1 << 6 | 1 << 9,
-  EDGE_BASE_FUNCTION_INTERFACE = 1 << 5 | 1 << 6 | 1 << 10,
-  FATPRISM_BASE_FUNCTION_INTERFACE = 1 << 5 | 1 << 6 | 1 << 11,
-  FLATPRISM_BASE_FUNCTION_INTERFACE = 1 << 5 | 1 << 6 | 1 << 12,
-  QUAD_BASE_FUNCTION_INTERFACE = 1 << 5 | 1 << 6 | 1 << 13
-};
-
 /** \brief Error handling
  *
  * This is complementary to PETSC error codes. The numerical values for
@@ -290,7 +208,7 @@ enum VERBOSITY_LEVELS {
 #define MYPCOMM_INDEX 0 ///< default communicator number PCOMM
 
 #define MAX_CORE_TMP 1       ///< maximal number of cores
-#define BITREFEDGES_SIZE 6   ///< number of edges on tetrahedral
+#define BITREFEDGES_SIZE 32  ///< number refined edges
 #define BITREFLEVEL_SIZE 128 ///< max number of refinements
 #define BITFIELDID_SIZE 32   ///< max number of fields
 #define BITFEID_SIZE 32      ///< max number of finite elements

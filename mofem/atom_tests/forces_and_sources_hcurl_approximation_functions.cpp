@@ -288,7 +288,11 @@ int main(int argc, char *argv[]) {
     tet_fe.getOpPtrVector().push_back(
         new OpPrintingHdivApproximationFunctions(my_split));
     tri_fe.getOpPtrVector().push_back(
+        new OpHOSetCovariantPiolaTransformOnFace3D(HCURL));
+    tri_fe.getOpPtrVector().push_back(
         new OpFacePrintingHdivApproximationFunctions(my_split));
+    edge_fe.getOpPtrVector().push_back(
+        new OpHOSetContravariantPiolaTransformOnEdge3D(HCURL));
     edge_fe.getOpPtrVector().push_back(
         new OpEdgePrintingHdivApproximationFunctions(my_split));
 
@@ -300,7 +304,8 @@ int main(int argc, char *argv[]) {
     /*PostProcVolumeOnRefinedMesh post_proc(m_field);
     CHKERR post_proc.generateReferenceElementMesh();
     CHKERR post_proc.addHdivFunctionsPostProc("HCURL");
-    CHKERR m_field.loop_finite_elements("TEST_PROBLEM","HCURL_TET_FE",post_proc);
+    CHKERR
+    m_field.loop_finite_elements("TEST_PROBLEM","HCURL_TET_FE",post_proc);
     CHKERR post_proc.postProcMesh.write_file("out.vtk","VTK",""); */
   }
   CATCH_ERRORS;

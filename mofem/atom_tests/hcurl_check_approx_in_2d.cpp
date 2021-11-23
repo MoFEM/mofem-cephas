@@ -26,10 +26,7 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
-using FaceEle = MoFEM::FaceElementForcesAndSourcesCoreSwitch<
-    FaceElementForcesAndSourcesCore::NO_HO_GEOMETRY |
-    FaceElementForcesAndSourcesCore::NO_CONTRAVARIANT_TRANSFORM_HDIV |
-    FaceElementForcesAndSourcesCore::NO_COVARIANT_TRANSFORM_HCURL>;
+using FaceEle = MoFEM::FaceElementForcesAndSourcesCore;
 
 using FaceEleOp = FaceEle::UserDataOperator;
 
@@ -313,28 +310,32 @@ int main(int argc, char *argv[]) {
     CHKERR simple_interface->setUp();
     auto dm = simple_interface->getDM();
 
-    MatrixDouble jac(2, 2), inv_jac(2, 2), vals, diff_vals;
+    MatrixDouble vals, diff_vals;
 
     auto assemble_matrices_and_vectors = [&]() {
       MoFEMFunctionBegin;
+      auto jac_ptr = boost::make_shared<MatrixDouble>();
+      auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
+      auto det_ptr = boost::make_shared<VectorDouble>();
+
       pipeline_mng->getOpDomainRhsPipeline().push_back(
-          new OpCalculateJacForFace(jac));
+          new OpCalculateHOJacForFace(jac_ptr));
       pipeline_mng->getOpDomainRhsPipeline().push_back(
-          new OpCalculateInvJacForFace(inv_jac));
+          new OpInvertMatrix<2>(jac_ptr, det_ptr, inv_jac_ptr));
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpMakeHdivFromHcurl());
       pipeline_mng->getOpDomainRhsPipeline().push_back(
-          new OpSetContravariantPiolaTransformFace(jac));
+          new OpSetContravariantPiolaTransformOnFace2D(jac_ptr));
       pipeline_mng->getOpDomainRhsPipeline().push_back(new OpAssembleVec());
 
       pipeline_mng->getOpDomainLhsPipeline().push_back(
-          new OpCalculateJacForFace(jac));
+          new OpCalculateHOJacForFace(jac_ptr));
       pipeline_mng->getOpDomainLhsPipeline().push_back(
-          new OpCalculateInvJacForFace(inv_jac));
+          new OpInvertMatrix<2>(jac_ptr, det_ptr, inv_jac_ptr));
       pipeline_mng->getOpDomainLhsPipeline().push_back(
           new OpMakeHdivFromHcurl());
       pipeline_mng->getOpDomainLhsPipeline().push_back(
-          new OpSetContravariantPiolaTransformFace(jac));
+          new OpSetContravariantPiolaTransformOnFace2D(jac_ptr));
       pipeline_mng->getOpDomainLhsPipeline().push_back(new OpAssembleMat());
 
       auto integration_rule = [](int, int, int p_data) { return 2 * p_data; };
@@ -369,20 +370,24 @@ int main(int argc, char *argv[]) {
       pipeline_mng->getOpDomainLhsPipeline().clear();
       pipeline_mng->getOpDomainRhsPipeline().clear();
 
+      auto jac_ptr = boost::make_shared<MatrixDouble>();
+      auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
+      auto det_ptr = boost::make_shared<VectorDouble>();
+
       pipeline_mng->getOpDomainRhsPipeline().push_back(
-          new OpCalculateJacForFace(jac));
+          new OpCalculateHOJacForFace(jac_ptr));
       pipeline_mng->getOpDomainRhsPipeline().push_back(
-          new OpCalculateInvJacForFace(inv_jac));
+          new OpInvertMatrix<2>(jac_ptr, det_ptr, inv_jac_ptr));
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpMakeHdivFromHcurl());
       pipeline_mng->getOpDomainRhsPipeline().push_back(
-          new OpSetContravariantPiolaTransformFace(jac));
+          new OpSetContravariantPiolaTransformOnFace2D(jac_ptr));
       pipeline_mng->getOpDomainRhsPipeline().push_back(
-          new OpSetInvJacHcurlFace(inv_jac));
+          new OpSetInvJacHcurlFace(inv_jac_ptr));
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpValsDiffVals(vals, diff_vals));
       pipeline_mng->getOpDomainRhsPipeline().push_back(
-          new OpCalculateHdivVectorField<3>("FIELD1", ptr_values));
+          new OpCalculateHVecVectorField<3>("FIELD1", ptr_values));
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpCalculateHdivVectorDivergence<3, 2>("FIELD1", ptr_divergence));
       pipeline_mng->getOpDomainRhsPipeline().push_back(

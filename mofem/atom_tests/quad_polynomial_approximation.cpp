@@ -225,11 +225,15 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionBegin;
       Ele fe(m_field);
       fe.getRuleHook = rule;
-      MatrixDouble inv_jac;
-      fe.getOpPtrVector().push_back(new OpCalculateInvJacForFace(inv_jac));
-      fe.getOpPtrVector().push_back(new OpSetInvJacH1ForFace(inv_jac));
-      fe.getOpPtrVector().push_back(new OpSetInvJacL2ForFace(inv_jac));
-      fe.getOpPtrVector().push_back(new OpMakeHighOrderGeometryWeightsOnFace());
+      auto jac_ptr = boost::make_shared<MatrixDouble>();
+      auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
+      auto det_ptr = boost::make_shared<VectorDouble>();
+      fe.getOpPtrVector().push_back(new OpCalculateHOJacForFace(jac_ptr));
+      fe.getOpPtrVector().push_back(
+          new OpInvertMatrix<2>(jac_ptr, det_ptr, inv_jac_ptr));
+      fe.getOpPtrVector().push_back(new OpSetInvJacH1ForFace(inv_jac_ptr));
+      fe.getOpPtrVector().push_back(new OpSetInvJacL2ForFace(inv_jac_ptr));
+      fe.getOpPtrVector().push_back(new OpSetHOWeigthsOnFace());
       fe.getOpPtrVector().push_back(new QuadOpRhs(F));
       fe.getOpPtrVector().push_back(new QuadOpLhs(A));
       CHKERR VecZeroEntries(F);
@@ -260,15 +264,20 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionBegin;
       Ele fe(m_field);
       fe.getRuleHook = rule;
-      boost::shared_ptr<VectorDouble> field_vals_ptr(new VectorDouble());
-      boost::shared_ptr<MatrixDouble> diff_field_vals_ptr(new MatrixDouble());
-      MatrixDouble inv_jac;
+      auto field_vals_ptr = boost::make_shared<VectorDouble>();
+      auto diff_field_vals_ptr = boost::make_shared<MatrixDouble>();
+      auto jac_ptr = boost::make_shared<MatrixDouble>();
+      auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
+      auto det_ptr = boost::make_shared<VectorDouble>();
+
       fe.getOpPtrVector().push_back(
           new OpCalculateScalarFieldValues("FIELD1", field_vals_ptr));
-      fe.getOpPtrVector().push_back(new OpCalculateInvJacForFace(inv_jac));
-      fe.getOpPtrVector().push_back(new OpSetInvJacH1ForFace(inv_jac));
-      fe.getOpPtrVector().push_back(new OpSetInvJacL2ForFace(inv_jac));
-      fe.getOpPtrVector().push_back(new OpMakeHighOrderGeometryWeightsOnFace());
+      fe.getOpPtrVector().push_back(new OpCalculateHOJacForFace(jac_ptr));
+      fe.getOpPtrVector().push_back(
+          new OpInvertMatrix<2>(jac_ptr, det_ptr, inv_jac_ptr));
+      fe.getOpPtrVector().push_back(new OpSetInvJacH1ForFace(inv_jac_ptr));
+      fe.getOpPtrVector().push_back(new OpSetInvJacL2ForFace(inv_jac_ptr));
+      fe.getOpPtrVector().push_back(new OpSetHOWeigthsOnFace());
       fe.getOpPtrVector().push_back(new OpCalculateScalarFieldGradient<2>(
           "FIELD1", diff_field_vals_ptr, space == L2 ? MBQUAD : MBVERTEX));
       fe.getOpPtrVector().push_back(

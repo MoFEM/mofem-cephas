@@ -23,16 +23,16 @@ namespace MoFEM {
 
 using Sev = MoFEM::LogManager::SeverityLevel;
 
-typedef CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type
+typedef CubitMeshSet_multiIndex::index<CubitMeshsetType_mi_tag>::type
     CubitMeshsetByType;
 
-typedef CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type
+typedef CubitMeshSet_multiIndex::index<CubitMeshsetMaskedType_mi_tag>::type
     CubitMeshsetByMask;
 
-typedef CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type
+typedef CubitMeshSet_multiIndex::index<CubitMeshsets_name>::type
     CubitMeshsetByName;
 
-typedef CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type
+typedef CubitMeshSet_multiIndex::index<CubitMeshsetType_mi_tag>::type
     CubitMeshsetById;
 
 /**
@@ -109,16 +109,13 @@ for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,"SOME_BLOCK_NAME",it) {
   IT != MESHSET_MANAGER.get_meshsets_manager_ptr()->getEnd(NAME);              \
   IT++
 
-static const MOFEMuuid IDD_MOFEMMeshsetsManager =
-    MOFEMuuid(BitIntefaceId(MESHSETSMANAGER_INTERFACE));
-
 /** \brief Interface for managing meshsets containing materials and boundary
  * conditions
  * \ingroup mofem_meshset_mng
  */
 struct MeshsetsManager : public UnknownInterface {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
   MoFEM::Core &cOre;
@@ -192,17 +189,17 @@ struct MeshsetsManager : public UnknownInterface {
 
   /**
    * @brief Boradcats meshsets
-   * 
-   * @param verb 
-   * @return MoFEMErrorCode 
+   *
+   * @param verb
+   * @return MoFEMErrorCode
    */
   MoFEMErrorCode readMeshsets(int verb = DEFAULT_VERBOSITY);
 
   /**
    * @brief Boradcats meshsets
-   * 
-   * @param verb 
-   * @return MoFEMErrorCode 
+   *
+   * @param verb
+   * @return MoFEMErrorCode
    */
   MoFEMErrorCode broadcastMeshsets(int verb = DEFAULT_VERBOSITY);
 
@@ -289,7 +286,7 @@ struct MeshsetsManager : public UnknownInterface {
     */
   inline CubitMeshsetByType::iterator
   getBegin(const unsigned int cubit_bc_type) const {
-    return cubitMeshsets.get<CubitMeshSets_mi_tag>().lower_bound(cubit_bc_type);
+    return cubitMeshsets.get<CubitMeshsetType_mi_tag>().lower_bound(cubit_bc_type);
   }
 
   /**
@@ -308,7 +305,7 @@ struct MeshsetsManager : public UnknownInterface {
     */
   inline CubitMeshsetByType::iterator
   getEnd(const unsigned int cubit_bc_type) const {
-    return cubitMeshsets.get<CubitMeshSets_mi_tag>().upper_bound(cubit_bc_type);
+    return cubitMeshsets.get<CubitMeshsetType_mi_tag>().upper_bound(cubit_bc_type);
   }
 
   /**
@@ -325,7 +322,7 @@ struct MeshsetsManager : public UnknownInterface {
     */
   inline CubitMeshsetByMask::iterator
   getBySetTypeBegin(const unsigned int cubit_bc_type) const {
-    return cubitMeshsets.get<CubitMeshSets_mask_meshset_mi_tag>().lower_bound(
+    return cubitMeshsets.get<CubitMeshsetMaskedType_mi_tag>().lower_bound(
         cubit_bc_type);
   }
 
@@ -343,7 +340,7 @@ struct MeshsetsManager : public UnknownInterface {
     */
   inline CubitMeshsetByMask::iterator
   getBySetTypeEnd(const unsigned int cubit_bc_type) const {
-    return cubitMeshsets.get<CubitMeshSets_mask_meshset_mi_tag>().upper_bound(
+    return cubitMeshsets.get<CubitMeshsetMaskedType_mi_tag>().upper_bound(
         cubit_bc_type);
   }
 
@@ -362,7 +359,7 @@ struct MeshsetsManager : public UnknownInterface {
     * \param  type of meshset (NODESET, SIDESET or BLOCKSET and more)
     */
   inline CubitMeshsetByName::iterator getBegin(const std::string &name) const {
-    return cubitMeshsets.get<CubitMeshSets_name>().lower_bound(name);
+    return cubitMeshsets.get<CubitMeshsets_name>().lower_bound(name);
   }
 
   /**
@@ -380,7 +377,7 @@ struct MeshsetsManager : public UnknownInterface {
     * \param  type of meshset (NODESET, SIDESET or BLOCKSET and more)
     */
   inline CubitMeshsetByName::iterator getEnd(const std::string &name) const {
-    return cubitMeshsets.get<CubitMeshSets_name>().upper_bound(name);
+    return cubitMeshsets.get<CubitMeshsets_name>().upper_bound(name);
   }
 
   /**
@@ -488,22 +485,37 @@ struct MeshsetsManager : public UnknownInterface {
                                const MoFEMTypes bh = MF_EXIST);
 
   /**
-    * \brief get cubit meshset
-    * \ingroup mofem_meshset_mng
-
-    */
+   * \brief get cubit meshset
+   * \ingroup mofem_meshset_mng
+   *
+   *
+   */
   MoFEMErrorCode
   getCubitMeshsetPtr(const int ms_id, const CubitBCType cubit_bc_type,
                      const CubitMeshSets **cubit_meshset_ptr) const;
 
   /**
-    * \brief get cubit meshset
-    * \ingroup mofem_meshset_mng
-
-    */
+   * \brief get cubit meshset
+   *
+   * \ingroup mofem_meshset_mng
+   */
   MoFEMErrorCode
   getCubitMeshsetPtr(const string name,
                      const CubitMeshSets **cubit_meshset_ptr) const;
+
+  /**
+   * @brief Get vector of poointer to blocksets with name satisfying regular
+   * expression.
+   *
+   * \ingroup mofem_meshset_mng
+   *
+   * @param reg_exp_name
+   * @param std::vector<const CubitMeshSets *>
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode
+  getCubitMeshsetPtr(const std::regex reg_exp_name,
+                     std::vector<const CubitMeshSets *> &vec_ptr) const;
 
   /**
     * \brief get entities from CUBIT/meshset of a particular entity dimension
@@ -810,7 +822,6 @@ protected:
   CubitMeshSet_multiIndex cubitMeshsets; ///< cubit meshsets
   boost::shared_ptr<boost::program_options::options_description>
       configFileOptionsPtr; ///< config file options
-		
 };
 
 template <class CUBIT_BC_DATA_TYPE>
@@ -823,26 +834,14 @@ MoFEMErrorCode MeshsetsManager::printBcSet(CUBIT_BC_DATA_TYPE &data,
     CHKERR it->getBcDataStructure(data);
     MOFEM_LOG("MeshsetMngWorld", Sev::inform) << *it;
     MOFEM_LOG("MeshsetMngWorld", Sev::inform) << data;
-    int tets, tris, edges, nodes, prisms, quads;
-    CHKERR moab.get_number_entities_by_type(it->meshset, MBTET, tets, true);
-    CHKERR moab.get_number_entities_by_type(it->meshset, MBTRI, tris, true);
-    CHKERR moab.get_number_entities_by_type(it->meshset, MBEDGE, edges, true);
-    CHKERR moab.get_number_entities_by_type(it->meshset, MBVERTEX, nodes, true);
-    CHKERR moab.get_number_entities_by_type(it->meshset, MBPRISM, prisms, true);
-    CHKERR moab.get_number_entities_by_type(it->meshset, MBQUAD, quads, true);
     MOFEM_LOG("MeshsetMngWorld", Sev::inform) << "name " << it->getName();
-    MOFEM_LOG("MeshsetMngWorld", Sev::inform)
-        << "msId " << it->getMeshsetId() << " nb. tets " << tets;
-    MOFEM_LOG("MeshsetMngWorld", Sev::inform)
-        << "msId " << it->getMeshsetId() << " nb. prisms " << prisms;
-    MOFEM_LOG("MeshsetMngWorld", Sev::inform)
-        << "msId " << it->getMeshsetId() << " nb. quads " << quads;
-    MOFEM_LOG("MeshsetMngWorld", Sev::inform)
-        << "msId " << it->getMeshsetId() << " nb. tris " << tris;
-    MOFEM_LOG("MeshsetMngWorld", Sev::inform)
-        << "msId " << it->getMeshsetId() << " nb. edges " << edges;
-    MOFEM_LOG("MeshsetMngWorld", Sev::inform)
-        << "msId " << it->getMeshsetId() << " nb. nodes " << nodes;
+    for (EntityType t = MBVERTEX; t != MBENTITYSET; ++t) {
+      int nb;
+      CHKERR moab.get_number_entities_by_type(it->meshset, t, nb, true);
+      MOFEM_LOG("MeshsetMngWorld", Sev::inform)
+          << "msId " << it->getMeshsetId() << " number of "
+          << moab::CN::EntityTypeName(t) << " " << nb;
+    }
   }
   MoFEMFunctionReturn(0);
 }

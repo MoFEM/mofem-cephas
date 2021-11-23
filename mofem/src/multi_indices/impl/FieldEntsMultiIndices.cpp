@@ -32,12 +32,13 @@ FieldEntity::FieldEntity(
 
   localUId = getLocalUniqueIdCalculate(field_ptr->getBitNumber(),
                                        ref_ents_ptr->getEnt());
-
+#ifndef NDEBUG
   if (PetscUnlikely(!fieldDataAdaptorPtr))
     THROW_MESSAGE("Pointer to field data adaptor not set");
 
   if (PetscUnlikely(!tagMaxOrderPtr))
     THROW_MESSAGE("Pointer to max order not set");
+#endif
 }
 
 boost::shared_ptr<FieldData *const> FieldEntity::makeSharedFieldDataAdaptorPtr(

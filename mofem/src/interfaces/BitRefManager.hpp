@@ -23,9 +23,6 @@
 
 namespace MoFEM {
 
-static const MOFEMuuid IDD_MOFEMBitRefManager =
-    MOFEMuuid(BitIntefaceId(BITREFMANAGER_INTERFACE));
-
 /**
  * \brief Managing BitRefLevels
  * \ingroup mofem_bit_ref
@@ -33,7 +30,7 @@ static const MOFEMuuid IDD_MOFEMBitRefManager =
  */
 struct BitRefManager : public UnknownInterface {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
   MoFEM::Core &cOre;
@@ -501,7 +498,7 @@ struct BitRefManager : public UnknownInterface {
    *the
    * parent meshset. It can be used for example to transfer information about
    * boundary conditions to refined mesh or split mesh by interface
-   * elements. It is used by function refine_MESHSET, to update MESHSET
+   * elements. It is used by function refineMeshset, to update MESHSET
    *finite elements.
    *
    * \param parent meshset
@@ -532,7 +529,7 @@ struct BitRefManager : public UnknownInterface {
    * Search for refined entities of given type whose parent are entities in
    * the parent meshset. It can be used for example to transfer information
    *about boundary conditions to refined mesh or split mesh by interface
-   * elements. It is used by function refine_MESHSET, to update MESHSET
+   * elements. It is used by function refineMeshset, to update MESHSET
    * finite elements.
    *
    * \param parent meshset

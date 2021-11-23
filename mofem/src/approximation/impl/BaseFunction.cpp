@@ -18,31 +18,17 @@
 namespace MoFEM {
 
 MoFEMErrorCode
-BaseFunctionCtx::query_interface(const MOFEMuuid &uuid,
-                                 BaseFunctionUnknownInterface **iface) const {
-  MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_UNKNOWN_BASE_FUNCTION) {
-    *iface = const_cast<BaseFunctionCtx *>(this);
-    MoFEMFunctionReturnHot(0);
-  } else {
-    SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "wrong interference");
-  }
-  MoFEMFunctionReturnHot(0);
+BaseFunctionCtx::query_interface(boost::typeindex::type_index type_index,
+                                 UnknownInterface **iface) const {
+  *iface = const_cast<BaseFunctionCtx *>(this);
+  return 0;
 }
 
 MoFEMErrorCode
-BaseFunction::query_interface(const MOFEMuuid &uuid,
-                              BaseFunctionUnknownInterface **iface) const {
-  MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_UNKNOWN_BASE_FUNCTION) {
-    *iface = const_cast<BaseFunction *>(this);
-    MoFEMFunctionReturnHot(0);
-  } else {
-    SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "wrong interference");
-  }
-  MoFEMFunctionReturnHot(0);
+BaseFunction::query_interface(boost::typeindex::type_index type_index,
+                              UnknownInterface **iface) const {
+  *iface = const_cast<BaseFunction *>(this);
+  return 0;
 }
 
 MoFEMErrorCode

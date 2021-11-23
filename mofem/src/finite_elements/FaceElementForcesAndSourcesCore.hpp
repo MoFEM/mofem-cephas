@@ -41,213 +41,15 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
   /** \brief default operator for TRI element
    * \ingroup mofem_forces_and_sources_tri_element
    */
-  struct UserDataOperator : public ForcesAndSourcesCore::UserDataOperator {
-
-    using ForcesAndSourcesCore::UserDataOperator::UserDataOperator;
-
-    /**
-     * \brief get area of face
-     * @return area of face
-     */
-    inline double getArea();
-
-    /**
-     * \brief get measure of element
-     * @return area of face
-     */
-    inline double getMeasure();
-
-    /** \brief get triangle normal
-     */
-    inline VectorDouble &getNormal();
-
-    /** \brief get triangle tangent 1
-     */
-    inline VectorDouble &getTangent1();
-
-    /** \brief get triangle tangent 2
-     */
-    inline VectorDouble &getTangent2();
-
-    /** \brief get normal as tensor
-     */
-    inline auto getFTensor1Normal();
-
-    /** \brief get tangentOne as tensor
-     */
-    inline auto getFTensor1Tangent1();
-
-    /** \brief get tangentTwo as tensor
-     */
-    inline auto getFTensor1Tangent2();
-
-    /** \brief get element number of nodes
-     */
-    inline int getNumNodes();
-
-    /** \brief get element connectivity
-     */
-    inline const EntityHandle *getConn();
-
-    /** \brief get triangle coordinates
-     */
-    inline VectorDouble &getCoords();
-
-    /**
-     * \brief get get coords at gauss points
-
-     \code
-     FTensor::Index<'i',3> i;
-     FTensor::Tensor1<double,3> t_center;
-     auto t_coords = getFTensor1Coords();
-     t_center(i) = 0;
-     for(int nn = 0;nn!=3;nn++) {
-        t_center(i) += t_coords(i);
-        ++t_coords;
-      }
-      t_center(i) /= 3;
-    \endcode
-
-     */
-    inline auto getFTensor1Coords();
-
-    /** \brief Gauss points and weight, matrix (nb. of points x 3)
-
-    Column 0-2 integration points coordinate x and y, respectively. At rows are
-    integration points.
-
-    */
-    inline MatrixDouble &getCoordsAtGaussPts();
-
-    /** \brief get coordinates at Gauss pts.
-     */
-    inline auto getFTensor1CoordsAtGaussPts();
-
-    /** \brief coordinate at Gauss points (if hierarchical approximation of
-    element geometry)
-
-    Note: returned matrix has size 0 in rows and columns if no HO approximation
-    of geometry is available.
-
-      */
-    inline MatrixDouble &getHoCoordsAtGaussPts();
-
-    /** \brief get coordinates at Gauss pts (takes in account ho approx. of
-     * geometry)
-     */
-    inline auto getFTensor1HoCoordsAtGaussPts();
-
-    /** \brief if higher order geometry return normals at Gauss pts.
-
-    Note: returned matrix has size 0 in rows and columns if no HO approximation
-    of geometry is available.
-
-     */
-    inline MatrixDouble &getNormalsAtGaussPts();
-
-    /**
-     * @deprecated Use getNormalsAtGaussPts
-     */
-    DEPRECATED inline MatrixDouble &getNormalsAtGaussPt();
-
-    /** \brief if higher order geometry return normals at Gauss pts.
-     *
-     * \param gg gauss point number
-     */
-    inline ublas::matrix_row<MatrixDouble> getNormalsAtGaussPts(const int gg);
-
-    /**
-     * @deprecated Cotrect name is getNormalsAtGaussPts
-     */
-    DEPRECATED inline ublas::matrix_row<MatrixDouble>
-    getNormalsAtGaussPt(const int gg);
-
-    /** \brief if higher order geometry return tangent vector to triangle at
-    Gauss pts.
-
-    Note: returned matrix has size 0 in rows and columns if no HO approximation
-    of geometry is avaliable.
-
-     */
-    inline MatrixDouble &getTangent1AtGaussPts();
-
-    /** \brief if higher order geometry return tangent vector to triangle at
-    Gauss pts.
-
-    Note: returned matrix has size 0 in rows and columns if no HO approximation
-    of geometry is avaliable.
-
-     */
-    inline MatrixDouble &getTangent2AtGaussPts();
-
-    /** \brief get normal at integration points
-
-      Example:
-      \code
-      double nrm2;
-      FTensor::Index<'i',3> i;
-      auto t_normal = getFTensor1NormalsAtGaussPts();
-      for(int gg = gg!=data.getN().size1();gg++) {
-        nrm2 = sqrt(t_normal(i)*t_normal(i));
-        ++t_normal;
-      }
-      \endcode
-
-    */
-    inline auto getFTensor1NormalsAtGaussPts();
-
-    /** \brief get tangent 1 at integration points
-
-    */
-    inline auto getFTensor1Tangent1AtGaussPts();
-
-    /** \brief get tangent 2 at integration points
-
-    */
-    inline auto getFTensor1Tangent2AtGaussPts();
-
-    /** \brief return pointer to Generic Triangle Finite Element object
-     */
-    inline const FaceElementForcesAndSourcesCoreBase *getFaceFE();
-
-    /**
-     * @deprecated Use getFaceFE
-     */
-    DEPRECATED inline const FaceElementForcesAndSourcesCoreBase *
-    getFaceElementForcesAndSourcesCore();
-
-    /**
-     *
-     * User call this function to loop over elements on the side of face. This
-     * function calls MoFEM::VolumeElementForcesAndSourcesCoreOnSide with is
-     * operator to do calculations.
-     *
-     * @param  fe_name Name of the element
-     * @param  method  Finite element object
-     * @return         error code
-     */
-    template <int SWITCH>
-    MoFEMErrorCode loopSideVolumes(
-        const string &fe_name,
-        VolumeElementForcesAndSourcesCoreOnSideSwitch<SWITCH> &fe_method);
-
-  private:
-    MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
-
-  };
-
+  struct UserDataOperator;
+  
   enum Switches {
-    NO_HO_GEOMETRY = 1 << 0,
-    NO_CONTRAVARIANT_TRANSFORM_HDIV = 1 << 1,
-    NO_COVARIANT_TRANSFORM_HCURL = 1 << 2,
   };
 
-  template <int SWITCH> MoFEMErrorCode OpSwitch();
+  template <int SWITCH> MoFEMErrorCode opSwitch();
 
 protected:
   FaceElementForcesAndSourcesCoreBase(Interface &m_field);
-
-  MoFEMErrorCode getNumberOfNodes(int &num_nodes) const;
 
   /**
    * \brief Calculate element area and normal of the face at integration points
@@ -284,32 +86,174 @@ protected:
    */
   virtual MoFEMErrorCode calculateCoordinatesAtGaussPts();
 
-  /**
-   * \brief Calculate normal on curved elements
-   *
-   *  Geometry is given by other field.
-   *
-   * @return error code
-   */
-  virtual MoFEMErrorCode calculateHoNormal();
-
   double aRea;
   int num_nodes;
   const EntityHandle *conn;
   VectorDouble nOrmal, tangentOne, tangentTwo;
   VectorDouble coords;
-  MatrixDouble coordsAtGaussPts;
 
-  MatrixDouble hoCoordsAtGaussPts;
   MatrixDouble normalsAtGaussPts;
   MatrixDouble tangentOneAtGaussPts;
   MatrixDouble tangentTwoAtGaussPts;
-  OpGetCoordsAndNormalsOnFace opHOCoordsAndNormals;
-  OpSetContravariantPiolaTransformOnFace opContravariantTransform;
-  OpSetCovariantPiolaTransformOnFace opCovariantTransform;
 
   friend class UserDataOperator;
   friend class VolumeElementForcesAndSourcesCoreOnSideBase;
+};
+
+/** \brief default operator for TRI element
+ * \ingroup mofem_forces_and_sources_tri_element
+ */
+struct FaceElementForcesAndSourcesCoreBase::UserDataOperator
+    : public ForcesAndSourcesCore::UserDataOperator {
+
+  using ForcesAndSourcesCore::UserDataOperator::UserDataOperator;
+
+  /**
+   * \brief get area of face
+   * @return area of face
+   */
+  inline double getArea();
+
+  /**
+   * \brief get measure of element
+   * @return area of face
+   */
+  inline double getMeasure();
+
+  /** \brief get triangle normal
+   */
+  inline VectorDouble &getNormal();
+
+  /** \brief get triangle tangent 1
+   */
+  inline VectorDouble &getTangent1();
+
+  /** \brief get triangle tangent 2
+   */
+  inline VectorDouble &getTangent2();
+
+  /** \brief get normal as tensor
+   */
+  inline auto getFTensor1Normal();
+
+  /** \brief get tangentOne as tensor
+   */
+  inline auto getFTensor1Tangent1();
+
+  /** \brief get tangentTwo as tensor
+   */
+  inline auto getFTensor1Tangent2();
+
+  /** \brief get element number of nodes
+   */
+  inline int getNumNodes();
+
+  /** \brief get element connectivity
+   */
+  inline const EntityHandle *getConn();
+
+  /** \brief get triangle coordinates
+   */
+  inline VectorDouble &getCoords();
+
+  /**
+ * \brief get get coords at gauss points
+
+   \code
+   FTensor::Index<'i',3> i;
+   FTensor::Tensor1<double,3> t_center;
+   auto t_coords = getFTensor1Coords();
+   t_center(i) = 0;
+   for(int nn = 0;nn!=3;nn++) {
+      t_center(i) += t_coords(i);
+      ++t_coords;
+    }
+    t_center(i) /= 3;
+  \endcode
+
+   */
+  inline auto getFTensor1Coords();
+
+  /** \brief if higher order geometry return normals at Gauss pts.
+
+  Note: returned matrix has size 0 in rows and columns if no HO approximation
+  of geometry is available.
+
+   */
+  inline MatrixDouble &getNormalsAtGaussPts();
+
+  /** \brief if higher order geometry return normals at Gauss pts.
+   *
+   * \param gg gauss point number
+   */
+  inline ublas::matrix_row<MatrixDouble> getNormalsAtGaussPts(const int gg);
+
+  /** \brief if higher order geometry return tangent vector to triangle at
+  Gauss pts.
+
+  Note: returned matrix has size 0 in rows and columns if no HO approximation
+  of geometry is avaliable.
+
+   */
+  inline MatrixDouble &getTangent1AtGaussPts();
+
+  /** \brief if higher order geometry return tangent vector to triangle at
+  Gauss pts.
+
+  Note: returned matrix has size 0 in rows and columns if no HO approximation
+  of geometry is avaliable.
+
+   */
+  inline MatrixDouble &getTangent2AtGaussPts();
+
+  /** \brief get normal at integration points
+
+    Example:
+    \code
+    double nrm2;
+    FTensor::Index<'i',3> i;
+    auto t_normal = getFTensor1NormalsAtGaussPts();
+    for(int gg = gg!=data.getN().size1();gg++) {
+      nrm2 = sqrt(t_normal(i)*t_normal(i));
+      ++t_normal;
+    }
+    \endcode
+
+  */
+  inline auto getFTensor1NormalsAtGaussPts();
+
+  /** \brief get tangent 1 at integration points
+
+  */
+  inline auto getFTensor1Tangent1AtGaussPts();
+
+  /** \brief get tangent 2 at integration points
+
+  */
+  inline auto getFTensor1Tangent2AtGaussPts();
+
+  /** \brief return pointer to Generic Triangle Finite Element object
+   */
+  inline FaceElementForcesAndSourcesCoreBase *getFaceFE();
+
+
+  /**
+   *
+   * User call this function to loop over elements on the side of face. This
+   * function calls MoFEM::VolumeElementForcesAndSourcesCoreOnSide with is
+   * operator to do calculations.
+   *
+   * @param  fe_name Name of the element
+   * @param  method  Finite element object
+   * @return         error code
+   */
+  template <int SWITCH>
+  MoFEMErrorCode loopSideVolumes(
+      const string &fe_name,
+      VolumeElementForcesAndSourcesCoreOnSideSwitch<SWITCH> &fe_method);
+
+private:
+  MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
 };
 
 /** \brief Face finite element switched
@@ -337,10 +281,10 @@ using FaceElementForcesAndSourcesCore =
     FaceElementForcesAndSourcesCoreSwitch<0>;
 
 template <int SWITCH>
-MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::OpSwitch() {
+MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::opSwitch() {
   MoFEMFunctionBegin;
 
-  const EntityType type = numeredEntFiniteElementPtr->getEntType();
+  const auto type = numeredEntFiniteElementPtr->getEntType();
   if (type != lastEvaluatedElementEntityType) {
     switch (type) {
     case MBTRI:
@@ -365,41 +309,10 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::OpSwitch() {
   if (gaussPts.size2() == 0)
     MoFEMFunctionReturnHot(0);
 
-  DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
-  DataForcesAndSourcesCore &data_div = *dataOnElement[HDIV];
-
   CHKERR calculateCoordinatesAtGaussPts();
   CHKERR calHierarchicalBaseFunctionsOnElement();
   CHKERR calBernsteinBezierBaseFunctionsOnElement();
-
-  switch (numeredEntFiniteElementPtr->getEntType()) {
-  case MBTRI:
-    break;
-  case MBQUAD:
-    CHKERR calculateAreaAndNormalAtIntegrationPts();
-    break;
-  default:
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-            "Element type not implemented");
-  }
-
-  if (!(NO_HO_GEOMETRY & SWITCH)) {
-    CHKERR calculateHoNormal();
-  }
-
-  // Apply Piola transform to HDiv and HCurl spaces, uses previously
-  // calculated faces normal and tangent vectors.
-  if (!(NO_CONTRAVARIANT_TRANSFORM_HDIV & SWITCH)) {
-    if (dataH1.spacesOnEntities[MBTRI].test(HDIV))
-      CHKERR opContravariantTransform.opRhs(data_div);
-    if (dataH1.spacesOnEntities[MBQUAD].test(HDIV))
-      CHKERR opContravariantTransform.opRhs(data_div);
-  }
-
-  if (!(NO_COVARIANT_TRANSFORM_HCURL & SWITCH)) {
-    if (dataH1.spacesOnEntities[MBEDGE].test(HCURL))
-      CHKERR opCovariantTransform.opRhs(data_curl);
-  }
+  CHKERR calculateAreaAndNormalAtIntegrationPts();
 
   // Iterate over operators
   CHKERR loopOverOperators();
@@ -409,7 +322,7 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::OpSwitch() {
 
 template <int SWITCH>
 MoFEMErrorCode FaceElementForcesAndSourcesCoreSwitch<SWITCH>::operator()() {
-  return OpSwitch<SWITCH>();
+  return opSwitch<SWITCH>();
 }
 
 double FaceElementForcesAndSourcesCoreBase::UserDataOperator::getArea() {
@@ -475,44 +388,9 @@ auto FaceElementForcesAndSourcesCoreBase::UserDataOperator::
 }
 
 MatrixDouble &
-FaceElementForcesAndSourcesCoreBase::UserDataOperator::getCoordsAtGaussPts() {
-  return static_cast<FaceElementForcesAndSourcesCoreBase *>(ptrFE)
-      ->coordsAtGaussPts;
-}
-
-auto FaceElementForcesAndSourcesCoreBase::UserDataOperator::
-    getFTensor1CoordsAtGaussPts() {
-  double *ptr = &*getCoordsAtGaussPts().data().begin();
-  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
-                                                            &ptr[2]);
-}
-
-MatrixDouble &
-FaceElementForcesAndSourcesCoreBase::UserDataOperator::getHoCoordsAtGaussPts() {
-  return static_cast<FaceElementForcesAndSourcesCoreBase *>(ptrFE)
-      ->hoCoordsAtGaussPts;
-}
-
-auto FaceElementForcesAndSourcesCoreBase::UserDataOperator::
-    getFTensor1HoCoordsAtGaussPts() {
-  if (getHoCoordsAtGaussPts().size1() == 0 &&
-      getHoCoordsAtGaussPts().size2() != 3) {
-    return getFTensor1Coords();
-  }
-  double *ptr = &*getHoCoordsAtGaussPts().data().begin();
-  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
-                                                            &ptr[2]);
-}
-
-MatrixDouble &
 FaceElementForcesAndSourcesCoreBase::UserDataOperator::getNormalsAtGaussPts() {
   return static_cast<FaceElementForcesAndSourcesCoreBase *>(ptrFE)
       ->normalsAtGaussPts;
-}
-
-MatrixDouble &
-FaceElementForcesAndSourcesCoreBase::UserDataOperator::getNormalsAtGaussPt() {
-  return getNormalsAtGaussPts();
 }
 
 ublas::matrix_row<MatrixDouble>
@@ -522,12 +400,6 @@ FaceElementForcesAndSourcesCoreBase::UserDataOperator::getNormalsAtGaussPts(
       static_cast<FaceElementForcesAndSourcesCoreBase *>(ptrFE)
           ->normalsAtGaussPts,
       gg);
-}
-
-ublas::matrix_row<MatrixDouble>
-FaceElementForcesAndSourcesCoreBase::UserDataOperator::getNormalsAtGaussPt(
-    const int gg) {
-  return getNormalsAtGaussPts(gg);
 }
 
 MatrixDouble &
@@ -563,15 +435,12 @@ auto FaceElementForcesAndSourcesCoreBase::UserDataOperator::
                                                             &ptr[2]);
 }
 
-const FaceElementForcesAndSourcesCoreBase *
+FaceElementForcesAndSourcesCoreBase *
 FaceElementForcesAndSourcesCoreBase::UserDataOperator::getFaceFE() {
   return static_cast<FaceElementForcesAndSourcesCoreBase *>(ptrFE);
 }
 
-const FaceElementForcesAndSourcesCoreBase *FaceElementForcesAndSourcesCoreBase::
-    UserDataOperator::getFaceElementForcesAndSourcesCore() {
-  return getFaceFE();
-}
+
 
 template <int SWITCH>
 MoFEMErrorCode

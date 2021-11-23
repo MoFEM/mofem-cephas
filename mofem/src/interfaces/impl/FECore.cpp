@@ -383,66 +383,6 @@ Core::add_ents_to_finite_element_by_dim(const Range &ents, const int dim,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::add_ents_to_finite_element_by_EDGEs(
-    const EntityHandle meshset, const std::string &name, const bool recursive) {
-  MoFEMFunctionBegin;
-  CHKERR add_ents_to_finite_element_by_type(meshset, MBEDGE, name, recursive);
-  MoFEMFunctionReturn(0);
-}
-MoFEMErrorCode
-Core::add_ents_to_finite_element_by_EDGEs(const Range &edges,
-                                          const std::string &name) {
-  MoFEMFunctionBegin;
-  CHKERR add_ents_to_finite_element_by_type(edges, MBEDGE, name);
-  MoFEMFunctionReturn(0);
-}
-MoFEMErrorCode
-Core::add_ents_to_finite_element_by_VERTICEs(const Range &vert,
-                                             const std::string &name) {
-  MoFEMFunctionBegin;
-  CHKERR add_ents_to_finite_element_by_type(vert, MBVERTEX, name);
-  MoFEMFunctionReturn(0);
-}
-MoFEMErrorCode
-Core::add_ents_to_finite_element_by_TRIs(const Range &tris,
-                                         const std::string &name) {
-  MoFEMFunctionBegin;
-  CHKERR add_ents_to_finite_element_by_type(tris, MBTRI, name);
-  MoFEMFunctionReturn(0);
-}
-MoFEMErrorCode Core::add_ents_to_finite_element_by_TRIs(
-    const EntityHandle meshset, const std::string &name, const bool recursive) {
-  MoFEMFunctionBegin;
-  CHKERR add_ents_to_finite_element_by_type(meshset, MBTRI, name, recursive);
-  MoFEMFunctionReturn(0);
-}
-MoFEMErrorCode
-Core::add_ents_to_finite_element_by_TETs(const Range &tets,
-                                         const std::string &name) {
-  MoFEMFunctionBegin;
-  CHKERR add_ents_to_finite_element_by_type(tets, MBTET, name);
-  MoFEMFunctionReturn(0);
-}
-MoFEMErrorCode Core::add_ents_to_finite_element_by_TETs(
-    const EntityHandle meshset, const std::string &name, const bool recursive) {
-  MoFEMFunctionBegin;
-  CHKERR add_ents_to_finite_element_by_type(meshset, MBTET, name, recursive);
-  MoFEMFunctionReturn(0);
-}
-MoFEMErrorCode
-Core::add_ents_to_finite_element_by_PRISMs(const Range &prims,
-                                           const std::string &name) {
-  MoFEMFunctionBegin;
-  CHKERR add_ents_to_finite_element_by_type(prims, MBPRISM, name);
-  MoFEMFunctionReturn(0);
-}
-MoFEMErrorCode Core::add_ents_to_finite_element_by_PRISMs(
-    const EntityHandle meshset, const std::string &name, const bool recursive) {
-  MoFEMFunctionBegin;
-  CHKERR add_ents_to_finite_element_by_type(meshset, MBPRISM, name, recursive);
-  MoFEMFunctionReturn(0);
-}
-
 MoFEMErrorCode
 Core::add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit,
                                                     const std::string &name,
@@ -570,9 +510,8 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
         refinedFiniteElements.get<Ent_mi_tag>().lower_bound(first);
     if (ref_fe_miit == refinedFiniteElements.get<Ent_mi_tag>().end()) {
       std::ostringstream ss;
-      ss << "refinedFiniteElements not in database ent = " << first;
-      ss << " type " << get_moab().type_from_handle(first);
-      ss << " " << *fe;
+      ss << "refinedFiniteElements not in database ent = " << first << " type "
+         << type_from_handle << " " << *fe;
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, ss.str().c_str());
     }
     auto hi_ref_fe_miit =

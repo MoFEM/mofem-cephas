@@ -32,8 +32,8 @@ namespace MoFEM {
  */
 struct EdgePolynomialBase : public BaseFunction {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 BaseFunctionUnknownInterface **iface) const;
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
+                                 UnknownInterface **iface) const;
 
   EdgePolynomialBase();
   ~EdgePolynomialBase();
@@ -65,7 +65,6 @@ private:
   MoFEMErrorCode getValueHcurlAinsworthBase(MatrixDouble &pts);
 
   MoFEMErrorCode getValueHcurlDemkowiczBase(MatrixDouble &pts);
-
 };
 
 } // namespace MoFEM

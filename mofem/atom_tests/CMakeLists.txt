@@ -53,6 +53,7 @@ cm_export_file("../meshes/2_tets_contact.cub" export_atom_tests)
 cm_export_file("../meshes/reference_rectangle.h5m" export_atom_tests)
 cm_export_file("../meshes/half_of_sphere.h5m" export_atom_tests)
 cm_export_file("../meshes/unit_volume_sphere.cub" export_atom_tests)
+cm_export_file("../meshes/hex_cub.h5m" export_atom_tests)
 
 set(PERCOMPILED_MOFEM_HEADER 
   "${PROJECT_BINARY_DIR}/include/precompiled/MoFEM.hpp")
@@ -495,7 +496,8 @@ add_test(check_hcurl_demkowicz_base_functions_direvatives_tri
 )
 
 # Continuity check on tet for h1 space
-build_test(forces_and_sources_h1_continuity_check forces_and_sources_h1_continuity_check.cpp)
+build_test(forces_and_sources_h1_continuity_check 
+  forces_and_sources_h1_continuity_check.cpp)
 
 add_test(forces_and_sources_h1_continuity_check_atom
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
@@ -584,7 +586,8 @@ add_test(h1_check_approx_3d_ainsworth_tet
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_3d
   -file_name sphere.h5m
   -base ainsworth -space h1 
-  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
+  -pc_type lu -pc_factor_mat_solver_type mumps
+  -ksp_atol 1e-12 -ksp_rtol 0
   -log_no_color
 )
 add_test(h1_check_approx_3d_ainsworth_lobatto_tet
@@ -592,7 +595,7 @@ add_test(h1_check_approx_3d_ainsworth_lobatto_tet
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_3d
   -file_name sphere.h5m
   -base ainsworth_labatto -space h1 
-  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
+  -pc_type lu -pc_factor_mat_solver_type mumps
   -log_no_color
 )
 add_test(h1_check_approx_3d_bernstein_tet
@@ -600,7 +603,8 @@ add_test(h1_check_approx_3d_bernstein_tet
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_3d
   -file_name sphere.h5m
   -base bernstein -space h1 
-  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
+  -pc_type lu -pc_factor_mat_solver_type mumps 
+  -ksp_atol 1e-12 -ksp_rtol 0
   -log_no_color
 )
 add_test(l2_check_approx_3d_ainsworth_tet
@@ -608,7 +612,8 @@ add_test(l2_check_approx_3d_ainsworth_tet
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_3d
   -file_name sphere.h5m
   -base ainsworth -space l2 
-  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
+  -pc_type lu -pc_factor_mat_solver_type mumps
+  -ksp_atol 1e-12 -ksp_rtol 0
   -log_no_color
 )
 add_test(l2_check_approx_3d_bernstein_tet
@@ -616,7 +621,26 @@ add_test(l2_check_approx_3d_bernstein_tet
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_3d
   -file_name sphere.h5m
   -base bernstein -space l2 
-  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
+  -pc_type lu -pc_factor_mat_solver_type mumps
+  -ksp_atol 1e-12 -ksp_rtol 0
+  -log_no_color
+)
+add_test(l2_check_approx_3d_demkowicz_hex
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_3d
+  -file_name hex_cub.h5m
+  -base demkowicz -space l2 
+  -pc_type lu -pc_factor_mat_solver_type mumps
+  -ksp_atol 1e-12 -ksp_rtol 0
+  -log_no_color
+)
+add_test(h1_check_approx_3d_demkowicz_hex
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_3d
+  -file_name hex_cub.h5m
+  -base demkowicz -space h1
+  -pc_type lu -pc_factor_mat_solver_type mumps
+  -ksp_atol 1e-16 -ksp_rtol 0
   -log_no_color
 )
 
@@ -749,49 +773,59 @@ add_test(hdiv_continuity_check_demkowicz_base
 # add test for hdvi divergence operator
 build_test(hdiv_divergence_operator hdiv_divergence_operator.cpp)
 
-add_test(hdiv_divergence_operator_ainsworth_atom
+add_test(hdiv_divergence_operator_ainsworth_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hdiv_divergence_operator
   -file_name sphere.h5m -base ainsworth
   -log_no_color)
-add_test(hdiv_divergence_operator_demkowicz_atom
+add_test(hdiv_divergence_operator_demkowicz_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hdiv_divergence_operator
   -file_name sphere.h5m -base demkowicz
   -log_no_color)
-add_test(hdiv_divergence_operator_ainsworth_ho_geometry_atom
+add_test(hdiv_divergence_operator_ainsworth_ho_geometry_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hdiv_divergence_operator
   -file_name sphere.h5m -base ainsworth -ho_geometry
   -log_no_color)
-add_test(hdiv_divergence_operator_demkowicz_ho_geometry_atom
+add_test(hdiv_divergence_operator_demkowicz_ho_geometry_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hdiv_divergence_operator
   -file_name sphere.h5m -base demkowicz -ho_geometry
+  -log_no_color)
+add_test(hdiv_divergence_operator_demkowicz_hex
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/hdiv_divergence_operator
+  -file_name hex_cub.h5m -base demkowicz
   -log_no_color)
 
 # add test for hcurl curl operator
 build_test(hcurl_curl_operator hcurl_curl_operator.cpp)
 
-add_test(hcurl_curl_operator_ainsworth_atom
+add_test(hcurl_curl_operator_ainsworth_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/hcurl_curl_operator 
   -file_name sphere.h5m -base ainsworth
   -log_no_color)
-add_test(hcurl_curl_operator_demkowicz_atom
+add_test(hcurl_curl_operator_demkowicz_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/hcurl_curl_operator 
   -file_name sphere.h5m -base demkowicz
   -log_no_color)
-add_test(hcurl_curl_operator_ainsworth_ho_geometry_atom
+add_test(hcurl_curl_operator_ainsworth_ho_geometry_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/hcurl_curl_operator 
   -file_name sphere.h5m -base ainsworth -ho_geometry
   -log_no_color)
-add_test(hcurl_curl_operator_demkowicz_ho_geometry_atom
+add_test(hcurl_curl_operator_demkowicz_ho_geometry_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/hcurl_curl_operator 
   -file_name sphere.h5m -base demkowicz -ho_geometry
+  -log_no_color)
+add_test(hcurl_curl_operator_demkowicz_hex
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/hcurl_curl_operator 
+  -file_name hex_cub.h5m -base demkowicz
   -log_no_color)
 
 #test integration on skeleton
@@ -801,31 +835,45 @@ build_test(
 )
 
 add_test(
-  continuity_check_on_skeleton_3d_ainsworth_hdiv
+  continuity_check_on_skeleton_3d_ainsworth_hdiv_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_3d
   -my_file sphere.h5m -base ainsworth -space hdiv
   -log_no_color
 )
 add_test(
-  continuity_check_on_skeleton_3d_demkowicz_hdiv
+  continuity_check_on_skeleton_3d_demkowicz_hdiv_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_3d
   -my_file sphere.h5m -base demkowicz -space hdiv
   -log_no_color
 )
 add_test(
-  continuity_check_on_skeleton_3d_ainsworth_hcurl
+  continuity_check_on_skeleton_3d_ainsworth_hcurl_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_3d
   -my_file sphere.h5m -base ainsworth -space hcurl
   -log_no_color
 )
 add_test(
-  continuity_check_on_skeleton_3d_demkowicz_hcurl
+  continuity_check_on_skeleton_3d_demkowicz_hcurl_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_3d
   -my_file sphere.h5m -base demkowicz -space hcurl
+  -log_no_color
+)
+add_test(
+  continuity_check_on_skeleton_3d_demkowicz_hcurl_hex
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_3d
+  -my_file hex_cub.h5m -base demkowicz -space hcurl
+  -log_no_color
+)
+add_test(
+  continuity_check_on_skeleton_3d_demkowicz_hdiv_hex
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_3d
+  -my_file hex_cub.h5m -base demkowicz -space hdiv
   -log_no_color
 )
 
@@ -939,9 +987,15 @@ endif()
 #test for build problems
 build_test(build_problems build_problems.cpp)
 add_test(
-  build_problems_atom
+  build_problems_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 2
   ${CMAKE_CURRENT_BINARY_DIR}/build_problems -my_file disp01.h5m
+  -log_no_color
+)
+add_test(
+  build_problems_hex
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/build_problems -my_file hex_cub.h5m
   -log_no_color
 )
 
@@ -1025,7 +1079,6 @@ add_test(
     -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 
-cm_export_file("../meshes/unit_volume_sphere.cub" export_atom_tests)
 build_test(projection_from_10node_tet_vol_atom projection_from_10node_op_volume.cpp)
 add_test(
     projection_from_10node_tet_vol_atom
@@ -1073,10 +1126,10 @@ add_test(edge_and_bubble_shape_functions_on_quad ${MPI_RUN} ${MPI_RUN_FLAGS} --o
   -log_no_color
 )
 
-build_test(gauss_points_on_quad gauss_points_on_quad.cpp)
+build_test(gauss_points_on_outer_product gauss_points_on_outer_product.cpp)
 
-add_test(gauss_points_on_quad ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/gauss_points_on_quad
+add_test(gauss_points_on_outer_product ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/gauss_points_on_outer_product
 )
 
 build_test(partition_mesh partition_mesh.cpp)

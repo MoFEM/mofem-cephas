@@ -26,14 +26,9 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
-using FaceEle = MoFEM::FaceElementForcesAndSourcesCoreSwitch<
-    FaceElementForcesAndSourcesCore::NO_HO_GEOMETRY |
-    FaceElementForcesAndSourcesCore::NO_CONTRAVARIANT_TRANSFORM_HDIV |
-    FaceElementForcesAndSourcesCore::NO_COVARIANT_TRANSFORM_HCURL>;
+using FaceEle = MoFEM::FaceElementForcesAndSourcesCore;
 
-using EdgeEle = MoFEM::EdgeElementForcesAndSourcesCoreSwitch<
-    EdgeElementForcesAndSourcesCore::NO_HO_GEOMETRY |
-    EdgeElementForcesAndSourcesCore::NO_COVARIANT_TRANSFORM_HCURL>;
+using EdgeEle = MoFEM::EdgeElementForcesAndSourcesCore;
 
 using FaceEleOp = FaceEle::UserDataOperator;
 using EdgeEleOp = EdgeEle::UserDataOperator;
@@ -209,15 +204,18 @@ int main(int argc, char *argv[]) {
       double div = 0;
       FaceEle fe_face(m_field);
       fe_face.getRuleHook = rule;
-      MatrixDouble inv_jac(2, 2), jac(2, 2);
-      fe_face.getOpPtrVector().push_back(new OpCalculateJacForFace(jac));
-      fe_face.getOpPtrVector().push_back(new OpCalculateInvJacForFace(inv_jac));
+      auto jac_ptr = boost::make_shared<MatrixDouble>();
+      auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
+      auto det_ptr = boost::make_shared<VectorDouble>();
+      fe_face.getOpPtrVector().push_back(new OpCalculateHOJacForFace(jac_ptr));
+      fe_face.getOpPtrVector().push_back(
+          new OpInvertMatrix<2>(jac_ptr, det_ptr, inv_jac_ptr));
       fe_face.getOpPtrVector().push_back(new OpMakeHdivFromHcurl());
       fe_face.getOpPtrVector().push_back(
-          new OpSetContravariantPiolaTransformFace(jac));
-      fe_face.getOpPtrVector().push_back(new OpSetInvJacHcurlFace(inv_jac));
+          new OpSetContravariantPiolaTransformOnFace2D(jac_ptr));
+      fe_face.getOpPtrVector().push_back(new OpSetInvJacHcurlFace(inv_jac_ptr));
       fe_face.getOpPtrVector().push_back(
-          new OpMakeHighOrderGeometryWeightsOnFace());
+          new OpSetHOWeigthsOnFace());
       fe_face.getOpPtrVector().push_back(new OpDivergence(div));
       CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "FACE_FE", fe_face);
       return div;
@@ -228,7 +226,7 @@ int main(int argc, char *argv[]) {
       EdgeEle fe_edge(m_field);
       fe_edge.getRuleHook = rule;
       fe_edge.getOpPtrVector().push_back(
-          new OpSetContravariantPiolaTransformOnEdge());
+          new OpSetContravariantPiolaTransformOnEdge2D());
       fe_edge.getOpPtrVector().push_back(new OpFlux(flux));
       CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "EDGE_FE", fe_edge);
       return flux;

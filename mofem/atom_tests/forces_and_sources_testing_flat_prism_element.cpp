@@ -254,8 +254,8 @@ int main(int argc, char *argv[]) {
           *it = fabs(*it) < eps ? 0.0 : *it;
         }
         for (DoubleAllocator::iterator it =
-                 getNormalsAtGaussPtF3().data().begin();
-             it != getNormalsAtGaussPtF3().data().end(); it++) {
+                 getNormalsAtGaussPtsF3().data().begin();
+             it != getNormalsAtGaussPtsF3().data().end(); it++) {
           *it = fabs(*it) < eps ? 0.0 : *it;
         }
         for (DoubleAllocator::iterator it =
@@ -269,8 +269,8 @@ int main(int argc, char *argv[]) {
           *it = fabs(*it) < eps ? 0.0 : *it;
         }
         for (DoubleAllocator::iterator it =
-                 getNormalsAtGaussPtF4().data().begin();
-             it != getNormalsAtGaussPtF4().data().end(); it++) {
+                 getNormalsAtGaussPtsF4().data().begin();
+             it != getNormalsAtGaussPtsF4().data().end(); it++) {
           *it = fabs(*it) < eps ? 0.0 : *it;
         }
         for (DoubleAllocator::iterator it =
@@ -296,13 +296,13 @@ int main(int argc, char *argv[]) {
         mySplit << std::setprecision(3) << "normal F4 " << getNormalF4()
                 << std::endl;
         mySplit << std::setprecision(3) << "normal at Gauss pt F3 "
-                << getNormalsAtGaussPtF3() << std::endl;
+                << getNormalsAtGaussPtsF3() << std::endl;
         mySplit << std::setprecision(3) << getTangent1AtGaussPtF3()
                 << std::endl;
         mySplit << std::setprecision(3) << getTangent2AtGaussPtF3()
                 << std::endl;
         mySplit << std::setprecision(3) << "normal at Gauss pt F4 "
-                << getNormalsAtGaussPtF4() << std::endl;
+                << getNormalsAtGaussPtsF4() << std::endl;
         mySplit << std::setprecision(3) << getTangent1AtGaussPtF4()
                 << std::endl;
         mySplit << std::setprecision(3) << getTangent2AtGaussPtF4()

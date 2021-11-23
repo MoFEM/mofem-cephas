@@ -23,9 +23,6 @@
 
 namespace MoFEM {
 
-static const MOFEMuuid IDD_MOFEMProblemsManager =
-    MOFEMuuid(BitIntefaceId(PROBLEMSMANAGER_INTERFACE));
-
 /**
  * \brief Problem manager is used to build and partition problems
  * \ingroup mofem_problems_manager
@@ -33,7 +30,7 @@ static const MOFEMuuid IDD_MOFEMProblemsManager =
  */
 struct ProblemsManager : public UnknownInterface {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
   MoFEM::Core &cOre;

@@ -20,35 +20,17 @@
 namespace MoFEM {
 
 MoFEMErrorCode LegendrePolynomialCtx::query_interface(
-    const MOFEMuuid &uuid, BaseFunctionUnknownInterface **iface) const {
-
-  MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_LEGENDRE_BASE_FUNCTION) {
-    *iface = const_cast<LegendrePolynomialCtx *>(this);
-    MoFEMFunctionReturnHot(0);
-  } else {
-    SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "wrong interference");
-  }
-  ierr = BaseFunctionCtx::query_interface(uuid, iface);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+    boost::typeindex::type_index type_index,
+    UnknownInterface **iface) const {
+  *iface = const_cast<LegendrePolynomialCtx *>(this);
+  return 0;
 }
 
 MoFEMErrorCode LegendrePolynomial::query_interface(
-    const MOFEMuuid &uuid, BaseFunctionUnknownInterface **iface) const {
-
-  MoFEMFunctionBeginHot;
-  *iface = NULL;
-  if (uuid == IDD_LEGENDRE_BASE_FUNCTION) {
-    *iface = const_cast<LegendrePolynomial *>(this);
-    MoFEMFunctionReturnHot(0);
-  } else {
-    SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "wrong interference");
-  }
-  ierr = BaseFunction::query_interface(uuid, iface);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+    boost::typeindex::type_index type_index,
+    UnknownInterface **iface) const {
+  *iface = const_cast<LegendrePolynomial *>(this);
+  return 9;
 }
 
 MoFEMErrorCode
@@ -56,10 +38,7 @@ LegendrePolynomial::getValue(MatrixDouble &pts,
                              boost::shared_ptr<BaseFunctionCtx> ctx_ptr) {
 
   MoFEMFunctionBeginHot;
-  BaseFunctionUnknownInterface *iface;
-  ierr = ctx_ptr->query_interface(IDD_LEGENDRE_BASE_FUNCTION, &iface);
-  CHKERRG(ierr);
-  LegendrePolynomialCtx *ctx = reinterpret_cast<LegendrePolynomialCtx *>(iface);
+  auto ctx = ctx_ptr->getInterface<LegendrePolynomialCtx>();
   ctx->baseFunPtr->resize(pts.size2(), ctx->P + 1, false);
   ctx->baseDiffFunPtr->resize(pts.size2(), ctx->dIm * (ctx->P + 1), false);
   double *l = NULL;

@@ -33,11 +33,11 @@ MoFEMErrorCode CubitMeshSets::getTagsHandlers(moab::Interface &moab) {
   CHKERR moab.tag_get_handle(NAME_TAG_NAME, entityNameTag);
   MoFEMFunctionReturn(0);
 }
-CubitMeshSets::CubitMeshSets(moab::Interface &moab, const EntityHandle _meshset)
-    : meshset(_meshset), cubitBcType(UNKNOWNSET), msId(nullptr),
-      tag_bc_data(nullptr), tag_bc_size(0), tag_block_header_data(nullptr),
-      tag_block_attributes(nullptr), tag_block_attributes_size(0),
-      tagName(nullptr), meshsets_mask(NODESET | SIDESET | BLOCKSET) {
+CubitMeshSets::CubitMeshSets(moab::Interface &moab, const EntityHandle meshset)
+    : meshset(meshset), cubitBcType(UNKNOWNSET), msId(nullptr),
+      tagBcData(nullptr), tagBcSize(0), tagBlockHeaderData(nullptr),
+      tagBlockAttributes(nullptr), tagBlockAttributesSize(0), tagName(nullptr),
+      meshsetsMask(NODESET | SIDESET | BLOCKSET) {
 
   CHKERR getTagsHandlers(moab);
   CHKERR moab.tag_get_tags_on_entity(meshset, tag_handles);
@@ -61,8 +61,8 @@ CubitMeshSets::CubitMeshSets(moab::Interface &moab, const EntityHandle _meshset)
       }
     }
     if ((*tit == nsTag_data) || (*tit == ssTag_data)) {
-      CHKERR moab.tag_get_by_ptr(*tit, &meshset, 1, (const void **)&tag_bc_data,
-                                 &tag_bc_size);
+      CHKERR moab.tag_get_by_ptr(*tit, &meshset, 1, (const void **)&tagBcData,
+                                 &tagBcSize);
 
       CHKERR getTypeFromBcData(cubitBcType);
     }
@@ -70,14 +70,14 @@ CubitMeshSets::CubitMeshSets(moab::Interface &moab, const EntityHandle _meshset)
       int tag_length;
       CHKERR moab.tag_get_length(*tit, tag_length);
       CHKERR moab.tag_get_by_ptr(*tit, &meshset, 1,
-                                 (const void **)&tag_block_header_data);
-      if (tag_block_header_data[1] > 0)
+                                 (const void **)&tagBlockHeaderData);
+      if (tagBlockHeaderData[1] > 0)
         cubitBcType |= MATERIALSET;
     }
     if (*tit == thBlockAttribs) {
       CHKERR moab.tag_get_by_ptr(*tit, &meshset, 1,
-                                 (const void **)&tag_block_attributes,
-                                 &tag_block_attributes_size);
+                                 (const void **)&tagBlockAttributes,
+                                 &tagBlockAttributesSize);
     }
     if (*tit == entityNameTag) {
       CHKERR moab.tag_get_by_ptr(entityNameTag, &meshset, 1,
@@ -96,25 +96,25 @@ CubitMeshSets::CubitMeshSets(moab::Interface &moab, const EntityHandle _meshset)
   }
 }
 CubitMeshSets::CubitMeshSets(moab::Interface &moab,
-                             const CubitBCType _cubit_bc_type, const int _ms_id)
-    : cubitBcType(_cubit_bc_type), msId(nullptr), tag_bc_data(nullptr),
-      tag_bc_size(0), tag_block_header_data(nullptr),
-      tag_block_attributes(nullptr), tag_block_attributes_size(0),
-      tagName(nullptr), meshsets_mask(NODESET | SIDESET | BLOCKSET) {
+                             const CubitBCType cubit_bc_type, const int ms_id)
+    : cubitBcType(cubit_bc_type), msId(nullptr), tagBcData(nullptr),
+      tagBcSize(0), tagBlockHeaderData(nullptr), tagBlockAttributes(nullptr),
+      tagBlockAttributesSize(0), tagName(nullptr),
+      meshsetsMask(NODESET | SIDESET | BLOCKSET) {
 
   CHKERR getTagsHandlers(moab);
   CHKERR moab.create_meshset(MESHSET_SET, meshset);
   switch (cubitBcType.to_ulong()) {
   case NODESET:
-    CHKERR moab.tag_set_data(nsTag, &meshset, 1, &_ms_id);
+    CHKERR moab.tag_set_data(nsTag, &meshset, 1, &ms_id);
     CHKERR moab.tag_get_by_ptr(nsTag, &meshset, 1, (const void **)&msId);
     break;
   case SIDESET:
-    CHKERR moab.tag_set_data(ssTag, &meshset, 1, &_ms_id);
+    CHKERR moab.tag_set_data(ssTag, &meshset, 1, &ms_id);
     CHKERR moab.tag_get_by_ptr(ssTag, &meshset, 1, (const void **)&msId);
     break;
   case BLOCKSET:
-    CHKERR moab.tag_set_data(bhTag, &meshset, 1, &_ms_id);
+    CHKERR moab.tag_set_data(bhTag, &meshset, 1, &ms_id);
     CHKERR moab.tag_get_by_ptr(bhTag, &meshset, 1, (const void **)&msId);
     break;
   default: {
@@ -147,8 +147,8 @@ MoFEMErrorCode CubitMeshSets::getMeshsetIdEntitiesByDimension(
     moab::Interface &moab, Range &entities, const bool recursive) const {
   MoFEMFunctionBegin;
   if ((cubitBcType & CubitBCType(BLOCKSET)).any()) {
-    if (tag_block_header_data != nullptr) {
-      return getMeshsetIdEntitiesByDimension(moab, tag_block_header_data[2],
+    if (tagBlockHeaderData != nullptr) {
+      return getMeshsetIdEntitiesByDimension(moab, tagBlockHeaderData[2],
                                              entities, recursive);
     } else {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "dimension unknown");
@@ -175,8 +175,8 @@ MoFEMErrorCode CubitMeshSets::getMeshsetIdEntitiesByType(
 
 MoFEMErrorCode CubitMeshSets::getBcData(std::vector<char> &bc_data) const {
   MoFEMFunctionBegin;
-  bc_data.resize(tag_bc_size);
-  copy(&tag_bc_data[0], &tag_bc_data[tag_bc_size], bc_data.begin());
+  bc_data.resize(tagBcSize);
+  copy(&tagBcData[0], &tagBcData[tagBcSize], bc_data.begin());
   MoFEMFunctionReturn(0);
 }
 
@@ -184,14 +184,13 @@ MoFEMErrorCode CubitMeshSets::getBlockHeaderData(
     std::vector<unsigned int> &material_data) const {
   MoFEMFunctionBegin;
   material_data.resize(3);
-  copy(&tag_block_header_data[0], &tag_block_header_data[3],
-       material_data.begin());
+  copy(&tagBlockHeaderData[0], &tagBlockHeaderData[3], material_data.begin());
   MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode CubitMeshSets::printBlockHeaderData(std::ostream &os) const {
   MoFEMFunctionBegin;
-  if (tag_block_header_data != nullptr) {
+  if (tagBlockHeaderData != nullptr) {
     std::vector<unsigned int> material_data;
     getBlockHeaderData(material_data);
     os << "block_header_data = ";
@@ -287,10 +286,10 @@ MoFEMErrorCode CubitMeshSets::printBcData(std::ostream &os) const {
 MoFEMErrorCode
 CubitMeshSets::getAttributes(std::vector<double> &attributes) const {
   MoFEMFunctionBegin;
-  attributes.resize(tag_block_attributes_size);
-  if (tag_block_attributes_size > 0) {
-    copy(&tag_block_attributes[0],
-         &tag_block_attributes[tag_block_attributes_size], attributes.begin());
+  attributes.resize(tagBlockAttributesSize);
+  if (tagBlockAttributesSize > 0) {
+    copy(&tagBlockAttributes[0], &tagBlockAttributes[tagBlockAttributesSize],
+         attributes.begin());
   }
   MoFEMFunctionReturn(0);
 }
@@ -304,8 +303,8 @@ CubitMeshSets::setAttributes(moab::Interface &moab,
   void const *tag_data[] = {&*attributes.begin()};
   CHKERR moab.tag_set_by_ptr(thBlockAttribs, &meshset, 1, tag_data, tag_size);
   CHKERR moab.tag_get_by_ptr(thBlockAttribs, &meshset, 1,
-                             (const void **)&tag_block_attributes,
-                             &tag_block_attributes_size);
+                             (const void **)&tagBlockAttributes,
+                             &tagBlockAttributesSize);
   MoFEMFunctionReturn(0);
 }
 
@@ -372,11 +371,11 @@ std::ostream &operator<<(std::ostream &os, const CubitMeshSets &e) {
   if (e.tagName != nullptr) {
     os << " name " << e.getName();
   }
-  if (e.tag_block_header_data != nullptr) {
+  if (e.tagBlockHeaderData != nullptr) {
     os << " block header: ";
-    os << " blockCol = " << e.tag_block_header_data[0];
-    os << " blockMat = " << e.tag_block_header_data[1];
-    os << " blockDimension = " << e.tag_block_header_data[2];
+    os << " blockCol = " << e.tagBlockHeaderData[0];
+    os << " blockMat = " << e.tagBlockHeaderData[1];
+    os << " blockDimension = " << e.tagBlockHeaderData[2];
   }
   return os;
 }
@@ -406,8 +405,8 @@ void CubitMeshSets_change_name::operator()(CubitMeshSets &e) {
   }
 }
 
-void CubitMeshSets_change_add_bit_to_cubit_bc_type::
-operator()(CubitMeshSets &e) {
+void CubitMeshSets_change_add_bit_to_cubit_bc_type::operator()(
+    CubitMeshSets &e) {
   e.cubitBcType |= bIt;
 }
 
@@ -415,8 +414,8 @@ void CubitMeshSets_change_attributes::operator()(CubitMeshSets &e) {
   CHKERR e.setAttributes(mOab, aTtr);
 }
 
-void CubitMeshSets_change_attributes_data_structure::
-operator()(CubitMeshSets &e) {
+void CubitMeshSets_change_attributes_data_structure::operator()(
+    CubitMeshSets &e) {
   // Need to run this to set tag size in number of doubles, don;t know nothing
   // about structure
   int tag_size[] = {(int)(aTtr.getSizeOfData() / sizeof(double))};
@@ -424,8 +423,8 @@ operator()(CubitMeshSets &e) {
   CHKERR mOab.tag_set_by_ptr(e.thBlockAttribs, &e.meshset, 1, tag_data,
                              tag_size);
   CHKERR mOab.tag_get_by_ptr(e.thBlockAttribs, &e.meshset, 1,
-                             (const void **)&e.tag_block_attributes,
-                             &e.tag_block_attributes_size);
+                             (const void **)&e.tagBlockAttributes,
+                             &e.tagBlockAttributesSize);
   // Here I know about structure
   CHKERR e.setAttributeDataStructure(aTtr);
 }
@@ -438,11 +437,11 @@ void CubitMeshSets_change_bc_data_structure::operator()(CubitMeshSets &e) {
   if ((e.cubitBcType & CubitBCType(NODESET)).any()) {
     CHKERR mOab.tag_set_by_ptr(e.nsTag_data, &e.meshset, 1, tag_data, tag_size);
     CHKERR mOab.tag_get_by_ptr(e.nsTag_data, &e.meshset, 1,
-                               (const void **)&e.tag_bc_data, &e.tag_bc_size);
+                               (const void **)&e.tagBcData, &e.tagBcSize);
   } else if ((e.cubitBcType & CubitBCType(SIDESET)).any()) {
     CHKERR mOab.tag_set_by_ptr(e.ssTag_data, &e.meshset, 1, tag_data, tag_size);
     CHKERR mOab.tag_get_by_ptr(e.ssTag_data, &e.meshset, 1,
-                               (const void **)&e.tag_bc_data, &e.tag_bc_size);
+                               (const void **)&e.tagBcData, &e.tagBcSize);
   } else {
     THROW_MESSAGE("You have to have NODESET or SIDESET to apply BC data on it");
   }

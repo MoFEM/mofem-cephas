@@ -30,29 +30,23 @@ constexpr PetscData::Switches PetscData::CtxSetX_TT;
 constexpr PetscData::Switches PetscData::CtxSetTime;
 
 // PetscData
-MoFEMErrorCode PetscData::query_interface(const MOFEMuuid &uuid,
-                                          UnknownInterface **iface) const {
-  MoFEMFunctionBeginHot;
-  if (uuid == IDD_MOFEMPetscDataMethod) {
-    *iface = const_cast<PetscData *>(this);
-    MoFEMFunctionReturnHot(0);
-  }
-  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
-  }
+MoFEMErrorCode
+PetscData::query_interface(boost::typeindex::type_index type_index,
+                           UnknownInterface **iface) const {
+  *iface = const_cast<PetscData *>(this);
+  return 0;
+}
 
 PetscData::PetscData()
     : f(PETSC_NULL), A(PETSC_NULL), B(PETSC_NULL), x(PETSC_NULL),
       x_t(PETSC_NULL), x_tt(PETSC_NULL) {}
 
 // KSP
-MoFEMErrorCode KspMethod::query_interface(const MOFEMuuid &uuid,
-                                          UnknownInterface **iface) const {
-  MoFEMFunctionBeginHot;
-  if (uuid == IDD_MOFEMKspMethod) {
-    *iface = const_cast<KspMethod *>(this);
-    MoFEMFunctionReturnHot(0);
-  }
-  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
+MoFEMErrorCode
+KspMethod::query_interface(boost::typeindex::type_index type_index,
+                           UnknownInterface **iface) const {
+  *iface = const_cast<KspMethod *>(this);
+  return 0;
 };
 
 KspMethod::KspMethod()
@@ -70,14 +64,10 @@ MoFEMErrorCode KspMethod::copyKsp(const KspMethod &ksp) {
 }
 
 // SNES
-MoFEMErrorCode SnesMethod::query_interface(const MOFEMuuid &uuid,
-                                           UnknownInterface **iface) const {
-  if (uuid == IDD_MOFEMSnesMethod) {
-    *iface = const_cast<SnesMethod *>(this);
-    MoFEMFunctionReturnHot(0);
-  }
-  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
-  }
+MoFEMErrorCode SnesMethod::query_interface(boost::typeindex::type_index type_index, UnknownInterface **iface) const {
+  *iface = const_cast<SnesMethod *>(this);
+  return 0;
+}
 
 SnesMethod::SnesMethod()
     : snes_ctx(CTX_SNESNONE), snes_x(PetscData::x), snes_f(PetscData::f),
@@ -95,14 +85,12 @@ MoFEMErrorCode SnesMethod::copySnes(const SnesMethod &snes) {
 }
 
 // TS
-MoFEMErrorCode TSMethod::query_interface(const MOFEMuuid &uuid,
-                                 UnknownInterface **iface) const {
-    if (uuid == IDD_MOFEMTsMethod) {
-      *iface = const_cast<TSMethod *>(this);
-      MoFEMFunctionReturnHot(0);
-    }
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
-  }
+MoFEMErrorCode
+TSMethod::query_interface(boost::typeindex::type_index type_index,
+                          UnknownInterface **iface) const {
+  *iface = const_cast<TSMethod *>(this);
+  return 0;
+}
 
 TSMethod::TSMethod()
     : ts_ctx(CTX_TSNONE), ts_step(-1), ts_a(0), ts_t(0), ts_u(PetscData::x),
@@ -188,49 +176,6 @@ MoFEMErrorCode BasicMethod::operator()() {
   MoFEMFunctionReturnHot(0);
 }
 
-// FEMethod
-FEMethod::FEMethod() : BasicMethod() {}
-
-// Entity method
-EntityMethod::EntityMethod() : BasicMethod() {}
-
-// DofMethod
-DofMethod::DofMethod() : BasicMethod() {}
-
-MoFEMErrorCode FEMethod::getNumberOfNodes(int &num_nodes) const {
-  MoFEMFunctionBeginHot;
-
-  EntityHandle handle = numeredEntFiniteElementPtr->getEnt();
-  if (handle) {
-    switch (static_cast<EntityType>(handle >> MB_ID_WIDTH)) {
-    case MBVERTEX:
-      num_nodes = 1;
-      break;
-    case MBEDGE:
-      num_nodes = 2;
-      break;
-    case MBTRI:
-      num_nodes = 3;
-      break;
-    case MBQUAD:
-      num_nodes = 4;
-      break;
-    case MBTET:
-      num_nodes = 4;
-      break;
-    case MBPRISM:
-      num_nodes = 6;
-      break;
-    default:
-      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
-    }
-  } else {
-    num_nodes = 0;
-  }
-
-  MoFEMFunctionReturnHot(0);
-}
-
 MoFEMErrorCode FEMethod::getNodeData(const std::string field_name,
                                      VectorDouble &data,
                                      const bool reset_dofs) {
@@ -254,8 +199,7 @@ MoFEMErrorCode FEMethod::getNodeData(const std::string field_name,
 
         if (dit != hi_dit) {
           auto &first_dof = **dit;
-          int num_nodes;
-          CHKERR getNumberOfNodes(num_nodes);
+          const int num_nodes = getNumberOfNodes();
           const int nb_dof_idx = first_dof.getNbOfCoeffs();
           const int max_nb_dofs = nb_dof_idx * num_nodes;
           nodes_data.resize(max_nb_dofs, false);

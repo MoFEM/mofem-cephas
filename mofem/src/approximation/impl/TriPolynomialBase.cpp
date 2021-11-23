@@ -23,17 +23,10 @@ TriPolynomialBase::TriPolynomialBase() {}
 TriPolynomialBase::~TriPolynomialBase() {}
 
 MoFEMErrorCode
-TriPolynomialBase::query_interface(const MOFEMuuid &uuid,
-                                   BaseFunctionUnknownInterface **iface) const {
+TriPolynomialBase::query_interface(boost::typeindex::type_index type_index,
+                                   UnknownInterface **iface) const {
   MoFEMFunctionBegin;
-  *iface = NULL;
-  if (uuid == IDD_TET_BASE_FUNCTION) {
-    *iface = const_cast<TriPolynomialBase *>(this);
-    MoFEMFunctionReturnHot(0);
-  } else {
-    SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "wrong interference");
-  }
-  CHKERR BaseFunction::query_interface(uuid, iface);
+  *iface = const_cast<TriPolynomialBase *>(this);
   MoFEMFunctionReturn(0);
 }
 
@@ -861,9 +854,7 @@ TriPolynomialBase::getValue(MatrixDouble &pts,
                             boost::shared_ptr<BaseFunctionCtx> ctx_ptr) {
   MoFEMFunctionBegin;
 
-  BaseFunctionUnknownInterface *iface;
-  CHKERR ctx_ptr->query_interface(IDD_TRI_BASE_FUNCTION, &iface);
-  cTx = reinterpret_cast<EntPolynomialBaseCtx *>(iface);
+  cTx = ctx_ptr->getInterface<EntPolynomialBaseCtx>();
 
   int nb_gauss_pts = pts.size2();
   if (!nb_gauss_pts) {

@@ -244,8 +244,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getNodesIndices(
           bit_number, get_id_for_max_type<MBVERTEX>());
       auto hi = std::upper_bound(lo, ents_field.end(), hi_uid, cmp_uid_hi);
 
-      int num_nodes;
-      CHKERR getNumberOfNodes(num_nodes);
+      const int num_nodes = getNumberOfNodes();
       const int nb_dofs_on_vert = (*field_it)->getNbOfCoeffs();
       const int max_nb_dofs = nb_dofs_on_vert * num_nodes;
 
@@ -497,8 +496,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getProblemNodesIndices(
   const Field *field_struture = mField.get_field_structure(field_name);
   if (field_struture->getSpace() == H1) {
 
-    int num_nodes;
-    CHKERR getNumberOfNodes(num_nodes);
+    const int num_nodes = getNumberOfNodes();
     nodes_indices.resize(field_struture->getNbOfCoeffs() * num_nodes, false);
     std::fill(nodes_indices.begin(), nodes_indices.end(), -1);
 
@@ -641,8 +639,7 @@ ForcesAndSourcesCore::getNodesFieldData(DataForcesAndSourcesCore &data,
 
           if (nb_dofs) {
 
-            int num_nodes;
-            CHKERR getNumberOfNodes(num_nodes);
+            const int num_nodes = getNumberOfNodes();
             bb_node_order.resize(num_nodes, false);
             bb_node_order.clear();
             const int max_nb_dofs = nb_dofs_on_vert * num_nodes;
@@ -875,96 +872,70 @@ ForcesAndSourcesCore::getNoFieldFieldData(DataForcesAndSourcesCore &data,
 // ** Face **
 
 MoFEMErrorCode
-ForcesAndSourcesCore::getFaceTriNodes(DataForcesAndSourcesCore &data) const {
+ForcesAndSourcesCore::getFaceNodes(DataForcesAndSourcesCore &data) const {
   MoFEMFunctionBegin;
-  // PetscAttachDebugger();
-  data.facesNodes.resize(4, 3, false);
+  auto &face_nodes = data.facesNodes;
+  auto &face_nodes_order = data.facesNodesOrder;
   auto &side_table = const_cast<SideNumber_multiIndex &>(
       numeredEntFiniteElementPtr->getSideNumberTable());
-  auto siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI, 0));
-  auto hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI, 4));
-  if (auto nb_faces = std::distance(siit, hi_siit)) {
-    if (nb_faces != 4) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-              "Should be 4 triangles on tet, side_table not initialized");
-    }
-    const int canonical_face_sense_p1[4][3] = {
-        {0, 1, 3},
-        {1, 2, 3},
-        {0, 3, 2} /**/,
-        {0, 2, 1} /**/}; // second index is offset (positive sense)
-    const int canonical_face_sense_m1[4][3] = {
-        {0, 3, 1},
-        {1, 3, 2},
-        {0, 2, 3},
-        {0, 1, 2}}; // second index is offset (negative sense
-    for (; siit != hi_siit; siit++) {
-      const boost::shared_ptr<SideNumber> side = *siit;
-      int face_conn[3] = {-1, -1, -1};
-      if (side->offset == 0) {
-        face_conn[0] = side->sense == 1
-                           ? canonical_face_sense_p1[(int)side->side_number][0]
-                           : canonical_face_sense_m1[(int)side->side_number][0];
-        face_conn[1] = side->sense == 1
-                           ? canonical_face_sense_p1[(int)side->side_number][1]
-                           : canonical_face_sense_m1[(int)side->side_number][1];
-        face_conn[2] = side->sense == 1
-                           ? canonical_face_sense_p1[(int)side->side_number][2]
-                           : canonical_face_sense_m1[(int)side->side_number][2];
-      }
-      if (side->offset == 1) {
-        face_conn[0] =
-            side->sense == 1
-                ? canonical_face_sense_p1[(int)side->side_number][1]
-                : canonical_face_sense_m1[(int)side->side_number][2] /**/;
-        face_conn[1] = side->sense == 1
-                           ? canonical_face_sense_p1[(int)side->side_number][2]
-                           : canonical_face_sense_m1[(int)side->side_number][0];
-        face_conn[2] = side->sense == 1
-                           ? canonical_face_sense_p1[(int)side->side_number][0]
-                           : canonical_face_sense_m1[(int)side->side_number][1];
-      }
-      if (side->offset == 2) {
-        face_conn[0] =
-            side->sense == 1
-                ? canonical_face_sense_p1[(int)side->side_number][2]
-                : canonical_face_sense_m1[(int)side->side_number][1] /**/;
-        face_conn[1] = side->sense == 1
-                           ? canonical_face_sense_p1[(int)side->side_number][0]
-                           : canonical_face_sense_m1[(int)side->side_number][2];
-        face_conn[2] = side->sense == 1
-                           ? canonical_face_sense_p1[(int)side->side_number][1]
-                           : canonical_face_sense_m1[(int)side->side_number][0];
-      }
-      for (int nn = 0; nn < 3; nn++)
-        data.facesNodes(side->side_number, nn) = face_conn[nn];
-      {
-        const EntityHandle *conn_tet;
-        int num_nodes_tet;
-        EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
-        CHKERR mField.get_moab().get_connectivity(ent, conn_tet, num_nodes_tet,
-                                                  true);
-        if (num_nodes_tet != 4)
+  const auto ent = numeredEntFiniteElementPtr->getEnt();
+  const auto type = numeredEntFiniteElementPtr->getEntType();
+  const auto nb_faces = CN::NumSubEntities(type, 2);
+  const EntityHandle *conn_ele;
+  int num_nodes_ele;
+  CHKERR mField.get_moab().get_connectivity(ent, conn_ele, num_nodes_ele, true);
+  auto side_ptr_it = side_table.get<1>().lower_bound(
+      boost::make_tuple(CN::TypeDimensionMap[2].first, 0));
+  auto hi_side_ptr_it = side_table.get<1>().upper_bound(
+      boost::make_tuple(CN::TypeDimensionMap[2].second, 100));
+
+  for (; side_ptr_it != hi_side_ptr_it; ++side_ptr_it) {
+    const auto side = (*side_ptr_it)->side_number;
+    const auto sense = (*side_ptr_it)->sense;
+    const auto offset = (*side_ptr_it)->offset;
+    const auto face_ent = (*side_ptr_it)->ent;
+
+    EntityType face_type;
+    int nb_nodes_face;
+    auto face_indices =
+        CN::SubEntityVertexIndices(type, 2, side, face_type, nb_nodes_face);
+    face_nodes.resize(nb_faces, nb_nodes_face);
+    face_nodes_order.resize(nb_faces, nb_nodes_face);
+
+    if (sense == 1)
+      for (int n = 0; n != nb_nodes_face; ++n)
+        face_nodes_order(side, n) = (n + offset) % nb_nodes_face;
+    else
+      for (int n = 0; n != nb_nodes_face; ++n)
+        face_nodes_order(side, n) =
+            (nb_nodes_face - (n - offset) % nb_nodes_face) % nb_nodes_face;
+
+    for (int n = 0; n != nb_nodes_face; ++n)
+      face_nodes(side, n) = face_indices[face_nodes_order(side, n)];
+
+#ifndef NDEBUG
+    auto check = [&]() {
+      MoFEMFunctionBegin;
+      const EntityHandle *conn_face;
+      // int nb_nodes_face;
+      CHKERR mField.get_moab().get_connectivity(face_ent, conn_face,
+                                                nb_nodes_face, true);
+      face_nodes.resize(nb_faces, nb_nodes_face);
+      for (int nn = 0; nn != nb_nodes_face; ++nn) {
+        if (face_nodes(side, nn) !=
+            std::distance(
+                conn_ele,
+                std::find(conn_ele, &conn_ele[num_nodes_ele], conn_face[nn]))) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                  "data inconsistency");
-        int num_nodes_face;
-        const EntityHandle *conn_face;
-        CHKERR mField.get_moab().get_connectivity(side->ent, conn_face,
-                                                  num_nodes_face, true);
-        if (num_nodes_face != 3)
-          SETERRQ(PETSC_COMM_SELF, 1, "data inconsistency");
-        if (conn_face[0] != conn_tet[data.facesNodes(side->side_number, 0)])
-          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                  "data inconsistency");
-        if (conn_face[1] != conn_tet[data.facesNodes(side->side_number, 1)])
-          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                  "data inconsistency");
-        if (conn_face[2] != conn_tet[data.facesNodes(side->side_number, 2)])
-          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                  "data inconsistency");
+                  "Wrong face numeration");
+        }
       }
-    }
+      MoFEMFunctionReturn(0);
+    };
+    CHKERR check();
+#endif
   }
+
   MoFEMFunctionReturn(0);
 }
 
@@ -1112,8 +1083,7 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
           if (auto first_e = it->lock()) {
             space = first_e->getSpace();
             base = first_e->getApproxBase();
-            int num_nodes;
-            CHKERR getNumberOfNodes(num_nodes);
+            const int num_nodes = getNumberOfNodes();
             bb_node_order.resize(num_nodes, false);
             bb_node_order.clear();
             const int nb_dof_idx = first_e->getNbOfCoeffs();
@@ -1551,16 +1521,14 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopSide(
     const string &fe_name, ForcesAndSourcesCore *side_fe, const size_t side_dim,
     const EntityHandle ent_for_side) {
   MoFEMFunctionBegin;
-  const EntityHandle ent = ent_for_side ? ent_for_side : getFEEntityHandle();
+  const auto ent = ent_for_side ? ent_for_side : getFEEntityHandle();
+  const auto *problem_ptr = getFEMethod()->problemPtr;
 
-  const Problem *problem_ptr = getFEMethod()->problemPtr;
   Range adjacent_ents;
   CHKERR ptrFE->mField.getInterface<BitRefManager>()->getAdjacenciesAny(
       ent, side_dim, adjacent_ents);
-  typedef NumeredEntFiniteElement_multiIndex::index<
-      Composite_Name_And_Ent_mi_tag>::type FEByComposite;
-  FEByComposite &numered_fe = problem_ptr->numeredFiniteElementsPtr
-                                  ->get<Composite_Name_And_Ent_mi_tag>();
+  auto &numered_fe = problem_ptr->numeredFiniteElementsPtr
+                         ->get<Composite_Name_And_Ent_mi_tag>();
 
   side_fe->feName = fe_name;
 
@@ -1574,10 +1542,8 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopSide(
 
   int nn = 0;
   side_fe->loopSize = adjacent_ents.size();
-  for (Range::iterator vit = adjacent_ents.begin(); vit != adjacent_ents.end();
-       vit++) {
-    FEByComposite::iterator miit =
-        numered_fe.find(boost::make_tuple(fe_name, *vit));
+  for (auto fe_ent : adjacent_ents) {
+    auto miit = numered_fe.find(boost::make_tuple(fe_name, fe_ent));
     if (miit != numered_fe.end()) {
       side_fe->nInTheLoop = nn++;
       side_fe->numeredEntFiniteElementPtr = *miit;
@@ -1641,6 +1607,13 @@ MoFEMErrorCode ForcesAndSourcesCore::operator()() {
   if (operatorHook) {
     ierr = operatorHook();
     CHKERRG(ierr);
+  } else {
+#ifndef NDEBUG
+    MOFEM_LOG("SELF", Sev::warning)
+        << "No method operator() overloaded on element entity on finite "
+           "element <"
+        << boost::typeindex::type_id_runtime(*this).pretty_name() << ">";
+#endif
   }
   MoFEMFunctionReturnHot(0);
 }
