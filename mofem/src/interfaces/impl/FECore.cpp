@@ -496,6 +496,9 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
   int last_row_field_ents_view_size = 0;
   int last_col_field_ents_view_size = 0;
 
+  // Entities adjacent to entities
+  std::vector<EntityHandle> adj_ents;
+
   // Loop meshset finite element ents and add finite elements
   for (Range::const_pair_iterator peit = fe_ents.const_pair_begin();
        peit != fe_ents.const_pair_end(); peit++) {
@@ -593,68 +596,92 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
         const bool add_to_row = (field_id & fe_fields[ROW]).any();
         const bool add_to_col = (field_id & fe_fields[COL]).any();
 
-        // Entities adjacent to entities
-        Range adj_ents;
-
         // Resolve entities on element, those entities are used to build tag
         // with dof uids on finite element tag
+        adj_ents.clear();
         CHKERR fe_raw_ptr->getElementAdjacency(*miit, adj_ents);
 
-        for (Range::pair_iterator p_eit = adj_ents.pair_begin();
-             p_eit != adj_ents.pair_end(); ++p_eit) {
+        for(auto ent : adj_ents) {
 
-          const EntityHandle first = p_eit->first;
-          const EntityHandle second = p_eit->second;
-
-          typedef FieldEntity_multiIndex::index<Unique_mi_tag>::type
-              FieldEntityByComposite;
-          auto &field_ents_by_name_and_ent = entsFields.get<Unique_mi_tag>();
-          FieldEntityByComposite::iterator meit;
-
-          const auto lo_uid =
-              FieldEntity::getLocalUniqueIdCalculate(field_bit_number, first);
-
-          // If one entity in the pair search for one, otherwise search for
-          // range
-          if (first == second)
-            meit = field_ents_by_name_and_ent.find(lo_uid);
-          else
-            meit = field_ents_by_name_and_ent.lower_bound(lo_uid);
-
-          if (meit != field_ents_by_name_and_ent.end()) {
-
-            decltype(meit) hi_meit;
-
-            if (first == second) {
-              hi_meit = meit;
-              ++hi_meit;
-            } else
-              hi_meit = field_ents_by_name_and_ent.upper_bound(
-                  FieldEntity::getLocalUniqueIdCalculate(field_bit_number,
-                                                         second));
-
-            // Add to view and create list of finite elements with this dof UId
-            for (; meit != hi_meit; ++meit) {
+          auto dof_it = entsFields.get<Unique_mi_tag>().find(
+              FieldEntity::getLocalUniqueIdCalculate(field_bit_number, ent));
+          if(dof_it!=entsFields.get<Unique_mi_tag>().end()) {
               // Add entity to map with key entity uids pointers  and data
               // finite elements weak ptrs. I using pointers to uids instead
               // uids because this is faster.
-              const UId *uid_ptr = &(meit->get()->getLocalUniqueId());
+              const UId *uid_ptr = &(dof_it->get()->getLocalUniqueId());
               auto &fe_vec = ent_uid_and_fe_vec[uid_ptr];
               if (add_to_data) {
-                fe_raw_ptr->getDataFieldEntsPtr()->emplace_back(*meit);
+                fe_raw_ptr->getDataFieldEntsPtr()->emplace_back(*dof_it);
               }
               if (add_to_row && !row_as_data) {
-                fe_raw_ptr->getRowFieldEntsPtr()->emplace_back(*meit);
+                fe_raw_ptr->getRowFieldEntsPtr()->emplace_back(*dof_it);
               }
               if (add_to_col && !col_as_row) {
-                fe_raw_ptr->getColFieldEntsPtr()->emplace_back(*meit);
+                fe_raw_ptr->getColFieldEntsPtr()->emplace_back(*dof_it);
               }
 
               // add finite element to processed list
               fe_vec.emplace_back(*hint_p);
-            }
           }
+
         }
+
+        // for (Range::pair_iterator p_eit = adj_ents.pair_begin();
+        //      p_eit != adj_ents.pair_end(); ++p_eit) {
+
+        //   const EntityHandle first = p_eit->first;
+        //   const EntityHandle second = p_eit->second;
+
+        //   typedef FieldEntity_multiIndex::index<Unique_mi_tag>::type
+        //       FieldEntityByComposite;
+        //   auto &field_ents_by_name_and_ent = entsFields.get<Unique_mi_tag>();
+        //   FieldEntityByComposite::iterator meit;
+
+        //   const auto lo_uid =
+        //       FieldEntity::getLocalUniqueIdCalculate(field_bit_number, first);
+
+        //   // If one entity in the pair search for one, otherwise search for
+        //   // range
+        //   if (first == second)
+        //     meit = field_ents_by_name_and_ent.find(lo_uid);
+        //   else
+        //     meit = field_ents_by_name_and_ent.lower_bound(lo_uid);
+
+        //   if (meit != field_ents_by_name_and_ent.end()) {
+
+        //     decltype(meit) hi_meit;
+
+        //     if (first == second) {
+        //       hi_meit = meit;
+        //       ++hi_meit;
+        //     } else
+        //       hi_meit = field_ents_by_name_and_ent.upper_bound(
+        //           FieldEntity::getLocalUniqueIdCalculate(field_bit_number,
+        //                                                  second));
+
+        //     // Add to view and create list of finite elements with this dof UId
+        //     for (; meit != hi_meit; ++meit) {
+        //       // Add entity to map with key entity uids pointers  and data
+        //       // finite elements weak ptrs. I using pointers to uids instead
+        //       // uids because this is faster.
+        //       const UId *uid_ptr = &(meit->get()->getLocalUniqueId());
+        //       auto &fe_vec = ent_uid_and_fe_vec[uid_ptr];
+        //       if (add_to_data) {
+        //         fe_raw_ptr->getDataFieldEntsPtr()->emplace_back(*meit);
+        //       }
+        //       if (add_to_row && !row_as_data) {
+        //         fe_raw_ptr->getRowFieldEntsPtr()->emplace_back(*meit);
+        //       }
+        //       if (add_to_col && !col_as_row) {
+        //         fe_raw_ptr->getColFieldEntsPtr()->emplace_back(*meit);
+        //       }
+
+        //       // add finite element to processed list
+        //       fe_vec.emplace_back(*hint_p);
+        //     }
+        //   }
+        // }
       }
 
       // Sort field ents by uid

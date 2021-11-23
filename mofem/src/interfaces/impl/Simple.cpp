@@ -34,9 +34,9 @@ template <> MoFEMErrorCode Simple::setSkeletonAdjacency<2>() {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
 
-  auto defaultSkeletonEdge = [&](moab::Interface &moab, const Field &field,
-                                 const EntFiniteElement &fe,
-                                 Range &adjacency) -> MoFEMErrorCode {
+  auto defaultSkeletonEdge =
+      [&](moab::Interface &moab, const Field &field, const EntFiniteElement &fe,
+          std::vector<EntityHandle> &adjacency) -> MoFEMErrorCode {
     MoFEMFunctionBegin;
 
     CHKERR DefaultElementAdjacency::defaultEdge(moab, field, fe, adjacency);
@@ -45,19 +45,22 @@ template <> MoFEMErrorCode Simple::setSkeletonAdjacency<2>() {
         domainFields.end()) {
 
       const EntityHandle fe_ent = fe.getEnt();
-      Range bride_adjacency_edge, bride_adjacency;
+      std::vector<EntityHandle> bride_adjacency_edge;
       CHKERR moab.get_adjacencies(&fe_ent, 1, 2, false, bride_adjacency_edge);
 
       switch (field.getSpace()) {
       case H1:
-        CHKERR moab.get_connectivity(bride_adjacency_edge, bride_adjacency,
+        CHKERR moab.get_connectivity(&*bride_adjacency_edge.begin(),
+                                     bride_adjacency_edge.size(), adjacency,
                                      true);
       case HCURL:
       case HDIV:
-        CHKERR moab.get_adjacencies(bride_adjacency_edge, 1, false,
-                                    bride_adjacency, moab::Interface::UNION);
+        CHKERR moab.get_adjacencies(&*bride_adjacency_edge.begin(),
+                                    bride_adjacency_edge.size(), 1, false,
+                                    adjacency, moab::Interface::UNION);
       case L2:
-        bride_adjacency.merge(bride_adjacency_edge);
+        adjacency.insert(adjacency.end(), bride_adjacency_edge.begin(),
+                         bride_adjacency_edge.end());
         break;
       case NOFIELD:
         break;
@@ -66,13 +69,22 @@ template <> MoFEMErrorCode Simple::setSkeletonAdjacency<2>() {
                 "this field is not implemented for TRI finite element");
       }
 
-      bride_adjacency = subtract(bride_adjacency, adjacency);
+      std::sort(adjacency.begin(), adjacency.end());
+      auto it = std::unique(adjacency.begin(), adjacency.end());
 
-      for (auto e : bride_adjacency)
-        const_cast<SideNumber_multiIndex &>(fe.getSideNumberTable())
-            .insert(boost::shared_ptr<SideNumber>(new SideNumber(e, -1, 0, 0)));
+      std::vector<EntityHandle> new_adjacency(
+          std::distance(adjacency.begin(), it));
+      std::copy(adjacency.begin(), it, new_adjacency.begin());
 
-      adjacency.merge(bride_adjacency);
+      for (auto e : new_adjacency) {
+        auto side_table = fe.getSideNumberTable();
+        if (side_table.find(e) == side_table.end())
+          const_cast<SideNumber_multiIndex &>(fe.getSideNumberTable())
+              .insert(
+                  boost::shared_ptr<SideNumber>(new SideNumber(e, -1, 0, 0)));
+      }
+
+      adjacency.swap(new_adjacency);
     }
 
     MoFEMFunctionReturn(0);
@@ -88,9 +100,9 @@ template <> MoFEMErrorCode Simple::setSkeletonAdjacency<3>() {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
 
-  auto defaultSkeletonEdge = [&](moab::Interface &moab, const Field &field,
-                                 const EntFiniteElement &fe,
-                                 Range &adjacency) -> MoFEMErrorCode {
+  auto defaultSkeletonEdge =
+      [&](moab::Interface &moab, const Field &field, const EntFiniteElement &fe,
+          std::vector<EntityHandle> &adjacency) -> MoFEMErrorCode {
     MoFEMFunctionBegin;
 
     CHKERR DefaultElementAdjacency::defaultFace(moab, field, fe, adjacency);
@@ -99,21 +111,25 @@ template <> MoFEMErrorCode Simple::setSkeletonAdjacency<3>() {
         domainFields.end()) {
 
       const EntityHandle fe_ent = fe.getEnt();
-      Range bride_adjacency_face, bride_adjacency;
-      CHKERR moab.get_adjacencies(&fe_ent, 1, 3, false, bride_adjacency_face);
+      std::vector<EntityHandle> bride_adjacency_edge;
+      CHKERR moab.get_adjacencies(&fe_ent, 1, 2, false, bride_adjacency_edge);
 
       switch (field.getSpace()) {
       case H1:
-        CHKERR moab.get_connectivity(bride_adjacency_face, bride_adjacency,
+        CHKERR moab.get_connectivity(&*bride_adjacency_edge.begin(),
+                                     bride_adjacency_edge.size(), adjacency,
                                      true);
       case HCURL:
-        CHKERR moab.get_adjacencies(bride_adjacency_face, 1, false,
-                                    bride_adjacency, moab::Interface::UNION);
+        CHKERR moab.get_adjacencies(&*bride_adjacency_edge.begin(),
+                                    bride_adjacency_edge.size(), 1, false,
+                                    adjacency, moab::Interface::UNION);
       case HDIV:
-        CHKERR moab.get_adjacencies(bride_adjacency_face, 2, false,
-                                    bride_adjacency, moab::Interface::UNION);
+        CHKERR moab.get_adjacencies(&*bride_adjacency_edge.begin(),
+                                    bride_adjacency_edge.size(), 2, false,
+                                    adjacency, moab::Interface::UNION);
       case L2:
-        bride_adjacency.merge(bride_adjacency_face);
+        adjacency.insert(adjacency.end(), bride_adjacency_edge.begin(),
+                         bride_adjacency_edge.end());
         break;
       case NOFIELD:
         break;
@@ -122,13 +138,22 @@ template <> MoFEMErrorCode Simple::setSkeletonAdjacency<3>() {
                 "this field is not implemented for TRI finite element");
       }
 
-      bride_adjacency = subtract(bride_adjacency, adjacency);
+      std::sort(adjacency.begin(), adjacency.end());
+      auto it = std::unique(adjacency.begin(), adjacency.end());
 
-      for (auto e : bride_adjacency)
-        const_cast<SideNumber_multiIndex &>(fe.getSideNumberTable())
-            .insert(boost::shared_ptr<SideNumber>(new SideNumber(e, -1, 0, 0)));
+      std::vector<EntityHandle> new_adjacency(
+          std::distance(adjacency.begin(), it));
+      std::copy(adjacency.begin(), it, new_adjacency.begin());
 
-      adjacency.merge(bride_adjacency);
+      for (auto e : new_adjacency) {
+        auto side_table = fe.getSideNumberTable();
+        if (side_table.find(e) == side_table.end())
+          const_cast<SideNumber_multiIndex &>(fe.getSideNumberTable())
+              .insert(
+                  boost::shared_ptr<SideNumber>(new SideNumber(e, -1, 0, 0)));
+      }
+
+      adjacency.swap(new_adjacency);
     }
 
     MoFEMFunctionReturn(0);
