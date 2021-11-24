@@ -525,8 +525,8 @@ DMoFEMLoopFiniteElementsUpAndLowRank(DM dm, const char fe_name[],
   MoFEMFunctionBeginHot;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
   ierr = dm_field->mField_ptr->loop_finite_elements(
-      dm_field->problemPtr, fe_name, *method, low_rank, up_rank, MF_EXIST,
-      cache_ptr);
+      dm_field->problemPtr, fe_name, *method, low_rank, up_rank, nullptr,
+      MF_EXIST, cache_ptr);
   CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
