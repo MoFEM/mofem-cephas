@@ -739,14 +739,14 @@ static PetscErrorCode DMMoFEMTSSetIFunction(DM dm, S fe_name, T0 method,
   MoFEMFunctionBegin;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
   if (pre_only) {
-    dm_field->tsCtx->get_preProcess_to_do_IFunction().push_back(pre_only);
+    dm_field->tsCtx->getPreProcessIFunction().push_back(pre_only);
   }
   if (method) {
-    dm_field->tsCtx->get_loops_to_do_IFunction().push_back(
+    dm_field->tsCtx->getLoopsIFunction().push_back(
         PairNameFEMethodPtr(fe_name, method));
   }
   if (post_only) {
-    dm_field->tsCtx->get_postProcess_to_do_IFunction().push_back(post_only);
+    dm_field->tsCtx->getPostProcessIFunction().push_back(post_only);
   }
   CHKERR DMTSSetIFunction(dm, TsSetIFunction, dm_field->tsCtx.get());
   MoFEMFunctionReturn(0);
@@ -782,14 +782,14 @@ static PetscErrorCode DMMoFEMTSSetIJacobian(DM dm, S fe_name, T0 method,
   MoFEMFunctionBegin;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
   if (pre_only) {
-    dm_field->tsCtx->get_preProcess_to_do_IJacobian().push_back(pre_only);
+    dm_field->tsCtx->getPreProcessIJacobian().push_back(pre_only);
   }
   if (method) {
-    dm_field->tsCtx->get_loops_to_do_IJacobian().push_back(
+    dm_field->tsCtx->getLoopsIJacobian().push_back(
         PairNameFEMethodPtr(fe_name, method));
   }
   if (post_only) {
-    dm_field->tsCtx->get_postProcess_to_do_IJacobian().push_back(post_only);
+    dm_field->tsCtx->getPostProcessIJacobian().push_back(post_only);
   }
   CHKERR DMTSSetIJacobian(dm, TsSetIJacobian, dm_field->tsCtx.get());
   MoFEMFunctionReturn(0);
@@ -823,12 +823,12 @@ static PetscErrorCode DMMoFEMTSSetRHSFunction(DM dm, S fe_name, T0 method,
   MoFEMFunctionBegin;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
   if (pre_only)
-    dm_field->tsCtx->get_preProcess_to_do_RHSFunction().push_back(pre_only);
+    dm_field->tsCtx->getPreProcessRHSFunction().push_back(pre_only);
   if (method)
-    dm_field->tsCtx->get_loops_to_do_RHSFunction().push_back(
+    dm_field->tsCtx->getLoopsRHSFunction().push_back(
         PairNameFEMethodPtr(fe_name, method));
   if (post_only)
-    dm_field->tsCtx->get_postProcess_to_do_RHSFunction().push_back(post_only);
+    dm_field->tsCtx->getPostProcessRHSFunction().push_back(post_only);
   CHKERR DMTSSetRHSFunction(dm, TsSetRHSFunction, dm_field->tsCtx.get());
   MoFEMFunctionReturn(0);
 }
@@ -853,12 +853,12 @@ static PetscErrorCode DMMoFEMTSSetRHSJacobian(DM dm, S fe_name, T0 method,
   MoFEMFunctionBegin;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
   if (pre_only)
-    dm_field->tsCtx->get_preProcess_to_do_RHSFunction().push_back(pre_only);
+    dm_field->tsCtx->getPreProcessRHSFunction().push_back(pre_only);
   if (method)
-    dm_field->tsCtx->get_loops_to_do_RHSFunction().push_back(
+    dm_field->tsCtx->getLoopsRHSFunction().push_back(
         PairNameFEMethodPtr(fe_name, method));
   if (post_only)
-    dm_field->tsCtx->get_postProcess_to_do_RHSFunction().push_back(post_only);
+    dm_field->tsCtx->getPostProcessRHSFunction().push_back(post_only);
   CHKERR DMTSSetRHSJacobian(dm, TsSetRHSJacobian, dm_field->tsCtx.get());
   MoFEMFunctionReturn(0);
 }
@@ -883,14 +883,14 @@ static PetscErrorCode DMMoFEMTSSetI2Function(DM dm, S fe_name, T0 method,
   MoFEMFunctionBegin;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
   if (pre_only) {
-    dm_field->tsCtx->get_preProcess_to_do_IFunction().push_back(pre_only);
+    dm_field->tsCtx->getPreProcessIFunction().push_back(pre_only);
   }
   if (method) {
-    dm_field->tsCtx->get_loops_to_do_IFunction().push_back(
+    dm_field->tsCtx->getLoopsIFunction().push_back(
         PairNameFEMethodPtr(fe_name, method));
   }
   if (post_only) {
-    dm_field->tsCtx->get_postProcess_to_do_IFunction().push_back(post_only);
+    dm_field->tsCtx->getPostProcessIFunction().push_back(post_only);
   }
   CHKERR DMTSSetI2Function(dm, TsSetI2Function, dm_field->tsCtx.get());
   MoFEMFunctionReturn(0);
@@ -926,14 +926,14 @@ static PetscErrorCode DMMoFEMTSSetI2Jacobian(DM dm, S fe_name, T0 method,
   MoFEMFunctionBegin;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
   if (pre_only) {
-    dm_field->tsCtx->get_preProcess_to_do_IJacobian().push_back(pre_only);
+    dm_field->tsCtx->getPreProcessIJacobian().push_back(pre_only);
   }
   if (method) {
-    dm_field->tsCtx->get_loops_to_do_IJacobian().push_back(
+    dm_field->tsCtx->getLoopsIJacobian().push_back(
         PairNameFEMethodPtr(fe_name, method));
   }
   if (post_only) {
-    dm_field->tsCtx->get_postProcess_to_do_IJacobian().push_back(post_only);
+    dm_field->tsCtx->getPostProcessIJacobian().push_back(post_only);
   }
   CHKERR DMTSSetI2Jacobian(dm, TsSetI2Jacobian, dm_field->tsCtx.get());
   MoFEMFunctionReturn(0);
@@ -967,12 +967,12 @@ static PetscErrorCode DMMoFEMTSSetMonitor(DM dm, TS ts, S fe_name, T0 method,
   MoFEMFunctionBegin;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
   if (pre_only)
-    dm_field->tsCtx->get_preProcess_to_do_Monitor().push_back(pre_only);
+    dm_field->tsCtx->getPreProcessMonitor().push_back(pre_only);
   if (method)
-    dm_field->tsCtx->get_loops_to_do_Monitor().push_back(
+    dm_field->tsCtx->getLoopsMonitor().push_back(
         PairNameFEMethodPtr(fe_name, method));
   if (post_only)
-    dm_field->tsCtx->get_postProcess_to_do_Monitor().push_back(post_only);
+    dm_field->tsCtx->getPostProcessMonitor().push_back(post_only);
   CHKERR TSMonitorSet(ts, TsMonitorSet, dm_field->tsCtx.get(), PETSC_NULL);
   MoFEMFunctionReturn(0);
 }

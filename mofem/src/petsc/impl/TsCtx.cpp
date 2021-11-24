@@ -73,7 +73,7 @@ PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
   };
 
   // preprocess
-  for (auto &bit : ts_ctx->preProcess_IFunction) {
+  for (auto &bit : ts_ctx->preProcessIFunction) {
     bit->vecAssembleSwitch = boost::move(ts_ctx->vecAssembleSwitch);
     set(*bit);
     CHKERR ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problemName,
@@ -87,7 +87,7 @@ PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
   CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
 
   // fe loops
-  for (auto &lit : ts_ctx->loops_to_do_IFunction) {
+  for (auto &lit : ts_ctx->loopsIFunction) {
     lit.second->vecAssembleSwitch = boost::move(ts_ctx->vecAssembleSwitch);
     set(*lit.second);
     CHKERR ts_ctx->mField.loop_finite_elements(ts_ctx->problemName, lit.first,
@@ -98,7 +98,7 @@ PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
   }
 
   // post process
-  for (auto &bit : ts_ctx->postProcess_IFunction) {
+  for (auto &bit : ts_ctx->postProcessIFunction) {
     bit->vecAssembleSwitch = boost::move(ts_ctx->vecAssembleSwitch);
     set(*bit);
     CHKERR ts_ctx->mField.problem_basic_method_postProcess(ts_ctx->problemName,
@@ -167,7 +167,7 @@ PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
   };
 
   // preproces
-  for (auto &bit : ts_ctx->preProcess_IJacobian) {
+  for (auto &bit : ts_ctx->preProcessIJacobian) {
     bit->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
     set(*bit);
     CHKERR ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problemName,
@@ -180,7 +180,7 @@ PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
   ts_ctx->cacheWeakPtr = cache_ptr;
   CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
 
-  for (auto &lit : ts_ctx->loops_to_do_IJacobian) {
+  for (auto &lit : ts_ctx->loopsIJacobian) {
     lit.second->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
     set(*lit.second);
     CHKERR ts_ctx->mField.loop_finite_elements(ts_ctx->problemName, lit.first,
@@ -191,7 +191,7 @@ PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
   }
 
   // post process
-  for (auto &bit : ts_ctx->postProcess_IJacobian) {
+  for (auto &bit : ts_ctx->postProcessIJacobian) {
     bit->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
     set(*bit);
     CHKERR ts_ctx->mField.problem_basic_method_postProcess(ts_ctx->problemName,
@@ -236,7 +236,7 @@ PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
   };
 
   // preproces
-  for (auto &bit : ts_ctx->preProcess_Monitor) {
+  for (auto &bit : ts_ctx->preProcessMonitor) {
     set(*bit);
     CHKERR ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problemName,
                                                           *bit);
@@ -247,7 +247,7 @@ PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
   ts_ctx->cacheWeakPtr = cache_ptr;
   CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
 
-  for (auto &lit : ts_ctx->loops_to_do_Monitor) {
+  for (auto &lit : ts_ctx->loopsMonitor) {
     set(*lit.second);
     CHKERR ts_ctx->mField.loop_finite_elements(ts_ctx->problemName, lit.first,
                                                *(lit.second), nullptr,
@@ -256,7 +256,7 @@ PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
   }
 
   // post process
-  for (auto &bit : ts_ctx->postProcess_Monitor) {
+  for (auto &bit : ts_ctx->postProcessMonitor) {
     set(*bit);
     CHKERR ts_ctx->mField.problem_basic_method_postProcess(ts_ctx->problemName,
                                                            *bit);
@@ -321,7 +321,7 @@ PetscErrorCode TsSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx) {
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
-  for (auto &bit : ts_ctx->preProcess_RHSJacobian) {
+  for (auto &bit : ts_ctx->preProcessRHSJacobian) {
     bit->vecAssembleSwitch = boost::move(ts_ctx->vecAssembleSwitch);
     set(*bit);
     CHKERR ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problemName,
@@ -335,7 +335,7 @@ PetscErrorCode TsSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx) {
   CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
 
   // fe loops
-  for (auto &lit : ts_ctx->loops_to_do_RHSFunction) {
+  for (auto &lit : ts_ctx->loopsRHSFunction) {
     lit.second->vecAssembleSwitch = boost::move(ts_ctx->vecAssembleSwitch);
     set(*lit.second);
     CHKERR ts_ctx->mField.loop_finite_elements(ts_ctx->problemName, lit.first,
@@ -346,7 +346,7 @@ PetscErrorCode TsSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx) {
   }
 
   // post process
-  for (auto &bit : ts_ctx->postProcess_RHSJacobian) {
+  for (auto &bit : ts_ctx->postProcessRHSJacobian) {
     bit->vecAssembleSwitch = boost::move(ts_ctx->vecAssembleSwitch);
     set(*bit);
     CHKERR ts_ctx->mField.problem_basic_method_postProcess(ts_ctx->problemName,
@@ -412,7 +412,7 @@ PetscErrorCode TsSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
   };
 
   // preprocess
-  for (auto &bit : ts_ctx->preProcess_RHSJacobian) {
+  for (auto &bit : ts_ctx->preProcessRHSJacobian) {
     bit->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
     set(*bit);
     CHKERR ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problemName,
@@ -426,7 +426,7 @@ PetscErrorCode TsSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
   CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
 
   // fe loops
-  for (auto &lit : ts_ctx->loops_to_do_RHSJacobian) {
+  for (auto &lit : ts_ctx->loopsRHSJacobian) {
     lit.second->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
     set(*lit.second);
     CHKERR ts_ctx->mField.loop_finite_elements(ts_ctx->problemName, lit.first,
@@ -437,7 +437,7 @@ PetscErrorCode TsSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
   }
 
   // post process
-  for (auto &bit : ts_ctx->postProcess_RHSJacobian) {
+  for (auto &bit : ts_ctx->postProcessRHSJacobian) {
     bit->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
     set(*bit);
     CHKERR ts_ctx->mField.problem_basic_method_postProcess(ts_ctx->problemName,
@@ -511,7 +511,7 @@ PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
   };
 
   // preproces
-  for (auto &bit : ts_ctx->preProcess_IJacobian) {
+  for (auto &bit : ts_ctx->preProcessIJacobian) {
     bit->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
     set(*bit);
     CHKERR ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problemName,
@@ -524,7 +524,7 @@ PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
   ts_ctx->cacheWeakPtr = cache_ptr;
   CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
 
-  for (auto &lit : ts_ctx->loops_to_do_IJacobian) {
+  for (auto &lit : ts_ctx->loopsIJacobian) {
     lit.second->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
     set(*lit.second);
     CHKERR ts_ctx->mField.loop_finite_elements(ts_ctx->problemName, lit.first,
@@ -535,7 +535,7 @@ PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
   }
 
   // post process
-  for (auto &bit : ts_ctx->postProcess_IJacobian) {
+  for (auto &bit : ts_ctx->postProcessIJacobian) {
     bit->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
     set(*bit);
     CHKERR ts_ctx->mField.problem_basic_method_postProcess(ts_ctx->problemName,
@@ -615,7 +615,7 @@ PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
   };
 
   // preprocess
-  for (auto &bit : ts_ctx->preProcess_IFunction) {
+  for (auto &bit : ts_ctx->preProcessIFunction) {
     bit->vecAssembleSwitch = boost::move(ts_ctx->vecAssembleSwitch);
     set(*bit);
     CHKERR ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problemName,
@@ -629,7 +629,7 @@ PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
   CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
 
   // fe loops
-  for (auto &lit : ts_ctx->loops_to_do_IFunction) {
+  for (auto &lit : ts_ctx->loopsIFunction) {
     lit.second->vecAssembleSwitch = boost::move(ts_ctx->vecAssembleSwitch);
     set(*lit.second);
     CHKERR ts_ctx->mField.loop_finite_elements(ts_ctx->problemName, lit.first,
@@ -640,7 +640,7 @@ PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
   }
 
   // post process
-  for (auto &bit : ts_ctx->postProcess_IFunction) {
+  for (auto &bit : ts_ctx->postProcessIFunction) {
     bit->vecAssembleSwitch = boost::move(ts_ctx->vecAssembleSwitch);
     set(*bit);
     CHKERR ts_ctx->mField.problem_basic_method_postProcess(ts_ctx->problemName,
