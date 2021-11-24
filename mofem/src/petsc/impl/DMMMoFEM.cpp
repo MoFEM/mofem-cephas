@@ -518,40 +518,43 @@ PetscErrorCode DMoFEMPostProcessFiniteElements(DM dm, MoFEM::FEMethod *method) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DMoFEMLoopFiniteElementsUpAndLowRank(DM dm, const char fe_name[],
-                                                    MoFEM::FEMethod *method,
-                                                    int low_rank, int up_rank) {
+PetscErrorCode
+DMoFEMLoopFiniteElementsUpAndLowRank(DM dm, const char fe_name[],
+                                     MoFEM::FEMethod *method, int low_rank,
+                                     int up_rank, CacheTupleWeakPtr cache_ptr) {
   MoFEMFunctionBeginHot;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
   ierr = dm_field->mField_ptr->loop_finite_elements(
-      dm_field->problemPtr, fe_name, *method, low_rank, up_rank);
+      dm_field->problemPtr, fe_name, *method, low_rank, up_rank, MF_EXIST,
+      cache_ptr);
   CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode
-DMoFEMLoopFiniteElementsUpAndLowRank(DM dm, const std::string fe_name,
-                                     boost::shared_ptr<MoFEM::FEMethod> method,
-                                     int low_rank, int up_rank) {
+PetscErrorCode DMoFEMLoopFiniteElementsUpAndLowRank(
+    DM dm, const std::string fe_name, boost::shared_ptr<MoFEM::FEMethod> method,
+    int low_rank, int up_rank, CacheTupleWeakPtr cache_ptr) {
   return DMoFEMLoopFiniteElementsUpAndLowRank(dm, fe_name.c_str(), method.get(),
-                                              low_rank, up_rank);
+                                              low_rank, up_rank, cache_ptr);
 }
 
 PetscErrorCode DMoFEMLoopFiniteElements(DM dm, const char fe_name[],
-                                        MoFEM::FEMethod *method) {
+                                        MoFEM::FEMethod *method,
+                                        CacheTupleWeakPtr cache_ptr) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
-  ierr = DMoFEMLoopFiniteElementsUpAndLowRank(dm, fe_name, method,
-                                              dm_field->rAnk, dm_field->rAnk);
+  ierr = DMoFEMLoopFiniteElementsUpAndLowRank(
+      dm, fe_name, method, dm_field->rAnk, dm_field->rAnk, cache_ptr);
   CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
 
 PetscErrorCode
 DMoFEMLoopFiniteElements(DM dm, const std::string fe_name,
-                         boost::shared_ptr<MoFEM::FEMethod> method) {
-  return DMoFEMLoopFiniteElements(dm, fe_name.c_str(), method.get());
+                         boost::shared_ptr<MoFEM::FEMethod> method,
+                         CacheTupleWeakPtr cache_ptr) {
+  return DMoFEMLoopFiniteElements(dm, fe_name.c_str(), method.get(), cache_ptr);
 }
 
 PetscErrorCode DMoFEMLoopDofs(DM dm, const char field_name[],
