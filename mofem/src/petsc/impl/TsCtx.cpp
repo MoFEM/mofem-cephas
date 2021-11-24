@@ -83,8 +83,8 @@ PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
   }
 
   auto cache_ptr = boost::make_shared<CacheTuple>();
-  ts_ctx->cacheWeakPtr = cache_ptr;
   CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
+  ts_ctx->cacheWeakPtr = cache_ptr;
 
   // fe loops
   for (auto &lit : ts_ctx->loopsIFunction) {
@@ -177,8 +177,8 @@ PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
   }
 
   auto cache_ptr = boost::make_shared<CacheTuple>();
-  ts_ctx->cacheWeakPtr = cache_ptr;
   CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
+  ts_ctx->cacheWeakPtr = cache_ptr;
 
   for (auto &lit : ts_ctx->loopsIJacobian) {
     lit.second->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
@@ -244,8 +244,8 @@ PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
   }
 
   auto cache_ptr = boost::make_shared<CacheTuple>();
-  ts_ctx->cacheWeakPtr = cache_ptr;
   CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
+  ts_ctx->cacheWeakPtr = cache_ptr;
 
   for (auto &lit : ts_ctx->loopsMonitor) {
     set(*lit.second);
@@ -331,8 +331,8 @@ PetscErrorCode TsSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx) {
   }
 
   auto cache_ptr = boost::make_shared<CacheTuple>();
-  ts_ctx->cacheWeakPtr = cache_ptr;
   CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
+  ts_ctx->cacheWeakPtr = cache_ptr;
 
   // fe loops
   for (auto &lit : ts_ctx->loopsRHSFunction) {
@@ -422,8 +422,8 @@ PetscErrorCode TsSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
   }
 
   auto cache_ptr = boost::make_shared<CacheTuple>();
-  ts_ctx->cacheWeakPtr = cache_ptr;
   CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
+  ts_ctx->cacheWeakPtr = cache_ptr;
 
   // fe loops
   for (auto &lit : ts_ctx->loopsRHSJacobian) {
@@ -521,8 +521,8 @@ PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
   }
 
   auto cache_ptr = boost::make_shared<CacheTuple>();
-  ts_ctx->cacheWeakPtr = cache_ptr;
   CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
+  ts_ctx->cacheWeakPtr = cache_ptr;
 
   for (auto &lit : ts_ctx->loopsIJacobian) {
     lit.second->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
@@ -625,8 +625,8 @@ PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
   }
 
   auto cache_ptr = boost::make_shared<CacheTuple>();
-  ts_ctx->cacheWeakPtr = cache_ptr;
   CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
+  ts_ctx->cacheWeakPtr = cache_ptr;
 
   // fe loops
   for (auto &lit : ts_ctx->loopsIFunction) {
