@@ -138,6 +138,7 @@ MoFEMErrorCode BasicMethod::copyBasicMethod(const BasicMethod &basic) {
   this->finiteElementsPtr = basic.finiteElementsPtr;
   this->finiteElementsEntitiesPtr = basic.finiteElementsEntitiesPtr;
   this->adjacenciesPtr = basic.adjacenciesPtr;
+  this->cacheWeakPtr = basic.cacheWeakPtr;
 
   MoFEMFunctionReturnHot(0);
 }
