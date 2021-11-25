@@ -220,7 +220,7 @@ int main(int argc, char *argv[]) {
 
       fe_face.getOpPtrVector().push_back(
           new OpSetInvJacHcurlFaceEmbeddedIn3DSpace(inv_jac_ptr));
-      fe_face.getOpPtrVector().push_back(new OpSetHOWeigthsOnFace());
+      fe_face.getOpPtrVector().push_back(new OpSetHOWeightsOnFace());
       fe_face.getOpPtrVector().push_back(new OpDivergence(div));
       CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "FACE_FE", fe_face);
       return div;

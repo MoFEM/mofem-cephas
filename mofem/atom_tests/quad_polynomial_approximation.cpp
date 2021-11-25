@@ -233,7 +233,7 @@ int main(int argc, char *argv[]) {
           new OpInvertMatrix<2>(jac_ptr, det_ptr, inv_jac_ptr));
       fe.getOpPtrVector().push_back(new OpSetInvJacH1ForFace(inv_jac_ptr));
       fe.getOpPtrVector().push_back(new OpSetInvJacL2ForFace(inv_jac_ptr));
-      fe.getOpPtrVector().push_back(new OpSetHOWeigthsOnFace());
+      fe.getOpPtrVector().push_back(new OpSetHOWeightsOnFace());
       fe.getOpPtrVector().push_back(new QuadOpRhs(F));
       fe.getOpPtrVector().push_back(new QuadOpLhs(A));
       CHKERR VecZeroEntries(F);
@@ -277,7 +277,7 @@ int main(int argc, char *argv[]) {
           new OpInvertMatrix<2>(jac_ptr, det_ptr, inv_jac_ptr));
       fe.getOpPtrVector().push_back(new OpSetInvJacH1ForFace(inv_jac_ptr));
       fe.getOpPtrVector().push_back(new OpSetInvJacL2ForFace(inv_jac_ptr));
-      fe.getOpPtrVector().push_back(new OpSetHOWeigthsOnFace());
+      fe.getOpPtrVector().push_back(new OpSetHOWeightsOnFace());
       fe.getOpPtrVector().push_back(new OpCalculateScalarFieldGradient<2>(
           "FIELD1", diff_field_vals_ptr, space == L2 ? MBQUAD : MBVERTEX));
       fe.getOpPtrVector().push_back(
