@@ -209,7 +209,7 @@ struct PipelineManager : public UnknownInterface {
   enum TSType { EX, IM, IM2, IMEX };
 
   /**
-   * @brief reate TS (time) solver
+   * @brief create TS (time) solver
    *
    * @param type Type of time solver PipelineManager:EX/IM/IM2/IMEX
    * @param dm

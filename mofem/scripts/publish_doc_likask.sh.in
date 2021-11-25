@@ -1,7 +1,0 @@
-#!/bin/sh
-
-RSYNC=@RSYNC@
-PROJECT_SOURCE_DIR=@PROJECT_SOURCE_DIR@
-BINDIR=@PROJECT_BINARY_DIR@
-
-$RSYNC -avz --delete html "campus\lk58p"@userweb.eng.gla.ac.uk:/home/CAMPUS/lk58p/html/lukasz.kaczmarczyk/MoFem
