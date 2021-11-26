@@ -517,7 +517,7 @@ struct DataForcesAndSourcesCore {
      *
      */
     template <int Tensor_Dim>
-    FTensor::Tensor1<double *, Tensor_Dim>
+    FTensor::Tensor1<FTensor::PackPtr<double *, Tensor_Dim>, Tensor_Dim>
     getFTensor1DiffN(const FieldApproximationBase base);
 
     /**
@@ -537,7 +537,8 @@ struct DataForcesAndSourcesCore {
      *
      */
     template <int Tensor_Dim>
-    FTensor::Tensor1<double *, Tensor_Dim> getFTensor1DiffN();
+    FTensor::Tensor1<FTensor::PackPtr<double *, Tensor_Dim>, Tensor_Dim>
+    getFTensor1DiffN();
 
     /**
      * \brief Get derivatives of base functions (Loop by integration points)
@@ -558,7 +559,7 @@ struct DataForcesAndSourcesCore {
      *
      */
     template <int Tensor_Dim>
-    FTensor::Tensor1<double *, Tensor_Dim>
+    FTensor::Tensor1<FTensor::PackPtr<double *, Tensor_Dim>, Tensor_Dim>
     getFTensor1DiffN(const FieldApproximationBase base, const int gg,
                      const int bb);
 
@@ -581,8 +582,8 @@ struct DataForcesAndSourcesCore {
      *
      */
     template <int Tensor_Dim>
-    FTensor::Tensor1<double *, Tensor_Dim> getFTensor1DiffN(const int gg,
-                                                            const int bb);
+    FTensor::Tensor1<FTensor::PackPtr<double *, Tensor_Dim>, Tensor_Dim>
+    getFTensor1DiffN(const int gg, const int bb);
 
     /** \brief Get base functions for Hdiv/Hcurl spaces
 
@@ -1565,19 +1566,19 @@ DataForcesAndSourcesCore::EntData::getFTensor2N<3, 3>(
 /**@{*/
 
 template <>
-FTensor::Tensor1<double *, 3>
+FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
 DataForcesAndSourcesCore::EntData::getFTensor1DiffN<3>(
     const FieldApproximationBase base);
 template <>
-FTensor::Tensor1<double *, 3>
+FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
 DataForcesAndSourcesCore::EntData::getFTensor1DiffN<3>();
 
 template <>
-FTensor::Tensor1<double *, 2>
+FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>
 DataForcesAndSourcesCore::EntData::getFTensor1DiffN<2>(
     const FieldApproximationBase base);
 template <>
-FTensor::Tensor1<double *, 2>
+FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>
 DataForcesAndSourcesCore::EntData::getFTensor1DiffN<2>();
 
 template <>
