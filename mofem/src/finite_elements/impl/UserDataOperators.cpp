@@ -34,6 +34,13 @@ MoFEMErrorCode OpSetInvJacSpaceForFaceImpl<2>::doWork(
     size_t nb_functions = diff_n.size2() / 2;
     if (nb_functions) {
       size_t nb_gauss_pts = diff_n.size1();
+
+#ifndef NDEBUG
+      if (nb_gauss_pts != getGaussPts().size2())
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Wrong number of Gauss Pts");
+#endif
+
       diffNinvJac.resize(nb_gauss_pts, 2 * nb_functions, false);
 
       switch (type) {
@@ -55,7 +62,7 @@ MoFEMErrorCode OpSetInvJacSpaceForFaceImpl<2>::doWork(
             ++t_diff_n_ref;
           }
         }
-        diff_n.data().swap(diffNinvJac.data());
+        diff_n.swap(diffNinvJac);
       } break;
       default:
         SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
@@ -99,6 +106,13 @@ MoFEMErrorCode OpSetInvJacSpaceForFaceImpl<3>::doWork(
     size_t nb_functions = diff_n.size2() / 2;
     if (nb_functions) {
       size_t nb_gauss_pts = diff_n.size1();
+
+#ifndef NDEBUG
+      if (nb_gauss_pts != getGaussPts().size2())
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Wrong number of Gauss Pts");
+#endif
+
       diffNinvJac.resize(nb_gauss_pts, 3 * nb_functions, false);
       switch (type) {
       case MBVERTEX:
