@@ -207,7 +207,7 @@ OpSetInvJacHcurlFaceImpl<2>::doWork(int side, EntityType type,
         }
       }
 
-      data.getDiffN(base).data().swap(diffHcurlInvJac.data());
+      data.getDiffN(base).swap(diffHcurlInvJac);
     }
   }
 
@@ -351,7 +351,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransformOnFace2DImpl<2>::doWork(
             ++t_transformed_n;
           }
         }
-        data.getN(base).data().swap(piolaN.data());
+        data.getN(base).swap(piolaN);
       }
 
       piolaDiffN.resize(nb_gauss_pts, data.getDiffN(base).size2(), false);
@@ -377,7 +377,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransformOnFace2DImpl<2>::doWork(
             ++t_transformed_diff_n;
           }
         }
-        data.getDiffN(base).data().swap(piolaDiffN.data());
+        data.getDiffN(base).swap(piolaDiffN);
       }
     }
   }
@@ -647,7 +647,7 @@ OpSetInvJacH1ForFatPrism::doWork(int side, EntityType type,
       ++t_inv_jac;
     }
 
-    data.getDiffN(base).data().swap(diffNinvJac.data());
+    data.getDiffN(base).swap(diffNinvJac);
   }
 
   MoFEMFunctionReturn(0);
@@ -724,7 +724,7 @@ OpSetInvJacH1ForFlatPrism::doWork(int side, EntityType type,
                       &diffNinvJac(gg, 2 * dd), 1);
         }
       }
-      data.getDiffN(base).data().swap(diffNinvJac.data());
+      data.getDiffN(base).swap(diffNinvJac);
     } break;
     default:
       SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");

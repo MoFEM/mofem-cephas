@@ -388,7 +388,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::transformBaseFunctions() {
         }
         data.getDiffN(base).resize(new_diff_n.size1(), new_diff_n.size2(),
                                    false);
-        data.getDiffN(base).data().swap(new_diff_n.data());
+        data.getDiffN(base).swap(new_diff_n);
       }
     }
   }

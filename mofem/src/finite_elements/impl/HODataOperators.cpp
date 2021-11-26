@@ -152,7 +152,7 @@ OpSetHOInvJacToScalarBases::doWork(int side, EntityType type,
         ++t_inv_jac;
       }
 
-      diff_n.data().swap(diffNinvJac.data());
+      diff_n.swap(diffNinvJac);
     } else {
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Wrong number of gauss pts in invJacPtr, is %d but should be %d",
@@ -220,7 +220,7 @@ OpSetHOInvJacVectorBase::doWork(int side, EntityType type,
       ++t_inv_jac;
     }
 
-    data.getDiffN(base).data().swap(diffHdivInvJac.data());
+    data.getDiffN(base).swap(diffHdivInvJac);
   }
 
   MoFEMFunctionReturn(0);
@@ -352,8 +352,8 @@ MoFEMErrorCode OpSetHOContravariantPiolaTransform::doWork(
         ++t_jac;
       }
 
-      data.getN(base).data().swap(piolaN.data());
-      data.getDiffN(base).data().swap(piolaDiffN.data());
+      data.getN(base).swap(piolaN);
+      data.getDiffN(base).swap(piolaDiffN);
     }
   }
 
@@ -405,8 +405,8 @@ MoFEMErrorCode OpSetHOCovariantPiolaTransform::doWork(
       ++t_inv_jac;
     }
 
-    data.getN(base).data().swap(piolaN.data());
-    data.getDiffN(base).data().swap(piolaDiffN.data());
+    data.getN(base).swap(piolaN);
+    data.getDiffN(base).swap(piolaDiffN);
   }
 
   MoFEMFunctionReturn(0);
@@ -738,8 +738,8 @@ MoFEMErrorCode OpHOSetCovariantPiolaTransformOnFace3D::doWork(
         SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Data inconsistency");
 #endif
 
-      baseN.data().swap(piolaN.data());
-      diffBaseN.data().swap(diffPiolaN.data());
+      baseN.swap(piolaN);
+      diffBaseN.swap(diffPiolaN);
     }
   }
 
