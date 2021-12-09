@@ -672,6 +672,22 @@ getFTensor1FromArray(VectorDouble &data) {
   return FTensor::Tensor1<FTensor::PackPtr<double *, S>, DIM>();
 }
 
+/**
+ * @brief Get FTensor1 from array
+ *
+ * \todo Generalise for diffrent arrays and data types
+ *
+ * @tparam DIM
+ * @param ptr
+ * @return FTensor::Tensor1<FTensor::PackPtr<double *, DIM>, DIM>
+ */
+template <int DIM, int S>
+inline FTensor::Tensor1<FTensor::PackPtr<double *, S>, DIM>
+getFTensor1FromArray(double *ptr) {
+  static_assert(DIM != DIM, "not implemented");
+  return FTensor::Tensor1<FTensor::PackPtr<double *, S>, DIM>();
+}
+
 template <>
 inline FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>
 getFTensor1FromArray(VectorDouble &data) {
@@ -683,6 +699,19 @@ inline FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
 getFTensor1FromArray(VectorDouble &data) {
   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>{&data[0], &data[1],
                                                             &data[2]};
+}
+
+template <>
+inline FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>
+getFTensor1FromArray(double *ptr) {
+  return FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>{ptr, ptr + 1};
+}
+
+template <>
+inline FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
+getFTensor1FromArray(double *ptr) {
+  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>{ptr, ptr + 1,
+                                                            ptr + 2};
 }
 
 template <int DIM, int S>
