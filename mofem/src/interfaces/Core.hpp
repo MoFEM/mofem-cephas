@@ -63,7 +63,6 @@ template <int N> struct CoreTmp : public CoreTmp<N - 1> {
   );
 
   MoFEMErrorCode set_moab_interface(moab::Interface &new_moab, int verb);
-
 };
 
 template <int N> constexpr const int CoreTmp<N>::value;
@@ -196,7 +195,8 @@ template <> struct CoreTmp<0> : public Interface {
    * @param  iface returned pointer to interface
    * @return       error code
    */
-  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index, UnknownInterface **iface) const;
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
+                                 UnknownInterface **iface) const;
 
   /**@}*/
 
@@ -440,10 +440,9 @@ protected:
             const TagType tag_type = MB_TAG_SPARSE,
             const enum MoFEMTypes bh = MF_EXCL, int verb = DEFAULT_VERBOSITY);
 
-
   /**
    * @brief Delete field
-   * 
+   *
    * @param name field name
    * @param verb verbosity level
    * @return error code
@@ -965,7 +964,7 @@ protected:
 
   /**@{*/
 
-  mutable MPI_Comm mofemComm;       ///< MoFEM communicator
+  mutable MPI_Comm mofemComm;  ///< MoFEM communicator
   mutable ParallelComm *pComm; ///< MOAB communicator structure
 
   int sIze; ///< MoFEM communicator size
@@ -989,7 +988,6 @@ protected:
   /**@}*/
 
 protected:
-
   boost::shared_ptr<WrapMPIComm>
       wrapMPIMOABComm; ///< manage creation and destruction of MOAB communicator
 
@@ -1092,7 +1090,6 @@ template <> struct CoreTmp<-1> : public CoreTmp<0> {
 
   virtual MoFEMErrorCode set_moab_interface(moab::Interface &new_moab,
                                             int verb = VERBOSE);
-
 };
 
 using Core = CoreTmp<0>;
