@@ -107,10 +107,16 @@ MoFEMErrorCode FieldBlas::fieldLambda(FieldBlas::TwoFieldFunction lambda,
     do {
 
       VectorAdaptor y_field_data = (*y_eit)->getEntFieldData();
-      if (x_field_data.size() > y_field_data.size())
+      const auto size_x = x_field_data.size();
+      const auto size_y = y_field_data.size();
+      if (size_x > size_y)
         CHKERR missing();
-      for (auto dd = 0; dd != y_field_data.size(); ++dd)
+
+      size_t dd = 0;
+      for (; dd != std::min(size_x, size_y); ++dd)
         CHKERR lambda(y_field_data[dd], x_field_data[dd]);
+      for (; dd < size_y; ++dd)
+        y_field_data[dd] = 0;
 
       ++x_eit;
       ++y_eit;
