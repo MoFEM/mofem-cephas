@@ -91,12 +91,25 @@ template <typename OBJ>
 struct SmartPetscObj
     : public boost::intrusive_ptr<typename std::remove_pointer<OBJ>::type> {
 
-  SmartPetscObj()
-      : boost::intrusive_ptr<typename std::remove_pointer<OBJ>::type>() {}
-  SmartPetscObj(OBJ o, bool add_ref = false)
+  using Derived = boost::intrusive_ptr<typename std::remove_pointer<OBJ>::type>;
+
+  using Derived::Derived;
+
+  SmartPetscObj(std::nullptr_t ptr) : SmartPetscObj() {}
+
+  /**
+   * @brief Construct a new Smart Petsc Obj object
+   * 
+   * \note If add_red is set to true, you have to destroy OBJ.
+   * 
+   * @param o 
+   * @param add_ref // if false ownership of OBJ is taken by SmartPetscObj
+   */
+  explicit SmartPetscObj(OBJ o, bool add_ref = false)
       : boost::intrusive_ptr<typename std::remove_pointer<OBJ>::type>(o,
                                                                       add_ref) {
   }
+
   operator OBJ() { return this->get(); }
   explicit operator PetscObject() {
     return reinterpret_cast<PetscObject>(this->get());

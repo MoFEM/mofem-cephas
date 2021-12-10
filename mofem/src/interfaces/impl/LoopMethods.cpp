@@ -176,15 +176,6 @@ MoFEMErrorCode BasicMethod::operator()() {
   MoFEMFunctionReturnHot(0);
 }
 
-// FEMethod
-FEMethod::FEMethod() : BasicMethod() {}
-
-// Entity method
-EntityMethod::EntityMethod() : BasicMethod() {}
-
-// DofMethod
-DofMethod::DofMethod() : BasicMethod() {}
-
 MoFEMErrorCode FEMethod::getNodeData(const std::string field_name,
                                      VectorDouble &data,
                                      const bool reset_dofs) {

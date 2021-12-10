@@ -151,12 +151,14 @@ struct OpGradTimesTensorImpl<1, 1, SPACE_DIM, S, GAUSS, OpBase>
 
   OpGradTimesTensorImpl(const std::string field_name,
                         boost::shared_ptr<MatrixDouble> mat_vals,
-                        ScalarFun beta_coeff)
+                        ScalarFun beta_coeff,
+                        boost::shared_ptr<Range> ents_ptr = nullptr)
       : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals),
         betaCoeff(beta_coeff) {}
 
 protected:
   boost::shared_ptr<MatrixDouble> matVals;
+  boost::shared_ptr<Range> entsPtr;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
   ScalarFun betaCoeff;
 };
@@ -170,12 +172,14 @@ struct OpGradTimesTensorImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>
 
   OpGradTimesTensorImpl(
       const std::string field_name, boost::shared_ptr<MatrixDouble> mat_vals,
-      ScalarFun beta_coeff = [](double, double, double) { return 1; })
+      ScalarFun beta_coeff = [](double, double, double) { return 1; },
+      boost::shared_ptr<Range> ents_ptr = nullptr)
       : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals),
         betaCoeff(beta_coeff) {}
 
 protected:
   boost::shared_ptr<MatrixDouble> matVals;
+  boost::shared_ptr<Range> entsPtr;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
   ScalarFun betaCoeff;
 };
@@ -779,6 +783,10 @@ MoFEMErrorCode
 OpGradTimesTensorImpl<1, 1, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
     DataForcesAndSourcesCore::EntData &row_data) {
   MoFEMFunctionBegin;
+  if (entsPtr) {
+    if (entsPtr->find(OpBase::getFEEntityHandle()) == entsPtr->end())
+      MoFEMFunctionReturnHot(0);
+  }
   // get element volume
   const double vol = OpBase::getMeasure();
   // get integration weights
@@ -817,6 +825,10 @@ MoFEMErrorCode
 OpGradTimesTensorImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
     DataForcesAndSourcesCore::EntData &row_data) {
   MoFEMFunctionBegin;
+  if (entsPtr) {
+    if (entsPtr->find(OpBase::getFEEntityHandle()) == entsPtr->end())
+      MoFEMFunctionReturnHot(0);
+  }
   // get element volume
   const double vol = OpBase::getMeasure();
   // get integration weights

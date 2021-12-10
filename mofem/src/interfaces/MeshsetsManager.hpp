@@ -23,16 +23,16 @@ namespace MoFEM {
 
 using Sev = MoFEM::LogManager::SeverityLevel;
 
-typedef CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type
+typedef CubitMeshSet_multiIndex::index<CubitMeshsetType_mi_tag>::type
     CubitMeshsetByType;
 
-typedef CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type
+typedef CubitMeshSet_multiIndex::index<CubitMeshsetMaskedType_mi_tag>::type
     CubitMeshsetByMask;
 
-typedef CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type
+typedef CubitMeshSet_multiIndex::index<CubitMeshsets_name>::type
     CubitMeshsetByName;
 
-typedef CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type
+typedef CubitMeshSet_multiIndex::index<CubitMeshsetType_mi_tag>::type
     CubitMeshsetById;
 
 /**
@@ -189,17 +189,17 @@ struct MeshsetsManager : public UnknownInterface {
 
   /**
    * @brief Boradcats meshsets
-   * 
-   * @param verb 
-   * @return MoFEMErrorCode 
+   *
+   * @param verb
+   * @return MoFEMErrorCode
    */
   MoFEMErrorCode readMeshsets(int verb = DEFAULT_VERBOSITY);
 
   /**
    * @brief Boradcats meshsets
-   * 
-   * @param verb 
-   * @return MoFEMErrorCode 
+   *
+   * @param verb
+   * @return MoFEMErrorCode
    */
   MoFEMErrorCode broadcastMeshsets(int verb = DEFAULT_VERBOSITY);
 
@@ -286,7 +286,7 @@ struct MeshsetsManager : public UnknownInterface {
     */
   inline CubitMeshsetByType::iterator
   getBegin(const unsigned int cubit_bc_type) const {
-    return cubitMeshsets.get<CubitMeshSets_mi_tag>().lower_bound(cubit_bc_type);
+    return cubitMeshsets.get<CubitMeshsetType_mi_tag>().lower_bound(cubit_bc_type);
   }
 
   /**
@@ -305,7 +305,7 @@ struct MeshsetsManager : public UnknownInterface {
     */
   inline CubitMeshsetByType::iterator
   getEnd(const unsigned int cubit_bc_type) const {
-    return cubitMeshsets.get<CubitMeshSets_mi_tag>().upper_bound(cubit_bc_type);
+    return cubitMeshsets.get<CubitMeshsetType_mi_tag>().upper_bound(cubit_bc_type);
   }
 
   /**
@@ -322,7 +322,7 @@ struct MeshsetsManager : public UnknownInterface {
     */
   inline CubitMeshsetByMask::iterator
   getBySetTypeBegin(const unsigned int cubit_bc_type) const {
-    return cubitMeshsets.get<CubitMeshSets_mask_meshset_mi_tag>().lower_bound(
+    return cubitMeshsets.get<CubitMeshsetMaskedType_mi_tag>().lower_bound(
         cubit_bc_type);
   }
 
@@ -340,7 +340,7 @@ struct MeshsetsManager : public UnknownInterface {
     */
   inline CubitMeshsetByMask::iterator
   getBySetTypeEnd(const unsigned int cubit_bc_type) const {
-    return cubitMeshsets.get<CubitMeshSets_mask_meshset_mi_tag>().upper_bound(
+    return cubitMeshsets.get<CubitMeshsetMaskedType_mi_tag>().upper_bound(
         cubit_bc_type);
   }
 
@@ -359,7 +359,7 @@ struct MeshsetsManager : public UnknownInterface {
     * \param  type of meshset (NODESET, SIDESET or BLOCKSET and more)
     */
   inline CubitMeshsetByName::iterator getBegin(const std::string &name) const {
-    return cubitMeshsets.get<CubitMeshSets_name>().lower_bound(name);
+    return cubitMeshsets.get<CubitMeshsets_name>().lower_bound(name);
   }
 
   /**
@@ -377,7 +377,7 @@ struct MeshsetsManager : public UnknownInterface {
     * \param  type of meshset (NODESET, SIDESET or BLOCKSET and more)
     */
   inline CubitMeshsetByName::iterator getEnd(const std::string &name) const {
-    return cubitMeshsets.get<CubitMeshSets_name>().upper_bound(name);
+    return cubitMeshsets.get<CubitMeshsets_name>().upper_bound(name);
   }
 
   /**
@@ -485,26 +485,37 @@ struct MeshsetsManager : public UnknownInterface {
                                const MoFEMTypes bh = MF_EXIST);
 
   /**
-    * \brief get cubit meshset
-    * \ingroup mofem_meshset_mng
-    *
-    * \todo This function is obsolete, do not handle multiple blocks, etc.
-    Should be modified to work with regural expressions, and return vector of
-    pointers.
-    *
-    */
+   * \brief get cubit meshset
+   * \ingroup mofem_meshset_mng
+   *
+   *
+   */
   MoFEMErrorCode
   getCubitMeshsetPtr(const int ms_id, const CubitBCType cubit_bc_type,
                      const CubitMeshSets **cubit_meshset_ptr) const;
 
   /**
-    * \brief get cubit meshset
-    * \ingroup mofem_meshset_mng
-    * \deprecated  That funcion should not be used. 
-    */
+   * \brief get cubit meshset
+   *
+   * \ingroup mofem_meshset_mng
+   */
   MoFEMErrorCode
   getCubitMeshsetPtr(const string name,
                      const CubitMeshSets **cubit_meshset_ptr) const;
+
+  /**
+   * @brief Get vector of poointer to blocksets with name satisfying regular
+   * expression.
+   *
+   * \ingroup mofem_meshset_mng
+   *
+   * @param reg_exp_name
+   * @param std::vector<const CubitMeshSets *>
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode
+  getCubitMeshsetPtr(const std::regex reg_exp_name,
+                     std::vector<const CubitMeshSets *> &vec_ptr) const;
 
   /**
     * \brief get entities from CUBIT/meshset of a particular entity dimension
@@ -811,7 +822,6 @@ protected:
   CubitMeshSet_multiIndex cubitMeshsets; ///< cubit meshsets
   boost::shared_ptr<boost::program_options::options_description>
       configFileOptionsPtr; ///< config file options
-		
 };
 
 template <class CUBIT_BC_DATA_TYPE>

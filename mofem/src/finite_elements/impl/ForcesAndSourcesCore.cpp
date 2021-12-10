@@ -935,7 +935,7 @@ ForcesAndSourcesCore::getFaceNodes(DataForcesAndSourcesCore &data) const {
     CHKERR check();
 #endif
   }
-  
+
   MoFEMFunctionReturn(0);
 }
 
@@ -1607,6 +1607,13 @@ MoFEMErrorCode ForcesAndSourcesCore::operator()() {
   if (operatorHook) {
     ierr = operatorHook();
     CHKERRG(ierr);
+  } else {
+#ifndef NDEBUG
+    MOFEM_LOG("SELF", Sev::warning)
+        << "No method operator() overloaded on element entity on finite "
+           "element <"
+        << boost::typeindex::type_id_runtime(*this).pretty_name() << ">";
+#endif
   }
   MoFEMFunctionReturnHot(0);
 }

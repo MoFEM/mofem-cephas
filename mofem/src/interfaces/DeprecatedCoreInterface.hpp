@@ -275,18 +275,6 @@ struct DeprecatedCoreInterface : public CoreInterface {
   DEPRECATED MoFEMErrorCode delete_cubit_msId(const CubitBCType cubit_bc_type,
                                               const int msId);
 
-  /**
-  * \brief get cubit meshset
-
-  \deprecated use MeshsetsManager
-  \todo All cubit interface functions should be outsourced to dedicated
-  interface
-
-  */
-  DEPRECATED MoFEMErrorCode
-  get_cubit_msId(const int msId, const CubitBCType cubit_bc_type,
-                 const CubitMeshSets **cubit_meshset_ptr);
-
   DEPRECATED MoFEMErrorCode get_cubit_msId_entities_by_dimension(
       const int ms_id, const CubitBCType cubit_bc_type, const int dimension,
       Range &entities, const bool recursive = false);

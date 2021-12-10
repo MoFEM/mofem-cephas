@@ -34,17 +34,17 @@ struct CubitMeshSets {
   std::vector<Tag>
       tag_handles; ///< vector of tag handles to types of data passed from cubit
   int *msId;       ///< cubit meshset ID
-  char *tag_bc_data;
-  int tag_bc_size;
-  unsigned int *tag_block_header_data;
-  double *tag_block_attributes;
-  int tag_block_attributes_size;
+  char *tagBcData;
+  int tagBcSize;
+  unsigned int *tagBlockHeaderData;
+  double *tagBlockAttributes;
+  int tagBlockAttributesSize;
   char *tagName;
-  const CubitBCType meshsets_mask;
+  const CubitBCType meshsetsMask;
 
-  CubitMeshSets(Interface &moab, const EntityHandle _meshset);
-  CubitMeshSets(Interface &moab, const CubitBCType _cubit_bc_type,
-                const int _msId);
+  CubitMeshSets(Interface &moab, const EntityHandle meshset);
+  CubitMeshSets(Interface &moab, const CubitBCType cubit_bc_type,
+                const int msId);
 
   /**
    * \brief get meshset id as it set in preprocessing software
@@ -84,7 +84,7 @@ struct CubitMeshSets {
    * @return type is returned as unsigned integer
    */
   inline unsigned long int getMaksedBcTypeULong() const {
-    return (cubitBcType & meshsets_mask).to_ulong();
+    return (cubitBcType & meshsetsMask).to_ulong();
   }
 
   /**
@@ -95,8 +95,8 @@ struct CubitMeshSets {
    * @return unsigned int
    */
   unsigned int getMeshsetEntitiesDimension() const {
-    if (tag_block_header_data)
-      return tag_block_header_data[2];
+    if (tagBlockHeaderData)
+      return tagBlockHeaderData[2];
     else
       return -1;
   }
@@ -292,8 +292,8 @@ struct CubitMeshSets {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "attributes are not for ATTRIBUTE_TYPE structure");
     }
-    double *ptr = const_cast<double *>(tag_block_attributes);
-    CHKERR data.set_data(ptr, 8 * tag_block_attributes_size);
+    double *ptr = const_cast<double *>(tagBlockAttributes);
+    CHKERR data.set_data(ptr, 8 * tagBlockAttributesSize);
     MoFEMFunctionReturn(0);
   }
 
@@ -316,8 +316,8 @@ struct CubitMeshSets {
   MoFEMErrorCode setBcDataStructure(CUBIT_BC_DATA_TYPE &data) {
     MoFEMFunctionBeginHot;
 
-    char *ptr = const_cast<char *>(tag_bc_data);
-    ierr = data.set_data(ptr, tag_bc_size);
+    char *ptr = const_cast<char *>(tagBcData);
+    ierr = data.set_data(ptr, tagBcSize);
     CHKERRG(ierr);
     MoFEMFunctionReturnHot(0);
   }
@@ -336,13 +336,13 @@ struct CubitMeshSets {
  * boundary conditions, interfaces, sidesets, nodests, blocksets
  *
  * \param Meshset_mi_tag  index by meshset handle
- * \param CubitMeshSets_mi_tag index by bc type, see CubitBC
- * \param CubitMeshSets_mask_meshset_mi_tag index by NODESET, SIDESET, BLOCKSET
+ * \param CubitMeshsetType_mi_tag index by bc type, see CubitBC
+ * \param CubitMeshsetMaskedType_mi_tag index by NODESET, SIDESET, BLOCKSET
  * only
  *
- * \param CubitMeshSets_name index by meshset name
+ * \param CubitMeshsets_name index by meshset name
  *
- * \param Composite_Cubit_msId_And_MeshSetType_mi_tag index by meshset id and
+ * \param Composite_Cubit_msId_And_MeshsetType_mi_tag index by meshset id and
  * type NODESET, SIDESET or BLOCKSET
  *
  *  Example:
@@ -353,9 +353,9 @@ struct CubitMeshSets {
  *
  *
  *   auto mit =
- * index.get<CubitMeshSets_mask_meshset_mi_tag>().lower_bound(BLOCKSET); auto
+ * index.get<CubitMeshsetMaskedType_mi_tag>().lower_bound(BLOCKSET); auto
  * hi_mit =
- * index.get<CubitMeshSets_mask_meshset_mi_tag>().upper_bound(BLOCKSET);
+ * index.get<CubitMeshsetMaskedType_mi_tag>().upper_bound(BLOCKSET);
  *
  *   // Make a loop over all BLOCKSET
  *   for(;mit!=hi_mit;mit++) {
@@ -374,17 +374,17 @@ typedef multi_index_container<
     indexed_by<
         hashed_unique<tag<Meshset_mi_tag>, member<CubitMeshSets, EntityHandle,
                                                   &CubitMeshSets::meshset>>,
-        ordered_non_unique<tag<CubitMeshSets_mi_tag>,
+        ordered_non_unique<tag<CubitMeshsetType_mi_tag>,
                            const_mem_fun<CubitMeshSets, unsigned long int,
                                          &CubitMeshSets::getBcTypeULong>>,
-        ordered_non_unique<tag<CubitMeshSets_mask_meshset_mi_tag>,
+        ordered_non_unique<tag<CubitMeshsetMaskedType_mi_tag>,
                            const_mem_fun<CubitMeshSets, unsigned long int,
                                          &CubitMeshSets::getMaksedBcTypeULong>>,
         ordered_non_unique<
-            tag<CubitMeshSets_name>,
+            tag<CubitMeshsets_name>,
             const_mem_fun<CubitMeshSets, std::string, &CubitMeshSets::getName>>,
         hashed_unique<
-            tag<Composite_Cubit_msId_And_MeshSetType_mi_tag>,
+            tag<Composite_Cubit_msId_And_MeshsetType_mi_tag>,
             composite_key<
                 CubitMeshSets,
                 const_mem_fun<CubitMeshSets, int, &CubitMeshSets::getMeshsetId>,
