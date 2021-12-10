@@ -65,66 +65,59 @@ MoFEMErrorCode FieldBlas::fieldLambda(FieldBlas::TwoFieldFunction lambda,
              field_name_x.c_str(), field_name_y.c_str());
   }
 
-  typedef multi_index_container<
-      boost::shared_ptr<DofEntity>,
-      indexed_by<
-
-          hashed_non_unique<
-              tag<Composite_Ent_Order_And_CoeffIdx_mi_tag>,
-              composite_key<
-
-                  DofEntity,
-                  const_mem_fun<DofEntity, EntityHandle, &DofEntity::getEnt>,
-                  const_mem_fun<DofEntity, ApproximationOrder,
-                                &DofEntity::getDofOrder>,
-                  const_mem_fun<DofEntity, FieldCoefficientsNumber,
-                                &DofEntity::getDofCoeffIdx>
-
-                  >>
-
-          >>
-      DofEntity_multiIndex_composite_view;
-
-  auto dof_lo_for_view = dofs_ptr->get<Unique_mi_tag>().lower_bound(
-      FieldEntity::getLoBitNumberUId((*y_fit)->getBitNumber()));
-  auto dof_hi_for_view = dofs_ptr->get<Unique_mi_tag>().upper_bound(
-      FieldEntity::getHiBitNumberUId((*y_fit)->getBitNumber()));
-      
-  DofEntity_multiIndex_composite_view dof_composite_view;
-  dof_composite_view.insert(dof_lo_for_view, dof_hi_for_view);
-
   auto x_eit = field_ents->get<Unique_mi_tag>().lower_bound(
       FieldEntity::getLoBitNumberUId((*x_fit)->getBitNumber()));
   auto x_eit_hi = field_ents->get<Unique_mi_tag>().upper_bound(
       FieldEntity::getHiBitNumberUId((*x_fit)->getBitNumber()));
-  for (; x_eit != x_eit_hi; x_eit++) {
-    int nb_dofs_on_x_entity = (*x_eit)->getNbDofsOnEnt();
-    VectorAdaptor field_data = (*x_eit)->getEntFieldData();
-    for (int dd = 0; dd != nb_dofs_on_x_entity; ++dd) {
-      ApproximationOrder dof_order = (*x_eit)->getDofOrderMap()[dd];
-      FieldCoefficientsNumber dof_rank = dd % (*x_eit)->getNbOfCoeffs();
-      FieldData data = field_data[dd];
-      auto dit = dof_composite_view.find(
-          boost::make_tuple((*x_eit)->getEnt(), dof_order, dof_rank));
-      if (dit == dof_composite_view.end()) {
-        if (creat_if_missing) {
-          SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-                  "not yet implemented");
-        } else {
-          if (error_if_missing) {
-            std::ostringstream ss;
-            ss << "dof on ent " << (*x_eit)->getEnt() << " order " << dof_order
-               << " rank " << dof_rank << " does not exist";
-            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                    ss.str().c_str());
-          } else {
-            continue;
-          }
+
+  for (; x_eit != x_eit_hi;) {
+
+    VectorAdaptor x_field_data = (*x_eit)->getEntFieldData();
+
+    const auto lo_uid = FieldEntity::getLocalUniqueIdCalculate(
+        (*y_fit)->getBitNumber(), (*x_eit)->getEnt());
+    auto y_eit = field_ents->get<Unique_mi_tag>().find(lo_uid);
+
+    auto missing = [&]() {
+      MoFEMFunctionBeginHot;
+      if (creat_if_missing) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                "Not implemented creation of DOFs on the fly");
+      } else {
+        if (error_if_missing) {
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Missing entity");
         }
       }
-      CHKERR lambda((*dit)->getFieldData(),data);
-    }
+      MoFEMFunctionReturnHot(0);
+    };
+
+    if (y_eit == field_ents->end())
+      CHKERR missing();
+
+    auto check = [&]() {
+      if (x_eit == field_ents->end())
+        return false;
+      if (y_eit == field_ents->end())
+        return false;
+      if ((*y_eit)->getEnt() != (*x_eit)->getEnt())
+        return false;
+      return true;
+    };
+
+    do {
+
+      VectorAdaptor y_field_data = (*y_eit)->getEntFieldData();
+      if (x_field_data.size() > y_field_data.size())
+        CHKERR missing();
+      for (auto dd = 0; dd != y_field_data.size(); ++dd)
+        CHKERR lambda(y_field_data[dd], x_field_data[dd]);
+
+      ++x_eit;
+      ++y_eit;
+
+    } while (check());
   }
+
   MoFEMFunctionReturn(0);
 }
 
@@ -194,8 +187,8 @@ MoFEMErrorCode FieldBlas::setVertexDofs(FieldBlas::VertexCoordsFunction lambda,
       MoFEMFunctionBegin;
       if (*vit != entPtr->getEnt())
         SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "Inconsistent entity %ld != %ld", *vit, entPtr->getEnt());
-      if(!count)
+                 "Inconsistent entity %ld != %ld", *vit, entPtr->getEnt());
+      if (!count)
         CHKERR mField.get_moab().coords_iterate(vit, verts.end(), xCoord,
                                                 yCoord, zCoord, count);
       CHKERR lambda(entPtr->getEntFieldData(), xCoord, yCoord, zCoord);
@@ -209,11 +202,11 @@ MoFEMErrorCode FieldBlas::setVertexDofs(FieldBlas::VertexCoordsFunction lambda,
     }
     MoFEMErrorCode postProcess() {
       MoFEMFunctionBegin;
-      if(total != verts.size())
+      if (total != verts.size())
         SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "Inconsistent number of vertices in field meshset and in the "
-                "field %d != %d",
-                total, verts.size());
+                 "Inconsistent number of vertices in field meshset and in the "
+                 "field %d != %d",
+                 total, verts.size());
       MoFEMFunctionReturn(0);
     }
 
@@ -251,9 +244,9 @@ MoFEMErrorCode FieldBlas::setField(const double val, const EntityType type,
   auto dit = dofs_ptr->get<Unique_mi_tag>().lower_bound(lo_uid);
   auto hi_dit = dofs_ptr->get<Unique_mi_tag>().upper_bound(hi_uid);
 
-  for (; dit != hi_dit; dit++) 
+  for (; dit != hi_dit; dit++)
     (*dit)->getFieldData() = val;
-  
+
   MoFEMFunctionReturnHot(0);
 }
 
@@ -287,7 +280,6 @@ MoFEMErrorCode FieldBlas::setField(const double val, const EntityType type,
     }
     if (!cont)
       (*dit)->getFieldData() = val;
-    
   }
   MoFEMFunctionReturnHot(0);
 }
@@ -323,7 +315,7 @@ MoFEMErrorCode FieldBlas::fieldScale(const double alpha,
   MoFEMFunctionBeginHot;
 
   auto fit = fields_ptr->get<FieldName_mi_tag>().find(field_name);
-  if (fit == fields_ptr->get<FieldName_mi_tag>().end()) 
+  if (fit == fields_ptr->get<FieldName_mi_tag>().end())
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              " field < %s > not found, (top tip: check spelling)",
              field_name.c_str());
@@ -332,9 +324,9 @@ MoFEMErrorCode FieldBlas::fieldScale(const double alpha,
       FieldEntity::getLoBitNumberUId((*fit)->getBitNumber()));
   auto hi_dit = dofs_ptr->get<Unique_mi_tag>().upper_bound(
       FieldEntity::getHiBitNumberUId((*fit)->getBitNumber()));
-  for (; dit != hi_dit; dit++) 
+  for (; dit != hi_dit; dit++)
     (*dit)->getFieldData() *= alpha;
-  
+
   MoFEMFunctionReturnHot(0);
 }
 
