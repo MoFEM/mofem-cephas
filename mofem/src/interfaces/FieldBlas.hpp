@@ -38,10 +38,7 @@ struct FieldBlas : public UnknownInterface {
 
   FieldBlas(const MoFEM::Core &core);
 
-  /**
-   * \brief Destructor
-   */
-  ~FieldBlas();
+  ~FieldBlas() = default;
 
   typedef boost::function<MoFEMErrorCode(double &, const double)>
       TwoFieldFunction;

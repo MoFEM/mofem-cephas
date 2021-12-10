@@ -29,7 +29,6 @@ FieldBlas::query_interface(boost::typeindex::type_index type_index,
 
 FieldBlas::FieldBlas(const MoFEM::Core &core)
     : cOre(const_cast<MoFEM::Core &>(core)), dEbug(false) {}
-FieldBlas::~FieldBlas() {}
 
 MoFEMErrorCode FieldBlas::fieldLambda(FieldBlas::TwoFieldFunction lambda,
                                       const std::string field_name_x,
