@@ -450,6 +450,9 @@ MoFEMErrorCode Core::loop_finite_elements(
   if (!cache_ptr.use_count()) {
     tmp_cache_ptr = boost::make_shared<CacheTuple>();
     CHKERR cache_problem_entities(problem_ptr->getName(), tmp_cache_ptr);
+    method.cacheWeakPtr = tmp_cache_ptr;
+  } else {
+    method.cacheWeakPtr = cache_ptr;
   }
 
   if (!fe_ptr)

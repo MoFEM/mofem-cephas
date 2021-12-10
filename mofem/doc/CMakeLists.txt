@@ -121,21 +121,6 @@ if(DOXYGEN_FOUND)
     # from PROJECT_SOURCE_DIR/publish_doc_likask
 
     configure_file(
-      ${PROJECT_SOURCE_DIR}/scripts/publish_doc_likask.sh.in
-      ${PROJECT_BINARY_DIR}/scripts/tmp/publish_doc_likask.sh
-      @ONLY
-    )
-    file(COPY ${PROJECT_BINARY_DIR}/scripts/tmp/publish_doc_likask.sh
-      DESTINATION ${PROJECT_BINARY_DIR}/scripts/
-      FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE
-    )
-    add_custom_target(doc_publish_likask
-      ${PROJECT_BINARY_DIR}/scripts/publish_doc_likask.sh
-      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-      COMMENT "Publish (userweb.eng.gla.ac.uk) doxygen documentation" VERBATIM
-    )
-
-    configure_file(
       ${PROJECT_SOURCE_DIR}/scripts/publish_doc_cdash.sh.in
       ${PROJECT_BINARY_DIR}/scripts/tmp/publish_doc_cdash.sh
       @ONLY

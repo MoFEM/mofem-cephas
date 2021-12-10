@@ -226,9 +226,9 @@ PetscErrorCode DMoFEMPostProcessFiniteElements(DM dm, MoFEM::FEMethod *method);
  * @return          Error code
  * \ingroup dm
  */
-PetscErrorCode DMoFEMLoopFiniteElementsUpAndLowRank(DM dm, const char fe_name[],
-                                                    MoFEM::FEMethod *method,
-                                                    int low_rank, int up_rank);
+PetscErrorCode DMoFEMLoopFiniteElementsUpAndLowRank(
+    DM dm, const char fe_name[], MoFEM::FEMethod *method, int low_rank,
+    int up_rank, CacheTupleWeakPtr cache_ptr = CacheTupleSharedPtr());
 
 /**
  * \brief Executes FEMethod for finite elements in DM
@@ -240,10 +240,10 @@ PetscErrorCode DMoFEMLoopFiniteElementsUpAndLowRank(DM dm, const char fe_name[],
  * @return          Error code
  * \ingroup dm
  */
-PetscErrorCode
-DMoFEMLoopFiniteElementsUpAndLowRank(DM dm, const std::string fe_name,
-                                     boost::shared_ptr<MoFEM::FEMethod> method,
-                                     int low_rank, int up_rank);
+PetscErrorCode DMoFEMLoopFiniteElementsUpAndLowRank(
+    DM dm, const std::string fe_name, boost::shared_ptr<MoFEM::FEMethod> method,
+    int low_rank, int up_rank,
+    CacheTupleWeakPtr cache_ptr = CacheTupleSharedPtr());
 
 /**
  * \brief Executes FEMethod for finite elements in DM
@@ -253,8 +253,9 @@ DMoFEMLoopFiniteElementsUpAndLowRank(DM dm, const std::string fe_name,
  * @return         Error code
  * \ingroup dm
  */
-PetscErrorCode DMoFEMLoopFiniteElements(DM dm, const char fe_name[],
-                                        MoFEM::FEMethod *method);
+PetscErrorCode
+DMoFEMLoopFiniteElements(DM dm, const char fe_name[], MoFEM::FEMethod *method,
+                         CacheTupleWeakPtr cache_ptr = CacheTupleSharedPtr());
 
 /**
  * \brief Executes FEMethod for finite elements in DM
@@ -266,7 +267,8 @@ PetscErrorCode DMoFEMLoopFiniteElements(DM dm, const char fe_name[],
  */
 PetscErrorCode
 DMoFEMLoopFiniteElements(DM dm, const std::string fe_name,
-                         boost::shared_ptr<MoFEM::FEMethod> method);
+                         boost::shared_ptr<MoFEM::FEMethod> method,
+                         CacheTupleWeakPtr cache_ptr = CacheTupleSharedPtr());
 
 /**
  * \brief execute method for dofs on field in problem

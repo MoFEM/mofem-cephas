@@ -427,139 +427,10 @@ will fix the problem.
 
 \subsection debugging_in_docker How to make debugging in docker?
 
-You can use gdb inside docker, remembering to set cmake with debugging
-build type, for example
-\code
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-Wall" users_modules
-\endcode
-
-It is one non trivial trick that you have to do, to make debugging possible in
-docker, you need to run docker container in \em privileged mode, for example
-\code
-docker run --privileged -it --name work --hostname mofem -v $HOME:/mnt/home -v mofem_build:/my_build likask/mofem_build:v0.2 /bin/bash
-\endcode
-
-\subsection configure_vs_code How to configure MoFEM in Visual Studio Code?
-
-Basic support for C/C++ languages is provided with <a
-href="https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools">
-Microsoft C/C++ extension</a>. To configure IntelliSense code-completion tool
-add \p -DCMAKE_EXPORT_COMPILE_COMMANDS=ON to users_modules's `cmake` command 
-(or after `spyconfig.py` if installation with Spack is used).
-This will generate \p compile_commands.json file which has to be added to \p
-.vscode/c_cpp_properties.json file located in the working project. Example \p
-c_cpp_properties configuration on Mac should look like follows:
-\code
-{
-    "configurations": [
-        {
-            "name": "Mac",
-            "includePath": [
-                "${workspaceFolder}/**"
-            ],
-            "defines": [],
-            "macFrameworkPath": [
-                "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/
-                SDKs/MacOSX10.13.sdk/System/Library/Frameworks"
-            ],
-            "compilerPath": "/usr/bin/clang",
-            "cStandard": "c11",
-            "cppStandard": "c++14",
-            "intelliSenseMode": "clang-x64",
-            "compileCommands": "/Users/User1/mofem_install/users_modules_debug/compile_commands.json"
-
-        }
-    ],
-    "version": 4
-}
-\endcode
-
-\subsection configure_vs_code_remonte How to configure MoFEM in Visual Studio Code for remonte and local use?
-
-You can have more than one config, that can be the case if you work in your Mac OSX and remotely on a development server where Linux is installed. In that case, make in \p
-.vscode/c_cpp_properties.json two sections for Mac and Linux, as follows:
-
-\code
-{
-    "configurations": [
-        {
-            "name": "Mac",
-            "includePath": [
-                "${workspaceFolder}/**"
-            ],
-            "defines": [],
-            "macFrameworkPath": [
-                "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/
-                SDKs/MacOSX10.13.sdk/System/Library/Frameworks"
-            ],
-            "compilerPath": "/usr/bin/clang",
-            "cStandard": "c11",
-            "cppStandard": "c++14",
-            "intelliSenseMode": "clang-x64",
-            "compileCommands": "/Users/User1/mofem_install/users_modules_debug/compile_commands.json"
-        },
-        {
-            "name": "Linux",
-            "includePath": [
-                "/usr/local/include",
-                "/usr/include",
-                "${workspaceRoot}",
-                ""
-            ],
-            "defines": [
-                "WITH_ADOL_C",
-                "WITH_TETGEN",
-                "WITH_MED"
-            ],
-            "intelliSenseMode": "gcc-x64",
-            "browse": {
-                "path": [
-                    "/usr/local/include",
-                    "/usr/include",
-                    "${workspaceRoot}",
-                    ""
-                ],
-                "limitSymbolsToIncludedHeaders": true,
-                "databaseFilename": ""
-            },
-            "compilerPath": "/usr/bin/g++",
-            "cStandard": "c11",
-            "cppStandard": "c++14",
-            "compileCommands": "/home/User1/mofem_install/lib_debug/   compile_commands.json"
-        },
-    ],
-    "version": 4
-}
-\endcode
-
-
-\subsection vs_code_debug How to setup LLDB debugger in Visual Studio Code?
-
-For debugging on Mac the most commonly used extension is <a
-href="https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb">
-CodeLLDB</a> plugin. The configuration is straightforward: choose \p lldb
-type, set the path to the executable (compiled with debug flag!) as \p
-program, arguments for the command line put in \p args. Optionally, the path
-to current working directory can be set (\p cwd). Example configuration for
-fracture module is presented below.
-\code 
-    "configurations": [
-    {
-      "type": "lldb",
-      "request": "launch",
-      "name": "Debug_my_crack1",
-      "program": "/Users/User1/moFEM/users_modules_debug/fracture_mechanics/crack_propagation",
-      "args": [
-        "-my_file",
-        "LShape.h5m",
-        "-pc_factor_mat_solver_type",
-        "mumps",
-        "-ksp_monitor"
-      ],
-      "cwd": "/Users/User1/mofem_install/users_modules_debug/fracture_mechanics"
-    }
-  ]
-\endcode
+You can use gdb inside docker, remembering to set cmake with debugging build
+type. See \ref spack_developers, and setting `build_type` as explained in \ref
+spack_build_type. Now you can run code in docker container and use GDB or
+Vagrind to debug code.
 
 \subsection faq_how_to_view_matrix How to view matrix
 
@@ -597,6 +468,110 @@ The draw function works only with one processor.
 If you like to see diffrence of jacobians, add option:
 \code
 -snes_test_jacobian_display
+\endcode
+
+\section fq_visual_studio Visual Studio
+
+\subsection configure_vs_code How to configure MoFEM in Visual Studio Code?
+
+Basic support for C/C++ languages is provided with <a
+href="https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools">
+Microsoft C/C++ extension</a>. In the CMake files we set option \p
+CMAKE_EXPORT_COMPILE_COMMANDS=ON, which results gebration of file \p
+compile_commands.json file which has to be added to \p
+.vscode/c_cpp_properties.json file located in the working project. %Example \p
+c_cpp_properties configuration on Mac should look like follows:
+
+\code
+{
+    "configurations": [
+        {
+            "name": "Mac",
+            "includePath": [
+                "${workspaceFolder}/**"
+            ],
+            "defines": [
+                "WITH_ADOL_C",
+                "WITH_TETGEN",
+                "WITH_METAIO"
+            ],
+            "macFrameworkPath": [
+                "/System/Library/Frameworks",
+                "/Library/Frameworks"
+            ],
+            "compilerPath": "/usr/bin/clang",
+            "cStandard": "gnu17",
+            "cppStandard": "gnu++14",
+            "intelliSenseMode": "macos-clang-x64",
+            "compileCommands": "${workspaceFolder}/um-build-Debug-l3ew3vn/compile_commands.json"
+            "browse": {
+                "databaseFilename": "${default}",
+                "limitSymbolsToIncludedHeaders": true
+            }
+        }
+    ],
+    "version": 4
+}
+\endcode
+
+Note line
+\code
+"compileCommands": "${workspaceFolder}/um-build-Debug-l3ew3vn/compile_commands.json"
+\endcode
+
+which points to the particular build directory, i.e. um-build-Debug-l3ew3vn,
+which is associated with spack package hash, i.e. \p l3ew3vn. In this particular
+case, we can see 
+
+\code
+~ % spack find -lv mofem-users-modules 
+==> 2 installed packages
+-- darwin-macos-skylake / apple-clang@12.0.0 --------------------
+l3ew3vn mofem-users-modules@develop+copy_user_modules~docker~ipo build_type=Debug dev_path=/Users/likask/mofem_install/mofem-cephas/mofem/users_modules install_id=0
+\endcode
+
+where fisrt package has hash \p l3ew3vn.
+
+In settings (file .vscode/settings.json), by presing CMD-, (on mac), or CTRL-,
+on other systemsm you can choose intelliSenseEngine. "Default" setting for
+intelliSenseEngine, is not working or working slow; we recommend switching to
+"Tag Parser".
+
+\code
+"C_Cpp.intelliSenseEngine": "Tag Parser"
+\endcode
+
+However,  "Default" IntelliSense engine is the new engine that provides
+semantic-aware IntelliSense features and will be the eventual replacement for
+the Tag Parser. So in the future, you can check if the "Default" IntelliSense
+engine works well for you. Using  Tag Parser is a temporary solution.
+
+\subsection vs_code_debug How to setup LLDB debugger in Visual Studio Code?
+
+For debugging on Mac the most commonly used extension is <a
+href="https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb">
+CodeLLDB</a> plugin. The configuration is straightforward: choose \p lldb
+type, set the path to the executable (compiled with debug flag!) as \p
+program, arguments for the command line put in \p args. Optionally, the path
+to current working directory can be set (\p cwd). Example configuration for
+fracture module is presented below.
+\code 
+    "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug_my_crack1",
+      "program": "/Users/User1/moFEM/users_modules_debug/fracture_mechanics/crack_propagation",
+      "args": [
+        "-my_file",
+        "LShape.h5m",
+        "-pc_factor_mat_solver_type",
+        "mumps",
+        "-ksp_monitor"
+      ],
+      "cwd": "/Users/User1/mofem_install/users_modules_debug/fracture_mechanics"
+    }
+  ]
 \endcode
 
 */

@@ -158,7 +158,7 @@ if [ ! -d "$SPACK_ROOT_DIR" ]; then
     if [ ! -f "$PWD/mirror.tgz" ]; then
       echo "Downloading mirror of spack packages for MoFEM..."
       mkdir -p $SPACK_MIRROR_DIR && \
-      curl -s -L http://mofem.eng.gla.ac.uk/downloads/mirror_v0.16.tar.gz \
+      curl -s -L http://mofem.eng.gla.ac.uk/mofem/downloads/mirror_v0.16.tar.gz \
       | tar xzC $SPACK_MIRROR_DIR --strip 1
       echo -e "Done.\n"
     else 

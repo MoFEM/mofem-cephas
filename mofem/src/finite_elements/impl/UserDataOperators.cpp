@@ -34,32 +34,28 @@ MoFEMErrorCode OpSetInvJacSpaceForFaceImpl<2>::doWork(
     size_t nb_functions = diff_n.size2() / 2;
     if (nb_functions) {
       size_t nb_gauss_pts = diff_n.size1();
-      diffNinvJac.resize(nb_gauss_pts, 2 * nb_functions, false);
 
-      switch (type) {
-      case MBVERTEX:
-      case MBEDGE:
-      case MBTRI:
-      case MBQUAD: {
-        FTensor::Index<'i', 2> i;
-        FTensor::Index<'k', 2> k;
-        FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2> t_diff_n(
-            &diffNinvJac(0, 0), &diffNinvJac(0, 1));
-        FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2> t_diff_n_ref(
-            &diff_n(0, 0), &diff_n(0, 1));
-        auto t_inv_jac = getFTensor2FromMat<2, 2>(*invJacPtr);
-        for (size_t gg = 0; gg != nb_gauss_pts; ++gg, ++t_inv_jac) {
-          for (size_t dd = 0; dd != nb_functions; ++dd) {
-            t_diff_n(i) = t_inv_jac(k, i) * t_diff_n_ref(k);
-            ++t_diff_n;
-            ++t_diff_n_ref;
-          }
+#ifndef NDEBUG
+      if (nb_gauss_pts != getGaussPts().size2())
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Wrong number of Gauss Pts");
+#endif
+
+      diffNinvJac.resize(diff_n.size1(), diff_n.size2(), false);
+      FTensor::Index<'i', 2> i;
+      FTensor::Index<'k', 2> k;
+      auto t_diff_n = getFTensor1FromPtr<2>(&*diffNinvJac.data().begin());
+      auto t_diff_n_ref = getFTensor1FromPtr<2>(&*diff_n.data().begin());
+      auto t_inv_jac = getFTensor2FromMat<2, 2>(*invJacPtr);
+      for (size_t gg = 0; gg != nb_gauss_pts; ++gg, ++t_inv_jac) {
+        for (size_t dd = 0; dd != nb_functions; ++dd) {
+          t_diff_n(i) = t_inv_jac(k, i) * t_diff_n_ref(k);
+          ++t_diff_n;
+          ++t_diff_n_ref;
         }
-        diff_n.data().swap(diffNinvJac.data());
-      } break;
-      default:
-        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
       }
+
+      diff_n.swap(diffNinvJac);
     }
     MoFEMFunctionReturn(0);
   };
@@ -93,37 +89,36 @@ MoFEMErrorCode OpSetInvJacSpaceForFaceImpl<3>::doWork(
   if (getFEDim() != 2)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "This operator can be used only with element which face");
-    
+
   auto apply_transform = [&](MatrixDouble &diff_n) {
     MoFEMFunctionBegin;
     size_t nb_functions = diff_n.size2() / 2;
     if (nb_functions) {
       size_t nb_gauss_pts = diff_n.size1();
-      diffNinvJac.resize(nb_gauss_pts, 3 * nb_functions, false);
-      switch (type) {
-      case MBVERTEX:
-      case MBEDGE:
-      case MBTRI:
-      case MBQUAD: {
-        FTensor::Index<'i', 3> i;
-        FTensor::Index<'K', 2> K;
-        FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_diff_n(
-            &diffNinvJac(0, 0), &diffNinvJac(0, 1), &diffNinvJac(0, 2));
-        FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2> t_diff_n_ref(
-            &diff_n(0, 0), &diff_n(0, 1));
-        auto t_inv_jac = getFTensor2FromMat<3, 3>(*invJacPtr);
-        for (size_t gg = 0; gg != nb_gauss_pts; ++gg, ++t_inv_jac) {
-          for (size_t dd = 0; dd != nb_functions; ++dd) {
-            t_diff_n(i) = t_inv_jac(K, i) * t_diff_n_ref(K);
-            ++t_diff_n;
-            ++t_diff_n_ref;
-          }
+
+#ifndef NDEBUG
+      if (nb_gauss_pts != getGaussPts().size2())
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Wrong number of Gauss Pts");
+#endif
+
+      diffNinvJac.resize(diff_n.size1(), diff_n.size2(), false);
+
+      FTensor::Index<'i', 3> i;
+      FTensor::Index<'K', 2> K;
+      auto t_diff_n = getFTensor1FromPtr<3>(&*diffNinvJac.data().begin());
+      auto t_diff_n_ref = getFTensor1FromPtr<2>(&*diff_n.data().begin());
+      auto t_inv_jac = getFTensor2FromMat<3, 3>(*invJacPtr);
+      for (size_t gg = 0; gg != nb_gauss_pts; ++gg, ++t_inv_jac) {
+        for (size_t dd = 0; dd != nb_functions; ++dd) {
+          t_diff_n(i) = t_inv_jac(K, i) * t_diff_n_ref(K);
+          ++t_diff_n;
+          ++t_diff_n_ref;
         }
-        diff_n.swap(diffNinvJac);
-      } break;
-      default:
-        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
       }
+
+      diff_n.swap(diffNinvJac);
+      
     }
     MoFEMFunctionReturn(0);
   };
@@ -193,7 +188,7 @@ OpSetInvJacHcurlFaceImpl<2>::doWork(int side, EntityType type,
         }
       }
 
-      data.getDiffN(base).data().swap(diffHcurlInvJac.data());
+      data.getDiffN(base).swap(diffHcurlInvJac);
     }
   }
 
@@ -337,7 +332,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransformOnFace2DImpl<2>::doWork(
             ++t_transformed_n;
           }
         }
-        data.getN(base).data().swap(piolaN.data());
+        data.getN(base).swap(piolaN);
       }
 
       piolaDiffN.resize(nb_gauss_pts, data.getDiffN(base).size2(), false);
@@ -363,7 +358,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransformOnFace2DImpl<2>::doWork(
             ++t_transformed_diff_n;
           }
         }
-        data.getDiffN(base).data().swap(piolaDiffN.data());
+        data.getDiffN(base).swap(piolaDiffN);
       }
     }
   }
@@ -633,7 +628,7 @@ OpSetInvJacH1ForFatPrism::doWork(int side, EntityType type,
       ++t_inv_jac;
     }
 
-    data.getDiffN(base).data().swap(diffNinvJac.data());
+    data.getDiffN(base).swap(diffNinvJac);
   }
 
   MoFEMFunctionReturn(0);
@@ -710,7 +705,7 @@ OpSetInvJacH1ForFlatPrism::doWork(int side, EntityType type,
                       &diffNinvJac(gg, 2 * dd), 1);
         }
       }
-      data.getDiffN(base).data().swap(diffNinvJac.data());
+      data.getDiffN(base).swap(diffNinvJac);
     } break;
     default:
       SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");

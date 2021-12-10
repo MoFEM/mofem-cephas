@@ -140,9 +140,26 @@ MoFEMErrorCode ProblemsManager::partitionMesh(
           >>
       AdjBridgeMap;
 
+  auto get_it = [&](auto i) {
+    auto it = ents.begin();
+    for (; i > 0; --i) {
+      if (it == ents.end())
+        break;
+      ++it;
+    }
+    return it;
+  };
+
+  Range proc_ents;
+  proc_ents.insert(get_it(rstart), get_it(rend));
+  if (proc_ents.size() != rend - rstart)
+    SETERRQ2(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+             "Wrong number of elements in range %d != %d", proc_ents.size(),
+             rend - rstart);
+
   Range all_dim_ents;
-  CHKERR m_field.get_moab().get_adjacencies(ents, adj_dim, true, all_dim_ents,
-                                            moab::Interface::UNION);
+  CHKERR m_field.get_moab().get_adjacencies(
+      proc_ents, adj_dim, true, all_dim_ents, moab::Interface::UNION);
 
   AdjBridgeMap adj_bridge_map;
   auto hint = adj_bridge_map.begin();
@@ -168,16 +185,8 @@ MoFEMErrorCode ProblemsManager::partitionMesh(
       Range::iterator fe_it;
       int ii, jj;
       size_t max_row_size;
-      for (
-
-          fe_it = ents.begin(), ii = 0, jj = 0, max_row_size = 0;
-
-          fe_it != ents.end(); ++fe_it, ++ii) {
-
-        if (ii < rstart)
-          continue;
-        if (ii >= rend)
-          break;
+      for (fe_it = proc_ents.begin(), ii = rstart, jj = 0, max_row_size = 0;
+           fe_it != proc_ents.end(); ++fe_it, ++ii) {
 
         if (type_from_handle(*fe_it) == MBENTITYSET) {
           SETERRQ(
@@ -342,11 +351,11 @@ MoFEMErrorCode ProblemsManager::partitionMesh(
       // get lower dimension entities on each part
       for (int pp = 0; pp != n_parts; pp++) {
         Range dim_ents = parts_ents[pp].subset_by_dimension(dim);
-        for (int dd = dim - 1; dd != -1; dd--) {
+        for (int dd = dim - 1; dd >= 0; dd--) {
           Range adj_ents;
-          if (dim > 0) {
+          if (dd > 0) {
             CHKERR m_field.get_moab().get_adjacencies(
-                dim_ents, dd, true, adj_ents, moab::Interface::UNION);
+                dim_ents, dd, false, adj_ents, moab::Interface::UNION);
           } else {
             CHKERR m_field.get_moab().get_connectivity(dim_ents, adj_ents,
                                                        true);
@@ -360,33 +369,49 @@ MoFEMErrorCode ProblemsManager::partitionMesh(
         }
       }
       if (debug) {
-        for (int rr = 0; rr != m_field.get_comm_size(); rr++) {
-          ostringstream ss;
-          ss << "out_part_" << rr << ".vtk";
-          EntityHandle meshset;
-          CHKERR m_field.get_moab().create_meshset(MESHSET_SET, meshset);
-          CHKERR m_field.get_moab().add_entities(meshset, parts_ents[rr]);
-          CHKERR m_field.get_moab().write_file(ss.str().c_str(), "VTK", "",
-                                               &meshset, 1);
-          CHKERR m_field.get_moab().delete_entities(&meshset, 1);
+        if (m_field.get_comm_rank() == 0) {
+          for (int rr = 0; rr != n_parts; rr++) {
+            ostringstream ss;
+            ss << "out_part_" << rr << ".vtk";
+            MOFEM_LOG("SELF", Sev::inform)
+                << "Save debug part mesh " << ss.str();
+            EntityHandle meshset;
+            CHKERR m_field.get_moab().create_meshset(MESHSET_SET, meshset);
+            CHKERR m_field.get_moab().add_entities(meshset, parts_ents[rr]);
+            CHKERR m_field.get_moab().write_file(ss.str().c_str(), "VTK", "",
+                                                 &meshset, 1);
+            CHKERR m_field.get_moab().delete_entities(&meshset, 1);
+          }
         }
       }
       for (int pp = 0; pp != n_parts; pp++) {
         CHKERR m_field.get_moab().add_entities(tagged_sets[pp], parts_ents[pp]);
       }
 
-      // set gid to lower dimension entities
-      for (int dd = 0; dd <= dim; dd++) {
-        int gid = 1; // moab indexing from 1
+      // set gid and part tag
+      for (EntityType t = MBVERTEX; t != MBENTITYSET; ++t) {
+
+        void *ptr;
+        int count;
+
+        int gid = 1; // moab indexing from 1a
         for (int pp = 0; pp != n_parts; pp++) {
-          Range dim_ents = parts_ents[pp].subset_by_dimension(dd);
-          for (Range::iterator eit = dim_ents.begin(); eit != dim_ents.end();
-               eit++) {
-            if (dd > 0) {
-              CHKERR m_field.get_moab().tag_set_data(part_tag, &*eit, 1, &pp);
+          Range type_ents = parts_ents[pp].subset_by_type(t);
+          if (t != MBVERTEX) {
+            CHKERR m_field.get_moab().tag_clear_data(part_tag, type_ents, &pp);
+          }
+
+          auto eit = type_ents.begin();
+          for (; eit != type_ents.end();) {
+            CHKERR m_field.get_moab().tag_iterate(gid_tag, eit, type_ents.end(),
+                                                  count, ptr);
+            auto gid_tag_ptr = static_cast<int *>(ptr);
+            for (; count > 0; --count) {
+              *gid_tag_ptr = gid;
+              ++eit;
+              ++gid; 
+              ++gid_tag_ptr;
             }
-            CHKERR m_field.get_moab().tag_set_data(gid_tag, &*eit, 1, &gid);
-            gid++;
           }
         }
       }
@@ -1023,7 +1048,6 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
 
   {
 
-
     // rows
 
     // Computes the number of messages a node expects to receive
@@ -1087,15 +1111,15 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
   if (!square_matrix) {
 
     // Computes the number of messages a node expects to receive
-    CHKERR PetscGatherNumberOfMessages(comm, NULL,
-                                       &lengths_cols[0], &nrecvs_cols);
+    CHKERR PetscGatherNumberOfMessages(comm, NULL, &lengths_cols[0],
+                                       &nrecvs_cols);
 
     // Computes info about messages that a MPI-node will receive, including
     // (from-id,length) pairs for each message.
     int *onodes_cols;
-    CHKERR PetscGatherMessageLengths(comm, nsends_cols,
-                                     nrecvs_cols, &lengths_cols[0],
-                                     &onodes_cols, &olengths_cols);
+    CHKERR PetscGatherMessageLengths(comm, nsends_cols, nrecvs_cols,
+                                     &lengths_cols[0], &onodes_cols,
+                                     &olengths_cols);
 
     // Gets a unique new tag from a PETSc communicator.
     int tag_col;
@@ -1104,9 +1128,8 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
     // Allocate a buffer sufficient to hold messages of size specified in
     // olengths. And post Irecvs on these buffers using node info from onodes
     MPI_Request *r_waits_col; // must bee freed by user
-    CHKERR PetscPostIrecvInt(comm, tag_col, nrecvs_cols,
-                             onodes_cols, olengths_cols, &rbuf_col,
-                             &r_waits_col);
+    CHKERR PetscPostIrecvInt(comm, tag_col, nrecvs_cols, onodes_cols,
+                             olengths_cols, &rbuf_col, &r_waits_col);
     CHKERR PetscFree(onodes_cols);
 
     MPI_Request *s_waits_col; // status of sens messages
@@ -1136,7 +1159,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
 
   CHKERR PetscCommDestroy(&comm);
   CHKERR PetscFree(status);
- 
+
   DofEntity_multiIndex_global_uid_view dofs_glob_uid_view;
   auto hint = dofs_glob_uid_view.begin();
   for (auto dof : *m_field.get_dofs())
@@ -2841,8 +2864,7 @@ ProblemsManager::getProblemElementsLayout(const std::string name,
 MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
     const std::string problem_name, const std::string field_name,
     const Range ents, const int lo_coeff, const int hi_coeff,
-    const int lo_order, const int hi_order, int verb,
-    const bool debug) {
+    const int lo_order, const int hi_order, int verb, const bool debug) {
 
   MoFEM::Interface &m_field = cOre;
   ProblemManagerFunctionBegin;

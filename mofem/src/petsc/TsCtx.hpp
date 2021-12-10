@@ -32,34 +32,25 @@ struct TsCtx {
   std::string problemName;
   MoFEMTypes bH; ///< If set to MF_EXIST check if element exist
 
-  /// \deprecated use PairNameFEMethodPtr
-  DEPRECATED typedef MoFEM::PairNameFEMethodPtr loop_pair_type;
-
-  /// \deprecated use FEMethodsSequence
-  DEPRECATED typedef MoFEM::FEMethodsSequence loops_to_do_type;
-
-  /// \deprecated use BasicMethodsSequence
-  DEPRECATED typedef MoFEM::BasicMethodsSequence basic_method_to_do;
-
   typedef MoFEM::PairNameFEMethodPtr PairNameFEMethodPtr;
   typedef MoFEM::FEMethodsSequence FEMethodsSequence;
   typedef MoFEM::BasicMethodsSequence BasicMethodsSequence;
 
-  FEMethodsSequence loops_to_do_IJacobian;
-  FEMethodsSequence loops_to_do_IFunction;
-  FEMethodsSequence loops_to_do_Monitor;
-  FEMethodsSequence loops_to_do_RHSJacobian;
-  FEMethodsSequence loops_to_do_RHSFunction;
-  BasicMethodsSequence preProcess_IJacobian;
-  BasicMethodsSequence postProcess_IJacobian;
-  BasicMethodsSequence preProcess_IFunction;
-  BasicMethodsSequence postProcess_IFunction;
-  BasicMethodsSequence preProcess_Monitor;
-  BasicMethodsSequence postProcess_Monitor;
-  BasicMethodsSequence preProcess_RHSJacobian;
-  BasicMethodsSequence preProcess_RHSFunction;
-  BasicMethodsSequence postProcess_RHSJacobian;
-  BasicMethodsSequence postProcess_RHSFunction;
+  FEMethodsSequence loopsIJacobian;
+  FEMethodsSequence loopsIFunction;
+  FEMethodsSequence loopsMonitor;
+  FEMethodsSequence loopsRHSJacobian;
+  FEMethodsSequence loopsRHSFunction;
+  BasicMethodsSequence preProcessIJacobian;
+  BasicMethodsSequence postProcessIJacobian;
+  BasicMethodsSequence preProcessIFunction;
+  BasicMethodsSequence postProcessIFunction;
+  BasicMethodsSequence preProcessMonitor;
+  BasicMethodsSequence postProcessMonitor;
+  BasicMethodsSequence preProcessRHSJacobian;
+  BasicMethodsSequence preProcessRHSFunction;
+  BasicMethodsSequence postProcessRHSJacobian;
+  BasicMethodsSequence postProcessRHSFunction;
 
   bool zeroMatrix;
 
@@ -87,9 +78,7 @@ struct TsCtx {
    *
    * @return FEMethodsSequence&
    */
-  FEMethodsSequence &get_loops_to_do_IFunction() {
-    return loops_to_do_IFunction;
-  }
+  FEMethodsSequence &getLoopsIFunction() { return loopsIFunction; }
 
   /**
    * @brief Get the loops to do RHSFunction object
@@ -99,9 +88,7 @@ struct TsCtx {
    *
    * @return FEMethodsSequence&
    */
-  FEMethodsSequence &get_loops_to_do_RHSFunction() {
-    return loops_to_do_RHSFunction;
-  }
+  FEMethodsSequence &getLoopsRHSFunction() { return loopsRHSFunction; }
 
   /**
    * @brief Get the loops to do IJacobian object
@@ -111,9 +98,7 @@ struct TsCtx {
    *
    * @return FEMethodsSequence&
    */
-  FEMethodsSequence &get_loops_to_do_IJacobian() {
-    return loops_to_do_IJacobian;
-  }
+  FEMethodsSequence &getLoopsIJacobian() { return loopsIJacobian; }
 
   /**
    * @brief Get the loops to do RHSJacobian object
@@ -123,9 +108,7 @@ struct TsCtx {
    *
    * @return FEMethodsSequence&
    */
-  FEMethodsSequence &get_loops_to_do_RHSJacobian() {
-    return loops_to_do_RHSJacobian;
-  }
+  FEMethodsSequence &getLoopsRHSJacobian() { return loopsRHSJacobian; }
 
   /**
    * @brief Get the loops to do Monitor object
@@ -134,24 +117,22 @@ struct TsCtx {
    *
    * @return FEMethodsSequence&
    */
-  FEMethodsSequence &get_loops_to_do_Monitor() { return loops_to_do_Monitor; }
+  FEMethodsSequence &getLoopsMonitor() { return loopsMonitor; }
 
   /**
    * @brief Get the preProcess to do IFunction object
    *
    * @return BasicMethodsSequence&
    */
-  BasicMethodsSequence &get_preProcess_to_do_IFunction() {
-    return preProcess_IFunction;
-  }
+  BasicMethodsSequence &getPreProcessIFunction() { return preProcessIFunction; }
 
   /**
    * @brief Get the postProcess to do IFunction object
    *
    * @return BasicMethodsSequence&
    */
-  BasicMethodsSequence &get_postProcess_to_do_IFunction() {
-    return postProcess_IFunction;
+  BasicMethodsSequence &getPostProcessIFunction() {
+    return postProcessIFunction;
   }
 
   /**
@@ -159,17 +140,15 @@ struct TsCtx {
    *
    * @return BasicMethodsSequence&
    */
-  BasicMethodsSequence &get_preProcess_to_do_IJacobian() {
-    return preProcess_IJacobian;
-  }
+  BasicMethodsSequence &getPreProcessIJacobian() { return preProcessIJacobian; }
 
   /**
    * @brief Get the postProcess to do IJacobian object
    *
    * @return BasicMethodsSequence&
    */
-  BasicMethodsSequence &get_postProcess_to_do_IJacobian() {
-    return postProcess_IJacobian;
+  BasicMethodsSequence &getPostProcessIJacobian() {
+    return postProcessIJacobian;
   }
 
   /**
@@ -177,26 +156,22 @@ struct TsCtx {
    *
    * @return BasicMethodsSequence&
    */
-  BasicMethodsSequence &get_preProcess_to_do_Monitor() {
-    return preProcess_Monitor;
-  }
+  BasicMethodsSequence &getPreProcessMonitor() { return preProcessMonitor; }
 
   /**
    * @brief Get the postProcess to do Monitor object
    *
    * @return BasicMethodsSequence&
    */
-  BasicMethodsSequence &get_postProcess_to_do_Monitor() {
-    return postProcess_Monitor;
-  }
+  BasicMethodsSequence &getPostProcessMonitor() { return postProcessMonitor; }
 
   /**
    * @brief Get the preProcess to do RHSJacobian object
    *
    * @return BasicMethodsSequence&
    */
-  BasicMethodsSequence &get_preProcess_to_do_RHSJacobian() {
-    return preProcess_RHSJacobian;
+  BasicMethodsSequence &getPreProcessRHSJacobian() {
+    return preProcessRHSJacobian;
   }
 
   /**
@@ -204,8 +179,8 @@ struct TsCtx {
    *
    * @return BasicMethodsSequence&
    */
-  BasicMethodsSequence &get_postProcess_to_do_RHSJacobian() {
-    return postProcess_RHSJacobian;
+  BasicMethodsSequence &getPostProcessRHSJacobian() {
+    return postProcessRHSJacobian;
   }
 
   /**
@@ -213,8 +188,8 @@ struct TsCtx {
    *
    * @return BasicMethodsSequence&
    */
-  BasicMethodsSequence &get_preProcess_to_do_RHSFunction() {
-    return preProcess_RHSFunction;
+  BasicMethodsSequence &getPreProcessRHSFunction() {
+    return preProcessRHSFunction;
   }
 
   /**
@@ -222,8 +197,8 @@ struct TsCtx {
    *
    * @return BasicMethodsSequence&
    */
-  BasicMethodsSequence &get_postProcess_to_do_RHSFunction() {
-    return postProcess_RHSFunction;
+  BasicMethodsSequence &getPostProcessRHSFunction() {
+    return postProcessRHSFunction;
   }
 
   friend PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t,
@@ -255,6 +230,7 @@ private:
 
   boost::movelib::unique_ptr<bool> vecAssembleSwitch;
   boost::movelib::unique_ptr<bool> matAssembleSwitch;
+
 };
 
 /**
@@ -396,14 +372,14 @@ PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
  * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSSetI2Function.html>PETSc
  * for details</a>
  *
- * @param ts 
- * @param t 
- * @param u 
- * @param u_t 
- * @param u_tt 
- * @param F 
- * @param ctx 
- * @return PetscErrorCode 
+ * @param ts
+ * @param t
+ * @param u
+ * @param u_t
+ * @param u_tt
+ * @param F
+ * @param ctx
+ * @return PetscErrorCode
  */
 PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
                                Vec F, void *ctx);

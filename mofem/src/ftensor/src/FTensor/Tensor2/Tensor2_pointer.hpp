@@ -50,10 +50,10 @@ namespace FTensor
     template <class U>
     Tensor2(std::array<U *, Tensor_Dim0 * Tensor_Dim1> &a, const int i = 1)
         : inc(i) {
+      int k = 0;
       for (int i = 0; i != Tensor_Dim0; ++i) {
-        const int s = i * Tensor_Dim1;
-        for (int j = 0; j != Tensor_Dim1; ++j) {
-          data[i][j] = a[s + j];
+        for (int j = 0; j != Tensor_Dim1; ++j, ++k) {
+          data[i][j] = a[k];
         }
       }
     }

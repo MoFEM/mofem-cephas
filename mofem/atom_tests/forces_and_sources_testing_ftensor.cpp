@@ -290,12 +290,12 @@ int main(int argc, char *argv[]) {
       FTensor::Tensor3<double,3,3,3> t3;
 
       for(int br = 0;br!=nb_base_functions_row;br++) {
-        auto base_row = row_data.getFTensor0N(br);
-        auto diff_base_row = row_data.getFTensor1DiffN<3>(br);
+        auto base_row = row_data.getFTensor0N(0, br);
+        auto diff_base_row = row_data.getFTensor1DiffN<3>(0, br);
 
         for(int bc = 0;bc!=nb_base_functions_col;bc++) {
-          auto base_col = col_data.getFTensor0N(bc);
-          auto diff_base_col= row_data.getFTensor1DiffN<3>(bc);
+          auto base_col = col_data.getFTensor0N(0, bc);
+          auto diff_base_col= row_data.getFTensor1DiffN<3>(0, bc);
 
           auto field1_values = getFTensor1FromMat<3>(*field1ValuesDataPtr);
           auto field2_values = getFTensor0FromVec(*field2ValuesDataPtr);

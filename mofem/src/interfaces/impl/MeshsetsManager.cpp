@@ -668,7 +668,7 @@ struct BlockData {
   int numberOfAttributes;
   std::vector<double> aTtr;
 
-  BlockData() : aTtr(10, 0) {
+  BlockData() : numberOfAttributes(-1), aTtr(10, 0) {
     std::memcpy(dispBc.data.name, "Displacement", 12);
     std::memcpy(forceBc.data.name, "Force", 5);
     std::memcpy(pressureBc.data.name, "Pressure", 8);

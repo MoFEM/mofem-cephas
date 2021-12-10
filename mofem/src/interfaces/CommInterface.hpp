@@ -30,7 +30,8 @@ namespace MoFEM {
  */
 struct CommInterface : public UnknownInterface {
 
-  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index, UnknownInterface **iface) const;
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
+                                 UnknownInterface **iface) const;
 
   MoFEM::Core &cOre;
   bool dEbug;
@@ -69,8 +70,8 @@ struct CommInterface : public UnknownInterface {
   *
   */
   MoFEMErrorCode resolveSharedFiniteElements(const Problem *problem_ptr,
-                                                const std::string &fe_name,
-                                                int verb = DEFAULT_VERBOSITY);
+                                             const std::string &fe_name,
+                                             int verb = DEFAULT_VERBOSITY);
 
   /**
   * \brief resolve shared entities for finite elements in the problem
@@ -96,8 +97,8 @@ struct CommInterface : public UnknownInterface {
   *
   */
   MoFEMErrorCode resolveSharedFiniteElements(const std::string &name,
-                                                const std::string &fe_name,
-                                                int verb = DEFAULT_VERBOSITY);
+                                             const std::string &fe_name,
+                                             int verb = DEFAULT_VERBOSITY);
 
   /** \name Make entities multishared */
 
@@ -113,9 +114,9 @@ struct CommInterface : public UnknownInterface {
    * @return MoFEMErrorCode
    */
   MoFEMErrorCode makeEntitiesMultishared(const EntityHandle *entities,
-                                           const int num_entities,
-                                           const int owner_proc = 0,
-                                           int verb = DEFAULT_VERBOSITY);
+                                         const int num_entities,
+                                         const int owner_proc = 0,
+                                         int verb = DEFAULT_VERBOSITY);
 
   /**
    * @brief make entities from proc 0 shared on all proc
@@ -128,8 +129,8 @@ struct CommInterface : public UnknownInterface {
    * @return MoFEMErrorCode
    */
   MoFEMErrorCode makeEntitiesMultishared(Range &entities,
-                                           const int owner_proc = 0,
-                                           int verb = DEFAULT_VERBOSITY);
+                                         const int owner_proc = 0,
+                                         int verb = DEFAULT_VERBOSITY);
 
   /**
    * @brief make field entities multi shared
@@ -142,8 +143,8 @@ struct CommInterface : public UnknownInterface {
    * @return MoFEMErrorCode
    */
   MoFEMErrorCode makeFieldEntitiesMultishared(const std::string field_name,
-                                                 const int owner_proc = 0,
-                                                 int verb = DEFAULT_VERBOSITY);
+                                              const int owner_proc = 0,
+                                              int verb = DEFAULT_VERBOSITY);
 
   /**
    * @brief Exchange field data

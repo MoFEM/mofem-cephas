@@ -470,38 +470,6 @@ struct DataForcesAndSourcesCore {
      * \brief Get base function as Tensor0 (Loop by integration points)
      *
      * \param base
-     * \param bb base function
-     * \return Tensor0
-
-     Note that:
-     \code
-     t0 = data.getFTensor0N(base,bb);
-     ++t0
-     \endcode
-     Increment in above code will move pointer to base function in next
-     integration point.
-
-     *
-     */
-    inline FTensor::Tensor0<double *>
-    getFTensor0N(const FieldApproximationBase base, const int bb);
-
-    /**
-     * \brief Get base function as Tensor0 (Loop by integration points)
-     *
-     * Return base functions for field base
-     *
-     * \param bb base function
-     * \return Tensor0
-     *
-     *
-     */
-    inline FTensor::Tensor0<double *> getFTensor0N(const int bb);
-
-    /**
-     * \brief Get base function as Tensor0 (Loop by integration points)
-     *
-     * \param base
      * \param gg integration points
      * \param bb base function
      * \return Tensor0
@@ -549,7 +517,7 @@ struct DataForcesAndSourcesCore {
      *
      */
     template <int Tensor_Dim>
-    FTensor::Tensor1<double *, Tensor_Dim>
+    FTensor::Tensor1<FTensor::PackPtr<double *, Tensor_Dim>, Tensor_Dim>
     getFTensor1DiffN(const FieldApproximationBase base);
 
     /**
@@ -569,51 +537,8 @@ struct DataForcesAndSourcesCore {
      *
      */
     template <int Tensor_Dim>
-    FTensor::Tensor1<double *, Tensor_Dim> getFTensor1DiffN();
-
-    /**
-     * \brief Get derivatives of base functions (Loop by integration points)
-     *
-     * For volume element like tetrahedral or prism,
-     * \code
-     * Tensor1<double*,3> diff_base = data.getFTensor1DiffN<3>(base,bb);
-     * \endcode
-     * where bb is base function. Operator ++diff_base will move tensor pointer
-     * to next integration point.
-     *
-     * For face element like triangle or quad
-     * \code
-     * Tensor1<double*,2> diff_base = data.getFTensor1DiffN<2>(base,bb);
-     * \endcode
-     *
-     * \param base functions
-     * \return Tensor rank 1 (vector)
-     *
-     */
-    template <int Tensor_Dim>
-    FTensor::Tensor1<double *, Tensor_Dim>
-    getFTensor1DiffN(const FieldApproximationBase base, const int bb);
-
-    /**
-     * \brief Get derivatives of base functions (Loop by integration points)
-     *
-     * For volume element like tetrahedral or prism,
-     * \code
-     * Tensor1<double*,3> diff_base = data.getFTensor1DiffN<3>(bb);
-     * \endcode
-     * where bb is base function. Operator ++diff_base will move tensor pointer
-     * to next integration point.
-     *
-     * For face element like triangle or quad
-     * \code
-     * Tensor1<double*,2> diff_base = data.getFTensor1DiffN<2>(bb);
-     * \endcode
-     *
-     * \return Tensor rank 1 (vector)
-     *
-     */
-    template <int Tensor_Dim>
-    FTensor::Tensor1<double *, Tensor_Dim> getFTensor1DiffN(const int bb);
+    FTensor::Tensor1<FTensor::PackPtr<double *, Tensor_Dim>, Tensor_Dim>
+    getFTensor1DiffN();
 
     /**
      * \brief Get derivatives of base functions (Loop by integration points)
@@ -634,7 +559,7 @@ struct DataForcesAndSourcesCore {
      *
      */
     template <int Tensor_Dim>
-    FTensor::Tensor1<double *, Tensor_Dim>
+    FTensor::Tensor1<FTensor::PackPtr<double *, Tensor_Dim>, Tensor_Dim>
     getFTensor1DiffN(const FieldApproximationBase base, const int gg,
                      const int bb);
 
@@ -657,8 +582,8 @@ struct DataForcesAndSourcesCore {
      *
      */
     template <int Tensor_Dim>
-    FTensor::Tensor1<double *, Tensor_Dim> getFTensor1DiffN(const int gg,
-                                                            const int bb);
+    FTensor::Tensor1<FTensor::PackPtr<double *, Tensor_Dim>, Tensor_Dim>
+    getFTensor1DiffN(const int gg, const int bb);
 
     /** \brief Get base functions for Hdiv/Hcurl spaces
 
@@ -1468,16 +1393,16 @@ DataForcesAndSourcesCore::EntData::getFTensor0N() {
   return getFTensor0N(bAse);
 };
 
-FTensor::Tensor0<double *> DataForcesAndSourcesCore::EntData::getFTensor0N(
-    const FieldApproximationBase base, const int bb) {
-  double *ptr = &getN(base)(0, bb);
-  return FTensor::Tensor0<double *>(ptr, getN(base).size2());
-};
+// FTensor::Tensor0<double *> DataForcesAndSourcesCore::EntData::getFTensor0N(
+//     const FieldApproximationBase base, const int bb) {
+//   double *ptr = &getN(base)(0, bb);
+//   return FTensor::Tensor0<double *>(ptr, getN(base).size2());
+// };
 
-FTensor::Tensor0<double *>
-DataForcesAndSourcesCore::EntData::getFTensor0N(const int bb) {
-  return getFTensor0N(bAse, bb);
-};
+// FTensor::Tensor0<double *>
+// DataForcesAndSourcesCore::EntData::getFTensor0N(const int bb) {
+//   return getFTensor0N(bAse, bb);
+// };
 
 FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
 DataForcesAndSourcesCore::EntData::getFTensor0N(
@@ -1641,34 +1566,20 @@ DataForcesAndSourcesCore::EntData::getFTensor2N<3, 3>(
 /**@{*/
 
 template <>
-FTensor::Tensor1<double *, 3>
+FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
 DataForcesAndSourcesCore::EntData::getFTensor1DiffN<3>(
     const FieldApproximationBase base);
 template <>
-FTensor::Tensor1<double *, 3>
+FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
 DataForcesAndSourcesCore::EntData::getFTensor1DiffN<3>();
 
 template <>
-FTensor::Tensor1<double *, 2>
+FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>
 DataForcesAndSourcesCore::EntData::getFTensor1DiffN<2>(
     const FieldApproximationBase base);
 template <>
-FTensor::Tensor1<double *, 2>
+FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>
 DataForcesAndSourcesCore::EntData::getFTensor1DiffN<2>();
-template <>
-FTensor::Tensor1<double *, 3>
-DataForcesAndSourcesCore::EntData::getFTensor1DiffN<3>(
-    const FieldApproximationBase base, const int bb);
-template <>
-FTensor::Tensor1<double *, 3>
-DataForcesAndSourcesCore::EntData::getFTensor1DiffN<3>(const int bb);
-template <>
-FTensor::Tensor1<double *, 2>
-DataForcesAndSourcesCore::EntData::getFTensor1DiffN<2>(
-    const FieldApproximationBase base, const int bb);
-template <>
-FTensor::Tensor1<double *, 2>
-DataForcesAndSourcesCore::EntData::getFTensor1DiffN<2>(const int bb);
 
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>

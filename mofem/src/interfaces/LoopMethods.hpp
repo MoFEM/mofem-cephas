@@ -337,8 +337,25 @@ struct BasicMethod : public KspMethod, SnesMethod, TSMethod {
    */
   virtual MoFEMErrorCode postProcess();
 
+  /**
+   * @brief Get the cache weak ptr object
+   *
+   * \note This store problem information on entities about DOFs. Each problem
+   * store different information. If you iterate over finite elements in
+   * preprocessor of TS solve element, us TS cache in the loop. Otherwise you
+   * will create undetermined behaviour or segmentation error. This is necessary
+   * compromise over bug resilience for memory saving and preformans.
+   *
+   * @return boost::weak_ptr<CacheTuple>
+   */
+  inline boost::weak_ptr<CacheTuple> getCacheWeakPtr() const {
+    return cacheWeakPtr;
+  }
+
   boost::movelib::unique_ptr<bool> vecAssembleSwitch;
   boost::movelib::unique_ptr<bool> matAssembleSwitch;
+
+  boost::weak_ptr<CacheTuple> cacheWeakPtr; // cache pointer entity data
 };
 
 /**

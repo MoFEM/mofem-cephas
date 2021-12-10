@@ -227,7 +227,7 @@ MoFEMErrorCode OpSetInvJacH1::doWork(int side, EntityType type,
       }
     }
 
-    diff_n.data().swap(diffNinvJac.data());
+    diff_n.swap(diffNinvJac);
 
     MoFEMFunctionReturnHot(0);
   };
@@ -291,7 +291,7 @@ OpSetInvJacHdivAndHcurl::doWork(int side, EntityType type,
       }
     }
 
-    data.getDiffN(base).data().swap(diffHdivInvJac.data());
+    data.getDiffN(base).swap(diffHdivInvJac);
   }
 
   MoFEMFunctionReturn(0);
@@ -328,7 +328,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransform::doWork(
             ++t_transformed_n;
           }
         }
-        data.getN(base).data().swap(piolaN.data());
+        data.getN(base).swap(piolaN);
       }
 
       piolaDiffN.resize(nb_gauss_pts, data.getDiffN(base).size2(), false);
@@ -352,7 +352,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransform::doWork(
             ++t_transformed_diff_n;
           }
         }
-        data.getDiffN(base).data().swap(piolaDiffN.data());
+        data.getDiffN(base).swap(piolaDiffN);
       }
     }
   }
@@ -404,8 +404,8 @@ OpSetCovariantPiolaTransform::doWork(int side, EntityType type,
         ++t_transformed_diff_n;
       }
     }
-    data.getN(base).data().swap(piolaN.data());
-    data.getDiffN(base).data().swap(piolaDiffN.data());
+    data.getN(base).swap(piolaN);
+    data.getDiffN(base).swap(piolaDiffN);
   }
 
   // data.getBase() = base;
@@ -709,8 +709,8 @@ MoFEMErrorCode OpSetCovariantPiolaTransformOnFace::doWork(
       if (cc != nb_gauss_pts * nb_dofs)
         SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Data inconsistency");
 
-      baseN.data().swap(piola_n.data());
-      diffBaseN.data().swap(diff_piola_n.data());
+      baseN.swap(piola_n);
+      diffBaseN.swap(diff_piola_n);
     }
   }
 

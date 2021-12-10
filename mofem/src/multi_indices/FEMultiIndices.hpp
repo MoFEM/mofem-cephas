@@ -29,7 +29,7 @@ struct EntFiniteElement;
  */
 typedef boost::function<MoFEMErrorCode(Interface &moab, const Field &field,
                                        const EntFiniteElement &fe,
-                                       Range &adjacency)>
+                                       std::vector<EntityHandle> &adjacency)>
     ElementAdjacencyFunct;
 
 /**
@@ -139,22 +139,22 @@ struct DefaultElementAdjacency {
 
   static MoFEMErrorCode defaultVertex(Interface &moab, const Field &field,
                                       const EntFiniteElement &fe,
-                                      Range &adjacency);
+                                      std::vector<EntityHandle> &adjacency);
   static MoFEMErrorCode defaultEdge(Interface &moab, const Field &field,
                                     const EntFiniteElement &fe,
-                                    Range &adjacency);
+                                    std::vector<EntityHandle> &adjacency);
   static MoFEMErrorCode defaultFace(Interface &moab, const Field &field,
                                     const EntFiniteElement &fe,
-                                    Range &adjacency);
+                                    std::vector<EntityHandle> &adjacency);
   static MoFEMErrorCode defaultVolume(Interface &moab, const Field &field,
-                                   const EntFiniteElement &fe,
-                                   Range &adjacency);
+                                      const EntFiniteElement &fe,
+                                      std::vector<EntityHandle> &adjacency);
   static MoFEMErrorCode defaultPrism(Interface &moab, const Field &field,
                                      const EntFiniteElement &fe,
-                                     Range &adjacency);
+                                     std::vector<EntityHandle> &adjacency);
   static MoFEMErrorCode defaultMeshset(Interface &moab, const Field &field,
                                        const EntFiniteElement &fe,
-                                       Range &adjacency);
+                                       std::vector<EntityHandle> &adjacency);
 
   using DefEntTypeMap = std::array<bool, MBMAXTYPE>;
 
@@ -655,7 +655,7 @@ struct EntFiniteElement
   }
 
   MoFEMErrorCode getElementAdjacency(const boost::shared_ptr<Field> field_ptr,
-                                     Range &adjacency);
+                                     std::vector<EntityHandle> &adjacency);
 
 private:
   mutable boost::shared_ptr<FieldEntity_vector_view> dataFieldEnts;
