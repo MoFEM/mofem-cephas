@@ -232,7 +232,7 @@ template <int SPACE_DIM, typename OpBase>
 struct OpMixScalarTimesDivImpl<SPACE_DIM, GAUSS, OpBase> : public OpBase {
   OpMixScalarTimesDivImpl(const std::string row_field_name,
                           const std::string col_field_name,
-                          ConstantFun alpha_fun,
+                          ScalarFun alpha_fun,
                           const bool assemble_transpose = false,
                           const bool only_transpose = false)
       : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
@@ -244,7 +244,7 @@ struct OpMixScalarTimesDivImpl<SPACE_DIM, GAUSS, OpBase> : public OpBase {
 
 protected:
   FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
-  ConstantFun alphaConstant;
+  ScalarFun alphaConstant;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
                            DataForcesAndSourcesCore::EntData &col_data);
 };
@@ -511,7 +511,7 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
   };
 
   /**
-   * @brief Integrate \f$(\lambda,u_{,j})_\Omega\f$
+   * @brief Integrate \f$(\lambda,u_{i,i})_\Omega\f$
    *
    * @tparam SPACE_DIM
    */
@@ -1124,19 +1124,23 @@ MoFEMErrorCode OpMixScalarTimesDivImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
 #endif
 
   auto t_w = this->getFTensor0IntegrationWeight();
+  auto t_coords = this->getFTensor1CoordsAtGaussPts();
   size_t nb_base_functions_row = row_data.getN().size2();
+
   auto t_row_base = row_data.getFTensor0N();
-  const double alpha_constant = alphaConstant();
+  const double vol = this->getMeasure();
   for (size_t gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
 
-    const double alpha = alpha_constant * this->getMeasure() * t_w;
+    const double alpha =
+        alphaConstant(t_coords(0), t_coords(1), t_coords(2)) * t_w * vol;
 
     size_t rr = 0;
     auto t_m = getFTensor1FromPtr<SPACE_DIM>(OpBase::locMat.data().data());
     for (; rr != OpBase::nbRows; ++rr) {
+      const double r_val = alpha * t_row_base;
       auto t_col_diff_base = col_data.getFTensor1DiffN<SPACE_DIM>(gg, 0);
       for (size_t cc = 0; cc != OpBase::nbCols / SPACE_DIM; ++cc) {
-        t_m(i) += alpha * t_row_base * t_col_diff_base(i);
+        t_m(i) += r_val * t_col_diff_base(i);
         ++t_col_diff_base;
         ++t_m;
       }
@@ -1146,6 +1150,7 @@ MoFEMErrorCode OpMixScalarTimesDivImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
       ++t_row_base;
 
     ++t_w;
+    ++t_coords;
   }
 
   MoFEMFunctionReturn(0);
