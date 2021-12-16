@@ -315,7 +315,8 @@ VecManager::setGlobalGhostVector(const Problem *problem_ptr, RowColData rc,
         &problem_ptr->numeredColDofsPtr->get<PetscGlobalIdx_mi_tag>());
     break;
   default:
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+            "Function works only for ROWs and COLs");
   }
   DofsByGlobalIdx::iterator miit = dofs->lower_bound(0);
   DofsByGlobalIdx::iterator hi_miit = dofs->upper_bound(nb_dofs);
@@ -326,12 +327,14 @@ VecManager::setGlobalGhostVector(const Problem *problem_ptr, RowColData rc,
     CHKERR VecScatterCreateToAll(V, &ctx, &V_glob);
     CHKERR VecScatterBegin(ctx, V, V_glob, INSERT_VALUES, SCATTER_FORWARD);
     CHKERR VecScatterEnd(ctx, V, V_glob, INSERT_VALUES, SCATTER_FORWARD);
+    auto comm = PetscObjectComm((PetscObject)V);
     int size;
     CHKERR VecGetSize(V_glob, &size);
     if (size != nb_dofs) {
-      SETERRQ(
-          PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-          "data inconsistency: nb. of dofs and declared nb. dofs in database");
+      SETERRQ(comm, MOFEM_DATA_INCONSISTENCY,
+              "Size of vector is inconsistent with size of problem. You could "
+              "use wrong vector with wrong problem, or you created vector "
+              "before you remove DOFs from problem.");
     }
     PetscScalar *array;
     CHKERR VecGetArray(V_glob, &array);
@@ -345,7 +348,7 @@ VecManager::setGlobalGhostVector(const Problem *problem_ptr, RowColData rc,
         (*miit)->getFieldData() += array[(*miit)->getPetscGlobalDofIdx()];
       break;
     default:
-      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
+      SETERRQ(comm, MOFEM_NOT_IMPLEMENTED, "not implemented");
     }
     CHKERR VecRestoreArray(V_glob, &array);
     CHKERR VecScatterDestroy(&ctx);
@@ -353,7 +356,7 @@ VecManager::setGlobalGhostVector(const Problem *problem_ptr, RowColData rc,
     break;
   }
   default:
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
+    SETERRQ(comm, MOFEM_NOT_IMPLEMENTED, "not implemented");
   }
   MoFEMFunctionReturn(0);
 }
