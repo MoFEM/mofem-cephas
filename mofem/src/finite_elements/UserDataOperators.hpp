@@ -436,7 +436,7 @@ struct OpCalculateVectorFieldValues
  * rank 1, i.e. vector field
  *
  */
-template <int Tensor_Dim>
+template <int Tensor_Dim, CoordinateTypes COORDINATE_SYSTEM = CARTESIAN>
 struct OpCalculateDivergenceVectorFieldValues
     : public ForcesAndSourcesCore::UserDataOperator {
 
@@ -453,6 +453,12 @@ struct OpCalculateDivergenceVectorFieldValues
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data) {
     MoFEMFunctionBegin;
+
+    // When we move to C++17 add if constexpr()
+    if (COORDINATE_SYSTEM == POLAR || COORDINATE_SYSTEM == SPHERICAL)
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+               "%s coordiante not implemented",
+               CoordinateTypesNames[COORDINATE_SYSTEM]);
 
     const size_t nb_gauss_pts = getGaussPts().size2();
     auto &vec = *dataPtr;
@@ -475,20 +481,52 @@ struct OpCalculateDivergenceVectorFieldValues
                   "Number of dofs should multiple of dimensions");
         }
 #endif
-        auto diff_base_function = data.getFTensor1DiffN<Tensor_Dim>();
-        for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
-          auto field_data = data.getFTensor1FieldData<Tensor_Dim>();
-          size_t bb = 0;
-          for (; bb != size; ++bb) {
-            values_at_gauss_pts += field_data(I) * diff_base_function(I);
-            ++field_data;
-            ++diff_base_function;
+
+        // When we move to C++17 add if constexpr()
+        if (COORDINATE_SYSTEM == CARTESIAN) {
+          auto diff_base_function = data.getFTensor1DiffN<Tensor_Dim>();
+          for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
+            auto field_data = data.getFTensor1FieldData<Tensor_Dim>();
+            size_t bb = 0;
+            for (; bb != size; ++bb) {
+              values_at_gauss_pts += field_data(I) * diff_base_function(I);
+              ++field_data;
+              ++diff_base_function;
+            }
+            // Number of dofs can be smaller than number of Tensor_Dim x base
+            // functions
+            for (; bb != nb_base_functions; ++bb)
+              ++diff_base_function;
+            ++values_at_gauss_pts;
           }
-          // Number of dofs can be smaller than number of Tensor_Dim x base
-          // functions
-          for (; bb != nb_base_functions; ++bb)
-            ++diff_base_function;
-          ++values_at_gauss_pts;
+        }
+
+        // When we move to C++17 add if constexpr()
+        if (COORDINATE_SYSTEM == CYLINDRICAL) {
+          auto t_coords = getFTensor1CoordsAtGaussPts();
+          auto values_at_gauss_pts = getFTensor0FromVec(vec);
+          auto base_function = data.getFTensor0N();
+          auto diff_base_function = data.getFTensor1DiffN<Tensor_Dim>();
+          for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
+            auto field_data = data.getFTensor1FieldData<Tensor_Dim>();
+            size_t bb = 0;
+            for (; bb != size; ++bb) {
+              values_at_gauss_pts += field_data(I) * diff_base_function(I);
+              values_at_gauss_pts +=
+                  field_data(0) * base_function / t_coords(0);
+              ++field_data;
+              ++base_function;
+              ++diff_base_function;
+            }
+            // Number of dofs can be smaller than number of Tensor_Dim x base
+            // functions
+            for (; bb != nb_base_functions; ++bb) {
+              ++base_function;
+              ++diff_base_function;
+            }
+            ++values_at_gauss_pts;
+            ++t_coords;
+          }
         }
       }
     }

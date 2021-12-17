@@ -225,11 +225,13 @@ protected:
                            DataForcesAndSourcesCore::EntData &col_data);
 };
 
-template <int SPACE_DIM, IntegrationType I, typename OpBase>
+template <int SPACE_DIM, IntegrationType I, typename OpBase,
+          CoordinateTypes COORDINATE_SYSTEM>
 struct OpMixScalarTimesDivImpl {};
 
-template <int SPACE_DIM, typename OpBase>
-struct OpMixScalarTimesDivImpl<SPACE_DIM, GAUSS, OpBase> : public OpBase {
+template <int SPACE_DIM, typename OpBase, CoordinateTypes COORDINATE_SYSTEM>
+struct OpMixScalarTimesDivImpl<SPACE_DIM, GAUSS, OpBase, COORDINATE_SYSTEM>
+    : public OpBase {
   OpMixScalarTimesDivImpl(const std::string row_field_name,
                           const std::string col_field_name,
                           ScalarFun alpha_fun,
@@ -515,11 +517,12 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
    *
    * @tparam SPACE_DIM
    */
-  template <int SPACE_DIM>
+  template <int SPACE_DIM, CoordinateTypes COORDINATE_SYSTEM = CARTESIAN>
   struct OpMixScalarTimesDiv
-      : public OpMixScalarTimesDivImpl<SPACE_DIM, I, OpBase> {
-    using OpMixScalarTimesDivImpl<SPACE_DIM, I,
-                                  OpBase>::OpMixScalarTimesDivImpl;
+      : public OpMixScalarTimesDivImpl<SPACE_DIM, I, OpBase,
+                                       COORDINATE_SYSTEM> {
+    using OpMixScalarTimesDivImpl<SPACE_DIM, I, OpBase,
+                                  COORDINATE_SYSTEM>::OpMixScalarTimesDivImpl;
   };
 
   /**
@@ -1111,8 +1114,9 @@ MoFEMErrorCode OpMixDivTimesVecImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
   MoFEMFunctionReturn(0);
 }
 
-template <int SPACE_DIM, typename OpBase>
-MoFEMErrorCode OpMixScalarTimesDivImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
+template <int SPACE_DIM, typename OpBase, CoordinateTypes COORDINATE_SYSTEM>
+MoFEMErrorCode
+OpMixScalarTimesDivImpl<SPACE_DIM, GAUSS, OpBase, COORDINATE_SYSTEM>::iNtegrate(
     DataForcesAndSourcesCore::EntData &row_data,
     DataForcesAndSourcesCore::EntData &col_data) {
   MoFEMFunctionBegin;
@@ -1123,29 +1127,56 @@ MoFEMErrorCode OpMixScalarTimesDivImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
             "Number of rows in matrix should be multiple of space dimensions");
 #endif
 
+  // When we move to C++17 add if constexpr()
+  if (COORDINATE_SYSTEM == POLAR || COORDINATE_SYSTEM == SPHERICAL)
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+             "%s coordiante not implemented",
+             CoordinateTypesNames[COORDINATE_SYSTEM]);
+
   auto t_w = this->getFTensor0IntegrationWeight();
   auto t_coords = this->getFTensor1CoordsAtGaussPts();
   size_t nb_base_functions_row = row_data.getN().size2();
-
   auto t_row_base = row_data.getFTensor0N();
   const double vol = this->getMeasure();
   for (size_t gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
 
     const double alpha =
-        alphaConstant(t_coords(0), t_coords(1), t_coords(2)) * t_w * vol;
+        alphaConstant(t_coords(0), t_coords(1), t_coords(2)) * t_w * vol;        
 
     size_t rr = 0;
     auto t_m = getFTensor1FromPtr<SPACE_DIM>(OpBase::locMat.data().data());
-    for (; rr != OpBase::nbRows; ++rr) {
-      const double r_val = alpha * t_row_base;
-      auto t_col_diff_base = col_data.getFTensor1DiffN<SPACE_DIM>(gg, 0);
-      for (size_t cc = 0; cc != OpBase::nbCols / SPACE_DIM; ++cc) {
-        t_m(i) += r_val * t_col_diff_base(i);
-        ++t_col_diff_base;
-        ++t_m;
+
+    // When we move to C++17 add if constexpr()
+    if (COORDINATE_SYSTEM == CARTESIAN) {
+      for (; rr != OpBase::nbRows; ++rr) {
+        const double r_val = alpha * t_row_base;
+        auto t_col_diff_base = col_data.getFTensor1DiffN<SPACE_DIM>(gg, 0);
+        for (size_t cc = 0; cc != OpBase::nbCols / SPACE_DIM; ++cc) {
+          t_m(i) += r_val * t_col_diff_base(i);
+          ++t_col_diff_base;
+          ++t_m;
+        }
+        ++t_row_base;
       }
-      ++t_row_base;
     }
+
+    // When we move to C++17 add if constexpr()
+    if (COORDINATE_SYSTEM == CYLINDRICAL) {
+      for (; rr != OpBase::nbRows; ++rr) {
+        const double r_val = alpha * t_row_base;
+        auto t_col_base = col_data.getFTensor0N(gg, 0);
+        auto t_col_diff_base = col_data.getFTensor1DiffN<SPACE_DIM>(gg, 0);
+        for (size_t cc = 0; cc != OpBase::nbCols / SPACE_DIM; ++cc) {
+          t_m(i) += r_val * t_col_diff_base(i);
+          t_m(0) += (r_val / t_coords(0)) * t_col_base;
+          ++t_col_base;
+          ++t_col_diff_base;
+          ++t_m;
+        }
+        ++t_row_base;
+      }
+    }
+
     for (; rr < nb_base_functions_row; ++rr)
       ++t_row_base;
 
