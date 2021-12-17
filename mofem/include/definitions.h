@@ -112,6 +112,24 @@ enum MoFEMTypes {
   MF_NOT_THROW = 1 << 2
 };
 
+/**
+ * @brief Coordinate system names
+ * 
+ */
+const static char *const CoordinateTypesNames[] = {"Cartesian", "Polar",
+                                                   "Cylindrical", "Spherical"};
+/**
+ * @brief Coodinate system
+ *
+ */
+enum CoordinateTypes {
+  CARTESIAN,
+  POLAR,
+  CYLINDRICAL,
+  SPHERICAL,
+  LAST_COORDINATE_SYSTEM
+};
+
 /// \brief RowColData
 enum RowColData { ROW = 0, COL, DATA, LASTROWCOLDATA };
 
