@@ -320,6 +320,7 @@ VecManager::setGlobalGhostVector(const Problem *problem_ptr, RowColData rc,
   }
   DofsByGlobalIdx::iterator miit = dofs->lower_bound(0);
   DofsByGlobalIdx::iterator hi_miit = dofs->upper_bound(nb_dofs);
+  auto comm = PetscObjectComm((PetscObject)V);
   switch (scatter_mode) {
   case SCATTER_REVERSE: {
     VecScatter ctx;
@@ -327,7 +328,6 @@ VecManager::setGlobalGhostVector(const Problem *problem_ptr, RowColData rc,
     CHKERR VecScatterCreateToAll(V, &ctx, &V_glob);
     CHKERR VecScatterBegin(ctx, V, V_glob, INSERT_VALUES, SCATTER_FORWARD);
     CHKERR VecScatterEnd(ctx, V, V_glob, INSERT_VALUES, SCATTER_FORWARD);
-    auto comm = PetscObjectComm((PetscObject)V);
     int size;
     CHKERR VecGetSize(V_glob, &size);
     if (size != nb_dofs) {
