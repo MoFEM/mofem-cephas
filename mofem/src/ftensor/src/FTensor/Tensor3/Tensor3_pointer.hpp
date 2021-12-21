@@ -189,6 +189,11 @@ namespace FTensor
                    Number<Tensor_Dim2>());
       return *this;
     }
+
+    private:
+      template <int I>
+      Tensor3(const Tensor3<PackPtr<T *, I>, Tensor_Dim0, Tensor_Dim1,
+                            Tensor_Dim2> &) = delete;
   };
 
   template <class T, int Tensor_Dim0, int Tensor_Dim1, int Tensor_Dim2, int I>

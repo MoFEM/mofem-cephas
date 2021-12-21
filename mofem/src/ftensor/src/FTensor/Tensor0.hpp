@@ -93,10 +93,9 @@ namespace FTensor
   class Tensor0<PackPtr<T *, I>> : public Tensor0<T *> {
 
   public:
-    Tensor0(T *d) : Tensor0<T *>(d) {}
+    Tensor0(T *d) : Tensor0<T *>(d, I) {}
 
-     template <class U> const Tensor0 &operator=(const U &d)
-    {
+    template <class U> const Tensor0 &operator=(const U &d) {
       *Tensor0<T *>::data = d;
       return *this;
     }

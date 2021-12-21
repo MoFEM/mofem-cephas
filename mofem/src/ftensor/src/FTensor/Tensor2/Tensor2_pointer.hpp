@@ -216,6 +216,18 @@ namespace FTensor
     }
 
     T internal_contract(Number<1>) const { return *data[0][0]; }
+
+    private:
+
+      /**
+       * @brief Preventing casting on derived class
+       * 
+       * That can be source of errors
+       * 
+       */
+      template <int I>
+      Tensor2(const Tensor2<PackPtr<T *, I>, Tensor_Dim0, Tensor_Dim1> &) =
+          delete;
   };
 
   template <class T, int Tensor_Dim0, int Tensor_Dim1, int I>
@@ -227,7 +239,7 @@ namespace FTensor
 
     /* Initializations for varying numbers of elements. */
     template <class... U>
-    Tensor2(U *... d) : Tensor2<T *, Tensor_Dim0, Tensor_Dim1>(d...) {}
+    Tensor2(U *...d) : Tensor2<T *, Tensor_Dim0, Tensor_Dim1>(d...) {}
 
     Tensor2(): Tensor2<T, Tensor_Dim0, Tensor_Dim1>() {}
 

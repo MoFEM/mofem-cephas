@@ -252,6 +252,11 @@ namespace FTensor
           data[i][j] += inc;
       return *this;
     }
+
+    private:
+      template <int I>
+      Christof(const Christof<PackPtr<T *, I>, Tensor_Dim0, Tensor_Dim12> &) =
+          delete;
   };
 
   template <class T, int Tensor_Dim0, int Tensor_Dim12, int I>
