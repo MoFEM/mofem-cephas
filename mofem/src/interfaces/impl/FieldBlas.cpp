@@ -68,17 +68,17 @@ MoFEMErrorCode FieldBlas::fieldLambda(FieldBlas::TwoFieldFunction lambda,
       FieldEntity::getLoBitNumberUId((*x_fit)->getBitNumber()));
   auto x_eit_hi = field_ents->get<Unique_mi_tag>().upper_bound(
       FieldEntity::getHiBitNumberUId((*x_fit)->getBitNumber()));
+  auto y_eit_hi = field_ents->get<Unique_mi_tag>().upper_bound(
+      FieldEntity::getHiBitNumberUId((*y_fit)->getBitNumber()));
 
   for (; x_eit != x_eit_hi;) {
-
-    VectorAdaptor x_field_data = (*x_eit)->getEntFieldData();
 
     const auto lo_uid = FieldEntity::getLocalUniqueIdCalculate(
         (*y_fit)->getBitNumber(), (*x_eit)->getEnt());
     auto y_eit = field_ents->get<Unique_mi_tag>().find(lo_uid);
 
-    auto missing = [&]() {
-      MoFEMFunctionBeginHot;
+    if (y_eit == field_ents->end()) {
+
       if (creat_if_missing) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                 "Not implemented creation of DOFs on the fly");
@@ -87,40 +87,39 @@ MoFEMErrorCode FieldBlas::fieldLambda(FieldBlas::TwoFieldFunction lambda,
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Missing entity");
         }
       }
-      MoFEMFunctionReturnHot(0);
-    };
-
-    if (y_eit == field_ents->end())
-      CHKERR missing();
-
-    auto check = [&]() {
-      if (x_eit == field_ents->end())
-        return false;
-      if (y_eit == field_ents->end())
-        return false;
-      if ((*y_eit)->getEnt() != (*x_eit)->getEnt())
-        return false;
-      return true;
-    };
-
-    do {
-
-      VectorAdaptor y_field_data = (*y_eit)->getEntFieldData();
-      const auto size_x = x_field_data.size();
-      const auto size_y = y_field_data.size();
-      if (size_x > size_y)
-        CHKERR missing();
-
-      size_t dd = 0;
-      for (; dd != std::min(size_x, size_y); ++dd)
-        CHKERR lambda(y_field_data[dd], x_field_data[dd]);
-      for (; dd < size_y; ++dd)
-        y_field_data[dd] = 0;
 
       ++x_eit;
-      ++y_eit;
 
-    } while (check());
+    } else {
+
+      auto check = [&]() {
+        if (x_eit == x_eit_hi || x_eit == field_ents->end())
+          return false;
+        if (y_eit == y_eit_hi || y_eit == field_ents->end())
+          return false;
+        if ((*y_eit)->getEnt() != (*x_eit)->getEnt())
+          return false;
+        return true;
+      };
+
+      do {
+
+        VectorAdaptor x_field_data = (*x_eit)->getEntFieldData();
+        VectorAdaptor y_field_data = (*y_eit)->getEntFieldData();
+        const auto size_x = x_field_data.size();
+        const auto size_y = y_field_data.size();
+
+        size_t dd = 0;
+        for (; dd != std::min(size_x, size_y); ++dd)
+          CHKERR lambda(y_field_data[dd], x_field_data[dd]);
+        for (; dd < size_y; ++dd)
+          y_field_data[dd] = 0;
+
+        ++x_eit;
+        ++y_eit;
+
+      } while (check());
+    }
   }
 
   MoFEMFunctionReturn(0);
