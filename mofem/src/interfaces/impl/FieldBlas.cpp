@@ -30,11 +30,149 @@ FieldBlas::query_interface(boost::typeindex::type_index type_index,
 FieldBlas::FieldBlas(const MoFEM::Core &core)
     : cOre(const_cast<MoFEM::Core &>(core)), dEbug(false) {}
 
-MoFEMErrorCode FieldBlas::fieldLambda(FieldBlas::TwoFieldFunction lambda,
-                                      const std::string field_name_x,
-                                      const std::string field_name_y,
-                                      bool error_if_missing,
-                                      bool creat_if_missing) {
+MoFEMErrorCode
+FieldBlas::fieldLambdaOnValues(FieldBlas::OneFieldFunctionOnValues lambda,
+                               const std::string field_name, Range *ents_ptr) {
+  const MoFEM::Interface &m_field = cOre;
+  auto fields_ptr = m_field.get_fields();
+  MoFEMFunctionBegin;
+
+  auto x_fit = fields_ptr->get<FieldName_mi_tag>().find(field_name);
+  if (x_fit == fields_ptr->get<FieldName_mi_tag>().end()) {
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "field < %s > not found, (top tip: check spelling)",
+             field_name.c_str());
+  }
+
+  auto wrap_lambda_on_enties =
+      [lambda](boost::shared_ptr<FieldEntity> field_entity_ptr) {
+        MoFEMFunctionBeginHot;
+
+        auto field_data = field_entity_ptr->getEntFieldData();
+        for (auto &v : field_data)
+          v = lambda(v);
+
+        MoFEMFunctionReturnHot(0);
+      };
+
+  CHKERR fieldLambdaOnEntities(wrap_lambda_on_enties, field_name, ents_ptr);
+  MoFEMFunctionReturn(0);
+};
+
+MoFEMErrorCode
+FieldBlas::fieldLambdaOnEntities(FieldBlas::OneFieldFunctionOnEntities lambda,
+                                 const std::string field_name,
+                                 Range *ents_ptr) {
+  const MoFEM::Interface &m_field = cOre;
+  auto fields_ptr = m_field.get_fields();
+  auto field_ents = m_field.get_field_ents();
+  auto dofs_ptr = m_field.get_dofs();
+  MoFEMFunctionBegin;
+
+  auto fit = fields_ptr->get<FieldName_mi_tag>().find(field_name);
+  if (fit == fields_ptr->get<FieldName_mi_tag>().end()) {
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "field < %s > not found, (top tip: check spelling)",
+             field_name.c_str());
+  }
+
+  // End of iterator for y_field
+  const auto bit_number = (*fit)->getBitNumber();
+
+  auto loop_ents = [&](const EntityHandle f, const EntityHandle s) {
+    MoFEMFunctionBeginHot;
+
+    const auto lo_uid = FieldEntity::getLoLocalEntityBitNumber(bit_number, f);
+    const auto hi_uid = FieldEntity::getHiLocalEntityBitNumber(bit_number, s);
+
+    // Start of iterator for x_field
+    auto eit = field_ents->get<Unique_mi_tag>().lower_bound(lo_uid);
+    // End of iterator for x_field
+    auto eit_hi = field_ents->get<Unique_mi_tag>().upper_bound(hi_uid);
+
+    for (; eit != eit_hi; ++eit) {
+      CHKERR lambda(*eit);
+    }
+
+    MoFEMFunctionReturnHot(0);
+  };
+
+  if (ents_ptr) {
+    for (auto p = ents_ptr->const_pair_begin(); p != ents_ptr->const_pair_end();
+         ++p) {
+      CHKERR loop_ents(p->first, p->second);
+    }
+  } else {
+    // we are looping from the very first possible entity handle (MBVERTEX) to
+    // the very last (MBENTITYSET)
+    CHKERR loop_ents(get_id_for_min_type<MBVERTEX>(),
+                     get_id_for_max_type<MBENTITYSET>());
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode FieldBlas::fieldLambdaOnValues(
+    FieldBlas::TwoFieldFunctionOnValues lambda, const std::string field_name_x,
+    const std::string field_name_y, bool error_if_missing, Range *ents_ptr) {
+  const MoFEM::Interface &m_field = cOre;
+  auto fields_ptr = m_field.get_fields();
+  MoFEMFunctionBegin;
+
+  auto x_fit = fields_ptr->get<FieldName_mi_tag>().find(field_name_x);
+  if (x_fit == fields_ptr->get<FieldName_mi_tag>().end()) {
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "x field < %s > not found, (top tip: check spelling)",
+             field_name_x.c_str());
+  }
+  auto y_fit = fields_ptr->get<FieldName_mi_tag>().find(field_name_y);
+  if (y_fit == fields_ptr->get<FieldName_mi_tag>().end()) {
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "y field < %s > not found, (top tip: check spelling)",
+             field_name_y.c_str());
+  }
+  if ((*x_fit)->getSpace() != (*y_fit)->getSpace()) {
+    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "space for field < %s > and field <%s> are not compatible for "
+             "fieldblas",
+             field_name_x.c_str(), field_name_y.c_str());
+  }
+  if ((*x_fit)->getNbOfCoeffs() != (*y_fit)->getNbOfCoeffs()) {
+    SETERRQ2(
+        PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        "rank for field < %s > and field <%s> are not compatible for fieldblas",
+        field_name_x.c_str(), field_name_y.c_str());
+  }
+
+  auto wrap_lambda_on_enties =
+      [lambda](boost::shared_ptr<FieldEntity> y_field_entity_ptr,
+               const boost::shared_ptr<FieldEntity> x_field_entity_ptr) {
+        MoFEMFunctionBeginHot;
+
+        auto x_field_data = x_field_entity_ptr->getEntFieldData();
+        auto y_field_data = y_field_entity_ptr->getEntFieldData();
+        const auto size_x = x_field_data.size();
+        const auto size_y = y_field_data.size();
+
+        size_t dd = 0;
+        for (; dd != std::min(size_x, size_y); ++dd)
+          y_field_data[dd] = lambda(y_field_data[dd], x_field_data[dd]);
+        for (; dd < size_y; ++dd)
+          y_field_data[dd] = 0;
+
+        MoFEMFunctionReturnHot(0);
+      };
+
+  CHKERR fieldLambdaOnEntities(wrap_lambda_on_enties, field_name_x,
+                               field_name_y, error_if_missing, ents_ptr);
+  MoFEMFunctionReturn(0);
+};
+
+MoFEMErrorCode
+FieldBlas::fieldLambdaOnEntities(FieldBlas::TwoFieldFunctionOnEntities lambda,
+                                 const std::string field_name_x,
+                                 const std::string field_name_y,
+                                 bool error_if_missing, Range *ents_ptr) {
   const MoFEM::Interface &m_field = cOre;
   auto fields_ptr = m_field.get_fields();
   auto field_ents = m_field.get_field_ents();
@@ -53,75 +191,104 @@ MoFEMErrorCode FieldBlas::fieldLambda(FieldBlas::TwoFieldFunction lambda,
              "y field < %s > not found, (top tip: check spelling)",
              field_name_y.c_str());
   }
-  if ((*x_fit)->getSpace() != (*y_fit)->getSpace()) {
-    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-             "space for field < %s > and field <%s> are not compatible",
-             field_name_x.c_str(), field_name_y.c_str());
-  }
-  if ((*x_fit)->getNbOfCoeffs() != (*y_fit)->getNbOfCoeffs()) {
-    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-             "rank for field < %s > and field <%s> are not compatible",
-             field_name_x.c_str(), field_name_y.c_str());
-  }
 
-  auto x_eit = field_ents->get<Unique_mi_tag>().lower_bound(
-      FieldEntity::getLoBitNumberUId((*x_fit)->getBitNumber()));
-  auto x_eit_hi = field_ents->get<Unique_mi_tag>().upper_bound(
-      FieldEntity::getHiBitNumberUId((*x_fit)->getBitNumber()));
-  auto y_eit_hi = field_ents->get<Unique_mi_tag>().upper_bound(
-      FieldEntity::getHiBitNumberUId((*y_fit)->getBitNumber()));
+  // End of iterator for y_field
+  const auto x_bit_number = (*x_fit)->getBitNumber();
+  const auto y_bit_number = (*y_fit)->getBitNumber();
+  const auto y_eit_hi = field_ents->get<Unique_mi_tag>().upper_bound(
+      FieldEntity::getHiBitNumberUId(y_bit_number));
 
-  for (; x_eit != x_eit_hi;) {
+  auto loop_ents = [&](const EntityHandle f, const EntityHandle s) {
+    MoFEMFunctionBeginHot;
 
-    const auto lo_uid = FieldEntity::getLocalUniqueIdCalculate(
-        (*y_fit)->getBitNumber(), (*x_eit)->getEnt());
-    auto y_eit = field_ents->get<Unique_mi_tag>().find(lo_uid);
+    const auto x_lo_uid =
+        FieldEntity::getLoLocalEntityBitNumber(x_bit_number, f);
+    const auto x_hi_uid =
+        FieldEntity::getHiLocalEntityBitNumber(x_bit_number, s);
 
-    if (y_eit == field_ents->end()) {
+    // Start of iterator for x_field
+    auto x_eit = field_ents->get<Unique_mi_tag>().lower_bound(x_lo_uid);
+    // End of iterator for x_field
+    auto x_eit_hi = field_ents->get<Unique_mi_tag>().upper_bound(x_hi_uid);
 
-      if (creat_if_missing) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-                "Not implemented creation of DOFs on the fly");
-      } else {
+    for (; x_eit != x_eit_hi;) {
+
+      const auto y_lo_uid = FieldEntity::getLocalUniqueIdCalculate(
+          (*y_fit)->getBitNumber(), (*x_eit)->getEnt());
+      auto y_eit = field_ents->get<Unique_mi_tag>().find(y_lo_uid);
+
+      if (y_eit == field_ents->end()) {
+
         if (error_if_missing) {
-          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Missing entity");
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "Missing entity in y_field.");
         }
-      }
-
-      ++x_eit;
-
-    } else {
-
-      auto check = [&]() {
-        if (x_eit == x_eit_hi || x_eit == field_ents->end())
-          return false;
-        if (y_eit == y_eit_hi || y_eit == field_ents->end())
-          return false;
-        if ((*y_eit)->getEnt() != (*x_eit)->getEnt())
-          return false;
-        return true;
-      };
-
-      do {
-
-        VectorAdaptor x_field_data = (*x_eit)->getEntFieldData();
-        VectorAdaptor y_field_data = (*y_eit)->getEntFieldData();
-        const auto size_x = x_field_data.size();
-        const auto size_y = y_field_data.size();
-
-        size_t dd = 0;
-        for (; dd != std::min(size_x, size_y); ++dd)
-          CHKERR lambda(y_field_data[dd], x_field_data[dd]);
-        for (; dd < size_y; ++dd)
-          y_field_data[dd] = 0;
 
         ++x_eit;
-        ++y_eit;
 
-      } while (check());
+      } else {
+
+        auto check = [&]() {
+          if (x_eit == x_eit_hi)
+            return false;
+          if (y_eit == y_eit_hi)
+            return false;
+          if ((*y_eit)->getEnt() != (*x_eit)->getEnt())
+            return false;
+          return true;
+        };
+
+        do {
+
+          CHKERR lambda(*y_eit, *x_eit);
+
+          ++x_eit;
+          ++y_eit;
+
+        } while (check());
+      }
     }
+
+    MoFEMFunctionReturnHot(0);
+  };
+
+  if (ents_ptr) {
+    for (auto p = ents_ptr->const_pair_begin(); p != ents_ptr->const_pair_end();
+         ++p) {
+      CHKERR loop_ents(p->first, p->second);
+    }
+  } else {
+    // we are looping from the very first possible entity handle (MBVERTEX) to
+    // the very last (MBENTITYSET)
+    CHKERR loop_ents(get_id_for_min_type<MBVERTEX>(),
+                     get_id_for_max_type<MBENTITYSET>());
   }
 
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode FieldBlas::fieldLambda(TwoFieldFunctionOnValues lambda,
+                                      const std::string field_name_x,
+                                      const std::string field_name_y,
+                                      bool error_if_missing,
+                                      bool create_if_missing) {
+  if (create_if_missing)
+    MOFEM_LOG("SELF", Sev::noisy)
+        << "Option create_if_missing is set to true but have no effect";
+  return fieldLambdaOnValues(lambda, field_name_x, field_name_y,
+                             error_if_missing);
+}
+
+MoFEMErrorCode FieldBlas::fieldAxpy(const double alpha,
+                                    const std::string field_name_x,
+                                    const std::string field_name_y,
+                                    bool error_if_missing, Range *ents_ptr) {
+  MoFEMFunctionBegin;
+  auto axpy = [alpha](const double fy, const double fx) {
+    return fy + alpha * fx;
+  };
+  CHKERR fieldLambdaOnValues(axpy, field_name_x, field_name_y, error_if_missing,
+                             ents_ptr);
   MoFEMFunctionReturn(0);
 }
 
@@ -129,19 +296,18 @@ MoFEMErrorCode FieldBlas::fieldAxpy(const double alpha,
                                     const std::string field_name_x,
                                     const std::string field_name_y,
                                     bool error_if_missing,
-                                    bool creat_if_missing) {
+                                    bool create_if_missing) {
+  return fieldAxpy(alpha, field_name_x, field_name_y, error_if_missing);
+}
+
+MoFEMErrorCode FieldBlas::fieldCopy(const double alpha,
+                                    const std::string field_name_x,
+                                    const std::string field_name_y,
+                                    bool error_if_missing, Range *ents_ptr) {
   MoFEMFunctionBegin;
-  struct Axpy {
-    const double alpha;
-    Axpy(const double alpha) : alpha(alpha) {}
-    inline MoFEMErrorCode operator()(double &fy, const double fx) {
-      MoFEMFunctionBeginHot;
-      fy += alpha * fx;
-      MoFEMFunctionReturnHot(0);
-    }
-  };
-  CHKERR fieldLambda(Axpy(alpha), field_name_x, field_name_y, error_if_missing,
-                     creat_if_missing);
+  auto copy = [alpha](const double fy, const double fx) { return alpha * fx; };
+  CHKERR fieldLambdaOnValues(copy, field_name_x, field_name_y, error_if_missing,
+                             ents_ptr);
   MoFEMFunctionReturn(0);
 }
 
@@ -149,20 +315,19 @@ MoFEMErrorCode FieldBlas::fieldCopy(const double alpha,
                                     const std::string field_name_x,
                                     const std::string field_name_y,
                                     bool error_if_missing,
-                                    bool creat_if_missing) {
-  MoFEMFunctionBegin;
-  struct Copy {
-    const double alpha;
-    Copy(const double alpha) : alpha(alpha) {}
-    inline MoFEMErrorCode operator()(double &fy, const double fx) {
-      MoFEMFunctionBeginHot;
-      fy = alpha * fx;
-      MoFEMFunctionReturnHot(0);
-    }
-  };
-  CHKERR fieldLambda(Copy(alpha), field_name_x, field_name_y, error_if_missing,
-                     creat_if_missing);
-  MoFEMFunctionReturn(0);
+                                    bool create_if_missing) {
+  return fieldCopy(alpha, field_name_x, field_name_y, error_if_missing);
+}
+
+MoFEMErrorCode FieldBlas::fieldScale(const double alpha,
+                                     const std::string field_name,
+                                     Range *ents_ptr) {
+  MoFEMFunctionBeginHot;
+
+  auto scale = [alpha](const double v) { return v * alpha; };
+  CHKERR fieldLambdaOnValues(scale, field_name, ents_ptr);
+
+  MoFEMFunctionReturnHot(0);
 }
 
 MoFEMErrorCode FieldBlas::setVertexDofs(FieldBlas::VertexCoordsFunction lambda,
@@ -309,29 +474,6 @@ MoFEMErrorCode FieldBlas::setField(const double val,
     (*dit)->getFieldData() = val;
   }
   MoFEMFunctionReturn(0);
-}
-
-MoFEMErrorCode FieldBlas::fieldScale(const double alpha,
-                                     const std::string field_name) {
-  const MoFEM::Interface &m_field = cOre;
-  auto fields_ptr = m_field.get_fields();
-  auto dofs_ptr = m_field.get_dofs();
-  MoFEMFunctionBeginHot;
-
-  auto fit = fields_ptr->get<FieldName_mi_tag>().find(field_name);
-  if (fit == fields_ptr->get<FieldName_mi_tag>().end())
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-             " field < %s > not found, (top tip: check spelling)",
-             field_name.c_str());
-
-  auto dit = dofs_ptr->get<Unique_mi_tag>().lower_bound(
-      FieldEntity::getLoBitNumberUId((*fit)->getBitNumber()));
-  auto hi_dit = dofs_ptr->get<Unique_mi_tag>().upper_bound(
-      FieldEntity::getHiBitNumberUId((*fit)->getBitNumber()));
-  for (; dit != hi_dit; dit++)
-    (*dit)->getFieldData() *= alpha;
-
-  MoFEMFunctionReturnHot(0);
 }
 
 } // namespace MoFEM
