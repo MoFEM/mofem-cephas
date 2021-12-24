@@ -74,10 +74,21 @@ struct FieldBlas : public UnknownInterface {
   /** \brief filed lambda
      * \ingroup mofem_field_algebra
      *
-     * Do calculation on two fields and save result to field fy
+     * Do calculation on one field using lambda function with entity field input
      *
      * \code
-     * FIXME
+     auto field_abs = [&](
+      boost::shared_ptr<FieldEntity> ent_ptr) {
+        MoFEMFunctionBeginHot;
+        auto field_data = ent_ptr->getEntFieldData();
+        for (auto &v : field_data)
+          v = std::abs(v);
+        MoFEMFunctionReturnHot(0);
+      };
+
+     CHKERR
+     m_field.getInterface<FieldBlas>()->fieldLambdaOnEntities(field_abs,
+     "U", block_ents_ptr);
      * \endcode
      *
      * \param function f(double &x, double)
@@ -93,13 +104,19 @@ struct FieldBlas : public UnknownInterface {
   /** \brief filed lambda
    * \ingroup mofem_field_algebra
    *
-   * Do calculation on two fields and save result to field fy
+   * Do calculation on one field using lambda function with field value input
    *
    * \code
-   * FIXME
+     auto scale_field = [&](const double val) {
+       double time = ts_t; // global variable
+       return val * time;
+      };
+     CHKERR
+     m_field.getInterface<FieldBlas>()->fieldLambdaOnValues(scale_field,
+     "U", false, block_ents_ptr);
    * \endcode
    *
-   * \param function f(double &x, double)
+   * \param function f(const double)
    * \param field_name name of field
    * \param ents_ptr execute lambda function only on entities given by
    pointer to range
@@ -113,20 +130,17 @@ struct FieldBlas : public UnknownInterface {
    * \ingroup mofem_field_algebra
    *
    * Do calculation on two fields and save result to field fy
-   *
-   * \code
-   struct Axpy {
-    const double aLpha;
-    Axpy(const double alpha) : aLpha(alpha) {}
-    inline MoFEMErrorCode operator(double &fy, double fx) {
-      MoFEMFunctionBeginHot;
-      fy += Alpha * fx;
-      MoFEMFunctionReturnHot(0);
-    }
-   };
-   CHKERR m_field.getInterface<FieldBlas>()->fieldLambda(Axpy(aLpha),
-   field_name_x, field_name_y);
-   * \endcode
+   * input function usees field values
+   *   \code
+      auto field_axpy = [&](const double val_y,
+        const double val_x) {
+        // y = 2 * x + y
+        return 2 * val_x + val_y;
+      };
+     CHKERR
+     m_field.getInterface<FieldBlas>()->fieldLambdaOnValues(field_axpy,
+     "U", "P" false, block_ents_ptr);
+   *  \endcode
    *
    * \param function f(double &x, double)
    * \param field_name_x name of field_x
@@ -146,10 +160,28 @@ struct FieldBlas : public UnknownInterface {
    * \ingroup mofem_field_algebra
    *
    * Do calculation on two fields and save result to field fy
+   * input function usees field entities
    *
-   * \code
-   * FIXME
-   * \endcode
+   *  \code
+     auto vector_times_scalar_field = [&](boost::shared_ptr<FieldEntity> ent_ptr_y,
+        boost::shared_ptr<FieldEntity> ent_ptr_x) {
+        MoFEMFunctionBeginHot;
+        auto x_data = ent_ptr_x->getEntFieldData();
+        auto y_data = ent_ptr_y->getEntFieldData();
+        const auto size_x = x_data.size(); // scalar
+        const auto size_y = y_data.size(); // vector
+
+        for (size_t dd = 0;; dd != size_y; ++dd)
+          y_data[dd] *= x_data[0];
+    
+        MoFEMFunctionReturnHot(0);
+      };
+
+     CHKERR
+     m_field.getInterface<FieldBlas>()->fieldLambdaOnValues(vector_times_scalar_field,
+          "U", "P" false, block_ents_ptr);
+
+   *  \endcode
    *
    * \param function f(double &x, double)
    * \param field_name_x name of field_x
