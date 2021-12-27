@@ -64,6 +64,25 @@ struct ISManager : public UnknownInterface {
                                const RowColData row_col = COL) const;
 
   /**
+   * \brief Create global selection
+   * \ingroup mofem_is_managers
+   *
+   * Create section for given problem, such that points are sorted by UId,
+   * and number of dofs on point is equal to number of dofs on entity
+   *
+   * It takes all fields
+   *
+   * @param  problem_name
+   * @param  fields_list
+   * @param  s
+   * @param  row_col      ROE or COL, default is ROW
+   * @return              error code
+   */
+  SmartPetscObj<PetscSection>
+  sectionCreate(const std::string problem_name,
+                const RowColData row_col = COL) const;
+
+  /**
     * \brief create IS for given order range (collective)
     * \ingroup mofem_is_managers
 
