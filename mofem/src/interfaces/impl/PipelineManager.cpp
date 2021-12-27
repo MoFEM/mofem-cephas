@@ -82,12 +82,10 @@ SmartPetscObj<KSP> PipelineManager::createKSP(SmartPetscObj<DM> dm) {
 
   auto set_dm_section = [&](auto dm) {
     MoFEMFunctionBegin;
-    PetscSection section;
-    CHKERR m_field.getInterface<ISManager>()->sectionCreate(
-        simple_interface->getProblemName(), &section);
+    auto section = m_field.getInterface<ISManager>()->sectionCreate(
+        simple_interface->getProblemName());
     CHKERR DMSetDefaultSection(dm, section);
     CHKERR DMSetDefaultGlobalSection(dm, section);
-    CHKERR PetscSectionDestroy(&section);
     MoFEMFunctionReturn(0);
   };
   CHKERR set_dm_section(dm);
@@ -142,12 +140,10 @@ SmartPetscObj<SNES> PipelineManager::createSNES(SmartPetscObj<DM> dm) {
 
   auto set_dm_section = [&](auto dm) {
     MoFEMFunctionBegin;
-    PetscSection section;
-    CHKERR m_field.getInterface<ISManager>()->sectionCreate(
-        simple_interface->getProblemName(), &section);
+    auto section = m_field.getInterface<ISManager>()->sectionCreate(
+        simple_interface->getProblemName());
     CHKERR DMSetDefaultSection(dm, section);
     CHKERR DMSetDefaultGlobalSection(dm, section);
-    CHKERR PetscSectionDestroy(&section);
     MoFEMFunctionReturn(0);
   };
   CHKERR set_dm_section(dm);
@@ -225,12 +221,10 @@ SmartPetscObj<TS> PipelineManager::createTSEX(SmartPetscObj<DM> dm) {
 
   auto set_dm_section = [&](auto dm) {
     MoFEMFunctionBegin;
-    PetscSection section;
-    CHKERR m_field.getInterface<ISManager>()->sectionCreate(
-        simple_interface->getProblemName(), &section);
+    auto section = m_field.getInterface<ISManager>()->sectionCreate(
+        simple_interface->getProblemName());
     CHKERR DMSetDefaultSection(dm, section);
     CHKERR DMSetDefaultGlobalSection(dm, section);
-    CHKERR PetscSectionDestroy(&section);
     MoFEMFunctionReturn(0);
   };
   CHKERR set_dm_section(dm);
@@ -277,12 +271,10 @@ SmartPetscObj<TS> PipelineManager::createTSIM(SmartPetscObj<DM> dm) {
 
   auto set_dm_section = [&](auto dm) {
     MoFEMFunctionBegin;
-    PetscSection section;
-    CHKERR m_field.getInterface<ISManager>()->sectionCreate(
-        simple_interface->getProblemName(), &section);
+    auto section = m_field.getInterface<ISManager>()->sectionCreate(
+        simple_interface->getProblemName());
     CHKERR DMSetDefaultSection(dm, section);
     CHKERR DMSetDefaultGlobalSection(dm, section);
-    CHKERR PetscSectionDestroy(&section);
     MoFEMFunctionReturn(0);
   };
   CHKERR set_dm_section(dm);
@@ -340,12 +332,10 @@ SmartPetscObj<TS> PipelineManager::createTSIM2(SmartPetscObj<DM> dm) {
 
   auto set_dm_section = [&](auto dm) {
     MoFEMFunctionBegin;
-    PetscSection section;
-    CHKERR m_field.getInterface<ISManager>()->sectionCreate(
-        simple_interface->getProblemName(), &section);
+    auto section = m_field.getInterface<ISManager>()->sectionCreate(
+        simple_interface->getProblemName());
     CHKERR DMSetDefaultSection(dm, section);
     CHKERR DMSetDefaultGlobalSection(dm, section);
-    CHKERR PetscSectionDestroy(&section);
     MoFEMFunctionReturn(0);
   };
   CHKERR set_dm_section(dm);
@@ -403,12 +393,10 @@ SmartPetscObj<TS> PipelineManager::createTSIMEX(SmartPetscObj<DM> dm) {
 
   auto set_dm_section = [&](auto dm) {
     MoFEMFunctionBegin;
-    PetscSection section;
-    CHKERR m_field.getInterface<ISManager>()->sectionCreate(
-        simple_interface->getProblemName(), &section);
+    auto section = m_field.getInterface<ISManager>()->sectionCreate(
+        simple_interface->getProblemName());
     CHKERR DMSetDefaultSection(dm, section);
     CHKERR DMSetDefaultGlobalSection(dm, section);
-    CHKERR PetscSectionDestroy(&section);
     MoFEMFunctionReturn(0);
   };
   CHKERR set_dm_section(dm);
