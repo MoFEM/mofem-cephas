@@ -455,7 +455,7 @@ struct OpCalculateDivergenceVectorFieldValues
     MoFEMFunctionBegin;
 
     // When we move to C++17 add if constexpr()
-    if (COORDINATE_SYSTEM == POLAR || COORDINATE_SYSTEM == SPHERICAL)
+    if constexpr (COORDINATE_SYSTEM == POLAR || COORDINATE_SYSTEM == SPHERICAL)
       SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                "%s coordiante not implemented",
                CoordinateTypesNames[COORDINATE_SYSTEM]);
@@ -483,7 +483,7 @@ struct OpCalculateDivergenceVectorFieldValues
 #endif
 
         // When we move to C++17 add if constexpr()
-        if (COORDINATE_SYSTEM == CARTESIAN) {
+        if constexpr (COORDINATE_SYSTEM == CARTESIAN) {
           auto diff_base_function = data.getFTensor1DiffN<Tensor_Dim>();
           for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
             auto field_data = data.getFTensor1FieldData<Tensor_Dim>();
@@ -502,7 +502,7 @@ struct OpCalculateDivergenceVectorFieldValues
         }
 
         // When we move to C++17 add if constexpr()
-        if (COORDINATE_SYSTEM == CYLINDRICAL) {
+        if constexpr (COORDINATE_SYSTEM == CYLINDRICAL) {
           auto t_coords = getFTensor1CoordsAtGaussPts();
           auto values_at_gauss_pts = getFTensor0FromVec(vec);
           auto base_function = data.getFTensor0N();

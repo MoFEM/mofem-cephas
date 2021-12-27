@@ -13,9 +13,12 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #ifndef NDEBUG
-#define BOOST_DISABLE_ASSERTS
 #define BOOST_MULTI_INDEX_ENABLE_INVARIANT_CHECKING
 #define BOOST_MULTI_INDEX_ENABLE_SAFE_MODE
+#endif
+
+#ifdef NDEBUG
+#define BOOST_DISABLE_ASSERTS
 #endif
 
 #ifndef __MOFEM_HPP__

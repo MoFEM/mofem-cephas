@@ -149,7 +149,7 @@ template <typename E, typename C> struct Fdd4MImpl {
 
   template <int a, int b, int I, int J, int K, int L, int M, int N>
   inline auto fd2S() const {
-    if (I == J && K == L) {
+    if constexpr (I == J && K == L) {
       return 4 * (
 
                      fd2M<a, a, b, I, K, M, N>() * e.aM[b](J, L)
@@ -710,7 +710,7 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
       }
     }
 
-    if (NB == 3)
+    if constexpr (NB == 3)
       for (auto aa = 0; aa != Dim; ++aa) {
         for (auto bb = 0; bb != Dim; ++bb) {
           if (aa != bb) {
@@ -725,7 +725,7 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
         }
       }
 
-    if (NB == 2)
+    if constexpr (NB == 2)
       for (auto aa = 0; aa != Dim; ++aa) {
         for (auto bb = 0; bb != Dim; ++bb) {
           if (aa != bb) {
@@ -744,7 +744,7 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
         }
       }
 
-    if (NB == 1)
+    if constexpr (NB == 1)
       for (auto aa = 0; aa != Dim; ++aa) {
         for (auto bb = 0; bb != Dim; ++bb) {
           if (aa != bb) {
@@ -768,7 +768,7 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
       }
     }
 
-    if (NB == 3)
+    if constexpr (NB == 3)
       for (auto aa = 0; aa != Dim; ++aa) {
         for (auto bb = 0; bb != Dim; ++bb) {
           if (aa != bb) {
@@ -786,7 +786,7 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
         }
       }
 
-    if (NB == 2)
+    if constexpr (NB == 2)
       for (auto aa = 0; aa != Dim; ++aa) {
         for (auto bb = 0; bb != Dim; ++bb) {
           if (aa != bb)
@@ -832,7 +832,7 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
         }
       }
 
-    if (NB == 1)
+    if constexpr (NB == 1)
       for (auto aa = 0; aa != Dim; ++aa) {
         for (auto bb = 0; bb != Dim; ++bb) {
           if (aa != bb) {
