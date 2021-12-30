@@ -69,7 +69,7 @@ SmartPetscObj<KSP> PipelineManager::createKSP(SmartPetscObj<DM> dm) {
     DMType type;
     CHKERR DMGetType(simple_dm, &type);
     dm = createSmartDM(comm, type);
-    CHKERR DMMoFEMDuplicateDMCtx(simple->getDM(), dm);
+    CHKERR DMMoFEMDuplicateDMCtx(simple_dm, dm);
     return dm;
   };
 
@@ -78,10 +78,13 @@ SmartPetscObj<KSP> PipelineManager::createKSP(SmartPetscObj<DM> dm) {
   else
     dm = copy_dm_struture(dm);
 
+  const MoFEM::Problem *prb_ptr;
+  CHKERR DMMoFEMGetProblemPtr(dm, &prb_ptr);
+
   auto set_dm_section = [&](auto dm) {
     MoFEMFunctionBegin;
-    auto section = m_field.getInterface<ISManager>()->sectionCreate(
-        simple->getProblemName());
+    auto section =
+        m_field.getInterface<ISManager>()->sectionCreate(prb_ptr->getName());
     CHKERR DMSetDefaultSection(dm, section);
     CHKERR DMSetDefaultGlobalSection(dm, section);
     MoFEMFunctionReturn(0);
@@ -127,7 +130,7 @@ SmartPetscObj<SNES> PipelineManager::createSNES(SmartPetscObj<DM> dm) {
     DMType type;
     CHKERR DMGetType(simple_dm, &type);
     dm = createSmartDM(comm, type);
-    CHKERR DMMoFEMDuplicateDMCtx(simple->getDM(), dm);
+    CHKERR DMMoFEMDuplicateDMCtx(simple_dm, dm);
     return dm;
   };
 
@@ -136,10 +139,13 @@ SmartPetscObj<SNES> PipelineManager::createSNES(SmartPetscObj<DM> dm) {
   else
     dm = copy_dm_struture(dm);
 
+  const MoFEM::Problem *prb_ptr;
+  CHKERR DMMoFEMGetProblemPtr(dm, &prb_ptr);
+
   auto set_dm_section = [&](auto dm) {
     MoFEMFunctionBegin;
-    auto section = m_field.getInterface<ISManager>()->sectionCreate(
-        simple->getProblemName());
+    auto section =
+        m_field.getInterface<ISManager>()->sectionCreate(prb_ptr->getName());
     CHKERR DMSetDefaultSection(dm, section);
     CHKERR DMSetDefaultGlobalSection(dm, section);
     MoFEMFunctionReturn(0);
@@ -208,7 +214,7 @@ SmartPetscObj<TS> PipelineManager::createTSEX(SmartPetscObj<DM> dm) {
     DMType type;
     CHKERR DMGetType(simple_dm, &type);
     dm = createSmartDM(comm, type);
-    CHKERR DMMoFEMDuplicateDMCtx(simple->getDM(), dm);
+    CHKERR DMMoFEMDuplicateDMCtx(simple_dm, dm);
     return dm;
   };
 
@@ -217,10 +223,13 @@ SmartPetscObj<TS> PipelineManager::createTSEX(SmartPetscObj<DM> dm) {
   else
     dm = copy_dm_struture(dm);
 
+  const MoFEM::Problem *prb_ptr;
+  CHKERR DMMoFEMGetProblemPtr(dm, &prb_ptr);
+
   auto set_dm_section = [&](auto dm) {
     MoFEMFunctionBegin;
-    auto section = m_field.getInterface<ISManager>()->sectionCreate(
-        simple->getProblemName());
+    auto section =
+        m_field.getInterface<ISManager>()->sectionCreate(prb_ptr->getName());
     CHKERR DMSetDefaultSection(dm, section);
     CHKERR DMSetDefaultGlobalSection(dm, section);
     MoFEMFunctionReturn(0);
@@ -258,7 +267,7 @@ SmartPetscObj<TS> PipelineManager::createTSIM(SmartPetscObj<DM> dm) {
     DMType type;
     CHKERR DMGetType(simple_dm, &type);
     dm = createSmartDM(comm, type);
-    CHKERR DMMoFEMDuplicateDMCtx(simple->getDM(), dm);
+    CHKERR DMMoFEMDuplicateDMCtx(simple_dm, dm);
     return dm;
   };
 
@@ -267,10 +276,13 @@ SmartPetscObj<TS> PipelineManager::createTSIM(SmartPetscObj<DM> dm) {
   else
     dm = copy_dm_struture(dm);
 
+  const MoFEM::Problem *prb_ptr;
+  CHKERR DMMoFEMGetProblemPtr(dm, &prb_ptr);
+
   auto set_dm_section = [&](auto dm) {
     MoFEMFunctionBegin;
-    auto section = m_field.getInterface<ISManager>()->sectionCreate(
-        simple->getProblemName());
+    auto section =
+        m_field.getInterface<ISManager>()->sectionCreate(prb_ptr->getName());
     CHKERR DMSetDefaultSection(dm, section);
     CHKERR DMSetDefaultGlobalSection(dm, section);
     MoFEMFunctionReturn(0);
@@ -319,7 +331,7 @@ SmartPetscObj<TS> PipelineManager::createTSIM2(SmartPetscObj<DM> dm) {
     DMType type;
     CHKERR DMGetType(simple_dm, &type);
     dm = createSmartDM(comm, type);
-    CHKERR DMMoFEMDuplicateDMCtx(simple->getDM(), dm);
+    CHKERR DMMoFEMDuplicateDMCtx(simple_dm, dm);
     return dm;
   };
 
@@ -328,10 +340,13 @@ SmartPetscObj<TS> PipelineManager::createTSIM2(SmartPetscObj<DM> dm) {
   else
     dm = copy_dm_struture(dm);
 
+  const MoFEM::Problem *prb_ptr;
+  CHKERR DMMoFEMGetProblemPtr(dm, &prb_ptr);
+
   auto set_dm_section = [&](auto dm) {
     MoFEMFunctionBegin;
-    auto section = m_field.getInterface<ISManager>()->sectionCreate(
-        simple->getProblemName());
+    auto section =
+        m_field.getInterface<ISManager>()->sectionCreate(prb_ptr->getName());
     CHKERR DMSetDefaultSection(dm, section);
     CHKERR DMSetDefaultGlobalSection(dm, section);
     MoFEMFunctionReturn(0);
@@ -380,7 +395,7 @@ SmartPetscObj<TS> PipelineManager::createTSIMEX(SmartPetscObj<DM> dm) {
     DMType type;
     CHKERR DMGetType(simple_dm, &type);
     dm = createSmartDM(comm, type);
-    CHKERR DMMoFEMDuplicateDMCtx(simple->getDM(), dm);
+    CHKERR DMMoFEMDuplicateDMCtx(simple_dm, dm);
     return dm;
   };
 
@@ -389,10 +404,13 @@ SmartPetscObj<TS> PipelineManager::createTSIMEX(SmartPetscObj<DM> dm) {
   else
     dm = copy_dm_struture(dm);
 
+  const MoFEM::Problem *prb_ptr;
+  CHKERR DMMoFEMGetProblemPtr(dm, &prb_ptr);
+
   auto set_dm_section = [&](auto dm) {
     MoFEMFunctionBegin;
-    auto section = m_field.getInterface<ISManager>()->sectionCreate(
-        simple->getProblemName());
+    auto section =
+        m_field.getInterface<ISManager>()->sectionCreate(prb_ptr->getName());
     CHKERR DMSetDefaultSection(dm, section);
     CHKERR DMSetDefaultGlobalSection(dm, section);
     MoFEMFunctionReturn(0);
