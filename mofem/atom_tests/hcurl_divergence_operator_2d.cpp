@@ -2,7 +2,10 @@
  * \file hcurl_divergence_operator_2d.cpp
  * \example hcurl_divergence_operator_2d.cpp
  *
- * Testing Hcurl base, transfromed to Hdiv base in 2d using Green theorem
+ * Testing Hcurl base, transfromed to Hdiv base in 2d using Green theorem.
+ * 
+ * Note 0: This is low-level implementation.
+ * Note 1: Generic implementation for Quad/Tri mesh of arbitrary order.
  * 
  */
 
@@ -27,16 +30,19 @@ using namespace MoFEM;
 static char help[] = "...\n\n";
 
 using FaceEle = MoFEM::FaceElementForcesAndSourcesCore;
-
 using EdgeEle = MoFEM::EdgeElementForcesAndSourcesCore;
 
 using FaceEleOp = FaceEle::UserDataOperator;
 using EdgeEleOp = EdgeEle::UserDataOperator;
 
+constexpr int SPACE_DIM = 2;
+
 struct OpDivergence : public FaceEleOp {
 
   double &dIv;
   OpDivergence(double &div) : FaceEleOp("FIELD1", OPROW), dIv(div) {}
+
+  FTensor::Index<'i', SPACE_DIM> i;
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data) {
@@ -45,13 +51,16 @@ struct OpDivergence : public FaceEleOp {
     if (nb_dofs == 0)
       MoFEMFunctionReturnHot(0);
     const int nb_gauss_pts = data.getN().size1();
+    auto t_w = getFTensor0IntegrationWeight();
     auto t_diff_base_fun = data.getFTensor2DiffN<3, 2>();
+    const auto area = getMeasure();
     for (int gg = 0; gg != nb_gauss_pts; gg++) {
-      const double val = getArea() * getGaussPts()(2, gg);
+      const double val = area * t_w;
       for (int bb = 0; bb != nb_dofs; bb++) {
-        dIv += val * (t_diff_base_fun(0, 0) + t_diff_base_fun(1, 1));
+        dIv += val * t_diff_base_fun(i, i);
         ++t_diff_base_fun;
       }
+      ++t_w;
     }
     MoFEMFunctionReturn(0);
   }
@@ -62,7 +71,7 @@ struct OpFlux : public EdgeEleOp {
   double &fLux;
   OpFlux(double &flux) : EdgeEleOp("FIELD1", OPROW), fLux(flux) {}
 
-  FTensor::Index<'i', 3> i;
+  FTensor::Index<'i', SPACE_DIM> i;
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data) {
@@ -71,17 +80,16 @@ struct OpFlux : public EdgeEleOp {
     if (nb_dofs == 0)
       MoFEMFunctionReturnHot(0);
     const int nb_gauss_pts = data.getN().size1();
-    FTensor::Tensor1<double, 3> t_normal(-getDirection()[1], getDirection()[0],
-                                         0.);
-
+    auto t_normal = getFTensor1Normal();
     auto t_base_fun = data.getFTensor1N<3>();
+    auto t_w = getFTensor0IntegrationWeight();
     FTensor::Index<'i', 2> i;
     for (int gg = 0; gg != nb_gauss_pts; gg++) {
-      const double val = getGaussPts()(1, gg);
       for (int bb = 0; bb != nb_dofs; bb++) {
-        fLux += val * t_normal(i) * t_base_fun(i);
+        fLux += t_w * t_normal(i) * t_base_fun(i);
         ++t_base_fun;
       }
+      ++t_w;
     }
 
     MoFEMFunctionReturn(0);
@@ -235,11 +243,13 @@ int main(int argc, char *argv[]) {
     const double div = calculate_divergence();
     const double flux = calculate_flux();
 
-    PetscPrintf(PETSC_COMM_WORLD, "Div = %4.3e Flux = %3.4e Error = %4.3e\n",
-                div, flux, div + flux);
+    MOFEM_LOG_CHANNEL("WOLD"); // reset channel
+    MOFEM_LOG_C("WORLD", Sev::inform,
+                "Div = %4.3e Flux = %3.4e Error = %4.3e\n", div, flux,
+                div + flux);
 
     constexpr double tol = 1e-8;
-    if (std::abs(div + flux) > tol)
+    if (std::abs(div - flux) > tol)
       SETERRQ2(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                "Test failed (div != flux) %3.4e != %3.4e", div, flux);
   }
