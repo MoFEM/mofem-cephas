@@ -165,17 +165,13 @@ int main(int argc, char *argv[]) {
 
     // Add entities
 
-    CHKERR m_field.add_ents_to_field_by_type(0, MBTRI, "FIELD1");
-    CHKERR m_field.add_ents_to_field_by_type(0, MBQUAD, "FIELD1");
+    CHKERR m_field.add_ents_to_field_by_dim(0, SPACE_DIM, "FIELD1");
     // Set order
-    CHKERR m_field.set_field_order(0, MBTRI, "FIELD1", order);
-    CHKERR m_field.set_field_order(0, MBQUAD, "FIELD1", order);
-    CHKERR m_field.set_field_order(0, MBEDGE, "FIELD1", order);
+    for (auto t : {MBEDGE, MBTRI, MBQUAD})
+      CHKERR m_field.set_field_order(0, t, "FIELD1", order);
 
     // Add entities to elements
-    CHKERR m_field.add_ents_to_finite_element_by_type(0, MBTRI, "FACE_FE");
-    CHKERR m_field.add_ents_to_finite_element_by_type(0, MBQUAD, "FACE_FE");
-
+    CHKERR m_field.add_ents_to_finite_element_by_dim(0, SPACE_DIM, "FACE_FE");
     auto set_edge_elements_entities_on_mesh_skin = [&]() {
       MoFEMFunctionBegin;
       Range faces;
@@ -183,8 +179,8 @@ int main(int argc, char *argv[]) {
       Skinner skin(&m_field.get_moab());
       Range faces_skin;
       CHKERR skin.find_skin(0, faces, false, faces_skin);
-      CHKERR m_field.add_ents_to_finite_element_by_type(faces_skin, MBEDGE,
-                                                        "EDGE_FE");
+      CHKERR m_field.add_ents_to_finite_element_by_dim(
+          faces_skin, SPACE_DIM - 1, "EDGE_FE");
       MoFEMFunctionReturn(0);
     };
     CHKERR set_edge_elements_entities_on_mesh_skin();
@@ -246,7 +242,7 @@ int main(int argc, char *argv[]) {
     MOFEM_LOG_CHANNEL("WOLD"); // reset channel
     MOFEM_LOG_C("WORLD", Sev::inform,
                 "Div = %4.3e Flux = %3.4e Error = %4.3e\n", div, flux,
-                div + flux);
+                div - flux);
 
     constexpr double tol = 1e-8;
     if (std::abs(div - flux) > tol)
