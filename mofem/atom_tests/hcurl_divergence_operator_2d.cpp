@@ -36,13 +36,12 @@ using FaceEleOp = FaceEle::UserDataOperator;
 using EdgeEleOp = EdgeEle::UserDataOperator;
 
 constexpr int SPACE_DIM = 2;
+FTensor::Index<'i', SPACE_DIM> i;
 
 struct OpDivergence : public FaceEleOp {
 
   double &dIv;
   OpDivergence(double &div) : FaceEleOp("FIELD1", OPROW), dIv(div) {}
-
-  FTensor::Index<'i', SPACE_DIM> i;
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data) {
@@ -71,8 +70,6 @@ struct OpFlux : public EdgeEleOp {
   double &fLux;
   OpFlux(double &flux) : EdgeEleOp("FIELD1", OPROW), fLux(flux) {}
 
-  FTensor::Index<'i', SPACE_DIM> i;
-
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data) {
     MoFEMFunctionBegin;
@@ -83,7 +80,6 @@ struct OpFlux : public EdgeEleOp {
     auto t_normal = getFTensor1Normal();
     auto t_base_fun = data.getFTensor1N<3>();
     auto t_w = getFTensor0IntegrationWeight();
-    FTensor::Index<'i', 2> i;
     for (int gg = 0; gg != nb_gauss_pts; gg++) {
       for (int bb = 0; bb != nb_dofs; bb++) {
         fLux += t_w * t_normal(i) * t_base_fun(i);
