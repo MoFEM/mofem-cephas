@@ -258,7 +258,7 @@ See OpenMPI <a href=https://www.open-mpi.org/faq/?category=debugging>documentati
 
 If you using \em lldb, that is usally a case of Mac OSX, you run debugging as follows:
 \code
-mpirun -np 4 xterm -e lldb ./program [arg1] [arg2] [arg3]
+mpirun -np 4 xterm -e lldb -- ./program [arg1] [arg2] [arg3]
 \endcode 
 
 \subsection faq_memory_profiling_valgrind How to profile memory usage?
