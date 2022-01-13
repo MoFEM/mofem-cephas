@@ -237,13 +237,13 @@ message(STATUS ${JUPYTEXT})
 
 # System project liblairoes
 resolve_libraries(SYSTEM_PROJECT_LIBS "
+# MoAB
+  ${MESHKIT_LIBS_LINK}
+  ${MOAB_LIBS_LINK}
 # PETSc
   ${SLEPC_LINK_LIBRARIES}
   -L${PETSC_DIR}/${PETSC_ARCH}/lib
   ${PETSCVAR_PETSC_WITH_EXTERNAL_LIB}
-# MoAB
-  ${MESHKIT_LIBS_LINK}
-  ${MOAB_LIBS_LINK}
 # Boost
   ${Boost_LIBRARIES} 
 # Other
