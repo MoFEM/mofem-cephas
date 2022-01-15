@@ -416,7 +416,7 @@ and install users modules:
 ~~~~~
 spack dev-build \
   --test root  \
-  --source-pat $HOME/mofem_install/mofem-cephas/mofem/users_modules \
+  --source-path $HOME/mofem_install/mofem-cephas/mofem/users_modules \
   mofem-users-modules@develop build_type=RelWithDebInfo \
   ^/pa3httg
 ~~~~~
@@ -429,9 +429,9 @@ using command line option `-b BEFORE` or `-u UNTIL`, for example if you like
 to investigate build issues, you can do,
 ~~~~~
 spack dev-build \
-  -u configure \
+  -b build \
   --test root  \
-  --source-pat $HOME/mofem_install/mofem-cephas/mofem/users_modules \
+  --source-path $HOME/mofem_install/mofem-cephas/mofem/users_modules \
   mofem-users-modules@develop build_type=RelWithDebInfo \
   ^/pa3httg
 ~~~~~
