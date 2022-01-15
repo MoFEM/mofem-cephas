@@ -1,5 +1,4 @@
 # Add BOOST directory
-set(Boost_NO_BOOST_CMAKE ON) 
 set(BOOST_ROOT "${BOOST_DIR}")
 
 find_package(
