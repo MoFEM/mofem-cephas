@@ -1002,7 +1002,7 @@ computeEigenValuesSymmetric(const FTensor::Tensor2_symmetric<double, DIM> &mat,
  * @param t
  * @return double
  */
-template <typename T> static inline auto dEterminant(T &t) {
+template <typename T> static inline auto determinantTensor3by3(T &t) {
   return t(0, 0) * t(1, 1) * t(2, 2) + t(1, 0) * t(2, 1) * t(0, 2) +
          t(2, 0) * t(0, 1) * t(1, 2) - t(0, 0) * t(2, 1) * t(1, 2) -
          t(2, 0) * t(1, 1) * t(0, 2) - t(1, 0) * t(0, 1) * t(2, 2);
