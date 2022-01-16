@@ -6,9 +6,9 @@ find_package(
   REQUIRED COMPONENTS
   program_options log log_setup thread system filesystem)
 
-message(STATUS ${Boost_LIBRARIES})
-message(STATUS ${Boost_LIBRARY_DIRS})
-message(STATUS ${Boost_INCLUDE_DIRS})
+message(STATUS "Boost_LIBRARIES ${Boost_LIBRARIES}")
+message(STATUS "Boost_LIBRARY_DIRS ${Boost_LIBRARY_DIRS}")
+message(STATUS "Boost_INCLUDE_DIRS ${Boost_INCLUDE_DIRS}")
 
 if(NOT Boost_LIBRARIES)
   message(FATAL_ERROR "boost libraries not found")
