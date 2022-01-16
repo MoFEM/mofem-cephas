@@ -1034,9 +1034,7 @@ invertTensor3by3<3, double, ublas::row_major, DoubleAllocator>(
 template <class T1, class T2>
 inline MoFEMErrorCode determinantTensor3by3(T1 &t, T2 &det) {
   MoFEMFunctionBeginHot;
-  det = +t(0, 0) * t(1, 1) * t(2, 2) + t(1, 0) * t(2, 1) * t(0, 2) +
-        t(2, 0) * t(0, 1) * t(1, 2) - t(0, 0) * t(2, 1) * t(1, 2) -
-        t(2, 0) * t(1, 1) * t(0, 2) - t(1, 0) * t(0, 1) * t(2, 2);
+  det = determinantTensor3by3(t);
   MoFEMFunctionReturnHot(0);
 }
 
