@@ -203,9 +203,12 @@ find_path(
   HINTS 
   ${BLAS_DIR}/include
   ${CBLAS_DIR}/include 
-  ${PETSC_DIR}/${PETSC_ARCH}/include)
+  ${PETSC_DIR}/${PETSC_ARCH}/include
+  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/Accelerate.framework/Versions/Current/Frameworks/vecLib.framework/Headers)
 message(STATUS "CBLAS include found: " ${CBLAS_INCLUDE_DIR})
-include_directories(${CBLAS_INCLUDE_DIR})
+if(CBLAS_INCLUDE_DIR)
+  include_directories(${CBLAS_INCLUDE_DIR})
+endif(CBLAS_INCLUDE_DIR)
 
 include_directories(
   ${PROJECT_INCLUDE_DIRECTORIES}
