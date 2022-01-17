@@ -103,6 +103,17 @@ int main(int argc, char *argv[]) {
     // get access to field agebra interface
     auto fb = m_field.getInterface<FieldBlas>();
 
+    Range meshset_ents;
+    for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(
+             m_field, SIDESET | PRESSURESET, it)) {
+      if (it->getMeshsetId() != 1)
+        continue;
+      Range ents, nodes;
+      CHKERR it->getMeshsetIdEntitiesByType(m_field.get_moab(), MBTRI, ents,
+                                            true);
+      CHKERR m_field.get_moab().get_connectivity(ents, nodes, true);
+      meshset_ents.merge(nodes);
+    }
     // set value to field
     CHKERR fb->setField(+1, MBVERTEX, "FIELD_A");
     CHKERR fb->setField(-1, MBVERTEX, "FIELD_B");
@@ -114,7 +125,7 @@ int main(int argc, char *argv[]) {
     auto field_scale = [&](const double val) { return -0.5 * val; };
 
     // note that y_ent is first
-    // FIXME: this can be confusing? 
+    // FIXME: this can be confusing?
     auto vector_times_scalar_field =
         [&](boost::shared_ptr<FieldEntity> ent_ptr_y,
             boost::shared_ptr<FieldEntity> ent_ptr_x) {
@@ -126,34 +137,36 @@ int main(int argc, char *argv[]) {
 
           for (size_t dd = 0; dd != size_y; ++dd)
             y_data[dd] *= x_data[0];
+            
+          // y_data *= x_data[0]; //would work as well
 
           MoFEMFunctionReturnHot(0);
         };
 
     Range ents; // TODO: create test for subentities
     // FIELD_A = FIELD_A + 0.5 * FIELD_B
-    CHKERR fb->fieldLambdaOnValues(field_axpy, "FIELD_B", "FIELD_A");
+    CHKERR fb->fieldLambdaOnValues(field_axpy, "FIELD_B", "FIELD_A", true);
     // CHKERR fb->fieldAxpy(+0.5, "FIELD_B", "FIELD_A");
 
     // FIELD_B *= -0.5
     // CHKERR fb->fieldScale(-0.5, "FIELD_B");
-    CHKERR fb->fieldLambdaOnValues(field_scale, "FIELD_B");
+    CHKERR fb->fieldLambdaOnValues(field_scale, "FIELD_B", &meshset_ents);
 
     // FIELD_B(i) *= FIELD_C
     CHKERR fb->fieldLambdaOnEntities(vector_times_scalar_field, "FIELD_C",
-                                     "FIELD_B");
+                                     "FIELD_B", true, &meshset_ents);
 
     auto dofs_ptr = m_field.get_dofs();
     constexpr double eps = std::numeric_limits<double>::epsilon();
     for (auto dit : *dofs_ptr) {
-
       auto check = [&](const std::string name, const double expected) {
         MoFEMFunctionBegin;
-        if (dit->getName() == name) {
+        if (dit->getName() == name && dit->getEntType() == MBVERTEX) {
           cout << name << " " << dit->getFieldData() << " " << expected << endl;
-          if (dit->getFieldData() - expected > eps)
-            SETERRQ2(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
-                     "Wrong DOF value 0 != %4.3e for %s", dit->getFieldData(),
+          if (abs(dit->getFieldData() - expected) > eps)
+            SETERRQ3(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                     "Wrong DOF value %4.3e != %4.3e for %s",
+                     dit->getFieldData(), expected,
                      boost::lexical_cast<std::string>(*dit).c_str());
         }
 
@@ -161,8 +174,11 @@ int main(int argc, char *argv[]) {
       };
 
       CHKERR check("FIELD_A", 0.5);
-      CHKERR check("FIELD_B", 0.75);
-      CHKERR check("FIELD_C", 1.5);
+      
+      if (meshset_ents.find(dit->getEnt()) != meshset_ents.end()) {
+        CHKERR check("FIELD_B", 0.75);
+        CHKERR check("FIELD_C", 1.5);
+      }
     }
   }
   CATCH_ERRORS;

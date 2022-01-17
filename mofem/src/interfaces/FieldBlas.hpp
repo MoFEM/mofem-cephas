@@ -171,7 +171,7 @@ struct FieldBlas : public UnknownInterface {
         const auto size_x = x_data.size(); // scalar
         const auto size_y = y_data.size(); // vector
 
-        for (size_t dd = 0;; dd != size_y; ++dd)
+        for (size_t dd = 0; dd != size_y; ++dd)
           y_data[dd] *= x_data[0];
     
         MoFEMFunctionReturnHot(0);
