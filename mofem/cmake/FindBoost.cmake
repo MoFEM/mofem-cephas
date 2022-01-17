@@ -1,5 +1,4 @@
 # Add BOOST directory
-set(Boost_NO_BOOST_CMAKE ON) 
 set(BOOST_ROOT "${BOOST_DIR}")
 
 find_package(
@@ -7,9 +6,9 @@ find_package(
   REQUIRED COMPONENTS
   program_options log log_setup thread system filesystem)
 
-message(STATUS ${Boost_LIBRARIES})
-message(STATUS ${Boost_LIBRARY_DIRS})
-message(STATUS ${Boost_INCLUDE_DIRS})
+message(STATUS "Boost_LIBRARIES ${Boost_LIBRARIES}")
+message(STATUS "Boost_LIBRARY_DIRS ${Boost_LIBRARY_DIRS}")
+message(STATUS "Boost_INCLUDE_DIRS ${Boost_INCLUDE_DIRS}")
 
 if(NOT Boost_LIBRARIES)
   message(FATAL_ERROR "boost libraries not found")
@@ -28,3 +27,5 @@ if(NOT BOOST_INCLUDE_DIR)
   message(FATAL_ERROR "Boost include dir not found")
 endif(NOT BOOST_INCLUDE_DIR)
 include_directories(${BOOST_INCLUDE_DIR})
+
+add_definitions(${Boost_LIB_DIAGNOSTIC_DEFINITIONS})

@@ -32,30 +32,28 @@ PipelineManager::PipelineManager(const MoFEM::Core &core)
 MoFEMErrorCode PipelineManager::loopFiniteElements(SmartPetscObj<DM> dm) {
   MoFEMFunctionBegin;
   Interface &m_field = cOre;
-  Simple *simple_interface = m_field.getInterface<Simple>();
+  Simple *simple = m_field.getInterface<Simple>();
   if (!dm)
-    dm = simple_interface->getDM();
+    dm = simple->getDM();
 
   // Add element to calculate lhs of stiff part
   if (feDomainLhs)
-    CHKERR DMoFEMLoopFiniteElements(dm, simple_interface->getDomainFEName(),
-                                    feDomainLhs);
+    CHKERR DMoFEMLoopFiniteElements(dm, simple->getDomainFEName(), feDomainLhs);
   if (feBoundaryLhs)
-    CHKERR DMoFEMLoopFiniteElements(dm, simple_interface->getBoundaryFEName(),
+    CHKERR DMoFEMLoopFiniteElements(dm, simple->getBoundaryFEName(),
                                     feBoundaryLhs);
   if (feSkeletonLhs)
-    CHKERR DMoFEMLoopFiniteElements(dm, simple_interface->getSkeletonFEName(),
+    CHKERR DMoFEMLoopFiniteElements(dm, simple->getSkeletonFEName(),
                                     feSkeletonLhs);
 
   // Add element to calculate rhs of stiff part
   if (feDomainRhs)
-    CHKERR DMoFEMLoopFiniteElements(dm, simple_interface->getDomainFEName(),
-                                    feDomainRhs);
+    CHKERR DMoFEMLoopFiniteElements(dm, simple->getDomainFEName(), feDomainRhs);
   if (feBoundaryRhs)
-    CHKERR DMoFEMLoopFiniteElements(dm, simple_interface->getBoundaryFEName(),
+    CHKERR DMoFEMLoopFiniteElements(dm, simple->getBoundaryFEName(),
                                     feBoundaryRhs);
   if (feSkeletonRhs)
-    CHKERR DMoFEMLoopFiniteElements(dm, simple_interface->getSkeletonFEName(),
+    CHKERR DMoFEMLoopFiniteElements(dm, simple->getSkeletonFEName(),
                                     feSkeletonRhs);
 
   MoFEMFunctionReturn(0);
@@ -63,7 +61,7 @@ MoFEMErrorCode PipelineManager::loopFiniteElements(SmartPetscObj<DM> dm) {
 
 SmartPetscObj<KSP> PipelineManager::createKSP(SmartPetscObj<DM> dm) {
   Interface &m_field = cOre;
-  Simple *simple_interface = m_field.getInterface<Simple>();
+  Simple *simple = m_field.getInterface<Simple>();
 
   auto copy_dm_struture = [&](auto simple_dm) {
     MPI_Comm comm;
@@ -71,23 +69,24 @@ SmartPetscObj<KSP> PipelineManager::createKSP(SmartPetscObj<DM> dm) {
     DMType type;
     CHKERR DMGetType(simple_dm, &type);
     dm = createSmartDM(comm, type);
-    CHKERR DMMoFEMDuplicateDMCtx(simple_interface->getDM(), dm);
+    CHKERR DMMoFEMDuplicateDMCtx(simple_dm, dm);
     return dm;
   };
 
   if (!dm)
-    dm = copy_dm_struture(simple_interface->getDM());
+    dm = copy_dm_struture(simple->getDM());
   else
     dm = copy_dm_struture(dm);
 
+  const MoFEM::Problem *prb_ptr;
+  CHKERR DMMoFEMGetProblemPtr(dm, &prb_ptr);
+
   auto set_dm_section = [&](auto dm) {
     MoFEMFunctionBegin;
-    PetscSection section;
-    CHKERR m_field.getInterface<ISManager>()->sectionCreate(
-        simple_interface->getProblemName(), &section);
+    auto section =
+        m_field.getInterface<ISManager>()->sectionCreate(prb_ptr->getName());
     CHKERR DMSetDefaultSection(dm, section);
     CHKERR DMSetDefaultGlobalSection(dm, section);
-    CHKERR PetscSectionDestroy(&section);
     MoFEMFunctionReturn(0);
   };
   CHKERR set_dm_section(dm);
@@ -96,24 +95,24 @@ SmartPetscObj<KSP> PipelineManager::createKSP(SmartPetscObj<DM> dm) {
 
   // Add element to calculate lhs of stiff part
   if (feDomainLhs)
-    CHKERR DMMoFEMKSPSetComputeOperators(
-        dm, simple_interface->getDomainFEName(), feDomainLhs, null, null);
+    CHKERR DMMoFEMKSPSetComputeOperators(dm, simple->getDomainFEName(),
+                                         feDomainLhs, null, null);
   if (feBoundaryLhs)
-    CHKERR DMMoFEMKSPSetComputeOperators(
-        dm, simple_interface->getBoundaryFEName(), feBoundaryLhs, null, null);
+    CHKERR DMMoFEMKSPSetComputeOperators(dm, simple->getBoundaryFEName(),
+                                         feBoundaryLhs, null, null);
   if (feSkeletonLhs)
-    CHKERR DMMoFEMKSPSetComputeOperators(
-        dm, simple_interface->getSkeletonFEName(), feSkeletonLhs, null, null);
+    CHKERR DMMoFEMKSPSetComputeOperators(dm, simple->getSkeletonFEName(),
+                                         feSkeletonLhs, null, null);
 
   // Add element to calculate rhs of stiff part
   if (feDomainRhs)
-    CHKERR DMMoFEMKSPSetComputeRHS(dm, simple_interface->getDomainFEName(),
-                                   feDomainRhs, null, null);
+    CHKERR DMMoFEMKSPSetComputeRHS(dm, simple->getDomainFEName(), feDomainRhs,
+                                   null, null);
   if (feBoundaryRhs)
-    CHKERR DMMoFEMKSPSetComputeRHS(dm, simple_interface->getBoundaryFEName(),
+    CHKERR DMMoFEMKSPSetComputeRHS(dm, simple->getBoundaryFEName(),
                                    feBoundaryRhs, null, null);
   if (feSkeletonRhs)
-    CHKERR DMMoFEMKSPSetComputeRHS(dm, simple_interface->getSkeletonFEName(),
+    CHKERR DMMoFEMKSPSetComputeRHS(dm, simple->getSkeletonFEName(),
                                    feSkeletonRhs, null, null);
 
   auto ksp = MoFEM::createKSP(m_field.get_comm());
@@ -123,7 +122,7 @@ SmartPetscObj<KSP> PipelineManager::createKSP(SmartPetscObj<DM> dm) {
 
 SmartPetscObj<SNES> PipelineManager::createSNES(SmartPetscObj<DM> dm) {
   Interface &m_field = cOre;
-  Simple *simple_interface = m_field.getInterface<Simple>();
+  Simple *simple = m_field.getInterface<Simple>();
 
   auto copy_dm_struture = [&](auto simple_dm) {
     MPI_Comm comm;
@@ -131,23 +130,24 @@ SmartPetscObj<SNES> PipelineManager::createSNES(SmartPetscObj<DM> dm) {
     DMType type;
     CHKERR DMGetType(simple_dm, &type);
     dm = createSmartDM(comm, type);
-    CHKERR DMMoFEMDuplicateDMCtx(simple_interface->getDM(), dm);
+    CHKERR DMMoFEMDuplicateDMCtx(simple_dm, dm);
     return dm;
   };
 
   if (!dm)
-    dm = copy_dm_struture(simple_interface->getDM());
+    dm = copy_dm_struture(simple->getDM());
   else
     dm = copy_dm_struture(dm);
 
+  const MoFEM::Problem *prb_ptr;
+  CHKERR DMMoFEMGetProblemPtr(dm, &prb_ptr);
+
   auto set_dm_section = [&](auto dm) {
     MoFEMFunctionBegin;
-    PetscSection section;
-    CHKERR m_field.getInterface<ISManager>()->sectionCreate(
-        simple_interface->getProblemName(), &section);
+    auto section =
+        m_field.getInterface<ISManager>()->sectionCreate(prb_ptr->getName());
     CHKERR DMSetDefaultSection(dm, section);
     CHKERR DMSetDefaultGlobalSection(dm, section);
-    CHKERR PetscSectionDestroy(&section);
     MoFEMFunctionReturn(0);
   };
   CHKERR set_dm_section(dm);
@@ -156,24 +156,24 @@ SmartPetscObj<SNES> PipelineManager::createSNES(SmartPetscObj<DM> dm) {
 
   // Add element to calculate lhs of stiff part
   if (feDomainLhs)
-    CHKERR DMMoFEMSNESSetJacobian(dm, simple_interface->getDomainFEName(),
-                                  feDomainLhs, null, null);
+    CHKERR DMMoFEMSNESSetJacobian(dm, simple->getDomainFEName(), feDomainLhs,
+                                  null, null);
   if (feBoundaryLhs)
-    CHKERR DMMoFEMSNESSetJacobian(dm, simple_interface->getBoundaryFEName(),
+    CHKERR DMMoFEMSNESSetJacobian(dm, simple->getBoundaryFEName(),
                                   feBoundaryLhs, null, null);
   if (feSkeletonLhs)
-    CHKERR DMMoFEMSNESSetJacobian(dm, simple_interface->getSkeletonFEName(),
+    CHKERR DMMoFEMSNESSetJacobian(dm, simple->getSkeletonFEName(),
                                   feSkeletonLhs, null, null);
 
   // Add element to calculate rhs of stiff part
   if (feDomainRhs)
-    CHKERR DMMoFEMSNESSetFunction(dm, simple_interface->getDomainFEName(),
-                                  feDomainRhs, null, null);
+    CHKERR DMMoFEMSNESSetFunction(dm, simple->getDomainFEName(), feDomainRhs,
+                                  null, null);
   if (feBoundaryRhs)
-    CHKERR DMMoFEMSNESSetFunction(dm, simple_interface->getBoundaryFEName(),
+    CHKERR DMMoFEMSNESSetFunction(dm, simple->getBoundaryFEName(),
                                   feBoundaryRhs, null, null);
   if (feSkeletonRhs)
-    CHKERR DMMoFEMSNESSetFunction(dm, simple_interface->getSkeletonFEName(),
+    CHKERR DMMoFEMSNESSetFunction(dm, simple->getSkeletonFEName(),
                                   feSkeletonRhs, null, null);
 
   auto snes = MoFEM::createSNES(m_field.get_comm());
@@ -206,7 +206,7 @@ SmartPetscObj<TS> PipelineManager::createTS(const TSType type,
 
 SmartPetscObj<TS> PipelineManager::createTSEX(SmartPetscObj<DM> dm) {
   Interface &m_field = cOre;
-  Simple *simple_interface = m_field.getInterface<Simple>();
+  Simple *simple = m_field.getInterface<Simple>();
 
   auto copy_dm_struture = [&](auto simple_dm) {
     MPI_Comm comm;
@@ -214,23 +214,24 @@ SmartPetscObj<TS> PipelineManager::createTSEX(SmartPetscObj<DM> dm) {
     DMType type;
     CHKERR DMGetType(simple_dm, &type);
     dm = createSmartDM(comm, type);
-    CHKERR DMMoFEMDuplicateDMCtx(simple_interface->getDM(), dm);
+    CHKERR DMMoFEMDuplicateDMCtx(simple_dm, dm);
     return dm;
   };
 
   if (!dm)
-    dm = copy_dm_struture(simple_interface->getDM());
+    dm = copy_dm_struture(simple->getDM());
   else
     dm = copy_dm_struture(dm);
 
+  const MoFEM::Problem *prb_ptr;
+  CHKERR DMMoFEMGetProblemPtr(dm, &prb_ptr);
+
   auto set_dm_section = [&](auto dm) {
     MoFEMFunctionBegin;
-    PetscSection section;
-    CHKERR m_field.getInterface<ISManager>()->sectionCreate(
-        simple_interface->getProblemName(), &section);
+    auto section =
+        m_field.getInterface<ISManager>()->sectionCreate(prb_ptr->getName());
     CHKERR DMSetDefaultSection(dm, section);
     CHKERR DMSetDefaultGlobalSection(dm, section);
-    CHKERR PetscSectionDestroy(&section);
     MoFEMFunctionReturn(0);
   };
   CHKERR set_dm_section(dm);
@@ -239,13 +240,13 @@ SmartPetscObj<TS> PipelineManager::createTSEX(SmartPetscObj<DM> dm) {
 
   // Add element to calculate rhs of stiff part
   if (feDomainRhs)
-    CHKERR DMMoFEMTSSetRHSFunction(dm, simple_interface->getDomainFEName(),
+    CHKERR DMMoFEMTSSetRHSFunction(dm, simple->getDomainFEName(),
                                    feDomainExplicitRhs, null, null);
   if (feBoundaryRhs)
-    CHKERR DMMoFEMTSSetRHSFunction(dm, simple_interface->getBoundaryFEName(),
+    CHKERR DMMoFEMTSSetRHSFunction(dm, simple->getBoundaryFEName(),
                                    feBoundaryExplicitRhs, null, null);
   if (feSkeletonRhs)
-    CHKERR DMMoFEMTSSetRHSFunction(dm, simple_interface->getSkeletonFEName(),
+    CHKERR DMMoFEMTSSetRHSFunction(dm, simple->getSkeletonFEName(),
                                    feSkeletonExplicitRhs, null, null);
 
   // Note: More cases for explit, and implicit time ingeration cases can be
@@ -258,7 +259,7 @@ SmartPetscObj<TS> PipelineManager::createTSEX(SmartPetscObj<DM> dm) {
 
 SmartPetscObj<TS> PipelineManager::createTSIM(SmartPetscObj<DM> dm) {
   Interface &m_field = cOre;
-  Simple *simple_interface = m_field.getInterface<Simple>();
+  Simple *simple = m_field.getInterface<Simple>();
 
   auto copy_dm_struture = [&](auto simple_dm) {
     MPI_Comm comm;
@@ -266,23 +267,24 @@ SmartPetscObj<TS> PipelineManager::createTSIM(SmartPetscObj<DM> dm) {
     DMType type;
     CHKERR DMGetType(simple_dm, &type);
     dm = createSmartDM(comm, type);
-    CHKERR DMMoFEMDuplicateDMCtx(simple_interface->getDM(), dm);
+    CHKERR DMMoFEMDuplicateDMCtx(simple_dm, dm);
     return dm;
   };
 
   if (!dm)
-    dm = copy_dm_struture(simple_interface->getDM());
+    dm = copy_dm_struture(simple->getDM());
   else
     dm = copy_dm_struture(dm);
 
+  const MoFEM::Problem *prb_ptr;
+  CHKERR DMMoFEMGetProblemPtr(dm, &prb_ptr);
+
   auto set_dm_section = [&](auto dm) {
     MoFEMFunctionBegin;
-    PetscSection section;
-    CHKERR m_field.getInterface<ISManager>()->sectionCreate(
-        simple_interface->getProblemName(), &section);
+    auto section =
+        m_field.getInterface<ISManager>()->sectionCreate(prb_ptr->getName());
     CHKERR DMSetDefaultSection(dm, section);
     CHKERR DMSetDefaultGlobalSection(dm, section);
-    CHKERR PetscSectionDestroy(&section);
     MoFEMFunctionReturn(0);
   };
   CHKERR set_dm_section(dm);
@@ -291,25 +293,25 @@ SmartPetscObj<TS> PipelineManager::createTSIM(SmartPetscObj<DM> dm) {
 
   // Add element to calculate lhs of stiff part
   if (feDomainLhs)
-    CHKERR DMMoFEMTSSetIJacobian(dm, simple_interface->getDomainFEName(),
-                                 feDomainLhs, null, null);
+    CHKERR DMMoFEMTSSetIJacobian(dm, simple->getDomainFEName(), feDomainLhs,
+                                 null, null);
   if (feBoundaryLhs)
-    CHKERR DMMoFEMTSSetIJacobian(dm, simple_interface->getBoundaryFEName(),
-                                 feBoundaryLhs, null, null);
+    CHKERR DMMoFEMTSSetIJacobian(dm, simple->getBoundaryFEName(), feBoundaryLhs,
+                                 null, null);
   if (feSkeletonLhs)
-    CHKERR DMMoFEMTSSetIJacobian(dm, simple_interface->getSkeletonFEName(),
-                                 feSkeletonLhs, null, null);
+    CHKERR DMMoFEMTSSetIJacobian(dm, simple->getSkeletonFEName(), feSkeletonLhs,
+                                 null, null);
 
   // Add element to calculate rhs of stiff part
   if (feDomainRhs)
-    CHKERR DMMoFEMTSSetIFunction(dm, simple_interface->getDomainFEName(),
-                                 feDomainRhs, null, null);
+    CHKERR DMMoFEMTSSetIFunction(dm, simple->getDomainFEName(), feDomainRhs,
+                                 null, null);
   if (feBoundaryRhs)
-    CHKERR DMMoFEMTSSetIFunction(dm, simple_interface->getBoundaryFEName(),
-                                 feBoundaryRhs, null, null);
+    CHKERR DMMoFEMTSSetIFunction(dm, simple->getBoundaryFEName(), feBoundaryRhs,
+                                 null, null);
   if (feSkeletonRhs)
-    CHKERR DMMoFEMTSSetIFunction(dm, simple_interface->getSkeletonFEName(),
-                                 feSkeletonRhs, null, null);
+    CHKERR DMMoFEMTSSetIFunction(dm, simple->getSkeletonFEName(), feSkeletonRhs,
+                                 null, null);
 
   // Note: More cases for explit, and implicit time ingeration cases can be
   // implemented here.
@@ -321,7 +323,7 @@ SmartPetscObj<TS> PipelineManager::createTSIM(SmartPetscObj<DM> dm) {
 
 SmartPetscObj<TS> PipelineManager::createTSIM2(SmartPetscObj<DM> dm) {
   Interface &m_field = cOre;
-  Simple *simple_interface = m_field.getInterface<Simple>();
+  Simple *simple = m_field.getInterface<Simple>();
 
   auto copy_dm_struture = [&](auto simple_dm) {
     MPI_Comm comm;
@@ -329,23 +331,24 @@ SmartPetscObj<TS> PipelineManager::createTSIM2(SmartPetscObj<DM> dm) {
     DMType type;
     CHKERR DMGetType(simple_dm, &type);
     dm = createSmartDM(comm, type);
-    CHKERR DMMoFEMDuplicateDMCtx(simple_interface->getDM(), dm);
+    CHKERR DMMoFEMDuplicateDMCtx(simple_dm, dm);
     return dm;
   };
 
   if (!dm)
-    dm = copy_dm_struture(simple_interface->getDM());
+    dm = copy_dm_struture(simple->getDM());
   else
     dm = copy_dm_struture(dm);
 
+  const MoFEM::Problem *prb_ptr;
+  CHKERR DMMoFEMGetProblemPtr(dm, &prb_ptr);
+
   auto set_dm_section = [&](auto dm) {
     MoFEMFunctionBegin;
-    PetscSection section;
-    CHKERR m_field.getInterface<ISManager>()->sectionCreate(
-        simple_interface->getProblemName(), &section);
+    auto section =
+        m_field.getInterface<ISManager>()->sectionCreate(prb_ptr->getName());
     CHKERR DMSetDefaultSection(dm, section);
     CHKERR DMSetDefaultGlobalSection(dm, section);
-    CHKERR PetscSectionDestroy(&section);
     MoFEMFunctionReturn(0);
   };
   CHKERR set_dm_section(dm);
@@ -354,24 +357,24 @@ SmartPetscObj<TS> PipelineManager::createTSIM2(SmartPetscObj<DM> dm) {
 
   // Add element to calculate lhs of stiff part
   if (feDomainLhs)
-    CHKERR DMMoFEMTSSetI2Jacobian(dm, simple_interface->getDomainFEName(),
-                                  feDomainLhs, null, null);
+    CHKERR DMMoFEMTSSetI2Jacobian(dm, simple->getDomainFEName(), feDomainLhs,
+                                  null, null);
   if (feBoundaryLhs)
-    CHKERR DMMoFEMTSSetI2Jacobian(dm, simple_interface->getBoundaryFEName(),
+    CHKERR DMMoFEMTSSetI2Jacobian(dm, simple->getBoundaryFEName(),
                                   feBoundaryLhs, null, null);
   if (feSkeletonLhs)
-    CHKERR DMMoFEMTSSetI2Jacobian(dm, simple_interface->getSkeletonFEName(),
+    CHKERR DMMoFEMTSSetI2Jacobian(dm, simple->getSkeletonFEName(),
                                   feSkeletonLhs, null, null);
 
   // Add element to calculate rhs of stiff part
   if (feDomainRhs)
-    CHKERR DMMoFEMTSSetI2Function(dm, simple_interface->getDomainFEName(),
-                                  feDomainRhs, null, null);
+    CHKERR DMMoFEMTSSetI2Function(dm, simple->getDomainFEName(), feDomainRhs,
+                                  null, null);
   if (feBoundaryRhs)
-    CHKERR DMMoFEMTSSetI2Function(dm, simple_interface->getBoundaryFEName(),
+    CHKERR DMMoFEMTSSetI2Function(dm, simple->getBoundaryFEName(),
                                   feBoundaryRhs, null, null);
   if (feSkeletonRhs)
-    CHKERR DMMoFEMTSSetI2Function(dm, simple_interface->getSkeletonFEName(),
+    CHKERR DMMoFEMTSSetI2Function(dm, simple->getSkeletonFEName(),
                                   feSkeletonRhs, null, null);
 
   // Note: More cases for explit, and implicit time ingeration cases can be
@@ -384,7 +387,7 @@ SmartPetscObj<TS> PipelineManager::createTSIM2(SmartPetscObj<DM> dm) {
 
 SmartPetscObj<TS> PipelineManager::createTSIMEX(SmartPetscObj<DM> dm) {
   Interface &m_field = cOre;
-  Simple *simple_interface = m_field.getInterface<Simple>();
+  Simple *simple = m_field.getInterface<Simple>();
 
   auto copy_dm_struture = [&](auto simple_dm) {
     MPI_Comm comm;
@@ -392,23 +395,24 @@ SmartPetscObj<TS> PipelineManager::createTSIMEX(SmartPetscObj<DM> dm) {
     DMType type;
     CHKERR DMGetType(simple_dm, &type);
     dm = createSmartDM(comm, type);
-    CHKERR DMMoFEMDuplicateDMCtx(simple_interface->getDM(), dm);
+    CHKERR DMMoFEMDuplicateDMCtx(simple_dm, dm);
     return dm;
   };
 
   if (!dm)
-    dm = copy_dm_struture(simple_interface->getDM());
+    dm = copy_dm_struture(simple->getDM());
   else
     dm = copy_dm_struture(dm);
 
+  const MoFEM::Problem *prb_ptr;
+  CHKERR DMMoFEMGetProblemPtr(dm, &prb_ptr);
+
   auto set_dm_section = [&](auto dm) {
     MoFEMFunctionBegin;
-    PetscSection section;
-    CHKERR m_field.getInterface<ISManager>()->sectionCreate(
-        simple_interface->getProblemName(), &section);
+    auto section =
+        m_field.getInterface<ISManager>()->sectionCreate(prb_ptr->getName());
     CHKERR DMSetDefaultSection(dm, section);
     CHKERR DMSetDefaultGlobalSection(dm, section);
-    CHKERR PetscSectionDestroy(&section);
     MoFEMFunctionReturn(0);
   };
   CHKERR set_dm_section(dm);
@@ -417,35 +421,35 @@ SmartPetscObj<TS> PipelineManager::createTSIMEX(SmartPetscObj<DM> dm) {
 
   // Add element to calculate lhs of stiff part
   if (feDomainLhs)
-    CHKERR DMMoFEMTSSetIJacobian(dm, simple_interface->getDomainFEName(),
-                                 feDomainLhs, null, null);
+    CHKERR DMMoFEMTSSetIJacobian(dm, simple->getDomainFEName(), feDomainLhs,
+                                 null, null);
   if (feBoundaryLhs)
-    CHKERR DMMoFEMTSSetIJacobian(dm, simple_interface->getBoundaryFEName(),
-                                 feBoundaryLhs, null, null);
+    CHKERR DMMoFEMTSSetIJacobian(dm, simple->getBoundaryFEName(), feBoundaryLhs,
+                                 null, null);
   if (feSkeletonLhs)
-    CHKERR DMMoFEMTSSetIJacobian(dm, simple_interface->getSkeletonFEName(),
-                                 feSkeletonLhs, null, null);
+    CHKERR DMMoFEMTSSetIJacobian(dm, simple->getSkeletonFEName(), feSkeletonLhs,
+                                 null, null);
 
   // Add element to calculate rhs of stiff part
   if (feDomainRhs)
-    CHKERR DMMoFEMTSSetIFunction(dm, simple_interface->getDomainFEName(),
-                                 feDomainRhs, null, null);
+    CHKERR DMMoFEMTSSetIFunction(dm, simple->getDomainFEName(), feDomainRhs,
+                                 null, null);
   if (feBoundaryRhs)
-    CHKERR DMMoFEMTSSetIFunction(dm, simple_interface->getBoundaryFEName(),
-                                 feBoundaryRhs, null, null);
+    CHKERR DMMoFEMTSSetIFunction(dm, simple->getBoundaryFEName(), feBoundaryRhs,
+                                 null, null);
   if (feSkeletonRhs)
-    CHKERR DMMoFEMTSSetIFunction(dm, simple_interface->getSkeletonFEName(),
-                                 feSkeletonRhs, null, null);
+    CHKERR DMMoFEMTSSetIFunction(dm, simple->getSkeletonFEName(), feSkeletonRhs,
+                                 null, null);
 
   // Add element to calculate rhs of stiff part
   if (feDomainExplicitRhs)
-    CHKERR DMMoFEMTSSetRHSFunction(dm, simple_interface->getDomainFEName(),
+    CHKERR DMMoFEMTSSetRHSFunction(dm, simple->getDomainFEName(),
                                    feDomainExplicitRhs, null, null);
   if (feBoundaryExplicitRhs)
-    CHKERR DMMoFEMTSSetRHSFunction(dm, simple_interface->getBoundaryFEName(),
+    CHKERR DMMoFEMTSSetRHSFunction(dm, simple->getBoundaryFEName(),
                                    feBoundaryExplicitRhs, null, null);
   if (feSkeletonExplicitRhs)
-    CHKERR DMMoFEMTSSetRHSFunction(dm, simple_interface->getSkeletonFEName(),
+    CHKERR DMMoFEMTSSetRHSFunction(dm, simple->getSkeletonFEName(),
                                    feSkeletonExplicitRhs, null, null);
 
   // Note: More cases for explit, and implicit time ingeration cases can be

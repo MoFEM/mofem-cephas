@@ -66,48 +66,65 @@ typedef std::bitset<32> CubitBCType;
 // typedef ublas::unbounded_array<int,std::allocator<int> > IntAllocator;
 // typedef ublas::unbounded_array<double,std::allocator<double> >
 // DoubleAllocator;
-typedef std::vector<int, std::allocator<int>> IntAllocator;
-typedef std::vector<double, std::allocator<double>> DoubleAllocator;
-typedef std::vector<std::complex<double>, std::allocator<std::complex<double>>>
-    ComplexDoubleAllocator;
-typedef ublas::vector<int, IntAllocator> VectorInt;
-typedef ublas::vector<double, DoubleAllocator> VectorDouble;
-typedef ublas::matrix<int, ublas::row_major, IntAllocator> MatrixInt;
-typedef ublas::matrix<double, ublas::row_major, DoubleAllocator> MatrixDouble;
-typedef ublas::vector<std::complex<double>, ComplexDoubleAllocator>
-    VectorComplexDouble;
-typedef ublas::matrix<std::complex<double>, ublas::row_major,
-                      ComplexDoubleAllocator>
-    MatrixComplexDouble;
+template <typename T>
+using VecAllocator = std::vector<T, std::allocator<T>>;
+
+using IntAllocator = VecAllocator<int>;
+using DoubleAllocator = VecAllocator<double>;
+using ComplexDoubleAllocator = VecAllocator<std::complex<double>>;
+
+template <typename T>
+using UBlasVector = ublas::vector<T, VecAllocator<T>>;
+using VectorInt = UBlasVector<int>;
+using VectorDouble = UBlasVector<double>;
+using VectorComplexDouble = UBlasVector<std::complex<double>>;
+#ifdef WITH_ADOL_C
+using VectorADouble = UBlasVector<adouble>;
+#endif
+
+template <typename T>
+using UBlasMatrix = ublas::matrix<T, ublas::row_major, VecAllocator<T>>;
+using MatrixInt = UBlasMatrix<int>;
+using MatrixDouble = UBlasMatrix<double>;
+using MatrixComplexDouble = UBlasMatrix<std::complex<double>>;
+#ifdef WITH_ADOL_C
+using MatrixADouble = UBlasMatrix<adouble>;
+#endif
 
 // bounded vector & matrices
 template <typename T, size_t N>
 using VectorBoundedArray = ublas::vector<T, ublas::bounded_array<T, N>>;
 
-typedef VectorBoundedArray<int, 3> VectorInt3;
-typedef VectorBoundedArray<int, 4> VectorInt4;
-typedef VectorBoundedArray<int, 5> VectorInt5;
-typedef VectorBoundedArray<int, 6> VectorInt6;
-typedef VectorBoundedArray<int, 9> VectorInt9;
-typedef VectorBoundedArray<double, 3> VectorDouble3;
-typedef VectorBoundedArray<double, 4> VectorDouble4;
-typedef VectorBoundedArray<double, 5> VectorDouble5;
-typedef VectorBoundedArray<double, 6> VectorDouble6;
-typedef VectorBoundedArray<double, 9> VectorDouble9;
-typedef VectorBoundedArray<double, 12> VectorDouble12;
+using VectorInt3 = VectorBoundedArray<int, 3>;
+using VectorInt4 = VectorBoundedArray<int, 4>;
+using VectorInt5 = VectorBoundedArray<int, 5>;
+using VectorInt6 = VectorBoundedArray<int, 6>;
+using VectorInt9 = VectorBoundedArray<int, 9>;
+using VectorDouble3 = VectorBoundedArray<double, 3>;
+using VectorDouble4 = VectorBoundedArray<double, 4>;
+using VectorDouble5 = VectorBoundedArray<double, 5>;
+using VectorDouble6 = VectorBoundedArray<double, 6>;
+using VectorDouble9 = VectorBoundedArray<double, 9>;
+using VectorDouble12 = VectorBoundedArray<double, 12>;
+#ifdef WITH_ADOL_C
+using VectorADouble9 = VectorBoundedArray<adouble, 9>;
+#endif
 
 template <typename T, size_t N>
 using MatrixBoundedArray =
     ublas::matrix<T, ublas::row_major, ublas::bounded_array<T, N>>;
-typedef MatrixBoundedArray<double, 9> MatrixDouble3by3;
-typedef MatrixBoundedArray<std::complex<double>, 9> MatrixComplexDouble3by3;
+using MatrixDouble3by3 = MatrixBoundedArray<double, 9>;
+using MatrixComplexDouble3by3 = MatrixBoundedArray<std::complex<double>, 9>;
+#ifdef WITH_ADOL_C
+using MatrixADouble3by3 = MatrixBoundedArray<adouble, 9>;
+#endif
 
 // shallow adaptor classes
 template <typename T>
 using VectorShallowArrayAdaptor =
     ublas::vector<T, ublas::shallow_array_adaptor<T>>;
-typedef VectorShallowArrayAdaptor<double> VectorAdaptor;
-typedef VectorShallowArrayAdaptor<int> VectorIntAdaptor;
+using VectorAdaptor = VectorShallowArrayAdaptor<double>;
+using VectorIntAdaptor = VectorShallowArrayAdaptor<int>;
 
 template <typename T>
 using MatrixShallowArrayAdaptor =

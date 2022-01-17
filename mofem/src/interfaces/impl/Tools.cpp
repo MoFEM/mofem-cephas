@@ -55,7 +55,7 @@ double Tools::tetVolume(const double *coords) {
     ++t_coords;
     ++t_diff_n;
   }
-  return dEterminant(jac) / 6.;
+  return determinantTensor3by3(jac) / 6.;
 }
 
 MoFEMErrorCode

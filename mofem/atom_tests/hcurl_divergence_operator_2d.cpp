@@ -2,7 +2,10 @@
  * \file hcurl_divergence_operator_2d.cpp
  * \example hcurl_divergence_operator_2d.cpp
  *
- * Testing Hcurl base, transfromed to Hdiv base in 2d using Green theorem
+ * Testing Hcurl base, transfromed to Hdiv base in 2d using Green theorem.
+ * 
+ * Note 0: This is low-level implementation.
+ * Note 1: Generic implementation for Quad/Tri mesh of arbitrary order.
  * 
  */
 
@@ -27,11 +30,13 @@ using namespace MoFEM;
 static char help[] = "...\n\n";
 
 using FaceEle = MoFEM::FaceElementForcesAndSourcesCore;
-
 using EdgeEle = MoFEM::EdgeElementForcesAndSourcesCore;
 
 using FaceEleOp = FaceEle::UserDataOperator;
 using EdgeEleOp = EdgeEle::UserDataOperator;
+
+constexpr int SPACE_DIM = 2;
+FTensor::Index<'i', SPACE_DIM> i;
 
 struct OpDivergence : public FaceEleOp {
 
@@ -45,13 +50,16 @@ struct OpDivergence : public FaceEleOp {
     if (nb_dofs == 0)
       MoFEMFunctionReturnHot(0);
     const int nb_gauss_pts = data.getN().size1();
+    auto t_w = getFTensor0IntegrationWeight();
     auto t_diff_base_fun = data.getFTensor2DiffN<3, 2>();
+    const auto area = getMeasure();
     for (int gg = 0; gg != nb_gauss_pts; gg++) {
-      const double val = getArea() * getGaussPts()(2, gg);
+      const double val = area * t_w;
       for (int bb = 0; bb != nb_dofs; bb++) {
-        dIv += val * (t_diff_base_fun(0, 0) + t_diff_base_fun(1, 1));
+        dIv += val * t_diff_base_fun(i, i);
         ++t_diff_base_fun;
       }
+      ++t_w;
     }
     MoFEMFunctionReturn(0);
   }
@@ -62,8 +70,6 @@ struct OpFlux : public EdgeEleOp {
   double &fLux;
   OpFlux(double &flux) : EdgeEleOp("FIELD1", OPROW), fLux(flux) {}
 
-  FTensor::Index<'i', 3> i;
-
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data) {
     MoFEMFunctionBegin;
@@ -71,17 +77,15 @@ struct OpFlux : public EdgeEleOp {
     if (nb_dofs == 0)
       MoFEMFunctionReturnHot(0);
     const int nb_gauss_pts = data.getN().size1();
-    FTensor::Tensor1<double, 3> t_normal(-getDirection()[1], getDirection()[0],
-                                         0.);
-
+    auto t_normal = getFTensor1Normal();
     auto t_base_fun = data.getFTensor1N<3>();
-    FTensor::Index<'i', 2> i;
+    auto t_w = getFTensor0IntegrationWeight();
     for (int gg = 0; gg != nb_gauss_pts; gg++) {
-      const double val = getGaussPts()(1, gg);
       for (int bb = 0; bb != nb_dofs; bb++) {
-        fLux += val * t_normal(i) * t_base_fun(i);
+        fLux += t_w * t_normal(i) * t_base_fun(i);
         ++t_base_fun;
       }
+      ++t_w;
     }
 
     MoFEMFunctionReturn(0);
@@ -157,17 +161,13 @@ int main(int argc, char *argv[]) {
 
     // Add entities
 
-    CHKERR m_field.add_ents_to_field_by_type(0, MBTRI, "FIELD1");
-    CHKERR m_field.add_ents_to_field_by_type(0, MBQUAD, "FIELD1");
+    CHKERR m_field.add_ents_to_field_by_dim(0, SPACE_DIM, "FIELD1");
     // Set order
-    CHKERR m_field.set_field_order(0, MBTRI, "FIELD1", order);
-    CHKERR m_field.set_field_order(0, MBQUAD, "FIELD1", order);
-    CHKERR m_field.set_field_order(0, MBEDGE, "FIELD1", order);
+    for (auto t : {MBEDGE, MBTRI, MBQUAD})
+      CHKERR m_field.set_field_order(0, t, "FIELD1", order);
 
     // Add entities to elements
-    CHKERR m_field.add_ents_to_finite_element_by_type(0, MBTRI, "FACE_FE");
-    CHKERR m_field.add_ents_to_finite_element_by_type(0, MBQUAD, "FACE_FE");
-
+    CHKERR m_field.add_ents_to_finite_element_by_dim(0, SPACE_DIM, "FACE_FE");
     auto set_edge_elements_entities_on_mesh_skin = [&]() {
       MoFEMFunctionBegin;
       Range faces;
@@ -175,8 +175,8 @@ int main(int argc, char *argv[]) {
       Skinner skin(&m_field.get_moab());
       Range faces_skin;
       CHKERR skin.find_skin(0, faces, false, faces_skin);
-      CHKERR m_field.add_ents_to_finite_element_by_type(faces_skin, MBEDGE,
-                                                        "EDGE_FE");
+      CHKERR m_field.add_ents_to_finite_element_by_dim(
+          faces_skin, SPACE_DIM - 1, "EDGE_FE");
       MoFEMFunctionReturn(0);
     };
     CHKERR set_edge_elements_entities_on_mesh_skin();
@@ -235,11 +235,13 @@ int main(int argc, char *argv[]) {
     const double div = calculate_divergence();
     const double flux = calculate_flux();
 
-    PetscPrintf(PETSC_COMM_WORLD, "Div = %4.3e Flux = %3.4e Error = %4.3e\n",
-                div, flux, div + flux);
+    MOFEM_LOG_CHANNEL("WOLD"); // reset channel
+    MOFEM_LOG_C("WORLD", Sev::inform,
+                "Div = %4.3e Flux = %3.4e Error = %4.3e\n", div, flux,
+                div - flux);
 
     constexpr double tol = 1e-8;
-    if (std::abs(div + flux) > tol)
+    if (std::abs(div - flux) > tol)
       SETERRQ2(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                "Test failed (div != flux) %3.4e != %3.4e", div, flux);
   }

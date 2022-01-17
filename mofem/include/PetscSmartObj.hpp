@@ -99,10 +99,10 @@ struct SmartPetscObj
 
   /**
    * @brief Construct a new Smart Petsc Obj object
-   * 
+   *
    * \note If add_red is set to true, you have to destroy OBJ.
-   * 
-   * @param o 
+   *
+   * @param o
    * @param add_ref // if false ownership of OBJ is taken by SmartPetscObj
    */
   explicit SmartPetscObj(OBJ o, bool add_ref = false)
@@ -149,10 +149,8 @@ struct SmartPetscObj
  */
 auto createSmartDM = [](MPI_Comm comm, const std::string dm_type_name) {
   DM dm;
-  ierr = DMCreate(comm, &dm);
-  CHKERRABORT(comm, ierr);
-  ierr = DMSetType(dm, dm_type_name.c_str());
-  CHKERRABORT(comm, ierr);
+  CHK_THROW_MESSAGE(DMCreate(comm, &dm), "Failed to create DM");
+  CHK_THROW_MESSAGE(DMSetType(dm, dm_type_name.c_str()), "Failed set DM type");
   return SmartPetscObj<DM>(dm);
 };
 
@@ -164,8 +162,8 @@ auto createSmartDM = [](MPI_Comm comm, const std::string dm_type_name) {
  */
 inline MPI_Comm getCommFromPetscObject(PetscObject obj) {
   MPI_Comm comm;
-  ierr = PetscObjectGetComm(obj, &comm);
-  CHKERRABORT(PETSC_COMM_SELF, ierr);
+  CHK_THROW_MESSAGE(PetscObjectGetComm(obj, &comm),
+                    "Failed to get comm from PETSc object");
   return comm;
 };
 
@@ -184,8 +182,8 @@ inline MPI_Comm getCommFromPetscObject(PetscObject obj) {
 auto createSmartGhostVector = [](MPI_Comm comm, PetscInt n, PetscInt N,
                                  PetscInt nghost, const PetscInt ghosts[]) {
   Vec vv;
-  ierr = VecCreateGhost(comm, n, N, nghost, ghosts, &vv);
-  CHKERRABORT(comm, ierr);
+  CHK_THROW_MESSAGE(VecCreateGhost(comm, n, N, nghost, ghosts, &vv),
+                    "Failed to create ghosted Vec");
   return SmartPetscObj<Vec>(vv);
 };
 
@@ -199,8 +197,7 @@ auto createSmartGhostVector = [](MPI_Comm comm, PetscInt n, PetscInt N,
  */
 auto createSmartVectorMPI = [](MPI_Comm comm, PetscInt n, PetscInt N) {
   Vec vv;
-  ierr = VecCreateMPI(comm, n, N, &vv);
-  CHKERRABORT(comm, ierr);
+  CHK_THROW_MESSAGE(VecCreateMPI(comm, n, N, &vv), "Failed to create Vec");
   return SmartPetscObj<Vec>(vv);
 };
 
@@ -214,8 +211,7 @@ auto createSmartVectorMPI = [](MPI_Comm comm, PetscInt n, PetscInt N) {
 inline SmartPetscObj<Vec> smartVectorDuplicate(SmartPetscObj<Vec> &vec) {
   if (vec.use_count()) {
     Vec duplicate;
-    ierr = VecDuplicate(vec, &duplicate);
-    CHKERRABORT(PETSC_COMM_SELF, ierr);
+    CHK_THROW_MESSAGE(VecDuplicate(vec, &duplicate), "Failed to duplicate Vec");
     return SmartPetscObj<Vec>(duplicate);
   } else {
     return SmartPetscObj<Vec>();
@@ -224,15 +220,14 @@ inline SmartPetscObj<Vec> smartVectorDuplicate(SmartPetscObj<Vec> &vec) {
 
 inline SmartPetscObj<Vec> smartVectorDuplicate(Vec &vec) {
   Vec duplicate;
-  ierr = VecDuplicate(vec, &duplicate);
-  CHKERRABORT(PETSC_COMM_SELF, ierr);
+  CHK_THROW_MESSAGE(VecDuplicate(vec, &duplicate), "Failed to duplicate Vec");
   return SmartPetscObj<Vec>(duplicate);
 };
 
 inline SmartPetscObj<Mat> smartMatDuplicate(Mat &mat, MatDuplicateOption op) {
   Mat duplicate;
-  ierr = MatDuplicate(mat, op, &duplicate);
-  CHKERRABORT(PETSC_COMM_SELF, ierr);
+  CHK_THROW_MESSAGE(MatDuplicate(mat, op, &duplicate),
+                    "Failed to duplicate Mat");
   return SmartPetscObj<Mat>(duplicate);
 };
 
@@ -240,8 +235,8 @@ inline SmartPetscObj<Mat> smartMatDuplicate(SmartPetscObj<Mat> &mat,
                                             MatDuplicateOption op) {
   if (mat.use_count()) {
     Mat duplicate;
-    ierr = MatDuplicate(mat, op, &duplicate);
-    CHKERRABORT(PETSC_COMM_SELF, ierr);
+    CHK_THROW_MESSAGE(MatDuplicate(mat, op, &duplicate),
+                      "Failed to duplicate Mat");
     return SmartPetscObj<Mat>(duplicate);
   } else {
     return SmartPetscObj<Mat>();
@@ -250,29 +245,25 @@ inline SmartPetscObj<Mat> smartMatDuplicate(SmartPetscObj<Mat> &mat,
 
 auto createTS = [](MPI_Comm comm) {
   TS ts;
-  ierr = TSCreate(comm, &ts);
-  CHKERRABORT(comm, ierr);
+  CHK_THROW_MESSAGE(TSCreate(comm, &ts), "Failed to create TS");
   return SmartPetscObj<TS>(ts);
 };
 
 auto createSNES = [](MPI_Comm comm) {
   SNES snes;
-  ierr = SNESCreate(comm, &snes);
-  CHKERRABORT(comm, ierr);
+  CHK_THROW_MESSAGE(SNESCreate(comm, &snes), "Failed to create SNES");
   return SmartPetscObj<SNES>(snes);
 };
 
 auto createKSP = [](MPI_Comm comm) {
   KSP ksp;
-  ierr = KSPCreate(comm, &ksp);
-  CHKERRABORT(comm, ierr);
+  CHK_THROW_MESSAGE(KSPCreate(comm, &ksp), "Failed to create KSP");
   return SmartPetscObj<KSP>(ksp);
 };
 
 auto createPC = [](MPI_Comm comm) {
   PC pc;
-  ierr = PCCreate(comm, &pc);
-  CHKERRABORT(comm, ierr);
+  CHK_THROW_MESSAGE(PCCreate(comm, &pc), "Failed to create PC");
   return SmartPetscObj<PC>(pc);
 };
 
