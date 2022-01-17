@@ -20,9 +20,6 @@
 #define BOOST_MULTI_INDEX_ENABLE_SAFE_MODE
 #endif
 
-#define BOOST_ALL_NO_LIB 
-#define BOOST_ALL_DYN_LINK 
-
 #ifndef __MOFEM_HPP__
 #define __MOFEM_HPP__
 

@@ -27,3 +27,5 @@ if(NOT BOOST_INCLUDE_DIR)
   message(FATAL_ERROR "Boost include dir not found")
 endif(NOT BOOST_INCLUDE_DIR)
 include_directories(${BOOST_INCLUDE_DIR})
+
+add_definitions(${Boost_LIB_DIAGNOSTIC_DEFINITIONS})
