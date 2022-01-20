@@ -3,7 +3,8 @@ FROM likask/mofem-intermidiate
 LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk"
 
 RUN . $MOFEM_ENV_FILE && \
-  spack install mofem-softmech ^/$MOFEM_UM_HASH && \
+  spack install mofem-softmech@lukasz build_type=Release ^/$MOFEM_UM_HASH && \
+  rm -rf $MOFEM_INSTALL_DIR/um_view && \
   spack view symlink -i $MOFEM_INSTALL_DIR/um_view mofem-softmech
 
 WORKDIR $MOFEM_INSTALL_DIR
