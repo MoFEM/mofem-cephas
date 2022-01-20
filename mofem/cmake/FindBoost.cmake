@@ -29,3 +29,4 @@ endif(NOT BOOST_INCLUDE_DIR)
 include_directories(${BOOST_INCLUDE_DIR})
 
 add_definitions(${Boost_LIB_DIAGNOSTIC_DEFINITIONS})
+add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)

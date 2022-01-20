@@ -19,6 +19,7 @@
 #ifndef __DEFINITONS_H__
 #define __DEFINITONS_H__
 
+#ifndef DEPRECATED
 // taken from http://stackoverflow.com/questions/295120/c-mark-as-deprecated
 #ifdef __GNUC__
 #define DEPRECATED __attribute__((deprecated))
@@ -27,6 +28,7 @@
 #else
 #pragma message("WARNING: You need to implement DEPRECATED for this compiler")
 #define DEPRECATED
+#endif
 #endif
 
 /** \brief Error handling
