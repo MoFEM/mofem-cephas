@@ -62,12 +62,12 @@ ENV SPACK_ROOT_DIR=$MOFEM_INSTALL_DIR/spack
 
 # clone spack
 RUN mkdir -p $SPACK_ROOT_DIR && \
-    curl -s -L https://api.github.com/repos/likask/spack/tarball/develop_spack_v0.16.2 \
+    curl -s -L https://api.github.com/repos/likask/spack/tarball/spack_develop_v0.17.1 \
     | tar xzC $SPACK_ROOT_DIR --strip 1 && \
     . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
     echo ". $SPACK_ROOT_DIR/share/spack/setup-env.sh" >> ~/.bashrc && \
     spack external find && \
-    spack install --only dependencies mofem-cephas target=x86_64 ^petsc+X 
+    spack install --only dependencies mofem-cephas@lukasz target=x86_64 build_type=Release ^petsc+X 
 
 # image run hook: the -l will make sure /etc/profile environments are loaded
 CMD        /bin/bash -l

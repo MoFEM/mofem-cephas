@@ -2,7 +2,7 @@ FROM likask/mofem-spack-jupyter
 
 LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk"
 
-ENV MOFEM_JUPYTER_HOME_DIR=/jupyter
+ENV MOFEM_JUPYTER_HOME_DIR=/mofem_install/jupyter
 
 ADD . $MOFEM_JUPYTER_HOME_DIR
 
@@ -13,8 +13,8 @@ RUN apt-get update && \
   rm -rf /var/lib/apt/lists/*
 
 RUN useradd mofem \
-  -m -d /jupyter/mofem \
-  -k /jupyter/skel/ \
+  -m -d /mofem_install/jupyter/mofem \
+  -k /mofem_install/jupyter/skel/ \
   -p paN8aiEIonqJE && \
   usermod -aG sudo mofem
 
