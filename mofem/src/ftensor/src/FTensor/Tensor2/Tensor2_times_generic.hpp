@@ -8,7 +8,7 @@ namespace FTensor
   class Tensor2_times_generic
   {
     const Tensor2_Expr<A, T, Dim0, Dim1, i, j> iterA;
-    const U d;
+    const U &d;
 
   public:
     typename promote<T, U>::V operator()(const int N1, const int N2) const

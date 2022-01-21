@@ -397,9 +397,9 @@ template <int MODE> struct SetOtherLocalGhostVector {
           SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                   "Automatic creation of entity and dof not implemented");
         }
-        if (MODE == INSERT_VALUES)
+        if constexpr (MODE == INSERT_VALUES)
           (*diiiit)->getFieldData() = array[(*miit)->getPetscLocalDofIdx()];
-        else if (MODE == ADD_VALUES)
+        else if constexpr (MODE == ADD_VALUES)
           (*diiiit)->getFieldData() += array[(*miit)->getPetscLocalDofIdx()];
       }
     }
@@ -523,13 +523,15 @@ template <int MODE> struct SetOtherGlobalGhostVector {
           (*miit)->getEntDofIdx(), FieldEntity::getLocalUniqueIdCalculate(
                                        cpy_bit_number, (*miit)->getEnt()));
       auto diiiit = dofs_ptr->template get<Unique_mi_tag>().find(uid);
+#ifndef NDEBUG
       if (diiiit == dofs_ptr->template get<Unique_mi_tag>().end()) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                 "Automatic creation of entity and dof not implemented");
       }
-      if (MODE == INSERT_VALUES)
+#endif
+      if constexpr (MODE == INSERT_VALUES)
         (*diiiit)->getFieldData() = array[(*miit)->getPetscGlobalDofIdx()];
-      else if (MODE == ADD_VALUES)
+      else if constexpr (MODE == ADD_VALUES)
         (*diiiit)->getFieldData() += array[(*miit)->getPetscGlobalDofIdx()];
     }
     MoFEMFunctionReturn(0);

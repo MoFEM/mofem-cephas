@@ -72,8 +72,8 @@ c.Authenticator.admin_users = {'mofem'}
 c.LocalAuthenticator.add_user_cmd = [
   'useradd', 
   '-m', 
-  '-d', '/jupyter/USERNAME', 
-  '-k', '/jupyter/skel/', 
+  '-d', '/mofem_install/jupyter/USERNAME', 
+  '-k', '/mofem_install/jupyter/skel/', 
   '-p', 'paN8aiEIonqJE']  
 c.LocalAuthenticator.create_system_users = True
 

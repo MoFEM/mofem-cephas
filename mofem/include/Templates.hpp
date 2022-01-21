@@ -12,7 +12,7 @@
  * License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * 
+ *
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
  */
 
@@ -123,9 +123,7 @@ template <class X> inline std::string toString(X x) {
   return buffer.str();
 }
 
-template <int S, class T, class A>
-struct GetFTensor0FromVecImpl {
-};
+template <int S, class T, class A> struct GetFTensor0FromVecImpl {};
 
 template <int S> struct GetFTensor0FromVecImpl<S, double, DoubleAllocator> {
   static inline auto get(ublas::vector<double, DoubleAllocator> &data) {
@@ -417,7 +415,7 @@ struct GetFTensor3DgFromMatImpl {};
 
 template <int S>
 struct GetFTensor3DgFromMatImpl<1, 1, S, double, ublas::row_major,
-                                 DoubleAllocator> {
+                                DoubleAllocator> {
   static inline auto get(MatrixDouble &data) {
     if (data.size1() != 1)
       THROW_MESSAGE(
@@ -431,7 +429,7 @@ struct GetFTensor3DgFromMatImpl<1, 1, S, double, ublas::row_major,
 
 template <int S>
 struct GetFTensor3DgFromMatImpl<2, 2, S, double, ublas::row_major,
-                                 DoubleAllocator> {
+                                DoubleAllocator> {
   static inline auto get(MatrixDouble &data) {
     if (data.size1() != 9) {
       THROW_MESSAGE(
@@ -440,14 +438,14 @@ struct GetFTensor3DgFromMatImpl<2, 2, S, double, ublas::row_major,
           boost::lexical_cast<std::string>(data.size1()));
     }
     return FTensor::Dg<FTensor::PackPtr<double *, S>, 2, 2>{
-        &data(0, 0), &data(1, 0), &data(2, 0), &data(3, 0), &data(4, 0),
-        &data(5, 0), &data(6, 0)};
+        &data(0, 0), &data(1, 0), &data(2, 0), &data(3, 0),
+        &data(4, 0), &data(5, 0), &data(6, 0)};
   }
 };
 
 template <int S>
 struct GetFTensor3DgFromMatImpl<3, 3, S, double, ublas::row_major,
-                                 DoubleAllocator> {
+                                DoubleAllocator> {
   static inline auto get(MatrixDouble &data) {
     if (data.size1() != 18) {
       cerr << data.size1() << endl;
@@ -487,8 +485,7 @@ getFTensor3DgFromMat(ublas::matrix<T, L, A> &data) {
 template <int Tensor_Dim01, int Tensor_Dim2, int S = 1>
 static inline auto getFTensor3DgFromMat(MatrixDouble &data) {
   return GetFTensor3DgFromMatImpl<Tensor_Dim01, Tensor_Dim2, S, double,
-                                   ublas::row_major,
-                                   DoubleAllocator>::get(data);
+                                  ublas::row_major, DoubleAllocator>::get(data);
 }
 
 template <int Tensor_Dim0, int Tensor_Dim1, int Tensor_Dim2, int Tensor_Dim3,
@@ -748,28 +745,57 @@ getFTensor1FromArrayDiag(MatrixDouble &data, const size_t rr) {
  * @param data
  * @return FTensor::Tensor2<FTensor::PackPtr<double *, S>, DIM1, DIM2>
  */
+template <int DIM1, int DIM2, int S, class T, class L, class A>
+struct GetFTensor2FromArrayImpl {};
+
+template <int S, class T, class L, class A>
+struct GetFTensor2FromArrayImpl<2, 2, S, T, L, A> {
+  inline static auto get(ublas::matrix<T, L, A> &data, const size_t rr) {
+    return FTensor::Tensor2<FTensor::PackPtr<T *, S>, 2, 2>{
+        &data(rr + 0, 0), &data(rr + 0, 1), &data(rr + 1, 0), &data(rr + 1, 1)};
+  }
+};
+
+template <int S, class T, class L, class A>
+struct GetFTensor2FromArrayImpl<3, 3, S, T, L, A> {
+  inline static auto get(ublas::matrix<T, L, A> &data, const size_t rr) {
+    return FTensor::Tensor2<FTensor::PackPtr<T *, S>, 3, 3>{
+        &data(rr + 0, 0), &data(rr + 0, 1), &data(rr + 0, 2),
+        &data(rr + 1, 0), &data(rr + 1, 1), &data(rr + 1, 2),
+        &data(rr + 2, 0), &data(rr + 2, 1), &data(rr + 2, 2)};
+  }
+};
+
 template <int DIM1, int DIM2, int S>
 inline FTensor::Tensor2<FTensor::PackPtr<double *, S>, DIM1, DIM2>
 getFTensor2FromArray(MatrixDouble &data, const size_t rr) {
-  static_assert(DIM1 != DIM1, "not implemented");
-  return FTensor::Tensor2<FTensor::PackPtr<double *, S>, DIM1, DIM2>();
+  return GetFTensor2FromArrayImpl<DIM1, DIM2, S, double, ublas::row_major,
+                                  VecAllocator<double>>::get(data, rr);
 }
 
-template <>
-inline FTensor::Tensor2<FTensor::PackPtr<double *, 2>, 2, 2>
-getFTensor2FromArray(MatrixDouble &data, const size_t rr) {
-  return FTensor::Tensor2<FTensor::PackPtr<double *, 2>, 2, 2>{
-      &data(rr + 0, 0), &data(rr + 0, 1), &data(rr + 1, 0), &data(rr + 1, 1)};
+template <int S, typename T, typename L, typename A>
+inline auto getFTensor2FromArray2by2(ublas::matrix<T, L, A> &data,
+                                     const FTensor::Number<S> &,
+                                     const size_t rr) {
+  return GetFTensor2FromArrayImpl<2, 2, S, T, L, A>::get(data, rr);
 }
 
-template <>
-inline FTensor::Tensor2<FTensor::PackPtr<double *, 3>, 3, 3>
-getFTensor2FromArray(MatrixDouble &data, const size_t rr) {
-  return FTensor::Tensor2<FTensor::PackPtr<double *, 3>, 3, 3>{
-      &data(rr + 0, 0), &data(rr + 0, 1), &data(rr + 0, 2),
-      &data(rr + 1, 0), &data(rr + 1, 1), &data(rr + 1, 2),
-      &data(rr + 2, 0), &data(rr + 2, 1), &data(rr + 2, 2)};
+template <int S, typename T, typename L, typename A>
+inline auto getFTensor2FromArray3by3(ublas::matrix<T, L, A> &data,
+                                     const FTensor::Number<S> &,
+                                     const size_t rr) {
+  return GetFTensor2FromArrayImpl<3, 3, S, T, L, A>::get(data, rr);
 }
+
+#ifdef WITH_ADOL_C
+
+template <int DIM1, int DIM2, int S>
+inline auto getFTensor2FromArray(MatrixADouble &data, const size_t rr) {
+  return GetFTensor2FromArrayImpl<DIM1, DIM2, S, adouble, ublas::row_major,
+                                  VecAllocator<adouble>>::get(data, rr);
+}
+
+#endif
 
 // list of lapack wrappers
 /**
@@ -843,10 +869,10 @@ inline MoFEMErrorCode solveLinearSystem(MatrixDouble &mat, VectorDouble &f) {
 
 /**
  * @brief Solve linear system of equations using Lapack
- * 
- * @param mat 
- * @param f 
- * @return MoFEMErrorCode 
+ *
+ * @param mat
+ * @param f
+ * @return MoFEMErrorCode
  */
 inline MoFEMErrorCode solveLinearSystem(const MatrixDouble &mat,
                                         VectorDouble &f) {
@@ -923,12 +949,12 @@ computeEigenValuesSymmetric(FTensor::Tensor2<double, DIM, DIM> &eigen_vec,
 }
 /**
  * @brief compute eigenvalues of a symmetric tensor using lapack dsyev
- * 
- * @tparam DIM 
+ *
+ * @tparam DIM
  * @param mat input tensor pointer of size DIM x DIM
  * @param eig output eigen values sorted
  * @param eigen_vec output matrix of row eigen vectors
- * @return MoFEMErrorCode 
+ * @return MoFEMErrorCode
  */
 template <int DIM>
 inline MoFEMErrorCode computeEigenValuesSymmetric(
@@ -947,12 +973,12 @@ inline MoFEMErrorCode computeEigenValuesSymmetric(
 
 /**
  * @brief compute eigenvalues of a symmetric tensor using lapack dsyev
- * 
- * @tparam DIM 
+ *
+ * @tparam DIM
  * @param mat input tensor of size DIM x DIM
  * @param eig output eigen values sorted
  * @param eigen_vec output matrix of row eigen vectors
- * @return MoFEMErrorCode 
+ * @return MoFEMErrorCode
  */
 template <int DIM>
 inline MoFEMErrorCode
@@ -976,7 +1002,7 @@ computeEigenValuesSymmetric(const FTensor::Tensor2_symmetric<double, DIM> &mat,
  * @param t
  * @return double
  */
-template <class T> static inline double dEterminant(T &t) {
+template <typename T> static inline auto determinantTensor3by3(T &t) {
   return t(0, 0) * t(1, 1) * t(2, 2) + t(1, 0) * t(2, 1) * t(0, 2) +
          t(2, 0) * t(0, 1) * t(1, 2) - t(0, 0) * t(2, 1) * t(1, 2) -
          t(2, 0) * t(1, 1) * t(0, 2) - t(1, 0) * t(0, 1) * t(2, 2);
@@ -1008,9 +1034,7 @@ invertTensor3by3<3, double, ublas::row_major, DoubleAllocator>(
 template <class T1, class T2>
 inline MoFEMErrorCode determinantTensor3by3(T1 &t, T2 &det) {
   MoFEMFunctionBeginHot;
-  det = +t(0, 0) * t(1, 1) * t(2, 2) + t(1, 0) * t(2, 1) * t(0, 2) +
-        t(2, 0) * t(0, 1) * t(1, 2) - t(0, 0) * t(2, 1) * t(1, 2) -
-        t(2, 0) * t(1, 1) * t(0, 2) - t(1, 0) * t(0, 1) * t(2, 2);
+  det = determinantTensor3by3(t);
   MoFEMFunctionReturnHot(0);
 }
 

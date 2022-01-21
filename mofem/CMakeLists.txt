@@ -52,7 +52,7 @@ option(STAND_ALLONE_USERS_MODULES
 option(WITHCOVERAGE "Add gcc coverage compile tags" OFF)
 option(MOFEM_BUILD_TESTS "If is ON enbale testing" ON)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # If fortran is set by PETSc or user
@@ -203,9 +203,12 @@ find_path(
   HINTS 
   ${BLAS_DIR}/include
   ${CBLAS_DIR}/include 
-  ${PETSC_DIR}/${PETSC_ARCH}/include)
+  ${PETSC_DIR}/${PETSC_ARCH}/include
+  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/Accelerate.framework/Versions/Current/Frameworks/vecLib.framework/Headers)
 message(STATUS "CBLAS include found: " ${CBLAS_INCLUDE_DIR})
-include_directories(${CBLAS_INCLUDE_DIR})
+if(CBLAS_INCLUDE_DIR)
+  include_directories(${CBLAS_INCLUDE_DIR})
+endif(CBLAS_INCLUDE_DIR)
 
 include_directories(
   ${PROJECT_INCLUDE_DIRECTORIES}
@@ -237,15 +240,21 @@ message(STATUS ${JUPYTEXT})
 
 # System project liblairoes
 resolve_libraries(SYSTEM_PROJECT_LIBS "
+# MoAB
+  ${MESHKIT_LIBS_LINK}
+  ${MOAB_LIBS_LINK}
 # PETSc
   ${SLEPC_LINK_LIBRARIES}
   -L${PETSC_DIR}/${PETSC_ARCH}/lib
   ${PETSCVAR_PETSC_WITH_EXTERNAL_LIB}
-# MoAB
-  ${MESHKIT_LIBS_LINK}
-  ${MOAB_LIBS_LINK}
 # Boost
-  ${Boost_LIBRARIES} 
+  ${Boost_LIBRARIES}
+  ${Boost_FILESYSTEM_LIBRARY_RELEASE}
+  ${Boost_LOG_LIBRARY_RELEASE}
+  ${Boost_LOG_SETUP_LIBRARY_RELEASE}
+  ${Boost_PROGRAM_OPTIONS_LIBRARY_RELEASE}
+  ${Boost_SYSTEM_LIBRARY_RELEASE}
+  ${Boost_THREAD_LIBRARY_RELEASE}
 # Other
   ${MPI_F90_LIB}
   ${MPI_F77_LIB}")

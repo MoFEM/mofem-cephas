@@ -152,6 +152,16 @@ MoFEMErrorCode ISManager::sectionCreate(const std::string problem_name,
   MoFEMFunctionReturn(0);
 }
 
+SmartPetscObj<PetscSection>
+ISManager::sectionCreate(const std::string problem_name,
+                         const RowColData row_col) const {
+
+  PetscSection s;
+  CHK_THROW_MESSAGE(sectionCreate(problem_name, &s, row_col),
+                    "Section not creeated");
+  return SmartPetscObj<PetscSection>(s, false);
+}
+
 MoFEMErrorCode ISManager::isCreateProblemOrder(const std::string problem_name,
                                                RowColData rc, int min_order,
                                                int max_order, IS *is) const {

@@ -1128,7 +1128,7 @@ OpMixScalarTimesDivImpl<SPACE_DIM, GAUSS, OpBase, COORDINATE_SYSTEM>::iNtegrate(
 #endif
 
   // When we move to C++17 add if constexpr()
-  if (COORDINATE_SYSTEM == POLAR || COORDINATE_SYSTEM == SPHERICAL)
+  if constexpr (COORDINATE_SYSTEM == POLAR || COORDINATE_SYSTEM == SPHERICAL)
     SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
              "%s coordiante not implemented",
              CoordinateTypesNames[COORDINATE_SYSTEM]);
@@ -1147,7 +1147,7 @@ OpMixScalarTimesDivImpl<SPACE_DIM, GAUSS, OpBase, COORDINATE_SYSTEM>::iNtegrate(
     auto t_m = getFTensor1FromPtr<SPACE_DIM>(OpBase::locMat.data().data());
 
     // When we move to C++17 add if constexpr()
-    if (COORDINATE_SYSTEM == CARTESIAN) {
+    if constexpr (COORDINATE_SYSTEM == CARTESIAN) {
       for (; rr != OpBase::nbRows; ++rr) {
         const double r_val = alpha * t_row_base;
         auto t_col_diff_base = col_data.getFTensor1DiffN<SPACE_DIM>(gg, 0);
@@ -1161,7 +1161,7 @@ OpMixScalarTimesDivImpl<SPACE_DIM, GAUSS, OpBase, COORDINATE_SYSTEM>::iNtegrate(
     }
 
     // When we move to C++17 add if constexpr()
-    if (COORDINATE_SYSTEM == CYLINDRICAL) {
+    if constexpr (COORDINATE_SYSTEM == CYLINDRICAL) {
       for (; rr != OpBase::nbRows; ++rr) {
         const double r_val = alpha * t_row_base;
         auto t_col_base = col_data.getFTensor0N(gg, 0);

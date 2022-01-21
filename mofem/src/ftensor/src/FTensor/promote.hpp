@@ -39,6 +39,10 @@ namespace FTensor
   DECLARE_PROMOTE(double, adtl::adouble, adtl::adouble);
   DECLARE_PROMOTE(adtl::adouble, int, adtl::adouble);
   DECLARE_PROMOTE(int, adtl::adouble, adtl::adouble);
+  DECLARE_PROMOTE(adub, double, adub);
+  DECLARE_PROMOTE(double, adub, adub);
+  DECLARE_PROMOTE(adub, int, adub);
+  DECLARE_PROMOTE(int, adub, adub);
 #endif // WITH_ADOL_C
 
 #undef DECLARE_PROMOTE

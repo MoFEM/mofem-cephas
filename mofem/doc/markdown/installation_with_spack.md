@@ -109,7 +109,7 @@ require [Mixed
 Toolchains](http://spack.readthedocs.io/en/latest/getting_started.html#mixed-toolchains).
 The installing of `gfortran` through `homebrew` is one way of solving this:
 ~~~~~
-brew install gcc@9 
+brew install gcc
 ~~~~~
 Note that `gfortran` if part of `GCC`.
 
@@ -162,7 +162,7 @@ spack external find
 ~~~~~~
 
 If you are using a system where `gfortran` 10 or 11 is installed, some packages like
-`openblas` and `mumps` may not compile, especially on macOS. You can check this by running:
+`mumps` may not compile. You can check this by running:
 ~~~~~
 gfortran -v
 ~~~~~
@@ -173,27 +173,28 @@ gcc version 10.2.0 (GCC)
 that means you have version 10. This is temporary problem and will be
 fixed over the time, once various patches and fixes will be applied to those
 libraries. In the meantime you can fix that problem by editing `compilers.yaml`
-in macOS located in `~/.spack/darwin/compilers.yaml` to set version 9 of
-`gfortran` compiler:
+located in `~/.spack/darwin/compilers.yaml`,
+and set complier flags, i.e. `-fallow-argument-mismatch`, that will allow to compile `mumps`, with warnings not errors:
 ~~~~~~~
 - compiler:
     spec: apple-clang@12.0.0
     paths:
       cc: /usr/bin/clang
       cxx: /usr/bin/clang++
-      f77: /usr/local/bin/gfortran-9
-      fc: /usr/local/bin/gfortran-9
-    flags: {}
+      f77: /usr/local/bin/gfortran
+      fc: /usr/local/bin/gfortran
+    flags:
+      fflags: -fallow-argument-mismatch
     operating_system: macos
     target: x86_64
     modules: []
     environment: {}
     extra_rpaths: []
 ~~~~~~~
-Note that fortran compiler is set to version `9`, as follows
+Note following line
 ~~~~~~~
-      f77: /usr/local/bin/gfortran-9
-      fc: /usr/local/bin/gfortran-9
+flags:
+  fflags: -fallow-argument-mismatch
 ~~~~~~~
 
 Note that there are further instructions on [Spack usage and configuration](#spack_usage_config).
@@ -416,7 +417,7 @@ and install users modules:
 ~~~~~
 spack dev-build \
   --test root  \
-  --source-pat $HOME/mofem_install/mofem-cephas/mofem/users_modules \
+  --source-path $HOME/mofem_install/mofem-cephas/mofem/users_modules \
   mofem-users-modules@develop build_type=RelWithDebInfo \
   ^/pa3httg
 ~~~~~
@@ -429,9 +430,9 @@ using command line option `-b BEFORE` or `-u UNTIL`, for example if you like
 to investigate build issues, you can do,
 ~~~~~
 spack dev-build \
-  -u configure \
+  -b build \
   --test root  \
-  --source-pat $HOME/mofem_install/mofem-cephas/mofem/users_modules \
+  --source-path $HOME/mofem_install/mofem-cephas/mofem/users_modules \
   mofem-users-modules@develop build_type=RelWithDebInfo \
   ^/pa3httg
 ~~~~~

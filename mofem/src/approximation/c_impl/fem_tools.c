@@ -448,7 +448,7 @@ PetscErrorCode GradientOfDeformation(double *diffN, double *dofs, double *F) {
 // using complex variable
 void ShapeDiffMBTETinvJ_complex(double *diffN, __CLPK_doublecomplex *invJac,
                                 __CLPK_doublecomplex *diffNinvJac,
-                                const CBLAS_TRANSPOSE Trans) {
+                                CBLAS_TRANSPOSE Trans) {
   __CLPK_doublecomplex tmp1 = {1., 0.}, tmp2 = {0., 0.};
   int ii = 0, jj;
   for (; ii < 4; ii++) {
