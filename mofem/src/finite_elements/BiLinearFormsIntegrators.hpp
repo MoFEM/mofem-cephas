@@ -1510,7 +1510,7 @@ OpConvectiveTermLhsDyImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
       // loop over columns
       for (int cc = 0; cc != OpBase::nbCols / FIELD_DIM; ++cc) {
         t_mat(j, k) +=
-            alpha * t_row_base * t_kd(i, k)(t_diff_col_base(i) * t_u(i));
+            alpha * t_row_base * t_kd(j, k) * (t_diff_col_base(i) * t_u(i));
         ++t_mat;
         ++t_diff_col_base;
       }
