@@ -1488,6 +1488,8 @@ OpConvectiveTermLhsDyImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
   };
 
   auto t_u = getFTensor1FromMat<SPACE_DIM>(*uPtr);
+  constexpr auto t_kd = FTensor::Kronecker_Delta_symmetric<int>();
+
   FTensor::Index<'i', SPACE_DIM> i;
   FTensor::Index<'j', FIELD_DIM> j;
   FTensor::Index<'k', FIELD_DIM> k;
@@ -1507,7 +1509,8 @@ OpConvectiveTermLhsDyImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
       auto t_diff_col_base = col_data.getFTensor1DiffN<SPACE_DIM>(gg, 0);
       // loop over columns
       for (int cc = 0; cc != OpBase::nbCols / FIELD_DIM; ++cc) {
-        t_mat(j, k) += alpha * t_row_base * (t_diff_col_base(i) * t_u(i));
+        t_mat(j, k) +=
+            alpha * t_row_base * t_kd(j, k) * (t_diff_col_base(i) * t_u(i));
         ++t_mat;
         ++t_diff_col_base;
       }

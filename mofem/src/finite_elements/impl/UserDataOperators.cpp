@@ -102,7 +102,7 @@ MoFEMErrorCode OpSetInvJacSpaceForFaceImpl<3>::doWork(
                 "Wrong number of Gauss Pts");
 #endif
 
-      diffNinvJac.resize(diff_n.size1(), diff_n.size2(), false);
+      diffNinvJac.resize(diff_n.size1(), nb_functions * 3, false);
 
       FTensor::Index<'i', 3> i;
       FTensor::Index<'K', 2> K;
