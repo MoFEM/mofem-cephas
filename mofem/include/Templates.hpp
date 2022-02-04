@@ -431,15 +431,15 @@ template <int S>
 struct GetFTensor3DgFromMatImpl<2, 2, S, double, ublas::row_major,
                                 DoubleAllocator> {
   static inline auto get(MatrixDouble &data) {
-    if (data.size1() != 9) {
+    if (data.size1() != 6) {
       THROW_MESSAGE(
           "getFTensor4DdgFromMat<2, 2>: wrong size of data matrix, number "
           "of rows should be 6 but is " +
           boost::lexical_cast<std::string>(data.size1()));
     }
     return FTensor::Dg<FTensor::PackPtr<double *, S>, 2, 2>{
-        &data(0, 0), &data(1, 0), &data(2, 0), &data(3, 0),
-        &data(4, 0), &data(5, 0), &data(6, 0)};
+        &data(0, 0), &data(1, 0), &data(2, 0),
+        &data(3, 0), &data(4, 0), &data(5, 0)};
   }
 };
 
