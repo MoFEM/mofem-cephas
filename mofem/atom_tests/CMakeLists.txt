@@ -144,11 +144,11 @@ add_test(
 #field axpy
 cm_export_file("../meshes/elasticity_atom_test_01X_pressure.h5m" export_atom_tests)
 
-build_test(field_blas_axpy field_blas_axpy.cpp)
+build_test(field_blas field_blas.cpp)
 
-add_test(field_blas_axpy 
+add_test(field_blas 
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
-  ${CMAKE_CURRENT_BINARY_DIR}/field_blas_axpy 
+  ${CMAKE_CURRENT_BINARY_DIR}/field_blas 
   -my_file elasticity_atom_test_01X_pressure.h5m
   -log_no_color
 )
