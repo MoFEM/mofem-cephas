@@ -1,5 +1,5 @@
-/** \file field_axpy_atom_test.cpp
- * \example field_axpy_atom_test.cpp
+/** \file field_blas_axpy.cpp
+ * \example field_blas_axpy.cpp
  * \brief test field blas interface
  *
  * \ingroup mofem_field_algebra
