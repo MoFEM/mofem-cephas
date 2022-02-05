@@ -153,24 +153,6 @@ add_test(field_blas_axpy
   -log_no_color
 )
 
-build_test(field_blas_set_vertex_dofs field_blas_set_vertex_dofs.cpp)
-  
-add_test(field_blas_set_vertex_dofs
-  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
-  ${CMAKE_CURRENT_BINARY_DIR}/field_blas_set_vertex_dofs 
-  -file_name elasticity_atom_test_01X_pressure.h5m
-  -log_no_color
-)
-
-build_test(field_blas_lambda field_blas_lambda.cpp)
-  
-add_test(field_blas_lambda
-  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
-  ${CMAKE_CURRENT_BINARY_DIR}/field_blas_lambda 
-  -file_name elasticity_atom_test_01X_pressure.h5m
-  -log_no_color
-)
-
 #mesh refine
 cm_export_file("../meshes/templar.h5m" export_atom_tests)
 
