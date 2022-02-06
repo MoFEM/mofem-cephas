@@ -35,7 +35,8 @@
 
 namespace MoFEM {
 // FIXME: All operators in FTensor move to FTensor namespace.
-using ::operator<<;
+using FTensor::operator<<;
+using FTensor::operator>>;
 } // namespace MoFEM
 
 #include <Common.hpp>

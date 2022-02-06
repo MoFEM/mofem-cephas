@@ -90,39 +90,35 @@ namespace FTensor
     }
     T l2_squared(const Number<1> &) const { return data[0] * data[0]; }
   };
+
+  template <class T, int Tensor_Dim>
+  std::ostream &operator<<(std::ostream &os,
+                           const FTensor::Tensor1<T, Tensor_Dim> &t) {
+    os << '[';
+    for (int i = 0; i + 1 < Tensor_Dim; ++i) {
+      os << t(i) << ',';
+    }
+    if (Tensor_Dim > 0) {
+      os << t(Tensor_Dim - 1);
+    }
+    os << ']';
+    return os;
+  }
+
+  template <class T, int Tensor_Dim>
+  std::istream &operator>>(std::istream &is,
+                           FTensor::Tensor1<T, Tensor_Dim> &t) {
+    char c;
+    is >> c;
+    for (int i = 0; i + 1 < Tensor_Dim; ++i) {
+      is >> t(i) >> c;
+    }
+    if (Tensor_Dim > 0) {
+      is >> t(Tensor_Dim - 1);
+    }
+    is >> c;
+    return is;
+  }
 }
 /// JSON compatible output
 
-template <class T, int Tensor_Dim>
-std::ostream &
-operator<<(std::ostream &os, const FTensor::Tensor1<T, Tensor_Dim> &t)
-{
-  os << '[';
-  for(int i = 0; i + 1 < Tensor_Dim; ++i)
-    {
-      os << t(i) << ',';
-    }
-  if(Tensor_Dim > 0)
-    {
-      os << t(Tensor_Dim - 1);
-    }
-  os << ']';
-  return os;
-}
-
-template <class T, int Tensor_Dim>
-std::istream &operator>>(std::istream &is, FTensor::Tensor1<T, Tensor_Dim> &t)
-{
-  char c;
-  is >> c;
-  for(int i = 0; i + 1 < Tensor_Dim; ++i)
-    {
-      is >> t(i) >> c;
-    }
-  if(Tensor_Dim > 0)
-    {
-      is >> t(Tensor_Dim - 1);
-    }
-  is >> c;
-  return is;
-}
