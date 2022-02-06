@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionReturn(0);
     };
 
-    // CHKERR test_tet();
+    CHKERR test_tet();
     CHKERR test_tri();
   }
   CATCH_ERRORS;
