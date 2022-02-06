@@ -85,6 +85,11 @@ Tools::minTetsQuality(const Range &tets, double &min_quality, Tag th,
 constexpr std::array<double, 2> Tools::diffShapeFunMBEDGE;
 constexpr std::array<double, 6> Tools::diffShapeFunMBTRI;
 constexpr std::array<double, 12> Tools::diffShapeFunMBTET;
+constexpr double Tools::shapeFunMBTRI0At00;
+constexpr double Tools::shapeFunMBTRI1At00;
+constexpr double Tools::shapeFunMBTRI2At00;
+constexpr std::array<double, 3> Tools::shapeFunMBTRIAt00;
+
 constexpr std::array<double, 4> Tools::shapeFunMBTETAt000;
 constexpr std::array<double, 8> Tools::diffShapeFunMBQUADAtCenter;
 constexpr std::array<double, 24> Tools::diffShapeFunMBHEXAtCenter;
@@ -137,6 +142,71 @@ MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceFourNodeTet(
   int info = lapack_dgesv(3, nb_nodes, &a(0, 0), 3, IPIV, local_coords, 3);
   if (info != 0)
     SETERRQ1(PETSC_COMM_SELF, 1, "info == %d", info);
+
+  MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceTriNodeTri(
+    const double *elem_coords, const double *global_coords, const int nb_nodes,
+    double *local_coords) {
+
+  FTensor::Index<'i', 3> i3;
+  FTensor::Index<'j', 3> j3;
+  FTensor::Index<'K', 2> K2;
+  FTensor::Index<'L', 2> L2;
+  MoFEMFunctionBeginHot;
+
+  FTensor::Tensor1<FTensor::PackPtr<const double *, 1>, 3> t_elem_coords = {
+      &elem_coords[0], &elem_coords[3], &elem_coords[6]};
+
+  FTensor::Tensor1<const double, 3> t_n = {
+      shapeFunMBTRIAt00[0], shapeFunMBTRIAt00[1], shapeFunMBTRIAt00[2]};
+  FTensor::Tensor1<double, 3> t_coords_at_0;
+
+  // Build matrix and get coordinates of zero point
+  // ii - global coordinates
+  // jj - local direvatives
+  FTensor::Tensor2<double, 2, 3> t_a;
+  for (auto ii : {0, 1, 2}) {
+    FTensor::Tensor1<FTensor::PackPtr<const double *, 1>, 3> t_diff(
+        &diffShapeFunMBTRI[0], &diffShapeFunMBTRI[2], &diffShapeFunMBTRI[4]);
+    for (auto jj : {0, 1}) {
+      t_a(jj, ii) = t_diff(i3) * t_elem_coords(i3);
+      ++t_diff;
+    }
+    t_coords_at_0(ii) = t_n(i3) * t_elem_coords(i3);
+    ++t_elem_coords;
+  }
+
+  FTensor::Tensor1<FTensor::PackPtr<const double *, 3>, 3> t_global_coords = {
+      &global_coords[0], &global_coords[1], &global_coords[2]};
+  FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2> t_local_coords = {
+      &local_coords[0], &local_coords[1]};
+
+  FTensor::Tensor2_symmetric<double, 2> t_b, t_inv_b;
+  t_b(K2, L2) = t_a(K2, j3) ^ t_a(L2, j3);
+
+  // Solve problem
+  const auto inv_det = 1. / (t_b(0, 0) * t_b(1, 1) - t_b(0, 1) * t_b(1, 0));
+  t_inv_b(0, 0) = t_b(1, 1) * inv_det;
+  t_inv_b(0, 1) = -t_b(0, 1) * inv_det;
+  t_inv_b(1, 1) = t_b(0, 0) * inv_det;
+
+  // Calculate right hand side
+  for (int ii = 0; ii != nb_nodes; ++ii) {
+    t_local_coords(L2) =
+        t_inv_b(L2, K2) *
+        (t_a(K2, j3) * (t_global_coords(j3) - t_coords_at_0(j3)));
+    ++t_local_coords;
+    ++t_global_coords;
+  }
+
+#ifndef NDEBUG
+  MOFEM_LOG("SELF", Sev::noisy) << "t_a " << t_a;
+  MOFEM_LOG("SELF", Sev::noisy) << "t_b " << t_b;
+  MOFEM_LOG("SELF", Sev::noisy) << "t_coords_at_0 " << t_coords_at_0;
+  MOFEM_LOG("SELF", Sev::noisy) << "t_inv_b " << t_inv_b;
+#endif
 
   MoFEMFunctionReturnHot(0);
 }

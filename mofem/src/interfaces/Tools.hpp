@@ -88,6 +88,17 @@ struct Tools : public UnknownInterface {
 
       diffShapeFunMBTRI2x, diffShapeFunMBTRI2y};
 
+  static constexpr double shapeFunMBTRI0At00 = N_MBTRI0(0, 0);
+  static constexpr double shapeFunMBTRI1At00 = N_MBTRI1(0, 0);
+  static constexpr double shapeFunMBTRI2At00 = N_MBTRI2(0, 0);
+
+  /**
+   * @brief Array of shape function at zero local point on reference element
+   *
+   */
+  static constexpr std::array<double, 3> shapeFunMBTRIAt00 = {
+      shapeFunMBTRI0At00, shapeFunMBTRI1At00, shapeFunMBTRI2At00};
+
   static inline double shapeFunMBTRI0(const double x, const double y);
 
   static inline double shapeFunMBTRI1(const double x, const double y);
@@ -328,6 +339,30 @@ struct Tools : public UnknownInterface {
    * @return MoFEMErrorCode
    */
   static MoFEMErrorCode getLocalCoordinatesOnReferenceFourNodeTet(
+      const double *elem_coords, const double *glob_coords, const int nb_nodes,
+      double *local_coords);
+
+  /**
+   * @brief Get the Local Coordinates On Reference Four Node Tet object
+   *
+   * \code
+   * MatrixDouble elem_coords(4, 3);
+   * // Set nodal coordinates
+   * MatrixDouble global_coords(5, 3);
+   * // Set global coordinates
+   * MatrixDouble local_coords(global_coords.size1(), 3);
+   * CHKERR Tools::getLocalCoordinatesOnReferenceFourNodeTet(
+   *     &elem_coords(0, 0), &global_coords(0, 0), global_coords.size1(),
+   *     &local_coords(0, 0))
+   * \endcode
+   *
+   * @param elem_coords Global element node coordinates
+   * @param glob_coords Globale coordinates
+   * @param nb_nodes Number of points
+   * @param local_coords Result
+   * @return MoFEMErrorCode
+   */
+  static MoFEMErrorCode getLocalCoordinatesOnReferenceTriNodeTri(
       const double *elem_coords, const double *glob_coords, const int nb_nodes,
       double *local_coords);
 

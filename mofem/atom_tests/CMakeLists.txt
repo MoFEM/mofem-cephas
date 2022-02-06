@@ -1230,10 +1230,10 @@ add_test(
   ${CMAKE_CURRENT_BINARY_DIR}/segments_distance 
 )
 
-build_test(find_local_coordinates_on_tet find_local_coordinates)
+build_test(find_local_coordinates find_local_coordinates)
 add_test(
-  find_local_coordinates_on_tet ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/find_local_coordinates_on_tet 
+  find_local_coordinates ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/find_local_coordinates 
 )
 
 cm_export_file("disp01_1parts.h5m" export_atom_tests)
