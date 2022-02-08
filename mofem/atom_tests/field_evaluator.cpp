@@ -44,28 +44,30 @@ template <typename OP> struct MyOp : public OP {
     MoFEMFunctionBegin;
     if (type == MBVERTEX) {
 
-      std::cout << "Integration pts" << std::endl;
-      std::cout << OP::getGaussPts() << endl;
+      MOFEM_LOG("SELF", Sev::inform) << "FE " << OP::getFEEntityHandle();
 
-      std::cout << "Global coordinates " << endl;
-      std::cout << OP::getCoordsAtGaussPts() << std::endl;
+      MOFEM_LOG("SELF", Sev::inform) << "Integration pts" << std::endl;
+      MOFEM_LOG("SELF", Sev::inform) << OP::getGaussPts() << endl;
+
+      MOFEM_LOG("SELF", Sev::inform) << "Global coordinates " << endl;
+      MOFEM_LOG("SELF", Sev::inform) << OP::getCoordsAtGaussPts() << std::endl;
 
       for (int gg = 0; gg != OP::getCoordsAtGaussPts().size1(); ++gg) {
-        int pt_number = OP::getGaussPts()(3, gg);
+        int pt_number = OP::getGaussPts()(OP::getGaussPts().size1() - 1, gg);
 
-        std::cout << "gg " << gg << std::endl;
-        std::cout << "pt " << pt_number << std::endl;
+        MOFEM_LOG("SELF", Sev::inform) << "gg " << gg << std::endl;
+        MOFEM_LOG("SELF", Sev::inform) << "pt " << pt_number << std::endl;
 
         ublas::matrix_row<MatrixDouble> coord_at_gauss_pt(
             OP::getCoordsAtGaussPts(), gg);
         ublas::matrix_row<MatrixShallowArrayAdaptor<double>> eval_coord(
             evalPoints, pt_number);
 
-        std::cout << "coord_at_gauss_pt ";
-        std::cout << coord_at_gauss_pt << std::endl;
+        MOFEM_LOG("SELF", Sev::inform) << "coord_at_gauss_pt ";
+        MOFEM_LOG("SELF", Sev::inform) << coord_at_gauss_pt << std::endl;
 
-        std::cout << "eval_coord ";
-        std::cout << eval_coord << std::endl;
+        MOFEM_LOG("SELF", Sev::inform) << "eval_coord ";
+        MOFEM_LOG("SELF", Sev::inform) << eval_coord << std::endl;
 
         double error = norm_2(coord_at_gauss_pt - eval_coord);
 

@@ -1238,9 +1238,15 @@ add_test(
 
 cm_export_file("disp01_1parts.h5m" export_atom_tests)
 build_test(field_evaluator field_evaluator.cpp)
-add_test(field_evaluator
+add_test(field_evaluator_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/field_evaluator -file_name disp01_1parts.h5m 
+  -dm_is_partitioned
+  -log_no_color
+)
+add_test(field_evaluator_tri
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/field_evaluator -file_name rectangle_tri.h5m
   -dm_is_partitioned
   -log_no_color
 )

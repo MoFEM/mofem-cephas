@@ -120,8 +120,8 @@ FieldEvaluatorInterface::SetPts::operator()(ForcesAndSourcesCore *fe_raw_ptr,
           if (eval_pointentity_handle[nn] == fe_ent) {
             for (const int i : {0, 1, 2}) {
               t_gauss_pts(i) = t_shape(i + 1);
-              gauss_pts(3, nb_gauss_pts) = nn;
             }
+            gauss_pts(3, nb_gauss_pts) = nn;
             ++t_gauss_pts;
             ++nb_gauss_pts;
           }
@@ -138,10 +138,10 @@ FieldEvaluatorInterface::SetPts::operator()(ForcesAndSourcesCore *fe_raw_ptr,
         int nb_gauss_pts = 0;
         for (int nn = 0; nn != nb_eval_points; ++nn) {
           if (eval_pointentity_handle[nn] == fe_ent) {
-            for (const int i : {0, 1, 2}) {
+            for (const int i : {0, 1}) {
               t_gauss_pts(i) = t_shape(i + 1);
-              gauss_pts(2, nb_gauss_pts) = nn;
             }
+            gauss_pts(2, nb_gauss_pts) = nn;
             ++t_gauss_pts;
             ++nb_gauss_pts;
           }
@@ -205,8 +205,8 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint(
 
     if constexpr (D == 3) {
 
-      local_coords.resize(3 * data_ptr->nbEvalPoints);
-      shape.resize(4 * data_ptr->nbEvalPoints);
+      local_coords.resize(3 * nb_eval_points);
+      shape.resize(4 * nb_eval_points);
 
       std::array<double, 12> coords;
       CHKERR m_field.get_moab().get_coords(conn, num_nodes, coords.data());
@@ -233,7 +233,7 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint(
           &(data_ptr->localCoords(0, 2))};
 
 
-      for (int n = 0; n != data_ptr->nbEvalPoints; ++n) {
+      for (int n = 0; n != nb_eval_points; ++n) {
 
         const double eps = data_ptr->eps;
         if (t_shape(0) >= 0 - eps && t_shape(0) <= 1 + eps &&
@@ -260,14 +260,50 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint(
 
     if constexpr (D == 2) {
 
+      local_coords.resize(2 * nb_eval_points);
+      shape.resize(3 * nb_eval_points);
+
       std::array<double, 9> coords;
       CHKERR m_field.get_moab().get_coords(conn, num_nodes, coords.data());
 
-      for (int n = 0; n != data_ptr->nbEvalPoints; ++n) {
+      CHKERR Tools::getLocalCoordinatesOnReferenceTriNodeTri(
+          coords.data(), &data_ptr->evalPoints[0], nb_eval_points,
+          &local_coords[0]);
+      CHKERR Tools::shapeFunMBTRI<2>(&shape[0], &local_coords[0],
+                                     &local_coords[1], nb_eval_points);
 
+      FTensor::Index<'i', 3> i3;
+      FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_shape{
+          &shape[0], &shape[1], &shape[2]};
+      FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_shape_data{
+          &data_ptr->shapeFunctions(0, 0), &data_ptr->shapeFunctions(0, 1),
+          &data_ptr->shapeFunctions(0, 2)};
 
+      FTensor::Index<'j', 3> j2;
+      FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2> t_local{
+          &local_coords[0], &local_coords[1]};
+      FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2> t_local_data{
+          &(data_ptr->localCoords(0, 0)), &(data_ptr->localCoords(0, 1))};
+
+      for (int n = 0; n != nb_eval_points; ++n) {
+
+        const double eps = data_ptr->eps;
+        if (t_shape(0) >= 0 - eps && t_shape(0) <= 1 + eps &&
+
+            t_shape(1) >= 0 - eps && t_shape(1) <= 1 + eps &&
+
+            t_shape(2) >= 0 - eps && t_shape(2) <= 1 + eps) {
+
+          data_ptr->evalPointEntityHandle[n] = tet;
+          t_shape_data(i3) = t_shape(i3);
+          t_local_data(j2) = t_local(j2);
+        }
+
+        ++t_shape;
+        ++t_shape_data;
+        ++t_local;
+        ++t_local_data;
       }
-
     }
 
 
