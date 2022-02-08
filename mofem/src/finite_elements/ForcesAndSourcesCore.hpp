@@ -906,7 +906,6 @@ protected:
 
   inline ForcesAndSourcesCore *getSidePtrFE() const;
 
-private:
   /**
    * @brief User call this function to loop over elements on the side of
    * face. This function calls finite element with is operator to do
@@ -922,6 +921,7 @@ private:
   MoFEMErrorCode loopSide(const string &fe_name, ForcesAndSourcesCore *side_fe,
                           const size_t dim,
                           const EntityHandle ent_for_side = 0);
+private:
 
   friend class ForcesAndSourcesCore;
   friend class EdgeElementForcesAndSourcesCoreBase;
