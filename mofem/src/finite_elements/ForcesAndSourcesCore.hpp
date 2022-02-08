@@ -942,7 +942,7 @@ EntityHandle ForcesAndSourcesCore::UserDataOperator::getFEEntityHandle() const {
 }
 
 int ForcesAndSourcesCore::UserDataOperator::getFEDim() const {
-  return ptrFE->mField.get_moab().dimension_from_handle(getFEEntityHandle());
+  return dimension_from_handle(getFEEntityHandle());
 };
 
 EntityType ForcesAndSourcesCore::UserDataOperator::getFEType() const {
