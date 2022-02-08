@@ -1230,7 +1230,7 @@ add_test(
   ${CMAKE_CURRENT_BINARY_DIR}/segments_distance 
 )
 
-build_test(find_local_coordinates find_local_coordinates)
+build_test(find_local_coordinates find_local_coordinates.cpp)
 add_test(
   find_local_coordinates ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/find_local_coordinates 
