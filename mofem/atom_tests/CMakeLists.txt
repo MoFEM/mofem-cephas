@@ -144,30 +144,12 @@ add_test(
 #field axpy
 cm_export_file("../meshes/elasticity_atom_test_01X_pressure.h5m" export_atom_tests)
 
-build_test(field_axpy_atom_test field_axpy_atom_test.cpp)
+build_test(field_blas field_blas.cpp)
 
-add_test(field_axpy 
+add_test(field_blas 
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
-  ${CMAKE_CURRENT_BINARY_DIR}/field_axpy_atom_test 
+  ${CMAKE_CURRENT_BINARY_DIR}/field_blas 
   -my_file elasticity_atom_test_01X_pressure.h5m
-  -log_no_color
-)
-
-build_test(field_blas_set_vertex_dofs field_blas_set_vertex_dofs.cpp)
-  
-add_test(field_blas_set_vertex_dofs
-  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
-  ${CMAKE_CURRENT_BINARY_DIR}/field_blas_set_vertex_dofs 
-  -file_name elasticity_atom_test_01X_pressure.h5m
-  -log_no_color
-)
-
-build_test(field_blas_lambda field_blas_lambda.cpp)
-  
-add_test(field_blas_lambda
-  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
-  ${CMAKE_CURRENT_BINARY_DIR}/field_blas_lambda 
-  -file_name elasticity_atom_test_01X_pressure.h5m
   -log_no_color
 )
 
@@ -1248,10 +1230,10 @@ add_test(
   ${CMAKE_CURRENT_BINARY_DIR}/segments_distance 
 )
 
-build_test(find_local_coordinates_on_tet find_local_coordinates_on_tet.cpp)
+build_test(find_local_coordinates find_local_coordinates)
 add_test(
-  find_local_coordinates_on_tet ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/find_local_coordinates_on_tet 
+  find_local_coordinates ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/find_local_coordinates 
 )
 
 cm_export_file("disp01_1parts.h5m" export_atom_tests)

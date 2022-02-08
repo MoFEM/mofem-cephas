@@ -243,25 +243,22 @@ namespace FTensor
     os << ']';
     return os;
   }
-}
 
-template <class T, int Tensor_Dim0, int Tensor_Dim1>
-std::ostream &
-operator<<(std::ostream &os,
-           const FTensor::Tensor2<T, Tensor_Dim0, Tensor_Dim1> &t)
-{
-  os << '[';
-  for(int i = 0; i + 1 < Tensor_Dim0; ++i)
-    {
+  template <class T, int Tensor_Dim0, int Tensor_Dim1>
+  std::ostream &
+  operator<<(std::ostream &os,
+             const FTensor::Tensor2<T, Tensor_Dim0, Tensor_Dim1> &t) {
+    os << '[';
+    for (int i = 0; i + 1 < Tensor_Dim0; ++i) {
       FTensor::Tensor2_ostream_row(os, t, i);
       os << ',';
     }
-  if(Tensor_Dim0 > 0)
-    {
+    if (Tensor_Dim0 > 0) {
       FTensor::Tensor2_ostream_row(os, t, Tensor_Dim0 - 1);
     }
-  os << ']';
-  return os;
+    os << ']';
+    return os;
+  }
 }
 
 namespace FTensor
@@ -285,23 +282,20 @@ namespace FTensor
     is >> c;
     return is;
   }
-}
 
-template <class T, int Tensor_Dim0, int Tensor_Dim1>
-std::istream &
-operator>>(std::istream &is, FTensor::Tensor2<T, Tensor_Dim0, Tensor_Dim1> &t)
-{
-  char c;
-  is >> c;
-  for(int i = 0; i + 1 < Tensor_Dim0; ++i)
-    {
+  template <class T, int Tensor_Dim0, int Tensor_Dim1>
+  std::istream &operator>>(std::istream &is,
+                           FTensor::Tensor2<T, Tensor_Dim0, Tensor_Dim1> &t) {
+    char c;
+    is >> c;
+    for (int i = 0; i + 1 < Tensor_Dim0; ++i) {
       FTensor::Tensor2_istream_row(is, t, i);
       is >> c;
     }
-  if(Tensor_Dim0 > 0)
-    {
+    if (Tensor_Dim0 > 0) {
       FTensor::Tensor2_istream_row(is, t, Tensor_Dim0 - 1);
     }
-  is >> c;
-  return is;
+    is >> c;
+    return is;
+  }
 }

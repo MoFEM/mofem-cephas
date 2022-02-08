@@ -148,9 +148,8 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint3D(
   for (auto lit : leafs_out)
     CHKERR m_field.get_moab().get_entities_by_dimension(lit, 3, tree_ents,
                                                         true);
-
-  if (verb >= VERY_NOISY)
-    std::cout << "tree entities: " << tree_ents << endl;
+  if (verb >= NOISY)
+    MOFEM_LOG("SELF", Sev::noisy) << "tree entities: " << tree_ents;
 
   data_ptr->evalPointEntityHandle.resize(data_ptr->nbEvalPoints);
   std::fill(data_ptr->evalPointEntityHandle.begin(),
@@ -201,8 +200,8 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint3D(
                       data_ptr->evalPointEntityHandle.end());
   in_tets = in_tets.subset_by_dimension(3);
 
-  if (verb >= VERY_NOISY)
-    std::cout << "in tets: " << in_tets << endl;
+  if (verb >= NOISY)
+    MOFEM_LOG("SELF", Sev::noisy) << "in tets: " << in_tets << endl;
 
   for (auto peit = in_tets.pair_begin(); peit != in_tets.pair_end(); ++peit) {
     auto lo =
@@ -214,13 +213,13 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint3D(
     numered_fes->insert(lo, hi);
 
     if (verb >= VERY_NOISY)
-      std::cout << "numered elements:" << std::endl;
+      std::cerr << "numered elements:" << std::endl;
     for (; lo != hi; ++lo)
       if (verb >= VERY_NOISY)
-        std::cout << **lo << endl;
+        std::cerr << **lo << endl;
   }
   if (verb >= VERY_NOISY)
-    std::cout << std::endl;
+    std::cerr << std::endl;
 
   if (auto fe_ptr = data_ptr->feMethodPtr.lock()) {
 
@@ -229,12 +228,13 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint3D(
                 numered_fes->size(), m_field.get_comm_rank());
     MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
 
-    if(!cache_ptr) {
+    if (!cache_ptr) {
       cache_ptr = boost::make_shared<CacheTuple>();
       CHKERR m_field.cache_problem_entities(prb_ptr->getName(), cache_ptr);
 
       MOFEM_LOG("FieldEvaluatorSync", Sev::noisy)
-          << "If you call that function many times in the loop consider to set "
+          << "If you call that function many times in the loop consider to "
+             "set "
              "cache_ptr outside of the loop. Otherwise code can be slow.";
     }
 
@@ -242,7 +242,7 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint3D(
                                         lower_rank, upper_rank, numered_fes, bh,
                                         cache_ptr, verb);
 
-    } else
+  } else
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Pointer to element does not exists");
 

@@ -45,7 +45,7 @@
 #  
 #  If set to 0, no limit is enforced.
 #  Default: 0
-c.JupyterHub.active_server_limit = 40
+c.JupyterHub.active_server_limit = 0
 
 ## Duration (in seconds) to determine the number of active users.
 #  Default: 1800

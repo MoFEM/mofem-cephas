@@ -32,6 +32,13 @@
 
 // FTensor
 #include <FTensor.hpp>
+
+namespace MoFEM {
+// FIXME: All operators in FTensor move to FTensor namespace.
+using FTensor::operator<<;
+using FTensor::operator>>;
+} // namespace MoFEM
+
 #include <Common.hpp>
 #include <UnknownInterface.hpp>
 #include <DeprecatedPetsc.hpp>
