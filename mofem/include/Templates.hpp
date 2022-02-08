@@ -1278,6 +1278,10 @@ auto type_from_handle = [](const EntityHandle h) {
   return static_cast<EntityType>(h >> MB_ID_WIDTH);
 };
 
+auto dimension_from_handle = [](const EntityHandle h) {
+  return moab::CN::Dimension(type_from_handle(h));
+};
+
 } // namespace MoFEM
 
 #endif //__TEMPLATES_HPP__
