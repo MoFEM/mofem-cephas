@@ -199,8 +199,9 @@ MoFEMErrorCode Simple::setSkeletonAdjacency(int dim) {
 
 Simple::Simple(const Core &core)
     : cOre(const_cast<Core &>(core)), bitLevel(BitRefLevel().set(0)),
-      meshSet(0), boundaryMeshset(0), nameOfProblem("SimpleProblem"),
-      domainFE("dFE"), boundaryFE("bFE"), skeletonFE("sFE"), dIm(-1) {
+      meshSet(0), boundaryMeshset(0), skeletonMeshset(0),
+      nameOfProblem("SimpleProblem"), domainFE("dFE"), boundaryFE("bFE"),
+      skeletonFE("sFE"), dIm(-1) {
   PetscLogEventRegister("LoadMesh", 0, &MOFEM_EVENT_SimpleLoadMesh);
   PetscLogEventRegister("buildFields", 0, &MOFEM_EVENT_SimpleBuildFields);
   PetscLogEventRegister("buildFiniteElements", 0,
@@ -454,7 +455,6 @@ MoFEMErrorCode Simple::defineFiniteElements() {
     CHKERR m_field.add_finite_element(boundaryFE, MF_ZERO);
     CHKERR add_fields(boundaryFE, domainFields);
     CHKERR add_fields(boundaryFE, boundaryFields);
-    CHKERR add_fields(boundaryFE, skeletonFields);
     CHKERR add_data_fields(boundaryFE, dataFields);
     CHKERR add_data_fields(boundaryFE, noFieldDataFields);
     CHKERR add_fields(boundaryFE, noFieldFields);
@@ -542,7 +542,25 @@ MoFEMErrorCode Simple::buildFields() {
     MoFEMFunctionReturnHot(0);
   };
 
+  auto create_skeleton_meshset = [&]() {
+    MoFEMFunctionBeginHot;
+    // create boundary meshset
+    if (skeletonMeshset != 0) {
+      MoFEMFunctionReturnHot(0);
+    }
+    Range boundary_ents, skeleton_ents;
+    CHKERR m_field.get_moab().get_entities_by_dimension(boundaryMeshset,
+                                                        dIm - 1, boundary_ents);
+    CHKERR m_field.get_moab().get_entities_by_dimension(meshSet, dIm - 1,
+                                                        skeleton_ents);
+    skeleton_ents = subtract(skeleton_ents, boundary_ents);
+    CHKERR m_field.get_moab().create_meshset(MESHSET_SET, skeletonMeshset);
+    CHKERR m_field.get_moab().add_entities(skeletonMeshset, skeleton_ents);
+    MoFEMFunctionReturnHot(0);
+  };
+
   CHKERR create_boundary_meshset(get_skin(meshSet));
+  CHKERR create_skeleton_meshset();
 
   auto comm_interface_ptr = m_field.getInterface<CommInterface>();
   auto bit_ref_ptr = m_field.getInterface<BitRefManager>();
@@ -571,7 +589,7 @@ MoFEMErrorCode Simple::buildFields() {
   CHKERR add_ents_to_field(meshSet, dIm, domainFields);
   CHKERR add_ents_to_field(meshSet, dIm, dataFields);
   CHKERR add_ents_to_field(boundaryMeshset, dIm - 1, boundaryFields);
-  CHKERR add_ents_to_field(meshSet, dIm - 1, skeletonFields);
+  CHKERR add_ents_to_field(skeletonMeshset, dIm - 1, skeletonFields);
 
   std::set<std::string> nofield_fields;
   for (auto &f : noFieldFields)
@@ -665,7 +683,7 @@ MoFEMErrorCode Simple::buildFiniteElements() {
     CHKERR m_field.build_finite_elements(boundaryFE);
   }
   if (!skeletonFields.empty()) {
-    CHKERR m_field.add_ents_to_finite_element_by_dim(meshSet, dIm - 1,
+    CHKERR m_field.add_ents_to_finite_element_by_dim(skeletonMeshset, dIm - 1,
                                                      skeletonFE, true);
     CHKERR m_field.build_finite_elements(skeletonFE);
   }

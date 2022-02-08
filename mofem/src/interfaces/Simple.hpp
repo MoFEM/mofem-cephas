@@ -291,6 +291,13 @@ struct Simple : public UnknownInterface {
   inline EntityHandle &getBoundaryMeshSet() { return boundaryMeshset; }
 
   /**
+   * @brief Get the SkeletonMeshSet object
+   *
+   * @return EntityHandle&
+   */
+  inline EntityHandle &getSkeletonMeshSet() { return skeletonMeshset; }
+
+  /**
    * @brief Get the BitRefLevel
    *
    * @return BitRefLevel
@@ -390,6 +397,7 @@ private:
 
   EntityHandle meshSet;                       ///< domain meshset
   EntityHandle boundaryMeshset;               ///< meshset with boundary
+  EntityHandle skeletonMeshset;               ///< skeleton meshset with boundary
   std::vector<std::string> domainFields;      ///< domain fields
   std::vector<std::string> boundaryFields;    ///< boundary fields
   std::vector<std::string> skeletonFields;    ///< fields on the skeleton
