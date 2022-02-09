@@ -136,6 +136,9 @@ int main(int argc, char *argv[]) {
                                               AINSWORTH_LEGENDRE_BASE, 3);
       CHKERR simple_interface->addBoundaryField("MESH_NODE_POSITIONS", H1,
                                                 AINSWORTH_LEGENDRE_BASE, 3);
+      CHKERR simple_interface->addSkeletonField("MESH_NODE_POSITIONS", H1,
+                                                AINSWORTH_LEGENDRE_BASE, 3);
+
       // set fields order
       CHKERR simple_interface->setFieldOrder("MESH_NODE_POSITIONS", 1);
       // setup problem
@@ -189,6 +192,44 @@ int main(int argc, char *argv[]) {
       // make integration on boundary
       CHKERR DMoFEMLoopFiniteElements(dm, simple_interface->getBoundaryFEName(),
                                       boundary_fe);
+
+      auto skeleton_fe = boost::make_shared<FEMethod>();
+      auto A = smartCreateDMMatrix(dm);
+      auto B = smartCreateDMMatrix(dm);
+      auto f = smartCreateDMVector(dm);
+      auto x = smartCreateDMVector(dm);
+      auto x_t = smartCreateDMVector(dm);
+      auto x_tt = smartCreateDMVector(dm);
+      skeleton_fe->f = f;
+      skeleton_fe->A = A;
+      skeleton_fe->B = B;
+      skeleton_fe->x = x;
+      skeleton_fe->x_t = x_t;
+      skeleton_fe->x_tt = x_tt;
+
+      skeleton_fe->preProcessHook = [&]() {
+        MoFEMFunctionBegin;
+        if (f != skeleton_fe->ts_F)
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong ptr");
+        if (A != skeleton_fe->ts_A)
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong ptr");
+        if (B != skeleton_fe->ts_B)
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong ptr");
+        if (x != skeleton_fe->ts_u)
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong ptr");
+        if (x_t != skeleton_fe->ts_u_t)
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong ptr");
+        if (x_tt != skeleton_fe->ts_u_tt)
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong ptr");
+        MoFEMFunctionReturn(0);
+      };
+
+      skeleton_fe->postProcessHook = []() { return 0; };
+      skeleton_fe->operatorHook = []() { return 0; };
+
+      CHKERR DMoFEMLoopFiniteElements(dm, simple_interface->getSkeletonFEName(),
+                                      skeleton_fe);
+
       // assemble volumes from processors and accumulate on processor of rank 0
       CHKERR VecAssemblyBegin(vol);
       CHKERR VecAssemblyEnd(vol);
