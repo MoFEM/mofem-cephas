@@ -106,6 +106,7 @@ FieldEvaluatorInterface::SetPts::operator()(ForcesAndSourcesCore *fe_raw_ptr,
       const auto fe_dim = moab::CN::Dimension(fe_type);
 
       auto &gauss_pts = fe.gaussPts;
+      int nb_gauss_pts;
 
       if (fe_dim == 3) {
         gauss_pts.resize(4, nb_eval_points, false);
@@ -115,7 +116,7 @@ FieldEvaluatorInterface::SetPts::operator()(ForcesAndSourcesCore *fe_raw_ptr,
         FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3> t_gauss_pts{
             &gauss_pts(0, 0), &gauss_pts(1, 0), &gauss_pts(2, 0)};
 
-        int nb_gauss_pts = 0;
+        nb_gauss_pts = 0;
         for (int nn = 0; nn != nb_eval_points; ++nn) {
           if (eval_pointentity_handle[nn] == fe_ent) {
             for (const int i : {0, 1, 2}) {
@@ -135,7 +136,7 @@ FieldEvaluatorInterface::SetPts::operator()(ForcesAndSourcesCore *fe_raw_ptr,
             &shape_functions(0, 2)};
         FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 2> t_gauss_pts{
             &gauss_pts(0, 0), &gauss_pts(1, 0)};
-        int nb_gauss_pts = 0;
+        nb_gauss_pts = 0;
         for (int nn = 0; nn != nb_eval_points; ++nn) {
           if (eval_pointentity_handle[nn] == fe_ent) {
             for (const int i : {0, 1}) {
@@ -155,7 +156,7 @@ FieldEvaluatorInterface::SetPts::operator()(ForcesAndSourcesCore *fe_raw_ptr,
 
 #ifndef NDEBUG
       MOFEM_LOG("SELF", Sev::noisy)
-          << "nbEvalOPoints / nbGau_sspt_s: " << nbEvalPoints << " / "
+          << "nbEvalOPoints / nbGau_sspt_s: " << nb_eval_points << " / "
           << nb_gauss_pts;
       MOFEM_LOG("SELF", Sev::noisy) << "gauss pts: " << gauss_pts;
 #endif
