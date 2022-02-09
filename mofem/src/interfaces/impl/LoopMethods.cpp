@@ -41,6 +41,17 @@ PetscData::PetscData()
     : f(PETSC_NULL), A(PETSC_NULL), B(PETSC_NULL), x(PETSC_NULL),
       x_t(PETSC_NULL), x_tt(PETSC_NULL) {}
 
+MoFEMErrorCode PetscData::copyPetscData(const PetscData &petsc_data) {
+  this->data_ctx = petsc_data.data_ctx;
+  this->f = petsc_data.f;
+  this->A = petsc_data.A;
+  this->B = petsc_data.B;
+  this->x = petsc_data.x;
+  this->x = petsc_data.x;
+  this->x_t = petsc_data.x_t;
+  this->x_tt = petsc_data.x_tt;
+}
+
 // KSP
 MoFEMErrorCode
 KspMethod::query_interface(boost::typeindex::type_index type_index,
@@ -55,16 +66,16 @@ KspMethod::KspMethod()
 
 MoFEMErrorCode KspMethod::copyKsp(const KspMethod &ksp) {
   MoFEMFunctionBeginHot;
+  CHKERR copyPetscData(ksp);
   this->ksp_ctx = ksp.ksp_ctx;
   this->ksp = ksp.ksp;
-  this->ksp_f = ksp.ksp_f;
-  this->ksp_A = ksp.ksp_A;
-  this->ksp_B = ksp.ksp_B;
-  MoFEMFunctionReturnHot(0);
+   MoFEMFunctionReturnHot(0);
 }
 
 // SNES
-MoFEMErrorCode SnesMethod::query_interface(boost::typeindex::type_index type_index, UnknownInterface **iface) const {
+MoFEMErrorCode
+SnesMethod::query_interface(boost::typeindex::type_index type_index,
+                            UnknownInterface **iface) const {
   *iface = const_cast<SnesMethod *>(this);
   return 0;
 }
@@ -75,12 +86,9 @@ SnesMethod::SnesMethod()
 
 MoFEMErrorCode SnesMethod::copySnes(const SnesMethod &snes) {
   MoFEMFunctionBeginHot;
+  CHKERR copyPetscData(snes);
   this->snes_ctx = snes.snes_ctx;
   this->snes = snes.snes;
-  this->snes_x = snes.snes_x;
-  this->snes_f = snes.snes_f;
-  this->snes_A = snes.snes_A;
-  this->snes_B = snes.snes_B;
   MoFEMFunctionReturnHot(0);
 }
 
@@ -99,14 +107,9 @@ TSMethod::TSMethod()
 
 MoFEMErrorCode TSMethod::copyTs(const TSMethod &ts) {
   MoFEMFunctionBeginHot;
+  CHKERR copyPetscData(ts);
   this->ts_ctx = ts.ts_ctx;
   this->ts = ts.ts;
-  this->ts_u = ts.ts_u;
-  this->ts_u_t = ts.ts_u_t;
-  this->ts_u_tt = ts.ts_u_tt;
-  this->ts_F = ts.ts_F;
-  this->ts_A = ts.ts_A;
-  this->ts_B = ts.ts_B;
   this->ts_step = ts.ts_step;
   this->ts_a = ts.ts_a;
   this->ts_t = ts.ts_t;

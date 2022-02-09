@@ -1534,6 +1534,7 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopSide(
 
   CHKERR side_fe->setSideFEPtr(ptrFE);
   CHKERR side_fe->copyBasicMethod(*getFEMethod());
+  CHKERR side_fe->copyPetscData(*getFEMethod());
   CHKERR side_fe->copyKsp(*getFEMethod());
   CHKERR side_fe->copySnes(*getFEMethod());
   CHKERR side_fe->copyTs(*getFEMethod());

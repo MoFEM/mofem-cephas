@@ -53,6 +53,8 @@ struct PetscData : public UnknownInterface {
 
   Switches data_ctx;
 
+  MoFEMErrorCode copyPetscData(const PetscData &petsc_data);
+
   Vec f;
   Mat A;
   Mat B;
