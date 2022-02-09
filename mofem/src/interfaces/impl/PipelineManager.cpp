@@ -245,7 +245,7 @@ SmartPetscObj<TS> PipelineManager::createTSEX(SmartPetscObj<DM> dm) {
   if (feBoundaryRhs)
     CHKERR DMMoFEMTSSetRHSFunction(dm, simple->getBoundaryFEName(),
                                    feBoundaryExplicitRhs, null, null);
-  if (feSkeletonRhs)
+  if (feSkeletonExplicitRhs)
     CHKERR DMMoFEMTSSetRHSFunction(dm, simple->getSkeletonFEName(),
                                    feSkeletonExplicitRhs, null, null);
 
