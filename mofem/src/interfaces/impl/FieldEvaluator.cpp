@@ -280,9 +280,10 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint(
           &data_ptr->shapeFunctions(0, 0), &data_ptr->shapeFunctions(0, 1),
           &data_ptr->shapeFunctions(0, 2)};
 
-      FTensor::Index<'j', 3> j2;
+      FTensor::Index<'j', 2> j2;
       FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2> t_local{
           &local_coords[0], &local_coords[1]};
+      data_ptr->localCoords.resize(nb_eval_points, 2);
       FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2> t_local_data{
           &(data_ptr->localCoords(0, 0)), &(data_ptr->localCoords(0, 1))};
 

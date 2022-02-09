@@ -38,6 +38,8 @@ struct FieldEvaluatorInterface : public UnknownInterface {
 
   struct SetPtsData {
 
+    SetPtsData() = delete;
+
     /**
      * @brief Set the Gauss Pts data
      *
