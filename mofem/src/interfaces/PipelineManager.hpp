@@ -746,7 +746,7 @@ template <int DIM>
 boost::ptr_vector<PipelineManager::UserDataOperator> &
 PipelineManager::getOpSkeletonLhsPipeline() {
   return boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
-             createBoundaryFEPipeline<DIM>(feSkeletonRhs))
+             createBoundaryFEPipeline<DIM>(feSkeletonLhs))
       ->getOpPtrVector();
 }
 
@@ -770,7 +770,7 @@ template <int DIM>
 boost::ptr_vector<PipelineManager::UserDataOperator> &
 PipelineManager::getOpSkeletonRhsPipeline() {
   return boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
-             createBoundaryFEPipeline<DIM>(feSkeletonLhs))
+             createBoundaryFEPipeline<DIM>(feSkeletonRhs))
       ->getOpPtrVector();
 }
 
