@@ -50,6 +50,7 @@ MoFEMErrorCode PetscData::copyPetscData(const PetscData &petsc_data) {
   this->x = petsc_data.x;
   this->x_t = petsc_data.x_t;
   this->x_tt = petsc_data.x_tt;
+  return 0;
 }
 
 // KSP
