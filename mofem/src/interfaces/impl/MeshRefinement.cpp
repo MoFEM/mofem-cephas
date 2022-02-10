@@ -198,7 +198,7 @@ MoFEMErrorCode MeshRefinement::addVerticesInTheMiddleOfEdges(
         verts, bit, verb);
   }
   MoFEMFunctionReturn(0);
-} 
+}
 
 MoFEMErrorCode MeshRefinement::refineTets(const EntityHandle meshset,
                                           const BitRefLevel &bit,
@@ -251,7 +251,7 @@ MoFEMErrorCode MeshRefinement::refineTets(const Range &_tets,
             SETERRQ1(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
                      "Edge not found %ld", *eit);
           }
-          cerr << "Parent edge" << endl << **e_eit << endl;
+          MOFEM_LOG("SELF", Sev::noisy) << "Parent edge" << endl << **e_eit;
           if (entParentMap.find(*eit) != entParentMap.end()) {
             RefEntity_multiIndex::iterator v_eit =
                 ref_ents_ptr->find(entParentMap[*eit]);
@@ -259,14 +259,15 @@ MoFEMErrorCode MeshRefinement::refineTets(const Range &_tets,
               SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
                       "Vertex not found");
             }
-            cerr << "Vertex " << **v_eit << endl;
+            MOFEM_LOG("SELF", Sev::noisy) << "Vertex " << **v_eit;
           }
           RefEntity_multiIndex::index<Ent_Ent_mi_tag>::type::iterator ee_it,
               ee_hi_it;
           ee_it = ref_ents_ptr->get<Ent_Ent_mi_tag>().lower_bound(*eit);
           ee_hi_it = ref_ents_ptr->get<Ent_Ent_mi_tag>().upper_bound(*eit);
           for (; ee_it != ee_hi_it; ++ee_it) {
-            cerr << "Ent having edge parent by parent " << **ee_it << endl;
+            MOFEM_LOG("SELF", Sev::noisy)
+                << "Ent having edge parent by parent " << **ee_it;
           }
           RefEntity_multiIndex tmp_index;
           tmp_index.insert(ref_ents_ptr->begin(), ref_ents_ptr->end());
@@ -276,7 +277,7 @@ MoFEMErrorCode MeshRefinement::refineTets(const Range &_tets,
                   boost::make_tuple(MBVERTEX, *eit));
           if (vvit !=
               tmp_index.get<Composite_ParentEnt_And_EntType_mi_tag>().end()) {
-            cerr << "Tmp idx Vertex " << **vvit << endl;
+            MOFEM_LOG("SELF", Sev::noisy) << "Tmp idx Vertex " << **vvit;
           }
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "No vertex on trim edges, that make no sense");
@@ -424,10 +425,10 @@ MoFEMErrorCode MeshRefinement::refineTets(const Range &_tets,
           continue;
         for (int nn = 0; nn != 4; nn++) {
           if (conn[nn] == edge_new_nodes[ee]) {
-            std::cerr << "problem on edge: " << ee << endl;
-            std::cerr << "tet conn : " << conn[0] << " " << conn[1] << " "
-                      << conn[2] << " " << conn[3] << " : "
-                      << edge_new_nodes[ee] << std::endl;
+            MOFEM_LOG("SELF", Sev::noisy) << "problem on edge: " << ee;
+            MOFEM_LOG("SELF", Sev::noisy)
+                << "tet conn : " << conn[0] << " " << conn[1] << " " << conn[2]
+                << " " << conn[3] << " : " << edge_new_nodes[ee] << std::endl;
             for (int eee = 0; eee != 6; ++eee) {
               EntityHandle edge;
               CHKERR moab.side_element(tit, 1, eee, edge);
@@ -951,8 +952,8 @@ MoFEMErrorCode MeshRefinement::refinePrisms(const EntityHandle meshset,
   MoFEMFunctionReturn(0);
 }
 MoFEMErrorCode MeshRefinement::refineMeshset(const EntityHandle meshset,
-                                              const BitRefLevel &bit,
-                                              const bool recursive, int verb) {
+                                             const BitRefLevel &bit,
+                                             const bool recursive, int verb) {
   Interface &m_field = cOre;
   auto refined_ents_ptr = m_field.get_ref_ents();
   MoFEMFunctionBegin;
