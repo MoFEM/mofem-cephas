@@ -114,7 +114,8 @@ int main(int argc, char *argv[]) {
 
       MatrixDouble shape(init_local_coords.size1(), 3);
       CHKERR Tools::shapeFunMBTRI<2>(&shape(0, 0), &init_local_coords(0, 0),
-                                     &init_local_coords(0, 1), 5);
+                                     &init_local_coords(0, 1),
+                                     init_local_coords.size1());
       MOFEM_LOG("SELF", Sev::verbose) << "shape " << shape;
 
       MatrixDouble global_coords = prod(shape, elem_coords);
