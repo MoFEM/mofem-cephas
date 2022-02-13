@@ -864,7 +864,7 @@ MoFEMErrorCode CutMeshInterface::refineMesh(const int init_bit_level,
                                 moab::Interface::UNION);
 
     CHKERR refiner->addVerticesInTheMiddleOfEdges(ref_edges, bit);
-    CHKERR refiner->refineTets(vOlume, bit, false, verb);
+    CHKERR refiner->refineTets(vOlume, bit, verb);
 
     CHKERR update_range(fixed_edges);
     CHKERR update_range(&vOlume);
@@ -1336,8 +1336,7 @@ MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit,
     MoFEMFunctionBegin;
     CHKERR m_field.getInterface(refiner);
     CHKERR refiner->addVerticesInTheMiddleOfEdges(cutEdges, bit);
-    CHKERR refiner->refineTets(vOlume, bit, false, QUIET,
-                               debug ? &cutEdges : NULL);
+    CHKERR refiner->refineTets(vOlume, bit, QUIET, debug);
     MoFEMFunctionReturn(0);
   };
 
@@ -2000,8 +1999,7 @@ MoFEMErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,
 
   CHKERR m_field.getInterface(refiner);
   CHKERR refiner->addVerticesInTheMiddleOfEdges(trimEdges, bit);
-  CHKERR refiner->refineTets(cutNewVolumes, bit, false, QUIET,
-                             debug ? &trimEdges : NULL);
+  CHKERR refiner->refineTets(cutNewVolumes, bit, QUIET, debug);
 
   trimNewVolumes.clear();
   CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(

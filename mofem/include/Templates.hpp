@@ -1258,7 +1258,7 @@ struct TempMeshset {
     MOAB_THROW(rval);
   }
   virtual ~TempMeshset() { delete_meshset(); }
-  operator EntityHandle() { return meshset; }
+  operator EntityHandle() const { return meshset; }
   auto get_ptr() { return &meshset; }
 
 private:

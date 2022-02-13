@@ -17,6 +17,9 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 if(BASE AND SPACE)
+  message(
+    "${MPI_RUN} ${MPI_FLAGS} -np ${MPI_NP}
+    ${PROG} -my_file ${FILE} -base ${BASE} -space ${SPACE} -log_no_color")
   execute_process(
     COMMAND 
     ${MPI_RUN} ${MPI_FLAGS} -np ${MPI_NP}
@@ -24,6 +27,9 @@ if(BASE AND SPACE)
     WORKING_DIRECTORY ${BINARY_DIR}
     RESULT_VARIABLE CMD_RESULT)
 elseif(BASE)
+  message(
+    "${MPI_RUN} ${MPI_FLAGS} -np ${MPI_NP}
+    ${PROG} -my_file ${FILE} -base ${BASE} -log_no_color")
   execute_process(
     COMMAND 
     ${MPI_RUN} ${MPI_FLAGS} -np ${MPI_NP}
@@ -31,6 +37,9 @@ elseif(BASE)
     WORKING_DIRECTORY ${BINARY_DIR}
     RESULT_VARIABLE CMD_RESULT)
 elseif(SPACE)
+  message(
+    "${MPI_RUN} ${MPI_FLAGS} -np ${MPI_NP}
+    ${PROG} -my_file ${FILE} -space ${SPACE} -log_no_color")
   execute_process(
     COMMAND 
     ${MPI_RUN} ${MPI_FLAGS} -np ${MPI_NP}
@@ -38,6 +47,9 @@ elseif(SPACE)
     WORKING_DIRECTORY ${BINARY_DIR}
     RESULT_VARIABLE CMD_RESULT)
 else()
+  message(
+    "${MPI_RUN} ${MPI_FLAGS} -np ${MPI_NP}
+    ${PROG} -my_file ${FILE} -log_no_color")
   execute_process(
     COMMAND 
     ${MPI_RUN} ${MPI_FLAGS} -np ${MPI_NP}
