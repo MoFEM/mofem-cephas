@@ -88,28 +88,20 @@ struct MeshRefinement : public UnknownInterface {
    *
    * \param EntityHandle meshset
    * \param BitRefLevel bitLevel
-   * \param bool respect_interface If TRUE, interface elements would be refined
    * \param verb verbosity level
-   * \param Range * pointer to range in not null check consistency of refinement
    */
   MoFEMErrorCode refineTets(const EntityHandle meshset, const BitRefLevel &bit,
-                            const bool respect_interface = false,
-                            int verb = QUIET, Range *ref_edges = NULL,
-                            const bool debug = false);
+                            int verb = QUIET, const bool debug = false);
 
   /**\brief refine TET in the meshset
    *
    * \param Range of tets to refine
    * \param BitRefLevel bitLevel
    * \param BitRefLevel bitLevel
-   * \param bool respect_interface If TRUE, interface elements would be refined
    * \param verb verbosity level
-   * \param Range * pointer to range in not null check consistency of refinement
    */
   MoFEMErrorCode refineTets(const Range &tets, const BitRefLevel &bit,
-                            const bool respect_interface = false,
-                            int verb = QUIET, Range *ref_edges = NULL,
-                            const bool debug = false);
+                            int verb = QUIET, const bool debug = false);
 
   /**\brief refine PRISM in the meshset
    *
@@ -130,6 +122,35 @@ struct MeshRefinement : public UnknownInterface {
   MoFEMErrorCode refineMeshset(const EntityHandle meshset,
                                const BitRefLevel &bit,
                                const bool recursive = false, int verb = QUIET);
+
+  /**\brief refine TET in the meshset
+   *
+   * \param EntityHandle meshset
+   * \param BitRefLevel bitLevel
+   * \param verb verbosity level
+   */
+  MoFEMErrorCode refineTris(const EntityHandle meshset, const BitRefLevel &bit,
+                            int verb = QUIET, const bool debug = false);
+
+  /**\brief refine TRI in the meshset
+   *
+   * \param Range of tets to refine
+   * \param BitRefLevel bitLevel
+   * \param BitRefLevel bitLevel
+   * \param verb verbosity level
+   */
+  MoFEMErrorCode refineTris(const Range &tris, const BitRefLevel &bit,
+                            int verb = QUIET, const bool debug = false);
+
+private:
+  struct SetParent {
+    map<EntityHandle, EntityHandle> parentsToChange;
+    MoFEMErrorCode operator()(const EntityHandle ent, const EntityHandle parent,
+                              const RefEntity_multiIndex *ref_ents_ptr,
+                              MoFEM::Core &cOre);
+
+    MoFEMErrorCode operator()(const RefEntity_multiIndex *ref_ents_ptr);
+  };
 };
 
 } // namespace MoFEM

@@ -117,7 +117,7 @@ int main(int argc, char *argv[]) {
 
     auto out_meshset_tet_ptr = get_temp_meshset_ptr(moab);
     CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByDimAndRefLevel(
-        bit_level1, BitRefLevel().set(), 3, *out_meshset_tet_ptr);
+        bit_level1, BitRefLevel().set(), dim, *out_meshset_tet_ptr);
     Range tets;
     CHKERR moab.get_entities_by_handle(*out_meshset_tet_ptr, tets);
     {

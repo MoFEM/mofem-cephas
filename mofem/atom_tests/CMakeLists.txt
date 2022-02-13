@@ -159,14 +159,28 @@ cm_export_file("../meshes/templar.h5m" export_atom_tests)
 build_test(mesh_refine_atom mesh_refine_atom.cpp)
 
 add_test(
-    mesh_refine 
+    mesh_refine_tet
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
     -DMPI_FLAGS=${MPI_RUN_FLAGS} --oversubscribe
     -DMPI_NP=1
     -DPROG=${CMAKE_CURRENT_BINARY_DIR}/mesh_refine_atom
     -DFILE=templar.h5m
-    -DLOG1=mesh_refine.txt
+    -DLOG1=mesh_refine_tet.txt
+    -DLOG2=mesh_refine.txt
+    -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
+    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files
+    -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
+
+add_test(
+    mesh_refine_tri
+    ${CMAKE_COMMAND}
+    -DMPI_RUN=${MPI_RUN}
+    -DMPI_FLAGS=${MPI_RUN_FLAGS} --oversubscribe
+    -DMPI_NP=1
+    -DPROG=${CMAKE_CURRENT_BINARY_DIR}/mesh_refine_atom
+    -DFILE=rectangle_tri.h5m
+    -DLOG1=mesh_refine_tri.txt
     -DLOG2=mesh_refine.txt
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
     -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files

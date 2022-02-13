@@ -29,8 +29,16 @@ void tet_type_1(const EntityHandle *conn, const int split_edge,
                 const EntityHandle edge_new_node, EntityHandle *new_tets_conn);
 
 // TRIS
+
+MoFEMErrorCode tri_type_1(const EntityHandle *conn, const int split_edge,
+                          const EntityHandle edge_new_node,
+                          EntityHandle *new_tris_conn);
+
+MoFEMErrorCode tri_type_2(const EntityHandle *conn, const int *split_edges,
+                          const EntityHandle *edge_new_nodes,
+                          EntityHandle *new_tris_conn);
+
 MoFEMErrorCode tri_type_3(const EntityHandle *conn,
-                          const BitRefEdges split_edges,
                           const EntityHandle *edge_new_nodes,
                           EntityHandle *new_tris_conn);
 
