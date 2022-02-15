@@ -278,19 +278,16 @@ struct Problem {
  *
  */
 #define _IT_NUMEREDFE_BY_NAME_FOR_LOOP_(PROBLEMPTR, NAME, IT)                  \
-  NumeredEntFiniteElementbyName::iterator IT =                                 \
-      PROBLEMPTR->getNumeredFEsBegin(NAME);                                    \
+  auto IT = PROBLEMPTR->getNumeredFEsBegin(NAME);                              \
   IT != PROBLEMPTR->getNumeredFEsEnd(NAME);                                    \
   IT++
 
-  NumeredEntFiniteElementbyName::iterator
-  getNumeredFEsBegin(std::string fe_name) const {
+  auto getNumeredFEsBegin(std::string fe_name) const {
     return numeredFiniteElementsPtr->get<FiniteElement_name_mi_tag>()
         .lower_bound(fe_name);
   }
 
-  NumeredEntFiniteElementbyName::iterator
-  getNumeredFEsEnd(std::string fe_name) const {
+  auto getNumeredFEsEnd(std::string fe_name) const {
     return numeredFiniteElementsPtr->get<FiniteElement_name_mi_tag>()
         .upper_bound(fe_name);
   }

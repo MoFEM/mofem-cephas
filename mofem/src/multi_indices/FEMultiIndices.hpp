@@ -880,23 +880,6 @@ typedef multi_index_container<
     NumeredEntFiniteElement_multiIndex;
 
 /**
- *  \brief Entity finite element multi-index by finite element name
- *
- *  \ingroup fe_multi_indices
- */
-typedef NumeredEntFiniteElement_multiIndex::index<
-    FiniteElement_name_mi_tag>::type NumeredEntFiniteElementbyName;
-
-/**
- *  \brief Entity finite element multi-index by finite element name and
- * partition
- *
- *  \ingroup fe_multi_indices
- */
-typedef NumeredEntFiniteElement_multiIndex::index<
-    Composite_Name_And_Part_mi_tag>::type NumeredEntFiniteElementbyNameAndPart;
-
-/**
   @relates multi_index_container
   \brief MultiIndex for entities for FiniteElement
   \ingroup fe_multi_indices

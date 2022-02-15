@@ -124,7 +124,7 @@ Problem::getNumberOfElementsByNameAndPart(MPI_Comm comm, const std::string name,
   MPI_Comm_rank(comm, &rank);
   CHKERR PetscLayoutCreate(comm, layout);
   CHKERR PetscLayoutSetBlockSize(*layout, 1);
-  const NumeredEntFiniteElementbyNameAndPart &fe_by_name_and_part =
+  const auto &fe_by_name_and_part =
       numeredFiniteElementsPtr->get<Composite_Name_And_Part_mi_tag>();
   int nb_elems;
   nb_elems = fe_by_name_and_part.count(boost::make_tuple(name, rank));
