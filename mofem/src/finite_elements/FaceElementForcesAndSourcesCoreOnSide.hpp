@@ -76,62 +76,9 @@ struct FaceElementForcesAndSourcesCoreOnSideBase
   /** \brief default operator for Face element
    * \ingroup mofem_forces_and_sources_volume_element
    */
-  struct UserDataOperator
-      : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
-
-    using FaceElementForcesAndSourcesCoreBase::UserDataOperator::
-        UserDataOperator;
-
-    /** \brief return pointer to Generic Volume Finite Element object
-     */
-    inline const FaceElementForcesAndSourcesCoreOnSideBase *getFaceFE() const;
-
-    /**
-     * @brief Get the edge side finite element
-     *
-     * @return EdgeElementForcesAndSourcesCoreBase*
-     */
-    inline EdgeElementForcesAndSourcesCoreBase *getEdgeFE() const;
-
-    /**
-     * \brief get face sense in respect to volume
-     * @return error code
-     */
-    inline int getEdgeSense() const;
-
-    /**
-     * \brief get face side number in respect to volume
-     * @return error code
-     */
-    inline int getEdgeSideNumber() const;
-
-    /**
-     * get face normal on side which is this element
-     * @return face normal
-     */
-    inline VectorDouble &getDirection();
-
-    /** \brief get normal as tensor
-     */
-    inline auto getFTensor1Direction();
-
-    /** \brief get face coordinates at Gauss pts.
-
-    \note Coordinates should be the same what function getCoordsAtGaussPts
-    on face is returning. If both coordinates are different it is error, or you
-    do something very unusual.
-
-     */
-    inline MatrixDouble &getEdgeCoordsAtGaussPts();
-
-  protected:
-
-    MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
-
-  };
+  struct UserDataOperator;
 
 protected:
-
   MoFEMErrorCode setGaussPts(int order);
 
 private:
@@ -140,6 +87,60 @@ private:
   std::array<int, 2> edgeConnMap;
   std::array<int, 4> faceConnMap;
   int oppositeNode;
+};
+
+/** \brief default operator for Face element
+ * \ingroup mofem_forces_and_sources_volume_element
+ */
+struct FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator
+    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+
+  using FaceElementForcesAndSourcesCoreBase::UserDataOperator::UserDataOperator;
+
+  /** \brief return pointer to Generic Volume Finite Element object
+   */
+  inline const FaceElementForcesAndSourcesCoreOnSideBase *getFaceFE() const;
+
+  /**
+   * @brief Get the edge side finite element
+   *
+   * @return EdgeElementForcesAndSourcesCoreBase*
+   */
+  inline EdgeElementForcesAndSourcesCoreBase *getEdgeFE() const;
+
+  /**
+   * \brief get face sense in respect to volume
+   * @return error code
+   */
+  inline int getEdgeSense() const;
+
+  /**
+   * \brief get face side number in respect to volume
+   * @return error code
+   */
+  inline int getEdgeSideNumber() const;
+
+  /**
+   * get face normal on side which is this element
+   * @return face normal
+   */
+  inline VectorDouble &getDirection();
+
+  /** \brief get normal as tensor
+   */
+  inline auto getFTensor1Direction();
+
+  /** \brief get face coordinates at Gauss pts.
+
+  \note Coordinates should be the same what function getCoordsAtGaussPts
+  on face is returning. If both coordinates are different it is error, or you
+  do something very unusual.
+
+   */
+  inline MatrixDouble &getEdgeCoordsAtGaussPts();
+
+protected:
+  MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
 };
 
 /**
@@ -221,8 +222,8 @@ MatrixDouble &FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::
 }
 
 template <int SWITCH>
-MoFEMErrorCode FaceElementForcesAndSourcesCoreOnSideSwitch<SWITCH>::
-operator()() {
+MoFEMErrorCode
+FaceElementForcesAndSourcesCoreOnSideSwitch<SWITCH>::operator()() {
   return opSwitch<SWITCH>();
 }
 
