@@ -539,8 +539,6 @@ struct Tools : public UnknownInterface {
                               double *min_dist_ptr, double *o_ptr = nullptr,
                               EntityHandle *o_segments = nullptr) const;
 
-  /**@}*/
-
   /** \name Debugging */
 
   /**@{*/

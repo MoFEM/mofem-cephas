@@ -236,7 +236,6 @@ struct FaceElementForcesAndSourcesCoreBase::UserDataOperator
    */
   inline FaceElementForcesAndSourcesCoreBase *getFaceFE();
 
-
   /**
    *
    * User call this function to loop over elements on the side of face. This
@@ -439,8 +438,6 @@ FaceElementForcesAndSourcesCoreBase *
 FaceElementForcesAndSourcesCoreBase::UserDataOperator::getFaceFE() {
   return static_cast<FaceElementForcesAndSourcesCoreBase *>(ptrFE);
 }
-
-
 
 template <int SWITCH>
 MoFEMErrorCode

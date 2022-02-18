@@ -836,7 +836,7 @@ MoFEMErrorCode Core::cache_problem_entities(const std::string prb_name,
 
         if ((lo->getBitFEId() & prb_fe_id).any()) {
 
-          const BitRefLevel fe_bit = lo->entFePtr->getBitRefLevel();
+          const BitRefLevel &fe_bit = lo->entFePtr->getBitRefLevel();
 
           // if entity is not problem refinement level
           if (((fe_bit & prb_mask) != fe_bit) ||

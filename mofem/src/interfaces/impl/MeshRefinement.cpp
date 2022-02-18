@@ -267,42 +267,33 @@ MoFEMErrorCode MeshRefinement::refineTets(const Range &_tets,
                                   const auto type_parent) {
     auto &ref_ents =
         refined_ents_ptr->get<Composite_EntType_and_ParentEntType_mi_tag>();
-    auto miit =
-        ref_ents.lower_bound(boost::make_tuple(type_child, type_parent));
-    auto hi_miit =
-        ref_ents.upper_bound(boost::make_tuple(type_child, type_parent));
+    auto range =
+        ref_ents.equal_range(boost::make_tuple(type_child, type_parent));
+
     RefEntity_multiIndex_view_by_ordered_parent_entity ref_parent_ents_view;
 
-    decltype(miit) first;
-    decltype(miit) second;
+    auto test = [&](auto it) { return ((*it)->getBitRefLevel() & bit).any(); };
 
-    do {
+    auto first = range.first;
+    while (first != range.second)
+      if (test(first)) {
 
-      while (miit != hi_miit) {
-        first = miit;
-        if (((*miit)->getBitRefLevel() & bit).any()) {
-          ++miit;
-          second = miit;
-          break;
-        } else {
-          ++miit;
+        auto second = first;
+        ++second;
+        while (second != range.second) {
+          if (test(second))
+            ++second;
+          else
+            break;
         }
-      }
 
-      while (miit != hi_miit) {
-        if (((*miit)->getBitRefLevel() & bit).any()) {
-          second = miit;
-          break;
-        } else {
-          ++miit;
-        }
-      }
-
-      if (first != miit) {
         ref_parent_ents_view.insert(first, second);
-      }
 
-    } while (miit != hi_miit);
+        first = second;
+
+      } else {
+        ++first;
+      }
 
     return ref_parent_ents_view;
   };
@@ -901,46 +892,37 @@ MoFEMErrorCode MeshRefinement::refineTris(const Range &_tris,
 
   MoFEMFunctionBegin;
 
-  auto get_parent_ents_view = [&](const auto type_child,
+    auto get_parent_ents_view = [&](const auto type_child,
                                   const auto type_parent) {
     auto &ref_ents =
         refined_ents_ptr->get<Composite_EntType_and_ParentEntType_mi_tag>();
-    auto miit =
-        ref_ents.lower_bound(boost::make_tuple(type_child, type_parent));
-    auto hi_miit =
-        ref_ents.upper_bound(boost::make_tuple(type_child, type_parent));
+    auto range =
+        ref_ents.equal_range(boost::make_tuple(type_child, type_parent));
+
     RefEntity_multiIndex_view_by_ordered_parent_entity ref_parent_ents_view;
 
-    decltype(miit) first;
-    decltype(miit) second;
+    auto test = [&](auto it) { return ((*it)->getBitRefLevel() & bit).any(); };
 
-    do {
+    auto first = range.first;
+    while (first != range.second)
+      if (test(first)) {
 
-      while (miit != hi_miit) {
-        first = miit;
-        if (((*miit)->getBitRefLevel() & bit).any()) {
-          ++miit;
-          second = miit;
-          break;
-        } else {
-          ++miit;
+        auto second = first;
+        ++second;
+        while (second != range.second) {
+          if (test(second))
+            ++second;
+          else
+            break;
         }
-      }
 
-      while (miit != hi_miit) {
-        if (((*miit)->getBitRefLevel() & bit).any()) {
-          second = miit;
-          break;
-        } else {
-          ++miit;
-        }
-      }
-
-      if (first != miit) {
         ref_parent_ents_view.insert(first, second);
-      }
 
-    } while (miit != hi_miit);
+        first = second;
+
+      } else {
+        ++first;
+      }
 
     return ref_parent_ents_view;
   };
