@@ -52936,5 +52936,100 @@
    fun:_ZN5MoFEM6Simple8loadFileENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES6_
    fun:main
 }
-
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:mca_base_component_find
+   fun:mca_base_framework_components_register
+   fun:mca_base_framework_register
+   fun:mca_base_framework_open
+   fun:mca_io_base_file_select
+   fun:ompi_file_open
+   fun:PMPI_File_open
+   fun:H5FD_mpio_open
+   fun:H5FD_open
+   fun:H5F_open
+   fun:H5Fopen
+   fun:mhdf_openFileWithOpt
+   fun:_ZN4moab17WriteHDF5Parallel20parallel_create_fileEPKcbRKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaIS9_EERKNS_11FileOptionsEPKPNS_7TagInfoEiiPd
+   fun:_ZN4moab9WriteHDF515write_file_implEPKcbRKNS_11FileOptionsEPKmiRKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaISE_EEPKPNS_7TagInfoEii
+   fun:_ZN4moab9WriteHDF510write_fileEPKcbRKNS_11FileOptionsEPKmiRKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaISE_EEPKPNS_7TagInfoEii
+   fun:_ZN4moab4Core10write_fileEPKcS2_S2_RKNS_5RangeEPKPNS_7TagInfoEi
+   fun:_ZN4moab4Core10write_fileEPKcS2_S2_PKmiPKPNS_7TagInfoEi
+   fun:main
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:mca_base_component_find
+   fun:mca_base_framework_components_register
+   fun:mca_base_framework_register
+   fun:mca_base_framework_open
+   fun:mca_io_base_file_select
+   fun:ompi_file_open
+   fun:PMPI_File_open
+   fun:H5FD_mpio_open
+   fun:H5FD_open
+   fun:H5F_open
+   fun:H5Fopen
+   fun:mhdf_openFileWithOpt
+   fun:_ZN4moab17WriteHDF5Parallel20parallel_create_fileEPKcbRKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaIS9_EERKNS_11FileOptionsEPKPNS_7TagInfoEiiPd
+   fun:_ZN4moab9WriteHDF515write_file_implEPKcbRKNS_11FileOptionsEPKmiRKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaISE_EEPKPNS_7TagInfoEii
+   fun:_ZN4moab9WriteHDF510write_fileEPKcbRKNS_11FileOptionsEPKmiRKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaISE_EEPKPNS_7TagInfoEii
+   fun:_ZN4moab4Core10write_fileEPKcS2_S2_RKNS_5RangeEPKPNS_7TagInfoEi
+   fun:_ZN4moab4Core10write_fileEPKcS2_S2_PKmiPKPNS_7TagInfoEi
+   fun:main
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:mca_base_component_find
+   fun:mca_base_framework_components_register
+   fun:mca_base_framework_register
+   fun:mca_base_framework_open
+   fun:mca_io_base_file_select
+   fun:ompi_file_open
+   fun:PMPI_File_open
+   fun:H5FD_mpio_open
+   fun:H5FD_open
+   fun:H5F_open
+   fun:H5Fopen
+   fun:mhdf_openFileWithOpt
+   fun:_ZN4moab17WriteHDF5Parallel20parallel_create_fileEPKcbRKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaIS9_EERKNS_11FileOptionsEPKPNS_7TagInfoEiiPd
+   fun:_ZN4moab9WriteHDF515write_file_implEPKcbRKNS_11FileOptionsEPKmiRKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaISE_EEPKPNS_7TagInfoEii
+   fun:_ZN4moab9WriteHDF510write_fileEPKcbRKNS_11FileOptionsEPKmiRKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaISE_EEPKPNS_7TagInfoEii
+   fun:_ZN4moab4Core10write_fileEPKcS2_S2_RKNS_5RangeEPKPNS_7TagInfoEi
+   fun:_ZN4moab4Core10write_fileEPKcS2_S2_PKmiPKPNS_7TagInfoEi
+   fun:main
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:mca_base_component_find
+   fun:mca_base_framework_components_register
+   fun:mca_base_framework_register
+   fun:mca_base_framework_open
+   fun:mca_io_base_file_select
+   fun:ompi_file_open
+   fun:PMPI_File_open
+   fun:H5FD_mpio_open
+   fun:H5FD_open
+   fun:H5F_open
+   fun:H5Fopen
+   fun:mhdf_openFileWithOpt
+   fun:_ZN4moab17WriteHDF5Parallel20parallel_create_fileEPKcbRKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaIS9_EERKNS_11FileOptionsEPKPNS_7TagInfoEiiPd
+   fun:_ZN4moab9WriteHDF515write_file_implEPKcbRKNS_11FileOptionsEPKmiRKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaISE_EEPKPNS_7TagInfoEii
+   fun:_ZN4moab9WriteHDF510write_fileEPKcbRKNS_11FileOptionsEPKmiRKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaISE_EEPKPNS_7TagInfoEii
+   fun:_ZN4moab4Core10write_fileEPKcS2_S2_RKNS_5RangeEPKPNS_7TagInfoEi
+   fun:_ZN4moab4Core10write_fileEPKcS2_S2_PKmiPKPNS_7TagInfoEi
+   fun:main
+}
 
