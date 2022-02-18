@@ -290,6 +290,8 @@ MoFEMErrorCode MeshRefinement::refineTets(const Range &_tets,
         ref_parent_ents_view.insert(first, second);
 
         first = second;
+        if (first != range.second)
+          ++first;
 
       } else {
         ++first;
@@ -919,6 +921,8 @@ MoFEMErrorCode MeshRefinement::refineTris(const Range &_tris,
         ref_parent_ents_view.insert(first, second);
 
         first = second;
+        if (first != range.second)
+          ++first;
 
       } else {
         ++first;
