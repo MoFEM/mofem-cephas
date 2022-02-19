@@ -112,25 +112,35 @@ struct SetBitRefLevelTool {
     MoFEMFunctionBeginHot;
     std::vector<boost::shared_ptr<RefEntity>> shared_ref_ents_vec;
     shared_ref_ents_vec.reserve(seed_ents_range.size());
+    std::vector<const void *> tag_by_ptr;
     for (Range::const_pair_iterator pit = seed_ents_range.pair_begin();
          pit != seed_ents_range.pair_end(); pit++) {
       // add entities to database
       EntityHandle f = pit->first;
       EntityHandle s = pit->second;
+
       boost::shared_ptr<std::vector<RefEntityTmp<N>>> ref_ents_vec(
           new std::vector<RefEntityTmp<N>>());
       ref_ents_vec->reserve(s - f + 1);
-      for (auto f : Range(f, s))
-        ref_ents_vec->emplace_back(baseEntData, f);
+
+      tag_by_ptr.resize(s - f + 1);
+      CHKERR baseEntData->moab.tag_get_by_ptr(
+          baseEntData->th_RefParentHandle, Range(f, s), &*tag_by_ptr.begin());
+      auto tag_parent_it = tag_by_ptr.begin();
+      for (auto f : Range(f, s)) {
+        ref_ents_vec->emplace_back(
+            baseEntData, f,
+            const_cast<EntityHandle *>(
+                static_cast<const EntityHandle *>(*tag_parent_it)));
+        ++tag_parent_it;
+      }
 
       // Set bits to range
       if (bIt.any()) {
-        boost::shared_ptr<std::vector<const void *>> bits_by_ptr(
-            new std::vector<const void *>());
-        bits_by_ptr->resize(s - f + 1);
+        tag_by_ptr.resize(s - f + 1);
         CHKERR baseEntData->moab.tag_get_by_ptr(
-            baseEntData->th_RefBitLevel, Range(f, s), &*bits_by_ptr->begin());
-        for (auto &v_bit_ptr : *bits_by_ptr)
+            baseEntData->th_RefBitLevel, Range(f, s), &*tag_by_ptr.begin());
+        for (auto &v_bit_ptr : tag_by_ptr)
           const_cast<BitRefLevel &>(
               *(static_cast<const BitRefLevel *>(v_bit_ptr))) |= bIt;
       }
