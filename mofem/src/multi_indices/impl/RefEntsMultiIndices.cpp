@@ -38,7 +38,15 @@ boost::weak_ptr<RefElement> RefEntityTmp<0>::refElementPtr;
 RefEntityTmp<0>::RefEntityTmp(
     const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
     const EntityHandle ent)
-    : ent(ent) {}
+    : ent(ent) {
+  entParentTagPtr = static_cast<EntityHandle *>(get_tag_ptr(
+      basic_data_ptr->moab, basic_data_ptr->th_RefParentHandle, ent, NULL));
+}
+
+RefEntityTmp<0>::RefEntityTmp(
+    const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
+    const EntityHandle ent, EntityHandle *ent_parent_tag_ptr)
+    : ent(ent), entParentTagPtr(ent_parent_tag_ptr) {}
 
 int RefEntityTmp<0>::getSideNumber() const {
   return getRefElementPtr()->getSideNumberPtr(ent)->side_number;

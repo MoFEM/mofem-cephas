@@ -159,6 +159,9 @@ template <> struct RefEntityTmp<0> {
   RefEntityTmp(const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
                const EntityHandle ent);
 
+  RefEntityTmp(const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
+               const EntityHandle ent, EntityHandle *ent_parent_tag_ptr);
+
   virtual ~RefEntityTmp() = default;
 
   /**
@@ -477,11 +480,7 @@ template <> struct RefEntityTmp<0> {
    *
    * @return Pointer to tag on entity
    */
-  EntityHandle *getParentEntPtr() const {
-    return static_cast<EntityHandle *>(get_tag_ptr(
-        this->getBasicDataPtr()->moab,
-        this->getBasicDataPtr()->th_RefParentHandle, this->ent, NULL));
-  }
+  inline EntityHandle *getParentEntPtr() const { return entParentTagPtr; }
 
   /**
    * \brief Get pointer to bit ref level tag
@@ -503,10 +502,7 @@ template <> struct RefEntityTmp<0> {
   /** \brief Get patent entity
    */
   inline EntityType getParentEntType() const {
-    EntityHandle *tag_parent_ent = getParentEntPtr();
-    if (*tag_parent_ent == 0)
-      return MBMAXTYPE;
-    return (EntityType)((*tag_parent_ent & MB_TYPE_MASK) >> MB_ID_WIDTH);
+    return (EntityType)((getParentEnt() & MB_TYPE_MASK) >> MB_ID_WIDTH);
   }
 
   /** \brief Get parent entity, i.e. entity form one refinement level up
@@ -547,6 +543,7 @@ private:
   }
 
   static boost::weak_ptr<RefElement> refElementPtr;
+  EntityHandle *entParentTagPtr; ///< Tag ptr to parent entity handle
 };
 
 template <> struct RefEntityTmp<-1> : public RefEntityTmp<0> {
@@ -554,6 +551,11 @@ template <> struct RefEntityTmp<-1> : public RefEntityTmp<0> {
   RefEntityTmp(const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
                const EntityHandle ent)
       : RefEntityTmp<0>(basic_data_ptr, ent), basicDataPtr(basic_data_ptr) {}
+
+  RefEntityTmp(const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
+               const EntityHandle ent, EntityHandle *ent_parent_tag_ptr)
+      : RefEntityTmp<0>(basic_data_ptr, ent, ent_parent_tag_ptr),
+        basicDataPtr(basic_data_ptr) {}
 
   virtual const boost::shared_ptr<BasicEntityData> getBasicDataPtr() const {
     if (auto ptr = basicDataPtr.lock())
@@ -757,7 +759,9 @@ using RefEntity_multiIndex = multi_index_container<
                                  const_mem_fun<RefEntity, EntityType,
                                                &RefEntity::getEntType>,
                                  const_mem_fun<RefEntity, EntityHandle,
-                                               &RefEntity::getParentEnt>>>>
+                                               &RefEntity::getParentEnt>>
+
+                   >>
 
     >;
 
