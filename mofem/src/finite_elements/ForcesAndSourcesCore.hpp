@@ -523,6 +523,20 @@ private:
    */
   MoFEMErrorCode setSideFEPtr(const ForcesAndSourcesCore *side_fe_ptr);
 
+  /**
+   * @brief Element to integrate parent or child
+   * 
+   */
+  ForcesAndSourcesCore *refinePtrFE;
+
+  /**
+   * @brief Set the pointer to face element refined
+   *
+   * @param refine_fe_ptr
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode setRefineFEPtr(const ForcesAndSourcesCore *refine_fe_ptr);
+
   friend class VolumeElementForcesAndSourcesCoreOnSideBase;
   friend class FaceElementForcesAndSourcesCoreOnSideBase;
   friend class VolumeElementForcesAndSourcesCoreOnContactPrismSideBase;
@@ -921,6 +935,29 @@ protected:
   MoFEMErrorCode loopSide(const string &fe_name, ForcesAndSourcesCore *side_fe,
                           const size_t dim,
                           const EntityHandle ent_for_side = 0);
+
+  /**
+   * @brief  User call this function to loop over parent elements. This function
+   * calls finite element with is operator to do calculations.
+   *
+   * @param fe_name
+   * @param side_fe
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode loopParent(const string &fe_name,
+                            ForcesAndSourcesCore *side_fe);
+
+  /**
+   * @brief  User call this function to loop over parent elements. This function
+   * calls finite element with is operator to do calculations.
+   *
+   * @param fe_name
+   * @param side_fe
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode loopChildren(const string &fe_name,
+                              ForcesAndSourcesCore *side_fe);
+
 private:
 
   friend class ForcesAndSourcesCore;

@@ -83,7 +83,8 @@ ForcesAndSourcesCore::ForcesAndSourcesCore(Interface &m_field)
       dataNoField(*dataOnElement[NOFIELD].get()),
       dataH1(*dataOnElement[H1].get()), dataHcurl(*dataOnElement[HCURL].get()),
       dataHdiv(*dataOnElement[HDIV].get()), dataL2(*dataOnElement[L2].get()),
-      lastEvaluatedElementEntityType(MBMAXTYPE), sidePtrFE(nullptr) {}
+      lastEvaluatedElementEntityType(MBMAXTYPE), sidePtrFE(nullptr),
+      refinePtrFE(nullptr) {}
 
 // ** Sense **
 
@@ -1517,18 +1518,19 @@ ForcesAndSourcesCore::setSideFEPtr(const ForcesAndSourcesCore *side_fe_ptr) {
   MoFEMFunctionReturnHot(0);
 }
 
+MoFEMErrorCode ForcesAndSourcesCore::setRefineFEPtr(
+    const ForcesAndSourcesCore *refine_fe_ptr) {
+  MoFEMFunctionBeginHot;
+  refinePtrFE = const_cast<ForcesAndSourcesCore *>(refine_fe_ptr);
+  MoFEMFunctionReturnHot(0);
+}
+
 MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopSide(
     const string &fe_name, ForcesAndSourcesCore *side_fe, const size_t side_dim,
     const EntityHandle ent_for_side) {
   MoFEMFunctionBegin;
   const auto ent = ent_for_side ? ent_for_side : getFEEntityHandle();
   const auto *problem_ptr = getFEMethod()->problemPtr;
-
-  Range adjacent_ents;
-  CHKERR ptrFE->mField.getInterface<BitRefManager>()->getAdjacenciesAny(
-      ent, side_dim, adjacent_ents);
-  auto &numered_fe = problem_ptr->numeredFiniteElementsPtr
-                         ->get<Composite_Name_And_Ent_mi_tag>();
 
   side_fe->feName = fe_name;
 
@@ -1540,6 +1542,12 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopSide(
   CHKERR side_fe->copyTs(*getFEMethod());
 
   CHKERR side_fe->preProcess();
+
+  Range adjacent_ents;
+  CHKERR ptrFE->mField.getInterface<BitRefManager>()->getAdjacenciesAny(
+      ent, side_dim, adjacent_ents);
+  auto &numered_fe = problem_ptr->numeredFiniteElementsPtr
+                         ->get<Composite_Name_And_Ent_mi_tag>();
 
   int nn = 0;
   side_fe->loopSize = adjacent_ents.size();
@@ -1553,6 +1561,104 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopSide(
   }
 
   CHKERR side_fe->postProcess();
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopParent(
+    const string &fe_name, ForcesAndSourcesCore *side_fe) {
+  MoFEMFunctionBegin;
+  
+  const auto *problem_ptr = getFEMethod()->problemPtr;
+  auto &numered_fe = problem_ptr->numeredFiniteElementsPtr
+                         ->get<Composite_Name_And_Ent_mi_tag>();
+
+  const auto parent_ent = getNumeredEntFiniteElementPtr()->getParentEnt();
+  auto miit = numered_fe.find(boost::make_tuple(fe_name, parent_ent));
+  if (miit != numered_fe.end()) {
+
+    side_fe->feName = fe_name;
+
+    CHKERR side_fe->setRefineFEPtr(ptrFE);
+    CHKERR side_fe->copyBasicMethod(*getFEMethod());
+    CHKERR side_fe->copyPetscData(*getFEMethod());
+    CHKERR side_fe->copyKsp(*getFEMethod());
+    CHKERR side_fe->copySnes(*getFEMethod());
+    CHKERR side_fe->copyTs(*getFEMethod());
+
+    CHKERR side_fe->preProcess();
+
+    int nn = 0;
+    side_fe->loopSize = 1;
+
+    side_fe->nInTheLoop = nn++;
+    side_fe->numeredEntFiniteElementPtr = *miit;
+    CHKERR (*side_fe)();
+
+    CHKERR side_fe->postProcess();
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopChildren(
+    const string &fe_name, ForcesAndSourcesCore *side_fe) {
+  MoFEMFunctionBegin;
+  
+  const auto *problem_ptr = getFEMethod()->problemPtr;
+  auto &ref_ents = *getPtrFE()->mField.get_ref_ents();
+  auto &numered_fe = problem_ptr->numeredFiniteElementsPtr
+                         ->get<Composite_Name_And_Ent_mi_tag>();
+
+  const auto parent_ent = getNumeredEntFiniteElementPtr()->getEnt();
+  const auto parent_type = getNumeredEntFiniteElementPtr()->getEntType();
+  auto range =
+      ref_ents.get<Composite_ParentEnt_And_EntType_mi_tag>().equal_range(
+          boost::make_tuple(parent_type, parent_ent));
+
+  if (auto size = std::distance(range.first, range.second)) {
+
+    std::vector<EntityHandle> childs_vec;
+    childs_vec.reserve(size);
+    for (; range.first != range.second; ++range.first)
+      childs_vec.emplace_back((*range.first)->getEnt());
+
+    Range childs;
+
+    if ((childs_vec.back() - childs_vec.front() + 1) == size)
+      childs = Range(childs_vec[0], childs_vec.back());
+    else
+      childs.insert_list(childs_vec.begin(), childs_vec.end());
+
+    side_fe->feName = fe_name;
+
+    CHKERR side_fe->setRefineFEPtr(ptrFE);
+    CHKERR side_fe->copyBasicMethod(*getFEMethod());
+    CHKERR side_fe->copyPetscData(*getFEMethod());
+    CHKERR side_fe->copyKsp(*getFEMethod());
+    CHKERR side_fe->copySnes(*getFEMethod());
+    CHKERR side_fe->copyTs(*getFEMethod());
+
+    CHKERR side_fe->preProcess();
+
+    int nn = 0;
+    side_fe->loopSize = size;
+
+    for (auto p = childs.pair_begin(); p != childs.pair_end(); ++p) {
+
+      auto miit = numered_fe.lower_bound(boost::make_tuple(fe_name, p->first));
+      auto hi_miit =
+          numered_fe.lower_bound(boost::make_tuple(fe_name, p->second));
+
+      for (; miit != hi_miit; ++miit) {
+        side_fe->nInTheLoop = nn++;
+        side_fe->numeredEntFiniteElementPtr = *miit;
+        CHKERR (*side_fe)();
+      }
+    }
+
+    CHKERR side_fe->postProcess();
+  };
 
   MoFEMFunctionReturn(0);
 }
