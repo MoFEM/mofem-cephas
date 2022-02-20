@@ -272,30 +272,18 @@ MoFEMErrorCode MeshRefinement::refineTets(const Range &_tets,
 
     RefEntity_multiIndex_view_by_ordered_parent_entity ref_parent_ents_view;
 
-    auto test = [&](auto it) { return ((*it)->getBitRefLevel() & bit).any(); };
+    using I = decltype(range.first);
 
-    auto first = range.first;
-    while (first != range.second)
-      if (test(first)) {
+    boost::function<bool(I it)> tester = [&](I it) {
+      return ((*it)->getBitRefLevel() & bit).any();
+    };
 
-        auto second = first;
-        ++second;
-        while (second != range.second) {
-          if (test(second))
-            ++second;
-          else
-            break;
-        }
+    boost::function<MoFEMErrorCode(I f, I s)> inserter = [&](I f, I s) {
+      ref_parent_ents_view.insert(f, s);
+      return 0;
+    };
 
-        ref_parent_ents_view.insert(first, second);
-
-        first = second;
-        if (first != range.second)
-          ++first;
-
-      } else {
-        ++first;
-      }
+    rangeInserter(range.first, range.second, tester, inserter);
 
     return ref_parent_ents_view;
   };
@@ -903,30 +891,18 @@ MoFEMErrorCode MeshRefinement::refineTris(const Range &_tris,
 
     RefEntity_multiIndex_view_by_ordered_parent_entity ref_parent_ents_view;
 
-    auto test = [&](auto it) { return ((*it)->getBitRefLevel() & bit).any(); };
+    using I = decltype(range.first);
 
-    auto first = range.first;
-    while (first != range.second)
-      if (test(first)) {
+    boost::function<bool(I it)> tester = [&](I it) {
+      return ((*it)->getBitRefLevel() & bit).any();
+    };
 
-        auto second = first;
-        ++second;
-        while (second != range.second) {
-          if (test(second))
-            ++second;
-          else
-            break;
-        }
+    boost::function<MoFEMErrorCode(I f, I s)> inserter = [&](I f, I s) {
+      ref_parent_ents_view.insert(f, s);
+      return 0;
+    };
 
-        ref_parent_ents_view.insert(first, second);
-
-        first = second;
-        if (first != range.second)
-          ++first;
-
-      } else {
-        ++first;
-      }
+    rangeInserter(range.first, range.second, tester, inserter);
 
     return ref_parent_ents_view;
   };

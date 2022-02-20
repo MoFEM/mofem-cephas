@@ -1282,6 +1282,53 @@ auto dimension_from_handle = [](const EntityHandle h) {
   return moab::CN::Dimension(type_from_handle(h));
 };
 
+/**
+ * @brief Insert ranges
+ * 
+ * @tparam I 
+ * @param f 
+ * @param s 
+ * @param tester 
+ * @param inserter 
+ * @return auto 
+ */
+template <typename I>
+auto rangeInserter(const I f, const I s, boost::function<bool(I it)> tester,
+                   boost::function<MoFEMErrorCode(I f, I s)> inserter) {
+  MoFEMFunctionBegin;
+
+  auto first = f;
+  while (first != s)
+    if (tester(first)) {
+
+      auto second = first;
+      ++second;
+
+      while (second != s) {
+        if (tester(second))
+          ++second;
+        else
+          break;
+      }
+
+      CHKERR inserter(first, second);
+
+      first = second;
+      if (first != s)
+        ++first;
+
+    } else {
+      ++first;
+    }
+
+    MoFEMFunctionReturn(0);
+}
+
+// template <typename T, typename I>
+// std::vector<std::pair<T, T>> getPairRange(I s, I e, boost::function<T(I)>){
+
+// };
+
 } // namespace MoFEM
 
 #endif //__TEMPLATES_HPP__
