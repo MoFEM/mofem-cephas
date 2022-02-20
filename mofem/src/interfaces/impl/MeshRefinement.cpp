@@ -484,8 +484,8 @@ MoFEMErrorCode MeshRefinement::refineTets(const Range &_tets,
   ents_to_set_bit.insert(start_e, start_e + nb_new_tets - 1);
 
   // Create adj entities
+  Range ents;
   for (auto d : {1, 2}) {
-    Range ents;
     CHKERR moab.get_adjacencies(ents_to_set_bit, d, true, ents,
                                 moab::Interface::UNION);
   }
@@ -664,8 +664,8 @@ MoFEMErrorCode MeshRefinement::refineTets(const Range &_tets,
   }
 
   CHKERR set_parent(refined_ents_ptr);
-  CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevel(ents_to_set_bit,
-                                                               bit, true, verb);
+  CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevel(
+      ents_to_set_bit, bit, true, verb, &ents);
   MoFEMFunctionReturn(0);
 }
 MoFEMErrorCode MeshRefinement::refinePrisms(const EntityHandle meshset,
@@ -1087,8 +1087,8 @@ MoFEMErrorCode MeshRefinement::refineTris(const Range &_tris,
   }
 
   // Create adj entities
+  Range ents;
   for (auto d : {1}) {
-    Range ents;
     CHKERR moab.get_adjacencies(ents_to_set_bit, d, true, ents,
                                 moab::Interface::UNION);
   }
@@ -1200,8 +1200,8 @@ MoFEMErrorCode MeshRefinement::refineTris(const Range &_tris,
   }
 
   CHKERR set_parent(refined_ents_ptr);
-  CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevel(ents_to_set_bit,
-                                                               bit, true, verb);
+  CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevel(
+      ents_to_set_bit, bit, true, verb, &ents);
 
   MoFEMFunctionReturn(0);
 }

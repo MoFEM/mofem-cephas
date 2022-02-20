@@ -290,10 +290,10 @@ struct SetBitRefLevelTool {
   }
 };
 
-MoFEMErrorCode BitRefManager::setBitRefLevel(const Range &ents,
-                                             const BitRefLevel bit,
-                                             const bool only_tets,
-                                             int verb) const {
+MoFEMErrorCode
+BitRefManager::setBitRefLevel(const Range &ents, const BitRefLevel bit,
+                              const bool only_tets, int verb,
+                              Range *adj_ents_ptr) const {
   MoFEM::Interface &m_field = cOre;
   auto ref_ents_ptr = m_field.get_ref_ents();
   auto ref_fe_ptr = m_field.get_ref_finite_elements();
@@ -321,8 +321,27 @@ MoFEMErrorCode BitRefManager::setBitRefLevel(const Range &ents,
       if (!dim_ents.empty()) {
         for (int dd = 0; dd < d; ++dd) {
           Range adj_ents;
-          rval = m_field.get_moab().get_adjacencies(
-              dim_ents, dd, true, adj_ents, moab::Interface::UNION);
+
+          if (dd == 0) {
+            rval = m_field.get_moab().get_connectivity(ents, adj_ents, true);
+            // rval = m_field.get_moab().get_adjacencies(
+                // dim_ents, dd, true, adj_ents, moab::Interface::UNION);
+
+          } else {
+            if (adj_ents_ptr) {
+              if (dd == 1) {
+                adj_ents = adj_ents_ptr->subset_by_dimension(MBEDGE);
+              } else if (dd == 2) {
+                adj_ents = adj_ents_ptr->subset_by_dimension(MBTRI);
+              }
+            } else {
+              rval = m_field.get_moab().get_adjacencies(
+                  dim_ents, dd, true, adj_ents, moab::Interface::UNION);
+            }
+          }
+
+          // rval = m_field.get_moab().get_adjacencies(
+              // dim_ents, dd, true, adj_ents, moab::Interface::UNION);
 
           MOFEM_LOG_FUNCTION();
           MOFEM_LOG_C("BitRefSelf", Sev::noisy,

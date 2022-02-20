@@ -82,11 +82,13 @@ struct BitRefManager : public UnknownInterface {
    * @param  only_tets only add entities on tetrahedral (obsolete need to be
    fixed)
    * @param  verb      verbosity level
+   * @param adj_ents_ptr if pointer is given, it is used to get adj entities by
+   dimension/type
    * @return           error code
    */
   MoFEMErrorCode setBitRefLevel(const Range &ents, const BitRefLevel bit,
-                                const bool only_tets = true,
-                                int verb = 0) const;
+                                const bool only_tets = true, int verb = 0,
+                                Range *adj_ents_ptr = nullptr) const;
 
   /**
    * @brief add entities to database and set bit ref level
