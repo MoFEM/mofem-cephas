@@ -199,9 +199,9 @@ MoFEMErrorCode Simple::setSkeletonAdjacency(int dim) {
 
 Simple::Simple(const Core &core)
     : cOre(const_cast<Core &>(core)), bitLevel(BitRefLevel().set(0)),
-      meshSet(0), boundaryMeshset(0), skeletonMeshset(0),
-      nameOfProblem("SimpleProblem"), domainFE("dFE"), boundaryFE("bFE"),
-      skeletonFE("sFE"), dIm(-1) {
+      bitLevelMask(BitRefLevel().set()), meshSet(0), boundaryMeshset(0),
+      skeletonMeshset(0), nameOfProblem("SimpleProblem"), domainFE("dFE"),
+      boundaryFE("bFE"), skeletonFE("sFE"), dIm(-1) {
   PetscLogEventRegister("LoadMesh", 0, &MOFEM_EVENT_SimpleLoadMesh);
   PetscLogEventRegister("buildFields", 0, &MOFEM_EVENT_SimpleBuildFields);
   PetscLogEventRegister("buildFiniteElements", 0,
@@ -477,7 +477,8 @@ MoFEMErrorCode Simple::defineProblem(const PetscBool is_partitioned) {
   // Create dm instance
   dM = createSmartDM(m_field.get_comm(), "DMMOFEM");
   // set dm data structure which created mofem data structures
-  CHKERR DMMoFEMCreateMoFEM(dM, &m_field, nameOfProblem.c_str(), bitLevel);
+  CHKERR DMMoFEMCreateMoFEM(dM, &m_field, nameOfProblem.c_str(), bitLevel,
+                            bitLevelMask);
   CHKERR DMSetFromOptions(dM);
   CHKERR DMMoFEMAddElement(dM, domainFE.c_str());
   if (!boundaryFields.empty()) {

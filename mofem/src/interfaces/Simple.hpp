@@ -302,7 +302,14 @@ struct Simple : public UnknownInterface {
    *
    * @return BitRefLevel
    */
-  inline BitRefLevel getBitRefLevel() const { return bitLevel; }
+  inline BitRefLevel &getBitRefLevel() { return bitLevel; }
+
+  /**
+   * @brief Get the BitRefLevel
+   *
+   * @return BitRefLevel
+   */
+  inline BitRefLevel &getBitRefLevelMask() { return bitLevelMask; }
 
   /**
    * @brief Get the Domain FE Name
@@ -387,7 +394,8 @@ struct Simple : public UnknownInterface {
 private:
   MoFEM::Core &cOre;
 
-  const BitRefLevel bitLevel; ///< BitRefLevel of the probelm
+  BitRefLevel bitLevel; ///< BitRefLevel of the probelm
+  BitRefLevel bitLevelMask; ///< BitRefLevel of the probelm
 
   PetscLogEvent MOFEM_EVENT_SimpleLoadMesh;
   PetscLogEvent MOFEM_EVENT_SimpleBuildFields;
