@@ -392,6 +392,12 @@ struct FEMethod : public BasicMethod {
       numeredEntFiniteElementPtr; ///< Pointer to finite element database
                                   ///< structure
 
+  /**execute
+   * @brief Tet if element is run by hook
+   * 
+   */
+  boost::function<bool(FEMethod *fe_method_ptr)> exeTestHook;
+
   inline auto getDataDofsPtr() const {
     return numeredEntFiniteElementPtr->getDataDofsPtr();
   };
@@ -442,78 +448,6 @@ struct FEMethod : public BasicMethod {
   MoFEMErrorCode getNodeData(const std::string field_name, VectorDouble &data,
                              const bool reset_dofs = true);
 
-  template <class MULTIINDEX>
-  typename MULTIINDEX::iterator get_begin(const MULTIINDEX &index,
-                                          const std::string &field_name,
-                                          const EntityType type) const {
-    return index.lower_bound(boost::make_tuple(field_name, type));
-  }
-
-  template <class MULTIINDEX>
-  typename MULTIINDEX::iterator get_end(const MULTIINDEX &index,
-                                        const std::string &field_name,
-                                        const EntityType type) const {
-    return index.upper_bound(boost::make_tuple(field_name, type));
-  }
-
-/** \brief loop over all dofs which are on a particular FE data, field and
- * entity type \ingroup mofem_loops
- */
-#define _IT_GET_FEDATA_BY_TYPE_DOFS_FOR_LOOP_(FE, NAME, TYPE, IT)              \
-  auto IT = FE->get_begin<FEDofEntityByNameAndEnt>(                            \
-      FE->dataPtr->get<FEDofEntityByNameAndEnt>(), NAME,                       \
-      get_id_for_min_type(TYPE));                                              \
-  IT != FE->get_end<FEDofEntityByNameAndEnt>(                                  \
-            FE->dataPtr->get<FEDofEntityByNameAndEnt>(), NAME,                 \
-            get_id_for_max_type(TYPE));                                        \
-  IT++
-
-  template <class MULTIINDEX>
-  typename MULTIINDEX::iterator get_begin(const MULTIINDEX &index,
-                                          const std::string &field_name) const {
-    return index.lower_bound(field_name);
-  }
-  template <class MULTIINDEX>
-  typename MULTIINDEX::iterator get_end(const MULTIINDEX &index,
-                                        const std::string &field_name) const {
-    return index.upper_bound(field_name);
-  }
-
-/** \brief loop over all dofs which are on a particular FE row and field
- * \ingroup mofem_loops
- */
-#define _IT_GET_FEROW_BY_NAME_DOFS_FOR_LOOP_(FE, NAME, IT)                     \
-  auto IT = FE->get_begin<FENumeredDofEntityByUId>(                            \
-      FE->getRowDofs().get<Unique_mi_tag>(),                                   \
-      FieldEntity::getLoBitNumberUId(FE->getFieldBitNumber(NAME)));            \
-  IT != FE->get_end<FENumeredDofEntityByUId>(                                  \
-            FE->getRowDofs()->get<Unique_mi_tag>(),                            \
-            FieldEntity::getHiBitNumberUId(FE->getFieldBitNumber(NAME)));      \
-  IT++
-
-/** \brief loop over all dofs which are on a particular FE column and field
- * \ingroup mofem_loops
- */
-#define _IT_GET_FECOL_BY_NAME_DOFS_FOR_LOOP_(FE, NAME, IT)                     \
-  auto IT = FE->get_begin<FENumeredDofEntityByUId>(                            \
-      FE->getColDofs().get<Unique_mi_tag>(),                                   \
-      FieldEntity::getLoBitNumberUId(FE->getFieldBitNumber(NAME)));            \
-  IT != FE->get_end<FENumeredDofEntityByUId>(                                  \
-            FE->getColDofs()->get<Unique_mi_tag>(),                            \
-            FieldEntity::getHiBitNumberUId(FE->getFieldBitNumber(NAME)));      \
-  IT++
-
-/** \brief loop over all dofs which are on a particular FE data and field
- * \ingroup mofem_loops
- */
-#define _IT_GET_FEDATA_BY_NAME_DOFS_FOR_LOOP_(FE, NAME, IT)                    \
-  auto IT = FE->get_begin<FEDofEntityByUId>(                                   \
-      FE->dataPtr->get<Unique_mi_tag>(),                                       \
-      FieldEntity::getLoBitNumberUId(FE->getFieldBitNumber(NAME)));            \
-  IT != FE->get_end<FEDofEntityByUId>(                                         \
-            FE->dataPtr->get<Unique_mi_tag>(),                                 \
-            FieldEntity::getHiBitNumberUId(FE->getFieldBitNumber(NAME)));      \
-  IT++
 };
 
 inline auto FEMethod::getNumberOfNodes() const {

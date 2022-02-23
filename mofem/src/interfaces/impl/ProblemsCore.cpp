@@ -486,8 +486,15 @@ MoFEMErrorCode Core::loop_finite_elements(
 
     method.nInTheLoop = nn; // Index of element in the loop
     method.numeredEntFiniteElementPtr = *miit;
-    CHKERR method();
 
+    if (method.exeTestHook) {
+      if (method.exeTestHook(&method)) {
+        CHKERR method();
+      }
+    } else {
+      CHKERR method();
+    }
+    
   }
   PetscLogEventEnd(MOFEM_EVENT_operator, 0, 0, 0, 0);
 
