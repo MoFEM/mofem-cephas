@@ -58,8 +58,10 @@ Problem::Problem(moab::Interface &moab, const EntityHandle meshset)
 }
 
 std::ostream &operator<<(std::ostream &os, const Problem &e) {
-  os << "problem id " << e.getId() << " FiniteElement id " << e.getBitFEId()
-     << " name " << e.getName();
+  os << "Problem id " << e.getId() << " name " << e.getName() << endl;
+  os << "FiniteElement id " << e.getBitFEId() << endl;
+  os << "BitRefLevel " << e.getBitRefLevel() << endl;
+  os << "BitRefLevelMask " << e.getBitRefLevelMask();
   return os;
 }
 

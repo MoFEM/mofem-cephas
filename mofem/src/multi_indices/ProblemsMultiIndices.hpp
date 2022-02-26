@@ -533,7 +533,10 @@ struct Problem {
   inline DofIdx getNbGhostDofsCol() const { return nbGhostDofsCol; }
 
   inline BitRefLevel getBitRefLevel() const { return *tagBitRefLevel; }
-  inline BitRefLevel getMaskBitRefLevel() const { return *tagMaskBitRefLevel; }
+  inline BitRefLevel getBitRefLevelMask() const { return *tagBitRefLevel; }
+  DEPRECATED inline BitRefLevel getMaskBitRefLevel() const {
+    return *tagMaskBitRefLevel;
+  }
 
   /**
    * @brief Get the Row Dofs By Petsc Global Dof Idx object

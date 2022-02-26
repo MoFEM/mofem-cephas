@@ -818,9 +818,9 @@ MoFEMErrorCode Core::cache_problem_entities(const std::string prb_name,
       SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "problem not in database %s",
                prb_name.c_str());
 
-    const BitRefLevel prb_bit = p_miit->getBitRefLevel();
-    const BitRefLevel prb_mask = p_miit->getMaskBitRefLevel();
-    const BitFEId prb_fe_id = p_miit->getBitFEId();
+    const BitRefLevel &prb_bit = p_miit->getBitRefLevel();
+    const BitRefLevel &prb_mask = p_miit->getBitRefLevelMask();
+    const BitFEId &prb_fe_id = p_miit->getBitFEId();
 
     auto &row_dofs = p_miit->numeredRowDofsPtr;
     auto &col_dofs = p_miit->numeredColDofsPtr;
@@ -846,8 +846,7 @@ MoFEMErrorCode Core::cache_problem_entities(const std::string prb_name,
           const BitRefLevel &fe_bit = lo->entFePtr->getBitRefLevel();
 
           // if entity is not problem refinement level
-          if (((fe_bit & prb_mask) != fe_bit) ||
-              ((fe_bit & prb_bit) != prb_bit))
+          if (((fe_bit & prb_mask) != fe_bit) || ((fe_bit & prb_bit).none()))
             continue;
 
           auto cache_numered_dofs = [&](auto &numered_dofs, auto &cache_vec,

@@ -487,9 +487,9 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
         if ((lo->getBitFEId() & problem_ptr->getBitFEId()).any()) {
           std::array<bool, 2> row_col = {false, false};
 
-          const BitRefLevel prb_bit = problem_ptr->getBitRefLevel();
-          const BitRefLevel prb_mask = problem_ptr->getMaskBitRefLevel();
-          const BitRefLevel fe_bit = lo->entFePtr->getBitRefLevel();
+          const BitRefLevel &prb_bit = problem_ptr->getBitRefLevel();
+          const BitRefLevel &prb_mask = problem_ptr->getBitRefLevelMask();
+          const BitRefLevel &fe_bit = lo->entFePtr->getBitRefLevel();
 
           // if entity is not problem refinement level
           if ((fe_bit & prb_mask) != fe_bit)
@@ -688,8 +688,8 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
             new NumeredDofEntity_multiIndex());
   }
 
-  const BitRefLevel prb_bit = problem_ptr->getBitRefLevel();
-  const BitRefLevel prb_mask = problem_ptr->getMaskBitRefLevel();
+  const BitRefLevel &prb_bit = problem_ptr->getBitRefLevel();
+  const BitRefLevel &prb_mask = problem_ptr->getBitRefLevelMask();
 
   // // get rows and cols dofs view based on data on elements
   DofEntity_multiIndex_active_view dofs_rows, dofs_cols;
@@ -713,9 +713,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
           if ((lo->getBitFEId() & problem_ptr->getBitFEId()).any()) {
             std::array<bool, 2> row_col = {false, false};
 
-            const BitRefLevel prb_bit = problem_ptr->getBitRefLevel();
-            const BitRefLevel prb_mask = problem_ptr->getMaskBitRefLevel();
-            const BitRefLevel fe_bit = lo->entFePtr->getBitRefLevel();
+            const BitRefLevel &fe_bit = lo->entFePtr->getBitRefLevel();
 
             // if entity is not problem refinement level
             if ((fe_bit & prb_mask) != fe_bit)
@@ -1664,7 +1662,7 @@ MoFEMErrorCode ProblemsManager::buildCompsedProblem(
       int is_nb = 0;
       for (; dit != hi_dit; dit++) {
         const BitRefLevel &prb_bit = out_problem_it->getBitRefLevel();
-        const BitRefLevel &prb_mask = out_problem_it->getMaskBitRefLevel();
+        const BitRefLevel &prb_mask = out_problem_it->getBitRefLevelMask();
         const BitRefLevel &dof_bit = dit->get()->getBitRefLevel();
         if ((dof_bit & prb_bit).none() || ((dof_bit & prb_mask) != dof_bit))
           continue;
@@ -2484,7 +2482,7 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
     good_elems.reserve(fe_ent_ptr->size());
 
     const auto prb_bit = p_miit->getBitRefLevel();
-    const auto prb_mask = p_miit->getMaskBitRefLevel();
+    const auto prb_mask = p_miit->getBitRefLevelMask();
 
     // Loop over all elements in database and if right element is there add it
     // to problem finite element multi-index
@@ -2493,7 +2491,7 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
       // if element is not part of problem
       if (((*efit)->getId() & p_miit->getBitFEId()).any()) {
 
-        const auto fe_bit = (*efit)->getBitRefLevel();
+        const auto &fe_bit = (*efit)->getBitRefLevel();
 
         // if entity is not problem refinement level
         if ((fe_bit & prb_mask) == fe_bit && (fe_bit & prb_bit).any())

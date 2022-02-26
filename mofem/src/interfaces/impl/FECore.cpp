@@ -420,7 +420,7 @@ MoFEMErrorCode Core::add_ents_to_finite_element_by_bit_ref(
 
   int nb_add_fes = 0;
   for (; miit != hi_miit; miit++) {
-    BitRefLevel bit2 = miit->get()->getBitRefLevel();
+    const auto &bit2 = miit->get()->getBitRefLevel();
     if ((bit2 & mask) != bit2)
       continue;
     if ((bit2 & bit).any()) {

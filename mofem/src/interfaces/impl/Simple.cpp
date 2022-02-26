@@ -700,7 +700,7 @@ MoFEMErrorCode Simple::buildProblem() {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
   PetscLogEventBegin(MOFEM_EVENT_SimpleBuildProblem, 0, 0, 0, 0);
-  CHKERR m_field.build_adjacencies(bitLevel);
+  CHKERR m_field.build_adjacencies(bitLevel, bitLevelMask);
   // Set problem by the DOFs on the fields rather that by adding DOFs on the
   // elements
   m_field.getInterface<ProblemsManager>()->buildProblemFromFields = PETSC_TRUE;

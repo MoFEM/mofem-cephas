@@ -180,12 +180,15 @@ PetscErrorCode DMMoFEMCreateMoFEM(DM dm, MoFEM::Interface *m_field_ptr,
                                            &dm_field->problemPtr);
 
   MPI_Comm_compare(comm, PETSC_COMM_SELF, &result);
-  if (result == MPI_IDENT)
+  if (result == MPI_IDENT) {
     MOFEM_LOG("DMSELF", Sev::noisy)
         << "MoFEM DM created for problem " << dm_field->problemName;
-  else
+    MOFEM_LOG("DMSELF", Sev::noisy) << *dm_field->problemPtr;
+  } else {
     MOFEM_LOG("DMWORLD", Sev::noisy)
         << "MoFEM DM created for problem " << dm_field->problemName;
+    MOFEM_LOG("DMWORLD", Sev::noisy) << *dm_field->problemPtr;
+  }
 
   MoFEMFunctionReturn(0);
 }

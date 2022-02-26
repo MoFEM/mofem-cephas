@@ -86,7 +86,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
   MoFEMFunctionBegin;
 
   BitRefLevel prb_bit = p_miit->getBitRefLevel();
-  BitRefLevel prb_mask = p_miit->getMaskBitRefLevel();
+  BitRefLevel prb_mask = p_miit->getBitRefLevelMask();
 
   const DofIdx nb_dofs_col = p_miit->getNbDofsCol();
 
@@ -102,13 +102,14 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
         continue;
       }
 
-      const BitRefLevel fe_bit = r.first->entFePtr->getBitRefLevel();
+      const BitRefLevel &fe_bit = r.first->entFePtr->getBitRefLevel();
       // if entity is not problem refinement level
       if ((fe_bit & prb_mask) != fe_bit)
         continue;
-      if ((fe_bit & prb_bit) != prb_bit)
+      if ((fe_bit & prb_bit).none())
         continue;
-      const BitRefLevel dof_bit = mit_row->get()->getBitRefLevel();
+
+      const BitRefLevel &dof_bit = mit_row->get()->getBitRefLevel();
 
       // if entity is not problem refinement level
       if ((fe_bit & dof_bit).any()) {
@@ -161,14 +162,14 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
       if ((lo->getBitFEId() & p_miit->getBitFEId()).any()) {
 
-        const BitRefLevel prb_bit = p_miit->getBitRefLevel();
-        const BitRefLevel prb_mask = p_miit->getMaskBitRefLevel();
-        const BitRefLevel fe_bit = lo->entFePtr->getBitRefLevel();
+        const BitRefLevel &prb_bit = p_miit->getBitRefLevel();
+        const BitRefLevel &prb_mask = p_miit->getBitRefLevelMask();
+        const BitRefLevel &fe_bit = lo->entFePtr->getBitRefLevel();
 
         // if entity is not problem refinement level
         if ((fe_bit & prb_mask) != fe_bit)
           continue;
-        if ((fe_bit & prb_bit) != prb_bit)
+        if ((fe_bit & prb_bit).none())
           continue;
 
         auto dit = p_miit->numeredColDofsPtr->lower_bound(uid);
@@ -865,7 +866,7 @@ MoFEMErrorCode MatrixManager::checkMatrixFillIn(const std::string problem_name,
           MOFEM_LOG("SELF", Sev::error)
               << "problem: " << problemPtr->getBitRefLevel();
           MOFEM_LOG("SELF", Sev::error)
-              << "problem mask: " << problemPtr->getMaskBitRefLevel();
+              << "problem mask: " << problemPtr->getBitRefLevelMask();
           SETERRQ(mFieldPtr->get_comm(), MOFEM_DATA_INCONSISTENCY,
                   "adjacencies data inconsistency");
         } else {
