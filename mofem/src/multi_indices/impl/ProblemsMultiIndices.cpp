@@ -53,7 +53,7 @@ Problem::Problem(moab::Interface &moab, const EntityHandle meshset)
   rval = moab.tag_get_handle("_RefBitLevelMask", th_RefBitLevel_Mask);
   MOAB_THROW(rval);
   rval = moab.tag_get_by_ptr(th_RefBitLevel_Mask, &meshset, 1,
-                             (const void **)&tagMaskBitRefLevel);
+                             (const void **)&tagBitRefLevelMask);
   MOAB_THROW(rval);
 }
 

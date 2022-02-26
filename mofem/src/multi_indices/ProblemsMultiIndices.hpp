@@ -87,7 +87,7 @@ struct Problem {
   int tagNameSize;      ///< Size of problem name
   BitFEId *tagBitFEId;  ///< IDs of finite elements in problem
   BitRefLevel *tagBitRefLevel; ///< BitRef level of finite elements in problem
-  BitRefLevel *tagMaskBitRefLevel; ///< BItRefMask of elements in problem
+  BitRefLevel *tagBitRefLevelMask; ///< BItRefMask of elements in problem
 
   mutable DofIdx nbDofsRow;      ///< Global number of DOFs in  row
   mutable DofIdx nbDofsCol;      ///< Global number of DOFs in col
@@ -370,9 +370,9 @@ struct Problem {
   inline DofIdx getNbGhostDofsCol() const { return nbGhostDofsCol; }
 
   inline BitRefLevel getBitRefLevel() const { return *tagBitRefLevel; }
-  inline BitRefLevel getBitRefLevelMask() const { return *tagBitRefLevel; }
+  inline BitRefLevel getBitRefLevelMask() const { return *tagBitRefLevelMask; }
   DEPRECATED inline BitRefLevel getMaskBitRefLevel() const {
-    return *tagMaskBitRefLevel;
+    return *tagBitRefLevelMask;
   }
 
   /**
@@ -594,7 +594,7 @@ struct ProblemChangeRefLevelBitSet {
 struct ProblemChangeRefLevelBitDofMaskSet {
   BitRefLevel bit;
   ProblemChangeRefLevelBitDofMaskSet(const BitRefLevel _bit) : bit(_bit){};
-  void operator()(Problem &p) { *(p.tagMaskBitRefLevel) = bit; };
+  void operator()(Problem &p) { *(p.tagBitRefLevelMask) = bit; };
 };
 
 /** \brief add finite element to problem
@@ -612,7 +612,7 @@ struct ProblemFiniteElementChangeBitAdd {
 struct ProblemChangeRefLevelBitDofMaskAdd {
   BitRefLevel bit;
   ProblemChangeRefLevelBitDofMaskAdd(const BitRefLevel _bit) : bit(_bit){};
-  void operator()(Problem &p) { *(p.tagMaskBitRefLevel) |= bit; };
+  void operator()(Problem &p) { *(p.tagBitRefLevelMask) |= bit; };
 };
 
 /** \brief remove finite element from problem
