@@ -1462,3 +1462,7 @@ add_test(matrix_function
   -log_severity_level inform
   -log_no_color
 )
+
+build_test(
+  child_and_parent
+  child_and_parent.cpp)
