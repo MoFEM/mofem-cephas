@@ -67,6 +67,8 @@ struct ComposedProblemsData {
   }
 };
 
+using EmptyFieldBlocks = std::pair<BitFieldId, BitFieldId>;
+
 /** \brief keeps basic data about problem
  * \ingroup problems_multi_indices
  *
@@ -676,10 +678,41 @@ struct Problem {
     return sequenceColDofContainer;
   }
 
+
+  /**
+   * @brief Get the empty field blocks
+   *
+   * Emtpy field blocks is a pair contains IDs of the fields for which matrix
+   * has zero entries.
+   *
+   * @return EmptyFieldBlocks&
+   */
+  inline EmptyFieldBlocks &getEmptyFieldBlocks() const {
+    return emptyFieldBlocks;
+  }
+
+  /**
+   * @brief Add fields to the empty field blocks
+   *
+   * Emtpy field blocks is a pair contains IDs of the fields for which matrix
+   * has zero entries.
+   *
+   * @param add_fields
+   * @return EmptyFieldBlocks&
+   */
+  inline EmptyFieldBlocks &
+  addFieldToEmptyFieldBlocks(const EmptyFieldBlocks add_fields) const {
+    emptyFieldBlocks.first |= add_fields.first;
+    emptyFieldBlocks.second |= add_fields.second;
+    return emptyFieldBlocks;
+  }
+
 private:
   // Keep vector of DoFS on entity
   mutable boost::shared_ptr<SequenceDofContainer> sequenceRowDofContainer;
   mutable boost::shared_ptr<SequenceDofContainer> sequenceColDofContainer;
+
+  mutable EmptyFieldBlocks emptyFieldBlocks;
 };
 
 /// \deprecated use just Problem
