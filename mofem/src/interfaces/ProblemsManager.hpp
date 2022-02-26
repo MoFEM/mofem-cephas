@@ -336,6 +336,42 @@ struct ProblemsManager : public UnknownInterface {
       const int hi_coeff = MAX_DOFS_ON_ENTITY, const int lo_order = 0,
       const int hi_order = 100, int verb = VERBOSE, const bool debug = false);
 
+  /**
+   * @brief Remove DOFs from problem by bit ref level
+   * @ingroup mofem_problems_manager
+   *
+   * See for more detail other implementation for removeDofsOnEntities.
+   *
+   * @param problem_name name of the problem
+   * @param field_name name of the field
+   * @param bit_ref_level bit ref level on which DOFs are removed
+   * @param bit_ref_mask bit ref mask on which DOFs are removed
+   * @param ents_ptr filter entities with given bit and mask
+   * @param lo_coeff low dof coefficient (rank)
+   * @param hi_coeff high dof coefficient (rank)
+   * @param verb  verbosity level
+   * @param debug to debug and seek for inconsistencies set to true
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode removeDofsOnEntities(
+      const std::string problem_name, const std::string field_name,
+      const BitRefLevel bit_ref_level, const BitRefLevel bit_ref_mask,
+      Range *ents_ptr = nullptr, const int lo_coeff = 0,
+      const int hi_coeff = MAX_DOFS_ON_ENTITY, const int lo_order = 0,
+      const int hi_order = 100, int verb = VERBOSE, const bool debug = false);
+
+  /**
+   * @copydoc removeDofsOnEntities
+   *
+   * \note Use this function for nondistributed meshes
+   */
+  MoFEMErrorCode removeDofsOnEntitiesNotDistributed(
+      const std::string problem_name, const std::string field_name,
+      const BitRefLevel bit_ref_level, const BitRefLevel bit_ref_mask,
+      Range *ents_ptr = nullptr, const int lo_coeff = 0,
+      const int hi_coeff = MAX_DOFS_ON_ENTITY, const int lo_order = 0,
+      const int hi_order = 100, int verb = VERBOSE, const bool debug = false);
+
   enum MarkOP { OR, AND };
 
   /**

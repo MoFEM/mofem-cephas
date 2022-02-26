@@ -3286,6 +3286,59 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntitiesNotDistributed(
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
+    const std::string problem_name, const std::string field_name,
+    const BitRefLevel bit_ref_level, const BitRefLevel bit_ref_mask,
+    Range *ents_ptr, const int lo_coeff, const int hi_coeff, const int lo_order,
+    const int hi_order, int verb, const bool debug) {
+  MoFEM::Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+
+  auto bit_manager = m_field.getInterface<BitRefManager>();
+
+  Range ents;
+  if (ents_ptr) {
+    ents = *ents_ptr;
+    CHKERR bit_manager->filterEntitiesByRefLevel(bit_ref_level, bit_ref_mask,
+                                                 ents, verb);
+  } else {
+    CHKERR bit_manager->getEntitiesByRefLevel(bit_ref_level, bit_ref_mask, ents,
+                                              verb);
+  }
+
+  CHKERR removeDofsOnEntities(problem_name, field_name, ents, lo_coeff,
+                              hi_coeff, lo_order, hi_order, verb, debug);
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode ProblemsManager::removeDofsOnEntitiesNotDistributed(
+    const std::string problem_name, const std::string field_name,
+    const BitRefLevel bit_ref_level, const BitRefLevel bit_ref_mask,
+    Range *ents_ptr, const int lo_coeff, const int hi_coeff, const int lo_order,
+    const int hi_order, int verb, const bool debug) {
+  MoFEM::Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+
+  auto bit_manager = m_field.getInterface<BitRefManager>();
+
+  Range ents;
+  if (ents_ptr) {
+    ents = *ents_ptr;
+    CHKERR bit_manager->filterEntitiesByRefLevel(bit_ref_level, bit_ref_mask,
+                                                 ents, verb);
+  } else {
+    CHKERR bit_manager->getEntitiesByRefLevel(bit_ref_level, bit_ref_mask, ents,
+                                              verb);
+  }
+
+  CHKERR removeDofsOnEntitiesNotDistributed(problem_name, field_name, ents,
+                                            lo_coeff, hi_coeff, lo_order,
+                                            hi_order, verb, debug);
+
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode
 ProblemsManager::markDofs(const std::string problem_name, RowColData rc,
                           const enum MarkOP op, const Range ents,
