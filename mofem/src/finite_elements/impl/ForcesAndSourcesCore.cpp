@@ -1626,7 +1626,7 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopChildren(
     Range childs;
 
     if ((childs_vec.back() - childs_vec.front() + 1) == size)
-      childs = Range(childs_vec[0], childs_vec.back());
+      childs = Range(childs_vec.front(), childs_vec.back());
     else
       childs.insert_list(childs_vec.begin(), childs_vec.end());
 

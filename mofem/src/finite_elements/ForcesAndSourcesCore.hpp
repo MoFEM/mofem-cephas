@@ -920,6 +920,8 @@ protected:
 
   inline ForcesAndSourcesCore *getSidePtrFE() const;
 
+  inline ForcesAndSourcesCore *getRefinePtrFE() const;
+
   /**
    * @brief User call this function to loop over elements on the side of
    * face. This function calls finite element with is operator to do
@@ -1148,6 +1150,11 @@ ForcesAndSourcesCore *ForcesAndSourcesCore::UserDataOperator::getPtrFE() const {
 ForcesAndSourcesCore *
 ForcesAndSourcesCore::UserDataOperator::getSidePtrFE() const {
   return ptrFE->sidePtrFE;
+}
+
+ForcesAndSourcesCore *
+ForcesAndSourcesCore::UserDataOperator::getRefinePtrFE() const {
+  return ptrFE->refinePtrFE;
 }
 
 MatrixDouble &ForcesAndSourcesCore::UserDataOperator::getCoordsAtGaussPts() {
