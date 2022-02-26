@@ -358,7 +358,7 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
         MOFEM_LOG("WORLD", Sev::verbose) << "Read problem " << *p.first;
         MOFEM_LOG("WORLD", Sev::noisy)
             << "\tBitRef " << p.first->getBitRefLevel() << " BitMask "
-            << p.first->getMaskBitRefLevel();
+            << p.first->getBitRefLevelMask();
       }
 
       if (!p.second) {
