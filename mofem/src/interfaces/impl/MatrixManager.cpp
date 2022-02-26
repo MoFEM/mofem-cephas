@@ -88,6 +88,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
   BitRefLevel prb_bit = p_miit->getBitRefLevel();
   BitRefLevel prb_mask = p_miit->getBitRefLevelMask();
 
+  const EmptyFieldBlocks &empty_field_blocks = p_miit->getEmptyFieldBlocks();
   const DofIdx nb_dofs_col = p_miit->getNbDofsCol();
 
   dofs_col_view.clear();
