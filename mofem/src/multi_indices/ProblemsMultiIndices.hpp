@@ -352,6 +352,171 @@ struct Problem {
     return numeredColDofsPtr->end();
   }
 
+/**
+ * \brief use with loops to iterate row DOFs
+ * \ingroup problems_multi_indices
+ *
+ * \code
+ * for(_IT_NUMEREDDOF_ROW_BY_LOCIDX_FOR_LOOP_(PROBLEMPTR,IT)) {
+ *   ...
+ * }
+ * \endcode
+ *
+ */
+#define _IT_NUMEREDDOF_ROW_BY_LOCIDX_FOR_LOOP_(PROBLEMPTR, IT)                 \
+  NumeredDofEntityByLocalIdx::iterator IT =                                    \
+      PROBLEMPTR->getNumeredRowDofsByLocIdxBegin(0);                           \
+  IT != PROBLEMPTR->getNumeredRowDofsByLocIdxEnd(                              \
+            PROBLEMPTR->getNbLocalDofsRow() - 1);                              \
+  IT++
+
+/**
+ * \brief use with loops to iterate col DOFs
+ *
+ * \code
+ * for(_IT_NUMEREDDOF_COL_BY_LOCIDX_FOR_LOOP_(PROBLEMPTR,IT)) {
+ *   ...
+ * }
+ * \endcode
+ *
+ */
+#define _IT_NUMEREDDOF_COL_BY_LOCIDX_FOR_LOOP_(PROBLEMPTR, IT)                 \
+  NumeredDofEntityByUId::iterator IT =                                         \
+      PROBLEMPTR->getNumeredColDofsByLocIdxBegin(0);                           \
+  IT != PROBLEMPTR->getNumeredColDofsByLocIdxEnd(                              \
+            PROBLEMPTR->getNbLocalDofsRow() - 1);                              \
+  IT++
+
+  /// get begin iterator for numeredRowDofsPtr (insted you can use
+  /// #_IT_NUMEREDDOF_ROW_FOR_LOOP_ for loops)
+  NumeredDofEntityByLocalIdx::iterator
+  getNumeredRowDofsByLocIdxBegin(const DofIdx locidx) const {
+    return numeredRowDofsPtr->get<PetscLocalIdx_mi_tag>().lower_bound(locidx);
+  }
+
+  /// get end iterator for numeredRowDofsPtr (insted you can use
+  /// #_IT_NUMEREDDOF_ROW_FOR_LOOP_ for loops)
+  NumeredDofEntityByLocalIdx::iterator
+  getNumeredRowDofsByLocIdxEnd(const DofIdx locidx) const {
+    return numeredRowDofsPtr->get<PetscLocalIdx_mi_tag>().upper_bound(locidx);
+  }
+
+  /// get begin iterator for numeredColDofsPtr (insted you can use
+  /// #_IT_NUMEREDDOF_COL_FOR_LOOP_ for loops)
+  NumeredDofEntityByLocalIdx::iterator
+  getNumeredColDofsByLocIdxBegin(const DofIdx locidx) const {
+    return numeredColDofsPtr->get<PetscLocalIdx_mi_tag>().lower_bound(locidx);
+  }
+
+  /// get end iterator for numeredColDofsPtr (insted you can use
+  /// #_IT_NUMEREDDOF_COL_FOR_LOOP_ for loops)
+  NumeredDofEntityByLocalIdx::iterator
+  getNumeredColDofsByLocIdxEnd(const DofIdx locidx) const {
+    return numeredColDofsPtr->get<PetscLocalIdx_mi_tag>().upper_bound(locidx);
+  }
+
+/**
+ * \brief use with loops to iterate row DOFs
+ * \ingroup problems_multi_indices
+ *
+ * \code
+ * for(_IT_NUMEREDDOF_BY_ENT_ROW_FOR_LOOP_(PROBLEMPTR,ENT,IT)) {
+ *   ...
+ * }
+ * \endcode
+ *
+ */
+#define _IT_NUMEREDDOF_ROW_BY_ENT_FOR_LOOP_(PROBLEMPTR, ENT, IT)               \
+  NumeredDofEntityByEnt::iterator IT =                                         \
+      PROBLEMPTR->getNumeredRowDofsByEntBegin(ENT);                            \
+  IT != PROBLEMPTR->getNumeredRowDofsByEntEnd(ENT);                            \
+  IT++
+
+/**
+ * \brief use with loops to iterate col DOFs
+ * \ingroup problems_multi_indices
+ *
+ * \code
+ * for(_IT_NUMEREDDOF_COL_BY_ENT_FOR_LOOP_(PROBLEMPTR,ENT,IT)) {
+ *   ...
+ * }
+ * \endcode
+ *
+ */
+#define _IT_NUMEREDDOF_COL_BY_ENT_FOR_LOOP_(PROBLEMPTR, ENT, IT)               \
+  NumeredDofEntityByEnt::iterator IT =                                         \
+      PROBLEMPTR->getNumeredColDofsByEntBegin(ENT);                            \
+  IT != PROBLEMPTR->getNumeredColDofsByEntEnd(ENT);                            \
+  IT++
+
+  /// get begin iterator for numeredRowDofsPtr (insted you can use
+  /// #_IT_NUMEREDDOF_ROW_BY_ENT_FOR_LOOP_ for loops)
+  NumeredDofEntityByEnt::iterator
+  getNumeredRowDofsByEntBegin(const EntityHandle ent) const {
+    return numeredRowDofsPtr->get<Ent_mi_tag>().lower_bound(ent);
+  }
+
+  /// get end iterator for numeredRowDofsPtr (insted you can use
+  /// #_IT_NUMEREDDOF_ROW_BY_ENT_FOR_LOOP_ for loops)
+  NumeredDofEntityByEnt::iterator
+  getNumeredRowDofsByEntEnd(const EntityHandle ent) const {
+    return numeredRowDofsPtr->get<Ent_mi_tag>().upper_bound(ent);
+  }
+
+  /// get begin iterator for numeredColDofsPtr (insted you can use
+  /// #_IT_NUMEREDDOF_COL_BY_ENT_FOR_LOOP_ for loops)
+  NumeredDofEntityByEnt::iterator
+  getNumeredColDofsByEntBegin(const EntityHandle ent) const {
+    return numeredColDofsPtr->get<Ent_mi_tag>().lower_bound(ent);
+  }
+
+  /// get end iterator for numeredColDofsPtr (insted you can use
+  /// #_IT_NUMEREDDOF_COL_BY_ENT_FOR_LOOP_ for loops)
+  NumeredDofEntityByEnt::iterator
+  getNumeredColDofsByEntEnd(const EntityHandle ent) const {
+    return numeredColDofsPtr->get<Ent_mi_tag>().upper_bound(ent);
+  }
+
+/**
+ * use with loops to iterate row DOFs
+ * \ingroup problems_multi_indices
+ *
+ * \code
+ * for(_IT_NUMEREDDOF_BY_NAME_ROW_FOR_LOOP_(PROBLEMPTR,m_field.get_field_bit_number(FIELD_BIT_NUMBER),IT))
+ * {
+ *   ...
+ * }
+ * \endcode
+ *
+ */
+#define _IT_NUMEREDDOF_ROW_BY_BITNUMBER_FOR_LOOP_(PROBLEMPTR,                  \
+                                                  FIELD_BIT_NUMBER, IT)        \
+  auto IT = PROBLEMPTR->numeredRowDofsPtr->lower_bound(                        \
+      FieldEntity::getLoBitNumberUId(FIELD_BIT_NUMBER));                       \
+  IT != PROBLEMPTR->numeredRowDofsPtr->upper_bound(                            \
+            FieldEntity::getHiBitNumberUId(FIELD_BIT_NUMBER));                 \
+  IT++
+
+/**
+ * \brief use with loops to iterate col DOFs
+ * \ingroup problems_multi_indices
+ *
+ * \code
+ * for(_IT_NUMEREDDOF_COL_BY_BITNUMBER_FOR_LOOP_(PROBLEMPTR,m_field.get_field_bit_number(FIELD_BIT_NUMBER),IT))
+ * {
+ *   ...
+ * }
+ * \endcode
+ *
+ */
+#define _IT_NUMEREDDOF_COL_BY_BITNUMBER_FOR_LOOP_(PROBLEMPTR,                  \
+                                                  FIELD_BIT_NUMBER, IT)        \
+  auto IT = PROBLEMPTR->numeredColDofsPtr->lower_bound(                        \
+      FieldEntity::getLoBitNumberUId(FIELD_BIT_NUMBER));                       \
+  IT != PROBLEMPTR->numeredColDofsPtr->upper_bound(                            \
+            FieldEntity::getHiBitNumberUId(FIELD_BIT_NUMBER));                 \
+  IT++
+
   Problem(Interface &moab, const EntityHandle meshset);
 
   virtual ~Problem() = default;
