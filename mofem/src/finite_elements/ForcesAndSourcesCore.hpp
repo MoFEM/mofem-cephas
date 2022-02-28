@@ -911,16 +911,9 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
 
   /**@}*/
 
-protected:
-  ForcesAndSourcesCore *ptrFE;
+  /**@{*/
 
-  virtual MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
-
-  inline ForcesAndSourcesCore *getPtrFE() const;
-
-  inline ForcesAndSourcesCore *getSidePtrFE() const;
-
-  inline ForcesAndSourcesCore *getRefinePtrFE() const;
+  /** \name Loops */
 
   /**
    * @brief User call this function to loop over elements on the side of
@@ -932,33 +925,72 @@ protected:
    * @param dim           dimension the of side element
    * @param ent_for_side  entity handle for which adjacent volume or face will
    * be accessed
+   * @param verb
+   * @param sev
    * @return MoFEMErrorCode
    */
   MoFEMErrorCode loopSide(const string &fe_name, ForcesAndSourcesCore *side_fe,
-                          const size_t dim,
-                          const EntityHandle ent_for_side = 0);
+                          const size_t dim, const EntityHandle ent_for_side = 0,
+                          const int verb = QUIET,
+                          const LogManager::SeverityLevel sev = Sev::noisy);
 
   /**
    * @brief  User call this function to loop over parent elements. This function
    * calls finite element with is operator to do calculations.
    *
    * @param fe_name
-   * @param side_fe
+   * @param parent_fe
+   * @param verb
+   * @param sev
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode loopThis(const string &fe_name,
+                          ForcesAndSourcesCore *parent_fe,
+                          const int verb = QUIET,
+                          const LogManager::SeverityLevel sev = Sev::noisy);
+
+  /**
+   * @brief  User call this function to loop over parent elements. This function
+   * calls finite element with is operator to do calculations.
+   *
+   * @param fe_name
+   * @param parent_fe
+   * @param verb
+   * @param sev
    * @return MoFEMErrorCode
    */
   MoFEMErrorCode loopParent(const string &fe_name,
-                            ForcesAndSourcesCore *side_fe);
+                            ForcesAndSourcesCore *parent_fe,
+                            const int verb = QUIET,
+                            const LogManager::SeverityLevel sev = Sev::noisy);
 
   /**
    * @brief  User call this function to loop over parent elements. This function
    * calls finite element with is operator to do calculations.
    *
    * @param fe_name
-   * @param side_fe
+   * @param child_fe
+   * @param verb
+   * @param sev
    * @return MoFEMErrorCode
    */
   MoFEMErrorCode loopChildren(const string &fe_name,
-                              ForcesAndSourcesCore *side_fe);
+                              ForcesAndSourcesCore *child_fe,
+                              const int verb = QUIET,
+                              const LogManager::SeverityLevel sev = Sev::noisy);
+
+  /**@}*/
+
+protected:
+  ForcesAndSourcesCore *ptrFE;
+
+  virtual MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
+
+  inline ForcesAndSourcesCore *getPtrFE() const;
+
+  inline ForcesAndSourcesCore *getSidePtrFE() const;
+
+  inline ForcesAndSourcesCore *getRefinePtrFE() const;
 
 private:
 

@@ -1527,7 +1527,8 @@ MoFEMErrorCode ForcesAndSourcesCore::setRefineFEPtr(
 
 MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopSide(
     const string &fe_name, ForcesAndSourcesCore *side_fe, const size_t side_dim,
-    const EntityHandle ent_for_side) {
+    const EntityHandle ent_for_side, const int verb,
+    const LogManager::SeverityLevel sev) {
   MoFEMFunctionBegin;
   const auto ent = ent_for_side ? ent_for_side : getFEEntityHandle();
   const auto *problem_ptr = getFEMethod()->problemPtr;
@@ -1554,6 +1555,11 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopSide(
   for (auto fe_ent : adjacent_ents) {
     auto miit = numered_fe.find(boost::make_tuple(fe_name, fe_ent));
     if (miit != numered_fe.end()) {
+
+      if (verb >= VERBOSE)
+        MOFEM_LOG("SELF", sev) << "Side finite element "
+                               << "(" << nn << "): " << **miit;
+
       side_fe->nInTheLoop = nn++;
       side_fe->numeredEntFiniteElementPtr = *miit;
       CHKERR (*side_fe)();
@@ -1565,8 +1571,40 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopSide(
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopThis(
+    const string &fe_name, ForcesAndSourcesCore *this_fe, const int verb,
+    const LogManager::SeverityLevel sev) {
+  MoFEMFunctionBegin;
+
+  if (verb >= VERBOSE)
+    MOFEM_LOG("SELF", sev) << "This finite element: "
+                           << *getNumeredEntFiniteElementPtr();
+
+  const auto *problem_ptr = getFEMethod()->problemPtr;
+  this_fe->feName = fe_name;
+
+  CHKERR this_fe->setRefineFEPtr(ptrFE);
+  CHKERR this_fe->copyBasicMethod(*getFEMethod());
+  CHKERR this_fe->copyPetscData(*getFEMethod());
+  CHKERR this_fe->copyKsp(*getFEMethod());
+  CHKERR this_fe->copySnes(*getFEMethod());
+  CHKERR this_fe->copyTs(*getFEMethod());
+
+  CHKERR this_fe->preProcess();
+
+  this_fe->nInTheLoop = getNinTheLoop();
+  this_fe->numeredEntFiniteElementPtr = getNumeredEntFiniteElementPtr();
+
+  CHKERR (*this_fe)();
+
+  CHKERR this_fe->postProcess();
+
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopParent(
-    const string &fe_name, ForcesAndSourcesCore *side_fe) {
+    const string &fe_name, ForcesAndSourcesCore *parent_fe, const int verb,
+    const LogManager::SeverityLevel sev) {
   MoFEMFunctionBegin;
   
   const auto *problem_ptr = getFEMethod()->problemPtr;
@@ -1577,32 +1615,36 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopParent(
   auto miit = numered_fe.find(boost::make_tuple(fe_name, parent_ent));
   if (miit != numered_fe.end()) {
 
-    side_fe->feName = fe_name;
+    if(verb >= VERBOSE)
+      MOFEM_LOG("SELF", sev) << "Parent finite element: " << **miit;
 
-    CHKERR side_fe->setRefineFEPtr(ptrFE);
-    CHKERR side_fe->copyBasicMethod(*getFEMethod());
-    CHKERR side_fe->copyPetscData(*getFEMethod());
-    CHKERR side_fe->copyKsp(*getFEMethod());
-    CHKERR side_fe->copySnes(*getFEMethod());
-    CHKERR side_fe->copyTs(*getFEMethod());
+    parent_fe->feName = fe_name;
 
-    CHKERR side_fe->preProcess();
+    CHKERR parent_fe->setRefineFEPtr(ptrFE);
+    CHKERR parent_fe->copyBasicMethod(*getFEMethod());
+    CHKERR parent_fe->copyPetscData(*getFEMethod());
+    CHKERR parent_fe->copyKsp(*getFEMethod());
+    CHKERR parent_fe->copySnes(*getFEMethod());
+    CHKERR parent_fe->copyTs(*getFEMethod());
+
+    CHKERR parent_fe->preProcess();
 
     int nn = 0;
-    side_fe->loopSize = 1;
+    parent_fe->loopSize = 1;
 
-    side_fe->nInTheLoop = nn++;
-    side_fe->numeredEntFiniteElementPtr = *miit;
-    CHKERR (*side_fe)();
+    parent_fe->nInTheLoop = nn++;
+    parent_fe->numeredEntFiniteElementPtr = *miit;
+    CHKERR (*parent_fe)();
 
-    CHKERR side_fe->postProcess();
+    CHKERR parent_fe->postProcess();
   }
 
   MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopChildren(
-    const string &fe_name, ForcesAndSourcesCore *side_fe) {
+    const string &fe_name, ForcesAndSourcesCore *child_fe, const int verb,
+    const LogManager::SeverityLevel sev) {
   MoFEMFunctionBegin;
   
   const auto *problem_ptr = getFEMethod()->problemPtr;
@@ -1630,34 +1672,39 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopChildren(
     else
       childs.insert_list(childs_vec.begin(), childs_vec.end());
 
-    side_fe->feName = fe_name;
+    child_fe->feName = fe_name;
 
-    CHKERR side_fe->setRefineFEPtr(ptrFE);
-    CHKERR side_fe->copyBasicMethod(*getFEMethod());
-    CHKERR side_fe->copyPetscData(*getFEMethod());
-    CHKERR side_fe->copyKsp(*getFEMethod());
-    CHKERR side_fe->copySnes(*getFEMethod());
-    CHKERR side_fe->copyTs(*getFEMethod());
+    CHKERR child_fe->setRefineFEPtr(ptrFE);
+    CHKERR child_fe->copyBasicMethod(*getFEMethod());
+    CHKERR child_fe->copyPetscData(*getFEMethod());
+    CHKERR child_fe->copyKsp(*getFEMethod());
+    CHKERR child_fe->copySnes(*getFEMethod());
+    CHKERR child_fe->copyTs(*getFEMethod());
 
-    CHKERR side_fe->preProcess();
+    CHKERR child_fe->preProcess();
 
     int nn = 0;
-    side_fe->loopSize = size;
+    child_fe->loopSize = size;
 
     for (auto p = childs.pair_begin(); p != childs.pair_end(); ++p) {
 
       auto miit = numered_fe.lower_bound(boost::make_tuple(fe_name, p->first));
       auto hi_miit =
-          numered_fe.lower_bound(boost::make_tuple(fe_name, p->second));
+          numered_fe.upper_bound(boost::make_tuple(fe_name, p->second));
 
       for (; miit != hi_miit; ++miit) {
-        side_fe->nInTheLoop = nn++;
-        side_fe->numeredEntFiniteElementPtr = *miit;
-        CHKERR (*side_fe)();
+
+        if (verb >= VERBOSE)
+          MOFEM_LOG("SELF", sev) << "Child finite element "
+                                 << "(" << nn << "): " << **miit;
+
+        child_fe->nInTheLoop = nn++;
+        child_fe->numeredEntFiniteElementPtr = *miit;
+        CHKERR (*child_fe)();
       }
     }
 
-    CHKERR side_fe->postProcess();
+    CHKERR child_fe->postProcess();
   };
 
   MoFEMFunctionReturn(0);
