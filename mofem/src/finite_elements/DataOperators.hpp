@@ -39,21 +39,37 @@ struct DataOperator {
 
   virtual ~DataOperator() = default;
 
-  /** \brief Operator for bi-linear form, usually to calculate values on left
-   * hand side
+  boost::function<MoFEMErrorCode(
+      DataOperator *op_ptr, int row_side, int col_side, EntityType row_type,
+      EntityType col_type, DataForcesAndSourcesCore::EntData &row_data,
+      DataForcesAndSourcesCore::EntData &col_data)>
+      doWorkLhsHook;
+
+  /** \brief Operator for bi-linear form, usually to calculate values on
+   * left hand side
    */
   virtual MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
                                 EntityType col_type,
                                 DataForcesAndSourcesCore::EntData &row_data,
                                 DataForcesAndSourcesCore::EntData &col_data) {
     MoFEMFunctionBeginHot;
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-            "doWork function is not implemented for this operator");
+    if (doWorkLhsHook) {
+      CHKERR doWorkLhsHook(this, row_side, col_side, row_type, col_type,
+                           row_data, col_data);
+    } else {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+              "doWork function is not implemented for this operator");
+    }
     MoFEMFunctionReturnHot(0);
   }
 
   virtual MoFEMErrorCode opLhs(DataForcesAndSourcesCore &row_data,
                                DataForcesAndSourcesCore &col_data);
+
+  boost::function<MoFEMErrorCode(DataOperator *op_ptr, int side,
+                                 EntityType type,
+                                 DataForcesAndSourcesCore::EntData &data)>
+      doWorkRhsHook;
 
   /** \brief Operator for linear form, usually to calculate values on right hand
    * side
@@ -61,8 +77,12 @@ struct DataOperator {
   virtual MoFEMErrorCode doWork(int side, EntityType type,
                                 DataForcesAndSourcesCore::EntData &data) {
     MoFEMFunctionBeginHot;
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-            "doWork function is not implemented for this operator");
+    if (doWorkRhsHook) {
+      CHKERR doWorkRhsHook(this, side, type, data);
+    } else {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+              "doWork function is not implemented for this operator");
+    }
     MoFEMFunctionReturnHot(0);
   }
 
@@ -408,7 +428,7 @@ struct OpSetContravariantPiolaTransformOnFace : public DataOperator {
   const VectorDouble
       *normalRawPtr; //< Normal of the element for linear geometry
   const MatrixDouble *normalsAtGaussPtsRawPtr; //< Normals at integration points
-                                               //for nonlinear geometry
+                                               // for nonlinear geometry
 
   /**
    * @brief Shift in vector for linear geometry
@@ -440,7 +460,7 @@ struct OpSetContravariantPiolaTransformOnFace : public DataOperator {
 
 /** \brief transform Hcurl base fluxes from reference element to physical
  * triangle \ingroup mofem_forces_and_sources
- * 
+ *
  * \deprecated It is used in contact elements. Contact elements should be
  * minified to work as face element,
  */
