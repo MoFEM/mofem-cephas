@@ -67,8 +67,6 @@ struct ComposedProblemsData {
   }
 };
 
-using EmptyFieldBlocks = std::pair<BitFieldId, BitFieldId>;
-
 /** \brief keeps basic data about problem
  * \ingroup problems_multi_indices
  *
@@ -678,6 +676,7 @@ struct Problem {
     return sequenceColDofContainer;
   }
 
+  using EmptyFieldBlocks = std::pair<BitFieldId, BitFieldId>;
 
   /**
    * @brief Get the empty field blocks
@@ -715,8 +714,7 @@ private:
   mutable EmptyFieldBlocks emptyFieldBlocks;
 };
 
-/// \deprecated use just Problem
-DEPRECATED typedef Problem MoFEMProblem;
+using EmptyFieldBlocks = Problem::EmptyFieldBlocks;
 
 /**
  * @relates multi_index_container
