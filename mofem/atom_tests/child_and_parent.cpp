@@ -297,8 +297,8 @@ MoFEMErrorCode AtomTest::assembleSystem() {
   domainChildRhs->getOpPtrVector().push_back(
       new OpDomainSource(FIELD_NAME, approxFunction));
 
-  auto paremt_op_lhs = new DomainEleOp(NOSPACE, DomainEleOp::OPLAST);
-  paremt_op_lhs->doWorkRhsHook = [&](DataOperator *op_ptr, int side,
+  auto parent_op_lhs = new DomainEleOp(NOSPACE, DomainEleOp::OPLAST);
+  parent_op_lhs->doWorkRhsHook = [&](DataOperator *op_ptr, int side,
                                      EntityType type,
                                      DataForcesAndSourcesCore::EntData &data) {
     auto domain_op = static_cast<DomainEleOp *>(op_ptr);
@@ -321,8 +321,8 @@ MoFEMErrorCode AtomTest::assembleSystem() {
     MoFEMFunctionReturn(0);
   };
 
-  auto paremt_op_rhs = new DomainEleOp(NOSPACE, DomainEleOp::OPLAST);
-  paremt_op_rhs->doWorkRhsHook = [&](DataOperator *op_ptr, int side,
+  auto parent_op_rhs = new DomainEleOp(NOSPACE, DomainEleOp::OPLAST);
+  parent_op_rhs->doWorkRhsHook = [&](DataOperator *op_ptr, int side,
                                      EntityType type,
                                      DataForcesAndSourcesCore::EntData &data) {
     auto domain_op = static_cast<DomainEleOp *>(op_ptr);
@@ -345,8 +345,8 @@ MoFEMErrorCode AtomTest::assembleSystem() {
     MoFEMFunctionReturn(0);
   };
 
-  pipeline_mng->getOpDomainLhsPipeline().push_back(paremt_op_lhs);
-  pipeline_mng->getOpDomainRhsPipeline().push_back(paremt_op_rhs);
+  pipeline_mng->getOpDomainLhsPipeline().push_back(parent_op_lhs);
+  pipeline_mng->getOpDomainRhsPipeline().push_back(parent_op_rhs);
 
   // pipeline_mng->getOpDomainLhsPipeline().push_back(
   //     new OpDomainMass(FIELD_NAME, FIELD_NAME, beta));
@@ -394,8 +394,43 @@ MoFEMErrorCode AtomTest::checkResults() {
   CHKERR pipeline_mng->setDomainRhsIntegrationRule(rule);
   pipeline_mng->getDomainRhsFE()->exeTestHook = test_bit_child;
 
+  // using ParentFE = FaceElementForcesAndSourcesCoreOnChildParentSwitch<0>;
+  // auto domain_child_rhs = boost::make_shared<ParentFE>(mField);
+  // domain_child_rhs->getOpPtrVector().push_back(
+  //     new OpCalculateScalarFieldValues(FIELD_NAME, commonDataPtr->approxVals));
+  // domain_child_rhs->getOpPtrVector().push_back(
+  //     new OpError<FIELD_DIM>(commonDataPtr));
+
+  // auto parent_op_rhs = new DomainEleOp(NOSPACE, DomainEleOp::OPLAST);
+  // parent_op_rhs->doWorkRhsHook = [&](DataOperator *op_ptr, int side,
+  //                                    EntityType type,
+  //                                    DataForcesAndSourcesCore::EntData &data) {
+  //   auto domain_op = static_cast<DomainEleOp *>(op_ptr);
+  //   MoFEMFunctionBegin;
+
+  //   MOFEM_LOG("SELF", Sev::verbose) << "Error pipeline FE";
+
+  //   if (!domain_child_rhs)
+  //     SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "FE not allocated");
+
+  //   auto &bit =
+  //       domain_op->getFEMethod()->numeredEntFiniteElementPtr->getBitRefLevel();
+  //   if (bit == BitRefLevel().set(1)) {
+  //     CHKERR domain_op->loopParent(domain_op->getFEName(),
+  //                                  domain_child_rhs.get(), VERBOSE,
+  //                                  Sev::verbose);
+  //   } else if ((bit & BitRefLevel().set(0)).any()) {
+  //     CHKERR domain_op->loopThis(domain_op->getFEName(), domain_child_rhs.get(),
+  //                                VERBOSE, Sev::verbose);
+  //   }
+  //   MoFEMFunctionReturn(0);
+  // };
+
+  // pipeline_mng->getOpDomainRhsPipeline().push_back(parent_op_rhs);
+
   pipeline_mng->getOpDomainRhsPipeline().push_back(
-      new OpCalculateScalarFieldValues(FIELD_NAME, commonDataPtr->approxVals));
+      new OpCalculateScalarFieldValues(FIELD_NAME,
+      commonDataPtr->approxVals));
   pipeline_mng->getOpDomainRhsPipeline().push_back(
       new OpError<FIELD_DIM>(commonDataPtr));
 
