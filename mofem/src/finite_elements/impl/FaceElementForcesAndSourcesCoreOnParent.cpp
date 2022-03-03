@@ -1,0 +1,123 @@
+/** \file FaceElementForcesAndSourcesCoreOnParent.cpp
+
+\brief Implementation of face element
+
+*/
+
+/* This file is part of MoFEM.
+ * MoFEM is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MoFEM is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
+namespace MoFEM {
+
+int FaceElementForcesAndSourcesCoreOnChildParentBase::getRule(int order) {
+  return -1;
+};
+
+MoFEMErrorCode
+FaceElementForcesAndSourcesCoreOnChildParentBase::setGaussPts(int order) {
+  MoFEMFunctionBegin;
+
+  auto ref_fe = refinePtrFE;
+  if (ref_fe == nullptr)
+    SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+            "Pointer to face element is not set");
+
+  const auto ref_ent = ref_fe->getFEEntityHandle();
+  const auto ent = getFEEntityHandle();
+
+  auto get_coords = [&](const auto ent) {
+    int num_nodes;
+    const EntityHandle *conn;
+    CHKERR mField.get_moab().get_connectivity(ent, conn, num_nodes, true);
+    std::array<double, 9> node_coords;
+    CHKERR mField.get_moab().get_coords(conn, num_nodes, node_coords.data());
+    return node_coords;
+  };
+
+  auto ref_node_coords = get_coords(ref_ent);
+  auto node_coords = get_coords(ent);
+
+  const auto &ref_gauss_pts = ref_fe->gaussPts;
+  const auto nb_integration_points = ref_gauss_pts.size2();
+
+  auto set_integration_pts_for_tri = [&]() {
+    MatrixDouble ref_shapes(nb_integration_points, 3);
+    CHKERR Tools::shapeFunMBTRI<1>(&ref_shapes(0, 0), &ref_gauss_pts(0, 0),
+                                   &ref_gauss_pts(1, 0), nb_integration_points);
+
+    auto get_glob_coords = [&]() {
+      MatrixDouble glob_coords(3, nb_integration_points);
+
+      auto t_glob_coords = FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3>{
+          &glob_coords(0, 0), &glob_coords(1, 0), &glob_coords(2, 0)};
+      auto t_shape =
+          FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(&ref_shapes(0, 0));
+
+      for (auto gg = 0; gg != nb_integration_points; ++gg) {
+        FTensor::Index<'i', 3> i;
+
+        auto t_ref_node_coords =
+            FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>{
+                &ref_node_coords[0], &ref_node_coords[1], &ref_node_coords[2]};
+
+        t_glob_coords(i) = 0;
+        for (int nn = 0; nn != num_nodes; ++nn) {
+          t_glob_coords(i) += t_shape * t_ref_node_coords(0);
+          ++t_ref_node_coords;
+          ++t_shape;
+        }
+
+        ++t_shape;
+        ++t_glob_coords;
+      }
+      return glob_coords;
+    };
+
+    auto glob_coords = get_glob_coords();
+    MatrixDouble local_coords(nb_integration_points, 2);
+
+    CHKERR Tools::getLocalCoordinatesOnReferenceTriNodeTri(
+        node_coords.data(), &glob_coords(0, 9), nb_integration_points,
+        &local_coords(0, 0));
+
+    gaussPts.resize(3, nb_integration_points, false);
+    auto t_gauss_pts = FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 2>{
+        &gaussPts(0, 0), &gaussPts(1, 0)};
+    auto t_local_coords = FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>{
+        &local_coords(0, 0), &local_coords(0, 1)};
+
+    for (auto gg = 0; gg != nb_integration_points; ++gg) {
+      FTensor::Index<'i', 2> i;
+      t_gauss_pts(i) = t_local_coords(i);
+      t_gauss_pts(2) = ref_gauss_pts(2, 0);
+      ++t_gauss_pts;
+      ++t_local_coords;
+    }
+  };
+
+  const auto type = numeredEntFiniteElementPtr->getEntType();
+
+  switch (type) {
+  case MBTRI:
+    set_integration_pts_for_tri();
+    break;
+  default:
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+             "Element type not implemented: %d", type);
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+} // namespace MoFEM
