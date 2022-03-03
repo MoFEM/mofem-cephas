@@ -132,6 +132,7 @@ using Sev = MoFEM::LogManager::SeverityLevel;
 #include <VolumeElementForcesAndSourcesCoreOnSide.hpp>
 #include <VolumeElementForcesAndSourcesCoreOnContactPrismSide.hpp>
 #include <FaceElementForcesAndSourcesCoreOnSide.hpp>
+#include <FaceElementForcesAndSourcesCoreOnParent.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
 #include <UserDataOperators.hpp>
 #include <HODataOperators.hpp> // Manage HO order geometry
