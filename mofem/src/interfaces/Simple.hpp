@@ -389,7 +389,9 @@ struct Simple : public UnknownInterface {
    * 
    * @return MoFEMErrorCode 
    */
-  MoFEMErrorCode deleteFiniteElements(); 
+  MoFEMErrorCode deleteFiniteElements();
+
+  bool &getAddSkeleton() { return addSkeleton; }
 
 private:
   MoFEM::Core &cOre;
@@ -406,6 +408,9 @@ private:
   EntityHandle meshSet;                       ///< domain meshset
   EntityHandle boundaryMeshset;               ///< meshset with boundary
   EntityHandle skeletonMeshset;               ///< skeleton meshset with boundary
+
+  bool addSkeleton; ///< Add skeleton
+
   std::vector<std::string> domainFields;      ///< domain fields
   std::vector<std::string> boundaryFields;    ///< boundary fields
   std::vector<std::string> skeletonFields;    ///< fields on the skeleton

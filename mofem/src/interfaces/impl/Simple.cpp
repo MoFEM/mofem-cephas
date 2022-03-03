@@ -201,7 +201,7 @@ Simple::Simple(const Core &core)
     : cOre(const_cast<Core &>(core)), bitLevel(BitRefLevel().set(0)),
       bitLevelMask(BitRefLevel().set()), meshSet(0), boundaryMeshset(0),
       skeletonMeshset(0), nameOfProblem("SimpleProblem"), domainFE("dFE"),
-      boundaryFE("bFE"), skeletonFE("sFE"), dIm(-1) {
+      boundaryFE("bFE"), skeletonFE("sFE"), dIm(-1), addSkeleton(false) {
   PetscLogEventRegister("LoadMesh", 0, &MOFEM_EVENT_SimpleLoadMesh);
   PetscLogEventRegister("buildFields", 0, &MOFEM_EVENT_SimpleBuildFields);
   PetscLogEventRegister("buildFiniteElements", 0,
@@ -333,6 +333,8 @@ Simple::addSkeletonField(const std::string &name, const FieldSpace space,
     SETERRQ(
         PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
         "NOFIELD space for boundary filed not implemented in Simple interface");
+
+  addSkeleton = true;
   MoFEMFunctionReturn(0);
 }
 
@@ -459,11 +461,12 @@ MoFEMErrorCode Simple::defineFiniteElements() {
     CHKERR add_data_fields(boundaryFE, noFieldDataFields);
     CHKERR add_fields(boundaryFE, noFieldFields);
   }
-  if (!skeletonFields.empty()) {
+  if (addSkeleton) {
     CHKERR m_field.add_finite_element(skeletonFE, MF_ZERO);
     CHKERR add_fields(skeletonFE, domainFields);
     CHKERR add_fields(skeletonFE, boundaryFields);
-    CHKERR add_fields(skeletonFE, skeletonFields);
+    if (!skeletonFields.empty())
+      CHKERR add_fields(skeletonFE, skeletonFields);
     CHKERR add_data_fields(skeletonFE, dataFields);
     CHKERR add_data_fields(skeletonFE, noFieldDataFields);
     CHKERR add_fields(skeletonFE, noFieldFields);
@@ -484,7 +487,7 @@ MoFEMErrorCode Simple::defineProblem(const PetscBool is_partitioned) {
   if (!boundaryFields.empty()) {
     CHKERR DMMoFEMAddElement(dM, boundaryFE.c_str());
   }
-  if (!skeletonFields.empty()) {
+  if (addSkeleton) {
     CHKERR DMMoFEMAddElement(dM, skeletonFE.c_str());
   }
   for (std::vector<std::string>::iterator fit = otherFEs.begin();
@@ -683,7 +686,7 @@ MoFEMErrorCode Simple::buildFiniteElements() {
                                                      boundaryFE, true);
     CHKERR m_field.build_finite_elements(boundaryFE);
   }
-  if (!skeletonFields.empty()) {
+  if (addSkeleton) {
     CHKERR m_field.add_ents_to_finite_element_by_dim(skeletonMeshset, dIm - 1,
                                                      skeletonFE, true);
     CHKERR m_field.build_finite_elements(skeletonFE);
@@ -713,7 +716,7 @@ MoFEMErrorCode Simple::buildProblem() {
 MoFEMErrorCode Simple::setUp(const PetscBool is_partitioned) {
   MoFEMFunctionBegin;
   CHKERR defineFiniteElements();
-  if (!skeletonFields.empty())
+  if (addSkeleton)
     CHKERR setSkeletonAdjacency();
   CHKERR defineProblem(is_partitioned);
   CHKERR buildFields();
@@ -727,7 +730,7 @@ MoFEMErrorCode Simple::reSetUp() {
   MoFEMFunctionBegin;
 
   CHKERR defineFiniteElements();
-  if (!skeletonFields.empty())
+  if (addSkeleton)
     CHKERR setSkeletonAdjacency();
   CHKERR buildFields();
   CHKERR buildFiniteElements();
