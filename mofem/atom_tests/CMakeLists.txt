@@ -1212,6 +1212,13 @@ add_test(
   -log_no_color
 )
 
+build_test(simple_l2_only simple_l2_only.cpp)
+add_test(
+  simple_l2_only ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/simple_l2_only -file_name rectangle_tri.h5m 
+  -log_no_color
+)
+
 build_test(test_cache_on_entities test_cache_on_entities.cpp)
 
 add_test(
