@@ -2546,6 +2546,7 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
   for (auto &fe : *numbered_good_elems_ptr) {
 
     auto check_fields_and_dofs = [&]() {
+
       if (!part_from_moab) {
 
         if (fe.getBitFieldIdRow().none() && m_field.get_comm_size() == 0) {
@@ -2554,19 +2555,9 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
                  "determine partition of finite element. Check element " +
                      boost::lexical_cast<std::string>(fe.getName());
         }
-      }
 
-      // Adding elements if row or column has DOFs, or there is no field set
-      // to rows and columns. The second case would be used by elements
-      // performing tasks which do not assemble matrices or vectors, but
-      // evaluate fields or modify base functions.
+      return true;
 
-      return (!fe.sPtr->getRowFieldEnts().empty() ||
-              !fe.sPtr->getColFieldEnts().empty())
-
-             ||
-
-             (fe.getBitFieldIdRow().none() || fe.getBitFieldIdCol().none());
     };
 
     if (check_fields_and_dofs()) {
