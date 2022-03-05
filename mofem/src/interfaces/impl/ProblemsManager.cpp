@@ -2548,13 +2548,13 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
     auto check_fields_and_dofs = [&]() {
 
       if (!part_from_moab) {
-
         if (fe.getBitFieldIdRow().none() && m_field.get_comm_size() == 0) {
           MOFEM_LOG("WORLD", Sev::warning)
               << "At least one field has to be added to element row to "
                  "determine partition of finite element. Check element " +
                      boost::lexical_cast<std::string>(fe.getName());
         }
+      }
 
       return true;
 
