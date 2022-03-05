@@ -123,12 +123,9 @@ template <class X> inline std::string toString(X x) {
   return buffer.str();
 }
 
-template <int S, class T, class A> struct GetFTensor0FromVecImpl {};
-
-template <int S> struct GetFTensor0FromVecImpl<S, double, DoubleAllocator> {
-  static inline auto get(ublas::vector<double, DoubleAllocator> &data) {
-    return FTensor::Tensor0<FTensor::PackPtr<double *, S>>(
-        &*data.data().begin());
+template <int S, class T, class A> struct GetFTensor0FromVecImpl {
+  static inline auto get(ublas::vector<T, A> &data) {
+    return FTensor::Tensor0<FTensor::PackPtr<T *, S>>(&*data.data().begin());
   }
 };
 
@@ -156,9 +153,9 @@ static inline auto getFTensor0FromVec(ublas::vector<T, A> &data) {
 template <int Tensor_Dim, int S, class T, class L, class A>
 struct GetFTensor1FromMatImpl {};
 
-template <int S>
-struct GetFTensor1FromMatImpl<3, S, double, ublas::row_major, DoubleAllocator> {
-  static inline auto get(MatrixDouble &data) {
+template <int S, class T, class A>
+struct GetFTensor1FromMatImpl<3, S, T, ublas::row_major, A> {
+  static inline auto get(ublas::matrix<T, ublas::row_major, A> &data) {
     if (data.size1() != 3)
       THROW_MESSAGE(
           "getFTensor1FromMat<3>: wrong size of data matrix, number of "
@@ -170,9 +167,9 @@ struct GetFTensor1FromMatImpl<3, S, double, ublas::row_major, DoubleAllocator> {
   }
 };
 
-template <int S>
-struct GetFTensor1FromMatImpl<2, S, double, ublas::row_major, DoubleAllocator> {
-  static inline auto get(MatrixDouble &data) {
+template <int S, class T, class A>
+struct GetFTensor1FromMatImpl<2, S, T, ublas::row_major, A> {
+  static inline auto get(ublas::matrix<T, ublas::row_major, A> &data) {
     if (data.size1() != 2)
       THROW_MESSAGE(
           "getFTensor1FromMat<2>: wrong size of data matrix, number of "
@@ -183,9 +180,9 @@ struct GetFTensor1FromMatImpl<2, S, double, ublas::row_major, DoubleAllocator> {
   }
 };
 
-template <int S>
-struct GetFTensor1FromMatImpl<1, S, double, ublas::row_major, DoubleAllocator> {
-  static inline auto get(MatrixDouble &data) {
+template <int S, class T, class A>
+struct GetFTensor1FromMatImpl<1, S, T, ublas::row_major, A> {
+  static inline auto get(ublas::matrix<T, ublas::row_major, A> &data) {
     if (data.size1() != 1)
       THROW_MESSAGE(
           "getFTensor1FromMat<1>: wrong size of data matrix, number of "
@@ -330,10 +327,9 @@ static inline auto getFTensor2SymmetricFromMat(MatrixDouble &data) {
 template <int Tensor_Dim01, int Tensor_Dim23, int S, class T, class L, class A>
 struct GetFTensor4DdgFromMatImpl {};
 
-template <int S>
-struct GetFTensor4DdgFromMatImpl<1, 1, S, double, ublas::row_major,
-                                 DoubleAllocator> {
-  static inline auto get(MatrixDouble &data) {
+template <int S, class T, class A>
+struct GetFTensor4DdgFromMatImpl<1, 1, S, T, ublas::row_major, A> {
+  static inline auto get(ublas::matrix<T, ublas::row_major, A> &data) {
     if (data.size1() != 1)
       THROW_MESSAGE(
           "getFTensor4DdgFromMat<1, 1>: wrong size of data matrix, number "
@@ -344,10 +340,9 @@ struct GetFTensor4DdgFromMatImpl<1, 1, S, double, ublas::row_major,
   }
 };
 
-template <int S>
-struct GetFTensor4DdgFromMatImpl<2, 2, S, double, ublas::row_major,
-                                 DoubleAllocator> {
-  static inline auto get(MatrixDouble &data) {
+template <int S, class T, class A>
+struct GetFTensor4DdgFromMatImpl<2, 2, S, T, ublas::row_major, A> {
+  static inline auto get(ublas::matrix<T, ublas::row_major, A> &data) {
     if (data.size1() != 9) {
       THROW_MESSAGE(
           "getFTensor4DdgFromMat<2, 2>: wrong size of data matrix, number "
@@ -360,10 +355,9 @@ struct GetFTensor4DdgFromMatImpl<2, 2, S, double, ublas::row_major,
   }
 };
 
-template <int S>
-struct GetFTensor4DdgFromMatImpl<3, 3, S, double, ublas::row_major,
-                                 DoubleAllocator> {
-  static inline auto get(MatrixDouble &data) {
+template <int S, class T, class A>
+struct GetFTensor4DdgFromMatImpl<3, 3, S, T, ublas::row_major, A> {
+  static inline auto get(ublas::matrix<T, ublas::row_major, A> &data) {
     if (data.size1() != 36) {
       cerr << data.size1() << endl;
       THROW_MESSAGE(
@@ -413,10 +407,9 @@ static inline auto getFTensor4DdgFromMat(MatrixDouble &data) {
 template <int Tensor_Dim01, int Tensor_Dim2, int S, class T, class L, class A>
 struct GetFTensor3DgFromMatImpl {};
 
-template <int S>
-struct GetFTensor3DgFromMatImpl<1, 1, S, double, ublas::row_major,
-                                DoubleAllocator> {
-  static inline auto get(MatrixDouble &data) {
+template <int S, class T, class A>
+struct GetFTensor3DgFromMatImpl<1, 1, S, T, ublas::row_major, A> {
+  static inline auto get(ublas::matrix<T, ublas::row_major, A> &data) {
     if (data.size1() != 1)
       THROW_MESSAGE(
           "getFTensor3DgFromMat<1, 1>: wrong size of data matrix, number "
@@ -427,10 +420,9 @@ struct GetFTensor3DgFromMatImpl<1, 1, S, double, ublas::row_major,
   }
 };
 
-template <int S>
-struct GetFTensor3DgFromMatImpl<2, 2, S, double, ublas::row_major,
-                                DoubleAllocator> {
-  static inline auto get(MatrixDouble &data) {
+template <int S, class T, class A>
+struct GetFTensor3DgFromMatImpl<2, 2, S, T, ublas::row_major, A> {
+  static inline auto get(ublas::matrix<T, ublas::row_major, A> &data) {
     if (data.size1() != 6) {
       THROW_MESSAGE(
           "getFTensor4DdgFromMat<2, 2>: wrong size of data matrix, number "
@@ -443,10 +435,9 @@ struct GetFTensor3DgFromMatImpl<2, 2, S, double, ublas::row_major,
   }
 };
 
-template <int S>
-struct GetFTensor3DgFromMatImpl<3, 3, S, double, ublas::row_major,
-                                DoubleAllocator> {
-  static inline auto get(MatrixDouble &data) {
+template <int S, class T, class A>
+struct GetFTensor3DgFromMatImpl<3, 3, S, T, ublas::row_major, A> {
+  static inline auto get(ublas::matrix<T, ublas::row_major, A> &data) {
     if (data.size1() != 18) {
       cerr << data.size1() << endl;
       THROW_MESSAGE(
@@ -492,10 +483,9 @@ template <int Tensor_Dim0, int Tensor_Dim1, int Tensor_Dim2, int Tensor_Dim3,
           int S, class T, class L, class A>
 struct GetFTensor4FromMatImpl {};
 
-template <int S>
-struct GetFTensor4FromMatImpl<1, 1, 1, 1, S, double, ublas::row_major,
-                              DoubleAllocator> {
-  static inline auto get(MatrixDouble &data) {
+template <int S, class T, class A>
+struct GetFTensor4FromMatImpl<1, 1, 1, 1, S, T, ublas::row_major, A> {
+  static inline auto get(ublas::matrix<T, ublas::row_major, A> &data) {
     if (data.size1() != 1)
       THROW_MESSAGE(
           "getFTensor4FromMat<1, 1, 1, 1>: wrong size of data matrix, number "
@@ -507,10 +497,9 @@ struct GetFTensor4FromMatImpl<1, 1, 1, 1, S, double, ublas::row_major,
   }
 };
 
-template <int S>
-struct GetFTensor4FromMatImpl<2, 2, 2, 2, S, double, ublas::row_major,
-                              DoubleAllocator> {
-  static inline auto get(MatrixDouble &data) {
+template <int S, class T, class A>
+struct GetFTensor4FromMatImpl<2, 2, 2, 2, S, T, ublas::row_major, A> {
+  static inline auto get(ublas::matrix<T, ublas::row_major, A> &data) {
     if (data.size1() != 16) {
       THROW_MESSAGE(
           "getFTensor4FromMat<2, 2, 2, 2>: wrong size of data matrix, number "
@@ -525,10 +514,9 @@ struct GetFTensor4FromMatImpl<2, 2, 2, 2, S, double, ublas::row_major,
   }
 };
 
-template <int S>
-struct GetFTensor4FromMatImpl<3, 3, 3, 3, S, double, ublas::row_major,
-                              DoubleAllocator> {
-  static inline auto get(MatrixDouble &data) {
+template <int S, class T, class A>
+struct GetFTensor4FromMatImpl<3, 3, 3, 3, S, T, ublas::row_major, A> {
+  static inline auto get(ublas::matrix<T, ublas::row_major, A> &data) {
     if (data.size1() != 81) {
       cerr << data.size1() << endl;
       THROW_MESSAGE(
