@@ -391,7 +391,27 @@ struct Simple : public UnknownInterface {
    */
   MoFEMErrorCode deleteFiniteElements();
 
-  bool &getAddSkeleton() { return addSkeleton; }
+  /**
+   * @brief Get the Add Skeleton F E object
+   *
+   * If variable set to true, skeleton element is created regardless field on
+   * skelton is added or not.
+   *
+   * @return true
+   * @return false
+   */
+  bool &getAddSkeletonFE() { return addSkeletonFE; }
+
+  /**
+   * @brief Get the Add Boundary F E object
+   *
+   * If variable set to true, boundary element is created regardless field on
+   * skelton is added or not.
+   *
+   * @return true
+   * @return false
+   */
+  bool &getAddBoundaryFE() { return addBoundaryFE; }
 
 private:
   MoFEM::Core &cOre;
@@ -409,7 +429,8 @@ private:
   EntityHandle boundaryMeshset;               ///< meshset with boundary
   EntityHandle skeletonMeshset;               ///< skeleton meshset with boundary
 
-  bool addSkeleton; ///< Add skeleton
+  bool addSkeletonFE; ///< Add skeleton FE 
+  bool addBoundaryFE; ///< Add boundary FE  
 
   std::vector<std::string> domainFields;      ///< domain fields
   std::vector<std::string> boundaryFields;    ///< boundary fields
