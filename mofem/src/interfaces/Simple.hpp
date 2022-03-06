@@ -379,15 +379,15 @@ struct Simple : public UnknownInterface {
 
   /**
    * @brief Delete dm
-   * 
-   * @return MoFEMErrorCode 
+   *
+   * @return MoFEMErrorCode
    */
   MoFEMErrorCode deleteDM();
 
-   /**
+  /**
    * @brief Delete finite elements
-   * 
-   * @return MoFEMErrorCode 
+   *
+   * @return MoFEMErrorCode
    */
   MoFEMErrorCode deleteFiniteElements();
 
@@ -416,7 +416,7 @@ struct Simple : public UnknownInterface {
 private:
   MoFEM::Core &cOre;
 
-  BitRefLevel bitLevel; ///< BitRefLevel of the probelm
+  BitRefLevel bitLevel;     ///< BitRefLevel of the probelm
   BitRefLevel bitLevelMask; ///< BitRefLevel of the probelm
 
   PetscLogEvent MOFEM_EVENT_SimpleLoadMesh;
@@ -425,12 +425,12 @@ private:
   PetscLogEvent MOFEM_EVENT_SimpleBuildProblem;
   PetscLogEvent MOFEM_EVENT_SimpleKSPSolve;
 
-  EntityHandle meshSet;                       ///< domain meshset
-  EntityHandle boundaryMeshset;               ///< meshset with boundary
-  EntityHandle skeletonMeshset;               ///< skeleton meshset with boundary
+  EntityHandle meshSet;         ///< domain meshset
+  EntityHandle boundaryMeshset; ///< meshset with boundary
+  EntityHandle skeletonMeshset; ///< skeleton meshset with boundary
 
-  bool addSkeletonFE; ///< Add skeleton FE 
-  bool addBoundaryFE; ///< Add boundary FE  
+  bool addSkeletonFE; ///< Add skeleton FE
+  bool addBoundaryFE; ///< Add boundary FE
 
   std::vector<std::string> domainFields;      ///< domain fields
   std::vector<std::string> boundaryFields;    ///< boundary fields
