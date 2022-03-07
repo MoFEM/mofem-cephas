@@ -53239,5 +53239,219 @@
    obj:*
    obj:*
 }
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:_Znwm
+   fun:_ZN9__gnu_cxx13new_allocatorImE8allocateEmPKv
+   fun:_ZNSt16allocator_traitsISaImEE8allocateERS0_m
+   fun:_ZNSt12_Vector_baseImSaImEE11_M_allocateEm
+   fun:_ZNSt6vectorImSaImEE17_M_realloc_insertIJRKmEEEvN9__gnu_cxx17__normal_iteratorIPmS1_EEDpOT_
+   fun:_ZN4moab14AEntityFactory13add_adjacencyEmmb
+   fun:_ZN4moab7MeshSet20insert_entity_vectorEPKmmmPNS_14AEntityFactoryE
+   fun:_ZZN5MoFEM7CoreTmpILi0EE10addProblemESt6bitsetILm32EERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEiENKUlT_E_clImEEDaSC_
+   fun:_ZN5MoFEM7CoreTmpILi0EE10addProblemESt6bitsetILm32EERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEi
+   fun:_ZN5MoFEM7CoreTmpILi0EE11add_problemERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE10MoFEMTypesi
+   fun:_ZN5MoFEM18DMMoFEMCreateMoFEMEP5_p_DMPNS_23DeprecatedCoreInterfaceEPKcSt6bitsetILm128EES7_
+   fun:_ZN5MoFEM6Simple13defineProblemE9PetscBool
+   fun:_ZN5MoFEM6Simple5setUpE9PetscBool
+   fun:main
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:_Znwm
+   fun:_ZN4moab14AEntityFactory15get_adjacenciesEmRPSt6vectorImSaImEEb
+   fun:_ZN4moab14AEntityFactory13add_adjacencyEmmb
+   fun:_ZN4moab7MeshSet20insert_entity_vectorEPKmmmPNS_14AEntityFactoryE
+   fun:_ZZN5MoFEM7CoreTmpILi0EE10addProblemESt6bitsetILm32EERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEiENKUlT_E_clImEEDaSC_
+   fun:_ZN5MoFEM7CoreTmpILi0EE10addProblemESt6bitsetILm32EERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEi
+   fun:_ZN5MoFEM7CoreTmpILi0EE11add_problemERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE10MoFEMTypesi
+   fun:_ZN5MoFEM18DMMoFEMCreateMoFEMEP5_p_DMPNS_23DeprecatedCoreInterfaceEPKcSt6bitsetILm128EES7_
+   fun:_ZN5MoFEM6Simple13defineProblemE9PetscBool
+   fun:_ZN5MoFEM6Simple5setUpE9PetscBool
+   fun:main
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:mca_base_component_find
+   fun:mca_base_framework_components_register
+   fun:mca_base_framework_register
+   fun:mca_base_framework_open
+   fun:mca_io_base_file_select
+   fun:ompi_file_open
+   fun:PMPI_File_open
+   fun:H5FD_mpio_open
+   fun:H5FD_open
+   fun:H5F_open
+   fun:H5Fopen
+   fun:mhdf_openFileWithOpt
+   fun:_ZN4moab17WriteHDF5Parallel20parallel_create_fileEPKcbRKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaIS9_EERKNS_11FileOptionsEPKPNS_7TagInfoEiiPd
+   fun:_ZN4moab9WriteHDF515write_file_implEPKcbRKNS_11FileOptionsEPKmiRKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaISE_EEPKPNS_7TagInfoEii
+   fun:_ZN4moab9WriteHDF510write_fileEPKcbRKNS_11FileOptionsEPKmiRKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaISE_EEPKPNS_7TagInfoEii
+   fun:_ZN4moab4Core10write_fileEPKcS2_S2_RKNS_5RangeEPKPNS_7TagInfoEi
+   fun:_ZN4moab4Core10write_fileEPKcS2_S2_PKmiPKPNS_7TagInfoEi
+   fun:_ZN28PostProcTemplateOnRefineMeshIN5MoFEM39VolumeElementForcesAndSourcesCoreSwitchILi0EEEE9writeFileENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE
+   fun:_ZN32NonlinearElasticElementInterface18postProcessElementEi
+   fun:main
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:mca_base_component_find
+   fun:mca_base_framework_components_register
+   fun:mca_base_framework_register
+   fun:mca_base_framework_open
+   fun:mca_io_base_file_select
+   fun:ompi_file_open
+   fun:PMPI_File_open
+   fun:H5FD_mpio_open
+   fun:H5FD_open
+   fun:H5F_open
+   fun:H5Fopen
+   fun:mhdf_openFileWithOpt
+   fun:_ZN4moab17WriteHDF5Parallel20parallel_create_fileEPKcbRKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaIS9_EERKNS_11FileOptionsEPKPNS_7TagInfoEiiPd
+   fun:_ZN4moab9WriteHDF515write_file_implEPKcbRKNS_11FileOptionsEPKmiRKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaISE_EEPKPNS_7TagInfoEii
+   fun:_ZN4moab9WriteHDF510write_fileEPKcbRKNS_11FileOptionsEPKmiRKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaISE_EEPKPNS_7TagInfoEii
+   fun:_ZN4moab4Core10write_fileEPKcS2_S2_RKNS_5RangeEPKPNS_7TagInfoEi
+   fun:_ZN4moab4Core10write_fileEPKcS2_S2_PKmiPKPNS_7TagInfoEi
+   fun:_ZN28PostProcTemplateOnRefineMeshIN5MoFEM39VolumeElementForcesAndSourcesCoreSwitchILi0EEEE9writeFileENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE
+   fun:_ZN32NonlinearElasticElementInterface18postProcessElementEi
+   fun:main
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:mca_base_component_find
+   fun:mca_base_framework_components_register
+   fun:mca_base_framework_register
+   fun:mca_base_framework_open
+   fun:mca_io_base_file_select
+   fun:ompi_file_open
+   fun:PMPI_File_open
+   fun:H5FD_mpio_open
+   fun:H5FD_open
+   fun:H5F_open
+   fun:H5Fopen
+   fun:mhdf_openFileWithOpt
+   fun:_ZN4moab17WriteHDF5Parallel20parallel_create_fileEPKcbRKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaIS9_EERKNS_11FileOptionsEPKPNS_7TagInfoEiiPd
+   fun:_ZN4moab9WriteHDF515write_file_implEPKcbRKNS_11FileOptionsEPKmiRKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaISE_EEPKPNS_7TagInfoEii
+   fun:_ZN4moab9WriteHDF510write_fileEPKcbRKNS_11FileOptionsEPKmiRKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaISE_EEPKPNS_7TagInfoEii
+   fun:_ZN4moab4Core10write_fileEPKcS2_S2_RKNS_5RangeEPKPNS_7TagInfoEi
+   fun:_ZN4moab4Core10write_fileEPKcS2_S2_PKmiPKPNS_7TagInfoEi
+   fun:_ZN28PostProcTemplateOnRefineMeshIN5MoFEM39VolumeElementForcesAndSourcesCoreSwitchILi0EEEE9writeFileENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE
+   fun:_ZN32NonlinearElasticElementInterface18postProcessElementEi
+   fun:main
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:mca_base_component_find
+   fun:mca_base_framework_components_register
+   fun:mca_base_framework_register
+   fun:mca_base_framework_open
+   fun:mca_io_base_file_select
+   fun:ompi_file_open
+   fun:PMPI_File_open
+   fun:H5FD_mpio_open
+   fun:H5FD_open
+   fun:H5F_open
+   fun:H5Fopen
+   fun:mhdf_openFileWithOpt
+   fun:_ZN4moab17WriteHDF5Parallel20parallel_create_fileEPKcbRKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaIS9_EERKNS_11FileOptionsEPKPNS_7TagInfoEiiPd
+   fun:_ZN4moab9WriteHDF515write_file_implEPKcbRKNS_11FileOptionsEPKmiRKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaISE_EEPKPNS_7TagInfoEii
+   fun:_ZN4moab9WriteHDF510write_fileEPKcbRKNS_11FileOptionsEPKmiRKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaISE_EEPKPNS_7TagInfoEii
+   fun:_ZN4moab4Core10write_fileEPKcS2_S2_RKNS_5RangeEPKPNS_7TagInfoEi
+   fun:_ZN4moab4Core10write_fileEPKcS2_S2_PKmiPKPNS_7TagInfoEi
+   fun:_ZN28PostProcTemplateOnRefineMeshIN5MoFEM39VolumeElementForcesAndSourcesCoreSwitchILi0EEEE9writeFileENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE
+   fun:_ZN32NonlinearElasticElementInterface18postProcessElementEi
+   fun:main
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:mca_sharedfp_sm_file_open
+   fun:mca_common_ompio_file_open
+   fun:mca_io_ompio_file_open
+   fun:mca_io_base_file_select
+   fun:ompi_file_open
+   fun:PMPI_File_open
+   fun:H5FD_mpio_open
+   fun:H5FD_open
+   fun:H5F_open
+   fun:H5Fopen
+   fun:mhdf_openFileWithOpt
+   fun:_ZN4moab17WriteHDF5Parallel20parallel_create_fileEPKcbRKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaIS9_EERKNS_11FileOptionsEPKPNS_7TagInfoEiiPd
+   fun:_ZN4moab9WriteHDF515write_file_implEPKcbRKNS_11FileOptionsEPKmiRKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaISE_EEPKPNS_7TagInfoEii
+   fun:_ZN4moab9WriteHDF510write_fileEPKcbRKNS_11FileOptionsEPKmiRKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaISE_EEPKPNS_7TagInfoEii
+   fun:_ZN4moab4Core10write_fileEPKcS2_S2_RKNS_5RangeEPKPNS_7TagInfoEi
+   fun:_ZN4moab4Core10write_fileEPKcS2_S2_PKmiPKPNS_7TagInfoEi
+   fun:_ZN28PostProcTemplateOnRefineMeshIN5MoFEM39VolumeElementForcesAndSourcesCoreSwitchILi0EEEE9writeFileENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE
+   fun:_ZN32NonlinearElasticElementInterface18postProcessElementEi
+   fun:main
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:mca_sharedfp_sm_file_open
+   fun:mca_common_ompio_file_open
+   fun:mca_io_ompio_file_open
+   fun:mca_io_base_file_select
+   fun:ompi_file_open
+   fun:PMPI_File_open
+   fun:H5FD_mpio_open
+   fun:H5FD_open
+   fun:H5F_open
+   fun:H5Fopen
+   fun:mhdf_openFileWithOpt
+   fun:_ZN4moab17WriteHDF5Parallel20parallel_create_fileEPKcbRKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaIS9_EERKNS_11FileOptionsEPKPNS_7TagInfoEiiPd
+   fun:_ZN4moab9WriteHDF515write_file_implEPKcbRKNS_11FileOptionsEPKmiRKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaISE_EEPKPNS_7TagInfoEii
+   fun:_ZN4moab9WriteHDF510write_fileEPKcbRKNS_11FileOptionsEPKmiRKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaISE_EEPKPNS_7TagInfoEii
+   fun:_ZN4moab4Core10write_fileEPKcS2_S2_RKNS_5RangeEPKPNS_7TagInfoEi
+   fun:_ZN4moab4Core10write_fileEPKcS2_S2_PKmiPKPNS_7TagInfoEi
+   fun:_ZN22MortarContactInterface23postProcessContactStateEi
+   fun:_ZN22MortarContactInterface18postProcessElementEi
+   fun:main
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:mca_sharedfp_sm_file_open
+   fun:mca_common_ompio_file_open
+   fun:mca_io_ompio_file_open
+   fun:mca_io_base_file_select
+   fun:ompi_file_open
+   fun:PMPI_File_open
+   fun:H5FD_mpio_open
+   fun:H5FD_open
+   fun:H5F_open
+   fun:H5Fopen
+   fun:mhdf_openFileWithOpt
+   fun:_ZN4moab17WriteHDF5Parallel20parallel_create_fileEPKcbRKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaIS9_EERKNS_11FileOptionsEPKPNS_7TagInfoEiiPd
+   fun:_ZN4moab9WriteHDF515write_file_implEPKcbRKNS_11FileOptionsEPKmiRKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaISE_EEPKPNS_7TagInfoEii
+   fun:_ZN4moab9WriteHDF510write_fileEPKcbRKNS_11FileOptionsEPKmiRKSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaISE_EEPKPNS_7TagInfoEii
+   fun:_ZN4moab4Core10write_fileEPKcS2_S2_RKNS_5RangeEPKPNS_7TagInfoEi
+   fun:_ZN4moab4Core10write_fileEPKcS2_S2_PKmiPKPNS_7TagInfoEi
+   fun:_ZN28PostProcTemplateOnRefineMeshIN5MoFEM37FaceElementForcesAndSourcesCoreSwitchILi0EEEE9writeFileENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE
+   fun:_ZN22MortarContactInterface18postProcessElementEi
+   fun:main
+}
 
 
