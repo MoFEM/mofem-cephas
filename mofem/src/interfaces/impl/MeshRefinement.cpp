@@ -1043,23 +1043,28 @@ MoFEMErrorCode MeshRefinement::refineTris(const Range &_tris,
     }
   }
 
-  // Create tets
-  EntityHandle start_e = 0;
-  EntityHandle *conn_moab;
   const int nb_new_tris = vertices_of_created_tris.size() / 3;
-  CHKERR m_field.get_moab().query_interface(read_util);
-  CHKERR read_util->get_element_connect(nb_new_tris, 3, MBTRI, 0, start_e,
-                                        conn_moab);
-  std::copy(vertices_of_created_tris.begin(), vertices_of_created_tris.end(),
-            conn_moab);
-  CHKERR read_util->update_adjacencies(start_e, nb_new_tris, 3, conn_moab);
-  ents_to_set_bit.insert(start_e, start_e + nb_new_tris - 1);
+  EntityHandle start_e = 0;
 
-  if (debug) {
-    auto meshset_ptr = get_temp_meshset_ptr(moab);
-    CHKERR moab.add_entities(*meshset_ptr, ents_to_set_bit);
-    CHKERR moab.write_file("out_refinded_debug.vtk", "VTK", "",
-                           meshset_ptr->get_ptr(), 1);
+  if (nb_new_tris) {
+
+    // Create tets
+    EntityHandle *conn_moab;
+    CHKERR m_field.get_moab().query_interface(read_util);
+    CHKERR read_util->get_element_connect(nb_new_tris, 3, MBTRI, 0, start_e,
+                                          conn_moab);
+    std::copy(vertices_of_created_tris.begin(), vertices_of_created_tris.end(),
+              conn_moab);
+    CHKERR read_util->update_adjacencies(start_e, nb_new_tris, 3, conn_moab);
+    ents_to_set_bit.insert(start_e, start_e + nb_new_tris - 1);
+
+    if (debug) {
+      auto meshset_ptr = get_temp_meshset_ptr(moab);
+      CHKERR moab.add_entities(*meshset_ptr, ents_to_set_bit);
+      CHKERR moab.write_file("out_refinded_debug.vtk", "VTK", "",
+                             meshset_ptr->get_ptr(), 1);
+    }
+
   }
 
   // Create adj entities
