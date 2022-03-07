@@ -286,7 +286,8 @@ struct MeshsetsManager : public UnknownInterface {
     */
   inline CubitMeshsetByType::iterator
   getBegin(const unsigned int cubit_bc_type) const {
-    return cubitMeshsets.get<CubitMeshsetType_mi_tag>().lower_bound(cubit_bc_type);
+    return cubitMeshsets.get<CubitMeshsetType_mi_tag>().lower_bound(
+        cubit_bc_type);
   }
 
   /**
@@ -305,7 +306,8 @@ struct MeshsetsManager : public UnknownInterface {
     */
   inline CubitMeshsetByType::iterator
   getEnd(const unsigned int cubit_bc_type) const {
-    return cubitMeshsets.get<CubitMeshsetType_mi_tag>().upper_bound(cubit_bc_type);
+    return cubitMeshsets.get<CubitMeshsetType_mi_tag>().upper_bound(
+        cubit_bc_type);
   }
 
   /**
