@@ -316,7 +316,7 @@ BitRefManager::setBitRefLevel(const Range &ents, const BitRefLevel bit,
 
       MOFEM_LOG_FUNCTION();
       MOFEM_LOG_C("BitRefSelf", Sev::noisy,
-                  "\tNumber of dim %d entities to add %d", d, ents.size());
+                  "\tNumber of dim %d entities to add %d", d, dim_ents.size());
 
       if (!dim_ents.empty()) {
         for (int dd = 0; dd < d; ++dd) {
