@@ -186,6 +186,24 @@ struct BcManager : public UnknownInterface {
   /**
    * @brief Get block is
    *
+   * @param block_problem_name
+   * @param is_problem_name
+   * @param block_name
+   * @param field_name
+   * @param lo
+   * @param hi
+   * @param is_expand is to extend
+   * @return SmartPetscObj<IS>
+   */
+  SmartPetscObj<IS>
+  getBlockIS(const std::string block_problem_name,
+             const std::string is_problem_name, const std::string block_name,
+             const std::string field_name, int lo, int hi,
+             SmartPetscObj<IS> is_expand = SmartPetscObj<IS>());
+
+  /**
+   * @brief Get block is
+   *
    * @param problem_name
    * @param block_name
    * @param field_name
