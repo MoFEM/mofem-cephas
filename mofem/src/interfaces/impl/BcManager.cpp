@@ -235,15 +235,15 @@ BcManager::BcMarkerPtr BcManager::getMergedBlocksMarker(
   return boundary_marker_ptr;
 }
 
-SmartPetscObj<IS> BcManager::getBlockIS(const std::string block_problem_name,
-                                        const std::string is_problem_name,
+SmartPetscObj<IS> BcManager::getBlockIS(const std::string block_prefix,
                                         const std::string block_name,
-                                        const std::string field_name, int lo,
+                                        const std::string field_name,
+                                        const std::string problem_name, int lo,
                                         int hi, SmartPetscObj<IS> is_expand) {
   Interface &m_field = cOre;
 
   const std::string bc_id =
-      block_problem_name + "_" + field_name + "_" + block_name + "(.*)";
+      block_prefix + "_" + field_name + "_" + block_name + "(.*)";
 
   Range bc_ents;
   for (auto bc : getBcMapByBlockName()) {
@@ -259,7 +259,7 @@ SmartPetscObj<IS> BcManager::getBlockIS(const std::string block_problem_name,
     MoFEMFunctionBegin;
     CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(bc_ents);
     CHKERR m_field.getInterface<ISManager>()->isCreateProblemFieldAndRank(
-        is_problem_name, ROW, field_name, lo, hi, is_bc, &bc_ents);
+        problem_name, ROW, field_name, lo, hi, is_bc, &bc_ents);
     if (is_expand) {
       IS is_tmp;
       CHKERR ISExpand(is_bc, is_expand, &is_tmp);
@@ -279,7 +279,7 @@ SmartPetscObj<IS> BcManager::getBlockIS(const std::string problem_name,
                                         const std::string block_name,
                                         const std::string field_name, int lo,
                                         int hi, SmartPetscObj<IS> is_expand) {
-  return getBlockIS(problem_name, problem_name, block_name, field_name, lo, hi,
+  return getBlockIS(problem_name, block_name, field_name, problem_name, lo, hi,
                     is_expand);
 }
 
