@@ -235,14 +235,15 @@ BcManager::BcMarkerPtr BcManager::getMergedBlocksMarker(
   return boundary_marker_ptr;
 }
 
-SmartPetscObj<IS> BcManager::getBlockIS(const std::string problem_name,
+SmartPetscObj<IS> BcManager::getBlockIS(const std::string block_prefix,
                                         const std::string block_name,
-                                        const std::string field_name, int lo,
+                                        const std::string field_name,
+                                        const std::string problem_name, int lo,
                                         int hi, SmartPetscObj<IS> is_expand) {
   Interface &m_field = cOre;
 
   const std::string bc_id =
-      problem_name + "_" + field_name + "_" + block_name + "(.*)";
+      block_prefix + "_" + field_name + "_" + block_name + "(.*)";
 
   Range bc_ents;
   for (auto bc : getBcMapByBlockName()) {
@@ -272,6 +273,14 @@ SmartPetscObj<IS> BcManager::getBlockIS(const std::string problem_name,
     CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "IS is not created");
 
   return is_bc;
+}
+
+SmartPetscObj<IS> BcManager::getBlockIS(const std::string problem_name,
+                                        const std::string block_name,
+                                        const std::string field_name, int lo,
+                                        int hi, SmartPetscObj<IS> is_expand) {
+  return getBlockIS(problem_name, block_name, field_name, problem_name, lo, hi,
+                    is_expand);
 }
 
 } // namespace MoFEM
