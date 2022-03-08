@@ -35,6 +35,7 @@ template <int DIM> struct ElementsAndOps {};
 template <> struct ElementsAndOps<2> {
   using DomainEle = PipelineManager::FaceEle;
   using DomainEleOp = DomainEle::UserDataOperator;
+  using DomianParentEle = FaceElementForcesAndSourcesCoreOnChildParentSwitch<0>;
 };
 
 template <> struct ElementsAndOps<3> {
@@ -43,6 +44,7 @@ template <> struct ElementsAndOps<3> {
 };
 
 using DomainEle = ElementsAndOps<SPACE_DIM>::DomainEle;
+using DomainParentEle = ElementsAndOps<SPACE_DIM>::DomianParentEle;
 using DomainEleOp = DomainEle::UserDataOperator;
 using EntData = DataForcesAndSourcesCore::EntData;
 
@@ -50,20 +52,9 @@ template <int FIELD_DIM> struct ApproxFieldFunction;
 
 template <> struct ApproxFieldFunction<1> {
   double operator()(const double x, const double y, const double z) {
-    return sin(x * 10.) * cos(y * 10.);
+    return x * x + y * y + x * y + pow(x, 3) + pow(y, 3) + pow(x, 4) +
+           pow(y, 4);
   }
-};
-
-auto test_bit_parent = [](FEMethod *fe_ptr) {
-  const auto &bit = fe_ptr->numeredEntFiniteElementPtr->getBitRefLevel();
-  MOFEM_LOG("SELF", Sev::noisy) << bit << " " << bit.test(0);
-  return bit.test(0);
-};
-
-auto test_bit_child = [](FEMethod *fe_ptr) {
-  const auto &bit = fe_ptr->numeredEntFiniteElementPtr->getBitRefLevel();
-  MOFEM_LOG("SELF", Sev::noisy) << bit << " " << bit.test(0);
-  return bit.test(1);
 };
 
 using OpDomainMass = FormsIntegrators<DomainEleOp>::Assembly<
@@ -85,14 +76,12 @@ private:
 
   MoFEMErrorCode readMesh();
   MoFEMErrorCode setupProblem();
-  MoFEMErrorCode setIntegrationRules();
   MoFEMErrorCode createCommonData();
-  MoFEMErrorCode boundaryCondition();
   MoFEMErrorCode assembleSystem();
   MoFEMErrorCode solveSystem();
-  MoFEMErrorCode outputResults();
-  MoFEMErrorCode checkResults();
-
+  MoFEMErrorCode
+  checkResults(boost::function<bool(FEMethod *fe_method_ptr)> test_bit);
+  MoFEMErrorCode refineResults();
   struct CommonData {
     boost::shared_ptr<VectorDouble> approxVals;
     SmartPetscObj<Vec> L2Vec;
@@ -159,13 +148,18 @@ MoFEMErrorCode AtomTest::runProblem() {
   MoFEMFunctionBegin;
   CHKERR readMesh();
   CHKERR setupProblem();
-  CHKERR setIntegrationRules();
   CHKERR createCommonData();
-  CHKERR boundaryCondition();
   CHKERR assembleSystem();
   CHKERR solveSystem();
-  CHKERR outputResults();
-  CHKERR checkResults();
+
+  auto test_bit_child = [](FEMethod *fe_ptr) {
+    const auto &bit = fe_ptr->numeredEntFiniteElementPtr->getBitRefLevel();
+    MOFEM_LOG("SELF", Sev::noisy) << bit << " " << bit.test(0);
+    return bit.test(1);
+  };
+
+  CHKERR checkResults(test_bit_child);
+  CHKERR refineResults();
   MoFEMFunctionReturn(0);
 }
 //! [Run programme]
@@ -206,12 +200,12 @@ MoFEMErrorCode AtomTest::readMesh() {
         CHKERR moab.add_entities(*meshset_ref_edges_ptr, &*eit, 1);
       }
     }
-    CHKERR refine->addVerticesInTheMiddleOfEdges(
-        *meshset_ref_edges_ptr, bit_level1, false, QUIET, 10000);
+    CHKERR refine->addVerticesInTheMiddleOfEdges(*meshset_ref_edges_ptr,
+                                                 bit_level1, false, VERBOSE);
     if (simpleInterface->getDim() == 3) {
-      CHKERR refine->refineTets(*meshset_level0_ptr, bit_level1, QUIET);
+      CHKERR refine->refineTets(*meshset_level0_ptr, bit_level1, VERBOSE);
     } else if (simpleInterface->getDim() == 2) {
-      CHKERR refine->refineTris(*meshset_level0_ptr, bit_level1, QUIET);
+      CHKERR refine->refineTris(*meshset_level0_ptr, bit_level1, VERBOSE);
     } else {
       SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
               "Dimension not handled by test");
@@ -248,22 +242,6 @@ MoFEMErrorCode AtomTest::setupProblem() {
 }
 //! [Set up problem]
 
-//! [Set integration rule]
-MoFEMErrorCode AtomTest::setIntegrationRules() {
-  MoFEMFunctionBegin;
-
-  auto rule = [](int, int, int p) -> int { return 2 * p; };
-
-  PipelineManager *pipeline_mng = mField.getInterface<PipelineManager>();
-  CHKERR pipeline_mng->setDomainLhsIntegrationRule(rule);
-  CHKERR pipeline_mng->setDomainRhsIntegrationRule(rule);
-  pipeline_mng->getDomainLhsFE()->exeTestHook = test_bit_parent;
-  pipeline_mng->getDomainRhsFE()->exeTestHook = test_bit_parent;
-
-  MoFEMFunctionReturn(0);
-}
-//! [Set integration rule]
-
 //! [Create common data]
 MoFEMErrorCode AtomTest::createCommonData() {
   MoFEMFunctionBegin;
@@ -276,10 +254,6 @@ MoFEMErrorCode AtomTest::createCommonData() {
 }
 //! [Create common data]
 
-//! [Boundary condition]
-MoFEMErrorCode AtomTest::boundaryCondition() { return 0; }
-//! [Boundary condition]
-
 boost::shared_ptr<DomainEle> domainChildLhs, domainChildRhs;
 
 //! [Push operators to pipeline]
@@ -287,13 +261,30 @@ MoFEMErrorCode AtomTest::assembleSystem() {
   MoFEMFunctionBegin;
   PipelineManager *pipeline_mng = mField.getInterface<PipelineManager>();
 
+  auto rule = [](int, int, int p) -> int { return 2 * p; };
+
+  CHKERR pipeline_mng->setDomainLhsIntegrationRule(rule);
+  CHKERR pipeline_mng->setDomainRhsIntegrationRule(rule);
+
+  auto test_bit_parent = [](FEMethod *fe_ptr) {
+    const auto &bit = fe_ptr->numeredEntFiniteElementPtr->getBitRefLevel();
+    MOFEM_LOG("SELF", Sev::noisy) << bit << " " << bit.test(0);
+    return bit.test(0);
+  };
+
+  pipeline_mng->getDomainLhsFE()->exeTestHook = test_bit_parent;
+  pipeline_mng->getDomainRhsFE()->exeTestHook = test_bit_parent;
+
   auto beta = [](const double, const double, const double) { return 1; };
 
   // Make aliased shared pointer, and create child element
   domainChildLhs = boost::make_shared<DomainEle>(mField);
+  domainChildLhs->getRuleHook = rule;
   domainChildLhs->getOpPtrVector().push_back(
       new OpDomainMass(FIELD_NAME, FIELD_NAME, beta));
+      
   domainChildRhs = boost::make_shared<DomainEle>(mField);
+  domainChildLhs->getRuleHook = rule;
   domainChildRhs->getOpPtrVector().push_back(
       new OpDomainSource(FIELD_NAME, approxFunction));
 
@@ -348,10 +339,6 @@ MoFEMErrorCode AtomTest::assembleSystem() {
   pipeline_mng->getOpDomainLhsPipeline().push_back(parent_op_lhs);
   pipeline_mng->getOpDomainRhsPipeline().push_back(parent_op_rhs);
 
-  // pipeline_mng->getOpDomainLhsPipeline().push_back(
-  //     new OpDomainMass(FIELD_NAME, FIELD_NAME, beta));
-  // pipeline_mng->getOpDomainRhsPipeline().push_back(
-  //     new OpDomainSource(FIELD_NAME, approxFunction));
   MoFEMFunctionReturn(0);
 }
 //! [Push operators to pipeline]
@@ -360,6 +347,9 @@ MoFEMErrorCode AtomTest::assembleSystem() {
 MoFEMErrorCode AtomTest::solveSystem() {
   MoFEMFunctionBegin;
   PipelineManager *pipeline_mng = mField.getInterface<PipelineManager>();
+
+  MOFEM_LOG("WORLD", Sev::inform) << "Solve problem";
+
   auto solver = pipeline_mng->createKSP();
   CHKERR KSPSetFromOptions(solver);
   CHKERR KSPSetUp(solver);
@@ -376,57 +366,161 @@ MoFEMErrorCode AtomTest::solveSystem() {
 }
 
 //! [Solve]
-MoFEMErrorCode AtomTest::outputResults() {
+MoFEMErrorCode AtomTest::refineResults() {
   MoFEMFunctionBegin;
+
+  auto &moab = mField.get_moab();
+
+  auto bit_level0 = BitRefLevel().set(0);
+  auto bit_level1 = BitRefLevel().set(1);
+  auto bit_level2 = BitRefLevel().set(2);
+
+  auto refine_mesh = [&]() {
+    MoFEMFunctionBegin;
+
+    auto refine = mField.getInterface<MeshRefinement>();
+
+    auto meshset_level1_ptr = get_temp_meshset_ptr(moab);
+    CHKERR mField.getInterface<BitRefManager>()->getEntitiesByDimAndRefLevel(
+        bit_level1, BitRefLevel().set(), simpleInterface->getDim(),
+        *meshset_level1_ptr);
+
+    // random mesh refinement
+    auto meshset_ref_edges_ptr = get_temp_meshset_ptr(moab);
+    Range edges_to_refine;
+    CHKERR mField.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+        bit_level1, BitRefLevel().set(), MBEDGE, edges_to_refine);
+
+    CHKERR refine->addVerticesInTheMiddleOfEdges(edges_to_refine, bit_level2,
+                                                 VERBOSE);
+    if (simpleInterface->getDim() == 3) {
+      CHKERR refine->refineTets(*meshset_level1_ptr, bit_level2, VERBOSE);
+    } else if (simpleInterface->getDim() == 2) {
+      CHKERR refine->refineTris(*meshset_level1_ptr, bit_level2, VERBOSE);
+    } else {
+      SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+              "Dimension not handled by test");
+    }
+
+    Range meshsets;
+    CHKERR moab.get_entities_by_type(0, MBENTITYSET, meshsets, true);
+    for (auto m : meshsets) {
+      for (auto t = MBVERTEX; t != MBENTITYSET; ++t) {
+        CHKERR mField.getInterface<BitRefManager>()
+            ->updateMeshsetByEntitiesChildren(m, bit_level2, m, t, false);
+      }
+    }
+
+    MoFEMFunctionReturn(0);
+  };
+
+  CHKERR refine_mesh();
+
+  simpleInterface->getBitRefLevel() = bit_level2;
+  simpleInterface->getBitRefLevelMask() = BitRefLevel().set();
+
+  CHKERR simpleInterface->reSetUp();
+
+  CHKERR mField.getInterface<ProblemsManager>()->removeDofsOnEntities(
+      simpleInterface->getProblemName(), FIELD_NAME, BitRefLevel().set(),
+      bit_level0 | bit_level1);
+
+  auto project_data = [&]() {
+    MoFEMFunctionBegin;
+
+    PipelineManager *pipeline_mng = mField.getInterface<PipelineManager>();
+
+    pipeline_mng->getDomainLhsFE().reset();
+    pipeline_mng->getDomainRhsFE().reset();
+    pipeline_mng->getOpDomainLhsPipeline().clear();
+    pipeline_mng->getOpDomainRhsPipeline().clear();
+
+    auto rule = [](int, int, int p) -> int { return 2 * p; };
+
+    CHKERR pipeline_mng->setDomainLhsIntegrationRule(rule);
+    CHKERR pipeline_mng->setDomainRhsIntegrationRule(rule);
+
+    auto test_bit_ref = [](FEMethod *fe_ptr) {
+      const auto &bit = fe_ptr->numeredEntFiniteElementPtr->getBitRefLevel();
+      MOFEM_LOG("SELF", Sev::noisy) << "ref : " << bit << " " << bit.test(2);
+      return bit.test(2);
+    };
+
+    pipeline_mng->getDomainLhsFE()->exeTestHook = test_bit_ref;
+    pipeline_mng->getDomainRhsFE()->exeTestHook = test_bit_ref;
+
+    auto beta = [](const double, const double, const double) { return 1; };
+    auto field_vals_ptr = boost::make_shared<VectorDouble>();
+
+    auto domainParentRhs = boost::make_shared<DomainParentEle>(mField);
+    domainParentRhs->getOpPtrVector().push_back(
+        new OpCalculateScalarFieldValues(FIELD_NAME, field_vals_ptr));
+    auto domainRhs = boost::make_shared<DomainParentEle>(mField);
+    domainRhs->getOpPtrVector().push_back(
+        new OpCalculateScalarFieldValues(FIELD_NAME, field_vals_ptr));
+
+    auto child_op_rhs = new DomainEleOp(NOSPACE, DomainEleOp::OPLAST);
+    child_op_rhs->doWorkRhsHook = [&](DataOperator *op_ptr, int side,
+                                      EntityType type,
+                                      DataForcesAndSourcesCore::EntData &data) {
+      auto domain_op = static_cast<DomainEleOp *>(op_ptr);
+      MoFEMFunctionBegin;
+
+      MOFEM_LOG("SELF", Sev::verbose) << "RHS Pipeline FE";
+
+      if (!domainParentRhs)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "FE not allocated");
+      if (!domainRhs)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "FE not allocated");
+
+      auto &bit = domain_op->getFEMethod()
+                      ->numeredEntFiniteElementPtr->getBitRefLevel();
+      if (bit == bit_level2) {
+        CHKERR domain_op->loopParent(domain_op->getFEName(),
+                                     domainParentRhs.get(), VERBOSE,
+                                     Sev::verbose);
+      } else if ((bit & bit_level1).any()) {
+        CHKERR domain_op->loopThis(domain_op->getFEName(), domainRhs.get(),
+                                   VERBOSE, Sev::verbose);
+      } else {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "No FE to run");
+      }
+
+      MOFEM_LOG("SELF", Sev::noisy)
+          << "Values at points from parent: " << *field_vals_ptr;
+
+      MoFEMFunctionReturn(0);
+    };
+
+    pipeline_mng->getOpDomainLhsPipeline().push_back(
+        new OpDomainMass(FIELD_NAME, FIELD_NAME, beta));
+    pipeline_mng->getOpDomainRhsPipeline().push_back(
+        new OpDomainSource(FIELD_NAME, approxFunction));
+
+    CHKERR solveSystem();
+    CHKERR checkResults(test_bit_ref);
+
+    MoFEMFunctionReturn(0);
+  };
+
+  CHKERR project_data();
+
   MoFEMFunctionReturn(0);
 }
 //! [Postprocess results]
 
 //! [Check results]
-MoFEMErrorCode AtomTest::checkResults() {
+MoFEMErrorCode AtomTest::checkResults(
+    boost::function<bool(FEMethod *fe_method_ptr)> test_bit) {
   MoFEMFunctionBegin;
   PipelineManager *pipeline_mng = mField.getInterface<PipelineManager>();
   pipeline_mng->getDomainLhsFE().reset();
   pipeline_mng->getDomainRhsFE().reset();
   pipeline_mng->getOpDomainRhsPipeline().clear();
 
-  auto rule = [](int, int, int p) -> int { return 2 * p; };
+  auto rule = [](int, int, int p) -> int { return 2 * p + 1; };
   CHKERR pipeline_mng->setDomainRhsIntegrationRule(rule);
-  pipeline_mng->getDomainRhsFE()->exeTestHook = test_bit_child;
-
-  // using ParentFE = FaceElementForcesAndSourcesCoreOnChildParentSwitch<0>;
-  // auto domain_child_rhs = boost::make_shared<ParentFE>(mField);
-  // domain_child_rhs->getOpPtrVector().push_back(
-  //     new OpCalculateScalarFieldValues(FIELD_NAME, commonDataPtr->approxVals));
-  // domain_child_rhs->getOpPtrVector().push_back(
-  //     new OpError<FIELD_DIM>(commonDataPtr));
-
-  // auto parent_op_rhs = new DomainEleOp(NOSPACE, DomainEleOp::OPLAST);
-  // parent_op_rhs->doWorkRhsHook = [&](DataOperator *op_ptr, int side,
-  //                                    EntityType type,
-  //                                    DataForcesAndSourcesCore::EntData &data) {
-  //   auto domain_op = static_cast<DomainEleOp *>(op_ptr);
-  //   MoFEMFunctionBegin;
-
-  //   MOFEM_LOG("SELF", Sev::verbose) << "Error pipeline FE";
-
-  //   if (!domain_child_rhs)
-  //     SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "FE not allocated");
-
-  //   auto &bit =
-  //       domain_op->getFEMethod()->numeredEntFiniteElementPtr->getBitRefLevel();
-  //   if (bit == BitRefLevel().set(1)) {
-  //     CHKERR domain_op->loopParent(domain_op->getFEName(),
-  //                                  domain_child_rhs.get(), VERBOSE,
-  //                                  Sev::verbose);
-  //   } else if ((bit & BitRefLevel().set(0)).any()) {
-  //     CHKERR domain_op->loopThis(domain_op->getFEName(), domain_child_rhs.get(),
-  //                                VERBOSE, Sev::verbose);
-  //   }
-  //   MoFEMFunctionReturn(0);
-  // };
-
-  // pipeline_mng->getOpDomainRhsPipeline().push_back(parent_op_rhs);
+  pipeline_mng->getDomainRhsFE()->exeTestHook = test_bit;
 
   pipeline_mng->getOpDomainRhsPipeline().push_back(
       new OpCalculateScalarFieldValues(FIELD_NAME,
