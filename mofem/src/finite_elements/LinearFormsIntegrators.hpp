@@ -675,6 +675,15 @@ MoFEMErrorCode OpBaseTimesScalarFieldImpl<1, S, GAUSS, OpBase>::iNtegrate(
   auto t_row_base = row_data.getFTensor0N();
   // get vector values
   auto t_vec = getFTensor0FromVec<S>(*sourceVec);
+
+#ifndef NDEBUG
+  if (sourceVec->size() != OpBase::nbIntegrationPts) {
+    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "Wrong number of integration points %d != %d",
+             OpBase::nbIntegrationPts, sourceVec->size());
+  }
+#endif
+
   // get coords
   auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
   // loop over integration points
