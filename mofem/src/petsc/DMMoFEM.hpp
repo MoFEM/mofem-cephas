@@ -961,6 +961,17 @@ auto smartCreateDMVector = [](DM dm) {
 };
 
 /**
+ * @brief Get KSP context data structure used by DM
+ * 
+ */
+auto smartGetDMKspCtx = [](DM dm) {
+  boost::shared_ptr<MoFEM::KspCtx> ksp_ctx;
+  ierr = DMMoFEMGetKspCtx(dm, ksp_ctx);
+  CHKERRABORT(getCommFromPetscObject(reinterpret_cast<PetscObject>(dm)), ierr);
+  return ksp_ctx;
+};
+
+/**
  * @brief Get SNES context data structure used by DM
  * 
  */
@@ -969,6 +980,17 @@ auto smartGetDMSnesCtx = [](DM dm) {
   ierr = DMMoFEMGetSnesCtx(dm, snes_ctx);
   CHKERRABORT(getCommFromPetscObject(reinterpret_cast<PetscObject>(dm)), ierr);
   return snes_ctx;
+};
+
+/**
+ * @brief Get TS context data structure used by DM
+ * 
+ */
+auto smartGetDMTsCtx = [](DM dm) {
+  boost::shared_ptr<MoFEM::TsCtx> ts_ctx;
+  ierr = DMMoFEMGetTsCtx(dm, ts_ctx);
+  CHKERRABORT(getCommFromPetscObject(reinterpret_cast<PetscObject>(dm)), ierr);
+  return ts_ctx;
 };
 
 /**

@@ -20,6 +20,16 @@
 
 namespace MoFEM {
 
+MoFEMErrorCode KspCtx::clearLoops() {
+  MoFEMFunctionBegin;
+  loops_to_do_Mat.clear();
+  loops_to_do_Rhs.clear();
+  preProcess_Mat.clear();
+  postProcess_Mat.clear();
+  preProcess_Rhs.clear();
+  MoFEMFunctionReturn(0);
+}
+
 PetscErrorCode KspRhs(KSP ksp, Vec f, void *ctx) {
   // PetscValidHeaderSpecific(ksp,KSP_CLASSID,1);
   MoFEMFunctionBegin;

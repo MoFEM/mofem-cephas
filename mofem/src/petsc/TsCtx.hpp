@@ -201,6 +201,13 @@ struct TsCtx {
     return postProcessRHSFunction;
   }
 
+  /**
+   * @brief Clear loops
+   *
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode clearLoops();
+
   friend PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t,
                                        Vec F, void *ctx);
   friend PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec U_t,

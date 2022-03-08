@@ -54,32 +54,6 @@ struct SnesCtx {
   BasicMethodsSequence
       postProcess_Rhs; ///< Sequence of methods run after residual is assembled
 
-  /**
-   * \brief Copy sequences from other SNES contex
-   * @param  snes_ctx SNES contex from which Sequence is copied from
-   * @return          error code
-   */
-  MoFEMErrorCode copyLoops(const SnesCtx &snes_ctx) {
-    MoFEMFunctionBeginHot;
-    loops_to_do_Mat = snes_ctx.loops_to_do_Mat;
-    loops_to_do_Rhs = snes_ctx.loops_to_do_Rhs;
-    preProcess_Mat = snes_ctx.preProcess_Mat;
-    postProcess_Mat = snes_ctx.postProcess_Mat;
-    preProcess_Rhs = snes_ctx.preProcess_Rhs;
-    postProcess_Rhs = snes_ctx.postProcess_Rhs;
-    MoFEMFunctionReturnHot(0);
-  }
-
-  MoFEMErrorCode clearLoops() {
-    MoFEMFunctionBeginHot;
-    loops_to_do_Mat.clear();
-    loops_to_do_Rhs.clear();
-    preProcess_Mat.clear();
-    postProcess_Mat.clear();
-    preProcess_Rhs.clear();
-    postProcess_Rhs.clear();
-    MoFEMFunctionReturnHot(0);
-  }
 
   SnesCtx(Interface &m_field, const std::string &problem_name)
       : mField(m_field), moab(m_field.get_moab()), problemName(problem_name),
@@ -133,6 +107,20 @@ struct SnesCtx {
    * @return reference to BasicMethod for postprocessing
    */
   BasicMethodsSequence &get_postProcess_to_do_Mat() { return postProcess_Mat; }
+
+  /**
+   * \brief Copy sequences from other SNES contex
+   * @param  snes_ctx SNES contex from which Sequence is copied from
+   * @return          error code
+   */
+  MoFEMErrorCode copyLoops(const SnesCtx &snes_ctx);
+
+  /**
+   * @brief Clear loops 
+   * 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode clearLoops();
 
   friend PetscErrorCode SnesRhs(SNES snes, Vec x, Vec f, void *ctx);
   friend PetscErrorCode SnesMat(SNES snes, Vec x, Mat A, Mat B, void *ctx);

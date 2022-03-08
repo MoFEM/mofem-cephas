@@ -14,6 +14,26 @@
 
 namespace MoFEM {
 
+MoFEMErrorCode TsCtx::clearLoops() {
+  MoFEMFunctionBeginHot;
+  loopsIJacobian.clear();
+  loopsIFunction.clear();
+  loopsMonitor.clear();
+  loopsRHSJacobian.clear();
+  loopsRHSFunction.clear();
+  preProcessIJacobian.clear();
+  postProcessIJacobian.clear();
+  preProcessIFunction.clear();
+  postProcessIFunction.clear();
+  preProcessMonitor.clear();
+  postProcessMonitor.clear();
+  preProcessRHSJacobian.clear();
+  preProcessRHSFunction.clear();
+  postProcessRHSJacobian.clear();
+  postProcessRHSFunction.clear();
+  MoFEMFunctionReturnHot(0);
+}  
+
 PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
                               void *ctx) {
   MoFEMFunctionBegin;

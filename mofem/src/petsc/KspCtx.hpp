@@ -102,6 +102,13 @@ struct KspCtx {
   friend PetscErrorCode KspRhs(KSP ksp, Vec f, void *ctx);
   friend PetscErrorCode KspMat(KSP ksp, Mat A, Mat B, void *ctx);
 
+  /**
+   * @brief Clear loops 
+   * 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode clearLoops();
+
 private:
   PetscLogEvent MOFEM_EVENT_KspRhs;
   PetscLogEvent MOFEM_EVENT_KspMat;

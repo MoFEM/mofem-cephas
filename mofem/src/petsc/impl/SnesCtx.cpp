@@ -14,6 +14,28 @@
 
 namespace MoFEM {
 
+MoFEMErrorCode SnesCtx::copyLoops(const SnesCtx &snes_ctx) {
+  MoFEMFunctionBeginHot;
+  loops_to_do_Mat = snes_ctx.loops_to_do_Mat;
+  loops_to_do_Rhs = snes_ctx.loops_to_do_Rhs;
+  preProcess_Mat = snes_ctx.preProcess_Mat;
+  postProcess_Mat = snes_ctx.postProcess_Mat;
+  preProcess_Rhs = snes_ctx.preProcess_Rhs;
+  postProcess_Rhs = snes_ctx.postProcess_Rhs;
+  MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode SnesCtx::clearLoops() {
+  MoFEMFunctionBeginHot;
+  loops_to_do_Mat.clear();
+  loops_to_do_Rhs.clear();
+  preProcess_Mat.clear();
+  postProcess_Mat.clear();
+  preProcess_Rhs.clear();
+  postProcess_Rhs.clear();
+  MoFEMFunctionReturnHot(0);
+}
+
 PetscErrorCode SnesRhs(SNES snes, Vec x, Vec f, void *ctx) {
   SnesCtx *snes_ctx = (SnesCtx *)ctx;
   // PetscValidHeaderSpecific(snes,SNES_CLASSID,1);
