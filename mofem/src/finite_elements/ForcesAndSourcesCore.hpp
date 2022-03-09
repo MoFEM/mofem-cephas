@@ -781,18 +781,6 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
 
   inline Mat getSNESB() const;
 
-  //! \deprecated Use getSNESF intead
-  DEPRECATED inline Vec getSnesF() const { return getSNESf(); }
-
-  //! \deprecated Use getSNESX intead
-  DEPRECATED inline Vec getSnesX() const { return getSNESx(); }
-
-  //! \deprecated Use getSNESA intead
-  DEPRECATED inline Mat getSnesA() const { return getSNESA(); }
-
-  //! \deprecated Use getSNESB intead
-  DEPRECATED inline Mat getSnesB() const { return getSNESB(); }
-
   /**@}*/
 
   /** \name Accessing TS */
@@ -885,7 +873,7 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
 
   /**@{*/
 
-  /** \name Deprecated (do not use) */
+  /** \name Measures (area, volume, length, etc.) */
 
   /**
    * \brief get measure of element
@@ -904,6 +892,19 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
   /**@{*/
 
   /** \name Deprecated (do not use) */
+
+  //! \deprecated Use getSNESF intead
+  DEPRECATED inline Vec getSnesF() const { return getSNESf(); }
+
+  //! \deprecated Use getSNESX intead
+  DEPRECATED inline Vec getSnesX() const { return getSNESx(); }
+
+  //! \deprecated Use getSNESA intead
+  DEPRECATED inline Mat getSnesA() const { return getSNESA(); }
+
+  //! \deprecated Use getSNESB intead
+  DEPRECATED inline Mat getSnesB() const { return getSNESB(); }
+
 
   // \deprecated Deprecated function with spelling mistake
   DEPRECATED inline MoFEMErrorCode
