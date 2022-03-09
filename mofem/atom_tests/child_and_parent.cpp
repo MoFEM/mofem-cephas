@@ -76,7 +76,6 @@ private:
 
   MoFEMErrorCode readMesh();
   MoFEMErrorCode setupProblem();
-  MoFEMErrorCode createCommonData();
   MoFEMErrorCode assembleSystem();
   MoFEMErrorCode solveSystem();
   MoFEMErrorCode
@@ -87,7 +86,6 @@ private:
     SmartPetscObj<Vec> L2Vec;
     SmartPetscObj<Vec> resVec;
   };
-  boost::shared_ptr<CommonData> commonDataPtr;
 
   template <int FIELD_DIM> struct OpError;
 };
@@ -148,7 +146,6 @@ MoFEMErrorCode AtomTest::runProblem() {
   MoFEMFunctionBegin;
   CHKERR readMesh();
   CHKERR setupProblem();
-  CHKERR createCommonData();
   CHKERR assembleSystem();
   CHKERR solveSystem();
 
@@ -241,18 +238,6 @@ MoFEMErrorCode AtomTest::setupProblem() {
   MoFEMFunctionReturn(0);
 }
 //! [Set up problem]
-
-//! [Create common data]
-MoFEMErrorCode AtomTest::createCommonData() {
-  MoFEMFunctionBegin;
-  commonDataPtr = boost::make_shared<CommonData>();
-  commonDataPtr->resVec = smartCreateDMVector(simpleInterface->getDM());
-  commonDataPtr->L2Vec = createSmartVectorMPI(
-      mField.get_comm(), (!mField.get_comm_rank()) ? 1 : 0, 1);
-  commonDataPtr->approxVals = boost::make_shared<VectorDouble>();
-  MoFEMFunctionReturn(0);
-}
-//! [Create common data]
 
 boost::shared_ptr<DomainEle> domainChildLhs, domainChildRhs;
 
@@ -467,8 +452,8 @@ MoFEMErrorCode AtomTest::refineResults() {
     pipeline_mng->getOpDomainRhsPipeline().push_back(
         new OpDomainTimesScalarField(FIELD_NAME, field_vals_ptr, beta));
 
-    struct CheckGaussCoords : public DomainEleOp {
-      CheckGaussCoords() : DomainEleOp(NOSPACE, DomainEleOp::OPLAST) {}
+    struct OpCheckGaussCoords : public DomainEleOp {
+      OpCheckGaussCoords() : DomainEleOp(NOSPACE, DomainEleOp::OPLAST) {}
 
       MoFEMErrorCode doWork(int side, EntityType type,
                             DataForcesAndSourcesCore::EntData &data) {
@@ -509,7 +494,7 @@ MoFEMErrorCode AtomTest::refineResults() {
       }
     };
 
-    pipeline_mng->getOpDomainRhsPipeline().push_back(new CheckGaussCoords());
+    pipeline_mng->getOpDomainRhsPipeline().push_back(new OpCheckGaussCoords());
 
     CHKERR solveSystem();
     CHKERR checkResults(test_bit_ref);
@@ -536,28 +521,35 @@ MoFEMErrorCode AtomTest::checkResults(
   CHKERR pipeline_mng->setDomainRhsIntegrationRule(rule);
   pipeline_mng->getDomainRhsFE()->exeTestHook = test_bit;
 
+  auto common_data_ptr = boost::make_shared<CommonData>();
+  common_data_ptr->resVec = smartCreateDMVector(simpleInterface->getDM());
+  common_data_ptr->L2Vec = createSmartVectorMPI(
+      mField.get_comm(), (!mField.get_comm_rank()) ? 1 : 0, 1);
+  common_data_ptr->approxVals = boost::make_shared<VectorDouble>();
+
   pipeline_mng->getOpDomainRhsPipeline().push_back(
       new OpCalculateScalarFieldValues(FIELD_NAME,
-      commonDataPtr->approxVals));
+      common_data_ptr->approxVals));
   pipeline_mng->getOpDomainRhsPipeline().push_back(
-      new OpError<FIELD_DIM>(commonDataPtr));
+      new OpError<FIELD_DIM>(common_data_ptr));
 
-  CHKERR VecZeroEntries(commonDataPtr->L2Vec);
-  CHKERR VecZeroEntries(commonDataPtr->resVec);
+  CHKERR VecZeroEntries(common_data_ptr->L2Vec);
+  CHKERR VecZeroEntries(common_data_ptr->resVec);
 
   CHKERR pipeline_mng->loopFiniteElements();
 
-  CHKERR VecAssemblyBegin(commonDataPtr->L2Vec);
-  CHKERR VecAssemblyEnd(commonDataPtr->L2Vec);
-  CHKERR VecAssemblyBegin(commonDataPtr->resVec);
-  CHKERR VecAssemblyEnd(commonDataPtr->resVec);
+  CHKERR VecAssemblyBegin(common_data_ptr->L2Vec);
+  CHKERR VecAssemblyEnd(common_data_ptr->L2Vec);
+  CHKERR VecAssemblyBegin(common_data_ptr->resVec);
+  CHKERR VecAssemblyEnd(common_data_ptr->resVec);
   double nrm2;
-  CHKERR VecNorm(commonDataPtr->resVec, NORM_2, &nrm2);
+  CHKERR VecNorm(common_data_ptr->resVec, NORM_2, &nrm2);
   const double *array;
-  CHKERR VecGetArrayRead(commonDataPtr->L2Vec, &array);
+  CHKERR VecGetArrayRead(common_data_ptr->L2Vec, &array);
   MOFEM_LOG_C("WORLD", Sev::inform, "Error %6.4e Vec norm %6.4e\n",
               std::sqrt(array[0]), nrm2);
-  CHKERR VecRestoreArrayRead(commonDataPtr->L2Vec, &array);
+  CHKERR VecRestoreArrayRead(common_data_ptr->L2Vec, &array);
+  
   constexpr double eps = 1e-8;
   if (nrm2 > eps)
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
