@@ -40,6 +40,7 @@ FaceElementForcesAndSourcesCoreOnChildParentBase::setGaussPts(int order) {
   const auto nb_integration_points = ref_gauss_pts.size2();
 
   auto set_integration_pts_for_tri = [&]() {
+    MoFEMFunctionBeginHot;
     auto get_coords = [&](const auto ent) {
       int num_nodes;
       const EntityHandle *conn;
@@ -110,13 +111,14 @@ FaceElementForcesAndSourcesCoreOnChildParentBase::setGaussPts(int order) {
       ++t_gauss_pts;
       ++t_local_coords;
     }
+    MoFEMFunctionReturnHot(0);
   };
 
   const auto type = numeredEntFiniteElementPtr->getEntType();
 
   switch (type) {
   case MBTRI:
-    set_integration_pts_for_tri();
+    CHKERR set_integration_pts_for_tri();
     break;
   default:
     SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
