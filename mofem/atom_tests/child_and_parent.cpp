@@ -455,47 +455,61 @@ MoFEMErrorCode AtomTest::refineResults() {
     auto domainParentRhs = boost::make_shared<DomainParentEle>(mField);
     domainParentRhs->getOpPtrVector().push_back(
         new OpCalculateScalarFieldValues(FIELD_NAME, field_vals_ptr));
-    auto domainRhs = boost::make_shared<DomainParentEle>(mField);
-    domainRhs->getOpPtrVector().push_back(
-        new OpCalculateScalarFieldValues(FIELD_NAME, field_vals_ptr));
-
-    auto child_op_rhs = new DomainEleOp(NOSPACE, DomainEleOp::OPLAST);
-    child_op_rhs->doWorkRhsHook = [&](DataOperator *op_ptr, int side,
-                                      EntityType type,
-                                      DataForcesAndSourcesCore::EntData &data) {
-      auto domain_op = static_cast<DomainEleOp *>(op_ptr);
-      MoFEMFunctionBegin;
-
-      MOFEM_LOG("SELF", Sev::verbose) << "RHS Pipeline FE";
-
-      if (!domainParentRhs)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "FE not allocated");
-      if (!domainRhs)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "FE not allocated");
-
-      auto &bit = domain_op->getFEMethod()
-                      ->numeredEntFiniteElementPtr->getBitRefLevel();
-      if (bit == bit_level2) {
-        CHKERR domain_op->loopParent(domain_op->getFEName(),
-                                     domainParentRhs.get(), VERBOSE,
-                                     Sev::verbose);
-      } else if ((bit & bit_level1).any()) {
-        CHKERR domain_op->loopThis(domain_op->getFEName(), domainRhs.get(),
-                                   VERBOSE, Sev::verbose);
-      } else {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "No FE to run");
-      }
-
-      MOFEM_LOG("SELF", Sev::noisy)
-          << "Values at points from parent: " << *field_vals_ptr;
-
-      MoFEMFunctionReturn(0);
-    };
 
     pipeline_mng->getOpDomainLhsPipeline().push_back(
         new OpDomainMass(FIELD_NAME, FIELD_NAME, beta));
     pipeline_mng->getOpDomainRhsPipeline().push_back(
-        new OpDomainSource(FIELD_NAME, approxFunction));
+        new OpRunParent(domainParentRhs, bit_level2, bit_level2,
+                        domainParentRhs, bit_level2, BitRefLevel().set()));
+
+    using OpDomainTimesScalarField = FormsIntegrators<DomainEleOp>::Assembly<
+        PETSC>::LinearForm<GAUSS>::OpBaseTimesScalarField<1>;
+    pipeline_mng->getOpDomainRhsPipeline().push_back(
+        new OpDomainTimesScalarField(FIELD_NAME, field_vals_ptr, beta));
+
+    struct CheckGaussCoords : public DomainEleOp {
+      CheckGaussCoords() : DomainEleOp(NOSPACE, DomainEleOp::OPLAST) {}
+
+      MoFEMErrorCode doWork(int side, EntityType type,
+                            DataForcesAndSourcesCore::EntData &data) {
+        MoFEMFunctionBegin;
+
+        MatrixDouble parent_coords;
+
+        DomainParentEle parent_fe(getPtrFE()->mField);
+        auto domain_op = new DomainEleOp(NOSPACE, DomainEleOp::OPLAST);
+        domain_op->doWorkRhsHook =
+            [&](DataOperator *op_ptr, int side, EntityType type,
+                DataForcesAndSourcesCore::EntData &data) {
+              MoFEMFunctionBegin;
+              parent_coords =
+                  static_cast<DomainEleOp *>(op_ptr)->getCoordsAtGaussPts();
+              MoFEMFunctionReturn(0);
+            };
+        parent_fe.getOpPtrVector().push_back(domain_op);
+
+        CHKERR loopParent(getFEName(), &parent_fe);
+
+        MatrixDouble child_coords = getCoordsAtGaussPts();
+        child_coords -= parent_coords;
+
+        MOFEM_LOG("SELF", Sev::verbose) << "Corrds diffs" << child_coords;
+
+        double n = 0;
+        for (auto d : child_coords.data())
+          n += d * d;
+
+        if (sqrt(n) > 1e-12)
+          SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                   "Parent and child global coords at integration points are "
+                   "diffrent norm = %3.2e",
+                   sqrt(n));
+
+        MoFEMFunctionReturn(0);
+      }
+    };
+
+    pipeline_mng->getOpDomainRhsPipeline().push_back(new CheckGaussCoords());
 
     CHKERR solveSystem();
     CHKERR checkResults(test_bit_ref);
