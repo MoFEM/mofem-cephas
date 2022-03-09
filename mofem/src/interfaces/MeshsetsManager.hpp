@@ -21,8 +21,6 @@
 
 namespace MoFEM {
 
-using Sev = MoFEM::LogManager::SeverityLevel;
-
 typedef CubitMeshSet_multiIndex::index<CubitMeshsetType_mi_tag>::type
     CubitMeshsetByType;
 
