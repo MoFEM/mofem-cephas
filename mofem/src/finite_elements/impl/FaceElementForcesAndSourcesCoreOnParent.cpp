@@ -81,7 +81,7 @@ FaceElementForcesAndSourcesCoreOnChildParentBase::setGaussPts(int order) {
 
         t_glob_coords(i) = 0;
         for (int nn = 0; nn != ref_node_coords.size() / 3; ++nn) {
-          t_glob_coords(i) += t_shape * t_ref_node_coords(0);
+          t_glob_coords(i) += t_shape * t_ref_node_coords(i);
           ++t_ref_node_coords;
           ++t_shape;
         }
