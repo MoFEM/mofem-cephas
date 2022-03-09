@@ -38,22 +38,23 @@ static PetscErrorCode mofem_error_handler(MPI_Comm comm, int line,
       PetscGetVersion(petsc_version, 255);
       MOFEM_LOG_CHANNEL("SELF");
 
-      MOFEM_LOG_C("SELF", Sev::error, "%s",
+      MOFEM_LOG_C("SELF", MoFEM::Sev::error, "%s",
                   "--------------------- MoFEM Error Message "
                   "---------------------------------------------------");
 
-      MOFEM_LOG_C("SELF", Sev::error, "MoFEM version %d.%d.%d (%s %s)",
+      MOFEM_LOG_C("SELF", MoFEM::Sev::error, "MoFEM version %d.%d.%d (%s %s)",
                   MoFEM_VERSION_MAJOR, MoFEM_VERSION_MINOR, MoFEM_VERSION_BUILD,
                   MOAB_VERSION_STRING, petsc_version);
 
-      MOFEM_LOG_C("SELF", Sev::error, "MoFEM git commit id %s", GIT_SHA1_NAME);
+      MOFEM_LOG_C("SELF", MoFEM::Sev::error, "MoFEM git commit id %s",
+                  GIT_SHA1_NAME);
 
-      MOFEM_LOG_C("SELF", Sev::error, "%s",
+      MOFEM_LOG_C("SELF", MoFEM::Sev::error, "%s",
                   "See http://mofem.eng.gla.ac.uk/mofem/html/ "
                   "guidelines_bug_reporting.html for bug reporting.");
 
       MOFEM_LOG_C(
-          "SELF", Sev::error, "%s",
+          "SELF", MoFEM::Sev::error, "%s",
           "Write to https://groups.google.com/forum/#!forum/mofem-group to "
           "seek help.");
     }
@@ -62,10 +63,10 @@ static PetscErrorCode mofem_error_handler(MPI_Comm comm, int line,
 
       if (p == PETSC_ERROR_INITIAL) {
         if (mess)
-          MOFEM_LOG_C("SELF", Sev::error, "%s", mess);
+          MOFEM_LOG_C("SELF", MoFEM::Sev::error, "%s", mess);
       }
-      MOFEM_LOG_C("SELF", Sev::error, "#%d %s() line %d in %s", cnt++, fun,
-                  line, file);
+      MOFEM_LOG_C("SELF", MoFEM::Sev::error, "#%d %s() line %d in %s", cnt++,
+                  fun, line, file);
 
     } else {
       PetscTraceBackErrorHandler(PETSC_COMM_SELF, line, fun, file, n, p, mess,
@@ -86,7 +87,7 @@ static PetscErrorCode mofem_error_handler(MPI_Comm comm, int line,
       }
 
       // error_printf_highlight();
-      MOFEM_LOG_C("SELF", Sev::error, "%s",
+      MOFEM_LOG_C("SELF", MoFEM::Sev::error, "%s",
                   "-- MoFEM End of Error Message -- send entire error "
                   "message to mofem-group@googlegroups.com --");
       // error_printf_normal();

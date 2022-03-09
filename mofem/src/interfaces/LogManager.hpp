@@ -243,6 +243,8 @@ private:
 
 };
 
+using Sev = LogManager::SeverityLevel;
+
 // The operator puts a human-friendly representation of the severity level to
 // the stream
 std::ostream &operator<<(std::ostream &strm,

@@ -87,8 +87,6 @@ using FTensor::operator>>;
 #include <AuxPETSc.hpp>
 
 #include <LogManager.hpp>
-using Sev = MoFEM::LogManager::SeverityLevel;
-
 #include <BitRefManager.hpp>
 #include <Tools.hpp>
 #include <CommInterface.hpp>
@@ -136,6 +134,7 @@ using Sev = MoFEM::LogManager::SeverityLevel;
 #include <Projection10NodeCoordsOnField.hpp>
 #include <UserDataOperators.hpp>
 #include <HODataOperators.hpp> // Manage HO order geometry
+#include <MeshProjectionDataOperators.hpp> // Operators for projections between bit ref levels
 #include <FormsIntegrators.hpp>
 #include <LinearFormsIntegrators.hpp>
 #include <BiLinearFormsIntegrators.hpp>
