@@ -110,13 +110,13 @@ struct FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator
 
   /**
    * \brief get face sense in respect to volume
-   * @return error code
+   * @return edge sense
    */
   inline int getEdgeSense() const;
 
   /**
    * \brief get face side number in respect to volume
-   * @return error code
+   * @return edge side number
    */
   inline int getEdgeSideNumber() const;
 
