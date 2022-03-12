@@ -525,7 +525,7 @@ private:
 
   /**
    * @brief Element to integrate parent or child
-   * 
+   *
    */
   ForcesAndSourcesCore *refinePtrFE;
 
@@ -609,7 +609,7 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
    */
   inline int getFEDim() const;
 
-   /**
+  /**
    * @brief Get dimension of finite element
    *
    * @return int
@@ -905,7 +905,6 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
   //! \deprecated Use getSNESB intead
   DEPRECATED inline Mat getSnesB() const { return getSNESB(); }
 
-
   // \deprecated Deprecated function with spelling mistake
   DEPRECATED inline MoFEMErrorCode
   getPorblemRowIndices(const std::string filed_name, const EntityType type,
@@ -995,7 +994,6 @@ protected:
   inline ForcesAndSourcesCore *getRefinePtrFE() const;
 
 private:
-
   friend class ForcesAndSourcesCore;
   friend class EdgeElementForcesAndSourcesCoreBase;
   friend class FaceElementForcesAndSourcesCoreBase;
@@ -1095,70 +1093,142 @@ ForcesAndSourcesCore::UserDataOperator::getTSCtx() const {
 }
 
 Vec ForcesAndSourcesCore::UserDataOperator::getKSPf() const {
+#ifndef NDEBUG
+  if (getFEMethod()->ksp_f == PETSC_NULL)
+    THROW_MESSAGE("KSP not set F vector");
+#endif
   return getFEMethod()->ksp_f;
 }
 
 Mat ForcesAndSourcesCore::UserDataOperator::getKSPA() const {
+#ifndef NDEBUG
+  if (getFEMethod()->ksp_A == PETSC_NULL)
+    THROW_MESSAGE("KSP not set A vector");
+#endif
   return getFEMethod()->ksp_A;
 }
 
 Mat ForcesAndSourcesCore::UserDataOperator::getKSPB() const {
+#ifndef NDEBUG
+  if (getFEMethod()->ksp_B == PETSC_NULL)
+    THROW_MESSAGE("KSP not set B vector");
+#endif
   return getFEMethod()->ksp_B;
 }
 
 Vec ForcesAndSourcesCore::UserDataOperator::getSNESf() const {
+#ifndef NDEBUG
+  if (getFEMethod()->snes_f == PETSC_NULL)
+    THROW_MESSAGE("SNES not set F vector");
+#endif
   return getFEMethod()->snes_f;
 }
 
 Vec ForcesAndSourcesCore::UserDataOperator::getSNESx() const {
+#ifndef NDEBUG
+  if (getFEMethod()->snes_x == PETSC_NULL)
+    THROW_MESSAGE("SNESnot set X vector");
+#endif
   return getFEMethod()->snes_x;
 }
 
 Mat ForcesAndSourcesCore::UserDataOperator::getSNESA() const {
+#ifndef NDEBUG
+  if (getFEMethod()->snes_A == PETSC_NULL)
+    THROW_MESSAGE("SNES not set A vector");
+#endif
   return getFEMethod()->snes_A;
 }
 
 Mat ForcesAndSourcesCore::UserDataOperator::getSNESB() const {
+#ifndef NDEBUG
+  if (getFEMethod()->snes_B == PETSC_NULL)
+    THROW_MESSAGE("SNES not set A matrix");
+#endif
   return getFEMethod()->snes_B;
 }
 
 Vec ForcesAndSourcesCore::UserDataOperator::getTSu() const {
+#ifndef NDEBUG
+  if (getFEMethod()->ts_u == PETSC_NULL)
+    THROW_MESSAGE("TS not set U vector");
+#endif
   return getFEMethod()->ts_u;
 }
 
 Vec ForcesAndSourcesCore::UserDataOperator::getTSu_t() const {
+#ifndef NDEBUG
+  if (getFEMethod()->ts_u_t == PETSC_NULL)
+    THROW_MESSAGE("TS not set U_t vector");
+#endif
   return getFEMethod()->ts_u_t;
 }
 
 Vec ForcesAndSourcesCore::UserDataOperator::getTSu_tt() const {
+#ifndef NDEBUG
+  if (getFEMethod()->ts_u_tt == PETSC_NULL)
+    THROW_MESSAGE("TS not set U_tt vector");
+#endif
   return getFEMethod()->ts_u_tt;
 }
 
 Vec ForcesAndSourcesCore::UserDataOperator::getTSf() const {
+#ifndef NDEBUG
+  if (getFEMethod()->ts_F == PETSC_NULL)
+    THROW_MESSAGE("TS not set F vector");
+#endif
   return getFEMethod()->ts_F;
 }
 
 Mat ForcesAndSourcesCore::UserDataOperator::getTSA() const {
+#ifndef NDEBUG
+  if (getFEMethod()->ts_A == PETSC_NULL)
+    THROW_MESSAGE("TS not set A matrix");
+#endif
   return getFEMethod()->ts_A;
 }
 
 Mat ForcesAndSourcesCore::UserDataOperator::getTSB() const {
+#ifndef NDEBUG
+  if (getFEMethod()->ts_B == PETSC_NULL)
+    THROW_MESSAGE("TS not set B matrix");
+#endif
   return getFEMethod()->ts_B;
 }
 
 int ForcesAndSourcesCore::UserDataOperator::getTSstep() const {
+#ifndef NDEBUG
+  if ((getFEMethod()->data_ctx & PetscData::PetscData::CtxSetTime).none())
+    THROW_MESSAGE("TS not set time");
+#endif
   return getFEMethod()->ts_step;
 }
 
 double ForcesAndSourcesCore::UserDataOperator::getTStime() const {
+#ifndef NDEBUG
+  if ((getFEMethod()->data_ctx & PetscData::PetscData::CtxSetTime).none())
+    THROW_MESSAGE("TS not set time");
+#endif
   return getFEMethod()->ts_t;
 }
 
 double ForcesAndSourcesCore::UserDataOperator::getTSa() const {
+#ifndef NDEBUG
+  if ((getFEMethod()->data_ctx & (PetscData::CtxSetA | PetscData::CtxSetB))
+          .none() ||
+      (getFEMethod()->data_ctx & (PetscData::CtxSetX_T)).none())
+    THROW_MESSAGE("TS not set B matrix");
+#endif
   return getFEMethod()->ts_a;
 }
 
 double ForcesAndSourcesCore::UserDataOperator::getTSaa() const {
+#ifndef NDEBUG
+  if ((getFEMethod()->data_ctx & (PetscData::CtxSetA | PetscData::CtxSetB))
+          .none() ||
+      (getFEMethod()->data_ctx & (PetscData::CtxSetX_TT)).none())
+    THROW_MESSAGE("TS not set B matrix");
+#endif
   return getFEMethod()->ts_aa;
 }
 
