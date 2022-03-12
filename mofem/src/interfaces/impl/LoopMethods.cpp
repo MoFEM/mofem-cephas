@@ -38,8 +38,8 @@ PetscData::query_interface(boost::typeindex::type_index type_index,
 }
 
 PetscData::PetscData()
-    : f(PETSC_NULL), A(PETSC_NULL), B(PETSC_NULL), x(PETSC_NULL),
-      x_t(PETSC_NULL), x_tt(PETSC_NULL) {}
+    : data_ctx(PetscData::CtxSetNone), f(PETSC_NULL), A(PETSC_NULL),
+      B(PETSC_NULL), x(PETSC_NULL), x_t(PETSC_NULL), x_tt(PETSC_NULL) {}
 
 MoFEMErrorCode PetscData::copyPetscData(const PetscData &petsc_data) {
   this->data_ctx = petsc_data.data_ctx;
