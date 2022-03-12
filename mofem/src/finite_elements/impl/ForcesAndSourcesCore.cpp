@@ -1063,64 +1063,63 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
 
   const auto ele_type = numeredEntFiniteElementPtr->getEntType();
 
-  auto get_nodal_base_data =
-      [&](DataForcesAndSourcesCore &data, auto field_ptr) {
-        MoFEMFunctionBegin;
-        auto &space = data.dataOnEntities[MBVERTEX][0].getSpace();
-        auto &base = data.dataOnEntities[MBVERTEX][0].getBase();
-        auto &bb_node_order = data.dataOnEntities[MBVERTEX][0].getBBNodeOrder();
+  auto get_nodal_base_data = [&](DataForcesAndSourcesCore &data,
+                                 auto field_ptr) {
+    MoFEMFunctionBegin;
+    auto &space = data.dataOnEntities[MBVERTEX][0].getSpace();
+    auto &base = data.dataOnEntities[MBVERTEX][0].getBase();
+    auto &bb_node_order = data.dataOnEntities[MBVERTEX][0].getBBNodeOrder();
 
-        auto &field_ents = getDataFieldEnts();
-        auto bit_number = field_ptr->getBitNumber();
-        const auto lo_uid = FieldEntity::getLocalUniqueIdCalculate(
-            bit_number, get_id_for_min_type<MBVERTEX>());
-        auto lo = std::lower_bound(field_ents.begin(), field_ents.end(), lo_uid,
-                                   cmp_uid_lo);
-        if (lo != field_ents.end()) {
-          const auto hi_uid = FieldEntity::getLocalUniqueIdCalculate(
-              bit_number, get_id_for_max_type<MBVERTEX>());
-          auto hi = std::upper_bound(lo, field_ents.end(), hi_uid, cmp_uid_hi);
-          if (lo != hi) {
+    auto &field_ents = getDataFieldEnts();
+    auto bit_number = field_ptr->getBitNumber();
+    const auto lo_uid = FieldEntity::getLocalUniqueIdCalculate(
+        bit_number, get_id_for_min_type<MBVERTEX>());
+    auto lo = std::lower_bound(field_ents.begin(), field_ents.end(), lo_uid,
+                               cmp_uid_lo);
+    if (lo != field_ents.end()) {
+      const auto hi_uid = FieldEntity::getLocalUniqueIdCalculate(
+          bit_number, get_id_for_max_type<MBVERTEX>());
+      auto hi = std::upper_bound(lo, field_ents.end(), hi_uid, cmp_uid_hi);
+      if (lo != hi) {
 
-            for (auto it = lo; it != hi; ++it)
-              if (auto first_e = it->lock()) {
-                space = first_e->getSpace();
-                base = first_e->getApproxBase();
-                const int num_nodes = getNumberOfNodes();
-                bb_node_order.resize(num_nodes, false);
-                bb_node_order.clear();
-                const int nb_dof_idx = first_e->getNbOfCoeffs();
+        for (auto it = lo; it != hi; ++it)
+          if (auto first_e = it->lock()) {
+            space = first_e->getSpace();
+            base = first_e->getApproxBase();
+            const int num_nodes = getNumberOfNodes();
+            bb_node_order.resize(num_nodes, false);
+            bb_node_order.clear();
+            const int nb_dof_idx = first_e->getNbOfCoeffs();
 
-                std::vector<boost::weak_ptr<FieldEntity>> brother_ents_vec;
+            std::vector<boost::weak_ptr<FieldEntity>> brother_ents_vec;
 
-                for (; it != hi; ++it) {
-                  if (auto e = it->lock()) {
-                    const auto &sn = e->getSideNumberPtr();
-                    const int side_number = sn->side_number;
-                    const int brother_side_number = sn->brother_side_number;
-                    if (brother_side_number != -1)
-                      brother_ents_vec.emplace_back(e);
-                    bb_node_order[side_number] = e->getMaxOrder();
-                  }
-                }
-
-                for (auto &it : brother_ents_vec) {
-                  if (const auto e = it.lock()) {
-                    const auto &sn = e->getSideNumberPtr();
-                    const int side_number = sn->side_number;
-                    const int brother_side_number = sn->brother_side_number;
-                    bb_node_order[brother_side_number] =
-                        bb_node_order[side_number];
-                  }
-                }
-
-                break;
+            for (; it != hi; ++it) {
+              if (auto e = it->lock()) {
+                const auto &sn = e->getSideNumberPtr();
+                const int side_number = sn->side_number;
+                const int brother_side_number = sn->brother_side_number;
+                if (brother_side_number != -1)
+                  brother_ents_vec.emplace_back(e);
+                bb_node_order[side_number] = e->getMaxOrder();
               }
-          }
-        }
+            }
 
-        MoFEMFunctionReturn(0);
-      };
+            for (auto &it : brother_ents_vec) {
+              if (const auto e = it.lock()) {
+                const auto &sn = e->getSideNumberPtr();
+                const int side_number = sn->side_number;
+                const int brother_side_number = sn->brother_side_number;
+                bb_node_order[brother_side_number] = bb_node_order[side_number];
+              }
+            }
+
+            break;
+          }
+      }
+    }
+
+    MoFEMFunctionReturn(0);
+  };
 
   auto get_entity_base_data = [&](DataForcesAndSourcesCore &data,
                                   auto field_ptr, const EntityType type_lo,
@@ -1206,6 +1205,34 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
     }
   }
 
+  auto check_space = [&](const auto space) {
+    switch (space) {
+    case H1:
+      for (auto t = MBEDGE; t <= ele_type; ++t) {
+        if (dataOnElement[H1]->spacesOnEntities[t].test(H1))
+          return true;
+      }
+      return false;
+    case HCURL:
+      for (auto t = MBEDGE; t <= ele_type; ++t) {
+        if (dataOnElement[HCURL]->spacesOnEntities[t].test(HCURL))
+          return true;
+      }
+      return false;
+    case HDIV:
+      for (auto t = MBTRI; t <= ele_type; ++t) {
+        if (dataOnElement[HDIV]->spacesOnEntities[t].test(HDIV))
+          return true;
+      }
+      return false;
+    case L2:
+      return dataOnElement[L2]->spacesOnEntities[ele_type].test(L2);
+      break;
+    default:
+      THROW_MESSAGE("Not implemented");
+    }
+  };
+
   std::set<string> fields_list;
   for (auto &e : getDataFieldEnts()) {
     if (auto ent_data_ptr = e.lock()) {
@@ -1217,7 +1244,7 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
           CHKERR get_nodal_base_data(*dataOnElement[space], field_ptr);
           CHKERR get_entity_base_data(*dataOnElement[space], field_ptr, MBEDGE,
                                       ele_type);
-          if (dataH1.spacesOnEntities[ele_type].test(space)) {
+          if (check_space(space)) {
             CHKERR getElementPolynomialBase()->getValue(
                 gaussPts, boost::make_shared<EntPolynomialBaseCtx>(
                               *dataOnElement[space], field_name,
@@ -1613,7 +1640,7 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopParent(
     const string &fe_name, ForcesAndSourcesCore *parent_fe, const int verb,
     const LogManager::SeverityLevel sev) {
   MoFEMFunctionBegin;
-  
+
   const auto *problem_ptr = getFEMethod()->problemPtr;
   auto &numered_fe = problem_ptr->numeredFiniteElementsPtr
                          ->get<Composite_Name_And_Ent_mi_tag>();
@@ -1622,7 +1649,7 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopParent(
   auto miit = numered_fe.find(boost::make_tuple(fe_name, parent_ent));
   if (miit != numered_fe.end()) {
 
-    if(verb >= VERBOSE)
+    if (verb >= VERBOSE)
       MOFEM_LOG("SELF", sev) << "Parent finite element: " << **miit;
 
     parent_fe->feName = fe_name;
@@ -1653,7 +1680,7 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopChildren(
     const string &fe_name, ForcesAndSourcesCore *child_fe, const int verb,
     const LogManager::SeverityLevel sev) {
   MoFEMFunctionBegin;
-  
+
   const auto *problem_ptr = getFEMethod()->problemPtr;
   auto &ref_ents = *getPtrFE()->mField.get_ref_ents();
   auto &numered_fe = problem_ptr->numeredFiniteElementsPtr
