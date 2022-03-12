@@ -1061,69 +1061,72 @@ MoFEMErrorCode
 ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
   MoFEMFunctionBegin;
 
-  auto get_nodal_base_data = [&](DataForcesAndSourcesCore &data,
-                                 auto field_ptr) {
-    MoFEMFunctionBegin;
-    auto &space = data.dataOnEntities[MBVERTEX][0].getSpace();
-    auto &base = data.dataOnEntities[MBVERTEX][0].getBase();
-    auto &bb_node_order = data.dataOnEntities[MBVERTEX][0].getBBNodeOrder();
+  const auto ele_type = numeredEntFiniteElementPtr->getEntType();
 
-    auto &field_ents = getDataFieldEnts();
-    auto bit_number = field_ptr->getBitNumber();
-    const auto lo_uid = FieldEntity::getLocalUniqueIdCalculate(
-        bit_number, get_id_for_min_type<MBVERTEX>());
-    auto lo = std::lower_bound(field_ents.begin(), field_ents.end(), lo_uid,
-                               cmp_uid_lo);
-    if (lo != field_ents.end()) {
-      const auto hi_uid = FieldEntity::getLocalUniqueIdCalculate(
-          bit_number, get_id_for_max_type<MBVERTEX>());
-      auto hi = std::upper_bound(lo, field_ents.end(), hi_uid, cmp_uid_hi);
-      if (lo != hi) {
+  auto get_nodal_base_data =
+      [&](DataForcesAndSourcesCore &data, auto field_ptr) {
+        MoFEMFunctionBegin;
+        auto &space = data.dataOnEntities[MBVERTEX][0].getSpace();
+        auto &base = data.dataOnEntities[MBVERTEX][0].getBase();
+        auto &bb_node_order = data.dataOnEntities[MBVERTEX][0].getBBNodeOrder();
 
-        for (auto it = lo; it != hi; ++it)
-          if (auto first_e = it->lock()) {
-            space = first_e->getSpace();
-            base = first_e->getApproxBase();
-            const int num_nodes = getNumberOfNodes();
-            bb_node_order.resize(num_nodes, false);
-            bb_node_order.clear();
-            const int nb_dof_idx = first_e->getNbOfCoeffs();
+        auto &field_ents = getDataFieldEnts();
+        auto bit_number = field_ptr->getBitNumber();
+        const auto lo_uid = FieldEntity::getLocalUniqueIdCalculate(
+            bit_number, get_id_for_min_type<MBVERTEX>());
+        auto lo = std::lower_bound(field_ents.begin(), field_ents.end(), lo_uid,
+                                   cmp_uid_lo);
+        if (lo != field_ents.end()) {
+          const auto hi_uid = FieldEntity::getLocalUniqueIdCalculate(
+              bit_number, get_id_for_max_type<MBVERTEX>());
+          auto hi = std::upper_bound(lo, field_ents.end(), hi_uid, cmp_uid_hi);
+          if (lo != hi) {
 
-            std::vector<boost::weak_ptr<FieldEntity>> brother_ents_vec;
+            for (auto it = lo; it != hi; ++it)
+              if (auto first_e = it->lock()) {
+                space = first_e->getSpace();
+                base = first_e->getApproxBase();
+                const int num_nodes = getNumberOfNodes();
+                bb_node_order.resize(num_nodes, false);
+                bb_node_order.clear();
+                const int nb_dof_idx = first_e->getNbOfCoeffs();
 
-            for (; it != hi; ++it) {
-              if (auto e = it->lock()) {
-                const auto &sn = e->getSideNumberPtr();
-                const int side_number = sn->side_number;
-                const int brother_side_number = sn->brother_side_number;
-                if (brother_side_number != -1)
-                  brother_ents_vec.emplace_back(e);
-                bb_node_order[side_number] = e->getMaxOrder();
+                std::vector<boost::weak_ptr<FieldEntity>> brother_ents_vec;
+
+                for (; it != hi; ++it) {
+                  if (auto e = it->lock()) {
+                    const auto &sn = e->getSideNumberPtr();
+                    const int side_number = sn->side_number;
+                    const int brother_side_number = sn->brother_side_number;
+                    if (brother_side_number != -1)
+                      brother_ents_vec.emplace_back(e);
+                    bb_node_order[side_number] = e->getMaxOrder();
+                  }
+                }
+
+                for (auto &it : brother_ents_vec) {
+                  if (const auto e = it.lock()) {
+                    const auto &sn = e->getSideNumberPtr();
+                    const int side_number = sn->side_number;
+                    const int brother_side_number = sn->brother_side_number;
+                    bb_node_order[brother_side_number] =
+                        bb_node_order[side_number];
+                  }
+                }
+
+                break;
               }
-            }
-
-            for (auto &it : brother_ents_vec) {
-              if (const auto e = it.lock()) {
-                const auto &sn = e->getSideNumberPtr();
-                const int side_number = sn->side_number;
-                const int brother_side_number = sn->brother_side_number;
-                bb_node_order[brother_side_number] = bb_node_order[side_number];
-              }
-            }
-
-            break;
           }
-      }
-    }
+        }
 
-    MoFEMFunctionReturn(0);
-  };
+        MoFEMFunctionReturn(0);
+      };
 
   auto get_entity_base_data = [&](DataForcesAndSourcesCore &data,
                                   auto field_ptr, const EntityType type_lo,
                                   const EntityType type_hi) {
     MoFEMFunctionBegin;
-    for (EntityType t = type_lo; t != type_hi; ++t) {
+    for (EntityType t = MBEDGE; t != MBPOLYHEDRON; ++t) {
       for (auto &dat : data.dataOnEntities[t]) {
         dat.getDataOrder() = 0;
         dat.getBase() = NOBASE;
@@ -1151,17 +1154,19 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
             if (cache->loHi[0] != cache->loHi[1]) {
               const EntityType type = e->getEntType();
               const int side = e->getSideNumberPtr()->side_number;
-              auto &dat = data.dataOnEntities[type][side];
-              const int brother_side =
-                  e->getSideNumberPtr()->brother_side_number;
-              if (brother_side != -1)
-                brother_ents_vec.emplace_back(e);
-              dat.getBase() = e->getApproxBase();
-              dat.getSpace() = e->getSpace();
-              const auto ent_order = e->getMaxOrder();
-              dat.getDataOrder() = dat.getDataOrder() > ent_order
-                                       ? dat.getDataOrder()
-                                       : ent_order;
+              if (side >= 0) {
+                auto &dat = data.dataOnEntities[type][side];
+                const int brother_side =
+                    e->getSideNumberPtr()->brother_side_number;
+                if (brother_side != -1)
+                  brother_ents_vec.emplace_back(e);
+                dat.getBase() = e->getApproxBase();
+                dat.getSpace() = e->getSpace();
+                const auto ent_order = e->getMaxOrder();
+                dat.getDataOrder() = dat.getDataOrder() > ent_order
+                                         ? dat.getDataOrder()
+                                         : ent_order;
+              }
             }
           }
         }
@@ -1211,13 +1216,15 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
           auto space = ent_data_ptr->getSpace();
           CHKERR get_nodal_base_data(*dataOnElement[space], field_ptr);
           CHKERR get_entity_base_data(*dataOnElement[space], field_ptr, MBEDGE,
-                                      MBPOLYHEDRON);
-          CHKERR getElementPolynomialBase()->getValue(
-              gaussPts, boost::make_shared<EntPolynomialBaseCtx>(
-                            *dataOnElement[space], field_name,
-                            static_cast<FieldSpace>(space),
-                            AINSWORTH_BERNSTEIN_BEZIER_BASE, NOBASE));
-          fields_list.insert(field_name);
+                                      ele_type);
+          if (dataH1.spacesOnEntities[ele_type].test(space)) {
+            CHKERR getElementPolynomialBase()->getValue(
+                gaussPts, boost::make_shared<EntPolynomialBaseCtx>(
+                              *dataOnElement[space], field_name,
+                              static_cast<FieldSpace>(space),
+                              AINSWORTH_BERNSTEIN_BEZIER_BASE, NOBASE));
+            fields_list.insert(field_name);
+          }
         }
       }
     }

@@ -197,16 +197,24 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCoreBase::opSwitch() {
 
   CHKERR createDataOnElement();
 
-  DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
-
   CHKERR calculateEdgeDirection();
   CHKERR getSpacesAndBaseOnEntities(dataH1);
   CHKERR getEntityDataOrder<MBEDGE>(dataH1, H1);
   dataH1.dataOnEntities[MBEDGE][0].getSense() =
       1; // set sense to 1, this is this entity
 
+  // L2
+  if (dataH1.spacesOnEntities[MBEDGE].test(L2)) {
+    auto &data_l2 = *dataOnElement[L2];
+    CHKERR getEntityDataOrder<MBEDGE>(data_l2, L2);
+    data_l2.dataOnEntities[MBEDGE][0].getSense() =
+        1; // set sense to 1, this is this entity
+    data_l2.spacesOnEntities[MBEDGE].set(L2);
+  }
+
   // Hcurl
   if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
+    auto &data_curl = *dataOnElement[HCURL];
     CHKERR getEntityDataOrder<MBEDGE>(data_curl, HCURL);
     data_curl.dataOnEntities[MBEDGE][0].getSense() =
         1; // set sense to 1, this is this entity
