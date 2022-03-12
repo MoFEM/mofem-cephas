@@ -24,8 +24,8 @@ OpRunParent::OpRunParent(boost::shared_ptr<ForcesAndSourcesCore> parent_ele_ptr,
                          boost::shared_ptr<ForcesAndSourcesCore> this_ele_ptr,
                          BitRefLevel bit_this, BitRefLevel bit_this_mask,
                          int verb, Sev sev)
-    : ForcesAndSurcesCore::UserDataOperator(
-          NOSPACE, ForcesAndSurcesCore::UserDataOperator::OPLAST),
+    : ForcesAndSourcesCore::UserDataOperator(
+          NOSPACE, ForcesAndSourcesCore::UserDataOperator::OPLAST),
       parentElePtr(parent_ele_ptr), bitParent(bit_parent),
       bitParentMask(bit_parent_mask), thisElePtr(this_ele_ptr),
       bitThis(bit_this), bitThisMask(bit_this_mask), verbosity(verb),

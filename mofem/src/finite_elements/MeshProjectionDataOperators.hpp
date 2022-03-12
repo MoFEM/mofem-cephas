@@ -22,7 +22,7 @@
 
 namespace MoFEM {
 
-struct OpRunParent : public ForcesAndSurcesCore::UserDataOperator {
+struct OpRunParent : public ForcesAndSourcesCore::UserDataOperator {
   OpRunParent(boost::shared_ptr<ForcesAndSourcesCore> parent_ele_ptr,
               BitRefLevel bit_parent, BitRefLevel bit_parent_mask,
               boost::shared_ptr<ForcesAndSourcesCore> this_ele_ptr,
