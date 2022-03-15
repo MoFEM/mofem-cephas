@@ -1,5 +1,4 @@
 /**
- * \file child_and_parent.cpp
  * \example child_and_parent.cpp
  *
  * Testing projection child and parent.
@@ -401,7 +400,7 @@ MoFEMErrorCode AtomTest::refineResults() {
 
   CHKERR refine_mesh();
 
-  simpleInterface->getBitRefLevel() = bit_level2;
+  simpleInterface->getBitRefLevel() = bit_level1 | bit_level2;
   simpleInterface->getBitRefLevelMask() = BitRefLevel().set();
 
   CHKERR simpleInterface->reSetUp();

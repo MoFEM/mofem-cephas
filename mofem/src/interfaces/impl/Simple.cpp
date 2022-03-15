@@ -729,6 +729,13 @@ MoFEMErrorCode Simple::reSetUp() {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
 
+  const Problem *problem_ptr;
+  CHKERR DMMoFEMGetProblemPtr(dM, &problem_ptr);
+  const auto problem_name = problem_ptr->getName();
+  CHKERR m_field.modify_problem_ref_level_set_bit(problem_name, bitLevel);
+  CHKERR m_field.modify_problem_mask_ref_level_set_bit(problem_name,
+                                                       bitLevelMask);
+
   CHKERR defineFiniteElements();
   if (addSkeletonFE || !skeletonFields.empty())
     CHKERR setSkeletonAdjacency();
