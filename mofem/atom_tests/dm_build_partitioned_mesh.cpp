@@ -189,8 +189,7 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.getInterface<ISManager>()->sectionCreate("TEST_PROBLEM",
                                                             &section);
     CHKERR PetscSectionView(section, PETSC_VIEWER_STDOUT_WORLD);
-    CHKERR DMSetDefaultSection(dm, section);
-    CHKERR DMSetDefaultGlobalSection(dm, section);
+    CHKERR DMSetSection(dm, section);
     CHKERR PetscSectionDestroy(&section);
 
     PetscBool save_file = PETSC_TRUE;

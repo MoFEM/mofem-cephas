@@ -85,8 +85,7 @@ SmartPetscObj<KSP> PipelineManager::createKSP(SmartPetscObj<DM> dm) {
     MoFEMFunctionBegin;
     auto section =
         m_field.getInterface<ISManager>()->sectionCreate(prb_ptr->getName());
-    CHKERR DMSetDefaultSection(dm, section);
-    CHKERR DMSetDefaultGlobalSection(dm, section);
+    CHKERR DMSetSection(dm, section);
     MoFEMFunctionReturn(0);
   };
   CHKERR set_dm_section(dm);
@@ -148,8 +147,7 @@ SmartPetscObj<SNES> PipelineManager::createSNES(SmartPetscObj<DM> dm) {
     MoFEMFunctionBegin;
     auto section =
         m_field.getInterface<ISManager>()->sectionCreate(prb_ptr->getName());
-    CHKERR DMSetDefaultSection(dm, section);
-    CHKERR DMSetDefaultGlobalSection(dm, section);
+    CHKERR DMSetSection(dm, section);
     MoFEMFunctionReturn(0);
   };
   CHKERR set_dm_section(dm);
@@ -234,8 +232,7 @@ SmartPetscObj<TS> PipelineManager::createTSEX(SmartPetscObj<DM> dm) {
     MoFEMFunctionBegin;
     auto section =
         m_field.getInterface<ISManager>()->sectionCreate(prb_ptr->getName());
-    CHKERR DMSetDefaultSection(dm, section);
-    CHKERR DMSetDefaultGlobalSection(dm, section);
+    CHKERR DMSetSection(dm, section);
     MoFEMFunctionReturn(0);
   };
   CHKERR set_dm_section(dm);
@@ -289,8 +286,7 @@ SmartPetscObj<TS> PipelineManager::createTSIM(SmartPetscObj<DM> dm) {
     MoFEMFunctionBegin;
     auto section =
         m_field.getInterface<ISManager>()->sectionCreate(prb_ptr->getName());
-    CHKERR DMSetDefaultSection(dm, section);
-    CHKERR DMSetDefaultGlobalSection(dm, section);
+    CHKERR DMSetSection(dm, section);
     MoFEMFunctionReturn(0);
   };
   CHKERR set_dm_section(dm);
@@ -353,8 +349,7 @@ SmartPetscObj<TS> PipelineManager::createTSIM2(SmartPetscObj<DM> dm) {
     MoFEMFunctionBegin;
     auto section =
         m_field.getInterface<ISManager>()->sectionCreate(prb_ptr->getName());
-    CHKERR DMSetDefaultSection(dm, section);
-    CHKERR DMSetDefaultGlobalSection(dm, section);
+    CHKERR DMSetSection(dm, section);
     MoFEMFunctionReturn(0);
   };
   CHKERR set_dm_section(dm);
@@ -417,8 +412,7 @@ SmartPetscObj<TS> PipelineManager::createTSIMEX(SmartPetscObj<DM> dm) {
     MoFEMFunctionBegin;
     auto section =
         m_field.getInterface<ISManager>()->sectionCreate(prb_ptr->getName());
-    CHKERR DMSetDefaultSection(dm, section);
-    CHKERR DMSetDefaultGlobalSection(dm, section);
+    CHKERR DMSetSection(dm, section);
     MoFEMFunctionReturn(0);
   };
   CHKERR set_dm_section(dm);
