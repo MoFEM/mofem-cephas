@@ -1208,7 +1208,7 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
   auto check_space = [&](const auto space) {
     switch (space) {
     case H1:
-      for (auto t = MBEDGE; t <= ele_type; ++t) {
+      for (auto t = MBVERTEX; t <= ele_type; ++t) {
         if (dataOnElement[H1]->spacesOnEntities[t].test(H1))
           return true;
       }
