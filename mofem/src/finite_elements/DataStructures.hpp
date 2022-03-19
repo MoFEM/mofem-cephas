@@ -947,7 +947,18 @@ struct DataForcesAndSourcesCore {
         bbAlphaInducesByOrder;
 
   protected:
+    /**
+     * @brief Used by Bernstein base to keep temporally pointer
+     * 
+     * @copydoc MoFEM::DataForcesAndSourcesCore::baseSwap
+     */
     boost::shared_ptr<MatrixDouble> swapBaseNPtr;
+
+    /**
+     * @brief Used by Bernstein base to keep temporally pointer
+     *
+     * @copydoc MoFEM::DataForcesAndSourcesCore::baseSwap
+     */
     boost::shared_ptr<MatrixDouble> swapBaseDiffNPtr;
   };
 
