@@ -985,8 +985,8 @@ struct DataForcesAndSourcesCore {
    * particular field, since it all shape functions change with the order. BB
    * base is precalculated for every field, and when user push operator with
    * paricular field using BB base, pointers to shape funtions and direvatives
-   * of shape futions are set to particular location, once operator is executed,
-   * pointers are switch back to its oroginal position.
+   * of shape functions are set to particular location, once operator is
+   * executed, pointers are switch back to its oroginal position.
    *
    * getNSharedPtr(base) <=== getBBNSharedPtr(field_name);
    * // DO OPERATOR WORK
