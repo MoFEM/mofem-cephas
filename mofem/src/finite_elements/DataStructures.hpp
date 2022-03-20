@@ -1404,17 +1404,6 @@ DataForcesAndSourcesCore::EntData::getFTensor0N() {
   return getFTensor0N(bAse);
 };
 
-// FTensor::Tensor0<double *> DataForcesAndSourcesCore::EntData::getFTensor0N(
-//     const FieldApproximationBase base, const int bb) {
-//   double *ptr = &getN(base)(0, bb);
-//   return FTensor::Tensor0<double *>(ptr, getN(base).size2());
-// };
-
-// FTensor::Tensor0<double *>
-// DataForcesAndSourcesCore::EntData::getFTensor0N(const int bb) {
-//   return getFTensor0N(bAse, bb);
-// };
-
 FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
 DataForcesAndSourcesCore::EntData::getFTensor0N(
     const FieldApproximationBase base, const int gg, const int bb) {
