@@ -1,4 +1,4 @@
-/** \file DataStructures.hpp
+/** \file EntitiesFieldData.hpp
 
 \brief Data structures for accessing information about finite element and its
 degrees of freedom.
@@ -19,8 +19,8 @@ degrees of freedom.
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __DATASTRUCTURES_HPP
-#define __DATASTRUCTURES_HPP
+#ifndef __ENTITIES_FIELD_DATA_HPP__
+#define __ENTITIES_FIELD_DATA_HPP__
 
 using namespace boost::numeric;
 
@@ -1626,7 +1626,7 @@ DEPRECATED typedef DerivedEntitiesFieldData DerivedDataForcesAndSourcesCore;
 
 } // namespace MoFEM
 
-#endif //__DATASTRUCTURES_HPP
+#endif //__ENTITIES_FIELD_DATA_HPP__
 
 /**
  * \defgroup mofem_forces_and_sources_user_data_operators User data operator
