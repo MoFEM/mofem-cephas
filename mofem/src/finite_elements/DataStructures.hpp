@@ -59,6 +59,15 @@ struct DataForcesAndSourcesCore {
    */
   struct EntData {
 
+    enum BaseDirevatives {
+      ZeroDirevative = 0,
+      FirstDirevative,
+      SecondDerivative,
+      ThirdDerivative,
+      ForthDerivative,
+      LastDerivative
+    };
+
     /** \name Constructor and destructor */
 
     /**@{*/
@@ -204,25 +213,20 @@ struct DataForcesAndSourcesCore {
      * Get shared pointer to base base functions
      */
     virtual boost::shared_ptr<MatrixDouble> &
-    getNSharedPtr(const FieldApproximationBase base);
+    getNSharedPtr(const FieldApproximationBase base,
+                  const BaseDirevatives direvatie);
 
     /**
      * Get shared pointer to base base functions
      */
-    virtual const boost::shared_ptr<MatrixDouble> &
-    getNSharedPtr(const FieldApproximationBase base) const;
+    virtual boost::shared_ptr<MatrixDouble> &
+    getNSharedPtr(const FieldApproximationBase base);
 
     /**
      * Get shared pointer to derivatives of base base functions
      */
     virtual boost::shared_ptr<MatrixDouble> &
     getDiffNSharedPtr(const FieldApproximationBase base);
-
-    /**
-     * Get shared pointer to derivatives of base base functions
-     */
-    virtual const boost::shared_ptr<MatrixDouble> &
-    getDiffNSharedPtr(const FieldApproximationBase base) const;
 
     /**@}*/
 
@@ -928,9 +932,15 @@ struct DataForcesAndSourcesCore {
     VectorDofs dOfs;                   ///< DoFs on entity
     VectorFieldEntities fieldEntities; ///< Field entities
     VectorDouble fieldData;            ///< Field data on entity
-    std::array<boost::shared_ptr<MatrixDouble>, LASTBASE> N; ///< Base functions
+
+    std::array<std::array<boost::shared_ptr<MatrixDouble>, LASTBASE>,
+               LastDerivative>
+        baseFunctionsAndBaseDirevatives; 
+
+    std::array<boost::shared_ptr<MatrixDouble>, LASTBASE> &N; ///< Base functions
     std::array<boost::shared_ptr<MatrixDouble>, LASTBASE>
-        diffN; ///< Derivatives of base functions
+        &diffN; ///< Derivatives of base functions
+ 
 
     std::string bbFieldName; ///< field name
     VectorInt bbNodeOrder;   ///< order of nodes
@@ -995,7 +1005,7 @@ struct DataForcesAndSourcesCore {
    * Bernstein-Bezier (BB) base is not hierarchical, and is calculated for
    * particular field, since it all shape functions change with the order. BB
    * base is precalculated for every field, and when user push operator with
-   * paricular field using BB base, pointers to shape funtions and direvatives
+   * paricular field using BB base, pointers to shape funtions and BaseDirevatives
    * of shape functions are set to particular location, once operator is
    * executed, pointers are switch back to its oroginal position.
    *
@@ -1016,6 +1026,8 @@ struct DataForcesAndSourcesCore {
 protected:
   DataForcesAndSourcesCore() {}
 };
+
+using BaseDirevatives = DataForcesAndSourcesCore::EntData::BaseDirevatives;
 
 /** \brief this class derive data form other data structure
  * \ingroup mofem_forces_and_sources_user_data_operators
@@ -1044,6 +1056,10 @@ struct DerivedDataForcesAndSourcesCore : public DataForcesAndSourcesCore {
                        &ent_data_ptr);
 
     int getSense() const;
+
+    boost::shared_ptr<MatrixDouble> &
+    getNSharedPtr(const FieldApproximationBase base,
+                  const BaseDirevatives direvative);
 
     boost::shared_ptr<MatrixDouble> &
     getNSharedPtr(const FieldApproximationBase base);

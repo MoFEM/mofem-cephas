@@ -20,37 +20,39 @@
 namespace MoFEM {
 
 DataForcesAndSourcesCore::EntData::EntData(const bool allocate_base_matrices)
-    : sEnse(0), oRder(0), bAse(NOBASE) {
-  if (allocate_base_matrices)
-    for (int b = 0; b != LASTBASE; ++b) {
-      N[b].reset(new MatrixDouble());
-      diffN[b].reset(new MatrixDouble());
+    : sEnse(0), oRder(0), bAse(NOBASE),
+      N(baseFunctionsAndBaseDirevatives[ZeroDirevative]),
+      diffN(baseFunctionsAndBaseDirevatives[FirstDirevative]) {
+  if (allocate_base_matrices) {
+
+    for (auto d = 0; d != LastDerivative; ++d) {
+      for (int b = 0; b != LASTBASE; ++b) {
+        baseFunctionsAndBaseDirevatives[d][b].reset(new MatrixDouble());
+        N[b].reset(new MatrixDouble());
+        diffN[b].reset(new MatrixDouble());
+      }
     }
+
+  }
 }
 
 int DataForcesAndSourcesCore::EntData::getSense() const { return sEnse; }
 
 boost::shared_ptr<MatrixDouble> &
 DataForcesAndSourcesCore::EntData::getNSharedPtr(
-    const FieldApproximationBase base) {
-  return N[base];
+    const FieldApproximationBase base, const BaseDirevatives direvatie) {
+  return baseFunctionsAndBaseDirevatives[direvatie][base];
 }
 
-const boost::shared_ptr<MatrixDouble> &
+boost::shared_ptr<MatrixDouble> &
 DataForcesAndSourcesCore::EntData::getNSharedPtr(
-    const FieldApproximationBase base) const {
+    const FieldApproximationBase base) {
   return N[base];
 }
 
 boost::shared_ptr<MatrixDouble> &
 DataForcesAndSourcesCore::EntData::getDiffNSharedPtr(
     const FieldApproximationBase base) {
-  return diffN[base];
-}
-
-const boost::shared_ptr<MatrixDouble> &
-DataForcesAndSourcesCore::EntData::getDiffNSharedPtr(
-    const FieldApproximationBase base) const {
   return diffN[base];
 }
 
@@ -220,12 +222,22 @@ int DerivedDataForcesAndSourcesCore::DerivedEntData::getSense() const {
 
 boost::shared_ptr<MatrixDouble> &
 DerivedDataForcesAndSourcesCore::DerivedEntData::getNSharedPtr(
+    const FieldApproximationBase base, const BaseDirevatives direvative) {
+  if (baseFunctionsAndBaseDirevatives[direvative][base])
+    return baseFunctionsAndBaseDirevatives[direvative][base];
+  else
+    return entDataPtr->getNSharedPtr(base, direvative);
+}
+
+boost::shared_ptr<MatrixDouble> &
+DerivedDataForcesAndSourcesCore::DerivedEntData::getNSharedPtr(
     const FieldApproximationBase base) {
   if (N[base])
     return N[base];
   else
     return entDataPtr->getNSharedPtr(base);
 }
+
 boost::shared_ptr<MatrixDouble> &
 DerivedDataForcesAndSourcesCore::DerivedEntData::getDiffNSharedPtr(
     const FieldApproximationBase base) {
