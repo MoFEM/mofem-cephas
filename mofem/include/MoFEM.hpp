@@ -55,7 +55,7 @@ using FTensor::operator>>;
 #include <LobattoPolynomial.hpp>
 #include <JacobiPolynomial.hpp>
 #include <EntPolynomialBaseCtx.hpp>
-#include <QuadPolynomialBase.hpp>      // Base functions on quad
+#include <QuadPolynomialBase.hpp> // Base functions on quad
 #include <EdgePolynomialBase.hpp>
 #include <TriPolynomialBase.hpp>
 #include <TetPolynomialBase.hpp>
@@ -135,6 +135,7 @@ using FTensor::operator>>;
 #include <UserDataOperators.hpp>
 #include <HODataOperators.hpp> // Manage HO order geometry
 #include <MeshProjectionDataOperators.hpp> // Operators for projections between bit ref levels
+#include <BaseDirevativesDataOperators.hpp> // Operators to calculate HO direcarives
 #include <FormsIntegrators.hpp>
 #include <LinearFormsIntegrators.hpp>
 #include <BiLinearFormsIntegrators.hpp>
