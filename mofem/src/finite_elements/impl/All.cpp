@@ -11,7 +11,7 @@ extern "C" {
 }
 #endif
 
-#include "impl/DataStructures.cpp"
+#include "impl/EntitiesFieldData.cpp"
 #include "impl/DataOperators.cpp"
 #include "impl/ForcesAndSourcesCore.cpp"
 #include "impl/UserDataOperators.cpp"

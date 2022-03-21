@@ -117,7 +117,7 @@ using FTensor::operator>>;
 #include <DMMoFEM.hpp>
 
 // SRC/FINITE_ELEMENTS
-#include <DataStructures.hpp>
+#include <EntitiesFieldData.hpp>
 #include <DataOperators.hpp>
 #include <ForcesAndSourcesCore.hpp>
 #include <VolumeElementForcesAndSourcesCore.hpp>
