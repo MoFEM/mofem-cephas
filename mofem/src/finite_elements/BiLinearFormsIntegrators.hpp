@@ -48,8 +48,8 @@ struct OpGradGradImpl<1, 1, SPACE_DIM, GAUSS, OpBase> : public OpBase {
 protected:
   ScalarFun betaCoeff;
   boost::shared_ptr<Range> entsPtr;
-  MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
-                           DataForcesAndSourcesCore::EntData &col_data);
+  MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
+                           EntitiesFieldData::EntData &col_data);
 };
 
 template <int FIELD_DIM, int SPACE_DIM, typename OpBase>
@@ -67,8 +67,8 @@ struct OpGradGradImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase> : public OpBase {
 protected:
   ScalarFun betaCoeff;
   boost::shared_ptr<Range> entsPtr;
-  MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
-                           DataForcesAndSourcesCore::EntData &col_data);
+  MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
+                           EntitiesFieldData::EntData &col_data);
 };
 
 template <int BASE_DIM, int FIELD_DIM, IntegrationType I, typename OpBase>
@@ -88,8 +88,8 @@ struct OpMassImpl<1, 1, GAUSS, OpBase> : public OpBase {
 protected:
   ScalarFun betaCoeff;
   boost::shared_ptr<Range> entsPtr;
-  MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
-                           DataForcesAndSourcesCore::EntData &col_data);
+  MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
+                           EntitiesFieldData::EntData &col_data);
 };
 
 template <int FIELD_DIM, typename OpBase>
@@ -100,8 +100,8 @@ struct OpMassImpl<1, FIELD_DIM, GAUSS, OpBase>
 protected:
   using OpMassImpl<1, 1, GAUSS, OpBase>::betaCoeff;
   using OpMassImpl<1, 1, GAUSS, OpBase>::entsPtr;
-  MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
-                           DataForcesAndSourcesCore::EntData &col_data);
+  MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
+                           EntitiesFieldData::EntData &col_data);
 };
 
 template <int BASE_DIM, typename OpBase>
@@ -118,8 +118,8 @@ struct OpMassImpl<BASE_DIM, BASE_DIM, GAUSS, OpBase> : public OpBase {
 protected:
   ScalarFun betaCoeff;
   boost::shared_ptr<Range> entsPtr;
-  MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
-                           DataForcesAndSourcesCore::EntData &col_data);
+  MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
+                           EntitiesFieldData::EntData &col_data);
 };
 
 template <typename OpBase>
@@ -135,8 +135,8 @@ struct OpMassImpl<3, 9, GAUSS, OpBase> : public OpBase {
 protected:
   ScalarFun betaCoeff;
   boost::shared_ptr<Range> entsPtr;
-  MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
-                           DataForcesAndSourcesCore::EntData &col_data);
+  MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
+                           EntitiesFieldData::EntData &col_data);
 };
 
 template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM, int S, IntegrationType I,
@@ -157,8 +157,8 @@ struct OpGradSymTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>
 
 protected:
   boost::shared_ptr<MatrixDouble> matD;
-  MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
-                           DataForcesAndSourcesCore::EntData &col_data);
+  MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
+                           EntitiesFieldData::EntData &col_data);
 };
 
 template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM, int S, IntegrationType I,
@@ -176,8 +176,8 @@ struct OpGradTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>
 
 protected:
   boost::shared_ptr<MatrixDouble> matD;
-  MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
-                           DataForcesAndSourcesCore::EntData &col_data);
+  MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
+                           EntitiesFieldData::EntData &col_data);
 };
 
 template <int SPACE_DIM, IntegrationType I, typename OpBase>
@@ -199,8 +199,8 @@ struct OpMixDivTimesScalarImpl<SPACE_DIM, GAUSS, OpBase> : public OpBase {
 protected:
   FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
   ConstantFun alphaConstant;
-  MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
-                           DataForcesAndSourcesCore::EntData &col_data);
+  MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
+                           EntitiesFieldData::EntData &col_data);
 };
 
 template <int SPACE_DIM, IntegrationType I, typename OpBase>
@@ -221,8 +221,8 @@ struct OpMixDivTimesVecImpl<SPACE_DIM, GAUSS, OpBase> : public OpBase {
 protected:
   FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
   ConstantFun alphaConstant;
-  MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
-                           DataForcesAndSourcesCore::EntData &col_data);
+  MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
+                           EntitiesFieldData::EntData &col_data);
 };
 
 template <int SPACE_DIM, IntegrationType I, typename OpBase,
@@ -247,8 +247,8 @@ struct OpMixScalarTimesDivImpl<SPACE_DIM, GAUSS, OpBase, COORDINATE_SYSTEM>
 protected:
   FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
   ScalarFun alphaConstant;
-  MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
-                           DataForcesAndSourcesCore::EntData &col_data);
+  MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
+                           EntitiesFieldData::EntData &col_data);
 };
 
 template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM, IntegrationType I,
@@ -272,8 +272,8 @@ struct OpMixVectorTimesGradImpl<3, SPACE_DIM, SPACE_DIM, GAUSS, OpBase>
 protected:
   FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
   ConstantFun alphaConstant;
-  MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
-                           DataForcesAndSourcesCore::EntData &col_data);
+  MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
+                           EntitiesFieldData::EntData &col_data);
 };
 
 template <int SPACE_DIM, typename OpBase>
@@ -293,8 +293,8 @@ struct OpMixVectorTimesGradImpl<1, SPACE_DIM, SPACE_DIM, GAUSS, OpBase>
 protected:
   FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
   ConstantFun alphaConstant;
-  MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
-                           DataForcesAndSourcesCore::EntData &col_data);
+  MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
+                           EntitiesFieldData::EntData &col_data);
 };
 
 template <int SPACE_DIM, IntegrationType I, typename OpBase>
@@ -317,8 +317,8 @@ protected:
   FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
   FTensor::Index<'j', SPACE_DIM> j; ///< summit Index
   ConstantFun alphaConstant;
-  MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
-                           DataForcesAndSourcesCore::EntData &col_data);
+  MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
+                           EntitiesFieldData::EntData &col_data);
 };
 
 template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM, IntegrationType I,
@@ -347,8 +347,8 @@ struct OpConvectiveTermLhsDuImpl<1, 1, SPACE_DIM, GAUSS, OpBase>
 protected:
   boost::shared_ptr<MatrixDouble> yGradPtr;
   ConstantFun alphaConstant;
-  MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
-                           DataForcesAndSourcesCore::EntData &col_data);
+  MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
+                           EntitiesFieldData::EntData &col_data);
 };
 
 template <int SPACE_DIM, typename OpBase>
@@ -369,8 +369,8 @@ struct OpConvectiveTermLhsDyImpl<1, 1, SPACE_DIM, GAUSS, OpBase>
 protected:
   ConstantFun alphaConstant;
   boost::shared_ptr<MatrixDouble> uPtr;
-  MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
-                           DataForcesAndSourcesCore::EntData &col_data);
+  MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
+                           EntitiesFieldData::EntData &col_data);
 };
 
 template <int FIELD_DIM, int SPACE_DIM, typename OpBase>
@@ -391,8 +391,8 @@ struct OpConvectiveTermLhsDuImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>
 protected:
   ConstantFun alphaConstant;
   boost::shared_ptr<MatrixDouble> yGradPtr;
-  MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
-                           DataForcesAndSourcesCore::EntData &col_data);
+  MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
+                           EntitiesFieldData::EntData &col_data);
 };
 
 template <int FIELD_DIM, int SPACE_DIM, typename OpBase>
@@ -413,8 +413,8 @@ struct OpConvectiveTermLhsDyImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>
 protected:
   ConstantFun alphaConstant;
   boost::shared_ptr<MatrixDouble> uPtr;
-  MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
-                           DataForcesAndSourcesCore::EntData &col_data);
+  MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
+                           EntitiesFieldData::EntData &col_data);
 };
 
 /**
@@ -569,8 +569,8 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
 
 template <int SPACE_DIM, typename OpBase>
 MoFEMErrorCode OpGradGradImpl<1, 1, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
-    DataForcesAndSourcesCore::EntData &row_data,
-    DataForcesAndSourcesCore::EntData &col_data) {
+    EntitiesFieldData::EntData &row_data,
+    EntitiesFieldData::EntData &col_data) {
   MoFEMFunctionBegin;
 
   if (entsPtr) {
@@ -619,8 +619,8 @@ MoFEMErrorCode OpGradGradImpl<1, 1, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
 template <int FIELD_DIM, int SPACE_DIM, typename OpBase>
 MoFEMErrorCode
 OpGradGradImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
-    DataForcesAndSourcesCore::EntData &row_data,
-    DataForcesAndSourcesCore::EntData &col_data) {
+    EntitiesFieldData::EntData &row_data,
+    EntitiesFieldData::EntData &col_data) {
   MoFEMFunctionBegin;
 
   if (entsPtr) {
@@ -682,8 +682,8 @@ OpGradGradImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
 
 template <typename OpBase>
 MoFEMErrorCode OpMassImpl<1, 1, GAUSS, OpBase>::iNtegrate(
-    DataForcesAndSourcesCore::EntData &row_data,
-    DataForcesAndSourcesCore::EntData &col_data) {
+    EntitiesFieldData::EntData &row_data,
+    EntitiesFieldData::EntData &col_data) {
   MoFEMFunctionBegin;
   if (entsPtr) {
     if (entsPtr->find(OpBase::getFEEntityHandle()) == entsPtr->end())
@@ -727,8 +727,8 @@ MoFEMErrorCode OpMassImpl<1, 1, GAUSS, OpBase>::iNtegrate(
 
 template <int FIELD_DIM, typename OpBase>
 MoFEMErrorCode OpMassImpl<1, FIELD_DIM, GAUSS, OpBase>::iNtegrate(
-    DataForcesAndSourcesCore::EntData &row_data,
-    DataForcesAndSourcesCore::EntData &col_data) {
+    EntitiesFieldData::EntData &row_data,
+    EntitiesFieldData::EntData &col_data) {
   MoFEMFunctionBegin;
   if (entsPtr) {
     if (entsPtr->find(OpBase::getFEEntityHandle()) == entsPtr->end())
@@ -783,8 +783,8 @@ MoFEMErrorCode OpMassImpl<1, FIELD_DIM, GAUSS, OpBase>::iNtegrate(
 
 template <int BASE_DIM, typename OpBase>
 MoFEMErrorCode OpMassImpl<BASE_DIM, BASE_DIM, GAUSS, OpBase>::iNtegrate(
-    DataForcesAndSourcesCore::EntData &row_data,
-    DataForcesAndSourcesCore::EntData &col_data) {
+    EntitiesFieldData::EntData &row_data,
+    EntitiesFieldData::EntData &col_data) {
   FTensor::Index<'i', BASE_DIM> i;
   MoFEMFunctionBegin;
   if (entsPtr) {
@@ -830,8 +830,8 @@ MoFEMErrorCode OpMassImpl<BASE_DIM, BASE_DIM, GAUSS, OpBase>::iNtegrate(
 
 template <typename OpBase>
 MoFEMErrorCode OpMassImpl<3, 9, GAUSS, OpBase>::iNtegrate(
-    DataForcesAndSourcesCore::EntData &row_data,
-    DataForcesAndSourcesCore::EntData &col_data) {
+    EntitiesFieldData::EntData &row_data,
+    EntitiesFieldData::EntData &col_data) {
   MoFEMFunctionBegin;
   FTensor::Index<'i', 3> i;
   FTensor::Index<'k', 3> k;
@@ -885,8 +885,8 @@ MoFEMErrorCode OpMassImpl<3, 9, GAUSS, OpBase>::iNtegrate(
 template <int SPACE_DIM, int S, typename OpBase>
 MoFEMErrorCode
 OpGradSymTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
-    DataForcesAndSourcesCore::EntData &row_data,
-    DataForcesAndSourcesCore::EntData &col_data) {
+    EntitiesFieldData::EntData &row_data,
+    EntitiesFieldData::EntData &col_data) {
   MoFEMFunctionBegin;
 
   const size_t nb_row_dofs = row_data.getIndices().size();
@@ -966,8 +966,8 @@ OpGradSymTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
 template <int SPACE_DIM, int S, typename OpBase>
 MoFEMErrorCode
 OpGradTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
-    DataForcesAndSourcesCore::EntData &row_data,
-    DataForcesAndSourcesCore::EntData &col_data) {
+    EntitiesFieldData::EntData &row_data,
+    EntitiesFieldData::EntData &col_data) {
   MoFEMFunctionBegin;
 
   const size_t nb_row_dofs = row_data.getIndices().size();
@@ -1042,8 +1042,8 @@ OpGradTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
 
 template <int SPACE_DIM, typename OpBase>
 MoFEMErrorCode OpMixDivTimesScalarImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
-    DataForcesAndSourcesCore::EntData &row_data,
-    DataForcesAndSourcesCore::EntData &col_data) {
+    EntitiesFieldData::EntData &row_data,
+    EntitiesFieldData::EntData &col_data) {
   MoFEMFunctionBegin;
 
   auto t_w = this->getFTensor0IntegrationWeight();
@@ -1077,8 +1077,8 @@ MoFEMErrorCode OpMixDivTimesScalarImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
 
 template <int SPACE_DIM, typename OpBase>
 MoFEMErrorCode OpMixDivTimesVecImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
-    DataForcesAndSourcesCore::EntData &row_data,
-    DataForcesAndSourcesCore::EntData &col_data) {
+    EntitiesFieldData::EntData &row_data,
+    EntitiesFieldData::EntData &col_data) {
   MoFEMFunctionBegin;
 
   auto t_w = this->getFTensor0IntegrationWeight();
@@ -1117,8 +1117,8 @@ MoFEMErrorCode OpMixDivTimesVecImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
 template <int SPACE_DIM, typename OpBase, CoordinateTypes COORDINATE_SYSTEM>
 MoFEMErrorCode
 OpMixScalarTimesDivImpl<SPACE_DIM, GAUSS, OpBase, COORDINATE_SYSTEM>::iNtegrate(
-    DataForcesAndSourcesCore::EntData &row_data,
-    DataForcesAndSourcesCore::EntData &col_data) {
+    EntitiesFieldData::EntData &row_data,
+    EntitiesFieldData::EntData &col_data) {
   MoFEMFunctionBegin;
 
 #ifndef NDEBUG
@@ -1190,8 +1190,8 @@ OpMixScalarTimesDivImpl<SPACE_DIM, GAUSS, OpBase, COORDINATE_SYSTEM>::iNtegrate(
 template <int SPACE_DIM, typename OpBase>
 MoFEMErrorCode
 OpMixVectorTimesGradImpl<3, SPACE_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
-    DataForcesAndSourcesCore::EntData &row_data,
-    DataForcesAndSourcesCore::EntData &col_data) {
+    EntitiesFieldData::EntData &row_data,
+    EntitiesFieldData::EntData &col_data) {
   MoFEMFunctionBegin;
 
   auto t_w = this->getFTensor0IntegrationWeight();
@@ -1225,8 +1225,8 @@ OpMixVectorTimesGradImpl<3, SPACE_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
 template <int SPACE_DIM, typename OpBase>
 MoFEMErrorCode
 OpMixVectorTimesGradImpl<1, SPACE_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
-    DataForcesAndSourcesCore::EntData &row_data,
-    DataForcesAndSourcesCore::EntData &col_data) {
+    EntitiesFieldData::EntData &row_data,
+    EntitiesFieldData::EntData &col_data) {
   MoFEMFunctionBegin;
 
   auto t_w = this->getFTensor0IntegrationWeight();
@@ -1268,8 +1268,8 @@ OpMixVectorTimesGradImpl<1, SPACE_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
 
 template <int SPACE_DIM, typename OpBase>
 MoFEMErrorCode OpMixTensorTimesGradImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
-    DataForcesAndSourcesCore::EntData &row_data,
-    DataForcesAndSourcesCore::EntData &col_data) {
+    EntitiesFieldData::EntData &row_data,
+    EntitiesFieldData::EntData &col_data) {
   MoFEMFunctionBegin;
 
   auto t_w = this->getFTensor0IntegrationWeight();
@@ -1307,8 +1307,8 @@ MoFEMErrorCode OpMixTensorTimesGradImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
 template <int SPACE_DIM, typename OpBase>
 MoFEMErrorCode
 OpConvectiveTermLhsDuImpl<1, 1, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
-    DataForcesAndSourcesCore::EntData &row_data,
-    DataForcesAndSourcesCore::EntData &col_data) {
+    EntitiesFieldData::EntData &row_data,
+    EntitiesFieldData::EntData &col_data) {
   MoFEMFunctionBegin;
 
   // get element volume
@@ -1362,8 +1362,8 @@ OpConvectiveTermLhsDuImpl<1, 1, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
 template <int SPACE_DIM, typename OpBase>
 MoFEMErrorCode
 OpConvectiveTermLhsDyImpl<1, 1, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
-    DataForcesAndSourcesCore::EntData &row_data,
-    DataForcesAndSourcesCore::EntData &col_data) {
+    EntitiesFieldData::EntData &row_data,
+    EntitiesFieldData::EntData &col_data) {
   MoFEMFunctionBegin;
 
   // get element volume
@@ -1407,8 +1407,8 @@ OpConvectiveTermLhsDyImpl<1, 1, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
 template <int FIELD_DIM, int SPACE_DIM, typename OpBase>
 MoFEMErrorCode
 OpConvectiveTermLhsDuImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
-    DataForcesAndSourcesCore::EntData &row_data,
-    DataForcesAndSourcesCore::EntData &col_data) {
+    EntitiesFieldData::EntData &row_data,
+    EntitiesFieldData::EntData &col_data) {
   MoFEMFunctionBegin;
 
   // get element volume
@@ -1466,8 +1466,8 @@ OpConvectiveTermLhsDuImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
 template <int FIELD_DIM, int SPACE_DIM, typename OpBase>
 MoFEMErrorCode
 OpConvectiveTermLhsDyImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
-    DataForcesAndSourcesCore::EntData &row_data,
-    DataForcesAndSourcesCore::EntData &col_data) {
+    EntitiesFieldData::EntData &row_data,
+    EntitiesFieldData::EntData &col_data) {
   MoFEMFunctionBegin;
 
   // get element volume

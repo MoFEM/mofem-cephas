@@ -51,7 +51,7 @@ MoFEMErrorCode TetPolynomialBase::getValueH1(MatrixDouble &pts) {
 MoFEMErrorCode TetPolynomialBase::getValueH1AinsworthBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
                                      double *diffL, const int dim) =
@@ -163,7 +163,7 @@ MoFEMErrorCode
 TetPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const std::string field_name = cTx->fieldName;
   const int nb_gauss_pts = pts.size2();
 
@@ -463,7 +463,7 @@ MoFEMErrorCode TetPolynomialBase::getValueL2(MatrixDouble &pts) {
 MoFEMErrorCode TetPolynomialBase::getValueL2AinsworthBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
                                      double *diffL, const int dim) =
@@ -493,7 +493,7 @@ MoFEMErrorCode
 TetPolynomialBase::getValueL2BernsteinBezierBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const std::string field_name = cTx->fieldName;
   const int nb_gauss_pts = pts.size2();
 
@@ -669,7 +669,7 @@ TetPolynomialBase::getValueL2BernsteinBezierBase(MatrixDouble &pts) {
 MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
                                      double *diffL, const int dim) =
@@ -1009,7 +1009,7 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
 MoFEMErrorCode TetPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   if (base != DEMKOWICZ_JACOBI_BASE) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -1093,7 +1093,7 @@ MoFEMErrorCode
 TetPolynomialBase::getValueHcurlAinsworthBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
                                      double *diffL, const int dim) =
@@ -1211,7 +1211,7 @@ MoFEMErrorCode
 TetPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   if (base != DEMKOWICZ_JACOBI_BASE) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -1376,7 +1376,7 @@ TetPolynomialBase::getValue(MatrixDouble &pts,
 
   if (cTx->bAse != AINSWORTH_BERNSTEIN_BEZIER_BASE) {
     const FieldApproximationBase base = cTx->bAse;
-    DataForcesAndSourcesCore &data = cTx->dAta;
+    EntitiesFieldData &data = cTx->dAta;
     if (cTx->copyNodeBase == LASTBASE) {
       data.dataOnEntities[MBVERTEX][0].getN(base).resize(nb_gauss_pts, 4,
                                                          false);

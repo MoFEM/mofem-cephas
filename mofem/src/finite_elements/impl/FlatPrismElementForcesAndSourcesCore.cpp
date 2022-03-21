@@ -39,9 +39,9 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
     MoFEMFunctionReturnHot(0);
   CHKERR createDataOnElement();
 
-  DataForcesAndSourcesCore &data_div = *dataOnElement[HDIV];
-  DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
-  DataForcesAndSourcesCore &data_l2 = *dataOnElement[HCURL];
+  EntitiesFieldData &data_div = *dataOnElement[HDIV];
+  EntitiesFieldData &data_curl = *dataOnElement[HCURL];
+  EntitiesFieldData &data_l2 = *dataOnElement[HCURL];
 
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
   int num_nodes;

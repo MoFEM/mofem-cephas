@@ -26,47 +26,47 @@ ContactPrismElementForcesAndSourcesCore::
       dataOnMaster{
 
           nullptr,
-          boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET), // NOFIELD
-          boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET), // H1
-          boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET), // HCURL
-          boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET), // HDIV
-          boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET)  // L2
+          boost::make_shared<EntitiesFieldData>(MBENTITYSET), // NOFIELD
+          boost::make_shared<EntitiesFieldData>(MBENTITYSET), // H1
+          boost::make_shared<EntitiesFieldData>(MBENTITYSET), // HCURL
+          boost::make_shared<EntitiesFieldData>(MBENTITYSET), // HDIV
+          boost::make_shared<EntitiesFieldData>(MBENTITYSET)  // L2
 
       },
       dataOnSlave{
 
           nullptr,
-          boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET), // NOFIELD
-          boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET), // H1
-          boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET), // HCURL
-          boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET), // HDIV
-          boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET)  // L2
+          boost::make_shared<EntitiesFieldData>(MBENTITYSET), // NOFIELD
+          boost::make_shared<EntitiesFieldData>(MBENTITYSET), // H1
+          boost::make_shared<EntitiesFieldData>(MBENTITYSET), // HCURL
+          boost::make_shared<EntitiesFieldData>(MBENTITYSET), // HDIV
+          boost::make_shared<EntitiesFieldData>(MBENTITYSET)  // L2
 
       },
       derivedDataOnMaster{
 
           nullptr,
-          boost::make_shared<DerivedDataForcesAndSourcesCore>(
+          boost::make_shared<DerivedEntitiesFieldData>(
               dataOnMaster[NOFIELD]),
-          boost::make_shared<DerivedDataForcesAndSourcesCore>(dataOnMaster[H1]),
-          boost::make_shared<DerivedDataForcesAndSourcesCore>(
+          boost::make_shared<DerivedEntitiesFieldData>(dataOnMaster[H1]),
+          boost::make_shared<DerivedEntitiesFieldData>(
               dataOnMaster[HCURL]),
-          boost::make_shared<DerivedDataForcesAndSourcesCore>(
+          boost::make_shared<DerivedEntitiesFieldData>(
               dataOnMaster[HDIV]),
-          boost::make_shared<DerivedDataForcesAndSourcesCore>(dataOnMaster[L2])
+          boost::make_shared<DerivedEntitiesFieldData>(dataOnMaster[L2])
 
       },
       derivedDataOnSlave{
 
           nullptr,
-          boost::make_shared<DerivedDataForcesAndSourcesCore>(
+          boost::make_shared<DerivedEntitiesFieldData>(
               dataOnSlave[NOFIELD]),
-          boost::make_shared<DerivedDataForcesAndSourcesCore>(dataOnSlave[H1]),
-          boost::make_shared<DerivedDataForcesAndSourcesCore>(
+          boost::make_shared<DerivedEntitiesFieldData>(dataOnSlave[H1]),
+          boost::make_shared<DerivedEntitiesFieldData>(
               dataOnSlave[HCURL]),
-          boost::make_shared<DerivedDataForcesAndSourcesCore>(
+          boost::make_shared<DerivedEntitiesFieldData>(
               dataOnSlave[HDIV]),
-          boost::make_shared<DerivedDataForcesAndSourcesCore>(dataOnSlave[L2])
+          boost::make_shared<DerivedEntitiesFieldData>(dataOnSlave[L2])
 
       },
       dataH1Master(*dataOnMaster[H1].get()),
@@ -84,26 +84,26 @@ ContactPrismElementForcesAndSourcesCore::
       boost::shared_ptr<BaseFunction>(new TriPolynomialBase());
 
   dataH1Master.dataOnEntities[MBVERTEX].push_back(
-      new DataForcesAndSourcesCore::EntData());
+      new EntitiesFieldData::EntData());
   dataH1Slave.dataOnEntities[MBVERTEX].push_back(
-      new DataForcesAndSourcesCore::EntData());
+      new EntitiesFieldData::EntData());
 
   for (int ee = 0; ee != 3; ++ee) {
     dataH1Master.dataOnEntities[MBEDGE].push_back(
-        new DataForcesAndSourcesCore::EntData());
+        new EntitiesFieldData::EntData());
     dataH1Slave.dataOnEntities[MBEDGE].push_back(
-        new DataForcesAndSourcesCore::EntData());
+        new EntitiesFieldData::EntData());
   }
 
   dataH1Master.dataOnEntities[MBTRI].push_back(
-      new DataForcesAndSourcesCore::EntData());
+      new EntitiesFieldData::EntData());
   dataH1Slave.dataOnEntities[MBTRI].push_back(
-      new DataForcesAndSourcesCore::EntData());
+      new EntitiesFieldData::EntData());
 
   dataHdivMaster.dataOnEntities[MBTRI].push_back(
-      new DataForcesAndSourcesCore::EntData());
+      new EntitiesFieldData::EntData());
   dataHdivSlave.dataOnEntities[MBTRI].push_back(
-      new DataForcesAndSourcesCore::EntData());
+      new EntitiesFieldData::EntData());
 
   // Data on elements for proper spaces
   dataOnMaster[H1]->setElementType(MBTRI);
@@ -173,9 +173,9 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
     MoFEMFunctionReturnHot(0);
   CHKERR createDataOnElement();
 
-  DataForcesAndSourcesCore &data_div = *dataOnElement[HDIV];
-  DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
-  DataForcesAndSourcesCore &data_l2 = *dataOnElement[HCURL];
+  EntitiesFieldData &data_div = *dataOnElement[HDIV];
+  EntitiesFieldData &data_curl = *dataOnElement[HCURL];
+  EntitiesFieldData &data_l2 = *dataOnElement[HCURL];
 
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
   auto get_coord_and_normal = [&]() {
@@ -275,7 +275,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
     CHKERR getEntityDataOrder<MBTRI>(data_l2, L2);
   }
 
-  auto clean_data = [](DataForcesAndSourcesCore &data) {
+  auto clean_data = [](EntitiesFieldData &data) {
     MoFEMFunctionBegin;
     data.sPace.reset();
     data.bAse.reset();
@@ -289,8 +289,8 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
     MoFEMFunctionReturn(0);
   };
 
-  auto copy_data = [](DataForcesAndSourcesCore &data,
-                      DataForcesAndSourcesCore &copy_data, const int shift) {
+  auto copy_data = [](EntitiesFieldData &data,
+                      EntitiesFieldData &copy_data, const int shift) {
     MoFEMFunctionBegin;
 
     if (shift != 0 && shift != 6) {
@@ -328,8 +328,8 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
     MoFEMFunctionReturn(0);
   };
 
-  auto copy_data_hdiv = [](DataForcesAndSourcesCore &data,
-                           DataForcesAndSourcesCore &copy_data,
+  auto copy_data_hdiv = [](EntitiesFieldData &data,
+                           EntitiesFieldData &copy_data,
                            const int shift) {
     MoFEMFunctionBegin;
 
@@ -563,8 +563,8 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
       CATCH_OP_ERRORS(*oit);
 
     } else {
-      boost::shared_ptr<DataForcesAndSourcesCore> op_master_data[2];
-      boost::shared_ptr<DataForcesAndSourcesCore> op_slave_data[2];
+      boost::shared_ptr<EntitiesFieldData> op_master_data[2];
+      boost::shared_ptr<EntitiesFieldData> op_slave_data[2];
 
       for (int ss = 0; ss != 2; ss++) {
 
@@ -647,8 +647,8 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
                     slave.dataOnEntities[MBVERTEX][0].getLocalIndices(), ex);
               };
 
-              auto get_data = [&](DataForcesAndSourcesCore &master_data,
-                                  DataForcesAndSourcesCore &slave_data) {
+              auto get_data = [&](EntitiesFieldData &master_data,
+                                  EntitiesFieldData &slave_data) {
                 return getNodesFieldData(
                     field_name,
                     master_data.dataOnEntities[MBVERTEX][0].getFieldData(),
@@ -822,7 +822,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
 }
 
 MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityFieldData(
-    DataForcesAndSourcesCore &master_data, DataForcesAndSourcesCore &slave_data,
+    EntitiesFieldData &master_data, EntitiesFieldData &slave_data,
     const std::string &field_name, const EntityType type_lo,
     const EntityType type_hi) const {
   MoFEMFunctionBegin;
@@ -1024,7 +1024,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesFieldData(
 
 template <typename EXTRACTOR>
 MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityIndices(
-    DataForcesAndSourcesCore &master_data, DataForcesAndSourcesCore &slave_data,
+    EntitiesFieldData &master_data, EntitiesFieldData &slave_data,
     const std::string &field_name, FieldEntity_vector_view &ents_field,
     const EntityType type_lo, const EntityType type_hi,
     EXTRACTOR &&extractor) const {

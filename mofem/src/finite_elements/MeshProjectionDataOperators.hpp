@@ -30,7 +30,7 @@ struct OpRunParent : public ForcesAndSourcesCore::UserDataOperator {
               Sev sev = Sev::verbose);
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
 private:
   boost::shared_ptr<ForcesAndSourcesCore> parentElePtr;

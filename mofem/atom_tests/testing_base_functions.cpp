@@ -295,7 +295,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    DataForcesAndSourcesCore tet_data(MBTET);
+    EntitiesFieldData tet_data(MBTET);
     for (int type = MBVERTEX; type != MBMAXTYPE; type++) {
       tet_data.spacesOnEntities[type].set(L2);
       tet_data.spacesOnEntities[type].set(H1);
@@ -696,7 +696,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    DataForcesAndSourcesCore tri_data(MBTRI);
+    EntitiesFieldData tri_data(MBTRI);
     for (int type = MBVERTEX; type != MBMAXTYPE; type++) {
       tri_data.spacesOnEntities[type].set(L2);
       tri_data.spacesOnEntities[type].set(H1);
@@ -969,7 +969,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    DataForcesAndSourcesCore edge_data(MBTRI);
+    EntitiesFieldData edge_data(MBTRI);
     for (int type = MBVERTEX; type != MBMAXTYPE; type++) {
       edge_data.spacesOnEntities[type].set(L2);
       edge_data.spacesOnEntities[type].set(H1);
@@ -1118,7 +1118,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    DataForcesAndSourcesCore quad_data(MBQUAD);
+    EntitiesFieldData quad_data(MBQUAD);
     for (int type = MBVERTEX; type != MBMAXTYPE; type++) {
       quad_data.spacesOnEntities[type].set(H1);
     }

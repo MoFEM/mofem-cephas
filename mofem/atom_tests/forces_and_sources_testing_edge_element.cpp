@@ -201,7 +201,7 @@ int main(int argc, char *argv[]) {
             my_split(_my_split) {}
 
       MoFEMErrorCode doWork(int side, EntityType type,
-                            DataForcesAndSourcesCore::EntData &data) {
+                            EntitiesFieldData::EntData &data) {
         MoFEMFunctionBegin;
 
         my_split << "NH1" << std::endl;
@@ -227,8 +227,8 @@ int main(int argc, char *argv[]) {
 
       MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
                             EntityType col_type,
-                            DataForcesAndSourcesCore::EntData &row_data,
-                            DataForcesAndSourcesCore::EntData &col_data) {
+                            EntitiesFieldData::EntData &row_data,
+                            EntitiesFieldData::EntData &col_data) {
         MoFEMFunctionBegin;
         my_split << "ROW NH1NH1" << std::endl;
         my_split << "row side: " << row_side << " row_type: " << row_type

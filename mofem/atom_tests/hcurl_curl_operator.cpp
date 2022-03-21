@@ -39,7 +39,7 @@ struct OpVolCurl : public VolumeElementForcesAndSourcesCore::UserDataOperator {
         tCurl(t_curl) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 };
 
 struct OpFacesRot : public FaceElementForcesAndSourcesCore::UserDataOperator {
@@ -51,7 +51,7 @@ struct OpFacesRot : public FaceElementForcesAndSourcesCore::UserDataOperator {
         tCurl(t_curl) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 };
 
 int main(int argc, char *argv[]) {
@@ -206,7 +206,7 @@ int main(int argc, char *argv[]) {
 }
 
 MoFEMErrorCode OpVolCurl::doWork(int side, EntityType type,
-                                 DataForcesAndSourcesCore::EntData &data) {
+                                 EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   if (data.getFieldData().size() == 0)
@@ -237,7 +237,7 @@ MoFEMErrorCode OpVolCurl::doWork(int side, EntityType type,
 }
 
 MoFEMErrorCode OpFacesRot::doWork(int side, EntityType type,
-                                  DataForcesAndSourcesCore::EntData &data) {
+                                  EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   int nb_dofs = data.getFieldData().size();

@@ -27,7 +27,7 @@ EntPolynomialBaseCtx::query_interface(boost::typeindex::type_index type_index,
 }
 
 EntPolynomialBaseCtx::EntPolynomialBaseCtx(
-    DataForcesAndSourcesCore &data, const FieldSpace space,
+    EntitiesFieldData &data, const FieldSpace space,
     const FieldApproximationBase base,
     const FieldApproximationBase copy_node_base)
     : dAta(data), sPace(space), bAse(base), copyNodeBase(copy_node_base) {
@@ -36,7 +36,7 @@ EntPolynomialBaseCtx::EntPolynomialBaseCtx(
 }
 
 EntPolynomialBaseCtx::EntPolynomialBaseCtx(
-    DataForcesAndSourcesCore &data, const std::string field_name,
+    EntitiesFieldData &data, const std::string field_name,
     const FieldSpace space, const FieldApproximationBase base,
     const FieldApproximationBase copy_node_base)
     : dAta(data), sPace(space), bAse(base), fieldName(field_name),

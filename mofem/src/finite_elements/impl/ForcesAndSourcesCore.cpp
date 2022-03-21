@@ -57,26 +57,26 @@ ForcesAndSourcesCore::ForcesAndSourcesCore(Interface &m_field)
       mField(m_field), getRuleHook(0), setRuleHook(0),
       dataOnElement{
 
-          boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET), // NOSPACE,
-          boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET), // NOFIELD
-          boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET), // H1
-          boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET), // HCURL
-          boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET), // HDIV
-          boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET)  // L2
+          boost::make_shared<EntitiesFieldData>(MBENTITYSET), // NOSPACE,
+          boost::make_shared<EntitiesFieldData>(MBENTITYSET), // NOFIELD
+          boost::make_shared<EntitiesFieldData>(MBENTITYSET), // H1
+          boost::make_shared<EntitiesFieldData>(MBENTITYSET), // HCURL
+          boost::make_shared<EntitiesFieldData>(MBENTITYSET), // HDIV
+          boost::make_shared<EntitiesFieldData>(MBENTITYSET)  // L2
 
       },
       derivedDataOnElement{
 
           nullptr,
-          boost::make_shared<DerivedDataForcesAndSourcesCore>(
+          boost::make_shared<DerivedEntitiesFieldData>(
               dataOnElement[NOFIELD]), // NOFIELD
-          boost::make_shared<DerivedDataForcesAndSourcesCore>(
+          boost::make_shared<DerivedEntitiesFieldData>(
               dataOnElement[H1]), // H1
-          boost::make_shared<DerivedDataForcesAndSourcesCore>(
+          boost::make_shared<DerivedEntitiesFieldData>(
               dataOnElement[HCURL]), // HCURL
-          boost::make_shared<DerivedDataForcesAndSourcesCore>(
+          boost::make_shared<DerivedEntitiesFieldData>(
               dataOnElement[HDIV]), // HDIV
-          boost::make_shared<DerivedDataForcesAndSourcesCore>(
+          boost::make_shared<DerivedEntitiesFieldData>(
               dataOnElement[L2]) // L2
 
       },
@@ -90,7 +90,7 @@ ForcesAndSourcesCore::ForcesAndSourcesCore(Interface &m_field)
 
 MoFEMErrorCode ForcesAndSourcesCore::getEntitySense(
     const EntityType type,
-    boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const {
+    boost::ptr_vector<EntitiesFieldData::EntData> &data) const {
   MoFEMFunctionBegin;
 
   auto &side_table = numeredEntFiniteElementPtr->getSideNumberTable().get<0>();
@@ -146,7 +146,7 @@ int ForcesAndSourcesCore::getMaxColOrder() const {
 
 MoFEMErrorCode ForcesAndSourcesCore::getEntityDataOrder(
     const EntityType type, const FieldSpace space,
-    boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const {
+    boost::ptr_vector<EntitiesFieldData::EntData> &data) const {
   MoFEMFunctionBegin;
 
   auto set_order = [&]() {
@@ -314,7 +314,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getNodesIndices(
 }
 
 MoFEMErrorCode
-ForcesAndSourcesCore::getRowNodesIndices(DataForcesAndSourcesCore &data,
+ForcesAndSourcesCore::getRowNodesIndices(EntitiesFieldData &data,
                                          const std::string &field_name) const {
 
   struct Extractor {
@@ -331,7 +331,7 @@ ForcesAndSourcesCore::getRowNodesIndices(DataForcesAndSourcesCore &data,
 }
 
 MoFEMErrorCode
-ForcesAndSourcesCore::getColNodesIndices(DataForcesAndSourcesCore &data,
+ForcesAndSourcesCore::getColNodesIndices(EntitiesFieldData &data,
                                          const std::string &field_name) const {
 
   struct Extractor {
@@ -349,7 +349,7 @@ ForcesAndSourcesCore::getColNodesIndices(DataForcesAndSourcesCore &data,
 
 template <typename EXTRACTOR>
 MoFEMErrorCode ForcesAndSourcesCore::getEntityIndices(
-    DataForcesAndSourcesCore &data, const std::string &field_name,
+    EntitiesFieldData &data, const std::string &field_name,
     FieldEntity_vector_view &ents_field, const EntityType type_lo,
     const EntityType type_hi, EXTRACTOR &&extractor) const {
   MoFEMFunctionBegin;
@@ -418,7 +418,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityIndices(
 }
 
 MoFEMErrorCode ForcesAndSourcesCore::getEntityRowIndices(
-    DataForcesAndSourcesCore &data, const std::string &field_name,
+    EntitiesFieldData &data, const std::string &field_name,
     const EntityType type_lo, const EntityType type_hi) const {
 
   struct Extractor {
@@ -433,7 +433,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityRowIndices(
 }
 
 MoFEMErrorCode ForcesAndSourcesCore::getEntityColIndices(
-    DataForcesAndSourcesCore &data, const std::string &field_name,
+    EntitiesFieldData &data, const std::string &field_name,
     const EntityType type_lo, const EntityType type_hi) const {
 
   struct Extractor {
@@ -466,7 +466,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getNoFieldIndices(
 }
 
 MoFEMErrorCode ForcesAndSourcesCore::getNoFieldRowIndices(
-    DataForcesAndSourcesCore &data, const std::string &field_name) const {
+    EntitiesFieldData &data, const std::string &field_name) const {
   MoFEMFunctionBegin;
   if (data.dataOnEntities[MBENTITYSET].size() == 0) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
@@ -477,7 +477,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getNoFieldRowIndices(
 }
 
 MoFEMErrorCode ForcesAndSourcesCore::getNoFieldColIndices(
-    DataForcesAndSourcesCore &data, const std::string &field_name) const {
+    EntitiesFieldData &data, const std::string &field_name) const {
   MoFEMFunctionBegin;
   if (data.dataOnEntities[MBENTITYSET].size() == 0) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
@@ -598,7 +598,7 @@ ForcesAndSourcesCore::getProblemTypeColIndices(const std::string &field_name,
 // ** Data **
 
 MoFEMErrorCode
-ForcesAndSourcesCore::getNodesFieldData(DataForcesAndSourcesCore &data,
+ForcesAndSourcesCore::getNodesFieldData(EntitiesFieldData &data,
                                         const std::string &field_name) const {
 
   auto get_nodes_field_data = [&](VectorDouble &nodes_data,
@@ -718,7 +718,7 @@ ForcesAndSourcesCore::getNodesFieldData(DataForcesAndSourcesCore &data,
 }
 
 MoFEMErrorCode ForcesAndSourcesCore::getEntityFieldData(
-    DataForcesAndSourcesCore &data, const std::string &field_name,
+    EntitiesFieldData &data, const std::string &field_name,
     const EntityType type_lo, const EntityType type_hi) const {
   MoFEMFunctionBegin;
   for (EntityType t = type_lo; t != type_hi; ++t) {
@@ -856,7 +856,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getNoFieldFieldData(
 }
 
 MoFEMErrorCode
-ForcesAndSourcesCore::getNoFieldFieldData(DataForcesAndSourcesCore &data,
+ForcesAndSourcesCore::getNoFieldFieldData(EntitiesFieldData &data,
                                           const std::string field_name) const {
   MoFEMFunctionBegin;
   if (data.dataOnEntities[MBENTITYSET].size() == 0)
@@ -873,7 +873,7 @@ ForcesAndSourcesCore::getNoFieldFieldData(DataForcesAndSourcesCore &data,
 // ** Face **
 
 MoFEMErrorCode
-ForcesAndSourcesCore::getFaceNodes(DataForcesAndSourcesCore &data) const {
+ForcesAndSourcesCore::getFaceNodes(EntitiesFieldData &data) const {
   MoFEMFunctionBegin;
   auto &face_nodes = data.facesNodes;
   auto &face_nodes_order = data.facesNodesOrder;
@@ -943,7 +943,7 @@ ForcesAndSourcesCore::getFaceNodes(DataForcesAndSourcesCore &data) const {
 // ** Space and Base **
 
 MoFEMErrorCode ForcesAndSourcesCore::getSpacesAndBaseOnEntities(
-    DataForcesAndSourcesCore &data) const {
+    EntitiesFieldData &data) const {
   MoFEMFunctionBeginHot;
 
   if (nInTheLoop == 0) {
@@ -1063,7 +1063,7 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
 
   const auto ele_type = numeredEntFiniteElementPtr->getEntType();
 
-  auto get_nodal_base_data = [&](DataForcesAndSourcesCore &data,
+  auto get_nodal_base_data = [&](EntitiesFieldData &data,
                                  auto field_ptr) {
     MoFEMFunctionBegin;
     auto &space = data.dataOnEntities[MBVERTEX][0].getSpace();
@@ -1121,7 +1121,7 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
     MoFEMFunctionReturn(0);
   };
 
-  auto get_entity_base_data = [&](DataForcesAndSourcesCore &data,
+  auto get_entity_base_data = [&](EntitiesFieldData &data,
                                   auto field_ptr, const EntityType type_lo,
                                   const EntityType type_hi) {
     MoFEMFunctionBegin;
@@ -1358,7 +1358,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
 
       } else {
 
-        boost::shared_ptr<DataForcesAndSourcesCore> op_data[2];
+        boost::shared_ptr<EntitiesFieldData> op_data[2];
         std::array<bool, 2> base_swap;
         std::array<std::pair<std::string, FieldApproximationBase>, 2>
             base_swap_data;

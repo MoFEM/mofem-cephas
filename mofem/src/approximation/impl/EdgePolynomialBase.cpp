@@ -45,7 +45,7 @@ EdgePolynomialBase::getValue(MatrixDouble &pts,
         "Wrong dimension of pts, should be at least 3 rows with coordinates");
 
   const FieldApproximationBase base = cTx->bAse;
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
 
   if (base != AINSWORTH_BERNSTEIN_BEZIER_BASE) {
     if (cTx->copyNodeBase == LASTBASE) {
@@ -116,7 +116,7 @@ MoFEMErrorCode
 EdgePolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const std::string &field_name = cTx->fieldName;
   const int nb_gauss_pts = pts.size2();
 
@@ -211,7 +211,7 @@ EdgePolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
 MoFEMErrorCode EdgePolynomialBase::getValueH1AinsworthBase(MatrixDouble &pts) {
   MoFEMFunctionBeginHot;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
                                      double *diffL, const int dim) =
@@ -275,7 +275,7 @@ MoFEMErrorCode EdgePolynomialBase::getValueH1AinsworthBase(MatrixDouble &pts) {
 MoFEMErrorCode EdgePolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
   MoFEMFunctionBeginHot;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
 
   int nb_gauss_pts = pts.size2();
@@ -332,7 +332,7 @@ MoFEMErrorCode EdgePolynomialBase::getValueL2(MatrixDouble &pts) {
 MoFEMErrorCode EdgePolynomialBase::getValueL2DemkowiczBase(MatrixDouble &pts) {
   MoFEMFunctionBeginHot;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
 
   int nb_gauss_pts = pts.size2();
@@ -379,7 +379,7 @@ MoFEMErrorCode
 EdgePolynomialBase::getValueHcurlAinsworthBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
 
   PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
@@ -420,7 +420,7 @@ MoFEMErrorCode
 EdgePolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
 
   int nb_gauss_pts = pts.size2();

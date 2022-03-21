@@ -44,7 +44,7 @@ struct OpDivergence : public FaceEleOp {
   OpDivergence(double &div) : FaceEleOp("FIELD1", OPROW), dIv(div) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data) {
+                        EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
     const int nb_dofs = data.getIndices().size();
     if (nb_dofs == 0)
@@ -71,7 +71,7 @@ struct OpFlux : public EdgeEleOp {
   OpFlux(double &flux) : EdgeEleOp("FIELD1", OPROW), fLux(flux) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data) {
+                        EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
     const int nb_dofs = data.getIndices().size();
     if (nb_dofs == 0)

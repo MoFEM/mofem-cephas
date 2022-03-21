@@ -42,7 +42,7 @@ using DomainEle = ElementsAndOps<SPACE_DIM>::DomainEle;
 using DomainEleOp = DomainEle::UserDataOperator;
 using BoundaryEle = ElementsAndOps<SPACE_DIM>::BoundaryEle;
 using BoundaryEleOp = BoundaryEle::UserDataOperator;
-using EntData = DataForcesAndSourcesCore::EntData;
+using EntData = EntitiesFieldData::EntData;
 
 int main(int argc, char *argv[]) {
 
@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
       auto op_side_fe = new DomainEleOp(NOSPACE, DomainEleOp::OPLAST);
       op_side_fe->doWorkRhsHook = [&](DataOperator *op_ptr, int side,
                                       EntityType type,
-                                      DataForcesAndSourcesCore::EntData &data) {
+                                      EntitiesFieldData::EntData &data) {
         auto domain_op = static_cast<DomainEleOp *>(op_ptr);
         MoFEMFunctionBegin;
 
@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
       // Create boundary FE OP
 
       auto do_work_rhs = [&](DataOperator *op_ptr, int side, EntityType type,
-                             DataForcesAndSourcesCore::EntData &data) {
+                             EntitiesFieldData::EntData &data) {
         auto bdy_op = static_cast<BoundaryEleOp *>(op_ptr);
         MoFEMFunctionBegin;
 

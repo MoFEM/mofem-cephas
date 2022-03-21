@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
         ~PrintJacobian() { my_split.close(); }
 
         MoFEMErrorCode doWork(int side, EntityType type,
-                              DataForcesAndSourcesCore::EntData &data) {
+                              EntitiesFieldData::EntData &data) {
           MoFEMFunctionBeginHot;
           const double eps = 1e-6;
           for (unsigned int ii = 0; ii != data.getDiffN().size1(); ii++) {
@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
         MoFEMFunctionReturnHot(0);
       }
 
-      DataForcesAndSourcesCore data;
+      EntitiesFieldData data;
 
       MoFEMErrorCode operator()() {
         MoFEMFunctionBegin;

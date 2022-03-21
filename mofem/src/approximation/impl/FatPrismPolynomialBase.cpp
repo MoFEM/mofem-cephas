@@ -29,9 +29,9 @@ MoFEMErrorCode FatPrismPolynomialBaseCtx::query_interface(
 }
 
 FatPrismPolynomialBaseCtx::FatPrismPolynomialBaseCtx(
-    DataForcesAndSourcesCore &data,
-    DataForcesAndSourcesCore &data_triangles_only,
-    DataForcesAndSourcesCore &data_trough_thickness,
+    EntitiesFieldData &data,
+    EntitiesFieldData &data_triangles_only,
+    EntitiesFieldData &data_trough_thickness,
     MatrixDouble &gauss_pts_triangles_only,
     MatrixDouble &gauss_pts_through_thickness, moab::Interface &moab,
     const NumeredEntFiniteElement *fe_ptr, const FieldSpace space,
@@ -83,7 +83,7 @@ FatPrismPolynomialBase::getValue(MatrixDouble &pts,
         "Wrong dimension of pts, should be at least 3 rows with coordinates");
 
   const FieldApproximationBase base = cTx->bAse;
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
 
   if (cTx->copyNodeBase == LASTBASE)
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
@@ -142,7 +142,7 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1TrianglesOnly() {
 MoFEMErrorCode FatPrismPolynomialBase::getValueH1ThroughThickness() {
   MoFEMFunctionBegin;
 
-  // DataForcesAndSourcesCore& data = cTx->dAta;
+  // EntitiesFieldData& data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
                                      double *diffL, const int dim) =
@@ -183,7 +183,7 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1ThroughThickness() {
 MoFEMErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
 
   PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,

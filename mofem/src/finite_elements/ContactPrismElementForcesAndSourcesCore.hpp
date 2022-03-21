@@ -235,13 +235,13 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
   MoFEMErrorCode operator()();
 
-  inline const std::array<boost::shared_ptr<DataForcesAndSourcesCore>,
+  inline const std::array<boost::shared_ptr<EntitiesFieldData>,
                           LASTSPACE>
   getDataOnMasterFromEleSide() {
     return dataOnMaster;
   }
 
-  inline const std::array<boost::shared_ptr<DataForcesAndSourcesCore>,
+  inline const std::array<boost::shared_ptr<EntitiesFieldData>,
                           LASTSPACE>
   getDataOnSlaveFromEleSide() {
     return dataOnSlave;
@@ -278,9 +278,9 @@ protected:
    * FIXME: that should be moved to private class data and acessed only by
    * member function
    */
-  const std::array<boost::shared_ptr<DataForcesAndSourcesCore>, LASTSPACE>
+  const std::array<boost::shared_ptr<EntitiesFieldData>, LASTSPACE>
       dataOnMaster;
-  const std::array<boost::shared_ptr<DataForcesAndSourcesCore>, LASTSPACE>
+  const std::array<boost::shared_ptr<EntitiesFieldData>, LASTSPACE>
       dataOnSlave;
 
   /**
@@ -289,22 +289,22 @@ protected:
    * FIXME: that should be moved to private class data and acessed only by
    * member function
    */
-  const std::array<boost::shared_ptr<DataForcesAndSourcesCore>, LASTSPACE>
+  const std::array<boost::shared_ptr<EntitiesFieldData>, LASTSPACE>
       derivedDataOnMaster;
-  const std::array<boost::shared_ptr<DataForcesAndSourcesCore>, LASTSPACE>
+  const std::array<boost::shared_ptr<EntitiesFieldData>, LASTSPACE>
       derivedDataOnSlave;
 
-  DataForcesAndSourcesCore &dataH1Master;
-  DataForcesAndSourcesCore &dataH1Slave;
+  EntitiesFieldData &dataH1Master;
+  EntitiesFieldData &dataH1Slave;
 
-  DataForcesAndSourcesCore &dataNoFieldMaster;
-  DataForcesAndSourcesCore &dataNoFieldSlave;
-  DataForcesAndSourcesCore &dataHcurlMaster;
-  DataForcesAndSourcesCore &dataHcurlSlave;
-  DataForcesAndSourcesCore &dataHdivMaster;
-  DataForcesAndSourcesCore &dataHdivSlave;
-  DataForcesAndSourcesCore &dataL2Master;
-  DataForcesAndSourcesCore &dataL2Slave;
+  EntitiesFieldData &dataNoFieldMaster;
+  EntitiesFieldData &dataNoFieldSlave;
+  EntitiesFieldData &dataHcurlMaster;
+  EntitiesFieldData &dataHcurlSlave;
+  EntitiesFieldData &dataHdivMaster;
+  EntitiesFieldData &dataHdivSlave;
+  EntitiesFieldData &dataL2Master;
+  EntitiesFieldData &dataL2Slave;
 
   MoFEMErrorCode setDefaultGaussPts(const int rule);
 
@@ -322,7 +322,7 @@ protected:
    */
   MoFEMErrorCode getValueHdivDemkowiczBase(MatrixDouble &pts,
                                            FieldApproximationBase m_s_base,
-                                           DataForcesAndSourcesCore &m_s_data);
+                                           EntitiesFieldData &m_s_data);
 
   /** \brief function that gets entity field data.
    *
@@ -333,8 +333,8 @@ protected:
    * \param type_hi highest dimension entity type to be searched
    */
   MoFEMErrorCode
-  getEntityFieldData(DataForcesAndSourcesCore &master_data,
-                     DataForcesAndSourcesCore &slave_data,
+  getEntityFieldData(EntitiesFieldData &master_data,
+                     EntitiesFieldData &slave_data,
                      const std::string &field_name,
                      const EntityType type_lo = MBVERTEX,
                      const EntityType type_hi = MBPOLYHEDRON) const;
@@ -349,8 +349,8 @@ protected:
    * \param type_hi highest dimension entity type to be searched
    */
   template <typename EXTRACTOR>
-  MoFEMErrorCode getEntityIndices(DataForcesAndSourcesCore &master_data,
-                                  DataForcesAndSourcesCore &slave_data,
+  MoFEMErrorCode getEntityIndices(EntitiesFieldData &master_data,
+                                  EntitiesFieldData &slave_data,
                                   const std::string &field_name,
                                   FieldEntity_vector_view &ents_field,
                                   const EntityType type_lo,

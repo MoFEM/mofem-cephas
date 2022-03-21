@@ -63,7 +63,7 @@ struct PrismOp : public FatPrismElementForcesAndSourcesCore::UserDataOperator {
 
   PrismOp(moab::Interface &post_proc, MapCoords &map_coords);
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
 public:
   moab::Interface &postProc;
@@ -91,7 +91,7 @@ template <typename OP> struct Op : public OP {
 
   Op(moab::Interface &post_proc, MapCoords &map_coords, EntityHandle prism);
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
 public:
   moab::Interface &postProc;
@@ -356,7 +356,7 @@ PrismOp::PrismOp(moab::Interface &post_proc, MapCoords &map_coords)
       postProc(post_proc), mapCoords(map_coords) {}
 
 MoFEMErrorCode PrismOp::doWork(int side, EntityType type,
-                               DataForcesAndSourcesCore::EntData &data) {
+                               EntitiesFieldData::EntData &data) {
   constexpr double def_val[] = {0, 0, 0};
   MoFEMFunctionBegin;
   switch (type) {
@@ -594,7 +594,7 @@ Op<OP>::Op(moab::Interface &post_proc, MapCoords &map_coords,
 
 template <typename OP>
 MoFEMErrorCode Op<OP>::doWork(int side, EntityType type,
-                              DataForcesAndSourcesCore::EntData &data) {
+                              EntitiesFieldData::EntData &data) {
   constexpr double def_val[] = {0, 0, 0};
   MoFEMFunctionBegin;
   switch (type) {

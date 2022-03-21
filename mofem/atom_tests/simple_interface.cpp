@@ -33,7 +33,7 @@ struct OpVolume : public VolumeElementForcesAndSourcesCore::UserDataOperator {
       : VolumeElementForcesAndSourcesCore::UserDataOperator(field_name, OPROW),
         vOl(vol) {}
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data) {
+                        EntitiesFieldData::EntData &data) {
 
     MoFEMFunctionBegin;
     if (type != MBVERTEX)
@@ -52,8 +52,8 @@ struct OpVolume : public VolumeElementForcesAndSourcesCore::UserDataOperator {
   }
   MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
                         EntityType col_type,
-                        DataForcesAndSourcesCore::EntData &row_data,
-                        DataForcesAndSourcesCore::EntData &col_data) {
+                        EntitiesFieldData::EntData &row_data,
+                        EntitiesFieldData::EntData &col_data) {
     MoFEMFunctionBeginHot;
     // PetscPrintf(PETSC_COMM_WORLD,"domain: calculate matrix\n");
     MoFEMFunctionReturnHot(0);
@@ -66,7 +66,7 @@ struct OpFace : public FaceElementForcesAndSourcesCore::UserDataOperator {
       : FaceElementForcesAndSourcesCore::UserDataOperator(field_name, OPROW),
         vOl(vol) {}
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data) {
+                        EntitiesFieldData::EntData &data) {
 
     MoFEMFunctionBegin;
     if (type != MBVERTEX)
@@ -89,8 +89,8 @@ struct OpFace : public FaceElementForcesAndSourcesCore::UserDataOperator {
   }
   MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
                         EntityType col_type,
-                        DataForcesAndSourcesCore::EntData &row_data,
-                        DataForcesAndSourcesCore::EntData &col_data) {
+                        EntitiesFieldData::EntData &row_data,
+                        EntitiesFieldData::EntData &col_data) {
     MoFEMFunctionBeginHot;
     // PetscPrintf(PETSC_COMM_WORLD,"boundary: calculate matrix\n");
     MoFEMFunctionReturnHot(0);

@@ -50,12 +50,12 @@ DataOperator::DataOperator(const bool symm)
 }
 
 template <bool Symm>
-MoFEMErrorCode DataOperator::opLhs(DataForcesAndSourcesCore &row_data,
-                                   DataForcesAndSourcesCore &col_data) {
+MoFEMErrorCode DataOperator::opLhs(EntitiesFieldData &row_data,
+                                   EntitiesFieldData &col_data) {
   MoFEMFunctionBeginHot;
 
   auto do_col_entity =
-      [&](boost::ptr_vector<DataForcesAndSourcesCore::EntData> &row_ent_data,
+      [&](boost::ptr_vector<EntitiesFieldData::EntData> &row_ent_data,
           const int ss, const EntityType row_type, const EntityType low_type,
           const EntityType hi_type) {
         MoFEMFunctionBegin;
@@ -107,8 +107,8 @@ MoFEMErrorCode DataOperator::opLhs(DataForcesAndSourcesCore &row_data,
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode DataOperator::opLhs(DataForcesAndSourcesCore &row_data,
-                                   DataForcesAndSourcesCore &col_data) {
+MoFEMErrorCode DataOperator::opLhs(EntitiesFieldData &row_data,
+                                   EntitiesFieldData &col_data) {
   if (getSymm())
     return opLhs<true>(row_data, col_data);
   else
@@ -117,7 +117,7 @@ MoFEMErrorCode DataOperator::opLhs(DataForcesAndSourcesCore &row_data,
 
 template <bool ErrorIfNoBase>
 MoFEMErrorCode
-DataOperator::opRhs(DataForcesAndSourcesCore &data,
+DataOperator::opRhs(EntitiesFieldData &data,
                     const std::array<bool, MBMAXTYPE> &do_entities) {
   MoFEMFunctionBegin;
 
@@ -167,7 +167,7 @@ DataOperator::opRhs(DataForcesAndSourcesCore &data,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode DataOperator::opRhs(DataForcesAndSourcesCore &data,
+MoFEMErrorCode DataOperator::opRhs(EntitiesFieldData &data,
                                    const bool error_if_no_base) {
   if (error_if_no_base)
     return opRhs<true>(data, doEntities);
@@ -197,7 +197,7 @@ MoFEMErrorCode invertTensor3by3<3, double, ublas::row_major, DoubleAllocator>(
 }
 
 MoFEMErrorCode OpSetInvJacH1::doWork(int side, EntityType type,
-                                     DataForcesAndSourcesCore::EntData &data) {
+                                     EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   auto transform_base = [&](MatrixDouble &diff_n) {
@@ -254,7 +254,7 @@ MoFEMErrorCode OpSetInvJacH1::doWork(int side, EntityType type,
 
 MoFEMErrorCode
 OpSetInvJacHdivAndHcurl::doWork(int side, EntityType type,
-                                DataForcesAndSourcesCore::EntData &data) {
+                                EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   if (type == MBVERTEX)
@@ -298,7 +298,7 @@ OpSetInvJacHdivAndHcurl::doWork(int side, EntityType type,
 }
 
 MoFEMErrorCode OpSetContravariantPiolaTransform::doWork(
-    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+    int side, EntityType type, EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   if (CN::Dimension(type) > 1) {
@@ -362,7 +362,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransform::doWork(
 
 MoFEMErrorCode
 OpSetCovariantPiolaTransform::doWork(int side, EntityType type,
-                                     DataForcesAndSourcesCore::EntData &data) {
+                                     EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   if (type == MBVERTEX)
@@ -415,7 +415,7 @@ OpSetCovariantPiolaTransform::doWork(int side, EntityType type,
 
 MoFEMErrorCode
 OpGetCoordsAndNormalsOnPrism::doWork(int side, EntityType type,
-                                     DataForcesAndSourcesCore::EntData &data) {
+                                     EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   if (data.getFieldData().size() == 0)
@@ -524,7 +524,7 @@ MoFEMErrorCode OpGetCoordsAndNormalsOnPrism::calculateNormals() {
 }
 
 MoFEMErrorCode OpSetContravariantPiolaTransformOnFace::doWork(
-    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+    int side, EntityType type, EntitiesFieldData::EntData &data) {
   FTensor::Index<'i', 3> i;
   MoFEMFunctionBegin;
 
@@ -617,7 +617,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransformOnFace::doWork(
 }
 
 MoFEMErrorCode OpSetCovariantPiolaTransformOnFace::doWork(
-    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+    int side, EntityType type, EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   const auto type_dim = moab::CN::Dimension(type);
@@ -719,7 +719,7 @@ MoFEMErrorCode OpSetCovariantPiolaTransformOnFace::doWork(
 
 MoFEMErrorCode
 OpGetHOTangentOnEdge::doWork(int side, EntityType type,
-                             DataForcesAndSourcesCore::EntData &data) {
+                             EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   int nb_dofs = data.getFieldData().size();
@@ -765,7 +765,7 @@ OpGetHOTangentOnEdge::doWork(int side, EntityType type,
 }
 
 MoFEMErrorCode OpSetCovariantPiolaTransformOnEdge::doWork(
-    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+    int side, EntityType type, EntitiesFieldData::EntData &data) {
   MoFEMFunctionBeginHot;
 
   if (type != MBEDGE)
@@ -867,7 +867,7 @@ OpGetDataAndGradient<3, 3>::getGradAtGaussPtsTensor<3, 3>(MatrixDouble &data) {
 
 template <>
 MoFEMErrorCode OpGetDataAndGradient<3, 3>::calculateValAndGrad(
-    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+    int side, EntityType type, EntitiesFieldData::EntData &data) {
   MoFEMFunctionBeginHot;
   if (data.getBase() == NOBASE)
     MoFEMFunctionReturnHot(0);
@@ -925,7 +925,7 @@ MoFEMErrorCode OpGetDataAndGradient<3, 3>::calculateValAndGrad(
 
 template <>
 MoFEMErrorCode OpGetDataAndGradient<1, 3>::calculateValAndGrad(
-    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+    int side, EntityType type, EntitiesFieldData::EntData &data) {
   MoFEMFunctionBeginHot;
   const unsigned int nb_gauss_pts = data.getN().size1();
   const unsigned int nb_base_functions = data.getN().size2();

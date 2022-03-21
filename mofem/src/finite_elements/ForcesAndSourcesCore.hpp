@@ -27,7 +27,7 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
-/** \brief structure to get information form mofem into DataForcesAndSourcesCore
+/** \brief structure to get information form mofem into EntitiesFieldData
  * \ingroup mofem_forces_and_sources
  *
  */
@@ -151,9 +151,9 @@ public:
    * @param space
    * @param type
    * @param side
-   * @return const DataForcesAndSourcesCore::EntData&
+   * @return const EntitiesFieldData::EntData&
    */
-  const DataForcesAndSourcesCore::EntData &getEntData(const FieldSpace space,
+  const EntitiesFieldData::EntData &getEntData(const FieldSpace space,
                                                       const EntityType type,
                                                       const int side) const {
     return dataOnElement[space]->dataOnEntities[type][side];
@@ -165,9 +165,9 @@ public:
    * @param space
    * @param type
    * @param side
-   * @return DataForcesAndSourcesCore::EntData&
+   * @return EntitiesFieldData::EntData&
    */
-  DataForcesAndSourcesCore::EntData &
+  EntitiesFieldData::EntData &
   getEntData(const FieldSpace space, const EntityType type, const int side) {
     return dataOnElement[space]->dataOnEntities[type][side];
   }
@@ -181,7 +181,7 @@ protected:
    */
   MoFEMErrorCode getEntitySense(
       const EntityType type,
-      boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const;
+      boost::ptr_vector<EntitiesFieldData::EntData> &data) const;
 
   /**
    * @brief Get the entity data order
@@ -193,7 +193,7 @@ protected:
    */
   MoFEMErrorCode getEntityDataOrder(
       const EntityType type, const FieldSpace space,
-      boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const;
+      boost::ptr_vector<EntitiesFieldData::EntData> &data) const;
 
   /**
    * @brief Get the entity sense (orientation)
@@ -203,7 +203,7 @@ protected:
    * @return MoFEMErrorCode
    */
   template <EntityType type>
-  inline MoFEMErrorCode getEntitySense(DataForcesAndSourcesCore &data) const {
+  inline MoFEMErrorCode getEntitySense(EntitiesFieldData &data) const {
     return getEntitySense(type, data.dataOnEntities[type]);
   }
 
@@ -216,7 +216,7 @@ protected:
    * @return MoFEMErrorCode
    */
   template <EntityType type>
-  inline MoFEMErrorCode getEntityDataOrder(DataForcesAndSourcesCore &data,
+  inline MoFEMErrorCode getEntityDataOrder(EntitiesFieldData &data,
                                            const FieldSpace space) const {
     return getEntityDataOrder(type, space, data.dataOnEntities[type]);
   }
@@ -233,15 +233,15 @@ protected:
                   VectorInt &local_nodes_indices, EXTRACTOR &&extractor) const;
 
   /// \brief get row node indices from FENumeredDofEntity_multiIndex
-  MoFEMErrorCode getRowNodesIndices(DataForcesAndSourcesCore &data,
+  MoFEMErrorCode getRowNodesIndices(EntitiesFieldData &data,
                                     const std::string &field_name) const;
 
   /// \brief get col node indices from FENumeredDofEntity_multiIndex
-  MoFEMErrorCode getColNodesIndices(DataForcesAndSourcesCore &data,
+  MoFEMErrorCode getColNodesIndices(EntitiesFieldData &data,
                                     const std::string &field_name) const;
 
   template <typename EXTRACTOR>
-  MoFEMErrorCode getEntityIndices(DataForcesAndSourcesCore &data,
+  MoFEMErrorCode getEntityIndices(EntitiesFieldData &data,
                                   const std::string &field_name,
                                   FieldEntity_vector_view &ents_field,
                                   const EntityType type_lo,
@@ -249,13 +249,13 @@ protected:
                                   EXTRACTOR &&extractor) const;
 
   MoFEMErrorCode
-  getEntityRowIndices(DataForcesAndSourcesCore &data,
+  getEntityRowIndices(EntitiesFieldData &data,
                       const std::string &field_name,
                       const EntityType type_lo = MBVERTEX,
                       const EntityType type_hi = MBPOLYHEDRON) const;
 
   MoFEMErrorCode
-  getEntityColIndices(DataForcesAndSourcesCore &data,
+  getEntityColIndices(EntitiesFieldData &data,
                       const std::string &field_name,
                       const EntityType type_lo = MBVERTEX,
                       const EntityType type_hi = MBPOLYHEDRON) const;
@@ -267,11 +267,11 @@ protected:
                     VectorInt &nodes_indices) const;
 
   /// \brief get col NoField indices
-  MoFEMErrorCode getNoFieldRowIndices(DataForcesAndSourcesCore &data,
+  MoFEMErrorCode getNoFieldRowIndices(EntitiesFieldData &data,
                                       const std::string &field_name) const;
 
   /// \brief get col NoField indices
-  MoFEMErrorCode getNoFieldColIndices(DataForcesAndSourcesCore &data,
+  MoFEMErrorCode getNoFieldColIndices(EntitiesFieldData &data,
                                       const std::string &field_name) const;
 
   /**@}*/
@@ -288,7 +288,7 @@ protected:
                                      VectorDofs &ent_field_dofs,
                                      VectorFieldEntities &ent_field) const;
 
-  MoFEMErrorCode getNoFieldFieldData(DataForcesAndSourcesCore &data,
+  MoFEMErrorCode getNoFieldFieldData(EntitiesFieldData &data,
                                      const std::string field_name) const;
 
   /**
@@ -297,11 +297,11 @@ protected:
    * @param  field_name Field name
    * @return            Error code
    */
-  MoFEMErrorCode getNodesFieldData(DataForcesAndSourcesCore &data,
+  MoFEMErrorCode getNodesFieldData(EntitiesFieldData &data,
                                    const std::string &field_name) const;
 
   MoFEMErrorCode
-  getEntityFieldData(DataForcesAndSourcesCore &data,
+  getEntityFieldData(EntitiesFieldData &data,
                      const std::string &field_name,
                      const EntityType type_lo = MBVERTEX,
                      const EntityType type_hi = MBPOLYHEDRON) const;
@@ -309,11 +309,11 @@ protected:
   /**@}*/
 
   /// \brief Get nodes on faces
-  MoFEMErrorCode getFaceNodes(DataForcesAndSourcesCore &data) const;
+  MoFEMErrorCode getFaceNodes(EntitiesFieldData &data) const;
 
   /// \brief Get field approximation space and base on entities
   MoFEMErrorCode
-  getSpacesAndBaseOnEntities(DataForcesAndSourcesCore &data) const;
+  getSpacesAndBaseOnEntities(EntitiesFieldData &data) const;
 
   /** \name Data form NumeredDofEntity_multiIndex */
 
@@ -463,21 +463,21 @@ protected:
    * @brief Entity data on element entity rows fields
    *
    */
-  const std::array<boost::shared_ptr<DataForcesAndSourcesCore>, LASTSPACE>
+  const std::array<boost::shared_ptr<EntitiesFieldData>, LASTSPACE>
       dataOnElement;
 
   /**
    * @brief Entity data on element entity columns fields
    *
    */
-  const std::array<boost::shared_ptr<DataForcesAndSourcesCore>, LASTSPACE>
+  const std::array<boost::shared_ptr<EntitiesFieldData>, LASTSPACE>
       derivedDataOnElement;
 
-  DataForcesAndSourcesCore &dataNoField;
-  DataForcesAndSourcesCore &dataH1;
-  DataForcesAndSourcesCore &dataHcurl;
-  DataForcesAndSourcesCore &dataHdiv;
-  DataForcesAndSourcesCore &dataL2;
+  EntitiesFieldData &dataNoField;
+  EntitiesFieldData &dataH1;
+  EntitiesFieldData &dataHcurl;
+  EntitiesFieldData &dataHdiv;
+  EntitiesFieldData &dataL2;
 
   /**
    * @brief Vector of finite element users data operators
@@ -639,7 +639,7 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
    *
    * \code
    * MoFEMErrorCode doWork(int side, EntityType type,
-   *                     DataForcesAndSourcesCore::EntData &data) {
+   *                     EntitiesFieldData::EntData &data) {
    *  MoFEMFunctionBegin;
    *
    *  if (type == MBVERTEX) {

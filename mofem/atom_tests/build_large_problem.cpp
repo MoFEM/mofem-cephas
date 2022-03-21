@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
 
     using Vol = VolumeElementForcesAndSourcesCore;
     using VolOp = VolumeElementForcesAndSourcesCore::UserDataOperator;
-    using EntData = DataForcesAndSourcesCore::EntData;
+    using EntData = EntitiesFieldData::EntData;
 
     auto vol_ptr = boost::make_shared<Vol>(m_field);
 

@@ -25,7 +25,7 @@ namespace MoFEM {
 struct OpBaseDerivativesBase : public ForcesAndSourcesCore::UserDataOperator {
 
   OpBaseDerivativesBase(boost::shared_ptr<MatrixDouble> base_mass_ptr,
-                        boost::shared_ptr<DataForcesAndSourcesCore> data_l2,
+                        boost::shared_ptr<EntitiesFieldData> data_l2,
                         const FieldApproximationBase b, const FieldSpace s,
                         int verb = QUIET, Sev sev = Sev::verbose)
       : ForcesAndSourcesCore::UserDataOperator(
@@ -39,7 +39,7 @@ protected:
   Sev severityLevel;
 
   boost::shared_ptr<MatrixDouble> baseMassPtr;
-  boost::shared_ptr<DataForcesAndSourcesCore> dataL2;
+  boost::shared_ptr<EntitiesFieldData> dataL2;
 };
 
 template <int BASE_DIM>
@@ -53,7 +53,7 @@ template <> struct OpBaseDerivativesMass<1> : public OpBaseDerivativesBase  {
   using OpBaseDerivativesBase::OpBaseDerivativesBase;
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 };
 
 template <int BASE_DIM>
@@ -67,7 +67,7 @@ template <> struct OpBaseDerivativesNext<1> : public OpBaseDerivativesBase {
   using OpBaseDerivativesBase::OpBaseDerivativesBase;
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
 private:
 

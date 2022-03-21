@@ -32,7 +32,7 @@ OpSetBc::OpSetBc(std::string field_name, bool yes_set,
       yesSet(yes_set), boundaryMarker(boundary_marker) {}
 
 MoFEMErrorCode OpSetBc::doWork(int side, EntityType type,
-                               DataForcesAndSourcesCore::EntData &data) {
+                               EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
   if (boundaryMarker) {
     if (!data.getIndices().empty())
@@ -68,7 +68,7 @@ OpUnSetBc::OpUnSetBc(std::string field_name)
           field_name, ForcesAndSourcesCore::UserDataOperator::OPROW) {}
 
 MoFEMErrorCode OpUnSetBc::doWork(int side, EntityType type,
-                                 DataForcesAndSourcesCore::EntData &data) {
+                                 EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
   EssentialBcStorage::feStorage[rowFieldName].clear();
   MoFEMFunctionReturn(0);
@@ -86,7 +86,7 @@ MoFEMErrorCode OpUnSetBc::doWork(int side, EntityType type,
 template <>
 MoFEMErrorCode
 VecSetValues<EssentialBcStorage>(Vec V,
-                                 const DataForcesAndSourcesCore::EntData &data,
+                                 const EntitiesFieldData::EntData &data,
                                  const double *ptr, InsertMode iora) {
   MoFEMFunctionBegin;
 
@@ -122,8 +122,8 @@ VecSetValues<EssentialBcStorage>(Vec V,
  */
 template <>
 MoFEMErrorCode MatSetValues<EssentialBcStorage>(
-    Mat M, const DataForcesAndSourcesCore::EntData &row_data,
-    const DataForcesAndSourcesCore::EntData &col_data, const double *ptr,
+    Mat M, const EntitiesFieldData::EntData &row_data,
+    const EntitiesFieldData::EntData &col_data, const double *ptr,
     InsertMode iora) {
 
   if(!M)

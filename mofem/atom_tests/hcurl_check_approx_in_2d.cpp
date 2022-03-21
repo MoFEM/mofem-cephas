@@ -91,8 +91,8 @@ struct OpAssembleMat : public FaceEleOp {
   MatrixDouble nA;
   MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
                         EntityType col_type,
-                        DataForcesAndSourcesCore::EntData &row_data,
-                        DataForcesAndSourcesCore::EntData &col_data) {
+                        EntitiesFieldData::EntData &row_data,
+                        EntitiesFieldData::EntData &col_data) {
 
     MoFEMFunctionBegin;
     const int nb_dofs_row = row_data.getIndices().size();
@@ -129,7 +129,7 @@ struct OpAssembleVec : public FaceEleOp {
 
   VectorDouble nF;
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data) {
+                        EntitiesFieldData::EntData &data) {
 
     MoFEMFunctionBegin;
     const int nb_dofs = data.getIndices().size();
@@ -164,7 +164,7 @@ struct OpValsDiffVals : public FaceEleOp {
   FTensor::Index<'j', 2> j;
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data) {
+                        EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
     const int nb_dofs = data.getIndices().size();
     if (nb_dofs == 0)
@@ -212,7 +212,7 @@ struct OpCheckValsDiffVals : public FaceEleOp {
   FTensor::Index<'j', 2> j;
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data) {
+                        EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
     const double eps = 1e-6;
     if (type == MBEDGE && side == 0) {

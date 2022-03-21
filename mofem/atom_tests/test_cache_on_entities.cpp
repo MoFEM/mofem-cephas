@@ -49,7 +49,7 @@ struct MyStorage : EntityStorage {
 struct OpVolumeSet : public VolOp {
   OpVolumeSet(const std::string &field_name) : VolOp(field_name, OPROW) {}
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data) {
+                        EntitiesFieldData::EntData &data) {
 
     MoFEMFunctionBegin;
     MOFEM_LOG_CHANNEL("SYNC");
@@ -113,7 +113,7 @@ std::vector<OpVolumeSet::SharedVecInt> OpVolumeSet::entsIndices;
 struct OpVolumeTest : public VolOp {
   OpVolumeTest(const std::string &field_name) : VolOp(field_name, OPROW) {}
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data) {
+                        EntitiesFieldData::EntData &data) {
 
     MoFEMFunctionBegin;
     MOFEM_LOG_CHANNEL("SYNC");
@@ -158,7 +158,7 @@ struct OpVolumeAssemble : public VolOp {
   OpVolumeAssemble(const std::string &field_name, Vec v)
       : VolOp(field_name, OPROW), V(v) {}
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data) {
+                        EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
     auto nb_dofs = data.getIndices().size();
     if (nb_dofs) {

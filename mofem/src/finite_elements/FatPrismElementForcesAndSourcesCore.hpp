@@ -179,9 +179,9 @@ struct FatPrismElementForcesAndSourcesCore
      */
     inline MatrixDouble &getTangent2AtGaussPtF4();
 
-    inline DataForcesAndSourcesCore &getTrianglesOnlyDataStructure();
+    inline EntitiesFieldData &getTrianglesOnlyDataStructure();
 
-    inline DataForcesAndSourcesCore &getTroughThicknessDataStructure();
+    inline EntitiesFieldData &getTroughThicknessDataStructure();
 
     /** \brief return pointer to fat prism finite element
      */
@@ -202,8 +202,8 @@ protected:
   MatrixDouble coordsAtGaussPtsTrianglesOnly;
   MatrixDouble gaussPtsThroughThickness;
 
-  DataForcesAndSourcesCore dataH1TrianglesOnly;
-  DataForcesAndSourcesCore dataH1TroughThickness;
+  EntitiesFieldData dataH1TrianglesOnly;
+  EntitiesFieldData dataH1TroughThickness;
 
   MatrixDouble hoCoordsAtGaussPtsF3;
   MatrixDouble nOrmals_at_GaussPtF3;
@@ -346,13 +346,13 @@ inline MatrixDouble &FatPrismElementForcesAndSourcesCore::UserDataOperator::
       ->tAngent2_at_GaussPtF4;
 }
 
-inline DataForcesAndSourcesCore &FatPrismElementForcesAndSourcesCore::
+inline EntitiesFieldData &FatPrismElementForcesAndSourcesCore::
     UserDataOperator::getTrianglesOnlyDataStructure() {
   return static_cast<FatPrismElementForcesAndSourcesCore *>(ptrFE)
       ->dataH1TrianglesOnly;
 }
 
-inline DataForcesAndSourcesCore &FatPrismElementForcesAndSourcesCore::
+inline EntitiesFieldData &FatPrismElementForcesAndSourcesCore::
     UserDataOperator::getTroughThicknessDataStructure() {
   return static_cast<FatPrismElementForcesAndSourcesCore *>(ptrFE)
       ->dataH1TroughThickness;

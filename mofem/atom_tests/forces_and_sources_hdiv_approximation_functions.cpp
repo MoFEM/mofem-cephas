@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
             mySplit(my_split) {}
 
       MoFEMErrorCode doWork(int side, EntityType type,
-                            DataForcesAndSourcesCore::EntData &data) {
+                            EntitiesFieldData::EntData &data) {
         MoFEMFunctionBeginHot;
 
         if (data.getFieldData().size() == 0)
@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
             mySplit(my_split) {}
 
       MoFEMErrorCode doWork(int side, EntityType type,
-                            DataForcesAndSourcesCore::EntData &data) {
+                            EntitiesFieldData::EntData &data) {
         MoFEMFunctionBeginHot;
 
         if (data.getFieldData().size() == 0)

@@ -34,7 +34,7 @@ struct MyOp : public ContactPrismElementForcesAndSourcesCore::UserDataOperator {
         faceType(face_type) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data) {
+                        EntitiesFieldData::EntData &data) {
     MoFEMFunctionBeginHot;
 
     if (data.getFieldData().empty())
@@ -77,8 +77,8 @@ struct MyOp : public ContactPrismElementForcesAndSourcesCore::UserDataOperator {
 
   MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
                         EntityType col_type,
-                        DataForcesAndSourcesCore::EntData &row_data,
-                        DataForcesAndSourcesCore::EntData &col_data) {
+                        EntitiesFieldData::EntData &row_data,
+                        EntitiesFieldData::EntData &col_data) {
     MoFEMFunctionBeginHot;
 
     if (row_data.getFieldData().empty())
@@ -103,7 +103,7 @@ struct CallingOp : public ForcesAndSourcesCore::UserDataOperator {
       : ForcesAndSourcesCore::UserDataOperator("FIELD1", "FIELD1", type) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data) {
+                        EntitiesFieldData::EntData &data) {
     MoFEMFunctionBeginHot;
 
     if (data.getFieldData().empty())
@@ -119,8 +119,8 @@ struct CallingOp : public ForcesAndSourcesCore::UserDataOperator {
 
   MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
                         EntityType col_type,
-                        DataForcesAndSourcesCore::EntData &row_data,
-                        DataForcesAndSourcesCore::EntData &col_data) {
+                        EntitiesFieldData::EntData &row_data,
+                        EntitiesFieldData::EntData &col_data) {
     MoFEMFunctionBeginHot;
 
     if (row_data.getFieldData().empty())
@@ -147,7 +147,7 @@ struct MyOp2
             "FIELD1", "FIELD2", type, face_type) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data) {
+                        EntitiesFieldData::EntData &data) {
     MoFEMFunctionBeginHot;
 
     if (type != MBENTITYSET)
@@ -162,8 +162,8 @@ struct MyOp2
 
   MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
                         EntityType col_type,
-                        DataForcesAndSourcesCore::EntData &row_data,
-                        DataForcesAndSourcesCore::EntData &col_data) {
+                        EntitiesFieldData::EntData &row_data,
+                        EntitiesFieldData::EntData &col_data) {
     MoFEMFunctionBeginHot;
 
     unSetSymm();

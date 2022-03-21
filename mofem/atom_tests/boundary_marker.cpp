@@ -38,7 +38,7 @@ struct OpFace : public FaceEleOp {
       : FaceEleOp("FIELD1", OPROW), skinEnts(skin_ents), mArker(marker) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data) {
+                        EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
 
     const int nb_dofs = data.getIndices().size();

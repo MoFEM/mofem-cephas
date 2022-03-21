@@ -37,7 +37,7 @@ struct OpCalculateHOJacVolume
   OpCalculateHOJacVolume(boost::shared_ptr<MatrixDouble> jac_ptr);
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
 private:
   boost::shared_ptr<MatrixDouble> jacPtr;
@@ -53,7 +53,7 @@ struct OpCalculateHOCoords : public ForcesAndSourcesCore::UserDataOperator {
       : ForcesAndSourcesCore::UserDataOperator(field_name, OPROW) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 };
 
 /**
@@ -76,7 +76,7 @@ struct OpSetHOInvJacToScalarBases
   }
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
 private:
   boost::shared_ptr<MatrixDouble> invJacPtr;
@@ -106,7 +106,7 @@ struct OpSetHOInvJacVectorBase : public ForcesAndSourcesCore::UserDataOperator {
   }
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
 private:
   boost::shared_ptr<MatrixDouble> invJacPtr;
@@ -125,7 +125,7 @@ struct OpSetHOWeightsOnFace
   OpSetHOWeightsOnFace()
       : FaceElementForcesAndSourcesCoreBase::UserDataOperator(NOSPACE) {}
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 };
 
 /**
@@ -143,7 +143,7 @@ struct OpSetHOWeights : public ForcesAndSourcesCore::UserDataOperator {
   }
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
 private:
   boost::shared_ptr<VectorDouble> detPtr;
@@ -167,7 +167,7 @@ struct OpSetHOContravariantPiolaTransform
   }
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
 private:
   boost::shared_ptr<VectorDouble> detPtr;
@@ -195,7 +195,7 @@ struct OpSetHOCovariantPiolaTransform
   }
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
 private:
   boost::shared_ptr<MatrixDouble> jacInvPtr;
@@ -222,7 +222,7 @@ struct OpCalculateHOJacForFaceImpl<2>
   OpCalculateHOJacForFaceImpl(boost::shared_ptr<MatrixDouble> jac_ptr);
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
 protected:
   boost::shared_ptr<MatrixDouble> jacPtr;
@@ -234,7 +234,7 @@ struct OpCalculateHOJacForFaceImpl<3> : public OpCalculateHOJacForFaceImpl<2> {
   using OpCalculateHOJacForFaceImpl<2>::OpCalculateHOJacForFaceImpl;
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 };
 
 using OpCalculateHOJacForFace = OpCalculateHOJacForFaceImpl<2>;
@@ -250,7 +250,7 @@ struct OpGetHONormalsOnFace
       : FaceElementForcesAndSourcesCoreBase::UserDataOperator(field_name,
                                                               OPROW) {}
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 };
 
 /** \brief transform Hdiv base fluxes from reference element to physical
@@ -270,7 +270,7 @@ struct OpHOSetContravariantPiolaTransformOnFace3D
         normalsAtGaussPts(normals_at_gauss_pts) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
 private:
   boost::shared_ptr<MatrixDouble> normalsAtGaussPts;
@@ -289,7 +289,7 @@ struct OpHOSetContravariantPiolaTransformOnEdge3D
         tangentAtGaussPts(tangent_at_pts) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
 private:
   boost::shared_ptr<MatrixDouble> tangentAtGaussPts;
@@ -316,7 +316,7 @@ struct OpHOSetCovariantPiolaTransformOnFace3D
   }
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
 private:
   boost::shared_ptr<MatrixDouble> normalsAtPts;
@@ -341,7 +341,7 @@ struct OpGetHOTangentsOnEdge
         tangentsAtPts(tangents_at_pts) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
 private:
   boost::shared_ptr<MatrixDouble> tangentsAtPts;
@@ -359,7 +359,7 @@ template <typename OP> struct OpScaleBaseBySpaceInverseOfMeasure : public OP {
       : OP(space), fieldSpace(space), detJacPtr(det_jac_ptr) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data) {
+                        EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
 
     if (!detJacPtr) {

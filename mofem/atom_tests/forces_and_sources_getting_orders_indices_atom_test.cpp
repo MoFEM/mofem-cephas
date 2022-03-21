@@ -139,15 +139,15 @@ int main(int argc, char *argv[]) {
       TeeDevice my_tee;
       TeeStream my_split;
 
-      boost::shared_ptr<DataForcesAndSourcesCore> dataPtr;
-      boost::shared_ptr<DerivedDataForcesAndSourcesCore> derivedDataPtr;
+      boost::shared_ptr<EntitiesFieldData> dataPtr;
+      boost::shared_ptr<DerivedEntitiesFieldData> derivedDataPtr;
 
       ForcesAndSourcesCore_TestFE(MoFEM::Interface &_m_field)
           : ForcesAndSourcesCore(_m_field),
             ofs("forces_and_sources_getting_orders_indices_atom_test.txt"),
             my_tee(std::cout, ofs), my_split(my_tee),
-            dataPtr(new DataForcesAndSourcesCore(MBTET)),
-            derivedDataPtr(new DerivedDataForcesAndSourcesCore(dataPtr)){};
+            dataPtr(new EntitiesFieldData(MBTET)),
+            derivedDataPtr(new DerivedEntitiesFieldData(dataPtr)){};
 
       MoFEMErrorCode preProcess() {
         MoFEMFunctionBeginHot;
@@ -157,8 +157,8 @@ int main(int argc, char *argv[]) {
       MoFEMErrorCode operator()() {
         MoFEMFunctionBeginHot;
 
-        DataForcesAndSourcesCore &data = *dataPtr;
-        DerivedDataForcesAndSourcesCore &derived_data = *derivedDataPtr;
+        EntitiesFieldData &data = *dataPtr;
+        DerivedEntitiesFieldData &derived_data = *derivedDataPtr;
 
         my_split << "\n\nNEXT ELEM\n\n";
 

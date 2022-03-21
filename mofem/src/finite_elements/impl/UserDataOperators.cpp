@@ -22,7 +22,7 @@ purposes.
 namespace MoFEM {
 
 MoFEMErrorCode OpSetInvJacSpaceForFaceImpl<2>::doWork(
-    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+    int side, EntityType type, EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   if (getFEDim() != 2)
@@ -83,7 +83,7 @@ MoFEMErrorCode OpSetInvJacSpaceForFaceImpl<2>::doWork(
 }
 
 MoFEMErrorCode OpSetInvJacSpaceForFaceImpl<3>::doWork(
-    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+    int side, EntityType type, EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   if (getFEDim() != 2)
@@ -146,7 +146,7 @@ MoFEMErrorCode OpSetInvJacSpaceForFaceImpl<3>::doWork(
 
 MoFEMErrorCode
 OpSetInvJacHcurlFaceImpl<2>::doWork(int side, EntityType type,
-                                    DataForcesAndSourcesCore::EntData &data) {
+                                    EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   if (type != MBEDGE && type != MBTRI && type != MBQUAD)
@@ -197,7 +197,7 @@ OpSetInvJacHcurlFaceImpl<2>::doWork(int side, EntityType type,
 
 MoFEMErrorCode
 OpSetInvJacHcurlFaceImpl<3>::doWork(int side, EntityType type,
-                                    DataForcesAndSourcesCore::EntData &data) {
+                                    EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   if (type != MBEDGE && type != MBTRI && type != MBQUAD)
@@ -251,7 +251,7 @@ OpSetInvJacHcurlFaceImpl<3>::doWork(int side, EntityType type,
 
 MoFEMErrorCode
 OpMakeHdivFromHcurl::doWork(int side, EntityType type,
-                            DataForcesAndSourcesCore::EntData &data) {
+                            EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   if (type != MBEDGE && type != MBTRI && type != MBQUAD)
@@ -296,7 +296,7 @@ OpMakeHdivFromHcurl::doWork(int side, EntityType type,
 }
 
 MoFEMErrorCode OpSetContravariantPiolaTransformOnFace2DImpl<2>::doWork(
-    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+    int side, EntityType type, EntitiesFieldData::EntData &data) {
 
   MoFEMFunctionBegin;
 
@@ -367,7 +367,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransformOnFace2DImpl<2>::doWork(
 }
 
 MoFEMErrorCode OpSetContravariantPiolaTransformOnFace2DImpl<3>::doWork(
-    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+    int side, EntityType type, EntitiesFieldData::EntData &data) {
 
   MoFEMFunctionBegin;
 
@@ -439,7 +439,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransformOnFace2DImpl<3>::doWork(
 }
 
 MoFEMErrorCode OpSetContravariantPiolaTransformOnEdge2D::doWork(
-    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+    int side, EntityType type, EntitiesFieldData::EntData &data) {
   MoFEMFunctionBeginHot;
 
   if (type != MBEDGE)
@@ -502,7 +502,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransformOnEdge2D::doWork(
 }
 
 MoFEMErrorCode OpMultiplyDeterminantOfJacobianAndWeightsForFatPrisms::doWork(
-    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+    int side, EntityType type, EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   if (type == MBVERTEX) {
@@ -552,7 +552,7 @@ MoFEMErrorCode OpMultiplyDeterminantOfJacobianAndWeightsForFatPrisms::doWork(
 
 MoFEMErrorCode
 OpCalculateInvJacForFatPrism::doWork(int side, EntityType type,
-                                     DataForcesAndSourcesCore::EntData &data) {
+                                     EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   if (type == MBVERTEX) {
@@ -597,7 +597,7 @@ OpCalculateInvJacForFatPrism::doWork(int side, EntityType type,
 
 MoFEMErrorCode
 OpSetInvJacH1ForFatPrism::doWork(int side, EntityType type,
-                                 DataForcesAndSourcesCore::EntData &data) {
+                                 EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
@@ -636,7 +636,7 @@ OpSetInvJacH1ForFatPrism::doWork(int side, EntityType type,
 
 MoFEMErrorCode
 OpCalculateInvJacForFlatPrism::doWork(int side, EntityType type,
-                                      DataForcesAndSourcesCore::EntData &data) {
+                                      EntitiesFieldData::EntData &data) {
 
   MoFEMFunctionBegin;
 
@@ -671,7 +671,7 @@ OpCalculateInvJacForFlatPrism::doWork(int side, EntityType type,
 
 MoFEMErrorCode
 OpSetInvJacH1ForFlatPrism::doWork(int side, EntityType type,
-                                  DataForcesAndSourcesCore::EntData &data) {
+                                  EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {

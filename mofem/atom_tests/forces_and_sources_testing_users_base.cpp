@@ -114,7 +114,7 @@ private:
     // This is example, simply use Demkowicz HDiv base to generate base
     // functions
 
-    DataForcesAndSourcesCore &data = cTx->dAta;
+    EntitiesFieldData &data = cTx->dAta;
     int nb_gauss_pts = pts.size2();
 
     // calculate shape functions, i.e. barycentric coordinates
@@ -330,7 +330,7 @@ int main(int argc, char *argv[]) {
       }
 
       MoFEMErrorCode doWork(int side, EntityType type,
-                            DataForcesAndSourcesCore::EntData &data) {
+                            EntitiesFieldData::EntData &data) {
         MoFEMFunctionBeginHot;
         if (data.getIndices().empty()) {
           MoFEMFunctionReturnHot(0);
@@ -345,8 +345,8 @@ int main(int argc, char *argv[]) {
 
       MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
                             EntityType col_type,
-                            DataForcesAndSourcesCore::EntData &row_data,
-                            DataForcesAndSourcesCore::EntData &col_data) {
+                            EntitiesFieldData::EntData &row_data,
+                            EntitiesFieldData::EntData &col_data) {
         MoFEMFunctionBeginHot;
         if (row_data.getIndices().empty())
           MoFEMFunctionReturnHot(0);

@@ -32,7 +32,7 @@ OpRunParent::OpRunParent(boost::shared_ptr<ForcesAndSourcesCore> parent_ele_ptr,
       severityLevel(sev) {}
 
 MoFEMErrorCode OpRunParent::doWork(int side, EntityType type,
-                                   DataForcesAndSourcesCore::EntData &data) {
+                                   EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   auto &bit = getFEMethod()->numeredEntFiniteElementPtr->getBitRefLevel();

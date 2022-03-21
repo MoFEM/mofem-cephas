@@ -34,7 +34,7 @@ OpCalculateHOJacVolume::OpCalculateHOJacVolume(
 
 MoFEMErrorCode
 OpCalculateHOJacVolume::doWork(int side, EntityType type,
-                               DataForcesAndSourcesCore::EntData &data) {
+                               EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   const auto nb_base_functions = data.getN(NOBASE).size2();
@@ -85,7 +85,7 @@ OpCalculateHOJacVolume::doWork(int side, EntityType type,
 
 MoFEMErrorCode
 OpCalculateHOCoords::doWork(int side, EntityType type,
-                            DataForcesAndSourcesCore::EntData &data) {
+                            EntitiesFieldData::EntData &data) {
   FTensor::Index<'i', 3> i;
   MoFEMFunctionBegin;
   const auto nb_dofs = data.getFieldData().size() / 3;
@@ -114,7 +114,7 @@ OpCalculateHOCoords::doWork(int side, EntityType type,
 
 MoFEMErrorCode
 OpSetHOInvJacToScalarBases::doWork(int side, EntityType type,
-                                   DataForcesAndSourcesCore::EntData &data) {
+                                   EntitiesFieldData::EntData &data) {
   FTensor::Index<'i', 3> i;
   FTensor::Index<'j', 3> j;
   MoFEMFunctionBegin;
@@ -183,7 +183,7 @@ OpSetHOInvJacToScalarBases::doWork(int side, EntityType type,
 
 MoFEMErrorCode
 OpSetHOInvJacVectorBase::doWork(int side, EntityType type,
-                                DataForcesAndSourcesCore::EntData &data) {
+                                EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   FTensor::Index<'i', 3> i;
@@ -228,7 +228,7 @@ OpSetHOInvJacVectorBase::doWork(int side, EntityType type,
 
 MoFEMErrorCode
 OpSetHOWeightsOnFace::doWork(int side, EntityType type,
-                             DataForcesAndSourcesCore::EntData &data) {
+                             EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
   const size_t nb_int_pts = getGaussPts().size2();
   if (getNormalsAtGaussPts().size1()) {
@@ -255,7 +255,7 @@ OpSetHOWeightsOnFace::doWork(int side, EntityType type,
 }
 
 MoFEMErrorCode OpSetHOWeights::doWork(int side, EntityType type,
-                                      DataForcesAndSourcesCore::EntData &data) {
+                                      EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   const auto nb_integration_pts = detPtr->size();
@@ -278,7 +278,7 @@ MoFEMErrorCode OpSetHOWeights::doWork(int side, EntityType type,
 }
 
 MoFEMErrorCode OpSetHOContravariantPiolaTransform::doWork(
-    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+    int side, EntityType type, EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   FTensor::Index<'i', 3> i;
@@ -361,7 +361,7 @@ MoFEMErrorCode OpSetHOContravariantPiolaTransform::doWork(
 }
 
 MoFEMErrorCode OpSetHOCovariantPiolaTransform::doWork(
-    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+    int side, EntityType type, EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   FTensor::Index<'i', 3> i;
@@ -418,7 +418,7 @@ OpCalculateHOJacForFaceImpl<2>::OpCalculateHOJacForFaceImpl(
       jacPtr(jac_ptr) {}
 
 MoFEMErrorCode OpCalculateHOJacForFaceImpl<2>::doWork(
-    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+    int side, EntityType type, EntitiesFieldData::EntData &data) {
 
   MoFEMFunctionBegin;
 
@@ -447,7 +447,7 @@ MoFEMErrorCode OpCalculateHOJacForFaceImpl<2>::doWork(
 };
 
 MoFEMErrorCode OpCalculateHOJacForFaceImpl<3>::doWork(
-    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+    int side, EntityType type, EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   FTensor::Index<'i', 3> i;
@@ -485,7 +485,7 @@ MoFEMErrorCode OpCalculateHOJacForFaceImpl<3>::doWork(
 
 MoFEMErrorCode
 OpGetHONormalsOnFace::doWork(int side, EntityType type,
-                             DataForcesAndSourcesCore::EntData &data) {
+                             EntitiesFieldData::EntData &data) {
   MoFEMFunctionBeginHot;
 
   FTensor::Index<'i', 3> i;
@@ -597,7 +597,7 @@ OpGetHONormalsOnFace::doWork(int side, EntityType type,
 }
 
 MoFEMErrorCode OpHOSetContravariantPiolaTransformOnFace3D::doWork(
-    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+    int side, EntityType type, EntitiesFieldData::EntData &data) {
   FTensor::Index<'i', 3> i;
   MoFEMFunctionBegin;
 
@@ -650,7 +650,7 @@ MoFEMErrorCode OpHOSetContravariantPiolaTransformOnFace3D::doWork(
 }
 
 MoFEMErrorCode OpHOSetCovariantPiolaTransformOnFace3D::doWork(
-    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+    int side, EntityType type, EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   const auto type_dim = moab::CN::Dimension(type);
@@ -747,7 +747,7 @@ MoFEMErrorCode OpHOSetCovariantPiolaTransformOnFace3D::doWork(
 }
 
 MoFEMErrorCode OpHOSetContravariantPiolaTransformOnEdge3D::doWork(
-    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+    int side, EntityType type, EntitiesFieldData::EntData &data) {
   FTensor::Index<'i', 3> i;
   MoFEMFunctionBeginHot;
 
@@ -832,7 +832,7 @@ MoFEMErrorCode OpHOSetContravariantPiolaTransformOnEdge3D::doWork(
 
 MoFEMErrorCode
 OpGetHOTangentsOnEdge::doWork(int side, EntityType type,
-                              DataForcesAndSourcesCore::EntData &data) {
+                              EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   int nb_dofs = data.getFieldData().size();

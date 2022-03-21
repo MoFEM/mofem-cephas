@@ -284,7 +284,7 @@ int main(int argc, char *argv[]) {
                   "F2", UserDataOperator::OPROW),
               elemData(elem_data) {}
         MoFEMErrorCode doWork(int side, EntityType type,
-                              DataForcesAndSourcesCore::EntData &data) {
+                              EntitiesFieldData::EntData &data) {
           MoFEMFunctionBeginHot;
 
           if (type == MBTRI && side == getFaceSideNumber()) {
@@ -330,7 +330,7 @@ int main(int argc, char *argv[]) {
       }
 
       MoFEMErrorCode doWork(int side, EntityType type,
-                            DataForcesAndSourcesCore::EntData &data) {
+                            EntitiesFieldData::EntData &data) {
 
         MoFEMFunctionBeginHot;
         if (type == MBTRI && side == 0) {
@@ -424,7 +424,7 @@ int main(int argc, char *argv[]) {
                   "F2", UserDataOperator::OPROW),
               elemData(elem_data) {}
         MoFEMErrorCode doWork(int side, EntityType type,
-                              DataForcesAndSourcesCore::EntData &data) {
+                              EntitiesFieldData::EntData &data) {
           MoFEMFunctionBeginHot;
 
           if (type == MBTRI && side == getFaceSideNumber()) {
@@ -470,7 +470,7 @@ int main(int argc, char *argv[]) {
       }
 
       MoFEMErrorCode doWork(int side, EntityType type,
-                            DataForcesAndSourcesCore::EntData &data) {
+                            EntitiesFieldData::EntData &data) {
 
         MoFEMFunctionBeginHot;
         if (type == MBTRI && side == 0) {

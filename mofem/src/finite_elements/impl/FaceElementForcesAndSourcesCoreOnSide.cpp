@@ -59,7 +59,7 @@ FaceElementForcesAndSourcesCoreOnSideBase::setGaussPts(int order) {
   const int nb_gauss_pts = sidePtrFE->gaussPts.size2();
   gaussPts.resize(3, nb_gauss_pts, false);
   gaussPts.clear();
-  DataForcesAndSourcesCore &data_h1_on_edge = *edge_ptr_fe->dataOnElement[H1];
+  EntitiesFieldData &data_h1_on_edge = *edge_ptr_fe->dataOnElement[H1];
   const MatrixDouble &edge_shape_funtions =
       data_h1_on_edge.dataOnEntities[MBVERTEX][0].getN(NOBASE);
 

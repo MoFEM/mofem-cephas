@@ -37,7 +37,7 @@ struct OpVolDivergence
         dIv(div) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 };
 
 struct OpFacesFluxes
@@ -50,7 +50,7 @@ struct OpFacesFluxes
         dIv(div) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 };
 
 int main(int argc, char *argv[]) {
@@ -193,7 +193,7 @@ int main(int argc, char *argv[]) {
 
 MoFEMErrorCode
 OpVolDivergence::doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data) {
+                        EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   if (CN::Dimension(type) < 2)
@@ -223,7 +223,7 @@ OpVolDivergence::doWork(int side, EntityType type,
 }
 
 MoFEMErrorCode OpFacesFluxes::doWork(int side, EntityType type,
-                                     DataForcesAndSourcesCore::EntData &data) {
+                                     EntitiesFieldData::EntData &data) {
   MoFEMFunctionBeginHot;
 
   if (CN::Dimension(type) != 2)

@@ -49,7 +49,7 @@ struct SkeletonFE : public EdgeEleOp {
           elemData(elem_data) {}
 
     MoFEMErrorCode doWork(int side, EntityType type,
-                          DataForcesAndSourcesCore::EntData &data) {
+                          EntitiesFieldData::EntData &data) {
       MoFEMFunctionBeginHot;
 
       if (type == MBEDGE && side == getEdgeSideNumber()) {
@@ -103,7 +103,7 @@ struct SkeletonFE : public EdgeEleOp {
   }
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data) {
+                        EntitiesFieldData::EntData &data) {
 
     MoFEMFunctionBeginHot;
     if (type == MBEDGE) {

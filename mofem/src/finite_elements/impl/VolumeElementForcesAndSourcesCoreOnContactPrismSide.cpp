@@ -96,13 +96,13 @@ VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::setGaussPts(int order) 
   gaussPts.clear();
 
   const EntityType tri_type = MBTRI;
-  boost::shared_ptr<DataForcesAndSourcesCore> dataH1_on_face;
+  boost::shared_ptr<EntitiesFieldData> dataH1_on_face;
 
   if (side_of_vol_number == 3) {
-    dataH1_on_face = boost::shared_ptr<DataForcesAndSourcesCore>(
+    dataH1_on_face = boost::shared_ptr<EntitiesFieldData>(
         contact_prism_ptr_fe->getDataOnMasterFromEleSide()[H1]);
   } else if (side_of_vol_number == 4) {
-    dataH1_on_face = boost::shared_ptr<DataForcesAndSourcesCore>(
+    dataH1_on_face = boost::shared_ptr<EntitiesFieldData>(
         contact_prism_ptr_fe->getDataOnSlaveFromEleSide()[H1]);
   } else {
     SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,

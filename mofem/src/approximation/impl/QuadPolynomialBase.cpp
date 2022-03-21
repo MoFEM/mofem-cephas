@@ -30,7 +30,7 @@ MoFEMErrorCode QuadPolynomialBase::getValueH1(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
   const FieldApproximationBase base = cTx->bAse;
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   data.dataOnEntities[MBVERTEX][0].getNSharedPtr(base) =
       data.dataOnEntities[MBVERTEX][0].getNSharedPtr(cTx->copyNodeBase);
   data.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(base) =
@@ -55,7 +55,7 @@ MoFEMErrorCode QuadPolynomialBase::getValueH1(MatrixDouble &pts) {
 MoFEMErrorCode QuadPolynomialBase::getValueH1AinsworthBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   const auto copy_base = cTx->copyNodeBase;
 
@@ -127,7 +127,7 @@ MoFEMErrorCode QuadPolynomialBase::getValueH1AinsworthBase(MatrixDouble &pts) {
 MoFEMErrorCode QuadPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   const auto copy_base = cTx->copyNodeBase;
 
@@ -213,7 +213,7 @@ MoFEMErrorCode QuadPolynomialBase::getValueL2(MatrixDouble &pts) {
 MoFEMErrorCode QuadPolynomialBase::getValueL2DemkowiczBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   const auto copy_base = cTx->copyNodeBase;
 
@@ -261,7 +261,7 @@ MoFEMErrorCode
 QuadPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   const auto copy_base = cTx->copyNodeBase;
 
@@ -402,7 +402,7 @@ MoFEMErrorCode
 QuadPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   const auto copy_base = cTx->copyNodeBase;
   int nb_gauss_pts = pts.size2();
@@ -457,7 +457,7 @@ QuadPolynomialBase::getValue(MatrixDouble &pts,
         "Wrong dimension of pts, should be at least 3 rows with coordinates");
 
   const FieldApproximationBase base = cTx->bAse;
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   if (cTx->copyNodeBase != NOBASE)
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "Shape base has to be on NOBASE", ApproximationBaseNames[base]);

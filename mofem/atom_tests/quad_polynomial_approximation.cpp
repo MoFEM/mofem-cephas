@@ -24,7 +24,7 @@ using namespace MoFEM;
 
 using Ele = FaceElementForcesAndSourcesCore;
 using OpEle = FaceElementForcesAndSourcesCore::UserDataOperator;
-using EntData = DataForcesAndSourcesCore::EntData;
+using EntData = EntitiesFieldData::EntData;
 
 static char help[] = "...\n\n";
 
@@ -63,7 +63,7 @@ struct QuadOpCheck : public OpEle {
   QuadOpCheck(boost::shared_ptr<VectorDouble> &field_vals,
               boost::shared_ptr<MatrixDouble> &diff_field_vals);
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
 private:
   boost::shared_ptr<VectorDouble> fieldVals;
@@ -74,7 +74,7 @@ struct QuadOpRhs : public OpEle {
 
   QuadOpRhs(SmartPetscObj<Vec> &f);
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
 private:
   SmartPetscObj<Vec> F;
@@ -85,8 +85,8 @@ struct QuadOpLhs : public OpEle {
   QuadOpLhs(SmartPetscObj<Mat> &a);
   MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
                         EntityType col_type,
-                        DataForcesAndSourcesCore::EntData &row_data,
-                        DataForcesAndSourcesCore::EntData &col_data);
+                        EntitiesFieldData::EntData &row_data,
+                        EntitiesFieldData::EntData &col_data);
 
 private:
   SmartPetscObj<Mat> A;
@@ -302,7 +302,7 @@ QuadOpCheck::QuadOpCheck(boost::shared_ptr<VectorDouble> &field_vals,
       fieldVals(field_vals), diffFieldVals(diff_field_vals) {}
 
 MoFEMErrorCode QuadOpCheck::doWork(int side, EntityType type,
-                                   DataForcesAndSourcesCore::EntData &data) {
+                                   EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   if (type == MBQUAD) {
@@ -339,7 +339,7 @@ QuadOpRhs::QuadOpRhs(SmartPetscObj<Vec> &f)
       F(f) {}
 
 MoFEMErrorCode QuadOpRhs::doWork(int side, EntityType type,
-                                 DataForcesAndSourcesCore::EntData &data) {
+                                 EntitiesFieldData::EntData &data) {
   FTensor::Index<'i', 3> i;
   MoFEMFunctionBegin;
   const int nb_dofs = data.getIndices().size();
@@ -379,8 +379,8 @@ QuadOpLhs::QuadOpLhs(SmartPetscObj<Mat> &a)
 
 MoFEMErrorCode QuadOpLhs::doWork(int row_side, int col_side,
                                  EntityType row_type, EntityType col_type,
-                                 DataForcesAndSourcesCore::EntData &row_data,
-                                 DataForcesAndSourcesCore::EntData &col_data) {
+                                 EntitiesFieldData::EntData &row_data,
+                                 EntitiesFieldData::EntData &col_data) {
   FTensor::Index<'i', 3> i;
   MoFEMFunctionBegin;
   const int row_nb_dofs = row_data.getIndices().size();

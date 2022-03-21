@@ -40,7 +40,7 @@ template <typename OP> struct MyOp : public OP {
             getMatrixAdaptor(eval_points.data(), eval_points.size() / 3, 3)) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data) {
+                        EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
     if (type == MBVERTEX) {
 

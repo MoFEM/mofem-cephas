@@ -28,7 +28,7 @@ struct OpVolumeCalculation
         volumeVec(volume_vec) {}
 
   MoFEMErrorCode doWork(int row_side, EntityType row_type,
-                        DataForcesAndSourcesCore::EntData &row_data) {
+                        EntitiesFieldData::EntData &row_data) {
     MoFEMFunctionBegin;
 
     if (row_type != MBVERTEX)

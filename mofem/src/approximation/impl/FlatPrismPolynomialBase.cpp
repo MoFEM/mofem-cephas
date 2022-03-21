@@ -25,7 +25,7 @@ MoFEMErrorCode FlatPrismPolynomialBaseCtx::query_interface(
 }
 
 FlatPrismPolynomialBaseCtx::FlatPrismPolynomialBaseCtx(
-    DataForcesAndSourcesCore &data, moab::Interface &moab,
+    EntitiesFieldData &data, moab::Interface &moab,
     const NumeredEntFiniteElement *fe_ptr, const FieldSpace space,
     const FieldApproximationBase base,
     const FieldApproximationBase copy_node_base)
@@ -68,7 +68,7 @@ FlatPrismPolynomialBase::getValue(MatrixDouble &pts,
         "Wrong dimension of pts, should be at least 3 rows with coordinates");
 
   const FieldApproximationBase base = cTx->bAse;
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
 
   if (cTx->copyNodeBase == LASTBASE)
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
@@ -157,7 +157,7 @@ FlatPrismPolynomialBase::getValue(MatrixDouble &pts,
 MoFEMErrorCode FlatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
   MoFEMFunctionBeginHot;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
                                      double *diffL, const int dim) =

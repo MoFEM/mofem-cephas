@@ -44,7 +44,7 @@ template <> struct ElementsAndOps<3> {
 constexpr int SPACE_DIM =
     EXECUTABLE_DIMENSION; //< Space dimension of problem, mesh
 
-using EntData = DataForcesAndSourcesCore::EntData;
+using EntData = EntitiesFieldData::EntData;
 using DomainEle = ElementsAndOps<SPACE_DIM>::DomainEle;
 using DomainEleOp = ElementsAndOps<SPACE_DIM>::DomainEleOp;
 
@@ -125,7 +125,7 @@ struct OpValsDiffVals : public DomainEleOp {
   FTensor::Index<'i', SPACE_DIM> i;
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data) {
+                        EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
     const int nb_gauss_pts = getGaussPts().size2();
     if (type == MBVERTEX) {
@@ -199,7 +199,7 @@ struct OpCheckValsDiffVals : public DomainEleOp {
   FTensor::Index<'i', SPACE_DIM> i;
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data) {
+                        EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
     const double eps = 1e-6;
     const int nb_gauss_pts = data.getN().size1();

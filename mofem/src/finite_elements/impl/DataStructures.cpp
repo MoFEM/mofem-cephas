@@ -19,7 +19,7 @@
 
 namespace MoFEM {
 
-DataForcesAndSourcesCore::EntData::EntData(const bool allocate_base_matrices)
+EntitiesFieldData::EntData::EntData(const bool allocate_base_matrices)
     : sEnse(0), oRder(0), bAse(NOBASE),
       N(baseFunctionsAndBaseDirevatives[ZeroDirevative]),
       diffN(baseFunctionsAndBaseDirevatives[FirstDirevative]) {
@@ -36,30 +36,30 @@ DataForcesAndSourcesCore::EntData::EntData(const bool allocate_base_matrices)
   }
 }
 
-int DataForcesAndSourcesCore::EntData::getSense() const { return sEnse; }
+int EntitiesFieldData::EntData::getSense() const { return sEnse; }
 
 boost::shared_ptr<MatrixDouble> &
-DataForcesAndSourcesCore::EntData::getNSharedPtr(
+EntitiesFieldData::EntData::getNSharedPtr(
     const FieldApproximationBase base, const BaseDirevatives direvatie) {
   return baseFunctionsAndBaseDirevatives[direvatie][base];
 }
 
 boost::shared_ptr<MatrixDouble> &
-DataForcesAndSourcesCore::EntData::getNSharedPtr(
+EntitiesFieldData::EntData::getNSharedPtr(
     const FieldApproximationBase base) {
   return N[base];
 }
 
 boost::shared_ptr<MatrixDouble> &
-DataForcesAndSourcesCore::EntData::getDiffNSharedPtr(
+EntitiesFieldData::EntData::getDiffNSharedPtr(
     const FieldApproximationBase base) {
   return diffN[base];
 }
 
-static void constructor_data(DataForcesAndSourcesCore *data,
+static void constructor_data(EntitiesFieldData *data,
                              const EntityType type) {
 
-  using EntData = DataForcesAndSourcesCore::EntData;
+  using EntData = EntitiesFieldData::EntData;
 
   data->dataOnEntities[MBENTITYSET].push_back(new EntData());
 
@@ -96,11 +96,11 @@ static void constructor_data(DataForcesAndSourcesCore *data,
   }
 }
 
-DataForcesAndSourcesCore::DataForcesAndSourcesCore(EntityType type) {
+EntitiesFieldData::EntitiesFieldData(EntityType type) {
   constructor_data(this, type);
 }
 
-MoFEMErrorCode DataForcesAndSourcesCore::setElementType(const EntityType type) {
+MoFEMErrorCode EntitiesFieldData::setElementType(const EntityType type) {
   MoFEMFunctionBegin;
   for (auto &data : dataOnEntities)
     data.clear();
@@ -109,11 +109,11 @@ MoFEMErrorCode DataForcesAndSourcesCore::setElementType(const EntityType type) {
 }
 
 static void constructor_derived_data(
-    DerivedDataForcesAndSourcesCore *derived_data,
-    const boost::shared_ptr<DataForcesAndSourcesCore> &data_ptr) {
+    DerivedEntitiesFieldData *derived_data,
+    const boost::shared_ptr<EntitiesFieldData> &data_ptr) {
 
-  using EntData = DataForcesAndSourcesCore::EntData;
-  using DerivedEntData = DerivedDataForcesAndSourcesCore::DerivedEntData;
+  using EntData = EntitiesFieldData::EntData;
+  using DerivedEntData = DerivedEntitiesFieldData::DerivedEntData;
 
   for (int tt = MBVERTEX; tt != MBMAXTYPE; ++tt) {
     auto &ent_data = data_ptr->dataOnEntities[tt];
@@ -125,14 +125,14 @@ static void constructor_derived_data(
   }
 }
 
-DerivedDataForcesAndSourcesCore::DerivedDataForcesAndSourcesCore(
-    const boost::shared_ptr<DataForcesAndSourcesCore> &data_ptr)
-    : DataForcesAndSourcesCore(), dataPtr(data_ptr) {
+DerivedEntitiesFieldData::DerivedEntitiesFieldData(
+    const boost::shared_ptr<EntitiesFieldData> &data_ptr)
+    : EntitiesFieldData(), dataPtr(data_ptr) {
   constructor_derived_data(this, dataPtr);
 }
 
 MoFEMErrorCode
-DerivedDataForcesAndSourcesCore::setElementType(const EntityType type) {
+DerivedEntitiesFieldData::setElementType(const EntityType type) {
   MoFEMFunctionBegin;
   for (EntityType tt = MBVERTEX; tt != MBMAXTYPE; ++tt)
     dataOnEntities[tt].clear();
@@ -140,7 +140,7 @@ DerivedDataForcesAndSourcesCore::setElementType(const EntityType type) {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode DataForcesAndSourcesCore::EntData::resetFieldDependentData() {
+MoFEMErrorCode EntitiesFieldData::EntData::resetFieldDependentData() {
   MoFEMFunctionBeginHot;
   sPace = NOSPACE;
   bAse = NOBASE;
@@ -151,7 +151,7 @@ MoFEMErrorCode DataForcesAndSourcesCore::EntData::resetFieldDependentData() {
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode DataForcesAndSourcesCore::resetFieldDependentData() {
+MoFEMErrorCode EntitiesFieldData::resetFieldDependentData() {
   MoFEMFunctionBegin;
   for (EntityType t = MBVERTEX; t != MBMAXTYPE; t++)
     for (auto &e : dataOnEntities[t])
@@ -160,7 +160,7 @@ MoFEMErrorCode DataForcesAndSourcesCore::resetFieldDependentData() {
 }
 
 MoFEMErrorCode
-DataForcesAndSourcesCore::EntData::baseSwap(const std::string &field_name,
+EntitiesFieldData::EntData::baseSwap(const std::string &field_name,
                                             const FieldApproximationBase base) {
   MoFEMFunctionBegin;
   auto make_swap = [](boost::shared_ptr<MatrixDouble> &ptr,
@@ -180,7 +180,7 @@ DataForcesAndSourcesCore::EntData::baseSwap(const std::string &field_name,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode DataForcesAndSourcesCore::baseSwap(const std::string &field_name,
+MoFEMErrorCode EntitiesFieldData::baseSwap(const std::string &field_name,
                           const FieldApproximationBase base) {
   MoFEMFunctionBegin;
   for (int tt = MBVERTEX; tt != MBMAXTYPE; ++tt) {
@@ -191,7 +191,7 @@ MoFEMErrorCode DataForcesAndSourcesCore::baseSwap(const std::string &field_name,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode DerivedDataForcesAndSourcesCore::DerivedEntData::baseSwap(
+MoFEMErrorCode DerivedEntitiesFieldData::DerivedEntData::baseSwap(
     const std::string &field_name, const FieldApproximationBase base) {
   MoFEMFunctionBegin;
   auto make_swap = [](boost::shared_ptr<MatrixDouble> &ptr,
@@ -212,16 +212,16 @@ MoFEMErrorCode DerivedDataForcesAndSourcesCore::DerivedEntData::baseSwap(
   MoFEMFunctionReturn(0);
 }
 
-DerivedDataForcesAndSourcesCore::DerivedEntData::DerivedEntData(
-    const boost::shared_ptr<DataForcesAndSourcesCore::EntData> &ent_data_ptr)
-    : DataForcesAndSourcesCore::EntData(false), entDataPtr(ent_data_ptr) {}
+DerivedEntitiesFieldData::DerivedEntData::DerivedEntData(
+    const boost::shared_ptr<EntitiesFieldData::EntData> &ent_data_ptr)
+    : EntitiesFieldData::EntData(false), entDataPtr(ent_data_ptr) {}
 
-int DerivedDataForcesAndSourcesCore::DerivedEntData::getSense() const {
+int DerivedEntitiesFieldData::DerivedEntData::getSense() const {
   return entDataPtr->getSense();
 }
 
 boost::shared_ptr<MatrixDouble> &
-DerivedDataForcesAndSourcesCore::DerivedEntData::getNSharedPtr(
+DerivedEntitiesFieldData::DerivedEntData::getNSharedPtr(
     const FieldApproximationBase base, const BaseDirevatives direvative) {
   if (baseFunctionsAndBaseDirevatives[direvative][base])
     return baseFunctionsAndBaseDirevatives[direvative][base];
@@ -230,7 +230,7 @@ DerivedDataForcesAndSourcesCore::DerivedEntData::getNSharedPtr(
 }
 
 boost::shared_ptr<MatrixDouble> &
-DerivedDataForcesAndSourcesCore::DerivedEntData::getNSharedPtr(
+DerivedEntitiesFieldData::DerivedEntData::getNSharedPtr(
     const FieldApproximationBase base) {
   if (N[base])
     return N[base];
@@ -239,7 +239,7 @@ DerivedDataForcesAndSourcesCore::DerivedEntData::getNSharedPtr(
 }
 
 boost::shared_ptr<MatrixDouble> &
-DerivedDataForcesAndSourcesCore::DerivedEntData::getDiffNSharedPtr(
+DerivedEntitiesFieldData::DerivedEntData::getDiffNSharedPtr(
     const FieldApproximationBase base) {
   if (diffN[base])
     return diffN[base];
@@ -247,7 +247,7 @@ DerivedDataForcesAndSourcesCore::DerivedEntData::getDiffNSharedPtr(
     return entDataPtr->getDiffNSharedPtr(base);
 }
 const boost::shared_ptr<MatrixDouble> &
-DerivedDataForcesAndSourcesCore::DerivedEntData::getNSharedPtr(
+DerivedEntitiesFieldData::DerivedEntData::getNSharedPtr(
     const FieldApproximationBase base) const {
   if (N[base])
     return N[base];
@@ -255,7 +255,7 @@ DerivedDataForcesAndSourcesCore::DerivedEntData::getNSharedPtr(
     return entDataPtr->getNSharedPtr(base);
 }
 const boost::shared_ptr<MatrixDouble> &
-DerivedDataForcesAndSourcesCore::DerivedEntData::getDiffNSharedPtr(
+DerivedEntitiesFieldData::DerivedEntData::getDiffNSharedPtr(
     const FieldApproximationBase base) const {
   if (diffN[base])
     return diffN[base];
@@ -264,7 +264,7 @@ DerivedDataForcesAndSourcesCore::DerivedEntData::getDiffNSharedPtr(
 }
 
 std::ostream &operator<<(std::ostream &os,
-                         const DataForcesAndSourcesCore::EntData &e) {
+                         const EntitiesFieldData::EntData &e) {
   os << "sEnse: " << e.getSense() << std::endl
      << "oRder: " << e.getOrder() << std::endl
      << "global indices: " << e.getIndices() << std::endl
@@ -272,9 +272,9 @@ std::ostream &operator<<(std::ostream &os,
   // FIXME: precision should not be set here
   os << "fieldData: " << std::fixed << std::setprecision(2) << e.getFieldData()
      << std::endl;
-  MatrixDouble base = const_cast<DataForcesAndSourcesCore::EntData &>(e).getN();
+  MatrixDouble base = const_cast<EntitiesFieldData::EntData &>(e).getN();
   MatrixDouble diff_base =
-      const_cast<DataForcesAndSourcesCore::EntData &>(e).getDiffN();
+      const_cast<EntitiesFieldData::EntData &>(e).getDiffN();
   const double eps = 1e-6;
   for (unsigned int ii = 0; ii != base.size1(); ii++) {
     for (unsigned int jj = 0; jj != base.size2(); jj++) {
@@ -293,7 +293,7 @@ std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
-std::ostream &operator<<(std::ostream &os, const DataForcesAndSourcesCore &e) {
+std::ostream &operator<<(std::ostream &os, const EntitiesFieldData &e) {
   for (EntityType t = MBVERTEX; t != MBENTITYSET; ++t) {
     for (unsigned int nn = 0; nn < e.dataOnEntities[t].size(); nn++) {
       os << "dataOnEntities[" << moab::CN::EntityTypeName(t) << "][" << nn
@@ -310,7 +310,7 @@ std::ostream &operator<<(std::ostream &os, const DataForcesAndSourcesCore &e) {
 
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
-DataForcesAndSourcesCore::EntData::getFTensor1FieldData<3>() {
+EntitiesFieldData::EntData::getFTensor1FieldData<3>() {
   if (dOfs[0]->getNbOfCoeffs() != 3) {
     std::stringstream s;
     s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
@@ -324,7 +324,7 @@ DataForcesAndSourcesCore::EntData::getFTensor1FieldData<3>() {
 
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>
-DataForcesAndSourcesCore::EntData::getFTensor1FieldData<2>() {
+EntitiesFieldData::EntData::getFTensor1FieldData<2>() {
   if (dOfs[0]->getNbOfCoeffs() != 2) {
     std::stringstream s;
     s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
@@ -337,7 +337,7 @@ DataForcesAndSourcesCore::EntData::getFTensor1FieldData<2>() {
 
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 1>
-DataForcesAndSourcesCore::EntData::getFTensor1FieldData<1>() {
+EntitiesFieldData::EntData::getFTensor1FieldData<1>() {
   if (dOfs[0]->getNbOfCoeffs() != 1) {
     std::stringstream s;
     s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
@@ -350,7 +350,7 @@ DataForcesAndSourcesCore::EntData::getFTensor1FieldData<1>() {
 
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
-DataForcesAndSourcesCore::EntData::getFTensor2FieldData<3, 3>() {
+EntitiesFieldData::EntData::getFTensor2FieldData<3, 3>() {
   if (dOfs[0]->getNbOfCoeffs() != 9) {
     std::stringstream s;
     s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
@@ -366,7 +366,7 @@ DataForcesAndSourcesCore::EntData::getFTensor2FieldData<3, 3>() {
 
 template <>
 FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 6>, 3>
-DataForcesAndSourcesCore::EntData::getFTensor2SymmetricFieldData<3>() {
+EntitiesFieldData::EntData::getFTensor2SymmetricFieldData<3>() {
   if (dOfs[0]->getNbOfCoeffs() != 6) {
     std::stringstream s;
     s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
@@ -382,7 +382,7 @@ DataForcesAndSourcesCore::EntData::getFTensor2SymmetricFieldData<3>() {
 
 template <>
 FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 3>, 2>
-DataForcesAndSourcesCore::EntData::getFTensor2SymmetricFieldData<2>() {
+EntitiesFieldData::EntData::getFTensor2SymmetricFieldData<2>() {
   if (dOfs[0]->getNbOfCoeffs() != 3) {
     std::stringstream s;
     s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
@@ -397,7 +397,7 @@ DataForcesAndSourcesCore::EntData::getFTensor2SymmetricFieldData<2>() {
 }
 
 FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
-DataForcesAndSourcesCore::EntData::getFTensor0FieldData() {
+EntitiesFieldData::EntData::getFTensor0FieldData() {
   if (dOfs[0]->getNbOfCoeffs() != 1) {
     std::stringstream s;
     s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
@@ -410,7 +410,7 @@ DataForcesAndSourcesCore::EntData::getFTensor0FieldData() {
 
 template <int Tensor_Dim>
 FTensor::Tensor1<FTensor::PackPtr<double *, Tensor_Dim>, Tensor_Dim>
-DataForcesAndSourcesCore::EntData::getFTensor1DiffN(
+EntitiesFieldData::EntData::getFTensor1DiffN(
     const FieldApproximationBase base) {
   std::stringstream s;
   s << "Template for tensor dimension " << Tensor_Dim << " not implemented";
@@ -420,13 +420,13 @@ DataForcesAndSourcesCore::EntData::getFTensor1DiffN(
 
 template <int Tensor_Dim>
 FTensor::Tensor1<FTensor::PackPtr<double *, Tensor_Dim>, Tensor_Dim>
-DataForcesAndSourcesCore::EntData::getFTensor1DiffN() {
+EntitiesFieldData::EntData::getFTensor1DiffN() {
   return getFTensor1DiffN<Tensor_Dim>(bAse);
 }
 
 // template <int Tensor_Dim>
 // FTensor::Tensor1<double *, Tensor_Dim>
-// DataForcesAndSourcesCore::EntData::getFTensor1DiffN(
+// EntitiesFieldData::EntData::getFTensor1DiffN(
 //     const FieldApproximationBase base, const int bb) {
 //   std::stringstream s;
 //   s << "Template for tensor dimension " << Tensor_Dim << " not implemented";
@@ -436,7 +436,7 @@ DataForcesAndSourcesCore::EntData::getFTensor1DiffN() {
 
 // template <int Tensor_Dim>
 // FTensor::Tensor1<double *, Tensor_Dim>
-// DataForcesAndSourcesCore::EntData::getFTensor1DiffN(const int bb) {
+// EntitiesFieldData::EntData::getFTensor1DiffN(const int bb) {
 //   return getFTensor1DiffN<Tensor_Dim>(bAse, bb);
 // }
 
@@ -445,7 +445,7 @@ DataForcesAndSourcesCore::EntData::getFTensor1DiffN() {
  */
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
-DataForcesAndSourcesCore::EntData::getFTensor1DiffN<3>(
+EntitiesFieldData::EntData::getFTensor1DiffN<3>(
     const FieldApproximationBase base) {
   double *ptr = &*getDiffN(base).data().begin();
   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
@@ -457,7 +457,7 @@ DataForcesAndSourcesCore::EntData::getFTensor1DiffN<3>(
  */
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
-DataForcesAndSourcesCore::EntData::getFTensor1DiffN<3>() {
+EntitiesFieldData::EntData::getFTensor1DiffN<3>() {
   return getFTensor1DiffN<3>(bAse);
 }
 
@@ -466,7 +466,7 @@ DataForcesAndSourcesCore::EntData::getFTensor1DiffN<3>() {
  */
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>
-DataForcesAndSourcesCore::EntData::getFTensor1DiffN<2>(
+EntitiesFieldData::EntData::getFTensor1DiffN<2>(
     const FieldApproximationBase base) {
   double *ptr = &*getDiffN(base).data().begin();
   return FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>(ptr, &ptr[1]);
@@ -477,13 +477,13 @@ DataForcesAndSourcesCore::EntData::getFTensor1DiffN<2>(
  */
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>
-DataForcesAndSourcesCore::EntData::getFTensor1DiffN<2>() {
+EntitiesFieldData::EntData::getFTensor1DiffN<2>() {
   return getFTensor1DiffN<2>(bAse);
 }
 
 template <int Tensor_Dim>
 FTensor::Tensor1<FTensor::PackPtr<double *, Tensor_Dim>, Tensor_Dim>
-DataForcesAndSourcesCore::EntData::getFTensor1DiffN(
+EntitiesFieldData::EntData::getFTensor1DiffN(
     const FieldApproximationBase base, const int gg, const int bb) {
   std::stringstream s;
   s << "Template for tensor dimension " << Tensor_Dim << " not implemented";
@@ -496,7 +496,7 @@ DataForcesAndSourcesCore::EntData::getFTensor1DiffN(
  */
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
-DataForcesAndSourcesCore::EntData::getFTensor1DiffN<3>(
+EntitiesFieldData::EntData::getFTensor1DiffN<3>(
     const FieldApproximationBase base, const int gg, const int bb) {
   double *ptr = &getDiffN(base)(gg, 3 * bb);
   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
@@ -508,7 +508,7 @@ DataForcesAndSourcesCore::EntData::getFTensor1DiffN<3>(
  */
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
-DataForcesAndSourcesCore::EntData::getFTensor1DiffN<3>(const int gg,
+EntitiesFieldData::EntData::getFTensor1DiffN<3>(const int gg,
                                                        const int bb) {
   return getFTensor1DiffN<3>(bAse, gg, bb);
 }
@@ -518,7 +518,7 @@ DataForcesAndSourcesCore::EntData::getFTensor1DiffN<3>(const int gg,
  */
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>
-DataForcesAndSourcesCore::EntData::getFTensor1DiffN<2>(
+EntitiesFieldData::EntData::getFTensor1DiffN<2>(
     const FieldApproximationBase base, const int gg, const int bb) {
   double *ptr = &getDiffN(base)(gg, 2 * bb);
   return FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>(ptr, &ptr[1]);
@@ -529,7 +529,7 @@ DataForcesAndSourcesCore::EntData::getFTensor1DiffN<2>(
  */
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>
-DataForcesAndSourcesCore::EntData::getFTensor1DiffN<2>(const int gg,
+EntitiesFieldData::EntData::getFTensor1DiffN<2>(const int gg,
                                                        const int bb) {
   return getFTensor1DiffN<2>(bAse, gg, bb);
 }
@@ -542,7 +542,7 @@ DataForcesAndSourcesCore::EntData::getFTensor1DiffN<2>(const int gg,
 
 template <int Tensor_Dim>
 FTensor::Tensor1<FTensor::PackPtr<double *, Tensor_Dim>, Tensor_Dim>
-DataForcesAndSourcesCore::EntData::getFTensor1N(FieldApproximationBase base) {
+EntitiesFieldData::EntData::getFTensor1N(FieldApproximationBase base) {
   std::stringstream s;
   s << "Template for tensor dimension " << Tensor_Dim << " not implemented";
   THROW_MESSAGE(s.str());
@@ -551,7 +551,7 @@ DataForcesAndSourcesCore::EntData::getFTensor1N(FieldApproximationBase base) {
 
 template <int Tensor_Dim>
 FTensor::Tensor1<FTensor::PackPtr<double *, Tensor_Dim>, Tensor_Dim>
-DataForcesAndSourcesCore::EntData::getFTensor1N(FieldApproximationBase base,
+EntitiesFieldData::EntData::getFTensor1N(FieldApproximationBase base,
                                                 const int gg, const int bb) {
   std::stringstream s;
   s << "Template for tensor dimension " << Tensor_Dim << " not implemented";
@@ -562,7 +562,7 @@ DataForcesAndSourcesCore::EntData::getFTensor1N(FieldApproximationBase base,
 template <int Tensor_Dim0, int Tensor_Dim1>
 FTensor::Tensor2<FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>,
                  Tensor_Dim0, Tensor_Dim1>
-DataForcesAndSourcesCore::EntData::getFTensor2DiffN(
+EntitiesFieldData::EntData::getFTensor2DiffN(
     FieldApproximationBase base) {
   std::stringstream s;
   s << "Template for tensor dimension " << Tensor_Dim0 << "x" << Tensor_Dim1
@@ -574,7 +574,7 @@ DataForcesAndSourcesCore::EntData::getFTensor2DiffN(
 template <int Tensor_Dim0, int Tensor_Dim1>
 FTensor::Tensor2<FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>,
                  Tensor_Dim0, Tensor_Dim1>
-DataForcesAndSourcesCore::EntData::getFTensor2DiffN(FieldApproximationBase base,
+EntitiesFieldData::EntData::getFTensor2DiffN(FieldApproximationBase base,
                                                     const int gg,
                                                     const int bb) {
   std::stringstream s;
@@ -586,7 +586,7 @@ DataForcesAndSourcesCore::EntData::getFTensor2DiffN(FieldApproximationBase base,
 
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
-DataForcesAndSourcesCore::EntData::getFTensor1N<3>(
+EntitiesFieldData::EntData::getFTensor1N<3>(
     FieldApproximationBase base) {
   double *t_n_ptr = &*getN(base).data().begin();
   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(t_n_ptr, // HVEC0
@@ -596,7 +596,7 @@ DataForcesAndSourcesCore::EntData::getFTensor1N<3>(
 
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
-DataForcesAndSourcesCore::EntData::getFTensor1N<3>(FieldApproximationBase base,
+EntitiesFieldData::EntData::getFTensor1N<3>(FieldApproximationBase base,
                                                    const int gg, const int bb) {
   double *t_n_ptr = &getN(base)(gg, 3 * bb);
   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(t_n_ptr, // HVEC0
@@ -606,7 +606,7 @@ DataForcesAndSourcesCore::EntData::getFTensor1N<3>(FieldApproximationBase base,
 
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
-DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 3>(
+EntitiesFieldData::EntData::getFTensor2DiffN<3, 3>(
     FieldApproximationBase base) {
   double *t_diff_n_ptr = &*getDiffN(base).data().begin();
   return FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>(
@@ -617,7 +617,7 @@ DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 3>(
 
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
-DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 3>(
+EntitiesFieldData::EntData::getFTensor2DiffN<3, 3>(
     FieldApproximationBase base, const int gg, const int bb) {
   double *t_diff_n_ptr = &getDiffN(base)(gg, 9 * bb);
   return FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>(
@@ -628,7 +628,7 @@ DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 3>(
 
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>
-DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 2>(
+EntitiesFieldData::EntData::getFTensor2DiffN<3, 2>(
     FieldApproximationBase base) {
   double *t_diff_n_ptr = &*getDiffN(base).data().begin();
   return FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>(
@@ -638,7 +638,7 @@ DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 2>(
 
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>
-DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 2>(
+EntitiesFieldData::EntData::getFTensor2DiffN<3, 2>(
     FieldApproximationBase base, const int gg, const int bb) {
   double *t_diff_n_ptr = &getDiffN(base)(gg, 6 * bb);
   return FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>(
@@ -649,7 +649,7 @@ DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 2>(
 template <int Tensor_Dim0, int Tensor_Dim1>
 FTensor::Tensor2<FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>,
                  Tensor_Dim0, Tensor_Dim1>
-DataForcesAndSourcesCore::EntData::getFTensor2N(FieldApproximationBase base) {
+EntitiesFieldData::EntData::getFTensor2N(FieldApproximationBase base) {
   std::stringstream s;
   s << "Template for tensor dimension " << Tensor_Dim0 << ", " << Tensor_Dim1
     << " not implemented";
@@ -660,7 +660,7 @@ DataForcesAndSourcesCore::EntData::getFTensor2N(FieldApproximationBase base) {
 
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
-DataForcesAndSourcesCore::EntData::getFTensor2N<3, 3>(
+EntitiesFieldData::EntData::getFTensor2N<3, 3>(
     FieldApproximationBase base) {
   double *t_n_ptr = &*(getN(base).data().begin());
   return FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>(
@@ -677,7 +677,7 @@ DataForcesAndSourcesCore::EntData::getFTensor2N<3, 3>(
 template <int Tensor_Dim0, int Tensor_Dim1>
 FTensor::Tensor2<FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>,
                  Tensor_Dim0, Tensor_Dim1>
-DataForcesAndSourcesCore::EntData::getFTensor2N(FieldApproximationBase base,
+EntitiesFieldData::EntData::getFTensor2N(FieldApproximationBase base,
                                                 const int gg, const int bb) {
   std::stringstream s;
   s << "Template for tensor dimension " << Tensor_Dim0 << ", " << Tensor_Dim1
@@ -689,7 +689,7 @@ DataForcesAndSourcesCore::EntData::getFTensor2N(FieldApproximationBase base,
 
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
-DataForcesAndSourcesCore::EntData::getFTensor2N<3, 3>(
+EntitiesFieldData::EntData::getFTensor2N<3, 3>(
     FieldApproximationBase base, const int gg, const int bb) {
   double *t_n_ptr = &getN(base)(gg, 9 * bb);
   return FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>(
@@ -710,13 +710,13 @@ DataForcesAndSourcesCore::EntData::getFTensor2N<3, 3>(
 /**@{*/
 
 boost::shared_ptr<MatrixInt> &
-DataForcesAndSourcesCore::EntData::getBBAlphaIndicesSharedPtr(
+EntitiesFieldData::EntData::getBBAlphaIndicesSharedPtr(
     const std::string &field_name) {
   return bbAlphaInduces[field_name];
 }
 
 boost::shared_ptr<MatrixDouble> &
-DataForcesAndSourcesCore::EntData::getBBNSharedPtr(
+EntitiesFieldData::EntData::getBBNSharedPtr(
     const std::string &field_name) {
   return bbN[field_name];
 }
@@ -725,7 +725,7 @@ DataForcesAndSourcesCore::EntData::getBBNSharedPtr(
  * Get shared pointer to BB base base functions
  */
 const boost::shared_ptr<MatrixDouble> &
-DataForcesAndSourcesCore::EntData::getBBNSharedPtr(
+EntitiesFieldData::EntData::getBBNSharedPtr(
     const std::string &field_name) const {
   return bbN.at(field_name);
 }
@@ -734,7 +734,7 @@ DataForcesAndSourcesCore::EntData::getBBNSharedPtr(
  * Get shared pointer to BB derivatives of base base functions
  */
 boost::shared_ptr<MatrixDouble> &
-DataForcesAndSourcesCore::EntData::getBBDiffNSharedPtr(
+EntitiesFieldData::EntData::getBBDiffNSharedPtr(
     const std::string &field_name) {
   return bbDiffN[field_name];
 }
@@ -743,85 +743,85 @@ DataForcesAndSourcesCore::EntData::getBBDiffNSharedPtr(
  * Get shared pointer to derivatives of BB base base functions
  */
 const boost::shared_ptr<MatrixDouble> &
-DataForcesAndSourcesCore::EntData::getBBDiffNSharedPtr(
+EntitiesFieldData::EntData::getBBDiffNSharedPtr(
     const std::string &field_name) const {
   return bbDiffN.at(field_name);
 }
 
 std::map<std::string, boost::shared_ptr<MatrixInt>> &
-DataForcesAndSourcesCore::EntData::getBBAlphaIndicesMap() {
+EntitiesFieldData::EntData::getBBAlphaIndicesMap() {
   return bbAlphaInduces;
 }
 
 std::map<std::string, boost::shared_ptr<MatrixDouble>> &
-DataForcesAndSourcesCore::EntData::getBBNMap() {
+EntitiesFieldData::EntData::getBBNMap() {
   return bbN;
 }
 
 std::map<std::string, boost::shared_ptr<MatrixDouble>> &
-DataForcesAndSourcesCore::EntData::getBBDiffNMap() {
+EntitiesFieldData::EntData::getBBDiffNMap() {
   return bbDiffN;
 }
 
 boost::shared_ptr<MatrixInt> &
-DataForcesAndSourcesCore::EntData::getBBAlphaIndicesByOrderSharedPtr(
+EntitiesFieldData::EntData::getBBAlphaIndicesByOrderSharedPtr(
     const size_t o) {
   return bbAlphaInducesByOrder[o];
 }
 
 boost::shared_ptr<MatrixDouble> &
-DataForcesAndSourcesCore::EntData::getBBNByOrderSharedPtr(const size_t o) {
+EntitiesFieldData::EntData::getBBNByOrderSharedPtr(const size_t o) {
   return bbNByOrder[o];
 }
 
 const boost::shared_ptr<MatrixDouble> &
-DataForcesAndSourcesCore::EntData::getBBNByOrderSharedPtr(const size_t o) const {
+EntitiesFieldData::EntData::getBBNByOrderSharedPtr(const size_t o) const {
    return bbNByOrder[o]; 
 }
 
 boost::shared_ptr<MatrixDouble> &
-DataForcesAndSourcesCore::EntData::getBBDiffNByOrderSharedPtr(const size_t o) {
+EntitiesFieldData::EntData::getBBDiffNByOrderSharedPtr(const size_t o) {
   return bbDiffNByOrder[o];
 }
 
 const boost::shared_ptr<MatrixDouble> &
-DataForcesAndSourcesCore::EntData::getBBDiffNByOrderSharedPtr(
+EntitiesFieldData::EntData::getBBDiffNByOrderSharedPtr(
     const size_t o) const {
   return bbDiffNByOrder[o];
 }
 
 std::array<boost::shared_ptr<MatrixInt>,
-           DataForcesAndSourcesCore::EntData::MaxBernsteinBezierOrder> &
-DataForcesAndSourcesCore::EntData::getBBAlphaIndicesByOrderArray() {
+           EntitiesFieldData::EntData::MaxBernsteinBezierOrder> &
+EntitiesFieldData::EntData::getBBAlphaIndicesByOrderArray() {
   return bbAlphaInducesByOrder;
 }
 
 std::array<boost::shared_ptr<MatrixDouble>,
-           DataForcesAndSourcesCore::EntData::MaxBernsteinBezierOrder> &
-DataForcesAndSourcesCore::EntData::getBBNByOrderArray() {
+           EntitiesFieldData::EntData::MaxBernsteinBezierOrder> &
+EntitiesFieldData::EntData::getBBNByOrderArray() {
   return bbNByOrder;
 }
 
 std::array<boost::shared_ptr<MatrixDouble>,
-           DataForcesAndSourcesCore::EntData::MaxBernsteinBezierOrder> &
-DataForcesAndSourcesCore::EntData::getBBDiffNByOrderArray() {
+           EntitiesFieldData::EntData::MaxBernsteinBezierOrder> &
+EntitiesFieldData::EntData::getBBDiffNByOrderArray() {
   return bbDiffNByOrder;
 }
 
 boost::shared_ptr<MatrixInt> &
-DerivedDataForcesAndSourcesCore::DerivedEntData::getBBAlphaIndicesSharedPtr(
+DerivedEntitiesFieldData::DerivedEntData::getBBAlphaIndicesSharedPtr(
     const std::string &field_name) {
   return entDataPtr->getBBAlphaIndicesSharedPtr(field_name);
 }
 
 boost::shared_ptr<MatrixDouble> &
-DerivedDataForcesAndSourcesCore::DerivedEntData::getBBNSharedPtr(
+DerivedEntitiesFieldData::DerivedEntData::getBBNSharedPtr(
     const std::string &field_name) {
   return entDataPtr->getBBNSharedPtr(field_name);
 }
 
 const boost::shared_ptr<MatrixDouble> &
-DerivedDataForcesAndSourcesCore::DerivedEntData::getBBNSharedPtr(
+DerivedEntitiesFieldData::DerivedEntData::getBBNSharedPtr(
     const std::string &field_name) const {
   return entDataPtr->getBBNSharedPtr(field_name);
 }
@@ -830,7 +830,7 @@ DerivedDataForcesAndSourcesCore::DerivedEntData::getBBNSharedPtr(
  * Get shared pointer to BB derivatives of base base functions
  */
 boost::shared_ptr<MatrixDouble> &
-DerivedDataForcesAndSourcesCore::DerivedEntData::getBBDiffNSharedPtr(
+DerivedEntitiesFieldData::DerivedEntData::getBBDiffNSharedPtr(
     const std::string &field_name) {
   return entDataPtr->getBBDiffNSharedPtr(field_name);
 }
@@ -839,7 +839,7 @@ DerivedDataForcesAndSourcesCore::DerivedEntData::getBBDiffNSharedPtr(
  * Get shared pointer to derivatives of BB base base functions
  */
 const boost::shared_ptr<MatrixDouble> &
-DerivedDataForcesAndSourcesCore::DerivedEntData::getBBDiffNSharedPtr(
+DerivedEntitiesFieldData::DerivedEntData::getBBDiffNSharedPtr(
     const std::string &field_name) const {
   return entDataPtr->getBBDiffNSharedPtr(field_name);
 }

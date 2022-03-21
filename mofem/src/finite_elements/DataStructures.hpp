@@ -49,7 +49,7 @@ using VectorFieldEntities = ublas::vector<FieldEntity *, FieldEntAllocator>;
  * functions, entity side number, type of entities, approximation order, etc.
  *
  */
-struct DataForcesAndSourcesCore {
+struct EntitiesFieldData {
 
   /** \brief Data on single entity (This is passed as argument to
    * DataOperator::doWork) \ingroup mofem_forces_and_sources_user_data_operators
@@ -247,12 +247,12 @@ struct DataForcesAndSourcesCore {
     inline MatrixDouble &getN(const FieldApproximationBase base);
 
     /**
-     * @copydoc MoFEM::DataForcesAndSourcesCore::EntData::getN
+     * @copydoc MoFEM::EntitiesFieldData::EntData::getN
      */
     inline MatrixDouble &getN(const std::string &field_name);
 
     /**
-     * @copydoc MoFEM::DataForcesAndSourcesCore::EntData::getN
+     * @copydoc MoFEM::EntitiesFieldData::EntData::getN
      */
     inline MatrixDouble &getN();
 
@@ -285,12 +285,12 @@ struct DataForcesAndSourcesCore {
     inline MatrixDouble &getDiffN(const FieldApproximationBase base);
 
     /**
-     * @copydoc MoFEM::DataForcesAndSourcesCore::EntData::getDiffN
+     * @copydoc MoFEM::EntitiesFieldData::EntData::getDiffN
      */
     inline MatrixDouble &getDiffN(const std::string &field_name);
 
     /**
-     * @copydoc MoFEM::DataForcesAndSourcesCore::EntData::getDiffN
+     * @copydoc MoFEM::EntitiesFieldData::EntData::getDiffN
      */
     inline MatrixDouble &getDiffN();
 
@@ -828,7 +828,7 @@ struct DataForcesAndSourcesCore {
     /**@{*/
 
     friend std::ostream &operator<<(std::ostream &os,
-                                    const DataForcesAndSourcesCore::EntData &e);
+                                    const EntitiesFieldData::EntData &e);
 
     /**
      * Reset data associated with particular field name
@@ -935,12 +935,12 @@ struct DataForcesAndSourcesCore {
 
     std::array<std::array<boost::shared_ptr<MatrixDouble>, LASTBASE>,
                LastDerivative>
-        baseFunctionsAndBaseDirevatives; 
+        baseFunctionsAndBaseDirevatives;
 
-    std::array<boost::shared_ptr<MatrixDouble>, LASTBASE> &N; ///< Base functions
+    std::array<boost::shared_ptr<MatrixDouble>, LASTBASE>
+        &N; ///< Base functions
     std::array<boost::shared_ptr<MatrixDouble>, LASTBASE>
         &diffN; ///< Derivatives of base functions
- 
 
     std::string bbFieldName; ///< field name
     VectorInt bbNodeOrder;   ///< order of nodes
@@ -959,15 +959,15 @@ struct DataForcesAndSourcesCore {
   protected:
     /**
      * @brief Used by Bernstein base to keep temporally pointer
-     * 
-     * @copydoc MoFEM::DataForcesAndSourcesCore::baseSwap
+     *
+     * @copydoc MoFEM::EntitiesFieldData::baseSwap
      */
     boost::shared_ptr<MatrixDouble> swapBaseNPtr;
 
     /**
      * @brief Used by Bernstein base to keep temporally pointer
      *
-     * @copydoc MoFEM::DataForcesAndSourcesCore::baseSwap
+     * @copydoc MoFEM::EntitiesFieldData::baseSwap
      */
     boost::shared_ptr<MatrixDouble> swapBaseDiffNPtr;
   };
@@ -988,8 +988,8 @@ struct DataForcesAndSourcesCore {
                       ///< function, dofs
                       ///< values, etc.
 
-  DataForcesAndSourcesCore(const EntityType type);
-  virtual ~DataForcesAndSourcesCore() = default;
+  EntitiesFieldData(const EntityType type);
+  virtual ~EntitiesFieldData() = default;
 
   virtual MoFEMErrorCode setElementType(const EntityType type);
 
@@ -1005,9 +1005,9 @@ struct DataForcesAndSourcesCore {
    * Bernstein-Bezier (BB) base is not hierarchical, and is calculated for
    * particular field, since it all shape functions change with the order. BB
    * base is precalculated for every field, and when user push operator with
-   * paricular field using BB base, pointers to shape funtions and BaseDirevatives
-   * of shape functions are set to particular location, once operator is
-   * executed, pointers are switch back to its oroginal position.
+   * paricular field using BB base, pointers to shape funtions and
+   * BaseDirevatives of shape functions are set to particular location, once
+   * operator is executed, pointers are switch back to its oroginal position.
    *
    * getNSharedPtr(base) <=== getBBNSharedPtr(field_name);
    * // DO OPERATOR WORK
@@ -1020,14 +1020,13 @@ struct DataForcesAndSourcesCore {
   virtual MoFEMErrorCode baseSwap(const std::string &field_name,
                                   const FieldApproximationBase base);
 
-  friend std::ostream &operator<<(std::ostream &os,
-                                  const DataForcesAndSourcesCore &e);
+  friend std::ostream &operator<<(std::ostream &os, const EntitiesFieldData &e);
 
 protected:
-  DataForcesAndSourcesCore() {}
+  EntitiesFieldData() {}
 };
 
-using BaseDirevatives = DataForcesAndSourcesCore::EntData::BaseDirevatives;
+using BaseDirevatives = EntitiesFieldData::EntData::BaseDirevatives;
 
 /** \brief this class derive data form other data structure
  * \ingroup mofem_forces_and_sources_user_data_operators
@@ -1040,7 +1039,7 @@ using BaseDirevatives = DataForcesAndSourcesCore::EntData::BaseDirevatives;
  * Shape functions, senses are shared with other data structure.
  *
  */
-struct DerivedDataForcesAndSourcesCore : public DataForcesAndSourcesCore {
+struct DerivedEntitiesFieldData : public EntitiesFieldData {
 
   /** \brief Derived ata on single entity (This is passed as argument to
    * DataOperator::doWork) \ingroup mofem_forces_and_sources_user_data_operators
@@ -1050,10 +1049,10 @@ struct DerivedDataForcesAndSourcesCore : public DataForcesAndSourcesCore {
    * base functions.
    *
    */
-  struct DerivedEntData : public DataForcesAndSourcesCore::EntData {
+  struct DerivedEntData : public EntitiesFieldData::EntData {
 
-    DerivedEntData(const boost::shared_ptr<DataForcesAndSourcesCore::EntData>
-                       &ent_data_ptr);
+    DerivedEntData(
+        const boost::shared_ptr<EntitiesFieldData::EntData> &ent_data_ptr);
 
     int getSense() const;
 
@@ -1107,33 +1106,33 @@ struct DerivedDataForcesAndSourcesCore : public DataForcesAndSourcesCore {
     getBBDiffNSharedPtr(const std::string &field_name) const;
 
     /**
-     * @copydoc MoFEM::DataForcesAndSourcesCore::EntData::swapBaseNPtr
+     * @copydoc MoFEM::EntitiesFieldData::EntData::swapBaseNPtr
      */
     MoFEMErrorCode baseSwap(const std::string &field_name,
                             const FieldApproximationBase base);
 
   protected:
-    const boost::shared_ptr<DataForcesAndSourcesCore::EntData> entDataPtr;
+    const boost::shared_ptr<EntitiesFieldData::EntData> entDataPtr;
   };
 
-  DerivedDataForcesAndSourcesCore(
-      const boost::shared_ptr<DataForcesAndSourcesCore> &data_ptr);
+  DerivedEntitiesFieldData(
+      const boost::shared_ptr<EntitiesFieldData> &data_ptr);
   MoFEMErrorCode setElementType(const EntityType type);
 
 private:
-  const boost::shared_ptr<DataForcesAndSourcesCore> dataPtr;
+  const boost::shared_ptr<EntitiesFieldData> dataPtr;
 };
 
-ApproximationOrder DataForcesAndSourcesCore::EntData::getOrder() const {
+ApproximationOrder EntitiesFieldData::EntData::getOrder() const {
   return oRder;
 }
 
-const VectorInt &DataForcesAndSourcesCore::EntData::getIndices() const {
+const VectorInt &EntitiesFieldData::EntData::getIndices() const {
   return iNdices;
 }
 
 const VectorIntAdaptor
-DataForcesAndSourcesCore::EntData::getIndicesUpToOrder(int order) {
+EntitiesFieldData::EntData::getIndicesUpToOrder(int order) {
   unsigned int size = 0;
   if (auto dof = dOfs[0]) {
     size = dof->getOrderNbDofs(order) * dof->getNbOfCoeffs();
@@ -1143,12 +1142,12 @@ DataForcesAndSourcesCore::EntData::getIndicesUpToOrder(int order) {
   return VectorIntAdaptor(size, ublas::shallow_array_adaptor<int>(size, data));
 }
 
-const VectorInt &DataForcesAndSourcesCore::EntData::getLocalIndices() const {
+const VectorInt &EntitiesFieldData::EntData::getLocalIndices() const {
   return localIndices;
 }
 
 const VectorIntAdaptor
-DataForcesAndSourcesCore::EntData::getLocalIndicesUpToOrder(int order) {
+EntitiesFieldData::EntData::getLocalIndicesUpToOrder(int order) {
   unsigned int size = 0;
   if (auto dof = dOfs[0]) {
     size = dof->getOrderNbDofs(order) * dof->getNbOfCoeffs();
@@ -1158,24 +1157,22 @@ DataForcesAndSourcesCore::EntData::getLocalIndicesUpToOrder(int order) {
   return VectorIntAdaptor(size, ublas::shallow_array_adaptor<int>(size, data));
 }
 
-int &DataForcesAndSourcesCore::EntData::getSense() { return sEnse; }
+int &EntitiesFieldData::EntData::getSense() { return sEnse; }
 
-ApproximationOrder &DataForcesAndSourcesCore::EntData::getDataOrder() {
-  return oRder;
-}
+ApproximationOrder &EntitiesFieldData::EntData::getDataOrder() { return oRder; }
 
-VectorInt &DataForcesAndSourcesCore::EntData::getIndices() { return iNdices; }
+VectorInt &EntitiesFieldData::EntData::getIndices() { return iNdices; }
 
-VectorInt &DataForcesAndSourcesCore::EntData::getLocalIndices() {
+VectorInt &EntitiesFieldData::EntData::getLocalIndices() {
   return localIndices;
 }
 
-const VectorDouble &DataForcesAndSourcesCore::EntData::getFieldData() const {
+const VectorDouble &EntitiesFieldData::EntData::getFieldData() const {
   return fieldData;
 }
 
 const VectorAdaptor
-DataForcesAndSourcesCore::EntData::getFieldDataUpToOrder(int order) {
+EntitiesFieldData::EntData::getFieldDataUpToOrder(int order) {
   unsigned int size = 0;
   if (auto dof = dOfs[0]) {
     size = dof->getOrderNbDofs(order) * dof->getNbOfCoeffs();
@@ -1185,28 +1182,26 @@ DataForcesAndSourcesCore::EntData::getFieldDataUpToOrder(int order) {
   return getVectorAdaptor(data, size);
 }
 
-const VectorDofs &DataForcesAndSourcesCore::EntData::getFieldDofs() const {
+const VectorDofs &EntitiesFieldData::EntData::getFieldDofs() const {
   return dOfs;
 }
 
-VectorDofs &DataForcesAndSourcesCore::EntData::getFieldDofs() { return dOfs; }
+VectorDofs &EntitiesFieldData::EntData::getFieldDofs() { return dOfs; }
 
-VectorDouble &DataForcesAndSourcesCore::EntData::getFieldData() {
-  return fieldData;
-}
+VectorDouble &EntitiesFieldData::EntData::getFieldData() { return fieldData; }
 
-VectorFieldEntities &DataForcesAndSourcesCore::EntData::getFieldEntities() {
+VectorFieldEntities &EntitiesFieldData::EntData::getFieldEntities() {
   return fieldEntities;
 }
 
 const VectorFieldEntities &
-DataForcesAndSourcesCore::EntData::getFieldEntities() const {
+EntitiesFieldData::EntData::getFieldEntities() const {
   return fieldEntities;
 }
 
 template <int Tensor_Dim>
 FTensor::Tensor1<FTensor::PackPtr<double *, Tensor_Dim>, Tensor_Dim>
-DataForcesAndSourcesCore::EntData::getFTensor1FieldData() {
+EntitiesFieldData::EntData::getFTensor1FieldData() {
   std::stringstream s;
   s << "Not implemented for this dimension dim = " << Tensor_Dim;
   THROW_MESSAGE(s.str());
@@ -1215,7 +1210,7 @@ DataForcesAndSourcesCore::EntData::getFTensor1FieldData() {
 template <int Tensor_Dim0, int Tensor_Dim1>
 FTensor::Tensor2<FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>,
                  Tensor_Dim0, Tensor_Dim1>
-DataForcesAndSourcesCore::EntData::getFTensor2FieldData() {
+EntitiesFieldData::EntData::getFTensor2FieldData() {
   std::stringstream s;
   s << "Not implemented for this dimension dim0 = " << Tensor_Dim0;
   s << " and dim1 " << Tensor_Dim1;
@@ -1225,59 +1220,54 @@ DataForcesAndSourcesCore::EntData::getFTensor2FieldData() {
 template <int Tensor_Dim>
 FTensor::Tensor2_symmetric<
     FTensor::PackPtr<double *, (Tensor_Dim * (Tensor_Dim + 1)) / 2>, Tensor_Dim>
-DataForcesAndSourcesCore::EntData::getFTensor2SymmetricFieldData() {
+EntitiesFieldData::EntData::getFTensor2SymmetricFieldData() {
   std::stringstream s;
   s << "Not implemented for this dimension dim = " << Tensor_Dim;
   THROW_MESSAGE(s.str());
 }
 
-FieldApproximationBase &DataForcesAndSourcesCore::EntData::getBase() {
-  return bAse;
-}
+FieldApproximationBase &EntitiesFieldData::EntData::getBase() { return bAse; }
 
-FieldSpace &DataForcesAndSourcesCore::EntData::getSpace() { return sPace; }
+FieldSpace &EntitiesFieldData::EntData::getSpace() { return sPace; }
 
 MatrixDouble &
-DataForcesAndSourcesCore::EntData::getN(const FieldApproximationBase base) {
+EntitiesFieldData::EntData::getN(const FieldApproximationBase base) {
   return *(getNSharedPtr(base));
 }
 
-MatrixDouble &
-DataForcesAndSourcesCore::EntData::getN(const std::string &field_name) {
+MatrixDouble &EntitiesFieldData::EntData::getN(const std::string &field_name) {
   return *(getBBNSharedPtr(field_name));
 }
 
-MatrixDouble &DataForcesAndSourcesCore::EntData::getN() { return getN(bAse); }
+MatrixDouble &EntitiesFieldData::EntData::getN() { return getN(bAse); }
 
 MatrixDouble &
-DataForcesAndSourcesCore::EntData::getDiffN(const FieldApproximationBase base) {
+EntitiesFieldData::EntData::getDiffN(const FieldApproximationBase base) {
   return *(getDiffNSharedPtr(base));
 }
 
 MatrixDouble &
-DataForcesAndSourcesCore::EntData::getDiffN(const std::string &field_name) {
+EntitiesFieldData::EntData::getDiffN(const std::string &field_name) {
   return *(getBBDiffNSharedPtr(field_name));
 }
 
-MatrixDouble &DataForcesAndSourcesCore::EntData::getDiffN() {
-  return getDiffN(bAse);
-}
+MatrixDouble &EntitiesFieldData::EntData::getDiffN() { return getDiffN(bAse); }
 
 const VectorAdaptor
-DataForcesAndSourcesCore::EntData::getN(const FieldApproximationBase base,
-                                        const int gg) {
+EntitiesFieldData::EntData::getN(const FieldApproximationBase base,
+                                 const int gg) {
   int size = getN(base).size2();
   double *data = &getN(base)(gg, 0);
   return VectorAdaptor(size, ublas::shallow_array_adaptor<double>(size, data));
 }
 
-const VectorAdaptor DataForcesAndSourcesCore::EntData::getN(const int gg) {
+const VectorAdaptor EntitiesFieldData::EntData::getN(const int gg) {
   return getN(bAse, gg);
 }
 
 const MatrixAdaptor
-DataForcesAndSourcesCore::EntData::getDiffN(const FieldApproximationBase base,
-                                            const int gg) {
+EntitiesFieldData::EntData::getDiffN(const FieldApproximationBase base,
+                                     const int gg) {
   // FIXME: That is bug, it will not work if number of integration pts is
   // equal to number of nodes on entity.  User who not implementing low
   // level DataOperator will not experience this.
@@ -1298,14 +1288,13 @@ DataForcesAndSourcesCore::EntData::getDiffN(const FieldApproximationBase base,
   }
 }
 
-const MatrixAdaptor DataForcesAndSourcesCore::EntData::getDiffN(const int gg) {
+const MatrixAdaptor EntitiesFieldData::EntData::getDiffN(const int gg) {
   return getDiffN(bAse, gg);
 }
 
 const VectorAdaptor
-DataForcesAndSourcesCore::EntData::getN(const FieldApproximationBase base,
-                                        const int gg,
-                                        const int nb_base_functions) {
+EntitiesFieldData::EntData::getN(const FieldApproximationBase base,
+                                 const int gg, const int nb_base_functions) {
   (void)getN()(gg, nb_base_functions -
                        1); // throw error if nb_base_functions is to big
   double *data = &getN(base)(gg, 0);
@@ -1314,15 +1303,14 @@ DataForcesAndSourcesCore::EntData::getN(const FieldApproximationBase base,
 }
 
 const VectorAdaptor
-DataForcesAndSourcesCore::EntData::getN(const int gg,
-                                        const int nb_base_functions) {
+EntitiesFieldData::EntData::getN(const int gg, const int nb_base_functions) {
   return getN(bAse, gg, nb_base_functions);
 }
 
 const MatrixAdaptor
-DataForcesAndSourcesCore::EntData::getDiffN(const FieldApproximationBase base,
-                                            const int gg,
-                                            const int nb_base_functions) {
+EntitiesFieldData::EntData::getDiffN(const FieldApproximationBase base,
+                                     const int gg,
+                                     const int nb_base_functions) {
   // FIXME: That is bug, it will not work if number of integration pts is
   // equal to number of nodes on entity.  User who not implementing low
   // level DataOperator will not experience this.
@@ -1346,15 +1334,15 @@ DataForcesAndSourcesCore::EntData::getDiffN(const FieldApproximationBase base,
 }
 
 const MatrixAdaptor
-DataForcesAndSourcesCore::EntData::getDiffN(const int gg,
-                                            const int nb_base_functions) {
+EntitiesFieldData::EntData::getDiffN(const int gg,
+                                     const int nb_base_functions) {
   return getDiffN(bAse, gg, nb_base_functions);
 }
 
 template <int DIM>
 const MatrixAdaptor
-DataForcesAndSourcesCore::EntData::getVectorN(const FieldApproximationBase base,
-                                              const int gg) {
+EntitiesFieldData::EntData::getVectorN(const FieldApproximationBase base,
+                                       const int gg) {
   if (PetscUnlikely(getN(base).size2() % DIM)) {
     THROW_MESSAGE("Wrong dimension");
   }
@@ -1367,15 +1355,14 @@ DataForcesAndSourcesCore::EntData::getVectorN(const FieldApproximationBase base,
 }
 
 template <int DIM>
-const MatrixAdaptor
-DataForcesAndSourcesCore::EntData::getVectorN(const int gg) {
+const MatrixAdaptor EntitiesFieldData::EntData::getVectorN(const int gg) {
   return getVectorN<DIM>(bAse, gg);
 }
 
 template <int DIM0, int DIM1>
 const MatrixAdaptor
-DataForcesAndSourcesCore::EntData::getVectorDiffN(FieldApproximationBase base,
-                                                  const int gg) {
+EntitiesFieldData::EntData::getVectorDiffN(FieldApproximationBase base,
+                                           const int gg) {
   if (PetscUnlikely(getDiffN(base).size2() % (DIM0 * DIM1))) {
     THROW_MESSAGE("Wrong dimension");
   }
@@ -1388,69 +1375,65 @@ DataForcesAndSourcesCore::EntData::getVectorDiffN(FieldApproximationBase base,
 }
 
 template <int DIM0, int DIM1>
-const MatrixAdaptor
-DataForcesAndSourcesCore::EntData::getVectorDiffN(const int gg) {
+const MatrixAdaptor EntitiesFieldData::EntData::getVectorDiffN(const int gg) {
   return getVectorDiffN<DIM0, DIM1>(bAse, gg);
 }
 
 template <int DIM0, int DIM1>
-const MatrixAdaptor DataForcesAndSourcesCore::EntData::getVectorDiffN(
-    const FieldApproximationBase base, const int dof, const int gg) {
+const MatrixAdaptor
+EntitiesFieldData::EntData::getVectorDiffN(const FieldApproximationBase base,
+                                           const int dof, const int gg) {
   double *data =
-      &DataForcesAndSourcesCore::EntData::getDiffN(base)(gg, DIM0 * DIM1 * dof);
+      &EntitiesFieldData::EntData::getDiffN(base)(gg, DIM0 * DIM1 * dof);
   return MatrixAdaptor(DIM0, DIM1,
                        ublas::shallow_array_adaptor<double>(DIM0 * DIM1, data));
 }
 
 template <int DIM0, int DIM1>
-const MatrixAdaptor
-DataForcesAndSourcesCore::EntData::getVectorDiffN(const int dof, const int gg) {
+const MatrixAdaptor EntitiesFieldData::EntData::getVectorDiffN(const int dof,
+                                                               const int gg) {
   return getVectorDiffN<DIM0, DIM1>(bAse, dof, gg);
 }
 
 FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
-DataForcesAndSourcesCore::EntData::getFTensor0N(
-    const FieldApproximationBase base) {
+EntitiesFieldData::EntData::getFTensor0N(const FieldApproximationBase base) {
   double *ptr = &*getN(base).data().begin();
   return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(ptr);
 };
 
 FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
-DataForcesAndSourcesCore::EntData::getFTensor0N() {
+EntitiesFieldData::EntData::getFTensor0N() {
   return getFTensor0N(bAse);
 };
 
 FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
-DataForcesAndSourcesCore::EntData::getFTensor0N(
-    const FieldApproximationBase base, const int gg, const int bb) {
+EntitiesFieldData::EntData::getFTensor0N(const FieldApproximationBase base,
+                                         const int gg, const int bb) {
   double *ptr = &getN(base)(gg, bb);
   return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(ptr);
 };
 
 FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
-DataForcesAndSourcesCore::EntData::getFTensor0N(const int gg, const int bb) {
+EntitiesFieldData::EntData::getFTensor0N(const int gg, const int bb) {
   return getFTensor0N(bAse, gg, bb);
 };
 
-template <int Tensor_Dim>
-auto DataForcesAndSourcesCore::EntData::getFTensor1N() {
+template <int Tensor_Dim> auto EntitiesFieldData::EntData::getFTensor1N() {
   return getFTensor1N<Tensor_Dim>(bAse);
 }
 
 template <int Tensor_Dim>
-auto DataForcesAndSourcesCore::EntData::getFTensor1N(const int gg,
-                                                     const int bb) {
+auto EntitiesFieldData::EntData::getFTensor1N(const int gg, const int bb) {
   return getFTensor1N<Tensor_Dim>(bAse, gg, bb);
 }
 
 template <int Tensor_Dim0, int Tensor_Dim1>
-auto DataForcesAndSourcesCore::EntData::getFTensor2N() {
+auto EntitiesFieldData::EntData::getFTensor2N() {
   return getFTensor2N<Tensor_Dim0, Tensor_Dim1>(bAse);
 }
 
 template <int Tensor_Dim0, int Tensor_Dim1>
-auto DataForcesAndSourcesCore::EntData::getFTensor2N(const int gg,
-                                                     const int bb) {
+auto EntitiesFieldData::EntData::getFTensor2N(const int gg, const int bb) {
   return getFTensor2N<Tensor_Dim0, Tensor_Dim1>(bAse, gg, bb);
 }
 
@@ -1458,11 +1441,9 @@ auto DataForcesAndSourcesCore::EntData::getFTensor2N(const int gg,
 
 /**@{*/
 
-VectorInt &DataForcesAndSourcesCore::EntData::getBBNodeOrder() {
-  return bbNodeOrder;
-}
+VectorInt &EntitiesFieldData::EntData::getBBNodeOrder() { return bbNodeOrder; }
 
-MatrixInt &DataForcesAndSourcesCore::EntData::getBBAlphaIndices() {
+MatrixInt &EntitiesFieldData::EntData::getBBAlphaIndices() {
   return *getBBAlphaIndicesSharedPtr(bbFieldName);
 }
 
@@ -1473,13 +1454,13 @@ MatrixInt &DataForcesAndSourcesCore::EntData::getBBAlphaIndices() {
 /**@{*/
 
 boost::shared_ptr<MatrixDouble> &
-DerivedDataForcesAndSourcesCore::DerivedEntData::getDerivedNSharedPtr(
+DerivedEntitiesFieldData::DerivedEntData::getDerivedNSharedPtr(
     const FieldApproximationBase base) {
   return N[base];
 }
 
 boost::shared_ptr<MatrixDouble> &
-DerivedDataForcesAndSourcesCore::DerivedEntData::getDerivedDiffNSharedPtr(
+DerivedEntitiesFieldData::DerivedEntData::getDerivedDiffNSharedPtr(
     const FieldApproximationBase base) {
   return diffN[base];
 }
@@ -1502,19 +1483,17 @@ DerivedDataForcesAndSourcesCore::DerivedEntData::getDerivedDiffNSharedPtr(
  * @return MoFEMErrorCode
  */
 template <typename T = EntityStorage>
-inline MoFEMErrorCode
-VecSetValues(Vec V, const DataForcesAndSourcesCore::EntData &data,
-             const double *ptr, InsertMode iora) {
-  static_assert(
-      !std::is_same<T, T>::value,
-      "VecSetValues value for this data storage is not implemented");
+inline MoFEMErrorCode VecSetValues(Vec V,
+                                   const EntitiesFieldData::EntData &data,
+                                   const double *ptr, InsertMode iora) {
+  static_assert(!std::is_same<T, T>::value,
+                "VecSetValues value for this data storage is not implemented");
   return MOFEM_NOT_IMPLEMENTED;
 }
 
 template <>
 inline MoFEMErrorCode
-VecSetValues<EntityStorage>(Vec V,
-                            const DataForcesAndSourcesCore::EntData &data,
+VecSetValues<EntityStorage>(Vec V, const EntitiesFieldData::EntData &data,
                             const double *ptr, InsertMode iora) {
   return VecSetValues(V, data.getIndices().size(), &*data.getIndices().begin(),
                       ptr, iora);
@@ -1537,10 +1516,10 @@ VecSetValues<EntityStorage>(Vec V,
  * @return MoFEMErrorCode
  */
 template <typename T = EntityStorage>
-inline MoFEMErrorCode
-MatSetValues(Mat M, const DataForcesAndSourcesCore::EntData &row_data,
-             const DataForcesAndSourcesCore::EntData &col_data,
-             const double *ptr, InsertMode iora) {
+inline MoFEMErrorCode MatSetValues(Mat M,
+                                   const EntitiesFieldData::EntData &row_data,
+                                   const EntitiesFieldData::EntData &col_data,
+                                   const double *ptr, InsertMode iora) {
   static_assert(!std::is_same<T, T>::value,
                 "MatSetValues value for this data storage is not implemented");
   return MOFEM_NOT_IMPLEMENTED;
@@ -1548,9 +1527,8 @@ MatSetValues(Mat M, const DataForcesAndSourcesCore::EntData &row_data,
 
 template <>
 inline MoFEMErrorCode
-MatSetValues<EntityStorage>(Mat M,
-                            const DataForcesAndSourcesCore::EntData &row_data,
-                            const DataForcesAndSourcesCore::EntData &col_data,
+MatSetValues<EntityStorage>(Mat M, const EntitiesFieldData::EntData &row_data,
+                            const EntitiesFieldData::EntData &col_data,
                             const double *ptr, InsertMode iora) {
   return MatSetValues(
       M, row_data.getIndices().size(), &*row_data.getIndices().begin(),
@@ -1563,17 +1541,16 @@ MatSetValues<EntityStorage>(Mat M,
 
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
-DataForcesAndSourcesCore::EntData::getFTensor1N<3>(FieldApproximationBase base);
+EntitiesFieldData::EntData::getFTensor1N<3>(FieldApproximationBase base);
 
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
-DataForcesAndSourcesCore::EntData::getFTensor1N<3>(FieldApproximationBase base,
-                                                   const int gg, const int bb);
+EntitiesFieldData::EntData::getFTensor1N<3>(FieldApproximationBase base,
+                                            const int gg, const int bb);
 
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
-DataForcesAndSourcesCore::EntData::getFTensor2N<3, 3>(
-    FieldApproximationBase base);
+EntitiesFieldData::EntData::getFTensor2N<3, 3>(FieldApproximationBase base);
 
 /**@}*/
 
@@ -1583,28 +1560,27 @@ DataForcesAndSourcesCore::EntData::getFTensor2N<3, 3>(
 
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
-DataForcesAndSourcesCore::EntData::getFTensor1DiffN<3>(
+EntitiesFieldData::EntData::getFTensor1DiffN<3>(
     const FieldApproximationBase base);
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
-DataForcesAndSourcesCore::EntData::getFTensor1DiffN<3>();
+EntitiesFieldData::EntData::getFTensor1DiffN<3>();
 
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>
-DataForcesAndSourcesCore::EntData::getFTensor1DiffN<2>(
+EntitiesFieldData::EntData::getFTensor1DiffN<2>(
     const FieldApproximationBase base);
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>
-DataForcesAndSourcesCore::EntData::getFTensor1DiffN<2>();
+EntitiesFieldData::EntData::getFTensor1DiffN<2>();
 
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>
-DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 2>(
-    FieldApproximationBase base);
+EntitiesFieldData::EntData::getFTensor2DiffN<3, 2>(FieldApproximationBase base);
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>
-DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 2>(
-    FieldApproximationBase base, const int gg, const int bb);
+EntitiesFieldData::EntData::getFTensor2DiffN<3, 2>(FieldApproximationBase base,
+                                                   const int gg, const int bb);
 
 /**@}*/
 
@@ -1614,29 +1590,39 @@ DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 2>(
 
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
-DataForcesAndSourcesCore::EntData::getFTensor1FieldData<3>();
+EntitiesFieldData::EntData::getFTensor1FieldData<3>();
 
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>
-DataForcesAndSourcesCore::EntData::getFTensor1FieldData<2>();
+EntitiesFieldData::EntData::getFTensor1FieldData<2>();
 
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 1>
-DataForcesAndSourcesCore::EntData::getFTensor1FieldData<1>();
+EntitiesFieldData::EntData::getFTensor1FieldData<1>();
 
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
-DataForcesAndSourcesCore::EntData::getFTensor2FieldData<3, 3>();
+EntitiesFieldData::EntData::getFTensor2FieldData<3, 3>();
 
 template <>
 FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 6>, 3>
-DataForcesAndSourcesCore::EntData::getFTensor2SymmetricFieldData<3>();
+EntitiesFieldData::EntData::getFTensor2SymmetricFieldData<3>();
 
 template <>
 FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 3>, 2>
-DataForcesAndSourcesCore::EntData::getFTensor2SymmetricFieldData<2>();
+EntitiesFieldData::EntData::getFTensor2SymmetricFieldData<2>();
 
 /**@}*/
+
+/**
+ * @deprecated Use EntitiesFieldData
+ */
+DEPRECATED typedef EntitiesFieldData DataForcesAndSourcesCore;
+
+/**
+ * @deprecated Use DerivedEntitiesFieldData
+ */
+DEPRECATED typedef DerivedEntitiesFieldData DerivedDataForcesAndSourcesCore;
 
 } // namespace MoFEM
 

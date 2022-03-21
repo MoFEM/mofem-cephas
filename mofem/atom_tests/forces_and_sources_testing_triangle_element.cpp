@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
             my_split(_my_split) {}
 
       MoFEMErrorCode doWork(int side, EntityType type,
-                            DataForcesAndSourcesCore::EntData &data) {
+                            EntitiesFieldData::EntData &data) {
         MoFEMFunctionBeginHot;
 
         const double eps = 1e-4;
@@ -195,8 +195,8 @@ int main(int argc, char *argv[]) {
 
       MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
                             EntityType col_type,
-                            DataForcesAndSourcesCore::EntData &row_data,
-                            DataForcesAndSourcesCore::EntData &col_data) {
+                            EntitiesFieldData::EntData &row_data,
+                            EntitiesFieldData::EntData &col_data) {
 
         MoFEMFunctionBeginHot;
         my_split << "NH1NH1" << std::endl;
@@ -257,7 +257,7 @@ int main(int argc, char *argv[]) {
        }
 
       MoFEMErrorCode doWork(int side, EntityType type,
-                            DataForcesAndSourcesCore::EntData &data) {
+                            EntitiesFieldData::EntData &data) {
         MoFEMFunctionBeginHot;
 
         if (type != MBENTITYSET)
@@ -271,8 +271,8 @@ int main(int argc, char *argv[]) {
 
       MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
                             EntityType col_type,
-                            DataForcesAndSourcesCore::EntData &row_data,
-                            DataForcesAndSourcesCore::EntData &col_data) {
+                            EntitiesFieldData::EntData &row_data,
+                            EntitiesFieldData::EntData &col_data) {
         MoFEMFunctionBeginHot;
 
         unSetSymm();

@@ -51,7 +51,7 @@ MoFEMErrorCode TriPolynomialBase::getValueH1(MatrixDouble &pts) {
 MoFEMErrorCode
 TriPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const std::string &field_name = cTx->fieldName;
   int nb_gauss_pts = pts.size2();
 
@@ -265,7 +265,7 @@ TriPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
 MoFEMErrorCode TriPolynomialBase::getValueH1AinsworthBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   if (cTx->basePolynomialsType0 == NULL)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -350,7 +350,7 @@ MoFEMErrorCode TriPolynomialBase::getValueL2(MatrixDouble &pts) {
 MoFEMErrorCode TriPolynomialBase::getValueL2AinsworthBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   if (cTx->basePolynomialsType0 == NULL)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -383,7 +383,7 @@ MoFEMErrorCode
 TriPolynomialBase::getValueL2BernsteinBezierBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const std::string &field_name = cTx->fieldName;
   int nb_gauss_pts = pts.size2();
 
@@ -536,7 +536,7 @@ TriPolynomialBase::getValueL2BernsteinBezierBase(MatrixDouble &pts) {
 MoFEMErrorCode TriPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   if (cTx->basePolynomialsType0 == NULL)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -605,7 +605,7 @@ MoFEMErrorCode TriPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
 MoFEMErrorCode TriPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   // set shape functions into data structure
   if (data.dataOnEntities[MBTRI].size() != 1) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
@@ -654,7 +654,7 @@ MoFEMErrorCode
 TriPolynomialBase::getValueHcurlAinsworthBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   if (data.dataOnEntities[MBTRI].size() != 1)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
@@ -741,7 +741,7 @@ MoFEMErrorCode
 TriPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
 
   int nb_gauss_pts = pts.size2();
@@ -867,7 +867,7 @@ TriPolynomialBase::getValue(MatrixDouble &pts,
         "Wrong dimension of pts, should be at least 3 rows with coordinates");
 
   const FieldApproximationBase base = cTx->bAse;
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
 
   if (base != AINSWORTH_BERNSTEIN_BEZIER_BASE) {
     if (cTx->copyNodeBase == LASTBASE) {

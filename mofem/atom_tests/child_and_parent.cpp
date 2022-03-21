@@ -45,7 +45,7 @@ template <> struct ElementsAndOps<3> {
 using DomainEle = ElementsAndOps<SPACE_DIM>::DomainEle;
 using DomainParentEle = ElementsAndOps<SPACE_DIM>::DomianParentEle;
 using DomainEleOp = DomainEle::UserDataOperator;
-using EntData = DataForcesAndSourcesCore::EntData;
+using EntData = EntitiesFieldData::EntData;
 
 template <int FIELD_DIM> struct ApproxFieldFunction;
 
@@ -275,7 +275,7 @@ MoFEMErrorCode AtomTest::assembleSystem() {
   auto parent_op_lhs = new DomainEleOp(NOSPACE, DomainEleOp::OPLAST);
   parent_op_lhs->doWorkRhsHook = [&](DataOperator *op_ptr, int side,
                                      EntityType type,
-                                     DataForcesAndSourcesCore::EntData &data) {
+                                     EntitiesFieldData::EntData &data) {
     auto domain_op = static_cast<DomainEleOp *>(op_ptr);
     MoFEMFunctionBegin;
 
@@ -299,7 +299,7 @@ MoFEMErrorCode AtomTest::assembleSystem() {
   auto parent_op_rhs = new DomainEleOp(NOSPACE, DomainEleOp::OPLAST);
   parent_op_rhs->doWorkRhsHook = [&](DataOperator *op_ptr, int side,
                                      EntityType type,
-                                     DataForcesAndSourcesCore::EntData &data) {
+                                     EntitiesFieldData::EntData &data) {
     auto domain_op = static_cast<DomainEleOp *>(op_ptr);
     MoFEMFunctionBegin;
 
@@ -455,7 +455,7 @@ MoFEMErrorCode AtomTest::refineResults() {
       OpCheckGaussCoords() : DomainEleOp(NOSPACE, DomainEleOp::OPLAST) {}
 
       MoFEMErrorCode doWork(int side, EntityType type,
-                            DataForcesAndSourcesCore::EntData &data) {
+                            EntitiesFieldData::EntData &data) {
         MoFEMFunctionBegin;
 
         MatrixDouble parent_coords;
@@ -464,7 +464,7 @@ MoFEMErrorCode AtomTest::refineResults() {
         auto domain_op = new DomainEleOp(NOSPACE, DomainEleOp::OPLAST);
         domain_op->doWorkRhsHook =
             [&](DataOperator *op_ptr, int side, EntityType type,
-                DataForcesAndSourcesCore::EntData &data) {
+                EntitiesFieldData::EntData &data) {
               MoFEMFunctionBegin;
               parent_coords =
                   static_cast<DomainEleOp *>(op_ptr)->getCoordsAtGaussPts();

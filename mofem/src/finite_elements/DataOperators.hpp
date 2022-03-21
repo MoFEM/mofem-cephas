@@ -41,8 +41,8 @@ struct DataOperator {
 
   boost::function<MoFEMErrorCode(
       DataOperator *op_ptr, int row_side, int col_side, EntityType row_type,
-      EntityType col_type, DataForcesAndSourcesCore::EntData &row_data,
-      DataForcesAndSourcesCore::EntData &col_data)>
+      EntityType col_type, EntitiesFieldData::EntData &row_data,
+      EntitiesFieldData::EntData &col_data)>
       doWorkLhsHook;
 
   /** \brief Operator for bi-linear form, usually to calculate values on
@@ -50,8 +50,8 @@ struct DataOperator {
    */
   virtual MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
                                 EntityType col_type,
-                                DataForcesAndSourcesCore::EntData &row_data,
-                                DataForcesAndSourcesCore::EntData &col_data) {
+                                EntitiesFieldData::EntData &row_data,
+                                EntitiesFieldData::EntData &col_data) {
     MoFEMFunctionBeginHot;
     if (doWorkLhsHook) {
       CHKERR doWorkLhsHook(this, row_side, col_side, row_type, col_type,
@@ -63,19 +63,19 @@ struct DataOperator {
     MoFEMFunctionReturnHot(0);
   }
 
-  virtual MoFEMErrorCode opLhs(DataForcesAndSourcesCore &row_data,
-                               DataForcesAndSourcesCore &col_data);
+  virtual MoFEMErrorCode opLhs(EntitiesFieldData &row_data,
+                               EntitiesFieldData &col_data);
 
   boost::function<MoFEMErrorCode(DataOperator *op_ptr, int side,
                                  EntityType type,
-                                 DataForcesAndSourcesCore::EntData &data)>
+                                 EntitiesFieldData::EntData &data)>
       doWorkRhsHook;
 
   /** \brief Operator for linear form, usually to calculate values on right hand
    * side
    */
   virtual MoFEMErrorCode doWork(int side, EntityType type,
-                                DataForcesAndSourcesCore::EntData &data) {
+                                EntitiesFieldData::EntData &data) {
     MoFEMFunctionBeginHot;
     if (doWorkRhsHook) {
       CHKERR doWorkRhsHook(this, side, type, data);
@@ -86,7 +86,7 @@ struct DataOperator {
     MoFEMFunctionReturnHot(0);
   }
 
-  virtual MoFEMErrorCode opRhs(DataForcesAndSourcesCore &data,
+  virtual MoFEMErrorCode opRhs(EntitiesFieldData &data,
                                const bool error_if_no_base = false);
 
   bool sYmm; ///< If true assume that matrix is symmetric structure
@@ -124,11 +124,11 @@ struct DataOperator {
 
 private:
   template <bool Symm>
-  inline MoFEMErrorCode opLhs(DataForcesAndSourcesCore &row_data,
-                              DataForcesAndSourcesCore &col_data);
+  inline MoFEMErrorCode opLhs(EntitiesFieldData &row_data,
+                              EntitiesFieldData &col_data);
 
   template <bool ErrorIfNoBase>
-  inline MoFEMErrorCode opRhs(DataForcesAndSourcesCore &data,
+  inline MoFEMErrorCode opRhs(EntitiesFieldData &data,
                               const std::array<bool, MBMAXTYPE> &do_entities);
 };
 
@@ -151,7 +151,7 @@ struct OpSetInvJacH1 : public DataOperator {
 
   MatrixDouble diffNinvJac;
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 };
 
 /**
@@ -174,7 +174,7 @@ struct OpSetInvJacHdivAndHcurl : public DataOperator {
 
   MatrixDouble diffHdivInvJac;
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 };
 
 /** \brief apply contravariant (Piola) transfer to Hdiv space
@@ -209,7 +209,7 @@ struct OpSetContravariantPiolaTransform : public DataOperator {
   MatrixDouble piolaDiffN;
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 };
 
 /** \brief apply covariant transfer to Hcurl space
@@ -241,7 +241,7 @@ struct OpSetCovariantPiolaTransform : public DataOperator {
   MatrixDouble piolaDiffN;
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 };
 
 /** \brief Get field values and gradients at Gauss points
@@ -281,7 +281,7 @@ template <int RANK, int DIM> struct OpGetDataAndGradient : public DataOperator {
    * @return      error code
    */
   MoFEMErrorCode calculateValAndGrad(int side, EntityType type,
-                                     DataForcesAndSourcesCore::EntData &data) {
+                                     EntitiesFieldData::EntData &data) {
     MoFEMFunctionBeginHot;
     const int nb_base_functions = data.getN().size2();
     bool constant_diff = false;
@@ -313,7 +313,7 @@ template <int RANK, int DIM> struct OpGetDataAndGradient : public DataOperator {
   }
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data) {
+                        EntitiesFieldData::EntData &data) {
 
     MoFEMFunctionBegin;
 
@@ -373,14 +373,14 @@ OpGetDataAndGradient<3, 3>::getGradAtGaussPtsTensor<3, 3>(MatrixDouble &data);
  */
 template <>
 MoFEMErrorCode OpGetDataAndGradient<3, 3>::calculateValAndGrad(
-    int side, EntityType type, DataForcesAndSourcesCore::EntData &data);
+    int side, EntityType type, EntitiesFieldData::EntData &data);
 
 /**
  * \brief Specialization for field with for scalar field in 3 dimension
  */
 template <>
 MoFEMErrorCode OpGetDataAndGradient<1, 3>::calculateValAndGrad(
-    int side, EntityType type, DataForcesAndSourcesCore::EntData &data);
+    int side, EntityType type, EntitiesFieldData::EntData &data);
 
 /** \brief calculate normals at Gauss points of triangle element
  * \ingroup mofem_forces_and_sources
@@ -412,7 +412,7 @@ struct OpGetCoordsAndNormalsOnPrism : public DataOperator {
 
   MatrixDouble sPin;
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
   MoFEMErrorCode calculateNormals();
 };
@@ -455,7 +455,7 @@ struct OpSetContravariantPiolaTransformOnFace : public DataOperator {
   }
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 };
 
 /** \brief transform Hcurl base fluxes from reference element to physical
@@ -484,7 +484,7 @@ struct OpSetCovariantPiolaTransformOnFace : public DataOperator {
         tangent1AtGaussPt(tangent1_at_pts) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 };
 
 /** \brief Calculate tangent vector on edge form HO geometry approximation
@@ -497,7 +497,7 @@ struct OpGetHOTangentOnEdge : public DataOperator {
   OpGetHOTangentOnEdge(MatrixDouble &tangent) : tAngent(tangent) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 };
 
 /** \brief transform Hcurl base fluxes from reference element to physical edge
@@ -513,7 +513,7 @@ struct OpSetCovariantPiolaTransformOnEdge : public DataOperator {
       : tAngent(tangent), tangentAtGaussPt(tangent_at_pts) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 };
 
 } // namespace MoFEM

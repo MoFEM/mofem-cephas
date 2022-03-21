@@ -37,8 +37,8 @@ struct FatPrismPolynomialBaseCtx : public EntPolynomialBaseCtx {
   MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
-  DataForcesAndSourcesCore &dataTrianglesOnly;
-  DataForcesAndSourcesCore &dataTroughThickness;
+  EntitiesFieldData &dataTrianglesOnly;
+  EntitiesFieldData &dataTroughThickness;
 
   MatrixDouble &gaussPtsTrianglesOnly;
   MatrixDouble &gaussPtsThroughThickness;
@@ -47,9 +47,9 @@ struct FatPrismPolynomialBaseCtx : public EntPolynomialBaseCtx {
   const NumeredEntFiniteElement *fePtr;
 
   FatPrismPolynomialBaseCtx(
-      DataForcesAndSourcesCore &data,
-      DataForcesAndSourcesCore &data_triangles_only,
-      DataForcesAndSourcesCore &data_trough_thickness,
+      EntitiesFieldData &data,
+      EntitiesFieldData &data_triangles_only,
+      EntitiesFieldData &data_trough_thickness,
       MatrixDouble &gauss_pts_triangles_only,
       MatrixDouble &gauss_pts_through_thickness, moab::Interface &moab,
       const NumeredEntFiniteElement *fe_ptr, const FieldSpace space,

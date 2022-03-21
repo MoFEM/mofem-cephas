@@ -22,7 +22,7 @@
 
 namespace MoFEM {
 
-struct DataForcesAndSourcesCore;
+struct EntitiesFieldData;
 struct FEMethod;
 
 /**
@@ -45,17 +45,17 @@ struct EntPolynomialBaseCtx : public BaseFunctionCtx {
                                          double *diff_t, double *L,
                                          double *diffL, const int dim);
 
-  DataForcesAndSourcesCore &dAta;
+  EntitiesFieldData &dAta;
   const FieldSpace sPace;
   const FieldApproximationBase bAse;
   const std::string fieldName;
   const FieldApproximationBase copyNodeBase;
 
-  EntPolynomialBaseCtx(DataForcesAndSourcesCore &data, const FieldSpace space,
+  EntPolynomialBaseCtx(EntitiesFieldData &data, const FieldSpace space,
                        const FieldApproximationBase base,
                        const FieldApproximationBase copy_node_base = LASTBASE);
 
-  EntPolynomialBaseCtx(DataForcesAndSourcesCore &data,
+  EntPolynomialBaseCtx(EntitiesFieldData &data,
                        const std::string field_name, const FieldSpace space,
                        const FieldApproximationBase base,
                        const FieldApproximationBase copy_node_base = LASTBASE);

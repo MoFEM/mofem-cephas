@@ -23,7 +23,7 @@ namespace MoFEM {
 
 MoFEMErrorCode
 OpBaseDerivativesMass<1>::doWork(int side, EntityType type,
-                                 DataForcesAndSourcesCore::EntData &data) {
+                                 EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
 //   if (sPace != L2) {
@@ -37,9 +37,9 @@ OpBaseDerivativesMass<1>::doWork(int side, EntityType type,
 //     // Set data structure to store bas
 //     dataL2->dataOnEntities[fe_type].clear();
 //     dataL2->dataOnEntities[MBVERTEX].push_back(
-//         new DataForcesAndSourcesCore::EntData());
+//         new EntitiesFieldData::EntData());
 //     dataL2->dataOnEntities[fe_type].push_back(
-//         new DataForcesAndSourcesCore::EntData());
+//         new EntitiesFieldData::EntData());
 
 //     auto &vertex_data = dataL2->dataOnEntities[MBVERTEX][0];
 //     vertex_data.getNSharedPtr(NOBASE) =
@@ -111,7 +111,7 @@ OpBaseDerivativesMass<1>::doWork(int side, EntityType type,
 
 MoFEMErrorCode
 OpBaseDerivativesNext<1>::doWork(int side, EntityType type,
-                                 DataForcesAndSourcesCore::EntData &data) {
+                                 EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
 //   auto &base = data.getN(base);

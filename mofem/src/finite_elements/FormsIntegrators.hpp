@@ -47,7 +47,7 @@ struct OpSetBc : public ForcesAndSourcesCore::UserDataOperator {
   OpSetBc(std::string field_name, bool yes_set,
           boost::shared_ptr<std::vector<unsigned char>> boundary_marker);
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
 public:
   bool yesSet;
@@ -57,7 +57,7 @@ public:
 struct OpUnSetBc : public ForcesAndSourcesCore::UserDataOperator {
   OpUnSetBc(std::string field_name);
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 };
 
 /**
@@ -73,7 +73,7 @@ struct OpUnSetBc : public ForcesAndSourcesCore::UserDataOperator {
 template <>
 MoFEMErrorCode
 VecSetValues<EssentialBcStorage>(Vec V,
-                                 const DataForcesAndSourcesCore::EntData &data,
+                                 const EntitiesFieldData::EntData &data,
                                  const double *ptr, InsertMode iora);
 
 /**
@@ -88,8 +88,8 @@ VecSetValues<EssentialBcStorage>(Vec V,
  */
 template <>
 MoFEMErrorCode MatSetValues<EssentialBcStorage>(
-    Mat M, const DataForcesAndSourcesCore::EntData &row_data,
-    const DataForcesAndSourcesCore::EntData &col_data, const double *ptr,
+    Mat M, const EntitiesFieldData::EntData &row_data,
+    const EntitiesFieldData::EntData &col_data, const double *ptr,
     InsertMode iora);
 
 //! [Storage and set boundary conditions]
@@ -134,7 +134,7 @@ using VectorFun = boost::function<FTensor::Tensor1<double, DIM>(
 
 template <AssemblyType A, typename EleOp> struct OpBaseImpl : public EleOp {
   using OpType = typename EleOp::OpType;
-  using EntData = DataForcesAndSourcesCore::EntData;
+  using EntData = EntitiesFieldData::EntData;
 
   OpBaseImpl(const std::string row_field_name, const std::string col_field_name,
              const OpType type)
@@ -227,7 +227,7 @@ protected:
  */
 template <typename EleOp> struct FormsIntegrators {
 
-  using EntData = DataForcesAndSourcesCore::EntData;
+  using EntData = EntitiesFieldData::EntData;
   using OpType = typename EleOp::OpType;
 
   /**
@@ -263,8 +263,8 @@ template <AssemblyType A, typename EleOp>
 MoFEMErrorCode
 OpBaseImpl<A, EleOp>::doWork(int row_side, int col_side, EntityType row_type,
                              EntityType col_type,
-                             DataForcesAndSourcesCore::EntData &row_data,
-                             DataForcesAndSourcesCore::EntData &col_data) {
+                             EntitiesFieldData::EntData &row_data,
+                             EntitiesFieldData::EntData &col_data) {
   MoFEMFunctionBegin;
   // get number of dofs on row
   nbRows = row_data.getIndices().size();
@@ -338,8 +338,8 @@ struct OpBaseImpl<PETSC, EleOp> : public OpBaseImpl<LAST_ASSEMBLE, EleOp> {
   using OpBaseImpl<LAST_ASSEMBLE, EleOp>::OpBaseImpl;
 
 protected:
-  MoFEMErrorCode aSsemble(DataForcesAndSourcesCore::EntData &row_data,
-                          DataForcesAndSourcesCore::EntData &col_data,
+  MoFEMErrorCode aSsemble(EntitiesFieldData::EntData &row_data,
+                          EntitiesFieldData::EntData &col_data,
                           const bool transpose) {
     MoFEMFunctionBegin;
 
@@ -363,7 +363,7 @@ protected:
     MoFEMFunctionReturn(0);
   }
 
-  MoFEMErrorCode aSsemble(DataForcesAndSourcesCore::EntData &data) {
+  MoFEMErrorCode aSsemble(EntitiesFieldData::EntData &data) {
     return VecSetValues<EssentialBcStorage>(
         this->getKSPf(), data, &*this->locF.data().begin(), ADD_VALUES);
   }

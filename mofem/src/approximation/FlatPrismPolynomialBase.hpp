@@ -39,7 +39,7 @@ struct FlatPrismPolynomialBaseCtx : public EntPolynomialBaseCtx {
   const NumeredEntFiniteElement *fePtr;
 
   FlatPrismPolynomialBaseCtx(
-      DataForcesAndSourcesCore &data, moab::Interface &moab,
+      EntitiesFieldData &data, moab::Interface &moab,
       const NumeredEntFiniteElement *fe_ptr, const FieldSpace space,
       const FieldApproximationBase base,
       const FieldApproximationBase copy_node_base = LASTBASE);

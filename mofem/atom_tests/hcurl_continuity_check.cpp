@@ -249,7 +249,7 @@ int main(int argc, char *argv[]) {
             mField(m_field), tH(th) {}
 
       MoFEMErrorCode doWork(int side, EntityType type,
-                            DataForcesAndSourcesCore::EntData &data) {
+                            EntitiesFieldData::EntData &data) {
         MoFEMFunctionBegin;
 
         if (data.getFieldData().size() == 0)
@@ -389,7 +389,7 @@ int main(int argc, char *argv[]) {
             mField(m_field), tH1(th1), tH2(th2), mySplit(my_split) {}
 
       MoFEMErrorCode doWork(int side, EntityType type,
-                            DataForcesAndSourcesCore::EntData &data) {
+                            EntitiesFieldData::EntData &data) {
         MoFEMFunctionBegin;
 
         if (type != MBTRI)
@@ -453,7 +453,7 @@ int main(int argc, char *argv[]) {
             mField(m_field), tH1(_th1), tH2(_th2), mySplit(my_split) {}
 
       MoFEMErrorCode doWork(int side, EntityType type,
-                            DataForcesAndSourcesCore::EntData &data) {
+                            EntitiesFieldData::EntData &data) {
         MoFEMFunctionBegin;
 
         if (type != MBTRI)
@@ -522,7 +522,7 @@ int main(int argc, char *argv[]) {
             mField(m_field), tH1(_th1), tH2(_th2), mySplit(my_split) {}
 
       MoFEMErrorCode doWork(int side, EntityType type,
-                            DataForcesAndSourcesCore::EntData &data) {
+                            EntitiesFieldData::EntData &data) {
         MoFEMFunctionBegin;
 
         if (type != MBEDGE)
