@@ -457,7 +457,7 @@ protected:
    */
   virtual MoFEMErrorCode setGaussPts(int order);
 
-  /**@/}*/
+  /**@}*/
 
   /**
    * @brief Entity data on element entity rows fields
