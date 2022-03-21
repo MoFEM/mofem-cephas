@@ -89,9 +89,9 @@ MoFEMErrorCode HexPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
                   "Sense of entity not set");
 
         sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
-        order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
+        order[ee] = data.dataOnEntities[MBEDGE][ee].getOrder();
 
-        int nb_dofs = NBEDGE_H1(data.dataOnEntities[MBEDGE][ee].getDataOrder());
+        int nb_dofs = NBEDGE_H1(data.dataOnEntities[MBEDGE][ee].getOrder());
         data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts, nb_dofs,
                                                           false);
         data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(
@@ -133,7 +133,7 @@ MoFEMErrorCode HexPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
       bool nb_dofs_sum = false;
       for (int ff = 0; ff != 6; ++ff) {
 
-        order[ff] = data.dataOnEntities[MBQUAD][ff].getDataOrder();
+        order[ff] = data.dataOnEntities[MBQUAD][ff].getOrder();
         const int nb_dofs = NBFACEQUAD_H1(order[ff]);
 
         data.dataOnEntities[MBQUAD][ff].getN(base).resize(nb_gauss_pts, nb_dofs,
@@ -179,7 +179,7 @@ MoFEMErrorCode HexPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
 
     if (data.spacesOnEntities[MBHEX].test(H1)) {
       // volume
-      int order = data.dataOnEntities[MBHEX][0].getDataOrder();
+      int order = data.dataOnEntities[MBHEX][0].getOrder();
       int nb_vol_dofs = NBVOLUMEHEX_H1(order);
       data.dataOnEntities[MBHEX][0].getN(base).resize(nb_gauss_pts, nb_vol_dofs,
                                                       false);
@@ -248,7 +248,7 @@ MoFEMErrorCode HexPolynomialBase::getValueL2DemkowiczBase(MatrixDouble &pts) {
 
   auto &base_fun = data.dataOnEntities[MBHEX][0].getN(base);
   auto &diff_base_fun = data.dataOnEntities[MBHEX][0].getDiffN(base);
-  const int vol_order = data.dataOnEntities[MBHEX][0].getDataOrder();
+  const int vol_order = data.dataOnEntities[MBHEX][0].getOrder();
 
   const int nb_dofs = NBVOLUMEHEX_L2(vol_order);
   base_fun.resize(nb_gauss_pts, nb_dofs, false);
@@ -316,7 +316,7 @@ MoFEMErrorCode HexPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
         SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Sense pn quad <%d> not set", ff);
 
-      order[ff] = data.dataOnEntities[MBQUAD][ff].getDataOrder();
+      order[ff] = data.dataOnEntities[MBQUAD][ff].getOrder();
       if (data.facesNodes.size1() != 6)
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Expected six faces");
@@ -363,7 +363,7 @@ MoFEMErrorCode HexPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
   // Hex
   if (data.spacesOnEntities[MBHEX].test(HDIV)) {
 
-    const int order = data.dataOnEntities[MBHEX][0].getDataOrder();
+    const int order = data.dataOnEntities[MBHEX][0].getOrder();
     const int nb_dofs_family =
         NBVOLUMEHEX_DEMKOWICZ_FAMILY_HDIV(order, order, order);
 
@@ -498,7 +498,7 @@ HexPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
                  "Sense on edge <%d> on Hex not set", ee);
 
       sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
-      order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
+      order[ee] = data.dataOnEntities[MBEDGE][ee].getOrder();
       const int nb_dofs = NBEDGE_DEMKOWICZ_HCURL(order[ee]);
       data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,
                                                         3 * nb_dofs, false);
@@ -544,7 +544,7 @@ HexPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
         SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Sense pn quad <%d> not set", ff);
 
-      order[ff] = data.dataOnEntities[MBQUAD][ff].getDataOrder();
+      order[ff] = data.dataOnEntities[MBQUAD][ff].getOrder();
       if (data.facesNodes.size1() != 6)
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Expected six faces");
@@ -638,7 +638,7 @@ HexPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
   // Hex
   if (data.spacesOnEntities[MBHEX].test(HCURL)) {
 
-    const int order = data.dataOnEntities[MBHEX][0].getDataOrder();
+    const int order = data.dataOnEntities[MBHEX][0].getOrder();
     const int nb_dofs = NBVOLUMEHEX_DEMKOWICZ_FAMILY_HCURL(order, order, order);
 
     volFamily.resize(3, 3 * nb_dofs * nb_gauss_pts);

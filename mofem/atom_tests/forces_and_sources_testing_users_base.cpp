@@ -125,7 +125,7 @@ private:
     double diff_shape_fun[12];
     CHKERR ShapeDiffMBTET(diff_shape_fun);
 
-    int volume_order = data.dataOnEntities[MBTET][0].getDataOrder();
+    int volume_order = data.dataOnEntities[MBTET][0].getOrder();
 
     int p_f[4];
     double *phi_f[4];
@@ -133,7 +133,7 @@ private:
 
     // Calculate base function on tet faces
     for (int ff = 0; ff != 4; ff++) {
-      int face_order = data.dataOnEntities[MBTRI][ff].getDataOrder();
+      int face_order = data.dataOnEntities[MBTRI][ff].getOrder();
       int order = volume_order > face_order ? volume_order : face_order;
       data.dataOnEntities[MBTRI][ff].getN(base).resize(
           nb_gauss_pts, 3 * NBFACETRI_DEMKOWICZ_HDIV(order), false);
@@ -166,7 +166,7 @@ private:
 
     // Set size of face base correctly
     for (int ff = 0; ff != 4; ff++) {
-      int face_order = data.dataOnEntities[MBTRI][ff].getDataOrder();
+      int face_order = data.dataOnEntities[MBTRI][ff].getOrder();
       data.dataOnEntities[MBTRI][ff].getN(base).resize(
           nb_gauss_pts, 3 * NBFACETRI_DEMKOWICZ_HDIV(face_order), true);
       data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(

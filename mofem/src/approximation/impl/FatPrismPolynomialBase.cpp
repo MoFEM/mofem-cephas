@@ -153,7 +153,7 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1ThroughThickness() {
   for (unsigned int ee = 3; ee <= 5; ee++) {
     auto &ent_data = cTx->dataTroughThickness.dataOnEntities[MBEDGE][ee];
     int sense = ent_data.getSense();
-    int order = ent_data.getDataOrder();
+    int order = ent_data.getOrder();
     int nb_dofs = NBEDGE_H1(order);
     ent_data.getN(base).resize(nb_gauss_pts_through_thickness, nb_dofs, false);
     ent_data.getDiffN(base).resize(nb_gauss_pts_through_thickness, nb_dofs,
@@ -217,7 +217,7 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
     auto &thickness_ent = cTx->dataTroughThickness.dataOnEntities[MBEDGE][ee];
     auto &prism_ent = data.dataOnEntities[MBEDGE][ee];
 
-    int order = thickness_ent.getDataOrder();
+    int order = thickness_ent.getOrder();
     int nb_dofs = NBEDGE_H1(order);
     if ((unsigned int)nb_dofs != thickness_ent.getN(base).size2())
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -412,7 +412,7 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
         quads_nodes[4 * side + nn] =
             std::distance(conn, std::find(conn, conn + 6, conn_quad[nn]));
       }
-      int order = data.dataOnEntities[MBQUAD][side].getDataOrder();
+      int order = data.dataOnEntities[MBQUAD][side].getOrder();
       quad_order[side] = order;
       data.dataOnEntities[MBQUAD][side].getN(base).resize(
           nb_gauss_pts, NBFACEQUAD_H1(order), false);
@@ -442,7 +442,7 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
 
   auto prim_base = [&]() {
     MoFEMFunctionBegin;
-    int order = data.dataOnEntities[MBPRISM][0].getDataOrder();
+    int order = data.dataOnEntities[MBPRISM][0].getOrder();
     double *vertex_n = &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0);
     double *diff_vertex_n =
         &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0, 0);

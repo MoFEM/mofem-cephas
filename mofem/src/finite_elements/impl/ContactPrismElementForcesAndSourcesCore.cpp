@@ -309,20 +309,20 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
     for (int ii = 0; ii != 3; ++ii) {
       data.dataOnEntities[MBEDGE][ii].getSense() =
           copy_data.dataOnEntities[MBEDGE][ii + shift].getSense();
-      data.dataOnEntities[MBEDGE][ii].getDataOrder() =
-          copy_data.dataOnEntities[MBEDGE][ii + shift].getDataOrder();
+      data.dataOnEntities[MBEDGE][ii].getOrder() =
+          copy_data.dataOnEntities[MBEDGE][ii + shift].getOrder();
     }
 
     if (shift == 0) {
       data.dataOnEntities[MBTRI][0].getSense() =
           copy_data.dataOnEntities[MBTRI][3].getSense();
-      data.dataOnEntities[MBTRI][0].getDataOrder() =
-          copy_data.dataOnEntities[MBTRI][3].getDataOrder();
+      data.dataOnEntities[MBTRI][0].getOrder() =
+          copy_data.dataOnEntities[MBTRI][3].getOrder();
     } else {
       data.dataOnEntities[MBTRI][0].getSense() =
           copy_data.dataOnEntities[MBTRI][4].getSense();
-      data.dataOnEntities[MBTRI][0].getDataOrder() =
-          copy_data.dataOnEntities[MBTRI][4].getDataOrder();
+      data.dataOnEntities[MBTRI][0].getOrder() =
+          copy_data.dataOnEntities[MBTRI][4].getOrder();
     }
 
     MoFEMFunctionReturn(0);
@@ -352,7 +352,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
     ent_dat.getBase() = cpy_ent_dat.getBase();
     ent_dat.getSpace() = cpy_ent_dat.getSpace();
     ent_dat.getSense() = ent_dat.getSense();
-    ent_dat.getDataOrder() = cpy_ent_dat.getDataOrder();
+    ent_dat.getOrder() = cpy_ent_dat.getOrder();
 
     MoFEMFunctionReturn(0);
   };
@@ -830,7 +830,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityFieldData(
   auto reset_data = [type_lo, type_hi](auto &data) {
     for (EntityType t = type_lo; t != type_hi; ++t) {
       for (auto &dat : data.dataOnEntities[t]) {
-        dat.getDataOrder() = 0;
+        dat.getOrder() = 0;
         dat.getBase() = NOBASE;
         dat.getSpace() = NOSPACE;
         dat.getFieldData().resize(0, false);
@@ -865,8 +865,8 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityFieldData(
             dat.getBase() = e->getApproxBase();
             dat.getSpace() = e->getSpace();
             const int ent_order = e->getMaxOrder();
-            dat.getDataOrder() =
-                dat.getDataOrder() > ent_order ? dat.getDataOrder() : ent_order;
+            dat.getOrder() =
+                dat.getOrder() > ent_order ? dat.getOrder() : ent_order;
             const auto dof_ent_field_data = e->getEntFieldData();
             const int nb_dofs_on_ent = e->getNbDofsOnEnt();
             ent_field_data.resize(nb_dofs_on_ent, false);

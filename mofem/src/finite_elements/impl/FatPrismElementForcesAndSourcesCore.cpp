@@ -111,21 +111,21 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
         continue;
       order_triangles_only = std::max(
           order_triangles_only,
-          dataH1TrianglesOnly.dataOnEntities[MBEDGE][ee].getDataOrder());
+          dataH1TrianglesOnly.dataOnEntities[MBEDGE][ee].getOrder());
     }
     for (unsigned int ff = 3; ff <= 4; ff++) {
       order_triangles_only = std::max(
           order_triangles_only,
-          dataH1TrianglesOnly.dataOnEntities[MBTRI][ff].getDataOrder());
+          dataH1TrianglesOnly.dataOnEntities[MBTRI][ff].getOrder());
     }
     for (unsigned int qq = 0; qq < 3; qq++) {
       order_triangles_only = std::max(
           order_triangles_only,
-          dataH1TroughThickness.dataOnEntities[MBQUAD][qq].getDataOrder());
+          dataH1TroughThickness.dataOnEntities[MBQUAD][qq].getOrder());
     }
     order_triangles_only = std::max(
         order_triangles_only,
-        dataH1TroughThickness.dataOnEntities[MBPRISM][0].getDataOrder());
+        dataH1TroughThickness.dataOnEntities[MBPRISM][0].getOrder());
 
     // integration pts on the triangles surfaces
     nb_gauss_pts_on_faces = 0;
@@ -203,16 +203,16 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
         for (unsigned int ee = 3; ee <= 5; ee++) {
           order_thickness = std::max(
               order_thickness,
-              dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getDataOrder());
+              dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getOrder());
         }
         for (unsigned int qq = 0; qq < 3; qq++) {
           order_thickness = std::max(
               order_thickness,
-              dataH1TroughThickness.dataOnEntities[MBQUAD][qq].getDataOrder());
+              dataH1TroughThickness.dataOnEntities[MBQUAD][qq].getOrder());
         }
         order_thickness = std::max(
             order_thickness,
-            dataH1TroughThickness.dataOnEntities[MBPRISM][0].getDataOrder());
+            dataH1TroughThickness.dataOnEntities[MBPRISM][0].getOrder());
         // integration points
         int rule = getRuleThroughThickness(order_thickness);
         if (rule >= 0) {

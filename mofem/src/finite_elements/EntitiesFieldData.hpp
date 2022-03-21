@@ -102,7 +102,14 @@ struct EntitiesFieldData {
 
     inline int &getSense();
 
-    inline ApproximationOrder &getDataOrder();
+    inline ApproximationOrder &getOrder();
+
+    /**
+     * @deprecated use getOrder
+     */
+    DEPRECATED inline ApproximationOrder &getDataOrder() {
+      return getDataOrder();
+    }
 
     inline VectorInt &getIndices();
 
@@ -1159,7 +1166,7 @@ EntitiesFieldData::EntData::getLocalIndicesUpToOrder(int order) {
 
 int &EntitiesFieldData::EntData::getSense() { return sEnse; }
 
-ApproximationOrder &EntitiesFieldData::EntData::getDataOrder() { return oRder; }
+ApproximationOrder &EntitiesFieldData::EntData::getOrder() { return oRder; }
 
 VectorInt &EntitiesFieldData::EntData::getIndices() { return iNdices; }
 

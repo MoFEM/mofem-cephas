@@ -154,7 +154,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityDataOrder(
     auto &side_table = numeredEntFiniteElementPtr->getSideNumberTable();
 
     for (unsigned int s = 0; s != data.size(); ++s)
-      data[s].getDataOrder() = 0;
+      data[s].getOrder() = 0;
 
     const FieldEntity_vector_view &data_field_ent = getDataFieldEnts();
 
@@ -183,8 +183,8 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityDataOrder(
               if (side_number >= 0) {
                 ApproximationOrder ent_order = e.getMaxOrder();
                 auto &dat = data[side_number];
-                dat.getDataOrder() = dat.getDataOrder() > ent_order
-                                         ? dat.getDataOrder()
+                dat.getOrder() = dat.getOrder() > ent_order
+                                         ? dat.getOrder()
                                          : ent_order;
               }
             } else
@@ -209,8 +209,8 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityDataOrder(
         const int brother_side_number = (*sit)->brother_side_number;
         if (brother_side_number != -1) {
           const int side_number = (*sit)->side_number;
-          data[brother_side_number].getDataOrder() =
-              data[side_number].getDataOrder();
+          data[brother_side_number].getOrder() =
+              data[side_number].getOrder();
         }
       }
     }
@@ -723,7 +723,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityFieldData(
   MoFEMFunctionBegin;
   for (EntityType t = type_lo; t != type_hi; ++t) {
     for (auto &dat : data.dataOnEntities[t]) {
-      dat.getDataOrder() = 0;
+      dat.getOrder() = 0;
       dat.getBase() = NOBASE;
       dat.getSpace() = NOSPACE;
       dat.getFieldData().resize(0, false);
@@ -766,8 +766,8 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityFieldData(
             dat.getBase() = e->getApproxBase();
             dat.getSpace() = e->getSpace();
             const int ent_order = e->getMaxOrder();
-            dat.getDataOrder() =
-                dat.getDataOrder() > ent_order ? dat.getDataOrder() : ent_order;
+            dat.getOrder() =
+                dat.getOrder() > ent_order ? dat.getOrder() : ent_order;
 
             auto ent_data = e->getEntFieldData();
             ent_field_data.resize(ent_data.size(), false);
@@ -794,7 +794,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityFieldData(
           auto &dat_brother = data.dataOnEntities[type][brother_side];
           dat_brother.getBase() = dat.getBase();
           dat_brother.getSpace() = dat.getSpace();
-          dat_brother.getDataOrder() = dat.getDataOrder();
+          dat_brother.getOrder() = dat.getOrder();
           dat_brother.getFieldData() = dat.getFieldData();
           dat_brother.getFieldDofs() = dat.getFieldDofs();
           dat_brother.getFieldEntities() = dat.getFieldEntities();
@@ -1127,7 +1127,7 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
     MoFEMFunctionBegin;
     for (EntityType t = MBEDGE; t != MBPOLYHEDRON; ++t) {
       for (auto &dat : data.dataOnEntities[t]) {
-        dat.getDataOrder() = 0;
+        dat.getOrder() = 0;
         dat.getBase() = NOBASE;
         dat.getSpace() = NOSPACE;
         dat.getFieldData().resize(0, false);
@@ -1162,8 +1162,8 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
                 dat.getBase() = e->getApproxBase();
                 dat.getSpace() = e->getSpace();
                 const auto ent_order = e->getMaxOrder();
-                dat.getDataOrder() = dat.getDataOrder() > ent_order
-                                         ? dat.getDataOrder()
+                dat.getOrder() = dat.getOrder() > ent_order
+                                         ? dat.getOrder()
                                          : ent_order;
               }
             }
@@ -1180,7 +1180,7 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
           auto &dat_brother = data.dataOnEntities[type][brother_side];
           dat_brother.getBase() = dat.getBase();
           dat_brother.getSpace() = dat.getSpace();
-          dat_brother.getDataOrder() = dat.getDataOrder();
+          dat_brother.getOrder() = dat.getOrder();
         }
       }
     }

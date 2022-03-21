@@ -178,8 +178,8 @@ MoFEMErrorCode FlatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
     if (ent_data.getSense() == 0)
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
     sense[ee] = ent_data.getSense();
-    order[ee] = ent_data.getDataOrder();
-    int nb_dofs = NBEDGE_H1(ent_data.getDataOrder());
+    order[ee] = ent_data.getOrder();
+    int nb_dofs = NBEDGE_H1(ent_data.getOrder());
     ent_data.getN(base).resize(nb_gauss_pts, nb_dofs, false);
     ent_data.getDiffN(base).resize(nb_gauss_pts, 2 * nb_dofs, false);
     H1edgeN[ee] = &*ent_data.getN(base).data().begin();
@@ -210,13 +210,13 @@ MoFEMErrorCode FlatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
 
   if ((data.spacesOnEntities[MBTRI]).test(H1)) {
     for (int ff = 3; ff <= 4; ff++) {
-      int nb_dofs = NBFACETRI_H1(data.dataOnEntities[MBTRI][ff].getDataOrder());
+      int nb_dofs = NBFACETRI_H1(data.dataOnEntities[MBTRI][ff].getOrder());
       data.dataOnEntities[MBTRI][ff].getN(base).resize(nb_gauss_pts, nb_dofs,
                                                        false);
       data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(nb_gauss_pts,
                                                            2 * nb_dofs, false);
       CHKERR H1_FaceShapeFunctions_MBTRI(
-          faceNodes[ff - 3], data.dataOnEntities[MBTRI][ff].getDataOrder(),
+          faceNodes[ff - 3], data.dataOnEntities[MBTRI][ff].getOrder(),
           &*N.data().begin(), &*diffN.data().begin(),
           &*data.dataOnEntities[MBTRI][ff].getN(base).data().begin(),
           &*data.dataOnEntities[MBTRI][ff].getDiffN(base).data().begin(),

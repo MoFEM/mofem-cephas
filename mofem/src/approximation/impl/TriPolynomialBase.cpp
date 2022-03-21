@@ -157,8 +157,8 @@ TriPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
                 "Sense of the edge unknown");
 
       const int sense = ent_data.getSense();
-      const int order = ent_data.getDataOrder();
-      const int nb_dofs = NBEDGE_H1(ent_data.getDataOrder());
+      const int order = ent_data.getOrder();
+      const int nb_dofs = NBEDGE_H1(ent_data.getOrder());
 
       if (nb_dofs) {
         if (get_alpha_by_order_ptr(ent_data, order)) {
@@ -217,7 +217,7 @@ TriPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
               "Wrong size ent of ent data");
 
     auto &ent_data = data.dataOnEntities[MBTRI][0];
-    const int order = ent_data.getDataOrder();
+    const int order = ent_data.getOrder();
     const int nb_dofs = NBFACETRI_H1(order);
     if (get_alpha_by_order_ptr(ent_data, order)) {
       get_alpha_by_name_ptr(ent_data, field_name) =
@@ -289,8 +289,8 @@ MoFEMErrorCode TriPolynomialBase::getValueH1AinsworthBase(MatrixDouble &pts) {
                 "sense of the edge unknown");
 
       sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
-      order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
-      int nb_dofs = NBEDGE_H1(data.dataOnEntities[MBEDGE][ee].getDataOrder());
+      order[ee] = data.dataOnEntities[MBEDGE][ee].getOrder();
+      int nb_dofs = NBEDGE_H1(data.dataOnEntities[MBEDGE][ee].getOrder());
       data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts, nb_dofs,
                                                         false);
       data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_gauss_pts,
@@ -311,14 +311,14 @@ MoFEMErrorCode TriPolynomialBase::getValueH1AinsworthBase(MatrixDouble &pts) {
     if (data.dataOnEntities[MBTRI].size() != 1) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
     }
-    int nb_dofs = NBFACETRI_H1(data.dataOnEntities[MBTRI][0].getDataOrder());
+    int nb_dofs = NBFACETRI_H1(data.dataOnEntities[MBTRI][0].getOrder());
     data.dataOnEntities[MBTRI][0].getN(base).resize(nb_gauss_pts, nb_dofs,
                                                     false);
     data.dataOnEntities[MBTRI][0].getDiffN(base).resize(nb_gauss_pts,
                                                         2 * nb_dofs, false);
     const int face_nodes[] = {0, 1, 2};
     CHKERR H1_FaceShapeFunctions_MBTRI(
-        face_nodes, data.dataOnEntities[MBTRI][0].getDataOrder(),
+        face_nodes, data.dataOnEntities[MBTRI][0].getOrder(),
         &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
         &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
         &*data.dataOnEntities[MBTRI][0].getN(base).data().begin(),
@@ -362,14 +362,14 @@ MoFEMErrorCode TriPolynomialBase::getValueL2AinsworthBase(MatrixDouble &pts) {
   int nb_gauss_pts = pts.size2();
 
   data.dataOnEntities[MBTRI][0].getN(base).resize(
-      nb_gauss_pts, NBFACETRI_L2(data.dataOnEntities[MBTRI][0].getDataOrder()),
+      nb_gauss_pts, NBFACETRI_L2(data.dataOnEntities[MBTRI][0].getOrder()),
       false);
   data.dataOnEntities[MBTRI][0].getDiffN(base).resize(
       nb_gauss_pts,
-      2 * NBFACETRI_L2(data.dataOnEntities[MBTRI][0].getDataOrder()), false);
+      2 * NBFACETRI_L2(data.dataOnEntities[MBTRI][0].getOrder()), false);
 
   CHKERR L2_Ainsworth_ShapeFunctions_MBTRI(
-      data.dataOnEntities[MBTRI][0].getDataOrder(),
+      data.dataOnEntities[MBTRI][0].getOrder(),
       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
       &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
       &*data.dataOnEntities[MBTRI][0].getN(base).data().begin(),
@@ -455,7 +455,7 @@ TriPolynomialBase::getValueL2BernsteinBezierBase(MatrixDouble &pts) {
     auto &lambda = data.dataOnEntities[MBVERTEX][0].getN(NOBASE);
 
     auto &ent_data = data.dataOnEntities[MBTRI][0];
-    const int order = ent_data.getDataOrder();
+    const int order = ent_data.getOrder();
     const int nb_dofs = NBFACETRI_L2(order);
 
     if (get_alpha_by_order_ptr(ent_data, order)) {
@@ -552,7 +552,7 @@ MoFEMErrorCode TriPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
 
   N_face_edge.resize(1, 3, false);
   N_face_bubble.resize(1, false);
-  int face_order = data.dataOnEntities[MBTRI][0].getDataOrder();
+  int face_order = data.dataOnEntities[MBTRI][0].getOrder();
   // three edges on face
   for (int ee = 0; ee < 3; ee++) {
     N_face_edge(0, ee).resize(
@@ -617,7 +617,7 @@ MoFEMErrorCode TriPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
              "but base is %s",
              ApproximationBaseNames[base]);
   }
-  int order = data.dataOnEntities[MBTRI][0].getDataOrder();
+  int order = data.dataOnEntities[MBTRI][0].getOrder();
   int nb_gauss_pts = pts.size2();
   data.dataOnEntities[MBTRI][0].getN(base).resize(
       nb_gauss_pts, 3 * NBFACETRI_DEMKOWICZ_HDIV(order), false);
@@ -679,9 +679,9 @@ TriPolynomialBase::getValueHcurlAinsworthBase(MatrixDouble &pts) {
                 "data inconsistency");
       }
       sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
-      order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
+      order[ee] = data.dataOnEntities[MBEDGE][ee].getOrder();
       int nb_dofs = NBEDGE_AINSWORTH_HCURL(
-          data.dataOnEntities[MBEDGE][ee].getDataOrder());
+          data.dataOnEntities[MBEDGE][ee].getOrder());
       data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,
                                                         3 * nb_dofs, false);
       data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(
@@ -713,7 +713,7 @@ TriPolynomialBase::getValueHcurlAinsworthBase(MatrixDouble &pts) {
     if (data.dataOnEntities[MBTRI].size() != 1) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
     }
-    int order = data.dataOnEntities[MBTRI][0].getDataOrder();
+    int order = data.dataOnEntities[MBTRI][0].getOrder();
     int nb_dofs = NBFACETRI_AINSWORTH_HCURL(order);
     data.dataOnEntities[MBTRI][0].getN(base).resize(nb_gauss_pts, 3 * nb_dofs,
                                                     false);
@@ -766,9 +766,9 @@ TriPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
                 "orientation (sense) of edge is not set");
 
       sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
-      order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
+      order[ee] = data.dataOnEntities[MBEDGE][ee].getOrder();
       int nb_dofs = NBEDGE_DEMKOWICZ_HCURL(
-          data.dataOnEntities[MBEDGE][ee].getDataOrder());
+          data.dataOnEntities[MBEDGE][ee].getOrder());
       data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,
                                                         3 * nb_dofs, false);
       data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(
@@ -804,7 +804,7 @@ TriPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "No data struture to keep base functions on face");
 
-    int order = data.dataOnEntities[MBTRI][0].getDataOrder();
+    int order = data.dataOnEntities[MBTRI][0].getOrder();
     int nb_dofs = NBFACETRI_DEMKOWICZ_HCURL(order);
     data.dataOnEntities[MBTRI][0].getN(base).resize(nb_gauss_pts, 3 * nb_dofs,
                                                     false);

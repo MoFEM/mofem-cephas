@@ -87,8 +87,8 @@ MoFEMErrorCode QuadPolynomialBase::getValueH1AinsworthBase(MatrixDouble &pts) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "sense not set");
 
       sense[ee] = ent_dat.getSense();
-      order[ee] = ent_dat.getDataOrder();
-      int nb_dofs = NBEDGE_H1(ent_dat.getDataOrder());
+      order[ee] = ent_dat.getOrder();
+      int nb_dofs = NBEDGE_H1(ent_dat.getOrder());
       ent_dat.getN(base).resize(nb_gauss_pts, nb_dofs, false);
       ent_dat.getDiffN(base).resize(nb_gauss_pts, 2 * nb_dofs, false);
       H1edgeN[ee] = &*ent_dat.getN(base).data().begin();
@@ -108,12 +108,12 @@ MoFEMErrorCode QuadPolynomialBase::getValueH1AinsworthBase(MatrixDouble &pts) {
               "should be one quad to store bubble base on quad");
 
     auto &ent_dat = data.dataOnEntities[MBQUAD][0];
-    int nb_dofs = NBFACEQUAD_H1(ent_dat.getDataOrder());
+    int nb_dofs = NBFACEQUAD_H1(ent_dat.getOrder());
     ent_dat.getN(base).resize(nb_gauss_pts, nb_dofs, false);
     ent_dat.getDiffN(base).resize(nb_gauss_pts, 2 * nb_dofs, false);
     int face_nodes[] = {0, 1, 2, 3};
     CHKERR H1_QuadShapeFunctions_MBQUAD(
-        face_nodes, ent_dat.getDataOrder(),
+        face_nodes, ent_dat.getOrder(),
         &*vert_dat.getN(base).data().begin(),
         &*vert_dat.getDiffN(base).data().begin(),
         &*ent_dat.getN(base).data().begin(),
@@ -150,8 +150,8 @@ MoFEMErrorCode QuadPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "sense not set");
 
       sense[ee] = ent_dat.getSense();
-      order[ee] = ent_dat.getDataOrder();
-      int nb_dofs = NBEDGE_H1(ent_dat.getDataOrder());
+      order[ee] = ent_dat.getOrder();
+      int nb_dofs = NBEDGE_H1(ent_dat.getOrder());
       ent_dat.getN(base).resize(nb_gauss_pts, nb_dofs, false);
       ent_dat.getDiffN(base).resize(nb_gauss_pts, 2 * nb_dofs, false);
       H1edgeN[ee] = &*ent_dat.getN(base).data().begin();
@@ -171,8 +171,8 @@ MoFEMErrorCode QuadPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
               "should be one quad to store bubble base on quad");
 
     auto &ent_dat = data.dataOnEntities[MBQUAD][0];
-    int nb_dofs = NBFACEQUAD_H1(ent_dat.getDataOrder());
-    int p = ent_dat.getDataOrder();
+    int nb_dofs = NBFACEQUAD_H1(ent_dat.getOrder());
+    int p = ent_dat.getOrder();
     int order[2] = {p, p};
     ent_dat.getN(base).resize(nb_gauss_pts, nb_dofs, false);
     ent_dat.getDiffN(base).resize(nb_gauss_pts, 2 * nb_dofs, false);
@@ -223,7 +223,7 @@ MoFEMErrorCode QuadPolynomialBase::getValueL2DemkowiczBase(MatrixDouble &pts) {
       data.dataOnEntities[MBVERTEX][0].getDiffN(copy_base);
 
   auto &ent_dat = data.dataOnEntities[MBQUAD][0];
-  int p = ent_dat.getDataOrder();
+  int p = ent_dat.getOrder();
   int order[2] = {p, p};
   int nb_dofs = NBFACEQUAD_L2(p);
   ent_dat.getN(base).resize(nb_gauss_pts, nb_dofs, false);
@@ -289,9 +289,9 @@ QuadPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
                 "orientation (sense) of edge is not set");
 
       sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
-      order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
+      order[ee] = data.dataOnEntities[MBEDGE][ee].getOrder();
       int nb_dofs = NBEDGE_DEMKOWICZ_HCURL(
-          data.dataOnEntities[MBEDGE][ee].getDataOrder());
+          data.dataOnEntities[MBEDGE][ee].getOrder());
 
       data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,
                                                         3 * nb_dofs, false);
@@ -316,7 +316,7 @@ QuadPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "No data struture to keep base functions on face");
 
-    int p = data.dataOnEntities[MBQUAD][0].getDataOrder();
+    int p = data.dataOnEntities[MBQUAD][0].getOrder();
     const int nb_dofs_family = NBFACEQUAD_DEMKOWICZ_FAMILY_HCURL(p, p);
     if (nb_dofs_family) {
       faceFamily.resize(2, 3 * nb_dofs_family * nb_gauss_pts, false);
@@ -418,7 +418,7 @@ QuadPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "No data struture to keep base functions on face");
 
-    int p = data.dataOnEntities[MBQUAD][0].getDataOrder();
+    int p = data.dataOnEntities[MBQUAD][0].getOrder();
     const int nb_dofs = NBFACEQUAD_DEMKOWICZ_HDIV(p);
     auto &face_n = data.dataOnEntities[MBQUAD][0].getN(base);
     auto &diff_face_n = data.dataOnEntities[MBQUAD][0].getDiffN(base);
