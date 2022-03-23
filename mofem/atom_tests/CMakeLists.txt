@@ -1486,3 +1486,20 @@ add_test(child_and_parent
   -log_severity_level inform
   -log_no_color
 )
+
+build_test(
+  higer_direvatives
+  higer_direvatives.cpp)
+
+add_test(higer_direvatives
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/higer_direvatives
+  -file_name rectangle_tri.h5m 
+  -ksp_atol 1e-12 -ksp_rtol 1e-12 
+  -ksp_type cg 
+  -pc_type lu 
+  -ksp_max_it 500 
+  -ksp_monitor
+  -log_severity_level inform
+  -log_no_color
+)
