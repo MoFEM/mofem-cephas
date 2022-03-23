@@ -424,22 +424,6 @@ EntitiesFieldData::EntData::getFTensor1DiffN() {
   return getFTensor1DiffN<Tensor_Dim>(bAse);
 }
 
-// template <int Tensor_Dim>
-// FTensor::Tensor1<double *, Tensor_Dim>
-// EntitiesFieldData::EntData::getFTensor1DiffN(
-//     const FieldApproximationBase base, const int bb) {
-//   std::stringstream s;
-//   s << "Template for tensor dimension " << Tensor_Dim << " not implemented";
-//   THROW_MESSAGE(s.str());
-//   return FTensor::Tensor1<double *, Tensor_Dim>();
-// }
-
-// template <int Tensor_Dim>
-// FTensor::Tensor1<double *, Tensor_Dim>
-// EntitiesFieldData::EntData::getFTensor1DiffN(const int bb) {
-//   return getFTensor1DiffN<Tensor_Dim>(bAse, bb);
-// }
-
 /**
  * \brief Get spatial derivative of base function tensor for dimension 3d
  */
