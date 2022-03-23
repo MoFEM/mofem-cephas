@@ -21,90 +21,166 @@
 
 namespace MoFEM {
 
+OpBaseDerivativesBase::OpBaseDerivativesBase(
+    boost::shared_ptr<MatrixDouble> base_mass_ptr,
+    boost::shared_ptr<EntitiesFieldData> data_l2,
+    const FieldApproximationBase b, const FieldSpace s, int verb, Sev sev)
+    : ForcesAndSourcesCore::UserDataOperator(s, OPLAST), base(b),
+      verbosity(verb), severityLevel(sev), baseMassPtr(base_mass_ptr),
+      dataL2(data_l2) {}
+
 MoFEMErrorCode
 OpBaseDerivativesMass<1>::doWork(int side, EntityType type,
                                  EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
-//   if (sPace != L2) {
-//     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-//             "Space should be set to L2");
-//   }
+  if (sPace != L2) {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Space should be set to L2");
+  }
 
-//   if (!data.getNSharedPtr(base)) {
-//     auto fe_ptr = getPtrFE();
-//     auto fe_type = getFEType();
-//     // Set data structure to store bas
-//     dataL2->dataOnEntities[fe_type].clear();
-//     dataL2->dataOnEntities[MBVERTEX].push_back(
-//         new EntitiesFieldData::EntData());
-//     dataL2->dataOnEntities[fe_type].push_back(
-//         new EntitiesFieldData::EntData());
+  auto fe_type = getFEType();
 
-//     auto &vertex_data = dataL2->dataOnEntities[MBVERTEX][0];
-//     vertex_data.getNSharedPtr(NOBASE) =
-//         fe_ptr->dataH1.dataOnEntities[MBVERTEX][0]->getNSharedPtr(NOBASE);
-//     vertex_data.getDiffNSharedPtr(NOBASE) =
-//         fe_ptr->dataH1.dataOnEntities[MBVERTEX][0]->getDiffNSharedPtr(NOBASE);
+  auto calculate_base = [&]() {
+    MoFEMFunctionBeginHot;
+    auto fe_ptr = getPtrFE();
+    // Set data structure to store bas
+    dataL2->dataOnEntities[fe_type].clear();
+    dataL2->dataOnEntities[MBVERTEX].push_back(
+        new EntitiesFieldData::EntData());
+    dataL2->dataOnEntities[fe_type].push_back(new EntitiesFieldData::EntData());
 
-//     auto &ent_data = dataL2->dataOnEntities[fe_type][0];
-//     ent_data.sEnse = 1;
-//     ent_data.bAse = base;
-//     ent_data.oRder = fe_ptr->getMaxDataOrder();
+    auto &vertex_data = dataL2->dataOnEntities[MBVERTEX][0];
+    vertex_data.getNSharedPtr(NOBASE) =
+        fe_ptr->getEntData(H1, MBVERTEX, 0).getNSharedPtr(NOBASE);
+    vertex_data.getDiffNSharedPtr(NOBASE) =
+        fe_ptr->getEntData(H1, MBVERTEX, 0).getDiffNSharedPtr(NOBASE);
 
-//     auto base_functions_generator = fe_ptr->getElementPolynomialBase();
-//     CHKERR base_functions_generator->getValue(
-//         getGaussPts(), boost::make_shared<EntPolynomialBaseCtx>(
-//                            *dataL2, static_cast<FieldSpace>(L2),
-//                            static_cast<FieldApproximationBase>(base), NOBASE));
-//   }
+    auto &ent_data = dataL2->dataOnEntities[fe_type][0];
+    ent_data.getSense() = 1;
+    ent_data.getBase() = base;
+    ent_data.getOrder() = fe_ptr->getMaxDataOrder();
 
-//   auto &base = dataL2.getN(base);
-//   const auto nb = base.size2();
+    auto base_functions_generator = fe_ptr->getElementPolynomialBase();
+    CHKERR base_functions_generator->getValue(
+        getGaussPts(), boost::make_shared<EntPolynomialBaseCtx>(
+                           *dataL2, static_cast<FieldSpace>(L2),
+                           static_cast<FieldApproximationBase>(base), NOBASE));
+    MoFEMFunctionReturnHot(0);
+  };
 
-//   if (&nb) {
+  CHKERR calculate_base();
 
-//     const auto nb_integration_pts = base.size1();
+  auto &ent_data = dataL2->dataOnEntities[fe_type][0];
+  auto &base_funcions = ent_data.getN(base);
+  const auto nb = base_funcions.size2();
 
-// #ifndef NDEBUG
-//     if (baseMassPtr)
-//       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-//               "Mass matrix is null pointer");
-// #endif
+  if (nb) {
 
-//     auto &nN = *baseMassPtr;
-//     nN.resize(nb, nb, false);
-//     nN.clear();
+    const auto nb_integration_pts = base_funcions.size1();
 
-//     auto t_w = getFTensor0IntegrationWeight();
-//     // get base function gradient on rows
-//     auto t_row_base = dataL2.getFTensor0N();
-//     // loop over integration points
-//     for (int gg = 0; gg != nb_integration_pts; ++gg) {
-//       // take into account Jacobian
-//       const double alpha = t_w * vol;
+#ifndef NDEBUG
+    if (!baseMassPtr)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Mass matrix is null pointer");
+#endif
 
-//       for (int rr = 0; rr != nb; ++rr) {
+    auto &nN = *baseMassPtr;
+    nN.resize(nb, nb, false);
+    nN.clear();
 
-//         // loop over rows base functions
-//         auto a_mat_ptr = &*nN(rr, 0);
-//         // get column base functions gradient at gauss point gg
-//         auto t_col_base = dataL2.getFTensor0N(gg, 0);
-//         // loop over columns
-//         for (int cc = 0; cc <= rr; ++cc) {
-//           // calculate element of local matrix
-//           *a_mat_ptr += alpha * (t_row_base * t_col_base);
-//           ++t_col_base;
-//           ++a_mat_ptr;
-//         }
+    auto t_w = getFTensor0IntegrationWeight();
+    // get base function gradient on rows
+    auto t_row_base = ent_data.getFTensor0N();
+    // loop over integration points
+    for (int gg = 0; gg != nb_integration_pts; ++gg) {
+      // take into account Jacobian
+      const double alpha = t_w;
 
-//         ++t_row_base;
-//       }
-//       ++t_w; // move to another integration weight
-//     }
-//   }
+      for (int rr = 0; rr != nb; ++rr) {
 
-//   cholesky_decompose(nN);
+        // loop over rows base functions
+        auto a_mat_ptr = &nN(rr, 0);
+        // get column base functions gradient at gauss point gg
+        auto t_col_base = ent_data.getFTensor0N(gg, 0);
+        // loop over columns
+        for (int cc = 0; cc <= rr; ++cc) {
+          // calculate element of local matrix
+          *a_mat_ptr += alpha * (t_row_base * t_col_base);
+          ++t_col_base;
+          ++a_mat_ptr;
+        }
+
+        ++t_row_base;
+      }
+      ++t_w; // move to another integration weight
+    }
+
+    cholesky_decompose(nN);
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+OpBaseDerivativesNext<1>::OpBaseDerivativesNext(
+    int direvative, boost::shared_ptr<MatrixDouble> base_mass_ptr,
+    boost::shared_ptr<EntitiesFieldData> data_l2,
+    const FieldApproximationBase b, const FieldSpace s, int verb, Sev sev)
+    : OpBaseDerivativesBase(base_mass_ptr, data_l2, b, s, verb, sev),
+      calcBaseDirevative(direvative) {}
+
+template <int SPACE_DIM>
+MoFEMErrorCode
+OpBaseDerivativesNext<1>::setBase(EntitiesFieldData::EntData &data,
+                                  EntitiesFieldData::EntData &ent_data) {
+  MoFEMFunctionBegin;
+
+#ifndef NDEBUG
+  if (!baseMassPtr)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Mass matrix is null pointer");
+#endif
+
+  const int nb_gauss_pts = data.getN().size1();
+  const int nb_approx_bases = data.getN().size2();
+  const int nb_direvatives = pow(SPACE_DIM, calcBaseDirevative - 1);
+
+  const int nb_base_functions = ent_data.getN().size1();
+  const int nb_prj_bases = ent_data.getN().size2();
+
+  if (!data.getNSharedPtr(base,
+                          static_cast<BaseDirevatives>(calcBaseDirevative))) {
+    data.getNSharedPtr(base, static_cast<BaseDirevatives>(calcBaseDirevative)) =
+        boost::make_shared<MatrixDouble>();
+  }
+
+  auto &nex_diff_base = *(data.getNSharedPtr(
+      base, static_cast<BaseDirevatives>(calcBaseDirevative)));
+  nex_diff_base.resize(nb_gauss_pts, nb_approx_bases * nb_direvatives);
+  nex_diff_base.clear();
+
+  FTensor::Index<'i', SPACE_DIM> i;
+
+  for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+
+    auto next_diffs_ptr = &nex_diff_base(gg, 0);
+    auto t_next_diff = getFTensor1FromPtr<SPACE_DIM>(next_diffs_ptr);
+
+    auto ptr = &*nF.data().begin();
+    for (auto r = 0; r != nb_approx_bases; ++r) {
+      for (int d = 0; d != nb_direvatives; ++d) {
+
+        auto l2_diff_base = ent_data.getFTensor1DiffN<SPACE_DIM>(base, gg, 0);
+        for (int rr = 0; rr != nb_base_functions; ++rr) {
+          t_next_diff(i) += l2_diff_base(i) * (*ptr);
+          ++l2_diff_base;
+          ++ptr;
+        }
+
+        ++t_next_diff;
+      }
+    }
+  }
 
   MoFEMFunctionReturn(0);
 }
@@ -114,93 +190,84 @@ OpBaseDerivativesNext<1>::doWork(int side, EntityType type,
                                  EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
-//   auto &base = data.getN(base);
-//   const auto nb = base.size2();
+  auto &approx_base = data.getN(base);
+  const auto nb_approx_bases = approx_base.size2();
 
-//   if (&nb) {
+  if (nb_approx_bases) {
 
-//     auto fe_type = getFEType();
-//     const auto nb_integration_pts = base.size1();
+    const auto fe_type = getFEType();
+    const auto nb_integration_pts = approx_base.size1();
 
-//     int base_direvative = 0;
-//     for (auto base_direvative = 0; base_direvative != LastDerivative;
-//          ++base_direvative) {
-//       if (!data.getNSharedPtr(base, static_cast<BaseDirevatives>(d))) {
-//         ++base_direvative;
-//         break;
-//       }
-//     }
+#ifndef NDEBUG
+    if (!baseMassPtr)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Mass matrix is null pointer");
+#endif
 
-//     if (base_direvative == LastDerivative)
-//       MoFEMFunctionReturnHot(0);
 
-// #ifndef NDEBUG
-//     if (baseMassPtr)
-//       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-//               "Mass matrix is null pointer");
-//     if (base_direvative < 2)
-//       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-//               "Direvative should be larger than 2");
-//     if (base_direvative < data.baseFunctionsAndBaseDirevatives.size())
-//       SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-//                "Direvative should be larger than %d",
-//                data.baseFunctionsAndBaseDirevatives.size());
-//     if (data.getNSharedPtr(base, base_direvative - 1))
-//       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-//               "Derivative does not exist");
-// #endif
+    const auto space_dim = data.getDiffN(base).size2() / nb_approx_bases;
+    auto &diff_approx_base = *(data.getNSharedPtr(
+        base, static_cast<BaseDirevatives>(calcBaseDirevative - 1)));
+    auto &ent_data = dataL2->dataOnEntities[fe_type][0];
+    const int nb_prj_bases = ent_data.getN().size2();
+    auto &nN = *baseMassPtr;
 
-//     const space_dim = data.getDiffN().size2() / nb;
-//     auto &diff_base = *(data.getNSharedPtr(base, base_direvative - 1));
+#ifndef NDEBUG
+    if (ent_data.getN().size1() != nb_integration_pts)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Number of integration points is not consistent");
+    if (nb_prj_bases * space_dim == nb_prj_bases)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Number of base funtions derivatives is not consistent");
+    if (nN.size2() != nb_prj_bases) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Number of base functions and size of mass matrix does not math");
+    }
+#endif
 
-// #ifndef NDEBUG
-//     if (diff_base.size1() != nb_integration_pts)
-//       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-//               "Number of integration points is not consistent");
-//     if (nb * space_dim == nb)
-//       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-//               "Number of base funtions derivatives is not consistent");
-// #endif
+    int nb_direvatives = pow(space_dim, calcBaseDirevative - 1);
+    nF.resize(nb_approx_bases * nb_direvatives, nb_prj_bases, false);
+    nF.clear();
 
-//     auto &nN = *baseMassPtr;
+    auto t_w = getFTensor0IntegrationWeight();
+    // get base function gradient on rows
 
-//     int nb_direvatives = pow(space_dim, base_direvative - 1);
-//     nF.resize(nb, nb_direvatives, false);
-//     nF.clear();
+    auto diff_base_ptr = &*diff_approx_base.data().begin();
+    // loop over integration points
+    for (int gg = 0; gg != nb_integration_pts; ++gg) {
+      // take into account Jacobian
+      const double alpha = t_w;
 
-//     auto diff_base_ptr = *diff_base.data().begin();
+      auto f_vec_ptr = &*nF.data().begin();
+      for (int d = 0; d != nb_approx_bases * nb_direvatives; ++d) {
+        auto t_base = ent_data.getFTensor0N(base, gg, 0);
+        for (int rr = 0; rr != nb_prj_bases; ++rr) {
+          *f_vec_ptr += alpha * (t_base * (*diff_base_ptr));
+          ++t_base;
+        }
+        ++diff_base_ptr;
+        ++f_vec_ptr;
+      }
+      ++t_w; // move to another integration weight
+    }
 
-//     auto t_w = getFTensor0IntegrationWeight();
-//     // get base function gradient on rows
-//     auto &ent_data = dataL2->dataOnEntities[fe_type][0];
-//     const int nb_base_functions = ent_data->getN().size2();
-//     auto t_row_base = ent_data.getFTensor0N();
-//     // loop over integration points
-//     for (int gg = 0; gg != nb_integration_pts; ++gg) {
-//       // take into account Jacobian
-//       const double alpha = t_w * vol;
+    for (auto r = 0; r != nb_approx_bases; ++r) {
+      for (int d = 0; d != nb_direvatives; ++d) {
+        ublas::matrix_row<MatrixDouble> mc(nF, r * nb_direvatives + d);
+        cholesky_solve(nN, mc, ublas::lower());
+      }
+    }
 
-//       for (int rr = 0; rr != nb_base_functions; ++rr) {
-
-//         auto f_vec_ptr = &*nF.data().begin();
-//         for (int d = 0; d != nb * nb_direvatives; ++d) {
-//           *f_vec_ptr += alpha * (t_row_base * (*diff_base_ptr));
-//           ++diff_base_ptr;
-//           ++f_vec_ptr;
-//         }
-
-//         ++t_row_base;
-//       }
-//       ++t_w; // move to another integration weight
-//     }
-//   }
-
-//   for (auto rr = 0; rr != nb; ++rr) {
-//     for (int d = 0; d != nb_direvatives; ++d) {
-//       ublas::matrix_column<MatrixDouble> mc(mF, nb * nb_direvatives + d);
-//       cholesky_solve(nN, nF, ublas::lower());
-//     }
-//   }
+    if (space_dim == 3)
+      CHKERR setBase<3>(data, ent_data);
+    else if (space_dim == 2)
+      CHKERR setBase<2>(data, ent_data);
+    // else if (space_dim == 1)
+    //   CHKERR setBase<1>(data, ent_data);
+    else
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
+               "Space dim can be only 1,2,3 but is %d", space_dim);
+  }
 
   MoFEMFunctionReturn(0);
 }

@@ -27,11 +27,7 @@ struct OpBaseDerivativesBase : public ForcesAndSourcesCore::UserDataOperator {
   OpBaseDerivativesBase(boost::shared_ptr<MatrixDouble> base_mass_ptr,
                         boost::shared_ptr<EntitiesFieldData> data_l2,
                         const FieldApproximationBase b, const FieldSpace s,
-                        int verb = QUIET, Sev sev = Sev::verbose)
-      : ForcesAndSourcesCore::UserDataOperator(
-            s, ForcesAndSourcesCore::UserDataOperator::OPLAST),
-        base(b), verbosity(verb), severityLevel(sev),
-        baseMassPtr(base_mass_ptr), dataL2(data_l2) {}
+                        int verb = QUIET, Sev sev = Sev::verbose);
 
 protected:
   FieldApproximationBase base;
@@ -43,10 +39,7 @@ protected:
 };
 
 template <int BASE_DIM>
-struct OpBaseDerivativesMass : public OpBaseDerivativesBase {
-private:
-  using OpBaseDerivativesBase::OpBaseDerivativesBase;
-};
+struct OpBaseDerivativesMass;
 
 template <> struct OpBaseDerivativesMass<1> : public OpBaseDerivativesBase  {
 
@@ -57,21 +50,26 @@ template <> struct OpBaseDerivativesMass<1> : public OpBaseDerivativesBase  {
 };
 
 template <int BASE_DIM>
-struct OpBaseDerivativesNext : public OpBaseDerivativesBase {
-private:
-  using OpBaseDerivativesBase::OpBaseDerivativesBase;
-};
+struct OpBaseDerivativesNext;
 
 template <> struct OpBaseDerivativesNext<1> : public OpBaseDerivativesBase {
 
-  using OpBaseDerivativesBase::OpBaseDerivativesBase;
+  OpBaseDerivativesNext(int direvative,
+                        boost::shared_ptr<MatrixDouble> base_mass_ptr,
+                        boost::shared_ptr<EntitiesFieldData> data_l2,
+                        const FieldApproximationBase b, const FieldSpace s,
+                        int verb = QUIET, Sev sev = Sev::verbose);
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data);
 
 private:
-
+  int calcBaseDirevative;
   MatrixDouble nF;
+
+  template <int SPACE_DIM>
+  MoFEMErrorCode setBase(EntitiesFieldData::EntData &data,
+                         EntitiesFieldData::EntData &ent_data);
 };
 
 } // namespace MoFEM
