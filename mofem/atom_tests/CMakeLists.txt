@@ -1488,12 +1488,12 @@ add_test(child_and_parent
 )
 
 build_test(
-  higer_direvatives
-  higer_direvatives.cpp)
+  higher_direvatives
+  higher_direvatives.cpp)
 
-add_test(higer_direvatives
+add_test(higher_direvatives
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
-  ${CMAKE_CURRENT_BINARY_DIR}/higer_direvatives
+  ${CMAKE_CURRENT_BINARY_DIR}/higher_direvatives
   -file_name rectangle_tri.h5m 
   -ksp_atol 1e-12 -ksp_rtol 1e-12 
   -ksp_type cg 

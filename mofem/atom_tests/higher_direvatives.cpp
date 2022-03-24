@@ -1,5 +1,5 @@
 /**
- * \example higher_direvatives.cpp
+ * \example higer_direvatives.cpp
  *
  * Testing higher direvatives of base functions
  *
