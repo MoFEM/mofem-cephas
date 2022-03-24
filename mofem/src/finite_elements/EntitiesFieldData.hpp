@@ -186,9 +186,7 @@ struct EntitiesFieldData::EntData {
   /**
    * @deprecated use getOrder
    */
-  DEPRECATED inline ApproximationOrder &getDataOrder() {
-    return getDataOrder();
-  }
+  DEPRECATED inline ApproximationOrder &getDataOrder() { return getOrder(); }
 
   inline VectorInt &getIndices();
 
@@ -371,6 +369,16 @@ struct EntitiesFieldData::EntData {
   inline MatrixDouble &getDiffN(const FieldApproximationBase base);
 
   /**
+   * @brief Get base function derivative
+   * 
+   * @param base  base  
+   * @param direvative derivative
+   * @return MatrixDouble& 
+   */
+  inline MatrixDouble &getN(const FieldApproximationBase base,
+                                const BaseDirevatives direvative);
+
+  /**
    * @copydoc MoFEM::EntitiesFieldData::EntData::getDiffN
    */
   inline MatrixDouble &getDiffN(const std::string &field_name);
@@ -379,6 +387,14 @@ struct EntitiesFieldData::EntData {
    * @copydoc MoFEM::EntitiesFieldData::EntData::getDiffN
    */
   inline MatrixDouble &getDiffN();
+
+  /**
+   * @brief Get base function derivative
+   * 
+   * @param derivative 
+   * @return MatrixDouble& 
+   */
+  inline MatrixDouble &getN(const BaseDirevatives derivative);
 
   /// \brief get base functions at Gauss pts
   inline const VectorAdaptor getN(const FieldApproximationBase base,
@@ -1256,11 +1272,30 @@ EntitiesFieldData::EntData::getDiffN(const FieldApproximationBase base) {
 }
 
 MatrixDouble &
+EntitiesFieldData::EntData::getN(const FieldApproximationBase base,
+                                 const BaseDirevatives derivative) {
+#ifndef NDEBUG
+  if (!getNSharedPtr(base, derivative)) {
+    MOFEM_LOG_C("SELF", Sev::error,
+                "Ptr to base %s functions derivative %d is null",
+                ApproximationBaseNames[base], derivative);
+    THROW_MESSAGE("Null pointer");
+  }
+#endif
+  return *(getNSharedPtr(base, derivative));
+}
+
+MatrixDouble &
 EntitiesFieldData::EntData::getDiffN(const std::string &field_name) {
   return *(getBBDiffNSharedPtr(field_name));
 }
 
 MatrixDouble &EntitiesFieldData::EntData::getDiffN() { return getDiffN(bAse); }
+
+MatrixDouble &
+EntitiesFieldData::EntData::getN(const BaseDirevatives derivative) {
+  return getN(bAse, derivative);
+}
 
 const VectorAdaptor
 EntitiesFieldData::EntData::getN(const FieldApproximationBase base,
