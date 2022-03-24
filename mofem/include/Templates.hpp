@@ -641,6 +641,13 @@ FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3,
       &ptr[HVEC2_0], &ptr[HVEC2_1], &ptr[HVEC2_2]);
 };
 
+template <>
+FTensor::Tensor2<FTensor::PackPtr<double *, 4>, 2,
+                 2> inline getFTensor2FromPtr<2, 2>(double *ptr) {
+  return FTensor::Tensor2<FTensor::PackPtr<double *, 4>, 2, 2>(
+      &ptr[0], &ptr[1], &ptr[2], &ptr[3]);
+};
+
 /**
  * @brief Get FTensor1 from array
  *
