@@ -628,7 +628,7 @@ struct OpCalculateVectorFieldValuesFromPetscVecImpl
     const size_t nb_base_functions = data.getN().size2();
     auto base_function = data.getFTensor0N();
     auto values_at_gauss_pts = getFTensor1FromMat<Tensor_Dim>(mat);
-    
+
     FTensor::Index<'I', Tensor_Dim> I;
     const size_t size = nb_dofs / Tensor_Dim;
     if (nb_dofs % Tensor_Dim) {
@@ -1115,7 +1115,7 @@ OpCalculateTensor2SymmetricFieldValuesDot<2>::getFTensorDotData<2>() {
 
 /**@}*/
 
-/** \name Gradients of scalar fields at integration points */
+/** \name Gradients and Hessian of scalar fields at integration points */
 
 /**@{*/
 
@@ -1226,6 +1226,98 @@ struct OpCalculateScalarFieldGradient
       Tensor_Dim, double, ublas::row_major,
       DoubleAllocator>::OpCalculateScalarFieldGradient_General;
 };
+
+/** \brief Evaluate field gradient values for scalar field, i.e. gradient is
+ * tensor rank 1 (vector), specialization
+ *
+ */
+template <int Tensor_Dim>
+struct OpCalculateScalarFieldHessian
+    : public OpCalculateVectorFieldValues_General<
+          Tensor_Dim, double, ublas::row_major, DoubleAllocator> {
+
+  using OpCalculateVectorFieldValues_General<
+      Tensor_Dim, double, ublas::row_major,
+      DoubleAllocator>::OpCalculateVectorFieldValues_General;
+
+  /**
+   * \brief calculate gradient values of scalar field at integration points
+   * @param  side side entity number
+   * @param  type side entity type
+   * @param  data entity data
+   * @return      error code
+   */
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        EntitiesFieldData::EntData &data);
+};
+
+template <int Tensor_Dim>
+MoFEMErrorCode OpCalculateScalarFieldHessian<Tensor_Dim>::doWork(
+    int side, EntityType type, EntitiesFieldData::EntData &data) {
+  MoFEMFunctionBegin;
+
+  const size_t nb_gauss_pts = this->getGaussPts().size2();
+  auto &mat = *this->dataPtr;
+  if (type == this->zeroType) {
+    mat.resize(Tensor_Dim * Tensor_Dim, nb_gauss_pts, false);
+    mat.clear();
+  }
+
+  const int nb_dofs = data.getFieldData().size();
+  if (nb_dofs) {
+
+    if (nb_gauss_pts) {
+      const int nb_base_functions = data.getN().size2();
+
+      auto &hessian_base = data.getN(BaseDirevatives::SecondDerivative);
+#ifndef NDEBUG
+      if (hessian_base.size1() != nb_gauss_pts) {
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "Wrong number of integration pts (%d != %d)",
+                 hessian_base.size1(), nb_gauss_pts);
+      }
+      if (hessian_base.size2() != nb_base_functions * Tensor_Dim * Tensor_Dim) {
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "Wrong number of base functions (%d != %d)",
+                 hessian_base.size2() / (Tensor_Dim * Tensor_Dim),
+                 nb_base_functions);
+      }
+      if (hessian_base.size2() < nb_dofs * Tensor_Dim * Tensor_Dim) {
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "Wrong number of base functions (%d < %d)",
+                 hessian_base.size2(), nb_dofs * Tensor_Dim * Tensor_Dim);
+      }
+#endif
+
+      auto t_diff2_base_function = getFTensor2FromPtr<Tensor_Dim, Tensor_Dim>(
+          &*hessian_base.data().begin());
+
+      auto hessian_at_gauss_pts =
+          getFTensor2FromMat<Tensor_Dim, Tensor_Dim>(mat);
+
+      FTensor::Index<'I', Tensor_Dim> I;
+      FTensor::Index<'J', Tensor_Dim> J;
+      for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+        auto field_data = data.getFTensor0FieldData();
+        int bb = 0;
+        for (; bb != nb_dofs; ++bb) {
+          hessian_at_gauss_pts(I, J) +=
+              field_data * t_diff2_base_function(I, J);
+          ++field_data;
+          ++t_diff2_base_function;
+        }
+        // Number of dofs can be smaller than number of base functions
+        for (; bb < nb_base_functions; ++bb) {
+          ++t_diff2_base_function;
+        }
+
+        ++hessian_at_gauss_pts;
+      }
+    }
+  }
+
+  MoFEMFunctionReturn(0);
+}
 
 /**}*/
 
@@ -1403,7 +1495,6 @@ struct OpCalculateVectorFieldGradientDot
         dotVector[i] = 0;
     CHKERR VecRestoreArrayRead(getFEMethod()->ts_u_t, &array);
 
-
     const int nb_base_functions = data.getN().size2();
     auto diff_base_function = data.getFTensor1DiffN<Tensor_Dim1>();
     auto gradients_at_gauss_pts =
@@ -1414,7 +1505,7 @@ struct OpCalculateVectorFieldGradientDot
     if (nb_dofs % Tensor_Dim0) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Data inconsistency");
     }
-    
+
     for (int gg = 0; gg < nb_gauss_pts; ++gg) {
       auto field_data = getFTensorDotData<Tensor_Dim0>();
       int bb = 0;
@@ -2836,10 +2927,9 @@ private:
 };
 
 template <int DIM>
-MoFEMErrorCode
-OpInvertMatrix<DIM>::doWorkImpl(int side, EntityType type,
-                                EntitiesFieldData::EntData &data,
-                                const FTensor::Number<3> &) {
+MoFEMErrorCode OpInvertMatrix<DIM>::doWorkImpl(int side, EntityType type,
+                                               EntitiesFieldData::EntData &data,
+                                               const FTensor::Number<3> &) {
   MoFEMFunctionBegin;
 
   if (!inPtr)
@@ -2882,10 +2972,9 @@ OpInvertMatrix<DIM>::doWorkImpl(int side, EntityType type,
 }
 
 template <int DIM>
-MoFEMErrorCode
-OpInvertMatrix<DIM>::doWorkImpl(int side, EntityType type,
-                                EntitiesFieldData::EntData &data,
-                                const FTensor::Number<2> &) {
+MoFEMErrorCode OpInvertMatrix<DIM>::doWorkImpl(int side, EntityType type,
+                                               EntitiesFieldData::EntData &data,
+                                               const FTensor::Number<2> &) {
   MoFEMFunctionBegin;
 
   if (!inPtr)
