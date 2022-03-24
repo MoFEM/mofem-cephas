@@ -44,7 +44,7 @@ OpBaseDerivativesMass<1>::doWork(int side, EntityType type,
   auto calculate_base = [&]() {
     MoFEMFunctionBeginHot;
     auto fe_ptr = getPtrFE();
-    // Set data structure to store bas
+    // Set data structure to store base
     dataL2->dataOnEntities[fe_type].clear();
     dataL2->dataOnEntities[MBVERTEX].push_back(
         new EntitiesFieldData::EntData());
@@ -59,10 +59,9 @@ OpBaseDerivativesMass<1>::doWork(int side, EntityType type,
     auto &ent_data = dataL2->dataOnEntities[fe_type][0];
     ent_data.getSense() = 1;
     ent_data.getBase() = base;
-    ent_data.getOrder() = fe_ptr->getMaxDataOrder();
+    ent_data.getOrder() = std::max(0, fe_ptr->getMaxDataOrder() - 2);
 
-    auto base_functions_generator = fe_ptr->getElementPolynomialBase();
-    CHKERR base_functions_generator->getValue(
+    CHKERR fe_ptr->getElementPolynomialBase()->getValue(
         getGaussPts(), boost::make_shared<EntPolynomialBaseCtx>(
                            *dataL2, static_cast<FieldSpace>(L2),
                            static_cast<FieldApproximationBase>(base), NOBASE));
@@ -77,7 +76,7 @@ OpBaseDerivativesMass<1>::doWork(int side, EntityType type,
 
   if (nb) {
 
-    const auto nb_integration_pts = base_funcions.size1();
+    const auto nb_integration_pts = getGaussPts().size2();
 
 #ifndef NDEBUG
     if (!baseMassPtr)
@@ -135,17 +134,10 @@ OpBaseDerivativesNext<1>::setBase(EntitiesFieldData::EntData &data,
                                   EntitiesFieldData::EntData &ent_data) {
   MoFEMFunctionBegin;
 
-#ifndef NDEBUG
-  if (!baseMassPtr)
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "Mass matrix is null pointer");
-#endif
+  const int nb_gauss_pts = data.getN(base).size1();
+  const int nb_approx_bases = data.getN(base).size2();
+  const int nb_direvatives = std::pow(SPACE_DIM, calcBaseDirevative - 1);
 
-  const int nb_gauss_pts = data.getN().size1();
-  const int nb_approx_bases = data.getN().size2();
-  const int nb_direvatives = pow(SPACE_DIM, calcBaseDirevative - 1);
-
-  const int nb_base_functions = ent_data.getN().size1();
   const int nb_prj_bases = ent_data.getN().size2();
 
   if (!data.getNSharedPtr(base,
@@ -156,29 +148,27 @@ OpBaseDerivativesNext<1>::setBase(EntitiesFieldData::EntData &data,
 
   auto &nex_diff_base = *(data.getNSharedPtr(
       base, static_cast<BaseDirevatives>(calcBaseDirevative)));
-  nex_diff_base.resize(nb_gauss_pts, nb_approx_bases * nb_direvatives);
+  const int next_nb_direvatives = pow(SPACE_DIM, calcBaseDirevative);
+  nex_diff_base.resize(nb_gauss_pts, nb_approx_bases * next_nb_direvatives);
   nex_diff_base.clear();
 
   FTensor::Index<'i', SPACE_DIM> i;
+  auto next_diffs_ptr = &*nex_diff_base.data().begin();
+  auto t_next_diff = getFTensor1FromPtr<SPACE_DIM>(next_diffs_ptr);
 
   for (int gg = 0; gg != nb_gauss_pts; ++gg) {
 
-    auto next_diffs_ptr = &nex_diff_base(gg, 0);
-    auto t_next_diff = getFTensor1FromPtr<SPACE_DIM>(next_diffs_ptr);
-
     auto ptr = &*nF.data().begin();
-    for (auto r = 0; r != nb_approx_bases; ++r) {
-      for (int d = 0; d != nb_direvatives; ++d) {
+    for (auto r = 0; r != nb_approx_bases * nb_direvatives; ++r) {
 
         auto l2_diff_base = ent_data.getFTensor1DiffN<SPACE_DIM>(base, gg, 0);
-        for (int rr = 0; rr != nb_base_functions; ++rr) {
+        for (int rr = 0; rr != nb_prj_bases; ++rr) {
           t_next_diff(i) += l2_diff_base(i) * (*ptr);
           ++l2_diff_base;
           ++ptr;
         }
 
         ++t_next_diff;
-      }
     }
   }
 
@@ -198,34 +188,37 @@ OpBaseDerivativesNext<1>::doWork(int side, EntityType type,
     const auto fe_type = getFEType();
     const auto nb_integration_pts = approx_base.size1();
 
+    const auto space_dim = data.getDiffN(base).size2() / nb_approx_bases;
+    auto &diff_approx_base = *(data.getNSharedPtr(
+        base, static_cast<BaseDirevatives>(calcBaseDirevative - 1)));
+    int nb_direvatives = pow(space_dim, calcBaseDirevative - 1);
+
+    auto &ent_data = dataL2->dataOnEntities[fe_type][0];
+    const int nb_prj_bases = ent_data.getN().size2();
+
 #ifndef NDEBUG
     if (!baseMassPtr)
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "Mass matrix is null pointer");
 #endif
-
-
-    const auto space_dim = data.getDiffN(base).size2() / nb_approx_bases;
-    auto &diff_approx_base = *(data.getNSharedPtr(
-        base, static_cast<BaseDirevatives>(calcBaseDirevative - 1)));
-    auto &ent_data = dataL2->dataOnEntities[fe_type][0];
-    const int nb_prj_bases = ent_data.getN().size2();
     auto &nN = *baseMassPtr;
 
 #ifndef NDEBUG
-    if (ent_data.getN().size1() != nb_integration_pts)
+    if (diff_approx_base.size2() != nb_approx_bases * nb_direvatives) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Number of deriveraives and basses do not match");
+    }
+    if (ent_data.getN().size1() != nb_integration_pts) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "Number of integration points is not consistent");
-    if (nb_prj_bases * space_dim == nb_prj_bases)
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-              "Number of base funtions derivatives is not consistent");
+    }
     if (nN.size2() != nb_prj_bases) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "Number of base functions and size of mass matrix does not math");
     }
 #endif
 
-    int nb_direvatives = pow(space_dim, calcBaseDirevative - 1);
+
     nF.resize(nb_approx_bases * nb_direvatives, nb_prj_bases, false);
     nF.clear();
 
@@ -238,24 +231,24 @@ OpBaseDerivativesNext<1>::doWork(int side, EntityType type,
       // take into account Jacobian
       const double alpha = t_w;
 
-      auto f_vec_ptr = &*nF.data().begin();
-      for (int d = 0; d != nb_approx_bases * nb_direvatives; ++d) {
+      for (int r = 0; r != nb_approx_bases * nb_direvatives; ++r) {
+
+        // Rows are base functions
         auto t_base = ent_data.getFTensor0N(base, gg, 0);
         for (int rr = 0; rr != nb_prj_bases; ++rr) {
-          *f_vec_ptr += alpha * (t_base * (*diff_base_ptr));
+          nF(r, rr) += alpha * (t_base * (*diff_base_ptr));
           ++t_base;
         }
+
         ++diff_base_ptr;
-        ++f_vec_ptr;
       }
+      
       ++t_w; // move to another integration weight
     }
 
-    for (auto r = 0; r != nb_approx_bases; ++r) {
-      for (int d = 0; d != nb_direvatives; ++d) {
-        ublas::matrix_row<MatrixDouble> mc(nF, r * nb_direvatives + d);
-        cholesky_solve(nN, mc, ublas::lower());
-      }
+    for (auto r = 0; r != nb_approx_bases * nb_direvatives; ++r) {
+      ublas::matrix_row<MatrixDouble> mc(nF, r);
+      cholesky_solve(nN, mc, ublas::lower());
     }
 
     if (space_dim == 3)
