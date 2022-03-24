@@ -48,18 +48,23 @@ using DomainEleOp = DomainEle::UserDataOperator;
 using EntData = EntitiesFieldData::EntData;
 
 auto fun = [](const double x, const double y, const double z) {
-  return x * x + y * y + x * y + pow(x, 3) + pow(y, 3) + pow(x, 4) + pow(y, 4);
+  return x * y; // x * x + y * y + x * y + pow(x, 3) + pow(y, 3) +
+                // pow(x, 4) + pow(y, 4);
 };
 
 auto diff_fun = [](const double x, const double y, const double z) {
-  return FTensor::Tensor1<double, 2>{2 * x + y + 3 * pow(x, 2) + 4 * pow(x, 3),
-                                     2 * y + x + 3 * pow(y, 2) + 4 * pow(y, 3)};
+  return FTensor::Tensor1<double, 2>{y, x};
+  // return FTensor::Tensor1<double, 2>{2 * x + y + 3 * pow(x, 2) + 4 * pow(x,
+  // 3),
+  //                                    2 * y + x + 3 * pow(y, 2) + 4 * pow(y,
+  //                                    3)};
 };
 
 auto diff2_fun = [](const double x, const double y, const double z) {
-  return FTensor::Tensor2<double, 2, 2>{2 + 6 * x + 12 * pow(x, 2), 1.,
+  return FTensor::Tensor2<double, 2, 2>{0., 1., 1., 0.};
+  // return FTensor::Tensor2<double, 2, 2>{2 + 6 * x + 12 * pow(x, 2), 1.,
 
-                                        1., 2 + 6 * y + 12 * pow(y, 2)};
+  //                                       1., 2 + 6 * y + 12 * pow(y, 2)};
 };
 
 using OpDomainMass = FormsIntegrators<DomainEleOp>::Assembly<
@@ -84,7 +89,10 @@ private:
   MoFEMErrorCode checkResults();
 
   struct CommonData {
+    boost::shared_ptr<MatrixDouble> invJacPtr;
     boost::shared_ptr<VectorDouble> approxVals;
+    boost::shared_ptr<MatrixDouble> approxGradVals;
+    boost::shared_ptr<MatrixDouble> approxHessianVals;
     SmartPetscObj<Vec> L2Vec;
     SmartPetscObj<Vec> resVec;
   };
@@ -104,29 +112,64 @@ template <> struct AtomTest::OpError<1> : public DomainEleOp {
       const int nb_integration_pts = getGaussPts().size2();
       auto t_w = getFTensor0IntegrationWeight();
       auto t_val = getFTensor0FromVec(*(commonDataPtr->approxVals));
+      auto t_grad_val = getFTensor1FromMat<2>(*(commonDataPtr->approxGradVals));
+      auto t_hessian_val =
+          getFTensor2FromMat<2, 2>(*(commonDataPtr)->approxHessianVals);
+      auto t_inv_jac = getFTensor2FromMat<2, 2>(*(commonDataPtr->invJacPtr));
       auto t_coords = getFTensor1CoordsAtGaussPts();
 
       VectorDouble nf(nb_dofs, false);
       nf.clear();
 
-      FTensor::Index<'i', 3> i;
+      FTensor::Index<'i', 2> i;
+      FTensor::Index<'j', 2> j;
+      FTensor::Index<'k', 2> k;
+      FTensor::Index<'l', 2> l;
       const double volume = getMeasure();
 
       auto t_row_base = data.getFTensor0N();
+      auto t_diff_row_base = data.getFTensor1DiffN<2>();
+
       std::array<double, 3> error = {0, 0, 0};
       for (int gg = 0; gg != nb_integration_pts; ++gg) {
 
         const double alpha = t_w * volume;
+
         double diff = t_val - fun(t_coords(0), t_coords(1), t_coords(2));
         error[0] += alpha * pow(diff, 2);
+        auto t_diff_grad = diff_fun(t_coords(0), t_coords(1), t_coords(2));
+        t_diff_grad(i) -= t_grad_val(j) * t_inv_jac(j, i);
+        error[1] += alpha * t_diff_grad(i) * t_diff_grad(i);
+
+        FTensor::Tensor2<double, 2, 2> t_hessian_push;
+        t_hessian_push(i, j) =
+            (t_hessian_val(k, l) * t_inv_jac(k, i)) * t_inv_jac(l, j);
+
+        MOFEM_LOG("SELF", Sev::noisy) << "t_hessian_val " << t_hessian_push;
+
+        if (std::abs(t_hessian_push(0, 1) - t_hessian_push(1, 0)) >
+            std::numeric_limits<float>::epsilon()) {
+          MOFEM_LOG("SELF", Sev::error) << "t_hessian_push " << t_hessian_push;
+          MOFEM_LOG("SELF", Sev::error) << "t_hessian_val " << t_hessian_val;
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "Hessian should be symmetric");
+        }
+
+        auto t_diff_hessian = diff2_fun(t_coords(0), t_coords(1), t_coords(2));
+        t_diff_hessian(i, j) -= t_hessian_push(i, j);
+        error[2] = t_diff_hessian(i, j) * t_diff_hessian(i, j);
 
         for (size_t r = 0; r != nb_dofs; ++r) {
           nf[r] += alpha * t_row_base * diff;
           ++t_row_base;
+          ++t_diff_row_base;
         }
 
         ++t_w;
         ++t_val;
+        ++t_grad_val;
+        ++t_hessian_val;
+        ++t_inv_jac;
         ++t_coords;
       }
 
@@ -170,7 +213,7 @@ MoFEMErrorCode AtomTest::setupProblem() {
   // Add field
   CHKERR simpleInterface->addDomainField(FIELD_NAME, H1,
                                          AINSWORTH_LEGENDRE_BASE, FIELD_DIM);
-  constexpr int order = 5;
+  constexpr int order = 4;
   CHKERR simpleInterface->setFieldOrder(FIELD_NAME, order);
   CHKERR simpleInterface->setUp();
 
@@ -188,7 +231,7 @@ MoFEMErrorCode AtomTest::assembleSystem() {
   CHKERR pipeline_mng->setDomainLhsIntegrationRule(rule);
   CHKERR pipeline_mng->setDomainRhsIntegrationRule(rule);
 
-    auto beta = [](const double, const double, const double) { return 1; };
+  auto beta = [](const double, const double, const double) { return 1; };
   pipeline_mng->getOpDomainLhsPipeline().push_back(
       new OpDomainMass(FIELD_NAME, FIELD_NAME, beta));
   pipeline_mng->getOpDomainRhsPipeline().push_back(
@@ -236,18 +279,36 @@ MoFEMErrorCode AtomTest::checkResults() {
   common_data_ptr->L2Vec = createSmartVectorMPI(
       mField.get_comm(), (!mField.get_comm_rank()) ? 3 : 0, 3);
   common_data_ptr->approxVals = boost::make_shared<VectorDouble>();
-
-  pipeline_mng->getOpDomainRhsPipeline().push_back(
-      new OpCalculateScalarFieldValues(FIELD_NAME,
-      common_data_ptr->approxVals));
+  common_data_ptr->approxGradVals = boost::make_shared<MatrixDouble>();
+  common_data_ptr->approxHessianVals = boost::make_shared<MatrixDouble>();
 
   auto base_mass = boost::make_shared<MatrixDouble>();
   auto data_l2 = boost::make_shared<EntitiesFieldData>(MBENTITYSET);
+  auto jac_ptr = boost::make_shared<MatrixDouble>();
+  auto det_ptr = boost::make_shared<VectorDouble>();
+  auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
+  common_data_ptr->invJacPtr = inv_jac_ptr;
+
+  pipeline_mng->getOpDomainRhsPipeline().push_back(
+      new OpCalculateHOJacForFace(jac_ptr));
+  pipeline_mng->getOpDomainRhsPipeline().push_back(
+      new OpInvertMatrix<2>(jac_ptr, det_ptr, inv_jac_ptr));
+
+  pipeline_mng->getOpDomainRhsPipeline().push_back(
+      new OpCalculateScalarFieldValues(FIELD_NAME,
+                                       common_data_ptr->approxVals));
+  pipeline_mng->getOpDomainRhsPipeline().push_back(
+      new OpCalculateScalarFieldGradient<2>(FIELD_NAME,
+                                            common_data_ptr->approxGradVals));
 
   pipeline_mng->getOpDomainRhsPipeline().push_back(new OpBaseDerivativesMass<1>(
       base_mass, data_l2, AINSWORTH_LEGENDRE_BASE, L2));
   pipeline_mng->getOpDomainRhsPipeline().push_back(new OpBaseDerivativesNext<1>(
       2, base_mass, data_l2, AINSWORTH_LEGENDRE_BASE, H1));
+
+  pipeline_mng->getOpDomainRhsPipeline().push_back(
+      new OpCalculateScalarFieldHessian<2>(FIELD_NAME,
+                                           common_data_ptr->approxHessianVals));
 
   pipeline_mng->getOpDomainRhsPipeline().push_back(
       new OpError<FIELD_DIM>(common_data_ptr));
@@ -261,15 +322,29 @@ MoFEMErrorCode AtomTest::checkResults() {
   CHKERR VecAssemblyEnd(common_data_ptr->L2Vec);
   CHKERR VecAssemblyBegin(common_data_ptr->resVec);
   CHKERR VecAssemblyEnd(common_data_ptr->resVec);
+
+  constexpr double eps = 1e-8;
+
   double nrm2;
   CHKERR VecNorm(common_data_ptr->resVec, NORM_2, &nrm2);
   const double *array;
   CHKERR VecGetArrayRead(common_data_ptr->L2Vec, &array);
-  MOFEM_LOG_C("WORLD", Sev::inform, "Error %6.4e Vec norm %6.4e\n",
-              std::sqrt(array[0]), nrm2);
+  MOFEM_LOG_C("WORLD", Sev::inform,
+              "Error %6.4e Diff Error %6.4e Diff2 Error %6.4e Vec norm %6.4e\n",
+              std::sqrt(array[0]), std::sqrt(array[1]), std::sqrt(array[2]),
+              nrm2);
+  if (std::sqrt(array[0]) > eps)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "Wrong function value");
+  if (std::sqrt(array[1]) > eps)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+            "Wrong function first direcative");
+  if (std::sqrt(array[2]) > eps)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+            "Wrong function second direcative");
+
   CHKERR VecRestoreArrayRead(common_data_ptr->L2Vec, &array);
-  
-  constexpr double eps = 1e-8;
+
+
   if (nrm2 > eps)
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "Not converged solution err = %6.4e", nrm2);
