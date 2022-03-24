@@ -48,23 +48,18 @@ using DomainEleOp = DomainEle::UserDataOperator;
 using EntData = EntitiesFieldData::EntData;
 
 auto fun = [](const double x, const double y, const double z) {
-  return x * y; // x * x + y * y + x * y + pow(x, 3) + pow(y, 3) +
-                // pow(x, 4) + pow(y, 4);
+  return x * x + y * y + x * y + pow(x, 3) + pow(y, 3) + pow(x, 4) + pow(y, 4);
 };
 
 auto diff_fun = [](const double x, const double y, const double z) {
-  return FTensor::Tensor1<double, 2>{y, x};
-  // return FTensor::Tensor1<double, 2>{2 * x + y + 3 * pow(x, 2) + 4 * pow(x,
-  // 3),
-  //                                    2 * y + x + 3 * pow(y, 2) + 4 * pow(y,
-  //                                    3)};
+  return FTensor::Tensor1<double, 2>{2 * x + y + 3 * pow(x, 2) + 4 * pow(x, 3),
+                                     2 * y + x + 3 * pow(y, 2) + 4 * pow(y, 3)};
 };
 
 auto diff2_fun = [](const double x, const double y, const double z) {
-  return FTensor::Tensor2<double, 2, 2>{0., 1., 1., 0.};
-  // return FTensor::Tensor2<double, 2, 2>{2 + 6 * x + 12 * pow(x, 2), 1.,
+  return FTensor::Tensor2<double, 2, 2>{2 + 6 * x + 12 * pow(x, 2), 1.,
 
-  //                                       1., 2 + 6 * y + 12 * pow(y, 2)};
+                                        1., 2 + 6 * y + 12 * pow(y, 2)};
 };
 
 using OpDomainMass = FormsIntegrators<DomainEleOp>::Assembly<
@@ -343,7 +338,6 @@ MoFEMErrorCode AtomTest::checkResults() {
             "Wrong function second direcative");
 
   CHKERR VecRestoreArrayRead(common_data_ptr->L2Vec, &array);
-
 
   if (nrm2 > eps)
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
