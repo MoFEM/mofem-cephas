@@ -1,7 +1,7 @@
 /**
- * \example child_and_parent.cpp
+ * \example higer_direvatives.cpp
  *
- * Testing projection child and parent.
+ * Testing higher direvatives of base functions
  *
  */
 
