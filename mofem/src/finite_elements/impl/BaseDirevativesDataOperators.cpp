@@ -59,7 +59,7 @@ OpBaseDerivativesMass<1>::doWork(int side, EntityType type,
     auto &ent_data = dataL2->dataOnEntities[fe_type][0];
     ent_data.getSense() = 1;
     ent_data.getBase() = base;
-    ent_data.getOrder() = std::max(0, fe_ptr->getMaxDataOrder() - 2);
+    ent_data.getOrder() = std::max(0, fe_ptr->getMaxDataOrder() - 1);
 
     CHKERR fe_ptr->getElementPolynomialBase()->getValue(
         getGaussPts(), boost::make_shared<EntPolynomialBaseCtx>(
