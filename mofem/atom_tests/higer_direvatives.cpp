@@ -92,10 +92,14 @@ private:
     SmartPetscObj<Vec> resVec;
   };
 
-  template <int FIELD_DIM> struct OpError;
+  struct OpError;
 };
 
-template <> struct AtomTest::OpError<1> : public DomainEleOp {
+/**
+ * @brief Operator to evaluate errors
+ * 
+ */
+struct AtomTest::OpError : public DomainEleOp {
   boost::shared_ptr<CommonData> commonDataPtr;
   OpError(boost::shared_ptr<CommonData> &common_data_ptr)
       : DomainEleOp(FIELD_NAME, OPROW), commonDataPtr(common_data_ptr) {}
@@ -296,17 +300,25 @@ MoFEMErrorCode AtomTest::checkResults() {
       new OpCalculateScalarFieldGradient<2>(FIELD_NAME,
                                             common_data_ptr->approxGradVals));
 
+  // calculate mass matrix to project direvatives
   pipeline_mng->getOpDomainRhsPipeline().push_back(new OpBaseDerivativesMass<1>(
       base_mass, data_l2, AINSWORTH_LEGENDRE_BASE, L2));
+  // calculate second direvative of base functions, i.e. hessian
   pipeline_mng->getOpDomainRhsPipeline().push_back(new OpBaseDerivativesNext<1>(
       2, base_mass, data_l2, AINSWORTH_LEGENDRE_BASE, H1));
+  // calculate third direvative
+  pipeline_mng->getOpDomainRhsPipeline().push_back(new OpBaseDerivativesNext<1>(
+      3, base_mass, data_l2, AINSWORTH_LEGENDRE_BASE, H1));
+  // calculate forth direvative
+  pipeline_mng->getOpDomainRhsPipeline().push_back(new OpBaseDerivativesNext<1>(
+      4, base_mass, data_l2, AINSWORTH_LEGENDRE_BASE, H1));
 
   pipeline_mng->getOpDomainRhsPipeline().push_back(
       new OpCalculateScalarFieldHessian<2>(FIELD_NAME,
                                            common_data_ptr->approxHessianVals));
 
   pipeline_mng->getOpDomainRhsPipeline().push_back(
-      new OpError<FIELD_DIM>(common_data_ptr));
+      new OpError(common_data_ptr));
 
   CHKERR VecZeroEntries(common_data_ptr->L2Vec);
   CHKERR VecZeroEntries(common_data_ptr->resVec);
