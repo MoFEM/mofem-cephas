@@ -439,63 +439,63 @@ add_test(
     -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 
-# Checking direvatives
+# Checking derivatives
 build_test(
-  check_base_functions_direvatives_on_tet
-  check_base_functions_direvatives_on_tet.cpp
+  check_base_functions_derivatives_on_tet
+  check_base_functions_derivatives_on_tet.cpp
 )
 
-add_test(check_h1_ainsworth_base_functions_direvatives_on_tet
+add_test(check_h1_ainsworth_base_functions_derivatives_on_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_direvatives_on_tet
+  ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_derivatives_on_tet
   -space H1TET -base ainsworth
   -log_no_color
 )
-add_test(check_hdiv_ainsworth_base_functions_direvatives_on_tet
+add_test(check_hdiv_ainsworth_base_functions_derivatives_on_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_direvatives_on_tet
+  ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_derivatives_on_tet
   -space HDIVTET -base ainsworth
   -log_no_color
 )
-add_test(check_hdiv_demkowicz_base_functions_direvatives_on_tet
+add_test(check_hdiv_demkowicz_base_functions_derivatives_on_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_direvatives_on_tet
+  ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_derivatives_on_tet
   -space HDIVTET -base demkowicz
   -log_no_color
 )
-add_test(check_hcurl_ainsworth_base_functions_direvatives_on_tet
+add_test(check_hcurl_ainsworth_base_functions_derivatives_on_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_direvatives_on_tet
+  ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_derivatives_on_tet
   -space HCURLTET -base ainsworth
   -log_no_color
 )
-add_test(check_hcurl_demkowicz_base_functions_direvatives_on_tet
+add_test(check_hcurl_demkowicz_base_functions_derivatives_on_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_direvatives_on_tet
+  ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_derivatives_on_tet
   -space HCURLTET -base demkowicz
   -log_no_color
 )
 
 build_test(
-  check_base_functions_direvatives_tri
-  check_base_functions_direvatives_tri.cpp
+  check_base_functions_derivatives_tri
+  check_base_functions_derivatives_tri.cpp
 )
 
-add_test(check_h1_ainsworth_base_functions_direvatives_tri
+add_test(check_h1_ainsworth_base_functions_derivatives_tri
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_direvatives_tri 
+  ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_derivatives_tri 
   -space h1tri -base ainsworth
   -log_no_color
 )
-add_test(check_hcurl_ainsworth_base_functions_direvatives_tri
+add_test(check_hcurl_ainsworth_base_functions_derivatives_tri
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_direvatives_tri -space hcurltri 
+  ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_derivatives_tri -space hcurltri 
   -base ainsworth
   -log_no_color
 )
-add_test(check_hcurl_demkowicz_base_functions_direvatives_tri
+add_test(check_hcurl_demkowicz_base_functions_derivatives_tri
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_direvatives_tri -space hcurltri 
+  ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_derivatives_tri -space hcurltri 
   -base demkowicz
   -log_no_color
 )
@@ -1488,12 +1488,12 @@ add_test(child_and_parent
 )
 
 build_test(
-  higher_direvatives
-  higher_direvatives.cpp)
+  higher_derivatives
+  higher_derivatives.cpp)
 
-add_test(higher_direvatives
+add_test(higher_derivatives
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
-  ${CMAKE_CURRENT_BINARY_DIR}/higher_direvatives
+  ${CMAKE_CURRENT_BINARY_DIR}/higher_derivatives
   -file_name rectangle_tri.h5m 
   -ksp_atol 1e-12 -ksp_rtol 1e-12 
   -ksp_type cg 

@@ -87,7 +87,7 @@ struct EntitiesFieldData {
    * particular field, since it all shape functions change with the order. BB
    * base is precalculated for every field, and when user push operator with
    * paricular field using BB base, pointers to shape funtions and
-   * BaseDirevatives of shape functions are set to particular location, once
+   * BaseDerivatives of shape functions are set to particular location, once
    * operator is executed, pointers are switch back to its oroginal position.
    *
    * getNSharedPtr(base) <=== getBBNSharedPtr(field_name);
@@ -138,9 +138,9 @@ private:
  */
 struct EntitiesFieldData::EntData {
 
-  enum BaseDirevatives {
-    ZeroDirevative = 0,
-    FirstDirevative,
+  enum BaseDerivatives {
+    ZeroDerivative = 0,
+    FirstDerivative,
     SecondDerivative,
     ThirdDerivative,
     ForthDerivative,
@@ -298,7 +298,7 @@ struct EntitiesFieldData::EntData {
    */
   virtual boost::shared_ptr<MatrixDouble> &
   getNSharedPtr(const FieldApproximationBase base,
-                const BaseDirevatives direvatie);
+                const BaseDerivatives direvatie);
 
   /**
    * Get shared pointer to base base functions
@@ -372,11 +372,11 @@ struct EntitiesFieldData::EntData {
    * @brief Get base function derivative
    * 
    * @param base  base  
-   * @param direvative derivative
+   * @param derivative derivative
    * @return MatrixDouble& 
    */
   inline MatrixDouble &getN(const FieldApproximationBase base,
-                                const BaseDirevatives direvative);
+                                const BaseDerivatives derivative);
 
   /**
    * @copydoc MoFEM::EntitiesFieldData::EntData::getDiffN
@@ -394,7 +394,7 @@ struct EntitiesFieldData::EntData {
    * @param derivative 
    * @return MatrixDouble& 
    */
-  inline MatrixDouble &getN(const BaseDirevatives derivative);
+  inline MatrixDouble &getN(const BaseDerivatives derivative);
 
   /// \brief get base functions at Gauss pts
   inline const VectorAdaptor getN(const FieldApproximationBase base,
@@ -1035,7 +1035,7 @@ protected:
 
   std::array<std::array<boost::shared_ptr<MatrixDouble>, LASTBASE>,
              LastDerivative>
-      baseFunctionsAndBaseDirevatives;
+      baseFunctionsAndBaseDerivatives;
 
   std::array<boost::shared_ptr<MatrixDouble>, LASTBASE> &N; ///< Base functions
   std::array<boost::shared_ptr<MatrixDouble>, LASTBASE>
@@ -1071,7 +1071,7 @@ protected:
   boost::shared_ptr<MatrixDouble> swapBaseDiffNPtr;
 };
 
-using BaseDirevatives = EntitiesFieldData::EntData::BaseDirevatives;
+using BaseDerivatives = EntitiesFieldData::EntData::BaseDerivatives;
 
 /** \brief Derived ata on single entity (This is passed as argument to
  * DataOperator::doWork) \ingroup mofem_forces_and_sources_user_data_operators
@@ -1091,7 +1091,7 @@ struct DerivedEntitiesFieldData::DerivedEntData
 
   boost::shared_ptr<MatrixDouble> &
   getNSharedPtr(const FieldApproximationBase base,
-                const BaseDirevatives direvative);
+                const BaseDerivatives derivative);
 
   boost::shared_ptr<MatrixDouble> &
   getNSharedPtr(const FieldApproximationBase base);
@@ -1273,7 +1273,7 @@ EntitiesFieldData::EntData::getDiffN(const FieldApproximationBase base) {
 
 MatrixDouble &
 EntitiesFieldData::EntData::getN(const FieldApproximationBase base,
-                                 const BaseDirevatives derivative) {
+                                 const BaseDerivatives derivative) {
 #ifndef NDEBUG
   if (!getNSharedPtr(base, derivative)) {
     MOFEM_LOG_C("SELF", Sev::error,
@@ -1293,7 +1293,7 @@ EntitiesFieldData::EntData::getDiffN(const std::string &field_name) {
 MatrixDouble &EntitiesFieldData::EntData::getDiffN() { return getDiffN(bAse); }
 
 MatrixDouble &
-EntitiesFieldData::EntData::getN(const BaseDirevatives derivative) {
+EntitiesFieldData::EntData::getN(const BaseDerivatives derivative) {
   return getN(bAse, derivative);
 }
 

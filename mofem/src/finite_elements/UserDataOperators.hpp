@@ -657,7 +657,7 @@ protected:
   VectorDouble dotVector;
 };
 
-/** \brief Get time direvatives of values at integration pts for tensor filed
+/** \brief Get time derivatives of values at integration pts for tensor filed
  * rank 1, i.e. vector field
  *
  * \ingroup mofem_forces_and_sources_user_data_operators
@@ -667,7 +667,7 @@ using OpCalculateVectorFieldValuesDot =
     OpCalculateVectorFieldValuesFromPetscVecImpl<Tensor_Dim,
                                                  PetscData::CTX_SET_X_T>;
 
-/** \brief Get second time direvatives of values at integration pts for tensor
+/** \brief Get second time derivatives of values at integration pts for tensor
  * filed rank 1, i.e. vector field
  *
  * \ingroup mofem_forces_and_sources_user_data_operators
@@ -1269,7 +1269,7 @@ MoFEMErrorCode OpCalculateScalarFieldHessian<Tensor_Dim>::doWork(
     if (nb_gauss_pts) {
       const int nb_base_functions = data.getN().size2();
 
-      auto &hessian_base = data.getN(BaseDirevatives::SecondDerivative);
+      auto &hessian_base = data.getN(BaseDerivatives::SecondDerivative);
 #ifndef NDEBUG
       if (hessian_base.size1() != nb_gauss_pts) {
         SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,

@@ -1,4 +1,4 @@
-/** \file BaseDirevativesDataOperators.hpp
+/** \file BaseDerivativesDataOperators.hpp
   * \brief Base derivatives data operators
 
 */
@@ -54,7 +54,7 @@ struct OpBaseDerivativesNext;
 
 template <> struct OpBaseDerivativesNext<1> : public OpBaseDerivativesBase {
 
-  OpBaseDerivativesNext(int direvative,
+  OpBaseDerivativesNext(int derivative,
                         boost::shared_ptr<MatrixDouble> base_mass_ptr,
                         boost::shared_ptr<EntitiesFieldData> data_l2,
                         const FieldApproximationBase b, const FieldSpace s,
@@ -64,7 +64,7 @@ template <> struct OpBaseDerivativesNext<1> : public OpBaseDerivativesBase {
                         EntitiesFieldData::EntData &data);
 
 private:
-  int calcBaseDirevative;
+  int calcBaseDerivative;
   MatrixDouble nF;
 
   template <int SPACE_DIM>

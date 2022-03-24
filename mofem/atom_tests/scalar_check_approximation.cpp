@@ -2,7 +2,7 @@
  * \file scalar_check_approximation.cpp
  * \example scalar_check_approximation.cpp
  *
- * Approximate polynomial in 2D and check direvatives
+ * Approximate polynomial in 2D and check derivatives
  *
  */
 
@@ -254,7 +254,7 @@ struct OpCheckValsDiffVals : public DomainEleOp {
 
         if (err_diff_val > eps)
           SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                   "Wrong direvatives from operator %4.3e", err_diff_val);
+                   "Wrong derivatives from operator %4.3e", err_diff_val);
 
         const double x = getCoordsAtGaussPts()(gg, 0);
         const double y = getCoordsAtGaussPts()(gg, 1);

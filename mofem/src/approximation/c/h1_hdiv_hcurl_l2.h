@@ -166,7 +166,7 @@ extern "C" {
  *
  * @param p polynomial order
  * @param N barycentric coordinates (shape functions) at integration points
- * @param diffN direvatives of barycentric coordinates, i.e. direvatives of
+ * @param diffN derivatives of barycentric coordinates, i.e. derivatives of
  * shape functions
  * @param L2N values of L2 base at integration points
  * @param diff_L2N dirvatives of base functions at integration points
@@ -185,7 +185,7 @@ PetscErrorCode L2_Ainsworth_ShapeFunctions_MBTRI(
  *
  * @param p polynomial order
  * @param N barycentric coordinates (shape functions) at integration points
- * @param diffN direvatives of barycentric coordinates, i.e. direvatives of
+ * @param diffN derivatives of barycentric coordinates, i.e. derivatives of
  * shape functions
  * @param L2N values of L2 base at integration points
  * @param diff_L2N dirvatives of base functions at integration points

@@ -622,7 +622,7 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
    * @param t_vec eiegn vectors matrix
    * @param f function
    * @param d_f directive of function
-   * @return auto direvatives, forth order tensor with minor simetries
+   * @return auto derivatives, forth order tensor with minor simetries
    */
   inline auto getDiffMat(Fun f, Fun d_f) {
 
@@ -661,7 +661,7 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
    * @param d_f derivative of function
    * @param dd_f second derivative of function
    * @param t_S second rank tensor S
-   * @return auto second direvatives, forth order tensor with minor simetries
+   * @return auto second derivatives, forth order tensor with minor simetries
    */
   template <typename T>
   inline auto getDiffDiffMat(Fun f, Fun d_f, Fun dd_f, T &t_S) {

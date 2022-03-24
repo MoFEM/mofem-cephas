@@ -983,7 +983,7 @@ PetscErrorCode ShapeJacMBTETQ(const double *diffN, const double *coords,
   bzero(Jac, sizeof(double) * 9);
   for (ii = 0; ii < 10; ii++)    // shape func.
     for (jj = 0; jj < 3; jj++)   // space
-      for (kk = 0; kk < 3; kk++) // direvative of shape func.
+      for (kk = 0; kk < 3; kk++) // derivative of shape func.
         Jac[jj * 3 + kk] += diffN[ii * 3 + kk] * coords[ii * 3 + jj];
   MoFEMFunctionReturnHot(0);
 }

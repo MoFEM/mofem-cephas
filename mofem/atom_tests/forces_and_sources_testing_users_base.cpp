@@ -121,7 +121,7 @@ private:
     shapeFun.resize(nb_gauss_pts, 4, false);
     CHKERR ShapeMBTET(&*shapeFun.data().begin(), &pts(0, 0), &pts(1, 0),
                       &pts(2, 0), nb_gauss_pts);
-    // direvatives of shape functions
+    // derivatives of shape functions
     double diff_shape_fun[12];
     CHKERR ShapeDiffMBTET(diff_shape_fun);
 

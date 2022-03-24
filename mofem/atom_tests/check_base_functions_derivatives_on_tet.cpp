@@ -182,15 +182,15 @@ int main(int argc, char *argv[]) {
     typedef tee_device<std::ostream, std::ofstream> TeeDevice;
     typedef stream<TeeDevice> TeeStream;
 
-    std::ofstream ofs("forces_and_sources_checking_direvatives.txt");
+    std::ofstream ofs("forces_and_sources_checking_derivatives.txt");
     TeeDevice my_tee(std::cout, ofs);
     TeeStream my_split(my_tee);
 
-    struct OpCheckingDirevatives
+    struct OpCheckingDerivatives
         : public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
       TeeStream &mySplit;
-      OpCheckingDirevatives(TeeStream &my_split)
+      OpCheckingDerivatives(TeeStream &my_split)
           : VolumeElementForcesAndSourcesCore::UserDataOperator(
                 "FIELD", UserDataOperator::OPROW),
             mySplit(my_split) {}
@@ -370,7 +370,7 @@ int main(int argc, char *argv[]) {
 
     MyFE tet_fe(m_field);
 
-    tet_fe.getOpPtrVector().push_back(new OpCheckingDirevatives(my_split));
+    tet_fe.getOpPtrVector().push_back(new OpCheckingDerivatives(my_split));
     CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TET_FE", tet_fe);
     
   }

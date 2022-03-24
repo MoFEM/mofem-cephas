@@ -135,7 +135,7 @@ using FTensor::operator>>;
 #include <UserDataOperators.hpp>
 #include <HODataOperators.hpp> // Manage HO order geometry
 #include <MeshProjectionDataOperators.hpp> // Operators for projections between bit ref levels
-#include <BaseDirevativesDataOperators.hpp> // Operators to calculate HO direcarives
+#include <BaseDerivativesDataOperators.hpp> // Operators to calculate HO direcarives
 #include <FormsIntegrators.hpp>
 #include <LinearFormsIntegrators.hpp>
 #include <BiLinearFormsIntegrators.hpp>

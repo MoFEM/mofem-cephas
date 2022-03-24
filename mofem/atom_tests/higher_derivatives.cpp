@@ -1,7 +1,7 @@
 /**
- * \example higher_direvatives.cpp
+ * \example higher_derivatives.cpp
  *
- * Testing higher direvatives of base functions
+ * Testing higher derivatives of base functions
  *
  */
 
@@ -50,7 +50,7 @@ auto fun = [](const double x, const double y, const double z) {
 };
 
 /**
- * @brief Function direvative
+ * @brief Function derivative
  *
  */
 auto diff_fun = [](const double x, const double y, const double z) {
@@ -59,7 +59,7 @@ auto diff_fun = [](const double x, const double y, const double z) {
 };
 
 /**
- * @brief Function second direvative
+ * @brief Function second derivative
  *
  */
 auto diff2_fun = [](const double x, const double y, const double z) {
@@ -172,7 +172,7 @@ struct AtomTest::OpError : public DomainEleOp {
       auto t_diff_grad = diff_fun(t_coords(0), t_coords(1), t_coords(2));
       t_diff_grad(i) -= t_grad_val(j) * t_inv_jac(j, i);
       error[1] += alpha * t_diff_grad(i) *
-                  t_diff_grad(i); // note push forward direvatives
+                  t_diff_grad(i); // note push forward derivatives
 
       FTensor::Tensor2<double, 2, 2> t_hessian_push;
       t_hessian_push(i, j) =
@@ -311,7 +311,7 @@ MoFEMErrorCode AtomTest::checkResults() {
   common_data_ptr->approxGradVals = boost::make_shared<MatrixDouble>();
   common_data_ptr->approxHessianVals = boost::make_shared<MatrixDouble>();
 
-  // create data strutires for evaluation of higher order direvatives
+  // create data strutires for evaluation of higher order derivatives
   auto base_mass = boost::make_shared<MatrixDouble>();
   auto data_l2 = boost::make_shared<EntitiesFieldData>(MBENTITYSET);
   auto jac_ptr = boost::make_shared<MatrixDouble>();
@@ -336,16 +336,16 @@ MoFEMErrorCode AtomTest::checkResults() {
       new OpCalculateScalarFieldGradient<2>(FIELD_NAME,
                                             common_data_ptr->approxGradVals));
 
-  // calculate mass matrix to project direvatives
+  // calculate mass matrix to project derivatives
   pipeline_mng->getOpDomainRhsPipeline().push_back(new OpBaseDerivativesMass<1>(
       base_mass, data_l2, AINSWORTH_LEGENDRE_BASE, L2));
-  // calculate second direvative of base functions, i.e. hessian
+  // calculate second derivative of base functions, i.e. hessian
   pipeline_mng->getOpDomainRhsPipeline().push_back(new OpBaseDerivativesNext<1>(
       2, base_mass, data_l2, AINSWORTH_LEGENDRE_BASE, H1));
-  // calculate third direvative
+  // calculate third derivative
   pipeline_mng->getOpDomainRhsPipeline().push_back(new OpBaseDerivativesNext<1>(
       3, base_mass, data_l2, AINSWORTH_LEGENDRE_BASE, H1));
-  // calculate forth direvative
+  // calculate forth derivative
   pipeline_mng->getOpDomainRhsPipeline().push_back(new OpBaseDerivativesNext<1>(
       4, base_mass, data_l2, AINSWORTH_LEGENDRE_BASE, H1));
 
@@ -354,7 +354,7 @@ MoFEMErrorCode AtomTest::checkResults() {
       new OpCalculateScalarFieldHessian<2>(FIELD_NAME,
                                            common_data_ptr->approxHessianVals));
 
-  //FIXME: Note third and forth direvative is calculated but not properly tested
+  //FIXME: Note third and forth derivative is calculated but not properly tested
 
   // push operator to evaluate errors
   pipeline_mng->getOpDomainRhsPipeline().push_back(

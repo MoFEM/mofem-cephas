@@ -2157,7 +2157,7 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_EdgeBaseFunctions_MBEDGE(
 
   if (diff_phi != NULL)
     SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
-            "Not implemented direvatives for edge for Hcurl Demkowicz base");
+            "Not implemented derivatives for edge for Hcurl Demkowicz base");
 
   int n0_idx = 0;
   int n1_idx = 1;

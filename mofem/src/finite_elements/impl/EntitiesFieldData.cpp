@@ -21,13 +21,13 @@ namespace MoFEM {
 
 EntitiesFieldData::EntData::EntData(const bool allocate_base_matrices)
     : sEnse(0), oRder(0), bAse(NOBASE),
-      N(baseFunctionsAndBaseDirevatives[ZeroDirevative]),
-      diffN(baseFunctionsAndBaseDirevatives[FirstDirevative]) {
+      N(baseFunctionsAndBaseDerivatives[ZeroDerivative]),
+      diffN(baseFunctionsAndBaseDerivatives[FirstDerivative]) {
   if (allocate_base_matrices) {
 
     for (auto d = 0; d != LastDerivative; ++d) {
       for (int b = 0; b != LASTBASE; ++b) {
-        baseFunctionsAndBaseDirevatives[d][b].reset(new MatrixDouble());
+        baseFunctionsAndBaseDerivatives[d][b].reset(new MatrixDouble());
         N[b].reset(new MatrixDouble());
         diffN[b].reset(new MatrixDouble());
       }
@@ -40,8 +40,8 @@ int EntitiesFieldData::EntData::getSense() const { return sEnse; }
 
 boost::shared_ptr<MatrixDouble> &
 EntitiesFieldData::EntData::getNSharedPtr(
-    const FieldApproximationBase base, const BaseDirevatives direvatie) {
-  return baseFunctionsAndBaseDirevatives[direvatie][base];
+    const FieldApproximationBase base, const BaseDerivatives direvatie) {
+  return baseFunctionsAndBaseDerivatives[direvatie][base];
 }
 
 boost::shared_ptr<MatrixDouble> &
@@ -222,11 +222,11 @@ int DerivedEntitiesFieldData::DerivedEntData::getSense() const {
 
 boost::shared_ptr<MatrixDouble> &
 DerivedEntitiesFieldData::DerivedEntData::getNSharedPtr(
-    const FieldApproximationBase base, const BaseDirevatives direvative) {
-  if (baseFunctionsAndBaseDirevatives[direvative][base])
-    return baseFunctionsAndBaseDirevatives[direvative][base];
+    const FieldApproximationBase base, const BaseDerivatives derivative) {
+  if (baseFunctionsAndBaseDerivatives[derivative][base])
+    return baseFunctionsAndBaseDerivatives[derivative][base];
   else
-    return entDataPtr->getNSharedPtr(base, direvative);
+    return entDataPtr->getNSharedPtr(base, derivative);
 }
 
 boost::shared_ptr<MatrixDouble> &

@@ -2,7 +2,7 @@
  * \file hcurl_check_approx_in_2d
  * \example hcurl_check_approx_in_2d.cpp
  *
- * Approximate polynomial in 2D and check direvatives
+ * Approximate polynomial in 2D and check derivatives
  *
  */
 

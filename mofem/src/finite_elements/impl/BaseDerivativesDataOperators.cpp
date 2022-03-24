@@ -1,4 +1,4 @@
-/** \file BaseDirevativesDataOperators.cpp
+/** \file BaseDerivativesDataOperators.cpp
 
 
 */
@@ -122,11 +122,11 @@ OpBaseDerivativesMass<1>::doWork(int side, EntityType type,
 }
 
 OpBaseDerivativesNext<1>::OpBaseDerivativesNext(
-    int direvative, boost::shared_ptr<MatrixDouble> base_mass_ptr,
+    int derivative, boost::shared_ptr<MatrixDouble> base_mass_ptr,
     boost::shared_ptr<EntitiesFieldData> data_l2,
     const FieldApproximationBase b, const FieldSpace s, int verb, Sev sev)
     : OpBaseDerivativesBase(base_mass_ptr, data_l2, b, s, verb, sev),
-      calcBaseDirevative(direvative) {}
+      calcBaseDerivative(derivative) {}
 
 template <int SPACE_DIM>
 MoFEMErrorCode
@@ -136,20 +136,20 @@ OpBaseDerivativesNext<1>::setBase(EntitiesFieldData::EntData &data,
 
   const int nb_gauss_pts = data.getN(base).size1();
   const int nb_approx_bases = data.getN(base).size2();
-  const int nb_direvatives = std::pow(SPACE_DIM, calcBaseDirevative - 1);
+  const int nb_derivatives = std::pow(SPACE_DIM, calcBaseDerivative - 1);
 
   const int nb_prj_bases = ent_data.getN().size2();
 
   if (!data.getNSharedPtr(base,
-                          static_cast<BaseDirevatives>(calcBaseDirevative))) {
-    data.getNSharedPtr(base, static_cast<BaseDirevatives>(calcBaseDirevative)) =
+                          static_cast<BaseDerivatives>(calcBaseDerivative))) {
+    data.getNSharedPtr(base, static_cast<BaseDerivatives>(calcBaseDerivative)) =
         boost::make_shared<MatrixDouble>();
   }
 
   auto &nex_diff_base = *(data.getNSharedPtr(
-      base, static_cast<BaseDirevatives>(calcBaseDirevative)));
-  const int next_nb_direvatives = pow(SPACE_DIM, calcBaseDirevative);
-  nex_diff_base.resize(nb_gauss_pts, nb_approx_bases * next_nb_direvatives);
+      base, static_cast<BaseDerivatives>(calcBaseDerivative)));
+  const int next_nb_derivatives = pow(SPACE_DIM, calcBaseDerivative);
+  nex_diff_base.resize(nb_gauss_pts, nb_approx_bases * next_nb_derivatives);
   nex_diff_base.clear();
 
   FTensor::Index<'i', SPACE_DIM> i;
@@ -159,7 +159,7 @@ OpBaseDerivativesNext<1>::setBase(EntitiesFieldData::EntData &data,
   for (int gg = 0; gg != nb_gauss_pts; ++gg) {
 
     auto ptr = &*nF.data().begin();
-    for (auto r = 0; r != nb_approx_bases * nb_direvatives; ++r) {
+    for (auto r = 0; r != nb_approx_bases * nb_derivatives; ++r) {
 
         auto l2_diff_base = ent_data.getFTensor1DiffN<SPACE_DIM>(base, gg, 0);
         for (int rr = 0; rr != nb_prj_bases; ++rr) {
@@ -190,8 +190,8 @@ OpBaseDerivativesNext<1>::doWork(int side, EntityType type,
 
     const auto space_dim = data.getDiffN(base).size2() / nb_approx_bases;
     auto &diff_approx_base = *(data.getNSharedPtr(
-        base, static_cast<BaseDirevatives>(calcBaseDirevative - 1)));
-    int nb_direvatives = pow(space_dim, calcBaseDirevative - 1);
+        base, static_cast<BaseDerivatives>(calcBaseDerivative - 1)));
+    int nb_derivatives = pow(space_dim, calcBaseDerivative - 1);
 
     auto &ent_data = dataL2->dataOnEntities[fe_type][0];
     const int nb_prj_bases = ent_data.getN().size2();
@@ -204,7 +204,7 @@ OpBaseDerivativesNext<1>::doWork(int side, EntityType type,
     auto &nN = *baseMassPtr;
 
 #ifndef NDEBUG
-    if (diff_approx_base.size2() != nb_approx_bases * nb_direvatives) {
+    if (diff_approx_base.size2() != nb_approx_bases * nb_derivatives) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "Number of deriveraives and basses do not match");
     }
@@ -219,7 +219,7 @@ OpBaseDerivativesNext<1>::doWork(int side, EntityType type,
 #endif
 
 
-    nF.resize(nb_approx_bases * nb_direvatives, nb_prj_bases, false);
+    nF.resize(nb_approx_bases * nb_derivatives, nb_prj_bases, false);
     nF.clear();
 
     auto t_w = getFTensor0IntegrationWeight();
@@ -231,7 +231,7 @@ OpBaseDerivativesNext<1>::doWork(int side, EntityType type,
       // take into account Jacobian
       const double alpha = t_w;
 
-      for (int r = 0; r != nb_approx_bases * nb_direvatives; ++r) {
+      for (int r = 0; r != nb_approx_bases * nb_derivatives; ++r) {
 
         // Rows are base functions
         auto t_base = ent_data.getFTensor0N(base, gg, 0);
@@ -246,7 +246,7 @@ OpBaseDerivativesNext<1>::doWork(int side, EntityType type,
       ++t_w; // move to another integration weight
     }
 
-    for (auto r = 0; r != nb_approx_bases * nb_direvatives; ++r) {
+    for (auto r = 0; r != nb_approx_bases * nb_derivatives; ++r) {
       ublas::matrix_row<MatrixDouble> mc(nF, r);
       cholesky_solve(nN, mc, ublas::lower());
     }

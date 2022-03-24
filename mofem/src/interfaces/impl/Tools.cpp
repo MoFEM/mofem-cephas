@@ -110,7 +110,7 @@ MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceFourNodeTet(
 
   // Build matrix and get coordinates of zero point
   // ii - global coordinates
-  // jj - local direvatives
+  // jj - local derivatives
   MatrixDouble3by3 a(3, 3);
   for (auto ii : {0, 1, 2}) {
     FTensor::Tensor1<FTensor::PackPtr<const double *, 1>, 4> t_diff(
@@ -165,7 +165,7 @@ MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceTriNodeTri(
 
   // Build matrix and get coordinates of zero point
   // ii - global coordinates
-  // jj - local direvatives
+  // jj - local derivatives
   FTensor::Tensor2<double, 2, 3> t_a;
   for (auto ii : {0, 1, 2}) {
     FTensor::Tensor1<FTensor::PackPtr<const double *, 1>, 3> t_diff(
