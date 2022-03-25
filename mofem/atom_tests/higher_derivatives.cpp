@@ -54,8 +54,9 @@ auto fun = [](const double x, const double y, const double z) {
  *
  */
 auto diff_fun = [](const double x, const double y, const double z) {
-  return FTensor::Tensor1<double, 2>{2 * x + y + 3 * pow(x, 2) + 4 * pow(x, 3),
-                                     2 * y + x + 3 * pow(y, 2) + 4 * pow(y, 3)};
+  return FTensor::Tensor1<double, SPACE_DIM>{
+      2 * x + y + 3 * pow(x, 2) + 4 * pow(x, 3),
+      2 * y + x + 3 * pow(y, 2) + 4 * pow(y, 3)};
 };
 
 /**
@@ -63,9 +64,10 @@ auto diff_fun = [](const double x, const double y, const double z) {
  *
  */
 auto diff2_fun = [](const double x, const double y, const double z) {
-  return FTensor::Tensor2<double, 2, 2>{2 + 6 * x + 12 * pow(x, 2), 1.,
+  return FTensor::Tensor2<double, SPACE_DIM, SPACE_DIM>{
+      2 + 6 * x + 12 * pow(x, 2), 1.,
 
-                                        1., 2 + 6 * y + 12 * pow(y, 2)};
+      1., 2 + 6 * y + 12 * pow(y, 2)};
 };
 
 /**
@@ -174,7 +176,7 @@ struct AtomTest::OpError : public DomainEleOp {
       error[1] += alpha * t_diff_grad(i) *
                   t_diff_grad(i); // note push forward derivatives
 
-      FTensor::Tensor2<double, 2, 2> t_hessian_push;
+      FTensor::Tensor2<double, SPACE_DIM, SPACE_DIM> t_hessian_push;
       t_hessian_push(i, j) =
           (t_hessian_val(k, l) * t_inv_jac(k, i)) * t_inv_jac(l, j);
 
@@ -331,10 +333,10 @@ MoFEMErrorCode AtomTest::checkResults() {
       new OpCalculateScalarFieldValues(FIELD_NAME,
                                        common_data_ptr->approxVals));
 
-  // calculate gradient at integration points                                       
+  // calculate gradient at integration points
   pipeline_mng->getOpDomainRhsPipeline().push_back(
-      new OpCalculateScalarFieldGradient<2>(FIELD_NAME,
-                                            common_data_ptr->approxGradVals));
+      new OpCalculateScalarFieldGradient<SPACE_DIM>(
+          FIELD_NAME, common_data_ptr->approxGradVals));
 
   // calculate mass matrix to project derivatives
   pipeline_mng->getOpDomainRhsPipeline().push_back(new OpBaseDerivativesMass<1>(
@@ -351,8 +353,8 @@ MoFEMErrorCode AtomTest::checkResults() {
 
   // calculate hessian at integration points
   pipeline_mng->getOpDomainRhsPipeline().push_back(
-      new OpCalculateScalarFieldHessian<2>(FIELD_NAME,
-                                           common_data_ptr->approxHessianVals));
+      new OpCalculateScalarFieldHessian<SPACE_DIM>(
+          FIELD_NAME, common_data_ptr->approxHessianVals));
 
   //FIXME: Note third and forth derivative is calculated but not properly tested
 
