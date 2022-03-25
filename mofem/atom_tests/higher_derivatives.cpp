@@ -26,6 +26,7 @@ using namespace MoFEM;
 static char help[] = "...\n\n";
 
 constexpr char FIELD_NAME[] = "U";
+constexpr int BASE_DIM = 1;
 constexpr int FIELD_DIM = 1;
 constexpr int SPACE_DIM = 2;
 
@@ -75,14 +76,14 @@ auto diff2_fun = [](const double x, const double y, const double z) {
  *
  */
 using OpDomainMass = FormsIntegrators<DomainEleOp>::Assembly<
-    PETSC>::BiLinearForm<GAUSS>::OpMass<1, FIELD_DIM>;
+    PETSC>::BiLinearForm<GAUSS>::OpMass<BASE_DIM, FIELD_DIM>;
 
 /**
  * @brief Operator to integrate the right hand side matrix for the problem
  *
  */
 using OpDomainSource = FormsIntegrators<DomainEleOp>::Assembly<
-    PETSC>::LinearForm<GAUSS>::OpSource<1, FIELD_DIM>;
+    PETSC>::LinearForm<GAUSS>::OpSource<BASE_DIM, FIELD_DIM>;
 
 struct AtomTest {
 
@@ -137,14 +138,14 @@ struct AtomTest::OpError : public DomainEleOp {
     auto t_w = getFTensor0IntegrationWeight(); // ger integration weights
     auto t_val = getFTensor0FromVec(*(
         commonDataPtr->approxVals)); // get function approximation at gauss pts
-    auto t_grad_val = getFTensor1FromMat<2>(
+    auto t_grad_val = getFTensor1FromMat<SPACE_DIM>(
         *(commonDataPtr
               ->approxGradVals)); // get gradient of approximation at gauss pts
-    auto t_hessian_val = getFTensor2FromMat<2, 2>(
+    auto t_hessian_val = getFTensor2FromMat<SPACE_DIM, SPACE_DIM>(
         *(commonDataPtr)->approxHessianVals); // get hessian of approximation
                                               // at integration pts
 
-    auto t_inv_jac = getFTensor2FromMat<2, 2>(
+    auto t_inv_jac = getFTensor2FromMat<SPACE_DIM, SPACE_DIM>(
         *(commonDataPtr->invJacPtr)); // get inverse of element jacobian
     auto t_coords = getFTensor1CoordsAtGaussPts(); // get coordinates of
                                                    // integration points
@@ -326,7 +327,7 @@ MoFEMErrorCode AtomTest::checkResults() {
       new OpCalculateHOJacForFace(jac_ptr));
   // calculate incerse of jacobian at integration points
   pipeline_mng->getOpDomainRhsPipeline().push_back(
-      new OpInvertMatrix<2>(jac_ptr, det_ptr, inv_jac_ptr));
+      new OpInvertMatrix<SPACE_DIM>(jac_ptr, det_ptr, inv_jac_ptr));
 
   // calculate value of function at integration points
   pipeline_mng->getOpDomainRhsPipeline().push_back(
@@ -339,17 +340,21 @@ MoFEMErrorCode AtomTest::checkResults() {
           FIELD_NAME, common_data_ptr->approxGradVals));
 
   // calculate mass matrix to project derivatives
-  pipeline_mng->getOpDomainRhsPipeline().push_back(new OpBaseDerivativesMass<1>(
-      base_mass, data_l2, AINSWORTH_LEGENDRE_BASE, L2));
+  pipeline_mng->getOpDomainRhsPipeline().push_back(
+      new OpBaseDerivativesMass<BASE_DIM>(base_mass, data_l2,
+                                          AINSWORTH_LEGENDRE_BASE, L2));
   // calculate second derivative of base functions, i.e. hessian
-  pipeline_mng->getOpDomainRhsPipeline().push_back(new OpBaseDerivativesNext<1>(
-      2, base_mass, data_l2, AINSWORTH_LEGENDRE_BASE, H1));
+  pipeline_mng->getOpDomainRhsPipeline().push_back(
+      new OpBaseDerivativesNext<BASE_DIM>(2, base_mass, data_l2,
+                                          AINSWORTH_LEGENDRE_BASE, H1));
   // calculate third derivative
-  pipeline_mng->getOpDomainRhsPipeline().push_back(new OpBaseDerivativesNext<1>(
-      3, base_mass, data_l2, AINSWORTH_LEGENDRE_BASE, H1));
+  pipeline_mng->getOpDomainRhsPipeline().push_back(
+      new OpBaseDerivativesNext<BASE_DIM>(3, base_mass, data_l2,
+                                          AINSWORTH_LEGENDRE_BASE, H1));
   // calculate forth derivative
-  pipeline_mng->getOpDomainRhsPipeline().push_back(new OpBaseDerivativesNext<1>(
-      4, base_mass, data_l2, AINSWORTH_LEGENDRE_BASE, H1));
+  pipeline_mng->getOpDomainRhsPipeline().push_back(
+      new OpBaseDerivativesNext<BASE_DIM>(4, base_mass, data_l2,
+                                          AINSWORTH_LEGENDRE_BASE, H1));
 
   // calculate hessian at integration points
   pipeline_mng->getOpDomainRhsPipeline().push_back(
