@@ -1321,7 +1321,7 @@ MoFEMErrorCode OpCalculateScalarFieldHessian<Tensor_Dim>::doWork(
 
 /**}*/
 
-/** \name Gradients of tensor fields at integration points */
+/** \name Gradients and hessian of tensor fields at integration points */
 
 /**@{*/
 
@@ -1667,6 +1667,130 @@ struct OpCalculateTensor2SymmetricFieldGradient
             Tensor_Dim0, Tensor_Dim1, double, ublas::row_major,
             DoubleAllocator>(field_name, data_ptr, zero_type) {}
 };
+
+template <int Tensor_Dim0, int Tensor_Dim1>
+struct OpCalculateVectorFieldHessian
+    : public OpCalculateTensor2FieldValues_General<
+          Tensor_Dim0, Tensor_Dim1, double, ublas::row_major, DoubleAllocator> {
+
+  using OpCalculateTensor2FieldValues_General<
+      Tensor_Dim0, Tensor_Dim1, double, ublas::row_major,
+      DoubleAllocator>::OpCalculateTensor2FieldValues_General;
+
+  /**
+   * \brief calculate values of vector field at integration points
+   * @param  side side entity number
+   * @param  type side entity type
+   * @param  data entity data
+   * @return      error code
+   */
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        EntitiesFieldData::EntData &data);
+};
+
+/**
+ * \brief Member function specialization calculating vector field gradients for
+ * tenor field rank 2
+ *
+ */
+template <int Tensor_Dim0, int Tensor_Dim1>
+MoFEMErrorCode OpCalculateVectorFieldHessian<Tensor_Dim0, Tensor_Dim1>::doWork(
+    int side, EntityType type, EntitiesFieldData::EntData &data) {
+  MoFEMFunctionBegin;
+  if (!this->dataPtr)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Data pointer not allocated");
+
+  const size_t nb_gauss_pts = this->getGaussPts().size2();
+  auto &mat = *this->dataPtr;
+  if (type == this->zeroType) {
+    mat.resize(Tensor_Dim0 * Tensor_Dim1 * Tensor_Dim1, nb_gauss_pts, false);
+    mat.clear();
+  }
+
+  if (nb_gauss_pts) {
+    const size_t nb_dofs = data.getFieldData().size();
+
+    if (nb_dofs) {
+
+      if (this->dataVec.use_count()) {
+        this->dotVector.resize(nb_dofs, false);
+        const double *array;
+        CHKERR VecGetArrayRead(this->dataVec, &array);
+        const auto &local_indices = data.getLocalIndices();
+        for (int i = 0; i != local_indices.size(); ++i)
+          if (local_indices[i] != -1)
+            this->dotVector[i] = array[local_indices[i]];
+          else
+            this->dotVector[i] = 0;
+        CHKERR VecRestoreArrayRead(this->dataVec, &array);
+        data.getFieldData().swap(this->dotVector);
+      }
+
+      const int nb_base_functions = data.getN().size2();
+
+      auto &hessian_base = data.getN(BaseDerivatives::SecondDerivative);
+#ifndef NDEBUG
+      if (hessian_base.size1() != nb_gauss_pts) {
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "Wrong number of integration pts (%d != %d)",
+                 hessian_base.size1(), nb_gauss_pts);
+      }
+      if (hessian_base.size2() !=
+          nb_base_functions * Tensor_Dim1 * Tensor_Dim1) {
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "Wrong number of base functions (%d != %d)",
+                 hessian_base.size2() / (Tensor_Dim1 * Tensor_Dim1),
+                 nb_base_functions);
+      }
+      if (hessian_base.size2() < nb_dofs * Tensor_Dim1 * Tensor_Dim1) {
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "Wrong number of base functions (%d < %d)",
+                 hessian_base.size2(), nb_dofs * Tensor_Dim1 * Tensor_Dim1);
+      }
+#endif
+
+      auto t_diff2_base_function = getFTensor2FromPtr<Tensor_Dim1, Tensor_Dim1>(
+          &*hessian_base.data().begin());
+
+      auto t_hessian_at_gauss_pts =
+          getFTensor3FromMat<Tensor_Dim0, Tensor_Dim1, Tensor_Dim1>(mat);
+
+      FTensor::Index<'I', Tensor_Dim0> I;
+      FTensor::Index<'J', Tensor_Dim1> J;
+      FTensor::Index<'K', Tensor_Dim1> K;
+
+      int size = nb_dofs / Tensor_Dim0;
+#ifndef NDEBUG
+      if (nb_dofs % Tensor_Dim0) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Data inconsistency");
+      }
+#endif
+
+      for (int gg = 0; gg < nb_gauss_pts; ++gg) {
+        auto field_data = data.getFTensor1FieldData<Tensor_Dim0>();
+        int bb = 0;
+        for (; bb < size; ++bb) {
+          t_hessian_at_gauss_pts(I, J, K) +=
+              field_data(I) * t_diff2_base_function(J, K);
+          ++field_data;
+          ++t_diff2_base_function;
+        }
+        // Number of dofs can be smaller than number of Tensor_Dim0 x base
+        // functions
+        for (; bb != nb_base_functions; ++bb)
+          ++t_diff2_base_function;
+        ++t_hessian_at_gauss_pts;
+      }
+
+      if (this->dataVec.use_count()) {
+        data.getFieldData().swap(this->dotVector);
+      }
+    }
+  }
+  MoFEMFunctionReturn(0);
+}
 
 /**@}*/
 

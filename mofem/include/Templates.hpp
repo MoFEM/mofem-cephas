@@ -694,13 +694,13 @@ template <int Tensor_Dim0, int Tensor_Dim1, int Tensor_Dim2, int S = 1, class T,
           class L, class A>
 static inline FTensor::Tensor3<FTensor::PackPtr<T *, 1>, Tensor_Dim0,
                                Tensor_Dim1, Tensor_Dim2>
-getFTensor4FromMat(ublas::matrix<T, L, A> &data) {
+getFTensor3FromMat(ublas::matrix<T, L, A> &data) {
   static_assert(!std::is_same<T, T>::value,
                 "Such getFTensor3FromMat specialisation is not implemented");
 }
 
 template <int Tensor_Dim0, int Tensor_Dim1, int Tensor_Dim2, int S = 1>
-static inline auto getFTensor4FromMat(MatrixDouble &data) {
+static inline auto getFTensor3FromMat(MatrixDouble &data) {
   return GetFTensor3FromMatImpl<Tensor_Dim0, Tensor_Dim1, Tensor_Dim2, S,
                                 double, ublas::row_major,
                                 DoubleAllocator>::get(data);
