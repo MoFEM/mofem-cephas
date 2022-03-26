@@ -156,12 +156,13 @@ struct GetFTensor1FromMatImpl {};
 template <int S, class T, class A>
 struct GetFTensor1FromMatImpl<3, S, T, ublas::row_major, A> {
   static inline auto get(ublas::matrix<T, ublas::row_major, A> &data) {
+#ifndef NDDEBUG
     if (data.size1() != 3)
       THROW_MESSAGE(
           "getFTensor1FromMat<3>: wrong size of data matrix, number of "
           "rows should be 3 but is %d" +
           boost::lexical_cast<std::string>(data.size1()));
-
+#endif
     return FTensor::Tensor1<FTensor::PackPtr<double *, S>, 3>(
         &data(0, 0), &data(1, 0), &data(2, 0));
   }
@@ -170,11 +171,13 @@ struct GetFTensor1FromMatImpl<3, S, T, ublas::row_major, A> {
 template <int S, class T, class A>
 struct GetFTensor1FromMatImpl<2, S, T, ublas::row_major, A> {
   static inline auto get(ublas::matrix<T, ublas::row_major, A> &data) {
+#ifndef NDDEBUG
     if (data.size1() != 2)
       THROW_MESSAGE(
           "getFTensor1FromMat<2>: wrong size of data matrix, number of "
           "rows should be 2 but is %d" +
           boost::lexical_cast<std::string>(data.size1()));
+#endif
     return FTensor::Tensor1<FTensor::PackPtr<double *, S>, 2>(&data(0, 0),
                                                               &data(1, 0));
   }
@@ -183,11 +186,13 @@ struct GetFTensor1FromMatImpl<2, S, T, ublas::row_major, A> {
 template <int S, class T, class A>
 struct GetFTensor1FromMatImpl<1, S, T, ublas::row_major, A> {
   static inline auto get(ublas::matrix<T, ublas::row_major, A> &data) {
+#ifndef NDEBUG
     if (data.size1() != 1)
       THROW_MESSAGE(
           "getFTensor1FromMat<1>: wrong size of data matrix, number of "
           "rows should be 1 but is %d" +
           boost::lexical_cast<std::string>(data.size1()));
+#endif
     return FTensor::Tensor1<FTensor::PackPtr<double *, S>, 1>(&data(0, 0));
   }
 };
@@ -227,11 +232,12 @@ getFTensor2FromMat(ublas::matrix<T, L, A> &data) {
 template <>
 inline FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 3>
 getFTensor2FromMat(MatrixDouble &data) {
+#ifndef NDEBUG
   if (data.size1() != 9)
     THROW_MESSAGE("getFTensor2FromMat<3,3>: wrong size of data matrix; numer "
                   "of rows should be 9 but is " +
                   boost::lexical_cast<std::string>(data.size1()));
-
+#endif
   return FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 3>(
       &data(0, 0), &data(1, 0), &data(2, 0), &data(3, 0), &data(4, 0),
       &data(5, 0), &data(6, 0), &data(7, 0), &data(8, 0));
@@ -243,11 +249,12 @@ getFTensor2FromMat(MatrixDouble &data) {
 template <>
 inline FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 2>
 getFTensor2FromMat(MatrixDouble &data) {
+#ifndef NDEBUG
   if (data.size1() != 6)
     THROW_MESSAGE("getFTensor2FromMat<3,3>: wrong size of data matrix, numer "
                   "of rows should be 6 but is " +
                   boost::lexical_cast<std::string>(data.size1()));
-
+#endif
   return FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 2>(
       &data(0, 0), &data(1, 0), &data(2, 0), &data(3, 0), &data(4, 0),
       &data(5, 0));
@@ -259,11 +266,12 @@ getFTensor2FromMat(MatrixDouble &data) {
 template <>
 inline FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 2, 2>
 getFTensor2FromMat(MatrixDouble &data) {
+#ifndef NDEBUG
   if (data.size1() != 4)
     THROW_MESSAGE("getFTensor2FromMat<2,2>: wrong size of data matrix, numer "
                   "of rows should be 4 but is " +
                   boost::lexical_cast<std::string>(data.size1()));
-
+#endif
   return FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 2, 2>(
       &data(0, 0), &data(1, 0), &data(2, 0), &data(3, 0));
 }
@@ -285,12 +293,13 @@ struct GetFTensor2SymmetricFromMatImpl {};
 template <int S, class T, class L, class A>
 struct GetFTensor2SymmetricFromMatImpl<3, S, T, L, A> {
   static inline auto get(ublas::matrix<T, L, A> &data) {
+#ifndef NDEBUG
     if (data.size1() != 6)
       THROW_MESSAGE(
           "getFTensor2SymmetricFromMat<3>: wrong size of data matrix, numer "
           "of rows should be 6 but is " +
           boost::lexical_cast<std::string>(data.size1()));
-
+#endif
     return FTensor::Tensor2_symmetric<FTensor::PackPtr<T *, S>, 3>(
         &data(0, 0), &data(1, 0), &data(2, 0), &data(3, 0), &data(4, 0),
         &data(5, 0));
@@ -300,11 +309,13 @@ struct GetFTensor2SymmetricFromMatImpl<3, S, T, L, A> {
 template <int S, class T, class L, class A>
 struct GetFTensor2SymmetricFromMatImpl<2, S, T, L, A> {
   static inline auto get(ublas::matrix<T, L, A> &data) {
+#ifndef NDEBUG
     if (data.size1() != 3)
       THROW_MESSAGE(
           "getFTensor2SymmetricFromMat<2>: wrong size of data matrix, numer "
           "of rows should be 3 but is " +
           boost::lexical_cast<std::string>(data.size1()));
+#endif
     return FTensor::Tensor2_symmetric<FTensor::PackPtr<T *, S>, 2>(
         &data(0, 0), &data(1, 0), &data(2, 0));
   }
@@ -330,12 +341,13 @@ struct GetFTensor4DdgFromMatImpl {};
 template <int S, class T, class A>
 struct GetFTensor4DdgFromMatImpl<1, 1, S, T, ublas::row_major, A> {
   static inline auto get(ublas::matrix<T, ublas::row_major, A> &data) {
+#ifndef NDEBUG
     if (data.size1() != 1)
       THROW_MESSAGE(
           "getFTensor4DdgFromMat<1, 1>: wrong size of data matrix, number "
           "of rows should be 1 but is " +
           boost::lexical_cast<std::string>(data.size1()));
-
+#endif
     return FTensor::Ddg<FTensor::PackPtr<double *, S>, 1, 1>{&data(0, 0)};
   }
 };
@@ -343,12 +355,14 @@ struct GetFTensor4DdgFromMatImpl<1, 1, S, T, ublas::row_major, A> {
 template <int S, class T, class A>
 struct GetFTensor4DdgFromMatImpl<2, 2, S, T, ublas::row_major, A> {
   static inline auto get(ublas::matrix<T, ublas::row_major, A> &data) {
+#ifndef NDEBUG
     if (data.size1() != 9) {
       THROW_MESSAGE(
           "getFTensor4DdgFromMat<2, 2>: wrong size of data matrix, number "
           "of rows should be 9 but is " +
           boost::lexical_cast<std::string>(data.size1()));
     }
+#endif
     return FTensor::Ddg<FTensor::PackPtr<double *, S>, 2, 2>{
         &data(0, 0), &data(1, 0), &data(2, 0), &data(3, 0), &data(4, 0),
         &data(5, 0), &data(6, 0), &data(7, 0), &data(8, 0)};
@@ -358,6 +372,7 @@ struct GetFTensor4DdgFromMatImpl<2, 2, S, T, ublas::row_major, A> {
 template <int S, class T, class A>
 struct GetFTensor4DdgFromMatImpl<3, 3, S, T, ublas::row_major, A> {
   static inline auto get(ublas::matrix<T, ublas::row_major, A> &data) {
+#ifndef NDEBUG
     if (data.size1() != 36) {
       cerr << data.size1() << endl;
       THROW_MESSAGE(
@@ -365,6 +380,7 @@ struct GetFTensor4DdgFromMatImpl<3, 3, S, T, ublas::row_major, A> {
           "of rows should be 36 but is " +
           boost::lexical_cast<std::string>(data.size1()));
     }
+#endif
     return FTensor::Ddg<FTensor::PackPtr<double *, S>, 3, 3>{
         &data(0, 0),  &data(1, 0),  &data(2, 0),  &data(3, 0),  &data(4, 0),
         &data(5, 0),  &data(6, 0),  &data(7, 0),  &data(8, 0),  &data(9, 0),
@@ -410,12 +426,13 @@ struct GetFTensor3DgFromMatImpl {};
 template <int S, class T, class A>
 struct GetFTensor3DgFromMatImpl<1, 1, S, T, ublas::row_major, A> {
   static inline auto get(ublas::matrix<T, ublas::row_major, A> &data) {
+#ifndef NDEBUG
     if (data.size1() != 1)
       THROW_MESSAGE(
           "getFTensor3DgFromMat<1, 1>: wrong size of data matrix, number "
           "of rows should be 1 but is " +
           boost::lexical_cast<std::string>(data.size1()));
-
+#endif
     return FTensor::Dg<FTensor::PackPtr<double *, S>, 1, 1>{&data(0, 0)};
   }
 };
@@ -423,12 +440,14 @@ struct GetFTensor3DgFromMatImpl<1, 1, S, T, ublas::row_major, A> {
 template <int S, class T, class A>
 struct GetFTensor3DgFromMatImpl<2, 2, S, T, ublas::row_major, A> {
   static inline auto get(ublas::matrix<T, ublas::row_major, A> &data) {
+#ifndef NDEBUG
     if (data.size1() != 6) {
       THROW_MESSAGE(
           "getFTensor4DdgFromMat<2, 2>: wrong size of data matrix, number "
           "of rows should be 6 but is " +
           boost::lexical_cast<std::string>(data.size1()));
     }
+#endif
     return FTensor::Dg<FTensor::PackPtr<double *, S>, 2, 2>{
         &data(0, 0), &data(1, 0), &data(2, 0),
         &data(3, 0), &data(4, 0), &data(5, 0)};
@@ -438,6 +457,7 @@ struct GetFTensor3DgFromMatImpl<2, 2, S, T, ublas::row_major, A> {
 template <int S, class T, class A>
 struct GetFTensor3DgFromMatImpl<3, 3, S, T, ublas::row_major, A> {
   static inline auto get(ublas::matrix<T, ublas::row_major, A> &data) {
+#ifndef NDEBUG
     if (data.size1() != 18) {
       cerr << data.size1() << endl;
       THROW_MESSAGE(
@@ -445,6 +465,7 @@ struct GetFTensor3DgFromMatImpl<3, 3, S, T, ublas::row_major, A> {
           "of rows should be 18 but is " +
           boost::lexical_cast<std::string>(data.size1()));
     }
+#endif
     return FTensor::Dg<FTensor::PackPtr<double *, S>, 3, 3>{
         &data(0, 0),  &data(1, 0),  &data(2, 0),  &data(3, 0),  &data(4, 0),
         &data(5, 0),  &data(6, 0),  &data(7, 0),  &data(8, 0),  &data(9, 0),
@@ -486,12 +507,13 @@ struct GetFTensor4FromMatImpl {};
 template <int S, class T, class A>
 struct GetFTensor4FromMatImpl<1, 1, 1, 1, S, T, ublas::row_major, A> {
   static inline auto get(ublas::matrix<T, ublas::row_major, A> &data) {
+#ifndef NDEBUG
     if (data.size1() != 1)
       THROW_MESSAGE(
           "getFTensor4FromMat<1, 1, 1, 1>: wrong size of data matrix, number "
           "of rows should be 1 but is " +
           boost::lexical_cast<std::string>(data.size1()));
-
+#endif
     return FTensor::Tensor4<FTensor::PackPtr<double *, S>, 1, 1, 1, 1>{
         &data(0, 0)};
   }
@@ -500,12 +522,14 @@ struct GetFTensor4FromMatImpl<1, 1, 1, 1, S, T, ublas::row_major, A> {
 template <int S, class T, class A>
 struct GetFTensor4FromMatImpl<2, 2, 2, 2, S, T, ublas::row_major, A> {
   static inline auto get(ublas::matrix<T, ublas::row_major, A> &data) {
+#ifndef NDEBUG
     if (data.size1() != 16) {
       THROW_MESSAGE(
           "getFTensor4FromMat<2, 2, 2, 2>: wrong size of data matrix, number "
           "of rows should be 16 but is " +
           boost::lexical_cast<std::string>(data.size1()));
     }
+#endif
     return FTensor::Tensor4<FTensor::PackPtr<double *, S>, 2, 2, 2, 2>{
         &data(0, 0),  &data(1, 0),  &data(2, 0),  &data(3, 0),
         &data(4, 0),  &data(5, 0),  &data(6, 0),  &data(7, 0),
@@ -517,6 +541,7 @@ struct GetFTensor4FromMatImpl<2, 2, 2, 2, S, T, ublas::row_major, A> {
 template <int S, class T, class A>
 struct GetFTensor4FromMatImpl<3, 3, 3, 3, S, T, ublas::row_major, A> {
   static inline auto get(ublas::matrix<T, ublas::row_major, A> &data) {
+#ifndef NDEBUG
     if (data.size1() != 81) {
       cerr << data.size1() << endl;
       THROW_MESSAGE(
@@ -524,6 +549,7 @@ struct GetFTensor4FromMatImpl<3, 3, 3, 3, S, T, ublas::row_major, A> {
           "of rows should be 81 but is " +
           boost::lexical_cast<std::string>(data.size1()));
     }
+#endif
     return FTensor::Tensor4<FTensor::PackPtr<double *, S>, 3, 3, 3, 3>{
         &data(0, 0),  &data(1, 0),  &data(2, 0),  &data(3, 0),  &data(4, 0),
         &data(5, 0),  &data(6, 0),  &data(7, 0),  &data(8, 0),  &data(9, 0),
@@ -573,6 +599,110 @@ template <int Tensor_Dim0, int Tensor_Dim1, int Tensor_Dim2, int Tensor_Dim3,
 static inline auto getFTensor4FromMat(MatrixDouble &data) {
   return GetFTensor4FromMatImpl<Tensor_Dim0, Tensor_Dim1, Tensor_Dim2,
                                 Tensor_Dim3, S, double, ublas::row_major,
+                                DoubleAllocator>::get(data);
+}
+
+template <int Tensor_Dim0, int Tensor_Dim1, int Tensor_Dim2, int S, class T,
+          class L, class A>
+struct GetFTensor3FromMatImpl {};
+
+template <int S, class T, class A>
+struct GetFTensor3FromMatImpl<1, 1, 1, S, T, ublas::row_major, A> {
+  static inline auto get(ublas::matrix<T, ublas::row_major, A> &data) {
+#ifndef NDEBUG
+    if (data.size1() != 1)
+      THROW_MESSAGE(
+          "getFTensor3FromMat<1, 1, 1>: wrong size of data matrix, number "
+          "of rows should be 1 but is " +
+          boost::lexical_cast<std::string>(data.size1()));
+#endif
+    return FTensor::Tensor3<FTensor::PackPtr<double *, S>, 1, 1, 1>{
+        &data(0, 0)};
+  }
+};
+
+template <int S, class T, class A>
+struct GetFTensor3FromMatImpl<2, 2, 2, S, T, ublas::row_major, A> {
+  static inline auto get(ublas::matrix<T, ublas::row_major, A> &data) {
+#ifndef NDEBUG
+    if (data.size1() != 8)
+      THROW_MESSAGE(
+          "getFTensor3FromMat<1, 1, 1>: wrong size of data matrix, number "
+          "of rows should be 8 but is " +
+          boost::lexical_cast<std::string>(data.size1()));
+#endif
+    return FTensor::Tensor3<FTensor::PackPtr<double *, S>, 2, 2, 2>{
+        &data(0, 0), &data(1, 0), &data(2, 0), &data(3, 0), &data(4, 0),
+        &data(5, 0), &data(6, 0), &data(7, 0)
+
+    };
+  }
+};
+
+template <int S, class T, class A>
+struct GetFTensor3FromMatImpl<3, 2, 2, S, T, ublas::row_major, A> {
+  static inline auto get(ublas::matrix<T, ublas::row_major, A> &data) {
+#ifndef NDEBUG
+    if (data.size1() != 12)
+      THROW_MESSAGE(
+          "getFTensor3FromMat<1, 1, 1>: wrong size of data matrix, number "
+          "of rows should be 8 but is " +
+          boost::lexical_cast<std::string>(data.size1()));
+#endif
+    return FTensor::Tensor3<FTensor::PackPtr<double *, S>, 3, 2, 2>{
+        &data(0, 0), &data(1, 0), &data(2, 0),  &data(3, 0),
+        &data(4, 0), &data(5, 0), &data(6, 0),  &data(7, 0),
+        &data(8, 0), &data(9, 0), &data(10, 0), &data(11, 0)};
+  }
+};
+
+template <int S, class T, class A>
+struct GetFTensor3FromMatImpl<3, 3, 3, S, T, ublas::row_major, A> {
+  static inline auto get(ublas::matrix<T, ublas::row_major, A> &data) {
+#ifndef NDEBUG
+    if (data.size1() != 26)
+      THROW_MESSAGE(
+          "getFTensor3FromMat<1, 1, 1>: wrong size of data matrix, number "
+          "of rows should be 8 but is " +
+          boost::lexical_cast<std::string>(data.size1()));
+#endif
+    return FTensor::Tensor3<FTensor::PackPtr<double *, S>, 3, 3, 3>{
+        &data(0, 0),  &data(1, 0),  &data(2, 0),  &data(3, 0),  &data(4, 0),
+        &data(5, 0),  &data(6, 0),  &data(7, 0),  &data(8, 0),  &data(9, 0),
+        &data(10, 0), &data(11, 0), &data(12, 0), &data(13, 0), &data(14, 0),
+        &data(15, 0), &data(16, 0), &data(17, 0), &data(18, 0), &data(19, 0),
+        &data(20, 0), &data(21, 0), &data(22, 0), &data(23, 0), &data(24, 0),
+        &data(25, 0), &data(26, 0)};
+  }
+};
+
+/**
+ * @brief Get tensor rank 3 (non symmetries) form data matrix
+ *
+ * @tparam Tensor_Dim0 dimension of frirst index
+ * @tparam Tensor_Dim1 dimension of second index
+ * @tparam Tensor_Dim2 dimension of third index
+ * @tparam S shift size
+ * @tparam T the type of object stored
+ * @tparam L the storage organization
+ * @tparam A 	the type of Storage array
+ * @param data data container
+ * @return FTensor::Tensor3<FTensor::PackPtr<T *, 1>, Tensor_Dim0,
+                               Tensor_Dim1, Tensor_Dim2>
+ */
+template <int Tensor_Dim0, int Tensor_Dim1, int Tensor_Dim2, int S = 1, class T,
+          class L, class A>
+static inline FTensor::Tensor3<FTensor::PackPtr<T *, 1>, Tensor_Dim0,
+                               Tensor_Dim1, Tensor_Dim2>
+getFTensor4FromMat(ublas::matrix<T, L, A> &data) {
+  static_assert(!std::is_same<T, T>::value,
+                "Such getFTensor3FromMat specialisation is not implemented");
+}
+
+template <int Tensor_Dim0, int Tensor_Dim1, int Tensor_Dim2, int S = 1>
+static inline auto getFTensor4FromMat(MatrixDouble &data) {
+  return GetFTensor3FromMatImpl<Tensor_Dim0, Tensor_Dim1, Tensor_Dim2, S,
+                                double, ublas::row_major,
                                 DoubleAllocator>::get(data);
 }
 
@@ -1279,13 +1409,13 @@ auto dimension_from_handle = [](const EntityHandle h) {
 
 /**
  * @brief Insert ranges
- * 
- * @tparam I 
- * @param f 
- * @param s 
- * @param tester 
- * @param inserter 
- * @return auto 
+ *
+ * @tparam I
+ * @param f
+ * @param s
+ * @param tester
+ * @param inserter
+ * @return auto
  */
 template <typename I>
 auto rangeInserter(const I f, const I s, boost::function<bool(I it)> tester,
@@ -1316,7 +1446,7 @@ auto rangeInserter(const I f, const I s, boost::function<bool(I it)> tester,
       ++first;
     }
 
-    MoFEMFunctionReturn(0);
+  MoFEMFunctionReturn(0);
 }
 
 // template <typename T, typename I>
