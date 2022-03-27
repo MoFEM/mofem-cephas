@@ -696,7 +696,7 @@ EntitiesFieldData::EntData::getFTensor2N<3, 3>(
 boost::shared_ptr<MatrixInt> &
 EntitiesFieldData::EntData::getBBAlphaIndicesSharedPtr(
     const std::string &field_name) {
-  return bbAlphaInduces[field_name];
+  return bbAlphaIndices[field_name];
 }
 
 boost::shared_ptr<MatrixDouble> &
@@ -734,7 +734,7 @@ EntitiesFieldData::EntData::getBBDiffNSharedPtr(
 
 std::map<std::string, boost::shared_ptr<MatrixInt>> &
 EntitiesFieldData::EntData::getBBAlphaIndicesMap() {
-  return bbAlphaInduces;
+  return bbAlphaIndices;
 }
 
 std::map<std::string, boost::shared_ptr<MatrixDouble>> &
@@ -750,7 +750,7 @@ EntitiesFieldData::EntData::getBBDiffNMap() {
 boost::shared_ptr<MatrixInt> &
 EntitiesFieldData::EntData::getBBAlphaIndicesByOrderSharedPtr(
     const size_t o) {
-  return bbAlphaInducesByOrder[o];
+  return bbAlphaIndicesByOrder[o];
 }
 
 boost::shared_ptr<MatrixDouble> &
@@ -758,26 +758,15 @@ EntitiesFieldData::EntData::getBBNByOrderSharedPtr(const size_t o) {
   return bbNByOrder[o];
 }
 
-const boost::shared_ptr<MatrixDouble> &
-EntitiesFieldData::EntData::getBBNByOrderSharedPtr(const size_t o) const {
-   return bbNByOrder[o]; 
-}
-
 boost::shared_ptr<MatrixDouble> &
 EntitiesFieldData::EntData::getBBDiffNByOrderSharedPtr(const size_t o) {
-  return bbDiffNByOrder[o];
-}
-
-const boost::shared_ptr<MatrixDouble> &
-EntitiesFieldData::EntData::getBBDiffNByOrderSharedPtr(
-    const size_t o) const {
   return bbDiffNByOrder[o];
 }
 
 std::array<boost::shared_ptr<MatrixInt>,
            EntitiesFieldData::EntData::MaxBernsteinBezierOrder> &
 EntitiesFieldData::EntData::getBBAlphaIndicesByOrderArray() {
-  return bbAlphaInducesByOrder;
+  return bbAlphaIndicesByOrder;
 }
 
 std::array<boost::shared_ptr<MatrixDouble>,

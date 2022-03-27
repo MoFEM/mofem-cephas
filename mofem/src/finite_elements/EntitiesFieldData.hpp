@@ -986,25 +986,48 @@ struct EntitiesFieldData::EntData {
   virtual std::map<std::string, boost::shared_ptr<MatrixInt>> &
   getBBAlphaIndicesMap();
 
+  /**
+   * @brief get hash map of base function for BB base, key is a field name
+   * 
+   * @return std::map<std::string, boost::shared_ptr<MatrixDouble>>& 
+   */
   virtual std::map<std::string, boost::shared_ptr<MatrixDouble>> &getBBNMap();
 
+  /**
+   * @brief get hash map of direvarives base function for BB base, key is a
+   * field name
+   *
+   * @return std::map<std::string, boost::shared_ptr<MatrixDouble>>&
+   */
   virtual std::map<std::string, boost::shared_ptr<MatrixDouble>> &
   getBBDiffNMap();
 
+  /**
+   * @brief get ALpha indices for BB base by order
+   * 
+   * @param o approximation order
+   * @return boost::shared_ptr<MatrixInt>& 
+   */
   virtual boost::shared_ptr<MatrixInt> &
   getBBAlphaIndicesByOrderSharedPtr(const size_t o);
 
+  /**
+   * @brief get BB base by order
+   * 
+   * @param o 
+   * @return boost::shared_ptr<MatrixDouble>& 
+   */
   virtual boost::shared_ptr<MatrixDouble> &
   getBBNByOrderSharedPtr(const size_t o);
 
-  virtual const boost::shared_ptr<MatrixDouble> &
-  getBBNByOrderSharedPtr(const size_t o) const;
-
+  /**
+   * @brief get BB base direvative by order
+   * 
+   * @param o 
+   * @return boost::shared_ptr<MatrixDouble>& 
+   */
   virtual boost::shared_ptr<MatrixDouble> &
   getBBDiffNByOrderSharedPtr(const size_t o);
-
-  virtual const boost::shared_ptr<MatrixDouble> &
-  getBBDiffNByOrderSharedPtr(const size_t o) const;
 
   static constexpr size_t MaxBernsteinBezierOrder = BITFEID_SIZE;
 
@@ -1046,14 +1069,14 @@ protected:
   std::map<std::string, boost::shared_ptr<MatrixDouble>> bbN;
   std::map<std::string, boost::shared_ptr<MatrixDouble>> bbDiffN;
   std::map<std::string, boost::shared_ptr<MatrixInt>>
-      bbAlphaInduces; ///< Indices for Bernstein-Bezier base
+      bbAlphaIndices; ///< Indices for Bernstein-Bezier (BB) base
 
   std::array<boost::shared_ptr<MatrixDouble>, MaxBernsteinBezierOrder>
-      bbNByOrder;
+      bbNByOrder; ///< BB base functions by order
   std::array<boost::shared_ptr<MatrixDouble>, MaxBernsteinBezierOrder>
-      bbDiffNByOrder;
+      bbDiffNByOrder; ///< BB base functions direvatives by order
   std::array<boost::shared_ptr<MatrixInt>, MaxBernsteinBezierOrder>
-      bbAlphaInducesByOrder;
+      bbAlphaIndicesByOrder; ///< BB alpha indices by order
 
 protected:
   /**
