@@ -345,15 +345,18 @@ MoFEMErrorCode AtomTest::checkResults() {
                                           AINSWORTH_LEGENDRE_BASE, L2));
   // calculate second derivative of base functions, i.e. hessian
   pipeline_mng->getOpDomainRhsPipeline().push_back(
-      new OpBaseDerivativesNext<BASE_DIM>(2, base_mass, data_l2,
+      new OpBaseDerivativesNext<BASE_DIM>(BaseDerivatives::SecondDerivative,
+                                          base_mass, data_l2,
                                           AINSWORTH_LEGENDRE_BASE, H1));
   // calculate third derivative
   pipeline_mng->getOpDomainRhsPipeline().push_back(
-      new OpBaseDerivativesNext<BASE_DIM>(3, base_mass, data_l2,
+      new OpBaseDerivativesNext<BASE_DIM>(BaseDerivatives::ThirdDerivative,
+                                          base_mass, data_l2,
                                           AINSWORTH_LEGENDRE_BASE, H1));
   // calculate forth derivative
   pipeline_mng->getOpDomainRhsPipeline().push_back(
-      new OpBaseDerivativesNext<BASE_DIM>(4, base_mass, data_l2,
+      new OpBaseDerivativesNext<BASE_DIM>(BaseDerivatives::ForthDerivative,
+                                          base_mass, data_l2,
                                           AINSWORTH_LEGENDRE_BASE, H1));
 
   // calculate hessian at integration points
