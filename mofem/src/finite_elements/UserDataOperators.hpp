@@ -2701,10 +2701,10 @@ derivatives
 \ingroup mofem_forces_and_sources_tri_element
 
 */
-template <int DIM> struct OpSetInvJacSpaceForFaceImpl;
+template <int DIM, int DERIVATIVE = 1> struct OpSetInvJacSpaceForFaceImpl;
 
 template <>
-struct OpSetInvJacSpaceForFaceImpl<2>
+struct OpSetInvJacSpaceForFaceImpl<2, 1>
     : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
 
   OpSetInvJacSpaceForFaceImpl(FieldSpace space,
@@ -2721,36 +2721,53 @@ protected:
 };
 
 template <>
-struct OpSetInvJacSpaceForFaceImpl<3> : public OpSetInvJacSpaceForFaceImpl<2> {
+struct OpSetInvJacSpaceForFaceImpl<3, 1>
+    : public OpSetInvJacSpaceForFaceImpl<2, 1> {
 
-  using OpSetInvJacSpaceForFaceImpl<2>::OpSetInvJacSpaceForFaceImpl;
+  using OpSetInvJacSpaceForFaceImpl<2, 1>::OpSetInvJacSpaceForFaceImpl;
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data);
 };
 
-struct OpSetInvJacH1ForFace : public OpSetInvJacSpaceForFaceImpl<2> {
+template <>
+struct OpSetInvJacSpaceForFaceImpl<2, 2>
+    : public OpSetInvJacSpaceForFaceImpl<2, 1> {
+
+  using OpSetInvJacSpaceForFaceImpl<2, 1>::OpSetInvJacSpaceForFaceImpl;
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        EntitiesFieldData::EntData &data);
+};
+
+template <int DERIVARIVE = 1>
+struct OpSetInvJacH1ForFace
+    : public OpSetInvJacSpaceForFaceImpl<2, DERIVARIVE> {
   OpSetInvJacH1ForFace(boost::shared_ptr<MatrixDouble> inv_jac_ptr)
-      : OpSetInvJacSpaceForFaceImpl(H1, inv_jac_ptr) {}
+      : OpSetInvJacSpaceForFaceImpl<2, DERIVARIVE>(H1, inv_jac_ptr) {}
 };
 
-struct OpSetInvJacL2ForFace : public OpSetInvJacSpaceForFaceImpl<2> {
+template <int DERIVARIVE = 1>
+struct OpSetInvJacL2ForFace
+    : public OpSetInvJacSpaceForFaceImpl<2, DERIVARIVE> {
   OpSetInvJacL2ForFace(boost::shared_ptr<MatrixDouble> inv_jac_ptr)
-      : OpSetInvJacSpaceForFaceImpl(L2, inv_jac_ptr) {}
+      : OpSetInvJacSpaceForFaceImpl<2, DERIVARIVE>(L2, inv_jac_ptr) {}
 };
 
+template <int DERIVARIVE = 1>
 struct OpSetInvJacH1ForFaceEmbeddedIn3DSpace
-    : public OpSetInvJacSpaceForFaceImpl<3> {
+    : public OpSetInvJacSpaceForFaceImpl<3, DERIVARIVE> {
   OpSetInvJacH1ForFaceEmbeddedIn3DSpace(
       boost::shared_ptr<MatrixDouble> inv_jac_ptr)
-      : OpSetInvJacSpaceForFaceImpl(H1, inv_jac_ptr) {}
+      : OpSetInvJacSpaceForFaceImpl<3, DERIVARIVE>(H1, inv_jac_ptr) {}
 };
 
+template <int DERIVARIVE = 1>
 struct OpSetInvJacL2ForFaceEmbeddedIn3DSpace
-    : public OpSetInvJacSpaceForFaceImpl<3> {
+    : public OpSetInvJacSpaceForFaceImpl<3, DERIVARIVE> {
   OpSetInvJacL2ForFaceEmbeddedIn3DSpace(
       boost::shared_ptr<MatrixDouble> inv_jac_ptr)
-      : OpSetInvJacSpaceForFaceImpl(L2, inv_jac_ptr) {}
+      : OpSetInvJacSpaceForFaceImpl<3, DERIVARIVE>(L2, inv_jac_ptr) {}
 };
 
 /**

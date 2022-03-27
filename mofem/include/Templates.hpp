@@ -744,8 +744,7 @@ getFTensor1FromPtr<3>(double *ptr) {
 template <int DIM1, int DIM2>
 inline FTensor::Tensor2<FTensor::PackPtr<double *, DIM1 * DIM2>, DIM1, DIM2>
 getFTensor2FromPtr(double *ptr) {
-  static_assert(DIM1 != 3, "Such getFTensor2FromPtr is not implemented");
-  static_assert(DIM2 >= 2 && DIM2 <= 3,
+  static_assert(DIM1 == DIM1 || DIM2 != DIM2,
                 "Such getFTensor2FromPtr is not implemented");
 };
 
@@ -776,6 +775,38 @@ FTensor::Tensor2<FTensor::PackPtr<double *, 4>, 2,
                  2> inline getFTensor2FromPtr<2, 2>(double *ptr) {
   return FTensor::Tensor2<FTensor::PackPtr<double *, 4>, 2, 2>(
       &ptr[0], &ptr[1], &ptr[2], &ptr[3]);
+};
+
+/**
+ * @brief Make summetric Tensor2 from pointer, taking lower triangle of matrix
+ *
+ * @tparam DIM
+ * @param ptr
+ * @return FTensor::Tensor2<FTensor::PackPtr<double *, DIM1 * DIM2>, DIM1, DIM2>
+ */
+template <int DIM>
+inline FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, DIM * DIM>, DIM>
+getFTensor2SymmetricLowerFromPtr(double *ptr) {
+  static_assert(DIM,
+                "Such getFTensor2SymmetricUpperFromPtr is not implemented");
+}
+
+template <>
+inline FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 9>, 3>
+getFTensor2SymmetricLowerFromPtr<3>(double *ptr) {
+  return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 9>, 3>(
+      &ptr[HVEC0_0], &ptr[HVEC0_1], &ptr[HVEC0_2],
+
+      &ptr[HVEC1_0], &ptr[HVEC1_1],
+
+      &ptr[HVEC2_2]);
+};
+
+template <>
+inline FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 4>, 2>
+getFTensor2SymmetricLowerFromPtr<2>(double *ptr) {
+  return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 4>, 2>(
+      &ptr[0], &ptr[1], &ptr[3]);
 };
 
 /**

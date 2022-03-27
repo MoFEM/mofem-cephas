@@ -21,8 +21,9 @@ purposes.
 
 namespace MoFEM {
 
-MoFEMErrorCode OpSetInvJacSpaceForFaceImpl<2>::doWork(
-    int side, EntityType type, EntitiesFieldData::EntData &data) {
+MoFEMErrorCode
+OpSetInvJacSpaceForFaceImpl<2, 1>::doWork(int side, EntityType type,
+                                          EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   if (getFEDim() != 2)
@@ -82,8 +83,9 @@ MoFEMErrorCode OpSetInvJacSpaceForFaceImpl<2>::doWork(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode OpSetInvJacSpaceForFaceImpl<3>::doWork(
-    int side, EntityType type, EntitiesFieldData::EntData &data) {
+MoFEMErrorCode
+OpSetInvJacSpaceForFaceImpl<3, 1>::doWork(int side, EntityType type,
+                                          EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   if (getFEDim() != 2)
@@ -139,6 +141,81 @@ MoFEMErrorCode OpSetInvJacSpaceForFaceImpl<3>::doWork(
         if (ptr)
           CHKERR apply_transform(*ptr);
     }
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+OpSetInvJacSpaceForFaceImpl<2, 2>::doWork(int side, EntityType type,
+                                          EntitiesFieldData::EntData &data) {
+  MoFEMFunctionBegin;
+
+  if (getFEDim() != 2)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "This operator can be used only with element which faces");
+
+  auto apply_transform = [&](MatrixDouble &diff2_n) {
+    MoFEMFunctionBegin;
+    size_t nb_functions = diff2_n.size2() / 4;
+    if (nb_functions) {
+      size_t nb_gauss_pts = diff2_n.size1();
+
+#ifndef NDEBUG
+      if (nb_gauss_pts != getGaussPts().size2())
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Wrong number of Gauss Pts");
+#endif
+
+      diffNinvJac.resize(diff2_n.size1(), diff2_n.size2(), false);
+
+      FTensor::Index<'i', 2> i;
+      FTensor::Index<'j', 2> j;
+      FTensor::Index<'k', 2> k;
+      FTensor::Index<'l', 2> l;
+      auto t_diff2_n = getFTensor2FromPtr<2, 2>(&*diffNinvJac.data().begin());
+      auto t_diff2_n_ref = getFTensor2FromPtr<2, 2>(&*diff2_n.data().begin());
+      auto t_inv_jac = getFTensor2FromMat<2, 2>(*invJacPtr);
+      for (size_t gg = 0; gg != nb_gauss_pts; ++gg, ++t_inv_jac) {
+        for (size_t dd = 0; dd != nb_functions; ++dd) {
+          t_diff2_n(i, j) =
+              t_inv_jac(k, i) * (t_inv_jac(l, j) * t_diff2_n_ref(k, l));
+          ++t_diff2_n;
+          ++t_diff2_n_ref;
+        }
+      }
+
+      diff2_n.swap(diffNinvJac);
+    }
+    MoFEMFunctionReturn(0);
+  };
+
+  if (!(type == MBVERTEX && sPace == L2)) {
+
+    for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
+      FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
+      CHKERR apply_transform(
+          data.getN(base, BaseDerivatives::SecondDerivative));
+    }
+
+    if (!(data.getBBDiffNMap().empty() &&
+          data.getBBDiffNByOrderArray().empty())) {
+      SETERRQ(
+          PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+          "Operator do not work for Bernstein-Bezier. This functionality is "
+          "not implemented.");
+    }
+
+    // switch (type) {
+    // case MBVERTEX:
+    //   for (auto &m : data.getBBDiffNMap())
+    //     CHKERR apply_transform(*(m.second));
+    //   break;
+    // default:
+    //   for (auto &ptr : data.getBBDiffNByOrderArray())
+    //     if (ptr)
+    //       CHKERR apply_transform(*ptr);
+    // }
   }
 
   MoFEMFunctionReturn(0);
@@ -684,6 +761,7 @@ OpSetInvJacH1ForFlatPrism::doWork(int side, EntityType type,
     unsigned int nb_gauss_pts = data.getN(base).size1();
     diffNinvJac.resize(nb_gauss_pts, 2 * nb_dofs, false);
 
+#ifndef NDEBUG
     if (type != MBVERTEX) {
       if (nb_dofs != data.getDiffN(base).size2() / 2) {
         SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -692,6 +770,7 @@ OpSetInvJacH1ForFlatPrism::doWork(int side, EntityType type,
                  nb_dofs, data.getDiffN(base).size2());
       }
     }
+#endif
 
     switch (type) {
     case MBVERTEX:

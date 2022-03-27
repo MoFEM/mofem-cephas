@@ -173,13 +173,15 @@ struct AtomTest::OpError : public DomainEleOp {
       double diff = t_val - fun(t_coords(0), t_coords(1), t_coords(2));
       error[0] += alpha * pow(diff, 2);
       auto t_diff_grad = diff_fun(t_coords(0), t_coords(1), t_coords(2));
-      t_diff_grad(i) -= t_grad_val(j) * t_inv_jac(j, i);
+      t_diff_grad(i) -= t_grad_val(i);
+      // t_grad_val(j) * t_inv_jac(j, i);
+
       error[1] += alpha * t_diff_grad(i) *
                   t_diff_grad(i); // note push forward derivatives
 
       FTensor::Tensor2<double, SPACE_DIM, SPACE_DIM> t_hessian_push;
-      t_hessian_push(i, j) =
-          (t_hessian_val(k, l) * t_inv_jac(k, i)) * t_inv_jac(l, j);
+      t_hessian_push(i, j) = t_hessian_val(i, j);
+      // (t_hessian_val(k, l) * t_inv_jac(k, i)) * t_inv_jac(l, j);
 
       MOFEM_LOG("SELF", Sev::noisy) << "t_hessian_val " << t_hessian_push;
 
@@ -329,16 +331,6 @@ MoFEMErrorCode AtomTest::checkResults() {
   pipeline_mng->getOpDomainRhsPipeline().push_back(
       new OpInvertMatrix<SPACE_DIM>(jac_ptr, det_ptr, inv_jac_ptr));
 
-  // calculate value of function at integration points
-  pipeline_mng->getOpDomainRhsPipeline().push_back(
-      new OpCalculateScalarFieldValues(FIELD_NAME,
-                                       common_data_ptr->approxVals));
-
-  // calculate gradient at integration points
-  pipeline_mng->getOpDomainRhsPipeline().push_back(
-      new OpCalculateScalarFieldGradient<SPACE_DIM>(
-          FIELD_NAME, common_data_ptr->approxGradVals));
-
   // calculate mass matrix to project derivatives
   pipeline_mng->getOpDomainRhsPipeline().push_back(
       new OpBaseDerivativesMass<BASE_DIM>(base_mass, data_l2,
@@ -358,6 +350,25 @@ MoFEMErrorCode AtomTest::checkResults() {
       new OpBaseDerivativesNext<BASE_DIM>(BaseDerivatives::ForthDerivative,
                                           base_mass, data_l2,
                                           AINSWORTH_LEGENDRE_BASE, H1));
+
+  // push first base direvatives tp physical element shape
+  pipeline_mng->getOpDomainRhsPipeline().push_back(
+      new OpSetInvJacH1ForFace<SPACE_DIM, 1>(inv_jac_ptr));
+  // push second base direvatives tp physical element shape
+  pipeline_mng->getOpDomainRhsPipeline().push_back(
+      new OpSetInvJacH1ForFace<SPACE_DIM, 2>(inv_jac_ptr));
+
+  // calculate value of function at integration points
+  pipeline_mng->getOpDomainRhsPipeline().push_back(
+      new OpCalculateScalarFieldValues(FIELD_NAME,
+                                       common_data_ptr->approxVals));
+
+  // calculate gradient at integration points
+  pipeline_mng->getOpDomainRhsPipeline().push_back(
+      new OpCalculateScalarFieldGradient<SPACE_DIM>(
+          FIELD_NAME, common_data_ptr->approxGradVals));
+
+
 
   // calculate hessian at integration points
   pipeline_mng->getOpDomainRhsPipeline().push_back(
