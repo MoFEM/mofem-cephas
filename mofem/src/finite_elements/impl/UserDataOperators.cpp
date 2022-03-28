@@ -198,24 +198,28 @@ OpSetInvJacSpaceForFaceImpl<2, 2>::doWork(int side, EntityType type,
           data.getN(base, BaseDerivatives::SecondDerivative));
     }
 
-    if (!(data.getBBDiffNMap().empty() &&
-          data.getBBDiffNByOrderArray().empty())) {
-      SETERRQ(
-          PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-          "Operator do not work for Bernstein-Bezier. This functionality is "
-          "not implemented.");
-    }
+    auto error = [&](auto &m) {
+      if (m.size2())
+        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                "Operator do not work for Bernstein-Bezier. This "
+                "functionality is "
+                "not implemented.");
+    };
 
-    // switch (type) {
-    // case MBVERTEX:
-    //   for (auto &m : data.getBBDiffNMap())
-    //     CHKERR apply_transform(*(m.second));
-    //   break;
-    // default:
-    //   for (auto &ptr : data.getBBDiffNByOrderArray())
-    //     if (ptr)
-    //       CHKERR apply_transform(*ptr);
-    // }
+    switch (type) {
+    case MBVERTEX:
+      for (auto &m : data.getBBDiffNMap()) {
+        CHKERR error(*(m.second));
+        CHKERR apply_transform(*(m.second));
+      }
+      break;
+    default:
+      for (auto &ptr : data.getBBDiffNByOrderArray())
+        if (ptr) {
+          CHKERR error(*ptr);
+          CHKERR apply_transform(*ptr);
+        }
+    }
   }
 
   MoFEMFunctionReturn(0);

@@ -353,10 +353,10 @@ MoFEMErrorCode AtomTest::checkResults() {
 
   // push first base direvatives tp physical element shape
   pipeline_mng->getOpDomainRhsPipeline().push_back(
-      new OpSetInvJacH1ForFace<SPACE_DIM, 1>(inv_jac_ptr));
+      new OpSetInvJacH1ForFace<1>(inv_jac_ptr));
   // push second base direvatives tp physical element shape
   pipeline_mng->getOpDomainRhsPipeline().push_back(
-      new OpSetInvJacH1ForFace<SPACE_DIM, 2>(inv_jac_ptr));
+      new OpSetInvJacH1ForFace<2>(inv_jac_ptr));
 
   // calculate value of function at integration points
   pipeline_mng->getOpDomainRhsPipeline().push_back(
