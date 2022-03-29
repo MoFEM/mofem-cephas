@@ -199,11 +199,13 @@ OpSetInvJacSpaceForFaceImpl<2, 2>::doWork(int side, EntityType type,
     }
 
     auto error = [&](auto &m) {
+      MoFEMFunctionBegin;
       if (m.size2())
         SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                 "Operator do not work for Bernstein-Bezier. This "
                 "functionality is "
                 "not implemented.");
+      MoFEMFunctionReturn(0);
     };
 
     switch (type) {
