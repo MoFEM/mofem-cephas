@@ -174,28 +174,23 @@ struct AtomTest::OpError : public DomainEleOp {
       error[0] += alpha * pow(diff, 2);
       auto t_diff_grad = diff_fun(t_coords(0), t_coords(1), t_coords(2));
       t_diff_grad(i) -= t_grad_val(i);
-      // t_grad_val(j) * t_inv_jac(j, i);
 
       error[1] += alpha * t_diff_grad(i) *
                   t_diff_grad(i); // note push forward derivatives
 
       FTensor::Tensor2<double, SPACE_DIM, SPACE_DIM> t_hessian_push;
-      t_hessian_push(i, j) = t_hessian_val(i, j);
-      // (t_hessian_val(k, l) * t_inv_jac(k, i)) * t_inv_jac(l, j);
-
       MOFEM_LOG("SELF", Sev::noisy) << "t_hessian_val " << t_hessian_push;
 
       // hessian expected to have symmetry
-      if (std::abs(t_hessian_push(0, 1) - t_hessian_push(1, 0)) >
+      if (std::abs(t_hessian_val(0, 1) - t_hessian_val(1, 0)) >
           std::numeric_limits<float>::epsilon()) {
-        MOFEM_LOG("SELF", Sev::error) << "t_hessian_push " << t_hessian_push;
         MOFEM_LOG("SELF", Sev::error) << "t_hessian_val " << t_hessian_val;
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Hessian should be symmetric");
       }
 
       auto t_diff_hessian = diff2_fun(t_coords(0), t_coords(1), t_coords(2));
-      t_diff_hessian(i, j) -= t_hessian_push(i, j);
+      t_diff_hessian(i, j) -= t_hessian_val(i, j);
       error[2] = t_diff_hessian(i, j) * t_diff_hessian(i, j);
 
       // move data to next integration point
