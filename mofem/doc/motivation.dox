@@ -64,7 +64,7 @@ Template input      TEMPLATE  yes      yes
 - Interface (e.g. cohesive) elements and shell elements
 
 - Automatic Differentiation by OverLoading in C++ (<a href=https://projects.coin-or.org/ADOL-C>ADOL-C</a>). 
-FGetting started
+
 \subsection mofem_features_mesh_types Range of mesh types and topological operations
 
 %MoFEM is implemented with the use of MOAB and deliver the great flexibility of
