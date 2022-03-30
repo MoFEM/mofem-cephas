@@ -170,7 +170,7 @@ gcc version 11.2.0 (Homebrew GCC 11.2.0_3)
 that means you have version 11. This is a temporary problem and will be
 fixed over the time, once various patches and fixes will be applied to those
 libraries. In the meantime, you can fix this problem by editing `compilers.yaml`
-file located in `~/.spack/darwin/compilers.yaml`, and setting compiler flag `-fallow-argument-mismatch`, which will allow to compile `mumps` with warnings rather than errors. The `compilers.yaml` file should be similar to the following:
+file located in `~/.spack/darwin/compilers.yaml`, and setting compiler flag `-fallow-argument-mismatch`, which will allow to compile `mumps` with warnings rather than errors. The `compilers.yaml` file should then be similar to the following:
 ~~~~~~~
 compilers:
 - compiler:
@@ -316,7 +316,7 @@ before proceeding with the installation. In particular, the instructions below
 will use so-called *specs* to obtain the desired build configuration, see
 [Spack manual page](https://spack.readthedocs.io/en/latest/basic_usage.html#specs-dependencies)
 for more details. For example, the default Spack specifier for the build type
-is `build_type=RelWithDebInfo`, however keep in mind
+is `RelWithDebInfo`, however keep in mind
 that two other build types can be specified as
 `build_type=Release` or `build_type=Debug`, see also [Change the build_type](#spack_build_type).
 
@@ -364,7 +364,7 @@ vhv7opa mofem-cephas@develop+adol-c~copy_user_modules~ipo+med+slepc+tetgen build
 ~~~~~
 
 Furthermore, in the directory `$HOME/mofem_install/mofem-cephas` you will find
-build directory `core-build-WithDebugInfo-vhv7opa`. Note that the hash in the name of the directory is matching the first column in the list printed by executing `spack find -lv mofem-cephas`.
+build directory `core-build-WithDebugInfo-vhv7opa`. Note that the hash in the name of the directory is matching the one in first column in the list printed by executing `spack find -lv mofem-cephas`.
 
 You can now start to develop code in the MoFEM core library. If you change directory to
 ~~~~~
@@ -415,7 +415,7 @@ and check installed versions of the core library (`mofem-cephas@develop`):
 nnnvprd mofem-cephas@develop+adol-c~copy_user_modules~ipo+med+slepc+tetgen build_type=Debug dev_path=/home/lukasz/mofem_install/mofem-cephas install_id=0
 pa3httg mofem-cephas@develop+adol-c~copy_user_modules~ipo+med+slepc+tetgen build_type=RelWithDebInfo dev_path=/home/lukasz/mofem_install/mofem-cephas install_id=0
 ~~~~~
-For example, if you want to install users modules against core library built with the specification `build_type=RelWithDebInfo`, pick the second row, and copy to clipboard the hash `pa3httg` . Next, change the directory:
+For example, if you want to install users modules against core library which was built with the specification `build_type=RelWithDebInfo`, pick the corresponding row and copy to clipboard the hash (`pa3httg`). Next, change the directory:
 ~~~~~
 cd $HOME/mofem_install/mofem-cephas/mofem/users_modules
 ~~~~~
@@ -489,7 +489,7 @@ Clone spack:
 git clone -b master https://github.com/likask/spack.git
 ~~~~~
 
-and initialise Spack's environment variables (also should be placed into `.bash_profile` or `.bashrc`):
+and initialise Spack's environment variables (should also be placed into `.bash_profile` or `.bashrc`):
 ~~~~~~
 . spack/share/spack/setup-env.sh
 ~~~~~~
@@ -581,7 +581,7 @@ spack activate -v um_view mofem-users-modules
 
 #### Developer installation
 
-Alternatively, you may want to follow the developer installation, it will have a few differences from the [Developer installation](#spack_developers) discussed above.
+Alternatively, you may want to follow the developer installation, which will have a few differences from the [Developer installation](#spack_developers) discussed above.
 
 Create `mofem_install` folder in the `$HOME` directory and clone MoFEM repository:
 ~~~~~
@@ -594,7 +594,7 @@ git clone \
 ~~~~~
 Kick-start installation of the core library:
 ~~~~~
-spack dev-build \
+spack dev-build -j4 \
   --source-path $HOME/mofem_install/mofem-cephas \
   --keep-prefix \
   --test root \
@@ -602,7 +602,7 @@ spack dev-build \
 ~~~~~
 
 
-If installation is successfully, by executing
+If installation is successful, by executing
 ~~~~~
 spack find -lv mofem-cephas
 ~~~~~
@@ -613,11 +613,11 @@ you should see something similar to
 3prnmyj mofem-cephas@develop+adol-c~copy_user_modules~docker~ipo+med~shared+slepc+tetgen build_type=RelWithDebInfo dev_path=/home/staff/as601x/mofem_install/mofem-cephas install_id=0
 ~~~~~
 
-Copy to clipboard the hash `3prnmyj` . Next, change the directory:
+Copy to clipboard the hash (`3prnmyj`). Next, change the directory:
 ~~~~~
 cd $HOME/mofem_install/mofem-cephas/mofem/users_modules
 ~~~~~
-and install users modules specifying the dependency on the previously installed core library using the hash `3prnmyj`:
+and install users modules specifying the dependency on the previously installed core library using the hash (`3prnmyj`):
 ~~~~~
 spack dev-build \
   --test root  \
