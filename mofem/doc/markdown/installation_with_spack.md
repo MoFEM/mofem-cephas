@@ -187,20 +187,6 @@ compilers:
     modules: []
     environment: {}
     extra_rpaths: []
-- compiler:
-    spec: gcc@11.2.0
-    paths:
-      cc: /usr/local/bin/gcc-11
-      cxx: /usr/local/bin/g++-11
-      f77: /usr/local/bin/gfortran-11
-      fc: /usr/local/bin/gfortran-11
-    flags:
-      fflags: -fallow-argument-mismatch
-    operating_system: monterey
-    target: x86_64
-    modules: []
-    environment: {}
-    extra_rpaths: []
 ~~~~~~~
 Note the following line:
 ~~~~~~~
@@ -619,7 +605,7 @@ cd $HOME/mofem_install/mofem-cephas/mofem/users_modules
 ~~~~~
 and install users modules specifying the dependency on the previously installed core library using the hash (`3prnmyj`):
 ~~~~~
-spack dev-build \
+spack dev-build -j4 \
   --test root  \
   --source-path $HOME/mofem_install/mofem-cephas/mofem/users_modules \
   mofem-users-modules@develop build_type=RelWithDebInfo \
