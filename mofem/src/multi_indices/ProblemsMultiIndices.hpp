@@ -153,73 +153,7 @@ struct Problem {
   /**
    * \brief Subproblem problem data
    */
-  struct SubProblemData {
-
-    SmartPetscObj<IS>
-        rowIs; ///< indices of main problem of which sub problem is this
-    SmartPetscObj<IS>
-        colIs; ///< indices of main problem of which sub problem is this
-    SmartPetscObj<AO>
-        rowMap; ///< mapping form main problem indices to sub-problem indices
-    SmartPetscObj<AO>
-        colMap; ///< mapping form main problem indices to sub-problem indices
-
-    inline auto getSmartRowIs() { return rowIs; }
-    inline auto getSmartColIs() { return colIs; }
-    inline auto getSmartRowMap() { return rowMap; }
-    inline auto getSmartColMap() { return colMap; }
-
-    /**
-     * get row Is for sub problem
-     * @param  is create is
-     * @return    error code
-     */
-    inline MoFEMErrorCode getRowIs(IS *is) {
-      MoFEMFunctionBeginHot;
-      PetscObjectReference((PetscObject)rowIs);
-      *is = rowIs;
-      MoFEMFunctionReturnHot(0);
-    }
-
-    /**
-     * get col Is for sub problem
-     * @param  is create is
-     * @return    error code
-     */
-    inline MoFEMErrorCode getColIs(IS *is) {
-      MoFEMFunctionBeginHot;
-      PetscObjectReference((PetscObject)colIs);
-      *is = colIs;
-      MoFEMFunctionReturnHot(0);
-    };
-
-    /**
-     * get row AO mapping for sub problem
-     * @param  ao get mapping
-     * @return    error code
-     */
-    inline MoFEMErrorCode getRowMap(AO *ao) {
-      MoFEMFunctionBeginHot;
-      PetscObjectReference((PetscObject)rowMap);
-      *ao = rowMap;
-      MoFEMFunctionReturnHot(0);
-    }
-
-    /**
-     * get col AO mapping for sub problem
-     * @param  ao get mapping
-     * @return    error code
-     */
-    inline MoFEMErrorCode getColMap(AO *ao) {
-      MoFEMFunctionBeginHot;
-      PetscObjectReference((PetscObject)colMap);
-      *ao = colMap;
-      MoFEMFunctionReturnHot(0);
-    }
-
-    SubProblemData() = default;
-    virtual ~SubProblemData() = default;
-  };
+  struct SubProblemData;
 
   /**
    * Pointer to data structure. This pointer has allocated data only for
@@ -712,6 +646,77 @@ private:
   mutable boost::shared_ptr<SequenceDofContainer> sequenceColDofContainer;
 
   mutable EmptyFieldBlocks emptyFieldBlocks;
+};
+
+/**
+ * \brief Subproblem problem data
+ */
+struct Problem::SubProblemData {
+
+  SmartPetscObj<IS>
+      rowIs; ///< indices of main problem of which sub problem is this
+  SmartPetscObj<IS>
+      colIs; ///< indices of main problem of which sub problem is this
+  SmartPetscObj<AO>
+      rowMap; ///< mapping form main problem indices to sub-problem indices
+  SmartPetscObj<AO>
+      colMap; ///< mapping form main problem indices to sub-problem indices
+
+  inline auto getSmartRowIs() { return rowIs; }
+  inline auto getSmartColIs() { return colIs; }
+  inline auto getSmartRowMap() { return rowMap; }
+  inline auto getSmartColMap() { return colMap; }
+
+  /**
+   * get row Is for sub problem
+   * @param  is create is
+   * @return    error code
+   */
+  inline MoFEMErrorCode getRowIs(IS *is) {
+    MoFEMFunctionBeginHot;
+    PetscObjectReference((PetscObject)rowIs);
+    *is = rowIs;
+    MoFEMFunctionReturnHot(0);
+  }
+
+  /**
+   * get col Is for sub problem
+   * @param  is create is
+   * @return    error code
+   */
+  inline MoFEMErrorCode getColIs(IS *is) {
+    MoFEMFunctionBeginHot;
+    PetscObjectReference((PetscObject)colIs);
+    *is = colIs;
+    MoFEMFunctionReturnHot(0);
+  };
+
+  /**
+   * get row AO mapping for sub problem
+   * @param  ao get mapping
+   * @return    error code
+   */
+  inline MoFEMErrorCode getRowMap(AO *ao) {
+    MoFEMFunctionBeginHot;
+    PetscObjectReference((PetscObject)rowMap);
+    *ao = rowMap;
+    MoFEMFunctionReturnHot(0);
+  }
+
+  /**
+   * get col AO mapping for sub problem
+   * @param  ao get mapping
+   * @return    error code
+   */
+  inline MoFEMErrorCode getColMap(AO *ao) {
+    MoFEMFunctionBeginHot;
+    PetscObjectReference((PetscObject)colMap);
+    *ao = colMap;
+    MoFEMFunctionReturnHot(0);
+  }
+
+  SubProblemData() = default;
+  virtual ~SubProblemData() = default;
 };
 
 using EmptyFieldBlocks = Problem::EmptyFieldBlocks;
