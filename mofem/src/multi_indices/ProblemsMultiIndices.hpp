@@ -35,36 +35,11 @@ struct ComposedProblemsData {
   std::vector<IS> rowIs;
   std::vector<IS> colIs;
 
-  inline MoFEMErrorCode getRowIs(IS *is, const unsigned int pp) const {
-    MoFEMFunctionBeginHot;
-    PetscObjectReference((PetscObject)rowIs[pp]);
-    if (pp <= rowIs.size()) {
-      SETERRQ1(PETSC_COMM_WORLD, MOFEM_INVALID_DATA,
-               "Exceed size of array pp<%d", rowIs.size());
-    }
-    *is = rowIs[pp];
-    MoFEMFunctionReturnHot(0);
-  }
+  inline MoFEMErrorCode getRowIs(IS *is, const unsigned int pp) const;
 
-  inline MoFEMErrorCode getColIs(IS *is, const unsigned int pp) const {
-    MoFEMFunctionBeginHot;
-    PetscObjectReference((PetscObject)colIs[pp]);
-    if (pp <= colIs.size()) {
-      SETERRQ1(PETSC_COMM_WORLD, MOFEM_INVALID_DATA,
-               "Exceed size of array pp<%d", colIs.size());
-    }
-    *is = colIs[pp];
-    MoFEMFunctionReturnHot(0);
-  }
+  inline MoFEMErrorCode getColIs(IS *is, const unsigned int pp) const;
 
-  virtual ~ComposedProblemsData() {
-    for (unsigned int ii = 0; ii != rowIs.size(); ii++) {
-      ISDestroy(&rowIs[ii]);
-    }
-    for (unsigned int jj = 0; jj != colIs.size(); jj++) {
-      ISDestroy(&colIs[jj]);
-    }
-  }
+  virtual ~ComposedProblemsData();
 };
 
 /** \brief keeps basic data about problem
@@ -104,49 +79,17 @@ struct Problem {
   /**
    * \brief get access to numeredRowDofsPtr storing DOFs on rows
    */
-  boost::shared_ptr<NumeredDofEntity_multiIndex> &getNumeredRowDofsPtr() const {
-    return numeredRowDofsPtr;
-  }
+  inline auto &getNumeredRowDofsPtr() const { return numeredRowDofsPtr; }
 
   /**
    * \brief get access to numeredColDofsPtr storing DOFs on cols
    */
-  boost::shared_ptr<NumeredDofEntity_multiIndex> &getNumeredColDofsPtr() const {
-    return numeredColDofsPtr;
-  }
+  inline auto &getNumeredColDofsPtr() const { return numeredColDofsPtr; }
 
   /**
    * \brief get access to reference for multi-index storing finite elements
    */
-  const boost::shared_ptr<NumeredEntFiniteElement_multiIndex> &
-  getNumeredFiniteElementsPtr() const {
-    return numeredFiniteElementsPtr;
-  }
-
-  /**
-   * \brief get access to numeredRowDofsPtr storing DOFs on rows
-   * \deprected Use getNumeredRowDofsPtr
-   */
-  DEPRECATED boost::shared_ptr<NumeredDofEntity_multiIndex> &
-  getNumeredRowDofs() const {
-    return numeredRowDofsPtr;
-  }
-
-  /**
-   * \brief get access to numeredColDofsPtr storing DOFs on cols
-   * \deprecated Use getNumeredColDofsPtr
-   */
-  DEPRECATED boost::shared_ptr<NumeredDofEntity_multiIndex> &
-  getNumeredColDofs() const {
-    return numeredColDofsPtr;
-  }
-
-  /**
-   * \brief get access to reference for multi-index storing finite elements
-   * \deprecated getNumeredFiniteElementsPtr
-   */
-  const boost::shared_ptr<NumeredEntFiniteElement_multiIndex> &DEPRECATED
-  getNumeredFiniteElements() const {
+  inline const auto &getNumeredFiniteElementsPtr() const {
     return numeredFiniteElementsPtr;
   }
 
@@ -177,10 +120,7 @@ struct Problem {
   /**
    * \brief Het composed problems data structure
    */
-  inline boost::shared_ptr<ComposedProblemsData> &
-  getComposedProblemsData() const {
-    return composedProblemsData;
-  }
+  inline auto &getComposedProblemsData() const { return composedProblemsData; }
 
   /**
    * \brief get DOFs from problem
@@ -321,29 +261,25 @@ struct Problem {
 
   /// get begin iterator for numeredRowDofsPtr (insted you can use
   /// #_IT_NUMEREDDOF_ROW_FOR_LOOP_ for loops)
-  NumeredDofEntityByLocalIdx::iterator
-  getNumeredRowDofsByLocIdxBegin(const DofIdx locidx) const {
+  auto getNumeredRowDofsByLocIdxBegin(const DofIdx locidx) const {
     return numeredRowDofsPtr->get<PetscLocalIdx_mi_tag>().lower_bound(locidx);
   }
 
   /// get end iterator for numeredRowDofsPtr (insted you can use
   /// #_IT_NUMEREDDOF_ROW_FOR_LOOP_ for loops)
-  NumeredDofEntityByLocalIdx::iterator
-  getNumeredRowDofsByLocIdxEnd(const DofIdx locidx) const {
+  auto getNumeredRowDofsByLocIdxEnd(const DofIdx locidx) const {
     return numeredRowDofsPtr->get<PetscLocalIdx_mi_tag>().upper_bound(locidx);
   }
 
   /// get begin iterator for numeredColDofsPtr (insted you can use
   /// #_IT_NUMEREDDOF_COL_FOR_LOOP_ for loops)
-  NumeredDofEntityByLocalIdx::iterator
-  getNumeredColDofsByLocIdxBegin(const DofIdx locidx) const {
+  auto getNumeredColDofsByLocIdxBegin(const DofIdx locidx) const {
     return numeredColDofsPtr->get<PetscLocalIdx_mi_tag>().lower_bound(locidx);
   }
 
   /// get end iterator for numeredColDofsPtr (insted you can use
   /// #_IT_NUMEREDDOF_COL_FOR_LOOP_ for loops)
-  NumeredDofEntityByLocalIdx::iterator
-  getNumeredColDofsByLocIdxEnd(const DofIdx locidx) const {
+  auto getNumeredColDofsByLocIdxEnd(const DofIdx locidx) const {
     return numeredColDofsPtr->get<PetscLocalIdx_mi_tag>().upper_bound(locidx);
   }
 
@@ -359,8 +295,7 @@ struct Problem {
  *
  */
 #define _IT_NUMEREDDOF_ROW_BY_ENT_FOR_LOOP_(PROBLEMPTR, ENT, IT)               \
-  NumeredDofEntityByEnt::iterator IT =                                         \
-      PROBLEMPTR->getNumeredRowDofsByEntBegin(ENT);                            \
+  auto IT = PROBLEMPTR->getNumeredRowDofsByEntBegin(ENT);                      \
   IT != PROBLEMPTR->getNumeredRowDofsByEntEnd(ENT);                            \
   IT++
 
@@ -376,36 +311,31 @@ struct Problem {
  *
  */
 #define _IT_NUMEREDDOF_COL_BY_ENT_FOR_LOOP_(PROBLEMPTR, ENT, IT)               \
-  NumeredDofEntityByEnt::iterator IT =                                         \
-      PROBLEMPTR->getNumeredColDofsByEntBegin(ENT);                            \
+  auto IT = PROBLEMPTR->getNumeredColDofsByEntBegin(ENT);                      \
   IT != PROBLEMPTR->getNumeredColDofsByEntEnd(ENT);                            \
   IT++
 
   /// get begin iterator for numeredRowDofsPtr (insted you can use
   /// #_IT_NUMEREDDOF_ROW_BY_ENT_FOR_LOOP_ for loops)
-  NumeredDofEntityByEnt::iterator
-  getNumeredRowDofsByEntBegin(const EntityHandle ent) const {
+  auto getNumeredRowDofsByEntBegin(const EntityHandle ent) const {
     return numeredRowDofsPtr->get<Ent_mi_tag>().lower_bound(ent);
   }
 
   /// get end iterator for numeredRowDofsPtr (insted you can use
   /// #_IT_NUMEREDDOF_ROW_BY_ENT_FOR_LOOP_ for loops)
-  NumeredDofEntityByEnt::iterator
-  getNumeredRowDofsByEntEnd(const EntityHandle ent) const {
+  auto getNumeredRowDofsByEntEnd(const EntityHandle ent) const {
     return numeredRowDofsPtr->get<Ent_mi_tag>().upper_bound(ent);
   }
 
   /// get begin iterator for numeredColDofsPtr (insted you can use
   /// #_IT_NUMEREDDOF_COL_BY_ENT_FOR_LOOP_ for loops)
-  NumeredDofEntityByEnt::iterator
-  getNumeredColDofsByEntBegin(const EntityHandle ent) const {
+  auto getNumeredColDofsByEntBegin(const EntityHandle ent) const {
     return numeredColDofsPtr->get<Ent_mi_tag>().lower_bound(ent);
   }
 
   /// get end iterator for numeredColDofsPtr (insted you can use
   /// #_IT_NUMEREDDOF_COL_BY_ENT_FOR_LOOP_ for loops)
-  NumeredDofEntityByEnt::iterator
-  getNumeredColDofsByEntEnd(const EntityHandle ent) const {
+  auto getNumeredColDofsByEntEnd(const EntityHandle ent) const {
     return numeredColDofsPtr->get<Ent_mi_tag>().upper_bound(ent);
   }
 
@@ -455,7 +385,7 @@ struct Problem {
 
   inline BitProblemId getId() const { return *((BitProblemId *)tagId); }
 
-  inline std::string getName() const {
+  inline auto getName() const {
     return std::string((char *)tagName, tagNameSize);
   }
 
@@ -468,9 +398,10 @@ struct Problem {
 
   inline BitRefLevel getBitRefLevel() const { return *tagBitRefLevel; }
   inline BitRefLevel getBitRefLevelMask() const { return *tagBitRefLevelMask; }
-  DEPRECATED inline BitRefLevel getMaskBitRefLevel() const {
-    return *tagBitRefLevelMask;
-  }
+
+  // DEPRECATED inline BitRefLevel getMaskBitRefLevel() const {
+  //   return *tagBitRefLevelMask;
+  // }
 
   /**
    * @brief Get the Row Dofs By Petsc Global Dof Idx object
@@ -588,9 +519,7 @@ struct Problem {
 
    * @return MoFEM::Problem::SequenceDofContainer
    */
-  inline boost::shared_ptr<SequenceDofContainer> &getRowDofsSequence() const {
-    return sequenceRowDofContainer;
-  }
+  inline auto &getRowDofsSequence() const { return sequenceRowDofContainer; }
 
   /**
    * \brief Get reference to sequence data numbered dof container
@@ -606,9 +535,7 @@ struct Problem {
 
    * @return MoFEM::Problem::SequenceDofContainer
    */
-  inline boost::shared_ptr<SequenceDofContainer> &getColDofsSequence() const {
-    return sequenceColDofContainer;
-  }
+  inline auto &getColDofsSequence() const { return sequenceColDofContainer; }
 
   using EmptyFieldBlocks = std::pair<BitFieldId, BitFieldId>;
 
@@ -826,6 +753,30 @@ struct ProblemClearSubProblemData {
 struct ProblemClearComposedProblemData {
   void operator()(Problem &e) { e.composedProblemsData.reset(); }
 };
+
+inline MoFEMErrorCode
+ComposedProblemsData::getRowIs(IS *is, const unsigned int pp) const {
+  MoFEMFunctionBeginHot;
+  PetscObjectReference((PetscObject)rowIs[pp]);
+  if (pp <= rowIs.size()) {
+    SETERRQ1(PETSC_COMM_WORLD, MOFEM_INVALID_DATA, "Exceed size of array pp<%d",
+             rowIs.size());
+  }
+  *is = rowIs[pp];
+  MoFEMFunctionReturnHot(0);
+}
+
+inline MoFEMErrorCode
+ComposedProblemsData::getColIs(IS *is, const unsigned int pp) const {
+  MoFEMFunctionBeginHot;
+  PetscObjectReference((PetscObject)colIs[pp]);
+  if (pp <= colIs.size()) {
+    SETERRQ1(PETSC_COMM_WORLD, MOFEM_INVALID_DATA, "Exceed size of array pp<%d",
+             colIs.size());
+  }
+  *is = colIs[pp];
+  MoFEMFunctionReturnHot(0);
+}
 
 } // namespace MoFEM
 
