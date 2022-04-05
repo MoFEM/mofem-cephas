@@ -340,8 +340,8 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
     // (from-id,length) pairs for each message.
     int *onodes;   // list of node-ids from which messages are expected
     int *olengths; // corresponding message lengths
-    CHKERR PetscGatherMessageLengths(comm, nsends, nrecvs,
-                                     &dofs_vec_length[0], &onodes, &olengths);
+    CHKERR PetscGatherMessageLengths(comm, nsends, nrecvs, &dofs_vec_length[0],
+                                     &onodes, &olengths);
 
     // Gets a unique new tag from a PETSc communicator.
     int tag;
