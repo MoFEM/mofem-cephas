@@ -483,6 +483,10 @@ MoFEMErrorCode OpCalculateHOJacForFaceImpl<3>::doWork(
   MoFEMFunctionReturn(0);
 }
 
+OpGetHONormalsOnFace::OpGetHONormalsOnFace(std::string field_name)
+    : FaceElementForcesAndSourcesCoreBase::UserDataOperator(field_name, OPROW) {
+}
+
 MoFEMErrorCode
 OpGetHONormalsOnFace::doWork(int side, EntityType type,
                              EntitiesFieldData::EntData &data) {

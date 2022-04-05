@@ -246,9 +246,8 @@ using OpCalculateHOJacForFaceEmbeddedIn3DSpace = OpCalculateHOJacForFaceImpl<3>;
 struct OpGetHONormalsOnFace
     : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
 
-  OpGetHONormalsOnFace(std::string field_name)
-      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(field_name,
-                                                              OPROW) {}
+  OpGetHONormalsOnFace(std::string field_name);
+
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data);
 };
