@@ -575,6 +575,8 @@ private:
   mutable EmptyFieldBlocks emptyFieldBlocks;
 };
 
+using EmptyFieldBlocks = Problem::EmptyFieldBlocks;
+
 /**
  * \brief Subproblem problem data
  */

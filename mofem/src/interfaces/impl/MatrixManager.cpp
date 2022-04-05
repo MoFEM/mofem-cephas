@@ -119,15 +119,19 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
 
         for (auto &it : r.first->entFePtr->getColFieldEnts()) {
           if (auto e = it.lock()) {
-            if (empty_row_block &&
+            if (empty_row_block ||
                 (empty_field_blocks.second & e->getId()).none()) {
+
               if (auto cache = e->entityCacheColDofs.lock()) {
                 const auto lo = cache->loHi[0];
                 const auto hi = cache->loHi[1];
                 for (auto vit = lo; vit != hi; ++vit) {
+
                   const int idx = TAG::get_index(vit);
                   if (PetscLikely(idx >= 0))
                     dofs_col_view.push_back(idx);
+
+#ifndef NDEBUG
                   if (PetscUnlikely(idx >= nb_dofs_col)) {
                     MOFEM_LOG("SELF", Sev::error)
                         << "Problem with dof: " << std::endl
@@ -136,9 +140,12 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
                         mofemComm, PETSC_ERR_ARG_SIZ,
                         "Index of dof larger than number of DOFs in column");
                   }
+#endif
                 }
-              } else
+
+              } else {
                 SETERRQ(mofemComm, MOFEM_DATA_INCONSISTENCY, "Cache not set");
+              }
             }
           }
         }

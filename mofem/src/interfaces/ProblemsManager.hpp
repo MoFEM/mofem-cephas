@@ -417,6 +417,22 @@ struct ProblemsManager : public UnknownInterface {
                                 const unsigned char c,
                                 std::vector<unsigned char> &marker) const;
 
+  /**
+   * @brief add empty block to problem
+   *
+   * MatrixManager assumes that all blocks, i.e. all fields combinations are non
+   * zero. This is not always the case, to optimise code and reduce memory usage
+   * user can specifi which blocks are empty.
+   *
+   * @param problem_name problem name
+   * @param row_field row filed name
+   * @param col_field col field name
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode addFieldToEmptyFieldBlocks(const std::string problem_name,
+                                            const std::string row_field,
+                                            const std::string col_field) const;
+
 private:
   PetscLogEvent MOFEM_EVENT_ProblemsManager;
 };

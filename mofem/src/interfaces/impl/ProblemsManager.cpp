@@ -3426,4 +3426,25 @@ MoFEMErrorCode ProblemsManager::modifyMarkDofs(
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode
+ProblemsManager::addFieldToEmptyFieldBlocks(const std::string problem_name,
+                                            const std::string row_field,
+                                            const std::string col_field) const {
+
+  Interface &m_field = cOre;
+  const Problem *problem_ptr;                                             
+  MoFEMFunctionBegin;
+
+  const auto problem_ptr = m_field.get_problem(problem_name);
+  auto get_field_id = [&](const std::string field_name) {
+    return m_field.get_field_structure(field_name)->getId();
+  };
+  const auto row_id = get_field_id(row_field);
+  const auto col_id = get_field_id(col_field);
+
+  problem_ptr->addFieldToEmptyFieldBlocks(EmptyFieldBlocks(row_id, col_id));
+
+  MoFEMFunctionReturn(0);
+}
+
 } // namespace MoFEM

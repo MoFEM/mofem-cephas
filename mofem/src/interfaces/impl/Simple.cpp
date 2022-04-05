@@ -788,4 +788,14 @@ MoFEMErrorCode Simple::deleteFiniteElements() {
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode
+Simple::addFieldToEmptyFieldBlocks(const std::string row_field,
+                                   const std::string col_field) const {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+  CHKERR m_field.getInterface<ProblemsManager>()->addFieldToEmptyFieldBlocks(
+      getProblemName(), row_field, col_field);
+  MoFEMFunctionReturn(0);
+}
+
 } // namespace MoFEM

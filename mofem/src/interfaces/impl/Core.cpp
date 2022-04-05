@@ -869,7 +869,8 @@ const FieldEntity_multiIndex *Core::get_field_ents() const {
 const DofEntity_multiIndex *Core::get_dofs() const { return &dofsField; }
 const Problem *Core::get_problem(const std::string problem_name) const {
   const Problem *prb;
-  CHKERR get_problem(problem_name, &prb);
+  CHK_THROW_MESSAGE(get_problem(problem_name, &prb),
+                    "Problem of given name not found");
   return prb;
 }
 const Problem_multiIndex *Core::get_problems() const { return &pRoblems; }

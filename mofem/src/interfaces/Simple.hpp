@@ -413,6 +413,20 @@ struct Simple : public UnknownInterface {
    */
   bool &getAddBoundaryFE() { return addBoundaryFE; }
 
+  /**
+   * @brief add empty block to problem
+   *
+   * MatrixManager assumes that all blocks, i.e. all fields combinations are non
+   * zero. This is not always the case, to optimise code and reduce memory usage
+   * user can specifi which blocks are empty.
+   *
+   * @param row_field row filed name
+   * @param col_field col field name
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode addFieldToEmptyFieldBlocks(const std::string row_field,
+                                            const std::string col_field) const;
+
 private:
   MoFEM::Core &cOre;
 
