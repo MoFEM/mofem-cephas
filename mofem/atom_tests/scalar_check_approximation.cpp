@@ -26,7 +26,8 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
-static constexpr int approx_order = 4;
+static int approx_order = 4;
+
 template <int DIM> struct ApproxFunctionsImpl {};
 
 template <int DIM> struct ElementsAndOps {};
@@ -220,7 +221,6 @@ struct OpCheckValsDiffVals : public DomainEleOp {
         SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                  "Wrong value from operator %4.3e", err_val);
 
-
       const double x = getCoordsAtGaussPts()(gg, 0);
       const double y = getCoordsAtGaussPts()(gg, 1);
       const double z = getCoordsAtGaussPts()(gg, 2);
@@ -265,7 +265,7 @@ struct OpCheckValsDiffVals : public DomainEleOp {
         t_delta_diff_val(i) = t_diff_vals(i) - t_diff_anal(i);
 
         err_diff_val = sqrt(t_delta_diff_val(i) * t_delta_diff_val(i));
-        if(SPACE_DIM == 3)
+        if (SPACE_DIM == 3)
           MOFEM_LOG("AT", Sev::noisy)
               << "Diff val " << err_diff_val << " : "
               << sqrt(t_diff_vals(i) * t_diff_vals(i)) << " :  "
@@ -369,8 +369,49 @@ int main(int argc, char *argv[]) {
     else if (choice_space_value == L2SPACE)
       space = L2;
 
+    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &approx_order,
+                              PETSC_NULL);
+
     CHKERR simple_interface->addDomainField("FIELD1", space, base, 1);
     CHKERR simple_interface->setFieldOrder("FIELD1", approx_order);
+
+    Range edges, faces;
+    CHKERR moab.get_entities_by_dimension(0, 1, edges);
+    CHKERR moab.get_entities_by_dimension(0, 2, faces);
+
+    if (choice_base_value != BERNSTEIN) {
+      Range rise_order;
+
+      int i = 0;
+      for (auto e : edges) {
+        if (!(i % 2)) {
+          rise_order.insert(e);
+        }
+        ++i;
+      }
+
+      for (auto f : faces) {
+        if (!(i % 3)) {
+          rise_order.insert(f);
+        }
+        ++i;
+      }
+
+      Range rise_twice;
+      for (auto e : rise_order) {
+        if (!(i % 2)) {
+          rise_twice.insert(e);
+        }
+        ++i;
+      }
+
+      CHKERR simple_interface->setFieldOrder("FIELD1", approx_order + 1,
+                                             &rise_order);
+
+      CHKERR simple_interface->setFieldOrder("FIELD1", approx_order + 2,
+                                             &rise_twice);
+    }
+
     CHKERR simple_interface->setUp();
     auto dm = simple_interface->getDM();
 
@@ -421,7 +462,7 @@ int main(int argc, char *argv[]) {
           new OpSource("FIELD1", ApproxFunctions::fUn));
 
       auto integration_rule = [](int, int, int p_data) {
-        return 3 * p_data;
+        return 2 * p_data + 1;
       };
       CHKERR pipeline_mng->setDomainRhsIntegrationRule(integration_rule);
       CHKERR pipeline_mng->setDomainLhsIntegrationRule(integration_rule);
@@ -465,7 +506,7 @@ int main(int argc, char *argv[]) {
             new OpSetInvJacSpaceForFaceImpl<2>(space, inv_jac_ptr));
       }
 
-      if(SPACE_DIM == 3) {
+      if (SPACE_DIM == 3) {
         pipeline_mng->getOpDomainRhsPipeline().push_back(
             new OpCalculateHOJacVolume(jac_ptr));
         pipeline_mng->getOpDomainRhsPipeline().push_back(
