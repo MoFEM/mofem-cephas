@@ -276,9 +276,8 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONQUAD(
     int *faces_nodes, int *p, double *N, double *diffN, double *faceN,
     double *diff_faceN, int nb_integration_pts) {
 
-  const int nb_dofs = (p[0] - 1) * (p[1] - 1);
-
-  if (nb_dofs > 0) {
+  if (p[0] > 1 && p[1] > 1) {
+    const int nb_dofs = (p[0] - 1) * (p[1] - 1);
 
     const int n0 = faces_nodes[0];
     const int n1 = faces_nodes[1];

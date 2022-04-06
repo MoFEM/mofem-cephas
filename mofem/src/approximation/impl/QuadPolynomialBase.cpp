@@ -178,11 +178,13 @@ MoFEMErrorCode QuadPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
     ent_dat.getDiffN(base).resize(nb_gauss_pts, 2 * nb_dofs, false);
 
     int face_nodes[] = {0, 1, 2, 3};
-    CHKERR DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONQUAD(
-        face_nodes, order, &*copy_base_fun.data().begin(),
-        &*copy_diff_base_fun.data().begin(),
-        &*ent_dat.getN(base).data().begin(),
-        &*ent_dat.getDiffN(base).data().begin(), nb_gauss_pts);
+    if (nb_dofs) {
+      CHKERR DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONQUAD(
+          face_nodes, order, &*copy_base_fun.data().begin(),
+          &*copy_diff_base_fun.data().begin(),
+          &*ent_dat.getN(base).data().begin(),
+          &*ent_dat.getDiffN(base).data().begin(), nb_gauss_pts);
+    }
   }
 
   MoFEMFunctionReturn(0);
