@@ -529,6 +529,15 @@ add_test(h1_check_approx_2d_ainsworth_tri
   -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
   -log_no_color
 )
+add_test(h1_check_approx_2d_ainsworth_tri_order_1_heterogenous
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
+  -file_name rectangle_tri.h5m
+  -base ainsworth -space h1 
+  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
+  -order 1
+  -log_no_color
+)
 add_test(h1_check_approx_2d_ainsworth_lobatto_tri
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
@@ -569,12 +578,30 @@ add_test(h1_check_approx_2d_ainsworth_quad
   -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
   -log_no_color
 )
+add_test(h1_check_approx_2d_ainsworth_quad_order_1_heterogenous
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
+  -file_name rectangle_quad.h5m
+  -base ainsworth -space h1 
+  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
+  -order 1
+  -log_no_color
+)
 add_test(h1_check_approx_2d_demkowicz_quad
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
   -file_name rectangle_quad.h5m
   -base demkowicz -space h1 
   -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
+  -log_no_color
+)
+add_test(h1_check_approx_2d_demkowicz_quad_order_1_heterogenous
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
+  -file_name rectangle_quad.h5m
+  -base demkowicz -space h1 
+  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
+  -order 1
   -log_no_color
 )
 add_test(l2_check_approx_2d_demkowicz_quad
@@ -594,6 +621,15 @@ add_test(h1_check_approx_3d_ainsworth_tet
   -pc_type lu -pc_factor_mat_solver_type mumps
   -ksp_atol 1e-12 -ksp_rtol 0
   -log_no_color
+)
+add_test(h1_check_approx_3d_ainsworth_tet_order_1_heterogenous
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_3d
+  -file_name sphere.h5m
+  -base ainsworth -space h1 
+  -pc_type lu -pc_factor_mat_solver_type mumps
+  -ksp_atol 1e-12 -ksp_rtol 0
+  -order 1 -log_no_color
 )
 add_test(h1_check_approx_3d_ainsworth_lobatto_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
@@ -647,6 +683,15 @@ add_test(h1_check_approx_3d_demkowicz_hex
   -pc_type lu -pc_factor_mat_solver_type mumps
   -ksp_atol 1e-16 -ksp_rtol 0
   -log_no_color
+)
+add_test(h1_check_approx_3d_demkowicz_hex_order_1_heterogenous
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_3d
+  -file_name hex_cub.h5m
+  -base demkowicz -space h1
+  -pc_type lu -pc_factor_mat_solver_type mumps
+  -ksp_atol 1e-16 -ksp_rtol 0
+  -order 1 -log_no_color
 )
 
 # Check approximation on Hcurl space in 2d
@@ -1370,7 +1415,7 @@ add_test(continuity_check_on_skeleton_with_simple_2d_for_h1_ainsworth_tri
   -file_name rectangle_tri.h5m -base ainsworth
   -log_no_color)
 
-add_test(continuity_check_on_skeleton_with_simple_2d_for_h1_debkowicz_quad
+add_test(continuity_check_on_skeleton_with_simple_2d_for_h1_demkowicz_quad
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d_for_h1 
   -file_name rectangle_quad.h5m -base demkowicz
