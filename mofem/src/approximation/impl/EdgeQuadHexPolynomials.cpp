@@ -816,8 +816,8 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONHEX(
 
   for (int face = 0; face != 6; face++) {
 
-    const int nb_dofs = (p[face] - 1) * (p[face] - 1);
-    if (nb_dofs > 0) {
+    if (p[face] > 1) {
+      const int nb_dofs = (p[face] - 1) * (p[face] - 1);
 
       const int n0 = face_nodes[4 * face + 0];
       const int n1 = face_nodes[4 * face + 1];
