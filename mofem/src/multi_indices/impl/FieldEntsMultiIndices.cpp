@@ -21,6 +21,10 @@
 
 namespace MoFEM {
 
+constexpr int FieldEntity::dof_shift; // Maximal number of DOFs on entity
+constexpr int FieldEntity::ent_shift; // EntityHandle size
+constexpr int FieldEntity::proc_shift; // Maximal number of 1024 processors
+
 FieldEntity::FieldEntity(
     const boost::shared_ptr<Field> field_ptr,
     const boost::shared_ptr<RefEntity> ref_ents_ptr,

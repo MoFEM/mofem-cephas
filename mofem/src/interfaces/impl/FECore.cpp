@@ -147,7 +147,7 @@ Core::modify_finite_element_add_field_data(const std::string &fe_name,
     SETERRQ(mofemComm, MOFEM_NOT_FOUND,
             "This finite element is not defined (advise: check spelling)");
   bool success = finite_element_name_set.modify(
-      it_fe, FiniteElement_change_bit_add(getBitFieldId(name_data)));
+      it_fe, FiniteElement_change_bit_add(get_field_id(name_data)));
   if (!success)
     SETERRQ(mofemComm, MOFEM_OPERATION_UNSUCCESSFUL,
             "modification unsuccessful");
@@ -169,7 +169,7 @@ Core::modify_finite_element_add_field_row(const std::string &fe_name,
     SETERRQ1(mofemComm, MOFEM_NOT_FOUND, "this < %s > is not there",
              fe_name.c_str());
   bool success = finite_element_name_set.modify(
-      it_fe, FiniteElement_row_change_bit_add(getBitFieldId(name_row)));
+      it_fe, FiniteElement_row_change_bit_add(get_field_id(name_row)));
   if (!success)
     SETERRQ(mofemComm, MOFEM_OPERATION_UNSUCCESSFUL,
             "modification unsuccessful");
@@ -191,7 +191,7 @@ Core::modify_finite_element_add_field_col(const std::string &fe_name,
     SETERRQ(mofemComm, MOFEM_OPERATION_UNSUCCESSFUL,
             "this FiniteElement is there");
   bool success = finite_element_name_set.modify(
-      it_fe, FiniteElement_col_change_bit_add(getBitFieldId(name_col)));
+      it_fe, FiniteElement_col_change_bit_add(get_field_id(name_col)));
   if (!success)
     SETERRQ(mofemComm, MOFEM_OPERATION_UNSUCCESSFUL,
             "modification unsuccessful");
@@ -209,7 +209,7 @@ Core::modify_finite_element_off_field_data(const std::string &fe_name,
   if (it_fe == finite_element_name_set.end())
     SETERRQ(mofemComm, MOFEM_NOT_FOUND, "this FiniteElement is there");
   bool success = finite_element_name_set.modify(
-      it_fe, FiniteElement_change_bit_off(getBitFieldId(name_data)));
+      it_fe, FiniteElement_change_bit_off(get_field_id(name_data)));
   if (!success)
     SETERRQ(mofemComm, MOFEM_OPERATION_UNSUCCESSFUL,
             "modification unsuccessful");
@@ -228,7 +228,7 @@ Core::modify_finite_element_off_field_row(const std::string &fe_name,
     SETERRQ1(mofemComm, MOFEM_NOT_FOUND, "this < %s > is not there",
              fe_name.c_str());
   bool success = finite_element_name_set.modify(
-      it_fe, FiniteElement_row_change_bit_off(getBitFieldId(name_row)));
+      it_fe, FiniteElement_row_change_bit_off(get_field_id(name_row)));
   if (!success)
     SETERRQ(mofemComm, MOFEM_OPERATION_UNSUCCESSFUL,
             "modification unsuccessful");
@@ -246,7 +246,7 @@ Core::modify_finite_element_off_field_col(const std::string &fe_name,
   if (it_fe == finite_element_name_set.end())
     SETERRQ(mofemComm, MOFEM_NOT_FOUND, "this FiniteElement is there");
   bool success = finite_element_name_set.modify(
-      it_fe, FiniteElement_col_change_bit_off(getBitFieldId(name_col)));
+      it_fe, FiniteElement_col_change_bit_off(get_field_id(name_col)));
   if (!success)
     SETERRQ(mofemComm, MOFEM_OPERATION_UNSUCCESSFUL,
             "modification unsuccessful");

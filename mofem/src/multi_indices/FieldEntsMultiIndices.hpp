@@ -126,9 +126,6 @@ struct FieldEntity : public interface_Field<Field, RefEntity> {
    */
   static inline UId getLocalUniqueIdCalculate(const char bit_number,
                                               const EntityHandle handle) {
-    constexpr int dof_shift = 9;   // Maximal number of DOFs on entity
-    constexpr int ent_shift = 64;  // EntityHandle size
-    constexpr int proc_shift = 10; // Maximal number of 1024 processors
     return
 
         (static_cast<UId>(handle) << proc_shift | static_cast<UId>(bit_number)
@@ -149,7 +146,7 @@ struct FieldEntity : public interface_Field<Field, RefEntity> {
    * \brief Get global unique id
    * @return Global UId
    */
-  const UId getGlobalUniqueId() const { return getGlobalUniqueIdCalculate(); }
+  UId getGlobalUniqueId() const { return getGlobalUniqueIdCalculate(); }
 
   /**
    * \brief Get global unique id
@@ -174,9 +171,6 @@ struct FieldEntity : public interface_Field<Field, RefEntity> {
   static inline UId
   getGlobalUniqueIdCalculate(const int owner_proc, const char bit_number,
                              const EntityHandle moab_owner_handle) {
-    constexpr int dof_shift = 9;   // Maximal number of DOFs on entity
-    constexpr int ent_shift = 64;  // EntityHandle size
-    constexpr int proc_shift = 10; // Maximal number of 1024 processors
     return
 
         (static_cast<UId>(owner_proc) |
@@ -184,6 +178,29 @@ struct FieldEntity : public interface_Field<Field, RefEntity> {
          static_cast<UId>(bit_number) << proc_shift + ent_shift)
         << dof_shift;
   }
+
+  static inline auto getOwnerFromUniqueId(const UId uid) {
+    constexpr int proc_mask = MAX_PROCESSORS_NUMBER - 1;
+    return static_cast<int>(
+
+        (uid & getGlobalUniqueIdCalculate(proc_mask, 0, 0)) >> dof_shift
+
+    );
+  };
+
+  static inline auto getHandleFromUniqueId(const UId uid) {
+    constexpr EntityHandle handle_mask = ~(EntityHandle(0));
+    return static_cast<EntityHandle>(
+        (uid & getGlobalUniqueIdCalculate(0, 0, handle_mask)) >> proc_shift >>
+        dof_shift);
+  };
+
+  static inline auto getFieldBitNumberFromUniqueId(const UId uid) {
+    constexpr int bit_field_mask = ~(char(0));
+    return static_cast<char>(
+        (uid & getGlobalUniqueIdCalculate(0, bit_field_mask, 0)) >>
+        (proc_shift + ent_shift) >> dof_shift);
+  };
 
   /**
    * \brief Calculate global UId
@@ -196,19 +213,12 @@ struct FieldEntity : public interface_Field<Field, RefEntity> {
   }
 
   static inline UId getLoBitNumberUId(const FieldBitNumber bit_number) {
-    constexpr int dof_shift = 9;   // Maximal number of DOFs on entity
-    constexpr int ent_shift = 64;  // EntityHandle size
-    constexpr int proc_shift = 10; // Maximal number of 1024 processors
     return
 
         static_cast<UId>(bit_number) << dof_shift + ent_shift + proc_shift;
   }
 
   static inline UId getHiBitNumberUId(const FieldBitNumber bit_number) {
-    constexpr int dof_shift = 9;   // Maximal number of DOFs on entity
-    constexpr int ent_shift = 64;  // EntityHandle size
-    constexpr int proc_shift = 10; // Maximal number of 1024 processors
-
     return static_cast<UId>(MAX_DOFS_ON_ENTITY - 1) |
            static_cast<UId>(MAX_PROCESSORS_NUMBER - 1) << dof_shift |
            static_cast<UId>(std::numeric_limits<EntityHandle>::max())
@@ -281,6 +291,9 @@ struct FieldEntity : public interface_Field<Field, RefEntity> {
 private:
   mutable boost::shared_ptr<const ApproximationOrder> tagMaxOrderPtr;
   mutable boost::shared_ptr<FieldData *const> fieldDataAdaptorPtr;
+  static constexpr int dof_shift = 9;   // Maximal number of DOFs on entity
+  static constexpr int ent_shift = 64;  // EntityHandle size
+  static constexpr int proc_shift = 10; // Maximal number of 1024 processors
 };
 
 template <>
@@ -393,7 +406,7 @@ private:
  * \ingroup ent_multi_indices
  *
  */
-typedef multi_index_container<
+using FieldEntity_multiIndex = multi_index_container<
     boost::shared_ptr<FieldEntity>,
     indexed_by<
         ordered_unique<tag<Unique_mi_tag>,
@@ -402,9 +415,7 @@ typedef multi_index_container<
                            const_mem_fun<FieldEntity::interface_type_RefEntity,
                                          EntityHandle, &FieldEntity::getEnt>>
 
-        >>
-
-    FieldEntity_multiIndex;
+        >>;
 
 /** \brief Entity index by field name
  *
@@ -412,7 +423,20 @@ typedef multi_index_container<
  */
 using FieldEntityByUId = FieldEntity_multiIndex::index<Unique_mi_tag>::type;
 
-typedef multi_index_container<
+/** \brief multi-index view on DofEntity by uid
+  \ingroup dof_multi_indices
+*/
+using FieldEntity_multiIndex_global_uid_view = multi_index_container<
+    boost::shared_ptr<FieldEntity>,
+    indexed_by<
+
+        ordered_unique<
+            tag<Unique_mi_tag>,
+            const_mem_fun<FieldEntity, UId, &FieldEntity::getGlobalUniqueId>>
+
+        >>;
+
+using FieldEntity_multiIndex_ent_view = multi_index_container<
     boost::shared_ptr<FieldEntity>,
     indexed_by<
 
@@ -422,10 +446,9 @@ typedef multi_index_container<
                            const_mem_fun<FieldEntity::interface_type_RefEntity,
                                          EntityHandle, &FieldEntity::getEnt>>
 
-        >>
-    FieldEntity_multiIndex_ent_view;
+        >>;
 
-typedef multi_index_container<
+using FieldEntity_multiIndex_spaceType_view = multi_index_container<
     boost::shared_ptr<FieldEntity>,
     indexed_by<
 
@@ -443,10 +466,20 @@ typedef multi_index_container<
 
                           >>
 
-        >>
-    FieldEntity_multiIndex_spaceType_view;
+        >>;
 
 typedef std::vector<boost::weak_ptr<FieldEntity>> FieldEntity_vector_view;
+
+using FieldEntity_multiIndex = multi_index_container<
+    boost::shared_ptr<FieldEntity>,
+    indexed_by<
+        ordered_unique<tag<Unique_mi_tag>,
+                       member<FieldEntity, UId, &FieldEntity::localUId>>,
+        ordered_non_unique<tag<Ent_mi_tag>,
+                           const_mem_fun<FieldEntity::interface_type_RefEntity,
+                                         EntityHandle, &FieldEntity::getEnt>>
+
+        >>;
 
 } // namespace MoFEM
 

@@ -500,14 +500,30 @@ struct CoreInterface : public UnknownInterface {
   virtual MoFEMErrorCode build_field(const std::string field_name,
                                      int verb = DEFAULT_VERBOSITY) = 0;
 
+  /**
+   * @brief Get field Id
+   * 
+   * @param name of field
+   * @return BitFieldId 
+   */
+  virtual BitFieldId get_field_id(const std::string &name) const = 0;
+
   /** \brief get field bit number
   *
-  * \param name of Field
+  * \param name of field
   * Example:\code
   auto field_number = mField.get_field_bit_number("DISPLACEMENT");
   * \endcode
   */
   virtual FieldBitNumber get_field_bit_number(const std::string name) const = 0;
+
+  /**
+   * @brief get field name from id
+   * 
+   * @param id 
+   * @return std::string 
+   */
+  virtual std::string get_field_name(const BitFieldId id) const = 0;
 
   /** \brief get field meshset
   *

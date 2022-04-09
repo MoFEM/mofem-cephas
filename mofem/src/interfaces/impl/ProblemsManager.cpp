@@ -409,7 +409,7 @@ MoFEMErrorCode ProblemsManager::partitionMesh(
             for (; count > 0; --count) {
               *gid_tag_ptr = gid;
               ++eit;
-              ++gid; 
+              ++gid;
               ++gid_tag_ptr;
             }
           }
@@ -664,6 +664,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
   auto fields_ptr = m_field.get_fields();
   auto fe_ptr = m_field.get_finite_elements();
   auto fe_ent_ptr = m_field.get_ents_finite_elements();
+  auto ents_field_ptr = m_field.get_field_ents();
   auto dofs_field_ptr = m_field.get_dofs();
   ProblemManagerFunctionBegin;
   PetscLogEventBegin(MOFEM_EVENT_ProblemsManager, 0, 0, 0, 0);
@@ -1188,11 +1189,49 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
       for (int dd = 0; dd < len; dd += data_block_size) {
         uid = IdxDataTypePtr(&data_from_proc[dd]).getUId();
         auto ddit = dofs_glob_uid_view.find(uid);
-        if (ddit == dofs_glob_uid_view.end()) {
-          std::ostringstream zz;
-          zz << uid << std::endl;
-          SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-                   "no such dof %s in mofem database", zz.str().c_str());
+
+        if (PetscUnlikely(ddit != dofs_glob_uid_view.end())) {
+
+#ifndef NDEBUG
+          MOFEM_LOG("SELF", Sev::error)
+              << "DOF is shared or multishared between processors. For example "
+                 "if order of field on given entity is set in inconsistently, "
+                 "has diffrent value on two processor, error such as this is "
+                 "triggered";
+
+          MOFEM_LOG("SELF", Sev::error) << "UId " << uid << " is not found";
+          const auto owner_proc = FieldEntity::getOwnerFromUniqueId(uid);
+          MOFEM_LOG("SELF", Sev::error)
+              << "Problematic UId owner proc is " << owner_proc;
+          const auto uid_handle = FieldEntity::getHandleFromUniqueId(uid);
+          MOFEM_LOG("SELF", Sev::error)
+              << "Problematic UId entity owning processor handle is "
+              << uid_handle << " entity type "
+              << moab::CN::EntityTypeName(type_from_handle(uid_handle));
+          const auto uid_bit_number =
+              FieldEntity::getFieldBitNumberFromUniqueId(uid);
+          MOFEM_LOG("SELF", Sev::error)
+              << "Problematic UId field is "
+              << m_field.get_field_name(
+                     field_bit_from_bit_number(uid_bit_number));
+
+          FieldEntity_multiIndex_global_uid_view field_view;
+          field_view.insert(ents_field_ptr->begin(), ents_field_ptr->end());
+          auto fe_it = field_view.find(FieldEntity::getGlobalUniqueIdCalculate(
+              owner_proc, uid_bit_number, uid_handle));
+          if (fe_it == field_view.end()) {
+            MOFEM_LOG("SELF", Sev::error)
+                << "Also, no field entity in database for given global UId";
+          } else {
+            MOFEM_LOG("SELF", Sev::error) << "Field entity in databse exist "
+                                             "(but have no DOF wih give UId";
+            MOFEM_LOG("SELF", Sev::error) << **fe_it;
+          }
+#endif
+
+          SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+                  "DOF with global UId not found (Compile code in Debug to "
+                  "learn more about problem");
         }
 
         auto dit = numered_dofs_ptr[ss]->find((*ddit)->getLocalUniqueId());
@@ -1200,23 +1239,32 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
         if (dit != numered_dofs_ptr[ss]->end()) {
 
           int global_idx = IdxDataTypePtr(&data_from_proc[dd]).getDofIdx();
-          if (global_idx < 0)
+#ifndef NDEBUG
+          if (PetscUnlikely(global_idx < 0))
             SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                     "received negative dof");
+#endif
           bool success;
           success = numered_dofs_ptr[ss]->modify(
               dit, NumeredDofEntity_mofem_index_change(global_idx));
-          if (!success)
+
+#ifndef NDEBUG
+          if (PetscUnlikely(!success))
             SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                     "modification unsuccessful");
+#endif
           success = numered_dofs_ptr[ss]->modify(
               dit, NumeredDofEntity_part_and_glob_idx_change((*dit)->getPart(),
                                                              global_idx));
-          if (!success)
+#ifndef NDEBUG
+          if (PetscUnlikely(!success))
             SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                     "modification unsuccessful");
+#endif
+        };
 
-        } else if (ddit->get()->getPStatus() == 0) {
+#ifndef NDEBUG
+        if (PetscUnlikely(ddit->get()->getPStatus() == 0)) {
 
           // Dof is shared on this processor, however there is no element
           // which have this dof. If DOF is not shared and received from other
@@ -1231,6 +1279,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
                    "%s",
                    zz.str().c_str());
         }
+#endif
       }
     }
   }
@@ -2546,7 +2595,6 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
   for (auto &fe : *numbered_good_elems_ptr) {
 
     auto check_fields_and_dofs = [&]() {
-
       if (!part_from_moab) {
         if (fe.getBitFieldIdRow().none() && m_field.get_comm_size() == 0) {
           MOFEM_LOG("WORLD", Sev::warning)
@@ -2557,7 +2605,6 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
       }
 
       return true;
-
     };
 
     if (check_fields_and_dofs()) {
@@ -3432,7 +3479,6 @@ ProblemsManager::addFieldToEmptyFieldBlocks(const std::string problem_name,
                                             const std::string col_field) const {
 
   Interface &m_field = cOre;
-  const Problem *problem_ptr;                                             
   MoFEMFunctionBegin;
 
   const auto problem_ptr = m_field.get_problem(problem_name);

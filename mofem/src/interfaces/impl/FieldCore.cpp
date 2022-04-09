@@ -28,7 +28,7 @@
 
 namespace MoFEM {
 
-BitFieldId Core::getBitFieldId(const std::string &name) const {
+BitFieldId Core::get_field_id(const std::string &name) const {
   auto &set = fIelds.get<FieldName_mi_tag>();
   auto miit = set.find(name);
   if (miit == set.end()) {
@@ -42,8 +42,17 @@ FieldBitNumber Core::get_field_bit_number(const std::string name) const {
   auto &set = fIelds.get<FieldName_mi_tag>();
   auto miit = set.find(name);
   if (miit == set.end())
-    THROW_MESSAGE("field not in database (top tip: check spelling)");
+    THROW_MESSAGE("field < " + name +
+                  " > not in database (top tip: check spelling)");
   return (*miit)->getBitNumber();
+}
+
+std::string Core::get_field_name(const BitFieldId id) const {
+  auto &set = fIelds.get<BitFieldId_mi_tag>();
+  auto miit = set.find(id);
+  if (miit == set.end())
+    THROW_MESSAGE("field not in database (top tip: check spelling)");
+  return (*miit)->getName();
 }
 
 EntityHandle Core::get_field_meshset(const BitFieldId id) const {
@@ -55,7 +64,7 @@ EntityHandle Core::get_field_meshset(const BitFieldId id) const {
 }
 
 EntityHandle Core::get_field_meshset(const std::string name) const {
-  return get_field_meshset(getBitFieldId(name));
+  return get_field_meshset(get_field_id(name));
 }
 
 bool Core::check_field(const std::string &name) const {
@@ -909,7 +918,7 @@ MoFEMErrorCode Core::set_field_order(const EntityHandle meshset,
   if (verb == -1)
     verb = verbose;
   *buildMoFEM = 0;
-  CHKERR this->set_field_order(meshset, type, getBitFieldId(name), order, verb);
+  CHKERR this->set_field_order(meshset, type, get_field_id(name), order, verb);
   MoFEMFunctionReturn(0);
 }
 MoFEMErrorCode Core::set_field_order(const Range &ents, const std::string &name,
@@ -918,7 +927,7 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const std::string &name,
   if (verb == -1)
     verb = verbose;
   *buildMoFEM = 0;
-  CHKERR this->set_field_order(ents, getBitFieldId(name), order, verb);
+  CHKERR this->set_field_order(ents, get_field_id(name), order, verb);
   MoFEMFunctionReturn(0);
 }
 MoFEMErrorCode Core::set_field_order_by_entity_type_and_bit_ref(
@@ -945,7 +954,7 @@ MoFEMErrorCode Core::set_field_order_by_entity_type_and_bit_ref(
   Range ents;
   CHKERR BitRefManager(*this).getEntitiesByTypeAndRefLevel(bit, mask, type,
                                                            ents, verb);
-  CHKERR this->set_field_order(ents, getBitFieldId(name), order, verb);
+  CHKERR this->set_field_order(ents, get_field_id(name), order, verb);
   MoFEMFunctionReturn(0);
 }
 
