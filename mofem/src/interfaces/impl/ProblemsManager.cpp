@@ -1190,7 +1190,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
         uid = IdxDataTypePtr(&data_from_proc[dd]).getUId();
         auto ddit = dofs_glob_uid_view.find(uid);
 
-        if (PetscUnlikely(ddit != dofs_glob_uid_view.end())) {
+        if (PetscUnlikely(ddit == dofs_glob_uid_view.end())) {
 
 #ifndef NDEBUG
           MOFEM_LOG("SELF", Sev::error)
@@ -1226,6 +1226,21 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
             MOFEM_LOG("SELF", Sev::error) << "Field entity in databse exist "
                                              "(but have no DOF wih give UId";
             MOFEM_LOG("SELF", Sev::error) << **fe_it;
+
+            // Save file with missing entity
+            auto error_file_name =
+                "error_with_missing_entity_" +
+                boost::lexical_cast<std::string>(m_field.get_comm_rank()) +
+                ".vtk";
+            MOFEM_LOG("SELF", Sev::error)
+                << "Look to file < " << error_file_name
+                << " > it contains entity with missing DOF.";
+
+            auto tmp_msh = get_temp_meshset_ptr(m_field.get_moab());
+            const auto local_fe_ent = (*fe_it)->getEnt();
+            CHKERR m_field.get_moab().add_entities(*tmp_msh, &local_fe_ent, 1);
+            CHKERR m_field.get_moab().write_file(error_file_name.c_str(), "VTK",
+                                                 "", tmp_msh->get_ptr(), 1);
           }
 #endif
 
