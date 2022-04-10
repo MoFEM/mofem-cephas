@@ -55,9 +55,7 @@ MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
       continue;
 
     if (verb >= NOISY) {
-      std::ostringstream zz;
-      zz << "pstatus " << std::bitset<8>(pstatus) << " ";
-      PetscSynchronizedPrintf(m_field.get_comm(), "%s", zz.str().c_str());
+      MOFEM_LOG("SYNC", Sev::noisy) << "pstatus " << std::bitset<8>(pstatus);
     }
 
     for (int proc = 0;
@@ -75,10 +73,10 @@ MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
       sbuffer[(*meit)->getSharingProcsPtr()[proc]].push_back(
           handle_on_sharing_proc);
       if (verb >= NOISY)
-        PetscSynchronizedPrintf(
-            m_field.get_comm(), "send %lu (%lu) to %d at %d\n",
-            (*meit)->getEnt(), handle_on_sharing_proc,
-            (*meit)->getSharingProcsPtr()[proc], m_field.get_comm_rank());
+        MOFEM_LOG_C("SYNC", Sev::noisy, "send %lu (%lu) to %d at %d\n",
+                    (*meit)->getEnt(), handle_on_sharing_proc,
+                    (*meit)->getSharingProcsPtr()[proc],
+                    m_field.get_comm_rank());
 
       if (!(pstatus & PSTATUS_MULTISHARED))
         break;
@@ -159,8 +157,8 @@ MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
     CHKERR MPI_Waitall(nsends, s_waits, &status[0]);
 
   if (verb >= VERY_VERBOSE) {
-    PetscSynchronizedPrintf(m_field.get_comm(), "Rank %d nb. before ents %u\n",
-                            m_field.get_comm_rank(), ents.size());
+    MOFEM_LOG_C("SYNC", Sev::verbose, "Rank %d nb. before ents %u\n",
+                m_field.get_comm_rank(), ents.size());
   }
 
   // synchronise range
@@ -181,9 +179,9 @@ MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
                  m_field.get_comm_rank(), ent);
 
       if (verb >= VERY_VERBOSE)
-        PetscSynchronizedPrintf(
-            m_field.get_comm(), "received %ul (%ul) from %d at %d\n",
-            (*meit)->getEnt(), ent, onodes[kk], m_field.get_comm_rank());
+        MOFEM_LOG_C("SYNC", Sev::verbose, "received %ul (%ul) from %d at %d\n",
+                    (*meit)->getEnt(), ent, onodes[kk],
+                    m_field.get_comm_rank());
 
       ents.insert((*meit)->getEnt());
     }
@@ -203,7 +201,7 @@ MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
   CHKERR PetscCommDestroy(&comm);
 
   if (verb >= VERBOSE)
-    PetscSynchronizedFlush(m_field.get_comm(), PETSC_STDOUT);
+    MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
 
   MoFEMFunctionReturn(0);
 }
@@ -321,7 +319,7 @@ CommInterface::makeEntitiesMultishared(const EntityHandle *entities,
     all_ents_range.insert_list(entities, entities + num_entities);
 
     auto get_tag = [&]() {
-      return m_field.get_moab().globalId_tag();;
+      return m_field.get_moab().globalId_tag();
     };
 
     auto delete_tag = [&](auto &&th_gid) {
@@ -427,8 +425,8 @@ CommInterface::makeEntitiesMultishared(const EntityHandle *entities,
           ss << shhandles[r] << " ";
 
         ss << std::endl;
-        PetscSynchronizedPrintf(m_field.get_comm(), "%s", ss.str().c_str());
-        PetscSynchronizedFlush(m_field.get_comm(), PETSC_STDOUT);
+        MOFEM_LOG("SYNC", Sev::noisy) << ss.str();
+        MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
 
         MoFEMFunctionReturn(0);
       };
