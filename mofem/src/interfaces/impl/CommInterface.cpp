@@ -19,7 +19,9 @@
 
 namespace MoFEM {
 
-MoFEMErrorCode CommInterface::query_interface(boost::typeindex::type_index type_index, UnknownInterface **iface) const {
+MoFEMErrorCode
+CommInterface::query_interface(boost::typeindex::type_index type_index,
+                               UnknownInterface **iface) const {
   MoFEMFunctionBeginHot;
   *iface = const_cast<CommInterface *>(this);
   MoFEMFunctionReturnHot(0);
@@ -318,9 +320,7 @@ CommInterface::makeEntitiesMultishared(const EntityHandle *entities,
     Range all_ents_range;
     all_ents_range.insert_list(entities, entities + num_entities);
 
-    auto get_tag = [&]() {
-      return m_field.get_moab().globalId_tag();
-    };
+    auto get_tag = [&]() { return m_field.get_moab().globalId_tag(); };
 
     auto delete_tag = [&](auto &&th_gid) {
       MoFEMFunctionBegin;
@@ -350,7 +350,7 @@ CommInterface::makeEntitiesMultishared(const EntityHandle *entities,
 
       auto resolve_dim = [&](auto &all_ents_range) {
         for (int resolve_dim = 3; resolve_dim >= 0; --resolve_dim) {
-          if (all_ents_range.num_of_dimension(resolve_dim)) 
+          if (all_ents_range.num_of_dimension(resolve_dim))
             return resolve_dim;
         }
         return -1;
@@ -475,7 +475,6 @@ MoFEMErrorCode CommInterface::exchangeFieldData(const std::string field_name,
   MoFEM::Interface &m_field = cOre;
   MoFEMFunctionBegin;
   if (m_field.get_comm_size() > 1) {
-
 
     Range exchange_ents_data_verts, exchange_ents_data;
 
