@@ -192,6 +192,9 @@ int main(int argc, char *argv[]) {
     {
       // get options from command line
       CHKERR simple_interface->getOptions();
+      // Add ghost cells needed for evaluation on skeleton
+      simple_interface->getAddSkeletonFE() = true;
+
       // load mesh file
       CHKERR simple_interface->loadFile("");
 
