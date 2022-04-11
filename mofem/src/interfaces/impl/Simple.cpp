@@ -203,9 +203,10 @@ Simple::Simple(const Core &core)
       skeletonMeshset(0), nameOfProblem("SimpleProblem"), domainFE("dFE"),
       boundaryFE("bFE"), skeletonFE("sFE"), dIm(-1), addSkeletonFE(false),
       addBoundaryFE(false) {
-  PetscLogEventRegister("LoadMesh", 0, &MOFEM_EVENT_SimpleLoadMesh);
-  PetscLogEventRegister("buildFields", 0, &MOFEM_EVENT_SimpleBuildFields);
-  PetscLogEventRegister("buildFiniteElements", 0,
+  PetscLogEventRegister("SimpleSetUp", 0, &MOFEM_EVENT_SimpleSetUP);
+  PetscLogEventRegister("SimpleLoadMesh", 0, &MOFEM_EVENT_SimpleLoadMesh);
+  PetscLogEventRegister("SimpleBuildFields", 0, &MOFEM_EVENT_SimpleBuildFields);
+  PetscLogEventRegister("SimpleBuildFiniteElements", 0,
                         &MOFEM_EVENT_SimpleBuildFiniteElements);
   PetscLogEventRegister("SimpleSetUp", 0, &MOFEM_EVENT_SimpleBuildProblem);
   PetscLogEventRegister("SimpleKSPSolve", 0, &MOFEM_EVENT_SimpleKSPSolve);
@@ -257,14 +258,34 @@ MoFEMErrorCode Simple::loadFile(const std::string options,
       }
     }
   }
-  Range ents;
-  CHKERR m_field.get_moab().get_entities_by_dimension(meshSet, dIm, ents, true);
-  CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevel(ents, bitLevel,
-                                                               false);
+
   ParallelComm *pcomm =
       ParallelComm::get_pcomm(&m_field.get_moab(), MYPCOMM_INDEX);
   if (pcomm == NULL)
     pcomm = new ParallelComm(&m_field.get_moab(), m_field.get_comm());
+
+  // Exahcge ghost cells, need access to shared entities
+  if (addSkeletonFE) {
+    CHKERR pcomm->exchange_ghost_cells(
+        getDim(), getDim() - 1, 1, 3 /**get all adjacent ghosted entities */,
+        true, true, nullptr);
+    if (meshSet) {
+      Range all;
+      CHKERR m_field.get_moab().get_entities_by_dimension(0, getDim(), all);
+      Range shared;
+      CHKERR pcomm->filter_pstatus(all, PSTATUS_SHARED | PSTATUS_MULTISHARED,
+                                   PSTATUS_OR, -1, &shared);
+
+      CHKERR m_field.get_moab().add_entities(meshSet, shared);
+    }
+  }
+
+  
+  Range ents;
+  CHKERR m_field.get_moab().get_entities_by_dimension(meshSet, dIm, ents, true);
+  CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevel(ents, bitLevel,
+                                                               false);
+
   PetscLogEventEnd(MOFEM_EVENT_SimpleLoadMesh, 0, 0, 0, 0);
   MoFEMFunctionReturn(0);
 }
@@ -714,7 +735,11 @@ MoFEMErrorCode Simple::buildProblem() {
 }
 
 MoFEMErrorCode Simple::setUp(const PetscBool is_partitioned) {
+  Interface &m_field = cOre;
   MoFEMFunctionBegin;
+
+  PetscLogEventBegin(MOFEM_EVENT_SimpleSetUP, 0, 0, 0, 0);
+
   CHKERR defineFiniteElements();
   if (addSkeletonFE || !skeletonFields.empty())
     CHKERR setSkeletonAdjacency();
@@ -722,6 +747,8 @@ MoFEMErrorCode Simple::setUp(const PetscBool is_partitioned) {
   CHKERR buildFields();
   CHKERR buildFiniteElements();
   CHKERR buildProblem();
+
+  PetscLogEventEnd(MOFEM_EVENT_SimpleSetUP, 0, 0, 0, 0);
   MoFEMFunctionReturn(0);
 }
 

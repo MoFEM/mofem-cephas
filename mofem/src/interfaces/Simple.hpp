@@ -433,6 +433,7 @@ private:
   BitRefLevel bitLevel;     ///< BitRefLevel of the probelm
   BitRefLevel bitLevelMask; ///< BitRefLevel of the probelm
 
+  PetscLogEvent MOFEM_EVENT_SimpleSetUP;
   PetscLogEvent MOFEM_EVENT_SimpleLoadMesh;
   PetscLogEvent MOFEM_EVENT_SimpleBuildFields;
   PetscLogEvent MOFEM_EVENT_SimpleBuildFiniteElements;
