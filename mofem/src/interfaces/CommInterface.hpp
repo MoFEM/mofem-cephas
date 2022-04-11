@@ -192,6 +192,58 @@ struct CommInterface : public UnknownInterface {
                                           int verb = DEFAULT_VERBOSITY);
 
   /**@}*/
+
+  /**@*/
+
+  /** \name Read load and boradcoast */
+
+  /**
+   * \brief Set partition tag to each finite element in the problem
+   * \ingroup mofem_problems_manager
+   *
+   * This will use one of the mesh partitioning programs available from PETSc
+   * See
+   * <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatPartitioningType.html>
+   *
+   * @param  ents        Entities to partition
+   * @param  dim         Dimension of entities to partition
+   * @param  adj_dim     Adjacency dimension
+   * @param  n_parts     Number of partitions
+   * @param  verb        Verbosity level
+   * @return             Error code
+   */
+  MoFEMErrorCode partitionMesh(const Range &ents, const int dim,
+                               const int adj_dim, const int n_parts,
+                               Tag *th_vertex_weights = nullptr,
+                               Tag *th_edge_weights = nullptr,
+                               Tag *th_part_weights = nullptr,
+                               int verb = VERBOSE, const bool debug = false);
+
+
+  // /**
+  //  * @brief 
+  //  * 
+  //  * @param meshset 
+  //  * @param overlap 
+  //  * @param dim 
+  //  * @param adj_dim 
+  //  * @param n_parts 
+  //  * @param th_vertex_weights 
+  //  * @param th_edge_weights 
+  //  * @param th_part_weights 
+  //  * @param verb 
+  //  * @return MoFEMErrorCode 
+  //  */
+  // MoFEMErrorCode partitionAndShare(const EntityHandle meshset,
+  //                                  const int overlap = 0, const int dim,
+  //                                  const int adj_dim, const int n_parts,
+  //                                  Tag *th_vertex_weights = nullptr,
+  //                                  Tag *th_edge_weights = nullptr,
+  //                                  Tag *th_part_weights = nullptr,
+  //                                  int verb = VERBOSE);
+
+  /**@}*/
+
 };
 } // namespace MoFEM
 

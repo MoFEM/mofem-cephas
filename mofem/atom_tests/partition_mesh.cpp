@@ -69,11 +69,10 @@ int main(int argc, char *argv[]) {
                                th_vertex_weight, MB_TAG_CREAT | MB_TAG_DENSE,
                                &def_val);
 
-    ProblemsManager *prb_mng_ptr;
-    CHKERR m_field.getInterface(prb_mng_ptr);
-    CHKERR prb_mng_ptr->partitionMesh(tets, 3, 2, m_field.get_comm_size(),
-                                      &th_vertex_weight, NULL, NULL, VERBOSE,
-                                      false);
+    CommInterface *comm_interafce_ptr = m_field.getInterface<CommInterface>();
+    CHKERR comm_interafce_ptr->partitionMesh(
+        tets, 3, 2, m_field.get_comm_size(), &th_vertex_weight, NULL, NULL,
+        VERBOSE, false);
 
     if (!m_field.get_comm_rank()) {
       CHKERR moab.write_file("partitioned_mesh.h5m");

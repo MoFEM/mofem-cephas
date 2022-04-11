@@ -46,6 +46,7 @@ struct ProblemsManager : public UnknownInterface {
 
   /**
    * \brief Set partition tag to each finite element in the problem
+   * \deprecated Use CommInterface
    * \ingroup mofem_problems_manager
    *
    * This will use one of the mesh partitioning programs available from PETSc
@@ -59,12 +60,13 @@ struct ProblemsManager : public UnknownInterface {
    * @param  verb        Verbosity level
    * @return             Error code
    */
-  MoFEMErrorCode partitionMesh(const Range &ents, const int dim,
-                               const int adj_dim, const int n_parts,
-                               Tag *th_vertex_weights = nullptr,
-                               Tag *th_edge_weights = nullptr,
-                               Tag *th_part_weights = nullptr,
-                               int verb = VERBOSE, const bool debug = false);
+  DEPRECATED MoFEMErrorCode partitionMesh(const Range &ents, const int dim,
+                                          const int adj_dim, const int n_parts,
+                                          Tag *th_vertex_weights = nullptr,
+                                          Tag *th_edge_weights = nullptr,
+                                          Tag *th_part_weights = nullptr,
+                                          int verb = VERBOSE,
+                                          const bool debug = false);
 
   /** \brief build problem data structures
    * \ingroup mofem_problems_manager

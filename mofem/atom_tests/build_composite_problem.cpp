@@ -58,10 +58,10 @@ int main(int argc, char *argv[]) {
     Range tets;
     CHKERR moab.get_entities_by_type(root_set, MBTET, tets, false);
 
-    ProblemsManager *prb_mng_ptr;
-    CHKERR m_field.getInterface(prb_mng_ptr);
-    CHKERR prb_mng_ptr->partitionMesh(tets, 3, 2, m_field.get_comm_size(), NULL,
-                                      NULL, NULL);
+    ProblemsManager *prb_mng_ptr = m_field.getInterface<ProblemsManager>();
+    CommInterface *comm_interface_ptr = m_field.getInterface<CommInterface>();
+    CHKERR comm_interface_ptr->partitionMesh(
+        tets, 3, 2, m_field.get_comm_size(), NULL, NULL, NULL);
 
     EntityHandle part_set;
     CHKERR moab.create_meshset(MESHSET_SET, part_set);
