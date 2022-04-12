@@ -470,6 +470,10 @@ private:
   SmartPetscObj<DM>
       dM; ///< Discrete manager (interface to PETSc/MoFEM functions)
 
+  MoFEMErrorCode createBoundaryMeshset();
+  MoFEMErrorCode createSkeletonMeshset();
+  MoFEMErrorCode exchangeGhostCells();
+
   template <int DIM = -1> MoFEMErrorCode setSkeletonAdjacency();
 };
 

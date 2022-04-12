@@ -240,6 +240,7 @@ MoFEMErrorCode Simple::loadFile(const std::string options,
   // keep only part of the problem.
   CHKERR m_field.get_moab().load_file(meshFileName, 0, options.c_str());
   CHKERR m_field.rebuild_database();
+
   // determine problem dimension
   if (dIm == -1) {
     int nb_ents_3d;
@@ -259,28 +260,13 @@ MoFEMErrorCode Simple::loadFile(const std::string options,
     }
   }
 
-  ParallelComm *pcomm =
-      ParallelComm::get_pcomm(&m_field.get_moab(), MYPCOMM_INDEX);
-  if (pcomm == NULL)
-    pcomm = new ParallelComm(&m_field.get_moab(), m_field.get_comm());
+  if (!boundaryMeshset)
+    CHKERR createBoundaryMeshset();
+  if (!skeletonMeshset)
+    CHKERR createSkeletonMeshset();
+  if (addSkeletonFE)
+    CHKERR exchangeGhostCells();
 
-  // Exahcge ghost cells, need access to shared entities
-  if (addSkeletonFE) {
-    CHKERR pcomm->exchange_ghost_cells(
-        getDim(), getDim() - 1, 1, 3 /**get all adjacent ghosted entities */,
-        true, true, nullptr);
-    if (meshSet) {
-      Range all;
-      CHKERR m_field.get_moab().get_entities_by_dimension(0, getDim(), all);
-      Range shared;
-      CHKERR pcomm->filter_pstatus(all, PSTATUS_SHARED | PSTATUS_MULTISHARED,
-                                   PSTATUS_OR, -1, &shared);
-
-      CHKERR m_field.get_moab().add_entities(meshSet, shared);
-    }
-  }
-
-  
   Range ents;
   CHKERR m_field.get_moab().get_entities_by_dimension(meshSet, dIm, ents, true);
   CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevel(ents, bitLevel,
@@ -532,61 +518,6 @@ MoFEMErrorCode Simple::buildFields() {
   MoFEMFunctionBegin;
   PetscLogEventBegin(MOFEM_EVENT_SimpleBuildFields, 0, 0, 0, 0);
 
-  auto get_skin = [&](auto meshset) {
-    Range domain_ents;
-    CHKERR m_field.get_moab().get_entities_by_dimension(meshset, dIm,
-                                                        domain_ents, true);
-    Skinner skin(&m_field.get_moab());
-    Range domain_skin;
-    CHKERR skin.find_skin(0, domain_ents, false, domain_skin);
-    // filter not owned entities, those are not on boundary
-    ParallelComm *pcomm =
-        ParallelComm::get_pcomm(&m_field.get_moab(), MYPCOMM_INDEX);
-    Range proc_domain_skin;
-    CHKERR pcomm->filter_pstatus(domain_skin,
-                                 PSTATUS_SHARED | PSTATUS_MULTISHARED,
-                                 PSTATUS_NOT, -1, &proc_domain_skin);
-    return proc_domain_skin;
-  };
-
-  auto create_boundary_meshset = [&](auto &&proc_domain_skin) {
-    MoFEMFunctionBeginHot;
-    // create boundary meshset
-    if (boundaryMeshset != 0) {
-      MoFEMFunctionReturnHot(0);
-      // CHKERR m_field.get_moab().delete_entities(&boundaryMeshset, 1);
-    }
-    CHKERR m_field.get_moab().create_meshset(MESHSET_SET, boundaryMeshset);
-    CHKERR m_field.get_moab().add_entities(boundaryMeshset, proc_domain_skin);
-    for (int dd = 0; dd != dIm - 1; dd++) {
-      Range adj;
-      CHKERR m_field.get_moab().get_adjacencies(proc_domain_skin, dd, false,
-                                                adj, moab::Interface::UNION);
-      CHKERR m_field.get_moab().add_entities(boundaryMeshset, adj);
-    }
-    MoFEMFunctionReturnHot(0);
-  };
-
-  auto create_skeleton_meshset = [&]() {
-    MoFEMFunctionBeginHot;
-    // create boundary meshset
-    if (skeletonMeshset != 0) {
-      MoFEMFunctionReturnHot(0);
-    }
-    Range boundary_ents, skeleton_ents;
-    CHKERR m_field.get_moab().get_entities_by_dimension(boundaryMeshset,
-                                                        dIm - 1, boundary_ents);
-    CHKERR m_field.get_moab().get_entities_by_dimension(meshSet, dIm - 1,
-                                                        skeleton_ents);
-    skeleton_ents = subtract(skeleton_ents, boundary_ents);
-    CHKERR m_field.get_moab().create_meshset(MESHSET_SET, skeletonMeshset);
-    CHKERR m_field.get_moab().add_entities(skeletonMeshset, skeleton_ents);
-    MoFEMFunctionReturnHot(0);
-  };
-
-  CHKERR create_boundary_meshset(get_skin(meshSet));
-  CHKERR create_skeleton_meshset();
-
   auto comm_interface_ptr = m_field.getInterface<CommInterface>();
   auto bit_ref_ptr = m_field.getInterface<BitRefManager>();
 
@@ -822,6 +753,117 @@ Simple::addFieldToEmptyFieldBlocks(const std::string row_field,
   MoFEMFunctionBegin;
   CHKERR m_field.getInterface<ProblemsManager>()->addFieldToEmptyFieldBlocks(
       getProblemName(), row_field, col_field);
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode Simple::createBoundaryMeshset() {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+  ParallelComm *pcomm =
+      ParallelComm::get_pcomm(&m_field.get_moab(), MYPCOMM_INDEX);
+
+  auto get_skin = [&](auto meshset) {
+    // filter not owned entities, those are not on boundary
+
+    Range domain_ents;
+    CHKERR m_field.get_moab().get_entities_by_dimension(meshset, dIm,
+                                                        domain_ents, true);
+    CHKERR pcomm->filter_pstatus(domain_ents,
+                                 PSTATUS_SHARED | PSTATUS_MULTISHARED,
+                                 PSTATUS_NOT, -1, nullptr);
+
+    Skinner skin(&m_field.get_moab());
+    Range domain_skin;
+    CHKERR skin.find_skin(0, domain_ents, false, domain_skin);
+    CHKERR pcomm->filter_pstatus(domain_skin,
+                                 PSTATUS_SHARED | PSTATUS_MULTISHARED,
+                                 PSTATUS_NOT, -1, nullptr);
+    return domain_skin;
+  };
+
+  auto create_boundary_meshset = [&](auto &&domain_skin) {
+    MoFEMFunctionBeginHot;
+    // create boundary meshset
+    if (boundaryMeshset != 0) {
+      MoFEMFunctionReturnHot(0);
+    }
+    CHKERR m_field.get_moab().create_meshset(MESHSET_SET, boundaryMeshset);
+    CHKERR m_field.get_moab().add_entities(boundaryMeshset, domain_skin);
+    for (int dd = 0; dd != dIm - 1; dd++) {
+      Range adj;
+      CHKERR m_field.get_moab().get_adjacencies(domain_skin, dd, false, adj,
+                                                moab::Interface::UNION);
+      CHKERR m_field.get_moab().add_entities(boundaryMeshset, adj);
+    }
+    MoFEMFunctionReturnHot(0);
+  };
+
+  CHKERR create_boundary_meshset(get_skin(meshSet));
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode Simple::createSkeletonMeshset() {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+
+  ParallelComm *pcomm =
+      ParallelComm::get_pcomm(&m_field.get_moab(), MYPCOMM_INDEX);
+
+  auto create_skeleton_meshset = [&](auto meshset) {
+    MoFEMFunctionBeginHot;
+    // create boundary meshset
+    if (skeletonMeshset != 0) {
+      MoFEMFunctionReturnHot(0);
+    }
+    Range boundary_ents, skeleton_ents;
+    CHKERR m_field.get_moab().get_entities_by_dimension(boundaryMeshset,
+                                                        dIm - 1, boundary_ents);
+    Range domain_ents;
+    CHKERR m_field.get_moab().get_entities_by_dimension(meshset, dIm,
+                                                        domain_ents, true);
+    CHKERR m_field.get_moab().get_adjacencies(
+        domain_ents, dIm - 1, false, skeleton_ents, moab::Interface::UNION);
+    skeleton_ents = subtract(skeleton_ents, boundary_ents);
+    CHKERR pcomm->filter_pstatus(skeleton_ents, PSTATUS_NOT_OWNED, PSTATUS_NOT,
+                                 -1, nullptr);
+    CHKERR m_field.get_moab().create_meshset(MESHSET_SET, skeletonMeshset);
+    CHKERR m_field.get_moab().add_entities(skeletonMeshset, skeleton_ents);
+    MoFEMFunctionReturnHot(0);
+  };
+
+  CHKERR create_skeleton_meshset(meshSet);
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode Simple::exchangeGhostCells() {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+  MOFEM_LOG("WORLD", Sev::verbose) << "Exchange ghost cells";
+
+  ParallelComm *pcomm =
+      ParallelComm::get_pcomm(&m_field.get_moab(), MYPCOMM_INDEX);
+  if (pcomm == NULL)
+    pcomm = new ParallelComm(&m_field.get_moab(), m_field.get_comm());
+
+  Range verts;
+  CHKERR m_field.get_moab().get_entities_by_type(0, MBVERTEX, verts);
+  CHKERR pcomm->exchange_ghost_cells(getDim(), getDim() - 1, 1,
+                                     3 /**get all adjacent ghosted entities */,
+                                     true, false, meshSet ? &meshSet : nullptr);
+
+  Range shared;
+  CHKERR m_field.get_moab().get_entities_by_dimension(0, dIm, shared);
+  for (auto d = dIm - 1; d >= 1; --d) {
+    CHKERR m_field.get_moab().get_adjacencies(shared, d, false, shared,
+                                              moab::Interface::UNION);
+  }
+  CHKERR pcomm->filter_pstatus(shared, PSTATUS_SHARED | PSTATUS_MULTISHARED,
+                               PSTATUS_OR, -1, &shared);
+  Tag part_tag = pcomm->part_tag();
+  CHKERR pcomm->exchange_tags(part_tag, shared);
+
   MoFEMFunctionReturn(0);
 }
 
