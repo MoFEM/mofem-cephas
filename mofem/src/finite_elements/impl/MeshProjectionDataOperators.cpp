@@ -46,7 +46,7 @@ MoFEMErrorCode OpRunParent::doWork(int side, EntityType type,
     CHKERR loopParent(getFEName(), parentElePtr.get(), verbosity,
                       severityLevel);
 
-  } else if (check(bitParent, bitParentMask)) {
+  } else if (check(bitThis, bitThisMask)) {
 
     CHKERR loopThis(getFEName(), thisElePtr.get(), verbosity, severityLevel);
   }
