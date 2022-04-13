@@ -279,7 +279,7 @@ MoFEMErrorCode AtomTest::assembleSystem() {
     auto domain_op = static_cast<DomainEleOp *>(op_ptr);
     MoFEMFunctionBegin;
 
-    MOFEM_LOG("SELF", Sev::verbose) << "LHS Pipeline FE";
+    MOFEM_LOG("SELF", Sev::noisy) << "LHS Pipeline FE";
 
     if (!domainChildLhs)
       SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "FE not allocated");
@@ -287,11 +287,11 @@ MoFEMErrorCode AtomTest::assembleSystem() {
     auto &bit =
         domain_op->getFEMethod()->numeredEntFiniteElementPtr->getBitRefLevel();
     if (bit == BitRefLevel().set(0)) {
-      CHKERR domain_op->loopChildren(
-          domain_op->getFEName(), domainChildLhs.get(), VERBOSE, Sev::verbose);
+      CHKERR domain_op->loopChildren(domain_op->getFEName(),
+                                     domainChildLhs.get(), VERBOSE, Sev::noisy);
     } else {
       CHKERR domain_op->loopThis(domain_op->getFEName(), domainChildLhs.get(),
-                                 VERBOSE, Sev::verbose);
+                                 VERBOSE, Sev::noisy);
     }
     MoFEMFunctionReturn(0);
   };
@@ -303,7 +303,7 @@ MoFEMErrorCode AtomTest::assembleSystem() {
     auto domain_op = static_cast<DomainEleOp *>(op_ptr);
     MoFEMFunctionBegin;
 
-    MOFEM_LOG("SELF", Sev::verbose) << "RHS Pipeline FE";
+    MOFEM_LOG("SELF", Sev::noisy) << "RHS Pipeline FE";
 
     if (!domainChildRhs)
       SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "FE not allocated");
@@ -311,11 +311,11 @@ MoFEMErrorCode AtomTest::assembleSystem() {
     auto &bit =
         domain_op->getFEMethod()->numeredEntFiniteElementPtr->getBitRefLevel();
     if (bit == BitRefLevel().set(0)) {
-      CHKERR domain_op->loopChildren(
-          domain_op->getFEName(), domainChildRhs.get(), VERBOSE, Sev::verbose);
+      CHKERR domain_op->loopChildren(domain_op->getFEName(),
+                                     domainChildRhs.get(), VERBOSE, Sev::noisy);
     } else if ((bit & BitRefLevel().set(0)).any()) {
       CHKERR domain_op->loopThis(domain_op->getFEName(), domainChildRhs.get(),
-                                 VERBOSE, Sev::verbose);
+                                 VERBOSE, Sev::noisy);
     }
     MoFEMFunctionReturn(0);
   };
@@ -416,8 +416,6 @@ MoFEMErrorCode AtomTest::refineResults() {
 
     pipeline_mng->getDomainLhsFE().reset();
     pipeline_mng->getDomainRhsFE().reset();
-    pipeline_mng->getOpDomainLhsPipeline().clear();
-    pipeline_mng->getOpDomainRhsPipeline().clear();
 
     auto rule = [](int, int, int p) -> int { return 2 * p; };
 
@@ -477,7 +475,7 @@ MoFEMErrorCode AtomTest::refineResults() {
         MatrixDouble child_coords = getCoordsAtGaussPts();
         child_coords -= parent_coords;
 
-        MOFEM_LOG("SELF", Sev::verbose) << "Corrds diffs" << child_coords;
+        MOFEM_LOG("SELF", Sev::noisy) << "Corrds diffs" << child_coords;
 
         double n = 0;
         for (auto d : child_coords.data())
@@ -496,7 +494,12 @@ MoFEMErrorCode AtomTest::refineResults() {
     pipeline_mng->getOpDomainRhsPipeline().push_back(new OpCheckGaussCoords());
 
     CHKERR solveSystem();
-    CHKERR checkResults(test_bit_ref);
+
+    simpleInterface->getBitRefLevel() = bit_level2;
+    simpleInterface->getBitRefLevelMask() = BitRefLevel().set();
+    CHKERR simpleInterface->reSetUp();
+
+    CHKERR checkResults([](FEMethod *fe_ptr) { return true; });
 
     MoFEMFunctionReturn(0);
   };
@@ -514,7 +517,6 @@ MoFEMErrorCode AtomTest::checkResults(
   PipelineManager *pipeline_mng = mField.getInterface<PipelineManager>();
   pipeline_mng->getDomainLhsFE().reset();
   pipeline_mng->getDomainRhsFE().reset();
-  pipeline_mng->getOpDomainRhsPipeline().clear();
 
   auto rule = [](int, int, int p) -> int { return 2 * p + 1; };
   CHKERR pipeline_mng->setDomainRhsIntegrationRule(rule);
