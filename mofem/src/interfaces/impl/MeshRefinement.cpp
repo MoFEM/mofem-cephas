@@ -249,6 +249,75 @@ MoFEMErrorCode MeshRefinement::refineTets(const Range &_tets,
                                           const BitRefLevel &bit, int verb,
                                           const bool debug) {
 
+  MoFEMFunctionBegin;
+
+  auto set_edge_bits = [](moab::Interface &moab,
+                          RefEntity_multiIndex_view_by_ordered_parent_entity
+                              &ref_parent_ents_view,
+                          EntityHandle tet, BitRefEdges &parent_edges_bit,
+                          EntityHandle *edge_new_nodes, int *split_edges) {
+    MoFEMFunctionBeginHot;
+
+    for (int ee = 0; ee != 6; ++ee) {
+      EntityHandle edge;
+      CHKERR moab.side_element(tet, 1, ee, edge);
+      auto eit = ref_parent_ents_view.find(edge);
+      if (eit != ref_parent_ents_view.end()) {
+        edge_new_nodes[ee] = (*eit)->getEnt();
+        split_edges[parent_edges_bit.count()] = ee;
+        parent_edges_bit.set(ee, 1);
+      }
+    }
+
+    MoFEMFunctionReturnHot(0);
+  };
+
+  CHKERR refineTets(_tets, bit, set_edge_bits, verb, debug);
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode MeshRefinement::refineTetsHangingNodes(const Range &_tets,
+                                                      const BitRefLevel &bit,
+                                                      int verb,
+                                                      const bool debug) {
+
+  MoFEMFunctionBegin;
+
+  auto set_edge_bits = [](moab::Interface &moab,
+                          RefEntity_multiIndex_view_by_ordered_parent_entity
+                              &ref_parent_ents_view,
+                          EntityHandle tet, BitRefEdges &parent_edges_bit,
+                          EntityHandle *edge_new_nodes, int *split_edges) {
+    MoFEMFunctionBeginHot;
+
+    for (int ee = 0; ee != 6; ++ee) {
+      EntityHandle edge;
+      CHKERR moab.side_element(tet, 1, ee, edge);
+      auto eit = ref_parent_ents_view.find(edge);
+      if (eit != ref_parent_ents_view.end()) {
+        edge_new_nodes[ee] = (*eit)->getEnt();
+        split_edges[parent_edges_bit.count()] = ee;
+        parent_edges_bit.set(ee, 1);
+      }
+    }
+
+    if(parent_edges_bit.count() < 6)
+      parent_edges_bit.reset();
+
+    MoFEMFunctionReturnHot(0);
+  };
+
+  CHKERR refineTets(_tets, bit, set_edge_bits, verb, debug);
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode MeshRefinement::refineTets(const Range &_tets,
+                                          const BitRefLevel &bit,
+                                          SetEdgeBitsFun set_edge_bits,
+                                          int verb, const bool debug) {
+
   Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   auto refined_ents_ptr = m_field.get_ref_ents();
@@ -330,16 +399,8 @@ MoFEMErrorCode MeshRefinement::refineTets(const Range &_tets,
     EntityHandle edge_new_nodes[] = {0, 0, 0, 0, 0, 0};
     int split_edges[] = {-1, -1, -1, -1, -1, -1};
 
-    for (int ee = 0; ee != 6; ++ee) {
-      EntityHandle edge;
-      CHKERR moab.side_element(tit, 1, ee, edge);
-      auto eit = ref_parent_ents_view.find(edge);
-      if (eit != ref_parent_ents_view.end()) {
-        edge_new_nodes[ee] = (*eit)->getEnt();
-        split_edges[parent_edges_bit.count()] = ee;
-        parent_edges_bit.set(ee, 1);
-      }
-    }
+    CHKERR set_edge_bits(moab, ref_parent_ents_view, tit, parent_edges_bit,
+                         edge_new_nodes, split_edges);
 
     if (parent_edges_bit.count()) {
 
@@ -874,6 +935,75 @@ MoFEMErrorCode MeshRefinement::refineTris(const EntityHandle meshset,
 MoFEMErrorCode MeshRefinement::refineTris(const Range &_tris,
                                           const BitRefLevel &bit, int verb,
                                           const bool debug) {
+  MoFEMFunctionBegin;
+
+  auto set_edge_bits = [](moab::Interface &moab,
+                          RefEntity_multiIndex_view_by_ordered_parent_entity
+                              &ref_parent_ents_view,
+                          EntityHandle tet, BitRefEdges &parent_edges_bit,
+                          EntityHandle *edge_new_nodes, int *split_edges) {
+    MoFEMFunctionBeginHot;
+
+    for (int ee = 0; ee != 3; ++ee) {
+      EntityHandle edge;
+      CHKERR moab.side_element(tet, 1, ee, edge);
+      auto eit = ref_parent_ents_view.find(edge);
+      if (eit != ref_parent_ents_view.end()) {
+        edge_new_nodes[ee] = (*eit)->getEnt();
+        split_edges[parent_edges_bit.count()] = ee;
+        parent_edges_bit.set(ee, 1);
+      }
+    }
+
+    MoFEMFunctionReturnHot(0);
+  };
+
+  CHKERR refineTris(_tris, bit, set_edge_bits, verb, debug);
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode MeshRefinement::refineTrisHangingNodes(const Range &_tris,
+                                                      const BitRefLevel &bit,
+                                                      int verb,
+                                                      const bool debug) {
+
+  MoFEMFunctionBegin;
+
+  auto set_edge_bits = [](moab::Interface &moab,
+                          RefEntity_multiIndex_view_by_ordered_parent_entity
+                              &ref_parent_ents_view,
+                          EntityHandle tet, BitRefEdges &parent_edges_bit,
+                          EntityHandle *edge_new_nodes, int *split_edges) {
+    MoFEMFunctionBeginHot;
+
+    for (int ee = 0; ee != 3; ++ee) {
+      EntityHandle edge;
+      CHKERR moab.side_element(tet, 1, ee, edge);
+      auto eit = ref_parent_ents_view.find(edge);
+      if (eit != ref_parent_ents_view.end()) {
+        edge_new_nodes[ee] = (*eit)->getEnt();
+        split_edges[parent_edges_bit.count()] = ee;
+        parent_edges_bit.set(ee, 1);
+      }
+    }
+
+    if (parent_edges_bit.count() < 3) {
+      parent_edges_bit.reset();
+    }
+
+    MoFEMFunctionReturnHot(0);
+  };
+
+  CHKERR refineTris(_tris, bit, set_edge_bits, verb, debug);
+
+  MoFEMFunctionReturn(0);
+};
+
+MoFEMErrorCode MeshRefinement::refineTris(const Range &_tris,
+                                          const BitRefLevel &bit,
+                                          SetEdgeBitsFun set_edge_bits,
+                                          int verb, const bool debug) {
   Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   auto refined_ents_ptr = m_field.get_ref_ents();
@@ -949,16 +1079,8 @@ MoFEMErrorCode MeshRefinement::refineTris(const Range &_tris,
     EntityHandle edge_new_nodes[] = {0, 0, 0};
     int split_edges[] = {-1, -1, -1};
 
-    for (int ee = 0; ee != 3; ++ee) {
-      EntityHandle edge;
-      CHKERR moab.side_element(tit, 1, ee, edge);
-      auto eit = ref_parent_ents_view.find(edge);
-      if (eit != ref_parent_ents_view.end()) {
-        edge_new_nodes[ee] = (*eit)->getEnt();
-        split_edges[parent_edges_bit.count()] = ee;
-        parent_edges_bit.set(ee, 1);
-      }
-    }
+    CHKERR set_edge_bits(moab, ref_parent_ents_view, tit, parent_edges_bit,
+                         edge_new_nodes, split_edges);
 
     if (parent_edges_bit.count()) {
 
@@ -1064,7 +1186,6 @@ MoFEMErrorCode MeshRefinement::refineTris(const Range &_tris,
       CHKERR moab.write_file("out_refinded_debug.vtk", "VTK", "",
                              meshset_ptr->get_ptr(), 1);
     }
-
   }
 
   // Create adj entities
