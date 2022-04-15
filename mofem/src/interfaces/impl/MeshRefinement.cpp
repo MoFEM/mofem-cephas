@@ -882,7 +882,7 @@ MoFEMErrorCode MeshRefinement::refineTris(const Range &_tris,
 
   MoFEMFunctionBegin;
 
-    auto get_parent_ents_view = [&](const auto type_child,
+  auto get_parent_ents_view = [&](const auto type_child,
                                   const auto type_parent) {
     auto &ref_ents =
         refined_ents_ptr->get<Composite_EntType_and_ParentEntType_mi_tag>();
