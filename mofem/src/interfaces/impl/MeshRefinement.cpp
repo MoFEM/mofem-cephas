@@ -313,6 +313,19 @@ MoFEMErrorCode MeshRefinement::refineTetsHangingNodes(const Range &_tets,
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode
+MeshRefinement::refineTetsHangingNodes(const EntityHandle meshset,
+                                       const BitRefLevel &bit, int verb,
+                                       const bool debug) {
+  Interface &m_field = cOre;
+  moab::Interface &moab = m_field.get_moab();
+  MoFEMFunctionBegin;
+  Range tets;
+  CHKERR moab.get_entities_by_type(meshset, MBTET, tets, false);
+  CHKERR refineTetsHangingNodes(tets, bit, verb, debug);
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode MeshRefinement::refineTets(const Range &_tets,
                                           const BitRefLevel &bit,
                                           SetEdgeBitsFun set_edge_bits,
@@ -999,6 +1012,19 @@ MoFEMErrorCode MeshRefinement::refineTrisHangingNodes(const Range &_tris,
 
   MoFEMFunctionReturn(0);
 };
+
+MoFEMErrorCode
+MeshRefinement::refineTrisHangingNodes(const EntityHandle meshset,
+                                       const BitRefLevel &bit, int verb,
+                                       const bool debug) {
+  Interface &m_field = cOre;
+  moab::Interface &moab = m_field.get_moab();
+  MoFEMFunctionBegin;
+  Range tris;
+  CHKERR moab.get_entities_by_type(meshset, MBTRI, tris, false);
+  CHKERR refineTrisHangingNodes(tris, bit, verb, debug);
+  MoFEMFunctionReturn(0);
+}
 
 MoFEMErrorCode MeshRefinement::refineTris(const Range &_tris,
                                           const BitRefLevel &bit,

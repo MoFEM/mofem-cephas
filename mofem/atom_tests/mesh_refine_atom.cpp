@@ -83,15 +83,14 @@ int main(int argc, char *argv[]) {
 
     auto refine_edges = [&](auto bit0, auto bit) {
       MoFEMFunctionBegin;
-      auto meshset_level0_ptr = get_temp_meshset_ptr(moab);
+      auto meshset_ptr = get_temp_meshset_ptr(moab);
       CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(
-          bit0, BitRefLevel().set(), *meshset_level0_ptr);
+          bit0, BitRefLevel().set(), *meshset_ptr);
 
       // random mesh refinement
       auto meshset_ref_edges_ptr = get_temp_meshset_ptr(moab);
       Range edges_to_refine;
-      CHKERR moab.get_entities_by_type(*meshset_level0_ptr, MBEDGE,
-                                       edges_to_refine);
+      CHKERR moab.get_entities_by_type(*meshset_ptr, MBEDGE, edges_to_refine);
       int ii = 0;
       for (Range::iterator eit = edges_to_refine.begin();
            eit != edges_to_refine.end(); eit++, ii++) {
@@ -100,12 +99,47 @@ int main(int argc, char *argv[]) {
           CHKERR moab.add_entities(*meshset_ref_edges_ptr, &*eit, 1);
         }
       }
-      CHKERR refine->addVerticesInTheMiddleOfEdges(
-          *meshset_ref_edges_ptr, bit, false, QUIET, 10000);
+      CHKERR refine->addVerticesInTheMiddleOfEdges(*meshset_ref_edges_ptr, bit,
+                                                   false, QUIET, 10000);
       if (dim == 3) {
-        CHKERR refine->refineTets(*meshset_level0_ptr, bit, QUIET, true);
+        CHKERR refine->refineTets(*meshset_ptr, bit, QUIET, true);
       } else if (dim == 2) {
-        CHKERR refine->refineTris(*meshset_level0_ptr, bit, QUIET, true);
+        CHKERR refine->refineTris(*meshset_ptr, bit, QUIET, true);
+      } else {
+        SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                "Dimension not handled by test");
+      }
+      MoFEMFunctionReturn(0);
+    };
+
+    auto refine_ents_hanging_nodes = [&](auto bit0, auto bit) {
+      MoFEMFunctionBegin;
+      auto meshset_ptr = get_temp_meshset_ptr(moab);
+      CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(
+          bit0, BitRefLevel().set(), *meshset_ptr);
+
+      // random mesh refinement
+      auto meshset_ref_edges_ptr = get_temp_meshset_ptr(moab);
+      Range ents_dim;
+      CHKERR moab.get_entities_by_dimension(*meshset_ptr, dim, ents_dim);
+      int ii = 0;
+      for (Range::iterator eit = ents_dim.begin(); eit != ents_dim.end();
+           eit++, ii++) {
+        int numb = ii % 2;
+        if (numb == 0) {
+          std::vector<EntityHandle> adj_ents;
+          CHKERR moab.get_adjacencies(&*eit, 1, 1, false, adj_ents);
+          CHKERR moab.add_entities(*meshset_ref_edges_ptr, &*adj_ents.begin(),
+                                   adj_ents.size());
+        }
+      }
+
+      CHKERR refine->addVerticesInTheMiddleOfEdges(*meshset_ref_edges_ptr, bit,
+                                                   false, QUIET, 10000);
+      if (dim == 3) {
+        CHKERR refine->refineTetsHangingNodes(*meshset_ptr, bit, QUIET, true);
+      } else if (dim == 2) {
+        CHKERR refine->refineTrisHangingNodes(*meshset_ptr, bit, QUIET, true);
       } else {
         SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                 "Dimension not handled by test");
@@ -158,8 +192,10 @@ int main(int argc, char *argv[]) {
     };
 
     CHKERR refine_edges(BitRefLevel().set(0), BitRefLevel().set(1));
-    CHKERR save_blessed_field(BitRefLevel().set(1));
-    CHKERR save_vtk(BitRefLevel().set(1));
+    CHKERR refine_ents_hanging_nodes(BitRefLevel().set(1),
+                                     BitRefLevel().set(2));
+    CHKERR save_blessed_field(BitRefLevel().set(2));
+    CHKERR save_vtk(BitRefLevel().set(2));
   }
   CATCH_ERRORS;
 

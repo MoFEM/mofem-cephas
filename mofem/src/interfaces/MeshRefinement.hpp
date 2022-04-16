@@ -115,6 +115,18 @@ struct MeshRefinement : public UnknownInterface {
                                         int verb = QUIET,
                                         const bool debug = false);
 
+  /**\brief refine TET in the meshset
+   *
+   * \param Range of tets to refine
+   * \param BitRefLevel bitLevel
+   * \param BitRefLevel bitLevel
+   * \param verb verbosity level
+   */
+  MoFEMErrorCode refineTetsHangingNodes(const EntityHandle meshset,
+                                        const BitRefLevel &bit,
+                                        int verb = QUIET,
+                                        const bool debug = false);
+
   /**\brief refine PRISM in the meshset
    *
    * \param EntityHandle meshset
@@ -153,6 +165,18 @@ struct MeshRefinement : public UnknownInterface {
    */
   MoFEMErrorCode refineTris(const Range &tris, const BitRefLevel &bit,
                             int verb = QUIET, const bool debug = false);
+
+  /**\brief refine TRI in the meshset
+   *
+   * \param Range of tets to refine
+   * \param BitRefLevel bitLevel
+   * \param BitRefLevel bitLevel
+   * \param verb verbosity level
+   */
+  MoFEMErrorCode refineTrisHangingNodes(const EntityHandle meshset,
+                                        const BitRefLevel &bit,
+                                        int verb = QUIET,
+                                        const bool debug = false);
 
   /**\brief refine TRI in the meshset
    *
