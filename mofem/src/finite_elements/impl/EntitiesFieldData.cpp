@@ -101,17 +101,16 @@ MoFEMErrorCode EntitiesFieldData::setElementType(const EntityType type) {
   MoFEMFunctionReturn(0);
 }
 
-static void restore_data(EntitiesFieldData *data, const EntityType type) {
-
-  using EntData = EntitiesFieldData::EntData;
-
-  data->dataOnEntities[MBENTITYSET].resize(1);
+MoFEMErrorCode EntitiesFieldData::restoreElementType(const EntityType type) {
+  MoFEMFunctionBegin;
+  
+  dataOnEntities[MBENTITYSET].resize(1);
 
   auto set_default = [&]() {
     std::array<size_t, MBMAXTYPE> count;
     std::fill(count.begin(), count.end(), 0);
     const int dim_type = moab::CN::Dimension(type);
-    data->dataOnEntities[MBVERTEX].resize(1);
+    dataOnEntities[MBVERTEX].resize(1);
     if (type != MBVERTEX) {
       for (auto dd = dim_type; dd > 0; --dd) {
         int nb_ents = moab::CN::NumSubEntities(type, dd);
@@ -121,7 +120,7 @@ static void restore_data(EntitiesFieldData *data, const EntityType type) {
         }
         for (auto tt = moab::CN::TypeDimensionMap[dd].first;
              tt <= moab::CN::TypeDimensionMap[dd].second; ++tt) {
-          data->dataOnEntities[tt].resize(count[tt]);
+          dataOnEntities[tt].resize(count[tt]);
         }
       }
     }
@@ -134,11 +133,7 @@ static void restore_data(EntitiesFieldData *data, const EntityType type) {
   default:
     set_default();
   }
-}
 
-MoFEMErrorCode EntitiesFieldData::restoreElementType(const EntityType type) {
-  MoFEMFunctionBegin;
-  restore_data(this, type);
   MoFEMFunctionReturn(0);
 }
 
@@ -173,22 +168,19 @@ MoFEMErrorCode DerivedEntitiesFieldData::setElementType(const EntityType type) {
   MoFEMFunctionReturn(0);
 }
 
-static void
-restore_derived_data(DerivedEntitiesFieldData *derived_data,
-                     const boost::shared_ptr<EntitiesFieldData> &data_ptr) {
-  using EntData = EntitiesFieldData::EntData;
-  using DerivedEntData = DerivedEntitiesFieldData::DerivedEntData;
-  for (int tt = MBVERTEX; tt != MBMAXTYPE; ++tt) {
-    auto &ent_data = data_ptr->dataOnEntities[tt];
-    auto &derived_ent_data = derived_data->dataOnEntities[tt];
-    derived_ent_data.resize(ent_data.size());
-  }
-}
-
 MoFEMErrorCode
 DerivedEntitiesFieldData::restoreElementType(const EntityType type) {
   MoFEMFunctionBegin;
-  restore_derived_data(this, dataPtr);
+  for (int tt = MBVERTEX; tt != MBMAXTYPE; ++tt) {
+    auto &ent_data = dataPtr->dataOnEntities[tt];
+    auto &derived_ent_data = dataOnEntities[tt];
+    if (derived_ent_data.size() < ent_data.size()) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Should be used setElementType, instead restoreElementType. "
+              "EntData should be linked with DerivedEntData");
+    }
+    derived_ent_data.resize(ent_data.size());
+  }
   MoFEMFunctionReturn(0);
 }
 
