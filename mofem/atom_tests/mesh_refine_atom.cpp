@@ -70,12 +70,9 @@ int main(int argc, char *argv[]) {
 
     BitRefLevel bit_level0;
     bit_level0.set(0);
-    if (dim == 3) {
+    if (dim == 3 || dim == 2) {
       CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
-          0, 3, bit_level0);
-    } else if (dim == 2) {
-      CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
-          0, 2, bit_level0);
+          0, dim, bit_level0);
     } else {
       SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
               "Dimension not handled by test");
@@ -84,64 +81,85 @@ int main(int argc, char *argv[]) {
     BitRefLevel bit_level1;
     bit_level1.set(1);
 
-    auto meshset_level0_ptr = get_temp_meshset_ptr(moab);
-    CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(
-        bit_level0, BitRefLevel().set(), *meshset_level0_ptr);
+    auto refine_edges = [&](auto bit0, auto bit) {
+      MoFEMFunctionBegin;
+      auto meshset_level0_ptr = get_temp_meshset_ptr(moab);
+      CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(
+          bit0, BitRefLevel().set(), *meshset_level0_ptr);
 
-    // random mesh refinement
-    auto meshset_ref_edges_ptr = get_temp_meshset_ptr(moab);
-    Range edges_to_refine;
-    CHKERR moab.get_entities_by_type(*meshset_level0_ptr, MBEDGE,
-                                     edges_to_refine);
-    int ii = 0;
-    for (Range::iterator eit = edges_to_refine.begin();
-         eit != edges_to_refine.end(); eit++, ii++) {
-      int numb = ii % 2;
-      if (numb == 0) {
-        CHKERR moab.add_entities(*meshset_ref_edges_ptr, &*eit, 1);
-      }
-    }
-    CHKERR refine->addVerticesInTheMiddleOfEdges(
-        *meshset_ref_edges_ptr, bit_level1, false, QUIET, 10000);
-    if (dim == 3) {
-      CHKERR refine->refineTets(*meshset_level0_ptr, bit_level1, QUIET, true);
-    } else if (dim == 2) {
-      CHKERR refine->refineTris(*meshset_level0_ptr, bit_level1, QUIET, true);
-    } else {
-      SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
-              "Dimension not handled by test");
-    }
-
-    std::ofstream myfile;
-    myfile.open("mesh_refine.txt");
-
-    auto out_meshset_tet_ptr = get_temp_meshset_ptr(moab);
-    CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByDimAndRefLevel(
-        bit_level1, BitRefLevel().set(), dim, *out_meshset_tet_ptr);
-    Range tets;
-    CHKERR moab.get_entities_by_handle(*out_meshset_tet_ptr, tets);
-    {
+      // random mesh refinement
+      auto meshset_ref_edges_ptr = get_temp_meshset_ptr(moab);
+      Range edges_to_refine;
+      CHKERR moab.get_entities_by_type(*meshset_level0_ptr, MBEDGE,
+                                       edges_to_refine);
       int ii = 0;
-      for (Range::iterator tit = tets.begin(); tit != tets.end(); tit++) {
-        int num_nodes;
-        const EntityHandle *conn;
-        CHKERR moab.get_connectivity(*tit, conn, num_nodes, true);
-
-        for (int nn = 0; nn < num_nodes; nn++) {
-          // cout << conn[nn] << " ";
-          myfile << conn[nn] << " ";
+      for (Range::iterator eit = edges_to_refine.begin();
+           eit != edges_to_refine.end(); eit++, ii++) {
+        int numb = ii % 2;
+        if (numb == 0) {
+          CHKERR moab.add_entities(*meshset_ref_edges_ptr, &*eit, 1);
         }
-        // cout << std::endl;
-        myfile << std::endl;
-        if (ii > 25)
-          break;
       }
-    }
+      CHKERR refine->addVerticesInTheMiddleOfEdges(
+          *meshset_ref_edges_ptr, bit, false, QUIET, 10000);
+      if (dim == 3) {
+        CHKERR refine->refineTets(*meshset_level0_ptr, bit, QUIET, true);
+      } else if (dim == 2) {
+        CHKERR refine->refineTris(*meshset_level0_ptr, bit, QUIET, true);
+      } else {
+        SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                "Dimension not handled by test");
+      }
+      MoFEMFunctionReturn(0);
+    };
 
-    myfile.close();
+    auto save_blessed_field = [&](auto bit) {
+      MoFEMFunctionBegin;
 
-    CHKERR moab.write_file("out_mesh_refine.vtk", "VTK", "",
-                           out_meshset_tet_ptr->get_ptr(), 1);
+      std::ofstream myfile;
+      myfile.open("mesh_refine.txt");
+
+      auto out_meshset_tet_ptr = get_temp_meshset_ptr(moab);
+      CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByDimAndRefLevel(
+          bit, BitRefLevel().set(), dim, *out_meshset_tet_ptr);
+      Range tets;
+      CHKERR moab.get_entities_by_handle(*out_meshset_tet_ptr, tets);
+      {
+        int ii = 0;
+        for (Range::iterator tit = tets.begin(); tit != tets.end(); tit++) {
+          int num_nodes;
+          const EntityHandle *conn;
+          CHKERR moab.get_connectivity(*tit, conn, num_nodes, true);
+
+          for (int nn = 0; nn < num_nodes; nn++) {
+            // cout << conn[nn] << " ";
+            myfile << conn[nn] << " ";
+          }
+          // cout << std::endl;
+          myfile << std::endl;
+          if (ii > 25)
+            break;
+        }
+      }
+
+      myfile.close();
+
+      MoFEMFunctionReturn(0);
+    };
+
+    auto save_vtk = [&](auto bit) {
+      MoFEMFunctionBegin;
+      auto out_meshset_tet_ptr = get_temp_meshset_ptr(moab);
+      CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByDimAndRefLevel(
+          bit, BitRefLevel().set(), dim, *out_meshset_tet_ptr);
+      CHKERR moab.write_file("out_mesh_refine.vtk", "VTK", "",
+                             out_meshset_tet_ptr->get_ptr(), 1);
+      MoFEMFunctionReturn(0);
+    };
+
+    CHKERR refine_edges(BitRefLevel().set(0), BitRefLevel().set(1));
+    CHKERR save_blessed_field(BitRefLevel().set(1));
+    CHKERR save_vtk(BitRefLevel().set(1));
   }
   CATCH_ERRORS;
 
