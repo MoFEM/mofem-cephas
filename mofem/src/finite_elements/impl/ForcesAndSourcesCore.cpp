@@ -474,8 +474,9 @@ ForcesAndSourcesCore::getNoFieldRowIndices(EntitiesFieldData &data,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode ForcesAndSourcesCore::getNoFieldColIndices(
-    EntitiesFieldData &data, const int bit_number) const {
+MoFEMErrorCode
+ForcesAndSourcesCore::getNoFieldColIndices(EntitiesFieldData &data,
+                                           const int bit_number) const {
   MoFEMFunctionBegin;
   if (data.dataOnEntities[MBENTITYSET].size() == 0) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
@@ -1349,32 +1350,29 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
     dataOnElement[op.sPace]->resetFieldDependentData();
     std::fill(last_eval_field_id.begin(), last_eval_field_id.end(), 0);
 
-    try {
-      switch (op.sPace) {
-      case NOSPACE:
-        try {
-          CHKERR op.doWork(
-              0, MBENTITYSET,
-              dataOnElement[op.sPace]->dataOnEntities[MBENTITYSET][0]);
-        }
-        CATCH_OP_ERRORS(op);
-        break;
-      case NOFIELD:
-      case H1:
-      case HCURL:
-      case HDIV:
-      case L2:
-        try {
-          CHKERR op.opRhs(*dataOnElement[op.sPace], false);
-        }
-        CATCH_OP_ERRORS(op);
-        break;
-      default:
-        SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-                 "Not implemented for this space", op.sPace);
+    switch (op.sPace) {
+    case NOSPACE:
+      try {
+        CHKERR op.doWork(
+            0, MBENTITYSET,
+            dataOnElement[op.sPace]->dataOnEntities[MBENTITYSET][0]);
       }
+      CATCH_OP_ERRORS(op);
+      break;
+    case NOFIELD:
+    case H1:
+    case HCURL:
+    case HDIV:
+    case L2:
+      try {
+        CHKERR op.opRhs(*dataOnElement[op.sPace], false);
+      }
+      CATCH_OP_ERRORS(op);
+      break;
+    default:
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+               "Not implemented for this space", op.sPace);
     }
-    CATCH_OP_ERRORS(op);
 
     MoFEMFunctionReturnHot(0);
   };
@@ -1415,9 +1413,6 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
       CHKERR getEntityColIndices(*op_data[ss], field_id[ss], MBEDGE);
 
     switch (space[ss]) {
-    case NOSPACE:
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown space");
-      break;
     case H1:
       if (!ss)
         CHKERR getRowNodesIndices(*op_data[ss], field_id[ss]);
@@ -1451,7 +1446,8 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
       break;
     default:
       SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-               "Not implemented for this space", space);
+               "not implemented for this space < %s >",
+               FieldSpaceNames[space[ss]]);
     }
     MoFEMFunctionReturnHot(0);
   };
@@ -1471,6 +1467,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
 
         for (size_t ss = 0; ss != 2; ss++) {
           field_name[ss] = !ss ? oit->rowFieldName : oit->colFieldName;
+#ifndef NDEBUG
           if (field_name[ss].empty()) {
             SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                      "Not set Field name in operator %d (0-row, 1-column) in "
@@ -1479,6 +1476,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
                      (boost::typeindex::type_id_runtime(*oit).pretty_name())
                          .c_str());
           }
+#endif
           field_struture[ss] = mField.get_field_structure(field_name[ss]);
           field_id[ss] = field_struture[ss]->getBitNumber();
           space[ss] = field_struture[ss]->getSpace();
