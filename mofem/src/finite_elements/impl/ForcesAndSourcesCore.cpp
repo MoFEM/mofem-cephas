@@ -1406,11 +1406,13 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
                FieldSpaceNames[space[ss]]);
     }
 
-    CHKERR getEntityFieldData(*op_data[ss], field_id[ss], MBEDGE);
-    if (!ss)
-      CHKERR getEntityRowIndices(*op_data[ss], field_id[ss], MBEDGE);
-    else
-      CHKERR getEntityColIndices(*op_data[ss], field_id[ss], MBEDGE);
+    if (space[ss] != NOFIELD) {
+      CHKERR getEntityFieldData(*op_data[ss], field_id[ss], MBEDGE);
+      if (!ss)
+        CHKERR getEntityRowIndices(*op_data[ss], field_id[ss], MBEDGE);
+      else
+        CHKERR getEntityColIndices(*op_data[ss], field_id[ss], MBEDGE);
+    }
 
     switch (space[ss]) {
     case H1:
