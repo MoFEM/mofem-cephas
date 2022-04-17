@@ -213,9 +213,10 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
     nOrmals_at_GaussPtF4.resize(nb_gauss_pts, 3, false);
     tAngent1_at_GaussPtF4.resize(nb_gauss_pts, 3, false);
     tAngent2_at_GaussPtF4.resize(nb_gauss_pts, 3, false);
-    CHKERR getNodesFieldData(dataH1, meshPositionsFieldName);
-    CHKERR getEntityFieldData(dataH1, meshPositionsFieldName, MBEDGE);
-    CHKERR getEntityFieldData(dataH1, meshPositionsFieldName, MBEDGE);
+    const auto bit_number = mField.get_field_bit_number(meshPositionsFieldName);
+    CHKERR getNodesFieldData(dataH1, bit_number);
+    CHKERR getEntityFieldData(dataH1, bit_number, MBEDGE);
+    CHKERR getEntityFieldData(dataH1, bit_number, MBEDGE);
     CHKERR opHOCoordsAndNormals.opRhs(dataH1);
     CHKERR opHOCoordsAndNormals.calculateNormals();
   } else {

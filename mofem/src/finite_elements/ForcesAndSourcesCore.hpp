@@ -228,51 +228,48 @@ protected:
   /// \brief get node indices
   template <typename EXTRACTOR>
   MoFEMErrorCode
-  getNodesIndices(const std::string &field_name,
+  getNodesIndices(const int bit_number,
                   FieldEntity_vector_view &ents_field, VectorInt &nodes_indices,
                   VectorInt &local_nodes_indices, EXTRACTOR &&extractor) const;
 
   /// \brief get row node indices from FENumeredDofEntity_multiIndex
   MoFEMErrorCode getRowNodesIndices(EntitiesFieldData &data,
-                                    const std::string &field_name) const;
+                                    const int bit_number) const;
 
   /// \brief get col node indices from FENumeredDofEntity_multiIndex
   MoFEMErrorCode getColNodesIndices(EntitiesFieldData &data,
-                                    const std::string &field_name) const;
+                                    const int bit_number) const;
 
   template <typename EXTRACTOR>
-  MoFEMErrorCode getEntityIndices(EntitiesFieldData &data,
-                                  const std::string &field_name,
+  MoFEMErrorCode getEntityIndices(EntitiesFieldData &data, const int bit_number,
                                   FieldEntity_vector_view &ents_field,
                                   const EntityType type_lo,
                                   const EntityType type_hi,
                                   EXTRACTOR &&extractor) const;
 
   MoFEMErrorCode
-  getEntityRowIndices(EntitiesFieldData &data,
-                      const std::string &field_name,
+  getEntityRowIndices(EntitiesFieldData &data, const int bit_number,
                       const EntityType type_lo = MBVERTEX,
                       const EntityType type_hi = MBPOLYHEDRON) const;
 
   MoFEMErrorCode
-  getEntityColIndices(EntitiesFieldData &data,
-                      const std::string &field_name,
+  getEntityColIndices(EntitiesFieldData &data, const int bit_number,
                       const EntityType type_lo = MBVERTEX,
                       const EntityType type_hi = MBPOLYHEDRON) const;
 
   /// \brief get NoField indices
   MoFEMErrorCode
-  getNoFieldIndices(const std::string &field_name,
+  getNoFieldIndices(const int bit_number,
                     boost::shared_ptr<FENumeredDofEntity_multiIndex> dofs,
                     VectorInt &nodes_indices) const;
 
   /// \brief get col NoField indices
   MoFEMErrorCode getNoFieldRowIndices(EntitiesFieldData &data,
-                                      const std::string &field_name) const;
+                                      const int bit_number) const;
 
   /// \brief get col NoField indices
   MoFEMErrorCode getNoFieldColIndices(EntitiesFieldData &data,
-                                      const std::string &field_name) const;
+                                      const int bit_number) const;
 
   /**@}*/
 
@@ -283,13 +280,13 @@ protected:
   /**
    * \brief Get field data on nodes
    */
-  MoFEMErrorCode getNoFieldFieldData(const std::string field_name,
+  MoFEMErrorCode getNoFieldFieldData(const int bit_number,
                                      VectorDouble &ent_field_data,
                                      VectorDofs &ent_field_dofs,
                                      VectorFieldEntities &ent_field) const;
 
   MoFEMErrorCode getNoFieldFieldData(EntitiesFieldData &data,
-                                     const std::string field_name) const;
+                                     const int bit_number) const;
 
   /**
    * \brief Get data on nodes
@@ -298,11 +295,10 @@ protected:
    * @return            Error code
    */
   MoFEMErrorCode getNodesFieldData(EntitiesFieldData &data,
-                                   const std::string &field_name) const;
+                                   const int bit_number) const;
 
   MoFEMErrorCode
-  getEntityFieldData(EntitiesFieldData &data,
-                     const std::string &field_name,
+  getEntityFieldData(EntitiesFieldData &data, const int bit_number,
                      const EntityType type_lo = MBVERTEX,
                      const EntityType type_hi = MBPOLYHEDRON) const;
 
@@ -893,22 +889,22 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
 
   /** \name Deprecated (do not use) */
 
-  //! \deprecated Use getSNESF intead
-  DEPRECATED inline Vec getSnesF() const { return getSNESf(); }
+  // //! \deprecated Use getSNESF intead
+  // DEPRECATED inline Vec getSnesF() const { return getSNESf(); }
 
-  //! \deprecated Use getSNESX intead
-  DEPRECATED inline Vec getSnesX() const { return getSNESx(); }
+  // //! \deprecated Use getSNESX intead
+  // DEPRECATED inline Vec getSnesX() const { return getSNESx(); }
 
-  //! \deprecated Use getSNESA intead
-  DEPRECATED inline Mat getSnesA() const { return getSNESA(); }
+  // //! \deprecated Use getSNESA intead
+  // DEPRECATED inline Mat getSnesA() const { return getSNESA(); }
 
-  //! \deprecated Use getSNESB intead
-  DEPRECATED inline Mat getSnesB() const { return getSNESB(); }
+  // //! \deprecated Use getSNESB intead
+  // DEPRECATED inline Mat getSnesB() const { return getSNESB(); }
 
-  // \deprecated Deprecated function with spelling mistake
-  DEPRECATED inline MoFEMErrorCode
-  getPorblemRowIndices(const std::string filed_name, const EntityType type,
-                       const int side, VectorInt &indices) const;
+  // // \deprecated Deprecated function with spelling mistake
+  // DEPRECATED inline MoFEMErrorCode
+  // getPorblemRowIndices(const std::string filed_name, const EntityType type,
+  //                      const int side, VectorInt &indices) const;
 
   /**@}*/
 
@@ -1241,11 +1237,11 @@ auto ForcesAndSourcesCore::UserDataOperator::getFTensor0IntegrationWeight() {
       &(getGaussPts()(getGaussPts().size1() - 1, 0)));
 }
 
-MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::getPorblemRowIndices(
-    const std::string filed_name, const EntityType type, const int side,
-    VectorInt &indices) const {
-  return getProblemRowIndices(filed_name, type, side, indices);
-}
+// MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::getPorblemRowIndices(
+//     const std::string filed_name, const EntityType type, const int side,
+//     VectorInt &indices) const {
+//   return getProblemRowIndices(filed_name, type, side, indices);
+// }
 
 ForcesAndSourcesCore *ForcesAndSourcesCore::UserDataOperator::getPtrFE() const {
   return ptrFE;

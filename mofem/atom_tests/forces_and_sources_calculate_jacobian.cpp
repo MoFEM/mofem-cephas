@@ -191,11 +191,12 @@ int main(int argc, char *argv[]) {
         CHKERR getEntityDataOrder<MBTET>(data, H1);
         CHKERR getFaceNodes(data);
 
-        CHKERR getRowNodesIndices(data, "FIELD1");
-        CHKERR getEntityRowIndices(data, "FIELD1", MBEDGE);
+        const auto bit_number = mField.get_field_bit_number("FIELD1");
+        CHKERR getRowNodesIndices(data, bit_number);
+        CHKERR getEntityRowIndices(data, bit_number, MBEDGE);
 
-        CHKERR getNodesFieldData(data, "FIELD1");
-        CHKERR getEntityFieldData(data, "FIELD1", MBEDGE);
+        CHKERR getNodesFieldData(data, bit_number);
+        CHKERR getEntityFieldData(data, bit_number, MBEDGE);
 
         MatrixDouble gauss_pts(4, 4);
         for (int gg = 0; gg < 4; gg++) {

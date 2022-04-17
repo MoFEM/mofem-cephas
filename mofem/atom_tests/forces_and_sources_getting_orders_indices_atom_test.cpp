@@ -183,10 +183,11 @@ int main(int argc, char *argv[]) {
             boost::shared_ptr<BaseFunctionCtx>(
                 new EntPolynomialBaseCtx(data, H1, AINSWORTH_LEGENDRE_BASE)));
 
-        CHKERR getRowNodesIndices(data, "FIELD1");
-        CHKERR getEntityFieldData(data, "FIELD1", MBEDGE);
-        CHKERR getEntityRowIndices(data, "FIELD1", MBEDGE);
-        CHKERR getNodesFieldData(data, "FIELD1");
+        const auto bn1 = mField.get_field_bit_number("FIELD1");
+        CHKERR getRowNodesIndices(data, bn1);
+        CHKERR getEntityFieldData(data, bn1, MBEDGE);
+        CHKERR getEntityRowIndices(data, bn1, MBEDGE);
+        CHKERR getNodesFieldData(data, bn1);
 
         data.dataOnEntities[MBVERTEX][0].getFieldData().resize(0);
         my_split << "FIELD1:\n";
@@ -194,10 +195,11 @@ int main(int argc, char *argv[]) {
 
         derived_data.dataOnEntities[MBVERTEX][0].getBase() =
             AINSWORTH_LEGENDRE_BASE;
-        CHKERR getColNodesIndices(derived_data, "FIELD2");
-        CHKERR getEntityFieldData(derived_data, "FIELD2", MBEDGE);
-        CHKERR getEntityColIndices(derived_data, "FIELD2", MBEDGE);
-        CHKERR getNodesFieldData(derived_data, "FIELD2");
+        const auto bn2 = mField.get_field_bit_number("FIELD2");
+        CHKERR getColNodesIndices(derived_data, bn2);
+        CHKERR getEntityFieldData(derived_data, bn2, MBEDGE);
+        CHKERR getEntityColIndices(derived_data, bn2, MBEDGE);
+        CHKERR getNodesFieldData(derived_data, bn2);
         
         derived_data.dataOnEntities[MBVERTEX][0].getFieldData().resize(0);
 

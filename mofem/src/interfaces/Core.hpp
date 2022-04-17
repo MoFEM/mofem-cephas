@@ -603,7 +603,7 @@ protected:
   MoFEMErrorCode get_field_entities_by_handle(const std::string name,
                                               Range &ents) const;
   bool check_field(const std::string &name) const;
-  const Field *get_field_structure(const std::string &name);
+  Field *get_field_structure(const std::string &name);
 
   /**@}*/
 

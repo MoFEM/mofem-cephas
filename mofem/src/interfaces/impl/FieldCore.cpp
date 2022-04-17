@@ -75,7 +75,7 @@ bool Core::check_field(const std::string &name) const {
   return true;
 }
 
-const Field *Core::get_field_structure(const std::string &name) {
+Field *Core::get_field_structure(const std::string &name) {
   auto &set = fIelds.get<FieldName_mi_tag>();
   auto miit = set.find(name);
   if (miit == set.end()) {

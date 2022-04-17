@@ -63,7 +63,8 @@ int main(int argc, char *argv[]) {
     MoFEM::Interface &m_field = core;
 
     const char *option;
-    option = ""; ;
+    option = "";
+    ;
     CHKERR moab.load_file(mesh_file_name, 0, option);
 
     // set entitities bit level
@@ -255,14 +256,18 @@ int main(int argc, char *argv[]) {
         CHKERR getEntityDataOrder<MBTET>(data_col, H1);
         data_row.dataOnEntities[MBVERTEX][0].getBase() =
             AINSWORTH_LEGENDRE_BASE;
-        CHKERR getEntityFieldData(data_row, "FIELD1", MBEDGE);
+
+        const auto bn1 = mField.get_field_bit_number("FIELD1");
+        const auto bn2 = mField.get_field_bit_number("FIELD2");
+
+        CHKERR getEntityFieldData(data_row, bn1, MBEDGE);
         data_col.dataOnEntities[MBVERTEX][0].getBase() =
             AINSWORTH_LEGENDRE_BASE;
-        CHKERR getEntityFieldData(data_col, "FIELD2", MBEDGE);    
-        CHKERR getRowNodesIndices(data_row, "FIELD1");
-        CHKERR getColNodesIndices(data_col, "FIELD2");
-        CHKERR getEntityRowIndices(data_row, "FIELD1", MBEDGE);
-        CHKERR getEntityColIndices(data_col, "FIELD2", MBEDGE);
+        CHKERR getEntityFieldData(data_col, bn2, MBEDGE);
+        CHKERR getRowNodesIndices(data_row, bn1);
+        CHKERR getColNodesIndices(data_col, bn2);
+        CHKERR getEntityRowIndices(data_row, bn1, MBEDGE);
+        CHKERR getEntityColIndices(data_col, bn2, MBEDGE);
         CHKERR getFaceNodes(data_row);
         CHKERR getFaceNodes(data_col);
 

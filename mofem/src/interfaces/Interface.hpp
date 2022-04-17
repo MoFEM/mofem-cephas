@@ -587,7 +587,7 @@ struct CoreInterface : public UnknownInterface {
    * \return const Field*
    *
    */
-  virtual const Field *get_field_structure(const std::string &name) = 0;
+  virtual Field *get_field_structure(const std::string &name) = 0;
 
   /**@}*/
 

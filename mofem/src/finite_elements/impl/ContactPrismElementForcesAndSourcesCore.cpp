@@ -697,15 +697,16 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
               if (!getNinTheLoop()) {
                 // NOFIELD data are the same for each element, can be
                 // retrieved only once
+                const auto bit_number = mField.get_field_bit_number(field_name);
                 if (!ss) {
-                  CHKERR getNoFieldRowIndices(*op_master_data[ss], field_name);
-                  CHKERR getNoFieldRowIndices(*op_slave_data[ss], field_name);
+                  CHKERR getNoFieldRowIndices(*op_master_data[ss], bit_number);
+                  CHKERR getNoFieldRowIndices(*op_slave_data[ss], bit_number);
                 } else {
-                  CHKERR getNoFieldColIndices(*op_master_data[ss], field_name);
-                  CHKERR getNoFieldColIndices(*op_slave_data[ss], field_name);
+                  CHKERR getNoFieldColIndices(*op_master_data[ss], bit_number);
+                  CHKERR getNoFieldColIndices(*op_slave_data[ss], bit_number);
                 }
-                CHKERR getNoFieldFieldData(*op_master_data[ss], field_name);
-                CHKERR getNoFieldFieldData(*op_slave_data[ss], field_name);
+                CHKERR getNoFieldFieldData(*op_master_data[ss], bit_number);
+                CHKERR getNoFieldFieldData(*op_slave_data[ss], bit_number);
               }
               break;
             default:
