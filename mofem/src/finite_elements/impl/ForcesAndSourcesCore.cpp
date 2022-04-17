@@ -1378,6 +1378,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
     MoFEMFunctionReturnHot(0);
   };
 
+  // set entity data
   auto set_op_entityties_data = [&](auto ss, auto &op) {
     MoFEMFunctionBeginHot;
 
@@ -1455,6 +1456,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
     MoFEMFunctionReturnHot(0);
   };
 
+  // evalate operators with field data
   auto evaluate_op_for_fields = [&](auto &op) {
     MoFEMFunctionBeginHot;
     if (op.getOpType() & UserDataOperator::OPROW) {
@@ -1513,6 +1515,8 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
           base[ss] = field_struture[ss]->getApproxBase();
         }
 
+        // not that if field name do not change between operators, entity field
+        // data are nor rebuild
         for (size_t ss = 0; ss != 2; ss++) {
 
           if (oit->getOpType() & types[ss] ||
