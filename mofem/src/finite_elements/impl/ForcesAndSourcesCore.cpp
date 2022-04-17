@@ -1455,6 +1455,31 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
     MoFEMFunctionReturnHot(0);
   };
 
+  auto evaluate_op_for_fields = [&](auto &op) {
+    MoFEMFunctionBeginHot;
+    if (op.getOpType() & UserDataOperator::OPROW) {
+      try {
+        CHKERR op.opRhs(*op_data[0], false);
+      }
+      CATCH_OP_ERRORS(op);
+    }
+
+    if (op.getOpType() & UserDataOperator::OPCOL) {
+      try {
+        CHKERR op.opRhs(*op_data[1], false);
+      }
+      CATCH_OP_ERRORS(op);
+    }
+
+    if (op.getOpType() & UserDataOperator::OPROWCOL) {
+      try {
+        CHKERR op.opLhs(*op_data[0], *op_data[1]);
+      }
+      CATCH_OP_ERRORS(op);
+    }
+    MoFEMFunctionReturnHot(0);
+  };
+
   auto oit = opPtrVector.begin();
   auto hi_oit = opPtrVector.end();
 
@@ -1501,26 +1526,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
 
         CHKERR swap_bases(*oit);
 
-        if (oit->getOpType() & UserDataOperator::OPROW) {
-          try {
-            CHKERR oit->opRhs(*op_data[0], false);
-          }
-          CATCH_OP_ERRORS(*oit);
-        }
-
-        if (oit->getOpType() & UserDataOperator::OPCOL) {
-          try {
-            CHKERR oit->opRhs(*op_data[1], false);
-          }
-          CATCH_OP_ERRORS(*oit);
-        }
-
-        if (oit->getOpType() & UserDataOperator::OPROWCOL) {
-          try {
-            CHKERR oit->opLhs(*op_data[0], *op_data[1]);
-          }
-          CATCH_OP_ERRORS(*oit);
-        }
+        CHKERR evaluate_op_for_fields(*oit);
 
         CHKERR swap_bases(*oit);
       }
