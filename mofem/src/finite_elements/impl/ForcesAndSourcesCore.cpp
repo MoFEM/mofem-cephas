@@ -1485,6 +1485,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
   auto oit = opPtrVector.begin();
   auto hi_oit = opPtrVector.end();
 
+  // interate over all operators on element
   for (; oit != hi_oit; oit++) {
 
     try {
@@ -1492,7 +1493,10 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
       CHKERR oit->setPtrFE(this);
 
       if (oit->opType == UserDataOperator::OPLAST) {
+
+        // run operator for space but specific field
         CHKERR evaluate_op_last_type(*oit);
+
       } else {
 
         field_name[0] = oit->rowFieldName;
@@ -1530,6 +1534,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
 
         CHKERR swap_bases(*oit);
 
+        // run operator for given field or row, column or both
         CHKERR evaluate_op_for_fields(*oit);
 
         CHKERR swap_bases(*oit);
