@@ -1312,7 +1312,8 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
 
   std::array<std::string, 2> field_name;
   std::array<Field *, 3> field_struture;
-  std::array<int, 2> field_id;
+  std::array<int, 2>
+      field_id; // note the this is field bit number (nor field bit)
   std::array<FieldSpace, 2> space;
   std::array<FieldApproximationBase, 2> base;
 
@@ -1467,8 +1468,10 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
         CHKERR evaluate_op_last_type(*oit);
       } else {
 
+        field_name[0] = oit->rowFieldName;
+        field_name[1] = oit->colFieldName;
+
         for (size_t ss = 0; ss != 2; ss++) {
-          field_name[ss] = !ss ? oit->rowFieldName : oit->colFieldName;
 #ifndef NDEBUG
           if (field_name[ss].empty()) {
             SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
