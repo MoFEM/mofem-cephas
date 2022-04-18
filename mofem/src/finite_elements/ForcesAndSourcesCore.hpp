@@ -151,26 +151,32 @@ public:
    * @param space
    * @param type
    * @param side
-   * @return const EntitiesFieldData::EntData&
+   * @return EntitiesFieldData::EntData&
    */
-  const EntitiesFieldData::EntData &getEntData(const FieldSpace space,
-                                                      const EntityType type,
-                                                      const int side) const {
+  auto &getEntData(const FieldSpace space, const EntityType type,
+                   const int side) {
     return dataOnElement[space]->dataOnEntities[type][side];
   }
 
   /**
-   * @brief Get the entity data
-   *
-   * @param space
-   * @param type
-   * @param side
-   * @return EntitiesFieldData::EntData&
+   * @brief Get data on entities and space
+   * 
+   * Entities data are stored by space, by entity type, and entity side.
+   * 
+   * @return std::array<boost::shared_ptr<EntitiesFieldData>, LASTSPACE>
    */
-  EntitiesFieldData::EntData &
-  getEntData(const FieldSpace space, const EntityType type, const int side) {
-    return dataOnElement[space]->dataOnEntities[type][side];
-  }
+  auto &getDataOnElement() { return dataOnElement; }
+
+  /**
+   * @brief Get derived data on entities and space
+   *
+   * Entities data are stored by space, by entity type, and entity side. Derived
+   * data is used to store data on columns, so it shares infromatin about shape
+   * functions wih rows.
+   *
+   * @return std::array<boost::shared_ptr<EntitiesFieldData>, LASTSPACE>
+   */
+  auto &getDerivedDataOnElement() { return derivedDataOnElement; }
 
 protected:
   /**
