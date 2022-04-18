@@ -39,11 +39,12 @@ struct DataOperator {
 
   virtual ~DataOperator() = default;
 
-  boost::function<MoFEMErrorCode(
+  using DoWorkLhsHookFunType =  boost::function<MoFEMErrorCode(
       DataOperator *op_ptr, int row_side, int col_side, EntityType row_type,
       EntityType col_type, EntitiesFieldData::EntData &row_data,
-      EntitiesFieldData::EntData &col_data)>
-      doWorkLhsHook;
+      EntitiesFieldData::EntData &col_data)>;
+
+   DoWorkLhsHookFunType doWorkLhsHook;
 
   /** \brief Operator for bi-linear form, usually to calculate values on
    * left hand side
@@ -66,10 +67,11 @@ struct DataOperator {
   virtual MoFEMErrorCode opLhs(EntitiesFieldData &row_data,
                                EntitiesFieldData &col_data);
 
-  boost::function<MoFEMErrorCode(DataOperator *op_ptr, int side,
-                                 EntityType type,
-                                 EntitiesFieldData::EntData &data)>
-      doWorkRhsHook;
+  using DoWorkRhsHookFunType = boost::function<MoFEMErrorCode(
+      DataOperator *op_ptr, int side, EntityType type,
+      EntitiesFieldData::EntData &data)>;
+
+  DoWorkRhsHookFunType doWorkRhsHook;
 
   /** \brief Operator for linear form, usually to calculate values on right hand
    * side
