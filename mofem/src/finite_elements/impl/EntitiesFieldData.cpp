@@ -174,12 +174,9 @@ DerivedEntitiesFieldData::restoreElementType(const EntityType type) {
   for (int tt = MBVERTEX; tt != MBMAXTYPE; ++tt) {
     auto &ent_data = dataPtr->dataOnEntities[tt];
     auto &derived_ent_data = dataOnEntities[tt];
-    if (derived_ent_data.size() < ent_data.size()) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-              "Should be used setElementType, instead restoreElementType. "
-              "EntData should be linked with DerivedEntData");
+    if (derived_ent_data.size() > ent_data.size()) {
+      derived_ent_data.resize(ent_data.size());
     }
-    derived_ent_data.resize(ent_data.size());
   }
   MoFEMFunctionReturn(0);
 }
