@@ -86,8 +86,6 @@ ForcesAndSourcesCore::ForcesAndSourcesCore(Interface &m_field)
 
   dataOnElement[NOSPACE]->dataOnEntities[MBENTITYSET].push_back(
       new EntitiesFieldData::EntData());
-  derivedDataOnElement[NOSPACE]->dataOnEntities[MBENTITYSET].push_back(
-      new EntitiesFieldData::EntData());
 
   dataOnElement[NOFIELD]->dataOnEntities[MBENTITYSET].push_back(
       new EntitiesFieldData::EntData());
