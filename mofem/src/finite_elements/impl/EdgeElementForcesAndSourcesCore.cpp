@@ -37,6 +37,8 @@ EdgeElementForcesAndSourcesCoreBase::EdgeElementForcesAndSourcesCoreBase(
       meshPositionsFieldName("MESH_NODE_POSITIONS") {
   getElementPolynomialBase() =
       boost::shared_ptr<BaseFunction>(new EdgePolynomialBase());
+  CHK_THROW_MESSAGE(createDataOnElement(MBEDGE),
+                 "Problem with creation data on element");
 }
 
 MoFEMErrorCode EdgeElementForcesAndSourcesCoreBase::calculateEdgeDirection() {

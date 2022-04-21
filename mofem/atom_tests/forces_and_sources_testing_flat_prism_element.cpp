@@ -348,7 +348,7 @@ int main(int argc, char *argv[]) {
         if (type != MBENTITYSET)
           MoFEMFunctionReturnHot(0);
 
-        mySplit << "NPFIELD" << std::endl;
+        mySplit << "NOFIELD" << std::endl;
         mySplit << "side: " << side << " type: " << type << std::endl;
         mySplit << data << std::endl;
         MoFEMFunctionReturnHot(0);

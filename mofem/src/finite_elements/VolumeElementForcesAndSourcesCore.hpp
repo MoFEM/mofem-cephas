@@ -204,7 +204,8 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::opSwitch() {
     default:
       MoFEMFunctionReturnHot(0);
     }
-    CHKERR createDataOnElement();
+    CHKERR createDataOnElement(type);
+    lastEvaluatedElementEntityType = type;
   }
 
   CHKERR calculateVolumeAndJacobian();

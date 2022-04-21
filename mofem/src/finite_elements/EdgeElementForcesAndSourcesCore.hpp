@@ -195,8 +195,6 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCoreBase::opSwitch() {
   if (numeredEntFiniteElementPtr->getEntType() != MBEDGE)
     MoFEMFunctionReturnHot(0);
 
-  CHKERR createDataOnElement();
-
   CHKERR calculateEdgeDirection();
   CHKERR getSpacesAndBaseOnEntities(dataH1);
   CHKERR getEntityDataOrder<MBEDGE>(dataH1, H1);

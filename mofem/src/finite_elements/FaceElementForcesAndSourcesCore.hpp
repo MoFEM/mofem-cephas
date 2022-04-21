@@ -297,7 +297,8 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::opSwitch() {
     default:
       MoFEMFunctionReturnHot(0);
     }
-    CHKERR createDataOnElement();
+    CHKERR createDataOnElement(type);
+    lastEvaluatedElementEntityType = type;
   }
 
   // Calculate normal and tangent vectors for face geometry

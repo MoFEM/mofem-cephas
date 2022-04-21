@@ -83,28 +83,6 @@ ContactPrismElementForcesAndSourcesCore::
   getUserPolynomialBase() =
       boost::shared_ptr<BaseFunction>(new TriPolynomialBase());
 
-  dataH1Master.dataOnEntities[MBVERTEX].push_back(
-      new EntitiesFieldData::EntData());
-  dataH1Slave.dataOnEntities[MBVERTEX].push_back(
-      new EntitiesFieldData::EntData());
-
-  for (int ee = 0; ee != 3; ++ee) {
-    dataH1Master.dataOnEntities[MBEDGE].push_back(
-        new EntitiesFieldData::EntData());
-    dataH1Slave.dataOnEntities[MBEDGE].push_back(
-        new EntitiesFieldData::EntData());
-  }
-
-  dataH1Master.dataOnEntities[MBTRI].push_back(
-      new EntitiesFieldData::EntData());
-  dataH1Slave.dataOnEntities[MBTRI].push_back(
-      new EntitiesFieldData::EntData());
-
-  dataHdivMaster.dataOnEntities[MBTRI].push_back(
-      new EntitiesFieldData::EntData());
-  dataHdivSlave.dataOnEntities[MBTRI].push_back(
-      new EntitiesFieldData::EntData());
-
   // Data on elements for proper spaces
   dataOnMaster[H1]->setElementType(MBTRI);
   derivedDataOnMaster[H1]->setElementType(MBTRI);
@@ -115,6 +93,20 @@ ContactPrismElementForcesAndSourcesCore::
   derivedDataOnMaster[HDIV]->setElementType(MBTRI);
   dataOnSlave[HDIV]->setElementType(MBTRI);
   derivedDataOnSlave[HDIV]->setElementType(MBTRI);
+
+  dataOnMaster[NOFIELD]->dataOnEntities[MBENTITYSET].push_back(
+      new EntitiesFieldData::EntData());
+  dataOnSlave[NOFIELD]->dataOnEntities[MBENTITYSET].push_back(
+      new EntitiesFieldData::EntData());
+
+  derivedDataOnMaster[NOFIELD]->dataOnEntities[MBENTITYSET].push_back(
+      new EntitiesFieldData::EntData());
+  derivedDataOnSlave[NOFIELD]->dataOnEntities[MBENTITYSET].push_back(
+      new EntitiesFieldData::EntData());
+
+  CHK_THROW_MESSAGE(createDataOnElement(MBPRISM),
+                 "Problem with creation data on element");
+
 }
 
 MoFEMErrorCode
@@ -171,7 +163,6 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
 
   if (numeredEntFiniteElementPtr->getEntType() != MBPRISM)
     MoFEMFunctionReturnHot(0);
-  CHKERR createDataOnElement();
 
   EntitiesFieldData &data_div = *dataOnElement[HDIV];
   EntitiesFieldData &data_curl = *dataOnElement[HCURL];

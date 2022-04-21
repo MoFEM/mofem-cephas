@@ -27,14 +27,16 @@ FatPrismElementForcesAndSourcesCore::FatPrismElementForcesAndSourcesCore(
       opHOCoordsAndNormals(hoCoordsAtGaussPtsF3, nOrmals_at_GaussPtF3,
                            tAngent1_at_GaussPtF3, tAngent2_at_GaussPtF3,
                            hoCoordsAtGaussPtsF4, nOrmals_at_GaussPtF4,
-                           tAngent1_at_GaussPtF4, tAngent2_at_GaussPtF4) {}
+                           tAngent1_at_GaussPtF4, tAngent2_at_GaussPtF4) {
+  CHK_THROW_MESSAGE(createDataOnElement(MBPRISM),
+                 "Problem with creation data on element");
+}
 
 MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
   MoFEMFunctionBegin;
 
   if (numeredEntFiniteElementPtr->getEntType() != MBPRISM)
     MoFEMFunctionReturnHot(0);
-  CHKERR createDataOnElement();
 
   auto get_fe_coordinates = [&]() {
     MoFEMFunctionBegin;

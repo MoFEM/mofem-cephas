@@ -58,7 +58,7 @@ MoFEMErrorCode DataOperator::opLhs(EntitiesFieldData &row_data,
       [&](boost::ptr_vector<EntitiesFieldData::EntData> &row_ent_data,
           const int ss, const EntityType row_type, const EntityType low_type,
           const EntityType hi_type) {
-        MoFEMFunctionBegin;
+        MoFEMFunctionBeginHot;
         for (EntityType col_type = low_type; col_type != hi_type; ++col_type) {
           auto &col_ent_data = col_data.dataOnEntities[col_type];
           for (size_t SS = 0; SS != col_ent_data.size(); SS++) {
@@ -67,11 +67,11 @@ MoFEMErrorCode DataOperator::opLhs(EntitiesFieldData &row_data,
                             col_ent_data[SS]);
           }
         }
-        MoFEMFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       };
 
   auto do_row_entity = [&](const EntityType type) {
-    MoFEMFunctionBegin;
+    MoFEMFunctionBeginHot;
     auto &row_ent_data = row_data.dataOnEntities[type];
     for (size_t ss = 0; ss != row_ent_data.size(); ++ss) {
       size_t SS = 0;
@@ -86,23 +86,15 @@ MoFEMErrorCode DataOperator::opLhs(EntitiesFieldData &row_data,
       CHKERR do_col_entity(row_ent_data, ss, type,
                            static_cast<EntityType>(type + 1), MBMAXTYPE);
     }
-    MoFEMFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   };
 
-  for (EntityType row_type = MBVERTEX; row_type != MBENTITYSET; ++row_type) {
+  for (EntityType row_type = MBVERTEX; row_type != MBMAXTYPE; ++row_type) {
     if (doEntities[row_type]) {
       CHKERR do_row_entity(row_type);
     }
   }
 
-  if (doEntities[MBENTITYSET]) {
-    for (unsigned int mm = 0; mm != row_data.dataOnEntities[MBENTITYSET].size();
-         ++mm) {
-      if (!row_data.dataOnEntities[MBENTITYSET][mm].getFieldData().empty()) {
-        CHKERR do_row_entity(MBENTITYSET);
-      }
-    }
-  }
 
   MoFEMFunctionReturnHot(0);
 }
@@ -119,10 +111,10 @@ template <bool ErrorIfNoBase>
 MoFEMErrorCode
 DataOperator::opRhs(EntitiesFieldData &data,
                     const std::array<bool, MBMAXTYPE> &do_entities) {
-  MoFEMFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   auto do_entity = [&](auto type) {
-    MoFEMFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     auto &ent_data = data.dataOnEntities[type];
     const size_t size = ent_data.size();
@@ -144,27 +136,17 @@ DataOperator::opRhs(EntitiesFieldData &data,
       CHKERR doWork(ss, type, side_data);
     }
 
-    MoFEMFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   };
 
-  for (EntityType row_type = MBVERTEX; row_type != MBENTITYSET; ++row_type) {
+  for (EntityType row_type = MBVERTEX; row_type != MBMAXTYPE; ++row_type) {
     if (do_entities[row_type]) {
       CHKERR do_entity(row_type);
     }
   }
 
-  if (do_entities[MBENTITYSET]) {
-    // This is odd behaviour, diffrent than for other entities. Should be
-    // changed that behaviour is consistent,
-    for (unsigned int mm = 0; mm != data.dataOnEntities[MBENTITYSET].size();
-         ++mm) {
-      if (!data.dataOnEntities[MBENTITYSET][mm].getFieldData().empty()) {
-        CHKERR doWork(mm, MBENTITYSET, data.dataOnEntities[MBENTITYSET][mm]);
-      }
-    }
-  }
 
-  MoFEMFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
 MoFEMErrorCode DataOperator::opRhs(EntitiesFieldData &data,

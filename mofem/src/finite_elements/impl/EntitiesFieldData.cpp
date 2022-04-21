@@ -57,13 +57,11 @@ static void constructor_data(EntitiesFieldData *data, const EntityType type) {
 
   using EntData = EntitiesFieldData::EntData;
 
-  data->dataOnEntities[MBENTITYSET].push_back(new EntData());
-
   auto set_default = [&]() {
     std::array<size_t, MBMAXTYPE> count;
     std::fill(count.begin(), count.end(), 0);
     const int dim_type = moab::CN::Dimension(type);
-    data->dataOnEntities[MBVERTEX].push_back(new EntData());
+    data->dataOnEntities[MBVERTEX].resize(1);
     if (type != MBVERTEX) {
       for (auto dd = dim_type; dd > 0; --dd) {
         int nb_ents = moab::CN::NumSubEntities(type, dd);
@@ -73,8 +71,7 @@ static void constructor_data(EntitiesFieldData *data, const EntityType type) {
         }
         for (auto tt = moab::CN::TypeDimensionMap[dd].first;
              tt <= moab::CN::TypeDimensionMap[dd].second; ++tt) {
-          for (size_t n = 0; n != count[tt]; ++n)
-            data->dataOnEntities[tt].push_back(new EntData());
+          data->dataOnEntities[tt].resize(count[tt]);
         }
       }
     }
@@ -95,45 +92,7 @@ EntitiesFieldData::EntitiesFieldData(EntityType type) {
 
 MoFEMErrorCode EntitiesFieldData::setElementType(const EntityType type) {
   MoFEMFunctionBegin;
-  for (auto &data : dataOnEntities)
-    data.clear();
   constructor_data(this, type);
-  MoFEMFunctionReturn(0);
-}
-
-MoFEMErrorCode EntitiesFieldData::restoreElementType(const EntityType type) {
-  MoFEMFunctionBegin;
-  
-  dataOnEntities[MBENTITYSET].resize(1);
-
-  auto set_default = [&]() {
-    std::array<size_t, MBMAXTYPE> count;
-    std::fill(count.begin(), count.end(), 0);
-    const int dim_type = moab::CN::Dimension(type);
-    dataOnEntities[MBVERTEX].resize(1);
-    if (type != MBVERTEX) {
-      for (auto dd = dim_type; dd > 0; --dd) {
-        int nb_ents = moab::CN::NumSubEntities(type, dd);
-        for (int ii = 0; ii != nb_ents; ++ii) {
-          auto sub_ent_type = moab::CN::SubEntityType(type, dd, ii);
-          count[sub_ent_type] = nb_ents;
-        }
-        for (auto tt = moab::CN::TypeDimensionMap[dd].first;
-             tt <= moab::CN::TypeDimensionMap[dd].second; ++tt) {
-          dataOnEntities[tt].resize(count[tt]);
-        }
-      }
-    }
-  };
-
-  switch (type) {
-  case MBENTITYSET:
-    break;
-
-  default:
-    set_default();
-  }
-
   MoFEMFunctionReturn(0);
 }
 
@@ -147,10 +106,11 @@ constructor_derived_data(DerivedEntitiesFieldData *derived_data,
   for (int tt = MBVERTEX; tt != MBMAXTYPE; ++tt) {
     auto &ent_data = data_ptr->dataOnEntities[tt];
     auto &derived_ent_data = derived_data->dataOnEntities[tt];
-    for (auto &e : ent_data) {
-      boost::shared_ptr<EntData> ent_data_ptr(data_ptr, &e);
+    for (auto c = derived_ent_data.size(); c < ent_data.size(); ++c) {
+      boost::shared_ptr<EntData> ent_data_ptr(data_ptr, &ent_data[c]);
       derived_ent_data.push_back(new DerivedEntData(ent_data_ptr));
     }
+    derived_ent_data.resize(ent_data.size());
   }
 }
 
@@ -162,22 +122,7 @@ DerivedEntitiesFieldData::DerivedEntitiesFieldData(
 
 MoFEMErrorCode DerivedEntitiesFieldData::setElementType(const EntityType type) {
   MoFEMFunctionBegin;
-  for (EntityType tt = MBVERTEX; tt != MBMAXTYPE; ++tt)
-    dataOnEntities[tt].clear();
   constructor_derived_data(this, dataPtr);
-  MoFEMFunctionReturn(0);
-}
-
-MoFEMErrorCode
-DerivedEntitiesFieldData::restoreElementType(const EntityType type) {
-  MoFEMFunctionBegin;
-  for (int tt = MBVERTEX; tt != MBMAXTYPE; ++tt) {
-    auto &ent_data = dataPtr->dataOnEntities[tt];
-    auto &derived_ent_data = dataOnEntities[tt];
-    if (derived_ent_data.size() > ent_data.size()) {
-      derived_ent_data.resize(ent_data.size());
-    }
-  }
   MoFEMFunctionReturn(0);
 }
 

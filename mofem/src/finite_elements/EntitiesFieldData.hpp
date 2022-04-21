@@ -74,8 +74,6 @@ struct EntitiesFieldData {
 
   virtual MoFEMErrorCode setElementType(const EntityType type);
 
-  virtual MoFEMErrorCode restoreElementType(const EntityType type);
-
   /**
    * Reset data associated with particular field name
    * @return error code
@@ -127,7 +125,6 @@ struct DerivedEntitiesFieldData : public EntitiesFieldData {
   DerivedEntitiesFieldData(
       const boost::shared_ptr<EntitiesFieldData> &data_ptr);
   MoFEMErrorCode setElementType(const EntityType type);
-  MoFEMErrorCode restoreElementType(const EntityType type);
 
 private:
   const boost::shared_ptr<EntitiesFieldData> dataPtr;

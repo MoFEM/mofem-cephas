@@ -32,14 +32,17 @@ namespace MoFEM {
 
 VertexElementForcesAndSourcesCore::VertexElementForcesAndSourcesCore(
     Interface &m_field)
-    : ForcesAndSourcesCore(m_field){};
+    : ForcesAndSourcesCore(m_field) {
+  CHK_THROW_MESSAGE(createDataOnElement(MBVERTEX),
+                 "Problem with creation data on element");
+};
 
 MoFEMErrorCode VertexElementForcesAndSourcesCore::operator()() {
   MoFEMFunctionBegin;
 
   if (numeredEntFiniteElementPtr->getEntType() != MBVERTEX)
     MoFEMFunctionReturnHot(0);
-  CHKERR createDataOnElement();
+
 
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
   coords.resize(3, false);

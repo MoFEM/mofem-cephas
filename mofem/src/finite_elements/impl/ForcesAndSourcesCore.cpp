@@ -82,7 +82,18 @@ ForcesAndSourcesCore::ForcesAndSourcesCore(Interface &m_field)
       dataH1(*dataOnElement[H1].get()), dataHcurl(*dataOnElement[HCURL].get()),
       dataHdiv(*dataOnElement[HDIV].get()), dataL2(*dataOnElement[L2].get()),
       lastEvaluatedElementEntityType(MBMAXTYPE), sidePtrFE(nullptr),
-      refinePtrFE(nullptr) {}
+      refinePtrFE(nullptr) {
+
+  dataOnElement[NOSPACE]->dataOnEntities[MBENTITYSET].push_back(
+      new EntitiesFieldData::EntData());
+  derivedDataOnElement[NOSPACE]->dataOnEntities[MBENTITYSET].push_back(
+      new EntitiesFieldData::EntData());
+
+  dataOnElement[NOFIELD]->dataOnEntities[MBENTITYSET].push_back(
+      new EntitiesFieldData::EntData());
+  derivedDataOnElement[NOFIELD]->dataOnEntities[MBENTITYSET].push_back(
+      new EntitiesFieldData::EntData());
+}
 
 // ** Sense **
 
@@ -466,9 +477,12 @@ MoFEMErrorCode
 ForcesAndSourcesCore::getNoFieldRowIndices(EntitiesFieldData &data,
                                            const int bit_number) const {
   MoFEMFunctionBegin;
+#ifndef NDEBUG
   if (data.dataOnEntities[MBENTITYSET].size() == 0) {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "data.dataOnEntities[MBENTITYSET] is empty");
   }
+#endif
   CHKERR getNoFieldIndices(bit_number, getRowDofsPtr(),
                            data.dataOnEntities[MBENTITYSET][0].getIndices());
   MoFEMFunctionReturn(0);
@@ -478,9 +492,12 @@ MoFEMErrorCode
 ForcesAndSourcesCore::getNoFieldColIndices(EntitiesFieldData &data,
                                            const int bit_number) const {
   MoFEMFunctionBegin;
+#ifndef NDEBUG
   if (data.dataOnEntities[MBENTITYSET].size() == 0) {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "data.dataOnEntities[MBENTITYSET] is empty");
   }
+#endif
   CHKERR getNoFieldIndices(bit_number, getColDofsPtr(),
                            data.dataOnEntities[MBENTITYSET][0].getIndices());
   MoFEMFunctionReturn(0);
@@ -1259,20 +1276,14 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
   MoFEMFunctionReturn(0);
 };
 
-MoFEMErrorCode ForcesAndSourcesCore::createDataOnElement() {
+MoFEMErrorCode ForcesAndSourcesCore::createDataOnElement(EntityType type) {
   MoFEMFunctionBegin;
-
-  const EntityType type = numeredEntFiniteElementPtr->getEntType();
-  if (type == lastEvaluatedElementEntityType)
-    MoFEMFunctionReturnHot(0);
 
   // Data on elements for proper spaces
   for (int space = H1; space != LASTSPACE; ++space) {
     dataOnElement[space]->setElementType(type);
     derivedDataOnElement[space]->setElementType(type);
   }
-
-  lastEvaluatedElementEntityType = type;
 
   MoFEMFunctionReturn(0);
 }
@@ -1395,57 +1406,59 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
     op_data[ss] =
         !ss ? dataOnElement[space[ss]] : derivedDataOnElement[space[ss]];
 
-    switch (space[ss]) {
-    case NOFIELD:
-    case H1:
-    case HCURL:
-    case HDIV:
-    case L2:
-      break;
-    default:
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-               "not implemented for this this < %s > space",
-               FieldSpaceNames[space[ss]]);
-    }
-
-    if (space[ss] != NOFIELD) {
-      CHKERR getEntityFieldData(*op_data[ss], field_id[ss], MBEDGE);
-      if (!ss)
-        CHKERR getEntityRowIndices(*op_data[ss], field_id[ss], MBEDGE);
-      else
-        CHKERR getEntityColIndices(*op_data[ss], field_id[ss], MBEDGE);
-    }
-
-    switch (space[ss]) {
-    case H1:
+    auto get_data_for_nodes = [&]() {
+      MoFEMFunctionBegin;
       if (!ss)
         CHKERR getRowNodesIndices(*op_data[ss], field_id[ss]);
       else
         CHKERR getColNodesIndices(*op_data[ss], field_id[ss]);
       CHKERR getNodesFieldData(*op_data[ss], field_id[ss]);
-      break;
+      MoFEMFunctionReturn(0);
+    };
+
+    // get data on entities but not nodes
+    auto get_data_for_entities = [&]() {
+      MoFEMFunctionBegin;
+      CHKERR getEntityFieldData(*op_data[ss], field_id[ss], MBEDGE);
+      if (!ss)
+        CHKERR getEntityRowIndices(*op_data[ss], field_id[ss], MBEDGE);
+      else
+        CHKERR getEntityColIndices(*op_data[ss], field_id[ss], MBEDGE);
+      MoFEMFunctionReturn(0);
+    };
+
+    auto get_data_for_meshset = [&]() {
+      MoFEMFunctionBegin;
+      if (!ss) {
+        CHKERR getNoFieldRowIndices(*op_data[ss], field_id[ss]);
+      } else {
+        CHKERR getNoFieldColIndices(*op_data[ss], field_id[ss]);
+      }
+      CHKERR getNoFieldFieldData(*op_data[ss], field_id[ss]);
+      MoFEMFunctionReturn(0);
+    };
+
+    switch (space[ss]) {
+    case H1:
+      CHKERR get_data_for_nodes();
     case HCURL:
     case HDIV:
+      CHKERR get_data_for_entities();
       break;
     case L2:
       switch (type) {
       case MBVERTEX:
-        CHKERR getNodesFieldData(*op_data[ss], field_id[ss]);
+        CHKERR get_data_for_nodes();
         break;
       default:
-        break;
+        CHKERR get_data_for_entities();
       }
       break;
     case NOFIELD:
       if (!getNinTheLoop()) {
         // NOFIELD data are the same for each element, can be
         // retrieved only once
-        if (!ss) {
-          CHKERR getNoFieldRowIndices(*op_data[ss], field_id[ss]);
-        } else {
-          CHKERR getNoFieldColIndices(*op_data[ss], field_id[ss]);
-        }
-        CHKERR getNoFieldFieldData(*op_data[ss], field_id[ss]);
+        CHKERR get_data_for_meshset();
       }
       break;
     default:

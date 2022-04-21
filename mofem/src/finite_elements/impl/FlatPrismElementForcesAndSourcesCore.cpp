@@ -30,14 +30,15 @@ FlatPrismElementForcesAndSourcesCore::FlatPrismElementForcesAndSourcesCore(
                            tAngent1_at_GaussPtF4, tAngent2_at_GaussPtF4) {
   getElementPolynomialBase() =
       boost::shared_ptr<BaseFunction>(new FlatPrismPolynomialBase());
+  CHK_THROW_MESSAGE(createDataOnElement(MBPRISM),
+                 "Problem with creation data on element")
 }
 
 MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
   MoFEMFunctionBegin;
 
-  if (numeredEntFiniteElementPtr->getEntType() != MBPRISM)
+  if (numeredEntFiniteElementPtr->getEntType() != MBPRISM) 
     MoFEMFunctionReturnHot(0);
-  CHKERR createDataOnElement();
 
   EntitiesFieldData &data_div = *dataOnElement[HDIV];
   EntitiesFieldData &data_curl = *dataOnElement[HCURL];
@@ -136,6 +137,7 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
           &gaussPts(0, 0), &gaussPts(1, 0), nb_gauss_pts);
     }
   }
+  
   if (nb_gauss_pts == 0)
     MoFEMFunctionReturnHot(0);
 
@@ -171,6 +173,7 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
                   dataH1, mField.get_moab(), numeredEntFiniteElementPtr.get(),
                   H1, static_cast<FieldApproximationBase>(b), NOBASE)));
         }
+ #ifndef NDEBUG       
         if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "Not yet implemented");
@@ -183,6 +186,7 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "Not yet implemented");
         }
+#endif
         break;
       default:
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -230,9 +234,11 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
     tAngent2_at_GaussPtF4.resize(0, 0, false);
   }
 
+#ifndef NDEBUG
   if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented yet");
   }
+#endif
 
   // Iterate over operators
   CHKERR loopOverOperators();
