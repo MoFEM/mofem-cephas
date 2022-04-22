@@ -541,8 +541,8 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
 
     for (auto aa = 0; aa != Dim; ++aa) {
       auto &M = aM[aa];
-      for (auto ii = 0; ii != Dim; ++ii)
-        for (auto jj = 0; jj <= ii; ++jj)
+      for (auto jj = 0; jj != Dim; ++jj)
+        for (auto ii = jj; ii != Dim; ++ii)
           M(ii, jj) = tVec(aa, ii) * tVec(aa, jj);
     }
 
