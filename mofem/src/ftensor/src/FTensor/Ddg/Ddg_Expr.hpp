@@ -85,10 +85,10 @@ namespace FTensor
     template <class U>
     Ddg_Expr<Ddg<A, Tensor_Dim01, Tensor_Dim23>, T, Dim01, Dim23, i, j, k, l> &
     operator=(const U &d) {
-      for (int ii = 0; ii != Dim01;++ii)
-        for (int jj = ii; jj != Dim01;++jj)
-          for (int kk = 0; kk != Dim23;++kk)
-            for (int ll = kk; ll != Dim23;++ll)
+      for (int jj = 0; jj != Dim01; ++jj)
+        for (int ii = jj; ii != Dim01; ++ii)
+          for (int ll = 0; ll != Dim23; ++ll)
+            for (int kk = ll; kk != Dim23; ++kk)
               iter(ii, jj, kk, ll) = d;
       return *this;
     }
