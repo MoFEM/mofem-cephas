@@ -85,7 +85,7 @@ template <typename E, typename C> struct d2MCoefficients {
   inline auto get(const Number<a> &, const Number<b> &, const int i,
                   const int j, const int k, const int l,
                   const Number<2> &) const {
-    if (a == 1 || b == 1)
+    if constexpr (a == 1 || b == 1)
       return get(Number<a>(), Number<b>(), i, j, k, l, Number<3>());
     else
       return get(Number<a>(), Number<b>(), i, j, k, l, Number<1>());
@@ -111,7 +111,7 @@ template <typename E, typename C, typename G> struct d2MImpl {
 
   template <int b, int a>
   inline C term(const int i, const int j, const int k, const int l) const {
-    if (a != b) {
+    if constexpr (a != b) {
       return g.get(Number<a>(), Number<b>(), i, j, k, l,
                    typename E::NumberNb());
     }
@@ -160,7 +160,7 @@ template <typename E, typename C> struct Fdd4MImpl {
 
                  );
 
-    } else if (I == J)
+    } else if constexpr (I == J)
       return 2 * (
 
                      fd2M<a, a, b, I, K, M, N>() * e.aM[b](J, L) +
@@ -172,7 +172,7 @@ template <typename E, typename C> struct Fdd4MImpl {
                      fd2M<a, a, b, J, L, M, N>() * e.aM[b](I, K)
 
                  );
-    else if (K == L)
+    else if constexpr (K == L)
       return 2 * (
 
                      fd2M<a, a, b, I, K, M, N>() * e.aM[b](J, L) +
@@ -202,7 +202,7 @@ template <typename E, typename C> struct Fdd4MImpl {
   template <int a, int b, int i, int j, int k, int l, int m, int n>
   inline C term() const {
 
-    if (a != b) {
+    if constexpr (a != b) {
 
       if (e.nB == 1) {
         return
@@ -443,7 +443,7 @@ struct GetDiffDiffMatImpl {
   template <int I, int J, int K, int L, int M, int N>
   inline auto add(const Number<I> &, const Number<J> &, const Number<K> &,
                   const Number<L> &, const Number<M> &, const Number<N> &) {
-    if (N != M)
+    if constexpr (N != M)
       return (tS(M - 1, N - 1) + tS(N - 1, M - 1)) *
                  r.eval(typename E::NumberDim(), Number<M - 1>(),
                         Number<N - 1>(), Number<I - 1>(), Number<J - 1>(),
@@ -496,7 +496,7 @@ struct GetDiffDiffMatImpl {
     tA(I - 1, J - 1, K - 1, L - 1) =
         add(Number<I>(), Number<J>(), Number<K>(), Number<L>(),
             typename E::NumberDim(), typename E::NumberDim());
-    if (K != I || L != J)
+    if constexpr (K != I || L != J)
       tA(K - 1, L - 1, I - 1, J - 1) = tA(I - 1, J - 1, K - 1, L - 1);
   }
 
@@ -761,9 +761,9 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
 
     for (auto aa = 0; aa != Dim; ++aa) {
       for (auto mm = 0; mm != Dim; ++mm) {
-        for (auto nn = mm; nn != Dim; ++nn) {
-          d2MType1[aa][nn][mm](i, j, k, l) = 0;
-          d2MType1[aa][mm][nn](i, j, k, l) = 0;
+        for (auto nn = 0; nn != Dim; ++nn) {
+          if (nn != mm)
+            d2MType1[aa][nn][mm](i, j, k, l) = 0;
         }
       }
     }
@@ -825,8 +825,9 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
                   } else
                     r = 0;
 
-                  d2MType1[aa][cc][dd](i, j, k, l) +=
-                      r * aS[aa][bb](i, j, k, l);
+                  if (r)
+                    d2MType1[aa][cc][dd](i, j, k, l) +=
+                        r * aS[aa][bb](i, j, k, l);
                 }
             }
         }
