@@ -42,6 +42,36 @@ private:
   int verbosity;
   Sev severityLevel;
 };
+
+// struct OpAddParentEntData : public ForcesAndSourcesCore::UserDataOperator {
+
+//   OpAddParentEntData(std::string field_name, OpType op_parent_type,
+//                      boost::shared_ptr<ForcesAndSourcesCore> parent_ele_ptr,
+//                      BitRefLevel bit_child, BitRefLevel bit_child_mask,
+//                      BitRefLevel bit_parent_ent,
+//                      BitRefLevel bit_parent_ent_mask, int verb, Sev sev);
+
+//   MoFEMErrorCode doWork(int side, EntityType type,
+//                         EntitiesFieldData::EntData &data);
+
+// private:
+//   std::string rowFieldName;
+//   std::string colFieldName;
+//   OpType opParentType;
+//   boost::shared_ptr<ForcesAndSourcesCore> parentElePtr;
+//   const BitRefLevel bitChild;
+//   const BitRefLevel bitChildMask;
+//   const BitRefLevel bitParentEnt;
+//   const BitRefLevel bitParentEntMask;
+//   int verbosity;
+//   Sev severityLevel;
+// };
+
+// struct OpRetoreEntData : public ForcesAndSourcesCore::UserDataOperator {
+//   OpRetoreEntData();
+//   MoFEMErrorCode doWork(int side, EntityType type,
+//                         EntitiesFieldData::EntData &data);
+// };
 }
 
 #endif //__MESH_PROJECTION_DATA_OPERATORS_HPP__
