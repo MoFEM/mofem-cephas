@@ -308,8 +308,8 @@ namespace FTensor
               int Current_Dim3>
     void eval(const Number<Current_Dim0> &, const Number<Current_Dim1> &,
               const Number<Current_Dim2> &, const Number<Current_Dim3> &) {
-      iter(Current_Dim0 - 1, Current_Dim1 - 1, Current_Dim2 - 1,
-           Current_Dim3 - 1) = u;
+      iter(Number<Current_Dim0 - 1>(), Number<Current_Dim1 - 1>(),
+           Number<Current_Dim2 - 1>(), Number<Current_Dim3 - 1>()) = u;
       eval(Number<Current_Dim0 - 1>(), Number<Current_Dim1>(),
            Number<Current_Dim2>(), Number<Current_Dim3>());
     }
@@ -317,7 +317,8 @@ namespace FTensor
     template <int Current_Dim1, int Current_Dim2, int Current_Dim3>
     void eval(const Number<1> &, const Number<Current_Dim1> &,
               const Number<Current_Dim2> &, const Number<Current_Dim3> &) {
-      iter(0, Current_Dim1 - 1, Current_Dim2 - 1, Current_Dim3 - 1) = u;
+      iter(Number<0>(), Number<Current_Dim1 - 1>(), Number<Current_Dim2 - 1>(),
+           Number<Current_Dim3 - 1>()) = u;
       eval(Number<Current_Dim1 - 1>(), Number<Current_Dim1 - 1>(),
            Number<Current_Dim2>(), Number<Current_Dim3>());
     }
@@ -325,7 +326,8 @@ namespace FTensor
     template <int Current_Dim2, int Current_Dim3>
     void eval(const Number<1> &, const Number<1> &,
               const Number<Current_Dim2> &, const Number<Current_Dim3> &) {
-      iter(0, 0, Current_Dim2 - 1, Current_Dim3 - 1) = u;
+      iter(Number<0>(), Number<0>(), Number<Current_Dim2 - 1>(),
+           Number<Current_Dim3 - 1>()) = u;
       eval(Number<Dim01>(), Number<Dim01>(), Number<Current_Dim2 - 1>(),
            Number<Current_Dim3>());
     }
@@ -333,14 +335,15 @@ namespace FTensor
     template <int Current_Dim3>
     void eval(const Number<1> &, const Number<1> &, const Number<1> &,
               const Number<Current_Dim3> &) {
-      iter(0, 0, 0, Current_Dim3 - 1) = u;
+      iter(Number<0>(), Number<0>(), Number<0>(), Number<Current_Dim3 - 1>()) =
+          u;
       eval(Number<Dim01>(), Number<Dim01>(), Number<Current_Dim3 - 1>(),
            Number<Current_Dim3 - 1>());
     }
 
     void eval(const Number<1> &, const Number<1> &, const Number<1> &,
               const Number<1> &) {
-      iter(0, 0, 0, 0) = u;
+      iter(Number<0>(), Number<0>(), Number<0>(), Number<0>()) = u;
     }
 
   public:

@@ -62,6 +62,58 @@ namespace FTensor
                                 [N4 + (N3 * (2 * Tensor_Dim23 - N3 - 1)) / 2]);
     }
 
+    template <int N1, int N2, int N3, int N4>
+    auto &operator()(const Number<N1> &, const Number<N2> &, const Number<N3> &,
+                     const Number<N4> &) {
+
+      static_assert(N1 < Tensor_Dim01, "Bad index N1");
+      static_assert(N2 < Tensor_Dim01, "Bad index N2");
+      static_assert(N3 < Tensor_Dim23, "Bad index N3");
+      static_assert(N4 < Tensor_Dim23, "Bad index N4");
+
+      if constexpr (N1 > N2) {
+        if constexpr (N3 > N4)
+          return data[N1 + (N2 * (2 * Tensor_Dim01 - N2 - 1)) / 2]
+                     [N3 + (N4 * (2 * Tensor_Dim23 - N4 - 1)) / 2];
+        else
+          return data[N1 + (N2 * (2 * Tensor_Dim01 - N2 - 1)) / 2]
+                     [N4 + (N3 * (2 * Tensor_Dim23 - N3 - 1)) / 2];
+      } else {
+        if constexpr (N3 > N4)
+          return data[N2 + (N1 * (2 * Tensor_Dim01 - N1 - 1)) / 2]
+                     [N3 + (N4 * (2 * Tensor_Dim23 - N4 - 1)) / 2];
+        else
+          return data[N2 + (N1 * (2 * Tensor_Dim01 - N1 - 1)) / 2]
+                     [N4 + (N3 * (2 * Tensor_Dim23 - N3 - 1)) / 2];
+      }
+    }
+
+    template <int N1, int N2, int N3, int N4>
+    auto operator()(const Number<N1> &, const Number<N2> &, const Number<N3> &,
+                    const Number<N4> &) const {
+
+      static_assert(N1 < Tensor_Dim01, "Bad index N1");
+      static_assert(N2 < Tensor_Dim01, "Bad index N2");
+      static_assert(N3 < Tensor_Dim23, "Bad index N3");
+      static_assert(N4 < Tensor_Dim23, "Bad index N4");
+
+      if constexpr (N1 > N2) {
+        if constexpr (N3 > N4)
+          return data[N1 + (N2 * (2 * Tensor_Dim01 - N2 - 1)) / 2]
+                     [N3 + (N4 * (2 * Tensor_Dim23 - N4 - 1)) / 2];
+        else
+          return data[N1 + (N2 * (2 * Tensor_Dim01 - N2 - 1)) / 2]
+                     [N4 + (N3 * (2 * Tensor_Dim23 - N3 - 1)) / 2];
+      } else {
+        if constexpr (N3 > N4)
+          return data[N2 + (N1 * (2 * Tensor_Dim01 - N1 - 1)) / 2]
+                     [N3 + (N4 * (2 * Tensor_Dim23 - N4 - 1)) / 2];
+        else
+          return data[N2 + (N1 * (2 * Tensor_Dim01 - N1 - 1)) / 2]
+                     [N4 + (N3 * (2 * Tensor_Dim23 - N3 - 1)) / 2];
+      }
+    }
+
     /* These operator()'s are the first part in constructing template
        expressions.  They can be used to slice off lower dimensional
        parts. They are not entirely safe, since you can accidently use a

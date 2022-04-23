@@ -57,6 +57,30 @@ namespace FTensor
                      : data[N2 + (N1 * (2 * Tensor_Dim - N1 - 1)) / 2];
     }
 
+    template <int N1, int N2>
+    T operator()(const Number<N1> &, const Number<N2>()) const {
+
+      static_assert(N1 < Tensor_Dim, "Bad index");
+      static_assert(N2 < Tensor_Dim, "Bad index");
+
+      if constexpr (N1 > N2)
+        return data[N1 + (N2 * (2 * Tensor_Dim - N2 - 1)) / 2];
+      else
+        return data[N2 + (N1 * (2 * Tensor_Dim - N1 - 1)) / 2];
+    }
+
+    template <int N1, int N2>
+    T &operator()(const Number<N1> &, const Number<N2>()) {
+
+      static_assert(N1 < Tensor_Dim, "Bad index");
+      static_assert(N2 < Tensor_Dim, "Bad index");
+
+      if constexpr (N1 > N2)
+        return data[N1 + (N2 * (2 * Tensor_Dim - N2 - 1)) / 2];
+      else
+        return data[N2 + (N1 * (2 * Tensor_Dim - N1 - 1)) / 2];
+    }
+
     /* These operator()'s are the first part in constructing template
        expressions.  They can be used to slice off lower dimensional
        parts. They are not entirely safe, since you can accidentally use a
