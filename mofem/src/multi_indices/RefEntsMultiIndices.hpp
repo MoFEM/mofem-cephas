@@ -67,7 +67,7 @@ inline void *get_tag_ptr(moab::Interface &moab, Tag th, EntityHandle ent,
  * \brief keeps information about side number for the finite element
  * \ingroup ent_multi_indices
  */
-struct __attribute__((__packed__)) SideNumber {
+struct /*__attribute__((__packed__))*/ SideNumber {
   EntityHandle ent;
   char side_number;
   char sense;
