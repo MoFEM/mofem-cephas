@@ -141,145 +141,124 @@ template <typename E, typename C> struct Fdd4MImpl {
   E &e;
 
   using NumberNb = typename E::NumberNb;
+  using NumberDim = typename E::NumberDim;
 
   template <int N> using Number = FTensor::Number<N>;
 
-  template <int I, int J, int K, int L> auto fd2M(int A, int a, int b) const {
+  template <int I, int J, int K, int L>
+  inline auto fd2M(int A, int a, int b) const {
     return e.d2MType1[A][a][b](Number<I>(), Number<J>(), Number<K>(),
                                Number<L>());
   }
 
-  template <int I, int J, int K, int L, int M, int N>
-  auto fd2S(int a, int b) const {
-    if constexpr (I == J && K == L) {
+  template <int i, int j, int k, int l, int m, int n>
+  auto term_fd2S(int a, int b, const Number<i> &, const Number<j> &,
+                 const Number<k> &, const Number<l> &, const Number<m> &,
+                 const Number<n> &) const {
+    if constexpr (i == j && k == l) {
       return 4 *
              (
 
-                 fd2M<I, K, M, N>(a, a, b) * e.aM[b](Number<J>(), Number<L>())
+                 fd2M<i, k, m, n>(a, a, b) * e.aM[b](Number<j>(), Number<l>())
 
                  +
 
-                 fd2M<I, K, M, N>(b, a, b) * e.aM[a](Number<J>(), Number<L>())
+                 fd2M<i, k, m, n>(b, a, b) * e.aM[a](Number<j>(), Number<l>())
 
              );
 
-    } else if constexpr (I == J)
+    } else if constexpr (i == j)
       return 2 *
              (
 
-                 fd2M<I, K, M, N>(a, a, b) * e.aM[b](Number<J>(), Number<L>()) +
-                 fd2M<J, L, M, N>(b, a, b) * e.aM[a](Number<I>(), Number<K>())
+                 fd2M<i, k, m, n>(a, a, b) * e.aM[b](Number<j>(), Number<l>()) +
+                 fd2M<j, l, m, n>(b, a, b) * e.aM[a](Number<i>(), Number<k>())
 
                  +
 
-                 fd2M<I, K, M, N>(b, a, b) * e.aM[a](Number<J>(), Number<L>()) +
-                 fd2M<J, L, M, N>(a, a, b) * e.aM[b](Number<I>(), Number<K>())
+                 fd2M<i, k, m, n>(b, a, b) * e.aM[a](Number<j>(), Number<l>()) +
+                 fd2M<j, l, m, n>(a, a, b) * e.aM[b](Number<i>(), Number<k>())
 
              );
-    else if constexpr (K == L)
+    else if constexpr (k == l)
       return 2 *
              (
 
-                 fd2M<I, K, M, N>(a, a, b) * e.aM[b](Number<J>(), Number<L>()) +
-                 fd2M<J, L, M, N>(b, a, b) * e.aM[a](Number<I>(), Number<K>()) +
+                 fd2M<i, k, m, n>(a, a, b) * e.aM[b](Number<j>(), Number<l>()) +
+                 fd2M<j, l, m, n>(b, a, b) * e.aM[a](Number<i>(), Number<k>()) +
 
                  +
 
-                     fd2M<I, K, M, N>(b, a, b) *
-                     e.aM[a](Number<J>(), Number<L>()) +
-                 fd2M<J, L, M, N>(a, a, b) * e.aM[b](Number<I>(), Number<K>())
+                     fd2M<i, k, m, n>(b, a, b) *
+                     e.aM[a](Number<j>(), Number<l>()) +
+                 fd2M<j, l, m, n>(a, a, b) * e.aM[b](Number<i>(), Number<k>())
 
              );
     else
-      return fd2M<I, K, M, N>(a, a, b) * e.aM[b](Number<J>(), Number<L>()) +
-             fd2M<J, L, M, N>(b, a, b) * e.aM[a](Number<I>(), Number<K>()) +
-             fd2M<I, L, M, N>(a, a, b) * e.aM[b](Number<J>(), Number<K>()) +
-             fd2M<J, K, M, N>(b, a, b) * e.aM[a](Number<I>(), Number<L>())
+      return fd2M<i, k, m, n>(a, a, b) * e.aM[b](Number<j>(), Number<l>()) +
+             fd2M<j, l, m, n>(b, a, b) * e.aM[a](Number<i>(), Number<k>()) +
+             fd2M<i, l, m, n>(a, a, b) * e.aM[b](Number<j>(), Number<k>()) +
+             fd2M<j, k, m, n>(b, a, b) * e.aM[a](Number<i>(), Number<l>())
 
              +
 
-             fd2M<I, K, M, N>(b, a, b) * e.aM[a](Number<J>(), Number<L>()) +
-             fd2M<J, L, M, N>(a, a, b) * e.aM[b](Number<I>(), Number<K>()) +
-             fd2M<I, L, M, N>(b, a, b) * e.aM[a](Number<J>(), Number<K>()) +
-             fd2M<J, K, M, N>(a, a, b) * e.aM[b](Number<I>(), Number<L>());
+             fd2M<i, k, m, n>(b, a, b) * e.aM[a](Number<j>(), Number<l>()) +
+             fd2M<j, l, m, n>(a, a, b) * e.aM[b](Number<i>(), Number<k>()) +
+             fd2M<i, l, m, n>(b, a, b) * e.aM[a](Number<j>(), Number<k>()) +
+             fd2M<j, k, m, n>(a, a, b) * e.aM[b](Number<i>(), Number<l>());
   }
 
-  template <int NB, int a, int b, int i, int j, int k, int l, int m, int n>
-  inline C term(const Number<NB> &, const Number<a> &, const Number<b> &,
-                const Number<i> &, const Number<j> &, const Number<k> &,
-                const Number<l> &, const Number<m> &, const Number<n> &) const {
+  template <int NB, int i, int j, int k, int l, int m, int n>
+  C term_SM(const int a, const int b, const Number<NB> &, const Number<i> &,
+            const Number<j> &, const Number<k> &, const Number<l> &,
+            const Number<m> &, const Number<n> &) const {
 
-    if constexpr (a != b) {
+    if constexpr (NB == 1) {
+      return 0;
 
-      if constexpr (NB == 1) {
-        return
+    } else if constexpr (NB == 2) {
 
-            fd2S<i, j, k, l, m, n>(a, b);
-
-      } else if constexpr (NB == 2) {
-
-        if constexpr (a == 1 || b == 1) {
-          if constexpr (n < m) {
-            return
-
-                fd2S<i, j, k, l, m, n>(a, b)
-
-                +
-
-                2 * (e.fVal(a) * e.aF2(a, b)) *
-                    (e.aSM[b][a][n][m](Number<i>(), Number<j>(), Number<k>(),
-                                       Number<l>()) -
-                     e.aSM[a][b][n][m](Number<i>(), Number<j>(), Number<k>(),
-                                       Number<l>()));
-
-          } else {
-
-            return
-
-                fd2S<i, j, k, l, m, n>(a, b)
-
-                +
-
-                2 * (e.fVal(a) * e.aF2(a, b)) *
-                    (e.aSM[b][a][m][n](Number<i>(), Number<j>(), Number<k>(),
-                                       Number<l>()) -
-                     e.aSM[a][b][m][n](Number<i>(), Number<j>(), Number<k>(),
-                                       Number<l>()));
-          }
-
-        } else {
-          return fd2S<i, j, k, l, m, n>(a, b);
-        }
-
-      } else {
-
+      if (a == 1 || b == 1) {
         if constexpr (n < m) {
           return
 
-              fd2S<i, j, k, l, m, n>(a, b)
-
-              +
-
-              2 * (e.fVal(a) * e.aF2(a, b)) *
-                  (e.aSM[b][a][n][m](Number<i>(), Number<j>(), Number<k>(),
-                                     Number<l>()) -
-                   e.aSM[a][b][n][m](Number<i>(), Number<j>(), Number<k>(),
-                                     Number<l>()));
+              e.aF2(a, b) * (e.aSM[b][a][n][m](Number<i>(), Number<j>(),
+                                               Number<k>(), Number<l>()) -
+                             e.aSM[a][b][n][m](Number<i>(), Number<j>(),
+                                               Number<k>(), Number<l>()));
 
         } else {
 
           return
 
-              fd2S<i, j, k, l, m, n>(a, b)
-
-              +
-
-              2 * (e.fVal(a) * e.aF2(a, b)) *
-                  (e.aSM[b][a][m][n](Number<i>(), Number<j>(), Number<k>(),
-                                     Number<l>()) -
-                   e.aSM[a][b][m][n](Number<i>(), Number<j>(), Number<k>(),
-                                     Number<l>()));
+              e.aF2(a, b) * (e.aSM[b][a][m][n](Number<i>(), Number<j>(),
+                                               Number<k>(), Number<l>()) -
+                             e.aSM[a][b][m][n](Number<i>(), Number<j>(),
+                                               Number<k>(), Number<l>()));
         }
+
+      } else {
+        return 0;
+      }
+
+    } else {
+
+      if constexpr (n < m) {
+        return
+
+            e.aF2(a, b) * (e.aSM[b][a][n][m](Number<i>(), Number<j>(),
+                                             Number<k>(), Number<l>()) -
+                           e.aSM[a][b][n][m](Number<i>(), Number<j>(),
+                                             Number<k>(), Number<l>()));
+
+      } else {
+
+        return
+
+            e.aF2(a, b) * (e.aSM[b][a][m][n](Number<i>(), Number<j>(),
+                                             Number<k>(), Number<l>()) -
+                           e.aSM[a][b][m][n](Number<i>(), Number<j>(),
+                                             Number<k>(), Number<l>()));
       }
     }
 
@@ -287,22 +266,70 @@ template <typename E, typename C> struct Fdd4MImpl {
   }
 
   template <int nb, int a, int i, int j, int k, int l, int m, int n>
-  inline C eval(const Number<nb> &, const Number<a> &, const Number<i> &,
-                const Number<j> &, const Number<k> &, const Number<l> &,
-                const Number<m> &, const Number<n> &) const {
-    return term(NumberNb(), Number<a>(), Number<nb - 1>(), Number<i>(),
-                Number<j>(), Number<k>(), Number<l>(), Number<m>(),
-                Number<n>()) +
-           eval(Number<nb - 1>(), Number<a>(), Number<i>(), Number<j>(),
-                Number<k>(), Number<l>(), Number<m>(), Number<n>());
+  inline C eval_fdS2(const Number<nb> &, const Number<a> &, const Number<i> &,
+                     const Number<j> &, const Number<k> &, const Number<l> &,
+                     const Number<m> &, const Number<n> &) const {
+    if constexpr (a != nb - 1)
+      return term_fd2S(a, nb - 1, Number<i>(), Number<j>(), Number<k>(),
+                       Number<l>(), Number<m>(), Number<n>()) +
+             eval_fdS2(Number<nb - 1>(), Number<a>(), Number<i>(), Number<j>(),
+                       Number<k>(), Number<l>(), Number<m>(), Number<n>());
+    else
+      return eval_fdS2(Number<nb - 1>(), Number<a>(), Number<i>(), Number<j>(),
+                       Number<k>(), Number<l>(), Number<m>(), Number<n>());
   }
 
   template <int a, int i, int j, int k, int l, int m, int n>
-  inline C eval(const Number<1> &, const Number<a> &, const Number<i> &,
+  inline C eval_fdS2(const Number<1> &, const Number<a> &, const Number<i> &,
+                     const Number<j> &, const Number<k> &, const Number<l> &,
+                     const Number<m> &, const Number<n> &) const {
+    if constexpr (a != 0)
+      return term_fd2S(a, 0, Number<i>(), Number<j>(), Number<k>(), Number<l>(),
+                       Number<m>(), Number<n>());
+    else
+      return 0;
+  }
+
+  template <int nb, int a, int i, int j, int k, int l, int m, int n>
+  inline C eval_SM(const Number<nb> &, const Number<a> &, const Number<i> &,
+                   const Number<j> &, const Number<k> &, const Number<l> &,
+                   const Number<m> &, const Number<n> &) const {
+    if constexpr (a != nb - 1)
+      return term_SM(a, nb - 1, NumberNb(), Number<i>(), Number<j>(),
+                     Number<k>(), Number<l>(), Number<m>(), Number<n>()) +
+             eval_SM(Number<nb - 1>(), Number<a>(), Number<i>(), Number<j>(),
+                     Number<k>(), Number<l>(), Number<m>(), Number<n>());
+
+    else
+      return eval_SM(Number<nb - 1>(), Number<a>(), Number<i>(), Number<j>(),
+                     Number<k>(), Number<l>(), Number<m>(), Number<n>());
+  }
+
+  template <int a, int i, int j, int k, int l, int m, int n>
+  inline C eval_SM(const Number<1> &, const Number<a> &, const Number<i> &,
+                   const Number<j> &, const Number<k> &, const Number<l> &,
+                   const Number<m> &, const Number<n> &) const {
+    if constexpr (a != 0)
+      return term_SM(a, 0, NumberNb(), Number<i>(), Number<j>(), Number<k>(),
+                     Number<l>(), Number<m>(), Number<n>());
+    else
+      return 0;
+  }
+
+  template <int nb, int a, int i, int j, int k, int l, int m, int n>
+  inline C eval(const Number<nb> &, const Number<a> &, const Number<i> &,
                 const Number<j> &, const Number<k> &, const Number<l> &,
                 const Number<m> &, const Number<n> &) const {
-    return term(NumberNb(), Number<a>(), Number<0>(), Number<i>(), Number<j>(),
-                Number<k>(), Number<l>(), Number<m>(), Number<n>());
+    return
+
+        (2 * e.fVal(a)) * eval_SM(NumberDim(), Number<a>(), Number<i>(),
+                                  Number<j>(), Number<k>(), Number<l>(),
+                                  Number<m>(), Number<n>())
+
+        +
+
+        eval_fdS2(NumberDim(), Number<a>(), Number<i>(), Number<j>(),
+                  Number<k>(), Number<l>(), Number<m>(), Number<n>());
   }
 };
 
@@ -443,7 +470,7 @@ template <typename E, typename C> struct SecondMatrixDirectiveImpl {
   template <int i, int j, int k, int l, int m, int n>
   inline C eval(const Number<1> &, const Number<i> &, const Number<j> &,
                 const Number<k> &, const Number<l> &, const Number<m> &,
-                const Number<n>) const {
+                const Number<n> &) const {
     return term<0, i, j, k, l, m, n>();
   }
 };
@@ -557,8 +584,112 @@ struct GetDiffDiffMatImpl {
     tA(I - 1, J - 1, K - 1, L - 1) =
         add(Number<I>(), Number<J>(), Number<K>(), Number<L>(),
             typename E::NumberDim(), typename E::NumberDim());
+    // Major symmetry
     if constexpr (K != I || L != J)
       tA(K - 1, L - 1, I - 1, J - 1) = tA(I - 1, J - 1, K - 1, L - 1);
+  }
+
+  template <int I, int J, int K>
+  inline void set(const Number<I> &, const Number<J> &, const Number<K> &,
+                  const Number<0> &) {
+    set(Number<I>(), Number<J>(), Number<K - 1>(), Number<K - 1>());
+  }
+
+  template <int I, int J>
+  inline void set(const Number<I> &, const Number<J> &, const Number<0> &,
+                  const Number<0> &) {
+    set(Number<I>(), Number<J - 1>(), Number<I>(), Number<J - 1>());
+  }
+
+  template <int I, int K>
+  inline void set(const Number<I> &, const Number<0> &, const Number<K> &,
+                  const Number<0> &) {
+    set(Number<I - 1>(), Number<I - 1>(), Number<I - 1>(), Number<I - 1>());
+  }
+
+  inline void set(const Number<0> &, const Number<0> &, const Number<0> &,
+                  const Number<0> &) {}
+};
+
+template <typename E, typename C, typename T1, typename VT2, int DimT2>
+struct GetDiffDiffMatImpl<E, C, T1, FTensor::Tensor2_symmetric<VT2, DimT2>> {
+  using Val = typename E::Val;
+  using Vec = typename E::Vec;
+  using Fun = typename E::Fun;
+
+  template <int N> using Number = FTensor::Number<N>;
+
+  GetDiffDiffMatImpl(E &e, T1 &t_a, FTensor::Tensor2_symmetric<VT2, DimT2> &t_S)
+      : r(e), e(e), tA(t_a), tS(t_S) {}
+  SecondMatrixDirectiveImpl<E, C> r;
+  E &e;
+  T1 &tA;
+  FTensor::Tensor2_symmetric<VT2, DimT2> &tS;
+
+  template <int I, int J, int K, int L, int M, int N>
+  inline auto add(const Number<I> &, const Number<J> &, const Number<K> &,
+                  const Number<L> &, const Number<M> &, const Number<N> &) {
+
+    if constexpr (N != M)
+      return (2 * tS(Number<M - 1>(), Number<N - 1>())) *
+                 r.eval(typename E::NumberDim(), Number<M - 1>(),
+                        Number<N - 1>(), Number<I - 1>(), Number<J - 1>(),
+                        Number<K - 1>(), Number<L - 1>())
+
+             +
+
+             add(Number<I>(), Number<J>(), Number<K>(), Number<L>(),
+                 Number<M>(), Number<N - 1>());
+    else
+      return tS(Number<M - 1>(), Number<N - 1>()) *
+                 r.eval(typename E::NumberDim(), Number<M - 1>(),
+                        Number<N - 1>(), Number<I - 1>(), Number<J - 1>(),
+                        Number<K - 1>(), Number<L - 1>())
+
+             +
+
+             add(Number<I>(), Number<J>(), Number<K>(), Number<L>(),
+                 Number<M>(), Number<N - 1>());
+  }
+
+  template <int I, int J, int K, int L, int M>
+  inline auto add(const Number<I> &, const Number<J> &, const Number<K> &,
+                  const Number<L> &, const Number<M> &, const Number<1> &) {
+    return (2 * tS(Number<M - 1>(), Number<0>())) *
+               r.eval(typename E::NumberDim(), Number<M - 1>(), Number<0>(),
+                      Number<I - 1>(), Number<J - 1>(), Number<K - 1>(),
+                      Number<L - 1>())
+
+           +
+
+           add(Number<I>(), Number<J>(), Number<K>(), Number<L>(),
+               Number<M - 1>(), Number<M - 1>());
+  }
+
+  template <int I, int J, int K, int L>
+  inline auto add(const Number<I> &, const Number<J> &, const Number<K> &,
+                  const Number<L> &, const Number<1> &, const Number<1> &) {
+    return tS(Number<0>(), Number<0>()) *
+           r.eval(typename E::NumberDim(), Number<0>(), Number<0>(),
+                  Number<I - 1>(), Number<J - 1>(), Number<K - 1>(),
+                  Number<L - 1>());
+  }
+
+  template <int I, int J, int K, int L>
+  inline void set(const Number<I> &, const Number<J> &, const Number<K> &,
+                  const Number<L> &) {
+
+    set(Number<I>(), Number<J>(), Number<K>(), Number<L - 1>());
+
+    tA(Number<I - 1>(), Number<J - 1>(), Number<K - 1>(), Number<L - 1>()) =
+        add(Number<I>(), Number<J>(), Number<K>(), Number<L>(),
+            typename E::NumberDim(), typename E::NumberDim());
+
+    // Major symmetry
+    if constexpr (K != I || L != J)
+      tA(Number<K - 1>(), Number<L - 1>(), Number<I - 1>(), Number<J - 1>()) =
+          tA(Number<I - 1>(), Number<J - 1>(), Number<K - 1>(),
+             Number<L - 1>());
   }
 
   template <int I, int J, int K>
@@ -695,7 +826,7 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
       for (auto bb = 0; bb != aa; ++bb) {
         aF(aa, bb) = 1 / (tVal(aa) - tVal(bb));
         aF(bb, aa) = -aF(aa, bb);
-        aF2(aa, bb) = aF2(bb, aa) = aF(aa, bb) * aF(aa, bb);
+        aF2(aa, bb) = aF(aa, bb) * aF(aa, bb);
       }
 
     using T3 = FTensor::Ddg<V, Dim, Dim>;
@@ -738,7 +869,7 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
       for (auto bb = 0; bb != aa; ++bb) {
         aF(aa, bb) = 1 / (tVal(aa) - tVal(bb));
         aF(bb, aa) = -aF(aa, bb);
-        aF2(aa, bb) = aF2(bb, aa) = aF(aa, bb) * aF(aa, bb);
+        aF2(aa, bb) = aF(aa, bb) * aF(aa, bb);
       }
 
     FTensor::Index<'i', Dim> i;
@@ -931,7 +1062,7 @@ private:
   FTensor::Ddg<V, Dim, Dim> d2MType0[Dim][Dim][Dim];
   FTensor::Ddg<V, Dim, Dim> d2MType1[Dim][Dim][Dim];
   FTensor::Tensor2<V, Dim, Dim> aF;
-  FTensor::Tensor2<V, Dim, Dim> aF2;
+  FTensor::Tensor2_symmetric<V, Dim> aF2;
   FTensor::Tensor1<V, Dim> fVal;
   FTensor::Tensor1<V, Dim> dfVal;
   FTensor::Tensor1<V, Dim> ddfVal;

@@ -273,7 +273,6 @@ int main(int argc, char *argv[]) {
 
       FTensor::Tensor1<double, 3> t_eig_vals{w[1], w[0], w[2]};
       return std::make_tuple(t_a, t_eig_vec, t_eig_vals);
-
     };
 
     // Test matrix againsst mathematica results
@@ -304,6 +303,9 @@ int main(int argc, char *argv[]) {
 
           0., 0., 1.};
 
+      FTensor::Tensor2_symmetric<double, 3> t_S_sym;
+      t_S_sym(i, j) = (t_S(i, j) || t_S(j, i)) / 2.;
+
       MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Diff A";
       print_mat(t_A);
 
@@ -322,7 +324,8 @@ int main(int argc, char *argv[]) {
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Diff";
         print_ddg_direction(t_d, 0, 2);
 
-        auto t_dd = EigenMatrix::getDiffDiffMat(t_L, t_N, f, d_f, dd_f, t_S, 3);
+        auto t_dd =
+            EigenMatrix::getDiffDiffMat(t_L, t_N, f, d_f, dd_f, t_S_sym, 3);
 
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Diff Diff";
         print_ddg_direction(t_dd, 0, 2);
@@ -440,8 +443,11 @@ int main(int argc, char *argv[]) {
 
               0., 0., 1.};
 
+          FTensor::Tensor2_symmetric<double, 3> t_S_sym;
+          t_S_sym(i, j) = t_S(i, j) || t_S(j, i);
+
           auto t_dd =
-              EigenMatrix::getDiffDiffMat(t_L, t_N, f, d_f, dd_f, t_S, 3);
+              EigenMatrix::getDiffDiffMat(t_L, t_N, f, d_f, dd_f, t_S_sym, 3);
 
           auto norm2_t_dd = get_norm_t4(t_dd, FTensor::Number<3>());
           MOFEM_LOG("ATOM_TEST", Sev::inform) << "norm2_t_dd " << norm2_t_dd;
@@ -500,9 +506,12 @@ int main(int argc, char *argv[]) {
 
               3. / 2., 1.,      3. / 3.};
 
+          FTensor::Tensor2_symmetric<double, 3> t_S_sym;
+          t_S_sym(i, j) = t_S(i, j) || t_S(j, i);
+
           auto t_dd =
-              EigenMatrix::getDiffDiffMat(t_L, t_N, f, d_f, dd_f, t_S, 3);
-          auto t_dd_a = get_diff2_matrix2(t_S, t_dd, FTensor::Number<3>());
+              EigenMatrix::getDiffDiffMat(t_L, t_N, f, d_f, dd_f, t_S_sym, 3);
+          auto t_dd_a = get_diff2_matrix2(t_S_sym, t_dd, FTensor::Number<3>());
 
           MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_dd_a";
           print_ddg(t_dd_a, "hand ");
@@ -519,10 +528,10 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    // Testing two same eigen values 
+    // Testing two same eigen values
     {
 
-      std::array<double, 9> a{5.,   4., 0,
+      std::array<double, 9> a{5.,  4., 0,
 
                               4.,  5,  0.,
 
@@ -678,8 +687,11 @@ int main(int argc, char *argv[]) {
 
           3. / 2., 1.,      3. / 3.};
 
+      FTensor::Tensor2_symmetric<double, 3> t_S_sym;
+      t_S_sym(i, j) = t_S(i, j) || t_S(j, i);
+
       auto t_dd = EigenMatrix::getDiffDiffMat(t_eig_vals, t_eig_vecs, f, d_f,
-                                              dd_f, t_S, 1);
+                                              dd_f, t_S_sym, 1);
 
       MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_dd";
       print_ddg(t_dd, "test ");
@@ -719,11 +731,14 @@ int main(int argc, char *argv[]) {
 
           3. / 1., 3. / 1., 1.};
 
+      FTensor::Tensor2_symmetric<double, 3> t_S_sym;
+      t_S_sym(i, j) = t_S(i, j) || t_S(j, i);
+
       auto t_dd = EigenMatrix::getDiffDiffMat(t_eig_vals, t_eig_vecs, f, d_f,
-                                              dd_f, t_S, 1);
+                                              dd_f, t_S_sym, 1);
       // print_ddg(t_dd, "test ");
 
-      auto t_dd_a = get_diff2_matrix2(t_S, t_dd, FTensor::Number<3>());
+      auto t_dd_a = get_diff2_matrix2(t_S_sym, t_dd, FTensor::Number<3>());
 
       double nrm2_t_dd_a = get_norm_t4(t_dd_a, FTensor::Number<3>());
       MOFEM_LOG("ATOM_TEST", Sev::inform)
@@ -736,11 +751,11 @@ int main(int argc, char *argv[]) {
     // check second directive two reapeating eiegn values
     {
 
-      std::array<double, 9> a{5., 4.,  0.,
+      std::array<double, 9> a{5., 4., 0.,
 
-                              4.,  5., 0.,
+                              4., 5., 0.,
 
-                              0.,  0.,  9};
+                              0., 0., 9};
 
       auto tuple = run_lapack(a, swap01);
       auto &t_a = std::get<0>(tuple);
@@ -761,11 +776,14 @@ int main(int argc, char *argv[]) {
 
           3. / 1., 3. / 1., 1.};
 
+      FTensor::Tensor2_symmetric<double, 3> t_S_sym;
+      t_S_sym(i, j) = t_S(i, j) || t_S(j, i);
+
       auto t_dd = EigenMatrix::getDiffDiffMat(t_eig_vals, t_eig_vecs, f, d_f,
-                                              dd_f, t_S, 2);
+                                              dd_f, t_S_sym, 2);
       print_ddg(t_dd, "test ");
 
-      auto t_dd_a = get_diff2_matrix2(t_S, t_dd, FTensor::Number<3>());
+      auto t_dd_a = get_diff2_matrix2(t_S_sym, t_dd, FTensor::Number<3>());
 
       double nrm2_t_dd_a = get_norm_t4(t_dd_a, FTensor::Number<3>());
       MOFEM_LOG("ATOM_TEST", Sev::inform)
@@ -805,10 +823,13 @@ int main(int argc, char *argv[]) {
 
           3. / 1., 3. / 1., 1.};
 
+      FTensor::Tensor2_symmetric<double, 3> t_S_sym;
+      t_S_sym(i, j) = t_S(i, j) || t_S(j, i);
+
       auto t_dd_1 = EigenMatrix::getDiffDiffMat(t_eig_vals, t_eig_vecs, f, d_f,
-                                                dd_f, t_S, 3);
+                                                dd_f, t_S_sym, 3);
       auto t_dd_2 = EigenMatrix::getDiffDiffMat(t_eig_vals, t_eig_vecs, f, d_f,
-                                                dd_f, t_S, 1);
+                                                dd_f, t_S_sym, 1);
 
       double nrm2_t_dd_t1 = get_norm_t4(t_dd_1, FTensor::Number<3>());
       MOFEM_LOG("ATOM_TEST", Sev::verbose)
@@ -847,11 +868,11 @@ int main(int argc, char *argv[]) {
     // check second directive exponent agains perturned
     {
 
-      std::array<double, 9> a{5., 4.,  0.,
+      std::array<double, 9> a{5., 4., 0.,
 
-                              4.,  5., 0.,
+                              4., 5., 0.,
 
-                              0.,  0.,  9};
+                              0., 0., 9};
 
       auto tuple = run_lapack(a, swap01);
       auto &t_a = std::get<0>(tuple);
@@ -875,10 +896,13 @@ int main(int argc, char *argv[]) {
 
           3. / 1., 3. / 1., 1.};
 
+      FTensor::Tensor2_symmetric<double, 3> t_S_sym;
+      t_S_sym(i, j) = t_S(i, j) || t_S(j, i);
+
       auto t_dd_1 = EigenMatrix::getDiffDiffMat(t_eig_vals, t_eig_vecs, f, d_f,
-                                                dd_f, t_S, 3);
+                                                dd_f, t_S_sym, 3);
       auto t_dd_2 = EigenMatrix::getDiffDiffMat(t_eig_vals, t_eig_vecs, f, d_f,
-                                                dd_f, t_S, 2);
+                                                dd_f, t_S_sym, 2);
 
       double nrm2_t_dd_t1 = get_norm_t4(t_dd_1, FTensor::Number<3>());
       MOFEM_LOG("ATOM_TEST", Sev::verbose)
@@ -944,6 +968,9 @@ int main(int argc, char *argv[]) {
           2. / 1., 1.,      2. / 3.,
 
           3. / 1., 3. / 1., 1.};
+
+      // FTensor::Tensor2_symmetric<double, 3> t_S_sym;
+      // t_S_sym(i, j) = t_S(i, j) || t_S(j, i);
 
       t_eig_vals(0) += 2e-5;
       t_eig_vals(2) -= 2e-5;
@@ -1012,11 +1039,14 @@ int main(int argc, char *argv[]) {
 
           3. / 1., 3. / 1., 1.};
 
+      FTensor::Tensor2_symmetric<double, 3> t_S_sym;
+      t_S_sym(i, j) = t_S(i, j) || t_S(j, i);
+
       MOFEM_LOG("ATOM_TEST", Sev::inform) << "Start";
       for (int ii = 0; ii != 1000; ++ii) {
         auto t_d = EigenMatrix::getDiffMat(t_eig_vals, t_eig_vecs, f, d_f, 3);
         auto t_dd = EigenMatrix::getDiffDiffMat(t_eig_vals, t_eig_vecs, f, d_f,
-                                                dd_f, t_S, 3);
+                                                dd_f, t_S_sym, 3);
       }
       MOFEM_LOG("ATOM_TEST", Sev::inform) << "End";
     }
@@ -1110,9 +1140,14 @@ int main(int argc, char *argv[]) {
       {
         FTensor::Tensor2<double, 2, 2> t_S{
 
-            1.,      1. / 2,
+            1., 1. / 2,
 
             2. / 2., 1.};
+
+        // FTensor::Index<'i', 2> i;
+        // FTensor::Index<'j', 2> j;
+        // FTensor::Tensor2_symmetric<double, 2> t_S_sym;
+        // t_S_sym(i, j) = t_S(i, j) || t_S(j, i);
 
         auto t_dd = EigenMatrix::getDiffDiffMat(t_eig_vals, t_eig_vecs, f, d_f,
                                                 dd_f, t_S, 2);
@@ -1183,13 +1218,18 @@ int main(int argc, char *argv[]) {
       {
         FTensor::Tensor2<double, 2, 2> t_S{
 
-            1.,      1. / 2,
+            1., 1. / 2,
 
             2. / 2., 1.};
 
+        FTensor::Index<'i', 2> i;
+        FTensor::Index<'j', 2> j;
+        FTensor::Tensor2_symmetric<double, 2> t_S_sym;
+        t_S_sym(i, j) = t_S(i, j) || t_S(j, i);
+
         auto t_dd = EigenMatrix::getDiffDiffMat(t_eig_vals, t_eig_vecs, f, d_f,
-                                                dd_f, t_S, 1);
-        auto t_dd_a = get_diff2_matrix2(t_S, t_dd, FTensor::Number<2>());
+                                                dd_f, t_S_sym, 1);
+        auto t_dd_a = get_diff2_matrix2(t_S_sym, t_dd, FTensor::Number<2>());
 
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_dd_a";
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_dd";
@@ -1202,7 +1242,6 @@ int main(int argc, char *argv[]) {
                   "This norm should be zero");
       }
     }
-
   }
   CATCH_ERRORS;
 
