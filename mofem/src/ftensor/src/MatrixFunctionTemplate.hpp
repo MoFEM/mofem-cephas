@@ -152,9 +152,9 @@ template <typename E, typename C> struct Fdd4MImpl {
   }
 
   template <int i, int j, int k, int l, int m, int n>
-  auto term_fd2S(int a, int b, const Number<i> &, const Number<j> &,
-                 const Number<k> &, const Number<l> &, const Number<m> &,
-                 const Number<n> &) const {
+  inline auto term_fd2S(int a, int b, const Number<i> &, const Number<j> &,
+                        const Number<k> &, const Number<l> &, const Number<m> &,
+                        const Number<n> &) const {
     if constexpr (i == j && k == l) {
       return 4 *
              (
@@ -209,9 +209,10 @@ template <typename E, typename C> struct Fdd4MImpl {
   }
 
   template <int NB, int i, int j, int k, int l, int m, int n>
-  C term_SM(const int a, const int b, const Number<NB> &, const Number<i> &,
-            const Number<j> &, const Number<k> &, const Number<l> &,
-            const Number<m> &, const Number<n> &) const {
+  inline C term_SM(const int a, const int b, const Number<NB> &,
+                   const Number<i> &, const Number<j> &, const Number<k> &,
+                   const Number<l> &, const Number<m> &,
+                   const Number<n> &) const {
 
     if constexpr (NB == 1) {
       return 0;
