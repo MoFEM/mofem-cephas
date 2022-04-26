@@ -440,8 +440,8 @@ template <typename E, typename C> struct SecondMatrixDirectiveImpl {
     return
 
         (term1<a, i, j, k, l, m, n>() + term2<a, i, j, k, l, m, n>() +
-         term3<a, i, j, k, l, m, n>()) /
-            static_cast<C>(2)
+         term3<a, i, j, k, l, m, n>()) *
+            0.5
 
         +
 
@@ -452,8 +452,8 @@ template <typename E, typename C> struct SecondMatrixDirectiveImpl {
         +
 
         r.eval(typename E::NumberDim(), Number<a>(), Number<i>(), Number<j>(),
-               Number<k>(), Number<l>(), Number<m>(), Number<n>()) /
-            static_cast<C>(4);
+               Number<k>(), Number<l>(), Number<m>(), Number<n>()) *
+            0.25;
   }
 
   template <int nb, int i, int j, int k, int l, int m, int n>
@@ -521,6 +521,9 @@ struct GetDiffDiffMatImpl {
   using Vec = typename E::Vec;
   using Fun = typename E::Fun;
 
+  using NumberNb = typename E::NumberNb;
+  using NumberDim = typename E::NumberDim;
+
   template <int N> using Number = FTensor::Number<N>;
 
   GetDiffDiffMatImpl(E &e, T1 &t_a, T2 &t_S) : r(e), e(e), tA(t_a), tS(t_S) {}
@@ -534,16 +537,16 @@ struct GetDiffDiffMatImpl {
                   const Number<L> &, const Number<M> &, const Number<N> &) {
     if constexpr (N != M)
       return (tS(M - 1, N - 1) + tS(N - 1, M - 1)) *
-                 r.eval(typename E::NumberDim(), Number<M - 1>(),
-                        Number<N - 1>(), Number<I - 1>(), Number<J - 1>(),
-                        Number<K - 1>(), Number<L - 1>())
+                 r.eval(NumberDim(), Number<M - 1>(), Number<N - 1>(),
+                        Number<I - 1>(), Number<J - 1>(), Number<K - 1>(),
+                        Number<L - 1>())
 
              +
 
              add(Number<I>(), Number<J>(), Number<K>(), Number<L>(),
                  Number<M>(), Number<N - 1>());
     else
-      return tS(M - 1, N - 1) * r.eval(typename E::NumberDim(), Number<M - 1>(),
+      return tS(M - 1, N - 1) * r.eval(NumberDim(), Number<M - 1>(),
                                        Number<N - 1>(), Number<I - 1>(),
                                        Number<J - 1>(), Number<K - 1>(),
                                        Number<L - 1>())
@@ -558,7 +561,7 @@ struct GetDiffDiffMatImpl {
   inline auto add(const Number<I> &, const Number<J> &, const Number<K> &,
                   const Number<L> &, const Number<M> &, const Number<1> &) {
     return (tS(M - 1, 0) + tS(0, M - 1)) *
-               r.eval(typename E::NumberDim(), Number<M - 1>(), Number<0>(),
+               r.eval(NumberDim(), Number<M - 1>(), Number<0>(),
                       Number<I - 1>(), Number<J - 1>(), Number<K - 1>(),
                       Number<L - 1>())
 
@@ -573,7 +576,7 @@ struct GetDiffDiffMatImpl {
   template <int I, int J, int K, int L>
   inline auto add(const Number<I> &, const Number<J> &, const Number<K> &,
                   const Number<L> &, const Number<1> &, const Number<1> &) {
-    return tS(0, 0) * r.eval(typename E::NumberDim(), Number<0>(), Number<0>(),
+    return tS(0, 0) * r.eval(NumberDim(), Number<0>(), Number<0>(),
                              Number<I - 1>(), Number<J - 1>(), Number<K - 1>(),
                              Number<L - 1>());
   }
@@ -582,9 +585,8 @@ struct GetDiffDiffMatImpl {
   inline void set(const Number<I> &, const Number<J> &, const Number<K> &,
                   const Number<L> &) {
     set(Number<I>(), Number<J>(), Number<K>(), Number<L - 1>());
-    tA(I - 1, J - 1, K - 1, L - 1) =
-        add(Number<I>(), Number<J>(), Number<K>(), Number<L>(),
-            typename E::NumberDim(), typename E::NumberDim());
+    tA(I - 1, J - 1, K - 1, L - 1) = add(Number<I>(), Number<J>(), Number<K>(),
+                                         Number<L>(), NumberDim(), NumberDim());
     // Major symmetry
     if constexpr (K != I || L != J)
       tA(K - 1, L - 1, I - 1, J - 1) = tA(I - 1, J - 1, K - 1, L - 1);
@@ -618,6 +620,9 @@ struct GetDiffDiffMatImpl<E, C, T1, FTensor::Tensor2_symmetric<VT2, DimT2>> {
   using Vec = typename E::Vec;
   using Fun = typename E::Fun;
 
+  using NumberNb = typename E::NumberNb;
+  using NumberDim = typename E::NumberDim;
+
   template <int N> using Number = FTensor::Number<N>;
 
   GetDiffDiffMatImpl(E &e, T1 &t_a, FTensor::Tensor2_symmetric<VT2, DimT2> &t_S)
@@ -633,9 +638,9 @@ struct GetDiffDiffMatImpl<E, C, T1, FTensor::Tensor2_symmetric<VT2, DimT2>> {
 
     if constexpr (N != M)
       return (2 * tS(Number<M - 1>(), Number<N - 1>())) *
-                 r.eval(typename E::NumberDim(), Number<M - 1>(),
-                        Number<N - 1>(), Number<I - 1>(), Number<J - 1>(),
-                        Number<K - 1>(), Number<L - 1>())
+                 r.eval(NumberDim(), Number<M - 1>(), Number<N - 1>(),
+                        Number<I - 1>(), Number<J - 1>(), Number<K - 1>(),
+                        Number<L - 1>())
 
              +
 
@@ -643,9 +648,9 @@ struct GetDiffDiffMatImpl<E, C, T1, FTensor::Tensor2_symmetric<VT2, DimT2>> {
                  Number<M>(), Number<N - 1>());
     else
       return tS(Number<M - 1>(), Number<N - 1>()) *
-                 r.eval(typename E::NumberDim(), Number<M - 1>(),
-                        Number<N - 1>(), Number<I - 1>(), Number<J - 1>(),
-                        Number<K - 1>(), Number<L - 1>())
+                 r.eval(NumberDim(), Number<M - 1>(), Number<N - 1>(),
+                        Number<I - 1>(), Number<J - 1>(), Number<K - 1>(),
+                        Number<L - 1>())
 
              +
 
@@ -657,7 +662,7 @@ struct GetDiffDiffMatImpl<E, C, T1, FTensor::Tensor2_symmetric<VT2, DimT2>> {
   inline auto add(const Number<I> &, const Number<J> &, const Number<K> &,
                   const Number<L> &, const Number<M> &, const Number<1> &) {
     return (2 * tS(Number<M - 1>(), Number<0>())) *
-               r.eval(typename E::NumberDim(), Number<M - 1>(), Number<0>(),
+               r.eval(NumberDim(), Number<M - 1>(), Number<0>(),
                       Number<I - 1>(), Number<J - 1>(), Number<K - 1>(),
                       Number<L - 1>())
 
@@ -671,9 +676,8 @@ struct GetDiffDiffMatImpl<E, C, T1, FTensor::Tensor2_symmetric<VT2, DimT2>> {
   inline auto add(const Number<I> &, const Number<J> &, const Number<K> &,
                   const Number<L> &, const Number<1> &, const Number<1> &) {
     return tS(Number<0>(), Number<0>()) *
-           r.eval(typename E::NumberDim(), Number<0>(), Number<0>(),
-                  Number<I - 1>(), Number<J - 1>(), Number<K - 1>(),
-                  Number<L - 1>());
+           r.eval(NumberDim(), Number<0>(), Number<0>(), Number<I - 1>(),
+                  Number<J - 1>(), Number<K - 1>(), Number<L - 1>());
   }
 
   template <int I, int J, int K, int L>
@@ -683,8 +687,8 @@ struct GetDiffDiffMatImpl<E, C, T1, FTensor::Tensor2_symmetric<VT2, DimT2>> {
     set(Number<I>(), Number<J>(), Number<K>(), Number<L - 1>());
 
     tA(Number<I - 1>(), Number<J - 1>(), Number<K - 1>(), Number<L - 1>()) =
-        add(Number<I>(), Number<J>(), Number<K>(), Number<L>(),
-            typename E::NumberDim(), typename E::NumberDim());
+        add(Number<I>(), Number<J>(), Number<K>(), Number<L>(), NumberDim(),
+            NumberDim());
 
     // Major symmetry
     if constexpr (K != I || L != J)
