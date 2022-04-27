@@ -58,7 +58,7 @@ namespace FTensor
     }
 
     template <int N1, int N2>
-    T operator()(const Number<N1> &, const Number<N2>()) const {
+    inline T operator()(const Number<N1> &, const Number<N2>()) const {
 
       static_assert(N1 < Tensor_Dim, "Bad index");
       static_assert(N2 < Tensor_Dim, "Bad index");
@@ -70,7 +70,7 @@ namespace FTensor
     }
 
     template <int N1, int N2>
-    T &operator()(const Number<N1> &, const Number<N2>()) {
+    inline T &operator()(const Number<N1> &, const Number<N2>()) {
 
       static_assert(N1 < Tensor_Dim, "Bad index");
       static_assert(N2 < Tensor_Dim, "Bad index");

@@ -63,8 +63,8 @@ namespace FTensor
     }
 
     template <int N1, int N2, int N3, int N4>
-    auto &operator()(const Number<N1> &, const Number<N2> &, const Number<N3> &,
-                     const Number<N4> &) {
+    inline auto &operator()(const Number<N1> &, const Number<N2> &,
+                            const Number<N3> &, const Number<N4> &) {
 
       static_assert(N1 < Tensor_Dim01, "Bad index N1");
       static_assert(N2 < Tensor_Dim01, "Bad index N2");
@@ -89,8 +89,8 @@ namespace FTensor
     }
 
     template <int N1, int N2, int N3, int N4>
-    auto operator()(const Number<N1> &, const Number<N2> &, const Number<N3> &,
-                    const Number<N4> &) const {
+    inline auto operator()(const Number<N1> &, const Number<N2> &,
+                           const Number<N3> &, const Number<N4> &) const {
 
       static_assert(N1 < Tensor_Dim01, "Bad index N1");
       static_assert(N2 < Tensor_Dim01, "Bad index N2");
