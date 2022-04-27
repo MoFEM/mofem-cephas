@@ -375,17 +375,20 @@ template <typename E, typename C> struct ReconstructMatImpl {
   ReconstructMatImpl(E &e) : e(e) {}
   E &e;
 
-  template <int a> inline C term(const int ii, const int jj) const {
-    return e.aM[a](ii, jj) * e.fVal(a);
+  template <int a, int i, int j> inline C term() const {
+    return e.aM[a](Number<i>(), Number<j>()) * e.fVal(a);
   }
 
-  template <int nb>
-  inline C eval(const Number<nb> &, const int ii, const int jj) const {
-    return term<nb - 1>(ii, jj) + eval(Number<nb - 1>(), ii, jj);
+  template <int nb, int i, int j>
+  inline C eval(const Number<nb> &, const Number<i> &,
+                const Number<j> &) const {
+    return term<nb - 1, i, j>() +
+           eval(Number<nb - 1>(), Number<i>(), Number<j>());
   }
 
-  inline C eval(const Number<1> &, const int ii, const int jj) const {
-    return term<0>(ii, jj);
+  template <int i, int j>
+  inline C eval(const Number<1> &, const Number<i> &, const Number<j> &) const {
+    return term<0, i, j>();
   }
 };
 
@@ -400,27 +403,28 @@ template <typename E, typename C> struct FirstMatrixDirectiveImpl {
   d2MImpl<E, C, d2MCoefficients<E, C>> r;
   E &e;
 
-  template <int a>
-  inline C term(const int i, const int j, const int k, const int l) const {
+  template <int a, int i, int j, int k, int l> inline C term() const {
     return
 
         e.aMM[a][a](i, j, k, l) * e.dfVal(a)
 
         +
 
-        r.eval(typename E::NumberDim(), Number<a>(), i, j, k, l) /
-            static_cast<C>(2);
+        r.eval(typename E::NumberDim(), Number<a>(), i, j, k, l) * 0.5;
   }
 
-  template <int nb>
-  inline C eval(const Number<nb> &, const int i, const int j, const int k,
-                const int l) const {
-    return term<nb - 1>(i, j, k, l) + eval(Number<nb - 1>(), i, j, k, l);
+  template <int nb, int i, int j, int k, int l>
+  inline C eval(const Number<nb> &, const Number<i> &, const Number<j> &,
+                const Number<k> &, const Number<l> &) const {
+    return term<nb - 1, i, j, k, l>() + eval(Number<nb - 1>(), Number<i>(),
+                                             Number<j>(), Number<k>(),
+                                             Number<l>());
   }
 
-  inline C eval(const Number<1> &, const int i, const int j, const int k,
-                const int l) const {
-    return term<0>(i, j, k, l);
+  template <int i, int j, int k, int l>
+  inline C eval(const Number<1> &, const Number<i> &, const Number<j> &,
+                const Number<k> &, const Number<l> &) const {
+    return term<0, i, j, k, l>();
   }
 };
 
@@ -502,16 +506,35 @@ template <typename E, typename C, typename T> struct GetMatImpl {
   using Vec = typename E::Vec;
   using Fun = typename E::Fun;
 
+  using NumberNb = typename E::NumberNb;
+  using NumberDim = typename E::NumberDim;
+
   template <int N> using Number = FTensor::Number<N>;
 
   GetMatImpl(E &e, T &t_a) : r(e), tA(t_a) {}
   ReconstructMatImpl<E, C> r;
   T &tA;
 
-  inline void set() {
-    for (int ii = 0; ii != typename E::NumberDim(); ++ii)
-      for (int jj = ii; jj != typename E::NumberDim(); ++jj)
-        tA(ii, jj) = r.eval(typename E::NumberDim(), ii, jj);
+  template <int i, int j>
+  inline void set(const Number<i> &, const Number<j> &) {
+
+    set(Number<i>(), Number<j - 1>());
+
+    tA(Number<i - 1>(), Number<j - 1>()) =
+        r.eval(NumberDim(), Number<i - 1>(), Number<j - 1>());
+  }
+
+  template <int i> inline void set(const Number<i> &, const Number<1> &) {
+
+    set(Number<i - 1>(), Number<i - 1>());
+
+    tA(Number<i - 1>(), Number<0>()) =
+        r.eval(NumberDim(), Number<i - 1>(), Number<0>());
+  }
+
+  inline void set(const Number<1> &, const Number<1> &) {
+    tA(Number<0>(), Number<0>()) =
+        r.eval(NumberDim(), Number<0>(), Number<0>());
   }
 };
 
@@ -520,19 +543,64 @@ template <typename E, typename C, typename T> struct GetDiffMatImpl {
   using Vec = typename E::Vec;
   using Fun = typename E::Fun;
 
+  using NumberNb = typename E::NumberNb;
+  using NumberDim = typename E::NumberDim;
+
   template <int N> using Number = FTensor::Number<N>;
 
   GetDiffMatImpl(E &e, T &t_a) : r(e), tA(t_a) {}
   FirstMatrixDirectiveImpl<E, C> r;
   T &tA;
 
-  inline void set() {
-    for (int ii = 0; ii != typename E::NumberDim(); ++ii)
-      for (int jj = ii; jj != typename E::NumberDim(); ++jj)
-        for (int kk = 0; kk != typename E::NumberDim(); ++kk)
-          for (int ll = 0; ll != typename E::NumberDim(); ++ll)
-            tA(ii, jj, kk, ll) =
-                r.eval(typename E::NumberDim(), ii, jj, kk, ll);
+  template <int i, int j, int k, int l>
+  inline void set(const Number<i> &, const Number<j> &, const Number<k> &,
+                  const Number<l> &) {
+
+    tA(Number<i - 1>(), Number<j - 1>(), Number<k - 1>(), Number<l - 1>()) =
+        r.eval(NumberDim(), Number<i - 1>(), Number<j - 1>(), Number<k - 1>(),
+               Number<l - 1>());
+
+    set(Number<i - 1>(), Number<j>(), Number<k>(), Number<l>());
+  }
+
+  template <int j, int k, int l>
+  inline void set(const Number<1> &, const Number<j> &, const Number<k> &,
+           const Number<l> &) {
+
+    tA(Number<0>(), Number<j - 1>(), Number<k - 1>(), Number<l - 1>()) =
+        r.eval(NumberDim(), Number<0>(), Number<j - 1>(), Number<k - 1>(),
+               Number<l - 1>());
+
+    set(Number<j - 1>(), Number<j - 1>(), Number<k>(), Number<l>());
+  }
+
+  template <int k, int l>
+  inline void set(const Number<1> &, const Number<1> &, const Number<k> &,
+           const Number<l> &) {
+
+    tA(Number<0>(), Number<0>(), Number<k - 1>(), Number<l - 1>()) =
+        r.eval(NumberDim(), Number<0>(), Number<0>(), Number<k - 1>(),
+               Number<l - 1>());
+
+    set(NumberDim(), NumberDim(), Number<k - 1>(), Number<l>());
+  }
+
+  template <int l>
+  inline void set(const Number<1> &, const Number<1> &, const Number<1> &,
+                  const Number<l> &) {
+
+    tA(Number<0>(), Number<0>(), Number<0>(), Number<l - 1>()) =
+        r.eval(NumberDim(), Number<0>(), Number<0>(), Number<0>(),
+               Number<l - 1>());
+
+    set(NumberDim(), NumberDim(), Number<l - 1>(), Number<l - 1>());
+  }
+
+  inline void set(const Number<1> &, const Number<1> &, const Number<1> &,
+                  const Number<1> &) {
+
+    tA(Number<0>(), Number<0>(), Number<0>(), Number<0>()) =
+        r.eval(NumberDim(), Number<0>(), Number<0>(), Number<0>(), Number<0>());
   }
 };
 
@@ -823,7 +891,8 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
     using T3 =
         FTensor::Tensor2_symmetric<typename std::remove_const<V>::type, Dim>;
     T3 t_A;
-    GetMatImpl<EigenMatrixImp<T1, T2, NB, Dim>, V, T3>(*this, t_A).set();
+    GetMatImpl<EigenMatrixImp<T1, T2, NB, Dim>, V, T3>(*this, t_A)
+        .set(NumberDim(), NumberDim());
     return t_A;
   }
 
@@ -858,7 +927,7 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
     using T3 = FTensor::Ddg<V, Dim, Dim>;
     T3 t_diff_A;
     GetDiffMatImpl<EigenMatrixImp<T1, T2, NB, Dim>, V, T3>(*this, t_diff_A)
-        .set();
+        .set(NumberDim(), NumberDim(), NumberDim(), NumberDim());
     return t_diff_A;
   }
 
