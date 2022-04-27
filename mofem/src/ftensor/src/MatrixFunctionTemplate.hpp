@@ -64,10 +64,48 @@
 
 namespace EigenMatrix {
 
+template <int N> using Number = FTensor::Number<N>;
+
+template <int N1, int N2, int Dim>
+inline auto get_sym_index(const Number<N1> &, const Number<N2> &,
+                   const Number<Dim> &) {
+  if constexpr (N1 > N2)
+    return N1 + (N2 * (2 * Dim - N2 - 1)) / 2;
+  else
+    return N2 + (N1 * (2 * Dim - N1 - 1)) / 2;
+}
+
+inline auto get_sym_index(const int N1, const int N2, const int Dim) {
+  if (N1 > N2)
+    return N1 + (N2 * (2 * Dim - N2 - 1)) / 2;
+  else
+    return N2 + (N1 * (2 * Dim - N1 - 1)) / 2;
+}
+
+template <int N1, int N2, int Dim>
+inline auto get_nodiag_index(const Number<N1> &, const Number<N2> &,
+                   const Number<Dim> &) {
+  static_assert(N1 != N2, "Bad index");
+  if constexpr (N2 > N1)
+    return (Dim - 1) * N1 + N2 - 1;
+  else
+    return (Dim - 1) * N1 + N2;
+}
+
+inline auto get_nodiag_index(const int N1, const int N2, int Dim) {
+  if (N2 > N1)
+    return (Dim - 1) * N1 + N2 - 1;
+  else
+    return (Dim - 1) * N1 + N2;
+}
+
 template <typename E, typename C> struct d2MCoefficients {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
   using Fun = typename E::Fun;
+
+  using NumberNb = typename E::NumberNb;
+  using NumberDim = typename E::NumberDim;
 
   template <int N> using Number = FTensor::Number<N>;
 
@@ -78,7 +116,9 @@ template <typename E, typename C> struct d2MCoefficients {
   inline auto get(const Number<a> &, const Number<b> &, const int i,
                   const int j, const int k, const int l,
                   const Number<3> &) const {
-    return e.aS[a][b](i, j, k, l) * e.fVal(a) * e.aF(a, b);
+    return e.aS[get_sym_index(Number<a>(), Number<b>(), NumberDim())](i, j, k,
+                                                                      l) *
+           e.fVal(a) * e.aF(a, b);
   }
 
   template <int a, int b>
@@ -95,7 +135,9 @@ template <typename E, typename C> struct d2MCoefficients {
   inline auto get(const Number<a> &, const Number<b> &, const int i,
                   const int j, const int k, const int l,
                   const Number<1>) const {
-    return e.aS[a][b](i, j, k, l) * e.dfVal(a) / static_cast<C>(2);
+    return e.aS[get_sym_index(Number<a>(), Number<b>(), NumberDim())](i, j, k,
+                                                                      l) *
+           e.dfVal(a) / static_cast<C>(2);
   }
 };
 
@@ -143,27 +185,26 @@ template <typename E, typename C> struct Fdd4MImpl {
   using NumberNb = typename E::NumberNb;
   using NumberDim = typename E::NumberDim;
 
-  template <int N> using Number = FTensor::Number<N>;
 
-  template <int I, int J, int K, int L>
-  inline auto fd2M(int A, int a, int b) const {
-    return e.d2MType1[A][a][b](Number<I>(), Number<J>(), Number<K>(),
-                               Number<L>());
+  template <int A, int a, int b, int I, int J, int K, int L>
+  inline auto fd2M() const {
+    return e.d2MType1[b][get_sym_index(Number<A>(), Number<a>(), NumberDim())](
+        Number<I>(), Number<J>(), Number<K>(), Number<L>());
   }
 
-  template <int i, int j, int k, int l, int m, int n>
-  inline auto term_fd2S(int a, int b, const Number<i> &, const Number<j> &,
-                        const Number<k> &, const Number<l> &, const Number<m> &,
-                        const Number<n> &) const {
+  template <int a, int b, int i, int j, int k, int l, int m, int n>
+  inline auto term_fd2S(const Number<a> &, const Number<b> &, const Number<i> &,
+                        const Number<j> &, const Number<k> &, const Number<l> &,
+                        const Number<m> &, const Number<n> &) const {
     if constexpr (i == j && k == l) {
       return 4 *
              (
 
-                 fd2M<i, k, m, n>(a, a, b) * e.aM[b](Number<j>(), Number<l>())
+                 fd2M<a, a, b, i, k, m, n>() * e.aM[b](Number<j>(), Number<l>())
 
                  +
 
-                 fd2M<i, k, m, n>(b, a, b) * e.aM[a](Number<j>(), Number<l>())
+                 fd2M<b, a, b, i, k, m, n>() * e.aM[a](Number<j>(), Number<l>())
 
              );
 
@@ -171,45 +212,49 @@ template <typename E, typename C> struct Fdd4MImpl {
       return 2 *
              (
 
-                 fd2M<i, k, m, n>(a, a, b) * e.aM[b](Number<j>(), Number<l>()) +
-                 fd2M<j, l, m, n>(b, a, b) * e.aM[a](Number<i>(), Number<k>())
+                 fd2M<a, a, b, i, k, m, n>() *
+                     e.aM[b](Number<j>(), Number<l>()) +
+                 fd2M<b, a, b, j, l, m, n>() * e.aM[a](Number<i>(), Number<k>())
 
                  +
 
-                 fd2M<i, k, m, n>(b, a, b) * e.aM[a](Number<j>(), Number<l>()) +
-                 fd2M<j, l, m, n>(a, a, b) * e.aM[b](Number<i>(), Number<k>())
+                 fd2M<b, a, b, i, k, m, n>() *
+                     e.aM[a](Number<j>(), Number<l>()) +
+                 fd2M<a, a, b, j, l, m, n>() * e.aM[b](Number<i>(), Number<k>())
 
              );
     else if constexpr (k == l)
       return 2 *
              (
 
-                 fd2M<i, k, m, n>(a, a, b) * e.aM[b](Number<j>(), Number<l>()) +
-                 fd2M<j, l, m, n>(b, a, b) * e.aM[a](Number<i>(), Number<k>()) +
+                 fd2M<a, a, b, i, k, m, n>() *
+                     e.aM[b](Number<j>(), Number<l>()) +
+                 fd2M<b, a, b, j, l, m, n>() *
+                     e.aM[a](Number<i>(), Number<k>()) +
 
                  +
 
-                     fd2M<i, k, m, n>(b, a, b) *
+                     fd2M<b, a, b, i, k, m, n>() *
                      e.aM[a](Number<j>(), Number<l>()) +
-                 fd2M<j, l, m, n>(a, a, b) * e.aM[b](Number<i>(), Number<k>())
+                 fd2M<a, a, b, j, l, m, n>() * e.aM[b](Number<i>(), Number<k>())
 
              );
     else
-      return fd2M<i, k, m, n>(a, a, b) * e.aM[b](Number<j>(), Number<l>()) +
-             fd2M<j, l, m, n>(b, a, b) * e.aM[a](Number<i>(), Number<k>()) +
-             fd2M<i, l, m, n>(a, a, b) * e.aM[b](Number<j>(), Number<k>()) +
-             fd2M<j, k, m, n>(b, a, b) * e.aM[a](Number<i>(), Number<l>())
+      return fd2M<a, a, b, i, k, m, n>() * e.aM[b](Number<j>(), Number<l>()) +
+             fd2M<b, a, b, j, l, m, n>() * e.aM[a](Number<i>(), Number<k>()) +
+             fd2M<a, a, b, i, l, m, n>() * e.aM[b](Number<j>(), Number<k>()) +
+             fd2M<b, a, b, j, k, m, n>() * e.aM[a](Number<i>(), Number<l>())
 
              +
 
-             fd2M<i, k, m, n>(b, a, b) * e.aM[a](Number<j>(), Number<l>()) +
-             fd2M<j, l, m, n>(a, a, b) * e.aM[b](Number<i>(), Number<k>()) +
-             fd2M<i, l, m, n>(b, a, b) * e.aM[a](Number<j>(), Number<k>()) +
-             fd2M<j, k, m, n>(a, a, b) * e.aM[b](Number<i>(), Number<l>());
+             fd2M<b, a, b, i, k, m, n>() * e.aM[a](Number<j>(), Number<l>()) +
+             fd2M<a, a, b, j, l, m, n>() * e.aM[b](Number<i>(), Number<k>()) +
+             fd2M<b, a, b, i, l, m, n>() * e.aM[a](Number<j>(), Number<k>()) +
+             fd2M<a, a, b, j, k, m, n>() * e.aM[b](Number<i>(), Number<l>());
   }
 
-  template <int NB, int i, int j, int k, int l, int m, int n>
-  inline C term_SM(const int a, const int b, const Number<NB> &,
+  template <int NB, int a, int b, int i, int j, int k, int l, int m, int n>
+  inline C term_SM(const Number<a> &, const Number<b> &, const Number<NB> &,
                    const Number<i> &, const Number<j> &, const Number<k> &,
                    const Number<l> &, const Number<m> &,
                    const Number<n> &) const {
@@ -219,24 +264,16 @@ template <typename E, typename C> struct Fdd4MImpl {
 
     } else if constexpr (NB == 2) {
 
-      if (a == 1 || b == 1) {
-        if constexpr (n < m) {
-          return
+      if constexpr (a == 1 || b == 1) {
+        return
 
-              e.aF2(a, b) * (e.aSM[b][a][n][m](Number<i>(), Number<j>(),
-                                               Number<k>(), Number<l>()) -
-                             e.aSM[a][b][n][m](Number<i>(), Number<j>(),
-                                               Number<k>(), Number<l>()));
-
-        } else {
-
-          return
-
-              e.aF2(a, b) * (e.aSM[b][a][m][n](Number<i>(), Number<j>(),
-                                               Number<k>(), Number<l>()) -
-                             e.aSM[a][b][m][n](Number<i>(), Number<j>(),
-                                               Number<k>(), Number<l>()));
-        }
+            e.aF2(Number<a>(), Number<b>()) *
+            (e.aSM[get_nodiag_index(Number<b>(), Number<a>(), NumberDim())]
+                  [get_sym_index(Number<m>(), Number<n>(), NumberDim())](
+                      Number<i>(), Number<j>(), Number<k>(), Number<l>()) -
+             e.aSM[get_nodiag_index(Number<a>(), Number<b>(), NumberDim())]
+                  [get_sym_index(Number<m>(), Number<n>(), NumberDim())](
+                      Number<i>(), Number<j>(), Number<k>(), Number<l>()));
 
       } else {
         return 0;
@@ -244,23 +281,15 @@ template <typename E, typename C> struct Fdd4MImpl {
 
     } else {
 
-      if constexpr (n < m) {
-        return
+      return
 
-            e.aF2(a, b) * (e.aSM[b][a][n][m](Number<i>(), Number<j>(),
-                                             Number<k>(), Number<l>()) -
-                           e.aSM[a][b][n][m](Number<i>(), Number<j>(),
-                                             Number<k>(), Number<l>()));
-
-      } else {
-
-        return
-
-            e.aF2(a, b) * (e.aSM[b][a][m][n](Number<i>(), Number<j>(),
-                                             Number<k>(), Number<l>()) -
-                           e.aSM[a][b][m][n](Number<i>(), Number<j>(),
-                                             Number<k>(), Number<l>()));
-      }
+          e.aF2(Number<a>(), Number<b>()) *
+          (e.aSM[get_nodiag_index(Number<b>(), Number<a>(), NumberDim())]
+                [get_sym_index(Number<m>(), Number<n>(), NumberDim())](
+                    Number<i>(), Number<j>(), Number<k>(), Number<l>()) -
+           e.aSM[get_nodiag_index(Number<a>(), Number<b>(), NumberDim())]
+                [get_sym_index(Number<m>(), Number<n>(), NumberDim())](
+                    Number<i>(), Number<j>(), Number<k>(), Number<l>()));
     }
 
     return 0;
@@ -271,8 +300,8 @@ template <typename E, typename C> struct Fdd4MImpl {
                      const Number<j> &, const Number<k> &, const Number<l> &,
                      const Number<m> &, const Number<n> &) const {
     if constexpr (a != nb - 1)
-      return term_fd2S(a, nb - 1, Number<i>(), Number<j>(), Number<k>(),
-                       Number<l>(), Number<m>(), Number<n>()) +
+      return term_fd2S(Number<a>(), Number<nb - 1>(), Number<i>(), Number<j>(),
+                       Number<k>(), Number<l>(), Number<m>(), Number<n>()) +
              eval_fdS2(Number<nb - 1>(), Number<a>(), Number<i>(), Number<j>(),
                        Number<k>(), Number<l>(), Number<m>(), Number<n>());
     else
@@ -285,8 +314,8 @@ template <typename E, typename C> struct Fdd4MImpl {
                      const Number<j> &, const Number<k> &, const Number<l> &,
                      const Number<m> &, const Number<n> &) const {
     if constexpr (a != 0)
-      return term_fd2S(a, 0, Number<i>(), Number<j>(), Number<k>(), Number<l>(),
-                       Number<m>(), Number<n>());
+      return term_fd2S(Number<a>(), Number<0>(), Number<i>(), Number<j>(),
+                       Number<k>(), Number<l>(), Number<m>(), Number<n>());
     else
       return 0;
   }
@@ -296,8 +325,9 @@ template <typename E, typename C> struct Fdd4MImpl {
                    const Number<j> &, const Number<k> &, const Number<l> &,
                    const Number<m> &, const Number<n> &) const {
     if constexpr (a != nb - 1)
-      return term_SM(a, nb - 1, NumberNb(), Number<i>(), Number<j>(),
-                     Number<k>(), Number<l>(), Number<m>(), Number<n>()) +
+      return term_SM(Number<a>(), Number<nb - 1>(), NumberNb(), Number<i>(),
+                     Number<j>(), Number<k>(), Number<l>(), Number<m>(),
+                     Number<n>()) +
              eval_SM(Number<nb - 1>(), Number<a>(), Number<i>(), Number<j>(),
                      Number<k>(), Number<l>(), Number<m>(), Number<n>());
 
@@ -311,8 +341,9 @@ template <typename E, typename C> struct Fdd4MImpl {
                    const Number<j> &, const Number<k> &, const Number<l> &,
                    const Number<m> &, const Number<n> &) const {
     if constexpr (a != 0)
-      return term_SM(a, 0, NumberNb(), Number<i>(), Number<j>(), Number<k>(),
-                     Number<l>(), Number<m>(), Number<n>());
+      return term_SM(Number<a>(), Number<0>(), NumberNb(), Number<i>(),
+                     Number<j>(), Number<k>(), Number<l>(), Number<m>(),
+                     Number<n>());
     else
       return 0;
   }
@@ -398,6 +429,8 @@ template <typename E, typename C> struct SecondMatrixDirectiveImpl {
   using Vec = typename E::Vec;
   using Fun = typename E::Fun;
 
+  using NumberDim = typename E::NumberDim;
+
   template <int N> using Number = FTensor::Number<N>;
 
   SecondMatrixDirectiveImpl(E &e) : r(e), e(e) {}
@@ -406,32 +439,20 @@ template <typename E, typename C> struct SecondMatrixDirectiveImpl {
 
   template <int a, int i, int j, int k, int l, int m, int n>
   inline C term1() const {
-    if constexpr (l < k)
-      return e.d2MType0[a][l][k](Number<i>(), Number<j>(), Number<m>(),
-                                 Number<n>());
-    else
-      return e.d2MType0[a][k][l](Number<i>(), Number<j>(), Number<m>(),
-                                 Number<n>());
+    return e.d2MType0[a][get_sym_index(Number<k>(), Number<l>(), NumberDim())](
+        Number<i>(), Number<j>(), Number<m>(), Number<n>());
   };
 
   template <int a, int i, int j, int k, int l, int m, int n>
   inline C term2() const {
-    if constexpr (j < i)
-      return e.d2MType0[a][j][i](Number<k>(), Number<l>(), Number<m>(),
-                                 Number<n>());
-    else
-      return e.d2MType0[a][i][j](Number<k>(), Number<l>(), Number<m>(),
-                                 Number<n>());
+    return e.d2MType0[a][get_sym_index(Number<i>(), Number<j>(), NumberDim())](
+        Number<k>(), Number<l>(), Number<m>(), Number<n>());
   }
 
   template <int a, int i, int j, int k, int l, int m, int n>
   inline C term3() const {
-    if constexpr (n < m)
-      return e.d2MType0[a][n][m](Number<i>(), Number<j>(), Number<k>(),
-                                 Number<l>());
-    else
-      return e.d2MType0[a][m][n](Number<i>(), Number<j>(), Number<k>(),
-                                 Number<l>());
+    return e.d2MType0[a][get_sym_index(Number<n>(), Number<m>(), NumberDim())](
+        Number<i>(), Number<j>(), Number<k>(), Number<l>());
   }
 
   template <int a, int i, int j, int k, int l, int m, int n>
@@ -734,17 +755,17 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
 
   EigenMatrixImp(Val &t_val, Vec &t_vec) : tVal(t_val), tVec(t_vec) {
 
+    FTensor::Index<'i', Dim> i;
+    FTensor::Index<'j', Dim> j;
+    FTensor::Index<'k', Dim> k;
+    FTensor::Index<'l', Dim> l;
+
     for (auto aa = 0; aa != Dim; ++aa) {
       auto &M = aM[aa];
       for (auto ii = 0; ii != Dim; ++ii)
         for (auto jj = 0; jj <= ii; ++jj)
           M(ii, jj) = tVec(aa, ii) * tVec(aa, jj);
     }
-
-    FTensor::Index<'i', Dim> i;
-    FTensor::Index<'j', Dim> j;
-    FTensor::Index<'k', Dim> k;
-    FTensor::Index<'l', Dim> l;
 
     for (auto aa = 0; aa != Dim; ++aa) {
       for (auto bb = 0; bb != Dim; ++bb) {
@@ -770,7 +791,7 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
         if (aa != bb) {
           auto &Gab = aG[aa][bb];
           auto &Gba = aG[bb][aa];
-          auto &S = aS[aa][bb];
+          auto &S = aS[get_sym_index(aa, bb, Dim)];
           S(i, j, k, l) = Gab(i, j, k, l) + Gba(i, j, k, l);
         }
       }
@@ -885,12 +906,13 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
     for (auto aa = 0; aa != Dim; ++aa) {
       for (auto bb = 0; bb != Dim; ++bb) {
         if (aa != bb) {
-          const auto &S = aS[aa][bb];
+          const auto &S = aS[get_sym_index(aa, bb, Dim)];
           const auto &M = aM[aa];
+          auto &SMmn = aSM[get_nodiag_index(aa, bb, Dim)];
           for (auto mm = 0; mm != Dim; ++mm) {
             for (auto nn = mm; nn != Dim; ++nn) {
-              auto &SMmn = aSM[aa][bb][mm][nn];
-              SMmn(i, j, k, l) = S(i, j, k, l) * M(mm, nn);
+              SMmn[get_sym_index(mm, nn, Dim)](i, j, k, l) =
+                  S(i, j, k, l) * M(mm, nn);
             }
           }
         }
@@ -900,7 +922,7 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
     for (auto aa = 0; aa != Dim; ++aa) {
       for (auto mm = 0; mm != Dim; ++mm) {
         for (auto nn = mm; nn != Dim; ++nn) {
-          d2MType0[aa][mm][nn](i, j, k, l) = 0;
+          d2MType0[aa][get_sym_index(mm, nn, Dim)](i, j, k, l) = 0;
         }
       }
     }
@@ -912,8 +934,9 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
             const V v = dfVal(aa) * aF(aa, bb);
             for (auto mm = 0; mm != Dim; ++mm) {
               for (auto nn = mm; nn != Dim; ++nn) {
-                d2MType0[aa][mm][nn](i, j, k, l) +=
-                    v * aSM[aa][bb][mm][nn](i, j, k, l);
+                d2MType0[aa][get_sym_index(mm, nn, Dim)](i, j, k, l) +=
+                    v * aSM[get_nodiag_index(aa, bb, Dim)]
+                           [get_sym_index(mm, nn, Dim)](i, j, k, l);
               }
             }
           }
@@ -931,8 +954,9 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
               v = ddfVal(aa) / 2;
             for (auto mm = 0; mm != Dim; ++mm) {
               for (auto nn = mm; nn != Dim; ++nn) {
-                d2MType0[aa][mm][nn](i, j, k, l) +=
-                    v * aSM[aa][bb][mm][nn](i, j, k, l);
+                d2MType0[aa][get_sym_index(mm, nn, Dim)](i, j, k, l) +=
+                    v * aSM[get_nodiag_index(aa, bb, Dim)]
+                           [get_sym_index(mm, nn, Dim)](i, j, k, l);
               }
             }
           }
@@ -946,8 +970,9 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
             const V v = ddfVal(aa) / 2;
             for (auto mm = 0; mm != Dim; ++mm) {
               for (auto nn = mm; nn != Dim; ++nn) {
-                d2MType0[aa][mm][nn](i, j, k, l) +=
-                    v * aSM[aa][bb][mm][nn](i, j, k, l);
+                d2MType0[aa][get_sym_index(mm, nn, Dim)](i, j, k, l) +=
+                    v * aSM[get_nodiag_index(aa, bb, Dim)]
+                           [get_sym_index(mm, nn, Dim)](i, j, k, l);
               }
             }
           }
@@ -958,7 +983,7 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
       for (auto mm = 0; mm != Dim; ++mm) {
         for (auto nn = 0; nn != Dim; ++nn) {
           if (nn != mm)
-            d2MType1[aa][nn][mm](i, j, k, l) = 0;
+            d2MType1[mm][get_sym_index(aa, nn, Dim)](i, j, k, l) = 0;
         }
       }
     }
@@ -967,13 +992,14 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
       for (auto aa = 0; aa != Dim; ++aa) {
         for (auto bb = 0; bb != Dim; ++bb) {
           if (aa != bb) {
-            const auto &S = aS[aa][bb];
+            const auto &S = aS[get_sym_index(aa, bb, Dim)];
             const auto v0 = aF(aa, bb);
             for (auto cc = 0; cc != Dim; ++cc) {
               for (auto dd = 0; dd != Dim; ++dd) {
                 if (cc != dd) {
                   const double v1 = fVal(cc) * aF(cc, dd);
-                  d2MType1[aa][cc][dd](i, j, k, l) += (v1 * v0) * S(i, j, k, l);
+                  d2MType1[dd][get_sym_index(aa, cc, Dim)](i, j, k, l) +=
+                      (v1 * v0) * S(i, j, k, l);
                 }
               }
             }
@@ -1021,8 +1047,8 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
                     r = 0;
 
                   if (r)
-                    d2MType1[aa][cc][dd](i, j, k, l) +=
-                        r * aS[aa][bb](i, j, k, l);
+                    d2MType1[dd][get_sym_index(aa, cc, Dim)](i, j, k, l) +=
+                        r * aS[get_sym_index(aa, bb, Dim)](i, j, k, l);
                 }
             }
         }
@@ -1037,8 +1063,8 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
                 if (cc != dd) {
                   if ((bb != dd) && (aa != dd && bb != cc)) {
                     const double r = ddfVal(cc) / 4;
-                    d2MType1[aa][cc][dd](i, j, k, l) +=
-                        r * aS[aa][bb](i, j, k, l);
+                    d2MType1[dd][get_sym_index(aa, cc, Dim)](i, j, k, l) +=
+                        r * aS[get_sym_index(aa, bb, Dim)](i, j, k, l);
                   }
                 }
               }
@@ -1062,12 +1088,12 @@ private:
   FTensor::Tensor2_symmetric<V, Dim> aM[Dim];
   FTensor::Ddg<V, Dim, Dim> aMM[Dim][Dim];
   FTensor::Ddg<V, Dim, Dim> aG[Dim][Dim];
-  FTensor::Ddg<V, Dim, Dim> aS[Dim][Dim];
-  FTensor::Ddg<V, Dim, Dim> aSM[Dim][Dim][Dim][Dim];
-  FTensor::Ddg<V, Dim, Dim> d2MType0[Dim][Dim][Dim];
-  FTensor::Ddg<V, Dim, Dim> d2MType1[Dim][Dim][Dim];
-  FTensor::Tensor2<V, Dim, Dim> aF;
+  FTensor::Ddg<V, Dim, Dim> aS[(Dim * (Dim + 1)) / 2];
+  FTensor::Ddg<V, Dim, Dim> aSM[(Dim - 1) * Dim][(Dim * (Dim + 1)) / 2];
+  FTensor::Ddg<V, Dim, Dim> d2MType0[Dim][(Dim * (Dim + 1)) / 2];
+  FTensor::Ddg<V, Dim, Dim> d2MType1[Dim][(Dim * (Dim + 1)) / 2];
   FTensor::Tensor2_symmetric<V, Dim> aF2;
+  FTensor::Tensor2<V, Dim, Dim> aF;
   FTensor::Tensor1<V, Dim> fVal;
   FTensor::Tensor1<V, Dim> dfVal;
   FTensor::Tensor1<V, Dim> ddfVal;
