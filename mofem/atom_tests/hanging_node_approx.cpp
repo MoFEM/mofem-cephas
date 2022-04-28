@@ -272,7 +272,7 @@ MoFEMErrorCode AtomTest::assembleSystem() {
 
   pipeline_mng->getOpDomainRhsPipeline().push_back(
       new OpDomainSource(FIELD_NAME, approxFunction));
-  pipeline_mng->getOpDomainRhsPipeline().push_back(new OpRetoreEntData());
+  pipeline_mng->getOpDomainRhsPipeline().push_back(new OpRestoreEntData());
 
   MoFEMFunctionReturn(0);
 }

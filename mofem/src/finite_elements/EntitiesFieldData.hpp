@@ -1040,6 +1040,19 @@ struct EntitiesFieldData::EntData {
   virtual std::array<boost::shared_ptr<MatrixDouble>, MaxBernsteinBezierOrder> &
   getBBDiffNByOrderArray();
 
+  /**
+   * @brief Swap bases functions
+   *
+   * Some base are not hierarchical and depene on approximation order. Such case
+   * demand special handling, that appropiate base order is set depending on
+   * field, such that is accessible in operator.
+   *
+   * @note Base is not swap on meshsets
+   *
+   * @param field_name
+   * @param base
+   * @return MoFEMErrorCode
+   */
   virtual MoFEMErrorCode baseSwap(const std::string &field_name,
                                   const FieldApproximationBase base);
 
@@ -1092,6 +1105,8 @@ protected:
    * @copydoc MoFEM::EntitiesFieldData::baseSwap
    */
   boost::shared_ptr<MatrixDouble> swapBaseDiffNPtr;
+
+  friend struct OpAddParentEntData;
 };
 
 using BaseDerivatives = EntitiesFieldData::EntData::BaseDerivatives;

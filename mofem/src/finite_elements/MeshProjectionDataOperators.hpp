@@ -43,35 +43,36 @@ private:
   Sev severityLevel;
 };
 
-// struct OpAddParentEntData : public ForcesAndSourcesCore::UserDataOperator {
+struct OpAddParentEntData : public ForcesAndSourcesCore::UserDataOperator {
 
-//   OpAddParentEntData(std::string field_name, OpType op_parent_type,
-//                      boost::shared_ptr<ForcesAndSourcesCore> parent_ele_ptr,
-//                      BitRefLevel bit_child, BitRefLevel bit_child_mask,
-//                      BitRefLevel bit_parent_ent,
-//                      BitRefLevel bit_parent_ent_mask, int verb, Sev sev);
+  OpAddParentEntData(std::string field_name, OpType op_parent_type,
+                     boost::shared_ptr<ForcesAndSourcesCore> parent_ele_ptr,
+                     BitRefLevel bit_child, BitRefLevel bit_child_mask,
+                     BitRefLevel bit_parent_ent,
+                     BitRefLevel bit_parent_ent_mask, int verb, Sev sev);
 
-//   MoFEMErrorCode doWork(int side, EntityType type,
-//                         EntitiesFieldData::EntData &data);
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        EntitiesFieldData::EntData &data);
 
-// private:
-//   std::string rowFieldName;
-//   std::string colFieldName;
-//   OpType opParentType;
-//   boost::shared_ptr<ForcesAndSourcesCore> parentElePtr;
-//   const BitRefLevel bitChild;
-//   const BitRefLevel bitChildMask;
-//   const BitRefLevel bitParentEnt;
-//   const BitRefLevel bitParentEntMask;
-//   int verbosity;
-//   Sev severityLevel;
-// };
+private:
+  OpType opParentType;
+  boost::shared_ptr<ForcesAndSourcesCore> parentElePtr;
+  const BitRefLevel bitChild;
+  const BitRefLevel bitChildMask;
+  const BitRefLevel bitParentEnt;
+  const BitRefLevel bitParentEntMask;
+  int verbosity;
+  Sev severityLevel;
+};
 
-// struct OpRetoreEntData : public ForcesAndSourcesCore::UserDataOperator {
-//   OpRetoreEntData();
-//   MoFEMErrorCode doWork(int side, EntityType type,
-//                         EntitiesFieldData::EntData &data);
-// };
+struct OpRestoreEntData : public ForcesAndSourcesCore::UserDataOperator {
+  OpRestoreEntData(FieldSpace space, OpType op_type);
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        EntitiesFieldData::EntData &data);
+private:
+  FieldSpace sPace;
+  OpType opType;
+};
 }
 
 #endif //__MESH_PROJECTION_DATA_OPERATORS_HPP__

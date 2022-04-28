@@ -54,142 +54,156 @@ MoFEMErrorCode OpRunParent::doWork(int side, EntityType type,
   MoFEMFunctionReturn(0);
 }
 
-// OpAddParentEntData::OpAddParentEntData(
-//     std::string field_name, OpType op_parent_type,
-//     boost::shared_ptr<ForcesAndSourcesCore> parent_ele_ptr,
-//     BitRefLevel bit_child, BitRefLevel bit_child_mask,
-//     BitRefLevel bit_parent_ent, BitRefLevel bit_parent_ent_mask, int verb,
-//     Sev sev)
-//     : ForcesAndSourcesCore::UserDataOperator(field_name, op_parent_type),
-//       opParentType(op_parent_type), parentElePtr(parent_ele_ptr),
-//       bitChild(bit_child), bitChildMask(bit_child_mask),
-//       bitParentEnt(bit_parent_ent), bitParentEntMask(bit_parent_ent_mask),
-//       verbosity(verb), severityLevel(sev) {
-//   std::fill(doEntities.begin(), doEntities.end(), false);
-//   doEntities[MBENTITYSET] = true;
-// }
+OpAddParentEntData::OpAddParentEntData(
+    std::string field_name, OpType op_parent_type,
+    boost::shared_ptr<ForcesAndSourcesCore> parent_ele_ptr,
+    BitRefLevel bit_child, BitRefLevel bit_child_mask,
+    BitRefLevel bit_parent_ent, BitRefLevel bit_parent_ent_mask, int verb,
+    Sev sev)
+    : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPLAST),
+      opParentType(op_parent_type), parentElePtr(parent_ele_ptr),
+      bitChild(bit_child), bitChildMask(bit_child_mask),
+      bitParentEnt(bit_parent_ent), bitParentEntMask(bit_parent_ent_mask),
+      verbosity(verb), severityLevel(sev) {}
 
-// MoFEMErrorCode OpAddParentEntData::doWork(int side, EntityType type,
-//                                           EntitiesFieldData::EntData &data) {
-//   MoFEMFunctionBegin;
+MoFEMErrorCode OpAddParentEntData::doWork(int side, EntityType type,
+                                          EntitiesFieldData::EntData &data) {
+  MoFEMFunctionBegin;
 
-//   // auto check = [](auto &b, auto &m, auto &bit) {
-//   //   return ((bit & b).any()) && ((bit & m) == bit);
-//   // };
+  auto check = [](auto &b, auto &m, auto &bit) {
+    return ((bit & b).any()) && ((bit & m) == bit);
+  };
 
-//   // auto &bit_fe = getFEMethod()->numeredEntFiniteElementPtr->getBitRefLevel();
-//   // if (check(bitChild, bitChildMask, bit_fe)) {
+  auto get_entities_field_data_ptr = [&](auto space) {
+    switch (opParentType) {
+    case OPROW:
+      return getPtrFE()->getDataOnElement()[space];
+    case OPCOL:
+      return getPtrFE()->getDerivedDataOnElement()[space];
+    default:
+      return boost::shared_ptr<EntitiesFieldData>();
+    }
+  };
 
-//   //   auto loop_parent_fe = [&]() {
-//   //     MoFEMFunctionBeginHot;
-//   //     if (verbosity >= VERBOSE) {
-//   //       MOFEM_LOG("SELF", severityLevel)
-//   //           << "loop parent element in OpAddParentEntData";
-//   //     }
-//   //     // note live of op pointer is controlled by ptr_vec in in finite
-//   //     // element
-//   //     auto field_op = new ForcesAndSourcesCore::UserDataOperator(rowFieldName,
-//   //                                                                opParentType);
-//   //     // that forces to run operator at last instance and collect data on
-//   //     // entities
-//   //     field_op->doWorkRhsHook =
-//   //         [&](DataOperator *op_ptr, int side, EntityType type,
-//   //             EntitiesFieldData::EntData &data) { return 0; };
-//   //     parentElePtr->getOpPtrVector().push_back(field_op);
-//   //     CHKERR loopParent(getFEName(), parentElePtr.get(), verbosity,
-//   //                       severityLevel);
-//   //     // clean element from obsolete data operator
-//   //     parentElePtr->getOpPtrVector().pop_back();
-//   //     MoFEMFunctionReturnHot(0);
-//   //   };
+  auto &bit_fe = getFEMethod()->numeredEntFiniteElementPtr->getBitRefLevel();
+  if (check(bitChild, bitChildMask, bit_fe)) {
 
-//   //   auto
+    auto loop_parent_fe = [&]() {
+      MoFEMFunctionBeginHot;
 
-//   //   auto base = data.getBase();
-//   //   auto space = data.getSpace();
-//   //   auto entities_field_data = getPtrFE()->getDataOnElement()[space];
+      if (verbosity >= VERBOSE) {
+        MOFEM_LOG("SELF", severityLevel)
+            << "loop parent element in OpAddParentEntData";
+      }
 
-//   //   auto ent_finite_element = parentElePtr->getFEEntityHandle();
-//   //   auto parent_entities_field_data = parentElePtr->getDataOnElement()[space];
-//   //   auto &side_parent_table =
-//   //       parentElePtr->numeredEntFiniteElementPtr->getSideNumberTable();
-
-//   //   if (side == 0 && type == MBVERTEX) {
-
-//   //     auto ent_data = getPtrFE()->getDataOnElement();
-//   //     auto derived_data_on_element = getDerivedDataOnElement();
-
-//   //     if (op.getOpType() & UserDataOperator::OPROW ||
-//   //         op.getOpType() & UserDataOperator::OPROWCOL) {
-
-//   //       for (auto &entities_field_data_ptr : ent_data) {
-//   //         if(entities_field_data_ptr) {
-//   //           for(auto &ent_data : *entities_field_data_ptr) {
-//   //             if(ent_data->getFieldEntities().size() == 1) {
-//   //               auto ent_data_bit = ent_data->getBitRefLevel();
-//   //               if(check(bitParentEnt,bitParentEntMask, ent_data_bit)) {
-//   //                 ent_data[space][MBENTITYSET].push_back(ent_data);
-//   //               }
-//   //             } else if(ent_data->getFieldEntities().size() > 1) {
-//   //               ent_data[space][MBENTITYSET].push_back(ent_data);
-//   //               auto &back_end_data = ent_data[space][MBENTITYSET].back();
-//   //               int dd = 0;
-//   //               for(auto dof : ent_data->getFieldDofs()) {
-//   //                 auto &dof_bit = dof->getBitRefLevel();
-//   //                 if (!check(bitParentEnt, bitParentEntMask, dof_bit)) {
-//   //                   back_ent_data->getFieldData()[dd] = 0;
-//   //                   back_ent_data->getIndices()[dd] = 1;
-//   //                 }
-//   //                 ++dd;
-//   //               }
-//   //             } 
-//   //           }
-//   //         }
-//   //       }
-//   //     }
-
-//   //     if (op.getOpType() & UserDataOperator::OPCOL ||
-//   //         op.getOpType() & UserDataOperator::OPROWCOL) {
-//   //     }
-
-//   //     if (parent_entities_field_data) {
-//   //       for (auto &type_data : *parent_entities_field_data) {
-//   //         for (auto &side_data : type_data) {
-//   //           for (auto field_ent : side_data->getFieldEntities()) {
-//   //             auto &bit_parent_ent = field_ent->getBitRefLevel();
-//   //             auto parent_type = field_ent->getEntType();
-//   //             if (check(bitParentEnt, bitParentEntMask, bit_parent_ent)) {
+      // note live of op pointer is controlled by ptr_vec in in finite
+      // element
+      auto field_op = new ForcesAndSourcesCore::UserDataOperator(rowFieldName,
+                                                                 opParentType);
+      // that forces to run operator at last instance and collect data on
+      // entities
+      field_op->doWorkRhsHook = [&](DataOperator *op_ptr, int side,
+                                    EntityType type,
+                                    EntitiesFieldData::EntData &data) {
+        MoFEMFunctionBegin;
 
 
-//   //             }
-//   //           }
-//   //         }
-//   //       }
-//   //     }
-//   //   }
+        auto field_entities = data.getFieldEntities();
+        if (field_entities.size() == 1) {
+          auto &bit_ent = field_entities[0]->getBitRefLevel();
+          if (!check(bitParentEnt, bitParentEntMask, bit_ent))
+            MoFEMFunctionReturnHot(0);
+        } 
 
-//   //   // auto base_swap = [&]() {
-//   //   //   MoFEMFunctionBeginHot;
-//   //   //   if (base == AINSWORTH_BERNSTEIN_BEZIER_BASE) {
-//   //   //     CHKERR entities_field_data->baseSwap(rowFieldName,
-//   //   //                                          AINSWORTH_BERNSTEIN_BEZIER_BASE);
-//   //   //     CHKERR parent_entities_field_data->baseSwap(
-//   //   //         rowFieldName, AINSWORTH_BERNSTEIN_BEZIER_BASE);
-//   //   //   }
-//   //   //   MoFEMFunctionReturnHot(0);
-//   //   // };
-//   // }
+        auto space = data.getSpace();
+        auto base = data.getBase();
 
-//   MoFEMFunctionReturn(0);
-// }
+        auto entities_field_data_ptr = get_entities_field_data_ptr(space);
+        if (entities_field_data_ptr)
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "Only OPROW/OPCOL op type is allows");
 
-// OpRetoreEntData::OpRetoreEntData()
-//     : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPLAST) {}
+        entities_field_data_ptr->dataOnEntities[MBENTITYSET].push_back(
+            new EntitiesFieldData::EntData());
+        auto &child_data =
+            entities_field_data_ptr->dataOnEntities[MBENTITYSET].back();
 
-// MoFEMErrorCode OpRetoreEntData::doWork(int side, EntityType type,
-//                                        EntitiesFieldData::EntData &data) {
-//   MoFEMFunctionBegin;
-//   MoFEMFunctionReturn(0);
-// }
+
+        child_data.sPace = space;
+        child_data.bAse = base;
+
+        child_data.sEnse = data.getSense();
+        child_data.oRder = data.getOrder();
+        child_data.iNdices = data.getIndices();
+        child_data.localIndices = data.getLocalIndices();
+        child_data.dOfs = data.getFieldDofs();
+        child_data.fieldEntities = field_entities;
+        child_data.fieldData = data.getFieldData();
+
+        int direvative = 0;
+        for (auto &b : data.baseFunctionsAndBaseDerivatives) {
+          if (b[base]) {
+            child_data.baseFunctionsAndBaseDerivatives[direvative] = b;
+          }
+          ++direvative;
+        }
+
+        if (field_entities.size() > 1) {
+          int dof = 0;
+          for (auto &field_ent : field_entities) {
+            auto &bit_ent = field_ent->getBitRefLevel();
+            if (!check(bitParentEnt, bitParentEntMask, bit_ent)) {
+              for (auto d = 0; d != field_ent->getNbDofsOnEnt(); ++d) {
+                child_data.iNdices[dof + d] = -1;
+                child_data.localIndices[dof + d] = -1;
+                child_data.fieldData[dof + d] = 0;
+              }
+              }
+          }
+        }
+
+        MoFEMFunctionReturn(0);
+      };
+
+      parentElePtr->getOpPtrVector().push_back(field_op);
+      CHKERR loopParent(getFEName(), parentElePtr.get(), verbosity,
+                        severityLevel);
+      // clean element from obsolete data operator
+      parentElePtr->getOpPtrVector().pop_back();
+
+      MoFEMFunctionReturnHot(0);
+    };
+
+    CHKERR loop_parent_fe();
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+OpRestoreEntData::OpRestoreEntData(FieldSpace space, OpType op_type)
+    : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPLAST), sPace(space),
+      opType(op_type) {}
+
+MoFEMErrorCode OpRestoreEntData::doWork(int side, EntityType type,
+                                        EntitiesFieldData::EntData &data) {
+  MoFEMFunctionBegin;
+
+  switch (opType) {
+  case OPROW:
+    getPtrFE()->getDataOnElement()[sPace]->dataOnEntities[MBENTITYSET].clear();
+    break;
+  case OPCOL:
+    getPtrFE()
+        ->getDerivedDataOnElement()[sPace]
+        ->dataOnEntities[MBENTITYSET]
+        .clear();
+    break;
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Only OPROW/OPCOL op type is allows");
+  }
+
+  MoFEMFunctionReturn(0);
+}
 
 } // namespace MoFEM

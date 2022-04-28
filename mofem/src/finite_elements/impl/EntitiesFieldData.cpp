@@ -169,7 +169,8 @@ EntitiesFieldData::EntData::baseSwap(const std::string &field_name,
 MoFEMErrorCode EntitiesFieldData::baseSwap(const std::string &field_name,
                                            const FieldApproximationBase base) {
   MoFEMFunctionBegin;
-  for (int tt = MBVERTEX; tt != MBMAXTYPE; ++tt) {
+  // Note: Do not swap bases on entities sets
+  for (int tt = MBVERTEX; tt != MBENTITYSET; ++tt) {
     auto &ent_data = dataOnEntities[tt];
     for (auto &side_data : ent_data)
       CHKERR side_data.baseSwap(field_name, base);
