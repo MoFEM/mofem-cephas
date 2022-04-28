@@ -84,15 +84,15 @@ FTensor::Ddg<double, 3, 3> getDiffDiffMat(Val<double, 3> &t_val,
       t_val, t_vec, f, d_f, dd_f, t_S, nb);
 }
 
-// FTensor::Ddg<double, 3, 3>
-// getDiffDiffMat(Val<FTensor::PackPtr<double *, 1>, 3> &t_val,
-//                Vec<FTensor::PackPtr<double *, 1>, 3> &t_vec, Fun<double> f,
-//                Fun<double> d_f, Fun<double> dd_f,
-//                FTensor::Tensor2<double, 3, 3> &t_S, const int nb) {
-//   return getDiffDiffMatImpl<FTensor::PackPtr<double *, 1>,
-//                             FTensor::Tensor2<double, 3, 3>, 3>(
-//       t_val, t_vec, f, d_f, dd_f, t_S, nb);
-// }
+FTensor::Ddg<double, 3, 3>
+getDiffDiffMat(Val<FTensor::PackPtr<double *, 1>, 3> &t_val,
+               Vec<FTensor::PackPtr<double *, 1>, 3> &t_vec, Fun<double> f,
+               Fun<double> d_f, Fun<double> dd_f,
+               FTensor::Tensor2<double, 3, 3> &t_S, const int nb) {
+  return getDiffDiffMatImpl<FTensor::PackPtr<double *, 1>,
+                            FTensor::Tensor2<double, 3, 3>, 3>(
+      t_val, t_vec, f, d_f, dd_f, t_S, nb);
+}
 
 FTensor::Ddg<double, 3, 3>
 getDiffDiffMat(Val<double, 3> &t_val, Vec<double, 3> &t_vec, Fun<double> f,
