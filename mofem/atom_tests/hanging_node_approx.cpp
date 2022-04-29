@@ -1,5 +1,5 @@
 /**
- * \example child_and_parent.cpp
+ * \example hanging_node_approx.cpp
  *
  * Tetsing approximation with hanging nodes.
  *
@@ -265,14 +265,15 @@ MoFEMErrorCode AtomTest::assembleSystem() {
 
           FIELD_NAME, DomainEleOp::OPROW,
           boost::make_shared<DomainParentEle>(mField), BitRefLevel().set(1),
-          BitRefLevel().set(1), BitRefLevel().set(1), BitRefLevel().set(),
-          BitRefLevel().set(0), BitRefLevel().set(0) NOISY, Sev::noisy)
+          BitRefLevel().set(1), BitRefLevel().set(0), BitRefLevel().set(0),
+          NOISY, Sev::noisy)
 
   );
 
   pipeline_mng->getOpDomainRhsPipeline().push_back(
       new OpDomainSource(FIELD_NAME, approxFunction));
-  pipeline_mng->getOpDomainRhsPipeline().push_back(new OpRestoreEntData());
+  pipeline_mng->getOpDomainRhsPipeline().push_back(
+      new OpRestoreEntData(H1, DomainEleOp::OPROW));
 
   MoFEMFunctionReturn(0);
 }

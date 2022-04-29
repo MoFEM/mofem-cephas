@@ -55,6 +55,7 @@ struct OpAddParentEntData : public ForcesAndSourcesCore::UserDataOperator {
                         EntitiesFieldData::EntData &data);
 
 private:
+  std::string fieldName;
   OpType opParentType;
   boost::shared_ptr<ForcesAndSourcesCore> parentElePtr;
   const BitRefLevel bitChild;
