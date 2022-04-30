@@ -27,7 +27,7 @@ struct OpRunParent : public ForcesAndSourcesCore::UserDataOperator {
               BitRefLevel bit_parent, BitRefLevel bit_parent_mask,
               boost::shared_ptr<ForcesAndSourcesCore> this_ele_ptr,
               BitRefLevel bit_this, BitRefLevel bit_this_mask, int verb = QUIET,
-              Sev sev = Sev::verbose);
+              Sev sev = Sev::noisy);
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data);
@@ -49,10 +49,18 @@ struct OpAddParentEntData : public ForcesAndSourcesCore::UserDataOperator {
                      boost::shared_ptr<ForcesAndSourcesCore> parent_ele_ptr,
                      BitRefLevel bit_child, BitRefLevel bit_child_mask,
                      BitRefLevel bit_parent_ent,
-                     BitRefLevel bit_parent_ent_mask, int verb, Sev sev);
+                     BitRefLevel bit_parent_ent_mask, int verb = QUIET,
+                     Sev sev = Sev::noisy);
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data);
+
+  static MoFEMErrorCode
+  markHangingSkin(MoFEM::Interface &m_field, const int dim,
+                  const BitRefLevel parent_bit, const BitRefLevel parent_mask,
+                  const BitRefLevel child_bit, const BitRefLevel child_mask,
+                  const BitRefLevel mark_bit, const bool resolve_shared,
+                  const std::string debug_file_name = "");
 
 private:
   std::string fieldName;
@@ -67,12 +75,15 @@ private:
 };
 
 struct OpRestoreEntData : public ForcesAndSourcesCore::UserDataOperator {
-  OpRestoreEntData(FieldSpace space, OpType op_type);
+  OpRestoreEntData(FieldSpace space, OpType op_type, int verb = QUIET,
+                   Sev sev = Sev::noisy);
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data);
 private:
   FieldSpace sPace;
   OpType opType;
+  int verbosity;
+  Sev severityLevel;
 };
 }
 
