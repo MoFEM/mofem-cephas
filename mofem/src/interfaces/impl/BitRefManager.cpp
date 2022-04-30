@@ -290,10 +290,10 @@ struct SetBitRefLevelTool {
   }
 };
 
-MoFEMErrorCode
-BitRefManager::setBitRefLevel(const Range &ents, const BitRefLevel bit,
-                              const bool only_tets, int verb,
-                              Range *adj_ents_ptr) const {
+MoFEMErrorCode BitRefManager::setBitRefLevel(const Range &ents,
+                                             const BitRefLevel bit,
+                                             const bool only_tets, int verb,
+                                             Range *adj_ents_ptr) const {
   MoFEM::Interface &m_field = cOre;
   auto ref_ents_ptr = m_field.get_ref_ents();
   auto ref_fe_ptr = m_field.get_ref_finite_elements();
@@ -325,7 +325,7 @@ BitRefManager::setBitRefLevel(const Range &ents, const BitRefLevel bit,
           if (dd == 0) {
             rval = m_field.get_moab().get_connectivity(ents, adj_ents, true);
             // rval = m_field.get_moab().get_adjacencies(
-                // dim_ents, dd, true, adj_ents, moab::Interface::UNION);
+            // dim_ents, dd, true, adj_ents, moab::Interface::UNION);
 
           } else {
             if (adj_ents_ptr) {
@@ -341,7 +341,7 @@ BitRefManager::setBitRefLevel(const Range &ents, const BitRefLevel bit,
           }
 
           // rval = m_field.get_moab().get_adjacencies(
-              // dim_ents, dd, true, adj_ents, moab::Interface::UNION);
+          // dim_ents, dd, true, adj_ents, moab::Interface::UNION);
 
           MOFEM_LOG_FUNCTION();
           MOFEM_LOG_C("BitRefSelf", Sev::noisy,
@@ -641,6 +641,29 @@ MoFEMErrorCode BitRefManager::shiftRightBitRef(const int shift,
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode
+BitRefManager::writeBitLevelByDim(const BitRefLevel bit, const BitRefLevel mask,
+                                  const int dim, const char *file_name,
+                                  const char *file_type, const char *options,
+                                  const bool check_for_empty) const {
+  MoFEM::Interface &m_field = cOre;
+  moab::Interface &moab(m_field.get_moab());
+  MoFEMFunctionBegin;
+  Range ents;
+  CHKERR getEntitiesByDimAndRefLevel(bit, mask, dim, ents);
+  if (check_for_empty && ents.empty()) {
+    MOFEM_LOG("SELF", Sev::warning)
+        << "No entities to save in writeBitLevelByDim";
+    MoFEMFunctionReturnHot(0);
+  }
+  EntityHandle meshset;
+  CHKERR moab.create_meshset(MESHSET_SET, meshset);
+  CHKERR moab.add_entities(meshset, ents);
+  CHKERR moab.write_file(file_name, file_type, options, &meshset, 1);
+  CHKERR moab.delete_entities(&meshset, 1);
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode BitRefManager::writeBitLevelByType(
     const BitRefLevel bit, const BitRefLevel mask, const EntityType type,
     const char *file_name, const char *file_type, const char *options,
@@ -650,8 +673,11 @@ MoFEMErrorCode BitRefManager::writeBitLevelByType(
   MoFEMFunctionBegin;
   Range ents;
   CHKERR getEntitiesByTypeAndRefLevel(bit, mask, type, ents);
-  if (check_for_empty && ents.empty())
+  if (check_for_empty && ents.empty()) {
+    MOFEM_LOG("SELF", Sev::warning)
+        << "No entities to save in writeBitLevelByType";
     MoFEMFunctionReturnHot(0);
+  }
   EntityHandle meshset;
   CHKERR moab.create_meshset(MESHSET_SET, meshset);
   CHKERR moab.add_entities(meshset, ents);

@@ -595,6 +595,22 @@ struct BitRefManager : public UnknownInterface {
    * \brief Write bit ref level to file
    * @param  bit       bit ref level
    * @param  mask      mask of bit ref level
+   * @param  dim       dimension
+   * @param  file_name file name (see moab documentation)
+   * @param  file_type file type (see moab documentation)
+   * @param  options   file options (see moab documentation)
+   * @return           error code
+   */
+  MoFEMErrorCode writeBitLevelByDim(const BitRefLevel bit,
+                                    const BitRefLevel mask, const int dim,
+                                    const char *file_name,
+                                    const char *file_type, const char *options,
+                                    const bool check_for_empty = true) const;
+
+  /**
+   * \brief Write bit ref level to file
+   * @param  bit       bit ref level
+   * @param  mask      mask of bit ref level
    * @param  type      type of entity
    * @param  file_name file name (see moab documentation)
    * @param  file_type file type (see moab documentation)
