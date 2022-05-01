@@ -641,6 +641,31 @@ MoFEMErrorCode BitRefManager::shiftRightBitRef(const int shift,
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode BitRefManager::writeBitLevel(const BitRefLevel bit,
+                                            const BitRefLevel mask,
+                                            const char *file_name,
+                                            const char *file_type,
+                                            const char *options,
+                                            const bool check_for_empty) const {
+  MoFEM::Interface &m_field = cOre;
+  moab::Interface &moab(m_field.get_moab());
+  MoFEMFunctionBegin;
+  EntityHandle meshset;
+  CHKERR moab.create_meshset(MESHSET_SET, meshset);
+  CHKERR getEntitiesByRefLevel(bit, mask, meshset);
+  int nb_ents;
+  CHKERR moab.get_number_entities_by_handle(meshset, nb_ents, true);
+  if (check_for_empty && !nb_ents) {
+    MOFEM_LOG("SELF", Sev::warning)
+        << "No entities to save < " << file_name << " > in writeBitLevel";
+    MoFEMFunctionReturnHot(0);
+  }
+
+  CHKERR moab.write_file(file_name, file_type, options, &meshset, 1);
+  CHKERR moab.delete_entities(&meshset, 1);
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode
 BitRefManager::writeBitLevelByDim(const BitRefLevel bit, const BitRefLevel mask,
                                   const int dim, const char *file_name,
@@ -653,7 +678,7 @@ BitRefManager::writeBitLevelByDim(const BitRefLevel bit, const BitRefLevel mask,
   CHKERR getEntitiesByDimAndRefLevel(bit, mask, dim, ents);
   if (check_for_empty && ents.empty()) {
     MOFEM_LOG("SELF", Sev::warning)
-        << "No entities to save in writeBitLevelByDim";
+        << "No entities to save < " << file_name << " > in writeBitLevelByDim";
     MoFEMFunctionReturnHot(0);
   }
   EntityHandle meshset;
@@ -675,7 +700,7 @@ MoFEMErrorCode BitRefManager::writeBitLevelByType(
   CHKERR getEntitiesByTypeAndRefLevel(bit, mask, type, ents);
   if (check_for_empty && ents.empty()) {
     MOFEM_LOG("SELF", Sev::warning)
-        << "No entities to save in writeBitLevelByType";
+        << "No entities to save < " << file_name << " > in writeBitLevelByType";
     MoFEMFunctionReturnHot(0);
   }
   EntityHandle meshset;
