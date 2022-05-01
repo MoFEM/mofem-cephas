@@ -165,7 +165,7 @@ public:
    * 
    * @return std::array<boost::shared_ptr<EntitiesFieldData>, LASTSPACE>
    */
-  auto &getDataOnElement() { return dataOnElement; }
+  auto &getDataOnElementBySpaceArray() { return dataOnElement; }
 
   /**
    * @brief Get derived data on entities and space
@@ -525,7 +525,7 @@ private:
    */
   MoFEMErrorCode setSideFEPtr(const ForcesAndSourcesCore *side_fe_ptr);
 
-  /**
+  /**u
    * @brief Element to integrate parent or child
    *
    */
