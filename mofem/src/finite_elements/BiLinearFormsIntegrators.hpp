@@ -507,10 +507,11 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
    */
   template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM, int S = 0>
   struct OpGradGradSymTensorGradGrad
-      : public OpGradGradSymTensorGradGradImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, S,
-                                            I, OpBase> {
-    using OpGradGradSymTensorGradGradImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, S, I,
-                                       OpBase>::OpGradGradSymTensorGradGradImpl;
+      : public OpGradGradSymTensorGradGradImpl<BASE_DIM, FIELD_DIM, SPACE_DIM,
+                                               S, I, OpBase> {
+    using OpGradGradSymTensorGradGradImpl<
+        BASE_DIM, FIELD_DIM, SPACE_DIM, S, I,
+        OpBase>::OpGradGradSymTensorGradGradImpl;
   };
 
   /**
@@ -730,6 +731,41 @@ MoFEMErrorCode OpMassImpl<1, 1, GAUSS, OpBase>::iNtegrate(
     if (entsPtr->find(OpBase::getFEEntityHandle()) == entsPtr->end())
       MoFEMFunctionReturnHot(0);
   }
+
+#ifndef NDEBUG
+  auto log_error = [&]() {
+    MOFEM_LOG("SELF", Sev::error) << "Row side " << OpBase::rowSide << " "
+                                  << CN::EntityTypeName(OpBase::rowType);
+    MOFEM_LOG("SELF", Sev::error) << "Col side " << OpBase::colSide << " "
+                                  << CN::EntityTypeName(OpBase::colType);
+  };
+
+  if (row_data.getN().size2() < OpBase::nbRows) {
+    log_error();
+    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "Wrong number of base functions on rows %d < %d",
+             row_data.getN().size2(), OpBase::nbRows);
+  }
+  if (col_data.getN().size2() < OpBase::nbCols) {
+    log_error();
+    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "Wrong number of base functions on cols %d < %d",
+             col_data.getN().size2(), OpBase::nbCols);
+  }
+  if (row_data.getN().size1() != OpBase::nbIntegrationPts) {
+    log_error();
+    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "Wrong number of integration points on rows %d != %d",
+             row_data.getN().size1(), OpBase::nbIntegrationPts);
+  }
+  if (col_data.getN().size1() != OpBase::nbIntegrationPts) {
+    log_error();
+    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "Wrong number of integration points on cols %d != %d",
+             col_data.getN().size1(), OpBase::nbIntegrationPts);
+  }
+#endif
+
   // get element volume
   const double vol = OpBase::getMeasure();
   // get integration weights
@@ -1036,8 +1072,7 @@ OpGradGradSymTensorGradGradImpl<1, 1, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
     }
     if (row_hessian.size2() < OpBase::nbRows * SPACE_DIM * SPACE_DIM) {
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-               "Wrong number of base functions (%d < %d)",
-               row_hessian.size2(),
+               "Wrong number of base functions (%d < %d)", row_hessian.size2(),
                OpBase::nbRows * SPACE_DIM * SPACE_DIM);
     }
     if (col_hessian.size1() != OpBase::nbIntegrationPts) {
@@ -1047,12 +1082,10 @@ OpGradGradSymTensorGradGradImpl<1, 1, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
     }
     if (col_hessian.size2() < OpBase::nbCols * SPACE_DIM * SPACE_DIM) {
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-               "Wrong number of base functions (%d < %d)",
-               col_hessian.size2(),
+               "Wrong number of base functions (%d < %d)", col_hessian.size2(),
                OpBase::nbRows * SPACE_DIM * SPACE_DIM);
     }
 #endif
-
 
     // get element volume
     double vol = OpBase::getMeasure();
