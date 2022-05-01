@@ -1453,11 +1453,11 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
       }
       break;
     case NOFIELD:
-      if (!getNinTheLoop()) {
+      // if (!getNinTheLoop()) {
         // NOFIELD data are the same for each element, can be
         // retrieved only once
         CHKERR get_data_for_meshset();
-      }
+      // }
       break;
     default:
       SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
