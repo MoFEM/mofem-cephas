@@ -1365,7 +1365,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
       try {
         CHKERR op.doWork(
             0, MBENTITYSET,
-            dataOnElement[op.sPace]->dataOnEntities[MBENTITYSET][0]);
+            dataOnElement[NOSPACE]->dataOnEntities[MBENTITYSET][0]);
       }
       CATCH_OP_ERRORS(op);
       break;
@@ -1473,7 +1473,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
 
     if (op.getOpType() & UDO::OPROW) {
       try {
-        CHKERR op.opRhs(*op_data[0], false);
+          CHKERR op.opRhs(*op_data[0], false);
       }
       CATCH_OP_ERRORS(op);
     }
@@ -1511,8 +1511,8 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
 
       } else if (
 
-          (oit->opType & (UDO::OPROW | UDO::OPCOL | UDO::OPROWCOL |
-                          UDO::OPMESHSET)) == oit->opType
+          (oit->opType & (UDO::OPROW | UDO::OPCOL | UDO::OPROWCOL)) ==
+          oit->opType
 
       ) {
 

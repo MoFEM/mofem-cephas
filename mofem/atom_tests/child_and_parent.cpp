@@ -272,7 +272,7 @@ MoFEMErrorCode AtomTest::assembleSystem() {
   domainChildRhs->getOpPtrVector().push_back(
       new OpDomainSource(FIELD_NAME, approxFunction));
 
-  auto parent_op_lhs = new DomainEleOp(NOSPACE, DomainEleOp::OPLAST);
+  auto parent_op_lhs = new DomainEleOp(NOSPACE, DomainEleOp::OPSPACE);
   parent_op_lhs->doWorkRhsHook = [&](DataOperator *op_ptr, int side,
                                      EntityType type,
                                      EntitiesFieldData::EntData &data) {
@@ -296,7 +296,7 @@ MoFEMErrorCode AtomTest::assembleSystem() {
     MoFEMFunctionReturn(0);
   };
 
-  auto parent_op_rhs = new DomainEleOp(NOSPACE, DomainEleOp::OPLAST);
+  auto parent_op_rhs = new DomainEleOp(NOSPACE, DomainEleOp::OPSPACE);
   parent_op_rhs->doWorkRhsHook = [&](DataOperator *op_ptr, int side,
                                      EntityType type,
                                      EntitiesFieldData::EntData &data) {
@@ -450,7 +450,7 @@ MoFEMErrorCode AtomTest::refineResults() {
         new OpDomainTimesScalarField(FIELD_NAME, field_vals_ptr, beta));
 
     struct OpCheckGaussCoords : public DomainEleOp {
-      OpCheckGaussCoords() : DomainEleOp(NOSPACE, DomainEleOp::OPLAST) {}
+      OpCheckGaussCoords() : DomainEleOp(NOSPACE, DomainEleOp::OPSPACE) {}
 
       MoFEMErrorCode doWork(int side, EntityType type,
                             EntitiesFieldData::EntData &data) {
@@ -459,7 +459,7 @@ MoFEMErrorCode AtomTest::refineResults() {
         MatrixDouble parent_coords;
 
         DomainParentEle parent_fe(getPtrFE()->mField);
-        auto domain_op = new DomainEleOp(NOSPACE, DomainEleOp::OPLAST);
+        auto domain_op = new DomainEleOp(NOSPACE, DomainEleOp::OPSPACE);
         domain_op->doWorkRhsHook =
             [&](DataOperator *op_ptr, int side, EntityType type,
                 EntitiesFieldData::EntData &data) {

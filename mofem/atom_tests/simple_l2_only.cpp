@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
       PipelineManager *pipeline_mng = m_field.getInterface<PipelineManager>();
 
       // Create OP for side FE
-      auto op_side_fe = new DomainEleOp(NOSPACE, DomainEleOp::OPLAST);
+      auto op_side_fe = new DomainEleOp(NOSPACE, DomainEleOp::OPSPACE);
       op_side_fe->doWorkRhsHook = [&](DataOperator *op_ptr, int side,
                                       EntityType type,
                                       EntitiesFieldData::EntData &data) {
@@ -128,10 +128,10 @@ int main(int argc, char *argv[]) {
         MoFEMFunctionReturn(0);
       };
 
-      auto op_bdy_fe = new BoundaryEleOp(NOSPACE, DomainEleOp::OPLAST);
+      auto op_bdy_fe = new BoundaryEleOp(NOSPACE, DomainEleOp::OPSPACE);
       op_bdy_fe->doWorkRhsHook = do_work_rhs;
 
-      auto op_skeleton_fe = new BoundaryEleOp(NOSPACE, DomainEleOp::OPLAST);
+      auto op_skeleton_fe = new BoundaryEleOp(NOSPACE, DomainEleOp::OPSPACE);
       op_skeleton_fe->doWorkRhsHook = do_work_rhs;
 
       // Count boundary
