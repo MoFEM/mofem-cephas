@@ -245,20 +245,19 @@ MoFEMErrorCode AtomTest::setupProblem() {
     auto basic_entity_data_ptr = fe.getBasicDataPtr();
     auto th_parent_handle = basic_entity_data_ptr->th_RefParentHandle;
 
-    using GetParent =
-        boost::function<MoFEMErrorCode(std::vector<EntityHandle> & parents)>;
-    GetParent get_parent = [&](std::vector<EntityHandle> &parents) {
+    using GetParent = boost::function<MoFEMErrorCode(
+        EntityHandle fe, std::vector<EntityHandle> & parents)>;
+    GetParent get_parent = [&](EntityHandle fe,
+                               std::vector<EntityHandle> &parents) {
       MoFEMFunctionBegin;
       EntityHandle fe_parent;
 
-      CHKERR moab.tag_get_data(th_parent_handle, &parents.back(), 1,
-                               &fe_parent);
+      CHKERR moab.tag_get_data(th_parent_handle, &fe, 1, &fe_parent);
       auto parent_type = type_from_handle(fe_parent);
-      auto back_type = type_from_handle(parents.back());
-      if (fe_parent != 0 && fe_parent != parents.back() &&
-          parent_type == back_type) {
+      auto back_type = type_from_handle(fe);
+      if (fe_parent != 0 && fe_parent != fe && parent_type == back_type) {
         parents.push_back(fe_parent);
-        CHKERR get_parent(parents);
+        CHKERR get_parent(parents.back(), parents);
       }
       MoFEMFunctionReturn(0);
     };
@@ -270,10 +269,9 @@ MoFEMErrorCode AtomTest::setupProblem() {
 
       std::vector<EntityHandle> parents;
       parents.reserve(BITREFLEVEL_SIZE);
-      parents.push_back(fe.getEnt());
 
       if (parent_ent && parent_ent != fe.getEnt()) {
-        CHKERR get_parent(parents);
+        CHKERR get_parent(fe.getEnt(), parents);
         for (auto fe_ent : parents) {
           switch (field.getSpace()) {
           case H1:
