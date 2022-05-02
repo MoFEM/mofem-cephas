@@ -525,7 +525,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
 
     oit->setPtrFE(this);
 
-    if (oit->opType == UserDataOperator::OPLAST) {
+    if (oit->opType == UserDataOperator::OPSPACE) {
 
       // Set field
       switch (oit->sPace) {

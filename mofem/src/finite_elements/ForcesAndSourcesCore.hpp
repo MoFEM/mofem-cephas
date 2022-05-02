@@ -555,9 +555,12 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
   /**
    * \brief Controls loop over entities on element
    *
-   * OPROW is used if row vector is assembled
-   * OPCOL is usually used if column vector is assembled
-   * OPROWCOL is usually used for assemble matrices.
+   * - OPROW is used if row vector is assembled
+   * - OPCOL is usually used if column vector is assembled
+   * - OPROWCOL is usually used for assemble matrices.
+   * - OPSPACE no field is defined for such operator. Is usually used to modify
+   * base
+   * 
    *
    * For typical problem like Bubnov-Galerkin OPROW and OPCOL are the same. In
    * more general case for example for non-square matrices columns and rows
@@ -568,8 +571,11 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
     OPROW = 1 << 0,
     OPCOL = 1 << 1,
     OPROWCOL = 1 << 2,
-    OPLAST = 1 << 3
+    OPMESHSET = 1 << 3,
+    OPSPACE = 1 << 4
   };
+
+  static const char *const OpTypeNames[];
 
   char opType;
   std::string rowFieldName;
@@ -583,7 +589,7 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
    *
    * User has no access to field data from this operator.
    */
-  UserDataOperator(const FieldSpace space, const char type = OPLAST,
+  UserDataOperator(const FieldSpace space, const char type = OPSPACE,
                    const bool symm = true);
 
   UserDataOperator(const std::string &field_name, const char type,

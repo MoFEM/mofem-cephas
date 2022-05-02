@@ -135,7 +135,7 @@ struct OpSetHOWeightsOnFace
 struct OpSetHOWeights : public ForcesAndSourcesCore::UserDataOperator {
 
   OpSetHOWeights(boost::shared_ptr<VectorDouble> det_ptr)
-      : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPLAST),
+      : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPSPACE),
         detPtr(det_ptr) {
     if (!detPtr)
       CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY,
@@ -159,7 +159,7 @@ struct OpSetHOContravariantPiolaTransform
   OpSetHOContravariantPiolaTransform(const FieldSpace space,
                                      boost::shared_ptr<VectorDouble> det_ptr,
                                      boost::shared_ptr<MatrixDouble> jac_ptr)
-      : ForcesAndSourcesCore::UserDataOperator(space, OPLAST), detPtr(det_ptr),
+      : ForcesAndSourcesCore::UserDataOperator(space, OPSPACE), detPtr(det_ptr),
         jacPtr(jac_ptr) {
     doVertices = false;
     if (space == HDIV)
@@ -184,7 +184,7 @@ struct OpSetHOCovariantPiolaTransform
 
   OpSetHOCovariantPiolaTransform(const FieldSpace space,
                                  boost::shared_ptr<MatrixDouble> jac_inv_ptr)
-      : ForcesAndSourcesCore::UserDataOperator(space, OPLAST),
+      : ForcesAndSourcesCore::UserDataOperator(space, OPSPACE),
         jacInvPtr(jac_inv_ptr) {
     doVertices = false;
     if (space == HDIV)
@@ -265,7 +265,7 @@ struct OpHOSetContravariantPiolaTransformOnFace3D
   OpHOSetContravariantPiolaTransformOnFace3D(
       const FieldSpace space,
       boost::shared_ptr<MatrixDouble> normals_at_gauss_pts = nullptr)
-      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(space, OPLAST),
+      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(space, OPSPACE),
         normalsAtGaussPts(normals_at_gauss_pts) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
@@ -305,7 +305,7 @@ struct OpHOSetCovariantPiolaTransformOnFace3D
       boost::shared_ptr<MatrixDouble> normals_at_pts = nullptr,
       boost::shared_ptr<MatrixDouble> tangent1_at_pts = nullptr,
       boost::shared_ptr<MatrixDouble> tangent2_at_pts = nullptr)
-      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(space, OPLAST),
+      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(space, OPSPACE),
         normalsAtPts(normals_at_pts), tangent1AtPts(tangent1_at_pts),
         tangent2AtPts(tangent2_at_pts) {
     if (normals_at_pts || tangent1_at_pts || tangent2_at_pts)

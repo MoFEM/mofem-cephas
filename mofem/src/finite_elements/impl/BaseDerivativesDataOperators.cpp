@@ -25,7 +25,7 @@ OpBaseDerivativesBase::OpBaseDerivativesBase(
     boost::shared_ptr<MatrixDouble> base_mass_ptr,
     boost::shared_ptr<EntitiesFieldData> data_l2,
     const FieldApproximationBase b, const FieldSpace s, int verb, Sev sev)
-    : ForcesAndSourcesCore::UserDataOperator(s, OPLAST), base(b),
+    : ForcesAndSourcesCore::UserDataOperator(s, OPSPACE), base(b),
       verbosity(verb), severityLevel(sev), baseMassPtr(base_mass_ptr),
       dataL2(data_l2) {}
 
