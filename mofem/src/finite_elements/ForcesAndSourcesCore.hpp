@@ -571,8 +571,7 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
     OPROW = 1 << 0,
     OPCOL = 1 << 1,
     OPROWCOL = 1 << 2,
-    OPMESHSET = 1 << 3,
-    OPSPACE = 1 << 4
+    OPSPACE = 1 << 3
   };
 
   static const char *const OpTypeNames[];
