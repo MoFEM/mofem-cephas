@@ -214,7 +214,15 @@ MoFEMErrorCode AtomTest::readMesh() {
 
   BitRefManager *bit_mng = mField.getInterface<BitRefManager>();
   CHKERR bit_mng->writeBitLevelByType(bit_level1, BitRefLevel().set(), MBTRI,
-                                      "out_ref.vtk", "VTK", "");
+                                      "out_ref_mesh.vtk", "VTK", "");
+
+  auto bit_mark = BitRefLevel().set(2);
+  CHKERR OpAddParentEntData::markHangingSkinParents(
+      mField, 2, bit_level0, BitRefLevel().set(), bit_level1,
+      BitRefLevel().set(), bit_mark, true, "parent_ref_skin.vtk");
+  CHKERR OpAddParentEntData::markHangingSkinChildren(
+      mField, bit_level1, bit_level1, bit_mark, BitRefLevel().set(),
+      "children_ref_skin.vtk");
 
   MoFEMFunctionReturn(0);
 }
@@ -226,13 +234,112 @@ MoFEMErrorCode AtomTest::setupProblem() {
   // Add field
   CHKERR simpleInterface->addDomainField(FIELD_NAME, H1,
                                          AINSWORTH_LEGENDRE_BASE, FIELD_DIM);
+
+  ElementAdjacencyFunct get_parent_adjacency =
+      [&](moab::Interface &moab, const Field &field, const EntFiniteElement &fe,
+          std::vector<EntityHandle> &adjacency) -> MoFEMErrorCode {
+    MoFEMFunctionBegin;
+
+    CHKERR DefaultElementAdjacency::defaultFace(moab, field, fe, adjacency);
+
+    auto basic_entity_data_ptr = fe.getBasicDataPtr();
+    auto th_parent_handle = basic_entity_data_ptr->th_RefParentHandle;
+
+    using GetParent =
+        boost::function<MoFEMErrorCode(std::vector<EntityHandle> & parents)>;
+    GetParent get_parent = [&](std::vector<EntityHandle> &parents) {
+      MoFEMFunctionBegin;
+      EntityHandle fe_parent;
+
+      CHKERR moab.tag_get_data(th_parent_handle, &parents.back(), 1,
+                               &fe_parent);
+      auto parent_type = type_from_handle(fe_parent);
+      auto back_type = type_from_handle(parents.back());
+      if (fe_parent != 0 && fe_parent != parents.back() &&
+          parent_type == back_type) {
+        parents.push_back(fe_parent);
+        CHKERR get_parent(parents);
+      }
+      MoFEMFunctionReturn(0);
+    };
+
+    if (field.getSpace() != NOFIELD) {
+
+      const auto fe_name = fe.getName();
+      const auto parent_ent = fe.getParentEnt();
+
+      std::vector<EntityHandle> parents;
+      parents.reserve(BITREFLEVEL_SIZE);
+      parents.push_back(fe.getEnt());
+
+      if (parent_ent && parent_ent != fe.getEnt()) {
+        CHKERR get_parent(parents);
+        for (auto fe_ent : parents) {
+          switch (field.getSpace()) {
+          case H1:
+            CHKERR moab.get_adjacencies(&fe_ent, 1, 0, false, adjacency,
+                                        moab::Interface::UNION);
+          case HCURL:
+            CHKERR moab.get_adjacencies(&fe_ent, 1, 1, false, adjacency,
+                                        moab::Interface::UNION);
+          case HDIV:
+          case L2:
+            adjacency.push_back(fe_ent);
+            break;
+          default:
+            SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                    "this field is not implemented for face finite element");
+          }
+        }
+
+        std::sort(adjacency.begin(), adjacency.end());
+        auto it = std::unique(adjacency.begin(), adjacency.end());
+        adjacency.resize(std::distance(adjacency.begin(), it));
+
+        for (auto e : adjacency) {
+          auto side_table = fe.getSideNumberTable();
+          if (side_table.find(e) == side_table.end())
+            const_cast<SideNumber_multiIndex &>(fe.getSideNumberTable())
+                .insert(
+                    boost::shared_ptr<SideNumber>(new SideNumber(e, -1, 0, 0)));
+        }
+      }
+    }
+
+    MoFEMFunctionReturn(0);
+  };
+
   constexpr int order = 4;
   CHKERR simpleInterface->setFieldOrder(FIELD_NAME, order);
-  CHKERR simpleInterface->setUp();
+  // CHKERR simpleInterface->setUp();
 
-  // CHKERR mField.getInterface<ProblemsManager>()->removeDofsOnEntities(
-  //     simpleInterface->getProblemName(), FIELD_NAME, BitRefLevel().set(0),
-  //     BitRefLevel().set());
+  CHKERR simpleInterface->defineFiniteElements();
+
+  CHKERR mField.modify_finite_element_adjacency_table(
+      simpleInterface->getDomainFEName(), MBTRI, get_parent_adjacency);
+  CHKERR mField.modify_finite_element_adjacency_table(
+      simpleInterface->getDomainFEName(), MBQUAD, get_parent_adjacency);
+
+  CHKERR simpleInterface->defineProblem(PETSC_TRUE);
+  CHKERR simpleInterface->buildFields();
+  CHKERR simpleInterface->buildFiniteElements();
+  CHKERR simpleInterface->buildProblem();
+
+  auto bit_l0 = BitRefLevel().set(0);
+  auto bit_l1 = BitRefLevel().set(1);
+  auto bit_mark = BitRefLevel().set(2);
+
+  BitRefManager *bit_mng = mField.getInterface<BitRefManager>();
+  ProblemsManager *prb_mng = mField.getInterface<ProblemsManager>();
+
+  CHKERR bit_mng->writeBitLevelByType(bit_mark, bit_l0 | bit_l1 | bit_mark,
+                                      MBEDGE, "l0_ents_edges.vtk", "VTK", "");
+  CHKERR bit_mng->writeBitLevelByType(bit_mark, bit_l1 | bit_mark, MBEDGE,
+                                      "l1_ents_edges.vtk", "VTK", "");
+  CHKERR bit_mng->writeBitLevelByType(bit_mark, bit_l1 | bit_mark, MBVERTEX,
+                                      "l1_ents_verts.vtk", "VTK", "");
+  CHKERR prb_mng->removeDofsOnEntities(simpleInterface->getProblemName(),
+                                       FIELD_NAME, bit_mark, bit_l1 | bit_mark);
 
   MoFEMFunctionReturn(0);
 }
@@ -242,6 +349,10 @@ MoFEMErrorCode AtomTest::setupProblem() {
 MoFEMErrorCode AtomTest::assembleSystem() {
   MoFEMFunctionBegin;
   PipelineManager *pipeline_mng = mField.getInterface<PipelineManager>();
+
+  auto l0 = BitRefLevel().set(0);
+  auto l1 = BitRefLevel().set(1);
+  auto marker = BitRefLevel().set(2);
 
   auto rule = [](int, int, int p) -> int { return 2 * p; };
 
@@ -255,25 +366,78 @@ MoFEMErrorCode AtomTest::assembleSystem() {
   pipeline_mng->getDomainLhsFE()->exeTestHook = test_bit_child;
   pipeline_mng->getDomainRhsFE()->exeTestHook = test_bit_child;
 
+  auto parent_fe_ptr = boost::make_shared<DomainParentEle>(mField);
+
+  auto set_parent_dofs = [&](auto &pipeline, auto op, auto verbosity,
+                             auto sev) {
+    pipeline.push_back(
+
+        new OpAddParentEntData(
+
+            FIELD_NAME, op, parent_fe_ptr,
+
+            // level 1 elements
+            l1, l1,
+
+            // marked level 1
+            marker, l0 | l1 | marker,
+
+            verbosity, sev)
+
+    );
+  };
+
   auto beta = [](const double, const double, const double) { return 1; };
+  set_parent_dofs(pipeline_mng->getOpDomainLhsPipeline(), DomainEleOp::OPROW,
+                  QUIET, Sev::noisy);
+  set_parent_dofs(pipeline_mng->getOpDomainLhsPipeline(), DomainEleOp::OPCOL,
+                  QUIET, Sev::noisy);
   pipeline_mng->getOpDomainLhsPipeline().push_back(
       new OpDomainMass(FIELD_NAME, FIELD_NAME, beta));
 
-  pipeline_mng->getOpDomainRhsPipeline().push_back(
+  auto field_op_row = new ForcesAndSourcesCore::UserDataOperator(
+      FIELD_NAME, DomainEleOp::OPROW);
+  field_op_row->doWorkRhsHook = [](DataOperator *op_ptr, int side,
+                                   EntityType type,
+                                   EntitiesFieldData::EntData &data) {
+    MoFEMFunctionBegin;
+    if (type == MBENTITYSET) {
+      MOFEM_LOG("SELF", Sev::verbose)
+          << "ROW: side/type: " << side << "/" << CN::EntityTypeName(type)
+          << " op space/base: " << FieldSpaceNames[data.getSpace()] << "/"
+          << ApproximationBaseNames[data.getBase()] << " DOFs "
+          << data.getIndices() << " nb base functions " << data.getN().size2()
+          << " nb base functions integration points " << data.getN().size1();
+    }
+    MoFEMFunctionReturn(0);
+  };
 
-      new OpAddParentEntData(
+  auto field_op_col = new ForcesAndSourcesCore::UserDataOperator(
+      FIELD_NAME, DomainEleOp::OPCOL);
+  field_op_col->doWorkRhsHook = [](DataOperator *op_ptr, int side,
+                                   EntityType type,
+                                   EntitiesFieldData::EntData &data) {
+    MoFEMFunctionBegin;
+    if (type == MBENTITYSET) {
+      MOFEM_LOG("SELF", Sev::verbose)
+          << "COL: side/type: " << side << "/" << CN::EntityTypeName(type)
+          << " op space/base: " << FieldSpaceNames[data.getSpace()] << "/"
+          << ApproximationBaseNames[data.getBase()] << " DOFs "
+          << data.getIndices() << " nb base functions " << data.getN().size2()
+          << " nb base functions integration points " << data.getN().size1();
+    }
+    MoFEMFunctionReturn(0);
+  };
 
-          FIELD_NAME, DomainEleOp::OPROW,
-          boost::make_shared<DomainParentEle>(mField), BitRefLevel().set(1),
-          BitRefLevel().set(1), BitRefLevel().set(0), BitRefLevel().set(0),
-          NOISY, Sev::noisy)
-
-  );
+  set_parent_dofs(pipeline_mng->getOpDomainRhsPipeline(), DomainEleOp::OPROW,
+                  VERBOSE, Sev::noisy);
+  // set_parent_dofs(pipeline_mng->getOpDomainRhsPipeline(), DomainEleOp::OPCOL,
+  //                 VERBOSE, Sev::noisy);
+  // pipeline_mng->getOpDomainRhsPipeline().push_back(field_op_row);
+  // pipeline_mng->getOpDomainRhsPipeline().push_back(field_op_col);
 
   pipeline_mng->getOpDomainRhsPipeline().push_back(
       new OpDomainSource(FIELD_NAME, approxFunction));
-  pipeline_mng->getOpDomainRhsPipeline().push_back(
-      new OpRestoreEntData(H1, DomainEleOp::OPROW));
 
   MoFEMFunctionReturn(0);
 }
@@ -322,6 +486,34 @@ MoFEMErrorCode AtomTest::checkResults() {
       mField.get_comm(), (!mField.get_comm_rank()) ? 1 : 0, 1);
   common_data_ptr->approxVals = boost::make_shared<VectorDouble>();
 
+
+  auto parent_fe_ptr = boost::make_shared<DomainParentEle>(mField);
+
+  auto l0 = BitRefLevel().set(0);
+  auto l1 = BitRefLevel().set(1);
+  auto marker = BitRefLevel().set(2);
+
+  auto set_parent_dofs = [&](auto &pipeline, auto op, auto verbosity,
+                             auto sev) {
+    pipeline.push_back(
+
+        new OpAddParentEntData(
+
+            FIELD_NAME, op, parent_fe_ptr,
+
+            // level 1 elements
+            l1, l1,
+
+            // marked level 1
+            marker, l0 | l1 | marker,
+
+            verbosity, sev)
+
+    );
+  };
+
+  set_parent_dofs(pipeline_mng->getOpDomainRhsPipeline(), DomainEleOp::OPROW,
+                  VERBOSE, Sev::noisy);
   pipeline_mng->getOpDomainRhsPipeline().push_back(
       new OpCalculateScalarFieldValues(FIELD_NAME,
                                        common_data_ptr->approxVals));

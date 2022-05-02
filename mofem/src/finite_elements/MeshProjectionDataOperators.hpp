@@ -52,15 +52,21 @@ struct OpAddParentEntData : public ForcesAndSourcesCore::UserDataOperator {
                      BitRefLevel bit_parent_ent_mask, int verb = QUIET,
                      Sev sev = Sev::noisy);
 
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        EntitiesFieldData::EntData &data);
+  MoFEMErrorCode opRhs(EntitiesFieldData &data,
+                       const bool error_if_no_base = false);
 
   static MoFEMErrorCode
-  markHangingSkin(MoFEM::Interface &m_field, const int dim,
+  markHangingSkinParents(MoFEM::Interface &m_field, const int dim,
                   const BitRefLevel parent_bit, const BitRefLevel parent_mask,
                   const BitRefLevel child_bit, const BitRefLevel child_mask,
                   const BitRefLevel mark_bit, const bool resolve_shared,
                   const std::string debug_file_name = "");
+
+  static MoFEMErrorCode markHangingSkinChildren(
+      MoFEM::Interface &m_field, const BitRefLevel child_bit,
+      const BitRefLevel child_mask, const BitRefLevel mark_bit,
+      const BitRefLevel mark_mask, const std::string debug_file_name = "");
+      
 
 private:
   std::string fieldName;
@@ -74,17 +80,6 @@ private:
   Sev severityLevel;
 };
 
-struct OpRestoreEntData : public ForcesAndSourcesCore::UserDataOperator {
-  OpRestoreEntData(FieldSpace space, OpType op_type, int verb = QUIET,
-                   Sev sev = Sev::noisy);
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        EntitiesFieldData::EntData &data);
-private:
-  FieldSpace sPace;
-  OpType opType;
-  int verbosity;
-  Sev severityLevel;
-};
-}
+} // namespace MoFEM
 
 #endif //__MESH_PROJECTION_DATA_OPERATORS_HPP__

@@ -60,139 +60,154 @@ OpAddParentEntData::OpAddParentEntData(
     BitRefLevel bit_child, BitRefLevel bit_child_mask,
     BitRefLevel bit_parent_ent, BitRefLevel bit_parent_ent_mask, int verb,
     Sev sev)
-    : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPSPACE),
+    : ForcesAndSourcesCore::UserDataOperator(field_name, op_parent_type),
       fieldName(field_name), opParentType(op_parent_type),
       parentElePtr(parent_ele_ptr), bitChild(bit_child),
       bitChildMask(bit_child_mask), bitParentEnt(bit_parent_ent),
       bitParentEntMask(bit_parent_ent_mask), verbosity(verb),
       severityLevel(sev) {}
 
-MoFEMErrorCode OpAddParentEntData::doWork(int side, EntityType type,
-                                          EntitiesFieldData::EntData &data) {
+MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
+                                         const bool error_if_no_base) {
   MoFEMFunctionBegin;
 
   auto check = [](auto &b, auto &m, auto &bit) {
     return ((bit & b).any()) && ((bit & m) == bit);
   };
 
-  auto get_entities_field_data_ptr = [&](auto space) {
-    switch (opParentType) {
-    case OPROW:
-      return getPtrFE()->getDataOnElementBySpaceArray()[space];
-    case OPCOL:
-      return getPtrFE()->getDerivedDataOnElement()[space];
-    default:
-      return boost::shared_ptr<EntitiesFieldData>();
+  auto set_child_data = [](auto &parent_data, auto &child_data) {
+    MoFEMFunctionBeginHot;
+
+    child_data.sPace = parent_data.getSpace();
+    child_data.bAse = parent_data.getBase();
+    child_data.sEnse = parent_data.getSense();
+    child_data.oRder = parent_data.getOrder();
+    child_data.iNdices.swap(parent_data.getIndices());
+    child_data.localIndices.swap(parent_data.getLocalIndices());
+    child_data.dOfs.swap(parent_data.getFieldDofs());
+    child_data.fieldData.swap(parent_data.getFieldData());
+    child_data.fieldEntities.swap(parent_data.getFieldEntities());
+
+    using BaseDerivatives = EntitiesFieldData::EntData::BaseDerivatives;
+
+    for (auto direvative = 0; direvative != BaseDerivatives::LastDerivative;
+         ++direvative) {
+      auto &parent_base = parent_data.getNSharedPtr(
+          parent_data.getBase(), static_cast<BaseDerivatives>(direvative));
+      if (parent_base) {
+        auto &child_base = child_data.getNSharedPtr(
+            parent_data.getBase(), static_cast<BaseDerivatives>(direvative));
+        child_base = parent_base;
+      }
     }
+
+    MoFEMFunctionReturnHot(0);
+  };
+
+  auto switch_of_dofs_children = [](auto &parent_data, auto type,
+                                    EntitiesFieldData &entities_field_data) {
+    MoFEMFunctionBeginHot;
+    for (auto i : parent_data.getIndices()) {
+      if (i >= 0) {
+        for (auto &child_data : entities_field_data.dataOnEntities[type]) {
+          auto it = std::find(child_data.getIndices().begin(),
+                              child_data.getIndices().end(), i);
+          if (it != child_data.getIndices().end()) {
+            const auto dof_idx =
+                std::distance(child_data.getIndices().begin(), it);
+            child_data.getIndices()[dof_idx] = -1;
+            child_data.getLocalIndices()[dof_idx] = -1;
+            child_data.getFieldData()[dof_idx] = 0;
+          }
+        }
+      }
+    }
+    MoFEMFunctionReturnHot(0);
+  };
+
+  // that forces to run operator at last instance and collect data on
+  // entities
+  auto do_work_parent_hook = [&](DataOperator *op_ptr, int side,
+                                 EntityType type,
+                                 EntitiesFieldData::EntData &data) {
+    MoFEMFunctionBegin;
+
+    auto field_entities = data.getFieldEntities();
+    if (field_entities.size()) {
+
+      BitRefLevel bit_ent;
+      for (auto fe : field_entities)
+        bit_ent |= fe->getBitRefLevel();
+
+      if (check(bitParentEnt, bitParentEntMask, bit_ent)) {
+
+        if (verbosity >= VERBOSE) {
+          MOFEM_LOG("SELF", severityLevel)
+              << "Add entity data to meshset "
+              << "side/type: " << side << "/" << CN::EntityTypeName(type)
+              << " op space/base: " << FieldSpaceNames[data.getSpace()] << "/"
+              << ApproximationBaseNames[data.getBase()];
+        }
+
+        if (field_entities.size() > 1) {
+          int dof_idx = 0;
+          for (auto dof : data.getFieldDofs()) {
+            auto &bit_ent = dof->getBitRefLevel();
+            if (!check(bitParentEnt, bitParentEntMask, bit_ent)) {
+              data.getIndices()[dof_idx] = -1;
+              data.getLocalIndices()[dof_idx] = -1;
+              data.getFieldData()[dof_idx] = 0;
+            }
+            ++dof_idx;
+          }
+        }
+
+#ifndef NDEBUG
+        if (verbosity >= NOISY) {
+          for (auto field_ent : field_entities) {
+            MOFEM_LOG("SELF", severityLevel)
+                << "Parent field entity bit: " << field_ent->getBitRefLevel()
+                << " " << *field_ent;
+          }
+        }
+#endif
+
+        CHKERR switch_of_dofs_children(data, type, entities_field_data);
+
+        entities_field_data.dataOnEntities[MBENTITYSET].push_back(
+            new EntitiesFieldData::EntData());
+        auto &child_data_meshset =
+            entities_field_data.dataOnEntities[MBENTITYSET].back();
+        CHKERR set_child_data(data, child_data_meshset);
+      }
+    }
+
+    MoFEMFunctionReturn(0);
   };
 
   auto &bit_fe = getFEMethod()->numeredEntFiniteElementPtr->getBitRefLevel();
   if (check(bitChild, bitChildMask, bit_fe)) {
 
-    MOFEM_LOG("SELF", severityLevel) << "Child FE bit: " << bit_fe;
+    if (verbosity >= VERBOSE) {
+      MOFEM_LOG("SELF", severityLevel) << "Child FE bit: " << bit_fe;
+    }
 
     auto loop_parent_fe = [&]() {
       MoFEMFunctionBeginHot;
-
-#ifndef NDEBUG
-      if (verbosity >= VERBOSE) {
-        MOFEM_LOG("SELF", severityLevel)
-            << "Loop parent element in OpAddParentEntData";
-      }
-#endif
 
       // note live of op pointer is controlled by ptr_vec in in finite
       // element
       auto field_op =
           new ForcesAndSourcesCore::UserDataOperator(fieldName, opParentType);
-      // that forces to run operator at last instance and collect data on
-      // entities
-      field_op->doWorkRhsHook = [&](DataOperator *op_ptr, int side,
-                                    EntityType type,
-                                    EntitiesFieldData::EntData &data) {
-        MoFEMFunctionBegin;
-
-        auto field_entities = data.getFieldEntities();
-        if (field_entities.size()) {
-
-          if (field_entities.size() == 1) {
-            auto &bit_ent = field_entities[0]->getBitRefLevel();
-            if (!check(bitParentEnt, bitParentEntMask, bit_ent))
-              MoFEMFunctionReturnHot(0);
-          }
-
-#ifndef NDEBUG
-          if (verbosity >= VERBOSE) {
-            for (auto field_ent : field_entities) {
-              MOFEM_LOG("SELF", severityLevel)
-                  << "Parent FE bit: " << field_ent->getBitRefLevel() << " "
-                  << *field_ent;
-            }
-          }
-#endif
-
-          auto space = data.getSpace();
-          auto base = data.getBase();
-
-          if (verbosity == VERBOSE) {
-            MOFEM_LOG("SELF", severityLevel)
-                << "Side/type: " << side << "/" << CN::EntityTypeName(type)
-                << " op space/base: " << FieldSpaceNames[space] << "/"
-                << ApproximationBaseNames[space];
-          }
-
-          auto entities_field_data_ptr = get_entities_field_data_ptr(space);
-          if (!entities_field_data_ptr)
-            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                    "Only OPROW/OPCOL op type is allows");
-
-          entities_field_data_ptr->dataOnEntities[MBENTITYSET].push_back(
-              new EntitiesFieldData::EntData());
-          auto &child_data =
-              entities_field_data_ptr->dataOnEntities[MBENTITYSET].back();
-
-          child_data.sPace = space;
-          child_data.bAse = base;
-
-          child_data.sEnse = data.getSense();
-          child_data.oRder = data.getOrder();
-          child_data.iNdices = data.getIndices();
-          child_data.localIndices = data.getLocalIndices();
-          child_data.dOfs = data.getFieldDofs();
-          child_data.fieldEntities = field_entities;
-          child_data.fieldData = data.getFieldData();
-
-          int direvative = 0;
-          for (auto &b : data.baseFunctionsAndBaseDerivatives) {
-            if (b[base]) {
-              child_data.baseFunctionsAndBaseDerivatives[direvative] = b;
-            }
-            ++direvative;
-          }
-
-          if (field_entities.size() > 1) {
-            int dof = 0;
-            for (auto &field_ent : field_entities) {
-              auto &bit_ent = field_ent->getBitRefLevel();
-              if (!check(bitParentEnt, bitParentEntMask, bit_ent)) {
-                for (auto d = 0; d != field_ent->getNbDofsOnEnt(); ++d) {
-                  child_data.iNdices[dof + d] = -1;
-                  child_data.localIndices[dof + d] = -1;
-                  child_data.fieldData[dof + d] = 0;
-                }
-              }
-            }
-          }
-        }
-
-        MoFEMFunctionReturn(0);
-      };
+      field_op->doWorkRhsHook = do_work_parent_hook;
 
       parentElePtr->getOpPtrVector().push_back(field_op);
       CHKERR loopParent(getFEName(), parentElePtr.get(), verbosity,
                         severityLevel);
-                      
- #ifndef NDEBUG
+      // clean element from obsolete data operator
+      parentElePtr->getOpPtrVector().pop_back();
+
+#ifndef NDEBUG
       auto &parent_gauss_pts = parentElePtr->gaussPts;
       if (getGaussPts().size1() != parent_gauss_pts.size1()) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -200,12 +215,9 @@ MoFEMErrorCode OpAddParentEntData::doWork(int side, EntityType type,
       }
       if (getGaussPts().size2() != parent_gauss_pts.size2()) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "Wrong number of itegartion points");
+                "Wrong number of integration points");
       }
 #endif
-
-      // clean element from obsolete data operator
-      parentElePtr->getOpPtrVector().pop_back();
 
       MoFEMFunctionReturnHot(0);
     };
@@ -213,92 +225,16 @@ MoFEMErrorCode OpAddParentEntData::doWork(int side, EntityType type,
     CHKERR loop_parent_fe();
   }
 
-  MoFEMFunctionReturn(0);
-}
-
-OpRestoreEntData::OpRestoreEntData(FieldSpace space, OpType op_type, int verb,
-                                   Sev sev)
-    : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPSPACE), sPace(space),
-      opType(op_type), verbosity(verb), severityLevel(sev) {}
-
-MoFEMErrorCode OpRestoreEntData::doWork(int side, EntityType type,
-                                        EntitiesFieldData::EntData &data) {
-  MoFEMFunctionBegin;
-
-#ifndef NDEBUG
-  auto log_meshset_data = [&](auto &data_on_meshset) {
-    MoFEMFunctionBegin;
+  if (verbosity >= VERBOSE) {
     MOFEM_LOG("SELF", severityLevel)
-        << "Nb meshset data " << data_on_meshset.size();
-    int side = 0;
-    for (auto &ent_data : data_on_meshset) {
-      for (auto field_ent : ent_data.getFieldEntities()) {
-        MOFEM_LOG("SELF", severityLevel)
-            << "Side " << side << ": " << *field_ent;
-      }
-      ++side;
-    }
-    MoFEMFunctionReturn(0);
-  };
-#endif
-
-  switch (opType) {
-  case OPROW:
-#ifndef NDEBUG
-    CHKERR log_meshset_data(
-        getPtrFE()->getDataOnElementBySpaceArray()[sPace]->dataOnEntities[MBENTITYSET]);
-#endif
-    getPtrFE()->getDataOnElementBySpaceArray()[sPace]->dataOnEntities[MBENTITYSET].clear();
-    break;
-  case OPCOL:
-#ifndef NDEBUG
-    CHKERR log_meshset_data(getPtrFE()
-                                ->getDerivedDataOnElement()[sPace]
-                                ->dataOnEntities[MBENTITYSET]);
-#endif
-    getPtrFE()
-        ->getDerivedDataOnElement()[sPace]
-        ->dataOnEntities[MBENTITYSET]
-        .clear();
-    break;
-  default:
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "Only OPROW/OPCOL op type is allows");
+        << "Number of meshset entities "
+        << entities_field_data.dataOnEntities[MBENTITYSET].size();
   }
 
   MoFEMFunctionReturn(0);
 }
 
-OpSwitchOffIndices::OpSwitchOffIndices(const std::string field_name,
-                                       const OpType op_type,
-                                       const BitRefLevel bit_ent,
-                                       const BitRefLevel bit_mask_ent)
-    : ForcesAndSourcesCore::UserDataOperator(field_name, op_type),
-      bitEnt(bit_ent), bitEntMask(bit_mask_ent) {}
-
-MoFEMErrorCode OpSwitchOffIndices::doWork(int side, EntityType type,
-                                          EntitiesFieldData::EntData &data) {
-  MoFEMFunctionBegin;
-
-  auto check = [&](auto &bit) {
-    return ((bit & bitEnt).any()) && ((bit & bitEntMask) == bit);
-  };
-
-  size_t dd = 0;
-  for (auto &dof : data.getFieldDofs()) {
-    auto &bit = dof->getBitRefLevel();
-    if (check(bit)) {
-      data.getIndices()[dd] = -1;
-      data.getLocalIndices()[dd] = -1;
-      data.getFieldData()[dd] = 0;
-    }
-    ++dd;
-  }
-
-  MoFEMFunctionReturn(0);
-}
-
-MoFEMErrorCode OpAddParentEntData::markHangingSkin(
+MoFEMErrorCode OpAddParentEntData::markHangingSkinParents(
     MoFEM::Interface &m_field, const int dim, const BitRefLevel parent_bit,
     const BitRefLevel parent_mask, const BitRefLevel child_bit,
     const BitRefLevel child_mask, const BitRefLevel mark_bit,
@@ -389,9 +325,8 @@ MoFEMErrorCode OpAddParentEntData::markHangingSkinChildren(
         handles.push_back((*lo)->getEnt());
       }
       children.insert_list(handles.begin(), handles.end());
-
     }
- 
+
     CHKERR bit_mng->filterEntitiesByRefLevel(child_bit, child_mask, children);
 
     return children;
@@ -406,7 +341,7 @@ MoFEMErrorCode OpAddParentEntData::markHangingSkinChildren(
     auto name =
         boost::lexical_cast<std::string>(proc_rank) + "_" + debug_file_name;
     MOFEM_LOG("SELF", Sev::verbose) << "Save debug file: " << name;
-    CHKERR bit_mng->writeBitLevel(mark_bit, BitRefLevel().set() /*mark_bit | child_mask*/, name.c_str(),
+    CHKERR bit_mng->writeBitLevel(mark_bit, mark_bit | child_mask, name.c_str(),
                                   "VTK", "");
   }
 
