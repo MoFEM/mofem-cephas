@@ -338,6 +338,9 @@ MoFEMErrorCode AtomTest::setupProblem() {
                                       "l1_ents_edges.vtk", "VTK", "");
   CHKERR bit_mng->writeBitLevelByType(bit_mark, bit_l1 | bit_mark, MBVERTEX,
                                       "l1_ents_verts.vtk", "VTK", "");
+
+  CHKERR prb_mng->removeDofsOnEntities(simpleInterface->getProblemName(),
+                                       FIELD_NAME, bit_l0, bit_l0);
   CHKERR prb_mng->removeDofsOnEntities(simpleInterface->getProblemName(),
                                        FIELD_NAME, bit_mark, bit_l1 | bit_mark);
 
