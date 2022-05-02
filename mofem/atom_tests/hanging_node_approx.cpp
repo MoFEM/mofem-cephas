@@ -434,7 +434,7 @@ MoFEMErrorCode AtomTest::assembleSystem() {
                   VERBOSE, Sev::noisy);
   // set_parent_dofs(pipeline_mng->getOpDomainRhsPipeline(), DomainEleOp::OPCOL,
   //                 VERBOSE, Sev::noisy);
-  // pipeline_mng->getOpDomainRhsPipeline().push_back(field_op_row);
+  pipeline_mng->getOpDomainRhsPipeline().push_back(field_op_row);
   // pipeline_mng->getOpDomainRhsPipeline().push_back(field_op_col);
 
   pipeline_mng->getOpDomainRhsPipeline().push_back(
