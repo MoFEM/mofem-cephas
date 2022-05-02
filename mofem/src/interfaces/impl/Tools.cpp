@@ -201,12 +201,12 @@ MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceTriNodeTri(
     ++t_global_coords;
   }
 
-#ifndef NDEBUG
-  MOFEM_LOG("SELF", Sev::noisy) << "t_a " << t_a;
-  MOFEM_LOG("SELF", Sev::noisy) << "t_b " << t_b;
-  MOFEM_LOG("SELF", Sev::noisy) << "t_coords_at_0 " << t_coords_at_0;
-  MOFEM_LOG("SELF", Sev::noisy) << "t_inv_b " << t_inv_b;
-#endif
+// #ifndef NDEBUG
+//   MOFEM_LOG("SELF", Sev::noisy) << "t_a " << t_a;
+//   MOFEM_LOG("SELF", Sev::noisy) << "t_b " << t_b;
+//   MOFEM_LOG("SELF", Sev::noisy) << "t_coords_at_0 " << t_coords_at_0;
+//   MOFEM_LOG("SELF", Sev::noisy) << "t_inv_b " << t_inv_b;
+// #endif
 
   MoFEMFunctionReturnHot(0);
 }
