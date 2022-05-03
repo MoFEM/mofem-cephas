@@ -61,6 +61,9 @@ using OpDomainMass = FormsIntegrators<DomainEleOp>::Assembly<
 using OpDomainSource = FormsIntegrators<DomainEleOp>::Assembly<
     PETSC>::LinearForm<GAUSS>::OpSource<1, FIELD_DIM>;
 
+auto bit = [](auto l) { return BitRefLevel().set(l); };
+auto marker = []() { return BitRefLevel().set(BITREFLEVEL_SIZE - 1); };
+
 struct AtomTest {
 
   AtomTest(MoFEM::Interface &m_field) : mField(m_field) {}
@@ -206,22 +209,20 @@ MoFEMErrorCode AtomTest::readMesh() {
     MoFEMFunctionReturn(0);
   };
 
-  BitRefLevel bit_level1;
-  bit_level1.set(1);
-  CHKERR refine_mesh(bit_level0, bit_level1);
+  CHKERR refine_mesh(bit(0), bit(1));
+
   simpleInterface->getBitRefLevel() = BitRefLevel().set();
   simpleInterface->getBitRefLevelMask() = BitRefLevel().set();
 
   BitRefManager *bit_mng = mField.getInterface<BitRefManager>();
-  CHKERR bit_mng->writeBitLevelByType(bit_level1, BitRefLevel().set(), MBTRI,
+  CHKERR bit_mng->writeBitLevelByType(bit(1), BitRefLevel().set(), MBTRI,
                                       "out_ref_mesh.vtk", "VTK", "");
 
-  auto bit_mark = BitRefLevel().set(2);
   CHKERR OpAddParentEntData::markHangingSkinParents(
-      mField, 2, bit_level0, BitRefLevel().set(), bit_level1,
-      BitRefLevel().set(), bit_mark, true, "parent_ref_skin.vtk");
+      mField, 2, bit(0), BitRefLevel().set(), bit(1), BitRefLevel().set(),
+      marker(), true, "parent_ref_skin.vtk");
   CHKERR OpAddParentEntData::markHangingSkinChildren(
-      mField, bit_level1, bit_level1, bit_mark, BitRefLevel().set(),
+      mField, bit(1), bit(1), marker(), BitRefLevel().set(),
       "children_ref_skin.vtk");
 
   MoFEMFunctionReturn(0);
@@ -323,24 +324,20 @@ MoFEMErrorCode AtomTest::setupProblem() {
   CHKERR simpleInterface->buildFiniteElements();
   CHKERR simpleInterface->buildProblem();
 
-  auto bit_l0 = BitRefLevel().set(0);
-  auto bit_l1 = BitRefLevel().set(1);
-  auto bit_mark = BitRefLevel().set(2);
-
   BitRefManager *bit_mng = mField.getInterface<BitRefManager>();
   ProblemsManager *prb_mng = mField.getInterface<ProblemsManager>();
 
-  CHKERR bit_mng->writeBitLevelByType(bit_mark, bit_l0 | bit_l1 | bit_mark,
+  CHKERR bit_mng->writeBitLevelByType(marker(), bit(0) | bit(1) | marker(),
                                       MBEDGE, "l0_ents_edges.vtk", "VTK", "");
-  CHKERR bit_mng->writeBitLevelByType(bit_mark, bit_l1 | bit_mark, MBEDGE,
+  CHKERR bit_mng->writeBitLevelByType(marker(), bit(1) | marker(), MBEDGE,
                                       "l1_ents_edges.vtk", "VTK", "");
-  CHKERR bit_mng->writeBitLevelByType(bit_mark, bit_l1 | bit_mark, MBVERTEX,
+  CHKERR bit_mng->writeBitLevelByType(marker(), bit(1) | marker(), MBVERTEX,
                                       "l1_ents_verts.vtk", "VTK", "");
 
   CHKERR prb_mng->removeDofsOnEntities(simpleInterface->getProblemName(),
-                                       FIELD_NAME, bit_l0, bit_l0);
+                                       FIELD_NAME, bit(0), bit(0));
   CHKERR prb_mng->removeDofsOnEntities(simpleInterface->getProblemName(),
-                                       FIELD_NAME, bit_mark, bit_l1 | bit_mark);
+                                       FIELD_NAME, marker(), bit(1) | marker());
 
   MoFEMFunctionReturn(0);
 }
@@ -350,10 +347,6 @@ MoFEMErrorCode AtomTest::setupProblem() {
 MoFEMErrorCode AtomTest::assembleSystem() {
   MoFEMFunctionBegin;
   PipelineManager *pipeline_mng = mField.getInterface<PipelineManager>();
-
-  auto l0 = BitRefLevel().set(0);
-  auto l1 = BitRefLevel().set(1);
-  auto marker = BitRefLevel().set(2);
 
   auto rule = [](int, int, int p) -> int { return 2 * p; };
 
@@ -378,10 +371,10 @@ MoFEMErrorCode AtomTest::assembleSystem() {
             FIELD_NAME, op, parent_fe_ptr,
 
             // level 1 elements
-            l1, l1,
+            bit(1), bit(1),
 
             // marked level 1
-            marker, l0 | l1 | marker,
+            marker(), bit(0) | bit(1) | marker(),
 
             verbosity, sev)
 
@@ -490,10 +483,6 @@ MoFEMErrorCode AtomTest::checkResults() {
 
   auto parent_fe_ptr = boost::make_shared<DomainParentEle>(mField);
 
-  auto l0 = BitRefLevel().set(0);
-  auto l1 = BitRefLevel().set(1);
-  auto marker = BitRefLevel().set(2);
-
   auto set_parent_dofs = [&](auto &pipeline, auto op, auto verbosity,
                              auto sev) {
     pipeline.push_back(
@@ -503,10 +492,10 @@ MoFEMErrorCode AtomTest::checkResults() {
             FIELD_NAME, op, parent_fe_ptr,
 
             // level 1 elements
-            l1, l1,
+            bit(1), bit(1),
 
             // marked level 1
-            marker, l0 | l1 | marker,
+            marker(), bit(0) | bit(1) | marker(),
 
             verbosity, sev)
 
