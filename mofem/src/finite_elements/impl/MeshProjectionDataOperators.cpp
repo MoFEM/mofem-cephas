@@ -254,18 +254,14 @@ MoFEMErrorCode OpAddParentEntData::markHangingSkinParents(
                                               child_level);
   auto parnets_on_child = subtract(child_level, child_only);
 
-  Range parent_skin;
-  CHKERR skin.find_skin(0, parent_level, false, parent_skin);
+  Range parent_skin_and_children;
+  CHKERR skin.find_skin(0, parent_level, false, parent_skin_and_children);
   if (resolve_shared)
-    CHKERR pcomm->filter_pstatus(parent_skin,
+    CHKERR pcomm->filter_pstatus(parent_skin_and_children,
                                  PSTATUS_SHARED | PSTATUS_MULTISHARED,
                                  PSTATUS_NOT, -1, nullptr);
-  Range child_skin;
-  CHKERR skin.find_skin(0, child_level, false, child_skin);
-  if (resolve_shared)
-    CHKERR pcomm->filter_pstatus(child_skin,
-                                 PSTATUS_SHARED | PSTATUS_MULTISHARED,
-                                 PSTATUS_NOT, -1, nullptr);
+  CHKERR bit_mng->updateRange(parent_skin_and_children,
+                              parent_skin_and_children);
 
   Range parents_on_child_skin;
   CHKERR skin.find_skin(0, parnets_on_child, false, parents_on_child_skin);
@@ -273,7 +269,8 @@ MoFEMErrorCode OpAddParentEntData::markHangingSkinParents(
     CHKERR pcomm->filter_pstatus(parents_on_child_skin,
                                  PSTATUS_SHARED | PSTATUS_MULTISHARED,
                                  PSTATUS_NOT, -1, nullptr);
-  parents_on_child_skin = subtract(parents_on_child_skin, parent_skin);
+  parents_on_child_skin =
+      subtract(parents_on_child_skin, parent_skin_and_children);
 
   for (auto d = dim - 1; d >= 0; --d) {
     Range adj;
@@ -304,36 +301,10 @@ MoFEMErrorCode OpAddParentEntData::markHangingSkinChildren(
   auto refined_ents_ptr = m_field.get_ref_ents();
   MoFEMFunctionBegin;
 
-  Range markers;
+  Range markers, children;
   CHKERR bit_mng->getEntitiesByRefLevel(mark_bit, mark_mask, markers);
-
-  std::vector<EntityHandle> handles;
-
-  auto get_children = [&]() {
-    Range children;
-
-    for (auto p = markers.pair_begin(); p != markers.pair_end(); ++p) {
-      const auto f = p->first;
-      const auto s = p->second;
-
-      auto &ref_ents_by_parents = refined_ents_ptr->get<Ent_Ent_mi_tag>();
-      auto lo = ref_ents_by_parents.lower_bound(f);
-      auto hi = ref_ents_by_parents.upper_bound(s);
-
-      handles.resize(std::distance(lo, hi));
-      for (; lo != hi; ++lo) {
-        handles.push_back((*lo)->getEnt());
-      }
-      children.insert_list(handles.begin(), handles.end());
-    }
-
-    CHKERR bit_mng->filterEntitiesByRefLevel(child_bit, child_mask, children);
-
-    return children;
-  };
-
-  auto children = get_children();
-
+  CHKERR bit_mng->updateRange(markers, children);
+  CHKERR bit_mng->filterEntitiesByRefLevel(child_bit, child_mask, children);
   CHKERR bit_mng->addBitRefLevel(children, mark_bit);
 
   if (!debug_file_name.empty()) {
