@@ -139,7 +139,9 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
       for (auto fe : field_entities)
         bit_ent |= fe->getBitRefLevel();
 
-      if (check(bitParentEnt, bitParentEntMask, bit_ent)) {
+      // note all nodes from all added 
+      if (check(bitParentEnt, bitParentEntMask, bit_ent) ||
+          type == MBENTITYSET) {
 
         if (verbosity >= VERBOSE) {
           MOFEM_LOG("SELF", severityLevel)
@@ -149,7 +151,8 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
               << ApproximationBaseNames[data.getBase()];
         }
 
-        if (field_entities.size() > 1) {
+        // note all nodes from all added 
+        if (field_entities.size() > 1 && type != MBENTITYSET) {
           int dof_idx = 0;
           for (auto dof : data.getFieldDofs()) {
             auto &bit_ent = dof->getBitRefLevel();

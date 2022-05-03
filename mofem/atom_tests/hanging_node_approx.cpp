@@ -66,39 +66,38 @@ auto marker = [](auto l) {
   return BitRefLevel().set(BITREFLEVEL_SIZE - 1 - l);
 };
 
-auto set_parent_dofs = [](auto &pipeline, auto op, auto parent_fe_ptr,
+auto set_parent_dofs = [](auto &m_field, auto &pipeline, auto op,
                           auto verbosity, auto sev) {
-  auto &m_field = parent_fe_ptr->mField;
-
+  auto parent_fe_ptr_l0 = boost::make_shared<DomainParentEle>(m_field);
   auto parent_fe_ptr_l1 = boost::make_shared<DomainParentEle>(m_field);
 
-  // parent_fe_ptr->getOpPtrVector().push_back(
+  parent_fe_ptr_l1->getOpPtrVector().push_back(
 
-  //     new OpAddParentEntData(
+      new OpAddParentEntData(
 
-  //         FIELD_NAME, op, parent_fe_ptr_l1,
+          FIELD_NAME, op, parent_fe_ptr_l0,
 
-  //         // level 1 elements
-  //         bit(1), bit(1) | bit(2),
+          // level 1 elements
+          bit(1), bit(1),
 
-  //         // marked level 1
-  //         marker(0), BitRefLevel().set(),
+          // marked level 1
+          marker(0), BitRefLevel().set(),
 
-  //         verbosity, sev)
+          verbosity, sev)
 
-  // );
+  );
 
   pipeline.push_back(
 
       new OpAddParentEntData(
 
-          FIELD_NAME, op, parent_fe_ptr,
+          FIELD_NAME, op, parent_fe_ptr_l1,
 
           // level 1 elements
           bit(2), bit(2),
 
           // marked level 1
-          marker(1), BitRefLevel().set().flip(2),
+          marker(1), BitRefLevel().set(),
 
           verbosity, sev)
 
@@ -260,18 +259,16 @@ MoFEMErrorCode AtomTest::readMesh() {
     CHKERR pcomm->filter_pstatus(ele_to_refine_skin,
                                  PSTATUS_SHARED | PSTATUS_MULTISHARED,
                                  PSTATUS_NOT, -1, nullptr);
-
-    CHKERR refine->addVerticesInTheMiddleOfEdges(*meshset_ref_edges_ptr, bit1,
-                                                 false, VERBOSE);
-    CHKERR refine->refineTrisHangingNodes(*meshset_level0_ptr, bit1, VERBOSE);
-
-    CHKERR bit_mng->updateRange(level0_skin, level0_skin);
-    CHKERR bit_mng->updateRange(ele_to_refine_skin, ele_to_refine_skin);
-
     ele_to_refine_skin = subtract(ele_to_refine_skin, level0_skin);
     CHKERR mField.get_moab().get_adjacencies(ele_to_refine_skin, 0, false,
                                              ele_to_refine_skin,
                                              moab::Interface::UNION);
+    CHKERR refine->addVerticesInTheMiddleOfEdges(*meshset_ref_edges_ptr, bit1,
+                                                 false, VERBOSE);
+    CHKERR refine->refineTrisHangingNodes(*meshset_level0_ptr, bit1, VERBOSE);
+    
+    CHKERR bit_mng->updateRange(level0_skin, level0_skin);
+    CHKERR bit_mng->updateRange(ele_to_refine_skin, ele_to_refine_skin);
 
     CHKERR bit_mng->addBitRefLevel(ele_to_refine_skin, mark);
 
@@ -286,18 +283,13 @@ MoFEMErrorCode AtomTest::readMesh() {
 
     CHKERR bit_mng->writeBitLevelByType(
         mark, BitRefLevel().set(), MBEDGE,
-        (boost::lexical_cast<std::string>(l) + "_ref_skin.vtk").c_str(), "VTK",
-        "");
+        (boost::lexical_cast<std::string>(l) + "_ref_skin_old.vtk").c_str(),
+        "VTK", "");
 
-    CHKERR bit_mng->writeBitLevelByType(bit(1), bit(2) | bit(1), MBTRI,
-                                        "bit1bit1tri.vtk", "VTK", "");
-    CHKERR bit_mng->writeBitLevelByType(bit(2), bit(2), MBTRI,
-                                        "bit2bit2tri.vtk", "VTK", "");
-
-    CHKERR bit_mng->writeBitLevelByType(marker(0), BitRefLevel().set().flip(1),
-                                        MBEDGE, "bit1bit1edge.vtk", "VTK", "");
-    CHKERR bit_mng->writeBitLevelByType(marker(1), BitRefLevel().set().flip(2),
-                                        MBEDGE, "bit2bit2edge.vtk", "VTK", "");
+    CHKERR bit_mng->writeBitLevelByType(
+        mark, bit0.flip(), MBEDGE,
+        (boost::lexical_cast<std::string>(l) + "_ref_skin_new.vtk").c_str(),
+        "VTK", "");
 
     MoFEMFunctionReturn(0);
   };
@@ -407,21 +399,21 @@ MoFEMErrorCode AtomTest::setupProblem() {
   ProblemsManager *prb_mng = mField.getInterface<ProblemsManager>();
 
   CHKERR prb_mng->removeDofsOnEntities(simpleInterface->getProblemName(),
-                                       FIELD_NAME, bit(0), bit(0));
+                                       FIELD_NAME, bit(0),
+                                       bit(0) | marker(0) | marker(1));
   CHKERR prb_mng->removeDofsOnEntities(simpleInterface->getProblemName(),
-                                       FIELD_NAME, bit(1), bit(1));
+                                       FIELD_NAME, bit(1),
+                                       bit(1) | marker(0) | marker(1));
 
   CHKERR prb_mng->removeDofsOnEntities(simpleInterface->getProblemName(),
-                                       FIELD_NAME, marker(0),
-                                       BitRefLevel().set().flip(0));
+                                       FIELD_NAME, marker(0), bit(0).flip());
   CHKERR prb_mng->removeDofsOnEntities(simpleInterface->getProblemName(),
-                                       FIELD_NAME, marker(1),
-                                       BitRefLevel().set().flip(1));
+                                       FIELD_NAME, marker(1), bit(1).flip());
 
-  CHKERR bit_mng->writeBitLevel(marker(0), BitRefLevel().set().flip(0),
-                                "remove_bit1.vtk", "VTK", "");
-  CHKERR bit_mng->writeBitLevel(marker(1), BitRefLevel().set().flip(1),
-                                "remove_bit2.vtk", "VTK", "");
+  CHKERR bit_mng->writeBitLevel(marker(0), bit(0).flip(), "remove_bit1.vtk",
+                                "VTK", "");
+  CHKERR bit_mng->writeBitLevel(marker(1), bit(1).flip(), "remove_bit2.vtk",
+                                "VTK", "");
 
   MoFEMFunctionReturn(0);
 }
@@ -432,7 +424,7 @@ MoFEMErrorCode AtomTest::assembleSystem() {
   MoFEMFunctionBegin;
   PipelineManager *pipeline_mng = mField.getInterface<PipelineManager>();
 
-  auto rule = [](int, int, int p) -> int { return 2 * p; };
+  auto rule = [](int, int, int p) -> int { return 2 * p + 1; };
 
   CHKERR pipeline_mng->setDomainLhsIntegrationRule(rule);
   CHKERR pipeline_mng->setDomainRhsIntegrationRule(rule);
@@ -440,13 +432,11 @@ MoFEMErrorCode AtomTest::assembleSystem() {
   pipeline_mng->getDomainLhsFE()->exeTestHook = test_bit_child;
   pipeline_mng->getDomainRhsFE()->exeTestHook = test_bit_child;
 
-  auto parent_fe_ptr = boost::make_shared<DomainParentEle>(mField);
-
   auto beta = [](const double, const double, const double) { return 1; };
-  set_parent_dofs(pipeline_mng->getOpDomainLhsPipeline(), DomainEleOp::OPROW,
-                  parent_fe_ptr, QUIET, Sev::noisy);
-  set_parent_dofs(pipeline_mng->getOpDomainLhsPipeline(), DomainEleOp::OPCOL,
-                  parent_fe_ptr, QUIET, Sev::noisy);
+  set_parent_dofs(mField, pipeline_mng->getOpDomainLhsPipeline(),
+                  DomainEleOp::OPROW, QUIET, Sev::noisy);
+  set_parent_dofs(mField, pipeline_mng->getOpDomainLhsPipeline(),
+                  DomainEleOp::OPCOL, QUIET, Sev::noisy);
   pipeline_mng->getOpDomainLhsPipeline().push_back(
       new OpDomainMass(FIELD_NAME, FIELD_NAME, beta));
 
@@ -484,8 +474,8 @@ MoFEMErrorCode AtomTest::assembleSystem() {
     MoFEMFunctionReturn(0);
   };
 
-  set_parent_dofs(pipeline_mng->getOpDomainRhsPipeline(), DomainEleOp::OPROW,
-                  parent_fe_ptr, VERBOSE, Sev::noisy);
+  set_parent_dofs(mField, pipeline_mng->getOpDomainRhsPipeline(),
+                  DomainEleOp::OPROW, VERBOSE, Sev::noisy);
   pipeline_mng->getOpDomainRhsPipeline().push_back(field_op_row);
 
   pipeline_mng->getOpDomainRhsPipeline().push_back(
@@ -534,10 +524,8 @@ MoFEMErrorCode AtomTest::checkResults() {
       mField.get_comm(), (!mField.get_comm_rank()) ? 1 : 0, 1);
   common_data_ptr->approxVals = boost::make_shared<VectorDouble>();
 
-  auto parent_fe_ptr = boost::make_shared<DomainParentEle>(mField);
-
-  set_parent_dofs(pipeline_mng->getOpDomainRhsPipeline(), DomainEleOp::OPROW,
-                  parent_fe_ptr, VERBOSE, Sev::noisy);
+  set_parent_dofs(mField, pipeline_mng->getOpDomainRhsPipeline(),
+                  DomainEleOp::OPROW, VERBOSE, Sev::noisy);
   pipeline_mng->getOpDomainRhsPipeline().push_back(
       new OpCalculateScalarFieldValues(FIELD_NAME,
                                        common_data_ptr->approxVals));
