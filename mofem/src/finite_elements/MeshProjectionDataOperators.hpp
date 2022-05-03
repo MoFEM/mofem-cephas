@@ -55,19 +55,6 @@ struct OpAddParentEntData : public ForcesAndSourcesCore::UserDataOperator {
   MoFEMErrorCode opRhs(EntitiesFieldData &data,
                        const bool error_if_no_base = false);
 
-  static MoFEMErrorCode
-  markHangingSkinParents(MoFEM::Interface &m_field, const int dim,
-                  const BitRefLevel parent_bit, const BitRefLevel parent_mask,
-                  const BitRefLevel child_bit, const BitRefLevel child_mask,
-                  const BitRefLevel mark_bit, const bool resolve_shared,
-                  const std::string debug_file_name = "");
-
-  static MoFEMErrorCode markHangingSkinChildren(
-      MoFEM::Interface &m_field, const BitRefLevel child_bit,
-      const BitRefLevel child_mask, const BitRefLevel mark_bit,
-      const BitRefLevel mark_mask, const std::string debug_file_name = "");
-      
-
 private:
   std::string fieldName;
   OpType opParentType;

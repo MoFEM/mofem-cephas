@@ -62,7 +62,52 @@ using OpDomainSource = FormsIntegrators<DomainEleOp>::Assembly<
     PETSC>::LinearForm<GAUSS>::OpSource<1, FIELD_DIM>;
 
 auto bit = [](auto l) { return BitRefLevel().set(l); };
-auto marker = []() { return BitRefLevel().set(BITREFLEVEL_SIZE - 1); };
+auto marker = [](auto l) {
+  return BitRefLevel().set(BITREFLEVEL_SIZE - 1 - l);
+};
+
+auto set_parent_dofs = [](auto &pipeline, auto op, auto parent_fe_ptr,
+                          auto verbosity, auto sev) {
+  auto &m_field = parent_fe_ptr->mField;
+
+  auto parent_fe_ptr_l1 = boost::make_shared<DomainParentEle>(m_field);
+
+  // parent_fe_ptr->getOpPtrVector().push_back(
+
+  //     new OpAddParentEntData(
+
+  //         FIELD_NAME, op, parent_fe_ptr_l1,
+
+  //         // level 1 elements
+  //         bit(1), bit(1) | bit(2),
+
+  //         // marked level 1
+  //         marker(0), BitRefLevel().set(),
+
+  //         verbosity, sev)
+
+  // );
+
+  pipeline.push_back(
+
+      new OpAddParentEntData(
+
+          FIELD_NAME, op, parent_fe_ptr,
+
+          // level 1 elements
+          bit(2), bit(2),
+
+          // marked level 1
+          marker(1), BitRefLevel().set().flip(2),
+
+          verbosity, sev)
+
+  );
+};
+
+auto test_bit_child = [](FEMethod *fe_ptr) {
+  return fe_ptr->numeredEntFiniteElementPtr->getBitRefLevel().test(2);
+};
 
 struct AtomTest {
 
@@ -156,6 +201,10 @@ MoFEMErrorCode AtomTest::runProblem() {
 
 //! [Read mesh]
 MoFEMErrorCode AtomTest::readMesh() {
+  BitRefManager *bit_mng = mField.getInterface<BitRefManager>();
+  ParallelComm *pcomm =
+      ParallelComm::get_pcomm(&mField.get_moab(), MYPCOMM_INDEX);
+  Skinner skin(&mField.get_moab());
   MoFEMFunctionBegin;
 
   CHKERR mField.getInterface(simpleInterface);
@@ -164,28 +213,40 @@ MoFEMErrorCode AtomTest::readMesh() {
 
   MOFEM_LOG("WORLD", Sev::verbose) << "Dim " << simpleInterface->getDim();
 
-  auto bit_level0 = simpleInterface->getBitRefLevel();
-
   auto &moab = mField.get_moab();
 
-  auto refine_mesh = [&](auto bit0, auto bit1) {
+  Range level0_ents;
+  CHKERR mField.getInterface<BitRefManager>()->getEntitiesByDimAndRefLevel(
+      bit(0), BitRefLevel().set(), 2, level0_ents);
+  Range level0_skin;
+  CHKERR skin.find_skin(0, level0_ents, false, level0_skin);
+  CHKERR pcomm->filter_pstatus(level0_skin,
+                               PSTATUS_SHARED | PSTATUS_MULTISHARED,
+                               PSTATUS_NOT, -1, nullptr);
+
+  auto refine_mesh = [&](auto bit0, auto bit1, auto mark, auto l) {
     MoFEMFunctionBegin;
 
     auto refine = mField.getInterface<MeshRefinement>();
 
     auto meshset_level0_ptr = get_temp_meshset_ptr(moab);
-    CHKERR mField.getInterface<BitRefManager>()->getEntitiesByRefLevel(
-        bit0, BitRefLevel().set(), *meshset_level0_ptr);
+    CHKERR bit_mng->getEntitiesByDimAndRefLevel(bit0, BitRefLevel().set(), 2,
+                                                *meshset_level0_ptr);
 
     // random mesh refinement
     auto meshset_ref_edges_ptr = get_temp_meshset_ptr(moab);
 
-    Range eles_to_refine;
-    CHKERR moab.get_entities_by_dimension(
-        *meshset_level0_ptr, simpleInterface->getDim(), eles_to_refine);
+    Range eles;
+    CHKERR moab.get_entities_by_dimension(*meshset_level0_ptr,
+                                          simpleInterface->getDim(), eles);
+    CHKERR bit_mng->filterEntitiesByRefLevel(bit0, bit0, eles);
+
+    Range ele_to_refine;
+
     int ii = 0;
-    for (auto t : eles_to_refine) {
+    for (auto t : eles) {
       if (ii % 2) {
+        ele_to_refine.insert(t);
         std::vector<EntityHandle> adj_edges;
         CHKERR mField.get_moab().get_adjacencies(&t, 1, 1, false, adj_edges);
         CHKERR moab.add_entities(*meshset_ref_edges_ptr, &*adj_edges.begin(),
@@ -194,36 +255,58 @@ MoFEMErrorCode AtomTest::readMesh() {
       ++ii;
     }
 
+    Range ele_to_refine_skin;
+    CHKERR skin.find_skin(0, ele_to_refine, false, ele_to_refine_skin);
+    CHKERR pcomm->filter_pstatus(ele_to_refine_skin,
+                                 PSTATUS_SHARED | PSTATUS_MULTISHARED,
+                                 PSTATUS_NOT, -1, nullptr);
+
     CHKERR refine->addVerticesInTheMiddleOfEdges(*meshset_ref_edges_ptr, bit1,
                                                  false, VERBOSE);
+    CHKERR refine->refineTrisHangingNodes(*meshset_level0_ptr, bit1, VERBOSE);
 
-    if (simpleInterface->getDim() == 3) {
-      CHKERR refine->refineTetsHangingNodes(*meshset_level0_ptr, bit1, VERBOSE);
-    } else if (simpleInterface->getDim() == 2) {
-      CHKERR refine->refineTrisHangingNodes(*meshset_level0_ptr, bit1, VERBOSE);
-    } else {
-      SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
-              "Dimension not handled by test");
-    }
+    CHKERR bit_mng->updateRange(level0_skin, level0_skin);
+    CHKERR bit_mng->updateRange(ele_to_refine_skin, ele_to_refine_skin);
+
+    ele_to_refine_skin = subtract(ele_to_refine_skin, level0_skin);
+    CHKERR mField.get_moab().get_adjacencies(ele_to_refine_skin, 0, false,
+                                             ele_to_refine_skin,
+                                             moab::Interface::UNION);
+
+    CHKERR bit_mng->addBitRefLevel(ele_to_refine_skin, mark);
+
+    CHKERR bit_mng->writeBitLevelByType(
+        bit1, BitRefLevel().set(), MBTRI,
+        (boost::lexical_cast<std::string>(l) + "_ref_mesh.vtk").c_str(), "VTK",
+        "");
+    CHKERR bit_mng->writeBitLevelByType(
+        bit1, bit1, MBTRI,
+        (boost::lexical_cast<std::string>(l) + "_only_ref_mesh.vtk").c_str(),
+        "VTK", "");
+
+    CHKERR bit_mng->writeBitLevelByType(
+        mark, BitRefLevel().set(), MBEDGE,
+        (boost::lexical_cast<std::string>(l) + "_ref_skin.vtk").c_str(), "VTK",
+        "");
+
+    CHKERR bit_mng->writeBitLevelByType(bit(1), bit(2) | bit(1), MBTRI,
+                                        "bit1bit1tri.vtk", "VTK", "");
+    CHKERR bit_mng->writeBitLevelByType(bit(2), bit(2), MBTRI,
+                                        "bit2bit2tri.vtk", "VTK", "");
+
+    CHKERR bit_mng->writeBitLevelByType(marker(0), BitRefLevel().set().flip(1),
+                                        MBEDGE, "bit1bit1edge.vtk", "VTK", "");
+    CHKERR bit_mng->writeBitLevelByType(marker(1), BitRefLevel().set().flip(2),
+                                        MBEDGE, "bit2bit2edge.vtk", "VTK", "");
 
     MoFEMFunctionReturn(0);
   };
 
-  CHKERR refine_mesh(bit(0), bit(1));
+  CHKERR refine_mesh(bit(0), bit(1), marker(0), 1);
+  CHKERR refine_mesh(bit(1), bit(2), marker(1), 2);
 
-  simpleInterface->getBitRefLevel() = BitRefLevel().set();
+  simpleInterface->getBitRefLevel() = bit(0) | bit(1) | bit(2);
   simpleInterface->getBitRefLevelMask() = BitRefLevel().set();
-
-  BitRefManager *bit_mng = mField.getInterface<BitRefManager>();
-  CHKERR bit_mng->writeBitLevelByType(bit(1), BitRefLevel().set(), MBTRI,
-                                      "out_ref_mesh.vtk", "VTK", "");
-
-  CHKERR OpAddParentEntData::markHangingSkinParents(
-      mField, 2, bit(0), BitRefLevel().set(), bit(1), BitRefLevel().set(),
-      marker(), true, "parent_ref_skin.vtk");
-  CHKERR OpAddParentEntData::markHangingSkinChildren(
-      mField, bit(1), bit(1), marker(), BitRefLevel().set(),
-      "children_ref_skin.vtk");
 
   MoFEMFunctionReturn(0);
 }
@@ -265,43 +348,39 @@ MoFEMErrorCode AtomTest::setupProblem() {
 
     if (field.getSpace() != NOFIELD) {
 
-      const auto fe_name = fe.getName();
-      const auto parent_ent = fe.getParentEnt();
-
       std::vector<EntityHandle> parents;
       parents.reserve(BITREFLEVEL_SIZE);
 
-      if (parent_ent && parent_ent != fe.getEnt()) {
-        CHKERR get_parent(fe.getEnt(), parents);
-        for (auto fe_ent : parents) {
-          switch (field.getSpace()) {
-          case H1:
-            CHKERR moab.get_adjacencies(&fe_ent, 1, 0, false, adjacency,
-                                        moab::Interface::UNION);
-          case HCURL:
-            CHKERR moab.get_adjacencies(&fe_ent, 1, 1, false, adjacency,
-                                        moab::Interface::UNION);
-          case HDIV:
-          case L2:
-            adjacency.push_back(fe_ent);
-            break;
-          default:
-            SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-                    "this field is not implemented for face finite element");
-          }
-        }
+      CHKERR get_parent(fe.getEnt(), parents);
 
-        std::sort(adjacency.begin(), adjacency.end());
-        auto it = std::unique(adjacency.begin(), adjacency.end());
-        adjacency.resize(std::distance(adjacency.begin(), it));
-
-        for (auto e : adjacency) {
-          auto side_table = fe.getSideNumberTable();
-          if (side_table.find(e) == side_table.end())
-            const_cast<SideNumber_multiIndex &>(fe.getSideNumberTable())
-                .insert(
-                    boost::shared_ptr<SideNumber>(new SideNumber(e, -1, 0, 0)));
+      for (auto fe_ent : parents) {
+        switch (field.getSpace()) {
+        case H1:
+          CHKERR moab.get_adjacencies(&fe_ent, 1, 0, false, adjacency,
+                                      moab::Interface::UNION);
+        case HCURL:
+          CHKERR moab.get_adjacencies(&fe_ent, 1, 1, false, adjacency,
+                                      moab::Interface::UNION);
+        case HDIV:
+        case L2:
+          adjacency.push_back(fe_ent);
+          break;
+        default:
+          SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                  "this field is not implemented for face finite element");
         }
+      }
+
+      std::sort(adjacency.begin(), adjacency.end());
+      auto it = std::unique(adjacency.begin(), adjacency.end());
+      adjacency.resize(std::distance(adjacency.begin(), it));
+
+      for (auto e : adjacency) {
+        auto side_table = fe.getSideNumberTable();
+        if (side_table.find(e) == side_table.end())
+          const_cast<SideNumber_multiIndex &>(fe.getSideNumberTable())
+              .insert(
+                  boost::shared_ptr<SideNumber>(new SideNumber(e, -1, 0, 0)));
       }
     }
 
@@ -327,17 +406,23 @@ MoFEMErrorCode AtomTest::setupProblem() {
   BitRefManager *bit_mng = mField.getInterface<BitRefManager>();
   ProblemsManager *prb_mng = mField.getInterface<ProblemsManager>();
 
-  CHKERR bit_mng->writeBitLevelByType(marker(), bit(0) | bit(1) | marker(),
-                                      MBEDGE, "l0_ents_edges.vtk", "VTK", "");
-  CHKERR bit_mng->writeBitLevelByType(marker(), bit(1) | marker(), MBEDGE,
-                                      "l1_ents_edges.vtk", "VTK", "");
-  CHKERR bit_mng->writeBitLevelByType(marker(), bit(1) | marker(), MBVERTEX,
-                                      "l1_ents_verts.vtk", "VTK", "");
-
   CHKERR prb_mng->removeDofsOnEntities(simpleInterface->getProblemName(),
                                        FIELD_NAME, bit(0), bit(0));
   CHKERR prb_mng->removeDofsOnEntities(simpleInterface->getProblemName(),
-                                       FIELD_NAME, marker(), bit(1) | marker());
+                                       FIELD_NAME, bit(1), bit(1));
+
+  CHKERR prb_mng->removeDofsOnEntities(simpleInterface->getProblemName(),
+                                       FIELD_NAME, marker(0),
+                                       bit(1) | bit(2) | marker(0) | marker(1));
+  CHKERR prb_mng->removeDofsOnEntities(simpleInterface->getProblemName(),
+                                       FIELD_NAME, marker(1),
+                                       bit(2) | marker(1));
+
+  CHKERR bit_mng->writeBitLevel(marker(0),
+                                bit(1) | bit(2) | marker(0) | marker(1),
+                                "remove_bit1.vtk", "VTK", "");
+  CHKERR bit_mng->writeBitLevel(marker(1), bit(2) | marker(1), "remove_bit2.vtk",
+                                "VTK", "");
 
   MoFEMFunctionReturn(0);
 }
@@ -353,39 +438,16 @@ MoFEMErrorCode AtomTest::assembleSystem() {
   CHKERR pipeline_mng->setDomainLhsIntegrationRule(rule);
   CHKERR pipeline_mng->setDomainRhsIntegrationRule(rule);
 
-  auto test_bit_child = [](FEMethod *fe_ptr) {
-    return fe_ptr->numeredEntFiniteElementPtr->getBitRefLevel().test(1);
-  };
-
   pipeline_mng->getDomainLhsFE()->exeTestHook = test_bit_child;
   pipeline_mng->getDomainRhsFE()->exeTestHook = test_bit_child;
 
   auto parent_fe_ptr = boost::make_shared<DomainParentEle>(mField);
 
-  auto set_parent_dofs = [&](auto &pipeline, auto op, auto verbosity,
-                             auto sev) {
-    pipeline.push_back(
-
-        new OpAddParentEntData(
-
-            FIELD_NAME, op, parent_fe_ptr,
-
-            // level 1 elements
-            bit(1), bit(1),
-
-            // marked level 1
-            marker(), bit(0) | bit(1) | marker(),
-
-            verbosity, sev)
-
-    );
-  };
-
   auto beta = [](const double, const double, const double) { return 1; };
   set_parent_dofs(pipeline_mng->getOpDomainLhsPipeline(), DomainEleOp::OPROW,
-                  QUIET, Sev::noisy);
+                  parent_fe_ptr, QUIET, Sev::noisy);
   set_parent_dofs(pipeline_mng->getOpDomainLhsPipeline(), DomainEleOp::OPCOL,
-                  QUIET, Sev::noisy);
+                  parent_fe_ptr, QUIET, Sev::noisy);
   pipeline_mng->getOpDomainLhsPipeline().push_back(
       new OpDomainMass(FIELD_NAME, FIELD_NAME, beta));
 
@@ -424,11 +486,8 @@ MoFEMErrorCode AtomTest::assembleSystem() {
   };
 
   set_parent_dofs(pipeline_mng->getOpDomainRhsPipeline(), DomainEleOp::OPROW,
-                  VERBOSE, Sev::noisy);
-  // set_parent_dofs(pipeline_mng->getOpDomainRhsPipeline(), DomainEleOp::OPCOL,
-  //                 VERBOSE, Sev::noisy);
+                  parent_fe_ptr, VERBOSE, Sev::noisy);
   pipeline_mng->getOpDomainRhsPipeline().push_back(field_op_row);
-  // pipeline_mng->getOpDomainRhsPipeline().push_back(field_op_col);
 
   pipeline_mng->getOpDomainRhsPipeline().push_back(
       new OpDomainSource(FIELD_NAME, approxFunction));
@@ -468,10 +527,6 @@ MoFEMErrorCode AtomTest::checkResults() {
 
   auto rule = [](int, int, int p) -> int { return 2 * p + 1; };
   CHKERR pipeline_mng->setDomainRhsIntegrationRule(rule);
-
-  auto test_bit_child = [](FEMethod *fe_ptr) {
-    return fe_ptr->numeredEntFiniteElementPtr->getBitRefLevel().test(1);
-  };
   pipeline_mng->getDomainRhsFE()->exeTestHook = test_bit_child;
 
   auto common_data_ptr = boost::make_shared<CommonData>();
@@ -480,30 +535,10 @@ MoFEMErrorCode AtomTest::checkResults() {
       mField.get_comm(), (!mField.get_comm_rank()) ? 1 : 0, 1);
   common_data_ptr->approxVals = boost::make_shared<VectorDouble>();
 
-
   auto parent_fe_ptr = boost::make_shared<DomainParentEle>(mField);
 
-  auto set_parent_dofs = [&](auto &pipeline, auto op, auto verbosity,
-                             auto sev) {
-    pipeline.push_back(
-
-        new OpAddParentEntData(
-
-            FIELD_NAME, op, parent_fe_ptr,
-
-            // level 1 elements
-            bit(1), bit(1),
-
-            // marked level 1
-            marker(), bit(0) | bit(1) | marker(),
-
-            verbosity, sev)
-
-    );
-  };
-
   set_parent_dofs(pipeline_mng->getOpDomainRhsPipeline(), DomainEleOp::OPROW,
-                  VERBOSE, Sev::noisy);
+                  parent_fe_ptr, VERBOSE, Sev::noisy);
   pipeline_mng->getOpDomainRhsPipeline().push_back(
       new OpCalculateScalarFieldValues(FIELD_NAME,
                                        common_data_ptr->approxVals));
