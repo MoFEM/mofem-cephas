@@ -413,16 +413,15 @@ MoFEMErrorCode AtomTest::setupProblem() {
 
   CHKERR prb_mng->removeDofsOnEntities(simpleInterface->getProblemName(),
                                        FIELD_NAME, marker(0),
-                                       bit(1) | bit(2) | marker(0) | marker(1));
+                                       BitRefLevel().set().flip(0));
   CHKERR prb_mng->removeDofsOnEntities(simpleInterface->getProblemName(),
                                        FIELD_NAME, marker(1),
-                                       bit(2) | marker(1));
+                                       BitRefLevel().set().flip(1));
 
-  CHKERR bit_mng->writeBitLevel(marker(0),
-                                bit(1) | bit(2) | marker(0) | marker(1),
+  CHKERR bit_mng->writeBitLevel(marker(0), BitRefLevel().set().flip(0),
                                 "remove_bit1.vtk", "VTK", "");
-  CHKERR bit_mng->writeBitLevel(marker(1), bit(2) | marker(1), "remove_bit2.vtk",
-                                "VTK", "");
+  CHKERR bit_mng->writeBitLevel(marker(1), BitRefLevel().set().flip(1),
+                                "remove_bit2.vtk", "VTK", "");
 
   MoFEMFunctionReturn(0);
 }
