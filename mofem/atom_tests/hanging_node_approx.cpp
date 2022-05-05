@@ -52,7 +52,7 @@ template <int FIELD_DIM> struct ApproxFieldFunction;
 
 template <> struct ApproxFieldFunction<1> {
   double operator()(const double x, const double y, const double z) {
-    return x * x + y * y;
+    return 1;//x * x + y * y;
     // return x * x + y * y + x * y + pow(x, 3) + pow(y, 3) + pow(x, 4) +
     //        pow(y, 4);
   }
@@ -71,9 +71,6 @@ auto marker = [](auto l) {
 auto set_parent_dofs = [](auto &m_field, auto &fe_top, auto op, auto verbosity,
                           auto sev) {
 
-  BitRefLevel bit_ele_mask;
-  for (auto l = 1; l <= nb_ref_levels; ++l)
-    bit_ele_mask |= bit(l);
 
   boost::function<void(boost::shared_ptr<ForcesAndSourcesCore>, int)>
       add_parent_level = [&](boost::shared_ptr<ForcesAndSourcesCore>
@@ -88,8 +85,12 @@ auto set_parent_dofs = [](auto &m_field, auto &fe_top, auto op, auto verbosity,
               boost::dynamic_pointer_cast<ForcesAndSourcesCore>(fe_ptr_current),
               level - 1);
 
+          BitRefLevel bit_ele_mask;
+          for (auto l = 1; l <= nb_ref_levels; ++l)
+            bit_ele_mask |= bit(l);
+
           BitRefLevel bit_marker;
-          for (auto l = 1; l <= level; ++l)
+          for (auto l = 1; l <= nb_ref_levels; ++l)
             bit_marker |= marker(l);
 
           parent_fe_pt->getOpPtrVector().push_back(
@@ -112,7 +113,8 @@ auto set_parent_dofs = [](auto &m_field, auto &fe_top, auto op, auto verbosity,
 };
 
 auto test_bit_child = [](FEMethod *fe_ptr) {
-  return fe_ptr->numeredEntFiniteElementPtr->getBitRefLevel().test(2);
+  return fe_ptr->numeredEntFiniteElementPtr->getBitRefLevel().test(
+      nb_ref_levels);
 };
 
 struct AtomTest {
@@ -321,7 +323,7 @@ MoFEMErrorCode AtomTest::readMesh() {
     CHKERR mark_skins(l + 1, l + 1);
     bit_sum |= bit(l);
   }
-  bit_sum |= bit(2);
+  bit_sum |= bit(nb_ref_levels);
 
   simpleInterface->getBitRefLevel() = bit_sum;
   simpleInterface->getBitRefLevelMask() = BitRefLevel().set();
@@ -405,7 +407,7 @@ MoFEMErrorCode AtomTest::setupProblem() {
     MoFEMFunctionReturn(0);
   };
 
-  constexpr int order = 2;
+  constexpr int order = 1;
   CHKERR simpleInterface->setFieldOrder(FIELD_NAME, order);
   // CHKERR simpleInterface->setUp();
 
@@ -555,12 +557,7 @@ MoFEMErrorCode AtomTest::assembleSystem() {
 
       for (auto &field_ent : data.getFieldEntities()) {
         MOFEM_LOG("SELF", Sev::verbose)
-            << "\t" << CN::EntityTypeName(field_ent->getEntType())
-            << " marker(0) " << get_bool(field_ent, marker(0)) << " marker(1) "
-            << get_bool(field_ent, marker(0)) << " bit(0) "
-            << get_bool(field_ent, bit(0)) << " bit(1) "
-            << get_bool(field_ent, bit(1)) << " bit(2) "
-            << get_bool(field_ent, bit(2));
+            << "\t" << CN::EntityTypeName(field_ent->getEntType());
       }
     }
     MoFEMFunctionReturn(0);
@@ -717,7 +714,7 @@ MoFEMErrorCode AtomTest::printResults() {
   CHKERR pipeline_mng->loopFiniteElements();
 
   CHKERR mField.getInterface<BitRefManager>()->writeBitLevelByType(
-      bit(2), BitRefLevel().set(), MBTRI, "out.vtk", "VTK", "");
+      bit(nb_ref_levels), BitRefLevel().set(), MBTRI, "out.vtk", "VTK", "");
 
   MoFEMFunctionReturn(0);
 }

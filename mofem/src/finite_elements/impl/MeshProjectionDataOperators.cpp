@@ -179,6 +179,9 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
           const auto ent_type = data.getFieldEntities()[0]->getEntType();
           CHKERR switch_of_dofs_children(
               data, entities_field_data.dataOnEntities[ent_type]);
+          if(ent_type != type)
+            CHKERR switch_of_dofs_children(
+                data, entities_field_data.dataOnEntities[type]);
         }
 
         entities_field_data.dataOnEntities[MBENTITYSET].push_back(
