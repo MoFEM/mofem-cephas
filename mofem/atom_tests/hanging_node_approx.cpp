@@ -28,6 +28,7 @@ static char help[] = "...\n\n";
 constexpr char FIELD_NAME[] = "U";
 constexpr int FIELD_DIM = 1;
 constexpr int SPACE_DIM = 2;
+constexpr int nb_ref_levels = 2;
 
 template <int DIM> struct ElementsAndOps {};
 
@@ -305,7 +306,7 @@ MoFEMErrorCode AtomTest::readMesh() {
   };
 
   BitRefLevel bit_sum;
-  for (auto l = 0; l != 2; ++l) {
+  for (auto l = 0; l != nb_ref_levels; ++l) {
     CHKERR refine_mesh(l + 1);
     CHKERR mark_skins(l, l + 1);
     CHKERR mark_skins(l + 1, l + 1);
@@ -414,7 +415,7 @@ MoFEMErrorCode AtomTest::setupProblem() {
   BitRefManager *bit_mng = mField.getInterface<BitRefManager>();
   ProblemsManager *prb_mng = mField.getInterface<ProblemsManager>();
 
-  for (int l = 0; l != 2; ++l) {
+  for (int l = 0; l != nb_ref_levels; ++l) {
     CHKERR prb_mng->removeDofsOnEntities(simpleInterface->getProblemName(),
                                          FIELD_NAME, bit(l), bit(l));
     CHKERR prb_mng->removeDofsOnEntities(simpleInterface->getProblemName(),
