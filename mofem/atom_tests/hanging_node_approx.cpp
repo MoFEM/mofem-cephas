@@ -304,15 +304,16 @@ MoFEMErrorCode AtomTest::readMesh() {
     MoFEMFunctionReturn(0);
   };
 
-  CHKERR refine_mesh(1);
-  CHKERR mark_skins(0, 1);
-  CHKERR mark_skins(1, 1);
+  BitRefLevel bit_sum;
+  for (auto l = 0; l != 2; ++l) {
+    CHKERR refine_mesh(l + 1);
+    CHKERR mark_skins(l, l + 1);
+    CHKERR mark_skins(l + 1, l + 1);
+    bit_sum |= bit(l);
+  }
+  bit_sum |= bit(2);
 
-  CHKERR refine_mesh(2);
-  CHKERR mark_skins(1, 2);
-  CHKERR mark_skins(2, 2);
-
-  simpleInterface->getBitRefLevel() = bit(0) | bit(1) | bit(2);
+  simpleInterface->getBitRefLevel() = bit_sum;
   simpleInterface->getBitRefLevelMask() = BitRefLevel().set();
 
   MoFEMFunctionReturn(0);
@@ -413,92 +414,90 @@ MoFEMErrorCode AtomTest::setupProblem() {
   BitRefManager *bit_mng = mField.getInterface<BitRefManager>();
   ProblemsManager *prb_mng = mField.getInterface<ProblemsManager>();
 
-  CHKERR prb_mng->removeDofsOnEntities(simpleInterface->getProblemName(),
-                                       FIELD_NAME, bit(0), bit(0));
-  CHKERR prb_mng->removeDofsOnEntities(simpleInterface->getProblemName(),
-                                       FIELD_NAME, bit(1), bit(1));
-  CHKERR prb_mng->removeDofsOnEntities(simpleInterface->getProblemName(),
-                                       FIELD_NAME, marker(1), bit(0).flip());
-  CHKERR prb_mng->removeDofsOnEntities(simpleInterface->getProblemName(),
-                                       FIELD_NAME, marker(2), bit(1).flip());
+  for (int l = 0; l != 2; ++l) {
+    CHKERR prb_mng->removeDofsOnEntities(simpleInterface->getProblemName(),
+                                         FIELD_NAME, bit(l), bit(l));
+    CHKERR prb_mng->removeDofsOnEntities(simpleInterface->getProblemName(),
+                                         FIELD_NAME, marker(l + 1),
+                                         bit(l).flip());
+  }
 
+  // auto save_mesh = [&](std::string file_name, Range ents) {
+  //   auto &moab = mField.get_moab();
+  //   MoFEMFunctionBeginHot;
+  //   if(ents.empty()) {
+  //     MOFEM_LOG("SELF", Sev::warning)
+  //         << "Nothig to write < " << file_name << " >";
+  //     MoFEMFunctionReturnHot(0);
+  //   } else {
 
-  auto save_mesh = [&](std::string file_name, Range ents) {
-    auto &moab = mField.get_moab();
-    MoFEMFunctionBeginHot;
-    if(ents.empty()) {
-      MOFEM_LOG("SELF", Sev::warning)
-          << "Nothig to write < " << file_name << " >";
-      MoFEMFunctionReturnHot(0);
-    } else {
+  //     auto meshset_ptr = get_temp_meshset_ptr(moab);
+  //     CHKERR moab.add_entities(*meshset_ptr, ents);
+  //     CHKERR moab.write_file(file_name.c_str(), "VTK", "",
+  //                            meshset_ptr->get_ptr(), 1);
+  //   }
 
-      auto meshset_ptr = get_temp_meshset_ptr(moab);
-      CHKERR moab.add_entities(*meshset_ptr, ents);
-      CHKERR moab.write_file(file_name.c_str(), "VTK", "",
-                             meshset_ptr->get_ptr(), 1);
-    }
+  //   MoFEMFunctionReturnHot(0);
+  // };
 
-    MoFEMFunctionReturnHot(0);
-  };
+  // auto get_adj = [&](auto &i_ents, auto &r_ents) {
+  //   auto &moab = mField.get_moab();
+  //   MoFEMFunctionBeginHot;
+  //   CHKERR moab.get_adjacencies(i_ents, 1, false, r_ents,
+  //                               moab::Interface::UNION);
+  //   CHKERR moab.get_adjacencies(i_ents, 0, false, r_ents,
+  //                               moab::Interface::UNION);
+  //   MoFEMFunctionReturnHot(0);
+  // };
 
-  auto get_adj = [&](auto &i_ents, auto &r_ents) {
-    auto &moab = mField.get_moab();
-    MoFEMFunctionBeginHot;
-    CHKERR moab.get_adjacencies(i_ents, 1, false, r_ents,
-                                moab::Interface::UNION);
-    CHKERR moab.get_adjacencies(i_ents, 0, false, r_ents,
-                                moab::Interface::UNION);
-    MoFEMFunctionReturnHot(0);
-  };
+  // std::map<std::string, Range> e_maps;
 
-  std::map<std::string, Range> e_maps;
+  // CHKERR mField.getInterface<BitRefManager>()->getEntitiesByRefLevel(
+  //     bit(0), bit(0), e_maps["bit0_bit0.vtk"]);
+  // CHKERR bit_mng->updateRange(e_maps["bit0_bit0.vtk"], e_maps["bit1_bit1.vtk"]);
 
-  CHKERR mField.getInterface<BitRefManager>()->getEntitiesByRefLevel(
-      bit(0), bit(0), e_maps["bit0_bit0.vtk"]);
-  CHKERR bit_mng->updateRange(e_maps["bit0_bit0.vtk"], e_maps["bit1_bit1.vtk"]);
+  // CHKERR mField.getInterface<BitRefManager>()->getEntitiesByRefLevel(
+  //     bit(1), bit(1) | bit(2), e_maps["bit1_bit1orbit2.vtk"]);
 
-  CHKERR mField.getInterface<BitRefManager>()->getEntitiesByRefLevel(
-      bit(1), bit(1) | bit(2), e_maps["bit1_bit1orbit2.vtk"]);
+  // CHKERR get_adj(e_maps["bit0_bit0.vtk"], e_maps["bit1_bit1_marker1.vtk"]);
+  // CHKERR mField.getInterface<BitRefManager>()->filterEntitiesByRefLevel(
+  //     marker(1), BitRefLevel().set(), e_maps["bit1_bit1_marker1.vtk"]);
+  // CHKERR mField.getInterface<BitRefManager>()->filterEntitiesByRefLevel(
+  //     bit(2), BitRefLevel().set(), e_maps["bit1_bit1_marker1.vtk"]);
 
-  CHKERR get_adj(e_maps["bit0_bit0.vtk"], e_maps["bit1_bit1_marker1.vtk"]);
-  CHKERR mField.getInterface<BitRefManager>()->filterEntitiesByRefLevel(
-      marker(1), BitRefLevel().set(), e_maps["bit1_bit1_marker1.vtk"]);
-  CHKERR mField.getInterface<BitRefManager>()->filterEntitiesByRefLevel(
-      bit(2), BitRefLevel().set(), e_maps["bit1_bit1_marker1.vtk"]);
+  // CHKERR bit_mng->updateRange(e_maps["bit1_bit1.vtk"], e_maps["bit2_bit2.vtk"]);
+  // CHKERR get_adj(e_maps["bit1_bit1.vtk"], e_maps["bit2_bit2_marker2.vtk"]);
+  // CHKERR mField.getInterface<BitRefManager>()->filterEntitiesByRefLevel(
+  //     marker(2), BitRefLevel().set(), e_maps["bit2_bit2_marker2.vtk"]);
+  // CHKERR mField.getInterface<BitRefManager>()->filterEntitiesByRefLevel(
+  //     bit(2), BitRefLevel().set(), e_maps["bit2_bit2_marker2.vtk"]);
 
-  CHKERR bit_mng->updateRange(e_maps["bit1_bit1.vtk"], e_maps["bit2_bit2.vtk"]);
-  CHKERR get_adj(e_maps["bit1_bit1.vtk"], e_maps["bit2_bit2_marker2.vtk"]);
-  CHKERR mField.getInterface<BitRefManager>()->filterEntitiesByRefLevel(
-      marker(2), BitRefLevel().set(), e_maps["bit2_bit2_marker2.vtk"]);
-  CHKERR mField.getInterface<BitRefManager>()->filterEntitiesByRefLevel(
-      bit(2), BitRefLevel().set(), e_maps["bit2_bit2_marker2.vtk"]);
+  // CHKERR mField.getInterface<BitRefManager>()->getEntitiesByRefLevel(
+  //     marker(1), bit(0).flip(), e_maps["marker1_flip_bit0.vtk"]);
+  // CHKERR mField.getInterface<BitRefManager>()->getEntitiesByRefLevel(
+  //     marker(2), bit(1).flip(), e_maps["marker2_flip_bit1.vtk"]);
 
-  CHKERR mField.getInterface<BitRefManager>()->getEntitiesByRefLevel(
-      marker(1), bit(0).flip(), e_maps["marker1_flip_bit0.vtk"]);
-  CHKERR mField.getInterface<BitRefManager>()->getEntitiesByRefLevel(
-      marker(2), bit(1).flip(), e_maps["marker2_flip_bit1.vtk"]);
+  // CHKERR mField.getInterface<BitRefManager>()->getEntitiesByRefLevel(
+  //     bit(1), bit(1), e_maps["bit0_bit1_not_updated.vtk"]);
 
-  CHKERR mField.getInterface<BitRefManager>()->getEntitiesByRefLevel(
-      bit(1), bit(1), e_maps["bit0_bit1_not_updated.vtk"]);
+  // CHKERR mField.getInterface<BitRefManager>()->getEntitiesByRefLevel(
+  //     bit(0) | bit(1) | bit(2), BitRefLevel().set(),
+  //     e_maps["problem_ents.vtk"]);
+  // e_maps["problem_ents.vtk"] =
+  //     subtract(e_maps["problem_ents.vtk"], e_maps["bit0_bit0.vtk"]);
+  // e_maps["problem_ents.vtk"] =
+  //     subtract(e_maps["problem_ents.vtk"], e_maps["bit0_bit1_not_updated.vtk"]);
+  // e_maps["problem_ents.vtk"] =
+  //     subtract(e_maps["problem_ents.vtk"], e_maps["marker1_flip_bit0.vtk"]);
+  // e_maps["problem_ents.vtk"] =
+  //     subtract(e_maps["problem_ents.vtk"], e_maps["marker2_flip_bit1.vtk"]);
 
-  CHKERR mField.getInterface<BitRefManager>()->getEntitiesByRefLevel(
-      bit(0) | bit(1) | bit(2), BitRefLevel().set(),
-      e_maps["problem_ents.vtk"]);
-  e_maps["problem_ents.vtk"] =
-      subtract(e_maps["problem_ents.vtk"], e_maps["bit0_bit0.vtk"]);
-  e_maps["problem_ents.vtk"] =
-      subtract(e_maps["problem_ents.vtk"], e_maps["bit0_bit1_not_updated.vtk"]);
-  e_maps["problem_ents.vtk"] =
-      subtract(e_maps["problem_ents.vtk"], e_maps["marker1_flip_bit0.vtk"]);
-  e_maps["problem_ents.vtk"] =
-      subtract(e_maps["problem_ents.vtk"], e_maps["marker2_flip_bit1.vtk"]);
+  // e_maps["problem_ents_verts.vtk"] =
+  //     e_maps["problem_ents.vtk"].subset_by_type(MBVERTEX);
 
-  e_maps["problem_ents_verts.vtk"] =
-      e_maps["problem_ents.vtk"].subset_by_type(MBVERTEX);
-
-  for (auto &r : e_maps) {
-    CHKERR save_mesh(r.first, r.second);
-  };
+  // for (auto &r : e_maps) {
+  //   CHKERR save_mesh(r.first, r.second);
+  // };
 
   MoFEMFunctionReturn(0);
 }
