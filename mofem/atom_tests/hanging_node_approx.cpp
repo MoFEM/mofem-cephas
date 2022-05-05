@@ -51,7 +51,7 @@ template <int FIELD_DIM> struct ApproxFieldFunction;
 
 template <> struct ApproxFieldFunction<1> {
   double operator()(const double x, const double y, const double z) {
-    return 1; //x * x + y * y;
+    return x * x + y * y;
     // return x * x + y * y + x * y + pow(x, 3) + pow(y, 3) + pow(x, 4) +
     //        pow(y, 4);
   }
@@ -394,7 +394,7 @@ MoFEMErrorCode AtomTest::setupProblem() {
     MoFEMFunctionReturn(0);
   };
 
-  constexpr int order = 1;
+  constexpr int order = 2;
   CHKERR simpleInterface->setFieldOrder(FIELD_NAME, order);
   // CHKERR simpleInterface->setUp();
 
