@@ -52,9 +52,7 @@ template <int FIELD_DIM> struct ApproxFieldFunction;
 
 template <> struct ApproxFieldFunction<1> {
   double operator()(const double x, const double y, const double z) {
-    return 1;//x * x + y * y;
-    // return x * x + y * y + x * y + pow(x, 3) + pow(y, 3) + pow(x, 4) +
-    //        pow(y, 4);
+    return x * x + y * y + x * y * y + x * x * y;
   }
 };
 
@@ -403,7 +401,7 @@ MoFEMErrorCode AtomTest::setupProblem() {
     MoFEMFunctionReturn(0);
   };
 
-  constexpr int order = 1;
+  constexpr int order = 3;
   CHKERR simpleInterface->setFieldOrder(FIELD_NAME, order);
   // CHKERR simpleInterface->setUp();
 
@@ -429,84 +427,6 @@ MoFEMErrorCode AtomTest::setupProblem() {
                                          FIELD_NAME, marker(l + 1),
                                          bit(l).flip());
   }
-
-  // auto save_mesh = [&](std::string file_name, Range ents) {
-  //   auto &moab = mField.get_moab();
-  //   MoFEMFunctionBeginHot;
-  //   if(ents.empty()) {
-  //     MOFEM_LOG("SELF", Sev::warning)
-  //         << "Nothig to write < " << file_name << " >";
-  //     MoFEMFunctionReturnHot(0);
-  //   } else {
-
-  //     auto meshset_ptr = get_temp_meshset_ptr(moab);
-  //     CHKERR moab.add_entities(*meshset_ptr, ents);
-  //     CHKERR moab.write_file(file_name.c_str(), "VTK", "",
-  //                            meshset_ptr->get_ptr(), 1);
-  //   }
-
-  //   MoFEMFunctionReturnHot(0);
-  // };
-
-  // auto get_adj = [&](auto &i_ents, auto &r_ents) {
-  //   auto &moab = mField.get_moab();
-  //   MoFEMFunctionBeginHot;
-  //   CHKERR moab.get_adjacencies(i_ents, 1, false, r_ents,
-  //                               moab::Interface::UNION);
-  //   CHKERR moab.get_adjacencies(i_ents, 0, false, r_ents,
-  //                               moab::Interface::UNION);
-  //   MoFEMFunctionReturnHot(0);
-  // };
-
-  // std::map<std::string, Range> e_maps;
-
-  // CHKERR mField.getInterface<BitRefManager>()->getEntitiesByRefLevel(
-  //     bit(0), bit(0), e_maps["bit0_bit0.vtk"]);
-  // CHKERR bit_mng->updateRange(e_maps["bit0_bit0.vtk"], e_maps["bit1_bit1.vtk"]);
-
-  // CHKERR mField.getInterface<BitRefManager>()->getEntitiesByRefLevel(
-  //     bit(1), bit(1) | bit(2), e_maps["bit1_bit1orbit2.vtk"]);
-
-  // CHKERR get_adj(e_maps["bit0_bit0.vtk"], e_maps["bit1_bit1_marker1.vtk"]);
-  // CHKERR mField.getInterface<BitRefManager>()->filterEntitiesByRefLevel(
-  //     marker(1), BitRefLevel().set(), e_maps["bit1_bit1_marker1.vtk"]);
-  // CHKERR mField.getInterface<BitRefManager>()->filterEntitiesByRefLevel(
-  //     bit(2), BitRefLevel().set(), e_maps["bit1_bit1_marker1.vtk"]);
-
-  // CHKERR bit_mng->updateRange(e_maps["bit1_bit1.vtk"], e_maps["bit2_bit2.vtk"]);
-  // CHKERR get_adj(e_maps["bit1_bit1.vtk"], e_maps["bit2_bit2_marker2.vtk"]);
-  // CHKERR mField.getInterface<BitRefManager>()->filterEntitiesByRefLevel(
-  //     marker(2), BitRefLevel().set(), e_maps["bit2_bit2_marker2.vtk"]);
-  // CHKERR mField.getInterface<BitRefManager>()->filterEntitiesByRefLevel(
-  //     bit(2), BitRefLevel().set(), e_maps["bit2_bit2_marker2.vtk"]);
-
-  // CHKERR mField.getInterface<BitRefManager>()->getEntitiesByRefLevel(
-  //     marker(1), bit(0).flip(), e_maps["marker1_flip_bit0.vtk"]);
-  // CHKERR mField.getInterface<BitRefManager>()->getEntitiesByRefLevel(
-  //     marker(2), bit(1).flip(), e_maps["marker2_flip_bit1.vtk"]);
-
-  // CHKERR mField.getInterface<BitRefManager>()->getEntitiesByRefLevel(
-  //     bit(1), bit(1), e_maps["bit0_bit1_not_updated.vtk"]);
-
-  // CHKERR mField.getInterface<BitRefManager>()->getEntitiesByRefLevel(
-  //     bit(0) | bit(1) | bit(2), BitRefLevel().set(),
-  //     e_maps["problem_ents.vtk"]);
-  // e_maps["problem_ents.vtk"] =
-  //     subtract(e_maps["problem_ents.vtk"], e_maps["bit0_bit0.vtk"]);
-  // e_maps["problem_ents.vtk"] =
-  //     subtract(e_maps["problem_ents.vtk"], e_maps["bit0_bit1_not_updated.vtk"]);
-  // e_maps["problem_ents.vtk"] =
-  //     subtract(e_maps["problem_ents.vtk"], e_maps["marker1_flip_bit0.vtk"]);
-  // e_maps["problem_ents.vtk"] =
-  //     subtract(e_maps["problem_ents.vtk"], e_maps["marker2_flip_bit1.vtk"]);
-
-  // e_maps["problem_ents_verts.vtk"] =
-  //     e_maps["problem_ents.vtk"].subset_by_type(MBVERTEX);
-
-  // for (auto &r : e_maps) {
-  //   CHKERR save_mesh(r.first, r.second);
-  // };
-
   MoFEMFunctionReturn(0);
 }
 //! [Set up problem]
@@ -632,12 +552,18 @@ MoFEMErrorCode AtomTest::checkResults() {
   CHKERR VecGetArrayRead(common_data_ptr->L2Vec, &array);
   MOFEM_LOG_C("WORLD", Sev::inform, "Error %6.4e Vec norm %6.4e\n",
               std::sqrt(array[0]), nrm2);
-  CHKERR VecRestoreArrayRead(common_data_ptr->L2Vec, &array);
 
   constexpr double eps = 1e-8;
   if (nrm2 > eps)
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
              "Not converged solution err = %6.4e", nrm2);
+  if (std::sqrt(array[0]) > eps)
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+             "Error in approximation err = %6.4e", std::sqrt(array[0]));
+
+
+  CHKERR VecRestoreArrayRead(common_data_ptr->L2Vec, &array);
+
   MoFEMFunctionReturn(0);
 }
 //! [Check results]

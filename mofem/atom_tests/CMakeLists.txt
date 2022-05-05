@@ -1555,7 +1555,7 @@ build_test(
 
 add_test(hanging_node_approx
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
-  ${CMAKE_CURRENT_BINARY_DIR}/higher_derivatives
+  ${CMAKE_CURRENT_BINARY_DIR}/hanging_node_approx
   -file_name rectangle_tri.h5m 
   -ksp_atol 1e-12 -ksp_rtol 1e-12 
   -ksp_type cg 
