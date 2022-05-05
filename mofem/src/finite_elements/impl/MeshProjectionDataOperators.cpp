@@ -173,13 +173,12 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
         }
 #endif
 
-        CHKERR switch_of_dofs_children(
-            data, entities_field_data.dataOnEntities[type]);
-        if (type == MBENTITYSET) {
-          for (auto t = 0; t != MBENTITYSET; ++t) {
-            CHKERR switch_of_dofs_children(
-                data, entities_field_data.dataOnEntities[t]);
-          }
+        if (data.getFieldEntities().size()) {
+          // note: assumes that all entities on data are the same type. that is
+          // good assumption, since we group entities on side by type.
+          const auto ent_type = data.getFieldEntities()[0]->getEntType();
+          CHKERR switch_of_dofs_children(
+              data, entities_field_data.dataOnEntities[ent_type]);
         }
 
         entities_field_data.dataOnEntities[MBENTITYSET].push_back(
