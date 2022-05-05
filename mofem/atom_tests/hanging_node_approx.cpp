@@ -28,7 +28,7 @@ static char help[] = "...\n\n";
 constexpr char FIELD_NAME[] = "U";
 constexpr int FIELD_DIM = 1;
 constexpr int SPACE_DIM = 2;
-constexpr int nb_ref_levels = 3;
+constexpr int nb_ref_levels = 3; ///< Three levels of refinement
 
 template <int DIM> struct ElementsAndOps {};
 
@@ -50,22 +50,50 @@ using EntData = EntitiesFieldData::EntData;
 
 template <int FIELD_DIM> struct ApproxFieldFunction;
 
+/**
+ * @brief third order polynomial used for testing
+ * 
+ */
 template <> struct ApproxFieldFunction<1> {
   double operator()(const double x, const double y, const double z) {
     return x * x + y * y + x * y * y + x * x * y;
   }
 };
 
+/**
+ * @brief evaluate mass matrix
+ * 
+ */
 using OpDomainMass = FormsIntegrators<DomainEleOp>::Assembly<
     PETSC>::BiLinearForm<GAUSS>::OpMass<1, FIELD_DIM>;
+
+/**
+ * @brief evaluate source, i.e. rhs vector
+ * 
+ */
 using OpDomainSource = FormsIntegrators<DomainEleOp>::Assembly<
     PETSC>::LinearForm<GAUSS>::OpSource<1, FIELD_DIM>;
 
+/**
+ * @brief set bit
+ * 
+ */
 auto bit = [](auto l) { return BitRefLevel().set(l); };
+
+/**
+ * @brief set bit to marker
+ *
+ * Marker is used to mark field entities on skin on which we have hanging nodes
+ */
 auto marker = [](auto l) {
   return BitRefLevel().set(BITREFLEVEL_SIZE - 1 - l);
 };
 
+/**
+ * @brief set levels of projection operators, which project field data from
+ * parent entities, to child, up to to level, i.e. last mesh refinement.
+ *
+ */
 auto set_parent_dofs = [](auto &m_field, auto &fe_top, auto op, auto verbosity,
                           auto sev) {
 
@@ -106,6 +134,14 @@ auto set_parent_dofs = [](auto &m_field, auto &fe_top, auto op, auto verbosity,
 
 };
 
+/**
+ * @brief lambda function used to select elements on which finite element
+ * pipelines are executed.
+ *
+ * @note childs elements on pipeline, retrive data from parents using operators
+ * pushed by \ref set_parent_dofs
+ *
+ */
 auto test_bit_child = [](FEMethod *fe_ptr) {
   return fe_ptr->numeredEntFiniteElementPtr->getBitRefLevel().test(
       nb_ref_levels);
@@ -123,7 +159,18 @@ private:
 
   static ApproxFieldFunction<FIELD_DIM> approxFunction;
 
+  /**
+   * @brief red mesh and randomly refine three times
+   * 
+   * @return MoFEMErrorCode 
+   */
   MoFEMErrorCode readMesh();
+
+  /**
+   * @brief add field, and set up problem
+   * 
+   * @return MoFEMErrorCode 
+   */
   MoFEMErrorCode setupProblem();
   MoFEMErrorCode assembleSystem();
   MoFEMErrorCode solveSystem();
@@ -333,6 +380,14 @@ MoFEMErrorCode AtomTest::setupProblem() {
   CHKERR simpleInterface->addDomainField(FIELD_NAME, H1,
                                          AINSWORTH_LEGENDRE_BASE, FIELD_DIM);
 
+  /**
+   * @brief lambda functions enabling to determine sparsity of the matrix for
+   * hierarchical mesh with hanging nodes
+   *
+   * @note elements form child, see dofs from parent, so DOFs localted on
+   * adjacencies of parent entity has adjacent to dofs of chiold.
+   *
+   */
   ElementAdjacencyFunct get_parent_adjacency =
       [&](moab::Interface &moab, const Field &field, const EntFiniteElement &fe,
           std::vector<EntityHandle> &adjacency) -> MoFEMErrorCode {
@@ -345,6 +400,12 @@ MoFEMErrorCode AtomTest::setupProblem() {
 
     using GetParent = boost::function<MoFEMErrorCode(
         EntityHandle fe, std::vector<EntityHandle> & parents)>;
+
+    /**
+     * @brief this function os called recursively, until all stack of parents is
+     * found.
+     *
+     */
     GetParent get_parent = [&](EntityHandle fe,
                                std::vector<EntityHandle> &parents) {
       MoFEMFunctionBegin;
@@ -407,6 +468,9 @@ MoFEMErrorCode AtomTest::setupProblem() {
 
   CHKERR simpleInterface->defineFiniteElements();
 
+  
+  // Inform finite element about how to find adjacent DOFs to element
+
   CHKERR mField.modify_finite_element_adjacency_table(
       simpleInterface->getDomainFEName(), MBTRI, get_parent_adjacency);
   CHKERR mField.modify_finite_element_adjacency_table(
@@ -419,6 +483,8 @@ MoFEMErrorCode AtomTest::setupProblem() {
 
   BitRefManager *bit_mng = mField.getInterface<BitRefManager>();
   ProblemsManager *prb_mng = mField.getInterface<ProblemsManager>();
+
+  // remove obsolete DOFs from problem
 
   for (int l = 0; l != nb_ref_levels; ++l) {
     CHKERR prb_mng->removeDofsOnEntities(simpleInterface->getProblemName(),

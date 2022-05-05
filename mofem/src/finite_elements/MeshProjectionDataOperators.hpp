@@ -24,7 +24,9 @@ namespace MoFEM {
 
 /**
  * @brief Operator to execute finite element instance on parent element.
- *
+ * This operator is typically used to project field from parent to child, or
+ * vice versa. It enables to evaluate filed data of parent entity on chile
+ * entity integration points.
  */
 struct OpRunParent : public ForcesAndSourcesCore::UserDataOperator {
 
@@ -33,6 +35,8 @@ struct OpRunParent : public ForcesAndSourcesCore::UserDataOperator {
    *
    * @note Finite element instance usually has to be class which has overloaded
    * method from projevting integration points from child tp parent.
+   *
+   * @note Typically parent_ele_ptr and bit_this_mask is the same instance
    *
    * @param parent_ele_ptr finite element instance executed on parent entity
    * @param bit_parent bit of parent entity
@@ -66,7 +70,11 @@ private:
 
 /**
  * @brief Operator to project base functions from parent entity
- * 
+ *
+ * This operator project base functions, field data (i.e. indices, field values
+ * of dofs, etc.), into parent element. Operator can be called as a hierarchy to
+ * get access to information on lower refinement levels.
+ *
  */
 struct OpAddParentEntData : public ForcesAndSourcesCore::UserDataOperator {
 
