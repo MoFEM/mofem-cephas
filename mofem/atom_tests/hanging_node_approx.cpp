@@ -28,7 +28,7 @@ static char help[] = "...\n\n";
 constexpr char FIELD_NAME[] = "U";
 constexpr int FIELD_DIM = 1;
 constexpr int SPACE_DIM = 2;
-constexpr int nb_ref_levels = 2;
+constexpr int nb_ref_levels = 3;
 
 template <int DIM> struct ElementsAndOps {};
 
@@ -85,10 +85,6 @@ auto set_parent_dofs = [](auto &m_field, auto &fe_top, auto op, auto verbosity,
               boost::dynamic_pointer_cast<ForcesAndSourcesCore>(fe_ptr_current),
               level - 1);
 
-          BitRefLevel bit_ele_mask;
-          for (auto l = 1; l <= nb_ref_levels; ++l)
-            bit_ele_mask |= bit(l);
-
           BitRefLevel bit_marker;
           for (auto l = 1; l <= nb_ref_levels; ++l)
             bit_marker |= marker(l);
@@ -99,7 +95,7 @@ auto set_parent_dofs = [](auto &m_field, auto &fe_top, auto op, auto verbosity,
 
                   FIELD_NAME, op, fe_ptr_current,
 
-                  bit(level), bit_ele_mask,
+                  BitRefLevel().set(), bit(0).flip(),
 
                   bit_marker, BitRefLevel().set(),
 
