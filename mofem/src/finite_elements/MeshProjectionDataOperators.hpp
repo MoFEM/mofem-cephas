@@ -22,7 +22,28 @@
 
 namespace MoFEM {
 
+/**
+ * @brief Operator to execute finite element instance on parent element.
+ *
+ */
 struct OpRunParent : public ForcesAndSourcesCore::UserDataOperator {
+
+  /**
+   * @brief Construct a new Op Run Parent object
+   *
+   * @note Finite element instance usually has to be class which has overloaded
+   * method from projevting integration points from child tp parent.
+   *
+   * @param parent_ele_ptr finite element instance executed on parent entity
+   * @param bit_parent bit of parent entity
+   * @param bit_parent_mask mask of parent entity
+   * @param this_ele_ptr "this" element instance
+   * @param bit_this bit of entity on which "this" finite element is executed
+   * @param bit_this_mask mask of entity on which "this" finite element instance
+   * is executed
+   * @param verb verbosity level
+   * @param sev logging severity level
+   */
   OpRunParent(boost::shared_ptr<ForcesAndSourcesCore> parent_ele_ptr,
               BitRefLevel bit_parent, BitRefLevel bit_parent_mask,
               boost::shared_ptr<ForcesAndSourcesCore> this_ele_ptr,
@@ -43,8 +64,25 @@ private:
   Sev severityLevel;
 };
 
+/**
+ * @brief Operator to project base functions from parent entity
+ * 
+ */
 struct OpAddParentEntData : public ForcesAndSourcesCore::UserDataOperator {
 
+  /**
+   * @brief Construct a new Op Add Parent Ent Data object
+   * 
+   * @param field_name field name DOFs projected from parent
+   * @param op_parent_type  type of user data operator
+   * @param parent_ele_ptr parent finite element instance
+   * @param bit_child bit of child entity
+   * @param bit_child_mask bit mask of child
+   * @param bit_parent_ent bit of parent entity
+   * @param bit_parent_ent_mask bit mask of parent
+   * @param verb verbosity level
+   * @param sev severity level for logging
+   */
   OpAddParentEntData(std::string field_name, OpType op_parent_type,
                      boost::shared_ptr<ForcesAndSourcesCore> parent_ele_ptr,
                      BitRefLevel bit_child, BitRefLevel bit_child_mask,
