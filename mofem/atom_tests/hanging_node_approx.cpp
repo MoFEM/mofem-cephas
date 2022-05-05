@@ -51,8 +51,9 @@ template <int FIELD_DIM> struct ApproxFieldFunction;
 
 template <> struct ApproxFieldFunction<1> {
   double operator()(const double x, const double y, const double z) {
-    return x * x + y * y + x * y + pow(x, 3) + pow(y, 3) + pow(x, 4) +
-           pow(y, 4);
+    return 1; //x * x + y * y;
+    // return x * x + y * y + x * y + pow(x, 3) + pow(y, 3) + pow(x, 4) +
+    //        pow(y, 4);
   }
 };
 
@@ -77,11 +78,9 @@ auto set_parent_dofs = [](auto &m_field, auto &pipeline, auto op,
 
           FIELD_NAME, op, parent_fe_ptr_l0,
 
-          // level 1 elements
-          bit(1), bit(1),
+          bit(1), bit(1) | bit(2),
 
-          // marked level 1
-          marker(0), BitRefLevel().set(),
+          marker(1), BitRefLevel().set(),
 
           verbosity, sev)
 
@@ -93,11 +92,9 @@ auto set_parent_dofs = [](auto &m_field, auto &pipeline, auto op,
 
           FIELD_NAME, op, parent_fe_ptr_l1,
 
-          // level 1 elements
-          bit(2), bit(2),
+          bit(2), bit(1) | bit(2),
 
-          // marked level 1
-          marker(1), BitRefLevel().set(),
+          marker(1) | marker(2), BitRefLevel().set(),
 
           verbosity, sev)
 
@@ -125,7 +122,7 @@ private:
   MoFEMErrorCode assembleSystem();
   MoFEMErrorCode solveSystem();
   MoFEMErrorCode checkResults();
-
+  MoFEMErrorCode printResults();
   struct CommonData {
     boost::shared_ptr<VectorDouble> approxVals;
     SmartPetscObj<Vec> L2Vec;
@@ -194,6 +191,7 @@ MoFEMErrorCode AtomTest::runProblem() {
   CHKERR assembleSystem();
   CHKERR solveSystem();
   CHKERR checkResults();
+  CHKERR printResults();
   MoFEMFunctionReturn(0);
 }
 //! [Run programme]
@@ -216,86 +214,103 @@ MoFEMErrorCode AtomTest::readMesh() {
 
   Range level0_ents;
   CHKERR mField.getInterface<BitRefManager>()->getEntitiesByDimAndRefLevel(
-      bit(0), BitRefLevel().set(), 2, level0_ents);
+      bit(0), BitRefLevel().set(), SPACE_DIM, level0_ents);
   Range level0_skin;
   CHKERR skin.find_skin(0, level0_ents, false, level0_skin);
   CHKERR pcomm->filter_pstatus(level0_skin,
                                PSTATUS_SHARED | PSTATUS_MULTISHARED,
                                PSTATUS_NOT, -1, nullptr);
 
-  auto refine_mesh = [&](auto bit0, auto bit1, auto mark, auto l) {
+  auto refine_mesh = [&](auto l) {
     MoFEMFunctionBegin;
 
     auto refine = mField.getInterface<MeshRefinement>();
 
     auto meshset_level0_ptr = get_temp_meshset_ptr(moab);
-    CHKERR bit_mng->getEntitiesByDimAndRefLevel(bit0, BitRefLevel().set(), 2,
-                                                *meshset_level0_ptr);
+    CHKERR bit_mng->getEntitiesByDimAndRefLevel(bit(l - 1), BitRefLevel().set(),
+                                                SPACE_DIM, *meshset_level0_ptr);
 
     // random mesh refinement
     auto meshset_ref_edges_ptr = get_temp_meshset_ptr(moab);
 
-    Range eles;
-    CHKERR moab.get_entities_by_dimension(*meshset_level0_ptr,
-                                          simpleInterface->getDim(), eles);
-    CHKERR bit_mng->filterEntitiesByRefLevel(bit0, bit0, eles);
+    Range els;
+    CHKERR moab.get_entities_by_dimension(*meshset_level0_ptr, SPACE_DIM, els);
+    CHKERR bit_mng->filterEntitiesByRefLevel(bit(l - 1), bit(l - 1), els);
 
     Range ele_to_refine;
 
-    int ii = 0;
-    for (auto t : eles) {
-      if (ii % 2) {
-        ele_to_refine.insert(t);
-        std::vector<EntityHandle> adj_edges;
-        CHKERR mField.get_moab().get_adjacencies(&t, 1, 1, false, adj_edges);
-        CHKERR moab.add_entities(*meshset_ref_edges_ptr, &*adj_edges.begin(),
-                                 adj_edges.size());
+    if (l == 1) {
+      int ii = 0;
+      for (auto t : els) {
+        if ((ii % 2)) {
+          ele_to_refine.insert(t);
+          std::vector<EntityHandle> adj_edges;
+          CHKERR mField.get_moab().get_adjacencies(&t, 1, SPACE_DIM - 1, false,
+                                                   adj_edges);
+          CHKERR moab.add_entities(*meshset_ref_edges_ptr, &*adj_edges.begin(),
+                                   adj_edges.size());
+        }
+        ++ii;
       }
-      ++ii;
+    } else {
+      Range level_skin;
+      CHKERR skin.find_skin(0, els, false, level_skin);
+      CHKERR pcomm->filter_pstatus(level_skin,
+                                   PSTATUS_SHARED | PSTATUS_MULTISHARED,
+                                   PSTATUS_NOT, -1, nullptr);
+      level_skin = subtract(level_skin, level0_skin);
+      Range adj;
+      CHKERR mField.get_moab().get_adjacencies(level_skin, SPACE_DIM, false,
+                                               adj, moab::Interface::UNION);
+      els = subtract(els, adj);
+      ele_to_refine.merge(els);
+      Range adj_edges;
+      CHKERR mField.get_moab().get_adjacencies(
+          els, SPACE_DIM - 1, false, adj_edges, moab::Interface::UNION);
+      CHKERR moab.add_entities(*meshset_ref_edges_ptr, adj_edges);
     }
 
-    Range ele_to_refine_skin;
-    CHKERR skin.find_skin(0, ele_to_refine, false, ele_to_refine_skin);
-    CHKERR pcomm->filter_pstatus(ele_to_refine_skin,
-                                 PSTATUS_SHARED | PSTATUS_MULTISHARED,
-                                 PSTATUS_NOT, -1, nullptr);
-    ele_to_refine_skin = subtract(ele_to_refine_skin, level0_skin);
-    CHKERR mField.get_moab().get_adjacencies(ele_to_refine_skin, 0, false,
-                                             ele_to_refine_skin,
-                                             moab::Interface::UNION);
-    CHKERR refine->addVerticesInTheMiddleOfEdges(*meshset_ref_edges_ptr, bit1,
+    CHKERR refine->addVerticesInTheMiddleOfEdges(*meshset_ref_edges_ptr, bit(l),
                                                  false, VERBOSE);
-    CHKERR refine->refineTrisHangingNodes(*meshset_level0_ptr, bit1, VERBOSE);
-    
+    CHKERR refine->refineTrisHangingNodes(*meshset_level0_ptr, bit(l), VERBOSE);
     CHKERR bit_mng->updateRange(level0_skin, level0_skin);
-    CHKERR bit_mng->updateRange(ele_to_refine_skin, ele_to_refine_skin);
 
-    CHKERR bit_mng->addBitRefLevel(ele_to_refine_skin, mark);
-
-    CHKERR bit_mng->writeBitLevelByType(
-        bit1, BitRefLevel().set(), MBTRI,
+    CHKERR bit_mng->writeBitLevelByDim(
+        bit(l), BitRefLevel().set(), SPACE_DIM,
         (boost::lexical_cast<std::string>(l) + "_ref_mesh.vtk").c_str(), "VTK",
         "");
-    CHKERR bit_mng->writeBitLevelByType(
-        bit1, bit1, MBTRI,
+    CHKERR bit_mng->writeBitLevelByDim(
+        bit(l), bit(l), MBTRI,
         (boost::lexical_cast<std::string>(l) + "_only_ref_mesh.vtk").c_str(),
-        "VTK", "");
-
-    CHKERR bit_mng->writeBitLevelByType(
-        mark, BitRefLevel().set(), MBEDGE,
-        (boost::lexical_cast<std::string>(l) + "_ref_skin_old.vtk").c_str(),
-        "VTK", "");
-
-    CHKERR bit_mng->writeBitLevelByType(
-        mark, bit0.flip(), MBEDGE,
-        (boost::lexical_cast<std::string>(l) + "_ref_skin_new.vtk").c_str(),
         "VTK", "");
 
     MoFEMFunctionReturn(0);
   };
 
-  CHKERR refine_mesh(bit(0), bit(1), marker(0), 1);
-  CHKERR refine_mesh(bit(1), bit(2), marker(1), 2);
+  auto mark_skins = [&](auto l, auto m) {
+    MoFEMFunctionBegin;
+    Range ents;
+    CHKERR bit_mng->getEntitiesByDimAndRefLevel(bit(l), bit(l), SPACE_DIM,
+                                                ents);
+    Range level_skin;
+    CHKERR skin.find_skin(0, ents, false, level_skin);
+    CHKERR pcomm->filter_pstatus(level_skin,
+                                 PSTATUS_SHARED | PSTATUS_MULTISHARED,
+                                 PSTATUS_NOT, -1, nullptr);
+    level_skin = subtract(level_skin, level0_skin);
+    CHKERR mField.get_moab().get_adjacencies(level_skin, 0, false, level_skin,
+                                             moab::Interface::UNION);
+    CHKERR bit_mng->addBitRefLevel(level_skin, marker(m));
+    MoFEMFunctionReturn(0);
+  };
+
+  CHKERR refine_mesh(1);
+  CHKERR mark_skins(0, 1);
+  CHKERR mark_skins(1, 1);
+
+  CHKERR refine_mesh(2);
+  CHKERR mark_skins(1, 2);
+  CHKERR mark_skins(2, 2);
 
   simpleInterface->getBitRefLevel() = bit(0) | bit(1) | bit(2);
   simpleInterface->getBitRefLevelMask() = BitRefLevel().set();
@@ -379,7 +394,7 @@ MoFEMErrorCode AtomTest::setupProblem() {
     MoFEMFunctionReturn(0);
   };
 
-  constexpr int order = 4;
+  constexpr int order = 1;
   CHKERR simpleInterface->setFieldOrder(FIELD_NAME, order);
   // CHKERR simpleInterface->setUp();
 
@@ -399,21 +414,91 @@ MoFEMErrorCode AtomTest::setupProblem() {
   ProblemsManager *prb_mng = mField.getInterface<ProblemsManager>();
 
   CHKERR prb_mng->removeDofsOnEntities(simpleInterface->getProblemName(),
-                                       FIELD_NAME, bit(0),
-                                       bit(0) | marker(0) | marker(1));
+                                       FIELD_NAME, bit(0), bit(0));
   CHKERR prb_mng->removeDofsOnEntities(simpleInterface->getProblemName(),
-                                       FIELD_NAME, bit(1),
-                                       bit(1) | marker(0) | marker(1));
+                                       FIELD_NAME, bit(1), bit(1));
+  CHKERR prb_mng->removeDofsOnEntities(simpleInterface->getProblemName(),
+                                       FIELD_NAME, marker(1), bit(0).flip());
+  CHKERR prb_mng->removeDofsOnEntities(simpleInterface->getProblemName(),
+                                       FIELD_NAME, marker(2), bit(1).flip());
 
-  CHKERR prb_mng->removeDofsOnEntities(simpleInterface->getProblemName(),
-                                       FIELD_NAME, marker(0), bit(0).flip());
-  CHKERR prb_mng->removeDofsOnEntities(simpleInterface->getProblemName(),
-                                       FIELD_NAME, marker(1), bit(1).flip());
 
-  CHKERR bit_mng->writeBitLevel(marker(0), bit(0).flip(), "remove_bit1.vtk",
-                                "VTK", "");
-  CHKERR bit_mng->writeBitLevel(marker(1), bit(1).flip(), "remove_bit2.vtk",
-                                "VTK", "");
+  auto save_mesh = [&](std::string file_name, Range ents) {
+    auto &moab = mField.get_moab();
+    MoFEMFunctionBeginHot;
+    if(ents.empty()) {
+      MOFEM_LOG("SELF", Sev::warning)
+          << "Nothig to write < " << file_name << " >";
+      MoFEMFunctionReturnHot(0);
+    } else {
+
+      auto meshset_ptr = get_temp_meshset_ptr(moab);
+      CHKERR moab.add_entities(*meshset_ptr, ents);
+      CHKERR moab.write_file(file_name.c_str(), "VTK", "",
+                             meshset_ptr->get_ptr(), 1);
+    }
+
+    MoFEMFunctionReturnHot(0);
+  };
+
+  auto get_adj = [&](auto &i_ents, auto &r_ents) {
+    auto &moab = mField.get_moab();
+    MoFEMFunctionBeginHot;
+    CHKERR moab.get_adjacencies(i_ents, 1, false, r_ents,
+                                moab::Interface::UNION);
+    CHKERR moab.get_adjacencies(i_ents, 0, false, r_ents,
+                                moab::Interface::UNION);
+    MoFEMFunctionReturnHot(0);
+  };
+
+  std::map<std::string, Range> e_maps;
+
+  CHKERR mField.getInterface<BitRefManager>()->getEntitiesByRefLevel(
+      bit(0), bit(0), e_maps["bit0_bit0.vtk"]);
+  CHKERR bit_mng->updateRange(e_maps["bit0_bit0.vtk"], e_maps["bit1_bit1.vtk"]);
+
+  CHKERR mField.getInterface<BitRefManager>()->getEntitiesByRefLevel(
+      bit(1), bit(1) | bit(2), e_maps["bit1_bit1orbit2.vtk"]);
+
+  CHKERR get_adj(e_maps["bit0_bit0.vtk"], e_maps["bit1_bit1_marker1.vtk"]);
+  CHKERR mField.getInterface<BitRefManager>()->filterEntitiesByRefLevel(
+      marker(1), BitRefLevel().set(), e_maps["bit1_bit1_marker1.vtk"]);
+  CHKERR mField.getInterface<BitRefManager>()->filterEntitiesByRefLevel(
+      bit(2), BitRefLevel().set(), e_maps["bit1_bit1_marker1.vtk"]);
+
+  CHKERR bit_mng->updateRange(e_maps["bit1_bit1.vtk"], e_maps["bit2_bit2.vtk"]);
+  CHKERR get_adj(e_maps["bit1_bit1.vtk"], e_maps["bit2_bit2_marker2.vtk"]);
+  CHKERR mField.getInterface<BitRefManager>()->filterEntitiesByRefLevel(
+      marker(2), BitRefLevel().set(), e_maps["bit2_bit2_marker2.vtk"]);
+  CHKERR mField.getInterface<BitRefManager>()->filterEntitiesByRefLevel(
+      bit(2), BitRefLevel().set(), e_maps["bit2_bit2_marker2.vtk"]);
+
+  CHKERR mField.getInterface<BitRefManager>()->getEntitiesByRefLevel(
+      marker(1), bit(0).flip(), e_maps["marker1_flip_bit0.vtk"]);
+  CHKERR mField.getInterface<BitRefManager>()->getEntitiesByRefLevel(
+      marker(2), bit(1).flip(), e_maps["marker2_flip_bit1.vtk"]);
+
+  CHKERR mField.getInterface<BitRefManager>()->getEntitiesByRefLevel(
+      bit(1), bit(1), e_maps["bit0_bit1_not_updated.vtk"]);
+
+  CHKERR mField.getInterface<BitRefManager>()->getEntitiesByRefLevel(
+      bit(0) | bit(1) | bit(2), BitRefLevel().set(),
+      e_maps["problem_ents.vtk"]);
+  e_maps["problem_ents.vtk"] =
+      subtract(e_maps["problem_ents.vtk"], e_maps["bit0_bit0.vtk"]);
+  e_maps["problem_ents.vtk"] =
+      subtract(e_maps["problem_ents.vtk"], e_maps["bit0_bit1_not_updated.vtk"]);
+  e_maps["problem_ents.vtk"] =
+      subtract(e_maps["problem_ents.vtk"], e_maps["marker1_flip_bit0.vtk"]);
+  e_maps["problem_ents.vtk"] =
+      subtract(e_maps["problem_ents.vtk"], e_maps["marker2_flip_bit1.vtk"]);
+
+  e_maps["problem_ents_verts.vtk"] =
+      e_maps["problem_ents.vtk"].subset_by_type(MBVERTEX);
+
+  for (auto &r : e_maps) {
+    CHKERR save_mesh(r.first, r.second);
+  };
 
   MoFEMFunctionReturn(0);
 }
@@ -447,29 +532,27 @@ MoFEMErrorCode AtomTest::assembleSystem() {
                                    EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
     if (type == MBENTITYSET) {
+
       MOFEM_LOG("SELF", Sev::verbose)
           << "ROW: side/type: " << side << "/" << CN::EntityTypeName(type)
           << " op space/base: " << FieldSpaceNames[data.getSpace()] << "/"
           << ApproximationBaseNames[data.getBase()] << " DOFs "
           << data.getIndices() << " nb base functions " << data.getN().size2()
           << " nb base functions integration points " << data.getN().size1();
-    }
-    MoFEMFunctionReturn(0);
-  };
 
-  auto field_op_col = new ForcesAndSourcesCore::UserDataOperator(
-      FIELD_NAME, DomainEleOp::OPCOL);
-  field_op_col->doWorkRhsHook = [](DataOperator *op_ptr, int side,
-                                   EntityType type,
-                                   EntitiesFieldData::EntData &data) {
-    MoFEMFunctionBegin;
-    if (type == MBENTITYSET) {
-      MOFEM_LOG("SELF", Sev::verbose)
-          << "COL: side/type: " << side << "/" << CN::EntityTypeName(type)
-          << " op space/base: " << FieldSpaceNames[data.getSpace()] << "/"
-          << ApproximationBaseNames[data.getBase()] << " DOFs "
-          << data.getIndices() << " nb base functions " << data.getN().size2()
-          << " nb base functions integration points " << data.getN().size1();
+      auto get_bool = [](auto fe, auto bit) {
+        return (bit & fe->getBitRefLevel()).any();
+      };
+
+      for (auto &field_ent : data.getFieldEntities()) {
+        MOFEM_LOG("SELF", Sev::verbose)
+            << "\t" << CN::EntityTypeName(field_ent->getEntType())
+            << " marker(0) " << get_bool(field_ent, marker(0)) << " marker(1) "
+            << get_bool(field_ent, marker(0)) << " bit(0) "
+            << get_bool(field_ent, bit(0)) << " bit(1) "
+            << get_bool(field_ent, bit(1)) << " bit(2) "
+            << get_bool(field_ent, bit(2));
+      }
     }
     MoFEMFunctionReturn(0);
   };
@@ -556,6 +639,79 @@ MoFEMErrorCode AtomTest::checkResults() {
   MoFEMFunctionReturn(0);
 }
 //! [Check results]
+
+MoFEMErrorCode AtomTest::printResults() {
+  MoFEMFunctionBegin;
+  PipelineManager *pipeline_mng = mField.getInterface<PipelineManager>();
+  pipeline_mng->getDomainLhsFE().reset();
+  pipeline_mng->getDomainRhsFE().reset();
+
+  auto rule = [](int, int, int p) -> int { return -1; };
+  CHKERR pipeline_mng->setDomainRhsIntegrationRule(rule);
+
+  static_cast<ForcesAndSourcesCore *>(pipeline_mng->getDomainRhsFE().get())
+      ->setRuleHook = [](ForcesAndSourcesCore *fe_raw_ptr, int order_row,
+                         int order_col, int order_data) -> MoFEMErrorCode {
+    MoFEMFunctionBeginHot;
+    fe_raw_ptr->gaussPts.resize(3, 3);
+    fe_raw_ptr->gaussPts(0, 0) = 0;
+    fe_raw_ptr->gaussPts(1, 0) = 0;
+    fe_raw_ptr->gaussPts(2, 0) = 0;
+    fe_raw_ptr->gaussPts(0, 1) = 1;
+    fe_raw_ptr->gaussPts(1, 1) = 0;
+    fe_raw_ptr->gaussPts(2, 1) = 0;
+    fe_raw_ptr->gaussPts(0, 2) = 0;
+    fe_raw_ptr->gaussPts(1, 2) = 1;
+    fe_raw_ptr->gaussPts(2, 2) = 0;
+    MoFEMFunctionReturnHot(0);
+  };
+
+  auto field_op_row = new ForcesAndSourcesCore::UserDataOperator(
+      FIELD_NAME, DomainEleOp::OPROW);
+
+  auto approx_vals = boost::make_shared<VectorDouble>();
+
+  auto &moab = mField.get_moab();
+  Tag th;
+  double def_val[] = {0};
+  CHKERR moab.tag_get_handle("FIELD", 1, MB_TYPE_DOUBLE, th,
+                             MB_TAG_CREAT | MB_TAG_SPARSE, &def_val);
+
+  field_op_row->doWorkRhsHook = [&](DataOperator *base_op_ptr, int side,
+                                    EntityType type,
+                                    EntitiesFieldData::EntData &data) {
+    MoFEMFunctionBegin;
+    if (type == MBVERTEX) {
+      auto op_ptr =
+          static_cast<FaceElementForcesAndSourcesCoreBase::UserDataOperator *>(
+              base_op_ptr);
+      auto t_field = getFTensor0FromVec(*approx_vals);
+      auto nb_gauss_pts = op_ptr->getGaussPts().size2();
+      if (nb_gauss_pts != 3)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Should be three guass pts.");
+      auto conn = op_ptr->getConn();
+      for (auto gg = 0; gg != nb_gauss_pts; ++gg) {
+        const double v = t_field;
+        CHKERR moab.tag_set_data(th, &conn[gg], 1, &v);
+        ++t_field;
+      }
+    }
+    MoFEMFunctionReturn(0);
+  };
+
+  set_parent_dofs(mField, pipeline_mng->getOpDomainRhsPipeline(),
+                  DomainEleOp::OPROW, VERBOSE, Sev::noisy);
+  pipeline_mng->getOpDomainRhsPipeline().push_back(
+      new OpCalculateScalarFieldValues(FIELD_NAME, approx_vals));
+  pipeline_mng->getOpDomainRhsPipeline().push_back(field_op_row);
+  CHKERR pipeline_mng->loopFiniteElements();
+
+  CHKERR mField.getInterface<BitRefManager>()->writeBitLevelByType(
+      bit(2), BitRefLevel().set(), MBTRI, "out.vtk", "VTK", "");
+
+  MoFEMFunctionReturn(0);
+}
 
 int main(int argc, char *argv[]) {
 

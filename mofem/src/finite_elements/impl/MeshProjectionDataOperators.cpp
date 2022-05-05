@@ -104,20 +104,19 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
     MoFEMFunctionReturnHot(0);
   };
 
-  auto switch_of_dofs_children = [](auto &parent_data, auto type,
-                                    EntitiesFieldData &entities_field_data) {
+  auto switch_of_dofs_children = [](auto &parent_ent_data, auto &child_data) {
     MoFEMFunctionBeginHot;
-    for (auto i : parent_data.getIndices()) {
+    for (auto i : parent_ent_data.getIndices()) {
       if (i >= 0) {
-        for (auto &child_data : entities_field_data.dataOnEntities[type]) {
-          auto it = std::find(child_data.getIndices().begin(),
-                              child_data.getIndices().end(), i);
-          if (it != child_data.getIndices().end()) {
+        for (auto &child_ent_data : child_data) {
+          auto it = std::find(child_ent_data.getIndices().begin(),
+                              child_ent_data.getIndices().end(), i);
+          if (it != child_ent_data.getIndices().end()) {
             const auto dof_idx =
-                std::distance(child_data.getIndices().begin(), it);
-            child_data.getIndices()[dof_idx] = -1;
-            child_data.getLocalIndices()[dof_idx] = -1;
-            child_data.getFieldData()[dof_idx] = 0;
+                std::distance(child_ent_data.getIndices().begin(), it);
+            child_ent_data.getIndices()[dof_idx] = -1;
+            child_ent_data.getLocalIndices()[dof_idx] = -1;
+            child_ent_data.getFieldData()[dof_idx] = 0;
           }
         }
       }
@@ -139,9 +138,8 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
       for (auto fe : field_entities)
         bit_ent |= fe->getBitRefLevel();
 
-      // note all nodes from all added 
-      if (check(bitParentEnt, bitParentEntMask, bit_ent) ||
-          type == MBENTITYSET) {
+      // note all nodes from all added
+      if (check(bitParentEnt, bitParentEntMask, bit_ent)) {
 
         if (verbosity >= VERBOSE) {
           MOFEM_LOG("SELF", severityLevel)
@@ -151,8 +149,8 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
               << ApproximationBaseNames[data.getBase()];
         }
 
-        // note all nodes from all added 
-        if (field_entities.size() > 1 && type != MBENTITYSET) {
+        // note all nodes from all added
+        if (field_entities.size() > 1) {
           int dof_idx = 0;
           for (auto dof : data.getFieldDofs()) {
             auto &bit_ent = dof->getBitRefLevel();
@@ -163,7 +161,7 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
             }
             ++dof_idx;
           }
-        }
+        } 
 
 #ifndef NDEBUG
         if (verbosity >= NOISY) {
@@ -175,7 +173,14 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
         }
 #endif
 
-        CHKERR switch_of_dofs_children(data, type, entities_field_data);
+        CHKERR switch_of_dofs_children(
+            data, entities_field_data.dataOnEntities[type]);
+        if (type == MBENTITYSET) {
+          for (auto t = 0; t != MBENTITYSET; ++t) {
+            CHKERR switch_of_dofs_children(
+                data, entities_field_data.dataOnEntities[t]);
+          }
+        }
 
         entities_field_data.dataOnEntities[MBENTITYSET].push_back(
             new EntitiesFieldData::EntData());
@@ -213,6 +218,8 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
 #ifndef NDEBUG
       auto &parent_gauss_pts = parentElePtr->gaussPts;
       if (getGaussPts().size1() != parent_gauss_pts.size1()) {
+        MOFEM_LOG("SELF", Sev::error) << getGaussPts();
+        MOFEM_LOG("SELF", Sev::error) << parent_gauss_pts;
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Wrong number of weights");
       }
