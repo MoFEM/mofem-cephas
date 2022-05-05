@@ -68,38 +68,47 @@ auto marker = [](auto l) {
   return BitRefLevel().set(BITREFLEVEL_SIZE - 1 - l);
 };
 
-auto set_parent_dofs = [](auto &m_field, auto &pipeline, auto op,
-                          auto verbosity, auto sev) {
-  auto parent_fe_ptr_l0 = boost::make_shared<DomainParentEle>(m_field);
-  auto parent_fe_ptr_l1 = boost::make_shared<DomainParentEle>(m_field);
+auto set_parent_dofs = [](auto &m_field, auto &fe_top, auto op, auto verbosity,
+                          auto sev) {
 
-  parent_fe_ptr_l1->getOpPtrVector().push_back(
+  BitRefLevel bit_ele_mask;
+  for (auto l = 1; l <= nb_ref_levels; ++l)
+    bit_ele_mask |= bit(l);
 
-      new OpAddParentEntData(
+  boost::function<void(boost::shared_ptr<ForcesAndSourcesCore>, int)>
+      add_parent_level = [&](boost::shared_ptr<ForcesAndSourcesCore>
+                                 parent_fe_pt,
+                             int level) {
+        if (level > 0) {
 
-          FIELD_NAME, op, parent_fe_ptr_l0,
+          auto fe_ptr_current = boost::shared_ptr<ForcesAndSourcesCore>(
+              new DomainParentEle(m_field));
 
-          bit(1), bit(1) | bit(2),
+          add_parent_level(
+              boost::dynamic_pointer_cast<ForcesAndSourcesCore>(fe_ptr_current),
+              level - 1);
 
-          marker(1), BitRefLevel().set(),
+          BitRefLevel bit_marker;
+          for (auto l = 1; l <= level; ++l)
+            bit_marker |= marker(l);
 
-          verbosity, sev)
+          parent_fe_pt->getOpPtrVector().push_back(
 
-  );
+              new OpAddParentEntData(
 
-  pipeline.push_back(
+                  FIELD_NAME, op, fe_ptr_current,
 
-      new OpAddParentEntData(
+                  bit(level), bit_ele_mask,
 
-          FIELD_NAME, op, parent_fe_ptr_l1,
+                  bit_marker, BitRefLevel().set(),
 
-          bit(2), bit(1) | bit(2),
+                  verbosity, sev));
+        }
+      };
 
-          marker(1) | marker(2), BitRefLevel().set(),
+  add_parent_level(boost::dynamic_pointer_cast<ForcesAndSourcesCore>(fe_top),
+                   nb_ref_levels);
 
-          verbosity, sev)
-
-  );
 };
 
 auto test_bit_child = [](FEMethod *fe_ptr) {
@@ -518,10 +527,10 @@ MoFEMErrorCode AtomTest::assembleSystem() {
   pipeline_mng->getDomainRhsFE()->exeTestHook = test_bit_child;
 
   auto beta = [](const double, const double, const double) { return 1; };
-  set_parent_dofs(mField, pipeline_mng->getOpDomainLhsPipeline(),
-                  DomainEleOp::OPROW, QUIET, Sev::noisy);
-  set_parent_dofs(mField, pipeline_mng->getOpDomainLhsPipeline(),
-                  DomainEleOp::OPCOL, QUIET, Sev::noisy);
+  set_parent_dofs(mField, pipeline_mng->getDomainLhsFE(), DomainEleOp::OPROW,
+                  QUIET, Sev::noisy);
+  set_parent_dofs(mField, pipeline_mng->getDomainLhsFE(), DomainEleOp::OPCOL,
+                  QUIET, Sev::noisy);
   pipeline_mng->getOpDomainLhsPipeline().push_back(
       new OpDomainMass(FIELD_NAME, FIELD_NAME, beta));
 
@@ -557,8 +566,8 @@ MoFEMErrorCode AtomTest::assembleSystem() {
     MoFEMFunctionReturn(0);
   };
 
-  set_parent_dofs(mField, pipeline_mng->getOpDomainRhsPipeline(),
-                  DomainEleOp::OPROW, VERBOSE, Sev::noisy);
+  set_parent_dofs(mField, pipeline_mng->getDomainRhsFE(), DomainEleOp::OPROW,
+                  VERBOSE, Sev::noisy);
   pipeline_mng->getOpDomainRhsPipeline().push_back(field_op_row);
 
   pipeline_mng->getOpDomainRhsPipeline().push_back(
@@ -607,8 +616,8 @@ MoFEMErrorCode AtomTest::checkResults() {
       mField.get_comm(), (!mField.get_comm_rank()) ? 1 : 0, 1);
   common_data_ptr->approxVals = boost::make_shared<VectorDouble>();
 
-  set_parent_dofs(mField, pipeline_mng->getOpDomainRhsPipeline(),
-                  DomainEleOp::OPROW, VERBOSE, Sev::noisy);
+  set_parent_dofs(mField, pipeline_mng->getDomainRhsFE(), DomainEleOp::OPROW,
+                  VERBOSE, Sev::noisy);
   pipeline_mng->getOpDomainRhsPipeline().push_back(
       new OpCalculateScalarFieldValues(FIELD_NAME,
                                        common_data_ptr->approxVals));
@@ -700,8 +709,8 @@ MoFEMErrorCode AtomTest::printResults() {
     MoFEMFunctionReturn(0);
   };
 
-  set_parent_dofs(mField, pipeline_mng->getOpDomainRhsPipeline(),
-                  DomainEleOp::OPROW, VERBOSE, Sev::noisy);
+  set_parent_dofs(mField, pipeline_mng->getDomainRhsFE(), DomainEleOp::OPROW,
+                  VERBOSE, Sev::noisy);
   pipeline_mng->getOpDomainRhsPipeline().push_back(
       new OpCalculateScalarFieldValues(FIELD_NAME, approx_vals));
   pipeline_mng->getOpDomainRhsPipeline().push_back(field_op_row);
