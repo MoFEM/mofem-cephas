@@ -389,10 +389,8 @@ MoFEMErrorCode AtomTest::refineResults() {
     Range meshsets;
     CHKERR moab.get_entities_by_type(0, MBENTITYSET, meshsets, true);
     for (auto m : meshsets) {
-      for (auto t = MBVERTEX; t != MBENTITYSET; ++t) {
-        CHKERR mField.getInterface<BitRefManager>()
-            ->updateMeshsetByEntitiesChildren(m, bit_level2, m, t, false);
-      }
+      CHKERR mField.getInterface<BitRefManager>()
+          ->updateMeshsetByEntitiesChildren(m, bit_level2, m, MBMAXTYPE, false);
     }
 
     MoFEMFunctionReturn(0);
