@@ -568,10 +568,11 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
    *
    */
   enum OpType {
-    OPROW = 1 << 0,
-    OPCOL = 1 << 1,
-    OPROWCOL = 1 << 2,
-    OPSPACE = 1 << 3
+    OPROW = 1 << 0,    ///< operator doWork function is executed on FE rows
+    OPCOL = 1 << 1,    ///< operator doWork function is executed on FE columns
+    OPROWCOL = 1 << 2, ///< operator doWork is executed on FE rows &columns
+    OPSPACE = 1 << 3,  ///< operator do Work is execute on space data
+    OPLAST = 1 << 3    ///< @deprecated would be removed
   };
 
   static const char *const OpTypeNames[];
