@@ -259,7 +259,7 @@ struct BitRefManager : public UnknownInterface {
                                    int verb = QUIET) const;
 
   /**
-   * \brief Set nth bit ref level
+   * \brief Set nth bit ref level to all entities in databse
    * \ingroup mofem_bit_ref
    * @param  n    nth bit
    * @param  b    value to set

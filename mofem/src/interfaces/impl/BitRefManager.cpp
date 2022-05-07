@@ -575,12 +575,11 @@ MoFEMErrorCode BitRefManager::setNthBitRefLevel(const Range &ents, const int n,
   MoFEMFunctionBegin;
   std::vector<const BitRefLevel *> ents_bits_vec;
   CHKERR RefEntity::getBitRefLevel(m_field.get_moab(), ents, ents_bits_vec);
-  for (std::vector<const BitRefLevel *>::iterator it = ents_bits_vec.begin();
-       it != ents_bits_vec.end(); ++it) {
+  for (auto it = ents_bits_vec.begin(); it != ents_bits_vec.end(); ++it) {
     const_cast<BitRefLevel &>(**it)[n] = b;
   }
   if (verb == VERY_NOISY) {
-    cerr << ents << endl;
+    MOFEM_LOG("BitRefSelf", Sev::noisy) << "Set bit to " << ents;
   }
   MoFEMFunctionReturn(0);
 }
@@ -590,13 +589,11 @@ MoFEMErrorCode BitRefManager::setNthBitRefLevel(const int n, const bool b,
   MoFEM::Interface &m_field = cOre;
   auto ref_ents_ptr = m_field.get_ref_ents();
   MoFEMFunctionBeginHot;
-  RefEntity_multiIndex::iterator dit, hi_dit;
-  dit = ref_ents_ptr->begin();
-  hi_dit = ref_ents_ptr->end();
-  for (; dit != hi_dit; dit++) {
+  auto hi_dit = ref_ents_ptr->end();
+  for (auto dit = ref_ents_ptr->begin(); dit != hi_dit; ++dit) {
     (*const_cast<RefEntity *>(dit->get())->getBitRefLevelPtr())[n] = b;
     if (verb >= VERY_VERBOSE) {
-      cerr << **dit << endl;
+      MOFEM_LOG("BitRefSelf", Sev::noisy) << "Set bit to " << **dit;
     }
   }
   MoFEMFunctionReturnHot(0);
