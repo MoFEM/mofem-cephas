@@ -1052,6 +1052,8 @@ MoFEMErrorCode BitRefManager::updateMeshsetByEntitiesChildren(
   }
   Range children_ents;
   CHKERR updateRange(parent_ents, children_ents);
+  if (child_type < MBMAXTYPE)
+    children_ents = children_ents.subset_by_type(child_type);
   CHKERR filterEntitiesByRefLevel(child_bit, BitRefLevel().set(), children_ents,
                                   verb);
   CHKERR moab.add_entities(child, children_ents);

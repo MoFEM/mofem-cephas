@@ -508,10 +508,11 @@ struct BitRefManager : public UnknownInterface {
    * \param mask of parent bit ref level
    * \param child_bit refinement level
    * \param mask of child bit ref level
-   * \param type of refined entity
-   * \param child_type meshset where child entities are stored (if the child
+   * \param child meshset where child entities are stored (if the child
    *meshset is set to be the parent meshset, the parent would be updated with
    *the refined entities)
+   * \param child_type meshset is update only by entities of specified type. if
+   *type is set to MBMAXTYPE all types are updated.
    * \param recursive if true parent meshset is searched recursively
    *
    **/
@@ -521,27 +522,7 @@ struct BitRefManager : public UnknownInterface {
       const BitRefLevel &child_mask, const EntityHandle child,
       EntityType child_type, const bool recursive = false, int verb = 0);
 
-  /** \brief Get child entities form meshset containing parent entities
-   * \ingroup mofem_bit_ref
-   *
-   * \note this calls updateMeshsetByEntitiesChildren with setting masks and
-   * parent to parent_bit = parent_mask = BitRefLevel().set() and child_mask =
-   * child_bit.
-   *
-   * Search for refined entities of given type whose parent are entities in
-   * the parent meshset. It can be used for example to transfer information
-   *about boundary conditions to refined mesh or split mesh by interface
-   * elements. It is used by function refineMeshset, to update MESHSET
-   * finite elements.
-   *
-   * \param parent meshset
-   * \param child_bit refinement level
-   * \param type of refined entity
-   * \param child_type meshset where child entities are stored (if the child
-   * meshset is set to be the parent meshset, the parent would be updated with
-   * the refined entities)
-   * \param recursive if true parent meshset is searched recursively
-   *
+  /** \copydoc updateMeshsetByEntitiesChildren
    **/
   MoFEMErrorCode updateMeshsetByEntitiesChildren(const EntityHandle parent,
                                                  const BitRefLevel &child_bit,

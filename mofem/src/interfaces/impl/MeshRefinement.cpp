@@ -924,11 +924,7 @@ MoFEMErrorCode MeshRefinement::refineMeshset(const EntityHandle meshset,
             "this meshset is not in ref database");
   }
   CHKERR m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(
-      meshset, bit, meshset, MBEDGE, recursive, verb);
-  CHKERR m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(
-      meshset, bit, meshset, MBTRI, recursive, verb);
-  CHKERR m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(
-      meshset, bit, meshset, MBTET, recursive, verb);
+      meshset, bit, meshset, MBMAXTYPE, recursive, verb);
   *(const_cast<RefEntity *>(miit->get())->getBitRefLevelPtr()) |= bit;
   MoFEMFunctionReturn(0);
 }
