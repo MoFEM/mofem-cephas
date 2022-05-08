@@ -280,13 +280,21 @@ template <> MoFEMErrorCode Simple::setParentAdjacency<3>() {
   MoFEMFunctionBegin;
 
   CHKERR m_field.modify_finite_element_adjacency_table(
-      domainFE, MBTRI, Simple::parentFiniteElementAdjacencyFunction<3>);
+      domainFE, MBTET, Simple::parentFiniteElementAdjacencyFunction<3>);
   CHKERR m_field.modify_finite_element_adjacency_table(
-      domainFE, MBQUAD, Simple::parentFiniteElementAdjacencyFunction<3>);
-  CHKERR m_field.modify_finite_element_adjacency_table(
-      boundaryFE, MBEDGE, Simple::parentFiniteElementAdjacencyFunction<2>);
-  CHKERR m_field.modify_finite_element_adjacency_table(
-      skeletonFE, MBEDGE, Simple::parentFiniteElementAdjacencyFunction<2>);
+      domainFE, MBHEX, Simple::parentFiniteElementAdjacencyFunction<3>);
+  if (addBoundaryFE || !boundaryFields.empty()) {
+    CHKERR m_field.modify_finite_element_adjacency_table(
+        boundaryFE, MBTRI, Simple::parentFiniteElementAdjacencyFunction<2>);
+    CHKERR m_field.modify_finite_element_adjacency_table(
+        boundaryFE, MBQUAD, Simple::parentFiniteElementAdjacencyFunction<2>);
+  }
+  if (addSkeletonFE || !skeletonFields.empty()) {
+    CHKERR m_field.modify_finite_element_adjacency_table(
+        skeletonFE, MBTRI, Simple::parentFiniteElementAdjacencyFunction<2>);
+    CHKERR m_field.modify_finite_element_adjacency_table(
+        skeletonFE, MBQUAD, Simple::parentFiniteElementAdjacencyFunction<2>);
+  }
 
   MoFEMFunctionReturn(0);
 }
@@ -299,10 +307,12 @@ template <> MoFEMErrorCode Simple::setParentAdjacency<2>() {
       domainFE, MBTRI, Simple::parentFiniteElementAdjacencyFunction<2>);
   CHKERR m_field.modify_finite_element_adjacency_table(
       domainFE, MBQUAD, Simple::parentFiniteElementAdjacencyFunction<2>);
-  CHKERR m_field.modify_finite_element_adjacency_table(
-      boundaryFE, MBEDGE, Simple::parentFiniteElementAdjacencyFunction<1>);
-  CHKERR m_field.modify_finite_element_adjacency_table(
-      skeletonFE, MBEDGE, Simple::parentFiniteElementAdjacencyFunction<1>);
+  if (addBoundaryFE || !boundaryFields.empty())
+    CHKERR m_field.modify_finite_element_adjacency_table(
+        boundaryFE, MBEDGE, Simple::parentFiniteElementAdjacencyFunction<1>);
+  if (addSkeletonFE || !skeletonFields.empty())
+    CHKERR m_field.modify_finite_element_adjacency_table(
+        skeletonFE, MBEDGE, Simple::parentFiniteElementAdjacencyFunction<1>);
 
   MoFEMFunctionReturn(0);
 }
