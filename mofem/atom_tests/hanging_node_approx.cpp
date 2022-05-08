@@ -383,7 +383,7 @@ MoFEMErrorCode AtomTest::setupProblem() {
   constexpr int order = 3;
   CHKERR simpleInterface->setFieldOrder(FIELD_NAME, order);
 
-  // Simple intrafece will resolve adjacncy to DOFs of parent of the element.
+  // Simple intrafece will resolve adjacency to DOFs of parent of the element.
   // Using that information MAtrixManager  allocate appropriately size of
   // matrix.
   simpleInterface->getParentAdjacencies() = true;
