@@ -392,7 +392,7 @@ struct Simple : public UnknownInterface {
   MoFEMErrorCode deleteFiniteElements();
 
   /**
-   * @brief Get the Add Skeleton F E object
+   * @brief Get the addSkeletonFE
    *
    * If variable set to true, skeleton element is created regardless field on
    * skelton is added or not.
@@ -403,7 +403,7 @@ struct Simple : public UnknownInterface {
   bool &getAddSkeletonFE() { return addSkeletonFE; }
 
   /**
-   * @brief Get the Add Boundary F E object
+   * @brief Get the addSkeletonFE
    *
    * If variable set to true, boundary element is created regardless field on
    * skelton is added or not.
@@ -412,6 +412,16 @@ struct Simple : public UnknownInterface {
    * @return false
    */
   bool &getAddBoundaryFE() { return addBoundaryFE; }
+
+  /**
+   * @brief Get the addParentAdjacencies
+   *
+   * If set true add parent adjacencies
+   *
+   * @return true
+   * @return false
+   */
+  bool &getParentAdjacencies() { return addParentAdjacencies; }
 
   /**
    * @brief add empty block to problem
@@ -426,6 +436,24 @@ struct Simple : public UnknownInterface {
    */
   MoFEMErrorCode addFieldToEmptyFieldBlocks(const std::string row_field,
                                             const std::string col_field) const;
+
+  /**
+   * @brief Function setting adjacencies to DOFs of parent element
+   *
+   * @note elements form child, see dofs from parent, so DOFs localted on
+   * adjacencies of parent entity has adjacent to dofs of chiold.
+   *
+   * @tparam DIM dimension of the element entity
+   * @param moab
+   * @param field
+   * @param fe
+   * @param adjacency
+   * @return MoFEMErrorCode
+   */
+  template <int DIM>
+  static MoFEMErrorCode parentFiniteElementAdjacencyFunction(
+      moab::Interface &moab, const Field &field, const EntFiniteElement &fe,
+      std::vector<EntityHandle> &adjacency);
 
 private:
   MoFEM::Core &cOre;
@@ -444,8 +472,9 @@ private:
   EntityHandle boundaryMeshset; ///< meshset with boundary
   EntityHandle skeletonMeshset; ///< skeleton meshset with boundary
 
-  bool addSkeletonFE; ///< Add skeleton FE
-  bool addBoundaryFE; ///< Add boundary FE
+  bool addSkeletonFE;        ///< Add skeleton FE
+  bool addBoundaryFE;        ///< Add boundary FE
+  bool addParentAdjacencies; ///< If set to true parent adjacencies are build
 
   std::vector<std::string> domainFields;      ///< domain fields
   std::vector<std::string> boundaryFields;    ///< boundary fields
@@ -475,6 +504,9 @@ private:
   MoFEMErrorCode exchangeGhostCells();
 
   template <int DIM = -1> MoFEMErrorCode setSkeletonAdjacency();
+
+  template <int DIM = -1> MoFEMErrorCode setParentAdjacency();
+
 };
 
 } // namespace MoFEM

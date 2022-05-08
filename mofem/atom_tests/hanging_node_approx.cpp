@@ -380,106 +380,15 @@ MoFEMErrorCode AtomTest::setupProblem() {
   CHKERR simpleInterface->addDomainField(FIELD_NAME, H1,
                                          AINSWORTH_LEGENDRE_BASE, FIELD_DIM);
 
-  /**
-   * @brief lambda functions enabling to determine sparsity of the matrix for
-   * hierarchical mesh with hanging nodes
-   *
-   * @note elements form child, see dofs from parent, so DOFs localted on
-   * adjacencies of parent entity has adjacent to dofs of chiold.
-   *
-   */
-  ElementAdjacencyFunct get_parent_adjacency =
-      [&](moab::Interface &moab, const Field &field, const EntFiniteElement &fe,
-          std::vector<EntityHandle> &adjacency) -> MoFEMErrorCode {
-    MoFEMFunctionBegin;
-
-    CHKERR DefaultElementAdjacency::defaultFace(moab, field, fe, adjacency);
-
-    auto basic_entity_data_ptr = fe.getBasicDataPtr();
-    auto th_parent_handle = basic_entity_data_ptr->th_RefParentHandle;
-
-    using GetParent = boost::function<MoFEMErrorCode(
-        EntityHandle fe, std::vector<EntityHandle> & parents)>;
-
-    /**
-     * @brief this function os called recursively, until all stack of parents is
-     * found.
-     *
-     */
-    GetParent get_parent = [&](EntityHandle fe,
-                               std::vector<EntityHandle> &parents) {
-      MoFEMFunctionBegin;
-      EntityHandle fe_parent;
-
-      CHKERR moab.tag_get_data(th_parent_handle, &fe, 1, &fe_parent);
-      auto parent_type = type_from_handle(fe_parent);
-      auto back_type = type_from_handle(fe);
-      if (fe_parent != 0 && fe_parent != fe && parent_type == back_type) {
-        parents.push_back(fe_parent);
-        CHKERR get_parent(parents.back(), parents);
-      }
-      MoFEMFunctionReturn(0);
-    };
-
-    if (field.getSpace() != NOFIELD) {
-
-      std::vector<EntityHandle> parents;
-      parents.reserve(BITREFLEVEL_SIZE);
-
-      CHKERR get_parent(fe.getEnt(), parents);
-
-      for (auto fe_ent : parents) {
-        switch (field.getSpace()) {
-        case H1:
-          CHKERR moab.get_adjacencies(&fe_ent, 1, 0, false, adjacency,
-                                      moab::Interface::UNION);
-        case HCURL:
-          CHKERR moab.get_adjacencies(&fe_ent, 1, 1, false, adjacency,
-                                      moab::Interface::UNION);
-        case HDIV:
-        case L2:
-          adjacency.push_back(fe_ent);
-          break;
-        default:
-          SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-                  "this field is not implemented for face finite element");
-        }
-      }
-
-      std::sort(adjacency.begin(), adjacency.end());
-      auto it = std::unique(adjacency.begin(), adjacency.end());
-      adjacency.resize(std::distance(adjacency.begin(), it));
-
-      for (auto e : adjacency) {
-        auto side_table = fe.getSideNumberTable();
-        if (side_table.find(e) == side_table.end())
-          const_cast<SideNumber_multiIndex &>(fe.getSideNumberTable())
-              .insert(
-                  boost::shared_ptr<SideNumber>(new SideNumber(e, -1, 0, 0)));
-      }
-    }
-
-    MoFEMFunctionReturn(0);
-  };
-
   constexpr int order = 3;
   CHKERR simpleInterface->setFieldOrder(FIELD_NAME, order);
-  // CHKERR simpleInterface->setUp();
 
-  CHKERR simpleInterface->defineFiniteElements();
+  // Simple intrafece will resolve adjacncy to DOFs of parent of the element.
+  // Using that information MAtrixManager  allocate appropriately size of
+  // matrix.
+  simpleInterface->getParentAdjacencies() = true;
+  CHKERR simpleInterface->setUp();
 
-  
-  // Inform finite element about how to find adjacent DOFs to element
-
-  CHKERR mField.modify_finite_element_adjacency_table(
-      simpleInterface->getDomainFEName(), MBTRI, get_parent_adjacency);
-  CHKERR mField.modify_finite_element_adjacency_table(
-      simpleInterface->getDomainFEName(), MBQUAD, get_parent_adjacency);
-
-  CHKERR simpleInterface->defineProblem(PETSC_TRUE);
-  CHKERR simpleInterface->buildFields();
-  CHKERR simpleInterface->buildFiniteElements();
-  CHKERR simpleInterface->buildProblem();
 
   BitRefManager *bit_mng = mField.getInterface<BitRefManager>();
   ProblemsManager *prb_mng = mField.getInterface<ProblemsManager>();
