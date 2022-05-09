@@ -897,7 +897,8 @@ MoFEMErrorCode BitRefManager::getEntitiesByParentType(const BitRefLevel bit,
   }
   ents.insert_list(ents_vec.begin(), ents_vec.end());
   if (verb > NOISY)
-    cerr << "getEntitiesByParentType: " << ents << endl;
+    MOFEM_LOG("BitRefSelf", Sev::noisy)
+        << "getEntitiesByParentType: " << ents << endl;
   MoFEMFunctionReturn(0);
 }
 
@@ -1048,7 +1049,7 @@ MoFEMErrorCode BitRefManager::updateMeshsetByEntitiesChildren(
     MOFEM_LOG("BitRefSelf", Sev::noisy) << "Parnets: " << parent;
   }
   Range children_ents;
-  CHKERR updateRange(parent_ents, children_ents);
+  CHKERR updateRangeByChildren(parent_ents, children_ents);
   if (child_type < MBMAXTYPE)
     children_ents = children_ents.subset_by_type(child_type);
   CHKERR filterEntitiesByRefLevel(child_bit, BitRefLevel().set(), children_ents,
@@ -1089,7 +1090,7 @@ MoFEMErrorCode BitRefManager::updateFieldMeshsetByEntitiesChildren(
     }
 
     Range children_ents;
-    CHKERR updateRange(parent_ents, children_ents);
+    CHKERR updateRangeByChildren(parent_ents, children_ents);
     CHKERR filterEntitiesByRefLevel(child_bit, BitRefLevel().set(),
                                     children_ents, verb);
 
@@ -1122,7 +1123,7 @@ MoFEMErrorCode BitRefManager::updateFieldMeshsetByEntitiesChildren(
   }
 
   Range children_ents;
-  CHKERR updateRange(parent_ents, children_ents);
+  CHKERR updateRangeByChildren(parent_ents, children_ents);
   CHKERR filterEntitiesByRefLevel(child_bit, BitRefLevel().set(), children_ents,
                                   verb);
 
@@ -1148,7 +1149,7 @@ MoFEMErrorCode BitRefManager::updateFiniteElementMeshsetByEntitiesChildren(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode BitRefManager::updateRange(const Range &parent_ents,
+MoFEMErrorCode BitRefManager::updateRangeByChildren(const Range &parent_ents,
                                           Range &child_ents, MoFEMTypes bh) {
   MoFEM::Interface &m_field = cOre;
   auto ref_ents_ptr = m_field.get_ref_ents();
@@ -1173,11 +1174,13 @@ MoFEMErrorCode BitRefManager::updateRange(const Range &parent_ents,
         }
       }
       for (; it != hi_it; it++) {
+#ifndef NDEBUG
         if (it->get()->getEntType() == MBENTITYSET) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
                   "This should not happen; Entity should not have part of the "
                   "meshset. It has no children.");
         }
+#endif
         child_ents_vec.emplace_back((*it)->getEnt());
       }
     } else if (bh == MF_EXIST) {
@@ -1187,4 +1190,50 @@ MoFEMErrorCode BitRefManager::updateRange(const Range &parent_ents,
   child_ents.insert_list(child_ents_vec.begin(), child_ents_vec.end());
   MoFEMFunctionReturn(0);
 }
+
+MoFEMErrorCode BitRefManager::updateRangeByParent(const Range &child_ents,
+                                                  Range &parent_ents,
+                                                  MoFEMTypes bh) {
+  MoFEM::Interface &m_field = cOre;
+  auto ref_ents_ptr = m_field.get_ref_ents();
+  MoFEMFunctionBegin;
+  auto &ref_ents =
+      const_cast<RefEntity_multiIndex *>(ref_ents_ptr)->get<Ent_mi_tag>();
+  std::vector<EntityHandle> parent_ents_vec;
+  parent_ents_vec.reserve(ref_ents.size());
+  for (Range::const_pair_iterator pit = child_ents.const_pair_begin();
+       pit != child_ents.const_pair_end(); pit++) {
+    const auto f = pit->first;
+    auto it = ref_ents.lower_bound(f);
+    if (it != ref_ents.end()) {
+      const auto s = pit->second;
+      auto hi_it = ref_ents.upper_bound(s);
+      if (bh == MF_EXIST) {
+        if (std::distance(it, hi_it) != (s - f) + 1) {
+          SETERRQ2(
+              PETSC_COMM_SELF, MOFEM_NOT_FOUND,
+              "Number of entities and enties parents is diffrent %d != %d ",
+              std::distance(it, hi_it), (s - f) + 1);
+        }
+      }
+      for (; it != hi_it; it++) {
+#ifndef NDEBUG
+        if (it->get()->getEntType() == MBENTITYSET) {
+          SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
+                  "This should not happen; Entity should not have part of the "
+                  "meshset. It has no children.");
+        }
+#endif
+        auto parent = (*it)->getParentEnt();
+        if (parent)
+          parent_ents_vec.emplace_back(parent);
+      }
+    } else if (bh == MF_EXIST) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "Entities not found");
+    }
+  }
+  parent_ents.insert_list(parent_ents_vec.begin(), parent_ents_vec.end());
+  MoFEMFunctionReturn(0);
+}
+
 } // namespace MoFEM

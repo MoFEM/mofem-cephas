@@ -555,7 +555,7 @@ struct BitRefManager : public UnknownInterface {
       const EntityType fe_ent_type, int verb = 0);
 
   /**
-   * \brief Update range by prents
+   * \brief Update range by childresn
    *
    * FIXME: NOT TESTED
    *
@@ -563,8 +563,28 @@ struct BitRefManager : public UnknownInterface {
    * @param  child  children range
    * @return        error code
    */
-  MoFEMErrorCode updateRange(const Range &parent, Range &child,
-                             MoFEMTypes bh = MF_ZERO);
+  MoFEMErrorCode updateRangeByChildren(const Range &parent, Range &child,
+                                       MoFEMTypes bh = MF_ZERO);
+
+  /**
+   * \brief Update range by prents
+   *
+   * FIXME: NOT TESTED
+   *
+   * @param  child parent range
+   * @param  parent  children range
+   * @return        error code
+   */
+  MoFEMErrorCode updateRangeByParent(const Range &parent, Range &child,
+                                     MoFEMTypes bh = MF_ZERO);
+
+  /**
+   * @deprecated use updateRangeByChildren
+   */
+  DEPRECATED inline MoFEMErrorCode
+  updateRange(const Range &parent, Range &child, MoFEMTypes bh = MF_ZERO) {
+    return updateRangeByChildren(parent, child, bh);
+  }
 
   /**@}*/
 

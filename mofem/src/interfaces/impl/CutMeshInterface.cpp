@@ -249,13 +249,13 @@ CutMeshInterface::cutOnly(Range vol, const BitRefLevel cut_bit, Tag th,
   CHKERR cutEdgesInMiddle(cut_bit, cutNewVolumes, cutNewSurfaces,
                           cutNewVertices, debug);
 
-  CHKERR cOre.getInterface<BitRefManager>()->updateRange(constrainSurface,
+  CHKERR cOre.getInterface<BitRefManager>()->updateRangeByChildren(constrainSurface,
                                                          constrainSurface);
   if (fixed_edges)
-    CHKERR cOre.getInterface<BitRefManager>()->updateRange(*fixed_edges,
+    CHKERR cOre.getInterface<BitRefManager>()->updateRangeByChildren(*fixed_edges,
                                                            *fixed_edges);
   if (corner_nodes)
-    CHKERR cOre.getInterface<BitRefManager>()->updateRange(*corner_nodes,
+    CHKERR cOre.getInterface<BitRefManager>()->updateRangeByChildren(*corner_nodes,
                                                            *corner_nodes);
   if (update_meshsets)
     CHKERR m_field.getInterface<MeshsetsManager>()
@@ -285,14 +285,14 @@ MoFEMErrorCode CutMeshInterface::trimOnly(const BitRefLevel trim_bit, Tag th,
   CHKERR findEdgesToTrim(fixed_edges, corner_nodes, th, tol_trim_close, debug);
   CHKERR trimEdgesInTheMiddle(trim_bit, debug);
 
-  CHKERR cOre.getInterface<BitRefManager>()->updateRange(constrainSurface,
+  CHKERR cOre.getInterface<BitRefManager>()->updateRangeByChildren(constrainSurface,
                                                          constrainSurface);
   if (fixed_edges)
-    CHKERR cOre.getInterface<BitRefManager>()->updateRange(*fixed_edges,
+    CHKERR cOre.getInterface<BitRefManager>()->updateRangeByChildren(*fixed_edges,
                                                            *fixed_edges);
 
   if (corner_nodes)
-    CHKERR cOre.getInterface<BitRefManager>()->updateRange(*corner_nodes,
+    CHKERR cOre.getInterface<BitRefManager>()->updateRangeByChildren(*corner_nodes,
                                                            *corner_nodes);
 
   if (update_meshsets)
@@ -437,11 +437,11 @@ MoFEMErrorCode CutMeshInterface::cutTrimAndMerge(
   MOFEM_LOG_C("WORLD", Sev::inform, "Min quality node merge %6.4g",
               get_min_quality(bit_level3, th));
 
-  CHKERR cOre.getInterface<BitRefManager>()->updateRange(constrainSurface,
+  CHKERR cOre.getInterface<BitRefManager>()->updateRangeByChildren(constrainSurface,
                                                          constrainSurface);
-  CHKERR cOre.getInterface<BitRefManager>()->updateRange(fixed_edges,
+  CHKERR cOre.getInterface<BitRefManager>()->updateRangeByChildren(fixed_edges,
                                                          fixed_edges);
-  CHKERR cOre.getInterface<BitRefManager>()->updateRange(corner_nodes,
+  CHKERR cOre.getInterface<BitRefManager>()->updateRangeByChildren(corner_nodes,
                                                          corner_nodes);
 
   first_bit += bit_levels.size() - 1;
@@ -849,7 +849,7 @@ MoFEMErrorCode CutMeshInterface::refineMesh(const int init_bit_level,
     MoFEMFunctionBegin;
     if (r_ptr) {
       Range childs;
-      CHKERR bit_ref_manager->updateRange(*r_ptr, childs);
+      CHKERR bit_ref_manager->updateRangeByChildren(*r_ptr, childs);
       r_ptr->merge(childs);
     }
     MoFEMFunctionReturn(0);
