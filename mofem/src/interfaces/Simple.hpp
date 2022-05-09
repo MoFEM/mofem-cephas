@@ -233,7 +233,7 @@ struct Simple : public UnknownInterface {
    *
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode reSetUp();
+  MoFEMErrorCode reSetUp(bool only_dm = false);
 
   /**
    * \brief Get DM

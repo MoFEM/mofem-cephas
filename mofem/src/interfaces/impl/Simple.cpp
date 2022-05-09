@@ -845,10 +845,25 @@ MoFEMErrorCode Simple::setUp(const PetscBool is_partitioned) {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Simple::reSetUp() {
+MoFEMErrorCode Simple::reSetUp(bool only_dm) {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
+  PetscLogEventBegin(MOFEM_EVENT_SimpleBuildProblem, 0, 0, 0, 0);
 
+  if (!only_dm) {
+    CHKERR defineFiniteElements();
+
+    if (addSkeletonFE || !skeletonFields.empty())
+      CHKERR setSkeletonAdjacency();
+    if (addParentAdjacencies)
+      CHKERR setParentAdjacency();
+
+    CHKERR buildFields();
+    CHKERR buildFiniteElements();
+
+  }
+
+  CHKERR m_field.build_adjacencies(bitLevel);
   const Problem *problem_ptr;
   CHKERR DMMoFEMGetProblemPtr(dM, &problem_ptr);
   const auto problem_name = problem_ptr->getName();
@@ -856,21 +871,13 @@ MoFEMErrorCode Simple::reSetUp() {
   CHKERR m_field.modify_problem_mask_ref_level_set_bit(problem_name,
                                                        bitLevelMask);
 
-  CHKERR defineFiniteElements();
-  if (addSkeletonFE || !skeletonFields.empty())
-    CHKERR setSkeletonAdjacency();
-  CHKERR buildFields();
-  CHKERR buildFiniteElements();
-
-  PetscLogEventBegin(MOFEM_EVENT_SimpleBuildProblem, 0, 0, 0, 0);
-  CHKERR m_field.build_adjacencies(bitLevel);
   // Set problem by the DOFs on the fields rather that by adding DOFs on the
   // elements
   m_field.getInterface<ProblemsManager>()->buildProblemFromFields = PETSC_TRUE;
   CHKERR DMSetUp_MoFEM(dM);
   m_field.getInterface<ProblemsManager>()->buildProblemFromFields = PETSC_FALSE;
-  PetscLogEventEnd(MOFEM_EVENT_SimpleBuildProblem, 0, 0, 0, 0);
 
+  PetscLogEventEnd(MOFEM_EVENT_SimpleBuildProblem, 0, 0, 0, 0);
   MoFEMFunctionReturn(0);
 }
 
