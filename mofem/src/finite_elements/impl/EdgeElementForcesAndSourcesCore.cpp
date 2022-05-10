@@ -152,7 +152,7 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCoreBase::UserDataOperator::setPtrFE(
 
 MoFEMErrorCode
 EdgeElementForcesAndSourcesCoreBase::UserDataOperator::loopSideFaces(
-    const string fe_name, FaceElementForcesAndSourcesCoreOnSideBase &fe_side) {
+    const string fe_name, FaceElementForcesAndSourcesCoreOnSide &fe_side) {
   return loopSide(fe_name, &fe_side, 2);
 }
 

@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
     CHKERR prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM");
 
     struct ForcesAndSourcesCore_TestFE
-        : public FaceElementForcesAndSourcesCoreBase {
+        : public FaceElementForcesAndSourcesCore {
 
       typedef tee_device<std::ostream, std::ofstream> TeeDevice;
       typedef stream<TeeDevice> TeeStream;
@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
       TeeStream my_split;
 
       ForcesAndSourcesCore_TestFE(MoFEM::Interface &m_field)
-          : FaceElementForcesAndSourcesCoreBase(m_field),
+          : FaceElementForcesAndSourcesCore(m_field),
             ofs("forces_and_sources_getting_higher_order_skin_normals_atom."
                 "txt"),
             my_tee(std::cout, ofs), my_split(my_tee){};
@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
       MoFEMErrorCode operator()() {
         MoFEMFunctionBegin;
 
-        CHKERR FaceElementForcesAndSourcesCoreBase::operator()();
+        CHKERR FaceElementForcesAndSourcesCore::operator()();
 
         my_split.precision(3);
         my_split << "coords: " << coordsAtGaussPts << std::endl;

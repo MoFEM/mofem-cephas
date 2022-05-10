@@ -414,7 +414,7 @@ MoFEMErrorCode OpSetHOCovariantPiolaTransform::doWork(
 
 OpCalculateHOJacForFaceImpl<2>::OpCalculateHOJacForFaceImpl(
     boost::shared_ptr<MatrixDouble> jac_ptr)
-    : FaceElementForcesAndSourcesCoreBase::UserDataOperator(NOSPACE),
+    : FaceElementForcesAndSourcesCore::UserDataOperator(NOSPACE),
       jacPtr(jac_ptr) {}
 
 MoFEMErrorCode OpCalculateHOJacForFaceImpl<2>::doWork(
@@ -484,7 +484,7 @@ MoFEMErrorCode OpCalculateHOJacForFaceImpl<3>::doWork(
 }
 
 OpGetHONormalsOnFace::OpGetHONormalsOnFace(std::string field_name)
-    : FaceElementForcesAndSourcesCoreBase::UserDataOperator(field_name, OPROW) {
+    : FaceElementForcesAndSourcesCore::UserDataOperator(field_name, OPROW) {
 }
 
 MoFEMErrorCode

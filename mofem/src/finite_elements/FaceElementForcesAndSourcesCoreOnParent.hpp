@@ -28,11 +28,11 @@ namespace MoFEM {
  * \brief Base face element used to integrate on skeleton
  * \ingroup mofem_forces_and_sources_volume_element
  */
-struct FaceElementForcesAndSourcesCoreOnChildParentBase
-    : public FaceElementForcesAndSourcesCoreBase {
+struct FaceElementForcesAndSourcesCoreOnChildParent
+    : public FaceElementForcesAndSourcesCore {
 
-  using FaceElementForcesAndSourcesCoreBase::
-      FaceElementForcesAndSourcesCoreBase;
+  using FaceElementForcesAndSourcesCore::
+      FaceElementForcesAndSourcesCore;
 
   int getRule(int order);
 

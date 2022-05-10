@@ -2705,11 +2705,11 @@ template <int DIM, int DERIVATIVE = 1> struct OpSetInvJacSpaceForFaceImpl;
 
 template <>
 struct OpSetInvJacSpaceForFaceImpl<2, 1>
-    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+    : public FaceElementForcesAndSourcesCore::UserDataOperator {
 
   OpSetInvJacSpaceForFaceImpl(FieldSpace space,
                               boost::shared_ptr<MatrixDouble> inv_jac_ptr)
-      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(space),
+      : FaceElementForcesAndSourcesCore::UserDataOperator(space),
         invJacPtr(inv_jac_ptr) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
@@ -2780,10 +2780,10 @@ template <int DIM> struct OpSetInvJacHcurlFaceImpl;
 
 template <>
 struct OpSetInvJacHcurlFaceImpl<2>
-    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+    : public FaceElementForcesAndSourcesCore::UserDataOperator {
 
   OpSetInvJacHcurlFaceImpl(boost::shared_ptr<MatrixDouble> inv_jac_ptr)
-      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(HCURL),
+      : FaceElementForcesAndSourcesCore::UserDataOperator(HCURL),
         invJacPtr(inv_jac_ptr) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
@@ -2809,10 +2809,10 @@ using OpSetInvJacHcurlFaceEmbeddedIn3DSpace = OpSetInvJacHcurlFaceImpl<3>;
  * @ingroup mofem_forces_and_sources_tri_element
  */
 struct OpMakeHdivFromHcurl
-    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+    : public FaceElementForcesAndSourcesCore::UserDataOperator {
 
   OpMakeHdivFromHcurl()
-      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(HCURL) {}
+      : FaceElementForcesAndSourcesCore::UserDataOperator(HCURL) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data);
@@ -2837,11 +2837,11 @@ template <int DIM> struct OpSetContravariantPiolaTransformOnFace2DImpl;
 
 template <>
 struct OpSetContravariantPiolaTransformOnFace2DImpl<2>
-    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+    : public FaceElementForcesAndSourcesCore::UserDataOperator {
 
   OpSetContravariantPiolaTransformOnFace2DImpl(
       boost::shared_ptr<MatrixDouble> jac_ptr)
-      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(HCURL),
+      : FaceElementForcesAndSourcesCore::UserDataOperator(HCURL),
         jacPtr(jac_ptr) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,

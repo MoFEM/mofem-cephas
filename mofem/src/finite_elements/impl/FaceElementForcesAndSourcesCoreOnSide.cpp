@@ -20,12 +20,12 @@
 
 namespace MoFEM {
 
-int FaceElementForcesAndSourcesCoreOnSideBase::getRule(int order) {
+int FaceElementForcesAndSourcesCoreOnSide::getRule(int order) {
   return -1;
 };
 
 MoFEMErrorCode
-FaceElementForcesAndSourcesCoreOnSideBase::setGaussPts(int order) {
+FaceElementForcesAndSourcesCoreOnSide::setGaussPts(int order) {
   MoFEMFunctionBegin;
   if (sidePtrFE == nullptr)
     SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
@@ -114,10 +114,10 @@ FaceElementForcesAndSourcesCoreOnSideBase::setGaussPts(int order) {
 }
 
 MoFEMErrorCode
-FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::setPtrFE(
+FaceElementForcesAndSourcesCoreOnSide::UserDataOperator::setPtrFE(
     ForcesAndSourcesCore *ptr) {
   MoFEMFunctionBeginHot;
-  if (!(ptrFE = dynamic_cast<FaceElementForcesAndSourcesCoreOnSideBase *>(ptr)))
+  if (!(ptrFE = dynamic_cast<FaceElementForcesAndSourcesCoreOnSide *>(ptr)))
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "User operator and finite element do not work together");
   MoFEMFunctionReturnHot(0);

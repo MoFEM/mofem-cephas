@@ -336,7 +336,7 @@ int main(int argc, char *argv[]) {
 
     QuadFE fe_quad(m_field, edge_block, one_prism);
     fe_quad.getOpPtrVector().push_back(
-        new Op<FaceElementForcesAndSourcesCoreBase::UserDataOperator>(
+        new Op<FaceElementForcesAndSourcesCore::UserDataOperator>(
             moab, map_coords, one_prism));
     CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "QUAD", fe_quad);
 

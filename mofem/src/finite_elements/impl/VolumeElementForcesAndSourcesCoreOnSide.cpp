@@ -35,7 +35,7 @@ VolumeElementForcesAndSourcesCoreOnSideBase::setGaussPts(int order) {
   const auto nb_nodes_on_ele = CN::VerticesPerEntity(type);
 
   auto face_ptr_fe =
-      static_cast<FaceElementForcesAndSourcesCoreBase *>(sidePtrFE);
+      static_cast<FaceElementForcesAndSourcesCore *>(sidePtrFE);
 
   const auto face_entity = sidePtrFE->numeredEntFiniteElementPtr->getEnt();
   auto &side_table = const_cast<SideNumber_multiIndex &>(

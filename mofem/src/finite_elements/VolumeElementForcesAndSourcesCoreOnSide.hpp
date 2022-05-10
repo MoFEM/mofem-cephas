@@ -105,7 +105,7 @@ struct VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator
 
   inline VolumeElementForcesAndSourcesCoreOnSideBase *getVolumeFE() const;
 
-  inline FaceElementForcesAndSourcesCoreBase *getFaceFE() const;
+  inline FaceElementForcesAndSourcesCore *getFaceFE() const;
 
   /**
    * \brief get face sense in respect to volume
@@ -239,10 +239,10 @@ int VolumeElementForcesAndSourcesCoreOnSideBase::getFaceSideNumber() const {
   return faceSideNumber;
 }
 
-FaceElementForcesAndSourcesCoreBase *
+FaceElementForcesAndSourcesCore *
 VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator::getFaceFE()
     const {
-  return static_cast<FaceElementForcesAndSourcesCoreBase *>(
+  return static_cast<FaceElementForcesAndSourcesCore *>(
       getVolumeFE()->sidePtrFE);
 }
 

@@ -20,13 +20,13 @@
 
 namespace MoFEM {
 
-FaceElementForcesAndSourcesCoreBase::FaceElementForcesAndSourcesCoreBase(
+FaceElementForcesAndSourcesCore::FaceElementForcesAndSourcesCore(
     Interface &m_field)
     : ForcesAndSourcesCore(m_field),
       meshPositionsFieldName("MESH_NODE_POSITIONS") {}
 
 MoFEMErrorCode
-FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormalAtIntegrationPts() {
+FaceElementForcesAndSourcesCore::calculateAreaAndNormalAtIntegrationPts() {
   MoFEMFunctionBegin;
 
   auto type = numeredEntFiniteElementPtr->getEntType();
@@ -124,7 +124,7 @@ FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormalAtIntegrationPts() {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormal() {
+MoFEMErrorCode FaceElementForcesAndSourcesCore::calculateAreaAndNormal() {
   MoFEMFunctionBegin;
 
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
@@ -188,7 +188,7 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormal() {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::setIntegrationPts() {
+MoFEMErrorCode FaceElementForcesAndSourcesCore::setIntegrationPts() {
   MoFEMFunctionBegin;
   // Set integration points
   int order_data = getMaxDataOrder();
@@ -304,7 +304,7 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::setIntegrationPts() {
 }
 
 MoFEMErrorCode
-FaceElementForcesAndSourcesCoreBase::getSpaceBaseAndOrderOnElement() {
+FaceElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
   MoFEMFunctionBegin;
   // Get spaces order/base and sense of entities.
 
@@ -369,7 +369,7 @@ FaceElementForcesAndSourcesCoreBase::getSpaceBaseAndOrderOnElement() {
 }
 
 MoFEMErrorCode
-FaceElementForcesAndSourcesCoreBase::calculateCoordinatesAtGaussPts() {
+FaceElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
   MoFEMFunctionBeginHot;
 
   const size_t nb_nodes =
@@ -386,16 +386,16 @@ FaceElementForcesAndSourcesCoreBase::calculateCoordinatesAtGaussPts() {
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::UserDataOperator::setPtrFE(
+MoFEMErrorCode FaceElementForcesAndSourcesCore::UserDataOperator::setPtrFE(
     ForcesAndSourcesCore *ptr) {
   MoFEMFunctionBeginHot;
-  if (!(ptrFE = dynamic_cast<FaceElementForcesAndSourcesCoreBase *>(ptr)))
+  if (!(ptrFE = dynamic_cast<FaceElementForcesAndSourcesCore *>(ptr)))
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "User operator and finite element do not work together");
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::operator()() {
+MoFEMErrorCode FaceElementForcesAndSourcesCore::operator()() {
   MoFEMFunctionBegin;
 
   const auto type = numeredEntFiniteElementPtr->getEntType();

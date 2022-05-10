@@ -121,9 +121,9 @@ private:
  *
  */
 struct OpSetHOWeightsOnFace
-    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+    : public FaceElementForcesAndSourcesCore::UserDataOperator {
   OpSetHOWeightsOnFace()
-      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(NOSPACE) {}
+      : FaceElementForcesAndSourcesCore::UserDataOperator(NOSPACE) {}
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data);
 };
@@ -217,7 +217,7 @@ template <int DIM> struct OpCalculateHOJacForFaceImpl;
 
 template <>
 struct OpCalculateHOJacForFaceImpl<2>
-    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+    : public FaceElementForcesAndSourcesCore::UserDataOperator {
 
   OpCalculateHOJacForFaceImpl(boost::shared_ptr<MatrixDouble> jac_ptr);
 
@@ -244,7 +244,7 @@ using OpCalculateHOJacForFaceEmbeddedIn3DSpace = OpCalculateHOJacForFaceImpl<3>;
  * \ingroup mofem_forces_and_source
  */
 struct OpGetHONormalsOnFace
-    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+    : public FaceElementForcesAndSourcesCore::UserDataOperator {
 
   OpGetHONormalsOnFace(std::string field_name);
 
@@ -260,12 +260,12 @@ struct OpGetHONormalsOnFace
  *
  */
 struct OpHOSetContravariantPiolaTransformOnFace3D
-    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+    : public FaceElementForcesAndSourcesCore::UserDataOperator {
 
   OpHOSetContravariantPiolaTransformOnFace3D(
       const FieldSpace space,
       boost::shared_ptr<MatrixDouble> normals_at_gauss_pts = nullptr)
-      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(space, OPSPACE),
+      : FaceElementForcesAndSourcesCore::UserDataOperator(space, OPSPACE),
         normalsAtGaussPts(normals_at_gauss_pts) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
@@ -298,14 +298,14 @@ private:
  * triangle \ingroup mofem_forces_and_sources
  */
 struct OpHOSetCovariantPiolaTransformOnFace3D
-    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+    : public FaceElementForcesAndSourcesCore::UserDataOperator {
 
   OpHOSetCovariantPiolaTransformOnFace3D(
       const FieldSpace space,
       boost::shared_ptr<MatrixDouble> normals_at_pts = nullptr,
       boost::shared_ptr<MatrixDouble> tangent1_at_pts = nullptr,
       boost::shared_ptr<MatrixDouble> tangent2_at_pts = nullptr)
-      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(space, OPSPACE),
+      : FaceElementForcesAndSourcesCore::UserDataOperator(space, OPSPACE),
         normalsAtPts(normals_at_pts), tangent1AtPts(tangent1_at_pts),
         tangent2AtPts(tangent2_at_pts) {
     if (normals_at_pts || tangent1_at_pts || tangent2_at_pts)

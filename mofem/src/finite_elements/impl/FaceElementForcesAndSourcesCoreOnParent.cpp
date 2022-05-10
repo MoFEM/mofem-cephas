@@ -20,12 +20,12 @@
 
 namespace MoFEM {
 
-int FaceElementForcesAndSourcesCoreOnChildParentBase::getRule(int order) {
+int FaceElementForcesAndSourcesCoreOnChildParent::getRule(int order) {
   return -1;
 };
 
 MoFEMErrorCode
-FaceElementForcesAndSourcesCoreOnChildParentBase::setGaussPts(int order) {
+FaceElementForcesAndSourcesCoreOnChildParent::setGaussPts(int order) {
   MoFEMFunctionBegin;
 
   auto ref_fe = refinePtrFE;

@@ -35,7 +35,7 @@ template <int DIM> struct ElementsAndOps {};
 template <> struct ElementsAndOps<2> {
   using DomainEle = PipelineManager::FaceEle;
   using DomainEleOp = DomainEle::UserDataOperator;
-  using DomianParentEle = FaceElementForcesAndSourcesCoreOnChildParentBase;
+  using DomianParentEle = FaceElementForcesAndSourcesCoreOnChildParent;
 };
 
 template <> struct ElementsAndOps<3> {
@@ -586,7 +586,7 @@ MoFEMErrorCode AtomTest::printResults() {
     MoFEMFunctionBegin;
     if (type == MBVERTEX) {
       auto op_ptr =
-          static_cast<FaceElementForcesAndSourcesCoreBase::UserDataOperator *>(
+          static_cast<FaceElementForcesAndSourcesCore::UserDataOperator *>(
               base_op_ptr);
       auto t_field = getFTensor0FromVec(*approx_vals);
       auto nb_gauss_pts = op_ptr->getGaussPts().size2();

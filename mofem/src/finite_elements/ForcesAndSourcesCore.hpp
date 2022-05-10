@@ -540,8 +540,8 @@ private:
   MoFEMErrorCode setRefineFEPtr(const ForcesAndSourcesCore *refine_fe_ptr);
 
   friend class VolumeElementForcesAndSourcesCoreOnSideBase;
-  friend class FaceElementForcesAndSourcesCoreOnSideBase;
-  friend class FaceElementForcesAndSourcesCoreOnChildParentBase;
+  friend class FaceElementForcesAndSourcesCoreOnSide;
+  friend class FaceElementForcesAndSourcesCoreOnChildParent;
   friend class VolumeElementForcesAndSourcesCoreOnContactPrismSideBase;
 
 protected:
@@ -1004,7 +1004,7 @@ protected:
 private:
   friend class ForcesAndSourcesCore;
   friend class EdgeElementForcesAndSourcesCoreBase;
-  friend class FaceElementForcesAndSourcesCoreBase;
+  friend class FaceElementForcesAndSourcesCore;
   friend class ContactPrismElementForcesAndSourcesCore;
 };
 

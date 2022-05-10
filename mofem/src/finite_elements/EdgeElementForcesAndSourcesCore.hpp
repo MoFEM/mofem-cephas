@@ -28,7 +28,7 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
-struct FaceElementForcesAndSourcesCoreOnSideBase;
+struct FaceElementForcesAndSourcesCoreOnSide;
 
 /** \brief Edge finite element
  * \ingroup mofem_forces_and_sources_edge_element
@@ -68,7 +68,7 @@ protected:
   MoFEMErrorCode setIntegrationPts();
   MoFEMErrorCode calculateCoordsAtIntegrationPts();
 
-  friend class FaceElementForcesAndSourcesCoreOnSideBase;
+  friend class FaceElementForcesAndSourcesCoreOnSide;
 };
 
 /** \brief default operator for EDGE element
@@ -153,7 +153,7 @@ struct EdgeElementForcesAndSourcesCoreBase::UserDataOperator
 
   MoFEMErrorCode
   loopSideFaces(const string fe_name,
-                FaceElementForcesAndSourcesCoreOnSideBase &fe_side);
+                FaceElementForcesAndSourcesCoreOnSide &fe_side);
 
 protected:
   MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
