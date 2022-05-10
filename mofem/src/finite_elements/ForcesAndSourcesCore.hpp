@@ -751,7 +751,7 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
 
   /** \brief Get name of the element
    */
-  inline const std::string &getFEName() const;
+  inline std::string getFEName() const;
 
   /** \name Accessing KSP */
 
@@ -1076,8 +1076,8 @@ int ForcesAndSourcesCore::UserDataOperator::getLoopSize() const {
   return getFEMethod()->getLoopSize();
 }
 
-const std::string &ForcesAndSourcesCore::UserDataOperator::getFEName() const {
-  return getFEMethod()->feName;
+std::string ForcesAndSourcesCore::UserDataOperator::getFEName() const {
+  return getFEMethod()->getFEName();
 }
 
 const PetscData::Switches &

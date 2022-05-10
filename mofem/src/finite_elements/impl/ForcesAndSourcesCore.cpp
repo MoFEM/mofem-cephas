@@ -1397,7 +1397,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
             .none()) {
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "no data field < %s > on finite element < %s >",
-               field_name[ss].c_str(), feName.c_str());
+               field_name[ss].c_str(), getFEName().c_str());
     }
 #endif
 
@@ -1633,8 +1633,6 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopSide(
   const auto ent = ent_for_side ? ent_for_side : getFEEntityHandle();
   const auto *problem_ptr = getFEMethod()->problemPtr;
 
-  side_fe->feName = fe_name;
-
   CHKERR side_fe->setSideFEPtr(ptrFE);
   CHKERR side_fe->copyBasicMethod(*getFEMethod());
   CHKERR side_fe->copyPetscData(*getFEMethod());
@@ -1681,7 +1679,6 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopThis(
                            << *getNumeredEntFiniteElementPtr();
 
   const auto *problem_ptr = getFEMethod()->problemPtr;
-  this_fe->feName = fe_name;
 
   CHKERR this_fe->setRefineFEPtr(ptrFE);
   CHKERR this_fe->copyBasicMethod(*getFEMethod());
@@ -1718,8 +1715,6 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopParent(
     if (verb >= VERBOSE)
       MOFEM_LOG("SELF", sev) << "Parent finite element: " << **miit;
 
-    parent_fe->feName = fe_name;
-
     CHKERR parent_fe->setRefineFEPtr(ptrFE);
     CHKERR parent_fe->copyBasicMethod(*getFEMethod());
     CHKERR parent_fe->copyPetscData(*getFEMethod());
@@ -1729,10 +1724,8 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopParent(
 
     CHKERR parent_fe->preProcess();
 
-    int nn = 0;
     parent_fe->loopSize = 1;
-
-    parent_fe->nInTheLoop = nn++;
+    parent_fe->nInTheLoop = 0;
     parent_fe->numeredEntFiniteElementPtr = *miit;
     CHKERR (*parent_fe)();
 
@@ -1771,8 +1764,6 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopChildren(
       childs = Range(childs_vec.front(), childs_vec.back());
     else
       childs.insert_list(childs_vec.begin(), childs_vec.end());
-
-    child_fe->feName = fe_name;
 
     CHKERR child_fe->setRefineFEPtr(ptrFE);
     CHKERR child_fe->copyBasicMethod(*getFEMethod());

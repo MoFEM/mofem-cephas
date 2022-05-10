@@ -36,7 +36,11 @@ struct VolumeElementForcesAndSourcesCoreOnSide;
  */
 struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
-  std::string meshPositionsFieldName; ///< Name of the field with geometry
+  /**
+   * @deprecated not used anumore, will be removed in next versions 
+   * 
+   */
+  std::string meshPositionsFieldName;
 
   /** \brief default operator for TRI element
    * \ingroup mofem_forces_and_sources_tri_element

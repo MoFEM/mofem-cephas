@@ -51,7 +51,7 @@ FaceElementForcesAndSourcesCore::calculateAreaAndNormalAtIntegrationPts() {
         &m(0, 0), &m(0, 1), &m(0, 2));
   };
 
-  if(type == MBTRI) {
+  if (type == MBTRI) {
 
     const size_t nb_gauss_pts = gaussPts.size2();
     normalsAtGaussPts.resize(nb_gauss_pts, 3);
@@ -398,36 +398,36 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::UserDataOperator::setPtrFE(
 MoFEMErrorCode FaceElementForcesAndSourcesCore::operator()() {
   MoFEMFunctionBegin;
 
-  const auto type = numeredEntFiniteElementPtr->getEntType();
-  if (type != lastEvaluatedElementEntityType) {
-    switch (type) {
-    case MBTRI:
-      getElementPolynomialBase() =
-          boost::shared_ptr<BaseFunction>(new TriPolynomialBase());
-      break;
-    case MBQUAD:
-      getElementPolynomialBase() =
-          boost::shared_ptr<BaseFunction>(new QuadPolynomialBase());
-      break;
-    default:
-      MoFEMFunctionReturnHot(0);
+    const auto type = numeredEntFiniteElementPtr->getEntType();
+    if (type != lastEvaluatedElementEntityType) {
+      switch (type) {
+      case MBTRI:
+        getElementPolynomialBase() =
+            boost::shared_ptr<BaseFunction>(new TriPolynomialBase());
+        break;
+      case MBQUAD:
+        getElementPolynomialBase() =
+            boost::shared_ptr<BaseFunction>(new QuadPolynomialBase());
+        break;
+      default:
+        MoFEMFunctionReturnHot(0);
+      }
+      CHKERR createDataOnElement(type);
+      lastEvaluatedElementEntityType = type;
     }
-    CHKERR createDataOnElement(type);
-    lastEvaluatedElementEntityType = type;
-  }
 
-  // Calculate normal and tangent vectors for face geometry
-  CHKERR calculateAreaAndNormal();
-  CHKERR getSpaceBaseAndOrderOnElement();
+    // Calculate normal and tangent vectors for face geometry
+    CHKERR calculateAreaAndNormal();
+    CHKERR getSpaceBaseAndOrderOnElement();
 
-  CHKERR setIntegrationPts();
-  if (gaussPts.size2() == 0)
-    MoFEMFunctionReturnHot(0);
+    CHKERR setIntegrationPts();
+    if (gaussPts.size2() == 0)
+      MoFEMFunctionReturnHot(0);
 
-  CHKERR calculateCoordinatesAtGaussPts();
-  CHKERR calHierarchicalBaseFunctionsOnElement();
-  CHKERR calBernsteinBezierBaseFunctionsOnElement();
-  CHKERR calculateAreaAndNormalAtIntegrationPts();
+    CHKERR calculateCoordinatesAtGaussPts();
+    CHKERR calHierarchicalBaseFunctionsOnElement();
+    CHKERR calBernsteinBezierBaseFunctionsOnElement();
+    CHKERR calculateAreaAndNormalAtIntegrationPts();
 
   // Iterate over operators
   CHKERR loopOverOperators();

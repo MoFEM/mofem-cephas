@@ -574,7 +574,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
                 .none())
           SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                    "no data field < %s > on finite element < %s >",
-                   field_name.c_str(), feName.c_str());
+                   field_name.c_str(), getFEName().c_str());
 
         if (oit->getOpType() & types[ss] ||
             oit->getOpType() & UserDataOperator::OPROWCOL) {

@@ -386,15 +386,27 @@ struct FEMethod : public BasicMethod {
 
   FEMethod() = default;
 
-  std::string feName; ///< Name of finite element
-
   boost::shared_ptr<const NumeredEntFiniteElement>
       numeredEntFiniteElementPtr; ///< Pointer to finite element database
                                   ///< structure
 
-  /**execute
-   * @brief Tet if element is run by hook
+  /**
+   * @brief get finite element name
+   *
+   * @return std::string
+   */
+  inline auto getFEName() const {
+    return numeredEntFiniteElementPtr->getName();
+  }
+
+  /**
+   * @brief Tet if element to skip element
+   *
+   * If is set and return false  elemnent us skiped in
+   * MoFEM::Core::loop_finite_elements
    * 
+   * \note That functionality is used to run elements on particular bit levels
+   *
    */
   boost::function<bool(FEMethod *fe_method_ptr)> exeTestHook;
 
