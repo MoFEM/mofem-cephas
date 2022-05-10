@@ -1475,7 +1475,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
 
     if (op.getOpType() & UDO::OPROW) {
       try {
-          CHKERR op.opRhs(*op_data[0], false);
+        CHKERR op.opRhs(*op_data[0], false);
       }
       CATCH_OP_ERRORS(op);
     }
