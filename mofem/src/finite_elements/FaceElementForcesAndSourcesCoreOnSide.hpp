@@ -209,6 +209,8 @@ struct FaceElementForcesAndSourcesCoreOnSideSwitch
     : public FaceElementForcesAndSourcesCoreOnSide {
   using FaceElementForcesAndSourcesCoreOnSide::
       FaceElementForcesAndSourcesCoreOnSide;
+  using UserDataOperator =
+      FaceElementForcesAndSourcesCoreOnSide::UserDataOperator;
 };
 
 } // namespace MoFEM

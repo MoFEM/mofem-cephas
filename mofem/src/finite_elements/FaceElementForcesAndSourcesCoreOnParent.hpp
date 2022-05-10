@@ -49,6 +49,8 @@ struct FaceElementForcesAndSourcesCoreOnChildParentSwitch
     : public FaceElementForcesAndSourcesCoreOnChildParent {
   using FaceElementForcesAndSourcesCoreOnChildParent::
       FaceElementForcesAndSourcesCoreOnChildParent;
+  using UserDataOperator =
+      FaceElementForcesAndSourcesCoreOnChildParent::UserDataOperator;
 };
 
 } // namespace MoFEM

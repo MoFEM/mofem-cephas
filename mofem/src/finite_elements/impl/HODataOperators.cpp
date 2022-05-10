@@ -22,7 +22,7 @@ namespace MoFEM {
 
 OpCalculateHOJacVolume::OpCalculateHOJacVolume(
     boost::shared_ptr<MatrixDouble> jac_ptr)
-    : VolumeElementForcesAndSourcesCoreBase::UserDataOperator(H1, OPSPACE),
+    : VolumeElementForcesAndSourcesCore::UserDataOperator(H1, OPSPACE),
       jacPtr(jac_ptr) {
 
   for (auto t = MBEDGE; t != MBMAXTYPE; ++t)

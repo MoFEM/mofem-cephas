@@ -24,7 +24,7 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
-template <int SWITCH> struct VolumeElementForcesAndSourcesCoreOnSideSwitch;
+struct VolumeElementForcesAndSourcesCoreOnSide;
 
 /** \brief Face finite element
  \ingroup mofem_forces_and_sources_tri_element
@@ -94,7 +94,7 @@ protected:
   MatrixDouble tangentTwoAtGaussPts;
 
   friend class UserDataOperator;
-  friend class VolumeElementForcesAndSourcesCoreOnSideBase;
+  friend class VolumeElementForcesAndSourcesCoreOnSide;
 };
 
 /** \brief default operator for TRI element
@@ -243,10 +243,9 @@ struct FaceElementForcesAndSourcesCore::UserDataOperator
    * @param  method  Finite element object
    * @return         error code
    */
-  template <int SWITCH>
-  MoFEMErrorCode loopSideVolumes(
-      const string &fe_name,
-      VolumeElementForcesAndSourcesCoreOnSideSwitch<SWITCH> &fe_method);
+  MoFEMErrorCode
+  loopSideVolumes(const string fe_name,
+                  VolumeElementForcesAndSourcesCoreOnSide &fe_method);
 
 private:
   MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
@@ -358,21 +357,10 @@ FaceElementForcesAndSourcesCore::UserDataOperator::getFaceFE() {
   return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE);
 }
 
-template <int SWITCH>
-MoFEMErrorCode
-FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolumes(
-    const string &fe_name,
-    VolumeElementForcesAndSourcesCoreOnSideSwitch<SWITCH> &fe_method) {
-  return loopSide(fe_name, &fe_method, 3);
-}
-
 /** \deprecated use FaceElementForcesAndSourcesCore
  */
 DEPRECATED typedef FaceElementForcesAndSourcesCore
     FaceElementForcesAndSourcesCoreBase;
-
-
-    
 
 } // namespace MoFEM
 

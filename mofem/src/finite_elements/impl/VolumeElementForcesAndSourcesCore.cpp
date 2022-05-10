@@ -20,7 +20,7 @@
 
 namespace MoFEM {
 
-VolumeElementForcesAndSourcesCoreBase::VolumeElementForcesAndSourcesCoreBase(
+VolumeElementForcesAndSourcesCore::VolumeElementForcesAndSourcesCore(
     Interface &m_field, const EntityType type)
     : ForcesAndSourcesCore(m_field), vOlume(elementMeasure),
       meshPositionsFieldName("MESH_NODE_POSITIONS"), coords(24), jAc(3, 3),
@@ -33,7 +33,7 @@ VolumeElementForcesAndSourcesCoreBase::VolumeElementForcesAndSourcesCoreBase(
               &invJac(1, 1), &invJac(1, 2), &invJac(2, 0), &invJac(2, 1),
               &invJac(2, 2)) {}
 
-MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::setIntegrationPts() {
+MoFEMErrorCode VolumeElementForcesAndSourcesCore::setIntegrationPts() {
   MoFEMFunctionBegin;
 
   int order_data = getMaxDataOrder();
@@ -192,7 +192,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::setIntegrationPts() {
 }
 
 MoFEMErrorCode
-VolumeElementForcesAndSourcesCoreBase::calculateVolumeAndJacobian() {
+VolumeElementForcesAndSourcesCore::calculateVolumeAndJacobian() {
   MoFEMFunctionBegin;
   const auto ent = numeredEntFiniteElementPtr->getEnt();
   const auto type = numeredEntFiniteElementPtr->getEntType();
@@ -242,7 +242,7 @@ VolumeElementForcesAndSourcesCoreBase::calculateVolumeAndJacobian() {
 }
 
 MoFEMErrorCode
-VolumeElementForcesAndSourcesCoreBase::calculateCoordinatesAtGaussPts() {
+VolumeElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
   MoFEMFunctionBegin;
   // Get coords at Gauss points
   FTensor::Index<'i', 3> i;
@@ -272,7 +272,7 @@ VolumeElementForcesAndSourcesCoreBase::calculateCoordinatesAtGaussPts() {
 }
 
 MoFEMErrorCode
-VolumeElementForcesAndSourcesCoreBase::getSpaceBaseAndOrderOnElement() {
+VolumeElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
   MoFEMFunctionBegin;
 
   CHKERR getSpacesAndBaseOnEntities(dataH1);
@@ -357,7 +357,7 @@ VolumeElementForcesAndSourcesCoreBase::getSpaceBaseAndOrderOnElement() {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::transformBaseFunctions() {
+MoFEMErrorCode VolumeElementForcesAndSourcesCore::transformBaseFunctions() {
   MoFEMFunctionBegin;
 
   if (numeredEntFiniteElementPtr->getEntType() == MBTET) {
@@ -431,13 +431,51 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::transformBaseFunctions() {
 }
 
 MoFEMErrorCode
-VolumeElementForcesAndSourcesCoreBase::UserDataOperator::setPtrFE(
+VolumeElementForcesAndSourcesCore::UserDataOperator::setPtrFE(
     ForcesAndSourcesCore *ptr) {
   MoFEMFunctionBeginHot;
-  if (!(ptrFE = dynamic_cast<VolumeElementForcesAndSourcesCoreBase *>(ptr)))
+  if (!(ptrFE = dynamic_cast<VolumeElementForcesAndSourcesCore *>(ptr)))
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "User operator and finite element do not work together");
   MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode VolumeElementForcesAndSourcesCore::operator()() {
+  MoFEMFunctionBegin;
+
+  const auto type = numeredEntFiniteElementPtr->getEntType();
+  if (type != lastEvaluatedElementEntityType) {
+    switch (type) {
+    case MBTET:
+      getElementPolynomialBase() =
+          boost::shared_ptr<BaseFunction>(new TetPolynomialBase());
+      break;
+    case MBHEX:
+      getElementPolynomialBase() =
+          boost::shared_ptr<BaseFunction>(new HexPolynomialBase());
+      break;
+    default:
+      MoFEMFunctionReturnHot(0);
+    }
+    CHKERR createDataOnElement(type);
+    lastEvaluatedElementEntityType = type;
+  }
+
+  CHKERR calculateVolumeAndJacobian();
+  CHKERR getSpaceBaseAndOrderOnElement();
+  CHKERR setIntegrationPts();
+  if (gaussPts.size2() == 0)
+    MoFEMFunctionReturnHot(0);
+  CHKERR calculateCoordinatesAtGaussPts();
+  CHKERR calHierarchicalBaseFunctionsOnElement();
+  CHKERR calBernsteinBezierBaseFunctionsOnElement();
+
+  CHKERR transformBaseFunctions();
+
+  // Iterate over operators
+  CHKERR loopOverOperators();
+
+  MoFEMFunctionReturn(0);
 }
 
 } // namespace MoFEM

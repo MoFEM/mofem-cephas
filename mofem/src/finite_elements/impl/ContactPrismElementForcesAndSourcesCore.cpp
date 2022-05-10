@@ -1208,4 +1208,12 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesIndices(
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode
+ContactPrismElementForcesAndSourcesCore::UserDataOperator::loopSideVolumes(
+    const string fe_name,
+    VolumeElementForcesAndSourcesCoreOnContactPrismSide &fe_method,
+    const int side_type, const EntityHandle ent_for_side) {
+  return loopSide(fe_name, &fe_method, side_type, ent_for_side);
+}
+
 } // namespace MoFEM

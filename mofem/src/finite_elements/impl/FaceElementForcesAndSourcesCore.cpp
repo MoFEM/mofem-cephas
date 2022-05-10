@@ -435,4 +435,10 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::operator()() {
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode
+FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolumes(
+    const string fe_name, VolumeElementForcesAndSourcesCoreOnSide &fe_method) {
+  return loopSide(fe_name, &fe_method, 3);
+}
+
 } // namespace MoFEM

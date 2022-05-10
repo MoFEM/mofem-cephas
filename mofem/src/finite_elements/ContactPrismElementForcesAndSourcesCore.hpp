@@ -24,8 +24,8 @@
 #define __CONTACTPRISMELEMENTFORCESANDSURCESCORE_HPP__
 
 namespace MoFEM {
-template <int SWITCH>
-struct VolumeElementForcesAndSourcesCoreOnContactPrismSideSwitch;
+
+struct VolumeElementForcesAndSourcesCoreOnContactPrismSide;
 
 /** \brief ContactPrism finite element
  \ingroup mofem_forces_and_sources_prism_element
@@ -43,206 +43,16 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
   /** \brief default operator for Contact Prism element
    * \ingroup mofem_forces_and_sources_prism_element
    */
-  struct UserDataOperator : public ForcesAndSourcesCore::UserDataOperator {
-
-    UserDataOperator(const FieldSpace space)
-        : ForcesAndSourcesCore::UserDataOperator(space) {}
-
-    UserDataOperator(const std::string &field_name, const char type)
-        : ForcesAndSourcesCore::UserDataOperator(field_name, type) {}
-
-    UserDataOperator(const std::string &row_field_name,
-                     const std::string &col_field_name, const char type)
-        : ForcesAndSourcesCore::UserDataOperator(row_field_name, col_field_name,
-                                                 type) {}
-
-    UserDataOperator(const std::string &row_field_name,
-                     const std::string &col_field_name, const char type,
-                     const char face_type)
-        : ForcesAndSourcesCore::UserDataOperator(row_field_name, col_field_name,
-                                                 type),
-          faceType(face_type) {}
-
-    UserDataOperator(const std::string &field_name, const char type,
-                     const char face_type)
-        : ForcesAndSourcesCore::UserDataOperator(field_name, type),
-          faceType(face_type) {}
-
-    /**
-           * \brief Controls loop over faces and face combination on element
-            *
-            * FACEMASTER is used when column or row data needs to be accessed
-      located at master face
-            * FACESLAVE is used when column or row data needs to be accessed
-      located at slave face
-            * FACEMASTERMASTER is used for accessing simultaneously row and col
-      data located at master face.
-            * FACEMASTERSLAVE is used for accessing simultaneously row data that
-      is located on master face and col data located at slave face.
-            * FACESLAVEMASTER is used for accessing simultaneously row data that
-      is located on slave face and col data located at master face.
-      * FACESLAVESLAVE is used for accessing simultaneously row and col
-      data located at slave face.
-            *
-      */
-    enum FaceType {
-      FACEMASTER = 1 << 0,
-      FACESLAVE = 1 << 1,
-      FACEMASTERMASTER = 1 << 2,
-      FACEMASTERSLAVE = 1 << 3,
-      FACESLAVEMASTER = 1 << 4,
-      FACESLAVESLAVE = 1 << 5,
-      FACELAST = 1 << 6
-    };
-
-    char faceType;
-
-    /**
-     * \brief Get operator types
-     * @return Return operator type
-     */
-    inline int getFaceType() const;
-
-    inline boost::shared_ptr<const NumeredEntFiniteElement>
-    getNumeredEntFiniteElementPtr() const;
-
-    /** \brief get face aRea Master
-     */
-    inline double getAreaMaster();
-
-    /** \brief get face aRea Slave
-     */
-    inline double getAreaSlave();
-
-    /** \brief get face normal vector to Master face
-     */
-    inline VectorAdaptor getNormalMaster();
-
-    /** \brief get first face tangent vector to Master face
-     */
-    inline VectorAdaptor getTangentMasterOne();
-
-    /** \brief get second face tangent vector to Master face
-     */
-    inline VectorAdaptor getTangentMasterTwo();
-
-    /** \brief get face normal vector to Slave face
-     */
-    inline VectorAdaptor getNormalSlave();
-
-    /** \brief get first face tangent vector to Slave face
-     */
-    inline VectorAdaptor getTangentSlaveOne();
-
-    /** \brief get second face tangent vector to Slave face
-     */
-    inline VectorAdaptor getTangentSlaveTwo();
-
-    /** \brief get Gauss point at Master face
-     */
-    inline MatrixDouble &getGaussPtsMaster();
-
-    /** \brief get Gauss point at Slave face
-     */
-    inline MatrixDouble &getGaussPtsSlave();
-
-    /**
-     * @brief Get integration weights for slave side
-     *
-     * \code
-     * auto t_w = getFTensor0IntegrationWeight();
-     * for(int gg = 0; gg!=getGaussPts.size2(); ++gg) {
-     *  // integrate something
-     *  ++t_w;
-     * }
-     * \endcode
-     *
-     * @return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
-     */
-    inline auto getFTensor0IntegrationWeightSlave();
-
-    /**
-     * @brief Get integration weights for master side
-     *
-     * \code
-     * auto t_w = getFTensor0IntegrationWeight();
-     * for(int gg = 0; gg!=getGaussPts.size2(); ++gg) {
-     *  // integrate something
-     *  ++t_w;
-     * }
-     * \endcode
-     *
-     * @return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
-     */
-    inline auto getFTensor0IntegrationWeightMaster();
-
-    /** \brief get triangle coordinates
-
-      Vector has 9 elements, i.e. coordinates on Master face
-
-     */
-    inline VectorDouble getCoordsMaster();
-
-    /** \brief get triangle coordinates
-
-      Vector has 9 elements, i.e. coordinates on Slave face
-
-     */
-    inline VectorDouble getCoordsSlave();
-
-    /** \brief get coordinates at Gauss pts on full prism.
-
-      Matrix has size (nb integration points on master)x(3),
-      i.e. coordinates on face Master
-
-     */
-    inline MatrixDouble &getCoordsAtGaussPtsMaster();
-
-    /** \brief get coordinates at Gauss pts on full prism.
-
-      Matrix has size (nb integration points on slave)x(3),
-      i.e. coordinates on face Slave
-
-     */
-    inline MatrixDouble &getCoordsAtGaussPtsSlave();
-
-    /** \brief return pointer to triangle finite element object
-     */
-    inline const ContactPrismElementForcesAndSourcesCore *
-    getContactPrismElementForcesAndSourcesCore();
-
-    /**
-     *
-     * User call this function to loop over elements on the side of face. This
-     * function calls MoFEM::VolumeElementForcesAndSourcesCoreOnContactPrismSide with
-     * is operator to do calculations.
-     *
-     * @param  fe_name Name of the element
-     * @param  method  Finite element object
-     * @param  side_type  states the side from which side element will work (0
-     * for master 1 for slave)
-     * @return         error code
-     */
-    template <int SWITCH>
-    MoFEMErrorCode loopSideVolumes(
-        const string &fe_name,
-        VolumeElementForcesAndSourcesCoreOnContactPrismSideSwitch<SWITCH> &fe_method,
-        const int side_type, const EntityHandle ent_for_side);
-
-  protected:
-    inline ForcesAndSourcesCore *getSidePtrFE() const;
-  };
+  struct UserDataOperator;
 
   MoFEMErrorCode operator()();
 
-  inline const std::array<boost::shared_ptr<EntitiesFieldData>,
-                          LASTSPACE>
+  inline const std::array<boost::shared_ptr<EntitiesFieldData>, LASTSPACE>
   getDataOnMasterFromEleSide() {
     return dataOnMaster;
   }
 
-  inline const std::array<boost::shared_ptr<EntitiesFieldData>,
-                          LASTSPACE>
+  inline const std::array<boost::shared_ptr<EntitiesFieldData>, LASTSPACE>
   getDataOnSlaveFromEleSide() {
     return dataOnSlave;
   }
@@ -270,7 +80,7 @@ protected:
   VectorDouble tangentSlaveOne, tangentSlaveTwo;
   VectorDouble tangentMasterOne, tangentMasterTwo;
   OpSetContravariantPiolaTransformOnFace opContravariantTransform;
-  
+
   /**
    * @brief Entity data on element entity rows fields
    *
@@ -280,8 +90,7 @@ protected:
    */
   const std::array<boost::shared_ptr<EntitiesFieldData>, LASTSPACE>
       dataOnMaster;
-  const std::array<boost::shared_ptr<EntitiesFieldData>, LASTSPACE>
-      dataOnSlave;
+  const std::array<boost::shared_ptr<EntitiesFieldData>, LASTSPACE> dataOnSlave;
 
   /**
    * @brief Entity data on element entity columns fields
@@ -332,12 +141,10 @@ protected:
    * \param type_lo lowest dimension entity type to be searched
    * \param type_hi highest dimension entity type to be searched
    */
-  MoFEMErrorCode
-  getEntityFieldData(EntitiesFieldData &master_data,
-                     EntitiesFieldData &slave_data,
-                     const std::string &field_name,
-                     const EntityType type_lo = MBVERTEX,
-                     const EntityType type_hi = MBPOLYHEDRON) const;
+  MoFEMErrorCode getEntityFieldData(
+      EntitiesFieldData &master_data, EntitiesFieldData &slave_data,
+      const std::string &field_name, const EntityType type_lo = MBVERTEX,
+      const EntityType type_hi = MBPOLYHEDRON) const;
 
   /** \brief function that gets entity indices.
    *
@@ -349,13 +156,12 @@ protected:
    * \param type_hi highest dimension entity type to be searched
    */
   template <typename EXTRACTOR>
-  MoFEMErrorCode getEntityIndices(EntitiesFieldData &master_data,
-                                  EntitiesFieldData &slave_data,
-                                  const std::string &field_name,
-                                  FieldEntity_vector_view &ents_field,
-                                  const EntityType type_lo,
-                                  const EntityType type_hi,
-                                  EXTRACTOR &&extractor) const;
+  MoFEMErrorCode
+  getEntityIndices(EntitiesFieldData &master_data,
+                   EntitiesFieldData &slave_data, const std::string &field_name,
+                   FieldEntity_vector_view &ents_field,
+                   const EntityType type_lo, const EntityType type_hi,
+                   EXTRACTOR &&extractor) const;
 
   /** \brief function that gets nodes indices.
    *
@@ -390,21 +196,215 @@ protected:
    * \param master_base base for master face
    * \param slave_base base for slave face
    */
-  MoFEMErrorCode getNodesFieldData(
-      const std::string field_name, VectorDouble &master_nodes_data,
-      VectorDouble &slave_nodes_data, VectorDofs &master_nodes_dofs,
-      VectorDofs &slave_nodes_dofs, 
-      
-      VectorFieldEntities &master_field_entities, VectorFieldEntities &slave_field_entities, 
-      
-      
-      FieldSpace &master_space,
-      FieldSpace &slave_space, FieldApproximationBase &master_base,
-      FieldApproximationBase &slave_base) const;
+  MoFEMErrorCode getNodesFieldData(const std::string field_name,
+                                   VectorDouble &master_nodes_data,
+                                   VectorDouble &slave_nodes_data,
+                                   VectorDofs &master_nodes_dofs,
+                                   VectorDofs &slave_nodes_dofs,
+
+                                   VectorFieldEntities &master_field_entities,
+                                   VectorFieldEntities &slave_field_entities,
+
+                                   FieldSpace &master_space,
+                                   FieldSpace &slave_space,
+                                   FieldApproximationBase &master_base,
+                                   FieldApproximationBase &slave_base) const;
 
 private:
   int nbGaussPts;
+};
 
+/** \brief default operator for Contact Prism element
+ * \ingroup mofem_forces_and_sources_prism_element
+ */
+struct ContactPrismElementForcesAndSourcesCore::UserDataOperator
+    : public ForcesAndSourcesCore::UserDataOperator {
+
+  UserDataOperator(const FieldSpace space)
+      : ForcesAndSourcesCore::UserDataOperator(space) {}
+
+  UserDataOperator(const std::string &field_name, const char type)
+      : ForcesAndSourcesCore::UserDataOperator(field_name, type) {}
+
+  UserDataOperator(const std::string &row_field_name,
+                   const std::string &col_field_name, const char type)
+      : ForcesAndSourcesCore::UserDataOperator(row_field_name, col_field_name,
+                                               type) {}
+
+  UserDataOperator(const std::string &row_field_name,
+                   const std::string &col_field_name, const char type,
+                   const char face_type)
+      : ForcesAndSourcesCore::UserDataOperator(row_field_name, col_field_name,
+                                               type),
+        faceType(face_type) {}
+
+  UserDataOperator(const std::string &field_name, const char type,
+                   const char face_type)
+      : ForcesAndSourcesCore::UserDataOperator(field_name, type),
+        faceType(face_type) {}
+
+  /**
+         * \brief Controls loop over faces and face combination on element
+          *
+          * FACEMASTER is used when column or row data needs to be accessed
+    located at master face
+          * FACESLAVE is used when column or row data needs to be accessed
+    located at slave face
+          * FACEMASTERMASTER is used for accessing simultaneously row and col
+    data located at master face.
+          * FACEMASTERSLAVE is used for accessing simultaneously row data that
+    is located on master face and col data located at slave face.
+          * FACESLAVEMASTER is used for accessing simultaneously row data that
+    is located on slave face and col data located at master face.
+    * FACESLAVESLAVE is used for accessing simultaneously row and col
+    data located at slave face.
+          *
+    */
+  enum FaceType {
+    FACEMASTER = 1 << 0,
+    FACESLAVE = 1 << 1,
+    FACEMASTERMASTER = 1 << 2,
+    FACEMASTERSLAVE = 1 << 3,
+    FACESLAVEMASTER = 1 << 4,
+    FACESLAVESLAVE = 1 << 5,
+    FACELAST = 1 << 6
+  };
+
+  char faceType;
+
+  /**
+   * \brief Get operator types
+   * @return Return operator type
+   */
+  inline int getFaceType() const;
+
+  inline boost::shared_ptr<const NumeredEntFiniteElement>
+  getNumeredEntFiniteElementPtr() const;
+
+  /** \brief get face aRea Master
+   */
+  inline double getAreaMaster();
+
+  /** \brief get face aRea Slave
+   */
+  inline double getAreaSlave();
+
+  /** \brief get face normal vector to Master face
+   */
+  inline VectorAdaptor getNormalMaster();
+
+  /** \brief get first face tangent vector to Master face
+   */
+  inline VectorAdaptor getTangentMasterOne();
+
+  /** \brief get second face tangent vector to Master face
+   */
+  inline VectorAdaptor getTangentMasterTwo();
+
+  /** \brief get face normal vector to Slave face
+   */
+  inline VectorAdaptor getNormalSlave();
+
+  /** \brief get first face tangent vector to Slave face
+   */
+  inline VectorAdaptor getTangentSlaveOne();
+
+  /** \brief get second face tangent vector to Slave face
+   */
+  inline VectorAdaptor getTangentSlaveTwo();
+
+  /** \brief get Gauss point at Master face
+   */
+  inline MatrixDouble &getGaussPtsMaster();
+
+  /** \brief get Gauss point at Slave face
+   */
+  inline MatrixDouble &getGaussPtsSlave();
+
+  /**
+   * @brief Get integration weights for slave side
+   *
+   * \code
+   * auto t_w = getFTensor0IntegrationWeight();
+   * for(int gg = 0; gg!=getGaussPts.size2(); ++gg) {
+   *  // integrate something
+   *  ++t_w;
+   * }
+   * \endcode
+   *
+   * @return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
+   */
+  inline auto getFTensor0IntegrationWeightSlave();
+
+  /**
+   * @brief Get integration weights for master side
+   *
+   * \code
+   * auto t_w = getFTensor0IntegrationWeight();
+   * for(int gg = 0; gg!=getGaussPts.size2(); ++gg) {
+   *  // integrate something
+   *  ++t_w;
+   * }
+   * \endcode
+   *
+   * @return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
+   */
+  inline auto getFTensor0IntegrationWeightMaster();
+
+  /** \brief get triangle coordinates
+
+    Vector has 9 elements, i.e. coordinates on Master face
+
+   */
+  inline VectorDouble getCoordsMaster();
+
+  /** \brief get triangle coordinates
+
+    Vector has 9 elements, i.e. coordinates on Slave face
+
+   */
+  inline VectorDouble getCoordsSlave();
+
+  /** \brief get coordinates at Gauss pts on full prism.
+
+    Matrix has size (nb integration points on master)x(3),
+    i.e. coordinates on face Master
+
+   */
+  inline MatrixDouble &getCoordsAtGaussPtsMaster();
+
+  /** \brief get coordinates at Gauss pts on full prism.
+
+    Matrix has size (nb integration points on slave)x(3),
+    i.e. coordinates on face Slave
+
+   */
+  inline MatrixDouble &getCoordsAtGaussPtsSlave();
+
+  /** \brief return pointer to triangle finite element object
+   */
+  inline const ContactPrismElementForcesAndSourcesCore *
+  getContactPrismElementForcesAndSourcesCore();
+
+  /**
+   *
+   * User call this function to loop over elements on the side of face. This
+   * function calls MoFEM::VolumeElementForcesAndSourcesCoreOnContactPrismSide
+   * with is operator to do calculations.
+   *
+   * @param  fe_name Name of the element
+   * @param  method  Finite element object
+   * @param  side_type  states the side from which side element will work (0
+   * for master 1 for slave)
+   * @return         error code
+   */
+  MoFEMErrorCode loopSideVolumes(
+      const string fe_name,
+      VolumeElementForcesAndSourcesCoreOnContactPrismSide &fe_method,
+      const int side_type, const EntityHandle ent_for_side);
+
+protected:
+  inline ForcesAndSourcesCore *getSidePtrFE() const;
 };
 
 boost::shared_ptr<const NumeredEntFiniteElement>
@@ -413,15 +413,6 @@ ContactPrismElementForcesAndSourcesCore::UserDataOperator::
   return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
       ->numeredEntFiniteElementPtr;
 };
-
-template <int SWITCH>
-MoFEMErrorCode
-ContactPrismElementForcesAndSourcesCore::UserDataOperator::loopSideVolumes(
-    const string &fe_name,
-    VolumeElementForcesAndSourcesCoreOnContactPrismSideSwitch<SWITCH> &fe_method,
-    const int side_type, const EntityHandle ent_for_side) {
-  return loopSide(fe_name, &fe_method, side_type, ent_for_side);
-}
 
 inline int
 ContactPrismElementForcesAndSourcesCore::UserDataOperator::getFaceType() const {

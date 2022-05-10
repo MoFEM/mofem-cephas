@@ -539,10 +539,10 @@ private:
    */
   MoFEMErrorCode setRefineFEPtr(const ForcesAndSourcesCore *refine_fe_ptr);
 
-  friend class VolumeElementForcesAndSourcesCoreOnSideBase;
+  friend class VolumeElementForcesAndSourcesCoreOnSide;
   friend class FaceElementForcesAndSourcesCoreOnSide;
   friend class FaceElementForcesAndSourcesCoreOnChildParent;
-  friend class VolumeElementForcesAndSourcesCoreOnContactPrismSideBase;
+  friend class VolumeElementForcesAndSourcesCoreOnContactPrismSide;
 
 protected:
   MatrixDouble coordsAtGaussPts; ///< coordinated at gauss points
