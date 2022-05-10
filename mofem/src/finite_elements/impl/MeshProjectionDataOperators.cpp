@@ -69,6 +69,7 @@ OpAddParentEntData::OpAddParentEntData(
 
 MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
                                          const bool error_if_no_base) {
+  int count_meshset_sides = 0;
   MoFEMFunctionBegin;
 
   auto check = [](auto &b, auto &m, auto &bit) {
@@ -99,7 +100,7 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
       if (parent_base) {
         auto &child_base = child_data.getNSharedPtr(
             parent_data.getBase(), static_cast<BaseDerivatives>(direvative));
-        if(!child_base)
+        if (!child_base)
           child_base = boost::make_shared<MatrixDouble>();
         child_base->swap(*parent_base);
       }
@@ -144,6 +145,7 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
 
       // note all nodes from all added
       if (check(bitParentEnt, bitParentEntMask, bit_ent)) {
+        ++count_meshset_sides;
 
         if (verbosity >= VERBOSE) {
           MOFEM_LOG("SELF", severityLevel)
@@ -192,10 +194,12 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
           }
         }
 
-        entities_field_data.dataOnEntities[MBENTITYSET].push_back(
-            new EntitiesFieldData::EntData());
+        entities_field_data.dataOnEntities[MBENTITYSET].resize(
+            count_meshset_sides);
         auto &child_data_meshset =
-            entities_field_data.dataOnEntities[MBENTITYSET].back();
+            entities_field_data
+                .dataOnEntities[MBENTITYSET][count_meshset_sides - 1];
+
         if (opParentType != OPSPACE) {
           CHKERR set_child_data(data, child_data_meshset);
         }
@@ -206,53 +210,56 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
     MoFEMFunctionReturn(0);
   };
 
-  auto &bit_fe = getFEMethod()->numeredEntFiniteElementPtr->getBitRefLevel();
-  if (check(bitChild, bitChildMask, bit_fe)) {
+    auto &bit_fe = getFEMethod()->numeredEntFiniteElementPtr->getBitRefLevel();
+    if (check(bitChild, bitChildMask, bit_fe)) {
 
-    if (verbosity >= VERBOSE) {
-      MOFEM_LOG("SELF", severityLevel) << "Child FE bit: " << bit_fe;
-    }
+      if (verbosity >= VERBOSE) {
+        MOFEM_LOG("SELF", severityLevel) << "Child FE bit: " << bit_fe;
+      }
 
-    auto loop_parent_fe = [&]() {
-      MoFEMFunctionBeginHot;
+      auto loop_parent_fe = [&]() {
+        MoFEMFunctionBeginHot;
 
-      // note live of op pointer is controlled by ptr_vec in in finite
-      // element
-      auto field_op =
-          new ForcesAndSourcesCore::UserDataOperator(fieldName, opParentType);
-      field_op->doWorkRhsHook = do_work_parent_hook;
 
-      parentElePtr->getOpPtrVector().push_back(field_op);
-      CHKERR loopParent(getFEName(), parentElePtr.get(), verbosity,
-                        severityLevel);
-      // clean element from obsolete data operator
-      parentElePtr->getOpPtrVector().pop_back();
+
+        // note live of op pointer is controlled by ptr_vec in in finite
+        // element
+        auto field_op =
+            new ForcesAndSourcesCore::UserDataOperator(fieldName, opParentType);
+        field_op->doWorkRhsHook = do_work_parent_hook;
+
+        parentElePtr->getOpPtrVector().push_back(field_op);
+        CHKERR loopParent(getFEName(), parentElePtr.get(), verbosity,
+                          severityLevel);
+        // clean element from obsolete data operator
+        parentElePtr->getOpPtrVector().pop_back();
 
 #ifndef NDEBUG
-      auto &parent_gauss_pts = parentElePtr->gaussPts;
-      if (getGaussPts().size1() != parent_gauss_pts.size1()) {
-        MOFEM_LOG("SELF", Sev::error) << getGaussPts();
-        MOFEM_LOG("SELF", Sev::error) << parent_gauss_pts;
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "Wrong number of weights");
-      }
-      if (getGaussPts().size2() != parent_gauss_pts.size2()) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "Wrong number of integration points");
-      }
+        auto &parent_gauss_pts = parentElePtr->gaussPts;
+        if (getGaussPts().size1() != parent_gauss_pts.size1()) {
+          MOFEM_LOG("SELF", Sev::error) << getGaussPts();
+          MOFEM_LOG("SELF", Sev::error) << parent_gauss_pts;
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "Wrong number of weights");
+        }
+        if (getGaussPts().size2() != parent_gauss_pts.size2()) {
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "Wrong number of integration points");
+        }
 #endif
 
-      MoFEMFunctionReturnHot(0);
-    };
+        MoFEMFunctionReturnHot(0);
+      };
 
-    CHKERR loop_parent_fe();
-  }
+      CHKERR loop_parent_fe();
+    }
 
-  if (verbosity >= VERBOSE) {
-    MOFEM_LOG("SELF", severityLevel)
-        << "Number of meshset entities "
-        << entities_field_data.dataOnEntities[MBENTITYSET].size();
-  }
+    if (verbosity >= VERBOSE) {
+      MOFEM_LOG("SELF", severityLevel)
+          << "Number of meshset entities "
+          << entities_field_data.dataOnEntities[MBENTITYSET].size();
+    }
+  
 
   MoFEMFunctionReturn(0);
 }
