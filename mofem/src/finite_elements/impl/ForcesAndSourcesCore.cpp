@@ -1441,7 +1441,6 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
       CHKERR get_data_for_nodes();
     case HCURL:
     case HDIV:
-      op_data[ss]->dataOnEntities[MBENTITYSET].clear();
       CHKERR get_data_for_entities();
       break;
     case L2:
@@ -1450,7 +1449,6 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
         CHKERR get_data_for_nodes();
         break;
       default:
-        op_data[ss]->dataOnEntities[MBENTITYSET].clear();
         CHKERR get_data_for_entities();
       }
       break;
