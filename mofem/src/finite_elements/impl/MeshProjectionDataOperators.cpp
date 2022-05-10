@@ -77,8 +77,6 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
 
   auto set_child_data = [](auto &parent_data, auto &child_data) {
     MoFEMFunctionBeginHot;
-
-    child_data.sPace = parent_data.getSpace();
     child_data.bAse = parent_data.getBase();
     child_data.sEnse = parent_data.getSense();
     child_data.oRder = parent_data.getOrder();
@@ -87,9 +85,13 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
     child_data.dOfs.swap(parent_data.getFieldDofs());
     child_data.fieldData.swap(parent_data.getFieldData());
     child_data.fieldEntities.swap(parent_data.getFieldEntities());
+    MoFEMFunctionReturnHot(0);
+  };
 
+  auto set_child_base = [](auto &parent_data, auto &child_data) {
+    MoFEMFunctionBeginHot;
+    child_data.sPace = parent_data.getSpace();
     using BaseDerivatives = EntitiesFieldData::EntData::BaseDerivatives;
-
     for (auto direvative = 0; direvative != BaseDerivatives::LastDerivative;
          ++direvative) {
       auto &parent_base = parent_data.getNSharedPtr(
@@ -97,7 +99,9 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
       if (parent_base) {
         auto &child_base = child_data.getNSharedPtr(
             parent_data.getBase(), static_cast<BaseDerivatives>(direvative));
-        child_base = parent_base;
+        if(!child_base)
+          child_base = boost::make_shared<MatrixDouble>();
+        child_base->swap(*parent_base);
       }
     }
 
@@ -149,19 +153,21 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
               << ApproximationBaseNames[data.getBase()];
         }
 
-        // note all nodes from all added
-        if (field_entities.size() > 1) {
-          int dof_idx = 0;
-          for (auto dof : data.getFieldDofs()) {
-            auto &bit_ent = dof->getBitRefLevel();
-            if (!check(bitParentEnt, bitParentEntMask, bit_ent)) {
-              data.getIndices()[dof_idx] = -1;
-              data.getLocalIndices()[dof_idx] = -1;
-              data.getFieldData()[dof_idx] = 0;
+        if (opParentType != OPSPACE) {
+          // note all nodes from all added
+          if (field_entities.size() > 1) {
+            int dof_idx = 0;
+            for (auto dof : data.getFieldDofs()) {
+              auto &bit_ent = dof->getBitRefLevel();
+              if (!check(bitParentEnt, bitParentEntMask, bit_ent)) {
+                data.getIndices()[dof_idx] = -1;
+                data.getLocalIndices()[dof_idx] = -1;
+                data.getFieldData()[dof_idx] = 0;
+              }
+              ++dof_idx;
             }
-            ++dof_idx;
           }
-        } 
+        }
 
 #ifndef NDEBUG
         if (verbosity >= NOISY) {
@@ -173,22 +179,27 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
         }
 #endif
 
-        if (data.getFieldEntities().size()) {
-          // note: assumes that all entities on data are the same type. that is
-          // good assumption, since we group entities on side by type.
-          const auto ent_type = data.getFieldEntities()[0]->getEntType();
-          CHKERR switch_of_dofs_children(
-              data, entities_field_data.dataOnEntities[ent_type]);
-          if(ent_type != type)
+        if (opParentType != OPSPACE) {
+          if (data.getFieldEntities().size()) {
+            // note: assumes that all entities on data are the same type. that
+            // is good assumption, since we group entities on side by type.
+            const auto ent_type = data.getFieldEntities()[0]->getEntType();
             CHKERR switch_of_dofs_children(
-                data, entities_field_data.dataOnEntities[type]);
+                data, entities_field_data.dataOnEntities[ent_type]);
+            if (ent_type != type)
+              CHKERR switch_of_dofs_children(
+                  data, entities_field_data.dataOnEntities[type]);
+          }
         }
 
         entities_field_data.dataOnEntities[MBENTITYSET].push_back(
             new EntitiesFieldData::EntData());
         auto &child_data_meshset =
             entities_field_data.dataOnEntities[MBENTITYSET].back();
-        CHKERR set_child_data(data, child_data_meshset);
+        if (opParentType != OPSPACE) {
+          CHKERR set_child_data(data, child_data_meshset);
+        }
+        CHKERR set_child_base(data, child_data_meshset);
       }
     }
 

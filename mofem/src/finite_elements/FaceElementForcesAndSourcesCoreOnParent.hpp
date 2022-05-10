@@ -33,9 +33,8 @@ struct FaceElementForcesAndSourcesCoreOnChildParent
 
   using FaceElementForcesAndSourcesCore::FaceElementForcesAndSourcesCore;
 
-  int getRule(int order);
-
 protected:
+  int getRule(int order);
   MoFEMErrorCode setGaussPts(int order);
 
 private:
