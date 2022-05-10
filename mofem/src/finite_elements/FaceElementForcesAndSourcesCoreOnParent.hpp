@@ -31,8 +31,7 @@ namespace MoFEM {
 struct FaceElementForcesAndSourcesCoreOnChildParent
     : public FaceElementForcesAndSourcesCore {
 
-  using FaceElementForcesAndSourcesCore::
-      FaceElementForcesAndSourcesCore;
+  using FaceElementForcesAndSourcesCore::FaceElementForcesAndSourcesCore;
 
   int getRule(int order);
 
@@ -40,6 +39,16 @@ protected:
   MoFEMErrorCode setGaussPts(int order);
 
 private:
+};
+
+/**
+ * @deprecated do not use needed for back compatibility
+ */
+template <int SWITCH>
+DEPRECATED struct FaceElementForcesAndSourcesCoreOnChildParentSwitch
+    : public FaceElementForcesAndSourcesCoreOnChildParent {
+  using FaceElementForcesAndSourcesCoreOnChildParent::
+      FaceElementForcesAndSourcesCoreOnChildParent;
 };
 
 } // namespace MoFEM

@@ -201,6 +201,16 @@ MatrixDouble &FaceElementForcesAndSourcesCoreOnSide::UserDataOperator::
   return getEdgeFE()->coordsAtGaussPts;
 }
 
+/**
+ * @deprecated do not use needed for back compatibility
+ */
+template <int SWITCH>
+DEPRECATED struct FaceElementForcesAndSourcesCoreOnSideSwitch
+    : public FaceElementForcesAndSourcesCoreOnSide {
+  using FaceElementForcesAndSourcesCoreOnSide::
+      FaceElementForcesAndSourcesCoreOnSide;
+};
+
 } // namespace MoFEM
 
 #endif //__FACEELEMENTFORCESANDSOURCESCORE_ONSIDE___HPP__
