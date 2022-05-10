@@ -395,4 +395,44 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::UserDataOperator::setPtrFE(
   MoFEMFunctionReturnHot(0);
 }
 
+MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::operator()() {
+  MoFEMFunctionBegin;
+
+  const auto type = numeredEntFiniteElementPtr->getEntType();
+  if (type != lastEvaluatedElementEntityType) {
+    switch (type) {
+    case MBTRI:
+      getElementPolynomialBase() =
+          boost::shared_ptr<BaseFunction>(new TriPolynomialBase());
+      break;
+    case MBQUAD:
+      getElementPolynomialBase() =
+          boost::shared_ptr<BaseFunction>(new QuadPolynomialBase());
+      break;
+    default:
+      MoFEMFunctionReturnHot(0);
+    }
+    CHKERR createDataOnElement(type);
+    lastEvaluatedElementEntityType = type;
+  }
+
+  // Calculate normal and tangent vectors for face geometry
+  CHKERR calculateAreaAndNormal();
+  CHKERR getSpaceBaseAndOrderOnElement();
+
+  CHKERR setIntegrationPts();
+  if (gaussPts.size2() == 0)
+    MoFEMFunctionReturnHot(0);
+
+  CHKERR calculateCoordinatesAtGaussPts();
+  CHKERR calHierarchicalBaseFunctionsOnElement();
+  CHKERR calBernsteinBezierBaseFunctionsOnElement();
+  CHKERR calculateAreaAndNormalAtIntegrationPts();
+
+  // Iterate over operators
+  CHKERR loopOverOperators();
+
+  MoFEMFunctionReturn(0);
+}
+
 } // namespace MoFEM

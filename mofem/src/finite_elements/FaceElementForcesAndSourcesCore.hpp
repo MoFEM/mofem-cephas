@@ -42,15 +42,12 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
    * \ingroup mofem_forces_and_sources_tri_element
    */
   struct UserDataOperator;
-  
-  enum Switches {
-  };
 
-  template <int SWITCH> MoFEMErrorCode opSwitch();
+  MoFEMErrorCode operator()();
 
-protected:
   FaceElementForcesAndSourcesCoreBase(Interface &m_field);
 
+protected:
   /**
    * \brief Calculate element area and normal of the face at integration points
    *
@@ -255,75 +252,11 @@ private:
   MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
 };
 
-/** \brief Face finite element switched
- \ingroup mofem_forces_and_sources_tri_element
-
- */
-template <int SWITCH>
-struct FaceElementForcesAndSourcesCoreSwitch
-    : public FaceElementForcesAndSourcesCoreBase {
-
-  FaceElementForcesAndSourcesCoreSwitch(Interface &m_field)
-      : FaceElementForcesAndSourcesCoreBase(m_field) {}
-
-  using UserDataOperator =
-      FaceElementForcesAndSourcesCoreBase::UserDataOperator;
-
-  MoFEMErrorCode operator()();
-};
-
 /** \brief Face finite element default
  \ingroup mofem_forces_and_sources_tri_element
 
  */
-using FaceElementForcesAndSourcesCore =
-    FaceElementForcesAndSourcesCoreSwitch<0>;
-
-template <int SWITCH>
-MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::opSwitch() {
-  MoFEMFunctionBegin;
-
-  const auto type = numeredEntFiniteElementPtr->getEntType();
-  if (type != lastEvaluatedElementEntityType) {
-    switch (type) {
-    case MBTRI:
-      getElementPolynomialBase() =
-          boost::shared_ptr<BaseFunction>(new TriPolynomialBase());
-      break;
-    case MBQUAD:
-      getElementPolynomialBase() =
-          boost::shared_ptr<BaseFunction>(new QuadPolynomialBase());
-      break;
-    default:
-      MoFEMFunctionReturnHot(0);
-    }
-    CHKERR createDataOnElement(type);
-    lastEvaluatedElementEntityType = type;
-  }
-
-  // Calculate normal and tangent vectors for face geometry
-  CHKERR calculateAreaAndNormal();
-  CHKERR getSpaceBaseAndOrderOnElement();
-
-  CHKERR setIntegrationPts();
-  if (gaussPts.size2() == 0)
-    MoFEMFunctionReturnHot(0);
-
-  CHKERR calculateCoordinatesAtGaussPts();
-  CHKERR calHierarchicalBaseFunctionsOnElement();
-  CHKERR calBernsteinBezierBaseFunctionsOnElement();
-  CHKERR calculateAreaAndNormalAtIntegrationPts();
-
-  // Iterate over operators
-  CHKERR loopOverOperators();
-
-  MoFEMFunctionReturn(0);
-}
-
-template <int SWITCH>
-MoFEMErrorCode FaceElementForcesAndSourcesCoreSwitch<SWITCH>::operator()() {
-  return opSwitch<SWITCH>();
-}
+using FaceElementForcesAndSourcesCore = FaceElementForcesAndSourcesCoreBase;
 
 double FaceElementForcesAndSourcesCoreBase::UserDataOperator::getArea() {
   return static_cast<FaceElementForcesAndSourcesCoreBase *>(ptrFE)->aRea;

@@ -42,33 +42,6 @@ protected:
 private:
 };
 
-/**
- * @brief Face side finite element with switches
- *
- * Using SWITCH to off functions
- *
- * @tparam SWITCH
- */
-template <int SWITCH>
-struct FaceElementForcesAndSourcesCoreOnChildParentSwitch
-    : public FaceElementForcesAndSourcesCoreOnChildParentBase {
-
-  // using FaceElementForcesAndSourcesCoreOnChildParentBase::
-  //     FaceElementForcesAndSourcesCoreOnChildParentBase;
-
-  FaceElementForcesAndSourcesCoreOnChildParentSwitch(MoFEM::Interface &m_field)
-      : FaceElementForcesAndSourcesCoreOnChildParentBase(m_field) {}
-
-
-  MoFEMErrorCode operator()();
-};
-
-template <int SWITCH>
-MoFEMErrorCode
-FaceElementForcesAndSourcesCoreOnChildParentSwitch<SWITCH>::operator()() {
-  return opSwitch<SWITCH>();
-}
-
 } // namespace MoFEM
 
 #endif //__FACEELEMENTFORCESANDSOURCESCORE_ONSIDE___HPP__

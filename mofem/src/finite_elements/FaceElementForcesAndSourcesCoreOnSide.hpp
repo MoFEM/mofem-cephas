@@ -143,26 +143,6 @@ protected:
   MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
 };
 
-/**
- * @brief Face side finite element with switches
- *
- * Using SWITCH to off functions
- *
- * @tparam SWITCH
- */
-template <int SWITCH>
-struct FaceElementForcesAndSourcesCoreOnSideSwitch
-    : public FaceElementForcesAndSourcesCoreOnSideBase {
-
-  FaceElementForcesAndSourcesCoreOnSideSwitch(MoFEM::Interface &m_field)
-      : FaceElementForcesAndSourcesCoreOnSideBase(m_field) {}
-
-  using UserDataOperator =
-      FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator;
-
-  MoFEMErrorCode operator()();
-};
-
 const std::array<int, 2> &
 FaceElementForcesAndSourcesCoreOnSideBase::getEdgeConnMap() const {
   return edgeConnMap;
@@ -219,12 +199,6 @@ auto FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::
 MatrixDouble &FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::
     getEdgeCoordsAtGaussPts() {
   return getEdgeFE()->coordsAtGaussPts;
-}
-
-template <int SWITCH>
-MoFEMErrorCode
-FaceElementForcesAndSourcesCoreOnSideSwitch<SWITCH>::operator()() {
-  return opSwitch<SWITCH>();
 }
 
 } // namespace MoFEM

@@ -35,7 +35,7 @@ template <int DIM> struct ElementsAndOps {};
 template <> struct ElementsAndOps<2> {
   using DomainEle = PipelineManager::FaceEle;
   using DomainEleOp = DomainEle::UserDataOperator;
-  using DomianParentEle = FaceElementForcesAndSourcesCoreOnChildParentSwitch<0>;
+  using DomianParentEle = FaceElementForcesAndSourcesCoreOnChildParentBase;
 };
 
 template <> struct ElementsAndOps<3> {

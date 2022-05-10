@@ -28,8 +28,6 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
-template <int SWITCH> struct FaceElementForcesAndSourcesCoreOnSideSwitch;
-
 struct FaceElementForcesAndSourcesCoreOnSideBase;
 
 /** \brief Edge finite element
@@ -153,10 +151,9 @@ struct EdgeElementForcesAndSourcesCoreBase::UserDataOperator
   inline FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
   getFTensor1TangentAtGaussPts();
 
-  template <int SWITCH>
   MoFEMErrorCode
-  loopSideFaces(const string &fe_name,
-                FaceElementForcesAndSourcesCoreOnSideSwitch<SWITCH> &fe_side);
+  loopSideFaces(const string fe_name,
+                FaceElementForcesAndSourcesCoreOnSideBase &fe_side);
 
 protected:
   MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
@@ -305,14 +302,6 @@ auto EdgeElementForcesAndSourcesCoreBase::UserDataOperator::
     getFTensor1Normal() {
   FTensor::Tensor1<double, 3> t_normal{0., 0., 1.};
   return getFTensor1Normal(t_normal);
-}
-
-template <int SWITCH>
-MoFEMErrorCode
-EdgeElementForcesAndSourcesCoreBase::UserDataOperator::loopSideFaces(
-    const string &fe_name,
-    FaceElementForcesAndSourcesCoreOnSideSwitch<SWITCH> &fe_side) {
-  return loopSide(fe_name, &fe_side, 2);
 }
 
 } // namespace MoFEM
