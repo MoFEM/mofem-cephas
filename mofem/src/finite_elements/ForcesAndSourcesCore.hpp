@@ -1003,7 +1003,7 @@ protected:
 
 private:
   friend class ForcesAndSourcesCore;
-  friend class EdgeElementForcesAndSourcesCoreBase;
+  friend class EdgeElementForcesAndSourcesCore;
   friend class FaceElementForcesAndSourcesCore;
   friend class ContactPrismElementForcesAndSourcesCore;
 };

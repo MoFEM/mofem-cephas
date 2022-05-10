@@ -42,7 +42,7 @@ FaceElementForcesAndSourcesCoreOnSide::setGaussPts(int order) {
             "Edge can not be found on face element");
 
   auto edge_ptr_fe =
-      static_cast<EdgeElementForcesAndSourcesCoreBase *>(sidePtrFE);
+      static_cast<EdgeElementForcesAndSourcesCore *>(sidePtrFE);
 
   edgeSense = (*sit)->sense;
   edgeSideNumber = (*sit)->side_number;

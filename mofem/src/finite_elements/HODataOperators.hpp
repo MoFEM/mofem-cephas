@@ -279,12 +279,12 @@ private:
  * \ingroup mofem_forces_and_sources
  */
 struct OpHOSetContravariantPiolaTransformOnEdge3D
-    : public EdgeElementForcesAndSourcesCoreBase::UserDataOperator {
+    : public EdgeElementForcesAndSourcesCore::UserDataOperator {
 
   OpHOSetContravariantPiolaTransformOnEdge3D(
       const FieldSpace space = HCURL,
       boost::shared_ptr<MatrixDouble> tangent_at_pts = nullptr)
-      : EdgeElementForcesAndSourcesCoreBase::UserDataOperator(space),
+      : EdgeElementForcesAndSourcesCore::UserDataOperator(space),
         tangentAtGaussPts(tangent_at_pts) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
@@ -330,12 +330,12 @@ private:
  * \ingroup mofem_forces_and_sources
  */
 struct OpGetHOTangentsOnEdge
-    : public EdgeElementForcesAndSourcesCoreBase::UserDataOperator {
+    : public EdgeElementForcesAndSourcesCore::UserDataOperator {
 
   OpGetHOTangentsOnEdge(
       std::string field_name,
       boost::shared_ptr<MatrixDouble> tangents_at_pts = nullptr)
-      : EdgeElementForcesAndSourcesCoreBase::UserDataOperator(field_name,
+      : EdgeElementForcesAndSourcesCore::UserDataOperator(field_name,
                                                               OPROW),
         tangentsAtPts(tangents_at_pts) {}
 

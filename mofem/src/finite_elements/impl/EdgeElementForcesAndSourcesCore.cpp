@@ -1,4 +1,4 @@
-/** \file EdgeElementForcesAndSourcesCoreBase.cpp
+/** \file EdgeElementForcesAndSourcesCore.cpp
 
 \brief Implementation of edge element
 
@@ -31,7 +31,7 @@ extern "C" {
 
 namespace MoFEM {
 
-EdgeElementForcesAndSourcesCoreBase::EdgeElementForcesAndSourcesCoreBase(
+EdgeElementForcesAndSourcesCore::EdgeElementForcesAndSourcesCore(
     Interface &m_field)
     : ForcesAndSourcesCore(m_field),
       meshPositionsFieldName("MESH_NODE_POSITIONS") {
@@ -41,7 +41,7 @@ EdgeElementForcesAndSourcesCoreBase::EdgeElementForcesAndSourcesCoreBase(
                  "Problem with creation data on element");
 }
 
-MoFEMErrorCode EdgeElementForcesAndSourcesCoreBase::calculateEdgeDirection() {
+MoFEMErrorCode EdgeElementForcesAndSourcesCore::calculateEdgeDirection() {
   MoFEMFunctionBegin;
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
   CHKERR mField.get_moab().get_connectivity(ent, cOnn, numNodes, true);
@@ -54,7 +54,7 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCoreBase::calculateEdgeDirection() {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode EdgeElementForcesAndSourcesCoreBase::setIntegrationPts() {
+MoFEMErrorCode EdgeElementForcesAndSourcesCore::setIntegrationPts() {
   MoFEMFunctionBegin;
   int order_data = getMaxDataOrder();
   int order_row = getMaxRowOrder();
@@ -107,7 +107,7 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCoreBase::setIntegrationPts() {
 }
 
 MoFEMErrorCode
-EdgeElementForcesAndSourcesCoreBase::calculateCoordsAtIntegrationPts() {
+EdgeElementForcesAndSourcesCore::calculateCoordsAtIntegrationPts() {
   FTensor::Index<'i', 3> i;
   MoFEMFunctionBeginHot;
   const auto nb_gauss_pts = gaussPts.size2();
@@ -141,19 +141,60 @@ EdgeElementForcesAndSourcesCoreBase::calculateCoordsAtIntegrationPts() {
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode EdgeElementForcesAndSourcesCoreBase::UserDataOperator::setPtrFE(
+MoFEMErrorCode EdgeElementForcesAndSourcesCore::UserDataOperator::setPtrFE(
     ForcesAndSourcesCore *ptr) {
   MoFEMFunctionBeginHot;
-  if (!(ptrFE = dynamic_cast<EdgeElementForcesAndSourcesCoreBase *>(ptr)))
+  if (!(ptrFE = dynamic_cast<EdgeElementForcesAndSourcesCore *>(ptr)))
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "User operator and finite element do not work together");
   MoFEMFunctionReturnHot(0);
 }
 
 MoFEMErrorCode
-EdgeElementForcesAndSourcesCoreBase::UserDataOperator::loopSideFaces(
+EdgeElementForcesAndSourcesCore::UserDataOperator::loopSideFaces(
     const string fe_name, FaceElementForcesAndSourcesCoreOnSide &fe_side) {
   return loopSide(fe_name, &fe_side, 2);
+}
+
+MoFEMErrorCode EdgeElementForcesAndSourcesCore::operator()() {
+  MoFEMFunctionBegin;
+
+  if (numeredEntFiniteElementPtr->getEntType() != MBEDGE)
+    MoFEMFunctionReturnHot(0);
+
+  CHKERR calculateEdgeDirection();
+  CHKERR getSpacesAndBaseOnEntities(dataH1);
+  CHKERR getEntityDataOrder<MBEDGE>(dataH1, H1);
+  dataH1.dataOnEntities[MBEDGE][0].getSense() =
+      1; // set sense to 1, this is this entity
+
+  // L2
+  if (dataH1.spacesOnEntities[MBEDGE].test(L2)) {
+    auto &data_l2 = *dataOnElement[L2];
+    CHKERR getEntityDataOrder<MBEDGE>(data_l2, L2);
+    data_l2.dataOnEntities[MBEDGE][0].getSense() =
+        1; // set sense to 1, this is this entity
+    data_l2.spacesOnEntities[MBEDGE].set(L2);
+  }
+
+  // Hcurl
+  if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
+    auto &data_curl = *dataOnElement[HCURL];
+    CHKERR getEntityDataOrder<MBEDGE>(data_curl, HCURL);
+    data_curl.dataOnEntities[MBEDGE][0].getSense() =
+        1; // set sense to 1, this is this entity
+    data_curl.spacesOnEntities[MBEDGE].set(HCURL);
+  }
+
+  CHKERR setIntegrationPts();
+  CHKERR calculateCoordsAtIntegrationPts();
+  CHKERR calHierarchicalBaseFunctionsOnElement();
+  CHKERR calBernsteinBezierBaseFunctionsOnElement();
+
+  // Iterate over operators
+  CHKERR loopOverOperators();
+
+  MoFEMFunctionReturn(0);
 }
 
 } // namespace MoFEM

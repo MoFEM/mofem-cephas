@@ -45,7 +45,7 @@ private:
  * @deprecated do not use needed for back compatibility
  */
 template <int SWITCH>
-DEPRECATED struct FaceElementForcesAndSourcesCoreOnChildParentSwitch
+struct FaceElementForcesAndSourcesCoreOnChildParentSwitch
     : public FaceElementForcesAndSourcesCoreOnChildParent {
   using FaceElementForcesAndSourcesCoreOnChildParent::
       FaceElementForcesAndSourcesCoreOnChildParent;

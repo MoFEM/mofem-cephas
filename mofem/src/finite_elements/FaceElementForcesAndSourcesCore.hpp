@@ -252,11 +252,6 @@ private:
   MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
 };
 
-/** \deprecated use FaceElementForcesAndSourcesCore
- */
-DEPRECATED typedef FaceElementForcesAndSourcesCore
-    FaceElementForcesAndSourcesCoreBase;
-
 double FaceElementForcesAndSourcesCore::UserDataOperator::getArea() {
   return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)->aRea;
 }
@@ -370,6 +365,14 @@ FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolumes(
     VolumeElementForcesAndSourcesCoreOnSideSwitch<SWITCH> &fe_method) {
   return loopSide(fe_name, &fe_method, 3);
 }
+
+/** \deprecated use FaceElementForcesAndSourcesCore
+ */
+DEPRECATED typedef FaceElementForcesAndSourcesCore
+    FaceElementForcesAndSourcesCoreBase;
+
+
+    
 
 } // namespace MoFEM
 

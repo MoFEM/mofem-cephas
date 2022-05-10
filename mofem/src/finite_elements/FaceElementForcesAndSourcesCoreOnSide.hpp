@@ -104,9 +104,9 @@ struct FaceElementForcesAndSourcesCoreOnSide::UserDataOperator
   /**
    * @brief Get the edge side finite element
    *
-   * @return EdgeElementForcesAndSourcesCoreBase*
+   * @return EdgeElementForcesAndSourcesCore*
    */
-  inline EdgeElementForcesAndSourcesCoreBase *getEdgeFE() const;
+  inline EdgeElementForcesAndSourcesCore *getEdgeFE() const;
 
   /**
    * \brief get face sense in respect to volume
@@ -170,9 +170,9 @@ FaceElementForcesAndSourcesCoreOnSide::UserDataOperator::getFaceFE() const {
   return static_cast<FaceElementForcesAndSourcesCoreOnSide *>(ptrFE);
 }
 
-EdgeElementForcesAndSourcesCoreBase *
+EdgeElementForcesAndSourcesCore *
 FaceElementForcesAndSourcesCoreOnSide::UserDataOperator::getEdgeFE() const {
-  return static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE->sidePtrFE);
+  return static_cast<EdgeElementForcesAndSourcesCore *>(ptrFE->sidePtrFE);
 }
 
 int FaceElementForcesAndSourcesCoreOnSide::UserDataOperator::getEdgeSense()
@@ -205,7 +205,7 @@ MatrixDouble &FaceElementForcesAndSourcesCoreOnSide::UserDataOperator::
  * @deprecated do not use needed for back compatibility
  */
 template <int SWITCH>
-DEPRECATED struct FaceElementForcesAndSourcesCoreOnSideSwitch
+struct FaceElementForcesAndSourcesCoreOnSideSwitch
     : public FaceElementForcesAndSourcesCoreOnSide {
   using FaceElementForcesAndSourcesCoreOnSide::
       FaceElementForcesAndSourcesCoreOnSide;
