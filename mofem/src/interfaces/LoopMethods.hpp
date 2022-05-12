@@ -386,6 +386,8 @@ struct FEMethod : public BasicMethod {
 
   FEMethod() = default;
 
+  std::string feName; ///< Name of finite element
+
   boost::shared_ptr<const NumeredEntFiniteElement>
       numeredEntFiniteElementPtr; ///< Pointer to finite element database
                                   ///< structure
@@ -395,9 +397,7 @@ struct FEMethod : public BasicMethod {
    *
    * @return std::string
    */
-  inline auto getFEName() const {
-    return numeredEntFiniteElementPtr->getName();
-  }
+  inline auto getFEName() const { return feName; }
 
   /**
    * @brief Tet if element to skip element

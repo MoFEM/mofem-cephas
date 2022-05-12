@@ -1573,7 +1573,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
 }
 
 const char *const ForcesAndSourcesCore::UserDataOperator::OpTypeNames[] = {
-    "OPROW", " OPCOL", "OPROWCOL", "OPSPACE", "OPMESHSET"};
+    "OPROW", " OPCOL", "OPROWCOL", "OPSPACE", "OPLAST"};
 
 MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::getProblemRowIndices(
     const std::string field_name, const EntityType type, const int side,
@@ -1631,6 +1631,8 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopSide(
   const auto ent = ent_for_side ? ent_for_side : getFEEntityHandle();
   const auto *problem_ptr = getFEMethod()->problemPtr;
 
+  side_fe->feName = fe_name;
+
   CHKERR side_fe->setSideFEPtr(ptrFE);
   CHKERR side_fe->copyBasicMethod(*getFEMethod());
   CHKERR side_fe->copyPetscData(*getFEMethod());
@@ -1677,6 +1679,7 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopThis(
                            << *getNumeredEntFiniteElementPtr();
 
   const auto *problem_ptr = getFEMethod()->problemPtr;
+  this_fe->feName = fe_name;
 
   CHKERR this_fe->setRefineFEPtr(ptrFE);
   CHKERR this_fe->copyBasicMethod(*getFEMethod());
@@ -1712,6 +1715,8 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopParent(
 
     if (verb >= VERBOSE)
       MOFEM_LOG("SELF", sev) << "Parent finite element: " << **miit;
+
+    parent_fe->feName = fe_name;
 
     CHKERR parent_fe->setRefineFEPtr(ptrFE);
     CHKERR parent_fe->copyBasicMethod(*getFEMethod());
@@ -1762,6 +1767,8 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopChildren(
       childs = Range(childs_vec.front(), childs_vec.back());
     else
       childs.insert_list(childs_vec.begin(), childs_vec.end());
+
+    child_fe->feName = fe_name;
 
     CHKERR child_fe->setRefineFEPtr(ptrFE);
     CHKERR child_fe->copyBasicMethod(*getFEMethod());

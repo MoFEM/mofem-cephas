@@ -470,6 +470,7 @@ MoFEMErrorCode Core::loop_finite_elements(
     }
   }
 
+  method.feName = fe_name;
   method.loopSize =
       std::distance(miit, hi_miit); // Set numbers of elements in the loop
   method.loHiFERank = std::make_pair(lower_rank, upper_rank);
