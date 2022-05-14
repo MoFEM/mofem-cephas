@@ -26,6 +26,8 @@
 
 namespace MoFEM {
 
+template <int DIM> struct ParentFiniteElementAdjacencyFunction;
+
 /**
  * \brief Simple interface for fast problem set-up
  * \ingroup mofem_simple_interface
@@ -424,6 +426,34 @@ struct Simple : public UnknownInterface {
   bool &getParentAdjacencies() { return addParentAdjacencies; }
 
   /**
+   * @brief  bit ref level for parent
+   *
+   * @return auto&
+   */
+  auto &getBitAdjParent() { return bitAdjParent; }
+
+  /**
+   * @brief bit ref level for parent marent
+   *
+   * @return auto&
+   */
+  auto &getBitAdjParentMask() { return bitAdjParentMask; }
+
+  /**
+   * @brief bit ref level for parent
+   *
+   * @return auto&
+   */
+  auto &getBitAdjEnt() { return bitAdjEnt; } 
+
+  /**
+   * @brief bit ref level for parent marent
+   *
+   * @return auto&
+   */
+  auto &getBitAdjEntMask() { return bitAdjEntMask; }
+
+  /**
    * @brief add empty block to problem
    *
    * MatrixManager assumes that all blocks, i.e. all fields combinations are non
@@ -437,23 +467,6 @@ struct Simple : public UnknownInterface {
   MoFEMErrorCode addFieldToEmptyFieldBlocks(const std::string row_field,
                                             const std::string col_field) const;
 
-  /**
-   * @brief Function setting adjacencies to DOFs of parent element
-   *
-   * @note elements form child, see dofs from parent, so DOFs localted on
-   * adjacencies of parent entity has adjacent to dofs of chiold.
-   *
-   * @tparam DIM dimension of the element entity
-   * @param moab
-   * @param field
-   * @param fe
-   * @param adjacency
-   * @return MoFEMErrorCode
-   */
-  template <int DIM>
-  static MoFEMErrorCode parentFiniteElementAdjacencyFunction(
-      moab::Interface &moab, const Field &field, const EntFiniteElement &fe,
-      std::vector<EntityHandle> &adjacency);
 
 private:
   MoFEM::Core &cOre;
@@ -475,6 +488,11 @@ private:
   bool addSkeletonFE;        ///< Add skeleton FE
   bool addBoundaryFE;        ///< Add boundary FE
   bool addParentAdjacencies; ///< If set to true parent adjacencies are build
+
+  BitRefLevel bitAdjParent;     ///< bit ref level for parent
+  BitRefLevel bitAdjParentMask; ///< bit ref level for parent marent
+  BitRefLevel bitAdjEnt;        ///< bit ref level for parent
+  BitRefLevel bitAdjEntMask;    ///< bit ref level for parent marent
 
   std::vector<std::string> domainFields;      ///< domain fields
   std::vector<std::string> boundaryFields;    ///< boundary fields
@@ -507,6 +525,12 @@ private:
 
   template <int DIM = -1> MoFEMErrorCode setParentAdjacency();
 
+  boost::shared_ptr<ParentFiniteElementAdjacencyFunction<3>>
+      parentAdjFunctionDim3;
+  boost::shared_ptr<ParentFiniteElementAdjacencyFunction<2>>
+      parentAdjFunctionDim2;
+  boost::shared_ptr<ParentFiniteElementAdjacencyFunction<1>>
+      parentAdjFunctionDim1;
 };
 
 } // namespace MoFEM

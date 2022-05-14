@@ -187,113 +187,32 @@ template <int DIM> MoFEMErrorCode Simple::setParentAdjacency() {
   return MOFEM_NOT_IMPLEMENTED;
 }
 
-template <int DIM>
-MoFEMErrorCode
-Simple::parentFiniteElementAdjacencyFunction(moab::Interface &moab, const Field &field,
-                           const EntFiniteElement &fe,
-                           std::vector<EntityHandle> &adjacency) {
-  MoFEMFunctionBegin;
-
-  static_assert(DIM >= 0 && DIM <= 3, "DIM is out of scope");
-
-  if constexpr (DIM == 3)
-    CHKERR DefaultElementAdjacency::defaultVolume(moab, field, fe, adjacency);
-  if constexpr (DIM == 2)
-    CHKERR DefaultElementAdjacency::defaultFace(moab, field, fe, adjacency);
-  else if constexpr (DIM == 1)
-    CHKERR DefaultElementAdjacency::defaultEdge(moab, field, fe, adjacency);
-  else if constexpr (DIM == 0)
-    CHKERR DefaultElementAdjacency::defaultVertex(moab, field, fe, adjacency);
-
-  auto basic_entity_data_ptr = fe.getBasicDataPtr();
-  auto th_parent_handle = basic_entity_data_ptr->th_RefParentHandle;
-
-  using GetParent = boost::function<MoFEMErrorCode(
-      EntityHandle fe, std::vector<EntityHandle> & parents)>;
-
-  /**
-   * @brief this function os called recursively, until all stack of parents is
-   * found.
-   *
-   */
-  GetParent get_parent = [&](EntityHandle fe,
-                             std::vector<EntityHandle> &parents) {
-    MoFEMFunctionBegin;
-    EntityHandle fe_parent;
-
-    CHKERR moab.tag_get_data(th_parent_handle, &fe, 1, &fe_parent);
-    auto parent_type = type_from_handle(fe_parent);
-    auto back_type = type_from_handle(fe);
-    if (fe_parent != 0 && fe_parent != fe && parent_type == back_type) {
-      parents.push_back(fe_parent);
-      CHKERR get_parent(parents.back(), parents);
-    }
-    MoFEMFunctionReturn(0);
-  };
-
-  if (field.getSpace() != NOFIELD) {
-
-    std::vector<EntityHandle> parents;
-    parents.reserve(BITREFLEVEL_SIZE);
-
-    CHKERR get_parent(fe.getEnt(), parents);
-
-    for (auto fe_ent : parents) {
-      switch (field.getSpace()) {
-      case H1:
-        CHKERR moab.get_adjacencies(&fe_ent, 1, 0, false, adjacency,
-                                    moab::Interface::UNION);
-      case HCURL:
-        if constexpr (DIM >= 2)
-          CHKERR moab.get_adjacencies(&fe_ent, 1, 1, false, adjacency,
-                                      moab::Interface::UNION);
-      case HDIV:
-        if constexpr (DIM == 3)
-          CHKERR moab.get_adjacencies(&fe_ent, 1, 2, false, adjacency,
-                                      moab::Interface::UNION);
-      case L2:
-        adjacency.push_back(fe_ent);
-        break;
-      default:
-        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-                "this field is not implemented for face finite element");
-      }
-    }
-
-    std::sort(adjacency.begin(), adjacency.end());
-    auto it = std::unique(adjacency.begin(), adjacency.end());
-    adjacency.resize(std::distance(adjacency.begin(), it));
-
-    for (auto e : adjacency) {
-      auto side_table = fe.getSideNumberTable();
-      if (side_table.find(e) == side_table.end())
-        const_cast<SideNumber_multiIndex &>(fe.getSideNumberTable())
-            .insert(boost::shared_ptr<SideNumber>(new SideNumber(e, -1, 0, 0)));
-    }
-  }
-
-  MoFEMFunctionReturn(0);
-}
-
 template <> MoFEMErrorCode Simple::setParentAdjacency<3>() {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
 
-  CHKERR m_field.modify_finite_element_adjacency_table(
-      domainFE, MBTET, Simple::parentFiniteElementAdjacencyFunction<3>);
-  CHKERR m_field.modify_finite_element_adjacency_table(
-      domainFE, MBHEX, Simple::parentFiniteElementAdjacencyFunction<3>);
+  parentAdjFunctionDim3 =
+      boost::make_shared<ParentFiniteElementAdjacencyFunction<3>>(
+          bitAdjParent, bitAdjParentMask, bitAdjEnt, bitAdjEntMask);
+  parentAdjFunctionDim2 =
+      boost::make_shared<ParentFiniteElementAdjacencyFunction<2>>(
+          bitAdjParent, bitAdjParentMask, bitAdjEnt, bitAdjEntMask);
+
+  CHKERR m_field.modify_finite_element_adjacency_table(domainFE, MBTET,
+                                                       *parentAdjFunctionDim3);
+  CHKERR m_field.modify_finite_element_adjacency_table(domainFE, MBHEX,
+                                                       *parentAdjFunctionDim3);
   if (addBoundaryFE || !boundaryFields.empty()) {
     CHKERR m_field.modify_finite_element_adjacency_table(
-        boundaryFE, MBTRI, Simple::parentFiniteElementAdjacencyFunction<2>);
+        boundaryFE, MBTRI, *parentAdjFunctionDim2);
     CHKERR m_field.modify_finite_element_adjacency_table(
-        boundaryFE, MBQUAD, Simple::parentFiniteElementAdjacencyFunction<2>);
+        boundaryFE, MBQUAD, *parentAdjFunctionDim2);
   }
   if (addSkeletonFE || !skeletonFields.empty()) {
     CHKERR m_field.modify_finite_element_adjacency_table(
-        skeletonFE, MBTRI, Simple::parentFiniteElementAdjacencyFunction<2>);
+        skeletonFE, MBTRI, *parentAdjFunctionDim2);
     CHKERR m_field.modify_finite_element_adjacency_table(
-        skeletonFE, MBQUAD, Simple::parentFiniteElementAdjacencyFunction<2>);
+        skeletonFE, MBQUAD, *parentAdjFunctionDim2);
   }
 
   MoFEMFunctionReturn(0);
@@ -303,16 +222,23 @@ template <> MoFEMErrorCode Simple::setParentAdjacency<2>() {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
 
-  CHKERR m_field.modify_finite_element_adjacency_table(
-      domainFE, MBTRI, Simple::parentFiniteElementAdjacencyFunction<2>);
-  CHKERR m_field.modify_finite_element_adjacency_table(
-      domainFE, MBQUAD, Simple::parentFiniteElementAdjacencyFunction<2>);
+  parentAdjFunctionDim2 =
+      boost::make_shared<ParentFiniteElementAdjacencyFunction<2>>(
+          bitAdjParent, bitAdjParentMask, bitAdjEnt, bitAdjEntMask);
+  parentAdjFunctionDim1 =
+      boost::make_shared<ParentFiniteElementAdjacencyFunction<1>>(
+          bitAdjParent, bitAdjParentMask, bitAdjEnt, bitAdjEntMask);
+
+  CHKERR m_field.modify_finite_element_adjacency_table(domainFE, MBTRI,
+                                                       *parentAdjFunctionDim2);
+  CHKERR m_field.modify_finite_element_adjacency_table(domainFE, MBQUAD,
+                                                       *parentAdjFunctionDim2);
   if (addBoundaryFE || !boundaryFields.empty())
     CHKERR m_field.modify_finite_element_adjacency_table(
-        boundaryFE, MBEDGE, Simple::parentFiniteElementAdjacencyFunction<1>);
+        boundaryFE, MBEDGE, *parentAdjFunctionDim1);
   if (addSkeletonFE || !skeletonFields.empty())
     CHKERR m_field.modify_finite_element_adjacency_table(
-        skeletonFE, MBEDGE, Simple::parentFiniteElementAdjacencyFunction<1>);
+        skeletonFE, MBEDGE, *parentAdjFunctionDim1);
 
   MoFEMFunctionReturn(0);
 }
@@ -352,7 +278,9 @@ Simple::Simple(const Core &core)
       bitLevelMask(BitRefLevel().set()), meshSet(0), boundaryMeshset(0),
       skeletonMeshset(0), nameOfProblem("SimpleProblem"), domainFE("dFE"),
       boundaryFE("bFE"), skeletonFE("sFE"), dIm(-1), addSkeletonFE(false),
-      addBoundaryFE(false), addParentAdjacencies(false) {
+      addBoundaryFE(false), addParentAdjacencies(false),
+      bitAdjParent(BitRefLevel().set()), bitAdjParentMask(BitRefLevel().set()),
+      bitAdjEnt(BitRefLevel().set()), bitAdjEntMask(BitRefLevel().set()) {
   PetscLogEventRegister("SimpleSetUp", 0, &MOFEM_EVENT_SimpleSetUP);
   PetscLogEventRegister("SimpleLoadMesh", 0, &MOFEM_EVENT_SimpleLoadMesh);
   PetscLogEventRegister("SimpleBuildFields", 0, &MOFEM_EVENT_SimpleBuildFields);
@@ -833,7 +761,7 @@ MoFEMErrorCode Simple::setUp(const PetscBool is_partitioned) {
   if (addSkeletonFE || !skeletonFields.empty())
     CHKERR setSkeletonAdjacency();
 
-  if(addParentAdjacencies)
+  if (addParentAdjacencies)
     CHKERR setParentAdjacency();
 
   CHKERR defineProblem(is_partitioned);
@@ -860,7 +788,6 @@ MoFEMErrorCode Simple::reSetUp(bool only_dm) {
 
     CHKERR buildFields();
     CHKERR buildFiniteElements();
-
   }
 
   CHKERR m_field.build_adjacencies(bitLevel);

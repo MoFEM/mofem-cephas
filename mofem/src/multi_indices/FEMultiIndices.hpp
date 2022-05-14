@@ -27,10 +27,9 @@ struct EntFiniteElement;
 /** \brief user adjacency function
  * \ingroup fe_multi_indices
  */
-typedef boost::function<MoFEMErrorCode(Interface &moab, const Field &field,
-                                       const EntFiniteElement &fe,
-                                       std::vector<EntityHandle> &adjacency)>
-    ElementAdjacencyFunct;
+using ElementAdjacencyFunct = boost::function<MoFEMErrorCode(
+    Interface &moab, const Field &field, const EntFiniteElement &fe,
+    std::vector<EntityHandle> &adjacency)>;
 
 /**
  * \brief Finite element definition

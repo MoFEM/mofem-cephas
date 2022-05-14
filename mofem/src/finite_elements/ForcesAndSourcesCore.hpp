@@ -176,7 +176,7 @@ public:
    *
    * @return std::array<boost::shared_ptr<EntitiesFieldData>, LASTSPACE>
    */
-  auto &getDerivedDataOnElement() { return derivedDataOnElement; }
+  auto &getDerivedDataOnElementBySpaceArray() { return derivedDataOnElement; }
 
 protected:
   /**
@@ -471,7 +471,7 @@ protected:
   /**
    * @brief Entity data on element entity columns fields
    *
-   */
+  */
   const std::array<boost::shared_ptr<EntitiesFieldData>, LASTSPACE>
       derivedDataOnElement;
 
@@ -990,16 +990,17 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
 
   /**@}*/
 
-protected:
-  ForcesAndSourcesCore *ptrFE;
-
-  virtual MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
-
   inline ForcesAndSourcesCore *getPtrFE() const;
 
   inline ForcesAndSourcesCore *getSidePtrFE() const;
 
   inline ForcesAndSourcesCore *getRefinePtrFE() const;
+
+
+protected:
+  ForcesAndSourcesCore *ptrFE;
+
+  virtual MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
 
 private:
   friend class ForcesAndSourcesCore;

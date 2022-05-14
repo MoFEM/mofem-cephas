@@ -326,7 +326,7 @@ MoFEMErrorCode AtomTest::readMesh() {
     CHKERR refine->addVerticesInTheMiddleOfEdges(*meshset_ref_edges_ptr, bit(l),
                                                  false, VERBOSE);
     CHKERR refine->refineTrisHangingNodes(*meshset_level0_ptr, bit(l), VERBOSE);
-    CHKERR bit_mng->updateRange(level0_skin, level0_skin);
+    CHKERR bit_mng->updateRangeByChildren(level0_skin, level0_skin);
 
     CHKERR bit_mng->writeBitLevelByDim(
         bit(l), BitRefLevel().set(), SPACE_DIM,
@@ -387,6 +387,11 @@ MoFEMErrorCode AtomTest::setupProblem() {
   // Using that information MAtrixManager  allocate appropriately size of
   // matrix.
   simpleInterface->getParentAdjacencies() = true;
+  BitRefLevel bit_marker;
+  for (auto l = 1; l <= nb_ref_levels; ++l)
+    bit_marker |= marker(l);
+  simpleInterface->getBitAdjEnt() = bit_marker;
+
   CHKERR simpleInterface->setUp();
 
 
