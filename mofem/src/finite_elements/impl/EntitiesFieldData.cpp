@@ -20,7 +20,7 @@
 namespace MoFEM {
 
 EntitiesFieldData::EntData::EntData(const bool allocate_base_matrices)
-    : sEnse(0), oRder(0), bAse(NOBASE),
+    : sEnse(0), oRder(0), bAse(NOBASE), entDataBitRefLevel(),
       N(baseFunctionsAndBaseDerivatives[ZeroDerivative]),
       diffN(baseFunctionsAndBaseDerivatives[FirstDerivative]) {
   if (allocate_base_matrices) {
@@ -796,5 +796,14 @@ DerivedEntitiesFieldData::DerivedEntData::getBBDiffNSharedPtr(
 }
 
 /**@}*/
+
+BitRefLevel &EntitiesFieldData::EntData::getEntDataBitRefLevel() {
+  return entDataBitRefLevel;
+}
+
+BitRefLevel &DerivedEntitiesFieldData::DerivedEntData::getEntDataBitRefLevel() {
+  return entDataPtr->getEntDataBitRefLevel();
+}
+
 
 } // namespace MoFEM

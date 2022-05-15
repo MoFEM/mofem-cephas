@@ -62,6 +62,8 @@ OpAddParentEntData::OpAddParentEntData(
     Sev sev)
     : ForcesAndSourcesCore::UserDataOperator(field_name, op_parent_type),
       fieldName(field_name), opParentType(op_parent_type),
+      
+      
       parentElePtr(parent_ele_ptr), bitChild(bit_child),
       bitChildMask(bit_child_mask), bitParentEnt(bit_parent_ent),
       bitParentEntMask(bit_parent_ent_mask), verbosity(verb),
@@ -98,6 +100,7 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
   auto set_child_base = [](auto &parent_data, auto &child_data) {
     MoFEMFunctionBeginHot;
     child_data.sPace = parent_data.getSpace();
+    child_data.getEntDataBitRefLevel() = parent_data.getEntDataBitRefLevel();
 
 #ifndef NDEBUG
     if (child_data.bAse == AINSWORTH_BERNSTEIN_BEZIER_BASE)
@@ -151,9 +154,7 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
     auto field_entities = data.getFieldEntities();
     if (field_entities.size()) {
 
-      BitRefLevel bit_ent;
-      for (auto fe : field_entities)
-        bit_ent |= fe->getBitRefLevel();
+      BitRefLevel &bit_ent = data.getEntDataBitRefLevel();
 
       // note all nodes from all added
       if (check(bitParentEnt, bitParentEntMask, bit_ent)) {

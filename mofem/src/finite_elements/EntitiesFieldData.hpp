@@ -216,6 +216,9 @@ struct EntitiesFieldData::EntData {
   /// \brief get field entities
   inline VectorFieldEntities &getFieldEntities();
 
+  //// \brief get entity bit ref level
+  virtual BitRefLevel &getEntDataBitRefLevel();
+
   /**
    * @brief Return FTensor of rank 1, i.e. vector from filed data coeffinects
    *
@@ -1063,6 +1066,7 @@ protected:
   ApproximationOrder oRder;          ///< Entity order
   FieldSpace sPace;                  ///< Entity space
   FieldApproximationBase bAse;       ///< Field approximation base
+  BitRefLevel entDataBitRefLevel;    ///< Bit ref level in entity
   VectorInt iNdices;                 ///< Global indices on entity
   VectorInt localIndices;            ///< Local indices on entity
   VectorDofs dOfs;                   ///< DoFs on entity
@@ -1126,6 +1130,9 @@ struct DerivedEntitiesFieldData::DerivedEntData
       const boost::shared_ptr<EntitiesFieldData::EntData> &ent_data_ptr);
 
   int getSense() const;
+
+  //// \brief get entity bit ref level
+  BitRefLevel &getEntDataBitRefLevel();
 
   boost::shared_ptr<MatrixDouble> &
   getNSharedPtr(const FieldApproximationBase base,

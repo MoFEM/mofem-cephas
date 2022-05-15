@@ -612,6 +612,46 @@ ForcesAndSourcesCore::getProblemTypeColIndices(const std::string &field_name,
 // ** Data **
 
 MoFEMErrorCode
+ForcesAndSurcesCore::getBitRefLevelOnData() {
+  MoFEMFunctionBegin;
+
+  for (auto &data : dataOnElement) {
+    if (data) {
+      for (auto &dat : data->dataOnEntities) {
+        for (auto &ent_dat : dat) {
+          ent_dat.getEntDataBitRefLevel().reset();
+        }
+      }
+    }
+  }
+
+  auto &field_ents = getDataFieldEnts();
+  for (auto it : field_ents) {
+    if (auto e = it.lock()) {
+      const FieldSpace space = e->getSpace();
+      if (space > NOFIELD) {
+        const EntityType type = e->getEntType();
+        const int side =
+            type == MBVERTEX ? 0 : e->getSideNumberPtr()->side_number;
+        if (side >= 0) {
+          if (auto &data = dataOnElement[space]) {
+            auto &dat = data->dataOnEntities[type][side];
+            dat.getEntDataBitRefLevel() |= e->getBitRefLevel();
+          }
+        }
+      } else {
+        if (auto &data = dataOnElement[NOFIELD]) {
+          auto &dat = data->dataOnEntities[MBENTITYSET][0];
+          dat.getEntDataBitRefLevel() |= e->getBitRefLevel();
+        }
+      }
+    }
+  }
+
+  MoFEMFunctionReturn(0);
+};
+
+MoFEMErrorCode
 ForcesAndSourcesCore::getNodesFieldData(EntitiesFieldData &data,
                                         const int bit_number) const {
 
@@ -844,7 +884,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getNoFieldFieldData(
     std::fill(ent_field.begin(), ent_field.end(), nullptr);
 
     const auto hi_uid = FieldEntity::getLocalUniqueIdCalculate(
-        bit_number, get_id_for_max_type<MBVERTEX>());
+        bit_number, get_id_for_max_type<MBENTITYSET>());
     auto hi = std::upper_bound(lo, field_ents.end(), hi_uid, cmp_uid_hi);
     if (lo != hi) {
 
@@ -1353,7 +1393,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
   const EntityType type = numeredEntFiniteElementPtr->getEntType();
 
   // evaluate entity data only, no field specific data provided or known
-  auto evaluate_op_last_type = [&](auto &op) {
+  auto evaluate_op_space = [&](auto &op) {
     MoFEMFunctionBeginHot;
 
     // reseat all data which all field dependent
@@ -1494,6 +1534,9 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
     MoFEMFunctionReturnHot(0);
   };
 
+  // Collect bit ref level on all entities, fields and spaces
+  CHKERR getBitRefLevelOnData();
+
   auto oit = opPtrVector.begin();
   auto hi_oit = opPtrVector.end();
 
@@ -1507,7 +1550,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
       if ((oit->opType & UDO::OPSPACE) == UDO::OPSPACE) {
 
         // run operator for space but specific field
-        CHKERR evaluate_op_last_type(*oit);
+        CHKERR evaluate_op_space(*oit);
 
       } else if (
 

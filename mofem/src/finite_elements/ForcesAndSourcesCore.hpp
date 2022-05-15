@@ -283,6 +283,10 @@ protected:
 
   /**@{*/
 
+  /** Get bit ref level in  entities, and set it to data
+   */
+  MoFEMErrorCode getBitRefLevelOnData();
+
   /**
    * \brief Get field data on nodes
    */
