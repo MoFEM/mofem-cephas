@@ -90,17 +90,17 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
   };
 
   /**
-   * @brief swap child baase
-   * 
+   * @brief swap child base
+   *
    * @todo add swap for Bernstein-Bezier base
-   * 
+   *
    */
   auto set_child_base = [](auto &parent_data, auto &child_data) {
     MoFEMFunctionBeginHot;
     child_data.sPace = parent_data.getSpace();
 
 #ifndef NDEBUG
-    if(child_data.bAse == AINSWORTH_BERNSTEIN_BEZIER_BASE)
+    if (child_data.bAse == AINSWORTH_BERNSTEIN_BEZIER_BASE)
       SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Base not implemented");
 #endif
 
@@ -167,19 +167,17 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
               << ApproximationBaseNames[data.getBase()];
         }
 
-        if (opParentType != OPSPACE) {
-          // note all nodes from all added
-          if (field_entities.size() > 1) {
-            int dof_idx = 0;
-            for (auto dof : data.getFieldDofs()) {
-              auto &bit_ent = dof->getBitRefLevel();
-              if (!check(bitParentEnt, bitParentEntMask, bit_ent)) {
-                data.getIndices()[dof_idx] = -1;
-                data.getLocalIndices()[dof_idx] = -1;
-                data.getFieldData()[dof_idx] = 0;
-              }
-              ++dof_idx;
+        // note all nodes from all added
+        if (field_entities.size() > 1) {
+          int dof_idx = 0;
+          for (auto dof : data.getFieldDofs()) {
+            auto &bit_ent = dof->getBitRefLevel();
+            if (!check(bitParentEnt, bitParentEntMask, bit_ent)) {
+              data.getIndices()[dof_idx] = -1;
+              data.getLocalIndices()[dof_idx] = -1;
+              data.getFieldData()[dof_idx] = 0;
             }
+            ++dof_idx;
           }
         }
 
@@ -193,17 +191,15 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
         }
 #endif
 
-        if (opParentType != OPSPACE) {
-          if (data.getFieldEntities().size()) {
-            // note: assumes that all entities on data are the same type. that
-            // is good assumption, since we group entities on side by type.
-            const auto ent_type = data.getFieldEntities()[0]->getEntType();
+        if (data.getFieldEntities().size()) {
+          // note: assumes that all entities on data are the same type. that
+          // is good assumption, since we group entities on side by type.
+          const auto ent_type = data.getFieldEntities()[0]->getEntType();
+          CHKERR switch_of_dofs_children(
+              data, entities_field_data.dataOnEntities[ent_type]);
+          if (ent_type != type)
             CHKERR switch_of_dofs_children(
-                data, entities_field_data.dataOnEntities[ent_type]);
-            if (ent_type != type)
-              CHKERR switch_of_dofs_children(
-                  data, entities_field_data.dataOnEntities[type]);
-          }
+                data, entities_field_data.dataOnEntities[type]);
         }
 
         if (entities_field_data.dataOnEntities[MBENTITYSET].size() <
@@ -215,9 +211,7 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
             entities_field_data
                 .dataOnEntities[MBENTITYSET][count_meshset_sides - 1];
 
-        if (opParentType != OPSPACE) {
-          CHKERR set_child_data(data, child_data_meshset);
-        }
+        CHKERR set_child_data(data, child_data_meshset);
         CHKERR set_child_base(data, child_data_meshset);
       }
     }
