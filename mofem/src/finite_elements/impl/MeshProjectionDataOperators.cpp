@@ -134,49 +134,6 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
           if (!child_base)
             child_base = boost::make_shared<MatrixDouble>();
           child_base->swap(*parent_base);
-          // cerr << child_data.getN(static_cast<FieldApproximationBase>(b))
-              //  << endl;
-        }
-      }
-    }
-
-    MoFEMFunctionReturnHot(0);
-  };
-
-  auto print_child_base = [](auto &parent_data, auto &child_data) {
-    MoFEMFunctionBeginHot;
-    // child_data.sPace = parent_data.getSpace();
-    child_data.getEntDataBitRefLevel() = parent_data.getEntDataBitRefLevel();
-
-    using BaseDerivatives = EntitiesFieldData::EntData::BaseDerivatives;
-    for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
-      for (auto direvative = 0; direvative != BaseDerivatives::LastDerivative;
-           ++direvative) {
-        auto &parent_base =
-            parent_data.getNSharedPtr(static_cast<FieldApproximationBase>(b),
-                                      static_cast<BaseDerivatives>(direvative));
-        if (parent_base) {
-          auto &child_base = child_data.getNSharedPtr(
-              static_cast<FieldApproximationBase>(b),
-              static_cast<BaseDerivatives>(direvative));
-          // if (!child_base)
-            // child_base = boost::make_shared<MatrixDouble>();
-          // child_base->swap(*parent_base);
-          // cerr << child_data.getN(parent_data.getSpace()) << endl;
-
-          // if (direvative == 0)
-
-          cerr << child_data.getN(static_cast<FieldApproximationBase>(b),
-                                  static_cast<BaseDerivatives>(direvative))
-               << endl;
-          cerr << parent_data.getN(static_cast<FieldApproximationBase>(b),
-                                   static_cast<BaseDerivatives>(direvative))
-               << endl;
-          cerr << child_data.getN(static_cast<FieldApproximationBase>(b),
-                                  static_cast<BaseDerivatives>(direvative)) -
-                      parent_data.getN(static_cast<FieldApproximationBase>(b),
-                                       static_cast<BaseDerivatives>(direvative))
-               << endl;
         }
       }
     }
@@ -213,7 +170,6 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
 
     BitRefLevel &bit_ent = data.getEntDataBitRefLevel();
 
-
     // note all nodes from all added
     if (check(bitParentEnt, bitParentEntMask, bit_ent)) {
       ++count_meshset_sides;
@@ -226,32 +182,19 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
             << ApproximationBaseNames[data.getBase()];
       }
 
-      // cerr << "Op: " << OpTypeNames[ffs(opParentType) - 1] << " side: " << side
-      //      << " type: " << CN::EntityTypeName(type) << endl;
-      // cerr << bit_ent << endl;
-
-      // if (opParentType == OPSPACE) {
-        if (entities_field_data.dataOnEntities[MBENTITYSET].size() <
-            count_meshset_sides)
-          entities_field_data.dataOnEntities[MBENTITYSET].resize(
-              count_meshset_sides);
-      // }
+      if (entities_field_data.dataOnEntities[MBENTITYSET].size() <
+          count_meshset_sides)
+        entities_field_data.dataOnEntities[MBENTITYSET].resize(
+            count_meshset_sides);
 
       auto &child_data_meshset =
           entities_field_data
               .dataOnEntities[MBENTITYSET][count_meshset_sides - 1];
 
-      // cerr << entities_field_data.dataOnEntities[MBENTITYSET].size() << endl;
-
       if (opParentType == OPSPACE) {
         CHKERR set_child_base(data, child_data_meshset);
 
       } else {
-
-        // if (opParentType == OPROW /*|| opParentType == OPROW*/)
-          // CHKERR print_child_base(data, child_data_meshset);
-
-        // cerr << "AAAAAA" << endl;
 
         auto &field_entities = data.getFieldEntities();
 
@@ -365,7 +308,7 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
     auto &ents_data = entities_field_data.dataOnEntities[MBENTITYSET];
     auto &dev_ents_data =
         derivative_entities_field_data.dataOnEntities[MBENTITYSET];
-    dev_ents_data.clear(); 
+    dev_ents_data.clear();
     for (auto c = 0; c < ents_data.size(); ++c) {
       boost::shared_ptr<EntData> ent_data_ptr(data_ptr, &ents_data[c]);
       dev_ents_data.push_back(new DerivedEntData(ent_data_ptr));
