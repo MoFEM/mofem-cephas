@@ -52,7 +52,7 @@ template <int FIELD_DIM> struct ApproxFieldFunction;
 
 /**
  * @brief third order polynomial used for testing
- * 
+ *
  */
 template <> struct ApproxFieldFunction<1> {
   double operator()(const double x, const double y, const double z) {
@@ -62,21 +62,21 @@ template <> struct ApproxFieldFunction<1> {
 
 /**
  * @brief evaluate mass matrix
- * 
+ *
  */
 using OpDomainMass = FormsIntegrators<DomainEleOp>::Assembly<
     PETSC>::BiLinearForm<GAUSS>::OpMass<1, FIELD_DIM>;
 
 /**
  * @brief evaluate source, i.e. rhs vector
- * 
+ *
  */
 using OpDomainSource = FormsIntegrators<DomainEleOp>::Assembly<
     PETSC>::LinearForm<GAUSS>::OpSource<1, FIELD_DIM>;
 
 /**
  * @brief set bit
- * 
+ *
  */
 auto bit = [](auto l) { return BitRefLevel().set(l); };
 
@@ -96,42 +96,56 @@ auto marker = [](auto l) {
  */
 auto set_parent_dofs = [](auto &m_field, auto &fe_top, auto op, auto verbosity,
                           auto sev) {
-
-
   boost::function<void(boost::shared_ptr<ForcesAndSourcesCore>, int)>
-      add_parent_level = [&](boost::shared_ptr<ForcesAndSourcesCore>
-                                 parent_fe_pt,
-                             int level) {
-        if (level > 0) {
+      add_parent_level =
+          [&](boost::shared_ptr<ForcesAndSourcesCore> parent_fe_pt, int level) {
+            if (level > 0) {
 
-          auto fe_ptr_current = boost::shared_ptr<ForcesAndSourcesCore>(
-              new DomainParentEle(m_field));
+              auto fe_ptr_current = boost::shared_ptr<ForcesAndSourcesCore>(
+                  new DomainParentEle(m_field));
 
-          add_parent_level(
-              boost::dynamic_pointer_cast<ForcesAndSourcesCore>(fe_ptr_current),
-              level - 1);
+              add_parent_level(
+                  boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
+                      fe_ptr_current),
+                  level - 1);
 
-          BitRefLevel bit_marker;
-          for (auto l = 1; l <= nb_ref_levels; ++l)
-            bit_marker |= marker(l);
+              BitRefLevel bit_marker;
+              for (auto l = 1; l <= nb_ref_levels; ++l)
+                bit_marker |= marker(l);
 
-          parent_fe_pt->getOpPtrVector().push_back(
+              if (op == DomainEleOp::OPSPACE) {
 
-              new OpAddParentEntData(
+                parent_fe_pt->getOpPtrVector().push_back(
 
-                  FIELD_NAME, op, fe_ptr_current,
+                    new OpAddParentEntData(
 
-                  BitRefLevel().set(), bit(0).flip(),
+                        H1, op, fe_ptr_current,
 
-                  bit_marker, BitRefLevel().set(),
+                        BitRefLevel().set(), bit(0).flip(),
 
-                  verbosity, sev));
-        }
-      };
+                        bit_marker, BitRefLevel().set(),
+
+                        verbosity, sev));
+
+              } else {
+
+                parent_fe_pt->getOpPtrVector().push_back(
+
+                    new OpAddParentEntData(
+
+                        FIELD_NAME, op, fe_ptr_current,
+
+                        BitRefLevel().set(), bit(0).flip(),
+
+                        bit_marker, BitRefLevel().set(),
+
+                        verbosity, sev));
+              }
+            }
+          };
 
   add_parent_level(boost::dynamic_pointer_cast<ForcesAndSourcesCore>(fe_top),
                    nb_ref_levels);
-
 };
 
 /**
@@ -161,15 +175,15 @@ private:
 
   /**
    * @brief red mesh and randomly refine three times
-   * 
-   * @return MoFEMErrorCode 
+   *
+   * @return MoFEMErrorCode
    */
   MoFEMErrorCode readMesh();
 
   /**
    * @brief add field, and set up problem
-   * 
-   * @return MoFEMErrorCode 
+   *
+   * @return MoFEMErrorCode
    */
   MoFEMErrorCode setupProblem();
   MoFEMErrorCode assembleSystem();
@@ -394,7 +408,6 @@ MoFEMErrorCode AtomTest::setupProblem() {
 
   CHKERR simpleInterface->setUp();
 
-
   BitRefManager *bit_mng = mField.getInterface<BitRefManager>();
   ProblemsManager *prb_mng = mField.getInterface<ProblemsManager>();
 
@@ -425,6 +438,8 @@ MoFEMErrorCode AtomTest::assembleSystem() {
   pipeline_mng->getDomainRhsFE()->exeTestHook = test_bit_child;
 
   auto beta = [](const double, const double, const double) { return 1; };
+  set_parent_dofs(mField, pipeline_mng->getDomainLhsFE(), DomainEleOp::OPSPACE,
+                  QUIET, Sev::noisy);
   set_parent_dofs(mField, pipeline_mng->getDomainLhsFE(), DomainEleOp::OPROW,
                   QUIET, Sev::noisy);
   set_parent_dofs(mField, pipeline_mng->getDomainLhsFE(), DomainEleOp::OPCOL,
@@ -459,6 +474,8 @@ MoFEMErrorCode AtomTest::assembleSystem() {
     MoFEMFunctionReturn(0);
   };
 
+  set_parent_dofs(mField, pipeline_mng->getDomainRhsFE(), DomainEleOp::OPSPACE,
+                  VERBOSE, Sev::verbose);
   set_parent_dofs(mField, pipeline_mng->getDomainRhsFE(), DomainEleOp::OPROW,
                   VERBOSE, Sev::noisy);
   pipeline_mng->getOpDomainRhsPipeline().push_back(field_op_row);
@@ -509,6 +526,8 @@ MoFEMErrorCode AtomTest::checkResults() {
       mField.get_comm(), (!mField.get_comm_rank()) ? 1 : 0, 1);
   common_data_ptr->approxVals = boost::make_shared<VectorDouble>();
 
+  set_parent_dofs(mField, pipeline_mng->getDomainRhsFE(), DomainEleOp::OPSPACE,
+                  QUIET, Sev::noisy);
   set_parent_dofs(mField, pipeline_mng->getDomainRhsFE(), DomainEleOp::OPROW,
                   VERBOSE, Sev::noisy);
   pipeline_mng->getOpDomainRhsPipeline().push_back(
@@ -540,7 +559,6 @@ MoFEMErrorCode AtomTest::checkResults() {
   if (std::sqrt(array[0]) > eps)
     SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
              "Error in approximation err = %6.4e", std::sqrt(array[0]));
-
 
   CHKERR VecRestoreArrayRead(common_data_ptr->L2Vec, &array);
 
@@ -608,6 +626,8 @@ MoFEMErrorCode AtomTest::printResults() {
     MoFEMFunctionReturn(0);
   };
 
+  set_parent_dofs(mField, pipeline_mng->getDomainRhsFE(), DomainEleOp::OPSPACE,
+                  VERBOSE, Sev::noisy);
   set_parent_dofs(mField, pipeline_mng->getDomainRhsFE(), DomainEleOp::OPROW,
                   VERBOSE, Sev::noisy);
   pipeline_mng->getOpDomainRhsPipeline().push_back(

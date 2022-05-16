@@ -98,11 +98,32 @@ struct OpAddParentEntData : public ForcesAndSourcesCore::UserDataOperator {
                      BitRefLevel bit_parent_ent_mask, int verb = QUIET,
                      Sev sev = Sev::noisy);
 
+  /**
+   * @brief Construct a new Op Add Parent Ent Data object
+   *
+   * @param space field space
+   * @param op_parent_type  type of user data operator
+   * @param parent_ele_ptr parent finite element instance
+   * @param bit_child bit of child entity
+   * @param bit_child_mask bit mask of child
+   * @param bit_parent_ent bit of parent entity
+   * @param bit_parent_ent_mask bit mask of parent
+   * @param verb verbosity level
+   * @param sev severity level for logging
+   */
+  OpAddParentEntData(FieldSpace space, OpType op_parent_type,
+                     boost::shared_ptr<ForcesAndSourcesCore> parent_ele_ptr,
+                     BitRefLevel bit_child, BitRefLevel bit_child_mask,
+                     BitRefLevel bit_parent_ent,
+                     BitRefLevel bit_parent_ent_mask, int verb = QUIET,
+                     Sev sev = Sev::noisy);
+
   MoFEMErrorCode opRhs(EntitiesFieldData &data,
                        const bool error_if_no_base = false);
 
 private:
   std::string fieldName;
+  FieldSpace approxSpace;
   OpType opParentType;
   boost::shared_ptr<ForcesAndSourcesCore> parentElePtr;
   const BitRefLevel bitChild;

@@ -615,6 +615,10 @@ MoFEMErrorCode
 ForcesAndSurcesCore::getBitRefLevelOnData() {
   MoFEMFunctionBegin;
 
+  for (int s = H1; s != LASTSPACE; ++s) {
+    dataOnElement[s]->dataOnEntities[MBENTITYSET].clear();
+  }
+
   for (auto &data : dataOnElement) {
     if (data) {
       for (auto &dat : data->dataOnEntities) {
