@@ -1128,11 +1128,8 @@ template <int Tensor_Dim, class T, class L, class A>
 struct OpCalculateScalarFieldGradient_General
     : public OpCalculateVectorFieldValues_General<Tensor_Dim, T, L, A> {
 
-  OpCalculateScalarFieldGradient_General(
-      const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
-      const EntityType zero_type = MBVERTEX)
-      : OpCalculateVectorFieldValues_General<Tensor_Dim, T, L, A>(
-            field_name, data_ptr, zero_type) {}
+  using OpCalculateVectorFieldValues_General<
+      Tensor_Dim, T, L, A>::OpCalculateVectorFieldValues_General;
 };
 
 /** \brief Evaluate field gradient values for scalar field, i.e. gradient is
@@ -1145,15 +1142,9 @@ struct OpCalculateScalarFieldGradient_General<Tensor_Dim, double,
     : public OpCalculateVectorFieldValues_General<
           Tensor_Dim, double, ublas::row_major, DoubleAllocator> {
 
-  OpCalculateScalarFieldGradient_General(
-      const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
-      const EntityType zero_type = MBVERTEX)
-      : OpCalculateVectorFieldValues_General<Tensor_Dim, double,
-                                             ublas::row_major, DoubleAllocator>(
-            field_name, data_ptr, zero_type) {
-    if (!this->dataPtr)
-      THROW_MESSAGE("Data pointer not allocated");
-  }
+  using OpCalculateVectorFieldValues_General<
+      Tensor_Dim, double, ublas::row_major,
+      DoubleAllocator>::OpCalculateVectorFieldValues_General;
 
   /**
    * \brief calculate gradient values of scalar field at integration points
