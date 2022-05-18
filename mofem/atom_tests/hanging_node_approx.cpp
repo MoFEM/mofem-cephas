@@ -49,14 +49,28 @@ using DomainEleOp = DomainEle::UserDataOperator;
 using EntData = EntitiesFieldData::EntData;
 
 template <int FIELD_DIM> struct ApproxFieldFunction;
+template <int FIELD_DIM> struct ApproxFieldFunctionDerivative;
 
 /**
  * @brief third order polynomial used for testing
  *
  */
 template <> struct ApproxFieldFunction<1> {
-  double operator()(const double x, const double y, const double z) {
+  auto operator()(const double x, const double y, const double z) {
     return x * x + y * y + x * y * y + x * x * y;
+  }
+};
+
+/**
+ * @brief third order polynomial used for testing
+ *
+ */
+template <> struct ApproxFieldFunctionDerivative<1> {
+  auto operator()(const double x, const double y, const double z) {
+    // x * x + y * y + x * y * y + x * x * y
+
+    return FTensor::Tensor1<double, SPACE_DIM>{2 * x + y * y + 2 * x * y,
+                                               2 * y + 2 * x * y + x * x};
   }
 };
 
@@ -96,6 +110,12 @@ auto marker = [](auto l) {
  */
 auto set_parent_dofs = [](auto &m_field, auto &fe_top, auto op, auto verbosity,
                           auto sev) {
+
+
+  auto jac_ptr = boost::make_shared<MatrixDouble>();
+  auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
+  auto det_ptr = boost::make_shared<VectorDouble>();
+
   boost::function<void(boost::shared_ptr<ForcesAndSourcesCore>, int)>
       add_parent_level =
           [&](boost::shared_ptr<ForcesAndSourcesCore> parent_fe_pt, int level) {
@@ -103,6 +123,14 @@ auto set_parent_dofs = [](auto &m_field, auto &fe_top, auto op, auto verbosity,
 
               auto fe_ptr_current = boost::shared_ptr<ForcesAndSourcesCore>(
                   new DomainParentEle(m_field));
+              if (op == DomainEleOp::OPSPACE) {
+                fe_ptr_current->getOpPtrVector().push_back(
+                    new OpCalculateHOJacForFace(jac_ptr));
+                fe_ptr_current->getOpPtrVector().push_back(
+                    new OpInvertMatrix<2>(jac_ptr, det_ptr, inv_jac_ptr));
+                fe_ptr_current->getOpPtrVector().push_back(
+                    new OpSetInvJacH1ForFace(inv_jac_ptr));
+              }
 
               add_parent_level(
                   boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
@@ -172,6 +200,7 @@ private:
   Simple *simpleInterface;
 
   static ApproxFieldFunction<FIELD_DIM> approxFunction;
+  static ApproxFieldFunctionDerivative<FIELD_DIM> divApproxFunction;
 
   /**
    * @brief red mesh and randomly refine three times
@@ -192,6 +221,7 @@ private:
   MoFEMErrorCode printResults();
   struct CommonData {
     boost::shared_ptr<VectorDouble> approxVals;
+    boost::shared_ptr<MatrixDouble> divApproxVals;
     SmartPetscObj<Vec> L2Vec;
     SmartPetscObj<Vec> resVec;
   };
@@ -201,7 +231,8 @@ private:
 
 ApproxFieldFunction<FIELD_DIM> AtomTest::approxFunction =
     ApproxFieldFunction<FIELD_DIM>();
-
+ApproxFieldFunctionDerivative<FIELD_DIM> AtomTest::divApproxFunction =
+    ApproxFieldFunctionDerivative<FIELD_DIM>();
 template <> struct AtomTest::OpError<1> : public DomainEleOp {
   boost::shared_ptr<CommonData> commonDataPtr;
   OpError(boost::shared_ptr<CommonData> &common_data_ptr)
@@ -211,15 +242,18 @@ template <> struct AtomTest::OpError<1> : public DomainEleOp {
 
     if (const size_t nb_dofs = data.getIndices().size()) {
 
+      FTensor::Index<'i', SPACE_DIM> i;
+
       const int nb_integration_pts = getGaussPts().size2();
       auto t_w = getFTensor0IntegrationWeight();
       auto t_val = getFTensor0FromVec(*(commonDataPtr->approxVals));
+      auto t_grad_val =
+          getFTensor1FromMat<SPACE_DIM>(*(commonDataPtr->divApproxVals));
       auto t_coords = getFTensor1CoordsAtGaussPts();
 
       VectorDouble nf(nb_dofs, false);
       nf.clear();
 
-      FTensor::Index<'i', 3> i;
       const double volume = getMeasure();
 
       auto t_row_base = data.getFTensor0N();
@@ -229,7 +263,14 @@ template <> struct AtomTest::OpError<1> : public DomainEleOp {
         const double alpha = t_w * volume;
         double diff = t_val - AtomTest::approxFunction(t_coords(0), t_coords(1),
                                                        t_coords(2));
-        error += alpha * pow(diff, 2);
+
+        auto t_grad_diff =
+            AtomTest::divApproxFunction(t_coords(0), t_coords(1), t_coords(2));
+        t_grad_diff(i) -= t_grad_val(i);
+
+
+
+        error += alpha * (pow(diff, 2) + t_grad_diff(i) * t_grad_diff(i));
 
         for (size_t r = 0; r != nb_dofs; ++r) {
           nf[r] += alpha * t_row_base * diff;
@@ -238,6 +279,7 @@ template <> struct AtomTest::OpError<1> : public DomainEleOp {
 
         ++t_w;
         ++t_val;
+        ++t_grad_val;
         ++t_coords;
       }
 
@@ -525,14 +567,33 @@ MoFEMErrorCode AtomTest::checkResults() {
   common_data_ptr->L2Vec = createSmartVectorMPI(
       mField.get_comm(), (!mField.get_comm_rank()) ? 1 : 0, 1);
   common_data_ptr->approxVals = boost::make_shared<VectorDouble>();
+  common_data_ptr->divApproxVals = boost::make_shared<MatrixDouble>();
+
+  auto jac_ptr = boost::make_shared<MatrixDouble>();
+  auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
+  auto det_ptr = boost::make_shared<VectorDouble>();
+
+  pipeline_mng->getOpDomainRhsPipeline().push_back(
+      new OpCalculateHOJacForFace(jac_ptr));
+  pipeline_mng->getOpDomainRhsPipeline().push_back(
+      new OpInvertMatrix<2>(jac_ptr, det_ptr, inv_jac_ptr));
+  pipeline_mng->getOpDomainRhsPipeline().push_back(
+      new OpSetInvJacH1ForFace(inv_jac_ptr));
 
   set_parent_dofs(mField, pipeline_mng->getDomainRhsFE(), DomainEleOp::OPSPACE,
                   QUIET, Sev::noisy);
+
+
   set_parent_dofs(mField, pipeline_mng->getDomainRhsFE(), DomainEleOp::OPROW,
                   VERBOSE, Sev::noisy);
+
+  pipeline_mng->getOpDomainRhsPipeline().push_back(
+      new OpCalculateScalarFieldGradient<SPACE_DIM>(
+          FIELD_NAME, common_data_ptr->divApproxVals));
   pipeline_mng->getOpDomainRhsPipeline().push_back(
       new OpCalculateScalarFieldValues(FIELD_NAME,
                                        common_data_ptr->approxVals));
+
   pipeline_mng->getOpDomainRhsPipeline().push_back(
       new OpError<FIELD_DIM>(common_data_ptr));
 

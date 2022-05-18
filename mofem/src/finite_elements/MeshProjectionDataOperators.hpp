@@ -238,7 +238,6 @@ template <int DIM> struct ParentFiniteElementAdjacencyFunction {
         CHKERR moab.tag_get_data(th_bit_level, &*adjacency.begin(),
                                  adjacency.size(), &*bitLevels.begin());
 
-
         adjTmp.reserve(adjacency.size());
         for (int i = 0; i != adjacency.size(); ++i) {
           const auto &bit = bitLevels[i];
@@ -246,7 +245,6 @@ template <int DIM> struct ParentFiniteElementAdjacencyFunction {
             adjTmp.push_back(adjacency[i]);
           }
         }
-
       }
     }
 
