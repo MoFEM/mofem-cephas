@@ -281,7 +281,7 @@ std::ostream &operator<<(std::ostream &os,
 }
 
 std::ostream &operator<<(std::ostream &os, const EntitiesFieldData &e) {
-  for (EntityType t = MBVERTEX; t != MBENTITYSET; ++t) {
+  for (EntityType t = MBVERTEX; t != MBMAXTYPE; ++t) {
     for (unsigned int nn = 0; nn < e.dataOnEntities[t].size(); nn++) {
       os << "dataOnEntities[" << moab::CN::EntityTypeName(t) << "][" << nn
          << "]" << std::endl
