@@ -1184,6 +1184,29 @@ MoFEMErrorCode OpCalculateScalarFieldGradient_General<
       auto diff_base_function = data.getFTensor1DiffN<Tensor_Dim>();
       auto gradients_at_gauss_pts = getFTensor1FromMat<Tensor_Dim>(mat);
 
+#ifndef NDEBUG
+      if (nb_dofs > nb_base_functions)
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "Number of base functions inconsistent with number of DOFs "
+                 "(%d > %d)",
+                 nb_dofs, nb_base_functions);
+
+      if (data.getDiffN().size2() != nb_base_functions * Tensor_Dim)
+        SETERRQ2(
+            PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Number of base functions inconsistent with number of derivatives "
+            "(%d != %d)",
+            data.getDiffN().size2(), nb_base_functions);
+
+      if (data.getDiffN().size1() != nb_gauss_pts)
+        SETERRQ2(
+            PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Number of base functions inconsistent with number of integration "
+            "pts (%d != %d)",
+            data.getDiffN().size2(), nb_gauss_pts);
+
+#endif
+
       FTensor::Index<'I', Tensor_Dim> I;
       for (int gg = 0; gg < nb_gauss_pts; ++gg) {
         auto field_data = data.getFTensor0FieldData();
