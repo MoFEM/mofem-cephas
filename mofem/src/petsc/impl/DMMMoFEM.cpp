@@ -219,7 +219,8 @@ PetscErrorCode DMMoFEMCreateSubDM(DM subdm, DM dm, const char problem_name[]) {
             "data structure for MoFEM not yet created");
   }
   CHKERR DMMoFEMCreateMoFEM(subdm, dm_field->mField_ptr, problem_name,
-                            dm_field->problemPtr->getBitRefLevel());
+                            dm_field->problemPtr->getBitRefLevel(),
+                            dm_field->problemPtr->getBitRefLevelMask());
 
   DMCtx *subdm_field = (DMCtx *)subdm->data;
   subdm_field->isSubDM = PETSC_TRUE;
