@@ -616,7 +616,7 @@ ForcesAndSurcesCore::getBitRefLevelOnData() {
   MoFEMFunctionBegin;
 
   for (int s = H1; s != LASTSPACE; ++s) {
-    dataOnElement[s]->dataOnEntities[MBENTITYSET].clear();
+    dataOnElement[s]->dataOnEntities[MBENTITYSET].resize(0);
   }
 
   for (auto &data : dataOnElement) {
@@ -1447,6 +1447,10 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
 
     op_data[ss] =
         !ss ? dataOnElement[space[ss]] : derivedDataOnElement[space[ss]];
+
+    for (auto &data : op_data[ss]->dataOnEntities[MBENTITYSET]) {
+      CHKERR data.resetFieldDependentData();
+    }
 
     auto get_data_for_nodes = [&]() {
       MoFEMFunctionBegin;
