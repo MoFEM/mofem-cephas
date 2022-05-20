@@ -1013,12 +1013,12 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
   CHKERR m_field.clear_problem(out_name);
 
   // get reference to all problems
-  typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemByName;
-  ProblemByName &problems_by_name =
+  using ProblemByName = decltype(problems_ptr->get<Problem_mi_tag>());
+  auto &problems_by_name =
       const_cast<ProblemByName &>(problems_ptr->get<Problem_mi_tag>());
 
   // get iterators to out problem, i.e. build problem
-  ProblemByName::iterator out_problem_it = problems_by_name.find(out_name);
+  auto out_problem_it = problems_by_name.find(out_name);
   if (out_problem_it == problems_by_name.end()) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "subproblem with name < %s > not defined (top tip check spelling)",
@@ -1026,7 +1026,7 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
   }
   // get iterator to main problem, i.e. out problem is subproblem of main
   // problem
-  ProblemByName::iterator main_problem_it = problems_by_name.find(main_problem);
+  auto main_problem_it = problems_by_name.find(main_problem);
   if (main_problem_it == problems_by_name.end()) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "problem of subproblem with name < %s > not defined (top tip "
@@ -1096,10 +1096,11 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
           FieldEntity::getHiBitNumberUId(bit_number));
 
       auto add_dit_to_dofs_array = [&](auto &dit) {
-        dofs_array->emplace_back(
-            dit->get()->getDofEntityPtr(), dit->get()->getPetscGlobalDofIdx(),
-            dit->get()->getPetscGlobalDofIdx(),
-            dit->get()->getPetscLocalDofIdx(), dit->get()->getPart());
+        if (dit->get()->getPetscGlobalDofIdx() >= 0)
+          dofs_array->emplace_back(
+              dit->get()->getDofEntityPtr(), dit->get()->getPetscGlobalDofIdx(),
+              dit->get()->getPetscGlobalDofIdx(),
+              dit->get()->getPetscLocalDofIdx(), dit->get()->getPart());
       };
 
       if (entityMap[ss]) {
