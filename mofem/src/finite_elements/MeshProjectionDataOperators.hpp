@@ -194,7 +194,8 @@ template <int DIM> struct ParentFiniteElementAdjacencyFunction {
         BitRefLevel bit_parent;
         CHKERR moab.tag_get_data(th_bit_level, &fe_parent, 1, &bit_parent);
         if (check(bitParent, bitParentMask, bit_parent)) {
-          if (fe_parent != 0 && fe_parent != fe && parent_type == back_type) {
+          if ((fe_parent != 0) && (fe_parent != fe) &&
+              (parent_type == back_type)) {
             parents.push_back(fe_parent);
             CHKERR get_parent(parents.back(), parents);
           }
@@ -207,81 +208,83 @@ template <int DIM> struct ParentFiniteElementAdjacencyFunction {
 
       CHKERR get_parent(fe.getEnt(), parents);
 
-      for (auto fe_ent : parents) {
-        switch (field.getSpace()) {
-        case H1:
+      adjacency.clear();
+      switch (field.getSpace()) {
+      case H1:
+        for (auto fe_ent : parents)
           CHKERR moab.get_adjacencies(&fe_ent, 1, 0, false, adjacency,
                                       moab::Interface::UNION);
-        case HCURL:
-          if constexpr (DIM >= 2)
+      case HCURL:
+        if constexpr (DIM >= 2)
+          for (auto fe_ent : parents)
             CHKERR moab.get_adjacencies(&fe_ent, 1, 1, false, adjacency,
                                         moab::Interface::UNION);
-        case HDIV:
-          if constexpr (DIM == 3)
+      case HDIV:
+        if constexpr (DIM == 3)
+          for (auto fe_ent : parents)
             CHKERR moab.get_adjacencies(&fe_ent, 1, 2, false, adjacency,
                                         moab::Interface::UNION);
-        case L2:
+      case L2:
+        for (auto fe_ent : parents)
           adjacency.push_back(fe_ent);
-          break;
-        default:
-          SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-                  "this field is not implemented for face finite element");
-        }
+        break;
+      default:
+        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                "this field is not implemented for face finite element");
       }
+    
 
-      if (adjacency.size()) {
+    if (adjacency.size()) {
 
-        std::sort(adjacency.begin(), adjacency.end());
-        auto it = std::unique(adjacency.begin(), adjacency.end());
-        adjacency.resize(std::distance(adjacency.begin(), it));
-        bitLevels.resize(adjacency.size());
-        CHKERR moab.tag_get_data(th_bit_level, &*adjacency.begin(),
-                                 adjacency.size(), &*bitLevels.begin());
+      std::sort(adjacency.begin(), adjacency.end());
+      auto it = std::unique(adjacency.begin(), adjacency.end());
+      adjacency.resize(std::distance(adjacency.begin(), it));
+      bitLevels.resize(adjacency.size());
+      CHKERR moab.tag_get_data(th_bit_level, &*adjacency.begin(),
+                               adjacency.size(), &*bitLevels.begin());
 
-        adjTmp.reserve(adjacency.size());
-        for (int i = 0; i != adjacency.size(); ++i) {
-          const auto &bit = bitLevels[i];
-          if (check(bitEnt, bitEntMask, bit)) {
-            adjTmp.push_back(adjacency[i]);
-          }
+      adjTmp.reserve(adjacency.size());
+      for (int i = 0; i != adjacency.size(); ++i) {
+        if (check(bitEnt, bitEntMask, bitLevels[i])) {
+          adjTmp.push_back(adjacency[i]);
         }
       }
     }
-
-    adjacency.clear();
-
-    if constexpr (DIM == 3)
-      CHKERR DefaultElementAdjacency::defaultVolume(moab, field, fe, adjacency);
-    if constexpr (DIM == 2)
-      CHKERR DefaultElementAdjacency::defaultFace(moab, field, fe, adjacency);
-    else if constexpr (DIM == 1)
-      CHKERR DefaultElementAdjacency::defaultEdge(moab, field, fe, adjacency);
-    else if constexpr (DIM == 0)
-      CHKERR DefaultElementAdjacency::defaultVertex(moab, field, fe, adjacency);
-
-    adjacency.insert(adjacency.end(), adjTmp.begin(), adjTmp.end());
-
-    std::sort(adjacency.begin(), adjacency.end());
-    auto it = std::unique(adjacency.begin(), adjacency.end());
-    adjacency.resize(std::distance(adjacency.begin(), it));
-
-    for (auto e : adjacency) {
-      auto side_table = fe.getSideNumberTable();
-      if (side_table.find(e) == side_table.end())
-        const_cast<SideNumber_multiIndex &>(fe.getSideNumberTable())
-            .insert(boost::shared_ptr<SideNumber>(new SideNumber(e, -1, 0, 0)));
-    }
-
-    MoFEMFunctionReturn(0);
   }
 
-private:
-  BitRefLevel bitParent;
-  BitRefLevel bitParentMask;
-  BitRefLevel bitEnt;
-  BitRefLevel bitEntMask;
-  std::vector<EntityHandle> adjTmp;
-  std::vector<BitRefLevel> bitLevels;
+  adjacency.clear();
+
+  if constexpr (DIM == 3)
+    CHKERR DefaultElementAdjacency::defaultVolume(moab, field, fe, adjacency);
+  if constexpr (DIM == 2)
+    CHKERR DefaultElementAdjacency::defaultFace(moab, field, fe, adjacency);
+  else if constexpr (DIM == 1)
+    CHKERR DefaultElementAdjacency::defaultEdge(moab, field, fe, adjacency);
+  else if constexpr (DIM == 0)
+    CHKERR DefaultElementAdjacency::defaultVertex(moab, field, fe, adjacency);
+
+  adjacency.insert(adjacency.end(), adjTmp.begin(), adjTmp.end());
+
+  std::sort(adjacency.begin(), adjacency.end());
+  auto it = std::unique(adjacency.begin(), adjacency.end());
+  adjacency.resize(std::distance(adjacency.begin(), it));
+
+  for (auto e : adjacency) {
+    auto &side_table = fe.getSideNumberTable();
+    if (side_table.find(e) == side_table.end())
+      const_cast<SideNumber_multiIndex &>(side_table)
+          .insert(boost::shared_ptr<SideNumber>(new SideNumber(e, -1, 0, 0)));
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+private : BitRefLevel bitParent;
+BitRefLevel bitParentMask;
+BitRefLevel bitEnt;
+BitRefLevel bitEntMask;
+std::vector<EntityHandle> adjTmp;
+std::vector<BitRefLevel> bitLevels;
 };
 
 } // namespace MoFEM

@@ -91,8 +91,8 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
 
   auto set_child_data = [](auto &parent_data, auto &child_data) {
     MoFEMFunctionBeginHot;
-    child_data.sPace = parent_data.getSpace();
     child_data.getEntDataBitRefLevel() = parent_data.getEntDataBitRefLevel();
+    child_data.sPace = parent_data.getSpace();
     child_data.bAse = parent_data.getBase();
     child_data.sEnse = parent_data.getSense();
     child_data.oRder = parent_data.getOrder();
@@ -112,6 +112,8 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
    */
   auto set_child_base = [](auto &parent_data, auto &child_data) {
     MoFEMFunctionBeginHot;
+    child_data.resetFieldDependentData();
+    child_data.getEntDataBitRefLevel() = parent_data.getEntDataBitRefLevel();
     child_data.sPace = parent_data.getSpace();
     child_data.getEntDataBitRefLevel() = parent_data.getEntDataBitRefLevel();
 
@@ -222,13 +224,18 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
         }
 #endif
 
-        if (data.getFieldEntities().size()) {
-          // note: assumes that all entities on data are the same type. that
-          // is good assumption, since we group entities on side by type.
-          const auto ent_type = data.getFieldEntities()[0]->getEntType();
-          CHKERR switch_of_dofs_children(
-              data, entities_field_data.dataOnEntities[ent_type]);
-          if (ent_type != type)
+        if (field_entities.size()) {
+          boost::container::static_vector<EntityType, 128> ents_type;
+          ents_type.reserve(field_entities.size());
+          for (auto fe : field_entities)
+            ents_type.push_back(fe->getEntType());
+          std::sort(ents_type.begin(), ents_type.end());
+
+          auto end = std::unique(ents_type.begin(), ents_type.end());
+          for (auto it_t = ents_type.begin(); it_t != end; ++it_t)
+            CHKERR switch_of_dofs_children(
+                data, entities_field_data.dataOnEntities[*it_t]);
+          if (type == MBENTITYSET)
             CHKERR switch_of_dofs_children(
                 data, entities_field_data.dataOnEntities[type]);
         }
@@ -253,6 +260,9 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
       // note live of op pointer is controlled by ptr_vec in in finite
       // element
       if (opParentType == OPSPACE) {
+
+        entities_field_data.dataOnEntities[MBENTITYSET].resize(0);
+
         auto field_op = new ForcesAndSourcesCore::UserDataOperator(
             approxSpace, opParentType);
         field_op->doWorkRhsHook = do_work_parent_hook;
@@ -321,6 +331,23 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
         entities_field_data,
         *(getPtrFE()->getDerivedDataOnElementBySpaceArray()[approxSpace]));
   }
+
+#ifndef NDEBUG
+  auto &side_table =
+      getPtrFE()->numeredEntFiniteElementPtr->getSideNumberTable();
+  for (auto &data : entities_field_data.dataOnEntities[MBENTITYSET]) {
+    for (auto dof : data.getFieldDofs()) {
+      auto &bit_dof = dof->getBitRefLevel();
+      if (check(bitParentEnt, bitParentEntMask, bit_dof)) {
+        auto ent = dof->getEnt();
+        if (side_table.find(ent) == side_table.end()) {
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "Adjacency not found");
+        }
+      }
+    }
+  }
+#endif
 
   MoFEMFunctionReturn(0);
 }
