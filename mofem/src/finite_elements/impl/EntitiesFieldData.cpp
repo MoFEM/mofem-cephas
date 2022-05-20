@@ -130,6 +130,7 @@ MoFEMErrorCode EntitiesFieldData::EntData::resetFieldDependentData() {
   MoFEMFunctionBeginHot;
   sPace = NOSPACE;
   bAse = NOBASE;
+  fieldEntities.resize(0, false);
   iNdices.resize(0, false);
   localIndices.resize(0, false);
   dOfs.resize(0, false);
