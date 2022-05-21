@@ -1024,7 +1024,7 @@ struct EntitiesFieldData::EntData {
   getBBNByOrderSharedPtr(const size_t o);
 
   /**
-   * @brief get BB base direvative by order
+   * @brief get BB base derivative by order
    * 
    * @param o 
    * @return boost::shared_ptr<MatrixDouble>& 
