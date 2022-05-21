@@ -77,7 +77,7 @@ MoFEMErrorCode DataOperator::opLhs(EntitiesFieldData &row_data,
       size_t SS = 0;
       if (Symm)
         SS = ss;
-      for (; SS < col_data.dataOnEntities[type].size(); SS++) {
+      for (; SS < col_data.dataOnEntities[type].size(); ++SS) {
         CHKERR doWork(ss, SS, type, type, row_ent_data[ss],
                       col_data.dataOnEntities[type][SS]);
       }
