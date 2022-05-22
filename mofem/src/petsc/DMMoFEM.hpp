@@ -937,6 +937,17 @@ struct DMCtx : public UnknownInterface {
 };
 
 /**
+ * @brief get problem pointer from DM
+ * 
+ */
+auto getProblemPtr = [](DM dm) {
+  const MoFEM::Problem *problem_ptr;
+  CHK_THROW_MESSAGE(DMMoFEMGetProblemPtr(dm, &problem_ptr),
+                    "Get cot get problem ptr from DM");
+  return problem_ptr;
+};
+
+/**
  * @brief Get smart matrix from DM
  * \ingroup dm
  * 
