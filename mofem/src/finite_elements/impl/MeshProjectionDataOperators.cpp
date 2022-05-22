@@ -124,15 +124,15 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
 
     using BaseDerivatives = EntitiesFieldData::EntData::BaseDerivatives;
     for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
-      for (auto direvative = 0; direvative != BaseDerivatives::LastDerivative;
-           ++direvative) {
+      for (auto derivative = 0; derivative != BaseDerivatives::LastDerivative;
+           ++derivative) {
         auto parent_base =
             parent_data.getNSharedPtr(static_cast<FieldApproximationBase>(b),
-                                      static_cast<BaseDerivatives>(direvative));
+                                      static_cast<BaseDerivatives>(derivative));
         if (parent_base) {
           auto child_base = child_data.getNSharedPtr(
               static_cast<FieldApproximationBase>(b),
-              static_cast<BaseDerivatives>(direvative));
+              static_cast<BaseDerivatives>(derivative));
           if (!child_base)
             child_base = boost::make_shared<MatrixDouble>();
           child_base->swap(*parent_base);
