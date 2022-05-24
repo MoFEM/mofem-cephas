@@ -28,8 +28,6 @@ EntitiesFieldData::EntData::EntData(const bool allocate_base_matrices)
     for (auto d = 0; d != LastDerivative; ++d) {
       for (int b = 0; b != LASTBASE; ++b) {
         baseFunctionsAndBaseDerivatives[d][b].reset(new MatrixDouble());
-        N[b].reset(new MatrixDouble());
-        diffN[b].reset(new MatrixDouble());
       }
     }
   }
