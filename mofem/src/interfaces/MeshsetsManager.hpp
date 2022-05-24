@@ -805,7 +805,7 @@ struct MeshsetsManager : public UnknownInterface {
     return configFileOptionsPtr;
   }
 
-  MoFEMErrorCode updateAllMeshsetsByEntitiesChildren(const BitRefLevel &bit);
+  MoFEMErrorCode updateAllMeshsetsByEntitiesChildren(const BitRefLevel bit);
 
   static bool brodcastMeshsets; ///< if true meshsets are synchrinised between
                                 ///< processors
