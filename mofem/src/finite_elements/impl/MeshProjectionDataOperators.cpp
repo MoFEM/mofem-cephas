@@ -65,7 +65,12 @@ OpAddParentEntData::OpAddParentEntData(
       parentElePtr(parent_ele_ptr), bitChild(bit_child),
       bitChildMask(bit_child_mask), bitParentEnt(bit_parent_ent),
       bitParentEntMask(bit_parent_ent_mask), verbosity(verb),
-      severityLevel(sev) {}
+      severityLevel(sev) {
+
+  auto field_op =
+      new ForcesAndSourcesCore::UserDataOperator(fieldName, opParentType);
+  parentElePtr->getOpPtrVector().push_back(field_op);
+}
 
 OpAddParentEntData::OpAddParentEntData(
     FieldSpace space, OpType op_parent_type,
@@ -78,7 +83,12 @@ OpAddParentEntData::OpAddParentEntData(
       parentElePtr(parent_ele_ptr), bitChild(bit_child),
       bitChildMask(bit_child_mask), bitParentEnt(bit_parent_ent),
       bitParentEntMask(bit_parent_ent_mask), verbosity(verb),
-      severityLevel(sev) {}
+      severityLevel(sev) {
+
+  auto field_op =
+      new ForcesAndSourcesCore::UserDataOperator(approxSpace, opParentType);
+  parentElePtr->getOpPtrVector().push_back(field_op);
+}
 
 MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
                                          const bool error_if_no_base) {
@@ -184,10 +194,16 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
             << ApproximationBaseNames[data.getBase()];
       }
 
-      if (entities_field_data.dataOnEntities[MBENTITYSET].size() <
-          count_meshset_sides)
-        entities_field_data.dataOnEntities[MBENTITYSET].resize(
-            count_meshset_sides);
+      auto &data_on_meshset = entities_field_data.dataOnEntities[MBENTITYSET];
+      if (data_on_meshset.size() < count_meshset_sides) {
+        if (poolEntsVector.size()) {
+          data_on_meshset.transfer(data_on_meshset.end(),
+                                   poolEntsVector.begin(), poolEntsVector);
+        } else {
+          entities_field_data.dataOnEntities[MBENTITYSET].resize(
+              count_meshset_sides);
+        }
+      }
 
       auto &child_data_meshset =
           entities_field_data
@@ -257,27 +273,9 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
     auto loop_parent_fe = [&]() {
       MoFEMFunctionBeginHot;
 
-      // note live of op pointer is controlled by ptr_vec in in finite
-      // element
-      if (opParentType == OPSPACE) {
-
-        entities_field_data.dataOnEntities[MBENTITYSET].resize(0);
-
-        auto field_op = new ForcesAndSourcesCore::UserDataOperator(
-            approxSpace, opParentType);
-        field_op->doWorkRhsHook = do_work_parent_hook;
-        parentElePtr->getOpPtrVector().push_back(field_op);
-      } else {
-        auto field_op =
-            new ForcesAndSourcesCore::UserDataOperator(fieldName, opParentType);
-        field_op->doWorkRhsHook = do_work_parent_hook;
-        parentElePtr->getOpPtrVector().push_back(field_op);
-      }
-
+      parentElePtr->getOpPtrVector().back().doWorkRhsHook = do_work_parent_hook;
       CHKERR loopParent(getFEName(), parentElePtr.get(), verbosity,
                         severityLevel);
-      // clean element from obsolete data operator
-      parentElePtr->getOpPtrVector().pop_back();
 
 #ifndef NDEBUG
       auto &parent_gauss_pts = parentElePtr->gaussPts;
@@ -305,7 +303,17 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
         << entities_field_data.dataOnEntities[MBENTITYSET].size();
   }
 
-  entities_field_data.dataOnEntities[MBENTITYSET].resize(count_meshset_sides);
+  auto &data_on_meshset = entities_field_data.dataOnEntities[MBENTITYSET];
+  auto it = data_on_meshset.begin();
+
+  if (count_meshset_sides < data_on_meshset.size()) {
+    for (auto s = 0; s != count_meshset_sides; ++s)
+      ++it;
+    poolEntsVector.transfer(poolEntsVector.end(), it, data_on_meshset.end(),
+                            data_on_meshset);
+  }
+
+  // entities_field_data.dataOnEntities[MBENTITYSET].resize(count_meshset_sides);
 
   auto set_up_derivative_ent_data = [&](auto &entities_field_data,
                                         auto &derivative_entities_field_data) {

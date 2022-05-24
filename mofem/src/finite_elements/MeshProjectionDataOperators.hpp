@@ -132,6 +132,8 @@ private:
   const BitRefLevel bitParentEntMask;
   int verbosity;
   Sev severityLevel;
+
+  boost::ptr_deque<EntitiesFieldData::EntData> poolEntsVector;
 };
 
 template <int DIM> struct ParentFiniteElementAdjacencyFunction {
