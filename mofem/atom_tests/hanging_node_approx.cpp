@@ -111,10 +111,13 @@ auto marker = [](auto l) {
 auto set_parent_dofs = [](auto &m_field, auto &fe_top, auto op, auto verbosity,
                           auto sev) {
 
-
   auto jac_ptr = boost::make_shared<MatrixDouble>();
   auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
   auto det_ptr = boost::make_shared<VectorDouble>();
+
+  BitRefLevel bit_marker;
+  for (auto l = 1; l <= nb_ref_levels; ++l)
+    bit_marker |= marker(l);
 
   boost::function<void(boost::shared_ptr<ForcesAndSourcesCore>, int)>
       add_parent_level =
@@ -136,10 +139,6 @@ auto set_parent_dofs = [](auto &m_field, auto &fe_top, auto op, auto verbosity,
                   boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
                       fe_ptr_current),
                   level - 1);
-
-              BitRefLevel bit_marker;
-              for (auto l = 1; l <= nb_ref_levels; ++l)
-                bit_marker |= marker(l);
 
               if (op == DomainEleOp::OPSPACE) {
 
@@ -439,7 +438,7 @@ MoFEMErrorCode AtomTest::setupProblem() {
   constexpr int order = 3;
   CHKERR simpleInterface->setFieldOrder(FIELD_NAME, order);
 
-  // Simple intrafece will resolve adjacency to DOFs of parent of the element.
+  // Simple interface will resolve adjacency to DOFs of parent of the element.
   // Using that information MAtrixManager  allocate appropriately size of
   // matrix.
   simpleInterface->getParentAdjacencies() = true;
