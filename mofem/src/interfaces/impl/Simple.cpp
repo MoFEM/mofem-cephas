@@ -780,15 +780,14 @@ MoFEMErrorCode Simple::reSetUp(bool only_dm) {
 
   if (!only_dm) {
     CHKERR defineFiniteElements();
-
-    if (addSkeletonFE || !skeletonFields.empty())
-      CHKERR setSkeletonAdjacency();
-    if (addParentAdjacencies)
-      CHKERR setParentAdjacency();
-
     CHKERR buildFields();
-    CHKERR buildFiniteElements();
   }
+
+  if (addSkeletonFE || !skeletonFields.empty())
+    CHKERR setSkeletonAdjacency();
+  if (addParentAdjacencies)
+    CHKERR setParentAdjacency();
+  CHKERR buildFiniteElements();
 
   CHKERR m_field.build_adjacencies(bitLevel);
   const Problem *problem_ptr;
