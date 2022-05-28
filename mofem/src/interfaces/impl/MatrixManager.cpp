@@ -105,46 +105,44 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
 
       const BitRefLevel &fe_bit = r.first->entFePtr->getBitRefLevel();
       // if entity is not problem refinement level
-      if ((fe_bit & prb_mask) != fe_bit)
-        continue;
-      if ((fe_bit & prb_bit).none())
-        continue;
+      if ((fe_bit & prb_bit).any() && (fe_bit & prb_mask) == fe_bit) {
 
-      const BitRefLevel &dof_bit = (*mit_row)->getBitRefLevel();
-      const bool empty_row_block =
-          (empty_field_blocks.first & (*mit_row)->getId()).none();
+        const BitRefLevel &dof_bit = (*mit_row)->getBitRefLevel();
+        const bool empty_row_block =
+            (empty_field_blocks.first & (*mit_row)->getId()).none();
 
-      // if entity is not problem refinement level
-      if ((fe_bit & dof_bit).any()) {
+        // if entity is not problem refinement level
+        if ((fe_bit & dof_bit).any()) {
 
-        for (auto &it : r.first->entFePtr->getColFieldEnts()) {
-          if (auto e = it.lock()) {
-            if (empty_row_block ||
-                (empty_field_blocks.second & e->getId()).none()) {
+          for (auto &it : r.first->entFePtr->getColFieldEnts()) {
+            if (auto e = it.lock()) {
+              if (empty_row_block ||
+                  (empty_field_blocks.second & e->getId()).none()) {
 
-              if (auto cache = e->entityCacheColDofs.lock()) {
-                const auto lo = cache->loHi[0];
-                const auto hi = cache->loHi[1];
-                for (auto vit = lo; vit != hi; ++vit) {
+                if (auto cache = e->entityCacheColDofs.lock()) {
+                  const auto lo = cache->loHi[0];
+                  const auto hi = cache->loHi[1];
+                  for (auto vit = lo; vit != hi; ++vit) {
 
-                  const int idx = TAG::get_index(vit);
-                  if (PetscLikely(idx >= 0))
-                    dofs_col_view.push_back(idx);
+                    const int idx = TAG::get_index(vit);
+                    if (PetscLikely(idx >= 0))
+                      dofs_col_view.push_back(idx);
 
 #ifndef NDEBUG
-                  if (PetscUnlikely(idx >= nb_dofs_col)) {
-                    MOFEM_LOG("SELF", Sev::error)
-                        << "Problem with dof: " << std::endl
-                        << "Rank " << rAnk << " : " << *(*vit);
-                    SETERRQ(
-                        mofemComm, PETSC_ERR_ARG_SIZ,
-                        "Index of dof larger than number of DOFs in column");
-                  }
+                    if (PetscUnlikely(idx >= nb_dofs_col)) {
+                      MOFEM_LOG("SELF", Sev::error)
+                          << "Problem with dof: " << std::endl
+                          << "Rank " << rAnk << " : " << *(*vit);
+                      SETERRQ(
+                          mofemComm, PETSC_ERR_ARG_SIZ,
+                          "Index of dof larger than number of DOFs in column");
+                    }
 #endif
-                }
+                  }
 
-              } else {
-                SETERRQ(mofemComm, MOFEM_DATA_INCONSISTENCY, "Cache not set");
+                } else {
+                  SETERRQ(mofemComm, MOFEM_DATA_INCONSISTENCY, "Cache not set");
+                }
               }
             }
           }
