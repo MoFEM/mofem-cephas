@@ -36,6 +36,9 @@ template <> struct ElementsAndOps<2> {
   using DomainEle = PipelineManager::FaceEle;
   using DomainEleOp = DomainEle::UserDataOperator;
   using DomianParentEle = FaceElementForcesAndSourcesCoreOnChildParent;
+  using BoundaryEle = PipelineManager::EdgeEle;
+  using BoundaryEleOp = BoundaryEle::UserDataOperator;
+  using BoundaryParentEle = EdgeElementForcesAndSourcesCoreOnChildParent;
 };
 
 template <> struct ElementsAndOps<3> {
@@ -46,6 +49,10 @@ template <> struct ElementsAndOps<3> {
 using DomainEle = ElementsAndOps<SPACE_DIM>::DomainEle;
 using DomainParentEle = ElementsAndOps<SPACE_DIM>::DomianParentEle;
 using DomainEleOp = DomainEle::UserDataOperator;
+using BoundaryEle = ElementsAndOps<SPACE_DIM>::BoundaryEle;
+using BoundaryEleOp = BoundaryEle::UserDataOperator;
+using BoundaryParentEle = ElementsAndOps<SPACE_DIM>::BoundaryParentEle;
+
 using EntData = EntitiesFieldData::EntData;
 
 template <int FIELD_DIM> struct ApproxFieldFunction;
@@ -108,8 +115,11 @@ auto marker = [](auto l) {
  * parent entities, to child, up to to level, i.e. last mesh refinement.
  *
  */
-auto set_parent_dofs = [](auto &m_field, auto &fe_top, auto op, auto verbosity,
-                          auto sev) {
+template <typename PARENT_FE>
+auto set_parent_dofs(MoFEM::Interface &m_field,
+                     boost::shared_ptr<FEMethod> &fe_top,
+                     ForcesAndSourcesCore::UserDataOperator::OpType op,
+                     int verbosity, LogManager::SeverityLevel sev) {
 
   auto jac_ptr = boost::make_shared<MatrixDouble>();
   auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
@@ -125,7 +135,7 @@ auto set_parent_dofs = [](auto &m_field, auto &fe_top, auto op, auto verbosity,
             if (level > 0) {
 
               auto fe_ptr_current = boost::shared_ptr<ForcesAndSourcesCore>(
-                  new DomainParentEle(m_field));
+                  new PARENT_FE(m_field));
               if (op == DomainEleOp::OPSPACE) {
                 fe_ptr_current->getOpPtrVector().push_back(
                     new OpCalculateHOJacForFace(jac_ptr));
@@ -226,6 +236,8 @@ private:
   };
 
   template <int FIELD_DIM> struct OpError;
+
+  template <int FIELD_DIM> struct OpErrorBdy;
 };
 
 ApproxFieldFunction<FIELD_DIM> AtomTest::approxFunction =
@@ -267,8 +279,6 @@ template <> struct AtomTest::OpError<1> : public DomainEleOp {
             AtomTest::divApproxFunction(t_coords(0), t_coords(1), t_coords(2));
         t_grad_diff(i) -= t_grad_val(i);
 
-
-
         error += alpha * (pow(diff, 2) + t_grad_diff(i) * t_grad_diff(i));
 
         for (size_t r = 0; r != nb_dofs; ++r) {
@@ -286,6 +296,46 @@ template <> struct AtomTest::OpError<1> : public DomainEleOp {
       CHKERR VecSetValue(commonDataPtr->L2Vec, index, error, ADD_VALUES);
       CHKERR VecSetValues(commonDataPtr->resVec, data, &nf[0], ADD_VALUES);
     }
+
+    MoFEMFunctionReturn(0);
+  }
+};
+
+template <> struct AtomTest::OpErrorBdy<1> : public BoundaryEleOp {
+  boost::shared_ptr<CommonData> commonDataPtr;
+  OpErrorBdy(boost::shared_ptr<CommonData> &common_data_ptr)
+      : BoundaryEleOp(H1, OPSPACE), commonDataPtr(common_data_ptr) {}
+  MoFEMErrorCode doWork(int side, EntityType type, EntData &data) {
+    MoFEMFunctionBegin;
+
+    FTensor::Index<'i', SPACE_DIM> i;
+
+    const int nb_integration_pts = getGaussPts().size2();
+    auto t_w = getFTensor0IntegrationWeight();
+    auto t_val = getFTensor0FromVec(*(commonDataPtr->approxVals));
+    auto t_coords = getFTensor1CoordsAtGaussPts();
+
+    const double volume = getMeasure();
+
+    double error2 = 0;
+    for (int gg = 0; gg != nb_integration_pts; ++gg) {
+
+      const double alpha = t_w * volume;
+      double diff = t_val - AtomTest::approxFunction(t_coords(0), t_coords(1),
+                                                     t_coords(2));
+      error2 += alpha * (pow(diff, 2));
+
+      ++t_w;
+      ++t_val;
+      ++t_coords;
+    }
+
+    constexpr double eps = 1e-8;
+    if (sqrt(error2) > eps)
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+               "Error on boundary = %6.4e", sqrt(error2));
+
+    MOFEM_LOG("SELF", Sev::noisy) << "Boundary error " << sqrt(error2);
 
     MoFEMFunctionReturn(0);
   }
@@ -434,6 +484,8 @@ MoFEMErrorCode AtomTest::setupProblem() {
   // Add field
   CHKERR simpleInterface->addDomainField(FIELD_NAME, H1,
                                          AINSWORTH_LEGENDRE_BASE, FIELD_DIM);
+  CHKERR simpleInterface->addBoundaryField(FIELD_NAME, H1,
+                                           AINSWORTH_LEGENDRE_BASE, FIELD_DIM);
 
   constexpr int order = 3;
   CHKERR simpleInterface->setFieldOrder(FIELD_NAME, order);
@@ -479,12 +531,12 @@ MoFEMErrorCode AtomTest::assembleSystem() {
   pipeline_mng->getDomainRhsFE()->exeTestHook = test_bit_child;
 
   auto beta = [](const double, const double, const double) { return 1; };
-  set_parent_dofs(mField, pipeline_mng->getDomainLhsFE(), DomainEleOp::OPSPACE,
-                  QUIET, Sev::noisy);
-  set_parent_dofs(mField, pipeline_mng->getDomainLhsFE(), DomainEleOp::OPROW,
-                  QUIET, Sev::noisy);
-  set_parent_dofs(mField, pipeline_mng->getDomainLhsFE(), DomainEleOp::OPCOL,
-                  QUIET, Sev::noisy);
+  set_parent_dofs<DomainParentEle>(mField, pipeline_mng->getDomainLhsFE(),
+                                   DomainEleOp::OPSPACE, QUIET, Sev::noisy);
+  set_parent_dofs<DomainParentEle>(mField, pipeline_mng->getDomainLhsFE(),
+                                   DomainEleOp::OPROW, QUIET, Sev::noisy);
+  set_parent_dofs<DomainParentEle>(mField, pipeline_mng->getDomainLhsFE(),
+                                   DomainEleOp::OPCOL, QUIET, Sev::noisy);
   pipeline_mng->getOpDomainLhsPipeline().push_back(
       new OpDomainMass(FIELD_NAME, FIELD_NAME, beta));
 
@@ -515,10 +567,11 @@ MoFEMErrorCode AtomTest::assembleSystem() {
     MoFEMFunctionReturn(0);
   };
 
-  set_parent_dofs(mField, pipeline_mng->getDomainRhsFE(), DomainEleOp::OPSPACE,
-                  VERBOSE, Sev::verbose);
-  set_parent_dofs(mField, pipeline_mng->getDomainRhsFE(), DomainEleOp::OPROW,
-                  VERBOSE, Sev::noisy);
+  set_parent_dofs<DomainParentEle>(
+      mField, pipeline_mng->getDomainRhsFE(), DomainEleOp::OPSPACE, VERBOSE,
+      Sev::verbose);
+  set_parent_dofs<DomainParentEle>(mField, pipeline_mng->getDomainRhsFE(),
+                                   DomainEleOp::OPROW, VERBOSE, Sev::noisy);
   pipeline_mng->getOpDomainRhsPipeline().push_back(field_op_row);
 
   pipeline_mng->getOpDomainRhsPipeline().push_back(
@@ -556,10 +609,13 @@ MoFEMErrorCode AtomTest::checkResults() {
   PipelineManager *pipeline_mng = mField.getInterface<PipelineManager>();
   pipeline_mng->getDomainLhsFE().reset();
   pipeline_mng->getDomainRhsFE().reset();
+  pipeline_mng->getBoundaryRhsFE().reset();
 
   auto rule = [](int, int, int p) -> int { return 2 * p + 1; };
   CHKERR pipeline_mng->setDomainRhsIntegrationRule(rule);
+  CHKERR pipeline_mng->setBoundaryRhsIntegrationRule(rule);
   pipeline_mng->getDomainRhsFE()->exeTestHook = test_bit_child;
+  pipeline_mng->getBoundaryRhsFE()->exeTestHook = test_bit_child;
 
   auto common_data_ptr = boost::make_shared<CommonData>();
   common_data_ptr->resVec = smartCreateDMVector(simpleInterface->getDM());
@@ -579,12 +635,10 @@ MoFEMErrorCode AtomTest::checkResults() {
   pipeline_mng->getOpDomainRhsPipeline().push_back(
       new OpSetInvJacH1ForFace(inv_jac_ptr));
 
-  set_parent_dofs(mField, pipeline_mng->getDomainRhsFE(), DomainEleOp::OPSPACE,
-                  QUIET, Sev::noisy);
-
-
-  set_parent_dofs(mField, pipeline_mng->getDomainRhsFE(), DomainEleOp::OPROW,
-                  VERBOSE, Sev::noisy);
+  set_parent_dofs<DomainParentEle>(mField, pipeline_mng->getDomainRhsFE(),
+                                   DomainEleOp::OPSPACE, QUIET, Sev::noisy);
+  set_parent_dofs<DomainParentEle>(mField, pipeline_mng->getDomainRhsFE(),
+                                   DomainEleOp::OPROW, VERBOSE, Sev::noisy);
 
   pipeline_mng->getOpDomainRhsPipeline().push_back(
       new OpCalculateScalarFieldGradient<SPACE_DIM>(
@@ -595,6 +649,16 @@ MoFEMErrorCode AtomTest::checkResults() {
 
   pipeline_mng->getOpDomainRhsPipeline().push_back(
       new OpError<FIELD_DIM>(common_data_ptr));
+
+  set_parent_dofs<BoundaryParentEle>(mField, pipeline_mng->getBoundaryRhsFE(),
+                                     BoundaryEleOp::OPSPACE, QUIET, Sev::noisy);
+  set_parent_dofs<BoundaryParentEle>(mField, pipeline_mng->getBoundaryRhsFE(),
+                                     BoundaryEleOp::OPROW, VERBOSE, Sev::noisy);
+  pipeline_mng->getOpBoundaryRhsPipeline().push_back(
+      new OpCalculateScalarFieldValues(FIELD_NAME,
+                                       common_data_ptr->approxVals));
+  pipeline_mng->getOpBoundaryRhsPipeline().push_back(
+      new OpErrorBdy<FIELD_DIM>(common_data_ptr));
 
   CHKERR VecZeroEntries(common_data_ptr->L2Vec);
   CHKERR VecZeroEntries(common_data_ptr->resVec);
@@ -686,10 +750,10 @@ MoFEMErrorCode AtomTest::printResults() {
     MoFEMFunctionReturn(0);
   };
 
-  set_parent_dofs(mField, pipeline_mng->getDomainRhsFE(), DomainEleOp::OPSPACE,
-                  VERBOSE, Sev::noisy);
-  set_parent_dofs(mField, pipeline_mng->getDomainRhsFE(), DomainEleOp::OPROW,
-                  VERBOSE, Sev::noisy);
+  set_parent_dofs<DomainParentEle>(mField, pipeline_mng->getDomainRhsFE(),
+                                   DomainEleOp::OPSPACE, VERBOSE, Sev::noisy);
+  set_parent_dofs<DomainParentEle>(mField, pipeline_mng->getDomainRhsFE(),
+                                   DomainEleOp::OPROW, VERBOSE, Sev::noisy);
   pipeline_mng->getOpDomainRhsPipeline().push_back(
       new OpCalculateScalarFieldValues(FIELD_NAME, approx_vals));
   pipeline_mng->getOpDomainRhsPipeline().push_back(field_op_row);
