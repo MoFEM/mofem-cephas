@@ -116,10 +116,10 @@ int main(int argc, char *argv[]) {
       CHKERR Tools::shapeFunMBTRI<2>(&shape(0, 0), &init_local_coords(0, 0),
                                      &init_local_coords(0, 1),
                                      init_local_coords.size1());
-      MOFEM_LOG("SELF", Sev::verbose) << "shape " << shape;
+      MOFEM_LOG("SELF", Sev::verbose) << "tri shape " << shape;
 
       MatrixDouble global_coords = prod(shape, elem_coords);
-      MOFEM_LOG("SELF", Sev::verbose) << "global_coords " << global_coords;
+      MOFEM_LOG("SELF", Sev::verbose) << "tri global_coords " << global_coords;
 
       MatrixDouble local_coords(init_local_coords.size1(), 2);
       CHKERR Tools::getLocalCoordinatesOnReferenceTriNodeTri(
@@ -136,8 +136,50 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionReturn(0);
     };
 
+    auto test_edge = [&]() {
+      MoFEMFunctionBegin;
+      MatrixDouble elem_coords(2, 3);
+
+      elem_coords(0, 0) = -1;
+      elem_coords(0, 1) = -1;
+      elem_coords(0, 2) = -1;
+      elem_coords(1, 0) = 2;
+      elem_coords(1, 1) = 0;
+      elem_coords(1, 2) = 0;
+
+      VectorDouble init_local_coords(6);
+      init_local_coords[0] = 0;
+      init_local_coords[1] = 1;
+      init_local_coords[2] = 0.5;
+      init_local_coords[4] = 0.25;
+      init_local_coords[5] = 0.75;
+
+      MatrixDouble shape(init_local_coords.size(), 2);
+      CHKERR Tools::shapeFunMBEDGE<1>(&shape(0, 0), &init_local_coords[0],
+                                      init_local_coords.size());
+      MOFEM_LOG("SELF", Sev::verbose) << "edge shape " << shape;
+
+      MatrixDouble global_coords = prod(shape, elem_coords);
+      MOFEM_LOG("SELF", Sev::verbose) << "edge global_coords " << global_coords;
+
+      VectorDouble local_coords(init_local_coords.size());
+      CHKERR Tools::getLocalCoordinatesOnReferenceEdgeNodeEdge(
+          &elem_coords(0, 0), &global_coords(0, 0), init_local_coords.size(),
+          &local_coords[0]);
+
+      VectorDouble residual = local_coords - init_local_coords;
+      MOFEM_LOG("SELF", Sev::inform) << residual;
+      for (auto v : residual.data())
+        if (std::abs(v) > 1e-12)
+          SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                   "Should be zer, but is v = %3.4e", v);
+
+      MoFEMFunctionReturn(0);
+    };
+
     CHKERR test_tet();
     CHKERR test_tri();
+    CHKERR test_edge();
   }
   CATCH_ERRORS;
 
