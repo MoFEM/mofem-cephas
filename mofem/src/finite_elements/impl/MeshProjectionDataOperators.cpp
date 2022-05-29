@@ -211,6 +211,7 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
 
       if (opParentType == OPSPACE) {
         CHKERR set_child_base(data, child_data_meshset);
+        child_data_meshset.resetFieldDependentData();
 
       } else {
 
