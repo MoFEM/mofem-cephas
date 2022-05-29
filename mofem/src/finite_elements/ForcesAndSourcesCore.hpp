@@ -546,6 +546,7 @@ private:
   friend class VolumeElementForcesAndSourcesCoreOnSide;
   friend class FaceElementForcesAndSourcesCoreOnSide;
   friend class FaceElementForcesAndSourcesCoreOnChildParent;
+  friend class EdgeElementForcesAndSourcesCoreOnChildParent;
   friend class VolumeElementForcesAndSourcesCoreOnContactPrismSide;
 
 protected:

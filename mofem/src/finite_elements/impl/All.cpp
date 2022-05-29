@@ -22,6 +22,7 @@ extern "C" {
 #include "impl/VolumeElementForcesAndSourcesCore.cpp"
 #include "impl/FaceElementForcesAndSourcesCore.cpp"
 #include "impl/EdgeElementForcesAndSourcesCore.cpp"
+#include "impl/EdgeElementForcesAndSourcesCoreOnParent.cpp"
 #include "impl/VertexElementForcesAndSourcesCore.cpp"
 #include "impl/FlatPrismElementForcesAndSourcesCore.cpp"
 #include "impl/ContactPrismElementForcesAndSourcesCore.cpp"

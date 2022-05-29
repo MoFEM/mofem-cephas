@@ -131,6 +131,7 @@ using FTensor::operator>>;
 #include <VolumeElementForcesAndSourcesCoreOnContactPrismSide.hpp>
 #include <FaceElementForcesAndSourcesCoreOnSide.hpp>
 #include <FaceElementForcesAndSourcesCoreOnParent.hpp>
+#include <EdgeElementForcesAndSourcesCoreOnParent.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
 #include <UserDataOperators.hpp>
 #include <HODataOperators.hpp> // Manage HO order geometry
