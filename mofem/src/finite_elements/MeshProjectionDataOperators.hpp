@@ -136,6 +136,16 @@ private:
   boost::ptr_deque<EntitiesFieldData::EntData> poolEntsVector;
 };
 
+/**
+ * @brief Create adjacency to parent elements.
+ *
+ * That class is used during entity finite element construction.
+ *
+ * \todo this function has to be extended to take cases of integration on
+ * skeleton for hanging node cases.
+ *
+ * @tparam DIM dimension of parent element
+ */
 template <int DIM> struct ParentFiniteElementAdjacencyFunction {
 
   ParentFiniteElementAdjacencyFunction(BitRefLevel bit_parent,
@@ -148,8 +158,8 @@ template <int DIM> struct ParentFiniteElementAdjacencyFunction {
   /**
    * @brief Function setting adjacencies to DOFs of parent element
    *
-   * @note elements form child, see dofs from parent, so DOFs localted on
-   * adjacencies of parent entity has adjacent to dofs of chiold.
+   * @note elements form child, see dofs from parent, so DOFs located on
+   * adjacencies of parent entity has adjacent to dofs of child.
    *
    * @tparam DIM dimension of the element entity
    * @param moab
