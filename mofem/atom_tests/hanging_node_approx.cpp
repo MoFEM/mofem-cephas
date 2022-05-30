@@ -36,9 +36,9 @@ template <> struct ElementsAndOps<2> {
   using DomainEle = PipelineManager::FaceEle;
   using DomainEleOp = DomainEle::UserDataOperator;
   using DomianParentEle = FaceElementForcesAndSourcesCoreOnChildParent;
-  using BoundaryEle = PipelineManager::EdgeEle;
-  using BoundaryEleOp = BoundaryEle::UserDataOperator;
-  using BoundaryParentEle = EdgeElementForcesAndSourcesCoreOnChildParent;
+  using SkeletonEle = PipelineManager::EdgeEle;
+  using SkeletonEleOp = SkeletonEle::UserDataOperator;
+  using SkeletonParentEle = EdgeElementForcesAndSourcesCoreOnChildParent;
 };
 
 template <> struct ElementsAndOps<3> {
@@ -49,9 +49,9 @@ template <> struct ElementsAndOps<3> {
 using DomainEle = ElementsAndOps<SPACE_DIM>::DomainEle;
 using DomainParentEle = ElementsAndOps<SPACE_DIM>::DomianParentEle;
 using DomainEleOp = DomainEle::UserDataOperator;
-using BoundaryEle = ElementsAndOps<SPACE_DIM>::BoundaryEle;
-using BoundaryEleOp = BoundaryEle::UserDataOperator;
-using BoundaryParentEle = ElementsAndOps<SPACE_DIM>::BoundaryParentEle;
+using SkeletonEle = ElementsAndOps<SPACE_DIM>::SkeletonEle;
+using SkeletonEleOp = SkeletonEle::UserDataOperator;
+using SkeletonParentEle = ElementsAndOps<SPACE_DIM>::SkeletonParentEle;
 
 using EntData = EntitiesFieldData::EntData;
 
@@ -237,7 +237,7 @@ private:
 
   template <int FIELD_DIM> struct OpError;
 
-  template <int FIELD_DIM> struct OpErrorBdy;
+  template <int FIELD_DIM> struct OpErrorSkel;
 };
 
 ApproxFieldFunction<FIELD_DIM> AtomTest::approxFunction =
@@ -301,10 +301,10 @@ template <> struct AtomTest::OpError<1> : public DomainEleOp {
   }
 };
 
-template <> struct AtomTest::OpErrorBdy<1> : public BoundaryEleOp {
+template <> struct AtomTest::OpErrorSkel<1> : public SkeletonEleOp {
   boost::shared_ptr<CommonData> commonDataPtr;
-  OpErrorBdy(boost::shared_ptr<CommonData> &common_data_ptr)
-      : BoundaryEleOp(H1, OPSPACE), commonDataPtr(common_data_ptr) {}
+  OpErrorSkel(boost::shared_ptr<CommonData> &common_data_ptr)
+      : SkeletonEleOp(H1, OPSPACE), commonDataPtr(common_data_ptr) {}
   MoFEMErrorCode doWork(int side, EntityType type, EntData &data) {
     MoFEMFunctionBegin;
 
@@ -335,7 +335,7 @@ template <> struct AtomTest::OpErrorBdy<1> : public BoundaryEleOp {
       SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                "Error on boundary = %6.4e", sqrt(error2));
 
-    MOFEM_LOG("SELF", Sev::noisy) << "Boundary error " << sqrt(error2);
+    MOFEM_LOG("SELF", Sev::noisy) << "Skeleton error " << sqrt(error2);
 
     MoFEMFunctionReturn(0);
   }
@@ -484,7 +484,7 @@ MoFEMErrorCode AtomTest::setupProblem() {
   // Add field
   CHKERR simpleInterface->addDomainField(FIELD_NAME, H1,
                                          AINSWORTH_LEGENDRE_BASE, FIELD_DIM);
-  CHKERR simpleInterface->addBoundaryField(FIELD_NAME, H1,
+  CHKERR simpleInterface->addSkeletonField(FIELD_NAME, H1,
                                            AINSWORTH_LEGENDRE_BASE, FIELD_DIM);
 
   constexpr int order = 3;
@@ -609,13 +609,13 @@ MoFEMErrorCode AtomTest::checkResults() {
   PipelineManager *pipeline_mng = mField.getInterface<PipelineManager>();
   pipeline_mng->getDomainLhsFE().reset();
   pipeline_mng->getDomainRhsFE().reset();
-  pipeline_mng->getBoundaryRhsFE().reset();
+  pipeline_mng->getSkeletonRhsFE().reset();
 
   auto rule = [](int, int, int p) -> int { return 2 * p + 1; };
   CHKERR pipeline_mng->setDomainRhsIntegrationRule(rule);
-  CHKERR pipeline_mng->setBoundaryRhsIntegrationRule(rule);
+  CHKERR pipeline_mng->setSkeletonRhsIntegrationRule(rule);
   pipeline_mng->getDomainRhsFE()->exeTestHook = test_bit_child;
-  pipeline_mng->getBoundaryRhsFE()->exeTestHook = test_bit_child;
+  pipeline_mng->getSkeletonRhsFE()->exeTestHook = test_bit_child;
 
   auto common_data_ptr = boost::make_shared<CommonData>();
   common_data_ptr->resVec = smartCreateDMVector(simpleInterface->getDM());
@@ -650,15 +650,15 @@ MoFEMErrorCode AtomTest::checkResults() {
   pipeline_mng->getOpDomainRhsPipeline().push_back(
       new OpError<FIELD_DIM>(common_data_ptr));
 
-  set_parent_dofs<BoundaryParentEle>(mField, pipeline_mng->getBoundaryRhsFE(),
-                                     BoundaryEleOp::OPSPACE, QUIET, Sev::noisy);
-  set_parent_dofs<BoundaryParentEle>(mField, pipeline_mng->getBoundaryRhsFE(),
-                                     BoundaryEleOp::OPROW, VERBOSE, Sev::noisy);
-  pipeline_mng->getOpBoundaryRhsPipeline().push_back(
+  set_parent_dofs<SkeletonParentEle>(mField, pipeline_mng->getSkeletonRhsFE(),
+                                     SkeletonEleOp::OPSPACE, QUIET, Sev::noisy);
+  set_parent_dofs<SkeletonParentEle>(mField, pipeline_mng->getSkeletonRhsFE(),
+                                     SkeletonEleOp::OPROW, VERBOSE, Sev::noisy);
+  pipeline_mng->getOpSkeletonRhsPipeline().push_back(
       new OpCalculateScalarFieldValues(FIELD_NAME,
                                        common_data_ptr->approxVals));
-  pipeline_mng->getOpBoundaryRhsPipeline().push_back(
-      new OpErrorBdy<FIELD_DIM>(common_data_ptr));
+  pipeline_mng->getOpSkeletonRhsPipeline().push_back(
+      new OpErrorSkel<FIELD_DIM>(common_data_ptr));
 
   CHKERR VecZeroEntries(common_data_ptr->L2Vec);
   CHKERR VecZeroEntries(common_data_ptr->resVec);
