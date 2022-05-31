@@ -137,12 +137,14 @@ auto set_parent_dofs(MoFEM::Interface &m_field,
               auto fe_ptr_current = boost::shared_ptr<ForcesAndSourcesCore>(
                   new PARENT_FE(m_field));
               if (op == DomainEleOp::OPSPACE) {
-                fe_ptr_current->getOpPtrVector().push_back(
-                    new OpCalculateHOJacForFace(jac_ptr));
-                fe_ptr_current->getOpPtrVector().push_back(
-                    new OpInvertMatrix<2>(jac_ptr, det_ptr, inv_jac_ptr));
-                fe_ptr_current->getOpPtrVector().push_back(
-                    new OpSetInvJacH1ForFace(inv_jac_ptr));
+                if (typeid(PARENT_FE) == typeid(DomainParentEle)) {
+                  fe_ptr_current->getOpPtrVector().push_back(
+                      new OpCalculateHOJacForFace(jac_ptr));
+                  fe_ptr_current->getOpPtrVector().push_back(
+                      new OpInvertMatrix<2>(jac_ptr, det_ptr, inv_jac_ptr));
+                  fe_ptr_current->getOpPtrVector().push_back(
+                      new OpSetInvJacH1ForFace(inv_jac_ptr));
+                }
               }
 
               add_parent_level(
