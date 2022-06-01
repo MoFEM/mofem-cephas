@@ -2,8 +2,8 @@
  * \file test_cache_on_entities.cpp
  * \example test_cache_on_entities.cpp
  *
- * Tetsing entities cache. Entities acache is data abstraction enabling user to
- * pass data between operators, finite elements, and problems, in convinient
+ * Testing entities cache. Entities cache is data abstraction enabling user to
+ * pass data between operators, finite elements, and problems, in convenient
  * way.
  *
  * It can be used to store indices, or history variables, and any other data,
