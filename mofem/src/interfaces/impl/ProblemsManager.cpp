@@ -950,7 +950,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
           // Dof is shared on this processor, however there is no element
           // which have this dof. If DOF is not shared and received from other
           // processor, but not marked as a shared on other that means that is
-          // data inconstancy and error should be thorwed.
+          // data inconstancy and error should be thrown.
 
           std::ostringstream zz;
           zz << **ddit << std::endl;
