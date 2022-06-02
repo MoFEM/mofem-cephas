@@ -1169,7 +1169,7 @@ MoFEMErrorCode BitRefManager::updateRangeByChildren(const Range &parent_ents,
         if (std::distance(it, hi_it) != (s - f) + 1) {
           SETERRQ2(
               PETSC_COMM_SELF, MOFEM_NOT_FOUND,
-              "Number of entities and enties parents is diffrent %d != %d ",
+              "Number of entities and entities parents is different %d != %d ",
               std::distance(it, hi_it), (s - f) + 1);
         }
       }
