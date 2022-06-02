@@ -2129,6 +2129,15 @@ ProblemsManager::debugPartitionedProblem(const Problem *problem_ptr, int verb) {
           }
         } else {
           if ((*dit)->getPetscGlobalDofIdx() < 0) {
+
+            const EntityHandle ent = (*dit)->getEnt();
+            CHKERR save_ent(
+                m_field.get_moab(),
+                "debug_part" +
+                    boost::lexical_cast<std::string>(m_field.get_comm_rank()) +
+                    "_negative_global_index.vtk",
+                ent);
+
             std::ostringstream zz;
             zz << "rank " << m_field.get_comm_rank() << " "
                << dit->get()->getBitRefLevel() << " " << **dit;
