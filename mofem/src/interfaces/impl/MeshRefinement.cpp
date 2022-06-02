@@ -554,7 +554,7 @@ MoFEMErrorCode MeshRefinement::refineTets(const Range &_tets,
 
   SetParent set_parent;
 
-  // Set parrents and adjacencies
+  // Set parents and adjacencies
   for (int idx = 0; idx != parent_tets_refinded.size(); ++idx) {
 
     const EntityHandle tit = parent_tets_refinded[idx];
