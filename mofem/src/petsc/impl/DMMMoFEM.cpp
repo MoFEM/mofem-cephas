@@ -1210,7 +1210,7 @@ PetscErrorCode DMSetUp_MoFEM(DM dm) {
 
   if (dm_field->isCompDM) {
     // It is composite probelm
-    CHKERR prb_mng_ptr->buildCompsedProblem(
+    CHKERR prb_mng_ptr->buildComposedProblem(
         dm_field->problemName, dm_field->rowCompPrb, dm_field->colCompPrb,
         dm_field->isSquareMatrix == PETSC_TRUE, dm_field->verbosity);
   } else {

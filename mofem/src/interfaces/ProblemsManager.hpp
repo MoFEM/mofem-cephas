@@ -166,7 +166,7 @@ struct ProblemsManager : public UnknownInterface {
    * @return                  error code
    */
   MoFEMErrorCode
-  buildCompsedProblem(const std::string out_name,
+  buildComposedProblem(const std::string out_name,
                       const std::vector<std::string> add_row_problems,
                       const std::vector<std::string> add_col_problems,
                       const bool square_matrix = true, int verb = 1);

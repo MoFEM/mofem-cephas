@@ -1254,7 +1254,7 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode ProblemsManager::buildCompsedProblem(
+MoFEMErrorCode ProblemsManager::buildComposedProblem(
     const std::string out_name, const std::vector<std::string> add_row_problems,
     const std::vector<std::string> add_col_problems, const bool square_matrix,
     int verb) {
