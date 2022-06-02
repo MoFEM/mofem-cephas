@@ -383,33 +383,31 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
             const BitRefLevel &fe_bit = lo->entFePtr->getBitRefLevel();
 
             // if entity is not problem refinement level
-            if ((fe_bit & prb_mask) != fe_bit)
-              continue;
-            if ((fe_bit & prb_bit).none())
-              continue;
+            if ((fe_bit & prb_bit).any() && (fe_bit & prb_mask) == fe_bit) {
 
-            auto add_to_view = [&](auto &nb_dofs, auto &view, auto rc) {
-              auto dit = nb_dofs->lower_bound(uid);
-              decltype(dit) hi_dit;
-              if (dit != nb_dofs->end()) {
-                hi_dit = nb_dofs->upper_bound(
-                    uid | static_cast<UId>(MAX_DOFS_ON_ENTITY - 1));
-                view.insert(dit, hi_dit);
-                row_col[rc] = true;
-              }
-            };
+              auto add_to_view = [&](auto dofs, auto &view, auto rc) {
+                auto dit = dofs->lower_bound(uid);
+                decltype(dit) hi_dit;
+                if (dit != dofs->end()) {
+                  hi_dit = dofs->upper_bound(
+                      uid | static_cast<UId>(MAX_DOFS_ON_ENTITY - 1));
+                  view.insert(dit, hi_dit);
+                  row_col[rc] = true;
+                }
+              };
 
-            if ((lo->entFePtr->getBitFieldIdRow() & (*it)->getId()).any())
-              add_to_view(dofs_field_ptr, dofs_rows, ROW);
+              if ((lo->entFePtr->getBitFieldIdRow() & (*it)->getId()).any())
+                add_to_view(dofs_field_ptr, dofs_rows, ROW);
 
-            if (!square_matrix)
-              if ((lo->entFePtr->getBitFieldIdCol() & (*it)->getId()).any())
-                add_to_view(dofs_field_ptr, dofs_cols, COL);
+              if (!square_matrix)
+                if ((lo->entFePtr->getBitFieldIdCol() & (*it)->getId()).any())
+                  add_to_view(dofs_field_ptr, dofs_cols, COL);
 
-            if (square_matrix && row_col[ROW])
-              break;
-            else if (row_col[ROW] && row_col[COL])
-              break;
+              if (square_matrix && row_col[ROW])
+                break;
+              else if (row_col[ROW] && row_col[COL])
+                break;
+            }
           }
         }
       }
@@ -424,16 +422,14 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
   if (buildProblemFromFields == PETSC_TRUE) {
     // Get fields IDs on elements
     BitFieldId fields_ids_row, fields_ids_col;
-    for (FiniteElement_multiIndex::iterator fit = fe_ptr->begin();
-         fit != fe_ptr->end(); fit++) {
+    for (auto fit = fe_ptr->begin(); fit != fe_ptr->end(); fit++) {
       if ((fit->get()->getId() & problem_ptr->getBitFEId()).any()) {
         fields_ids_row |= fit->get()->getBitFieldIdRow();
         fields_ids_col |= fit->get()->getBitFieldIdCol();
       }
     }
     // Get fields DOFs
-    for (Field_multiIndex::iterator fit = fields_ptr->begin();
-         fit != fields_ptr->end(); fit++) {
+    for (auto fit = fields_ptr->begin(); fit != fields_ptr->end(); fit++) {
       if ((fit->get()->getId() & (fields_ids_row | fields_ids_col)).any()) {
 
         auto dit = dofs_field_ptr->get<Unique_mi_tag>().lower_bound(
@@ -451,20 +447,19 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
             }
           }
 
-          const BitRefLevel &dof_bit = (*dit)->getBitRefLevel();
+          const auto &dof_bit = (*dit)->getBitRefLevel();
           // if entity is not problem refinement level
-          if ((dof_bit & prb_mask) != dof_bit)
-            continue;
-          if ((dof_bit & prb_bit).none())
-            continue;
+          if ((dof_bit & prb_bit).any() && (dof_bit & prb_mask) == dof_bit) {
 
-          if ((fit->get()->getId() & fields_ids_row).any()) {
-            dofs_rows.insert(*dit);
-          }
-          if (!square_matrix) {
-            if ((fit->get()->getId() & fields_ids_col).any()) {
-              dofs_cols.insert(*dit);
+            if ((fit->get()->getId() & fields_ids_row).any()) {
+              dofs_rows.insert(*dit);
             }
+            if (!square_matrix) {
+              if ((fit->get()->getId() & fields_ids_col).any()) {
+                dofs_cols.insert(*dit);
+              }
+            }
+
           }
         }
       }
@@ -2093,6 +2088,18 @@ MoFEMErrorCode
 ProblemsManager::debugPartitionedProblem(const Problem *problem_ptr, int verb) {
   MoFEM::Interface &m_field = cOre;
   MoFEMFunctionBeginHot;
+
+  auto save_ent = [](moab::Interface &moab, const std::string name,
+                       const EntityHandle ent) {
+    MoFEMFunctionBegin;
+    EntityHandle out_meshset;
+    CHKERR moab.create_meshset(MESHSET_SET, out_meshset);
+    CHKERR moab.add_entities(out_meshset, &ent, 1);
+    CHKERR moab.write_file(name.c_str(), "VTK", "", &out_meshset, 1);
+    CHKERR moab.delete_entities(&out_meshset, 1);
+    MoFEMFunctionReturn(0);
+  };
+
   if (debug > 0) {
 
     typedef NumeredDofEntity_multiIndex::index<Idx_mi_tag>::type
