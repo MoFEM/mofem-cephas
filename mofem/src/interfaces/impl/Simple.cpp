@@ -788,7 +788,7 @@ MoFEMErrorCode Simple::reSetUp(bool only_dm) {
     CHKERR buildFiniteElements();
   }
 
-  CHKERR m_field.build_adjacencies(bitLevel);
+  CHKERR m_field.build_adjacencies(bitLevel, bitLevelMask);
 
   const Problem *problem_ptr;
   CHKERR DMMoFEMGetProblemPtr(dM, &problem_ptr);
