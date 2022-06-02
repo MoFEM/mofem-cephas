@@ -2654,10 +2654,10 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
       }
 
       // create weak view
-      std::vector<boost::weak_ptr<NumeredDofEntity>> dosf_weak_view;
-      dosf_weak_view.reserve(dofs_it_view.size());
+      std::vector<boost::weak_ptr<NumeredDofEntity>> dofs_weak_view;
+      dofs_weak_view.reserve(dofs_it_view.size());
       for (auto dit : dofs_it_view)
-        dosf_weak_view.push_back(*dit);
+        dofs_weak_view.push_back(*dit);
 
       if (verb >= NOISY)
         MOFEM_LOG_C("SYNC", Sev::noisy,
@@ -2665,7 +2665,7 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
                     numered_dofs[s]->size(), dofs_it_view.size());
 
       // erase dofs from problem
-      for (auto weak_dit : dosf_weak_view)
+      for (auto weak_dit : dofs_weak_view)
         if (auto dit = weak_dit.lock()) {
           numered_dofs[s]->erase(dit->getLocalUniqueId());
         }
@@ -2687,7 +2687,7 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
           ++nb_ghost_dofs;
         else
           SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                   "Imposible case. You could run problem on no distributed "
+                   "Impossible case. You could run problem on no distributed "
                    "mesh. That is not implemented. Dof local index is %d",
                    (*dit)->getPetscLocalDofIdx());
       }
