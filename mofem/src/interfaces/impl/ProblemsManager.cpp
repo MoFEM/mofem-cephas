@@ -862,7 +862,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
           MOFEM_LOG("SELF", Sev::error)
               << "DOF is shared or multishared between processors. For example "
                  "if order of field on given entity is set in inconsistently, "
-                 "has diffrent value on two processor, error such as this is "
+                 "has different value on two processor, error such as this is "
                  "triggered";
 
           MOFEM_LOG("SELF", Sev::error) << "UId " << uid << " is not found";
