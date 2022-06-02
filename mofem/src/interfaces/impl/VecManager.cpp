@@ -107,8 +107,19 @@ MoFEMErrorCode VecManager::vecCreateGhost(const std::string name, RowColData rc,
   std::vector<DofIdx> ghost_idx(count);
   for (auto vit = ghost_idx.begin(); miit != hi_miit; ++miit, ++vit) {
     *vit = (*miit)->petscGloablDofIdx;
+
+#ifndef NDEBUG
+    if (PetscUnlikely(*vit > nb_dofs || *vit < 0)) {
+      MOFEM_LOG_FUNCTION();
+      MOFEM_LOG_ATTRIBUTES("VECSELF",
+                           LogManager::BitLineID | LogManager::BitScope);
+      MOFEM_LOG("VECSELF", Sev::error) << "Problem with DOF " << **miit;
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong ghost index");
+    }
+#endif    
+
   }
-  CHKERR ::VecCreateGhost(PETSC_COMM_WORLD, nb_local_dofs, nb_dofs,
+  CHKERR ::VecCreateGhost(m_field.get_comm(), nb_local_dofs, nb_dofs,
                           nb_ghost_dofs, &ghost_idx[0], V);
   MoFEMFunctionReturn(0);
 }
