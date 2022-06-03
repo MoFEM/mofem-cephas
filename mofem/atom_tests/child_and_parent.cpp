@@ -510,8 +510,8 @@ MoFEMErrorCode AtomTest::refineResults() {
     pipeline_mng->getOpDomainRhsPipeline().push_back(
         new OpDomainTimesScalarField(FIELD_NAME, field_vals_ptr, beta));
 
-    // pipeline_mng->getOpDomainRhsPipeline().push_back(
-    //     new OpCheckGaussCoords<DomainEleOp, DomainParentEle>());
+    pipeline_mng->getOpDomainRhsPipeline().push_back(
+        new OpCheckGaussCoords<DomainEleOp, DomainParentEle>());
 
     pipeline_mng->getOpBoundaryRhsPipeline().push_back(
         new OpCheckGaussCoords<BoundaryEleOp, BoundaryParentEle>());
