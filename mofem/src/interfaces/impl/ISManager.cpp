@@ -158,7 +158,7 @@ ISManager::sectionCreate(const std::string problem_name,
 
   PetscSection s;
   CHK_THROW_MESSAGE(sectionCreate(problem_name, &s, row_col),
-                    "Section not creeated");
+                    "Section not created");
   return SmartPetscObj<PetscSection>(s, false);
 }
 
