@@ -34,18 +34,16 @@ MoFEMErrorCode ISManager::sectionCreate(const std::string problem_name,
                                         PetscSection *s,
                                         const RowColData row_col) const {
   const MoFEM::Interface &m_field = cOre;
-  const Problem *problem_ptr;
+  const Problem *problem_ptr = m_field.get_problem(problem_name);
   auto fields_ptr = m_field.get_fields();
   auto fe_ptr = m_field.get_finite_elements();
   MoFEMFunctionBegin;
-  CHKERR m_field.get_problem(problem_name, &problem_ptr);
   boost::shared_ptr<NumeredDofEntity_multiIndex> dofs;
-  BitFieldId fields_ids;
+  BitFieldId fields_ids(0);
   switch (row_col) {
   case ROW:
     dofs = problem_ptr->numeredRowDofsPtr;
-    for (FiniteElement_multiIndex::iterator fit = fe_ptr->begin();
-         fit != fe_ptr->end(); fit++) {
+    for (auto fit = fe_ptr->begin(); fit != fe_ptr->end(); fit++) {
       if ((fit->get()->getId() & problem_ptr->getBitFEId()).any()) {
         fields_ids |= fit->get()->getBitFieldIdRow();
       }
@@ -53,8 +51,7 @@ MoFEMErrorCode ISManager::sectionCreate(const std::string problem_name,
     break;
   case COL:
     dofs = problem_ptr->numeredColDofsPtr;
-    for (FiniteElement_multiIndex::iterator fit = fe_ptr->begin();
-         fit != fe_ptr->end(); fit++) {
+    for (auto fit = fe_ptr->begin(); fit != fe_ptr->end(); fit++) {
       if ((fit->get()->getId() & problem_ptr->getBitFEId()).any()) {
         fields_ids |= fit->get()->getBitFieldIdCol();
       }
@@ -68,8 +65,7 @@ MoFEMErrorCode ISManager::sectionCreate(const std::string problem_name,
   map<std::string, std::pair<int, int>> fields_map;
   {
     int field = 0;
-    for (Field_multiIndex::iterator fit = fields_ptr->begin();
-         fit != fields_ptr->end(); fit++) {
+    for (auto fit = fields_ptr->begin(); fit != fields_ptr->end(); fit++) {
       if ((fit->get()->getId() & fields_ids).any()) {
         fields_map[fit->get()->getName()].first = field++;
         fields_map[fit->get()->getName()].second = fit->get()->getNbOfCoeffs();
@@ -79,8 +75,7 @@ MoFEMErrorCode ISManager::sectionCreate(const std::string problem_name,
   const int proc = m_field.get_comm_rank();
   CHKERR PetscSectionCreate(PETSC_COMM_WORLD, s);
   CHKERR PetscSectionSetNumFields(*s, fields_map.size());
-  for (map<std::string, std::pair<int, int>>::iterator mit = fields_map.begin();
-       mit != fields_map.end(); mit++) {
+  for (auto mit = fields_map.begin(); mit != fields_map.end(); mit++) {
     CHKERR PetscSectionSetFieldName(*s, mit->second.first, mit->first.c_str());
     CHKERR PetscSectionSetFieldComponents(*s, mit->second.first,
                                           mit->second.second);
@@ -126,7 +121,9 @@ MoFEMErrorCode ISManager::sectionCreate(const std::string problem_name,
         int dd = 0;
         const auto &ent_uid = dit->get()->getEntLocalUniqueId();
         while (dit != hi_dit && dit->get()->getEntLocalUniqueId() == ent_uid) {
-          ++dd;
+          const DofIdx loc_idx = dit->get()->getPetscLocalDofIdx();
+          if (loc_idx >= 0)
+            ++dd;
           ++dit;
         }
 
