@@ -314,8 +314,6 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
                             data_on_meshset);
   }
 
-  // entities_field_data.dataOnEntities[MBENTITYSET].resize(count_meshset_sides);
-
   auto set_up_derivative_ent_data = [&](auto &entities_field_data,
                                         auto &derivative_entities_field_data) {
     MoFEMFunctionBegin;
