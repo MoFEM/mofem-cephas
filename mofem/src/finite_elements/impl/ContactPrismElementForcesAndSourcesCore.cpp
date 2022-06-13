@@ -513,9 +513,160 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
 MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
   MoFEMFunctionBegin;
 
-  const EntityType type = numeredEntFiniteElementPtr->getEntType();
-  constexpr std::array<UserDataOperator::OpType, 2> types{
+std::array<boost::shared_ptr<EntitiesFieldData>, 2> op_master_data;
+std::array<boost::shared_ptr<EntitiesFieldData>, 2> op_slave_data;
+
+//1)
+std::array<std::string, 2> field_name;
+  std::array<Field *, 3> field_struture;
+  std::array<int, 2>
+      field_id; // note the this is field bit number (nor field bit)
+  std::array<FieldSpace, 2> space;
+  std::array<FieldApproximationBase, 2> base;
+
+  constexpr std::array<UserDataOperator::OpType, 2> types = {
       UserDataOperator::OPROW, UserDataOperator::OPCOL};
+  std::array<int, 2> last_eval_field_id = {0, 0};
+
+  auto swap_bases = [&](auto &op) {
+    MoFEMFunctionBeginHot;
+    for (size_t ss = 0; ss != 2; ++ss) {
+      if (op.getOpType() & types[ss] ||
+          (op.getOpType() & UserDataOperator::OPROWCOL 
+          && (types[ss] & UserDataOperator::FACEMASTERMASTER 
+        || types[ss] & UserDataOperator::FACEMASTERSLAVE 
+        || types[ss] & UserDataOperator::FACESLAVEMASTER 
+        || types[ss] & UserDataOperator::FACESLAVESLAVE) 
+        ) ) {
+        switch (base[ss]) {
+        case AINSWORTH_BERNSTEIN_BEZIER_BASE:
+          CHKERR op_master_data[ss]->baseSwap(field_name[ss],
+                                       AINSWORTH_BERNSTEIN_BEZIER_BASE);
+          CHKERR op_slave_data[ss]->baseSwap(field_name[ss],
+                                              AINSWORTH_BERNSTEIN_BEZIER_BASE);
+        default:
+          break;
+        }
+      }
+    }
+
+    MoFEMFunctionReturnHot(0);
+  };
+  //1) end
+
+  const EntityType type = numeredEntFiniteElementPtr->getEntType();
+
+  //2) new from current version of forcesAndSourcesCore
+  auto evaluate_op_last_type = [&](auto &op) {
+    MoFEMFunctionBeginHot;
+
+    // reseat all data which all field dependent
+    dataOnMaster[op.sPace]->resetFieldDependentData();
+    dataOnSlave[op.sPace]->resetFieldDependentData();
+    std::fill(last_eval_field_id.begin(), last_eval_field_id.end(), 0);
+
+          // Set field
+      switch (op.sPace) {
+      case NOSPACE:
+        try {
+        CHKERR op.doWork(
+            0, MBENTITYSET,
+            dataOnMaster[op.sPace]->dataOnEntities[MBENTITYSET][0]);
+        CHKERR op.doWork(
+            0, MBENTITYSET,
+            dataOnSlave[op.sPace]->dataOnEntities[MBENTITYSET][0]);
+      }
+      CATCH_OP_ERRORS(op);
+      case NOFIELD:
+      case H1:
+      case HCURL:
+      case HDIV:
+      case L2:
+        try {
+        CHKERR op.opRhs(*dataOnMaster[op.sPace], false);
+        CHKERR op.opRhs(*dataOnSlave[op.sPace], false);
+      }
+      CATCH_OP_ERRORS(op);
+      break;
+      default:
+        SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                 "Not implemented for this space", op.sPace);
+      }
+
+    MoFEMFunctionReturnHot(0);
+  };
+  //2) end
+
+  //3) begin
+  auto evaluate_op_for_fields = [&](auto &op, int type) {
+    MoFEMFunctionBeginHot;
+    if (op.getOpType() & UserDataOperator::OPROW &&
+        (type & UserDataOperator::FACEMASTER)) {
+      try {
+        CHKERR op.opRhs(*op_master_data[0], false);
+      }
+      CATCH_OP_ERRORS(op);
+    }
+
+    if (op.getOpType() & UserDataOperator::OPROW &&
+        (type & UserDataOperator::FACESLAVE)) {
+      try {
+        CHKERR op.opRhs(*op_slave_data[0], false);
+      }
+      CATCH_OP_ERRORS(op);
+    }
+
+    if (op.getOpType() & UserDataOperator::OPCOL &&
+        (type & UserDataOperator::FACEMASTER)) {
+      try {
+        CHKERR op.opRhs(*op_master_data[1], false);
+      }
+      CATCH_OP_ERRORS(op);
+    }
+
+    if (op.getOpType() & UserDataOperator::OPCOL &&
+        (type & UserDataOperator::FACESLAVE)) {
+      try {
+        CHKERR op.opRhs(*op_slave_data[1], false);
+      }
+      CATCH_OP_ERRORS(op);
+    }
+
+    if (op.getOpType() & UserDataOperator::OPROWCOL &&
+        (type & UserDataOperator::FACEMASTERMASTER)) {
+      try {
+        CHKERR op.opLhs(*op_master_data[0], *op_master_data[1]);
+      }
+      CATCH_OP_ERRORS(op);
+    }
+
+    if (op.getOpType() & UserDataOperator::OPROWCOL &&
+        (type & UserDataOperator::FACEMASTERSLAVE)) {
+      try {
+        CHKERR op.opLhs(*op_master_data[0], *op_slave_data[1]);
+      }
+      CATCH_OP_ERRORS(op);
+    }
+
+    if (op.getOpType() & UserDataOperator::OPROWCOL &&
+        (type & UserDataOperator::FACESLAVEMASTER)) {
+      try {
+        CHKERR op.opLhs(*op_slave_data[0], *op_master_data[1]);
+      }
+      CATCH_OP_ERRORS(op);
+    }
+
+    if (op.getOpType() & UserDataOperator::OPROWCOL &&
+        (type & UserDataOperator::FACESLAVESLAVE)) {
+      try {
+        CHKERR op.opLhs(*op_slave_data[0], *op_slave_data[1]);
+      }
+      CATCH_OP_ERRORS(op);
+    }
+    MoFEMFunctionReturnHot(0);
+  };
+  //3) end
+
   std::array<std::string, 2> last_eval_field_name{std::string(), std::string()};
 
   auto oit = opPtrVector.begin();
@@ -527,59 +678,54 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
 
     if (oit->opType == UserDataOperator::OPLAST) {
 
-      // Set field
-      switch (oit->sPace) {
-      case NOSPACE:
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Unknown space");
-      case NOFIELD:
-      case H1:
-      case HCURL:
-      case HDIV:
-      case L2:
-        break;
-      default:
-        SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-                 "Not implemented for this space", oit->sPace);
-      }
-
-      // Reseat all data which all field dependent
-      dataOnMaster[oit->sPace]->resetFieldDependentData();
-      dataOnSlave[oit->sPace]->resetFieldDependentData();
-
-      // Run operator
-      try {
-        CHKERR oit->opRhs(*dataOnMaster[oit->sPace], false);
-        CHKERR oit->opRhs(*dataOnSlave[oit->sPace], false);
-      }
-      CATCH_OP_ERRORS(*oit);
+      // run operator for space but specific field
+      CHKERR evaluate_op_last_type(*oit);
 
     } else {
-      boost::shared_ptr<EntitiesFieldData> op_master_data[2];
-      boost::shared_ptr<EntitiesFieldData> op_slave_data[2];
+
+      field_name[0] = oit->rowFieldName;
+      field_name[1] = oit->colFieldName;
+
+      // boost::shared_ptr<EntitiesFieldData> op_master_data[2];
+      // boost::shared_ptr<EntitiesFieldData> op_slave_data[2];
 
       for (int ss = 0; ss != 2; ss++) {
+#ifndef NDEBUG
+        if (field_name[ss].empty()) {
+          SETERRQ2(
+              PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Not set Field name in operator %d (0-row, 1-column) in "
+              "operator %s",
+              ss,
+              (boost::typeindex::type_id_runtime(*oit).pretty_name()).c_str());
+        }
+#endif
 
-        const std::string field_name =
-            !ss ? oit->rowFieldName : oit->colFieldName;
-        const Field *field_struture = mField.get_field_structure(field_name);
-        const BitFieldId data_id = field_struture->getId();
-        const FieldSpace space = field_struture->getSpace();
+        field_struture[ss] = mField.get_field_structure(field_name[ss]);
+        field_id[ss] = field_struture[ss]->getBitNumber();
+        space[ss] = field_struture[ss]->getSpace();
+        base[ss] = field_struture[ss]->getApproxBase();
+      }
+
+      for (int ss = 0; ss != 2; ss++) {
+        const BitFieldId data_id = field_struture[ss]->getId();
+
         op_master_data[ss] =
-            !ss ? dataOnMaster[space] : derivedDataOnMaster[space];
+            !ss ? dataOnMaster[space[ss]] : derivedDataOnMaster[space[ss]];
         op_slave_data[ss] =
-            !ss ? dataOnSlave[space] : derivedDataOnSlave[space];
+            !ss ? dataOnSlave[space[ss]] : derivedDataOnSlave[space[ss]];
 
         if ((oit->getNumeredEntFiniteElementPtr()->getBitFieldIdData() &
              data_id)
                 .none())
           SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                    "no data field < %s > on finite element < %s >",
-                   field_name.c_str(), feName.c_str());
+                   field_name[ss].c_str(), feName.c_str());
 
         if (oit->getOpType() & types[ss] ||
             oit->getOpType() & UserDataOperator::OPROWCOL) {
 
-          switch (space) {
+          switch (space[ss]) {
           case NOSPACE:
             SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown space");
             break;
@@ -594,9 +740,9 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
                      "Not implemented for this space", space);
           }
 
-          if (last_eval_field_name[ss] != field_name) {
+          if (last_eval_field_name[ss] != field_name[ss]) {
             CHKERR getEntityFieldData(*op_master_data[ss], *op_slave_data[ss],
-                                      field_name, MBEDGE);
+                                      field_name[ss], MBEDGE);
 
             if (!ss) {
               struct Extractor {
@@ -607,7 +753,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
               };
 
               CHKERR getEntityIndices(*op_master_data[ss], *op_slave_data[ss],
-                                      field_name, getRowFieldEnts(), MBEDGE,
+                                      field_name[ss], getRowFieldEnts(), MBEDGE,
                                       MBPRISM, Extractor());
             } else {
               struct Extractor {
@@ -617,11 +763,11 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
                 }
               };
               CHKERR getEntityIndices(*op_master_data[ss], *op_slave_data[ss],
-                                      field_name, getRowFieldEnts(), MBEDGE,
+                                      field_name[ss], getRowFieldEnts(), MBEDGE,
                                       MBPRISM, Extractor());
             }
 
-            switch (space) {
+            switch (space[ss]) {
             case NOSPACE:
               SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                       "unknown space");
@@ -631,7 +777,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
               auto get_indices = [&](auto &master, auto &slave, auto &ents,
                                      auto &&ex) {
                 return getNodesIndices(
-                    field_name, ents,
+                    field_name[ss], ents,
                     master.dataOnEntities[MBVERTEX][0].getIndices(),
                     master.dataOnEntities[MBVERTEX][0].getLocalIndices(),
                     slave.dataOnEntities[MBVERTEX][0].getIndices(),
@@ -641,7 +787,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
               auto get_data = [&](EntitiesFieldData &master_data,
                                   EntitiesFieldData &slave_data) {
                 return getNodesFieldData(
-                    field_name,
+                    field_name[ss],
                     master_data.dataOnEntities[MBVERTEX][0].getFieldData(),
                     slave_data.dataOnEntities[MBVERTEX][0].getFieldData(),
                     master_data.dataOnEntities[MBVERTEX][0].getFieldDofs(),
@@ -688,7 +834,8 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
               if (!getNinTheLoop()) {
                 // NOFIELD data are the same for each element, can be
                 // retrieved only once
-                const auto bit_number = mField.get_field_bit_number(field_name);
+                const auto bit_number =
+                    mField.get_field_bit_number(field_name[ss]);
                 if (!ss) {
                   CHKERR getNoFieldRowIndices(*op_master_data[ss], bit_number);
                   CHKERR getNoFieldRowIndices(*op_slave_data[ss], bit_number);
@@ -704,7 +851,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
               SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                        "Not implemented for this space", space);
             }
-            last_eval_field_name[ss] = field_name;
+            last_eval_field_name[ss] = field_name[ss];
           }
         }
       }
@@ -745,69 +892,9 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
                UserDataOperator::FACESLAVESLAVE;
       }
 
-      if (oit->getOpType() & UserDataOperator::OPROW &&
-          (type & UserDataOperator::FACEMASTER)) {
-        try {
-          CHKERR oit->opRhs(*op_master_data[0], false);
-        }
-        CATCH_OP_ERRORS(*oit);
-      }
-
-      if (oit->getOpType() & UserDataOperator::OPROW &&
-          (type & UserDataOperator::FACESLAVE)) {
-        try {
-          CHKERR oit->opRhs(*op_slave_data[0], false);
-        }
-        CATCH_OP_ERRORS(*oit);
-      }
-
-      if (oit->getOpType() & UserDataOperator::OPCOL &&
-          (type & UserDataOperator::FACEMASTER)) {
-        try {
-          CHKERR oit->opRhs(*op_master_data[1], false);
-        }
-        CATCH_OP_ERRORS(*oit);
-      }
-
-      if (oit->getOpType() & UserDataOperator::OPCOL &&
-          (type & UserDataOperator::FACESLAVE)) {
-        try {
-          CHKERR oit->opRhs(*op_slave_data[1], false);
-        }
-        CATCH_OP_ERRORS(*oit);
-      }
-
-      if (oit->getOpType() & UserDataOperator::OPROWCOL &&
-          (type & UserDataOperator::FACEMASTERMASTER)) {
-        try {
-          CHKERR oit->opLhs(*op_master_data[0], *op_master_data[1]);
-        }
-        CATCH_OP_ERRORS(*oit);
-      }
-
-      if (oit->getOpType() & UserDataOperator::OPROWCOL &&
-          (type & UserDataOperator::FACEMASTERSLAVE)) {
-        try {
-          CHKERR oit->opLhs(*op_master_data[0], *op_slave_data[1]);
-        }
-        CATCH_OP_ERRORS(*oit);
-      }
-
-      if (oit->getOpType() & UserDataOperator::OPROWCOL &&
-          (type & UserDataOperator::FACESLAVEMASTER)) {
-        try {
-          CHKERR oit->opLhs(*op_slave_data[0], *op_master_data[1]);
-        }
-        CATCH_OP_ERRORS(*oit);
-      }
-
-      if (oit->getOpType() & UserDataOperator::OPROWCOL &&
-          (type & UserDataOperator::FACESLAVESLAVE)) {
-        try {
-          CHKERR oit->opLhs(*op_slave_data[0], *op_slave_data[1]);
-        }
-        CATCH_OP_ERRORS(*oit);
-      }
+      CHKERR swap_bases(*oit);
+      CHKERR evaluate_op_for_fields(*oit, type);
+      CHKERR swap_bases(*oit);
     }
   }
   MoFEMFunctionReturn(0);
