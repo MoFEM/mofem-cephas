@@ -2461,7 +2461,7 @@ private:
 };
 
 /**
- * @brief Calculate tenor field using vectorial base, i.e. Hdiv/Hcurl
+ * @brief Calculate tenor field using tensor base, i.e. Hdiv/Hcurl
  * \ingroup mofem_forces_and_sources_user_data_operators
  *
  * @tparam Tensor_Dim0 rank of the filed
