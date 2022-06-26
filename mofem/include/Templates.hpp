@@ -778,7 +778,7 @@ FTensor::Tensor2<FTensor::PackPtr<double *, 4>, 2,
 };
 
 /**
- * @brief Make summetric Tensor2 from pointer, taking lower triangle of matrix
+ * @brief Make symmetric Tensor2 from pointer, taking lower triangle of matrix
  *
  * @tparam DIM
  * @param ptr
