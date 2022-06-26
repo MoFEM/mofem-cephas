@@ -41,13 +41,14 @@ constexpr double a6 = -a0;
 struct ApproxFunctions {
   static FTensor::Tensor1<double, 3> fUn(const double x, const double y) {
     return FTensor::Tensor1<double, 3>(
+        // x
         6 * a6 * std::pow(x, 5) * std::pow(y, 0) +
             5 * a5 * std::pow(x, 4) * std::pow(y, 1) +
             4 * a4 * std::pow(x, 3) * std::pow(y, 2) +
             3 * a3 * std::pow(x, 2) * std::pow(y, 3) +
             2 * a2 * std::pow(x, 1) * std::pow(y, 4) +
             1 * a1 * std::pow(x, 0) * std::pow(y, 5),
-
+        // y
         1 * a5 * std::pow(x, 5) * std::pow(y, 0) +
             2 * a4 * std::pow(x, 4) * std::pow(y, 1) +
             3 * a3 * std::pow(x, 3) * std::pow(y, 2) +
@@ -55,29 +56,99 @@ struct ApproxFunctions {
             5 * a1 * std::pow(x, 1) * std::pow(y, 4) +
             6 * a0 * std::pow(x, 0) * std::pow(y, 5),
 
+        // z
         0.);
   }
 
   static FTensor::Tensor2<double, 3, 2> diffFun(const double x,
                                                 const double y) {
     return FTensor::Tensor2<double, 3, 2>(
+        // x,x
         30 * a6 * pow(x, 4) * pow(y, 0) + 20 * a5 * pow(x, 3) * pow(y, 1) +
             12 * a4 * pow(x, 2) * pow(y, 2) + 6 * a3 * pow(x, 1) * pow(y, 3) +
             2 * a2 * pow(x, 0) * pow(y, 4),
-
+        // x,y
         5 * a5 * pow(x, 4) * pow(y, 0) + 8 * a4 * pow(x, 3) * pow(y, 1) +
             9 * a3 * pow(x, 2) * pow(y, 2) + 8 * a2 * pow(x, 1) * pow(y, 3) +
             5 * a1 * pow(x, 0) * pow(y, 4),
-
+        // y,x
         5 * a5 * pow(x, 4) * pow(y, 0) + 8 * a4 * pow(x, 3) * pow(y, 1) +
             9 * a3 * pow(x, 2) * pow(y, 2) + 8 * a2 * pow(x, 1) * pow(y, 3) +
             5 * a1 * pow(x, 0) * pow(y, 4),
-
+        // y,y
         2 * a4 * pow(x, 4) * pow(y, 0) + 6 * a3 * pow(x, 3) * pow(y, 1) +
             12 * a2 * pow(x, 2) * pow(y, 2) + 20 * a1 * pow(x, 1) * pow(y, 3) +
             30 * a0 * pow(x, 0) * pow(y, 4),
-
+        // z
         0., 0.);
+  }
+
+  static FTensor::Tensor3<double, 3, 2, 2> diffFun2(const double x,
+                                                    const double y) {
+    return FTensor::Tensor3<double, 3, 2, 2>(
+        // x,xx 0/000
+
+        30 * 4 * a6 * pow(x, 3) * pow(y, 0) +
+            20 * 3 * a5 * pow(x, 2) * pow(y, 1) +
+            12 * 2 * a4 * pow(x, 1) * pow(y, 2) +
+            6 * 1 * a3 * pow(x, 0) * pow(y, 3),
+
+        // x,xy 1/001
+
+        20 * 1 * a5 * pow(x, 3) * pow(y, 0) +
+            12 * 2 * a4 * pow(x, 1) * pow(y, 2) +
+            6 * 3 * a3 * pow(x, 1) * pow(y, 2),
+
+        // x,yx 2/010
+
+        5 * 4 * a5 * pow(x, 3) * pow(y, 0) +
+            8 * 3 * a4 * pow(x, 2) * pow(y, 1) +
+            9 * 2 * a3 * pow(x, 1) * pow(y, 2) +
+            8 * 1 * a2 * pow(x, 0) * pow(y, 3),
+
+        // x,yy 3/011
+
+        8 * 1 * a4 * pow(x, 3) * pow(y, 0) +
+            9 * 2 * a3 * pow(x, 2) * pow(y, 1) +
+            8 * 3 * a2 * pow(x, 1) * pow(y, 2) +
+            5 * 4 * a1 * pow(x, 0) * pow(y, 3),
+
+        // y,xx 4/100
+
+        5 * 4 * a5 * pow(x, 3) * pow(y, 0) +
+            8 * 3 * a4 * pow(x, 2) * pow(y, 1) +
+            9 * 2 * a3 * pow(x, 1) * pow(y, 2) +
+            8 * 1 * a2 * pow(x, 0) * pow(y, 3),
+
+        // y,xy 5/101
+
+        8 * 1 * a4 * pow(x, 3) * pow(y, 0) +
+            9 * 2 * a3 * pow(x, 2) * pow(y, 1) +
+            8 * a2 * 3 * pow(x, 1) * pow(y, 2) +
+            5 * 4 * a1 * pow(x, 0) * pow(y, 3),
+
+        // y,yx 6/110
+
+        2 * 4 * a4 * pow(x, 3) * pow(y, 0) +
+            6 * 3 * a3 * pow(x, 2) * pow(y, 1) +
+            12 * 2 * a2 * pow(x, 1) * pow(y, 2) +
+            20 * 1 * a1 * pow(x, 0) * pow(y, 3),
+
+        // y,yy 7/111
+
+        6 * 1 * a3 * pow(x, 3) * pow(y, 0) +
+            12 * 2 * a2 * pow(x, 2) * pow(y, 1) +
+            20 * 3 * a1 * pow(x, 1) * pow(y, 2) +
+            30 * 4 * a0 * pow(x, 0) * pow(y, 3),
+
+        // z,xx 8/200
+        0.,
+        // z,xy 9/201
+        0.,
+        // z,yx 10/210
+        0.,
+        // z,yy 11/211
+        0.);
   }
 };
 
@@ -201,12 +272,14 @@ struct OpCheckValsDiffVals : public FaceEleOp {
   MatrixDouble &diffVals;
   boost::shared_ptr<MatrixDouble> ptrVals;
   boost::shared_ptr<VectorDouble> ptrDiv;
+  boost::shared_ptr<MatrixDouble> ptrGrad;
 
   OpCheckValsDiffVals(MatrixDouble &vals, MatrixDouble &diff_vals,
                       boost::shared_ptr<MatrixDouble> ptr_vals,
-                      boost::shared_ptr<VectorDouble> ptr_div)
+                      boost::shared_ptr<VectorDouble> ptr_div,
+                      boost::shared_ptr<MatrixDouble> ptr_grad)
       : FaceEleOp("FIELD1", OPROW), vAls(vals), diffVals(diff_vals),
-        ptrVals(ptr_vals), ptrDiv(ptr_div) {}
+        ptrVals(ptr_vals), ptrDiv(ptr_div), ptrGrad(ptr_grad) {}
 
   FTensor::Index<'i', 3> i;
   FTensor::Index<'j', 2> j;
@@ -222,6 +295,7 @@ struct OpCheckValsDiffVals : public FaceEleOp {
       auto t_diff_vals = getFTensor2FromMat<3, 2>(diffVals);
       auto t_vals_from_op = getFTensor1FromMat<3>(*ptrVals);
       auto t_div_from_op = getFTensor0FromVec(*ptrDiv);
+      auto t_grad_from_op = getFTensor2FromMat<3, 2>(*ptrGrad);
 
       for (int gg = 0; gg != nb_gauss_pts; gg++) {
         const double x = getCoordsAtGaussPts()(gg, 0);
@@ -257,12 +331,54 @@ struct OpCheckValsDiffVals : public FaceEleOp {
                    "Wrong divergence from operator %4.3e (%4.3e != %4.3e)",
                    err_div, div, t_div_from_op);
 
+        FTensor::Tensor2<double, 3, 2> t_grad_diff;
+        t_grad_diff(i, j) = t_grad_from_op(i, j) - t_diff_vals(i, j);
+        double gard_diff_error = sqrt(t_grad_diff(i, j) * t_grad_diff(i, j));
+        if (gard_diff_error > eps)
+          SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                   "Wrong gradient from operator %4.3e", gard_diff_error);
+
         ++t_vals;
         ++t_diff_vals;
         ++t_vals_from_op;
         ++t_div_from_op;
+        ++t_grad_from_op;
       }
     }
+    MoFEMFunctionReturn(0);
+  }
+};
+
+struct OpCheckValsDiff2Vals : public FaceEleOp {
+  boost::shared_ptr<MatrixDouble> ptrDiff2;
+
+  OpCheckValsDiff2Vals(MatrixDouble &vals,
+                      boost::shared_ptr<MatrixDouble> ptr_diff2)
+      : FaceEleOp("FIELD1", OPROW), ptrDiff2(ptr_diff2) {}
+
+  FTensor::Index<'i', 3> i;
+  FTensor::Index<'j', 2> j;
+  FTensor::Index<'j', 2> k;
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        EntitiesFieldData::EntData &data) {
+    MoFEMFunctionBegin;
+    // const double eps = 1e-6;
+    // if (type == MBEDGE && side == 0) {
+    //   const int nb_gauss_pts = data.getN().size1();
+
+    //   auto t_diff2_vals = getFTensor3FromMat<3, 2, 2>(*ptrDiff2);
+
+    // for (int gg = 0; gg != nb_gauss_pts; gg++) {
+    //     const double x = getCoordsAtGaussPts()(gg, 0);
+    //     const double y = getCoordsAtGaussPts()(gg, 1);
+
+
+
+    //     ++t_vals;
+    //     ++t_diff2_vals;
+    //   }
+    // }
     MoFEMFunctionReturn(0);
   }
 };
@@ -364,8 +480,9 @@ int main(int argc, char *argv[]) {
     auto check_solution = [&] {
       MoFEMFunctionBegin;
 
-      boost::shared_ptr<MatrixDouble> ptr_values(new MatrixDouble());
-      boost::shared_ptr<VectorDouble> ptr_divergence(new VectorDouble());
+      auto ptr_values = boost::make_shared<MatrixDouble>();
+      auto ptr_divergence = boost::make_shared<VectorDouble>();
+      auto ptr_grad = boost::make_shared<MatrixDouble>();
 
       pipeline_mng->getOpDomainLhsPipeline().clear();
       pipeline_mng->getOpDomainRhsPipeline().clear();
@@ -389,9 +506,21 @@ int main(int argc, char *argv[]) {
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpCalculateHVecVectorField<3>("FIELD1", ptr_values));
       pipeline_mng->getOpDomainRhsPipeline().push_back(
-          new OpCalculateHdivVectorDivergence<3, 2>("FIELD1", ptr_divergence));
+          new OpCalculateHVecVectorGradient<3, 2>("FIELD1", ptr_grad));
       pipeline_mng->getOpDomainRhsPipeline().push_back(
-          new OpCheckValsDiffVals(vals, diff_vals, ptr_values, ptr_divergence));
+          new OpCalculateHdivVectorDivergence<3, 2>("FIELD1", ptr_divergence));
+      pipeline_mng->getOpDomainRhsPipeline().push_back(new OpCheckValsDiffVals(
+          vals, diff_vals, ptr_values, ptr_divergence, ptr_grad));
+
+      // check HO-derivative
+      auto base_mass = boost::make_shared<MatrixDouble>();
+      auto data_l2 = boost::make_shared<EntitiesFieldData>(MBENTITYSET);
+      constexpr int BASE_DIM = 3;
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
+          new OpBaseDerivativesMass<BASE_DIM>(base_mass, data_l2, base, L2));
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
+          new OpBaseDerivativesNext<BASE_DIM>(BaseDerivatives::SecondDerivative,
+                                              base_mass, data_l2, base, HCURL));
 
       CHKERR pipeline_mng->loopFiniteElements();
 
