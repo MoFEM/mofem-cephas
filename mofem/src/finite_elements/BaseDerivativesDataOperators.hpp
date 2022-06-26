@@ -49,9 +49,18 @@ template <> struct OpBaseDerivativesMass<1> : public OpBaseDerivativesBase  {
                         EntitiesFieldData::EntData &data);
 };
 
+template <> struct OpBaseDerivativesMass<3> : public OpBaseDerivativesMass<1> {
+  using OpBaseDerivativesMass<1>::OpBaseDerivativesMass;
+};
+
 template <int BASE_DIM>
 struct OpBaseDerivativesNext;
 
+/**
+ * @brief Specialisation for calculate directives for scalar base functions
+ * 
+ * @tparam  
+ */
 template <> struct OpBaseDerivativesNext<1> : public OpBaseDerivativesBase {
 
   OpBaseDerivativesNext(int derivative,
@@ -61,15 +70,33 @@ template <> struct OpBaseDerivativesNext<1> : public OpBaseDerivativesBase {
                         int verb = QUIET, Sev sev = Sev::verbose);
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        EntitiesFieldData::EntData &data);
+                        EntitiesFieldData::EntData &data) {
+    return doWorkImpl<1>(side, type, data);
+  }
 
-private:
+protected:
   int calcBaseDerivative;
   MatrixDouble nF;
 
-  template <int SPACE_DIM>
-  MoFEMErrorCode setBase(EntitiesFieldData::EntData &data,
-                         EntitiesFieldData::EntData &ent_data);
+  template <int BASE_DIM>
+  MoFEMErrorCode doWorkImpl(int side, EntityType type,
+                            EntitiesFieldData::EntData &data);
+
+  template <int BASE_DIM, int SPACE_DIM>
+  MoFEMErrorCode setBaseImpl(EntitiesFieldData::EntData &data,
+                             EntitiesFieldData::EntData &ent_data);
+};
+
+/**
+ * @brief Specialisation for calculate directives for scalar base functions
+ * 
+ * @tparam  
+ */
+template <> struct OpBaseDerivativesNext<3> : public OpBaseDerivativesNext<1> {
+
+  using OpBaseDerivativesNext<1>::OpBaseDerivativesNext;
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        EntitiesFieldData::EntData &data);
 };
 
 } // namespace MoFEM
