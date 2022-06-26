@@ -1419,6 +1419,13 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
     case HDIV:
     case L2:
       try {
+
+        for (EntityType t = MBVERTEX; t != MBMAXTYPE; ++t) {
+          for (auto &e : dataOnElement[op.sPace]->dataOnEntities[t]) {
+            e.getSpace() = op.sPace;
+          }
+        }
+
         CHKERR op.opRhs(*dataOnElement[op.sPace], false);
       }
       CATCH_OP_ERRORS(op);
