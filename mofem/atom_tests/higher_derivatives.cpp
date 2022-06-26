@@ -346,10 +346,10 @@ MoFEMErrorCode AtomTest::checkResults() {
                                           base_mass, data_l2,
                                           AINSWORTH_LEGENDRE_BASE, H1));
 
-  // push first base direvatives tp physical element shape
+  // push first base directives tp physical element shape
   pipeline_mng->getOpDomainRhsPipeline().push_back(
       new OpSetInvJacH1ForFace<1>(inv_jac_ptr));
-  // push second base direvatives tp physical element shape
+  // push second base directives tp physical element shape
   pipeline_mng->getOpDomainRhsPipeline().push_back(
       new OpSetInvJacH1ForFace<2>(inv_jac_ptr));
 
