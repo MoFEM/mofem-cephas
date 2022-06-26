@@ -183,11 +183,6 @@ struct EntitiesFieldData::EntData {
 
   inline ApproximationOrder &getOrder();
 
-  /**
-   * @deprecated use getOrder
-   */
-  DEPRECATED inline ApproximationOrder &getDataOrder() { return getOrder(); }
-
   inline VectorInt &getIndices();
 
   inline VectorInt &getLocalIndices();
