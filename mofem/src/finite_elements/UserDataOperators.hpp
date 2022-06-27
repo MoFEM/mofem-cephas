@@ -2264,7 +2264,6 @@ private:
   const int zeroSide;
 };
 
-
 /**
  * @brief Calculate gradient of vector field
  * @ingroup mofem_forces_and_sources_user_data_operators
@@ -2277,9 +2276,9 @@ struct OpCalculateHVecVectorHessian
     : public ForcesAndSourcesCore::UserDataOperator {
 
   OpCalculateHVecVectorHessian(const std::string field_name,
-                                boost::shared_ptr<MatrixDouble> data_ptr,
-                                const EntityType zero_type = MBEDGE,
-                                const int zero_side = 0)
+                               boost::shared_ptr<MatrixDouble> data_ptr,
+                               const EntityType zero_type = MBEDGE,
+                               const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
         dataPtr(data_ptr), zeroType(zero_type), zeroSide(zero_side) {
@@ -2804,18 +2803,20 @@ derivatives
 */
 template <int DIM, int DERIVATIVE = 1> struct OpSetInvJacSpaceForFaceImpl;
 
-struct OpSetInvJacSpaceForFaceBase
+struct OpSetInvJacToScalarBasesBasic
     : public FaceElementForcesAndSourcesCore::UserDataOperator {
 
-  OpSetInvJacSpaceForFaceBase(FieldSpace space,
-                              boost::shared_ptr<MatrixDouble> inv_jac_ptr)
+  OpSetInvJacToScalarBasesBasic(FieldSpace space,
+                                boost::shared_ptr<MatrixDouble> inv_jac_ptr)
       : FaceElementForcesAndSourcesCore::UserDataOperator(space),
         invJacPtr(inv_jac_ptr) {}
+
+protected:
 
   template <int D1, int D2, int J1, int J2>
   MoFEMErrorCode applyTransform(MatrixDouble &diff_n) {
     MoFEMFunctionBegin;
-    size_t nb_functions = diff_n.size2() / 2;
+    size_t nb_functions = diff_n.size2() / D1;
     if (nb_functions) {
       size_t nb_gauss_pts = diff_n.size1();
 
@@ -2823,9 +2824,14 @@ struct OpSetInvJacSpaceForFaceBase
       if (nb_gauss_pts != getGaussPts().size2())
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Wrong number of Gauss Pts");
+      if (diff_n.size2() % D1)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Number of direvatives of base functions and D1 dimension does "
+                "not match");
 #endif
 
       diffNinvJac.resize(diff_n.size1(), diff_n.size2(), false);
+
       FTensor::Index<'i', D2> i;
       FTensor::Index<'k', D1> k;
       auto t_diff_n = getFTensor1FromPtr<D2>(&*diffNinvJac.data().begin());
@@ -2844,15 +2850,15 @@ struct OpSetInvJacSpaceForFaceBase
     MoFEMFunctionReturn(0);
   }
 
-protected:
   boost::shared_ptr<MatrixDouble> invJacPtr;
   MatrixDouble diffNinvJac;
 };
 
 template <>
-struct OpSetInvJacSpaceForFaceImpl<2, 1> : public OpSetInvJacSpaceForFaceBase {
+struct OpSetInvJacSpaceForFaceImpl<2, 1>
+    : public OpSetInvJacToScalarBasesBasic {
 
-  using OpSetInvJacSpaceForFaceBase::OpSetInvJacSpaceForFaceBase;
+  using OpSetInvJacToScalarBasesBasic::OpSetInvJacToScalarBasesBasic;
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data);
