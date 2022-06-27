@@ -31,34 +31,7 @@ OpSetInvJacSpaceForFaceImpl<2, 1>::doWork(int side, EntityType type,
             "This operator can be used only with element which faces");
 
   auto apply_transform = [&](MatrixDouble &diff_n) {
-    MoFEMFunctionBegin;
-    size_t nb_functions = diff_n.size2() / 2;
-    if (nb_functions) {
-      size_t nb_gauss_pts = diff_n.size1();
-
-#ifndef NDEBUG
-      if (nb_gauss_pts != getGaussPts().size2())
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "Wrong number of Gauss Pts");
-#endif
-
-      diffNinvJac.resize(diff_n.size1(), diff_n.size2(), false);
-      FTensor::Index<'i', 2> i;
-      FTensor::Index<'k', 2> k;
-      auto t_diff_n = getFTensor1FromPtr<2>(&*diffNinvJac.data().begin());
-      auto t_diff_n_ref = getFTensor1FromPtr<2>(&*diff_n.data().begin());
-      auto t_inv_jac = getFTensor2FromMat<2, 2>(*invJacPtr);
-      for (size_t gg = 0; gg != nb_gauss_pts; ++gg, ++t_inv_jac) {
-        for (size_t dd = 0; dd != nb_functions; ++dd) {
-          t_diff_n(i) = t_inv_jac(k, i) * t_diff_n_ref(k);
-          ++t_diff_n;
-          ++t_diff_n_ref;
-        }
-      }
-
-      diff_n.swap(diffNinvJac);
-    }
-    MoFEMFunctionReturn(0);
+    return applyTransform<2, 2, 2, 2>(diff_n);
   };
 
   if (!(type == MBVERTEX && sPace == L2)) {
@@ -93,36 +66,7 @@ OpSetInvJacSpaceForFaceImpl<3, 1>::doWork(int side, EntityType type,
             "This operator can be used only with element which face");
 
   auto apply_transform = [&](MatrixDouble &diff_n) {
-    MoFEMFunctionBegin;
-    size_t nb_functions = diff_n.size2() / 2;
-    if (nb_functions) {
-      size_t nb_gauss_pts = diff_n.size1();
-
-#ifndef NDEBUG
-      if (nb_gauss_pts != getGaussPts().size2())
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "Wrong number of Gauss Pts");
-#endif
-
-      diffNinvJac.resize(diff_n.size1(), nb_functions * 3, false);
-
-      FTensor::Index<'i', 3> i;
-      FTensor::Index<'K', 2> K;
-      auto t_diff_n = getFTensor1FromPtr<3>(&*diffNinvJac.data().begin());
-      auto t_diff_n_ref = getFTensor1FromPtr<2>(&*diff_n.data().begin());
-      auto t_inv_jac = getFTensor2FromMat<3, 3>(*invJacPtr);
-      for (size_t gg = 0; gg != nb_gauss_pts; ++gg, ++t_inv_jac) {
-        for (size_t dd = 0; dd != nb_functions; ++dd) {
-          t_diff_n(i) = t_inv_jac(K, i) * t_diff_n_ref(K);
-          ++t_diff_n;
-          ++t_diff_n_ref;
-        }
-      }
-
-      diff_n.swap(diffNinvJac);
-      
-    }
-    MoFEMFunctionReturn(0);
+    return applyTransform<2, 3, 3, 3>(diff_n);
   };
 
   if (!(type == MBVERTEX && sPace == L2)) {

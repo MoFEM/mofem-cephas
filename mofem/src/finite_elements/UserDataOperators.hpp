@@ -2804,21 +2804,58 @@ derivatives
 */
 template <int DIM, int DERIVATIVE = 1> struct OpSetInvJacSpaceForFaceImpl;
 
-template <>
-struct OpSetInvJacSpaceForFaceImpl<2, 1>
+struct OpSetInvJacSpaceForFaceBase
     : public FaceElementForcesAndSourcesCore::UserDataOperator {
 
-  OpSetInvJacSpaceForFaceImpl(FieldSpace space,
+  OpSetInvJacSpaceForFaceBase(FieldSpace space,
                               boost::shared_ptr<MatrixDouble> inv_jac_ptr)
       : FaceElementForcesAndSourcesCore::UserDataOperator(space),
         invJacPtr(inv_jac_ptr) {}
 
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        EntitiesFieldData::EntData &data);
+  template <int D1, int D2, int J1, int J2>
+  MoFEMErrorCode applyTransform(MatrixDouble &diff_n) {
+    MoFEMFunctionBegin;
+    size_t nb_functions = diff_n.size2() / 2;
+    if (nb_functions) {
+      size_t nb_gauss_pts = diff_n.size1();
+
+#ifndef NDEBUG
+      if (nb_gauss_pts != getGaussPts().size2())
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Wrong number of Gauss Pts");
+#endif
+
+      diffNinvJac.resize(diff_n.size1(), diff_n.size2(), false);
+      FTensor::Index<'i', D2> i;
+      FTensor::Index<'k', D1> k;
+      auto t_diff_n = getFTensor1FromPtr<D2>(&*diffNinvJac.data().begin());
+      auto t_diff_n_ref = getFTensor1FromPtr<D1>(&*diff_n.data().begin());
+      auto t_inv_jac = getFTensor2FromMat<J1, J2>(*invJacPtr);
+      for (size_t gg = 0; gg != nb_gauss_pts; ++gg, ++t_inv_jac) {
+        for (size_t dd = 0; dd != nb_functions; ++dd) {
+          t_diff_n(i) = t_inv_jac(k, i) * t_diff_n_ref(k);
+          ++t_diff_n;
+          ++t_diff_n_ref;
+        }
+      }
+
+      diff_n.swap(diffNinvJac);
+    }
+    MoFEMFunctionReturn(0);
+  }
 
 protected:
   boost::shared_ptr<MatrixDouble> invJacPtr;
   MatrixDouble diffNinvJac;
+};
+
+template <>
+struct OpSetInvJacSpaceForFaceImpl<2, 1> : public OpSetInvJacSpaceForFaceBase {
+
+  using OpSetInvJacSpaceForFaceBase::OpSetInvJacSpaceForFaceBase;
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        EntitiesFieldData::EntData &data);
 };
 
 template <>
