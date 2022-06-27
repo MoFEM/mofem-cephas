@@ -20,7 +20,7 @@
 
 namespace MoFEM {
 
-OpCalculateHOJacVolume::OpCalculateHOJacVolume(
+OpCalculateHOJacForVolume::OpCalculateHOJacForVolume(
     boost::shared_ptr<MatrixDouble> jac_ptr)
     : VolumeElementForcesAndSourcesCore::UserDataOperator(H1, OPSPACE),
       jacPtr(jac_ptr) {
@@ -33,7 +33,7 @@ OpCalculateHOJacVolume::OpCalculateHOJacVolume(
 }
 
 MoFEMErrorCode
-OpCalculateHOJacVolume::doWork(int side, EntityType type,
+OpCalculateHOJacForVolume::doWork(int side, EntityType type,
                                EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 

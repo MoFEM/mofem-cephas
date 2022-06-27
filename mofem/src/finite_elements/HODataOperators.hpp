@@ -31,10 +31,10 @@ namespace MoFEM {
  * data.
  *
  */
-struct OpCalculateHOJacVolume
+struct OpCalculateHOJacForVolume
     : public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-  OpCalculateHOJacVolume(boost::shared_ptr<MatrixDouble> jac_ptr);
+  OpCalculateHOJacForVolume(boost::shared_ptr<MatrixDouble> jac_ptr);
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data);
@@ -42,6 +42,10 @@ struct OpCalculateHOJacVolume
 private:
   boost::shared_ptr<MatrixDouble> jacPtr;
 };
+
+/** \deprecated use OpCalculateHOJacForVolume
+ */
+using OpCalculateHOJacVolume = OpCalculateHOJacForVolume;
 
 /**
  * @brief Calculate HO coordinates at gauss points
@@ -239,8 +243,8 @@ using OpCalculateHOJacForFaceEmbeddedIn3DSpace = OpCalculateHOJacForFaceImpl<3>;
 
 template <int DIM> struct OpCalculateHOJac;
 
-template <> struct OpCalculateHOJac<3> : public OpCalculateHOJacVolume {
-  using OpCalculateHOJacVolume::OpCalculateHOJacVolume;
+template <> struct OpCalculateHOJac<3> : public OpCalculateHOJacForVolume {
+  using OpCalculateHOJacForVolume::OpCalculateHOJacForVolume;
 };
 
 template <> struct OpCalculateHOJac<2> : public OpCalculateHOJacForFaceImpl<2> {
