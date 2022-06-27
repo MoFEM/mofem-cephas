@@ -139,11 +139,11 @@ auto set_parent_dofs(MoFEM::Interface &m_field,
               if (op == DomainEleOp::OPSPACE) {
                 if (typeid(PARENT_FE) == typeid(DomainParentEle)) {
                   fe_ptr_current->getOpPtrVector().push_back(
-                      new OpCalculateHOJacForFace(jac_ptr));
+                      new OpCalculateHOJac<2>(jac_ptr));
                   fe_ptr_current->getOpPtrVector().push_back(
                       new OpInvertMatrix<2>(jac_ptr, det_ptr, inv_jac_ptr));
                   fe_ptr_current->getOpPtrVector().push_back(
-                      new OpSetInvJacH1ForFace(inv_jac_ptr));
+                      new OpSetHOInvJacToScalarBases<2>(H1, inv_jac_ptr));
                 }
               }
 
@@ -636,11 +636,11 @@ MoFEMErrorCode AtomTest::checkResults() {
   auto det_ptr = boost::make_shared<VectorDouble>();
 
   pipeline_mng->getOpDomainRhsPipeline().push_back(
-      new OpCalculateHOJacForFace(jac_ptr));
+      new OpCalculateHOJac<2>(jac_ptr));
   pipeline_mng->getOpDomainRhsPipeline().push_back(
       new OpInvertMatrix<2>(jac_ptr, det_ptr, inv_jac_ptr));
   pipeline_mng->getOpDomainRhsPipeline().push_back(
-      new OpSetInvJacH1ForFace(inv_jac_ptr));
+      new OpSetHOInvJacToScalarBases<2>(H1, inv_jac_ptr));
 
   set_parent_dofs<DomainParentEle>(mField, pipeline_mng->getDomainRhsFE(),
                                    DomainEleOp::OPSPACE, QUIET, Sev::noisy);
