@@ -277,6 +277,21 @@ getFTensor2FromMat(MatrixDouble &data) {
 }
 
 /**
+ * Template specialization for getFTensor2FromMat
+ */
+template <>
+inline FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 1, 1>
+getFTensor2FromMat(MatrixDouble &data) {
+#ifndef NDEBUG
+  if (data.size1() != 1)
+    THROW_MESSAGE("getFTensor2FromMat<1,1>: wrong size of data matrix, numer "
+                  "of rows should be 1 but is " +
+                  boost::lexical_cast<std::string>(data.size1()));
+#endif
+  return FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 1, 1>(&data(0, 0));
+}
+
+/**
  * \brief Get tensor rank 2 (matrix) form data matrix (specialization)
  */
 template <int Tensor_Dim0, int Tensor_Dim1>
