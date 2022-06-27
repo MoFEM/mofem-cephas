@@ -113,22 +113,9 @@ OpCalculateHOCoords::doWork(int side, EntityType type,
 };
 
 MoFEMErrorCode
-OpSetHOInvJacToScalarBases::doWork(int side, EntityType type,
-                                   EntitiesFieldData::EntData &data) {
+OpSetHOInvJacToScalarBases<3>::doWork(int side, EntityType type,
+                                      EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
-
-  auto transform_base = [&](MatrixDouble &diff_n) {
-    MoFEMFunctionBeginHot;
-    if (getFEDim() == 3)
-      return applyTransform<3, 3, 3, 3>(diff_n);
-    else if (getFEDim() == 2)
-      return applyTransform<2, 2, 2, 2>(diff_n);
-    else if (getFEDim() == 1)
-      return applyTransform<1, 1, 1, 1>(diff_n);
-    else
-      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Case not implemented");
-    MoFEMFunctionReturnHot(0);
-  };
 
   if (getFEDim() == 3) {
 
@@ -154,56 +141,8 @@ OpSetHOInvJacToScalarBases::doWork(int side, EntityType type,
           CHKERR transform_base(*ptr);
     }
 
-  } else if (getFEDim() == 2) {
-
-    auto transform_base = [&](MatrixDouble &diff_n) {
-      MoFEMFunctionBeginHot;
-      return applyTransform<2, 2, 2, 2>(diff_n);
-      MoFEMFunctionReturnHot(0);
-    };
-
-    for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
-      FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
-      CHKERR transform_base(data.getDiffN(base));
-    }
-
-    switch (type) {
-    case MBVERTEX:
-      for (auto &m : data.getBBDiffNMap())
-        CHKERR transform_base(*(m.second));
-      break;
-    default:
-      for (auto &ptr : data.getBBDiffNByOrderArray())
-        if (ptr)
-          CHKERR transform_base(*ptr);
-    }
-
-  } else if (getFEDim() == 1) {
-
-    auto transform_base = [&](MatrixDouble &diff_n) {
-      MoFEMFunctionBeginHot;
-      return applyTransform<1, 1, 1, 1>(diff_n);
-      MoFEMFunctionReturnHot(0);
-    };
-
-    for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
-      FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
-      CHKERR transform_base(data.getDiffN(base));
-    }
-
-    switch (type) {
-    case MBVERTEX:
-      for (auto &m : data.getBBDiffNMap())
-        CHKERR transform_base(*(m.second));
-      break;
-    default:
-      for (auto &ptr : data.getBBDiffNByOrderArray())
-        if (ptr)
-          CHKERR transform_base(*ptr);
-    }
-
   } else {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Case not implemented");
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Use different operator");
   }
 
   MoFEMFunctionReturn(0);

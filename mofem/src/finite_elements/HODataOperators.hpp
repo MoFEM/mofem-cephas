@@ -60,13 +60,24 @@ struct OpCalculateHOCoords : public ForcesAndSourcesCore::UserDataOperator {
  * \brief Set inverse jacobian to base functions
  *
  */
-struct OpSetHOInvJacToScalarBases : public OpSetInvJacToScalarBasesBasic {
+template<int DIM>
+struct OpSetHOInvJacToScalarBases;
+
+template<>
+struct OpSetHOInvJacToScalarBases<3> : public OpSetInvJacToScalarBasesBasic {
 
   using OpSetInvJacToScalarBasesBasic::OpSetInvJacToScalarBasesBasic;
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data);
 
+};
+
+template <>
+struct OpSetHOInvJacToScalarBases<2>
+    : public OpSetInvJacSpaceForFaceImpl<2, 1> {
+
+  using OpSetInvJacSpaceForFaceImpl<2, 1>::OpSetInvJacSpaceForFaceImpl;
 };
 
 /**
@@ -225,6 +236,16 @@ struct OpCalculateHOJacForFaceImpl<3> : public OpCalculateHOJacForFaceImpl<2> {
 
 using OpCalculateHOJacForFace = OpCalculateHOJacForFaceImpl<2>;
 using OpCalculateHOJacForFaceEmbeddedIn3DSpace = OpCalculateHOJacForFaceImpl<3>;
+
+template <int DIM> struct OpCalculateHOJac;
+
+template <> struct OpCalculateHOJac<3> : public OpCalculateHOJacVolume {
+  using OpCalculateHOJacVolume::OpCalculateHOJacVolume;
+};
+
+template <> struct OpCalculateHOJac<2> : public OpCalculateHOJacForFaceImpl<2> {
+  using OpCalculateHOJacForFaceImpl<2>::OpCalculateHOJacForFaceImpl;
+};
 
 /** \brief Calculate normals at Gauss points of triangle element
  * \ingroup mofem_forces_and_source
@@ -458,10 +479,10 @@ MoFEMErrorCode addHOOpsVol(const std::string field, E &e, bool h1, bool hcurl,
   e.getOpPtrVector().push_back(new OpSetHOWeights(material_det_vec));
   if (h1)
     e.getOpPtrVector().push_back(
-        new OpSetHOInvJacToScalarBases(H1, material_inv_grad_mat));
+        new OpSetHOInvJacToScalarBases<3>(H1, material_inv_grad_mat));
   if (l2)
     e.getOpPtrVector().push_back(
-        new OpSetHOInvJacToScalarBases(L2, material_inv_grad_mat));
+        new OpSetHOInvJacToScalarBases<3>(L2, material_inv_grad_mat));
   if (hdiv) {
     e.getOpPtrVector().push_back(new OpSetHOContravariantPiolaTransform(
         HDIV, material_det_vec, material_grad_mat));

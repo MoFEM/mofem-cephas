@@ -2810,9 +2810,8 @@ struct OpSetInvJacToScalarBasesBasic
                                 boost::shared_ptr<MatrixDouble> inv_jac_ptr);
 
 protected:
-
   template <int D1, int D2, int J1, int J2>
-  MoFEMErrorCode applyTransform(MatrixDouble &diff_n) {
+  inline MoFEMErrorCode applyTransform(MatrixDouble &diff_n) {
     MoFEMFunctionBegin;
     size_t nb_functions = diff_n.size2() / D1;
     if (nb_functions) {
