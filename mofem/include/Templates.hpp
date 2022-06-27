@@ -642,7 +642,7 @@ struct GetFTensor3FromMatImpl<2, 2, 2, S, T, ublas::row_major, A> {
 #ifndef NDEBUG
     if (data.size1() != 8)
       THROW_MESSAGE(
-          "getFTensor3FromMat<1, 1, 1>: wrong size of data matrix, number "
+          "getFTensor3FromMat<2, 2, 2>: wrong size of data matrix, number "
           "of rows should be 8 but is " +
           boost::lexical_cast<std::string>(data.size1()));
 #endif
@@ -660,8 +660,8 @@ struct GetFTensor3FromMatImpl<3, 2, 2, S, T, ublas::row_major, A> {
 #ifndef NDEBUG
     if (data.size1() != 12)
       THROW_MESSAGE(
-          "getFTensor3FromMat<1, 1, 1>: wrong size of data matrix, number "
-          "of rows should be 8 but is " +
+          "getFTensor3FromMat<3, 2, 2>: wrong size of data matrix, number "
+          "of rows should be 12 but is " +
           boost::lexical_cast<std::string>(data.size1()));
 #endif
     return FTensor::Tensor3<FTensor::PackPtr<double *, S>, 3, 2, 2>{
