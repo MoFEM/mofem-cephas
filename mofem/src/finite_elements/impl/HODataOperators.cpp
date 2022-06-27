@@ -115,67 +115,95 @@ OpCalculateHOCoords::doWork(int side, EntityType type,
 MoFEMErrorCode
 OpSetHOInvJacToScalarBases::doWork(int side, EntityType type,
                                    EntitiesFieldData::EntData &data) {
-  FTensor::Index<'i', 3> i;
-  FTensor::Index<'j', 3> j;
   MoFEMFunctionBegin;
 
   auto transform_base = [&](MatrixDouble &diff_n) {
     MoFEMFunctionBeginHot;
-
-    unsigned int nb_gauss_pts = diff_n.size1();
-    if (nb_gauss_pts == 0)
-      MoFEMFunctionReturnHot(0);
-
-    if (invJacPtr->size2() == nb_gauss_pts) {
-
-      unsigned int nb_base_functions = diff_n.size2() / 3;
-      if (nb_base_functions == 0)
-        MoFEMFunctionReturnHot(0);
-
-      auto t_inv_jac = getFTensor2FromMat<3, 3>(*invJacPtr);
-
-      diffNinvJac.resize(nb_gauss_pts, 3 * nb_base_functions, false);
-
-      double *t_diff_n_ptr = &*diff_n.data().begin();
-      FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_diff_n(
-          t_diff_n_ptr, &t_diff_n_ptr[1], &t_diff_n_ptr[2]);
-      double *t_inv_n_ptr = &*diffNinvJac.data().begin();
-      FTensor::Tensor1<double *, 3> t_inv_diff_n(t_inv_n_ptr, &t_inv_n_ptr[1],
-                                                 &t_inv_n_ptr[2], 3);
-
-      for (unsigned int gg = 0; gg < nb_gauss_pts; ++gg) {
-        for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
-          t_inv_diff_n(i) = t_diff_n(j) * t_inv_jac(j, i);
-          ++t_diff_n;
-          ++t_inv_diff_n;
-        }
-        ++t_inv_jac;
-      }
-
-      diff_n.swap(diffNinvJac);
-    } else {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-               "Wrong number of gauss pts in invJacPtr, is %d but should be %d",
-               invJacPtr->size1(), nb_gauss_pts);
-    }
-
+    if (getFEDim() == 3)
+      return applyTransform<3, 3, 3, 3>(diff_n);
+    else if (getFEDim() == 2)
+      return applyTransform<2, 2, 2, 2>(diff_n);
+    else if (getFEDim() == 1)
+      return applyTransform<1, 1, 1, 1>(diff_n);
+    else
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Case not implemented");
     MoFEMFunctionReturnHot(0);
   };
 
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
-    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
-    CHKERR transform_base(data.getDiffN(base));
-  }
+  if (getFEDim() == 3) {
 
-  switch (type) {
-  case MBVERTEX:
-    for (auto &m : data.getBBDiffNMap())
-      CHKERR transform_base(*(m.second));
-    break;
-  default:
-    for (auto &ptr : data.getBBDiffNByOrderArray())
-      if (ptr)
-        CHKERR transform_base(*ptr);
+    auto transform_base = [&](MatrixDouble &diff_n) {
+      MoFEMFunctionBeginHot;
+      return applyTransform<3, 3, 3, 3>(diff_n);
+      MoFEMFunctionReturnHot(0);
+    };
+
+    for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
+      FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
+      CHKERR transform_base(data.getDiffN(base));
+    }
+
+    switch (type) {
+    case MBVERTEX:
+      for (auto &m : data.getBBDiffNMap())
+        CHKERR transform_base(*(m.second));
+      break;
+    default:
+      for (auto &ptr : data.getBBDiffNByOrderArray())
+        if (ptr)
+          CHKERR transform_base(*ptr);
+    }
+
+  } else if (getFEDim() == 2) {
+
+    auto transform_base = [&](MatrixDouble &diff_n) {
+      MoFEMFunctionBeginHot;
+      return applyTransform<2, 2, 2, 2>(diff_n);
+      MoFEMFunctionReturnHot(0);
+    };
+
+    for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
+      FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
+      CHKERR transform_base(data.getDiffN(base));
+    }
+
+    switch (type) {
+    case MBVERTEX:
+      for (auto &m : data.getBBDiffNMap())
+        CHKERR transform_base(*(m.second));
+      break;
+    default:
+      for (auto &ptr : data.getBBDiffNByOrderArray())
+        if (ptr)
+          CHKERR transform_base(*ptr);
+    }
+
+  } else if (getFEDim() == 1) {
+
+    auto transform_base = [&](MatrixDouble &diff_n) {
+      MoFEMFunctionBeginHot;
+      return applyTransform<1, 1, 1, 1>(diff_n);
+      MoFEMFunctionReturnHot(0);
+    };
+
+    for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
+      FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
+      CHKERR transform_base(data.getDiffN(base));
+    }
+
+    switch (type) {
+    case MBVERTEX:
+      for (auto &m : data.getBBDiffNMap())
+        CHKERR transform_base(*(m.second));
+      break;
+    default:
+      for (auto &ptr : data.getBBDiffNByOrderArray())
+        if (ptr)
+          CHKERR transform_base(*ptr);
+    }
+
+  } else {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Case not implemented");
   }
 
   MoFEMFunctionReturn(0);

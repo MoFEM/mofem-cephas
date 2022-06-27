@@ -21,6 +21,16 @@ purposes.
 
 namespace MoFEM {
 
+OpSetInvJacToScalarBasesBasic::OpSetInvJacToScalarBasesBasic(
+    FieldSpace space, boost::shared_ptr<MatrixDouble> inv_jac_ptr)
+    : ForcesAndSourcesCore::UserDataOperator(space), invJacPtr(inv_jac_ptr) {
+  if (!inv_jac_ptr)
+    CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "invJacPtr not allocated");
+  if (space == L2) {
+    doVertices = false;
+  }
+}
+
 MoFEMErrorCode
 OpSetInvJacSpaceForFaceImpl<2, 1>::doWork(int side, EntityType type,
                                           EntitiesFieldData::EntData &data) {

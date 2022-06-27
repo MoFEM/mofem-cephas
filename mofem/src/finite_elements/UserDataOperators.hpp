@@ -2804,12 +2804,10 @@ derivatives
 template <int DIM, int DERIVATIVE = 1> struct OpSetInvJacSpaceForFaceImpl;
 
 struct OpSetInvJacToScalarBasesBasic
-    : public FaceElementForcesAndSourcesCore::UserDataOperator {
+    : public ForcesAndSourcesCore::UserDataOperator {
 
   OpSetInvJacToScalarBasesBasic(FieldSpace space,
-                                boost::shared_ptr<MatrixDouble> inv_jac_ptr)
-      : FaceElementForcesAndSourcesCore::UserDataOperator(space),
-        invJacPtr(inv_jac_ptr) {}
+                                boost::shared_ptr<MatrixDouble> inv_jac_ptr);
 
 protected:
 

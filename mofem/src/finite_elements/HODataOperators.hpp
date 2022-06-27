@@ -60,27 +60,13 @@ struct OpCalculateHOCoords : public ForcesAndSourcesCore::UserDataOperator {
  * \brief Set inverse jacobian to base functions
  *
  */
-struct OpSetHOInvJacToScalarBases
-    : public ForcesAndSourcesCore::UserDataOperator {
+struct OpSetHOInvJacToScalarBases : public OpSetInvJacToScalarBasesBasic {
 
-  OpSetHOInvJacToScalarBases(const FieldSpace space,
-                             boost::shared_ptr<MatrixDouble> inv_jac_ptr)
-      : ForcesAndSourcesCore::UserDataOperator(space), invJacPtr(inv_jac_ptr) {
-
-    if (!inv_jac_ptr)
-      CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "invJacPtr not allocated");
-
-    if (space == L2) {
-      doVertices = false;
-    }
-  }
+  using OpSetInvJacToScalarBasesBasic::OpSetInvJacToScalarBasesBasic;
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data);
 
-private:
-  boost::shared_ptr<MatrixDouble> invJacPtr;
-  MatrixDouble diffNinvJac;
 };
 
 /**
