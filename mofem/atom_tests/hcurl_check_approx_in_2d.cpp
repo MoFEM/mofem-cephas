@@ -348,18 +348,19 @@ int main(int argc, char *argv[]) {
     auto check_solution = [&] {
       MoFEMFunctionBegin;
 
+      pipeline_mng->getOpDomainLhsPipeline().clear();
+      pipeline_mng->getOpDomainRhsPipeline().clear();
+
       auto ptr_values = boost::make_shared<MatrixDouble>();
       auto ptr_divergence = boost::make_shared<VectorDouble>();
       auto ptr_grad = boost::make_shared<MatrixDouble>();
       auto ptr_hessian = boost::make_shared<MatrixDouble>();
 
-      pipeline_mng->getOpDomainLhsPipeline().clear();
-      pipeline_mng->getOpDomainRhsPipeline().clear();
-
       auto jac_ptr = boost::make_shared<MatrixDouble>();
       auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
       auto det_ptr = boost::make_shared<VectorDouble>();
 
+      // Change H-curl to H-div in 2D, and apply Piola transform
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpCalculateHOJac<SPACE_DIM>(jac_ptr));
       pipeline_mng->getOpDomainRhsPipeline().push_back(
@@ -371,16 +372,7 @@ int main(int argc, char *argv[]) {
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpSetInvJacHcurlFace(inv_jac_ptr));
 
-      pipeline_mng->getOpDomainRhsPipeline().push_back(
-          new OpCalculateHVecVectorField<BASE_DIM>("FIELD1", ptr_values));
-      pipeline_mng->getOpDomainRhsPipeline().push_back(
-          new OpCalculateHVecVectorGradient<BASE_DIM, SPACE_DIM>("FIELD1",
-                                                                 ptr_grad));
-      pipeline_mng->getOpDomainRhsPipeline().push_back(
-          new OpCalculateHdivVectorDivergence<BASE_DIM, SPACE_DIM>(
-              "FIELD1", ptr_divergence));
-
-      // check HO-derivative
+      // Evaluate base function second derivative
       auto base_mass = boost::make_shared<MatrixDouble>();
       auto data_l2 = boost::make_shared<EntitiesFieldData>(MBENTITYSET);
 
@@ -392,6 +384,18 @@ int main(int argc, char *argv[]) {
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpBaseDerivativesNext<BASE_DIM>(BaseDerivatives::SecondDerivative,
                                               base_mass, data_l2, base, HCURL));
+
+      // Calculate field values at integration points
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
+          new OpCalculateHVecVectorField<BASE_DIM>("FIELD1", ptr_values));
+      // Gradient
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
+          new OpCalculateHVecVectorGradient<BASE_DIM, SPACE_DIM>("FIELD1",
+                                                                 ptr_grad));
+      // Hessian
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
+          new OpCalculateHdivVectorDivergence<BASE_DIM, SPACE_DIM>(
+              "FIELD1", ptr_divergence)); 
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpCalculateHVecVectorHessian<BASE_DIM, SPACE_DIM>("FIELD1",
                                                                 ptr_hessian));
