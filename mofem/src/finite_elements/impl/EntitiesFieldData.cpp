@@ -611,6 +611,24 @@ EntitiesFieldData::EntData::getFTensor2DiffN<3, 2>(FieldApproximationBase base,
       &t_diff_n_ptr[HVEC1_1], &t_diff_n_ptr[HVEC2_0], &t_diff_n_ptr[HVEC2_1]);
 }
 
+template <>
+FTensor::Tensor3<FTensor::PackPtr<double *, 12>, 3, 2, 2>
+EntitiesFieldData::EntData::getFTensor3Diff2N(FieldApproximationBase base) {
+  double *ptr = &(getN(base, BaseDerivatives::SecondDerivative))(0, 0);
+  return FTensor::Tensor3<FTensor::PackPtr<double *, 12>, 3, 2, 2>{
+
+      &ptr[2 * HVEC0_0 + 0], &ptr[2 * HVEC0_0 + 1], &ptr[2 * HVEC0_1 + 0],
+      &ptr[2 * HVEC0_1 + 1],
+
+      &ptr[2 * HVEC1_0 + 0], &ptr[2 * HVEC1_0 + 1], &ptr[2 * HVEC1_1 + 0],
+      &ptr[2 * HVEC1_1 + 1],
+
+      &ptr[2 * HVEC2_0 + 0], &ptr[2 * HVEC2_0 + 1], &ptr[2 * HVEC2_1 + 0],
+      &ptr[2 * HVEC2_1 + 1]
+
+  };
+}
+
 template <int Tensor_Dim0, int Tensor_Dim1>
 FTensor::Tensor2<FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>,
                  Tensor_Dim0, Tensor_Dim1>

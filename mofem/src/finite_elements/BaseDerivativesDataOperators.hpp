@@ -53,6 +53,23 @@ template <> struct OpBaseDerivativesMass<3> : public OpBaseDerivativesMass<1> {
   using OpBaseDerivativesMass<1>::OpBaseDerivativesMass;
 };
 
+template <int DIM> struct OpBaseDerivativesSetHOInvJacobian;
+
+template <>
+struct OpBaseDerivativesSetHOInvJacobian<2>
+    : public OpSetInvJacSpaceForFaceImpl<2, 1> {
+
+  OpBaseDerivativesSetHOInvJacobian(
+      boost::shared_ptr<EntitiesFieldData> data_l2,
+      boost::shared_ptr<MatrixDouble> inv_jac_ptr);
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        EntitiesFieldData::EntData &data);
+
+protected:
+  boost::shared_ptr<EntitiesFieldData> dataL2;
+};
+
 template <int BASE_DIM>
 struct OpBaseDerivativesNext;
 

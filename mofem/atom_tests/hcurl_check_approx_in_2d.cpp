@@ -348,14 +348,6 @@ struct OpCheckValsDiffVals : public FaceEleOp {
         delta_diff2_val(i, j, k) =
             t_hess_from_op(i, j, k) - ApproxFunctions::diff2Fun(x, y)(i, j, k);
 
-        for (int ii = 0; ii != 3; ++ii)
-          for (int jj = 0; jj != 2; ++jj)
-            for (int kk = 0; kk != 2; ++kk)
-              cerr << ii << " " << jj << " " << kk << " : "
-                   << delta_diff2_val(ii, jj, kk) << endl;
-
-        cerr << endl;
-
         double hess_diff_error =
             sqrt(delta_diff2_val(i, j, k) * delta_diff2_val(i, j, k));
         if (hess_diff_error > eps)
@@ -496,7 +488,7 @@ int main(int argc, char *argv[]) {
           new OpSetContravariantPiolaTransformOnFace2D(jac_ptr));
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpSetInvJacHcurlFace(inv_jac_ptr));
-          
+
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpValsDiffVals(vals, diff_vals));
       pipeline_mng->getOpDomainRhsPipeline().push_back(
@@ -514,6 +506,9 @@ int main(int argc, char *argv[]) {
 
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpBaseDerivativesMass<BASE_DIM>(base_mass, data_l2, base, L2));
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
+          new OpBaseDerivativesSetHOInvJacobian<SPACE_DIM>(data_l2,
+                                                           inv_jac_ptr));
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpBaseDerivativesNext<BASE_DIM>(BaseDerivatives::SecondDerivative,
                                               base_mass, data_l2, base, HCURL));

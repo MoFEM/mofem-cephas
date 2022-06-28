@@ -774,6 +774,24 @@ struct EntitiesFieldData::EntData {
     return getFTensor2DiffN<Tensor_Dim0, Tensor_Dim1>(bAse, gg, bb);
   }
 
+  /** \brief Get second derivatives of base functions for Hvec space
+   */
+  template <int Tensor_Dim0, int Tensor_Dim1, int Tensor_Dim2>
+  FTensor::Tensor3<
+      FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1 * Tensor_Dim2>,
+      Tensor_Dim0, Tensor_Dim1, Tensor_Dim2>
+  getFTensor3Diff2N(FieldApproximationBase base);
+
+  /** \brief Get second derivatives of base functions for Hvec space
+   */
+  template <int Tensor_Dim0, int Tensor_Dim1, int Tensor_Dim2>
+  inline FTensor::Tensor3<
+      FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1 * Tensor_Dim2>,
+      Tensor_Dim0, Tensor_Dim1, Tensor_Dim2>
+  getFTensor3Diff2N() {
+    return getFTensor3Diff2N<Tensor_Dim0, Tensor_Dim1, Tensor_Dim2>(bAse);
+  }
+
   /**
    * \brief Get Hdiv base functions at integration point
 
@@ -1665,6 +1683,10 @@ template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>
 EntitiesFieldData::EntData::getFTensor2DiffN<3, 2>(FieldApproximationBase base,
                                                    const int gg, const int bb);
+
+template <>
+FTensor::Tensor3<FTensor::PackPtr<double *, 12>, 3, 2, 2>
+EntitiesFieldData::EntData::getFTensor3Diff2N(FieldApproximationBase base);
 
 /**@}*/
 

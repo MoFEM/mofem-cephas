@@ -2308,10 +2308,11 @@ struct OpCalculateHVecVectorHessian
                "Wrong number of integration pts (%d != %d)",
                hessian_base.size1(), nb_integration_points);
     }
-    if (hessian_base.size2() != 3 * nb_base_functions * SPACE_DIM * SPACE_DIM) {
+    if (hessian_base.size2() !=
+        BASE_DIM * nb_base_functions * SPACE_DIM * SPACE_DIM) {
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Wrong number of base functions (%d != %d)",
-               hessian_base.size2() / (SPACE_DIM * SPACE_DIM),
+               hessian_base.size2() / (BASE_DIM * SPACE_DIM * SPACE_DIM),
                nb_base_functions);
     }
     if (hessian_base.size2() < BASE_DIM * nb_dofs * SPACE_DIM * SPACE_DIM) {
@@ -2325,15 +2326,14 @@ struct OpCalculateHVecVectorHessian
     FTensor::Index<'j', SPACE_DIM> j;
     FTensor::Index<'k', SPACE_DIM> k;
 
-    auto t_base_diff2 = getFTensor3FromPtr<BASE_DIM, SPACE_DIM, SPACE_DIM>(
-        &*hessian_base.data().begin());
-
+    auto t_base_diff2 = data.getFTensor3Diff2N<BASE_DIM, SPACE_DIM, SPACE_DIM>();
     auto t_data = getFTensor3FromMat<BASE_DIM, SPACE_DIM, SPACE_DIM>(*dataPtr);
     for (size_t gg = 0; gg != nb_integration_points; ++gg) {
       auto t_dof = data.getFTensor0FieldData();
       int bb = 0;
       for (; bb != nb_dofs; ++bb) {
         t_data(i, j, k) += t_dof * t_base_diff2(i, j, k);
+
         ++t_base_diff2;
         ++t_dof;
       }

@@ -121,6 +121,28 @@ OpBaseDerivativesMass<1>::doWork(int side, EntityType type,
   MoFEMFunctionReturn(0);
 }
 
+OpBaseDerivativesSetHOInvJacobian<2>::OpBaseDerivativesSetHOInvJacobian(
+    boost::shared_ptr<EntitiesFieldData> data_l2,
+    boost::shared_ptr<MatrixDouble> inv_jac_ptr)
+    : OpSetInvJacSpaceForFaceImpl<2, 1>(NOSPACE, inv_jac_ptr), dataL2(data_l2) {
+}
+
+MoFEMErrorCode
+OpBaseDerivativesSetHOInvJacobian<2>::doWork(int side, EntityType type,
+                                             EntitiesFieldData::EntData &data) {
+  MoFEMFunctionBegin;
+
+  auto apply_transform = [&](MatrixDouble &diff_n) {
+    return applyTransform<2, 2, 2, 2>(diff_n);
+  };
+
+  const auto fe_type = getFEType();
+  auto &ent_data = dataL2->dataOnEntities[fe_type][0];
+  CHKERR apply_transform(ent_data.getDiffN());
+
+  MoFEMFunctionReturn(0);
+}
+
 OpBaseDerivativesNext<1>::OpBaseDerivativesNext(
     int derivative, boost::shared_ptr<MatrixDouble> base_mass_ptr,
     boost::shared_ptr<EntitiesFieldData> data_l2,
@@ -150,9 +172,9 @@ OpBaseDerivativesNext<1>::setBaseImpl(EntitiesFieldData::EntData &data,
     n_diff_shared_ptr = boost::make_shared<MatrixDouble>();
 
   auto &nex_diff_base = *(n_diff_shared_ptr);
-  const int next_nb_derivatives = pow(SPACE_DIM, calcBaseDerivative);
-  nex_diff_base.resize(nb_gauss_pts,
-                       BASE_DIM * nb_approx_bases * next_nb_derivatives, false);
+  const int next_nb_derivatives = BASE_DIM * pow(SPACE_DIM, calcBaseDerivative);
+  nex_diff_base.resize(nb_gauss_pts, nb_approx_bases * next_nb_derivatives,
+                       false);
   nex_diff_base.clear();
 
   FTensor::Index<'i', SPACE_DIM> i;
@@ -162,6 +184,7 @@ OpBaseDerivativesNext<1>::setBaseImpl(EntitiesFieldData::EntData &data,
   for (int gg = 0; gg != nb_gauss_pts; ++gg) {
 
     auto ptr = &*nF.data().begin();
+
     for (auto r = 0; r != nb_approx_bases * nb_derivatives; ++r) {
 
       auto l2_diff_base = ent_data.getFTensor1DiffN<SPACE_DIM>(base, gg, 0);
@@ -260,7 +283,7 @@ OpBaseDerivativesNext<1>::doWorkImpl(int side, EntityType type,
     else if (space_dim == 2)
       CHKERR setBaseImpl<BASE_DIM, 2>(data, ent_data);
     // else if (space_dim == 1)
-    //   CHKERR setBaseImpl<1>(data, ent_data);
+    //   CHKERR setBaseImpl<BASE_DIM, 1>(data, ent_data);
     else
       SETERRQ1(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
                "Space dim can be only 1,2,3 but is %d", space_dim);
