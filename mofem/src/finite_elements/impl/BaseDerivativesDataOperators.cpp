@@ -293,6 +293,12 @@ OpBaseDerivativesNext<1>::doWorkImpl(int side, EntityType type,
 }
 
 MoFEMErrorCode
+OpBaseDerivativesNext<1>::doWork(int side, EntityType type,
+                                 EntitiesFieldData::EntData &data) {
+  return doWorkImpl<1>(side, type, data);
+}
+
+MoFEMErrorCode
 OpBaseDerivativesNext<3>::doWork(int side, EntityType type,
                                  EntitiesFieldData::EntData &data) {
   return doWorkImpl<3>(side, type, data);

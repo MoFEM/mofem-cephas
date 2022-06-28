@@ -87,9 +87,7 @@ template <> struct OpBaseDerivativesNext<1> : public OpBaseDerivativesBase {
                         int verb = QUIET, Sev sev = Sev::verbose);
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        EntitiesFieldData::EntData &data) {
-    return doWorkImpl<1>(side, type, data);
-  }
+                        EntitiesFieldData::EntData &data);
 
 protected:
   int calcBaseDerivative;
