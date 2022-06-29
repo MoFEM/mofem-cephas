@@ -802,6 +802,30 @@ and with that at hand kick-start installation process described above.
 
 # FAQ {#spack_faq}
 
+## Installation on MAC OS X Montery (XCode 13.4.1)
+
+Not all packages can be installed with spack currentlt. Temprorary solution utill bigs are fixed in other packages is
+installation following packages with homebrew
+~~~~~
+brew install openblas
+brew install openmpi
+~~~~~
+Then spack command has to be called
+~~~~~
+spack external find 
+~~~~~
+Command abouve will find homebrew installation for openmpi. Installation for
+openblas has to be added by editing file $HOME/.spack/packages.yaml, and adding
+at the end
+~~~~~
+  openblas:
+    version: [0.3.20]
+    buildable: false
+    externals:
+    - spec: openblas@0.3.20%apple-clang@13.1.6 arch=darwin-monterey-m1
+      prefix: /opt/homebrew/opt/openblas
+~~~~~
+
 ## How to get packages installed today?
 
 Run command:
