@@ -92,6 +92,10 @@ else(SYMM_RESTRICT)
 endif(SYMM_RESTRICT)
 add_definitions(${DEFINE_RESTRICT})
 
+# suppres C++17 warrnings in Boost and other libs, mostly related to std::iterator
+add_definitions("-D_LIBCPP_DISABLE_DEPRECATION_WARNINGS")
+add_definitions("-D_LIBCPP_SUPPRESS_DEPRECATED_PUSH")
+
 # Installing extermal packages It is used to install prerequisites, ADOL-C,
 # TetGen, MED can be installed like that
 include(ExternalProject)
