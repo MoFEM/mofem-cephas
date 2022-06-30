@@ -153,20 +153,8 @@ int main(int argc, char *argv[]) {
             EntityHandle cubit_meshset = ciit->meshset;
             CHKERR m_field.getInterface<BitRefManager>()
                 ->updateMeshsetByEntitiesChildren(
-                    cubit_meshset, bit_levels.back(), cubit_meshset, MBVERTEX,
+                    cubit_meshset, bit_levels.back(), cubit_meshset, MBMAXTYPE,
                     true);
-            CHKERR m_field.getInterface<BitRefManager>()
-                ->updateMeshsetByEntitiesChildren(cubit_meshset,
-                                                  bit_levels.back(),
-                                                  cubit_meshset, MBEDGE, true);
-            CHKERR m_field.getInterface<BitRefManager>()
-                ->updateMeshsetByEntitiesChildren(cubit_meshset,
-                                                  bit_levels.back(),
-                                                  cubit_meshset, MBTRI, true);
-            CHKERR m_field.getInterface<BitRefManager>()
-                ->updateMeshsetByEntitiesChildren(cubit_meshset,
-                                                  bit_levels.back(),
-                                                  cubit_meshset, MBTET, true);
           }
         }
       }

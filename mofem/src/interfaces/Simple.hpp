@@ -26,6 +26,8 @@
 
 namespace MoFEM {
 
+template <int DIM> struct ParentFiniteElementAdjacencyFunction;
+
 /**
  * \brief Simple interface for fast problem set-up
  * \ingroup mofem_simple_interface
@@ -233,7 +235,7 @@ struct Simple : public UnknownInterface {
    *
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode reSetUp();
+  MoFEMErrorCode reSetUp(bool only_dm = false);
 
   /**
    * \brief Get DM
@@ -392,7 +394,7 @@ struct Simple : public UnknownInterface {
   MoFEMErrorCode deleteFiniteElements();
 
   /**
-   * @brief Get the Add Skeleton F E object
+   * @brief Get the addSkeletonFE
    *
    * If variable set to true, skeleton element is created regardless field on
    * skelton is added or not.
@@ -403,7 +405,7 @@ struct Simple : public UnknownInterface {
   bool &getAddSkeletonFE() { return addSkeletonFE; }
 
   /**
-   * @brief Get the Add Boundary F E object
+   * @brief Get the addSkeletonFE
    *
    * If variable set to true, boundary element is created regardless field on
    * skelton is added or not.
@@ -412,6 +414,44 @@ struct Simple : public UnknownInterface {
    * @return false
    */
   bool &getAddBoundaryFE() { return addBoundaryFE; }
+
+  /**
+   * @brief Get the addParentAdjacencies
+   *
+   * If set true add parent adjacencies
+   *
+   * @return true
+   * @return false
+   */
+  bool &getParentAdjacencies() { return addParentAdjacencies; }
+
+  /**
+   * @brief  bit ref level for parent
+   *
+   * @return auto&
+   */
+  auto &getBitAdjParent() { return bitAdjParent; }
+
+  /**
+   * @brief bit ref level for parent marent
+   *
+   * @return auto&
+   */
+  auto &getBitAdjParentMask() { return bitAdjParentMask; }
+
+  /**
+   * @brief bit ref level for parent
+   *
+   * @return auto&
+   */
+  auto &getBitAdjEnt() { return bitAdjEnt; } 
+
+  /**
+   * @brief bit ref level for parent marent
+   *
+   * @return auto&
+   */
+  auto &getBitAdjEntMask() { return bitAdjEntMask; }
 
   /**
    * @brief add empty block to problem
@@ -426,6 +466,7 @@ struct Simple : public UnknownInterface {
    */
   MoFEMErrorCode addFieldToEmptyFieldBlocks(const std::string row_field,
                                             const std::string col_field) const;
+
 
 private:
   MoFEM::Core &cOre;
@@ -444,8 +485,14 @@ private:
   EntityHandle boundaryMeshset; ///< meshset with boundary
   EntityHandle skeletonMeshset; ///< skeleton meshset with boundary
 
-  bool addSkeletonFE; ///< Add skeleton FE
-  bool addBoundaryFE; ///< Add boundary FE
+  bool addSkeletonFE;        ///< Add skeleton FE
+  bool addBoundaryFE;        ///< Add boundary FE
+  bool addParentAdjacencies; ///< If set to true parent adjacencies are build
+
+  BitRefLevel bitAdjParent;     ///< bit ref level for parent
+  BitRefLevel bitAdjParentMask; ///< bit ref level for parent marent
+  BitRefLevel bitAdjEnt;        ///< bit ref level for parent
+  BitRefLevel bitAdjEntMask;    ///< bit ref level for parent marent
 
   std::vector<std::string> domainFields;      ///< domain fields
   std::vector<std::string> boundaryFields;    ///< boundary fields
@@ -475,6 +522,15 @@ private:
   MoFEMErrorCode exchangeGhostCells();
 
   template <int DIM = -1> MoFEMErrorCode setSkeletonAdjacency();
+
+  template <int DIM = -1> MoFEMErrorCode setParentAdjacency();
+
+  boost::shared_ptr<ParentFiniteElementAdjacencyFunction<3>>
+      parentAdjFunctionDim3;
+  boost::shared_ptr<ParentFiniteElementAdjacencyFunction<2>>
+      parentAdjFunctionDim2;
+  boost::shared_ptr<ParentFiniteElementAdjacencyFunction<1>>
+      parentAdjFunctionDim1;
 };
 
 } // namespace MoFEM

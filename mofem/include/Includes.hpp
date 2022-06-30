@@ -111,9 +111,11 @@
 #include <boost/numeric/ublas/lu.hpp>
 #include <boost/numeric/ublas/io.hpp>
 #include <boost/math/special_functions/fpclassify.hpp>
+#include <boost/container/static_vector.hpp>
 
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/ptr_container/ptr_map.hpp>
+#include <boost/ptr_container/ptr_deque.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/scoped_array.hpp>
 #include <boost/weak_ptr.hpp>

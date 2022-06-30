@@ -183,11 +183,6 @@ struct EntitiesFieldData::EntData {
 
   inline ApproximationOrder &getOrder();
 
-  /**
-   * @deprecated use getOrder
-   */
-  DEPRECATED inline ApproximationOrder &getDataOrder() { return getOrder(); }
-
   inline VectorInt &getIndices();
 
   inline VectorInt &getLocalIndices();
@@ -215,6 +210,9 @@ struct EntitiesFieldData::EntData {
 
   /// \brief get field entities
   inline VectorFieldEntities &getFieldEntities();
+
+  //// \brief get entity bit ref level
+  virtual BitRefLevel &getEntDataBitRefLevel();
 
   /**
    * @brief Return FTensor of rank 1, i.e. vector from filed data coeffinects
@@ -776,6 +774,24 @@ struct EntitiesFieldData::EntData {
     return getFTensor2DiffN<Tensor_Dim0, Tensor_Dim1>(bAse, gg, bb);
   }
 
+  /** \brief Get second derivatives of base functions for Hvec space
+   */
+  template <int Tensor_Dim0, int Tensor_Dim1, int Tensor_Dim2>
+  FTensor::Tensor3<
+      FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1 * Tensor_Dim2>,
+      Tensor_Dim0, Tensor_Dim1, Tensor_Dim2>
+  getFTensor3Diff2N(FieldApproximationBase base);
+
+  /** \brief Get second derivatives of base functions for Hvec space
+   */
+  template <int Tensor_Dim0, int Tensor_Dim1, int Tensor_Dim2>
+  inline FTensor::Tensor3<
+      FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1 * Tensor_Dim2>,
+      Tensor_Dim0, Tensor_Dim1, Tensor_Dim2>
+  getFTensor3Diff2N() {
+    return getFTensor3Diff2N<Tensor_Dim0, Tensor_Dim1, Tensor_Dim2>(bAse);
+  }
+
   /**
    * \brief Get Hdiv base functions at integration point
 
@@ -1021,7 +1037,7 @@ struct EntitiesFieldData::EntData {
   getBBNByOrderSharedPtr(const size_t o);
 
   /**
-   * @brief get BB base direvative by order
+   * @brief get BB base derivative by order
    * 
    * @param o 
    * @return boost::shared_ptr<MatrixDouble>& 
@@ -1040,6 +1056,19 @@ struct EntitiesFieldData::EntData {
   virtual std::array<boost::shared_ptr<MatrixDouble>, MaxBernsteinBezierOrder> &
   getBBDiffNByOrderArray();
 
+  /**
+   * @brief Swap bases functions
+   *
+   * Some base are not hierarchical and depene on approximation order. Such case
+   * demand special handling, that appropiate base order is set depending on
+   * field, such that is accessible in operator.
+   *
+   * @note Base is not swap on meshsets
+   *
+   * @param field_name
+   * @param base
+   * @return MoFEMErrorCode
+   */
   virtual MoFEMErrorCode baseSwap(const std::string &field_name,
                                   const FieldApproximationBase base);
 
@@ -1050,6 +1079,7 @@ protected:
   ApproximationOrder oRder;          ///< Entity order
   FieldSpace sPace;                  ///< Entity space
   FieldApproximationBase bAse;       ///< Field approximation base
+  BitRefLevel entDataBitRefLevel;    ///< Bit ref level in entity
   VectorInt iNdices;                 ///< Global indices on entity
   VectorInt localIndices;            ///< Local indices on entity
   VectorDofs dOfs;                   ///< DoFs on entity
@@ -1092,6 +1122,8 @@ protected:
    * @copydoc MoFEM::EntitiesFieldData::baseSwap
    */
   boost::shared_ptr<MatrixDouble> swapBaseDiffNPtr;
+
+  friend struct OpAddParentEntData;
 };
 
 using BaseDerivatives = EntitiesFieldData::EntData::BaseDerivatives;
@@ -1111,6 +1143,9 @@ struct DerivedEntitiesFieldData::DerivedEntData
       const boost::shared_ptr<EntitiesFieldData::EntData> &ent_data_ptr);
 
   int getSense() const;
+
+  //// \brief get entity bit ref level
+  BitRefLevel &getEntDataBitRefLevel();
 
   boost::shared_ptr<MatrixDouble> &
   getNSharedPtr(const FieldApproximationBase base,
@@ -1648,6 +1683,10 @@ template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>
 EntitiesFieldData::EntData::getFTensor2DiffN<3, 2>(FieldApproximationBase base,
                                                    const int gg, const int bb);
+
+template <>
+FTensor::Tensor3<FTensor::PackPtr<double *, 12>, 3, 2, 2>
+EntitiesFieldData::EntData::getFTensor3Diff2N(FieldApproximationBase base);
 
 /**@}*/
 

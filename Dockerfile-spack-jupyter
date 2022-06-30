@@ -29,11 +29,13 @@ RUN pip3 -q install pip --upgrade && \
   jupyter_contrib_nbextensions \
   itkwidgets \
   ipywidgets \
-  ipyvtk-simple==0.1.2 && \
+  pythreejs \
+  ipyvtk-simple && \
   jupyter contrib nbextension install && \
-  jupyter nbextension enable spellchecker/main && \
   jupyter nbextension install --py jupytext && \
   jupyter nbextension enable --py jupytext && \
+  jupyter nbextension install --py pythreejs && \
+  jupyter nbextension enable --py pythreejs && \
   npm install -g configurable-http-proxy
 
 # allow jupyterlab for ipyvtk

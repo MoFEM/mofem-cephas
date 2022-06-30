@@ -432,7 +432,7 @@ int main(int argc, char *argv[]) {
 
       if (SPACE_DIM == 2) {
         pipeline_mng->getOpDomainLhsPipeline().push_back(
-            new OpCalculateHOJacForFace(jac_ptr));
+            new OpCalculateHOJac<2>(jac_ptr));
         pipeline_mng->getOpDomainLhsPipeline().push_back(
             new OpInvertMatrix<SPACE_DIM>(jac_ptr, det_ptr, inv_jac_ptr));
         pipeline_mng->getOpDomainLhsPipeline().push_back(
@@ -441,13 +441,13 @@ int main(int argc, char *argv[]) {
 
       if (SPACE_DIM == 3) {
         pipeline_mng->getOpDomainLhsPipeline().push_back(
-            new OpCalculateHOJacVolume(jac_ptr));
+            new OpCalculateHOJac<3>(jac_ptr));
         pipeline_mng->getOpDomainLhsPipeline().push_back(
             new OpInvertMatrix<SPACE_DIM>(jac_ptr, det_ptr, nullptr));
         pipeline_mng->getOpDomainLhsPipeline().push_back(
             new OpSetHOWeights(det_ptr));
         pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpCalculateHOJacVolume(jac_ptr));
+            new OpCalculateHOJac<3>(jac_ptr));
         pipeline_mng->getOpDomainRhsPipeline().push_back(
             new OpInvertMatrix<3>(jac_ptr, det_ptr, nullptr));
         pipeline_mng->getOpDomainRhsPipeline().push_back(
@@ -497,23 +497,12 @@ int main(int argc, char *argv[]) {
       pipeline_mng->getDomainLhsFE().reset();
       pipeline_mng->getOpDomainRhsPipeline().clear();
 
-      if (SPACE_DIM == 2) {
-        pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpCalculateHOJacForFace(jac_ptr));
-        pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpInvertMatrix<SPACE_DIM>(jac_ptr, det_ptr, inv_jac_ptr));
-        pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpSetInvJacSpaceForFaceImpl<2>(space, inv_jac_ptr));
-      }
-
-      if (SPACE_DIM == 3) {
-        pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpCalculateHOJacVolume(jac_ptr));
-        pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpInvertMatrix<SPACE_DIM>(jac_ptr, det_ptr, inv_jac_ptr));
-        pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpSetHOInvJacToScalarBases(space, inv_jac_ptr));
-      }
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
+          new OpCalculateHOJac<SPACE_DIM>(jac_ptr));
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
+          new OpInvertMatrix<SPACE_DIM>(jac_ptr, det_ptr, inv_jac_ptr));
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
+          new OpSetHOInvJacToScalarBases<SPACE_DIM>(space, inv_jac_ptr));
 
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpValsDiffVals(vals, diff_vals, true));

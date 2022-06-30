@@ -61,11 +61,41 @@ struct Tools : public UnknownInterface {
       boost::function<double(double, double)> f =
           [](double a, double b) -> double { return std::min(a, b); });
 
+  static constexpr double shapeFunMBEDGE0At00 = N_MBEDGE0(0);
+  static constexpr double shapeFunMBEDGE1At00 = N_MBEDGE1(0);
+
+  /**
+   * @brief Array of shape function at zero local point on reference element
+   *
+   */
+  static constexpr std::array<double, 2> shapeFunMBEDGEAt00 = {
+      shapeFunMBEDGE0At00, shapeFunMBEDGE1At00};
+
   static constexpr double diffN_MBEDGE0x = diffN_MBEDGE0;
   static constexpr double diffN_MBEDGE1x = diffN_MBEDGE1;
 
   static constexpr std::array<double, 2> diffShapeFunMBEDGE = {diffN_MBEDGE0x,
                                                                diffN_MBEDGE1x};
+
+  static inline double shapeFunMBEDGE0(const double x);
+
+  static inline double shapeFunMBEDGE1(const double x);
+
+  /**
+   * @brief Calculate shape functions on edge
+   *
+   * \note Template parameter is leading dimension of point coordinate arrays,
+   * such that \f$ksi_{n+1} = ksi[n + LDB]\f$
+   *
+   * @tparam 1
+   * @param shape shape functions
+   * @param ksi pointer to first local coordinates
+   * @param nb number of points
+   * @return MoFEMErrorCode
+   */
+  template <int LDB = 1>
+  static MoFEMErrorCode shapeFunMBEDGE(double *shape, const double *ksi,
+                                       const int nb);
 
   static constexpr double diffShapeFunMBTRI0x =
       diffN_MBTRI0x; ///< derivative of triangle shape function
@@ -367,6 +397,30 @@ struct Tools : public UnknownInterface {
       double *local_coords);
 
   /**
+   * @brief Get the Local Coordinates On Reference Four Node Tet object
+   *
+   * \code
+   * MatrixDouble elem_coords(4, 3);
+   * // Set nodal coordinates
+   * MatrixDouble global_coords(5, 3);
+   * // Set global coordinates
+   * MatrixDouble local_coords(global_coords.size1(), 3);
+   * CHKERR Tools::getLocalCoordinatesOnReferenceFourNodeTet(
+   *     &elem_coords(0, 0), &global_coords(0, 0), global_coords.size1(),
+   *     &local_coords(0, 0))
+   * \endcode
+   *
+   * @param elem_coords Global element node coordinates
+   * @param glob_coords Globale coordinates
+   * @param nb_nodes Number of points
+   * @param local_coords Result
+   * @return MoFEMErrorCode
+   */
+  static MoFEMErrorCode getLocalCoordinatesOnReferenceEdgeNodeEdge(
+      const double *elem_coords, const double *glob_coords, const int nb_nodes,
+      double *local_coords);
+
+  /**
    * @brief Get the Tets With Quality
    *
    * @param out_tets
@@ -559,6 +613,27 @@ struct Tools : public UnknownInterface {
   outerProductOfEdgeIntegrationPtsForHex(MatrixDouble &pts, const int edge0,
                                          const int edge1, const int edge2);
 };
+
+double Tools::shapeFunMBEDGE0(const double x) {
+  return N_MBEDGE0(x);
+}
+
+double Tools::shapeFunMBEDGE1(const double x) {
+  return N_MBEDGE1(x);
+}
+
+template <int LDB>
+MoFEMErrorCode Tools::shapeFunMBEDGE(double *shape, const double *ksi,
+                                     const int nb) {
+  MoFEMFunctionBeginHot;
+  for (int n = 0; n != nb; ++n) {
+    shape[0] = shapeFunMBEDGE0(*ksi);
+    shape[1] = shapeFunMBEDGE1(*ksi);
+    shape += 2;
+    ksi += LDB;
+  }
+  MoFEMFunctionReturnHot(0);
+}
 
 double Tools::shapeFunMBTRI0(const double x, const double y) {
   return N_MBTRI0(x, y);

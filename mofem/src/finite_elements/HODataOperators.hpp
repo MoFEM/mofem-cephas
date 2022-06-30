@@ -31,10 +31,10 @@ namespace MoFEM {
  * data.
  *
  */
-struct OpCalculateHOJacVolume
-    : public VolumeElementForcesAndSourcesCoreBase::UserDataOperator {
+struct OpCalculateHOJacForVolume
+    : public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-  OpCalculateHOJacVolume(boost::shared_ptr<MatrixDouble> jac_ptr);
+  OpCalculateHOJacForVolume(boost::shared_ptr<MatrixDouble> jac_ptr);
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data);
@@ -42,6 +42,10 @@ struct OpCalculateHOJacVolume
 private:
   boost::shared_ptr<MatrixDouble> jacPtr;
 };
+
+/** \deprecated use OpCalculateHOJacForVolume
+ */
+using OpCalculateHOJacVolume = OpCalculateHOJacForVolume;
 
 /**
  * @brief Calculate HO coordinates at gauss points
@@ -60,27 +64,24 @@ struct OpCalculateHOCoords : public ForcesAndSourcesCore::UserDataOperator {
  * \brief Set inverse jacobian to base functions
  *
  */
-struct OpSetHOInvJacToScalarBases
-    : public ForcesAndSourcesCore::UserDataOperator {
+template<int DIM>
+struct OpSetHOInvJacToScalarBases;
 
-  OpSetHOInvJacToScalarBases(const FieldSpace space,
-                             boost::shared_ptr<MatrixDouble> inv_jac_ptr)
-      : ForcesAndSourcesCore::UserDataOperator(space), invJacPtr(inv_jac_ptr) {
+template<>
+struct OpSetHOInvJacToScalarBases<3> : public OpSetInvJacToScalarBasesBasic {
 
-    if (!inv_jac_ptr)
-      CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "invJacPtr not allocated");
-
-    if (space == L2) {
-      doVertices = false;
-    }
-  }
+  using OpSetInvJacToScalarBasesBasic::OpSetInvJacToScalarBasesBasic;
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data);
 
-private:
-  boost::shared_ptr<MatrixDouble> invJacPtr;
-  MatrixDouble diffNinvJac;
+};
+
+template <>
+struct OpSetHOInvJacToScalarBases<2>
+    : public OpSetInvJacSpaceForFaceImpl<2, 1> {
+
+  using OpSetInvJacSpaceForFaceImpl<2, 1>::OpSetInvJacSpaceForFaceImpl;
 };
 
 /**
@@ -121,9 +122,9 @@ private:
  *
  */
 struct OpSetHOWeightsOnFace
-    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+    : public FaceElementForcesAndSourcesCore::UserDataOperator {
   OpSetHOWeightsOnFace()
-      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(NOSPACE) {}
+      : FaceElementForcesAndSourcesCore::UserDataOperator(NOSPACE) {}
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data);
 };
@@ -135,7 +136,7 @@ struct OpSetHOWeightsOnFace
 struct OpSetHOWeights : public ForcesAndSourcesCore::UserDataOperator {
 
   OpSetHOWeights(boost::shared_ptr<VectorDouble> det_ptr)
-      : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPLAST),
+      : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPSPACE),
         detPtr(det_ptr) {
     if (!detPtr)
       CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY,
@@ -159,7 +160,7 @@ struct OpSetHOContravariantPiolaTransform
   OpSetHOContravariantPiolaTransform(const FieldSpace space,
                                      boost::shared_ptr<VectorDouble> det_ptr,
                                      boost::shared_ptr<MatrixDouble> jac_ptr)
-      : ForcesAndSourcesCore::UserDataOperator(space, OPLAST), detPtr(det_ptr),
+      : ForcesAndSourcesCore::UserDataOperator(space, OPSPACE), detPtr(det_ptr),
         jacPtr(jac_ptr) {
     doVertices = false;
     if (space == HDIV)
@@ -184,7 +185,7 @@ struct OpSetHOCovariantPiolaTransform
 
   OpSetHOCovariantPiolaTransform(const FieldSpace space,
                                  boost::shared_ptr<MatrixDouble> jac_inv_ptr)
-      : ForcesAndSourcesCore::UserDataOperator(space, OPLAST),
+      : ForcesAndSourcesCore::UserDataOperator(space, OPSPACE),
         jacInvPtr(jac_inv_ptr) {
     doVertices = false;
     if (space == HDIV)
@@ -217,7 +218,7 @@ template <int DIM> struct OpCalculateHOJacForFaceImpl;
 
 template <>
 struct OpCalculateHOJacForFaceImpl<2>
-    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+    : public FaceElementForcesAndSourcesCore::UserDataOperator {
 
   OpCalculateHOJacForFaceImpl(boost::shared_ptr<MatrixDouble> jac_ptr);
 
@@ -240,11 +241,21 @@ struct OpCalculateHOJacForFaceImpl<3> : public OpCalculateHOJacForFaceImpl<2> {
 using OpCalculateHOJacForFace = OpCalculateHOJacForFaceImpl<2>;
 using OpCalculateHOJacForFaceEmbeddedIn3DSpace = OpCalculateHOJacForFaceImpl<3>;
 
+template <int DIM> struct OpCalculateHOJac;
+
+template <> struct OpCalculateHOJac<3> : public OpCalculateHOJacForVolume {
+  using OpCalculateHOJacForVolume::OpCalculateHOJacForVolume;
+};
+
+template <> struct OpCalculateHOJac<2> : public OpCalculateHOJacForFaceImpl<2> {
+  using OpCalculateHOJacForFaceImpl<2>::OpCalculateHOJacForFaceImpl;
+};
+
 /** \brief Calculate normals at Gauss points of triangle element
  * \ingroup mofem_forces_and_source
  */
 struct OpGetHONormalsOnFace
-    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+    : public FaceElementForcesAndSourcesCore::UserDataOperator {
 
   OpGetHONormalsOnFace(std::string field_name);
 
@@ -260,12 +271,12 @@ struct OpGetHONormalsOnFace
  *
  */
 struct OpHOSetContravariantPiolaTransformOnFace3D
-    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+    : public FaceElementForcesAndSourcesCore::UserDataOperator {
 
   OpHOSetContravariantPiolaTransformOnFace3D(
       const FieldSpace space,
       boost::shared_ptr<MatrixDouble> normals_at_gauss_pts = nullptr)
-      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(space, OPLAST),
+      : FaceElementForcesAndSourcesCore::UserDataOperator(space, OPSPACE),
         normalsAtGaussPts(normals_at_gauss_pts) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
@@ -279,12 +290,12 @@ private:
  * \ingroup mofem_forces_and_sources
  */
 struct OpHOSetContravariantPiolaTransformOnEdge3D
-    : public EdgeElementForcesAndSourcesCoreBase::UserDataOperator {
+    : public EdgeElementForcesAndSourcesCore::UserDataOperator {
 
   OpHOSetContravariantPiolaTransformOnEdge3D(
       const FieldSpace space = HCURL,
       boost::shared_ptr<MatrixDouble> tangent_at_pts = nullptr)
-      : EdgeElementForcesAndSourcesCoreBase::UserDataOperator(space),
+      : EdgeElementForcesAndSourcesCore::UserDataOperator(space),
         tangentAtGaussPts(tangent_at_pts) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
@@ -298,14 +309,14 @@ private:
  * triangle \ingroup mofem_forces_and_sources
  */
 struct OpHOSetCovariantPiolaTransformOnFace3D
-    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+    : public FaceElementForcesAndSourcesCore::UserDataOperator {
 
   OpHOSetCovariantPiolaTransformOnFace3D(
       const FieldSpace space,
       boost::shared_ptr<MatrixDouble> normals_at_pts = nullptr,
       boost::shared_ptr<MatrixDouble> tangent1_at_pts = nullptr,
       boost::shared_ptr<MatrixDouble> tangent2_at_pts = nullptr)
-      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(space, OPLAST),
+      : FaceElementForcesAndSourcesCore::UserDataOperator(space, OPSPACE),
         normalsAtPts(normals_at_pts), tangent1AtPts(tangent1_at_pts),
         tangent2AtPts(tangent2_at_pts) {
     if (normals_at_pts || tangent1_at_pts || tangent2_at_pts)
@@ -330,12 +341,12 @@ private:
  * \ingroup mofem_forces_and_sources
  */
 struct OpGetHOTangentsOnEdge
-    : public EdgeElementForcesAndSourcesCoreBase::UserDataOperator {
+    : public EdgeElementForcesAndSourcesCore::UserDataOperator {
 
   OpGetHOTangentsOnEdge(
       std::string field_name,
       boost::shared_ptr<MatrixDouble> tangents_at_pts = nullptr)
-      : EdgeElementForcesAndSourcesCoreBase::UserDataOperator(field_name,
+      : EdgeElementForcesAndSourcesCore::UserDataOperator(field_name,
                                                               OPROW),
         tangentsAtPts(tangents_at_pts) {}
 
@@ -472,10 +483,10 @@ MoFEMErrorCode addHOOpsVol(const std::string field, E &e, bool h1, bool hcurl,
   e.getOpPtrVector().push_back(new OpSetHOWeights(material_det_vec));
   if (h1)
     e.getOpPtrVector().push_back(
-        new OpSetHOInvJacToScalarBases(H1, material_inv_grad_mat));
+        new OpSetHOInvJacToScalarBases<3>(H1, material_inv_grad_mat));
   if (l2)
     e.getOpPtrVector().push_back(
-        new OpSetHOInvJacToScalarBases(L2, material_inv_grad_mat));
+        new OpSetHOInvJacToScalarBases<3>(L2, material_inv_grad_mat));
   if (hdiv) {
     e.getOpPtrVector().push_back(new OpSetHOContravariantPiolaTransform(
         HDIV, material_det_vec, material_grad_mat));

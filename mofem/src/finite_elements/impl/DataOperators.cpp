@@ -77,7 +77,7 @@ MoFEMErrorCode DataOperator::opLhs(EntitiesFieldData &row_data,
       size_t SS = 0;
       if (Symm)
         SS = ss;
-      for (; SS < col_data.dataOnEntities[type].size(); SS++) {
+      for (; SS < col_data.dataOnEntities[type].size(); ++SS) {
         CHKERR doWork(ss, SS, type, type, row_ent_data[ss],
                       col_data.dataOnEntities[type][SS]);
       }
@@ -185,31 +185,27 @@ MoFEMErrorCode OpSetInvJacH1::doWork(int side, EntityType type,
   auto transform_base = [&](MatrixDouble &diff_n) {
     MoFEMFunctionBeginHot;
 
-    if (!diff_n.size1())
-      MoFEMFunctionReturnHot(0);
-    if (!diff_n.size2())
-      MoFEMFunctionReturnHot(0);
+    if (diff_n.data().size()) {
+      const int nb_base_functions = diff_n.size2() / 3;
+      const int nb_gauss_pts = diff_n.size1();
+      diffNinvJac.resize(diff_n.size1(), diff_n.size2(), false);
 
-    const int nb_base_functions = diff_n.size2() / 3;
-    const int nb_gauss_pts = diff_n.size1();
-    diffNinvJac.resize(diff_n.size1(), diff_n.size2(), false);
+      double *t_diff_n_ptr = &*diff_n.data().begin();
+      FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_diff_n(
+          t_diff_n_ptr, &t_diff_n_ptr[1], &t_diff_n_ptr[2]);
+      double *t_inv_n_ptr = &*diffNinvJac.data().begin();
+      FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_inv_diff_n(
+          t_inv_n_ptr, &t_inv_n_ptr[1], &t_inv_n_ptr[2]);
 
-    double *t_diff_n_ptr = &*diff_n.data().begin();
-    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_diff_n(
-        t_diff_n_ptr, &t_diff_n_ptr[1], &t_diff_n_ptr[2]);
-    double *t_inv_n_ptr = &*diffNinvJac.data().begin();
-    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_inv_diff_n(
-        t_inv_n_ptr, &t_inv_n_ptr[1], &t_inv_n_ptr[2]);
-
-    for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
-      for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
-        t_inv_diff_n(i) = t_diff_n(j) * tInvJac(j, i);
-        ++t_diff_n;
-        ++t_inv_diff_n;
+      for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
+        for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
+          t_inv_diff_n(i) = t_diff_n(j) * tInvJac(j, i);
+          ++t_diff_n;
+          ++t_inv_diff_n;
+        }
       }
+      diff_n.swap(diffNinvJac);
     }
-
-    diff_n.swap(diffNinvJac);
 
     MoFEMFunctionReturnHot(0);
   };

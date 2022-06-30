@@ -28,7 +28,7 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
-using FaceEleOnSide = MoFEM::FaceElementForcesAndSourcesCoreOnSideSwitch<0>;
+using FaceEleOnSide = MoFEM::FaceElementForcesAndSourcesCoreOnSide;
 using EdgeEle = MoFEM::EdgeElementForcesAndSourcesCore;
 using FaceEleOnSideOp = FaceEleOnSide::UserDataOperator;
 using EdgeEleOp = EdgeEle::UserDataOperator;

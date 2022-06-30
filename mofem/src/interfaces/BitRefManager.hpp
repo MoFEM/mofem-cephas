@@ -259,7 +259,7 @@ struct BitRefManager : public UnknownInterface {
                                    int verb = QUIET) const;
 
   /**
-   * \brief Set nth bit ref level
+   * \brief Set nth bit ref level to all entities in databse
    * \ingroup mofem_bit_ref
    * @param  n    nth bit
    * @param  b    value to set
@@ -508,10 +508,11 @@ struct BitRefManager : public UnknownInterface {
    * \param mask of parent bit ref level
    * \param child_bit refinement level
    * \param mask of child bit ref level
-   * \param type of refined entity
-   * \param child_type meshset where child entities are stored (if the child
+   * \param child meshset where child entities are stored (if the child
    *meshset is set to be the parent meshset, the parent would be updated with
    *the refined entities)
+   * \param child_type meshset is update only by entities of specified type. if
+   *type is set to MBMAXTYPE all types are updated.
    * \param recursive if true parent meshset is searched recursively
    *
    **/
@@ -521,27 +522,7 @@ struct BitRefManager : public UnknownInterface {
       const BitRefLevel &child_mask, const EntityHandle child,
       EntityType child_type, const bool recursive = false, int verb = 0);
 
-  /** \brief Get child entities form meshset containing parent entities
-   * \ingroup mofem_bit_ref
-   *
-   * \note this calls updateMeshsetByEntitiesChildren with setting masks and
-   * parent to parent_bit = parent_mask = BitRefLevel().set() and child_mask =
-   * child_bit.
-   *
-   * Search for refined entities of given type whose parent are entities in
-   * the parent meshset. It can be used for example to transfer information
-   *about boundary conditions to refined mesh or split mesh by interface
-   * elements. It is used by function refineMeshset, to update MESHSET
-   * finite elements.
-   *
-   * \param parent meshset
-   * \param child_bit refinement level
-   * \param type of refined entity
-   * \param child_type meshset where child entities are stored (if the child
-   * meshset is set to be the parent meshset, the parent would be updated with
-   * the refined entities)
-   * \param recursive if true parent meshset is searched recursively
-   *
+  /** \copydoc updateMeshsetByEntitiesChildren
    **/
   MoFEMErrorCode updateMeshsetByEntitiesChildren(const EntityHandle parent,
                                                  const BitRefLevel &child_bit,
@@ -574,7 +555,7 @@ struct BitRefManager : public UnknownInterface {
       const EntityType fe_ent_type, int verb = 0);
 
   /**
-   * \brief Update range by prents
+   * \brief Update range by childresn
    *
    * FIXME: NOT TESTED
    *
@@ -582,14 +563,65 @@ struct BitRefManager : public UnknownInterface {
    * @param  child  children range
    * @return        error code
    */
-  MoFEMErrorCode updateRange(const Range &parent, Range &child,
-                             MoFEMTypes bh = MF_ZERO);
+  MoFEMErrorCode updateRangeByChildren(const Range &parent, Range &child,
+                                       MoFEMTypes bh = MF_ZERO);
+
+  /**
+   * \brief Update range by prents
+   *
+   * FIXME: NOT TESTED
+   *
+   * @param  child parent range
+   * @param  parent  children range
+   * @return        error code
+   */
+  MoFEMErrorCode updateRangeByParent(const Range &parent, Range &child,
+                                     MoFEMTypes bh = MF_ZERO);
+
+  /**
+   * @deprecated use updateRangeByChildren
+   */
+  DEPRECATED inline MoFEMErrorCode
+  updateRange(const Range &parent, Range &child, MoFEMTypes bh = MF_ZERO) {
+    return updateRangeByChildren(parent, child, bh);
+  }
 
   /**@}*/
 
   /** \name Writting files */
 
   /**@{*/
+
+  /**
+   * \brief Write bit ref level to file
+   * @param  bit       bit ref level
+   * @param  mask      mask of bit ref level
+   * @param  dim       dimension
+   * @param  file_name file name (see moab documentation)
+   * @param  file_type file type (see moab documentation)
+   * @param  options   file options (see moab documentation)
+   * @return           error code
+   */
+  MoFEMErrorCode writeBitLevel(const BitRefLevel bit, const BitRefLevel mask,
+                               const char *file_name, const char *file_type,
+                               const char *options,
+                               const bool check_for_empty = true) const;
+
+  /**
+   * \brief Write bit ref level to file
+   * @param  bit       bit ref level
+   * @param  mask      mask of bit ref level
+   * @param  dim       dimension
+   * @param  file_name file name (see moab documentation)
+   * @param  file_type file type (see moab documentation)
+   * @param  options   file options (see moab documentation)
+   * @return           error code
+   */
+  MoFEMErrorCode writeBitLevelByDim(const BitRefLevel bit,
+                                    const BitRefLevel mask, const int dim,
+                                    const char *file_name,
+                                    const char *file_type, const char *options,
+                                    const bool check_for_empty = true) const;
 
   /**
    * \brief Write bit ref level to file

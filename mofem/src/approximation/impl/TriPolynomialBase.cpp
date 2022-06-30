@@ -267,23 +267,27 @@ MoFEMErrorCode TriPolynomialBase::getValueH1AinsworthBase(MatrixDouble &pts) {
 
   EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
+
   if (cTx->basePolynomialsType0 == NULL)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Polynomial type not set");
+
   PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
                                      double *diffL, const int dim) =
       cTx->basePolynomialsType0;
 
   int nb_gauss_pts = pts.size2();
 
-  if (data.spacesOnEntities[MBEDGE].test(H1)) {
+  if (data.spacesOnEntities[MBEDGE].test(H1)) {  
     // edges
     if (data.dataOnEntities[MBEDGE].size() != 3)
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "expected size of data.dataOnEntities[MBEDGE] is 3");
 
     int sense[3], order[3];
     double *H1edgeN[3], *diffH1edgeN[3];
     for (int ee = 0; ee < 3; ee++) {
+
       if (data.dataOnEntities[MBEDGE][ee].getSense() == 0)
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "sense of the edge unknown");
@@ -309,8 +313,10 @@ MoFEMErrorCode TriPolynomialBase::getValueH1AinsworthBase(MatrixDouble &pts) {
   if (data.spacesOnEntities[MBTRI].test(H1)) {
     // face
     if (data.dataOnEntities[MBTRI].size() != 1) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "expected that size data.dataOnEntities[MBTRI] is one");
     }
+
     int nb_dofs = NBFACETRI_H1(data.dataOnEntities[MBTRI][0].getOrder());
     data.dataOnEntities[MBTRI][0].getN(base).resize(nb_gauss_pts, nb_dofs,
                                                     false);

@@ -612,6 +612,50 @@ ForcesAndSourcesCore::getProblemTypeColIndices(const std::string &field_name,
 // ** Data **
 
 MoFEMErrorCode
+ForcesAndSurcesCore::getBitRefLevelOnData() {
+  MoFEMFunctionBegin;
+
+  // for (int s = H1; s != LASTSPACE; ++s) {
+  //   dataOnElement[s]->dataOnEntities[MBENTITYSET].resize(0);
+  // }
+
+  for (auto &data : dataOnElement) {
+    if (data) {
+      for (auto &dat : data->dataOnEntities) {
+        for (auto &ent_dat : dat) {
+          ent_dat.getEntDataBitRefLevel().reset();
+        }
+      }
+    }
+  }
+
+  auto &field_ents = getDataFieldEnts();
+  for (auto it : field_ents) {
+    if (auto e = it.lock()) {
+      const FieldSpace space = e->getSpace();
+      if (space > NOFIELD) {
+        const EntityType type = e->getEntType();
+        const int side =
+            type == MBVERTEX ? 0 : e->getSideNumberPtr()->side_number;
+        if (side >= 0) {
+          if (auto &data = dataOnElement[space]) {
+            auto &dat = data->dataOnEntities[type][side];
+            dat.getEntDataBitRefLevel() |= e->getBitRefLevel();
+          }
+        }
+      } else {
+        if (auto &data = dataOnElement[NOFIELD]) {
+          auto &dat = data->dataOnEntities[MBENTITYSET][0];
+          dat.getEntDataBitRefLevel() |= e->getBitRefLevel();
+        }
+      }
+    }
+  }
+
+  MoFEMFunctionReturn(0);
+};
+
+MoFEMErrorCode
 ForcesAndSourcesCore::getNodesFieldData(EntitiesFieldData &data,
                                         const int bit_number) const {
 
@@ -844,7 +888,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getNoFieldFieldData(
     std::fill(ent_field.begin(), ent_field.end(), nullptr);
 
     const auto hi_uid = FieldEntity::getLocalUniqueIdCalculate(
-        bit_number, get_id_for_max_type<MBVERTEX>());
+        bit_number, get_id_for_max_type<MBENTITYSET>());
     auto hi = std::upper_bound(lo, field_ents.end(), hi_uid, cmp_uid_hi);
     if (lo != hi) {
 
@@ -1319,6 +1363,8 @@ MoFEMErrorCode ForcesAndSourcesCore::createDataOnElement(EntityType type) {
 MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
   MoFEMFunctionBegin;
 
+  using UDO = UserDataOperator;
+
   std::array<std::string, 2> field_name;
   std::array<Field *, 3> field_struture;
   std::array<int, 2>
@@ -1326,8 +1372,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
   std::array<FieldSpace, 2> space;
   std::array<FieldApproximationBase, 2> base;
 
-  constexpr std::array<UserDataOperator::OpType, 2> types = {
-      UserDataOperator::OPROW, UserDataOperator::OPCOL};
+  constexpr std::array<UDO::OpType, 2> types = {UDO::OPROW, UDO::OPCOL};
   std::array<int, 2> last_eval_field_id = {0, 0};
 
   std::array<boost::shared_ptr<EntitiesFieldData>, 2> op_data;
@@ -1335,8 +1380,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
   auto swap_bases = [&](auto &op) {
     MoFEMFunctionBeginHot;
     for (size_t ss = 0; ss != 2; ++ss) {
-      if (op.getOpType() & types[ss] ||
-          op.getOpType() & UserDataOperator::OPROWCOL) {
+      if (op.getOpType() & types[ss] || op.getOpType() & UDO::OPROWCOL) {
         switch (base[ss]) {
         case AINSWORTH_BERNSTEIN_BEZIER_BASE:
           CHKERR op_data[ss]->baseSwap(field_name[ss],
@@ -1353,7 +1397,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
   const EntityType type = numeredEntFiniteElementPtr->getEntType();
 
   // evaluate entity data only, no field specific data provided or known
-  auto evaluate_op_last_type = [&](auto &op) {
+  auto evaluate_op_space = [&](auto &op) {
     MoFEMFunctionBeginHot;
 
     // reseat all data which all field dependent
@@ -1365,7 +1409,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
       try {
         CHKERR op.doWork(
             0, MBENTITYSET,
-            dataOnElement[op.sPace]->dataOnEntities[MBENTITYSET][0]);
+            dataOnElement[NOSPACE]->dataOnEntities[MBENTITYSET][0]);
       }
       CATCH_OP_ERRORS(op);
       break;
@@ -1375,6 +1419,13 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
     case HDIV:
     case L2:
       try {
+
+        for (EntityType t = MBVERTEX; t != MBMAXTYPE; ++t) {
+          for (auto &e : dataOnElement[op.sPace]->dataOnEntities[t]) {
+            e.getSpace() = op.sPace;
+          }
+        }
+
         CHKERR op.opRhs(*dataOnElement[op.sPace], false);
       }
       CATCH_OP_ERRORS(op);
@@ -1397,12 +1448,16 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
             .none()) {
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "no data field < %s > on finite element < %s >",
-               field_name[ss].c_str(), feName.c_str());
+               field_name[ss].c_str(), getFEName().c_str());
     }
 #endif
 
     op_data[ss] =
         !ss ? dataOnElement[space[ss]] : derivedDataOnElement[space[ss]];
+
+    for (auto &data : op_data[ss]->dataOnEntities[MBENTITYSET]) {
+      CHKERR data.resetFieldDependentData();
+    }
 
     auto get_data_for_nodes = [&]() {
       MoFEMFunctionBegin;
@@ -1453,11 +1508,11 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
       }
       break;
     case NOFIELD:
-      if (!getNinTheLoop()) {
-        // NOFIELD data are the same for each element, can be
-        // retrieved only once
-        CHKERR get_data_for_meshset();
-      }
+      // if (!getNinTheLoop()) {
+      // NOFIELD data are the same for each element, can be
+      // retrieved only once
+      CHKERR get_data_for_meshset();
+      // }
       break;
     default:
       SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
@@ -1470,21 +1525,22 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
   // evalate operators with field data
   auto evaluate_op_for_fields = [&](auto &op) {
     MoFEMFunctionBeginHot;
-    if (op.getOpType() & UserDataOperator::OPROW) {
+
+    if (op.getOpType() & UDO::OPROW) {
       try {
         CHKERR op.opRhs(*op_data[0], false);
       }
       CATCH_OP_ERRORS(op);
     }
 
-    if (op.getOpType() & UserDataOperator::OPCOL) {
+    if (op.getOpType() & UDO::OPCOL) {
       try {
         CHKERR op.opRhs(*op_data[1], false);
       }
       CATCH_OP_ERRORS(op);
     }
 
-    if (op.getOpType() & UserDataOperator::OPROWCOL) {
+    if (op.getOpType() & UDO::OPROWCOL) {
       try {
         CHKERR op.opLhs(*op_data[0], *op_data[1]);
       }
@@ -1492,6 +1548,9 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
     }
     MoFEMFunctionReturnHot(0);
   };
+
+  // Collect bit ref level on all entities, fields and spaces
+  CHKERR getBitRefLevelOnData();
 
   auto oit = opPtrVector.begin();
   auto hi_oit = opPtrVector.end();
@@ -1503,17 +1562,23 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
 
       CHKERR oit->setPtrFE(this);
 
-      if (oit->opType == UserDataOperator::OPLAST) {
+      if ((oit->opType & UDO::OPSPACE) == UDO::OPSPACE) {
 
         // run operator for space but specific field
-        CHKERR evaluate_op_last_type(*oit);
+        CHKERR evaluate_op_space(*oit);
 
-      } else {
+      } else if (
+
+          (oit->opType & (UDO::OPROW | UDO::OPCOL | UDO::OPROWCOL)) ==
+          oit->opType
+
+      ) {
 
         field_name[0] = oit->rowFieldName;
         field_name[1] = oit->colFieldName;
 
         for (size_t ss = 0; ss != 2; ss++) {
+
 #ifndef NDEBUG
           if (field_name[ss].empty()) {
             SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -1524,6 +1589,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
                          .c_str());
           }
 #endif
+
           field_struture[ss] = mField.get_field_structure(field_name[ss]);
           field_id[ss] = field_struture[ss]->getBitNumber();
           space[ss] = field_struture[ss]->getSpace();
@@ -1535,7 +1601,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
         for (size_t ss = 0; ss != 2; ss++) {
 
           if (oit->getOpType() & types[ss] ||
-              oit->getOpType() & UserDataOperator::OPROWCOL) {
+              oit->getOpType() & UDO::OPROWCOL) {
             if (last_eval_field_id[ss] != field_id[ss]) {
               CHKERR set_op_entityties_data(ss, *oit);
               last_eval_field_id[ss] = field_id[ss];
@@ -1549,12 +1615,23 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
         CHKERR evaluate_op_for_fields(*oit);
 
         CHKERR swap_bases(*oit);
+
+      } else {
+
+        for (int i = 0; i != 5; ++i)
+          if (oit->opType & (1 << i))
+            MOFEM_LOG("SELF", Sev::error) << UDO::OpTypeNames[i];
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Impossible operator type");
       }
     }
     CATCH_OP_ERRORS(*oit);
   }
   MoFEMFunctionReturn(0);
 }
+
+const char *const ForcesAndSourcesCore::UserDataOperator::OpTypeNames[] = {
+    "OPROW", " OPCOL", "OPROWCOL", "OPSPACE", "OPLAST"};
 
 MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::getProblemRowIndices(
     const std::string field_name, const EntityType type, const int side,
@@ -1708,10 +1785,8 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopParent(
 
     CHKERR parent_fe->preProcess();
 
-    int nn = 0;
     parent_fe->loopSize = 1;
-
-    parent_fe->nInTheLoop = nn++;
+    parent_fe->nInTheLoop = 0;
     parent_fe->numeredEntFiniteElementPtr = *miit;
     CHKERR (*parent_fe)();
 

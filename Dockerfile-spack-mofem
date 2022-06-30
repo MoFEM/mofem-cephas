@@ -8,7 +8,7 @@ ENV MOFEM_ENV_FILE=/etc/profile.d/mofem.sh
 
 # Install core library
 RUN . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
-  spack dev-build -j 8 \
+  spack dev-build -j 5 \
   --source-path $MOFEM_SRC_DIR \
   --keep-prefix \
   --test root \
@@ -21,7 +21,7 @@ RUN . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
 
 # Install users mdoules
 RUN . $MOFEM_ENV_FILE && \
-  spack dev-build -j 8 \
+  spack dev-build -j 5 \
   --test root  \
   --source-path $MOFEM_UM_SRC_DIR \
   mofem-users-modules@lukasz+docker build_type=Release \

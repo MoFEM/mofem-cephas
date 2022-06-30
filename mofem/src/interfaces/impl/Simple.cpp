@@ -182,6 +182,82 @@ template <> MoFEMErrorCode Simple::setSkeletonAdjacency<-1>() {
   MoFEMFunctionReturn(0);
 }
 
+template <int DIM> MoFEMErrorCode Simple::setParentAdjacency() {
+  static_assert(DIM == 2 || DIM == 3, "not implemented");
+  return MOFEM_NOT_IMPLEMENTED;
+}
+
+template <> MoFEMErrorCode Simple::setParentAdjacency<3>() {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+
+  parentAdjFunctionDim3 =
+      boost::make_shared<ParentFiniteElementAdjacencyFunction<3>>(
+          bitAdjParent, bitAdjParentMask, bitAdjEnt, bitAdjEntMask);
+  parentAdjFunctionDim2 =
+      boost::make_shared<ParentFiniteElementAdjacencyFunction<2>>(
+          bitAdjParent, bitAdjParentMask, bitAdjEnt, bitAdjEntMask);
+
+  CHKERR m_field.modify_finite_element_adjacency_table(domainFE, MBTET,
+                                                       *parentAdjFunctionDim3);
+  CHKERR m_field.modify_finite_element_adjacency_table(domainFE, MBHEX,
+                                                       *parentAdjFunctionDim3);
+  if (addBoundaryFE || !boundaryFields.empty()) {
+    CHKERR m_field.modify_finite_element_adjacency_table(
+        boundaryFE, MBTRI, *parentAdjFunctionDim2);
+    CHKERR m_field.modify_finite_element_adjacency_table(
+        boundaryFE, MBQUAD, *parentAdjFunctionDim2);
+  }
+  if (addSkeletonFE || !skeletonFields.empty()) {
+    CHKERR m_field.modify_finite_element_adjacency_table(
+        skeletonFE, MBTRI, *parentAdjFunctionDim2);
+    CHKERR m_field.modify_finite_element_adjacency_table(
+        skeletonFE, MBQUAD, *parentAdjFunctionDim2);
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+template <> MoFEMErrorCode Simple::setParentAdjacency<2>() {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+
+  parentAdjFunctionDim2 =
+      boost::make_shared<ParentFiniteElementAdjacencyFunction<2>>(
+          bitAdjParent, bitAdjParentMask, bitAdjEnt, bitAdjEntMask);
+  parentAdjFunctionDim1 =
+      boost::make_shared<ParentFiniteElementAdjacencyFunction<1>>(
+          bitAdjParent, bitAdjParentMask, bitAdjEnt, bitAdjEntMask);
+
+  CHKERR m_field.modify_finite_element_adjacency_table(domainFE, MBTRI,
+                                                       *parentAdjFunctionDim2);
+  CHKERR m_field.modify_finite_element_adjacency_table(domainFE, MBQUAD,
+                                                       *parentAdjFunctionDim2);
+  if (addBoundaryFE || !boundaryFields.empty())
+    CHKERR m_field.modify_finite_element_adjacency_table(
+        boundaryFE, MBEDGE, *parentAdjFunctionDim1);
+  if (addSkeletonFE || !skeletonFields.empty())
+    CHKERR m_field.modify_finite_element_adjacency_table(
+        skeletonFE, MBEDGE, *parentAdjFunctionDim1);
+
+  MoFEMFunctionReturn(0);
+}
+
+template <> MoFEMErrorCode Simple::setParentAdjacency<-1>() {
+  MoFEMFunctionBegin;
+  switch (getDim()) {
+  case 1:
+    THROW_MESSAGE("Not implemented");
+  case 2:
+    return setParentAdjacency<2>();
+  case 3:
+    return setParentAdjacency<3>();
+  default:
+    THROW_MESSAGE("Not implemented");
+  }
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode Simple::setSkeletonAdjacency(int dim) {
   MoFEMFunctionBegin;
   if (dim == -1)
@@ -202,7 +278,9 @@ Simple::Simple(const Core &core)
       bitLevelMask(BitRefLevel().set()), meshSet(0), boundaryMeshset(0),
       skeletonMeshset(0), nameOfProblem("SimpleProblem"), domainFE("dFE"),
       boundaryFE("bFE"), skeletonFE("sFE"), dIm(-1), addSkeletonFE(false),
-      addBoundaryFE(false) {
+      addBoundaryFE(false), addParentAdjacencies(false),
+      bitAdjParent(BitRefLevel().set()), bitAdjParentMask(BitRefLevel().set()),
+      bitAdjEnt(BitRefLevel().set()), bitAdjEntMask(BitRefLevel().set()) {
   PetscLogEventRegister("SimpleSetUp", 0, &MOFEM_EVENT_SimpleSetUP);
   PetscLogEventRegister("SimpleLoadMesh", 0, &MOFEM_EVENT_SimpleLoadMesh);
   PetscLogEventRegister("SimpleBuildFields", 0, &MOFEM_EVENT_SimpleBuildFields);
@@ -267,10 +345,17 @@ MoFEMErrorCode Simple::loadFile(const std::string options,
   if (addSkeletonFE)
     CHKERR exchangeGhostCells();
 
-  Range ents;
-  CHKERR m_field.get_moab().get_entities_by_dimension(meshSet, dIm, ents, true);
-  CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevel(ents, bitLevel,
-                                                               false);
+  if (bitLevel.any()) {
+    Range ents;
+    CHKERR m_field.get_moab().get_entities_by_dimension(meshSet, dIm, ents,
+                                                        true);
+    CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevel(ents, bitLevel,
+                                                                 false);
+  } else {
+    MOFEM_LOG("WORLD", Sev::warning) << "BitRefLevel is none and not set";
+    CHKERR m_field.getInterface<BitRefManager>()->addToDatabaseBitRefLevelByDim(
+        dIm, BitRefLevel().set(), BitRefLevel().set());
+  }
 
   PetscLogEventEnd(MOFEM_EVENT_SimpleLoadMesh, 0, 0, 0, 0);
   MoFEMFunctionReturn(0);
@@ -672,8 +757,13 @@ MoFEMErrorCode Simple::setUp(const PetscBool is_partitioned) {
   PetscLogEventBegin(MOFEM_EVENT_SimpleSetUP, 0, 0, 0, 0);
 
   CHKERR defineFiniteElements();
+
   if (addSkeletonFE || !skeletonFields.empty())
     CHKERR setSkeletonAdjacency();
+
+  if (addParentAdjacencies)
+    CHKERR setParentAdjacency();
+
   CHKERR defineProblem(is_partitioned);
   CHKERR buildFields();
   CHKERR buildFiniteElements();
@@ -683,9 +773,22 @@ MoFEMErrorCode Simple::setUp(const PetscBool is_partitioned) {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Simple::reSetUp() {
+MoFEMErrorCode Simple::reSetUp(bool only_dm) {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
+  PetscLogEventBegin(MOFEM_EVENT_SimpleBuildProblem, 0, 0, 0, 0);
+
+  if (!only_dm) {
+    CHKERR defineFiniteElements();
+    CHKERR buildFields();
+    if (addSkeletonFE || !skeletonFields.empty())
+      CHKERR setSkeletonAdjacency();
+    if (addParentAdjacencies)
+      CHKERR setParentAdjacency();
+    CHKERR buildFiniteElements();
+  }
+
+  CHKERR m_field.build_adjacencies(bitLevel, bitLevelMask);
 
   const Problem *problem_ptr;
   CHKERR DMMoFEMGetProblemPtr(dM, &problem_ptr);
@@ -694,21 +797,13 @@ MoFEMErrorCode Simple::reSetUp() {
   CHKERR m_field.modify_problem_mask_ref_level_set_bit(problem_name,
                                                        bitLevelMask);
 
-  CHKERR defineFiniteElements();
-  if (addSkeletonFE || !skeletonFields.empty())
-    CHKERR setSkeletonAdjacency();
-  CHKERR buildFields();
-  CHKERR buildFiniteElements();
-
-  PetscLogEventBegin(MOFEM_EVENT_SimpleBuildProblem, 0, 0, 0, 0);
-  CHKERR m_field.build_adjacencies(bitLevel);
   // Set problem by the DOFs on the fields rather that by adding DOFs on the
   // elements
   m_field.getInterface<ProblemsManager>()->buildProblemFromFields = PETSC_TRUE;
   CHKERR DMSetUp_MoFEM(dM);
   m_field.getInterface<ProblemsManager>()->buildProblemFromFields = PETSC_FALSE;
-  PetscLogEventEnd(MOFEM_EVENT_SimpleBuildProblem, 0, 0, 0, 0);
 
+  PetscLogEventEnd(MOFEM_EVENT_SimpleBuildProblem, 0, 0, 0, 0);
   MoFEMFunctionReturn(0);
 }
 

@@ -28,9 +28,7 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
-template <int SWITCH> struct FaceElementForcesAndSourcesCoreOnSideSwitch;
-
-struct FaceElementForcesAndSourcesCoreOnSideBase;
+struct FaceElementForcesAndSourcesCoreOnSide;
 
 /** \brief Edge finite element
  * \ingroup mofem_forces_and_sources_edge_element
@@ -41,7 +39,8 @@ struct FaceElementForcesAndSourcesCoreOnSideBase;
  * rowColOpPtrVector.
  *
  */
-struct EdgeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
+struct EdgeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
+  EdgeElementForcesAndSourcesCore(Interface &m_field);
 
   std::string meshPositionsFieldName;
 
@@ -52,10 +51,10 @@ struct EdgeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
 
   enum Switches {};
 
-  template <int SWITCH> MoFEMErrorCode opSwitch();
+  MoFEMErrorCode operator()();
 
 protected:
-  EdgeElementForcesAndSourcesCoreBase(Interface &m_field);
+
 
   MatrixDouble tangentAtGaussPts;
 
@@ -70,13 +69,13 @@ protected:
   MoFEMErrorCode setIntegrationPts();
   MoFEMErrorCode calculateCoordsAtIntegrationPts();
 
-  friend class FaceElementForcesAndSourcesCoreOnSideBase;
+  friend class FaceElementForcesAndSourcesCoreOnSide;
 };
 
 /** \brief default operator for EDGE element
   \ingroup mofem_forces_and_sources_edge_element
   */
-struct EdgeElementForcesAndSourcesCoreBase::UserDataOperator
+struct EdgeElementForcesAndSourcesCore::UserDataOperator
     : public ForcesAndSourcesCore::UserDataOperator {
 
   using ForcesAndSourcesCore::UserDataOperator::UserDataOperator;
@@ -128,7 +127,7 @@ struct EdgeElementForcesAndSourcesCoreBase::UserDataOperator
   /**
    * \brief get pointer to this finite element
    */
-  inline const EdgeElementForcesAndSourcesCoreBase *getEdgeFE();
+  inline const EdgeElementForcesAndSourcesCore *getEdgeFE();
 
   inline FTensor::Tensor1<double, 3> getFTensor1Direction();
 
@@ -153,144 +152,70 @@ struct EdgeElementForcesAndSourcesCoreBase::UserDataOperator
   inline FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
   getFTensor1TangentAtGaussPts();
 
-  template <int SWITCH>
   MoFEMErrorCode
-  loopSideFaces(const string &fe_name,
-                FaceElementForcesAndSourcesCoreOnSideSwitch<SWITCH> &fe_side);
+  loopSideFaces(const string fe_name,
+                FaceElementForcesAndSourcesCoreOnSide &fe_side);
 
 protected:
   MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
 };
 
-/** \brief Edge finite element
- * \ingroup mofem_forces_and_sources_edge_element
- *
- * User is implementing own operator at Gauss points level, by own object
- * derived from EdgeElementForcesAndSourcesCoreL::UserDataOperator.  Arbitrary
- * number of operator added pushing objects to rowOpPtrVector and
- * rowColOpPtrVector.
- *
- */
-template <int SWITCH>
-struct EdgeElementForcesAndSourcesCoreSwitch
-    : public EdgeElementForcesAndSourcesCoreBase {
-
-  EdgeElementForcesAndSourcesCoreSwitch(Interface &m_field)
-      : EdgeElementForcesAndSourcesCoreBase(m_field) {}
-
-  MoFEMErrorCode operator()();
-};
-
-/** \brief Edge finite element default
- \ingroup mofem_forces_and_sources_edge_element
-
- */
-using EdgeElementForcesAndSourcesCore =
-    EdgeElementForcesAndSourcesCoreSwitch<0>;
-
-template <int SWITCH>
-MoFEMErrorCode EdgeElementForcesAndSourcesCoreBase::opSwitch() {
-  MoFEMFunctionBegin;
-
-  if (numeredEntFiniteElementPtr->getEntType() != MBEDGE)
-    MoFEMFunctionReturnHot(0);
-
-  CHKERR calculateEdgeDirection();
-  CHKERR getSpacesAndBaseOnEntities(dataH1);
-  CHKERR getEntityDataOrder<MBEDGE>(dataH1, H1);
-  dataH1.dataOnEntities[MBEDGE][0].getSense() =
-      1; // set sense to 1, this is this entity
-
-  // L2
-  if (dataH1.spacesOnEntities[MBEDGE].test(L2)) {
-    auto &data_l2 = *dataOnElement[L2];
-    CHKERR getEntityDataOrder<MBEDGE>(data_l2, L2);
-    data_l2.dataOnEntities[MBEDGE][0].getSense() =
-        1; // set sense to 1, this is this entity
-    data_l2.spacesOnEntities[MBEDGE].set(L2);
-  }
-
-  // Hcurl
-  if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
-    auto &data_curl = *dataOnElement[HCURL];
-    CHKERR getEntityDataOrder<MBEDGE>(data_curl, HCURL);
-    data_curl.dataOnEntities[MBEDGE][0].getSense() =
-        1; // set sense to 1, this is this entity
-    data_curl.spacesOnEntities[MBEDGE].set(HCURL);
-  }
-
-  CHKERR setIntegrationPts();
-  CHKERR calculateCoordsAtIntegrationPts();
-  CHKERR calHierarchicalBaseFunctionsOnElement();
-  CHKERR calBernsteinBezierBaseFunctionsOnElement();
-
-  // Iterate over operators
-  CHKERR loopOverOperators();
-
-  MoFEMFunctionReturn(0);
-}
-
-template <int SWITCH>
-MoFEMErrorCode EdgeElementForcesAndSourcesCoreSwitch<SWITCH>::operator()() {
-  return opSwitch<SWITCH>();
-}
-
 const EntityHandle *
-EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getConn() {
-  return static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE)->cOnn;
+EdgeElementForcesAndSourcesCore::UserDataOperator::getConn() {
+  return static_cast<EdgeElementForcesAndSourcesCore *>(ptrFE)->cOnn;
 }
 
-double EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getLength() {
-  return static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE)->lEngth;
+double EdgeElementForcesAndSourcesCore::UserDataOperator::getLength() {
+  return static_cast<EdgeElementForcesAndSourcesCore *>(ptrFE)->lEngth;
 }
 
-double EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getMeasure() {
+double EdgeElementForcesAndSourcesCore::UserDataOperator::getMeasure() {
   return getLength();
 }
 
 VectorDouble &
-EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getDirection() {
-  return static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE)->dIrection;
+EdgeElementForcesAndSourcesCore::UserDataOperator::getDirection() {
+  return static_cast<EdgeElementForcesAndSourcesCore *>(ptrFE)->dIrection;
 }
 
 VectorDouble &
-EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getCoords() {
-  return static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE)->cOords;
+EdgeElementForcesAndSourcesCore::UserDataOperator::getCoords() {
+  return static_cast<EdgeElementForcesAndSourcesCore *>(ptrFE)->cOords;
 }
 
 MatrixDouble &
-EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getTangetAtGaussPts() {
-  return static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE)
+EdgeElementForcesAndSourcesCore::UserDataOperator::getTangetAtGaussPts() {
+  return static_cast<EdgeElementForcesAndSourcesCore *>(ptrFE)
       ->tangentAtGaussPts;
 }
 
-const EdgeElementForcesAndSourcesCoreBase *
-EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getEdgeFE() {
-  return static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE);
+const EdgeElementForcesAndSourcesCore *
+EdgeElementForcesAndSourcesCore::UserDataOperator::getEdgeFE() {
+  return static_cast<EdgeElementForcesAndSourcesCore *>(ptrFE);
 }
 
 inline FTensor::Tensor1<double, 3>
-EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getFTensor1Direction() {
+EdgeElementForcesAndSourcesCore::UserDataOperator::getFTensor1Direction() {
   return FTensor::Tensor1<double, 3>(getDirection()[0], getDirection()[1],
                                      getDirection()[2]);
 }
 
 FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
-EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getTensor1Coords() {
+EdgeElementForcesAndSourcesCore::UserDataOperator::getTensor1Coords() {
   double *ptr = &*getCoords().data().begin();
   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
                                                             &ptr[2]);
 }
 
 FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
-EdgeElementForcesAndSourcesCoreBase::UserDataOperator::
+EdgeElementForcesAndSourcesCore::UserDataOperator::
     getFTensor1TangentAtGaussPts() {
   double *ptr = &*getTangetAtGaussPts().data().begin();
   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
                                                             &ptr[2]);
 }
 
-auto EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getFTensor1Normal(
+auto EdgeElementForcesAndSourcesCore::UserDataOperator::getFTensor1Normal(
     const FTensor::Tensor1<double, 3> &vec) {
   FTensor::Tensor1<double, 3> t_normal;
   FTensor::Index<'i', 3> i;
@@ -301,19 +226,17 @@ auto EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getFTensor1Normal(
   return t_normal;
 }
 
-auto EdgeElementForcesAndSourcesCoreBase::UserDataOperator::
+auto EdgeElementForcesAndSourcesCore::UserDataOperator::
     getFTensor1Normal() {
   FTensor::Tensor1<double, 3> t_normal{0., 0., 1.};
   return getFTensor1Normal(t_normal);
 }
 
-template <int SWITCH>
-MoFEMErrorCode
-EdgeElementForcesAndSourcesCoreBase::UserDataOperator::loopSideFaces(
-    const string &fe_name,
-    FaceElementForcesAndSourcesCoreOnSideSwitch<SWITCH> &fe_side) {
-  return loopSide(fe_name, &fe_side, 2);
-}
+/**
+ * @deprecated use EdgeElementForcesAndSourcesCore
+ */
+DEPRECATED typedef EdgeElementForcesAndSourcesCore
+    EdgeElementForcesAndSourcesCoreBase;
 
 } // namespace MoFEM
 

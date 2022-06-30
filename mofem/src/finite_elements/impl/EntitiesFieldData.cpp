@@ -20,7 +20,7 @@
 namespace MoFEM {
 
 EntitiesFieldData::EntData::EntData(const bool allocate_base_matrices)
-    : sEnse(0), oRder(0), bAse(NOBASE),
+    : sEnse(0), oRder(0), bAse(NOBASE), entDataBitRefLevel(),
       N(baseFunctionsAndBaseDerivatives[ZeroDerivative]),
       diffN(baseFunctionsAndBaseDerivatives[FirstDerivative]) {
   if (allocate_base_matrices) {
@@ -28,8 +28,6 @@ EntitiesFieldData::EntData::EntData(const bool allocate_base_matrices)
     for (auto d = 0; d != LastDerivative; ++d) {
       for (int b = 0; b != LASTBASE; ++b) {
         baseFunctionsAndBaseDerivatives[d][b].reset(new MatrixDouble());
-        N[b].reset(new MatrixDouble());
-        diffN[b].reset(new MatrixDouble());
       }
     }
   }
@@ -130,6 +128,7 @@ MoFEMErrorCode EntitiesFieldData::EntData::resetFieldDependentData() {
   MoFEMFunctionBeginHot;
   sPace = NOSPACE;
   bAse = NOBASE;
+  fieldEntities.resize(0, false);
   iNdices.resize(0, false);
   localIndices.resize(0, false);
   dOfs.resize(0, false);
@@ -169,7 +168,8 @@ EntitiesFieldData::EntData::baseSwap(const std::string &field_name,
 MoFEMErrorCode EntitiesFieldData::baseSwap(const std::string &field_name,
                                            const FieldApproximationBase base) {
   MoFEMFunctionBegin;
-  for (int tt = MBVERTEX; tt != MBMAXTYPE; ++tt) {
+  // Note: Do not swap bases on entities sets
+  for (int tt = MBVERTEX; tt != MBENTITYSET; ++tt) {
     auto &ent_data = dataOnEntities[tt];
     for (auto &side_data : ent_data)
       CHKERR side_data.baseSwap(field_name, base);
@@ -280,7 +280,7 @@ std::ostream &operator<<(std::ostream &os,
 }
 
 std::ostream &operator<<(std::ostream &os, const EntitiesFieldData &e) {
-  for (EntityType t = MBVERTEX; t != MBENTITYSET; ++t) {
+  for (EntityType t = MBVERTEX; t != MBMAXTYPE; ++t) {
     for (unsigned int nn = 0; nn < e.dataOnEntities[t].size(); nn++) {
       os << "dataOnEntities[" << moab::CN::EntityTypeName(t) << "][" << nn
          << "]" << std::endl
@@ -611,6 +611,24 @@ EntitiesFieldData::EntData::getFTensor2DiffN<3, 2>(FieldApproximationBase base,
       &t_diff_n_ptr[HVEC1_1], &t_diff_n_ptr[HVEC2_0], &t_diff_n_ptr[HVEC2_1]);
 }
 
+template <>
+FTensor::Tensor3<FTensor::PackPtr<double *, 12>, 3, 2, 2>
+EntitiesFieldData::EntData::getFTensor3Diff2N(FieldApproximationBase base) {
+  double *ptr = &(getN(base, BaseDerivatives::SecondDerivative))(0, 0);
+  return FTensor::Tensor3<FTensor::PackPtr<double *, 12>, 3, 2, 2>{
+
+      &ptr[2 * HVEC0_0 + 0], &ptr[2 * HVEC0_0 + 1], &ptr[2 * HVEC0_1 + 0],
+      &ptr[2 * HVEC0_1 + 1],
+
+      &ptr[2 * HVEC1_0 + 0], &ptr[2 * HVEC1_0 + 1], &ptr[2 * HVEC1_1 + 0],
+      &ptr[2 * HVEC1_1 + 1],
+
+      &ptr[2 * HVEC2_0 + 0], &ptr[2 * HVEC2_0 + 1], &ptr[2 * HVEC2_1 + 0],
+      &ptr[2 * HVEC2_1 + 1]
+
+  };
+}
+
 template <int Tensor_Dim0, int Tensor_Dim1>
 FTensor::Tensor2<FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>,
                  Tensor_Dim0, Tensor_Dim1>
@@ -795,5 +813,14 @@ DerivedEntitiesFieldData::DerivedEntData::getBBDiffNSharedPtr(
 }
 
 /**@}*/
+
+BitRefLevel &EntitiesFieldData::EntData::getEntDataBitRefLevel() {
+  return entDataBitRefLevel;
+}
+
+BitRefLevel &DerivedEntitiesFieldData::DerivedEntData::getEntDataBitRefLevel() {
+  return entDataPtr->getEntDataBitRefLevel();
+}
+
 
 } // namespace MoFEM

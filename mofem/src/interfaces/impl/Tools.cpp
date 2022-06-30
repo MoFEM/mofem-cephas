@@ -82,6 +82,10 @@ Tools::minTetsQuality(const Range &tets, double &min_quality, Tag th,
   MoFEMFunctionReturn(0);
 }
 
+constexpr double Tools::shapeFunMBEDGE0At00;
+constexpr double Tools::shapeFunMBEDGE1At00;
+constexpr std::array<double, 2> Tools::shapeFunMBEDGEAt00;
+
 constexpr std::array<double, 2> Tools::diffShapeFunMBEDGE;
 constexpr std::array<double, 6> Tools::diffShapeFunMBTRI;
 constexpr std::array<double, 12> Tools::diffShapeFunMBTET;
@@ -201,12 +205,48 @@ MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceTriNodeTri(
     ++t_global_coords;
   }
 
-#ifndef NDEBUG
-  MOFEM_LOG("SELF", Sev::noisy) << "t_a " << t_a;
-  MOFEM_LOG("SELF", Sev::noisy) << "t_b " << t_b;
-  MOFEM_LOG("SELF", Sev::noisy) << "t_coords_at_0 " << t_coords_at_0;
-  MOFEM_LOG("SELF", Sev::noisy) << "t_inv_b " << t_inv_b;
-#endif
+  MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceEdgeNodeEdge(
+    const double *elem_coords, const double *global_coords, const int nb_nodes,
+    double *local_coords) {
+
+  FTensor::Index<'i', 3> i3;
+  MoFEMFunctionBeginHot;
+
+  FTensor::Tensor1<FTensor::PackPtr<const double *, 1>, 3> t_elem_coords = {
+      &elem_coords[0], &elem_coords[3], &elem_coords[6]};
+
+  FTensor::Tensor1<const double, 2> t_n = {shapeFunMBEDGEAt00[0],
+                                           shapeFunMBEDGEAt00[1]};
+  FTensor::Tensor1<double, 3> t_coords_at_0;
+  // Build matrix and get coordinates of zero point
+  // ii - global coordinates
+  FTensor::Tensor1<double, 3> t_a;
+  for (auto ii : {0, 1, 2}) {
+    t_a(ii) = diffShapeFunMBEDGE[0] * t_elem_coords(0) +
+              diffShapeFunMBEDGE[1] * t_elem_coords(1);
+    t_coords_at_0(ii) = shapeFunMBEDGEAt00[0] * t_elem_coords(0) +
+                        shapeFunMBEDGEAt00[1] * t_elem_coords(1);
+    ++t_elem_coords;
+  }
+
+  FTensor::Tensor1<FTensor::PackPtr<const double *, 3>, 3> t_global_coords = {
+      &global_coords[0], &global_coords[1], &global_coords[2]};
+  FTensor::Tensor0<FTensor::PackPtr<double *, 1>> t_local_coords = {
+      &local_coords[0]};
+
+  const double b = t_a(i3) * t_a(i3);
+  const double inv_b = 1 / b;
+
+  // Calculate right hand side
+  for (int ii = 0; ii != nb_nodes; ++ii) {
+    t_local_coords =
+        inv_b * (t_a(i3) * (t_global_coords(i3) - t_coords_at_0(i3)));
+    ++t_local_coords;
+    ++t_global_coords;
+  }
 
   MoFEMFunctionReturnHot(0);
 }

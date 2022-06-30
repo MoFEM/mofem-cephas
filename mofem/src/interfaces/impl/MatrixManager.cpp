@@ -105,17 +105,11 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
 
       const BitRefLevel &fe_bit = r.first->entFePtr->getBitRefLevel();
       // if entity is not problem refinement level
-      if ((fe_bit & prb_mask) != fe_bit)
-        continue;
-      if ((fe_bit & prb_bit).none())
-        continue;
+      if ((fe_bit & prb_bit).any() && (fe_bit & prb_mask) == fe_bit) {
 
-      const BitRefLevel &dof_bit = (*mit_row)->getBitRefLevel();
-      const bool empty_row_block =
-          (empty_field_blocks.first & (*mit_row)->getId()).none();
-
-      // if entity is not problem refinement level
-      if ((fe_bit & dof_bit).any()) {
+        const BitRefLevel &dof_bit = (*mit_row)->getBitRefLevel();
+        const bool empty_row_block =
+            (empty_field_blocks.first & (*mit_row)->getId()).none();
 
         for (auto &it : r.first->entFePtr->getColFieldEnts()) {
           if (auto e = it.lock()) {

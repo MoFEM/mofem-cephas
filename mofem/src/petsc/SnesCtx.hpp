@@ -54,13 +54,19 @@ struct SnesCtx {
   BasicMethodsSequence
       postProcess_Rhs; ///< Sequence of methods run after residual is assembled
 
-
   SnesCtx(Interface &m_field, const std::string &problem_name)
       : mField(m_field), moab(m_field.get_moab()), problemName(problem_name),
         bH(MF_EXIST), zeroPreCondMatrixB(true),
         typeOfAssembly(MAT_FINAL_ASSEMBLY), vErify(false) {
     PetscLogEventRegister("LoopSNESRhs", 0, &MOFEM_EVENT_SnesRhs);
     PetscLogEventRegister("LoopSNESMat", 0, &MOFEM_EVENT_SnesMat);
+    if (!LogManager::checkIfChannelExist("SNES_WORLD")) {
+      auto core_log = logging::core::get();
+      core_log->add_sink(
+          LogManager::createSink(LogManager::getStrmWorld(), "SNES_WORLD"));
+      LogManager::setLog("SNES_WORLD");
+      MOFEM_LOG_TAG("SNES_WORLD", "SNES");
+    }
   }
 
   virtual ~SnesCtx() = default;
@@ -191,6 +197,13 @@ MoFEMErrorCode SnesMoFEMSetAssemblyType(SNES snes, MatAssemblyType type);
  * @return      error code
  */
 MoFEMErrorCode SnesMoFEMSetBehavior(SNES snes, MoFEMTypes bh);
+
+/**
+ * @brief Sens monitor printing residual field by field
+ *
+ */
+MoFEMErrorCode MoFEMSNESMonitorFields(SNES snes, PetscInt its, PetscReal fgnorm,
+                                      SnesCtx *snes_ctx);
 
 } // namespace MoFEM
 

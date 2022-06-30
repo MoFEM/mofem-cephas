@@ -228,12 +228,14 @@ int main(int argc, char *argv[]) {
       auto jac_ptr = boost::make_shared<MatrixDouble>();
       auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
       auto det_ptr = boost::make_shared<VectorDouble>();
-      fe.getOpPtrVector().push_back(new OpCalculateHOJacForFace(jac_ptr));
+      fe.getOpPtrVector().push_back(new OpCalculateHOJac<2>(jac_ptr));
       fe.getOpPtrVector().push_back(
           new OpInvertMatrix<2>(jac_ptr, det_ptr, inv_jac_ptr));
-      fe.getOpPtrVector().push_back(new OpSetInvJacH1ForFace(inv_jac_ptr));
-      fe.getOpPtrVector().push_back(new OpSetInvJacL2ForFace(inv_jac_ptr));
-      fe.getOpPtrVector().push_back(new OpSetHOWeightsOnFace());
+      fe.getOpPtrVector().push_back(
+          new OpSetHOInvJacToScalarBases<2>(H1, inv_jac_ptr));
+      fe.getOpPtrVector().push_back(
+          new OpSetHOInvJacToScalarBases<2>(L2, inv_jac_ptr));
+      fe.getOpPtrVector().push_back(new OpSetHOWeights(det_ptr));
       fe.getOpPtrVector().push_back(new QuadOpRhs(F));
       fe.getOpPtrVector().push_back(new QuadOpLhs(A));
       CHKERR VecZeroEntries(F);
@@ -272,12 +274,14 @@ int main(int argc, char *argv[]) {
 
       fe.getOpPtrVector().push_back(
           new OpCalculateScalarFieldValues("FIELD1", field_vals_ptr));
-      fe.getOpPtrVector().push_back(new OpCalculateHOJacForFace(jac_ptr));
+      fe.getOpPtrVector().push_back(new OpCalculateHOJac<2>(jac_ptr));
       fe.getOpPtrVector().push_back(
           new OpInvertMatrix<2>(jac_ptr, det_ptr, inv_jac_ptr));
-      fe.getOpPtrVector().push_back(new OpSetInvJacH1ForFace(inv_jac_ptr));
-      fe.getOpPtrVector().push_back(new OpSetInvJacL2ForFace(inv_jac_ptr));
-      fe.getOpPtrVector().push_back(new OpSetHOWeightsOnFace());
+      fe.getOpPtrVector().push_back(
+          new OpSetHOInvJacToScalarBases<2>(H1, inv_jac_ptr));
+      fe.getOpPtrVector().push_back(
+          new OpSetHOInvJacToScalarBases<2>(L2, inv_jac_ptr));
+      fe.getOpPtrVector().push_back(new OpSetHOWeights(det_ptr));
       fe.getOpPtrVector().push_back(new OpCalculateScalarFieldGradient<2>(
           "FIELD1", diff_field_vals_ptr, space == L2 ? MBQUAD : MBVERTEX));
       fe.getOpPtrVector().push_back(

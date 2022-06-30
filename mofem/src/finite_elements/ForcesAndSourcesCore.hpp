@@ -165,7 +165,7 @@ public:
    * 
    * @return std::array<boost::shared_ptr<EntitiesFieldData>, LASTSPACE>
    */
-  auto &getDataOnElement() { return dataOnElement; }
+  auto &getDataOnElementBySpaceArray() { return dataOnElement; }
 
   /**
    * @brief Get derived data on entities and space
@@ -176,7 +176,7 @@ public:
    *
    * @return std::array<boost::shared_ptr<EntitiesFieldData>, LASTSPACE>
    */
-  auto &getDerivedDataOnElement() { return derivedDataOnElement; }
+  auto &getDerivedDataOnElementBySpaceArray() { return derivedDataOnElement; }
 
 protected:
   /**
@@ -282,6 +282,10 @@ protected:
   /** \name Data */
 
   /**@{*/
+
+  /** Get bit ref level in  entities, and set it to data
+   */
+  MoFEMErrorCode getBitRefLevelOnData();
 
   /**
    * \brief Get field data on nodes
@@ -471,7 +475,7 @@ protected:
   /**
    * @brief Entity data on element entity columns fields
    *
-   */
+  */
   const std::array<boost::shared_ptr<EntitiesFieldData>, LASTSPACE>
       derivedDataOnElement;
 
@@ -525,7 +529,7 @@ private:
    */
   MoFEMErrorCode setSideFEPtr(const ForcesAndSourcesCore *side_fe_ptr);
 
-  /**
+  /**u
    * @brief Element to integrate parent or child
    *
    */
@@ -539,10 +543,11 @@ private:
    */
   MoFEMErrorCode setRefineFEPtr(const ForcesAndSourcesCore *refine_fe_ptr);
 
-  friend class VolumeElementForcesAndSourcesCoreOnSideBase;
-  friend class FaceElementForcesAndSourcesCoreOnSideBase;
-  friend class FaceElementForcesAndSourcesCoreOnChildParentBase;
-  friend class VolumeElementForcesAndSourcesCoreOnContactPrismSideBase;
+  friend class VolumeElementForcesAndSourcesCoreOnSide;
+  friend class FaceElementForcesAndSourcesCoreOnSide;
+  friend class FaceElementForcesAndSourcesCoreOnChildParent;
+  friend class EdgeElementForcesAndSourcesCoreOnChildParent;
+  friend class VolumeElementForcesAndSourcesCoreOnContactPrismSide;
 
 protected:
   MatrixDouble coordsAtGaussPts; ///< coordinated at gauss points
@@ -555,9 +560,12 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
   /**
    * \brief Controls loop over entities on element
    *
-   * OPROW is used if row vector is assembled
-   * OPCOL is usually used if column vector is assembled
-   * OPROWCOL is usually used for assemble matrices.
+   * - OPROW is used if row vector is assembled
+   * - OPCOL is usually used if column vector is assembled
+   * - OPROWCOL is usually used for assemble matrices.
+   * - OPSPACE no field is defined for such operator. Is usually used to modify
+   * base
+   * 
    *
    * For typical problem like Bubnov-Galerkin OPROW and OPCOL are the same. In
    * more general case for example for non-square matrices columns and rows
@@ -565,11 +573,14 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
    *
    */
   enum OpType {
-    OPROW = 1 << 0,
-    OPCOL = 1 << 1,
-    OPROWCOL = 1 << 2,
-    OPLAST = 1 << 3
+    OPROW = 1 << 0,    ///< operator doWork function is executed on FE rows
+    OPCOL = 1 << 1,    ///< operator doWork function is executed on FE columns
+    OPROWCOL = 1 << 2, ///< operator doWork is executed on FE rows &columns
+    OPSPACE = 1 << 3,  ///< operator do Work is execute on space data
+    OPLAST = 1 << 3    ///< @deprecated would be removed
   };
+
+  static const char *const OpTypeNames[];
 
   char opType;
   std::string rowFieldName;
@@ -583,7 +594,7 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
    *
    * User has no access to field data from this operator.
    */
-  UserDataOperator(const FieldSpace space, const char type = OPLAST,
+  UserDataOperator(const FieldSpace space, const char type = OPSPACE,
                    const bool symm = true);
 
   UserDataOperator(const std::string &field_name, const char type,
@@ -745,7 +756,7 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
 
   /** \brief Get name of the element
    */
-  inline const std::string &getFEName() const;
+  inline std::string getFEName() const;
 
   /** \name Accessing KSP */
 
@@ -984,21 +995,22 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
 
   /**@}*/
 
-protected:
-  ForcesAndSourcesCore *ptrFE;
-
-  virtual MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
-
   inline ForcesAndSourcesCore *getPtrFE() const;
 
   inline ForcesAndSourcesCore *getSidePtrFE() const;
 
   inline ForcesAndSourcesCore *getRefinePtrFE() const;
 
+
+protected:
+  ForcesAndSourcesCore *ptrFE;
+
+  virtual MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
+
 private:
   friend class ForcesAndSourcesCore;
-  friend class EdgeElementForcesAndSourcesCoreBase;
-  friend class FaceElementForcesAndSourcesCoreBase;
+  friend class EdgeElementForcesAndSourcesCore;
+  friend class FaceElementForcesAndSourcesCore;
   friend class ContactPrismElementForcesAndSourcesCore;
 };
 
@@ -1070,8 +1082,8 @@ int ForcesAndSourcesCore::UserDataOperator::getLoopSize() const {
   return getFEMethod()->getLoopSize();
 }
 
-const std::string &ForcesAndSourcesCore::UserDataOperator::getFEName() const {
-  return getFEMethod()->feName;
+std::string ForcesAndSourcesCore::UserDataOperator::getFEName() const {
+  return getFEMethod()->getFEName();
 }
 
 const PetscData::Switches &

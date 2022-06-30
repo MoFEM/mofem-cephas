@@ -233,4 +233,64 @@ MoFEMErrorCode SnesMoFEMSetBehavior(SNES snes, MoFEMTypes bh) {
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode MoFEMSNESMonitorFields(SNES snes, PetscInt its, PetscReal fgnorm,
+                                      SnesCtx *snes_ctx) {
+  MoFEMFunctionBegin;
+  auto &m_field =  snes_ctx->mField;
+  auto problem_ptr = m_field.get_problem(snes_ctx->problemName);
+  auto fields_ptr = m_field.get_fields();
+  auto dofs = problem_ptr->numeredRowDofsPtr;
+
+  std::vector<double> lnorms(fields_ptr->size(), 0),
+      norms(fields_ptr->size(), 0);
+
+  Vec res;
+  CHKERR SNESGetFunction(snes, &res, NULL, NULL);
+
+  const double *r;
+  CHKERR VecGetArrayRead(res, &r);
+  {
+    int f = 0;
+    for (auto fi : *fields_ptr) {
+      const auto lo_uid = FieldEntity::getLoBitNumberUId(fi->bitNumber);
+      const auto hi_uid = FieldEntity::getHiBitNumberUId(fi->bitNumber);
+      const auto hi = dofs->get<Unique_mi_tag>().upper_bound(hi_uid);
+      for (auto lo = dofs->get<Unique_mi_tag>().lower_bound(lo_uid); lo != hi;
+           ++lo) {
+        const DofIdx loc_idx = (*lo)->getPetscLocalDofIdx();
+        if (loc_idx >= 0 && loc_idx < problem_ptr->nbLocDofsRow) {
+          lnorms[f] += PetscRealPart(PetscSqr(r[loc_idx]));
+        }
+      }
+      ++f;
+    }
+  }
+  CHKERR VecRestoreArrayRead(res, &r);
+
+  MPIU_Allreduce(&*lnorms.begin(), &*norms.begin(), lnorms.size(), MPIU_REAL,
+                 MPIU_SUM, PetscObjectComm((PetscObject)snes));
+
+  std::stringstream s;
+  int tl;
+  CHKERR PetscObjectGetTabLevel((PetscObject)snes, &tl);
+  for (auto t = 0; t != tl; ++t)
+    s << "  ";
+  s << its << " Function norm " << boost::format("%14.12e") % (double)fgnorm
+    << " [";
+  {
+    int f = 0;
+    for (auto fi : *fields_ptr) {
+      if (f > 0)
+        s << ", ";
+      s << boost::format("%14.12e") % (double)PetscSqrtReal(norms[f]);
+      ++f;
+    }
+    s << "]";
+  }
+
+  MOFEM_LOG("SNES_WORLD", Sev::inform) << s.str();
+
+  MoFEMFunctionReturn(0);
+}
+
 } // namespace MoFEM

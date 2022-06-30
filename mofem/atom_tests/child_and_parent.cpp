@@ -34,7 +34,10 @@ template <int DIM> struct ElementsAndOps {};
 template <> struct ElementsAndOps<2> {
   using DomainEle = PipelineManager::FaceEle;
   using DomainEleOp = DomainEle::UserDataOperator;
-  using DomianParentEle = FaceElementForcesAndSourcesCoreOnChildParentSwitch<0>;
+  using DomianParentEle = FaceElementForcesAndSourcesCoreOnChildParent;
+  using BoundaryEle = PipelineManager::EdgeEle;
+  using BoundaryEleOp = BoundaryEle::UserDataOperator;
+  using BoundaryParentEle = EdgeElementForcesAndSourcesCoreOnChildParent;
 };
 
 template <> struct ElementsAndOps<3> {
@@ -46,6 +49,10 @@ using DomainEle = ElementsAndOps<SPACE_DIM>::DomainEle;
 using DomainParentEle = ElementsAndOps<SPACE_DIM>::DomianParentEle;
 using DomainEleOp = DomainEle::UserDataOperator;
 using EntData = EntitiesFieldData::EntData;
+
+using BoundaryEle = ElementsAndOps<SPACE_DIM>::BoundaryEle;
+using BoundaryEleOp = BoundaryEle::UserDataOperator;
+using BoundaryParentEle = ElementsAndOps<SPACE_DIM>::BoundaryParentEle;
 
 template <int FIELD_DIM> struct ApproxFieldFunction;
 
@@ -140,6 +147,57 @@ template <> struct AtomTest::OpError<1> : public DomainEleOp {
   }
 };
 
+template <typename ELE_OP, typename PARENT_ELE>
+struct OpCheckGaussCoords : public ELE_OP {
+  OpCheckGaussCoords() : ELE_OP(NOSPACE, ELE_OP::OPSPACE) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        EntitiesFieldData::EntData &data) {
+    MoFEMFunctionBegin;
+
+    MatrixDouble parent_coords;
+
+    PARENT_ELE parent_fe(this->getPtrFE()->mField);
+    auto op = new ELE_OP(NOSPACE, ELE_OP::OPSPACE);
+    op->doWorkRhsHook = [&](DataOperator *op_ptr, int side,
+                                   EntityType type,
+                                   EntitiesFieldData::EntData &data) {
+      MoFEMFunctionBegin;
+
+      MOFEM_LOG("SELF", Sev::noisy)
+          << "parent_coords in op "
+          << static_cast<ELE_OP *>(op_ptr)->getCoordsAtGaussPts();
+
+      parent_coords = static_cast<ELE_OP *>(op_ptr)->getCoordsAtGaussPts();
+      MoFEMFunctionReturn(0);
+    };
+    parent_fe.getOpPtrVector().push_back(op);
+
+    MOFEM_LOG("SELF", Sev::noisy) << "fe name " << this->getFEName();
+    CHKERR this->loopParent(this->getFEName(), &parent_fe);
+    MOFEM_LOG("SELF", Sev::noisy) << "parent_coords " << parent_coords;
+
+    MatrixDouble child_coords = this->getCoordsAtGaussPts();
+    MOFEM_LOG("SELF", Sev::noisy) << "child_coords " << child_coords;
+
+    child_coords -= parent_coords;
+
+    MOFEM_LOG("SELF", Sev::noisy) << "Corrds diffs" << child_coords;
+
+    double n = 0;
+    for (auto d : child_coords.data())
+      n += d * d;
+
+    if (sqrt(n) > 1e-12)
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+               "Parent and child global coords at integration points are "
+               "diffrent norm = %3.2e",
+               sqrt(n));
+
+    MoFEMFunctionReturn(0);
+  }
+};
+
 //! [Run programme]
 MoFEMErrorCode AtomTest::runProblem() {
   MoFEMFunctionBegin;
@@ -226,6 +284,8 @@ MoFEMErrorCode AtomTest::setupProblem() {
   // Add field
   CHKERR simpleInterface->addDomainField(FIELD_NAME, H1,
                                          AINSWORTH_LEGENDRE_BASE, FIELD_DIM);
+  CHKERR simpleInterface->addBoundaryField(FIELD_NAME, H1,
+                                           AINSWORTH_LEGENDRE_BASE, FIELD_DIM);
   constexpr int order = 4;
   CHKERR simpleInterface->setFieldOrder(FIELD_NAME, order);
   CHKERR simpleInterface->setUp();
@@ -266,13 +326,13 @@ MoFEMErrorCode AtomTest::assembleSystem() {
   domainChildLhs->getRuleHook = rule;
   domainChildLhs->getOpPtrVector().push_back(
       new OpDomainMass(FIELD_NAME, FIELD_NAME, beta));
-      
+
   domainChildRhs = boost::make_shared<DomainEle>(mField);
   domainChildLhs->getRuleHook = rule;
   domainChildRhs->getOpPtrVector().push_back(
       new OpDomainSource(FIELD_NAME, approxFunction));
 
-  auto parent_op_lhs = new DomainEleOp(NOSPACE, DomainEleOp::OPLAST);
+  auto parent_op_lhs = new DomainEleOp(NOSPACE, DomainEleOp::OPSPACE);
   parent_op_lhs->doWorkRhsHook = [&](DataOperator *op_ptr, int side,
                                      EntityType type,
                                      EntitiesFieldData::EntData &data) {
@@ -296,7 +356,7 @@ MoFEMErrorCode AtomTest::assembleSystem() {
     MoFEMFunctionReturn(0);
   };
 
-  auto parent_op_rhs = new DomainEleOp(NOSPACE, DomainEleOp::OPLAST);
+  auto parent_op_rhs = new DomainEleOp(NOSPACE, DomainEleOp::OPSPACE);
   parent_op_rhs->doWorkRhsHook = [&](DataOperator *op_ptr, int side,
                                      EntityType type,
                                      EntitiesFieldData::EntData &data) {
@@ -389,10 +449,8 @@ MoFEMErrorCode AtomTest::refineResults() {
     Range meshsets;
     CHKERR moab.get_entities_by_type(0, MBENTITYSET, meshsets, true);
     for (auto m : meshsets) {
-      for (auto t = MBVERTEX; t != MBENTITYSET; ++t) {
-        CHKERR mField.getInterface<BitRefManager>()
-            ->updateMeshsetByEntitiesChildren(m, bit_level2, m, t, false);
-      }
+      CHKERR mField.getInterface<BitRefManager>()
+          ->updateMeshsetByEntitiesChildren(m, bit_level2, m, MBMAXTYPE, false);
     }
 
     MoFEMFunctionReturn(0);
@@ -416,11 +474,13 @@ MoFEMErrorCode AtomTest::refineResults() {
 
     pipeline_mng->getDomainLhsFE().reset();
     pipeline_mng->getDomainRhsFE().reset();
+    pipeline_mng->getBoundaryRhsFE().reset();
 
     auto rule = [](int, int, int p) -> int { return 2 * p; };
 
     CHKERR pipeline_mng->setDomainLhsIntegrationRule(rule);
     CHKERR pipeline_mng->setDomainRhsIntegrationRule(rule);
+    CHKERR pipeline_mng->setBoundaryRhsIntegrationRule(rule);
 
     auto test_bit_ref = [](FEMethod *fe_ptr) {
       const auto &bit = fe_ptr->numeredEntFiniteElementPtr->getBitRefLevel();
@@ -430,6 +490,7 @@ MoFEMErrorCode AtomTest::refineResults() {
 
     pipeline_mng->getDomainLhsFE()->exeTestHook = test_bit_ref;
     pipeline_mng->getDomainRhsFE()->exeTestHook = test_bit_ref;
+    pipeline_mng->getBoundaryRhsFE()->exeTestHook = test_bit_ref;
 
     auto beta = [](const double, const double, const double) { return 1; };
     auto field_vals_ptr = boost::make_shared<VectorDouble>();
@@ -449,49 +510,11 @@ MoFEMErrorCode AtomTest::refineResults() {
     pipeline_mng->getOpDomainRhsPipeline().push_back(
         new OpDomainTimesScalarField(FIELD_NAME, field_vals_ptr, beta));
 
-    struct OpCheckGaussCoords : public DomainEleOp {
-      OpCheckGaussCoords() : DomainEleOp(NOSPACE, DomainEleOp::OPLAST) {}
+    pipeline_mng->getOpDomainRhsPipeline().push_back(
+        new OpCheckGaussCoords<DomainEleOp, DomainParentEle>());
 
-      MoFEMErrorCode doWork(int side, EntityType type,
-                            EntitiesFieldData::EntData &data) {
-        MoFEMFunctionBegin;
-
-        MatrixDouble parent_coords;
-
-        DomainParentEle parent_fe(getPtrFE()->mField);
-        auto domain_op = new DomainEleOp(NOSPACE, DomainEleOp::OPLAST);
-        domain_op->doWorkRhsHook =
-            [&](DataOperator *op_ptr, int side, EntityType type,
-                EntitiesFieldData::EntData &data) {
-              MoFEMFunctionBegin;
-              parent_coords =
-                  static_cast<DomainEleOp *>(op_ptr)->getCoordsAtGaussPts();
-              MoFEMFunctionReturn(0);
-            };
-        parent_fe.getOpPtrVector().push_back(domain_op);
-
-        CHKERR loopParent(getFEName(), &parent_fe);
-
-        MatrixDouble child_coords = getCoordsAtGaussPts();
-        child_coords -= parent_coords;
-
-        MOFEM_LOG("SELF", Sev::noisy) << "Corrds diffs" << child_coords;
-
-        double n = 0;
-        for (auto d : child_coords.data())
-          n += d * d;
-
-        if (sqrt(n) > 1e-12)
-          SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                   "Parent and child global coords at integration points are "
-                   "diffrent norm = %3.2e",
-                   sqrt(n));
-
-        MoFEMFunctionReturn(0);
-      }
-    };
-
-    pipeline_mng->getOpDomainRhsPipeline().push_back(new OpCheckGaussCoords());
+    pipeline_mng->getOpBoundaryRhsPipeline().push_back(
+        new OpCheckGaussCoords<BoundaryEleOp, BoundaryParentEle>());
 
     CHKERR solveSystem();
 
@@ -517,6 +540,7 @@ MoFEMErrorCode AtomTest::checkResults(
   PipelineManager *pipeline_mng = mField.getInterface<PipelineManager>();
   pipeline_mng->getDomainLhsFE().reset();
   pipeline_mng->getDomainRhsFE().reset();
+  pipeline_mng->getBoundaryRhsFE().reset();
 
   auto rule = [](int, int, int p) -> int { return 2 * p + 1; };
   CHKERR pipeline_mng->setDomainRhsIntegrationRule(rule);
@@ -530,7 +554,7 @@ MoFEMErrorCode AtomTest::checkResults(
 
   pipeline_mng->getOpDomainRhsPipeline().push_back(
       new OpCalculateScalarFieldValues(FIELD_NAME,
-      common_data_ptr->approxVals));
+                                       common_data_ptr->approxVals));
   pipeline_mng->getOpDomainRhsPipeline().push_back(
       new OpError<FIELD_DIM>(common_data_ptr));
 
@@ -550,7 +574,7 @@ MoFEMErrorCode AtomTest::checkResults(
   MOFEM_LOG_C("WORLD", Sev::inform, "Error %6.4e Vec norm %6.4e\n",
               std::sqrt(array[0]), nrm2);
   CHKERR VecRestoreArrayRead(common_data_ptr->L2Vec, &array);
-  
+
   constexpr double eps = 1e-8;
   if (nrm2 > eps)
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,

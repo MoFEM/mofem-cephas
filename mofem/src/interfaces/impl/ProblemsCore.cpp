@@ -494,7 +494,7 @@ MoFEMErrorCode Core::loop_finite_elements(
     } else {
       CHKERR method();
     }
-    
+
   }
   PetscLogEventEnd(MOFEM_EVENT_operator, 0, 0, 0, 0);
 

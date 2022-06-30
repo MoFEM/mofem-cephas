@@ -277,6 +277,21 @@ getFTensor2FromMat(MatrixDouble &data) {
 }
 
 /**
+ * Template specialization for getFTensor2FromMat
+ */
+template <>
+inline FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 1, 1>
+getFTensor2FromMat(MatrixDouble &data) {
+#ifndef NDEBUG
+  if (data.size1() != 1)
+    THROW_MESSAGE("getFTensor2FromMat<1,1>: wrong size of data matrix, numer "
+                  "of rows should be 1 but is " +
+                  boost::lexical_cast<std::string>(data.size1()));
+#endif
+  return FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 1, 1>(&data(0, 0));
+}
+
+/**
  * \brief Get tensor rank 2 (matrix) form data matrix (specialization)
  */
 template <int Tensor_Dim0, int Tensor_Dim1>
@@ -627,7 +642,7 @@ struct GetFTensor3FromMatImpl<2, 2, 2, S, T, ublas::row_major, A> {
 #ifndef NDEBUG
     if (data.size1() != 8)
       THROW_MESSAGE(
-          "getFTensor3FromMat<1, 1, 1>: wrong size of data matrix, number "
+          "getFTensor3FromMat<2, 2, 2>: wrong size of data matrix, number "
           "of rows should be 8 but is " +
           boost::lexical_cast<std::string>(data.size1()));
 #endif
@@ -645,8 +660,8 @@ struct GetFTensor3FromMatImpl<3, 2, 2, S, T, ublas::row_major, A> {
 #ifndef NDEBUG
     if (data.size1() != 12)
       THROW_MESSAGE(
-          "getFTensor3FromMat<1, 1, 1>: wrong size of data matrix, number "
-          "of rows should be 8 but is " +
+          "getFTensor3FromMat<3, 2, 2>: wrong size of data matrix, number "
+          "of rows should be 12 but is " +
           boost::lexical_cast<std::string>(data.size1()));
 #endif
     return FTensor::Tensor3<FTensor::PackPtr<double *, S>, 3, 2, 2>{
@@ -777,8 +792,39 @@ FTensor::Tensor2<FTensor::PackPtr<double *, 4>, 2,
       &ptr[0], &ptr[1], &ptr[2], &ptr[3]);
 };
 
+/*
+ * @brief Make Tensor3 from pointer
+ *
+ * @tparam DIM
+ * @param ptr
+ * @return FTensor::Tensor3<FTensor::PackPtr<double *, DIM1 * DIM2* DIM3>, DIM1,
+ * DIM2, DIM3>
+ */
+template <int DIM1, int DIM2, int DIM3>
+inline FTensor::Tensor3<FTensor::PackPtr<double *, DIM1 * DIM2 * DIM3>, DIM1,
+                        DIM2, DIM3>
+getFTensor3FromPtr(double *ptr) {
+  static_assert(DIM1 == DIM1 || DIM2 != DIM2 || DIM3 != DIM3,
+                "Such getFTensor2FromPtr is not implemented");
+};
+
+template <>
+inline FTensor::Tensor3<FTensor::PackPtr<double *, 12>, 3, 2, 2>
+getFTensor3FromPtr<3, 2, 2>(double *ptr) {
+  return FTensor::Tensor3<FTensor::PackPtr<double *, 12>, 3, 2, 2>(
+      &ptr[0], &ptr[1], &ptr[2],
+
+      &ptr[3], &ptr[4], &ptr[5],
+
+      &ptr[6], &ptr[7], &ptr[8],
+
+      &ptr[9], &ptr[10], &ptr[11]
+
+  );
+};
+
 /**
- * @brief Make summetric Tensor2 from pointer, taking lower triangle of matrix
+ * @brief Make symmetric Tensor2 from pointer, taking lower triangle of matrix
  *
  * @tparam DIM
  * @param ptr

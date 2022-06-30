@@ -20,12 +20,12 @@
 
 namespace MoFEM {
 
-int VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::getRule(int order) {
+int VolumeElementForcesAndSourcesCoreOnContactPrismSide::getRule(int order) {
   return -1;
 };
 
 MoFEMErrorCode
-VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::setGaussPts(int order) {
+VolumeElementForcesAndSourcesCoreOnContactPrismSide::setGaussPts(int order) {
   MoFEMFunctionBegin;
 
   if (!sidePtrFE)

@@ -383,33 +383,31 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
             const BitRefLevel &fe_bit = lo->entFePtr->getBitRefLevel();
 
             // if entity is not problem refinement level
-            if ((fe_bit & prb_mask) != fe_bit)
-              continue;
-            if ((fe_bit & prb_bit).none())
-              continue;
+            if ((fe_bit & prb_bit).any() && (fe_bit & prb_mask) == fe_bit) {
 
-            auto add_to_view = [&](auto &nb_dofs, auto &view, auto rc) {
-              auto dit = nb_dofs->lower_bound(uid);
-              decltype(dit) hi_dit;
-              if (dit != nb_dofs->end()) {
-                hi_dit = nb_dofs->upper_bound(
-                    uid | static_cast<UId>(MAX_DOFS_ON_ENTITY - 1));
-                view.insert(dit, hi_dit);
-                row_col[rc] = true;
-              }
-            };
+              auto add_to_view = [&](auto dofs, auto &view, auto rc) {
+                auto dit = dofs->lower_bound(uid);
+                decltype(dit) hi_dit;
+                if (dit != dofs->end()) {
+                  hi_dit = dofs->upper_bound(
+                      uid | static_cast<UId>(MAX_DOFS_ON_ENTITY - 1));
+                  view.insert(dit, hi_dit);
+                  row_col[rc] = true;
+                }
+              };
 
-            if ((lo->entFePtr->getBitFieldIdRow() & (*it)->getId()).any())
-              add_to_view(dofs_field_ptr, dofs_rows, ROW);
+              if ((lo->entFePtr->getBitFieldIdRow() & (*it)->getId()).any())
+                add_to_view(dofs_field_ptr, dofs_rows, ROW);
 
-            if (!square_matrix)
-              if ((lo->entFePtr->getBitFieldIdCol() & (*it)->getId()).any())
-                add_to_view(dofs_field_ptr, dofs_cols, COL);
+              if (!square_matrix)
+                if ((lo->entFePtr->getBitFieldIdCol() & (*it)->getId()).any())
+                  add_to_view(dofs_field_ptr, dofs_cols, COL);
 
-            if (square_matrix && row_col[ROW])
-              break;
-            else if (row_col[ROW] && row_col[COL])
-              break;
+              if (square_matrix && row_col[ROW])
+                break;
+              else if (row_col[ROW] && row_col[COL])
+                break;
+            }
           }
         }
       }
@@ -424,16 +422,14 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
   if (buildProblemFromFields == PETSC_TRUE) {
     // Get fields IDs on elements
     BitFieldId fields_ids_row, fields_ids_col;
-    for (FiniteElement_multiIndex::iterator fit = fe_ptr->begin();
-         fit != fe_ptr->end(); fit++) {
+    for (auto fit = fe_ptr->begin(); fit != fe_ptr->end(); fit++) {
       if ((fit->get()->getId() & problem_ptr->getBitFEId()).any()) {
         fields_ids_row |= fit->get()->getBitFieldIdRow();
         fields_ids_col |= fit->get()->getBitFieldIdCol();
       }
     }
     // Get fields DOFs
-    for (Field_multiIndex::iterator fit = fields_ptr->begin();
-         fit != fields_ptr->end(); fit++) {
+    for (auto fit = fields_ptr->begin(); fit != fields_ptr->end(); fit++) {
       if ((fit->get()->getId() & (fields_ids_row | fields_ids_col)).any()) {
 
         auto dit = dofs_field_ptr->get<Unique_mi_tag>().lower_bound(
@@ -451,20 +447,19 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
             }
           }
 
-          const BitRefLevel &dof_bit = (*dit)->getBitRefLevel();
+          const auto &dof_bit = (*dit)->getBitRefLevel();
           // if entity is not problem refinement level
-          if ((dof_bit & prb_mask) != dof_bit)
-            continue;
-          if ((dof_bit & prb_bit).none())
-            continue;
+          if ((dof_bit & prb_bit).any() && (dof_bit & prb_mask) == dof_bit) {
 
-          if ((fit->get()->getId() & fields_ids_row).any()) {
-            dofs_rows.insert(*dit);
-          }
-          if (!square_matrix) {
-            if ((fit->get()->getId() & fields_ids_col).any()) {
-              dofs_cols.insert(*dit);
+            if ((fit->get()->getId() & fields_ids_row).any()) {
+              dofs_rows.insert(*dit);
             }
+            if (!square_matrix) {
+              if ((fit->get()->getId() & fields_ids_col).any()) {
+                dofs_cols.insert(*dit);
+              }
+            }
+
           }
         }
       }
@@ -862,7 +857,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
           MOFEM_LOG("SELF", Sev::error)
               << "DOF is shared or multishared between processors. For example "
                  "if order of field on given entity is set in inconsistently, "
-                 "has diffrent value on two processor, error such as this is "
+                 "has different value on two processor, error such as this is "
                  "triggered";
 
           MOFEM_LOG("SELF", Sev::error) << "UId " << uid << " is not found";
@@ -950,7 +945,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
           // Dof is shared on this processor, however there is no element
           // which have this dof. If DOF is not shared and received from other
           // processor, but not marked as a shared on other that means that is
-          // data inconstancy and error should be thorwed.
+          // data inconstancy and error should be thrown.
 
           std::ostringstream zz;
           zz << **ddit << std::endl;
@@ -1013,12 +1008,12 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
   CHKERR m_field.clear_problem(out_name);
 
   // get reference to all problems
-  typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemByName;
-  ProblemByName &problems_by_name =
+  using ProblemByName = decltype(problems_ptr->get<Problem_mi_tag>());
+  auto &problems_by_name =
       const_cast<ProblemByName &>(problems_ptr->get<Problem_mi_tag>());
 
   // get iterators to out problem, i.e. build problem
-  ProblemByName::iterator out_problem_it = problems_by_name.find(out_name);
+  auto out_problem_it = problems_by_name.find(out_name);
   if (out_problem_it == problems_by_name.end()) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "subproblem with name < %s > not defined (top tip check spelling)",
@@ -1026,7 +1021,7 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
   }
   // get iterator to main problem, i.e. out problem is subproblem of main
   // problem
-  ProblemByName::iterator main_problem_it = problems_by_name.find(main_problem);
+  auto main_problem_it = problems_by_name.find(main_problem);
   if (main_problem_it == problems_by_name.end()) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "problem of subproblem with name < %s > not defined (top tip "
@@ -1096,10 +1091,11 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
           FieldEntity::getHiBitNumberUId(bit_number));
 
       auto add_dit_to_dofs_array = [&](auto &dit) {
-        dofs_array->emplace_back(
-            dit->get()->getDofEntityPtr(), dit->get()->getPetscGlobalDofIdx(),
-            dit->get()->getPetscGlobalDofIdx(),
-            dit->get()->getPetscLocalDofIdx(), dit->get()->getPart());
+        if (dit->get()->getPetscGlobalDofIdx() >= 0)
+          dofs_array->emplace_back(
+              dit->get()->getDofEntityPtr(), dit->get()->getPetscGlobalDofIdx(),
+              dit->get()->getPetscGlobalDofIdx(),
+              dit->get()->getPetscLocalDofIdx(), dit->get()->getPart());
       };
 
       if (entityMap[ss]) {
@@ -1253,7 +1249,7 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode ProblemsManager::buildCompsedProblem(
+MoFEMErrorCode ProblemsManager::buildComposedProblem(
     const std::string out_name, const std::vector<std::string> add_row_problems,
     const std::vector<std::string> add_col_problems, const bool square_matrix,
     int verb) {
@@ -2092,6 +2088,18 @@ MoFEMErrorCode
 ProblemsManager::debugPartitionedProblem(const Problem *problem_ptr, int verb) {
   MoFEM::Interface &m_field = cOre;
   MoFEMFunctionBeginHot;
+
+  auto save_ent = [](moab::Interface &moab, const std::string name,
+                       const EntityHandle ent) {
+    MoFEMFunctionBegin;
+    EntityHandle out_meshset;
+    CHKERR moab.create_meshset(MESHSET_SET, out_meshset);
+    CHKERR moab.add_entities(out_meshset, &ent, 1);
+    CHKERR moab.write_file(name.c_str(), "VTK", "", &out_meshset, 1);
+    CHKERR moab.delete_entities(&out_meshset, 1);
+    MoFEMFunctionReturn(0);
+  };
+
   if (debug > 0) {
 
     typedef NumeredDofEntity_multiIndex::index<Idx_mi_tag>::type
@@ -2128,6 +2136,15 @@ ProblemsManager::debugPartitionedProblem(const Problem *problem_ptr, int verb) {
           }
         } else {
           if ((*dit)->getPetscGlobalDofIdx() < 0) {
+
+            const EntityHandle ent = (*dit)->getEnt();
+            CHKERR save_ent(
+                m_field.get_moab(),
+                "debug_part" +
+                    boost::lexical_cast<std::string>(m_field.get_comm_rank()) +
+                    "_negative_global_index.vtk",
+                ent);
+
             std::ostringstream zz;
             zz << "rank " << m_field.get_comm_rank() << " "
                << dit->get()->getBitRefLevel() << " " << **dit;
@@ -2653,10 +2670,10 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
       }
 
       // create weak view
-      std::vector<boost::weak_ptr<NumeredDofEntity>> dosf_weak_view;
-      dosf_weak_view.reserve(dofs_it_view.size());
+      std::vector<boost::weak_ptr<NumeredDofEntity>> dofs_weak_view;
+      dofs_weak_view.reserve(dofs_it_view.size());
       for (auto dit : dofs_it_view)
-        dosf_weak_view.push_back(*dit);
+        dofs_weak_view.push_back(*dit);
 
       if (verb >= NOISY)
         MOFEM_LOG_C("SYNC", Sev::noisy,
@@ -2664,7 +2681,7 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
                     numered_dofs[s]->size(), dofs_it_view.size());
 
       // erase dofs from problem
-      for (auto weak_dit : dosf_weak_view)
+      for (auto weak_dit : dofs_weak_view)
         if (auto dit = weak_dit.lock()) {
           numered_dofs[s]->erase(dit->getLocalUniqueId());
         }
@@ -2686,7 +2703,7 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
           ++nb_ghost_dofs;
         else
           SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                   "Imposible case. You could run problem on no distributed "
+                   "Impossible case. You could run problem on no distributed "
                    "mesh. That is not implemented. Dof local index is %d",
                    (*dit)->getPetscLocalDofIdx());
       }

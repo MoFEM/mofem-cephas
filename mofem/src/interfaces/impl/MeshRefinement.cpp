@@ -554,7 +554,7 @@ MoFEMErrorCode MeshRefinement::refineTets(const Range &_tets,
 
   SetParent set_parent;
 
-  // Set parrents and adjacencies
+  // Set parents and adjacencies
   for (int idx = 0; idx != parent_tets_refinded.size(); ++idx) {
 
     const EntityHandle tit = parent_tets_refinded[idx];
@@ -924,11 +924,7 @@ MoFEMErrorCode MeshRefinement::refineMeshset(const EntityHandle meshset,
             "this meshset is not in ref database");
   }
   CHKERR m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(
-      meshset, bit, meshset, MBEDGE, recursive, verb);
-  CHKERR m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(
-      meshset, bit, meshset, MBTRI, recursive, verb);
-  CHKERR m_field.getInterface<BitRefManager>()->updateMeshsetByEntitiesChildren(
-      meshset, bit, meshset, MBTET, recursive, verb);
+      meshset, bit, meshset, MBMAXTYPE, recursive, verb);
   *(const_cast<RefEntity *>(miit->get())->getBitRefLevelPtr()) |= bit;
   MoFEMFunctionReturn(0);
 }

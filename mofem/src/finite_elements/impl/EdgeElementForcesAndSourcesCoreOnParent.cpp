@@ -1,6 +1,6 @@
-/** \file FaceElementForcesAndSourcesCoreOnParent.cpp
+/** \file EdgeElementForcesAndSourcesCoreOnParent.cpp
 
-\brief Implementation of face element
+\brief Implementation of edge element for parent
 
 */
 
@@ -20,12 +20,12 @@
 
 namespace MoFEM {
 
-int FaceElementForcesAndSourcesCoreOnChildParent::getRule(int order) {
+int EdgeElementForcesAndSourcesCoreOnChildParent::getRule(int order) {
   return -1;
 };
 
 MoFEMErrorCode
-FaceElementForcesAndSourcesCoreOnChildParent::setGaussPts(int order) {
+EdgeElementForcesAndSourcesCoreOnChildParent::setGaussPts(int order) {
   MoFEMFunctionBegin;
 
   auto ref_fe = refinePtrFE;
@@ -39,13 +39,14 @@ FaceElementForcesAndSourcesCoreOnChildParent::setGaussPts(int order) {
   const auto &ref_gauss_pts = ref_fe->gaussPts;
   const auto nb_integration_points = ref_gauss_pts.size2();
 
-  auto set_integration_pts_for_tri = [&]() {
+  auto set_integration_pts_for_edge = [&]() {
     MoFEMFunctionBeginHot;
+
     auto get_coords = [&](const auto ent) {
       int num_nodes;
       const EntityHandle *conn;
       CHKERR mField.get_moab().get_connectivity(ent, conn, num_nodes, true);
-      std::array<double, 9> node_coords;
+      std::array<double, 6> node_coords;
       CHKERR mField.get_moab().get_coords(conn, num_nodes, node_coords.data());
       return node_coords;
     };
@@ -53,9 +54,9 @@ FaceElementForcesAndSourcesCoreOnChildParent::setGaussPts(int order) {
     auto ref_node_coords = get_coords(ref_ent);
     auto node_coords = get_coords(ent);
 
-    MatrixDouble ref_shapes(nb_integration_points, 3);
-    CHKERR Tools::shapeFunMBTRI<1>(&ref_shapes(0, 0), &ref_gauss_pts(0, 0),
-                                   &ref_gauss_pts(1, 0), nb_integration_points);
+    MatrixDouble ref_shapes(nb_integration_points, 2);
+    CHKERR Tools::shapeFunMBEDGE<1>(&ref_shapes(0, 0), &ref_gauss_pts(0, 0),
+                                    nb_integration_points);
 
 #ifndef NDEBUG
     if (ref_shapes.size1() * ref_shapes.size2() !=
@@ -92,22 +93,21 @@ FaceElementForcesAndSourcesCoreOnChildParent::setGaussPts(int order) {
     };
 
     auto glob_coords = get_glob_coords();
-    MatrixDouble local_coords(nb_integration_points, 2);
+    VectorDouble local_coords(nb_integration_points);
 
-    CHKERR Tools::getLocalCoordinatesOnReferenceTriNodeTri(
+    CHKERR Tools::getLocalCoordinatesOnReferenceEdgeNodeEdge(
         node_coords.data(), &glob_coords(0, 0), nb_integration_points,
-        &local_coords(0, 0));
+        &local_coords[0]);
 
-    gaussPts.resize(3, nb_integration_points, false);
-    auto t_gauss_pts = FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3>{
-        &gaussPts(0, 0), &gaussPts(1, 0), &gaussPts(2, 0)};
-    auto t_local_coords = FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>{
-        &local_coords(0, 0), &local_coords(0, 1)};
+    gaussPts.resize(2, nb_integration_points, false);
+    auto t_gauss_pts = FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 2>{
+        &gaussPts(0, 0), &gaussPts(1, 0)};
+    auto t_local_coords =
+        FTensor::Tensor0<FTensor::PackPtr<double *, 1>>{&local_coords[0]};
 
     for (auto gg = 0; gg != nb_integration_points; ++gg) {
-      FTensor::Index<'i', 2> i;
-      t_gauss_pts(i) = t_local_coords(i);
-      t_gauss_pts(2) = ref_gauss_pts(2, 0);
+      t_gauss_pts(0) = t_local_coords;
+      t_gauss_pts(1) = ref_gauss_pts(1, 0);
       ++t_gauss_pts;
       ++t_local_coords;
     }
@@ -117,8 +117,8 @@ FaceElementForcesAndSourcesCoreOnChildParent::setGaussPts(int order) {
   const auto type = numeredEntFiniteElementPtr->getEntType();
 
   switch (type) {
-  case MBTRI:
-    CHKERR set_integration_pts_for_tri();
+  case MBEDGE:
+    CHKERR set_integration_pts_for_edge();
     break;
   default:
     SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,

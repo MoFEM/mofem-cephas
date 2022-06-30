@@ -20,12 +20,12 @@
 
 namespace MoFEM {
 
-int VolumeElementForcesAndSourcesCoreOnSideBase::getRule(int order) {
+int VolumeElementForcesAndSourcesCoreOnSide::getRule(int order) {
   return -1;
 };
 
 MoFEMErrorCode
-VolumeElementForcesAndSourcesCoreOnSideBase::setGaussPts(int order) {
+VolumeElementForcesAndSourcesCoreOnSide::setGaussPts(int order) {
   MoFEMFunctionBegin;
 
   if (!sidePtrFE)
@@ -35,7 +35,7 @@ VolumeElementForcesAndSourcesCoreOnSideBase::setGaussPts(int order) {
   const auto nb_nodes_on_ele = CN::VerticesPerEntity(type);
 
   auto face_ptr_fe =
-      static_cast<FaceElementForcesAndSourcesCoreBase *>(sidePtrFE);
+      static_cast<FaceElementForcesAndSourcesCore *>(sidePtrFE);
 
   const auto face_entity = sidePtrFE->numeredEntFiniteElementPtr->getEnt();
   auto &side_table = const_cast<SideNumber_multiIndex &>(
@@ -107,11 +107,11 @@ VolumeElementForcesAndSourcesCoreOnSideBase::setGaussPts(int order) {
 }
 
 MoFEMErrorCode
-VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator::setPtrFE(
+VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::setPtrFE(
     ForcesAndSourcesCore *ptr) {
   MoFEMFunctionBeginHot;
   if (!(ptrFE =
-            dynamic_cast<VolumeElementForcesAndSourcesCoreOnSideBase *>(ptr)))
+            dynamic_cast<VolumeElementForcesAndSourcesCoreOnSide *>(ptr)))
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "User operator and finite element do not work together");
   MoFEMFunctionReturnHot(0);

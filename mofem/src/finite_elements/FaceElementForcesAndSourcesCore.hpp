@@ -24,7 +24,7 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
-template <int SWITCH> struct VolumeElementForcesAndSourcesCoreOnSideSwitch;
+struct VolumeElementForcesAndSourcesCoreOnSide;
 
 /** \brief Face finite element
  \ingroup mofem_forces_and_sources_tri_element
@@ -34,23 +34,24 @@ template <int SWITCH> struct VolumeElementForcesAndSourcesCoreOnSideSwitch;
  number of operator added pushing objects to OpPtrVector
 
  */
-struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
+struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
-  std::string meshPositionsFieldName; ///< Name of the field with geometry
+  /**
+   * @deprecated not used anumore, will be removed in next versions 
+   * 
+   */
+  std::string meshPositionsFieldName;
 
   /** \brief default operator for TRI element
    * \ingroup mofem_forces_and_sources_tri_element
    */
   struct UserDataOperator;
-  
-  enum Switches {
-  };
 
-  template <int SWITCH> MoFEMErrorCode opSwitch();
+  MoFEMErrorCode operator()();
+
+  FaceElementForcesAndSourcesCore(Interface &m_field);
 
 protected:
-  FaceElementForcesAndSourcesCoreBase(Interface &m_field);
-
   /**
    * \brief Calculate element area and normal of the face at integration points
    *
@@ -97,13 +98,13 @@ protected:
   MatrixDouble tangentTwoAtGaussPts;
 
   friend class UserDataOperator;
-  friend class VolumeElementForcesAndSourcesCoreOnSideBase;
+  friend class VolumeElementForcesAndSourcesCoreOnSide;
 };
 
 /** \brief default operator for TRI element
  * \ingroup mofem_forces_and_sources_tri_element
  */
-struct FaceElementForcesAndSourcesCoreBase::UserDataOperator
+struct FaceElementForcesAndSourcesCore::UserDataOperator
     : public ForcesAndSourcesCore::UserDataOperator {
 
   using ForcesAndSourcesCore::UserDataOperator::UserDataOperator;
@@ -234,7 +235,7 @@ struct FaceElementForcesAndSourcesCoreBase::UserDataOperator
 
   /** \brief return pointer to Generic Triangle Finite Element object
    */
-  inline FaceElementForcesAndSourcesCoreBase *getFaceFE();
+  inline FaceElementForcesAndSourcesCore *getFaceFE();
 
   /**
    *
@@ -246,207 +247,124 @@ struct FaceElementForcesAndSourcesCoreBase::UserDataOperator
    * @param  method  Finite element object
    * @return         error code
    */
-  template <int SWITCH>
-  MoFEMErrorCode loopSideVolumes(
-      const string &fe_name,
-      VolumeElementForcesAndSourcesCoreOnSideSwitch<SWITCH> &fe_method);
+  MoFEMErrorCode
+  loopSideVolumes(const string fe_name,
+                  VolumeElementForcesAndSourcesCoreOnSide &fe_method);
 
 private:
   MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
 };
 
-/** \brief Face finite element switched
- \ingroup mofem_forces_and_sources_tri_element
-
- */
-template <int SWITCH>
-struct FaceElementForcesAndSourcesCoreSwitch
-    : public FaceElementForcesAndSourcesCoreBase {
-
-  FaceElementForcesAndSourcesCoreSwitch(Interface &m_field)
-      : FaceElementForcesAndSourcesCoreBase(m_field) {}
-
-  using UserDataOperator =
-      FaceElementForcesAndSourcesCoreBase::UserDataOperator;
-
-  MoFEMErrorCode operator()();
-};
-
-/** \brief Face finite element default
- \ingroup mofem_forces_and_sources_tri_element
-
- */
-using FaceElementForcesAndSourcesCore =
-    FaceElementForcesAndSourcesCoreSwitch<0>;
-
-template <int SWITCH>
-MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::opSwitch() {
-  MoFEMFunctionBegin;
-
-  const auto type = numeredEntFiniteElementPtr->getEntType();
-  if (type != lastEvaluatedElementEntityType) {
-    switch (type) {
-    case MBTRI:
-      getElementPolynomialBase() =
-          boost::shared_ptr<BaseFunction>(new TriPolynomialBase());
-      break;
-    case MBQUAD:
-      getElementPolynomialBase() =
-          boost::shared_ptr<BaseFunction>(new QuadPolynomialBase());
-      break;
-    default:
-      MoFEMFunctionReturnHot(0);
-    }
-    CHKERR createDataOnElement(type);
-    lastEvaluatedElementEntityType = type;
-  }
-
-  // Calculate normal and tangent vectors for face geometry
-  CHKERR calculateAreaAndNormal();
-  CHKERR getSpaceBaseAndOrderOnElement();
-
-  CHKERR setIntegrationPts();
-  if (gaussPts.size2() == 0)
-    MoFEMFunctionReturnHot(0);
-
-  CHKERR calculateCoordinatesAtGaussPts();
-  CHKERR calHierarchicalBaseFunctionsOnElement();
-  CHKERR calBernsteinBezierBaseFunctionsOnElement();
-  CHKERR calculateAreaAndNormalAtIntegrationPts();
-
-  // Iterate over operators
-  CHKERR loopOverOperators();
-
-  MoFEMFunctionReturn(0);
+double FaceElementForcesAndSourcesCore::UserDataOperator::getArea() {
+  return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)->aRea;
 }
 
-template <int SWITCH>
-MoFEMErrorCode FaceElementForcesAndSourcesCoreSwitch<SWITCH>::operator()() {
-  return opSwitch<SWITCH>();
-}
-
-double FaceElementForcesAndSourcesCoreBase::UserDataOperator::getArea() {
-  return static_cast<FaceElementForcesAndSourcesCoreBase *>(ptrFE)->aRea;
-}
-
-double FaceElementForcesAndSourcesCoreBase::UserDataOperator::getMeasure() {
+double FaceElementForcesAndSourcesCore::UserDataOperator::getMeasure() {
   return getArea();
 }
 
-VectorDouble &
-FaceElementForcesAndSourcesCoreBase::UserDataOperator::getNormal() {
-  return static_cast<FaceElementForcesAndSourcesCoreBase *>(ptrFE)->nOrmal;
+VectorDouble &FaceElementForcesAndSourcesCore::UserDataOperator::getNormal() {
+  return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)->nOrmal;
 }
 
-VectorDouble &
-FaceElementForcesAndSourcesCoreBase::UserDataOperator::getTangent1() {
-  return static_cast<FaceElementForcesAndSourcesCoreBase *>(ptrFE)->tangentOne;
+VectorDouble &FaceElementForcesAndSourcesCore::UserDataOperator::getTangent1() {
+  return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)->tangentOne;
 }
 
-VectorDouble &
-FaceElementForcesAndSourcesCoreBase::UserDataOperator::getTangent2() {
-  return static_cast<FaceElementForcesAndSourcesCoreBase *>(ptrFE)->tangentTwo;
+VectorDouble &FaceElementForcesAndSourcesCore::UserDataOperator::getTangent2() {
+  return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)->tangentTwo;
 }
 
-auto FaceElementForcesAndSourcesCoreBase::UserDataOperator::
-    getFTensor1Normal() {
+auto FaceElementForcesAndSourcesCore::UserDataOperator::getFTensor1Normal() {
   double *ptr = &*getNormal().data().begin();
   return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
 }
 
-auto FaceElementForcesAndSourcesCoreBase::UserDataOperator::
-    getFTensor1Tangent1() {
+auto FaceElementForcesAndSourcesCore::UserDataOperator::getFTensor1Tangent1() {
   double *ptr = &*getTangent1().data().begin();
   return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
 }
 
-auto FaceElementForcesAndSourcesCoreBase::UserDataOperator::
-    getFTensor1Tangent2() {
+auto FaceElementForcesAndSourcesCore::UserDataOperator::getFTensor1Tangent2() {
   double *ptr = &*getTangent2().data().begin();
   return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
 }
 
-int FaceElementForcesAndSourcesCoreBase::UserDataOperator::getNumNodes() {
-  return static_cast<FaceElementForcesAndSourcesCoreBase *>(ptrFE)->num_nodes;
+int FaceElementForcesAndSourcesCore::UserDataOperator::getNumNodes() {
+  return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)->num_nodes;
 }
 
 const EntityHandle *
-FaceElementForcesAndSourcesCoreBase::UserDataOperator::getConn() {
-  return static_cast<FaceElementForcesAndSourcesCoreBase *>(ptrFE)->conn;
+FaceElementForcesAndSourcesCore::UserDataOperator::getConn() {
+  return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)->conn;
 }
 
-VectorDouble &
-FaceElementForcesAndSourcesCoreBase::UserDataOperator::getCoords() {
-  return static_cast<FaceElementForcesAndSourcesCoreBase *>(ptrFE)->coords;
+VectorDouble &FaceElementForcesAndSourcesCore::UserDataOperator::getCoords() {
+  return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)->coords;
 }
 
-auto FaceElementForcesAndSourcesCoreBase::UserDataOperator::
-    getFTensor1Coords() {
+auto FaceElementForcesAndSourcesCore::UserDataOperator::getFTensor1Coords() {
   double *ptr = &*getCoords().data().begin();
   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
                                                             &ptr[2]);
 }
 
 MatrixDouble &
-FaceElementForcesAndSourcesCoreBase::UserDataOperator::getNormalsAtGaussPts() {
-  return static_cast<FaceElementForcesAndSourcesCoreBase *>(ptrFE)
+FaceElementForcesAndSourcesCore::UserDataOperator::getNormalsAtGaussPts() {
+  return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)
       ->normalsAtGaussPts;
 }
 
 ublas::matrix_row<MatrixDouble>
-FaceElementForcesAndSourcesCoreBase::UserDataOperator::getNormalsAtGaussPts(
+FaceElementForcesAndSourcesCore::UserDataOperator::getNormalsAtGaussPts(
     const int gg) {
   return ublas::matrix_row<MatrixDouble>(
-      static_cast<FaceElementForcesAndSourcesCoreBase *>(ptrFE)
-          ->normalsAtGaussPts,
+      static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)->normalsAtGaussPts,
       gg);
 }
 
 MatrixDouble &
-FaceElementForcesAndSourcesCoreBase::UserDataOperator::getTangent1AtGaussPts() {
-  return static_cast<FaceElementForcesAndSourcesCoreBase *>(ptrFE)
+FaceElementForcesAndSourcesCore::UserDataOperator::getTangent1AtGaussPts() {
+  return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)
       ->tangentOneAtGaussPts;
 }
 
 MatrixDouble &
-FaceElementForcesAndSourcesCoreBase::UserDataOperator::getTangent2AtGaussPts() {
-  return static_cast<FaceElementForcesAndSourcesCoreBase *>(ptrFE)
+FaceElementForcesAndSourcesCore::UserDataOperator::getTangent2AtGaussPts() {
+  return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)
       ->tangentTwoAtGaussPts;
 }
 
-auto FaceElementForcesAndSourcesCoreBase::UserDataOperator::
+auto FaceElementForcesAndSourcesCore::UserDataOperator::
     getFTensor1NormalsAtGaussPts() {
   double *ptr = &*getNormalsAtGaussPts().data().begin();
   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
                                                             &ptr[2]);
 }
 
-auto FaceElementForcesAndSourcesCoreBase::UserDataOperator::
+auto FaceElementForcesAndSourcesCore::UserDataOperator::
     getFTensor1Tangent1AtGaussPts() {
   double *ptr = &*getTangent1AtGaussPts().data().begin();
   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
                                                             &ptr[2]);
 }
 
-auto FaceElementForcesAndSourcesCoreBase::UserDataOperator::
+auto FaceElementForcesAndSourcesCore::UserDataOperator::
     getFTensor1Tangent2AtGaussPts() {
   double *ptr = &*getTangent2AtGaussPts().data().begin();
   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
                                                             &ptr[2]);
 }
 
-FaceElementForcesAndSourcesCoreBase *
-FaceElementForcesAndSourcesCoreBase::UserDataOperator::getFaceFE() {
-  return static_cast<FaceElementForcesAndSourcesCoreBase *>(ptrFE);
+FaceElementForcesAndSourcesCore *
+FaceElementForcesAndSourcesCore::UserDataOperator::getFaceFE() {
+  return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE);
 }
 
-template <int SWITCH>
-MoFEMErrorCode
-FaceElementForcesAndSourcesCoreBase::UserDataOperator::loopSideVolumes(
-    const string &fe_name,
-    VolumeElementForcesAndSourcesCoreOnSideSwitch<SWITCH> &fe_method) {
-  return loopSide(fe_name, &fe_method, 3);
-}
+/** \deprecated use FaceElementForcesAndSourcesCore
+ */
+DEPRECATED typedef FaceElementForcesAndSourcesCore
+    FaceElementForcesAndSourcesCoreBase;
 
 } // namespace MoFEM
 

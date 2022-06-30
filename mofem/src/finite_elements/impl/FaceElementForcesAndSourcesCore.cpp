@@ -20,13 +20,13 @@
 
 namespace MoFEM {
 
-FaceElementForcesAndSourcesCoreBase::FaceElementForcesAndSourcesCoreBase(
+FaceElementForcesAndSourcesCore::FaceElementForcesAndSourcesCore(
     Interface &m_field)
     : ForcesAndSourcesCore(m_field),
       meshPositionsFieldName("MESH_NODE_POSITIONS") {}
 
 MoFEMErrorCode
-FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormalAtIntegrationPts() {
+FaceElementForcesAndSourcesCore::calculateAreaAndNormalAtIntegrationPts() {
   MoFEMFunctionBegin;
 
   auto type = numeredEntFiniteElementPtr->getEntType();
@@ -51,7 +51,7 @@ FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormalAtIntegrationPts() {
         &m(0, 0), &m(0, 1), &m(0, 2));
   };
 
-  if(type == MBTRI) {
+  if (type == MBTRI) {
 
     const size_t nb_gauss_pts = gaussPts.size2();
     normalsAtGaussPts.resize(nb_gauss_pts, 3);
@@ -124,7 +124,7 @@ FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormalAtIntegrationPts() {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormal() {
+MoFEMErrorCode FaceElementForcesAndSourcesCore::calculateAreaAndNormal() {
   MoFEMFunctionBegin;
 
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
@@ -188,7 +188,7 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormal() {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::setIntegrationPts() {
+MoFEMErrorCode FaceElementForcesAndSourcesCore::setIntegrationPts() {
   MoFEMFunctionBegin;
   // Set integration points
   int order_data = getMaxDataOrder();
@@ -304,7 +304,7 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::setIntegrationPts() {
 }
 
 MoFEMErrorCode
-FaceElementForcesAndSourcesCoreBase::getSpaceBaseAndOrderOnElement() {
+FaceElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
   MoFEMFunctionBegin;
   // Get spaces order/base and sense of entities.
 
@@ -369,7 +369,7 @@ FaceElementForcesAndSourcesCoreBase::getSpaceBaseAndOrderOnElement() {
 }
 
 MoFEMErrorCode
-FaceElementForcesAndSourcesCoreBase::calculateCoordinatesAtGaussPts() {
+FaceElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
   MoFEMFunctionBeginHot;
 
   const size_t nb_nodes =
@@ -386,13 +386,59 @@ FaceElementForcesAndSourcesCoreBase::calculateCoordinatesAtGaussPts() {
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::UserDataOperator::setPtrFE(
+MoFEMErrorCode FaceElementForcesAndSourcesCore::UserDataOperator::setPtrFE(
     ForcesAndSourcesCore *ptr) {
   MoFEMFunctionBeginHot;
-  if (!(ptrFE = dynamic_cast<FaceElementForcesAndSourcesCoreBase *>(ptr)))
+  if (!(ptrFE = dynamic_cast<FaceElementForcesAndSourcesCore *>(ptr)))
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "User operator and finite element do not work together");
   MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode FaceElementForcesAndSourcesCore::operator()() {
+  MoFEMFunctionBegin;
+
+  const auto type = numeredEntFiniteElementPtr->getEntType();
+  if (type != lastEvaluatedElementEntityType) {
+    switch (type) {
+    case MBTRI:
+      getElementPolynomialBase() =
+          boost::shared_ptr<BaseFunction>(new TriPolynomialBase());
+      break;
+    case MBQUAD:
+      getElementPolynomialBase() =
+          boost::shared_ptr<BaseFunction>(new QuadPolynomialBase());
+      break;
+    default:
+      MoFEMFunctionReturnHot(0);
+    }
+    CHKERR createDataOnElement(type);
+    lastEvaluatedElementEntityType = type;
+  }
+
+  // Calculate normal and tangent vectors for face geometry
+  CHKERR calculateAreaAndNormal();
+  CHKERR getSpaceBaseAndOrderOnElement();
+
+  CHKERR setIntegrationPts();
+  if (gaussPts.size2() == 0)
+    MoFEMFunctionReturnHot(0);
+
+  CHKERR calculateCoordinatesAtGaussPts();
+  CHKERR calHierarchicalBaseFunctionsOnElement();
+  CHKERR calBernsteinBezierBaseFunctionsOnElement();
+  CHKERR calculateAreaAndNormalAtIntegrationPts();
+
+  // Iterate over operators
+  CHKERR loopOverOperators();
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolumes(
+    const string fe_name, VolumeElementForcesAndSourcesCoreOnSide &fe_method) {
+  return loopSide(fe_name, &fe_method, 3);
 }
 
 } // namespace MoFEM
