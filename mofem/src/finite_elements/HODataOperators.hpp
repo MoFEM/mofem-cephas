@@ -61,14 +61,11 @@ struct OpCalculateHOCoords : public ForcesAndSourcesCore::UserDataOperator {
 };
 
 /**
- * \brief Set inverse jacobian to base functions
+ * @deprecated This class should be DIM = 3 specialization when default
+ * parameter is removed
  *
  */
-template<int DIM>
-struct OpSetHOInvJacToScalarBases;
-
-template<>
-struct OpSetHOInvJacToScalarBases<3> : public OpSetInvJacToScalarBasesBasic {
+struct OpSetHOInvJacToScalarBasesImpl : public OpSetInvJacToScalarBasesBasic {
 
   using OpSetInvJacToScalarBasesBasic::OpSetInvJacToScalarBasesBasic;
 
@@ -76,6 +73,20 @@ struct OpSetHOInvJacToScalarBases<3> : public OpSetInvJacToScalarBasesBasic {
                         EntitiesFieldData::EntData &data);
 
 };
+
+/**
+ * \brief Set inverse jacobian to base functions
+ *
+ * \deprecated  Version with default variant DIM = 3 is deprecated, keep for
+ * back compatibility. Should be removed in future. Use of default variant make
+ * code implicit, what can be source of some hidden error. Explict interface is
+ * better, when user see and control outcome, and is aware of existing variants.
+ *
+ */
+template<int DIM = 3>
+struct OpSetHOInvJacToScalarBases : public OpSetHOInvJacToScalarBasesImpl {
+  using OpSetHOInvJacToScalarBasesImpl::OpSetHOInvJacToScalarBasesImpl;
+}; 
 
 template <>
 struct OpSetHOInvJacToScalarBases<2>

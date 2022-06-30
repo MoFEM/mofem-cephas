@@ -113,8 +113,8 @@ OpCalculateHOCoords::doWork(int side, EntityType type,
 };
 
 MoFEMErrorCode
-OpSetHOInvJacToScalarBases<3>::doWork(int side, EntityType type,
-                                      EntitiesFieldData::EntData &data) {
+OpSetHOInvJacToScalarBasesImpl::doWork(int side, EntityType type,
+                                       EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   if (getFEDim() == 3) {
