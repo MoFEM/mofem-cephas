@@ -147,7 +147,7 @@ struct SmartPetscObj
  * \endcode
  *
  */
-auto createSmartDM = [](MPI_Comm comm, const std::string dm_type_name) {
+inline auto createSmartDM(MPI_Comm comm, const std::string dm_type_name) {
   DM dm;
   CHK_THROW_MESSAGE(DMCreate(comm, &dm), "Failed to create DM");
   CHK_THROW_MESSAGE(DMSetType(dm, dm_type_name.c_str()), "Failed set DM type");
@@ -179,7 +179,7 @@ inline MPI_Comm getCommFromPetscObject(PetscObject obj) {
  * \endcode
  *
  */
-auto createSmartGhostVector = [](MPI_Comm comm, PetscInt n, PetscInt N,
+inline auto createSmartGhostVector(MPI_Comm comm, PetscInt n, PetscInt N,
                                  PetscInt nghost, const PetscInt ghosts[]) {
   Vec vv;
   CHK_THROW_MESSAGE(VecCreateGhost(comm, n, N, nghost, ghosts, &vv),
@@ -195,7 +195,7 @@ auto createSmartGhostVector = [](MPI_Comm comm, PetscInt n, PetscInt N,
  * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Vec/VecCreateMPI.html>VecCreateMPI</a>.
  *
  */
-auto createSmartVectorMPI = [](MPI_Comm comm, PetscInt n, PetscInt N) {
+inline auto createSmartVectorMPI(MPI_Comm comm, PetscInt n, PetscInt N) {
   Vec vv;
   CHK_THROW_MESSAGE(VecCreateMPI(comm, n, N, &vv), "Failed to create Vec");
   return SmartPetscObj<Vec>(vv);
@@ -243,25 +243,25 @@ inline SmartPetscObj<Mat> smartMatDuplicate(SmartPetscObj<Mat> &mat,
   }
 };
 
-auto createTS = [](MPI_Comm comm) {
+inline auto createTS(MPI_Comm comm) {
   TS ts;
   CHK_THROW_MESSAGE(TSCreate(comm, &ts), "Failed to create TS");
   return SmartPetscObj<TS>(ts);
 };
 
-auto createSNES = [](MPI_Comm comm) {
+inline auto createSNES(MPI_Comm comm) {
   SNES snes;
   CHK_THROW_MESSAGE(SNESCreate(comm, &snes), "Failed to create SNES");
   return SmartPetscObj<SNES>(snes);
 };
 
-auto createKSP = [](MPI_Comm comm) {
+inline auto createKSP(MPI_Comm comm) {
   KSP ksp;
   CHK_THROW_MESSAGE(KSPCreate(comm, &ksp), "Failed to create KSP");
   return SmartPetscObj<KSP>(ksp);
 };
 
-auto createPC = [](MPI_Comm comm) {
+inline auto createPC(MPI_Comm comm) {
   PC pc;
   CHK_THROW_MESSAGE(PCCreate(comm, &pc), "Failed to create PC");
   return SmartPetscObj<PC>(pc);

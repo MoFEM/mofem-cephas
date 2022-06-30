@@ -1476,7 +1476,7 @@ private:
  * @brief  Create smart pointer to temprary meshset
  * 
  */
-auto get_temp_meshset_ptr = [](moab::Interface &moab) {
+inline auto get_temp_meshset_ptr(moab::Interface &moab) {
   return boost::make_shared<TempMeshset>(moab);
 };
 
@@ -1484,7 +1484,7 @@ auto get_temp_meshset_ptr = [](moab::Interface &moab) {
  * @brief get type from entity handle
  * 
  */
-auto type_from_handle = [](const EntityHandle h) {
+inline auto type_from_handle(const EntityHandle h) {
   return static_cast<EntityType>(h >> MB_ID_WIDTH);
 };
 
@@ -1492,7 +1492,7 @@ auto type_from_handle = [](const EntityHandle h) {
  * @brief get entity dimension form handle
  * 
  */
-auto dimension_from_handle = [](const EntityHandle h) {
+inline auto dimension_from_handle(const EntityHandle h) {
   return moab::CN::Dimension(type_from_handle(h));
 };
 
@@ -1500,7 +1500,7 @@ auto dimension_from_handle = [](const EntityHandle h) {
  * @brief get field bit id from bit number
  * 
  */
-auto field_bit_from_bit_number = [](const int bit_number) {
+inline auto field_bit_from_bit_number(const int bit_number) {
   return BitFieldId().set(bit_number - 1);
 };
 

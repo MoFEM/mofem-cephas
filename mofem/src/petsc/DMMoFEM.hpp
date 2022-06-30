@@ -940,7 +940,7 @@ struct DMCtx : public UnknownInterface {
  * @brief get problem pointer from DM
  * 
  */
-auto getProblemPtr = [](DM dm) {
+inline auto getProblemPtr(DM dm) {
   const MoFEM::Problem *problem_ptr;
   CHK_THROW_MESSAGE(DMMoFEMGetProblemPtr(dm, &problem_ptr),
                     "Get cot get problem ptr from DM");
@@ -952,7 +952,7 @@ auto getProblemPtr = [](DM dm) {
  * \ingroup dm
  * 
  */
-auto smartCreateDMMatrix = [](DM dm) {
+inline auto smartCreateDMMatrix(DM dm) {
   SmartPetscObj<Mat> a;
   ierr = DMCreateMatrix_MoFEM(dm, a);
   CHKERRABORT(getCommFromPetscObject(reinterpret_cast<PetscObject>(dm)), ierr);
@@ -964,7 +964,7 @@ auto smartCreateDMMatrix = [](DM dm) {
  * \ingroup dm
  * 
  */
-auto smartCreateDMVector = [](DM dm) {
+inline auto smartCreateDMVector(DM dm) {
   SmartPetscObj<Vec> v;
   ierr = DMCreateGlobalVector_MoFEM(dm, v);
   CHKERRABORT(getCommFromPetscObject(reinterpret_cast<PetscObject>(dm)), ierr);
@@ -975,7 +975,7 @@ auto smartCreateDMVector = [](DM dm) {
  * @brief Get KSP context data structure used by DM
  * 
  */
-auto smartGetDMKspCtx = [](DM dm) {
+inline auto smartGetDMKspCtx(DM dm) {
   boost::shared_ptr<MoFEM::KspCtx> ksp_ctx;
   ierr = DMMoFEMGetKspCtx(dm, ksp_ctx);
   CHKERRABORT(getCommFromPetscObject(reinterpret_cast<PetscObject>(dm)), ierr);
@@ -986,7 +986,7 @@ auto smartGetDMKspCtx = [](DM dm) {
  * @brief Get SNES context data structure used by DM
  * 
  */
-auto smartGetDMSnesCtx = [](DM dm) {
+inline auto smartGetDMSnesCtx(DM dm) {
   boost::shared_ptr<MoFEM::SnesCtx> snes_ctx;
   ierr = DMMoFEMGetSnesCtx(dm, snes_ctx);
   CHKERRABORT(getCommFromPetscObject(reinterpret_cast<PetscObject>(dm)), ierr);
@@ -997,7 +997,7 @@ auto smartGetDMSnesCtx = [](DM dm) {
  * @brief Get TS context data structure used by DM
  * 
  */
-auto smartGetDMTsCtx = [](DM dm) {
+inline auto smartGetDMTsCtx(DM dm) {
   boost::shared_ptr<MoFEM::TsCtx> ts_ctx;
   ierr = DMMoFEMGetTsCtx(dm, ts_ctx);
   CHKERRABORT(getCommFromPetscObject(reinterpret_cast<PetscObject>(dm)), ierr);
