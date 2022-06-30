@@ -14,9 +14,9 @@ docker tag likask/mofem-spack-mofem:latest likask/mofem-spack-mofem:$VERSION
 docker tag likask/mofem-spack-mofem:latest likask/mofem-intermidiate:latest
 
 #Install softmech module
-docker build -t likask/mofem-spack-softmech -f Dockerfile-spack-softmech empty/ 
-docker tag likask/mofem-spack-softmech:latest likask/mofem-spack-softmech:$VERSION 
-docker tag likask/mofem-spack-softmech:latest likask/mofem-intermidiate:latest
+#docker build -t likask/mofem-spack-softmech -f Dockerfile-spack-softmech empty/ 
+#docker tag likask/mofem-spack-softmech:latest likask/mofem-spack-softmech:$VERSION 
+#docker tag likask/mofem-spack-softmech:latest likask/mofem-intermidiate:latest
 
 # Install other modules ...
 
