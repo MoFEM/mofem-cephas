@@ -850,6 +850,16 @@ DMMoFEMTSSetRHSFunction(DM dm, const std::string fe_name,
   MoFEMFunctionReturnHot(0);
 }
 
+PetscErrorCode DMMoFEMTSSetRHSFunction(DM dm, const char fe_name[],
+                                       MoFEM::FEMethod *method,
+                                       MoFEM::BasicMethod *pre_only,
+                                       MoFEM::BasicMethod *post_only) {
+  return DMMoFEMTSSetRHSFunction<const char *, MoFEM::FEMethod *,
+                                 MoFEM::BasicMethod *, MoFEM::BasicMethod *>(
+      dm, fe_name, method, pre_only, post_only);
+  MoFEMFunctionReturnHot(0);
+}
+
 template <class S, class T0, class T1, class T2>
 static PetscErrorCode DMMoFEMTSSetRHSJacobian(DM dm, S fe_name, T0 method,
                                               T1 pre_only, T2 post_only) {
@@ -876,6 +886,16 @@ DMMoFEMTSSetRHSJacobian(DM dm, const std::string fe_name,
                                  boost::shared_ptr<MoFEM::FEMethod>,
                                  boost::shared_ptr<MoFEM::BasicMethod>,
                                  boost::shared_ptr<MoFEM::BasicMethod>>(
+      dm, fe_name, method, pre_only, post_only);
+  MoFEMFunctionReturnHot(0);
+}
+
+PetscErrorCode DMMoFEMTSSetRHSJacobian(DM dm, const char fe_name[],
+                                       MoFEM::FEMethod *method,
+                                       MoFEM::BasicMethod *pre_only,
+                                       MoFEM::BasicMethod *post_only) {
+  return DMMoFEMTSSetRHSJacobian<const char *, MoFEM::FEMethod *,
+                                 MoFEM::BasicMethod *, MoFEM::BasicMethod *>(
       dm, fe_name, method, pre_only, post_only);
   MoFEMFunctionReturnHot(0);
 }

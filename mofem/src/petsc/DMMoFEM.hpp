@@ -439,6 +439,11 @@ DMMoFEMTSSetRHSFunction(DM dm, const std::string fe_name,
                         boost::shared_ptr<MoFEM::BasicMethod> pre_only,
                         boost::shared_ptr<MoFEM::BasicMethod> post_only);
 
+PetscErrorCode DMMoFEMTSSetRHSFunction(DM dm, const char fe_name[],
+                                       MoFEM::FEMethod *method,
+                                       MoFEM::BasicMethod *pre_only,
+                                       MoFEM::BasicMethod *post_only);
+
 /**
  * @brief set TS the right hand side jacobian
  *
@@ -458,6 +463,11 @@ DMMoFEMTSSetRHSJacobian(DM dm, const std::string fe_name,
                         boost::shared_ptr<MoFEM::FEMethod> method,
                         boost::shared_ptr<MoFEM::BasicMethod> pre_only,
                         boost::shared_ptr<MoFEM::BasicMethod> post_only);
+
+PetscErrorCode DMMoFEMTSSetRHSJacobian(DM dm, const char fe_name[],
+                                       MoFEM::FEMethod *method,
+                                       MoFEM::BasicMethod *pre_only,
+                                       MoFEM::BasicMethod *post_only);
 
 /**
  * \brief set TS implicit function evaluation function
