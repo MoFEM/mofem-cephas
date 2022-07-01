@@ -69,10 +69,10 @@ inline void *get_tag_ptr(moab::Interface &moab, Tag th, EntityHandle ent,
  */
 struct /*__attribute__((__packed__))*/ SideNumber {
   EntityHandle ent;
-  char side_number;
-  char sense;
-  char offset;
-  char brother_side_number;
+  signed char side_number;
+  signed char sense;
+  signed char offset;
+  signed char brother_side_number;
 
   inline EntityType getEntType() const {
     return static_cast<EntityType>((ent & MB_TYPE_MASK) >> MB_ID_WIDTH);
@@ -106,7 +106,7 @@ typedef multi_index_container<
             composite_key<
                 SideNumber,
                 const_mem_fun<SideNumber, EntityType, &SideNumber::getEntType>,
-                member<SideNumber, char, &SideNumber::side_number>
+                member<SideNumber, signed char, &SideNumber::side_number>
 
                 >>
 

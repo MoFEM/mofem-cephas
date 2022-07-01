@@ -105,8 +105,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntitySense(
   if (sit != side_table.end()) {
     auto hi_sit = side_table.upper_bound(get_id_for_max_type(type));
     for (; sit != hi_sit; ++sit) {
-      const int side_number = (*sit)->side_number;
-      if (side_number >= 0) {
+      if (const auto side_number = (*sit)->side_number; side_number >= 0) {
         const int brother_side_number = (*sit)->brother_side_number;
         const int sense = (*sit)->sense;
 
@@ -186,8 +185,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityDataOrder(
             auto sit = side_table.find(e.getEnt());
             if (sit != side_table.end()) {
               auto &side = *sit;
-              const int side_number = side->side_number;
-              if (side_number >= 0) {
+              if (const auto side_number = side->side_number; side_number >= 0) {
                 ApproximationOrder ent_order = e.getMaxOrder();
                 auto &dat = data[side_number];
                 dat.getOrder() =
@@ -286,8 +284,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getNodesIndices(
       for (auto it = lo; it != hi; ++it) {
         if (auto e = it->lock()) {
           auto side_ptr = e->getSideNumberPtr();
-          const auto side_number = side_ptr->side_number;
-          if (side_number >= 0) {
+          if (const auto side_number = side_ptr->side_number; side_number >= 0) {
             const auto brother_side_number = side_ptr->brother_side_number;
             if (auto cache = extractor(e).lock()) {
               for (auto dit = cache->loHi[0]; dit != cache->loHi[1]; ++dit) {
@@ -387,10 +384,9 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityIndices(
 
           const EntityType type = e->getEntType();
           auto side_ptr = e->getSideNumberPtr();
-          const int side = side_ptr->side_number;
-          if (side >= 0) {
-            const int nb_dofs_on_ent = e->getNbDofsOnEnt();
-            const int brother_side = side_ptr->brother_side_number;
+          if (const auto side = side_ptr->side_number; side >= 0) {
+            const auto nb_dofs_on_ent = e->getNbDofsOnEnt();
+            const auto brother_side = side_ptr->brother_side_number;
             auto &dat = data.dataOnEntities[type][side];
             auto &ent_field_indices = dat.getIndices();
             auto &ent_field_local_indices = dat.getLocalIndices();
@@ -523,20 +519,18 @@ MoFEMErrorCode ForcesAndSourcesCore::getProblemNodesIndices(
 
     int nn = 0;
     for (; siit != hi_siit; siit++, nn++) {
-
-      if (siit->get()->side_number == -1)
-        continue;
-
-      auto bit_number = mField.get_field_bit_number(field_name);
-      const EntityHandle ent = siit->get()->ent;
-      auto dit = dofs.get<Unique_mi_tag>().lower_bound(
-          FieldEntity::getLoLocalEntityBitNumber(bit_number, ent));
-      auto hi_dit = dofs.get<Unique_mi_tag>().upper_bound(
-          FieldEntity::getHiLocalEntityBitNumber(bit_number, ent));
-      for (; dit != hi_dit; dit++) {
-        nodes_indices[siit->get()->side_number * (*dit)->getNbOfCoeffs() +
-                      (*dit)->getDofCoeffIdx()] =
-            (*dit)->getPetscGlobalDofIdx();
+      if (siit->get()->side_number >= 0) {
+        auto bit_number = mField.get_field_bit_number(field_name);
+        const EntityHandle ent = siit->get()->ent;
+        auto dit = dofs.get<Unique_mi_tag>().lower_bound(
+            FieldEntity::getLoLocalEntityBitNumber(bit_number, ent));
+        auto hi_dit = dofs.get<Unique_mi_tag>().upper_bound(
+            FieldEntity::getHiLocalEntityBitNumber(bit_number, ent));
+        for (; dit != hi_dit; dit++) {
+          nodes_indices[siit->get()->side_number * (*dit)->getNbOfCoeffs() +
+                        (*dit)->getDofCoeffIdx()] =
+              (*dit)->getPetscGlobalDofIdx();
+        }
       }
     }
   } else {
@@ -561,20 +555,19 @@ MoFEMErrorCode ForcesAndSourcesCore::getProblemTypeIndices(
       side_table.get<1>().upper_bound(boost::make_tuple(type, side_number));
 
   for (; siit != hi_siit; siit++) {
+    if (siit->get()->side_number >= 0) {
 
-    if (siit->get()->side_number == -1)
-      continue;
+      const EntityHandle ent = siit->get()->ent;
+      auto bit_number = mField.get_field_bit_number(field_name);
+      auto dit = dofs.get<Unique_mi_tag>().lower_bound(
+          FieldEntity::getLoLocalEntityBitNumber(bit_number, ent));
+      auto hi_dit = dofs.get<Unique_mi_tag>().upper_bound(
+          FieldEntity::getHiLocalEntityBitNumber(bit_number, ent));
+      indices.resize(std::distance(dit, hi_dit));
+      for (; dit != hi_dit; dit++) {
 
-    const EntityHandle ent = siit->get()->ent;
-    auto bit_number = mField.get_field_bit_number(field_name);
-    auto dit = dofs.get<Unique_mi_tag>().lower_bound(
-        FieldEntity::getLoLocalEntityBitNumber(bit_number, ent));
-    auto hi_dit = dofs.get<Unique_mi_tag>().upper_bound(
-        FieldEntity::getHiLocalEntityBitNumber(bit_number, ent));
-    indices.resize(std::distance(dit, hi_dit));
-    for (; dit != hi_dit; dit++) {
-
-      indices[(*dit)->getEntDofIdx()] = (*dit)->getPetscGlobalDofIdx();
+        indices[(*dit)->getEntDofIdx()] = (*dit)->getPetscGlobalDofIdx();
+      }
     }
   }
 
@@ -635,7 +628,7 @@ ForcesAndSurcesCore::getBitRefLevelOnData() {
       const FieldSpace space = e->getSpace();
       if (space > NOFIELD) {
         const EntityType type = e->getEntType();
-        const int side =
+        const signed char side =
             type == MBVERTEX ? 0 : e->getSideNumberPtr()->side_number;
         if (side >= 0) {
           if (auto &data = dataOnElement[space]) {
@@ -718,10 +711,9 @@ ForcesAndSourcesCore::getNodesFieldData(EntitiesFieldData &data,
             for (auto it = lo; it != hi; ++it) {
               if (auto e = it->lock()) {
                 const auto &sn = e->getSideNumberPtr();
-                const int side_number = sn->side_number;
                 // Some field entities on skeleton can have negative side
-                // numbeer
-                if (side_number >= 0) {
+                // number
+                if (const auto side_number = sn->side_number; side_number >= 0) {
                   const int brother_side_number = sn->brother_side_number;
 
                   field_entities[side_number] = e.get();
@@ -809,12 +801,9 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityFieldData(
 
       for (auto it = lo; it != hi; ++it)
         if (auto e = it->lock()) {
-
-          const EntityType type = e->getEntType();
           auto side_ptr = e->getSideNumberPtr();
-          const int side = side_ptr->side_number;
-          if (side >= 0) {
-
+          if (const auto side = side_ptr->side_number; side >= 0) {
+            const EntityType type = e->getEntType();
             auto &dat = data.dataOnEntities[type][side];
             auto &ent_field = dat.getFieldEntities();
             auto &ent_field_dofs = dat.getFieldDofs();
@@ -1210,9 +1199,9 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
         if (auto e = lo->lock()) {
           if (auto cache = e->entityCacheDataDofs.lock()) {
             if (cache->loHi[0] != cache->loHi[1]) {
-              const EntityType type = e->getEntType();
-              const int side = e->getSideNumberPtr()->side_number;
-              if (side >= 0) {
+              if (const auto side = e->getSideNumberPtr()->side_number;
+                  side >= 0) {
+                const EntityType type = e->getEntType();
                 auto &dat = data.dataOnEntities[type][side];
                 const int brother_side =
                     e->getSideNumberPtr()->brother_side_number;
