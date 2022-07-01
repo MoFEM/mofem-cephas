@@ -12,7 +12,8 @@ RUN . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
   --source-path $MOFEM_SRC_DIR \
   --keep-prefix \
   --test root \
-  mofem-cephas@lukasz~copy_user_modules+docker target=x86_64 build_type=Release ^petsc+X && \
+  mofem-cephas@lukasz~copy_user_modules+docker \
+  target=$TARGET build_type=Release ^petsc+X && \
   export MOFEM_CEPHAS_HASH=`spack find -lv mofem-cephas | awk '/mofem-cephas/ {print $1}' | head -n 1` && \
   cd $MOFEM_INSTALL_DIR/core-build-Release-$MOFEM_CEPHAS_HASH && make clean && \
   touch $MOFEM_ENV_FILE && \
