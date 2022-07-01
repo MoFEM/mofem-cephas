@@ -91,12 +91,7 @@ else(SYMM_RESTRICT)
   add_definitions("-Drestrict=")
 endif(SYMM_RESTRICT)
 add_definitions(${DEFINE_RESTRICT})
-
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  # suppres C++17 warrnings in Boost and other libs, mostly related to std::iterator
-  add_definitions("-D_LIBCPP_DISABLE_DEPRECATION_WARNINGS")
-  add_definitions("-D_LIBCPP_SUPPRESS_DEPRECATED_PUSH")
-endif()
+add_definitions("-D_LIBCPP_DISABLE_DEPRECATION_WARNINGS")
 
 # Installing extermal packages It is used to install prerequisites, ADOL-C,
 # TetGen, MED can be installed like that
