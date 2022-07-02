@@ -149,7 +149,8 @@ struct OpGradSymTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>
   FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
   OpGradSymTensorGradImpl(const std::string row_field_name,
                           const std::string col_field_name,
-                          boost::shared_ptr<MatrixDouble> mat_D)
+                          boost::shared_ptr<MatrixDouble> mat_D,
+                          boost::shared_ptr<Range> ents_ptr = nullptr)
       : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL), matD(mat_D) {
     if (row_field_name == col_field_name)
       this->sYmm = true;
@@ -157,6 +158,7 @@ struct OpGradSymTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>
 
 protected:
   boost::shared_ptr<MatrixDouble> matD;
+  boost::shared_ptr<Range> entsPtr;
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data);
 };
@@ -965,6 +967,11 @@ OpGradSymTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
     EntitiesFieldData::EntData &row_data,
     EntitiesFieldData::EntData &col_data) {
   MoFEMFunctionBegin;
+
+  if (entsPtr) {
+    if (entsPtr->find(OpBase::getFEEntityHandle()) == entsPtr->end())
+      MoFEMFunctionReturnHot(0);
+  }
 
   const size_t nb_row_dofs = row_data.getIndices().size();
   const size_t nb_col_dofs = col_data.getIndices().size();
