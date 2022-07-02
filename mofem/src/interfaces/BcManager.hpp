@@ -62,8 +62,6 @@ struct BcManager : public UnknownInterface {
    */
   MoFEMErrorCode getOptions();
 
-  Range getAdjEnts(Range ents);
-
   /**
    * @brief Remove DOFs from problem
    *
@@ -82,7 +80,7 @@ struct BcManager : public UnknownInterface {
                                            bool get_low_dim_ents = true);
 
   /**
-   * @brief Mark block dofs
+   * @brief Mark block DOFs
    *
    * @param problem_name
    * @param block_name
@@ -146,7 +144,7 @@ struct BcManager : public UnknownInterface {
   inline auto getMergedBlocksMarker(std::vector<string> bc_names) {
     std::vector<std::regex> reg_vec(bc_names.size());
     for (int i = 0; i != bc_names.size(); ++i) {
-      string full_name = string("(.*)_") + bc_names[i] + string("(.*)");
+      auto full_name = std::string("(.*)_") + bc_names[i] + std::string("(.*)");
       reg_vec[i] = std::regex(full_name);
     }
     return getMergedBlocksMarker(reg_vec);
@@ -177,14 +175,15 @@ struct BcManager : public UnknownInterface {
    * @param name bc name
    * @return auto
    */
-  inline auto checkBlock(const std::pair<string, boost::shared_ptr<BCs>> &bc,
-                         std::string name) {
-    string full_name = string("(.*)_") + name + string("(.*)");
+  inline auto
+  checkBlock(const std::pair<std::string, boost::shared_ptr<BCs>> &bc,
+             std::string name) {
+    auto full_name = std::string("(.*)_") + name + std::string("(.*)");
     return checkBlock(bc, std::regex(full_name));
   }
 
   /**
-   * @brief Get block is
+   * @brief Get block IS
    *
    * @param block_prefix  for hashmap
    * @param block_name    for hash map
@@ -201,7 +200,7 @@ struct BcManager : public UnknownInterface {
              int lo, int hi, SmartPetscObj<IS> is_expand = SmartPetscObj<IS>());
 
   /**
-   * @brief Get block is
+   * @brief Get block IS
    *
    * @param problem_name
    * @param block_name
