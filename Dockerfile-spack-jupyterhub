@@ -18,6 +18,9 @@ RUN useradd mofem \
   -p paN8aiEIonqJE && \
   usermod -aG sudo mofem
 
+# Copy static styles for JupyterHub
+RUN cp /mofem_install/jupyter/css/* /usr/local/share/jupyterhub/static/css
+
 WORKDIR $MOFEM_INSTALL_DIR
 
 EXPOSE 8000

@@ -641,7 +641,7 @@ c.JupyterHub.concurrent_spawn_limit = 10
 
 ## Paths to search for jinja templates, before using the default templates.
 #  Default: []
-# c.JupyterHub.template_paths = []
+c.JupyterHub.template_paths = ['/mofem_install/jupyter/templates']
 
 ## Extra variables to be passed into jinja templates
 #  Default: {}
