@@ -39,12 +39,12 @@ ADD . $MOFEM_INSTALL_DIR
 
 # clone spack
 RUN mkdir -p $SPACK_ROOT_DIR && \
-    curl -s -L https://api.github.com/repos/likask/spack/tarball/ \
+    curl -s -L https://api.github.com/repos/likask/spack/tarball/lukasz/spack_v0.17.2 \
     | tar xzC $SPACK_ROOT_DIR --strip 1 && \
     . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
     echo ". $SPACK_ROOT_DIR/share/spack/setup-env.sh" >> ~/.bashrc && \
     spack external find && \
-    spack install --only dependencies mofem-users-modules@lukasz target=x86_64 
+    spack install --only dependencies mofem-users-modules@lukasz~basic_fe~basic_tutorials target=x86_64 
 
 #GNUPGHOME=
 #spack gpg create lukasz lukasz.kaczmarczyk@glasgow.ac.uk
