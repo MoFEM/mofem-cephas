@@ -423,33 +423,32 @@ int main(int argc, char *argv[]) {
 
     auto assemble_matrices_and_vectors = [&]() {
       MoFEMFunctionBegin;
-      if (SPACE_DIM == 2)
-        pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpSetHOWeightsOnFace());
 
       using OpSource = FormsIntegrators<DomainEleOp>::Assembly<
           PETSC>::LinearForm<GAUSS>::OpSource<1, 1>;
 
       if (SPACE_DIM == 2) {
         pipeline_mng->getOpDomainLhsPipeline().push_back(
-            new OpCalculateHOJac<2>(jac_ptr));
+            new OpCalculateHOJac<SPACE_DIM>(jac_ptr));
         pipeline_mng->getOpDomainLhsPipeline().push_back(
             new OpInvertMatrix<SPACE_DIM>(jac_ptr, det_ptr, inv_jac_ptr));
         pipeline_mng->getOpDomainLhsPipeline().push_back(
+            new OpSetHOWeightsOnFace());
+        pipeline_mng->getOpDomainRhsPipeline().push_back(
             new OpSetHOWeightsOnFace());
       }
 
       if (SPACE_DIM == 3) {
         pipeline_mng->getOpDomainLhsPipeline().push_back(
-            new OpCalculateHOJac<3>(jac_ptr));
+            new OpCalculateHOJac<SPACE_DIM>(jac_ptr));
         pipeline_mng->getOpDomainLhsPipeline().push_back(
             new OpInvertMatrix<SPACE_DIM>(jac_ptr, det_ptr, nullptr));
         pipeline_mng->getOpDomainLhsPipeline().push_back(
             new OpSetHOWeights(det_ptr));
         pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpCalculateHOJac<3>(jac_ptr));
+            new OpCalculateHOJac<SPACE_DIM>(jac_ptr));
         pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpInvertMatrix<3>(jac_ptr, det_ptr, nullptr));
+            new OpInvertMatrix<SPACE_DIM>(jac_ptr, det_ptr, nullptr));
         pipeline_mng->getOpDomainRhsPipeline().push_back(
             new OpSetHOWeights(det_ptr));
       }
