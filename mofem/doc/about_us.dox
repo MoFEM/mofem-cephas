@@ -87,4 +87,11 @@ with it, including my sign-off) is maintained indefinitely and may be
 redistributed consistent with this project or the open source license(s)
 involved.
 
+\subsection Users modudules
+
+Users Module are separate software entities in their own repository that can
+follow their license agreements and copyrights. If the user module license and
+copyright are not stated explicitly, it is assumed that it follows the copyright
+and right of the core MoFEM library.
+
 */
