@@ -60,8 +60,7 @@ SOFTWARE.
 
 \subsection Contributing License Agreement
 
-Contributions are accepted via BitBucket merge requests. If you are planning a
-large contribution.
+Contributions are accepted via BitBucket merge requests. 
 
 MoFEM is distributed under a MIT Licese (see above). The act of submitting a
 merge request (with or without an explicit Signed-off-by tag) will be understood
