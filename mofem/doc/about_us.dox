@@ -63,7 +63,7 @@ MIT License
 Contributions are accepted via BitBucket merge requests. If you are planning a
 large contribution.
 
-PETSc is distributed under a MIT Licese (see above). The act of submitting a
+MoFEM is distributed under a MIT Licese (see above). The act of submitting a
 merge request (with or without an explicit Signed-off-by tag) will be understood
 as an affirmation of the following:
 
