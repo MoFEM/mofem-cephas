@@ -1,4 +1,4 @@
-Copyright (c) 2022 [Authors](https://www.openhub.net/p/mofem/contributors)
+# Copyright (c) 2022 [Authors](https://www.openhub.net/p/mofem/contributors)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +19,4 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 [MIT License](https://en.wikipedia.org/wiki/MIT_License#License_terms)
+
