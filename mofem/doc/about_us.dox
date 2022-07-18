@@ -36,7 +36,7 @@ List of third party libraries and packages used by MoFEM:
 
 \section legal_stuff Legal stuff
 
-Copyright (c) 2022 <a href="https://www.openhub.net/p/mofem/contributors">Authors</a>
+Copyright (c) 2022 Contributors <a href="https://www.openhub.net/p/mofem/contributors">https://www.openhub.net/p/mofem/contributors</a>
  
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -56,7 +56,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  
-MIT License
+<a href="https://opensource.org/licenses/MIT">MIT License</a>
 
 \subsection Contributing License Agreement
 
