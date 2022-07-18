@@ -151,7 +151,8 @@ struct OpGradSymTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>
                           const std::string col_field_name,
                           boost::shared_ptr<MatrixDouble> mat_D,
                           boost::shared_ptr<Range> ents_ptr = nullptr)
-      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL), matD(mat_D) {
+      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL), matD(mat_D),
+        entsPtr(ents_ptr) {
     if (row_field_name == col_field_name)
       this->sYmm = true;
   }
