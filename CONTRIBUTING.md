@@ -32,3 +32,17 @@ By making a contribution to this project, I certify that:
 - c. The contribution was provided directly to me by some other person who certified (a), (b) or (c) and I have not modified it.
 
 - d. I understand and agree that this project and the contribution are public and that a record of the contribution (including all personal information I submit with it, including my sign-off) is maintained indefinitely and may be redistributed consistent with this project or the open source license(s) involved.
+
+- e. Principal developers should still be referred in [CONTRIBUTING.md][contributing_file] and [DISTRIBUTION.md][distribution_file] as [Principal developers](#Principal developers) list when merging to or from other repositories or using implementations of this user module
+
+- f. Contributor names and links can be added to the [Principal developers](#Principal developers) list but they cannot be deleted from the list at any point or branching of the development
+
+
+[contributing_file]: ./CONTRIBUTING.md 
+[distribution_file]: ./DISTRIBUTION.md 
+
+# Principal developers
+
+- For core: Principal developers and other contributors can be found in: [Authors](http://mofem.eng.gla.ac.uk/mofem/html/authors.html) MoFEM webpage
+
+- For users modules: Principal developers and other contributors list must be referred and maintained as described in each users modules
