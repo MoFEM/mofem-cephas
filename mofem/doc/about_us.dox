@@ -30,11 +30,9 @@ List of third party libraries and packages used by MoFEM:
 - CMake <http://www.cmake.org>
 - ParaView <http://www.paraview.org>
 
-\section Acknowledgments
+\section legal_stuff Legal stuffa
 
-\image html Acknowledgments.png width=100%
-
-\section legal_stuff Legal stuff
+\subsection license License
 
 Copyright (c) 2022 Contributors <a href="https://www.openhub.net/p/mofem/contributors">https://www.openhub.net/p/mofem/contributors</a>
  
@@ -58,39 +56,15 @@ SOFTWARE.
  
 <a href="https://opensource.org/licenses/MIT">MIT License</a>
 
-\subsection Contributing License Agreement
-
-Contributions are accepted via BitBucket merge requests. 
-
-MoFEM is distributed under a MIT Licese (see above). The act of submitting a
-merge request (with or without an explicit Signed-off-by tag) will be understood
-as an affirmation of the following:
-
-By making a contribution to this project, I certify that:
-
-a. The contribution was created in whole or in part by me and I have the right
-to submit it under the open source license indicated in the file; or
-
-b. The contribution is based upon previous work that, to the best of my
-knowledge, is covered under an appropriate open source license and I have the
-right under that license to submit that work with modifications, whether created
-in whole or in part by me, under the same open source license (unless I am
-permitted to submit under a different license), as indicated in the file; or
-
-c. The contribution was provided directly to me by some other person who
-certified (a), (b) or (c) and I have not modified it.
-
-d. I understand and agree that this project and the contribution are public and
-that a record of the contribution (including all personal information I submit
-with it, including my sign-off) is maintained indefinitely and may be
-redistributed consistent with this project or the open source license(s)
-involved.
-
-\subsection Users modudules
+\subsection license_users_modules Users Modudules License
 
 Users Module are separate software entities in their own repository that can
 follow their license agreements and copyrights. If the User Module license and
 copyright are not stated explicitly, it is assumed that it follows the copyright
 and right of the core MoFEM library.
+
+\section Acknowledgments
+
+\image html Acknowledgments.png width=100%
 
 */
