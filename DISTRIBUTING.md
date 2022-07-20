@@ -1,8 +1,8 @@
 # Distributing License Agreement
 
-MoFEM is distributed under a [MIT License](https://en.wikipedia.org/wiki/MIT_License#License_terms). 
-Distributions licenses will have to follow the guidance below when using parts of MoFEM development.
+Distributions licenses follow [LICENSE.md][licence_file] and will have to follow the guidance below when using parts of MoFEM development.
 
+[licence_file]: ./LICENSE.md 
 # License text
 
 A text section must be include in each distribution that encompasses MoFEM core and users modules versions that includes: 
