@@ -61,7 +61,7 @@ SOFTWARE.
 Users Module are separate software entities in their own repository that can
 follow their license agreements and copyrights. If the User Module license and
 copyright are not stated explicitly, it is assumed that it follows the copyright
-and right of the core MoFEM library.
+the MoFEM library.
 
 \section Acknowledgments
 
