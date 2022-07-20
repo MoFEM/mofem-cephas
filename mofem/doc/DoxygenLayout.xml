@@ -51,6 +51,7 @@
       <tab type="user" url="@ref thrid_party" title="Third party libraries" intro=""/>
       <tab type="user" url="@ref Acknowledgments" title="Acknowledgments" intro=""/>
       <tab type="user" url="@ref legal_stuff" title="Legal stuff" intro=""/>
+      <tab type="user" url="@ref contributing_to_mofem" title="Contributing" intro=""/>
       <tab type="user" url="@ref citelist" title="Bibliography"/>
     </tab>
 

@@ -1,6 +1,7 @@
-# Contributing to MoFEM 
+Contributing to MoFEM {#contributing_to_mofem}
+==============================================
 
-#### Table of links to follow
+# Table of links to follow
 
 * MoFEM is a software with an open community of users and developers, and here we put what it means to be a good citizen of MoFEM community. [Link to Be a good MoFEM citizen](http://mofem.eng.gla.ac.uk/mofem/html/being_a_good_citizen.html)
 
@@ -13,13 +14,12 @@ you program, make pull requests,  etc. Please follow [link to coding practice](h
 * [Writing documentation](http://mofem.eng.gla.ac.uk/mofem/html/a_guide_to_writing_documentation.html) is essential to develop the code successfully; without comments, examples and tutorials code will be difficult or even impossible to use.
 
 * If you seek support, email us on [Q&A group](https://groups.google.com/forum/#!categories/mofem-group) or join [MoFEM Slack](https://mofem.slack.com).
- 
+
+* Contributions are accepted via [BitBucket](https://bitbucket.org/likask/mofem-cephas) pull requests. 
 
 We encourage you to join our team!
 
 # Contributing License Agreement
-
-Contributions are accepted via BitBucket merge requests. If you are planning a large contribution.
 
 MoFEM is distributed under a [MIT License](https://en.wikipedia.org/wiki/MIT_License#License_terms). The act of submitting a merge request (with or without an explicit Signed-off-by tag) will be understood as an affirmation of the following:
 
