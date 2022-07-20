@@ -15,7 +15,9 @@ you program, make pull requests,  etc. Please follow [link to coding practice](h
 
 * If you seek support, email us on [Q&A group](https://groups.google.com/forum/#!categories/mofem-group) or join [MoFEM Slack](https://mofem.slack.com).
 
-* Contributions are accepted via [BitBucket](https://bitbucket.org/likask/mofem-cephas) pull requests. 
+* Contributions to core library are accepted via [BitBucket](https://bitbucket.org/likask/mofem-cephas) pull requests. 
+
+* Contributions to users modules are accepted via [BitBucket](https://bitbucket.org/mofem/users-modules-cephas) pull requests. 
 
 We encourage you to join our team!
 
