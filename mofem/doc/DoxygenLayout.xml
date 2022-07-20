@@ -47,11 +47,10 @@
     <tab type="user" visible="yes" title="About" url="@ref about_us" intro="">
       <tab type="user" url="@ref authors" title="Authors" intro=""/>
       <tab type="user" url="@ref contact" title="Contact" intro=""/>
-      <tab type="user" url="@ref mofem_openhub" title="Stats" intro=""/>
-      <tab type="user" url="@ref thrid_party" title="Third party libraries" intro=""/>
-      <tab type="user" url="@ref Acknowledgments" title="Acknowledgments" intro=""/>
       <tab type="user" url="@ref legal_stuff" title="Legal stuff" intro=""/>
       <tab type="user" url="@ref contributing_to_mofem" title="Contributing" intro=""/>
+      <tab type="user" url="@ref thrid_party" title="Third party libraries" intro=""/>
+      <tab type="user" url="@ref Acknowledgments" title="Acknowledgments" intro=""/>
       <tab type="user" url="@ref citelist" title="Bibliography"/>
     </tab>
 
