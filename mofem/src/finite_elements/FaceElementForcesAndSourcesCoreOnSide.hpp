@@ -61,10 +61,19 @@ struct FaceElementForcesAndSourcesCoreOnSide
 
   /**
    * @brief Sense face on volume
+   * @deprecated  use getSkeletonSense()
    *
    * @return int
    */
-  inline int getEdgeSense() const;
+  DEPRECATED inline int getEdgeSense() const;
+
+  /* @brief Get the skeleton sense
+   *
+   * calls getFaceSense()
+   *
+   * @return int
+   */
+  inline int getSkeletonSense() const;
 
   /**
    * @brief Face number on the volume
@@ -109,10 +118,19 @@ struct FaceElementForcesAndSourcesCoreOnSide::UserDataOperator
   inline EdgeElementForcesAndSourcesCore *getEdgeFE() const;
 
   /**
-   * \brief get face sense in respect to volume
+   * @brief get face sense in respect to volume
+   * @deprecated  use getSkeletonSense()
    * @return edge sense
    */
-  inline int getEdgeSense() const;
+   DEPRECATED inline int getEdgeSense() const;
+
+  /* @brief Get the skeleton sense
+   *
+   * calls getEdgeSense()
+   *
+   * @return int
+   */
+  inline int getSkeletonSense() const;
 
   /**
    * \brief get face side number in respect to volume
@@ -158,6 +176,10 @@ int FaceElementForcesAndSourcesCoreOnSide::getOppositeNode() const {
 }
 
 int FaceElementForcesAndSourcesCoreOnSide::getEdgeSense() const {
+  return getSkeletonSense();
+}
+
+int FaceElementForcesAndSourcesCoreOnSide::getSkeletonSense() const {
   return edgeSense;
 }
 
@@ -176,6 +198,11 @@ FaceElementForcesAndSourcesCoreOnSide::UserDataOperator::getEdgeFE() const {
 }
 
 int FaceElementForcesAndSourcesCoreOnSide::UserDataOperator::getEdgeSense()
+    const {
+  return getSkeletonSense();
+}
+
+int FaceElementForcesAndSourcesCoreOnSide::UserDataOperator::getSkeletonSense()
     const {
   return getFaceFE()->edgeSense;
 }
