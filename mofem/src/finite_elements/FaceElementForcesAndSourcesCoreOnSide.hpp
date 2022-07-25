@@ -53,7 +53,7 @@ struct FaceElementForcesAndSourcesCoreOnSide
   inline const std::array<int, 4> &getFaceConnMap() const;
 
   /**
-   * @brief Get node on volume opposite to volume element
+   * @brief Get node on volume opposite to skeleton element
    *
    * @return int
    */
