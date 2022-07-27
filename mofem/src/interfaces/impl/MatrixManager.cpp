@@ -838,8 +838,13 @@ MoFEMErrorCode MatrixManager::checkMatrixFillIn(const std::string problem_name,
           int max_order = (*cit)->getMaxOrder();
           if ((*cit)->getNbOfCoeffs() * (*cit)->getOrderNbDofs(max_order) !=
               nb_dofs_on_ent) {
+
+            /* It could be that you have
+            removed DOFs from problem, and for example if this was vector filed
+            with components {Ux,Uy,Uz}, you removed on Uz element.*/
+
             MOFEM_LOG("SELF", Sev::warning)
-                << "Warning: Number of Dofs in Col diffrent than number "
+                << "Warning: Number of Dofs in Col different than number "
                    "of dofs for given entity order "
                 << (*cit)->getNbOfCoeffs() * (*cit)->getOrderNbDofs(max_order)
                 << " " << nb_dofs_on_ent;
@@ -922,8 +927,13 @@ MoFEMErrorCode MatrixManager::checkMatrixFillIn(const std::string problem_name,
           int max_order = (*rit)->getMaxOrder();
           if ((*rit)->getNbOfCoeffs() * (*rit)->getOrderNbDofs(max_order) !=
               nb_dofs_on_ent) {
+
+            /* It could be that you have removed DOFs from problem, and for
+             * example if this was vector filed with components {Ux,Uy,Uz}, you
+             * removed on Uz element. */
+            
             MOFEM_LOG("SELF", Sev::warning)
-                << "Warning: Number of Dofs in Row diffrent than number "
+                << "Warning: Number of Dofs in Row different than number "
                    "of dofs for given entity order "
                 << (*rit)->getNbOfCoeffs() * (*rit)->getOrderNbDofs(max_order)
                 << " " << nb_dofs_on_ent;
