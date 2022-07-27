@@ -6,16 +6,6 @@ to use base functions. Need to be changed.
 
 */
 
-/*
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
- */
-
 #ifndef __H1_HDIV_HCURL_L2_H__
 #define __H1_HDIV_HCURL_L2_H__
 
