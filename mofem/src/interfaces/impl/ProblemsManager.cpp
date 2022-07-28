@@ -2502,7 +2502,7 @@ ProblemsManager::partitionGhostDofsOnDistributedMesh(const std::string name,
     NumbDofTypeSharedPtr numered_dofs[] = {p_miit->numeredRowDofsPtr,
                                            p_miit->numeredColDofsPtr};
 
-    // interate over dofs on rows and dofs on columns
+    // iterate over dofs on rows and dofs on columns
     for (int ss = 0; ss != loop_size; ++ss) {
 
       // create dofs view by uid
@@ -2518,7 +2518,7 @@ ProblemsManager::partitionGhostDofsOnDistributedMesh(const std::string name,
       };
       sort(ghost_idx_view.begin(), ghost_idx_view.end(), cmp);
 
-      // intare over dofs which have negative local index
+      // iterate over dofs which have negative local index
       for (auto gid_it : ghost_idx_view) {
         bool success = numered_dofs[ss]->modify(
             gid_it, NumeredDofEntity_local_idx_change((nb_local_dofs[ss])++));
