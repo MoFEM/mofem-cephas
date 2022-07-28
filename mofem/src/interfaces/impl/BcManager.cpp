@@ -100,10 +100,14 @@ MoFEMErrorCode BcManager::removeBlockDOFsOnEntities(
       if (it->getName().compare(0, block_name.length(), block_name) == 0) {
         CHKERR m_field.get_moab().get_entities_by_handle(it->meshset,
                                                          remove_ents, true);
+        const std::string bc_id =
+            problem_name + "_" + field_name + "_" + it->getName();
+
         MOFEM_LOG("BcMngWorld", Sev::verbose)
             << "Found block to remove " << block_name << " number of entities "
             << remove_ents.size() << " highest dim of entities "
             << get_dim(remove_ents);
+        bcMapByBlockName[bc_id] = bc;
       }
     }
     return remove_ents;
