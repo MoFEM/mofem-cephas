@@ -256,4 +256,28 @@ namespace FTensor
 
   };
 
+  template <class A, class T, int Dim0, int Dim1, int Dim2, char i, char j,
+            char k>
+  class minus_Tensor3 {
+    Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> iterA;
+
+  public:
+    T operator()(const int N1, const int N2, const int N3) const
+    {
+      return -iterA(N1, N2, N3);
+    }
+
+    minus_Tensor3(const Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> &a)
+        : iterA(a) {}
+  };
+
+  template <class A, class T, int Dim0, int Dim1, int Dim2, char i, char j,
+            char k>
+  Tensor3_Expr<minus_Tensor3<A, T, Dim0, Dim1, Dim2, i, j, k>, T, Dim0, Dim1,
+               Dim2, i, j, k>
+  operator-(const Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> &a) {
+    using TensorExpr = minus_Tensor3<A, T, Dim0, Dim1, Dim2, i, j, k>;
+    return Tensor3_Expr<TensorExpr, T, Dim0, Dim1, Dim2, i, j, k>(
+        TensorExpr(a));
+  }
 }
