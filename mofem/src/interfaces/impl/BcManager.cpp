@@ -82,27 +82,29 @@ MoFEMErrorCode BcManager::removeBlockDOFsOnEntities(
   };
 
   auto get_block_ents = [&](const std::string block_name) {
+    Range remove_ents;
     for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field, BLOCKSET, it)) {
       if (it->getName().compare(0, block_name.length(), block_name) == 0) {
         auto bc = boost::make_shared<BCs>();
         CHKERR m_field.get_moab().get_entities_by_handle(it->meshset,
                                                          bc->bcEnts, true);
-        if (get_low_dim_ents) {
+        if (get_lod_dim_ents) {
           auto low_dim_ents = get_adj_ents(bc->bcEnts);
           bc->bcEnts.swap(low_dim_ents);
         }
 
         const std::string bc_id =
             problem_name + "_" + field_name + "_" + it->getName();
-            
+
         MOFEM_LOG("BcMngWorld", Sev::verbose)
             << "Found block to remove " << block_name << " number of entities "
             << bc->bcEnts.size() << " highest dim of entities "
             << get_dim(bc->bcEnts);
+        remove_ents.merge(bc->bcEnts);
         bcMapByBlockName[bc_id] = bc;
       }
     }
-    return bc->bcEnts;
+    return remove_ents;
   };
 
   CHKERR remove_dofs_on_ents(get_block_ents(block_name), lo, hi);
