@@ -88,6 +88,7 @@ MoFEMErrorCode BcManager::removeBlockDOFsOnEntities(
         auto bc = boost::make_shared<BCs>();
         CHKERR m_field.get_moab().get_entities_by_handle(it->meshset,
                                                          bc->bcEnts, true);
+        CHKERR it->getAttributes(bc->bcAttributes);
         if (get_lod_dim_ents) {
           auto low_dim_ents = get_adj_ents(bc->bcEnts);
           bc->bcEnts.swap(low_dim_ents);
@@ -203,10 +204,12 @@ BcManager::BcMarkerPtr
 BcManager::getMergedBlocksMarker(std::vector<std::regex> bc_regex_vec) {
   BcManager::BcMarkerPtr boundary_marker_ptr;
   if (bcMapByBlockName.size()) {
-    boundary_marker_ptr = boost::make_shared<std::vector<char unsigned>>();
     for (auto b : bcMapByBlockName) {
       for (auto &reg_name : bc_regex_vec) {
         if (std::regex_match(b.first, reg_name)) {
+          if (!boundary_marker_ptr)
+            boundary_marker_ptr =
+                boost::make_shared<std::vector<char unsigned>>();
           boundary_marker_ptr->resize(b.second->bcMarkers.size(), 0);
           for (int i = 0; i != b.second->bcMarkers.size(); ++i) {
             (*boundary_marker_ptr)[i] |= b.second->bcMarkers[i];
