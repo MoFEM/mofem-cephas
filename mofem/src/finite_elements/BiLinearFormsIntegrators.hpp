@@ -1630,7 +1630,7 @@ OpConvectiveTermLhsDuImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
       // loop over columns
       for (int cc = 0; cc != OpBase::nbCols / SPACE_DIM; cc++) {
         // calculate element of local matrix
-        t_mat(I, l) += (alpha * t_row_base * t_col_base) * t_grad_y(I, k);
+        t_mat(I, k) += (alpha * t_row_base * t_col_base) * t_grad_y(I, k);
         ++t_col_base;
         ++t_mat;
       }
