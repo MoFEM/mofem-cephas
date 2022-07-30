@@ -102,6 +102,13 @@
 
                         <li><a href=""><img src="slider_shallow_wave.png" alt="Shallow Wave" title="Shallow Wave Equation" /></a></li>
 
+                        <li><a href="http://mofem.eng.gla.ac.uk/mofem/html/"><img src="slider_navier_stokes.png"
+                                    alt="Navier-Stokes Equations" title="Navier-Stokes Equations" /></a></li>
+
+                        <li><a href="https://bitbucket.org/likask/mofem_um_bone_remodelling/src/master/"><img
+                                    src="slider_bone_remodelling.png" alt="Bone Remodelling"
+                                    title="CT-scan reconstructio Bone Remodelling & Fracture" /></a></li>
+
                         <li><a
                                 href="https://bitbucket.org/IgnatiosAthanasiadis/mofem_um_contact_mechanics_ignatios/src/master/"><img
                                     src="slider_mortar_contact.png" alt="Mortar Contact" title="Mortar Contact" /></a>
@@ -109,13 +116,6 @@
 
                         <li><a href="https://bitbucket.org/likask/mofem_um_solid_shell_prism_element/src/master/"><img
                                     src="slider_solid_shell.png" alt="Solid Shell" title="Solid Shell" /></a></li>
-
-                        <li><a href="https://bitbucket.org/likask/mofem_um_bone_remodelling/src/master/"><img
-                                    src="slider_bone_remodelling.png" alt="Bone Remodelling"
-                                    title="Bone Remodelling" /></a></li>
-
-                        <li><a href="http://mofem.eng.gla.ac.uk/mofem/html/"><img src="slider_navier_stokes.png"
-                                    alt="Navier-Stokes Equations" title="Navier-Stokes Equations" /></a></li>
 
                         <li><a href="https://bitbucket.org/karol41/mofem_um_topology_optimization/src/master/"><img
                                     src="slider_topology_optimisation.png" alt="Topology Optimisation"
