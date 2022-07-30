@@ -91,9 +91,16 @@
                     <ul>
                         <li><a href="benchmarks_edf_tets.html"><img src="slider_configurational_fracture.png" alt="Configurational
                 Fracture" title="Configurational Fracture" /></a></li>
-                        <li><a href="https://bitbucket.org/karol41/mofem_um_phase_field_fracture/src/master/"><img
-                                    src="slider_phase_field_fracture.png" alt="Phase-field Fracture"
-                                    title="Phase-field Fracture" /></a></li>
+
+                        <li><a href=""><img src="slider_plasticity.png" alt="Plasticity" title="Plasticity" /></a></li>
+
+                        <li><a href=""><img src="slider_microsopy_image_3d_recovery.png" alt="Image Recobery" title="Microscpopy 3D Image Recovery" /></a></li>
+
+                        <li><a href=""><img src="slider_cahn_hilliard_navier_stokes_equation.png" alt="NS Chan-Hillard" title="Navier Stockes Chan Hillard equation" /></a></li>
+
+                        <li><a href=""><img src="slider_indentation.png" alt="NS Chan-Hillard" title="Metamaterial Indentation" /></a></li>
+
+                        <li><a href=""><img src="slider_shallow_wave.png" alt="Shallow Wave" title="Sahallow Wave Equation" /></a></li>
 
                         <li><a
                                 href="https://bitbucket.org/IgnatiosAthanasiadis/mofem_um_contact_mechanics_ignatios/src/master/"><img
@@ -114,12 +121,12 @@
                                     src="slider_topology_optimisation.png" alt="Topology Optimisation"
                                     title="Topology Optimisation" /></a></li>
 
-                        <li><a href="https://bitbucket.org/mofem/um_eshelbian_plasticity/src/master/"><img
-                                    src="slider_plasticity.png" alt="Plasticity" title="Plasticity" /></a></li>
+                        <li><a href="https://bitbucket.org/karol41/mofem_um_phase_field_fracture/src/master/"><img
+                                    src="slider_phase_field_fracture.png" alt="Phase-field Fracture"
+                                    title="Phase-field Fracture" /></a></li>
 
                         <li><a href=""><img src="slider_magnetostatics.png" alt="Magnetostatics"
-                                    title="Magnetostatics" /></a>
-                        </li>
+                                    title="Magnetostatics" /></a> </li>
 
                         <li><a href="https://bitbucket.org/karol41/mofem_um_cell_engineering/src/master/"><img
                                     src="slider_cell_traction_microscopy.png" alt="Cell Traction Microscopy"
@@ -133,6 +140,9 @@
 
                         <li><a href="https://bitbucket.org/likask/mofem_um_helmholtz"><img
                                     src="slider_acoustic_wave.png" alt="Acoustic Wave" title="Acoustic Wave" /></a></li>
+
+
+
 
                     </ul>
                 </div>
