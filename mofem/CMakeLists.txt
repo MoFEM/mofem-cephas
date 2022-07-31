@@ -29,7 +29,7 @@ project(MoFEM
 # Set fallback version. Fallback version is version of MoFEM which is used
 # as default version if version from the git tags can not be extracted. For exammple 
 # that is a keys when somone install mofem from tarball.
-set(MoFEM_FALLBACK_VERSION "0.13.0" CACHE STRING "Fallback version" FORCE)
+set(MoFEM_FALLBACK_VERSION "0.13.1" CACHE STRING "Fallback version" FORCE)
 message(STATUS "Falback vecrsion v${MoFEM_FALLBACK_VERSION}")
 
 # Options
