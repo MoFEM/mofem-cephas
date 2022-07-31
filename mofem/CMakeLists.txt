@@ -114,7 +114,7 @@ message(STATUS "PETSc lib dirs " ${PETSc_LIBRARY_DIRS})
 message(STATUS "PETSc includ " ${PETSc_INCLUDE_DIRS})
 
 # PETSC tools
-pkg_check_modules(SLEPC SLEPc)
+pkg_check_modules(SLEPC slepc)
 message(STATUS "SLEPc version " ${SLEPC_VERSION})
 message(STATUS "SLEPc lib dirs " ${SLEPC_LIBRARY_DIRS})
 message(STATUS "SLEPc include " ${SLEPC_INCLUDE_DIRS})
