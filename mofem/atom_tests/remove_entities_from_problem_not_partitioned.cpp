@@ -4,8 +4,6 @@
 
 */
 
-
-
 #include <MoFEM.hpp>
 using namespace MoFEM;
 
@@ -42,6 +40,9 @@ int main(int argc, char *argv[]) {
     // Create MoFEM database
     MoFEM::Core core(moab);
     MoFEM::Interface &m_field = core;
+
+    MOFEM_LOG_CHANNEL("WORLD");
+    BOOST_LOG_SCOPED_THREAD_ATTR("Timeline", attrs::timer());
 
     // set entities bit level
     const auto bit_level = BitRefLevel().set(0);
@@ -108,14 +109,23 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionReturn(0);
     };
 
+
+    MOFEM_LOG("WORLD", Sev::inform) << "Remove dofs";
+
     Range tets_skin;
     CHKERR get_triangles_on_skin(tets_skin);
     CHKERR prb_mng_ptr->removeDofsOnEntitiesNotDistributed(
         "P1", "F1", tets_skin, 0, 1, VERBOSE, true);
 
+    MOFEM_LOG("WORLD", Sev::inform) << "Check consistency";
+
     CHKERR m_field.getInterface<MatrixManager>()
-        ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>("P1", -2, -2,
+        ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>("P1", -2,
+        -2,
                                                                    0);
+
+    MOFEM_LOG("WORLD", Sev::inform) << "done";
+
   }
   CATCH_ERRORS;
 
