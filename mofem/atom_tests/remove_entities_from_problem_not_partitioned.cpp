@@ -119,6 +119,9 @@ int main(int argc, char *argv[]) {
 
     MOFEM_LOG("WORLD", Sev::inform) << "Check consistency";
 
+    SmartPetscObj<Vec> v;
+    CHKERR m_field.getInterface<VecManager>()->vecCreateGhost("P1", ROW, v);
+
     CHKERR m_field.getInterface<MatrixManager>()
         ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>("P1", -2,
         -2,
