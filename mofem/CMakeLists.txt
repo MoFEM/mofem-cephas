@@ -16,6 +16,12 @@ if(PETSCVAR_FC)
   set(CMAKE_Fortran_COMPILER ${PETSCVAR_FC})
 endif(PETSCVAR_FC)
 
+if(PETSCVAR_CUDA_INCLUDE)
+  message(STATUS "PETSc is compiled with CUDA")
+  set(PETSC_HAVE_CUDA TRUE)
+  add_definitions(-DPETSC_HAVE_CUDA=1)
+endif(PETSCVAR_CUDA_INCLUDE)
+
 # Get mpirun path bin directory
 string(REGEX REPLACE "mpicc" "" "MPI_BIN_PATH" ${CMAKE_C_COMPILER})
 find_program(MPI_RUN mpirun HINTS ${MPI_BIN_PATH} /usr/bin PATH ${MPI_BIN_PATH})
@@ -30,7 +36,7 @@ project(MoFEM
 # as default version if version from the git tags can not be extracted. For exammple 
 # that is a keys when somone install mofem from tarball.
 set(MoFEM_FALLBACK_VERSION "0.13.0" CACHE STRING "Fallback version" FORCE)
-message(STATUS "Falback vecrsion v${MoFEM_FALLBACK_VERSION}")
+message(STATUS "Fallback version v${MoFEM_FALLBACK_VERSION}")
 
 # Options
 option(BUILD_SHARED_LIBS "Build using shared libraries" OFF)

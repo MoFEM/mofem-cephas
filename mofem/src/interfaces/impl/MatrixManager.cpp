@@ -535,6 +535,16 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
       SETERRQ(get_comm(), PETSC_ERR_ARG_SIZ, "data inconsistency");
     }
 
+  } else if (strcmp(type, MATAIJCUSPARSE) == 0) {
+
+    if (i.size() - 1 != (unsigned int)nb_loc_row_from_iterators) {
+      SETERRQ(get_comm(), PETSC_ERR_ARG_SIZ, "data inconsistency");
+    }
+    PetscInt nb_local_dofs_row = p_miit->getNbLocalDofsRow();
+    if ((unsigned int)nb_local_dofs_row != i.size() - 1) {
+      SETERRQ(get_comm(), PETSC_ERR_ARG_SIZ, "data inconsistency");
+    }
+
   } else {
 
     SETERRQ(get_comm(), PETSC_ERR_ARG_NULL, "not implemented");
@@ -572,10 +582,11 @@ MatrixManager::MatrixManager(const MoFEM::Core &core)
 template <>
 MoFEMErrorCode MatrixManager::createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(
     const std::string name, Mat *Aij, int verb) {
+  MoFEMFunctionBegin;
+
   MoFEM::CoreInterface &m_field = cOre;
   CreateRowComressedADJMatrix *core_ptr =
       static_cast<CreateRowComressedADJMatrix *>(&cOre);
-  MoFEMFunctionBegin;
   PetscLogEventBegin(MOFEM_EVENT_createMPIAIJWithArrays, 0, 0, 0, 0);
 
   auto problems_ptr = m_field.get_problems();
@@ -665,39 +676,17 @@ MatrixManager::createMPIAIJCUSPARSEWithArrays<PetscGlobalIdx_mi_tag>(
   std::vector<int> d_nnz(nb_local_dofs_row, 0), o_nnz(nb_local_dofs_row, 0);
   CHKERR get_nnz(d_nnz, o_nnz);
 
-  // CHKERR MatCreate(m_field.get_comm(), Aij);
-  // CHKERR MatSetSizes(*Aij, nb_local_dofs_row, nb_local_dofs_col, nb_row_dofs,
-  //                    nb_col_dofs);
-  // CHKERR MatSetType(*Aij, MATMPIAIJ);
-  // CHKERR MatMPIAIJSetPreallocation(*Aij, 0, &*d_nnz.begin(), 0,
-  //                                  &*o_nnz.begin());
-
-  // PetscLogEventEnd(MOFEM_EVENT_createMPIAIJ, 0, 0, 0, 0);
-
-  // CHKERR ::MatCreateMPIAIJWithArrays(
-  //     m_field.get_comm(), nb_local_dofs_row, nb_local_dofs_col, nb_row_dofs,
-  //     nb_col_dofs, &*i_vec.begin(), &*j_vec.begin(), PETSC_NULL, Aij);
-
-  // CHKERR ::MatCreateMPIAIJWithArrays(
-  //     MPI_Comm comm, PetscInt m, PetscInt n, PetscInt M, PetscInt N,
-  //     const PetscInt i[], const PetscInt j[], const PetscScalar a[], Mat
-  //     *mat);
-
-  // CHKERR ::MatCreateMPIAIJCUSPARSE(MPI_Comm comm, PetscInt m, PetscInt n,
-  //                               PetscInt M, PetscInt N, PetscInt d_nz,
-  //                               const PetscInt d_nnz[], PetscInt o_nz,
-  //                               const PetscInt o_nnz[], Mat *A);
-
 #ifdef PETSC_HAVE_CUDA
-
   CHKERR ::MatCreateAIJCUSPARSE(m_field.get_comm(), nb_local_dofs_row,
-                                nb_local_dofs_col, nb_row_dofs, nb_col_dofs,
-                                PETSC_DEFAULT, &*d_nnz.begin(), PETSC_DEFAULT,
-                                &*o_nnz.begin(), Aij);
+                                nb_local_dofs_col, nb_row_dofs, nb_col_dofs, 0,
+                                &*d_nnz.begin(), 0, &*o_nnz.begin(), Aij);
+#else
+  SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+          "Error: To use this matrix type compile PETSc with CUDA.");
 #endif
 
   PetscLogEventEnd(MOFEM_EVENT_createMPIAIJCUSPARSEWithArrays, 0, 0, 0, 0);
-
+  
   MoFEMFunctionReturn(0);
 }
 
