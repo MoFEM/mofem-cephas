@@ -2948,8 +2948,10 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntitiesNotDistributed(
             indices[idx] = i++;
           }
         }
-        if(i != check)
+        if (i != check) {
+          MOFEM_LOG("SELF", Sev::error) << "i != check " << i << "!=" << check;
           THROW_MESSAGE("Wrong number of indices");
+        }
         return indices;
       };
 
@@ -2958,19 +2960,20 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntitiesNotDistributed(
       auto local_indices = get_indices_by_tag(PetscLocalIdx_mi_tag(),
                                               nb_local_dofs + nb_ghost_dofs);
 
+      int i = 0;    
       for (auto dit = numered_dofs[s]->begin(); dit != numered_dofs[s]->end();
            ++dit) {
         auto idx = (*dit)->getDofIdx();
         if (idx >= 0) {
           auto mod = NumeredDofEntity_part_and_all_indices_change(
-              (*dit)->getPart(), idx, global_indices[idx], local_indices[idx]);
+              (*dit)->getPart(), i++, global_indices[idx], local_indices[idx]);
           bool success = numered_dofs[s]->modify(dit, mod);
           if (!success)
             SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                     "can not set negative indices");
         } else {
           auto mod = NumeredDofEntity_part_and_all_indices_change(
-              (*dit)->getPart(), idx, -1, -1);
+              (*dit)->getPart(), -1, -1, -1);
           bool success = numered_dofs[s]->modify(dit, mod);
           if (!success)
             SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
