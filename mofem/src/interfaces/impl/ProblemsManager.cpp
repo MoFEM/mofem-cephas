@@ -2835,6 +2835,8 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntitiesNotDistributed(
   const int nb_init_ghost_row_dofs = prb_ptr->getNbGhostDofsRow();
   const int nb_init_ghost_col_dofs = prb_ptr->getNbGhostDofsCol();
 
+  const std::array<int, 2> nb_init_dofs = {nb_init_row_dofs, nb_init_col_dofs};
+
   for (int s = 0; s != 2; ++s)
     if (numered_dofs[s]) {
 
@@ -2933,40 +2935,56 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntitiesNotDistributed(
       *(local_nbdof_ptr[s]) = nb_local_dofs;
       *(ghost_nbdof_ptr[s]) = nb_ghost_dofs;
 
-      int local_idx = 0;
-      int global_idx = 0;
-      for (auto dit = numered_dofs[s]->begin(); dit != numered_dofs[s]->end();
-           ++dit) {
-
-        auto current_loc_idx = (*dit)->getPetscLocalDofIdx();
-        auto current_glob_idx = (*dit)->getPetscGlobalDofIdx();
-
-        if (current_loc_idx >= 0) {
-          current_loc_idx = local_idx;
-          ++local_idx;
+      // get indices
+      auto get_indices_by_tag = [&](auto tag) {
+        std::vector<int> indices;
+        indices.resize(nb_init_dofs[s], -1);
+        int i = 0;
+        for (auto dit = numered_dofs[s]->get<decltype(tag)>().begin();
+             dit != numered_dofs[s]->get<decltype(tag)>().end(); ++dit) {
+          const int current_idx = decltype(tag)::get_index(dit);
+          const int idx = (*dit)->getDofIdx();
+          if (current_idx >= 0 && idx >= 0) {
+            indices[idx] = i++;
+          }
         }
-
-        if (current_glob_idx >= 0) {
-          current_glob_idx = global_idx;
-          ++global_idx;
-        }
-
-        auto mod = NumeredDofEntity_part_and_all_indices_change(
-            (*dit)->getPart(), (*dit)->getDofIdx(), current_glob_idx,
-            current_loc_idx);
-        bool success = numered_dofs[s]->modify(dit, mod);
-        if (!success)
-          SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-                  "can not set negative indices");
+        return indices;
       };
 
-      if (debug)
+      auto global_indices = get_indices_by_tag(PetscGlobalIdx_mi_tag());
+      auto local_indices = get_indices_by_tag(PetscLocalIdx_mi_tag());
+
+      for (auto dit = numered_dofs[s]->begin(); dit != numered_dofs[s]->end();
+           ++dit) {
+        auto idx = (*dit)->getDofIdx();
+        if (idx >= 0) {
+          auto mod = NumeredDofEntity_part_and_all_indices_change(
+              (*dit)->getPart(), idx, global_indices[idx], local_indices[idx]);
+          bool success = numered_dofs[s]->modify(dit, mod);
+          if (!success)
+            SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+                    "can not set negative indices");
+        } else {
+          auto mod = NumeredDofEntity_part_and_all_indices_change(
+              (*dit)->getPart(), idx, -1, -1);
+          bool success = numered_dofs[s]->modify(dit, mod);
+          if (!success)
+            SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+                    "can not set negative indices");
+ 
+        }
+      };
+
+      if (debug) {
         for (auto dof : (*numered_dofs[s])) {
           if (dof->getDofIdx() >= 0 && dof->getPetscGlobalDofIdx() < 0) {
             SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                     "Negative global idx");
           }
         }
+
+      }
+
     } else {
 
       *(nbdof_ptr[1]) = *(nbdof_ptr[0]);
