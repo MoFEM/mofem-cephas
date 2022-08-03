@@ -29,7 +29,7 @@ project(MoFEM
 # Set fallback version. Fallback version is version of MoFEM which is used
 # as default version if version from the git tags can not be extracted. For exammple 
 # that is a keys when somone install mofem from tarball.
-set(MoFEM_FALLBACK_VERSION "0.13.0" CACHE STRING "Fallback version" FORCE)
+set(MoFEM_FALLBACK_VERSION "0.13.1" CACHE STRING "Fallback version" FORCE)
 message(STATUS "Falback vecrsion v${MoFEM_FALLBACK_VERSION}")
 
 # Options
@@ -114,7 +114,7 @@ message(STATUS "PETSc lib dirs " ${PETSc_LIBRARY_DIRS})
 message(STATUS "PETSc includ " ${PETSc_INCLUDE_DIRS})
 
 # PETSC tools
-pkg_check_modules(SLEPC SLEPc)
+pkg_check_modules(SLEPC slepc)
 message(STATUS "SLEPc version " ${SLEPC_VERSION})
 message(STATUS "SLEPc lib dirs " ${SLEPC_LIBRARY_DIRS})
 message(STATUS "SLEPc include " ${SLEPC_INCLUDE_DIRS})

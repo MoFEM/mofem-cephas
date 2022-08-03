@@ -510,29 +510,57 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
     // Adjacency matrix used to partition problems, f.e. METIS
     if (i.size() - 1 != (unsigned int)nb_loc_row_from_iterators) {
-      SETERRQ(get_comm(), PETSC_ERR_ARG_SIZ, "data inconsistency");
+      SETERRQ2(
+          get_comm(), PETSC_ERR_ARG_SIZ,
+          "Number of rows from iterator is different than size of rows in "
+          "compressed row "
+          "matrix (unsigned int)nb_local_dofs_row != i.size() - 1, i.e. %d != "
+          "%d",
+          (unsigned int)nb_loc_row_from_iterators, i.size() - 1);
     }
 
   } else if (strcmp(type, MATMPIAIJ) == 0) {
 
     // Compressed MPIADJ matrix
     if (i.size() - 1 != (unsigned int)nb_loc_row_from_iterators) {
-      SETERRQ(get_comm(), PETSC_ERR_ARG_SIZ, "data inconsistency");
+      SETERRQ2(
+          get_comm(), PETSC_ERR_ARG_SIZ,
+          "Number of rows from iterator is different than size of rows in "
+          "compressed row "
+          "matrix (unsigned int)nb_local_dofs_row != i.size() - 1, i.e. %d != "
+          "%d",
+          (unsigned int)nb_loc_row_from_iterators, i.size() - 1);
     }
     PetscInt nb_local_dofs_row = p_miit->getNbLocalDofsRow();
     if ((unsigned int)nb_local_dofs_row != i.size() - 1) {
-      SETERRQ(get_comm(), PETSC_ERR_ARG_SIZ, "data inconsistency");
+      SETERRQ2(
+          get_comm(), PETSC_ERR_ARG_SIZ,
+          "Number of rows is different than size of rows in compressed row "
+          "matrix (unsigned int)nb_local_dofs_row != i.size() - 1, i.e. %d != "
+          "%d",
+          (unsigned int)nb_local_dofs_row, i.size() - 1);
     }
 
   } else if (strcmp(type, MATAIJ) == 0) {
 
     // Sequential compressed ADJ matrix
     if (i.size() - 1 != (unsigned int)nb_loc_row_from_iterators) {
-      SETERRQ(get_comm(), PETSC_ERR_ARG_SIZ, "data inconsistency");
+      SETERRQ2(
+          get_comm(), PETSC_ERR_ARG_SIZ,
+          "Number of rows form iterator is different than size of rows in "
+          "compressed row "
+          "matrix (unsigned int)nb_local_dofs_row != i.size() - 1, i.e. %d != "
+          "%d",
+          (unsigned int)nb_loc_row_from_iterators, i.size() - 1);
     }
     PetscInt nb_local_dofs_row = p_miit->getNbLocalDofsRow();
     if ((unsigned int)nb_local_dofs_row != i.size() - 1) {
-      SETERRQ(get_comm(), PETSC_ERR_ARG_SIZ, "data inconsistency");
+      SETERRQ2(
+          get_comm(), PETSC_ERR_ARG_SIZ,
+          "Number of rows is different than size of rows in compressed row "
+          "matrix (unsigned int)nb_local_dofs_row != i.size() - 1, i.e. %d != "
+          "%d",
+          (unsigned int)nb_local_dofs_row, i.size() - 1);
     }
 
   } else {

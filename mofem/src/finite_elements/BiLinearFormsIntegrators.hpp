@@ -1601,8 +1601,8 @@ OpConvectiveTermLhsDuImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
   auto t_row_base = row_data.getFTensor0N();
 
   auto t_grad_y = getFTensor2FromMat<FIELD_DIM, SPACE_DIM>(*yGradPtr);
-  FTensor::Index<'i', SPACE_DIM> i;
-  FTensor::Index<'J', FIELD_DIM> j;
+  FTensor::Index<'I', FIELD_DIM> I;
+  FTensor::Index<'k', SPACE_DIM> k;
 
   auto get_t_mat = [&](const int rr) {
     std::array<double *, FIELD_DIM * SPACE_DIM> ptrs;
@@ -1630,7 +1630,7 @@ OpConvectiveTermLhsDuImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
       // loop over columns
       for (int cc = 0; cc != OpBase::nbCols / SPACE_DIM; cc++) {
         // calculate element of local matrix
-        t_mat(j, i) += (alpha * t_row_base * t_col_base) * t_grad_y(j, i);
+        t_mat(I, k) += (alpha * t_row_base * t_col_base) * t_grad_y(I, k);
         ++t_col_base;
         ++t_mat;
       }
@@ -1672,9 +1672,9 @@ OpConvectiveTermLhsDyImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
   auto t_u = getFTensor1FromMat<SPACE_DIM>(*uPtr);
   constexpr auto t_kd = FTensor::Kronecker_Delta_symmetric<int>();
 
-  FTensor::Index<'i', SPACE_DIM> i;
-  FTensor::Index<'j', FIELD_DIM> j;
-  FTensor::Index<'k', FIELD_DIM> k;
+  FTensor::Index<'I', FIELD_DIM> I;
+  FTensor::Index<'L', FIELD_DIM> L;
+  FTensor::Index<'k', SPACE_DIM> k;
 
   const double alpha_constant = alphaConstant();
   // loop over integration points
@@ -1691,8 +1691,8 @@ OpConvectiveTermLhsDyImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
       auto t_diff_col_base = col_data.getFTensor1DiffN<SPACE_DIM>(gg, 0);
       // loop over columns
       for (int cc = 0; cc != OpBase::nbCols / FIELD_DIM; ++cc) {
-        t_mat(j, k) +=
-            alpha * t_row_base * t_kd(j, k) * (t_diff_col_base(i) * t_u(i));
+        t_mat(I, L) +=
+            alpha * t_row_base * t_kd(I, L) * (t_diff_col_base(k) * t_u(k));
         ++t_mat;
         ++t_diff_col_base;
       }

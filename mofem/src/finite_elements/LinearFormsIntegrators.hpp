@@ -1241,7 +1241,7 @@ OpConvectiveTermRhsImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
   auto t_grad_y = getFTensor2FromMat<FIELD_DIM, SPACE_DIM>(*yGradPtr);
 
   FTensor::Index<'i', SPACE_DIM> i;
-  FTensor::Index<'j', FIELD_DIM> j;
+  FTensor::Index<'J', FIELD_DIM> J;
   const double alpha_constant = alphaConstant();
   for (size_t gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
 
@@ -1249,13 +1249,14 @@ OpConvectiveTermRhsImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
     const double vol = OpBase::getMeasure();
 
     FTensor::Tensor1<double, FIELD_DIM> t_c;
-    t_c(j) = (t_grad_y(j, i) * t_u(i)) * (t_w * vol * alpha_constant);
+    t_c(J) = (t_grad_y(J, i) * t_u(i)) * (t_w * vol * alpha_constant);
 
     auto t_nf = getFTensor1FromArray<FIELD_DIM, FIELD_DIM>(OpBase::locF);
     int rr = 0;
     for (; rr != OpBase::nbRows / FIELD_DIM; ++rr) {
-      t_nf(j) += t_base * t_c(j);
+      t_nf(J) += t_base * t_c(J);
       ++t_base;
+      ++t_nf;
     }
     for (; rr < OpBase::nbRowBaseFunctions; ++rr)
       ++t_base;
