@@ -2936,7 +2936,7 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntitiesNotDistributed(
       *(ghost_nbdof_ptr[s]) = nb_ghost_dofs;
 
       // get indices
-      auto get_indices_by_tag = [&](auto tag) {
+      auto get_indices_by_tag = [&](auto tag, int check) {
         std::vector<int> indices;
         indices.resize(nb_init_dofs[s], -1);
         int i = 0;
@@ -2948,11 +2948,15 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntitiesNotDistributed(
             indices[idx] = i++;
           }
         }
+        if(i != check)
+          THROW_MESSAGE("Wrong number of indices");
         return indices;
       };
 
-      auto global_indices = get_indices_by_tag(PetscGlobalIdx_mi_tag());
-      auto local_indices = get_indices_by_tag(PetscLocalIdx_mi_tag());
+      auto global_indices =
+          get_indices_by_tag(PetscGlobalIdx_mi_tag(), nb_global_dof);
+      auto local_indices = get_indices_by_tag(PetscLocalIdx_mi_tag(),
+                                              nb_local_dofs + nb_ghost_dofs);
 
       for (auto dit = numered_dofs[s]->begin(); dit != numered_dofs[s]->end();
            ++dit) {
