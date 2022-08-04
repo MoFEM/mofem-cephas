@@ -57,6 +57,9 @@ MoFEMErrorCode VecManager::vecCreateSeq(const std::string name, RowColData rc,
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
   }
   CHKERR ::VecCreateSeq(PETSC_COMM_SELF, nb_local_dofs + nb_ghost_dofs, V);
+  CHKERR ::VecSetOption(
+      *V, VEC_IGNORE_NEGATIVE_INDICES,
+      PETSC_TRUE); // As default in MOFEM we will assume that this is always on
   MoFEMFunctionReturn(0);
 }
 
@@ -110,6 +113,9 @@ MoFEMErrorCode VecManager::vecCreateGhost(const std::string name, RowColData rc,
   }
   CHKERR ::VecCreateGhost(m_field.get_comm(), nb_local_dofs, nb_dofs,
                           nb_ghost_dofs, &ghost_idx[0], V);
+  CHKERR ::VecSetOption(
+      *V, VEC_IGNORE_NEGATIVE_INDICES,
+      PETSC_TRUE); // As default in MOFEM we will assume that this is always on
   MoFEMFunctionReturn(0);
 }
 
