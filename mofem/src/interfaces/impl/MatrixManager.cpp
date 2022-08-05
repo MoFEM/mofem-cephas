@@ -726,8 +726,9 @@ MatrixManager::createSeqAIJCUSPARSEWithArrays<PetscLocalIdx_mi_tag>(
 
 #ifdef PETSC_HAVE_CUDA
   // CHKERR ::MatCreateSeqAIJCUSPARSE(MPI_Comm comm, PetscInt m, PetscInt n,
-  //                                        PetscInt nz, const PetscInt nnz[],
-  //                                        Mat *A)
+  //                                  PetscInt nz, const PetscInt nnz[], Mat *A);
+  SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+          "Not implemented type of matrix yet, try MPI version (aijcusparse)");
 #endif
 
   MoFEMFunctionReturn(0);
