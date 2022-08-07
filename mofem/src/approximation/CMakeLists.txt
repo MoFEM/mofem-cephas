@@ -3,6 +3,8 @@ include_directories(${PROJECT_SOURCE_DIR}/src/multi_indices)
 include_directories(${PROJECT_SOURCE_DIR}/src/interfaces)
 include_directories(${PROJECT_SOURCE_DIR}/src/finite_elements)
 include_directories(${PROJECT_SOURCE_DIR}/src/petsc)
+include_directories(${PROJECT_SOURCE_DIR}/src/post_proc)
+include_directories(${PROJECT_SOURCE_DIR}/src/boundary_conditions)
 
 # Approximation lib
 if(PRECOMPILED_HEADRES)

@@ -18,6 +18,9 @@ link_directories(${PROJECT_BINARY_DIR}/src/petsc)
 include_directories(${PROJECT_SOURCE_DIR}/src/finite_elements)
 link_directories(${PROJECT_BINARY_DIR}/src/finite_elements)
 
+include_directories(${PROJECT_SOURCE_DIR}/src/post_proc)
+include_directories(${PROJECT_SOURCE_DIR}/src/boundary_conditions)
+
 # cubit_bc_test
 cm_export_file("../meshes/disp01.h5m" export_atom_tests)
 cm_export_file("../meshes/force01.h5m" export_atom_tests)
@@ -56,6 +59,7 @@ function(build_test target source)
     mofem_approx
     mofem_third_party
     mofem_matrix_function
+    mofem_post_proc
     ${PROJECT_LIBS}
   )
 endfunction(build_test)

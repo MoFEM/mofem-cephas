@@ -312,10 +312,10 @@ int main(int argc, char *argv[]) {
     MoFEM::Core core(moab);
     MoFEM::Interface &m_field = core;
 
-    Simple *simple_interface = m_field.getInterface<Simple>();
+    Simple *simple = m_field.getInterface<Simple>();
     PipelineManager *pipeline_mng = m_field.getInterface<PipelineManager>();
-    CHKERR simple_interface->getOptions();
-    CHKERR simple_interface->loadFile("", "");
+    CHKERR simple->getOptions();
+    CHKERR simple->loadFile("", "");
 
     // Declare elements
     enum bases {
@@ -360,8 +360,8 @@ int main(int argc, char *argv[]) {
     CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &approx_order,
                               PETSC_NULL);
 
-    CHKERR simple_interface->addDomainField("FIELD1", space, base, 1);
-    CHKERR simple_interface->setFieldOrder("FIELD1", approx_order);
+    CHKERR simple->addDomainField("FIELD1", space, base, 1);
+    CHKERR simple->setFieldOrder("FIELD1", approx_order);
 
     Range edges, faces;
     CHKERR moab.get_entities_by_dimension(0, 1, edges);
@@ -393,15 +393,15 @@ int main(int argc, char *argv[]) {
         ++i;
       }
 
-      CHKERR simple_interface->setFieldOrder("FIELD1", approx_order + 1,
+      CHKERR simple->setFieldOrder("FIELD1", approx_order + 1,
                                              &rise_order);
 
-      CHKERR simple_interface->setFieldOrder("FIELD1", approx_order + 2,
+      CHKERR simple->setFieldOrder("FIELD1", approx_order + 2,
                                              &rise_twice);
     }
 
-    CHKERR simple_interface->setUp();
-    auto dm = simple_interface->getDM();
+    CHKERR simple->setUp();
+    auto dm = simple->getDM();
 
     VectorDouble vals;
     auto jac_ptr = boost::make_shared<MatrixDouble>();
@@ -463,7 +463,7 @@ int main(int argc, char *argv[]) {
       CHKERR KSPSetFromOptions(solver);
       CHKERR KSPSetUp(solver);
 
-      auto dm = simple_interface->getDM();
+      auto dm = simple->getDM();
       auto D = smartCreateDMVector(dm);
       auto F = smartVectorDuplicate(D);
 
@@ -478,8 +478,8 @@ int main(int argc, char *argv[]) {
     auto check_solution = [&] {
       MoFEMFunctionBegin;
 
-      boost::shared_ptr<VectorDouble> ptr_values(new VectorDouble());
-      boost::shared_ptr<MatrixDouble> ptr_diff_vals(new MatrixDouble());
+      auto ptr_values = boost::make_shared<VectorDouble>();
+      auto ptr_diff_vals = boost::make_shared<MatrixDouble>();
 
       pipeline_mng->getDomainLhsFE().reset();
       pipeline_mng->getOpDomainRhsPipeline().clear();
@@ -506,9 +506,57 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionReturn(0);
     };
 
+    auto post_proc = [&] {
+      MoFEMFunctionBegin;
+
+      auto post_proc_fe =
+          boost::make_shared<PostProcBrokenMeshInMoab<DomainEle>>(m_field);
+
+      post_proc_fe->getOpPtrVector().push_back(
+          new OpCalculateHOJac<SPACE_DIM>(jac_ptr));
+      post_proc_fe->getOpPtrVector().push_back(
+          new OpInvertMatrix<SPACE_DIM>(jac_ptr, det_ptr, inv_jac_ptr));
+      post_proc_fe->getOpPtrVector().push_back(
+          new OpSetHOInvJacToScalarBases<SPACE_DIM>(space, inv_jac_ptr));
+
+      auto ptr_values = boost::make_shared<VectorDouble>();
+      auto ptr_diff_vals = boost::make_shared<MatrixDouble>();
+
+      post_proc_fe->getOpPtrVector().push_back(
+          new OpCalculateScalarFieldValues("FIELD1", ptr_values));
+      post_proc_fe->getOpPtrVector().push_back(
+          new OpCalculateScalarFieldGradient<SPACE_DIM>("FIELD1",
+                                                        ptr_diff_vals));
+
+      using OpPPMap = OpPostProcMapInMoab<SPACE_DIM, SPACE_DIM>;
+
+      post_proc_fe->getOpPtrVector().push_back(
+
+          new OpPPMap(
+
+              post_proc_fe->getPostProcMesh(), post_proc_fe->getMapGaussPts(),
+
+              {{"FIELD1", ptr_values}},
+
+              {{"FIELD1_GRAD", ptr_diff_vals}},
+
+              {}, {})
+
+      );
+
+      CHKERR DMoFEMLoopFiniteElements(dm, simple->getDomainFEName(),
+                                      post_proc_fe);
+
+      post_proc_fe->writeFile("out_post_proc.h5m");
+
+      MoFEMFunctionReturn(0);
+    };
+
     CHKERR assemble_matrices_and_vectors();
     CHKERR solve_problem();
     CHKERR check_solution();
+    CHKERR post_proc();
+
   }
   CATCH_ERRORS;
 
