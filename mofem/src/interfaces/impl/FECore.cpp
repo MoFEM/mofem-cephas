@@ -501,7 +501,7 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
     if (ref_fe_miit == refinedFiniteElements.get<Ent_mi_tag>().end()) {
       std::ostringstream ss;
       ss << "refinedFiniteElements not in database ent = " << first << " type "
-         << type_from_handle << " " << *fe;
+         << type_from_handle(first) << " " << *fe;
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, ss.str().c_str());
     }
     auto hi_ref_fe_miit =
