@@ -22,6 +22,12 @@ struct PostProcGenerateRefMeshBase;
 using PostProcGenerateRefMeshPtr =
     boost::shared_ptr<PostProcGenerateRefMeshBase>;
 
+/**
+ * @brief Element for postprocessing. Uses MoAB to generate post-processing
+ * mesh.
+ *
+ * @tparam T Finite Element Implementation
+ */
 template <EntityType T> struct PostProcGenerateRefMesh;
 
 template <typename E> struct PostProcBrokenMeshInMoabBase : public E {
@@ -32,8 +38,25 @@ template <typename E> struct PostProcBrokenMeshInMoabBase : public E {
   std::vector<EntityHandle> mapGaussPts;
   Range postProcElements;
 
+  /**
+   * @brief Get vector of vectors associated to integration points 
+   * 
+   * @return std::vector<EntityHandle>& 
+   */
   inline auto &getMapGaussPts();
+
+  /**
+   * @brief Get postprocessing mesh
+   *
+   * @return moab::Interface&
+   */
   inline auto &getPostProcMesh();
+
+  /**
+   * @brief Get postprocessing elements
+   * 
+   * @return auto& 
+   */
   inline auto &getPostProcElements();
 
   /**
