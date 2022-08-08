@@ -318,6 +318,9 @@ int main(int argc, char *argv[]) {
     Simple *simple = m_field.getInterface<Simple>();
     PipelineManager *pipeline_mng = m_field.getInterface<PipelineManager>();
     CHKERR simple->getOptions();
+
+    simple->getAddBoundaryFE() = true;
+    
     CHKERR simple->loadFile("", "");
 
     // Declare elements
@@ -363,8 +366,9 @@ int main(int argc, char *argv[]) {
     CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &approx_order,
                               PETSC_NULL);
 
+
+
     CHKERR simple->addDomainField("FIELD1", space, base, 1);
-    CHKERR simple->addBoundaryField("FIELD1", space, base, 1);
     CHKERR simple->setFieldOrder("FIELD1", approx_order);
 
     Range edges, faces;
@@ -404,7 +408,55 @@ int main(int argc, char *argv[]) {
                                              &rise_twice);
     }
 
-    CHKERR simple->setUp();
+    CHKERR simple->defineFiniteElements();
+
+    auto volume_adj = [](moab::Interface &moab, const Field &field,
+                         const EntFiniteElement &fe,
+                         std::vector<EntityHandle> &adjacency) {
+      MoFEMFunctionBegin;
+      EntityHandle fe_ent = fe.getEnt();
+      switch (field.getSpace()) {
+      case H1:
+        CHKERR moab.get_connectivity(&fe_ent, 1, adjacency, true);
+      case HCURL:
+        CHKERR moab.get_adjacencies(&fe_ent, 1, 1, false, adjacency,
+                                    moab::Interface::UNION);
+      case HDIV:
+      case L2:
+        CHKERR moab.get_adjacencies(&fe_ent, 1, 2, false, adjacency,
+                                    moab::Interface::UNION);
+        adjacency.push_back(fe_ent);
+        // build side table
+        for (auto ent : adjacency)
+          fe.getSideNumberPtr(ent);
+        break;
+      case NOFIELD: {
+        CHKERR moab.get_entities_by_handle(field.getMeshset(), adjacency,
+                                           false);
+        for (auto ent : adjacency) {
+          const_cast<SideNumber_multiIndex &>(fe.getSideNumberTable())
+              .insert(
+                  boost::shared_ptr<SideNumber>(new SideNumber(ent, -1, 0, 0)));
+        }
+      } break;
+      default:
+        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                "this field is not implemented for TRI finite element");
+      }
+
+      MoFEMFunctionReturn(0);
+    };
+
+    CHKERR m_field.modify_finite_element_adjacency_table(
+        simple->getDomainFEName(), MBTET, volume_adj);
+    CHKERR m_field.modify_finite_element_adjacency_table(
+        simple->getDomainFEName(), MBHEX, volume_adj);
+
+    CHKERR simple->defineProblem(PETSC_TRUE);
+    CHKERR simple->buildFields();
+    CHKERR simple->buildFiniteElements();
+    CHKERR simple->buildProblem();
+
     auto dm = simple->getDM();
 
     VectorDouble vals;
@@ -571,19 +623,19 @@ int main(int argc, char *argv[]) {
         op_loop_side->getOpPtrVector().push_back(
             new OpSetHOInvJacToScalarBases<SPACE_DIM>(space, inv_jac_ptr));
         op_loop_side->getOpPtrVector().push_back(
+            new OpCalculateScalarFieldValues("FIELD1", ptr_values));
+        op_loop_side->getOpPtrVector().push_back(
             new OpCalculateScalarFieldGradient<SPACE_DIM>("FIELD1",
                                                           ptr_diff_vals));
         // push op to boundary element
         bdy_post_proc_fe->getOpPtrVector().push_back(op_loop_side);
 
         bdy_post_proc_fe->getOpPtrVector().push_back(
-            new OpCalculateScalarFieldValues("FIELD1", ptr_values));
-
-        bdy_post_proc_fe->getOpPtrVector().push_back(
 
             new OpPPMap(
 
-                bdy_post_proc_fe->getPostProcMesh(), bdy_post_proc_fe->getMapGaussPts(),
+                bdy_post_proc_fe->getPostProcMesh(),
+                bdy_post_proc_fe->getMapGaussPts(),
 
                 {{"FIELD1", ptr_values}},
 
