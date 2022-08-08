@@ -200,9 +200,10 @@ struct Simple : public UnknownInterface {
    * @brief Set the skeleton adjacency object
    *
    * @param dim
+   * @param fe_name
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode setSkeletonAdjacency(int dim = -1);
+  MoFEMErrorCode setSkeletonAdjacency(int dim = -1, std::string fe_name = "");
 
   /**
    * \brief Build problem
@@ -512,7 +513,8 @@ private:
   MoFEMErrorCode createSkeletonMeshset();
   MoFEMErrorCode exchangeGhostCells();
 
-  template <int DIM = -1> MoFEMErrorCode setSkeletonAdjacency();
+  template <int DIM = -1>
+  MoFEMErrorCode setSkeletonAdjacency(std::string fe_name);
 
   template <int DIM = -1> MoFEMErrorCode setParentAdjacency();
 

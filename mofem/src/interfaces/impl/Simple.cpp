@@ -12,12 +12,14 @@ MoFEMErrorCode Simple::query_interface(boost::typeindex::type_index type_index,
   return 0;
 }
 
-template <int DIM> MoFEMErrorCode Simple::setSkeletonAdjacency() {
+template <int DIM>
+MoFEMErrorCode Simple::setSkeletonAdjacency(std::string fe_name) {
   static_assert(DIM == 2 || DIM == 3, "not implemented");
   return MOFEM_NOT_IMPLEMENTED;
 }
 
-template <> MoFEMErrorCode Simple::setSkeletonAdjacency<2>() {
+template <>
+MoFEMErrorCode Simple::setSkeletonAdjacency<2>(std::string fe_name) {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
 
@@ -77,13 +79,14 @@ template <> MoFEMErrorCode Simple::setSkeletonAdjacency<2>() {
     MoFEMFunctionReturn(0);
   };
 
-  CHKERR m_field.modify_finite_element_adjacency_table(skeletonFE, MBEDGE,
+  CHKERR m_field.modify_finite_element_adjacency_table(fe_name, MBEDGE,
                                                        defaultSkeletonEdge);
 
   MoFEMFunctionReturn(0);
 }
 
-template <> MoFEMErrorCode Simple::setSkeletonAdjacency<3>() {
+template <>
+MoFEMErrorCode Simple::setSkeletonAdjacency<3>(std::string fe_name) {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
 
@@ -146,23 +149,25 @@ template <> MoFEMErrorCode Simple::setSkeletonAdjacency<3>() {
     MoFEMFunctionReturn(0);
   };
 
-  CHKERR m_field.modify_finite_element_adjacency_table(skeletonFE, MBTRI,
+  CHKERR m_field.modify_finite_element_adjacency_table(fe_name, MBTRI,
                                                        defaultSkeletonEdge);
-  CHKERR m_field.modify_finite_element_adjacency_table(skeletonFE, MBQUAD,
+  CHKERR m_field.modify_finite_element_adjacency_table(fe_name, MBQUAD,
                                                        defaultSkeletonEdge);
 
   MoFEMFunctionReturn(0);
 }
 
-template <> MoFEMErrorCode Simple::setSkeletonAdjacency<-1>() {
+template <>
+MoFEMErrorCode Simple::setSkeletonAdjacency<-1>(std::string fe_name) {
   MoFEMFunctionBegin;
+
   switch (getDim()) {
   case 1:
     THROW_MESSAGE("Not implemented");
   case 2:
-    return setSkeletonAdjacency<2>();
+    return setSkeletonAdjacency<2>(fe_name);
   case 3:
-    return setSkeletonAdjacency<3>();
+    return setSkeletonAdjacency<3>(fe_name);
   default:
     THROW_MESSAGE("Not implemented");
   }
@@ -245,15 +250,19 @@ template <> MoFEMErrorCode Simple::setParentAdjacency<-1>() {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Simple::setSkeletonAdjacency(int dim) {
+MoFEMErrorCode Simple::setSkeletonAdjacency(int dim, std::string fe_name) {
   MoFEMFunctionBegin;
   if (dim == -1)
     dim = getDim();
+
+  if (fe_name.empty())
+    fe_name = skeletonFE;
+
   switch (dim) {
   case 2:
-    return setSkeletonAdjacency<2>();
+    return setSkeletonAdjacency<2>(fe_name);
   case 3:
-    return setSkeletonAdjacency<3>();
+    return setSkeletonAdjacency<3>(fe_name);
   default:
     SETERRQ(PETSC_COMM_WORLD, MOFEM_NOT_IMPLEMENTED, "Not implemented");
   }
