@@ -266,7 +266,7 @@ using OpCalculateScalarFieldValuesDotDot =
     OpCalculateScalarFieldValuesFromPetscVecImpl<PetscData::CTX_SET_X_TT>;
 
 /**
- * \depreacted Name inconstent with other operators
+ * \deprecated Name inconsistent with other operators
  *
  */
 using OpCalculateScalarValuesDot = OpCalculateScalarFieldValuesDot;
