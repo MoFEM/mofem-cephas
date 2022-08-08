@@ -133,6 +133,13 @@ struct PostProcBrokenMeshInMoab<FaceElementForcesAndSourcesCore>
       FaceElementForcesAndSourcesCore>::PostProcBrokenMeshInMoabBase;
 };
 
+template <>
+struct PostProcBrokenMeshInMoab<EdgeElementForcesAndSourcesCore>
+    : public PostProcBrokenMeshInMoabBase<EdgeElementForcesAndSourcesCore> {
+  using PostProcBrokenMeshInMoabBase<
+      EdgeElementForcesAndSourcesCore>::PostProcBrokenMeshInMoabBase;
+};
+
 template <typename E>
 boost::shared_ptr<E> make_post_proc_fe_in_moab(MoFEM::Interface &m_field);
 
@@ -142,6 +149,10 @@ make_post_proc_fe_in_moab(MoFEM::Interface &m_field);
 
 template <>
 boost::shared_ptr<PostProcBrokenMeshInMoab<FaceElementForcesAndSourcesCore>>
+make_post_proc_fe_in_moab(MoFEM::Interface &m_field);
+
+template <>
+boost::shared_ptr<PostProcBrokenMeshInMoab<EdgeElementForcesAndSourcesCore>>
 make_post_proc_fe_in_moab(MoFEM::Interface &m_field);
 
 /**

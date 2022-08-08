@@ -579,6 +579,96 @@ struct PostProcGenerateRefMesh<MBQUAD> : public PostProcGenerateRefMeshBase {
   }
 };
 
+template <>
+struct PostProcGenerateRefMesh<MBEDGE> : public PostProcGenerateRefMeshBase {
+  MoFEMErrorCode generateReferenceElementMesh() {
+    MoFEMFunctionBegin;
+
+    CHKERR getOptions();
+#ifndef NDEBUG
+    if (defMaxLevel > 0)
+      MOFEM_LOG("WORLD", Sev::warning)
+          << "Refinement for hexes is not implemented";
+#endif
+
+    auto set_gauss_pts = [&](std::map<EntityHandle, int> &little_map) {
+      MoFEMFunctionBegin;
+
+      int nb_nodes = 2;
+      if(hoNodes)
+        nb_nodes = 3;
+
+      auto &gauss_pts = levelGaussPtsOnRefMesh[0];
+      gauss_pts.resize(2, nb_nodes, false);
+      gauss_pts.clear();
+
+      int nn = 0;
+      for (; nn != 2; ++nn) {
+        gauss_pts(0, nn) = static_cast<double>(nn);
+        little_map[nn] = nn;
+      }
+
+      if (nn < nb_nodes) {
+        gauss_pts(0, nn) = 0.5;
+        little_map[nn] = 2;
+      }
+
+      MoFEMFunctionReturn(0);
+    };
+
+    auto set_ref_edges = [&](std::map<EntityHandle, int> &little_map) {
+      MoFEMFunctionBegin;
+
+      int level = 0;
+      int nb_edges = level + 1;
+
+      int nb_nodes = 2;
+      if(hoNodes)
+        nb_nodes = 3;
+
+      auto &ref_edges = levelRef[level];
+      ref_edges.resize(nb_edges, nb_nodes, false);
+
+      for (int ee = 0; ee != nb_edges; ++ee) {
+        int nn = 0;
+        for (; nn != 2; ++nn) {
+          ref_edges(ee, nn) = nb_nodes * ee + nn;
+        }
+        if (nn < nb_nodes) {
+          ref_edges(ee, nn) = nb_nodes * ee + 2;
+        }
+      }
+
+      MoFEMFunctionReturn(0);
+    };
+
+    auto set_shape_functions = [&]() {
+      MoFEMFunctionBegin;
+      auto &gauss_pts = levelGaussPtsOnRefMesh[0];
+      auto &shape_functions = levelShapeFunctions[0];
+      const auto nb_gauss_pts = gauss_pts.size2();
+      shape_functions.resize(nb_gauss_pts, 2);
+      for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+        const double ksi = gauss_pts(0, gg);
+        shape_functions(gg, 0) = N_MBEDGE0(ksi);
+        shape_functions(gg, 1) = N_MBEDGE1(ksi);
+      }
+      MoFEMFunctionReturn(0);
+    };
+
+    levelRef.resize(1);
+    levelGaussPtsOnRefMesh.resize(1);
+    levelShapeFunctions.resize(1);
+
+    std::map<EntityHandle, int> little_map;
+    CHKERR set_gauss_pts(little_map);
+    CHKERR set_ref_edges(little_map);
+    CHKERR set_shape_functions();
+
+    MoFEMFunctionReturn(0);
+  }
+};
+
 template <typename E> int PostProcBrokenMeshInMoabBase<E>::getMaxLevel() const {
   auto get_element_max_dofs_order = [&]() {
     int max_order = 0;
@@ -769,6 +859,9 @@ MoFEMErrorCode PostProcBrokenMeshInMoabBase<E>::preProcess() {
       case MBQUAD:
         ref_ele_ptr = boost::make_shared<PostProcGenerateRefMesh<MBQUAD>>();
         break;
+      case MBEDGE:
+        ref_ele_ptr = boost::make_shared<PostProcGenerateRefMesh<MBEDGE>>();
+        break;
       default:
         MOFEM_LOG("SELF", Sev::error)
             << "Generation of reference elements for type < "
@@ -958,6 +1051,13 @@ boost::shared_ptr<PostProcBrokenMeshInMoab<FaceElementForcesAndSourcesCore>>
 make_post_proc_fe_in_moab(MoFEM::Interface &m_field) {
   return boost::make_shared<
       PostProcBrokenMeshInMoab<FaceElementForcesAndSourcesCore>>(m_field);
+}
+
+template <>
+boost::shared_ptr<PostProcBrokenMeshInMoab<EdgeElementForcesAndSourcesCore>>
+make_post_proc_fe_in_moab(MoFEM::Interface &m_field) {
+  return boost::make_shared<
+      PostProcBrokenMeshInMoab<EdgeElementForcesAndSourcesCore>>(m_field);
 }
 
 } // namespace MoFEM

@@ -6,8 +6,6 @@
  *
  */
 
-
-
 #include <MoFEM.hpp>
 
 using namespace MoFEM;
@@ -24,12 +22,14 @@ template <> struct ElementsAndOps<2> {
   using DomainEle = PipelineManager::FaceEle;
   using DomainEleOp = DomainEle::UserDataOperator;
   using BoundaryEle = PipelineManager::EdgeEle;
+  using EleOnSide = FaceElementForcesAndSourcesCoreOnSide;
 };
 
 template <> struct ElementsAndOps<3> {
   using DomainEle = VolumeElementForcesAndSourcesCore;
   using DomainEleOp = DomainEle::UserDataOperator;
   using BoundaryEle = PipelineManager::FaceEle;
+  using EleOnSide = VolumeElementForcesAndSourcesCoreOnSide;
 };
 
 constexpr int SPACE_DIM =
@@ -39,6 +39,7 @@ using EntData = EntitiesFieldData::EntData;
 using DomainEle = ElementsAndOps<SPACE_DIM>::DomainEle;
 using DomainEleOp = ElementsAndOps<SPACE_DIM>::DomainEleOp;
 using BoundaryEle = ElementsAndOps<SPACE_DIM>::BoundaryEle;
+using EleOnSide = ElementsAndOps<SPACE_DIM>::EleOnSide;
 
 template <> struct ApproxFunctionsImpl<2> {
   static double fUn(const double x, const double y, double z) {
@@ -320,7 +321,7 @@ int main(int argc, char *argv[]) {
     CHKERR simple->getOptions();
 
     simple->getAddBoundaryFE() = true;
-    
+
     CHKERR simple->loadFile("", "");
 
     // Declare elements
@@ -366,8 +367,6 @@ int main(int argc, char *argv[]) {
     CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &approx_order,
                               PETSC_NULL);
 
-
-
     CHKERR simple->addDomainField("FIELD1", space, base, 1);
     CHKERR simple->setFieldOrder("FIELD1", approx_order);
 
@@ -401,11 +400,9 @@ int main(int argc, char *argv[]) {
         ++i;
       }
 
-      CHKERR simple->setFieldOrder("FIELD1", approx_order + 1,
-                                             &rise_order);
+      CHKERR simple->setFieldOrder("FIELD1", approx_order + 1, &rise_order);
 
-      CHKERR simple->setFieldOrder("FIELD1", approx_order + 2,
-                                             &rise_twice);
+      CHKERR simple->setFieldOrder("FIELD1", approx_order + 2, &rise_twice);
     }
 
     CHKERR simple->defineFiniteElements();
@@ -605,51 +602,47 @@ int main(int argc, char *argv[]) {
 
       post_proc_fe->writeFile("out_post_proc.h5m");
 
-      if constexpr (SPACE_DIM == 3) {
+      auto bdy_post_proc_fe =
+          boost::make_shared<PostProcBrokenMeshInMoab<BoundaryEle>>(
+              m_field); // element run on boundary
 
-        auto bdy_post_proc_fe = boost::make_shared<
-            PostProcBrokenMeshInMoab<PipelineManager::FaceEle>>(
-            m_field); // element run on boundary
+      auto op_loop_side = new OpLoopSide<EleOnSide>(
+          m_field, simple->getDomainFEName(), SPACE_DIM);
 
-        auto op_loop_side =
-            new OpLoopSide<VolumeElementForcesAndSourcesCoreOnSide>(
-                m_field, simple->getDomainFEName(), SPACE_DIM);
+      // push operators to side element
+      op_loop_side->getOpPtrVector().push_back(
+          new OpCalculateHOJac<SPACE_DIM>(jac_ptr));
+      op_loop_side->getOpPtrVector().push_back(
+          new OpInvertMatrix<SPACE_DIM>(jac_ptr, det_ptr, inv_jac_ptr));
+      op_loop_side->getOpPtrVector().push_back(
+          new OpSetHOInvJacToScalarBases<SPACE_DIM>(space, inv_jac_ptr));
+      op_loop_side->getOpPtrVector().push_back(
+          new OpCalculateScalarFieldValues("FIELD1", ptr_values));
+      op_loop_side->getOpPtrVector().push_back(
+          new OpCalculateScalarFieldGradient<SPACE_DIM>("FIELD1",
+                                                        ptr_diff_vals));
+      // push op to boundary element
+      bdy_post_proc_fe->getOpPtrVector().push_back(op_loop_side);
 
-        // push operators to side element
-        op_loop_side->getOpPtrVector().push_back(
-            new OpCalculateHOJac<SPACE_DIM>(jac_ptr));
-        op_loop_side->getOpPtrVector().push_back(
-            new OpInvertMatrix<SPACE_DIM>(jac_ptr, det_ptr, inv_jac_ptr));
-        op_loop_side->getOpPtrVector().push_back(
-            new OpSetHOInvJacToScalarBases<SPACE_DIM>(space, inv_jac_ptr));
-        op_loop_side->getOpPtrVector().push_back(
-            new OpCalculateScalarFieldValues("FIELD1", ptr_values));
-        op_loop_side->getOpPtrVector().push_back(
-            new OpCalculateScalarFieldGradient<SPACE_DIM>("FIELD1",
-                                                          ptr_diff_vals));
-        // push op to boundary element
-        bdy_post_proc_fe->getOpPtrVector().push_back(op_loop_side);
+      bdy_post_proc_fe->getOpPtrVector().push_back(
 
-        bdy_post_proc_fe->getOpPtrVector().push_back(
+          new OpPPMap(
 
-            new OpPPMap(
+              bdy_post_proc_fe->getPostProcMesh(),
+              bdy_post_proc_fe->getMapGaussPts(),
 
-                bdy_post_proc_fe->getPostProcMesh(),
-                bdy_post_proc_fe->getMapGaussPts(),
+              {{"FIELD1", ptr_values}},
 
-                {{"FIELD1", ptr_values}},
+              {{"FIELD1_GRAD", ptr_diff_vals}},
 
-                {{"FIELD1_GRAD", ptr_diff_vals}},
+              {}, {})
 
-                {}, {})
+      );
 
-        );
+      CHKERR DMoFEMLoopFiniteElements(dm, simple->getBoundaryFEName(),
+                                      bdy_post_proc_fe);
 
-        CHKERR DMoFEMLoopFiniteElements(dm, simple->getBoundaryFEName(),
-                                        bdy_post_proc_fe);
-
-        bdy_post_proc_fe->writeFile("out_post_proc_bdy.h5m");
-      }
+      bdy_post_proc_fe->writeFile("out_post_proc_bdy.h5m");
 
       MoFEMFunctionReturn(0);
     };
@@ -658,7 +651,6 @@ int main(int argc, char *argv[]) {
     CHKERR solve_problem();
     CHKERR check_solution();
     CHKERR post_proc();
-
   }
   CATCH_ERRORS;
 
