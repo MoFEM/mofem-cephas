@@ -23,11 +23,13 @@ template <int DIM> struct ElementsAndOps {};
 template <> struct ElementsAndOps<2> {
   using DomainEle = PipelineManager::FaceEle;
   using DomainEleOp = DomainEle::UserDataOperator;
+  using BoundaryEle = PipelineManager::EdgeEle;
 };
 
 template <> struct ElementsAndOps<3> {
   using DomainEle = VolumeElementForcesAndSourcesCore;
   using DomainEleOp = DomainEle::UserDataOperator;
+  using BoundaryEle = PipelineManager::FaceEle;
 };
 
 constexpr int SPACE_DIM =
@@ -36,6 +38,7 @@ constexpr int SPACE_DIM =
 using EntData = EntitiesFieldData::EntData;
 using DomainEle = ElementsAndOps<SPACE_DIM>::DomainEle;
 using DomainEleOp = ElementsAndOps<SPACE_DIM>::DomainEleOp;
+using BoundaryEle = ElementsAndOps<SPACE_DIM>::BoundaryEle;
 
 template <> struct ApproxFunctionsImpl<2> {
   static double fUn(const double x, const double y, double z) {
@@ -361,6 +364,7 @@ int main(int argc, char *argv[]) {
                               PETSC_NULL);
 
     CHKERR simple->addDomainField("FIELD1", space, base, 1);
+    CHKERR simple->addBoundaryField("FIELD1", space, base, 1);
     CHKERR simple->setFieldOrder("FIELD1", approx_order);
 
     Range edges, faces;
@@ -548,6 +552,52 @@ int main(int argc, char *argv[]) {
                                       post_proc_fe);
 
       post_proc_fe->writeFile("out_post_proc.h5m");
+
+      if constexpr (SPACE_DIM == 3) {
+
+        auto bdy_post_proc_fe = boost::make_shared<
+            PostProcBrokenMeshInMoab<PipelineManager::FaceEle>>(
+            m_field); // element run on boundary
+
+        auto op_loop_side =
+            new OpLoopSide<VolumeElementForcesAndSourcesCoreOnSide>(
+                m_field, simple->getDomainFEName(), SPACE_DIM);
+
+        // push operators to side element
+        op_loop_side->getOpPtrVector().push_back(
+            new OpCalculateHOJac<SPACE_DIM>(jac_ptr));
+        op_loop_side->getOpPtrVector().push_back(
+            new OpInvertMatrix<SPACE_DIM>(jac_ptr, det_ptr, inv_jac_ptr));
+        op_loop_side->getOpPtrVector().push_back(
+            new OpSetHOInvJacToScalarBases<SPACE_DIM>(space, inv_jac_ptr));
+        op_loop_side->getOpPtrVector().push_back(
+            new OpCalculateScalarFieldGradient<SPACE_DIM>("FIELD1",
+                                                          ptr_diff_vals));
+        // push op to boundary element
+        bdy_post_proc_fe->getOpPtrVector().push_back(op_loop_side);
+
+        bdy_post_proc_fe->getOpPtrVector().push_back(
+            new OpCalculateScalarFieldValues("FIELD1", ptr_values));
+
+        bdy_post_proc_fe->getOpPtrVector().push_back(
+
+            new OpPPMap(
+
+                bdy_post_proc_fe->getPostProcMesh(), bdy_post_proc_fe->getMapGaussPts(),
+
+                {{"FIELD1", ptr_values}},
+
+                {{"FIELD1_GRAD", ptr_diff_vals}},
+
+                {}, {})
+
+        );
+
+        CHKERR DMoFEMLoopFiniteElements(dm, simple->getBoundaryFEName(),
+                                        bdy_post_proc_fe);
+
+        bdy_post_proc_fe->writeFile("out_post_proc_bdy.h5m");
+      }
 
       MoFEMFunctionReturn(0);
     };

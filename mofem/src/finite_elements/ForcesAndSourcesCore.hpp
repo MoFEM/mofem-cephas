@@ -1281,6 +1281,33 @@ double &ForcesAndSourcesCore::UserDataOperator::getMeasure() {
   return static_cast<ForcesAndSourcesCore *>(ptrFE)->elementMeasure;
 }
 
+template <typename E>
+struct OpLoopSide : public ForcesAndSourcesCore::UserDataOperator {
+
+  using UserDataOperator = ForcesAndSourcesCore::UserDataOperator;
+
+  OpLoopSide(MoFEM::Interface &m_field, const std::string field_name,
+             const int side_dim)
+      : UserDataOperator(NOSPACE, OPSPACE), sideFEPtr(new E(m_field)),
+        fieldName(field_name), sideDim(side_dim) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        EntitiesFieldData::EntData &data) {
+    MoFEMFunctionBegin;
+    CHKERR loopSide(fieldName, sideFEPtr.get(), sideDim);
+    MoFEMFunctionReturn(0);
+  };
+
+  boost::ptr_vector<UserDataOperator> &getOpPtrVector() {
+    return sideFEPtr->getOpPtrVector();
+  }
+
+protected:
+  const std::string fieldName;
+  const int sideDim;
+  boost::shared_ptr<E> sideFEPtr;
+};
+
 } // namespace MoFEM
 
 #endif //__FORCES_AND_SOURCES_CORE__HPP__
