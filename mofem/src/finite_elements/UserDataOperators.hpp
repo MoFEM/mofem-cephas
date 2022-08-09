@@ -2801,6 +2801,10 @@ protected:
   template <int D1, int D2, int J1, int J2>
   inline MoFEMErrorCode applyTransform(MatrixDouble &diff_n) {
     MoFEMFunctionBegin;
+
+    static_assert(D2 == J2, "Dimension of jacobian and dimension of <out> "
+                            "directive does not match");
+
     size_t nb_functions = diff_n.size2() / D1;
     if (nb_functions) {
       size_t nb_gauss_pts = diff_n.size1();
@@ -2815,7 +2819,7 @@ protected:
                 "not match");
 #endif
 
-      diffNinvJac.resize(diff_n.size1(), diff_n.size2(), false);
+      diffNinvJac.resize(diff_n.size1(), D2 * nb_functions, false);
 
       FTensor::Index<'i', D2> i;
       FTensor::Index<'k', D1> k;
