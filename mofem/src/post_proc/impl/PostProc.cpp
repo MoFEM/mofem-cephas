@@ -338,10 +338,6 @@ struct PostProcGenerateRefMesh<MBTRI> : public PostProcGenerateRefMeshBase {
 
     CHKERR create_reference_element();
 
-    CHKERR moab_ref.write_file("aaa.vtk", "VTK", "");
-
-
-
     MoFEM::CoreTmp<-1> m_core_ref(moab_ref, PETSC_COMM_SELF, -2);
     MoFEM::Interface &m_field_ref = m_core_ref;
 
@@ -464,7 +460,7 @@ struct PostProcGenerateRefMesh<MBQUAD> : public PostProcGenerateRefMeshBase {
 #ifndef NDEBUG
     if (defMaxLevel > 0)
       MOFEM_LOG("WORLD", Sev::warning)
-          << "Refinement for hexes is not implemented";
+          << "Refinement for quad is not implemented";
 #endif
 
     moab::Core core_ref;
@@ -588,7 +584,7 @@ struct PostProcGenerateRefMesh<MBEDGE> : public PostProcGenerateRefMeshBase {
 #ifndef NDEBUG
     if (defMaxLevel > 0)
       MOFEM_LOG("WORLD", Sev::warning)
-          << "Refinement for hexes is not implemented";
+          << "Refinement for edges is not implemented";
 #endif
 
     auto set_gauss_pts = [&](std::map<EntityHandle, int> &little_map) {
