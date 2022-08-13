@@ -24,9 +24,10 @@ struct OpGradGradImpl {};
 template <int SPACE_DIM, typename OpBase>
 struct OpGradGradImpl<1, 1, SPACE_DIM, GAUSS, OpBase> : public OpBase {
   FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
-  OpGradGradImpl(const std::string row_field_name,
-                 const std::string col_field_name, ScalarFun beta,
-                 boost::shared_ptr<Range> ents_ptr = nullptr)
+  OpGradGradImpl(
+      const std::string row_field_name, const std::string col_field_name,
+      ScalarFun beta = [](double, double, double) constexpr { return 1; },
+      boost::shared_ptr<Range> ents_ptr = nullptr)
       : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
         betaCoeff(beta) {
     if (row_field_name == col_field_name)
@@ -43,9 +44,10 @@ protected:
 template <int FIELD_DIM, int SPACE_DIM, typename OpBase>
 struct OpGradGradImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase> : public OpBase {
   FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
-  OpGradGradImpl(const std::string row_field_name,
-                 const std::string col_field_name, ScalarFun beta,
-                 boost::shared_ptr<Range> ents_ptr = nullptr)
+  OpGradGradImpl(
+      const std::string row_field_name, const std::string col_field_name,
+      ScalarFun beta = [](double, double, double) constexpr { return 1; },
+      boost::shared_ptr<Range> ents_ptr = nullptr)
       : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
         betaCoeff(beta) {
     if (row_field_name == col_field_name)
@@ -65,8 +67,10 @@ struct OpMassImpl {};
 template <typename OpBase>
 struct OpMassImpl<1, 1, GAUSS, OpBase> : public OpBase {
 
-  OpMassImpl(const std::string row_field_name, const std::string col_field_name,
-             ScalarFun beta, boost::shared_ptr<Range> ents_ptr = nullptr)
+  OpMassImpl(
+      const std::string row_field_name, const std::string col_field_name,
+      ScalarFun beta = [](double, double, double) constexpr { return 1; },
+      boost::shared_ptr<Range> ents_ptr = nullptr)
       : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
         betaCoeff(beta), entsPtr(ents_ptr) {
     if (row_field_name == col_field_name)
@@ -95,8 +99,10 @@ protected:
 template <int BASE_DIM, typename OpBase>
 struct OpMassImpl<BASE_DIM, BASE_DIM, GAUSS, OpBase> : public OpBase {
 
-  OpMassImpl(const std::string row_field_name, const std::string col_field_name,
-             ScalarFun beta, boost::shared_ptr<Range> ents_ptr = nullptr)
+  OpMassImpl(
+      const std::string row_field_name, const std::string col_field_name,
+      ScalarFun beta = [](double, double, double) constexpr { return 1; },
+      boost::shared_ptr<Range> ents_ptr = nullptr)
       : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
         betaCoeff(beta), entsPtr(ents_ptr) {
     if (row_field_name == col_field_name)
@@ -112,8 +118,10 @@ protected:
 
 template <typename OpBase>
 struct OpMassImpl<3, 9, GAUSS, OpBase> : public OpBase {
-  OpMassImpl(const std::string row_field_name, const std::string col_field_name,
-             ScalarFun beta, boost::shared_ptr<Range> ents_ptr = nullptr)
+  OpMassImpl(
+      const std::string row_field_name, const std::string col_field_name,
+      ScalarFun beta = [](double, double, double) constexpr { return 1; },
+      boost::shared_ptr<Range> ents_ptr = nullptr)
       : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
         betaCoeff(beta), entsPtr(ents_ptr) {
     if (row_field_name == col_field_name)
@@ -247,10 +255,10 @@ struct OpMixScalarTimesDivImpl {};
 template <int SPACE_DIM, typename OpBase, CoordinateTypes COORDINATE_SYSTEM>
 struct OpMixScalarTimesDivImpl<SPACE_DIM, GAUSS, OpBase, COORDINATE_SYSTEM>
     : public OpBase {
-  OpMixScalarTimesDivImpl(const std::string row_field_name,
-                          const std::string col_field_name, ScalarFun alpha_fun,
-                          const bool assemble_transpose = false,
-                          const bool only_transpose = false)
+  OpMixScalarTimesDivImpl(
+      const std::string row_field_name, const std::string col_field_name,
+      ScalarFun alpha_fun = [](double, double, double) constexpr { return 1; },
+      const bool assemble_transpose = false, const bool only_transpose = false)
       : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
         alphaConstant(alpha_fun) {
     this->assembleTranspose = assemble_transpose;
