@@ -70,10 +70,10 @@ struct OpBaseTimesScalarFieldImpl;
 template <int S, typename OpBase>
 struct OpBaseTimesScalarFieldImpl<1, S, GAUSS, OpBase> : public OpBase {
 
-  OpBaseTimesScalarFieldImpl(const std::string field_name,
-                             boost::shared_ptr<VectorDouble> vec,
-                             ScalarFun beta_coeff,
-                             boost::shared_ptr<Range> ents_ptr = nullptr)
+  OpBaseTimesScalarFieldImpl(
+      const std::string field_name, boost::shared_ptr<VectorDouble> vec,
+      ScalarFun beta_coeff = [](double, double, double) constexpr { return 1; },
+      boost::shared_ptr<Range> ents_ptr = nullptr)
       : OpBase(field_name, field_name, OpBase::OPROW), sourceVec(vec),
         betaCoeff(beta_coeff), entsPtr(ents_ptr) {}
 
@@ -91,10 +91,10 @@ struct OpBaseTimesVectorImpl;
 template <int FIELD_DIM, int S, typename OpBase>
 struct OpBaseTimesVectorImpl<1, FIELD_DIM, S, GAUSS, OpBase> : public OpBase {
 
-  OpBaseTimesVectorImpl(const std::string field_name,
-                        boost::shared_ptr<MatrixDouble> vec,
-                        ScalarFun beta_coeff,
-                        boost::shared_ptr<Range> ents_ptr = nullptr)
+  OpBaseTimesVectorImpl(
+      const std::string field_name, boost::shared_ptr<MatrixDouble> vec,
+      ScalarFun beta_coeff = [](double, double, double) constexpr { return 1; },
+      boost::shared_ptr<Range> ents_ptr = nullptr)
       : OpBase(field_name, field_name, OpBase::OPROW), sourceVec(vec),
         betaCoeff(beta_coeff), entsPtr(ents_ptr) {}
 
@@ -110,10 +110,10 @@ template <int BASE_DIM, int S, typename OpBase>
 struct OpBaseTimesVectorImpl<BASE_DIM, BASE_DIM, S, GAUSS, OpBase>
     : public OpBase {
 
-  OpBaseTimesVectorImpl(const std::string field_name,
-                        boost::shared_ptr<MatrixDouble> vec,
-                        ScalarFun beta_coeff,
-                        boost::shared_ptr<Range> ents_ptr = nullptr)
+  OpBaseTimesVectorImpl(
+      const std::string field_name, boost::shared_ptr<MatrixDouble> vec,
+      ScalarFun beta_coeff = [](double, double, double) constexpr { return 1; },
+      boost::shared_ptr<Range> ents_ptr = nullptr)
       : OpBase(field_name, field_name, OpBase::OPROW), sourceVec(vec),
         betaCoeff(beta_coeff), entsPtr(ents_ptr) {}
 
@@ -135,10 +135,10 @@ struct OpGradTimesTensorImpl<1, 1, SPACE_DIM, S, GAUSS, OpBase>
 
   FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
 
-  OpGradTimesTensorImpl(const std::string field_name,
-                        boost::shared_ptr<MatrixDouble> mat_vals,
-                        ScalarFun beta_coeff,
-                        boost::shared_ptr<Range> ents_ptr = nullptr)
+  OpGradTimesTensorImpl(
+      const std::string field_name, boost::shared_ptr<MatrixDouble> mat_vals,
+      ScalarFun beta_coeff = [](double, double, double) constexpr { return 1; },
+      boost::shared_ptr<Range> ents_ptr = nullptr)
       : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals),
         betaCoeff(beta_coeff) {}
 
@@ -158,7 +158,7 @@ struct OpGradTimesTensorImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>
 
   OpGradTimesTensorImpl(
       const std::string field_name, boost::shared_ptr<MatrixDouble> mat_vals,
-      ScalarFun beta_coeff = [](double, double, double) { return 1; },
+      ScalarFun beta_coeff = [](double, double, double) constexpr { return 1; },
       boost::shared_ptr<Range> ents_ptr = nullptr)
       : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals),
         betaCoeff(beta_coeff) {}
@@ -180,7 +180,7 @@ struct OpGradTimesSymTensorImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>
 
   OpGradTimesSymTensorImpl(
       const std::string field_name, boost::shared_ptr<MatrixDouble> &mat_vals,
-      ScalarFun beta_coeff = [](double, double, double) { return 1; })
+      ScalarFun beta_coeff = [](double, double, double) constexpr { return 1; })
       : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals),
         betaCoeff(beta_coeff) {}
 
@@ -199,9 +199,10 @@ struct OpMixDivTimesUImpl {};
 template <int FIELD_DIM, int SPACE_DIM, typename OpBase>
 struct OpMixDivTimesUImpl<3, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>
     : public OpBase {
-  OpMixDivTimesUImpl(const std::string field_name,
-                     boost::shared_ptr<MatrixDouble> mat_vals, ScalarFun beta,
-                     boost::shared_ptr<Range> ents_ptr = nullptr)
+  OpMixDivTimesUImpl(
+      const std::string field_name, boost::shared_ptr<MatrixDouble> mat_vals,
+      ScalarFun beta = [](double, double, double) { return 1; },
+      boost::shared_ptr<Range> ents_ptr = nullptr)
       : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals),
         betaConst(beta), entsPtr(ents_ptr) {}
 
@@ -216,9 +217,10 @@ protected:
 
 template <int SPACE_DIM, typename OpBase>
 struct OpMixDivTimesUImpl<3, 1, SPACE_DIM, GAUSS, OpBase> : public OpBase {
-  OpMixDivTimesUImpl(const std::string field_name,
-                     boost::shared_ptr<VectorDouble> vec_vals, ScalarFun beta,
-                     boost::shared_ptr<Range> ents_ptr = nullptr)
+  OpMixDivTimesUImpl(
+      const std::string field_name, boost::shared_ptr<VectorDouble> vec_vals,
+      ScalarFun beta = [](double, double, double) constexpr { return 1; },
+      boost::shared_ptr<Range> ents_ptr = nullptr)
       : OpBase(field_name, field_name, OpBase::OPROW), vecVals(vec_vals),
         betaConst(beta), entsPtr(ents_ptr) {}
 
@@ -234,9 +236,10 @@ template <int FIELD_DIM, typename OpBase>
 struct OpMixDivTimesUImpl<1, FIELD_DIM, FIELD_DIM, GAUSS, OpBase>
     : public OpBase {
 
-  OpMixDivTimesUImpl(const std::string field_name,
-                     boost::shared_ptr<VectorDouble> vec, ScalarFun beta,
-                     boost::shared_ptr<Range> ents_ptr = nullptr)
+  OpMixDivTimesUImpl(
+      const std::string field_name, boost::shared_ptr<VectorDouble> vec,
+      ScalarFun beta = [](double, double, double) constexpr { return 1; },
+      boost::shared_ptr<Range> ents_ptr = nullptr)
       : OpBase(field_name, field_name, OpBase::OPROW), sourceVec(vec),
         betaCoeff(beta), entsPtr(ents_ptr) {}
 
@@ -293,9 +296,10 @@ struct OpNormalMixVecTimesScalarImpl;
 
 template <typename OpBase>
 struct OpNormalMixVecTimesScalarImpl<3, GAUSS, OpBase> : public OpBase {
-  OpNormalMixVecTimesScalarImpl(const std::string field_name,
-                                ScalarFun source_fun,
-                                boost::shared_ptr<Range> ents_ptr = nullptr)
+  OpNormalMixVecTimesScalarImpl(
+      const std::string field_name,
+      ScalarFun source_fun = [](double, double, double) constexpr { return 1; },
+      boost::shared_ptr<Range> ents_ptr = nullptr)
       : OpBase(field_name, field_name, OpBase::OPROW), sourceFun(source_fun),
         entsPtr(ents_ptr) {}
 
@@ -308,9 +312,10 @@ protected:
 
 template <typename OpBase>
 struct OpNormalMixVecTimesScalarImpl<2, GAUSS, OpBase> : public OpBase {
-  OpNormalMixVecTimesScalarImpl(const std::string field_name,
-                                ScalarFun source_fun,
-                                boost::shared_ptr<Range> ents_ptr = nullptr)
+  OpNormalMixVecTimesScalarImpl(
+      const std::string field_name,
+      ScalarFun source_fun = [](double, double, double) constexpr { return 1; },
+      boost::shared_ptr<Range> ents_ptr = nullptr)
       : OpBase(field_name, field_name, OpBase::OPROW), sourceFun(source_fun),
         entsPtr(ents_ptr) {}
 
@@ -330,7 +335,7 @@ struct OpConvectiveTermRhsImpl<1, 1, SPACE_DIM, GAUSS, OpBase> : public OpBase {
   OpConvectiveTermRhsImpl(
       const std::string field_name, boost::shared_ptr<MatrixDouble> u_ptr,
       boost::shared_ptr<MatrixDouble> y_grad_ptr,
-      ConstantFun source_fun = []() { return 1; })
+      ConstantFun source_fun = []() constexpr { return 1; })
       : OpBase(field_name, field_name, OpBase::OPROW), uPtr(u_ptr),
         yGradPtr(y_grad_ptr), alphaConstant(source_fun) {}
 
@@ -347,7 +352,7 @@ struct OpConvectiveTermRhsImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>
   OpConvectiveTermRhsImpl(
       const std::string field_name, boost::shared_ptr<MatrixDouble> u_ptr,
       boost::shared_ptr<MatrixDouble> y_grad_ptr,
-      ConstantFun source_fun = []() { return 1; })
+      ConstantFun source_fun = []() constexpr { return 1; })
       : OpBase(field_name, field_name, OpBase::OPROW), uPtr(u_ptr),
         yGradPtr(y_grad_ptr), alphaConstant(source_fun) {}
 
