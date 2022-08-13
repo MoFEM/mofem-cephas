@@ -10,8 +10,6 @@
 
 */
 
-
-
 #ifndef __BILINEAR_FORMS_INTEGRATORS_HPP__
 #define __BILINEAR_FORMS_INTEGRATORS_HPP__
 
