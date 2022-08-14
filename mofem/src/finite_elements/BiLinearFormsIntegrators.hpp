@@ -22,11 +22,11 @@ struct OpGradGradImpl {};
 template <int SPACE_DIM, typename OpBase>
 struct OpGradGradImpl<1, 1, SPACE_DIM, GAUSS, OpBase> : public OpBase {
   FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
-  OpGradGradImpl(
-      const std::string row_field_name, const std::string col_field_name,
-      ScalarFun beta = [](double, double, double) constexpr { return 1; },
-      boost::shared_ptr<Range> ents_ptr = nullptr)
-      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
+  OpGradGradImpl(const std::string row_field_name,
+                 const std::string col_field_name,
+                 ScalarFun beta = scalar_fun_one,
+                 boost::shared_ptr<Range> ents_ptr = nullptr)
+      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL, ents_ptr),
         betaCoeff(beta) {
     if (row_field_name == col_field_name)
       this->sYmm = true;
@@ -34,7 +34,6 @@ struct OpGradGradImpl<1, 1, SPACE_DIM, GAUSS, OpBase> : public OpBase {
 
 protected:
   ScalarFun betaCoeff;
-  boost::shared_ptr<Range> entsPtr;
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data);
 };
@@ -42,11 +41,11 @@ protected:
 template <int FIELD_DIM, int SPACE_DIM, typename OpBase>
 struct OpGradGradImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase> : public OpBase {
   FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
-  OpGradGradImpl(
-      const std::string row_field_name, const std::string col_field_name,
-      ScalarFun beta = [](double, double, double) constexpr { return 1; },
-      boost::shared_ptr<Range> ents_ptr = nullptr)
-      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
+  OpGradGradImpl(const std::string row_field_name,
+                 const std::string col_field_name,
+                 ScalarFun beta = scalar_fun_one,
+                 boost::shared_ptr<Range> ents_ptr = nullptr)
+      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL, ents_ptr),
         betaCoeff(beta) {
     if (row_field_name == col_field_name)
       this->sYmm = true;
@@ -54,7 +53,6 @@ struct OpGradGradImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase> : public OpBase {
 
 protected:
   ScalarFun betaCoeff;
-  boost::shared_ptr<Range> entsPtr;
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data);
 };
@@ -69,15 +67,14 @@ struct OpMassImpl<1, 1, GAUSS, OpBase> : public OpBase {
       const std::string row_field_name, const std::string col_field_name,
       ScalarFun beta = [](double, double, double) constexpr { return 1; },
       boost::shared_ptr<Range> ents_ptr = nullptr)
-      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
-        betaCoeff(beta), entsPtr(ents_ptr) {
+      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL, ents_ptr),
+        betaCoeff(beta) {
     if (row_field_name == col_field_name)
       this->sYmm = true;
   }
 
 protected:
   ScalarFun betaCoeff;
-  boost::shared_ptr<Range> entsPtr;
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data);
 };
@@ -89,7 +86,6 @@ struct OpMassImpl<1, FIELD_DIM, GAUSS, OpBase>
 
 protected:
   using OpMassImpl<1, 1, GAUSS, OpBase>::betaCoeff;
-  using OpMassImpl<1, 1, GAUSS, OpBase>::entsPtr;
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data);
 };
@@ -97,38 +93,34 @@ protected:
 template <int BASE_DIM, typename OpBase>
 struct OpMassImpl<BASE_DIM, BASE_DIM, GAUSS, OpBase> : public OpBase {
 
-  OpMassImpl(
-      const std::string row_field_name, const std::string col_field_name,
-      ScalarFun beta = [](double, double, double) constexpr { return 1; },
-      boost::shared_ptr<Range> ents_ptr = nullptr)
-      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
-        betaCoeff(beta), entsPtr(ents_ptr) {
+  OpMassImpl(const std::string row_field_name, const std::string col_field_name,
+             ScalarFun beta = scalar_fun_one,
+             boost::shared_ptr<Range> ents_ptr = nullptr)
+      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL, ents_ptr),
+        betaCoeff(beta) {
     if (row_field_name == col_field_name)
       this->sYmm = true;
   }
 
 protected:
   ScalarFun betaCoeff;
-  boost::shared_ptr<Range> entsPtr;
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data);
 };
 
 template <typename OpBase>
 struct OpMassImpl<3, 9, GAUSS, OpBase> : public OpBase {
-  OpMassImpl(
-      const std::string row_field_name, const std::string col_field_name,
-      ScalarFun beta = [](double, double, double) constexpr { return 1; },
-      boost::shared_ptr<Range> ents_ptr = nullptr)
-      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
-        betaCoeff(beta), entsPtr(ents_ptr) {
+  OpMassImpl(const std::string row_field_name, const std::string col_field_name,
+             ScalarFun beta = scalar_fun_one,
+             boost::shared_ptr<Range> ents_ptr = nullptr)
+      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL, ents_ptr),
+        betaCoeff(beta) {
     if (row_field_name == col_field_name)
       this->sYmm = true;
   }
 
 protected:
   ScalarFun betaCoeff;
-  boost::shared_ptr<Range> entsPtr;
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data);
 };
@@ -145,15 +137,14 @@ struct OpGradSymTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>
                           const std::string col_field_name,
                           boost::shared_ptr<MatrixDouble> mat_D,
                           boost::shared_ptr<Range> ents_ptr = nullptr)
-      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL), matD(mat_D),
-        entsPtr(ents_ptr) {
+      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL, ents_ptr),
+        matD(mat_D) {
     if (row_field_name == col_field_name)
       this->sYmm = true;
   }
 
 protected:
   boost::shared_ptr<MatrixDouble> matD;
-  boost::shared_ptr<Range> entsPtr;
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data);
 };
@@ -189,14 +180,14 @@ struct OpGradGradSymTensorGradGradImpl<1, 1, SPACE_DIM, S, GAUSS, OpBase>
                                   const std::string col_field_name,
                                   boost::shared_ptr<MatrixDouble> mat_D,
                                   boost::shared_ptr<Range> ents_ptr = nullptr)
-      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL), matD(mat_D) {
+      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL, ents_ptr),
+        matD(mat_D) {
     if (row_field_name == col_field_name)
       this->sYmm = true;
   }
 
 protected:
   boost::shared_ptr<MatrixDouble> matD;
-  boost::shared_ptr<Range> entsPtr;
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data);
 };
@@ -612,11 +603,6 @@ MoFEMErrorCode OpGradGradImpl<1, 1, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
     EntitiesFieldData::EntData &col_data) {
   MoFEMFunctionBegin;
 
-  if (entsPtr) {
-    if (entsPtr->find(OpBase::getFEEntityHandle()) == entsPtr->end())
-      MoFEMFunctionReturnHot(0);
-  }
-
   // get element volume
   const double vol = OpBase::getMeasure();
   // get integration weights
@@ -661,11 +647,6 @@ OpGradGradImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
     EntitiesFieldData::EntData &row_data,
     EntitiesFieldData::EntData &col_data) {
   MoFEMFunctionBegin;
-
-  if (entsPtr) {
-    if (entsPtr->find(OpBase::getFEEntityHandle()) == entsPtr->end())
-      MoFEMFunctionReturnHot(0);
-  }
 
   // get element volume
   const double vol = OpBase::getMeasure();
@@ -724,10 +705,6 @@ MoFEMErrorCode OpMassImpl<1, 1, GAUSS, OpBase>::iNtegrate(
     EntitiesFieldData::EntData &row_data,
     EntitiesFieldData::EntData &col_data) {
   MoFEMFunctionBegin;
-  if (entsPtr) {
-    if (entsPtr->find(OpBase::getFEEntityHandle()) == entsPtr->end())
-      MoFEMFunctionReturnHot(0);
-  }
 
 #ifndef NDEBUG
   auto log_error = [&]() {
@@ -804,10 +781,6 @@ MoFEMErrorCode OpMassImpl<1, FIELD_DIM, GAUSS, OpBase>::iNtegrate(
     EntitiesFieldData::EntData &row_data,
     EntitiesFieldData::EntData &col_data) {
   MoFEMFunctionBegin;
-  if (entsPtr) {
-    if (entsPtr->find(OpBase::getFEEntityHandle()) == entsPtr->end())
-      MoFEMFunctionReturnHot(0);
-  }
   // get element volume
   const double vol = OpBase::getMeasure();
   // get integration weights
@@ -861,10 +834,6 @@ MoFEMErrorCode OpMassImpl<BASE_DIM, BASE_DIM, GAUSS, OpBase>::iNtegrate(
     EntitiesFieldData::EntData &col_data) {
   FTensor::Index<'i', BASE_DIM> i;
   MoFEMFunctionBegin;
-  if (entsPtr) {
-    if (entsPtr->find(OpBase::getFEEntityHandle()) == entsPtr->end())
-      MoFEMFunctionReturnHot(0);
-  }
   size_t nb_base_functions = row_data.getN().size2() / BASE_DIM;
   // // get element volume
   const double vol = OpBase::getMeasure();
@@ -909,10 +878,6 @@ MoFEMErrorCode OpMassImpl<3, 9, GAUSS, OpBase>::iNtegrate(
   MoFEMFunctionBegin;
   FTensor::Index<'i', 3> i;
   FTensor::Index<'k', 3> k;
-  if (entsPtr) {
-    if (entsPtr->find(OpBase::getFEEntityHandle()) == entsPtr->end())
-      MoFEMFunctionReturnHot(0);
-  }
   auto get_t_vec = [&](const int rr) {
     std::array<double *, 3> ptrs;
     for (auto i = 0; i != 3; ++i)
@@ -962,11 +927,6 @@ OpGradSymTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
     EntitiesFieldData::EntData &row_data,
     EntitiesFieldData::EntData &col_data) {
   MoFEMFunctionBegin;
-
-  if (entsPtr) {
-    if (entsPtr->find(OpBase::getFEEntityHandle()) == entsPtr->end())
-      MoFEMFunctionReturnHot(0);
-  }
 
   const size_t nb_row_dofs = row_data.getIndices().size();
   const size_t nb_col_dofs = col_data.getIndices().size();

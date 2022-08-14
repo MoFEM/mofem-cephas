@@ -104,6 +104,16 @@ enum IntegrationType { GAUSS, USER_INTEGRATION, LAST_INTEGRATION };
 using ScalarFun =
     boost::function<double(const double, const double, const double)>;
 
+inline double scalar_fun_one(const double, const double, const double) {
+  return 1;
+}
+
+/**
+ * @brief Lambda function used to scale with time
+ * 
+ */
+using TimeFun = boost::function<double(double)>;
+
 /**
  * @brief Constant function type
  *
@@ -125,9 +135,15 @@ template <AssemblyType A, typename EleOp> struct OpBaseImpl : public EleOp {
   using EntData = EntitiesFieldData::EntData;
 
   OpBaseImpl(const std::string row_field_name, const std::string col_field_name,
-             const OpType type)
+             const OpType type, boost::shared_ptr<Range> ents_ptr = nullptr)
       : EleOp(row_field_name, col_field_name, type, false),
-        assembleTranspose(false), onlyTranspose(false) {}
+        assembleTranspose(false), onlyTranspose(false), entsPtr(ents_ptr) {}
+
+  OpBaseImpl(const std::string row_field_name, const std::string col_field_name,
+             const OpType type, TimeFun time_fun,
+             boost::shared_ptr<Range> ents_ptr = nullptr)
+      : OpBaseImpl(row_field_name, col_field_name, type, time_fun, ents_ptr),
+        timeScalingFun(time_fun) {}
 
   /**
    * \brief Do calculations for the left hand side
@@ -181,6 +197,9 @@ protected:
   MatrixDouble locMat;          ///< local entity block matrix
   MatrixDouble locMatTranspose; ///< local entity block matrix
   VectorDouble locF;            ///< local entity vector
+
+  TimeFun timeScalingFun; ///< assumes that time variable is set
+  boost::shared_ptr<Range> entsPtr; ///< Entities on which element is run
 
   /**
    * \brief Integrate grad-grad operator
@@ -254,6 +273,12 @@ OpBaseImpl<A, EleOp>::doWork(int row_side, int col_side, EntityType row_type,
                              EntitiesFieldData::EntData &row_data,
                              EntitiesFieldData::EntData &col_data) {
   MoFEMFunctionBegin;
+
+  if (entsPtr) {
+    if (entsPtr->find(this->getFEEntityHandle()) == entsPtr->end())
+      MoFEMFunctionReturnHot(0);
+  }
+
   // get number of dofs on row
   nbRows = row_data.getIndices().size();
   // if no dofs on row, exit that work, nothing to do here
@@ -300,6 +325,12 @@ template <AssemblyType A, typename EleOp>
 MoFEMErrorCode OpBaseImpl<A, EleOp>::doWork(int row_side, EntityType row_type,
                                             EntData &row_data) {
   MoFEMFunctionBegin;
+
+  if (entsPtr) {
+    if (entsPtr->find(this->getFEEntityHandle()) == entsPtr->end())
+      MoFEMFunctionReturnHot(0);
+  }
+
   // get number of dofs on row
   nbRows = row_data.getIndices().size();
   rowSide = row_side;
@@ -331,6 +362,9 @@ protected:
                           const bool transpose) {
     MoFEMFunctionBegin;
 
+    if (!this->timeScalingFun.empty())
+      this->locMat *= this->timeScalingFun(this->getFEMethod()->ts_t);
+
     // Assemble transpose
     if (transpose) {
       this->locMatTranspose.resize(this->locMat.size2(), this->locMat.size1(),
@@ -352,6 +386,10 @@ protected:
   }
 
   MoFEMErrorCode aSsemble(EntitiesFieldData::EntData &data) {
+
+    if (!this->timeScalingFun.empty())
+      this->locF *= this->timeScalingFun(this->getFEMethod()->ts_t);
+
     return VecSetValues<EssentialBcStorage>(
         this->getKSPf(), data, &*this->locF.data().begin(), ADD_VALUES);
   }
