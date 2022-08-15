@@ -33,6 +33,9 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/src/finite_elements)
 link_directories(${PROJECT_BINARY_DIR}/src/pots_prco)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/post_proc)
 
+link_directories(${PROJECT_BINARY_DIR}/src/boundary_conditions)
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/boundary_conditions)
+
 if(STAND_ALLONE_USERS_MODULES)
   install(
     DIRECTORY 

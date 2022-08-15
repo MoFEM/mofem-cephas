@@ -129,6 +129,7 @@ using FTensor::operator>>;
 #include <LinearFormsIntegrators.hpp>
 #include <BiLinearFormsIntegrators.hpp>
 #include <PostProc.hpp>
+#include <ScalingMethod.hpp>
 
 // More interfaces
 
