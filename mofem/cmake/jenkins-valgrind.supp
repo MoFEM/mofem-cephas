@@ -1,4 +1,753 @@
 {
+   
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:strdup
+   fun:PMIx_server_init
+   fun:pmix3x_server_init
+   fun:pmix_server_init
+   fun:rte_init
+   fun:orte_init
+   fun:orte_submit_init
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc
+   fun:strdup
+   fun:orte_attr_load
+   fun:orte_set_attribute
+   fun:bind_in_place.isra.0
+   fun:orte_rmaps_base_compute_bindings
+   fun:orte_odls_base_default_construct_child_list
+   fun:orte_odls_default_launch_local_procs
+   fun:orte_daemon_recv
+   fun:orte_rml_base_process_msg
+   fun:event_process_active_single_queue
+   fun:event_process_active
+   fun:event_base_loop
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:orte_odls_base_start_threads
+   fun:orte_odls_base_default_construct_child_list
+   fun:orte_odls_default_launch_local_procs
+   fun:orte_daemon_recv
+   fun:orte_rml_base_process_msg
+   fun:event_process_active_single_queue
+   fun:event_process_active
+   fun:event_base_loop
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:calloc
+   fun:opal_pointer_array_init
+   fun:orte_node_construct
+   fun:rte_init
+   fun:orte_init
+   fun:orte_submit_init
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:strdup
+   fun:PMIx_server_init
+   fun:pmix3x_server_init
+   fun:pmix_server_init
+   fun:rte_init
+   fun:orte_init
+   fun:orte_submit_init
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:strdup
+   fun:PMIx_server_init
+   fun:pmix3x_server_init
+   fun:pmix_server_init
+   fun:rte_init
+   fun:orte_init
+   fun:orte_submit_init
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc
+   fun:strdup
+   fun:_register_client
+   fun:event_process_active_single_queue
+   fun:event_process_active
+   fun:event_base_loop
+   fun:progress_engine
+   fun:start_thread
+   fun:clone
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:strdup
+   fun:orte_debugger_init_after_spawn
+   fun:event_process_active_single_queue
+   fun:event_process_active
+   fun:event_base_loop
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:strdup
+   fun:event_config_avoid_method
+   fun:opal_event_init
+   fun:opal_event_base_open
+   fun:mca_base_framework_open
+   fun:opal_init
+   fun:orte_submit_init
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc
+   fun:strdup
+   fun:rte_init
+   fun:orte_init
+   fun:orte_submit_init
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc
+   fun:strdup
+   fun:assign
+   fun:orte_rtc_base_assign
+   fun:orte_odls_base_default_construct_child_list
+   fun:orte_odls_default_launch_local_procs
+   fun:orte_daemon_recv
+   fun:orte_rml_base_process_msg
+   fun:event_process_active_single_queue
+   fun:event_process_active
+   fun:event_base_loop
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc
+   fun:strdup
+   fun:assign
+   fun:orte_rtc_base_assign
+   fun:orte_odls_base_default_construct_child_list
+   fun:orte_odls_default_launch_local_procs
+   fun:orte_daemon_recv
+   fun:orte_rml_base_process_msg
+   fun:event_process_active_single_queue
+   fun:event_process_active
+   fun:event_base_loop
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc
+   fun:strdup
+   fun:assign
+   fun:orte_rtc_base_assign
+   fun:orte_odls_base_default_construct_child_list
+   fun:orte_odls_default_launch_local_procs
+   fun:orte_daemon_recv
+   fun:orte_rml_base_process_msg
+   fun:event_process_active_single_queue
+   fun:event_process_active
+   fun:event_base_loop
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:orte_debugger_init_after_spawn
+   fun:event_process_active_single_queue
+   fun:event_process_active
+   fun:event_base_loop
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:event_get_supported_methods
+   fun:opal_event_init
+   fun:opal_event_base_open
+   fun:mca_base_framework_open
+   fun:opal_init
+   fun:orte_submit_init
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:evthread_posix_lock_alloc
+   fun:event_global_setup_locks_
+   fun:evthread_use_pthreads
+   fun:opal_event_base_open
+   fun:mca_base_framework_open
+   fun:opal_init
+   fun:orte_submit_init
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:evthread_posix_lock_alloc
+   fun:evsig_global_setup_locks_
+   fun:event_global_setup_locks_
+   fun:evthread_use_pthreads
+   fun:opal_event_base_open
+   fun:mca_base_framework_open
+   fun:opal_init
+   fun:orte_submit_init
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:evthread_posix_lock_alloc
+   fun:evutil_secure_rng_global_setup_locks_
+   fun:event_global_setup_locks_
+   fun:evthread_use_pthreads
+   fun:opal_event_base_open
+   fun:mca_base_framework_open
+   fun:opal_init
+   fun:orte_submit_init
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc
+   fun:strdup
+   fun:assign
+   fun:orte_rtc_base_assign
+   fun:orte_odls_base_default_construct_child_list
+   fun:orte_odls_default_launch_local_procs
+   fun:orte_daemon_recv
+   fun:orte_rml_base_process_msg
+   fun:event_process_active_single_queue
+   fun:event_process_active
+   fun:event_base_loop
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:event_config_avoid_method
+   fun:opal_event_init
+   fun:opal_event_base_open
+   fun:mca_base_framework_open
+   fun:opal_init
+   fun:orte_submit_init
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:event_config_new
+   fun:opal_event_init
+   fun:opal_event_base_open
+   fun:mca_base_framework_open
+   fun:opal_init
+   fun:orte_submit_init
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:hnp_push
+   fun:orte_plm_base_post_launch
+   fun:event_process_active_single_queue
+   fun:event_process_active
+   fun:event_base_loop
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:PMIx_server_init
+   fun:pmix3x_server_init
+   fun:pmix_server_init
+   fun:rte_init
+   fun:orte_init
+   fun:orte_submit_init
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:hnp_pull
+   fun:orte_iof_base_setup_parent
+   fun:orte_odls_base_default_launch_local
+   fun:event_process_active_single_queue
+   fun:event_process_active
+   fun:event_base_loop
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc
+   fun:orte_set_attribute
+   fun:orte_rmaps_rr_byobj
+   fun:orte_rmaps_rr_map
+   fun:orte_rmaps_base_map_job
+   fun:event_process_active_single_queue
+   fun:event_process_active
+   fun:event_base_loop
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc
+   fun:orte_set_attribute
+   fun:bind_in_place.isra.0
+   fun:orte_rmaps_base_compute_bindings
+   fun:orte_odls_base_default_construct_child_list
+   fun:orte_odls_default_launch_local_procs
+   fun:orte_daemon_recv
+   fun:orte_rml_base_process_msg
+   fun:event_process_active_single_queue
+   fun:event_process_active
+   fun:event_base_loop
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc
+   fun:orte_set_attribute
+   fun:bind_in_place.isra.0
+   fun:orte_rmaps_base_compute_bindings
+   fun:orte_odls_base_default_construct_child_list
+   fun:orte_odls_default_launch_local_procs
+   fun:orte_daemon_recv
+   fun:orte_rml_base_process_msg
+   fun:event_process_active_single_queue
+   fun:event_process_active
+   fun:event_base_loop
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:opal_os_path
+   fun:orte_debugger_init_after_spawn
+   fun:event_process_active_single_queue
+   fun:event_process_active
+   fun:event_base_loop
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc
+   fun:orte_node_construct
+   fun:rte_init
+   fun:orte_init
+   fun:orte_submit_init
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:orte_iof_base_read_event_construct
+   fun:hnp_push
+   fun:orte_plm_base_post_launch
+   fun:event_process_active_single_queue
+   fun:event_process_active
+   fun:event_base_loop
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:insert
+   fun:find_device_name
+   fun:pci_get_strings
+   fun:hwloc_pci_get_obj_names
+   fun:hwloc_pci_get_names
+   fun:hwloc_look_pci
+   fun:hwloc_discover_by_phase.isra.3
+   fun:hwloc_discover
+   fun:hwloc_topology_load
+   fun:opal_hwloc_base_get_topology
+   fun:rte_init
+   fun:orte_init
+   fun:orte_submit_init
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc
+   fun:assign
+   fun:orte_rtc_base_assign
+   fun:orte_odls_base_default_construct_child_list
+   fun:orte_odls_default_launch_local_procs
+   fun:orte_daemon_recv
+   fun:orte_rml_base_process_msg
+   fun:event_process_active_single_queue
+   fun:event_process_active
+   fun:event_base_loop
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc
+   fun:assign
+   fun:orte_rtc_base_assign
+   fun:orte_odls_base_default_construct_child_list
+   fun:orte_odls_default_launch_local_procs
+   fun:orte_daemon_recv
+   fun:orte_rml_base_process_msg
+   fun:event_process_active_single_queue
+   fun:event_process_active
+   fun:event_base_loop
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc
+   fun:assign
+   fun:orte_rtc_base_assign
+   fun:orte_odls_base_default_construct_child_list
+   fun:orte_odls_default_launch_local_procs
+   fun:orte_daemon_recv
+   fun:orte_rml_base_process_msg
+   fun:event_process_active_single_queue
+   fun:event_process_active
+   fun:event_base_loop
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:orte_rmaps_base_print_mapping
+   fun:orte_pmix_server_register_nspace
+   fun:orte_odls_base_default_construct_child_list
+   fun:orte_odls_default_launch_local_procs
+   fun:orte_daemon_recv
+   fun:orte_rml_base_process_msg
+   fun:event_process_active_single_queue
+   fun:event_process_active
+   fun:event_base_loop
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:insert
+   fun:find_device_name
+   fun:pci_get_strings
+   fun:hwloc_pci_get_obj_names
+   fun:hwloc_pci_get_names
+   fun:hwloc_look_pci
+   fun:hwloc_discover_by_phase.isra.3
+   fun:hwloc_discover
+   fun:hwloc_topology_load
+   fun:opal_hwloc_base_get_topology
+   fun:rte_init
+   fun:orte_init
+   fun:orte_submit_init
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc
+   fun:rte_init
+   fun:orte_init
+   fun:orte_submit_init
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:pmix_rte_init
+   fun:PMIx_server_init
+   fun:pmix3x_server_init
+   fun:pmix_server_init
+   fun:rte_init
+   fun:orte_init
+   fun:orte_submit_init
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc
+   fun:_register_client
+   fun:event_process_active_single_queue
+   fun:event_process_active
+   fun:event_base_loop
+   fun:progress_engine
+   fun:start_thread
+   fun:clone
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:calloc
+   fun:opal_pointer_array_init
+   fun:orte_node_construct
+   fun:rte_init
+   fun:orte_init
+   fun:orte_submit_init
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:assign
+   fun:orte_rtc_base_assign
+   fun:orte_odls_base_default_construct_child_list
+   fun:orte_odls_default_launch_local_procs
+   fun:orte_daemon_recv
+   fun:orte_rml_base_process_msg
+   fun:event_process_active_single_queue
+   fun:event_process_active
+   fun:event_base_loop
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:new_tracker.constprop.13
+   fun:pmix_server_fence
+   fun:server_switchyard
+   fun:pmix_server_message_handler
+   fun:pmix_ptl_base_process_msg
+   fun:event_process_active_single_queue
+   fun:event_process_active
+   fun:event_base_loop
+   fun:progress_engine
+   fun:start_thread
+   fun:clone
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:PMIx_server_init
+   fun:pmix3x_server_init
+   fun:pmix_server_init
+   fun:rte_init
+   fun:orte_init
+   fun:orte_submit_init
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:orte_rmaps_base_setup_proc
+   fun:orte_rmaps_rr_byobj
+   fun:orte_rmaps_rr_map
+   fun:orte_rmaps_base_map_job
+   fun:event_process_active_single_queue
+   fun:event_process_active
+   fun:event_base_loop
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:insert
+   fun:find_device_name
+   fun:pci_get_strings
+   fun:hwloc_pci_get_obj_names
+   fun:hwloc_pci_get_names
+   fun:hwloc_look_pci
+   fun:hwloc_discover_by_phase.isra.3
+   fun:hwloc_discover
+   fun:hwloc_topology_load
+   fun:opal_hwloc_base_get_topology
+   fun:rte_init
+   fun:orte_init
+   fun:orte_submit_init
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:opal_dss_buffer_extend
+   fun:opal_dss_pack_int32
+   fun:opal_dss_pack
+   fun:orte_pmix_server_register_nspace
+   fun:orte_odls_base_default_construct_child_list
+   fun:orte_odls_default_launch_local_procs
+   fun:orte_daemon_recv
+   fun:orte_rml_base_process_msg
+   fun:event_process_active_single_queue
+   fun:event_process_active
+   fun:event_base_loop
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:opal_dss_buffer_extend
+   fun:opal_dss_pack_int32
+   fun:opal_dss_pack
+   fun:orte_pmix_server_register_nspace
+   fun:orte_odls_base_default_construct_child_list
+   fun:orte_odls_default_launch_local_procs
+   fun:orte_daemon_recv
+   fun:orte_rml_base_process_msg
+   fun:event_process_active_single_queue
+   fun:event_process_active
+   fun:event_base_loop
+   fun:orterun
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:orte_iof_base_write_output
+   fun:orte_iof_hnp_read_local_handler
+   fun:event_process_active_single_queue
+   fun:event_process_active
+   fun:event_base_loop
+   fun:orterun
+   fun:(below main)
+}
+{
    <insert_a_suppression_name_here>
    Memcheck:Leak
    match-leak-kinds: reachable
