@@ -8,9 +8,10 @@ template <class T, int Tensor_Dim0, int Tensor_Dim1>
 class Tensor2<T *, Tensor_Dim0, Tensor_Dim1> {
 
 protected:
-  const int inc;
-  mutable T *restrict data[Tensor_Dim0][Tensor_Dim1];
 
+  mutable T *restrict data[Tensor_Dim0][Tensor_Dim1];
+  const int inc;
+  
 public:
   /* Initializations for varying numbers of elements. */
 
