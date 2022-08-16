@@ -85,22 +85,30 @@ MoFEMErrorCode BcManager::removeBlockDOFsOnEntities(
     Range remove_ents;
     for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field, BLOCKSET, it)) {
       if (it->getName().compare(0, block_name.length(), block_name) == 0) {
+        auto bc = boost::make_shared<BCs>();
         CHKERR m_field.get_moab().get_entities_by_handle(it->meshset,
-                                                         remove_ents, true);
+                                                         bc->bcEnts, true);
+        CHKERR it->getAttributes(bc->bcAttributes);
+        if (get_lod_dim_ents) {
+          auto low_dim_ents = get_adj_ents(bc->bcEnts);
+          bc->bcEnts.swap(low_dim_ents);
+        }
+
+        const std::string bc_id =
+            problem_name + "_" + field_name + "_" + it->getName();
+
         MOFEM_LOG("BcMngWorld", Sev::verbose)
             << "Found block to remove " << block_name << " number of entities "
-            << remove_ents.size() << " highest dim of entities "
-            << get_dim(remove_ents);
+            << bc->bcEnts.size() << " highest dim of entities "
+            << get_dim(bc->bcEnts);
+        remove_ents.merge(bc->bcEnts);
+        bcMapByBlockName[bc_id] = bc;
       }
     }
     return remove_ents;
   };
 
-  if (get_lod_dim_ents)
-    CHKERR remove_dofs_on_ents(get_adj_ents(get_block_ents(block_name)), lo,
-                               hi);
-  else
-    CHKERR remove_dofs_on_ents(get_block_ents(block_name), lo, hi);
+  CHKERR remove_dofs_on_ents(get_block_ents(block_name), lo, hi);
 
   MoFEMFunctionReturn(0);
 }
@@ -196,10 +204,12 @@ BcManager::BcMarkerPtr
 BcManager::getMergedBlocksMarker(std::vector<std::regex> bc_regex_vec) {
   BcManager::BcMarkerPtr boundary_marker_ptr;
   if (bcMapByBlockName.size()) {
-    boundary_marker_ptr = boost::make_shared<std::vector<char unsigned>>();
     for (auto b : bcMapByBlockName) {
       for (auto &reg_name : bc_regex_vec) {
         if (std::regex_match(b.first, reg_name)) {
+          if (!boundary_marker_ptr)
+            boundary_marker_ptr =
+                boost::make_shared<std::vector<char unsigned>>();
           boundary_marker_ptr->resize(b.second->bcMarkers.size(), 0);
           for (int i = 0; i != b.second->bcMarkers.size(); ++i) {
             (*boundary_marker_ptr)[i] |= b.second->bcMarkers[i];
