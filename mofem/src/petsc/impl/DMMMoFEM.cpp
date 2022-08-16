@@ -1153,6 +1153,14 @@ PetscErrorCode DMCreateMatrix_MoFEM(DM dm, Mat *M) {
     CHKERR dm_field->mField_ptr->getInterface<MatrixManager>()
         ->createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(dm_field->problemName,
                                                        M);
+  } else if (strcmp(dm->mattype, MATAIJCUSPARSE) == 0) {
+    CHKERR dm_field->mField_ptr->getInterface<MatrixManager>()
+        ->createMPIAIJCUSPARSEWithArrays<PetscGlobalIdx_mi_tag>(
+            dm_field->problemName, M);
+  } else if (strcmp(dm->mattype, MATSEQAIJCUSPARSE) == 0) {
+    CHKERR dm_field->mField_ptr->getInterface<MatrixManager>()
+        ->createSeqAIJCUSPARSEWithArrays<PetscLocalIdx_mi_tag>(
+            dm_field->problemName, M);
   } else {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
             "Matrix type not implemented");
@@ -1173,6 +1181,14 @@ PetscErrorCode DMCreateMatrix_MoFEM(DM dm, SmartPetscObj<Mat> &M) {
     CHKERR dm_field->mField_ptr->getInterface<MatrixManager>()
         ->createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(dm_field->problemName,
                                                        M);
+  } else if (strcmp(dm->mattype, MATAIJCUSPARSE) == 0) {
+    CHKERR dm_field->mField_ptr->getInterface<MatrixManager>()
+        ->createMPIAIJCUSPARSEWithArrays<PetscGlobalIdx_mi_tag>(
+            dm_field->problemName, M);
+  } else if (strcmp(dm->mattype, MATSEQAIJCUSPARSE) == 0) {
+    CHKERR dm_field->mField_ptr->getInterface<MatrixManager>()
+        ->createSeqAIJCUSPARSEWithArrays<PetscLocalIdx_mi_tag>(
+            dm_field->problemName, M);
   } else {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
             "Matrix type not implemented");
