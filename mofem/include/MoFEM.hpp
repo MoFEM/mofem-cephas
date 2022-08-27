@@ -130,6 +130,7 @@ using FTensor::operator>>;
 #include <BiLinearFormsIntegrators.hpp>
 #include <PostProc.hpp>
 #include <ScalingMethod.hpp>
+#include <Natural.hpp>
 
 // More interfaces
 

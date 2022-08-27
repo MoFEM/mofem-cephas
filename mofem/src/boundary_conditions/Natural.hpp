@@ -3,43 +3,67 @@
  * @brief Setting natural boundary conditions
  * @version 0.13.1
  * @date 2022-08-12
- * 
+ *
  * @copyright Copyright (c) 2022a
- * 
+ *
  */
 
 #ifndef _NATURAL_BC_
 #define _NATURAL_BC_
 
-
 namespace MoFEM {
 
-template <int BASE_DIM, int FIELD_DIM, IntegrationType I, typename OpBase>
-struct OpTimeScaledImpl;
+using VecOfTimeScalingMethods = boost::ptr_vector<ScalingMethod>;
 
-/**
- * @brief Integrate Neumann boundary condition or body forces scaled by time
- *
- */
-template <int BASE_DIM, int FIELD_DIM, IntegrationType I, typename OpBase>
-struct OpTimeScaledImpl<BASE_DIM, FIELD_DIM, GAUSS, OpBase>
-    : public FormsIntegrators<OpBase>::Assembly<I>::LinearForm<I>::OpSource<
-          BASE_DIM, FIELD_DIM> {
-  /**
-   * @brief Construct a new Op Source Impl object
-   *
-   * @param field_name
-   * @param time_fun
-   * @param source_fun
-   * @param ents_ptr
-   */
-  OpTimeScaledImpl(const std::string field_name, TimeFun time_fun,
-                   ScalarFun source_fun, std::string block_set_name);
+template <int BCSET, int BASE_DIM, int FIELD_DIM, AssemblyType A,
+          IntegrationType I, typename OpBase>
+struct OpFluxImpl;
+
+template <int BASE_DIM, int FIELD_DIM, AssemblyType A, IntegrationType I,
+          typename OpBase>
+struct OpFluxImpl<UNKNOWNSET, BASE_DIM, FIELD_DIM, A, I, OpBase>
+    : FormsIntegrators<OpBase>::template Assembly<A>::template LinearForm<
+          I>::template OpSource<BASE_DIM, FIELD_DIM> {
+
+  using OpSource = typename FormsIntegrators<OpBase>::template Assembly<
+      A>::template LinearForm<I>::template OpSource<BASE_DIM, FIELD_DIM>;
+
+  OpFluxImpl(const std::string field_name,
+             FTensor::Tensor1<double, FIELD_DIM> t_force);
+
+  OpFluxImpl(const std::string field_name);
+
+  VecOfTimeScalingMethods &getVecOfTimeScalingMethods() {
+    return vecOfTimeScalingMethods;
+  }
 
 protected:
+  FTensor::Tensor1<double, FIELD_DIM> tForce;
+  VecOfTimeScalingMethods vecOfTimeScalingMethods;
+};
 
+template <int BASE_DIM, int FIELD_DIM, AssemblyType A, IntegrationType I,
+          typename OpBase>
+struct OpFluxImpl<FORCESET, BASE_DIM, FIELD_DIM, A, I, OpBase>
+    : OpFluxImpl<UNKNOWNSET, BASE_DIM, FIELD_DIM, A, I, OpBase> {
 
+  OpFluxImpl(MoFEM::Interface &m_field, int ms_id,
+             const std::string field_name);
 
+protected:
+  MoFEMErrorCode getMeshsetData(MoFEM::Interface &m_field, int ms_id);
+};
+
+template <int BASE_DIM, int FIELD_DIM, AssemblyType A, IntegrationType I,
+          typename OpBase>
+struct OpFluxImpl<BLOCKSET, BASE_DIM, FIELD_DIM, A, I, OpBase>
+    : OpFluxImpl<UNKNOWNSET, BASE_DIM, FIELD_DIM, A, I, OpBase> {
+
+  OpFluxImpl(MoFEM::Interface &m_field, int ms_id,
+             const std::string field_name);
+
+protected:
+  MoFEMErrorCode getMeshsetData(MoFEM::Interface &m_field, int ms_id);
 };
 
 /**
@@ -61,25 +85,133 @@ template <typename EleOp> struct NaturalBC {
    */
   template <AssemblyType A> struct Assembly {
 
-    using OpBase = OpBaseImpl<A, EleOp>;
-
-    /**
-     * @brief Linear form
-     * @ingroup mofem_forms
-     *
-     * @tparam I
-     */
     template <IntegrationType I> struct LinearForm {
 
-      template <int BASE_DIM, int FIELD_DIM>
-      struct OpTimeScaledSource : public OpTimeScaledSourceImpl {
-        using OpTimeScaledSourceImpl<BASE_DIM, FIELD_DIM>::TimeScaledSourceImpl;
+      /**
+       * @brief This operator apply flux, or body force (i.e. body force)
+       * @ingroup mofem_forms
+       *
+       * @tparam I
+       */
+      template <int BCTYPE, int BASE_DIM, int FIELD_DIM>
+      struct OpFlux
+          : public OpFluxImpl<BCTYPE, BASE_DIM, FIELD_DIM, A, I, EleOp> {
+        using OpFluxImpl<BCTYPE, BASE_DIM, FIELD_DIM, A, I, EleOp>::OpFluxImpl;
       };
     };
 
   }; // Assembly
+};
+
+template <int BASE_DIM, int FIELD_DIM, AssemblyType A, IntegrationType I,
+          typename OpBase>
+OpFluxImpl<UNKNOWNSET, BASE_DIM, FIELD_DIM, A, I, OpBase>::OpFluxImpl(
+    const std::string field_name, FTensor::Tensor1<double, FIELD_DIM> t_force)
+    : OpFluxImpl(field_name) {
+
+  FTensor::Index<'i', FIELD_DIM> i;
+  this->tForce(i) = t_force(i);
 }
 
-};
+template <int BASE_DIM, int FIELD_DIM, AssemblyType A, IntegrationType I,
+          typename OpBase>
+OpFluxImpl<UNKNOWNSET, BASE_DIM, FIELD_DIM, A, I, OpBase>::OpFluxImpl(
+    const std::string field_name)
+    : OpSource(
+          field_name,
+
+          [this](const double, const double, const double) { return tForce; }
+
+      ) {
+
+  this->timeScalingFun = [this](const double t) {
+    double s = 1;
+    for (auto o = vecOfTimeScalingMethods.begin();
+         o != vecOfTimeScalingMethods.end(); ++o) {
+      s *= o->getScale(t);
+    }
+    return s;
+  };
+
+  static_assert(FIELD_DIM > 1, "Is not implemented for scalar field");
+}
+
+template <int BASE_DIM, int FIELD_DIM, AssemblyType A, IntegrationType I,
+          typename OpBase>
+OpFluxImpl<FORCESET, BASE_DIM, FIELD_DIM, A, I, OpBase>::OpFluxImpl(
+    MoFEM::Interface &m_field, int ms_id, const std::string field_name)
+    : OpFluxImpl<UNKNOWNSET, BASE_DIM, FIELD_DIM, A, I, OpBase>(field_name) {
+  CHK_THROW_MESSAGE(getMeshsetData(m_field, ms_id), "Can not get BC data");
+}
+
+template <int BASE_DIM, int FIELD_DIM, AssemblyType A, IntegrationType I,
+          typename OpBase>
+MoFEMErrorCode
+OpFluxImpl<FORCESET, BASE_DIM, FIELD_DIM, A, I, OpBase>::getMeshsetData(
+    MoFEM::Interface &m_field, int ms_id) {
+  MoFEMFunctionBegin;
+
+  auto mng_ptr = m_field.getInterface<MeshsetsManager>();
+  const CubitMeshSets *cubit_meshset_ptr;
+  CHKERR mng_ptr->getCubitMeshsetPtr(ms_id, NODESET, &cubit_meshset_ptr);
+
+  ForceCubitBcData bc_data;
+  CHKERR cubit_meshset_ptr->getBcDataStructure(bc_data);
+
+  this->tForce(0) = bc_data.data.value3;
+  if constexpr (FIELD_DIM > 1)
+    this->tForce(1) = bc_data.data.value4;
+  if constexpr (FIELD_DIM > 2)
+    this->tForce(2) = bc_data.data.value5;
+
+  FTensor::Index<'i', FIELD_DIM> i;
+  this->tForce(i) *= bc_data.data.value1;
+
+  this->entsPtr = boost::make_shared<Range>();
+  CHKERR m_field.get_moab().get_entities_by_handle(cubit_meshset_ptr->meshset,
+                                                   *(this->entsPtr), true);
+
+  MoFEMFunctionReturn(0);
+}
+
+template <int BASE_DIM, int FIELD_DIM, AssemblyType A, IntegrationType I,
+          typename OpBase>
+OpFluxImpl<BLOCKSET, BASE_DIM, FIELD_DIM, A, I, OpBase>::OpFluxImpl(
+    MoFEM::Interface &m_field, int ms_id, const std::string field_name)
+    : OpFluxImpl<UNKNOWNSET, BASE_DIM, FIELD_DIM, A, I, OpBase>(field_name) {
+  CHK_THROW_MESSAGE(getMeshsetData(m_field, ms_id), "Can not get BC data");
+}
+
+template <int BASE_DIM, int FIELD_DIM, AssemblyType A, IntegrationType I,
+          typename OpBase>
+MoFEMErrorCode
+OpFluxImpl<BLOCKSET, BASE_DIM, FIELD_DIM, A, I, OpBase>::getMeshsetData(
+    MoFEM::Interface &m_field, int ms_id) {
+  MoFEMFunctionBegin;
+
+  auto mng_ptr = m_field.getInterface<MeshsetsManager>();
+  const CubitMeshSets *cubit_meshset_ptr;
+  CHKERR mng_ptr->getCubitMeshsetPtr(ms_id, NODESET, &cubit_meshset_ptr);
+
+  ForceCubitBcData bc_data;
+  CHKERR cubit_meshset_ptr->getBcDataStructure(bc_data);
+
+  this->tForce(0) = bc_data.data.value3;
+  if constexpr (FIELD_DIM > 1)
+    this->tForce(1) = bc_data.data.value4;
+  if constexpr (FIELD_DIM > 2)
+    this->tForce(2) = bc_data.data.value5;
+
+  FTensor::Index<'i', FIELD_DIM> i;
+  this->tForce(i) *= bc_data.data.value1;
+
+  this->entsPtr = boost::make_shared<Range>();
+  CHKERR m_field.get_moab().get_entities_by_handle(cubit_meshset_ptr->meshset,
+                                                   *(this->entsPtr), true);
+
+  MoFEMFunctionReturn(0);
+}
+
+}; // namespace MoFEM
 
 #endif //_NATURAL_BC_

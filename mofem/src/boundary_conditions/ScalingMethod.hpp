@@ -54,9 +54,9 @@ struct ScalingMethod {
 
 /** \brief Force scale operator for reading two columns
  */
-struct TimeForceScale : public ScalingMethod {
+struct TimeScale : public ScalingMethod {
 
-  TimeForceScale(std::string name = "-time_data_file",
+  TimeScale(std::string name = "-time_scalar_file",
                  bool error_if_file_not_given = false);
 
    double getScale(const double time);
@@ -88,19 +88,19 @@ private:
  * are acceleration in ax, ay, az direction.
  *
  */
-struct TimeAccelerogram : public ScalingMethod {
+struct TimeVector : public ScalingMethod {
 
-  TimeAccelerogram(std::string name = "-accelerogram_data_file");
+  TimeVector(std::string name = "-time_vector_file");
 
-	/**
-	 * @brief Add acceleration to vector Nf
-	 * 
-	 * @note Is assumed that Nf.size() == 3
-	 * 
-	 * @param fe 
-	 * @param Nf vector with three elements
-	 * @return MoFEMErrorCode 
-	 */
+  /**
+   * @brief Add acceleration to vector Nf
+   *
+   * @note Is assumed that Nf.size() == 3
+   *
+   * @param fe
+   * @param Nf vector with three elements
+   * @return MoFEMErrorCode
+   */
   MoFEMErrorCode scaleNf(const FEMethod *fe, VectorDouble &Nf);
 
 private:

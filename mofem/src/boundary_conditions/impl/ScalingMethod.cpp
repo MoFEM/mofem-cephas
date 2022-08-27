@@ -27,13 +27,13 @@ ScalingMethod::applyScalingSeries(const FEMethod *fe,
   MoFEMFunctionReturn(0);
 }
 
-TimeForceScale::TimeForceScale(string name, bool error_if_file_not_given)
+TimeScale::TimeScale(string name, bool error_if_file_not_given)
     : readFile(0), debug(0), nAme(name),
       errorIfFileNotGiven(error_if_file_not_given) {
   CHK_THROW_MESSAGE(timeData(), "Error in reading time data");
 }
 
-MoFEMErrorCode TimeForceScale::timeData() {
+MoFEMErrorCode TimeScale::timeData() {
   MoFEMFunctionBegin;
   char time_file_name[255];
   CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, nAme.c_str(),
@@ -85,7 +85,7 @@ MoFEMErrorCode TimeForceScale::timeData() {
   MoFEMFunctionReturn(0);
 }
 
-double TimeForceScale::getScale(const double time) {
+double TimeScale::getScale(const double time) {
   if (!fLg) {
     return time; // scale with time, by default
   }
@@ -117,18 +117,18 @@ double TimeForceScale::getScale(const double time) {
  * @param Nf
  * @return MoFEMErrorCode
  */
-MoFEMErrorCode TimeForceScale::scaleNf(const FEMethod *fe, VectorDouble &Nf) {
+MoFEMErrorCode TimeScale::scaleNf(const FEMethod *fe, VectorDouble &Nf) {
   MoFEMFunctionBegin;
   Nf *= getScale(fe->ts_t);
   MoFEMFunctionReturn(0);
 }
 
-TimeAccelerogram::TimeAccelerogram(std::string name)
+TimeVector::TimeVector(std::string name)
     : readFile(0), debug(0), nAme(name) {
   CHK_THROW_MESSAGE(timeData(), "Error reading time data");
 }
 
-MoFEMErrorCode TimeAccelerogram::timeData() {
+MoFEMErrorCode TimeVector::timeData() {
   MoFEMFunctionBegin;
   char time_file_name[255];
   PetscBool flg = PETSC_TRUE;
@@ -177,7 +177,7 @@ MoFEMErrorCode TimeAccelerogram::timeData() {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode TimeAccelerogram::scaleNf(const FEMethod *fe, VectorDouble &Nf) {
+MoFEMErrorCode TimeVector::scaleNf(const FEMethod *fe, VectorDouble &Nf) {
   MoFEMFunctionBegin;
   if (readFile == 0) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
