@@ -1869,12 +1869,12 @@ ForcesAndSourcesCore::UserDataOperator::UserDataOperator(const FieldSpace space,
     : DataOperator(symm), opType(type), sPace(space), ptrFE(nullptr) {}
 
 ForcesAndSourcesCore::UserDataOperator::UserDataOperator(
-    const std::string &field_name, const char type, const bool symm)
+    const std::string field_name, const char type, const bool symm)
     : DataOperator(symm), opType(type), rowFieldName(field_name),
       colFieldName(field_name), sPace(LASTSPACE), ptrFE(nullptr) {}
 
 ForcesAndSourcesCore::UserDataOperator::UserDataOperator(
-    const std::string &row_field_name, const std::string &col_field_name,
+    const std::string row_field_name, const std::string col_field_name,
     const char type, const bool symm)
     : DataOperator(symm), opType(type), rowFieldName(row_field_name),
       colFieldName(col_field_name), sPace(LASTSPACE), ptrFE(nullptr) {}
