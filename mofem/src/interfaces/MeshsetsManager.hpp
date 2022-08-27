@@ -486,6 +486,15 @@ struct MeshsetsManager : public UnknownInterface {
 
   /**
    * \brief get cubit meshset
+   * \ingroup mofem_meshset_mng
+   *
+   *
+   */
+  const CubitMeshSets *
+  getCubitMeshsetPtr(const int ms_id, const CubitBCType cubit_bc_type) const;
+
+  /**
+   * \brief get cubit meshset
    *
    * \ingroup mofem_meshset_mng
    */

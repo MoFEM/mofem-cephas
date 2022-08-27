@@ -505,6 +505,16 @@ MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
   MoFEMFunctionReturn(0);
 }
 
+const CubitMeshSets *
+MeshsetsManager::getCubitMeshsetPtr(const int ms_id,
+                                    const CubitBCType cubit_bc_type) const {
+  const CubitMeshSets *cubit_meshset_ptr;
+  CHK_THROW_MESSAGE(
+      getCubitMeshsetPtr(ms_id, cubit_bc_type, &cubit_meshset_ptr),
+      "Get not get meshset");
+  return cubit_meshset_ptr;
+}
+
 MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
     const string name, const CubitMeshSets **cubit_meshset_ptr) const {
   Interface &m_field = cOre;
