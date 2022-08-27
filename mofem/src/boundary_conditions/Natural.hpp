@@ -66,6 +66,25 @@ protected:
   MoFEMErrorCode getMeshsetData(MoFEM::Interface &m_field, int ms_id);
 };
 
+template <int BASE_DIM, int FIELD_DIM, AssemblyType A, IntegrationType I,
+          typename OpBase>
+struct OpFluxImpl<PRESSURESET, BASE_DIM, FIELD_DIM, A, I, OpBase>
+    : OpFluxImpl<UNKNOWNSET, BASE_DIM, FIELD_DIM, A, I, OpBase> {
+
+  using Parent = OpFluxImpl<UNKNOWNSET, BASE_DIM, FIELD_DIM, A, I, OpBase>;
+  using EntData = EntitiesFieldData::EntData;
+
+  OpFluxImpl(MoFEM::Interface &m_field, int ms_id,
+             const std::string field_name);
+
+protected:
+  MoFEMErrorCode iNtegrate(EntData &data);
+  MoFEMErrorCode getMeshsetData(MoFEM::Interface &m_field, int ms_id);
+
+  double surfacePressure;  
+
+};
+
 /**
  * @brief Integrator forms
  * @ingroup mofem_forms
@@ -140,9 +159,7 @@ template <int BASE_DIM, int FIELD_DIM, AssemblyType A, IntegrationType I,
           typename OpBase>
 OpFluxImpl<FORCESET, BASE_DIM, FIELD_DIM, A, I, OpBase>::OpFluxImpl(
     MoFEM::Interface &m_field, int ms_id, const std::string field_name)
-    : OpFluxImpl<UNKNOWNSET, BASE_DIM, FIELD_DIM, A, I, OpBase>(field_name) {
-  CHK_THROW_MESSAGE(getMeshsetData(m_field, ms_id), "Can not get BC data");
-}
+    : OpFluxImpl<UNKNOWNSET, BASE_DIM, FIELD_DIM, A, I, OpBase>(field_name) {}
 
 template <int BASE_DIM, int FIELD_DIM, AssemblyType A, IntegrationType I,
           typename OpBase>
@@ -151,9 +168,9 @@ OpFluxImpl<FORCESET, BASE_DIM, FIELD_DIM, A, I, OpBase>::getMeshsetData(
     MoFEM::Interface &m_field, int ms_id) {
   MoFEMFunctionBegin;
 
-  auto mng_ptr = m_field.getInterface<MeshsetsManager>();
-  const CubitMeshSets *cubit_meshset_ptr;
-  CHKERR mng_ptr->getCubitMeshsetPtr(ms_id, NODESET, &cubit_meshset_ptr);
+  auto cubit_meshset_ptr =
+      m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(ms_id,
+                                                                  NODESET);
 
   ForceCubitBcData bc_data;
   CHKERR cubit_meshset_ptr->getBcDataStructure(bc_data);
@@ -178,9 +195,7 @@ template <int BASE_DIM, int FIELD_DIM, AssemblyType A, IntegrationType I,
           typename OpBase>
 OpFluxImpl<BLOCKSET, BASE_DIM, FIELD_DIM, A, I, OpBase>::OpFluxImpl(
     MoFEM::Interface &m_field, int ms_id, const std::string field_name)
-    : OpFluxImpl<UNKNOWNSET, BASE_DIM, FIELD_DIM, A, I, OpBase>(field_name) {
-  CHK_THROW_MESSAGE(getMeshsetData(m_field, ms_id), "Can not get BC data");
-}
+    : OpFluxImpl<UNKNOWNSET, BASE_DIM, FIELD_DIM, A, I, OpBase>(field_name) {}
 
 template <int BASE_DIM, int FIELD_DIM, AssemblyType A, IntegrationType I,
           typename OpBase>
@@ -189,21 +204,73 @@ OpFluxImpl<BLOCKSET, BASE_DIM, FIELD_DIM, A, I, OpBase>::getMeshsetData(
     MoFEM::Interface &m_field, int ms_id) {
   MoFEMFunctionBegin;
 
-  auto mng_ptr = m_field.getInterface<MeshsetsManager>();
-  const CubitMeshSets *cubit_meshset_ptr;
-  CHKERR mng_ptr->getCubitMeshsetPtr(ms_id, NODESET, &cubit_meshset_ptr);
+  auto cubit_meshset_ptr =
+      m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(
+          ms_id, NODESET);
 
-  ForceCubitBcData bc_data;
-  CHKERR cubit_meshset_ptr->getBcDataStructure(bc_data);
+  std::vector<double> block_data;
+  CHKERR cubit_meshset_ptr->getAttributes(block_data);
+  if (block_data.size() != FIELD_DIM) {
+    MOFEM_LOG("SELF", Sev::warning)
+        << "BLOCKSET is expected to have " << FIELD_DIM
+        << " attributes but has size " << block_data.size();
+    if (block_data.size() < FIELD_DIM) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Size of attribute in BLOCKSET is too small");
+    }
+  }
 
-  this->tForce(0) = bc_data.data.value3;
-  if constexpr (FIELD_DIM > 1)
-    this->tForce(1) = bc_data.data.value4;
-  if constexpr (FIELD_DIM > 2)
-    this->tForce(2) = bc_data.data.value5;
+  for (unsigned int ii = 0; ii != block_data.size(); ++ii) {
+    this->tForce(ii) = block_data[ii];
+  }
 
+  this->entsPtr = boost::make_shared<Range>();
+  CHKERR m_field.get_moab().get_entities_by_handle(cubit_meshset_ptr->meshset,
+                                                   *(this->entsPtr), true);
+
+  MoFEMFunctionReturn(0);
+}
+
+template <int BASE_DIM, int FIELD_DIM, AssemblyType A, IntegrationType I,
+          typename OpBase>
+OpFluxImpl<PRESSURESET, BASE_DIM, FIELD_DIM, A, I, OpBase>::OpFluxImpl(
+    MoFEM::Interface &m_field, int ms_id, const std::string field_name)
+    : OpFluxImpl<UNKNOWNSET, BASE_DIM, FIELD_DIM, A, I, OpBase>(field_name) {}
+
+template <int BASE_DIM, int FIELD_DIM, AssemblyType A, IntegrationType I,
+          typename OpBase>
+MoFEMErrorCode
+OpFluxImpl<PRESSURESET, BASE_DIM, FIELD_DIM, A, I, OpBase>::iNtegrate(
+    EntData &data) {
+  MoFEMFunctionBegin;
+
+  auto t_normal = this->getFTensor1NormalsAtGaussPts();
   FTensor::Index<'i', FIELD_DIM> i;
-  this->tForce(i) *= bc_data.data.value1;
+
+  this->sourceFun = [&](const double, const double, const double) {
+    this->tFroce(i) = this->surfacePressure*t_normal(i);
+    ++t_normal;
+    return this->tFroce;
+  };
+
+  CHKERR Parent::iNtegrate(data);
+  MoFEMFunctionReturn(0);
+}
+
+template <int BASE_DIM, int FIELD_DIM, AssemblyType A, IntegrationType I,
+          typename OpBase>
+MoFEMErrorCode
+OpFluxImpl<PRESSURESET, BASE_DIM, FIELD_DIM, A, I, OpBase>::getMeshsetData(
+    MoFEM::Interface &m_field, int ms_id) {
+  MoFEMFunctionBegin;
+
+  auto cubit_meshset_ptr =
+      m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(ms_id,
+                                                                  BLOCKSET);
+
+  PressureCubitBcData pressure_data;
+  CHKERR cubit_meshset_ptr->getBcDataStructure(pressure_data);
+  this->surfacePressure = pressure_data.data.value1;
 
   this->entsPtr = boost::make_shared<Range>();
   CHKERR m_field.get_moab().get_entities_by_handle(cubit_meshset_ptr->meshset,
