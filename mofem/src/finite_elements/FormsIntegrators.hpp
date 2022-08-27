@@ -142,8 +142,9 @@ template <AssemblyType A, typename EleOp> struct OpBaseImpl : public EleOp {
   OpBaseImpl(const std::string row_field_name, const std::string col_field_name,
              const OpType type, TimeFun time_fun,
              boost::shared_ptr<Range> ents_ptr = nullptr)
-      : OpBaseImpl(row_field_name, col_field_name, type, time_fun, ents_ptr),
-        timeScalingFun(time_fun) {}
+      : OpBaseImpl(row_field_name, col_field_name, type, ents_ptr) {
+    timeScalingFun = time_fun;
+  }
 
   /**
    * \brief Do calculations for the left hand side
