@@ -86,6 +86,13 @@ protected:
 
 template <int BASE_DIM, typename OpBase>
 struct OpSourceImpl<BASE_DIM, BASE_DIM, GAUSS, OpBase> : public OpBase {
+
+  OpSourceImpl(const std::string field_name, TimeFun time_fun,
+               VectorFun<BASE_DIM> source_fun,
+               boost::shared_ptr<Range> ents_ptr = nullptr)
+      : OpBase(field_name, field_name, OpBase::OPROW, time_fun, ents_ptr),
+        sourceFun(source_fun) {}
+
   OpSourceImpl(const std::string field_name, VectorFun<BASE_DIM> source_fun,
                boost::shared_ptr<Range> ents_ptr = nullptr)
       : OpBase(field_name, field_name, OpBase::OPROW, ents_ptr),
