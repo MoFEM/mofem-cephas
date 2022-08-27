@@ -539,6 +539,14 @@ MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
   MoFEMFunctionReturn(0);
 }
 
+std::vector<const CubitMeshSets *>
+MeshsetsManager::getCubitMeshsetPtr(const std::regex reg_exp_name) const {
+  std::vector<const CubitMeshSets *> vec_ptr;
+  CHK_MOAB_THROW(getCubitMeshsetPtr(reg_exp_name, vec_ptr),
+                 "Error in getting meshsets by name");
+  return vec_ptr;
+}
+
 MoFEMErrorCode MeshsetsManager::getEntitiesByDimension(
     const int msId, const unsigned int cubit_bc_type, const int dimension,
     Range &entities, const bool recursive) const {
