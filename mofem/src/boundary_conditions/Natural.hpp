@@ -13,9 +13,11 @@
 
 namespace MoFEM {
 
-using VecOfTimeScalingMethods = boost::ptr_vector<ScalingMethod>;
+using VecOfTimeScalingMethods = std::vector<boost::shared_ptr<ScalingMethod>>;
 
-template <int BCSET, int BASE_DIM, int FIELD_DIM, AssemblyType A,
+template <typename OP> struct FluxOpType {};
+
+template <CubitBC BCTYPE, int BASE_DIM, int FIELD_DIM, AssemblyType A,
           IntegrationType I, typename OpBase>
 struct OpFluxImpl;
 
@@ -46,11 +48,32 @@ template <typename EleOp> struct NaturalBC {
        *
        * @tparam I
        */
-      template <int BCTYPE, int BASE_DIM, int FIELD_DIM>
+      template <CubitBC BCTYPE, int BASE_DIM, int FIELD_DIM>
       struct OpFlux
           : public OpFluxImpl<BCTYPE, BASE_DIM, FIELD_DIM, A, I, EleOp> {
         using OpFluxImpl<BCTYPE, BASE_DIM, FIELD_DIM, A, I, EleOp>::OpFluxImpl;
       };
+
+      template <CubitBC BCTYPE, int BASE_DIM, int FIELD_DIM>
+      static MoFEMErrorCode addFluxToPipeline(
+
+          FluxOpType<OpFlux<BCTYPE, BASE_DIM, FIELD_DIM>>,
+
+          boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+          MoFEM::Interface &m_field, const std::string field_name,
+          const std::string block_name = "", Sev sev = Sev::noisy
+
+      );
+
+      template <CubitBC BCTYPE, int BASE_DIM, int FIELD_DIM>
+      static MoFEMErrorCode addScalingMethod(
+
+          FluxOpType<OpFlux<BCTYPE, BASE_DIM, FIELD_DIM>>,
+          boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+          boost::shared_ptr<ScalingMethod> sm,
+          Sev sev = Sev::noisy
+
+      );
     };
 
   }; // Assembly
@@ -130,7 +153,6 @@ struct OpFluxImpl<UNKNOWNSET, 1, 1, A, I, OpBase>
   OpFluxImpl(const std::string field_name, double value,
              boost::shared_ptr<Range> ents_ptr = nullptr);
 
- 
   VecOfTimeScalingMethods &getVecOfTimeScalingMethods() {
     return vecOfTimeScalingMethods;
   }
@@ -175,8 +197,8 @@ struct OpFluxImpl<UNKNOWNSET, BASE_DIM, BASE_DIM, A, I, OpBase>
     : FormsIntegrators<OpBase>::template Assembly<A>::template LinearForm<
           I>::template OpNormalMixVecTimesScalar<BASE_DIM> {
 
-  using OpSource = typename FormsIntegrators<OpBase>::template Assembly<A>::
-      template LinearForm<I>::template OpNormalMixVecTimesScalar<BASE_DIM>;
+  using OpSource = typename FormsIntegrators<OpBase>::template Assembly<
+      A>::template LinearForm<I>::template OpNormalMixVecTimesScalar<BASE_DIM>;
 
   OpFluxImpl(const std::string field_name, const double value,
              boost::shared_ptr<Range> ents_ptr = nullptr);
@@ -197,6 +219,7 @@ struct OpFluxImpl<BLOCKSET, BASE_DIM, BASE_DIM, A, I, OpBase>
     : OpFluxImpl<UNKNOWNSET, BASE_DIM, BASE_DIM, A, I, OpBase> {
   OpFluxImpl(MoFEM::Interface &m_field, int ms_id,
              const std::string field_name);
+
 protected:
   MoFEMErrorCode getMeshsetData(MoFEM::Interface &m_field, int ms_id);
 };
@@ -225,8 +248,7 @@ OpFluxImpl<UNKNOWNSET, 1, FIELD_DIM, A, I, OpBase>::OpFluxImpl(
 
   this->timeScalingFun = [this](const double t) {
     double s = 1;
-    for (auto o = vecOfTimeScalingMethods.begin();
-         o != vecOfTimeScalingMethods.end(); ++o) {
+    for (auto &o : vecOfTimeScalingMethods) {
       s *= o->getScale(t);
     }
     return s;
@@ -283,8 +305,8 @@ MoFEMErrorCode OpFluxImpl<BLOCKSET, 1, FIELD_DIM, A, I, OpBase>::getMeshsetData(
   MoFEMFunctionBegin;
 
   auto cubit_meshset_ptr =
-      m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(
-          ms_id, NODESET);
+      m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(ms_id,
+                                                                  NODESET);
 
   std::vector<double> block_data;
   CHKERR cubit_meshset_ptr->getAttributes(block_data);
@@ -325,7 +347,7 @@ OpFluxImpl<PRESSURESET, 1, FIELD_DIM, A, I, OpBase>::iNtegrate(EntData &data) {
   FTensor::Index<'i', FIELD_DIM> i;
 
   this->sourceFun = [&](const double, const double, const double) {
-    this->tFroce(i) = this->surfacePressure*t_normal(i);
+    this->tFroce(i) = this->surfacePressure * t_normal(i);
     this->tFroce.normalize();
     ++t_normal;
     return this->tFroce;
@@ -378,8 +400,7 @@ OpFluxImpl<UNKNOWNSET, 1, 1, A, I, OpBase>::OpFluxImpl(
 
   this->timeScalingFun = [this](const double t) {
     double s = 1;
-    for (auto o = vecOfTimeScalingMethods.begin();
-         o != vecOfTimeScalingMethods.end(); ++o) {
+    for (auto &o : vecOfTimeScalingMethods) {
       s *= o->getScale(t);
     }
     return s;
@@ -464,13 +485,11 @@ OpFluxImpl<UNKNOWNSET, BASE_DIM, BASE_DIM, A, I, OpBase>::OpFluxImpl(
 
   this->timeScalingFun = [this](const double t) {
     double s = 1;
-    for (auto o = vecOfTimeScalingMethods.begin();
-         o != vecOfTimeScalingMethods.end(); ++o) {
+    for (auto &o : vecOfTimeScalingMethods) {
       s *= o->getScale(t);
     }
     return s;
   };
-
 }
 
 template <int BASE_DIM, AssemblyType A, IntegrationType I, typename OpBase>
@@ -499,6 +518,89 @@ OpFluxImpl<BLOCKSET, BASE_DIM, BASE_DIM, A, I, OpBase>::getMeshsetData(
   CHKERR m_field.get_moab().get_entities_by_handle(cubit_meshset_ptr->meshset,
                                                    *(this->entsPtr), true);
 
+  MoFEMFunctionReturn(0);
+}
+
+template <typename OpBase>
+template <AssemblyType A>
+template <IntegrationType I>
+template <CubitBC BCTYPE, int BASE_DIM, int FIELD_DIM>
+MoFEMErrorCode
+NaturalBC<OpBase>::Assembly<A>::LinearForm<I>::addFluxToPipeline(
+
+    FluxOpType<OpFlux<BCTYPE, BASE_DIM, FIELD_DIM>>,
+
+    boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+    MoFEM::Interface &m_field, const std::string field_name,
+    const std::string block_name,
+    Sev sev
+
+) {
+  MoFEMFunctionBegin;
+
+  using OP = OpFlux<BCTYPE, BASE_DIM, FIELD_DIM>;
+
+  auto add_op = [&](auto &&meshset_vec_ptr) {
+    for (auto m : meshset_vec_ptr) {
+      MOFEM_TAG_AND_LOG("SELF", sev, "OpFlux") << "Add for meshset " << *m;
+      pipeline.push_back(new OP(m_field, m->getMeshsetId(), field_name));
+    }
+    MOFEM_LOG_CHANNEL("SELF");
+  };
+
+  switch (BCTYPE) {
+  case TEMPERATURESET:
+  case FORCESET:
+    add_op(m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(NODESET |
+                                                                       BCTYPE));
+  case PRESSURESET:
+  case HEATFLUXSET:
+    add_op(m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(SIDESET |
+                                                                       BCTYPE));
+    break;
+  case BLOCKSET:
+    add_op(
+
+        m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(std::regex(
+
+            (boost::format("%s(.*)") % block_name).str()
+
+                ))
+
+    );
+
+    break;
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+            "Handling of bc type not implemented");
+    break;
+  }
+  MoFEMFunctionReturn(0);
+};
+
+template <typename OpBase>
+template <AssemblyType A>
+template <IntegrationType I>
+template <CubitBC BCTYPE, int BASE_DIM, int FIELD_DIM>
+MoFEMErrorCode NaturalBC<OpBase>::Assembly<A>::LinearForm<I>::addScalingMethod(
+
+    FluxOpType<OpFlux<BCTYPE, BASE_DIM, FIELD_DIM>>,
+    boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+    boost::shared_ptr<ScalingMethod> sm, Sev sev
+
+) {
+  MoFEMFunctionBegin;
+  using OP = OpFlux<BCTYPE, BASE_DIM, FIELD_DIM>;
+  int idx = 0;
+  for (auto o = pipeline.begin(); o != pipeline.end(); ++o) {
+    if (auto op_flux_ptr = dynamic_cast<OP *>(&*o)) {
+      MOFEM_TAG_AND_LOG("SELF", sev, "OpFlux")
+          << "Add scaling for < " << idx++ << " > "
+          << boost::typeindex::type_id_runtime(*op_flux_ptr).pretty_name();
+      op_flux_ptr->getVecOfTimeScalingMethods().push_back(sm);
+    }
+  }
+  MOFEM_LOG_CHANNEL("SELF");
   MoFEMFunctionReturn(0);
 }
 
