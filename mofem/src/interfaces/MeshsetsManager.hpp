@@ -494,6 +494,28 @@ struct MeshsetsManager : public UnknownInterface {
   getCubitMeshsetPtr(const int ms_id, const CubitBCType cubit_bc_type) const;
 
   /**
+   * @brief Get vector of pointer by bc type
+   *
+   * \ingroup mofem_meshset_mng
+   *
+   * @param std::vector<const CubitMeshSets *>
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode
+  getCubitMeshsetPtr(const CubitBCType cubit_bc_type,
+                     std::vector<const CubitMeshSets *> &vec_ptr) const;
+
+/**
+   * @brief Get vector of pointer by bc type
+   *
+   * \ingroup mofem_meshset_mng
+   *
+   * @return MoFEMErrorCode
+   */
+  std::vector<const CubitMeshSets *>
+  getCubitMeshsetPtr(const CubitBCType cubit_bc_type) const;
+
+  /**
    * \brief get cubit meshset
    *
    * \ingroup mofem_meshset_mng

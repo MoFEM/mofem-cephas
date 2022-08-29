@@ -534,6 +534,26 @@ MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
 }
 
 MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
+    const CubitBCType cubit_bc_type,
+    std::vector<const CubitMeshSets *> &vec_ptr) const {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+  auto r = cubitMeshsets.get<CubitMeshsetType_mi_tag>().equal_range(BLOCKSET);
+  for (; r.first != r.second; ++r.first) {
+    vec_ptr.push_back(&*r.first);
+  }
+  MoFEMFunctionReturn(0);
+}
+
+std::vector<const CubitMeshSets *>
+MeshsetsManager::getCubitMeshsetPtr(const CubitBCType cubit_bc_type) const {
+  std::vector<const CubitMeshSets *> vec_ptr;
+  CHK_MOAB_THROW(getCubitMeshsetPtr(cubit_bc_type, vec_ptr),
+                 "Error in getting meshsets by name");
+  return vec_ptr;
+}
+
+MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
     const std::regex reg_exp_name,
     std::vector<const CubitMeshSets *> &vec_ptr) const {
   Interface &m_field = cOre;
