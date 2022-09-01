@@ -151,23 +151,19 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities(const std::string problem_name,
                                      marked_field_dofs);
     };
 
-    for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field, BLOCKSET, it)) {
-      if (it->getName().compare(0, block_name.length(), block_name) == 0) {
-
-        const std::string bc_id =
-            problem_name + "_" + field_name + "_" + it->getName();
-
+    auto iterate_meshsets = [&](auto &&meshset_vec_ptr) {
+      MoFEMFunctionBegin;
+      for (auto m : meshset_vec_ptr) {
         auto bc = boost::make_shared<BCs>();
-        CHKERR m_field.get_moab().get_entities_by_handle(it->meshset,
+        CHKERR m_field.get_moab().get_entities_by_handle(m->getMeshset(),
                                                          bc->bcEnts, true);
-        CHKERR it->getAttributes(bc->bcAttributes);
+        CHKERR m->getAttributes(bc->bcAttributes);
 
         MOFEM_LOG("BcMngWorld", Sev::verbose)
-            << "Found block " << block_name << " number of entities "
+            << "Found block " << m->getName() << " number of entities "
             << bc->bcEnts.size() << " number of attributes "
             << bc->bcAttributes.size() << " highest dim of entities "
             << get_dim(bc->bcEnts);
-
         CHKERR mark_fix_dofs(bc->bcMarkers, lo, hi);
         if (get_low_dim_ents) {
           auto low_dim_ents = get_adj_ents(bc->bcEnts);
@@ -178,9 +174,23 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities(const std::string problem_name,
           CHKERR prb_mng->markDofs(problem_name, ROW, ProblemsManager::AND,
                                    bc->bcEnts, bc->bcMarkers);
 
+        const std::string bc_id =
+            problem_name + "_" + field_name + "_" + m->getName();
         bcMapByBlockName[bc_id] = bc;
       }
-    }
+      MoFEMFunctionReturn(0);
+    };
+
+    CHKERR iterate_meshsets(
+
+        m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(std::regex(
+
+            (boost::format("%s(.*)") % block_name).str()
+
+                ))
+
+    );
+
     MoFEMFunctionReturn(0);
   };
 
