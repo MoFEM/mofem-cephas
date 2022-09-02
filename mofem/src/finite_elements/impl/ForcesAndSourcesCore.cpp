@@ -1053,7 +1053,7 @@ MoFEMErrorCode ForcesAndSourcesCore::calHierarchicalBaseFunctionsOnElement(
     case USER_BASE:
       if (!getUserPolynomialBase())
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "Functions genrating user approximation base not defined");
+                "Functions generating user approximation base not defined");
 
       for (int space = H1; space != LASTSPACE; ++space)
         if (dataOnElement[H1]->sPace.test(space) &&
