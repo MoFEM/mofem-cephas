@@ -49,66 +49,37 @@ MoFEMErrorCode BcManager::getOptions() {
 
 MoFEMErrorCode BcManager::removeBlockDOFsOnEntities(
     const std::string problem_name, const std::string block_name,
-    const std::string field_name, int lo, int hi, bool get_lod_dim_ents) {
+    const std::string field_name, int lo, int hi, bool get_low_dim_ents,
+    bool is_distributed_mesh) {
   Interface &m_field = cOre;
   auto prb_mng = m_field.getInterface<ProblemsManager>();
   MoFEMFunctionBegin;
 
-  auto get_dim = [&](const Range &ents) {
-    for (auto d : {3, 2, 1})
-      if (ents.num_of_dimension(d))
-        return d;
-    return 0;
-  };
+  CHKERR pushMarkDOFsOnEntities(problem_name, block_name, field_name, lo, hi,
+                                get_low_dim_ents);
 
-  auto get_adj_ents = [&](const Range &ents) {
-    Range verts;
-    CHKERR m_field.get_moab().get_connectivity(ents, verts, true);
-    const auto dim = get_dim(ents);
-    for (size_t d = 1; d < dim; ++d)
-      CHKERR m_field.get_moab().get_adjacencies(ents, d, false, verts,
-                                                moab::Interface::UNION);
-    verts.merge(ents);
-    CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(verts);
-    return verts;
-  };
-
-  auto remove_dofs_on_ents = [&](const Range &&ents, const int lo,
+  auto remove_dofs_on_ents = [&](const Range &ents, const int lo,
                                  const int hi) {
-    MoFEMFunctionBegin;
-    CHKERR prb_mng->removeDofsOnEntities(problem_name, field_name, ents, lo,
-                                         hi);
-    MoFEMFunctionReturn(0);
+    if (is_distributed_mesh)
+      return prb_mng->removeDofsOnEntities(problem_name, field_name, ents, lo,
+                                           hi);
+    else
+      return prb_mng->removeDofsOnEntitiesNotDistributed(
+          problem_name, field_name, ents, lo, hi);
   };
 
-  auto get_block_ents = [&](const std::string block_name) {
-    Range remove_ents;
-    for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field, BLOCKSET, it)) {
-      if (it->getName().compare(0, block_name.length(), block_name) == 0) {
-        auto bc = boost::make_shared<BCs>();
-        CHKERR m_field.get_moab().get_entities_by_handle(it->meshset,
-                                                         bc->bcEnts, true);
-        CHKERR it->getAttributes(bc->bcAttributes);
-        if (get_lod_dim_ents) {
-          auto low_dim_ents = get_adj_ents(bc->bcEnts);
-          bc->bcEnts.swap(low_dim_ents);
-        }
+  for (auto m :
+       m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(std::regex(
 
-        const std::string bc_id =
-            problem_name + "_" + field_name + "_" + it->getName();
+           (boost::format("%s(.*)") % block_name).str()
 
-        MOFEM_LOG("BcMngWorld", Sev::verbose)
-            << "Found block to remove " << block_name << " number of entities "
-            << bc->bcEnts.size() << " highest dim of entities "
-            << get_dim(bc->bcEnts);
-        remove_ents.merge(bc->bcEnts);
-        bcMapByBlockName[bc_id] = bc;
-      }
-    }
-    return remove_ents;
-  };
+               ))
 
-  CHKERR remove_dofs_on_ents(get_block_ents(block_name), lo, hi);
+  ) {
+    const std::string bc_id =
+        problem_name + "_" + field_name + "_" + m->getName();
+    CHKERR remove_dofs_on_ents(bcMapByBlockName.at(bc_id)->bcEnts, lo, hi);
+  }
 
   MoFEMFunctionReturn(0);
 }
