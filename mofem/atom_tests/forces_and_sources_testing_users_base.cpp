@@ -354,7 +354,7 @@ int main(int argc, char *argv[]) {
 
     // create finite element instance
     VolumeElementForcesAndSourcesCore fe1(m_field);
-    // set class needed to cinstruct user approximation base
+    // set class needed to construct user approximation base
     fe1.getUserPolynomialBase() =
         boost::shared_ptr<BaseFunction>(new SomeUserPolynomialBase());
 
