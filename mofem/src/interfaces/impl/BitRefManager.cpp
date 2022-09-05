@@ -303,7 +303,7 @@ MoFEMErrorCode BitRefManager::setBitRefLevel(const Range &ents,
 
       MOFEM_LOG_FUNCTION();
       MOFEM_LOG_C("BitRefSelf", Sev::noisy,
-                  "\tNumber of dim %d entities to add %d", d, dim_ents.size());
+                  "  Number of dim %d entities to add %d", d, dim_ents.size());
 
       if (!dim_ents.empty()) {
         for (int dd = 0; dd < d; ++dd) {
@@ -332,7 +332,7 @@ MoFEMErrorCode BitRefManager::setBitRefLevel(const Range &ents,
 
           MOFEM_LOG_FUNCTION();
           MOFEM_LOG_C("BitRefSelf", Sev::noisy,
-                      "\tNumber of dim %d adj entities for dim %d to add %d", d,
+                      "  Number of dim %d adj entities for dim %d to add %d", d,
                       dd, adj_ents.size());
 
           if (rval == MB_MULTIPLE_ENTITIES_FOUND) {
