@@ -616,25 +616,4 @@ MoFEMErrorCode PostProcGenerateRefMesh<MBEDGE>::generateReferenceElementMesh() {
   MoFEMFunctionReturn(0);
 }
 
-template <>
-boost::shared_ptr<PostProcBrokenMeshInMoab<VolumeElementForcesAndSourcesCore>>
-make_post_proc_fe_in_moab(MoFEM::Interface &m_field) {
-  return boost::make_shared<
-      PostProcBrokenMeshInMoab<VolumeElementForcesAndSourcesCore>>(m_field);
-}
-
-template <>
-boost::shared_ptr<PostProcBrokenMeshInMoab<FaceElementForcesAndSourcesCore>>
-make_post_proc_fe_in_moab(MoFEM::Interface &m_field) {
-  return boost::make_shared<
-      PostProcBrokenMeshInMoab<FaceElementForcesAndSourcesCore>>(m_field);
-}
-
-template <>
-boost::shared_ptr<PostProcBrokenMeshInMoab<EdgeElementForcesAndSourcesCore>>
-make_post_proc_fe_in_moab(MoFEM::Interface &m_field) {
-  return boost::make_shared<
-      PostProcBrokenMeshInMoab<EdgeElementForcesAndSourcesCore>>(m_field);
-}
-
 } // namespace MoFEM

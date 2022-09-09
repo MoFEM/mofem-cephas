@@ -565,21 +565,6 @@ struct PostProcBrokenMeshInMoab<EdgeElementForcesAndSourcesCore>
       EdgeElementForcesAndSourcesCore>::PostProcBrokenMeshInMoabBase;
 };
 
-template <typename E>
-boost::shared_ptr<E> make_post_proc_fe_in_moab(MoFEM::Interface &m_field);
-
-template <>
-boost::shared_ptr<PostProcBrokenMeshInMoab<VolumeElementForcesAndSourcesCore>>
-make_post_proc_fe_in_moab(MoFEM::Interface &m_field);
-
-template <>
-boost::shared_ptr<PostProcBrokenMeshInMoab<FaceElementForcesAndSourcesCore>>
-make_post_proc_fe_in_moab(MoFEM::Interface &m_field);
-
-template <>
-boost::shared_ptr<PostProcBrokenMeshInMoab<EdgeElementForcesAndSourcesCore>>
-make_post_proc_fe_in_moab(MoFEM::Interface &m_field);
-
 /**
  * @brief Post post-proc data at points from hash maps
  *

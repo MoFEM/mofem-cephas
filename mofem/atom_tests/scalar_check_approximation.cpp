@@ -603,8 +603,7 @@ int main(int argc, char *argv[]) {
       post_proc_fe->writeFile("out_post_proc.h5m");
 
       auto bdy_post_proc_fe =
-          make_post_proc_fe_in_moab<PostProcBrokenMeshInMoab<BoundaryEle>>(
-              m_field);
+          boost::make_shared<PostProcBrokenMeshInMoab<BoundaryEle>>(m_field);
 
       auto op_loop_side = new OpLoopSide<EleOnSide>(
           m_field, simple->getDomainFEName(), SPACE_DIM);
