@@ -563,7 +563,9 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionBegin;
 
       auto post_proc_fe =
-          boost::make_shared<PostProcBrokenMeshInMoab<DomainEle>>(m_field);
+          make_post_proc_fe_in_moab<PostProcBrokenMeshInMoab<DomainEle>>(
+              m_field);
+      // boost::make_shared<PostProcBrokenMeshInMoab<DomainEle>>(m_field);
 
       post_proc_fe->getOpPtrVector().push_back(
           new OpCalculateHOJac<SPACE_DIM>(jac_ptr));
@@ -603,8 +605,10 @@ int main(int argc, char *argv[]) {
       post_proc_fe->writeFile("out_post_proc.h5m");
 
       auto bdy_post_proc_fe =
-          boost::make_shared<PostProcBrokenMeshInMoab<BoundaryEle>>(
-              m_field); // element run on boundary
+          make_post_proc_fe_in_moab<PostProcBrokenMeshInMoab<BoundaryEle>>(
+              m_field);
+      // boost::make_shared<PostProcBrokenMeshInMoab<BoundaryEle>>(
+          // m_field); // element run on boundary
 
       auto op_loop_side = new OpLoopSide<EleOnSide>(
           m_field, simple->getDomainFEName(), SPACE_DIM);
