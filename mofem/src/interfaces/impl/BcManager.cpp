@@ -3,7 +3,6 @@
  * \ingroup bc_manager
  */
 
-
 namespace MoFEM {
 
 MoFEMErrorCode
@@ -79,6 +78,7 @@ MoFEMErrorCode BcManager::removeBlockDOFsOnEntities(
     const std::string bc_id =
         problem_name + "_" + field_name + "_" + m->getName();
     CHKERR remove_dofs_on_ents(bcMapByBlockName.at(bc_id)->bcEnts, lo, hi);
+    bcMapByBlockName.at(bc_id)->bcMarkers = std::vector<unsigned char>();
   }
 
   MoFEMFunctionReturn(0);
@@ -227,7 +227,7 @@ SmartPetscObj<IS> BcManager::getBlockIS(const std::string block_prefix,
   for (auto bc : getBcMapByBlockName()) {
     if (std::regex_match(bc.first, std::regex(bc_id))) {
       bc_ents.merge(*(bc.second->getBcEntsPtr()));
-      MOFEM_LOG("BcMngSelf", Sev::noisy)
+      MOFEM_LOG("BcMngWorld", Sev::verbose)
           << "Get entities from block and add to IS. Block name " << bc.first;
     }
   }
@@ -259,6 +259,662 @@ SmartPetscObj<IS> BcManager::getBlockIS(const std::string problem_name,
                                         int hi, SmartPetscObj<IS> is_expand) {
   return getBlockIS(problem_name, block_name, field_name, problem_name, lo, hi,
                     is_expand);
+}
+
+template <>
+MoFEMErrorCode
+BcManager::removeBlockDOFsOnEntities<BcMeshsetType<DISPLACEMENTSET>>(
+    const std::string problem_name, const std::string field_name,
+    bool get_low_dim_ents, bool block_name_field_prefix,
+    bool is_distributed_mesh) {
+  Interface &m_field = cOre;
+  auto prb_mng = m_field.getInterface<ProblemsManager>();
+  MoFEMFunctionBegin;
+
+  CHKERR pushMarkDOFsOnEntities<BcMeshsetType<DISPLACEMENTSET>>(
+      problem_name, field_name, get_low_dim_ents, block_name_field_prefix);
+
+  std::array<Range, 3> ents_to_remove;
+
+  for (auto m :
+
+       m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(
+           NODESET | DISPLACEMENTSET)) {
+
+    const std::string bc_id =
+        problem_name + "_" + field_name + "_DISPLACEMENTSET" +
+        boost::lexical_cast<std::string>(m->getMeshsetId());
+
+    auto bc = bcMapByBlockName.at(bc_id);
+
+    if (bc->dispBcPtr)
+      if (bc->dispBcPtr->data.flag1) {
+        ents_to_remove[0].merge(bc->bcEnts);
+      }
+    if (bc->dispBcPtr->data.flag2) {
+      ents_to_remove[1].merge(bc->bcEnts);
+    }
+    if (bc->dispBcPtr->data.flag3) {
+      ents_to_remove[2].merge(bc->bcEnts);
+    }
+
+    bc->bcMarkers = std::vector<unsigned char>();
+  }
+
+  auto remove_dofs_on_ents = [&](const Range &ents, const int lo,
+                                 const int hi) {
+    if (is_distributed_mesh)
+      return prb_mng->removeDofsOnEntities(problem_name, field_name, ents, lo,
+                                           hi);
+    else
+      return prb_mng->removeDofsOnEntitiesNotDistributed(
+          problem_name, field_name, ents, lo, hi);
+  };
+
+  if (!ents_to_remove[0].empty()) {
+    CHKERR remove_dofs_on_ents(ents_to_remove[0], 0, 0);
+  }
+
+  if (!ents_to_remove[1].empty()) {
+    CHKERR remove_dofs_on_ents(ents_to_remove[1], 1, 1);
+  }
+
+  if (!ents_to_remove[2].empty()) {
+    CHKERR remove_dofs_on_ents(ents_to_remove[2], 2, 2);
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+template <>
+MoFEMErrorCode
+BcManager::removeBlockDOFsOnEntities<BcMeshsetType<TEMPERATURESET>>(
+    const std::string problem_name, const std::string field_name,
+    bool get_low_dim_ents, bool block_name_field_prefix,
+    bool is_distributed_mesh) {
+  Interface &m_field = cOre;
+  auto prb_mng = m_field.getInterface<ProblemsManager>();
+  MoFEMFunctionBegin;
+
+  CHKERR pushMarkDOFsOnEntities<BcMeshsetType<TEMPERATURESET>>(
+      problem_name, field_name, get_low_dim_ents, block_name_field_prefix);
+
+  Range ents_to_remove;
+
+  for (auto m :
+
+       m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(
+           NODESET | TEMPERATURESET)
+
+  ) {
+    const std::string bc_id =
+        problem_name + "_" + field_name + "_TEMPERATURESET" +
+        boost::lexical_cast<std::string>(m->getMeshsetId());
+    auto bc = bcMapByBlockName.at(bc_id);
+    ents_to_remove.merge(bc->bcEnts);
+    bc->bcMarkers = std::vector<unsigned char>();
+  }
+
+  auto remove_dofs_on_ents = [&](const Range &ents, const int lo,
+                                 const int hi) {
+    if (is_distributed_mesh)
+      return prb_mng->removeDofsOnEntities(problem_name, field_name, ents, lo,
+                                           hi);
+    else
+      return prb_mng->removeDofsOnEntitiesNotDistributed(
+          problem_name, field_name, ents, lo, hi);
+  };
+
+  if (!ents_to_remove.empty()) {
+    CHKERR remove_dofs_on_ents(ents_to_remove, 0, MAX_DOFS_ON_ENTITY);
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+template <>
+MoFEMErrorCode BcManager::removeBlockDOFsOnEntities<BcMeshsetType<BLOCKSET>>(
+    const std::string problem_name, const std::string field_name,
+    bool get_low_dim_ents, bool block_name_field_prefix,
+    bool is_distributed_mesh) {
+  Interface &m_field = cOre;
+  auto prb_mng = m_field.getInterface<ProblemsManager>();
+  MoFEMFunctionBegin;
+
+  CHKERR pushMarkDOFsOnEntities<BcMeshsetType<BLOCKSET>>(
+      problem_name, field_name, get_low_dim_ents, block_name_field_prefix);
+
+  std::array<Range, 3> ents_to_remove;
+
+  for (auto m :
+
+       m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(BLOCKSET)) {
+
+
+    const auto block_name = m->getName();
+
+    std::string bc_id;
+    if(block_name_field_prefix)
+      bc_id = problem_name + "_" + m->getName();
+    else
+      bc_id = problem_name + "_" + field_name + "_" + m->getName();
+
+    auto str = boost::format("%s_%s_((FIX_(ALL|X|Y|Z))|(REMOVE_(ALL|X|Y|Z))|("
+                             "DISPLACEMENT)|(ROTATION)|(TEMP))(.*)")
+
+               % problem_name % field_name;
+
+    if (std::regex_match(bc_id, std::regex(str.str()))) {
+
+      auto bc = bcMapByBlockName.at(bc_id);
+
+      if(auto disp_bc = bc->dispBcPtr) {
+        if(disp_bc->data.flag1) {
+          ents_to_remove[0].merge(bc->bcEnts);
+        } 
+        if(disp_bc->data.flag2) {
+          ents_to_remove[1].merge(bc->bcEnts);
+        }
+        if(disp_bc->data.flag3) {
+          ents_to_remove[2].merge(bc->bcEnts);
+        }
+      } else if (auto temp_bc = bc->tempBcPtr) {
+        ents_to_remove[0].merge(bc->bcEnts);
+      } else {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "BC type not implemented");
+      }
+    }
+  }
+
+  auto remove_dofs_on_ents = [&](const Range &ents, const int lo,
+                                 const int hi) {
+    if (is_distributed_mesh)
+      return prb_mng->removeDofsOnEntities(problem_name, field_name, ents, lo,
+                                           hi);
+    else
+      return prb_mng->removeDofsOnEntitiesNotDistributed(
+          problem_name, field_name, ents, lo, hi);
+  };
+
+  if (!ents_to_remove[0].empty()) {
+    CHKERR remove_dofs_on_ents(ents_to_remove[0], 0, 0);
+  }
+
+  if (!ents_to_remove[1].empty()) {
+    CHKERR remove_dofs_on_ents(ents_to_remove[1], 1, 1);
+  }
+
+  if (!ents_to_remove[2].empty()) {
+    CHKERR remove_dofs_on_ents(ents_to_remove[2], 2, 2);
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+template <>
+MoFEMErrorCode
+BcManager::pushMarkDOFsOnEntities<BcMeshsetType<DISPLACEMENTSET>>(
+    const std::string problem_name, const std::string field_name,
+    bool get_low_dim_ents, bool block_name_field_prefix) {
+  Interface &m_field = cOre;
+  auto prb_mng = m_field.getInterface<ProblemsManager>();
+  MoFEMFunctionBegin;
+
+  if (block_name_field_prefix)
+    MOFEM_LOG("BcMngWorld", Sev::warning)
+        << "Argument block_name_field_prefix=true has no effect";
+
+  auto get_dim = [&](const Range &ents) {
+    for (auto d : {3, 2, 1})
+      if (ents.num_of_dimension(d))
+        return d;
+    return 0;
+  };
+
+  auto get_adj_ents = [&](const Range &ents) {
+    Range verts;
+    CHKERR m_field.get_moab().get_connectivity(ents, verts, true);
+    const auto dim = get_dim(ents);
+    for (size_t d = 1; d < dim; ++d)
+      CHKERR m_field.get_moab().get_adjacencies(ents, d, false, verts,
+                                                moab::Interface::UNION);
+    verts.merge(ents);
+    CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(verts);
+    return verts;
+  };
+
+  auto fix_disp = [&]() {
+    MoFEMFunctionBegin;
+
+    auto iterate_meshsets = [&](auto &&meshset_vec_ptr) {
+      MoFEMFunctionBegin;
+      for (auto m : meshset_vec_ptr) {
+        auto bc = boost::make_shared<BCs>();
+        CHKERR m_field.get_moab().get_entities_by_handle(m->getMeshset(),
+                                                         bc->bcEnts, true);
+
+        bc->dispBcPtr = boost::make_shared<DisplacementCubitBcData>();
+        CHKERR m->getBcDataStructure(*(bc->dispBcPtr));
+
+        MOFEM_LOG("BcMngWorld", Sev::verbose)
+            << "Found block DISPLACEMENTSET number of entities "
+            << bc->bcEnts.size() << " highest dim of entities "
+            << get_dim(bc->bcEnts);
+        MOFEM_LOG("BcMngWorld", Sev::verbose) << *bc->dispBcPtr;
+
+        if (bc->dispBcPtr->data.flag1)
+          CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 0, 0,
+                                         ProblemsManager::MarkOP::OR, 1,
+                                         bc->bcMarkers);
+        if (bc->dispBcPtr->data.flag2)
+          CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 1, 1,
+                                         ProblemsManager::MarkOP::OR, 1,
+                                         bc->bcMarkers);
+        if (bc->dispBcPtr->data.flag3)
+          CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 2, 2,
+                                         ProblemsManager::MarkOP::OR, 1,
+                                         bc->bcMarkers);
+
+        if (get_low_dim_ents) {
+          auto low_dim_ents = get_adj_ents(bc->bcEnts);
+          CHKERR prb_mng->markDofs(problem_name, ROW, ProblemsManager::AND,
+                                   low_dim_ents, bc->bcMarkers);
+          bc->bcEnts.swap(low_dim_ents);
+        } else
+          CHKERR prb_mng->markDofs(problem_name, ROW, ProblemsManager::AND,
+                                   bc->bcEnts, bc->bcMarkers);
+
+        const std::string bc_id =
+            problem_name + "_" + field_name + "_DISPLACEMENTSET" +
+            boost::lexical_cast<std::string>(m->getMeshsetId());
+        bcMapByBlockName[bc_id] = bc;
+      }
+      MoFEMFunctionReturn(0);
+    };
+
+    CHKERR iterate_meshsets(
+
+        m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(
+            NODESET | DISPLACEMENTSET)
+
+    );
+
+    MoFEMFunctionReturn(0);
+  };
+
+  CHKERR fix_disp();
+
+  MoFEMFunctionReturn(0);
+}
+
+template <>
+MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcMeshsetType<TEMPERATURESET>>(
+    const std::string problem_name, const std::string field_name,
+    bool get_low_dim_ents, bool block_name_field_prefix) {
+  Interface &m_field = cOre;
+  auto prb_mng = m_field.getInterface<ProblemsManager>();
+  MoFEMFunctionBegin;
+
+  if (block_name_field_prefix)
+    MOFEM_LOG("BcMngWorld", Sev::warning)
+        << "Argument block_name_field_prefix=true has no effect";
+
+  auto get_dim = [&](const Range &ents) {
+    for (auto d : {3, 2, 1})
+      if (ents.num_of_dimension(d))
+        return d;
+    return 0;
+  };
+
+  auto get_adj_ents = [&](const Range &ents) {
+    Range verts;
+    CHKERR m_field.get_moab().get_connectivity(ents, verts, true);
+    const auto dim = get_dim(ents);
+    for (size_t d = 1; d < dim; ++d)
+      CHKERR m_field.get_moab().get_adjacencies(ents, d, false, verts,
+                                                moab::Interface::UNION);
+    verts.merge(ents);
+    CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(verts);
+    return verts;
+  };
+
+  auto fix_disp = [&]() {
+    MoFEMFunctionBegin;
+
+    auto iterate_meshsets = [&](auto &&meshset_vec_ptr) {
+      MoFEMFunctionBegin;
+      for (auto m : meshset_vec_ptr) {
+        auto bc = boost::make_shared<BCs>();
+        CHKERR m_field.get_moab().get_entities_by_handle(m->getMeshset(),
+                                                         bc->bcEnts, true);
+
+        bc->tempBcPtr = boost::make_shared<TemperatureCubitBcData>();
+        CHKERR m->getBcDataStructure(*(bc->tempBcPtr));
+
+        MOFEM_LOG("BcMngWorld", Sev::verbose)
+            << "Found block TEMPERATURESET number of entities "
+            << bc->bcEnts.size() << " highest dim of entities "
+            << get_dim(bc->bcEnts);
+        MOFEM_LOG("BcMngWorld", Sev::verbose) << *bc->tempBcPtr;
+
+        CHKERR prb_mng->modifyMarkDofs(
+            problem_name, ROW, field_name, 0, MAX_DOFS_ON_ENTITY,
+            ProblemsManager::MarkOP::OR, 1, bc->bcMarkers);
+
+        if (get_low_dim_ents) {
+          auto low_dim_ents = get_adj_ents(bc->bcEnts);
+          CHKERR prb_mng->markDofs(problem_name, ROW, ProblemsManager::AND,
+                                   low_dim_ents, bc->bcMarkers);
+          bc->bcEnts.swap(low_dim_ents);
+        } else
+          CHKERR prb_mng->markDofs(problem_name, ROW, ProblemsManager::AND,
+                                   bc->bcEnts, bc->bcMarkers);
+
+        const std::string bc_id =
+            problem_name + "_" + field_name + "_TEMPERATURESET" +
+            boost::lexical_cast<std::string>(m->getMeshsetId());
+        bcMapByBlockName[bc_id] = bc;
+      }
+      MoFEMFunctionReturn(0);
+    };
+
+    CHKERR iterate_meshsets(
+
+        m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(
+            NODESET | DISPLACEMENTSET)
+
+    );
+
+    MoFEMFunctionReturn(0);
+  };
+
+  CHKERR fix_disp();
+
+  MoFEMFunctionReturn(0);
+}
+
+template <>
+MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcMeshsetType<BLOCKSET>>(
+    const std::string problem_name, const std::string field_name,
+    bool get_low_dim_ents, bool block_name_field_prefix) {
+  Interface &m_field = cOre;
+  auto prb_mng = m_field.getInterface<ProblemsManager>();
+  MoFEMFunctionBegin;
+
+  auto get_dim = [&](const Range &ents) {
+    for (auto d : {3, 2, 1})
+      if (ents.num_of_dimension(d))
+        return d;
+    return 0;
+  };
+
+  auto get_adj_ents = [&](const Range &ents) {
+    Range verts;
+    CHKERR m_field.get_moab().get_connectivity(ents, verts, true);
+    const auto dim = get_dim(ents);
+    for (size_t d = 1; d < dim; ++d)
+      CHKERR m_field.get_moab().get_adjacencies(ents, d, false, verts,
+                                                moab::Interface::UNION);
+    verts.merge(ents);
+    CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(verts);
+    return verts;
+  };
+
+  auto fix = [&]() {
+    MoFEMFunctionBegin;
+
+    auto iterate_meshsets = [&](auto &&meshset_vec_ptr) {
+      MoFEMFunctionBegin;
+      for (auto m : meshset_vec_ptr) {
+        const auto block_name = m->getName();
+        MOFEM_LOG("BcMngWorld", Sev::verbose) << "BLOCKSET name " << block_name;
+
+        if (block_name_field_prefix) {
+          auto r = std::regex(
+
+              (boost::format("%s_(.*)") % field_name).str()
+
+          );
+          if (!std::regex_match(field_name, r)) {
+            continue; // block name do not have field prefix
+          }
+        }
+
+
+        auto bc = boost::make_shared<BCs>();
+       
+        CHKERR m->getAttributes(bc->bcAttributes);
+        CHKERR m_field.get_moab().get_entities_by_handle(m->getMeshset(),
+                                                         bc->bcEnts, true);
+
+        auto log = [&]() {
+          MoFEMFunctionBeginHot;
+          MOFEM_LOG("BcMngWorld", Sev::verbose)
+              << "Found block BLOCKSET number of entities " << bc->bcEnts.size()
+              << " number of attributes " << bc->bcAttributes.size()
+              << " highest dim of entities " << get_dim(bc->bcEnts);
+
+          MoFEMFunctionReturnHot(0);
+        };
+
+        auto add = [&]() {
+          MoFEMFunctionBegin;
+          if (block_name_field_prefix) {
+            const std::string bc_id =
+                problem_name + "_" +  m->getName();
+            MOFEM_LOG("BcMngWorld", Sev::verbose) << "Add BC " << bc_id;
+            bcMapByBlockName[bc_id] = bc;
+          } else {
+            const std::string bc_id =
+                problem_name + "_" + field_name + "_" + m->getName();
+            MOFEM_LOG("BcMngWorld", Sev::verbose) << "Add BC " << bc_id;
+            bcMapByBlockName[bc_id] = bc;
+          }
+          MoFEMFunctionReturn(0);
+        };
+
+        auto mark_disp = [&]() {
+          MoFEMFunctionBegin;
+          if (bc->dispBcPtr->data.flag1)
+            CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 0, 0,
+                                           ProblemsManager::MarkOP::OR, 1,
+                                           bc->bcMarkers);
+          if (bc->dispBcPtr->data.flag2)
+            CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 1, 1,
+                                           ProblemsManager::MarkOP::OR, 1,
+                                           bc->bcMarkers);
+          if (bc->dispBcPtr->data.flag3)
+            CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 2, 2,
+                                           ProblemsManager::MarkOP::OR, 1,
+                                           bc->bcMarkers);
+          MoFEMFunctionReturn(0);
+        };
+
+        auto mark_temp = [&]() {
+          MoFEMFunctionBegin;
+          CHKERR prb_mng->modifyMarkDofs(
+              problem_name, ROW, field_name, 0, MAX_DOFS_ON_ENTITY,
+              ProblemsManager::MarkOP::OR, 1, bc->bcMarkers);
+          MoFEMFunctionReturn(0);
+        };
+
+        if (std::regex_match(block_name,
+                             std::regex("(.*)(FIX_ALL|REMOVE_ALL)(.*)"))) {
+          bc->dispBcPtr = boost::make_shared<DisplacementCubitBcData>();
+
+          bc->dispBcPtr->data.flag1 = 1;
+          bc->dispBcPtr->data.flag2 = 1;
+          bc->dispBcPtr->data.flag3 = 1;
+
+          if (bc->bcAttributes.size() == 3) {
+            bc->dispBcPtr->data.value1 = bc->bcAttributes[0];
+            bc->dispBcPtr->data.value2 = bc->bcAttributes[1];
+            bc->dispBcPtr->data.value3 = bc->bcAttributes[2];
+          } else {
+            MOFEM_LOG("BcMngWorld", Sev::warning)
+                << "Expected three atributes on block but have "
+                << bc->bcAttributes.size();
+          }
+          MOFEM_LOG("BcMngWorld", Sev::verbose) << *bc->dispBcPtr;
+
+          CHKERR add();
+          CHKERR log();
+          CHKERR mark_disp();
+        } else if (std::regex_match(block_name,
+                                    std::regex("(.*)(FIX_X|REMOVE_X)(.*)"))) {
+          bc->dispBcPtr = boost::make_shared<DisplacementCubitBcData>();
+
+          bc->dispBcPtr->data.flag1 = 1;
+          if (bc->bcAttributes.size() == 1) {
+            bc->dispBcPtr->data.value1 = bc->bcAttributes[0];
+          } else {
+            MOFEM_LOG("BcMngWorld", Sev::warning)
+                << "Expected one atributes on block but have "
+                << bc->bcAttributes.size();
+          }
+          MOFEM_LOG("BcMngWorld", Sev::verbose) << *bc->dispBcPtr;
+
+          CHKERR add();
+          CHKERR log();
+          CHKERR mark_disp();
+        } else if (std::regex_match(block_name,
+                                    std::regex("(.*)(FIX_Y|REMOVE_Y)(.*)"))) {
+          bc->dispBcPtr = boost::make_shared<DisplacementCubitBcData>();
+
+          bc->dispBcPtr->data.flag2 = 1;
+          if (bc->bcAttributes.size() == 1) {
+            bc->dispBcPtr->data.value2 = bc->bcAttributes[0];
+          } else {
+            MOFEM_LOG("BcMngWorld", Sev::warning)
+                << "Expected one atributes on block but have "
+                << bc->bcAttributes.size();
+          }
+          MOFEM_LOG("BcMngWorld", Sev::verbose) << *bc->dispBcPtr;
+
+          CHKERR add();
+          CHKERR log();
+          CHKERR mark_disp();
+        } else if (std::regex_match(block_name,
+                                    std::regex("(.*)(FIX_Z|REMOVE_Z)(.*)"))) {
+
+          bc->dispBcPtr->data.flag3 = 1;
+          if (bc->bcAttributes.size() == 1) {
+            bc->dispBcPtr->data.value3 = bc->bcAttributes[0];
+          } else {
+            MOFEM_LOG("BcMngWorld", Sev::warning)
+                << "Expected one atributes on block but have "
+                << bc->bcAttributes.size();
+          }
+          MOFEM_LOG("BcMngWorld", Sev::verbose) << *bc->dispBcPtr;
+
+          CHKERR add();
+          CHKERR log();
+          CHKERR mark_disp();
+        } else if (std::regex_match(block_name,
+                                    std::regex("(.*)DISPLACEMENT(.*)"))) {
+
+          bc->dispBcPtr = boost::make_shared<DisplacementCubitBcData>();
+
+          if (bc->bcAttributes.size() == 6) {
+            bc->dispBcPtr->data.flag1 = bc->bcAttributes[0];
+            bc->dispBcPtr->data.flag2 = bc->bcAttributes[1];
+            bc->dispBcPtr->data.flag2 = bc->bcAttributes[2];
+            bc->dispBcPtr->data.value1 = bc->bcAttributes[0];
+            bc->dispBcPtr->data.value2 = bc->bcAttributes[4];
+            bc->dispBcPtr->data.value3 = bc->bcAttributes[5];
+          } else {
+            MOFEM_LOG("BcMngWorld", Sev::error)
+                << "Expected three atributes on block but have "
+                << bc->bcAttributes.size();
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                    "Wrong number of block attributes");
+          }
+
+        } else if (std::regex_match(block_name,
+                                    std::regex("(.*)ROTATION(.*)"))) {
+          bc->dispBcPtr = boost::make_shared<DisplacementCubitBcData>();
+
+          if (bc->bcAttributes.size() != 9) {
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                    "Expected three parameters");
+          }
+          MOFEM_LOG("BcMngWorld", Sev::verbose) << *bc->dispBcPtr;
+
+          bc->dispBcPtr->data.value1 = bc->bcAttributes[0];
+          bc->dispBcPtr->data.value2 = bc->bcAttributes[1];
+          bc->dispBcPtr->data.value3 = bc->bcAttributes[2];
+          bc->dispBcPtr->data.value4 = bc->bcAttributes[3];
+          bc->dispBcPtr->data.value5 = bc->bcAttributes[4];
+          bc->dispBcPtr->data.value6 = bc->bcAttributes[5];
+          bc->dispBcPtr->data.flag1 = bc->bcAttributes[6];
+          bc->dispBcPtr->data.flag2 = bc->bcAttributes[7];
+          bc->dispBcPtr->data.flag2 = bc->bcAttributes[8];
+
+          CHKERR add();
+          CHKERR log();
+          CHKERR mark_disp();
+        } else if (std::regex_match(block_name,
+                                    std::regex("(.*)TEMPERATURE(.*)"))) {
+
+          bc->tempBcPtr = boost::make_shared<TemperatureCubitBcData>();
+
+          if (bc->bcAttributes.size() == 1) {
+            bc->tempBcPtr->data.value1 = bc->bcAttributes[0];
+          } else
+            MOFEM_LOG("BcMngWorld", Sev::warning)
+                << "Temperature on blockset not set";
+
+          MOFEM_LOG("BcMngWorld", Sev::verbose) << *bc->tempBcPtr;
+
+          CHKERR add();
+          CHKERR log();
+          CHKERR mark_temp();
+        }
+
+        if (get_low_dim_ents) {
+          auto low_dim_ents = get_adj_ents(bc->bcEnts);
+          CHKERR prb_mng->markDofs(problem_name, ROW, ProblemsManager::AND,
+                                   low_dim_ents, bc->bcMarkers);
+          bc->bcEnts.swap(low_dim_ents);
+        } else {
+          CHKERR prb_mng->markDofs(problem_name, ROW, ProblemsManager::AND,
+                                   bc->bcEnts, bc->bcMarkers);
+        }
+      }
+
+
+      MoFEMFunctionReturn(0);
+    };
+
+    CHKERR iterate_meshsets(
+
+        m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(BLOCKSET |
+                                                                    UNKNOWNSET)
+
+    );
+
+    MoFEMFunctionReturn(0);
+  };
+
+  CHKERR fix();
+
+  MoFEMFunctionReturn(0);
+}
+
+template <>
+MoFEMErrorCode BcManager::removeBlockDOFsOnEntities<DisplacementCubitBcData>(
+    const std::string problem_name, const std::string field_name,
+    bool get_low_dim_ents, bool block_name_field_prefix,
+    bool is_distributed_mesh) {
+  MoFEMFunctionBegin;
+  CHKERR removeBlockDOFsOnEntities<BcMeshsetType<DISPLACEMENTSET>>(
+      problem_name, field_name, get_low_dim_ents, block_name_field_prefix,
+      is_distributed_mesh);
+  CHKERR removeBlockDOFsOnEntities<BcMeshsetType<BLOCKSET>>(
+      problem_name, field_name, get_low_dim_ents, block_name_field_prefix,
+      is_distributed_mesh);
+  MoFEMFunctionReturn(0);
 }
 
 } // namespace MoFEM

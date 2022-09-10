@@ -24,30 +24,6 @@ struct ScalingMethod {
    */
   virtual double getScale(const double time);
 
-  /**
-   * @brief  Scale vector
-   *
-   * Function is virtual, expected to be implemented at every derived class
-   *
-   * @param fe
-   * @param Nf
-   * @return MoFEMErrorCode
-   */
-  virtual MoFEMErrorCode scaleNf(const FEMethod *fe, VectorDouble &Nf) = 0;
-
-  /**
-   * @brief Apply scaling for series of scaling methods
-   *
-   * @param fe
-   * @param methods_op
-   * @param nf
-   * @return MoFEMErrorCode
-   */
-  static MoFEMErrorCode
-  applyScalingSeries(const FEMethod *fe,
-                     boost::ptr_vector<ScalingMethod> &methods_op,
-                     VectorDouble &nf);
-
   ScalingMethod() = default;
   virtual ~ScalingMethod() = default;
 };
@@ -61,15 +37,6 @@ struct TimeScale : public ScalingMethod {
 
    double getScale(const double time);
 
-  /**
-   * @brief Scale force the right hand vector
-   *
-   * @param fe
-   * @param Nf
-   * @return MoFEMErrorCode
-   */
-  MoFEMErrorCode scaleNf(const FEMethod *fe, VectorDouble &Nf);
-
 private:
   MoFEMErrorCode timeData();
 
@@ -81,35 +48,6 @@ private:
   PetscBool fLg;
 };
 
-/**
- * @brief Read acceleration data
- *
- * Read data file with four columns, first column is time, and remaining columns
- * are acceleration in ax, ay, az direction.
- *
- */
-struct TimeVector : public ScalingMethod {
-
-  TimeVector(std::string name = "-time_vector_file");
-
-  /**
-   * @brief Add acceleration to vector Nf
-   *
-   * @note Is assumed that Nf.size() == 3
-   *
-   * @param fe
-   * @param Nf vector with three elements
-   * @return MoFEMErrorCode
-   */
-  MoFEMErrorCode scaleNf(const FEMethod *fe, VectorDouble &Nf);
-
-private:
-  MoFEMErrorCode timeData();
-
-  std::map<double, VectorDouble> tSeries;
-  int readFile, debug;
-  string nAme;
-};
 }
 
 #endif //_TIME_SCALING_HPP_

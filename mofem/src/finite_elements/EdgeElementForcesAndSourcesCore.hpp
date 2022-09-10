@@ -110,7 +110,11 @@ struct EdgeElementForcesAndSourcesCore::UserDataOperator
   /**
    * \brief get tangent vector to edge curve at integration points
    */
-  inline MatrixDouble &getTangetAtGaussPts();
+  inline MatrixDouble &getTangentAtGaussPts();
+
+  DEPRECATED inline MatrixDouble &getTangetAtGaussPts() {
+    return getTangentAtGaussPts();
+  }
 
   /**
    * \brief get pointer to this finite element
@@ -172,7 +176,7 @@ EdgeElementForcesAndSourcesCore::UserDataOperator::getCoords() {
 }
 
 MatrixDouble &
-EdgeElementForcesAndSourcesCore::UserDataOperator::getTangetAtGaussPts() {
+EdgeElementForcesAndSourcesCore::UserDataOperator::getTangentAtGaussPts() {
   return static_cast<EdgeElementForcesAndSourcesCore *>(ptrFE)
       ->tangentAtGaussPts;
 }
@@ -198,7 +202,7 @@ EdgeElementForcesAndSourcesCore::UserDataOperator::getTensor1Coords() {
 FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
 EdgeElementForcesAndSourcesCore::UserDataOperator::
     getFTensor1TangentAtGaussPts() {
-  double *ptr = &*getTangetAtGaussPts().data().begin();
+  double *ptr = &*getTangentAtGaussPts().data().begin();
   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
                                                             &ptr[2]);
 }

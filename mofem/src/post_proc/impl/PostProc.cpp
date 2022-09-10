@@ -96,7 +96,7 @@ struct PostProcGenerateRefMesh<MBTET> : public PostProcGenerateRefMeshBase {
       m_field_ref.getInterface<BitRefManager>()->setBitRefLevelByDim(
           0, 3, BitRefLevel().set(0));
       for (int ll = 0; ll != max_level; ++ll) {
-        MOFEM_TAG_AND_LOG_C("WORLD", Sev::verbose, "PostProc",
+        MOFEM_TAG_AND_LOG_C("WORLD", Sev::noisy, "PostProc",
                             "Refine Level %d", ll);
         Range edges;
         CHKERR m_field_ref.getInterface<BitRefManager>()
@@ -350,8 +350,8 @@ struct PostProcGenerateRefMesh<MBTRI> : public PostProcGenerateRefMeshBase {
           0, 2, BitRefLevel().set(0));
 
       for (int ll = 0; ll != max_level; ++ll) {
-        MOFEM_TAG_AND_LOG_C("WORLD", Sev::verbose, "PostProc",
-                            "Refine Level %d", ll);
+        MOFEM_TAG_AND_LOG_C("WORLD", Sev::noisy, "PostProc", "Refine Level %d",
+                            ll);
         Range edges;
         CHKERR m_field_ref.getInterface<BitRefManager>()
             ->getEntitiesByTypeAndRefLevel(BitRefLevel().set(ll),

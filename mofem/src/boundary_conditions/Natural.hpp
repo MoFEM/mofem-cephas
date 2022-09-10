@@ -15,14 +15,23 @@ namespace MoFEM {
 
 using VecOfTimeScalingMethods = std::vector<boost::shared_ptr<ScalingMethod>>;
 
+template <CubitBC BCTYP> struct NaturalMeshsetType {};
+struct NaturalForceMeshsets {};
+
 template <typename OP> struct FluxOpType {};
 
-template <CubitBC BCTYPE, int BASE_DIM, int FIELD_DIM, AssemblyType A,
+template <typename T, int BASE_DIM, int FIELD_DIM, AssemblyType A,
           IntegrationType I, typename OpBase>
 struct OpFluxImpl;
 
+template <typename T, AssemblyType A, IntegrationType I, typename OpBase>
+struct AddFluxToPipelineImpl;
+
+template <typename T, AssemblyType A, IntegrationType I, typename OpBase>
+struct AddScalingMethodImpl;
+
 /**
- * @brief Integrator forms
+ * @brief Natural boundary conditions
  * @ingroup mofem_forms
  *
  * @tparam EleOp
@@ -42,38 +51,27 @@ template <typename EleOp> struct NaturalBC {
 
     template <IntegrationType I> struct LinearForm {
 
-      /**
-       * @brief This operator apply flux, or body force (i.e. body force)
-       * @ingroup mofem_forms
-       *
-       * @tparam I
-       */
-      template <CubitBC BCTYPE, int BASE_DIM, int FIELD_DIM>
-      struct OpFlux
-          : public OpFluxImpl<BCTYPE, BASE_DIM, FIELD_DIM, A, I, EleOp> {
-        using OpFluxImpl<BCTYPE, BASE_DIM, FIELD_DIM, A, I, EleOp>::OpFluxImpl;
-      };
+      template <typename T, int BASE_DIM, int FIELD_DIM>
+      using OpFlux = OpFluxImpl<T, BASE_DIM, FIELD_DIM, A, I, EleOp>;
 
-      template <CubitBC BCTYPE, int BASE_DIM, int FIELD_DIM>
+      template <typename T>
+      using AddFluxToPipeline = AddFluxToPipelineImpl<T, A, I, EleOp>;
+
+      template <typename T>
+      using AddScalingMethod = AddScalingMethodImpl<T, A, I, EleOp>;
+
+      template <typename T>
       static MoFEMErrorCode addFluxToPipeline(
-
-          FluxOpType<OpFlux<BCTYPE, BASE_DIM, FIELD_DIM>>,
-
+          FluxOpType<T>,
           boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
           MoFEM::Interface &m_field, const std::string field_name,
-          const std::string block_name = "", Sev sev = Sev::noisy
+          const std::string block_name = "", Sev sev = Sev::noisy);
 
-      );
-
-      template <CubitBC BCTYPE, int BASE_DIM, int FIELD_DIM>
+      template <typename T>
       static MoFEMErrorCode addScalingMethod(
-
-          FluxOpType<OpFlux<BCTYPE, BASE_DIM, FIELD_DIM>>,
+          FluxOpType<T>,
           boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
-          boost::shared_ptr<ScalingMethod> sm,
-          Sev sev = Sev::noisy
-
-      );
+          boost::shared_ptr<ScalingMethod> sm, Sev sev = Sev::noisy);
     };
 
   }; // Assembly
@@ -82,7 +80,7 @@ template <typename EleOp> struct NaturalBC {
 // Declarations
 
 template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
-struct OpFluxImpl<UNKNOWNSET, 1, FIELD_DIM, A, I, OpBase>
+struct OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, FIELD_DIM, A, I, OpBase>
     : FormsIntegrators<OpBase>::template Assembly<A>::template LinearForm<
           I>::template OpSource<1, FIELD_DIM> {
 
@@ -104,8 +102,8 @@ protected:
 };
 
 template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
-struct OpFluxImpl<FORCESET, 1, FIELD_DIM, A, I, OpBase>
-    : OpFluxImpl<UNKNOWNSET, 1, FIELD_DIM, A, I, OpBase> {
+struct OpFluxImpl<NaturalMeshsetType<FORCESET>, 1, FIELD_DIM, A, I, OpBase>
+    : OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, FIELD_DIM, A, I, OpBase> {
 
   OpFluxImpl(MoFEM::Interface &m_field, int ms_id,
              const std::string field_name);
@@ -115,8 +113,8 @@ protected:
 };
 
 template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
-struct OpFluxImpl<BLOCKSET, 1, FIELD_DIM, A, I, OpBase>
-    : OpFluxImpl<UNKNOWNSET, 1, FIELD_DIM, A, I, OpBase> {
+struct OpFluxImpl<NaturalMeshsetType<BLOCKSET>, 1, FIELD_DIM, A, I, OpBase>
+    : OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, FIELD_DIM, A, I, OpBase> {
 
   OpFluxImpl(MoFEM::Interface &m_field, int ms_id,
              const std::string field_name);
@@ -126,10 +124,11 @@ protected:
 };
 
 template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
-struct OpFluxImpl<PRESSURESET, 1, FIELD_DIM, A, I, OpBase>
-    : OpFluxImpl<UNKNOWNSET, 1, FIELD_DIM, A, I, OpBase> {
+struct OpFluxImpl<NaturalMeshsetType<PRESSURESET>, 1, FIELD_DIM, A, I, OpBase>
+    : OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, FIELD_DIM, A, I, OpBase> {
 
-  using Parent = OpFluxImpl<UNKNOWNSET, 1, FIELD_DIM, A, I, OpBase>;
+  using Parent =
+      OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, FIELD_DIM, A, I, OpBase>;
   using EntData = EntitiesFieldData::EntData;
 
   OpFluxImpl(MoFEM::Interface &m_field, int ms_id,
@@ -142,8 +141,11 @@ protected:
   double surfacePressure;
 };
 
+template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
+struct OpFluxImpl<NaturalForceMeshsets, 1, FIELD_DIM, A, I, OpBase>;
+
 template <AssemblyType A, IntegrationType I, typename OpBase>
-struct OpFluxImpl<UNKNOWNSET, 1, 1, A, I, OpBase>
+struct OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, 1, A, I, OpBase>
     : FormsIntegrators<OpBase>::template Assembly<A>::template LinearForm<
           I>::template OpSource<1, 1> {
 
@@ -167,10 +169,10 @@ protected:
 };
 
 template <AssemblyType A, IntegrationType I, typename OpBase>
-struct OpFluxImpl<BLOCKSET, 1, 1, A, I, OpBase>
-    : OpFluxImpl<UNKNOWNSET, 1, 1, A, I, OpBase> {
+struct OpFluxImpl<NaturalMeshsetType<BLOCKSET>, 1, 1, A, I, OpBase>
+    : OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, 1, A, I, OpBase> {
 
-  using Parent = OpFluxImpl<UNKNOWNSET, 1, 1, A, I, OpBase>;
+  using Parent = OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, 1, A, I, OpBase>;
 
   OpFluxImpl(MoFEM::Interface &m_field, int ms_id,
              const std::string field_name);
@@ -180,10 +182,10 @@ protected:
 };
 
 template <AssemblyType A, IntegrationType I, typename OpBase>
-struct OpFluxImpl<HEATFLUXSET, 1, 1, A, I, OpBase>
-    : OpFluxImpl<UNKNOWNSET, 1, 1, A, I, OpBase> {
+struct OpFluxImpl<NaturalMeshsetType<HEATFLUXSET>, 1, 1, A, I, OpBase>
+    : OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, 1, A, I, OpBase> {
 
-  using Parent = OpFluxImpl<UNKNOWNSET, 1, 1, A, I, OpBase>;
+  using Parent = OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, 1, A, I, OpBase>;
 
   OpFluxImpl(MoFEM::Interface &m_field, int ms_id,
              const std::string field_name);
@@ -193,7 +195,8 @@ protected:
 };
 
 template <int BASE_DIM, AssemblyType A, IntegrationType I, typename OpBase>
-struct OpFluxImpl<UNKNOWNSET, BASE_DIM, BASE_DIM, A, I, OpBase>
+struct OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, BASE_DIM, BASE_DIM, A, I,
+                  OpBase>
     : FormsIntegrators<OpBase>::template Assembly<A>::template LinearForm<
           I>::template OpNormalMixVecTimesScalar<BASE_DIM> {
 
@@ -215,8 +218,9 @@ protected:
 };
 
 template <int BASE_DIM, AssemblyType A, IntegrationType I, typename OpBase>
-struct OpFluxImpl<BLOCKSET, BASE_DIM, BASE_DIM, A, I, OpBase>
-    : OpFluxImpl<UNKNOWNSET, BASE_DIM, BASE_DIM, A, I, OpBase> {
+struct OpFluxImpl<NaturalMeshsetType<BLOCKSET>, BASE_DIM, BASE_DIM, A, I,
+                  OpBase> : OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, BASE_DIM,
+                                       BASE_DIM, A, I, OpBase> {
   OpFluxImpl(MoFEM::Interface &m_field, int ms_id,
              const std::string field_name);
 
@@ -227,9 +231,10 @@ protected:
 // Definitions
 
 template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
-OpFluxImpl<UNKNOWNSET, 1, FIELD_DIM, A, I, OpBase>::OpFluxImpl(
-    const std::string field_name, FTensor::Tensor1<double, FIELD_DIM> t_force,
-    boost::shared_ptr<Range> ents_ptr)
+OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, FIELD_DIM, A, I,
+           OpBase>::OpFluxImpl(const std::string field_name,
+                               FTensor::Tensor1<double, FIELD_DIM> t_force,
+                               boost::shared_ptr<Range> ents_ptr)
     : OpFluxImpl(field_name) {
   FTensor::Index<'i', FIELD_DIM> i;
   this->tForce(i) = t_force(i);
@@ -237,8 +242,8 @@ OpFluxImpl<UNKNOWNSET, 1, FIELD_DIM, A, I, OpBase>::OpFluxImpl(
 }
 
 template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
-OpFluxImpl<UNKNOWNSET, 1, FIELD_DIM, A, I, OpBase>::OpFluxImpl(
-    const std::string field_name)
+OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, FIELD_DIM, A, I,
+           OpBase>::OpFluxImpl(const std::string field_name)
     : OpSource(
           field_name,
 
@@ -258,15 +263,18 @@ OpFluxImpl<UNKNOWNSET, 1, FIELD_DIM, A, I, OpBase>::OpFluxImpl(
 }
 
 template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
-OpFluxImpl<FORCESET, 1, FIELD_DIM, A, I, OpBase>::OpFluxImpl(
-    MoFEM::Interface &m_field, int ms_id, const std::string field_name)
-    : OpFluxImpl<UNKNOWNSET, 1, FIELD_DIM, A, I, OpBase>(field_name) {
+OpFluxImpl<NaturalMeshsetType<FORCESET>, 1, FIELD_DIM, A, I,
+           OpBase>::OpFluxImpl(MoFEM::Interface &m_field, int ms_id,
+                               const std::string field_name)
+    : OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, FIELD_DIM, A, I, OpBase>(
+          field_name) {
   CHK_THROW_MESSAGE(getMeshsetData(m_field, ms_id), "Get meshset data");
 }
 
 template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
-MoFEMErrorCode OpFluxImpl<FORCESET, 1, FIELD_DIM, A, I, OpBase>::getMeshsetData(
-    MoFEM::Interface &m_field, int ms_id) {
+MoFEMErrorCode OpFluxImpl<NaturalMeshsetType<FORCESET>, 1, FIELD_DIM, A, I,
+                          OpBase>::getMeshsetData(MoFEM::Interface &m_field,
+                                                  int ms_id) {
   MoFEMFunctionBegin;
 
   auto cubit_meshset_ptr =
@@ -293,20 +301,23 @@ MoFEMErrorCode OpFluxImpl<FORCESET, 1, FIELD_DIM, A, I, OpBase>::getMeshsetData(
 }
 
 template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
-OpFluxImpl<BLOCKSET, 1, FIELD_DIM, A, I, OpBase>::OpFluxImpl(
-    MoFEM::Interface &m_field, int ms_id, const std::string field_name)
-    : OpFluxImpl<UNKNOWNSET, 1, FIELD_DIM, A, I, OpBase>(field_name) {
+OpFluxImpl<NaturalMeshsetType<BLOCKSET>, 1, FIELD_DIM, A, I,
+           OpBase>::OpFluxImpl(MoFEM::Interface &m_field, int ms_id,
+                               const std::string field_name)
+    : OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, FIELD_DIM, A, I, OpBase>(
+          field_name) {
   CHK_THROW_MESSAGE(getMeshsetData(m_field, ms_id), "Get meshset data");
 }
 
 template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
-MoFEMErrorCode OpFluxImpl<BLOCKSET, 1, FIELD_DIM, A, I, OpBase>::getMeshsetData(
-    MoFEM::Interface &m_field, int ms_id) {
+MoFEMErrorCode OpFluxImpl<NaturalMeshsetType<BLOCKSET>, 1, FIELD_DIM, A, I,
+                          OpBase>::getMeshsetData(MoFEM::Interface &m_field,
+                                                  int ms_id) {
   MoFEMFunctionBegin;
 
   auto cubit_meshset_ptr =
       m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(ms_id,
-                                                                  NODESET);
+                                                                  BLOCKSET);
 
   std::vector<double> block_data;
   CHKERR cubit_meshset_ptr->getAttributes(block_data);
@@ -320,7 +331,12 @@ MoFEMErrorCode OpFluxImpl<BLOCKSET, 1, FIELD_DIM, A, I, OpBase>::getMeshsetData(
     }
   }
 
-  for (unsigned int ii = 0; ii != block_data.size(); ++ii) {
+  MOFEM_LOG("WORLD", Sev::inform)
+      << "Flux blockset " << cubit_meshset_ptr->getName();
+  MOFEM_LOG("WORLD", Sev::inform)
+      << "Number of attributes " << block_data.size();
+
+  for (unsigned int ii = 0; ii != FIELD_DIM; ++ii) {
     this->tForce(ii) = block_data[ii];
   }
 
@@ -332,25 +348,27 @@ MoFEMErrorCode OpFluxImpl<BLOCKSET, 1, FIELD_DIM, A, I, OpBase>::getMeshsetData(
 }
 
 template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
-OpFluxImpl<PRESSURESET, 1, FIELD_DIM, A, I, OpBase>::OpFluxImpl(
-    MoFEM::Interface &m_field, int ms_id, const std::string field_name)
-    : OpFluxImpl<UNKNOWNSET, 1, FIELD_DIM, A, I, OpBase>(field_name) {
+OpFluxImpl<NaturalMeshsetType<PRESSURESET>, 1, FIELD_DIM, A, I,
+           OpBase>::OpFluxImpl(MoFEM::Interface &m_field, int ms_id,
+                               const std::string field_name)
+    : OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, FIELD_DIM, A, I, OpBase>(
+          field_name) {
   CHK_THROW_MESSAGE(getMeshsetData(m_field, ms_id), "Get meshset data");
 }
 
 template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
-MoFEMErrorCode
-OpFluxImpl<PRESSURESET, 1, FIELD_DIM, A, I, OpBase>::iNtegrate(EntData &data) {
+MoFEMErrorCode OpFluxImpl<NaturalMeshsetType<PRESSURESET>, 1, FIELD_DIM, A, I,
+                          OpBase>::iNtegrate(EntData &data) {
   MoFEMFunctionBegin;
 
-  auto t_normal = this->getFTensor1NormalsAtGaussPts();
+  auto t_normal = this->getFTensor1Normal();
   FTensor::Index<'i', FIELD_DIM> i;
 
   this->sourceFun = [&](const double, const double, const double) {
-    this->tFroce(i) = this->surfacePressure * t_normal(i);
-    this->tFroce.normalize();
-    ++t_normal;
-    return this->tFroce;
+    this->tForce(i) = t_normal(i);
+    this->tForce.normalize();
+    this->tForce(i) *= this->surfacePressure;
+    return this->tForce;
   };
 
   CHKERR Parent::iNtegrate(data);
@@ -358,14 +376,14 @@ OpFluxImpl<PRESSURESET, 1, FIELD_DIM, A, I, OpBase>::iNtegrate(EntData &data) {
 }
 
 template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
-MoFEMErrorCode
-OpFluxImpl<PRESSURESET, 1, FIELD_DIM, A, I, OpBase>::getMeshsetData(
-    MoFEM::Interface &m_field, int ms_id) {
+MoFEMErrorCode OpFluxImpl<NaturalMeshsetType<PRESSURESET>, 1, FIELD_DIM, A, I,
+                          OpBase>::getMeshsetData(MoFEM::Interface &m_field,
+                                                  int ms_id) {
   MoFEMFunctionBegin;
 
   auto cubit_meshset_ptr =
       m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(ms_id,
-                                                                  BLOCKSET);
+                                                                  SIDESET);
 
   PressureCubitBcData pressure_data;
   CHKERR cubit_meshset_ptr->getBcDataStructure(pressure_data);
@@ -379,7 +397,7 @@ OpFluxImpl<PRESSURESET, 1, FIELD_DIM, A, I, OpBase>::getMeshsetData(
 }
 
 template <AssemblyType A, IntegrationType I, typename OpBase>
-OpFluxImpl<UNKNOWNSET, 1, 1, A, I, OpBase>::OpFluxImpl(
+OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, 1, A, I, OpBase>::OpFluxImpl(
     const std::string field_name, const double value,
     boost::shared_ptr<Range> ents_ptr)
     : OpFluxImpl(field_name) {
@@ -388,7 +406,7 @@ OpFluxImpl<UNKNOWNSET, 1, 1, A, I, OpBase>::OpFluxImpl(
 }
 
 template <AssemblyType A, IntegrationType I, typename OpBase>
-OpFluxImpl<UNKNOWNSET, 1, 1, A, I, OpBase>::OpFluxImpl(
+OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, 1, A, I, OpBase>::OpFluxImpl(
     const std::string field_name)
     : OpSource(field_name,
 
@@ -408,14 +426,16 @@ OpFluxImpl<UNKNOWNSET, 1, 1, A, I, OpBase>::OpFluxImpl(
 }
 
 template <AssemblyType A, IntegrationType I, typename OpBase>
-OpFluxImpl<BLOCKSET, 1, 1, A, I, OpBase>::OpFluxImpl(
+OpFluxImpl<NaturalMeshsetType<BLOCKSET>, 1, 1, A, I, OpBase>::OpFluxImpl(
     MoFEM::Interface &m_field, int ms_id, const std::string field_name)
-    : OpFluxImpl<UNKNOWNSET, 1, 1, A, I, OpBase>(field_name) {
+    : OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, 1, A, I, OpBase>(
+          field_name) {
   CHK_THROW_MESSAGE(getMeshsetData(m_field, ms_id), "Get meshset data");
 }
 
 template <AssemblyType A, IntegrationType I, typename OpBase>
-MoFEMErrorCode OpFluxImpl<BLOCKSET, 1, 1, A, I, OpBase>::getMeshsetData(
+MoFEMErrorCode
+OpFluxImpl<NaturalMeshsetType<BLOCKSET>, 1, 1, A, I, OpBase>::getMeshsetData(
     MoFEM::Interface &m_field, int ms_id) {
   MoFEMFunctionBegin;
 
@@ -438,20 +458,22 @@ MoFEMErrorCode OpFluxImpl<BLOCKSET, 1, 1, A, I, OpBase>::getMeshsetData(
 }
 
 template <AssemblyType A, IntegrationType I, typename OpBase>
-OpFluxImpl<HEATFLUXSET, 1, 1, A, I, OpBase>::OpFluxImpl(
+OpFluxImpl<NaturalMeshsetType<HEATFLUXSET>, 1, 1, A, I, OpBase>::OpFluxImpl(
     MoFEM::Interface &m_field, int ms_id, const std::string field_name)
-    : OpFluxImpl<UNKNOWNSET, 1, 1, A, I, OpBase>(field_name) {
+    : OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, 1, A, I, OpBase>(
+          field_name) {
   CHK_THROW_MESSAGE(getMeshsetData(m_field, ms_id), "Get meshset data");
 }
 
 template <AssemblyType A, IntegrationType I, typename OpBase>
-MoFEMErrorCode OpFluxImpl<HEATFLUXSET, 1, 1, A, I, OpBase>::getMeshsetData(
+MoFEMErrorCode
+OpFluxImpl<NaturalMeshsetType<HEATFLUXSET>, 1, 1, A, I, OpBase>::getMeshsetData(
     MoFEM::Interface &m_field, int ms_id) {
   MoFEMFunctionBegin;
 
   auto cubit_meshset_ptr =
       m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(ms_id,
-                                                                  BLOCKSET);
+                                                                  SIDESET);
   HeatFluxCubitBcData heat_flux;
   CHKERR cubit_meshset_ptr->getBcDataStructure(heat_flux);
   this->scalarValue = heat_flux.data.value1;
@@ -464,17 +486,17 @@ MoFEMErrorCode OpFluxImpl<HEATFLUXSET, 1, 1, A, I, OpBase>::getMeshsetData(
 }
 
 template <int BASE_DIM, AssemblyType A, IntegrationType I, typename OpBase>
-OpFluxImpl<UNKNOWNSET, BASE_DIM, BASE_DIM, A, I, OpBase>::OpFluxImpl(
-    const std::string field_name, const double value,
-    boost::shared_ptr<Range> ents_ptr)
+OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, BASE_DIM, BASE_DIM, A, I,
+           OpBase>::OpFluxImpl(const std::string field_name, const double value,
+                               boost::shared_ptr<Range> ents_ptr)
     : OpFluxImpl(field_name) {
   this->scalarValue = value;
   this->entsPtr = ents_ptr;
 }
 
 template <int BASE_DIM, AssemblyType A, IntegrationType I, typename OpBase>
-OpFluxImpl<UNKNOWNSET, BASE_DIM, BASE_DIM, A, I, OpBase>::OpFluxImpl(
-    const std::string field_name)
+OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, BASE_DIM, BASE_DIM, A, I,
+           OpBase>::OpFluxImpl(const std::string field_name)
     : OpSource(field_name,
 
                [this](const double, const double, const double) {
@@ -493,16 +515,18 @@ OpFluxImpl<UNKNOWNSET, BASE_DIM, BASE_DIM, A, I, OpBase>::OpFluxImpl(
 }
 
 template <int BASE_DIM, AssemblyType A, IntegrationType I, typename OpBase>
-OpFluxImpl<BLOCKSET, BASE_DIM, BASE_DIM, A, I, OpBase>::OpFluxImpl(
-    MoFEM::Interface &m_field, int ms_id, const std::string field_name)
-    : OpFluxImpl<UNKNOWNSET, BASE_DIM, BASE_DIM, A, I, OpBase>(field_name) {
+OpFluxImpl<NaturalMeshsetType<BLOCKSET>, BASE_DIM, BASE_DIM, A, I,
+           OpBase>::OpFluxImpl(MoFEM::Interface &m_field, int ms_id,
+                               const std::string field_name)
+    : OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, BASE_DIM, BASE_DIM, A, I,
+                 OpBase>(field_name) {
   CHK_THROW_MESSAGE(getMeshsetData(m_field, ms_id), "Get meshset data");
 }
 
 template <int BASE_DIM, AssemblyType A, IntegrationType I, typename OpBase>
-MoFEMErrorCode
-OpFluxImpl<BLOCKSET, BASE_DIM, BASE_DIM, A, I, OpBase>::getMeshsetData(
-    MoFEM::Interface &m_field, int ms_id) {
+MoFEMErrorCode OpFluxImpl<NaturalMeshsetType<BLOCKSET>, BASE_DIM, BASE_DIM, A,
+                          I, OpBase>::getMeshsetData(MoFEM::Interface &m_field,
+                                                     int ms_id) {
   MoFEMFunctionBegin;
 
   auto cubit_meshset_ptr =
@@ -521,87 +545,244 @@ OpFluxImpl<BLOCKSET, BASE_DIM, BASE_DIM, A, I, OpBase>::getMeshsetData(
   MoFEMFunctionReturn(0);
 }
 
-template <typename OpBase>
-template <AssemblyType A>
-template <IntegrationType I>
-template <CubitBC BCTYPE, int BASE_DIM, int FIELD_DIM>
-MoFEMErrorCode
-NaturalBC<OpBase>::Assembly<A>::LinearForm<I>::addFluxToPipeline(
+template <CubitBC BCTYPE, int BASE_DIM, int FIELD_DIM, AssemblyType A,
+          IntegrationType I, typename OpBase>
+struct AddFluxToPipelineImpl<
 
-    FluxOpType<OpFlux<BCTYPE, BASE_DIM, FIELD_DIM>>,
+    OpFluxImpl<NaturalMeshsetType<BCTYPE>, BASE_DIM, FIELD_DIM, A, I, OpBase>,
+    A, I, OpBase
 
-    boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
-    MoFEM::Interface &m_field, const std::string field_name,
-    const std::string block_name,
-    Sev sev
+    > {
 
-) {
-  MoFEMFunctionBegin;
+  AddFluxToPipelineImpl() = delete;
 
-  using OP = OpFlux<BCTYPE, BASE_DIM, FIELD_DIM>;
+  static MoFEMErrorCode add(
 
-  auto add_op = [&](auto &&meshset_vec_ptr) {
-    for (auto m : meshset_vec_ptr) {
-      MOFEM_TAG_AND_LOG("SELF", sev, "OpFlux") << "Add for meshset " << *m;
-      pipeline.push_back(new OP(m_field, m->getMeshsetId(), field_name));
+      FluxOpType<OpFluxImpl<NaturalMeshsetType<BCTYPE>, BASE_DIM, FIELD_DIM, A,
+                            I, OpBase>>,
+
+      boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+      MoFEM::Interface &m_field, const std::string field_name,
+      const std::string block_name, Sev sev
+
+  ) {
+    MoFEMFunctionBegin;
+
+    using OP = typename NaturalBC<OpBase>::template Assembly<
+        A>::template LinearForm<I>::template OpFlux<NaturalMeshsetType<BCTYPE>,
+                                                    BASE_DIM, FIELD_DIM>;
+
+    auto add_op = [&](auto &&meshset_vec_ptr) {
+      for (auto m : meshset_vec_ptr) {
+        MOFEM_TAG_AND_LOG("SELF", sev, "OpFlux") << "Add for meshset " << *m;
+        pipeline.push_back(new OP(m_field, m->getMeshsetId(), field_name));
+      }
+      MOFEM_LOG_CHANNEL("SELF");
+    };
+
+    switch (BCTYPE) {
+    case TEMPERATURESET:
+    case FORCESET:
+      add_op(m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(
+          NODESET | BCTYPE));
+    case PRESSURESET:
+    case HEATFLUXSET:
+      add_op(m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(
+          SIDESET | BCTYPE));
+      break;
+    case BLOCKSET:
+      add_op(
+
+          m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(
+              std::regex(
+
+                  (boost::format("%s(.*)") % block_name).str()
+
+                      ))
+
+      );
+
+      break;
+    default:
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+              "Handling of bc type not implemented");
+      break;
     }
-    MOFEM_LOG_CHANNEL("SELF");
-  };
-
-  switch (BCTYPE) {
-  case TEMPERATURESET:
-  case FORCESET:
-    add_op(m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(NODESET |
-                                                                       BCTYPE));
-  case PRESSURESET:
-  case HEATFLUXSET:
-    add_op(m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(SIDESET |
-                                                                       BCTYPE));
-    break;
-  case BLOCKSET:
-    add_op(
-
-        m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(std::regex(
-
-            (boost::format("%s(.*)") % block_name).str()
-
-                ))
-
-    );
-
-    break;
-  default:
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-            "Handling of bc type not implemented");
-    break;
+    MoFEMFunctionReturn(0);
   }
-  MoFEMFunctionReturn(0);
+};
+
+template <int BASE_DIM, int FIELD_DIM, AssemblyType A, IntegrationType I,
+          typename OpBase>
+struct AddFluxToPipelineImpl<
+
+    OpFluxImpl<NaturalForceMeshsets, BASE_DIM, FIELD_DIM, A, I, OpBase>, A, I,
+    OpBase
+
+    > {
+
+  AddFluxToPipelineImpl() = delete;
+
+  static MoFEMErrorCode add(
+
+      FluxOpType<
+          OpFluxImpl<NaturalForceMeshsets, BASE_DIM, FIELD_DIM, A, I, OpBase>>,
+
+      boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+      MoFEM::Interface &m_field, const std::string field_name,
+      const std::string block_name, Sev sev
+
+  ) {
+    MoFEMFunctionBegin;
+
+    using OpFluxForceset =
+        typename NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
+            I>::template OpFlux<NaturalMeshsetType<FORCESET>, 1, FIELD_DIM>;
+    using OpFluxPressureset =
+        typename NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
+            I>::template OpFlux<NaturalMeshsetType<PRESSURESET>, 1, FIELD_DIM>;
+    using OpFluxBlockset =
+        typename NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
+            I>::template OpFlux<NaturalMeshsetType<BLOCKSET>, 1, FIELD_DIM>;
+
+    CHKERR
+    NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
+        I>::addFluxToPipeline(FluxOpType<OpFluxForceset>(), pipeline, m_field,
+                              field_name, block_name, sev);
+    CHKERR
+    NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
+        I>::addFluxToPipeline(FluxOpType<OpFluxPressureset>(), pipeline,
+                              m_field, field_name, block_name, sev);
+    CHKERR
+    NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
+        I>::addFluxToPipeline(FluxOpType<OpFluxBlockset>(), pipeline, m_field,
+                              field_name, block_name, sev);
+
+    MoFEMFunctionReturn(0);
+  }
 };
 
 template <typename OpBase>
 template <AssemblyType A>
 template <IntegrationType I>
-template <CubitBC BCTYPE, int BASE_DIM, int FIELD_DIM>
+template <typename T>
+MoFEMErrorCode NaturalBC<OpBase>::Assembly<A>::LinearForm<I>::addFluxToPipeline(
+
+    FluxOpType<T>,
+
+    boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+    MoFEM::Interface &m_field, const std::string field_name,
+    const std::string block_name, Sev sev
+
+) {
+  using ADD =
+      NaturalBC<OpBase>::Assembly<A>::LinearForm<I>::AddFluxToPipeline<T>;
+  return ADD::add(FluxOpType<T>(), pipeline, m_field, field_name, block_name,
+                  sev);
+}
+
+template <CubitBC BCTYPE, int BASE_DIM, int FIELD_DIM, AssemblyType A,
+          IntegrationType I, typename OpBase>
+struct AddScalingMethodImpl<
+
+    OpFluxImpl<NaturalMeshsetType<BCTYPE>, BASE_DIM, FIELD_DIM, A, I, OpBase>,
+    A, I, OpBase
+
+    > {
+
+  AddScalingMethodImpl() = delete;
+
+  static MoFEMErrorCode add(
+
+      FluxOpType<OpFluxImpl<NaturalMeshsetType<BCTYPE>, BASE_DIM, FIELD_DIM, A,
+                            I, OpBase>>,
+
+      boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+      boost::shared_ptr<ScalingMethod> sm, Sev sev
+
+  ) {
+    MoFEMFunctionBegin;
+
+    using OP = typename NaturalBC<OpBase>::template Assembly<
+        A>::template LinearForm<I>::template OpFlux<NaturalMeshsetType<BCTYPE>,
+                                                    BASE_DIM, FIELD_DIM>;
+
+    int idx = 0;
+    for (auto o = pipeline.begin(); o != pipeline.end(); ++o) {
+      if (auto op_flux_ptr = dynamic_cast<OP *>(&*o)) {
+        MOFEM_TAG_AND_LOG("SELF", sev, "OpFlux")
+            << "Add scaling for < " << idx++ << " > "
+            << boost::typeindex::type_id_runtime(*op_flux_ptr).pretty_name();
+        op_flux_ptr->getVecOfTimeScalingMethods().push_back(sm);
+      }
+    }
+    MOFEM_LOG_CHANNEL("SELF");
+
+    MoFEMFunctionReturn(0);
+  }
+};
+
+template <int BASE_DIM, int FIELD_DIM, AssemblyType A, IntegrationType I,
+          typename OpBase>
+struct AddScalingMethodImpl<
+
+    OpFluxImpl<NaturalForceMeshsets, BASE_DIM, FIELD_DIM, A, I, OpBase>, A, I,
+    OpBase
+
+    > {
+
+  AddScalingMethodImpl() = delete;
+
+  static MoFEMErrorCode add(
+
+      FluxOpType<
+          OpFluxImpl<NaturalForceMeshsets, BASE_DIM, FIELD_DIM, A, I, OpBase>>,
+
+      boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+      boost::shared_ptr<ScalingMethod> sm, Sev sev
+
+  ) {
+    MoFEMFunctionBegin;
+
+    using OpFluxForceset =
+        typename NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
+            I>::template OpFlux<NaturalMeshsetType<FORCESET>, 1, FIELD_DIM>;
+    using OpFluxPressureset =
+        typename NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
+            I>::template OpFlux<NaturalMeshsetType<PRESSURESET>, 1, FIELD_DIM>;
+    using OpFluxBlockset =
+        typename NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
+            I>::template OpFlux<NaturalMeshsetType<BLOCKSET>, 1, FIELD_DIM>;
+
+    CHKERR
+    NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
+        I>::addScalingMethod(FluxOpType<OpFluxForceset>(), pipeline, sm, sev);
+    CHKERR
+    NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
+        I>::addScalingMethod(FluxOpType<OpFluxPressureset>(), pipeline, sm,
+                             sev);
+    CHKERR
+    NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
+        I>::addScalingMethod(FluxOpType<OpFluxBlockset>(), pipeline, sm, sev);
+
+    MoFEMFunctionReturn(0);
+  }
+};
+
+template <typename OpBase>
+template <AssemblyType A>
+template <IntegrationType I>
+template <typename T>
 MoFEMErrorCode NaturalBC<OpBase>::Assembly<A>::LinearForm<I>::addScalingMethod(
 
-    FluxOpType<OpFlux<BCTYPE, BASE_DIM, FIELD_DIM>>,
+    FluxOpType<T>,
     boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
     boost::shared_ptr<ScalingMethod> sm, Sev sev
 
 ) {
-  MoFEMFunctionBegin;
-  using OP = OpFlux<BCTYPE, BASE_DIM, FIELD_DIM>;
-  int idx = 0;
-  for (auto o = pipeline.begin(); o != pipeline.end(); ++o) {
-    if (auto op_flux_ptr = dynamic_cast<OP *>(&*o)) {
-      MOFEM_TAG_AND_LOG("SELF", sev, "OpFlux")
-          << "Add scaling for < " << idx++ << " > "
-          << boost::typeindex::type_id_runtime(*op_flux_ptr).pretty_name();
-      op_flux_ptr->getVecOfTimeScalingMethods().push_back(sm);
-    }
-  }
-  MOFEM_LOG_CHANNEL("SELF");
-  MoFEMFunctionReturn(0);
+  using ADD =
+      NaturalBC<OpBase>::Assembly<A>::LinearForm<I>::AddScalingMethod<T>;
+  return ADD::add(FluxOpType<T>(), pipeline, sm, sev);
 }
 
 }; // namespace MoFEM

@@ -131,6 +131,7 @@ using FTensor::operator>>;
 #include <PostProc.hpp>
 #include <ScalingMethod.hpp>
 #include <Natural.hpp>
+#include <Essential.hpp>
 
 // More interfaces
 

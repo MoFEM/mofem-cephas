@@ -21,6 +21,7 @@ endif(PRECOMPILED_HEADRES)
 add_library(
   mofem_boundary_conditions
   impl/ScalingMethod.cpp
+  impl/Essential.cpp
 )
 
 target_link_libraries(

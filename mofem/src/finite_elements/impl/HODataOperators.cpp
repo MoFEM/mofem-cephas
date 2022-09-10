@@ -732,7 +732,7 @@ MoFEMErrorCode OpHOSetContravariantPiolaTransformOnEdge3D::doWork(
     if (tangentAtGaussPts) {
       return &*tangentAtGaussPts->data().begin();
     } else {
-      return &*getTangetAtGaussPts().data().begin();
+      return &*getTangentAtGaussPts().data().begin();
     }
   };
 
@@ -802,7 +802,7 @@ OpGetHOTangentsOnEdge::doWork(int side, EntityType type,
     if (tangentsAtPts)
       return *tangentsAtPts;
     else
-      return getTangetAtGaussPts();
+      return getTangentAtGaussPts();
   };
 
   auto &tangent = get_tangent();

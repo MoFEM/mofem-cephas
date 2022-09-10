@@ -538,9 +538,10 @@ MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
     std::vector<const CubitMeshSets *> &vec_ptr) const {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
-  auto r = cubitMeshsets.get<CubitMeshsetType_mi_tag>().equal_range(BLOCKSET);
-  for (; r.first != r.second; ++r.first) {
-    vec_ptr.push_back(&*r.first);
+  for (auto &c : cubitMeshsets) {
+    if ((c.getBcType() & cubit_bc_type) == cubit_bc_type) {
+      vec_ptr.push_back(&c);
+    }
   }
   MoFEMFunctionReturn(0);
 }
