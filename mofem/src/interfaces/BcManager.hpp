@@ -13,6 +13,8 @@ namespace MoFEM {
 
 template <CubitBC BC>
 struct BcMeshsetType {};
+template <CubitBC BC>
+struct BcVectorMeshsetType {};
 
 /**
  * \brief Simple interface for fast problem set-up
@@ -269,7 +271,8 @@ BcManager::removeBlockDOFsOnEntities<BcMeshsetType<TEMPERATURESET>>(
     bool is_distributed_mesh);
 
 template <>
-MoFEMErrorCode BcManager::removeBlockDOFsOnEntities<BcMeshsetType<BLOCKSET>>(
+MoFEMErrorCode
+BcManager::removeBlockDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
     const std::string problem_name, const std::string field_name,
     bool get_low_dim_ents, bool block_name_field_prefix,
     bool is_distributed_mesh);
@@ -313,7 +316,12 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcMeshsetType<TEMPERATURESET>>(
                 angles, (+ 3 optional) flags for xyz)
  */
 template <>
-MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcMeshsetType<BLOCKSET>>(
+MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
+    const std::string problem_name, const std::string field_name,
+    bool get_low_dim_ents, bool block_name_field_prefix);
+
+template <>
+MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<DisplacementCubitBcData>(
     const std::string problem_name, const std::string field_name,
     bool get_low_dim_ents, bool block_name_field_prefix);
 

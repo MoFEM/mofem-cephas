@@ -27,9 +27,6 @@ struct OpFluxImpl;
 template <typename T, AssemblyType A, IntegrationType I, typename OpBase>
 struct AddFluxToPipelineImpl;
 
-template <typename T, AssemblyType A, IntegrationType I, typename OpBase>
-struct AddScalingMethodImpl;
-
 /**
  * @brief Natural boundary conditions
  * @ingroup mofem_forms
@@ -58,20 +55,12 @@ template <typename EleOp> struct NaturalBC {
       using AddFluxToPipeline = AddFluxToPipelineImpl<T, A, I, EleOp>;
 
       template <typename T>
-      using AddScalingMethod = AddScalingMethodImpl<T, A, I, EleOp>;
-
-      template <typename T>
       static MoFEMErrorCode addFluxToPipeline(
           FluxOpType<T>,
           boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
           MoFEM::Interface &m_field, const std::string field_name,
+          std::vector<boost::shared_ptr<ScalingMethod>> smv,
           const std::string block_name = "", Sev sev = Sev::noisy);
-
-      template <typename T>
-      static MoFEMErrorCode addScalingMethod(
-          FluxOpType<T>,
-          boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
-          boost::shared_ptr<ScalingMethod> sm, Sev sev = Sev::noisy);
     };
 
   }; // Assembly
@@ -563,7 +552,8 @@ struct AddFluxToPipelineImpl<
 
       boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
       MoFEM::Interface &m_field, const std::string field_name,
-      const std::string block_name, Sev sev
+      std::vector<boost::shared_ptr<ScalingMethod>> smv, std::string block_name,
+      Sev sev
 
   ) {
     MoFEMFunctionBegin;
@@ -575,7 +565,10 @@ struct AddFluxToPipelineImpl<
     auto add_op = [&](auto &&meshset_vec_ptr) {
       for (auto m : meshset_vec_ptr) {
         MOFEM_TAG_AND_LOG("SELF", sev, "OpFlux") << "Add for meshset " << *m;
-        pipeline.push_back(new OP(m_field, m->getMeshsetId(), field_name));
+        auto op_ptr = new OP(m_field, m->getMeshsetId(), field_name);
+        for (auto sm : smv)
+          op_ptr->getVecOfTimeScalingMethods().push_back(sm);
+        pipeline.push_back(op_ptr);
       }
       MOFEM_LOG_CHANNEL("SELF");
     };
@@ -630,6 +623,7 @@ struct AddFluxToPipelineImpl<
 
       boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
       MoFEM::Interface &m_field, const std::string field_name,
+      std::vector<boost::shared_ptr<ScalingMethod>> smv,
       const std::string block_name, Sev sev
 
   ) {
@@ -648,15 +642,15 @@ struct AddFluxToPipelineImpl<
     CHKERR
     NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
         I>::addFluxToPipeline(FluxOpType<OpFluxForceset>(), pipeline, m_field,
-                              field_name, block_name, sev);
+                              field_name, smv, block_name, sev);
     CHKERR
     NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
         I>::addFluxToPipeline(FluxOpType<OpFluxPressureset>(), pipeline,
-                              m_field, field_name, block_name, sev);
+                              m_field, field_name, smv, block_name, sev);
     CHKERR
     NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
         I>::addFluxToPipeline(FluxOpType<OpFluxBlockset>(), pipeline, m_field,
-                              field_name, block_name, sev);
+                              field_name, smv, block_name, sev);
 
     MoFEMFunctionReturn(0);
   }
@@ -672,119 +666,16 @@ MoFEMErrorCode NaturalBC<OpBase>::Assembly<A>::LinearForm<I>::addFluxToPipeline(
 
     boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
     MoFEM::Interface &m_field, const std::string field_name,
+    std::vector<boost::shared_ptr<ScalingMethod>> smv,
     const std::string block_name, Sev sev
 
 ) {
   using ADD =
       NaturalBC<OpBase>::Assembly<A>::LinearForm<I>::AddFluxToPipeline<T>;
-  return ADD::add(FluxOpType<T>(), pipeline, m_field, field_name, block_name,
-                  sev);
+  return ADD::add(FluxOpType<T>(), pipeline, m_field, field_name, smv,
+                  block_name, sev);
 }
 
-template <CubitBC BCTYPE, int BASE_DIM, int FIELD_DIM, AssemblyType A,
-          IntegrationType I, typename OpBase>
-struct AddScalingMethodImpl<
-
-    OpFluxImpl<NaturalMeshsetType<BCTYPE>, BASE_DIM, FIELD_DIM, A, I, OpBase>,
-    A, I, OpBase
-
-    > {
-
-  AddScalingMethodImpl() = delete;
-
-  static MoFEMErrorCode add(
-
-      FluxOpType<OpFluxImpl<NaturalMeshsetType<BCTYPE>, BASE_DIM, FIELD_DIM, A,
-                            I, OpBase>>,
-
-      boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
-      boost::shared_ptr<ScalingMethod> sm, Sev sev
-
-  ) {
-    MoFEMFunctionBegin;
-
-    using OP = typename NaturalBC<OpBase>::template Assembly<
-        A>::template LinearForm<I>::template OpFlux<NaturalMeshsetType<BCTYPE>,
-                                                    BASE_DIM, FIELD_DIM>;
-
-    int idx = 0;
-    for (auto o = pipeline.begin(); o != pipeline.end(); ++o) {
-      if (auto op_flux_ptr = dynamic_cast<OP *>(&*o)) {
-        MOFEM_TAG_AND_LOG("SELF", sev, "OpFlux")
-            << "Add scaling for < " << idx++ << " > "
-            << boost::typeindex::type_id_runtime(*op_flux_ptr).pretty_name();
-        op_flux_ptr->getVecOfTimeScalingMethods().push_back(sm);
-      }
-    }
-    MOFEM_LOG_CHANNEL("SELF");
-
-    MoFEMFunctionReturn(0);
-  }
-};
-
-template <int BASE_DIM, int FIELD_DIM, AssemblyType A, IntegrationType I,
-          typename OpBase>
-struct AddScalingMethodImpl<
-
-    OpFluxImpl<NaturalForceMeshsets, BASE_DIM, FIELD_DIM, A, I, OpBase>, A, I,
-    OpBase
-
-    > {
-
-  AddScalingMethodImpl() = delete;
-
-  static MoFEMErrorCode add(
-
-      FluxOpType<
-          OpFluxImpl<NaturalForceMeshsets, BASE_DIM, FIELD_DIM, A, I, OpBase>>,
-
-      boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
-      boost::shared_ptr<ScalingMethod> sm, Sev sev
-
-  ) {
-    MoFEMFunctionBegin;
-
-    using OpFluxForceset =
-        typename NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
-            I>::template OpFlux<NaturalMeshsetType<FORCESET>, 1, FIELD_DIM>;
-    using OpFluxPressureset =
-        typename NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
-            I>::template OpFlux<NaturalMeshsetType<PRESSURESET>, 1, FIELD_DIM>;
-    using OpFluxBlockset =
-        typename NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
-            I>::template OpFlux<NaturalMeshsetType<BLOCKSET>, 1, FIELD_DIM>;
-
-    CHKERR
-    NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
-        I>::addScalingMethod(FluxOpType<OpFluxForceset>(), pipeline, sm, sev);
-    CHKERR
-    NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
-        I>::addScalingMethod(FluxOpType<OpFluxPressureset>(), pipeline, sm,
-                             sev);
-    CHKERR
-    NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
-        I>::addScalingMethod(FluxOpType<OpFluxBlockset>(), pipeline, sm, sev);
-
-    MoFEMFunctionReturn(0);
-  }
-};
-
-template <typename OpBase>
-template <AssemblyType A>
-template <IntegrationType I>
-template <typename T>
-MoFEMErrorCode NaturalBC<OpBase>::Assembly<A>::LinearForm<I>::addScalingMethod(
-
-    FluxOpType<T>,
-    boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
-    boost::shared_ptr<ScalingMethod> sm, Sev sev
-
-) {
-  using ADD =
-      NaturalBC<OpBase>::Assembly<A>::LinearForm<I>::AddScalingMethod<T>;
-  return ADD::add(FluxOpType<T>(), pipeline, sm, sev);
-}
-
-}; // namespace MoFEM
+} // namespace MoFEM
 
 #endif //_NATURAL_BC_

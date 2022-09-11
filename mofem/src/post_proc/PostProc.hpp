@@ -344,10 +344,10 @@ MoFEMErrorCode PostProcBrokenMeshInMoabBase<E>::preProcess() {
             << moab::CN::EntityTypeName(type) << " > is not implemented";
         CHK_THROW_MESSAGE(MOFEM_NOT_IMPLEMENTED, "Element not implemented");
       }
-    }
 
-    CHK_THROW_MESSAGE(ref_ele_ptr->generateReferenceElementMesh(),
-                      "Error when generating reference element");
+      CHK_THROW_MESSAGE(ref_ele_ptr->generateReferenceElementMesh(),
+                        "Error when generating reference element");
+    }
 
     refElementsMap[type] = ref_ele_ptr;
 

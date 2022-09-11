@@ -128,15 +128,17 @@ using FTensor::operator>>;
 #include <FormsIntegrators.hpp>
 #include <LinearFormsIntegrators.hpp>
 #include <BiLinearFormsIntegrators.hpp>
-#include <PostProc.hpp>
-#include <ScalingMethod.hpp>
-#include <Natural.hpp>
-#include <Essential.hpp>
 
 // More interfaces
 
 #include <PipelineManager.hpp>
 #include <FieldEvaluator.hpp>
 #include <BcManager.hpp>
+
+// Post-processing and boundary condition
+#include <PostProc.hpp>
+#include <ScalingMethod.hpp>
+#include <Natural.hpp>
+#include <Essential.hpp>
 
 #endif // MOFEM_HPP__

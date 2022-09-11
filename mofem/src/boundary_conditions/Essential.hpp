@@ -13,6 +13,8 @@
 
 namespace MoFEM {
 
+template <typename T> struct EssentialOpType {};
+
 template <CubitBC BC> struct EssentialMeshsetType {};
 
 template <typename T> struct EssentialPreProc {};
@@ -83,12 +85,25 @@ template <typename EleOp> struct EssentialBC {
       template <typename T, int BASE_DIM, int FIELD_DIM>
       using OpEssentialRhs =
           OpEssentialRhsImpl<T, BASE_DIM, FIELD_DIM, A, I, EleOp>;
+
+      template <typename T>
+      static MoFEMErrorCode addEssentialToRhsPipeline(
+          EssentialOpType<T>, MoFEM::Interface &m_field,
+          boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+          std::string problem_name, std::string field_name,
+          boost::shared_ptr<MatrixDouble> field_mat_ptr,
+          std::vector<boost::shared_ptr<ScalingMethod>> smv);
     };
 
     template <IntegrationType I> struct BiLinearForm {
       template <typename T, int BASE_DIM, int FIELD_DIM>
       using OpEssentialLhs =
           OpEssentialLhsImpl<T, BASE_DIM, FIELD_DIM, A, I, EleOp>;
+      template <typename T>
+      static MoFEMErrorCode addEssentialToLhsPipeline(
+          EssentialOpType<T>, MoFEM::Interface &m_field,
+          boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+          std::string problem_name, std::string field_name);
     };
   };
 };
@@ -105,8 +120,11 @@ struct OpEssentialRhsImpl<DisplacementCubitBcData, 1, FIELD_DIM, A, I, OpBase>
                      boost::shared_ptr<DisplacementCubitBcData> bc_data,
                      boost::shared_ptr<Range> ents_ptr);
 
+  VecOfTimeScalingMethods &getVecOfTimeScalingMethods();
+
 private:
   FTensor::Tensor1<double, FIELD_DIM> tVal;
+  VecOfTimeScalingMethods vecOfTimeScalingMethods;
 };
 
 template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
@@ -122,11 +140,26 @@ OpEssentialRhsImpl<DisplacementCubitBcData, 1, FIELD_DIM, A, I, OpBase>::
   FTensor::Index<'i', FIELD_DIM> i;
   tVal(i) = 0;
   if (bc_data->data.flag1 == 1)
-    tVal(0) = bc_data->data.value1;
+    tVal(0) = -bc_data->data.value1;
   if (bc_data->data.flag2 == 1 && FIELD_DIM > 1)
-    tVal(1) = bc_data->data.value2;
+    tVal(1) = -bc_data->data.value2;
   if (bc_data->data.flag3 == 1 && FIELD_DIM > 2)
-    tVal(2) = bc_data->data.value3;
+    tVal(2) = -bc_data->data.value3;
+
+  this->timeScalingFun = [this](const double t) {
+    double s = 1;
+    for (auto &o : vecOfTimeScalingMethods) {
+      s *= o->getScale(t);
+    }
+    return s;
+  };
+}
+
+template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
+VecOfTimeScalingMethods &
+OpEssentialRhsImpl<DisplacementCubitBcData, 1, FIELD_DIM, A, I,
+                   OpBase>::getVecOfTimeScalingMethods() {
+  return vecOfTimeScalingMethods;
 }
 
 template <int BASE_DIM, int FIELD_DIM, AssemblyType A, IntegrationType I,
@@ -156,38 +189,149 @@ OpEssentialLhsImpl<DisplacementCubitBcData, BASE_DIM, FIELD_DIM, A, I,
 
           ents_ptr) {}
 
-// template <int BASE_DIM, int FIELD_DIM, AssemblyType A, IntegrationType I,
-//           typename OpBase>
-// struct AddEssentialToRhsPipelineImpl<DisplacementCubitBcData, BASE_DIM,
-//                                      FIELD_DIM, A, I, OpBase> {
+template <int BASE_DIM, int FIELD_DIM, AssemblyType A, IntegrationType I,
+          typename OpBase>
+struct AddEssentialToRhsPipelineImpl<
 
-//   AddEssentialToRhsPipelineImpl() = delete;
+    OpEssentialRhsImpl<DisplacementCubitBcData, BASE_DIM, FIELD_DIM, A, I,
+                       OpBase>,
+    A, I, OpBase
 
-//   static MoFEMErrorCodes add() {
-//     MoFEMFunctionBegin;
+    > {
 
-//     using OP =
-//         typename EssentialBC<OpBase>::template Assembly<A>::template LinearForm<
-//             I>::template OpEssentialRhsImpl<DisplacementCubitBcData, BASE_DIM,
-//                                             FIELD_DIM>;
+  AddEssentialToRhsPipelineImpl() = delete;
 
-//     auto add_op = [&](auto &&bcs) {
-//       MoFEMFunctionBegin;
-//       for (auto &m : bsc) {
-//         if (auto bc = m.second->dispBcPtr) {
-//           MOFEM_TAG_AND_LOG("SELF", sev, "OpEssentialRhs") << *bc;
-//           pipeline.push_back(new OP(field_name, bc, m.second->getBcEdgesPtr()));
-//         }
-//       }
-//       MOFEM_LOG_CHANNEL("SELF");
-//       MoFEMFunctionReturn(0);
-//     };
+  static MoFEMErrorCode add(
 
-//     CHKERR add_op(m_field.getInterface<BcManager>()->getBcMapByBlockName());
+      EssentialOpType<OpEssentialRhsImpl<DisplacementCubitBcData, BASE_DIM,
+                                         FIELD_DIM, A, I, OpBase>>,
 
-//     MoFEMFunctionReturn(0);
-//   };
-// };
+      MoFEM::Interface &m_field,
+      boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+      const std::string problem_name, std::string field_name,
+      boost::shared_ptr<MatrixDouble> field_mat_ptr,
+      std::vector<boost::shared_ptr<ScalingMethod>> smv) {
+    MoFEMFunctionBegin;
+
+    using OP =
+        typename EssentialBC<OpBase>::template Assembly<A>::template LinearForm<
+            I>::template OpEssentialRhs<DisplacementCubitBcData, BASE_DIM,
+                                        FIELD_DIM>;
+    using OpInternal = typename FormsIntegrators<OpBase>::template Assembly<
+        A>::template LinearForm<I>::template OpBaseTimesVector<BASE_DIM,
+                                                               FIELD_DIM, 1>;
+
+    auto add_op = [&](auto &bcs) {
+      MoFEMFunctionBeginHot;
+      for (auto &m : bcs) {
+        if (auto bc = m.second->dispBcPtr) {
+          auto &bc_id = m.first;
+          auto regex_str =
+              (boost::format("%s_%s_(.*)") % problem_name % field_name).str();
+          if (std::regex_match(bc_id, std::regex(regex_str))) {
+            MOFEM_TAG_AND_LOG("SELF", Sev::noisy, "OpEssentialRhs") << *bc;
+            pipeline.push_back(
+                new OpSetBc(field_name, false, m.second->getBcMarkersPtr()));
+            auto op_ptr = new OP(field_name, bc, m.second->getBcEntsPtr());
+            for (auto sm : smv)
+              op_ptr->getVecOfTimeScalingMethods().push_back(sm);
+            pipeline.push_back(op_ptr);
+            pipeline.push_back(new OpInternal(
+                field_name, field_mat_ptr,
+                [](double, double, double) constexpr { return 1.; },
+                m.second->getBcEntsPtr()));
+            pipeline.push_back(new OpUnSetBc(field_name));
+          }
+        }
+      }
+      MOFEM_LOG_CHANNEL("SELF");
+      MoFEMFunctionReturnHot(0);
+    };
+
+    CHKERR add_op(m_field.getInterface<BcManager>()->getBcMapByBlockName());
+
+    MoFEMFunctionReturn(0);
+  }
+};
+
+template <int BASE_DIM, int FIELD_DIM, AssemblyType A, IntegrationType I,
+          typename OpBase>
+struct AddEssentialToLhsPipelineImpl<
+
+    OpEssentialLhsImpl<DisplacementCubitBcData, BASE_DIM, FIELD_DIM, A, I,
+                       OpBase>,
+    A, I, OpBase
+
+    > {
+
+  AddEssentialToLhsPipelineImpl() = delete;
+
+  static MoFEMErrorCode
+  add(EssentialOpType<OpEssentialLhsImpl<DisplacementCubitBcData, BASE_DIM,
+                                         FIELD_DIM, A, I, OpBase>>,
+      MoFEM::Interface &m_field,
+      boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+      const std::string problem_name, std::string field_name) {
+    MoFEMFunctionBegin;
+
+    using OP = typename EssentialBC<OpBase>::template Assembly<A>::
+        template BiLinearForm<I>::template OpEssentialLhs<
+            DisplacementCubitBcData, BASE_DIM, FIELD_DIM>;
+
+    auto add_op = [&](auto &bcs) {
+      MoFEMFunctionBeginHot;
+      for (auto &m : bcs) {
+        if (auto bc = m.second->dispBcPtr) {
+          auto &bc_id = m.first;
+          auto regex_str =
+              (boost::format("%s_%s_(.*)") % problem_name % field_name).str();
+          if (std::regex_match(bc_id, std::regex(regex_str))) {
+            MOFEM_TAG_AND_LOG("SELF", Sev::noisy, "OpEssentialRhs") << *bc;
+            pipeline.push_back(
+                new OpSetBc(field_name, false, m.second->getBcMarkersPtr()));
+            pipeline.push_back(new OP(field_name, m.second->getBcEntsPtr()));
+            pipeline.push_back(new OpUnSetBc(field_name));
+          }
+        }
+      }
+      MOFEM_LOG_CHANNEL("SELF");
+      MoFEMFunctionReturnHot(0);
+    };
+
+    CHKERR add_op(m_field.getInterface<BcManager>()->getBcMapByBlockName());
+
+    MoFEMFunctionReturn(0);
+  }
+};
+
+template <typename OpBase>
+template <AssemblyType A>
+template <IntegrationType I>
+template <typename T>
+MoFEMErrorCode
+EssentialBC<OpBase>::Assembly<A>::LinearForm<I>::addEssentialToRhsPipeline(
+    EssentialOpType<T>, MoFEM::Interface &m_field,
+    boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+    std::string problem_name, std::string field_name,
+    boost::shared_ptr<MatrixDouble> field_mat_ptr,
+    std::vector<boost::shared_ptr<ScalingMethod>> smv) {
+  return AddEssentialToRhsPipelineImpl<T, A, I, OpBase>::add(
+      EssentialOpType<T>(), m_field, pipeline, problem_name, field_name,
+      field_mat_ptr, smv);
+}
+
+template <typename OpBase>
+template <AssemblyType A>
+template <IntegrationType I>
+template <typename T>
+MoFEMErrorCode
+EssentialBC<OpBase>::Assembly<A>::BiLinearForm<I>::addEssentialToLhsPipeline(
+    EssentialOpType<T>, MoFEM::Interface &m_field,
+    boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+    std::string problem_name, std::string field_name) {
+  return AddEssentialToLhsPipelineImpl<T, A, I, OpBase>::add(
+      EssentialOpType<T>(), m_field, pipeline, problem_name, field_name);
+}
 
 } // namespace MoFEM
 

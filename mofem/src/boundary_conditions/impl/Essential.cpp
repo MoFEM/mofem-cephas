@@ -23,6 +23,7 @@ EssentialPreProc<DisplacementCubitBcData>::getVecOfTimeScalingMethods() {
 }
 
 MoFEMErrorCode EssentialPreProc<DisplacementCubitBcData>::operator()() {
+  MOFEM_LOG_CHANNEL("WORLD");
   MoFEMFunctionBegin;
 
   if (auto fe_method_ptr = fePtr.lock()) {
@@ -35,14 +36,18 @@ MoFEMErrorCode EssentialPreProc<DisplacementCubitBcData>::operator()() {
       if (auto disp_bc = bc.second->dispBcPtr) {
 
         auto &bc_id = bc.first;
-        std::regex field_rgx("^(.*)_(.*)_(.*)$");
+        // Assumes that field name is consist with letters and numbers. No
+        // special characters.
+        auto field_rgx_str =
+            (boost::format("%s_([a-zA-Z0-9]*)_(.*)") % problem_name).str();
+        std::regex field_rgx(field_rgx_str);
         std::smatch match_field_name;
         std::string field_name;
         std::string block_name;
 
         if (std::regex_search(bc_id, match_field_name, field_rgx)) {
-          field_name = match_field_name[2];
-          block_name = match_field_name[3];
+          field_name = match_field_name[1];
+          block_name = match_field_name[2];
         } else {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "Field name and block name can not be resolved");
