@@ -115,6 +115,12 @@ inline double scalar_fun_one(const double, const double, const double) {
 using TimeFun = boost::function<double(double)>;
 
 /**
+ * @brief Lambda function used to scale with time
+ * 
+ */
+using FEFun = boost::function<double(const FEMethod *fe_ptr)>;
+
+/**
  * @brief Constant function type
  *
  */
@@ -139,13 +145,6 @@ template <AssemblyType A, typename EleOp> struct OpBaseImpl : public EleOp {
       : EleOp(row_field_name, col_field_name, type, false),
         assembleTranspose(false), onlyTranspose(false), entsPtr(ents_ptr) {}
 
-  OpBaseImpl(const std::string row_field_name, const std::string col_field_name,
-             const OpType type, TimeFun time_fun,
-             boost::shared_ptr<Range> ents_ptr = nullptr)
-      : OpBaseImpl(row_field_name, col_field_name, type, ents_ptr) {
-    timeScalingFun = time_fun;
-  }
-
   /**
    * \brief Do calculations for the left hand side
    * @param  row_side row side number (local number) of entity on element
@@ -169,6 +168,10 @@ template <AssemblyType A, typename EleOp> struct OpBaseImpl : public EleOp {
    * @return MoFEMErrorCode
    */
   MoFEMErrorCode doWork(int row_side, EntityType row_type, EntData &row_data);
+
+  TimeFun timeScalingFun; ///< assumes that time variable is set
+  FEFun feScalingFun;     ///< assumes that time variable is set
+  boost::shared_ptr<Range> entsPtr; ///< Entities on which element is run
 
 protected:
   template <int DIM>
@@ -198,9 +201,6 @@ protected:
   MatrixDouble locMat;          ///< local entity block matrix
   MatrixDouble locMatTranspose; ///< local entity block matrix
   VectorDouble locF;            ///< local entity vector
-
-  TimeFun timeScalingFun; ///< assumes that time variable is set
-  boost::shared_ptr<Range> entsPtr; ///< Entities on which element is run
 
   /**
    * \brief Integrate grad-grad operator
@@ -365,6 +365,8 @@ protected:
 
     if (!this->timeScalingFun.empty())
       this->locMat *= this->timeScalingFun(this->getFEMethod()->ts_t);
+    if (!this->feScalingFun.empty())
+      this->locMat *= this->feScalingFun(this->getFEMethod());
 
     // Assemble transpose
     if (transpose) {
@@ -390,6 +392,8 @@ protected:
 
     if (!this->timeScalingFun.empty())
       this->locF *= this->timeScalingFun(this->getFEMethod()->ts_t);
+    if (!this->feScalingFun.empty())
+      this->locF *= this->feScalingFun(this->getFEMethod());
 
     return VecSetValues<EssentialBcStorage>(
         this->getKSPf(), data, &*this->locF.data().begin(), ADD_VALUES);

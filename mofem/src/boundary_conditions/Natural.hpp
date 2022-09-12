@@ -17,6 +17,7 @@ using VecOfTimeScalingMethods = std::vector<boost::shared_ptr<ScalingMethod>>;
 
 template <CubitBC BCTYP> struct NaturalMeshsetType {};
 struct NaturalForceMeshsets {};
+struct NaturalTemperatureMeshsets {};
 
 template <typename OP> struct FluxOpType {};
 
@@ -133,6 +134,9 @@ protected:
 template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
 struct OpFluxImpl<NaturalForceMeshsets, 1, FIELD_DIM, A, I, OpBase>;
 
+template <int BASE_DIM, AssemblyType A, IntegrationType I, typename OpBase>
+struct OpFluxImpl<NaturalTemperatureMeshsets, BASE_DIM, BASE_DIM, A, I, OpBase>;
+
 template <AssemblyType A, IntegrationType I, typename OpBase>
 struct OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, 1, A, I, OpBase>
     : FormsIntegrators<OpBase>::template Assembly<A>::template LinearForm<
@@ -208,6 +212,17 @@ protected:
 
 template <int BASE_DIM, AssemblyType A, IntegrationType I, typename OpBase>
 struct OpFluxImpl<NaturalMeshsetType<BLOCKSET>, BASE_DIM, BASE_DIM, A, I,
+                  OpBase> : OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, BASE_DIM,
+                                       BASE_DIM, A, I, OpBase> {
+  OpFluxImpl(MoFEM::Interface &m_field, int ms_id,
+             const std::string field_name);
+
+protected:
+  MoFEMErrorCode getMeshsetData(MoFEM::Interface &m_field, int ms_id);
+};
+
+template <int BASE_DIM, AssemblyType A, IntegrationType I, typename OpBase>
+struct OpFluxImpl<NaturalMeshsetType<TEMPERATURESET>, BASE_DIM, BASE_DIM, A, I,
                   OpBase> : OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, BASE_DIM,
                                        BASE_DIM, A, I, OpBase> {
   OpFluxImpl(MoFEM::Interface &m_field, int ms_id,
@@ -534,6 +549,36 @@ MoFEMErrorCode OpFluxImpl<NaturalMeshsetType<BLOCKSET>, BASE_DIM, BASE_DIM, A,
   MoFEMFunctionReturn(0);
 }
 
+template <int BASE_DIM, AssemblyType A, IntegrationType I, typename OpBase>
+OpFluxImpl<NaturalMeshsetType<TEMPERATURESET>, BASE_DIM, BASE_DIM, A, I,
+           OpBase>::OpFluxImpl(MoFEM::Interface &m_field, int ms_id,
+                               const std::string field_name)
+    : OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, BASE_DIM, BASE_DIM, A, I,
+                 OpBase>(field_name) {
+  CHK_THROW_MESSAGE(getMeshsetData(m_field, ms_id), "Get meshset data");
+}
+
+template <int BASE_DIM, AssemblyType A, IntegrationType I, typename OpBase>
+MoFEMErrorCode OpFluxImpl<NaturalMeshsetType<TEMPERATURESET>, BASE_DIM, BASE_DIM, A,
+                          I, OpBase>::getMeshsetData(MoFEM::Interface &m_field,
+                                                     int ms_id) {
+  MoFEMFunctionBegin;
+
+  auto cubit_meshset_ptr =
+      m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(ms_id,
+                                                                  NODESET);
+
+  TemperatureCubitBcData mydata;
+  CHKERR cubit_meshset_ptr->getBcDataStructure(mydata);
+  this->scalarValue = mydata.data.value1;
+
+  this->entsPtr = boost::make_shared<Range>();
+  CHKERR m_field.get_moab().get_entities_by_handle(cubit_meshset_ptr->meshset,
+                                                   *(this->entsPtr), true);
+
+  MoFEMFunctionReturn(0);
+}
+
 template <CubitBC BCTYPE, int BASE_DIM, int FIELD_DIM, AssemblyType A,
           IntegrationType I, typename OpBase>
 struct AddFluxToPipelineImpl<
@@ -631,13 +676,16 @@ struct AddFluxToPipelineImpl<
 
     using OpFluxForceset =
         typename NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
-            I>::template OpFlux<NaturalMeshsetType<FORCESET>, 1, FIELD_DIM>;
+            I>::template OpFlux<NaturalMeshsetType<FORCESET>, BASE_DIM,
+                                FIELD_DIM>;
     using OpFluxPressureset =
         typename NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
-            I>::template OpFlux<NaturalMeshsetType<PRESSURESET>, 1, FIELD_DIM>;
+            I>::template OpFlux<NaturalMeshsetType<PRESSURESET>, BASE_DIM,
+                                FIELD_DIM>;
     using OpFluxBlockset =
         typename NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
-            I>::template OpFlux<NaturalMeshsetType<BLOCKSET>, 1, FIELD_DIM>;
+            I>::template OpFlux<NaturalMeshsetType<BLOCKSET>, BASE_DIM,
+                                FIELD_DIM>;
 
     CHKERR
     NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
@@ -647,6 +695,52 @@ struct AddFluxToPipelineImpl<
     NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
         I>::addFluxToPipeline(FluxOpType<OpFluxPressureset>(), pipeline,
                               m_field, field_name, smv, block_name, sev);
+    CHKERR
+    NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
+        I>::addFluxToPipeline(FluxOpType<OpFluxBlockset>(), pipeline, m_field,
+                              field_name, smv, block_name, sev);
+
+    MoFEMFunctionReturn(0);
+  }
+};
+
+template <int BASE_DIM, int FIELD_DIM, AssemblyType A, IntegrationType I,
+          typename OpBase>
+struct AddFluxToPipelineImpl<
+
+    OpFluxImpl<NaturalTemperatureMeshsets, BASE_DIM, FIELD_DIM, A, I, OpBase>,
+    A, I, OpBase
+
+    > {
+
+  AddFluxToPipelineImpl() = delete;
+
+  static MoFEMErrorCode add(
+
+      FluxOpType<OpFluxImpl<NaturalTemperatureMeshsets, BASE_DIM, FIELD_DIM, A,
+                            I, OpBase>>,
+
+      boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+      MoFEM::Interface &m_field, const std::string field_name,
+      std::vector<boost::shared_ptr<ScalingMethod>> smv,
+      const std::string block_name, Sev sev
+
+  ) {
+    MoFEMFunctionBegin;
+
+    using OpFluxTempSet =
+        typename NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
+            I>::template OpFlux<NaturalMeshsetType<TEMPERATURESET>, BASE_DIM,
+                                FIELD_DIM>;
+    using OpFluxBlockset =
+        typename NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
+            I>::template OpFlux<NaturalMeshsetType<BLOCKSET>, BASE_DIM,
+                                FIELD_DIM>;
+
+    CHKERR
+    NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
+        I>::addFluxToPipeline(FluxOpType<OpFluxTempSet>(), pipeline, m_field,
+                              field_name, smv, block_name, sev);
     CHKERR
     NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
         I>::addFluxToPipeline(FluxOpType<OpFluxBlockset>(), pipeline, m_field,

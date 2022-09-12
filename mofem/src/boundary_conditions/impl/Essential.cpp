@@ -45,6 +45,11 @@ MoFEMErrorCode EssentialPreProc<DisplacementCubitBcData>::operator()() {
         std::string field_name;
         std::string block_name;
 
+        auto get_field_coeffs = [&]() {
+          auto field_ptr = mField.get_field_structure(field_name);
+          return field_ptr->getNbOfCoeffs();
+        };
+
         if (std::regex_search(bc_id, match_field_name, field_rgx)) {
           field_name = match_field_name[1];
           block_name = match_field_name[2];
@@ -52,6 +57,8 @@ MoFEMErrorCode EssentialPreProc<DisplacementCubitBcData>::operator()() {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "Field name and block name can not be resolved");
         }
+
+        const auto nb_field_coeffs = get_field_coeffs();
 
         auto regex_str = (boost::format("%s_(.*)") % problem_name).str();
         if (std::regex_match(bc_id, std::regex(regex_str))) {
@@ -94,7 +101,7 @@ MoFEMErrorCode EssentialPreProc<DisplacementCubitBcData>::operator()() {
             idx = 0;
             coeff = 0;
             CHKERR fb->fieldLambdaOnEntities(lambda, field_name, &verts);
-          } else if (disp_bc->data.flag2) {
+          } else if (disp_bc->data.flag2 && nb_field_coeffs > 1) {
             v = disp_bc->data.value2;
             for (auto s : vecOfTimeScalingMethods) {
               v *= s->getScale(fe_method_ptr->ts_t);
@@ -102,7 +109,7 @@ MoFEMErrorCode EssentialPreProc<DisplacementCubitBcData>::operator()() {
             idx = 0;
             coeff = 1;
             CHKERR fb->fieldLambdaOnEntities(lambda, field_name, &verts);
-          } else if (disp_bc->data.flag3) {
+          } else if (disp_bc->data.flag3 && nb_field_coeffs > 2) {
             v = disp_bc->data.value3;
             for (auto s : vecOfTimeScalingMethods) {
               v *= s->getScale(fe_method_ptr->ts_t);
