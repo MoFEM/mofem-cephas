@@ -12,14 +12,14 @@ include_directories(${PROJECT_SOURCE_DIR}/src/boundary_conditions)
 
 if(PRECOMPILED_HEADRES)
   set_source_files_properties(
-    PostProc.cpp
+    PostProcBrokenMeshInMoabBase.cpp
     PROPERTIES
     COMPILE_FLAGS "-include ${PROJECT_BINARY_DIR}/include/precompiled/Includes.hpp"
   )
 endif(PRECOMPILED_HEADRES)
 add_library(
   mofem_post_proc
-  impl/PostProc.cpp
+  impl/PostProcBrokenMeshInMoabBase.cpp
 )
 
 target_link_libraries(mofem_post_proc PUBLIC ${MoFEM_PROJECT_LIBS})
