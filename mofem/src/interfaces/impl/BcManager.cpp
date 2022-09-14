@@ -313,17 +313,9 @@ BcManager::removeBlockDOFsOnEntities<BcMeshsetType<DISPLACEMENTSET>>(
           problem_name, field_name, ents, lo, hi);
   };
 
-  if (!ents_to_remove[0].empty()) {
-    CHKERR remove_dofs_on_ents(ents_to_remove[0], 0, 0);
-  }
-
-  if (!ents_to_remove[1].empty()) {
-    CHKERR remove_dofs_on_ents(ents_to_remove[1], 1, 1);
-  }
-
-  if (!ents_to_remove[2].empty()) {
-    CHKERR remove_dofs_on_ents(ents_to_remove[2], 2, 2);
-  }
+  CHKERR remove_dofs_on_ents(ents_to_remove[0], 0, 0);
+  CHKERR remove_dofs_on_ents(ents_to_remove[1], 1, 1);
+  CHKERR remove_dofs_on_ents(ents_to_remove[2], 2, 2);
 
   MoFEMFunctionReturn(0);
 }
@@ -367,9 +359,50 @@ BcManager::removeBlockDOFsOnEntities<BcMeshsetType<TEMPERATURESET>>(
           problem_name, field_name, ents, lo, hi);
   };
 
-  if (!ents_to_remove.empty()) {
-    CHKERR remove_dofs_on_ents(ents_to_remove, 0, MAX_DOFS_ON_ENTITY);
+  CHKERR remove_dofs_on_ents(ents_to_remove, 0, MAX_DOFS_ON_ENTITY);
+
+  MoFEMFunctionReturn(0);
+}
+
+template <>
+MoFEMErrorCode BcManager::removeBlockDOFsOnEntities<BcMeshsetType<HEATFLUXSET>>(
+    const std::string problem_name, const std::string field_name,
+    bool get_low_dim_ents, bool block_name_field_prefix,
+    bool is_distributed_mesh) {
+  Interface &m_field = cOre;
+  auto prb_mng = m_field.getInterface<ProblemsManager>();
+  MoFEMFunctionBegin;
+
+  CHKERR pushMarkDOFsOnEntities<BcMeshsetType<HEATFLUXSET>>(
+      problem_name, field_name, get_low_dim_ents, block_name_field_prefix);
+
+  Range ents_to_remove;
+
+  for (auto m :
+
+       m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(NODESET |
+                                                                   HEATFLUXSET)
+
+  ) {
+    const std::string bc_id =
+        problem_name + "_" + field_name + "_HEATFLUXSET" +
+        boost::lexical_cast<std::string>(m->getMeshsetId());
+    auto bc = bcMapByBlockName.at(bc_id);
+    ents_to_remove.merge(bc->bcEnts);
+    bc->bcMarkers = std::vector<unsigned char>();
   }
+
+  auto remove_dofs_on_ents = [&](const Range &ents, const int lo,
+                                 const int hi) {
+    if (is_distributed_mesh)
+      return prb_mng->removeDofsOnEntities(problem_name, field_name, ents, lo,
+                                           hi);
+    else
+      return prb_mng->removeDofsOnEntitiesNotDistributed(
+          problem_name, field_name, ents, lo, hi);
+  };
+
+  CHKERR remove_dofs_on_ents(ents_to_remove, 0, MAX_DOFS_ON_ENTITY);
 
   MoFEMFunctionReturn(0);
 }
@@ -439,17 +472,9 @@ BcManager::removeBlockDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
           problem_name, field_name, ents, lo, hi);
   };
 
-  if (!ents_to_remove[0].empty()) {
-    CHKERR remove_dofs_on_ents(ents_to_remove[0], 0, 0);
-  }
-
-  if (!ents_to_remove[1].empty()) {
-    CHKERR remove_dofs_on_ents(ents_to_remove[1], 1, 1);
-  }
-
-  if (!ents_to_remove[2].empty()) {
-    CHKERR remove_dofs_on_ents(ents_to_remove[2], 2, 2);
-  }
+  CHKERR remove_dofs_on_ents(ents_to_remove[0], 0, 0);
+  CHKERR remove_dofs_on_ents(ents_to_remove[1], 1, 1);
+  CHKERR remove_dofs_on_ents(ents_to_remove[2], 2, 2);
 
   MoFEMFunctionReturn(0);
 }
@@ -623,7 +648,91 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcMeshsetType<TEMPERATURESET>>(
     CHKERR iterate_meshsets(
 
         m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(
-            NODESET | DISPLACEMENTSET)
+            NODESET | TEMPERATURESET)
+
+    );
+
+    MoFEMFunctionReturn(0);
+  };
+
+  CHKERR fix_disp();
+
+  MoFEMFunctionReturn(0);
+}
+
+template <>
+MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcMeshsetType<HEATFLUXSET>>(
+    const std::string problem_name, const std::string field_name,
+    bool get_low_dim_ents, bool block_name_field_prefix) {
+  Interface &m_field = cOre;
+  auto prb_mng = m_field.getInterface<ProblemsManager>();
+  MoFEMFunctionBegin;
+
+  if (block_name_field_prefix)
+    MOFEM_LOG("BcMngWorld", Sev::warning)
+        << "Argument block_name_field_prefix=true has no effect";
+
+  auto get_dim = [&](const Range &ents) {
+    for (auto d : {3, 2, 1})
+      if (ents.num_of_dimension(d))
+        return d;
+    return 0;
+  };
+
+  auto get_adj_ents = [&](const Range &ents) {
+    Range verts;
+    CHKERR m_field.get_moab().get_connectivity(ents, verts, true);
+    const auto dim = get_dim(ents);
+    for (size_t d = 1; d < dim; ++d)
+      CHKERR m_field.get_moab().get_adjacencies(ents, d, false, verts,
+                                                moab::Interface::UNION);
+    verts.merge(ents);
+    CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(verts);
+    return verts;
+  };
+
+  auto fix_disp = [&]() {
+    MoFEMFunctionBegin;
+
+    auto iterate_meshsets = [&](auto &&meshset_vec_ptr) {
+      MoFEMFunctionBegin;
+      for (auto m : meshset_vec_ptr) {
+        auto bc = boost::make_shared<BCs>();
+        CHKERR m_field.get_moab().get_entities_by_handle(m->getMeshset(),
+                                                         bc->bcEnts, true);
+        bc->heatFluxBcPtr = boost::make_shared<HeatFluxCubitBcData>();
+        CHKERR m->getBcDataStructure(*(bc->heatFluxBcPtr));
+
+        MOFEM_LOG("BcMngWorld", Sev::verbose)
+            << "Found block HEATFLUX number of entities " << bc->bcEnts.size()
+            << " highest dim of entities " << get_dim(bc->bcEnts);
+        MOFEM_LOG("BcMngWorld", Sev::verbose) << *bc->heatFluxBcPtr;
+
+        CHKERR prb_mng->modifyMarkDofs(
+            problem_name, ROW, field_name, 0, MAX_DOFS_ON_ENTITY,
+            ProblemsManager::MarkOP::OR, 1, bc->bcMarkers);
+
+        if (get_low_dim_ents) {
+          auto low_dim_ents = get_adj_ents(bc->bcEnts);
+          CHKERR prb_mng->markDofs(problem_name, ROW, ProblemsManager::AND,
+                                   low_dim_ents, bc->bcMarkers);
+          bc->bcEnts.swap(low_dim_ents);
+        } else
+          CHKERR prb_mng->markDofs(problem_name, ROW, ProblemsManager::AND,
+                                   bc->bcEnts, bc->bcMarkers);
+
+        const std::string bc_id =
+            problem_name + "_" + field_name + "_HEATFLUXSET" +
+            boost::lexical_cast<std::string>(m->getMeshsetId());
+        bcMapByBlockName[bc_id] = bc;
+      }
+      MoFEMFunctionReturn(0);
+    };
+
+    CHKERR iterate_meshsets(
+
+        m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(SIDESET |
+                                                                    HEATFLUXSET)
 
     );
 
@@ -672,7 +781,6 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
 
   for (auto &m : bcMapByBlockName) {
     auto &bc_id = m.first;
-    cerr << bc_id << endl;
     if (std::regex_match(bc_id, std::regex(regex_str))) {
       auto &bc = m.second;
       if (std::regex_match(bc_id, std::regex("(.*)_FIX_X(.*)"))) {
@@ -762,6 +870,28 @@ MoFEMErrorCode BcManager::removeBlockDOFsOnEntities<DisplacementCubitBcData>(
       problem_name, field_name, get_low_dim_ents, block_name_field_prefix,
       is_distributed_mesh);
   CHKERR removeBlockDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
+      problem_name, field_name, get_low_dim_ents, block_name_field_prefix,
+      is_distributed_mesh);
+  MoFEMFunctionReturn(0);
+}
+
+template <>
+MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<HeatFluxCubitBcData>(
+    const std::string problem_name, const std::string field_name,
+    bool get_low_dim_ents, bool block_name_field_prefix) {
+  MoFEMFunctionBegin;
+  CHKERR pushMarkDOFsOnEntities<BcMeshsetType<HEATFLUXSET>>(
+      problem_name, field_name, get_low_dim_ents, block_name_field_prefix);
+  MoFEMFunctionReturn(0);
+}
+
+template <>
+MoFEMErrorCode BcManager::removeBlockDOFsOnEntities<HeatFluxCubitBcData>(
+    const std::string problem_name, const std::string field_name,
+    bool get_low_dim_ents, bool block_name_field_prefix,
+    bool is_distributed_mesh) {
+  MoFEMFunctionBegin;
+  CHKERR removeBlockDOFsOnEntities<BcMeshsetType<HEATFLUXSET>>(
       problem_name, field_name, get_low_dim_ents, block_name_field_prefix,
       is_distributed_mesh);
   MoFEMFunctionReturn(0);
