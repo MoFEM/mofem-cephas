@@ -21,11 +21,11 @@ template <typename T> struct EssentialPreProc {};
 
 template <> struct EssentialPreProc<DisplacementCubitBcData> {
   EssentialPreProc(MoFEM::Interface &m_field,
-                   boost::shared_ptr<FEMethod> fe_ptr, bool get_coords = false);
+                   boost::shared_ptr<FEMethod> fe_ptr,
+                   std::vector<boost::shared_ptr<ScalingMethod>> smv,
+                   bool get_coords = false);
 
   MoFEMErrorCode operator()();
-
-  VecOfTimeScalingMethods &getVecOfTimeScalingMethods();
 
 protected:
   MoFEM::Interface &mField;
@@ -36,11 +36,10 @@ protected:
 
 template <> struct EssentialPreProc<TemperatureCubitBcData> {
   EssentialPreProc(MoFEM::Interface &m_field,
-                   boost::shared_ptr<FEMethod> fe_ptr);
+                   boost::shared_ptr<FEMethod> fe_ptr,
+                   std::vector<boost::shared_ptr<ScalingMethod>> smv);
 
   MoFEMErrorCode operator()();
-
-  VecOfTimeScalingMethods &getVecOfTimeScalingMethods();
 
 protected:
   MoFEM::Interface &mField;
@@ -118,11 +117,8 @@ struct OpEssentialRhsImpl<DisplacementCubitBcData, 1, FIELD_DIM, A, I, OpBase>
 
   OpEssentialRhsImpl(const std::string field_name,
                      boost::shared_ptr<DisplacementCubitBcData> bc_data,
-                     boost::shared_ptr<Range> ents_ptr);
-
-  inline VecOfTimeScalingMethods &getVecOfTimeScalingMethods() {
-    return vecOfTimeScalingMethods;
-  }
+                     boost::shared_ptr<Range> ents_ptr,
+                     std::vector<boost::shared_ptr<ScalingMethod>> smv);
 
 private:
   FTensor::Tensor1<double, FIELD_DIM> tVal;
@@ -133,10 +129,12 @@ template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
 OpEssentialRhsImpl<DisplacementCubitBcData, 1, FIELD_DIM, A, I, OpBase>::
     OpEssentialRhsImpl(const std::string field_name,
                        boost::shared_ptr<DisplacementCubitBcData> bc_data,
-                       boost::shared_ptr<Range> ents_ptr)
+                       boost::shared_ptr<Range> ents_ptr,
+                       std::vector<boost::shared_ptr<ScalingMethod>> smv)
     : OpSource(
           field_name, [this](double, double, double) { return tVal; },
-          ents_ptr) {
+          ents_ptr),
+      vecOfTimeScalingMethods(smv) {
   static_assert(FIELD_DIM > 1, "Is not implemented for scalar field");
 
   FTensor::Index<'i', FIELD_DIM> i;
@@ -167,11 +165,8 @@ struct OpEssentialRhsImpl<HeatFluxCubitBcData, BASE_DIM, BASE_DIM, A, I, OpBase>
 
   OpEssentialRhsImpl(const std::string field_name,
                      boost::shared_ptr<HeatFluxCubitBcData> bc_data,
-                     boost::shared_ptr<Range> ents_ptr);
-
-  inline VecOfTimeScalingMethods &getVecOfTimeScalingMethods() {
-    return vecOfTimeScalingMethods;
-  }
+                     boost::shared_ptr<Range> ents_ptr,
+                     std::vector<boost::shared_ptr<ScalingMethod>> smv);
 
 private:
   FTensor::Tensor1<double, BASE_DIM> tVal;
@@ -182,10 +177,12 @@ template <int BASE_DIM, AssemblyType A, IntegrationType I, typename OpBase>
 OpEssentialRhsImpl<HeatFluxCubitBcData, BASE_DIM, BASE_DIM, A, I, OpBase>::
     OpEssentialRhsImpl(const std::string field_name,
                        boost::shared_ptr<HeatFluxCubitBcData> bc_data,
-                       boost::shared_ptr<Range> ents_ptr)
+                       boost::shared_ptr<Range> ents_ptr,
+                       std::vector<boost::shared_ptr<ScalingMethod>> smv)
     : OpSource(
           field_name, [this](double, double, double) { return tVal; },
-          ents_ptr) {
+          ents_ptr),
+      vecOfTimeScalingMethods(smv) {
   FTensor::Index<'i', BASE_DIM> i;
   tVal(i) = -bc_data->data.value1;
   this->timeScalingFun = [this](const double t) {
@@ -277,10 +274,8 @@ struct AddEssentialToRhsPipelineImpl<
             MOFEM_TAG_AND_LOG("SELF", Sev::noisy, "OpEssentialRhs") << *bc;
             pipeline.push_back(
                 new OpSetBc(field_name, false, m.second->getBcMarkersPtr()));
-            auto op_ptr = new OP(field_name, bc, m.second->getBcEntsPtr());
-            for (auto sm : smv)
-              op_ptr->getVecOfTimeScalingMethods().push_back(sm);
-            pipeline.push_back(op_ptr);
+            pipeline.push_back(
+                new OP(field_name, bc, m.second->getBcEntsPtr(), smv));
             pipeline.push_back(new OpInternal(
                 field_name, field_mat_ptr,
                 [](double, double, double) constexpr { return 1.; },
@@ -391,10 +386,8 @@ struct AddEssentialToRhsPipelineImpl<
             MOFEM_TAG_AND_LOG("SELF", Sev::noisy, "OpEssentialRhs") << *bc;
             pipeline.push_back(
                 new OpSetBc(field_name, false, m.second->getBcMarkersPtr()));
-            auto op_ptr = new OP(field_name, bc, m.second->getBcEntsPtr());
-            for (auto sm : smv)
-              op_ptr->getVecOfTimeScalingMethods().push_back(sm);
-            pipeline.push_back(op_ptr);
+            pipeline.push_back(
+                new OP(field_name, bc, m.second->getBcEntsPtr(), smv));
             pipeline.push_back(new OpInternal(
                 field_name, field_mat_ptr,
                 [](double, double, double) constexpr { return 1.; },

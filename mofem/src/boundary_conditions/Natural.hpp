@@ -79,14 +79,12 @@ struct OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, FIELD_DIM, A, I, OpBase>
 
   OpFluxImpl(const std::string field_name,
              FTensor::Tensor1<double, FIELD_DIM> t_force,
-             boost::shared_ptr<Range> ents_ptr = nullptr);
-
-  VecOfTimeScalingMethods &getVecOfTimeScalingMethods() {
-    return vecOfTimeScalingMethods;
-  }
+             boost::shared_ptr<Range> ents_ptr,
+             std::vector<boost::shared_ptr<ScalingMethod>> smv);
 
 protected:
-  OpFluxImpl(const std::string field_name);
+  OpFluxImpl(const std::string field_name,
+             std::vector<boost::shared_ptr<ScalingMethod>> smv);
   FTensor::Tensor1<double, FIELD_DIM> tForce;
   VecOfTimeScalingMethods vecOfTimeScalingMethods;
 };
@@ -95,8 +93,8 @@ template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
 struct OpFluxImpl<NaturalMeshsetType<FORCESET>, 1, FIELD_DIM, A, I, OpBase>
     : OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, FIELD_DIM, A, I, OpBase> {
 
-  OpFluxImpl(MoFEM::Interface &m_field, int ms_id,
-             const std::string field_name);
+  OpFluxImpl(MoFEM::Interface &m_field, int ms_id, const std::string field_name,
+             std::vector<boost::shared_ptr<ScalingMethod>> smv);
 
 protected:
   MoFEMErrorCode getMeshsetData(MoFEM::Interface &m_field, int ms_id);
@@ -106,8 +104,8 @@ template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
 struct OpFluxImpl<NaturalMeshsetType<BLOCKSET>, 1, FIELD_DIM, A, I, OpBase>
     : OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, FIELD_DIM, A, I, OpBase> {
 
-  OpFluxImpl(MoFEM::Interface &m_field, int ms_id,
-             const std::string field_name);
+  OpFluxImpl(MoFEM::Interface &m_field, int ms_id, const std::string field_name,
+             std::vector<boost::shared_ptr<ScalingMethod>> smv);
 
 protected:
   MoFEMErrorCode getMeshsetData(MoFEM::Interface &m_field, int ms_id);
@@ -121,8 +119,8 @@ struct OpFluxImpl<NaturalMeshsetType<PRESSURESET>, 1, FIELD_DIM, A, I, OpBase>
       OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, FIELD_DIM, A, I, OpBase>;
   using EntData = EntitiesFieldData::EntData;
 
-  OpFluxImpl(MoFEM::Interface &m_field, int ms_id,
-             const std::string field_name);
+  OpFluxImpl(MoFEM::Interface &m_field, int ms_id, const std::string field_name,
+             std::vector<boost::shared_ptr<ScalingMethod>> smv);
 
 protected:
   MoFEMErrorCode iNtegrate(EntData &data);
@@ -146,14 +144,12 @@ struct OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, 1, A, I, OpBase>
       A>::template LinearForm<I>::template OpSource<1, 1>;
 
   OpFluxImpl(const std::string field_name, double value,
-             boost::shared_ptr<Range> ents_ptr = nullptr);
-
-  VecOfTimeScalingMethods &getVecOfTimeScalingMethods() {
-    return vecOfTimeScalingMethods;
-  }
+             boost::shared_ptr<Range> ents_ptr,
+             std::vector<boost::shared_ptr<ScalingMethod>> smv);
 
 protected:
-  OpFluxImpl(const std::string field_name);
+  OpFluxImpl(const std::string field_name,
+             std::vector<boost::shared_ptr<ScalingMethod>> smv);
 
   MoFEMErrorCode getMeshsetData(MoFEM::Interface &m_field, int ms_id);
   double scalarValue;
@@ -167,8 +163,8 @@ struct OpFluxImpl<NaturalMeshsetType<BLOCKSET>, 1, 1, A, I, OpBase>
 
   using Parent = OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, 1, A, I, OpBase>;
 
-  OpFluxImpl(MoFEM::Interface &m_field, int ms_id,
-             const std::string field_name);
+  OpFluxImpl(MoFEM::Interface &m_field, int ms_id, const std::string field_name,
+             std::vector<boost::shared_ptr<ScalingMethod>> smv);
 
 protected:
   MoFEMErrorCode getMeshsetData(MoFEM::Interface &m_field, int ms_id);
@@ -180,8 +176,8 @@ struct OpFluxImpl<NaturalMeshsetType<HEATFLUXSET>, 1, 1, A, I, OpBase>
 
   using Parent = OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, 1, A, I, OpBase>;
 
-  OpFluxImpl(MoFEM::Interface &m_field, int ms_id,
-             const std::string field_name);
+  OpFluxImpl(MoFEM::Interface &m_field, int ms_id, const std::string field_name,
+             std::vector<boost::shared_ptr<ScalingMethod>> smv);
 
 protected:
   MoFEMErrorCode getMeshsetData(MoFEM::Interface &m_field, int ms_id);
@@ -197,14 +193,12 @@ struct OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, BASE_DIM, BASE_DIM, A, I,
       A>::template LinearForm<I>::template OpNormalMixVecTimesScalar<BASE_DIM>;
 
   OpFluxImpl(const std::string field_name, const double value,
-             boost::shared_ptr<Range> ents_ptr = nullptr);
-
-  VecOfTimeScalingMethods &getVecOfTimeScalingMethods() {
-    return vecOfTimeScalingMethods;
-  }
+             boost::shared_ptr<Range> ents_ptr,
+             std::vector<boost::shared_ptr<ScalingMethod>> smv);
 
 protected:
-  OpFluxImpl(const std::string field_name);
+  OpFluxImpl(const std::string field_name,
+             std::vector<boost::shared_ptr<ScalingMethod>> smv);
   double scalarValue;
 
   VecOfTimeScalingMethods vecOfTimeScalingMethods;
@@ -214,8 +208,8 @@ template <int BASE_DIM, AssemblyType A, IntegrationType I, typename OpBase>
 struct OpFluxImpl<NaturalMeshsetType<BLOCKSET>, BASE_DIM, BASE_DIM, A, I,
                   OpBase> : OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, BASE_DIM,
                                        BASE_DIM, A, I, OpBase> {
-  OpFluxImpl(MoFEM::Interface &m_field, int ms_id,
-             const std::string field_name);
+  OpFluxImpl(MoFEM::Interface &m_field, int ms_id, const std::string field_name,
+             std::vector<boost::shared_ptr<ScalingMethod>> smv);
 
 protected:
   MoFEMErrorCode getMeshsetData(MoFEM::Interface &m_field, int ms_id);
@@ -225,8 +219,8 @@ template <int BASE_DIM, AssemblyType A, IntegrationType I, typename OpBase>
 struct OpFluxImpl<NaturalMeshsetType<TEMPERATURESET>, BASE_DIM, BASE_DIM, A, I,
                   OpBase> : OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, BASE_DIM,
                                        BASE_DIM, A, I, OpBase> {
-  OpFluxImpl(MoFEM::Interface &m_field, int ms_id,
-             const std::string field_name);
+  OpFluxImpl(MoFEM::Interface &m_field, int ms_id, const std::string field_name,
+             std::vector<boost::shared_ptr<ScalingMethod>> smv);
 
 protected:
   MoFEMErrorCode getMeshsetData(MoFEM::Interface &m_field, int ms_id);
@@ -238,8 +232,10 @@ template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
 OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, FIELD_DIM, A, I,
            OpBase>::OpFluxImpl(const std::string field_name,
                                FTensor::Tensor1<double, FIELD_DIM> t_force,
-                               boost::shared_ptr<Range> ents_ptr)
-    : OpFluxImpl(field_name) {
+                               boost::shared_ptr<Range> ents_ptr,
+                               std::vector<boost::shared_ptr<ScalingMethod>>
+                                   smv)
+    : OpFluxImpl(field_name, smv) {
   FTensor::Index<'i', FIELD_DIM> i;
   this->tForce(i) = t_force(i);
   this->entsPtr = ents_ptr;
@@ -247,14 +243,16 @@ OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, FIELD_DIM, A, I,
 
 template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
 OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, FIELD_DIM, A, I,
-           OpBase>::OpFluxImpl(const std::string field_name)
+           OpBase>::OpFluxImpl(const std::string field_name,
+                               std::vector<boost::shared_ptr<ScalingMethod>>
+                                   smv)
     : OpSource(
           field_name,
 
           [this](const double, const double, const double) { return tForce; }
 
-      ) {
-
+          ),
+      vecOfTimeScalingMethods(smv) {
   this->timeScalingFun = [this](const double t) {
     double s = 1;
     for (auto &o : vecOfTimeScalingMethods) {
@@ -269,9 +267,11 @@ OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, FIELD_DIM, A, I,
 template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
 OpFluxImpl<NaturalMeshsetType<FORCESET>, 1, FIELD_DIM, A, I,
            OpBase>::OpFluxImpl(MoFEM::Interface &m_field, int ms_id,
-                               const std::string field_name)
+                               const std::string field_name,
+                               std::vector<boost::shared_ptr<ScalingMethod>>
+                                   smv)
     : OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, FIELD_DIM, A, I, OpBase>(
-          field_name) {
+          field_name, smv) {
   CHK_THROW_MESSAGE(getMeshsetData(m_field, ms_id), "Get meshset data");
 }
 
@@ -307,9 +307,11 @@ MoFEMErrorCode OpFluxImpl<NaturalMeshsetType<FORCESET>, 1, FIELD_DIM, A, I,
 template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
 OpFluxImpl<NaturalMeshsetType<BLOCKSET>, 1, FIELD_DIM, A, I,
            OpBase>::OpFluxImpl(MoFEM::Interface &m_field, int ms_id,
-                               const std::string field_name)
+                               const std::string field_name,
+                               std::vector<boost::shared_ptr<ScalingMethod>>
+                                   smv)
     : OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, FIELD_DIM, A, I, OpBase>(
-          field_name) {
+          field_name, smv) {
   CHK_THROW_MESSAGE(getMeshsetData(m_field, ms_id), "Get meshset data");
 }
 
@@ -354,9 +356,11 @@ MoFEMErrorCode OpFluxImpl<NaturalMeshsetType<BLOCKSET>, 1, FIELD_DIM, A, I,
 template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
 OpFluxImpl<NaturalMeshsetType<PRESSURESET>, 1, FIELD_DIM, A, I,
            OpBase>::OpFluxImpl(MoFEM::Interface &m_field, int ms_id,
-                               const std::string field_name)
+                               const std::string field_name,
+                               std::vector<boost::shared_ptr<ScalingMethod>>
+                                   smv)
     : OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, FIELD_DIM, A, I, OpBase>(
-          field_name) {
+          field_name, smv) {
   CHK_THROW_MESSAGE(getMeshsetData(m_field, ms_id), "Get meshset data");
 }
 
@@ -403,22 +407,25 @@ MoFEMErrorCode OpFluxImpl<NaturalMeshsetType<PRESSURESET>, 1, FIELD_DIM, A, I,
 template <AssemblyType A, IntegrationType I, typename OpBase>
 OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, 1, A, I, OpBase>::OpFluxImpl(
     const std::string field_name, const double value,
-    boost::shared_ptr<Range> ents_ptr)
-    : OpFluxImpl(field_name) {
+    boost::shared_ptr<Range> ents_ptr,
+    std::vector<boost::shared_ptr<ScalingMethod>> smv)
+    : OpFluxImpl(field_name, smv) {
   this->scalarValue = value;
   this->entsPtr = ents_ptr;
 }
 
 template <AssemblyType A, IntegrationType I, typename OpBase>
 OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, 1, A, I, OpBase>::OpFluxImpl(
-    const std::string field_name)
+    const std::string field_name,
+    std::vector<boost::shared_ptr<ScalingMethod>> smv)
     : OpSource(field_name,
 
                [this](const double, const double, const double) {
                  return scalarValue;
                }
 
-      ) {
+               ),
+      vecOfTimeScalingMethods(smv) {
 
   this->timeScalingFun = [this](const double t) {
     double s = 1;
@@ -431,9 +438,10 @@ OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, 1, A, I, OpBase>::OpFluxImpl(
 
 template <AssemblyType A, IntegrationType I, typename OpBase>
 OpFluxImpl<NaturalMeshsetType<BLOCKSET>, 1, 1, A, I, OpBase>::OpFluxImpl(
-    MoFEM::Interface &m_field, int ms_id, const std::string field_name)
-    : OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, 1, A, I, OpBase>(
-          field_name) {
+    MoFEM::Interface &m_field, int ms_id, const std::string field_name,
+    std::vector<boost::shared_ptr<ScalingMethod>> smv)
+    : OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, 1, A, I, OpBase>(field_name,
+                                                                     smv) {
   CHK_THROW_MESSAGE(getMeshsetData(m_field, ms_id), "Get meshset data");
 }
 
@@ -463,9 +471,10 @@ OpFluxImpl<NaturalMeshsetType<BLOCKSET>, 1, 1, A, I, OpBase>::getMeshsetData(
 
 template <AssemblyType A, IntegrationType I, typename OpBase>
 OpFluxImpl<NaturalMeshsetType<HEATFLUXSET>, 1, 1, A, I, OpBase>::OpFluxImpl(
-    MoFEM::Interface &m_field, int ms_id, const std::string field_name)
-    : OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, 1, A, I, OpBase>(
-          field_name) {
+    MoFEM::Interface &m_field, int ms_id, const std::string field_name,
+    std::vector<boost::shared_ptr<ScalingMethod>> smv)
+    : OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, 1, 1, A, I, OpBase>(field_name,
+                                                                     smv) {
   CHK_THROW_MESSAGE(getMeshsetData(m_field, ms_id), "Get meshset data");
 }
 
@@ -492,22 +501,27 @@ OpFluxImpl<NaturalMeshsetType<HEATFLUXSET>, 1, 1, A, I, OpBase>::getMeshsetData(
 template <int BASE_DIM, AssemblyType A, IntegrationType I, typename OpBase>
 OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, BASE_DIM, BASE_DIM, A, I,
            OpBase>::OpFluxImpl(const std::string field_name, const double value,
-                               boost::shared_ptr<Range> ents_ptr)
-    : OpFluxImpl(field_name) {
+                               boost::shared_ptr<Range> ents_ptr,
+                               std::vector<boost::shared_ptr<ScalingMethod>>
+                                   smv)
+    : OpFluxImpl(field_name, smv) {
   this->scalarValue = value;
   this->entsPtr = ents_ptr;
 }
 
 template <int BASE_DIM, AssemblyType A, IntegrationType I, typename OpBase>
 OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, BASE_DIM, BASE_DIM, A, I,
-           OpBase>::OpFluxImpl(const std::string field_name)
+           OpBase>::OpFluxImpl(const std::string field_name,
+                               std::vector<boost::shared_ptr<ScalingMethod>>
+                                   smv)
     : OpSource(field_name,
 
                [this](const double, const double, const double) {
                  return scalarValue;
                }
 
-      ) {
+               ),
+      vecOfTimeScalingMethods(smv) {
 
   this->timeScalingFun = [this](const double t) {
     double s = 1;
@@ -521,9 +535,11 @@ OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, BASE_DIM, BASE_DIM, A, I,
 template <int BASE_DIM, AssemblyType A, IntegrationType I, typename OpBase>
 OpFluxImpl<NaturalMeshsetType<BLOCKSET>, BASE_DIM, BASE_DIM, A, I,
            OpBase>::OpFluxImpl(MoFEM::Interface &m_field, int ms_id,
-                               const std::string field_name)
+                               const std::string field_name,
+                               std::vector<boost::shared_ptr<ScalingMethod>>
+                                   smv)
     : OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, BASE_DIM, BASE_DIM, A, I,
-                 OpBase>(field_name) {
+                 OpBase>(field_name, smv) {
   CHK_THROW_MESSAGE(getMeshsetData(m_field, ms_id), "Get meshset data");
 }
 
@@ -552,9 +568,11 @@ MoFEMErrorCode OpFluxImpl<NaturalMeshsetType<BLOCKSET>, BASE_DIM, BASE_DIM, A,
 template <int BASE_DIM, AssemblyType A, IntegrationType I, typename OpBase>
 OpFluxImpl<NaturalMeshsetType<TEMPERATURESET>, BASE_DIM, BASE_DIM, A, I,
            OpBase>::OpFluxImpl(MoFEM::Interface &m_field, int ms_id,
-                               const std::string field_name)
+                               const std::string field_name,
+                               std::vector<boost::shared_ptr<ScalingMethod>>
+                                   smv)
     : OpFluxImpl<NaturalMeshsetType<UNKNOWNSET>, BASE_DIM, BASE_DIM, A, I,
-                 OpBase>(field_name) {
+                 OpBase>(field_name, smv) {
   CHK_THROW_MESSAGE(getMeshsetData(m_field, ms_id), "Get meshset data");
 }
 
@@ -610,10 +628,7 @@ struct AddFluxToPipelineImpl<
     auto add_op = [&](auto &&meshset_vec_ptr) {
       for (auto m : meshset_vec_ptr) {
         MOFEM_TAG_AND_LOG("SELF", sev, "OpFlux") << "Add for meshset " << *m;
-        auto op_ptr = new OP(m_field, m->getMeshsetId(), field_name);
-        for (auto sm : smv)
-          op_ptr->getVecOfTimeScalingMethods().push_back(sm);
-        pipeline.push_back(op_ptr);
+        pipeline.push_back(new OP(m_field, m->getMeshsetId(), field_name, smv));
       }
       MOFEM_LOG_CHANNEL("SELF");
     };

@@ -14,13 +14,9 @@ namespace MoFEM {
 
 EssentialPreProc<DisplacementCubitBcData>::EssentialPreProc(
     MoFEM::Interface &m_field, boost::shared_ptr<FEMethod> fe_ptr,
-    bool get_coords)
-    : mField(m_field), fePtr(fe_ptr), getCoords(get_coords) {}
-
-VecOfTimeScalingMethods &
-EssentialPreProc<DisplacementCubitBcData>::getVecOfTimeScalingMethods() {
-  return vecOfTimeScalingMethods;
-}
+    std::vector<boost::shared_ptr<ScalingMethod>> smv, bool get_coords)
+    : mField(m_field), fePtr(fe_ptr), vecOfTimeScalingMethods(smv),
+      getCoords(get_coords) {}
 
 MoFEMErrorCode EssentialPreProc<DisplacementCubitBcData>::operator()() {
   MOFEM_LOG_CHANNEL("WORLD");
@@ -131,13 +127,9 @@ MoFEMErrorCode EssentialPreProc<DisplacementCubitBcData>::operator()() {
 }
 
 EssentialPreProc<TemperatureCubitBcData>::EssentialPreProc(
-    MoFEM::Interface &m_field, boost::shared_ptr<FEMethod> fe_ptr)
-    : mField(m_field), fePtr(fe_ptr) {}
-
-VecOfTimeScalingMethods &
-EssentialPreProc<TemperatureCubitBcData>::getVecOfTimeScalingMethods() {
-  return vecOfTimeScalingMethods;
-}
+    MoFEM::Interface &m_field, boost::shared_ptr<FEMethod> fe_ptr,
+    std::vector<boost::shared_ptr<ScalingMethod>> smv)
+    : mField(m_field), fePtr(fe_ptr), vecOfTimeScalingMethods(smv) {}
 
 MoFEMErrorCode EssentialPreProc<TemperatureCubitBcData>::operator()() {
   MoFEMFunctionBegin;
