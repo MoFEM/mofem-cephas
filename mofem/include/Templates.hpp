@@ -146,7 +146,7 @@ struct GetFTensor1FromMatImpl<3, S, T, ublas::row_major, A> {
     if (data.size1() != 3)
       THROW_MESSAGE(
           "getFTensor1FromMat<3>: wrong size of data matrix, number of "
-          "rows should be 3 but is %d" +
+          "rows should be 3 but is " +
           boost::lexical_cast<std::string>(data.size1()));
 #endif
     return FTensor::Tensor1<FTensor::PackPtr<double *, S>, 3>(
@@ -161,7 +161,7 @@ struct GetFTensor1FromMatImpl<2, S, T, ublas::row_major, A> {
     if (data.size1() != 2)
       THROW_MESSAGE(
           "getFTensor1FromMat<2>: wrong size of data matrix, number of "
-          "rows should be 2 but is %d" +
+          "rows should be 2 but is " +
           boost::lexical_cast<std::string>(data.size1()));
 #endif
     return FTensor::Tensor1<FTensor::PackPtr<double *, S>, 2>(&data(0, 0),
@@ -176,7 +176,7 @@ struct GetFTensor1FromMatImpl<1, S, T, ublas::row_major, A> {
     if (data.size1() != 1)
       THROW_MESSAGE(
           "getFTensor1FromMat<1>: wrong size of data matrix, number of "
-          "rows should be 1 but is %d" +
+          "rows should be 1 but is " +
           boost::lexical_cast<std::string>(data.size1()));
 #endif
     return FTensor::Tensor1<FTensor::PackPtr<double *, S>, 1>(&data(0, 0));
