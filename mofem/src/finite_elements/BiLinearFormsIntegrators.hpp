@@ -91,7 +91,7 @@ protected:
 };
 
 template <int BASE_DIM, typename OpBase>
-struct OpMassImpl<BASE_DIM, BASE_DIM, GAUSS, OpBase> : public OpBase {
+struct OpMassImpl<3, BASE_DIM, GAUSS, OpBase> : public OpBase {
 
   OpMassImpl(const std::string row_field_name, const std::string col_field_name,
              ScalarFun beta = scalar_fun_one,
@@ -785,18 +785,18 @@ MoFEMErrorCode OpMassImpl<1, FIELD_DIM, GAUSS, OpBase>::iNtegrate(
 };
 
 template <int BASE_DIM, typename OpBase>
-MoFEMErrorCode OpMassImpl<BASE_DIM, BASE_DIM, GAUSS, OpBase>::iNtegrate(
+MoFEMErrorCode OpMassImpl<3, BASE_DIM, GAUSS, OpBase>::iNtegrate(
     EntitiesFieldData::EntData &row_data,
     EntitiesFieldData::EntData &col_data) {
   FTensor::Index<'i', BASE_DIM> i;
   MoFEMFunctionBegin;
-  size_t nb_base_functions = row_data.getN().size2() / BASE_DIM;
+  size_t nb_base_functions = row_data.getN().size2() / 3;
   // // get element volume
   const double vol = OpBase::getMeasure();
   // get integration weights
   auto t_w = OpBase::getFTensor0IntegrationWeight();
   // get base function gradient on rows
-  auto t_row_base = row_data.getFTensor1N<BASE_DIM>();
+  auto t_row_base = row_data.getFTensor1N<3>();
   // get coordinate at integration points
   auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
   // loop over integration points
@@ -809,7 +809,7 @@ MoFEMErrorCode OpMassImpl<BASE_DIM, BASE_DIM, GAUSS, OpBase>::iNtegrate(
     int rr = 0;
     for (; rr != OpBase::nbRows; rr++) {
       // get column base functions gradient at gauss point gg
-      auto t_col_base = col_data.getFTensor1N<BASE_DIM>(gg, 0);
+      auto t_col_base = col_data.getFTensor1N<3>(gg, 0);
       // loop over columns
       for (int cc = 0; cc != OpBase::nbCols; cc++) {
         // calculate element of local matrix

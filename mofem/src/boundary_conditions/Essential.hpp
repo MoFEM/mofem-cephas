@@ -155,13 +155,14 @@ OpEssentialRhsImpl<DisplacementCubitBcData, 1, FIELD_DIM, A, I, OpBase>::
   };
 }
 
-template <int BASE_DIM, AssemblyType A, IntegrationType I, typename OpBase>
-struct OpEssentialRhsImpl<HeatFluxCubitBcData, BASE_DIM, BASE_DIM, A, I, OpBase>
-    : FormsIntegrators<OpBase>::template Assembly<A>::template LinearForm<
-          I>::template OpSource<BASE_DIM, BASE_DIM> {
+template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
+struct OpEssentialRhsImpl<HeatFluxCubitBcData, 3, FIELD_DIM, A, I, OpBase>
+    : FormsIntegrators<OpBase>::template Assembly<A>::template LinearForm<I>::
+          template OpSource<3, FIELD_DIM, SourceBoundaryNormalSpecialization> {
 
-  using OpSource = typename FormsIntegrators<OpBase>::template Assembly<
-      A>::template LinearForm<I>::template OpSource<BASE_DIM, BASE_DIM>;
+  using OpSource = typename FormsIntegrators<OpBase>::template Assembly<A>::
+      template LinearForm<I>::template OpSource<
+          3, FIELD_DIM, SourceBoundaryNormalSpecialization>;
 
   OpEssentialRhsImpl(const std::string field_name,
                      boost::shared_ptr<HeatFluxCubitBcData> bc_data,
@@ -169,22 +170,21 @@ struct OpEssentialRhsImpl<HeatFluxCubitBcData, BASE_DIM, BASE_DIM, A, I, OpBase>
                      std::vector<boost::shared_ptr<ScalingMethod>> smv);
 
 private:
-  FTensor::Tensor1<double, BASE_DIM> tVal;
+  double heatFlux;
   VecOfTimeScalingMethods vecOfTimeScalingMethods;
 };
 
-template <int BASE_DIM, AssemblyType A, IntegrationType I, typename OpBase>
-OpEssentialRhsImpl<HeatFluxCubitBcData, BASE_DIM, BASE_DIM, A, I, OpBase>::
+template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
+OpEssentialRhsImpl<HeatFluxCubitBcData, 3, FIELD_DIM, A, I, OpBase>::
     OpEssentialRhsImpl(const std::string field_name,
                        boost::shared_ptr<HeatFluxCubitBcData> bc_data,
                        boost::shared_ptr<Range> ents_ptr,
                        std::vector<boost::shared_ptr<ScalingMethod>> smv)
     : OpSource(
-          field_name, [this](double, double, double) { return tVal; },
+          field_name, [this](double, double, double) { return heatFlux; },
           ents_ptr),
       vecOfTimeScalingMethods(smv) {
-  FTensor::Index<'i', BASE_DIM> i;
-  tVal(i) = -bc_data->data.value1;
+  heatFlux = -bc_data->data.value1;
   this->timeScalingFun = [this](const double t) {
     double s = 1;
     for (auto &o : vecOfTimeScalingMethods) {

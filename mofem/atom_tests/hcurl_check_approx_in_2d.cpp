@@ -25,14 +25,14 @@ constexpr int SPACE_DIM = 2;
  *
  */
 using OpDomainMass = FormsIntegrators<FaceEleOp>::Assembly<PETSC>::BiLinearForm<
-    GAUSS>::OpMass<BASE_DIM, BASE_DIM>;
+    GAUSS>::OpMass<BASE_DIM, SPACE_DIM>;
 
 /**
  * @brief Operator to integrate the right hand side matrix for the problem
  *
  */
 using OpDomainSource = FormsIntegrators<FaceEleOp>::Assembly<PETSC>::LinearForm<
-    GAUSS>::OpSource<BASE_DIM, BASE_DIM>;
+    GAUSS>::OpSource<BASE_DIM, SPACE_DIM>;
 
 constexpr double a0 = 0.0;
 constexpr double a1 = 2.0;

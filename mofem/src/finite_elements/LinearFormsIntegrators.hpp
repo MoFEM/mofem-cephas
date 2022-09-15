@@ -9,6 +9,16 @@
 
 namespace MoFEM {
 
+struct SourceFunctionSpecialization {
+  template <typename OpBase> struct S { S() = delete; };
+  SourceFunctionSpecialization() = delete;
+};
+
+struct SourceBoundaryNormalSpecialization {
+  template <typename OpBase> struct S { S() = delete; };
+  SourceBoundaryNormalSpecialization() = delete;
+};
+
 template <int BASE_DIM, int FIELD_DIM, IntegrationType I, typename OpBase>
 struct OpSourceImpl;
 
@@ -18,7 +28,8 @@ struct OpSourceImpl;
  * @tparam OpBase
  */
 template <typename OpBase>
-struct OpSourceImpl<1, 1, GAUSS, OpBase> : public OpBase {
+struct OpSourceImpl<1, 1, GAUSS, SourceFunctionSpecialization::S<OpBase>>
+    : public OpBase {
 
   /**
    * @brief Construct a new Op Source Impl object
@@ -34,11 +45,11 @@ struct OpSourceImpl<1, 1, GAUSS, OpBase> : public OpBase {
 
   /**
    * @brief Construct a new Op Source Impl object
-   * 
-   * @param field_name 
-   * @param time_fun 
-   * @param source_fun 
-   * @param ents_ptr 
+   *
+   * @param field_name
+   * @param time_fun
+   * @param source_fun
+   * @param ents_ptr
    */
   OpSourceImpl(const std::string field_name, TimeFun time_fun,
                ScalarFun source_fun,
@@ -52,15 +63,16 @@ protected:
 };
 
 template <int FIELD_DIM, typename OpBase>
-struct OpSourceImpl<1, FIELD_DIM, GAUSS, OpBase> : public OpBase {
+struct OpSourceImpl<1, FIELD_DIM, GAUSS,
+                    SourceFunctionSpecialization::S<OpBase>> : public OpBase {
 
   /**
    * @brief Construct a new Op Source Impl object
-   * 
-   * @param field_name 
-   * @param time_fun 
-   * @param source_fun 
-   * @param ents_ptr 
+   *
+   * @param field_name
+   * @param time_fun
+   * @param source_fun
+   * @param ents_ptr
    */
   OpSourceImpl(const std::string field_name, TimeFun time_fun,
                VectorFun<FIELD_DIM> source_fun,
@@ -69,10 +81,10 @@ struct OpSourceImpl<1, FIELD_DIM, GAUSS, OpBase> : public OpBase {
 
   /**
    * @brief Construct a new Op Source Impl object
-   * 
-   * @param field_name 
-   * @param source_fun 
-   * @param ents_ptr 
+   *
+   * @param field_name
+   * @param source_fun
+   * @param ents_ptr
    */
   OpSourceImpl(const std::string field_name, VectorFun<FIELD_DIM> source_fun,
                boost::shared_ptr<Range> ents_ptr = nullptr)
@@ -84,22 +96,23 @@ protected:
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &data);
 };
 
-template <int BASE_DIM, typename OpBase>
-struct OpSourceImpl<BASE_DIM, BASE_DIM, GAUSS, OpBase> : public OpBase {
+template <int FIELD_DIM, typename OpBase>
+struct OpSourceImpl<3, FIELD_DIM, GAUSS,
+                    SourceFunctionSpecialization::S<OpBase>> : public OpBase {
 
   OpSourceImpl(const std::string field_name, TimeFun time_fun,
-               VectorFun<BASE_DIM> source_fun,
+               VectorFun<FIELD_DIM> source_fun,
                boost::shared_ptr<Range> ents_ptr = nullptr)
       : OpBase(field_name, field_name, OpBase::OPROW, time_fun, ents_ptr),
         sourceFun(source_fun) {}
 
-  OpSourceImpl(const std::string field_name, VectorFun<BASE_DIM> source_fun,
+  OpSourceImpl(const std::string field_name, VectorFun<FIELD_DIM> source_fun,
                boost::shared_ptr<Range> ents_ptr = nullptr)
       : OpBase(field_name, field_name, OpBase::OPROW, ents_ptr),
         sourceFun(source_fun) {}
 
 protected:
-  VectorFun<BASE_DIM> sourceFun;
+  VectorFun<FIELD_DIM> sourceFun;
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &data);
 };
 
@@ -143,9 +156,8 @@ protected:
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &data);
 };
 
-template <int BASE_DIM, int S, typename OpBase>
-struct OpBaseTimesVectorImpl<BASE_DIM, BASE_DIM, S, GAUSS, OpBase>
-    : public OpBase {
+template <int FIELD_DIM, int S, typename OpBase>
+struct OpBaseTimesVectorImpl<3, FIELD_DIM, S, GAUSS, OpBase> : public OpBase {
 
   OpBaseTimesVectorImpl(
       const std::string field_name, boost::shared_ptr<MatrixDouble> vec,
@@ -157,7 +169,7 @@ struct OpBaseTimesVectorImpl<BASE_DIM, BASE_DIM, S, GAUSS, OpBase>
 protected:
   ScalarFun betaCoeff;
   boost::shared_ptr<MatrixDouble> sourceVec;
-  FTensor::Index<'i', BASE_DIM> i;
+  FTensor::Index<'i', FIELD_DIM> i;
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &data);
 };
 
@@ -254,8 +266,8 @@ struct OpMixDivTimesUImpl<3, 1, SPACE_DIM, GAUSS, OpBase> : public OpBase {
       const std::string field_name, boost::shared_ptr<VectorDouble> vec_vals,
       ScalarFun beta = [](double, double, double) constexpr { return 1; },
       boost::shared_ptr<Range> ents_ptr = nullptr)
-      : OpBase(field_name, field_name, OpBase::OPROW, ents_ptr), vecVals(vec_vals),
-        betaConst(beta) {}
+      : OpBase(field_name, field_name, OpBase::OPROW, ents_ptr),
+        vecVals(vec_vals), betaConst(beta) {}
 
 protected:
   ScalarFun betaConst;
@@ -313,7 +325,7 @@ protected:
 };
 
 /**
- * @brief Multiply vactor times normal on the face times scalar function
+ * @brief Multiply vector times normal on the face times scalar function
  *
  * This operator typically will be used to evaluate natural boundary conditions
  * for mixed formulation.
@@ -324,6 +336,20 @@ protected:
  */
 template <int SPACE_DIM, IntegrationType I, typename OpBase>
 struct OpNormalMixVecTimesScalarImpl;
+
+/**
+ * @brief This is specialisation for sources on boundary which depends on normal
+ *
+ * @tparam BASE_DIM
+ * @tparam OpBase
+ */
+template <int FIELD_DIM, IntegrationType I, typename OpBase>
+struct OpSourceImpl<3, FIELD_DIM, I,
+                    SourceBoundaryNormalSpecialization::S<OpBase>>
+    : public OpNormalMixVecTimesScalarImpl<FIELD_DIM, I, OpBase> {
+  using OpNormalMixVecTimesScalarImpl<FIELD_DIM, I,
+                                      OpBase>::OpNormalMixVecTimesScalarImpl;
+};
 
 template <typename OpBase>
 struct OpNormalMixVecTimesScalarImpl<3, GAUSS, OpBase> : public OpBase {
@@ -414,8 +440,10 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
    * @tparam BASE_DIM
    * @tparam FIELD_DIM
    */
-  template <int BASE_DIM, int FIELD_DIM>
-  using OpSource = OpSourceImpl<BASE_DIM, FIELD_DIM, I, OpBase>;
+  template <int BASE_DIM, int FIELD_DIM,
+            typename S = SourceFunctionSpecialization>
+  using OpSource =
+      OpSourceImpl<BASE_DIM, FIELD_DIM, I, typename S::template S<OpBase>>;
 
   /**
    * @brief Vector field integrator \f$(v_i,f)_\Omega\f$, f is a vector
@@ -534,7 +562,8 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
 };
 
 template <typename OpBase>
-MoFEMErrorCode OpSourceImpl<1, 1, GAUSS, OpBase>::iNtegrate(
+MoFEMErrorCode
+OpSourceImpl<1, 1, GAUSS, SourceFunctionSpecialization::S<OpBase>>::iNtegrate(
     EntitiesFieldData::EntData &row_data) {
   MoFEMFunctionBegin;
 
@@ -566,8 +595,9 @@ MoFEMErrorCode OpSourceImpl<1, 1, GAUSS, OpBase>::iNtegrate(
 }
 
 template <int FIELD_DIM, typename OpBase>
-MoFEMErrorCode OpSourceImpl<1, FIELD_DIM, GAUSS, OpBase>::iNtegrate(
-    EntitiesFieldData::EntData &row_data) {
+MoFEMErrorCode
+OpSourceImpl<1, FIELD_DIM, GAUSS, SourceFunctionSpecialization::S<OpBase>>::
+    iNtegrate(EntitiesFieldData::EntData &row_data) {
   FTensor::Index<'i', FIELD_DIM> i;
   MoFEMFunctionBegin;
 
@@ -601,19 +631,20 @@ MoFEMErrorCode OpSourceImpl<1, FIELD_DIM, GAUSS, OpBase>::iNtegrate(
   MoFEMFunctionReturn(0);
 }
 
-template <int BASE_DIM, typename OpBase>
-MoFEMErrorCode OpSourceImpl<BASE_DIM, BASE_DIM, GAUSS, OpBase>::iNtegrate(
-    EntitiesFieldData::EntData &row_data) {
-  FTensor::Index<'i', BASE_DIM> i;
+template <int FIELD_DIM, typename OpBase>
+MoFEMErrorCode
+OpSourceImpl<3, FIELD_DIM, GAUSS, SourceFunctionSpecialization::S<OpBase>>::
+    iNtegrate(EntitiesFieldData::EntData &row_data) {
+  FTensor::Index<'i', FIELD_DIM> i;
   MoFEMFunctionBegin;
 
-  const size_t nb_base_functions = row_data.getN().size2() / BASE_DIM;
+  const size_t nb_base_functions = row_data.getN().size2() / 3;
   // get element volume
   const double vol = OpBase::getMeasure();
   // get integration weights
   auto t_w = OpBase::getFTensor0IntegrationWeight();
   // get base function gradient on rows
-  auto t_row_base = row_data.getFTensor1N<BASE_DIM>();
+  auto t_row_base = row_data.getFTensor1N<3>();
   // get coordinate at integration points
   auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
   // loop over integration points
@@ -718,23 +749,22 @@ MoFEMErrorCode OpBaseTimesVectorImpl<1, FIELD_DIM, S, GAUSS, OpBase>::iNtegrate(
   MoFEMFunctionReturn(0);
 }
 
-template <int BASE_DIM, int S, typename OpBase>
-MoFEMErrorCode
-OpBaseTimesVectorImpl<BASE_DIM, BASE_DIM, S, GAUSS, OpBase>::iNtegrate(
+template <int FIELD_DIM, int S, typename OpBase>
+MoFEMErrorCode OpBaseTimesVectorImpl<3, FIELD_DIM, S, GAUSS, OpBase>::iNtegrate(
     EntitiesFieldData::EntData &row_data) {
   MoFEMFunctionBegin;
 
-  const size_t nb_base_functions = row_data.getN().size2() / BASE_DIM;
+  const size_t nb_base_functions = row_data.getN().size2() / 3;
   // get element volume
   const double vol = OpBase::getMeasure();
   // get integration weights
   auto t_w = OpBase::getFTensor0IntegrationWeight();
   // get base function gradient on rows
-  auto t_row_base = row_data.getFTensor1N<BASE_DIM>();
+  auto t_row_base = row_data.getFTensor1N<3>();
   // get coords
   auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
   // get vector values
-  auto t_vec = getFTensor1FromMat<BASE_DIM, S>(*sourceVec);
+  auto t_vec = getFTensor1FromMat<FIELD_DIM, S>(*sourceVec);
   // loop over integration points
   for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
     // take into account Jacobian
