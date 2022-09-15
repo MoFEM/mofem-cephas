@@ -415,9 +415,7 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
    * @tparam FIELD_DIM
    */
   template <int BASE_DIM, int FIELD_DIM>
-  struct OpSource : public OpSourceImpl<BASE_DIM, FIELD_DIM, I, OpBase> {
-    using OpSourceImpl<BASE_DIM, FIELD_DIM, I, OpBase>::OpSourceImpl;
-  };
+  using OpSource = OpSourceImpl<BASE_DIM, FIELD_DIM, I, OpBase>;
 
   /**
    * @brief Vector field integrator \f$(v_i,f)_\Omega\f$, f is a vector
@@ -426,11 +424,7 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
    * @tparam BASE_DIM
    */
   template <int BASE_DIM, int S = 1>
-  struct OpBaseTimesScalar
-      : public OpBaseTimesScalarImpl<BASE_DIM, S, I, OpBase> {
-    using OpBaseTimesScalarImpl<BASE_DIM, S, I,
-                                     OpBase>::OpBaseTimesScalarImpl;
-  };
+  using OpBaseTimesScalar = OpBaseTimesScalarImpl<BASE_DIM, S, I, OpBase>;
 
   /** @deprecated use instead OpBaseTimesScalar
    */
@@ -446,12 +440,8 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
    * @tparam 0
    */
   template <int BASE_DIM, int FIELD_DIM, int S>
-  struct OpBaseTimesVector
-      : public OpBaseTimesVectorImpl<BASE_DIM, FIELD_DIM, S, I, OpBase> {
-    using OpBaseTimesVectorImpl<BASE_DIM, FIELD_DIM, S, I,
-                                OpBase>::OpBaseTimesVectorImpl;
-  };
-
+  using OpBaseTimesVector =
+      OpBaseTimesVectorImpl<BASE_DIM, FIELD_DIM, S, I, OpBase>;
   //! [Source operator]
 
   //! [Grad times tensor]
@@ -467,12 +457,8 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
    * @tparam SPACE_DIM
    */
   template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM, int S = 1>
-  struct OpGradTimesTensor
-      : public OpGradTimesTensorImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, S, I,
-                                     OpBase> {
-    using OpGradTimesTensorImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, S, I,
-                                OpBase>::OpGradTimesTensorImpl;
-  };
+  using OpGradTimesTensor =
+      OpGradTimesTensorImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, S, I, OpBase>;
 
   /**
    * @brief Integrate \f$(v_{,i},f_{ij})_\Omega\f$, f is symmetric tensor
@@ -485,12 +471,8 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
    * @tparam SPACE_DIM
    */
   template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM, int S = 1>
-  struct OpGradTimesSymTensor
-      : public OpGradTimesSymTensorImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, S, I,
-                                        OpBase> {
-    using OpGradTimesSymTensorImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, S, I,
-                                   OpBase>::OpGradTimesSymTensorImpl;
-  };
+  using OpGradTimesSymTensor =
+      OpGradTimesSymTensorImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, S, I, OpBase>;
 
   /**
    * @brief Integrate \f$(\lambda_{ij,j},u_{i})_\Omega\f$
@@ -500,11 +482,8 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
    * @tparam SPACE_DIM
    */
   template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM>
-  struct OpMixDivTimesU
-      : public OpMixDivTimesUImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, I, OpBase> {
-    using OpMixDivTimesUImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, I,
-                             OpBase>::OpMixDivTimesUImpl;
-  };
+  using OpMixDivTimesU =
+      OpMixDivTimesUImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, I, OpBase>;
 
   /**
    * @brief Integrate \f$(\lambda_{ij},u_{i,j})_\Omega\f$
@@ -512,11 +491,7 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
    * @tparam SPACE_DIM
    */
   template <int SPACE_DIM>
-  struct OpMixTensorTimesGradU
-      : public OpMixTensorTimesGradUImpl<SPACE_DIM, I, OpBase> {
-    using OpMixTensorTimesGradUImpl<SPACE_DIM, I,
-                                    OpBase>::OpMixTensorTimesGradUImpl;
-  };
+  using OpMixTensorTimesGradU = OpMixTensorTimesGradUImpl<SPACE_DIM, I, OpBase>;
 
   /**
    * @brief Integrate \f$(u_{i},\lambda_{ij,j})_\Omega\f$
@@ -524,14 +499,11 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
    * @tparam SPACE_DIM
    */
   template <int SPACE_DIM>
-  struct OpMixVecTimesDivLambda
-      : public OpMixVecTimesDivLambdaImpl<SPACE_DIM, I, OpBase> {
-    using OpMixVecTimesDivLambdaImpl<SPACE_DIM, I,
-                                     OpBase>::OpMixVecTimesDivLambdaImpl;
-  };
+  using OpMixVecTimesDivLambda =
+      OpMixVecTimesDivLambdaImpl<SPACE_DIM, I, OpBase>;
 
   /**
-   * @brief Multiply vactor times normal on the face times scalar function
+   * @brief Multiply vector times normal on the face times scalar function
    *
    * This operator typically will be used to evaluate natural boundary
    * conditions for mixed formulation.
@@ -541,11 +513,8 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
    * @tparam OpBase
    */
   template <int SPACE_DIM>
-  struct OpNormalMixVecTimesScalar
-      : public OpNormalMixVecTimesScalarImpl<SPACE_DIM, I, OpBase> {
-    using OpNormalMixVecTimesScalarImpl<SPACE_DIM, I,
-                                        OpBase>::OpNormalMixVecTimesScalarImpl;
-  };
+  using OpNormalMixVecTimesScalar =
+      OpNormalMixVecTimesScalarImpl<SPACE_DIM, I, OpBase>;
 
   /**
    * @brief Convective term
@@ -560,12 +529,8 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
    * @tparam SPACE_DIM
    */
   template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM>
-  struct OpConvectiveTermRhs
-      : public OpConvectiveTermRhsImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, I,
-                                       OpBase> {
-    using OpConvectiveTermRhsImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, I,
-                                  OpBase>::OpConvectiveTermRhsImpl;
-  };
+  using OpConvectiveTermRhs =
+      OpConvectiveTermRhsImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, I, OpBase>;
 };
 
 template <typename OpBase>

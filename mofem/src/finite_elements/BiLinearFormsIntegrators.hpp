@@ -448,11 +448,7 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
    * @tparam SPACE_DIM
    */
   template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM>
-  struct OpGradGrad
-      : public OpGradGradImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, I, OpBase> {
-    using OpGradGradImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, I,
-                         OpBase>::OpGradGradImpl;
-  };
+  using OpGradGrad = OpGradGradImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, I, OpBase>;
 
   /**
    * @brief Integrate \f$(v_i,\beta(\mathbf{x}) u_j)_\Omega\f$
@@ -461,9 +457,7 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
    * @tparam
    */
   template <int BASE_DIM, int FIELD_DIM>
-  struct OpMass : public OpMassImpl<BASE_DIM, FIELD_DIM, I, OpBase> {
-    using OpMassImpl<BASE_DIM, FIELD_DIM, I, OpBase>::OpMassImpl;
-  };
+  using OpMass = OpMassImpl<BASE_DIM, FIELD_DIM, I, OpBase>;
 
   /**
    * @brief Integrate \f$(v_k,D_{ijkl} u_{,l})_\Omega\f$
@@ -476,12 +470,8 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
    * @tparam S
    */
   template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM, int S = 0>
-  struct OpGradSymTensorGrad
-      : public OpGradSymTensorGradImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, S, I,
-                                       OpBase> {
-    using OpGradSymTensorGradImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, S, I,
-                                  OpBase>::OpGradSymTensorGradImpl;
-  };
+  using OpGradSymTensorGrad =
+      OpGradSymTensorGradImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, S, I, OpBase>;
 
   /**
    * @brief Integrate \f$(v_{,ij},D_{ijkl} u_{,kl})_\Omega\f$
@@ -494,13 +484,9 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
    * @tparam S
    */
   template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM, int S = 0>
-  struct OpGradGradSymTensorGradGrad
-      : public OpGradGradSymTensorGradGradImpl<BASE_DIM, FIELD_DIM, SPACE_DIM,
-                                               S, I, OpBase> {
-    using OpGradGradSymTensorGradGradImpl<
-        BASE_DIM, FIELD_DIM, SPACE_DIM, S, I,
-        OpBase>::OpGradGradSymTensorGradGradImpl;
-  };
+  using OpGradGradSymTensorGradGrad =
+      OpGradGradSymTensorGradGradImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, S, I,
+                                      OpBase>;
 
   /**
    * @brief Integrate \f$(v_{,j},D_{ijkl} u_{,l})_\Omega\f$
@@ -513,12 +499,8 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
    * @tparam S
    */
   template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM, int S = 0>
-  struct OpGradTensorGrad
-      : public OpGradTensorGradImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, S, I,
-                                    OpBase> {
-    using OpGradTensorGradImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, S, I,
-                               OpBase>::OpGradTensorGradImpl;
-  };
+  using OpGradTensorGrad =
+      OpGradTensorGradImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, S, I, OpBase>;
 
   /**
    * @brief Integrate \f$(\lambda_{i,i},u)_\Omega\f$
@@ -526,11 +508,7 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
    * @tparam SPACE_DIM
    */
   template <int SPACE_DIM>
-  struct OpMixDivTimesScalar
-      : public OpMixDivTimesScalarImpl<SPACE_DIM, I, OpBase> {
-    using OpMixDivTimesScalarImpl<SPACE_DIM, I,
-                                  OpBase>::OpMixDivTimesScalarImpl;
-  };
+  using OpMixDivTimesScalar = OpMixDivTimesScalarImpl<SPACE_DIM, I, OpBase>;
 
   /**
    * @brief Integrate \f$(\lambda_{ij,j},u_{i})_\Omega\f$
@@ -538,9 +516,7 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
    * @tparam SPACE_DIM
    */
   template <int SPACE_DIM>
-  struct OpMixDivTimesVec : public OpMixDivTimesVecImpl<SPACE_DIM, I, OpBase> {
-    using OpMixDivTimesVecImpl<SPACE_DIM, I, OpBase>::OpMixDivTimesVecImpl;
-  };
+  using OpMixDivTimesVec = OpMixDivTimesVecImpl<SPACE_DIM, I, OpBase>;
 
   /**
    * @brief Integrate \f$(\lambda,u_{i,i})_\Omega\f$
@@ -548,12 +524,8 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
    * @tparam SPACE_DIM
    */
   template <int SPACE_DIM, CoordinateTypes COORDINATE_SYSTEM = CARTESIAN>
-  struct OpMixScalarTimesDiv
-      : public OpMixScalarTimesDivImpl<SPACE_DIM, I, OpBase,
-                                       COORDINATE_SYSTEM> {
-    using OpMixScalarTimesDivImpl<SPACE_DIM, I, OpBase,
-                                  COORDINATE_SYSTEM>::OpMixScalarTimesDivImpl;
-  };
+  using OpMixScalarTimesDiv =
+      OpMixScalarTimesDivImpl<SPACE_DIM, I, OpBase, COORDINATE_SYSTEM>;
 
   /**
    * @brief Integrate \f$(\lambda_{i},u_{,j})_\Omega\f$
@@ -561,12 +533,8 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
    * @tparam SPACE_DIM
    */
   template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM>
-  struct OpMixVectorTimesGrad
-      : public OpMixVectorTimesGradImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, I,
-                                        OpBase> {
-    using OpMixVectorTimesGradImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, I,
-                                   OpBase>::OpMixVectorTimesGradImpl;
-  };
+  using OpMixVectorTimesGrad =
+      OpMixVectorTimesGradImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, I, OpBase>;
 
   /**
    * @brief Integrate \f$(\lambda_{ij},u_{i,j})_\Omega\f$
@@ -574,27 +542,15 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
    * @tparam SPACE_DIM
    */
   template <int SPACE_DIM>
-  struct OpMixTensorTimesGrad
-      : public OpMixTensorTimesGradImpl<SPACE_DIM, I, OpBase> {
-    using OpMixTensorTimesGradImpl<SPACE_DIM, I,
-                                   OpBase>::OpMixTensorTimesGradImpl;
-  };
+  using OpMixTensorTimesGrad = OpMixTensorTimesGradImpl<SPACE_DIM, I, OpBase>;
 
   template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM>
-  struct OpConvectiveTermLhsDu
-      : public OpConvectiveTermLhsDuImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, I,
-                                         OpBase> {
-    using OpConvectiveTermLhsDuImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, I,
-                                    OpBase>::OpConvectiveTermLhsDuImpl;
-  };
+  using OpConvectiveTermLhsDu =
+      OpConvectiveTermLhsDuImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, I, OpBase>;
 
   template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM>
-  struct OpConvectiveTermLhsDy
-      : public OpConvectiveTermLhsDyImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, I,
-                                         OpBase> {
-    using OpConvectiveTermLhsDyImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, I,
-                                    OpBase>::OpConvectiveTermLhsDyImpl;
-  };
+  using OpConvectiveTermLhsDy =
+      OpConvectiveTermLhsDyImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, I, OpBase>;
 };
 
 template <int SPACE_DIM, typename OpBase>
