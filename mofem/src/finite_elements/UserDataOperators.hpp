@@ -2017,11 +2017,16 @@ struct OpCalculateHVecVectorField
       DoubleAllocator>::OpCalculateHVecVectorField_General;
 };
 
+
+
 /** \brief Get vector field for H-div approximation
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
-template <int Tensor_Dim>
-struct OpCalculateHVecVectorFieldDot
+template <int Base_Dim, int Field_Dim = Base_Dim>
+struct OpCalculateHVecVectorFieldDot;
+
+template <int Field_Dim>
+struct OpCalculateHVecVectorFieldDot<3, Field_Dim>
     : public ForcesAndSourcesCore::UserDataOperator {
 
   OpCalculateHVecVectorFieldDot(const std::string field_name,
@@ -2051,13 +2056,14 @@ private:
   const int zeroSide;
 };
 
-template <int Tensor_Dim>
-MoFEMErrorCode OpCalculateHVecVectorFieldDot<Tensor_Dim>::doWork(
+template <int Field_Dim>
+MoFEMErrorCode OpCalculateHVecVectorFieldDot<3, Field_Dim>::doWork(
     int side, EntityType type, EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
+
   const size_t nb_integration_points = this->getGaussPts().size2();
   if (type == zeroType && side == zeroSide) {
-    dataPtr->resize(Tensor_Dim, nb_integration_points, false);
+    dataPtr->resize(Field_Dim, nb_integration_points, false);
     dataPtr->clear();
   }
 
@@ -2076,9 +2082,9 @@ MoFEMErrorCode OpCalculateHVecVectorFieldDot<Tensor_Dim>::doWork(
     CHKERR VecRestoreArrayRead(getFEMethod()->ts_u_t, &array);
 
     const size_t nb_base_functions = data.getN().size2() / 3;
-    FTensor::Index<'i', Tensor_Dim> i;
-    auto t_n_hdiv = data.getFTensor1N<Tensor_Dim>();
-    auto t_data = getFTensor1FromMat<Tensor_Dim>(*dataPtr);
+    FTensor::Index<'i', Field_Dim> i;
+    auto t_n_hdiv = data.getFTensor1N<3>();
+    auto t_data = getFTensor1FromMat<Field_Dim>(*dataPtr);
     for (size_t gg = 0; gg != nb_integration_points; ++gg) {
       int bb = 0;
       for (; bb != nb_dofs; ++bb) {
@@ -2090,6 +2096,7 @@ MoFEMErrorCode OpCalculateHVecVectorFieldDot<Tensor_Dim>::doWork(
       ++t_data;
     }
   }
+
   MoFEMFunctionReturn(0);
 }
 
