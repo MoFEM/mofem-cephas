@@ -61,7 +61,7 @@ template <typename EleOp> struct NaturalBC {
           boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
           MoFEM::Interface &m_field, const std::string field_name,
           std::vector<boost::shared_ptr<ScalingMethod>> smv,
-          const std::string block_name = "", Sev sev = Sev::noisy);
+          const std::string block_name = "", Sev sev = Sev::verbose);
     };
 
   }; // Assembly
@@ -626,10 +626,10 @@ struct AddFluxToPipelineImpl<
 
     auto add_op = [&](auto &&meshset_vec_ptr) {
       for (auto m : meshset_vec_ptr) {
-        MOFEM_TAG_AND_LOG("SELF", sev, "OpFlux") << "Add for meshset " << *m;
+        MOFEM_TAG_AND_LOG("WORLD", sev, "OpFlux") << "Add " << *m;
         pipeline.push_back(new OP(m_field, m->getMeshsetId(), field_name, smv));
       }
-      MOFEM_LOG_CHANNEL("SELF");
+      MOFEM_LOG_CHANNEL("WORLD");
     };
 
     switch (BCTYPE) {
