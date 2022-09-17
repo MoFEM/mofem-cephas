@@ -587,7 +587,7 @@ MoFEMErrorCode OpFluxImpl<NaturalMeshsetType<TEMPERATURESET>, 3, FIELD_DIM, A,
 
   TemperatureCubitBcData mydata;
   CHKERR cubit_meshset_ptr->getBcDataStructure(mydata);
-  this->scalarValue = -mydata.data.value1;
+  this->scalarValue = mydata.data.value1;
 
   this->entsPtr = boost::make_shared<Range>();
   CHKERR m_field.get_moab().get_entities_by_handle(cubit_meshset_ptr->meshset,
