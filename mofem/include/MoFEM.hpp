@@ -139,6 +139,9 @@ using FTensor::operator>>;
 #include <PostProc.hpp>
 #include <ScalingMethod.hpp>
 #include <Natural.hpp>
+#include <NaturalMeshsetType.hpp>
+#include <NaturalForceMeshsets.hpp>
+#include <NaturalTemperatureMeshsets.hpp>
 #include <Essential.hpp>
 
 #endif // MOFEM_HPP__
