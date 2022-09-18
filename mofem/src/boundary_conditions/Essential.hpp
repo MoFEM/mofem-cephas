@@ -13,12 +13,39 @@
 
 namespace MoFEM {
 
+/**
+ * @brief Wrapper on user dtat (element) operator used to select specialization
+ * of essential bc.
+ *
+ * @tparam T
+ */
 template <typename T> struct EssentialOpType {};
 
+/**
+ * @brief Specialisation for b.c. applied by different types of meshsets
+ *
+ * @tparam BC
+ */
 template <CubitBC BC> struct EssentialMeshsetType {};
 
+/**
+ * @brief Class (Function) to enforce essential constrains
+ *
+ * Class (Function) to enforce essential constrains for DOFs which were
+ * removed from the system
+ *
+ * @tparam T
+ */
 template <typename T> struct EssentialPreProc {};
 
+/**
+ * @brief Specialization for DisplacementCubitBcData
+ *
+ * Specialization to enforce blocksets which DisplacementCubitBcData ptr. That
+ * is to enforce displacement constraints. set
+ *
+ * @tparam
+ */
 template <> struct EssentialPreProc<DisplacementCubitBcData> {
   EssentialPreProc(MoFEM::Interface &m_field,
                    boost::shared_ptr<FEMethod> fe_ptr,
@@ -34,6 +61,14 @@ protected:
   bool getCoords;
 };
 
+/**
+ * @brief Specialization for TemperatureCubitBcData
+ *
+ * Specialization to enforce blocksets which TemperatureCubitBcData ptr. That is
+ * to enforce constrains on temperature. set
+ *
+ * @tparam
+ */
 template <> struct EssentialPreProc<TemperatureCubitBcData> {
   EssentialPreProc(MoFEM::Interface &m_field,
                    boost::shared_ptr<FEMethod> fe_ptr,
@@ -47,17 +82,57 @@ protected:
   VecOfTimeScalingMethods vecOfTimeScalingMethods;
 };
 
+/**
+ * @brief Enforce essential constrains on rhs.
+ * 
+ * This class is used when constrains are enforced by least square method.
+ * 
+ * @tparam T 
+ * @tparam BASE_DIM 
+ * @tparam FIELD_DIM 
+ * @tparam A 
+ * @tparam I 
+ * @tparam OpBase 
+ */
 template <typename T, int BASE_DIM, int FIELD_DIM, AssemblyType A,
           IntegrationType I, typename OpBase>
 struct OpEssentialRhsImpl;
 
+/**
+ * @brief Enforce essential constrains on lhs
+ * 
+ * This class is used when constrains are enforced by least square method.
+ * 
+ * @tparam T 
+ * @tparam BASE_DIM 
+ * @tparam FIELD_DIM 
+ * @tparam A 
+ * @tparam I 
+ * @tparam OpBase 
+ */
 template <typename T, int BASE_DIM, int FIELD_DIM, AssemblyType A,
           IntegrationType I, typename OpBase>
 struct OpEssentialLhsImpl;
 
+/**
+ * @brief Function (factory) for setting operators for rhs pipeline
+ * 
+ * @tparam T 
+ * @tparam A 
+ * @tparam I 
+ * @tparam OpBase 
+ */
 template <typename T, AssemblyType A, IntegrationType I, typename OpBase>
 struct AddEssentialToRhsPipelineImpl;
 
+/**
+ * @brief Function (factory) for setting operators for lhs pipeline
+ * 
+ * @tparam T 
+ * @tparam A 
+ * @tparam I 
+ * @tparam OpBase 
+ */
 template <typename T, AssemblyType A, IntegrationType I, typename OpBase>
 struct AddEssentialToLhsPipelineImpl;
 
@@ -225,10 +300,10 @@ template <int BASE_DIM, int FIELD_DIM, AssemblyType A, IntegrationType I,
           typename OpBase>
 struct OpEssentialLhsImpl<HeatFluxCubitBcData, BASE_DIM, FIELD_DIM, A, I,
                           OpBase>
-    : OpEssentialLhsImpl<DisplacementCubitBcData, BASE_DIM,
-                         FIELD_DIM, A, I, OpBase> {
-  using OpEssentialLhsImpl<DisplacementCubitBcData, BASE_DIM,
-                           FIELD_DIM, A, I, OpBase>::OpEssentialLhsImpl;
+    : OpEssentialLhsImpl<DisplacementCubitBcData, BASE_DIM, FIELD_DIM, A, I,
+                         OpBase> {
+  using OpEssentialLhsImpl<DisplacementCubitBcData, BASE_DIM, FIELD_DIM, A, I,
+                           OpBase>::OpEssentialLhsImpl;
 };
 
 template <int BASE_DIM, int FIELD_DIM, AssemblyType A, IntegrationType I,
@@ -410,8 +485,7 @@ template <int BASE_DIM, int FIELD_DIM, AssemblyType A, IntegrationType I,
           typename OpBase>
 struct AddEssentialToLhsPipelineImpl<
 
-    OpEssentialLhsImpl<HeatFluxCubitBcData, BASE_DIM, FIELD_DIM, A, I,
-                       OpBase>,
+    OpEssentialLhsImpl<HeatFluxCubitBcData, BASE_DIM, FIELD_DIM, A, I, OpBase>,
     A, I, OpBase
 
     > {
