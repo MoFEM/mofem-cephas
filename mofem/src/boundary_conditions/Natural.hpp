@@ -48,9 +48,6 @@ struct AddFluxToLhsPipelineImpl;
  */
 template <typename EleOp> struct NaturalBC {
 
-  using EntData = EntitiesFieldData::EntData;
-  using OpType = typename EleOp::OpType;
-
   /**
    * @brief Assembly methods
    * @ingroup mofem_forms

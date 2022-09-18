@@ -100,9 +100,6 @@ struct AddEssentialToLhsPipelineImpl;
  */
 template <typename EleOp> struct EssentialBC {
 
-  using EntData = EntitiesFieldData::EntData;
-  using OpType = typename EleOp::OpType;
-
   /**
    * @brief Assembly methods
    * @ingroup mofem_forms
