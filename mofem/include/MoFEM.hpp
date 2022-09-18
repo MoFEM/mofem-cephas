@@ -143,5 +143,8 @@ using FTensor::operator>>;
 #include <NaturalForceMeshsets.hpp>
 #include <NaturalTemperatureMeshsets.hpp>
 #include <Essential.hpp>
+#include <EssentialDisplacementCubitBcData.hpp>
+#include <EssentialTemperatureCubitBcData.hpp>
+#include <EssentialHeatFluxCubitBcData.hpp>
 
 #endif // MOFEM_HPP__

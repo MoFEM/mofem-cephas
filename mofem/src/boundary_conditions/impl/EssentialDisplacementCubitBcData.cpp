@@ -1,5 +1,5 @@
 /**
- * @file Essential.cpp
+ * @file EssentialDisplacementCubitBcData.cpp
  * @brief Essential boundary conditions
  * @version 13.1
  * @date 2022-09-03

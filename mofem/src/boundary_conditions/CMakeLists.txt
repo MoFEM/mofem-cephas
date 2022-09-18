@@ -21,7 +21,8 @@ endif(PRECOMPILED_HEADRES)
 add_library(
   mofem_boundary_conditions
   impl/ScalingMethod.cpp
-  impl/Essential.cpp
+  impl/EssentialDisplacementCubitBcData.cpp
+  impl/EssentialTemperatureCubitBcData.cpp
 )
 
 target_link_libraries(
