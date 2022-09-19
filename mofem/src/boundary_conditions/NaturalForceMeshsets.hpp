@@ -35,9 +35,6 @@ struct AddFluxToRhsPipelineImpl<
 
   static MoFEMErrorCode add(
 
-      FluxOpType<OpFluxRhsImpl<NaturalForceMeshsets, BASE_DIM, FIELD_DIM, A, I,
-                               OpBase>>,
-
       boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
       MoFEM::Interface &m_field, const std::string field_name,
       std::vector<boost::shared_ptr<ScalingMethod>> smv,
@@ -61,16 +58,20 @@ struct AddFluxToRhsPipelineImpl<
 
     CHKERR
     NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
-        I>::addFluxToRhsPipeline(FluxOpType<OpFluxForceset>(), pipeline,
-                                 m_field, field_name, smv, block_name, sev);
+        I>::template AddFluxToPipeline<OpFluxForceset>::add(pipeline, m_field,
+                                                            field_name, smv,
+                                                            block_name, sev);
     CHKERR
     NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
-        I>::addFluxToRhsPipeline(FluxOpType<OpFluxPressureset>(), pipeline,
-                                 m_field, field_name, smv, block_name, sev);
+        I>::template AddFluxToPipeline<OpFluxPressureset>::add(pipeline,
+                                                               m_field,
+                                                               field_name, smv,
+                                                               block_name, sev);
     CHKERR
     NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
-        I>::addFluxToRhsPipeline(FluxOpType<OpFluxBlockset>(), pipeline,
-                                 m_field, field_name, smv, block_name, sev);
+        I>::template AddFluxToPipeline<OpFluxBlockset>::add(pipeline, m_field,
+                                                            field_name, smv,
+                                                            block_name, sev);
 
     MoFEMFunctionReturn(0);
   }

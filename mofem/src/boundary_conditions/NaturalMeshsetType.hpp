@@ -559,9 +559,6 @@ struct AddFluxToRhsPipelineImpl<
 
   static MoFEMErrorCode add(
 
-      FluxOpType<OpFluxRhsImpl<NaturalMeshsetType<BCTYPE>, BASE_DIM, FIELD_DIM,
-                               A, I, OpBase>>,
-
       boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
       MoFEM::Interface &m_field, const std::string field_name,
       std::vector<boost::shared_ptr<ScalingMethod>> smv, std::string block_name,

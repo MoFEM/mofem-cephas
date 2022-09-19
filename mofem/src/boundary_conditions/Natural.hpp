@@ -57,83 +57,22 @@ template <typename EleOp> struct NaturalBC {
   template <AssemblyType A> struct Assembly {
 
     template <IntegrationType I> struct LinearForm {
-
       template <typename T, int BASE_DIM, int FIELD_DIM>
       using OpFlux = OpFluxRhsImpl<T, BASE_DIM, FIELD_DIM, A, I, EleOp>;
-
       template <typename T>
-      using AddFluxToRhsPipeline = AddFluxToRhsPipelineImpl<T, A, I, EleOp>;
-
-      template <typename T>
-      static MoFEMErrorCode addFluxToRhsPipeline(
-          FluxOpType<T>,
-          boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
-          MoFEM::Interface &m_field, const std::string field_name,
-          std::vector<boost::shared_ptr<ScalingMethod>> smv,
-          const std::string block_name = "", Sev sev = Sev::verbose);
+      using AddFluxToPipeline = AddFluxToRhsPipelineImpl<T, A, I, EleOp>;
     };
 
     template <IntegrationType I> struct BiLinearForm {
 
       template <typename T, int BASE_DIM, int FIELD_DIM>
       using OpFlux = OpFluxLhsImpl<T, BASE_DIM, FIELD_DIM, A, I, EleOp>;
-
       template <typename T>
-      using AddFluxToLhsPipeline = AddFluxToLhsPipelineImpl<T, A, I, EleOp>;
-
-      template <typename T>
-      static MoFEMErrorCode addFluxToLhsPipeline(
-          FluxOpType<T>,
-          boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
-          MoFEM::Interface &m_field, const std::string field_name,
-          std::vector<boost::shared_ptr<ScalingMethod>> smv,
-          const std::string block_name = "", Sev sev = Sev::verbose);
+      using AddFluxToPipeline = AddFluxToLhsPipelineImpl<T, A, I, EleOp>;
     };
 
   }; // Assembly
 };
-
-template <typename OpBase>
-template <AssemblyType A>
-template <IntegrationType I>
-template <typename T>
-MoFEMErrorCode
-NaturalBC<OpBase>::Assembly<A>::LinearForm<I>::addFluxToRhsPipeline(
-
-    FluxOpType<T>,
-
-    boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
-    MoFEM::Interface &m_field, const std::string field_name,
-    std::vector<boost::shared_ptr<ScalingMethod>> smv,
-    const std::string block_name, Sev sev
-
-) {
-  using ADD =
-      NaturalBC<OpBase>::Assembly<A>::LinearForm<I>::AddFluxToRhsPipeline<T>;
-  return ADD::add(FluxOpType<T>(), pipeline, m_field, field_name, smv,
-                  block_name, sev);
-}
-
-template <typename OpBase>
-template <AssemblyType A>
-template <IntegrationType I>
-template <typename T>
-MoFEMErrorCode
-NaturalBC<OpBase>::Assembly<A>::BiLinearForm<I>::addFluxToLhsPipeline(
-
-    FluxOpType<T>,
-
-    boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
-    MoFEM::Interface &m_field, const std::string field_name,
-    std::vector<boost::shared_ptr<ScalingMethod>> smv,
-    const std::string block_name, Sev sev
-
-) {
-  using ADD =
-      NaturalBC<OpBase>::Assembly<A>::BiLinearForm<I>::AddFluxToLhsPipeline<T>;
-  return ADD::add(FluxOpType<T>(), pipeline, m_field, field_name, smv,
-                  block_name, sev);
-}
 
 } // namespace MoFEM
 
