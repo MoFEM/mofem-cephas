@@ -39,6 +39,7 @@ using OpCalculateHOJacVolume = OpCalculateHOJacForVolume;
  * @brief Calculate HO coordinates at gauss points
  *
  */
+template <int FIELD_DIM = 3>
 struct OpCalculateHOCoords : public ForcesAndSourcesCore::UserDataOperator {
 
   OpCalculateHOCoords(const std::string field_name)
@@ -46,6 +47,36 @@ struct OpCalculateHOCoords : public ForcesAndSourcesCore::UserDataOperator {
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data);
+};
+
+template <int FIELD_DIM>
+MoFEMErrorCode
+OpCalculateHOCoords<FIELD_DIM>::doWork(int side, EntityType type,
+                                       EntitiesFieldData::EntData &data) {
+  FTensor::Index<'i', FIELD_DIM> i;
+  MoFEMFunctionBegin;
+  const auto nb_dofs = data.getFieldData().size() / FIELD_DIM;
+  if (nb_dofs) {
+    if (type == MBVERTEX)
+      getCoordsAtGaussPts().clear();
+    auto t_base = data.getFTensor0N();
+    auto t_coords = getFTensor1CoordsAtGaussPts();
+    const auto nb_integration_pts = data.getN().size1();
+    const auto nb_base_functions = data.getN().size2();
+    for (auto gg = 0; gg != nb_integration_pts; ++gg) {
+      auto t_dof = data.getFTensor1FieldData<FIELD_DIM>();
+      size_t bb = 0;
+      for (; bb != nb_dofs; ++bb) {
+        t_coords(i) += t_base * t_dof(i);
+        ++t_dof;
+        ++t_base;
+      }
+      for (; bb < nb_base_functions; ++bb)
+        ++t_base;
+      ++t_coords;
+    }
+  }
+  MoFEMFunctionReturn(0);
 };
 
 /**
