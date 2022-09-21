@@ -53,10 +53,12 @@ EdgePolynomialBase::getValue(MatrixDouble &pts,
                "for base %s",
                ApproximationBaseNames[base]);
 
-    data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(2, 1, false);
-    std::copy(Tools::diffShapeFunMBEDGE.begin(),
-              Tools::diffShapeFunMBEDGE.end(),
-              &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin());
+    data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(nb_gauss_pts, 2 * 1,
+                                                           false);
+    for (auto gg = 0; gg != nb_gauss_pts; ++gg)
+      std::copy(Tools::diffShapeFunMBEDGE.begin(),
+                Tools::diffShapeFunMBEDGE.end(),
+                &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(gg, 0));
   }
 
   switch (cTx->sPace) {

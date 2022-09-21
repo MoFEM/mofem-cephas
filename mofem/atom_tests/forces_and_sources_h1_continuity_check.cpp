@@ -506,7 +506,7 @@ int main(int argc, char *argv[]) {
         // mySplit << *tn_ptr << "  " << tn << " " << getLength() << endl;
         *tn_ptr -= tn;
 
-        // mySplit << getTangetAtGaussPts() << " " << getDirection() << endl;
+        // mySplit << getTangentAtGaussPts() << " " << getDirection() << endl;
 
         // cerr << t_ptr[0] << " " << t_ptr[1] << " " << t_ptr[2] << endl;
 

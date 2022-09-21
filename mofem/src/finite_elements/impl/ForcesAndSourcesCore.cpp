@@ -593,7 +593,7 @@ ForcesAndSourcesCore::getProblemTypeColIndices(const std::string &field_name,
 // ** Data **
 
 MoFEMErrorCode
-ForcesAndSurcesCore::getBitRefLevelOnData() {
+ForcesAndSourcesCore::getBitRefLevelOnData() {
   MoFEMFunctionBegin;
 
   // for (int s = H1; s != LASTSPACE; ++s) {

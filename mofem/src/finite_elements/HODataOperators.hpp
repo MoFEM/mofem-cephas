@@ -3,8 +3,6 @@
 
 */
 
-
-
 #ifndef __HO_DATA_OPERATORS_HPP__
 #define __HO_DATA_OPERATORS_HPP__
 
@@ -49,36 +47,6 @@ struct OpCalculateHOCoords : public ForcesAndSourcesCore::UserDataOperator {
                         EntitiesFieldData::EntData &data);
 };
 
-template <int FIELD_DIM>
-MoFEMErrorCode
-OpCalculateHOCoords<FIELD_DIM>::doWork(int side, EntityType type,
-                                       EntitiesFieldData::EntData &data) {
-  FTensor::Index<'i', FIELD_DIM> i;
-  MoFEMFunctionBegin;
-  const auto nb_dofs = data.getFieldData().size() / FIELD_DIM;
-  if (nb_dofs) {
-    if (type == MBVERTEX)
-      getCoordsAtGaussPts().clear();
-    auto t_base = data.getFTensor0N();
-    auto t_coords = getFTensor1CoordsAtGaussPts();
-    const auto nb_integration_pts = data.getN().size1();
-    const auto nb_base_functions = data.getN().size2();
-    for (auto gg = 0; gg != nb_integration_pts; ++gg) {
-      auto t_dof = data.getFTensor1FieldData<FIELD_DIM>();
-      size_t bb = 0;
-      for (; bb != nb_dofs; ++bb) {
-        t_coords(i) += t_base * t_dof(i);
-        ++t_dof;
-        ++t_base;
-      }
-      for (; bb < nb_base_functions; ++bb)
-        ++t_base;
-      ++t_coords;
-    }
-  }
-  MoFEMFunctionReturn(0);
-};
-
 /**
  * @deprecated This class should be DIM = 3 specialization when default
  * parameter is removed
@@ -90,7 +58,6 @@ struct OpSetHOInvJacToScalarBasesImpl : public OpSetInvJacToScalarBasesBasic {
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data);
-
 };
 
 /**
@@ -102,10 +69,10 @@ struct OpSetHOInvJacToScalarBasesImpl : public OpSetInvJacToScalarBasesBasic {
  * better, when user see and control outcome, and is aware of existing variants.
  *
  */
-template<int DIM = 3>
+template <int DIM = 3>
 struct OpSetHOInvJacToScalarBases : public OpSetHOInvJacToScalarBasesImpl {
   using OpSetHOInvJacToScalarBasesImpl::OpSetHOInvJacToScalarBasesImpl;
-}; 
+};
 
 template <>
 struct OpSetHOInvJacToScalarBases<2>
@@ -180,7 +147,7 @@ private:
   boost::shared_ptr<VectorDouble> detPtr;
 };
 
-/** \brief Apply contravariant (Piola) transfer to Hdiv space for HO geometr
+/** \brief Apply contravariant (Piola) transfer to Hdiv space for HO geometry
 
 * \ingroup mofem_forces_and_sources
 */
@@ -284,10 +251,12 @@ template <> struct OpCalculateHOJac<2> : public OpCalculateHOJacForFaceImpl<2> {
 /** \brief Calculate normals at Gauss points of triangle element
  * \ingroup mofem_forces_and_source
  */
+template <int FIELD_DIM = 3>
 struct OpGetHONormalsOnFace
     : public FaceElementForcesAndSourcesCore::UserDataOperator {
 
-  OpGetHONormalsOnFace(std::string field_name);
+  OpGetHONormalsOnFace(std::string field_name)
+      : FaceElementForcesAndSourcesCore::UserDataOperator(field_name, OPROW) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data);
@@ -370,14 +339,14 @@ private:
 /** \brief Calculate tangent vector on edge form HO geometry approximation
  * \ingroup mofem_forces_and_sources
  */
+template <int FIELD_DIM = 3>
 struct OpGetHOTangentsOnEdge
     : public EdgeElementForcesAndSourcesCore::UserDataOperator {
 
   OpGetHOTangentsOnEdge(
       std::string field_name,
       boost::shared_ptr<MatrixDouble> tangents_at_pts = nullptr)
-      : EdgeElementForcesAndSourcesCore::UserDataOperator(field_name,
-                                                              OPROW),
+      : EdgeElementForcesAndSourcesCore::UserDataOperator(field_name, OPROW),
         tangentsAtPts(tangents_at_pts) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
@@ -499,55 +468,292 @@ private:
   boost::shared_ptr<VectorDouble> detJacPtr;
 };
 
-template <typename E>
-MoFEMErrorCode addHOOpsVol(const std::string field, E &e, bool h1, bool hcurl,
-                           bool hdiv, bool l2) {
+/**
+ * @brief Add operators pushing bases from local to physical configuration
+ *
+ * @tparam FE_DIM dimension of element
+ * @tparam PROBLEM_DIM problem dimension
+ * @tparam SPACE_DIM space dimension
+ */
+template <int FE_DIM, int PROBLEM_DIM, int SPACE_DIM> struct AddHOOps;
+
+template <> struct AddHOOps<2, 2, 2> {
+  AddHOOps() = delete;
+  static MoFEMErrorCode
+  add(boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+      std::vector<FieldSpace> spaces, std::string geom_field_name = "");
+};
+
+template <> struct AddHOOps<1, 2, 2> {
+  AddHOOps() = delete;
+  static MoFEMErrorCode
+  add(boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+      std::vector<FieldSpace> spaces, std::string geom_field_name = "");
+};
+template <> struct AddHOOps<1, 3, 3> {
+  AddHOOps() = delete;
+  static MoFEMErrorCode
+  add(boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+      std::vector<FieldSpace> space, std::string geom_field_name = "");
+};
+
+template <> struct AddHOOps<2, 3, 3> {
+  AddHOOps() = delete;
+  static MoFEMErrorCode
+  add(boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+      std::vector<FieldSpace> space, std::string geom_field_name = "");
+};
+
+template <> struct AddHOOps<3, 3, 3> {
+  AddHOOps() = delete;
+  static MoFEMErrorCode
+  add(boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+      std::vector<FieldSpace> space, std::string geom_field_name = "");
+};
+
+template <int FIELD_DIM>
+MoFEMErrorCode
+OpCalculateHOCoords<FIELD_DIM>::doWork(int side, EntityType type,
+                                       EntitiesFieldData::EntData &data) {
+  FTensor::Index<'i', FIELD_DIM> i;
   MoFEMFunctionBegin;
-  auto material_grad_mat = boost::make_shared<MatrixDouble>();
-  auto material_det_vec = boost::make_shared<VectorDouble>();
-  auto material_inv_grad_mat = boost::make_shared<MatrixDouble>();
-  e.getOpPtrVector().push_back(
-      new OpCalculateVectorFieldGradient<3, 3>(field, material_grad_mat));
-  e.getOpPtrVector().push_back(new OpInvertMatrix<3>(
-      material_grad_mat, material_det_vec, material_inv_grad_mat));
-  e.getOpPtrVector().push_back(new OpSetHOWeights(material_det_vec));
-  if (h1)
-    e.getOpPtrVector().push_back(
-        new OpSetHOInvJacToScalarBases<3>(H1, material_inv_grad_mat));
-  if (l2)
-    e.getOpPtrVector().push_back(
-        new OpSetHOInvJacToScalarBases<3>(L2, material_inv_grad_mat));
-  if (hdiv) {
-    e.getOpPtrVector().push_back(new OpSetHOContravariantPiolaTransform(
-        HDIV, material_det_vec, material_grad_mat));
-    e.getOpPtrVector().push_back(
-        new OpSetHOInvJacVectorBase(HDIV, material_inv_grad_mat));
-  }
-  if (hcurl) {
-    e.getOpPtrVector().push_back(
-        new OpSetHOCovariantPiolaTransform(HCURL, material_inv_grad_mat));
-    e.getOpPtrVector().push_back(
-        new OpSetHOInvJacVectorBase(HCURL, material_inv_grad_mat));
+  const auto nb_dofs = data.getFieldData().size() / FIELD_DIM;
+  if (nb_dofs) {
+    if (type == MBVERTEX)
+      getCoordsAtGaussPts().clear();
+    auto t_base = data.getFTensor0N();
+    auto t_coords = getFTensor1CoordsAtGaussPts();
+    const auto nb_integration_pts = data.getN().size1();
+    const auto nb_base_functions = data.getN().size2();
+    for (auto gg = 0; gg != nb_integration_pts; ++gg) {
+      auto t_dof = data.getFTensor1FieldData<FIELD_DIM>();
+      size_t bb = 0;
+      for (; bb != nb_dofs; ++bb) {
+        t_coords(i) += t_base * t_dof(i);
+        ++t_dof;
+        ++t_base;
+      }
+      for (; bb < nb_base_functions; ++bb)
+        ++t_base;
+      ++t_coords;
+    }
   }
   MoFEMFunctionReturn(0);
 }
 
-template <typename E>
-MoFEMErrorCode addHOOpsFace3D(const std::string field, E &e, bool hcurl,
-                              bool hdiv) {
-  MoFEMFunctionBegin;
-  e.meshPositionsFieldName = "none";
-  e.getOpPtrVector().push_back(new OpGetHONormalsOnFace(field));
-  e.getOpPtrVector().push_back(new OpCalculateHOCoords(field));
-  if (hcurl) {
-    e.getOpPtrVector().push_back(
-        new OpHOSetContravariantPiolaTransformOnFace3D(HDIV));
+template <int FIELD_DIM>
+MoFEMErrorCode
+OpGetHONormalsOnFace<FIELD_DIM>::doWork(int side, EntityType type,
+                                        EntitiesFieldData::EntData &data) {
+  MoFEMFunctionBeginHot;
+
+  FTensor::Number<0> N0;
+  FTensor::Number<1> N1;
+
+  auto get_ftensor1 = [](MatrixDouble &m) {
+    return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
+        &m(0, 0), &m(0, 1), &m(0, 2));
+  };
+
+  unsigned int nb_dofs = data.getFieldData().size();
+  if (nb_dofs != 0) {
+
+    int nb_gauss_pts = data.getN().size1();
+    auto &tangent1_at_gauss_pts = getTangent1AtGaussPts();
+    auto &tangent2_at_gauss_pts = getTangent2AtGaussPts();
+    tangent1_at_gauss_pts.resize(nb_gauss_pts, 3, false);
+    tangent2_at_gauss_pts.resize(nb_gauss_pts, 3, false);
+
+    switch (type) {
+    case MBVERTEX: {
+      tangent1_at_gauss_pts.clear();
+      tangent2_at_gauss_pts.clear();
+    }
+    case MBEDGE:
+    case MBTRI:
+    case MBQUAD: {
+
+#ifndef NDEBUG
+      if (2 * data.getN().size2() != data.getDiffN().size2()) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "expected two direcatives in local element coordinates");
+      }
+      if (nb_dofs % FIELD_DIM != 0) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "expected that number of dofs is multiplicative of field "
+                "dimension");
+      }
+#endif
+
+      if (nb_dofs > FIELD_DIM * data.getN().size2()) {
+        unsigned int nn = 0;
+        for (; nn != nb_dofs; nn++) {
+          if (!data.getFieldDofs()[nn]->getActive())
+            break;
+        }
+        if (nn > FIELD_DIM * data.getN().size2()) {
+          SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                   "Data inconsistency for base %s",
+                   ApproximationBaseNames[data.getBase()]);
+        } else {
+          nb_dofs = nn;
+          if (!nb_dofs)
+            MoFEMFunctionReturnHot(0);
+        }
+      }
+      const int nb_base_functions = data.getN().size2();
+      auto t_base = data.getFTensor0N();
+      auto t_diff_base = data.getFTensor1DiffN<2>();
+      auto t_t1 = get_ftensor1(tangent1_at_gauss_pts);
+      auto t_t2 = get_ftensor1(tangent2_at_gauss_pts);
+      for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+        auto t_data = data.getFTensor1FieldData<FIELD_DIM>();
+        int bb = 0;
+        for (; bb != nb_dofs / FIELD_DIM; ++bb) {
+          FTensor::Index<'i', FIELD_DIM> i;
+          t_t1(i) += t_data(i) * t_diff_base(N0);
+          t_t2(i) += t_data(i) * t_diff_base(N1);
+          ++t_data;
+          ++t_base;
+          ++t_diff_base;
+        }
+        for (; bb != nb_base_functions; ++bb) {
+          ++t_base;
+          ++t_diff_base;
+        }
+        ++t_t1;
+        ++t_t2;
+      }
+    } break;
+    default:
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
+    }
   }
-  if (hdiv) {
-    e.getOpPtrVector().push_back(
-        new OpHOSetCovariantPiolaTransformOnFace3D(HDIV));
+
+  if (moab::CN::Dimension(type) == 2) {
+
+    auto &normal_at_gauss_pts = getNormalsAtGaussPts();
+    auto &tangent1_at_gauss_pts = getTangent1AtGaussPts();
+    auto &tangent2_at_gauss_pts = getTangent2AtGaussPts();
+
+    const auto nb_gauss_pts = tangent1_at_gauss_pts.size1();
+    normal_at_gauss_pts.resize(nb_gauss_pts, 3, false);
+
+    auto t_normal = get_ftensor1(normal_at_gauss_pts);
+    auto t_t1 = get_ftensor1(tangent1_at_gauss_pts);
+    auto t_t2 = get_ftensor1(tangent2_at_gauss_pts);
+    for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
+      FTensor::Index<'i', 3> i;
+      FTensor::Index<'j', 3> j;
+      FTensor::Index<'k', 3> k;
+      t_normal(j) = FTensor::levi_civita(i, j, k) * t_t1(k) * t_t2(i);
+      ++t_normal;
+      ++t_t1;
+      ++t_t2;
+    }
+  }
+
+  MoFEMFunctionReturnHot(0);
+}
+
+template <int FIELD_DIM>
+MoFEMErrorCode
+OpGetHOTangentsOnEdge<FIELD_DIM>::doWork(int side, EntityType type,
+                                         EntitiesFieldData::EntData &data) {
+  MoFEMFunctionBegin;
+
+  auto get_tangent = [&]() -> MatrixDouble & {
+    if (tangentsAtPts)
+      return *tangentsAtPts;
+    else
+      return getTangentAtGaussPts();
+  };
+
+  auto &tangent = get_tangent();
+  int nb_gauss_pts = getGaussPts().size2();
+
+  if (type == MBVERTEX) {
+    tangent.resize(nb_gauss_pts, 3, false);
+    tangent.clear();
+  }
+
+  int nb_dofs = data.getFieldData().size();
+  if (nb_dofs != 0) {
+    const int nb_base_functions = data.getN().size2();
+    double *diff_base_function = &*data.getDiffN().data().begin();
+    auto tangent_at_gauss_pts =
+        getFTensor1FromPtr<FIELD_DIM, 3>(&*tangent.data().begin());
+
+    FTensor::Index<'i', FIELD_DIM> i;
+    int size = nb_dofs / FIELD_DIM;
+    if (nb_dofs % FIELD_DIM) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Inconsistent number of dofs and filed dimension");
+    }
+    for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+      auto field_data = data.getFTensor1FieldData<FIELD_DIM>();
+      int bb = 0;
+      tangent_at_gauss_pts(i) = 0;
+      for (; bb < size; ++bb) {
+        tangent_at_gauss_pts(i) += field_data(i) * (*diff_base_function);
+        ++field_data;
+        ++diff_base_function;
+      }
+      for (; bb != nb_base_functions; ++bb) {
+        ++diff_base_function;
+      }
+      ++tangent_at_gauss_pts;
+    }
   }
   MoFEMFunctionReturn(0);
+}
+
+/**
+ * @deprecated do not use this function, instead use AddHOOps.
+ *
+ * @tparam E
+ * @param field
+ * @param e
+ * @param h1
+ * @param hcurl
+ * @param hdiv
+ * @param l2
+ * @return MoFEMErrorCode
+ */
+template <typename E>
+DEPRECATED MoFEMErrorCode addHOOpsVol(const std::string field, E &e, bool h1,
+                                      bool hcurl, bool hdiv, bool l2) {
+  std::vector<FieldSpace> spaces;
+  if (h1)
+    spaces.push_back(H1);
+  if (hcurl)
+    spaces.push_back(HCURL);
+  if (hdiv)
+    spaces.push_back(HDIV);
+  if (l2)
+    spaces.push_back(L2);
+  return AddHOOps<3, 3, 3>::add(e.getOpPtrVector(), spaces, field);
+}
+
+/**
+ * @deprecated do not use this function, instead use AddHOOps.
+ *
+ * @tparam E
+ * @param field
+ * @param e
+ * @param hcurl
+ * @param hdiv
+ * @return MoFEMErrorCode
+ */
+template <typename E>
+DEPRECATED MoFEMErrorCode addHOOpsFace3D(const std::string field, E &e,
+                                         bool hcurl, bool hdiv) {
+  std::vector<FieldSpace> spaces;
+  if (hcurl)
+    spaces.push_back(HCURL);
+  if (hdiv)
+    spaces.push_back(HDIV);
+  return AddHOOps<2, 3, 3>::add(e.getOpPtrVector(), spaces, field);
 }
 
 }; // namespace MoFEM

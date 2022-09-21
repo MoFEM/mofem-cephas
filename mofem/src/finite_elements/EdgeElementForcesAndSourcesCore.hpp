@@ -141,7 +141,13 @@ struct EdgeElementForcesAndSourcesCore::UserDataOperator
    */
   inline FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> getTensor1Coords();
 
-  inline FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
+  /**
+   * @brief Get tangent vector at integration points
+   *
+   * @return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, DIM>
+   */
+  template <int DIM = 3>
+  inline FTensor::Tensor1<FTensor::PackPtr<double *, 3>, DIM>
   getFTensor1TangentAtGaussPts();
 
   MoFEMErrorCode
@@ -199,12 +205,21 @@ EdgeElementForcesAndSourcesCore::UserDataOperator::getTensor1Coords() {
                                                             &ptr[2]);
 }
 
-FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
-EdgeElementForcesAndSourcesCore::UserDataOperator::
-    getFTensor1TangentAtGaussPts() {
+template <>
+inline FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
+EdgeElementForcesAndSourcesCore::UserDataOperator::getFTensor1TangentAtGaussPts<
+    3>() {
   double *ptr = &*getTangentAtGaussPts().data().begin();
   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
                                                             &ptr[2]);
+}
+
+template <>
+inline FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 2>
+EdgeElementForcesAndSourcesCore::UserDataOperator::getFTensor1TangentAtGaussPts<
+    2>() {
+  double *ptr = &*getTangentAtGaussPts().data().begin();
+  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 2>(ptr, &ptr[1]);
 }
 
 auto EdgeElementForcesAndSourcesCore::UserDataOperator::getFTensor1Normal(
