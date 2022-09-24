@@ -468,31 +468,10 @@ int main(int argc, char *argv[]) {
       using OpSource = FormsIntegrators<DomainEleOp>::Assembly<
           PETSC>::LinearForm<GAUSS>::OpSource<1, 1>;
 
-      if (SPACE_DIM == 2) {
-        pipeline_mng->getOpDomainLhsPipeline().push_back(
-            new OpCalculateHOJac<SPACE_DIM>(jac_ptr));
-        pipeline_mng->getOpDomainLhsPipeline().push_back(
-            new OpInvertMatrix<SPACE_DIM>(jac_ptr, det_ptr, inv_jac_ptr));
-        pipeline_mng->getOpDomainLhsPipeline().push_back(
-            new OpSetHOWeightsOnFace());
-        pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpSetHOWeightsOnFace());
-      }
-
-      if (SPACE_DIM == 3) {
-        pipeline_mng->getOpDomainLhsPipeline().push_back(
-            new OpCalculateHOJac<SPACE_DIM>(jac_ptr));
-        pipeline_mng->getOpDomainLhsPipeline().push_back(
-            new OpInvertMatrix<SPACE_DIM>(jac_ptr, det_ptr, nullptr));
-        pipeline_mng->getOpDomainLhsPipeline().push_back(
-            new OpSetHOWeights(det_ptr));
-        pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpCalculateHOJac<SPACE_DIM>(jac_ptr));
-        pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpInvertMatrix<SPACE_DIM>(jac_ptr, det_ptr, nullptr));
-        pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpSetHOWeights(det_ptr));
-      }
+      CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+          pipeline_mng->getOpDomainLhsPipeline(), {NOSPACE});
+      CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+          pipeline_mng->getOpDomainRhsPipeline(), {NOSPACE});
 
       using OpMass = FormsIntegrators<DomainEleOp>::Assembly<
           PETSC>::BiLinearForm<GAUSS>::OpMass<1, 1>;
@@ -537,12 +516,8 @@ int main(int argc, char *argv[]) {
       pipeline_mng->getDomainLhsFE().reset();
       pipeline_mng->getOpDomainRhsPipeline().clear();
 
-      pipeline_mng->getOpDomainRhsPipeline().push_back(
-          new OpCalculateHOJac<SPACE_DIM>(jac_ptr));
-      pipeline_mng->getOpDomainRhsPipeline().push_back(
-          new OpInvertMatrix<SPACE_DIM>(jac_ptr, det_ptr, inv_jac_ptr));
-      pipeline_mng->getOpDomainRhsPipeline().push_back(
-          new OpSetHOInvJacToScalarBases<SPACE_DIM>(space, inv_jac_ptr));
+      CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+          pipeline_mng->getOpDomainRhsPipeline(), {space});
 
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpValsDiffVals(vals, diff_vals, true));
@@ -565,12 +540,8 @@ int main(int argc, char *argv[]) {
       auto post_proc_fe =
           boost::make_shared<PostProcBrokenMeshInMoab<DomainEle>>(m_field);
 
-      post_proc_fe->getOpPtrVector().push_back(
-          new OpCalculateHOJac<SPACE_DIM>(jac_ptr));
-      post_proc_fe->getOpPtrVector().push_back(
-          new OpInvertMatrix<SPACE_DIM>(jac_ptr, det_ptr, inv_jac_ptr));
-      post_proc_fe->getOpPtrVector().push_back(
-          new OpSetHOInvJacToScalarBases<SPACE_DIM>(space, inv_jac_ptr));
+      CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+          post_proc_fe->getOpPtrVector(), {space});
 
       auto ptr_values = boost::make_shared<VectorDouble>();
       auto ptr_diff_vals = boost::make_shared<MatrixDouble>();
@@ -609,12 +580,8 @@ int main(int argc, char *argv[]) {
           m_field, simple->getDomainFEName(), SPACE_DIM);
 
       // push operators to side element
-      op_loop_side->getOpPtrVector().push_back(
-          new OpCalculateHOJac<SPACE_DIM>(jac_ptr));
-      op_loop_side->getOpPtrVector().push_back(
-          new OpInvertMatrix<SPACE_DIM>(jac_ptr, det_ptr, inv_jac_ptr));
-      op_loop_side->getOpPtrVector().push_back(
-          new OpSetHOInvJacToScalarBases<SPACE_DIM>(space, inv_jac_ptr));
+      CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+          op_loop_side->getOpPtrVector(), {space});
       op_loop_side->getOpPtrVector().push_back(
           new OpCalculateScalarFieldValues("FIELD1", ptr_values));
       op_loop_side->getOpPtrVector().push_back(

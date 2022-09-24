@@ -593,7 +593,7 @@ ForcesAndSourcesCore::getProblemTypeColIndices(const std::string &field_name,
 // ** Data **
 
 MoFEMErrorCode
-ForcesAndSurcesCore::getBitRefLevelOnData() {
+ForcesAndSourcesCore::getBitRefLevelOnData() {
   MoFEMFunctionBegin;
 
   // for (int s = H1; s != LASTSPACE; ++s) {
@@ -1053,7 +1053,7 @@ MoFEMErrorCode ForcesAndSourcesCore::calHierarchicalBaseFunctionsOnElement(
     case USER_BASE:
       if (!getUserPolynomialBase())
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "Functions genrating user approximation base not defined");
+                "Functions generating user approximation base not defined");
 
       for (int space = H1; space != LASTSPACE; ++space)
         if (dataOnElement[H1]->sPace.test(space) &&
@@ -1869,12 +1869,12 @@ ForcesAndSourcesCore::UserDataOperator::UserDataOperator(const FieldSpace space,
     : DataOperator(symm), opType(type), sPace(space), ptrFE(nullptr) {}
 
 ForcesAndSourcesCore::UserDataOperator::UserDataOperator(
-    const std::string &field_name, const char type, const bool symm)
+    const std::string field_name, const char type, const bool symm)
     : DataOperator(symm), opType(type), rowFieldName(field_name),
       colFieldName(field_name), sPace(LASTSPACE), ptrFE(nullptr) {}
 
 ForcesAndSourcesCore::UserDataOperator::UserDataOperator(
-    const std::string &row_field_name, const std::string &col_field_name,
+    const std::string row_field_name, const std::string col_field_name,
     const char type, const bool symm)
     : DataOperator(symm), opType(type), rowFieldName(row_field_name),
       colFieldName(col_field_name), sPace(LASTSPACE), ptrFE(nullptr) {}

@@ -206,7 +206,7 @@ int main(int argc, char *argv[]) {
 
         int nb_gauss_pts = data.getN().size1();
         for (int gg = 0; gg < nb_gauss_pts; gg++) {
-          my_split << "tangent " << gg << " " << getTangetAtGaussPts()
+          my_split << "tangent " << gg << " " << getTangentAtGaussPts()
                    << std::endl;
         }
 

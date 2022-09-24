@@ -505,6 +505,16 @@ MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
   MoFEMFunctionReturn(0);
 }
 
+const CubitMeshSets *
+MeshsetsManager::getCubitMeshsetPtr(const int ms_id,
+                                    const CubitBCType cubit_bc_type) const {
+  const CubitMeshSets *cubit_meshset_ptr;
+  CHK_THROW_MESSAGE(
+      getCubitMeshsetPtr(ms_id, cubit_bc_type, &cubit_meshset_ptr),
+      "Get not get meshset");
+  return cubit_meshset_ptr;
+}
+
 MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
     const string name, const CubitMeshSets **cubit_meshset_ptr) const {
   Interface &m_field = cOre;
@@ -524,6 +534,27 @@ MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
 }
 
 MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
+    const CubitBCType cubit_bc_type,
+    std::vector<const CubitMeshSets *> &vec_ptr) const {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+  for (auto &c : cubitMeshsets) {
+    if ((c.getBcType() & cubit_bc_type) == cubit_bc_type) {
+      vec_ptr.push_back(&c);
+    }
+  }
+  MoFEMFunctionReturn(0);
+}
+
+std::vector<const CubitMeshSets *>
+MeshsetsManager::getCubitMeshsetPtr(const CubitBCType cubit_bc_type) const {
+  std::vector<const CubitMeshSets *> vec_ptr;
+  CHK_MOAB_THROW(getCubitMeshsetPtr(cubit_bc_type, vec_ptr),
+                 "Error in getting meshsets by name");
+  return vec_ptr;
+}
+
+MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
     const std::regex reg_exp_name,
     std::vector<const CubitMeshSets *> &vec_ptr) const {
   Interface &m_field = cOre;
@@ -537,6 +568,14 @@ MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
     }
   }
   MoFEMFunctionReturn(0);
+}
+
+std::vector<const CubitMeshSets *>
+MeshsetsManager::getCubitMeshsetPtr(const std::regex reg_exp_name) const {
+  std::vector<const CubitMeshSets *> vec_ptr;
+  CHK_MOAB_THROW(getCubitMeshsetPtr(reg_exp_name, vec_ptr),
+                 "Error in getting meshsets by name");
+  return vec_ptr;
 }
 
 MoFEMErrorCode MeshsetsManager::getEntitiesByDimension(

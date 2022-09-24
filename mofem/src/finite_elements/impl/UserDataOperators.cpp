@@ -473,10 +473,10 @@ MoFEMErrorCode OpSetContravariantPiolaTransformOnEdge2D::doWork(
   FTensor::Index<'i', 3> i;
 
   {
-    int nb_gauss_pts = getTangetAtGaussPts().size1();
+    int nb_gauss_pts = getTangentAtGaussPts().size1();
     if (nb_gauss_pts) {
       l1.resize(nb_gauss_pts);
-      const auto &edge_direction = getTangetAtGaussPts();
+      const auto &edge_direction = getTangentAtGaussPts();
       FTensor::Tensor1<FTensor::PackPtr<const double *, 3>, 3> t_m_at_pts(
           &edge_direction(0, 0), &edge_direction(0, 1), &edge_direction(0, 2));
       for (int gg = 0; gg < nb_gauss_pts; ++gg) {
@@ -496,7 +496,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransformOnEdge2D::doWork(
       auto t_h_div = data.getFTensor1N<3>(base);
 
       size_t cc = 0;
-      const auto &edge_direction_at_gauss_pts = getTangetAtGaussPts();
+      const auto &edge_direction_at_gauss_pts = getTangentAtGaussPts();
       if (edge_direction_at_gauss_pts.size1() == nb_gauss_pts) {
 
         FTensor::Tensor1<FTensor::PackPtr<const double *, 3>, 3> t_m_at_pts(

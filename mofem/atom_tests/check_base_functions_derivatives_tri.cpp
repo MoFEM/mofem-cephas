@@ -321,24 +321,10 @@ int main(int argc, char *argv[]) {
 
     MyFE tri_fe(m_field);
 
-    auto jac_ptr = boost::make_shared<MatrixDouble>();
-    auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
-    auto det_ptr = boost::make_shared<VectorDouble>();
-
-    tri_fe.getOpPtrVector().push_back(new OpCalculateHOJac<2>(jac_ptr));
-    tri_fe.getOpPtrVector().push_back(
-        new OpInvertMatrix<2>(jac_ptr, det_ptr, inv_jac_ptr));
-    if (space == H1) {
-      tri_fe.getOpPtrVector().push_back(
-          new OpSetHOInvJacToScalarBases<2>(H1, inv_jac_ptr));
-    }
-    if (space == HCURL) {
-      tri_fe.getOpPtrVector().push_back(new OpSetInvJacHcurlFace(inv_jac_ptr));
-    }
+    CHKERR AddHOOps<2, 2, 2>::add(tri_fe.getOpPtrVector(), {space});
     tri_fe.getOpPtrVector().push_back(new OpCheckingDerivatives(my_split));
     CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TRI_FE", tri_fe);
 
-    cerr << *inv_jac_ptr << endl;
   }
   CATCH_ERRORS;
 

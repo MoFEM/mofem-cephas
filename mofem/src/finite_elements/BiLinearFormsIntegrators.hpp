@@ -10,8 +10,6 @@
 
 */
 
-
-
 #ifndef __BILINEAR_FORMS_INTEGRATORS_HPP__
 #define __BILINEAR_FORMS_INTEGRATORS_HPP__
 
@@ -25,9 +23,10 @@ template <int SPACE_DIM, typename OpBase>
 struct OpGradGradImpl<1, 1, SPACE_DIM, GAUSS, OpBase> : public OpBase {
   FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
   OpGradGradImpl(const std::string row_field_name,
-                 const std::string col_field_name, ScalarFun beta,
+                 const std::string col_field_name,
+                 ScalarFun beta = scalar_fun_one,
                  boost::shared_ptr<Range> ents_ptr = nullptr)
-      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
+      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL, ents_ptr),
         betaCoeff(beta) {
     if (row_field_name == col_field_name)
       this->sYmm = true;
@@ -35,7 +34,6 @@ struct OpGradGradImpl<1, 1, SPACE_DIM, GAUSS, OpBase> : public OpBase {
 
 protected:
   ScalarFun betaCoeff;
-  boost::shared_ptr<Range> entsPtr;
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data);
 };
@@ -44,9 +42,10 @@ template <int FIELD_DIM, int SPACE_DIM, typename OpBase>
 struct OpGradGradImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase> : public OpBase {
   FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
   OpGradGradImpl(const std::string row_field_name,
-                 const std::string col_field_name, ScalarFun beta,
+                 const std::string col_field_name,
+                 ScalarFun beta = scalar_fun_one,
                  boost::shared_ptr<Range> ents_ptr = nullptr)
-      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
+      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL, ents_ptr),
         betaCoeff(beta) {
     if (row_field_name == col_field_name)
       this->sYmm = true;
@@ -54,7 +53,6 @@ struct OpGradGradImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase> : public OpBase {
 
 protected:
   ScalarFun betaCoeff;
-  boost::shared_ptr<Range> entsPtr;
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data);
 };
@@ -65,17 +63,18 @@ struct OpMassImpl {};
 template <typename OpBase>
 struct OpMassImpl<1, 1, GAUSS, OpBase> : public OpBase {
 
-  OpMassImpl(const std::string row_field_name, const std::string col_field_name,
-             ScalarFun beta, boost::shared_ptr<Range> ents_ptr = nullptr)
-      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
-        betaCoeff(beta), entsPtr(ents_ptr) {
+  OpMassImpl(
+      const std::string row_field_name, const std::string col_field_name,
+      ScalarFun beta = [](double, double, double) constexpr { return 1; },
+      boost::shared_ptr<Range> ents_ptr = nullptr)
+      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL, ents_ptr),
+        betaCoeff(beta) {
     if (row_field_name == col_field_name)
       this->sYmm = true;
   }
 
 protected:
   ScalarFun betaCoeff;
-  boost::shared_ptr<Range> entsPtr;
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data);
 };
@@ -87,25 +86,24 @@ struct OpMassImpl<1, FIELD_DIM, GAUSS, OpBase>
 
 protected:
   using OpMassImpl<1, 1, GAUSS, OpBase>::betaCoeff;
-  using OpMassImpl<1, 1, GAUSS, OpBase>::entsPtr;
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data);
 };
 
 template <int BASE_DIM, typename OpBase>
-struct OpMassImpl<BASE_DIM, BASE_DIM, GAUSS, OpBase> : public OpBase {
+struct OpMassImpl<3, BASE_DIM, GAUSS, OpBase> : public OpBase {
 
   OpMassImpl(const std::string row_field_name, const std::string col_field_name,
-             ScalarFun beta, boost::shared_ptr<Range> ents_ptr = nullptr)
-      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
-        betaCoeff(beta), entsPtr(ents_ptr) {
+             ScalarFun beta = scalar_fun_one,
+             boost::shared_ptr<Range> ents_ptr = nullptr)
+      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL, ents_ptr),
+        betaCoeff(beta) {
     if (row_field_name == col_field_name)
       this->sYmm = true;
   }
 
 protected:
   ScalarFun betaCoeff;
-  boost::shared_ptr<Range> entsPtr;
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data);
 };
@@ -113,16 +111,16 @@ protected:
 template <typename OpBase>
 struct OpMassImpl<3, 9, GAUSS, OpBase> : public OpBase {
   OpMassImpl(const std::string row_field_name, const std::string col_field_name,
-             ScalarFun beta, boost::shared_ptr<Range> ents_ptr = nullptr)
-      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
-        betaCoeff(beta), entsPtr(ents_ptr) {
+             ScalarFun beta = scalar_fun_one,
+             boost::shared_ptr<Range> ents_ptr = nullptr)
+      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL, ents_ptr),
+        betaCoeff(beta) {
     if (row_field_name == col_field_name)
       this->sYmm = true;
   }
 
 protected:
   ScalarFun betaCoeff;
-  boost::shared_ptr<Range> entsPtr;
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data);
 };
@@ -139,15 +137,14 @@ struct OpGradSymTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>
                           const std::string col_field_name,
                           boost::shared_ptr<MatrixDouble> mat_D,
                           boost::shared_ptr<Range> ents_ptr = nullptr)
-      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL), matD(mat_D),
-        entsPtr(ents_ptr) {
+      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL, ents_ptr),
+        matD(mat_D) {
     if (row_field_name == col_field_name)
       this->sYmm = true;
   }
 
 protected:
   boost::shared_ptr<MatrixDouble> matD;
-  boost::shared_ptr<Range> entsPtr;
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data);
 };
@@ -183,14 +180,14 @@ struct OpGradGradSymTensorGradGradImpl<1, 1, SPACE_DIM, S, GAUSS, OpBase>
                                   const std::string col_field_name,
                                   boost::shared_ptr<MatrixDouble> mat_D,
                                   boost::shared_ptr<Range> ents_ptr = nullptr)
-      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL), matD(mat_D) {
+      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL, ents_ptr),
+        matD(mat_D) {
     if (row_field_name == col_field_name)
       this->sYmm = true;
   }
 
 protected:
   boost::shared_ptr<MatrixDouble> matD;
-  boost::shared_ptr<Range> entsPtr;
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data);
 };
@@ -247,10 +244,10 @@ struct OpMixScalarTimesDivImpl {};
 template <int SPACE_DIM, typename OpBase, CoordinateTypes COORDINATE_SYSTEM>
 struct OpMixScalarTimesDivImpl<SPACE_DIM, GAUSS, OpBase, COORDINATE_SYSTEM>
     : public OpBase {
-  OpMixScalarTimesDivImpl(const std::string row_field_name,
-                          const std::string col_field_name, ScalarFun alpha_fun,
-                          const bool assemble_transpose = false,
-                          const bool only_transpose = false)
+  OpMixScalarTimesDivImpl(
+      const std::string row_field_name, const std::string col_field_name,
+      ScalarFun alpha_fun = [](double, double, double) constexpr { return 1; },
+      const bool assemble_transpose = false, const bool only_transpose = false)
       : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
         alphaConstant(alpha_fun) {
     this->assembleTranspose = assemble_transpose;
@@ -451,11 +448,7 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
    * @tparam SPACE_DIM
    */
   template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM>
-  struct OpGradGrad
-      : public OpGradGradImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, I, OpBase> {
-    using OpGradGradImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, I,
-                         OpBase>::OpGradGradImpl;
-  };
+  using OpGradGrad = OpGradGradImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, I, OpBase>;
 
   /**
    * @brief Integrate \f$(v_i,\beta(\mathbf{x}) u_j)_\Omega\f$
@@ -464,9 +457,7 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
    * @tparam
    */
   template <int BASE_DIM, int FIELD_DIM>
-  struct OpMass : public OpMassImpl<BASE_DIM, FIELD_DIM, I, OpBase> {
-    using OpMassImpl<BASE_DIM, FIELD_DIM, I, OpBase>::OpMassImpl;
-  };
+  using OpMass = OpMassImpl<BASE_DIM, FIELD_DIM, I, OpBase>;
 
   /**
    * @brief Integrate \f$(v_k,D_{ijkl} u_{,l})_\Omega\f$
@@ -479,12 +470,8 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
    * @tparam S
    */
   template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM, int S = 0>
-  struct OpGradSymTensorGrad
-      : public OpGradSymTensorGradImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, S, I,
-                                       OpBase> {
-    using OpGradSymTensorGradImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, S, I,
-                                  OpBase>::OpGradSymTensorGradImpl;
-  };
+  using OpGradSymTensorGrad =
+      OpGradSymTensorGradImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, S, I, OpBase>;
 
   /**
    * @brief Integrate \f$(v_{,ij},D_{ijkl} u_{,kl})_\Omega\f$
@@ -497,13 +484,9 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
    * @tparam S
    */
   template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM, int S = 0>
-  struct OpGradGradSymTensorGradGrad
-      : public OpGradGradSymTensorGradGradImpl<BASE_DIM, FIELD_DIM, SPACE_DIM,
-                                               S, I, OpBase> {
-    using OpGradGradSymTensorGradGradImpl<
-        BASE_DIM, FIELD_DIM, SPACE_DIM, S, I,
-        OpBase>::OpGradGradSymTensorGradGradImpl;
-  };
+  using OpGradGradSymTensorGradGrad =
+      OpGradGradSymTensorGradGradImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, S, I,
+                                      OpBase>;
 
   /**
    * @brief Integrate \f$(v_{,j},D_{ijkl} u_{,l})_\Omega\f$
@@ -516,12 +499,8 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
    * @tparam S
    */
   template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM, int S = 0>
-  struct OpGradTensorGrad
-      : public OpGradTensorGradImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, S, I,
-                                    OpBase> {
-    using OpGradTensorGradImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, S, I,
-                               OpBase>::OpGradTensorGradImpl;
-  };
+  using OpGradTensorGrad =
+      OpGradTensorGradImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, S, I, OpBase>;
 
   /**
    * @brief Integrate \f$(\lambda_{i,i},u)_\Omega\f$
@@ -529,11 +508,7 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
    * @tparam SPACE_DIM
    */
   template <int SPACE_DIM>
-  struct OpMixDivTimesScalar
-      : public OpMixDivTimesScalarImpl<SPACE_DIM, I, OpBase> {
-    using OpMixDivTimesScalarImpl<SPACE_DIM, I,
-                                  OpBase>::OpMixDivTimesScalarImpl;
-  };
+  using OpMixDivTimesScalar = OpMixDivTimesScalarImpl<SPACE_DIM, I, OpBase>;
 
   /**
    * @brief Integrate \f$(\lambda_{ij,j},u_{i})_\Omega\f$
@@ -541,9 +516,7 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
    * @tparam SPACE_DIM
    */
   template <int SPACE_DIM>
-  struct OpMixDivTimesVec : public OpMixDivTimesVecImpl<SPACE_DIM, I, OpBase> {
-    using OpMixDivTimesVecImpl<SPACE_DIM, I, OpBase>::OpMixDivTimesVecImpl;
-  };
+  using OpMixDivTimesVec = OpMixDivTimesVecImpl<SPACE_DIM, I, OpBase>;
 
   /**
    * @brief Integrate \f$(\lambda,u_{i,i})_\Omega\f$
@@ -551,12 +524,8 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
    * @tparam SPACE_DIM
    */
   template <int SPACE_DIM, CoordinateTypes COORDINATE_SYSTEM = CARTESIAN>
-  struct OpMixScalarTimesDiv
-      : public OpMixScalarTimesDivImpl<SPACE_DIM, I, OpBase,
-                                       COORDINATE_SYSTEM> {
-    using OpMixScalarTimesDivImpl<SPACE_DIM, I, OpBase,
-                                  COORDINATE_SYSTEM>::OpMixScalarTimesDivImpl;
-  };
+  using OpMixScalarTimesDiv =
+      OpMixScalarTimesDivImpl<SPACE_DIM, I, OpBase, COORDINATE_SYSTEM>;
 
   /**
    * @brief Integrate \f$(\lambda_{i},u_{,j})_\Omega\f$
@@ -564,12 +533,8 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
    * @tparam SPACE_DIM
    */
   template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM>
-  struct OpMixVectorTimesGrad
-      : public OpMixVectorTimesGradImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, I,
-                                        OpBase> {
-    using OpMixVectorTimesGradImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, I,
-                                   OpBase>::OpMixVectorTimesGradImpl;
-  };
+  using OpMixVectorTimesGrad =
+      OpMixVectorTimesGradImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, I, OpBase>;
 
   /**
    * @brief Integrate \f$(\lambda_{ij},u_{i,j})_\Omega\f$
@@ -577,27 +542,15 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
    * @tparam SPACE_DIM
    */
   template <int SPACE_DIM>
-  struct OpMixTensorTimesGrad
-      : public OpMixTensorTimesGradImpl<SPACE_DIM, I, OpBase> {
-    using OpMixTensorTimesGradImpl<SPACE_DIM, I,
-                                   OpBase>::OpMixTensorTimesGradImpl;
-  };
+  using OpMixTensorTimesGrad = OpMixTensorTimesGradImpl<SPACE_DIM, I, OpBase>;
 
   template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM>
-  struct OpConvectiveTermLhsDu
-      : public OpConvectiveTermLhsDuImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, I,
-                                         OpBase> {
-    using OpConvectiveTermLhsDuImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, I,
-                                    OpBase>::OpConvectiveTermLhsDuImpl;
-  };
+  using OpConvectiveTermLhsDu =
+      OpConvectiveTermLhsDuImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, I, OpBase>;
 
   template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM>
-  struct OpConvectiveTermLhsDy
-      : public OpConvectiveTermLhsDyImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, I,
-                                         OpBase> {
-    using OpConvectiveTermLhsDyImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, I,
-                                    OpBase>::OpConvectiveTermLhsDyImpl;
-  };
+  using OpConvectiveTermLhsDy =
+      OpConvectiveTermLhsDyImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, I, OpBase>;
 };
 
 template <int SPACE_DIM, typename OpBase>
@@ -605,11 +558,6 @@ MoFEMErrorCode OpGradGradImpl<1, 1, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
     EntitiesFieldData::EntData &row_data,
     EntitiesFieldData::EntData &col_data) {
   MoFEMFunctionBegin;
-
-  if (entsPtr) {
-    if (entsPtr->find(OpBase::getFEEntityHandle()) == entsPtr->end())
-      MoFEMFunctionReturnHot(0);
-  }
 
   // get element volume
   const double vol = OpBase::getMeasure();
@@ -655,11 +603,6 @@ OpGradGradImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
     EntitiesFieldData::EntData &row_data,
     EntitiesFieldData::EntData &col_data) {
   MoFEMFunctionBegin;
-
-  if (entsPtr) {
-    if (entsPtr->find(OpBase::getFEEntityHandle()) == entsPtr->end())
-      MoFEMFunctionReturnHot(0);
-  }
 
   // get element volume
   const double vol = OpBase::getMeasure();
@@ -718,10 +661,6 @@ MoFEMErrorCode OpMassImpl<1, 1, GAUSS, OpBase>::iNtegrate(
     EntitiesFieldData::EntData &row_data,
     EntitiesFieldData::EntData &col_data) {
   MoFEMFunctionBegin;
-  if (entsPtr) {
-    if (entsPtr->find(OpBase::getFEEntityHandle()) == entsPtr->end())
-      MoFEMFunctionReturnHot(0);
-  }
 
 #ifndef NDEBUG
   auto log_error = [&]() {
@@ -798,10 +737,6 @@ MoFEMErrorCode OpMassImpl<1, FIELD_DIM, GAUSS, OpBase>::iNtegrate(
     EntitiesFieldData::EntData &row_data,
     EntitiesFieldData::EntData &col_data) {
   MoFEMFunctionBegin;
-  if (entsPtr) {
-    if (entsPtr->find(OpBase::getFEEntityHandle()) == entsPtr->end())
-      MoFEMFunctionReturnHot(0);
-  }
   // get element volume
   const double vol = OpBase::getMeasure();
   // get integration weights
@@ -850,22 +785,18 @@ MoFEMErrorCode OpMassImpl<1, FIELD_DIM, GAUSS, OpBase>::iNtegrate(
 };
 
 template <int BASE_DIM, typename OpBase>
-MoFEMErrorCode OpMassImpl<BASE_DIM, BASE_DIM, GAUSS, OpBase>::iNtegrate(
+MoFEMErrorCode OpMassImpl<3, BASE_DIM, GAUSS, OpBase>::iNtegrate(
     EntitiesFieldData::EntData &row_data,
     EntitiesFieldData::EntData &col_data) {
   FTensor::Index<'i', BASE_DIM> i;
   MoFEMFunctionBegin;
-  if (entsPtr) {
-    if (entsPtr->find(OpBase::getFEEntityHandle()) == entsPtr->end())
-      MoFEMFunctionReturnHot(0);
-  }
-  size_t nb_base_functions = row_data.getN().size2() / BASE_DIM;
+  size_t nb_base_functions = row_data.getN().size2() / 3;
   // // get element volume
   const double vol = OpBase::getMeasure();
   // get integration weights
   auto t_w = OpBase::getFTensor0IntegrationWeight();
   // get base function gradient on rows
-  auto t_row_base = row_data.getFTensor1N<BASE_DIM>();
+  auto t_row_base = row_data.getFTensor1N<3>();
   // get coordinate at integration points
   auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
   // loop over integration points
@@ -878,7 +809,7 @@ MoFEMErrorCode OpMassImpl<BASE_DIM, BASE_DIM, GAUSS, OpBase>::iNtegrate(
     int rr = 0;
     for (; rr != OpBase::nbRows; rr++) {
       // get column base functions gradient at gauss point gg
-      auto t_col_base = col_data.getFTensor1N<BASE_DIM>(gg, 0);
+      auto t_col_base = col_data.getFTensor1N<3>(gg, 0);
       // loop over columns
       for (int cc = 0; cc != OpBase::nbCols; cc++) {
         // calculate element of local matrix
@@ -903,10 +834,6 @@ MoFEMErrorCode OpMassImpl<3, 9, GAUSS, OpBase>::iNtegrate(
   MoFEMFunctionBegin;
   FTensor::Index<'i', 3> i;
   FTensor::Index<'k', 3> k;
-  if (entsPtr) {
-    if (entsPtr->find(OpBase::getFEEntityHandle()) == entsPtr->end())
-      MoFEMFunctionReturnHot(0);
-  }
   auto get_t_vec = [&](const int rr) {
     std::array<double *, 3> ptrs;
     for (auto i = 0; i != 3; ++i)
@@ -956,11 +883,6 @@ OpGradSymTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
     EntitiesFieldData::EntData &row_data,
     EntitiesFieldData::EntData &col_data) {
   MoFEMFunctionBegin;
-
-  if (entsPtr) {
-    if (entsPtr->find(OpBase::getFEEntityHandle()) == entsPtr->end())
-      MoFEMFunctionReturnHot(0);
-  }
 
   const size_t nb_row_dofs = row_data.getIndices().size();
   const size_t nb_col_dofs = col_data.getIndices().size();

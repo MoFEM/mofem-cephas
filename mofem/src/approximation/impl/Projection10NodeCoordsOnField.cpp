@@ -97,9 +97,9 @@ MoFEMErrorCode Projection10NodeCoordsOnField::operator()() {
   ublas::noalias(diffNodeCoord) = midNodeCoord - aveMidCoord;
   dOf.resize(3);
   ublas::noalias(dOf) = diffNodeCoord / edge_shape_function_val;
-  if (dofPtr->getNbOfCoeffs() != 3) {
+  if (dofPtr->getNbOfCoeffs() > 3) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "this method works only fields which are rank 3");
+            "this method works only fields which are rank 3 or lower");
   }
   dofPtr->getFieldData() = dOf[dofPtr->getDofCoeffIdx()];
 

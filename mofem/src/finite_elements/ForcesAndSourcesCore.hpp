@@ -585,11 +585,11 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
   UserDataOperator(const FieldSpace space, const char type = OPSPACE,
                    const bool symm = true);
 
-  UserDataOperator(const std::string &field_name, const char type,
+  UserDataOperator(const std::string field_name, const char type,
                    const bool symm = true);
 
-  UserDataOperator(const std::string &row_field_name,
-                   const std::string &col_field_name, const char type,
+  UserDataOperator(const std::string row_field_name,
+                   const std::string col_field_name, const char type,
                    const bool symm = true);
 
   /** \brief Return raw pointer to NumeredEntFiniteElement

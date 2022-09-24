@@ -192,18 +192,7 @@ int main(int argc, char *argv[]) {
       double div = 0;
       FaceEle fe_face(m_field);
       fe_face.getRuleHook = rule;
-      auto jac_ptr = boost::make_shared<MatrixDouble>();
-      auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
-      auto det_ptr = boost::make_shared<VectorDouble>();
-      fe_face.getOpPtrVector().push_back(new OpCalculateHOJacForFace(jac_ptr));
-      fe_face.getOpPtrVector().push_back(
-          new OpInvertMatrix<2>(jac_ptr, det_ptr, inv_jac_ptr));
-      fe_face.getOpPtrVector().push_back(new OpMakeHdivFromHcurl());
-      fe_face.getOpPtrVector().push_back(
-          new OpSetContravariantPiolaTransformOnFace2D(jac_ptr));
-      fe_face.getOpPtrVector().push_back(new OpSetInvJacHcurlFace(inv_jac_ptr));
-      fe_face.getOpPtrVector().push_back(
-          new OpSetHOWeightsOnFace());
+      CHKERR AddHOOps<2, 2, 2>::add(fe_face.getOpPtrVector(), {HDIV});
       fe_face.getOpPtrVector().push_back(new OpDivergence(div));
       CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "FACE_FE", fe_face);
       return div;

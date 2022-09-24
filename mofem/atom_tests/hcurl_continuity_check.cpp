@@ -526,9 +526,9 @@ int main(int argc, char *argv[]) {
         CHKERR mField.get_moab().tag_get_by_ptr(tH2, &edge, 1,
                                                 (const void **)&tn_ptr);
 
-        *tn_ptr = getTangetAtGaussPts()(0, 0) * t_ptr[0] +
-                  getTangetAtGaussPts()(0, 1) * t_ptr[1] +
-                  getTangetAtGaussPts()(0, 2) * t_ptr[2];
+        *tn_ptr = getTangentAtGaussPts()(0, 0) * t_ptr[0] +
+                  getTangentAtGaussPts()(0, 1) * t_ptr[1] +
+                  getTangentAtGaussPts()(0, 2) * t_ptr[2];
 
         double tn = 0;
         unsigned int nb_dofs = data.getN().size2() / 3;
@@ -541,18 +541,18 @@ int main(int argc, char *argv[]) {
 
         for (unsigned int dd = 0; dd != nb_dofs; ++dd) {
           double val = data.getFieldData()[dd];
-          tn += getTangetAtGaussPts()(0, 0) * data.getN()(0, 3 * dd + 0) *
+          tn += getTangentAtGaussPts()(0, 0) * data.getN()(0, 3 * dd + 0) *
                     val +
-                getTangetAtGaussPts()(0, 1) * data.getN()(0, 3 * dd + 1) *
+                getTangentAtGaussPts()(0, 1) * data.getN()(0, 3 * dd + 1) *
                     val +
-                getTangetAtGaussPts()(0, 2) * data.getN()(0, 3 * dd + 2) *
+                getTangentAtGaussPts()(0, 2) * data.getN()(0, 3 * dd + 2) *
                     val;
         }
 
         // mySplit << *tn_ptr << "  " << tn << " " << getLength() << endl;
         *tn_ptr -= tn;
 
-        // mySplit << getTangetAtGaussPts() << " " << getDirection() << endl;
+        // mySplit << getTangentAtGaussPts() << " " << getDirection() << endl;
 
         // cerr << t_ptr[0] << " " << t_ptr[1] << " " << t_ptr[2] << endl;
 

@@ -128,12 +128,23 @@ using FTensor::operator>>;
 #include <FormsIntegrators.hpp>
 #include <LinearFormsIntegrators.hpp>
 #include <BiLinearFormsIntegrators.hpp>
-#include <PostProc.hpp>
 
 // More interfaces
 
 #include <PipelineManager.hpp>
 #include <FieldEvaluator.hpp>
 #include <BcManager.hpp>
+
+// Post-processing and boundary condition
+#include <PostProc.hpp>
+#include <ScalingMethod.hpp>
+#include <Natural.hpp>
+#include <NaturalMeshsetType.hpp>
+#include <NaturalForceMeshsets.hpp>
+#include <NaturalTemperatureMeshsets.hpp>
+#include <Essential.hpp>
+#include <EssentialDisplacementCubitBcData.hpp>
+#include <EssentialTemperatureCubitBcData.hpp>
+#include <EssentialHeatFluxCubitBcData.hpp>
 
 #endif // MOFEM_HPP__

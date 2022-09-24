@@ -4,8 +4,8 @@
  * \example continuity_check_on_skeleton_with_simple_2d_for_hcurl.cpp
  *
  * \brief Integration on skeleton for 2d
- * 
- * Teting integration on skeleton and checking of continuity of hcurl space on
+ *
+ * Testing integration on skeleton and checking of continuity of hcurl space on
  * edges.
  */
 

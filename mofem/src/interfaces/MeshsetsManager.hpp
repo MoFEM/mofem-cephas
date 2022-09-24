@@ -486,6 +486,37 @@ struct MeshsetsManager : public UnknownInterface {
 
   /**
    * \brief get cubit meshset
+   * \ingroup mofem_meshset_mng
+   *
+   *
+   */
+  const CubitMeshSets *
+  getCubitMeshsetPtr(const int ms_id, const CubitBCType cubit_bc_type) const;
+
+  /**
+   * @brief Get vector of pointer by bc type
+   *
+   * \ingroup mofem_meshset_mng
+   *
+   * @param std::vector<const CubitMeshSets *>
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode
+  getCubitMeshsetPtr(const CubitBCType cubit_bc_type,
+                     std::vector<const CubitMeshSets *> &vec_ptr) const;
+
+/**
+   * @brief Get vector of pointer by bc type
+   *
+   * \ingroup mofem_meshset_mng
+   *
+   * @return MoFEMErrorCode
+   */
+  std::vector<const CubitMeshSets *>
+  getCubitMeshsetPtr(const CubitBCType cubit_bc_type) const;
+
+  /**
+   * \brief get cubit meshset
    *
    * \ingroup mofem_meshset_mng
    */
@@ -494,7 +525,7 @@ struct MeshsetsManager : public UnknownInterface {
                      const CubitMeshSets **cubit_meshset_ptr) const;
 
   /**
-   * @brief Get vector of poointer to blocksets with name satisfying regular
+   * @brief Get vector of pointer to blocksets with name satisfying regular
    * expression.
    *
    * \ingroup mofem_meshset_mng
@@ -506,6 +537,18 @@ struct MeshsetsManager : public UnknownInterface {
   MoFEMErrorCode
   getCubitMeshsetPtr(const std::regex reg_exp_name,
                      std::vector<const CubitMeshSets *> &vec_ptr) const;
+
+  /**
+   * @brief Get vector of pointer to blocksets with name satisfying regular
+   * expression.
+   *
+   * \ingroup mofem_meshset_mng
+   *
+   * @param reg_exp_name
+   * @return std::vector<const CubitMeshSets *>
+   */
+  std::vector<const CubitMeshSets *>
+  getCubitMeshsetPtr(const std::regex reg_exp_name) const;
 
   /**
     * \brief get entities from CUBIT/meshset of a particular entity dimension

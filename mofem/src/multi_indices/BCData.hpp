@@ -1,10 +1,8 @@
 /** \file BCData.hpp
- * \brief Data structure with Cubit native blocks/meshet with boundary
+ * \brief Data structure with Cubit native blocks/meshset with boundary
  * conditions
  *
  */
-
-
 
 #ifndef __BCDATA_HPP__
 #define __BCDATA_HPP__

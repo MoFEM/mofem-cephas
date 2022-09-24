@@ -164,7 +164,7 @@
 
                 <div class="fixed">
                     <!-- Twitter Embed Code -->
-                    <a class="twitter-timeline" data-lang="en" data-width="350" data-height="80vh" data-dnt="true"
+                    <a class="twitter-timeline" data-lang="en" data-width="350" data-height="650" data-dnt="true"
                         data-border-color="#D8D8D8" data-chrome="transparent"
                         href="https://twitter.com/mofemjoseph?ref_src=twsrc%5Etfw">News</a>
                     <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>

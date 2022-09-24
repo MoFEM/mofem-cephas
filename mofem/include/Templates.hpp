@@ -146,7 +146,7 @@ struct GetFTensor1FromMatImpl<3, S, T, ublas::row_major, A> {
     if (data.size1() != 3)
       THROW_MESSAGE(
           "getFTensor1FromMat<3>: wrong size of data matrix, number of "
-          "rows should be 3 but is %d" +
+          "rows should be 3 but is " +
           boost::lexical_cast<std::string>(data.size1()));
 #endif
     return FTensor::Tensor1<FTensor::PackPtr<double *, S>, 3>(
@@ -161,7 +161,7 @@ struct GetFTensor1FromMatImpl<2, S, T, ublas::row_major, A> {
     if (data.size1() != 2)
       THROW_MESSAGE(
           "getFTensor1FromMat<2>: wrong size of data matrix, number of "
-          "rows should be 2 but is %d" +
+          "rows should be 2 but is " +
           boost::lexical_cast<std::string>(data.size1()));
 #endif
     return FTensor::Tensor1<FTensor::PackPtr<double *, S>, 2>(&data(0, 0),
@@ -176,7 +176,7 @@ struct GetFTensor1FromMatImpl<1, S, T, ublas::row_major, A> {
     if (data.size1() != 1)
       THROW_MESSAGE(
           "getFTensor1FromMat<1>: wrong size of data matrix, number of "
-          "rows should be 1 but is %d" +
+          "rows should be 1 but is " +
           boost::lexical_cast<std::string>(data.size1()));
 #endif
     return FTensor::Tensor1<FTensor::PackPtr<double *, S>, 1>(&data(0, 0));
@@ -707,6 +707,25 @@ static inline auto getFTensor3FromMat(MatrixDouble &data) {
                                 DoubleAllocator>::get(data);
 }
 
+template<int DIM, int S = DIM>
+struct GetFTensor1FromPtrImpl;
+
+template <int S> struct GetFTensor1FromPtrImpl<2, S> {
+  GetFTensor1FromPtrImpl() = delete;
+  inline static auto get(double *ptr) {
+    return FTensor::Tensor1<FTensor::PackPtr<double *, S>, 2>(&ptr[HVEC0],
+                                                              &ptr[HVEC1]);
+  }
+};
+
+template <int S> struct GetFTensor1FromPtrImpl<3, S> {
+  GetFTensor1FromPtrImpl() = delete;
+  inline static auto get(double *ptr) {
+    return FTensor::Tensor1<FTensor::PackPtr<double *, S>, 3>(
+        &ptr[HVEC0], &ptr[HVEC1], &ptr[HVEC2]);
+  }
+};
+
 /**
  * @brief Make Tensor1 from pointer
  *
@@ -714,25 +733,10 @@ static inline auto getFTensor3FromMat(MatrixDouble &data) {
  * @param ptr
  * @return FTensor::Tensor2<FTensor::PackPtr<double *, 3 * DIM>, 3, DIM>
  */
-template <int DIM>
-inline FTensor::Tensor1<FTensor::PackPtr<double *, DIM>, DIM>
+template <int DIM, int S = DIM>
+inline FTensor::Tensor1<FTensor::PackPtr<double *, S>, DIM>
 getFTensor1FromPtr(double *ptr) {
-  static_assert(DIM != 3 && DIM != 2,
-                "Such getFTensor1FromPtr specialization is not implemented");
-};
-
-template <>
-inline FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>
-getFTensor1FromPtr<2>(double *ptr) {
-  return FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>(&ptr[HVEC0],
-                                                            &ptr[HVEC1]);
-};
-
-template <>
-inline FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
-getFTensor1FromPtr<3>(double *ptr) {
-  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
-      &ptr[HVEC0], &ptr[HVEC1], &ptr[HVEC2]);
+  return GetFTensor1FromPtrImpl<DIM, S>::get(ptr);
 };
 
 /**
@@ -934,10 +938,11 @@ getFTensor1FromArrayDiag(MatrixDouble &data, const size_t rr) {
  * @return FTensor::Tensor2<FTensor::PackPtr<double *, S>, DIM1, DIM2>
  */
 template <int DIM1, int DIM2, int S, class T, class L, class A>
-struct GetFTensor2FromArrayImpl {};
+struct GetFTensor2FromArrayImpl;
 
 template <int S, class T, class L, class A>
 struct GetFTensor2FromArrayImpl<2, 2, S, T, L, A> {
+  GetFTensor2FromArrayImpl() = delete;
   inline static auto get(ublas::matrix<T, L, A> &data, const size_t rr) {
     return FTensor::Tensor2<FTensor::PackPtr<T *, S>, 2, 2>{
         &data(rr + 0, 0), &data(rr + 0, 1), &data(rr + 1, 0), &data(rr + 1, 1)};
@@ -946,6 +951,7 @@ struct GetFTensor2FromArrayImpl<2, 2, S, T, L, A> {
 
 template <int S, class T, class L, class A>
 struct GetFTensor2FromArrayImpl<3, 3, S, T, L, A> {
+  GetFTensor2FromArrayImpl() = delete;
   inline static auto get(ublas::matrix<T, L, A> &data, const size_t rr) {
     return FTensor::Tensor2<FTensor::PackPtr<T *, S>, 3, 3>{
         &data(rr + 0, 0), &data(rr + 0, 1), &data(rr + 0, 2),

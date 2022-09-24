@@ -492,7 +492,7 @@ MoFEMErrorCode AtomTest::refineResults() {
                         domainParentRhs, bit_level2, BitRefLevel().set()));
 
     using OpDomainTimesScalarField = FormsIntegrators<DomainEleOp>::Assembly<
-        PETSC>::LinearForm<GAUSS>::OpBaseTimesScalarField<1>;
+        PETSC>::LinearForm<GAUSS>::OpBaseTimesScalar<1>;
     pipeline_mng->getOpDomainRhsPipeline().push_back(
         new OpDomainTimesScalarField(FIELD_NAME, field_vals_ptr, beta));
 
