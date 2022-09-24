@@ -827,16 +827,16 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
         MOFEM_LOG("BcMngWorld", Sev::inform) << *(bc->dispBcPtr);
       } else if (std::regex_match(bc_id, std::regex("(.*)_FIX_ALL(.*)"))) {
         bc->dispBcPtr = boost::make_shared<DisplacementCubitBcData>();
+        bc->dispBcPtr->data.flag1 = 1;
+        bc->dispBcPtr->data.flag2 = 1;
+        bc->dispBcPtr->data.flag3 = 1;
         if (bc->bcAttributes.size() >= 1) {
-          bc->dispBcPtr->data.flag1 = 1;
           bc->dispBcPtr->data.value1 = bc->bcAttributes[0];
         }
         if (bc->bcAttributes.size() >= 2) {
-          bc->dispBcPtr->data.flag2 = 1;
           bc->dispBcPtr->data.value2 = bc->bcAttributes[1];
         }
         if (bc->bcAttributes.size() >= 3) {
-          bc->dispBcPtr->data.flag3 = 1;
           bc->dispBcPtr->data.value3 = bc->bcAttributes[2];
         }
         MOFEM_LOG("BcMngWorld", Sev::inform) << "Add ALL " << bc_id;

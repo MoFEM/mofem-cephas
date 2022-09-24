@@ -764,9 +764,8 @@ MoFEMErrorCode AddHOOps<2, 3, 3>::add(
   } else {
 
     pipeline.push_back(new OpCalculateHOCoords<3>(geom_field_name));
-    pipeline.push_back(new OpGetHONormalsOnFace(geom_field_name));
+    pipeline.push_back(new OpGetHONormalsOnFace<3>(geom_field_name));
   }
-  pipeline.push_back(new OpSetHOWeightsOnFace());
 
   for (auto s : spaces) {
     switch (s) {
