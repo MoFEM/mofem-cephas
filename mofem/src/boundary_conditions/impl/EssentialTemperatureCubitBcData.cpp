@@ -30,21 +30,12 @@ MoFEMErrorCode EssentialPreProc<TemperatureCubitBcData>::operator()() {
       if (auto temp_bc = bc.second->tempBcPtr) {
 
         auto &bc_id = bc.first;
-        std::regex field_rgx("^(.*)_(.*)_(.*)$");
-        std::smatch match_field_name;
-        std::string field_name;
-        std::string block_name;
-
-        if (std::regex_search(bc_id, match_field_name, field_rgx)) {
-          field_name = match_field_name[2];
-          block_name = match_field_name[3];
-        } else {
-          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                  "Field name and block name can not be resolved");
-        }
 
         auto regex_str = (boost::format("%s_(.*)") % problem_name).str();
         if (std::regex_match(bc_id, std::regex(regex_str))) {
+
+          auto [field_name, block_name] =
+              BcManager::extractStringFromBlockId(bc_id, problem_name);
 
           MOFEM_LOG("WORLD", Sev::noisy)
               << "Apply EssentialPreProc<TemperatureCubitBcData>: "
