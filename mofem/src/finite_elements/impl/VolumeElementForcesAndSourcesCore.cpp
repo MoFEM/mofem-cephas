@@ -106,7 +106,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::setIntegrationPts() {
     MoFEMFunctionBegin;
     if (rule < QUAD_3D_TABLE_SIZE) {
       if (QUAD_3D_TABLE[rule]->dim != 3) {
-        SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY, "wrong dimension");
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong dimension");
       }
       if (QUAD_3D_TABLE[rule]->order < rule) {
         SETERRQ2(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
@@ -142,7 +142,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::setIntegrationPts() {
       }
 
     } else {
-      SETERRQ2(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "rule > quadrature order %d < %d", rule, QUAD_3D_TABLE_SIZE);
     }
     MoFEMFunctionReturn(0);
