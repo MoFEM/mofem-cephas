@@ -4,8 +4,6 @@
 
 */
 
-
-
 namespace MoFEM {
 
 FaceElementForcesAndSourcesCore::FaceElementForcesAndSourcesCore(
@@ -219,6 +217,21 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::setIntegrationPts() {
     MoFEMFunctionReturn(0);
   };
 
+  auto calc_base_for_tri = [&]() {
+    MoFEMFunctionBegin;
+    const size_t nb_gauss_pts = gaussPts.size2();
+    auto &base = dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE);
+    auto &diff_base = dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE);
+    base.resize(nb_gauss_pts, 3, false);
+    diff_base.resize(3, 2, false);
+    CHKERR ShapeMBTRI(&*base.data().begin(), &gaussPts(0, 0), &gaussPts(1, 0),
+                      nb_gauss_pts);
+    std::copy(
+        Tools::diffShapeFunMBTRI.begin(), Tools::diffShapeFunMBTRI.end(),
+        dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin());
+    MoFEMFunctionReturn(0);
+  };
+
   auto calc_base_for_quad = [&]() {
     MoFEMFunctionBegin;
     const size_t nb_gauss_pts = gaussPts.size2();
@@ -266,18 +279,10 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::setIntegrationPts() {
     // If rule is negative, set user defined integration points
     CHKERR setGaussPts(order_row, order_col, order_data);
     const size_t nb_gauss_pts = gaussPts.size2();
-    auto &base = dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE);
-    auto &diff_base = dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE);
     if (nb_gauss_pts) {
       switch (type) {
       case MBTRI:
-        base.resize(nb_gauss_pts, 3, false);
-        diff_base.resize(3, 2, false);
-        CHKERR ShapeMBTRI(&*base.data().begin(), &gaussPts(0, 0),
-                          &gaussPts(1, 0), nb_gauss_pts);
-        std::copy(
-            Tools::diffShapeFunMBTRI.begin(), Tools::diffShapeFunMBTRI.end(),
-            dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin());
+        CHKERR calc_base_for_tri();
         break;
       case MBQUAD:
         CHKERR calc_base_for_quad();
