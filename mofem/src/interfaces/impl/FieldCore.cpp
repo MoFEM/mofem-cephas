@@ -350,7 +350,6 @@ MoFEMErrorCode Core::addEntsToFieldByDim(const Range &ents, const int dim,
     MOFEM_LOG("SYNC", Sev::noisy) << "\tnb. add faces " << nb_ents_on_dim[2];
     MOFEM_LOG("SYNC", Sev::noisy) << "\tnb. add edges " << nb_ents_on_dim[1];
     MOFEM_LOG("SYNC", Sev::noisy) << "\tnb. add nodes " << nb_ents_on_dim[0];
-    MOFEM_LOG_SYNCHRONISE(mofemComm);
   }
   MoFEMFunctionReturn(0);
 }
@@ -358,8 +357,11 @@ MoFEMErrorCode Core::addEntsToFieldByDim(const Range &ents, const int dim,
 MoFEMErrorCode Core::add_ents_to_field_by_dim(const Range &ents, const int dim,
                                               const std::string &name,
                                               int verb) {
+  MoFEMFunctionBegin;
   Range ents_dim = ents.subset_by_dimension(dim);
-  return addEntsToFieldByDim(ents_dim, dim, name, verb);
+  CHKERR addEntsToFieldByDim(ents_dim, dim, name, verb);
+  MOFEM_LOG_SYNCHRONISE(mofemComm);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode Core::add_ents_to_field_by_type(const Range &ents,
@@ -372,6 +374,7 @@ MoFEMErrorCode Core::add_ents_to_field_by_type(const Range &ents,
     const int dim = get_moab().dimension_from_handle(ents_type[0]);
     CHKERR addEntsToFieldByDim(ents_type, dim, name, verb);
   }
+  MOFEM_LOG_SYNCHRONISE(mofemComm);
   MoFEMFunctionReturn(0);
 }
 
@@ -383,6 +386,7 @@ MoFEMErrorCode Core::add_ents_to_field_by_dim(const EntityHandle meshset,
   Range ents;
   CHKERR get_moab().get_entities_by_dimension(meshset, dim, ents, recursive);
   CHKERR addEntsToFieldByDim(ents, dim, name, verb);
+  MOFEM_LOG_SYNCHRONISE(mofemComm);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -397,6 +401,7 @@ MoFEMErrorCode Core::add_ents_to_field_by_type(const EntityHandle meshset,
     const int dim = get_moab().dimension_from_handle(ents[0]);
     CHKERR addEntsToFieldByDim(ents, dim, name, verb);
   }
+  MOFEM_LOG_SYNCHRONISE(mofemComm);
   MoFEMFunctionReturn(0);
 }
 
