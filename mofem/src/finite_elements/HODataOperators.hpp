@@ -721,7 +721,7 @@ OpGetHOTangentsOnEdge<FIELD_DIM>::doWork(int side, EntityType type,
  * @return MoFEMErrorCode
  */
 template <typename E>
-DEPRECATED MoFEMErrorCode addHOOpsVol(const std::string field, E &e, bool h1,
+MoFEMErrorCode addHOOpsVol(const std::string field, E &e, bool h1,
                                       bool hcurl, bool hdiv, bool l2) {
   std::vector<FieldSpace> spaces;
   if (h1)
@@ -746,7 +746,7 @@ DEPRECATED MoFEMErrorCode addHOOpsVol(const std::string field, E &e, bool h1,
  * @return MoFEMErrorCode
  */
 template <typename E>
-DEPRECATED MoFEMErrorCode addHOOpsFace3D(const std::string field, E &e,
+MoFEMErrorCode addHOOpsFace3D(const std::string field, E &e,
                                          bool hcurl, bool hdiv) {
   std::vector<FieldSpace> spaces;
   if (hcurl)
