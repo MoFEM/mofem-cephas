@@ -770,10 +770,10 @@ MoFEMErrorCode AddHOOps<2, 3, 3>::add(
   for (auto s : spaces) {
     switch (s) {
     case HCURL:
-      pipeline.push_back(new OpHOSetContravariantPiolaTransformOnFace3D(HDIV));
+      pipeline.push_back(new OpHOSetCovariantPiolaTransformOnFace3D(HCURL));
       break;
     case HDIV:
-      pipeline.push_back(new OpHOSetCovariantPiolaTransformOnFace3D(HDIV));
+      pipeline.push_back(new OpHOSetContravariantPiolaTransformOnFace3D(HDIV));
       break;
     default:
       SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
