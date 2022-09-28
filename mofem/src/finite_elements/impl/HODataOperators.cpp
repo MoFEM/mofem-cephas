@@ -646,12 +646,18 @@ MoFEMErrorCode OpHOSetContravariantPiolaTransformOnEdge3D::doWork(
 
 MoFEMErrorCode AddHOOps<2, 2, 2>::add(
     boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
-    std::vector<FieldSpace> spaces, std::string geom_field_name) {
+    std::vector<FieldSpace> spaces, std::string geom_field_name,
+    boost::shared_ptr<MatrixDouble> jac_ptr,
+    boost::shared_ptr<VectorDouble> det_ptr,
+    boost::shared_ptr<MatrixDouble> inv_jac_ptr) {
   MoFEMFunctionBegin;
 
-  auto det_ptr = boost::make_shared<VectorDouble>();
-  auto jac_ptr = boost::make_shared<MatrixDouble>();
-  auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
+  if (!jac_ptr)
+    jac_ptr = boost::make_shared<MatrixDouble>();
+  if (!det_ptr)
+    det_ptr = boost::make_shared<VectorDouble>();
+  if (!inv_jac_ptr)
+    inv_jac_ptr = boost::make_shared<MatrixDouble>();
 
   if (geom_field_name.empty()) {
 
@@ -787,12 +793,17 @@ MoFEMErrorCode AddHOOps<2, 3, 3>::add(
 
 MoFEMErrorCode AddHOOps<3, 3, 3>::add(
     boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
-    std::vector<FieldSpace> spaces, std::string geom_field_name) {
+    std::vector<FieldSpace> spaces, std::string geom_field_name,
+    boost::shared_ptr<MatrixDouble> jac, boost::shared_ptr<VectorDouble> det,
+    boost::shared_ptr<MatrixDouble> inv_jac) {
   MoFEMFunctionBegin;
 
-  auto jac = boost::make_shared<MatrixDouble>();
-  auto det = boost::make_shared<VectorDouble>();
-  auto inv_jac = boost::make_shared<MatrixDouble>();
+  if (!jac)
+    jac = boost::make_shared<MatrixDouble>();
+  if (!det)
+    det = boost::make_shared<VectorDouble>();
+  if (!inv_jac)
+    inv_jac = boost::make_shared<MatrixDouble>();
 
   if (geom_field_name.empty()) {
 
