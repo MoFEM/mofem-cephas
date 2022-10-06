@@ -3,7 +3,6 @@
  * \ingroup mofem_simple_interface
  */
 
-
 namespace MoFEM {
 
 MoFEMErrorCode Simple::query_interface(boost::typeindex::type_index type_index,
@@ -589,8 +588,8 @@ MoFEMErrorCode Simple::defineProblem(const PetscBool is_partitioned) {
 MoFEMErrorCode Simple::setFieldOrder(const std::string field_name,
                                      const int order, const Range *ents) {
   MoFEMFunctionBeginHot;
-  fieldsOrder.insert(
-      {field_name, {order, ents == NULL ? Range() : Range(*ents)}});
+  fieldsOrder.emplace_back(field_name, order,
+                           ents == NULL ? Range() : Range(*ents));
   MoFEMFunctionReturnHot(0);
 }
 
@@ -637,69 +636,38 @@ MoFEMErrorCode Simple::buildFields() {
   CHKERR make_no_field_ents(nofield_fields);
 
   // Set order
-  auto set_order = [&](auto meshset, auto dim, auto &fields) {
-    MoFEMFunctionBeginHot;
-    for (auto &field : fields) {
-      if (fieldsOrder.find(field) == fieldsOrder.end()) {
-        SETERRQ1(PETSC_COMM_WORLD, MOFEM_INVALID_DATA,
-                 "Order for field not set %s", field.c_str());
-      }
-      int dds = 0;
-      const Field *field_ptr = m_field.get_field_structure(field);
-      switch (field_ptr->getSpace()) {
-      case L2:
-        dds = dim;
-        break;
-      case HDIV:
-        dds = 2;
-        break;
-      case HCURL:
-        dds = 1;
-        break;
-      case H1:
-        dds = 1;
-        break;
-      default:
-        SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
-                "Glasgow we have a problem");
-      }
 
-      auto set_order = [&](auto field, auto &ents) {
-        MoFEMFunctionBegin;
+  auto get_field_ptr = [&](auto &f) { return m_field.get_field_structure(f); };
+  for (auto &t : fieldsOrder) {
+    const auto f = std::get<0>(t);
+    const auto order = std::get<1>(t);
+    MOFEM_LOG_CHANNEL("WORLD");
+    MOFEM_TAG_AND_LOG("WORLD", Sev::inform, "Simple")
+        << "Set order to field " << f << " order " << order << " ents "
+        << std::get<2>(t);
 
-        auto range = fieldsOrder.equal_range(field);
-        for (auto o = range.first; o != range.second; ++o) {
-          if (!o->second.second.empty())
-            ents = intersect(ents, o->second.second);
-          CHKERR m_field.set_field_order(ents, field, o->second.first);
-        }
+    if (std::get<2>(t).empty()) {
+      auto f_ptr = get_field_ptr(f);
 
-        MoFEMFunctionReturn(0);
-      };
-
-      if (field_ptr->getSpace() == H1) {
-        if (field_ptr->getApproxBase() == AINSWORTH_BERNSTEIN_BEZIER_BASE) {
-          Range ents;
-          CHKERR m_field.get_field_entities_by_dimension(field, 0, ents);
-          CHKERR set_order(field, ents);
+      if (f_ptr->getSpace() == H1) {
+        if (f_ptr->getApproxBase() == AINSWORTH_BERNSTEIN_BEZIER_BASE) {
+          CHKERR m_field.set_field_order(meshSet, MBVERTEX, f, order);
         } else {
-          CHKERR m_field.set_field_order(meshSet, MBVERTEX, field, 1);
+          CHKERR m_field.set_field_order(meshSet, MBVERTEX, f, 1);
         }
       }
-      for (int dd = dds; dd <= dim; dd++) {
-        Range ents;
-        CHKERR m_field.get_field_entities_by_dimension(field, dd, ents);
-        CHKERR set_order(field, ents);
+
+      for (auto d = 1; d <= dIm; ++d) {
+        for (EntityType t = CN::TypeDimensionMap[d].first;
+             t <= CN::TypeDimensionMap[d].second; ++t) {
+          CHKERR m_field.set_field_order(meshSet, t, f, order);
+        }
       }
+    } else {
+      CHKERR m_field.set_field_order(std::get<2>(t), f, order);
     }
-    MoFEMFunctionReturnHot(0);
-  };
-
-  CHKERR set_order(meshSet, dIm, domainFields);
-  CHKERR set_order(meshSet, dIm, dataFields);
-  CHKERR set_order(meshSet, dIm - 1, boundaryFields);
-  CHKERR set_order(meshSet, dIm - 1, skeletonFields);
-
+  }
+  MOFEM_LOG_CHANNEL("WORLD");
   // Build fields
   CHKERR m_field.build_fields();
   PetscLogEventEnd(MOFEM_EVENT_SimpleBuildFields, 0, 0, 0, 0);

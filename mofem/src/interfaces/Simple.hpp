@@ -493,7 +493,7 @@ private:
   std::vector<std::string> noFieldFields;     ///< NOFIELD field name
   std::vector<std::string> noFieldDataFields; ///< NOFIELD field name
 
-  std::multimap<std::string, std::pair<int, Range>>
+  std::list<std::tuple<std::string, int, Range>>
       fieldsOrder; ///< fields order
 
   std::string nameOfProblem; ///< problem name
