@@ -897,4 +897,28 @@ MoFEMErrorCode BcManager::removeBlockDOFsOnEntities<HeatFluxCubitBcData>(
   MoFEMFunctionReturn(0);
 }
 
+std::pair<std::string, std::string>
+BcManager::extractStringFromBlockId(const std::string block_id,
+                                    const std::string prb_name) {
+
+  // Assumes that field name is consist with letters and numbers.
+  // No special characters.
+  auto field_rgx_str =
+      (boost::format("%s_([a-zA-Z0-9]*)_(.*)") % prb_name).str();
+  std::regex field_rgx(field_rgx_str);
+  std::smatch match_field_name;
+  std::string field_name;
+  std::string block_name;
+
+  if (std::regex_search(block_id, match_field_name, field_rgx)) {
+    field_name = match_field_name[1];
+    block_name = match_field_name[2];
+  } else {
+    CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY,
+                      "Field name and block name can not be resolved");
+  }
+
+  return std::make_pair(field_name, block_name);
+}
+
 } // namespace MoFEM

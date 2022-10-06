@@ -32,32 +32,18 @@ MoFEMErrorCode EssentialPreProc<DisplacementCubitBcData>::operator()() {
       if (auto disp_bc = bc.second->dispBcPtr) {
 
         auto &bc_id = bc.first;
-        // Assumes that field name is consist with letters and numbers. No
-        // special characters.
-        auto field_rgx_str =
-            (boost::format("%s_([a-zA-Z0-9]*)_(.*)") % problem_name).str();
-        std::regex field_rgx(field_rgx_str);
-        std::smatch match_field_name;
-        std::string field_name;
-        std::string block_name;
-
-        auto get_field_coeffs = [&]() {
-          auto field_ptr = mField.get_field_structure(field_name);
-          return field_ptr->getNbOfCoeffs();
-        };
-
-        if (std::regex_search(bc_id, match_field_name, field_rgx)) {
-          field_name = match_field_name[1];
-          block_name = match_field_name[2];
-        } else {
-          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                  "Field name and block name can not be resolved");
-        }
-
-        const auto nb_field_coeffs = get_field_coeffs();
 
         auto regex_str = (boost::format("%s_(.*)") % problem_name).str();
         if (std::regex_match(bc_id, std::regex(regex_str))) {
+
+          auto [field_name, block_name] =
+              BcManager::extractStringFromBlockId(bc_id, problem_name);
+
+          auto get_field_coeffs = [&](auto field_name) {
+            auto field_ptr = mField.get_field_structure(field_name);
+            return field_ptr->getNbOfCoeffs();
+          };
+          const auto nb_field_coeffs = get_field_coeffs(field_name);
 
           MOFEM_LOG("WORLD", Sev::noisy)
               << "Apply EssentialPreProc<DisplacementCubitBcData>: "

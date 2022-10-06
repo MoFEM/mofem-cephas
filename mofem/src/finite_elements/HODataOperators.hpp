@@ -481,7 +481,10 @@ template <> struct AddHOOps<2, 2, 2> {
   AddHOOps() = delete;
   static MoFEMErrorCode
   add(boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
-      std::vector<FieldSpace> spaces, std::string geom_field_name = "");
+      std::vector<FieldSpace> spaces, std::string geom_field_name = "",
+      boost::shared_ptr<MatrixDouble> jac = nullptr,
+      boost::shared_ptr<VectorDouble> det = nullptr,
+      boost::shared_ptr<MatrixDouble> inv_jac = nullptr);
 };
 
 template <> struct AddHOOps<1, 2, 2> {
@@ -508,7 +511,10 @@ template <> struct AddHOOps<3, 3, 3> {
   AddHOOps() = delete;
   static MoFEMErrorCode
   add(boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
-      std::vector<FieldSpace> space, std::string geom_field_name = "");
+      std::vector<FieldSpace> space, std::string geom_field_name = "",
+      boost::shared_ptr<MatrixDouble> jac = nullptr,
+      boost::shared_ptr<VectorDouble> det = nullptr,
+      boost::shared_ptr<MatrixDouble> inv_jac = nullptr);
 };
 
 template <int FIELD_DIM>
@@ -721,7 +727,7 @@ OpGetHOTangentsOnEdge<FIELD_DIM>::doWork(int side, EntityType type,
  * @return MoFEMErrorCode
  */
 template <typename E>
-DEPRECATED MoFEMErrorCode addHOOpsVol(const std::string field, E &e, bool h1,
+MoFEMErrorCode addHOOpsVol(const std::string field, E &e, bool h1,
                                       bool hcurl, bool hdiv, bool l2) {
   std::vector<FieldSpace> spaces;
   if (h1)
@@ -746,7 +752,7 @@ DEPRECATED MoFEMErrorCode addHOOpsVol(const std::string field, E &e, bool h1,
  * @return MoFEMErrorCode
  */
 template <typename E>
-DEPRECATED MoFEMErrorCode addHOOpsFace3D(const std::string field, E &e,
+MoFEMErrorCode addHOOpsFace3D(const std::string field, E &e,
                                          bool hcurl, bool hdiv) {
   std::vector<FieldSpace> spaces;
   if (hcurl)

@@ -251,6 +251,17 @@ struct BcManager : public UnknownInterface {
              const std::string field_name, int lo, int hi,
              SmartPetscObj<IS> is_expand = SmartPetscObj<IS>());
 
+  /**
+   * @brief Extract block name and block name form block id
+   * 
+   * @param block_id 
+   * @param prb_name 
+   * @return std::pair<std::string, std::string> 
+   */
+  static std::pair<std::string, std::string>
+  extractStringFromBlockId(const std::string block_id,
+                           const std::string prb_name);
+
 private:
   MoFEM::Core &cOre;
 
