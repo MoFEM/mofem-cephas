@@ -861,40 +861,45 @@ getFTensor2SymmetricLowerFromPtr<2>(double *ptr) {
       &ptr[0], &ptr[1], &ptr[3]);
 };
 
+template <int DIM, int S> struct GetFTensor1FromArray;
+
+template <> struct GetFTensor1FromArray<2, 2> {
+  GetFTensor1FromArray() = delete;
+  template <typename V> static inline auto get(V &data) {
+    using T = typename std::remove_reference<decltype(data[0])>::type;
+    return FTensor::Tensor1<FTensor::PackPtr<T *, 2>, 2>{&data[0], &data[1]};
+  }
+};
+
+template <> struct GetFTensor1FromArray<3, 3> {
+  GetFTensor1FromArray() = delete;
+  template <typename V> static inline auto get(V &data) {
+    using T = typename std::remove_reference<decltype(data[0])>::type;
+    return FTensor::Tensor1<FTensor::PackPtr<T *, 3>, 3>{
+        &data[0], &data[1], &data[2]};
+  }
+};
+
+template <> struct GetFTensor1FromArray<6, 6> {
+  GetFTensor1FromArray() = delete;
+  template <typename V> static inline auto get(V &data) {
+    using T = typename std::remove_reference<decltype(data[0])>::type;
+    return FTensor::Tensor1<FTensor::PackPtr<T *, 6>, 6>{
+        &data[0], &data[1], &data[2], &data[3], &data[4], &data[5]};
+  }
+};
+
 /**
  * @brief Get FTensor1 from array
  *
- * \todo Generalise for diffrent arrays and data types
+ * \todo Generalise for different arrays and data types
  *
  * @tparam DIM
  * @param data
- * @return FTensor::Tensor1<FTensor::PackPtr<double *, DIM>, DIM>
+ * @return FTensor::Tensor1<FTensor::PackPtr<double *, S>, DIM>
  */
-template <int DIM, int S>
-inline FTensor::Tensor1<FTensor::PackPtr<double *, S>, DIM>
-getFTensor1FromArray(VectorDouble &data) {
-  static_assert(DIM != DIM, "not implemented");
-  return FTensor::Tensor1<FTensor::PackPtr<double *, S>, DIM>();
-}
-
-template <>
-inline FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>
-getFTensor1FromArray(VectorDouble &data) {
-  return FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>{&data[0], &data[1]};
-}
-
-template <>
-inline FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
-getFTensor1FromArray(VectorDouble &data) {
-  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>{&data[0], &data[1],
-                                                            &data[2]};
-}
-
-template <>
-inline FTensor::Tensor1<FTensor::PackPtr<double *, 6>, 6>
-getFTensor1FromArray(VectorDouble &data) {
-  return FTensor::Tensor1<FTensor::PackPtr<double *, 6>, 6>{
-      &data[0], &data[1], &data[2], &data[3], &data[4], &data[5]};
+template <int DIM, int S> inline auto getFTensor1FromArray(VectorDouble &data) {
+  return GetFTensor1FromArray<DIM, S>::get(data);
 }
 
 template <int DIM, int S>
