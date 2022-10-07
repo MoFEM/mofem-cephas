@@ -902,6 +902,13 @@ template <int DIM, int S> inline auto getFTensor1FromArray(VectorDouble &data) {
   return GetFTensor1FromArray<DIM, S>::get(data);
 }
 
+template <>
+inline FTensor::Tensor1<FTensor::PackPtr<double *, 6>, 6>
+getFTensor1FromArray(VectorDouble &data) {
+  return FTensor::Tensor1<FTensor::PackPtr<double *, 6>, 6>{
+      &data[0], &data[1], &data[2], &data[3], &data[4], &data[5]};
+}
+
 template <int DIM, int S>
 inline FTensor::Tensor1<FTensor::PackPtr<double *, S>, DIM>
 getFTensor1FromMat(MatrixDouble &data, const size_t rr) {
