@@ -10,6 +10,7 @@
 #include "Tensor4_times_Tensor2_symmetric.hpp"
 #include "Tensor4_times_Tensor3_triple.hpp"
 #include "Tensor4_times_Tensor3_double.hpp"
+#include "Tensor4_times_generic.hpp"
 
 #include "../permute.hpp"
 

@@ -135,7 +135,7 @@ namespace FTensor
   class Tensor3_times_Tensor1_2
   {
     Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> iterA;
-    Tensor1_Expr<B, U, Dim0, k> iterB;
+    Tensor1_Expr<B, U, Dim2, k> iterB;
 
     template <int CurrentDim>
     typename promote<T, U>::V
@@ -152,8 +152,8 @@ namespace FTensor
 
   public:
     Tensor3_times_Tensor1_2(
-      const Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> &a,
-      const Tensor1_Expr<B, U, Dim1, k> &b)
+        const Tensor3_Expr<A, T, Dim0, Dim1, Dim2, i, j, k> &a,
+        const Tensor1_Expr<B, U, Dim2, k> &b)
         : iterA(a), iterB(b)
     {}
     typename promote<T, U>::V operator()(const int N1, const int N2) const

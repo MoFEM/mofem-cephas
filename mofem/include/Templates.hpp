@@ -155,6 +155,22 @@ struct GetFTensor1FromMatImpl<3, S, T, ublas::row_major, A> {
 };
 
 template <int S, class T, class A>
+struct GetFTensor1FromMatImpl<6, S, T, ublas::row_major, A> {
+  static inline auto get(ublas::matrix<T, ublas::row_major, A> &data) {
+#ifndef NDDEBUG
+    if (data.size1() != 6)
+      THROW_MESSAGE(
+          "getFTensor1FromMat<6>: wrong size of data matrix, number of "
+          "rows should be 6 but is " +
+          boost::lexical_cast<std::string>(data.size1()));
+#endif
+    return FTensor::Tensor1<FTensor::PackPtr<double *, S>, 6>(
+        &data(0, 0), &data(1, 0), &data(2, 0), &data(3, 0), &data(4, 0),
+        &data(5, 0));
+  }
+};
+
+template <int S, class T, class A>
 struct GetFTensor1FromMatImpl<2, S, T, ublas::row_major, A> {
   static inline auto get(ublas::matrix<T, ublas::row_major, A> &data) {
 #ifndef NDDEBUG
@@ -872,6 +888,13 @@ inline FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
 getFTensor1FromArray(VectorDouble &data) {
   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>{&data[0], &data[1],
                                                             &data[2]};
+}
+
+template <>
+inline FTensor::Tensor1<FTensor::PackPtr<double *, 6>, 6>
+getFTensor1FromArray(VectorDouble &data) {
+  return FTensor::Tensor1<FTensor::PackPtr<double *, 6>, 6>{
+      &data[0], &data[1], &data[2], &data[3], &data[4], &data[5]};
 }
 
 template <int DIM, int S>
