@@ -105,6 +105,20 @@ public:
   /* Initializations for varying numbers of elements. */
   template <class... U> Tensor3(U *...d) : data{d...}, inc(1) {}
 
+  template <class U>
+  Tensor3(std::array<U *, Tensor_Dim0 * Tensor_Dim1 * Tensor_Dim2> &a,
+          const int i = 1)
+      : inc(i) {
+    int l = 0;
+    for (int i = 0; i != Tensor_Dim0; ++i) {
+      for (int j = 0; j != Tensor_Dim1; ++j) {
+        for (int k = 0; k != Tensor_Dim2; ++k, ++l) {
+          data[i][j][k] = a[l];
+        }
+      }
+    }
+  }
+
   /* There are two operator(int,int,int)'s, one for non-consts that lets you
      change the value, and one for consts that doesn't. */
 
@@ -190,6 +204,10 @@ public:
   template <class... U>
   Tensor3(U *...d)
       : Tensor3<T *, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2>{d...} {}
+
+  template <class U>
+  Tensor3(std::array<U *, Tensor_Dim0 * Tensor_Dim1 * Tensor_Dim2> &a)
+      : Tensor3<T *, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2>(a) {}
 
   /* The ++ operator increments the pointer, not the number that the
      pointer points to.  This allows iterating over a grid. */
