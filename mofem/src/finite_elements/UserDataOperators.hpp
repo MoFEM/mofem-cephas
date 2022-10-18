@@ -186,8 +186,17 @@ struct OpCalculateScalarFieldValuesFromPetscVecImpl
 
       auto get_array = [&](const auto ctx, auto vec) {
         MoFEMFunctionBegin;
-        if ((getFEMethod()->data_ctx & ctx).none())
-          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Vector not set");
+        if ((getFEMethod()->data_ctx & ctx).none()) {
+          MOFEM_LOG_CHANNEL("SELF");
+          MOFEM_LOG("SELF", Sev::error)
+              << "In this case filed degrees of freedom are read from vector.  "
+                 "That usually happens when time solver is used, and acces to "
+                 "first or second rates is needed. You probably not set ts_u, "
+                 "ts_u_t, or ts_u_tt and associated data structure, i.e. "
+                 "data_ctx to CTX_SET_X, CTX_SET_X_T, or CTX_SET_X_TT "
+                 "respectively";
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Vector not set!");
+        }
         CHKERR VecGetArrayRead(vec, &array);
         MoFEMFunctionReturn(0);
       };
