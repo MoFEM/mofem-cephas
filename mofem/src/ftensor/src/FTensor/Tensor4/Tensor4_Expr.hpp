@@ -10,6 +10,8 @@
 #include "Tensor4_times_Tensor2_symmetric.hpp"
 #include "Tensor4_times_Tensor3_triple.hpp"
 #include "Tensor4_times_Tensor3_double.hpp"
+#include "Tensor4_times_Dg_double.hpp"
+#include "Tensor4_times_Tensor4_double.hpp"
 #include "Tensor4_times_generic.hpp"
 
 #include "../permute.hpp"
@@ -92,7 +94,7 @@ namespace FTensor
         for(int jj = 0; jj != Dim01; ++jj)
           for(int kk = 0; kk != Dim23; ++kk)
             for (int ll = 0; ll != Dim23; ++ll) {
-              iter(ii, jj, kk, ll) = rhs(ii, jj, kk, ll);
+              iter(ii, jj, kk, ll) = permute(*this, rhs, ii, jj, kk, ll);
             }
       return *this;
     }
