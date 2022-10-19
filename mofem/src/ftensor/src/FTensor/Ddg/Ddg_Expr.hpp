@@ -15,6 +15,7 @@
 #include "Ddg_times_Tensor1.hpp"
 #include "Ddg_times_Tensor2.hpp"
 #include "Ddg_times_Tensor4.hpp"
+#include "Ddg_times_Dg.hpp"
 #include "Ddg_times_Tensor2_symmetric.hpp"
 #include "Ddg_times_generic.hpp"
 #include "minus_Ddg.hpp"
