@@ -186,6 +186,7 @@ struct OpCalculateScalarFieldValuesFromPetscVecImpl
 
       auto get_array = [&](const auto ctx, auto vec) {
         MoFEMFunctionBegin;
+#ifndef NDEBUG
         if ((getFEMethod()->data_ctx & ctx).none()) {
           MOFEM_LOG_CHANNEL("SELF");
           MOFEM_LOG("SELF", Sev::error)
@@ -197,6 +198,7 @@ struct OpCalculateScalarFieldValuesFromPetscVecImpl
                  "respectively";
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Vector not set!");
         }
+#endif
         CHKERR VecGetArrayRead(vec, &array);
         MoFEMFunctionReturn(0);
       };
@@ -573,8 +575,19 @@ struct OpCalculateVectorFieldValuesFromPetscVecImpl
 
     auto get_array = [&](const auto ctx, auto vec) {
       MoFEMFunctionBegin;
-      if ((getFEMethod()->data_ctx & ctx).none())
+#ifndef NDEBUG
+      if ((getFEMethod()->data_ctx & ctx).none()) {
+        MOFEM_LOG_CHANNEL("SELF");
+        MOFEM_LOG("SELF", Sev::error)
+            << "In this case filed degrees of freedom are read from vector.  "
+               "That usually happens when time solver is used, and acces to "
+               "first or second rates is needed. You probably not set ts_u, "
+               "ts_u_t, or ts_u_tt and associated data structure, i.e. "
+               "data_ctx to CTX_SET_X, CTX_SET_X_T, or CTX_SET_X_TT "
+               "respectively";
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Vector not set");
+      }
+#endif
       CHKERR VecGetArrayRead(vec, &array);
       MoFEMFunctionReturn(0);
     };
@@ -1038,14 +1051,28 @@ struct OpCalculateTensor2SymmetricFieldValuesDot
     MoFEMFunctionBegin;
     const int nb_gauss_pts = getGaussPts().size2();
     MatrixDouble &mat = *dataPtr;
+    constexpr auto symm_size = (Tensor_Dim * (Tensor_Dim + 1)) / 2;
     if (type == zeroType && side == zeroSide) {
-      mat.resize((Tensor_Dim * (Tensor_Dim + 1)) / 2, nb_gauss_pts, false);
+      mat.resize(symm_size, nb_gauss_pts, false);
       mat.clear();
     }
     auto &local_indices = data.getLocalIndices();
     const int nb_dofs = local_indices.size();
     if (!nb_dofs)
       MoFEMFunctionReturnHot(0);
+
+#ifndef NDEBUG
+    if ((getFEMethod()->data_ctx & PetscData::CtxSetX_T).none()) {
+      MOFEM_LOG_CHANNEL("SELF");
+      MOFEM_LOG("SELF", Sev::error)
+          << "In this case filed degrees of freedom are read from vector.  "
+             "That usually happens when time solver is used, and acces to "
+             "first rates is needed. You probably not set "
+             "ts_u_t and associated data structure data_ctx to CTX_SET_X_T "
+             "respectively";
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Vector not set!");
+    }
+#endif
 
     dotVector.resize(nb_dofs, false);
     const double *array;
@@ -1063,7 +1090,7 @@ struct OpCalculateTensor2SymmetricFieldValuesDot
     auto values_at_gauss_pts = getFTensor2SymmetricFromMat<Tensor_Dim>(mat);
     FTensor::Index<'i', Tensor_Dim> i;
     FTensor::Index<'j', Tensor_Dim> j;
-    const int size = nb_dofs / ((Tensor_Dim * (Tensor_Dim + 1)) / 2);
+    const int size = nb_dofs / symm_size;
     for (int gg = 0; gg != nb_gauss_pts; ++gg) {
       auto field_data = getFTensorDotData<Tensor_Dim>();
       int bb = 0;

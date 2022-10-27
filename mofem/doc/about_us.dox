@@ -15,7 +15,7 @@
 
 \subsection license License
 
-\include LICENSE.md
+\include users_modules/LICENSE.md 
 
 \subsection license_users_modules Users Modudules License
 
