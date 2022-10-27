@@ -145,6 +145,53 @@ namespace FTensor
                         l>(TensorExpr(a, b));
   }
 
+  /* A(i,j,k)*B(i,j,k) */
+
+  template <class A, class B, class T, class U, int Dim01, int Dim2, int Dim3,
+            char i, char j, char k, char l>
+  class Dg_times_Dg_01_01 {
+    Dg_Expr<A, T, Dim01, Dim2, i, j, k> iterA;
+    Dg_Expr<B, U, Dim01, Dim3, i, j, l> iterB;
+
+    template <int Current_Dim0, int Current_Dim1>
+    typename promote<T, U>::V eval(const int N1, const int N2,
+                                   const Number<Current_Dim0> &,
+                                   const Number<Current_Dim1> &) const {
+      return iterA(Current_Dim0 - 1, Current_Dim1 - 1, N1) *
+                 iterB(Current_Dim0 - 1, Current_Dim1 - 1, N2) +
+             eval(N1, N2, Number<Current_Dim0 - 1>(), Number<Current_Dim1>());
+    }
+    template <int Current_Dim1>
+    typename promote<T, U>::V eval(const int N1, const int N2,
+                                   const Number<1> &,
+                                   const Number<Current_Dim1> &) const {
+      return iterA(0, Current_Dim1 - 1, N1) * iterB(0, Current_Dim1 - 1, N2) +
+             eval(N1, N2, Number<Dim01>(), Number<Current_Dim1 - 1>());
+    }
+    typename promote<T, U>::V eval(const int N1, const int N2,
+                                   const Number<1> &, const Number<1> &) const {
+      return iterA(0, 0, N1) * iterB(0, 0, N2);
+    }
+
+  public:
+    Dg_times_Dg_01_01(const Dg_Expr<A, T, Dim01, Dim2, i, j, k> &a,
+                      const Dg_Expr<B, U, Dim01, Dim3, i, j, l> &b)
+        : iterA(a), iterB(b) {}
+    typename promote<T, U>::V operator()(const int N1, const int N2) const {
+      return eval(N1, N2, Number<Dim01>(), Number<Dim01>());
+    }
+  };
+
+  template <class A, class B, class T, class U, int Dim01, int Dim2, int Dim3,
+            char i, char j, char k, char l>
+  auto operator*(const Dg_Expr<A, T, Dim01, Dim2, i, j, k> &a,
+                 const Dg_Expr<B, U, Dim01, Dim3, i, j, l> &b) {
+    using TensorExpr =
+        Dg_times_Dg_01_01<A, B, T, U, Dim01, Dim2, Dim3, i, j, k, l>;
+    return Tensor2_Expr<TensorExpr, typename promote<T, U>::V, Dim2, Dim3, k,
+                        l>(TensorExpr(a, b));
+  }
+
   /* A(i,j,k)*B(l,m,k) -> Ddg */
 
   template <class A, class B, class T, class U, int Dim01, int Dim23, int Dim2,
