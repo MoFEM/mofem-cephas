@@ -1062,7 +1062,7 @@ struct OpCalculateTensor2SymmetricFieldValuesDot
       MoFEMFunctionReturnHot(0);
 
 #ifndef NDEBUG
-    if ((getFEMethod()->data_ctx & PetscData::CTX_SET_X_T).none()) {
+    if ((getFEMethod()->data_ctx & PetscData::CtxSetX_T).none()) {
       MOFEM_LOG_CHANNEL("SELF");
       MOFEM_LOG("SELF", Sev::error)
           << "In this case filed degrees of freedom are read from vector.  "
