@@ -60,6 +60,7 @@ function(build_test target source)
     mofem_third_party
     mofem_matrix_function
     mofem_post_proc
+    mofem_boundary_conditions
     ${PROJECT_LIBS}
   )
 endfunction(build_test)
@@ -1238,6 +1239,13 @@ if(MED_LIBRARY)
     -log_no_color
   )
 endif(MED_LIBRARY)
+cm_export_file("./blessed_files/scalar_data.csv" export_atom_tests)
+build_test(scaling_method scaling_method.cpp)
+add_test(
+  scaling_method_test ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/scaling_method
+  -log_no_color
+)
 
 # Simple interface
 build_test(simple_interface simple_interface.cpp)

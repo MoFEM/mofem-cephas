@@ -32,9 +32,11 @@ struct ScalingMethod {
  */
 struct TimeScale : public ScalingMethod {
 
-  TimeScale(std::string name = "-time_scalar_file",
-                 bool error_if_file_not_given = false);
-
+  TimeScale(std::string file_name = "-time_scalar_file",
+            bool error_if_file_not_given = false);
+  TimeScale(std::string file_name,
+            char delimiter,
+            bool error_if_file_not_given = false);
    double getScale(const double time);
 
 private:
@@ -42,10 +44,11 @@ private:
 
   std::map<double, double> tSeries;
   int readFile, debug;
-  string nAme;
+  string fileName;
+  char delimiter = ',';
   bool errorIfFileNotGiven;
-
   PetscBool fLg;
+  std::function<double(double)> scalingMethod = [](double time) { return time; };
 };
 
 }
