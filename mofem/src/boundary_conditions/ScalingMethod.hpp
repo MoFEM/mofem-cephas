@@ -41,16 +41,17 @@ struct TimeScale : public ScalingMethod {
 
 private:
   MoFEMErrorCode timeData();
-
+  double getScaleFromData(const double time);
+  double getLinearScale(const double time);
+  double lerp(const double a, const double b, double t);
   std::map<double, double> tSeries;
-  int readFile, debug;
-  string fileName;
+  int debug;
+  std::string fileName;
+  const char defaultDelimiter = ',';
   char delimiter = ',';
   bool errorIfFileNotGiven;
-  PetscBool fLg;
-  std::function<double(double)> scalingMethod = [](double time) { return time; };
+  std::function<double(double)> scalingMethod = [](double time){ return time; };
 };
-
 }
 
 #endif //_TIME_SCALING_HPP_
