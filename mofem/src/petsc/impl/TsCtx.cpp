@@ -20,7 +20,7 @@ MoFEMErrorCode TsCtx::clearLoops() {
   postProcessRHSJacobian.clear();
   postProcessRHSFunction.clear();
   MoFEMFunctionReturnHot(0);
-}  
+}
 
 PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
                               void *ctx) {
@@ -71,6 +71,7 @@ PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
     fe.ksp_ctx = KspMethod::CTX_SETFUNCTION;
     fe.data_ctx = PetscData::CtxSetF | PetscData::CtxSetX |
                   PetscData::CtxSetX_T | PetscData::CtxSetTime;
+    CHK_THROW_MESSAGE(TSGetTimeStep(ts, &fe.ts_dt), "get time step failed");
   };
 
   auto unset = [&](auto &fe) {
@@ -164,6 +165,7 @@ PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
     fe.ksp_ctx = KspMethod::CTX_OPERATORS;
     fe.data_ctx = PetscData::CtxSetA | PetscData::CtxSetB | PetscData::CtxSetX |
                   PetscData::CtxSetX_T | PetscData::CtxSetTime;
+    CHK_THROW_MESSAGE(TSGetTimeStep(ts, &fe.ts_dt), "get time step failed");
   };
 
   auto unset = [&](auto &fe) {
@@ -234,6 +236,7 @@ PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
     fe.snes_ctx = SnesMethod::CTX_SNESNONE;
     fe.ksp_ctx = KspMethod::CTX_KSPNONE;
     fe.data_ctx = PetscData::CtxSetX | PetscData::CtxSetTime;
+    CHK_THROW_MESSAGE(TSGetTimeStep(ts, &fe.ts_dt), "get time step failed");
   };
 
   auto unset = [&](auto &fe) {
@@ -317,6 +320,7 @@ PetscErrorCode TsSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx) {
     fe.ksp_ctx = KspMethod::CTX_SETFUNCTION;
     fe.data_ctx =
         PetscData::CtxSetF | PetscData::CtxSetX | PetscData::CtxSetTime;
+    CHK_THROW_MESSAGE(TSGetTimeStep(ts, &fe.ts_dt), "get time step failed");
   };
 
   auto unset = [&](auto &fe) {
@@ -406,6 +410,7 @@ PetscErrorCode TsSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
     fe.data_ctx = PetscData::CtxSetA | PetscData::CtxSetB | PetscData::CtxSetX |
                   PetscData::CtxSetTime;
     fe.ts = ts;
+    CHK_THROW_MESSAGE(TSGetTimeStep(ts, &fe.ts_dt), "get time step failed");
   };
 
   auto unset = [&](auto &fe) {
@@ -504,6 +509,7 @@ PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
                   PetscData::CtxSetX_T | PetscData::CtxSetX_TT |
                   PetscData::CtxSetTime;
     fe.ts = ts;
+    CHK_THROW_MESSAGE(TSGetTimeStep(ts, &fe.ts_dt), "get time step failed");
   };
 
   auto unset = [&](auto &fe) {
@@ -607,6 +613,7 @@ PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
                   PetscData::CtxSetX_T | PetscData::CtxSetX_TT |
                   PetscData::CtxSetTime;
     fe.ts = ts;
+    CHK_THROW_MESSAGE(TSGetTimeStep(ts, &fe.ts_dt), "get time step failed");
   };
 
   auto unset = [&](auto &fe) {

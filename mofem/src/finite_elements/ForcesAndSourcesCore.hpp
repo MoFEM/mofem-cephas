@@ -804,6 +804,8 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
 
   inline double getTStime() const;
 
+  inline double getTStimeStep() const;
+
   inline double getTSa() const;
 
   inline double getTSaa() const;
@@ -1212,6 +1214,14 @@ double ForcesAndSourcesCore::UserDataOperator::getTStime() const {
     THROW_MESSAGE("TS not set time");
 #endif
   return getFEMethod()->ts_t;
+}
+
+double ForcesAndSourcesCore::UserDataOperator::getTStimeStep() const {
+#ifndef NDEBUG
+  if ((getFEMethod()->data_ctx & PetscData::PetscData::CtxSetTime).none())
+    THROW_MESSAGE("TS not set time");
+#endif
+  return getFEMethod()->ts_dt;
 }
 
 double ForcesAndSourcesCore::UserDataOperator::getTSa() const {

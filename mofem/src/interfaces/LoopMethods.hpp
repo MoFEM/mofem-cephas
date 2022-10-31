@@ -156,10 +156,11 @@ struct TSMethod : virtual protected PetscData {
 
   TSContext ts_ctx;
 
-  PetscInt ts_step; ///< time step
+  PetscInt ts_step; ///< time step number
   PetscReal ts_a;   ///< shift for U_t (see PETSc Time Solver)
   PetscReal ts_aa;  ///< shift for U_tt shift for U_tt
   PetscReal ts_t;   ///< time
+  PetscReal ts_dt;  ///< time step size
 
   Vec &ts_u;    ///< state vector
   Vec &ts_u_t;  ///< time derivative of state vector
