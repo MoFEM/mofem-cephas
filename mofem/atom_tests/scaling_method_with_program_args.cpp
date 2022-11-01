@@ -18,13 +18,12 @@ int main(int argc, char *argv[]) {
   std::vector<double> scalarValues = {1.1, 2.4, 3.6,  4.1,  3.1,
                                       5.1, 9.1, 10.5, 11.2, 15.3};
   try {
-    auto timeScale = std::make_shared<TimeScale>(fileName, delimiter);
-    auto timeScaleLinearScaling = std::make_shared<TimeScale>();
+    auto timeScale = std::make_shared<TimeScale>();
     for (int i = 1; i <= scalarValues.size(); i++) {
       if (timeScale->getScale(double(i)) != scalarValues[i - 1]) {
-        SETERRQ2(PETSC_COMM_SELF,
-                 MOFEM_ATOM_TEST_INVALID, "Validation for data scaling from csv "
-                                         "failed for time: %d value: %d",
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                 "Validation for data scaling from csv "
+                 "failed for time: %d value: %d",
                  double(i), timeScale->getScale(i));
       }
     }
@@ -41,14 +40,6 @@ int main(int argc, char *argv[]) {
           PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
           "Validation for data scaling from csv failed for time: %d value: %d",
           2.5, timeScale->getScale(2.5));
-    }
-    for (int i = 1; i <= scalarValues.size(); i++) {
-      if (timeScaleLinearScaling->getScale(double(i)) != double(i)) {
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                 "Validation for linear scaling from csv failed for time: %d "
-                 "value: %d",
-                 double(i), timeScale->getScale(i));
-      }
     }
   }
   CATCH_ERRORS;

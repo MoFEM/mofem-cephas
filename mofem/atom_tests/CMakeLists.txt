@@ -1246,7 +1246,13 @@ add_test(
   ${CMAKE_CURRENT_BINARY_DIR}/scaling_method
   -log_no_color
 )
-
+build_test(scaling_method_with_program_args scaling_method_with_program_args.cpp)
+add_test(
+  scaling_method_with_program_args ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/scaling_method_with_program_args
+  -time_scalar_file scalar_data.csv
+  -log_no_color
+)
 # Simple interface
 build_test(simple_interface simple_interface.cpp)
 add_test(
