@@ -9,7 +9,7 @@
 using namespace MoFEM;
 
 static char help[] = "...\n\n";
-double lerp(double a, double b, double t) { return a + t * (b - a); }
+
 int main(int argc, char *argv[]) {
 
   MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
