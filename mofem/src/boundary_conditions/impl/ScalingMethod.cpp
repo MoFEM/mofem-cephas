@@ -92,8 +92,15 @@ double TimeScale::getScaleFromData(const double time) {
     scale = it->second;
   } else {
     auto it = tSeries.lower_bound(time);
-    auto upper = *it;
-    auto lower = *(--it);
+    if (it == tSeries.end()) {
+      return (--it)->second;
+    }
+    auto upper = *(it);
+    it--;
+    if (it == tSeries.end()) {
+      return upper.second;
+    }
+    auto lower = *it;
     double t = (time - lower.first) / (upper.first - lower.first);
     double scale1 = upper.second;
     double scale0 = lower.second;
