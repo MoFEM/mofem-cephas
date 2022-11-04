@@ -15,6 +15,8 @@ RUN apt-get update && \
   libnode64 \
   && apt-get clean && rm -rf /var/lib/apt/lists/*  
 
+RUN ln -s `which pip3.8` /usr/bin/pip3.8
+
 RUN pip3 -q install pip --upgrade && \
   pip3 install \
   pandas \
@@ -30,7 +32,8 @@ RUN pip3 -q install pip --upgrade && \
   itkwidgets \
   ipywidgets \
   pythreejs \
-  ipyvtk-simple && \
+  ipyvtk-simple \
+  jupyterhub-firstuseauthenticator && \
   jupyter contrib nbextension install && \
   jupyter nbextension install --py jupytext && \
   jupyter nbextension enable --py jupytext && \

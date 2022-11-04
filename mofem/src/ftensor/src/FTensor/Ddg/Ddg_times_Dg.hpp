@@ -71,4 +71,65 @@ inline auto operator*(const Dg_Expr<B, U, Dim23, Dim4, k, l, m> &b,
       TensorExpr(a, b));
 }
 
+/* A(i,j,k,l)*B(i,j,m) */
+
+template <class A, class B, class T, class U, int Dim01, int Dim23, int Dim4,
+          char i, char j, char k, char l, char m>
+class Ddg_times_Dg_01 {
+  const Ddg_Expr<A, T, Dim01, Dim23, i, j, k, l> iterA;
+  const Dg_Expr<B, U, Dim01, Dim4, i, j, m> iterB;
+
+  template <int Current_Dim0, int Current_Dim1>
+  typename promote<T, U>::V eval(const int N1, const int N2, const int N3,
+                                 const Number<Current_Dim0> &,
+                                 const Number<Current_Dim1> &) const {
+    return iterA(Current_Dim0 - 1, Current_Dim1 - 1, N1, N2) *
+               iterB(Current_Dim0 - 1, Current_Dim1 - 1, N3) +
+           eval(N1, N2, N3, Number<Current_Dim0 - 1>(), Number<Current_Dim1>());
+  }
+  template <int Current_Dim1>
+  typename promote<T, U>::V eval(const int N1, const int N2, const int N3,
+                                 const Number<1> &,
+                                 const Number<Current_Dim1> &) const {
+    return iterA(0, Current_Dim1 - 1, N1, N2) * iterB(0, Current_Dim1 - 1, N3) +
+           eval(N1, N2, N3, Number<Dim01>(), Number<Current_Dim1 - 1>());
+  }
+  typename promote<T, U>::V eval(const int N1, const int N2, const int N3,
+                                 const Number<1> &, const Number<1> &) const {
+    return iterA(0, 0, N1, N2) * iterB(0, 0, N3);
+  }
+
+public:
+  typename promote<T, U>::V operator()(const int N1, const int N2,
+                                       const int N3) const {
+    return eval(N1, N2, N3, Number<Dim01>(), Number<Dim01>());
+  }
+
+  Ddg_times_Dg_01(const Ddg_Expr<A, T, Dim01, Dim23, i, j, k, l> &a,
+                  const Dg_Expr<B, U, Dim01, Dim4, i, j, m> &b)
+      : iterA(a), iterB(b) {}
+};
+
+template <class A, class B, class T, class U, int Dim01, int Dim23, int Dim4,
+          char i, char j, char k, char l, char m>
+inline auto operator*(const Ddg_Expr<A, T, Dim01, Dim23, i, j, k, l> &a,
+                      const Dg_Expr<B, U, Dim01, Dim4, i, j, m> &b) {
+  using TensorExpr =
+      Ddg_times_Dg_01<A, B, T, U, Dim01, Dim23, Dim4, i, j, k, l, m>;
+  return Dg_Expr<TensorExpr, typename promote<T, U>::V, Dim23, Dim4, k, l, m>(
+      TensorExpr(a, b));
+}
+
+/* B(i,j,m)*A(i,j,k,l) */
+
+template <class A, class B, class T, class U, int Dim01, int Dim23, int Dim4,
+          char i, char j, char k, char l, char m>
+inline auto operator*(const Dg_Expr<B, U, Dim01, Dim4, i, j, m> &b,
+                      const Ddg_Expr<A, T, Dim01, Dim23, i, j, k, l> &a) {
+  using TensorExpr =
+      Ddg_times_Dg_01<A, B, T, U, Dim01, Dim23, Dim4, i, j, k, l, m>;
+  return Dg_Expr<TensorExpr, typename promote<T, U>::V, Dim23, Dim4, k, l, m>(
+      TensorExpr(a, b));
+}
+
 } // namespace FTensor
