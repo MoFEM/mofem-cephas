@@ -28,16 +28,17 @@ TimeScale::TimeScale(string file_name, char delimiter,
 
 MoFEMErrorCode TimeScale::timeData() {
   MoFEMFunctionBegin;
+  PetscBool arg_found = PETSC_FALSE;
   char time_file_name[255] = {'\0'};
   CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, fileNameFlag.c_str(),
-                               time_file_name, 255, &argFound);
-  if (argFound) {
+                               time_file_name, 255, &arg_found);
+  if (arg_found) {
     fileName = std::string(time_file_name);
   }
-  if (!argFound && fileName.empty() && errorIfFileNotGiven) {
+  if (!arg_found && fileName.empty() && errorIfFileNotGiven) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "*** ERROR %s (time_data FILE NEEDED)", fileName.c_str());
-  } else if (!argFound && fileName.empty() && !errorIfFileNotGiven) {
+  } else if (!arg_found && fileName.empty() && !errorIfFileNotGiven) {
     MOFEM_LOG_C("WORLD", Sev::warning,
                 "The %s file not provided. Loading scaled with time.",
                 fileName.c_str());
@@ -48,7 +49,7 @@ MoFEMErrorCode TimeScale::timeData() {
   std::ifstream in_file_stream(fileName);
   if (!in_file_stream.is_open() && errorIfFileNotGiven) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-             "*** ERROR data file < %s > open unsuccessful", fileName);
+             "*** ERROR data file < %s > open unsuccessful", fileName.c_str());
   } else if (!in_file_stream.is_open() && !errorIfFileNotGiven) {
     MOFEM_LOG("WORLD", Sev::warning)
         << "*** Warning data file " << fileName

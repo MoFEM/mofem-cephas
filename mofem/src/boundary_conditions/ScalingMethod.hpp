@@ -85,7 +85,6 @@ private:
   static const char defaultDelimiter = ',';
   char delimiter = ',';
   bool errorIfFileNotGiven;
-  PetscBool argFound;
   std::function<double(double)> scalingMethod = [](double time) {
     return time;
   };
