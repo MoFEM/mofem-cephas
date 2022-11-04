@@ -87,14 +87,19 @@ MoFEMErrorCode TimeScale::timeData() {
 double TimeScale::getLinearScale(const double time) { return time; }
 
 double TimeScale::getScaleFromData(const double time) {
-  double scale = 0;
+  if (tSeries.empty())
+    return 0.;
+
   auto it = tSeries.find(time);
   if (it != tSeries.end()) {
-    scale = it->second;
+    return it->second;
   } else {
     auto it = tSeries.lower_bound(time);
     if (it == tSeries.end()) {
       return (--it)->second;
+    }
+    if (it == tSeries.begin()) {
+      return it->second;
     }
     auto upper = *(it);
     it--;
@@ -105,9 +110,8 @@ double TimeScale::getScaleFromData(const double time) {
     double t = (time - lower.first) / (upper.first - lower.first);
     double scale1 = upper.second;
     double scale0 = lower.second;
-    scale = scale0 + t * (scale1 - scale0);
+    return scale0 + t * (scale1 - scale0);
   }
-  return scale;
 }
 
 double TimeScale::getScale(const double time) { return scalingMethod(time); }

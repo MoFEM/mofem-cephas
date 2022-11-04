@@ -1250,7 +1250,7 @@ build_test(scaling_method_with_program_args scaling_method_with_program_args.cpp
 add_test(
   scaling_method_with_program_args ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/scaling_method_with_program_args
-  -time_scalar_file scalar_data.csv
+  -time_scalar_file ${CMAKE_CURRENT_SOURCE_DIR}/blessed_files/scalar_data.csv
   -log_no_color
 )
 # Simple interface
