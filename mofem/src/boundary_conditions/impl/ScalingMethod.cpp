@@ -16,90 +16,104 @@ double ScalingMethod::getScale(const double time) {
   THROW_MESSAGE("getScale not implemented");
 }
 
-TimeScale::TimeScale(string name, bool error_if_file_not_given)
-    : readFile(0), debug(0), nAme(name),
+TimeScale::TimeScale(string file_name, bool error_if_file_not_given)
+    : TimeScale(file_name, defaultDelimiter, error_if_file_not_given) {}
+
+TimeScale::TimeScale(string file_name, char delimiter,
+                     bool error_if_file_not_given)
+    : fileName(file_name), delimiter(delimiter),
       errorIfFileNotGiven(error_if_file_not_given) {
   CHK_THROW_MESSAGE(timeData(), "Error in reading time data");
 }
 
 MoFEMErrorCode TimeScale::timeData() {
   MoFEMFunctionBegin;
-  char time_file_name[255];
-  CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, nAme.c_str(),
-                               time_file_name, 255, &fLg);
-  if (!fLg && errorIfFileNotGiven) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-             "*** ERROR %s (time_data FILE NEEDED)", nAme.c_str());
+  PetscBool arg_found = PETSC_FALSE;
+  char time_file_name[255] = {'\0'};
+  CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, fileNameFlag.c_str(),
+                               time_file_name, 255, &arg_found);
+  if (arg_found) {
+    fileName = std::string(time_file_name);
   }
-  if (!fLg) {
+  if (!arg_found && fileName.empty() && errorIfFileNotGiven) {
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "*** ERROR %s (time_data FILE NEEDED)", fileName.c_str());
+  } else if (!arg_found && fileName.empty() && !errorIfFileNotGiven) {
     MOFEM_LOG_C("WORLD", Sev::warning,
                 "The %s file not provided. Loading scaled with time.",
-                nAme.c_str());
+                fileName.c_str());
+    scalingMethod = [this](double time) { return this->getLinearScale(time); };
     MoFEMFunctionReturnHot(0);
   }
-  FILE *time_data = fopen(time_file_name, "r");
-  if (time_data == NULL) {
+
+  std::ifstream in_file_stream(fileName);
+  if (!in_file_stream.is_open() && errorIfFileNotGiven) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-             "*** ERROR data file < %s > open unsuccessful", time_file_name);
+             "*** ERROR data file < %s > open unsuccessful", fileName.c_str());
+  } else if (!in_file_stream.is_open() && !errorIfFileNotGiven) {
+    MOFEM_LOG("WORLD", Sev::warning)
+        << "*** Warning data file " << fileName
+        << " open unsuccessful. Using linear time scaling.";
+    scalingMethod = [this](double time) { return this->getLinearScale(time); };
   }
-  double no1 = 0.0, no2 = 0.0;
-  tSeries[no1] = no2;
-  while (!feof(time_data)) {
-    int n = fscanf(time_data, "%lf %lf", &no1, &no2);
-    if ((n <= 0) || ((no1 == 0) && (no2 == 0))) {
-      fgetc(time_data);
-      continue;
+  in_file_stream.seekg(0);
+  std::string line;
+  double time = 0.0, value = 0.0;
+  tSeries[time] = value;
+  char *p_delimiter = &delimiter;
+  std::regex rgx(static_cast<const char *>(p_delimiter));
+  std::sregex_token_iterator end;
+  while (std::getline(in_file_stream, line)) {
+    std::sregex_token_iterator iter(line.begin(), line.end(), rgx, -1);
+    auto time_str = iter;
+    auto value_str = ++iter;
+    if (time_str == end || value_str == end) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "*** ERROR read data file error (check input time data file) ");
     }
-    if (n != 2) {
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-               "*** ERROR read data file error (check input time data file) "
-               "{ n = %d }",
-               n);
-    }
-    tSeries[no1] = no2;
+    time = std::stod(time_str->str());
+    value = std::stod(value_str->str());
+    tSeries[time] = value;
   }
-  int r = fclose(time_data);
-  if (debug) {
-    std::map<double, double>::iterator tit = tSeries.begin();
-    for (; tit != tSeries.end(); tit++) {
-      PetscPrintf(PETSC_COMM_WORLD, "** read time series %3.2e time %3.2e\n",
-                  tit->first, tit->second);
-    }
-  }
-  if (r != 0) {
+  in_file_stream.close();
+  scalingMethod = [this](double time) { return this->getScaleFromData(time); };
+  if (in_file_stream.is_open()) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "*** ERROR file close unsuccessful");
   }
-  readFile = 1;
   MoFEMFunctionReturn(0);
 }
 
-double TimeScale::getScale(const double time) {
-  if (!fLg) {
-    return time; // scale with time, by default
-  }
-  if (readFile == 0) {
-    CHK_THROW_MESSAGE(MOFEM_OPERATION_UNSUCCESSFUL, "Data file not read");
-  }
+double TimeScale::getLinearScale(const double time) { return time; }
 
-  double scale = 0;
-  double t0 = 0, t1, s0 = tSeries[0], s1, dt;
-  for (auto &t : tSeries) {
-    if (t.first > time) {
-      t1 = t.first;
-      s1 = t.second;
-      dt = time - t0;
-      scale = s0 + ((s1 - s0) / (t1 - t0)) * dt;
-      break;
+double TimeScale::getScaleFromData(const double time) {
+  if (tSeries.empty())
+    return 0.;
+
+  auto it = tSeries.find(time);
+  if (it != tSeries.end()) {
+    return it->second;
+  } else {
+    auto it = tSeries.lower_bound(time);
+    if (it == tSeries.end()) {
+      return (--it)->second;
     }
-    t0 = t.first;
-    s0 = t.second;
-    scale = s0;
+    if (it == tSeries.begin()) {
+      return it->second;
+    }
+    auto upper = *(it);
+    it--;
+    if (it == tSeries.end()) {
+      return upper.second;
+    }
+    auto lower = *it;
+    double t = (time - lower.first) / (upper.first - lower.first);
+    double scale1 = upper.second;
+    double scale0 = lower.second;
+    return scale0 + t * (scale1 - scale0);
   }
-  return scale;
 }
 
-
-
+double TimeScale::getScale(const double time) { return scalingMethod(time); }
 
 } // namespace MoFEM
