@@ -1,0 +1,78 @@
+/** \file scaling_method.cpp
+
+  \brief Testing interface for reading and writing CSV files containing time
+  series data.
+
+*/
+
+#include <MoFEM.hpp>
+using namespace MoFEM;
+
+static char help[] = "...\n\n";
+
+int main(int argc, char *argv[]) {
+
+  MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
+  const char delimiter = ',';
+  std::string file_name = "scalar_data.csv";
+  std::vector<double> scalar_values = {1.1, 2.4, 3.6,  4.1,  3.1,
+                                       5.1, 9.1, 10.5, 11.2, 15.3};
+  try {
+    auto time_scale = std::make_shared<TimeScale>(file_name, delimiter);
+    auto time_scale_linear_scaling = std::make_shared<TimeScale>();
+    for (int i = 1; i <= scalar_values.size(); i++) {
+      if (std::fabs(time_scale->getScale(double(i)) - scalar_values[i - 1]) >
+          std::numeric_limits<double>::epsilon()) {
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                 "Validation for data scaling from csv "
+                 "failed for time: %f value: %f",
+                 double(i), time_scale->getScale(i));
+      }
+    }
+    double time1 = 3.0;
+    double time0 = 2.0;
+    double scale1 = scalar_values[2];
+    double scale0 = scalar_values[1];
+    double input_time = 2.5;
+    double interp_t = (input_time - time0) / (time1 - time0);
+    double expected_scale = scale0 + (scale1 - scale0) * interp_t;
+    double actual_scale = time_scale->getScale(2.5);
+    if (std::fabs(expected_scale - actual_scale) >
+        std::numeric_limits<double>::epsilon()) {
+      SETERRQ2(
+          PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+          "Validation for data scaling from csv failed for time: %f value: %f",
+          2.5, time_scale->getScale(2.5));
+    }
+    double time_out_of_range_1 = 11.0;
+    double time_out_of_range_2 = -1.0;
+    if (std::fabs(time_scale->getScale(time_out_of_range_2)) >
+        std::numeric_limits<double>::epsilon()) {
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+               "Validation for data scaling from csv failed for time: %f "
+               "value: %f",
+               -1.0, time_scale->getScale(-1.0));
+    }
+    if (std::fabs(time_scale->getScale(time_out_of_range_1) - 15.3) >
+        std::numeric_limits<double>::epsilon()) {
+      SETERRQ2(
+          PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+          "Validation for data scaling from csv failed for time: %f value: %f",
+          11.0, time_scale->getScale(11.0));
+    }
+    for (int i = 1; i <= scalar_values.size(); i++) {
+      if (std::fabs(time_scale_linear_scaling->getScale(double(i)) -
+                    double(i)) > std::numeric_limits<double>::epsilon()) {
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                 "Validation for linear scaling from csv failed for time: %f "
+                 "value: %f",
+                 double(i), time_scale->getScale(i));
+      }
+    }
+  }
+  CATCH_ERRORS;
+
+  MoFEM::Core::Finalize();
+
+  return 0;
+}
