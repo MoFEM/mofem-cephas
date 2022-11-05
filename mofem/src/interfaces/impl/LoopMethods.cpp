@@ -101,6 +101,7 @@ MoFEMErrorCode TSMethod::copyTs(const TSMethod &ts) {
   this->ts_step = ts.ts_step;
   this->ts_a = ts.ts_a;
   this->ts_t = ts.ts_t;
+  this->ts_dt = ts.ts_dt;
   MoFEMFunctionReturnHot(0);
 }
 
