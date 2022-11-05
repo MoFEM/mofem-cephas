@@ -19,7 +19,8 @@ int main(int argc, char *argv[]) {
   try {
     auto time_scale = std::make_shared<TimeScale>();
     for (int i = 1; i <= scalar_values.size(); i++) {
-      if (time_scale->getScale(double(i)) != scalar_values[i - 1]) {
+      if (std::fabs(time_scale->getScale(double(i)) - scalar_values[i - 1]) >
+          std::numeric_limits<double>::epsilon()) {
         SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                  "Validation for data scaling from csv "
                  "failed for time: %d value: %d",
@@ -34,7 +35,8 @@ int main(int argc, char *argv[]) {
     double interp_t = (input_time - time0) / (time1 - time0);
     double expected_scale = scale0 + (scale1 - scale0) * interp_t;
     double actual_scale = time_scale->getScale(2.5);
-    if (expected_scale != actual_scale) {
+    if (std::fabs(expected_scale - actual_scale) >
+        std::numeric_limits<double>::epsilon()) {
       SETERRQ2(
           PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
           "Validation for data scaling from csv failed for time: %f value: %f",

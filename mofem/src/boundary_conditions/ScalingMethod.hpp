@@ -71,8 +71,8 @@ private:
    * scaling if the provided time is not present in the data.
    * @return double
    */
-
   double getScaleFromData(const double time);
+
   /**
    * @brief Returns the value of time.
    * @return double
