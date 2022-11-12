@@ -81,6 +81,20 @@
                 </td>
             </tr>
         </table <head>
+
+       <link rel="stylesheet" href="mastodon-timeline.css">
+        
+        <div class="dummy-container">
+          <div id="mt-timeline" class="mt-timeline">
+            <div id="mt-body" class="mt-body">
+              <div class="loading-spinner"></div>
+            </div>
+          </div>
+        </div>
+        
+        <script src='mastodon-timeline.js'>
+        </script>
+
         <link rel="stylesheet" type="text/css" href="engine1/style.css" />
         </head>
 
@@ -149,29 +163,6 @@
             </div>
             <script type="text/javascript" src="engine1/wowslider.js"></script>
             <script type="text/javascript" src="engine1/script.js"></script>
-
-            <style>
-                @media screen and (max-width: 1200px) {
-                    #twitter-small-screen {
-                        display: none;
-                    }
-
-                    /* hide it on larger screens */
-                }
-            </style>
-
-            <div id="twitter-small-screen">
-
-                <div class="fixed">
-                    <!-- Twitter Embed Code -->
-                    <a class="twitter-timeline" data-lang="en" data-width="350" data-height="650" data-dnt="true"
-                        data-border-color="#D8D8D8" data-chrome="transparent"
-                        href="https://twitter.com/mofemjoseph?ref_src=twsrc%5Etfw">News</a>
-                    <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-                    <!-- / Twitter Embed Code -->
-                </div>
-
-            </div>
 
         </body>
 

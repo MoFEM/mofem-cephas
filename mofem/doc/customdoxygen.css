@@ -1770,19 +1770,6 @@ u {
 
 .main {
   width: 75%;
-  height: 100vh;
   flex-direction: column;
   max-width: 800px;
 }
-
-.sidebar {
-  width: 35%;
-  height: 50%;
-}
-
-.fixed {
-  position: fixed;
-  background: #FAFAFA;
-  top: 140px;
-  right: 20px;
-}    
