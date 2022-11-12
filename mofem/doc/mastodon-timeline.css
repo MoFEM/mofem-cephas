@@ -3,7 +3,7 @@
 /* Main container */
 .mt-timeline {
   height: calc(100% - 4rem);
-  padding: 2rem 3rem;
+  padding: 0rem 0rem;
   position: relative;
   background: white;
 }
