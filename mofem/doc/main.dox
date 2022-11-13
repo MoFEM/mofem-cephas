@@ -98,7 +98,7 @@
             crossorigin="anonymous" referrerpolicy="no-referrer" />
         Follow us on<br>
         <p style="text-align:center;">
-            Mastodon <a href="https://fosstodon.org/web/@mofem">
+            Mastodon <a rel="me" href="https://fosstodon.org/@mofem">
                 <i class="fab fa-mastodon"></i> @mofem@fosstodon.org
             </a> or Twitter
             <a href="https://twitter.com/mofemjoseph">
