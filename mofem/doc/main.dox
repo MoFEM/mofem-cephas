@@ -90,20 +90,26 @@
             </tr>
         </table>
 
-        <!-- Add Mastodon feed -->
+        <!-- Add follow us -->
 
         <br>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
             integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w=="
             crossorigin="anonymous" referrerpolicy="no-referrer" />
-        Follow us on
-        <a href="https://fosstodon.org/web/@mofem">
-            @mofem@fosstodon.org <i class="fab fa-mastodon"></i>
-        </a>
-        or on Twitter
-        <a href="https://twitter.com/mofemjoseph">@mofemjoseph</a> <i class="fab fa-twitter"></i>,
-        and YouTube <a href="https://www.youtube.com/c/MoFEM-channel/playlists">MoFEM-channel</a> <i class="fab fa-youtube"></i>.
-        <br>
+        Follow us on<br>
+        <p style="text-align:center;">
+            Mastodon <a href="https://fosstodon.org/web/@mofem">
+                <i class="fab fa-mastodon"></i> @mofem@fosstodon.org
+            </a> or Twitter
+            <a href="https://twitter.com/mofemjoseph">
+                <i class="fab fa-twitter"></i> @mofemjoseph
+            </a> and YouTube
+            <a href="https://www.youtube.com/c/MoFEM-channel/playlists">
+                <i class="fab fa-youtube"></i> MoFEM-channel
+            </a>
+        </p>
+
+        <!-- Add Mastodon feed -->
 
         <link rel="stylesheet" href="mastodon-timeline.css">
 
