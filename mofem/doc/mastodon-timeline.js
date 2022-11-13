@@ -72,7 +72,17 @@ MastodonApi.prototype.getToots = function () {
 			}
 
 			// Insert button to visit account page, after last toot
-			this.mtBodyContainer.insertAdjacentHTML('beforeend', '<div class="mt-seeMore"><a href="' + mapi.INSTANCE_URI + '/' + mapi.PROFILE_NAME + '" class="btn" target="_blank" rel="noopener noreferrer">' + mapi.BTN_SEE_MORE + '</a></div>');
+			this.mtBodyContainer.insertAdjacentHTML(
+				'beforeend', '<div class="mt-seeMore"><a href="' 
+				+ mapi.INSTANCE_URI 
+				+ '/' + mapi.PROFILE_NAME 
+				+ '" class="btn" target="_blank" rel="noopener noreferrer">' 
+				+ mapi.BTN_SEE_MORE 
+				+ ' <i class="fab fa-mastodon"></i> ' 
+				+ '</a>'
+				+ ' or '
+				+ '<a href="https://twitter.com/mofemjoseph">Twitter <i class="fab fa-twitter"></i></a>'
+				+ '</div>');
 		})
 		.catch(err => {
 			this.mtBodyContainer.innerHTML = '<div class="d-flex h-100"><div class="w-100 my-auto text-center">✖️<br/>Request Failed:<br/>' + err + '</div></div>';
