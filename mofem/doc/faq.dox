@@ -223,6 +223,12 @@ The commi t ID of the submodule is used to track which version to pull when
 pulling the main repo. Updating to the latest commit will then pull the your
 latest changes.
 
+\subsection git_squash Squashing for an external PR
+
+It is good practice to squash commits before the merge. That simply reviews and
+makes the git commits tree easier to browse and understand. Details on how to
+squash commits you will find here \ref SquashFAQ.
+
 \section faq_profiling Profiling
 
 \subsection faq_profiling_valgrind How to check for memory leaks and other bugs with Valgrind?

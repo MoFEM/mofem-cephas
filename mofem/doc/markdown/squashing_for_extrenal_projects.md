@@ -1,4 +1,4 @@
-# How to: Squashing for an external PR
+# How to: Squashing for an external PR {#SquashFAQ}
 ## 1. What is squashing?
 Squashing combines multiple commits into one, in order to keep a large project's commit history compact.
 ## 2. When to squash?
