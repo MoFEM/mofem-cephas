@@ -3,41 +3,49 @@
 \htmlinclude doc/search_tags.html
 
 \htmlonly
+<style>
+    .wrapper {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .main {
+        width: 75%;
+        flex-direction: column;
+        max-width: 800px;
+    }
+
+    .aligncenter {
+        text-align: center;
+    }
+
+    .table-spacing td {
+        padding: 10px;
+    }
+</style>
+
 <div class="wrapper">
     <div class="main">
-
 
         <html>
 
         <head>
             <title>MoFEM</title>
             <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-            <meta name="description" content="MoFEM - An open source, parallel finite
-	element library" />
+            <meta name="description" content="MoFEM - An open source, parallel finite element library" />
         </head>
 
+        <!-- Logo -->
 
         <p class="aligncenter">
             <img src="mofem_logo.png" alt="MoFEM logo" style="width:500px;height:110px;" />
         </p>
 
-        <style>
-            .aligncenter {
-                text-align: center;
-            }
-        </style>
-
-
         <h1 style="font-weight:200;font-size:150%">
             <center>An open source, parallel finite element library</center>
         </h1>
 
-
-        <style>
-            .table-spacing td {
-                padding: 10px;
-            }
-        </style>
+        <!-- Table with description -->
 
         <table id="table_main">
 
@@ -80,44 +88,65 @@
                     mechanics.
                 </td>
             </tr>
-        </table <head>
+        </table>
 
-       <link rel="stylesheet" href="mastodon-timeline.css">
-        
+        <!-- Add Mastodon feed -->
+
+        <br>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+            integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w=="
+            crossorigin="anonymous" referrerpolicy="no-referrer" />
+        Follow us on
+        <a href="https://fosstodon.org/web/@mofem">
+            @mofem@fosstodon.org <i class="fab fa-mastodon"></i>
+        </a>
+        or on Twitter
+        <a href="https://twitter.com/mofemjoseph">@mofemjoseph</a> <i class="fab fa-twitter"></i>,
+        and YouTube <a href="https://www.youtube.com/c/MoFEM-channel/playlists">MoFEM-channel</a> <i class="fab fa-youtube"></i>.
+        <br>
+
+        <link rel="stylesheet" href="mastodon-timeline.css">
+
         <div class="dummy-container">
-          <div id="mt-timeline" class="mt-timeline">
-            <div id="mt-body" class="mt-body">
-              <div class="loading-spinner"></div>
+            <div id="mt-timeline" class="mt-timeline">
+                <div id="mt-body" class="mt-body">
+                    <div class="loading-spinner"></div>
+                </div>
             </div>
-          </div>
         </div>
-        
+
         <script src='mastodon-timeline.js'>
         </script>
 
         <link rel="stylesheet" type="text/css" href="engine1/style.css" />
-        </head>
+
+        <!-- Add rolling examples images   -->
 
         <body style="background-color:#ffffff;margin:auto">
 
             <div id="wowslider-container1">
                 <div class="ws_images">
                     <ul>
-                        <li><a href="benchmarks_edf_tets.html"><img src="slider_configurational_fracture.png" alt="Configurational
-                Fracture" title="Configurational Fracture" /></a></li>
+                        <li><a href="benchmarks_edf_tets.html"><img src="slider_configurational_fracture.png"
+                                    alt="Configurational Fracture" title="Configurational Fracture" /></a></li>
 
                         <li><a href=""><img src="slider_plasticity.png" alt="Plasticity" title="Plasticity" /></a></li>
 
-                        <li><a href=""><img src="slider_microsopy_image_3d_recovery.png" alt="Image Recobery" title="Microscpopy 3D Image Recovery" /></a></li>
+                        <li><a href=""><img src="slider_microsopy_image_3d_recovery.png" alt="Image Recovery"
+                                    title="Microscpopy 3D Image Recovery" /></a></li>
 
-                        <li><a href=""><img src="slider_cahn_hilliard_navier_stokes_equation.png" alt="NS Chan-Hillard" title="Navier Stockes Chan Hillard equation" /></a></li>
+                        <li><a href=""><img src="slider_cahn_hilliard_navier_stokes_equation.png" alt="NS Chan-Hillard"
+                                    title="Navier Stockes Chan Hillard equation" /></a></li>
 
-                        <li><a href=""><img src="slider_indentation.png" alt="NS Chan-Hillard" title="Metamaterial Indentation" /></a></li>
+                        <li><a href=""><img src="slider_indentation.png" alt="NS Chan-Hillard"
+                                    title="Metamaterial Indentation" /></a></li>
 
-                        <li><a href=""><img src="slider_shallow_wave.png" alt="Shallow Wave" title="Shallow Wave Equation" /></a></li>
+                        <li><a href=""><img src="slider_shallow_wave.png" alt="Shallow Wave"
+                                    title="Shallow Wave Equation" /></a></li>
 
-                        <li><a href="http://mofem.eng.gla.ac.uk/mofem/html/"><img src="slider_navier_stokes.png"
-                                    alt="Navier-Stokes Equations" title="Navier-Stokes Equations" /></a></li>
+                        <li><a href="http://mofem.eng.gla.ac.uk/mofem/html/">
+                                <img src="slider_navier_stokes.png" alt="Navier-Stokes Equations"
+                                    title="Navier-Stokes Equations" /></a></li>
 
                         <li><a href="https://bitbucket.org/likask/mofem_um_bone_remodelling/src/master/"><img
                                     src="slider_bone_remodelling.png" alt="Bone Remodelling"
@@ -154,9 +183,6 @@
 
                         <li><a href="https://bitbucket.org/likask/mofem_um_helmholtz"><img
                                     src="slider_acoustic_wave.png" alt="Acoustic Wave" title="Acoustic Wave" /></a></li>
-
-
-
 
                     </ul>
                 </div>

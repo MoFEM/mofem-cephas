@@ -1757,19 +1757,3 @@ tt, code, kbd, samp
   direction:ltr; 
 }
 /* @end */
-
-u {
-	text-decoration: underline;
-}
-
-
-.wrapper {
-  display: flex;
-  justify-content: space-between;
-}
-
-.main {
-  width: 75%;
-  flex-direction: column;
-  max-width: 800px;
-}
