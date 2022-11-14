@@ -100,12 +100,16 @@
         <p style="text-align:center;">
             Mastodon <a rel="me" href="https://fosstodon.org/@mofem">
                 <i class="fab fa-mastodon"></i> @mofem@fosstodon.org
-            </a> or Twitter
+            </a> Twitter
             <a href="https://twitter.com/mofemjoseph">
                 <i class="fab fa-twitter"></i> @mofemjoseph
-            </a> and YouTube
+            </a>,
+              <a href="https://www.linkedin.com/company/mofem-community/">
+              <i class="fab fa-linkedin-in"> LinkedIn Community</i>
+            </a>
+            and
             <a href="https://www.youtube.com/c/MoFEM-channel/playlists">
-                <i class="fab fa-youtube"></i> MoFEM-channel
+                <i class="fab fa-youtube"></i> YouTube Channel
             </a>
         </p>
 
