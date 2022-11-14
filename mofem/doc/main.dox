@@ -95,16 +95,15 @@
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
             integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w=="
             crossorigin="anonymous" referrerpolicy="no-referrer" />
-        Follow us on<br>
         <p style="text-align:center;">
             Mastodon <a rel="me" href="https://fosstodon.org/@mofem">
                 <i class="fab fa-mastodon"></i> @mofem@fosstodon.org
             </a> Twitter
             <a href="https://twitter.com/mofemjoseph">
-                <i class="fab fa-twitter"></i> @mofemjoseph
-            </a>,
+                <i class="fab fa-twitter"></i> @mofemjoseph,
+            </a>
               <a href="https://www.linkedin.com/company/mofem-community/">
-              <i class="fab fa-linkedin-in"> LinkedIn Community</i>
+              <i class="fab fa-linkedin-in"></i> LinkedIn Community,
             </a>
             and
             <a href="https://www.youtube.com/c/MoFEM-channel/playlists">
