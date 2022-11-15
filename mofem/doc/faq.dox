@@ -225,7 +225,7 @@ latest changes.
 
 \subsection git_squash Squashing for an external PR
 
-It is good practice to squash commits before the merge. That simply reviews and
+It is good practice to squash commits before the merge. That simplifies reviews and
 makes the git commits tree easier to browse and understand. Details on how to
 squash commits you will find here \ref SquashFAQ.
 
