@@ -155,11 +155,6 @@ col side: 0 col_type: 5
 
 FILED_CGG : FILED_RT
 row side: 0 row_type: 5
-col side: 0 col_type: 5
-12 : 12
-
-FILED_CGG : FILED_RT
-row side: 0 row_type: 5
 col side: 0 col_type: 2
 12 : 6
 
@@ -177,6 +172,11 @@ FILED_CGG : FILED_RT
 row side: 0 row_type: 5
 col side: 3 col_type: 2
 12 : 6
+
+FILED_CGG : FILED_RT
+row side: 0 row_type: 5
+col side: 0 col_type: 5
+12 : 12
 
 FILED_CGG
 side: 0 type: 2
@@ -335,11 +335,6 @@ col side: 0 col_type: 5
 
 FILED_CGG : FILED_RT
 row side: 0 row_type: 5
-col side: 0 col_type: 5
-12 : 12
-
-FILED_CGG : FILED_RT
-row side: 0 row_type: 5
 col side: 0 col_type: 2
 12 : 6
 
@@ -357,6 +352,11 @@ FILED_CGG : FILED_RT
 row side: 0 row_type: 5
 col side: 3 col_type: 2
 12 : 6
+
+FILED_CGG : FILED_RT
+row side: 0 row_type: 5
+col side: 0 col_type: 5
+12 : 12
 
 FILED_CGG
 side: 0 type: 2
@@ -515,11 +515,6 @@ col side: 0 col_type: 5
 
 FILED_CGG : FILED_RT
 row side: 0 row_type: 5
-col side: 0 col_type: 5
-12 : 12
-
-FILED_CGG : FILED_RT
-row side: 0 row_type: 5
 col side: 0 col_type: 2
 12 : 6
 
@@ -537,6 +532,11 @@ FILED_CGG : FILED_RT
 row side: 0 row_type: 5
 col side: 3 col_type: 2
 12 : 6
+
+FILED_CGG : FILED_RT
+row side: 0 row_type: 5
+col side: 0 col_type: 5
+12 : 12
 
 FILED_CGG
 side: 0 type: 2
@@ -695,11 +695,6 @@ col side: 0 col_type: 5
 
 FILED_CGG : FILED_RT
 row side: 0 row_type: 5
-col side: 0 col_type: 5
-12 : 12
-
-FILED_CGG : FILED_RT
-row side: 0 row_type: 5
 col side: 0 col_type: 2
 12 : 6
 
@@ -717,6 +712,11 @@ FILED_CGG : FILED_RT
 row side: 0 row_type: 5
 col side: 3 col_type: 2
 12 : 6
+
+FILED_CGG : FILED_RT
+row side: 0 row_type: 5
+col side: 0 col_type: 5
+12 : 12
 
 FILED_CGG
 side: 0 type: 2
@@ -875,11 +875,6 @@ col side: 0 col_type: 5
 
 FILED_CGG : FILED_RT
 row side: 0 row_type: 5
-col side: 0 col_type: 5
-12 : 12
-
-FILED_CGG : FILED_RT
-row side: 0 row_type: 5
 col side: 0 col_type: 2
 12 : 6
 
@@ -897,6 +892,11 @@ FILED_CGG : FILED_RT
 row side: 0 row_type: 5
 col side: 3 col_type: 2
 12 : 6
+
+FILED_CGG : FILED_RT
+row side: 0 row_type: 5
+col side: 0 col_type: 5
+12 : 12
 
 FILED_CGG
 side: 0 type: 2
@@ -1055,11 +1055,6 @@ col side: 0 col_type: 5
 
 FILED_CGG : FILED_RT
 row side: 0 row_type: 5
-col side: 0 col_type: 5
-12 : 12
-
-FILED_CGG : FILED_RT
-row side: 0 row_type: 5
 col side: 0 col_type: 2
 12 : 6
 
@@ -1077,6 +1072,11 @@ FILED_CGG : FILED_RT
 row side: 0 row_type: 5
 col side: 3 col_type: 2
 12 : 6
+
+FILED_CGG : FILED_RT
+row side: 0 row_type: 5
+col side: 0 col_type: 5
+12 : 12
 
 FILED_CGG
 side: 0 type: 2
@@ -1235,11 +1235,6 @@ col side: 0 col_type: 5
 
 FILED_CGG : FILED_RT
 row side: 0 row_type: 5
-col side: 0 col_type: 5
-12 : 12
-
-FILED_CGG : FILED_RT
-row side: 0 row_type: 5
 col side: 0 col_type: 2
 12 : 6
 
@@ -1257,6 +1252,11 @@ FILED_CGG : FILED_RT
 row side: 0 row_type: 5
 col side: 3 col_type: 2
 12 : 6
+
+FILED_CGG : FILED_RT
+row side: 0 row_type: 5
+col side: 0 col_type: 5
+12 : 12
 
 FILED_CGG
 side: 0 type: 2
@@ -1415,11 +1415,6 @@ col side: 0 col_type: 5
 
 FILED_CGG : FILED_RT
 row side: 0 row_type: 5
-col side: 0 col_type: 5
-12 : 12
-
-FILED_CGG : FILED_RT
-row side: 0 row_type: 5
 col side: 0 col_type: 2
 12 : 6
 
@@ -1437,6 +1432,11 @@ FILED_CGG : FILED_RT
 row side: 0 row_type: 5
 col side: 3 col_type: 2
 12 : 6
+
+FILED_CGG : FILED_RT
+row side: 0 row_type: 5
+col side: 0 col_type: 5
+12 : 12
 
 FILED_CGG
 side: 0 type: 2
@@ -1595,11 +1595,6 @@ col side: 0 col_type: 5
 
 FILED_CGG : FILED_RT
 row side: 0 row_type: 5
-col side: 0 col_type: 5
-12 : 12
-
-FILED_CGG : FILED_RT
-row side: 0 row_type: 5
 col side: 0 col_type: 2
 12 : 6
 
@@ -1617,6 +1612,11 @@ FILED_CGG : FILED_RT
 row side: 0 row_type: 5
 col side: 3 col_type: 2
 12 : 6
+
+FILED_CGG : FILED_RT
+row side: 0 row_type: 5
+col side: 0 col_type: 5
+12 : 12
 
 FILED_CGG
 side: 0 type: 2
@@ -1775,11 +1775,6 @@ col side: 0 col_type: 5
 
 FILED_CGG : FILED_RT
 row side: 0 row_type: 5
-col side: 0 col_type: 5
-12 : 12
-
-FILED_CGG : FILED_RT
-row side: 0 row_type: 5
 col side: 0 col_type: 2
 12 : 6
 
@@ -1797,6 +1792,11 @@ FILED_CGG : FILED_RT
 row side: 0 row_type: 5
 col side: 3 col_type: 2
 12 : 6
+
+FILED_CGG : FILED_RT
+row side: 0 row_type: 5
+col side: 0 col_type: 5
+12 : 12
 
 FILED_CGG
 side: 0 type: 2
@@ -1955,11 +1955,6 @@ col side: 0 col_type: 5
 
 FILED_CGG : FILED_RT
 row side: 0 row_type: 5
-col side: 0 col_type: 5
-12 : 12
-
-FILED_CGG : FILED_RT
-row side: 0 row_type: 5
 col side: 0 col_type: 2
 12 : 6
 
@@ -1977,6 +1972,11 @@ FILED_CGG : FILED_RT
 row side: 0 row_type: 5
 col side: 3 col_type: 2
 12 : 6
+
+FILED_CGG : FILED_RT
+row side: 0 row_type: 5
+col side: 0 col_type: 5
+12 : 12
 
 FILED_CGG
 side: 0 type: 2
@@ -2135,11 +2135,6 @@ col side: 0 col_type: 5
 
 FILED_CGG : FILED_RT
 row side: 0 row_type: 5
-col side: 0 col_type: 5
-12 : 12
-
-FILED_CGG : FILED_RT
-row side: 0 row_type: 5
 col side: 0 col_type: 2
 12 : 6
 
@@ -2157,4 +2152,9 @@ FILED_CGG : FILED_RT
 row side: 0 row_type: 5
 col side: 3 col_type: 2
 12 : 6
+
+FILED_CGG : FILED_RT
+row side: 0 row_type: 5
+col side: 0 col_type: 5
+12 : 12
 

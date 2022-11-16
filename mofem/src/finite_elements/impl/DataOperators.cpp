@@ -62,6 +62,8 @@ MoFEMErrorCode DataOperator::opLhs(EntitiesFieldData &row_data,
     MoFEMFunctionBeginHot;
     auto &row_ent_data = row_data.dataOnEntities[type];
     for (size_t ss = 0; ss != row_ent_data.size(); ++ss) {
+      if (!Symm)
+        CHKERR do_col_entity(row_ent_data, ss, type, MBVERTEX, type);
       size_t SS = 0;
       if (Symm)
         SS = ss;
@@ -69,8 +71,6 @@ MoFEMErrorCode DataOperator::opLhs(EntitiesFieldData &row_data,
         CHKERR doWork(ss, SS, type, type, row_ent_data[ss],
                       col_data.dataOnEntities[type][SS]);
       }
-      if (!Symm)
-        CHKERR do_col_entity(row_ent_data, ss, type, MBVERTEX, type);
       CHKERR do_col_entity(row_ent_data, ss, type,
                            static_cast<EntityType>(type + 1), MBMAXTYPE);
     }
