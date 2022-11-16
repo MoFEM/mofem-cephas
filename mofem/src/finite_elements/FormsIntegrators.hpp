@@ -289,7 +289,7 @@ OpBaseImpl<A, EleOp>::doWork(int row_side, int col_side, EntityType row_type,
   rowType = row_type;
   // get number of dofs on column
   nbCols = col_data.getIndices().size();
-  // if no dofs on Columbia, exit nothing to do here
+  // if no dofs on column, exit nothing to do here
   if (!nbCols)
     MoFEMFunctionReturnHot(0);
   colSide = col_side;
