@@ -3,12 +3,7 @@
 
 */
 
-
-
 using namespace MoFEM;
-
-TriPolynomialBase::TriPolynomialBase() {}
-TriPolynomialBase::~TriPolynomialBase() {}
 
 MoFEMErrorCode
 TriPolynomialBase::query_interface(boost::typeindex::type_index type_index,

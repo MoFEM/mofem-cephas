@@ -21,8 +21,8 @@ struct EdgePolynomialBase : public BaseFunction {
   MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
-  EdgePolynomialBase();
-  ~EdgePolynomialBase();
+  EdgePolynomialBase() = default;
+  virtual ~EdgePolynomialBase() = default;
 
   MoFEMErrorCode getValue(MatrixDouble &pts,
                           boost::shared_ptr<BaseFunctionCtx> ctx_ptr);

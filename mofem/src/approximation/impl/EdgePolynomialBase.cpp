@@ -13,9 +13,6 @@ EdgePolynomialBase::query_interface(boost::typeindex::type_index type_index,
   return 0;
 }
 
-EdgePolynomialBase::~EdgePolynomialBase() {}
-EdgePolynomialBase::EdgePolynomialBase() {}
-
 MoFEMErrorCode
 EdgePolynomialBase::getValue(MatrixDouble &pts,
                              boost::shared_ptr<BaseFunctionCtx> ctx_ptr) {
