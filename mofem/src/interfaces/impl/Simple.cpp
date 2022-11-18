@@ -643,8 +643,9 @@ MoFEMErrorCode Simple::buildFields() {
     const auto order = std::get<1>(t);
     MOFEM_LOG_CHANNEL("WORLD");
     MOFEM_TAG_AND_LOG("WORLD", Sev::inform, "Simple")
-        << "Set order to field " << f << " order " << order << " ents "
-        << std::get<2>(t);
+        << "Set order to field " << f << " order " << order;
+    MOFEM_TAG_AND_LOG("WORLD", Sev::verbose, "Simple")
+        << "To ents " << std::get<2>(t);
 
     if (std::get<2>(t).empty()) {
       auto f_ptr = get_field_ptr(f);
