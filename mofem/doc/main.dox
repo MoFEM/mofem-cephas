@@ -26,7 +26,7 @@
 <div class="wrapper">
     <div class="main">
 
-        <html>
+        <!--MoFEM banner-->
 
         <head>
             <title>MoFEM</title>
@@ -43,90 +43,6 @@
         <h1 style="font-weight:200;font-size:150%">
             <center>An open source, parallel finite element library</center>
         </h1>
-
-        <!-- Table with description -->
-
-        <table id="table_main">
-
-            <tr>
-                <td style="text-align:center" width="33%" valign="bottom">
-                    <h2 style="font-weight:200;">The library</h2>
-                </td>
-                <td style="text-align:center" width="33%" valign="bottom">
-                    <h2 style="font-weight:200;">Scalability</h2>
-                </td>
-                <td style="text-align:center" width="33%" valign="bottom">
-                    <h2 style="font-weight:200;">Getting started</h2>
-                </td>
-            </tr>
-            <tr>
-                <td style="text-align:left;background-color:#FAFAFA;padding:12px" valign="top"><a
-                        style="font-weight:bold" href="namespace_mo_f_e_m.html">MoFEM</a> is an open source
-                    (<a href=https://en.wikipedia.org/wiki/MIT_License#Ambiguity_and_variants>MIT License</a>) C++
-                    finite element library. It is capable of dealing with complex
-                    multi-physics problems with arbitrary levels of approximation
-                    and refinement. <a style="font-weight:bold" href="namespace_mo_f_e_m.html">MoFEM</a> can read
-                    various input file formats, and work with preprocessors like Gmsh, Salome, Cubit, and many more.
-                </td>
-
-                <td style="text-align:left;background-color:#FAFAFA;padding:12px" valign="top"><a
-                        style="font-weight:bold" href="namespace_mo_f_e_m.html">MoFEM</a> can be used for
-                    parallel processing on desktop computers and high-performance clusters. Its modular toolkit-like
-                    structure allows for development of open modules and private industrial
-                    sensitive projects. At the same time, it is designed to suit both researchers
-                    developing computer methods and engineers solving real practical problems.
-                </td>
-
-                <td style="text-align:left;background-color:#FAFAFA;padding:12px" valign="top"><a
-                        style="font-weight:bold" href="running_code.html">Getting started</a> offers a wide
-                    range of information including guides on installation, basic tutorials,
-                    instructive videos. <a style="font-weight:bold" href="tutorials.html">Developer</a> section
-                    contains <a style="font-weight:bold" href="namespace_mo_f_e_m.html">MoFEM</a> design
-                    philosophy and tutorials on how to implement problems from solid
-                    mechanics to fluid
-                    mechanics.
-                </td>
-            </tr>
-        </table>
-
-        <!-- Add follow us -->
-
-        <br>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
-            integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w=="
-            crossorigin="anonymous" referrerpolicy="no-referrer" />
-        <p style="text-align:center;">
-            Mastodon <a rel="me" href="https://fosstodon.org/@mofem">
-                <i class="fab fa-mastodon"></i> @mofem@fosstodon.org
-            </a> Twitter
-            <a href="https://twitter.com/mofemjoseph">
-                <i class="fab fa-twitter"></i> @mofemjoseph,
-            </a>
-              <a href="https://www.linkedin.com/company/mofem-community/">
-              <i class="fab fa-linkedin-in"></i> LinkedIn Community,
-            </a>
-            and
-            <a href="https://www.youtube.com/c/MoFEM-channel/playlists">
-                <i class="fab fa-youtube"></i> YouTube Channel
-            </a>
-        </p>
-
-        <!-- Add Mastodon feed -->
-
-        <link rel="stylesheet" href="mastodon-timeline.css">
-
-        <div class="dummy-container">
-            <div id="mt-timeline" class="mt-timeline">
-                <div id="mt-body" class="mt-body">
-                    <div class="loading-spinner"></div>
-                </div>
-            </div>
-        </div>
-
-        <script src='mastodon-timeline.js'>
-        </script>
-
-        <link rel="stylesheet" type="text/css" href="engine1/style.css" />
 
         <!-- Add rolling examples images   -->
 
@@ -199,6 +115,92 @@
             <script type="text/javascript" src="engine1/script.js"></script>
 
         </body>
+
+        <!-- Table with description -->
+
+        <table id="table_main">
+
+            <tr>
+                <td style="text-align:center" width="33%" valign="bottom">
+                    <h2 style="font-weight:200;">The library</h2>
+                </td>
+                <td style="text-align:center" width="33%" valign="bottom">
+                    <h2 style="font-weight:200;">Scalability</h2>
+                </td>
+                <td style="text-align:center" width="33%" valign="bottom">
+                    <h2 style="font-weight:200;">Getting started</h2>
+                </td>
+            </tr>
+            <tr>
+                <td style="text-align:left;background-color:#FAFAFA;padding:12px" valign="top"><a
+                        style="font-weight:bold" href="namespace_mo_f_e_m.html">MoFEM</a> is an open source
+                    (<a href=https://en.wikipedia.org/wiki/MIT_License#Ambiguity_and_variants>MIT License</a>) C++
+                    finite element library. It is capable of dealing with complex
+                    multi-physics problems with arbitrary levels of approximation
+                    and refinement. <a style="font-weight:bold" href="namespace_mo_f_e_m.html">MoFEM</a> can read
+                    various input file formats, and work with preprocessors like Gmsh, Salome, Cubit, and many more.
+                </td>
+
+                <td style="text-align:left;background-color:#FAFAFA;padding:12px" valign="top"><a
+                        style="font-weight:bold" href="namespace_mo_f_e_m.html">MoFEM</a> can be used for
+                    parallel processing on desktop computers and high-performance clusters. Its modular toolkit-like
+                    structure allows for development of open modules and private industrial
+                    sensitive projects. At the same time, it is designed to suit both researchers
+                    developing computer methods and engineers solving real practical problems.
+                </td>
+
+                <td style="text-align:left;background-color:#FAFAFA;padding:12px" valign="top"><a
+                        style="font-weight:bold" href="running_code.html">Getting started</a> offers a wide
+                    range of information including guides on installation, basic tutorials,
+                    instructive videos. <a style="font-weight:bold" href="tutorials.html">Developer</a> section
+                    contains <a style="font-weight:bold" href="namespace_mo_f_e_m.html">MoFEM</a> design
+                    philosophy and tutorials on how to implement problems from solid
+                    mechanics to fluid
+                    mechanics.
+                </td>
+            </tr>
+        </table>
+
+        <!-- Add follow us -->
+
+        <br>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+            integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w=="
+            crossorigin="anonymous" referrerpolicy="no-referrer" />
+        <p style="text-align:center;">
+            Mastodon <a rel="me" href="https://fosstodon.org/@mofem">
+                <i class="fab fa-mastodon"></i> @mofem@fosstodon.org
+            </a> Twitter
+            <a href="https://twitter.com/mofemjoseph">
+                <i class="fab fa-twitter"></i> @mofemjoseph,
+            </a>
+            <a href="https://www.linkedin.com/company/mofem-community/">
+                <i class="fab fa-linkedin-in"></i> LinkedIn Community,
+            </a>
+            and
+            <a href="https://www.youtube.com/c/MoFEM-channel/playlists">
+                <i class="fab fa-youtube"></i> YouTube Channel
+            </a>
+        </p>
+
+        <!-- Add Mastodon feed -->
+
+        <link rel="stylesheet" href="mastodon-timeline.css">
+
+        <div class="dummy-container">
+            <div id="mt-timeline" class="mt-timeline">
+                <div id="mt-body" class="mt-body">
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
+        </div>
+
+        <script src='mastodon-timeline.js'>
+        </script>
+
+        <link rel="stylesheet" type="text/css" href="engine1/style.css" />
+
+
 
     </div>
 
