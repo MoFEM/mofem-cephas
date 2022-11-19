@@ -178,10 +178,10 @@
             </a>
             YouTube
             <a href="https://www.youtube.com/c/MoFEM-channel/playlists">
-                <i class="fab fa-youtube"></i> MoFEM-Channel
+                <i class="fab fa-youtube"></i> MoFEM-Channel,
             </a>
             and Mastodon <a rel="me" href="https://fosstodon.org/@mofem">
-                <i class="fab fa-mastodon"></i> @mofem@fosstodon.org,
+                <i class="fab fa-mastodon"></i> @mofem@fosstodon.org.
             </a>
         </p>
 
