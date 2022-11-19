@@ -796,7 +796,7 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
               << bc->bcAttributes.size();
         }
         MOFEM_LOG("BcMngWorld", Sev::inform) << "Add X " << bc_id;
-        MOFEM_LOG("BcMngWorld", Sev::inform) << bc->dispBcPtr;
+        MOFEM_LOG("BcMngWorld", Sev::inform) << *bc->dispBcPtr;
       } else if (std::regex_match(bc_id, std::regex("(.*)_FIX_Y(.*)"))) {
         bc->dispBcPtr = boost::make_shared<DisplacementCubitBcData>();
         bc->dispBcPtr->data.flag2 = 1;
