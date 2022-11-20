@@ -72,6 +72,13 @@ if(DOXYGEN_FOUND)
   )
   add_dependencies(doc doxygen_copy_script_files)
 
+  # copy mastadon files
+  add_custom_target(doxygen_mastadoc_files
+    ${CMAKE_COMMAND} -E copy
+    ${PROJECT_SOURCE_DIR}/doc/mastodon* ${PROJECT_BINARY_DIR}/html
+  )
+  add_dependencies(doc doxygen_mastadoc_files)
+
   # users modules docs
   # FIXME: This only works if modules are in ${PROJECT_SOURCE_DIR}/users_modules
   file(
