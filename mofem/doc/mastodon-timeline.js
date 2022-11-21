@@ -219,12 +219,21 @@ MastodonApi.prototype.getToots = function () {
 // Place media
 MastodonApi.prototype.replaceMedias = function (media_, spoiler_) {
 	let spoiler = spoiler_ || false;
-	let pic =
-		'<div class="toot-media ' + (spoiler ? 'toot-media-spoiler' : '') + ' img-ratio14_7 loading-spinner">'
-		+ '<img onload="removeSpinner(this)" onerror="removeSpinner(this)" src="' + media_.url + '" alt="" loading="lazy" />'
-		+ '</div>';
-
-	return pic;
+	if (media_.type == "image") {
+		let pic =
+			'<div class="toot-media ' + (spoiler ? 'toot-media-spoiler' : '') + ' img-ratio14_7 loading-spinner">'
+			+ '<img onload="removeSpinner(this)" onerror="removeSpinner(this)" src="' + media_.url + '" alt="" loading="lazy" />'
+			+ '</div>';
+		return pic;
+	} else {
+		let pic =
+			'<div class="toot-media">'
+			+ '<video src="' + media_.url 
+			+ '" width=100%"'  
+			+ '" controls autoplay loop muted> Your browser does not support the video tag.  </video>'
+			+ '</div>';
+		return pic;
+	}
 };
 
 // Format date
