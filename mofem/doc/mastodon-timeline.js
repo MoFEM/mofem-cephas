@@ -34,7 +34,10 @@ let MastodonApi = function (params_) {
 	this.mtIdContainer.addEventListener('click', function (event) {
 		let urlToot = event.target.closest('.mt-toot').dataset.location;
 		// Open Toot in new page avoiding any other natural link
-		if (event.target.localName != 'a' && event.target.localName != 'span' && urlToot) {
+		if (event.target.localName != 'a'
+			&& event.target.localName != 'video'
+			&& event.target.localName != 'span'
+			&& urlToot) {
 			window.open(urlToot, '_blank');
 		}
 	});
@@ -230,7 +233,7 @@ MastodonApi.prototype.replaceMedias = function (media_, spoiler_) {
 			'<div class="toot-media">'
 			+ '<video src="' + media_.url 
 			+ '" width=100%"'  
-			+ '" controls autoplay loop muted> Your browser does not support the video tag.  </video>'
+			+ '" controls autoplay loop muted> <a>Your browser does not support the video tag.</a> </video>'
 			+ '</div>';
 		return pic;
 	}
