@@ -155,6 +155,11 @@ namespace FTensor
               char j_1, char k_1>
     auto &operator-=(
         const Tensor3_Expr<B, U, Dim1_0, Dim1_1, Dim1_2, i_1, j_1, k_1> &rhs) {
+
+      static_assert(Dim0 <= Dim1_0, "Bad Dim1_0");
+      static_assert(Dim1 <= Dim1_1, "Bad Dim1_1");
+      static_assert(Dim2 <= Dim1_2, "Bad Dim1_2");
+
       for (int ii = 0; ii < Dim0; ++ii)
         for (int jj = 0; jj < Dim1; ++jj)
           for (int kk = 0; kk < Dim2; ++kk) {
@@ -174,6 +179,53 @@ namespace FTensor
       return *this;
     }
 
+    template <class B, class U, int Dim1_01, int Dim1_2, char i_1, char j_1,
+              char k_1>
+    auto &operator=(const Dg_Expr<B, U, Dim1_01, Dim1_2, i_1, j_1, k_1> &rhs) {
+
+      static_assert(Dim0 <= Dim1_01, "Bad Dim1_0");
+      static_assert(Dim1 == Dim0, "Bad Dim1");
+      static_assert(Dim2 <= Dim1_2, "Dim1_2");
+
+      for (int ii = 0; ii < Dim0; ++ii)
+        for (int jj = 0; jj < Dim1; ++jj)
+          for (int kk = 0; kk < Dim2; ++kk) {
+            iter(ii, jj, kk) = permute(*this, rhs, ii, jj, kk);
+          }
+      return *this;
+    }
+
+    template <class B, class U, int Dim1_01, int Dim1_2, char i_1, char j_1,
+              char k_1>
+    auto &operator+=(const Dg_Expr<B, U, Dim1_01, Dim1_2, i_1, j_1, k_1> &rhs) {
+
+      static_assert(Dim0 <= Dim1_01, "Bad Dim1_0");
+      static_assert(Dim1 == Dim0, "Bad Dim1");
+      static_assert(Dim2 <= Dim1_2, "Dim1_2");
+
+      for (int ii = 0; ii < Dim0; ++ii)
+        for (int jj = 0; jj < Dim1; ++jj)
+          for (int kk = 0; kk < Dim2; ++kk) {
+            iter(ii, jj, kk) += permute(*this, rhs, ii, jj, kk);
+          }
+      return *this;
+    }
+
+    template <class B, class U, int Dim1_01, int Dim1_2, char i_1, char j_1,
+              char k_1>
+    auto &operator-=(const Dg_Expr<B, U, Dim1_01, Dim1_2, i_1, j_1, k_1> &rhs) {
+
+      static_assert(Dim0 <= Dim1_01, "Bad Dim1_0");
+      static_assert(Dim1 == Dim0, "Bad Dim1");
+      static_assert(Dim2 <= Dim1_2, "Dim1_2");
+
+      for (int ii = 0; ii < Dim0; ++ii)
+        for (int jj = 0; jj < Dim1; ++jj)
+          for (int kk = 0; kk < Dim2; ++kk) {
+            iter(ii, jj, kk) -= permute(*this, rhs, ii, jj, kk);
+          }
+      return *this;
+    }
   };
 
   /* Specialized for Tensor4_number_rhs_2  */
@@ -241,6 +293,11 @@ namespace FTensor
               char j_1, char k_1>
     auto &operator=(
         const Tensor3_Expr<B, U, Dim1_0, Dim1_1, Dim1_2, i_1, j_1, k_1> &rhs) {
+
+      static_assert(Dim0 <= Dim1_0, "Bad index N1");
+      static_assert(Dim1 <= Dim1_1, "Bad index N2");
+      static_assert(Dim2 <= Dim1_2, "Bad index N2");
+
       for (int ii = 0; ii < Dim0; ++ii)
         for (int jj = 0; jj < Dim1; ++jj)
           for (int kk = 0; kk < Dim2; ++kk) {

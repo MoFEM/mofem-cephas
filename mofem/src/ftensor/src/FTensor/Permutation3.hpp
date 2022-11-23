@@ -60,5 +60,28 @@ namespace FTensor
       static_assert(error_when_instantiated<B>(), "Incompatible indices");
       return rhs(0, 0, 0);
     }
+
+    template <class B, class U>
+    U eval(const Dg_Expr<B, U, Dim0, Dim2, i, j, k> &rhs, const int N0,
+           const int N1, const int N2) {
+      static_assert(Dim0 == Dim1, "Incompatible indices");
+      return rhs(N0, N1, N2);
+    }
+
+    template <class B, class U>
+    U eval(const Dg_Expr<B, U, Dim0, Dim2, j, i, k> &rhs, const int N0,
+           const int N1, const int N2) {
+      static_assert(Dim0 == Dim1, "Incompatible indices");
+      return rhs(N0, N1, N2);
+    }
+
+    // Catch-all version for incompatible indices
+    template <class B, class U, int Dim1_01, int Dim1_1, int Dim1_2, char i1,
+              char j1, char k1>
+    U eval(const Dg_Expr<B, U, Dim1_01, Dim1_2, i1, j1, k1> &rhs, const int N0,
+           const int N1, const int N2) {
+      static_assert(error_when_instantiated<B>(), "Incompatible indices");
+      return rhs(0, 0, 0);
+    }
   };
 }
