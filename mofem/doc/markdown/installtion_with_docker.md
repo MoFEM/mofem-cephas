@@ -175,6 +175,7 @@ Run JupyterHub [JupterHyb](https://jupyterhub.readthedocs.io/en/stable/)
 ~~~~~~
 docker run \
   --shm-size=1024M \
+  -p 2222:22 \
   -p 8000:8000 \
   --name mofem_jupyter_hub \
   -d likask/mofem-spack-jupyterhub:latest 
