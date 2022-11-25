@@ -136,15 +136,17 @@ struct OpGradSymTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>
   OpGradSymTensorGradImpl(const std::string row_field_name,
                           const std::string col_field_name,
                           boost::shared_ptr<MatrixDouble> mat_D,
-                          boost::shared_ptr<Range> ents_ptr = nullptr)
+                          boost::shared_ptr<Range> ents_ptr = nullptr,
+                          ScalarFun beta = scalar_fun_one)
       : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL, ents_ptr),
-        matD(mat_D) {
+        matD(mat_D), betaCoeff(beta) {
     if (row_field_name == col_field_name)
       this->sYmm = true;
   }
 
 protected:
   boost::shared_ptr<MatrixDouble> matD;
+  ScalarFun betaCoeff;
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data);
 };
@@ -159,11 +161,14 @@ struct OpGradTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>
   FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
   OpGradTensorGradImpl(const std::string row_field_name,
                        const std::string col_field_name,
-                       boost::shared_ptr<MatrixDouble> mat_D)
-      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL), matD(mat_D) {}
+                       boost::shared_ptr<MatrixDouble> mat_D,
+                       ScalarFun beta = scalar_fun_one)
+      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL), matD(mat_D), betaCoeff(beta){
+  }
 
 protected:
   boost::shared_ptr<MatrixDouble> matD;
+  ScalarFun betaCoeff;
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data);
 };
@@ -907,11 +912,14 @@ OpGradSymTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
     // symmetry)
     auto t_D = getFTensor4DdgFromMat<SPACE_DIM, SPACE_DIM, S>(*matD);
 
+    // get coordinate at integration points
+    auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
+
     // iterate over integration points
     for (int gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
 
       // calculate scalar weight times element volume
-      double a = t_w * vol;
+      double a = t_w * vol * betaCoeff(t_coords(0), t_coords(1), t_coords(2));
 
       // iterate over row base functions
       int rr = 0;
@@ -952,6 +960,7 @@ OpGradSymTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
       // move to next integration weight
       ++t_w;
       ++t_D;
+      ++t_coords;
     }
   }
 
@@ -1098,11 +1107,14 @@ OpGradTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
         getFTensor4FromMat<SPACE_DIM, SPACE_DIM, SPACE_DIM, SPACE_DIM, S>(
             *matD);
 
+    // get coordinate at integration points
+    auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
+
     // iterate over integration points
     for (int gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
 
       // calculate scalar weight times element volume
-      double a = t_w * vol;
+      double a = t_w * vol * betaCoeff(t_coords(0), t_coords(1), t_coords(2));;;
 
       // iterate over row base functions
       int rr = 0;
@@ -1138,6 +1150,7 @@ OpGradTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
       // move to next integration weight
       ++t_w;
       ++t_D;
+      ++t_coords;
     }
   }
 
