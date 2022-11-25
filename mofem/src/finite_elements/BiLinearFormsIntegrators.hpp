@@ -163,8 +163,8 @@ struct OpGradTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>
                        const std::string col_field_name,
                        boost::shared_ptr<MatrixDouble> mat_D,
                        ScalarFun beta = scalar_fun_one)
-      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL), matD(mat_D), betaCoeff(beta){
-  }
+      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL), matD(mat_D),
+        betaCoeff(beta) {}
 
 protected:
   boost::shared_ptr<MatrixDouble> matD;
@@ -1114,7 +1114,9 @@ OpGradTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
     for (int gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
 
       // calculate scalar weight times element volume
-      double a = t_w * vol * betaCoeff(t_coords(0), t_coords(1), t_coords(2));;;
+      double a = t_w * vol * betaCoeff(t_coords(0), t_coords(1), t_coords(2));
+      ;
+      ;
 
       // iterate over row base functions
       int rr = 0;
