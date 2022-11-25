@@ -182,7 +182,7 @@ docker run \
 ~~~~~~
 
 Docker JupyterHub is running as demon, and you can access it on local host, at
-port 8000 [http:://localhost:8000][http:://localhost:8000]. Login is "mofem", on
+port 8000 [http:://localhost:8000](http:://localhost:8000). Login is "mofem", on
 first login you will be ask for password. "mofem" account is admin account, from
 it you can add users.
 
