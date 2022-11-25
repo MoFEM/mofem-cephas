@@ -1115,8 +1115,6 @@ OpGradTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
 
       // calculate scalar weight times element volume
       double a = t_w * vol * betaCoeff(t_coords(0), t_coords(1), t_coords(2));
-      ;
-      ;
 
       // iterate over row base functions
       int rr = 0;
