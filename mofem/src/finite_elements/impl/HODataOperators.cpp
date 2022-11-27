@@ -775,6 +775,8 @@ MoFEMErrorCode AddHOOps<2, 3, 3>::add(
 
   for (auto s : spaces) {
     switch (s) {
+    case NOSPACE:
+      break;
     case HCURL:
       pipeline.push_back(new OpHOSetCovariantPiolaTransformOnFace3D(HCURL));
       break;
