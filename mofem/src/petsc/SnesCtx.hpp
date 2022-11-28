@@ -2,8 +2,6 @@
  * \brief Context for PETSc SNES, i.e. nonlinear solver
  */
 
-
-
 #ifndef __SNESCTX_HPP__
 #define __SNESCTX_HPP__
 
@@ -110,9 +108,9 @@ struct SnesCtx {
   MoFEMErrorCode copyLoops(const SnesCtx &snes_ctx);
 
   /**
-   * @brief Clear loops 
-   * 
-   * @return MoFEMErrorCode 
+   * @brief Clear loops
+   *
+   * @return MoFEMErrorCode
    */
   MoFEMErrorCode clearLoops();
 
@@ -124,12 +122,10 @@ struct SnesCtx {
   friend MoFEMErrorCode SnesMoFEMSetBehavior(SNES snes, MoFEMTypes bh);
 
 private:
-
   boost::movelib::unique_ptr<bool> vecAssembleSwitch;
   boost::movelib::unique_ptr<bool> matAssembleSwitch;
   PetscLogEvent MOFEM_EVENT_SnesRhs; ///< Log events to assemble residual
   PetscLogEvent MOFEM_EVENT_SnesMat; ///< Log events to assemble tangent matrix
-
 };
 
 /**
