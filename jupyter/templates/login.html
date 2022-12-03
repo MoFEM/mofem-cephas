@@ -21,43 +21,6 @@
   <center>An open source, parallel finite element library</center>
 </h1>
 
-<style>
-  .notes {
-    text-align: left;
-    width: 50%;
-    margin-left: auto;
-    margin-right: auto;
-    padding-top: 15px;
-  }
-</style>
-
-<div class="notes">
-
-  <h3 id="password-and-login">Password and login</h3>
-  <ul>
-    <li>On the first login, select the password</li>
-    <li>The shell password on the SSH login is different than the JupyterHub password</li>
-    <li>Ask admin for SSH password </li>
-    <li>Change password in the shell using <a href="https://man7.org/linux/man-pages/man1/passwd.1.html">passwd</a>
-      command</li>
-    <li>Set up your shell with the command (e.g. bash):
-      <pre><code>$ usermod <span class="hljs-comment">--shell /bin/bash your_login_name</span>
-Entry <span class="hljs-keyword">in</span> .ssh/config <span class="hljs-keyword">on</span> laptop/desktop
-</code></pre>
-    </li>
-  </ul>
-  <h3 id="ssh-config">SSH config</h3>
-  <p>Copy the following code into .ssh/config on your laptop or desktop. </p>
-  <pre><code>Host mofemhub
-HostName cactus<span class="hljs-selector-class">.eng</span><span class="hljs-selector-class">.gla</span><span class="hljs-selector-class">.ac</span><span class="hljs-selector-class">.uk</span>
-ForwardX11 yes
-Compression yes
-User lukasz
-Port <span class="hljs-number">222</span>
-</code></pre>
-
-</div>
-
 {% block login %}
 <div id="login-main" class="container">
   {% block login_container %}
@@ -116,6 +79,49 @@ Port <span class="hljs-number">222</span>
   {% endblock login_container %}
 </div>
 {% endblock login %}
+
+<style>
+  .notes {
+    text-align: left;
+    width: 50%;
+    margin-left: auto;
+    margin-right: auto;
+    padding-top: 15px;
+  }
+</style>
+
+<div class="notes">
+
+  <h3 id="password-and-login">Password and login</h3>
+  <ul>
+  <li>On the first login, select the password</li>
+  <li>The shell password on the SSH login is different than the JupyterHub password</li>
+  <li>Ask admin for SSH password</li>
+  <li>Change password in the shell using <a href="https://www.computerhope.com/unix/upasswor.htm">passwd</a> command</li>
+  <li>Set up your shell with the command (e.g. bash):<pre><code>$ usermod <span class="hljs-comment">--shell /bin/bash your_login_name</span>
+  </code></pre></li>
+  </ul>
+  <h3 id="ssh-config">SSH config</h3>
+  <p>Copy the following code into .ssh/config on your laptop or desktop.</p>
+  <pre><code>Host greenstick
+    HostName greenstick<span class="hljs-selector-class">.eng</span><span class="hljs-selector-class">.gla</span><span class="hljs-selector-class">.ac</span><span class="hljs-selector-class">.uk</span>
+    ForwardX11 yes
+    Compression yes
+    User YOUR_LOGIB
+    LocalForward <span class="hljs-number">2222</span> greenstick<span class="hljs-selector-class">.eng</span><span class="hljs-selector-class">.gla</span><span class="hljs-selector-class">.ac</span><span class="hljs-selector-class">.uk</span>:<span class="hljs-number">2222</span>
+    LocalForward <span class="hljs-number">9000</span> greenstick<span class="hljs-selector-class">.eng</span><span class="hljs-selector-class">.gla</span><span class="hljs-selector-class">.ac</span><span class="hljs-selector-class">.uk</span>:<span class="hljs-number">9000</span>
+  
+  Host forward_greenstick
+    HostName localhost
+    ForwardX11 yes
+    Compression yes
+    User YOUR LOGIN
+    Port <span class="hljs-number">2222</span>
+  </code></pre><p>Fisrt you need to make ssh connection with server. That is:</p>
+  <pre><code><span class="hljs-attribute">ssh greenstick</span>
+  </code></pre><p>which forward ports of greenstick to your local machine. Then you can use address <a href="http://localhost:9000/hub/login">http://localhost:9000</a> to connect to hab, and in VS code you choose <em>forward_greenstick</em>.</p>
+
+</div>
 
 {% endblock %}
 
