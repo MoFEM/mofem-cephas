@@ -116,6 +116,91 @@ double TimeScale::getScaleFromData(const double time) {
   }
 }
 
-double TimeScale::getScale(const double time) { return scalingMethod(time); }
+TimeScaleVector::TimeScaleVector(string name, bool error_if_file_not_given)
+    : readFile(0), debug(0), nAme(name),
+      errorIfFileNotGiven(error_if_file_not_given) {
+  CHK_THROW_MESSAGE(timeData(), "Error in reading time data");
+}
+
+MoFEMErrorCode TimeScaleVector::timeData() {
+
+  MoFEMFunctionBeginHot;
+
+  char time_file_name[255];
+  PetscBool flg = PETSC_TRUE;
+  ierr = PetscOptionsGetString(PETSC_NULL, PETSC_NULL, nAme.c_str(),
+                               time_file_name, 255, &flg);
+  CHKERRG(ierr);
+  if (flg != PETSC_TRUE) {
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "*** ERROR %s (time_data FILE NEEDED)", nAme.c_str());
+  }
+  FILE *time_data = fopen(time_file_name, "r");
+  if (time_data == NULL) {
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "*** ERROR data file < %s > open unsuccessful", time_file_name);
+  }
+  double no1 = 0.0;
+  std::array<double, 3> no2{0, 0, 0};
+  tSeries[no1] = no2;
+  while (!feof(time_data)) {
+    int n =
+        fscanf(time_data, "%lf %lf %lf %lf", &no1, &no2[0], &no2[1], &no2[2]);
+    if (n < 0) {
+      fgetc(time_data);
+      continue;
+    }
+    if (n != 4) {
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "*** ERROR read data file error (check input time data file) "
+               "{ n = %d }",
+               n);
+    }
+    tSeries[no1] = no2;
+  }
+  int r = fclose(time_data);
+  if (debug) {
+
+    for (auto &[ts, vec] : tSeries) {
+      PetscPrintf(PETSC_COMM_WORLD,
+                  "** read accelerogram %3.2e time %3.2e %3.2e %3.2e\n",
+                  ts, vec[0], vec[1], vec[2]);
+    }
+  }
+  if (r != 0) {
+    SETERRQ(PETSC_COMM_SELF, 1, "*** ERROR file close unsuccessful");
+  }
+  readFile = 1;
+
+  MoFEMFunctionReturnHot(0);
+}
+
+std::array<double, 3> TimeScaleVector::getVector(const double time) {
+
+  if (readFile == 0) {
+    CHK_THROW_MESSAGE(MOFEM_OPERATION_UNSUCCESSFUL, "Data file not read");
+  }
+
+  std::array<double, 3> acc{0, 0, 0};
+  std::array<double, 3> acc0 = tSeries.begin()->second;
+  std::array<double, 3> Nf{0, 0, 0};
+
+  double t0 = 0, t1, dt;
+  for (auto &[ts, vec] : tSeries) {
+    if (ts > time) {
+      t1 = ts;
+      dt = time - t0;
+      for (int i = 0; i != 3; ++i)
+        acc[i] = acc0[i] + ((vec[i] - acc0[i]) / (t1 - t0)) * dt;
+      break;
+    }
+    t0 = ts;
+    acc0 = vec;
+    acc = acc0;
+  }
+  for (int i = 0; i != 3; ++i)
+    Nf[i] += acc[i];
+  return Nf;
+}
 
 } // namespace MoFEM
