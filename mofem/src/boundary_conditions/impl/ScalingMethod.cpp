@@ -175,6 +175,8 @@ MoFEMErrorCode TimeScaleVector::timeData() {
   MoFEMFunctionReturnHot(0);
 }
 
+double TimeScale::getScale(const double time) { return scalingMethod(time); }
+
 std::array<double, 3> TimeScaleVector::getVector(const double time) {
 
   if (readFile == 0) {
