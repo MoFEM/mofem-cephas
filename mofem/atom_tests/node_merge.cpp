@@ -1,4 +1,13 @@
-
+/**
+ * @file node_merge.cpp
+ * @example node_merge.cpp
+ * @brief test node merging
+ * @version 0.1
+ * @date 2022-12-11
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
 
 #include <MoFEM.hpp>
 
