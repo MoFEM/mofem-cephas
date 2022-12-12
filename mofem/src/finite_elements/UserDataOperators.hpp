@@ -535,9 +535,9 @@ protected:
   const EntityHandle zeroType;
 };
 
-/** \brief Approximate field valuse for given petsc vector
+/** \brief Approximate field values for given petsc vector
  *
- * \note Look at PetscData to see what vectors could be extarcted with that user
+ * \note Look at PetscData to see what vectors could be extracted with that user
  * data operator.
  *
  * \ingroup mofem_forces_and_sources_user_data_operators
