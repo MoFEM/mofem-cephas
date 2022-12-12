@@ -1570,3 +1570,7 @@ add_test(hanging_node_approx
   -log_severity_level inform
   -log_no_color
 )
+
+build_test(
+  operators_tests
+  operators_tests.cpp)

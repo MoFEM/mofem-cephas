@@ -4,6 +4,7 @@ const static int debug = 0;
 
 #include "impl/ProblemsManager.cpp"
 #include "impl/Simple.cpp"
+#include "impl/OperatorsTester.cpp"
 #include "impl/PipelineManager.cpp"
 #include "impl/MeshsetsManager.cpp"
 #include "impl/MeshRefinement.cpp"

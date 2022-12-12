@@ -98,6 +98,7 @@ struct PipelineManager : public UnknownInterface {
    * @return boost::ptr_vector<UserDataOperator>&
    */
   template <int DIM = -1>
+  
   inline boost::ptr_vector<UserDataOperator> &getOpDomainRhsPipeline();
 
   /**
