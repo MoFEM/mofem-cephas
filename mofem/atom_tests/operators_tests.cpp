@@ -179,27 +179,39 @@ int main(int argc, char *argv[]) {
             "VECTOR", vec_mat));
         pipe.push_back(new OpCalculateVectorFieldValuesDot<SPACE_DIM>(
             "VECTOR", dot_vec_vel));
-				return std::make_tuple(scl_mat, vec_mat, dot_vec_vel);
+        return std::make_tuple(scl_mat, vec_mat, dot_vec_vel);
       };
 
       auto [rhs_scl_mat, rhs_vec_mat, rhs_dot_vec_vel] =
           evaluate_field(pip->getOpDomainRhsPipeline());
       pip->getOpDomainRhsPipeline().push_back(
           new OpConvectiveTermRhs<1>("SCALAR", rhs_dot_vec_vel, rhs_scl_mat));
+      pip->getOpDomainRhsPipeline().push_back(
+          new OpConvectiveTermRhs<SPACE_DIM>("VECTOR", rhs_dot_vec_vel,
+                                             rhs_vec_mat));
 
       auto [lhs_scl_mat, lhs_vec_mat, lhs_dot_vec_vel] =
           evaluate_field(pip->getOpDomainLhsPipeline());
 
       // I create op, set scaling function to calculate time directive, and add
       // operator pinter to pipeline
-      auto op_convective_term_lhs_du =
+      auto op_convective_term_lhs_du_scalar =
           new OpConvectiveTermLhsDu<1>("SCALAR", "VECTOR", lhs_scl_mat);
-      op_convective_term_lhs_du->feScalingFun = [](const FEMethod *fe_ptr) {
-        return fe_ptr->ts_a;
-      };
-      pip->getOpDomainLhsPipeline().push_back(op_convective_term_lhs_du);
+      op_convective_term_lhs_du_scalar->feScalingFun =
+          [](const FEMethod *fe_ptr) { return fe_ptr->ts_a; };
+      pip->getOpDomainLhsPipeline().push_back(op_convective_term_lhs_du_scalar);
       pip->getOpDomainLhsPipeline().push_back(
           new OpConvectiveTermLhsDy<1>("SCALAR", "SCALAR", lhs_dot_vec_vel));
+
+      auto op_convective_term_lhs_du_vec =
+          new OpConvectiveTermLhsDu<SPACE_DIM>("VECTOR", "VECTOR", lhs_vec_mat);
+      op_convective_term_lhs_du_vec->feScalingFun = [](const FEMethod *fe_ptr) {
+        return fe_ptr->ts_a;
+      };
+      pip->getOpDomainLhsPipeline().push_back(op_convective_term_lhs_du_vec);
+      pip->getOpDomainLhsPipeline().push_back(
+          new OpConvectiveTermLhsDy<SPACE_DIM>("VECTOR", "VECTOR",
+                                               lhs_dot_vec_vel));
 
       constexpr double eps = 1e-6;
 
@@ -229,7 +241,6 @@ int main(int argc, char *argv[]) {
 
     CHKERR TestOpGradGrad();
     CHKERR TestOpConvection();
-
   }
   CATCH_ERRORS;
 
