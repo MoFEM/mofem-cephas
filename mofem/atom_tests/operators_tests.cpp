@@ -1,9 +1,12 @@
 /**
  * @file operators_tests.cpp
+ * @example operators_tests.cpp
  * @brief Test operators in forms integrators
  * @date 2022-12-11
  *
  * @copyright Copyright (c) 2022
+ *
+ * TODO: Add more operators.
  *
  */
 
@@ -32,6 +35,9 @@ using EntData = EntitiesFieldData::EntData;
 using DomainEle = ElementsAndOps<SPACE_DIM>::DomainEle;
 using DomainEleOp = DomainEle::UserDataOperator;
 using PostProcEle = PostProcBrokenMeshInMoab<DomainEle>;
+
+
+// Specializations for tested operators
 
 template <int FIELD_DIM>
 using OpGradGrad = FormsIntegrators<DomainEleOp>::Assembly<A>::BiLinearForm<
@@ -89,20 +95,24 @@ int main(int argc, char *argv[]) {
     // load mesh file
     CHKERR simple->loadFile();
 
+    // Scalar fields and vector field is tested. Add more fields, i.e. vector
+    // field if needed.
     CHKERR simple->addDomainField("SCALAR", H1, AINSWORTH_LEGENDRE_BASE, 1);
     CHKERR simple->addDomainField("VECTOR", H1, AINSWORTH_LEGENDRE_BASE,
                                   SPACE_DIM);
 
-    // set fields order
-    CHKERR simple->setFieldOrder("SCALAR", 2);
-    CHKERR simple->setFieldOrder("VECTOR", 2);
+    // set fields order, i.e. for most first cases order is sufficient.
+    CHKERR simple->setFieldOrder("SCALAR", 1);
+    CHKERR simple->setFieldOrder("VECTOR", 1);
 
     // setup problem
     CHKERR simple->setUp();
 
     // get operators tester
-    auto opt = m_field.getInterface<OperatorsTester>();
-    auto pip = m_field.getInterface<PipelineManager>();
+    auto opt = m_field.getInterface<OperatorsTester>(); // get interface to
+                                                        // OperatorsTester
+    auto pip = m_field.getInterface<PipelineManager>(); // get interface to
+                                                        // pipeline manager
 
     auto post_proc = [&](auto dm, auto f_res, auto out_name) {
       MoFEMFunctionBegin;
@@ -144,6 +154,7 @@ int main(int argc, char *argv[]) {
     // is not needed to test OPs, and not required, since we like to test only
     // operators.
 
+    // Test grad-grad operator for scalar and vector field specialisation
     auto TestOpGradGrad = [&]() {
       MoFEMFunctionBegin;
       MOFEM_LOG("OpTester", Sev::verbose) << "TestOpGradGrad";
@@ -185,6 +196,8 @@ int main(int argc, char *argv[]) {
           pip->getDomainLhsFE(), x, SmartPetscObj<Vec>(), SmartPetscObj<Vec>(),
           diff_x, 0, 1, eps);
 
+      // Calculate norm of difference between directive calculated from finite
+      // difference, and tangent matrix.
       double fnorm;
       CHKERR VecNorm(diff_res, NORM_2, &fnorm);
       MOFEM_LOG_C("OpTester", Sev::inform, "TestOpGradGrad %3.4e", fnorm);
@@ -211,6 +224,7 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionReturn(0);
     };
 
+    // test operator for convection (part of material time directives)
     auto TestOpConvection = [&]() {
       MoFEMFunctionBegin;
       MOFEM_LOG("OpTester", Sev::verbose) << "TestOpConvection";
@@ -279,6 +293,8 @@ int main(int argc, char *argv[]) {
           pip->getDomainLhsFE(), x, x_t, SmartPetscObj<Vec>(), diff_x, 0, 1,
           eps);
 
+      // Calculate norm of difference between directive calculated from finite
+      // difference, and tangent matrix.
       double fnorm;
       CHKERR VecNorm(diff_res, NORM_2, &fnorm);
       MOFEM_LOG_C("OpTester", Sev::inform, "TestOpGradGrad %3.4e", fnorm);
