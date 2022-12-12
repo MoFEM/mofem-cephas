@@ -1574,3 +1574,10 @@ add_test(hanging_node_approx
 build_test(
   operators_tests
   operators_tests.cpp)
+
+add_test(operators_tests
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/operators_tests
+  -file_name sphere.h5m
+  -log_no_color
+)
