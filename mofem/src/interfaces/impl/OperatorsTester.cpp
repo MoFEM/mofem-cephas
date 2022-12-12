@@ -181,7 +181,7 @@ SmartPetscObj<Vec> OperatorsTester::directionalCentralFiniteDiffence(
   return calculate_derivative(fm1, fp1);
 }
 
-SmartPetscObj<Vec> OperatorsTester::checkCentralFiniteDiffence(
+SmartPetscObj<Vec> OperatorsTester::checkCentralFiniteDifference(
     SmartPetscObj<DM> dm, std::string fe_name,
     boost::shared_ptr<FEMethod> pipeline_rhs,
     boost::shared_ptr<FEMethod> pipeline_lhs, SmartPetscObj<Vec> x,
@@ -212,7 +212,7 @@ OperatorsTester::setPipelineX(boost::shared_ptr<FEMethod> pipeline,
 
   SmartPetscObj<Vec> x_t, x_tt;
 
-  if (x_t.use_count()) {
+  if (delta_x.use_count()) {
     x_t = smartVectorDuplicate(x);
     VecCopy(delta_x, x_t);
     VecScale(x_t, 1. / delta_t);
@@ -222,7 +222,7 @@ OperatorsTester::setPipelineX(boost::shared_ptr<FEMethod> pipeline,
     pipeline->x_t = PETSC_NULL;
   }
 
-  if (x_t.use_count()) {
+  if (delta2_x.use_count()) {
     x_tt = smartVectorDuplicate(x);
     VecCopy(delta2_x, x_tt);
     VecScale(x_tt, 1. / pow(delta_t, 2));

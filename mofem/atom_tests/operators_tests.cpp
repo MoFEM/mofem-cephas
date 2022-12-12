@@ -41,6 +41,18 @@ template <int FIELD_DIM>
 using OpGradTimesTensor = FormsIntegrators<DomainEleOp>::Assembly<
     A>::LinearForm<I>::OpGradTimesTensor<1, FIELD_DIM, SPACE_DIM>;
 
+template <int FIELD_DIM>
+using OpConvectiveTermRhs = FormsIntegrators<DomainEleOp>::Assembly<
+    A>::LinearForm<I>::OpConvectiveTermRhs<1, FIELD_DIM, SPACE_DIM>;
+
+template <int FIELD_DIM>
+using OpConvectiveTermLhsDu = FormsIntegrators<DomainEleOp>::Assembly<
+    A>::BiLinearForm<I>::OpConvectiveTermLhsDu<1, FIELD_DIM, SPACE_DIM>;
+
+template <int FIELD_DIM>
+using OpConvectiveTermLhsDy = FormsIntegrators<DomainEleOp>::Assembly<
+    A>::BiLinearForm<I>::OpConvectiveTermLhsDy<1, FIELD_DIM, SPACE_DIM>;
+
 int main(int argc, char *argv[]) {
 
   // initialize petsc
@@ -130,7 +142,7 @@ int main(int argc, char *argv[]) {
       auto diff_x = opt->setRandomFields(
           simple->getDM(), {{"SCALAR", {-1, 1}}, {"VECTOR", {-1, 1}}});
 
-      auto diff_res = opt->checkCentralFiniteDiffence(
+      auto diff_res = opt->checkCentralFiniteDifference(
           simple->getDM(), simple->getDomainFEName(), pip->getDomainRhsFE(),
           pip->getDomainLhsFE(), x, SmartPetscObj<Vec>(), SmartPetscObj<Vec>(),
           diff_x, 0, 1, eps);
@@ -147,7 +159,77 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionReturn(0);
     };
 
+    auto TestOpConvection = [&]() {
+      MoFEMFunctionBegin;
+      MOFEM_LOG("OpTester", Sev::verbose) << "TestOpConvection";
+
+      pip->getOpDomainLhsPipeline().clear();
+      pip->getOpDomainRhsPipeline().clear();
+
+      pip->setDomainLhsIntegrationRule([](int, int, int o) { return 2 * o; });
+      pip->setDomainLhsIntegrationRule([](int, int, int o) { return 2 * o; });
+
+      auto evaluate_field = [&](auto &pipe) {
+        auto scl_mat = boost::make_shared<MatrixDouble>();
+        auto vec_mat = boost::make_shared<MatrixDouble>();
+        auto dot_vec_vel = boost::make_shared<MatrixDouble>();
+        pipe.push_back(
+            new OpCalculateScalarFieldGradient<SPACE_DIM>("SCALAR", scl_mat));
+        pipe.push_back(new OpCalculateVectorFieldGradient<SPACE_DIM, SPACE_DIM>(
+            "VECTOR", vec_mat));
+        pipe.push_back(new OpCalculateVectorFieldValuesDot<SPACE_DIM>(
+            "VECTOR", dot_vec_vel));
+				return std::make_tuple(scl_mat, vec_mat, dot_vec_vel);
+      };
+
+      auto [rhs_scl_mat, rhs_vec_mat, rhs_dot_vec_vel] =
+          evaluate_field(pip->getOpDomainRhsPipeline());
+      pip->getOpDomainRhsPipeline().push_back(
+          new OpConvectiveTermRhs<1>("SCALAR", rhs_dot_vec_vel, rhs_scl_mat));
+
+      auto [lhs_scl_mat, lhs_vec_mat, lhs_dot_vec_vel] =
+          evaluate_field(pip->getOpDomainLhsPipeline());
+
+      // I create op, set scaling function to calculate time directive, and add
+      // operator pinter to pipeline
+      auto op_convective_term_lhs_du =
+          new OpConvectiveTermLhsDu<1>("SCALAR", "VECTOR", lhs_scl_mat);
+      op_convective_term_lhs_du->feScalingFun = [](const FEMethod *fe_ptr) {
+        return fe_ptr->ts_a;
+      };
+      pip->getOpDomainLhsPipeline().push_back(op_convective_term_lhs_du);
+      pip->getOpDomainLhsPipeline().push_back(
+          new OpConvectiveTermLhsDy<1>("SCALAR", "SCALAR", lhs_dot_vec_vel));
+
+      constexpr double eps = 1e-6;
+
+      auto x = opt->setRandomFields(simple->getDM(),
+                                    {{"SCALAR", {-1, 1}}, {"VECTOR", {-1, 1}}});
+      auto x_t = opt->setRandomFields(
+          simple->getDM(), {{"SCALAR", {-1, 1}}, {"VECTOR", {-1, 1}}});
+      auto diff_x = opt->setRandomFields(
+          simple->getDM(), {{"SCALAR", {-1, 1}}, {"VECTOR", {-1, 1}}});
+
+      auto diff_res = opt->checkCentralFiniteDifference(
+          simple->getDM(), simple->getDomainFEName(), pip->getDomainRhsFE(),
+          pip->getDomainLhsFE(), x, x_t, SmartPetscObj<Vec>(), diff_x, 0, 1,
+          eps);
+
+      double fnorm;
+      CHKERR VecNorm(diff_res, NORM_2, &fnorm);
+      MOFEM_LOG_C("OpTester", Sev::inform, "TestOpGradGrad %3.4e", fnorm);
+
+      constexpr double err = 1e-9;
+      if (fnorm > err)
+        SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                "Norm of directional derivative too large");
+
+      MoFEMFunctionReturn(0);
+    };
+
     CHKERR TestOpGradGrad();
+    CHKERR TestOpConvection();
+
   }
   CATCH_ERRORS;
 

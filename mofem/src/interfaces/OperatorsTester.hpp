@@ -47,7 +47,7 @@ struct OperatorsTester : public UnknownInterface {
       SmartPetscObj<Vec> diff_x, double time, double delta_t, double eps,
       CacheTupleWeakPtr cache_ptr = CacheTupleSharedPtr());
 
-  SmartPetscObj<Vec> checkCentralFiniteDiffence(
+  SmartPetscObj<Vec> checkCentralFiniteDifference(
       SmartPetscObj<DM> dm, std::string fe_name,
       boost::shared_ptr<FEMethod> pipeline_rhs,
       boost::shared_ptr<FEMethod> pipeline_lhs, SmartPetscObj<Vec> x,
