@@ -128,7 +128,7 @@ OperatorsTester::assembleMat(SmartPetscObj<DM> dm, std::string fe_name,
   return m;
 }
 
-SmartPetscObj<Vec> OperatorsTester::directionalCentralFiniteDiffence(
+SmartPetscObj<Vec> OperatorsTester::directionalCentralFiniteDifference(
     SmartPetscObj<DM> dm, std::string fe_name,
     boost::shared_ptr<FEMethod> pipeline, SmartPetscObj<Vec> x,
     SmartPetscObj<Vec> delta_x, SmartPetscObj<Vec> delta2_x,
@@ -189,7 +189,7 @@ SmartPetscObj<Vec> OperatorsTester::checkCentralFiniteDifference(
     SmartPetscObj<Vec> diff_x, double time, double delta_t, double eps,
     CacheTupleWeakPtr cache_ptr) {
 
-  auto fd_diff = directionalCentralFiniteDiffence(
+  auto fd_diff = directionalCentralFiniteDifference(
       dm, fe_name, pipeline_rhs, x, delta_x, delta2_x, diff_x, time, delta_t,
       eps, cache_ptr);
 

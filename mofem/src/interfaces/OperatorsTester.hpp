@@ -40,7 +40,7 @@ struct OperatorsTester : public UnknownInterface {
                                  SmartPetscObj<Vec> delta2_x, double time,
                                  double delta_t, CacheTupleWeakPtr cache_ptr);
 
-  SmartPetscObj<Vec> directionalCentralFiniteDiffence(
+  SmartPetscObj<Vec> directionalCentralFiniteDifference(
       SmartPetscObj<DM> dm, std::string fe_name,
       boost::shared_ptr<FEMethod> pipeline, SmartPetscObj<Vec> x,
       SmartPetscObj<Vec> delta_x, SmartPetscObj<Vec> delta2_x,

@@ -53,6 +53,8 @@ template <int FIELD_DIM>
 using OpConvectiveTermLhsDy = FormsIntegrators<DomainEleOp>::Assembly<
     A>::BiLinearForm<I>::OpConvectiveTermLhsDy<1, FIELD_DIM, SPACE_DIM>;
 
+constexpr bool debug = false;
+
 int main(int argc, char *argv[]) {
 
   // initialize petsc
@@ -101,6 +103,42 @@ int main(int argc, char *argv[]) {
     // get operators tester
     auto opt = m_field.getInterface<OperatorsTester>();
     auto pip = m_field.getInterface<PipelineManager>();
+
+    auto post_proc = [&](auto dm, auto f_res, auto out_name) {
+      MoFEMFunctionBegin;
+      auto post_proc_fe =
+          boost::make_shared<PostProcBrokenMeshInMoab<DomainEle>>(m_field);
+
+      using OpPPMap = OpPostProcMapInMoab<SPACE_DIM, SPACE_DIM>;
+
+      auto scal_vec = boost::make_shared<VectorDouble>();
+      auto vec_mat = boost::make_shared<MatrixDouble>();
+
+      post_proc_fe->getOpPtrVector().push_back(
+          new OpCalculateScalarFieldValues("SCALAR", scal_vec, f_res));
+      post_proc_fe->getOpPtrVector().push_back(
+          new OpCalculateVectorFieldValues<SPACE_DIM>("VECTOR", vec_mat,
+                                                      f_res));
+
+      post_proc_fe->getOpPtrVector().push_back(
+
+          new OpPPMap(
+
+              post_proc_fe->getPostProcMesh(), post_proc_fe->getMapGaussPts(),
+
+              {{"SCALAR", scal_vec}},
+
+              {{"VECTOR", vec_mat}},
+
+              {}, {})
+
+      );
+
+      CHKERR DMoFEMLoopFiniteElements(dm, simple->getDomainFEName(),
+                                      post_proc_fe);
+      post_proc_fe->writeFile(out_name);
+      MoFEMFunctionReturn(0);
+    };
 
     // Note: I do not push OPs transferring base to physical coordinates. That
     // is not needed to test OPs, and not required, since we like to test only
@@ -155,6 +193,20 @@ int main(int argc, char *argv[]) {
       if (fnorm > err)
         SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                 "Norm of directional derivative too large");
+
+      if (debug) {
+        // Example how to plot direction in direction diff_x. If instead
+        // directionalCentralFiniteDifference(...) diff_res is used, then error
+        // on directive is plotted.
+        CHKERR post_proc(simple->getDM(),
+                         //
+                         opt->directionalCentralFiniteDifference(
+                             simple->getDM(), simple->getDomainFEName(),
+                             pip->getDomainRhsFE(), x, SmartPetscObj<Vec>(),
+                             SmartPetscObj<Vec>(), diff_x, 0, 1, eps),
+                         //
+                         "out_directional_directive_gradgrad.h5m");
+      }
 
       MoFEMFunctionReturn(0);
     };
@@ -232,9 +284,24 @@ int main(int argc, char *argv[]) {
       MOFEM_LOG_C("OpTester", Sev::inform, "TestOpGradGrad %3.4e", fnorm);
 
       constexpr double err = 1e-9;
-      if (fnorm > err)
+      if (fnorm > err) {
         SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                 "Norm of directional derivative too large");
+      }
+
+      if (debug) {
+        // Example how to plot direction in direction diff_x. If instead
+        // directionalCentralFiniteDifference(...) diff_res is used, then error
+        // on directive is plotted.
+        CHKERR post_proc(simple->getDM(),
+                         //
+                         opt->directionalCentralFiniteDifference(
+                             simple->getDM(), simple->getDomainFEName(),
+                             pip->getDomainRhsFE(), x, x_t,
+                             SmartPetscObj<Vec>(), diff_x, 0, 1, eps),
+                         //
+                         "out_directional_directive_convection.h5m");
+      }
 
       MoFEMFunctionReturn(0);
     };
