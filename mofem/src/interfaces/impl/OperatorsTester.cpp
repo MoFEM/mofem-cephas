@@ -207,10 +207,16 @@ std::pair<SmartPetscObj<Vec>, SmartPetscObj<Vec>>
 OperatorsTester::setPipelineX(boost::shared_ptr<FEMethod> pipeline,
                               SmartPetscObj<Vec> x, SmartPetscObj<Vec> delta_x,
                               SmartPetscObj<Vec> delta2_x, double delta_t) {
+
+
+  // Set dofs vector to finite element instance
+
   pipeline->x = x;
   pipeline->data_ctx |= PetscData::CTX_SET_X;
 
   SmartPetscObj<Vec> x_t, x_tt;
+
+  // Set velocity dofs vector to finite element instance
 
   if (delta_x.use_count()) {
     x_t = smartVectorDuplicate(x);
@@ -221,6 +227,9 @@ OperatorsTester::setPipelineX(boost::shared_ptr<FEMethod> pipeline,
   } else {
     pipeline->x_t = PETSC_NULL;
   }
+
+
+  // Set acceleration dofs vector to finite element instance
 
   if (delta2_x.use_count()) {
     x_tt = smartVectorDuplicate(x);

@@ -40,7 +40,7 @@ struct OperatorsTester : public UnknownInterface {
    * @endcode
    *
    *
-   * TODO: Set random filed to specific entities, and potentially order for
+   * TODO: Set random field to specific entities, and potentially order for
    testing proposes to dissect error in tangent matrix.
    *
    * @param dm
