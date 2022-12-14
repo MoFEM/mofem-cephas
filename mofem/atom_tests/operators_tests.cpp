@@ -216,7 +216,7 @@ int main(int argc, char *argv[]) {
                          opt->directionalCentralFiniteDifference(
                              simple->getDM(), simple->getDomainFEName(),
                              pip->getDomainRhsFE(), x, SmartPetscObj<Vec>(),
-                             SmartPetscObj<Vec>(), diff_x, 0, 1, eps),
+                             SmartPetscObj<Vec>(), diff_res, 0, 1, eps),
                          //
                          "out_directional_directive_gradgrad.h5m");
       }
@@ -297,7 +297,7 @@ int main(int argc, char *argv[]) {
       // difference, and tangent matrix.
       double fnorm;
       CHKERR VecNorm(diff_res, NORM_2, &fnorm);
-      MOFEM_LOG_C("OpTester", Sev::inform, "TestOpGradGrad %3.4e", fnorm);
+      MOFEM_LOG_C("OpTester", Sev::inform, "TestOpConvection %3.4e", fnorm);
 
       constexpr double err = 1e-9;
       if (fnorm > err) {
@@ -314,7 +314,7 @@ int main(int argc, char *argv[]) {
                          opt->directionalCentralFiniteDifference(
                              simple->getDM(), simple->getDomainFEName(),
                              pip->getDomainRhsFE(), x, x_t,
-                             SmartPetscObj<Vec>(), diff_x, 0, 1, eps),
+                             SmartPetscObj<Vec>(), diff_res, 0, 1, eps),
                          //
                          "out_directional_directive_convection.h5m");
       }
