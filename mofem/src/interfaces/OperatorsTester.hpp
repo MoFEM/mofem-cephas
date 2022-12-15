@@ -48,7 +48,8 @@ struct OperatorsTester : public UnknownInterface {
    * @return SmartPetscObj<Vec> smart vector
    */
   SmartPetscObj<Vec> setRandomFields(SmartPetscObj<DM> dm,
-                                     std::vector<RandomFieldData> random_fields);
+                                     std::vector<RandomFieldData> random_fields,
+                                     boost::shared_ptr<Range> ents = nullptr);
 
   /**
    * @brief Assemble the right hand side vector
