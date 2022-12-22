@@ -94,6 +94,50 @@ struct BlockSetAttributes : public GenericAttributeData {
     double User8;  // User attribute 8
     double User9;  // User attribute 9
     double User10; // User attribute 10
+
+    double User11; // User attribute 11
+    double User12; // User attribute 12
+    double User13; // User attribute 13
+    double User14; // User attribute 14
+    double User15; // User attribute 15
+    double User16; // User attribute 16
+    double User17; // User attribute 17
+    double User18; // User attribute 18
+    double User19; // User attribute 19
+    double User20; // User attribute 20
+
+    double User21; // User attribute 21
+    double User22; // User attribute 22
+    double User23; // User attribute 23
+    double User24; // User attribute 24
+    double User25; // User attribute 25
+    double User26; // User attribute 26
+    double User27; // User attribute 27
+    double User28; // User attribute 28
+    double User29; // User attribute 29
+    double User30; // User attribute 30
+
+    double User31; // User attribute 31
+    double User32; // User attribute 32
+    double User33; // User attribute 33
+    double User34; // User attribute 34
+    double User35; // User attribute 35
+    double User36; // User attribute 36
+    double User37; // User attribute 37
+    double User38; // User attribute 38
+    double User39; // User attribute 39
+    double User40; // User attribute 40
+
+    double User41; // User attribute 41
+    double User42; // User attribute 42
+    double User43; // User attribute 43
+    double User44; // User attribute 44
+    double User45; // User attribute 45
+    double User46; // User attribute 46
+    double User47; // User attribute 47
+    double User48; // User attribute 48
+    double User49; // User attribute 49
+    double User50; // User attribute 50
   };
 
   _data_ data;

@@ -369,8 +369,9 @@ MeshsetsManager::addEntitiesToMeshset(const CubitBCType cubit_bc_type,
 
 MoFEMErrorCode
 MeshsetsManager::setAtributes(const CubitBCType cubit_bc_type, const int ms_id,
-                              const std::vector<double> &attributes,
-                              const std::string name) {
+                              std::vector<double> &attributes,
+                              const std::string name,
+                              const int num_of_attributes) {
   Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
@@ -390,6 +391,14 @@ MeshsetsManager::setAtributes(const CubitBCType cubit_bc_type, const int ms_id,
               "name to cubit meshset can not be set");
     }
   }
+  if(num_of_attributes == -1)
+    MOFEM_LOG_C("MeshsetMngSelf", Sev::warning,
+                "Te number of attributes is set to -1. Recomended to use "
+                "\"number_of_attributes\" when setting attributes",
+                "");
+  else
+    attributes.resize(num_of_attributes);
+
   bool success =
       cubitMeshsets.modify(cubitMeshsets.project<0>(cit),
                            CubitMeshSets_change_attributes(moab, attributes));
@@ -690,7 +699,7 @@ struct BlockData {
   int numberOfAttributes;
   std::vector<double> aTtr;
 
-  BlockData() : numberOfAttributes(-1), aTtr(10, 0) {
+  BlockData() : numberOfAttributes(-1), aTtr(50, 0) {
     std::memcpy(dispBc.data.name, "Displacement", 12);
     std::memcpy(forceBc.data.name, "Force", 5);
     std::memcpy(pressureBc.data.name, "Pressure", 8);
@@ -719,7 +728,7 @@ MoFEMErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name,
         po::value<int>(&block_lists[it->getMeshsetId()].numberOfAttributes)
             ->default_value(-1),
         "Number of blockset attribute");
-    for (int ii = 1; ii <= 10; ii++) {
+    for (int ii = 1; ii <= 50; ii++) {
       std::string surfix = ".user" + boost::lexical_cast<std::string>(ii);
       configFileOptionsPtr->add_options()(
           (prefix + surfix).c_str(),
@@ -1135,7 +1144,8 @@ MoFEMErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name,
                                     &meshset, 1);
       }
       // Add attributes
-      CHKERR setAtributes(mit->second.bcType, mit->second.iD, mit->second.aTtr);
+      CHKERR setAtributes(mit->second.bcType, mit->second.iD, mit->second.aTtr,
+                          "", mit->second.numberOfAttributes);
       // Add material elastic data if value are physical (i.e. Young > 0,
       // Poisson in (-1.0.5) and ThermalExpansion>0)
       if (mit->second.matElastic.data.Young != -1) {

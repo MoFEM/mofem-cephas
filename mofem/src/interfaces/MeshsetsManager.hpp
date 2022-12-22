@@ -435,8 +435,9 @@ struct MeshsetsManager : public UnknownInterface {
    * @return               error code
    */
   MoFEMErrorCode setAtributes(const CubitBCType cubit_bc_type, const int ms_id,
-                              const std::vector<double> &attributes,
-                              const std::string name = "");
+                              std::vector<double> &attributes,
+                              const std::string name = "",
+                              const int num_of_attributes = -1);
 
   /**
    * \brief set (material) data structure to cubit meshset

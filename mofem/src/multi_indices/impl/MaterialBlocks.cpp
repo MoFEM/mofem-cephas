@@ -6,7 +6,7 @@
 namespace MoFEM {
 
 std::ostream &operator<<(std::ostream &os, const BlockSetAttributes &e) {
-  os << std::endl << "Blcok attributes" << std::endl;
+  os << std::endl << "Block attributes" << std::endl;
   os << "-------------------" << std::endl;
   os << "User attribute 1 = " << e.data.User1 << std::endl;
   os << "User attribute 2 = " << e.data.User2 << std::endl;
@@ -18,6 +18,51 @@ std::ostream &operator<<(std::ostream &os, const BlockSetAttributes &e) {
   os << "User attribute 8 = " << e.data.User7 << std::endl;
   os << "User attribute 9 = " << e.data.User7 << std::endl;
   os << "User attribute 10 = " << e.data.User10 << std::endl << std::endl;
+
+  os << "User attribute 11 = " << e.data.User11 << std::endl << std::endl;
+  os << "User attribute 12 = " << e.data.User12 << std::endl << std::endl;
+  os << "User attribute 13 = " << e.data.User13 << std::endl << std::endl;
+  os << "User attribute 14 = " << e.data.User14 << std::endl << std::endl;
+  os << "User attribute 15 = " << e.data.User15 << std::endl << std::endl;
+  os << "User attribute 16 = " << e.data.User16 << std::endl << std::endl;
+  os << "User attribute 17 = " << e.data.User17 << std::endl << std::endl;
+  os << "User attribute 18 = " << e.data.User18 << std::endl << std::endl;
+  os << "User attribute 19 = " << e.data.User19 << std::endl << std::endl;
+  os << "User attribute 20 = " << e.data.User20 << std::endl << std::endl;
+
+  os << "User attribute 21 = " << e.data.User21 << std::endl << std::endl;
+  os << "User attribute 22 = " << e.data.User22 << std::endl << std::endl;
+  os << "User attribute 23 = " << e.data.User23 << std::endl << std::endl;
+  os << "User attribute 24 = " << e.data.User24 << std::endl << std::endl;
+  os << "User attribute 25 = " << e.data.User25 << std::endl << std::endl;
+  os << "User attribute 26 = " << e.data.User26 << std::endl << std::endl;
+  os << "User attribute 27 = " << e.data.User27 << std::endl << std::endl;
+  os << "User attribute 28 = " << e.data.User28 << std::endl << std::endl;
+  os << "User attribute 29 = " << e.data.User29 << std::endl << std::endl;
+  os << "User attribute 30 = " << e.data.User30 << std::endl << std::endl;
+
+  os << "User attribute 31 = " << e.data.User31 << std::endl << std::endl;
+  os << "User attribute 32 = " << e.data.User32 << std::endl << std::endl;
+  os << "User attribute 33 = " << e.data.User33 << std::endl << std::endl;
+  os << "User attribute 34 = " << e.data.User34 << std::endl << std::endl;
+  os << "User attribute 35 = " << e.data.User35 << std::endl << std::endl;
+  os << "User attribute 36 = " << e.data.User36 << std::endl << std::endl;
+  os << "User attribute 37 = " << e.data.User37 << std::endl << std::endl;
+  os << "User attribute 38 = " << e.data.User38 << std::endl << std::endl;
+  os << "User attribute 39 = " << e.data.User39 << std::endl << std::endl;
+  os << "User attribute 40 = " << e.data.User40 << std::endl << std::endl;
+
+  os << "User attribute 41 = " << e.data.User41 << std::endl << std::endl;
+  os << "User attribute 42 = " << e.data.User42 << std::endl << std::endl;
+  os << "User attribute 43 = " << e.data.User43 << std::endl << std::endl;
+  os << "User attribute 44 = " << e.data.User44 << std::endl << std::endl;
+  os << "User attribute 45 = " << e.data.User45 << std::endl << std::endl;
+  os << "User attribute 46 = " << e.data.User46 << std::endl << std::endl;
+  os << "User attribute 47 = " << e.data.User47 << std::endl << std::endl;
+  os << "User attribute 48 = " << e.data.User48 << std::endl << std::endl;
+  os << "User attribute 49 = " << e.data.User49 << std::endl << std::endl;
+  os << "User attribute 50 = " << e.data.User50 << std::endl << std::endl;
+
   return os;
 }
 
