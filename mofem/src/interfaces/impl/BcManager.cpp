@@ -786,42 +786,43 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
       if (std::regex_match(bc_id, std::regex("(.*)_FIX_X(.*)"))) {
         bc->dispBcPtr = boost::make_shared<DisplacementCubitBcData>();
         bc->dispBcPtr->data.flag1 = 1;
-        if (bc->bcAttributes.size() == 1) {
-          bc->dispBcPtr->data.value1 = bc->bcAttributes[0];
-        } else if (bc->bcAttributes.size() == 3) {
-          bc->dispBcPtr->data.value1 = bc->bcAttributes[0];
-        } else {
+        if (bc->bcAttributes.empty()) {
+          bc->dispBcPtr->data.value1 = 0;
           MOFEM_LOG("BcMngWorld", Sev::warning)
               << "Expected one atributes on block but have "
               << bc->bcAttributes.size();
+        } else if (bc->bcAttributes.size() >= 1) {
+          bc->dispBcPtr->data.value1 = bc->bcAttributes[0];
         }
         MOFEM_LOG("BcMngWorld", Sev::inform) << "Add X " << bc_id;
-        MOFEM_LOG("BcMngWorld", Sev::inform) << bc->dispBcPtr;
+        MOFEM_LOG("BcMngWorld", Sev::inform) << *bc->dispBcPtr;
       } else if (std::regex_match(bc_id, std::regex("(.*)_FIX_Y(.*)"))) {
         bc->dispBcPtr = boost::make_shared<DisplacementCubitBcData>();
         bc->dispBcPtr->data.flag2 = 1;
-        if (bc->bcAttributes.size() == 1) {
-          bc->dispBcPtr->data.value2 = bc->bcAttributes[0];
-        } else if (bc->bcAttributes.size() <= 2) {
-          bc->dispBcPtr->data.value2 = bc->bcAttributes[1];
-        } else {
+        if (bc->bcAttributes.empty()) {
+          bc->dispBcPtr->data.value2 = 0;
           MOFEM_LOG("BcMngWorld", Sev::warning)
               << "Expected one atributes on block but have "
               << bc->bcAttributes.size();
+        } else if (bc->bcAttributes.size() == 1) {
+          bc->dispBcPtr->data.value2 = bc->bcAttributes[0];
+        } else if (bc->bcAttributes.size() >= 2) {
+          bc->dispBcPtr->data.value2 = bc->bcAttributes[1];
         }
         MOFEM_LOG("BcMngWorld", Sev::inform) << "Add Y " << bc_id;
         MOFEM_LOG("BcMngWorld", Sev::inform) << *(bc->dispBcPtr);
       } else if (std::regex_match(bc_id, std::regex("(.*)_FIX_Z(.*)"))) {
         bc->dispBcPtr = boost::make_shared<DisplacementCubitBcData>();
         bc->dispBcPtr->data.flag3 = 1;
-        if (bc->bcAttributes.size() == 1) {
-          bc->dispBcPtr->data.value3 = bc->bcAttributes[0];
-        } else if (bc->bcAttributes.size() <= 3) {
-          bc->dispBcPtr->data.value3 = bc->bcAttributes[2];
-        } else {
+        if (bc->bcAttributes.empty()) {
+          bc->dispBcPtr->data.value3 = 0;
           MOFEM_LOG("BcMngWorld", Sev::warning)
               << "Expected one atributes on block but have "
               << bc->bcAttributes.size();
+        } else if (bc->bcAttributes.size() == 1) {
+          bc->dispBcPtr->data.value3 = bc->bcAttributes[0];
+        } else if (bc->bcAttributes.size() == 3) {
+          bc->dispBcPtr->data.value3 = bc->bcAttributes[2];
         }
         MOFEM_LOG("BcMngWorld", Sev::inform) << "Add Z " << bc_id;
         MOFEM_LOG("BcMngWorld", Sev::inform) << *(bc->dispBcPtr);

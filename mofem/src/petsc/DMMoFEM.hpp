@@ -1002,15 +1002,6 @@ inline auto smartGetDMTsCtx(DM dm) {
   return ts_ctx;
 };
 
-/**
- * @deprecated Use smartCreateDMVector
- * 
- * @param dm 
- * @return DEPRECATED smartCreateDMVector 
- */
-DEPRECATED inline auto smartCreateDMDVector(DM dm) {
-  return smartCreateDMVector(dm);
-}
 
 } // namespace MoFEM
 

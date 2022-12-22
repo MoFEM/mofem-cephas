@@ -73,6 +73,7 @@ docker run --name mofem_volume likask/mofem-spack-build
 Now we can run Docker container and attach the previously created volume to it
 ~~~~~~~
 docker run \
+  --shm-size=1024M \
   --name mofem_develop \
   -v $HOME:/host_home \
   --volumes-from mofem_volume \
@@ -136,6 +137,7 @@ docker run --name mofem_volume likask/mofem-spack-softmech
 and run container as follows
 ~~~~~~
 docker run \
+  --shm-size=1024M \
   -p 8888:8888  \
   --name mofem_jupyetr \
   -v $HOME:/host_home  \
@@ -158,27 +160,32 @@ http://127.0.0.1:8888/?token=bed64e1d532ab00f402d56432193a80f6aace612d4ffbec2
 You can start docker without starting volume, as a isolated system, as follows,
 ~~~~~~
 docker run \
+  --shm-size=1024M \
   -p 8888:8888  \
   --name mofem_jupyter \
   --rm=true -ti \
   likask/mofem-spack-jupyter
 ~~~~~~
 
-# Running Jupyter hub {#docker_jupyterhub}
+If you run docker on amd64, add option --platform linux/amd64.
 
-Pull MoFEM images and create mofem_volume
-~~~~~~
-docker run --name mofem_volume likask/mofem-spack-softmech
-~~~~~~
+# Running JupyterHub {#docker_jupyterhub}
 
 Run JupyterHub [JupterHyb](https://jupyterhub.readthedocs.io/en/stable/)
 ~~~~~~
 docker run \
+  --shm-size=1024M \
+  -p 2222:22 \
   -p 8000:8000 \
   --name mofem_jupyter_hub \
-  --volumes-from mofem_volume \
-  -d likask/mofem-spack-jupyterhub 
+  -d likask/mofem-spack-jupyterhub:latest 
 ~~~~~~
+
+Docker JupyterHub is running as demon, and you can access it on local host, at
+port 8000 [http:://localhost:8000](http:://localhost:8000). Login is "mofem", on
+first login you will be ask for password. "mofem" account is admin account, from
+it you can add users.
+
 # Clone MoFEM repository {#docker_clone}
 
 To build MoFEM the source code need to be downloaded. The best method to do it is

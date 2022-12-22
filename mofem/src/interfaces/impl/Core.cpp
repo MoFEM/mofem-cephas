@@ -444,6 +444,7 @@ MoFEMErrorCode Core::registerSubInterfaces() {
   // Register sub interfaces
   CHKERR regSubInterface<LogManager>();
   CHKERR regSubInterface<Simple>();
+  CHKERR regSubInterface<OperatorsTester>();
   CHKERR regSubInterface<PipelineManager>();
   CHKERR regSubInterface<ProblemsManager>();
   CHKERR regSubInterface<MatrixManager>();

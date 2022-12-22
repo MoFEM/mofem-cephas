@@ -350,12 +350,25 @@ struct OpCalculateVectorFieldValues_General<Tensor_Dim, double,
       THROW_MESSAGE("Pointer is not set");
   }
 
+  OpCalculateVectorFieldValues_General(const std::string field_name,
+                                       boost::shared_ptr<MatrixDouble> data_ptr,
+                                       SmartPetscObj<Vec> data_vec,
+                                       const EntityType zero_type = MBVERTEX)
+      : ForcesAndSourcesCore::UserDataOperator(
+            field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
+        dataPtr(data_ptr), dataVec(data_vec), zeroType(zero_type) {
+    if (!dataPtr)
+      THROW_MESSAGE("Pointer is not set");
+  }
+
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data);
 
 protected:
   boost::shared_ptr<MatrixDouble> dataPtr;
+  SmartPetscObj<Vec> dataVec;
   const EntityHandle zeroType;
+  VectorDouble dotVector;
 };
 
 /**
@@ -378,6 +391,20 @@ MoFEMErrorCode OpCalculateVectorFieldValues_General<
 
   const size_t nb_dofs = data.getFieldData().size();
   if (nb_dofs) {
+
+    if (dataVec.use_count()) {
+      dotVector.resize(nb_dofs, false);
+      const double *array;
+      CHKERR VecGetArrayRead(dataVec, &array);
+      const auto &local_indices = data.getLocalIndices();
+      for (int i = 0; i != local_indices.size(); ++i)
+        if (local_indices[i] != -1)
+          dotVector[i] = array[local_indices[i]];
+        else
+          dotVector[i] = 0;
+      CHKERR VecRestoreArrayRead(dataVec, &array);
+      data.getFieldData().swap(dotVector);
+    }
 
     if (nb_gauss_pts) {
       const size_t nb_base_functions = data.getN().size2();
@@ -403,6 +430,10 @@ MoFEMErrorCode OpCalculateVectorFieldValues_General<
           ++base_function;
         ++values_at_gauss_pts;
       }
+    }
+
+    if (dataVec.use_count()) {
+      data.getFieldData().swap(dotVector);
     }
   }
   MoFEMFunctionReturn(0);
@@ -535,9 +566,9 @@ protected:
   const EntityHandle zeroType;
 };
 
-/** \brief Approximate field valuse for given petsc vector
+/** \brief Approximate field values for given petsc vector
  *
- * \note Look at PetscData to see what vectors could be extarcted with that user
+ * \note Look at PetscData to see what vectors could be extracted with that user
  * data operator.
  *
  * \ingroup mofem_forces_and_sources_user_data_operators

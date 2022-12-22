@@ -116,6 +116,8 @@
 
         </body>
 
+        <link rel="stylesheet" type="text/css" href="engine1/style.css" />
+
         <!-- Table with description -->
 
         <table id="table_main">
@@ -199,9 +201,6 @@
 
         <script src='mastodon-timeline.js'>
         </script>
-
-        <link rel="stylesheet" type="text/css" href="engine1/style.css" />
-
 
 
     </div>

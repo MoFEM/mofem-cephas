@@ -34,7 +34,10 @@ let MastodonApi = function (params_) {
 	this.mtIdContainer.addEventListener('click', function (event) {
 		let urlToot = event.target.closest('.mt-toot').dataset.location;
 		// Open Toot in new page avoiding any other natural link
-		if (event.target.localName != 'a' && event.target.localName != 'span' && urlToot) {
+		if (event.target.localName != 'a'
+			&& event.target.localName != 'video'
+			&& event.target.localName != 'span'
+			&& urlToot) {
 			window.open(urlToot, '_blank');
 		}
 	});
@@ -219,12 +222,21 @@ MastodonApi.prototype.getToots = function () {
 // Place media
 MastodonApi.prototype.replaceMedias = function (media_, spoiler_) {
 	let spoiler = spoiler_ || false;
-	let pic =
-		'<div class="toot-media ' + (spoiler ? 'toot-media-spoiler' : '') + ' img-ratio14_7 loading-spinner">'
-		+ '<img onload="removeSpinner(this)" onerror="removeSpinner(this)" src="' + media_.url + '" alt="" loading="lazy" />'
-		+ '</div>';
-
-	return pic;
+	if (media_.type == "image") {
+		let pic =
+			'<div class="toot-media ' + (spoiler ? 'toot-media-spoiler' : '') + ' img-ratio14_7 loading-spinner">'
+			+ '<img onload="removeSpinner(this)" onerror="removeSpinner(this)" src="' + media_.url + '" alt="" loading="lazy" />'
+			+ '</div>';
+		return pic;
+	} else {
+		let pic =
+			'<div class="toot-media">'
+			+ '<video src="' + media_.url 
+			+ '" width=100%"'  
+			+ '" controls autoplay loop muted> <a>Your browser does not support the video tag.</a> </video>'
+			+ '</div>';
+		return pic;
+	}
 };
 
 // Format date

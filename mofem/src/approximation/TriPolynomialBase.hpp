@@ -3,8 +3,6 @@
 
 */
 
-
-
 #ifndef __H1TRIPOLYNOMIAL_HPP__
 #define __H1TRIPOLYNOMIAL_HPP__
 
@@ -17,10 +15,11 @@ namespace MoFEM {
  */
 struct TriPolynomialBase : public BaseFunction {
 
-  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index, UnknownInterface **iface) const;
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
+                                 UnknownInterface **iface) const;
 
-  TriPolynomialBase();
-  ~TriPolynomialBase();
+  TriPolynomialBase() = default;
+  virtual ~TriPolynomialBase() = default;
 
   MoFEMErrorCode getValue(MatrixDouble &pts,
                           boost::shared_ptr<BaseFunctionCtx> ctx_ptr);
@@ -35,7 +34,7 @@ private:
   MoFEMErrorCode getValueL2(MatrixDouble &pts);
   MoFEMErrorCode getValueL2AinsworthBase(MatrixDouble &pts);
   MoFEMErrorCode getValueL2BernsteinBezierBase(MatrixDouble &pts);
-  
+
   ublas::matrix<MatrixDouble> N_face_edge;
   ublas::vector<MatrixDouble> N_face_bubble;
   ublas::matrix<MatrixDouble> diffN_face_edge;
@@ -50,7 +49,6 @@ private:
 
   MoFEMErrorCode getValueHdivDemkowiczBase(MatrixDouble &pts);
   MoFEMErrorCode getValueHcurlDemkowiczBase(MatrixDouble &pts);
-
 };
 
 } // namespace MoFEM

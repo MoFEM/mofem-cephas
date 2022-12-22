@@ -5,8 +5,6 @@ A l2, h1, h-div and h-curl spaces are implemented.
 
 */
 
-
-
 using namespace MoFEM;
 
 MoFEMErrorCode

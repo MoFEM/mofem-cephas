@@ -16,17 +16,19 @@ double ScalingMethod::getScale(const double time) {
   THROW_MESSAGE("getScale not implemented");
 }
 
-TimeScale::TimeScale(string file_name, bool error_if_file_not_given)
+const std::string TimeScale::defaultDelimiter =
+    "(\\s*,\\s*|\\s+)"; ///< comma or space
+
+TimeScale::TimeScale(std::string file_name, bool error_if_file_not_given)
     : TimeScale(file_name, defaultDelimiter, error_if_file_not_given) {}
 
-TimeScale::TimeScale(string file_name, char delimiter,
+TimeScale::TimeScale(std::string file_name, std::string delimiter,
                      bool error_if_file_not_given)
-    : fileName(file_name), delimiter(delimiter),
-      errorIfFileNotGiven(error_if_file_not_given) {
-  CHK_THROW_MESSAGE(timeData(), "Error in reading time data");
+    : fileName(file_name), errorIfFileNotGiven(error_if_file_not_given) {
+  CHK_THROW_MESSAGE(timeData(delimiter), "Error in reading time data");
 }
 
-MoFEMErrorCode TimeScale::timeData() {
+MoFEMErrorCode TimeScale::timeData(std::string delimiter) {
   MoFEMFunctionBegin;
   PetscBool arg_found = PETSC_FALSE;
   char time_file_name[255] = {'\0'};
@@ -60,8 +62,8 @@ MoFEMErrorCode TimeScale::timeData() {
   std::string line;
   double time = 0.0, value = 0.0;
   tSeries[time] = value;
-  char *p_delimiter = &delimiter;
-  std::regex rgx(static_cast<const char *>(p_delimiter));
+
+  std::regex rgx(delimiter.c_str());
   std::sregex_token_iterator end;
   while (std::getline(in_file_stream, line)) {
     std::sregex_token_iterator iter(line.begin(), line.end(), rgx, -1);

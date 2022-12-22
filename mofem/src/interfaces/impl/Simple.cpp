@@ -641,10 +641,16 @@ MoFEMErrorCode Simple::buildFields() {
   for (auto &t : fieldsOrder) {
     const auto f = std::get<0>(t);
     const auto order = std::get<1>(t);
-    MOFEM_LOG_CHANNEL("WORLD");
+
     MOFEM_TAG_AND_LOG("WORLD", Sev::inform, "Simple")
-        << "Set order to field " << f << " order " << order << " ents "
-        << std::get<2>(t);
+        << "Set order to field " << f << " order " << order;
+    if (!std::get<2>(t).empty()) {
+      MOFEM_LOG_CHANNEL("SYNC");
+      MOFEM_TAG_AND_LOG("SYNC", Sev::verbose, "Simple")
+          << "To ents: " << std::endl
+          << std::get<2>(t) << std::endl;
+      MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
+    }
 
     if (std::get<2>(t).empty()) {
       auto f_ptr = get_field_ptr(f);

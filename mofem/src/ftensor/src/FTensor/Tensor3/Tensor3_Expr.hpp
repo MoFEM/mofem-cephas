@@ -155,6 +155,7 @@ namespace FTensor
               char j_1, char k_1>
     auto &operator-=(
         const Tensor3_Expr<B, U, Dim1_0, Dim1_1, Dim1_2, i_1, j_1, k_1> &rhs) {
+
       for (int ii = 0; ii < Dim0; ++ii)
         for (int jj = 0; jj < Dim1; ++jj)
           for (int kk = 0; kk < Dim2; ++kk) {
@@ -174,6 +175,41 @@ namespace FTensor
       return *this;
     }
 
+    template <class B, class U, int Dim1_01, int Dim1_2, char i_1, char j_1,
+              char k_1>
+    auto &operator=(const Dg_Expr<B, U, Dim1_01, Dim1_2, i_1, j_1, k_1> &rhs) {
+
+      for (int ii = 0; ii < Dim0; ++ii)
+        for (int jj = 0; jj < Dim1; ++jj)
+          for (int kk = 0; kk < Dim2; ++kk) {
+            iter(ii, jj, kk) = permute(*this, rhs, ii, jj, kk);
+          }
+      return *this;
+    }
+
+    template <class B, class U, int Dim1_01, int Dim1_2, char i_1, char j_1,
+              char k_1>
+    auto &operator+=(const Dg_Expr<B, U, Dim1_01, Dim1_2, i_1, j_1, k_1> &rhs) {
+
+      for (int ii = 0; ii < Dim0; ++ii)
+        for (int jj = 0; jj < Dim1; ++jj)
+          for (int kk = 0; kk < Dim2; ++kk) {
+            iter(ii, jj, kk) += permute(*this, rhs, ii, jj, kk);
+          }
+      return *this;
+    }
+
+    template <class B, class U, int Dim1_01, int Dim1_2, char i_1, char j_1,
+              char k_1>
+    auto &operator-=(const Dg_Expr<B, U, Dim1_01, Dim1_2, i_1, j_1, k_1> &rhs) {
+
+      for (int ii = 0; ii < Dim0; ++ii)
+        for (int jj = 0; jj < Dim1; ++jj)
+          for (int kk = 0; kk < Dim2; ++kk) {
+            iter(ii, jj, kk) -= permute(*this, rhs, ii, jj, kk);
+          }
+      return *this;
+    }
   };
 
   /* Specialized for Tensor4_number_rhs_2  */
@@ -241,6 +277,7 @@ namespace FTensor
               char j_1, char k_1>
     auto &operator=(
         const Tensor3_Expr<B, U, Dim1_0, Dim1_1, Dim1_2, i_1, j_1, k_1> &rhs) {
+
       for (int ii = 0; ii < Dim0; ++ii)
         for (int jj = 0; jj < Dim1; ++jj)
           for (int kk = 0; kk < Dim2; ++kk) {

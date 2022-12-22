@@ -19,6 +19,9 @@ RUN ln -s `which pip3.8` /usr/bin/pip3.8
 
 RUN pip3 -q install pip --upgrade && \
   pip3 install \
+  notebook==6.4.12 
+
+RUN pip3 install \
   pandas \
   scipy \
   gmsh \
@@ -26,15 +29,14 @@ RUN pip3 -q install pip --upgrade && \
   pyvista \
   pyvirtualdisplay \
   ipyvtklink \
-  jupyter \
-  jupyterhub \
   jupyter_contrib_nbextensions \
   itkwidgets \
-  ipywidgets \
+  ipywidgets==7.7 \
   pythreejs \
   ipyvtk-simple \
+  jupyter \
   jupyterhub-firstuseauthenticator && \
-  jupyter contrib nbextension install && \
+  jupyter contrib nbextension install --sys-prefix && \
   jupyter nbextension install --py jupytext && \
   jupyter nbextension enable --py jupytext && \
   jupyter nbextension install --py pythreejs && \
