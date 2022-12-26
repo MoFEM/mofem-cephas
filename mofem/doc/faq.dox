@@ -356,6 +356,18 @@ If you have packages installed, follow instruction from <http://kcachegrind.sour
 
 \section faq_programing Programming
 
+\subsection stop_at_first_error How to stop at first error?
+
+When you compile code and programming, you make errors which produce long error
+messages that are diffcult to comprehend. If you like to code stop complying at
+the fatal fist error, you can do that by adding to the CMake file
+\code
+add_definitions(-Wfatal-errors)
+\endcode
+
+\note Remove addition to CMake when you push changes. Use -Wfatal-errors only
+for debuging and programming.
+
 \subsection adding_user_module How to add user module?
 
 You can see here \ref how_to_add_new_module_and_program or read the following.
