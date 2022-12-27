@@ -2447,9 +2447,10 @@ private:
  * @brief Calculate curl   of vector field
  * @ingroup mofem_forces_and_sources_user_data_operators
  *
- * @tparam Tensor_Dim dimension of space
+ * @tparam Field_Dim dimension of field
+ * @tparam Space_Dim dimension of space
  */
-template <int Tensor_Dim>
+template <int Field_Dim, int Space_Dim>
 struct OpCalculateHcurlVectorCurl
     : public ForcesAndSourcesCore::UserDataOperator {
 
@@ -2467,30 +2468,94 @@ struct OpCalculateHcurlVectorCurl
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
-    const size_t nb_integration_points = getGaussPts().size2();
+    const auto nb_integration_points = getGaussPts().size2();
     if (type == zeroType && side == zeroSide) {
-      dataPtr->resize(Tensor_Dim, nb_integration_points, false);
+      dataPtr->resize(Field_Dim, nb_integration_points, false);
       dataPtr->clear();
     }
-    const size_t nb_dofs = data.getFieldData().size();
+    const auto nb_dofs = data.getFieldData().size();
     if (!nb_dofs)
       MoFEMFunctionReturnHot(0);
 
-    MatrixDouble curl_mat;
+    FTensor::Index<'j', Space_Dim> j;
+    FTensor::Index<'I', Field_Dim> I;
+    FTensor::Index<'K', Field_Dim> K;
 
-    const size_t nb_base_functions = data.getN().size2() / Tensor_Dim;
-    FTensor::Index<'i', Tensor_Dim> i;
-    FTensor::Index<'j', Tensor_Dim> j;
-    FTensor::Index<'k', Tensor_Dim> k;
-    auto t_n_diff_hcurl = data.getFTensor2DiffN<Tensor_Dim, Tensor_Dim>();
-    auto t_data = getFTensor1FromMat<Tensor_Dim>(*dataPtr);
-    for (int gg = 0; gg != nb_integration_points; ++gg) {
+    const auto nb_base_functions = data.getN().size2() / Field_Dim;
+    auto t_n_diff_hcurl = data.getFTensor2DiffN<Field_Dim, Space_Dim>();
+    auto t_data = getFTensor1FromMat<Field_Dim>(*dataPtr);
+    for (auto gg = 0; gg != nb_integration_points; ++gg) {
 
       auto t_dof = data.getFTensor0FieldData();
       int bb = 0;
       for (; bb != nb_dofs; ++bb) {
 
-        t_data(k) += t_dof * (levi_civita(j, i, k) * t_n_diff_hcurl(i, j));
+        t_data(K) += t_dof * (levi_civita(j, I, K) * t_n_diff_hcurl(I, j));
+
+        ++t_n_diff_hcurl;
+        ++t_dof;
+      }
+
+      for (; bb != nb_base_functions; ++bb)
+        ++t_n_diff_hcurl;
+      ++t_data;
+    }
+
+    MoFEMFunctionReturn(0);
+  }
+
+private:
+  boost::shared_ptr<MatrixDouble> dataPtr;
+  const EntityHandle zeroType;
+  const int zeroSide;
+};
+
+/**
+ * @brief Calculate curl   of vector field
+ * @ingroup mofem_forces_and_sources_user_data_operators
+ *
+ * @tparam Field_Dim dimension of field
+ * @tparam Space_Dim dimension of space
+ */
+template <>
+struct OpCalculateHcurlVectorCurl<1, 2>
+    : public ForcesAndSourcesCore::UserDataOperator {
+
+  OpCalculateHcurlVectorCurl(const std::string field_name,
+                             boost::shared_ptr<MatrixDouble> data_ptr,
+                             const EntityType zero_type = MBVERTEX,
+                             const int zero_side = 0)
+      : ForcesAndSourcesCore::UserDataOperator(
+            field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
+        dataPtr(data_ptr), zeroType(zero_type), zeroSide(zero_side) {
+    if (!dataPtr)
+      THROW_MESSAGE("Pointer is not set");
+  }
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        EntitiesFieldData::EntData &data) {
+    MoFEMFunctionBegin;
+    const auto nb_integration_points = getGaussPts().size2();
+    if (type == zeroType && side == zeroSide) {
+      dataPtr->resize(2, nb_integration_points, false);
+      dataPtr->clear();
+    }
+    const auto nb_dofs = data.getFieldData().size();
+    if (!nb_dofs)
+      MoFEMFunctionReturnHot(0);
+
+    const auto nb_base_functions = data.getN().size2();
+    auto t_n_diff_hcurl = data.getFTensor1DiffN<2>();
+    auto t_data = getFTensor1FromMat<2>(*dataPtr);
+    for (auto gg = 0; gg != nb_integration_points; ++gg) {
+
+      auto t_dof = data.getFTensor0FieldData();
+      int bb = 0;
+      for (; bb != nb_dofs; ++bb) {
+
+        t_data(0) -= t_dof * t_n_diff_hcurl(1);
+        t_data(1) += t_dof * t_n_diff_hcurl(0);
+
         ++t_n_diff_hcurl;
         ++t_dof;
       }
@@ -2994,7 +3059,9 @@ template <int DIM> struct OpSetCovariantPiolaTransformOnFace2DImpl;
  * 
  * Covariant Piola transformation
  \f[
-
+ \psi_i|_t = J^{-1}_{ij}\hat{\psi}_j\\
+ \left.\frac{\partial \psi_i}{\partial \xi_j}\right|_t
+ = J^{-1}_{ik}\frac{\partial \hat{\psi}_k}{\partial \xi_j}
  \f]
 
  */
