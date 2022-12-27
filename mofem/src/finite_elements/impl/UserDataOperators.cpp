@@ -320,6 +320,77 @@ OpMakeHdivFromHcurl::doWork(int side, EntityType type,
   MoFEMFunctionReturn(0);
 }
 
+OpSetCovariantPiolaTransformOnFace2DImpl<
+    2>::OpSetCovariantPiolaTransformOnFace2DImpl(boost::shared_ptr<MatrixDouble>
+                                                     inv_jac_ptr)
+    : FaceElementForcesAndSourcesCore::UserDataOperator(HCURL),
+      invJacPtr(inv_jac_ptr) {}
+
+MoFEMErrorCode OpSetCovariantPiolaTransformOnFace2DImpl<2>::doWork(
+    int side, EntityType type, EntitiesFieldData::EntData &data) {
+  MoFEMFunctionBegin;
+
+  const auto type_dim = moab::CN::Dimension(type);
+  if (type_dim != 1 && type_dim != 2)
+    MoFEMFunctionReturnHot(0);
+
+  const auto nb_gauss_pts = getGaussPts().size2();
+
+  FTensor::Index<'i', 2> i;
+  FTensor::Index<'j', 2> j;
+  FTensor::Index<'k', 2> k;
+
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; ++b) {
+
+    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
+
+    auto &baseN = data.getN(base);
+    auto &diffBaseN = data.getDiffN(base);
+
+    int nb_dofs = baseN.size2() / 3;
+    int nb_gauss_pts = baseN.size1();
+
+    piolaN.resize(baseN.size1(), baseN.size2());
+
+    if (nb_dofs > 0 && nb_gauss_pts > 0) {
+
+      auto t_h_curl = data.getFTensor1N<3>(base);
+      auto t_transformed_h_curl =
+          getFTensor1FromPtr<3, 3>(&*piolaN.data().begin());
+      auto t_inv_jac = getFTensor2FromMat<2, 2>(*invJacPtr);
+      for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+        for (int ll = 0; ll != nb_dofs; ll++) {
+          t_transformed_h_curl(i) = t_inv_jac(j, i) * t_h_curl(j);
+          ++t_h_curl;
+          ++t_transformed_h_curl;
+        }
+        ++t_inv_jac;
+      }
+      baseN.swap(piolaN);
+
+      diffPiolaN.resize(diffBaseN.size1(), diffBaseN.size2());
+      if (diffBaseN.data().size() > 0) {
+        auto t_diff_h_curl = data.getFTensor2DiffN<3, 2>(base);
+        auto t_transformed_diff_h_curl =
+            getFTensor2FromPtr<3, 2>(&*diffPiolaN.data().begin());
+        auto t_inv_jac = getFTensor2FromMat<2, 2>(*invJacPtr);
+        for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+          for (int ll = 0; ll != nb_dofs; ll++) {
+            t_transformed_diff_h_curl(i, k) =
+                t_inv_jac(j, i) * t_diff_h_curl(j, k);
+            ++t_diff_h_curl;
+            ++t_transformed_diff_h_curl;
+          }
+          ++t_inv_jac;
+        }
+        diffBaseN.swap(diffPiolaN);
+      }
+    }
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode OpSetContravariantPiolaTransformOnFace2DImpl<2>::doWork(
     int side, EntityType type, EntitiesFieldData::EntData &data) {
 
@@ -361,7 +432,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransformOnFace2DImpl<2>::doWork(
       }
 
       piolaDiffN.resize(nb_gauss_pts, data.getDiffN(base).size2(), false);
-      if (data.getDiffN(base).size2() > 0) {
+      if (data.getDiffN(base).data().size() > 0) {
         auto t_diff_n = data.getFTensor2DiffN<3, 2>(base);
         double *t_transformed_diff_n_ptr = &*piolaDiffN.data().begin();
         FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>
@@ -737,6 +808,95 @@ OpSetInvJacH1ForFlatPrism::doWork(int side, EntityType type,
     default:
       SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
     }
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+OpCalculateHcurlVectorCurl<3, 3>::OpCalculateHcurlVectorCurl(
+    const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
+    const EntityType zero_type, const int zero_side)
+    : ForcesAndSourcesCore::UserDataOperator(
+          field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
+      dataPtr(data_ptr), zeroType(zero_type), zeroSide(zero_side) {
+  if (!dataPtr)
+    THROW_MESSAGE("Pointer is not set");
+}
+
+MoFEMErrorCode
+OpCalculateHcurlVectorCurl<3, 3>::doWork(int side, EntityType type,
+                                         EntitiesFieldData::EntData &data) {
+  MoFEMFunctionBegin;
+  const auto nb_integration_points = getGaussPts().size2();
+  if (type == zeroType && side == zeroSide) {
+    dataPtr->resize(3, nb_integration_points, false);
+    dataPtr->clear();
+  }
+  const auto nb_dofs = data.getFieldData().size();
+  if (!nb_dofs)
+    MoFEMFunctionReturnHot(0);
+  FTensor::Index<'i', 3> i;
+  FTensor::Index<'j', 3> j;
+  FTensor::Index<'k', 3> k;
+  const auto nb_base_functions = data.getN().size2() / 3;
+  auto t_n_diff_hcurl = data.getFTensor2DiffN<3, 3>();
+  auto t_data = getFTensor1FromMat<3>(*dataPtr);
+  for (auto gg = 0; gg != nb_integration_points; ++gg) {
+    auto t_dof = data.getFTensor0FieldData();
+    int bb = 0;
+    for (; bb != nb_dofs; ++bb) {
+      t_data(k) += t_dof * (levi_civita(j, i, k) * t_n_diff_hcurl(i, j));
+      ++t_n_diff_hcurl;
+      ++t_dof;
+    }
+    for (; bb < nb_base_functions; ++bb)
+      ++t_n_diff_hcurl;
+    ++t_data;
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+OpCalculateHcurlVectorCurl<1, 2>::OpCalculateHcurlVectorCurl(
+    const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
+    const EntityType zero_type, const int zero_side)
+    : ForcesAndSourcesCore::UserDataOperator(
+          field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
+      dataPtr(data_ptr), zeroType(zero_type), zeroSide(zero_side) {
+  if (!dataPtr)
+    THROW_MESSAGE("Pointer is not set");
+}
+
+MoFEMErrorCode
+OpCalculateHcurlVectorCurl<1, 2>::doWork(int side, EntityType type,
+                                            EntitiesFieldData::EntData &data) {
+  MoFEMFunctionBegin;
+  const auto nb_integration_points = getGaussPts().size2();
+  if (type == zeroType && side == zeroSide) {
+    dataPtr->resize(2, nb_integration_points, false);
+    dataPtr->clear();
+  }
+  const auto nb_dofs = data.getFieldData().size();
+  if (!nb_dofs)
+    MoFEMFunctionReturnHot(0);
+
+  FTensor::Index<'i', 2> i;
+  FTensor::Index<'j', 2> j;
+
+  const auto nb_base_functions = data.getN().size2();
+  auto t_n_diff_hcurl = data.getFTensor1DiffN<2>();
+  auto t_data = getFTensor1FromMat<2>(*dataPtr);
+  for (auto gg = 0; gg != nb_integration_points; ++gg) {
+    auto t_dof = data.getFTensor0FieldData();
+    int bb = 0;
+    for (; bb != nb_dofs; ++bb) {
+      t_data(i) += t_dof * (levi_civita(i, j) * t_n_diff_hcurl(j));
+      ++t_n_diff_hcurl;
+      ++t_dof;
+    }
+    for (; bb < nb_base_functions; ++bb)
+      ++t_n_diff_hcurl;
+    ++t_data;
   }
 
   MoFEMFunctionReturn(0);

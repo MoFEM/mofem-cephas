@@ -125,13 +125,7 @@ PetscErrorCode DMMoFEMGetSquareProblem(DM dm, PetscBool *square_problem);
  *
  * \ingroup dm
  */
-PetscErrorCode DMMoFEMResolveSharedFiniteElements(DM dm, const char fe_name[]);
-
-/**
- * @deprecated Use DMMoFEMResolveSharedFiniteElements
- */
-DEPRECATED PetscErrorCode DMMoFEMResolveSharedEntities(DM dm,
-                                                       const char fe_name[]);
+PetscErrorCode DMMoFEMResolveSharedFiniteElements(DM dm, std::string fe_name);
 
 /**
  * \brief Get finite elements layout in the problem
@@ -148,7 +142,7 @@ DEPRECATED PetscErrorCode DMMoFEMResolveSharedEntities(DM dm,
  *
  * \ingroup dm
  */
-PetscErrorCode DMMoFEMGetProblemFiniteElementLayout(DM dm, const char fe_name[],
+PetscErrorCode DMMoFEMGetProblemFiniteElementLayout(DM dm, std::string fe_name,
                                                     PetscLayout *layout);
 
 /**
@@ -159,13 +153,23 @@ PetscErrorCode DMMoFEMGetProblemFiniteElementLayout(DM dm, const char fe_name[],
  * Otherwise could lead to deadlock.
  *
  */
-PetscErrorCode DMMoFEMAddElement(DM dm, const char fe_name[]);
+PetscErrorCode DMMoFEMAddElement(DM dm, std::string fe_name);
+
+/**
+ * \brief add element to dm
+ * \ingroup dm
+ *
+ * \note add_file is a collective, should be executed on all processors.
+ * Otherwise could lead to deadlock.
+ *
+ */
+PetscErrorCode DMMoFEMAddElement(DM dm, std::vector<std::string> fe_name);
 
 /**
  * \brief unset element from dm
  * \ingroup dm
  */
-PetscErrorCode DMMoFEMUnSetElement(DM dm, const char fe_name[]);
+PetscErrorCode DMMoFEMUnSetElement(DM dm, std::string fe_name);
 
 /**
   * \brief set local (or ghosted) vector values on mesh for partition only

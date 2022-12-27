@@ -570,17 +570,14 @@ MoFEMErrorCode Simple::defineProblem(const PetscBool is_partitioned) {
   CHKERR DMMoFEMCreateMoFEM(dM, &m_field, nameOfProblem.c_str(), bitLevel,
                             bitLevelMask);
   CHKERR DMSetFromOptions(dM);
-  CHKERR DMMoFEMAddElement(dM, domainFE.c_str());
+  CHKERR DMMoFEMAddElement(dM, domainFE);
   if (addBoundaryFE || !boundaryFields.empty()) {
-    CHKERR DMMoFEMAddElement(dM, boundaryFE.c_str());
+    CHKERR DMMoFEMAddElement(dM, boundaryFE);
   }
   if (addSkeletonFE || !skeletonFields.empty()) {
-    CHKERR DMMoFEMAddElement(dM, skeletonFE.c_str());
+    CHKERR DMMoFEMAddElement(dM, skeletonFE);
   }
-  for (std::vector<std::string>::iterator fit = otherFEs.begin();
-       fit != otherFEs.end(); ++fit) {
-    CHKERR DMMoFEMAddElement(dM, fit->c_str());
-  }
+  CHKERR DMMoFEMAddElement(dM, otherFEs);
   CHKERR DMMoFEMSetIsPartitioned(dM, is_partitioned);
   MoFEMFunctionReturn(0);
 }
