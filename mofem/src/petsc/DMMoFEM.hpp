@@ -36,6 +36,15 @@ PetscErrorCode DMMoFEMCreateMoFEM(
 PetscErrorCode DMMoFEMDuplicateDMCtx(DM dm, DM dm_duplicate);
 
 /**
+ * @brief Swap internal data struture
+ *
+ * @param dm
+ * @param dm_swap
+ * @return PetscErrorCode
+ */
+PetscErrorCode DMMoFEMSwapDMCtx(DM dm, DM dm_swap);
+
+/**
  * \brief Must be called by user to set Sub DM MoFEM data structures
  * \ingroup dm
  */
