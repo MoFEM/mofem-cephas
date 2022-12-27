@@ -184,10 +184,11 @@ PetscErrorCode DMMoFEMCreateMoFEM(DM dm, MoFEM::Interface *m_field_ptr,
 PetscErrorCode DMMoFEMDuplicateDMCtx(DM dm, DM dm_duplicate) {
   MoFEMFunctionBegin;
 
-  auto *dm_field = static_cast<DMCtx *>(dm->data);
   if (!dm->data)
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "data structure for MoFEM not yet created");
+
+  auto *dm_field = static_cast<DMCtx *>(dm->data);
 
   if (static_cast<DMCtx *>(dm_duplicate->data)->referenceNumber == 0)
     delete static_cast<DMCtx *>(dm_duplicate->data);
@@ -198,14 +199,34 @@ PetscErrorCode DMMoFEMDuplicateDMCtx(DM dm, DM dm_duplicate) {
   MoFEMFunctionReturn(0);
 }
 
+PetscErrorCode DMMoFEMSwapDMCtx(DM dm, DM dm_swap) {
+  MoFEMFunctionBegin;
+  if (!dm->data)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "data structure for MoFEM not yet created on dm");
+  if (!dm_swap->data)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "data structure for MoFEM not yet created on swap dm");
+
+  auto *dm_field = static_cast<DMCtx *>(dm->data);
+  auto *dm_field_swap = static_cast<DMCtx *>(dm_swap->data);
+
+  auto tmp_field = dm_field;
+  dm_field = dm_field_swap;
+  dm_field_swap = tmp_field;
+
+  MoFEMFunctionReturn(0);
+}
+
 PetscErrorCode DMMoFEMCreateSubDM(DM subdm, DM dm, const char problem_name[]) {
   MoFEMFunctionBegin;
 
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
   if (!dm->data) {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "data structure for MoFEM not yet created");
   }
+  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+
   CHKERR DMMoFEMCreateMoFEM(subdm, dm_field->mField_ptr, problem_name,
                             dm_field->problemPtr->getBitRefLevel(),
                             dm_field->problemPtr->getBitRefLevelMask());
