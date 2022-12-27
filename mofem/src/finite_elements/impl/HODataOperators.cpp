@@ -683,8 +683,7 @@ MoFEMErrorCode AddHOOps<2, 2, 2>::add(
       pipeline.push_back(new OpSetHOInvJacToScalarBases<2>(s, inv_jac_ptr));
       break;
     case HCURL:
-      MOFEM_TAG_AND_LOG("WORLD", Sev::warning, "AddHOOps<2, 2, 2>")
-          << "Missing covariant Piola transform";
+      pipeline.push_back(new OpSetCovariantPiolaTransformOnFace2D(inv_jac_ptr));
       pipeline.push_back(new OpSetInvJacHcurlFace(inv_jac_ptr));
       MOFEM_LOG_CHANNEL("WORLD");
       break;

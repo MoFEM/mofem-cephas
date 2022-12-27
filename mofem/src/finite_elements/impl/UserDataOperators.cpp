@@ -320,6 +320,77 @@ OpMakeHdivFromHcurl::doWork(int side, EntityType type,
   MoFEMFunctionReturn(0);
 }
 
+OpSetCovariantPiolaTransformOnFace2DImpl<
+    2>::OpSetCovariantPiolaTransformOnFace2DImpl(boost::shared_ptr<MatrixDouble>
+                                                     inv_jac_ptr)
+    : FaceElementForcesAndSourcesCore::UserDataOperator(HCURL),
+      invJacPtr(inv_jac_ptr) {}
+
+MoFEMErrorCode OpSetCovariantPiolaTransformOnFace2DImpl<2>::doWork(
+    int side, EntityType type, EntitiesFieldData::EntData &data) {
+  MoFEMFunctionBegin;
+
+  const auto type_dim = moab::CN::Dimension(type);
+  if (type_dim != 1 && type_dim != 2)
+    MoFEMFunctionReturnHot(0);
+
+  const auto nb_gauss_pts = getGaussPts().size2();
+
+  FTensor::Index<'i', 2> i;
+  FTensor::Index<'j', 2> j;
+  FTensor::Index<'k', 2> k;
+
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; ++b) {
+
+    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
+
+    auto &baseN = data.getN(base);
+    auto &diffBaseN = data.getDiffN(base);
+
+    int nb_dofs = baseN.size2() / 3;
+    int nb_gauss_pts = baseN.size1();
+
+    piolaN.resize(baseN.size1(), baseN.size2());
+
+    if (nb_dofs > 0 && nb_gauss_pts > 0) {
+
+      auto t_h_curl = data.getFTensor1N<3>(base);
+      auto t_transformed_h_curl =
+          getFTensor1FromPtr<3, 3>(&*piolaN.data().begin());
+      auto t_inv_jac = getFTensor2FromMat<2, 2>(*invJacPtr);
+      for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+        for (int ll = 0; ll != nb_dofs; ll++) {
+          t_transformed_h_curl(i) = t_inv_jac(j, i) * t_h_curl(j);
+          ++t_h_curl;
+          ++t_transformed_h_curl;
+        }
+        ++t_inv_jac;
+      }
+      baseN.swap(piolaN);
+
+      diffPiolaN.resize(diffBaseN.size1(), diffBaseN.size2());
+      if (diffBaseN.data().size() > 0) {
+        auto t_diff_h_curl = data.getFTensor2DiffN<3, 2>(base);
+        auto t_transformed_diff_h_curl =
+            getFTensor2FromPtr<3, 2>(&*diffPiolaN.data().begin());
+        auto t_inv_jac = getFTensor2FromMat<2, 2>(*invJacPtr);
+        for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+          for (int ll = 0; ll != nb_dofs; ll++) {
+            t_transformed_diff_h_curl(i, k) =
+                t_inv_jac(j, i) * t_diff_h_curl(j, k);
+            ++t_diff_h_curl;
+            ++t_transformed_diff_h_curl;
+          }
+          ++t_inv_jac;
+        }
+        diffBaseN.swap(diffPiolaN);
+      }
+    }
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode OpSetContravariantPiolaTransformOnFace2DImpl<2>::doWork(
     int side, EntityType type, EntitiesFieldData::EntData &data) {
 
@@ -361,7 +432,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransformOnFace2DImpl<2>::doWork(
       }
 
       piolaDiffN.resize(nb_gauss_pts, data.getDiffN(base).size2(), false);
-      if (data.getDiffN(base).size2() > 0) {
+      if (data.getDiffN(base).data().size() > 0) {
         auto t_diff_n = data.getFTensor2DiffN<3, 2>(base);
         double *t_transformed_diff_n_ptr = &*piolaDiffN.data().begin();
         FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>
