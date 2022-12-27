@@ -685,7 +685,6 @@ MoFEMErrorCode AddHOOps<2, 2, 2>::add(
     case HCURL:
       pipeline.push_back(new OpSetCovariantPiolaTransformOnFace2D(inv_jac_ptr));
       pipeline.push_back(new OpSetInvJacHcurlFace(inv_jac_ptr));
-      MOFEM_LOG_CHANNEL("WORLD");
       break;
     case HDIV:
       pipeline.push_back(new OpMakeHdivFromHcurl());
