@@ -401,7 +401,6 @@ PetscErrorCode DMMoFEMGetDestroyProblem(DM dm, PetscBool *destroy_problem) {
 }
 
 PetscErrorCode DMMoFEMSetSquareProblem(DM dm, PetscBool square_problem) {
-  MoFEMFunctionBeginHot;
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
@@ -409,8 +408,7 @@ PetscErrorCode DMMoFEMSetSquareProblem(DM dm, PetscBool square_problem) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DMMoFEMResolveSharedFiniteElements(DM dm, const char fe_name[]) {
-  MoFEMFunctionBeginHot;
+PetscErrorCode DMMoFEMResolveSharedFiniteElements(DM dm, std::string fe_name) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
@@ -419,11 +417,7 @@ PetscErrorCode DMMoFEMResolveSharedFiniteElements(DM dm, const char fe_name[]) {
   MoFEMFunctionReturn(0);
 }
 
-PetscErrorCode DMMoFEMResolveSharedEntities(DM dm, const char fe_name[]) {
-  return DMMoFEMResolveSharedFiniteElements(dm, fe_name);
-}
-
-PetscErrorCode DMMoFEMGetProblemFiniteElementLayout(DM dm, const char fe_name[],
+PetscErrorCode DMMoFEMGetProblemFiniteElementLayout(DM dm, std::string fe_name,
                                                     PetscLayout *layout) {
   MoFEMFunctionBeginHot;
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
