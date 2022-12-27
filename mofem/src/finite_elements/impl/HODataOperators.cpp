@@ -686,7 +686,6 @@ MoFEMErrorCode AddHOOps<2, 2, 2>::add(
       MOFEM_TAG_AND_LOG("WORLD", Sev::warning, "AddHOOps<2, 2, 2>")
           << "Missing covariant Piola transform";
       pipeline.push_back(new OpSetInvJacHcurlFace(inv_jac_ptr));
-      MOFEM_LOG_CHANNEL("WORLD");
       break;
     case HDIV:
       pipeline.push_back(new OpMakeHdivFromHcurl());
