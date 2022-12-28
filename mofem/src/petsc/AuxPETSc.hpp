@@ -16,7 +16,8 @@ struct PairNameFEMethodPtr : public std::pair<std::string, FEMethod *> {
   template <typename FEMETHOD>
   PairNameFEMethodPtr(std::string name, boost::shared_ptr<FEMETHOD> ptr)
       : std::pair<std::string, FEMethod *>(name, ptr.get()), fePtr(ptr) {}
-  virtual ~PairNameFEMethodPtr() {}
+
+  virtual ~PairNameFEMethodPtr() = default;
 
   inline boost::shared_ptr<BasicMethod> getSharedPtr() const {
     if (!fePtr)
@@ -34,6 +35,9 @@ struct BasicMethodPtr {
   template <typename BASICMETHOD>
   BasicMethodPtr(boost::shared_ptr<BASICMETHOD> ptr)
       : rawPtr(ptr.get()), bmPtr(ptr) {}
+
+  virtual ~BasicMethodPtr() = default;
+
   inline BasicMethod &operator*() const { return *rawPtr; };
   inline BasicMethod *operator->() const { return rawPtr; }
 
