@@ -35,6 +35,8 @@ struct PipelineManager : public UnknownInterface {
   using FaceEle = MoFEM::FaceElementForcesAndSourcesCore;
   using EdgeEle = MoFEM::EdgeElementForcesAndSourcesCore;
 
+  template <int DIM> struct ElementsAndOpsByDim;
+
   inline boost::shared_ptr<FEMethod> &getDomainLhsFE();
 
   inline boost::shared_ptr<FEMethod> &getDomainRhsFE();
@@ -852,6 +854,18 @@ PipelineManager::getOpSkeletonExplicitRhsPipeline<-1>() {
   }
   return getOpSkeletonExplicitRhsPipeline<3>();
 }
+
+template <> struct PipelineManager::ElementsAndOpsByDim<2> {
+  using DomainEle = PipelineManager::FaceEle;
+  using BoundaryEle = PipelineManager::EdgeEle;
+  using FaceSideEle = FaceElementForcesAndSourcesCoreOnSide;
+};
+
+template <> struct PipelineManager::ElementsAndOpsByDim<3> {
+  using DomainEle = PipelineManager::VolEle;
+  using BoundaryEle = PipelineManager::FaceEle;
+  using FaceSideEle = VolumeElementForcesAndSourcesCoreOnSide;
+};
 
 } // namespace MoFEM
 
