@@ -890,7 +890,7 @@ OpCalculateHcurlVectorCurl<1, 2>::doWork(int side, EntityType type,
     auto t_dof = data.getFTensor0FieldData();
     int bb = 0;
     for (; bb != nb_dofs; ++bb) {
-      t_data(i) = levi_civita(i, j) * t_n_diff_hcurl(j);
+      t_data(i) += t_dof * (levi_civita(i, j) * t_n_diff_hcurl(j));
       ++t_n_diff_hcurl;
       ++t_dof;
     }
