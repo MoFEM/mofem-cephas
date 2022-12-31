@@ -2455,7 +2455,7 @@ template <int Base_Dim, int Space_Dim, int Field_Dim = Space_Dim>
 struct OpCalculateHcurlVectorCurl;
 
 /**
- * @brief Calculate curl   of vector field
+ * @brief Calculate curl of vector field
  * @ingroup mofem_forces_and_sources_user_data_operators
  *
  * @tparam Base_Dim base function dimension
@@ -2479,7 +2479,7 @@ private:
 };
 
 /**
- * @brief Calculate curl   of vector field
+ * @brief Calculate curl of vector field
  * @ingroup mofem_forces_and_sources_user_data_operators
  *
  * @tparam Field_Dim dimension of field
