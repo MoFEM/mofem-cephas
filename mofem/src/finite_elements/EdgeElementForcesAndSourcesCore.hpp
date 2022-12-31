@@ -129,7 +129,7 @@ struct EdgeElementForcesAndSourcesCore::UserDataOperator
    \code
    FTensor::Index<'i',3> i;
    auto t_center;
-   auto t_coords = getTensor1Coords();
+   auto t_coords = getFTensor1Coords();
    t_center(i) = 0;
    for(int nn = 0;nn!=2;nn++) {
       t_center(i) += t_coords(i);
@@ -139,7 +139,15 @@ struct EdgeElementForcesAndSourcesCore::UserDataOperator
   \endcode
 
    */
-  inline FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> getTensor1Coords();
+  inline FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> getFTensor1Coords();
+
+  /**
+   * @deprecated use getFTensor1Coords
+   */
+  DEPRECATED FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
+  getTensor1Coords() {
+    return getFTensor1Coords();
+  }
 
   /**
    * @brief Get tangent vector at integration points
@@ -199,7 +207,7 @@ EdgeElementForcesAndSourcesCore::UserDataOperator::getFTensor1Direction() {
 }
 
 FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
-EdgeElementForcesAndSourcesCore::UserDataOperator::getTensor1Coords() {
+EdgeElementForcesAndSourcesCore::UserDataOperator::getFTensor1Coords() {
   double *ptr = &*getCoords().data().begin();
   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
                                                             &ptr[2]);
