@@ -813,4 +813,93 @@ OpSetInvJacH1ForFlatPrism::doWork(int side, EntityType type,
   MoFEMFunctionReturn(0);
 }
 
+OpCalculateHcurlVectorCurl<3, 3, 3>::OpCalculateHcurlVectorCurl(
+    const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
+    const EntityType zero_type, const int zero_side)
+    : ForcesAndSourcesCore::UserDataOperator(
+          field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
+      dataPtr(data_ptr), zeroType(zero_type), zeroSide(zero_side) {
+  if (!dataPtr)
+    THROW_MESSAGE("Pointer is not set");
+}
+
+MoFEMErrorCode
+OpCalculateHcurlVectorCurl<3, 3, 3>::doWork(int side, EntityType type,
+                                            EntitiesFieldData::EntData &data) {
+  MoFEMFunctionBegin;
+  const auto nb_integration_points = getGaussPts().size2();
+  if (type == zeroType && side == zeroSide) {
+    dataPtr->resize(3, nb_integration_points, false);
+    dataPtr->clear();
+  }
+  const auto nb_dofs = data.getFieldData().size();
+  if (!nb_dofs)
+    MoFEMFunctionReturnHot(0);
+  FTensor::Index<'i', 3> i;
+  FTensor::Index<'j', 3> j;
+  FTensor::Index<'k', 3> k;
+  const auto nb_base_functions = data.getN().size2() / 3;
+  auto t_n_diff_hcurl = data.getFTensor2DiffN<3, 3>();
+  auto t_data = getFTensor1FromMat<3>(*dataPtr);
+  for (auto gg = 0; gg != nb_integration_points; ++gg) {
+    auto t_dof = data.getFTensor0FieldData();
+    int bb = 0;
+    for (; bb != nb_dofs; ++bb) {
+      t_data(k) += t_dof * (levi_civita(j, i, k) * t_n_diff_hcurl(i, j));
+      ++t_n_diff_hcurl;
+      ++t_dof;
+    }
+    for (; bb < nb_base_functions; ++bb)
+      ++t_n_diff_hcurl;
+    ++t_data;
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+OpCalculateHcurlVectorCurl<1, 2, 2>::OpCalculateHcurlVectorCurl(
+    const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
+    const EntityType zero_type, const int zero_side)
+    : ForcesAndSourcesCore::UserDataOperator(
+          field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
+      dataPtr(data_ptr), zeroType(zero_type), zeroSide(zero_side) {
+  if (!dataPtr)
+    THROW_MESSAGE("Pointer is not set");
+}
+
+MoFEMErrorCode
+OpCalculateHcurlVectorCurl<1, 2, 2>::doWork(int side, EntityType type,
+                                            EntitiesFieldData::EntData &data) {
+  MoFEMFunctionBegin;
+  const auto nb_integration_points = getGaussPts().size2();
+  if (type == zeroType && side == zeroSide) {
+    dataPtr->resize(2, nb_integration_points, false);
+    dataPtr->clear();
+  }
+  const auto nb_dofs = data.getFieldData().size();
+  if (!nb_dofs)
+    MoFEMFunctionReturnHot(0);
+
+  FTensor::Index<'i', 2> i;
+  FTensor::Index<'j', 2> j;
+
+  const auto nb_base_functions = data.getN().size2();
+  auto t_n_diff_hcurl = data.getFTensor1DiffN<2>();
+  auto t_data = getFTensor1FromMat<2>(*dataPtr);
+  for (auto gg = 0; gg != nb_integration_points; ++gg) {
+    auto t_dof = data.getFTensor0FieldData();
+    int bb = 0;
+    for (; bb != nb_dofs; ++bb) {
+      t_data(i) = levi_civita(i, j) * t_n_diff_hcurl(j);
+      ++t_n_diff_hcurl;
+      ++t_dof;
+    }
+    for (; bb < nb_base_functions; ++bb)
+      ++t_n_diff_hcurl;
+    ++t_data;
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
 } // namespace MoFEM
