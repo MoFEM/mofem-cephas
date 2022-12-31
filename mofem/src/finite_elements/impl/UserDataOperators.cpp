@@ -813,7 +813,7 @@ OpSetInvJacH1ForFlatPrism::doWork(int side, EntityType type,
   MoFEMFunctionReturn(0);
 }
 
-OpCalculateHcurlVectorCurl<3, 3, 3>::OpCalculateHcurlVectorCurl(
+OpCalculateHcurlVectorCurl<3, 3>::OpCalculateHcurlVectorCurl(
     const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
     const EntityType zero_type, const int zero_side)
     : ForcesAndSourcesCore::UserDataOperator(
@@ -824,8 +824,8 @@ OpCalculateHcurlVectorCurl<3, 3, 3>::OpCalculateHcurlVectorCurl(
 }
 
 MoFEMErrorCode
-OpCalculateHcurlVectorCurl<3, 3, 3>::doWork(int side, EntityType type,
-                                            EntitiesFieldData::EntData &data) {
+OpCalculateHcurlVectorCurl<3, 3>::doWork(int side, EntityType type,
+                                         EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
   const auto nb_integration_points = getGaussPts().size2();
   if (type == zeroType && side == zeroSide) {
@@ -857,7 +857,7 @@ OpCalculateHcurlVectorCurl<3, 3, 3>::doWork(int side, EntityType type,
   MoFEMFunctionReturn(0);
 }
 
-OpCalculateHcurlVectorCurl<1, 2, 2>::OpCalculateHcurlVectorCurl(
+OpCalculateHcurlVectorCurl<1, 2>::OpCalculateHcurlVectorCurl(
     const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
     const EntityType zero_type, const int zero_side)
     : ForcesAndSourcesCore::UserDataOperator(
@@ -868,7 +868,7 @@ OpCalculateHcurlVectorCurl<1, 2, 2>::OpCalculateHcurlVectorCurl(
 }
 
 MoFEMErrorCode
-OpCalculateHcurlVectorCurl<1, 2, 2>::doWork(int side, EntityType type,
+OpCalculateHcurlVectorCurl<1, 2>::doWork(int side, EntityType type,
                                             EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
   const auto nb_integration_points = getGaussPts().size2();

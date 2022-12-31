@@ -2451,7 +2451,7 @@ private:
  * @tparam Space_Dim dimension of space
  * @tparam Hcurl field dimension
  */
-template <int Base_Dim, int Space_Dim, int Field_Dim = Space_Dim>
+template <int Base_Dim, int Space_Dim>
 struct OpCalculateHcurlVectorCurl;
 
 /**
@@ -2463,7 +2463,7 @@ struct OpCalculateHcurlVectorCurl;
  * @tparam Hcurl field dimension
  */
 template <>
-struct OpCalculateHcurlVectorCurl<3, 3, 3>
+struct OpCalculateHcurlVectorCurl<3, 3>
     : public ForcesAndSourcesCore::UserDataOperator {
   OpCalculateHcurlVectorCurl(const std::string field_name,
                              boost::shared_ptr<MatrixDouble> data_ptr,
@@ -2486,7 +2486,7 @@ private:
  * @tparam Space_Dim dimension of space
  */
 template <>
-struct OpCalculateHcurlVectorCurl<1, 2, 2>
+struct OpCalculateHcurlVectorCurl<1, 2>
     : public ForcesAndSourcesCore::UserDataOperator {
 
   OpCalculateHcurlVectorCurl(const std::string field_name,
