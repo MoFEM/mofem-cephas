@@ -1,11 +1,9 @@
 /**
  * \example hanging_node_approx.cpp
  *
- * Tetsing approximation with hanging nodes.
+ * Testing approximation with hanging nodes.
  *
  */
-
-
 
 #include <MoFEM.hpp>
 
@@ -18,28 +16,15 @@ constexpr int FIELD_DIM = 1;
 constexpr int SPACE_DIM = 2;
 constexpr int nb_ref_levels = 3; ///< Three levels of refinement
 
-template <int DIM> struct ElementsAndOps {};
-
-template <> struct ElementsAndOps<2> {
-  using DomainEle = PipelineManager::FaceEle;
-  using DomainEleOp = DomainEle::UserDataOperator;
-  using DomianParentEle = FaceElementForcesAndSourcesCoreOnChildParent;
-  using BoundaryEle = PipelineManager::EdgeEle;
-  using BoundaryEleOp = BoundaryEle::UserDataOperator;
-  using BoundaryParentEle = EdgeElementForcesAndSourcesCoreOnChildParent;
-};
-
-template <> struct ElementsAndOps<3> {
-  using DomainEle = VolumeElementForcesAndSourcesCore;
-  using DomainEleOp = DomainEle::UserDataOperator;
-};
-
-using DomainEle = ElementsAndOps<SPACE_DIM>::DomainEle;
-using DomainParentEle = ElementsAndOps<SPACE_DIM>::DomianParentEle;
+using DomainEle = PipelineManager::ElementsAndOpsByDim<SPACE_DIM>::DomainEle;
+using DomainParentEle =
+    PipelineManager::ElementsAndOpsByDim<SPACE_DIM>::DomianParentEle;
+using BoundaryEle =
+    PipelineManager::ElementsAndOpsByDim<SPACE_DIM>::BoundaryEle;
+using BoundaryParentEle =
+    PipelineManager::ElementsAndOpsByDim<SPACE_DIM>::BoundaryParentEle;
 using DomainEleOp = DomainEle::UserDataOperator;
-using BoundaryEle = ElementsAndOps<SPACE_DIM>::BoundaryEle;
 using BoundaryEleOp = BoundaryEle::UserDataOperator;
-using BoundaryParentEle = ElementsAndOps<SPACE_DIM>::BoundaryParentEle;
 
 using EntData = EntitiesFieldData::EntData;
 
@@ -327,7 +312,6 @@ template <> struct AtomTest::OpErrorSkel<1> : public BoundaryEleOp {
       SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                "Error on boundary = %6.4e", sqrt(error2));
 
-
     MoFEMFunctionReturn(0);
   }
 };
@@ -562,9 +546,8 @@ MoFEMErrorCode AtomTest::assembleSystem() {
     MoFEMFunctionReturn(0);
   };
 
-  set_parent_dofs<DomainParentEle>(
-      mField, pipeline_mng->getDomainRhsFE(), DomainEleOp::OPSPACE, VERBOSE,
-      Sev::verbose);
+  set_parent_dofs<DomainParentEle>(mField, pipeline_mng->getDomainRhsFE(),
+                                   DomainEleOp::OPSPACE, VERBOSE, Sev::verbose);
   set_parent_dofs<DomainParentEle>(mField, pipeline_mng->getDomainRhsFE(),
                                    DomainEleOp::OPROW, VERBOSE, Sev::noisy);
   pipeline_mng->getOpDomainRhsPipeline().push_back(field_op_row);

@@ -859,12 +859,17 @@ template <> struct PipelineManager::ElementsAndOpsByDim<2> {
   using DomainEle = PipelineManager::FaceEle;
   using BoundaryEle = PipelineManager::EdgeEle;
   using FaceSideEle = FaceElementForcesAndSourcesCoreOnSide;
+  using DomianParentEle = FaceElementForcesAndSourcesCoreOnChildParent;
+  using BoundaryParentEle = EdgeElementForcesAndSourcesCoreOnChildParent;
 };
 
 template <> struct PipelineManager::ElementsAndOpsByDim<3> {
   using DomainEle = PipelineManager::VolEle;
   using BoundaryEle = PipelineManager::FaceEle;
   using FaceSideEle = VolumeElementForcesAndSourcesCoreOnSide;
+  // !!! Not yet implemented
+  // using DomianParentEle = VolumeElementForcesAndSourcesCoreOnChildParent;
+  using BoundaryParentEle = FaceElementForcesAndSourcesCoreOnChildParent;
 };
 
 } // namespace MoFEM
