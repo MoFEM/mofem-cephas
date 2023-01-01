@@ -159,8 +159,12 @@ SmartPetscObj<Vec> OperatorsTester::directionalCentralFiniteDifference(
       v = smartVectorDuplicate(v0);
       CHK_THROW_MESSAGE(VecCopy(v0, v), "Cpy");
       CHK_THROW_MESSAGE(VecAXPY(v, eps, diff_v), "Add");
+      CHK_THROW_MESSAGE(VecGhostUpdateBegin(v, INSERT_VALUES, SCATTER_FORWARD),
+                        "ghost");
+      CHK_THROW_MESSAGE(VecGhostUpdateEnd(v, INSERT_VALUES, SCATTER_FORWARD),
+                        "ghost");
     }
-    return v;
+   return v;
   };
 
   auto fm1 = assembleVec(dm, fe_name, pipeline,
@@ -239,6 +243,10 @@ OperatorsTester::setPipelineX(boost::shared_ptr<FEMethod> pipeline,
     x_t = smartVectorDuplicate(x);
     VecCopy(delta_x, x_t);
     VecScale(x_t, 1. / delta_t);
+    CHK_THROW_MESSAGE(VecGhostUpdateBegin(x_t, INSERT_VALUES, SCATTER_FORWARD),
+                      "ghost");
+    CHK_THROW_MESSAGE(VecGhostUpdateEnd(x_t, INSERT_VALUES, SCATTER_FORWARD),
+                      "ghost");
     pipeline->x_t = x_t;
     pipeline->data_ctx |= PetscData::CTX_SET_X_T;
   } else {
@@ -251,6 +259,10 @@ OperatorsTester::setPipelineX(boost::shared_ptr<FEMethod> pipeline,
     x_tt = smartVectorDuplicate(x);
     VecCopy(delta2_x, x_tt);
     VecScale(x_tt, 1. / pow(delta_t, 2));
+    CHK_THROW_MESSAGE(VecGhostUpdateBegin(x_tt, INSERT_VALUES, SCATTER_FORWARD),
+                      "ghost");
+    CHK_THROW_MESSAGE(VecGhostUpdateEnd(x_tt, INSERT_VALUES, SCATTER_FORWARD),
+                      "ghost");
     pipeline->x_tt = x_tt;
     pipeline->data_ctx |= PetscData::CTX_SET_X_TT;
   } else {
