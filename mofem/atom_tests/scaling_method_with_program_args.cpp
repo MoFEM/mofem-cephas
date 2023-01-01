@@ -13,7 +13,6 @@ static char help[] = "...\n\n";
 int main(int argc, char *argv[]) {
 
   MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
-  const char delimiter = ',';
   std::vector<double> scalar_values = {1.1, 2.4, 3.6,  4.1,  3.1,
                                        5.1, 9.1, 10.5, 11.2, 15.3};
   try {

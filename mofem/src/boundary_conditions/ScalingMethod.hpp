@@ -51,7 +51,7 @@ struct TimeScale : public ScalingMethod {
    * constructor will throw an error if this flag is set to true or throw a
    * warning and use linear scaling if this flag is set to false
    */
-  TimeScale(std::string file_name, char delimiter,
+  TimeScale(std::string file_name, std::string delimiter,
             bool error_if_file_not_given = false);
 
   /**
@@ -63,7 +63,7 @@ struct TimeScale : public ScalingMethod {
   double getScale(const double time);
 
 private:
-  MoFEMErrorCode timeData();
+  MoFEMErrorCode timeData(std::string delimiter);
 
   /**
    * @brief Get scaling at a given time when the scalar values have been
@@ -82,8 +82,10 @@ private:
   std::map<double, double> tSeries;
   std::string fileName = "";
   std::string fileNameFlag = "-time_scalar_file";
-  static const char defaultDelimiter = ',';
-  char delimiter = ',';
+
+  static const std::string
+      defaultDelimiter; // "(\\s*,\\s*|\\s+)"; 
+
   bool errorIfFileNotGiven;
   std::function<double(double)> scalingMethod = [](double time) {
     return time;

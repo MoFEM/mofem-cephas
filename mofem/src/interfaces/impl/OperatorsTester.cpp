@@ -22,7 +22,8 @@ OperatorsTester::query_interface(boost::typeindex::type_index type_index,
 
 SmartPetscObj<Vec>
 OperatorsTester::setRandomFields(SmartPetscObj<DM> dm,
-                                 std::vector<RandomFieldData> random_fields) {
+                                 std::vector<RandomFieldData> random_fields,
+                                 boost::shared_ptr<Range> ents_ptr) {
 
   MoFEM::Interface &m_field = cOre;
 
@@ -43,13 +44,30 @@ OperatorsTester::setRandomFields(SmartPetscObj<DM> dm,
     const auto field_id = m_field.get_field_bit_number(rf.first);
     MOFEM_TAG_AND_LOG("WORLD", Sev::noisy, "OperatorsTester")
         << "Set random field " << rf.first << " " << static_cast<int>(field_id);
-    auto lo = prb_ptr->getNumeredRowDofsPtr()->lower_bound(
-        FieldEntity::getLoBitNumberUId(field_id));
-    const auto up = prb_ptr->getNumeredRowDofsPtr()->upper_bound(
-        FieldEntity::getHiBitNumberUId(field_id));
-    for (; lo != up; ++lo) {
-      const auto idx = (*lo)->getPetscLocalDofIdx();
-      array[idx] = get_random_number(rf.second);
+
+    if (!ents_ptr) {
+      auto lo = prb_ptr->getNumeredRowDofsPtr()->lower_bound(
+          FieldEntity::getLoBitNumberUId(field_id));
+      const auto hi = prb_ptr->getNumeredRowDofsPtr()->upper_bound(
+          FieldEntity::getHiBitNumberUId(field_id));
+      for (; lo != hi; ++lo) {
+        const auto idx = (*lo)->getPetscLocalDofIdx();
+        array[idx] = get_random_number(rf.second);
+      }
+    } else {
+      for (auto pit = ents_ptr->const_pair_begin();
+           pit != ents_ptr->const_pair_end(); ++pit) {
+        auto lo =
+            prb_ptr->getNumeredRowDofsPtr()->get<Unique_mi_tag>().lower_bound(
+                DofEntity::getLoFieldEntityUId(field_id, pit->first));
+        auto hi =
+            prb_ptr->getNumeredRowDofsPtr()->get<Unique_mi_tag>().upper_bound(
+                DofEntity::getHiFieldEntityUId(field_id, pit->second));
+        for (; lo != hi; ++lo) {
+          const auto idx = (*lo)->getPetscLocalDofIdx();
+          array[idx] = get_random_number(rf.second);
+        }
+      }
     }
   }
 
@@ -208,7 +226,6 @@ OperatorsTester::setPipelineX(boost::shared_ptr<FEMethod> pipeline,
                               SmartPetscObj<Vec> x, SmartPetscObj<Vec> delta_x,
                               SmartPetscObj<Vec> delta2_x, double delta_t) {
 
-
   // Set dofs vector to finite element instance
 
   pipeline->x = x;
@@ -227,7 +244,6 @@ OperatorsTester::setPipelineX(boost::shared_ptr<FEMethod> pipeline,
   } else {
     pipeline->x_t = PETSC_NULL;
   }
-
 
   // Set acceleration dofs vector to finite element instance
 
