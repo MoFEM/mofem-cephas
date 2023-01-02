@@ -893,12 +893,15 @@ Core::get_problem_finite_elements_entities(const std::string problem_name,
   auto hi_miit =
       p_miit->numeredFiniteElementsPtr->get<FiniteElement_name_mi_tag>()
           .upper_bound(fe_name);
-  for (; miit != hi_miit; miit++) {
-    EntityHandle ent = (*miit)->getEnt();
-    CHKERR get_moab().add_entities(meshset, &ent, 1);
-    const int part = (*miit)->getPart();
-    CHKERR get_moab().tag_set_data(th_Part, &ent, 1, &part);
+
+  if (miit != hi_miit) {
+    Range fe_ents;
+    insertOrdered(fe_ents, RefEntExtractor(), miit, hi_miit);
+    int part = (*miit)->getPart();
+    CHKERR get_moab().tag_clear_data(th_Part, fe_ents, &part);
+    CHKERR get_moab().add_entities(meshset, fe_ents);
   }
+
   MoFEMFunctionReturn(0);
 }
 
