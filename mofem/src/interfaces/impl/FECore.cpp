@@ -2,7 +2,6 @@
  * \brief Core interface methods for managing deletions and insertion dofs
  */
 
-
 #include <MoFEM.hpp>
 
 #define FECoreFunctionBegin                                                    \
@@ -588,33 +587,30 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
         adj_ents.clear();
         CHKERR fe_raw_ptr->getElementAdjacency(*miit, adj_ents);
 
-        for(auto ent : adj_ents) {
+        for (auto ent : adj_ents) {
 
           auto dof_it = entsFields.get<Unique_mi_tag>().find(
               FieldEntity::getLocalUniqueIdCalculate(field_bit_number, ent));
-          if(dof_it!=entsFields.get<Unique_mi_tag>().end()) {
-              // Add entity to map with key entity uids pointers  and data
-              // finite elements weak ptrs. I using pointers to uids instead
-              // uids because this is faster.
-              const UId *uid_ptr = &(dof_it->get()->getLocalUniqueId());
-              auto &fe_vec = ent_uid_and_fe_vec[uid_ptr];
-              if (add_to_data) {
-                fe_raw_ptr->getDataFieldEntsPtr()->emplace_back(*dof_it);
-              }
-              if (add_to_row && !row_as_data) {
-                fe_raw_ptr->getRowFieldEntsPtr()->emplace_back(*dof_it);
-              }
-              if (add_to_col && !col_as_row) {
-                fe_raw_ptr->getColFieldEntsPtr()->emplace_back(*dof_it);
-              }
+          if (dof_it != entsFields.get<Unique_mi_tag>().end()) {
+            // Add entity to map with key entity uids pointers  and data
+            // finite elements weak ptrs. I using pointers to uids instead
+            // uids because this is faster.
+            const UId *uid_ptr = &(dof_it->get()->getLocalUniqueId());
+            auto &fe_vec = ent_uid_and_fe_vec[uid_ptr];
+            if (add_to_data) {
+              fe_raw_ptr->getDataFieldEntsPtr()->emplace_back(*dof_it);
+            }
+            if (add_to_row && !row_as_data) {
+              fe_raw_ptr->getRowFieldEntsPtr()->emplace_back(*dof_it);
+            }
+            if (add_to_col && !col_as_row) {
+              fe_raw_ptr->getColFieldEntsPtr()->emplace_back(*dof_it);
+            }
 
-              // add finite element to processed list
-              fe_vec.emplace_back(*hint_p);
+            // add finite element to processed list
+            fe_vec.emplace_back(*hint_p);
           }
-
         }
-
-
       }
 
       // Sort field ents by uid
@@ -745,7 +741,8 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
     SETERRQ(mofemComm, MOFEM_NOT_FOUND, "fe not build");
   for (auto peit = ents.pair_begin(); peit != ents.pair_end(); ++peit) {
     auto fit = entsFiniteElements.get<Ent_mi_tag>().lower_bound(peit->first);
-    auto hi_fit = entsFiniteElements.get<Ent_mi_tag>().upper_bound(peit->second);
+    auto hi_fit =
+        entsFiniteElements.get<Ent_mi_tag>().upper_bound(peit->second);
     for (; fit != hi_fit; ++fit) {
       if ((*fit)->getBitFieldIdRow().none() &&
           (*fit)->getBitFieldIdCol().none() &&
@@ -880,4 +877,29 @@ MoFEMErrorCode Core::check_number_of_ents_in_ents_finite_element() const {
   }
   MoFEMFunctionReturn(0);
 }
+
+MoFEMErrorCode
+Core::get_problem_finite_elements_entities(const std::string problem_name,
+                                           const std::string fe_name,
+                                           const EntityHandle meshset) {
+  MoFEMFunctionBegin;
+  auto &prb = pRoblems.get<Problem_mi_tag>();
+  auto p_miit = prb.find(problem_name);
+  if (p_miit == prb.end())
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "No such problem like < %s >", problem_name.c_str());
+  auto miit = p_miit->numeredFiniteElementsPtr->get<FiniteElement_name_mi_tag>()
+                  .lower_bound(fe_name);
+  auto hi_miit =
+      p_miit->numeredFiniteElementsPtr->get<FiniteElement_name_mi_tag>()
+          .upper_bound(fe_name);
+  for (; miit != hi_miit; miit++) {
+    EntityHandle ent = (*miit)->getEnt();
+    CHKERR get_moab().add_entities(meshset, &ent, 1);
+    const int part = (*miit)->getPart();
+    CHKERR get_moab().tag_set_data(th_Part, &ent, 1, &part);
+  }
+  MoFEMFunctionReturn(0);
+}
+
 } // namespace MoFEM

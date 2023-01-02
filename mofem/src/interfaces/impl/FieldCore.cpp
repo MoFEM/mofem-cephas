@@ -1299,29 +1299,6 @@ MoFEMErrorCode Core::list_fields() const {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode
-Core::get_problem_finite_elements_entities(const std::string problem_name,
-                                           const std::string fe_name,
-                                           const EntityHandle meshset) {
-  MoFEMFunctionBegin;
-  auto &prb = pRoblems.get<Problem_mi_tag>();
-  auto p_miit = prb.find(problem_name);
-  if (p_miit == prb.end())
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-             "No such problem like < %s >", problem_name.c_str());
-  auto miit = p_miit->numeredFiniteElementsPtr->get<FiniteElement_name_mi_tag>()
-                  .lower_bound(fe_name);
-  auto hi_miit = p_miit->numeredFiniteElementsPtr->get<FiniteElement_name_mi_tag>()
-                     .upper_bound(fe_name);
-  for (; miit != hi_miit; miit++) {
-    EntityHandle ent = (*miit)->getEnt();
-    CHKERR get_moab().add_entities(meshset, &ent, 1);
-    const int part = (*miit)->getPart();
-    CHKERR get_moab().tag_set_data(th_Part, &ent, 1, &part);
-  }
-  MoFEMFunctionReturn(0);
-}
-
 FieldEntityByUId::iterator
 Core::get_ent_field_by_name_begin(const std::string &field_name) const {
   return entsFields.get<Unique_mi_tag>().lower_bound(
