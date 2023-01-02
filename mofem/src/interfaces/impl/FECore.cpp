@@ -25,7 +25,7 @@ bool Core::check_finite_element(const std::string &name) const {
   return true;
 }
 
-MoFEMErrorCode Core::add_finite_element(const std::string &fe_name,
+MoFEMErrorCode Core::add_finite_element(const std::string fe_name,
                                         enum MoFEMTypes bh, int verb) {
   FECoreFunctionBegin;
   *buildMoFEM &= 1 << 0;
@@ -99,7 +99,7 @@ MoFEMErrorCode Core::add_finite_element(const std::string &fe_name,
 }
 
 MoFEMErrorCode
-Core::modify_finite_element_adjacency_table(const std::string &fe_name,
+Core::modify_finite_element_adjacency_table(const std::string fe_name,
                                             const EntityType type,
                                             ElementAdjacencyFunct function) {
   MoFEMFunctionBeginHot;
@@ -120,8 +120,8 @@ Core::modify_finite_element_adjacency_table(const std::string &fe_name,
 }
 
 MoFEMErrorCode
-Core::modify_finite_element_add_field_data(const std::string &fe_name,
-                                           const std::string &name_data) {
+Core::modify_finite_element_add_field_data(const std::string fe_name,
+                                           const std::string name_data) {
   MoFEMFunctionBegin;
   *buildMoFEM &= 1 << 0;
   typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type
@@ -142,8 +142,8 @@ Core::modify_finite_element_add_field_data(const std::string &fe_name,
 }
 
 MoFEMErrorCode
-Core::modify_finite_element_add_field_row(const std::string &fe_name,
-                                          const std::string &name_row) {
+Core::modify_finite_element_add_field_row(const std::string fe_name,
+                                          const std::string name_row) {
   MoFEMFunctionBegin;
   *buildMoFEM &= 1 << 0;
   typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type
@@ -164,8 +164,8 @@ Core::modify_finite_element_add_field_row(const std::string &fe_name,
 }
 
 MoFEMErrorCode
-Core::modify_finite_element_add_field_col(const std::string &fe_name,
-                                          const std::string &name_col) {
+Core::modify_finite_element_add_field_col(const std::string fe_name,
+                                          const std::string name_col) {
   MoFEMFunctionBegin;
   *buildMoFEM &= 1 << 0;
   typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type
@@ -186,8 +186,8 @@ Core::modify_finite_element_add_field_col(const std::string &fe_name,
 }
 
 MoFEMErrorCode
-Core::modify_finite_element_off_field_data(const std::string &fe_name,
-                                           const std::string &name_data) {
+Core::modify_finite_element_off_field_data(const std::string fe_name,
+                                           const std::string name_data) {
   MoFEMFunctionBegin;
   *buildMoFEM &= 1 << 0;
   auto &finite_element_name_set =
@@ -204,8 +204,8 @@ Core::modify_finite_element_off_field_data(const std::string &fe_name,
 }
 
 MoFEMErrorCode
-Core::modify_finite_element_off_field_row(const std::string &fe_name,
-                                          const std::string &name_row) {
+Core::modify_finite_element_off_field_row(const std::string fe_name,
+                                          const std::string name_row) {
   MoFEMFunctionBegin;
   *buildMoFEM &= 1 << 0;
   auto &finite_element_name_set =
@@ -223,8 +223,8 @@ Core::modify_finite_element_off_field_row(const std::string &fe_name,
 }
 
 MoFEMErrorCode
-Core::modify_finite_element_off_field_col(const std::string &fe_name,
-                                          const std::string &name_col) {
+Core::modify_finite_element_off_field_col(const std::string fe_name,
+                                          const std::string name_col) {
   MoFEMFunctionBegin;
   *buildMoFEM &= 1 << 0;
   auto &finite_element_name_set =
@@ -266,7 +266,7 @@ EntityHandle Core::get_finite_element_meshset(const BitFEId id) const {
   return (*miit)->meshset;
 }
 
-EntityHandle Core::get_finite_element_meshset(const std::string &name) const {
+EntityHandle Core::get_finite_element_meshset(const std::string name) const {
   return get_finite_element_meshset(getBitFEId(name));
 }
 
@@ -827,12 +827,12 @@ MoFEMErrorCode Core::build_adjacencies(const BitRefLevel &bit, int verb) {
 }
 
 EntFiniteElementByName::iterator
-Core::get_fe_by_name_begin(const std::string &fe_name) const {
+Core::get_fe_by_name_begin(const std::string fe_name) const {
   return entsFiniteElements.get<FiniteElement_name_mi_tag>().lower_bound(
       fe_name);
 }
 EntFiniteElementByName::iterator
-Core::get_fe_by_name_end(const std::string &fe_name) const {
+Core::get_fe_by_name_end(const std::string fe_name) const {
   return entsFiniteElements.get<FiniteElement_name_mi_tag>().upper_bound(
       fe_name);
 }

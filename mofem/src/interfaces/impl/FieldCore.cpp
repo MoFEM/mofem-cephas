@@ -1300,8 +1300,8 @@ MoFEMErrorCode Core::list_fields() const {
 }
 
 MoFEMErrorCode
-Core::get_problem_finite_elements_entities(const std::string &problem_name,
-                                           const std::string &fe_name,
+Core::get_problem_finite_elements_entities(const std::string problem_name,
+                                           const std::string fe_name,
                                            const EntityHandle meshset) {
   MoFEMFunctionBegin;
   auto &prb = pRoblems.get<Problem_mi_tag>();
