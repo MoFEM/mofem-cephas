@@ -127,9 +127,6 @@ private:
  *
  * That class is used during entity finite element construction.
  *
- * \todo this function has to be extended to take cases of integration on
- * skeleton for hanging node cases.
- *
  * @tparam DIM dimension of parent element
  */
 template <int DIM> struct ParentFiniteElementAdjacencyFunction {
@@ -173,9 +170,51 @@ template <int DIM> struct ParentFiniteElementAdjacencyFunction {
       auto th_parent_handle = basic_entity_data_ptr->th_RefParentHandle;
       auto th_bit_level = basic_entity_data_ptr->th_RefBitLevel;
 
+      std::vector<EntityHandle> parents;
+      parents.reserve(BITREFLEVEL_SIZE);
+
+      CHKERR getParent(fe.getEnt(), parents, moab, th_parent_handle,
+                       th_bit_level);
+
+      adjacency.clear();
+      CHKERR getParentsAdjacencies(field, moab, th_bit_level, parents,
+                                   adjacency);
+    }
+
+    adjTmp.clear();
+    CHKERR getDefaultAdjacencies(moab, field, fe, adjTmp);
+    adjacency.insert(adjacency.end(), adjTmp.begin(), adjTmp.end());
+
+    std::sort(adjacency.begin(), adjacency.end());
+    auto it = std::unique(adjacency.begin(), adjacency.end());
+    adjacency.resize(std::distance(adjacency.begin(), it));
+
+    for (auto e : adjacency) {
+      auto &side_table = fe.getSideNumberTable();
+      if (side_table.find(e) == side_table.end())
+        const_cast<SideNumber_multiIndex &>(side_table)
+            .insert(boost::shared_ptr<SideNumber>(new SideNumber(e, -1, 0, 0)));
+    }
+
+    MoFEMFunctionReturn(0);
+  }
+
+protected:
+  MoFEMErrorCode getParent(EntityHandle fe, std::vector<EntityHandle> &parents,
+                           moab::Interface &moab, Tag th_parent_handle,
+                           Tag th_bit_level) {
+    MoFEMFunctionBegin;
+
+    auto check = [](auto &b, auto &m, auto &bit) {
+      return ((bit & b).any()) && ((bit & m) == bit);
+    };
+
+    BitRefLevel bit_fe;
+    CHKERR moab.tag_get_data(th_bit_level, &fe, 1, &bit_fe);
+    if (check(bitEnt, bitEntMask, bit_fe)) {
+      
       using GetParent = boost::function<MoFEMErrorCode(
           EntityHandle fe, std::vector<EntityHandle> & parents)>;
-
       /**
        * @brief this function os called recursively, until all stack of parents
        * is found.
@@ -201,56 +240,60 @@ template <int DIM> struct ParentFiniteElementAdjacencyFunction {
         MoFEMFunctionReturn(0);
       };
 
-      std::vector<EntityHandle> parents;
-      parents.reserve(BITREFLEVEL_SIZE);
+      CHKERR get_parent(fe, parents);
+    }
+    MoFEMFunctionReturn(0);
+  }
 
-      CHKERR get_parent(fe.getEnt(), parents);
+  MoFEMErrorCode getParentsAdjacencies(const Field &field,
+                                       moab::Interface &moab, Tag th_bit_level,
+                                       std::vector<EntityHandle> &parents,
+                                       std::vector<EntityHandle> &adjacency) {
+    MoFEMFunctionBegin;
 
-      adjacency.clear();
-      switch (field.getSpace()) {
-      case H1:
+    switch (field.getSpace()) {
+    case H1:
+      for (auto fe_ent : parents)
+        CHKERR moab.get_adjacencies(&fe_ent, 1, 0, false, adjacency,
+                                    moab::Interface::UNION);
+    case HCURL:
+      if constexpr (DIM >= 2)
         for (auto fe_ent : parents)
-          CHKERR moab.get_adjacencies(&fe_ent, 1, 0, false, adjacency,
+          CHKERR moab.get_adjacencies(&fe_ent, 1, 1, false, adjacency,
                                       moab::Interface::UNION);
-      case HCURL:
-        if constexpr (DIM >= 2)
-          for (auto fe_ent : parents)
-            CHKERR moab.get_adjacencies(&fe_ent, 1, 1, false, adjacency,
-                                        moab::Interface::UNION);
-      case HDIV:
-        if constexpr (DIM == 3)
-          for (auto fe_ent : parents)
-            CHKERR moab.get_adjacencies(&fe_ent, 1, 2, false, adjacency,
-                                        moab::Interface::UNION);
-      case L2:
+    case HDIV:
+      if constexpr (DIM == 3)
         for (auto fe_ent : parents)
-          adjacency.push_back(fe_ent);
-        break;
-      default:
-        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-                "this field is not implemented for face finite element");
-      }
-
-      if (adjacency.size()) {
-
-        std::sort(adjacency.begin(), adjacency.end());
-        auto it = std::unique(adjacency.begin(), adjacency.end());
-        adjacency.resize(std::distance(adjacency.begin(), it));
-        bitLevels.resize(adjacency.size());
-        CHKERR moab.tag_get_data(th_bit_level, &*adjacency.begin(),
-                                 adjacency.size(), &*bitLevels.begin());
-
-        adjTmp.reserve(adjacency.size());
-        for (int i = 0; i != adjacency.size(); ++i) {
-          if (check(bitEnt, bitEntMask, bitLevels[i])) {
-            adjTmp.push_back(adjacency[i]);
-          }
-        }
-      }
+          CHKERR moab.get_adjacencies(&fe_ent, 1, 2, false, adjacency,
+                                      moab::Interface::UNION);
+    case L2:
+      for (auto fe_ent : parents)
+        adjacency.push_back(fe_ent);
+      break;
+    default:
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+              "this field is not implemented for face finite element");
     }
 
-    adjacency.clear();
+    auto check = [](auto &b, auto &m, auto &bit) {
+      return ((bit & b).any()) && ((bit & m) == bit);
+    };
 
+    if (adjacency.size()) {
+
+      std::sort(adjacency.begin(), adjacency.end());
+      auto it = std::unique(adjacency.begin(), adjacency.end());
+      adjacency.resize(std::distance(adjacency.begin(), it));
+    }
+
+    MoFEMFunctionReturn(0);
+  }
+
+  MoFEMErrorCode getDefaultAdjacencies(moab::Interface &moab,
+                                       const Field &field,
+                                       const EntFiniteElement &fe,
+                                       std::vector<EntityHandle> &adjacency) {
+    MoFEMFunctionBegin;
     if constexpr (DIM == 3)
       CHKERR DefaultElementAdjacency::defaultVolume(moab, field, fe, adjacency);
     if constexpr (DIM == 2)
@@ -259,30 +302,14 @@ template <int DIM> struct ParentFiniteElementAdjacencyFunction {
       CHKERR DefaultElementAdjacency::defaultEdge(moab, field, fe, adjacency);
     else if constexpr (DIM == 0)
       CHKERR DefaultElementAdjacency::defaultVertex(moab, field, fe, adjacency);
-
-    adjacency.insert(adjacency.end(), adjTmp.begin(), adjTmp.end());
-
-    std::sort(adjacency.begin(), adjacency.end());
-    auto it = std::unique(adjacency.begin(), adjacency.end());
-    adjacency.resize(std::distance(adjacency.begin(), it));
-
-    for (auto e : adjacency) {
-      auto &side_table = fe.getSideNumberTable();
-      if (side_table.find(e) == side_table.end())
-        const_cast<SideNumber_multiIndex &>(side_table)
-            .insert(boost::shared_ptr<SideNumber>(new SideNumber(e, -1, 0, 0)));
-    }
-
     MoFEMFunctionReturn(0);
-  }
+  };
 
-private:
   BitRefLevel bitParent;
   BitRefLevel bitParentMask;
   BitRefLevel bitEnt;
   BitRefLevel bitEntMask;
   std::vector<EntityHandle> adjTmp;
-  std::vector<BitRefLevel> bitLevels;
 };
 
 } // namespace MoFEM

@@ -473,11 +473,7 @@ MoFEMErrorCode AtomTest::setupProblem() {
   // Using that information MAtrixManager  allocate appropriately size of
   // matrix.
   simpleInterface->getParentAdjacencies() = true;
-  BitRefLevel bit_marker;
-  for (auto l = 1; l <= nb_ref_levels; ++l)
-    bit_marker |= marker(l);
-  simpleInterface->getBitAdjEnt() = bit_marker;
-
+  
   CHKERR simpleInterface->setUp();
 
   BitRefManager *bit_mng = mField.getInterface<BitRefManager>();
