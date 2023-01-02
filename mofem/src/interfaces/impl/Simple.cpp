@@ -54,7 +54,7 @@ MoFEMErrorCode Simple::setSkeletonAdjacency<2>(std::string fe_name) {
         break;
       default:
         SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-                "this field is not implemented for TRI finite element");
+                "this space is not implemented");
       }
 
       std::sort(adjacency.begin(), adjacency.end());
@@ -124,7 +124,7 @@ MoFEMErrorCode Simple::setSkeletonAdjacency<3>(std::string fe_name) {
         break;
       default:
         SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-                "this field is not implemented for TRI finite element");
+                "this space is not implemented");
       }
 
       std::sort(adjacency.begin(), adjacency.end());
