@@ -895,11 +895,14 @@ Core::get_problem_finite_elements_entities(const std::string problem_name,
           .upper_bound(fe_name);
 
   if (miit != hi_miit) {
-    Range fe_ents;
-    insertOrdered(fe_ents, RefEntExtractor(), miit, hi_miit);
+    std::vector<EntityHandle> ents;
+    ents.reserve(std::distance(miit, hi_miit));
+    for (; miit != hi_miit; miit)
+      ents.push_back((*miit)->getEnt());
     int part = (*miit)->getPart();
-    CHKERR get_moab().tag_clear_data(th_Part, fe_ents, &part);
-    CHKERR get_moab().add_entities(meshset, fe_ents);
+    CHKERR get_moab().tag_clear_data(th_Part, &*ents.begin(), ents.size(),
+                                     &part);
+    CHKERR get_moab().add_entities(meshset, &*ents.begin(), ents.size());
   }
 
   MoFEMFunctionReturn(0);
