@@ -1498,6 +1498,8 @@ struct RefEntExtractor {
 /**
  * @brief Insert ordered mofem multi-index into range
  *
+ * \note Inserted range has to be ordered.
+ * 
  * \code
  * auto hi_rit = refEntsPtr->upper_bound(start);
  * auto hi_rit = refEntsPtr->upper_bound(end);
