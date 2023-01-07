@@ -158,11 +158,7 @@ template <int DIM> struct ParentFiniteElementAdjacencyFunction {
 
     static_assert(DIM >= 0 && DIM <= 3, "DIM is out of scope");
 
-    auto check = [](auto &b, auto &m, auto &bit) {
-      return ((bit & b).any()) && ((bit & m) == bit);
-    };
-
-    adjTmp.clear();
+    adjacency.clear();
 
     if (field.getSpace() != NOFIELD) {
 
@@ -176,9 +172,7 @@ template <int DIM> struct ParentFiniteElementAdjacencyFunction {
       CHKERR getParent(fe.getEnt(), parents, moab, th_parent_handle,
                        th_bit_level);
 
-      adjacency.clear();
-      CHKERR getParentsAdjacencies(field, moab, th_bit_level, parents,
-                                   adjacency);
+      CHKERR getParentsAdjacencies(field, moab, parents, adjacency);
     }
 
     adjTmp.clear();
@@ -212,7 +206,7 @@ protected:
     BitRefLevel bit_fe;
     CHKERR moab.tag_get_data(th_bit_level, &fe, 1, &bit_fe);
     if (check(bitEnt, bitEntMask, bit_fe)) {
-      
+
       using GetParent = boost::function<MoFEMErrorCode(
           EntityHandle fe, std::vector<EntityHandle> & parents)>;
       /**
@@ -246,7 +240,7 @@ protected:
   }
 
   MoFEMErrorCode getParentsAdjacencies(const Field &field,
-                                       moab::Interface &moab, Tag th_bit_level,
+                                       moab::Interface &moab,
                                        std::vector<EntityHandle> &parents,
                                        std::vector<EntityHandle> &adjacency) {
     MoFEMFunctionBegin;
@@ -254,15 +248,15 @@ protected:
     switch (field.getSpace()) {
     case H1:
       for (auto fe_ent : parents)
-        CHKERR moab.get_adjacencies(&fe_ent, 1, 0, false, adjacency,
-                                    moab::Interface::UNION);
+        CHKERR moab.get_connectivity(&*parents.begin(), parents.size(),
+                                     adjacency, true);
     case HCURL:
-      if constexpr (DIM >= 2)
+      if constexpr (DIM >= 1)
         for (auto fe_ent : parents)
           CHKERR moab.get_adjacencies(&fe_ent, 1, 1, false, adjacency,
                                       moab::Interface::UNION);
     case HDIV:
-      if constexpr (DIM == 3)
+      if constexpr (DIM == 2)
         for (auto fe_ent : parents)
           CHKERR moab.get_adjacencies(&fe_ent, 1, 2, false, adjacency,
                                       moab::Interface::UNION);
@@ -275,12 +269,7 @@ protected:
               "this field is not implemented for face finite element");
     }
 
-    auto check = [](auto &b, auto &m, auto &bit) {
-      return ((bit & b).any()) && ((bit & m) == bit);
-    };
-
     if (adjacency.size()) {
-
       std::sort(adjacency.begin(), adjacency.end());
       auto it = std::unique(adjacency.begin(), adjacency.end());
       adjacency.resize(std::distance(adjacency.begin(), it));
@@ -310,6 +299,89 @@ protected:
   BitRefLevel bitEnt;
   BitRefLevel bitEntMask;
   std::vector<EntityHandle> adjTmp;
+};
+
+/**
+ * @brief Create adjacency to parent skeleton elements.
+ *
+ * That class is used during entity finite element construction.
+ *
+ * @tparam DIM dimension of parent element
+ */
+template <int DIM>
+struct ParentFiniteElementAdjacencyFunctionSkeleton
+    : public ParentFiniteElementAdjacencyFunction<DIM> {
+
+  ParentFiniteElementAdjacencyFunctionSkeleton(BitRefLevel bit_parent,
+                                               BitRefLevel bit_parent_mask,
+                                               BitRefLevel bit_ent,
+                                               BitRefLevel bit_ent_mask)
+      : ParentFiniteElementAdjacencyFunction<DIM>(bit_parent, bit_parent_mask,
+                                                  bit_ent, bit_ent_mask) {}
+
+  /**
+   * @brief Function setting adjacencies to DOFs of parent element
+   *
+   * @note elements form child, see dofs from parent, so DOFs located on
+   * adjacencies of parent entity has adjacent to dofs of child.
+   *
+   * @tparam DIM dimension of the element entity
+   * @param moab
+   * @param field
+   * @param fe
+   * @param adjacency
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode operator()(moab::Interface &moab, const Field &field,
+                            const EntFiniteElement &fe,
+                            std::vector<EntityHandle> &adjacency) {
+    MoFEMFunctionBegin;
+
+    adjacency.clear();
+    CHKERR this->getDefaultAdjacencies(moab, field, fe, adjacency);
+
+    if (field.getSpace() != NOFIELD) {
+
+      const auto fe_ent = fe.getEnt();
+      brideAdjacencyEdge.clear();
+      CHKERR moab.get_adjacencies(&fe_ent, 1, DIM + 1, false,
+                                  brideAdjacencyEdge);
+
+      std::vector<EntityHandle> parents;
+
+      if (this->bitParent.any()) {
+        auto basic_entity_data_ptr = fe.getBasicDataPtr();
+        auto th_parent_handle = basic_entity_data_ptr->th_RefParentHandle;
+        auto th_bit_level = basic_entity_data_ptr->th_RefBitLevel;
+        parents.reserve(BITREFLEVEL_SIZE);
+        for (auto bridge_fe : brideAdjacencyEdge) {
+          CHKERR this->getParent(bridge_fe, parents, moab, th_parent_handle,
+                                 th_bit_level);
+        };
+      } else {
+        parents.swap(brideAdjacencyEdge);
+      }
+
+      CHKERR this->getParentsAdjacencies(field, moab, parents, adjacency);
+
+      std::sort(adjacency.begin(), adjacency.end());
+      auto it = std::unique(adjacency.begin(), adjacency.end());
+      adjacency.resize(std::distance(adjacency.begin(), it));
+
+      for (auto e : adjacency) {
+        auto &side_table = fe.getSideNumberTable();
+        if (side_table.find(e) == side_table.end())
+          const_cast<SideNumber_multiIndex &>(side_table)
+              .insert(
+                  boost::shared_ptr<SideNumber>(new SideNumber(e, -1, 0, 0)));
+      }
+    }
+
+    MoFEMFunctionReturn(0);
+  }
+
+protected:
+  std::vector<EntityHandle> brideAdjacencyEdge;
 };
 
 } // namespace MoFEM
