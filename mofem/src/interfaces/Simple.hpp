@@ -463,8 +463,8 @@ struct Simple : public UnknownInterface {
 private:
   MoFEM::Core &cOre;
 
-  BitRefLevel bitLevel;     ///< BitRefLevel of the probelm
-  BitRefLevel bitLevelMask; ///< BitRefLevel of the probelm
+  BitRefLevel bitLevel;     ///< BitRefLevel of the problem
+  BitRefLevel bitLevelMask; ///< BitRefLevel of the problem
 
   PetscLogEvent MOFEM_EVENT_SimpleSetUP;
   PetscLogEvent MOFEM_EVENT_SimpleLoadMesh;
@@ -482,9 +482,9 @@ private:
   bool addParentAdjacencies; ///< If set to true parent adjacencies are build
 
   BitRefLevel bitAdjParent;     ///< bit ref level for parent
-  BitRefLevel bitAdjParentMask; ///< bit ref level for parent marent
+  BitRefLevel bitAdjParentMask; ///< bit ref level for parent parent
   BitRefLevel bitAdjEnt;        ///< bit ref level for parent
-  BitRefLevel bitAdjEntMask;    ///< bit ref level for parent marent
+  BitRefLevel bitAdjEntMask;    ///< bit ref level for parent parent
 
   std::vector<std::string> domainFields;      ///< domain fields
   std::vector<std::string> boundaryFields;    ///< boundary fields
