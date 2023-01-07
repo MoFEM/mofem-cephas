@@ -54,7 +54,7 @@ OpAddParentEntData::OpAddParentEntData(
       bitChildMask(bit_child_mask), bitParentEnt(bit_parent_ent),
       bitParentEntMask(bit_parent_ent_mask), verbosity(verb),
       severityLevel(sev) {
-
+  // Push op to collect data
   auto field_op =
       new ForcesAndSourcesCore::UserDataOperator(fieldName, opParentType);
   parentElePtr->getOpPtrVector().push_back(field_op);
@@ -72,7 +72,7 @@ OpAddParentEntData::OpAddParentEntData(
       bitChildMask(bit_child_mask), bitParentEnt(bit_parent_ent),
       bitParentEntMask(bit_parent_ent_mask), verbosity(verb),
       severityLevel(sev) {
-
+  // Push op to collect data
   auto field_op =
       new ForcesAndSourcesCore::UserDataOperator(approxSpace, opParentType);
   parentElePtr->getOpPtrVector().push_back(field_op);
@@ -252,6 +252,7 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
     MoFEMFunctionReturn(0);
   };
 
+  // iterate parents collect data
   auto &bit_fe = getFEMethod()->numeredEntFiniteElementPtr->getBitRefLevel();
   if (check(bitChild, bitChildMask, bit_fe)) {
 

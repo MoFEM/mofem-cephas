@@ -1580,7 +1580,7 @@ private:
 };
 
 /**
- * @brief  Create smart pointer to temprary meshset
+ * @brief  Create smart pointer to temporary meshset
  * 
  */
 inline auto get_temp_meshset_ptr(moab::Interface &moab) {
