@@ -2547,7 +2547,7 @@ ProblemsManager::partitionGhostDofsOnDistributedMesh(const std::string name,
 }
 
 MoFEMErrorCode ProblemsManager::getFEMeshset(const std::string prb_name,
-                                             const std::string fe_name,
+                                             const std::string &fe_name,
                                              EntityHandle *meshset) const {
   MoFEM::Interface &m_field = cOre;
   const Problem *problem_ptr;
@@ -2572,7 +2572,7 @@ MoFEMErrorCode ProblemsManager::getFEMeshset(const std::string prb_name,
 
 MoFEMErrorCode
 ProblemsManager::getProblemElementsLayout(const std::string name,
-                                          const std::string fe_name,
+                                          const std::string &fe_name,
                                           PetscLayout *layout) const {
   MoFEM::Interface &m_field = cOre;
   const Problem *problem_ptr;

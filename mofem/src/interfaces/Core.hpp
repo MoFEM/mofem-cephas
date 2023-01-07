@@ -602,30 +602,30 @@ protected:
   /**@{*/
 
   bool check_finite_element(const std::string &name) const;
-  MoFEMErrorCode add_finite_element(const std::string fe_name,
+  MoFEMErrorCode add_finite_element(const std::string &fe_name,
                                     enum MoFEMTypes bh = MF_EXCL,
                                     int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode
-  modify_finite_element_adjacency_table(const std::string fe_name,
+  modify_finite_element_adjacency_table(const std::string &fe_name,
                                         const EntityType type,
                                         ElementAdjacencyFunct function);
   MoFEMErrorCode
-  modify_finite_element_add_field_data(const std::string fe_name,
+  modify_finite_element_add_field_data(const std::string &fe_name,
                                        const std::string name_filed);
   MoFEMErrorCode
-  modify_finite_element_add_field_row(const std::string fe_name,
+  modify_finite_element_add_field_row(const std::string &fe_name,
                                       const std::string name_row);
   MoFEMErrorCode
-  modify_finite_element_add_field_col(const std::string fe_name,
+  modify_finite_element_add_field_col(const std::string &fe_name,
                                       const std::string name_col);
   MoFEMErrorCode
-  modify_finite_element_off_field_data(const std::string fe_name,
+  modify_finite_element_off_field_data(const std::string &fe_name,
                                        const std::string name_filed);
   MoFEMErrorCode
-  modify_finite_element_off_field_row(const std::string fe_name,
+  modify_finite_element_off_field_row(const std::string &fe_name,
                                       const std::string name_row);
   MoFEMErrorCode
-  modify_finite_element_off_field_col(const std::string fe_name,
+  modify_finite_element_off_field_col(const std::string &fe_name,
                                       const std::string name_col);
   MoFEMErrorCode add_ents_to_finite_element_by_type(
       const EntityHandle meshset, const EntityType type,
@@ -710,10 +710,10 @@ protected:
   MoFEMErrorCode delete_problem(const std::string name);
   MoFEMErrorCode
   modify_problem_add_finite_element(const std::string name_problem,
-                                    const std::string fe_name);
+                                    const std::string &fe_name);
   MoFEMErrorCode
   modify_problem_unset_finite_element(const std::string name_problem,
-                                      const std::string fe_name);
+                                      const std::string &fe_name);
   MoFEMErrorCode
   modify_problem_ref_level_add_bit(const std::string &name_problem,
                                    const BitRefLevel &bit);
@@ -750,7 +750,7 @@ protected:
 
   MoFEMErrorCode
   get_problem_finite_elements_entities(const std::string name,
-                                       const std::string fe_name,
+                                       const std::string &fe_name,
                                        const EntityHandle meshset);
 
   // \name Problem building (deprecated)
@@ -819,7 +819,7 @@ protected:
                                         CacheTupleWeakPtr cache_ptr);
 
   MoFEMErrorCode loop_finite_elements(
-      const Problem *problem_ptr, const std::string fe_name, FEMethod &method,
+      const Problem *problem_ptr, const std::string &fe_name, FEMethod &method,
       int lower_rank, int upper_rank,
       boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr = nullptr,
       MoFEMTypes bh = MF_EXIST,
@@ -827,7 +827,7 @@ protected:
       int verb = DEFAULT_VERBOSITY);
 
   MoFEMErrorCode loop_finite_elements(
-      const std::string problem_name, const std::string fe_name,
+      const std::string problem_name, const std::string &fe_name,
       FEMethod &method, int lower_rank, int upper_rank,
       boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr = nullptr,
       MoFEMTypes bh = MF_EXIST,
@@ -835,7 +835,7 @@ protected:
       int verb = DEFAULT_VERBOSITY);
 
   MoFEMErrorCode loop_finite_elements(
-      const std::string problem_name, const std::string fe_name,
+      const std::string problem_name, const std::string &fe_name,
       FEMethod &method,
       boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr = nullptr,
       MoFEMTypes bh = MF_EXIST,
@@ -930,9 +930,9 @@ protected:
   get_dofs_by_name_and_type_end(const std::string &field_name,
                                 const EntityType ent) const;
   EntFiniteElementByName::iterator
-  get_fe_by_name_begin(const std::string fe_name) const;
+  get_fe_by_name_begin(const std::string &fe_name) const;
   EntFiniteElementByName::iterator
-  get_fe_by_name_end(const std::string fe_name) const;
+  get_fe_by_name_end(const std::string &fe_name) const;
 
   /**@}*/
 

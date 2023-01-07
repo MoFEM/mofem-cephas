@@ -60,7 +60,7 @@ struct CommInterface : public UnknownInterface {
   *
   */
   MoFEMErrorCode resolveSharedFiniteElements(const Problem *problem_ptr,
-                                             const std::string fe_name,
+                                             const std::string &fe_name,
                                              int verb = DEFAULT_VERBOSITY);
 
   /**
@@ -87,7 +87,7 @@ struct CommInterface : public UnknownInterface {
   *
   */
   MoFEMErrorCode resolveSharedFiniteElements(const std::string name,
-                                             const std::string fe_name,
+                                             const std::string &fe_name,
                                              int verb = DEFAULT_VERBOSITY);
 
   /** \name Make entities multishared */

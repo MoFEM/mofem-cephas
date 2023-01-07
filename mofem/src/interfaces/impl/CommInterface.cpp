@@ -215,7 +215,7 @@ MoFEMErrorCode CommInterface::synchroniseFieldEntities(const std::string name,
 }
 
 MoFEMErrorCode CommInterface::resolveSharedFiniteElements(
-    const Problem *problem_ptr, const std::string fe_name, int verb) {
+    const Problem *problem_ptr, const std::string &fe_name, int verb) {
   MoFEM::Interface &m_field = cOre;
   MoFEMFunctionBegin;
   ParallelComm *pcomm = ParallelComm::get_pcomm(
@@ -290,7 +290,7 @@ MoFEMErrorCode CommInterface::resolveSharedFiniteElements(
 }
 
 MoFEMErrorCode CommInterface::resolveSharedFiniteElements(
-    const std::string name, const std::string fe_name, int verb) {
+    const std::string name, const std::string &fe_name, int verb) {
   MoFEM::Interface &m_field = cOre;
   MoFEMFunctionBegin;
   const Problem *problem_ptr;

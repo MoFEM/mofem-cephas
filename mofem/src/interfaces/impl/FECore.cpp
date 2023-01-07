@@ -24,7 +24,7 @@ bool Core::check_finite_element(const std::string &name) const {
   return true;
 }
 
-MoFEMErrorCode Core::add_finite_element(const std::string fe_name,
+MoFEMErrorCode Core::add_finite_element(const std::string &fe_name,
                                         enum MoFEMTypes bh, int verb) {
   FECoreFunctionBegin;
   *buildMoFEM &= 1 << 0;
@@ -98,7 +98,7 @@ MoFEMErrorCode Core::add_finite_element(const std::string fe_name,
 }
 
 MoFEMErrorCode
-Core::modify_finite_element_adjacency_table(const std::string fe_name,
+Core::modify_finite_element_adjacency_table(const std::string &fe_name,
                                             const EntityType type,
                                             ElementAdjacencyFunct function) {
   MoFEMFunctionBeginHot;
@@ -119,7 +119,7 @@ Core::modify_finite_element_adjacency_table(const std::string fe_name,
 }
 
 MoFEMErrorCode
-Core::modify_finite_element_add_field_data(const std::string fe_name,
+Core::modify_finite_element_add_field_data(const std::string &fe_name,
                                            const std::string name_data) {
   MoFEMFunctionBegin;
   *buildMoFEM &= 1 << 0;
@@ -141,7 +141,7 @@ Core::modify_finite_element_add_field_data(const std::string fe_name,
 }
 
 MoFEMErrorCode
-Core::modify_finite_element_add_field_row(const std::string fe_name,
+Core::modify_finite_element_add_field_row(const std::string &fe_name,
                                           const std::string name_row) {
   MoFEMFunctionBegin;
   *buildMoFEM &= 1 << 0;
@@ -163,7 +163,7 @@ Core::modify_finite_element_add_field_row(const std::string fe_name,
 }
 
 MoFEMErrorCode
-Core::modify_finite_element_add_field_col(const std::string fe_name,
+Core::modify_finite_element_add_field_col(const std::string &fe_name,
                                           const std::string name_col) {
   MoFEMFunctionBegin;
   *buildMoFEM &= 1 << 0;
@@ -185,7 +185,7 @@ Core::modify_finite_element_add_field_col(const std::string fe_name,
 }
 
 MoFEMErrorCode
-Core::modify_finite_element_off_field_data(const std::string fe_name,
+Core::modify_finite_element_off_field_data(const std::string &fe_name,
                                            const std::string name_data) {
   MoFEMFunctionBegin;
   *buildMoFEM &= 1 << 0;
@@ -203,7 +203,7 @@ Core::modify_finite_element_off_field_data(const std::string fe_name,
 }
 
 MoFEMErrorCode
-Core::modify_finite_element_off_field_row(const std::string fe_name,
+Core::modify_finite_element_off_field_row(const std::string &fe_name,
                                           const std::string name_row) {
   MoFEMFunctionBegin;
   *buildMoFEM &= 1 << 0;
@@ -222,7 +222,7 @@ Core::modify_finite_element_off_field_row(const std::string fe_name,
 }
 
 MoFEMErrorCode
-Core::modify_finite_element_off_field_col(const std::string fe_name,
+Core::modify_finite_element_off_field_col(const std::string &fe_name,
                                           const std::string name_col) {
   MoFEMFunctionBegin;
   *buildMoFEM &= 1 << 0;
@@ -824,12 +824,12 @@ MoFEMErrorCode Core::build_adjacencies(const BitRefLevel &bit, int verb) {
 }
 
 EntFiniteElementByName::iterator
-Core::get_fe_by_name_begin(const std::string fe_name) const {
+Core::get_fe_by_name_begin(const std::string &fe_name) const {
   return entsFiniteElements.get<FiniteElement_name_mi_tag>().lower_bound(
       fe_name);
 }
 EntFiniteElementByName::iterator
-Core::get_fe_by_name_end(const std::string fe_name) const {
+Core::get_fe_by_name_end(const std::string &fe_name) const {
   return entsFiniteElements.get<FiniteElement_name_mi_tag>().upper_bound(
       fe_name);
 }
@@ -880,7 +880,7 @@ MoFEMErrorCode Core::check_number_of_ents_in_ents_finite_element() const {
 
 MoFEMErrorCode
 Core::get_problem_finite_elements_entities(const std::string problem_name,
-                                           const std::string fe_name,
+                                           const std::string &fe_name,
                                            const EntityHandle meshset) {
   MoFEMFunctionBegin;
   auto &prb = pRoblems.get<Problem_mi_tag>();
