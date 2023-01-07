@@ -18,6 +18,7 @@
 namespace MoFEM {
 
 template <int DIM> struct ParentFiniteElementAdjacencyFunction;
+template <int DIM> struct ParentFiniteElementAdjacencyFunctionSkeleton;
 
 /**
  * \brief Simple interface for fast problem set-up
@@ -524,6 +525,11 @@ private:
       parentAdjFunctionDim2;
   boost::shared_ptr<ParentFiniteElementAdjacencyFunction<1>>
       parentAdjFunctionDim1;
+
+  boost::shared_ptr<ParentFiniteElementAdjacencyFunctionSkeleton<2>>
+      parentAdjSkeletonFunctionDim2;
+  boost::shared_ptr<ParentFiniteElementAdjacencyFunctionSkeleton<1>>
+      parentAdjSkeletonFunctionDim1;
 };
 
 } // namespace MoFEM

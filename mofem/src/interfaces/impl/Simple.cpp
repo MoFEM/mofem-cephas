@@ -22,64 +22,19 @@ MoFEMErrorCode Simple::setSkeletonAdjacency<2>(std::string fe_name) {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
 
-  auto defaultSkeletonEdge =
-      [&](moab::Interface &moab, const Field &field, const EntFiniteElement &fe,
-          std::vector<EntityHandle> &adjacency) -> MoFEMErrorCode {
-    MoFEMFunctionBegin;
+  if (!addParentAdjacencies) {
+    parentAdjSkeletonFunctionDim1 =
+        boost::make_shared<ParentFiniteElementAdjacencyFunctionSkeleton<1>>(
+            BitRefLevel(), BitRefLevel(), bitLevel, bitLevelMask);
+  } else {
+    parentAdjSkeletonFunctionDim1 =
+        boost::make_shared<ParentFiniteElementAdjacencyFunctionSkeleton<1>>(
+            bitAdjParent, bitAdjParentMask, bitAdjEnt, bitAdjEntMask);
 
-    CHKERR DefaultElementAdjacency::defaultEdge(moab, field, fe, adjacency);
+  }
 
-    if (std::find(domainFields.begin(), domainFields.end(), field.getName()) !=
-        domainFields.end()) {
-
-      const EntityHandle fe_ent = fe.getEnt();
-      std::vector<EntityHandle> bride_adjacency_edge;
-      CHKERR moab.get_adjacencies(&fe_ent, 1, 2, false, bride_adjacency_edge);
-
-      switch (field.getSpace()) {
-      case H1:
-        CHKERR moab.get_connectivity(&*bride_adjacency_edge.begin(),
-                                     bride_adjacency_edge.size(), adjacency,
-                                     true);
-      case HCURL:
-      case HDIV:
-        CHKERR moab.get_adjacencies(&*bride_adjacency_edge.begin(),
-                                    bride_adjacency_edge.size(), 1, false,
-                                    adjacency, moab::Interface::UNION);
-      case L2:
-        adjacency.insert(adjacency.end(), bride_adjacency_edge.begin(),
-                         bride_adjacency_edge.end());
-        break;
-      case NOFIELD:
-        break;
-      default:
-        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-                "this space is not implemented");
-      }
-
-      std::sort(adjacency.begin(), adjacency.end());
-      auto it = std::unique(adjacency.begin(), adjacency.end());
-
-      std::vector<EntityHandle> new_adjacency(
-          std::distance(adjacency.begin(), it));
-      std::copy(adjacency.begin(), it, new_adjacency.begin());
-
-      for (auto e : new_adjacency) {
-        auto side_table = fe.getSideNumberTable();
-        if (side_table.find(e) == side_table.end())
-          const_cast<SideNumber_multiIndex &>(fe.getSideNumberTable())
-              .insert(
-                  boost::shared_ptr<SideNumber>(new SideNumber(e, -1, 0, 0)));
-      }
-
-      adjacency.swap(new_adjacency);
-    }
-
-    MoFEMFunctionReturn(0);
-  };
-
-  CHKERR m_field.modify_finite_element_adjacency_table(fe_name, MBEDGE,
-                                                       defaultSkeletonEdge);
+  CHKERR m_field.modify_finite_element_adjacency_table(
+      fe_name, MBEDGE, *parentAdjSkeletonFunctionDim1);
 
   MoFEMFunctionReturn(0);
 }
@@ -89,69 +44,20 @@ MoFEMErrorCode Simple::setSkeletonAdjacency<3>(std::string fe_name) {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
 
-  auto defaultSkeletonEdge =
-      [&](moab::Interface &moab, const Field &field, const EntFiniteElement &fe,
-          std::vector<EntityHandle> &adjacency) -> MoFEMErrorCode {
-    MoFEMFunctionBegin;
+  if (!addParentAdjacencies) {
+    parentAdjSkeletonFunctionDim2 =
+        boost::make_shared<ParentFiniteElementAdjacencyFunctionSkeleton<2>>(
+            BitRefLevel(), BitRefLevel(), bitLevel, bitLevelMask);
+  } else {
+    parentAdjSkeletonFunctionDim2 =
+        boost::make_shared<ParentFiniteElementAdjacencyFunctionSkeleton<2>>(
+            bitAdjParent, bitAdjParentMask, bitAdjEnt, bitAdjEntMask);
+  }
 
-    CHKERR DefaultElementAdjacency::defaultFace(moab, field, fe, adjacency);
-
-    if (std::find(domainFields.begin(), domainFields.end(), field.getName()) !=
-        domainFields.end()) {
-
-      const EntityHandle fe_ent = fe.getEnt();
-      std::vector<EntityHandle> bride_adjacency_edge;
-      CHKERR moab.get_adjacencies(&fe_ent, 1, 2, false, bride_adjacency_edge);
-
-      switch (field.getSpace()) {
-      case H1:
-        CHKERR moab.get_connectivity(&*bride_adjacency_edge.begin(),
-                                     bride_adjacency_edge.size(), adjacency,
-                                     true);
-      case HCURL:
-        CHKERR moab.get_adjacencies(&*bride_adjacency_edge.begin(),
-                                    bride_adjacency_edge.size(), 1, false,
-                                    adjacency, moab::Interface::UNION);
-      case HDIV:
-        CHKERR moab.get_adjacencies(&*bride_adjacency_edge.begin(),
-                                    bride_adjacency_edge.size(), 2, false,
-                                    adjacency, moab::Interface::UNION);
-      case L2:
-        adjacency.insert(adjacency.end(), bride_adjacency_edge.begin(),
-                         bride_adjacency_edge.end());
-        break;
-      case NOFIELD:
-        break;
-      default:
-        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-                "this space is not implemented");
-      }
-
-      std::sort(adjacency.begin(), adjacency.end());
-      auto it = std::unique(adjacency.begin(), adjacency.end());
-
-      std::vector<EntityHandle> new_adjacency(
-          std::distance(adjacency.begin(), it));
-      std::copy(adjacency.begin(), it, new_adjacency.begin());
-
-      for (auto e : new_adjacency) {
-        auto side_table = fe.getSideNumberTable();
-        if (side_table.find(e) == side_table.end())
-          const_cast<SideNumber_multiIndex &>(fe.getSideNumberTable())
-              .insert(
-                  boost::shared_ptr<SideNumber>(new SideNumber(e, -1, 0, 0)));
-      }
-
-      adjacency.swap(new_adjacency);
-    }
-
-    MoFEMFunctionReturn(0);
-  };
-
-  CHKERR m_field.modify_finite_element_adjacency_table(fe_name, MBTRI,
-                                                       defaultSkeletonEdge);
-  CHKERR m_field.modify_finite_element_adjacency_table(fe_name, MBQUAD,
-                                                       defaultSkeletonEdge);
+  CHKERR m_field.modify_finite_element_adjacency_table(
+      fe_name, MBTRI, *parentAdjSkeletonFunctionDim2);
+  CHKERR m_field.modify_finite_element_adjacency_table(
+      fe_name, MBQUAD, *parentAdjSkeletonFunctionDim2);
 
   MoFEMFunctionReturn(0);
 }

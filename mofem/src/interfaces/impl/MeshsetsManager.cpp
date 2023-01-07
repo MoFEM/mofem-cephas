@@ -1343,7 +1343,7 @@ MoFEMErrorCode MeshsetsManager::saveMeshsetToFile(
 }
 
 MoFEMErrorCode
-MeshsetsManager::updateAllMeshsetsByEntitiesChildren(const BitRefLevel bit) {
+MeshsetsManager::updateAllMeshsetsByEntitiesChildren(const BitRefLevel &bit) {
   MoFEMFunctionBegin;
   BitRefManager *bit_mng = cOre.getInterface<BitRefManager>();
   for (_IT_CUBITMESHSETS_FOR_LOOP_((*this), iit)) {
