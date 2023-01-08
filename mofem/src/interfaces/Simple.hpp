@@ -43,6 +43,12 @@ struct Simple : public UnknownInterface {
    * @param  options file load options
    * @param  mesh_file_name file name if not set default or set by command line
    * is used.
+   *
+   * \note If bitRefLevel is set to any, bit ref level of loaded entities is not
+   * changed. After mesh is load, bit ref level should be set to create problem.
+   * Default setting of bit ref level is on first bit, and if is set all mesh
+   * entities on load are set to set level.
+   *
    * @return            error code
    */
   MoFEMErrorCode loadFile(const std::string options,
