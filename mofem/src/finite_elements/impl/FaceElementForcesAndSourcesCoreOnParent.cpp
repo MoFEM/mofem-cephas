@@ -95,7 +95,7 @@ FaceElementForcesAndSourcesCoreOnChildParent::setGaussPts(int order) {
     for (auto gg = 0; gg != nb_integration_points; ++gg) {
       FTensor::Index<'i', 2> i;
       t_gauss_pts(i) = t_local_coords(i);
-      t_gauss_pts(2) = ref_gauss_pts(2, 0);
+      t_gauss_pts(2) = ref_gauss_pts(2, gg);
       ++t_gauss_pts;
       ++t_local_coords;
     }
