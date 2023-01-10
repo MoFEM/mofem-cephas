@@ -212,6 +212,25 @@ struct BitRefManager : public UnknownInterface {
                                 int verb = QUIET) const;
 
   /**
+   * @brief Process bit ref level by lambda function
+   * 
+   * @param fun 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode lambdaBitRefLevel(
+      boost::function<void(EntityHandle ent, BitRefLevel &bit)> fun) const;
+
+  /**
+   * @brief Process bit ref level by lambda function
+   * 
+   * @param fun 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode lambdaBitRefLevel(
+      const Range &ents,
+      boost::function<void(EntityHandle ent, BitRefLevel &bit)> fun) const;
+
+  /**
    * \brief add bit ref level to ref entity
    * \ingroup mofem_bit_ref
    * @param  ents range of entities
@@ -219,7 +238,7 @@ struct BitRefManager : public UnknownInterface {
    * @param  verb verbosity level
    * @return      error code
    */
-  MoFEMErrorCode addBitRefLevel(const Range &ents, const BitRefLevel bit,
+  MoFEMErrorCode addBitRefLevel(const Range &ents, const BitRefLevel &bit,
                                 int verb = QUIET) const;
 
   /**
@@ -249,7 +268,7 @@ struct BitRefManager : public UnknownInterface {
                                    int verb = QUIET) const;
 
   /**
-   * \brief Set nth bit ref level to all entities in databse
+   * \brief Set nth bit ref level to all entities in database
    * \ingroup mofem_bit_ref
    * @param  n    nth bit
    * @param  b    value to set
@@ -545,7 +564,7 @@ struct BitRefManager : public UnknownInterface {
       const EntityType fe_ent_type, int verb = 0);
 
   /**
-   * \brief Update range by childresn
+   * \brief Update range by childrens
    *
    * FIXME: NOT TESTED
    *
@@ -557,7 +576,7 @@ struct BitRefManager : public UnknownInterface {
                                        MoFEMTypes bh = MF_ZERO);
 
   /**
-   * \brief Update range by prents
+   * \brief Update range by parents
    *
    * FIXME: NOT TESTED
    *
@@ -578,7 +597,7 @@ struct BitRefManager : public UnknownInterface {
 
   /**@}*/
 
-  /** \name Writting files */
+  /** \name Writing files */
 
   /**@{*/
 
