@@ -55,7 +55,7 @@ private:
 };
 
 /**
- * @brief Operator to project base functions from parent entity
+ * @brief Operator to project base functions from parent entity to child
  *
  * This operator project base functions, field data (i.e. indices, field values
  * of dofs, etc.), into parent element. Operator can be called as a hierarchy to
