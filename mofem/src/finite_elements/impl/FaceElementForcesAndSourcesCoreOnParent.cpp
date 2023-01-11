@@ -92,10 +92,23 @@ FaceElementForcesAndSourcesCoreOnChildParent::setGaussPts(int order) {
     auto t_local_coords = FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>{
         &local_coords(0, 0), &local_coords(0, 1)};
 
+    auto scale_quadarture = [&]() {
+      FTensor::Tensor1<double, 3> t_normal;
+      FTensor::Tensor1<double, 3> t_ref_normal;
+      CHKERR Tools::getTriNormal(node_coords.data(), &t_normal(0));
+      CHKERR Tools::getTriNormal(ref_node_coords.data(), &t_ref_normal(0));
+      FTensor::Index<'J', 3> J;
+      const double scale = std::sqrt((t_ref_normal(J) * t_ref_normal(J)) /
+                                     (t_normal(J) * t_normal(J)));
+      return scale;
+    };
+
+    const auto sq = scale_quadarture();
+
     for (auto gg = 0; gg != nb_integration_points; ++gg) {
       FTensor::Index<'i', 2> i;
       t_gauss_pts(i) = t_local_coords(i);
-      t_gauss_pts(2) = ref_gauss_pts(2, gg);
+      t_gauss_pts(2) = sq * ref_gauss_pts(2, gg);
       ++t_gauss_pts;
       ++t_local_coords;
     }
