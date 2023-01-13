@@ -102,31 +102,36 @@ auto set_parent_dofs(MoFEM::Interface &m_field,
   for (auto l = 1; l <= nb_ref_levels; ++l)
     bit_marker |= marker(l);
 
+  /**
+   * @brief Collect data from parent elements to child
+   */
   boost::function<void(boost::shared_ptr<ForcesAndSourcesCore>, int)>
       add_parent_level =
           [&](boost::shared_ptr<ForcesAndSourcesCore> parent_fe_pt, int level) {
+
+            // Evaluate if not last parent element
             if (level > 0) {
 
+              // Create domain parent FE
               auto fe_ptr_current = boost::shared_ptr<ForcesAndSourcesCore>(
                   new PARENT_FE(m_field));
               if (op == DomainEleOp::OPSPACE) {
-                if (typeid(PARENT_FE) == typeid(DomainParentEle)) {
-                  fe_ptr_current->getOpPtrVector().push_back(
-                      new OpCalculateHOJac<2>(jac_ptr));
-                  fe_ptr_current->getOpPtrVector().push_back(
-                      new OpInvertMatrix<2>(jac_ptr, det_ptr, inv_jac_ptr));
-                  fe_ptr_current->getOpPtrVector().push_back(
-                      new OpSetHOInvJacToScalarBases<2>(H1, inv_jac_ptr));
-                }
+                // Push base function
+                if (typeid(PARENT_FE) == typeid(DomainParentEle))
+                  CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+                      fe_ptr_current->getOpPtrVector(), {H1});
               }
 
+              // Call next level
               add_parent_level(
                   boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
                       fe_ptr_current),
                   level - 1);
 
+              // Add data to curent fe level
               if (op == DomainEleOp::OPSPACE) {
 
+                // Only base
                 parent_fe_pt->getOpPtrVector().push_back(
 
                     new OpAddParentEntData(
@@ -141,6 +146,7 @@ auto set_parent_dofs(MoFEM::Interface &m_field,
 
               } else {
 
+                // Filed data
                 parent_fe_pt->getOpPtrVector().push_back(
 
                     new OpAddParentEntData(
@@ -164,7 +170,7 @@ auto set_parent_dofs(MoFEM::Interface &m_field,
  * @brief lambda function used to select elements on which finite element
  * pipelines are executed.
  *
- * @note childs elements on pipeline, retrive data from parents using operators
+ * @note childs elements on pipeline, retrieve data from parents using operators
  * pushed by \ref set_parent_dofs
  *
  */
@@ -530,10 +536,6 @@ MoFEMErrorCode AtomTest::assembleSystem() {
           << data.getIndices() << " nb base functions " << data.getN().size2()
           << " nb base functions integration points " << data.getN().size1();
 
-      auto get_bool = [](auto fe, auto bit) {
-        return (bit & fe->getBitRefLevel()).any();
-      };
-
       for (auto &field_ent : data.getFieldEntities()) {
         MOFEM_LOG("SELF", Sev::verbose)
             << "\t" << CN::EntityTypeName(field_ent->getEntType());
@@ -598,17 +600,8 @@ MoFEMErrorCode AtomTest::checkResults() {
   common_data_ptr->approxVals = boost::make_shared<VectorDouble>();
   common_data_ptr->divApproxVals = boost::make_shared<MatrixDouble>();
 
-  auto jac_ptr = boost::make_shared<MatrixDouble>();
-  auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
-  auto det_ptr = boost::make_shared<VectorDouble>();
-
-  pipeline_mng->getOpDomainRhsPipeline().push_back(
-      new OpCalculateHOJac<2>(jac_ptr));
-  pipeline_mng->getOpDomainRhsPipeline().push_back(
-      new OpInvertMatrix<2>(jac_ptr, det_ptr, inv_jac_ptr));
-  pipeline_mng->getOpDomainRhsPipeline().push_back(
-      new OpSetHOInvJacToScalarBases<2>(H1, inv_jac_ptr));
-
+  CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+      pipeline_mng->getOpDomainRhsPipeline(), {H1});
   set_parent_dofs<DomainParentEle>(mField, pipeline_mng->getDomainRhsFE(),
                                    DomainEleOp::OPSPACE, QUIET, Sev::noisy);
   set_parent_dofs<DomainParentEle>(mField, pipeline_mng->getDomainRhsFE(),

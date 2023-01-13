@@ -22,17 +22,9 @@ MoFEMErrorCode Simple::setSkeletonAdjacency<2>(std::string fe_name) {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
 
-  if (!addParentAdjacencies) {
-    parentAdjSkeletonFunctionDim1 =
-        boost::make_shared<ParentFiniteElementAdjacencyFunctionSkeleton<1>>(
-            BitRefLevel(), BitRefLevel(), bitLevel, bitLevelMask);
-  } else {
-    parentAdjSkeletonFunctionDim1 =
-        boost::make_shared<ParentFiniteElementAdjacencyFunctionSkeleton<1>>(
-            bitAdjParent, bitAdjParentMask, bitAdjEnt, bitAdjEntMask);
-
-  }
-
+  parentAdjSkeletonFunctionDim1 =
+      boost::make_shared<ParentFiniteElementAdjacencyFunctionSkeleton<1>>(
+          BitRefLevel(), BitRefLevel(), bitLevel, bitLevelMask);
   CHKERR m_field.modify_finite_element_adjacency_table(
       fe_name, MBEDGE, *parentAdjSkeletonFunctionDim1);
 
@@ -44,15 +36,9 @@ MoFEMErrorCode Simple::setSkeletonAdjacency<3>(std::string fe_name) {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
 
-  if (!addParentAdjacencies) {
-    parentAdjSkeletonFunctionDim2 =
-        boost::make_shared<ParentFiniteElementAdjacencyFunctionSkeleton<2>>(
-            BitRefLevel(), BitRefLevel(), bitLevel, bitLevelMask);
-  } else {
-    parentAdjSkeletonFunctionDim2 =
-        boost::make_shared<ParentFiniteElementAdjacencyFunctionSkeleton<2>>(
-            bitAdjParent, bitAdjParentMask, bitAdjEnt, bitAdjEntMask);
-  }
+  parentAdjSkeletonFunctionDim2 =
+      boost::make_shared<ParentFiniteElementAdjacencyFunctionSkeleton<2>>(
+          BitRefLevel(), BitRefLevel(), bitLevel, bitLevelMask);
 
   CHKERR m_field.modify_finite_element_adjacency_table(
       fe_name, MBTRI, *parentAdjSkeletonFunctionDim2);

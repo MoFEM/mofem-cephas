@@ -432,7 +432,7 @@ struct Simple : public UnknownInterface {
   auto &getBitAdjParent() { return bitAdjParent; }
 
   /**
-   * @brief bit ref level for parent marent
+   * @brief bit ref level for parent parent
    *
    * @return auto&
    */

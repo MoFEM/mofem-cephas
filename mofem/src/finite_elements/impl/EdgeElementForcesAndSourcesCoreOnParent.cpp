@@ -4,8 +4,6 @@
 
 */
 
-
-
 namespace MoFEM {
 
 int EdgeElementForcesAndSourcesCoreOnChildParent::getRule(int order) {
