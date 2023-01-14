@@ -1,6 +1,8 @@
 /** \file FEMultiIndices.hpp
  * \brief Multi-index contains, data structures for mofem finite elements and
  * other low-level functions
+ * 
+ * \todo Add proc into feUId to reduce number of keys is multi-index
  */
 
 #ifndef __FEMMULTIINDICES_HPP__

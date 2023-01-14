@@ -2,10 +2,10 @@
  * \brief Multi-index containers for finite elements
  */
 
-
 namespace MoFEM {
 
-constexpr int FiniteElement::ent_shift; // EntityHandle size
+constexpr int FiniteElement::ent_shift;  // EntityHandle size
+constexpr int FiniteElement::proc_shift; // Proc size
 
 constexpr DefaultElementAdjacency::DefEntTypeMap
     DefaultElementAdjacency::defVertexTypeMap;
@@ -326,32 +326,28 @@ MoFEMErrorCode DefaultElementAdjacency::defaultMeshset(
 FiniteElement::FiniteElement(moab::Interface &moab, const EntityHandle _meshset)
     : meshset(_meshset) {
   Tag th_FEId;
-  rval = moab.tag_get_handle("_FEId", th_FEId);
-  MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_FEId, &meshset, 1, (const void **)&tagId);
-  MOAB_THROW(rval);
+  CHK_MOAB_THROW(moab.tag_get_handle("_FEId", th_FEId), "get tag");
+  CHK_MOAB_THROW(
+      moab.tag_get_by_ptr(th_FEId, &meshset, 1, (const void **)&tagId),
+      "get tag data");
   Tag th_FEName;
-  rval = moab.tag_get_handle("_FEName", th_FEName);
-  MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_FEName, &meshset, 1, (const void **)&tagName,
-                             &tagNameSize);
-  MOAB_THROW(rval);
+  CHK_MOAB_THROW(moab.tag_get_handle("_FEName", th_FEName), "get tag");
+  CHK_MOAB_THROW(moab.tag_get_by_ptr(th_FEName, &meshset, 1,
+                                     (const void **)&tagName, &tagNameSize),
+                 "get tag data");
   Tag th_FEIdCol, th_FEIdRow, th_FEIdData;
-  rval = moab.tag_get_handle("_FEIdCol", th_FEIdCol);
-  MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_FEIdCol, &meshset, 1,
-                             (const void **)&tag_BitFieldId_col_data);
-  MOAB_THROW(rval);
-  rval = moab.tag_get_handle("_FEIdRow", th_FEIdRow);
-  MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_FEIdRow, &meshset, 1,
-                             (const void **)&tag_BitFieldId_row_data);
-  MOAB_THROW(rval);
-  rval = moab.tag_get_handle("_FEIdData", th_FEIdData);
-  MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_FEIdData, &meshset, 1,
-                             (const void **)&tag_BitFieldId_data);
-  MOAB_THROW(rval);
+  CHK_MOAB_THROW(moab.tag_get_handle("_FEIdCol", th_FEIdCol), "get_tag");
+  CHK_MOAB_THROW(moab.tag_get_by_ptr(th_FEIdCol, &meshset, 1,
+                                     (const void **)&tag_BitFieldId_col_data),
+                 "get tag data");
+  CHK_MOAB_THROW(moab.tag_get_handle("_FEIdRow", th_FEIdRow), "get tag");
+  CHK_MOAB_THROW(moab.tag_get_by_ptr(th_FEIdRow, &meshset, 1,
+                                     (const void **)&tag_BitFieldId_row_data),
+                 "get tag data");
+  CHK_MOAB_THROW(moab.tag_get_handle("_FEIdData", th_FEIdData), "get tag");
+  CHK_MOAB_THROW(moab.tag_get_by_ptr(th_FEIdData, &meshset, 1,
+                                     (const void **)&tag_BitFieldId_data),
+                 "get tag data");
 
   elementAdjacencyTable[MBVERTEX] = DefaultElementAdjacency::defaultVertex;
   elementAdjacencyTable[MBEDGE] = DefaultElementAdjacency::defaultEdge;
