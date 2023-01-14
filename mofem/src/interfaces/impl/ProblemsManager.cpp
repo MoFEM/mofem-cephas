@@ -2551,22 +2551,31 @@ MoFEMErrorCode ProblemsManager::getFEMeshset(const std::string prb_name,
                                              EntityHandle *meshset) const {
   MoFEM::Interface &m_field = cOre;
   const Problem *problem_ptr;
+  const FiniteElement_multiIndex *fes_ptr;
   ProblemManagerFunctionBegin;
 
   CHKERR m_field.get_moab().create_meshset(MESHSET_SET, *meshset);
   CHKERR m_field.get_problem(prb_name, &problem_ptr);
-  auto fit =
-      problem_ptr->numeredFiniteElementsPtr->get<FiniteElement_name_mi_tag>()
-          .lower_bound(fe_name);
-  auto hi_fe_it =
-      problem_ptr->numeredFiniteElementsPtr->get<FiniteElement_name_mi_tag>()
-          .upper_bound(fe_name);
-  std::vector<EntityHandle> fe_vec;
-  fe_vec.reserve(std::distance(fit, hi_fe_it));
-  for (; fit != hi_fe_it; fit++)
-    fe_vec.push_back(fit->get()->getEnt());
-  CHKERR m_field.get_moab().add_entities(*meshset, &*fe_vec.begin(),
-                                         fe_vec.size());
+  CHKERR m_field.get_finite_elements(&fes_ptr);
+
+  auto fe_miit = fes_ptr->get<FiniteElement_name_mi_tag>().find(fe_name);
+  if (fe_miit != fes_ptr->get<FiniteElement_name_mi_tag>().end()) {
+    auto fit =
+        problem_ptr->numeredFiniteElementsPtr->get<Unique_mi_tag>().lower_bound(
+            EntFiniteElement::getLocalUniqueIdCalculate(
+                0, (*fe_miit)->getFEUId()));
+    auto hi_fe_it =
+        problem_ptr->numeredFiniteElementsPtr->get<Unique_mi_tag>().upper_bound(
+            EntFiniteElement::getLocalUniqueIdCalculate(
+                get_id_for_max_type<MBENTITYSET>(), (*fe_miit)->getFEUId()));
+    std::vector<EntityHandle> fe_vec;
+    fe_vec.reserve(std::distance(fit, hi_fe_it));
+    for (; fit != hi_fe_it; fit++)
+      fe_vec.push_back(fit->get()->getEnt());
+    CHKERR m_field.get_moab().add_entities(*meshset, &*fe_vec.begin(),
+                                           fe_vec.size());
+  }
+
   MoFEMFunctionReturn(0);
 }
 

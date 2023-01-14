@@ -3,7 +3,6 @@
  * other low-level functions
  */
 
-
 #ifndef __FEMMULTIINDICES_HPP__
 #define __FEMMULTIINDICES_HPP__
 
@@ -116,6 +115,9 @@ struct FiniteElement {
    * \brief print finite element
    */
   friend std::ostream &operator<<(std::ostream &os, const FiniteElement &e);
+
+private:
+  static constexpr int ent_shift = 64; // EntityHandle size
 };
 
 /** \brief default adjacency map
@@ -299,7 +301,7 @@ struct DefaultElementAdjacency {
 
   static inline bool getDefTypeMap(const EntityType fe_type,
                                    const EntityType ent_type) {
-    if(auto ptr = defTypeMap[fe_type])
+    if (auto ptr = defTypeMap[fe_type])
       return (*ptr)[ent_type];
     THROW_MESSAGE("DefTypeMap is not defined by this element. This is propably "
                   "new implementation, and has to be implemented");
@@ -774,15 +776,13 @@ struct NumeredEntFiniteElement
                                   const NumeredEntFiniteElement &e);
 };
 
-// TODO: [CORE-59] Fix multi-indices for element
-
 /**
  * @relates multi_index_container
  * \brief MultiIndex container for EntFiniteElement
  * \ingroup fe_multi_indices
  *
  */
-typedef multi_index_container<
+using EntFiniteElement_multiIndex = multi_index_container<
     boost::shared_ptr<EntFiniteElement>,
     indexed_by<
 
@@ -793,39 +793,16 @@ typedef multi_index_container<
         ordered_non_unique<
             tag<Ent_mi_tag>,
             const_mem_fun<EntFiniteElement::interface_type_RefEntity,
-                          EntityHandle, &EntFiniteElement::getEnt>>,
+                          EntityHandle, &EntFiniteElement::getEnt>>
 
-        ordered_non_unique<
-            tag<FiniteElement_name_mi_tag>,
-            const_mem_fun<EntFiniteElement::interface_type_FiniteElement,
-                          boost::string_ref, &EntFiniteElement::getNameRef>>,
-
-        ordered_non_unique<
-            tag<Composite_Name_And_Ent_mi_tag>,
-            composite_key<
-                EntFiniteElement,
-                const_mem_fun<EntFiniteElement::interface_type_FiniteElement,
-                              boost::string_ref, &EntFiniteElement::getNameRef>,
-                const_mem_fun<EntFiniteElement::interface_type_RefEntity,
-                              EntityHandle, &EntFiniteElement::getEnt>>>
-
-        >>
-    EntFiniteElement_multiIndex;
-
-/**
- *  \brief Entity finite element multi-index by finite element name
- *
- *  \ingroup fe_multi_indices
- */
-typedef EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type
-    EntFiniteElementByName;
+        >>;
 
 /**
   @relates multi_index_container
   \brief MultiIndex for entities for NumeredEntFiniteElement
   \ingroup fe_multi_indices
  */
-typedef multi_index_container<
+using NumeredEntFiniteElement_multiIndex = multi_index_container<
     boost::shared_ptr<NumeredEntFiniteElement>,
     indexed_by<
         ordered_unique<
@@ -837,23 +814,9 @@ typedef multi_index_container<
                            member<NumeredEntFiniteElement, unsigned int,
                                   &NumeredEntFiniteElement::part>>,
         ordered_non_unique<
-            tag<FiniteElement_name_mi_tag>,
-            const_mem_fun<NumeredEntFiniteElement::interface_type_FiniteElement,
-                          boost::string_ref,
-                          &NumeredEntFiniteElement::getNameRef>>,
-        ordered_non_unique<
             tag<Ent_mi_tag>,
             const_mem_fun<NumeredEntFiniteElement::interface_type_RefEntity,
                           EntityHandle, &NumeredEntFiniteElement::getEnt>>,
-        ordered_non_unique<
-            tag<Composite_Name_And_Ent_mi_tag>,
-            composite_key<
-                NumeredEntFiniteElement,
-                const_mem_fun<
-                    NumeredEntFiniteElement::interface_type_FiniteElement,
-                    boost::string_ref, &NumeredEntFiniteElement::getNameRef>,
-                const_mem_fun<NumeredEntFiniteElement::interface_type_RefEntity,
-                              EntityHandle, &NumeredEntFiniteElement::getEnt>>>,
         ordered_non_unique<
             tag<Composite_Name_And_Part_mi_tag>,
             composite_key<
@@ -862,8 +825,7 @@ typedef multi_index_container<
                     NumeredEntFiniteElement::interface_type_FiniteElement,
                     boost::string_ref, &NumeredEntFiniteElement::getNameRef>,
                 member<NumeredEntFiniteElement, unsigned int,
-                       &NumeredEntFiniteElement::part>>>>>
-    NumeredEntFiniteElement_multiIndex;
+                       &NumeredEntFiniteElement::part>>>>>;
 
 /**
   @relates multi_index_container

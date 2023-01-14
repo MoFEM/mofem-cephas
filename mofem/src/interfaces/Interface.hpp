@@ -1136,12 +1136,12 @@ struct CoreInterface : public UnknownInterface {
   /** clear finite elements
    */
   virtual MoFEMErrorCode
-  clear_finite_elements(const Range ents, int verb = DEFAULT_VERBOSITY) = 0;
+  clear_finite_elements(const Range &ents, int verb = DEFAULT_VERBOSITY) = 0;
 
   /** clear finite elements
    */
   virtual MoFEMErrorCode
-  clear_finite_elements(const std::string name, const Range ents,
+  clear_finite_elements(const std::string &fe_name, const Range &ents,
                         int verb = DEFAULT_VERBOSITY) = 0;
 
   /**@}*/
@@ -1920,7 +1920,7 @@ struct CoreInterface : public UnknownInterface {
    *
    * \param fe_name
    */
-  virtual EntFiniteElementByName::iterator
+  virtual EntFiniteElement_multiIndex::index<Unique_mi_tag>::type::iterator
   get_fe_by_name_begin(const std::string &fe_name) const = 0;
 
   /**
@@ -1935,14 +1935,14 @@ struct CoreInterface : public UnknownInterface {
    *
    * \param fe_name
    */
-  virtual EntFiniteElementByName::iterator
+  virtual EntFiniteElement_multiIndex::index<Unique_mi_tag>::type::iterator
   get_fe_by_name_end(const std::string &fe_name) const = 0;
 
   /** \brief loop over all finite elements from a moFEM field and FE
    * \ingroup mofem_access
    */
 #define _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD, NAME, IT)                        \
-  EntFiniteElementByName::iterator IT = (MFIELD).get_fe_by_name_begin(NAME);   \
+  auto IT = (MFIELD).get_fe_by_name_begin(NAME);                               \
   IT != (MFIELD).get_fe_by_name_end(NAME);                                     \
   IT++
 };

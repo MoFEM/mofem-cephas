@@ -239,12 +239,12 @@ Core::modify_finite_element_off_field_col(const std::string &fe_name,
   MoFEMFunctionReturn(0);
 }
 
-BitFEId Core::getBitFEId(const std::string &name) const {
+BitFEId Core::getBitFEId(const std::string &fe_name) const {
   auto &fe_by_id = finiteElements.get<FiniteElement_name_mi_tag>();
-  auto miit = fe_by_id.find(name);
+  auto miit = fe_by_id.find(fe_name);
   if (miit == fe_by_id.end())
     THROW_MESSAGE(
-        ("finite element < " + name + " > not found (top tip: check spelling)")
+        ("finite element < " + fe_name + " > not found (top tip: check spelling)")
             .c_str());
   return (*miit)->getId();
 }
@@ -661,10 +661,13 @@ MoFEMErrorCode Core::build_finite_elements(int verb) {
 
   if (verb > QUIET) {
 
-    auto &fe_ents = entsFiniteElements.get<FiniteElement_name_mi_tag>();
+    auto &fe_ents = entsFiniteElements.get<Unique_mi_tag>();
     for (auto &fe : finiteElements) {
-      auto miit = fe_ents.lower_bound(fe->getName());
-      auto hi_miit = fe_ents.upper_bound(fe->getName());
+      auto miit = fe_ents.lower_bound(
+          EntFiniteElement::getLocalUniqueIdCalculate(0, fe->getFEUId()));
+      auto hi_miit =
+          fe_ents.upper_bound(EntFiniteElement::getLocalUniqueIdCalculate(
+              get_id_for_max_type<MBENTITYSET>(), fe->getFEUId()));
       const auto count = std::distance(miit, hi_miit);
       MOFEM_LOG("SYNC", Sev::inform)
           << "Finite element " << fe->getName()
@@ -717,9 +720,12 @@ MoFEMErrorCode Core::build_finite_elements(const string fe_name,
   CHKERR buildFiniteElements(*fe_miit, ents_ptr, verb);
 
   if (verb >= VERBOSE) {
-    auto &fe_ents = entsFiniteElements.get<FiniteElement_name_mi_tag>();
-    auto miit = fe_ents.lower_bound((*fe_miit)->getName());
-    auto hi_miit = fe_ents.upper_bound((*fe_miit)->getName());
+    auto &fe_ents = entsFiniteElements.get<Unique_mi_tag>();
+    auto miit = fe_ents.lower_bound(
+        EntFiniteElement::getLocalUniqueIdCalculate(0, (*fe_miit)->getFEUId()));
+    auto hi_miit =
+        fe_ents.upper_bound(EntFiniteElement::getLocalUniqueIdCalculate(
+            get_id_for_max_type<MBENTITYSET>(), (*fe_miit)->getFEUId()));
     const auto count = std::distance(miit, hi_miit);
     MOFEM_LOG("SYNC", Sev::inform) << "Finite element " << fe_name
                                    << " added. Nb. of elements added " << count;
@@ -823,15 +829,27 @@ MoFEMErrorCode Core::build_adjacencies(const BitRefLevel &bit, int verb) {
   MoFEMFunctionReturn(0);
 }
 
-EntFiniteElementByName::iterator
+EntFiniteElement_multiIndex::index<Unique_mi_tag>::type::iterator
 Core::get_fe_by_name_begin(const std::string &fe_name) const {
-  return entsFiniteElements.get<FiniteElement_name_mi_tag>().lower_bound(
-      fe_name);
+  auto miit = finiteElements.get<FiniteElement_name_mi_tag>().find(fe_name);
+  if (miit != finiteElements.get<FiniteElement_name_mi_tag>().end()) {
+    return entsFiniteElements.get<Unique_mi_tag>().lower_bound(
+        EntFiniteElement::getLocalUniqueIdCalculate(0, (*miit)->getFEUId()));
+  } else {
+    return entsFiniteElements.get<Unique_mi_tag>().end();
+  }
 }
-EntFiniteElementByName::iterator
+
+EntFiniteElement_multiIndex::index<Unique_mi_tag>::type::iterator
 Core::get_fe_by_name_end(const std::string &fe_name) const {
-  return entsFiniteElements.get<FiniteElement_name_mi_tag>().upper_bound(
-      fe_name);
+  auto miit = finiteElements.get<FiniteElement_name_mi_tag>().find(fe_name);
+  if (miit != finiteElements.get<FiniteElement_name_mi_tag>().end()) {
+    return entsFiniteElements.get<Unique_mi_tag>().upper_bound(
+        EntFiniteElement::getLocalUniqueIdCalculate(
+            get_id_for_max_type<MBENTITYSET>(), (*miit)->getFEUId()));
+  } else {
+    return entsFiniteElements.get<Unique_mi_tag>().end();
+  }
 }
 
 MoFEMErrorCode Core::check_number_of_ents_in_ents_finite_element(
@@ -847,9 +865,13 @@ MoFEMErrorCode Core::check_number_of_ents_in_ents_finite_element(
   int num_entities;
   CHKERR get_moab().get_number_entities_by_handle(meshset, num_entities);
 
-  if (entsFiniteElements.get<FiniteElement_name_mi_tag>().count(
-          (*it)->getName().c_str()) != (unsigned int)num_entities) {
-    SETERRQ1(mofemComm, 1,
+  auto counts_fes = [&]() {
+    return std::distance(get_fe_by_name_begin((*it)->getName()),
+                         get_fe_by_name_end((*it)->getName()));
+  };
+
+  if (counts_fes() != static_cast<size_t>(num_entities)) {
+    SETERRQ1(mofemComm, MOFEM_DATA_INCONSISTENCY,
              "not equal number of entities in meshset and finite elements "
              "multiindex < %s >",
              (*it)->getName().c_str());
@@ -867,9 +889,13 @@ MoFEMErrorCode Core::check_number_of_ents_in_ents_finite_element() const {
     int num_entities;
     CHKERR get_moab().get_number_entities_by_handle(meshset, num_entities);
 
-    if (entsFiniteElements.get<FiniteElement_name_mi_tag>().count(
-            (*it)->getName().c_str()) != (unsigned int)num_entities) {
-      SETERRQ1(mofemComm, 1,
+    auto counts_fes = [&]() {
+      return std::distance(get_fe_by_name_begin((*it)->getName()),
+                           get_fe_by_name_end((*it)->getName()));
+    };
+
+    if (counts_fes() != static_cast<size_t>(num_entities)) {
+      SETERRQ1(mofemComm, MOFEM_DATA_INCONSISTENCY,
                "not equal number of entities in meshset and finite elements "
                "multiindex < %s >",
                (*it)->getName().c_str());
@@ -888,21 +914,28 @@ Core::get_problem_finite_elements_entities(const std::string problem_name,
   if (p_miit == prb.end())
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "No such problem like < %s >", problem_name.c_str());
-  auto miit = p_miit->numeredFiniteElementsPtr->get<FiniteElement_name_mi_tag>()
-                  .lower_bound(fe_name);
-  auto hi_miit =
-      p_miit->numeredFiniteElementsPtr->get<FiniteElement_name_mi_tag>()
-          .upper_bound(fe_name);
 
-  if (miit != hi_miit) {
-    std::vector<EntityHandle> ents;
-    ents.reserve(std::distance(miit, hi_miit));
-    for (; miit != hi_miit; miit)
-      ents.push_back((*miit)->getEnt());
-    int part = (*miit)->getPart();
-    CHKERR get_moab().tag_clear_data(th_Part, &*ents.begin(), ents.size(),
-                                     &part);
-    CHKERR get_moab().add_entities(meshset, &*ents.begin(), ents.size());
+  auto fe_miit = finiteElements.get<FiniteElement_name_mi_tag>().find(fe_name);
+  if (fe_miit != finiteElements.get<FiniteElement_name_mi_tag>().end()) {
+    auto miit =
+        p_miit->numeredFiniteElementsPtr->get<Unique_mi_tag>().lower_bound(
+            EntFiniteElement::getLocalUniqueIdCalculate(
+                0, (*fe_miit)->getFEUId()));
+    auto hi_miit =
+        p_miit->numeredFiniteElementsPtr->get<Unique_mi_tag>().upper_bound(
+            EntFiniteElement::getLocalUniqueIdCalculate(
+                get_id_for_max_type<MBENTITYSET>(), (*fe_miit)->getFEUId()));
+
+    if (miit != hi_miit) {
+      std::vector<EntityHandle> ents;
+      ents.reserve(std::distance(miit, hi_miit));
+      for (; miit != hi_miit; miit)
+        ents.push_back((*miit)->getEnt());
+      int part = (*miit)->getPart();
+      CHKERR get_moab().tag_clear_data(th_Part, &*ents.begin(), ents.size(),
+                                       &part);
+      CHKERR get_moab().add_entities(meshset, &*ents.begin(), ents.size());
+    }
   }
 
   MoFEMFunctionReturn(0);

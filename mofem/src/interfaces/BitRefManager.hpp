@@ -584,7 +584,8 @@ struct BitRefManager : public UnknownInterface {
    * @param  parent  children range
    * @return        error code
    */
-  MoFEMErrorCode updateRangeByParent(const Range &parent, Range &child,
+  MoFEMErrorCode updateRangeByParent(const Range &child_ents,
+                                     Range &parent_ents,
                                      MoFEMTypes bh = MF_ZERO);
 
   /**

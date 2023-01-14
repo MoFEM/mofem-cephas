@@ -5,6 +5,8 @@
 
 namespace MoFEM {
 
+constexpr int FiniteElement::ent_shift; // EntityHandle size
+
 constexpr DefaultElementAdjacency::DefEntTypeMap
     DefaultElementAdjacency::defVertexTypeMap;
 constexpr DefaultElementAdjacency::DefEntTypeMap
@@ -360,7 +362,7 @@ FiniteElement::FiniteElement(moab::Interface &moab, const EntityHandle _meshset)
   elementAdjacencyTable[MBPRISM] = DefaultElementAdjacency::defaultPrism;
   elementAdjacencyTable[MBENTITYSET] = DefaultElementAdjacency::defaultMeshset;
 
-  feUId = static_cast<UId>(getBitNumber()) << 8 * sizeof(EntityHandle);
+  feUId = static_cast<UId>(getBitNumber()) << ent_shift;
 }
 
 std::ostream &operator<<(std::ostream &os, const FiniteElement &e) {

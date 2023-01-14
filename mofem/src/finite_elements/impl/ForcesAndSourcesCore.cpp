@@ -3,8 +3,6 @@
 \brief Implementation of Elements on Entities for Forces and Sources
 */
 
-
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -173,7 +171,8 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityDataOrder(
             auto sit = side_table.find(e.getEnt());
             if (sit != side_table.end()) {
               auto &side = *sit;
-              if (const auto side_number = side->side_number; side_number >= 0) {
+              if (const auto side_number = side->side_number;
+                  side_number >= 0) {
                 ApproximationOrder ent_order = e.getMaxOrder();
                 auto &dat = data[side_number];
                 dat.getOrder() =
@@ -272,7 +271,8 @@ MoFEMErrorCode ForcesAndSourcesCore::getNodesIndices(
       for (auto it = lo; it != hi; ++it) {
         if (auto e = it->lock()) {
           auto side_ptr = e->getSideNumberPtr();
-          if (const auto side_number = side_ptr->side_number; side_number >= 0) {
+          if (const auto side_number = side_ptr->side_number;
+              side_number >= 0) {
             const auto brother_side_number = side_ptr->brother_side_number;
             if (auto cache = extractor(e).lock()) {
               for (auto dit = cache->loHi[0]; dit != cache->loHi[1]; ++dit) {
@@ -592,8 +592,7 @@ ForcesAndSourcesCore::getProblemTypeColIndices(const std::string &field_name,
 
 // ** Data **
 
-MoFEMErrorCode
-ForcesAndSourcesCore::getBitRefLevelOnData() {
+MoFEMErrorCode ForcesAndSourcesCore::getBitRefLevelOnData() {
   MoFEMFunctionBegin;
 
   // for (int s = H1; s != LASTSPACE; ++s) {
@@ -701,7 +700,8 @@ ForcesAndSourcesCore::getNodesFieldData(EntitiesFieldData &data,
                 const auto &sn = e->getSideNumberPtr();
                 // Some field entities on skeleton can have negative side
                 // number
-                if (const auto side_number = sn->side_number; side_number >= 0) {
+                if (const auto side_number = sn->side_number;
+                    side_number >= 0) {
                   const int brother_side_number = sn->brother_side_number;
 
                   field_entities[side_number] = e.get();
@@ -1680,22 +1680,28 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopSide(
   Range adjacent_ents;
   CHKERR ptrFE->mField.getInterface<BitRefManager>()->getAdjacenciesAny(
       ent, side_dim, adjacent_ents);
-  auto &numered_fe = problem_ptr->numeredFiniteElementsPtr
-                         ->get<Composite_Name_And_Ent_mi_tag>();
+  auto &numered_fe =
+      problem_ptr->numeredFiniteElementsPtr->get<Unique_mi_tag>();
 
-  int nn = 0;
-  side_fe->loopSize = adjacent_ents.size();
-  for (auto fe_ent : adjacent_ents) {
-    auto miit = numered_fe.find(boost::make_tuple(fe_name, fe_ent));
-    if (miit != numered_fe.end()) {
-
-      if (verb >= VERBOSE)
-        MOFEM_LOG("SELF", sev) << "Side finite element "
-                               << "(" << nn << "): " << **miit;
-
-      side_fe->nInTheLoop = nn++;
-      side_fe->numeredEntFiniteElementPtr = *miit;
-      CHKERR (*side_fe)();
+  auto fe_miit = ptrFE->mField.get_finite_elements()
+                     ->get<FiniteElement_name_mi_tag>()
+                     .find(fe_name);
+  if (fe_miit != ptrFE->mField.get_finite_elements()
+                     ->get<FiniteElement_name_mi_tag>()
+                     .end()) {
+    int nn = 0;
+    side_fe->loopSize = adjacent_ents.size();
+    for (auto fe_ent : adjacent_ents) {
+      auto miit = numered_fe.find(EntFiniteElement::getLocalUniqueIdCalculate(
+          fe_ent, (*fe_miit)->getFEUId()));
+      if (miit != numered_fe.end()) {
+        if (verb >= VERBOSE)
+          MOFEM_LOG("SELF", sev) << "Side finite element "
+                                 << "(" << nn << "): " << **miit;
+        side_fe->nInTheLoop = nn++;
+        side_fe->numeredEntFiniteElementPtr = *miit;
+        CHKERR (*side_fe)();
+      }
     }
   }
 
@@ -1741,34 +1747,39 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopParent(
   MoFEMFunctionBegin;
 
   const auto *problem_ptr = getFEMethod()->problemPtr;
-  auto &numered_fe = problem_ptr->numeredFiniteElementsPtr
-                         ->get<Composite_Name_And_Ent_mi_tag>();
+  auto &numered_fe =
+      problem_ptr->numeredFiniteElementsPtr->get<Unique_mi_tag>();
 
-  const auto parent_ent = getNumeredEntFiniteElementPtr()->getParentEnt();
-  auto miit = numered_fe.find(boost::make_tuple(fe_name, parent_ent));
-  if (miit != numered_fe.end()) {
+  parent_fe->feName = fe_name;
+  CHKERR parent_fe->setRefineFEPtr(ptrFE);
+  CHKERR parent_fe->copyBasicMethod(*getFEMethod());
+  CHKERR parent_fe->copyPetscData(*getFEMethod());
+  CHKERR parent_fe->copyKsp(*getFEMethod());
+  CHKERR parent_fe->copySnes(*getFEMethod());
+  CHKERR parent_fe->copyTs(*getFEMethod());
 
-    if (verb >= VERBOSE)
-      MOFEM_LOG("SELF", sev) << "Parent finite element: " << **miit;
+  CHKERR parent_fe->preProcess();
 
-    parent_fe->feName = fe_name;
-
-    CHKERR parent_fe->setRefineFEPtr(ptrFE);
-    CHKERR parent_fe->copyBasicMethod(*getFEMethod());
-    CHKERR parent_fe->copyPetscData(*getFEMethod());
-    CHKERR parent_fe->copyKsp(*getFEMethod());
-    CHKERR parent_fe->copySnes(*getFEMethod());
-    CHKERR parent_fe->copyTs(*getFEMethod());
-
-    CHKERR parent_fe->preProcess();
-
-    parent_fe->loopSize = 1;
-    parent_fe->nInTheLoop = 0;
-    parent_fe->numeredEntFiniteElementPtr = *miit;
-    CHKERR (*parent_fe)();
-
-    CHKERR parent_fe->postProcess();
+  auto fe_miit = ptrFE->mField.get_finite_elements()
+                     ->get<FiniteElement_name_mi_tag>()
+                     .find(fe_name);
+  if (fe_miit != ptrFE->mField.get_finite_elements()
+                     ->get<FiniteElement_name_mi_tag>()
+                     .end()) {
+    const auto parent_ent = getNumeredEntFiniteElementPtr()->getParentEnt();
+    auto miit = numered_fe.find(EntFiniteElement::getLocalUniqueIdCalculate(
+        parent_ent, (*fe_miit)->getFEUId()));
+    if (miit != numered_fe.end()) {
+      if (verb >= VERBOSE)
+        MOFEM_LOG("SELF", sev) << "Parent finite element: " << **miit;
+      parent_fe->loopSize = 1;
+      parent_fe->nInTheLoop = 0;
+      parent_fe->numeredEntFiniteElementPtr = *miit;
+      CHKERR (*parent_fe)();
+    }
   }
+
+  CHKERR parent_fe->postProcess();
 
   MoFEMFunctionReturn(0);
 }
@@ -1780,8 +1791,8 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopChildren(
 
   const auto *problem_ptr = getFEMethod()->problemPtr;
   auto &ref_ents = *getPtrFE()->mField.get_ref_ents();
-  auto &numered_fe = problem_ptr->numeredFiniteElementsPtr
-                         ->get<Composite_Name_And_Ent_mi_tag>();
+  auto &numered_fe =
+      problem_ptr->numeredFiniteElementsPtr->get<Unique_mi_tag>();
 
   const auto parent_ent = getNumeredEntFiniteElementPtr()->getEnt();
   const auto parent_type = getNumeredEntFiniteElementPtr()->getEntType();
@@ -1817,21 +1828,32 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopChildren(
     int nn = 0;
     child_fe->loopSize = size;
 
-    for (auto p = childs.pair_begin(); p != childs.pair_end(); ++p) {
+    auto fe_miit = ptrFE->mField.get_finite_elements()
+                       ->get<FiniteElement_name_mi_tag>()
+                       .find(fe_name);
+    if (fe_miit != ptrFE->mField.get_finite_elements()
+                       ->get<FiniteElement_name_mi_tag>()
+                       .end()) {
 
-      auto miit = numered_fe.lower_bound(boost::make_tuple(fe_name, p->first));
-      auto hi_miit =
-          numered_fe.upper_bound(boost::make_tuple(fe_name, p->second));
+      for (auto p = childs.pair_begin(); p != childs.pair_end(); ++p) {
 
-      for (; miit != hi_miit; ++miit) {
+        auto miit =
+            numered_fe.lower_bound(EntFiniteElement::getLocalUniqueIdCalculate(
+                p->first, (*fe_miit)->getFEUId()));
+        auto hi_miit =
+            numered_fe.upper_bound(EntFiniteElement::getLocalUniqueIdCalculate(
+                p->second, (*fe_miit)->getFEUId()));
 
-        if (verb >= VERBOSE)
-          MOFEM_LOG("SELF", sev) << "Child finite element "
-                                 << "(" << nn << "): " << **miit;
+        for (; miit != hi_miit; ++miit) {
 
-        child_fe->nInTheLoop = nn++;
-        child_fe->numeredEntFiniteElementPtr = *miit;
-        CHKERR (*child_fe)();
+          if (verb >= VERBOSE)
+            MOFEM_LOG("SELF", sev) << "Child finite element "
+                                   << "(" << nn << "): " << **miit;
+
+          child_fe->nInTheLoop = nn++;
+          child_fe->numeredEntFiniteElementPtr = *miit;
+          CHKERR (*child_fe)();
+        }
       }
     }
 

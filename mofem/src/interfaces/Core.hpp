@@ -677,7 +677,7 @@ protected:
    * @param  name field name
    * @return      field id
    */
-  BitFEId getBitFEId(const std::string &name) const;
+  BitFEId getBitFEId(const std::string &fe_name) const;
 
   /**
    * \brief Get field name
@@ -685,6 +685,7 @@ protected:
    * @return    field name
    */
   std::string getBitFEIdName(const BitFEId id) const;
+
   EntityHandle get_finite_element_meshset(const BitFEId id) const;
   EntityHandle get_finite_element_meshset(const std::string name) const;
   MoFEMErrorCode
@@ -743,9 +744,10 @@ protected:
   MoFEMErrorCode clear_finite_elements_by_bit_ref(const BitRefLevel bit,
                                                   const BitRefLevel mask,
                                                   int verb = DEFAULT_VERBOSITY);
-  MoFEMErrorCode clear_finite_elements(const Range ents,
+  MoFEMErrorCode clear_finite_elements(const Range &ents,
                                        int verb = DEFAULT_VERBOSITY);
-  MoFEMErrorCode clear_finite_elements(const std::string name, const Range ents,
+  MoFEMErrorCode clear_finite_elements(const std::string &fe_name,
+                                       const Range &ents,
                                        int verb = DEFAULT_VERBOSITY);
 
   MoFEMErrorCode
@@ -929,9 +931,10 @@ protected:
   DofEntityByUId::iterator
   get_dofs_by_name_and_type_end(const std::string &field_name,
                                 const EntityType ent) const;
-  EntFiniteElementByName::iterator
+
+  EntFiniteElement_multiIndex::index<Unique_mi_tag>::type::iterator
   get_fe_by_name_begin(const std::string &fe_name) const;
-  EntFiniteElementByName::iterator
+  EntFiniteElement_multiIndex::index<Unique_mi_tag>::type::iterator
   get_fe_by_name_end(const std::string &fe_name) const;
 
   /**@}*/

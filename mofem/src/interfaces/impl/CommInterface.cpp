@@ -230,61 +230,79 @@ MoFEMErrorCode CommInterface::resolveSharedFiniteElements(
   int gid, last_gid;
   CHKERR PetscLayoutGetRange(layout, &gid, &last_gid);
   CHKERR PetscLayoutDestroy(&layout);
-  for (_IT_NUMEREDFE_BY_NAME_FOR_LOOP_(problem_ptr, fe_name, fe_it)) {
-    EntityHandle ent = (*fe_it)->getEnt();
-    ents.insert(ent);
-    unsigned int part = (*fe_it)->getPart();
-    CHKERR m_field.get_moab().tag_set_data(pcomm->part_tag(), &ent, 1, &part);
-    if (part == pcomm->rank()) {
-      CHKERR m_field.get_moab().tag_set_data(th_gid, &ent, 1, &gid);
-      gid++;
-    }
-    shprocs.clear();
-    shhandles.clear();
 
-    if (pcomm->size() > 1) {
+  const FiniteElement_multiIndex *fes_ptr;
+  CHKERR m_field.get_finite_elements(&fes_ptr);
 
-      unsigned char pstatus = 0;
-      if (pcomm->rank() != part) {
-        pstatus = PSTATUS_NOT_OWNED;
-        pstatus |= PSTATUS_GHOST;
+  auto fe_miit = fes_ptr-> get<FiniteElement_name_mi_tag>().find(fe_name);
+  if (fe_miit != fes_ptr->get<FiniteElement_name_mi_tag>().end()) {
+    auto fit =
+        problem_ptr->numeredFiniteElementsPtr->get<Unique_mi_tag>().lower_bound(
+            EntFiniteElement::getLocalUniqueIdCalculate(
+                0, (*fe_miit)->getFEUId()));
+    auto hi_fe_it =
+        problem_ptr->numeredFiniteElementsPtr->get<Unique_mi_tag>().upper_bound(
+            EntFiniteElement::getLocalUniqueIdCalculate(
+                get_id_for_max_type<MBENTITYSET>(), (*fe_miit)->getFEUId()));
+    for (; fit != hi_fe_it; ++fit) {
+
+      auto ent = (*fit)->getEnt();
+      auto part = (*fit)->getPart();
+
+      ents.insert(ent);
+      CHKERR m_field.get_moab().tag_set_data(pcomm->part_tag(), &ent, 1, &part);
+      if (part == pcomm->rank()) {
+        CHKERR m_field.get_moab().tag_set_data(th_gid, &ent, 1, &gid);
+        gid++;
       }
+      shprocs.clear();
+      shhandles.clear();
 
-      if (pcomm->size() > 2) {
-        pstatus |= PSTATUS_SHARED;
-        pstatus |= PSTATUS_MULTISHARED;
-      } else {
-        pstatus |= PSTATUS_SHARED;
-      }
+      if (pcomm->size() > 1) {
 
-      size_t rrr = 0;
-      for (size_t rr = 0; rr < pcomm->size(); ++rr) {
-        if (rr != pcomm->rank()) {
-          shhandles[rrr] = ent;
-          shprocs[rrr] = rr;
-          ++rrr;
+        unsigned char pstatus = 0;
+        if (pcomm->rank() != part) {
+          pstatus = PSTATUS_NOT_OWNED;
+          pstatus |= PSTATUS_GHOST;
         }
-      }
-      for (; rrr != pcomm->size(); ++rrr)
-        shprocs[rrr] = -1;
 
-      if (pstatus & PSTATUS_SHARED) {
-        CHKERR m_field.get_moab().tag_set_data(pcomm->sharedp_tag(), &ent, 1,
-                                               &shprocs[0]);
-        CHKERR m_field.get_moab().tag_set_data(pcomm->sharedh_tag(), &ent, 1,
-                                               &shhandles[0]);
-      }
+        if (pcomm->size() > 2) {
+          pstatus |= PSTATUS_SHARED;
+          pstatus |= PSTATUS_MULTISHARED;
+        } else {
+          pstatus |= PSTATUS_SHARED;
+        }
 
-      if (pstatus & PSTATUS_MULTISHARED) {
-        CHKERR m_field.get_moab().tag_set_data(pcomm->sharedps_tag(), &ent, 1,
-                                               &shprocs[0]);
-        CHKERR m_field.get_moab().tag_set_data(pcomm->sharedhs_tag(), &ent, 1,
-                                               &shhandles[0]);
+        size_t rrr = 0;
+        for (size_t rr = 0; rr < pcomm->size(); ++rr) {
+          if (rr != pcomm->rank()) {
+            shhandles[rrr] = ent;
+            shprocs[rrr] = rr;
+            ++rrr;
+          }
+        }
+        for (; rrr != pcomm->size(); ++rrr)
+          shprocs[rrr] = -1;
+
+        if (pstatus & PSTATUS_SHARED) {
+          CHKERR m_field.get_moab().tag_set_data(pcomm->sharedp_tag(), &ent, 1,
+                                                 &shprocs[0]);
+          CHKERR m_field.get_moab().tag_set_data(pcomm->sharedh_tag(), &ent, 1,
+                                                 &shhandles[0]);
+        }
+
+        if (pstatus & PSTATUS_MULTISHARED) {
+          CHKERR m_field.get_moab().tag_set_data(pcomm->sharedps_tag(), &ent, 1,
+                                                 &shprocs[0]);
+          CHKERR m_field.get_moab().tag_set_data(pcomm->sharedhs_tag(), &ent, 1,
+                                                 &shhandles[0]);
+        }
+        CHKERR m_field.get_moab().tag_set_data(pcomm->pstatus_tag(), &ent, 1,
+                                               &pstatus);
       }
-      CHKERR m_field.get_moab().tag_set_data(pcomm->pstatus_tag(), &ent, 1,
-                                             &pstatus);
     }
   }
+  
   CHKERR pcomm->exchange_tags(th_gid, ents);
   MoFEMFunctionReturn(0);
 }
