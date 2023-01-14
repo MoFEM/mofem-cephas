@@ -5,7 +5,6 @@
 namespace MoFEM {
 
 constexpr int FiniteElement::ent_shift;  // EntityHandle size
-constexpr int FiniteElement::proc_shift; // Proc size
 
 constexpr DefaultElementAdjacency::DefEntTypeMap
     DefaultElementAdjacency::defVertexTypeMap;
