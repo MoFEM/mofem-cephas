@@ -30,13 +30,13 @@ MoFEMErrorCode OpRunParent::doWork(int side, EntityType type,
   };
 
   if (check(bitParent, bitParentMask)) {
-
-    CHKERR loopParent(getFEName(), parentElePtr.get(), verbosity,
-                      severityLevel);
+    if (parentElePtr)
+      CHKERR loopParent(getFEName(), parentElePtr.get(), verbosity,
+                        severityLevel);
 
   } else if (check(bitThis, bitThisMask)) {
-
-    CHKERR loopThis(getFEName(), thisElePtr.get(), verbosity, severityLevel);
+    if (thisElePtr)
+      CHKERR loopThis(getFEName(), thisElePtr.get(), verbosity, severityLevel);
   }
 
   MoFEMFunctionReturn(0);
