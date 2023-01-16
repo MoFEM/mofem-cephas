@@ -358,6 +358,8 @@ struct ParentFiniteElementAdjacencyFunctionSkeleton
           CHKERR this->getParent(bridge_fe, parents, moab, th_parent_handle,
                                  th_bit_level);
         };
+        parents.insert(parents.end(), brideAdjacencyEdge.begin(),
+                       brideAdjacencyEdge.end());
       } else {
         parents.swap(brideAdjacencyEdge);
       }
