@@ -24,7 +24,7 @@ MoFEMErrorCode Simple::setSkeletonAdjacency<2>(std::string fe_name) {
 
   parentAdjSkeletonFunctionDim1 =
       boost::make_shared<ParentFiniteElementAdjacencyFunctionSkeleton<1>>(
-          BitRefLevel(), BitRefLevel(), bitLevel, bitLevelMask);
+          bitAdjParent, bitAdjParentMask, bitAdjEnt, bitAdjEntMask);
   CHKERR m_field.modify_finite_element_adjacency_table(
       fe_name, MBEDGE, *parentAdjSkeletonFunctionDim1);
 
@@ -38,7 +38,7 @@ MoFEMErrorCode Simple::setSkeletonAdjacency<3>(std::string fe_name) {
 
   parentAdjSkeletonFunctionDim2 =
       boost::make_shared<ParentFiniteElementAdjacencyFunctionSkeleton<2>>(
-          BitRefLevel(), BitRefLevel(), bitLevel, bitLevelMask);
+          bitAdjParent, bitAdjParentMask, bitAdjEnt, bitAdjEntMask);
 
   CHKERR m_field.modify_finite_element_adjacency_table(
       fe_name, MBTRI, *parentAdjSkeletonFunctionDim2);
