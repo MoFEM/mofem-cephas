@@ -801,8 +801,6 @@ MoFEMErrorCode Simple::exchangeGhostCells() {
   if (pcomm == NULL)
     pcomm = new ParallelComm(&m_field.get_moab(), m_field.get_comm());
 
-  Range verts;
-  CHKERR m_field.get_moab().get_entities_by_type(0, MBVERTEX, verts);
   CHKERR pcomm->exchange_ghost_cells(getDim(), getDim() - 1, 1,
                                      3 /**get all adjacent ghosted entities */,
                                      true, false, meshSet ? &meshSet : nullptr);
