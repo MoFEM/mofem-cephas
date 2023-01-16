@@ -29,6 +29,16 @@ MoFEMErrorCode OpRunParent::doWork(int side, EntityType type,
     return ((bit & b).any()) && ((bit & m) == bit);
   };
 
+#ifndef NDEBUG
+  if (verbosity > QUIET) {
+    MOFEM_LOG_CHANNEL("SELF");
+    MOFEM_TAG_AND_LOG("SELF", severityLevel, "OpRunParent")
+        << "FE bit " << bit
+        << " check parent = " << check(bitParent, bitParentMask)
+        << " check this " << check(bitThis, bitThisMask);
+  }
+#endif
+
   if (check(bitParent, bitParentMask)) {
     if (parentElePtr)
       CHKERR loopParent(getFEName(), parentElePtr.get(), verbosity,
