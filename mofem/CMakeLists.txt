@@ -325,3 +325,5 @@ if(DOXYGEN_FOUND)
   )
   add_dependencies(doc doxygen_copy_scripts)
 endif(DOXYGEN_FOUND)
+
+add_definitions(-Wfatal-errors)

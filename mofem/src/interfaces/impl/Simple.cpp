@@ -225,12 +225,12 @@ MoFEMErrorCode Simple::loadFile(const std::string options,
     }
   }
 
+  if (addSkeletonFE) 
+    CHKERR exchangeGhostCells();
   if (!boundaryMeshset)
     CHKERR createBoundaryMeshset();
   if (!skeletonMeshset)
     CHKERR createSkeletonMeshset();
-  if (addSkeletonFE)
-    CHKERR exchangeGhostCells();
 
   if (bitLevel.any()) {
     Range ents;
@@ -807,7 +807,7 @@ MoFEMErrorCode Simple::exchangeGhostCells() {
 
   Range shared;
   CHKERR m_field.get_moab().get_entities_by_dimension(0, dIm, shared);
-  for (auto d = dIm - 1; d >= 1; --d) {
+  for (auto d = dIm - 1; d >= 0; --d) {
     CHKERR m_field.get_moab().get_adjacencies(shared, d, false, shared,
                                               moab::Interface::UNION);
   }
