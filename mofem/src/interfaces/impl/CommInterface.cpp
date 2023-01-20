@@ -38,8 +38,8 @@ MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
 
     auto get_pstatus = [&](const auto ent) {
       unsigned char pstatus;
-      CHK_MOAB_THROW(mField.get_moab().tag_get_data(pcomm->pstatus_tag(), &*eit,
-                                                    1, &pstatus),
+      CHK_MOAB_THROW(m_field.get_moab().tag_get_data(pcomm->pstatus_tag(),
+                                                     &*eit, 1, &pstatus),
                      "can not get pstatus");
       return pstatus;
     };
@@ -69,8 +69,8 @@ MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
                        "get shared handles");
       } else if (pstatus & PSTATUS_SHARED) {
         // shared
-        CHK_MOAB_THROW(moab.tag_get_data(pcomm->sharedp_tag(), &ent, 1,
-                                         &sharing_handles[0]),
+        CHK_MOAB_THROW(m_field.get_moab().tag_get_data(
+                           pcomm->sharedp_tag(), &ent, 1, &sharing_handles[0]),
                        "get sharing handle");
       }
       return sharing_handles;
@@ -97,9 +97,9 @@ MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
         EntityHandle handle_on_sharing_proc = sharing_handles[proc];
         sbuffer[sharing_procs[proc]].push_back(handle_on_sharing_proc);
         if (verb >= NOISY)
-          MOFEM_LOG_C("SYNC", Sev::noisy, "send %lu (%lu) to %d at %d\n",
-                      (*meit)->getEnt(), handle_on_sharing_proc,
-                      sharing_procs[proc], m_field.get_comm_rank());
+          MOFEM_LOG_C("SYNC", Sev::noisy, "send %lu (%lu) to %d at %d\n", *eit,
+                      handle_on_sharing_proc, sharing_procs[proc],
+                      m_field.get_comm_rank());
 
         if (!(pstatus & PSTATUS_MULTISHARED))
           break;
@@ -195,9 +195,8 @@ MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
       EntityHandle ent;
       bcopy(&data_from_proc[ee], &ent, sizeof(EntityHandle));
       if (verb >= VERY_VERBOSE)
-        MOFEM_LOG_C("SYNC", Sev::verbose, "received %ul (%ul) from %d at %d\n",
-                    (*meit)->getEnt(), ent, onodes[kk],
-                    m_field.get_comm_rank());
+        MOFEM_LOG_C("SYNC", Sev::verbose, "received %ul from %d at %d\n", ent,
+                    onodes[kk], m_field.get_comm_rank());
       ents.insert(ent);
     }
   }
