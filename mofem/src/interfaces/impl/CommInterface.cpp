@@ -29,56 +29,55 @@ MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
       &m_field.get_moab(), m_field.get_basic_entity_data_ptr()->pcommID);
   MoFEMFunctionBegin;
 
+  auto get_pstatus = [&](const auto ent) {
+    unsigned char pstatus;
+    CHK_MOAB_THROW(m_field.get_moab().tag_get_data(pcomm->pstatus_tag(), &ent,
+                                                   1, &pstatus),
+                   "can not get pstatus");
+    return pstatus;
+  };
+
+  auto get_sharing_procs = [&](const auto ent, const auto pstatus) {
+    std::vector<int> sharing_procs(MAX_SHARING_PROCS, -1);
+    if (pstatus & PSTATUS_MULTISHARED) {
+      // entity is multi shared
+      CHK_MOAB_THROW(m_field.get_moab().tag_get_data(
+                         pcomm->sharedps_tag(), &ent, 1, &sharing_procs[0]),
+                     "can not ger sharing_procs_ptr");
+    } else if (pstatus & PSTATUS_SHARED) {
+      // shared
+      CHK_MOAB_THROW(m_field.get_moab().tag_get_data(pcomm->sharedp_tag(), &ent,
+                                                     1, &sharing_procs[0]),
+                     "can not get sharing proc");
+    }
+    return sharing_procs;
+  };
+
+  auto get_sharing_handles = [&](const auto ent, const auto pstatus) {
+    std::vector<EntityHandle> sharing_handles(MAX_SHARING_PROCS, 0);
+    if (pstatus & PSTATUS_MULTISHARED) {
+      // entity is multi shared
+      CHK_MOAB_THROW(m_field.get_moab().tag_get_data(
+                         pcomm->sharedhs_tag(), &ent, 1, &sharing_handles[0]),
+                     "get shared handles");
+    } else if (pstatus & PSTATUS_SHARED) {
+      // shared
+      CHK_MOAB_THROW(m_field.get_moab().tag_get_data(pcomm->sharedh_tag(), &ent,
+                                                     1, &sharing_handles[0]),
+                     "get sharing handle");
+    }
+    return sharing_handles;
+  };
+
   // make a buffer
   std::vector<std::vector<EntityHandle>> sbuffer(m_field.get_comm_size());
 
-  Range::iterator eit = ents.begin();
-  for (; eit != ents.end(); eit++) {
+  for (auto ent : ents) {
 
-    auto get_pstatus = [&](const auto ent) {
-      unsigned char pstatus;
-      CHK_MOAB_THROW(m_field.get_moab().tag_get_data(pcomm->pstatus_tag(),
-                                                     &*eit, 1, &pstatus),
-                     "can not get pstatus");
-      return pstatus;
-    };
-
-    auto get_sharing_procs = [&](const auto ent, const auto pstatus) {
-      std::vector<int> sharing_procs(MAX_SHARING_PROCS, -1);
-      if (pstatus & PSTATUS_MULTISHARED) {
-        // entity is multi shared
-        CHK_MOAB_THROW(m_field.get_moab().tag_get_data(
-                           pcomm->sharedps_tag(), &ent, 1, &sharing_procs[0]),
-                       "can not ger sharing_procs_ptr");
-      } else if (pstatus & PSTATUS_SHARED) {
-        // shared
-        CHK_MOAB_THROW(m_field.get_moab().tag_get_data(
-                           pcomm->sharedp_tag(), &ent, 1, &sharing_procs[0]),
-                       "can not get sharing proc");
-      }
-      return sharing_procs;
-    };
-
-    auto get_sharing_handles = [&](const auto ent, const auto pstatus) {
-      std::vector<int> sharing_handles(MAX_SHARING_PROCS, 0);
-      if (pstatus & PSTATUS_MULTISHARED) {
-        // entity is multi shared
-        CHK_MOAB_THROW(m_field.get_moab().tag_get_data(
-                           pcomm->sharedps_tag(), &ent, 1, &sharing_handles[0]),
-                       "get shared handles");
-      } else if (pstatus & PSTATUS_SHARED) {
-        // shared
-        CHK_MOAB_THROW(m_field.get_moab().tag_get_data(
-                           pcomm->sharedp_tag(), &ent, 1, &sharing_handles[0]),
-                       "get sharing handle");
-      }
-      return sharing_handles;
-    };
-
-    auto pstatus = get_pstatus(*eit);
-    if (!pstatus) {
-      auto sharing_procs = get_sharing_procs(*eit, pstatus);
-      auto sharing_handles = get_sharing_handles(*eit, pstatus);
+    auto pstatus = get_pstatus(ent);
+    if (pstatus) {
+      auto sharing_procs = get_sharing_procs(ent, pstatus);
+      auto sharing_handles = get_sharing_handles(ent, pstatus);
 
       if (verb >= NOISY) {
         MOFEM_LOG("SYNC", Sev::noisy) << "pstatus " << std::bitset<8>(pstatus);
@@ -93,10 +92,10 @@ MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
         if (sharing_procs[proc] == m_field.get_comm_rank())
           continue;
 
-        EntityHandle handle_on_sharing_proc = sharing_handles[proc];
+        const auto handle_on_sharing_proc = sharing_handles[proc];
         sbuffer[sharing_procs[proc]].push_back(handle_on_sharing_proc);
         if (verb >= NOISY)
-          MOFEM_LOG_C("SYNC", Sev::noisy, "send %lu (%lu) to %d at %d\n", *eit,
+          MOFEM_LOG_C("SYNC", Sev::noisy, "send %lu (%lu) to %d at %d\n", ent,
                       handle_on_sharing_proc, sharing_procs[proc],
                       m_field.get_comm_rank());
 
@@ -123,7 +122,7 @@ MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
     }
   }
 
-  // // Make sure it is a PETSc m_field.get_comm()
+  // Make sure it is a PETSc m_field.get_comm()
   MPI_Comm comm;
   CHKERR PetscCommDuplicate(m_field.get_comm(), &comm, NULL);
 
@@ -190,13 +189,15 @@ MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
     int len = olengths[kk];
     int *data_from_proc = rbuf[kk];
 
-    for (int ee = 0; ee < len; ee += block_size) {
+    for (int ee = 0; ee < len;) {
       EntityHandle ent;
       bcopy(&data_from_proc[ee], &ent, sizeof(EntityHandle));
-      if (verb >= VERY_VERBOSE)
-        MOFEM_LOG_C("SYNC", Sev::verbose, "received %ul from %d at %d\n", ent,
-                    onodes[kk], m_field.get_comm_rank());
       ents.insert(ent);
+      ee += block_size;
+
+      if (verb >= VERY_VERBOSE)
+        MOFEM_LOG_C("SYNC", Sev::verbose, "received %lu from %d at %d\n", ent,
+                    onodes[kk], m_field.get_comm_rank());
     }
   }
 
