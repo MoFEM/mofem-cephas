@@ -3,7 +3,6 @@
  * \mofem_comm
  */
 
-
 namespace MoFEM {
 
 #ifdef PARMETIS
@@ -27,7 +26,8 @@ CommInterface::~CommInterface() {}
 
 MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
   MoFEM::Interface &m_field = cOre;
-  auto ref_ents_ptr = m_field.get_ref_ents();
+  ParallelComm *pcomm = ParallelComm::get_pcomm(
+      &m_field.get_moab(), m_field.get_basic_entity_data_ptr()->pcommID);
   MoFEMFunctionBegin;
 
   // make a buffer
@@ -36,46 +36,74 @@ MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
   Range::iterator eit = ents.begin();
   for (; eit != ents.end(); eit++) {
 
-    auto meit = ref_ents_ptr->get<Ent_mi_tag>().find(*eit);
-    if (meit == ref_ents_ptr->get<Ent_mi_tag>().end()) {
-      continue;
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-               "rank %d entity %lu not exist on database, local entity can not "
-               "be found for this owner",
-               m_field.get_comm_rank(), *eit);
-    }
+    auto get_pstatus = [&](const auto ent) {
+      unsigned char pstatus;
+      CHK_MOAB_THROW(mField.get_moab().tag_get_data(pcomm->pstatus_tag(), &*eit,
+                                                    1, &pstatus),
+                     "can not get pstatus");
+      return pstatus;
+    };
 
-    unsigned char pstatus = (*meit)->getPStatus();
+    auto get_sharing_procs = [&](const auto ent, const auto pstatus) {
+      std::vector<int> sharing_procs(MAX_SHARING_PROCS, -1);
+      if (pstatus & PSTATUS_MULTISHARED) {
+        // entity is multi shared
+        CHK_MOAB_THROW(m_field.get_moab().tag_get_data(
+                           pcomm->sharedps_tag(), &ent, 1, &sharing_procs[0]),
+                       "can not ger sharing_procs_ptr");
+      } else if (pstatus & PSTATUS_SHARED) {
+        // shared
+        CHK_MOAB_THROW(m_field.get_moab().tag_get_data(
+                           pcomm->sharedp_tag(), &ent, 1, &sharing_procs[0]),
+                       "can not get sharing proc");
+      }
+      return sharing_procs;
+    };
 
-    if (pstatus == 0)
-      continue;
+    auto get_sharing_handles = [&](const auto ent, const auto pstatus) {
+      std::vector<int> sharing_handles(MAX_SHARING_PROCS, 0);
+      if (pstatus & PSTATUS_MULTISHARED) {
+        // entity is multi shared
+        CHK_MOAB_THROW(m_field.get_moab().tag_get_data(
+                           pcomm->sharedps_tag(), &ent, 1, &sharing_handles[0]),
+                       "get shared handles");
+      } else if (pstatus & PSTATUS_SHARED) {
+        // shared
+        CHK_MOAB_THROW(moab.tag_get_data(pcomm->sharedp_tag(), &ent, 1,
+                                         &sharing_handles[0]),
+                       "get sharing handle");
+      }
+      return sharing_handles;
+    };
 
-    if (verb >= NOISY) {
-      MOFEM_LOG("SYNC", Sev::noisy) << "pstatus " << std::bitset<8>(pstatus);
-    }
+    auto pstatus = get_pstatus(*eit);
+    if (!pstatus) {
+      auto sharing_procs = get_sharing_procs(*eit, pstatus);
+      auto sharing_handles = get_sharing_handles(*eit, pstatus);
 
-    for (int proc = 0;
-         proc < MAX_SHARING_PROCS && -1 != (*meit)->getSharingProcsPtr()[proc];
-         proc++) {
-      if ((*meit)->getSharingProcsPtr()[proc] == -1)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
-                "sharing processor not set");
+      if (verb >= NOISY) {
+        MOFEM_LOG("SYNC", Sev::noisy) << "pstatus " << std::bitset<8>(pstatus);
+      }
 
-      if ((*meit)->getSharingProcsPtr()[proc] == m_field.get_comm_rank())
-        continue;
+      for (int proc = 0; proc < MAX_SHARING_PROCS && -1 != sharing_procs[proc];
+           proc++) {
+        if (sharing_procs[proc] == -1)
+          SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
+                  "sharing processor not set");
 
-      EntityHandle handle_on_sharing_proc =
-          (*meit)->getSharingHandlersPtr()[proc];
-      sbuffer[(*meit)->getSharingProcsPtr()[proc]].push_back(
-          handle_on_sharing_proc);
-      if (verb >= NOISY)
-        MOFEM_LOG_C("SYNC", Sev::noisy, "send %lu (%lu) to %d at %d\n",
-                    (*meit)->getEnt(), handle_on_sharing_proc,
-                    (*meit)->getSharingProcsPtr()[proc],
-                    m_field.get_comm_rank());
+        if (sharing_procs[proc] == m_field.get_comm_rank())
+          continue;
 
-      if (!(pstatus & PSTATUS_MULTISHARED))
-        break;
+        EntityHandle handle_on_sharing_proc = sharing_handles[proc];
+        sbuffer[sharing_procs[proc]].push_back(handle_on_sharing_proc);
+        if (verb >= NOISY)
+          MOFEM_LOG_C("SYNC", Sev::noisy, "send %lu (%lu) to %d at %d\n",
+                      (*meit)->getEnt(), handle_on_sharing_proc,
+                      sharing_procs[proc], m_field.get_comm_rank());
+
+        if (!(pstatus & PSTATUS_MULTISHARED))
+          break;
+      }
     }
   }
 
@@ -164,28 +192,19 @@ MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
     int *data_from_proc = rbuf[kk];
 
     for (int ee = 0; ee < len; ee += block_size) {
-
       EntityHandle ent;
       bcopy(&data_from_proc[ee], &ent, sizeof(EntityHandle));
-      auto meit = ref_ents_ptr->get<Ent_mi_tag>().find(ent);
-      if (meit == ref_ents_ptr->get<Ent_mi_tag>().end())
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                 "rank %d entity %lu not exist on database, local entity can "
-                 "not be found for this owner",
-                 m_field.get_comm_rank(), ent);
-
       if (verb >= VERY_VERBOSE)
         MOFEM_LOG_C("SYNC", Sev::verbose, "received %ul (%ul) from %d at %d\n",
                     (*meit)->getEnt(), ent, onodes[kk],
                     m_field.get_comm_rank());
-
-      ents.insert((*meit)->getEnt());
+      ents.insert(ent);
     }
   }
 
   if (verb >= VERBOSE)
-    PetscSynchronizedPrintf(m_field.get_comm(), "Rank %d nb. after ents %u\n",
-                            m_field.get_comm_rank(), ents.size());
+    MOFEM_LOG_C("SYNC", Sev::verbose, "Rank %d nb. after ents %u",
+                m_field.get_comm_rank(), ents.size());
 
   // Cleaning
   CHKERR PetscFree(s_waits);
@@ -234,7 +253,7 @@ MoFEMErrorCode CommInterface::resolveSharedFiniteElements(
   const FiniteElement_multiIndex *fes_ptr;
   CHKERR m_field.get_finite_elements(&fes_ptr);
 
-  auto fe_miit = fes_ptr-> get<FiniteElement_name_mi_tag>().find(fe_name);
+  auto fe_miit = fes_ptr->get<FiniteElement_name_mi_tag>().find(fe_name);
   if (fe_miit != fes_ptr->get<FiniteElement_name_mi_tag>().end()) {
     auto fit =
         problem_ptr->numeredFiniteElementsPtr->get<Unique_mi_tag>().lower_bound(
@@ -302,7 +321,7 @@ MoFEMErrorCode CommInterface::resolveSharedFiniteElements(
       }
     }
   }
-  
+
   CHKERR pcomm->exchange_tags(th_gid, ents);
   MoFEMFunctionReturn(0);
 }
@@ -871,8 +890,6 @@ CommInterface::partitionMesh(const Range &ents, const int dim,
 //                                  const int overlap) {
 //   MoFEM::Interface &m_field = cOre;
 //   MoFEMFunctionBegin;
-
-
 
 //   MoFEMFunctionReturn(0);
 // }

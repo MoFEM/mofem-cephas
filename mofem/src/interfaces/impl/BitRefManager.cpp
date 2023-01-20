@@ -1169,7 +1169,7 @@ MoFEMErrorCode BitRefManager::updateRangeByChildren(const Range &parent_ents,
       for (; it != hi_it; it++) {
 #ifndef NDEBUG
         if (it->get()->getEntType() == MBENTITYSET) {
-          SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
                   "This should not happen; Entity should not have part of the "
                   "meshset. It has no children.");
         }
@@ -1212,7 +1212,7 @@ MoFEMErrorCode BitRefManager::updateRangeByParent(const Range &child_ents,
       for (; it != hi_it; it++) {
 #ifndef NDEBUG
         if (it->get()->getEntType() == MBENTITYSET) {
-          SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
                   "This should not happen; Entity should not have part of the "
                   "meshset. It has no children.");
         }

@@ -90,7 +90,7 @@ MoFEMErrorCode MedInterface::medGetFieldNames(const string &file, int verb) {
 
     med_int num_comp = MEDfieldnComponent(fid, index + 1);
     if (num_comp <= 0) {
-      SETERRQ(m_field.get_comm(), MOFEM_IMPOSIBLE_CASE,
+      SETERRQ(m_field.get_comm(), MOFEM_IMPOSSIBLE_CASE,
               "Could not get number of components for MED field");
     }
 

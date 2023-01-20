@@ -673,7 +673,7 @@ MoFEMErrorCode OpSetCovariantPiolaTransformOnFace::doWork(
         }
       }
       if (cc != nb_gauss_pts * nb_dofs)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Data inconsistency");
+        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "Data inconsistency");
 
       baseN.swap(piola_n);
       diffBaseN.swap(diff_piola_n);
@@ -712,7 +712,7 @@ OpGetHOTangentOnEdge::doWork(int side, EntityType type,
     break;
   case MBEDGE:
     if (nb_dofs % 3) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
               "Approximated field should be rank 3, i.e. vector in 3d space");
     }
     for (int dd = 0; dd != 3; dd++) {
@@ -723,7 +723,7 @@ OpGetHOTangentOnEdge::doWork(int side, EntityType type,
     }
     break;
   default:
-    SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
             "This operator can calculate tangent vector only on edge");
   }
 
@@ -806,7 +806,7 @@ MoFEMErrorCode OpSetCovariantPiolaTransformOnEdge::doWork(
       }
 
       if (cc != nb_gauss_pts * nb_dofs)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Data inconsistency");
+        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "Data inconsistency");
     }
   }
 

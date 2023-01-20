@@ -244,7 +244,7 @@ MoFEMErrorCode Core::addField(const std::string &name, const FieldSpace space,
          fIelds.get<BitFieldId_mi_tag>().end();
          ++field_shift) {
       if (field_shift == BITFEID_SIZE)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
                 "Maximal number of fields exceeded");
     }
 

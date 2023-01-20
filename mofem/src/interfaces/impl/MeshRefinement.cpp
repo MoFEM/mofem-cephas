@@ -432,7 +432,7 @@ MoFEMErrorCode MeshRefinement::refineTets(const Range &_tets,
           nb_new_tets = 4;
           break;
         };
-        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Imposible case");
+        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "Impossible case");
         break;
       case 3:
         sub_type =
@@ -444,7 +444,7 @@ MoFEMErrorCode MeshRefinement::refineTets(const Range &_tets,
           nb_new_tets = 5;
           break;
         }
-        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Imposible case");
+        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "Impossible case");
       case 4:
         sub_type =
             tet_type_4(_conn_, split_edges, edge_new_nodes, new_tets_conns);
@@ -455,7 +455,7 @@ MoFEMErrorCode MeshRefinement::refineTets(const Range &_tets,
           nb_new_tets = 6;
           break;
         }
-        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Imposible case");
+        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "Impossible case");
       case 5:
         sub_type = tet_type_5(moab, _conn_, edge_new_nodes, new_tets_conns);
         nb_new_tets = 7;
@@ -466,7 +466,7 @@ MoFEMErrorCode MeshRefinement::refineTets(const Range &_tets,
         nb_new_tets = 8;
         break;
       default:
-        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Imposible case");
+        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "Impossible case");
       }
 
       // find that tets
@@ -669,7 +669,7 @@ MoFEMErrorCode MeshRefinement::refineTets(const Range &_tets,
         }
 
         // Refined edge is not child of any edge, face or tetrahedral, this is
-        // imposible edge
+        // Impossible edge
         SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                 "impossible refined edge");
       }
@@ -1119,7 +1119,7 @@ MoFEMErrorCode MeshRefinement::refineTris(const Range &_tris,
         nb_new_tris += 4;
         break;
       default:
-        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Imposible case");
+        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "Impossible case");
       }
 
       // find that tets
@@ -1305,7 +1305,7 @@ MoFEMErrorCode MeshRefinement::refineTris(const Range &_tris,
         }
 
         // Refined edge is not child of any edge, face or tetrahedral, this is
-        // imposible edge
+        // Impossible edge
         SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                 "impossible refined edge");
       }

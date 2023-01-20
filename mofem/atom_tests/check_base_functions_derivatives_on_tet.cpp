@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
                                 LASTSPACEOP, &choise_space_value, &flg);
     
     if (flg != PETSC_TRUE) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "space not set");
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "space not set");
     }
 
     FieldSpace space = LASTSPACE;
@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
                                 LASBASETOP, &choice_base_value, &flg);
     
     if (flg != PETSC_TRUE) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "base not set");
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "base not set");
     }
 
     FieldApproximationBase base = NOBASE;

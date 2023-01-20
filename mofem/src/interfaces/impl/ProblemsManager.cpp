@@ -2108,7 +2108,7 @@ ProblemsManager::debugPartitionedProblem(const Problem *problem_ptr, int verb) {
           if ((*dit)->getPetscLocalDofIdx() < 0) {
             std::ostringstream zz;
             zz << "rank " << m_field.get_comm_rank() << " " << **dit;
-            SETERRQ2(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
+            SETERRQ2(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
                      "local dof index for %d (0-row, 1-col) not set, i.e. has "
                      "negative value\n %s",
                      ss, zz.str().c_str());
@@ -2116,7 +2116,7 @@ ProblemsManager::debugPartitionedProblem(const Problem *problem_ptr, int verb) {
           if ((*dit)->getPetscLocalDofIdx() >= *local_nbdof_ptr[ss]) {
             std::ostringstream zz;
             zz << "rank " << m_field.get_comm_rank() << " " << **dit;
-            SETERRQ2(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
+            SETERRQ2(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
                      "local dofs for %d (0-row, 1-col) out of range\n %s", ss,
                      zz.str().c_str());
           }
@@ -2134,7 +2134,7 @@ ProblemsManager::debugPartitionedProblem(const Problem *problem_ptr, int verb) {
             std::ostringstream zz;
             zz << "rank " << m_field.get_comm_rank() << " "
                << dit->get()->getBitRefLevel() << " " << **dit;
-            SETERRQ2(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
+            SETERRQ2(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
                      "global dof index for %d (0-row, 1-col) row not set, i.e. "
                      "has negative value\n %s",
                      ss, zz.str().c_str());
@@ -2143,7 +2143,7 @@ ProblemsManager::debugPartitionedProblem(const Problem *problem_ptr, int verb) {
             std::ostringstream zz;
             zz << "rank " << m_field.get_comm_rank() << " nb_dofs "
                << *nbdof_ptr[ss] << " " << **dit;
-            SETERRQ2(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
+            SETERRQ2(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
                      "global dofs for %d (0-row, 1-col) out of range\n %s", ss,
                      zz.str().c_str());
           }
@@ -3106,7 +3106,7 @@ ProblemsManager::markDofs(const std::string problem_name, RowColData rc,
   case COL:
     dofs = problem_ptr->getNumeredColDofsPtr();
   default:
-    SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Should be row or column");
+    SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "Should be row or column");
   }
   marker.resize(dofs->size(), 0);
   std::vector<unsigned char> marker_tmp;
@@ -3154,7 +3154,7 @@ MoFEMErrorCode ProblemsManager::modifyMarkDofs(
   case COL:
     dofs = problem_ptr->getNumeredColDofsPtr();
   default:
-    SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Should be row or column");
+    SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "Should be row or column");
   }
   marker.resize(dofs->size(), 0);
 

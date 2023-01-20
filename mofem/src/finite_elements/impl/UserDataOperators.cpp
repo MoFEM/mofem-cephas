@@ -590,7 +590,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransformOnEdge2D::doWork(
       }
 
       if (cc != nb_gauss_pts * nb_dofs)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Data inconsistency");
+        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "Data inconsistency");
     }
   }
 
