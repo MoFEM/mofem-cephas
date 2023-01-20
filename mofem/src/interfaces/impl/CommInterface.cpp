@@ -22,7 +22,6 @@ CommInterface::query_interface(boost::typeindex::type_index type_index,
 
 CommInterface::CommInterface(const MoFEM::Core &core)
     : cOre(const_cast<MoFEM::Core &>(core)), dEbug(false) {}
-CommInterface::~CommInterface() {}
 
 MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
   MoFEM::Interface &m_field = cOre;

@@ -31,7 +31,7 @@ struct CommInterface : public UnknownInterface {
   /**
    * \brief Destructor
    */
-  ~CommInterface();
+  ~CommInterface() = default;
 
   /** \name Make elemnts multishared */
 
