@@ -58,7 +58,7 @@ MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
          proc < MAX_SHARING_PROCS && -1 != (*meit)->getSharingProcsPtr()[proc];
          proc++) {
       if ((*meit)->getSharingProcsPtr()[proc] == -1)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
                 "sharing processor not set");
 
       if ((*meit)->getSharingProcsPtr()[proc] == m_field.get_comm_rank())
