@@ -528,7 +528,7 @@ MoFEMErrorCode PostProcBrokenMeshInMoabBase<E>::postProcess() {
       if (m.second->nbEles) {
         MOFEM_TAG_AND_LOG("SELF", Sev::noisy, "PostProc")
             << "Update < " << moab::CN::EntityTypeName(m.first)
-            << m.second->countEle;
+            << " number of processsed " << m.second->countEle;
         CHKERR iface->update_adjacencies(
             m.second->startingEleHandle, m.second->countEle,
             m.second->levelRef[0].size2(), m.second->eleConn);
