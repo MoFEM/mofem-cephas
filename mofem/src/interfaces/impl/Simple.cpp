@@ -815,8 +815,8 @@ MoFEMErrorCode Simple::exchangeGhostCells() {
                                PSTATUS_OR, -1, &shared);
   Tag part_tag = pcomm->part_tag();
   CHKERR pcomm->exchange_tags(part_tag, shared);
-  CHKERR pcomm->exchange_tags("_RefBitLevel", shared);
-  CHKERR pcomm->exchange_tags("_RefParentHandle", shared);
+  CHKERR m_field.getInterface<CommInterface>()->resolveParentEntities(shared,
+                                                                      VERBOSE);
 
   MoFEMFunctionReturn(0);
 }

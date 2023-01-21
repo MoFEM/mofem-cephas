@@ -178,7 +178,7 @@ MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
   if (nsends)
     CHKERR MPI_Waitall(nsends, s_waits, &status[0]);
 
-  if (verb >= VERY_VERBOSE) {
+  if (verb >= VERBOSE) {
     MOFEM_LOG_C("SYNC", Sev::verbose, "Rank %d nb. before ents %u\n",
                 m_field.get_comm_rank(), ents.size());
   }
@@ -195,8 +195,8 @@ MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
       ents.insert(ent);
       ee += block_size;
 
-      if (verb >= VERY_VERBOSE)
-        MOFEM_LOG_C("SYNC", Sev::verbose, "received %lu from %d at %d\n", ent,
+      if (verb >= VERBOSE)
+        MOFEM_LOG_C("SYNC", Sev::noisy, "received %lu from %d at %d\n", ent,
                     onodes[kk], m_field.get_comm_rank());
     }
   }
@@ -458,8 +458,9 @@ MoFEMErrorCode CommInterface::resolveParentEntities(const Range &ents,
   if (nsends)
     CHKERR MPI_Waitall(nsends, s_waits, &status[0]);
 
-  if (verb >= VERY_VERBOSE) {
-    MOFEM_LOG_C("SYNC", Sev::verbose, "Rank %d nb. shared ents %u\n",
+  if (verb >= VERBOSE) {
+    MOFEM_LOG_C("SYNC", Sev::verbose,
+                "Rank %d nb. shared to synchronise parents ents %u\n",
                 m_field.get_comm_rank(), shared.size());
   }
 
@@ -483,17 +484,13 @@ MoFEMErrorCode CommInterface::resolveParentEntities(const Range &ents,
       CHKERR set_parent(ent, parent);
       CHKERR set_bit(ent, BitRefLevel(uulong_bit));
 
-      if (verb >= VERY_VERBOSE) {
-        MOFEM_LOG_C("SYNC", Sev::verbose, "received %lu (%lu) from %d at %d\n",
+      if (verb >= VERBOSE) {
+        MOFEM_LOG_C("SYNC", Sev::noisy, "received %lu (%lu) from %d at %d\n",
                     ent, parent, onodes[kk], m_field.get_comm_rank());
-        MOFEM_LOG("SYNC", Sev::verbose) << "Bit " << BitRefLevel(uulong_bit);
+        MOFEM_LOG("SYNC", Sev::noisy) << "Bit " << BitRefLevel(uulong_bit);
       }
     }
   }
-
-  if (verb >= VERBOSE)
-    MOFEM_LOG_C("SYNC", Sev::verbose, "Rank %d nb. after ents %u",
-                m_field.get_comm_rank(), ents.size());
 
   // Cleaning
   CHKERR PetscFree(s_waits);
