@@ -181,6 +181,21 @@ struct CommInterface : public UnknownInterface {
   MoFEMErrorCode synchroniseFieldEntities(const std::string name,
                                           int verb = DEFAULT_VERBOSITY);
 
+  /**
+   * @brief Synchronise parent entities
+   *
+   *  \note collective - need tu be run on all processors in communicator
+   *
+   * Exchange parent entity tag and bitref of entity. Note thar parent handle
+   * can be different on each processor.
+   *
+   * @param ent
+   * @param verb
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode resolveParentEntities(const Range &ent,
+                                       int verb = DEFAULT_VERBOSITY);
+
   /**@}*/
 
   /**@*/

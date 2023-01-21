@@ -232,6 +232,284 @@ MoFEMErrorCode CommInterface::synchroniseFieldEntities(const std::string name,
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode CommInterface::resolveParentEntities(const Range &ents,
+                                                    int verb) {
+  MoFEM::Interface &m_field = cOre;
+  ParallelComm *pcomm = ParallelComm::get_pcomm(
+      &m_field.get_moab(), m_field.get_basic_entity_data_ptr()->pcommID);
+
+  MoFEMFunctionBegin;
+
+  Range shared = ents;
+  CHKERR pcomm->filter_pstatus(shared, PSTATUS_NOT_OWNED, PSTATUS_NOT, -1,
+                               nullptr);
+  CHKERR pcomm->filter_pstatus(shared, PSTATUS_SHARED | PSTATUS_MULTISHARED,
+                               PSTATUS_OR, -1, nullptr);
+
+  auto th_RefParentHandle = cOre.get_th_RefParentHandle();
+  auto th_RefBitLevel = cOre.get_th_RefBitLevel();
+
+  auto get_pstatus = [&](const auto ent) {
+    unsigned char pstatus;
+    CHK_MOAB_THROW(m_field.get_moab().tag_get_data(pcomm->pstatus_tag(), &ent,
+                                                   1, &pstatus),
+                   "can not get pstatus");
+    return pstatus;
+  };
+
+  auto get_sharing_procs = [&](const auto ent, const auto pstatus) {
+    std::vector<int> sharing_procs(MAX_SHARING_PROCS, -1);
+    if (pstatus & PSTATUS_MULTISHARED) {
+      // entity is multi shared
+      CHK_MOAB_THROW(m_field.get_moab().tag_get_data(
+                         pcomm->sharedps_tag(), &ent, 1, &sharing_procs[0]),
+                     "can not ger sharing_procs_ptr");
+    } else if (pstatus & PSTATUS_SHARED) {
+      // shared
+      CHK_MOAB_THROW(m_field.get_moab().tag_get_data(pcomm->sharedp_tag(), &ent,
+                                                     1, &sharing_procs[0]),
+                     "can not get sharing proc");
+    }
+    return sharing_procs;
+  };
+
+  auto get_sharing_handles = [&](const auto ent, const auto pstatus) {
+    std::vector<EntityHandle> sharing_handles(MAX_SHARING_PROCS, 0);
+    if (pstatus & PSTATUS_MULTISHARED) {
+      // entity is multi shared
+      CHK_MOAB_THROW(m_field.get_moab().tag_get_data(
+                         pcomm->sharedhs_tag(), &ent, 1, &sharing_handles[0]),
+                     "get shared handles");
+    } else if (pstatus & PSTATUS_SHARED) {
+      // shared
+      CHK_MOAB_THROW(m_field.get_moab().tag_get_data(pcomm->sharedh_tag(), &ent,
+                                                     1, &sharing_handles[0]),
+                     "get sharing handle");
+    }
+    return sharing_handles;
+  };
+
+  auto get_parent_and_bit = [&](const auto ent) {
+    EntityHandle parent;
+    CHK_MOAB_THROW(
+        m_field.get_moab().tag_get_data(th_RefParentHandle, &ent, 1, &parent),
+        "get parent");
+    BitRefLevel bit;
+    CHK_MOAB_THROW(
+        m_field.get_moab().tag_get_data(th_RefBitLevel, &ent, 1, &bit),
+        "get parent");
+    return std::make_pair(parent, bit);
+  };
+
+  auto set_parent = [&](const auto ent, const auto parent) {
+    return m_field.get_moab().tag_set_data(th_RefParentHandle, &ent, 1,
+                                           &parent);
+  };
+
+  auto set_bit = [&](const auto ent, const auto bit) {
+    return m_field.get_moab().tag_set_data(th_RefBitLevel, &ent, 1, &bit);
+  };
+
+  // make a buffer
+  std::vector<std::vector<unsigned long long>> sbuffer(m_field.get_comm_size());
+
+  for (auto ent : shared) {
+
+    auto pstatus = get_pstatus(ent);
+    auto sharing_procs = get_sharing_procs(ent, pstatus);
+    auto sharing_handles = get_sharing_handles(ent, pstatus);
+    auto [parent, bit] = get_parent_and_bit(ent);
+
+    if (verb >= NOISY)
+      MOFEM_LOG("SYNC", Sev::noisy) << "pstatus " << std::bitset<8>(pstatus);
+
+    if (parent) {
+      auto pstatus_parent = get_pstatus(parent);
+      if (pstatus_parent != pstatus)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "pstatus of parent and child is different - such case is not "
+                "handled");
+
+      auto sharing_procs_parent = get_sharing_procs(parent, pstatus_parent);
+      auto sharing_handles_parent = get_sharing_handles(parent, pstatus_parent);
+
+      for (int proc = 0; proc < MAX_SHARING_PROCS && -1 != sharing_procs[proc];
+           proc++) {
+        if (sharing_procs[proc] == -1)
+          SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
+                  "sharing processor not set");
+
+        if (sharing_procs[proc] != m_field.get_comm_rank()) {
+          if (sharing_procs[proc] != sharing_procs_parent[proc])
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                    "sharing proc parent and child is different - such case "
+                    "is not "
+                    "handled");
+
+          auto handle_on_sharing_proc = sharing_handles[proc];
+          auto parent_handle_on_sharing_proc = sharing_handles_parent[proc];
+          sbuffer[sharing_procs[proc]].push_back(handle_on_sharing_proc);
+          sbuffer[sharing_procs[proc]].push_back(parent_handle_on_sharing_proc);
+          sbuffer[sharing_procs[proc]].push_back(bit.to_ullong());
+          if (verb >= NOISY)
+            MOFEM_LOG_C("SYNC", Sev::noisy, "send %lu (%lu) to %d at %d\n", ent,
+                        handle_on_sharing_proc, sharing_procs[proc],
+                        m_field.get_comm_rank());
+
+          if (!(pstatus & PSTATUS_MULTISHARED))
+            break;
+        }
+      }
+    } else {
+      for (int proc = 0; proc < MAX_SHARING_PROCS && -1 != sharing_procs[proc];
+           proc++) {
+        if (sharing_procs[proc] == -1)
+          SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
+                  "sharing processor not set");
+
+        if (sharing_procs[proc] != m_field.get_comm_rank()) {
+          auto handle_on_sharing_proc = sharing_handles[proc];
+          sbuffer[sharing_procs[proc]].push_back(handle_on_sharing_proc);
+          sbuffer[sharing_procs[proc]].push_back(parent);
+          sbuffer[sharing_procs[proc]].push_back(bit.to_ullong());
+          if (verb >= NOISY)
+            MOFEM_LOG_C("SYNC", Sev::noisy, "send %lu (%lu) to %d at %d\n", ent,
+                        handle_on_sharing_proc, sharing_procs[proc],
+                        m_field.get_comm_rank());
+
+          if (!(pstatus & PSTATUS_MULTISHARED))
+            break;
+        }
+      }
+    }
+  }
+
+  int nsends = 0; // number of messages to send
+  std::vector<int> sbuffer_lengths(
+      m_field.get_comm_size()); // length of the message to proc
+
+  const size_t block_size = sizeof(unsigned long long) / sizeof(int);
+  for (int proc = 0; proc < m_field.get_comm_size(); proc++) {
+
+    if (!sbuffer[proc].empty()) {
+
+      sbuffer_lengths[proc] = sbuffer[proc].size() * block_size;
+      nsends++;
+
+    } else {
+
+      sbuffer_lengths[proc] = 0;
+    }
+  }
+
+  // Make sure it is a PETSc m_field.get_comm()
+  MPI_Comm comm;
+  CHKERR PetscCommDuplicate(m_field.get_comm(), &comm, NULL);
+
+  std::vector<MPI_Status> status(m_field.get_comm_size());
+
+  // Computes the number of messages a node expects to receive
+  int nrecvs; // number of messages received
+  CHKERR PetscGatherNumberOfMessages(comm, NULL, &sbuffer_lengths[0], &nrecvs);
+
+  // Computes info about messages that a MPI-node will receive, including
+  // (from-id,length) pairs for each message.
+  int *onodes;   // list of node-ids from which messages are expected
+  int *olengths; // corresponding message lengths
+  CHKERR PetscGatherMessageLengths(comm, nsends, nrecvs, &sbuffer_lengths[0],
+                                   &onodes, &olengths);
+
+  // Gets a unique new tag from a PETSc communicator. All processors that share
+  // the communicator MUST call this routine EXACTLY the same number of times.
+  // This tag should only be used with the current objects communicator; do NOT
+  // use it with any other MPI communicator.
+  int tag;
+  CHKERR PetscCommGetNewTag(comm, &tag);
+
+  // Allocate a buffer sufficient to hold messages of size specified in
+  // olengths. And post Irecvs on these buffers using node info from onodes
+  int **rbuf;           // must bee freed by user
+  MPI_Request *r_waits; // must bee freed by user
+  // rbuf has a pointers to messages. It has size of of nrecvs (number of
+  // messages) +1. In the first index a block is allocated,
+  // such that rbuf[i] = rbuf[i-1]+olengths[i-1].
+  CHKERR PetscPostIrecvInt(comm, tag, nrecvs, onodes, olengths, &rbuf,
+                           &r_waits);
+
+  MPI_Request *s_waits; // status of sens messages
+  CHKERR PetscMalloc1(nsends, &s_waits);
+
+  // Send messages
+  for (int proc = 0, kk = 0; proc < m_field.get_comm_size(); proc++) {
+    if (!sbuffer_lengths[proc])
+      continue;                             // no message to send to this proc
+    CHKERR MPI_Isend(&(sbuffer[proc])[0],   // buffer to send
+                     sbuffer_lengths[proc], // message length
+                     MPIU_INT, proc,        // to proc
+                     tag, comm, s_waits + kk);
+    kk++;
+  }
+
+  // Wait for received
+  if (nrecvs)
+    CHKERR MPI_Waitall(nrecvs, r_waits, &status[0]);
+
+  // Wait for send messages
+  if (nsends)
+    CHKERR MPI_Waitall(nsends, s_waits, &status[0]);
+
+  if (verb >= VERY_VERBOSE) {
+    MOFEM_LOG_C("SYNC", Sev::verbose, "Rank %d nb. shared ents %u\n",
+                m_field.get_comm_rank(), shared.size());
+  }
+
+  // synchronise range
+  for (int kk = 0; kk < nrecvs; kk++) {
+
+    int len = olengths[kk];
+    int *data_from_proc = rbuf[kk];
+
+    for (int ee = 0; ee < len;) {
+      EntityHandle ent;
+      EntityHandle parent;
+      unsigned long long uulong_bit;
+      bcopy(&data_from_proc[ee], &ent, sizeof(EntityHandle));
+      ee += block_size;
+      bcopy(&data_from_proc[ee], &parent, sizeof(EntityHandle));
+      ee += block_size;
+      bcopy(&data_from_proc[ee], &uulong_bit, sizeof(unsigned long long));
+      ee += block_size;
+
+      CHKERR set_parent(ent, parent);
+      CHKERR set_bit(ent, BitRefLevel(uulong_bit));
+
+      if (verb >= VERY_VERBOSE) {
+        MOFEM_LOG_C("SYNC", Sev::verbose, "received %lu (%lu) from %d at %d\n",
+                    ent, parent, onodes[kk], m_field.get_comm_rank());
+        MOFEM_LOG("SYNC", Sev::verbose) << "Bit " << BitRefLevel(uulong_bit);
+      }
+    }
+  }
+
+  if (verb >= VERBOSE)
+    MOFEM_LOG_C("SYNC", Sev::verbose, "Rank %d nb. after ents %u",
+                m_field.get_comm_rank(), ents.size());
+
+  // Cleaning
+  CHKERR PetscFree(s_waits);
+  CHKERR PetscFree(rbuf[0]);
+  CHKERR PetscFree(rbuf);
+  CHKERR PetscFree(r_waits);
+  CHKERR PetscFree(onodes);
+  CHKERR PetscFree(olengths);
+  CHKERR PetscCommDestroy(&comm);
+
+  if (verb >= VERBOSE)
+    MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
+
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode CommInterface::resolveSharedFiniteElements(
     const Problem *problem_ptr, const std::string &fe_name, int verb) {
   MoFEM::Interface &m_field = cOre;
@@ -644,9 +922,9 @@ CommInterface::partitionMesh(const Range &ents, const int dim,
            fe_it != proc_ents.end(); ++fe_it, ++ii) {
 
         if (type_from_handle(*fe_it) == MBENTITYSET) {
-          SETERRQ(
-              PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-              "not yet implemented, don't know what to do for meshset element");
+          SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                  "not yet implemented, don't know what to do for meshset "
+                  "element");
         } else {
 
           Range dim_ents;
@@ -794,8 +1072,8 @@ CommInterface::partitionMesh(const Range &ents, const int dim,
           CHKERR m_field.get_moab().delete_entities(&old_set, 1);
         }
       }
-      // write a tag to those sets denoting they're partition sets, with a value
-      // of the proc number
+      // write a tag to those sets denoting they're partition sets, with a
+      // value of the proc number
       std::vector<int> dum_ids(n_parts);
       for (int i = 0; i < n_parts; i++)
         dum_ids[i] = i;
