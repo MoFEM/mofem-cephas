@@ -573,17 +573,37 @@ struct CoreInterface : public UnknownInterface {
   /** \brief get field structure
    * \ingroup mofem_field
    *
+   * If field is not found throw error if bh == MF_EXIST, or return
+   * nullptr if bh == MF_ZERO, i.e. otherwise
+   *
    * \param name field name
+   * \param bh controls behaviour
    * \return const Field*
    *
    */
-  virtual Field *get_field_structure(const std::string &name) = 0;
+  virtual const Field *
+  get_field_structure(const std::string &name,
+                      enum MoFEMTypes bh = MF_EXIST) const = 0;
 
   /**@}*/
 
   /** \name Finite elements */
 
   /**@{*/
+
+  /**
+   * @brief get finite element struture
+   *
+   * If finite element is not found throw error if bh == MF_EXIST, or return
+   * nullptr if bh == MF_ZERO, i.e. otherwise
+   *
+   * @param name
+   * @param bh 
+   * @return FiniteElement*
+   */
+  virtual const FiniteElement *
+  get_finite_element_structure(const std::string &name,
+                      enum MoFEMTypes bh = MF_EXIST) const = 0;
 
   /**
    * \brief Check if finite element is in database

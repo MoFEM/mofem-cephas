@@ -55,22 +55,25 @@ EntityHandle Core::get_field_meshset(const std::string name) const {
 }
 
 bool Core::check_field(const std::string &name) const {
-  auto &set = fIelds.get<FieldName_mi_tag>();
-  auto miit = set.find(name);
-  if (miit == set.end())
+  auto miit = fIelds.get<FieldName_mi_tag>().find(name);
+  if (miit == fIelds.get<FieldName_mi_tag>().end())
     return false;
-  return true;
+  else
+    return true;
 }
 
-Field *Core::get_field_structure(const std::string &name) {
-  auto &set = fIelds.get<FieldName_mi_tag>();
-  auto miit = set.find(name);
-  if (miit == set.end()) {
-    throw MoFEMException(
-        MOFEM_NOT_FOUND,
-        std::string("field < " + name +
-                    " > not in database (top tip: check spelling)")
-            .c_str());
+const Field *Core::get_field_structure(const std::string &name,
+                                       enum MoFEMTypes bh) const {
+  auto miit = fIelds.get<FieldName_mi_tag>().find(name);
+  if (miit == fIelds.get<FieldName_mi_tag>().end()) {
+    if (bh == MF_EXIST)
+      throw MoFEMException(
+          MOFEM_NOT_FOUND,
+          std::string("field < " + name +
+                      " > not in database (top tip: check spelling)")
+              .c_str());
+    else
+      return nullptr;
   }
   return miit->get();
 }

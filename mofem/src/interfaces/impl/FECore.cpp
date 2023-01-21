@@ -14,14 +14,28 @@
 
 namespace MoFEM {
 
+const FiniteElement *
+Core::get_finite_element_structure(const std::string &name,
+                                   enum MoFEMTypes bh) const {
+  auto miit = finiteElements.get<FiniteElement_name_mi_tag>().find(name);
+  if (miit == finiteElements.get<FiniteElement_name_mi_tag>().end())
+    if (bh == MF_EXIST)
+      throw MoFEMException(
+          MOFEM_NOT_FOUND,
+          std::string("finite element < " + name +
+                      " > not in database (top tip: check spelling)")
+              .c_str());
+    else
+      return nullptr;
+  return miit->get();
+}
+
 bool Core::check_finite_element(const std::string &name) const {
-  typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type
-      FeSetByName;
-  const FeSetByName &set = finiteElements.get<FiniteElement_name_mi_tag>();
-  FeSetByName::iterator miit = set.find(name);
-  if (miit == set.end())
+  auto miit = finiteElements.get<FiniteElement_name_mi_tag>().find(name);
+  if (miit == finiteElements.get<FiniteElement_name_mi_tag>().end())
     return false;
-  return true;
+  else
+    return true;
 }
 
 MoFEMErrorCode Core::add_finite_element(const std::string &fe_name,

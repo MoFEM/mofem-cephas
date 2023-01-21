@@ -593,7 +593,9 @@ protected:
   MoFEMErrorCode get_field_entities_by_handle(const std::string name,
                                               Range &ents) const;
   bool check_field(const std::string &name) const;
-  Field *get_field_structure(const std::string &name);
+
+  const Field *get_field_structure(const std::string &name,
+                                   enum MoFEMTypes bh = MF_EXIST) const;
 
   /**@}*/
 
@@ -601,7 +603,12 @@ protected:
 
   /**@{*/
 
+  const FiniteElement *
+  get_finite_element_structure(const std::string &name,
+                               enum MoFEMTypes bh = MF_EXCL) const;
+
   bool check_finite_element(const std::string &name) const;
+
   MoFEMErrorCode add_finite_element(const std::string &fe_name,
                                     enum MoFEMTypes bh = MF_EXCL,
                                     int verb = DEFAULT_VERBOSITY);

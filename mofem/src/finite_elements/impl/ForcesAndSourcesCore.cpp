@@ -1343,7 +1343,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
   using UDO = UserDataOperator;
 
   std::array<std::string, 2> field_name;
-  std::array<Field *, 3> field_struture;
+  std::array<const Field *, 3> field_struture;
   std::array<int, 2>
       field_id; // note the this is field bit number (nor field bit)
   std::array<FieldSpace, 2> space;
