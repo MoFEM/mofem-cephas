@@ -239,7 +239,7 @@ SmartPetscObj<TS> PipelineManager::createTSEX(SmartPetscObj<DM> dm) {
     CHKERR DMMoFEMTSSetRHSFunction(dm, simple->getSkeletonFEName(),
                                    feSkeletonExplicitRhs, null, null);
 
-  // Note: More cases for explit, and implicit time ingeration cases can be
+  // Note: More cases for explict, and implicit time interation cases can be
   // implemented here.
 
   auto ts = MoFEM::createTS(m_field.get_comm());
@@ -302,7 +302,7 @@ SmartPetscObj<TS> PipelineManager::createTSIM(SmartPetscObj<DM> dm) {
     CHKERR DMMoFEMTSSetIFunction(dm, simple->getSkeletonFEName(), feSkeletonRhs,
                                  null, null);
 
-  // Note: More cases for explit, and implicit time ingeration cases can be
+  // Note: More cases for explict, and implicit time interation cases can be
   // implemented here.
 
   auto ts = MoFEM::createTS(m_field.get_comm());
@@ -365,7 +365,7 @@ SmartPetscObj<TS> PipelineManager::createTSIM2(SmartPetscObj<DM> dm) {
     CHKERR DMMoFEMTSSetI2Function(dm, simple->getSkeletonFEName(),
                                   feSkeletonRhs, null, null);
 
-  // Note: More cases for explit, and implicit time ingeration cases can be
+  // Note: More cases for explict, and implicit time interation cases can be
   // implemented here.
 
   auto ts = MoFEM::createTS(m_field.get_comm());
@@ -439,7 +439,7 @@ SmartPetscObj<TS> PipelineManager::createTSIMEX(SmartPetscObj<DM> dm) {
     CHKERR DMMoFEMTSSetRHSFunction(dm, simple->getSkeletonFEName(),
                                    feSkeletonExplicitRhs, null, null);
 
-  // Note: More cases for explit, and implicit time ingeration cases can be
+  // Note: More cases for explict, and implicit time interation cases can be
   // implemented here.
 
   auto ts = MoFEM::createTS(m_field.get_comm());
