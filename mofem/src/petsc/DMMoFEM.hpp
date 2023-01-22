@@ -4,8 +4,8 @@
 
 
 
-#ifndef __DMMMOFEM_H
-#define __DMMMOFEM_H
+#ifndef __DMMOFEM_H
+#define __DMMOFEM_H
 
 #define DM_NO_ELEMENT "DMNONEFE"
 
@@ -1018,7 +1018,7 @@ inline auto smartGetDMTsCtx(DM dm) {
 
 } // namespace MoFEM
 
-#endif //__DMMMOFEM_H
+#endif //__DMMOFEM_H
 
 /**
  * \defgroup dm Distributed mesh manager
