@@ -213,9 +213,12 @@ struct BitRefManager : public UnknownInterface {
 
   /**
    * @brief Process bit ref level by lambda function
-   * 
-   * @param fun 
-   * @return MoFEMErrorCode 
+   *
+   * \note That not apply to type of MBENTITY. To avoid problems with problem
+   * meshsets. 
+   *
+   * @param fun
+   * @return MoFEMErrorCode
    */
   MoFEMErrorCode lambdaBitRefLevel(
       boost::function<void(EntityHandle ent, BitRefLevel &bit)> fun) const;

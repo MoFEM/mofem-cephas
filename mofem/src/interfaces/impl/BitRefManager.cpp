@@ -529,6 +529,7 @@ MoFEMErrorCode BitRefManager::lambdaBitRefLevel(
     Range ents;
     CHKERR m_field.get_moab().get_entities_by_handle(
         m_field.get_moab().get_root_set(), ents, true);
+    ents = subtract(ents, ents.subset_by_type(MBENTITYSET));
     return ents;
   };
   CHKERR lambdaBitRefLevel(get_ents(), fun);
