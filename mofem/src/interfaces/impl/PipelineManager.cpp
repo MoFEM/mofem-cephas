@@ -62,8 +62,6 @@ SmartPetscObj<KSP> PipelineManager::createKSP(SmartPetscObj<DM> dm) {
 
   if (!dm)
     dm = copy_dm_struture(simple->getDM());
-  else
-    dm = copy_dm_struture(dm);
 
   const MoFEM::Problem *prb_ptr;
   CHKERR DMMoFEMGetProblemPtr(dm, &prb_ptr);
@@ -124,8 +122,6 @@ SmartPetscObj<SNES> PipelineManager::createSNES(SmartPetscObj<DM> dm) {
 
   if (!dm)
     dm = copy_dm_struture(simple->getDM());
-  else
-    dm = copy_dm_struture(dm);
 
   const MoFEM::Problem *prb_ptr;
   CHKERR DMMoFEMGetProblemPtr(dm, &prb_ptr);
@@ -209,8 +205,6 @@ SmartPetscObj<TS> PipelineManager::createTSEX(SmartPetscObj<DM> dm) {
 
   if (!dm)
     dm = copy_dm_struture(simple->getDM());
-  else
-    dm = copy_dm_struture(dm);
 
   const MoFEM::Problem *prb_ptr;
   CHKERR DMMoFEMGetProblemPtr(dm, &prb_ptr);
@@ -263,8 +257,6 @@ SmartPetscObj<TS> PipelineManager::createTSIM(SmartPetscObj<DM> dm) {
 
   if (!dm)
     dm = copy_dm_struture(simple->getDM());
-  else
-    dm = copy_dm_struture(dm);
 
   const MoFEM::Problem *prb_ptr;
   CHKERR DMMoFEMGetProblemPtr(dm, &prb_ptr);
@@ -326,8 +318,6 @@ SmartPetscObj<TS> PipelineManager::createTSIM2(SmartPetscObj<DM> dm) {
 
   if (!dm)
     dm = copy_dm_struture(simple->getDM());
-  else
-    dm = copy_dm_struture(dm);
 
   const MoFEM::Problem *prb_ptr;
   CHKERR DMMoFEMGetProblemPtr(dm, &prb_ptr);
@@ -389,8 +379,6 @@ SmartPetscObj<TS> PipelineManager::createTSIMEX(SmartPetscObj<DM> dm) {
 
   if (!dm)
     dm = copy_dm_struture(simple->getDM());
-  else
-    dm = copy_dm_struture(dm);
 
   const MoFEM::Problem *prb_ptr;
   CHKERR DMMoFEMGetProblemPtr(dm, &prb_ptr);
