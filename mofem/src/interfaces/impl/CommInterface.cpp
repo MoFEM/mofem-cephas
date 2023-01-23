@@ -325,11 +325,6 @@ MoFEMErrorCode CommInterface::resolveParentEntities(const Range &ents,
 
     if (parent) {
       auto pstatus_parent = get_pstatus(parent);
-      if (pstatus_parent != pstatus)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "pstatus of parent and child is different - such case is not "
-                "handled");
-
       auto sharing_procs_parent = get_sharing_procs(parent, pstatus_parent);
       auto sharing_handles_parent = get_sharing_handles(parent, pstatus_parent);
 
@@ -340,14 +335,20 @@ MoFEMErrorCode CommInterface::resolveParentEntities(const Range &ents,
                   "sharing processor not set");
 
         if (sharing_procs[proc] != m_field.get_comm_rank()) {
-          if (sharing_procs[proc] != sharing_procs_parent[proc])
-            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                    "sharing proc parent and child is different - such case "
-                    "is not "
-                    "handled");
+
+          auto it = std::find(sharing_procs_parent.begin(),
+                              sharing_procs_parent.end(), sharing_procs[proc]);
+          if (it == sharing_procs_parent.end()) {
+            SETERRQ1(
+                PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Sharing proc for parent entity can not be found proc = %u",
+                sharing_procs[proc]);
+          }
 
           auto handle_on_sharing_proc = sharing_handles[proc];
-          auto parent_handle_on_sharing_proc = sharing_handles_parent[proc];
+          auto parent_handle_on_sharing_proc =
+              sharing_handles_parent[std::distance(sharing_procs_parent.begin(),
+                                                   it)];
           sbuffer[sharing_procs[proc]].push_back(handle_on_sharing_proc);
           sbuffer[sharing_procs[proc]].push_back(parent_handle_on_sharing_proc);
           sbuffer[sharing_procs[proc]].push_back(bit.to_ullong());
@@ -372,6 +373,7 @@ MoFEMErrorCode CommInterface::resolveParentEntities(const Range &ents,
           sbuffer[sharing_procs[proc]].push_back(handle_on_sharing_proc);
           sbuffer[sharing_procs[proc]].push_back(parent);
           sbuffer[sharing_procs[proc]].push_back(bit.to_ullong());
+
           if (verb >= NOISY)
             MOFEM_LOG_C("SYNC", Sev::noisy, "send %lu (%lu) to %d at %d\n", ent,
                         handle_on_sharing_proc, sharing_procs[proc],
