@@ -351,7 +351,15 @@ MoFEMErrorCode CommInterface::resolveParentEntities(const Range &ents,
                                                    it)];
           sbuffer[sharing_procs[proc]].push_back(handle_on_sharing_proc);
           sbuffer[sharing_procs[proc]].push_back(parent_handle_on_sharing_proc);
-          sbuffer[sharing_procs[proc]].push_back(bit.to_ullong());
+          try {
+            sbuffer[sharing_procs[proc]].push_back(bit.to_ullong());
+          } catch (std::exception &ex) {
+            MOFEM_LOG("SELF", Sev::warning) << ex.what();
+            MOFEM_LOG("SELF", Sev::warning)
+                << "On " << ent << " "
+                << moab::CN::EntityTypeName(type_from_handle(ent));
+            MOFEM_LOG("SELF", Sev::warning) << "For bit ref " << bit;
+          }          
           if (verb >= NOISY)
             MOFEM_LOG_C("SYNC", Sev::noisy, "send %lu (%lu) to %d at %d\n", ent,
                         handle_on_sharing_proc, sharing_procs[proc],
@@ -372,7 +380,16 @@ MoFEMErrorCode CommInterface::resolveParentEntities(const Range &ents,
           auto handle_on_sharing_proc = sharing_handles[proc];
           sbuffer[sharing_procs[proc]].push_back(handle_on_sharing_proc);
           sbuffer[sharing_procs[proc]].push_back(parent);
-          sbuffer[sharing_procs[proc]].push_back(bit.to_ullong());
+
+          try {
+            sbuffer[sharing_procs[proc]].push_back(bit.to_ullong());
+          } catch (std::exception &ex) {
+            MOFEM_LOG("SELF", Sev::warning) << ex.what();
+            MOFEM_LOG("SELF", Sev::warning)
+                << "On " << ent << " "
+                << moab::CN::EntityTypeName(type_from_handle(ent));
+            MOFEM_LOG("SELF", Sev::warning) << "For bit ref " << bit << " on ";
+          }
 
           if (verb >= NOISY)
             MOFEM_LOG_C("SYNC", Sev::noisy, "send %lu (%lu) to %d at %d\n", ent,
