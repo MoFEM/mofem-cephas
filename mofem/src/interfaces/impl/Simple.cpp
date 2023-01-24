@@ -64,7 +64,6 @@ MoFEMErrorCode Simple::setSkeletonAdjacency<-1>(std::string fe_name) {
   }
   MoFEMFunctionReturn(0);
 }
-
 template <int DIM> MoFEMErrorCode Simple::setParentAdjacency() {
   static_assert(DIM == 2 || DIM == 3, "not implemented");
   return MOFEM_NOT_IMPLEMENTED;
@@ -225,12 +224,12 @@ MoFEMErrorCode Simple::loadFile(const std::string options,
     }
   }
 
-  if (addSkeletonFE) 
-    CHKERR exchangeGhostCells();
   if (!boundaryMeshset)
     CHKERR createBoundaryMeshset();
   if (!skeletonMeshset)
     CHKERR createSkeletonMeshset();
+  if (addSkeletonFE)
+    CHKERR exchangeGhostCells();
 
   if (bitLevel.any()) {
     Range ents;
