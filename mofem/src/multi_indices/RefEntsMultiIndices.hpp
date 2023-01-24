@@ -137,9 +137,6 @@ struct RefElement;
 * \brief Struct keeps handle to refined handle.
 * \ingroup ent_multi_indices
 
-\todo th_RefType "_RefType" is set as two integers, need to be fixed, it is
-waste of space.
-
 */
 template <> struct RefEntityTmp<0> {
 

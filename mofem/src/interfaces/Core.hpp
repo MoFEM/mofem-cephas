@@ -197,7 +197,6 @@ template <> struct CoreTmp<0> : public Interface {
   inline Tag get_th_RefParentHandle() const { return th_RefParentHandle; }
   inline Tag get_th_RefBitLevel() const { return th_RefBitLevel; }
   inline Tag get_th_RefBitEdge() const { return th_RefBitEdge; }
-  inline Tag get_th_RefType() const { return th_RefType; }
 
   /**@}*/
 
@@ -258,7 +257,6 @@ protected:
   Tag th_Part; ///< Tag for partition number
   Tag th_RefParentHandle, th_RefBitLevel, th_RefBitLevel_Mask, th_RefBitEdge,
       th_RefFEMeshset;
-  Tag th_RefType;
   Tag th_FieldId, th_FieldName, th_FieldName_DataNamePrefix, th_FieldSpace,
       th_FieldBase;
   Tag th_FEId, th_FEName;

@@ -557,12 +557,6 @@ MoFEMErrorCode MeshRefinement::refineTets(const Range &_tets,
 
     if (nb_new_tets) {
 
-      int ref_type[2];
-      ref_type[0] = parent_edges_bit.count();
-      ref_type[1] = sub_type;
-
-      CHKERR moab.tag_clear_data(cOre.get_th_RefType(), &ref_tets[0],
-                                 nb_new_tets, ref_type);
       CHKERR moab.tag_clear_data(cOre.get_th_RefBitEdge(), &ref_tets[0],
                                  nb_new_tets, &parent_edges_bit);
       CHKERR moab.tag_clear_data(cOre.get_th_RefParentHandle(), &ref_tets[0],
@@ -1224,13 +1218,6 @@ MoFEMErrorCode MeshRefinement::refineTris(const Range &_tris,
 
     if (nb_new_tris) {
 
-      int ref_type[2];
-      ref_type[0] = parent_edges_bit.count();
-      ref_type[1] = 0;
-
-      // Set tags for reference dtriangles
-      CHKERR moab.tag_clear_data(cOre.get_th_RefType(), &ref_tris[0],
-                                 nb_new_tris, ref_type);
       CHKERR moab.tag_clear_data(cOre.get_th_RefBitEdge(), &ref_tris[0],
                                  nb_new_tris, &parent_edges_bit);
       CHKERR moab.tag_clear_data(cOre.get_th_RefParentHandle(), &ref_tris[0],
