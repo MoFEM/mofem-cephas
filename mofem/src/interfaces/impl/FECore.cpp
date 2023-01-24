@@ -943,7 +943,7 @@ Core::get_problem_finite_elements_entities(const std::string problem_name,
     if (miit != hi_miit) {
       std::vector<EntityHandle> ents;
       ents.reserve(std::distance(miit, hi_miit));
-      for (; miit != hi_miit; miit)
+      for (; miit != hi_miit; ++miit)
         ents.push_back((*miit)->getEnt());
       int part = (*miit)->getPart();
       CHKERR get_moab().tag_clear_data(th_Part, &*ents.begin(), ents.size(),
