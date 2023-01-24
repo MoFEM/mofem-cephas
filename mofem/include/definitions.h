@@ -216,9 +216,7 @@ enum VERBOSITY_LEVELS {
 
 #define MAX_CORE_TMP 1       ///< maximal number of cores
 #define BITREFEDGES_SIZE 32  ///< number refined edges
-#define BITREFLEVEL_SIZE                                                       \
-  128 ///< max number of refinements @todo should be 64 bit that it fits to long
-      ///< long int
+#define BITREFLEVEL_SIZE 64  ///< max number of refinements
 #define BITFIELDID_SIZE 32   ///< max number of fields
 #define BITFEID_SIZE 32      ///< max number of finite elements
 #define BITPROBLEMID_SIZE 32 ///< max number of problems
