@@ -685,6 +685,18 @@ struct BitRefManager : public UnknownInterface {
 
   /**@}*/
 
+  /**@{*/
+
+  /**
+   * @brief Fix tag size when BITREFLEVEL_SIZE of core library is different than
+   * file BITREFLEVEL_SIZE
+   *
+   * @return MoFEMErrorCode
+   */
+  static MoFEMErrorCode fixTagSize(moab::Interface &moab);
+
+  /**@}*/
+
 
   /** \name Get tag handles to data on the mesh */
 

@@ -1230,4 +1230,74 @@ MoFEMErrorCode BitRefManager::updateRangeByParent(const Range &child_ents,
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode BitRefManager::fixTagSize(moab::Interface &moab) {
+  MoFEMFunctionBegin;
+
+  if (Tag th = 0; moab.tag_get_handle("_RefBitLevel", th) == MB_SUCCESS) {
+
+    auto get_old_tag = [&](auto &&name) {
+      Tag th;
+      CHK_MOAB_THROW(moab.tag_get_handle(name, th),
+                     "bit ref level handle does not exist");
+      return th;
+    };
+
+    auto get_new_tag = [&](auto &&name, auto &&def_val) {
+      Tag th;
+      CHK_MOAB_THROW(moab.tag_get_handle(
+                         name, sizeof(BitRefLevel), MB_TYPE_OPAQUE, th,
+                         MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE, &def_val),
+                     "can not create tag");
+      return th;
+    };
+
+    int length;
+    CHKERR moab.tag_get_length(get_old_tag("_RefBitLevel"), length);
+
+    if (sizeof(BitRefLevel) != length) {
+
+      Range all_ents;
+      CHKERR moab.get_entities_by_type(0, MBENTITYSET, all_ents, true);
+      CHKERR moab.get_entities_by_handle(0, all_ents, true);
+
+      auto process_tag = [&](auto &&name, auto &&def_val) {
+        MoFEMFunctionBegin;
+        auto tag_old = get_old_tag(name);
+        auto get_bits = [&]() {
+          std::vector<BitRefLevel> bits;
+          bits.reserve(all_ents.size());
+          auto it_bit = bits.begin();
+          for (auto e : all_ents) {
+            const void *data;
+            int data_size;
+            CHKERR moab.tag_get_by_ptr(tag_old, &e, 1, (const void **)&data,
+                                       &data_size);
+            bcopy(
+                data, &*it_bit,
+                std::min(sizeof(BitRefLevel), static_cast<size_t>(data_size)));
+            ++it_bit;
+          }
+          return bits;
+        };
+        auto bits = get_bits();
+        CHKERR moab.tag_delete(tag_old);
+        auto tag_new = get_new_tag(name, def_val);
+        auto it_bit = bits.begin();
+        for (auto e : all_ents) {
+          if (it_bit->any()) {
+            CHKERR moab.tag_set_data(tag_new, &e, 1, &*it_bit);
+          }
+          ++it_bit;
+        }
+        MoFEMFunctionReturn(0);
+      };
+
+      CHKERR process_tag("_RefBitLevel", BitRefLevel() = 0);
+      CHKERR process_tag("_RefBitLevelMask", BitRefLevel().set());
+    }
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
 } // namespace MoFEM
