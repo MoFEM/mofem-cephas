@@ -18,15 +18,17 @@ const FiniteElement *
 Core::get_finite_element_structure(const std::string &name,
                                    enum MoFEMTypes bh) const {
   auto miit = finiteElements.get<FiniteElement_name_mi_tag>().find(name);
-  if (miit == finiteElements.get<FiniteElement_name_mi_tag>().end())
-    if (bh == MF_EXIST)
+  if (miit == finiteElements.get<FiniteElement_name_mi_tag>().end()) {
+    if (bh == MF_EXIST) {
       throw MoFEMException(
           MOFEM_NOT_FOUND,
           std::string("finite element < " + name +
                       " > not in database (top tip: check spelling)")
               .c_str());
-    else
+    } else {
       return nullptr;
+    }
+  }
   return miit->get();
 }
 
