@@ -388,7 +388,7 @@ MoFEMErrorCode CommInterface::resolveParentEntities(const Range &ents,
             MOFEM_LOG("SELF", Sev::warning)
                 << "On " << ent << " "
                 << moab::CN::EntityTypeName(type_from_handle(ent));
-            MOFEM_LOG("SELF", Sev::warning) << "For bit ref " << bit << " on ";
+            MOFEM_LOG("SELF", Sev::warning) << "For bit ref " << bit;
           }
 
           if (verb >= NOISY)
