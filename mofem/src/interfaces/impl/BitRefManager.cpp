@@ -1235,6 +1235,8 @@ MoFEMErrorCode BitRefManager::fixTagSize(moab::Interface &moab) {
 
   if (Tag th = 0; moab.tag_get_handle("_RefBitLevel", th) == MB_SUCCESS) {
 
+    MOFEM_LOG("BitRefWorld", Sev::verbose) << "Tag found";
+
     auto get_old_tag = [&](auto &&name) {
       Tag th;
       CHK_MOAB_THROW(moab.tag_get_handle(name, th),
@@ -1255,6 +1257,8 @@ MoFEMErrorCode BitRefManager::fixTagSize(moab::Interface &moab) {
     CHKERR moab.tag_get_length(get_old_tag("_RefBitLevel"), length);
 
     if (sizeof(BitRefLevel) != length) {
+
+      MOFEM_LOG("BitRefWorld", Sev::verbose) << "Fixing tag length";
 
       Range all_ents;
       CHKERR moab.get_entities_by_type(0, MBENTITYSET, all_ents, true);
