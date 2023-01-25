@@ -693,7 +693,8 @@ struct BitRefManager : public UnknownInterface {
    *
    * @return MoFEMErrorCode
    */
-  static MoFEMErrorCode fixTagSize(moab::Interface &moab);
+  static MoFEMErrorCode fixTagSize(moab::Interface &moab,
+                                   bool *changed = nullptr);
 
   /**@}*/
 

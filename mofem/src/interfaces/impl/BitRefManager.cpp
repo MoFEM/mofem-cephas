@@ -1230,12 +1230,16 @@ MoFEMErrorCode BitRefManager::updateRangeByParent(const Range &child_ents,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode BitRefManager::fixTagSize(moab::Interface &moab) {
+MoFEMErrorCode BitRefManager::fixTagSize(moab::Interface &moab, bool *changes) {
   MoFEMFunctionBegin;
+  MOFEM_LOG_CHANNEL("WORLD");
+
+  if (changes)
+    *changes = false;
 
   if (Tag th = 0; moab.tag_get_handle("_RefBitLevel", th) == MB_SUCCESS) {
 
-    MOFEM_LOG("BitRefWorld", Sev::verbose) << "Tag found";
+    MOFEM_TAG_AND_LOG("WORLD", Sev::verbose, "BitRefManager") << "Tag found";
 
     auto get_old_tag = [&](auto &&name) {
       Tag th;
@@ -1258,7 +1262,11 @@ MoFEMErrorCode BitRefManager::fixTagSize(moab::Interface &moab) {
 
     if (sizeof(BitRefLevel) != length) {
 
-      MOFEM_LOG("BitRefWorld", Sev::verbose) << "Fixing tag length";
+      if(changes)
+        *changes = true;
+
+      MOFEM_TAG_AND_LOG("WORLD", Sev::verbose, "BitRefManager")
+          << "Fixing tag length";
 
       Range all_ents;
       CHKERR moab.get_entities_by_type(0, MBENTITYSET, all_ents, true);
@@ -1301,6 +1309,7 @@ MoFEMErrorCode BitRefManager::fixTagSize(moab::Interface &moab) {
     }
   }
 
+  MOFEM_LOG_CHANNEL("WORLD");
   MoFEMFunctionReturn(0);
 }
 
