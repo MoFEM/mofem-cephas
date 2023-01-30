@@ -511,6 +511,80 @@ struct CfgCubitBcData : public GenericCubitBcData {
   friend std::ostream &operator<<(std::ostream &os, const CfgCubitBcData &e);
 };
 
+
+/*! \struct BlocksetScalarBcData //from TemperatureCubitBcData
+ *  \brief Definition of the temperature bc data structure
+ * \ingroup mofem_bc
+ */
+struct BlocksetScalarBcData : public GenericCubitBcData {
+  struct __attribute__((packed)) _data_ {
+    char name[16]; //< 11 characters for "BlocksetScalarBc" (11)
+    char value1;     //< This is always zero (12)
+    char value2;  //< 0: temperature is not applied on thin shells (default); 1:
+                //temperature is applied on thin shells (13)
+    char value3; //< 0: N/A, 1: temperature value applied (not on thin shells)
+                //(14)
+    char value4; //< 0: N/A, 1: temperature applied on thin shell middle (15)
+    char value5; //< 0: N/A, 1: thin shell temperature gradient specified (16)
+    char value6; //< 0: N/A, 1: top thin shell temperature (17)
+    char value7; //< 0: N/A, 1: bottom thin shell temperature (18)
+    char value8; //< This is always zero (19)
+    double value9; //< Temperature (default case - no thin shells)
+    double value10; //< Temperature for middle of thin shells
+    double value11; //< Temperature gradient for thin shells
+    double value12; //< Temperature for top of thin shells
+    double value13; //< Temperature for bottom of thin shells
+    double value14; //< This is always zero, i.e. ignore
+  };
+
+  _data_ data;
+
+  std::size_t getSizeOfData() const { return sizeof(_data_); }
+  const void *getDataPtr() const { return &data; }
+
+  BlocksetScalarBcData() : GenericCubitBcData(BLOCKSET) {
+    bzero(&data, sizeof(data));
+  }
+
+  MoFEMErrorCode fill_data(const std::vector<char> &bc_data) {
+    MoFEMFunctionBeginHot;
+    // Fill data
+    if (bc_data.size() > sizeof(data))
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "Wrong number of parameters in Cubit %d != %d", bc_data.size(),
+               sizeof(data));
+
+    // Fix for newer version of Cubit
+    if (bc_data.size() == 58) {
+      std::vector<char> new_bc_data(66, 0);
+      size_t ii = 0;
+      for (; ii != 16; ++ii)
+        new_bc_data[ii] = bc_data[ii];
+      for (; ii != bc_data.size(); ++ii)
+        new_bc_data[ii + 1] = bc_data[ii];
+      memcpy(&data, &new_bc_data[0], new_bc_data.size());
+    } else {
+      memcpy(&data, &bc_data[0], bc_data.size());
+    }
+
+    MoFEMFunctionReturnHot(0);
+  }
+
+  MoFEMErrorCode set_data(void *tag_ptr, unsigned int size) const {
+    MoFEMFunctionBeginHot;
+    if (size != sizeof(data)) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
+    }
+    memcpy(tag_ptr, &data, size);
+    MoFEMFunctionReturnHot(0);
+  }
+
+  /*! \brief Print temperature bc data
+   */
+  friend std::ostream &operator<<(std::ostream &os,
+                                  const BlocksetScalarBcData &e);
+};
+
 } // namespace MoFEM
 
 #endif // __BCMULTIINDICES_HPP__

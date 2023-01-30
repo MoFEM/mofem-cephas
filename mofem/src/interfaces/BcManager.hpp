@@ -39,7 +39,8 @@ struct BcManager : public UnknownInterface {
 
     boost::shared_ptr<DisplacementCubitBcData> dispBcPtr;
     boost::shared_ptr<TemperatureCubitBcData> tempBcPtr;
-    boost::shared_ptr<HeatFluxCubitBcData> heatFluxBcPtr;
+    boost::shared_ptr<HeatFluxCubitBcData> heatFluxBcPtr
+    boost::shared_ptr<BlocksetScalarBcData> essentialScalarBcPtr;;
 
     /// \deprecated use getBcEntsPtr
     DEPRECATED inline auto getBcEdgesPtr() {
