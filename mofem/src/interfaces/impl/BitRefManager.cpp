@@ -1039,7 +1039,7 @@ MoFEMErrorCode BitRefManager::updateMeshsetByEntitiesChildren(
   CHKERR filterEntitiesByRefLevel(parent_bit, parent_mask, parent_ents, verb);
   if (verb >= VERY_VERBOSE) {
     MOFEM_LOG_FUNCTION();
-    MOFEM_LOG("BitRefSelf", Sev::noisy) << "Parnets: " << parent;
+    MOFEM_LOG("BitRefSelf", Sev::noisy) << "Parents: " << parent;
   }
   Range children_ents;
   CHKERR updateRangeByChildren(parent_ents, children_ents);
