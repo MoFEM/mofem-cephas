@@ -41,20 +41,18 @@ MoFEMErrorCode EssentialPreProc<TemperatureCubitBcData>::operator()() {
               << "Apply EssentialPreProc<TemperatureCubitBcData>: "
               << problem_name << "_" << field_name << "_" << block_name;
 
-          double v;
-
-          auto lambda = [&](boost::shared_ptr<FieldEntity> field_entity_ptr) {
-            MoFEMFunctionBegin;
-            std::fill(field_entity_ptr->getEntFieldData().begin(),
-                      field_entity_ptr->getEntFieldData().end(), v);
-            MoFEMFunctionReturn(0);
-          };
-
           auto verts = bc.second->bcEnts.subset_by_type(MBVERTEX);
-          v = temp_bc->data.value1;
+          auto v = temp_bc->data.value1;
           for (auto s : vecOfTimeScalingMethods) {
             v *= s->getScale(fe_method_ptr->ts_t);
           }
+
+          auto lambda = [&](boost::shared_ptr<FieldEntity> field_entity_ptr) {
+            MoFEMFunctionBegin;
+            for (auto &d : field_entity_ptr->getEntFieldData())
+              d = v;
+            MoFEMFunctionReturn(0);
+          };
           CHKERR fb->fieldLambdaOnEntities(lambda, field_name, &verts);
         }
       }
