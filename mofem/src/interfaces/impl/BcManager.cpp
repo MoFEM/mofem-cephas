@@ -485,14 +485,13 @@ MoFEMErrorCode
 BcManager::removeBlockDOFsOnEntities<BcScalarMeshsetType<BLOCKSET>>(
     const std::string problem_name, const std::string block_name,
     const std::string field_name, bool get_low_dim_ents,
-    bool block_name_field_prefix, bool is_distributed_mesh) {
+    bool is_distributed_mesh) {
   Interface &m_field = cOre;
   auto prb_mng = m_field.getInterface<ProblemsManager>();
   MoFEMFunctionBegin;
 
   CHKERR pushMarkDOFsOnEntities<BcScalarMeshsetType<BLOCKSET>>(
-      problem_name, block_name, field_name, get_low_dim_ents,
-      block_name_field_prefix);
+      problem_name, block_name, field_name, get_low_dim_ents);
 
   Range ents_to_remove;
 
@@ -915,31 +914,17 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
 template <>
 MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcScalarMeshsetType<BLOCKSET>>(
     const std::string problem_name, const std::string block_name,
-    const std::string field_name, bool get_low_dim_ents,
-    bool block_name_field_prefix) {
+    const std::string field_name, bool get_low_dim_ents) {
   Interface &m_field = cOre;
   auto prb_mng = m_field.getInterface<ProblemsManager>();
   MoFEMFunctionBegin;
 
-  if (block_name_field_prefix) {
-    CHKERR pushMarkDOFsOnEntities(
-        problem_name, (boost::format("%s_%s") % field_name % block_name).str(),
-        field_name, 0, MAX_DOFS_ON_ENTITY, get_low_dim_ents);
-  } else {
-    CHKERR pushMarkDOFsOnEntities(problem_name, block_name, field_name, 0,
-                                  MAX_DOFS_ON_ENTITY, get_low_dim_ents);
-  }
+  CHKERR pushMarkDOFsOnEntities(problem_name, block_name, field_name, 0,
+                                MAX_DOFS_ON_ENTITY, get_low_dim_ents);
 
-  std::string regex_str;
-  if (block_name_field_prefix) {
-    regex_str = (boost::format("%s_%s_%s_%s(.*)") % problem_name % field_name %
-                 field_name % block_name)
-                    .str();
-  } else {
-    regex_str =
-        (boost::format("%s_%s_%s(.*)") % problem_name % field_name % block_name)
-            .str();
-  }
+  auto regex_str =
+      (boost::format("%s_%s_%s(.*)") % problem_name % field_name % block_name)
+          .str();
 
   for (auto &m : bcMapByBlockName) {
 
@@ -998,9 +983,16 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<TemperatureCubitBcData>(
   MoFEMFunctionBegin;
   CHKERR pushMarkDOFsOnEntities<BcMeshsetType<TEMPERATURESET>>(
       problem_name, field_name, get_low_dim_ents, block_name_field_prefix);
+
+  auto get_block_name = [&]() {
+    if (block_name_field_prefix)
+      return (boost::format("%s_FIX_SCALAR") % field_name).str();
+    else
+      return field_name;
+  };
+
   CHKERR pushMarkDOFsOnEntities<BcScalarMeshsetType<BLOCKSET>>(
-      problem_name, "FIX_SCALAR", field_name, get_low_dim_ents,
-      block_name_field_prefix);
+      problem_name, get_block_name(), field_name, get_low_dim_ents);
   MoFEMFunctionReturn(0);
 }
 
@@ -1013,9 +1005,17 @@ MoFEMErrorCode BcManager::removeBlockDOFsOnEntities<TemperatureCubitBcData>(
   CHKERR removeBlockDOFsOnEntities<BcMeshsetType<TEMPERATURESET>>(
       problem_name, field_name, get_low_dim_ents, block_name_field_prefix,
       is_distributed_mesh);
+
+  auto get_block_name = [&]() {
+    if (block_name_field_prefix)
+      return (boost::format("%s_FIX_SCALAR") % field_name).str();
+    else
+      return field_name;
+  };
+
   CHKERR removeBlockDOFsOnEntities<BcScalarMeshsetType<BLOCKSET>>(
-      problem_name, "FIX_SCALAR", field_name, get_low_dim_ents,
-      block_name_field_prefix, is_distributed_mesh);
+      problem_name, get_block_name(), field_name, get_low_dim_ents,
+      is_distributed_mesh);
   MoFEMFunctionReturn(0);
 }
 
