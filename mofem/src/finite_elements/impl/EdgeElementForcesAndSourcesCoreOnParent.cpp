@@ -4,8 +4,6 @@
 
 */
 
-
-
 namespace MoFEM {
 
 int EdgeElementForcesAndSourcesCoreOnChildParent::getRule(int order) {
@@ -93,9 +91,17 @@ EdgeElementForcesAndSourcesCoreOnChildParent::setGaussPts(int order) {
     auto t_local_coords =
         FTensor::Tensor0<FTensor::PackPtr<double *, 1>>{&local_coords[0]};
 
+    auto scale_quadarture = [&]() {
+      const double scale = Tools::getEdgeLength(ref_node_coords.data()) /
+                           Tools::getEdgeLength(node_coords.data());
+      return scale;
+    };
+
+    const auto sq = scale_quadarture();
+
     for (auto gg = 0; gg != nb_integration_points; ++gg) {
       t_gauss_pts(0) = t_local_coords;
-      t_gauss_pts(1) = ref_gauss_pts(1, 0);
+      t_gauss_pts(1) = sq * ref_gauss_pts(1, gg);
       ++t_gauss_pts;
       ++t_local_coords;
     }

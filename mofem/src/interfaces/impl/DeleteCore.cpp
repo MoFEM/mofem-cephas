@@ -272,7 +272,7 @@ MoFEMErrorCode Core::clear_finite_elements_by_bit_ref(const BitRefLevel bit,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::clear_finite_elements(const Range ents, int verb) {
+MoFEMErrorCode Core::clear_finite_elements(const Range &ents, int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
@@ -289,26 +289,24 @@ MoFEMErrorCode Core::clear_finite_elements(const Range ents, int verb) {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::clear_finite_elements(const std::string name,
-                                           const Range ents, int verb) {
+MoFEMErrorCode Core::clear_finite_elements(const std::string &fe_name,
+                                           const Range &ents, int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
-  CHKERR clear_adjacencies_finite_elements(name, ents, verb);
-  for (Range::const_pair_iterator p_eit = ents.pair_begin();
-       p_eit != ents.pair_end(); p_eit++) {
-    EntityHandle first = p_eit->first;
-    EntityHandle second = p_eit->second;
-    EntFiniteElement_multiIndex::index<
-        Composite_Name_And_Ent_mi_tag>::type::iterator fit,
-        hi_fit;
-    fit = entsFiniteElements.get<Composite_Name_And_Ent_mi_tag>().lower_bound(
-        boost::make_tuple(name, first));
-    hi_fit =
-        entsFiniteElements.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
-            boost::make_tuple(name, second));
-    fit = entsFiniteElements.get<Composite_Name_And_Ent_mi_tag>().erase(fit,
-                                                                        hi_fit);
+  CHKERR clear_adjacencies_finite_elements(fe_name, ents, verb);
+  auto fe_miit = finiteElements.get<FiniteElement_name_mi_tag>().find(fe_name);
+  if (fe_miit == finiteElements.get<FiniteElement_name_mi_tag>().end()) {
+    for (Range::const_pair_iterator p_eit = ents.pair_begin();
+         p_eit != ents.pair_end(); p_eit++) {
+      auto fit = entsFiniteElements.get<Unique_mi_tag>().lower_bound(
+          EntFiniteElement::getLocalUniqueIdCalculate(p_eit->first,
+                                                      (*fe_miit)->getFEUId()));
+      auto hi_fit = entsFiniteElements.get<Unique_mi_tag>().upper_bound(
+          EntFiniteElement::getLocalUniqueIdCalculate(p_eit->second,
+                                                      (*fe_miit)->getFEUId()));
+      fit = entsFiniteElements.get<Unique_mi_tag>().erase(fit, hi_fit);
+    }
   }
   MoFEMFunctionReturn(0);
 }

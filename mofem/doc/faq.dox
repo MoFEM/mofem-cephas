@@ -200,6 +200,16 @@ will be sent. To get webhook URL click on the three-dot sign (next to a channel
 name) -> Connectors -> Configure (Incoming Webhook) -> Give a name and click
 Create -> Copy the URL.
 
+\section faq_post_processing Postprocessing 
+
+\subsection Postporcessing on refined post-proc mesh with PostProcGenerateRefMeshBase and derived classes
+
+If higher approximation orders are used is sometimes required to refine mesh used to postprocessing to visualise higher order polynomials fields. Classes derived from PostProcGenerateRefMeshBase enable adaptive refinement, such that elements only with high orders are refined. To set refinement, use the command line option.
+\code
+-max_post_proc_ref_level 2
+\endcode
+Above results int to refinment levels,
+
 \section faq_git Git and repository
 
 \subsection users_modules_changes_affects_mainRepo Why do users_modules changes affect mofem-cephas/mofem git repository?
@@ -355,6 +365,18 @@ brew install qcachegrind --with-graphviz
 If you have packages installed, follow instruction from <http://kcachegrind.sourceforge.net/html/Documentation.html>
 
 \section faq_programing Programming
+
+\subsection stop_at_first_error How to stop at first error?
+
+When you compile code and programming, you make errors which produce long error
+messages that are diffcult to comprehend. If you like to code stop complying at
+the fatal fist error, you can do that by adding to the CMake file
+\code
+add_definitions(-Wfatal-errors)
+\endcode
+
+\note Remove addition to CMake when you push changes. Use -Wfatal-errors only
+for debuging and programming.
 
 \subsection adding_user_module How to add user module?
 

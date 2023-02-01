@@ -3,7 +3,6 @@
  * low-level functions
  */
 
-
 #ifndef __PROBLEMSMULTIINDICES_HPP__
 #define __PROBLEMSMULTIINDICES_HPP__
 
@@ -128,30 +127,6 @@ struct Problem {
       const int field_bit_number, const EntityHandle ent, const int ent_dof_idx,
       const RowColData row_or_col,
       boost::shared_ptr<NumeredDofEntity> &dof_ptr) const;
-
-/**
- * use with loops to iterate problem fes
- * \ingroup problems_multi_indices
- *
- * for(_IT_NUMEREDFE_BY_NAME_FOR_LOOP_(PROBLEMPTR,NAME,IT)) {
- *   ...
- * }
- *
- */
-#define _IT_NUMEREDFE_BY_NAME_FOR_LOOP_(PROBLEMPTR, NAME, IT)                  \
-  auto IT = PROBLEMPTR->getNumeredFEsBegin(NAME);                              \
-  IT != PROBLEMPTR->getNumeredFEsEnd(NAME);                                    \
-  IT++
-
-  auto getNumeredFEsBegin(std::string fe_name) const {
-    return numeredFiniteElementsPtr->get<FiniteElement_name_mi_tag>()
-        .lower_bound(fe_name);
-  }
-
-  auto getNumeredFEsEnd(std::string fe_name) const {
-    return numeredFiniteElementsPtr->get<FiniteElement_name_mi_tag>()
-        .upper_bound(fe_name);
-  }
 
 /**
  * \brief use with loops to iterate row DOFs

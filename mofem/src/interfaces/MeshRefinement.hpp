@@ -137,7 +137,7 @@ struct MeshRefinement : public UnknownInterface {
                                const BitRefLevel &bit,
                                const bool recursive = false, int verb = QUIET);
 
-  /**\brief refine TET in the meshset
+  /**\brief refine triangles in the meshset
    *
    * \param EntityHandle meshset
    * \param BitRefLevel bitLevel
@@ -148,9 +148,8 @@ struct MeshRefinement : public UnknownInterface {
 
   /**\brief refine TRI in the meshset
    *
-   * \param Range of tets to refine
-   * \param BitRefLevel bitLevel
-   * \param BitRefLevel bitLevel
+   * \param meshset of entities to refine
+   * \param BitRefLevel bit level of created entities
    * \param verb verbosity level
    */
   MoFEMErrorCode refineTris(const Range &tris, const BitRefLevel &bit,
@@ -158,9 +157,8 @@ struct MeshRefinement : public UnknownInterface {
 
   /**\brief refine TRI in the meshset
    *
-   * \param Range of tets to refine
-   * \param BitRefLevel bitLevel
-   * \param BitRefLevel bitLevel
+   * \param Range of entities to refine
+   * \param BitRefLevel bit level of created entities
    * \param verb verbosity level
    */
   MoFEMErrorCode refineTrisHangingNodes(const EntityHandle meshset,
@@ -170,9 +168,8 @@ struct MeshRefinement : public UnknownInterface {
 
   /**\brief refine TRI in the meshset
    *
-   * \param Range of tets to refine
-   * \param BitRefLevel bitLevel
-   * \param BitRefLevel bitLevel
+   * \param Range of entities to refine
+   * \param BitRefLevel bit level of created entities
    * \param verb verbosity level
    */
   MoFEMErrorCode refineTrisHangingNodes(const Range &tris,

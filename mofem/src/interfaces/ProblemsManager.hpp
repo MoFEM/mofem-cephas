@@ -267,7 +267,7 @@ struct ProblemsManager : public UnknownInterface {
    * @return MoFEMErrorCode 
    */
   MoFEMErrorCode getFEMeshset(const std::string prb_name,
-                              const std::string fe_name,
+                              const std::string &fe_name,
                               EntityHandle *meshset) const;
 
   /**
@@ -285,7 +285,7 @@ struct ProblemsManager : public UnknownInterface {
    * @return         error code
    */
   MoFEMErrorCode getProblemElementsLayout(const std::string name,
-                                          const std::string fe_name,
+                                          const std::string &fe_name,
                                           PetscLayout *layout) const;
 
   /**

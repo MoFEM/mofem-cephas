@@ -93,7 +93,7 @@ template <typename T, AssemblyType A, IntegrationType I, typename OpBase>
 struct AddEssentialToLhsPipelineImpl;
 
 /**
- * @brief Natural boundary conditions
+ * @brief Essential boundary conditions
  * @ingroup mofem_forms
  *
  * @tparam EleOp

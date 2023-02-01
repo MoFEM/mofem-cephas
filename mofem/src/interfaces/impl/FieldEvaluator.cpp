@@ -3,8 +3,6 @@
  *
  */
 
-
-
 namespace MoFEM {
 
 FieldEvaluatorInterface::FieldEvaluatorInterface(const MoFEM::Core &core)
@@ -220,7 +218,6 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint(
           &(data_ptr->localCoords(0, 0)), &(data_ptr->localCoords(0, 1)),
           &(data_ptr->localCoords(0, 2))};
 
-
       for (int n = 0; n != nb_eval_points; ++n) {
 
         const double eps = data_ptr->eps;
@@ -240,10 +237,8 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint(
         ++t_shape;
         ++t_shape_data;
         ++t_local;
-        ++t_local_data; 
-
+        ++t_local_data;
       }
-
     }
 
     if constexpr (D == 2) {
@@ -294,8 +289,6 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint(
         ++t_local_data;
       }
     }
-
-
   }
 
   const Problem *prb_ptr;
@@ -311,48 +304,58 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint(
   if (verb >= NOISY)
     MOFEM_LOG("SELF", Sev::noisy) << "in tets: " << in_tets << endl;
 
-  for (auto peit = in_tets.pair_begin(); peit != in_tets.pair_end(); ++peit) {
-    auto lo =
-        prb_ptr->numeredFiniteElementsPtr->get<Composite_Name_And_Ent_mi_tag>()
-            .lower_bound(boost::make_tuple(finite_element, peit->first));
-    auto hi =
-        prb_ptr->numeredFiniteElementsPtr->get<Composite_Name_And_Ent_mi_tag>()
-            .upper_bound(boost::make_tuple(finite_element, peit->second));
-    numered_fes->insert(lo, hi);
+  auto fe_miit =
+      m_field.get_finite_elements()->get<FiniteElement_name_mi_tag>().find(
+          finite_element);
+  if (fe_miit !=
+      m_field.get_finite_elements()->get<FiniteElement_name_mi_tag>().end()) {
 
-    if (verb >= VERY_NOISY)
-      std::cerr << "numered elements:" << std::endl;
-    for (; lo != hi; ++lo)
+    for (auto peit = in_tets.pair_begin(); peit != in_tets.pair_end(); ++peit) {
+
+      auto lo =
+          prb_ptr->numeredFiniteElementsPtr->get<Unique_mi_tag>().lower_bound(
+              EntFiniteElement::getLocalUniqueIdCalculate(
+                  peit->first, (*fe_miit)->getFEUId()));
+      auto hi =
+          prb_ptr->numeredFiniteElementsPtr->get<Unique_mi_tag>().upper_bound(
+              EntFiniteElement::getLocalUniqueIdCalculate(
+                  peit->second, (*fe_miit)->getFEUId()));
+      numered_fes->insert(lo, hi);
+
       if (verb >= VERY_NOISY)
-        std::cerr << **lo << endl;
-  }
-  if (verb >= VERY_NOISY)
-    std::cerr << std::endl;
-
-  if (auto fe_ptr = data_ptr->feMethodPtr.lock()) {
-
-    MOFEM_LOG_C("FieldEvaluatorSync", Sev::verbose,
-                "Number elements %d to evaluate at proc %d",
-                numered_fes->size(), m_field.get_comm_rank());
-    MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
-
-    if (!cache_ptr) {
-      cache_ptr = boost::make_shared<CacheTuple>();
-      CHKERR m_field.cache_problem_entities(prb_ptr->getName(), cache_ptr);
-
-      MOFEM_LOG("FieldEvaluatorSync", Sev::noisy)
-          << "If you call that function many times in the loop consider to "
-             "set "
-             "cache_ptr outside of the loop. Otherwise code can be slow.";
+        std::cerr << "numered elements:" << std::endl;
+      for (; lo != hi; ++lo)
+        if (verb >= VERY_NOISY)
+          std::cerr << **lo << endl;
     }
+    if (verb >= VERY_NOISY)
+      std::cerr << std::endl;
 
-    CHKERR m_field.loop_finite_elements(prb_ptr, finite_element, *fe_ptr,
-                                        lower_rank, upper_rank, numered_fes, bh,
-                                        cache_ptr, verb);
+    if (auto fe_ptr = data_ptr->feMethodPtr.lock()) {
 
-  } else
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "Pointer to element does not exists");
+      MOFEM_LOG_C("FieldEvaluatorSync", Sev::verbose,
+                  "Number elements %d to evaluate at proc %d",
+                  numered_fes->size(), m_field.get_comm_rank());
+      MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
+
+      if (!cache_ptr) {
+        cache_ptr = boost::make_shared<CacheTuple>();
+        CHKERR m_field.cache_problem_entities(prb_ptr->getName(), cache_ptr);
+
+        MOFEM_LOG("FieldEvaluatorSync", Sev::noisy)
+            << "If you call that function many times in the loop consider to "
+               "set "
+               "cache_ptr outside of the loop. Otherwise code can be slow.";
+      }
+
+      CHKERR m_field.loop_finite_elements(prb_ptr, finite_element, *fe_ptr,
+                                          lower_rank, upper_rank, numered_fes,
+                                          bh, cache_ptr, verb);
+
+    } else
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Pointer to element does not exists");
+  }
 
   MoFEMFunctionReturn(0);
 }

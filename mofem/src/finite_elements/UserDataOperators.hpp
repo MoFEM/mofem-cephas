@@ -132,7 +132,7 @@ struct OpCalculateScalarFieldValues
           ++base_function;
         }
         // It is possible to have more base functions than dofs
-        for (; bb != nb_base_functions; ++bb)
+        for (; bb < nb_base_functions; ++bb)
           ++base_function;
         ++values_at_gauss_pts;
       }
@@ -256,7 +256,7 @@ struct OpCalculateScalarFieldValuesFromPetscVecImpl
         }
         // Number of dofs can be smaller than number of Tensor_Dim x base
         // functions
-        for (; bb != nb_base_functions; ++bb)
+        for (; bb < nb_base_functions; ++bb)
           ++base_function;
         ++values_at_gauss_pts;
       }
@@ -426,7 +426,7 @@ MoFEMErrorCode OpCalculateVectorFieldValues_General<
         }
         // Number of dofs can be smaller than number of Tensor_Dim x base
         // functions
-        for (; bb != nb_base_functions; ++bb)
+        for (; bb < nb_base_functions; ++bb)
           ++base_function;
         ++values_at_gauss_pts;
       }
@@ -523,7 +523,7 @@ struct OpCalculateDivergenceVectorFieldValues
             }
             // Number of dofs can be smaller than number of Tensor_Dim x base
             // functions
-            for (; bb != nb_base_functions; ++bb)
+            for (; bb < nb_base_functions; ++bb)
               ++diff_base_function;
             ++values_at_gauss_pts;
           }
@@ -548,7 +548,7 @@ struct OpCalculateDivergenceVectorFieldValues
             }
             // Number of dofs can be smaller than number of Tensor_Dim x base
             // functions
-            for (; bb != nb_base_functions; ++bb) {
+            for (; bb < nb_base_functions; ++bb) {
               ++base_function;
               ++diff_base_function;
             }
@@ -683,7 +683,7 @@ struct OpCalculateVectorFieldValuesFromPetscVecImpl
       }
       // Number of dofs can be smaller than number of Tensor_Dim x base
       // functions
-      for (; bb != nb_base_functions; ++bb)
+      for (; bb < nb_base_functions; ++bb)
         ++base_function;
       ++values_at_gauss_pts;
     }
@@ -848,7 +848,7 @@ MoFEMErrorCode OpCalculateTensor2FieldValues_General<
         ++field_data;
         ++base_function;
       }
-      for (; bb != nb_base_functions; ++bb)
+      for (; bb < nb_base_functions; ++bb)
         ++base_function;
       ++values_at_gauss_pts;
     }
@@ -933,7 +933,7 @@ struct OpCalculateTensor2FieldValuesDot
           ++field_data;
           ++base_function;
         }
-        for (; bb != nb_base_functions; ++bb)
+        for (; bb < nb_base_functions; ++bb)
           ++base_function;
         ++values_at_gauss_pts;
       }
@@ -1036,7 +1036,7 @@ struct OpCalculateTensor2SymmetricFieldValues
         ++field_data;
         ++base_function;
       }
-      for (; bb != nb_base_functions; ++bb)
+      for (; bb < nb_base_functions; ++bb)
         ++base_function;
       ++values_at_gauss_pts;
     }
@@ -1130,7 +1130,7 @@ struct OpCalculateTensor2SymmetricFieldValuesDot
         ++field_data;
         ++base_function;
       }
-      for (; bb != nb_base_functions; ++bb)
+      for (; bb < nb_base_functions; ++bb)
         ++base_function;
       ++values_at_gauss_pts;
     }
@@ -2447,61 +2447,55 @@ private:
  * @brief Calculate curl   of vector field
  * @ingroup mofem_forces_and_sources_user_data_operators
  *
- * @tparam Tensor_Dim dimension of space
+ * @tparam Base_Dim base function dimension
+ * @tparam Space_Dim dimension of space
+ * @tparam Hcurl field dimension
  */
-template <int Tensor_Dim>
-struct OpCalculateHcurlVectorCurl
+template <int Base_Dim, int Space_Dim>
+struct OpCalculateHcurlVectorCurl;
+
+/**
+ * @brief Calculate curl of vector field
+ * @ingroup mofem_forces_and_sources_user_data_operators
+ *
+ * @tparam Base_Dim base function dimension
+ * @tparam Space_Dim dimension of space
+ * @tparam Hcurl field dimension
+ */
+template <>
+struct OpCalculateHcurlVectorCurl<3, 3>
+    : public ForcesAndSourcesCore::UserDataOperator {
+  OpCalculateHcurlVectorCurl(const std::string field_name,
+                             boost::shared_ptr<MatrixDouble> data_ptr,
+                             const EntityType zero_type = MBEDGE,
+                             const int zero_side = 0);
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        EntitiesFieldData::EntData &data);
+
+private:
+  boost::shared_ptr<MatrixDouble> dataPtr;
+  const EntityHandle zeroType;
+  const int zeroSide;
+};
+
+/**
+ * @brief Calculate curl of vector field
+ * @ingroup mofem_forces_and_sources_user_data_operators
+ *
+ * @tparam Field_Dim dimension of field
+ * @tparam Space_Dim dimension of space
+ */
+template <>
+struct OpCalculateHcurlVectorCurl<1, 2>
     : public ForcesAndSourcesCore::UserDataOperator {
 
   OpCalculateHcurlVectorCurl(const std::string field_name,
                              boost::shared_ptr<MatrixDouble> data_ptr,
-                             const EntityType zero_type = MBEDGE,
-                             const int zero_side = 0)
-      : ForcesAndSourcesCore::UserDataOperator(
-            field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
-        dataPtr(data_ptr), zeroType(zero_type), zeroSide(zero_side) {
-    if (!dataPtr)
-      THROW_MESSAGE("Pointer is not set");
-  }
+                             const EntityType zero_type = MBVERTEX,
+                             const int zero_side = 0);
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        EntitiesFieldData::EntData &data) {
-    MoFEMFunctionBegin;
-    const size_t nb_integration_points = getGaussPts().size2();
-    if (type == zeroType && side == zeroSide) {
-      dataPtr->resize(Tensor_Dim, nb_integration_points, false);
-      dataPtr->clear();
-    }
-    const size_t nb_dofs = data.getFieldData().size();
-    if (!nb_dofs)
-      MoFEMFunctionReturnHot(0);
-
-    MatrixDouble curl_mat;
-
-    const size_t nb_base_functions = data.getN().size2() / Tensor_Dim;
-    FTensor::Index<'i', Tensor_Dim> i;
-    FTensor::Index<'j', Tensor_Dim> j;
-    FTensor::Index<'k', Tensor_Dim> k;
-    auto t_n_diff_hcurl = data.getFTensor2DiffN<Tensor_Dim, Tensor_Dim>();
-    auto t_data = getFTensor1FromMat<Tensor_Dim>(*dataPtr);
-    for (int gg = 0; gg != nb_integration_points; ++gg) {
-
-      auto t_dof = data.getFTensor0FieldData();
-      int bb = 0;
-      for (; bb != nb_dofs; ++bb) {
-
-        t_data(k) += t_dof * (levi_civita(j, i, k) * t_n_diff_hcurl(i, j));
-        ++t_n_diff_hcurl;
-        ++t_dof;
-      }
-
-      for (; bb != nb_base_functions; ++bb)
-        ++t_n_diff_hcurl;
-      ++t_data;
-    }
-
-    MoFEMFunctionReturn(0);
-  }
+                        EntitiesFieldData::EntData &data);
 
 private:
   boost::shared_ptr<MatrixDouble> dataPtr;
@@ -2554,7 +2548,7 @@ struct OpCalculateHVecTensorField
           ++t_n_hvec;
           ++t_dof;
         }
-        for (; bb != nb_base_functions; ++bb)
+        for (; bb < nb_base_functions; ++bb)
           ++t_n_hvec;
         ++t_data;
       }
@@ -2615,7 +2609,7 @@ struct OpCalculateHTensorTensorField
         ++t_n_hten;
         ++t_dof;
       }
-      for (; bb != nb_base_functions; ++bb)
+      for (; bb < nb_base_functions; ++bb)
         ++t_n_hten;
       ++t_data;
     }
@@ -2984,6 +2978,41 @@ struct OpMakeHdivFromHcurl
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data);
 };
+
+/** \brief Transform Hcurl base fluxes from reference element to physical
+ * triangle 
+ */
+template <int DIM> struct OpSetCovariantPiolaTransformOnFace2DImpl;
+
+/** \brief Apply contravariant (Piola) transfer to Hdiv space on face
+ * 
+ * Covariant Piola transformation
+ \f[
+ \psi_i|_t = J^{-1}_{ij}\hat{\psi}_j\\
+ \left.\frac{\partial \psi_i}{\partial \xi_j}\right|_t
+ = J^{-1}_{ik}\frac{\partial \hat{\psi}_k}{\partial \xi_j}
+ \f]
+
+ */
+template <>
+struct OpSetCovariantPiolaTransformOnFace2DImpl<2>
+    : public FaceElementForcesAndSourcesCore::UserDataOperator {
+
+  OpSetCovariantPiolaTransformOnFace2DImpl(
+      boost::shared_ptr<MatrixDouble> inv_jac_ptr);
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        EntitiesFieldData::EntData &data);
+
+private:
+  boost::shared_ptr<MatrixDouble> invJacPtr;
+
+  MatrixDouble piolaN;
+  MatrixDouble diffPiolaN;
+};
+
+using OpSetCovariantPiolaTransformOnFace2D =
+    OpSetCovariantPiolaTransformOnFace2DImpl<2>;
 
 /** \brief Apply contravariant (Piola) transfer to Hdiv space on face
  *

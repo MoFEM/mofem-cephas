@@ -77,8 +77,7 @@ struct SkeletonFE : public EdgeEleOp {
   SkeletonFE(MoFEM::Interface &m_field, CommonData &elem_data)
       : EdgeEle::UserDataOperator("FIELD", UserDataOperator::OPROW),
         faceSideFe(m_field), elemData(elem_data) {
-    faceSideFe.getOpPtrVector().push_back(
-        new OpHOSetCovariantPiolaTransformOnFace3D(HCURL));
+    CHKERR AddHOOps<2, 2, 2>::add(faceSideFe.getOpPtrVector(), {HCURL});
     faceSideFe.getOpPtrVector().push_back(new SkeletonFE::OpFaceSide(elemData));
   }
 
@@ -210,8 +209,7 @@ int main(int argc, char *argv[]) {
       boost::shared_ptr<EdgeEle> skeleton_fe =
           boost::shared_ptr<EdgeEle>(new EdgeEle(m_field));
 
-      skeleton_fe->getOpPtrVector().push_back(
-          new OpHOSetContravariantPiolaTransformOnEdge3D(HCURL));
+      CHKERR AddHOOps<1, 2, 2>::add(skeleton_fe->getOpPtrVector(), {HCURL});
       skeleton_fe->getOpPtrVector().push_back(
           new SkeletonFE(m_field, elem_data));
 

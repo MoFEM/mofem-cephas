@@ -32,7 +32,7 @@ enum MoFEMErrorCodes {
   MOFEM_NOT_IMPLEMENTED = 101,
   MOFEM_NOT_FOUND = 102,
   MOFEM_OPERATION_UNSUCCESSFUL = 103,
-  MOFEM_IMPOSIBLE_CASE = 104,
+  MOFEM_IMPOSSIBLE_CASE = 104,
   MOFEM_INVALID_DATA = 105,
   MOFEM_NOT_INSTALLED = 106,
   MOFEM_MOFEMEXCEPTION_THROW = 107,
@@ -47,7 +47,7 @@ const static char *const MoFEMErrorCodesNames[] = {
     "MOFEM_NOT_IMPLEMENTED",
     "MOFEM_NOT_FOUND",
     "MOFEM_OPERATION_UNSUCCESSFUL",
-    "MOFEM_IMPOSIBLE_CASE",
+    "MOFEM_IMPOSSIBLE_CASE",
     "MOFEM_INVALID_DATA",
     "MOFEM_MOFEMEXCEPTION_THROW",
     "MOFEM_STD_EXCEPTION_THROW",
@@ -216,7 +216,7 @@ enum VERBOSITY_LEVELS {
 
 #define MAX_CORE_TMP 1       ///< maximal number of cores
 #define BITREFEDGES_SIZE 32  ///< number refined edges
-#define BITREFLEVEL_SIZE 128 ///< max number of refinements
+#define BITREFLEVEL_SIZE 64  ///< max number of refinements
 #define BITFIELDID_SIZE 32   ///< max number of fields
 #define BITFEID_SIZE 32      ///< max number of finite elements
 #define BITPROBLEMID_SIZE 32 ///< max number of problems

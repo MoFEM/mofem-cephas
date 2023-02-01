@@ -1498,6 +1498,8 @@ struct RefEntExtractor {
 /**
  * @brief Insert ordered mofem multi-index into range
  *
+ * \note Inserted range has to be ordered.
+ * 
  * \code
  * auto hi_rit = refEntsPtr->upper_bound(start);
  * auto hi_rit = refEntsPtr->upper_bound(end);
@@ -1578,7 +1580,7 @@ private:
 };
 
 /**
- * @brief  Create smart pointer to temprary meshset
+ * @brief  Create smart pointer to temporary meshset
  * 
  */
 inline auto get_temp_meshset_ptr(moab::Interface &moab) {
@@ -1651,10 +1653,27 @@ auto rangeInserter(const I f, const I s, boost::function<bool(I it)> tester,
   MoFEMFunctionReturn(0);
 }
 
-// template <typename T, typename I>
-// std::vector<std::pair<T, T>> getPairRange(I s, I e, boost::function<T(I)>){
-
-// };
+/**
+ * @brief Create Array
+ *
+ * See:
+ * <a
+ * href="https://stackoverflow.com/questions/50942556/current-status-of-stdmake-array">See
+ * stack overflow</a>
+ *
+ * @tparam Dest
+ * @tparam Arg
+ * @param arg
+ * @return constexpr auto
+ */
+template <typename Dest = void, typename... Arg>
+constexpr auto make_array(Arg &&...arg) {
+  if constexpr (std::is_same<void, Dest>::value)
+    return std::array<std::common_type_t<std::decay_t<Arg>...>, sizeof...(Arg)>{
+        {std::forward<Arg>(arg)...}};
+  else
+    return std::array<Dest, sizeof...(Arg)>{{std::forward<Arg>(arg)...}};
+}
 
 } // namespace MoFEM
 

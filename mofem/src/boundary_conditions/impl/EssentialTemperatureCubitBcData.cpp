@@ -41,7 +41,11 @@ MoFEMErrorCode EssentialPreProc<TemperatureCubitBcData>::operator()() {
               << "Apply EssentialPreProc<TemperatureCubitBcData>: "
               << problem_name << "_" << field_name << "_" << block_name;
 
-          double v;
+          auto verts = bc.second->bcEnts.subset_by_type(MBVERTEX);
+          auto v = temp_bc->data.value1;
+          for (auto s : vecOfTimeScalingMethods) {
+            v *= s->getScale(fe_method_ptr->ts_t);
+          }
 
           //   std::array<std::vector<double>, 3> coords;
           //   auto verts_check = bc.second->bcEnts.subset_by_type(MBVERTEX);
@@ -60,18 +64,10 @@ MoFEMErrorCode EssentialPreProc<TemperatureCubitBcData>::operator()() {
 
           auto lambda = [&](boost::shared_ptr<FieldEntity> field_entity_ptr) {
             MoFEMFunctionBegin;
-            // std::fill(field_entity_ptr->getEntFieldData().begin(),
-            //           field_entity_ptr->getEntFieldData().end(), v);
-            // CHKERR PetscPrintf(PETSC_COMM_WORLD, "v %e", v);                                                                                                
-            field_entity_ptr->getEntFieldData()[0] = v;
+            for (auto &d : field_entity_ptr->getEntFieldData())
+              d = v;
             MoFEMFunctionReturn(0);
           };
-
-          auto verts = bc.second->bcEnts.subset_by_type(MBVERTEX);
-          v = temp_bc->data.value1;
-          for (auto s : vecOfTimeScalingMethods) {
-            v *= s->getScale(fe_method_ptr->ts_t);
-          }
           CHKERR fb->fieldLambdaOnEntities(lambda, field_name, &verts);
         }
       }

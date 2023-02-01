@@ -184,10 +184,11 @@ PetscErrorCode DMMoFEMCreateMoFEM(DM dm, MoFEM::Interface *m_field_ptr,
 PetscErrorCode DMMoFEMDuplicateDMCtx(DM dm, DM dm_duplicate) {
   MoFEMFunctionBegin;
 
-  auto *dm_field = static_cast<DMCtx *>(dm->data);
   if (!dm->data)
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "data structure for MoFEM not yet created");
+
+  auto *dm_field = static_cast<DMCtx *>(dm->data);
 
   if (static_cast<DMCtx *>(dm_duplicate->data)->referenceNumber == 0)
     delete static_cast<DMCtx *>(dm_duplicate->data);
@@ -198,14 +199,34 @@ PetscErrorCode DMMoFEMDuplicateDMCtx(DM dm, DM dm_duplicate) {
   MoFEMFunctionReturn(0);
 }
 
+PetscErrorCode DMMoFEMSwapDMCtx(DM dm, DM dm_swap) {
+  MoFEMFunctionBegin;
+  if (!dm->data)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "data structure for MoFEM not yet created on dm");
+  if (!dm_swap->data)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "data structure for MoFEM not yet created on swap dm");
+
+  auto *dm_field = static_cast<DMCtx *>(dm->data);
+  auto *dm_field_swap = static_cast<DMCtx *>(dm_swap->data);
+
+  auto tmp_field = dm_field;
+  dm_field = dm_field_swap;
+  dm_field_swap = tmp_field;
+
+  MoFEMFunctionReturn(0);
+}
+
 PetscErrorCode DMMoFEMCreateSubDM(DM subdm, DM dm, const char problem_name[]) {
   MoFEMFunctionBegin;
 
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
   if (!dm->data) {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "data structure for MoFEM not yet created");
   }
+  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+
   CHKERR DMMoFEMCreateMoFEM(subdm, dm_field->mField_ptr, problem_name,
                             dm_field->problemPtr->getBitRefLevel(),
                             dm_field->problemPtr->getBitRefLevelMask());
@@ -401,7 +422,6 @@ PetscErrorCode DMMoFEMGetDestroyProblem(DM dm, PetscBool *destroy_problem) {
 }
 
 PetscErrorCode DMMoFEMSetSquareProblem(DM dm, PetscBool square_problem) {
-  MoFEMFunctionBeginHot;
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
@@ -409,8 +429,7 @@ PetscErrorCode DMMoFEMSetSquareProblem(DM dm, PetscBool square_problem) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DMMoFEMResolveSharedFiniteElements(DM dm, const char fe_name[]) {
-  MoFEMFunctionBeginHot;
+PetscErrorCode DMMoFEMResolveSharedFiniteElements(DM dm, std::string fe_name) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
@@ -419,11 +438,7 @@ PetscErrorCode DMMoFEMResolveSharedFiniteElements(DM dm, const char fe_name[]) {
   MoFEMFunctionReturn(0);
 }
 
-PetscErrorCode DMMoFEMResolveSharedEntities(DM dm, const char fe_name[]) {
-  return DMMoFEMResolveSharedFiniteElements(dm, fe_name);
-}
-
-PetscErrorCode DMMoFEMGetProblemFiniteElementLayout(DM dm, const char fe_name[],
+PetscErrorCode DMMoFEMGetProblemFiniteElementLayout(DM dm, std::string fe_name,
                                                     PetscLayout *layout) {
   MoFEMFunctionBeginHot;
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
@@ -447,24 +462,30 @@ PetscErrorCode DMMoFEMGetSquareProblem(DM dm, PetscBool *square_problem) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DMMoFEMAddElement(DM dm, const char fe_name[]) {
+PetscErrorCode DMMoFEMAddElement(DM dm, std::string fe_name) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
-  ierr = dm_field->mField_ptr->modify_problem_add_finite_element(
+  CHKERR dm_field->mField_ptr->modify_problem_add_finite_element(
       dm_field->problemName, fe_name);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
-PetscErrorCode DMMoFEMUnSetElement(DM dm, const char fe_name[]) {
+PetscErrorCode DMMoFEMAddElement(DM dm, std::vector<std::string> fe_name) {
+  MoFEMFunctionBegin;
+  for (auto fe : fe_name) {
+    CHKERR DMMoFEMAddElement(dm, fe);
+  }
+  MoFEMFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMUnSetElement(DM dm, std::string fe_name) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
-  ierr = dm_field->mField_ptr->modify_problem_unset_finite_element(
+  CHKERR dm_field->mField_ptr->modify_problem_unset_finite_element(
       dm_field->problemName, fe_name);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 PetscErrorCode DMoFEMMeshToLocalVector(DM dm, Vec l, InsertMode mode,
@@ -1113,22 +1134,22 @@ PetscErrorCode DMMoFEMSetTsCtx(DM dm, boost::shared_ptr<MoFEM::TsCtx> ts_ctx) {
 
 PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm, Vec *g) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
   CHKERR dm_field->mField_ptr->getInterface<VecManager>()->vecCreateGhost(
       dm_field->problemName, COL, g);
   CHKERR VecSetDM(*g, dm);
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm, SmartPetscObj<Vec> &g_ptr) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
   CHKERR dm_field->mField_ptr->getInterface<VecManager>()->vecCreateGhost(
       dm_field->problemName, COL, g_ptr);
   CHKERR VecSetDM(g_ptr, dm);
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 PetscErrorCode DMCreateLocalVector_MoFEM(DM dm, Vec *l) {

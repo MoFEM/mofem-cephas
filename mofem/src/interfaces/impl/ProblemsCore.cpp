@@ -140,7 +140,7 @@ MoFEMErrorCode Core::list_problem() const {
 }
 
 MoFEMErrorCode
-Core::modify_problem_add_finite_element(const std::string &name_problem,
+Core::modify_problem_add_finite_element(const std::string name_problem,
                                         const std::string &fe_name) {
   MoFEMFunctionBegin;
   typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
@@ -159,7 +159,7 @@ Core::modify_problem_add_finite_element(const std::string &name_problem,
 }
 
 MoFEMErrorCode
-Core::modify_problem_unset_finite_element(const std::string &name_problem,
+Core::modify_problem_unset_finite_element(const std::string name_problem,
                                           const std::string &fe_name) {
   MoFEMFunctionBegin;
   typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
@@ -493,7 +493,7 @@ MoFEMErrorCode Core::loop_finite_elements(
 }
 
 MoFEMErrorCode Core::loop_finite_elements(
-    const std::string &problem_name, const std::string &fe_name,
+    const std::string problem_name, const std::string &fe_name,
     FEMethod &method,
     boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr, MoFEMTypes bh,
     CacheTupleWeakPtr cache_ptr, int verb) {
@@ -508,7 +508,7 @@ MoFEMErrorCode Core::loop_finite_elements(
 }
 
 MoFEMErrorCode Core::loop_finite_elements(
-    const std::string &problem_name, const std::string &fe_name,
+    const std::string problem_name, const std::string &fe_name,
     FEMethod &method, int lower_rank, int upper_rank,
     boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr, MoFEMTypes bh,
     CacheTupleWeakPtr cache_ptr, int verb) {

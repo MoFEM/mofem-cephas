@@ -375,10 +375,9 @@ MoFEMErrorCode Tools::getTriNormal(const EntityHandle tri,
 }
 
 double Tools::getTriArea(const EntityHandle tri) const {
-  FTensor::Tensor1<double, 3> t_normal;
-  ierr = getTriNormal(tri, &t_normal(0));
-  CHKERRABORT(PETSC_COMM_SELF, ierr);
   FTensor::Index<'i', 3> i;
+  FTensor::Tensor1<double, 3> t_normal;
+  CHK_THROW_MESSAGE(getTriNormal(tri, &t_normal(0)), "calculate area");
   return sqrt(t_normal(i) * t_normal(i)) * 0.5;
 }
 

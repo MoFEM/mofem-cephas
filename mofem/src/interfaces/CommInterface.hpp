@@ -31,7 +31,7 @@ struct CommInterface : public UnknownInterface {
   /**
    * \brief Destructor
    */
-  ~CommInterface();
+  ~CommInterface() = default;
 
   /** \name Make elemnts multishared */
 
@@ -86,7 +86,7 @@ struct CommInterface : public UnknownInterface {
 
   *
   */
-  MoFEMErrorCode resolveSharedFiniteElements(const std::string &name,
+  MoFEMErrorCode resolveSharedFiniteElements(const std::string name,
                                              const std::string &fe_name,
                                              int verb = DEFAULT_VERBOSITY);
 
@@ -180,6 +180,21 @@ struct CommInterface : public UnknownInterface {
    */
   MoFEMErrorCode synchroniseFieldEntities(const std::string name,
                                           int verb = DEFAULT_VERBOSITY);
+
+  /**
+   * @brief Synchronise parent entities
+   *
+   *  \note collective - need tu be run on all processors in communicator
+   *
+   * Exchange parent entity tag and bitref of entity. Note thar parent handle
+   * can be different on each processor.
+   *
+   * @param ent
+   * @param verb
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode resolveParentEntities(const Range &ent,
+                                       int verb = DEFAULT_VERBOSITY);
 
   /**@}*/
 

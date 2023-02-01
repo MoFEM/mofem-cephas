@@ -168,7 +168,7 @@ MoFEMErrorCode OpSetHOWeightsOnFace::doWork(int side, EntityType type,
         ++t_normal;
       }
     } else {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
                "Number of rows in getNormalsAtGaussPts should be equal to "
                "number of integration points, but is not, i.e. %d != %d",
                getNormalsAtGaussPts().size1(), nb_int_pts);
@@ -549,7 +549,7 @@ MoFEMErrorCode OpHOSetCovariantPiolaTransformOnFace3D::doWork(
 
 #ifndef NDEBUG
       if (cc != nb_gauss_pts * nb_dofs)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Data inconsistency");
+        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "Data inconsistency");
 #endif
 
       baseN.swap(piolaN);
@@ -636,7 +636,7 @@ MoFEMErrorCode OpHOSetContravariantPiolaTransformOnEdge3D::doWork(
 
 #ifndef NDEBUG
       if (cc != nb_gauss_pts * nb_dofs)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Data inconsistency");
+        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "Data inconsistency");
 #endif
     }
   }
@@ -683,10 +683,8 @@ MoFEMErrorCode AddHOOps<2, 2, 2>::add(
       pipeline.push_back(new OpSetHOInvJacToScalarBases<2>(s, inv_jac_ptr));
       break;
     case HCURL:
-      MOFEM_TAG_AND_LOG("WORLD", Sev::warning, "AddHOOps<2, 2, 2>")
-          << "Missing covariant Piola transform";
+      pipeline.push_back(new OpSetCovariantPiolaTransformOnFace2D(inv_jac_ptr));
       pipeline.push_back(new OpSetInvJacHcurlFace(inv_jac_ptr));
-      MOFEM_LOG_CHANNEL("WORLD");
       break;
     case HDIV:
       pipeline.push_back(new OpMakeHdivFromHcurl());

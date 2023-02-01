@@ -55,22 +55,25 @@ EntityHandle Core::get_field_meshset(const std::string name) const {
 }
 
 bool Core::check_field(const std::string &name) const {
-  auto &set = fIelds.get<FieldName_mi_tag>();
-  auto miit = set.find(name);
-  if (miit == set.end())
+  auto miit = fIelds.get<FieldName_mi_tag>().find(name);
+  if (miit == fIelds.get<FieldName_mi_tag>().end())
     return false;
-  return true;
+  else
+    return true;
 }
 
-Field *Core::get_field_structure(const std::string &name) {
-  auto &set = fIelds.get<FieldName_mi_tag>();
-  auto miit = set.find(name);
-  if (miit == set.end()) {
-    throw MoFEMException(
-        MOFEM_NOT_FOUND,
-        std::string("field < " + name +
-                    " > not in database (top tip: check spelling)")
-            .c_str());
+const Field *Core::get_field_structure(const std::string &name,
+                                       enum MoFEMTypes bh) const {
+  auto miit = fIelds.get<FieldName_mi_tag>().find(name);
+  if (miit == fIelds.get<FieldName_mi_tag>().end()) {
+    if (bh == MF_EXIST)
+      throw MoFEMException(
+          MOFEM_NOT_FOUND,
+          std::string("field < " + name +
+                      " > not in database (top tip: check spelling)")
+              .c_str());
+    else
+      return nullptr;
   }
   return miit->get();
 }
@@ -244,7 +247,7 @@ MoFEMErrorCode Core::addField(const std::string &name, const FieldSpace space,
          fIelds.get<BitFieldId_mi_tag>().end();
          ++field_shift) {
       if (field_shift == BITFEID_SIZE)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
                 "Maximal number of fields exceeded");
     }
 
@@ -1296,29 +1299,6 @@ MoFEMErrorCode Core::list_fields() const {
     MOFEM_LOG("SYNC", Sev::inform) << *miit;
 
   MOFEM_LOG_SYNCHRONISE(mofemComm);
-  MoFEMFunctionReturn(0);
-}
-
-MoFEMErrorCode
-Core::get_problem_finite_elements_entities(const std::string &problem_name,
-                                           const std::string &fe_name,
-                                           const EntityHandle meshset) {
-  MoFEMFunctionBegin;
-  auto &prb = pRoblems.get<Problem_mi_tag>();
-  auto p_miit = prb.find(problem_name);
-  if (p_miit == prb.end())
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-             "No such problem like < %s >", problem_name.c_str());
-  auto miit = p_miit->numeredFiniteElementsPtr->get<FiniteElement_name_mi_tag>()
-                  .lower_bound(fe_name);
-  auto hi_miit = p_miit->numeredFiniteElementsPtr->get<FiniteElement_name_mi_tag>()
-                     .upper_bound(fe_name);
-  for (; miit != hi_miit; miit++) {
-    EntityHandle ent = (*miit)->getEnt();
-    CHKERR get_moab().add_entities(meshset, &ent, 1);
-    const int part = (*miit)->getPart();
-    CHKERR get_moab().tag_set_data(th_Part, &ent, 1, &part);
-  }
   MoFEMFunctionReturn(0);
 }
 
