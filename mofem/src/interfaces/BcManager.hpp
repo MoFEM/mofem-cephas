@@ -124,6 +124,7 @@ struct BcManager : public UnknownInterface {
    * @param problem_name
    * @param field_name
    * @param get_low_dim_ents get lower dimension entities
+   * @param block_name_field_prefix
    * @return MoFEMErrorCode
    */
   template <typename T>
@@ -138,9 +139,9 @@ struct BcManager : public UnknownInterface {
    * @tparam BCSET
    * @param problem_name
    * @param field_name
+   * @param block_name
    * @param get_low_dim_ents
    * @param is_distributed_mesh
-   * @param block_name_field_prefix
    * @return MoFEMErrorCode
    */
   template <typename T>
@@ -148,7 +149,6 @@ struct BcManager : public UnknownInterface {
                                            const std::string block_name,
                                            const std::string field_name,
                                            bool get_low_dim_ents = true,
-                                           bool block_name_field_prefix = false,
                                            bool is_distributed_mesh = true);
 
   /**
@@ -156,6 +156,7 @@ struct BcManager : public UnknownInterface {
    *
    * @param problem_name
    * @param field_name
+   * @param block_name
    * @param get_low_dim_ents get lower dimension entities
    * @return MoFEMErrorCode
    */
@@ -163,8 +164,7 @@ struct BcManager : public UnknownInterface {
   MoFEMErrorCode pushMarkDOFsOnEntities(const std::string problem_name,
                                         const std::string block_name,
                                         const std::string field_name,
-                                        bool get_low_dim_ents = true,
-                                        bool block_name_field_prefix = false);
+                                        bool get_low_dim_ents = true);
 
   /**
    * @brief Get bc data and remove element
@@ -342,7 +342,7 @@ MoFEMErrorCode
 BcManager::removeBlockDOFsOnEntities<BcScalarMeshsetType<BLOCKSET>>(
     const std::string problem_name, const std::string block_name,
     const std::string field_name, bool get_low_dim_ents,
-    bool block_name_field_prefix, bool is_distributed_mesh);
+    bool is_distributed_mesh);
 
 template <>
 MoFEMErrorCode
@@ -373,8 +373,7 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
 template <>
 MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcScalarMeshsetType<BLOCKSET>>(
     const std::string problem_name, const std::string field_name,
-    const std::string block_name, bool get_low_dim_ents,
-    bool block_name_field_prefix);
+    const std::string block_name, bool get_low_dim_ents);
 
 template <>
 MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<DisplacementCubitBcData>(
