@@ -1222,20 +1222,20 @@ MoFEMErrorCode BcManager::removeBlockDOFsOnEntities<HeatFluxCubitBcData>(
   MoFEMFunctionReturn(0);
 }
 
-template <>
-MoFEMErrorCode BcManager::removeBlockDOFsOnEntities<TemperatureCubitBcData>(
-    const std::string problem_name, const std::string field_name,
-    bool get_low_dim_ents, bool block_name_field_prefix,
-    bool is_distributed_mesh) {
-  MoFEMFunctionBegin;
-  CHKERR removeBlockDOFsOnEntities<BcMeshsetType<TEMPERATURESET>>(
-      problem_name, field_name, get_low_dim_ents, block_name_field_prefix,
-      is_distributed_mesh);
-  CHKERR removeBlockDOFsOnEntities<BcScalarMeshsetType<BLOCKSET>>(
-      problem_name, field_name, get_low_dim_ents, block_name_field_prefix,
-      is_distributed_mesh);
-  MoFEMFunctionReturn(0);
-}
+// template <>
+// MoFEMErrorCode BcManager::removeBlockDOFsOnEntities<TemperatureCubitBcData>(
+//     const std::string problem_name, const std::string field_name,
+//     bool get_low_dim_ents, bool block_name_field_prefix,
+//     bool is_distributed_mesh) {
+//   MoFEMFunctionBegin;
+//   CHKERR removeBlockDOFsOnEntities<BcMeshsetType<TEMPERATURESET>>(
+//       problem_name, field_name, get_low_dim_ents, block_name_field_prefix,
+//       is_distributed_mesh);
+//   CHKERR removeBlockDOFsOnEntities<BcScalarMeshsetType<BLOCKSET>>(
+//       problem_name, field_name, get_low_dim_ents, block_name_field_prefix,
+//       is_distributed_mesh);
+//   MoFEMFunctionReturn(0);
+// }
 
 std::pair<std::string, std::string>
 BcManager::extractStringFromBlockId(const std::string block_id,

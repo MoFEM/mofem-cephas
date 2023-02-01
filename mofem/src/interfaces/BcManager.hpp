@@ -17,9 +17,6 @@ template <CubitBC BC> struct BcScalarMeshsetType {};
 
 template <CubitBC BC> struct BcVectorMeshsetType {};
 
-template <CubitBC BC>
-struct BcScalarMeshsetType {};
-
 /**
  * \brief Simple interface for fast problem set-up
  * \ingroup mofem_simple_interface
@@ -408,12 +405,6 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<HeatFluxCubitBcData>(
 
 template <>
 MoFEMErrorCode BcManager::removeBlockDOFsOnEntities<HeatFluxCubitBcData>(
-    const std::string problem_name, const std::string field_name,
-    bool get_low_dim_ents, bool block_name_field_prefix,
-    bool is_distributed_mesh);
-
-template <>
-MoFEMErrorCode BcManager::removeBlockDOFsOnEntities<TemperatureCubitBcData>(
     const std::string problem_name, const std::string field_name,
     bool get_low_dim_ents, bool block_name_field_prefix,
     bool is_distributed_mesh);
