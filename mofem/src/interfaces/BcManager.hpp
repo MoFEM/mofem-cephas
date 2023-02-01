@@ -124,6 +124,7 @@ struct BcManager : public UnknownInterface {
    * @param problem_name
    * @param field_name
    * @param get_low_dim_ents get lower dimension entities
+   * @param block_name_field_prefix
    * @return MoFEMErrorCode
    */
   template <typename T>
@@ -138,9 +139,9 @@ struct BcManager : public UnknownInterface {
    * @tparam BCSET
    * @param problem_name
    * @param field_name
+   * @param block_name
    * @param get_low_dim_ents
    * @param is_distributed_mesh
-   * @param block_name_field_prefix
    * @return MoFEMErrorCode
    */
   template <typename T>
@@ -155,6 +156,7 @@ struct BcManager : public UnknownInterface {
    *
    * @param problem_name
    * @param field_name
+   * @param block_name
    * @param get_low_dim_ents get lower dimension entities
    * @return MoFEMErrorCode
    */
