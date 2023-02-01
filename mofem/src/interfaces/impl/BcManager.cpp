@@ -494,7 +494,7 @@ BcManager::removeBlockDOFsOnEntities<BcScalarMeshsetType<BLOCKSET>>(
       problem_name, block_name, field_name, get_low_dim_ents,
       block_name_field_prefix);
 
-  std::array<Range, 3> ents_to_remove;
+  Range ents_to_remove;
 
   for (auto m :
 
@@ -512,7 +512,7 @@ BcManager::removeBlockDOFsOnEntities<BcScalarMeshsetType<BLOCKSET>>(
 
       if (auto disp_bc = bc->tempBcPtr) {
         if (disp_bc->data.flag1) {
-          ents_to_remove[0].merge(bc->bcEnts);
+          ents_to_remove.merge(bc->bcEnts);
         }
       } else {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -531,7 +531,7 @@ BcManager::removeBlockDOFsOnEntities<BcScalarMeshsetType<BLOCKSET>>(
           problem_name, field_name, ents, lo, hi);
   };
 
-  CHKERR remove_dofs_on_ents(ents_to_remove[0], 0, MAX_DOFS_ON_ENTITY);
+  CHKERR remove_dofs_on_ents(ents_to_remove, 0, MAX_DOFS_ON_ENTITY);
 
   MoFEMFunctionReturn(0);
 }
