@@ -58,6 +58,14 @@ struct OpUnSetBc : public ForcesAndSourcesCore::UserDataOperator {
  * @brief Set values to vector in operator
  * @ingroup mofem_forms
  *
+ * MoFEM::FieldEntity provides MoFEM::FieldEntity::getWeakStoragePtr() storage
+ * function which allows to transfer data between FEs or operators processing
+ * the same entities.
+ *
+ * When MoFEM::OpSetBc is pushed in weak storage indices taking in account
+ * indices which are skip to take boundary conditions are stored. Those entities
+ * are used by VecSetValues.
+ *
  * @param V
  * @param data
  * @param ptr
@@ -73,6 +81,8 @@ VecSetValues<EssentialBcStorage>(Vec V,
 /**
  * @brief Set values to matrix in operator
  *
+ * See MoFEM::VecSetValues<EssentialBcStorage> for explanation.
+ * 
  * @param M
  * @param row_data
  * @param col_data
