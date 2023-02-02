@@ -16,6 +16,12 @@ namespace MoFEM {
 struct EssentialBcStorage : public EntityStorage {
   EssentialBcStorage(VectorInt &indices) : entityIndices(indices) {}
   VectorInt entityIndices;
+  /**
+   * @brief Store modifed indices by field
+   * 
+   * Hash map, key is field name, value is storage.
+   * 
+   */
   using HashVectorStorage =
       map<std::string, std::vector<boost::shared_ptr<EssentialBcStorage>>>;
   static HashVectorStorage feStorage;
