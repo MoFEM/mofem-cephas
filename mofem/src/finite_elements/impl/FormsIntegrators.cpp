@@ -99,7 +99,7 @@ VecSetValues<EssentialBcStorage>(Vec V,
 }
 
 /**
- * @brief Set valyes to matrix in operator
+ * @brief Set values to matrix in operator
  *
  * @param M
  * @param row_data
