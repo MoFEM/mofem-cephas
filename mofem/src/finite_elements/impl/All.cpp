@@ -31,3 +31,4 @@ extern "C" {
 #include "impl/FaceElementForcesAndSourcesCoreOnSide.cpp"
 #include "impl/FaceElementForcesAndSourcesCoreOnParent.cpp"
 #include "impl/VolumeElementForcesAndSourcesCoreOnContactPrismSide.cpp"
+#include "impl/Schur.cpp"
