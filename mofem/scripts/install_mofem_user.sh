@@ -156,31 +156,32 @@ if [ ! -d "$SPACK_ROOT_DIR" ]; then
   # Download mirror
   if [ ! -d "$SPACK_MIRROR_DIR" ]; then
     if [ ! -f "$PWD/mirror.tgz" ]; then
-      echo "Downloading mirror of spack packages for MoFEM..."
-      mkdir -p $SPACK_MIRROR_DIR && \
-      curl -s -L http://mofem.eng.gla.ac.uk/mofem/downloads/mirror_v0.16.tar.gz \
-      | tar xzC $SPACK_MIRROR_DIR --strip 1
-      echo -e "Done.\n"
+      # echo "Downloading mirror of spack packages for MoFEM..."
+      # mkdir -p $SPACK_MIRROR_DIR && \
+      # curl -s -L http://mofem.eng.gla.ac.uk/mofem/downloads/mirror_v0.16.tar.gz \
+      # | tar xzC $SPACK_MIRROR_DIR --strip 1
+      # echo -e "Done.\n"
     else 
-      mkdir -p $SPACK_MIRROR_DIR && \
-      tar xzf $PWD/mirror.tgz -C $SPACK_MIRROR_DIR  --strip 1
+      # mkdir -p $SPACK_MIRROR_DIR && \
+      # tar xzf $PWD/mirror.tgz -C $SPACK_MIRROR_DIR  --strip 1
     fi
   fi
  
+  # FIXME: We do not have mirror build for most recent version
   # Add mirror
-  spack mirror remove mofem_mirror 2> /dev/null
-  spack mirror add mofem_mirror $SPACK_MIRROR_DIR
+  # spack mirror remove mofem_mirror 2> /dev/null
+  # spack mirror add mofem_mirror $SPACK_MIRROR_DIR
 
   # Install packages required by Spack
   spack compiler find
   spack external find
 
-  # Set fortran compiler to version 9
-  # Set fortran compiler to version 9
-  if [ ${machine} = "Mac" ]
-  then
-    sed 's/gfortran$/gfortran-9/g' $HOME/.spack/darwin/compilers.yaml
-  fi
+  # # Set fortran compiler to version 9
+  # # Set fortran compiler to version 9
+  # if [ ${machine} = "Mac" ]
+  # then
+  #   sed 's/gfortran$/gfortran-9/g' $HOME/.spack/darwin/compilers.yaml
+  # fi
 
 fi
  
