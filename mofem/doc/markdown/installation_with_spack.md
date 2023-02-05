@@ -480,16 +480,6 @@ and initialise Spack's environment variables (should also be placed into `.bash_
 . spack/share/spack/setup-env.sh
 ~~~~~~
 
-You can download packages mirror:
-~~~~~
-mkdir -p mofem_mirror &&\
-curl -s -L  http://mofem.eng.gla.ac.uk/downloads/mirror_v0.16.tar.gz \
-| tar xzC $PWD/mofem_mirror  --strip 1
-spack mirror add mofem_mirror $PWD/mofem_mirror
-~~~~~
-\note The above step is not required. If you do not download and add a mirror, packages will be downloaded from the Internet. However, locations of libraries can change, or a server could be temporarily down. Using spack mirror makes
-installation resistant to such problems.
-
 #### Setup compiler and external packages
 
 First, find available compilers and external packages:
@@ -770,11 +760,11 @@ You can download mirror with all necessary packages from MoFEM repository and
 untar or unzip to directory:
 ~~~~~
 mkdir -p mofem_mirror &&
-curl -s -L  http://mofem.eng.gla.ac.uk/downloads/mirror_spack12.tar.gz \
+curl -s -L  http://mofem.eng.gla.ac.uk/downloads/mirror_v0.16.tar.gz \
 | tar xzC $PWD/mofem_mirror  --strip 1
 ~~~~~
 Note that packages are expanded to directory `mofem_mirror`, and mirror is
-made for MoFEM version v0.9.0.
+made for MoFEM version v0.16.0.
 
 Once mirror is downloaded, you can add it to your spack:
 ~~~~~

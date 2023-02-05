@@ -273,7 +273,7 @@ OpBaseDerivativesNext<1>::doWorkImpl(int side, EntityType type,
     // else if (space_dim == 1)
     //   CHKERR setBaseImpl<BASE_DIM, 1>(data, ent_data);
     else
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
                "Space dim can be only 1,2,3 but is %d", space_dim);
   }
 

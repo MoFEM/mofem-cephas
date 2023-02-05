@@ -838,7 +838,13 @@ struct MeshsetsManager : public UnknownInterface {
     return configFileOptionsPtr;
   }
 
-  MoFEMErrorCode updateAllMeshsetsByEntitiesChildren(const BitRefLevel bit);
+  /**
+   * @brief Update all blolsets, sidesets and node sets
+   * 
+   * @param bit 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode updateAllMeshsetsByEntitiesChildren(const BitRefLevel &bit);
 
   static bool brodcastMeshsets; ///< if true meshsets are synchrinised between
                                 ///< processors

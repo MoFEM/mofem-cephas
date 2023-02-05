@@ -1498,6 +1498,8 @@ struct RefEntExtractor {
 /**
  * @brief Insert ordered mofem multi-index into range
  *
+ * \note Inserted range has to be ordered.
+ * 
  * \code
  * auto hi_rit = refEntsPtr->upper_bound(start);
  * auto hi_rit = refEntsPtr->upper_bound(end);
@@ -1578,7 +1580,7 @@ private:
 };
 
 /**
- * @brief  Create smart pointer to temprary meshset
+ * @brief  Create smart pointer to temporary meshset
  * 
  */
 inline auto get_temp_meshset_ptr(moab::Interface &moab) {

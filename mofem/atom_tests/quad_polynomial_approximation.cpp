@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
                                 LASBASETOP, &choice_base_value, &flg);
 
     if (flg != PETSC_TRUE)
-      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "base not set");
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "base not set");
     FieldApproximationBase base = AINSWORTH_LEGENDRE_BASE;
     if (choice_base_value == AINSWORTH)
       base = AINSWORTH_LEGENDRE_BASE;
@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
     CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-space", list_spaces,
                                 LASBASETSPACE, &choice_space_value, &flg);
     if (flg != PETSC_TRUE)
-      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "space not set");
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "space not set");
     FieldSpace space = H1;
     if (choice_space_value == H1SPACE)
       space = H1;

@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
     CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list, LASTOP,
                                 &choise_value, &flg);
     if (flg != PETSC_TRUE) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "base not set");
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "base not set");
     }
 
     PetscBool ho_geometry = PETSC_FALSE;

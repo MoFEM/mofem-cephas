@@ -424,7 +424,7 @@ template <typename OP> struct OpScaleBaseBySpaceInverseOfMeasure : public OP {
           scale();
         break;
       default:
-        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "impossible case");
+        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "impossible case");
       }
     } else if (this->getFEDim() == 2) {
       switch (fieldSpace) {
@@ -441,7 +441,7 @@ template <typename OP> struct OpScaleBaseBySpaceInverseOfMeasure : public OP {
           scale();
         break;
       default:
-        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "impossible case");
+        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "impossible case");
       }
     } else if (this->getFEDim() == 1) {
       switch (fieldSpace) {
@@ -454,10 +454,10 @@ template <typename OP> struct OpScaleBaseBySpaceInverseOfMeasure : public OP {
           scale();
         break;
       default:
-        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "impossible case");
+        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "impossible case");
       }
     } else {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "impossible case");
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "impossible case");
     }
 
     MoFEMFunctionReturn(0);

@@ -401,7 +401,7 @@ TetGenInterface::outData(tetgenio &in, tetgenio &out,
                   "More that one tet with the same connectivity");
         }
       } else {
-        SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "Imposible case");
+        SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "Impossible case");
       }
     }
     if (!tet_found) {

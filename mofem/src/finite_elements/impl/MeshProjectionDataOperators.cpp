@@ -29,14 +29,24 @@ MoFEMErrorCode OpRunParent::doWork(int side, EntityType type,
     return ((bit & b).any()) && ((bit & m) == bit);
   };
 
-  if (check(bitParent, bitParentMask)) {
+#ifndef NDEBUG
+  if (verbosity > QUIET) {
+    MOFEM_LOG_CHANNEL("SELF");
+    MOFEM_TAG_AND_LOG("SELF", severityLevel, "OpRunParent")
+        << "FE bit " << bit
+        << " check parent = " << check(bitParent, bitParentMask)
+        << " check this " << check(bitThis, bitThisMask);
+  }
+#endif
 
-    CHKERR loopParent(getFEName(), parentElePtr.get(), verbosity,
-                      severityLevel);
+  if (check(bitParent, bitParentMask)) {
+    if (parentElePtr)
+      CHKERR loopParent(getFEName(), parentElePtr.get(), verbosity,
+                        severityLevel);
 
   } else if (check(bitThis, bitThisMask)) {
-
-    CHKERR loopThis(getFEName(), thisElePtr.get(), verbosity, severityLevel);
+    if (thisElePtr)
+      CHKERR loopThis(getFEName(), thisElePtr.get(), verbosity, severityLevel);
   }
 
   MoFEMFunctionReturn(0);
@@ -54,7 +64,7 @@ OpAddParentEntData::OpAddParentEntData(
       bitChildMask(bit_child_mask), bitParentEnt(bit_parent_ent),
       bitParentEntMask(bit_parent_ent_mask), verbosity(verb),
       severityLevel(sev) {
-
+  // Push op to collect data
   auto field_op =
       new ForcesAndSourcesCore::UserDataOperator(fieldName, opParentType);
   parentElePtr->getOpPtrVector().push_back(field_op);
@@ -72,7 +82,7 @@ OpAddParentEntData::OpAddParentEntData(
       bitChildMask(bit_child_mask), bitParentEnt(bit_parent_ent),
       bitParentEntMask(bit_parent_ent_mask), verbosity(verb),
       severityLevel(sev) {
-
+  // Push op to collect data
   auto field_op =
       new ForcesAndSourcesCore::UserDataOperator(approxSpace, opParentType);
   parentElePtr->getOpPtrVector().push_back(field_op);
@@ -252,6 +262,7 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
     MoFEMFunctionReturn(0);
   };
 
+  // iterate parents collect data
   auto &bit_fe = getFEMethod()->numeredEntFiniteElementPtr->getBitRefLevel();
   if (check(bitChild, bitChildMask, bit_fe)) {
 

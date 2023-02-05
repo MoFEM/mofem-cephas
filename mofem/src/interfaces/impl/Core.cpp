@@ -568,6 +568,10 @@ MoFEMErrorCode Core::getTags(int verb) {
 
   // Tags Ref
   {
+
+    // Fix size of bir ref level tags
+    CHKERR BitRefManager::fixTagSize(get_moab());
+
     const int def_part = -1;
     CHKERR get_moab().tag_get_handle("_MeshsetPartition", 1, MB_TYPE_INTEGER,
                                      th_Part, MB_TAG_CREAT | MB_TAG_SPARSE,
@@ -589,9 +593,6 @@ MoFEMErrorCode Core::getTags(int verb) {
     CHKERR get_moab().tag_get_handle(
         "_RefBitEdge", sizeof(BitRefEdges), MB_TYPE_OPAQUE, th_RefBitEdge,
         MB_TAG_CREAT | MB_TAG_SPARSE | MB_TAG_BYTES, &def_bit_edge);
-    const int def_type[] = {0, 0};
-    CHKERR get_moab().tag_get_handle("_RefType", 2, MB_TYPE_INTEGER, th_RefType,
-                                     MB_TAG_CREAT | MB_TAG_SPARSE, def_type);
   }
 
   // Tags Field

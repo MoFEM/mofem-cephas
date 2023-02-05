@@ -2,7 +2,6 @@
  * \brief Core interface methods for managing deletions and insertion dofs
  */
 
-
 #include <MoFEM.hpp>
 
 #define FECoreFunctionBegin                                                    \
@@ -15,14 +14,30 @@
 
 namespace MoFEM {
 
+const FiniteElement *
+Core::get_finite_element_structure(const std::string &name,
+                                   enum MoFEMTypes bh) const {
+  auto miit = finiteElements.get<FiniteElement_name_mi_tag>().find(name);
+  if (miit == finiteElements.get<FiniteElement_name_mi_tag>().end()) {
+    if (bh == MF_EXIST) {
+      throw MoFEMException(
+          MOFEM_NOT_FOUND,
+          std::string("finite element < " + name +
+                      " > not in database (top tip: check spelling)")
+              .c_str());
+    } else {
+      return nullptr;
+    }
+  }
+  return miit->get();
+}
+
 bool Core::check_finite_element(const std::string &name) const {
-  typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type
-      FeSetByName;
-  const FeSetByName &set = finiteElements.get<FiniteElement_name_mi_tag>();
-  FeSetByName::iterator miit = set.find(name);
-  if (miit == set.end())
+  auto miit = finiteElements.get<FiniteElement_name_mi_tag>().find(name);
+  if (miit == finiteElements.get<FiniteElement_name_mi_tag>().end())
     return false;
-  return true;
+  else
+    return true;
 }
 
 MoFEMErrorCode Core::add_finite_element(const std::string &fe_name,
@@ -121,7 +136,7 @@ Core::modify_finite_element_adjacency_table(const std::string &fe_name,
 
 MoFEMErrorCode
 Core::modify_finite_element_add_field_data(const std::string &fe_name,
-                                           const std::string &name_data) {
+                                           const std::string name_data) {
   MoFEMFunctionBegin;
   *buildMoFEM &= 1 << 0;
   typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type
@@ -143,7 +158,7 @@ Core::modify_finite_element_add_field_data(const std::string &fe_name,
 
 MoFEMErrorCode
 Core::modify_finite_element_add_field_row(const std::string &fe_name,
-                                          const std::string &name_row) {
+                                          const std::string name_row) {
   MoFEMFunctionBegin;
   *buildMoFEM &= 1 << 0;
   typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type
@@ -165,7 +180,7 @@ Core::modify_finite_element_add_field_row(const std::string &fe_name,
 
 MoFEMErrorCode
 Core::modify_finite_element_add_field_col(const std::string &fe_name,
-                                          const std::string &name_col) {
+                                          const std::string name_col) {
   MoFEMFunctionBegin;
   *buildMoFEM &= 1 << 0;
   typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type
@@ -187,7 +202,7 @@ Core::modify_finite_element_add_field_col(const std::string &fe_name,
 
 MoFEMErrorCode
 Core::modify_finite_element_off_field_data(const std::string &fe_name,
-                                           const std::string &name_data) {
+                                           const std::string name_data) {
   MoFEMFunctionBegin;
   *buildMoFEM &= 1 << 0;
   auto &finite_element_name_set =
@@ -205,7 +220,7 @@ Core::modify_finite_element_off_field_data(const std::string &fe_name,
 
 MoFEMErrorCode
 Core::modify_finite_element_off_field_row(const std::string &fe_name,
-                                          const std::string &name_row) {
+                                          const std::string name_row) {
   MoFEMFunctionBegin;
   *buildMoFEM &= 1 << 0;
   auto &finite_element_name_set =
@@ -224,7 +239,7 @@ Core::modify_finite_element_off_field_row(const std::string &fe_name,
 
 MoFEMErrorCode
 Core::modify_finite_element_off_field_col(const std::string &fe_name,
-                                          const std::string &name_col) {
+                                          const std::string name_col) {
   MoFEMFunctionBegin;
   *buildMoFEM &= 1 << 0;
   auto &finite_element_name_set =
@@ -240,12 +255,12 @@ Core::modify_finite_element_off_field_col(const std::string &fe_name,
   MoFEMFunctionReturn(0);
 }
 
-BitFEId Core::getBitFEId(const std::string &name) const {
+BitFEId Core::getBitFEId(const std::string &fe_name) const {
   auto &fe_by_id = finiteElements.get<FiniteElement_name_mi_tag>();
-  auto miit = fe_by_id.find(name);
+  auto miit = fe_by_id.find(fe_name);
   if (miit == fe_by_id.end())
     THROW_MESSAGE(
-        ("finite element < " + name + " > not found (top tip: check spelling)")
+        ("finite element < " + fe_name + " > not found (top tip: check spelling)")
             .c_str());
   return (*miit)->getId();
 }
@@ -266,7 +281,7 @@ EntityHandle Core::get_finite_element_meshset(const BitFEId id) const {
   return (*miit)->meshset;
 }
 
-EntityHandle Core::get_finite_element_meshset(const std::string &name) const {
+EntityHandle Core::get_finite_element_meshset(const std::string name) const {
   return get_finite_element_meshset(getBitFEId(name));
 }
 
@@ -588,33 +603,30 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
         adj_ents.clear();
         CHKERR fe_raw_ptr->getElementAdjacency(*miit, adj_ents);
 
-        for(auto ent : adj_ents) {
+        for (auto ent : adj_ents) {
 
           auto dof_it = entsFields.get<Unique_mi_tag>().find(
               FieldEntity::getLocalUniqueIdCalculate(field_bit_number, ent));
-          if(dof_it!=entsFields.get<Unique_mi_tag>().end()) {
-              // Add entity to map with key entity uids pointers  and data
-              // finite elements weak ptrs. I using pointers to uids instead
-              // uids because this is faster.
-              const UId *uid_ptr = &(dof_it->get()->getLocalUniqueId());
-              auto &fe_vec = ent_uid_and_fe_vec[uid_ptr];
-              if (add_to_data) {
-                fe_raw_ptr->getDataFieldEntsPtr()->emplace_back(*dof_it);
-              }
-              if (add_to_row && !row_as_data) {
-                fe_raw_ptr->getRowFieldEntsPtr()->emplace_back(*dof_it);
-              }
-              if (add_to_col && !col_as_row) {
-                fe_raw_ptr->getColFieldEntsPtr()->emplace_back(*dof_it);
-              }
+          if (dof_it != entsFields.get<Unique_mi_tag>().end()) {
+            // Add entity to map with key entity uids pointers  and data
+            // finite elements weak ptrs. I using pointers to uids instead
+            // uids because this is faster.
+            const UId *uid_ptr = &(dof_it->get()->getLocalUniqueId());
+            auto &fe_vec = ent_uid_and_fe_vec[uid_ptr];
+            if (add_to_data) {
+              fe_raw_ptr->getDataFieldEntsPtr()->emplace_back(*dof_it);
+            }
+            if (add_to_row && !row_as_data) {
+              fe_raw_ptr->getRowFieldEntsPtr()->emplace_back(*dof_it);
+            }
+            if (add_to_col && !col_as_row) {
+              fe_raw_ptr->getColFieldEntsPtr()->emplace_back(*dof_it);
+            }
 
-              // add finite element to processed list
-              fe_vec.emplace_back(*hint_p);
+            // add finite element to processed list
+            fe_vec.emplace_back(*hint_p);
           }
-
         }
-
-
       }
 
       // Sort field ents by uid
@@ -665,10 +677,13 @@ MoFEMErrorCode Core::build_finite_elements(int verb) {
 
   if (verb > QUIET) {
 
-    auto &fe_ents = entsFiniteElements.get<FiniteElement_name_mi_tag>();
+    auto &fe_ents = entsFiniteElements.get<Unique_mi_tag>();
     for (auto &fe : finiteElements) {
-      auto miit = fe_ents.lower_bound(fe->getName());
-      auto hi_miit = fe_ents.upper_bound(fe->getName());
+      auto miit = fe_ents.lower_bound(
+          EntFiniteElement::getLocalUniqueIdCalculate(0, fe->getFEUId()));
+      auto hi_miit =
+          fe_ents.upper_bound(EntFiniteElement::getLocalUniqueIdCalculate(
+              get_id_for_max_type<MBENTITYSET>(), fe->getFEUId()));
       const auto count = std::distance(miit, hi_miit);
       MOFEM_LOG("SYNC", Sev::inform)
           << "Finite element " << fe->getName()
@@ -721,9 +736,12 @@ MoFEMErrorCode Core::build_finite_elements(const string fe_name,
   CHKERR buildFiniteElements(*fe_miit, ents_ptr, verb);
 
   if (verb >= VERBOSE) {
-    auto &fe_ents = entsFiniteElements.get<FiniteElement_name_mi_tag>();
-    auto miit = fe_ents.lower_bound((*fe_miit)->getName());
-    auto hi_miit = fe_ents.upper_bound((*fe_miit)->getName());
+    auto &fe_ents = entsFiniteElements.get<Unique_mi_tag>();
+    auto miit = fe_ents.lower_bound(
+        EntFiniteElement::getLocalUniqueIdCalculate(0, (*fe_miit)->getFEUId()));
+    auto hi_miit =
+        fe_ents.upper_bound(EntFiniteElement::getLocalUniqueIdCalculate(
+            get_id_for_max_type<MBENTITYSET>(), (*fe_miit)->getFEUId()));
     const auto count = std::distance(miit, hi_miit);
     MOFEM_LOG("SYNC", Sev::inform) << "Finite element " << fe_name
                                    << " added. Nb. of elements added " << count;
@@ -745,7 +763,8 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
     SETERRQ(mofemComm, MOFEM_NOT_FOUND, "fe not build");
   for (auto peit = ents.pair_begin(); peit != ents.pair_end(); ++peit) {
     auto fit = entsFiniteElements.get<Ent_mi_tag>().lower_bound(peit->first);
-    auto hi_fit = entsFiniteElements.get<Ent_mi_tag>().upper_bound(peit->second);
+    auto hi_fit =
+        entsFiniteElements.get<Ent_mi_tag>().upper_bound(peit->second);
     for (; fit != hi_fit; ++fit) {
       if ((*fit)->getBitFieldIdRow().none() &&
           (*fit)->getBitFieldIdCol().none() &&
@@ -826,15 +845,27 @@ MoFEMErrorCode Core::build_adjacencies(const BitRefLevel &bit, int verb) {
   MoFEMFunctionReturn(0);
 }
 
-EntFiniteElementByName::iterator
+EntFiniteElement_multiIndex::index<Unique_mi_tag>::type::iterator
 Core::get_fe_by_name_begin(const std::string &fe_name) const {
-  return entsFiniteElements.get<FiniteElement_name_mi_tag>().lower_bound(
-      fe_name);
+  auto miit = finiteElements.get<FiniteElement_name_mi_tag>().find(fe_name);
+  if (miit != finiteElements.get<FiniteElement_name_mi_tag>().end()) {
+    return entsFiniteElements.get<Unique_mi_tag>().lower_bound(
+        EntFiniteElement::getLocalUniqueIdCalculate(0, (*miit)->getFEUId()));
+  } else {
+    return entsFiniteElements.get<Unique_mi_tag>().end();
+  }
 }
-EntFiniteElementByName::iterator
+
+EntFiniteElement_multiIndex::index<Unique_mi_tag>::type::iterator
 Core::get_fe_by_name_end(const std::string &fe_name) const {
-  return entsFiniteElements.get<FiniteElement_name_mi_tag>().upper_bound(
-      fe_name);
+  auto miit = finiteElements.get<FiniteElement_name_mi_tag>().find(fe_name);
+  if (miit != finiteElements.get<FiniteElement_name_mi_tag>().end()) {
+    return entsFiniteElements.get<Unique_mi_tag>().upper_bound(
+        EntFiniteElement::getLocalUniqueIdCalculate(
+            get_id_for_max_type<MBENTITYSET>(), (*miit)->getFEUId()));
+  } else {
+    return entsFiniteElements.get<Unique_mi_tag>().end();
+  }
 }
 
 MoFEMErrorCode Core::check_number_of_ents_in_ents_finite_element(
@@ -850,9 +881,13 @@ MoFEMErrorCode Core::check_number_of_ents_in_ents_finite_element(
   int num_entities;
   CHKERR get_moab().get_number_entities_by_handle(meshset, num_entities);
 
-  if (entsFiniteElements.get<FiniteElement_name_mi_tag>().count(
-          (*it)->getName().c_str()) != (unsigned int)num_entities) {
-    SETERRQ1(mofemComm, 1,
+  auto counts_fes = [&]() {
+    return std::distance(get_fe_by_name_begin((*it)->getName()),
+                         get_fe_by_name_end((*it)->getName()));
+  };
+
+  if (counts_fes() != static_cast<size_t>(num_entities)) {
+    SETERRQ1(mofemComm, MOFEM_DATA_INCONSISTENCY,
              "not equal number of entities in meshset and finite elements "
              "multiindex < %s >",
              (*it)->getName().c_str());
@@ -870,9 +905,13 @@ MoFEMErrorCode Core::check_number_of_ents_in_ents_finite_element() const {
     int num_entities;
     CHKERR get_moab().get_number_entities_by_handle(meshset, num_entities);
 
-    if (entsFiniteElements.get<FiniteElement_name_mi_tag>().count(
-            (*it)->getName().c_str()) != (unsigned int)num_entities) {
-      SETERRQ1(mofemComm, 1,
+    auto counts_fes = [&]() {
+      return std::distance(get_fe_by_name_begin((*it)->getName()),
+                           get_fe_by_name_end((*it)->getName()));
+    };
+
+    if (counts_fes() != static_cast<size_t>(num_entities)) {
+      SETERRQ1(mofemComm, MOFEM_DATA_INCONSISTENCY,
                "not equal number of entities in meshset and finite elements "
                "multiindex < %s >",
                (*it)->getName().c_str());
@@ -880,4 +919,42 @@ MoFEMErrorCode Core::check_number_of_ents_in_ents_finite_element() const {
   }
   MoFEMFunctionReturn(0);
 }
+
+MoFEMErrorCode
+Core::get_problem_finite_elements_entities(const std::string problem_name,
+                                           const std::string &fe_name,
+                                           const EntityHandle meshset) {
+  MoFEMFunctionBegin;
+  auto &prb = pRoblems.get<Problem_mi_tag>();
+  auto p_miit = prb.find(problem_name);
+  if (p_miit == prb.end())
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "No such problem like < %s >", problem_name.c_str());
+
+  auto fe_miit = finiteElements.get<FiniteElement_name_mi_tag>().find(fe_name);
+  if (fe_miit != finiteElements.get<FiniteElement_name_mi_tag>().end()) {
+    auto miit =
+        p_miit->numeredFiniteElementsPtr->get<Unique_mi_tag>().lower_bound(
+            EntFiniteElement::getLocalUniqueIdCalculate(
+                0, (*fe_miit)->getFEUId()));
+    auto hi_miit =
+        p_miit->numeredFiniteElementsPtr->get<Unique_mi_tag>().upper_bound(
+            EntFiniteElement::getLocalUniqueIdCalculate(
+                get_id_for_max_type<MBENTITYSET>(), (*fe_miit)->getFEUId()));
+
+    if (miit != hi_miit) {
+      std::vector<EntityHandle> ents;
+      ents.reserve(std::distance(miit, hi_miit));
+      for (; miit != hi_miit; ++miit)
+        ents.push_back((*miit)->getEnt());
+      int part = (*miit)->getPart();
+      CHKERR get_moab().tag_clear_data(th_Part, &*ents.begin(), ents.size(),
+                                       &part);
+      CHKERR get_moab().add_entities(meshset, &*ents.begin(), ents.size());
+    }
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
 } // namespace MoFEM

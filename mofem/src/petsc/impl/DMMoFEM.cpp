@@ -1134,22 +1134,22 @@ PetscErrorCode DMMoFEMSetTsCtx(DM dm, boost::shared_ptr<MoFEM::TsCtx> ts_ctx) {
 
 PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm, Vec *g) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
   CHKERR dm_field->mField_ptr->getInterface<VecManager>()->vecCreateGhost(
       dm_field->problemName, COL, g);
   CHKERR VecSetDM(*g, dm);
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm, SmartPetscObj<Vec> &g_ptr) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
   CHKERR dm_field->mField_ptr->getInterface<VecManager>()->vecCreateGhost(
       dm_field->problemName, COL, g_ptr);
   CHKERR VecSetDM(g_ptr, dm);
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 PetscErrorCode DMCreateLocalVector_MoFEM(DM dm, Vec *l) {

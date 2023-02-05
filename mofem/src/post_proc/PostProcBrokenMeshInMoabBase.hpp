@@ -142,15 +142,39 @@ template <typename E> struct PostProcBrokenMeshInMoabBase : public E {
 
   MoFEMErrorCode setGaussPts(int order);
 
+  MoFEMErrorCode setTagsToTransfer(std::vector<Tag> tags_to_transfer);
+
 protected:
   int getRule(int order);
-  int getMaxLevel() const;
+  
+  /**
+   * @brief Determine refinment level based on fields approx ordre.
+   * 
+   * level = (order - 1) / 2 
+   *
+   * @return int 
+   */
+  virtual int getMaxLevel() const;
 
   moab::Core coreMesh;
   moab::Interface &postProcMesh;
 
   std::map<EntityType, PostProcGenerateRefMeshPtr> refElementsMap;
+
+  std::vector<Tag> tagsToTransfer; ///< Set of tags on mesh to transfer to
+                                   ///< postprocessing mesh
+
+  virtual MoFEMErrorCode transferTags(); ///< transfer tags from mesh to
+                                         ///< post-process mesh
 };
+
+template <typename E>
+MoFEMErrorCode PostProcBrokenMeshInMoabBase<E>::setTagsToTransfer(
+    std::vector<Tag> tags_to_transfer) {
+  MoFEMFunctionBegin;
+  tagsToTransfer.swap(tags_to_transfer);
+  MoFEMFunctionReturn(0);
+}
 
 template <typename E> int PostProcBrokenMeshInMoabBase<E>::getMaxLevel() const {
   auto get_element_max_dofs_order = [&]() {
@@ -164,6 +188,64 @@ template <typename E> int PostProcBrokenMeshInMoabBase<E>::getMaxLevel() const {
   };
   const auto dof_max_order = get_element_max_dofs_order();
   return (dof_max_order > 0) ? (dof_max_order - 1) / 2 : 0;
+};
+
+template <typename E>
+MoFEMErrorCode PostProcBrokenMeshInMoabBase<E>::transferTags() {
+  MoFEMFunctionBegin;
+
+  auto &calc_mesh = this->mField.get_moab();
+
+  auto name = [&](auto tag) {
+    std::string name;
+    CHK_MOAB_THROW(calc_mesh.tag_get_name(tag, name), "get name");
+    return name;
+  };
+
+  auto data_type = [&](auto tag) {
+    moab::DataType data_type;
+    CHK_MOAB_THROW(calc_mesh.tag_get_data_type(tag, data_type), "get data type");
+    return data_type;
+  };
+
+  auto type = [&](auto tag) {
+    moab::TagType type;
+    CHK_MOAB_THROW(calc_mesh.tag_get_type(tag, type), "get tag type");
+    return type;
+  };
+
+  auto length = [&](auto tag) {
+    int length;
+    CHK_MOAB_THROW(calc_mesh.tag_get_length(tag, length), "get length ");
+    return length;
+  };
+
+  auto default_value = [&](auto tag) {
+    const void* def_val;
+    int size;
+    CHK_MOAB_THROW(calc_mesh.tag_get_default_value(tag, def_val, size),
+                     "get default tag value");
+    return def_val;
+  };
+
+  auto data_ptr = [&](auto tag) {
+    const void *tag_data;
+    auto core_ent = this->getFEEntityHandle();
+    CHK_MOAB_THROW(calc_mesh.tag_get_by_ptr(tag, &core_ent, 1, &tag_data),
+                   "get tag data");
+    return tag_data;
+  };
+
+  for (auto tag : tagsToTransfer) {
+    Tag tag_postproc;
+    CHKERR postProcMesh.tag_get_handle(
+        name(tag).c_str(), length(tag), data_type(tag), tag_postproc,
+        type(tag) | MB_TAG_CREAT, default_value(tag));
+    CHKERR postProcMesh.tag_clear_data(tag_postproc, postProcElements,
+                                       data_ptr(tag));
+  }
+
+  MoFEMFunctionReturn(0);
 };
 
 template <typename E>
@@ -290,6 +372,7 @@ MoFEMErrorCode PostProcBrokenMeshInMoabBase<E>::setGaussPts(int order) {
 
     const int n_in_the_loop = E::nInTheLoop;
     CHKERR postProcMesh.tag_clear_data(th, postProcElements, &n_in_the_loop);
+    CHKERR transferTags();
 
     MoFEMFunctionReturn(0);
   };
@@ -445,7 +528,7 @@ MoFEMErrorCode PostProcBrokenMeshInMoabBase<E>::postProcess() {
       if (m.second->nbEles) {
         MOFEM_TAG_AND_LOG("SELF", Sev::noisy, "PostProc")
             << "Update < " << moab::CN::EntityTypeName(m.first)
-            << m.second->countEle;
+            << " number of processsed " << m.second->countEle;
         CHKERR iface->update_adjacencies(
             m.second->startingEleHandle, m.second->countEle,
             m.second->levelRef[0].size2(), m.second->eleConn);

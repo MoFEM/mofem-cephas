@@ -2108,7 +2108,7 @@ ProblemsManager::debugPartitionedProblem(const Problem *problem_ptr, int verb) {
           if ((*dit)->getPetscLocalDofIdx() < 0) {
             std::ostringstream zz;
             zz << "rank " << m_field.get_comm_rank() << " " << **dit;
-            SETERRQ2(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
+            SETERRQ2(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
                      "local dof index for %d (0-row, 1-col) not set, i.e. has "
                      "negative value\n %s",
                      ss, zz.str().c_str());
@@ -2116,7 +2116,7 @@ ProblemsManager::debugPartitionedProblem(const Problem *problem_ptr, int verb) {
           if ((*dit)->getPetscLocalDofIdx() >= *local_nbdof_ptr[ss]) {
             std::ostringstream zz;
             zz << "rank " << m_field.get_comm_rank() << " " << **dit;
-            SETERRQ2(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
+            SETERRQ2(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
                      "local dofs for %d (0-row, 1-col) out of range\n %s", ss,
                      zz.str().c_str());
           }
@@ -2134,7 +2134,7 @@ ProblemsManager::debugPartitionedProblem(const Problem *problem_ptr, int verb) {
             std::ostringstream zz;
             zz << "rank " << m_field.get_comm_rank() << " "
                << dit->get()->getBitRefLevel() << " " << **dit;
-            SETERRQ2(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
+            SETERRQ2(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
                      "global dof index for %d (0-row, 1-col) row not set, i.e. "
                      "has negative value\n %s",
                      ss, zz.str().c_str());
@@ -2143,7 +2143,7 @@ ProblemsManager::debugPartitionedProblem(const Problem *problem_ptr, int verb) {
             std::ostringstream zz;
             zz << "rank " << m_field.get_comm_rank() << " nb_dofs "
                << *nbdof_ptr[ss] << " " << **dit;
-            SETERRQ2(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
+            SETERRQ2(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
                      "global dofs for %d (0-row, 1-col) out of range\n %s", ss,
                      zz.str().c_str());
           }
@@ -2547,32 +2547,41 @@ ProblemsManager::partitionGhostDofsOnDistributedMesh(const std::string name,
 }
 
 MoFEMErrorCode ProblemsManager::getFEMeshset(const std::string prb_name,
-                                             const std::string fe_name,
+                                             const std::string &fe_name,
                                              EntityHandle *meshset) const {
   MoFEM::Interface &m_field = cOre;
   const Problem *problem_ptr;
+  const FiniteElement_multiIndex *fes_ptr;
   ProblemManagerFunctionBegin;
 
   CHKERR m_field.get_moab().create_meshset(MESHSET_SET, *meshset);
   CHKERR m_field.get_problem(prb_name, &problem_ptr);
-  auto fit =
-      problem_ptr->numeredFiniteElementsPtr->get<FiniteElement_name_mi_tag>()
-          .lower_bound(fe_name);
-  auto hi_fe_it =
-      problem_ptr->numeredFiniteElementsPtr->get<FiniteElement_name_mi_tag>()
-          .upper_bound(fe_name);
-  std::vector<EntityHandle> fe_vec;
-  fe_vec.reserve(std::distance(fit, hi_fe_it));
-  for (; fit != hi_fe_it; fit++)
-    fe_vec.push_back(fit->get()->getEnt());
-  CHKERR m_field.get_moab().add_entities(*meshset, &*fe_vec.begin(),
-                                         fe_vec.size());
+  CHKERR m_field.get_finite_elements(&fes_ptr);
+
+  auto fe_miit = fes_ptr->get<FiniteElement_name_mi_tag>().find(fe_name);
+  if (fe_miit != fes_ptr->get<FiniteElement_name_mi_tag>().end()) {
+    auto fit =
+        problem_ptr->numeredFiniteElementsPtr->get<Unique_mi_tag>().lower_bound(
+            EntFiniteElement::getLocalUniqueIdCalculate(
+                0, (*fe_miit)->getFEUId()));
+    auto hi_fe_it =
+        problem_ptr->numeredFiniteElementsPtr->get<Unique_mi_tag>().upper_bound(
+            EntFiniteElement::getLocalUniqueIdCalculate(
+                get_id_for_max_type<MBENTITYSET>(), (*fe_miit)->getFEUId()));
+    std::vector<EntityHandle> fe_vec;
+    fe_vec.reserve(std::distance(fit, hi_fe_it));
+    for (; fit != hi_fe_it; fit++)
+      fe_vec.push_back(fit->get()->getEnt());
+    CHKERR m_field.get_moab().add_entities(*meshset, &*fe_vec.begin(),
+                                           fe_vec.size());
+  }
+
   MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
 ProblemsManager::getProblemElementsLayout(const std::string name,
-                                          const std::string fe_name,
+                                          const std::string &fe_name,
                                           PetscLayout *layout) const {
   MoFEM::Interface &m_field = cOre;
   const Problem *problem_ptr;
@@ -3097,7 +3106,7 @@ ProblemsManager::markDofs(const std::string problem_name, RowColData rc,
   case COL:
     dofs = problem_ptr->getNumeredColDofsPtr();
   default:
-    SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Should be row or column");
+    SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "Should be row or column");
   }
   marker.resize(dofs->size(), 0);
   std::vector<unsigned char> marker_tmp;
@@ -3145,7 +3154,7 @@ MoFEMErrorCode ProblemsManager::modifyMarkDofs(
   case COL:
     dofs = problem_ptr->getNumeredColDofsPtr();
   default:
-    SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Should be row or column");
+    SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "Should be row or column");
   }
   marker.resize(dofs->size(), 0);
 

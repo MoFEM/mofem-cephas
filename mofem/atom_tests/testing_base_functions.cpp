@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
                                 &choice_value, &flg);
     CHKERRG(ierr);
     if (flg != PETSC_TRUE) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "base not set");
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "base not set");
     }
 
     MatrixDouble pts_1d(1, 3);
