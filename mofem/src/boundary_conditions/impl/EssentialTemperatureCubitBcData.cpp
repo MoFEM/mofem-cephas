@@ -47,21 +47,6 @@ MoFEMErrorCode EssentialPreProc<TemperatureCubitBcData>::operator()() {
             v *= s->getScale(fe_method_ptr->ts_t);
           }
 
-          //   std::array<std::vector<double>, 3> coords;
-          //   auto verts_check = bc.second->bcEnts.subset_by_type(MBVERTEX);
-            
-          //  for (auto d : {0, 1, 2})
-          //     coords[d].resize(verts_check.size());
-
-          //   CHKERR mField.get_moab().get_coords(verts_check, &*coords[0].begin(),
-          //                                       &*coords[1].begin(),
-          //                                       &*coords[2].begin());
-          // CHKERR PetscPrintf(PETSC_COMM_WORLD, "coords z: ");                                                                                                
-          //   for (int ii = 0; ii != verts_check.size();  ++ii)
-          //     CHKERR PetscPrintf(PETSC_COMM_WORLD, " %e ", coords[2][ii]);
-              
-          //   CHKERR PetscPrintf(PETSC_COMM_WORLD, "\n");   
-
           auto lambda = [&](boost::shared_ptr<FieldEntity> field_entity_ptr) {
             MoFEMFunctionBegin;
             for (auto &d : field_entity_ptr->getEntFieldData())
