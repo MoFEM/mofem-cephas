@@ -364,83 +364,83 @@ BcManager::removeBlockDOFsOnEntities<BcMeshsetType<TEMPERATURESET>>(
   MoFEMFunctionReturn(0);
 }
 
-template <>
-MoFEMErrorCode
-BcManager::removeBlockDOFsOnEntities<BcScalarMeshsetType<BLOCKSET>>(
-    const std::string problem_name, const std::string field_name,
-    bool get_low_dim_ents, bool block_name_field_prefix,
-    bool is_distributed_mesh) {
-  Interface &m_field = cOre;
-  auto prb_mng = m_field.getInterface<ProblemsManager>();
-  MoFEMFunctionBegin;
+// template <>
+// MoFEMErrorCode
+// BcManager::removeBlockDOFsOnEntities<BcScalarMeshsetType<BLOCKSET>>(
+//     const std::string problem_name, const std::string field_name,
+//     bool get_low_dim_ents, bool block_name_field_prefix,
+//     bool is_distributed_mesh) {
+//   Interface &m_field = cOre;
+//   auto prb_mng = m_field.getInterface<ProblemsManager>();
+//   MoFEMFunctionBegin;
 
-  CHKERR pushMarkDOFsOnEntities<BcScalarMeshsetType<BLOCKSET>>(
-      problem_name, field_name, get_low_dim_ents, block_name_field_prefix);
+//   CHKERR pushMarkDOFsOnEntities<BcScalarMeshsetType<BLOCKSET>>(
+//       problem_name, field_name, get_low_dim_ents, block_name_field_prefix);
 
-  Range ents_to_remove;
+//   Range ents_to_remove;
 
-  for (auto m :
+//   for (auto m :
 
-       m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(BLOCKSET)) {
+//        m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(BLOCKSET)) {
 
-    const auto block_name = m->getName();
+//     const auto block_name = m->getName();
 
-    std::string bc_id;
-    if (block_name_field_prefix)
-      bc_id = problem_name + "_" + m->getName();
-    else
-      bc_id = problem_name + "_" + field_name + "_" + m->getName();
+//     std::string bc_id;
+//     if (block_name_field_prefix)
+//       bc_id = problem_name + "_" + m->getName();
+//     else
+//       bc_id = problem_name + "_" + field_name + "_" + m->getName();
 
-    auto str = boost::format("%s_%s_((FIX_(SCALAR))|("
-                             "DISPLACEMENT)|(ROTATION)|(TEMP))(.*)")
+//     auto str = boost::format("%s_%s_((FIX_(SCALAR))|("
+//                              "DISPLACEMENT)|(ROTATION)|(TEMP))(.*)")
 
-               % problem_name % field_name;
+//                % problem_name % field_name;
 
-    if (std::regex_match(bc_id, std::regex(str.str()))) {
+//     if (std::regex_match(bc_id, std::regex(str.str()))) {
 
-      auto bc = bcMapByBlockName.at(bc_id);
+//       auto bc = bcMapByBlockName.at(bc_id);
 
-      // if (auto disp_bc = bc->dispBcPtr) {
-      //   if (disp_bc->data.flag1) {
-      //     ents_to_remove[0].merge(bc->bcEnts);
-      //   }
-      //   // if (disp_bc->data.flag2) {
-      //   //   ents_to_remove[1].merge(bc->bcEnts);
-      //   // }
-      //   // if (disp_bc->data.flag3) {
-      //   //   ents_to_remove[2].merge(bc->bcEnts);
-      //   // }
-      // } else 
+//       // if (auto disp_bc = bc->dispBcPtr) {
+//       //   if (disp_bc->data.flag1) {
+//       //     ents_to_remove[0].merge(bc->bcEnts);
+//       //   }
+//       //   // if (disp_bc->data.flag2) {
+//       //   //   ents_to_remove[1].merge(bc->bcEnts);
+//       //   // }
+//       //   // if (disp_bc->data.flag3) {
+//       //   //   ents_to_remove[2].merge(bc->bcEnts);
+//       //   // }
+//       // } else 
       
-      if (auto temp_bc = bc->tempBcPtr) {
-        ents_to_remove.merge(bc->bcEnts);
-      } else {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "BC type not implemented");
-      }
-    }
-  }
+//       if (auto temp_bc = bc->tempBcPtr) {
+//         ents_to_remove.merge(bc->bcEnts);
+//       } else {
+//         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+//                 "BC type not implemented");
+//       }
+//     }
+//   }
 
-  auto remove_dofs_on_ents = [&](const Range &ents, const int lo,
-                                 const int hi) {
-    if (is_distributed_mesh){
-      CHKERR PetscPrintf(PETSC_COMM_WORLD, "Removing distributed \n");
-      return prb_mng->removeDofsOnEntities(problem_name, field_name, ents, lo,
-                                           hi);
-    }
-    else{
-      CHKERR PetscPrintf(PETSC_COMM_WORLD, "Removing non-distributed \n");
-      return prb_mng->removeDofsOnEntitiesNotDistributed(
-          problem_name, field_name, ents, lo, hi);
-    }
-  };
-  CHKERR PetscPrintf(PETSC_COMM_WORLD, "ents_to_remove.size():  %d\n",
-                         ents_to_remove.size());
+//   auto remove_dofs_on_ents = [&](const Range &ents, const int lo,
+//                                  const int hi) {
+//     if (is_distributed_mesh){
+//       CHKERR PetscPrintf(PETSC_COMM_WORLD, "Removing distributed \n");
+//       return prb_mng->removeDofsOnEntities(problem_name, field_name, ents, lo,
+//                                            hi);
+//     }
+//     else{
+//       CHKERR PetscPrintf(PETSC_COMM_WORLD, "Removing non-distributed \n");
+//       return prb_mng->removeDofsOnEntitiesNotDistributed(
+//           problem_name, field_name, ents, lo, hi);
+//     }
+//   };
+//   CHKERR PetscPrintf(PETSC_COMM_WORLD, "ents_to_remove.size():  %d\n",
+//                          ents_to_remove.size());
 
-  CHKERR remove_dofs_on_ents(ents_to_remove, 0, MAX_DOFS_ON_ENTITY);
+//   CHKERR remove_dofs_on_ents(ents_to_remove, 0, MAX_DOFS_ON_ENTITY);
 
-  MoFEMFunctionReturn(0);
-}
+//   MoFEMFunctionReturn(0);
+// }
 
 
 // Range ents_to_remove;

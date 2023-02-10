@@ -317,12 +317,12 @@ BcManager::removeBlockDOFsOnEntities<BcMeshsetType<TEMPERATURESET>>(
     bool get_low_dim_ents, bool block_name_field_prefix,
     bool is_distributed_mesh);
 
-template <>
-MoFEMErrorCode
-BcManager::removeBlockDOFsOnEntities<BcScalarMeshsetType<BLOCKSET>>(
-    const std::string problem_name, const std::string field_name,
-    bool get_low_dim_ents, bool block_name_field_prefix,
-    bool is_distributed_mesh);
+// template <>
+// MoFEMErrorCode
+// BcManager::removeBlockDOFsOnEntities<BcScalarMeshsetType<BLOCKSET>>(
+//     const std::string problem_name, const std::string field_name,
+//     bool get_low_dim_ents, bool block_name_field_prefix,
+//     bool is_distributed_mesh);
 
 template <>
 MoFEMErrorCode BcManager::removeBlockDOFsOnEntities<BcMeshsetType<HEATFLUXSET>>(
