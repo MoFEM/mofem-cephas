@@ -117,7 +117,7 @@ template <>
 inline MoFEMErrorCode VecSetValues<AssemblyTypeSelector<PETSC>>(
     Vec V, const EntitiesFieldData::EntData &data, const double *ptr,
     InsertMode iora) {
-  return VecSetValues(V, data, ptr, iora);
+  return VecSetValues<EssentialBcStorage>(V, data, ptr, iora);
 }
 
 /**
