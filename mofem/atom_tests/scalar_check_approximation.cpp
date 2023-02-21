@@ -462,9 +462,15 @@ int main(int argc, char *argv[]) {
           pipeline_mng->getOpDomainRhsPipeline(), {NOSPACE});
 
       using OpMass = FormsIntegrators<DomainEleOp>::Assembly<
-          PETSC>::BiLinearForm<GAUSS>::OpMass<1, 1>;
+          SCHUR>::BiLinearForm<GAUSS>::OpMass<1, 1>;
+
+      pipeline_mng->getOpDomainLhsPipeline().push_back(
+          new OpSchurAssembleBegin());
       pipeline_mng->getOpDomainLhsPipeline().push_back(new OpMass(
           "FIELD1", "FIELD1", [](double, double, double) { return 1.; }));
+      pipeline_mng->getOpDomainLhsPipeline().push_back(
+          new OpSchurAssembleEnd({}, {}, {}, {}));
+
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpSource("FIELD1", ApproxFunctions::fUn));
 

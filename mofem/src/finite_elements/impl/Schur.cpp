@@ -38,7 +38,7 @@ SchurL2Mats::MatSetValues(Mat M, const EntitiesFieldData::EntData &row_data,
   const auto idx = SchurL2Mats::schurL2Storage.size();
   const auto size = SchurL2Mats::locMats.size();
 
-  if (idx > size) {
+  if (idx >= size) {
     SchurL2Mats::locMats.push_back(new MatrixDouble(nb_rows, nb_cols));
     SchurL2Mats::rowIndices.push_back(new VectorInt(nb_rows));
     SchurL2Mats::colIndices.push_back(new VectorInt(nb_cols));

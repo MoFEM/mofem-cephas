@@ -16,7 +16,7 @@
 namespace MoFEM {
 struct OpSchurAssembleBegin : public ForcesAndSourcesCore::UserDataOperator {
 
-  OpSchurAssembleBegin(const std::string field_name)
+  OpSchurAssembleBegin()
       : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPSPACE) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
@@ -29,8 +29,13 @@ struct OpSchurAssembleBegin : public ForcesAndSourcesCore::UserDataOperator {
  */
 struct OpSchurAssembleEnd : public ForcesAndSourcesCore::UserDataOperator {
 
-  OpSchurAssembleEnd(const std::string field_name)
-      : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPSPACE) {}
+  OpSchurAssembleEnd(std::vector<std::string> fields_name,
+                     std::vector<EntityType> field_ent_types,
+                     std::vector<SmartPetscObj<AO>> sequence_of_aos,
+                     std::vector<SmartPetscObj<Mat>> sequence_of_mats)
+      : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPSPACE),
+        fieldsName(fields_name), fieldEntTypes(field_ent_types),
+        sequenceOfAOs(sequence_of_aos), sequenceOfMats(sequence_of_mats) {}
 
 protected:
   MoFEMErrorCode doWork(int side, EntityType type,
@@ -60,7 +65,7 @@ struct SchurL2Mats : public boost::enable_shared_from_this<SchurL2Mats> {
 
   inline auto &getMat() const { return locMats[iDX]; }
   inline auto &getRowInd() const { return rowIndices[iDX]; }
-  inline auto &getColInd() const { return rowIndices[iDX]; }
+  inline auto &getColInd() const { return colIndices[iDX]; }
 
   static MoFEMErrorCode MatSetValues(Mat M,
                                      const EntitiesFieldData::EntData &row_data,
