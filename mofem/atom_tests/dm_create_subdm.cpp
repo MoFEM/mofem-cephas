@@ -147,8 +147,12 @@ int main(int argc, char *argv[]) {
     CHKERR DMMoFEMCreateSubDM(subdm0, dm, "SUB0");
     CHKERR DMMoFEMSetSquareProblem(subdm0, PETSC_TRUE);
     CHKERR DMMoFEMAddElement(subdm0, "FE11");
-    CHKERR DMMoFEMAddSubFieldRow(subdm0, "FIELD1", MBVERTEX, MBVERTEX);
-    CHKERR DMMoFEMAddSubFieldCol(subdm0, "FIELD1", MBVERTEX, MBVERTEX);
+
+    auto verts_ptr = boost::make_shared<Range>();
+    CHKERR moab.get_entities_by_type(0, MBVERTEX, *verts_ptr, true);
+
+    CHKERR DMMoFEMAddSubFieldRow(subdm0, "FIELD1", verts_ptr);
+    CHKERR DMMoFEMAddSubFieldCol(subdm0, "FIELD1", verts_ptr);
     CHKERR DMSetUp(subdm0);
     CHKERR m_field.getInterface<MatrixManager>()
         ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>("SUB0", -1,

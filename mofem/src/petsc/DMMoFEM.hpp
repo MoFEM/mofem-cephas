@@ -714,17 +714,36 @@ PetscErrorCode DMSubDMSetUp_MoFEM(DM subdm);
  * Add field to sub dm problem on rows
  * \ingroup dm
  */
+PetscErrorCode DMMoFEMAddSubFieldRow(DM dm, const char field_name[]);
+
+/**
+ * @brief Add field to sub dm problem on rows
+ * \ingroup dm
+ * 
+ * @param dm 
+ * @param field_name 
+ * @param m 
+ * @return PetscErrorCode 
+ */
 PetscErrorCode DMMoFEMAddSubFieldRow(DM dm, const char field_name[],
-                                     EntityType lo_type = MBVERTEX,
-                                     EntityType hi_type = MBMAXTYPE);
+                                     boost::shared_ptr<Range> r_ptr);
 
 /**
  * Add field to sub dm problem on columns
  * \ingroup dm
  */
+PetscErrorCode DMMoFEMAddSubFieldCol(DM dm, const char field_name[]);
+
+/**
+ * @brief Add field to sub dm problem on columns
+ *
+ * @param dm
+ * @param field_name
+ * @param range of entities
+ * @return PetscErrorCode
+ */
 PetscErrorCode DMMoFEMAddSubFieldCol(DM dm, const char field_name[],
-                                     EntityType lo_type = MBVERTEX,
-                                     EntityType hi_type = MBMAXTYPE);
+                                     boost::shared_ptr<Range> r_ptr);
 
 /**
  * Return true if this DM is sub problem
@@ -929,10 +948,8 @@ struct DMCtx : public UnknownInterface {
   PetscBool isCompDM;
   std::vector<std::string> rowCompPrb;
   std::vector<std::string> colCompPrb;
-  boost::shared_ptr<std::map<std::string, std::pair<EntityType, EntityType>>>
-      mapTypeRow;
-  boost::shared_ptr<std::map<std::string, std::pair<EntityType, EntityType>>>
-      mapTypeCol;
+  std::map<std::string, boost::shared_ptr<Range>> mapTypeRow;
+  std::map<std::string, boost::shared_ptr<Range>> mapTypeCol;
 
   PetscBool destroyProblem; ///< If true destroy problem with DM
 

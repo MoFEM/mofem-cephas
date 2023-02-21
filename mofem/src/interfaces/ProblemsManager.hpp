@@ -138,10 +138,8 @@ struct ProblemsManager : public UnknownInterface {
       const std::string out_name, const std::vector<std::string> &fields_row,
       const std::vector<std::string> &fields_col,
       const std::string main_problem, const bool square_matrix = true,
-      const map<std::string, std::pair<EntityType, EntityType>> *entityMapRow =
-          nullptr,
-      const map<std::string, std::pair<EntityType, EntityType>> *entityMapCol =
-          nullptr,
+      const map<std::string, boost::shared_ptr<Range>> *entityMapRow = nullptr,
+      const map<std::string, boost::shared_ptr<Range>> *entityMapCol = nullptr,
       int verb = VERBOSE);
 
   /**

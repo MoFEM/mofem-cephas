@@ -981,11 +981,16 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
 }
 
 MoFEMErrorCode ProblemsManager::buildSubProblem(
-    const std::string out_name, const std::vector<std::string> &fields_row,
-    const std::vector<std::string> &fields_col, const std::string main_problem,
-    const bool square_matrix,
-    const map<std::string, std::pair<EntityType, EntityType>> *entityMapRow,
-    const map<std::string, std::pair<EntityType, EntityType>> *entityMapCol,
+    const std::string out_name,
+
+    const std::vector<std::string> &fields_row,
+    const std::vector<std::string> &fields_col,
+
+    const std::string main_problem, const bool square_matrix,
+
+    const map<std::string, boost::shared_ptr<Range>> *entityMapRow,
+    const map<std::string, boost::shared_ptr<Range>> *entityMapCol,
+
     int verb) {
   MoFEM::Interface &m_field = cOre;
   auto problems_ptr = m_field.get_problems();
@@ -1035,7 +1040,7 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
 
   // put rows & columns field names in array
   std::vector<std::string> fields[] = {fields_row, fields_col};
-  const map<std::string, std::pair<EntityType, EntityType>> *entityMap[] = {
+  const map<std::string, boost::shared_ptr<Range>> *entityMap[] = {
       entityMapRow, entityMapCol};
 
   // make data structure fos sub-problem data
@@ -1071,10 +1076,6 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
 
       // create elements objects
       auto bit_number = m_field.get_field_bit_number(field);
-      auto dit = main_problem_dofs[ss]->get<Unique_mi_tag>().lower_bound(
-          FieldEntity::getLoBitNumberUId(bit_number));
-      auto hi_dit = main_problem_dofs[ss]->get<Unique_mi_tag>().upper_bound(
-          FieldEntity::getHiBitNumberUId(bit_number));
 
       auto add_dit_to_dofs_array = [&](auto &dit) {
         if (dit->get()->getPetscGlobalDofIdx() >= 0)
@@ -1084,29 +1085,40 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
               dit->get()->getPetscLocalDofIdx(), dit->get()->getPart());
       };
 
+      auto get_dafult_dof_range = [&]() {
+        auto dit = main_problem_dofs[ss]->get<Unique_mi_tag>().lower_bound(
+            FieldEntity::getLoBitNumberUId(bit_number));
+        auto hi_dit = main_problem_dofs[ss]->get<Unique_mi_tag>().upper_bound(
+            FieldEntity::getHiBitNumberUId(bit_number));
+        return std::make_pair(dit, hi_dit);
+      };
+
       if (entityMap[ss]) {
         auto mit = entityMap[ss]->find(field);
+
         if (mit != entityMap[ss]->end()) {
-          EntityType lo_type = mit->second.first;
-          EntityType hi_type = mit->second.second;
-          int count = 0;
-          for (auto diit = dit; diit != hi_dit; ++diit) {
-            EntityType ent_type = (*diit)->getEntType();
-            if (ent_type >= lo_type && ent_type <= hi_type)
-              ++count;
-          }
-          dofs_array->reserve(count);
-          for (; dit != hi_dit; ++dit) {
-            EntityType ent_type = (*dit)->getEntType();
-            if (ent_type >= lo_type && ent_type <= hi_type)
+          for (auto p = mit->second->pair_begin(); p != mit->second->pair_end();
+               ++p) {
+            const auto lo_ent = p->first;
+            const auto hi_ent = p->second;
+            auto dit = main_problem_dofs[ss]->get<Unique_mi_tag>().lower_bound(
+                DofEntity::getLoFieldEntityUId(bit_number, lo_ent));
+            auto hi_dit =
+                main_problem_dofs[ss]->get<Unique_mi_tag>().upper_bound(
+                    DofEntity::getHiFieldEntityUId(bit_number, hi_ent));
+            dofs_array->reserve(std::distance(dit, hi_dit));
+            for (; dit != hi_dit; dit++) {
               add_dit_to_dofs_array(dit);
+            }
           }
         } else {
+          auto [dit, hi_dit] = get_dafult_dof_range();
           dofs_array->reserve(std::distance(dit, hi_dit));
           for (; dit != hi_dit; dit++)
             add_dit_to_dofs_array(dit);
         }
       } else {
+        auto [dit, hi_dit] = get_dafult_dof_range();
         dofs_array->reserve(std::distance(dit, hi_dit));
         for (; dit != hi_dit; dit++)
           add_dit_to_dofs_array(dit);
