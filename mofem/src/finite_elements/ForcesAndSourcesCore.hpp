@@ -80,7 +80,7 @@ struct ForcesAndSourcesCore : public FEMethod {
    It can be used to calculate nodal forces or other quantities on the mesh.
 
    */
-  boost::ptr_vector<UserDataOperator> &getOpPtrVector() { return opPtrVector; }
+  boost::ptr_deque<UserDataOperator> &getOpPtrVector() { return opPtrVector; }
 
   /**
    * @brief Get the Entity Polynomial Base object
@@ -477,7 +477,7 @@ protected:
    * @brief Vector of finite element users data operators
    *
    */
-  boost::ptr_vector<UserDataOperator> opPtrVector;
+  boost::ptr_deque<UserDataOperator> opPtrVector;
 
   friend class UserDataOperator;
 
@@ -1285,7 +1285,7 @@ struct OpLoopSide : public ForcesAndSourcesCore::UserDataOperator {
     MoFEMFunctionReturn(0);
   };
 
-  boost::ptr_vector<UserDataOperator> &getOpPtrVector() {
+  boost::ptr_deque<UserDataOperator> &getOpPtrVector() {
     return sideFEPtr->getOpPtrVector();
   }
 

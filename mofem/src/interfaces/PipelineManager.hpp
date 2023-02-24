@@ -87,79 +87,79 @@ struct PipelineManager : public UnknownInterface {
    * @ingroup mofem_basic_interface
    *
    * @tparam -1
-   * @return boost::ptr_vector<UserDataOperator>&
+   * @return boost::ptr_deque<UserDataOperator>&
    */
   template <int DIM = -1>
-  inline boost::ptr_vector<UserDataOperator> &getOpDomainLhsPipeline();
+  inline boost::ptr_deque<UserDataOperator> &getOpDomainLhsPipeline();
 
   /**
    * @brief Get the Op Domain Rhs Pipeline object
    * @ingroup mofem_basic_interface
    *
    * @tparam -1
-   * @return boost::ptr_vector<UserDataOperator>&
+   * @return boost::ptr_deque<UserDataOperator>&
    */
   template <int DIM = -1>
-  inline boost::ptr_vector<UserDataOperator> &getOpDomainRhsPipeline();
+  inline boost::ptr_deque<UserDataOperator> &getOpDomainRhsPipeline();
 
   /**
    * @brief Get the Op Boundary Lhs Pipeline object
    * @ingroup mofem_basic_interface
    *
    * @tparam -1
-   * @return boost::ptr_vector<UserDataOperator>&
+   * @return boost::ptr_deque<UserDataOperator>&
    */
   template <int DIM = -1>
-  inline boost::ptr_vector<UserDataOperator> &getOpBoundaryLhsPipeline();
+  inline boost::ptr_deque<UserDataOperator> &getOpBoundaryLhsPipeline();
 
   /**
    * @brief Get the Op Boundary Rhs Pipeline object
    * @ingroup mofem_basic_interface
    *
    * @tparam -1
-   * @return boost::ptr_vector<UserDataOperator>&
+   * @return boost::ptr_deque<UserDataOperator>&
    */
   template <int DIM = -1>
-  inline boost::ptr_vector<UserDataOperator> &getOpBoundaryRhsPipeline();
+  inline boost::ptr_deque<UserDataOperator> &getOpBoundaryRhsPipeline();
 
   /**
    * @brief Get the Op Skeleton Lhs Pipeline object
    * @ingroup mofem_basic_interface
    *
-   * @return boost::ptr_vector<UserDataOperator>&
+   * @return boost::ptr_deque<UserDataOperator>&
    */
   template <int DIM = -1>
-  inline boost::ptr_vector<UserDataOperator> &getOpSkeletonLhsPipeline();
+  inline boost::ptr_deque<UserDataOperator> &getOpSkeletonLhsPipeline();
 
   /**
    * @brief Get the Op Skeleton Rhs Pipeline object
    * @ingroup mofem_basic_interface
    *
    * @tparam -1
-   * @return boost::ptr_vector<UserDataOperator>&
+   * @return boost::ptr_deque<UserDataOperator>&
    */
   template <int DIM = -1>
-  inline boost::ptr_vector<UserDataOperator> &getOpSkeletonRhsPipeline();
+  inline boost::ptr_deque<UserDataOperator> &getOpSkeletonRhsPipeline();
 
   /**
    * @brief Get the Op Domain Rhs Pipeline object for implicit-explicit G term
    * @ingroup mofem_basic_interface
    *
    * @tparam -1
-   * @return boost::ptr_vector<UserDataOperator>&
+   * @return boost::ptr_deque<UserDataOperator>&
    */
   template <int DIM = -1>
-  inline boost::ptr_vector<UserDataOperator> &getOpDomainExplicitRhsPipeline();
+  inline boost::ptr_deque<UserDataOperator> &getOpDomainExplicitRhsPipeline();
 
   /**
    * @brief Get the Op Bondary Rhs Pipeline object for implicit-explicit G term
    * @ingroup mofem_basic_interface
    *
    * @tparam -1
-   * @return boost::ptr_vector<UserDataOperator>&
+   * @return boost::ptr_deque<UserDataOperator>&
    */
   template <int DIM = -1>
-  inline boost::ptr_vector<UserDataOperator> &
+  inline boost::ptr_deque<UserDataOperator> &
   getOpBoundaryExplicitRhsPipeline();
 
   /**
@@ -167,10 +167,10 @@ struct PipelineManager : public UnknownInterface {
    * @ingroup mofem_basic_interface
    *
    * @tparam -1
-   * @return boost::ptr_vector<UserDataOperator>&
+   * @return boost::ptr_deque<UserDataOperator>&
    */
   template <int DIM = -1>
-  inline boost::ptr_vector<UserDataOperator> &
+  inline boost::ptr_deque<UserDataOperator> &
   getOpSkeletonExplicitRhsPipeline();
 
   /**
@@ -640,7 +640,7 @@ PipelineManager::setSkeletonExplicitRhsIntegrationRule<-1>(
 }
 
 template <int DIM>
-boost::ptr_vector<PipelineManager::UserDataOperator> &
+boost::ptr_deque<PipelineManager::UserDataOperator> &
 PipelineManager::getOpDomainLhsPipeline() {
   return boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
              createDomainFEPipeline<DIM>(feDomainLhs))
@@ -648,7 +648,7 @@ PipelineManager::getOpDomainLhsPipeline() {
 }
 
 template <>
-inline boost::ptr_vector<PipelineManager::UserDataOperator> &
+inline boost::ptr_deque<PipelineManager::UserDataOperator> &
 PipelineManager::getOpDomainLhsPipeline<-1>() {
   switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
@@ -664,7 +664,7 @@ PipelineManager::getOpDomainLhsPipeline<-1>() {
 }
 
 template <int DIM>
-boost::ptr_vector<PipelineManager::UserDataOperator> &
+boost::ptr_deque<PipelineManager::UserDataOperator> &
 PipelineManager::getOpDomainRhsPipeline() {
   return boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
              createDomainFEPipeline<DIM>(feDomainRhs))
@@ -672,7 +672,7 @@ PipelineManager::getOpDomainRhsPipeline() {
 }
 
 template <>
-inline boost::ptr_vector<PipelineManager::UserDataOperator> &
+inline boost::ptr_deque<PipelineManager::UserDataOperator> &
 PipelineManager::getOpDomainRhsPipeline<-1>() {
   switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
@@ -688,7 +688,7 @@ PipelineManager::getOpDomainRhsPipeline<-1>() {
 }
 
 template <int DIM>
-boost::ptr_vector<PipelineManager::UserDataOperator> &
+boost::ptr_deque<PipelineManager::UserDataOperator> &
 PipelineManager::getOpBoundaryLhsPipeline() {
   return boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
              createBoundaryFEPipeline<DIM>(feBoundaryLhs))
@@ -696,7 +696,7 @@ PipelineManager::getOpBoundaryLhsPipeline() {
 }
 
 template <>
-inline boost::ptr_vector<PipelineManager::UserDataOperator> &
+inline boost::ptr_deque<PipelineManager::UserDataOperator> &
 PipelineManager::getOpBoundaryLhsPipeline<-1>() {
   switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
@@ -712,7 +712,7 @@ PipelineManager::getOpBoundaryLhsPipeline<-1>() {
 }
 
 template <int DIM>
-boost::ptr_vector<PipelineManager::UserDataOperator> &
+boost::ptr_deque<PipelineManager::UserDataOperator> &
 PipelineManager::getOpBoundaryRhsPipeline() {
   return boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
              createBoundaryFEPipeline<DIM>(feBoundaryRhs))
@@ -720,7 +720,7 @@ PipelineManager::getOpBoundaryRhsPipeline() {
 }
 
 template <>
-inline boost::ptr_vector<PipelineManager::UserDataOperator> &
+inline boost::ptr_deque<PipelineManager::UserDataOperator> &
 PipelineManager::getOpBoundaryRhsPipeline<-1>() {
   switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
@@ -736,7 +736,7 @@ PipelineManager::getOpBoundaryRhsPipeline<-1>() {
 }
 
 template <int DIM>
-boost::ptr_vector<PipelineManager::UserDataOperator> &
+boost::ptr_deque<PipelineManager::UserDataOperator> &
 PipelineManager::getOpSkeletonLhsPipeline() {
   return boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
              createBoundaryFEPipeline<DIM>(feSkeletonLhs))
@@ -744,7 +744,7 @@ PipelineManager::getOpSkeletonLhsPipeline() {
 }
 
 template <>
-inline boost::ptr_vector<PipelineManager::UserDataOperator> &
+inline boost::ptr_deque<PipelineManager::UserDataOperator> &
 PipelineManager::getOpSkeletonLhsPipeline<-1>() {
   switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
@@ -760,7 +760,7 @@ PipelineManager::getOpSkeletonLhsPipeline<-1>() {
 }
 
 template <int DIM>
-boost::ptr_vector<PipelineManager::UserDataOperator> &
+boost::ptr_deque<PipelineManager::UserDataOperator> &
 PipelineManager::getOpSkeletonRhsPipeline() {
   return boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
              createBoundaryFEPipeline<DIM>(feSkeletonRhs))
@@ -768,7 +768,7 @@ PipelineManager::getOpSkeletonRhsPipeline() {
 }
 
 template <>
-inline boost::ptr_vector<PipelineManager::UserDataOperator> &
+inline boost::ptr_deque<PipelineManager::UserDataOperator> &
 PipelineManager::getOpSkeletonRhsPipeline<-1>() {
   switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
@@ -784,7 +784,7 @@ PipelineManager::getOpSkeletonRhsPipeline<-1>() {
 }
 
 template <int DIM>
-boost::ptr_vector<PipelineManager::UserDataOperator> &
+boost::ptr_deque<PipelineManager::UserDataOperator> &
 PipelineManager::getOpDomainExplicitRhsPipeline() {
   return boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
              createDomainFEPipeline<DIM>(feDomainExplicitRhs))
@@ -792,7 +792,7 @@ PipelineManager::getOpDomainExplicitRhsPipeline() {
 }
 
 template <>
-inline boost::ptr_vector<PipelineManager::UserDataOperator> &
+inline boost::ptr_deque<PipelineManager::UserDataOperator> &
 PipelineManager::getOpDomainExplicitRhsPipeline<-1>() {
   switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
@@ -808,7 +808,7 @@ PipelineManager::getOpDomainExplicitRhsPipeline<-1>() {
 }
 
 template <int DIM>
-boost::ptr_vector<PipelineManager::UserDataOperator> &
+boost::ptr_deque<PipelineManager::UserDataOperator> &
 PipelineManager::getOpBoundaryExplicitRhsPipeline() {
   return boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
              createBoundaryFEPipeline<DIM>(feSkeletonExplicitRhs))
@@ -816,7 +816,7 @@ PipelineManager::getOpBoundaryExplicitRhsPipeline() {
 }
 
 template <>
-inline boost::ptr_vector<PipelineManager::UserDataOperator> &
+inline boost::ptr_deque<PipelineManager::UserDataOperator> &
 PipelineManager::getOpBoundaryExplicitRhsPipeline<-1>() {
   switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
@@ -832,7 +832,7 @@ PipelineManager::getOpBoundaryExplicitRhsPipeline<-1>() {
 }
 
 template <int DIM>
-boost::ptr_vector<PipelineManager::UserDataOperator> &
+boost::ptr_deque<PipelineManager::UserDataOperator> &
 PipelineManager::getOpSkeletonExplicitRhsPipeline() {
   return boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
              createBoundaryFEPipeline<DIM>(feSkeletonExplicitRhs))
@@ -840,7 +840,7 @@ PipelineManager::getOpSkeletonExplicitRhsPipeline() {
 }
 
 template <>
-inline boost::ptr_vector<PipelineManager::UserDataOperator> &
+inline boost::ptr_deque<PipelineManager::UserDataOperator> &
 PipelineManager::getOpSkeletonExplicitRhsPipeline<-1>() {
   switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
