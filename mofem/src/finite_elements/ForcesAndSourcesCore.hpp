@@ -894,29 +894,6 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
 
   /**@{*/
 
-  /** \name Deprecated (do not use) */
-
-  // //! \deprecated Use getSNESF intead
-  // DEPRECATED inline Vec getSnesF() const { return getSNESf(); }
-
-  // //! \deprecated Use getSNESX intead
-  // DEPRECATED inline Vec getSnesX() const { return getSNESx(); }
-
-  // //! \deprecated Use getSNESA intead
-  // DEPRECATED inline Mat getSnesA() const { return getSNESA(); }
-
-  // //! \deprecated Use getSNESB intead
-  // DEPRECATED inline Mat getSnesB() const { return getSNESB(); }
-
-  // // \deprecated Deprecated function with spelling mistake
-  // DEPRECATED inline MoFEMErrorCode
-  // getPorblemRowIndices(const std::string filed_name, const EntityType type,
-  //                      const int side, VectorInt &indices) const;
-
-  /**@}*/
-
-  /**@{*/
-
   /** \name Loops */
 
   /**
