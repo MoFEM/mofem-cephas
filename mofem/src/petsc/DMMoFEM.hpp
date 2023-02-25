@@ -1032,6 +1032,17 @@ inline auto smartGetDMTsCtx(DM dm) {
   return ts_ctx;
 };
 
+/**
+ * @brief  Get sub problem data structure
+ *
+ * @param dm
+ * @return auto
+ */
+inline auto getDMSubData(DM dm) {
+  auto prb_ptr = getProblemPtr(dm);
+  return prb_ptr->getSubData();
+};
+
 
 } // namespace MoFEM
 
