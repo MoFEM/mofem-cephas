@@ -14,12 +14,8 @@ boost::ptr_vector<MatrixDouble> SchurL2Mats::locMats;
 boost::ptr_vector<VectorInt> SchurL2Mats::rowIndices;
 boost::ptr_vector<VectorInt> SchurL2Mats::colIndices;
 
-SchurL2Mats::SchurL2Mats(const size_t idx, const UId uid_row,
-                         const EntityType row_type, const std::string row_field,
-                         const UId uid_col, const EntityType col_type,
-                         const std::string col_field)
-    : iDX(idx), uidRow(uid_row), rowType(row_type), rowField(row_field),
-      uidCol(uid_col), colType(col_type), colField(col_field) {}
+SchurL2Mats::SchurL2Mats(const size_t idx, const UId uid_row, const UId uid_col)
+    : iDX(idx), uidRow(uid_row), uidCol(uid_col) {}
 
 MoFEMErrorCode
 SchurL2Mats::MatSetValues(Mat M, const EntitiesFieldData::EntData &row_data,
@@ -27,7 +23,7 @@ SchurL2Mats::MatSetValues(Mat M, const EntitiesFieldData::EntData &row_data,
                           const MatrixDouble &mat, InsertMode iora) {
   MoFEMFunctionBegin;
 
-  if(iora != ADD_VALUES) {
+  if (iora != ADD_VALUES) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
             "Other case of assembly not implemented");
   }
@@ -56,9 +52,8 @@ SchurL2Mats::MatSetValues(Mat M, const EntitiesFieldData::EntData &row_data,
     return data.getFieldEntities()[0]->getLocalUniqueId();
   };
 
-  auto p = SchurL2Mats::schurL2Storage.emplace(
-      idx, get_uid(row_data), get_type(row_data), get_field_name(row_data),
-      get_uid(col_data), get_type(col_data), get_field_name(col_data));
+  auto p = SchurL2Mats::schurL2Storage.emplace(idx, get_uid(row_data),
+                                               get_uid(col_data));
 #ifndef NDEBUG
   if (!p.second) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -66,20 +61,36 @@ SchurL2Mats::MatSetValues(Mat M, const EntitiesFieldData::EntData &row_data,
   }
 #endif // NDEBUG
 
-  // set data to storage
   auto get_storage = [&p]() { return const_cast<SchurL2Mats &>(*p.first); };
-  auto add_indices = [](auto &storage, auto &ind) {
-    storage.resize(ind.size(), false);
-    noalias(storage) = ind;
-  };
 
-  get_storage().getMat().resize(nb_rows, nb_cols, false);
-  noalias(get_storage().getMat()) = mat;
+  if (p.second) {
+    get_storage().getMat().resize(nb_rows, nb_cols, false);
+    noalias(get_storage().getMat()) = mat;
 
-  const auto &row_ind = row_data.getIndices();
-  const auto &col_ind = col_data.getIndices();
-  add_indices(get_storage().getRowInd(), row_ind);
-  add_indices(get_storage().getColInd(), col_ind);
+    auto add_indices = [](auto &storage, auto &ind) {
+      storage.resize(ind.size(), false);
+      noalias(storage) = ind;
+    };
+
+    const auto &row_ind = row_data.getIndices();
+    const auto &col_ind = col_data.getIndices();
+    add_indices(get_storage().getRowInd(), row_ind);
+    add_indices(get_storage().getColInd(), col_ind);
+
+  } else {
+
+    switch (iora) {
+    case ADD_VALUES:
+      get_storage().getMat() += mat;
+      break;
+    case INSERT_VALUES:
+      noalias(get_storage().getMat()) = mat;
+      break;
+    default:
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+              "Assembly type not implemented");
+    };
+  }
 
   MoFEMFunctionReturn(0);
 }
@@ -150,128 +161,128 @@ MoFEMErrorCode OpSchurAssembleEnd::doWork(int side, EntityType type,
     MoFEMFunctionReturn(0);
   };
 
-  auto apply_schur = [&](auto &storage, const auto ss) {
+  auto apply_schur = [&](auto &storage,
+
+                         const auto ss,
+
+                         auto lo_uid, auto hi_uid, auto row_it,
+                         auto hi_row_it) {
     MoFEMFunctionBegin;
 
-    const auto row_field = fieldsName[ss];
-    const auto row_type = fieldEntTypes[ss];
+    for (; row_it != hi_row_it; ++row_it) {
+      if (row_it->uidRow == row_it->uidCol) {
 
-    auto row_it = storage.template get<SchurL2Mats::row_mi_tag>().find(
-        boost::make_tuple(row_type, row_field));
-    if (row_it != storage.template get<SchurL2Mats::row_mi_tag>().end()) {
+        if (getSymm()) {
+          CHKERR invert_symm_mat(row_it->getMat(), inv_mat);
+        } else {
+          CHKERR invert_nonsymm_mat(row_it->getMat(), inv_mat);
+        }
 
-      if (getSymm()) {
-        CHKERR invert_symm_mat(row_it->getMat(), inv_mat);
-      } else {
-        CHKERR invert_nonsymm_mat(row_it->getMat(), inv_mat);
-      }
+        const auto row_idx = row_it->iDX;
 
-      const auto row_idx = row_it->iDX;
-      auto c_lo = storage.template get<SchurL2Mats::col_mi_tag>().lower_bound(
-          boost::make_tuple(row_type, row_field));
-      auto c_hi = storage.template get<SchurL2Mats::col_mi_tag>().upper_bound(
-          boost::make_tuple(row_type, row_field));
+        auto c_lo =
+            storage.template get<SchurL2Mats::col_mi_tag>().lower_bound(lo_uid);
+        auto c_hi =
+            storage.template get<SchurL2Mats::col_mi_tag>().lower_bound(hi_uid);
 
-      for (; c_lo != c_hi; ++c_lo) {
-        if (row_idx != c_lo->iDX) {
+        for (; c_lo != c_hi; ++c_lo) {
 
-          auto &col_uid = c_lo->uidCol;
+          auto &row_uid = c_lo->uidRow;
+          if(row_uid == row_it->uidRow)
+            continue;
+
           auto &cc_off_mat = c_lo->getMat();
-          inv_diag_off_mat.resize(inv_mat.size1(), cc_off_mat.size2(), false);
-          noalias(inv_diag_off_mat) = prod(inv_mat, cc_off_mat);
+          inv_diag_off_mat.resize(cc_off_mat.size1(), inv_mat.size2(), false);
+#ifndef NDEBUG
+          if (inv_mat.size1() != cc_off_mat.size2()) {
+            SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                     "Wrong size %d != %d", inv_mat.size1(),
+                     cc_off_mat.size2());
+          }
+#endif // NDEBUG
+          noalias(inv_diag_off_mat) = prod(cc_off_mat, inv_mat);
 
           auto r_lo =
               storage.template get<SchurL2Mats::row_mi_tag>().lower_bound(
-                  boost::make_tuple(row_type, row_field));
+                  lo_uid);
           auto r_hi =
               storage.template get<SchurL2Mats::row_mi_tag>().upper_bound(
-                  boost::make_tuple(row_type, row_field));
-          for (; r_lo != r_hi; ++r_hi) {
-            if (row_idx != r_lo->iDX) {
-              auto &row_uid = r_lo->uidRow;
-              auto &rr_off_mat = r_lo->getMat();
-              off_mat_inv_diag_off_mat.resize(rr_off_mat.size1(),
-                                              inv_diag_off_mat.size2(), false);
-              noalias(off_mat_inv_diag_off_mat) =
-                  prod(rr_off_mat, inv_diag_off_mat);
+                  hi_uid);
 
-              auto it = storage.template get<SchurL2Mats::uid_mi_tag>().find(
-                  boost::make_tuple(row_uid, col_uid));
-              if (it == storage.template get<SchurL2Mats::uid_mi_tag>().end()) {
-                const auto idx = SchurL2Mats::schurL2Storage.size();
-                const auto size = SchurL2Mats::locMats.size();
-                const auto nb_rows = off_mat_inv_diag_off_mat.size1();
-                const auto nb_cols = off_mat_inv_diag_off_mat.size2();
-                if (idx > size) {
-                  SchurL2Mats::locMats.push_back(
-                      new MatrixDouble(nb_rows, nb_cols));
-                  SchurL2Mats::rowIndices.push_back(new VectorInt(nb_rows));
-                  SchurL2Mats::colIndices.push_back(new VectorInt(nb_cols));
-                }
-                auto p = SchurL2Mats::schurL2Storage.emplace(
-                    idx, row_uid, r_lo->rowType, r_lo->rowField, col_uid,
-                    c_lo->colType, c_lo->colField);
-                auto &mat = p.first->getMat();
-                mat.swap(off_mat_inv_diag_off_mat);
-              } else {
-                auto &mat = it->getMat();
-                mat -= off_mat_inv_diag_off_mat;
+          for (; r_lo != r_hi; ++r_lo) {
+            auto &col_uid = r_lo->uidCol;
+            if (col_uid == row_it->uidRow)
+              continue;
+            
+            auto &rr_off_mat = r_lo->getMat();
+            off_mat_inv_diag_off_mat.resize(inv_diag_off_mat.size1(),
+                                            rr_off_mat.size2(), false);
+#ifndef NDEBUG
+            if (rr_off_mat.size1() != inv_diag_off_mat.size2()) {
+              SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                       "Wrong size %d != %d", rr_off_mat.size1(),
+                       inv_diag_off_mat.size2());
+            }
+#endif // NDEBUG
+            noalias(off_mat_inv_diag_off_mat) =
+                prod(inv_diag_off_mat, rr_off_mat);
+
+            auto it = storage.template get<SchurL2Mats::uid_mi_tag>().find(
+                boost::make_tuple(row_uid, col_uid));
+            if (it == storage.template get<SchurL2Mats::uid_mi_tag>().end()) {
+              const auto idx = SchurL2Mats::schurL2Storage.size();
+              const auto size = SchurL2Mats::locMats.size();
+              const auto nb_rows = off_mat_inv_diag_off_mat.size1();
+              const auto nb_cols = off_mat_inv_diag_off_mat.size2();
+              if (idx >= size) {
+                SchurL2Mats::locMats.push_back(
+                    new MatrixDouble(nb_rows, nb_cols));
+                SchurL2Mats::rowIndices.push_back(new VectorInt(nb_rows));
+                SchurL2Mats::colIndices.push_back(new VectorInt(nb_cols));
               }
+              auto p =
+                  SchurL2Mats::schurL2Storage.emplace(idx, row_uid, col_uid);
+              auto &mat = p.first->getMat();
+              mat.swap(off_mat_inv_diag_off_mat);
+            } else {
+              auto &mat = it->getMat();
+#ifndef NDEBUG
+              if (mat.size1() != off_mat_inv_diag_off_mat.size1()) {
+                SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                         "Wrong size %d != %d", mat.size1(),
+                         off_mat_inv_diag_off_mat.size1());
+              }
+              if (mat.size2() != off_mat_inv_diag_off_mat.size2()) {
+                SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                         "Wrong size %d != %d", mat.size2(),
+                         off_mat_inv_diag_off_mat.size2());
+              }
+#endif // NDEBUG
+              mat += off_mat_inv_diag_off_mat;
             }
           }
         }
       }
-
-    } else {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Diag not found");
     }
 
     MoFEMFunctionReturn(0);
   };
 
-  auto assemble_diagonal = [&](auto &storage, const auto ss) {
+  auto erase_factored = [&](auto &storage,
+
+                            const auto ss, auto lo_uid, auto hi_uid) {
     MoFEMFunctionBegin;
 
-    auto row_type = fieldEntTypes[ss];
-    auto &row_field = fieldsName[ss];
-
-    auto row_it = storage.template get<SchurL2Mats::row_mi_tag>().find(
-        boost::make_tuple(row_type, row_field));
-    if (row_it != storage.template get<SchurL2Mats::row_mi_tag>().end()) {
-      auto &ind_row = row_it->getRowInd();
-      auto &ind_col = row_it->getColInd();
-      if (auto ao = sequenceOfAOs[ss]) {
-        CHKERR AOApplicationToPetsc(ao, ind_row.size(), &*ind_row.begin());
-        CHKERR AOApplicationToPetsc(ao, ind_col.size(), &*ind_col.begin());
-      }
-      auto &m = row_it->getMat();
-      CHKERR ::MatSetValues(sequenceOfMats[ss], ind_row.size(),
-                            &*ind_row.begin(), ind_col.size(),
-                            &*ind_col.begin(), &*m.data().begin(), ADD_VALUES);
-
-    } else {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Diag not found");
-    }
-
-    MoFEMFunctionReturn(0);
-  };
-
-  auto erase_factored = [&](auto &storage, const auto ss) {
-    MoFEMFunctionBegin;
-
-    auto row_type = fieldEntTypes[ss];
-    auto &row_field = fieldsName[ss];
-
-    auto r_lo = storage.template get<SchurL2Mats::row_mi_tag>().lower_bound(
-        boost::make_tuple(row_type, row_field));
-    auto r_hi = storage.template get<SchurL2Mats::row_mi_tag>().upper_bound(
-        boost::make_tuple(row_type, row_field));
+    auto r_lo =
+        storage.template get<SchurL2Mats::row_mi_tag>().lower_bound(lo_uid);
+    auto r_hi =
+        storage.template get<SchurL2Mats::row_mi_tag>().upper_bound(hi_uid);
     storage.template get<SchurL2Mats::row_mi_tag>().erase(r_lo, r_hi);
 
-    auto c_lo = storage.template get<SchurL2Mats::col_mi_tag>().lower_bound(
-        boost::make_tuple(row_type, row_field));
-    auto c_hi = storage.template get<SchurL2Mats::col_mi_tag>().upper_bound(
-        boost::make_tuple(row_type, row_field));
+    auto c_lo =
+        storage.template get<SchurL2Mats::col_mi_tag>().lower_bound(lo_uid);
+    auto c_hi =
+        storage.template get<SchurL2Mats::col_mi_tag>().upper_bound(hi_uid);
     storage.template get<SchurL2Mats::col_mi_tag>().erase(c_lo, c_hi);
 
     MoFEMFunctionReturn(0);
@@ -300,10 +311,37 @@ MoFEMErrorCode OpSchurAssembleEnd::doWork(int side, EntityType type,
   CHKERR assemble(SmartPetscObj<Mat>(getKSPB(), true), storage);
 
   for (auto ss = 0; ss != fieldsName.size(); ++ss) {
-    CHKERR apply_schur(storage, ss);
-    CHKERR assemble_diagonal(storage, ss);
-    CHKERR erase_factored(storage, ss);
-    CHKERR assemble_off_diagonal(storage, ss);
+
+    auto assemble = [&](auto &storage, auto ss, auto lo_uid, auto hi_uid) {
+      MoFEMFunctionBegin;
+      auto row_it =
+          storage.template get<SchurL2Mats::row_mi_tag>().lower_bound(lo_uid);
+      auto hi_row_it =
+          storage.template get<SchurL2Mats::row_mi_tag>().upper_bound(hi_uid);
+      CHKERR apply_schur(storage, ss, lo_uid, hi_uid, row_it, hi_row_it);
+      CHKERR erase_factored(storage, ss, lo_uid, hi_uid);
+      CHKERR assemble_off_diagonal(storage, ss);
+      MoFEMFunctionReturn(0);
+    };
+
+    auto field_bit = getPtrFE()->mField.get_field_bit_number(fieldsName[ss]);
+    auto row_ents = fieldEnts[ss];
+
+    if (row_ents) {
+      auto end = storage.template get<SchurL2Mats::row_mi_tag>().end();
+      for (auto p = row_ents->pair_begin(); p != row_ents->pair_end(); ++p) {
+        auto lo_uid =
+            FieldEntity::getLoLocalEntityBitNumber(field_bit, p->first);
+        auto hi_uid =
+            FieldEntity::getHiLocalEntityBitNumber(field_bit, p->second);
+        CHKERR assemble(storage, ss, lo_uid, hi_uid);
+      }
+    } else {
+      // Take all field diagonal
+      auto lo_uid = FieldEntity::getLoFieldEntityUId(field_bit);
+      auto hi_uid = FieldEntity::getHiFieldEntityUId(field_bit);
+      CHKERR assemble(storage, ss, lo_uid, hi_uid);
+    }
   }
 
   MoFEMFunctionReturn(0);

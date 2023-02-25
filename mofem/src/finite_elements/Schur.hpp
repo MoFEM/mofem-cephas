@@ -30,11 +30,11 @@ struct OpSchurAssembleBegin : public ForcesAndSourcesCore::UserDataOperator {
 struct OpSchurAssembleEnd : public ForcesAndSourcesCore::UserDataOperator {
 
   OpSchurAssembleEnd(std::vector<std::string> fields_name,
-                     std::vector<EntityType> field_ent_types,
+                     std::vector<boost::shared_ptr<Range>> field_ents,
                      std::vector<SmartPetscObj<AO>> sequence_of_aos,
                      std::vector<SmartPetscObj<Mat>> sequence_of_mats)
       : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPSPACE),
-        fieldsName(fields_name), fieldEntTypes(field_ent_types),
+        fieldsName(fields_name), fieldEnts(field_ents),
         sequenceOfAOs(sequence_of_aos), sequenceOfMats(sequence_of_mats) {}
 
 protected:
@@ -42,26 +42,19 @@ protected:
                         EntitiesFieldData::EntData &data);
 
   std::vector<std::string> fieldsName;
-  std::vector<EntityType> fieldEntTypes;
+  std::vector<boost::shared_ptr<Range>> fieldEnts;
   std::vector<SmartPetscObj<AO>> sequenceOfAOs;
   std::vector<SmartPetscObj<Mat>> sequenceOfMats;
 };
 
 struct SchurL2Mats : public boost::enable_shared_from_this<SchurL2Mats> {
 
-  SchurL2Mats(const size_t idx, const UId uid_row, const EntityType row_type,
-              const std::string row_field, const UId uid_col,
-              const EntityType col_type, const std::string col_field);
+  SchurL2Mats(const size_t idx, const UId uid_row, const UId uid_col);
   virtual ~SchurL2Mats() = default;
 
   const size_t iDX;
   const UId uidRow;
   const UId uidCol;
-
-  const EntityType rowType;
-  const EntityType colType;
-  const std::string rowField;
-  const std::string colField;
 
   inline auto &getMat() const { return locMats[iDX]; }
   inline auto &getRowInd() const { return rowIndices[iDX]; }
@@ -98,25 +91,11 @@ private:
 
                   >>,
 
-          ordered_non_unique<
-              tag<row_mi_tag>,
-              composite_key<
-                  SchurL2Mats,
+          ordered_non_unique<tag<row_mi_tag>, member<SchurL2Mats, const UId,
+                                                     &SchurL2Mats::uidRow>>,
 
-                  member<SchurL2Mats, const EntityType, &SchurL2Mats::rowType>,
-                  member<SchurL2Mats, const std::string, &SchurL2Mats::rowField>
-
-                  >>,
-
-          ordered_non_unique<
-              tag<col_mi_tag>,
-              composite_key<
-                  SchurL2Mats,
-
-                  member<SchurL2Mats, const EntityType, &SchurL2Mats::colType>,
-                  member<SchurL2Mats, const std::string, &SchurL2Mats::colField>
-
-                  >>
+          ordered_non_unique<tag<col_mi_tag>, member<SchurL2Mats, const UId,
+                                                     &SchurL2Mats::uidCol>>
 
           >>;
 
