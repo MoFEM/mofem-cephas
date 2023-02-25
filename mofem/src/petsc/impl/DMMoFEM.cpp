@@ -1326,9 +1326,9 @@ PetscErrorCode DMSubDMSetUp_MoFEM(DM subdm) {
   map<std::string, boost::shared_ptr<Range>> *entity_map_row = nullptr;
   map<std::string, boost::shared_ptr<Range>> *entity_map_col = nullptr;
 
-  if (subdm_field->mapTypeRow.empty())
+  if (subdm_field->mapTypeRow.size())
     entity_map_row = &subdm_field->mapTypeRow;
-  if (!subdm_field->mapTypeCol.empty())
+  if (subdm_field->mapTypeCol.size())
     entity_map_col = &subdm_field->mapTypeCol;
 
   CHKERR prb_mng_ptr->buildSubProblem(
