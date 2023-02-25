@@ -2811,18 +2811,19 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
     }
 
   if (verb > QUIET) {
+    MOFEM_LOG_C(
+        "WORLD", Sev::inform,
+        "removed ents from problem %s dofs [%d / %d (before %d / %d) global]",
+        prb_ptr->getName().c_str(), prb_ptr->getNbDofsRow(),
+        prb_ptr->getNbDofsCol(), nb_init_row_dofs, nb_init_col_dofs);
     MOFEM_LOG_C("SYNC", Sev::verbose,
-                "removed ents on rank %d from problem %s dofs [ %d / %d  "
-                "(before %d / "
-                "%d) local, %d / %d (before %d / %d) "
-                "ghost, %d / %d (before %d / %d) global]",
-                m_field.get_comm_rank(), prb_ptr->getName().c_str(),
-                prb_ptr->getNbLocalDofsRow(), prb_ptr->getNbLocalDofsCol(),
-                nb_init_row_dofs, nb_init_col_dofs,
-                prb_ptr->getNbGhostDofsRow(), prb_ptr->getNbGhostDofsCol(),
-                nb_init_ghost_row_dofs, nb_init_ghost_col_dofs,
-                prb_ptr->getNbDofsRow(), prb_ptr->getNbDofsCol(),
-                nb_init_loc_row_dofs, nb_init_loc_col_dofs);
+                "removed ents from problem %s dofs [ %d / %d  "
+                "(before %d / %d) local, %d / %d (before %d / %d)]",
+                prb_ptr->getName().c_str(), prb_ptr->getNbLocalDofsRow(),
+                prb_ptr->getNbLocalDofsCol(), nb_init_loc_row_dofs,
+                nb_init_loc_row_dofs, prb_ptr->getNbGhostDofsRow(),
+                prb_ptr->getNbGhostDofsCol(), nb_init_ghost_row_dofs,
+                nb_init_ghost_col_dofs);
     MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
   }
 
