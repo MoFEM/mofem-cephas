@@ -1053,6 +1053,9 @@ getFTensor1FromArrayDiag(MatrixDouble &data, const size_t rr) {
 template <int DIM1, int DIM2, int S, class T, class L, class A>
 struct GetFTensor2FromArrayImpl;
 
+template <int DIM1, int DIM2, class T, class L, class A>
+struct GetFTensor2FromArrayRawPtrImpl;
+
 template <int S, class T, class L, class A>
 struct GetFTensor2FromArrayImpl<2, 2, S, T, L, A> {
   GetFTensor2FromArrayImpl() = delete;
@@ -1078,8 +1081,8 @@ struct GetFTensor2FromArrayImpl<3, 3, S, T, L, A> {
 };
 
 template <class T, class L, class A>
-struct GetFTensor2FromArrayImpl<2, 2, 0, T, L, A> {
-  GetFTensor2FromArrayImpl() = delete;
+struct GetFTensor2FromArrayRawPtrImpl<2, 2, T, L, A> {
+  GetFTensor2FromArrayRawPtrImpl() = delete;
   inline static auto get(ublas::matrix<T, L, A> &data, const size_t rr,
                          const size_t cc, const int ss = 0) {
     return FTensor::Tensor2<T *, 2, 2>(
@@ -1090,8 +1093,8 @@ struct GetFTensor2FromArrayImpl<2, 2, 0, T, L, A> {
 };
 
 template <class T, class L, class A>
-struct GetFTensor2FromArrayImpl<3, 3, 0, T, L, A> {
-  GetFTensor2FromArrayImpl() = delete;
+struct GetFTensor2FromArrayRawPtrImpl<3, 3, T, L, A> {
+  GetFTensor2FromArrayRawPtrImpl() = delete;
   inline static auto get(ublas::matrix<T, L, A> &data, const size_t rr,
                          const size_t cc, const int ss = 0) {
     return FTensor::Tensor2<T *, 3, 3>(
@@ -1111,9 +1114,9 @@ getFTensor2FromArray(MatrixDouble &data, const size_t rr, const size_t cc = 0) {
 
 template <int DIM1, int DIM2>
 inline FTensor::Tensor2<double *, DIM1, DIM2>
-getFTensor2FromArray(MatrixDouble &data, const size_t rr, const size_t cc = 0,
-                     const int ss = 0) {
-  return GetFTensor2FromArrayImpl<DIM1, DIM2, 0, double, ublas::row_major,
+getFTensor2FromArray(MatrixDouble &data, const size_t rr, const size_t cc,
+                     const int ss) {
+  return GetFTensor2FromArrayRawPtrImpl<DIM1, DIM2, double, ublas::row_major,
                                   VecAllocator<double>>::get(data, rr, cc, ss);
 }
 
