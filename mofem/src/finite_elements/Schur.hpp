@@ -32,10 +32,12 @@ struct OpSchurAssembleEnd : public ForcesAndSourcesCore::UserDataOperator {
   OpSchurAssembleEnd(std::vector<std::string> fields_name,
                      std::vector<boost::shared_ptr<Range>> field_ents,
                      std::vector<SmartPetscObj<AO>> sequence_of_aos,
-                     std::vector<SmartPetscObj<Mat>> sequence_of_mats)
+                     std::vector<SmartPetscObj<Mat>> sequence_of_mats,
+                     std::vector<bool> sym_schur)
       : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPSPACE),
         fieldsName(fields_name), fieldEnts(field_ents),
-        sequenceOfAOs(sequence_of_aos), sequenceOfMats(sequence_of_mats) {}
+        sequenceOfAOs(sequence_of_aos), sequenceOfMats(sequence_of_mats),
+        symSchur(sym_schur) {}
 
 protected:
   MoFEMErrorCode doWork(int side, EntityType type,
@@ -45,6 +47,16 @@ protected:
   std::vector<boost::shared_ptr<Range>> fieldEnts;
   std::vector<SmartPetscObj<AO>> sequenceOfAOs;
   std::vector<SmartPetscObj<Mat>> sequenceOfMats;
+  std::vector<bool> symSchur;
+
+private:
+
+  MatrixDouble invMat;
+  MatrixDouble invDiagOffMat;
+  MatrixDouble offMatInvDiagOffMat;
+  MatrixDouble transOffMatInvDiagOffMat;
+
+
 };
 
 struct SchurL2Mats : public boost::enable_shared_from_this<SchurL2Mats> {
