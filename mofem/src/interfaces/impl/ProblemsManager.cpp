@@ -2813,11 +2813,11 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
   if (verb > QUIET) {
     MOFEM_LOG_C(
         "WORLD", Sev::inform,
-        "removed ents from problem %s dofs [%d / %d (before %d / %d) global]",
+        "Removed DOFs from problem %s dofs [%d / %d (before %d / %d) global]",
         prb_ptr->getName().c_str(), prb_ptr->getNbDofsRow(),
         prb_ptr->getNbDofsCol(), nb_init_row_dofs, nb_init_col_dofs);
     MOFEM_LOG_C("SYNC", Sev::verbose,
-                "removed ents from problem %s dofs [ %d / %d  "
+                "Removed DOFs from problem %s dofs [ %d / %d  "
                 "(before %d / %d) local, %d / %d (before %d / %d)]",
                 prb_ptr->getName().c_str(), prb_ptr->getNbLocalDofsRow(),
                 prb_ptr->getNbLocalDofsCol(), nb_init_loc_row_dofs,
