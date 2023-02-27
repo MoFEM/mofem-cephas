@@ -367,9 +367,10 @@ MoFEMErrorCode OpSchurAssembleEnd::doWork(int side, EntityType type,
         CHKERR assemble(storage, ss, lo_uid, hi_uid);
       }
     } else {
-      // Take all field diagonal
-      auto lo_uid = FieldEntity::getLoFieldEntityUId(field_bit);
-      auto hi_uid = FieldEntity::getHiFieldEntityUId(field_bit);
+      auto lo_uid =
+          FieldEntity::getLoLocalEntityBitNumberByType(field_bit, MBVERTEX);
+      auto hi_uid =
+          FieldEntity::getHiLocalEntityBitNumberByType(field_bit, MBENTITYSET);
       CHKERR assemble(storage, ss, lo_uid, hi_uid);
     }
   }

@@ -241,6 +241,17 @@ struct FieldEntity : public interface_Field<Field, RefEntity> {
            static_cast<UId>(MAX_DOFS_ON_ENTITY - 1);
   }
 
+  static inline UId getLoLocalEntityBitNumberByType(const char bit_number,
+                                              const EntityType type) {
+    return getLoLocalEntityBitNumber(bit_number, type << MB_ID_WIDTH);
+  }
+
+  static inline UId getHiLocalEntityBitNumberByType(const char bit_number,
+                                                    const EntityType type) {
+    return getLoLocalEntityBitNumber(bit_number, type << MB_ID_WIDTH) |
+           static_cast<UId>(MAX_DOFS_ON_ENTITY - 1);
+  }
+
   /**
    * \brief get hash-map relating dof index on entity with its order
    *
