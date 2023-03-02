@@ -256,6 +256,25 @@ inline auto createPC(MPI_Comm comm) {
   return SmartPetscObj<PC>(pc);
 };
 
+/**
+ * @brief Creates an application mapping using two index sets.
+ * 
+ * 
+ * <a
+ * href=https://petsc.org/release/docs/manualpages/AO/AOCreateMappingIS/>AOCreateMappingIS</a>.
+ * 
+ * @param isapp  index set that defines an ordering
+ * @param ispetsc  index set that defines another ordering, maybe NULL for identity
+ * @param aoout the new application ordering
+ * @return auto 
+ */
+inline auto  createAOMappingIS(IS isapp, IS ispetsc, AO *aoout) {
+  AO ao;
+  CHK_THROW_MESSAGE(AOCreateMappingIS(isapp, ispetsc, &ao),
+                    "Failed to create AO");
+  return SmartPetscObj<AO>(ao);
+};
+
 } // namespace MoFEM
 
 #endif
