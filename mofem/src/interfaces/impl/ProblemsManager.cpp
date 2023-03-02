@@ -2667,15 +2667,6 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
         MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
       }
 
-      // // set negative index
-      // auto mod = NumeredDofEntity_part_and_all_indices_change(-1, -1, -1, -1);
-      // for (auto dit : dofs_it_view) {
-      //   bool success = numered_dofs[s]->modify(dit, mod);
-      //   if (!success)
-      //     SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-      //             "can not set negative indices");
-      // }
-
       // create weak view
       std::vector<boost::weak_ptr<NumeredDofEntity>> dofs_weak_view;
       dofs_weak_view.reserve(dofs_it_view.size());
