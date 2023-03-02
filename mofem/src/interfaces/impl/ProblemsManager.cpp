@@ -2754,7 +2754,7 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
       };
 
       // set indices index
-      auto set_concatinated_indices = [&]() {
+      auto set_concatenated_indices = [&]() {
         std::vector<int> global_indices;
         std::vector<int> local_indices;
         MoFEMFunctionBegin;
@@ -2775,7 +2775,7 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
         }
         MoFEMFunctionReturn(0);
       };
-      CHKERR set_concatinated_indices();
+      CHKERR set_concatenated_indices();
 
       MPI_Allreduce(&nb_local_dofs, nbdof_ptr[s], 1, MPI_INT, MPI_SUM,
                     m_field.get_comm());
