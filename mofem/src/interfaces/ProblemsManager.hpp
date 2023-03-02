@@ -226,8 +226,8 @@ struct ProblemsManager : public UnknownInterface {
    * \ingroup mofem_problems_manager
    * \param name problem name
    *
-   * DOFs are ghost dofs if are used by elements on given partitition, but not
-   * owned by that partitition.
+   * DOFs are ghost dofs if are used by elements on given partition, but not
+   * owned by that partition.
    *
    */
   MoFEMErrorCode partitionGhostDofs(const std::string name, int verb = VERBOSE);
