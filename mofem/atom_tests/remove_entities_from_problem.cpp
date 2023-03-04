@@ -135,15 +135,15 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.getInterface<ISManager>()->isCreateProblemFieldAndRank(
         "P1", ROW, "F1", 0, 1, is_after_remove, &tets);
 
-    auto test_is = [&]() {
+    auto test_is = [&](auto prb_name, auto is_before, auto is_after) {
       MoFEMFunctionBegin;
-      const Problem *prb_ptr = m_field.get_problem("P1");
+      const Problem *prb_ptr = m_field.get_problem(prb_name);
       if (auto sub_data = prb_ptr->getSubData()) {
         auto sub_ao = sub_data->getSmartRowMap();
         if (sub_ao) {
-          CHKERR AOApplicationToPetscIS(sub_ao, is_before_remove);
+          CHKERR AOApplicationToPetscIS(sub_ao, is_before);
           PetscBool is_the_same;
-          CHKERR ISEqual(is_before_remove, is_after_remove, &is_the_same);
+          CHKERR ISEqual(is_before, is_after, &is_the_same);
           if (is_the_same == PETSC_FALSE) {
             SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                     "IS should be the same if map is correctly implemented");
@@ -161,11 +161,32 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionReturn(0);
     };
 
-    CHKERR test_is();
+    CHKERR test_is("P1", is_before_remove, is_after_remove);
 
     CHKERR m_field.getInterface<MatrixManager>()
         ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>("P1", -2, -2,
                                                                    0);
+
+    CHKERR m_field.add_problem("SUB");
+     // set refinement level for problem
+    CHKERR m_field.modify_problem_ref_level_add_bit("SUB", bit_level);
+    CHKERR m_field.modify_problem_add_finite_element("SUB", "E1");
+    CHKERR prb_mng_ptr->buildSubProblem("SUB", {"F1"}, {"F1"}, "P1", PETSC_TRUE,
+                                        nullptr, nullptr);
+    CHKERR prb_mng_ptr->partitionFiniteElements("SUB", true, 0,
+                                                m_field.get_comm_size());
+    CHKERR prb_mng_ptr->partitionGhostDofsOnDistributedMesh("SUB");
+
+    CHKERR prb_mng_ptr->removeDofsOnEntities("SUB", "F1", tets_skin, 0, 1, 0,
+                                             100, NOISY, true);
+    SmartPetscObj<IS> is_sub_after_remove;
+    CHKERR m_field.getInterface<ISManager>()->isCreateProblemFieldAndRank(
+        "SUB", ROW, "F1", 0, MAX_DOFS_ON_ENTITY, is_sub_after_remove, &tets);
+    CHKERR test_is("SUB", is_before_remove, is_after_remove);
+
+    CHKERR m_field.getInterface<MatrixManager>()
+        ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>("SUB", -2,
+                                                                   -2, 0);
   }
   CATCH_ERRORS;
 
