@@ -67,11 +67,11 @@ int main(int argc, char *argv[]) {
     int order = 2;
 
     for (EntityType t = CN::TypeDimensionMap[1].first;
-         t <= CN::TypeDimensionMap[3].second; ++t) {
+         t <= CN::TypeDimensionMap[SPACE_DIM].second; ++t) {
       CHKERR m_field.set_field_order(root_set, t, "F1", order);
     }
     for (EntityType t = CN::TypeDimensionMap[2].first;
-         t <= CN::TypeDimensionMap[3].second; ++t) {
+         t <= CN::TypeDimensionMap[SPACE_DIM].second; ++t) {
       CHKERR m_field.set_field_order(root_set, t, "F2", order);
     }
 
@@ -118,7 +118,6 @@ int main(int argc, char *argv[]) {
       tets_skin.merge(adj);
       MoFEMFunctionReturn(0);
     };
-
 
     MOFEM_LOG("WORLD", Sev::inform) << "Remove dofs";
 
