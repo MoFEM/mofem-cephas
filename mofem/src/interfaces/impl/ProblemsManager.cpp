@@ -2734,22 +2734,76 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
           indices.push_back(decltype(tag)::get_index(dit));
       };
 
+      auto get_sub_ao = [&](auto sub_data) {
+        if (s == 0) {
+          return sub_data->getSmartRowMap();
+        } else {
+          return sub_data->getSmartColMap();
+        }
+      };
+
+      auto set_sub_is_and_ao = [&s, &prb_ptr](auto sub_data, auto is, auto ao) {
+        if (s == 0) {
+          sub_data->rowIs = is;
+          sub_data->rowMap = ao;
+        } else {
+          sub_data->colIs = is;
+          sub_data->colMap = ao;
+        }
+      };
+
+      auto apply_symmetry = [&s, &prb_ptr](auto sub_data) {
+        if (s == 0) {
+          if (prb_ptr->numeredRowDofsPtr == prb_ptr->numeredColDofsPtr) {
+            sub_data->colIs = sub_data->getSmartRowIs();
+            sub_data->colMap = sub_data->getSmartRowMap();
+          }
+        }
+      };
+
       auto concatenate_dofs = [&](auto tag, auto &indices,
                                   const auto local_only) {
         MoFEMFunctionBegin;
         get_indices_by_tag(tag, indices, local_only);
 
-        AO ao;
+        SmartPetscObj<AO> ao;
+        // Create AO from app indices (i.e. old), to pestc indices (new after
+        // remove)
         if (local_only)
-          CHKERR AOCreateMapping(m_field.get_comm(), indices.size(),
-                                 &*indices.begin(), PETSC_NULL, &ao);
+          ao = createAOMapping(m_field.get_comm(), indices.size(),
+                               &*indices.begin(), PETSC_NULL);
         else
-          CHKERR AOCreateMapping(PETSC_COMM_SELF, indices.size(),
-                                 &*indices.begin(), PETSC_NULL, &ao);
+          ao = createAOMapping(PETSC_COMM_SELF, indices.size(),
+                               &*indices.begin(), PETSC_NULL);
+
+        // Set mapping to sub dm data
+        if (!local_only) {
+          if (auto sub_data = prb_ptr->getSubData()) {
+            // get old app, i.e. oroginal befor sub indices, and ao, from app,
+            // to petsc sub indices.
+            auto sub_ao = get_sub_ao(sub_data);
+            auto new_sub_is =
+                createISGeneral(m_field.get_comm(), indices.size(),
+                                &*indices.begin(), PETSC_COPY_VALUES);
+            CHKERR AOPetscToApplicationIS(sub_ao, new_sub_is);
+            auto new_sub_ao = createAOMappingIS(new_sub_is, PETSC_NULL);
+            // set new sub ao
+            set_sub_is_and_ao(sub_data, new_sub_is, new_sub_ao);
+            apply_symmetry(sub_data);
+          } else {
+            prb_ptr->getSubData() =
+                boost::make_shared<Problem::SubProblemData>();
+            auto sub_is = createISGeneral(m_field.get_comm(), indices.size(),
+                                          &*indices.begin(), PETSC_COPY_VALUES);
+            // set sub is ao
+            set_sub_is_and_ao(prb_ptr->getSubData(), sub_is, ao);
+            apply_symmetry(prb_ptr->getSubData());
+          }
+        }
 
         get_indices_by_uid(tag, indices);
         CHKERR AOApplicationToPetsc(ao, indices.size(), &*indices.begin());
-        CHKERR AODestroy(&ao);
+
         MoFEMFunctionReturn(0);
       };
 
@@ -3016,25 +3070,19 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntitiesNotDistributed(
     MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
 
   if (verb > QUIET) {
-    auto log = [&](auto str, auto level) {
-      MOFEM_LOG_C(str, level,
-                  "removed ents on rank %d from problem %s dofs [ %d / %d  "
-                  "(before %d / "
-                  "%d) local, %d / %d (before %d / %d) "
-                  "ghost, %d / %d (before %d / %d) global]",
-                  m_field.get_comm_rank(), prb_ptr->getName().c_str(),
-                  prb_ptr->getNbLocalDofsRow(), prb_ptr->getNbLocalDofsCol(),
-                  nb_init_row_dofs, nb_init_col_dofs,
-                  prb_ptr->getNbGhostDofsRow(), prb_ptr->getNbGhostDofsCol(),
-                  nb_init_ghost_row_dofs, nb_init_ghost_col_dofs,
-                  prb_ptr->getNbDofsRow(), prb_ptr->getNbDofsCol(),
-                  nb_init_loc_row_dofs, nb_init_loc_col_dofs);
-    };
-
-    log("WORLD", Sev::verbose);
-    if (m_field.get_comm_rank() > 0)
-      log("SYNC", Sev::noisy);
-
+    MOFEM_LOG_C(
+        "WORLD", Sev::inform,
+        "Removed DOFs from problem %s dofs [%d / %d (before %d / %d) global]",
+        prb_ptr->getName().c_str(), prb_ptr->getNbDofsRow(),
+        prb_ptr->getNbDofsCol(), nb_init_row_dofs, nb_init_col_dofs);
+    MOFEM_LOG_C("SYNC", Sev::verbose,
+                "Removed DOFs from problem %s dofs [ %d / %d  "
+                "(before %d / %d) local, %d / %d (before %d / %d)]",
+                prb_ptr->getName().c_str(), prb_ptr->getNbLocalDofsRow(),
+                prb_ptr->getNbLocalDofsCol(), nb_init_loc_row_dofs,
+                nb_init_loc_row_dofs, prb_ptr->getNbGhostDofsRow(),
+                prb_ptr->getNbGhostDofsCol(), nb_init_ghost_row_dofs,
+                nb_init_ghost_col_dofs);
     MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
   }
   MoFEMFunctionReturn(0);
