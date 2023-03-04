@@ -257,8 +257,26 @@ inline auto createPC(MPI_Comm comm) {
 };
 
 /**
- * @brief Creates an application mapping using two index sets.
+ * @brief Creates a data structure for an index set containing a list of integers.
  * 
+ * <a
+ * href=https://petsc.org/release/docs/manualpages/IS/ISCreateGeneral/>AOCreateMappingIS</a>.
+ * 
+ * @param comm the MPI communicator
+ * @param n the length of the index set
+ * @param idx  the list of integers
+ * @param mode PETSC_COPY_VALUES, PETSC_OWN_POINTER, or PETSC_USE_POINTER; see PetscCopyMode for meaning of this flag.
+ * @return SmartPetscObj<IS>(is)
+ */
+inline auto createISGeneral(MPI_Comm comm, PetscInt n, const PetscInt idx[],
+                            PetscCopyMode mode) {
+  IS is;
+  CHK_THROW_MESSAGE(ISCreateGeneral(comm, n, idx, mode, &is), "Create IS");
+  return SmartPetscObj<IS>(is);
+}
+
+/**
+ * @brief Creates an application mapping using two index sets.
  * 
  * <a
  * href=https://petsc.org/release/docs/manualpages/AO/AOCreateMappingIS/>AOCreateMappingIS</a>.
@@ -266,14 +284,34 @@ inline auto createPC(MPI_Comm comm) {
  * @param isapp  index set that defines an ordering
  * @param ispetsc  index set that defines another ordering, maybe NULL for identity
  * @param aoout the new application ordering
- * @return auto 
+ * @return SmartPetscObj<AO>(ao)
  */
-inline auto  createAOMappingIS(IS isapp, IS ispetsc, AO *aoout) {
+inline auto createAOMappingIS(IS isapp, IS ispetsc) {
   AO ao;
   CHK_THROW_MESSAGE(AOCreateMappingIS(isapp, ispetsc, &ao),
                     "Failed to create AO");
   return SmartPetscObj<AO>(ao);
 };
+
+/**
+ * @brief Creates an application mapping using two integer arrays.
+ *
+ * <a
+ * href=https://petsc.org/release/docs/manualpages/AO/AOCreateMapping/>AOCreateMappingIS</a>.
+ * 
+ * @param comm MPI communicator that is to share the AO
+ * @param napp size of integer arrays
+ * @param myapp  integer array that defines an ordering
+ * @param mypetsc  integer array that defines another ordering (may be NULL to indicate the identity ordering)
+ * @return SmartPetscObj<AO>(ao);
+ */
+inline auto createAOMapping(MPI_Comm comm, PetscInt napp,
+                            const PetscInt myapp[], const PetscInt mypetsc[]) {
+  AO ao;
+  CHK_THROW_MESSAGE(AOCreateMapping(comm, napp, myapp, mypetsc, &ao),
+                    "create ao");
+  return SmartPetscObj<AO>(ao);
+}
 
 } // namespace MoFEM
 
