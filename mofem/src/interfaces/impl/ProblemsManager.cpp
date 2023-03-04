@@ -3003,29 +3003,88 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntitiesNotDistributed(
       *(ghost_nbdof_ptr[s]) = nb_ghost_dofs;
 
       // get indices
-      auto get_indices_by_tag = [&](auto tag, int check) {
+      auto get_indices_by_tag = [&](auto tag) {
         std::vector<int> indices;
         indices.resize(nb_init_dofs[s], -1);
-        int i = 0;
-        for (auto dit = numered_dofs[s]->get<decltype(tag)>().begin();
-             dit != numered_dofs[s]->get<decltype(tag)>().end(); ++dit) {
-          const int current_idx = decltype(tag)::get_index(dit);
-          const int idx = (*dit)->getDofIdx();
-          if (current_idx >= 0 && idx >= 0) {
-            indices[idx] = i++;
-          }
-        }
-        if (i != check) {
-          MOFEM_LOG("SELF", Sev::error) << "i != check " << i << "!=" << check;
-          THROW_MESSAGE("Wrong number of indices");
+        for (auto dit = numered_dofs[s]->get<Idx_mi_tag>().lower_bound(0);
+             dit != numered_dofs[s]->get<Idx_mi_tag>().end(); ++dit) {
+          indices[(*dit)->getDofIdx()] = decltype(tag)::get_index(dit);
         }
         return indices;
       };
 
+      auto renumber = [](auto &indices) {
+        int idx = 0;
+        for (auto &m : indices) {
+          if (m >= 0) {
+            m = idx++;
+          }
+        }
+      };
+
+      auto get_sub_ao = [&](auto sub_data) {
+        if (s == 0) {
+          return sub_data->getSmartRowMap();
+        } else {
+          return sub_data->getSmartColMap();
+        }
+      };
+
+      auto set_sub_is_and_ao = [&s, &prb_ptr](auto sub_data, auto is, auto ao) {
+        if (s == 0) {
+          sub_data->rowIs = is;
+          sub_data->rowMap = ao;
+        } else {
+          sub_data->colIs = is;
+          sub_data->colMap = ao;
+        }
+      };
+
+      auto apply_symmetry = [&s, &prb_ptr](auto sub_data) {
+        if (s == 0) {
+          if (prb_ptr->numeredRowDofsPtr == prb_ptr->numeredColDofsPtr) {
+            sub_data->colIs = sub_data->getSmartRowIs();
+            sub_data->colMap = sub_data->getSmartRowMap();
+          }
+        }
+      };
+
+      auto set_sub_data = [&](auto &global_indices) {
+        MoFEMFunctionBegin;
+        if (auto sub_data = prb_ptr->getSubData()) {
+          // get old app, i.e. oroginal befor sub indices, and ao, from app,
+          // to petsc sub indices.
+          auto sub_ao = get_sub_ao(sub_data);
+          auto new_sub_is =
+              createISGeneral(m_field.get_comm(), global_indices.size(),
+                              &*global_indices.begin(), PETSC_COPY_VALUES);
+          CHKERR AOPetscToApplicationIS(sub_ao, new_sub_is);
+          auto new_sub_ao = createAOMappingIS(new_sub_is, PETSC_NULL);
+          // set new sub ao
+          set_sub_is_and_ao(sub_data, new_sub_is, new_sub_ao);
+          apply_symmetry(sub_data);
+        } else {
+          prb_ptr->getSubData() = boost::make_shared<Problem::SubProblemData>();
+          auto sub_is =
+              createISGeneral(m_field.get_comm(), global_indices.size(),
+                              &*global_indices.begin(), PETSC_COPY_VALUES);
+          auto sub_ao = createAOMappingIS(sub_is, PETSC_NULL);
+          // set sub is ao
+          set_sub_is_and_ao(prb_ptr->getSubData(), sub_is, sub_ao);
+          apply_symmetry(prb_ptr->getSubData());
+        }
+        MoFEMFunctionReturn(0);
+      };
+
       auto global_indices =
-          get_indices_by_tag(PetscGlobalIdx_mi_tag(), nb_global_dof);
-      auto local_indices = get_indices_by_tag(PetscLocalIdx_mi_tag(),
-                                              nb_local_dofs + nb_ghost_dofs);
+          get_indices_by_tag(PetscGlobalIdx_mi_tag());
+      auto local_indices = get_indices_by_tag(PetscLocalIdx_mi_tag());
+
+
+      renumber(global_indices);
+      renumber(local_indices);
+      
+      CHKERR set_sub_data(global_indices);
 
       int i = 0;    
       for (auto dit = numered_dofs[s]->begin(); dit != numered_dofs[s]->end();

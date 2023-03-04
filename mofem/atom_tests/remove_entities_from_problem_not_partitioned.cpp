@@ -119,6 +119,13 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionReturn(0);
     };
 
+    Range tets;
+    CHKERR m_field.get_moab().get_entities_by_dimension(root_set, SPACE_DIM,
+                                                        tets);
+    SmartPetscObj<IS> is_before_remove;
+    CHKERR m_field.getInterface<ISManager>()->isCreateProblemFieldAndRank(
+        "P1", ROW, "F1", 0, 1, is_before_remove, &tets);
+
     MOFEM_LOG("WORLD", Sev::inform) << "Remove dofs";
 
     Range tets_skin;
@@ -127,6 +134,38 @@ int main(int argc, char *argv[]) {
         "P1", "F1", tets_skin, 0, 1, 0, 100, VERBOSE, true);
 
     MOFEM_LOG("WORLD", Sev::inform) << "Check consistency";
+
+    SmartPetscObj<IS> is_after_remove;
+    CHKERR m_field.getInterface<ISManager>()->isCreateProblemFieldAndRank(
+        "P1", ROW, "F1", 0, 1, is_after_remove, &tets);
+
+    auto test_is = [&]() {
+      MoFEMFunctionBegin;
+      const Problem *prb_ptr = m_field.get_problem("P1");
+      if (auto sub_data = prb_ptr->getSubData()) {
+        auto sub_ao = sub_data->getSmartRowMap();
+        if (sub_ao) {
+          CHKERR AOApplicationToPetscIS(sub_ao, is_before_remove);
+          PetscBool is_the_same;
+          CHKERR ISEqual(is_before_remove, is_after_remove, &is_the_same);
+          if (is_the_same == PETSC_FALSE) {
+            SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                    "IS should be the same if map is correctly implemented");
+          } else {
+            MOFEM_LOG("WORLD", Sev::inform) << "Sub data map is correct";
+          }
+        } else {
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                  "AO map should exist");
+        }
+      } else {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                "Sub DM should exist");
+      }
+      MoFEMFunctionReturn(0);
+    };
+
+    CHKERR test_is();
 
     SmartPetscObj<Vec> v;
     CHKERR m_field.getInterface<VecManager>()->vecCreateGhost("P1", ROW, v);

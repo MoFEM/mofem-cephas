@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
             SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                     "IS should be the same if map is correctly implemented");
           } else {
-            MOFEM_LOG("WORLD", Sev::inform) << "Is is correct";
+            MOFEM_LOG("WORLD", Sev::inform) << "Sub data map is correct";
           }
         } else {
           SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
