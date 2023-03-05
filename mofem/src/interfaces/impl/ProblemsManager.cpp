@@ -2777,7 +2777,7 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
                                &*indices.begin(), PETSC_NULL);
 
         // Set mapping to sub dm data
-        if (!local_only) {
+        if (local_only) {
           if (auto sub_data = prb_ptr->getSubData()) {
             // get old app, i.e. oroginal befor sub indices, and ao, from app,
             // to petsc sub indices.
