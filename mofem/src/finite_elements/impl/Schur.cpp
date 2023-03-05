@@ -216,7 +216,7 @@ MoFEMErrorCode OpSchurAssembleEnd::doWork(int side, EntityType type,
     for (; row_it != hi_row_it; ++row_it) {
       if (row_it->uidRow == row_it->uidCol) {
 
-        if (getSymm()) {
+        if (symSchur[ss]) {
           CHKERR invert_symm_mat(row_it->getMat(), invMat);
         } else {
           CHKERR invert_nonsymm_mat(row_it->getMat(), invMat);
