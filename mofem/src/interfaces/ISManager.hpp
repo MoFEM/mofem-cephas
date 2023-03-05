@@ -73,6 +73,28 @@ struct ISManager : public UnknownInterface {
                 const RowColData row_col = COL) const;
 
   /**
+   * @brief Create IS for problem
+   *
+   * @param problem_name
+   * @param rc
+   * @param is
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode isCreateProblem(const std::string problem_name, RowColData rc,
+                                 IS *is) const;
+
+  /**
+   * @brief Create IS for problem
+   *
+   * @param problem_name
+   * @param rc
+   * @param is
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode isCreateProblem(const std::string problem_name, RowColData rc,
+                                 SmartPetscObj<IS> &is) const;
+
+  /**
     * \brief create IS for given order range (collective)
     * \ingroup mofem_is_managers
 
