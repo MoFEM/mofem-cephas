@@ -39,9 +39,10 @@ SchurL2Mats::MatSetValues(Mat M, const EntitiesFieldData::EntData &row_data,
   };
 
   const auto &row_ind = get_row_indices();
+  const auto &col_ind = col_data.getIndices();
 
   const auto nb_rows = row_ind.size();
-  const auto nb_cols = col_data.getIndices().size();
+  const auto nb_cols = col_ind.size();
 
   const auto idx = SchurL2Mats::schurL2Storage.size();
   const auto size = SchurL2Mats::locMats.size();
@@ -53,25 +54,12 @@ SchurL2Mats::MatSetValues(Mat M, const EntitiesFieldData::EntData &row_data,
   }
 
   // insert index
-  auto get_field_name = [](auto &data) {
-    return data.getFieldEntities()[0]->getName();
-  };
-  auto get_type = [](auto &data) {
-    return data.getFieldEntities()[0]->getEntType();
-  };
-
   auto get_uid = [](auto &data) {
     return data.getFieldEntities()[0]->getLocalUniqueId();
   };
 
   auto p = SchurL2Mats::schurL2Storage.emplace(idx, get_uid(row_data),
                                                get_uid(col_data));
-#ifndef NDEBUG
-  if (!p.second) {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "Is expected that data are inserted to storage");
-  }
-#endif // NDEBUG
 
   auto get_storage = [&p]() { return const_cast<SchurL2Mats &>(*p.first); };
 
@@ -84,7 +72,6 @@ SchurL2Mats::MatSetValues(Mat M, const EntitiesFieldData::EntData &row_data,
       noalias(storage) = ind;
     };
 
-    const auto &col_ind = col_data.getIndices();
     add_indices(get_storage().getRowInd(), row_ind);
     add_indices(get_storage().getColInd(), col_ind);
 
@@ -140,6 +127,12 @@ MoFEMErrorCode OpSchurAssembleEnd::doWork(int side, EntityType type,
   auto invert_nonsymm_mat = [&](MatrixDouble &m, auto &inv) {
     MoFEMFunctionBeginHot;
     const auto nb = m.size1();
+#ifndef NDEBUG
+    if (nb != m.size2()) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "It should be square matrix");
+    }
+#endif
     inv.resize(nb, nb, false);
     inv.clear();
     for (int c = 0; c != nb; ++c)
@@ -176,8 +169,8 @@ MoFEMErrorCode OpSchurAssembleEnd::doWork(int side, EntityType type,
                          auto hi_row_it) {
     MoFEMFunctionBegin;
 
-    auto add_off_mat = [&](auto row_uid, auto col_uid,
-                           auto &offMatInvDiagOffMat) {
+    auto add_off_mat = [&](auto row_uid, auto col_uid, auto &row_ind,
+                           auto &col_ind, auto &offMatInvDiagOffMat) {
       MoFEMFunctionBegin;
       auto it = storage.template get<SchurL2Mats::uid_mi_tag>().find(
           boost::make_tuple(row_uid, col_uid));
@@ -193,7 +186,11 @@ MoFEMErrorCode OpSchurAssembleEnd::doWork(int side, EntityType type,
         }
         auto p = SchurL2Mats::schurL2Storage.emplace(idx, row_uid, col_uid);
         auto &mat = p.first->getMat();
-        mat.swap(offMatInvDiagOffMat);
+        auto &set_row_ind = p.first->getRowInd();
+        auto &set_col_ind = p.first->getColInd();
+        noalias(mat) = offMatInvDiagOffMat;
+        noalias(set_row_ind) = row_ind;
+        noalias(set_col_ind) = col_ind;
       } else {
         auto &mat = it->getMat();
 #ifndef NDEBUG
@@ -216,7 +213,7 @@ MoFEMErrorCode OpSchurAssembleEnd::doWork(int side, EntityType type,
     for (; row_it != hi_row_it; ++row_it) {
       if (row_it->uidRow == row_it->uidCol) {
 
-        if (symSchur[ss]) {
+        if (getSymm()) {
           CHKERR invert_symm_mat(row_it->getMat(), invMat);
         } else {
           CHKERR invert_nonsymm_mat(row_it->getMat(), invMat);
@@ -227,7 +224,7 @@ MoFEMErrorCode OpSchurAssembleEnd::doWork(int side, EntityType type,
         auto c_lo =
             storage.template get<SchurL2Mats::col_mi_tag>().lower_bound(lo_uid);
         auto c_hi =
-            storage.template get<SchurL2Mats::col_mi_tag>().lower_bound(hi_uid);
+            storage.template get<SchurL2Mats::col_mi_tag>().upper_bound(hi_uid);
 
         for (; c_lo != c_hi; ++c_lo) {
 
@@ -256,7 +253,7 @@ MoFEMErrorCode OpSchurAssembleEnd::doWork(int side, EntityType type,
           for (; r_lo != r_hi; ++r_lo) {
             auto &col_uid = r_lo->uidCol;
 
-            // Skip dagonal
+            // Skip diagonal
             if (col_uid == row_it->uidRow)
               continue;
 
@@ -277,7 +274,8 @@ MoFEMErrorCode OpSchurAssembleEnd::doWork(int side, EntityType type,
             noalias(offMatInvDiagOffMat) =
                 prod(invDiagOffMat, rr_off_mat);
 
-            CHKERR add_off_mat(row_uid, col_uid, offMatInvDiagOffMat);
+            CHKERR add_off_mat(row_uid, col_uid, c_lo->getRowInd(),
+                               r_lo->getColInd(), offMatInvDiagOffMat);
 
             if (symSchur[ss] && row_uid != col_uid) {
               transOffMatInvDiagOffMat.resize(
@@ -285,8 +283,8 @@ MoFEMErrorCode OpSchurAssembleEnd::doWork(int side, EntityType type,
                   offMatInvDiagOffMat.size1(), false);
               noalias(transOffMatInvDiagOffMat) =
                   trans(offMatInvDiagOffMat);
-              CHKERR add_off_mat(col_uid, row_uid,
-                                 transOffMatInvDiagOffMat);
+              CHKERR add_off_mat(col_uid, row_uid, r_lo->getColInd(),
+                                 c_lo->getRowInd(), transOffMatInvDiagOffMat);
             }
           }
         }
@@ -338,8 +336,11 @@ MoFEMErrorCode OpSchurAssembleEnd::doWork(int side, EntityType type,
   };
 
   auto &storage = SchurL2Mats::schurL2Storage;
+  // Assemble to global matrix
   CHKERR assemble(SmartPetscObj<Mat>(getKSPB(), true), storage);
 
+  // Assemble Schur complements
+  // Iterate complements
   for (auto ss = 0; ss != fieldsName.size(); ++ss) {
 
     auto assemble = [&](auto &storage, auto ss, auto lo_uid, auto hi_uid) {
@@ -358,7 +359,6 @@ MoFEMErrorCode OpSchurAssembleEnd::doWork(int side, EntityType type,
     auto row_ents = fieldEnts[ss];
 
     if (row_ents) {
-      auto end = storage.template get<SchurL2Mats::row_mi_tag>().end();
       for (auto p = row_ents->pair_begin(); p != row_ents->pair_end(); ++p) {
         auto lo_uid =
             FieldEntity::getLoLocalEntityBitNumber(field_bit, p->first);
@@ -367,10 +367,11 @@ MoFEMErrorCode OpSchurAssembleEnd::doWork(int side, EntityType type,
         CHKERR assemble(storage, ss, lo_uid, hi_uid);
       }
     } else {
-      auto lo_uid =
-          FieldEntity::getLoLocalEntityBitNumberByType(field_bit, MBVERTEX);
-      auto hi_uid =
-          FieldEntity::getHiLocalEntityBitNumberByType(field_bit, MBENTITYSET);
+      // Iterate all entities (typically L2)
+      auto lo_uid = FieldEntity::getLoLocalEntityBitNumber(
+          field_bit, get_id_for_min_type<MBVERTEX>());
+      auto hi_uid = FieldEntity::getHiLocalEntityBitNumber(
+          field_bit, get_id_for_max_type<MBENTITYSET>());
       CHKERR assemble(storage, ss, lo_uid, hi_uid);
     }
   }

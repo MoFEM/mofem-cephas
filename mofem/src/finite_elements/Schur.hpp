@@ -64,7 +64,6 @@ struct SchurL2Mats : public boost::enable_shared_from_this<SchurL2Mats> {
   SchurL2Mats(const size_t idx, const UId uid_row, const UId uid_col);
   virtual ~SchurL2Mats() = default;
 
-  const size_t iDX;
   const UId uidRow;
   const UId uidCol;
 
@@ -78,6 +77,8 @@ struct SchurL2Mats : public boost::enable_shared_from_this<SchurL2Mats> {
                                      const MatrixDouble &mat, InsertMode iora);
 
 private:
+  const size_t iDX;
+
   friend OpSchurAssembleBegin;
   friend OpSchurAssembleEnd;
 
@@ -89,9 +90,6 @@ private:
   using SchurL2Storage = multi_index_container<
       SchurL2Mats,
       indexed_by<
-
-          ordered_unique<tag<idx_mi_tag>,
-                         member<SchurL2Mats, const size_t, &SchurL2Mats::iDX>>,
 
           ordered_unique<
               tag<uid_mi_tag>,
