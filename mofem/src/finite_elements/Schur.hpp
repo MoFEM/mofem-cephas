@@ -14,6 +14,11 @@
 #define __SCHUR_HPP__
 
 namespace MoFEM {
+
+/**
+ * @brief Clear Schur complement internal data
+ * 
+ */
 struct OpSchurAssembleBegin : public ForcesAndSourcesCore::UserDataOperator {
 
   OpSchurAssembleBegin()
@@ -24,11 +29,21 @@ struct OpSchurAssembleBegin : public ForcesAndSourcesCore::UserDataOperator {
 };
 
 /**
- * @brief Assemble cand clear
+ * @brief Assemble Schur complement
  *
  */
 struct OpSchurAssembleEnd : public ForcesAndSourcesCore::UserDataOperator {
 
+  /**
+   * @brief Construct a new Op Schur Assemble End object
+   * 
+   * @param fields_name list of fields
+   * @param field_ents list of entities on which schur complement is applied (can be empty)
+   * @param sequence_of_aos list of maps from base problem to Schur complement matrix
+   * @param sequence_of_mats list of Schur complement matrices
+   * @param sym_schur true if Schur complement is symmetric
+   * @param symm_op true if block diagonal is symmetric
+   */
   OpSchurAssembleEnd(std::vector<std::string> fields_name,
                      std::vector<boost::shared_ptr<Range>> field_ents,
                      std::vector<SmartPetscObj<AO>> sequence_of_aos,
@@ -59,6 +74,10 @@ private:
 
 };
 
+/**
+ * @brief Schur complement data storage
+ * 
+ */
 struct SchurL2Mats : public boost::enable_shared_from_this<SchurL2Mats> {
 
   SchurL2Mats(const size_t idx, const UId uid_row, const UId uid_col);
