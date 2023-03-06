@@ -33,8 +33,8 @@ struct OpSchurAssembleEnd : public ForcesAndSourcesCore::UserDataOperator {
                      std::vector<boost::shared_ptr<Range>> field_ents,
                      std::vector<SmartPetscObj<AO>> sequence_of_aos,
                      std::vector<SmartPetscObj<Mat>> sequence_of_mats,
-                     std::vector<bool> sym_schur)
-      : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPSPACE),
+                     std::vector<bool> sym_schur, bool symm_op = true)
+      : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPSPACE, symm_op),
         fieldsName(fields_name), fieldEnts(field_ents),
         sequenceOfAOs(sequence_of_aos), sequenceOfMats(sequence_of_mats),
         symSchur(sym_schur) {}
