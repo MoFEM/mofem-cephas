@@ -2779,18 +2779,19 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
         // Set mapping to sub dm data
         if (local_only) {
           if (auto sub_data = prb_ptr->getSubData()) {
+            // create is and then map it to main problem of sub-problem
+            auto sub_is = createISGeneral(m_field.get_comm(), indices.size(),
+                                          &*indices.begin(), PETSC_COPY_VALUES);
             // get old app, i.e. oroginal befor sub indices, and ao, from app,
             // to petsc sub indices.
             auto sub_ao = get_sub_ao(sub_data);
-            auto new_sub_is =
-                createISGeneral(m_field.get_comm(), indices.size(),
-                                &*indices.begin(), PETSC_COPY_VALUES);
-            CHKERR AOPetscToApplicationIS(sub_ao, new_sub_is);
-            auto new_sub_ao = createAOMappingIS(new_sub_is, PETSC_NULL);
+            CHKERR AOPetscToApplicationIS(sub_ao, sub_is);
+            sub_ao = createAOMappingIS(sub_is, PETSC_NULL);
             // set new sub ao
-            set_sub_is_and_ao(sub_data, new_sub_is, new_sub_ao);
+            set_sub_is_and_ao(sub_data, sub_is, sub_ao);
             apply_symmetry(sub_data);
           } else {
+            // create sub data
             prb_ptr->getSubData() =
                 boost::make_shared<Problem::SubProblemData>();
             auto sub_is = createISGeneral(m_field.get_comm(), indices.size(),
@@ -3052,16 +3053,17 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntitiesNotDistributed(
       auto set_sub_data = [&](auto &global_indices) {
         MoFEMFunctionBegin;
         if (auto sub_data = prb_ptr->getSubData()) {
-          // get old app, i.e. oroginal befor sub indices, and ao, from app,
-          // to petsc sub indices.
-          auto sub_ao = get_sub_ao(sub_data);
-          auto new_sub_is =
+          // create is and then map it to main problem of sub-problem
+          auto sub_is =
               createISGeneral(m_field.get_comm(), global_indices.size(),
                               &*global_indices.begin(), PETSC_COPY_VALUES);
-          CHKERR AOPetscToApplicationIS(sub_ao, new_sub_is);
-          auto new_sub_ao = createAOMappingIS(new_sub_is, PETSC_NULL);
+          // get old app, i.e. oroginal befor sub global_indices, and ao, from
+          // app, to petsc sub global_indices.
+          auto sub_ao = get_sub_ao(sub_data);
+          CHKERR AOPetscToApplicationIS(sub_ao, sub_is);
+          sub_ao = createAOMappingIS(sub_is, PETSC_NULL);
           // set new sub ao
-          set_sub_is_and_ao(sub_data, new_sub_is, new_sub_ao);
+          set_sub_is_and_ao(sub_data, sub_is, sub_ao);
           apply_symmetry(sub_data);
         } else {
           prb_ptr->getSubData() = boost::make_shared<Problem::SubProblemData>();
