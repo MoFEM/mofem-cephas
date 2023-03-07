@@ -3014,13 +3014,14 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntitiesNotDistributed(
         return indices;
       };
 
-      auto renumber = [](auto &indices) {
+      auto renumber = [&](auto tag, auto &indices) {
+        MoFEMFunctionBegin;
         int idx = 0;
-        for (auto &m : indices) {
-          if (m >= 0) {
-            m = idx++;
-          }
+        for (auto dit = numered_dofs[s]->get<decltype(tag)>().lower_bound(0);
+             dit != numered_dofs[s]->get<decltype(tag)>().end(); ++dit) {
+          indices[(*dit)->getDofIdx()] = idx++;
         }
+        MoFEMFunctionReturn(0);
       };
 
       auto get_sub_ao = [&](auto sub_data) {
@@ -3050,15 +3051,14 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntitiesNotDistributed(
         }
       };
 
-      auto set_sub_data = [&](auto &global_indices) {
+      auto set_sub_data = [&](auto &indices) {
         MoFEMFunctionBegin;
         if (auto sub_data = prb_ptr->getSubData()) {
           // create is and then map it to main problem of sub-problem
-          auto sub_is =
-              createISGeneral(m_field.get_comm(), global_indices.size(),
-                              &*global_indices.begin(), PETSC_COPY_VALUES);
-          // get old app, i.e. oroginal befor sub global_indices, and ao, from
-          // app, to petsc sub global_indices.
+          auto sub_is = createISGeneral(m_field.get_comm(), indices.size(),
+                                        &*indices.begin(), PETSC_COPY_VALUES);
+          // get old app, i.e. oroginal befor sub indices, and ao, from
+          // app, to petsc sub indices.
           auto sub_ao = get_sub_ao(sub_data);
           CHKERR AOPetscToApplicationIS(sub_ao, sub_is);
           sub_ao = createAOMappingIS(sub_is, PETSC_NULL);
@@ -3067,9 +3067,8 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntitiesNotDistributed(
           apply_symmetry(sub_data);
         } else {
           prb_ptr->getSubData() = boost::make_shared<Problem::SubProblemData>();
-          auto sub_is =
-              createISGeneral(m_field.get_comm(), global_indices.size(),
-                              &*global_indices.begin(), PETSC_COPY_VALUES);
+          auto sub_is = createISGeneral(m_field.get_comm(), indices.size(),
+                                        &*indices.begin(), PETSC_COPY_VALUES);
           auto sub_ao = createAOMappingIS(sub_is, PETSC_NULL);
           // set sub is ao
           set_sub_is_and_ao(prb_ptr->getSubData(), sub_is, sub_ao);
@@ -3078,15 +3077,11 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntitiesNotDistributed(
         MoFEMFunctionReturn(0);
       };
 
-      auto global_indices =
-          get_indices_by_tag(PetscGlobalIdx_mi_tag());
+      auto global_indices = get_indices_by_tag(PetscGlobalIdx_mi_tag());
       auto local_indices = get_indices_by_tag(PetscLocalIdx_mi_tag());
-
-
-      renumber(global_indices);
-      renumber(local_indices);
-      
       CHKERR set_sub_data(global_indices);
+      CHKERR renumber(PetscGlobalIdx_mi_tag(), global_indices);
+      CHKERR renumber(PetscLocalIdx_mi_tag(), local_indices);
 
       int i = 0;    
       for (auto dit = numered_dofs[s]->begin(); dit != numered_dofs[s]->end();
