@@ -18,28 +18,16 @@ template <int DIM> struct ApproxFunctionsImpl {};
 
 template <int DIM> struct ElementsAndOps {};
 
-template <> struct ElementsAndOps<2> {
-  using DomainEle = PipelineManager::FaceEle;
-  using DomainEleOp = DomainEle::UserDataOperator;
-  using BoundaryEle = PipelineManager::EdgeEle;
-  using EleOnSide = FaceElementForcesAndSourcesCoreOnSide;
-};
-
-template <> struct ElementsAndOps<3> {
-  using DomainEle = VolumeElementForcesAndSourcesCore;
-  using DomainEleOp = DomainEle::UserDataOperator;
-  using BoundaryEle = PipelineManager::FaceEle;
-  using EleOnSide = VolumeElementForcesAndSourcesCoreOnSide;
-};
-
 constexpr int SPACE_DIM =
     EXECUTABLE_DIMENSION; //< Space dimension of problem, mesh
 
+using DomainEle = PipelineManager::ElementsAndOpsByDim<SPACE_DIM>::DomainEle;
+using BoundaryEle =
+    PipelineManager::ElementsAndOpsByDim<SPACE_DIM>::BoundaryEle;
+using EleOnSide = PipelineManager::ElementsAndOpsByDim<SPACE_DIM>::FaceSideEle;
+
 using EntData = EntitiesFieldData::EntData;
-using DomainEle = ElementsAndOps<SPACE_DIM>::DomainEle;
-using DomainEleOp = ElementsAndOps<SPACE_DIM>::DomainEleOp;
-using BoundaryEle = ElementsAndOps<SPACE_DIM>::BoundaryEle;
-using EleOnSide = ElementsAndOps<SPACE_DIM>::EleOnSide;
+using DomainEleOp = DomainEle::UserDataOperator;
 
 template <> struct ApproxFunctionsImpl<2> {
   static double fUn(const double x, const double y, double z) {
@@ -474,9 +462,15 @@ int main(int argc, char *argv[]) {
           pipeline_mng->getOpDomainRhsPipeline(), {NOSPACE});
 
       using OpMass = FormsIntegrators<DomainEleOp>::Assembly<
-          PETSC>::BiLinearForm<GAUSS>::OpMass<1, 1>;
+          SCHUR>::BiLinearForm<GAUSS>::OpMass<1, 1>;
+
+      pipeline_mng->getOpDomainLhsPipeline().push_back(
+          new OpSchurAssembleBegin());
       pipeline_mng->getOpDomainLhsPipeline().push_back(new OpMass(
           "FIELD1", "FIELD1", [](double, double, double) { return 1.; }));
+      pipeline_mng->getOpDomainLhsPipeline().push_back(
+          new OpSchurAssembleEnd({}, {}, {}, {}, {}));
+
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpSource("FIELD1", ApproxFunctions::fUn));
 

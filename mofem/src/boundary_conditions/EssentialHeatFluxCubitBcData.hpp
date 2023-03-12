@@ -76,7 +76,7 @@ struct AddEssentialToRhsPipelineImpl<
   static MoFEMErrorCode add(
 
       MoFEM::Interface &m_field,
-      boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+      boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
       const std::string problem_name, std::string field_name,
       boost::shared_ptr<MatrixDouble> field_mat_ptr,
       std::vector<boost::shared_ptr<ScalingMethod>> smv
@@ -134,13 +134,11 @@ struct AddEssentialToLhsPipelineImpl<
 
   AddEssentialToLhsPipelineImpl() = delete;
 
-  static MoFEMErrorCode
-  add(
+  static MoFEMErrorCode add(
 
       MoFEM::Interface &m_field,
-      boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
-      const std::string problem_name, std::string field_name
-      ) {
+      boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+      const std::string problem_name, std::string field_name) {
     MoFEMFunctionBegin;
 
     using OP = typename EssentialBC<OpBase>::template Assembly<A>::

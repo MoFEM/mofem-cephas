@@ -62,10 +62,10 @@ MoFEMErrorCode DataOperator::opLhs(EntitiesFieldData &row_data,
     MoFEMFunctionBeginHot;
     auto &row_ent_data = row_data.dataOnEntities[type];
     for (size_t ss = 0; ss != row_ent_data.size(); ++ss) {
-      if (!Symm)
+      if constexpr (!Symm)
         CHKERR do_col_entity(row_ent_data, ss, type, MBVERTEX, type);
       size_t SS = 0;
-      if (Symm)
+      if constexpr (Symm)
         SS = ss;
       for (; SS < col_data.dataOnEntities[type].size(); ++SS) {
         CHKERR doWork(ss, SS, type, type, row_ent_data[ss],

@@ -105,9 +105,9 @@ struct Field {
    */
   unsigned int bitNumber;
 
-  static UId generateGlobalUniqueIdForTypeLo(const char bit_number,
-                                             const EntityType type,
-                                             const int owner_proc) {
+  DEPRECATED static UId generateGlobalUniqueIdForTypeLo(const char bit_number,
+                                                        const EntityType type,
+                                                        const int owner_proc) {
     constexpr int ent_shift = 8 * sizeof(EntityHandle);
     return (static_cast<UId>(type) << MB_ID_WIDTH |
             static_cast<UId>(bit_number) << 8 * sizeof(EntityHandle) |
@@ -115,12 +115,12 @@ struct Field {
            << 9;
   }
 
-  UId generateGlobalUniqueIdForTypeLo(const EntityType type,
+  DEPRECATED UId generateGlobalUniqueIdForTypeLo(const EntityType type,
                                       const int owner_proc) const {
     return generateGlobalUniqueIdForTypeLo(bitNumber, type, owner_proc);
   }
 
-  static UId generateGlobalUniqueIdForTypeHi(const char bit_number,
+  DEPRECATED static UId generateGlobalUniqueIdForTypeHi(const char bit_number,
                                              const EntityType type,
                                              const int owner_proc) {
     constexpr int ent_shift = 8 * sizeof(EntityHandle);
@@ -130,8 +130,8 @@ struct Field {
            << 9;
   }
 
-  UId generateGlobalUniqueIdForTypeHi(const EntityType type,
-                                      const int owner_proc) const {
+  DEPRECATED UId generateGlobalUniqueIdForTypeHi(const EntityType type,
+                                                 const int owner_proc) const {
     return generateGlobalUniqueIdForTypeHi(bitNumber, type, owner_proc);
   }
 

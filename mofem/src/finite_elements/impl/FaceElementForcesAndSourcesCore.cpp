@@ -180,7 +180,19 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::setIntegrationPts() {
   int order_data = getMaxDataOrder();
   int order_row = getMaxRowOrder();
   int order_col = getMaxColOrder();
-  int rule = getRule(order_row, order_col, order_data);
+
+  const auto type = numeredEntFiniteElementPtr->getEntType();
+
+  auto get_rule_by_type = [&]() {
+    switch (type) {
+    case MBQUAD:
+      return getRule(order_row + 1, order_col + 1, order_data + 1);
+    default:
+      return getRule(order_row, order_col, order_data);
+    }
+  };
+
+  const int rule = get_rule_by_type();
 
   auto set_integration_pts_for_tri = [&]() {
     MoFEMFunctionBegin;
@@ -257,8 +269,6 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::setIntegrationPts() {
     }
     MoFEMFunctionReturn(0);
   };
-
-  const auto type = numeredEntFiniteElementPtr->getEntType();
 
   if (rule >= 0) {
     switch (type) {

@@ -1053,45 +1053,85 @@ getFTensor1FromArrayDiag(MatrixDouble &data, const size_t rr) {
 template <int DIM1, int DIM2, int S, class T, class L, class A>
 struct GetFTensor2FromArrayImpl;
 
+template <int DIM1, int DIM2, class T, class L, class A>
+struct GetFTensor2FromArrayRawPtrImpl;
+
 template <int S, class T, class L, class A>
 struct GetFTensor2FromArrayImpl<2, 2, S, T, L, A> {
   GetFTensor2FromArrayImpl() = delete;
-  inline static auto get(ublas::matrix<T, L, A> &data, const size_t rr) {
+  inline static auto get(ublas::matrix<T, L, A> &data, const size_t rr,
+                         const size_t cc) {
     return FTensor::Tensor2<FTensor::PackPtr<T *, S>, 2, 2>{
-        &data(rr + 0, 0), &data(rr + 0, 1), &data(rr + 1, 0), &data(rr + 1, 1)};
+        &data(rr + 0, cc + 0), &data(rr + 0, cc + 1),
+
+        &data(rr + 1, cc + 0), &data(rr + 1, cc + 1)};
   }
 };
 
 template <int S, class T, class L, class A>
 struct GetFTensor2FromArrayImpl<3, 3, S, T, L, A> {
   GetFTensor2FromArrayImpl() = delete;
-  inline static auto get(ublas::matrix<T, L, A> &data, const size_t rr) {
+  inline static auto get(ublas::matrix<T, L, A> &data, const size_t rr,
+                         const size_t cc) {
     return FTensor::Tensor2<FTensor::PackPtr<T *, S>, 3, 3>{
-        &data(rr + 0, 0), &data(rr + 0, 1), &data(rr + 0, 2),
-        &data(rr + 1, 0), &data(rr + 1, 1), &data(rr + 1, 2),
-        &data(rr + 2, 0), &data(rr + 2, 1), &data(rr + 2, 2)};
+        &data(rr + 0, cc + 0), &data(rr + 0, cc + 1), &data(rr + 0, cc + 2),
+        &data(rr + 1, cc + 0), &data(rr + 1, cc + 1), &data(rr + 1, cc + 2),
+        &data(rr + 2, cc + 0), &data(rr + 2, cc + 1), &data(rr + 2, cc + 2)};
+  }
+};
+
+template <class T, class L, class A>
+struct GetFTensor2FromArrayRawPtrImpl<2, 2, T, L, A> {
+  GetFTensor2FromArrayRawPtrImpl() = delete;
+  inline static auto get(ublas::matrix<T, L, A> &data, const size_t rr,
+                         const size_t cc, const int ss = 0) {
+    return FTensor::Tensor2<T *, 2, 2>(
+        &data(rr + 0, cc + 0), &data(rr + 0, cc + 1),
+
+        &data(rr + 1, cc + 0), &data(rr + 1, cc + 1), ss);
+  }
+};
+
+template <class T, class L, class A>
+struct GetFTensor2FromArrayRawPtrImpl<3, 3, T, L, A> {
+  GetFTensor2FromArrayRawPtrImpl() = delete;
+  inline static auto get(ublas::matrix<T, L, A> &data, const size_t rr,
+                         const size_t cc, const int ss = 0) {
+    return FTensor::Tensor2<T *, 3, 3>(
+        &data(rr + 0, cc + 0), &data(rr + 0, cc + 1), &data(rr + 0, cc + 2),
+        &data(rr + 1, cc + 0), &data(rr + 1, cc + 1), &data(rr + 1, cc + 2),
+        &data(rr + 2, cc + 0), &data(rr + 2, cc + 1), &data(rr + 2, cc + 2),
+        ss);
   }
 };
 
 template <int DIM1, int DIM2, int S>
 inline FTensor::Tensor2<FTensor::PackPtr<double *, S>, DIM1, DIM2>
-getFTensor2FromArray(MatrixDouble &data, const size_t rr) {
+getFTensor2FromArray(MatrixDouble &data, const size_t rr, const size_t cc = 0) {
   return GetFTensor2FromArrayImpl<DIM1, DIM2, S, double, ublas::row_major,
-                                  VecAllocator<double>>::get(data, rr);
+                                  VecAllocator<double>>::get(data, rr, cc);
+}
+
+template <int DIM1, int DIM2>
+inline FTensor::Tensor2<double *, DIM1, DIM2>
+getFTensor2FromArray(MatrixDouble &data, const size_t rr, const size_t cc,
+                     const int ss) {
+  return GetFTensor2FromArrayRawPtrImpl<DIM1, DIM2, double, ublas::row_major,
+                                  VecAllocator<double>>::get(data, rr, cc, ss);
 }
 
 template <int S, typename T, typename L, typename A>
 inline auto getFTensor2FromArray2by2(ublas::matrix<T, L, A> &data,
                                      const FTensor::Number<S> &,
-                                     const size_t rr) {
-  return GetFTensor2FromArrayImpl<2, 2, S, T, L, A>::get(data, rr);
+                                     const size_t rr, const size_t cc = 0) {
+  return GetFTensor2FromArrayImpl<2, 2, S, T, L, A>::get(data, rr, cc);
 }
 
 template <int S, typename T, typename L, typename A>
 inline auto getFTensor2FromArray3by3(ublas::matrix<T, L, A> &data,
                                      const FTensor::Number<S> &,
-                                     const size_t rr) {
-  return GetFTensor2FromArrayImpl<3, 3, S, T, L, A>::get(data, rr);
+                                     const size_t rr, const size_t cc = 0) {
+  return GetFTensor2FromArrayImpl<3, 3, S, T, L, A>::get(data, rr, cc);
 }
 
 #ifdef WITH_ADOL_C

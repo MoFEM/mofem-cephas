@@ -480,7 +480,7 @@ template <int FE_DIM, int PROBLEM_DIM, int SPACE_DIM> struct AddHOOps;
 template <> struct AddHOOps<2, 2, 2> {
   AddHOOps() = delete;
   static MoFEMErrorCode
-  add(boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+  add(boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
       std::vector<FieldSpace> spaces, std::string geom_field_name = "",
       boost::shared_ptr<MatrixDouble> jac = nullptr,
       boost::shared_ptr<VectorDouble> det = nullptr,
@@ -490,27 +490,27 @@ template <> struct AddHOOps<2, 2, 2> {
 template <> struct AddHOOps<1, 2, 2> {
   AddHOOps() = delete;
   static MoFEMErrorCode
-  add(boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+  add(boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
       std::vector<FieldSpace> spaces, std::string geom_field_name = "");
 };
 template <> struct AddHOOps<1, 3, 3> {
   AddHOOps() = delete;
   static MoFEMErrorCode
-  add(boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+  add(boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
       std::vector<FieldSpace> space, std::string geom_field_name = "");
 };
 
 template <> struct AddHOOps<2, 3, 3> {
   AddHOOps() = delete;
   static MoFEMErrorCode
-  add(boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+  add(boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
       std::vector<FieldSpace> space, std::string geom_field_name = "");
 };
 
 template <> struct AddHOOps<3, 3, 3> {
   AddHOOps() = delete;
   static MoFEMErrorCode
-  add(boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+  add(boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
       std::vector<FieldSpace> space, std::string geom_field_name = "",
       boost::shared_ptr<MatrixDouble> jac = nullptr,
       boost::shared_ptr<VectorDouble> det = nullptr,
