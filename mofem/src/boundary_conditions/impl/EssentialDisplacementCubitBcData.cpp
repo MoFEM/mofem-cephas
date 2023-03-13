@@ -83,7 +83,8 @@ MoFEMErrorCode EssentialPreProc<DisplacementCubitBcData>::operator()() {
             idx = 0;
             coeff = 0;
             CHKERR fb->fieldLambdaOnEntities(lambda, field_name, &verts);
-          } else if (disp_bc->data.flag2 && nb_field_coeffs > 1) {
+          } 
+          if (disp_bc->data.flag2 && nb_field_coeffs > 1) {
             v = disp_bc->data.value2;
             for (auto s : vecOfTimeScalingMethods) {
               v *= s->getScale(fe_method_ptr->ts_t);
@@ -91,7 +92,8 @@ MoFEMErrorCode EssentialPreProc<DisplacementCubitBcData>::operator()() {
             idx = 0;
             coeff = 1;
             CHKERR fb->fieldLambdaOnEntities(lambda, field_name, &verts);
-          } else if (disp_bc->data.flag3 && nb_field_coeffs > 2) {
+          } 
+          if (disp_bc->data.flag3 && nb_field_coeffs > 2) {
             v = disp_bc->data.value3;
             for (auto s : vecOfTimeScalingMethods) {
               v *= s->getScale(fe_method_ptr->ts_t);
