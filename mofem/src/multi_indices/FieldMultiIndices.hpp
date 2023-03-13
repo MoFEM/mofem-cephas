@@ -120,21 +120,6 @@ struct Field {
     return generateGlobalUniqueIdForTypeLo(bitNumber, type, owner_proc);
   }
 
-  DEPRECATED static UId generateGlobalUniqueIdForTypeHi(const char bit_number,
-                                             const EntityType type,
-                                             const int owner_proc) {
-    constexpr int ent_shift = 8 * sizeof(EntityHandle);
-    return (static_cast<UId>(type) << MB_ID_WIDTH |
-            static_cast<UId>(bit_number) << ent_shift |
-            static_cast<UId>(owner_proc) << 5 + ent_shift)
-           << 9;
-  }
-
-  DEPRECATED UId generateGlobalUniqueIdForTypeHi(const EntityType type,
-                                                 const int owner_proc) const {
-    return generateGlobalUniqueIdForTypeHi(bitNumber, type, owner_proc);
-  }
-
   /**
    * \brief Get field meshset
    *
