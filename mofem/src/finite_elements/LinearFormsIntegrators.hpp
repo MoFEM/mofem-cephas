@@ -225,7 +225,7 @@ struct OpGradTimesSymTensorImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>
     : public OpBase {
 
   OpGradTimesSymTensorImpl(
-      const std::string field_name, boost::shared_ptr<MatrixDouble> &mat_vals,
+      const std::string field_name, boost::shared_ptr<MatrixDouble> mat_vals,
       ScalarFun beta_coeff = [](double, double, double) constexpr { return 1; })
       : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals),
         betaCoeff(beta_coeff) {}
@@ -299,7 +299,7 @@ struct OpMixVecTimesDivLambdaImpl {};
 template <int SPACE_DIM, typename OpBase>
 struct OpMixVecTimesDivLambdaImpl<SPACE_DIM, GAUSS, OpBase> : public OpBase {
   OpMixVecTimesDivLambdaImpl(const std::string field_name,
-                             boost::shared_ptr<MatrixDouble> &mat_vals)
+                             boost::shared_ptr<MatrixDouble> mat_vals)
       : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals) {}
 
 protected:
@@ -314,7 +314,7 @@ struct OpMixTensorTimesGradUImpl {};
 template <int SPACE_DIM, typename OpBase>
 struct OpMixTensorTimesGradUImpl<SPACE_DIM, GAUSS, OpBase> : public OpBase {
   OpMixTensorTimesGradUImpl(const std::string field_name,
-                            boost::shared_ptr<MatrixDouble> &mat_vals)
+                            boost::shared_ptr<MatrixDouble> mat_vals)
       : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals) {}
 
 protected:
