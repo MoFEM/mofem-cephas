@@ -148,7 +148,7 @@ protected:
   int getRule(int order);
   
   /**
-   * @brief Determine refinment level based on fields approx ordre.
+   * @brief Determine refinement level based on fields approx ordre.
    * 
    * level = (order - 1) / 2 
    *
