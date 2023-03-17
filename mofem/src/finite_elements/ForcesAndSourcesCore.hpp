@@ -1268,15 +1268,28 @@ double &ForcesAndSourcesCore::UserDataOperator::getMeasure() {
   return static_cast<ForcesAndSourcesCore *>(ptrFE)->elementMeasure;
 }
 
+/**
+ * @brief Element used to execute operators on side of the element
+ * 
+ * @tparam E template for side element type
+ * 
+ */
 template <typename E>
 struct OpLoopSide : public ForcesAndSourcesCore::UserDataOperator {
 
   using UserDataOperator = ForcesAndSourcesCore::UserDataOperator;
 
-  OpLoopSide(MoFEM::Interface &m_field, const std::string field_name,
+  /**
+   * @brief Construct a new Op Loop Side object
+   * 
+   * @param m_field 
+   * @param fe_name name of side (domain element)
+   * @param side_dim dimension
+   */
+  OpLoopSide(MoFEM::Interface &m_field, const std::string fe_name,
              const int side_dim)
       : UserDataOperator(NOSPACE, OPSPACE), sideFEPtr(new E(m_field)),
-        fieldName(field_name), sideDim(side_dim) {}
+        fieldName(fe_name), sideDim(side_dim) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data) {
