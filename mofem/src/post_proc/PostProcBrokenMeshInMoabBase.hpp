@@ -519,12 +519,12 @@ template <typename E>
 MoFEMErrorCode PostProcBrokenMeshInMoabBase<E>::postProcess() {
   MoFEMFunctionBeginHot;
 
-  auto update_elements = [&]() {
+  auto update_elements = [&](Range &ents) {
     ReadUtilIface *iface;
-    CHKERR this->postProcMesh.query_interface(iface);
+    CHKERR dataPtr->postProcMesh.query_interface(iface);
     MoFEMFunctionBegin;
 
-    for (auto &m : refElementsMap) {
+    for (auto &m : dataPtr->refElementsMap) {
       if (m.second->nbEles) {
         MOFEM_TAG_AND_LOG("SELF", Sev::noisy, "PostProc")
             << "Update < " << moab::CN::EntityTypeName(m.first)
@@ -532,75 +532,64 @@ MoFEMErrorCode PostProcBrokenMeshInMoabBase<E>::postProcess() {
         CHKERR iface->update_adjacencies(
             m.second->startingEleHandle, m.second->countEle,
             m.second->levelRef[0].size2(), m.second->eleConn);
+        ents.merge(Range(m.second->startingEleHandle,
+                         m.second->startingEleHandle + m.second->countEle - 1));
       }
     }
 
     MoFEMFunctionReturn(0);
   };
 
-  auto resolve_shared_ents = [&]() {
+  auto resolve_shared_ents = [&](Range &ents) {
     MoFEMFunctionBegin;
-    auto get_lower_dimension = [&]() {
-      int min_dim = 3;
-      for (auto &m : refElementsMap) {
-        const int dim = moab::CN::Dimension(m.first);
-        if (m.second->nbEles) {
-          min_dim = std::min(dim, min_dim);
-        }
-      }
-      return min_dim;
-    };
 
-    auto remove_obsolete_entities = [&](auto &&min_dim) {
+    auto remove_obsolete_entities = [&]() {
+      MoFEMFunctionBegin;
+
       Range edges;
-      CHKERR postProcMesh.get_entities_by_type(0, MBEDGE, edges, false);
+      CHKERR dataPtr->postProcMesh.get_entities_by_type(0, MBEDGE, edges,
+                                                        false);
 
       Range faces;
-      CHKERR postProcMesh.get_entities_by_dimension(0, 2, faces, false);
+      CHKERR dataPtr->postProcMesh.get_entities_by_dimension(0, 2, faces,
+                                                             false);
 
       Range vols;
-      CHKERR postProcMesh.get_entities_by_dimension(0, 3, vols, false);
+      CHKERR dataPtr->postProcMesh.get_entities_by_dimension(0, 3, vols, false);
 
-      Range ents;
+      edges = subtract(edges, ents);
+      faces = subtract(faces, ents);
 
-      if (min_dim > 1)
-        CHKERR postProcMesh.delete_entities(edges);
-      else
-        ents.merge(edges);
+      CHKERR dataPtr->postProcMesh.delete_entities(edges);
+      CHKERR dataPtr->postProcMesh.delete_entities(faces);
 
-      if (min_dim > 2)
-        CHKERR postProcMesh.delete_entities(faces);
-      else
-        ents.merge(faces);
-
-      ents.merge(vols);
-
-      return ents;
+      MoFEMFunctionReturn(0);
     };
 
-    auto ents = remove_obsolete_entities(get_lower_dimension());
+    CHKERR remove_obsolete_entities();
 
     ParallelComm *pcomm_post_proc_mesh =
-        ParallelComm::get_pcomm(&(postProcMesh), MYPCOMM_INDEX);
+        ParallelComm::get_pcomm(&(dataPtr->postProcMesh), MYPCOMM_INDEX);
     if (pcomm_post_proc_mesh == NULL) {
       // wrapRefMeshComm =
       // boost::make_shared<WrapMPIComm>(T::mField.get_comm(), false);
       pcomm_post_proc_mesh = new ParallelComm(
-          &(postProcMesh),
+          &(dataPtr->postProcMesh),
           PETSC_COMM_WORLD /*(T::wrapRefMeshComm)->get_comm()*/);
     }
 
     int rank = E::mField.get_comm_rank();
-    CHKERR postProcMesh.tag_clear_data(pcomm_post_proc_mesh->part_tag(), ents,
-                                       &rank);
+    CHKERR dataPtr->postProcMesh.tag_clear_data(
+        pcomm_post_proc_mesh->part_tag(), ents, &rank);
 
     CHKERR pcomm_post_proc_mesh->resolve_shared_ents(0);
 
     MoFEMFunctionReturn(0);
   };
 
-  CHKERR update_elements();
-  CHKERR resolve_shared_ents();
+  Range ents;
+  CHKERR update_elements(ents);
+  CHKERR resolve_shared_ents(ents);
 
   MoFEMFunctionReturnHot(0);
 }
