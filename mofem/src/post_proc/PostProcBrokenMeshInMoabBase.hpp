@@ -789,46 +789,54 @@ OpPostProcMapInMoab<DIM1, DIM2>::doWork(int side, EntityType type,
   };
 
   for (auto &m : dataMapScalar) {
-    auto th = get_tag(m.first, 1);
-    auto t_scl = getFTensor0FromVec(*m.second);
-    auto nb_integration_pts = getGaussPts().size2();
-    size_t gg = 0;
-    for (int gg = 0; gg != nb_integration_pts; ++gg) {
-      CHKERR set_tag(th, gg, set_scalar(t_scl));
-      ++t_scl;
+    if (m.second) {
+      auto th = get_tag(m.first, 1);
+      auto t_scl = getFTensor0FromVec(*m.second);
+      auto nb_integration_pts = getGaussPts().size2();
+      size_t gg = 0;
+      for (int gg = 0; gg != nb_integration_pts; ++gg) {
+        CHKERR set_tag(th, gg, set_scalar(t_scl));
+        ++t_scl;
+      }
     }
   }
 
   for (auto &m : dataMapVec) {
-    auto th = get_tag(m.first, 3);
-    auto t_vec = getFTensor1FromMat<DIM1>(*m.second);
-    auto nb_integration_pts = getGaussPts().size2();
-    size_t gg = 0;
-    for (int gg = 0; gg != nb_integration_pts; ++gg) {
-      CHKERR set_tag(th, gg, set_vector_3d(t_vec));
-      ++t_vec;
+    if (m.second) {
+      auto th = get_tag(m.first, 3);
+      auto t_vec = getFTensor1FromMat<DIM1>(*m.second);
+      auto nb_integration_pts = getGaussPts().size2();
+      size_t gg = 0;
+      for (int gg = 0; gg != nb_integration_pts; ++gg) {
+        CHKERR set_tag(th, gg, set_vector_3d(t_vec));
+        ++t_vec;
+      }
     }
   }
 
   for (auto &m : dataMapMat) {
-    auto th = get_tag(m.first, 9);
-    auto t_mat = getFTensor2FromMat<DIM1, DIM2>(*m.second);
-    auto nb_integration_pts = getGaussPts().size2();
-    size_t gg = 0;
-    for (int gg = 0; gg != nb_integration_pts; ++gg) {
-      CHKERR set_tag(th, gg, set_matrix_3d(t_mat));
-      ++t_mat;
+    if (m.second) {
+      auto th = get_tag(m.first, 9);
+      auto t_mat = getFTensor2FromMat<DIM1, DIM2>(*m.second);
+      auto nb_integration_pts = getGaussPts().size2();
+      size_t gg = 0;
+      for (int gg = 0; gg != nb_integration_pts; ++gg) {
+        CHKERR set_tag(th, gg, set_matrix_3d(t_mat));
+        ++t_mat;
+      }
     }
   }
 
   for (auto &m : dataMapSymmMat) {
-    auto th = get_tag(m.first, 9);
-    auto t_mat = getFTensor2SymmetricFromMat<DIM1>(*m.second);
-    auto nb_integration_pts = getGaussPts().size2();
-    size_t gg = 0;
-    for (int gg = 0; gg != nb_integration_pts; ++gg) {
-      CHKERR set_tag(th, gg, set_matrix_symm_3d(t_mat));
-      ++t_mat;
+    if (m.second) {
+      auto th = get_tag(m.first, 9);
+      auto t_mat = getFTensor2SymmetricFromMat<DIM1>(*m.second);
+      auto nb_integration_pts = getGaussPts().size2();
+      size_t gg = 0;
+      for (int gg = 0; gg != nb_integration_pts; ++gg) {
+        CHKERR set_tag(th, gg, set_matrix_symm_3d(t_mat));
+        ++t_mat;
+      }
     }
   }
 
@@ -875,8 +883,6 @@ struct PostProcBrokenMeshInMoabBaseContImpl
 
   MoFEMErrorCode preProcess() { return this->preProcPostProc(); };
   MoFEMErrorCode postProcess() { return this->postProcPostProc(); };
-
-
 
 protected:
   using PostProcBrokenMeshInMoabBase<E>::writeFile;
