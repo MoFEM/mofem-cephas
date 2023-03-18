@@ -910,13 +910,30 @@ struct PostProcBrokenMeshInMoabBaseEndImpl
   using PostProcBrokenMeshInMoabBase<E>::writeFile;
 };
 
+/**
+ * @brief Enable to run stack of post-processing elements. Use this to begin stack. 
+ * 
+ * See @ref scalar_check_approximation.cpp
+ * 
+ */
 using PostProcBrokenMeshInMoabBaseBegin = PostProcBrokenMeshInMoabBaseBeginImpl<
     PostProcBrokenMeshInMoabBase<ForcesAndSourcesCore>>;
 
+/**
+ * @brief Enable to run stack of post-processing elements. 
+ * 
+ * See @ref scalar_check_approximation.cpp
+ * 
+ * @tparam E 
+ */
 template <typename E>
 using PostProcBrokenMeshInMoabBaseCont =
     PostProcBrokenMeshInMoabBaseContImpl<PostProcBrokenMeshInMoabBase<E>>;
 
+/**
+ * @brief Enable to run stack of post-processing elements. Use this to end stack.
+ * 
+ */
 using PostProcBrokenMeshInMoabBaseEnd = PostProcBrokenMeshInMoabBaseEndImpl<
     PostProcBrokenMeshInMoabBase<ForcesAndSourcesCore>>;
 
