@@ -531,78 +531,98 @@ int main(int argc, char *argv[]) {
     auto post_proc = [&] {
       MoFEMFunctionBegin;
 
-      auto post_proc_fe =
-          boost::make_shared<PostProcBrokenMeshInMoab<DomainEle>>(m_field);
-
-      CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
-          post_proc_fe->getOpPtrVector(), {space});
-
-      auto ptr_values = boost::make_shared<VectorDouble>();
-      auto ptr_diff_vals = boost::make_shared<MatrixDouble>();
-
-      post_proc_fe->getOpPtrVector().push_back(
-          new OpCalculateScalarFieldValues("FIELD1", ptr_values));
-      post_proc_fe->getOpPtrVector().push_back(
-          new OpCalculateScalarFieldGradient<SPACE_DIM>("FIELD1",
-                                                        ptr_diff_vals));
-
       using OpPPMap = OpPostProcMapInMoab<SPACE_DIM, SPACE_DIM>;
 
-      post_proc_fe->getOpPtrVector().push_back(
+      auto get_domain_post_proc_fe = [&](auto post_proc_mesh_ptr) {
+        auto post_proc_fe =
+            boost::make_shared<PostProcBrokenMeshInMoabBaseCont<DomainEle>>(
+                m_field, post_proc_mesh_ptr);
 
-          new OpPPMap(
+        CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+            post_proc_fe->getOpPtrVector(), {space});
 
-              post_proc_fe->getPostProcMesh(), post_proc_fe->getMapGaussPts(),
+        auto ptr_values = boost::make_shared<VectorDouble>();
+        auto ptr_diff_vals = boost::make_shared<MatrixDouble>();
 
-              {{"FIELD1", ptr_values}},
+        post_proc_fe->getOpPtrVector().push_back(
+            new OpCalculateScalarFieldValues("FIELD1", ptr_values));
+        post_proc_fe->getOpPtrVector().push_back(
+            new OpCalculateScalarFieldGradient<SPACE_DIM>("FIELD1",
+                                                          ptr_diff_vals));
 
-              {{"FIELD1_GRAD", ptr_diff_vals}},
+        post_proc_fe->getOpPtrVector().push_back(
 
-              {}, {})
+            new OpPPMap(
 
-      );
+                post_proc_fe->getPostProcMesh(), post_proc_fe->getMapGaussPts(),
 
+                {{"FIELD1", ptr_values}},
+
+                {{"FIELD1_GRAD", ptr_diff_vals}},
+
+                {}, {})
+
+        );
+        return post_proc_fe;
+      };
+
+      auto get_bdy_post_proc_fe = [&](auto post_proc_mesh_ptr) {
+        auto bdy_post_proc_fe =
+            boost::make_shared<PostProcBrokenMeshInMoabBaseCont<BoundaryEle>>(
+                m_field, post_proc_mesh_ptr);
+
+        auto op_loop_side = new OpLoopSide<EleOnSide>(
+            m_field, simple->getDomainFEName(), SPACE_DIM);
+
+        auto ptr_values = boost::make_shared<VectorDouble>();
+        auto ptr_diff_vals = boost::make_shared<MatrixDouble>();
+
+        // push operators to side element
+        CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+            op_loop_side->getOpPtrVector(), {space});
+        op_loop_side->getOpPtrVector().push_back(
+            new OpCalculateScalarFieldValues("FIELD1", ptr_values));
+        op_loop_side->getOpPtrVector().push_back(
+            new OpCalculateScalarFieldGradient<SPACE_DIM>("FIELD1",
+                                                          ptr_diff_vals));
+        // push op to boundary element
+        bdy_post_proc_fe->getOpPtrVector().push_back(op_loop_side);
+
+        bdy_post_proc_fe->getOpPtrVector().push_back(
+
+            new OpPPMap(
+
+                bdy_post_proc_fe->getPostProcMesh(),
+                bdy_post_proc_fe->getMapGaussPts(),
+
+                {{"FIELD1", ptr_values}},
+
+                {{"FIELD1_GRAD", ptr_diff_vals}},
+
+                {}, {})
+
+        );
+
+        return bdy_post_proc_fe;
+      };
+
+      auto post_proc_mesh_ptr = boost::make_shared<moab::Core>();
+      auto post_proc_begin =
+          boost::make_shared<PostProcBrokenMeshInMoabBaseBegin>(
+              m_field, post_proc_mesh_ptr);
+      auto post_proc_end =
+          boost::make_shared<PostProcBrokenMeshInMoabBaseEnd>(
+              m_field, post_proc_mesh_ptr);
+      auto domain_post_proc_fe = get_domain_post_proc_fe(post_proc_mesh_ptr);
+      auto bdy_post_proc_fe = get_bdy_post_proc_fe(post_proc_mesh_ptr);
+
+      CHKERR DMoFEMPreProcessFiniteElements(dm, post_proc_begin->getFEMethod());
       CHKERR DMoFEMLoopFiniteElements(dm, simple->getDomainFEName(),
-                                      post_proc_fe);
-
-      post_proc_fe->writeFile("out_post_proc.h5m");
-
-      auto bdy_post_proc_fe =
-          boost::make_shared<PostProcBrokenMeshInMoab<BoundaryEle>>(m_field);
-
-      auto op_loop_side = new OpLoopSide<EleOnSide>(
-          m_field, simple->getDomainFEName(), SPACE_DIM);
-
-      // push operators to side element
-      CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
-          op_loop_side->getOpPtrVector(), {space});
-      op_loop_side->getOpPtrVector().push_back(
-          new OpCalculateScalarFieldValues("FIELD1", ptr_values));
-      op_loop_side->getOpPtrVector().push_back(
-          new OpCalculateScalarFieldGradient<SPACE_DIM>("FIELD1",
-                                                        ptr_diff_vals));
-      // push op to boundary element
-      bdy_post_proc_fe->getOpPtrVector().push_back(op_loop_side);
-
-      bdy_post_proc_fe->getOpPtrVector().push_back(
-
-          new OpPPMap(
-
-              bdy_post_proc_fe->getPostProcMesh(),
-              bdy_post_proc_fe->getMapGaussPts(),
-
-              {{"FIELD1", ptr_values}},
-
-              {{"FIELD1_GRAD", ptr_diff_vals}},
-
-              {}, {})
-
-      );
-
+                                      domain_post_proc_fe);
       CHKERR DMoFEMLoopFiniteElements(dm, simple->getBoundaryFEName(),
                                       bdy_post_proc_fe);
-
-      bdy_post_proc_fe->writeFile("out_post_proc_bdy.h5m");
+      CHKERR DMoFEMPostProcessFiniteElements(dm, post_proc_end->getFEMethod());
+      CHKERR post_proc_end->writeFile("out_post_proc.h5m");
 
       MoFEMFunctionReturn(0);
     };
