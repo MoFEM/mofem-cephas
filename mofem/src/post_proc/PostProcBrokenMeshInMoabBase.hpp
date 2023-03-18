@@ -164,6 +164,9 @@ protected:
   std::vector<Tag> tagsToTransfer; ///< Set of tags on mesh to transfer to
                                    ///< postprocessing mesh
 
+  virtual MoFEMErrorCode preProcPostProc();
+  virtual MoFEMErrorCode postProcPostProc();
+
   virtual MoFEMErrorCode transferTags(); ///< transfer tags from mesh to
                                          ///< post-process mesh
 };
@@ -385,15 +388,8 @@ MoFEMErrorCode PostProcBrokenMeshInMoabBase<E>::setGaussPts(int order) {
 };
 
 template <typename E>
-MoFEMErrorCode PostProcBrokenMeshInMoabBase<E>::preProcess() {
+MoFEMErrorCode PostProcBrokenMeshInMoabBase<E>::preProcPostProc() {
   MoFEMFunctionBegin;
-
-  ParallelComm *pcomm_post_proc_mesh =
-      ParallelComm::get_pcomm(&postProcMesh, MYPCOMM_INDEX);
-  if (pcomm_post_proc_mesh != NULL)
-    delete pcomm_post_proc_mesh;
-
-  CHKERR postProcMesh.delete_mesh();
 
   auto get_ref_ele = [&](const EntityType type) {
     PostProcGenerateRefMeshPtr ref_ele_ptr;
@@ -508,14 +504,15 @@ MoFEMErrorCode PostProcBrokenMeshInMoabBase<E>::preProcess() {
 }
 
 template <typename E>
-MoFEMErrorCode PostProcBrokenMeshInMoabBase<E>::postProcess() {
-  MoFEMFunctionBeginHot;
+MoFEMErrorCode PostProcBrokenMeshInMoabBase<E>::postProcPostProc() {
+  MoFEMFunctionBegin;
 
-  auto update_elements = [&](Range &ents) {
+  auto update_elements = [&]() {
     ReadUtilIface *iface;
     CHKERR postProcMesh.query_interface(iface);
     MoFEMFunctionBegin;
 
+    Range ents;
     for (auto &m : refElementsMap) {
       if (m.second->nbEles) {
         MOFEM_TAG_AND_LOG("SELF", Sev::noisy, "PostProc")
@@ -532,54 +529,90 @@ MoFEMErrorCode PostProcBrokenMeshInMoabBase<E>::postProcess() {
     MoFEMFunctionReturn(0);
   };
 
-  auto resolve_shared_ents = [&](Range &ents) {
+  auto set_proc_tags = [&]() {
+    MoFEMFunctionBegin;
+    ParallelComm *pcomm_post_proc_mesh =
+        ParallelComm::get_pcomm(&(postProcMesh), MYPCOMM_INDEX);
+    if (pcomm_post_proc_mesh) {
+      Range ents;
+      for (auto &m : refElementsMap) {
+        if (m.second->nbEles) {
+          ents.merge(
+              Range(m.second->startingEleHandle,
+                    m.second->startingEleHandle + m.second->countEle - 1));
+        }
+      }
+
+      int rank = E::mField.get_comm_rank();
+      CHKERR postProcMesh.tag_clear_data(pcomm_post_proc_mesh->part_tag(), ents,
+                                         &rank);
+    }
+    MoFEMFunctionReturn(0);
+  };
+
+  CHKERR update_elements();
+  CHKERR set_proc_tags();
+
+  MoFEMFunctionReturn(0);
+}
+
+template <typename E>
+MoFEMErrorCode PostProcBrokenMeshInMoabBase<E>::preProcess() {
+  MoFEMFunctionBegin;
+
+  ParallelComm *pcomm_post_proc_mesh =
+      ParallelComm::get_pcomm(&postProcMesh, MYPCOMM_INDEX);
+  if (pcomm_post_proc_mesh != NULL)
+    delete pcomm_post_proc_mesh;
+  CHKERR postProcMesh.delete_mesh();
+
+  CHKERR preProcPostProc();
+
+  MoFEMFunctionReturn(0);
+}
+
+template <typename E>
+MoFEMErrorCode PostProcBrokenMeshInMoabBase<E>::postProcess() {
+  MoFEMFunctionBeginHot;
+
+  ParallelComm *pcomm_post_proc_mesh =
+      ParallelComm::get_pcomm(&(postProcMesh), MYPCOMM_INDEX);
+  if (pcomm_post_proc_mesh == NULL) {
+    pcomm_post_proc_mesh = new ParallelComm(&(postProcMesh), PETSC_COMM_WORLD);
+  }
+
+  CHKERR postProcPostProc();
+
+  auto resolve_shared_ents = [&]() {
     MoFEMFunctionBegin;
 
     auto remove_obsolete_entities = [&]() {
       MoFEMFunctionBegin;
+      Range ents;
+      for (auto &m : refElementsMap) {
+        if (m.second->nbEles) {
+          ents.merge(
+              Range(m.second->startingEleHandle,
+                    m.second->startingEleHandle + m.second->countEle - 1));
+        }
+      }
 
-      Range edges;
-      CHKERR postProcMesh.get_entities_by_type(0, MBEDGE, edges, false);
+      Range all;
+      CHKERR postProcMesh.get_entities_by_handle(0, all, false);
+      all = subtract(all, all.subset_by_type(MBVERTEX));
+      all = subtract(all, ents);
 
-      Range faces;
-      CHKERR postProcMesh.get_entities_by_dimension(0, 2, faces, false);
-
-      Range vols;
-      CHKERR postProcMesh.get_entities_by_dimension(0, 3, vols, false);
-
-      edges = subtract(edges, ents);
-      faces = subtract(faces, ents);
-
-      CHKERR postProcMesh.delete_entities(edges);
-      CHKERR postProcMesh.delete_entities(faces);
-
+      CHKERR postProcMesh.delete_entities(all);
       MoFEMFunctionReturn(0);
     };
 
     CHKERR remove_obsolete_entities();
-
-    ParallelComm *pcomm_post_proc_mesh =
-        ParallelComm::get_pcomm(&(postProcMesh), MYPCOMM_INDEX);
-    if (pcomm_post_proc_mesh == NULL) {
-      // wrapRefMeshComm =
-      // boost::make_shared<WrapMPIComm>(T::mField.get_comm(), false);
-      pcomm_post_proc_mesh = new ParallelComm(
-          &(postProcMesh),
-          PETSC_COMM_WORLD /*(T::wrapRefMeshComm)->get_comm()*/);
-    }
-
-    int rank = E::mField.get_comm_rank();
-    CHKERR postProcMesh.tag_clear_data(pcomm_post_proc_mesh->part_tag(), ents,
-                                       &rank);
-
     CHKERR pcomm_post_proc_mesh->resolve_shared_ents(0);
 
     MoFEMFunctionReturn(0);
   };
 
-  Range ents;
-  CHKERR update_elements(ents);
-  CHKERR resolve_shared_ents(ents);
+  CHKERR resolve_shared_ents();
 
   MoFEMFunctionReturnHot(0);
 }
