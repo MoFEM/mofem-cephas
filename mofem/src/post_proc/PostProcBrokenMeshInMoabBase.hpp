@@ -1,12 +1,12 @@
 /**
  * @file PostProcBrokenMeshInMoabBase.hpp
  * @author your name (you@domain.com)
- * @brief 
+ * @brief
  * @version 0.1
  * @date 2022-09-14
- * 
+ *
  * @copyright Copyright (c) 2022
- * 
+ *
  */
 
 #ifndef __POSTPROCBROKENMESHINMOABBASE_HPP
@@ -24,21 +24,21 @@ struct PostProcGenerateRefMeshBase {
 
   std::vector<MatrixDouble>
       levelShapeFunctions; //< values of shape functions on refences element
-                           //refinement levels
+                           // refinement levels
   std::vector<MatrixDouble>
       levelGaussPtsOnRefMesh; //< gauss points at refinement levels
   std::vector<ublas::matrix<int>> levelRef; //< connectivity at refinement level
 
-  EntityHandle startingVertEleHandle; //< starting handle of first vertex
+  EntityHandle startingVertEleHandle;        //< starting handle of first vertex
   std::vector<double *> verticesOnEleArrays; //< array of vertices coordinate
   EntityHandle startingEleHandle; //< starting handle of first element
   EntityHandle *eleConn;          //< array of elements connectivity
 
-  int countEle; //< count elements
+  int countEle;     //< count elements
   int countVertEle; //< count vertices on the mesh
 
   int nbVertices; //< numer of vertices on the mesh
-  int nbEles; //< number of elements on the mesh
+  int nbEles;     //< number of elements on the mesh
 
   PostProcGenerateRefMeshBase();
   virtual ~PostProcGenerateRefMeshBase() = default;
@@ -46,8 +46,8 @@ struct PostProcGenerateRefMeshBase {
 
   virtual MoFEMErrorCode generateReferenceElementMesh() = 0;
 
-  PetscBool hoNodes; //< if true mid nodes are added
-  int defMaxLevel; //< default max number of refinement levels
+  PetscBool hoNodes;     //< if true mid nodes are added
+  int defMaxLevel;       //< default max number of refinement levels
   std::string optPrefix; //< prefix for options
 };
 
@@ -95,6 +95,7 @@ struct PostProcGenerateRefMesh<MBEDGE> : public PostProcGenerateRefMeshBase {
 template <typename E> struct PostProcBrokenMeshInMoabBase : public E {
 
   PostProcBrokenMeshInMoabBase(MoFEM::Interface &m_field);
+
   virtual ~PostProcBrokenMeshInMoabBase();
 
   std::vector<EntityHandle> mapGaussPts;
@@ -146,19 +147,18 @@ template <typename E> struct PostProcBrokenMeshInMoabBase : public E {
 
 protected:
   int getRule(int order);
-  
+
   /**
    * @brief Determine refinement level based on fields approx ordre.
-   * 
-   * level = (order - 1) / 2 
    *
-   * @return int 
+   * level = (order - 1) / 2
+   *
+   * @return int
    */
   virtual int getMaxLevel() const;
 
   moab::Core coreMesh;
-  moab::Interface &postProcMesh;
-
+  moab::Interface &postProcMesh = coreMesh;
   std::map<EntityType, PostProcGenerateRefMeshPtr> refElementsMap;
 
   std::vector<Tag> tagsToTransfer; ///< Set of tags on mesh to transfer to
@@ -167,14 +167,6 @@ protected:
   virtual MoFEMErrorCode transferTags(); ///< transfer tags from mesh to
                                          ///< post-process mesh
 };
-
-template <typename E>
-MoFEMErrorCode PostProcBrokenMeshInMoabBase<E>::setTagsToTransfer(
-    std::vector<Tag> tags_to_transfer) {
-  MoFEMFunctionBegin;
-  tagsToTransfer.swap(tags_to_transfer);
-  MoFEMFunctionReturn(0);
-}
 
 template <typename E> int PostProcBrokenMeshInMoabBase<E>::getMaxLevel() const {
   auto get_element_max_dofs_order = [&]() {
@@ -204,7 +196,8 @@ MoFEMErrorCode PostProcBrokenMeshInMoabBase<E>::transferTags() {
 
   auto data_type = [&](auto tag) {
     moab::DataType data_type;
-    CHK_MOAB_THROW(calc_mesh.tag_get_data_type(tag, data_type), "get data type");
+    CHK_MOAB_THROW(calc_mesh.tag_get_data_type(tag, data_type),
+                   "get data type");
     return data_type;
   };
 
@@ -221,10 +214,10 @@ MoFEMErrorCode PostProcBrokenMeshInMoabBase<E>::transferTags() {
   };
 
   auto default_value = [&](auto tag) {
-    const void* def_val;
+    const void *def_val;
     int size;
     CHK_MOAB_THROW(calc_mesh.tag_get_default_value(tag, def_val, size),
-                     "get default tag value");
+                   "get default tag value");
     return def_val;
   };
 
@@ -251,7 +244,7 @@ MoFEMErrorCode PostProcBrokenMeshInMoabBase<E>::transferTags() {
 template <typename E>
 PostProcBrokenMeshInMoabBase<E>::PostProcBrokenMeshInMoabBase(
     MoFEM::Interface &m_field)
-    : E(m_field), postProcMesh(coreMesh) {}
+    : E(m_field) {}
 
 template <typename E>
 PostProcBrokenMeshInMoabBase<E>::~PostProcBrokenMeshInMoabBase() {
@@ -393,11 +386,10 @@ MoFEMErrorCode PostProcBrokenMeshInMoabBase<E>::setGaussPts(int order) {
 
 template <typename E>
 MoFEMErrorCode PostProcBrokenMeshInMoabBase<E>::preProcess() {
-  moab::Interface &moab = coreMesh;
   MoFEMFunctionBegin;
 
   ParallelComm *pcomm_post_proc_mesh =
-      ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
+      ParallelComm::get_pcomm(&postProcMesh, MYPCOMM_INDEX);
   if (pcomm_post_proc_mesh != NULL)
     delete pcomm_post_proc_mesh;
 
@@ -521,14 +513,14 @@ MoFEMErrorCode PostProcBrokenMeshInMoabBase<E>::postProcess() {
 
   auto update_elements = [&](Range &ents) {
     ReadUtilIface *iface;
-    CHKERR dataPtr->postProcMesh.query_interface(iface);
+    CHKERR postProcMesh.query_interface(iface);
     MoFEMFunctionBegin;
 
-    for (auto &m : dataPtr->refElementsMap) {
+    for (auto &m : refElementsMap) {
       if (m.second->nbEles) {
         MOFEM_TAG_AND_LOG("SELF", Sev::noisy, "PostProc")
             << "Update < " << moab::CN::EntityTypeName(m.first)
-            << " number of processsed " << m.second->countEle;
+            << " number of processed " << m.second->countEle;
         CHKERR iface->update_adjacencies(
             m.second->startingEleHandle, m.second->countEle,
             m.second->levelRef[0].size2(), m.second->eleConn);
@@ -547,21 +539,19 @@ MoFEMErrorCode PostProcBrokenMeshInMoabBase<E>::postProcess() {
       MoFEMFunctionBegin;
 
       Range edges;
-      CHKERR dataPtr->postProcMesh.get_entities_by_type(0, MBEDGE, edges,
-                                                        false);
+      CHKERR postProcMesh.get_entities_by_type(0, MBEDGE, edges, false);
 
       Range faces;
-      CHKERR dataPtr->postProcMesh.get_entities_by_dimension(0, 2, faces,
-                                                             false);
+      CHKERR postProcMesh.get_entities_by_dimension(0, 2, faces, false);
 
       Range vols;
-      CHKERR dataPtr->postProcMesh.get_entities_by_dimension(0, 3, vols, false);
+      CHKERR postProcMesh.get_entities_by_dimension(0, 3, vols, false);
 
       edges = subtract(edges, ents);
       faces = subtract(faces, ents);
 
-      CHKERR dataPtr->postProcMesh.delete_entities(edges);
-      CHKERR dataPtr->postProcMesh.delete_entities(faces);
+      CHKERR postProcMesh.delete_entities(edges);
+      CHKERR postProcMesh.delete_entities(faces);
 
       MoFEMFunctionReturn(0);
     };
@@ -569,18 +559,18 @@ MoFEMErrorCode PostProcBrokenMeshInMoabBase<E>::postProcess() {
     CHKERR remove_obsolete_entities();
 
     ParallelComm *pcomm_post_proc_mesh =
-        ParallelComm::get_pcomm(&(dataPtr->postProcMesh), MYPCOMM_INDEX);
+        ParallelComm::get_pcomm(&(postProcMesh), MYPCOMM_INDEX);
     if (pcomm_post_proc_mesh == NULL) {
       // wrapRefMeshComm =
       // boost::make_shared<WrapMPIComm>(T::mField.get_comm(), false);
       pcomm_post_proc_mesh = new ParallelComm(
-          &(dataPtr->postProcMesh),
+          &(postProcMesh),
           PETSC_COMM_WORLD /*(T::wrapRefMeshComm)->get_comm()*/);
     }
 
     int rank = E::mField.get_comm_rank();
-    CHKERR dataPtr->postProcMesh.tag_clear_data(
-        pcomm_post_proc_mesh->part_tag(), ents, &rank);
+    CHKERR postProcMesh.tag_clear_data(pcomm_post_proc_mesh->part_tag(), ents,
+                                       &rank);
 
     CHKERR pcomm_post_proc_mesh->resolve_shared_ents(0);
 
