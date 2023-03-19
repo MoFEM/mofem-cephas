@@ -278,11 +278,18 @@ struct Simple : public UnknownInterface {
   void setDim(int dim) { dIm = dim; };
 
   /**
+   * @deprecated Use getMeshset
+   *
+   * @return EntityHandle&
+   */
+  DEPRECATED inline EntityHandle &getMeshSet() { return meshSet; }
+
+  /**
    * @brief Get the MeshSet object
    *
    * @return EntityHandle&
    */
-  inline EntityHandle &getMeshSet() { return meshSet; }
+  inline EntityHandle &getMeshset() { return meshSet; }
 
   /**
    * @brief Get the BoundaryMeshSet object
