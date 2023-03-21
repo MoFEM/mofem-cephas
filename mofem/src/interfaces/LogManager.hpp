@@ -149,6 +149,13 @@ struct LogManager : public UnknownInterface {
    */
   static boost::shared_ptr<std::ostream> getStrmSync();
 
+   /**
+   * @brief Get the strm null object
+   * 
+   * @return boost::shared_ptr<std::ostream> 
+   */
+  static boost::shared_ptr<std::ostream> getStrmNull();
+
   /**
    * @brief Create a sink object
    *
@@ -337,6 +344,13 @@ PetscErrorCode PetscVFPrintfDefault(FILE *fd, const char *format, va_list Argp);
  */
 #define MOFEM_LOG_SYNCHRONISE(comm)                                            \
   PetscSynchronizedFlush(comm, MoFEM::LogManager::dummy_mofem_fd);
+
+/**
+ * @brief Synchronise "SYNC" on curtain severity level
+ * 
+ */
+#define MOFEM_LOG_SEVERITY_SYNC(comm, severity)                                \
+  MOFEM_LOG("NULL", severity) << ([&] { return MOFEM_LOG_SYNCHRONISE(comm); })()
 
 /**
  * @brief Tag and log in channel
