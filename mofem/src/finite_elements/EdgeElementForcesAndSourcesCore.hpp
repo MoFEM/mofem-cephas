@@ -41,6 +41,8 @@ struct EdgeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
   MoFEMErrorCode operator()();
 
+  static FTensor::Tensor1<double, 3> tFaceOrientation;
+
 protected:
 
 
@@ -243,8 +245,7 @@ auto EdgeElementForcesAndSourcesCore::UserDataOperator::getFTensor1Normal(
 
 auto EdgeElementForcesAndSourcesCore::UserDataOperator::
     getFTensor1Normal() {
-  FTensor::Tensor1<double, 3> t_normal{0., 0., 1.};
-  return getFTensor1Normal(t_normal);
+  return getFTensor1Normal(tFaceOrientation);
 }
 
 /**
