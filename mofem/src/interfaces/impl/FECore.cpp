@@ -489,8 +489,6 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
 
   // Map entity uid to pointers
   typedef std::vector<boost::weak_ptr<EntFiniteElement>> VecOfWeakFEPtrs;
-  typedef std::map<const UId *, VecOfWeakFEPtrs> MapEntUIdAndVecOfWeakFEPtrs;
-  MapEntUIdAndVecOfWeakFEPtrs ent_uid_and_fe_vec;
   VecOfWeakFEPtrs processed_fes;
   processed_fes.reserve(fe_ents.size());
 
@@ -608,11 +606,7 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
           auto dof_it = entsFields.get<Unique_mi_tag>().find(
               FieldEntity::getLocalUniqueIdCalculate(field_bit_number, ent));
           if (dof_it != entsFields.get<Unique_mi_tag>().end()) {
-            // Add entity to map with key entity uids pointers  and data
-            // finite elements weak ptrs. I using pointers to uids instead
-            // uids because this is faster.
-            const UId *uid_ptr = &(dof_it->get()->getLocalUniqueId());
-            auto &fe_vec = ent_uid_and_fe_vec[uid_ptr];
+
             if (add_to_data) {
               fe_raw_ptr->getDataFieldEntsPtr()->emplace_back(*dof_it);
             }
@@ -623,8 +617,6 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
               fe_raw_ptr->getColFieldEntsPtr()->emplace_back(*dof_it);
             }
 
-            // add finite element to processed list
-            fe_vec.emplace_back(*hint_p);
           }
         }
       }
