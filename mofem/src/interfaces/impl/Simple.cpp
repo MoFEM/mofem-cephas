@@ -558,7 +558,26 @@ MoFEMErrorCode Simple::buildFields() {
         }
       }
     } else {
-      CHKERR m_field.set_field_order(std::get<2>(t), f, order);
+      auto f_ptr = get_field_ptr(f);
+
+      if (f_ptr->getSpace() == H1) {
+        if (f_ptr->getApproxBase() == AINSWORTH_BERNSTEIN_BEZIER_BASE) {
+          CHKERR m_field.set_field_order(
+              std::get<2>(t).subset_by_type(MBVERTEX), f, order);
+        } else {
+          CHKERR m_field.set_field_order(
+              std::get<2>(t).subset_by_type(MBVERTEX), f, 1);
+        }
+      }
+
+      for (auto d = 1; d <= dIm; ++d) {
+        for (EntityType type = CN::TypeDimensionMap[d].first;
+             type <= CN::TypeDimensionMap[d].second; ++type) {
+          CHKERR m_field.set_field_order(std::get<2>(t).subset_by_type(type), f,
+                                         order);
+        }
+      }
+
     }
   }
   MOFEM_LOG_CHANNEL("WORLD");
