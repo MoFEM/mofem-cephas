@@ -453,7 +453,7 @@ struct Simple : public UnknownInterface {
   auto &getBitAdjEnt() { return bitAdjEnt; } 
 
   /**
-   * @brief bit ref level for parent marent
+   * @brief bit ref level for parent parent
    *
    * @return auto&
    */
@@ -507,8 +507,9 @@ private:
   std::vector<std::string> noFieldFields;     ///< NOFIELD field name
   std::vector<std::string> noFieldDataFields; ///< NOFIELD field name
 
-  std::list<std::tuple<std::string, int, Range>>
-      fieldsOrder; ///< fields order
+  std::list<std::tuple<std::string, int, Range, bool>>
+      fieldsOrder; ///< fields order. 1: field name, order, range, set by range
+                   ///< if true
 
   std::string nameOfProblem; ///< problem name
   std::string domainFE;      ///< domain finite element
