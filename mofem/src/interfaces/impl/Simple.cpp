@@ -532,13 +532,13 @@ MoFEMErrorCode Simple::buildFields() {
 
     MOFEM_TAG_AND_LOG("WORLD", Sev::inform, "Simple")
         << "Set order to field " << f << " order " << order;
+    MOFEM_LOG_CHANNEL("SYNC");
     if (!std::get<2>(t).empty()) {
-      MOFEM_LOG_CHANNEL("SYNC");
       MOFEM_TAG_AND_LOG("SYNC", Sev::verbose, "Simple")
           << "To ents: " << std::endl
           << std::get<2>(t) << std::endl;
-      MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
     }
+    MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::verbose);
 
     if (std::get<2>(t).empty()) {
       auto f_ptr = get_field_ptr(f);
@@ -576,12 +576,12 @@ MoFEMErrorCode Simple::buildFiniteElements() {
   CHKERR m_field.add_ents_to_finite_element_by_dim(meshSet, dIm, domainFE,
                                                    true);
   CHKERR m_field.build_finite_elements(domainFE);
-  if (addBoundaryFE || !boundaryFields.empty()) {
+  if (addBoundaryFE || boundaryFields.size()) {
     CHKERR m_field.add_ents_to_finite_element_by_dim(boundaryMeshset, dIm - 1,
                                                      boundaryFE, true);
     CHKERR m_field.build_finite_elements(boundaryFE);
   }
-  if (addSkeletonFE || !skeletonFields.empty()) {
+  if (addSkeletonFE || skeletonFields.size()) {
     CHKERR m_field.add_ents_to_finite_element_by_dim(skeletonMeshset, dIm - 1,
                                                      skeletonFE, true);
     CHKERR m_field.build_finite_elements(skeletonFE);
