@@ -543,7 +543,7 @@ MoFEMErrorCode Simple::buildFields() {
 
     if (std::get<3>(t)) {
 
-      CHKERR m_field.set_field_order(std::get<2>(t), f, 1);
+      CHKERR m_field.set_field_order(std::get<2>(t), f, order);
 
     } else {
       auto f_ptr = get_field_ptr(f);
