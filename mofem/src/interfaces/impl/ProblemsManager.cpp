@@ -260,7 +260,7 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
         << problem_ptr->getName() << " Nb. local dofs "
         << problem_ptr->numeredRowDofsPtr->size() << " by "
         << problem_ptr->numeredColDofsPtr->size();
-    MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
+    MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::verbose);
   }
 
   if (verb >= NOISY) {
@@ -275,7 +275,7 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
         << problem_ptr->getNbDofsCol();
     for (auto &miit : *problem_ptr->numeredColDofsPtr)
       MOFEM_LOG("SYNC", Sev::noisy) << *miit;
-    MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
+    MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::noisy);
   }
 
   cOre.getBuildMoFEM() |= Core::BUILD_PROBLEM; // It is assumed that user who
@@ -2663,8 +2663,7 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
       if (verb > QUIET) {
         for (auto &dof : dofs_it_view)
           MOFEM_LOG("SYNC", Sev::noisy) << **dof;
-
-        MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
+        MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::noisy);
       }
 
       // create weak view
@@ -2870,7 +2869,7 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
                 nb_init_loc_row_dofs, prb_ptr->getNbGhostDofsRow(),
                 prb_ptr->getNbGhostDofsCol(), nb_init_ghost_row_dofs,
                 nb_init_ghost_col_dofs);
-    MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
+    MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::verbose);
   }
 
   MoFEMFunctionReturn(0);
