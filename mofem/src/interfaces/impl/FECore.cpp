@@ -531,7 +531,7 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
       processed_fes.emplace_back(*hint_p);
       auto fe_raw_ptr = hint_p->get();
 
-      // Allocate space for etities view
+      // Allocate space for entities view
       bool row_as_data = false, col_as_row = false;
       if (fe_fields[DATA] == fe_fields[ROW])
         row_as_data = true;
@@ -544,7 +544,7 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
       if (row_as_data) {
         fe_raw_ptr->getRowFieldEntsPtr() = fe_raw_ptr->getDataFieldEntsPtr();
       } else {
-        // row and col are diffent
+        // row and col are different
         if (fe_raw_ptr->getRowFieldEntsPtr() ==
             fe_raw_ptr->getDataFieldEntsPtr())
           fe_raw_ptr->getRowFieldEntsPtr() =
