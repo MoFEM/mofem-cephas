@@ -3079,8 +3079,6 @@ struct OpSetContravariantPiolaTransformOnEdge2D
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data);
 
-private:
-  std::vector<double> l1;
 };
 
 /**

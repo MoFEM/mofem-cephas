@@ -542,20 +542,8 @@ MoFEMErrorCode OpSetContravariantPiolaTransformOnEdge2D::doWork(
     MoFEMFunctionReturnHot(0);
 
   FTensor::Index<'i', 3> i;
-
-  {
-    int nb_gauss_pts = getTangentAtGaussPts().size1();
-    if (nb_gauss_pts) {
-      l1.resize(nb_gauss_pts);
-      const auto &edge_direction = getTangentAtGaussPts();
-      FTensor::Tensor1<FTensor::PackPtr<const double *, 3>, 3> t_m_at_pts(
-          &edge_direction(0, 0), &edge_direction(0, 1), &edge_direction(0, 2));
-      for (int gg = 0; gg < nb_gauss_pts; ++gg) {
-        l1[gg] = t_m_at_pts(i) * t_m_at_pts(i);
-        ++t_m_at_pts;
-      }
-    }
-  }
+  FTensor::Index<'j', 3> j;
+  FTensor::Index<'k', 3> k;
 
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
@@ -570,22 +558,22 @@ MoFEMErrorCode OpSetContravariantPiolaTransformOnEdge2D::doWork(
       const auto &edge_direction_at_gauss_pts = getTangentAtGaussPts();
       if (edge_direction_at_gauss_pts.size1() == nb_gauss_pts) {
 
-        FTensor::Tensor1<FTensor::PackPtr<const double *, 3>, 3> t_m_at_pts(
-            &edge_direction_at_gauss_pts(0, 1),
-            &edge_direction_at_gauss_pts(0, 0),
-            &edge_direction_at_gauss_pts(0, 2));
+        auto t_dir = getFTensor1TangentAtGaussPts<3>();
 
         for (int gg = 0; gg != nb_gauss_pts; ++gg) {
-          const double l0 = l1[gg];
+          FTensor::Tensor1<double, 3> t_normal;
+          t_normal(i) = (FTensor::levi_civita(i, j, k) *
+                         EdgeElementForcesAndSourcesCore::tFaceOrientation(j)) *
+                        t_dir(k);
+          const auto l2 = t_normal(i) * t_normal(i);
           for (int ll = 0; ll != nb_dofs; ++ll) {
             const double val = t_h_div(0);
-            const double a = val / l0;
-            t_h_div(i) = t_m_at_pts(i) * a;
-            t_h_div(0) *= -1;
+            const double a = val / l2;
+            t_h_div(i) = t_normal(i) * a;
             ++t_h_div;
             ++cc;
           }
-          ++t_m_at_pts;
+          ++t_dir;
         }
       }
 
