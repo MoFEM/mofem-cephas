@@ -181,6 +181,14 @@ protected:
                                          ///< post-process mesh
 };
 
+template <typename E>
+MoFEMErrorCode PostProcBrokenMeshInMoabBase<E>::setTagsToTransfer(
+    std::vector<Tag> tags_to_transfer) {
+  MoFEMFunctionBegin;
+  tagsToTransfer.swap(tags_to_transfer);
+  MoFEMFunctionReturn(0);
+}
+
 template <typename E> int PostProcBrokenMeshInMoabBase<E>::getMaxLevel() const {
   auto get_element_max_dofs_order = [&]() {
     int max_order = 0;
