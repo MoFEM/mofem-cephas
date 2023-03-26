@@ -29,14 +29,14 @@ struct OpSchurAssembleBegin : public ForcesAndSourcesCore::UserDataOperator {
 };
 
 /**
- * @brief Assemble Schur complement
+ * @brief Assemble Schur complement (Implementation)
  *
  */
-struct OpSchurAssembleEnd : public ForcesAndSourcesCore::UserDataOperator {
+struct OpSchurAssembleEndImpl : public ForcesAndSourcesCore::UserDataOperator {
 
   /**
    * @brief Construct a new Op Schur Assemble End object
-   * 
+   *
    * @param fields_name list of fields
    * @param field_ents list of entities on which schur complement is applied (can be empty)
    * @param sequence_of_aos list of maps from base problem to Schur complement matrix
@@ -44,19 +44,16 @@ struct OpSchurAssembleEnd : public ForcesAndSourcesCore::UserDataOperator {
    * @param sym_schur true if Schur complement is symmetric
    * @param symm_op true if block diagonal is symmetric
    */
-  OpSchurAssembleEnd(std::vector<std::string> fields_name,
-                     std::vector<boost::shared_ptr<Range>> field_ents,
-                     std::vector<SmartPetscObj<AO>> sequence_of_aos,
-                     std::vector<SmartPetscObj<Mat>> sequence_of_mats,
-                     std::vector<bool> sym_schur, bool symm_op = true)
-      : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPSPACE, symm_op),
-        fieldsName(fields_name), fieldEnts(field_ents),
-        sequenceOfAOs(sequence_of_aos), sequenceOfMats(sequence_of_mats),
-        symSchur(sym_schur) {}
+  OpSchurAssembleEndImpl(std::vector<std::string> fields_name,
+                         std::vector<boost::shared_ptr<Range>> field_ents,
+                         std::vector<SmartPetscObj<AO>> sequence_of_aos,
+                         std::vector<SmartPetscObj<Mat>> sequence_of_mats,
+                         std::vector<bool> sym_schur, bool symm_op = true);
 
 protected:
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        EntitiesFieldData::EntData &data);
+  template <typename I>
+  MoFEMErrorCode doWorkImpl(int side, EntityType type,
+                            EntitiesFieldData::EntData &data);
 
   std::vector<std::string> fieldsName;
   std::vector<boost::shared_ptr<Range>> fieldEnts;
@@ -64,14 +61,33 @@ protected:
   std::vector<SmartPetscObj<Mat>> sequenceOfMats;
   std::vector<bool> symSchur;
 
-private:
-
   MatrixDouble invMat;
   MatrixDouble invDiagOffMat;
   MatrixDouble offMatInvDiagOffMat;
   MatrixDouble transOffMatInvDiagOffMat;
+};
 
+struct SCHUR_DSYSV;
+struct SCHUR_DGESV;
 
+/**
+ * @brief Assemble Schur complement
+ *
+ */
+template <typename I> struct OpSchurAssembleEnd;
+
+template <>
+struct OpSchurAssembleEnd<SCHUR_DSYSV> : public OpSchurAssembleEndImpl {
+  using OpSchurAssembleEndImpl::OpSchurAssembleEndImpl;
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        EntitiesFieldData::EntData &data);
+};
+
+template <>
+struct OpSchurAssembleEnd<SCHUR_DGESV> : public OpSchurAssembleEndImpl {
+  using OpSchurAssembleEndImpl::OpSchurAssembleEndImpl;
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        EntitiesFieldData::EntData &data);
 };
 
 /**
@@ -99,7 +115,7 @@ private:
   const size_t iDX;
 
   friend OpSchurAssembleBegin;
-  friend OpSchurAssembleEnd;
+  friend OpSchurAssembleEndImpl;
 
   struct idx_mi_tag {};
   struct uid_mi_tag {};

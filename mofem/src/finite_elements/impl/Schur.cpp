@@ -100,51 +100,23 @@ MoFEMErrorCode OpSchurAssembleBegin::doWork(int side, EntityType type,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode OpSchurAssembleEnd::doWork(int side, EntityType type,
-                                          EntitiesFieldData::EntData &data) {
-  VectorInt ipiv;
-  VectorDouble lapack_work;
+OpSchurAssembleEndImpl::OpSchurAssembleEndImpl(
+    std::vector<std::string> fields_name,
+    std::vector<boost::shared_ptr<Range>> field_ents,
+    std::vector<SmartPetscObj<AO>> sequence_of_aos,
+    std::vector<SmartPetscObj<Mat>> sequence_of_mats,
+    std::vector<bool> sym_schur, bool symm_op)
+    : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPSPACE, symm_op),
+      fieldsName(fields_name), fieldEnts(field_ents),
+      sequenceOfAOs(sequence_of_aos), sequenceOfMats(sequence_of_mats),
+      symSchur(sym_schur) {}
+
+template <typename I>
+MoFEMErrorCode
+OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
+                                   EntitiesFieldData::EntData &data) {
+
   MoFEMFunctionBegin;
-
-  auto invert_symm_mat = [&](MatrixDouble &m, auto &inv) {
-    MoFEMFunctionBeginHot;
-    const int nb = m.size1();
-    inv.resize(nb, nb, false);
-    inv.clear();
-    for (int cc = 0; cc != nb; ++cc)
-      inv(cc, cc) = -1;
-    ipiv.resize(nb, false);
-    lapack_work.resize(nb * nb, false);
-    const auto info =
-        lapack_dsysv('L', nb, nb, &*m.data().begin(), nb, &*ipiv.begin(),
-                     &*inv.data().begin(), nb, &*lapack_work.begin(), nb * nb);
-    if (info != 0)
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-               "Can not invert matrix info = %d", info);
-    MoFEMFunctionReturnHot(0);
-  };
-
-  auto invert_nonsymm_mat = [&](MatrixDouble &m, auto &inv) {
-    MoFEMFunctionBeginHot;
-    const auto nb = m.size1();
-#ifndef NDEBUG
-    if (nb != m.size2()) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-              "It should be square matrix");
-    }
-#endif
-    inv.resize(nb, nb, false);
-    inv.clear();
-    for (int c = 0; c != nb; ++c)
-      inv(c, c) = -1;
-    ipiv.resize(nb, false);
-    const auto info = lapack_dgesv(nb, nb, &*m.data().begin(), nb,
-                                   &*ipiv.begin(), &*inv.data().begin(), nb);
-    if (info != 0)
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-               "Can not invert matrix info = %d", info);
-    MoFEMFunctionReturnHot(0);
-  };
 
   auto assemble = [&](SmartPetscObj<Mat> M, auto &storage) {
     MoFEMFunctionBegin;
@@ -213,11 +185,7 @@ MoFEMErrorCode OpSchurAssembleEnd::doWork(int side, EntityType type,
     for (; row_it != hi_row_it; ++row_it) {
       if (row_it->uidRow == row_it->uidCol) {
 
-        if (getSymm()) {
-          CHKERR invert_symm_mat(row_it->getMat(), invMat);
-        } else {
-          CHKERR invert_nonsymm_mat(row_it->getMat(), invMat);
-        }
+        CHKERR I::invertMat(row_it->getMat(), invMat);
 
         const auto row_idx = row_it->iDX;
 
@@ -378,4 +346,64 @@ MoFEMErrorCode OpSchurAssembleEnd::doWork(int side, EntityType type,
 
   MoFEMFunctionReturn(0);
 }
+
+struct SCHUR_DSYSV {
+  static auto invertMat(MatrixDouble &m, auto &inv) {
+    MoFEMFunctionBeginHot;
+    VectorInt ipiv;
+    VectorDouble lapack_work;
+    const int nb = m.size1();
+    inv.resize(nb, nb, false);
+    inv.clear();
+    for (int cc = 0; cc != nb; ++cc)
+      inv(cc, cc) = -1;
+    ipiv.resize(nb, false);
+    lapack_work.resize(nb * nb, false);
+    const auto info =
+        lapack_dsysv('L', nb, nb, &*m.data().begin(), nb, &*ipiv.begin(),
+                     &*inv.data().begin(), nb, &*lapack_work.begin(), nb * nb);
+    if (info != 0)
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+               "Can not invert matrix info = %d", info);
+    MoFEMFunctionReturnHot(0);
+  };
+};
+
+struct SCHUR_DGESV {
+  static auto invertMat(MatrixDouble &m, auto &inv) {
+    MoFEMFunctionBeginHot;
+    VectorInt ipiv;
+    const auto nb = m.size1();
+#ifndef NDEBUG
+    if (nb != m.size2()) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "It should be square matrix");
+    }
+#endif
+    inv.resize(nb, nb, false);
+    inv.clear();
+    for (int c = 0; c != nb; ++c)
+      inv(c, c) = -1;
+    ipiv.resize(nb, false);
+    const auto info = lapack_dgesv(nb, nb, &*m.data().begin(), nb,
+                                   &*ipiv.begin(), &*inv.data().begin(), nb);
+    if (info != 0)
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+               "Can not invert matrix info = %d", info);
+    MoFEMFunctionReturnHot(0);
+  };
+};
+
+MoFEMErrorCode
+OpSchurAssembleEnd<SCHUR_DSYSV>::doWork(int side, EntityType type,
+                                       EntitiesFieldData::EntData &data) {
+  return doWorkImpl<SCHUR_DSYSV>(side, type, data);
+}
+
+MoFEMErrorCode
+OpSchurAssembleEnd<SCHUR_DGESV>::doWork(int side, EntityType type,
+                                        EntitiesFieldData::EntData &data) {
+  return doWorkImpl<SCHUR_DGESV>(side, type, data);
+}
+
 } // namespace MoFEM
