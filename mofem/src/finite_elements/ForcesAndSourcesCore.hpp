@@ -620,7 +620,7 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
   /**
    * @brief Get the side number pointer
    *
-   * \note For vertex is expection. Side basses in argument of function doWork
+   * \note For vertex is expectation. Side basses in argument of function doWork
    * is zero. For other entity types side can be used as argument of this
    * function.
    *
