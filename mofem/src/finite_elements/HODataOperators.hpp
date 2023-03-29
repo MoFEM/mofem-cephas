@@ -699,7 +699,6 @@ OpGetHOTangentsOnEdge<FIELD_DIM>::doWork(int side, EntityType type,
     for (int gg = 0; gg != nb_gauss_pts; ++gg) {
       auto field_data = data.getFTensor1FieldData<FIELD_DIM>();
       int bb = 0;
-      tangent_at_gauss_pts(i) = 0;
       for (; bb < size; ++bb) {
         tangent_at_gauss_pts(i) += field_data(i) * (*diff_base_function);
         ++field_data;
