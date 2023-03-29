@@ -28,7 +28,7 @@ find_program(MPI_RUN mpirun HINTS ${MPI_BIN_PATH} /usr/bin PATH ${MPI_BIN_PATH})
 include(cmake/ResolveCompilerPaths.cmake)
 
 project(MoFEM 
-  VERSION 0.13.1
+  VERSION 0.13.3
   DESCRIPTION "Finite element framework" 
   LANGUAGES C CXX)
 
