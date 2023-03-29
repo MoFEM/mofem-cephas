@@ -741,8 +741,8 @@ MoFEMErrorCode AddHOOps<1, 3, 3>::add(
 
   } else {
 
-    pipeline.push_back(new OpCalculateHOCoords<2>(geom_field_name));
-    pipeline.push_back(new OpGetHOTangentsOnEdge<2>(geom_field_name));
+    pipeline.push_back(new OpCalculateHOCoords<3>(geom_field_name));
+    pipeline.push_back(new OpGetHOTangentsOnEdge<3>(geom_field_name));
   }
 
   for (auto s : spaces) {
