@@ -57,6 +57,9 @@ then
     cmake \
     git \
     python \
+    python-dev \
+    python3 \
+    python3-dev \
     python3-distutils \
     unzip \
     ssh \
