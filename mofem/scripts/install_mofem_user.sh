@@ -153,19 +153,19 @@ if [ ! -d "$SPACK_ROOT_DIR" ]; then
     echo ". $SPACK_ROOT_DIR/share/spack/setup-env.sh" >> ~/.zshrc
   fi
   
-  # Download mirror
-  if [ ! -d "$SPACK_MIRROR_DIR" ]; then
-    if [ ! -f "$PWD/mirror.tgz" ]; then
-      # echo "Downloading mirror of spack packages for MoFEM..."
-      # mkdir -p $SPACK_MIRROR_DIR && \
-      # curl -s -L http://mofem.eng.gla.ac.uk/mofem/downloads/mirror_v0.16.tar.gz \
-      # | tar xzC $SPACK_MIRROR_DIR --strip 1
-      # echo -e "Done.\n"
-    else 
-      # mkdir -p $SPACK_MIRROR_DIR && \
-      # tar xzf $PWD/mirror.tgz -C $SPACK_MIRROR_DIR  --strip 1
-    fi
-  fi
+  # # Download mirror
+  # if [ ! -d "$SPACK_MIRROR_DIR" ]; then
+  #   if [ ! -f "$PWD/mirror.tgz" ]; then
+  #     # echo "Downloading mirror of spack packages for MoFEM..."
+  #     # mkdir -p $SPACK_MIRROR_DIR && \
+  #     # curl -s -L http://mofem.eng.gla.ac.uk/mofem/downloads/mirror_v0.16.tar.gz \
+  #     # | tar xzC $SPACK_MIRROR_DIR --strip 1
+  #     # echo -e "Done.\n"
+  #   else 
+  #     # mkdir -p $SPACK_MIRROR_DIR && \
+  #     # tar xzf $PWD/mirror.tgz -C $SPACK_MIRROR_DIR  --strip 1
+  #   fi
+  # fi
  
   # FIXME: We do not have mirror build for most recent version
   # Add mirror
