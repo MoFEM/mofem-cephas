@@ -94,10 +94,6 @@ auto set_parent_dofs(MoFEM::Interface &m_field,
                      ForcesAndSourcesCore::UserDataOperator::OpType op,
                      int verbosity, LogManager::SeverityLevel sev) {
 
-  auto jac_ptr = boost::make_shared<MatrixDouble>();
-  auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
-  auto det_ptr = boost::make_shared<VectorDouble>();
-
   BitRefLevel bit_marker;
   for (auto l = 1; l <= nb_ref_levels; ++l)
     bit_marker |= marker(l);
