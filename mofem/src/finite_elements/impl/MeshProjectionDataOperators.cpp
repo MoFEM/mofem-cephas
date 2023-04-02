@@ -90,7 +90,7 @@ OpAddParentEntData::OpAddParentEntData(
 
 MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
                                          const bool error_if_no_base) {
-  int count_meshset_sides = 0;
+  int count_meshset_sides = 0; // count number of data on parent element
   MoFEMFunctionBegin;
 
   auto check = [](auto &b, auto &m, auto &bit) {
@@ -151,7 +151,7 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
     MoFEMFunctionReturnHot(0);
   };
 
-  auto switch_of_dofs_children = [](auto &parent_ent_data, auto &child_data) {
+  auto switch_off_dofs_children = [](auto &parent_ent_data, auto &child_data) {
     MoFEMFunctionBeginHot;
     for (auto i : parent_ent_data.getIndices()) {
       if (i >= 0) {
@@ -195,9 +195,11 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
       auto &data_on_meshset = entities_field_data.dataOnEntities[MBENTITYSET];
       if (data_on_meshset.size() < count_meshset_sides) {
         if (poolEntsVector.size()) {
+          // transfer data from pool to data_on_meshset
           data_on_meshset.transfer(data_on_meshset.end(),
                                    poolEntsVector.begin(), poolEntsVector);
         } else {
+          // resize, no data on pool
           entities_field_data.dataOnEntities[MBENTITYSET].resize(
               count_meshset_sides);
         }
@@ -248,10 +250,10 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
 
           auto end = std::unique(ents_type.begin(), ents_type.end());
           for (auto it_t = ents_type.begin(); it_t != end; ++it_t)
-            CHKERR switch_of_dofs_children(
+            CHKERR switch_off_dofs_children(
                 data, entities_field_data.dataOnEntities[*it_t]);
           if (type == MBENTITYSET)
-            CHKERR switch_of_dofs_children(
+            CHKERR switch_off_dofs_children(
                 data, entities_field_data.dataOnEntities[type]);
         }
 
@@ -273,6 +275,7 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
     auto loop_parent_fe = [&]() {
       MoFEMFunctionBeginHot;
 
+      // execute do_work_parent_hook on parent element, and collect data.
       parentElePtr->getOpPtrVector().back().doWorkRhsHook = do_work_parent_hook;
       CHKERR loopParent(getFEName(), parentElePtr.get(), verbosity,
                         severityLevel);
@@ -306,6 +309,7 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
   auto &data_on_meshset = entities_field_data.dataOnEntities[MBENTITYSET];
   auto it = data_on_meshset.begin();
 
+  // transfer not used data on entities to pool, to be used later
   if (count_meshset_sides < data_on_meshset.size()) {
     for (auto s = 0; s != count_meshset_sides; ++s)
       ++it;

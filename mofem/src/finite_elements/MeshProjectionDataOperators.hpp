@@ -57,9 +57,10 @@ private:
 /**
  * @brief Operator to project base functions from parent entity to child
  *
- * This operator project base functions, field data (i.e. indices, field values
- * of dofs, etc.), into parent element. Operator can be called as a hierarchy to
- * get access to information on lower refinement levels.
+ * This operator project/collect base functions, field data (i.e. indices, field
+ * values of dofs, etc.), from parent element, into child. Operator can be
+ * called as a hierarchy to get access to information on lower refinement
+ * levels.
  *
  */
 struct OpAddParentEntData : public ForcesAndSourcesCore::UserDataOperator {
