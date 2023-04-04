@@ -348,7 +348,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 }
 
 struct SCHUR_DSYSV {
-  static auto invertMat(MatrixDouble &m, auto &inv) {
+  static auto invertMat(MatrixDouble &m, MatrixDouble &inv) {
     MoFEMFunctionBeginHot;
     VectorInt ipiv;
     VectorDouble lapack_work;
@@ -370,7 +370,7 @@ struct SCHUR_DSYSV {
 };
 
 struct SCHUR_DGESV {
-  static auto invertMat(MatrixDouble &m, auto &inv) {
+  static auto invertMat(MatrixDouble &m, MatrixDouble &inv) {
     MoFEMFunctionBeginHot;
     VectorInt ipiv;
     const auto nb = m.size1();
