@@ -28,14 +28,14 @@ find_program(MPI_RUN mpirun HINTS ${MPI_BIN_PATH} /usr/bin PATH ${MPI_BIN_PATH})
 include(cmake/ResolveCompilerPaths.cmake)
 
 project(MoFEM 
-  VERSION 0.13.1
+  VERSION 0.13.3
   DESCRIPTION "Finite element framework" 
   LANGUAGES C CXX)
 
 # Set fallback version. Fallback version is version of MoFEM which is used
 # as default version if version from the git tags can not be extracted. For exammple 
 # that is a keys when somone install mofem from tarball.
-set(MoFEM_FALLBACK_VERSION "0.13.1" CACHE STRING "Fallback version" FORCE)
+set(MoFEM_FALLBACK_VERSION "0.13.3" CACHE STRING "Fallback version" FORCE)
 message(STATUS "Fallback version v${MoFEM_FALLBACK_VERSION}")
 
 # Options

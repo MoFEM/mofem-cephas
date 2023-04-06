@@ -477,7 +477,8 @@ MoFEMErrorCode Simple::setFieldOrder(const std::string field_name,
                                      const int order, const Range *ents) {
   MoFEMFunctionBeginHot;
   fieldsOrder.emplace_back(field_name, order,
-                           ents == NULL ? Range() : Range(*ents));
+                           ents == NULL ? Range() : Range(*ents),
+                           ents == NULL ? false : true);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -532,15 +533,19 @@ MoFEMErrorCode Simple::buildFields() {
 
     MOFEM_TAG_AND_LOG("WORLD", Sev::inform, "Simple")
         << "Set order to field " << f << " order " << order;
-    if (!std::get<2>(t).empty()) {
-      MOFEM_LOG_CHANNEL("SYNC");
+    MOFEM_LOG_CHANNEL("SYNC");
+    if (std::get<3>(t)) {
       MOFEM_TAG_AND_LOG("SYNC", Sev::verbose, "Simple")
           << "To ents: " << std::endl
           << std::get<2>(t) << std::endl;
-      MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
     }
+    MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::verbose);
 
-    if (std::get<2>(t).empty()) {
+    if (std::get<3>(t)) {
+
+      CHKERR m_field.set_field_order(std::get<2>(t), f, order);
+
+    } else {
       auto f_ptr = get_field_ptr(f);
 
       if (f_ptr->getSpace() == H1) {
@@ -557,8 +562,6 @@ MoFEMErrorCode Simple::buildFields() {
           CHKERR m_field.set_field_order(meshSet, t, f, order);
         }
       }
-    } else {
-      CHKERR m_field.set_field_order(std::get<2>(t), f, order);
     }
   }
   MOFEM_LOG_CHANNEL("WORLD");
@@ -576,12 +579,12 @@ MoFEMErrorCode Simple::buildFiniteElements() {
   CHKERR m_field.add_ents_to_finite_element_by_dim(meshSet, dIm, domainFE,
                                                    true);
   CHKERR m_field.build_finite_elements(domainFE);
-  if (addBoundaryFE || !boundaryFields.empty()) {
+  if (addBoundaryFE || boundaryFields.size()) {
     CHKERR m_field.add_ents_to_finite_element_by_dim(boundaryMeshset, dIm - 1,
                                                      boundaryFE, true);
     CHKERR m_field.build_finite_elements(boundaryFE);
   }
-  if (addSkeletonFE || !skeletonFields.empty()) {
+  if (addSkeletonFE || skeletonFields.size()) {
     CHKERR m_field.add_ents_to_finite_element_by_dim(skeletonMeshset, dIm - 1,
                                                      skeletonFE, true);
     CHKERR m_field.build_finite_elements(skeletonFE);

@@ -36,7 +36,7 @@ struct AddFluxToRhsPipelineImpl<
 
   static MoFEMErrorCode add(
 
-      boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+      boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
       MoFEM::Interface &m_field, const std::string field_name,
       std::vector<boost::shared_ptr<ScalingMethod>> smv,
       const std::string block_name, Sev sev

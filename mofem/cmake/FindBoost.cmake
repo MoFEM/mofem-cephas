@@ -4,7 +4,10 @@ set(BOOST_ROOT "${BOOST_DIR}")
 find_package(
   Boost 
   REQUIRED COMPONENTS
-  program_options log log_setup thread system filesystem)
+  program_options log log_setup thread system filesystem
+  OPTIONAL_COMPONENTS
+  python
+)
 
 message(STATUS "Boost_LIBRARIES ${Boost_LIBRARIES}")
 message(STATUS "Boost_LIBRARY_DIRS ${Boost_LIBRARY_DIRS}")

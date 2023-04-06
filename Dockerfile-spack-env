@@ -34,6 +34,7 @@ build-essential \
 libtool \
 libblas-dev \
 liblapack-dev \
+libpython3.8-dev \
 libsigsegv2 \
 libjpeg-dev \
 graphviz \
@@ -43,6 +44,7 @@ pkg-config \
 gnuplot \
 ca-certificates \
 python \
+python-dev \
 python3-distutils \
 libx11-dev \
 xauth \
@@ -71,7 +73,7 @@ RUN mkdir -p $SPACK_ROOT_DIR && \
     echo ". $SPACK_ROOT_DIR/share/spack/setup-env.sh" >> ~/.bashrc && \
     spack external find && \
     spack install --only dependencies mofem-cephas@lukasz \
-    target=$TARGET build_type=Release ^petsc+X 
+    target=$TARGET build_type=Release ^petsc+X ^boost+python
 
 # image run hook: the -l will make sure /etc/profile environments are loaded
 CMD        /bin/bash -l

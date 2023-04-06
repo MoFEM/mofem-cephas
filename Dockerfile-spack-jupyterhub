@@ -1,4 +1,4 @@
-FROM likask/mofem-spack-jupyter 
+FROM likask/mofem-intermidiate
 
 LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk"
 

@@ -17,3 +17,5 @@ um-build*
 .DS_Store
 spack-configure-args.txt
 compile_commands.json
+
+mofem/doxygen_warnlogfile

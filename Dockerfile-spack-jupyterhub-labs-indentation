@@ -1,0 +1,12 @@
+FROM likask/mofem-intermidiate
+
+LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk"
+
+ENV MOFEM_JUPYTER_HOME_DIR=/mofem_install/jupyter
+
+ADD labs $MOFEM_JUPYTER_HOME_DIR/skel
+
+WORKDIR $MOFEM_INSTALL_DIR
+
+EXPOSE 8000
+CMD ["/bin/bash", "-c", ". ${MOFEM_ENV_FILE}; jupyterhub -f ${MOFEM_JUPYTER_HOME_DIR}/jupyterhub_config.py"]

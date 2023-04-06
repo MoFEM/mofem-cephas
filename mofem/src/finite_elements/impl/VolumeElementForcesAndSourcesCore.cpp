@@ -25,8 +25,18 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::setIntegrationPts() {
   int order_data = getMaxDataOrder();
   int order_row = getMaxRowOrder();
   int order_col = getMaxColOrder();
-  int rule = getRule(order_row, order_col, order_data);
   const auto type = numeredEntFiniteElementPtr->getEntType();
+
+  auto get_rule_by_type = [&]() {
+    switch (type) {
+    case MBHEX:
+      return getRule(order_row + 1, order_col + 1, order_data + 1);
+    default:
+      return getRule(order_row, order_col, order_data);
+    }
+  };
+
+  const int rule = get_rule_by_type();
 
   auto calc_base_for_tet = [&]() {
     MoFEMFunctionBegin;

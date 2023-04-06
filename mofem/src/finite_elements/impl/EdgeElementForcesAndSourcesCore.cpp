@@ -19,6 +19,9 @@ extern "C" {
 
 namespace MoFEM {
 
+FTensor::Tensor1<double, 3> EdgeElementForcesAndSourcesCore::tFaceOrientation{
+    0., 0., 1.};
+
 EdgeElementForcesAndSourcesCore::EdgeElementForcesAndSourcesCore(
     Interface &m_field)
     : ForcesAndSourcesCore(m_field),

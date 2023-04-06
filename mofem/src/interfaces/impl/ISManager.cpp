@@ -146,6 +146,54 @@ ISManager::sectionCreate(const std::string problem_name,
   return SmartPetscObj<PetscSection>(s, false);
 }
 
+MoFEMErrorCode ISManager::isCreateProblem(const std::string problem_name,
+                                          RowColData rc, IS *is) const {
+  const MoFEM::Interface &m_field = cOre;
+  const Problem *problem_ptr;
+  MoFEMFunctionBegin;
+  CHKERR m_field.get_problem(problem_name, &problem_ptr);
+
+  const int rank = m_field.get_comm_rank();
+
+  decltype(problem_ptr->numeredRowDofsPtr) dofs_ptr;
+
+  switch (rc) {
+  case ROW:
+    dofs_ptr = problem_ptr->numeredRowDofsPtr;
+    break;
+  case COL:
+    dofs_ptr = problem_ptr->numeredColDofsPtr;
+    break;
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
+  }
+
+  auto lo = dofs_ptr->get<Part_mi_tag>().lower_bound(rank);
+  auto hi = dofs_ptr->get<Part_mi_tag>().upper_bound(rank);
+  const int size = std::distance(lo, hi);
+
+  int *id;
+  CHKERR PetscMalloc(size * sizeof(int), &id);
+  int *id_it = id;
+  for (; lo != hi; ++lo, ++id_it)
+    *id_it = (*lo)->getPetscGlobalDofIdx();
+  sort(id, &id[size]);
+
+  CHKERR ISCreateGeneral(PETSC_COMM_WORLD, size, id, PETSC_OWN_POINTER, is);
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode ISManager::isCreateProblem(const std::string problem_name,
+                                          RowColData rc,
+                                          SmartPetscObj<IS> &is) const {
+  MoFEMFunctionBegin;
+  IS raw_is;
+  CHKERR isCreateProblem(problem_name, rc, &raw_is);
+  is = SmartPetscObj<IS>(raw_is);
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode ISManager::isCreateProblemOrder(const std::string problem_name,
                                                RowColData rc, int min_order,
                                                int max_order, IS *is) const {

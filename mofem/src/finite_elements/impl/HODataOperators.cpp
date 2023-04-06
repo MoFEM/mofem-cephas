@@ -645,7 +645,7 @@ MoFEMErrorCode OpHOSetContravariantPiolaTransformOnEdge3D::doWork(
 }
 
 MoFEMErrorCode AddHOOps<2, 2, 2>::add(
-    boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+    boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
     std::vector<FieldSpace> spaces, std::string geom_field_name,
     boost::shared_ptr<MatrixDouble> jac_ptr,
     boost::shared_ptr<VectorDouble> det_ptr,
@@ -701,7 +701,7 @@ MoFEMErrorCode AddHOOps<2, 2, 2>::add(
 }
 
 MoFEMErrorCode AddHOOps<1, 2, 2>::add(
-    boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+    boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
     std::vector<FieldSpace> spaces, std::string geom_field_name) {
   MoFEMFunctionBegin;
 
@@ -733,7 +733,7 @@ MoFEMErrorCode AddHOOps<1, 2, 2>::add(
 }
 
 MoFEMErrorCode AddHOOps<1, 3, 3>::add(
-    boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+    boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
     std::vector<FieldSpace> spaces, std::string geom_field_name) {
   MoFEMFunctionBegin;
 
@@ -741,8 +741,8 @@ MoFEMErrorCode AddHOOps<1, 3, 3>::add(
 
   } else {
 
-    pipeline.push_back(new OpCalculateHOCoords<2>(geom_field_name));
-    pipeline.push_back(new OpGetHOTangentsOnEdge<2>(geom_field_name));
+    pipeline.push_back(new OpCalculateHOCoords<3>(geom_field_name));
+    pipeline.push_back(new OpGetHOTangentsOnEdge<3>(geom_field_name));
   }
 
   for (auto s : spaces) {
@@ -760,7 +760,7 @@ MoFEMErrorCode AddHOOps<1, 3, 3>::add(
 }
 
 MoFEMErrorCode AddHOOps<2, 3, 3>::add(
-    boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+    boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
     std::vector<FieldSpace> spaces, std::string geom_field_name) {
   MoFEMFunctionBegin;
 
@@ -792,7 +792,7 @@ MoFEMErrorCode AddHOOps<2, 3, 3>::add(
 }
 
 MoFEMErrorCode AddHOOps<3, 3, 3>::add(
-    boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+    boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
     std::vector<FieldSpace> spaces, std::string geom_field_name,
     boost::shared_ptr<MatrixDouble> jac, boost::shared_ptr<VectorDouble> det,
     boost::shared_ptr<MatrixDouble> inv_jac) {

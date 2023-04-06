@@ -105,36 +105,6 @@ struct Field {
    */
   unsigned int bitNumber;
 
-  static UId generateGlobalUniqueIdForTypeLo(const char bit_number,
-                                             const EntityType type,
-                                             const int owner_proc) {
-    constexpr int ent_shift = 8 * sizeof(EntityHandle);
-    return (static_cast<UId>(type) << MB_ID_WIDTH |
-            static_cast<UId>(bit_number) << 8 * sizeof(EntityHandle) |
-            static_cast<UId>(owner_proc) << 5 + ent_shift)
-           << 9;
-  }
-
-  UId generateGlobalUniqueIdForTypeLo(const EntityType type,
-                                      const int owner_proc) const {
-    return generateGlobalUniqueIdForTypeLo(bitNumber, type, owner_proc);
-  }
-
-  static UId generateGlobalUniqueIdForTypeHi(const char bit_number,
-                                             const EntityType type,
-                                             const int owner_proc) {
-    constexpr int ent_shift = 8 * sizeof(EntityHandle);
-    return (static_cast<UId>(type) << MB_ID_WIDTH |
-            static_cast<UId>(bit_number) << ent_shift |
-            static_cast<UId>(owner_proc) << 5 + ent_shift)
-           << 9;
-  }
-
-  UId generateGlobalUniqueIdForTypeHi(const EntityType type,
-                                      const int owner_proc) const {
-    return generateGlobalUniqueIdForTypeHi(bitNumber, type, owner_proc);
-  }
-
   /**
    * \brief Get field meshset
    *

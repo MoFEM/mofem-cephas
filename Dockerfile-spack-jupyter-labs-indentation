@@ -1,0 +1,11 @@
+FROM likask/mofem-intermidiate
+
+LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk"
+
+ADD labs $MOFEM_INSTALL_DIR
+
+WORKDIR $MOFEM_INSTALL_DIR
+
+EXPOSE 8888
+CMD /bin/bash -c "jupyter notebook --port=8888 --no-browser --ip=0.0.0.0 --allow-root"
+

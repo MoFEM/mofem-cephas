@@ -80,7 +80,7 @@ struct ForcesAndSourcesCore : public FEMethod {
    It can be used to calculate nodal forces or other quantities on the mesh.
 
    */
-  boost::ptr_vector<UserDataOperator> &getOpPtrVector() { return opPtrVector; }
+  boost::ptr_deque<UserDataOperator> &getOpPtrVector() { return opPtrVector; }
 
   /**
    * @brief Get the Entity Polynomial Base object
@@ -477,7 +477,7 @@ protected:
    * @brief Vector of finite element users data operators
    *
    */
-  boost::ptr_vector<UserDataOperator> opPtrVector;
+  boost::ptr_deque<UserDataOperator> opPtrVector;
 
   friend class UserDataOperator;
 
@@ -620,7 +620,7 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
   /**
    * @brief Get the side number pointer
    *
-   * \note For vertex is expection. Side basses in argument of function doWork
+   * \note For vertex is expectation. Side basses in argument of function doWork
    * is zero. For other entity types side can be used as argument of this
    * function.
    *
@@ -634,7 +634,7 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
   /**
    * @brief Get the side entity
    *
-   * \note For vertex is expection. Side basses in argument of function
+   * \note For vertex is expectation. Side basses in argument of function
    * doWork is zero. For other entity types side can be used as argument of
    * this function.
    *
@@ -891,29 +891,6 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
   inline double &getMeasure();
 
   /**}*/
-
-  /**@{*/
-
-  /** \name Deprecated (do not use) */
-
-  // //! \deprecated Use getSNESF intead
-  // DEPRECATED inline Vec getSnesF() const { return getSNESf(); }
-
-  // //! \deprecated Use getSNESX intead
-  // DEPRECATED inline Vec getSnesX() const { return getSNESx(); }
-
-  // //! \deprecated Use getSNESA intead
-  // DEPRECATED inline Mat getSnesA() const { return getSNESA(); }
-
-  // //! \deprecated Use getSNESB intead
-  // DEPRECATED inline Mat getSnesB() const { return getSNESB(); }
-
-  // // \deprecated Deprecated function with spelling mistake
-  // DEPRECATED inline MoFEMErrorCode
-  // getPorblemRowIndices(const std::string filed_name, const EntityType type,
-  //                      const int side, VectorInt &indices) const;
-
-  /**@}*/
 
   /**@{*/
 
@@ -1291,15 +1268,28 @@ double &ForcesAndSourcesCore::UserDataOperator::getMeasure() {
   return static_cast<ForcesAndSourcesCore *>(ptrFE)->elementMeasure;
 }
 
+/**
+ * @brief Element used to execute operators on side of the element
+ * 
+ * @tparam E template for side element type
+ * 
+ */
 template <typename E>
 struct OpLoopSide : public ForcesAndSourcesCore::UserDataOperator {
 
   using UserDataOperator = ForcesAndSourcesCore::UserDataOperator;
 
-  OpLoopSide(MoFEM::Interface &m_field, const std::string field_name,
+  /**
+   * @brief Construct a new Op Loop Side object
+   * 
+   * @param m_field 
+   * @param fe_name name of side (domain element)
+   * @param side_dim dimension
+   */
+  OpLoopSide(MoFEM::Interface &m_field, const std::string fe_name,
              const int side_dim)
       : UserDataOperator(NOSPACE, OPSPACE), sideFEPtr(new E(m_field)),
-        fieldName(field_name), sideDim(side_dim) {}
+        fieldName(fe_name), sideDim(side_dim) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data) {
@@ -1308,7 +1298,7 @@ struct OpLoopSide : public ForcesAndSourcesCore::UserDataOperator {
     MoFEMFunctionReturn(0);
   };
 
-  boost::ptr_vector<UserDataOperator> &getOpPtrVector() {
+  boost::ptr_deque<UserDataOperator> &getOpPtrVector() {
     return sideFEPtr->getOpPtrVector();
   }
 

@@ -894,6 +894,9 @@ OpGradSymTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
 
   if (nb_row_dofs && nb_col_dofs) {
 
+    const bool diag = (row_data.getFieldEntities()[0]->getLocalUniqueId() ==
+                       col_data.getFieldEntities()[0]->getLocalUniqueId());
+
     FTensor::Index<'i', SPACE_DIM> i;
     FTensor::Index<'j', SPACE_DIM> j;
     FTensor::Index<'k', SPACE_DIM> k;
@@ -938,7 +941,8 @@ OpGradSymTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
         auto t_col_diff_base = col_data.getFTensor1DiffN<SPACE_DIM>(gg, 0);
 
         // iterate column base functions
-        for (int cc = 0; cc != OpBase::nbCols / SPACE_DIM; ++cc) {
+        const auto nb_cols = (diag) ? rr : OpBase::nbCols / SPACE_DIM - 1;
+        for (int cc = 0; cc <= nb_cols; ++cc) {
 
           // integrate block local stiffens matrix
           t_m(i, j) += t_rowD(i, j, k) * t_col_diff_base(k);
@@ -962,6 +966,23 @@ OpGradSymTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
       ++t_D;
       ++t_coords;
     }
+
+    // Copy symmetry
+    if (diag) {
+      for (int rr = 0; rr != OpBase::nbRows / SPACE_DIM - 1; ++rr) {
+        auto t_m_rr = getFTensor2FromArray<SPACE_DIM, SPACE_DIM, SPACE_DIM>(
+            this->locMat, SPACE_DIM * rr, SPACE_DIM * (rr + 1));
+        auto t_m_cc = getFTensor2FromArray<SPACE_DIM, SPACE_DIM>(
+            this->locMat, SPACE_DIM * (rr + 1), SPACE_DIM * rr,
+            SPACE_DIM * OpBase::nbCols);
+        for (int cc = rr + 1; cc < OpBase::nbCols / SPACE_DIM; ++cc) {
+          t_m_rr(i, j) = t_m_cc(j, i);
+          ++t_m_rr;
+          ++t_m_cc;
+        }
+      }
+    }
+
   }
 
   MoFEMFunctionReturn(0);
