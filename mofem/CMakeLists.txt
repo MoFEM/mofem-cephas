@@ -124,6 +124,13 @@ pkg_check_modules(SLEPC slepc)
 message(STATUS "SLEPc version " ${SLEPC_VERSION})
 message(STATUS "SLEPc lib dirs " ${SLEPC_LIBRARY_DIRS})
 message(STATUS "SLEPc include " ${SLEPC_INCLUDE_DIRS})
+
+find_program(CCACHE_PROGRAM ccache)
+if(CCACHE_PROGRAM)
+		message("CCache found:" ${CCACHE_PROGRAM} )
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
+endif()
+
 if(SLEPC_FOUND)
 
   # For some unknown reason pkg-confifig reeturning empty SLEPC_LINK_LIBRARIES,
