@@ -23,7 +23,7 @@ We encourage you to join our team!
 
 # Contributing License Agreement
 
-MoFEM is distributed under a [MIT License](https://opensource.org/licenses/MIT). The act of submitting a merge request (with or without an explicit Signed-off-by tag) will be understood as an affirmation of the following:
+MoFEM is distributed under an [MIT License](https://opensource.org/licenses/MIT). The act of submitting a merge request (with or without an explicit Signed-off-by tag) will be understood as an affirmation of the following:
 
 By making a contribution to this project, I certify that:
 
