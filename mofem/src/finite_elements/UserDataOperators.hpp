@@ -1614,6 +1614,109 @@ inline auto OpCalculateVectorFieldGradientDot<2, 2>::getFTensorDotData<2>() {
                                                             &dotVector[1]);
 }
 
+/** \brief Get field gradients time derivative at integration pts for scalar
+ * filed rank 0, i.e. vector field
+ *
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ */
+template <int Tensor_Dim>
+struct OpCalculateScalarFieldGradientDot
+    : public ForcesAndSourcesCore::UserDataOperator {
+
+  OpCalculateScalarFieldGradientDot(const std::string field_name,
+                                    boost::shared_ptr<MatrixDouble> data_ptr,
+                                    const EntityType zero_at_type = MBVERTEX)
+      : ForcesAndSourcesCore::UserDataOperator(
+            field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
+        dataPtr(data_ptr), zeroAtType(zero_at_type) {
+    if (!dataPtr)
+      THROW_MESSAGE("Pointer is not set");
+  }
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        EntitiesFieldData::EntData &data) {
+    MoFEMFunctionBegin;
+
+    const auto &local_indices = data.getLocalIndices();
+    const int nb_dofs = local_indices.size();
+    const int nb_gauss_pts = this->getGaussPts().size2();
+
+    auto &mat = *this->dataPtr;
+    if (type == this->zeroAtType) {
+      mat.resize(Tensor_Dim, nb_gauss_pts, false);
+      mat.clear();
+    }
+    if (!nb_dofs)
+      MoFEMFunctionReturnHot(0);
+
+    auto get_FTensor_dot_data = [&]() {
+      return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(&dotVector[0]);
+      // return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
+      //     &dotVector[0], &dotVector[1], &dotVector[2]);
+    };
+
+    dotVector.resize(nb_dofs, false);
+    const double *array;
+    CHKERR VecGetArrayRead(getFEMethod()->ts_u_t, &array);
+    for (int i = 0; i != local_indices.size(); ++i)
+      if (local_indices[i] != -1)
+        dotVector[i] = array[local_indices[i]];
+      else
+        dotVector[i] = 0;
+    CHKERR VecRestoreArrayRead(getFEMethod()->ts_u_t, &array);
+
+    const int nb_base_functions = data.getN().size2();
+    auto diff_base_function = data.getFTensor1DiffN<Tensor_Dim>();
+    auto gradients_at_gauss_pts =
+        getFTensor1FromMat<Tensor_Dim>(mat);
+    FTensor::Index<'I', Tensor_Dim> I;
+    FTensor::Index<'J', Tensor_Dim> J;
+    int size = nb_dofs;
+    if (nb_dofs) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Data inconsistency");
+    }
+
+    for (int gg = 0; gg < nb_gauss_pts; ++gg) {
+      auto field_data = get_FTensor_dot_data();
+      int bb = 0;
+      for (; bb < size; ++bb) {
+        gradients_at_gauss_pts(J) += field_data * diff_base_function(J);
+        ++field_data;
+        ++diff_base_function;
+      }
+      // Number of dofs can be smaller than number of Tensor_Dim0 x base
+      // functions
+      for (; bb != nb_base_functions; ++bb)
+        ++diff_base_function;
+      ++gradients_at_gauss_pts;
+    }
+    MoFEMFunctionReturn(0);
+  }
+
+private:
+  boost::shared_ptr<MatrixDouble> dataPtr; ///< Data computed into this matrix
+  EntityType zeroAtType;  ///< Zero values at Gauss point at this type
+  VectorDouble dotVector; ///< Keeps temoorary values of time directives
+
+  // template <int Dim> inline auto getFTensorDotData() {
+  //   static_assert(Dim || !Dim, "not implemented");
+  // }
+};
+
+// template <>
+// template <>
+// inline auto OpCalculateScalarFieldGradientDot<3, 3>::getFTensorDotData<3>() {
+//   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
+//       &dotVector[0], &dotVector[1], &dotVector[2]);
+// }
+
+// template <>
+// template <>
+// inline auto OpCalculateScalarFieldGradientDot<2, 2>::getFTensorDotData<2>() {
+//   return FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>(&dotVector[0],
+//                                                             &dotVector[1]);
+// }
+
 /**
  * \brief Evaluate field gradient values for symmetric 2nd order tensor field,
  * i.e. gradient is tensor rank 3
