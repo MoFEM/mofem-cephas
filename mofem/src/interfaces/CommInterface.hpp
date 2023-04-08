@@ -167,7 +167,20 @@ struct CommInterface : public UnknownInterface {
    * \note collective - need tu be run on all processors in communicator
    *
    */
-  MoFEMErrorCode synchroniseEntities(Range &ent, int verb = DEFAULT_VERBOSITY);
+
+  /**
+   * @brief synchronize entity range on processors (collective)
+   * 
+   * \note collective - need tu be run on all processors in communicator
+   * 
+   * @param ent ents to send and received
+   * @param received_ents pointer to map with received entities
+   * @param verb 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode
+  synchroniseEntities(Range &ent, std::map<int, Range> *received_ents = nullptr,
+                      int verb = DEFAULT_VERBOSITY);
 
   /** synchronize entity range on processors (collective)
    * \ingroup mofem_field

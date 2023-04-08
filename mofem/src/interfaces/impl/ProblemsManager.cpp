@@ -478,7 +478,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
       }
       Range tmp_ents = ents_to_synchronise;
       CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(
-          ents_to_synchronise, verb);
+          ents_to_synchronise, nullptr, verb);
       ents_to_synchronise = subtract(ents_to_synchronise, tmp_ents);
       for (auto fit = fields_ptr->begin(); fit != fields_ptr->end(); fit++) {
         if ((fit->get()->getId() & *fields_ids[ss]).any()) {

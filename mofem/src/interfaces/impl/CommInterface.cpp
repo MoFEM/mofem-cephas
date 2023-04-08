@@ -23,7 +23,8 @@ CommInterface::query_interface(boost::typeindex::type_index type_index,
 CommInterface::CommInterface(const MoFEM::Core &core)
     : cOre(const_cast<MoFEM::Core &>(core)), dEbug(false) {}
 
-MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
+MoFEMErrorCode CommInterface::synchroniseEntities(
+    Range &ents, std::map<int, Range> *received_ents, int verb) {
   MoFEM::Interface &m_field = cOre;
   ParallelComm *pcomm = ParallelComm::get_pcomm(
       &m_field.get_moab(), m_field.get_basic_entity_data_ptr()->pcommID);
@@ -69,7 +70,7 @@ MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
     return sharing_handles;
   };
 
-  // make a buffer
+  // make a buffer entities to send
   std::vector<std::vector<EntityHandle>> sbuffer(m_field.get_comm_size());
 
   for (auto ent : ents) {
@@ -93,22 +94,29 @@ MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
           continue;
 
         const auto handle_on_sharing_proc = sharing_handles[proc];
+        // add entity to send, handle on the other side
         sbuffer[sharing_procs[proc]].push_back(handle_on_sharing_proc);
-        if (verb >= NOISY)
+        if (verb >= NOISY) {
           MOFEM_LOG_C("SYNC", Sev::noisy, "send %lu (%lu) to %d at %d\n", ent,
                       handle_on_sharing_proc, sharing_procs[proc],
                       m_field.get_comm_rank());
+        }
 
         if (!(pstatus & PSTATUS_MULTISHARED))
           break;
       }
     }
   }
+  if (verb >= NOISY) {
+    MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::noisy);
+  }
 
   int nsends = 0; // number of messages to send
   std::vector<int> sbuffer_lengths(
       m_field.get_comm_size()); // length of the message to proc
-  const size_t block_size = sizeof(EntityHandle) / sizeof(int);
+  const size_t block_size =
+      sizeof(EntityHandle) /
+      sizeof(int); // FIXME check if that works on given architecture!
   for (int proc = 0; proc < m_field.get_comm_size(); proc++) {
 
     if (!sbuffer[proc].empty()) {
@@ -181,6 +189,7 @@ MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
   if (verb >= VERBOSE) {
     MOFEM_LOG_C("SYNC", Sev::verbose, "Rank %d nb. before ents %u\n",
                 m_field.get_comm_rank(), ents.size());
+    MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::verbose);
   }
 
   // synchronise range
@@ -193,17 +202,28 @@ MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
       EntityHandle ent;
       bcopy(&data_from_proc[ee], &ent, sizeof(EntityHandle));
       ents.insert(ent);
+
+      if (received_ents) {
+        (*received_ents)[onodes[kk]].insert(ent);
+      }
+
       ee += block_size;
 
-      if (verb >= VERBOSE)
+      if (verb >= VERBOSE) {
         MOFEM_LOG_C("SYNC", Sev::noisy, "received %lu from %d at %d\n", ent,
                     onodes[kk], m_field.get_comm_rank());
+      }
     }
   }
+  if (verb >= VERBOSE) {
+    MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::verbose);
+  }
 
-  if (verb >= VERBOSE)
+  if (verb >= VERBOSE) {
     MOFEM_LOG_C("SYNC", Sev::verbose, "Rank %d nb. after ents %u",
                 m_field.get_comm_rank(), ents.size());
+    MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::verbose);
+  }
 
   // Cleaning
   CHKERR PetscFree(s_waits);
@@ -213,9 +233,6 @@ MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
   CHKERR PetscFree(onodes);
   CHKERR PetscFree(olengths);
   CHKERR PetscCommDestroy(&comm);
-
-  if (verb >= VERBOSE)
-    MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
 
   MoFEMFunctionReturn(0);
 }
@@ -227,7 +244,7 @@ MoFEMErrorCode CommInterface::synchroniseFieldEntities(const std::string name,
   EntityHandle idm = m_field.get_field_meshset(name);
   Range ents;
   CHKERR m_field.get_moab().get_entities_by_handle(idm, ents, false);
-  CHKERR synchroniseEntities(ents, verb);
+  CHKERR synchroniseEntities(ents, nullptr, verb);
   CHKERR m_field.get_moab().add_entities(idm, ents);
   MoFEMFunctionReturn(0);
 }

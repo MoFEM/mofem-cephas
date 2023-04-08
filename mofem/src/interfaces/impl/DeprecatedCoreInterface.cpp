@@ -40,7 +40,7 @@ MoFEMErrorCode DeprecatedCoreInterface::partition_mesh(const Range &ents,
 
 MoFEMErrorCode DeprecatedCoreInterface::synchronise_entities(Range &ent,
                                                              int verb) {
-  return getInterface<CommInterface>()->synchroniseEntities(ent, verb);
+  return getInterface<CommInterface>()->synchroniseEntities(ent, nullptr, verb);
 }
 
 MoFEMErrorCode
