@@ -1179,12 +1179,4 @@ CommInterface::partitionMesh(const Range &ents, const int dim,
   MoFEMFunctionReturn(0);
 }
 
-// MoFEMErrorCode partitionAndShare(const EntityHandle meshset,
-//                                  const int overlap) {
-//   MoFEM::Interface &m_field = cOre;
-//   MoFEMFunctionBegin;
-
-//   MoFEMFunctionReturn(0);
-// }
-
 } // namespace MoFEM
