@@ -602,4 +602,57 @@ fracture module is presented below.
   ]
 \endcode
 
+\section faq_snippets How to iterate over field dofs?
+
+\code
+
+auto iterate_field_row_dofs = [m_field & ](auto field_name, auto prb_name) {
+  auto bit_number = m_field.get_field_bit_number(field_name);
+  auto prb_ptr = m_field.get_problem(prb_name);
+  auto row_dofs_ptr = prb_ptr->getNumeredRowDofsPtr();
+
+  auto lo_it = row_dofs_ptr->get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getLoBitNumberUId(bit_number));
+  auto hi_it = row_dofs_ptr->get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getHiBitNumberUId(bit_number));
+
+  return std::make_pair(lo_it, hi_it);
+};
+
+auto iterate_field_and_range_row_dofs = [m_field & ](
+                                            auto field_name, auto prb_name,
+                                            auto first_ent, auto second_ent) {
+  auto bit_number = m_field.get_field_bit_number(field_name);
+  auto prb_ptr = m_field.get_problem(prb_name);
+  auto row_dofs_ptr = prb_ptr->getNumeredRowDofsPtr();
+
+  auto lo_it = row_dofs_ptr->get<Unique_mi_tag>().lower_bound(
+      DofEntity::getLoFieldEntityUId(bit_number, first_ent));
+  auto hi_it = row_dofs_ptr->get<Unique_mi_tag>().lower_bound(
+      DofEntity::getHiFieldEntityUId(bit_number, second_ent));
+
+  return std::make_pair(lo_it, hi_it);
+};
+
+
+auto iterate_field_and_type_row_dofs = [m_field & ](
+                                            auto field_name, auto prb_name) {
+  auto bit_number = m_field.get_field_bit_number(field_name);
+  auto prb_ptr = m_field.get_problem(prb_name);
+  auto row_dofs_ptr = prb_ptr->getNumeredRowDofsPtr();
+
+  // Note is a dynamic variant of get_id_for_min_type, when function takes an
+  // argument, not template variable
+  auto lo_it = row_dofs_ptr->get<Unique_mi_tag>().lower_bound(
+      DofEntity::getLoFieldEntityUId(bit_number,
+                                     get_id_for_min_type<MBVERTEX>()));
+  auto hi_it = row_dofs_ptr->get<Unique_mi_tag>().lower_bound(
+      DofEntity::getHiFieldEntityUId(bit_number,
+                                     get_id_for_max_type<MBVERTEX>()));
+
+  return std::make_pair(lo_it, hi_it);
+};
+
+\endcode
+
 */
