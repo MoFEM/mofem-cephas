@@ -71,8 +71,8 @@ struct OpAddParentEntData : public ForcesAndSourcesCore::UserDataOperator {
    * @param field_name field name DOFs projected from parent
    * @param op_parent_type  type of user data operator
    * @param parent_ele_ptr parent finite element instance
-   * @param bit_child bit of child entity
-   * @param bit_child_mask bit mask of child
+   * @param bit_child bit of child finite element entity
+   * @param bit_child_mask bit mask of child child finite element
    * @param bit_parent_ent bit of parent entity
    * @param bit_parent_ent_mask bit mask of parent
    * @param verb verbosity level
