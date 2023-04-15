@@ -1750,6 +1750,11 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopParent(
   auto &numered_fe =
       problem_ptr->numeredFiniteElementsPtr->get<Unique_mi_tag>();
 
+  auto &fes =
+      ptrFE->mField.get_finite_elements()->get<FiniteElement_name_mi_tag>();
+  auto fe_miit = fes.find(fe_name);
+  if (fe_miit != fes.end()) {
+
   parent_fe->feName = fe_name;
   CHKERR parent_fe->setRefineFEPtr(ptrFE);
   CHKERR parent_fe->copyBasicMethod(*getFEMethod());
@@ -1758,14 +1763,6 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopParent(
   CHKERR parent_fe->copySnes(*getFEMethod());
   CHKERR parent_fe->copyTs(*getFEMethod());
 
-  CHKERR parent_fe->preProcess();
-
-  auto fe_miit = ptrFE->mField.get_finite_elements()
-                     ->get<FiniteElement_name_mi_tag>()
-                     .find(fe_name);
-  if (fe_miit != ptrFE->mField.get_finite_elements()
-                     ->get<FiniteElement_name_mi_tag>()
-                     .end()) {
     const auto parent_ent = getNumeredEntFiniteElementPtr()->getParentEnt();
     auto miit = numered_fe.find(EntFiniteElement::getLocalUniqueIdCalculate(
         parent_ent, (*fe_miit)->getFEUId()));
@@ -1775,11 +1772,18 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopParent(
       parent_fe->loopSize = 1;
       parent_fe->nInTheLoop = 0;
       parent_fe->numeredEntFiniteElementPtr = *miit;
+      CHKERR parent_fe->preProcess();
       CHKERR (*parent_fe)();
+      CHKERR parent_fe->postProcess();
+    } else {
+      if (verb >= VERBOSE)
+        MOFEM_LOG("SELF", sev) << "Parent finite element: no parent";
+      parent_fe->loopSize = 0;
+      parent_fe->nInTheLoop = 0;
+      CHKERR parent_fe->preProcess();
+      CHKERR parent_fe->postProcess();     
     }
   }
-
-  CHKERR parent_fe->postProcess();
 
   MoFEMFunctionReturn(0);
 }

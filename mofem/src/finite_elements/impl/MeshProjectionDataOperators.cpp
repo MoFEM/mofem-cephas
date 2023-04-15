@@ -279,16 +279,26 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
                         severityLevel);
 
 #ifndef NDEBUG
-      auto &parent_gauss_pts = parentElePtr->gaussPts;
-      if (getGaussPts().size1() != parent_gauss_pts.size1()) {
-        MOFEM_LOG("SELF", Sev::error) << getGaussPts();
-        MOFEM_LOG("SELF", Sev::error) << parent_gauss_pts;
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "Wrong number of weights");
-      }
-      if (getGaussPts().size2() != parent_gauss_pts.size2()) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "Wrong number of integration points");
+      if (parentElePtr->getLoopSize()) {
+        auto &parent_gauss_pts = parentElePtr->gaussPts;
+        if (getGaussPts().size1() != parent_gauss_pts.size1()) {
+          MOFEM_LOG("SELF", Sev::error)
+              << "Calling element: "
+              << boost::typeindex::type_id_runtime(*parentElePtr)
+                     .pretty_name();
+          MOFEM_LOG("SELF", Sev::error) << getGaussPts();
+          MOFEM_LOG("SELF", Sev::error) << parent_gauss_pts;
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "Wrong number of weights");
+        }
+        if (getGaussPts().size2() != parent_gauss_pts.size2()) {
+          MOFEM_LOG("SELF", Sev::error)
+              << "Calling element: "
+              << boost::typeindex::type_id_runtime(*parentElePtr)
+                     .pretty_name();
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "Wrong number of integration points");
+        }
       }
 #endif
 
