@@ -80,6 +80,14 @@ struct Problem {
   }
 
   /**
+   * @brief Erase elements by entities
+   *
+   * @param entities
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode eraseElements(Range entities) const;
+
+  /**
    * \brief Subproblem problem data
    */
   struct SubProblemData;

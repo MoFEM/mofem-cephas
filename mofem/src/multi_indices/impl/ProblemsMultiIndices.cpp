@@ -186,6 +186,17 @@ MoFEMErrorCode Problem::getDofByNameEntAndEntDofIdx(
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode Problem::eraseElements(Range entities) const {
+  MoFEMFunctionBegin;
+  for (auto p = entities.pair_begin(); p != entities.pair_end(); ++p) {
+    auto lo = numeredFiniteElementsPtr->get<Ent_mi_tag>().lower_bound(p->first);
+    auto hi =
+        numeredFiniteElementsPtr->get<Ent_mi_tag>().upper_bound(p->second);
+    numeredFiniteElementsPtr->get<Ent_mi_tag>().erase(lo, hi);
+  }
+  MoFEMFunctionReturn(0);
+}
+
 void ProblemFiniteElementChangeBitAdd::operator()(Problem &p) {
   *(p.tagBitFEId) |= f_id;
 }
