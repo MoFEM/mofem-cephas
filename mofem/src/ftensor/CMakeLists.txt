@@ -54,7 +54,7 @@ if(ADOL-C_LIBRARY)
       add_dependencies(ftensor_and_adolc_tapeless_test install_prerequisites)
       target_link_libraries(ftensor_and_adolc_tapeless_test ${ADOL-C_LIBRARY})
       add_test(
-        ftensor_adloc_tapeless_test 
+        ftensor_adolc_tapeless_test 
         ${CMAKE_CURRENT_BINARY_DIR}/ftensor_and_adolc_tapeless_test
       )
     endif(TAPLESS_ADOL-C)
@@ -65,7 +65,7 @@ if(ADOL-C_LIBRARY)
     add_dependencies(ftensor_and_adolc_test install_prerequisites)
     target_link_libraries(ftensor_and_adolc_test ${ADOL-C_LIBRARY})
     add_test(
-      ftensor_adloc_test 
+      ftensor_adolc_test 
       ${CMAKE_CURRENT_BINARY_DIR}/ftensor_and_adolc_test
     )
   endif(MOFEM_BUILD_TESTS)

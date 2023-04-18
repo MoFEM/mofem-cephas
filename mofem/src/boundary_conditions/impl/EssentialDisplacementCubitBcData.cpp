@@ -49,10 +49,21 @@ MoFEMErrorCode EssentialPreProc<DisplacementCubitBcData>::operator()() {
               << "Apply EssentialPreProc<DisplacementCubitBcData>: "
               << problem_name << "_" << field_name << "_" << block_name;
 
+          FTensor::Tensor1<double, 3> t_angles(disp_bc->data.value4,disp_bc->data.value5, disp_bc->data.value6 );
           double v;
-          int coeff;
+          int coeff, coeff_r;
           std::array<std::vector<double>, 3> coords;
           int idx;
+
+          const bool is_rotation = disp_bc->data.flag4 || disp_bc->data.flag5 || disp_bc->data.flag6;
+
+          auto scale_value = [&](const double &c) {
+            double val = c;
+            for (auto s : vecOfTimeScalingMethods) {
+              val *= s->getScale(fe_method_ptr->ts_t);
+            }
+            return val;
+          };
 
           auto lambda = [&](boost::shared_ptr<FieldEntity> field_entity_ptr) {
             MoFEMFunctionBegin;
@@ -66,41 +77,61 @@ MoFEMErrorCode EssentialPreProc<DisplacementCubitBcData>::operator()() {
             MoFEMFunctionReturn(0);
           };
 
+          auto lambda_rot = [&](boost::shared_ptr<FieldEntity> field_entity_ptr) {
+            MoFEMFunctionBegin;
+              auto t_rot =
+                  _getRotDisp(t_angles, coords[0][idx], coords[1][idx], coords[2][idx]);
+              field_entity_ptr->getEntFieldData()[coeff] += scale_value(t_rot(coeff));
+              field_entity_ptr->getEntFieldData()[coeff_r] += scale_value(t_rot(coeff_r));
+            ++idx;
+            MoFEMFunctionReturn(0);
+          };
+
           auto verts = bc.second->bcEnts.subset_by_type(MBVERTEX);
-          if (getCoords) {
+          if (getCoords || is_rotation) {
             for (auto d : {0, 1, 2})
               coords[d].resize(verts.size());
             CHKERR mField.get_moab().get_coords(verts, &*coords[0].begin(),
                                                 &*coords[1].begin(),
                                                 &*coords[2].begin());
           }
-
+        
           if (disp_bc->data.flag1) {
-            v = disp_bc->data.value1;
-            for (auto s : vecOfTimeScalingMethods) {
-              v *= s->getScale(fe_method_ptr->ts_t);
-            }
+            v = scale_value(disp_bc->data.value1);
             idx = 0;
             coeff = 0;
             CHKERR fb->fieldLambdaOnEntities(lambda, field_name, &verts);
-          } 
+          }
           if (disp_bc->data.flag2 && nb_field_coeffs > 1) {
-            v = disp_bc->data.value2;
-            for (auto s : vecOfTimeScalingMethods) {
-              v *= s->getScale(fe_method_ptr->ts_t);
-            }
+            v = scale_value(disp_bc->data.value2);
             idx = 0;
             coeff = 1;
             CHKERR fb->fieldLambdaOnEntities(lambda, field_name, &verts);
           } 
           if (disp_bc->data.flag3 && nb_field_coeffs > 2) {
-            v = disp_bc->data.value3;
-            for (auto s : vecOfTimeScalingMethods) {
-              v *= s->getScale(fe_method_ptr->ts_t);
-            }
+            v = scale_value(disp_bc->data.value3);
             idx = 0;
             coeff = 2;
             CHKERR fb->fieldLambdaOnEntities(lambda, field_name, &verts);
+          }
+
+          if (disp_bc->data.flag4 && nb_field_coeffs > 2) {
+            idx = 0;
+            coeff = 1;
+            coeff_r = 2;
+            CHKERR fb->fieldLambdaOnEntities(lambda_rot, field_name, &verts);
+          }
+          if (disp_bc->data.flag5 && nb_field_coeffs > 2) {
+            idx = 0;
+            coeff = 0;
+            coeff_r = 2;
+            CHKERR fb->fieldLambdaOnEntities(lambda_rot, field_name, &verts);
+          }
+          if (disp_bc->data.flag6 && nb_field_coeffs > 1) {
+            idx = 0;
+            coeff = 0;
+            coeff_r = 1;
+            CHKERR fb->fieldLambdaOnEntities(lambda_rot, field_name, &verts);
           }
         }
       }
