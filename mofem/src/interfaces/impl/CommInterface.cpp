@@ -237,6 +237,10 @@ MoFEMErrorCode CommInterface::synchroniseEntities(
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
+  return synchroniseEntities(ents, nullptr, verb);
+}
+
 MoFEMErrorCode CommInterface::synchroniseFieldEntities(const std::string name,
                                                        int verb) {
   MoFEM::Interface &m_field = cOre;
