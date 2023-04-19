@@ -72,8 +72,6 @@ struct BcManager : public UnknownInterface {
    * @param lo lowest coefficient
    * @param hi highest coefficient
    * @param get_low_dim_ents get lower dimension entities
-   * @param block_name_field_prefix block name is expected to have prefix with
-   * field name
    * @param is_distributed_mesh distributed mesh
    * @return MoFEMErrorCode
    */
