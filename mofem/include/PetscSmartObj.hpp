@@ -119,7 +119,7 @@ struct SmartPetscObj
  * @brief Creates smart DM object
  *
  * DM object can be used as any other object, but is destroyed as smart pointer
- * when no loneger used.
+ * when no longer used.
  *
  * \code
  * CHKERR DMRegister_MoFEM("MOFEM")
@@ -128,7 +128,7 @@ struct SmartPetscObj
  *
  *    // ...
  *
- *    // dm is autmatically destroyed when program goes out of the scope
+ *    // dm is automatically destroyed when program goes out of the scope
  * }
  *
  *
