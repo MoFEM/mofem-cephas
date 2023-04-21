@@ -117,7 +117,7 @@ struct VecManager : public UnknownInterface {
                    SmartPetscObj<VecScatter> &smart_newctx) const;
 
   /**
-   * \brief set values of vector from/to meshdatabase
+   * \brief set values of vector from/to mesh database
    * \ingroup mofem_vectors
    *
    * \param pointer to problem struture
@@ -137,7 +137,7 @@ struct VecManager : public UnknownInterface {
                                      ScatterMode scatter_mode) const;
 
   /**
-   * \brief set values of vector from/to meshdatabase
+   * \brief set values of vector from/to mesh database
    * \ingroup mofem_vectors
    *
    * \param name of the problem
