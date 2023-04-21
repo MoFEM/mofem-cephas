@@ -911,9 +911,9 @@ PetscErrorCode DMMoFEMSetVerbosity(DM dm, const int verb);
 /**
  * \brief PETSc  Discrete Manager data structure
  *
- * This structure should not be accessed or modified by user. Is not available
- * from outside MoFEM DM manager. However user can inherit dat class and
- * add data for additional functionality.
+ * This structure should not be accessed or modified by user. Is not
+ * available from outside MoFEM DM manager. However user can inherit dat
+ * class and add data for additional functionality.
  *
  * This is part of implementation for PETSc interface, see more details in
  * <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/DM/index.html>
