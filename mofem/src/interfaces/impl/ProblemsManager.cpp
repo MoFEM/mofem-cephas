@@ -1284,7 +1284,8 @@ MoFEMErrorCode ProblemsManager::buildComposedProblem(
                                                &add_col_problems};
   std::vector<const Problem *> *add_prb_ptr[] = {&cmp_prb_data->rowProblemsAdd,
                                                  &cmp_prb_data->colProblemsAdd};
-  std::vector<IS> *add_prb_is[] = {&cmp_prb_data->rowIs, &cmp_prb_data->colIs};
+  std::vector<SmartPetscObj<IS>> *add_prb_is[] = {&cmp_prb_data->rowIs,
+                                                  &cmp_prb_data->colIs};
 
   // Get local indices counter
   int *nb_local_dofs[] = {&out_problem_it->nbLocDofsRow,
@@ -1305,9 +1306,6 @@ MoFEMErrorCode ProblemsManager::buildComposedProblem(
 
   // Loop over rows and columns in the main problem and sub-problems
   for (int ss = 0; ss != ((square_matrix) ? 1 : 2); ss++) {
-    // cerr << "SS " << ss << endl;
-    // cerr << add_prb[ss]->size() << endl;
-    // cerr << add_prb_ptr[ss]->size() << endl;
     add_prb_ptr[ss]->reserve(add_prb[ss]->size());
     add_prb_is[ss]->reserve(add_prb[ss]->size());
     for (std::vector<std::string>::const_iterator vit = add_prb[ss]->begin();
@@ -1409,7 +1407,8 @@ MoFEMErrorCode ProblemsManager::buildComposedProblem(
       IS is;
       CHKERR ISCreateGeneral(m_field.get_comm(), is_nb, dofs_out_idx_ptr,
                              PETSC_OWN_POINTER, &is);
-      (*add_prb_is[ss]).push_back(is);
+      auto smart_is = SmartPetscObj<IS>(is);
+      (*add_prb_is[ss]).push_back(smart_is);
       if (ss == 0) {
         shift_glob += (*add_prb_ptr[ss])[pp]->getNbDofsRow();
         shift_loc += (*add_prb_ptr[ss])[pp]->getNbLocalDofsRow();
@@ -1419,8 +1418,7 @@ MoFEMErrorCode ProblemsManager::buildComposedProblem(
       }
       if (square_matrix) {
         (*add_prb_ptr[1]).push_back((*add_prb_ptr[0])[pp]);
-        (*add_prb_is[1]).push_back(is);
-        CHKERR PetscObjectReference((PetscObject)is);
+        (*add_prb_is[1]).push_back(smart_is);
       }
     }
   }

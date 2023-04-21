@@ -5,15 +5,6 @@
 
 namespace MoFEM {
 
-ComposedProblemsData::~ComposedProblemsData() {
-  for (unsigned int ii = 0; ii != rowIs.size(); ii++) {
-    CHKERRABORT(PETSC_COMM_SELF, ISDestroy(&rowIs[ii]));
-  }
-  for (unsigned int jj = 0; jj != colIs.size(); jj++) {
-    CHKERRABORT(PETSC_COMM_SELF, ISDestroy(&colIs[jj]));
-  }
-}
-
 // moab problem
 Problem::Problem(moab::Interface &moab, const EntityHandle meshset)
     : meshset(meshset), numeredRowDofsPtr(new NumeredDofEntity_multiIndex()),
