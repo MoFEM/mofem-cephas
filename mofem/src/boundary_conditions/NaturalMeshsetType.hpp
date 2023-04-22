@@ -417,6 +417,11 @@ OpFluxRhsImpl<NaturalMeshsetType<BLOCKSET>, 1, 1, A, I, OpBase>::getMeshsetData(
   CHKERR m_field.get_moab().get_entities_by_handle(cubit_meshset_ptr->meshset,
                                                    *(this->entsPtr), true);
 
+  MOFEM_LOG("WORLD", Sev::inform)
+      << "Flux blockset " << cubit_meshset_ptr->getName();
+  MOFEM_LOG("WORLD", Sev::inform)
+      << "Scalar attribute value: " << this->scalarValue;
+
   MoFEMFunctionReturn(0);
 }
 
