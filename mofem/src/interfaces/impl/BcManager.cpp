@@ -288,17 +288,29 @@ BcManager::removeBlockDOFsOnEntities<BcMeshsetType<DISPLACEMENTSET>>(
 
     auto bc = bcMapByBlockName.at(bc_id);
 
-    if (bc->dispBcPtr)
+    if (bc->dispBcPtr) {
       if (bc->dispBcPtr->data.flag1) {
         ents_to_remove[0].merge(bc->bcEnts);
       }
-    if (bc->dispBcPtr->data.flag2) {
-      ents_to_remove[1].merge(bc->bcEnts);
+      if (bc->dispBcPtr->data.flag2) {
+        ents_to_remove[1].merge(bc->bcEnts);
+      }
+      if (bc->dispBcPtr->data.flag3) {
+        ents_to_remove[2].merge(bc->bcEnts);
+      }
+      if (bc->dispBcPtr->data.flag4) {
+        ents_to_remove[1].merge(bc->bcEnts);
+        ents_to_remove[2].merge(bc->bcEnts);
+      }
+      if (bc->dispBcPtr->data.flag5) {
+        ents_to_remove[0].merge(bc->bcEnts);
+        ents_to_remove[2].merge(bc->bcEnts);
+      }
+      if (bc->dispBcPtr->data.flag6) {
+        ents_to_remove[0].merge(bc->bcEnts);
+        ents_to_remove[1].merge(bc->bcEnts);
+      }
     }
-    if (bc->dispBcPtr->data.flag3) {
-      ents_to_remove[2].merge(bc->bcEnts);
-    }
-
     bc->bcMarkers = std::vector<unsigned char>();
   }
 
@@ -455,6 +467,18 @@ BcManager::removeBlockDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
         if (disp_bc->data.flag3) {
           ents_to_remove[2].merge(bc->bcEnts);
         }
+        if (disp_bc->data.flag4) {
+          ents_to_remove[1].merge(bc->bcEnts);
+          ents_to_remove[2].merge(bc->bcEnts);
+        }
+        if (disp_bc->data.flag5) {
+          ents_to_remove[0].merge(bc->bcEnts);
+          ents_to_remove[2].merge(bc->bcEnts);
+        }
+        if (disp_bc->data.flag6) {
+          ents_to_remove[0].merge(bc->bcEnts);
+          ents_to_remove[1].merge(bc->bcEnts);
+        }
       } else {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "BC type not implemented");
@@ -597,6 +621,33 @@ BcManager::pushMarkDOFsOnEntities<BcMeshsetType<DISPLACEMENTSET>>(
           CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 2, 2,
                                          ProblemsManager::MarkOP::OR, 1,
                                          bc->bcMarkers);
+        if (bc->dispBcPtr->data.flag4) {
+
+          CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 1, 1,
+                                         ProblemsManager::MarkOP::OR, 1,
+                                         bc->bcMarkers);
+          CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 2, 2,
+                                         ProblemsManager::MarkOP::OR, 1,
+                                         bc->bcMarkers);
+        }
+        if (bc->dispBcPtr->data.flag5) {
+
+          CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 0, 0,
+                                         ProblemsManager::MarkOP::OR, 1,
+                                         bc->bcMarkers);
+          CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 2, 2,
+                                         ProblemsManager::MarkOP::OR, 1,
+                                         bc->bcMarkers);
+        }
+        if (bc->dispBcPtr->data.flag6) {
+
+          CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 0, 0,
+                                         ProblemsManager::MarkOP::OR, 1,
+                                         bc->bcMarkers);
+          CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 1, 1,
+                                         ProblemsManager::MarkOP::OR, 1,
+                                         bc->bcMarkers);
+        }
 
         if (get_low_dim_ents) {
           auto low_dim_ents = get_adj_ents(bc->bcEnts);

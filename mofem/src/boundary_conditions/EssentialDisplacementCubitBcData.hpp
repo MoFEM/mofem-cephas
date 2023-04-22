@@ -46,7 +46,7 @@ _getRotDisp(FTensor::Tensor1<double, 3> t_angles, double x, double y,
 
   FTensor::Tensor1<double, 3> t_coords(x, y, z);
   auto t_rot = get_rotation(t_angles);
-  tRot(i) += t_rot(j, i) * t_coords(j) - t_coords(i);
+  tRot(i) = -t_coords(i) + t_rot(j, i) * t_coords(j);
 
   return tRot;
 }
