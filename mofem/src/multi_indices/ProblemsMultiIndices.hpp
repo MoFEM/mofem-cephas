@@ -611,8 +611,8 @@ struct Problem::SubProblemData {
    */
   inline MoFEMErrorCode getRowMap(AO *ao) {
     MoFEMFunctionBeginHot;
-    PetscObjectReference((PetscObject)rowMap);
     *ao = rowMap;
+    PetscObjectReference((PetscObject)(*ao));
     MoFEMFunctionReturnHot(0);
   }
 
@@ -623,8 +623,8 @@ struct Problem::SubProblemData {
    */
   inline MoFEMErrorCode getColMap(AO *ao) {
     MoFEMFunctionBeginHot;
-    PetscObjectReference((PetscObject)colMap);
     *ao = colMap;
+    PetscObjectReference((PetscObject)(*ao));
     MoFEMFunctionReturnHot(0);
   }
 
