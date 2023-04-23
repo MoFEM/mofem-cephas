@@ -277,6 +277,11 @@ If you using \em lldb, that is usally a case of Mac OSX, you run debugging as fo
 mpirun -np 4 xterm -e lldb -- ./program [arg1] [arg2] [arg3]
 \endcode 
 
+If you do not heve graphic terminal, you can alos run screen sessions,
+\code
+mpirun -np 4 screen -AdmS mpi gdb -ex run --args ./program [arg1] [arg2] [arg3]
+\enddoce
+
 \subsection faq_memory_profiling_valgrind How to profile memory usage?
 
 Valgrind comes with a tool for measuring memory usage: 
