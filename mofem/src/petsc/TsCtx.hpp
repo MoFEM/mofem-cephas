@@ -283,25 +283,6 @@ PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
 PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
                             void *ctx);
 
-/// \deprecate Do not use, change to TsSetIFunction
-DEPRECATED inline PetscErrorCode f_TSSetIFunction(TS ts, PetscReal t, Vec u,
-                                                  Vec u_t, Vec F, void *ctx) {
-  return TsSetIFunction(ts, t, u, u_t, F, ctx);
-}
-
-/// \deprecated Do not use, change to TsSetIJacobian
-DEPRECATED inline PetscErrorCode f_TSSetIJacobian(TS ts, PetscReal t, Vec u,
-                                                  Vec u_t, PetscReal a, Mat A,
-                                                  Mat B, void *ctx) {
-  return TsSetIJacobian(ts, t, u, u_t, a, A, B, ctx);
-}
-
-/// \deprecated Do not use, change to TsMonitorSet
-DEPRECATED inline PetscErrorCode f_TSMonitorSet(TS ts, PetscInt step,
-                                                PetscReal t, Vec u, void *ctx) {
-  return TsMonitorSet(ts, step, t, u, ctx);
-}
-
 /**
  * @brief TS solver function
  *
