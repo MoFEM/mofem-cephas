@@ -244,7 +244,7 @@ PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
-  // preproces
+  // preprocess
   for (auto &bit : ts_ctx->preProcessMonitor) {
     set(*bit);
     CHKERR ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problemName,
