@@ -519,7 +519,7 @@ PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
-  // preproces
+  // preprocess
   for (auto &bit : ts_ctx->preProcessIJacobian) {
     bit->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
     set(*bit);
