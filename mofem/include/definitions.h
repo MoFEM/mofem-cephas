@@ -163,8 +163,7 @@ enum CubitBC {
   MAT_MOISTURESET = 1 << 17, ///< block name is "MAT_MOISTURE"
   DIRICHLET_BC = 1 << 18,
   NEUMANN_BC = 1 << 19,
-  ROTATIONSET = 1 << 20,
-  LASTSET_BC = 1 << 21
+  LASTSET_BC = 1 << 20
 };
 
 // OFF_DEPRECATED static const unsigned int UNKNOWNCUBITNAME = UNKNOWNNAME;
@@ -179,7 +178,7 @@ const static char *const CubitBCNames[] = {
     "VELOCITYSET",    "ACCELERATIONSET", "TEMPERATURESET",  "HEATFLUXSET",
     "INTERFACESET",   "UNKNOWNNAME",     "MAT_ELASTICSET",  "MAT_INTERFSET",
     "MAT_THERMALSET", "BODYFORCESSET",   "MAT_MOISTURESET", "DIRICHLET_BC",
-    "NEUMANN_BC",  "ROTATIONSET"   "LASTSET_BC"};
+    "NEUMANN_BC", "LASTSET_BC"};
 
 /**
  * \brief Format in rows of vectorial base functions

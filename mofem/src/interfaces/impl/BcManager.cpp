@@ -439,16 +439,16 @@ BcManager::removeBlockDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
 
     const auto block_name = m->getName();
 
-    std::string bc_id = problem_name + "_" + field_name + "_" + m->getName();
+    std::string bc_id = problem_name + "_" + field_name + "_" + block_name;
     std::string regex_str;
     if (block_name_field_prefix) {
       regex_str = (boost::format("%s_%s_%s_((FIX_(ALL|X|Y|Z))|("
-                                 "DISPLACEMENT))(.*)") %
+                                 "DISPLACEMENT|ROTATE))(.*)") %
                    problem_name % field_name % field_name)
                       .str();
     } else {
       regex_str = (boost::format("%s_%s_((FIX_(ALL|X|Y|Z))|("
-                                 "DISPLACEMENT))(.*)") %
+                                 "DISPLACEMENT|ROTATE))(.*)") %
                    problem_name % field_name)
                       .str();
     }
@@ -856,29 +856,35 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
     bool get_low_dim_ents, bool block_name_field_prefix) {
   MoFEMFunctionBegin;
 
-  if (block_name_field_prefix) {
-    CHKERR pushMarkDOFsOnEntities(
-        problem_name, (boost::format("%s_FIX_X") % field_name).str(),
-        field_name, 0, 0, get_low_dim_ents);
-    CHKERR pushMarkDOFsOnEntities(
-        problem_name, (boost::format("%s_FIX_Y") % field_name).str(),
-        field_name, 1, 1, get_low_dim_ents);
-    CHKERR pushMarkDOFsOnEntities(
-        problem_name, (boost::format("%s_FIX_Z") % field_name).str(),
-        field_name, 2, 2, get_low_dim_ents);
-    CHKERR pushMarkDOFsOnEntities(
-        problem_name, (boost::format("%s_FIX_ALL") % field_name).str(),
-        field_name, 0, MAX_DOFS_ON_ENTITY, get_low_dim_ents);
-  } else {
-    CHKERR pushMarkDOFsOnEntities(problem_name, "FIX_X", field_name, 0, 0,
-                                  get_low_dim_ents);
-    CHKERR pushMarkDOFsOnEntities(problem_name, "FIX_Y", field_name, 1, 1,
-                                  get_low_dim_ents);
-    CHKERR pushMarkDOFsOnEntities(problem_name, "FIX_Z", field_name, 2, 2,
-                                  get_low_dim_ents);
-    CHKERR pushMarkDOFsOnEntities(problem_name, "FIX_ALL", field_name, 0,
-                                  MAX_DOFS_ON_ENTITY, get_low_dim_ents);
-  }
+  auto mark_dofs = [&](const string block_name, const int &idx_0,
+                            const int &idx_1) {
+    MoFEMFunctionBeginHot;
+    if (block_name_field_prefix) {
+      const string field_block = field_name + "_" + block_name;
+      CHKERR pushMarkDOFsOnEntities(problem_name, field_block, field_name,
+                                    idx_0, idx_1, get_low_dim_ents);
+    } else {
+
+      CHKERR pushMarkDOFsOnEntities(problem_name, block_name, field_name, idx_0,
+                                    idx_1, get_low_dim_ents);
+    }
+    MoFEMFunctionReturnHot(0);
+  };
+
+  // displacement
+  CHKERR mark_dofs("FIX_X", 0, 0);
+  CHKERR mark_dofs("FIX_Y", 1, 1);
+  CHKERR mark_dofs("FIX_Z", 2, 2);
+  CHKERR mark_dofs("FIX_ALL", 0, MAX_DOFS_ON_ENTITY);
+  
+  // rotation
+  CHKERR mark_dofs("ROTATE_X", 1, 1);
+  CHKERR mark_dofs("ROTATE_X", 2, 2);
+  CHKERR mark_dofs("ROTATE_Y", 0, 0);
+  CHKERR mark_dofs("ROTATE_Y", 2, 2);
+  CHKERR mark_dofs("ROTATE_Z", 0, 0);
+  CHKERR mark_dofs("ROTATE_Z", 1, 1);
+  CHKERR mark_dofs("ROTATE_ALL", 0, MAX_DOFS_ON_ENTITY);
 
   std::string regex_str;
   if (block_name_field_prefix) {
@@ -899,7 +905,7 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
         if (bc->bcAttributes.empty()) {
           bc->dispBcPtr->data.value1 = 0;
           MOFEM_LOG("BcMngWorld", Sev::warning)
-              << "Expected one atributes on block but have "
+              << "Expected one attribute on block but have "
               << bc->bcAttributes.size();
         } else if (bc->bcAttributes.size() >= 1) {
           bc->dispBcPtr->data.value1 = bc->bcAttributes[0];
@@ -912,7 +918,7 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
         if (bc->bcAttributes.empty()) {
           bc->dispBcPtr->data.value2 = 0;
           MOFEM_LOG("BcMngWorld", Sev::warning)
-              << "Expected one atributes on block but have "
+              << "Expected one attribute on block but have "
               << bc->bcAttributes.size();
         } else if (bc->bcAttributes.size() == 1) {
           bc->dispBcPtr->data.value2 = bc->bcAttributes[0];
@@ -927,7 +933,7 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
         if (bc->bcAttributes.empty()) {
           bc->dispBcPtr->data.value3 = 0;
           MOFEM_LOG("BcMngWorld", Sev::warning)
-              << "Expected one atributes on block but have "
+              << "Expected one attribute on block but have "
               << bc->bcAttributes.size();
         } else if (bc->bcAttributes.size() == 1) {
           bc->dispBcPtr->data.value3 = bc->bcAttributes[0];
@@ -949,6 +955,71 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
         }
         if (bc->bcAttributes.size() >= 3) {
           bc->dispBcPtr->data.value3 = bc->bcAttributes[2];
+        }
+        MOFEM_LOG("BcMngWorld", Sev::inform) << "Add ALL " << bc_id;
+        MOFEM_LOG("BcMngWorld", Sev::inform) << *(bc->dispBcPtr);
+      } else if (std::regex_match(bc_id, std::regex("(.*)_ROTATE_X(.*)"))) {
+        bc->dispBcPtr = boost::make_shared<DisplacementCubitBcData>();
+        bc->dispBcPtr->data.flag4 = 1;
+        bc->dispBcPtr->data.flag5 = 0;
+        bc->dispBcPtr->data.flag6 = 0;
+        if (bc->bcAttributes.empty()) {
+          bc->dispBcPtr->data.value4 = 0;
+          MOFEM_LOG("BcMngWorld", Sev::warning)
+              << "Expected one attribute on block but have "
+              << bc->bcAttributes.size();
+        } else if (bc->bcAttributes.size() >= 1) {
+          bc->dispBcPtr->data.value4 = bc->bcAttributes[0];
+        }
+        MOFEM_LOG("BcMngWorld", Sev::inform) << "Add X " << bc_id;
+        MOFEM_LOG("BcMngWorld", Sev::inform) << *bc->dispBcPtr;
+      } else if (std::regex_match(bc_id, std::regex("(.*)_ROTATE_Y(.*)"))) {
+        bc->dispBcPtr = boost::make_shared<DisplacementCubitBcData>();
+        bc->dispBcPtr->data.flag4 = 0;
+        bc->dispBcPtr->data.flag5 = 1;
+        bc->dispBcPtr->data.flag6 = 0;
+        if (bc->bcAttributes.empty()) {
+          bc->dispBcPtr->data.value5 = 0;
+          MOFEM_LOG("BcMngWorld", Sev::warning)
+              << "Expected one attribute on block but have "
+              << bc->bcAttributes.size();
+        } else if (bc->bcAttributes.size() == 1) {
+          bc->dispBcPtr->data.value5 = bc->bcAttributes[0];
+        } else if (bc->bcAttributes.size() >= 2) {
+          bc->dispBcPtr->data.value5 = bc->bcAttributes[1];
+        }
+        MOFEM_LOG("BcMngWorld", Sev::inform) << "Add Y " << bc_id;
+        MOFEM_LOG("BcMngWorld", Sev::inform) << *(bc->dispBcPtr);
+      } else if (std::regex_match(bc_id, std::regex("(.*)_ROTATE_Z(.*)"))) {
+        bc->dispBcPtr = boost::make_shared<DisplacementCubitBcData>();
+        bc->dispBcPtr->data.flag4 = 0;
+        bc->dispBcPtr->data.flag5 = 0;
+        bc->dispBcPtr->data.flag6 = 1;
+        if (bc->bcAttributes.empty()) {
+          bc->dispBcPtr->data.value6 = 0;
+          MOFEM_LOG("BcMngWorld", Sev::warning)
+              << "Expected one attribute on block but have "
+              << bc->bcAttributes.size();
+        } else if (bc->bcAttributes.size() == 1) {
+          bc->dispBcPtr->data.value6 = bc->bcAttributes[0];
+        } else if (bc->bcAttributes.size() == 3) {
+          bc->dispBcPtr->data.value6 = bc->bcAttributes[2];
+        }
+        MOFEM_LOG("BcMngWorld", Sev::inform) << "Add Z " << bc_id;
+        MOFEM_LOG("BcMngWorld", Sev::inform) << *(bc->dispBcPtr);
+      } else if (std::regex_match(bc_id, std::regex("(.*)_ROTATE_ALL(.*)"))) {
+        bc->dispBcPtr = boost::make_shared<DisplacementCubitBcData>();
+        bc->dispBcPtr->data.flag4 = 1;
+        bc->dispBcPtr->data.flag5 = 1;
+        bc->dispBcPtr->data.flag6 = 1;
+        if (bc->bcAttributes.size() >= 1) {
+          bc->dispBcPtr->data.value4 = bc->bcAttributes[0];
+        }
+        if (bc->bcAttributes.size() >= 2) {
+          bc->dispBcPtr->data.value5 = bc->bcAttributes[1];
+        }
+        if (bc->bcAttributes.size() >= 3) {
+          bc->dispBcPtr->data.value6 = bc->bcAttributes[2];
         }
         MOFEM_LOG("BcMngWorld", Sev::inform) << "Add ALL " << bc_id;
         MOFEM_LOG("BcMngWorld", Sev::inform) << *(bc->dispBcPtr);
@@ -984,7 +1055,7 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcScalarMeshsetType<BLOCKSET>>(
       if (bc->bcAttributes.empty()) {
         bc->tempBcPtr->data.value1 = 0;
         MOFEM_LOG("BcMngWorld", Sev::warning)
-            << "Expected one atributes on block but have "
+            << "Expected one attribute on block but have "
             << bc->bcAttributes.size();
       } else if (bc->bcAttributes.size() >= 1) {
         bc->tempBcPtr->data.value1 = bc->bcAttributes[0];

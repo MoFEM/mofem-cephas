@@ -82,9 +82,11 @@ MoFEMErrorCode EssentialPreProc<DisplacementCubitBcData>::operator()() {
           auto lambda = [&](boost::shared_ptr<FieldEntity> field_entity_ptr) {
             MoFEMFunctionBegin;
             auto v = t_vals(coeff);
-            if (is_rotation)
-              v += _getRotDisp(t_angles, coords[0][idx], coords[1][idx],
-                               coords[2][idx])(coeff);
+            if (is_rotation) {
+              FTensor::Tensor1<double, 3> t_coords(
+                  coords[0][idx], coords[1][idx], coords[2][idx]);
+              v += _getRotDisp(t_angles, t_coords)(coeff);
+            }
             if (getCoords)
               v += coords[coeff][idx];
 
@@ -115,8 +117,9 @@ MoFEMErrorCode EssentialPreProc<DisplacementCubitBcData>::operator()() {
             coeff = 1;
             CHKERR fb->fieldLambdaOnEntities(lambda, field_name, &verts);
           }
-          if (disp_bc->data.flag3 || disp_bc->data.flag4 ||
-              disp_bc->data.flag5 && nb_field_coeffs > 2) {
+          if ((disp_bc->data.flag3 || disp_bc->data.flag4 ||
+               disp_bc->data.flag5 && nb_field_coeffs > 2) ||
+              is_rotation && nb_field_coeffs > 1) {
             idx = 0;
             coeff = 2;
             CHKERR fb->fieldLambdaOnEntities(lambda, field_name, &verts);

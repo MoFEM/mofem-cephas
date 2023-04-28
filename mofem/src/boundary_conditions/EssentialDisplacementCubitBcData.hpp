@@ -14,12 +14,15 @@
 namespace MoFEM {
 
 inline FTensor::Tensor1<double, 3>
-_getRotDisp(FTensor::Tensor1<double, 3> t_angles, double x, double y,
-            double z) {
+_getRotDisp(FTensor::Tensor1<double, 3> const &t_angles,
+            FTensor::Tensor1<double, 3> t_coords,
+            FTensor::Tensor1<double, 3> t_offset = FTensor::Tensor1<double, 3>{
+                0., 0., 0.}) {
 
   FTensor::Index<'i', 3> i;
   FTensor::Index<'j', 3> j;
   FTensor::Index<'k', 3> k;
+
   FTensor::Tensor1<double, 3> tRot;
   tRot(i) = 0;
 
@@ -44,9 +47,10 @@ _getRotDisp(FTensor::Tensor1<double, 3> t_angles, double x, double y,
     return t_R;
   };
 
-  FTensor::Tensor1<double, 3> t_coords(x, y, z);
   auto t_rot = get_rotation(t_angles);
-  tRot(i) = -t_coords(i) + t_rot(j, i) * t_coords(j);
+  FTensor::Tensor1<double, 3> c_dist;
+  c_dist(i) = t_offset(i) - t_coords(i);
+  tRot(i) = c_dist(i) - t_rot(j, i) * c_dist(j);
 
   return tRot;
 }
@@ -57,6 +61,8 @@ _getRotDisp(FTensor::Tensor1<double, 3> t_angles, double x, double y,
  * Specialization to enforce blocksets which DisplacementCubitBcData ptr. That
  * is to enforce displacement constraints. set
  *
+ * TODO: implement specialization for BcVectorMeshsetType<BLOCKSET>
+ * 
  * @tparam
  */
 template <> struct EssentialPreProc<DisplacementCubitBcData> {
@@ -90,8 +96,8 @@ struct OpEssentialRhsImpl<DisplacementCubitBcData, 1, FIELD_DIM, A, I, OpBase>
 private:
   FTensor::Tensor1<double, FIELD_DIM> tVal;
   FTensor::Tensor1<double, 3> tAngles;
+  FTensor::Tensor1<double, 3> tOffset;
   VecOfTimeScalingMethods vecOfTimeScalingMethods;
-  boost::shared_ptr<DisplacementCubitBcData> bcData;
   VectorFun<FIELD_DIM> dispFunction;
 };
 
@@ -102,12 +108,13 @@ OpEssentialRhsImpl<DisplacementCubitBcData, 1, FIELD_DIM, A, I, OpBase>::
                        boost::shared_ptr<Range> ents_ptr,
                        std::vector<boost::shared_ptr<ScalingMethod>> smv)
     : OpSource(field_name, dispFunction, ents_ptr),
-      vecOfTimeScalingMethods(smv), bcData(bc_data) {
+      vecOfTimeScalingMethods(smv) {
   static_assert(FIELD_DIM > 1, "Is not implemented for scalar field");
 
   FTensor::Index<'i', FIELD_DIM> i;
   tVal(i) = 0;
   tAngles(i) = 0;
+  tOffset(i) = 0;
 
   if (bc_data->data.flag1 == 1)
     tVal(0) = -bc_data->data.value1;
@@ -132,7 +139,8 @@ OpEssentialRhsImpl<DisplacementCubitBcData, 1, FIELD_DIM, A, I, OpBase>::
   if (bc_data->data.flag4 || bc_data->data.flag5 || bc_data->data.flag6) {
     this->dispFunction = [this](double x, double y, double z) {
       FTensor::Index<'i', FIELD_DIM> i;
-      auto rot = _getRotDisp(tAngles, x, y, z);
+      auto rot =
+          _getRotDisp(tAngles, FTensor::Tensor1<double, 3>{x, y, z}, tOffset);
       tVal(i) += rot(i);
       return tVal;
     };
