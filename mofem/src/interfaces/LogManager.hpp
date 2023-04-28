@@ -350,7 +350,10 @@ PetscErrorCode PetscVFPrintfDefault(FILE *fd, const char *format, va_list Argp);
  * 
  */
 #define MOFEM_LOG_SEVERITY_SYNC(comm, severity)                                \
-  MOFEM_LOG("NULL", severity) << ([&] { return MOFEM_LOG_SYNCHRONISE(comm); })()
+  MOFEM_LOG("NULL", severity) << ([&] {                                        \
+    MOFEM_LOG_SYNCHRONISE(comm);                                               \
+    return 0;                                                                  \
+  })()
 
 /**
  * @brief Tag and log in channel
