@@ -479,6 +479,13 @@ Or you can do that in the code
 CHKERR MatView(A, PETSC_VIEWER_DRAW_WORLD);
 \endcode
 
+\subsection Resources about Python
+
+If you luking about resources about python, follow links,
+\li <a href="https://numpy.org/learn/">NumPy tutorials (both for beginners and advanced)</a>
+\li <a href="https://www.codecademy.com/catalog/language/python">Codecademy</a>
+\li <a href="https://www.coursera.org/learn/python">Coursera</a>
+
 
 \subsection petsc_print_matrix How to test and print jacobian matrix with PETSc?
 
