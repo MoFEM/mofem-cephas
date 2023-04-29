@@ -293,7 +293,7 @@ MoFEMErrorCode AtomTest::checkResults() {
 
   // create data structures for operator
   auto common_data_ptr = boost::make_shared<CommonData>();
-  common_data_ptr->L2Vec = createSmartVectorMPI(
+  common_data_ptr->L2Vec = createVectorMPI(
       mField.get_comm(), (!mField.get_comm_rank()) ? 3 : 0, 3);
   common_data_ptr->approxVals = boost::make_shared<VectorDouble>();
   common_data_ptr->approxGradVals = boost::make_shared<MatrixDouble>();

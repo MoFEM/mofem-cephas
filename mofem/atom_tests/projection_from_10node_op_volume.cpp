@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
     CHKERR DMMoFEMSetIsPartitioned(dM, PETSC_FALSE);
     CHKERR DMSetUp_MoFEM(dM);
 
-    auto vol_vec = createSmartVectorMPI(m_field.get_comm(),
+    auto vol_vec = createVectorMPI(m_field.get_comm(),
                                         m_field.get_comm_rank() ? 0 : 1, 1);
 
     auto fe_ptr =

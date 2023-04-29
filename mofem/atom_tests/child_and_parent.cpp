@@ -534,7 +534,7 @@ MoFEMErrorCode AtomTest::checkResults(
 
   auto common_data_ptr = boost::make_shared<CommonData>();
   common_data_ptr->resVec = smartCreateDMVector(simpleInterface->getDM());
-  common_data_ptr->L2Vec = createSmartVectorMPI(
+  common_data_ptr->L2Vec = createVectorMPI(
       mField.get_comm(), (!mField.get_comm_rank()) ? 1 : 0, 1);
   common_data_ptr->approxVals = boost::make_shared<VectorDouble>();
 

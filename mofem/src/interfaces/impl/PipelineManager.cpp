@@ -77,7 +77,7 @@ SmartPetscObj<KSP> PipelineManager::createKSP(SmartPetscObj<DM> dm) {
 
   boost::shared_ptr<FEMethod> null;
 
-  smartGetDMKspCtx(dm)->clearLoops();
+  getDMKspCtx(dm)->clearLoops();
 
   // Add element to calculate lhs of stiff part
   if (feDomainLhs)
@@ -135,7 +135,7 @@ SmartPetscObj<SNES> PipelineManager::createSNES(SmartPetscObj<DM> dm) {
   };
   CHKERR set_dm_section(dm);
 
-  smartGetDMSnesCtx(dm)->clearLoops();
+  getDMSnesCtx(dm)->clearLoops();
 
   boost::shared_ptr<FEMethod> null;
 
@@ -220,7 +220,7 @@ SmartPetscObj<TS> PipelineManager::createTSEX(SmartPetscObj<DM> dm) {
 
   boost::shared_ptr<FEMethod> null;
 
-  smartGetDMTsCtx(dm)->clearLoops();
+  getDMTsCtx(dm)->clearLoops();
 
   // Add element to calculate rhs of stiff part
   if (feDomainRhs)

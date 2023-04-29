@@ -985,57 +985,72 @@ inline auto getProblemPtr(DM dm) {
  * \ingroup dm
  * 
  */
-inline auto smartCreateDMMatrix(DM dm) {
+inline auto createDMMatrix(DM dm) {
   SmartPetscObj<Mat> a;
   ierr = DMCreateMatrix_MoFEM(dm, a);
   CHKERRABORT(getCommFromPetscObject(reinterpret_cast<PetscObject>(dm)), ierr);
   return a;
 };
 
+/** @deprecated use createDMMatrix */
+DEPRECATED inline auto smartCreateDMMatrix(DM dm) { return createDMMatrix(dm); }
+
 /**
  * @brief Get smart vector from DM
  * \ingroup dm
  * 
  */
-inline auto smartCreateDMVector(DM dm) {
+inline auto createDMVector(DM dm) {
   SmartPetscObj<Vec> v;
   ierr = DMCreateGlobalVector_MoFEM(dm, v);
   CHKERRABORT(getCommFromPetscObject(reinterpret_cast<PetscObject>(dm)), ierr);
   return v;
 };
 
+/** @deprecated use createDMVector*/
+DEPRECATED inline auto smartCreateDMVector(DM dm) { return createDMVector(dm); }
+
 /**
  * @brief Get KSP context data structure used by DM
  * 
  */
-inline auto smartGetDMKspCtx(DM dm) {
+inline auto getDMKspCtx(DM dm) {
   boost::shared_ptr<MoFEM::KspCtx> ksp_ctx;
   ierr = DMMoFEMGetKspCtx(dm, ksp_ctx);
   CHKERRABORT(getCommFromPetscObject(reinterpret_cast<PetscObject>(dm)), ierr);
   return ksp_ctx;
 };
 
+/** @deprecated getDMKspCtx  */
+DEPRECATED inline auto smartGetDMKspCtx(DM dm) { return getDMKspCtx(dm); }
+
 /**
  * @brief Get SNES context data structure used by DM
  * 
  */
-inline auto smartGetDMSnesCtx(DM dm) {
+inline auto getDMSnesCtx(DM dm) {
   boost::shared_ptr<MoFEM::SnesCtx> snes_ctx;
   ierr = DMMoFEMGetSnesCtx(dm, snes_ctx);
   CHKERRABORT(getCommFromPetscObject(reinterpret_cast<PetscObject>(dm)), ierr);
   return snes_ctx;
 };
 
+/** @deprecated use smartGetDMSnesCtx*/
+DEPRECATED inline auto smartGetDMSnesCtx(DM dm) { return getDMSnesCtx(dm); }
+
 /**
  * @brief Get TS context data structure used by DM
  * 
  */
-inline auto smartGetDMTsCtx(DM dm) {
+inline auto getDMTsCtx(DM dm) {
   boost::shared_ptr<MoFEM::TsCtx> ts_ctx;
   ierr = DMMoFEMGetTsCtx(dm, ts_ctx);
   CHKERRABORT(getCommFromPetscObject(reinterpret_cast<PetscObject>(dm)), ierr);
   return ts_ctx;
 };
+
+/** @deprecated use getDMTsCtx */
+DEPRECATED inline auto smartGetDMTsCtx(DM dm) { return getDMTsCtx(dm); }
 
 /**
  * @brief  Get sub problem data structure
