@@ -184,10 +184,10 @@ int main(int argc, char *argv[]) {
       auto skeleton_fe = boost::make_shared<FEMethod>();
       auto A = smartCreateDMMatrix(dm);
       auto B = smartCreateDMMatrix(dm);
-      auto f = smartCreateDMVector(dm);
-      auto x = smartCreateDMVector(dm);
-      auto x_t = smartCreateDMVector(dm);
-      auto x_tt = smartCreateDMVector(dm);
+      auto f = createDMVector(dm);
+      auto x = createDMVector(dm);
+      auto x_t = createDMVector(dm);
+      auto x_tt = createDMVector(dm);
       skeleton_fe->f = f;
       skeleton_fe->A = A;
       skeleton_fe->B = B;

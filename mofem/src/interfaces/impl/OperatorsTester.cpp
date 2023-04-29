@@ -34,7 +34,7 @@ OperatorsTester::setRandomFields(SmartPetscObj<DM> dm,
     return range[0] + r * (range[1] - range[0]);
   };
 
-  auto v = smartCreateDMVector(dm);
+  auto v = createDMVector(dm);
   double *array;
   CHKERR VecGetArray(v, &array);
 
@@ -87,7 +87,7 @@ OperatorsTester::assembleVec(SmartPetscObj<DM> dm, std::string fe_name,
                              double delta_t, CacheTupleWeakPtr cache_ptr) {
 
   pipeline->data_ctx = PetscData::CtxSetF | PetscData::CtxSetTime;
-  auto f = smartCreateDMVector(dm);
+  auto f = createDMVector(dm);
   pipeline->f = f;
   pipeline->ts_t = time;
   pipeline->ts_dt = delta_t;

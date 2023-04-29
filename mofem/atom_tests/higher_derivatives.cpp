@@ -269,7 +269,7 @@ MoFEMErrorCode AtomTest::solveSystem() {
   CHKERR KSPSetUp(solver);
 
   auto dm = simpleInterface->getDM();
-  auto D = smartCreateDMVector(dm);
+  auto D = createDMVector(dm);
   auto F = vectorDuplicate(D);
 
   CHKERR KSPSolve(solver, F, D);
