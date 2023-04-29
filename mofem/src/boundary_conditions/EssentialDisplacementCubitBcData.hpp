@@ -55,14 +55,17 @@ _getRotDisp(FTensor::Tensor1<double, 3> const &t_angles,
   return tRot;
 }
 
+struct DisplacementCubitBcDataWithRotation : public DisplacementCubitBcData {
+  std::array<double, 3> rotOffset;
+  DisplacementCubitBcDataWithRotation() : rotOffset{0, 0, 0} {}
+};
+
 /**
  * @brief Specialization for DisplacementCubitBcData
  *
  * Specialization to enforce blocksets which DisplacementCubitBcData ptr. That
  * is to enforce displacement constraints. set
  *
- * TODO: implement specialization for BcVectorMeshsetType<BLOCKSET>
- * 
  * @tparam
  */
 template <> struct EssentialPreProc<DisplacementCubitBcData> {
@@ -128,6 +131,13 @@ OpEssentialRhsImpl<DisplacementCubitBcData, 1, FIELD_DIM, A, I, OpBase>::
     tAngles(1) = -bc_data->data.value5;
   if (bc_data->data.flag6 == 1 && FIELD_DIM > 1)
     tAngles(2) = -bc_data->data.value6;
+
+  if (auto ext_bc_data =
+          dynamic_cast<DisplacementCubitBcDataWithRotation const *>(
+              bc_data.get())) {
+    for (int a = 0; a != 3; ++a)
+      tOffset(a) = ext_bc_data->rotOffset(a);
+  }
 
   this->timeScalingFun = [this](const double t) {
     double s = 1;

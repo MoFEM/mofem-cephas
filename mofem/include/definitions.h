@@ -178,7 +178,7 @@ const static char *const CubitBCNames[] = {
     "VELOCITYSET",    "ACCELERATIONSET", "TEMPERATURESET",  "HEATFLUXSET",
     "INTERFACESET",   "UNKNOWNNAME",     "MAT_ELASTICSET",  "MAT_INTERFSET",
     "MAT_THERMALSET", "BODYFORCESSET",   "MAT_MOISTURESET", "DIRICHLET_BC",
-    "NEUMANN_BC", "LASTSET_BC"};
+    "NEUMANN_BC",     "LASTSET_BC"};
 
 /**
  * \brief Format in rows of vectorial base functions

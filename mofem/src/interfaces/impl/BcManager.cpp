@@ -876,7 +876,7 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
   CHKERR mark_dofs("FIX_Y", 1, 1);
   CHKERR mark_dofs("FIX_Z", 2, 2);
   CHKERR mark_dofs("FIX_ALL", 0, MAX_DOFS_ON_ENTITY);
-  
+
   // rotation
   CHKERR mark_dofs("ROTATE_X", 1, 1);
   CHKERR mark_dofs("ROTATE_X", 2, 2);
@@ -959,56 +959,101 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
         MOFEM_LOG("BcMngWorld", Sev::inform) << "Add ALL " << bc_id;
         MOFEM_LOG("BcMngWorld", Sev::inform) << *(bc->dispBcPtr);
       } else if (std::regex_match(bc_id, std::regex("(.*)_ROTATE_X(.*)"))) {
-        bc->dispBcPtr = boost::make_shared<DisplacementCubitBcData>();
+        bc->dispBcPtr =
+            boost::make_shared<DisplacementCubitBcDataWithRotation>();
         bc->dispBcPtr->data.flag4 = 1;
         bc->dispBcPtr->data.flag5 = 0;
         bc->dispBcPtr->data.flag6 = 0;
         if (bc->bcAttributes.empty()) {
           bc->dispBcPtr->data.value4 = 0;
           MOFEM_LOG("BcMngWorld", Sev::warning)
-              << "Expected one attribute on block but have "
+              << "Expected at least one attribute on block (angle, center "
+                 "coords) but have "
               << bc->bcAttributes.size();
         } else if (bc->bcAttributes.size() >= 1) {
           bc->dispBcPtr->data.value4 = bc->bcAttributes[0];
         }
         MOFEM_LOG("BcMngWorld", Sev::inform) << "Add X " << bc_id;
         MOFEM_LOG("BcMngWorld", Sev::inform) << *bc->dispBcPtr;
+        if (bc->bcAttributes.size() == 4 || bc->bcAttributes.size() == 6) {
+          if (auto ext_disp_bc =
+                  dynamic_cast<DisplacementCubitBcDataWithRotation *>(
+                      bc->dispBcPtr.get())) {
+            auto &o = ext_disp_bc->rotOffset;
+            for (int a = 0; a != 3; ++a)
+              o[a] = bc->bcAttributes[bc->bcAttributes.size() - 3 + a];
+            MOFEM_LOG("BcMngWorld", Sev::inform)
+                << "Add Rotate X Center: " << o[0] << " " << o[1] << " "
+                << o[2];
+          }
+        }
       } else if (std::regex_match(bc_id, std::regex("(.*)_ROTATE_Y(.*)"))) {
-        bc->dispBcPtr = boost::make_shared<DisplacementCubitBcData>();
+        bc->dispBcPtr =
+            boost::make_shared<DisplacementCubitBcDataWithRotation>();
         bc->dispBcPtr->data.flag4 = 0;
         bc->dispBcPtr->data.flag5 = 1;
         bc->dispBcPtr->data.flag6 = 0;
         if (bc->bcAttributes.empty()) {
           bc->dispBcPtr->data.value5 = 0;
           MOFEM_LOG("BcMngWorld", Sev::warning)
-              << "Expected one attribute on block but have "
+              << "Expected one attribute on block (angle, center coords) but "
+                 "have "
               << bc->bcAttributes.size();
-        } else if (bc->bcAttributes.size() == 1) {
+        } else if (bc->bcAttributes.size() == 1 ||
+                   bc->bcAttributes.size() == 4) {
           bc->dispBcPtr->data.value5 = bc->bcAttributes[0];
-        } else if (bc->bcAttributes.size() >= 2) {
+        } else if (bc->bcAttributes.size() == 6) {
           bc->dispBcPtr->data.value5 = bc->bcAttributes[1];
         }
         MOFEM_LOG("BcMngWorld", Sev::inform) << "Add Y " << bc_id;
         MOFEM_LOG("BcMngWorld", Sev::inform) << *(bc->dispBcPtr);
+        if (bc->bcAttributes.size() == 4 || bc->bcAttributes.size() == 6) {
+          if (auto ext_disp_bc =
+                  dynamic_cast<DisplacementCubitBcDataWithRotation *>(
+                      bc->dispBcPtr.get())) {
+            auto &o = ext_disp_bc->rotOffset;
+            for (int a = 0; a != 3; ++a)
+              o[a] = bc->bcAttributes[bc->bcAttributes.size() - 3 + a];
+            MOFEM_LOG("BcMngWorld", Sev::inform)
+                << "Add Rotate Y Center: " << o[0] << " " << o[1] << " "
+                << o[2];
+          }
+        }
       } else if (std::regex_match(bc_id, std::regex("(.*)_ROTATE_Z(.*)"))) {
-        bc->dispBcPtr = boost::make_shared<DisplacementCubitBcData>();
+        bc->dispBcPtr =
+            boost::make_shared<DisplacementCubitBcDataWithRotation>();
         bc->dispBcPtr->data.flag4 = 0;
         bc->dispBcPtr->data.flag5 = 0;
         bc->dispBcPtr->data.flag6 = 1;
         if (bc->bcAttributes.empty()) {
           bc->dispBcPtr->data.value6 = 0;
           MOFEM_LOG("BcMngWorld", Sev::warning)
-              << "Expected one attribute on block but have "
+              << "Expected one attribute on block (angle, center coords) but "
+                 "have "
               << bc->bcAttributes.size();
-        } else if (bc->bcAttributes.size() == 1) {
+        } else if (bc->bcAttributes.size() == 1 ||
+                   bc->bcAttributes.size() > 4) {
           bc->dispBcPtr->data.value6 = bc->bcAttributes[0];
         } else if (bc->bcAttributes.size() == 3) {
           bc->dispBcPtr->data.value6 = bc->bcAttributes[2];
         }
         MOFEM_LOG("BcMngWorld", Sev::inform) << "Add Z " << bc_id;
         MOFEM_LOG("BcMngWorld", Sev::inform) << *(bc->dispBcPtr);
+        if (bc->bcAttributes.size() == 4 || bc->bcAttributes.size() == 6) {
+          if (auto ext_disp_bc =
+                  dynamic_cast<DisplacementCubitBcDataWithRotation *>(
+                      bc->dispBcPtr.get())) {
+            auto &o = ext_disp_bc->rotOffset;
+            for (int a = 0; a != 3; ++a)
+              o[a] = bc->bcAttributes[bc->bcAttributes.size() - 3 + a];
+            MOFEM_LOG("BcMngWorld", Sev::inform)
+                << "Add Rotate Z Center: " << o[0] << " " << o[1] << " "
+                << o[2];
+          }
+        }
       } else if (std::regex_match(bc_id, std::regex("(.*)_ROTATE_ALL(.*)"))) {
-        bc->dispBcPtr = boost::make_shared<DisplacementCubitBcData>();
+        bc->dispBcPtr =
+            boost::make_shared<DisplacementCubitBcDataWithRotation>();
         bc->dispBcPtr->data.flag4 = 1;
         bc->dispBcPtr->data.flag5 = 1;
         bc->dispBcPtr->data.flag6 = 1;
@@ -1023,6 +1068,18 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
         }
         MOFEM_LOG("BcMngWorld", Sev::inform) << "Add ALL " << bc_id;
         MOFEM_LOG("BcMngWorld", Sev::inform) << *(bc->dispBcPtr);
+        if (bc->bcAttributes.size() > 3) {
+          if (auto ext_disp_bc =
+                  dynamic_cast<DisplacementCubitBcDataWithRotation *>(
+                      bc->dispBcPtr.get())) {
+            auto &o = ext_disp_bc->rotOffset;
+            for (int a = 0; a != 3; ++a)
+              o[a] = bc->bcAttributes[3 + a];
+            MOFEM_LOG("BcMngWorld", Sev::inform)
+                << "Add Rotate ALL Center: " << o[0] << " " << o[1] << " "
+                << o[2];
+          }
+        }
       }
     }
   }

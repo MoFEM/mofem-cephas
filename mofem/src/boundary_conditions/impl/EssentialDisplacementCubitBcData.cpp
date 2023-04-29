@@ -51,6 +51,14 @@ MoFEMErrorCode EssentialPreProc<DisplacementCubitBcData>::operator()() {
 
           FTensor::Tensor1<double, 3> t_angles(0., 0., 0.);
           FTensor::Tensor1<double, 3> t_vals(0., 0., 0.);
+          FTensor::Tensor1<double, 3> t_off(0., 0., 0.);
+
+          if (auto ext_disp_bc =
+                  dynamic_cast<DisplacementCubitBcDataWithRotation const *>(
+                      disp_bc.get())) {
+            for (int a = 0; a != 3; ++a)
+              t_off(a) = ext_disp_bc->rotOffset[a];
+          }
 
           auto scale_value = [&](const double &c) {
             double val = c;
@@ -85,7 +93,7 @@ MoFEMErrorCode EssentialPreProc<DisplacementCubitBcData>::operator()() {
             if (is_rotation) {
               FTensor::Tensor1<double, 3> t_coords(
                   coords[0][idx], coords[1][idx], coords[2][idx]);
-              v += _getRotDisp(t_angles, t_coords)(coeff);
+              v += _getRotDisp(t_angles, t_coords, t_off)(coeff);
             }
             if (getCoords)
               v += coords[coeff][idx];
