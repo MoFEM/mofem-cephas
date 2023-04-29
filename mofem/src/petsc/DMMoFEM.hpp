@@ -19,6 +19,11 @@ PetscErrorCode DMRegister_MoFEM(const char sname[]);
 
 /**
  * \brief Must be called by user to set MoFEM data structures
+ *
+ * \note If problem exist function create DM for it. If you set bit levels,
+ * those bits are to existing bits. Thus if you do not like to change bit ref
+ * level for existing problem, set bits to zero.
+ *
  * \ingroup dm
  */
 PetscErrorCode DMMoFEMCreateMoFEM(
