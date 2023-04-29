@@ -17,7 +17,7 @@ namespace MoFEM {
  * \brief Section manager is used to create indexes and sections
  * \ingroup mofem_is_managers
  *
- * FIXME: ISManager is not properly testsed by atom tests.
+ * FIXME: ISManager is not properly tested by atom tests.
  *
  */
 struct ISManager : public UnknownInterface {
