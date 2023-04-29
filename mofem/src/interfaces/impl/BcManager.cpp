@@ -954,8 +954,10 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<DisplacementCubitBcData>(
     const std::string problem_name, const std::string field_name,
     bool get_low_dim_ents, bool block_name_field_prefix) {
   MoFEMFunctionBegin;
+  // that marks DOFs and create data when are set by cubit nodesets. 
   CHKERR pushMarkDOFsOnEntities<BcMeshsetType<DISPLACEMENTSET>>(
       problem_name, field_name, get_low_dim_ents, block_name_field_prefix);
+  // that marks DOFs and create data when are set by blocsket.
   CHKERR pushMarkDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
       problem_name, field_name, get_low_dim_ents, block_name_field_prefix);
   MoFEMFunctionReturn(0);
@@ -967,12 +969,15 @@ MoFEMErrorCode BcManager::removeBlockDOFsOnEntities<DisplacementCubitBcData>(
     bool get_low_dim_ents, bool block_name_field_prefix,
     bool is_distributed_mesh) {
   MoFEMFunctionBegin;
+  // that remove DOFs when are set by cubit nodesets. 
   CHKERR removeBlockDOFsOnEntities<BcMeshsetType<DISPLACEMENTSET>>(
       problem_name, field_name, get_low_dim_ents, block_name_field_prefix,
       is_distributed_mesh);
+  // that remove DOFs when are by blocksets  
   CHKERR removeBlockDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
       problem_name, field_name, get_low_dim_ents, block_name_field_prefix,
       is_distributed_mesh);
+  // add more ways to remove bcs when appropiate
   MoFEMFunctionReturn(0);
 }
 
