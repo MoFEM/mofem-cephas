@@ -456,7 +456,7 @@ MoFEMErrorCode Simple::defineProblem(const PetscBool is_partitioned) {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
   // Create dm instance
-  dM = createSmartDM(m_field.get_comm(), "DMMOFEM");
+  dM = createDM(m_field.get_comm(), "DMMOFEM");
   // set dm data structure which created mofem data structures
   CHKERR DMMoFEMCreateMoFEM(dM, &m_field, nameOfProblem.c_str(), bitLevel,
                             bitLevelMask);

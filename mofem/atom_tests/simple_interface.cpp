@@ -148,10 +148,10 @@ int main(int argc, char *argv[]) {
       // create distributed vector to accumulate values from processors.
       int ghosts[] = {0};
       
-      auto vol = createSmartGhostVector(
+      auto vol = createGhostVector(
           PETSC_COMM_WORLD, m_field.get_comm_rank() == 0 ? 1 : 0, 1,
           m_field.get_comm_rank() == 0 ? 0 : 1, ghosts);
-      auto surf_vol = smartVectorDuplicate(vol);
+      auto surf_vol = vectorDuplicate(vol);
 
       // set operator to the volume element
       auto material_grad_mat = boost::make_shared<MatrixDouble>();

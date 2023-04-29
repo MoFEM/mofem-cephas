@@ -324,7 +324,7 @@ int main(int argc, char *argv[]) {
       CHKERR KSPSetUp(solver);
 
       auto D = smartCreateDMVector(dm);
-      auto F = smartVectorDuplicate(D);
+      auto F = vectorDuplicate(D);
 
       CHKERR KSPSolve(solver, F, D);
       CHKERR VecGhostUpdateBegin(D, INSERT_VALUES, SCATTER_FORWARD);
