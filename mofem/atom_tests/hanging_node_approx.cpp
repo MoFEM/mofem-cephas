@@ -482,7 +482,6 @@ MoFEMErrorCode AtomTest::setupProblem() {
   
   CHKERR simpleInterface->setUp();
 
-  BitRefManager *bit_mng = mField.getInterface<BitRefManager>();
   ProblemsManager *prb_mng = mField.getInterface<ProblemsManager>();
 
   // remove obsolete DOFs from problem

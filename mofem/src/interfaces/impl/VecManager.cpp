@@ -551,7 +551,6 @@ MoFEMErrorCode VecManager::setOtherGlobalGhostVector(
   const MoFEM::Interface &m_field = cOre;
   auto fields_ptr = m_field.get_fields();
   auto dofs_ptr = m_field.get_dofs();
-  auto *field_ents = m_field.get_field_ents();
   MoFEMFunctionBegin;
   NumeredDofEntityByUId *dofs;
   DofIdx nb_dofs;

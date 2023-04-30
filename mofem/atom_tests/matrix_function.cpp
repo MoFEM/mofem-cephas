@@ -364,7 +364,7 @@ int main(int argc, char *argv[]) {
                                 -0.5, 0.,  3.};
 
         auto tuple = run_lapack(a);
-        auto &t_a = std::get<0>(tuple);
+        // auto &t_a = std::get<0>(tuple);
         auto &t_eig_vec = std::get<1>(tuple);
         auto &t_eig_vals = std::get<2>(tuple);
 
@@ -666,7 +666,7 @@ int main(int argc, char *argv[]) {
                               0.,  0.,  0.1};
 
       auto tuple = run_lapack(a);
-      auto &t_a = std::get<0>(tuple);
+      // auto &t_a = std::get<0>(tuple);
       auto &t_eig_vecs = std::get<1>(tuple);
       auto &t_eig_vals = std::get<2>(tuple);
 
@@ -714,7 +714,7 @@ int main(int argc, char *argv[]) {
                               0., 0., 2};
 
       auto tuple = run_lapack(a);
-      auto &t_a = std::get<0>(tuple);
+      // auto &t_a = std::get<0>(tuple);
       auto &t_eig_vecs = std::get<1>(tuple);
       auto &t_eig_vals = std::get<2>(tuple);
 
@@ -758,7 +758,7 @@ int main(int argc, char *argv[]) {
                               0., 0., 9};
 
       auto tuple = run_lapack(a, swap01);
-      auto &t_a = std::get<0>(tuple);
+      // auto &t_a = std::get<0>(tuple);
       auto &t_eig_vecs = std::get<1>(tuple);
       auto &t_eig_vals = std::get<2>(tuple);
 
@@ -803,7 +803,7 @@ int main(int argc, char *argv[]) {
                               0., 0., 2};
 
       auto tuple = run_lapack(a);
-      auto &t_a = std::get<0>(tuple);
+      // auto &t_a = std::get<0>(tuple);
       auto &t_eig_vecs = std::get<1>(tuple);
       auto &t_eig_vals = std::get<2>(tuple);
 
@@ -875,7 +875,7 @@ int main(int argc, char *argv[]) {
                               0., 0., 9};
 
       auto tuple = run_lapack(a, swap01);
-      auto &t_a = std::get<0>(tuple);
+      // auto &t_a = std::get<0>(tuple);
       auto &t_eig_vecs = std::get<1>(tuple);
       auto &t_eig_vals = std::get<2>(tuple);
 
@@ -948,7 +948,7 @@ int main(int argc, char *argv[]) {
                               0., 0., 9};
 
       auto tuple = run_lapack(a, swap01);
-      auto &t_a = std::get<0>(tuple);
+      // auto &t_a = std::get<0>(tuple);
       auto &t_eig_vecs = std::get<1>(tuple);
       auto &t_eig_vals = std::get<2>(tuple);
 
@@ -1023,7 +1023,7 @@ int main(int argc, char *argv[]) {
                               -0.5, 0.,  3.};
 
       auto tuple = run_lapack(a);
-      auto &t_a = std::get<0>(tuple);
+      // auto &t_a = std::get<0>(tuple);
       auto &t_eig_vecs = std::get<1>(tuple);
       auto &t_eig_vals = std::get<2>(tuple);
 

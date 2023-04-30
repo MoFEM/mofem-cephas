@@ -1178,7 +1178,6 @@ OpConvectiveTermRhsImpl<1, 1, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
     EntitiesFieldData::EntData &row_data) {
   MoFEMFunctionBegin;
 
-  const size_t nb_base_functions = row_data.getN().size2();
   auto t_w = this->getFTensor0IntegrationWeight();
   auto t_base = row_data.getFTensor0N();
 
@@ -1216,7 +1215,6 @@ OpConvectiveTermRhsImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
     EntitiesFieldData::EntData &row_data) {
   MoFEMFunctionBegin;
 
-  const size_t nb_base_functions = row_data.getN().size2();
   auto t_w = this->getFTensor0IntegrationWeight();
   auto t_base = row_data.getFTensor0N();
 

@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Check casting on PetscObject
-    { PetscObject obj = static_cast<PetscObject>(m_ptr); }
+    { std::ignore = static_cast<PetscObject>(m_ptr); }
 
     { 
       SmartPetscObj<Mat> n_ptr(m_ptr); 

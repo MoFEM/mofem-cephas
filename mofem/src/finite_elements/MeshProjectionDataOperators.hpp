@@ -247,7 +247,8 @@ protected:
 
     switch (field.getSpace()) {
     case H1:
-      for (auto fe_ent : parents)
+      // TODO: check this loop
+      for (int i = 0; i != parents.size(); ++i)
         CHKERR moab.get_connectivity(&*parents.begin(), parents.size(),
                                      adjacency, true);
     case HCURL:

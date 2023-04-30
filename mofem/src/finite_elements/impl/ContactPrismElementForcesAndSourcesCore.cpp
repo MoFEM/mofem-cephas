@@ -501,7 +501,6 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
 MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
   MoFEMFunctionBegin;
 
-  const EntityType type = numeredEntFiniteElementPtr->getEntType();
   constexpr std::array<UserDataOperator::OpType, 2> types{
       UserDataOperator::OPROW, UserDataOperator::OPCOL};
   std::array<std::string, 2> last_eval_field_name{std::string(), std::string()};

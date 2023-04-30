@@ -99,7 +99,6 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
       // if entity is not problem refinement level
       if ((fe_bit & prb_bit).any() && (fe_bit & prb_mask) == fe_bit) {
 
-        const BitRefLevel &dof_bit = (*mit_row)->getBitRefLevel();
         const bool empty_row_block =
             (empty_field_blocks.first & (*mit_row)->getId()).none();
 
@@ -669,8 +668,6 @@ MatrixManager::createMPIAIJCUSPARSEWithArrays<PetscGlobalIdx_mi_tag>(
   CHKERR core_ptr->createMatArrays<PetscGlobalIdx_mi_tag>(
       p_miit, MATAIJCUSPARSE, i_vec, j_vec, false, verb);
 
-  int nb_row_dofs = p_miit->getNbDofsRow();
-  int nb_col_dofs = p_miit->getNbDofsCol();
   int nb_local_dofs_row = p_miit->getNbLocalDofsRow();
   int nb_local_dofs_col = p_miit->getNbLocalDofsCol();
 
@@ -1128,7 +1125,6 @@ template <>
 MoFEMErrorCode
 MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
     const std::string problem_name, int row_print, int col_print, int verb) {
-  MoFEM::CoreInterface &m_field = cOre;
   MatrixManagerFunctionBegin;
   // create matrix
   SmartPetscObj<Mat> A;
@@ -1141,7 +1137,6 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
 template <>
 MoFEMErrorCode MatrixManager::checkMPIAIJMatrixFillIn<PetscGlobalIdx_mi_tag>(
     const std::string problem_name, int row_print, int col_print, int verb) {
-  MoFEM::CoreInterface &m_field = cOre;
   MatrixManagerFunctionBegin;
   // create matrix
   SmartPetscObj<Mat> A;

@@ -38,7 +38,6 @@ BcManager::BcManager(const Core &core) : cOre(const_cast<Core &>(core)) {
 }
 
 MoFEMErrorCode BcManager::getOptions() {
-  PetscBool flg = PETSC_TRUE;
   MoFEMFunctionBeginHot;
   ierr = PetscOptionsBegin(PETSC_COMM_WORLD, "", "BcManager options", "none");
   ierr = PetscOptionsEnd();
@@ -804,8 +803,6 @@ template <>
 MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
     const std::string problem_name, const std::string field_name,
     bool get_low_dim_ents, bool block_name_field_prefix) {
-  Interface &m_field = cOre;
-  auto prb_mng = m_field.getInterface<ProblemsManager>();
   MoFEMFunctionBegin;
 
   if (block_name_field_prefix) {
@@ -915,8 +912,6 @@ template <>
 MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcScalarMeshsetType<BLOCKSET>>(
     const std::string problem_name, const std::string block_name,
     const std::string field_name, bool get_low_dim_ents) {
-  Interface &m_field = cOre;
-  auto prb_mng = m_field.getInterface<ProblemsManager>();
   MoFEMFunctionBegin;
 
   CHKERR pushMarkDOFsOnEntities(problem_name, block_name, field_name, 0,

@@ -236,8 +236,6 @@ MoFEMErrorCode Core::clear_adjacencies_entities(const std::string name,
 
   const Field *field_ptr = get_field_structure(name);
   int field_bit_number = field_ptr->getBitNumber();
-  ParallelComm *pcomm =
-      ParallelComm::get_pcomm(&get_moab(), basicEntityDataPtr->pcommID);
 
   for (Range::const_pair_iterator p_eit = ents.pair_begin();
        p_eit != ents.pair_end(); p_eit++) {

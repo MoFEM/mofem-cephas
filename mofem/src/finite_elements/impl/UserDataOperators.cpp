@@ -334,8 +334,6 @@ MoFEMErrorCode OpSetCovariantPiolaTransformOnFace2DImpl<2>::doWork(
   if (type_dim != 1 && type_dim != 2)
     MoFEMFunctionReturnHot(0);
 
-  const auto nb_gauss_pts = getGaussPts().size2();
-
   FTensor::Index<'i', 2> i;
   FTensor::Index<'j', 2> j;
   FTensor::Index<'k', 2> k;
