@@ -120,7 +120,7 @@ OperatorsTester::assembleMat(SmartPetscObj<DM> dm, std::string fe_name,
                              SmartPetscObj<Vec> x, SmartPetscObj<Vec> delta_x,
                              SmartPetscObj<Vec> delta2_x, double time,
                              double delta_t, CacheTupleWeakPtr cache_ptr) {
-  auto m = smartCreateDMMatrix(dm);
+  auto m = createDMMatrix(dm);
 
   pipeline->data_ctx =
       PetscData::CtxSetA | PetscData::CtxSetB | PetscData::CtxSetTime;
