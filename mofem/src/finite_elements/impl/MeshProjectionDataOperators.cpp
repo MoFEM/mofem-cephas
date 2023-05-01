@@ -215,9 +215,25 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
 
         auto &field_entities = data.getFieldEntities();
 
-        // note all nodes from all added
+        // that is creepy hack (fix this)
+        // set indices -1 if entity is not on bit parent level
+        // note1: all nodes from parent are added
+        // note2: you have more entities typically for nodes
         if (field_entities.size() > 1) {
+
+          // The functionality issue is that in that you can have more than one
+          // entity. That is added that in some cases one like to group
+          // entities, for example nodes. As consequence DOFs on each entity
+          // have to be check separately one by one.
+
           int dof_idx = 0;
+
+// #ifndef NDEBUG
+          if (data.getIndices().size() != data.getFieldDofs().size())
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                    "Different size of indices and data vector");
+// #endif
+
           for (auto dof : data.getFieldDofs()) {
             auto &bit_ent = dof->getBitRefLevel();
             if (!check(bitParentEnt, bitParentEntMask, bit_ent)) {
@@ -264,7 +280,7 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
 
   // iterate parents collect data
   auto &bit_fe = getFEMethod()->numeredEntFiniteElementPtr->getBitRefLevel();
-  if (check(bitChild, bitChildMask, bit_fe)) {
+  if (check(bitChild, bitChildMask, bit_fe)) { // check if FE is on right bit
 
     if (verbosity >= VERBOSE) {
       MOFEM_LOG("SELF", severityLevel) << "Child FE bit: " << bit_fe;
@@ -305,6 +321,7 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
       MoFEMFunctionReturnHot(0);
     };
 
+    // iterate parent finite lents
     CHKERR loop_parent_fe();
   }
 
