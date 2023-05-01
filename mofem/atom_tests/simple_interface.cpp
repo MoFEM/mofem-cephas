@@ -182,8 +182,8 @@ int main(int argc, char *argv[]) {
                                       boundary_fe);
 
       auto skeleton_fe = boost::make_shared<FEMethod>();
-      auto A = smartCreateDMMatrix(dm);
-      auto B = smartCreateDMMatrix(dm);
+      auto A = createDMMatrix(dm);
+      auto B = createDMMatrix(dm);
       auto f = createDMVector(dm);
       auto x = createDMVector(dm);
       auto x_t = createDMVector(dm);
