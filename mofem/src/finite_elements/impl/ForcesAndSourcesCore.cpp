@@ -676,7 +676,12 @@ ForcesAndSourcesCore::getNodesFieldData(EntitiesFieldData &data,
           int nb_dofs = 0;
           for (auto it = lo; it != hi; ++it) {
             if (auto e = it->lock()) {
-              nb_dofs += e->getNbDofsOnEnt();
+              if (auto cache = e->entityCacheDataDofs.lock()) {
+                if (cache->loHi[0] != cache->loHi[1]) {
+                  nb_dofs += std::distance(cache->loHi[0], cache->loHi[1]);
+                  break;
+                }
+              }
             }
           }
 
