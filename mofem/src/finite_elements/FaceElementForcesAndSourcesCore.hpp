@@ -3,8 +3,6 @@
 
 */
 
-
-
 #ifndef __FACEELEMENTFORCESANDSOURCESCORE_HPP__
 #define __FACEELEMENTFORCESANDSOURCESCORE_HPP__
 
@@ -25,8 +23,8 @@ struct VolumeElementForcesAndSourcesCoreOnSide;
 struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
   /**
-   * @deprecated not used anumore, will be removed in next versions 
-   * 
+   * @deprecated not used anumore, will be removed in next versions
+   *
    */
   std::string meshPositionsFieldName;
 
@@ -76,6 +74,7 @@ protected:
   virtual MoFEMErrorCode calculateCoordinatesAtGaussPts();
 
   double aRea;
+  double elementCircumDiam;
   int num_nodes;
   const EntityHandle *conn;
   VectorDouble nOrmal, tangentOne, tangentTwo;
@@ -108,6 +107,18 @@ struct FaceElementForcesAndSourcesCore::UserDataOperator
    * @return area of face
    */
   inline double getMeasure();
+
+  /**
+   * \brief get circumference of element (or largest diagonal)
+   * @return of face
+   */
+  inline double getCircumDiam();
+
+  /**
+   * \brief get measure of element
+   * @return area of face
+   */
+  inline double getElementCharacteristicLength();
 
   /** \brief get triangle normal
    */
@@ -249,6 +260,16 @@ double FaceElementForcesAndSourcesCore::UserDataOperator::getArea() {
 
 double FaceElementForcesAndSourcesCore::UserDataOperator::getMeasure() {
   return getArea();
+}
+
+double FaceElementForcesAndSourcesCore::UserDataOperator::getCircumDiam() {
+  return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)
+      ->elementCircumDiam;
+}
+
+double FaceElementForcesAndSourcesCore::UserDataOperator::
+    getElementCharacteristicLength() {
+  return getCircumDiam();
 }
 
 VectorDouble &FaceElementForcesAndSourcesCore::UserDataOperator::getNormal() {

@@ -6,8 +6,6 @@
 
 */
 
-
-
 #ifndef __VOLUMEELEMENTFORCESANDSOURCESCORE_HPP__
 #define __VOLUMEELEMENTFORCESANDSOURCESCORE_HPP__
 
@@ -26,8 +24,7 @@ namespace MoFEM {
 struct VolumeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
   VolumeElementForcesAndSourcesCore(Interface &m_field,
-                                        const EntityType type = MBTET);
-
+                                    const EntityType type = MBTET);
 
   std::string meshPositionsFieldName; ///< \deprecated DO NOT USE!
 
@@ -36,13 +33,11 @@ struct VolumeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
    */
   struct UserDataOperator;
 
-  enum Switches {
-  };
+  enum Switches {};
 
   MoFEMErrorCode operator()();
 
 protected:
-
   // Note that functions below could be overloaded by user to change default
   // behavior of the element.
 
@@ -85,7 +80,6 @@ protected:
    */
   virtual MoFEMErrorCode transformBaseFunctions();
 
-
   VectorDouble coords;
   MatrixDouble3by3 jAc;
   MatrixDouble3by3 invJac;
@@ -96,6 +90,7 @@ protected:
   OpSetInvJacHdivAndHcurl opSetInvJacHdivAndHcurl;
 
   double &vOlume;
+  double &elementRad;
 
   int num_nodes;
   const EntityHandle *conn;
@@ -157,8 +152,7 @@ VolumeElementForcesAndSourcesCore::UserDataOperator::getConn() {
   return static_cast<VolumeElementForcesAndSourcesCore *>(ptrFE)->conn;
 }
 
-double
-VolumeElementForcesAndSourcesCore::UserDataOperator::getVolume() const {
+double VolumeElementForcesAndSourcesCore::UserDataOperator::getVolume() const {
   return static_cast<VolumeElementForcesAndSourcesCore *>(ptrFE)->vOlume;
 }
 
@@ -176,8 +170,7 @@ VolumeElementForcesAndSourcesCore::UserDataOperator::getInvJac() {
   return static_cast<VolumeElementForcesAndSourcesCore *>(ptrFE)->tInvJac;
 }
 
-VectorDouble &
-VolumeElementForcesAndSourcesCore::UserDataOperator::getCoords() {
+VectorDouble &VolumeElementForcesAndSourcesCore::UserDataOperator::getCoords() {
   return static_cast<VolumeElementForcesAndSourcesCore *>(ptrFE)->coords;
 }
 
@@ -188,7 +181,7 @@ VolumeElementForcesAndSourcesCore::UserDataOperator::getVolumeFE() const {
 
 /**
  * @deprecated use VolumeElementForcesAndSourcesCore
- * 
+ *
  */
 DEPRECATED typedef VolumeElementForcesAndSourcesCore
     VolumeElementForcesAndSourcesCoreBase;

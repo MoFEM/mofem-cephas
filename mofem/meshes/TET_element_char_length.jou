@@ -1,0 +1,15 @@
+reset
+brick x 1 y 1 z 1
+create planar surface with plane vertex 4 6 8
+webcut volume 1 with plane surface 7 noimprint nomerge
+
+delete volume 1
+delete surface 7
+
+volume 3  scheme tetmesh
+volume 3 size 100
+mesh volume 3
+undo group end
+
+
+save as "/Users/ignatiosathanasiadis/mofem_install/mofem-cephas/mofem/atom_tests/TET_element_char_length.cub" overwrite 

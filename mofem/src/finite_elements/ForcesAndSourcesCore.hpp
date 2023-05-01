@@ -6,8 +6,6 @@
 
 */
 
-
-
 #ifndef __FORCES_AND_SOURCES_CORE__HPP__
 #define __FORCES_AND_SOURCES_CORE__HPP__
 
@@ -148,9 +146,9 @@ public:
 
   /**
    * @brief Get data on entities and space
-   * 
+   *
    * Entities data are stored by space, by entity type, and entity side.
-   * 
+   *
    * @return std::array<boost::shared_ptr<EntitiesFieldData>, LASTSPACE>
    */
   auto &getDataOnElementBySpaceArray() { return dataOnElement; }
@@ -173,9 +171,9 @@ protected:
    * @param  data entity data
    * @return      error code
    */
-  MoFEMErrorCode getEntitySense(
-      const EntityType type,
-      boost::ptr_vector<EntitiesFieldData::EntData> &data) const;
+  MoFEMErrorCode
+  getEntitySense(const EntityType type,
+                 boost::ptr_vector<EntitiesFieldData::EntData> &data) const;
 
   /**
    * @brief Get the entity data order
@@ -185,9 +183,9 @@ protected:
    * @param data
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode getEntityDataOrder(
-      const EntityType type, const FieldSpace space,
-      boost::ptr_vector<EntitiesFieldData::EntData> &data) const;
+  MoFEMErrorCode
+  getEntityDataOrder(const EntityType type, const FieldSpace space,
+                     boost::ptr_vector<EntitiesFieldData::EntData> &data) const;
 
   /**
    * @brief Get the entity sense (orientation)
@@ -222,9 +220,9 @@ protected:
   /// \brief get node indices
   template <typename EXTRACTOR>
   MoFEMErrorCode
-  getNodesIndices(const int bit_number,
-                  FieldEntity_vector_view &ents_field, VectorInt &nodes_indices,
-                  VectorInt &local_nodes_indices, EXTRACTOR &&extractor) const;
+  getNodesIndices(const int bit_number, FieldEntity_vector_view &ents_field,
+                  VectorInt &nodes_indices, VectorInt &local_nodes_indices,
+                  EXTRACTOR &&extractor) const;
 
   /// \brief get row node indices from FENumeredDofEntity_multiIndex
   MoFEMErrorCode getRowNodesIndices(EntitiesFieldData &data,
@@ -306,8 +304,7 @@ protected:
   MoFEMErrorCode getFaceNodes(EntitiesFieldData &data) const;
 
   /// \brief Get field approximation space and base on entities
-  MoFEMErrorCode
-  getSpacesAndBaseOnEntities(EntitiesFieldData &data) const;
+  MoFEMErrorCode getSpacesAndBaseOnEntities(EntitiesFieldData &data) const;
 
   /** \name Data form NumeredDofEntity_multiIndex */
 
@@ -463,7 +460,7 @@ protected:
   /**
    * @brief Entity data on element entity columns fields
    *
-  */
+   */
   const std::array<boost::shared_ptr<EntitiesFieldData>, LASTSPACE>
       derivedDataOnElement;
 
@@ -541,6 +538,7 @@ protected:
   MatrixDouble coordsAtGaussPts; ///< coordinated at gauss points
   double elementMeasure; ///< Depending on dimension of elements, stores length,
                          ///< area or volume of element.
+  double elementCharacteristicLength; ///< Radius of inscribed circle or sphere
 };
 
 struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
@@ -553,7 +551,7 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
    * - OPROWCOL is usually used for assemble matrices.
    * - OPSPACE no field is defined for such operator. Is usually used to modify
    * base
-   * 
+   *
    *
    * For typical problem like Bubnov-Galerkin OPROW and OPCOL are the same. In
    * more general case for example for non-square matrices columns and rows
@@ -890,6 +888,20 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
    */
   inline double &getMeasure();
 
+  /** \name Element size (h: radius of inscribed curcle) */
+
+  /**
+   * \brief get element characteristic length
+   * @return volume
+   */
+  inline double getElementCharacteristicLength() const;
+
+  /**
+   * \brief get element characteristic length
+   * @return volume
+   */
+  inline double &getElementCharacteristicLength();
+
   /**}*/
 
   /**@{*/
@@ -967,7 +979,6 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
   inline ForcesAndSourcesCore *getSidePtrFE() const;
 
   inline ForcesAndSourcesCore *getRefinePtrFE() const;
-
 
 protected:
   ForcesAndSourcesCore *ptrFE;
@@ -1268,11 +1279,23 @@ double &ForcesAndSourcesCore::UserDataOperator::getMeasure() {
   return static_cast<ForcesAndSourcesCore *>(ptrFE)->elementMeasure;
 }
 
+double
+ForcesAndSourcesCore::UserDataOperator::getElementCharacteristicLength() const {
+  return static_cast<ForcesAndSourcesCore *>(ptrFE)
+      ->elementCharacteristicLength;
+}
+
+double &
+ForcesAndSourcesCore::UserDataOperator::getElementCharacteristicLength() {
+  return static_cast<ForcesAndSourcesCore *>(ptrFE)
+      ->elementCharacteristicLength;
+}
+
 /**
  * @brief Element used to execute operators on side of the element
- * 
+ *
  * @tparam E template for side element type
- * 
+ *
  */
 template <typename E>
 struct OpLoopSide : public ForcesAndSourcesCore::UserDataOperator {
@@ -1281,8 +1304,8 @@ struct OpLoopSide : public ForcesAndSourcesCore::UserDataOperator {
 
   /**
    * @brief Construct a new Op Loop Side object
-   * 
-   * @param m_field 
+   *
+   * @param m_field
    * @param fe_name name of side (domain element)
    * @param side_dim dimension
    */

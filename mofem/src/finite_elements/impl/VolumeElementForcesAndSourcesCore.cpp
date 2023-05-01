@@ -6,6 +6,12 @@
 
 namespace MoFEM {
 
+extern "C" {
+void tetcircumcenter_tp(double a[3], double b[3], double c[3], double d[3],
+                        double circumcenter[3], double *xi, double *eta,
+                        double *zeta);
+}
+
 VolumeElementForcesAndSourcesCore::VolumeElementForcesAndSourcesCore(
     Interface &m_field, const EntityType type)
     : ForcesAndSourcesCore(m_field), vOlume(elementMeasure),
@@ -17,7 +23,8 @@ VolumeElementForcesAndSourcesCore::VolumeElementForcesAndSourcesCore(
            &jAc(1, 2), &jAc(2, 0), &jAc(2, 1), &jAc(2, 2)),
       tInvJac(&invJac(0, 0), &invJac(0, 1), &invJac(0, 2), &invJac(1, 0),
               &invJac(1, 1), &invJac(1, 2), &invJac(2, 0), &invJac(2, 1),
-              &invJac(2, 2)) {}
+              &invJac(2, 2)),
+      elementRad(elementCharacteristicLength) {}
 
 MoFEMErrorCode VolumeElementForcesAndSourcesCore::setIntegrationPts() {
   MoFEMFunctionBegin;
@@ -236,8 +243,77 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateVolumeAndJacobian() {
   CHKERR determinantTensor3by3(tJac, vOlume);
   CHKERR invertTensor3by3(tJac, vOlume, tInvJac);
 
-  if (type == MBTET)
+  using T1_ptr = FTensor::Tensor1<double *, 3>;
+  using T1 = FTensor::Tensor1<double, 3>;
+
+  if (type == MBTET) {
     vOlume *= G_TET_W1[0] / 6.;
+
+    double center[3];
+    tetcircumcenter_tp(&coords.data()[0], &coords.data()[3], &coords.data()[6],
+                       &coords.data()[9], center, NULL, NULL, NULL);
+    T1_ptr t_centre(&center[0], &center[1], &center[2], 3);
+    T1_ptr t_first_vertex(&coords[0], &coords[1], &coords[2], 3);
+    T1 t_rad;
+    t_rad(i) = t_centre(i) - t_first_vertex(i);
+    elementRad = sqrt(t_rad(i) * t_rad(i));
+    // centre is wrong
+
+    // cross check
+    // https://math.stackexchange.com/questions/2820212/circumradius-of-a-tetrahedron
+    T1_ptr t_v_0(&coords[0], &coords[1], &coords[2], 3);
+    T1_ptr t_v_1(&coords[3], &coords[4], &coords[5], 3);
+    T1_ptr t_v_2(&coords[6], &coords[7], &coords[8], 3);
+    T1_ptr t_v_3(&coords[9], &coords[10], &coords[11], 3);
+
+    T1 edge_1, edge_2, edge_3, edge_4, edge_5, edge_6;
+    edge_1(i) = t_v_3(i) - t_v_2(i);
+    edge_2(i) = t_v_3(i) - t_v_1(i);
+    edge_3(i) = t_v_3(i) - t_v_0(i);
+
+    edge_4(i) = t_v_1(i) - t_v_0(i);
+    edge_5(i) = t_v_2(i) - t_v_1(i);
+    edge_6(i) = t_v_0(i) - t_v_2(i);
+
+    double a, b, c;
+    double a_op, b_op, c_op;
+    a = sqrt(edge_1(i) * edge_1(i));
+    b = sqrt(edge_2(i) * edge_2(i));
+    c = sqrt(edge_3(i) * edge_3(i));
+
+    a_op = sqrt(edge_4(i) * edge_4(i));
+    b_op = sqrt(edge_5(i) * edge_5(i));
+    c_op = sqrt(edge_6(i) * edge_6(i));
+    const double prod_1 = a * a_op + b * b_op + c * c_op;
+    const double prod_2 = a * a_op + b * b_op - c * c_op;
+    const double prod_3 = a * a_op - b * b_op + c * c_op;
+    const double prod_4 = -a * a_op + b * b_op + c * c_op;
+    const double full_prod = sqrt(prod_1 * prod_2 * prod_3 * prod_4);
+    elementRad = full_prod / (12. * vOlume);
+
+  } else if (type == MBHEX) {
+    T1_ptr t_v_0(&coords[0], &coords[1], &coords[2], 3);
+    T1_ptr t_v_1(&coords[3], &coords[4], &coords[5], 3);
+    T1_ptr t_v_2(&coords[6], &coords[7], &coords[8], 3);
+    T1_ptr t_v_3(&coords[9], &coords[10], &coords[11], 3);
+    T1_ptr t_v_4(&coords[12], &coords[13], &coords[14], 3);
+    T1_ptr t_v_5(&coords[15], &coords[16], &coords[17], 3);
+    T1_ptr t_v_6(&coords[18], &coords[19], &coords[20], 3);
+    T1_ptr t_v_7(&coords[21], &coords[22], &coords[23], 3);
+
+    T1 diag_1, diag_2, diag_3, diag_4;
+    diag_1(i) = t_v_0(i) - t_v_6(i);
+    diag_2(i) = t_v_1(i) - t_v_7(i);
+    diag_3(i) = t_v_2(i) - t_v_4(i);
+    diag_4(i) = t_v_3(i) - t_v_5(i);
+
+    const double l_1 = sqrt(diag_1(i) * diag_1(i));
+    const double l_2 = sqrt(diag_2(i) * diag_2(i));
+    const double l_3 = sqrt(diag_3(i) * diag_3(i));
+    const double l_4 = sqrt(diag_4(i) * diag_4(i));
+    std::vector<const double> v_edge{l_1, l_2, l_3, l_4};
+    elementRad = *min_element(v_edge.begin(), v_edge.end());
+  }
 
   MoFEMFunctionReturn(0);
 }

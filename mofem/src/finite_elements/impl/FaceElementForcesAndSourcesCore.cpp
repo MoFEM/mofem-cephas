@@ -6,6 +6,11 @@
 
 namespace MoFEM {
 
+extern "C" {
+void tricircumcenter3d_tp(double a[3], double b[3], double c[3],
+                          double circumcenter[3], double *xi, double *eta);
+}
+
 FaceElementForcesAndSourcesCore::FaceElementForcesAndSourcesCore(
     Interface &m_field)
     : ForcesAndSourcesCore(m_field),
@@ -151,6 +156,70 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::calculateAreaAndNormal() {
     }
     t_normal(j) = FTensor::levi_civita(i, j, k) * t_t1(k) * t_t2(i);
     aRea = sqrt(t_normal(i) * t_normal(i));
+
+    auto type = numeredEntFiniteElementPtr->getEntType();
+
+    using T1_ptr = FTensor::Tensor1<double *, 3>;
+    using T1 = FTensor::Tensor1<double, 3>;
+    if (type == MBTRI) {
+      double center[3];
+      tricircumcenter3d_tp(&coords.data()[0], &coords.data()[3],
+                           &coords.data()[6], center, NULL, NULL);
+      T1_ptr t_centre(&center[0], &center[1], &center[2], 3);
+      T1_ptr t_first_vertex(&coords[0], &coords[1], &coords[2], 3);
+      T1 t_rad;
+      t_rad(i) = t_centre(i) - t_first_vertex(i);
+      // elementCircumDiam = sqrt(t_rad(i) * t_rad(i));
+
+      T1_ptr t_v_1(&coords[0], &coords[1], &coords[2], 3);
+      T1_ptr t_v_2(&coords[3], &coords[4], &coords[5], 3);
+      T1_ptr t_v_3(&coords[6], &coords[7], &coords[8], 3);
+      T1 t_a, t_b, t_c;
+      t_a(i) = t_v_2(i) - t_v_1(i);
+      t_b(i) = t_v_3(i) - t_v_2(i);
+      t_c(i) = t_v_1(i) - t_v_3(i);
+      double a, b, c, s;
+      a = sqrt(t_a(i) * t_a(i));
+      b = sqrt(t_b(i) * t_b(i));
+      c = sqrt(t_c(i) * t_c(i));
+      s = 0.5 * (a + b + c);
+      double numerator = a * b * c;
+      double denominator = sqrt(s * (a + b - s) * (a + c - s) * (b + c - s));
+      elementCircumDiam = 0.5 * numerator / denominator;
+
+    } else if (type == MBQUAD) {
+      // from Parameshvara's circumradius formula for cyclic quadrilaterals
+      T1_ptr t_v_1(&coords[0], &coords[1], &coords[2], 3);
+      T1_ptr t_v_2(&coords[3], &coords[4], &coords[5], 3);
+      T1_ptr t_v_3(&coords[6], &coords[7], &coords[8], 3);
+      T1_ptr t_v_4(&coords[9], &coords[10], &coords[11], 3);
+      T1 t_a, t_b, t_c, t_d;
+      t_a(i) = t_v_2(i) - t_v_1(i);
+      t_b(i) = t_v_3(i) - t_v_2(i);
+      t_c(i) = t_v_4(i) - t_v_3(i);
+      t_d(i) = t_v_1(i) - t_v_4(i);
+      double a, b, c, d, s;
+      a = sqrt(t_a(i) * t_a(i));
+      b = sqrt(t_b(i) * t_b(i));
+      c = sqrt(t_c(i) * t_c(i));
+      d = sqrt(t_d(i) * t_d(i));
+      s = 0.5 * (a + b + c + d);
+      double numerator = (a * b + c * d) * (a * c + b * d) * (a * d + b * c);
+      double denominator = (s - a) * (s - b) * (s - c) * (s - d);
+      elementCircumDiam = 0.25 * sqrt(numerator / denominator);
+
+      T1 diag_1, diag_2;
+      diag_1(i) = t_v_3(i) - t_v_1(i);
+      diag_2(i) = t_v_4(i) - t_v_2(i);
+      const double l_diag_1 = sqrt(diag_1(i) * diag_1(i));
+      const double l_diag_2 = sqrt(diag_2(i) * diag_2(i));
+
+      if (l_diag_1 > l_diag_2)
+        elementCircumDiam = l_diag_1;
+      else
+        elementCircumDiam = l_diag_2;
+    }
+
     MoFEMFunctionReturn(0);
   };
 
