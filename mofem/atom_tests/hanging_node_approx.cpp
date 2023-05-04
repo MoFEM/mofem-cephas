@@ -541,9 +541,9 @@ MoFEMErrorCode AtomTest::assembleSystem() {
   };
 
   set_parent_dofs<DomainParentEle>(mField, pipeline_mng->getDomainRhsFE(),
-                                   DomainEleOp::OPSPACE, VERBOSE, Sev::verbose);
+                                   DomainEleOp::OPSPACE, NOISY, Sev::verbose);
   set_parent_dofs<DomainParentEle>(mField, pipeline_mng->getDomainRhsFE(),
-                                   DomainEleOp::OPROW, VERBOSE, Sev::noisy);
+                                   DomainEleOp::OPROW, NOISY, Sev::noisy);
   pipeline_mng->getOpDomainRhsPipeline().push_back(field_op_row);
 
   pipeline_mng->getOpDomainRhsPipeline().push_back(

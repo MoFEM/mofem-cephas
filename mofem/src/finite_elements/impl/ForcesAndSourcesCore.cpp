@@ -595,15 +595,11 @@ ForcesAndSourcesCore::getProblemTypeColIndices(const std::string &field_name,
 MoFEMErrorCode ForcesAndSourcesCore::getBitRefLevelOnData() {
   MoFEMFunctionBegin;
 
-  // for (int s = H1; s != LASTSPACE; ++s) {
-  //   dataOnElement[s]->dataOnEntities[MBENTITYSET].resize(0);
-  // }
-
   for (auto &data : dataOnElement) {
     if (data) {
       for (auto &dat : data->dataOnEntities) {
         for (auto &ent_dat : dat) {
-          ent_dat.getEntDataBitRefLevel().reset();
+          ent_dat.getEntDataBitRefLevel().clear();
         }
       }
     }
@@ -615,18 +611,25 @@ MoFEMErrorCode ForcesAndSourcesCore::getBitRefLevelOnData() {
       const FieldSpace space = e->getSpace();
       if (space > NOFIELD) {
         const EntityType type = e->getEntType();
-        const signed char side =
-            type == MBVERTEX ? 0 : e->getSideNumberPtr()->side_number;
+        const signed char side = e->getSideNumberPtr()->side_number;
         if (side >= 0) {
           if (auto &data = dataOnElement[space]) {
-            auto &dat = data->dataOnEntities[type][side];
-            dat.getEntDataBitRefLevel() |= e->getBitRefLevel();
+            if (type == MBVERTEX) {
+              auto &dat = data->dataOnEntities[type][0];
+              dat.getEntDataBitRefLevel().resize(getNumberOfNodes(), false);
+              dat.getEntDataBitRefLevel()[side] = e->getBitRefLevel();
+            } else {
+              auto &dat = data->dataOnEntities[type][side];
+              dat.getEntDataBitRefLevel().resize(1, false);
+              dat.getEntDataBitRefLevel()[0] = e->getBitRefLevel();
+            }
           }
         }
       } else {
         if (auto &data = dataOnElement[NOFIELD]) {
           auto &dat = data->dataOnEntities[MBENTITYSET][0];
-          dat.getEntDataBitRefLevel() |= e->getBitRefLevel();
+          dat.getEntDataBitRefLevel().resize(1, false);
+          dat.getEntDataBitRefLevel()[0] = e->getBitRefLevel();
         }
       }
     }

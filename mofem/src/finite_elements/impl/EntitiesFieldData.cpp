@@ -802,13 +802,13 @@ DerivedEntitiesFieldData::DerivedEntData::getBBDiffNSharedPtr(
 
 /**@}*/
 
-BitRefLevel &EntitiesFieldData::EntData::getEntDataBitRefLevel() {
+std::vector<BitRefLevel> &EntitiesFieldData::EntData::getEntDataBitRefLevel() {
   return entDataBitRefLevel;
 }
 
-BitRefLevel &DerivedEntitiesFieldData::DerivedEntData::getEntDataBitRefLevel() {
+std::vector<BitRefLevel> &
+DerivedEntitiesFieldData::DerivedEntData::getEntDataBitRefLevel() {
   return entDataPtr->getEntDataBitRefLevel();
 }
-
 
 } // namespace MoFEM
