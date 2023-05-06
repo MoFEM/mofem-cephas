@@ -307,11 +307,11 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateVolumeAndJacobian() {
     diag_3(i) = t_v_2(i) - t_v_4(i);
     diag_4(i) = t_v_3(i) - t_v_5(i);
 
-    const double l_1 = sqrt(diag_1(i) * diag_1(i));
-    const double l_2 = sqrt(diag_2(i) * diag_2(i));
-    const double l_3 = sqrt(diag_3(i) * diag_3(i));
-    const double l_4 = sqrt(diag_4(i) * diag_4(i));
-    std::vector<const double> v_edge{l_1, l_2, l_3, l_4};
+    double l_1 = sqrt(diag_1(i) * diag_1(i));
+    double l_2 = sqrt(diag_2(i) * diag_2(i));
+    double l_3 = sqrt(diag_3(i) * diag_3(i));
+    double l_4 = sqrt(diag_4(i) * diag_4(i));
+    std::vector<double> v_edge{l_1, l_2, l_3, l_4};
     elementRad = *min_element(v_edge.begin(), v_edge.end());
   }
 
