@@ -20,6 +20,7 @@ namespace MoFEM {
  */
 template <CubitBC BCTYP> struct NaturalMeshsetType {};
 
+/** Evaluate boundary integral on the right hand side*/
 template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
 struct OpFluxRhsImpl<NaturalMeshsetType<FORCESET>, 1, FIELD_DIM, A, I, OpBase>
     : OpFluxRhsImpl<NaturalMeshsetType<UNKNOWNSET>, 1, FIELD_DIM, A, I,
@@ -30,6 +31,13 @@ struct OpFluxRhsImpl<NaturalMeshsetType<FORCESET>, 1, FIELD_DIM, A, I, OpBase>
                 std::vector<boost::shared_ptr<ScalingMethod>> smv);
 
 protected:
+  /**
+   * @brief Extract information stored on meshset (BLOCKSET)
+   *
+   * @param m_field
+   * @param ms_id
+   * @return MoFEMErrorCode
+   */
   MoFEMErrorCode getMeshsetData(MoFEM::Interface &m_field, int ms_id);
 };
 
@@ -66,6 +74,21 @@ protected:
   double surfacePressure;
 };
 
+/**
+ * @brief Base class for OpFluxRhsImpl<NaturalMeshsetType<T>, 1, FIELD_DIM, A,
+ I, OpBase>
+ *
+ * This is only for scalar bases.
+ *
+ * @note It is derivitive from FormsIntegrators<OpBase>::template
+ Assembly<A>::template LinearForm< I>::template OpSource<1, FIELD_DIM>
+ *
+ * @tparam FIELD_DIM field dimension
+ * @tparam A
+ * @tparam I
+ * @tparam OpBase Base element operator for integration volume, face, edge, or
+ vertex
+ */
 template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
 struct OpFluxRhsImpl<NaturalMeshsetType<UNKNOWNSET>, 1, FIELD_DIM, A, I, OpBase>
     : FormsIntegrators<OpBase>::template Assembly<A>::template LinearForm<
@@ -550,6 +573,16 @@ OpFluxRhsImpl<NaturalMeshsetType<TEMPERATURESET>, 3, FIELD_DIM, A, I,
   MoFEMFunctionReturn(0);
 }
 
+/**
+ * @brief Function to push operators to rhs pipeline. This function user API.
+ *
+ * @tparam BCTYPE
+ * @tparam BASE_DIM
+ * @tparam FIELD_DIM
+ * @tparam A
+ * @tparam I
+ * @tparam OpBase
+ */
 template <CubitBC BCTYPE, int BASE_DIM, int FIELD_DIM, AssemblyType A,
           IntegrationType I, typename OpBase>
 struct AddFluxToRhsPipelineImpl<
