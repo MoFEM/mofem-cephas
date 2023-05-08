@@ -81,7 +81,6 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
   BitRefLevel prb_mask = p_miit->getBitRefLevelMask();
 
   const EmptyFieldBlocks &empty_field_blocks = p_miit->getEmptyFieldBlocks();
-  const DofIdx nb_dofs_col = p_miit->getNbDofsCol();
 
   dofs_col_view.clear();
   for (auto r = entFEAdjacencies.get<Unique_mi_tag>().equal_range(
@@ -117,6 +116,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
                     dofs_col_view.push_back(idx);
 
 #ifndef NDEBUG
+                  const DofIdx nb_dofs_col = p_miit->getNbDofsCol();
                   if (PetscUnlikely(idx >= nb_dofs_col)) {
                     MOFEM_LOG("SELF", Sev::error)
                         << "Problem with dof: " << std::endl

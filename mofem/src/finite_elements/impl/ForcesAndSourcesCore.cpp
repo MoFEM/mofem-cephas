@@ -931,7 +931,6 @@ ForcesAndSourcesCore::getFaceNodes(EntitiesFieldData &data) const {
     const auto side = (*side_ptr_it)->side_number;
     const auto sense = (*side_ptr_it)->sense;
     const auto offset = (*side_ptr_it)->offset;
-    const auto face_ent = (*side_ptr_it)->ent;
 
     EntityType face_type;
     int nb_nodes_face;
@@ -952,6 +951,7 @@ ForcesAndSourcesCore::getFaceNodes(EntitiesFieldData &data) const {
       face_nodes(side, n) = face_indices[face_nodes_order(side, n)];
 
 #ifndef NDEBUG
+    const auto face_ent = (*side_ptr_it)->ent;
     auto check = [&]() {
       MoFEMFunctionBegin;
       const EntityHandle *conn_face;
