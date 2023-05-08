@@ -67,8 +67,9 @@ protected:
   MatrixDouble transOffMatInvDiagOffMat;
 };
 
-struct SCHUR_DSYSV;
-struct SCHUR_DGESV;
+struct SCHUR_DSYSV; ///< SY	symmetric
+struct SCHUR_DGESV; ///< GE	general (i.e., unsymmetric, in some cases
+                    ///< rectangular)
 
 /**
  * @brief Assemble Schur complement
