@@ -13,51 +13,71 @@
 
 namespace MoFEM {
 
-inline FTensor::Tensor1<double, 3>
-_getRotDisp(FTensor::Tensor1<double, 3> const &t_angles,
-            FTensor::Tensor1<double, 3> t_coords,
-            FTensor::Tensor1<double, 3> t_offset = FTensor::Tensor1<double, 3>{
-                0., 0., 0.}) {
-
-  FTensor::Index<'i', 3> i;
-  FTensor::Index<'j', 3> j;
-  FTensor::Index<'k', 3> k;
-
-  FTensor::Tensor1<double, 3> tRot;
-  tRot(i) = 0;
-
-  auto get_rotation = [&](auto &t_omega) {
-    FTensor::Tensor2<double, 3, 3> t_R;
-
-    constexpr auto t_kd = FTensor::Kronecker_Delta<int>();
-    t_R(i, j) = t_kd(i, j);
-
-    const double angle = sqrt(t_omega(i) * t_omega(i));
-    if (std::abs(angle) < std::numeric_limits<double>::epsilon())
-      return t_R;
-
-    FTensor::Tensor2<double, 3, 3> t_Omega;
-    t_Omega(i, j) = FTensor::levi_civita<double>(i, j, k) * t_omega(k);
-    const double a = sin(angle) / angle;
-    const double ss_2 = sin(angle / 2.);
-    const double b = 2. * ss_2 * ss_2 / (angle * angle);
-    t_R(i, j) += a * t_Omega(i, j);
-    t_R(i, j) += b * t_Omega(i, k) * t_Omega(k, j);
-
-    return t_R;
-  };
-
-  auto t_rot = get_rotation(t_angles);
-  FTensor::Tensor1<double, 3> c_dist;
-  c_dist(i) = t_offset(i) - t_coords(i);
-  tRot(i) = c_dist(i) - t_rot(j, i) * c_dist(j);
-
-  return tRot;
-}
-
+/**
+ * @brief A specialized version of DisplacementCubitBcData that includes an
+ * additional rotation offset.
+ *
+ * DisplacementCubitBcDataWithRotation extends the DisplacementCubitBcData
+ * structure with a rotation offset and a method to calculate the rotated
+ * displacement given the rotation angles and coordinates.
+ */
 struct DisplacementCubitBcDataWithRotation : public DisplacementCubitBcData {
+
   std::array<double, 3> rotOffset;
   DisplacementCubitBcDataWithRotation() : rotOffset{0, 0, 0} {}
+
+  /**
+   * @brief Calculates the rotated displacement given the rotation angles,
+   * coordinates, and an optional offset.
+   *
+   * @param angles A FTensor::Tensor1 containing the rotation angles.
+   * @param coordinates A FTensor::Tensor1 containing the coordinates.
+   * @param offset An optional FTensor::Tensor1 containing the offset
+   * (default is {0., 0., 0.}).
+   * @return FTensor::Tensor1<double, 3> representing the rotated displacement.
+   */
+  static FTensor::Tensor1<double, 3>
+  GetRotDisp(const FTensor::Tensor1<double, 3> &angles,
+             FTensor::Tensor1<double, 3> coordinates,
+             FTensor::Tensor1<double, 3> offset = FTensor::Tensor1<double, 3>{
+                 0., 0., 0.}) {
+
+    FTensor::Index<'i', 3> i;
+    FTensor::Index<'j', 3> j;
+    FTensor::Index<'k', 3> k;
+
+    FTensor::Tensor1<double, 3> rotated_displacement;
+    rotated_displacement(i) = 0;
+
+    auto get_rotation = [&](auto &omega) {
+      FTensor::Tensor2<double, 3, 3> rotation_matrix;
+
+      constexpr auto kronecker_delta = FTensor::Kronecker_Delta<int>();
+      rotation_matrix(i, j) = kronecker_delta(i, j);
+
+      const double angle = sqrt(omega(i) * omega(i));
+      if (std::abs(angle) < std::numeric_limits<double>::epsilon())
+        return rotation_matrix;
+
+      FTensor::Tensor2<double, 3, 3> t_omega;
+      t_omega(i, j) = FTensor::levi_civita<double>(i, j, k) * omega(k);
+      const double a = sin(angle) / angle;
+      const double sin_squared = sin(angle / 2.) * sin(angle / 2.);
+      const double b = 2. * sin_squared / (angle * angle);
+      rotation_matrix(i, j) += a * t_omega(i, j);
+      rotation_matrix(i, j) += b * t_omega(i, k) * t_omega(k, j);
+
+      return rotation_matrix;
+    };
+
+    auto rotation = get_rotation(angles);
+    FTensor::Tensor1<double, 3> coordinate_distance;
+    coordinate_distance(i) = offset(i) - coordinates(i);
+    rotated_displacement(i) =
+        coordinate_distance(i) - rotation(j, i) * coordinate_distance(j);
+
+    return rotated_displacement;
+  }
 };
 
 /**
@@ -149,8 +169,8 @@ OpEssentialRhsImpl<DisplacementCubitBcData, 1, FIELD_DIM, A, I, OpBase>::
   if (bc_data->data.flag4 || bc_data->data.flag5 || bc_data->data.flag6) {
     this->dispFunction = [this](double x, double y, double z) {
       FTensor::Index<'i', FIELD_DIM> i;
-      auto rot =
-          _getRotDisp(tAngles, FTensor::Tensor1<double, 3>{x, y, z}, tOffset);
+      auto rot = DisplacementCubitBcDataWithRotation::GetRotDisp(
+          tAngles, FTensor::Tensor1<double, 3>{x, y, z}, tOffset);
       tVal(i) += rot(i);
       return tVal;
     };

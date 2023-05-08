@@ -93,7 +93,8 @@ MoFEMErrorCode EssentialPreProc<DisplacementCubitBcData>::operator()() {
             if (is_rotation) {
               FTensor::Tensor1<double, 3> t_coords(
                   coords[0][idx], coords[1][idx], coords[2][idx]);
-              v += _getRotDisp(t_angles, t_coords, t_off)(coeff);
+              v += DisplacementCubitBcDataWithRotation::GetRotDisp(
+                  t_angles, t_coords, t_off)(coeff);
             }
             if (getCoords)
               v += coords[coeff][idx];
