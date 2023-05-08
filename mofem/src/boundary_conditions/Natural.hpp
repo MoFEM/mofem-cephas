@@ -20,6 +20,14 @@ namespace MoFEM {
 using VecOfTimeScalingMethods = std::vector<boost::shared_ptr<ScalingMethod>>;
 
 /**
+ * @brief Vector of time vector scaling methods 
+ * 
+ */
+template <int FIELD_DIM>
+using VecOfTimeVectorScalingMethods =
+    std::vector<boost::shared_ptr<TimeScaleVector<FIELD_DIM>>>;
+
+/**
  * @brief Wrapper to generate natural b.c. specialisation based on operator type
  *
  * @tparam OP
