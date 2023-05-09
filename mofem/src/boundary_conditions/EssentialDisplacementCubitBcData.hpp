@@ -156,7 +156,7 @@ OpEssentialRhsImpl<DisplacementCubitBcData, 1, FIELD_DIM, A, I, OpBase>::
           dynamic_cast<DisplacementCubitBcDataWithRotation const *>(
               bc_data.get())) {
     for (int a = 0; a != 3; ++a)
-      tOffset(a) = ext_bc_data->rotOffset(a);
+      tOffset(a) = ext_bc_data->rotOffset[a];
   }
 
   this->timeScalingFun = [this](const double t) {
