@@ -383,7 +383,6 @@ template <typename OP> struct OpScaleBaseBySpaceInverseOfMeasure : public OP {
         if (detJacPtr) {
 
           auto &det_vec = *detJacPtr;
-          const auto nb_base_fun = base_fun.size2();
           const auto nb_int_pts = base_fun.size1();
 
           if (nb_int_pts != det_vec.size())
