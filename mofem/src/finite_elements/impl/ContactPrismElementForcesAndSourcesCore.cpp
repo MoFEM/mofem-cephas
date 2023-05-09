@@ -447,15 +447,15 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
       case DEMKOWICZ_JACOBI_BASE:
         if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
 
-          auto get_ftensor_from_mat_3d = [](MatrixDouble &m) {
-            return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
-                &m(0, 0), &m(0, 1), &m(0, 2));
-          };
+          // auto get_ftensor_from_mat_3d = [](MatrixDouble &m) {
+          //   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
+          //       &m(0, 0), &m(0, 1), &m(0, 2));
+          // };
           
-          auto get_tensor_vec = [](VectorDouble &n, const int r = 0) {
-            return FTensor::Tensor1<double *, 3>(&n(r + 0), &n(r + 1),
-                                                 &n(r + 2));
-          };
+          // auto get_tensor_vec = [](VectorDouble &n, const int r = 0) {
+          //   return FTensor::Tensor1<double *, 3>(&n(r + 0), &n(r + 1),
+          //                                        &n(r + 2));
+          // };
 
           CHKERR getUserPolynomialBase()->getValue(
               gaussPtsMaster,

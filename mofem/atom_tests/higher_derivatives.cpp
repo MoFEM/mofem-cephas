@@ -146,8 +146,8 @@ struct AtomTest::OpError : public DomainEleOp {
 
     const double volume = getMeasure(); // get finite element area
 
-    auto t_row_base = data.getFTensor0N();
-    auto t_diff_row_base = data.getFTensor1DiffN<2>();
+    // auto t_row_base = data.getFTensor0N();
+    // auto t_diff_row_base = data.getFTensor1DiffN<2>();
 
     std::array<double, 3> error = {0, 0,
                                    0}; // array for storing operator errors
