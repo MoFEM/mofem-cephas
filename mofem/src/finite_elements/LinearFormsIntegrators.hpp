@@ -1105,7 +1105,6 @@ MoFEMErrorCode OpNormalMixVecTimesScalarImpl<3, GAUSS, OpBase>::iNtegrate(
 
   const size_t nb_base_functions = row_data.getN().size2() / 3;
   // get element volume
-  // const double vol = OpBase::getMeasure();
   // get integration weights
   auto t_w = OpBase::getFTensor0IntegrationWeight();
   // get base function gradient on rows
@@ -1141,7 +1140,6 @@ MoFEMErrorCode OpNormalMixVecTimesScalarImpl<2, GAUSS, OpBase>::iNtegrate(
   const size_t nb_base_functions = row_data.getN().size2() / 3;
   FTensor::Tensor1<double, 3> t_z{0., 0., 1.};
   // get element volume
-  // const double vol = OpBase::getMeasure();
   // get integration weights
   auto t_w = OpBase::getFTensor0IntegrationWeight();
   // get base function gradient on rows

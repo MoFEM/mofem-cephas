@@ -85,7 +85,8 @@ MoFEMErrorCode EssentialPreProc<DisplacementCubitBcData>::operator()() {
           std::array<std::vector<double>, 3> coords;
           int idx;
 
-          const bool is_rotation = disp_bc->data.flag4 || disp_bc->data.flag5 || disp_bc->data.flag6;
+          const bool is_rotation =
+              disp_bc->data.flag4 || disp_bc->data.flag5 || disp_bc->data.flag6;
 
           auto lambda = [&](boost::shared_ptr<FieldEntity> field_entity_ptr) {
             MoFEMFunctionBegin;
@@ -96,8 +97,9 @@ MoFEMErrorCode EssentialPreProc<DisplacementCubitBcData>::operator()() {
               v += DisplacementCubitBcDataWithRotation::GetRotDisp(
                   t_angles, t_coords, t_off)(coeff);
             }
-            if (getCoords)
+            if (getCoords) {
               v += coords[coeff][idx];
+            }
 
             field_entity_ptr->getEntFieldData()[coeff] = v;
             ++idx;
@@ -121,19 +123,19 @@ MoFEMErrorCode EssentialPreProc<DisplacementCubitBcData>::operator()() {
             CHKERR fb->fieldLambdaOnEntities(lambda, field_name, &verts);
           }
           if (disp_bc->data.flag2 || disp_bc->data.flag4 ||
-              disp_bc->data.flag6 && nb_field_coeffs > 1) {
+              disp_bc->data.flag6) {
             idx = 0;
             coeff = 1;
-            CHKERR fb->fieldLambdaOnEntities(lambda, field_name, &verts);
+            if (nb_field_coeffs > 1)
+              CHKERR fb->fieldLambdaOnEntities(lambda, field_name, &verts);
           }
-          if ((disp_bc->data.flag3 || disp_bc->data.flag4 ||
-               disp_bc->data.flag5 && nb_field_coeffs > 2) ||
-              is_rotation && nb_field_coeffs > 1) {
+          if (disp_bc->data.flag3 || disp_bc->data.flag4 ||
+              disp_bc->data.flag5 || is_rotation) {
             idx = 0;
             coeff = 2;
-            CHKERR fb->fieldLambdaOnEntities(lambda, field_name, &verts);
+            if (nb_field_coeffs > 2)
+              CHKERR fb->fieldLambdaOnEntities(lambda, field_name, &verts);
           }
-
         }
       }
     }

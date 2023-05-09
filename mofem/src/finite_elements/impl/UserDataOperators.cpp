@@ -652,7 +652,6 @@ OpCalculateInvJacForFatPrism::doWork(int side, EntityType type,
     FTensor::Index<'j', 3> j;
     FTensor::Tensor2<double, 3, 3> t_jac;
 
-    // auto t_w = getFTensor0IntegrationWeight();
     for (int gg = 0; gg != nb_gauss_pts; gg++) {
 
       FTensor::Tensor1<double *, 3> t_coords(coords_ptr, &coords_ptr[1],
