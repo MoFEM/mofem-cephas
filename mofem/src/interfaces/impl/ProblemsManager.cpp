@@ -445,7 +445,6 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
                 dofs_cols.insert(*dit);
               }
             }
-
           }
         }
       }
@@ -1093,29 +1092,31 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
         return std::make_pair(dit, hi_dit);
       };
 
-      if (entityMap[ss]) {
-        auto mit = entityMap[ss]->find(field);
-
-        if (mit != entityMap[ss]->end()) {
-          for (auto p = mit->second->pair_begin(); p != mit->second->pair_end();
-               ++p) {
-            const auto lo_ent = p->first;
-            const auto hi_ent = p->second;
-            auto dit = main_problem_dofs[ss]->get<Unique_mi_tag>().lower_bound(
-                DofEntity::getLoFieldEntityUId(bit_number, lo_ent));
-            auto hi_dit =
-                main_problem_dofs[ss]->get<Unique_mi_tag>().upper_bound(
-                    DofEntity::getHiFieldEntityUId(bit_number, hi_ent));
-            dofs_array->reserve(std::distance(dit, hi_dit));
-            for (; dit != hi_dit; dit++) {
-              add_dit_to_dofs_array(dit);
-            }
+      auto check = [&](auto &field) -> boost::shared_ptr<Range> {
+        if (entityMap[ss]) {
+          auto mit = entityMap[ss]->find(field);
+          if (mit != entityMap[ss]->end()) {
+            return mit->second;
+          } else {
+            return nullptr;
           }
         } else {
-          auto [dit, hi_dit] = get_dafult_dof_range();
+          return nullptr;
+        }
+      };
+
+      if (auto r_ptr = check(field)) {
+        for (auto p = r_ptr->pair_begin(); p != r_ptr->pair_end(); ++p) {
+          const auto lo_ent = p->first;
+          const auto hi_ent = p->second;
+          auto dit = main_problem_dofs[ss]->get<Unique_mi_tag>().lower_bound(
+              DofEntity::getLoFieldEntityUId(bit_number, lo_ent));
+          auto hi_dit = main_problem_dofs[ss]->get<Unique_mi_tag>().upper_bound(
+              DofEntity::getHiFieldEntityUId(bit_number, hi_ent));
           dofs_array->reserve(std::distance(dit, hi_dit));
-          for (; dit != hi_dit; dit++)
+          for (; dit != hi_dit; dit++) {
             add_dit_to_dofs_array(dit);
+          }
         }
       } else {
         auto [dit, hi_dit] = get_dafult_dof_range();
@@ -2086,7 +2087,7 @@ ProblemsManager::debugPartitionedProblem(const Problem *problem_ptr, int verb) {
   MoFEMFunctionBeginHot;
 
   auto save_ent = [](moab::Interface &moab, const std::string name,
-                       const EntityHandle ent) {
+                     const EntityHandle ent) {
     MoFEMFunctionBegin;
     EntityHandle out_meshset;
     CHKERR moab.create_meshset(MESHSET_SET, out_meshset);
@@ -3080,7 +3081,7 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntitiesNotDistributed(
       CHKERR renumber(PetscGlobalIdx_mi_tag(), global_indices);
       CHKERR renumber(PetscLocalIdx_mi_tag(), local_indices);
 
-      int i = 0;    
+      int i = 0;
       for (auto dit = numered_dofs[s]->begin(); dit != numered_dofs[s]->end();
            ++dit) {
         auto idx = (*dit)->getDofIdx();
@@ -3098,7 +3099,6 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntitiesNotDistributed(
           if (!success)
             SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                     "can not set negative indices");
- 
         }
       };
 
@@ -3109,7 +3109,6 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntitiesNotDistributed(
                     "Negative global idx");
           }
         }
-
       }
 
     } else {
