@@ -108,11 +108,22 @@ OpSchurAssembleEndImpl::OpSchurAssembleEndImpl(
     std::vector<boost::shared_ptr<Range>> field_ents,
     std::vector<SmartPetscObj<AO>> sequence_of_aos,
     std::vector<SmartPetscObj<Mat>> sequence_of_mats,
+    std::vector<bool> sym_schur, std::vector<double> diag_eps, bool symm_op)
+    : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPSPACE, symm_op),
+      fieldsName(fields_name), fieldEnts(field_ents),
+      sequenceOfAOs(sequence_of_aos), sequenceOfMats(sequence_of_mats),
+      symSchur(sym_schur), diagEps(diag_eps) {}
+
+OpSchurAssembleEndImpl::OpSchurAssembleEndImpl(
+    std::vector<std::string> fields_name,
+    std::vector<boost::shared_ptr<Range>> field_ents,
+    std::vector<SmartPetscObj<AO>> sequence_of_aos,
+    std::vector<SmartPetscObj<Mat>> sequence_of_mats,
     std::vector<bool> sym_schur, bool symm_op)
     : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPSPACE, symm_op),
       fieldsName(fields_name), fieldEnts(field_ents),
       sequenceOfAOs(sequence_of_aos), sequenceOfMats(sequence_of_mats),
-      symSchur(sym_schur) {}
+      symSchur(sym_schur), diagEps(fields_name.size(), 0) {}
 
 template <typename I>
 MoFEMErrorCode
@@ -163,7 +174,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 
                          const auto ss,
 
-                         auto lo_uid, auto hi_uid) {
+                         auto lo_uid, auto hi_uid, double eps) {
     MoFEMFunctionBegin;
 
     auto add_off_mat = [&](auto row_uid, auto col_uid, auto &row_ind,
@@ -253,7 +264,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
     for(auto row_it : schur_row_ptr_view) {
       if (row_it->uidRow == row_it->uidCol) {
 
-        CHKERR I::invertMat(row_it->getMat(), invMat);
+        CHKERR I::invertMat(row_it->getMat(), invMat, eps);
 
         const auto row_idx = row_it->iDX;
         for (auto c_lo : schur_col_ptr_view) {
@@ -366,7 +377,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
     auto assemble = [&](auto &storage, auto ss, auto lo_uid, auto hi_uid) {
       MoFEMFunctionBegin;
 
-      CHKERR apply_schur(storage, ss, lo_uid, hi_uid);
+      CHKERR apply_schur(storage, ss, lo_uid, hi_uid, diagEps[ss]);
       CHKERR erase_factored(storage, ss, lo_uid, hi_uid);
       CHKERR assemble_off_diagonal(storage, ss);
       MoFEMFunctionReturn(0);
@@ -401,11 +412,18 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 }
 
 struct SCHUR_DSYSV {
-  static auto invertMat(MatrixDouble &m, MatrixDouble &inv) {
+  static auto invertMat(MatrixDouble &m, MatrixDouble &inv, double eps) {
     MoFEMFunctionBeginHot;
     VectorInt ipiv;
     VectorDouble lapack_work;
     const int nb = m.size1();
+
+    if (eps) {
+      for (int cc = 0; cc != nb; ++cc) {
+        m(cc, cc) += eps;
+      }
+    }
+
     inv.resize(nb, nb, false);
     inv.clear();
     for (int cc = 0; cc != nb; ++cc)
@@ -423,7 +441,7 @@ struct SCHUR_DSYSV {
 };
 
 struct SCHUR_DGESV {
-  static auto invertMat(MatrixDouble &m, MatrixDouble &inv) {
+  static auto invertMat(MatrixDouble &m, MatrixDouble &inv, double eps) {
     MoFEMFunctionBeginHot;
     VectorInt ipiv;
     const auto nb = m.size1();
@@ -433,6 +451,13 @@ struct SCHUR_DGESV {
               "It should be square matrix");
     }
 #endif
+
+    if (eps) {
+      for (int cc = 0; cc != nb; ++cc) {
+        m(cc, cc) += eps;
+      }
+    }
+
     inv.resize(nb, nb, false);
     inv.clear();
     for (int c = 0; c != nb; ++c)

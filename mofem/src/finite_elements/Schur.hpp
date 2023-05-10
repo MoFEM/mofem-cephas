@@ -50,6 +50,24 @@ struct OpSchurAssembleEndImpl : public ForcesAndSourcesCore::UserDataOperator {
                          std::vector<SmartPetscObj<Mat>> sequence_of_mats,
                          std::vector<bool> sym_schur, bool symm_op = true);
 
+  /**
+   * @brief Construct a new Op Schur Assemble End object
+   *
+   * @param fields_name list of fields
+   * @param field_ents list of entities on which schur complement is applied (can be empty)
+   * @param sequence_of_aos list of maps from base problem to Schur complement matrix
+   * @param sequence_of_mats list of Schur complement matrices
+   * @param sym_schur true if Schur complement is symmetric
+   * @param diag_eps add epsilon on diagonal of inverted matrix 
+   * @param symm_op true if block diagonal is symmetric
+   */
+  OpSchurAssembleEndImpl(std::vector<std::string> fields_name,
+                         std::vector<boost::shared_ptr<Range>> field_ents,
+                         std::vector<SmartPetscObj<AO>> sequence_of_aos,
+                         std::vector<SmartPetscObj<Mat>> sequence_of_mats,
+                         std::vector<bool> sym_schur,
+                         std::vector<double> diag_eps, bool symm_op = true);
+
 protected:
   template <typename I>
   MoFEMErrorCode doWorkImpl(int side, EntityType type,
@@ -60,6 +78,7 @@ protected:
   std::vector<SmartPetscObj<AO>> sequenceOfAOs;
   std::vector<SmartPetscObj<Mat>> sequenceOfMats;
   std::vector<bool> symSchur;
+  std::vector<double> diagEps;
 
   MatrixDouble invMat;
   MatrixDouble invDiagOffMat;
