@@ -1032,9 +1032,9 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
                  "have "
               << bc->bcAttributes.size();
         } else if (bc->bcAttributes.size() == 1 ||
-                   bc->bcAttributes.size() > 4) {
+                   bc->bcAttributes.size() == 4) {
           bc->dispBcPtr->data.value6 = bc->bcAttributes[0];
-        } else if (bc->bcAttributes.size() == 3) {
+        } else if (bc->bcAttributes.size() == 3 || bc->bcAttributes.size() == 6) {
           bc->dispBcPtr->data.value6 = bc->bcAttributes[2];
         }
         MOFEM_LOG("BcMngWorld", Sev::inform) << "Add Z " << bc_id;

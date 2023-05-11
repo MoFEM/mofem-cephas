@@ -651,14 +651,9 @@ MoFEMErrorCode OpFluxRhsImpl<NaturalMeshsetTypeVectorScaling<BLOCKSET>, 1, FIELD
         << "BLOCKSET is expected to have " << FIELD_DIM
         << " attributes but has size " << block_data.size();
     if (block_data.size() < FIELD_DIM) {
-        MOFEM_LOG("SELF", Sev::warning)
-        << "BLOCKSET is expected to have " << FIELD_DIM
-        << " attributes but has size " << block_data.size();
 
-        for(unsigned int ii = 0; ii != FIELD_DIM; ++ii)
-          this->tForce(ii) = 1;
-      // SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-      //         "Size of attribute in BLOCKSET is too small");
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Size of attribute in BLOCKSET is too small");
     }
   }
 
