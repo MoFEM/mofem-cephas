@@ -69,6 +69,7 @@ struct OpSchurAssembleEndImpl : public ForcesAndSourcesCore::UserDataOperator {
                          std::vector<double> diag_eps, bool symm_op = true);
 
 protected:
+
   template <typename I>
   MoFEMErrorCode doWorkImpl(int side, EntityType type,
                             EntitiesFieldData::EntData &data);
