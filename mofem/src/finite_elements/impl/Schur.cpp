@@ -140,9 +140,6 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
     if (M) {
       for (auto &s : storage) {
 
-#ifndef NDEBUG
-#endif
-
         auto &row_ind = s.getRowInd();
         auto &col_ind = s.getColInd();
         auto &m = s.getMat();
