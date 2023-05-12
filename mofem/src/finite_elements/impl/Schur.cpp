@@ -135,7 +135,8 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
   MOFEM_LOG("SELF", Sev::noisy) << "Schur assemble begin -> end";
 #endif
 
-  auto assemble = [&](SmartPetscObj<Mat> M, auto &storage) {
+  auto assemble = [&](SmartPetscObj<Mat> M, MatSetValuesRaw mat_set_values,
+                      auto &storage) {
     MoFEMFunctionBegin;
     if (M) {
       for (auto &s : storage) {
@@ -143,9 +144,8 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
         auto &row_ind = s.getRowInd();
         auto &col_ind = s.getColInd();
         auto &m = s.getMat();
-        if (auto ierr = ::MatSetValues(M, row_ind.size(), &*row_ind.begin(),
-                                       col_ind.size(), &*col_ind.begin(),
-                                       &*m.data().begin(), ADD_VALUES)) {
+        if (mat_set_values(M, row_ind.size(), &*row_ind.begin(), col_ind.size(),
+                           &*col_ind.begin(), &*m.data().begin(), ADD_VALUES)) {
           auto field_ents = getPtrFE()->mField.get_field_ents();
           auto row_ent_it = field_ents->find(s.uidRow);
           auto col_ent_it = field_ents->find(s.uidCol);
@@ -357,7 +357,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 
     // assemble Schur
     if (sequenceOfMats[ss]) {
-      CHKERR assemble(sequenceOfMats[ss], storage);
+      CHKERR assemble(sequenceOfMats[ss], matSetValuesSchurRaw, storage);
     }
 
     MoFEMFunctionReturn(0);
@@ -365,7 +365,8 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 
   auto &storage = SchurL2Mats::schurL2Storage;
   // Assemble to global matrix
-  CHKERR assemble(SmartPetscObj<Mat>(getKSPB(), true), storage);
+  CHKERR assemble(SmartPetscObj<Mat>(getKSPB(), true), matSetValuesRaw,
+                  storage);
 
   // Assemble Schur complements
   // Iterate complements

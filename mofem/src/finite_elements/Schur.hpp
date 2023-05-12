@@ -34,6 +34,13 @@ struct OpSchurAssembleBegin : public ForcesAndSourcesCore::UserDataOperator {
  */
 struct OpSchurAssembleEndImpl : public ForcesAndSourcesCore::UserDataOperator {
 
+  using MatSetValuesRaw = boost::function<MoFEMErrorCode(
+      Mat mat, PetscInt m, const PetscInt idxm[], PetscInt n,
+      const PetscInt idxn[], const PetscScalar v[], InsertMode addv)>;
+
+  MatSetValuesRaw matSetValuesRaw = ::MatSetValues;
+  MatSetValuesRaw matSetValuesSchurRaw = ::MatSetValues;
+
   /**
    * @brief Construct a new Op Schur Assemble End object
    *
