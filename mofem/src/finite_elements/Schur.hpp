@@ -87,7 +87,7 @@ protected:
 };
 
 struct SCHUR_DSYSV; ///< SY	symmetric
-struct SCHUR_DGESV; ///< GE	general (i.e., unsymmetric, in some cases
+struct SCHUR_DGESV; ///< GE	general (i.e., nonsymmetric, in some cases
                     ///< rectangular)
 
 /**
