@@ -231,6 +231,7 @@ protected:
       case BMat:
         return this->getKSPB();
     }
+    return this->getKSPB();
   };
 
 
