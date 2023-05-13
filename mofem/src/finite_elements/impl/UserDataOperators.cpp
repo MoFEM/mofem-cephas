@@ -334,8 +334,6 @@ MoFEMErrorCode OpSetCovariantPiolaTransformOnFace2DImpl<2>::doWork(
   if (type_dim != 1 && type_dim != 2)
     MoFEMFunctionReturnHot(0);
 
-  const auto nb_gauss_pts = getGaussPts().size2();
-
   FTensor::Index<'i', 2> i;
   FTensor::Index<'j', 2> j;
   FTensor::Index<'k', 2> k;
@@ -654,7 +652,6 @@ OpCalculateInvJacForFatPrism::doWork(int side, EntityType type,
     FTensor::Index<'j', 3> j;
     FTensor::Tensor2<double, 3, 3> t_jac;
 
-    auto t_w = getFTensor0IntegrationWeight();
     for (int gg = 0; gg != nb_gauss_pts; gg++) {
 
       FTensor::Tensor1<double *, 3> t_coords(coords_ptr, &coords_ptr[1],

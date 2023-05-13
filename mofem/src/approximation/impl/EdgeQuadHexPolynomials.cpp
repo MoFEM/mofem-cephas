@@ -915,12 +915,12 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_InteriorShapeFunctions_ONHEX(
     CHKERR ::DemkowiczHexAndQuad::monom_ordering(&permute[0][0], p[0] - 2,
                                                  p[1] - 2, p[2] - 2);
 
-    double P0[p[0] + 2];
-    double diffL0[3 * (p[0] + 2)];
-    double P1[p[1] + 2];
-    double diffL1[3 * (p[1] + 2)];
-    double P2[p[2] + 2];
-    double diffL2[3 * (p[2] + 2)];
+    // double P0[p[0] + 2];
+    // double diffL0[3 * (p[0] + 2)];
+    // double P1[p[1] + 2];
+    // double diffL1[3 * (p[1] + 2)];
+    // double P2[p[2] + 2];
+    // double diffL2[3 * (p[2] + 2)];
 
     for (int qq = 0; qq != nb_integration_pts; ++qq) {
 

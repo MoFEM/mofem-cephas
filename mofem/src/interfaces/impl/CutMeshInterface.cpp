@@ -928,12 +928,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, int verb,
     return a;
   };
 
-  auto get_range = [](std::vector<EntityHandle> v) {
-    Range r;
-    r.insert_list(v.begin(), v.end());
-    return r;
-  };
-
   auto vol_edges = get_adj(vol, 1);
 
   aveLength = 0;
@@ -1024,12 +1018,6 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
     return s;
   };
 
-  auto get_conn = [&](auto e) {
-    int num_nodes;
-    const EntityHandle *conn;
-    CHKERR moab.get_connectivity(e, conn, num_nodes, true);
-    return conn;
-  };
 
   auto get_range = [](std::vector<EntityHandle> v) {
     Range r;

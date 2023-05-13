@@ -93,6 +93,8 @@ OperatorsTester::assembleVec(SmartPetscObj<DM> dm, std::string fe_name,
   pipeline->ts_dt = delta_t;
 
   auto [v, a] = setPipelineX(pipeline, x, delta_x, delta2_x, delta_t);
+  std::ignore = a;
+  std::ignore = v;
 
   CHK_THROW_MESSAGE(
       DMoFEMMeshToLocalVector(dm, x, INSERT_VALUES, SCATTER_REVERSE),
@@ -134,6 +136,8 @@ OperatorsTester::assembleMat(SmartPetscObj<DM> dm, std::string fe_name,
   pipeline->ts_aa = 1. / pow(delta_t, 2);
 
   auto [v, a] = setPipelineX(pipeline, x, delta_x, delta2_x, delta_t);
+  std::ignore = a;
+  std::ignore = v;
 
   CHK_THROW_MESSAGE(
       DMoFEMMeshToLocalVector(dm, x, INSERT_VALUES, SCATTER_REVERSE),

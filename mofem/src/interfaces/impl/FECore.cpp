@@ -652,8 +652,6 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
     }
   }
 
-  auto &dofs_by_ent_uid = dofsField.get<Unique_mi_tag>();
-
   MoFEMFunctionReturn(0);
 }
 

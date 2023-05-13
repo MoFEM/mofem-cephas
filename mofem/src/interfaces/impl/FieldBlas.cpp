@@ -53,7 +53,6 @@ FieldBlas::fieldLambdaOnEntities(FieldBlas::OneFieldFunctionOnEntities lambda,
   const MoFEM::Interface &m_field = cOre;
   auto fields_ptr = m_field.get_fields();
   auto field_ents = m_field.get_field_ents();
-  auto dofs_ptr = m_field.get_dofs();
   MoFEMFunctionBegin;
 
   auto fit = fields_ptr->get<FieldName_mi_tag>().find(field_name);
@@ -163,7 +162,6 @@ FieldBlas::fieldLambdaOnEntities(FieldBlas::TwoFieldFunctionOnEntities lambda,
   const MoFEM::Interface &m_field = cOre;
   auto fields_ptr = m_field.get_fields();
   auto field_ents = m_field.get_field_ents();
-  auto dofs_ptr = m_field.get_dofs();
   MoFEMFunctionBegin;
 
   auto x_fit = fields_ptr->get<FieldName_mi_tag>().find(field_name_x);

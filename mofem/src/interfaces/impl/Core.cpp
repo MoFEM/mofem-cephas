@@ -273,8 +273,6 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
 
   Range ref_elems_to_add;
 
-  auto m_moab = &get_moab();
-
   // Initialize database
   Range meshsets;
   CHKERR get_moab().get_entities_by_type(0, MBENTITYSET, meshsets, false);

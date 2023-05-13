@@ -60,7 +60,6 @@ KernelLobattoPolynomial::getValue(MatrixDouble &pts,
                                   boost::shared_ptr<BaseFunctionCtx> ctx_ptr) {
 
   MoFEMFunctionBeginHot;
-  BaseFunctionUnknownInterface *iface;
   auto ctx = ctx_ptr->getInterface<KernelLobattoPolynomialCtx>();
   ctx->baseFunPtr->resize(pts.size2(), ctx->P + 1, false);
   ctx->baseDiffFunPtr->resize(pts.size2(), ctx->dIm * (ctx->P + 1), false);

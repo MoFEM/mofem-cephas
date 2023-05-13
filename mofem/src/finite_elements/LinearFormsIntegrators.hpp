@@ -1105,7 +1105,6 @@ MoFEMErrorCode OpNormalMixVecTimesScalarImpl<3, GAUSS, OpBase>::iNtegrate(
 
   const size_t nb_base_functions = row_data.getN().size2() / 3;
   // get element volume
-  const double vol = OpBase::getMeasure();
   // get integration weights
   auto t_w = OpBase::getFTensor0IntegrationWeight();
   // get base function gradient on rows
@@ -1141,7 +1140,6 @@ MoFEMErrorCode OpNormalMixVecTimesScalarImpl<2, GAUSS, OpBase>::iNtegrate(
   const size_t nb_base_functions = row_data.getN().size2() / 3;
   FTensor::Tensor1<double, 3> t_z{0., 0., 1.};
   // get element volume
-  const double vol = OpBase::getMeasure();
   // get integration weights
   auto t_w = OpBase::getFTensor0IntegrationWeight();
   // get base function gradient on rows
@@ -1178,7 +1176,6 @@ OpConvectiveTermRhsImpl<1, 1, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
     EntitiesFieldData::EntData &row_data) {
   MoFEMFunctionBegin;
 
-  const size_t nb_base_functions = row_data.getN().size2();
   auto t_w = this->getFTensor0IntegrationWeight();
   auto t_base = row_data.getFTensor0N();
 
@@ -1216,7 +1213,6 @@ OpConvectiveTermRhsImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
     EntitiesFieldData::EntData &row_data) {
   MoFEMFunctionBegin;
 
-  const size_t nb_base_functions = row_data.getN().size2();
   auto t_w = this->getFTensor0IntegrationWeight();
   auto t_base = row_data.getFTensor0N();
 

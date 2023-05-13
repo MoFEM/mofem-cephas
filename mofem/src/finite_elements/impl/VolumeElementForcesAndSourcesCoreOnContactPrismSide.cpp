@@ -83,7 +83,6 @@ VolumeElementForcesAndSourcesCoreOnContactPrismSide::setGaussPts(int order) {
   gaussPts.resize(4, nb_gauss_pts, false);
   gaussPts.clear();
 
-  const EntityType tri_type = MBTRI;
   boost::shared_ptr<EntitiesFieldData> dataH1_on_face;
 
   if (side_of_vol_number == 3) {

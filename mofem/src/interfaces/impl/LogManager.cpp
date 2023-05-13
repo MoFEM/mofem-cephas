@@ -16,8 +16,6 @@
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-static int dummy_file_ptr = 1;
-
 namespace MoFEM {
 
 using namespace MoFEM::LogKeywords;
