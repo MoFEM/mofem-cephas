@@ -315,8 +315,6 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
   MoFEM::Interface &m_field = cOre;
   auto fields_ptr = m_field.get_fields();
   auto fe_ptr = m_field.get_finite_elements();
-  auto fe_ent_ptr = m_field.get_ents_finite_elements();
-  auto ents_field_ptr = m_field.get_field_ents();
   auto dofs_field_ptr = m_field.get_dofs();
   ProblemManagerFunctionBegin;
   PetscLogEventBegin(MOFEM_EVENT_ProblemsManager, 0, 0, 0, 0);
@@ -840,6 +838,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
         if (PetscUnlikely(ddit == dofs_glob_uid_view.end())) {
 
 #ifndef NDEBUG
+          auto ents_field_ptr = m_field.get_field_ents();
           MOFEM_LOG("SELF", Sev::error)
               << "DOF is shared or multishared between processors. For example "
                  "if order of field on given entity is set in inconsistently, "
@@ -2625,7 +2624,7 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
   const int nb_init_row_dofs = prb_ptr->getNbDofsRow();
   const int nb_init_col_dofs = prb_ptr->getNbDofsCol();
   const int nb_init_loc_row_dofs = prb_ptr->getNbLocalDofsRow();
-  const int nb_init_loc_col_dofs = prb_ptr->getNbLocalDofsCol();
+  // const int nb_init_loc_col_dofs = prb_ptr->getNbLocalDofsCol();
   const int nb_init_ghost_row_dofs = prb_ptr->getNbGhostDofsRow();
   const int nb_init_ghost_col_dofs = prb_ptr->getNbGhostDofsCol();
 
@@ -2896,7 +2895,7 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntitiesNotDistributed(
   const int nb_init_row_dofs = prb_ptr->getNbDofsRow();
   const int nb_init_col_dofs = prb_ptr->getNbDofsCol();
   const int nb_init_loc_row_dofs = prb_ptr->getNbLocalDofsRow();
-  const int nb_init_loc_col_dofs = prb_ptr->getNbLocalDofsCol();
+  // const int nb_init_loc_col_dofs = prb_ptr->getNbLocalDofsCol();
   const int nb_init_ghost_row_dofs = prb_ptr->getNbGhostDofsRow();
   const int nb_init_ghost_col_dofs = prb_ptr->getNbGhostDofsCol();
 

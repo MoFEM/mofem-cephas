@@ -327,23 +327,23 @@ MoFEMErrorCode PostProcGenerateRefMesh<MBTRI>::generateReferenceElementMesh() {
     MoFEMFunctionReturn(0);
   };
 
-  auto set_gauss_pts = [&](std::map<EntityHandle, int> &little_map) {
-    MoFEMFunctionBegin;
-    Range faces;
-    CHKERR moab_ref.get_entities_by_type(0, MBTRI, faces, true);
-    Range faces_nodes;
-    CHKERR moab_ref.get_connectivity(faces, faces_nodes, false);
-    auto &gauss_pts = levelGaussPtsOnRefMesh[0];
-    gauss_pts.resize(faces_nodes.size(), 4, false);
-    size_t gg = 0;
-    for (auto node : faces_nodes) {
-      CHKERR moab_ref.get_coords(&node, 1, &gauss_pts(gg, 0));
-      little_map[node] = gg;
-      ++gg;
-    }
-    gauss_pts = trans(gauss_pts);
-    MoFEMFunctionReturn(0);
-  };
+  // auto set_gauss_pts = [&](std::map<EntityHandle, int> &little_map) {
+  //   MoFEMFunctionBegin;
+  //   Range faces;
+  //   CHKERR moab_ref.get_entities_by_type(0, MBTRI, faces, true);
+  //   Range faces_nodes;
+  //   CHKERR moab_ref.get_connectivity(faces, faces_nodes, false);
+  //   auto &gauss_pts = levelGaussPtsOnRefMesh[0];
+  //   gauss_pts.resize(faces_nodes.size(), 4, false);
+  //   size_t gg = 0;
+  //   for (auto node : faces_nodes) {
+  //     CHKERR moab_ref.get_coords(&node, 1, &gauss_pts(gg, 0));
+  //     little_map[node] = gg;
+  //     ++gg;
+  //   }
+  //   gauss_pts = trans(gauss_pts);
+  //   MoFEMFunctionReturn(0);
+  // };
 
   auto get_ref_gauss_pts_and_shape_functions = [this, max_level, &moab_ref,
                                                 &m_field_ref]() {

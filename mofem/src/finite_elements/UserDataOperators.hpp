@@ -2321,9 +2321,9 @@ struct OpCalculateHVecVectorHessian
       MoFEMFunctionReturnHot(0);
 
     const int nb_base_functions = data.getN().size2() / BASE_DIM;
-    auto &hessian_base = data.getN(BaseDerivatives::SecondDerivative);
 
 #ifndef NDEBUG
+    auto &hessian_base = data.getN(BaseDerivatives::SecondDerivative);
     if (hessian_base.size1() != nb_integration_points) {
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Wrong number of integration pts (%d != %d)",

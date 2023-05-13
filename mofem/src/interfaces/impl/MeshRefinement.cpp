@@ -549,7 +549,6 @@ MoFEMErrorCode MeshRefinement::refineTets(const Range &_tets,
     const EntityHandle tit = parent_tets_refinded[idx];
     const BitRefEdges &parent_edges_bit = parent_edges_bit_vec[idx];
     const int nb_new_tets = nb_new_tets_vec[idx];
-    const int sub_type = sub_type_vec[idx];
 
     std::array<EntityHandle, 8> ref_tets;
     for (int tt = 0; tt != nb_new_tets; ++tt, ++start_e)

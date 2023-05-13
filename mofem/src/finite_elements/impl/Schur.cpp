@@ -187,8 +187,6 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 
         CHKERR I::invertMat(row_it->getMat(), invMat);
 
-        const auto row_idx = row_it->iDX;
-
         auto c_lo =
             storage.template get<SchurL2Mats::col_mi_tag>().lower_bound(lo_uid);
         auto c_hi =
