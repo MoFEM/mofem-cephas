@@ -134,6 +134,13 @@ struct SchurL2Mats : public boost::enable_shared_from_this<SchurL2Mats> {
   inline auto &getRowInd() const { return rowIndices[iDX]; }
   inline auto &getColInd() const { return colIndices[iDX]; }
 
+  using MatSetValuesPtr = boost::function<MoFEMErrorCode(
+      Mat M, const EntitiesFieldData::EntData &row_data,
+      const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
+      InsertMode iora)>;
+
+  static MatSetValuesPtr matSetValuesPtr; ///< backend assembly function
+
   static MoFEMErrorCode MatSetValues(Mat M,
                                      const EntitiesFieldData::EntData &row_data,
                                      const EntitiesFieldData::EntData &col_data,

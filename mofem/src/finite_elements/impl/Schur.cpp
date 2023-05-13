@@ -18,15 +18,23 @@ SchurL2Mats::SchurL2Mats(const size_t idx, const UId uid_row, const UId uid_col)
     : iDX(idx), uidRow(uid_row), uidCol(uid_col) {}
 
 MoFEMErrorCode
+schur_mat_set_values_wrap(Mat M, const EntitiesFieldData::EntData &row_data,
+                          const EntitiesFieldData::EntData &col_data,
+                          const MatrixDouble &mat, InsertMode iora) {
+  return MatSetValues<AssemblyTypeSelector<PETSC>>(M, row_data, col_data, mat,
+                                                   iora);
+}
+
+SchurL2Mats::MatSetValuesPtr SchurL2Mats::matSetValuesPtr =
+    schur_mat_set_values_wrap;
+
+MoFEMErrorCode
 SchurL2Mats::MatSetValues(Mat M, const EntitiesFieldData::EntData &row_data,
                           const EntitiesFieldData::EntData &col_data,
                           const MatrixDouble &mat, InsertMode iora) {
   MoFEMFunctionBegin;
 
-  if (iora != ADD_VALUES) {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-            "Other case of assembly not implemented");
-  }
+  CHKERR matSetValuesPtr(M, row_data, col_data, mat, iora);
 
   auto get_row_indices = [&]() -> const VectorInt & {
     if (auto e_ptr = row_data.getFieldEntities()[0]) {
@@ -48,9 +56,9 @@ SchurL2Mats::MatSetValues(Mat M, const EntitiesFieldData::EntData &row_data,
   const auto size = SchurL2Mats::locMats.size();
 
   if (idx >= size) {
-    SchurL2Mats::locMats.push_back(new MatrixDouble(nb_rows, nb_cols));
-    SchurL2Mats::rowIndices.push_back(new VectorInt(nb_rows));
-    SchurL2Mats::colIndices.push_back(new VectorInt(nb_cols));
+    SchurL2Mats::locMats.push_back(new MatrixDouble());
+    SchurL2Mats::rowIndices.push_back(new VectorInt());
+    SchurL2Mats::colIndices.push_back(new VectorInt());
   }
 
   // insert index
@@ -64,8 +72,13 @@ SchurL2Mats::MatSetValues(Mat M, const EntitiesFieldData::EntData &row_data,
   auto get_storage = [&p]() { return const_cast<SchurL2Mats &>(*p.first); };
 
   if (p.second) {
-    get_storage().getMat().resize(nb_rows, nb_cols, false);
-    noalias(get_storage().getMat()) = mat;
+
+    auto asmb = [&](auto &sm) {
+      sm.resize(nb_rows, nb_cols, false);
+      noalias(sm) = mat;
+    };
+
+    asmb(get_storage().getMat());
 
     auto add_indices = [](auto &storage, auto &ind) {
       storage.resize(ind.size(), false);
@@ -77,17 +90,24 @@ SchurL2Mats::MatSetValues(Mat M, const EntitiesFieldData::EntData &row_data,
 
   } else {
 
-    switch (iora) {
-    case ADD_VALUES:
-      get_storage().getMat() += mat;
-      break;
-    case INSERT_VALUES:
-      noalias(get_storage().getMat()) = mat;
-      break;
-    default:
-      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-              "Assembly type not implemented");
+    auto asmb = [&](auto &sm) {
+      MoFEMFunctionBeginHot;
+      switch (iora) {
+      case ADD_VALUES:
+        sm += mat;
+        break;
+      case INSERT_VALUES:
+        noalias(sm) = mat;
+        break;
+      default:
+        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                "Assembly type not implemented");
+      }
+      MoFEMFunctionReturnHot(0);
     };
+
+    CHKERR asmb(get_storage().getMat());
+
   }
 
   MoFEMFunctionReturn(0);
@@ -100,6 +120,15 @@ MoFEMErrorCode OpSchurAssembleBegin::doWork(int side, EntityType type,
   MOFEM_LOG("SELF", Sev::noisy) << "Schur assemble begin";
 #endif
   SchurL2Mats::schurL2Storage.clear();
+
+  auto zero_mats = [&](auto &mats) {
+    for (auto &m : mats) {
+      m.resize(0, 0, false);
+    }
+  };
+
+  zero_mats(SchurL2Mats::locMats);
+
   MoFEMFunctionReturn(0);
 }
 
@@ -136,31 +165,34 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 #endif
 
   auto assemble = [&](SmartPetscObj<Mat> M, MatSetValuesRaw mat_set_values,
-                      auto &storage) {
+                      auto &storage, AssembleTo a) {
     MoFEMFunctionBegin;
     if (M) {
       for (auto &s : storage) {
-
-        auto &row_ind = s.getRowInd();
-        auto &col_ind = s.getColInd();
         auto &m = s.getMat();
-        if (mat_set_values(M, row_ind.size(), &*row_ind.begin(), col_ind.size(),
-                           &*col_ind.begin(), &*m.data().begin(), ADD_VALUES)) {
-          auto field_ents = getPtrFE()->mField.get_field_ents();
-          auto row_ent_it = field_ents->find(s.uidRow);
-          auto col_ent_it = field_ents->find(s.uidCol);
-          MOFEM_LOG_CHANNEL("SELF");
-          if (row_ent_it != field_ents->end())
-            MOFEM_LOG("SELF", Sev::error)
-                << "Assemble row entity: " << (*row_ent_it)->getName() << " "
-                << (*col_ent_it)->getEntTypeName() << " side "
-                << (*row_ent_it)->getSideNumber();
-          if (col_ent_it != field_ents->end())
-            MOFEM_LOG("SELF", Sev::error)
-                << "Assemble col entity: " << (*col_ent_it)->getName() << " "
-                << (*col_ent_it)->getEntTypeName() << " side "
-                << (*col_ent_it)->getSideNumber();
-          CHK_THROW_MESSAGE(ierr, "MatSetValues");
+        if (m.size1()) {
+          auto &row_ind = s.getRowInd();
+          auto &col_ind = s.getColInd();
+
+          if (mat_set_values(M, row_ind.size(), &*row_ind.begin(),
+                             col_ind.size(), &*col_ind.begin(),
+                             &*m.data().begin(), ADD_VALUES)) {
+            auto field_ents = getPtrFE()->mField.get_field_ents();
+            auto row_ent_it = field_ents->find(s.uidRow);
+            auto col_ent_it = field_ents->find(s.uidCol);
+            MOFEM_LOG_CHANNEL("SELF");
+            if (row_ent_it != field_ents->end())
+              MOFEM_LOG("SELF", Sev::error)
+                  << "Assemble row entity: " << (*row_ent_it)->getName() << " "
+                  << (*col_ent_it)->getEntTypeName() << " side "
+                  << (*row_ent_it)->getSideNumber();
+            if (col_ent_it != field_ents->end())
+              MOFEM_LOG("SELF", Sev::error)
+                  << "Assemble col entity: " << (*col_ent_it)->getName() << " "
+                  << (*col_ent_it)->getEntTypeName() << " side "
+                  << (*col_ent_it)->getSideNumber();
+            CHK_THROW_MESSAGE(ierr, "MatSetValues");
+          }
         }
       }
     }
@@ -357,7 +389,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 
     // assemble Schur
     if (sequenceOfMats[ss]) {
-      CHKERR assemble(sequenceOfMats[ss], matSetValuesSchurRaw, storage);
+      CHKERR assemble(sequenceOfMats[ss], matSetValuesSchurRaw, storage, B);
     }
 
     MoFEMFunctionReturn(0);
@@ -365,8 +397,6 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 
   auto &storage = SchurL2Mats::schurL2Storage;
   // Assemble to global matrix
-  CHKERR assemble(SmartPetscObj<Mat>(getKSPB(), true), matSetValuesRaw,
-                  storage);
 
   // Assemble Schur complements
   // Iterate complements
