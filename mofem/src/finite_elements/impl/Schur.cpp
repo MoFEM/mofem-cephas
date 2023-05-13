@@ -258,7 +258,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
     auto schur_row_ptr_view = get_row_view();
     auto schur_col_ptr_view = get_col_view();
 
-    for(auto row_it : schur_row_ptr_view) {
+    for (auto row_it : schur_row_ptr_view) {
       if (row_it->uidRow == row_it->uidCol) {
 
         CHKERR I::invertMat(row_it->getMat(), invMat, eps);
@@ -280,7 +280,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 #endif // NDEBUG
           noalias(invDiagOffMat) = prod(cc_off_mat, invMat);
 
-          for(auto r_lo : schur_row_ptr_view) {
+          for (auto r_lo : schur_row_ptr_view) {
             auto &col_uid = r_lo->uidCol;
 
             // Skip diagonal
