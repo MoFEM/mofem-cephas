@@ -165,7 +165,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 #endif
 
   auto assemble = [&](SmartPetscObj<Mat> M, MatSetValuesRaw mat_set_values,
-                      auto &storage, AssembleTo a) {
+                      auto &storage) {
     MoFEMFunctionBegin;
     if (M) {
       for (auto &s : storage) {
@@ -295,7 +295,6 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 
         CHKERR I::invertMat(row_it->getMat(), invMat, eps);
 
-        const auto row_idx = row_it->iDX;
         for (auto c_lo : schur_col_ptr_view) {
 
           auto &row_uid = c_lo->uidRow;
@@ -389,7 +388,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 
     // assemble Schur
     if (sequenceOfMats[ss]) {
-      CHKERR assemble(sequenceOfMats[ss], matSetValuesSchurRaw, storage, B);
+      CHKERR assemble(sequenceOfMats[ss], matSetValuesSchurRaw, storage);
     }
 
     MoFEMFunctionReturn(0);
