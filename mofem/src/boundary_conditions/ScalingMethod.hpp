@@ -103,7 +103,8 @@ template <int SPACE_DIM> struct TimeScaleVector : public ScalingMethod {
                   bool error_if_file_not_given = false);
 
   virtual FTensor::Tensor1<double, SPACE_DIM> getVector(const double time);
-  virtual FTensor::Tensor1<double, SPACE_DIM> getVectorFromData(const double time);
+  virtual FTensor::Tensor1<double, SPACE_DIM>
+  getVectorFromData(const double time);
 
 private:
   MoFEMErrorCode timeData();

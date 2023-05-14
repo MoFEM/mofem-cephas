@@ -134,7 +134,7 @@ struct AddFluxToRhsPipelineImpl<
             I>::template OpFlux<NaturalMeshsetType<BLOCKSET>, BASE_DIM,
                                 FIELD_DIM>;
 
-    using OpFluxBlocksetV =
+    using OpFluxBlocksetVectorScaling =
         typename NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
             I>::template OpFlux<NaturalMeshsetTypeVectorScaling<BLOCKSET>,
                                 BASE_DIM, FIELD_DIM>;
@@ -156,10 +156,9 @@ struct AddFluxToRhsPipelineImpl<
                                                             field_name, smv,
                                                             block_name, sev);
     CHKERR
-    NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
-        I>::template AddFluxToPipeline<OpFluxBlocksetV>::add(pipeline, m_field,
-                                                             field_name, vsmv,
-                                                             block_name, sev);
+    NaturalBC<OpBase>::template Assembly<A>::template LinearForm<I>::
+        template AddFluxToPipeline<OpFluxBlocksetVectorScaling>::add(
+            pipeline, m_field, field_name, vsmv, block_name, sev);
 
     MoFEMFunctionReturn(0);
   }

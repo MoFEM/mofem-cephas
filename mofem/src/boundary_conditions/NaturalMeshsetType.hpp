@@ -182,14 +182,13 @@ protected:
   MoFEMErrorCode getMeshsetData(MoFEM::Interface &m_field, int ms_id);
 };
 
-
 template <CubitBC BCTYP> struct NaturalMeshsetTypeVectorScaling {};
 
-
 template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
-struct OpFluxRhsImpl<NaturalMeshsetTypeVectorScaling<BLOCKSET>, 1, FIELD_DIM, A, I, OpBase>
-    : OpFluxRhsImpl<NaturalMeshsetTypeVectorScaling<UNKNOWNSET>, 1, FIELD_DIM, A, I,
-                    OpBase> {
+struct OpFluxRhsImpl<NaturalMeshsetTypeVectorScaling<BLOCKSET>, 1, FIELD_DIM, A,
+                     I, OpBase>
+    : OpFluxRhsImpl<NaturalMeshsetTypeVectorScaling<UNKNOWNSET>, 1, FIELD_DIM,
+                    A, I, OpBase> {
 
   OpFluxRhsImpl(MoFEM::Interface &m_field, int ms_id,
                 const std::string field_name,
@@ -609,15 +608,16 @@ OpFluxRhsImpl<NaturalMeshsetTypeVectorScaling<UNKNOWNSET>, 1, FIELD_DIM, A, I,
     OpFluxRhsImpl(
         const std::string field_name,
         std::vector<boost::shared_ptr<TimeScaleVector<FIELD_DIM>>> smv)
-    : OpSource(field_name, [this](double, double, double) {
-    FTensor::Index<'i', FIELD_DIM> i;
-    auto t = this->getFEMethod()->ts_t;
-    for (auto &o : vecOfTimeVectorScalingMethods) {
-      auto vec = o->getVector(t);
-      this->tForce(i) = vec(i);
-    }
-    return this->tForce;
-  }),
+    : OpSource(field_name,
+               [this](double, double, double) {
+                 FTensor::Index<'i', FIELD_DIM> i;
+                 auto t = this->getFEMethod()->ts_t;
+                 for (auto &o : vecOfTimeVectorScalingMethods) {
+                   auto vec = o->getVector(t);
+                   this->tForce(i) = vec(i);
+                 }
+                 return this->tForce;
+               }),
       vecOfTimeVectorScalingMethods(smv) {
 
   static_assert(FIELD_DIM > 1, "Not implemented for scalar field");
@@ -635,15 +635,15 @@ OpFluxRhsImpl<NaturalMeshsetTypeVectorScaling<BLOCKSET>, 1, FIELD_DIM, A, I,
 }
 
 template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
-MoFEMErrorCode OpFluxRhsImpl<NaturalMeshsetTypeVectorScaling<BLOCKSET>, 1, FIELD_DIM, A, I,
-                             OpBase>::getMeshsetData(MoFEM::Interface &m_field,
-                                                     int ms_id) {
+MoFEMErrorCode
+OpFluxRhsImpl<NaturalMeshsetTypeVectorScaling<BLOCKSET>, 1, FIELD_DIM, A, I,
+              OpBase>::getMeshsetData(MoFEM::Interface &m_field, int ms_id) {
   MoFEMFunctionBegin;
 
   auto cubit_meshset_ptr =
       m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(ms_id,
                                                                   BLOCKSET);
-  
+
   std::vector<double> block_data;
   CHKERR cubit_meshset_ptr->getAttributes(block_data);
   if (block_data.size() != FIELD_DIM) {
@@ -668,11 +668,10 @@ MoFEMErrorCode OpFluxRhsImpl<NaturalMeshsetTypeVectorScaling<BLOCKSET>, 1, FIELD
   MOFEM_LOG("WORLD", Sev::inform)
       << "tForce vector initialised: " << this->tForce;
 
-
   this->entsPtr = boost::make_shared<Range>();
   CHKERR m_field.get_moab().get_entities_by_handle(cubit_meshset_ptr->meshset,
                                                    *(this->entsPtr), true);
-             
+
   MoFEMFunctionReturn(0);
 }
 
@@ -741,7 +740,6 @@ struct AddFluxToRhsPipelineImpl<
     MoFEMFunctionReturn(0);
   }
 };
-
 
 template <CubitBC BCTYPE, int BASE_DIM, int FIELD_DIM, AssemblyType A,
           IntegrationType I, typename OpBase>
