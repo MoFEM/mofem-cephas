@@ -964,11 +964,13 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
         bc->dispBcPtr->data.flag4 = 1;
         bc->dispBcPtr->data.flag5 = 0;
         bc->dispBcPtr->data.flag6 = 0;
+        // for the ROTATE_X block the angles can be specified with either one or
+        // three attributes, e.g. 1, coords or 1,0,0,coords
         if (bc->bcAttributes.empty()) {
           bc->dispBcPtr->data.value4 = 0;
           MOFEM_LOG("BcMngWorld", Sev::warning)
-              << "Expected at least one attribute on block (angle, center "
-                 "coords) but have "
+              << "Expected one attribute on block on block (angle (1 or 3), "
+                 "center coords(3) but have "
               << bc->bcAttributes.size();
         } else if (bc->bcAttributes.size() >= 1) {
           bc->dispBcPtr->data.value4 = bc->bcAttributes[0];
@@ -993,11 +995,13 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
         bc->dispBcPtr->data.flag4 = 0;
         bc->dispBcPtr->data.flag5 = 1;
         bc->dispBcPtr->data.flag6 = 0;
+        // for the ROTATE_Y block the angles can be specified with either one or
+        // three attributes, e.g. 1, coords or 0,1,0,coords
         if (bc->bcAttributes.empty()) {
           bc->dispBcPtr->data.value5 = 0;
           MOFEM_LOG("BcMngWorld", Sev::warning)
-              << "Expected one attribute on block (angle, center coords) but "
-                 "have "
+              << "Expected one attribute on block on block (angle (1 or 3), "
+                 "center coords(3) but have "
               << bc->bcAttributes.size();
         } else if (bc->bcAttributes.size() == 1 ||
                    bc->bcAttributes.size() == 4) {
@@ -1025,16 +1029,19 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
         bc->dispBcPtr->data.flag4 = 0;
         bc->dispBcPtr->data.flag5 = 0;
         bc->dispBcPtr->data.flag6 = 1;
+        // for the ROTATE_Z block the angles can be specified with either one or
+        // three attributes, e.g. 1, coords or 0,0,1,coords
         if (bc->bcAttributes.empty()) {
           bc->dispBcPtr->data.value6 = 0;
           MOFEM_LOG("BcMngWorld", Sev::warning)
-              << "Expected one attribute on block (angle, center coords) but "
-                 "have "
+              << "Expected one attribute on block (angle (1 or 3), center "
+                 "coords(3) but have "
               << bc->bcAttributes.size();
         } else if (bc->bcAttributes.size() == 1 ||
-                   bc->bcAttributes.size() > 4) {
+                   bc->bcAttributes.size() == 4) {
           bc->dispBcPtr->data.value6 = bc->bcAttributes[0];
-        } else if (bc->bcAttributes.size() == 3) {
+        } else if (bc->bcAttributes.size() == 3 ||
+                   bc->bcAttributes.size() == 6) {
           bc->dispBcPtr->data.value6 = bc->bcAttributes[2];
         }
         MOFEM_LOG("BcMngWorld", Sev::inform) << "Add Z " << bc_id;
