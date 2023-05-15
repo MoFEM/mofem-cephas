@@ -198,6 +198,29 @@ struct BcManager : public UnknownInterface {
   inline BcMapByBlockName &getBcMapByBlockName() { return bcMapByBlockName; }
 
   /**
+   * @brief Merge block ranges
+   *
+   * @param bc_regex_vec
+   * @return Range
+   */
+  Range getMergedBlocksRange(std::vector<std::regex> bc_regex_vec);
+
+  /**
+   * @brief Merge block ranges
+   * 
+   * @param bc_names 
+   * @return auto 
+   */
+  inline auto getMergedBlocksRange(std::vector<string> bc_names) {
+    std::vector<std::regex> reg_vec(bc_names.size());
+    for (int i = 0; i != bc_names.size(); ++i) {
+      auto full_name = std::string("(.*)_") + bc_names[i] + std::string("(.*)");
+      reg_vec[i] = std::regex(full_name);
+    }
+    return getMergedBlocksRange(reg_vec);
+  }
+
+  /**
    * @brief Get the Merged Boundary Marker object
    *
    * @param bc_regex_vec boundary name regex vector
@@ -226,6 +249,7 @@ struct BcManager : public UnknownInterface {
    */
   BcMarkerPtr getMergedBlocksMarker(
       const std::vector<BcMarkerPtr> &boundary_markers_ptr_vec);
+
   /**
    * @brief check if given boundary condition name is in the map bc element
    *
