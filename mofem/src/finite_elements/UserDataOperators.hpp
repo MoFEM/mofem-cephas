@@ -8,6 +8,14 @@
 
 namespace MoFEM {
 
+extern "C" {
+void tetcircumcenter_tp(double a[3], double b[3], double c[3], double d[3],
+                        double circumcenter[3], double *xi, double *eta,
+                        double *zeta);
+void tricircumcenter3d_tp(double a[3], double b[3], double c[3],
+                          double circumcenter[3], double *xi, double *eta);
+}
+
 /** \name Get values at Gauss pts */
 
 /**@{*/
@@ -3350,6 +3358,175 @@ MoFEMErrorCode OpInvertMatrix<DIM>::doWorkImpl(int side, EntityType type,
 
   MoFEMFunctionReturn(0);
 }
+
+
+struct OpCalculateCharLength
+    : public ForcesAndSourcesCore::UserDataOperator {
+  OpCalculateCharLength(Interface &m_field, boost::shared_ptr<double> char_length)
+      : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPLAST),
+       mField(m_field), charLength(char_length) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data) {
+    MoFEMFunctionBegin;
+    
+    int num_nodes;
+    VectorDouble coords;
+    const EntityHandle *conn;
+    FTensor::Index<'i', 3> i;
+    double volume;
+    // double element_radius;
+
+    const auto ent = getNumeredEntFiniteElementPtr()->getEnt();
+    const auto type_fe = getNumeredEntFiniteElementPtr()->getEntType();
+    CHKERR mField.get_moab().get_connectivity(ent, conn, num_nodes, true);
+    coords.resize(3 * num_nodes, false);
+    CHKERR mField.get_moab().get_coords(conn, num_nodes,
+                                        &*coords.data().begin());
+
+    using T1_ptr = FTensor::Tensor1<double *, 3>;
+    using T1 = FTensor::Tensor1<double, 3>;
+
+    if (type_fe == MBTET) {
+      volume *= G_TET_W1[0] / 6.;
+      double center[3];
+      tetcircumcenter_tp(&coords.data()[0], &coords.data()[3],
+                         &coords.data()[6], &coords.data()[9], center, NULL,
+                         NULL, NULL);
+      T1_ptr t_centre(&center[0], &center[1], &center[2], 3);
+      T1_ptr t_first_vertex(&coords[0], &coords[1], &coords[2], 3);
+      T1 t_rad;
+      t_rad(i) = t_centre(i) - t_first_vertex(i);
+      // *charLength = sqrt(t_rad(i) * t_rad(i));
+      // centre is wrong
+
+      // cross check
+      // https://math.stackexchange.com/questions/2820212/circumradius-of-a-tetrahedron
+      T1_ptr t_v_0(&coords[0], &coords[1], &coords[2], 3);
+      T1_ptr t_v_1(&coords[3], &coords[4], &coords[5], 3);
+      T1_ptr t_v_2(&coords[6], &coords[7], &coords[8], 3);
+      T1_ptr t_v_3(&coords[9], &coords[10], &coords[11], 3);
+
+      T1 edge_1, edge_2, edge_3, edge_4, edge_5, edge_6;
+      edge_1(i) = t_v_3(i) - t_v_2(i);
+      edge_2(i) = t_v_3(i) - t_v_1(i);
+      edge_3(i) = t_v_3(i) - t_v_0(i);
+
+      edge_4(i) = t_v_1(i) - t_v_0(i);
+      edge_5(i) = t_v_2(i) - t_v_1(i);
+      edge_6(i) = t_v_0(i) - t_v_2(i);
+
+      double a, b, c;
+      double a_op, b_op, c_op;
+      a = sqrt(edge_1(i) * edge_1(i));
+      b = sqrt(edge_2(i) * edge_2(i));
+      c = sqrt(edge_3(i) * edge_3(i));
+
+      a_op = sqrt(edge_4(i) * edge_4(i));
+      b_op = sqrt(edge_5(i) * edge_5(i));
+      c_op = sqrt(edge_6(i) * edge_6(i));
+      const double prod_1 = a * a_op + b * b_op + c * c_op;
+      const double prod_2 = a * a_op + b * b_op - c * c_op;
+      const double prod_3 = a * a_op - b * b_op + c * c_op;
+      const double prod_4 = -a * a_op + b * b_op + c * c_op;
+      const double full_prod = sqrt(prod_1 * prod_2 * prod_3 * prod_4);
+      *charLength = full_prod / (12. * volume);
+
+    } else if (type_fe == MBHEX) {
+
+      T1_ptr t_v_0(&coords[0], &coords[1], &coords[2], 3);
+      T1_ptr t_v_1(&coords[3], &coords[4], &coords[5], 3);
+      T1_ptr t_v_2(&coords[6], &coords[7], &coords[8], 3);
+      T1_ptr t_v_3(&coords[9], &coords[10], &coords[11], 3);
+      T1_ptr t_v_4(&coords[12], &coords[13], &coords[14], 3);
+      T1_ptr t_v_5(&coords[15], &coords[16], &coords[17], 3);
+      T1_ptr t_v_6(&coords[18], &coords[19], &coords[20], 3);
+      T1_ptr t_v_7(&coords[21], &coords[22], &coords[23], 3);
+
+      T1 diag_1, diag_2, diag_3, diag_4;
+      diag_1(i) = t_v_0(i) - t_v_6(i);
+      diag_2(i) = t_v_1(i) - t_v_7(i);
+      diag_3(i) = t_v_2(i) - t_v_4(i);
+      diag_4(i) = t_v_3(i) - t_v_5(i);
+
+      double l_1 = sqrt(diag_1(i) * diag_1(i));
+      double l_2 = sqrt(diag_2(i) * diag_2(i));
+      double l_3 = sqrt(diag_3(i) * diag_3(i));
+      double l_4 = sqrt(diag_4(i) * diag_4(i));
+      std::vector<double> v_edge{l_1, l_2, l_3, l_4};
+      *charLength = *min_element(v_edge.begin(), v_edge.end());
+    }
+
+    if (type_fe == MBTRI) {
+
+      double center[3];
+      tricircumcenter3d_tp(&coords.data()[0], &coords.data()[3],
+                           &coords.data()[6], center, NULL, NULL);
+      T1_ptr t_centre(&center[0], &center[1], &center[2], 3);
+      T1_ptr t_first_vertex(&coords[0], &coords[1], &coords[2], 3);
+      T1 t_rad;
+      t_rad(i) = t_centre(i) - t_first_vertex(i);
+      // elementCircumDiam = sqrt(t_rad(i) * t_rad(i));
+
+      T1_ptr t_v_1(&coords[0], &coords[1], &coords[2], 3);
+      T1_ptr t_v_2(&coords[3], &coords[4], &coords[5], 3);
+      T1_ptr t_v_3(&coords[6], &coords[7], &coords[8], 3);
+      T1 t_a, t_b, t_c;
+      t_a(i) = t_v_2(i) - t_v_1(i);
+      t_b(i) = t_v_3(i) - t_v_2(i);
+      t_c(i) = t_v_1(i) - t_v_3(i);
+      double a, b, c, s;
+      a = sqrt(t_a(i) * t_a(i));
+      b = sqrt(t_b(i) * t_b(i));
+      c = sqrt(t_c(i) * t_c(i));
+      s = 0.5 * (a + b + c);
+      double numerator = a * b * c;
+      double denominator = sqrt(s * (a + b - s) * (a + c - s) * (b + c - s));
+      *charLength = 0.5 * numerator / denominator;
+
+    } else if (type_fe == MBQUAD) {
+      
+      // from Parameshvara's circumradius formula for cyclic quadrilaterals
+      T1_ptr t_v_1(&coords[0], &coords[1], &coords[2], 3);
+      T1_ptr t_v_2(&coords[3], &coords[4], &coords[5], 3);
+      T1_ptr t_v_3(&coords[6], &coords[7], &coords[8], 3);
+      T1_ptr t_v_4(&coords[9], &coords[10], &coords[11], 3);
+      T1 t_a, t_b, t_c, t_d;
+      t_a(i) = t_v_2(i) - t_v_1(i);
+      t_b(i) = t_v_3(i) - t_v_2(i);
+      t_c(i) = t_v_4(i) - t_v_3(i);
+      t_d(i) = t_v_1(i) - t_v_4(i);
+      double a, b, c, d, s;
+      a = sqrt(t_a(i) * t_a(i));
+      b = sqrt(t_b(i) * t_b(i));
+      c = sqrt(t_c(i) * t_c(i));
+      d = sqrt(t_d(i) * t_d(i));
+      s = 0.5 * (a + b + c + d);
+      double numerator = (a * b + c * d) * (a * c + b * d) * (a * d + b * c);
+      double denominator = (s - a) * (s - b) * (s - c) * (s - d);
+      *charLength = 0.25 * sqrt(numerator / denominator);
+
+      T1 diag_1, diag_2;
+      diag_1(i) = t_v_3(i) - t_v_1(i);
+      diag_2(i) = t_v_4(i) - t_v_2(i);
+      const double l_diag_1 = sqrt(diag_1(i) * diag_1(i));
+      const double l_diag_2 = sqrt(diag_2(i) * diag_2(i));
+
+      if (l_diag_1 > l_diag_2)
+        *charLength = l_diag_1;
+      else
+        *charLength = l_diag_2;
+    }
+
+
+    MoFEMFunctionReturn(0);
+  }
+
+private:
+  Interface &mField;
+  boost::shared_ptr<double> charLength;
+};
+
 
 /**@}*/
 

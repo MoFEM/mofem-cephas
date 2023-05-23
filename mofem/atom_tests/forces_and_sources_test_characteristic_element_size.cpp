@@ -86,7 +86,8 @@ int main(int argc, char *argv[]) {
 
     struct TestOperator : public DomainEleOp {
 
-      TestOperator() : DomainEleOp("FIELD1", OPROW) {}
+      TestOperator(boost::shared_ptr<double> char_length)
+          : DomainEleOp("FIELD1", OPROW), charLength(char_length) {}
 
       MoFEMErrorCode doWork(int side, EntityType type,
                             EntitiesFieldData::EntData &data) {
@@ -94,7 +95,7 @@ int main(int argc, char *argv[]) {
 
         constexpr double tol = std::numeric_limits<double>::epsilon();
         const auto type = getNumeredEntFiniteElementPtr()->getEntType();
-        const double characteristic_length = getElementCharacteristicLength();
+        const double characteristic_length = *charLength;
         const double element_measure = getMeasure();
         if (type == MBTRI || type == MBQUAD) {
           if (abs(characteristic_length - sqrt(2.)) > tol)
@@ -141,12 +142,17 @@ int main(int argc, char *argv[]) {
 
         MoFEMFunctionReturn(0);
       }
+      protected:
+        boost::shared_ptr<double> charLength;
     };
 
     auto pipeline_mng = m_field.getInterface<PipelineManager>();
 
-    auto op_bdy_fe = new TestOperator();
+    auto char_length = boost::make_shared<double>(0);
+    auto op_bdy_fe = new TestOperator(char_length);
+    auto op_char_length_eval = new OpCalculateCharLength(m_field, char_length);
 
+    pipeline_mng->getOpDomainRhsPipeline().push_back(op_char_length_eval);
     pipeline_mng->getOpDomainRhsPipeline().push_back(op_bdy_fe);
     CHKERR pipeline_mng->loopFiniteElements();
   }
