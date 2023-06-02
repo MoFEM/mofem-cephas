@@ -74,7 +74,6 @@ protected:
   virtual MoFEMErrorCode calculateCoordinatesAtGaussPts();
 
   double aRea;
-  double elementCircumDiam;
   int num_nodes;
   const EntityHandle *conn;
   VectorDouble nOrmal, tangentOne, tangentTwo;
@@ -260,16 +259,6 @@ double FaceElementForcesAndSourcesCore::UserDataOperator::getArea() {
 
 double FaceElementForcesAndSourcesCore::UserDataOperator::getMeasure() {
   return getArea();
-}
-
-double FaceElementForcesAndSourcesCore::UserDataOperator::getCircumDiam() {
-  return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)
-      ->elementCircumDiam;
-}
-
-double FaceElementForcesAndSourcesCore::UserDataOperator::
-    getElementCharacteristicLength() {
-  return getCircumDiam();
 }
 
 VectorDouble &FaceElementForcesAndSourcesCore::UserDataOperator::getNormal() {

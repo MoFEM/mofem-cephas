@@ -538,7 +538,6 @@ protected:
   MatrixDouble coordsAtGaussPts; ///< coordinated at gauss points
   double elementMeasure; ///< Depending on dimension of elements, stores length,
                          ///< area or volume of element.
-  double elementCharacteristicLength; ///< Radius of inscribed circle or sphere
 };
 
 struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
@@ -887,22 +886,6 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
    * @return volume
    */
   inline double &getMeasure();
-
-  /** \name Element size (h: radius of inscribed curcle) */
-
-  /**
-   * \brief get element characteristic length
-   * @return volume
-   */
-  inline double getElementCharacteristicLength() const;
-
-  /**
-   * \brief get element characteristic length
-   * @return volume
-   */
-  inline double &getElementCharacteristicLength();
-
-  /**}*/
 
   /**@{*/
 
@@ -1277,18 +1260,6 @@ double ForcesAndSourcesCore::UserDataOperator::getMeasure() const {
 
 double &ForcesAndSourcesCore::UserDataOperator::getMeasure() {
   return static_cast<ForcesAndSourcesCore *>(ptrFE)->elementMeasure;
-}
-
-double
-ForcesAndSourcesCore::UserDataOperator::getElementCharacteristicLength() const {
-  return static_cast<ForcesAndSourcesCore *>(ptrFE)
-      ->elementCharacteristicLength;
-}
-
-double &
-ForcesAndSourcesCore::UserDataOperator::getElementCharacteristicLength() {
-  return static_cast<ForcesAndSourcesCore *>(ptrFE)
-      ->elementCharacteristicLength;
 }
 
 /**

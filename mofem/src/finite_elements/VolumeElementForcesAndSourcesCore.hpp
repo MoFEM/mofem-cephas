@@ -90,7 +90,6 @@ protected:
   OpSetInvJacHdivAndHcurl opSetInvJacHdivAndHcurl;
 
   double &vOlume;
-  double &elementRad;
 
   int num_nodes;
   const EntityHandle *conn;
