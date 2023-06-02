@@ -55,6 +55,33 @@ struct PipelineManager : public UnknownInterface {
 
   inline boost::shared_ptr<FEMethod> &getSkeletonExplicitRhsFE();
 
+  template <typename T = ForcesAndSourcesCore, int DIM = -1>
+  inline auto getCastDomainLhsFE();
+
+  template <typename T = ForcesAndSourcesCore, int DIM = -1>
+  inline auto getCastDomainRhsFE();
+
+  template <typename T = ForcesAndSourcesCore, int DIM = -1>
+  inline auto getCastBoundaryLhsFE();
+
+  template <typename T = ForcesAndSourcesCore, int DIM = -1>
+  inline auto getCastBoundaryRhsFE();
+
+  template <typename T = ForcesAndSourcesCore, int DIM = -1>
+  inline auto getCastSkeletonLhsFE();
+
+  template <typename T = ForcesAndSourcesCore, int DIM = -1>
+  inline auto getCastSkeletonRhsFE();
+
+  template <typename T = ForcesAndSourcesCore, int DIM = -1>
+  inline auto getCastDomainExplicitRhsFE();
+
+  template <typename T = ForcesAndSourcesCore, int DIM = -1>
+  inline auto getCastBoundaryExplicitRhsFE();
+
+  template <typename T = ForcesAndSourcesCore, int DIM = -1>
+  inline auto getCastSkeletonExplicitRhsFE();
+
   template <int DIM = -1>
   inline MoFEMErrorCode setDomainLhsIntegrationRule(RuleHookFun rule);
 
@@ -159,8 +186,7 @@ struct PipelineManager : public UnknownInterface {
    * @return boost::ptr_deque<UserDataOperator>&
    */
   template <int DIM = -1>
-  inline boost::ptr_deque<UserDataOperator> &
-  getOpBoundaryExplicitRhsPipeline();
+  inline boost::ptr_deque<UserDataOperator> &getOpBoundaryExplicitRhsPipeline();
 
   /**
    * @brief Get the Op Skeleton Rhs Pipeline object for implicit-explicit G term
@@ -170,8 +196,7 @@ struct PipelineManager : public UnknownInterface {
    * @return boost::ptr_deque<UserDataOperator>&
    */
   template <int DIM = -1>
-  inline boost::ptr_deque<UserDataOperator> &
-  getOpSkeletonExplicitRhsPipeline();
+  inline boost::ptr_deque<UserDataOperator> &getOpSkeletonExplicitRhsPipeline();
 
   /**
    * @brief Iterate finite elements
@@ -326,6 +351,21 @@ PipelineManager::createDomainFEPipeline<1>(boost::shared_ptr<FEMethod> &fe) {
   return fe;
 }
 
+template <>
+inline boost::shared_ptr<FEMethod> &
+PipelineManager::createDomainFEPipeline<-1>(boost::shared_ptr<FEMethod> &fe) {
+  switch (cOre.getInterface<Simple>()->getDim()) {
+  case 1:
+    return createDomainFEPipeline<1>(fe);
+  case 2:
+    return createDomainFEPipeline<2>(fe);
+  case 3:
+    return createDomainFEPipeline<3>(fe);
+  default:
+    THROW_MESSAGE("Not implemented");
+  }
+}
+
 template <int DIM>
 boost::shared_ptr<FEMethod> &
 PipelineManager::createBoundaryFEPipeline(boost::shared_ptr<FEMethod> &fe) {
@@ -392,6 +432,71 @@ boost::shared_ptr<FEMethod> &PipelineManager::getBoundaryExplicitRhsFE() {
 
 boost::shared_ptr<FEMethod> &PipelineManager::getSkeletonExplicitRhsFE() {
   return feSkeletonExplicitRhs;
+}
+
+template <>
+inline boost::shared_ptr<FEMethod> &
+PipelineManager::createBoundaryFEPipeline<-1>(boost::shared_ptr<FEMethod> &fe) {
+  switch (cOre.getInterface<Simple>()->getDim()) {
+  case 1:
+    return createBoundaryFEPipeline<1>(fe);
+  case 2:
+    return createBoundaryFEPipeline<2>(fe);
+  case 3:
+    return createBoundaryFEPipeline<3>(fe);
+  default:
+    THROW_MESSAGE("Not implemented");
+  }
+}
+
+template <typename T, int DIM> auto PipelineManager::getCastDomainLhsFE() {
+  return boost::dynamic_pointer_cast<T>(
+      createDomainFEPipeline<DIM>(feDomainLhs));
+}
+
+template <typename T, int DIM> auto PipelineManager::getCastDomainRhsFE() {
+  return boost::dynamic_pointer_cast<T>(
+      createDomainFEPipeline<DIM>(feDomainRhs));
+}
+
+template <typename T, int DIM> auto PipelineManager::getCastBoundaryLhsFE() {
+  return boost::dynamic_pointer_cast<T>(
+      createBoundaryFEPipeline<DIM>(feBoundaryLhs));
+}
+
+template <typename T, int DIM>
+auto PipelineManager::getCastBoundaryRhsFE() {
+  return boost::dynamic_pointer_cast<T>(
+      createBoundaryFEPipeline<DIM>(feBoundaryRhs));
+}
+
+template <typename T, int DIM>
+auto PipelineManager::getCastSkeletonLhsFE() {
+  return boost::dynamic_pointer_cast<T>(
+      createBoundaryFEPipeline<DIM>(feSkeletonLhs));
+}
+
+template <typename T, int DIM> auto PipelineManager::getCastSkeletonRhsFE() {
+  return boost::dynamic_pointer_cast<T>(
+      createBoundaryFEPipeline<DIM>(feSkeletonRhs));
+}
+
+template <typename T, int DIM>
+auto PipelineManager::getCastDomainExplicitRhsFE() {
+  return boost::dynamic_pointer_cast<T>(
+      createDomainFEPipeline<DIM>(feDomainExplicitRhs));
+}
+
+template <typename T, int DIM>
+auto PipelineManager::getCastBoundaryExplicitRhsFE() {
+  return boost::dynamic_pointer_cast<T>(
+      createBoundaryFEPipeline<DIM>(feBoundaryExplicitRhs));
+}
+
+template <typename T, int DIM>
+auto PipelineManager::getCastSkeletonExplicitRhsFE() {
+  return boost::dynamic_pointer_cast<T>(
+      createBoundaryFEPipeline<DIM>(feSkeletonExplicitRhs));
 }
 
 template <int DIM>

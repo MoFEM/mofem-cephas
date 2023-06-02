@@ -94,10 +94,6 @@ auto set_parent_dofs(MoFEM::Interface &m_field,
                      ForcesAndSourcesCore::UserDataOperator::OpType op,
                      int verbosity, LogManager::SeverityLevel sev) {
 
-  auto jac_ptr = boost::make_shared<MatrixDouble>();
-  auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
-  auto det_ptr = boost::make_shared<VectorDouble>();
-
   BitRefLevel bit_marker;
   for (auto l = 1; l <= nb_ref_levels; ++l)
     bit_marker |= marker(l);
@@ -482,7 +478,6 @@ MoFEMErrorCode AtomTest::setupProblem() {
   
   CHKERR simpleInterface->setUp();
 
-  BitRefManager *bit_mng = mField.getInterface<BitRefManager>();
   ProblemsManager *prb_mng = mField.getInterface<ProblemsManager>();
 
   // remove obsolete DOFs from problem
@@ -545,9 +540,9 @@ MoFEMErrorCode AtomTest::assembleSystem() {
   };
 
   set_parent_dofs<DomainParentEle>(mField, pipeline_mng->getDomainRhsFE(),
-                                   DomainEleOp::OPSPACE, VERBOSE, Sev::verbose);
+                                   DomainEleOp::OPSPACE, NOISY, Sev::verbose);
   set_parent_dofs<DomainParentEle>(mField, pipeline_mng->getDomainRhsFE(),
-                                   DomainEleOp::OPROW, VERBOSE, Sev::noisy);
+                                   DomainEleOp::OPROW, NOISY, Sev::noisy);
   pipeline_mng->getOpDomainRhsPipeline().push_back(field_op_row);
 
   pipeline_mng->getOpDomainRhsPipeline().push_back(
@@ -569,8 +564,8 @@ MoFEMErrorCode AtomTest::solveSystem() {
   CHKERR KSPSetUp(solver);
 
   auto dm = simpleInterface->getDM();
-  auto D = smartCreateDMVector(dm);
-  auto F = smartVectorDuplicate(D);
+  auto D = createDMVector(dm);
+  auto F = vectorDuplicate(D);
 
   CHKERR KSPSolve(solver, F, D);
   CHKERR VecGhostUpdateBegin(D, INSERT_VALUES, SCATTER_FORWARD);
@@ -594,8 +589,8 @@ MoFEMErrorCode AtomTest::checkResults() {
   pipeline_mng->getBoundaryRhsFE()->exeTestHook = test_bit_child;
 
   auto common_data_ptr = boost::make_shared<CommonData>();
-  common_data_ptr->resVec = smartCreateDMVector(simpleInterface->getDM());
-  common_data_ptr->L2Vec = createSmartVectorMPI(
+  common_data_ptr->resVec = createDMVector(simpleInterface->getDM());
+  common_data_ptr->L2Vec = createVectorMPI(
       mField.get_comm(), (!mField.get_comm_rank()) ? 1 : 0, 1);
   common_data_ptr->approxVals = boost::make_shared<VectorDouble>();
   common_data_ptr->divApproxVals = boost::make_shared<MatrixDouble>();

@@ -154,7 +154,7 @@ MoFEMErrorCode PrismsFromSurfaceInterface::createPrismsFromPrisms(
     }
     tris.insert(face);
   }
-  CHKERR createPrisms(tris, out_prisms, verb);
+  CHKERR createPrisms(tris, NO_SWAP, out_prisms, verb);
   MoFEMFunctionReturn(0);
 }
 

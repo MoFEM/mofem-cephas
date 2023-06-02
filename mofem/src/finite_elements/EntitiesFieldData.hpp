@@ -200,7 +200,7 @@ struct EntitiesFieldData::EntData {
   inline VectorFieldEntities &getFieldEntities();
 
   //// \brief get entity bit ref level
-  virtual BitRefLevel &getEntDataBitRefLevel();
+  virtual std::vector<BitRefLevel> &getEntDataBitRefLevel();
 
   /**
    * @brief Return FTensor of rank 1, i.e. vector from filed data coeffinects
@@ -1067,12 +1067,12 @@ protected:
   ApproximationOrder oRder;          ///< Entity order
   FieldSpace sPace;                  ///< Entity space
   FieldApproximationBase bAse;       ///< Field approximation base
-  BitRefLevel entDataBitRefLevel;    ///< Bit ref level in entity
   VectorInt iNdices;                 ///< Global indices on entity
   VectorInt localIndices;            ///< Local indices on entity
   VectorDofs dOfs;                   ///< DoFs on entity
   VectorFieldEntities fieldEntities; ///< Field entities
   VectorDouble fieldData;            ///< Field data on entity
+  std::vector<BitRefLevel> entDataBitRefLevel; ///< Bit ref level in entity
 
   std::array<std::array<boost::shared_ptr<MatrixDouble>, LASTBASE>,
              LastDerivative>
@@ -1133,7 +1133,7 @@ struct DerivedEntitiesFieldData::DerivedEntData
   int getSense() const;
 
   //// \brief get entity bit ref level
-  BitRefLevel &getEntDataBitRefLevel();
+  std::vector<BitRefLevel> &getEntDataBitRefLevel();
 
   boost::shared_ptr<MatrixDouble> &
   getNSharedPtr(const FieldApproximationBase base,

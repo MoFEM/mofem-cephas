@@ -1296,6 +1296,8 @@ struct OpLoopSide : public ForcesAndSourcesCore::UserDataOperator {
     return sideFEPtr->getOpPtrVector();
   }
 
+  boost::shared_ptr<E> &getSideFEPtr() { return sideFEPtr; }
+
 protected:
   const std::string fieldName;
   const int sideDim;

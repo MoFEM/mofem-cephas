@@ -315,8 +315,6 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
   MoFEM::Interface &m_field = cOre;
   auto fields_ptr = m_field.get_fields();
   auto fe_ptr = m_field.get_finite_elements();
-  auto fe_ent_ptr = m_field.get_ents_finite_elements();
-  auto ents_field_ptr = m_field.get_field_ents();
   auto dofs_field_ptr = m_field.get_dofs();
   ProblemManagerFunctionBegin;
   PetscLogEventBegin(MOFEM_EVENT_ProblemsManager, 0, 0, 0, 0);
@@ -445,7 +443,6 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
                 dofs_cols.insert(*dit);
               }
             }
-
           }
         }
       }
@@ -478,7 +475,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
       }
       Range tmp_ents = ents_to_synchronise;
       CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(
-          ents_to_synchronise, verb);
+          ents_to_synchronise, nullptr, verb);
       ents_to_synchronise = subtract(ents_to_synchronise, tmp_ents);
       for (auto fit = fields_ptr->begin(); fit != fields_ptr->end(); fit++) {
         if ((fit->get()->getId() & *fields_ids[ss]).any()) {
@@ -840,6 +837,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
         if (PetscUnlikely(ddit == dofs_glob_uid_view.end())) {
 
 #ifndef NDEBUG
+          auto ents_field_ptr = m_field.get_field_ents();
           MOFEM_LOG("SELF", Sev::error)
               << "DOF is shared or multishared between processors. For example "
                  "if order of field on given entity is set in inconsistently, "
@@ -1093,29 +1091,31 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
         return std::make_pair(dit, hi_dit);
       };
 
-      if (entityMap[ss]) {
-        auto mit = entityMap[ss]->find(field);
-
-        if (mit != entityMap[ss]->end()) {
-          for (auto p = mit->second->pair_begin(); p != mit->second->pair_end();
-               ++p) {
-            const auto lo_ent = p->first;
-            const auto hi_ent = p->second;
-            auto dit = main_problem_dofs[ss]->get<Unique_mi_tag>().lower_bound(
-                DofEntity::getLoFieldEntityUId(bit_number, lo_ent));
-            auto hi_dit =
-                main_problem_dofs[ss]->get<Unique_mi_tag>().upper_bound(
-                    DofEntity::getHiFieldEntityUId(bit_number, hi_ent));
-            dofs_array->reserve(std::distance(dit, hi_dit));
-            for (; dit != hi_dit; dit++) {
-              add_dit_to_dofs_array(dit);
-            }
+      auto check = [&](auto &field) -> boost::shared_ptr<Range> {
+        if (entityMap[ss]) {
+          auto mit = entityMap[ss]->find(field);
+          if (mit != entityMap[ss]->end()) {
+            return mit->second;
+          } else {
+            return nullptr;
           }
         } else {
-          auto [dit, hi_dit] = get_dafult_dof_range();
+          return nullptr;
+        }
+      };
+
+      if (auto r_ptr = check(field)) {
+        for (auto p = r_ptr->pair_begin(); p != r_ptr->pair_end(); ++p) {
+          const auto lo_ent = p->first;
+          const auto hi_ent = p->second;
+          auto dit = main_problem_dofs[ss]->get<Unique_mi_tag>().lower_bound(
+              DofEntity::getLoFieldEntityUId(bit_number, lo_ent));
+          auto hi_dit = main_problem_dofs[ss]->get<Unique_mi_tag>().upper_bound(
+              DofEntity::getHiFieldEntityUId(bit_number, hi_ent));
           dofs_array->reserve(std::distance(dit, hi_dit));
-          for (; dit != hi_dit; dit++)
+          for (; dit != hi_dit; dit++) {
             add_dit_to_dofs_array(dit);
+          }
         }
       } else {
         auto [dit, hi_dit] = get_dafult_dof_range();
@@ -1284,7 +1284,8 @@ MoFEMErrorCode ProblemsManager::buildComposedProblem(
                                                &add_col_problems};
   std::vector<const Problem *> *add_prb_ptr[] = {&cmp_prb_data->rowProblemsAdd,
                                                  &cmp_prb_data->colProblemsAdd};
-  std::vector<IS> *add_prb_is[] = {&cmp_prb_data->rowIs, &cmp_prb_data->colIs};
+  std::vector<SmartPetscObj<IS>> *add_prb_is[] = {&cmp_prb_data->rowIs,
+                                                  &cmp_prb_data->colIs};
 
   // Get local indices counter
   int *nb_local_dofs[] = {&out_problem_it->nbLocDofsRow,
@@ -1305,9 +1306,6 @@ MoFEMErrorCode ProblemsManager::buildComposedProblem(
 
   // Loop over rows and columns in the main problem and sub-problems
   for (int ss = 0; ss != ((square_matrix) ? 1 : 2); ss++) {
-    // cerr << "SS " << ss << endl;
-    // cerr << add_prb[ss]->size() << endl;
-    // cerr << add_prb_ptr[ss]->size() << endl;
     add_prb_ptr[ss]->reserve(add_prb[ss]->size());
     add_prb_is[ss]->reserve(add_prb[ss]->size());
     for (std::vector<std::string>::const_iterator vit = add_prb[ss]->begin();
@@ -1409,7 +1407,8 @@ MoFEMErrorCode ProblemsManager::buildComposedProblem(
       IS is;
       CHKERR ISCreateGeneral(m_field.get_comm(), is_nb, dofs_out_idx_ptr,
                              PETSC_OWN_POINTER, &is);
-      (*add_prb_is[ss]).push_back(is);
+      auto smart_is = SmartPetscObj<IS>(is);
+      (*add_prb_is[ss]).push_back(smart_is);
       if (ss == 0) {
         shift_glob += (*add_prb_ptr[ss])[pp]->getNbDofsRow();
         shift_loc += (*add_prb_ptr[ss])[pp]->getNbLocalDofsRow();
@@ -1419,8 +1418,7 @@ MoFEMErrorCode ProblemsManager::buildComposedProblem(
       }
       if (square_matrix) {
         (*add_prb_ptr[1]).push_back((*add_prb_ptr[0])[pp]);
-        (*add_prb_is[1]).push_back(is);
-        CHKERR PetscObjectReference((PetscObject)is);
+        (*add_prb_is[1]).push_back(smart_is);
       }
     }
   }
@@ -2088,7 +2086,7 @@ ProblemsManager::debugPartitionedProblem(const Problem *problem_ptr, int verb) {
   MoFEMFunctionBeginHot;
 
   auto save_ent = [](moab::Interface &moab, const std::string name,
-                       const EntityHandle ent) {
+                     const EntityHandle ent) {
     MoFEMFunctionBegin;
     EntityHandle out_meshset;
     CHKERR moab.create_meshset(MESHSET_SET, out_meshset);
@@ -2627,7 +2625,7 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
   const int nb_init_row_dofs = prb_ptr->getNbDofsRow();
   const int nb_init_col_dofs = prb_ptr->getNbDofsCol();
   const int nb_init_loc_row_dofs = prb_ptr->getNbLocalDofsRow();
-  const int nb_init_loc_col_dofs = prb_ptr->getNbLocalDofsCol();
+  // const int nb_init_loc_col_dofs = prb_ptr->getNbLocalDofsCol();
   const int nb_init_ghost_row_dofs = prb_ptr->getNbGhostDofsRow();
   const int nb_init_ghost_col_dofs = prb_ptr->getNbGhostDofsCol();
 
@@ -2898,7 +2896,7 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntitiesNotDistributed(
   const int nb_init_row_dofs = prb_ptr->getNbDofsRow();
   const int nb_init_col_dofs = prb_ptr->getNbDofsCol();
   const int nb_init_loc_row_dofs = prb_ptr->getNbLocalDofsRow();
-  const int nb_init_loc_col_dofs = prb_ptr->getNbLocalDofsCol();
+  // const int nb_init_loc_col_dofs = prb_ptr->getNbLocalDofsCol();
   const int nb_init_ghost_row_dofs = prb_ptr->getNbGhostDofsRow();
   const int nb_init_ghost_col_dofs = prb_ptr->getNbGhostDofsCol();
 
@@ -3082,7 +3080,7 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntitiesNotDistributed(
       CHKERR renumber(PetscGlobalIdx_mi_tag(), global_indices);
       CHKERR renumber(PetscLocalIdx_mi_tag(), local_indices);
 
-      int i = 0;    
+      int i = 0;
       for (auto dit = numered_dofs[s]->begin(); dit != numered_dofs[s]->end();
            ++dit) {
         auto idx = (*dit)->getDofIdx();
@@ -3100,7 +3098,6 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntitiesNotDistributed(
           if (!success)
             SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                     "can not set negative indices");
- 
         }
       };
 
@@ -3111,7 +3108,6 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntitiesNotDistributed(
                     "Negative global idx");
           }
         }
-
       }
 
     } else {

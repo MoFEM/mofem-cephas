@@ -26,11 +26,16 @@ PetscErrorCode KspRhs(KSP ksp, Vec f, void *ctx) {
 
   ksp_ctx->vecAssembleSwitch = boost::movelib::make_unique<bool>(true);
 
+  auto cache_ptr = boost::make_shared<CacheTuple>();
+  CHKERR ksp_ctx->mField.cache_problem_entities(ksp_ctx->problemName,
+                                                cache_ptr);
+
   auto set = [&](auto &fe) {
     fe.ksp = ksp;
     fe.ksp_ctx = KspMethod::CTX_SETFUNCTION;
     fe.data_ctx = PetscData::CtxSetF;
     fe.ksp_f = f;
+    fe.cacheWeakPtr = cache_ptr;
   };
 
   auto unset = [&](auto &fe) {
@@ -47,10 +52,6 @@ PetscErrorCode KspRhs(KSP ksp, Vec f, void *ctx) {
     unset(*bit);
     ksp_ctx->vecAssembleSwitch = boost::move(bit->vecAssembleSwitch);
   }
-
-  auto cache_ptr = boost::make_shared<CacheTuple>();
-  CHKERR ksp_ctx->mField.cache_problem_entities(ksp_ctx->problemName,
-                                                cache_ptr);
 
   // operators
   for (auto &lit : ksp_ctx->loops_to_do_Rhs) {
@@ -89,6 +90,9 @@ PetscErrorCode KspMat(KSP ksp, Mat A, Mat B, void *ctx) {
   PetscLogEventBegin(ksp_ctx->MOFEM_EVENT_KspMat, 0, 0, 0, 0);
 
   ksp_ctx->matAssembleSwitch = boost::movelib::make_unique<bool>(true);
+  auto cache_ptr = boost::make_shared<CacheTuple>();
+  CHKERR ksp_ctx->mField.cache_problem_entities(ksp_ctx->problemName,
+                                                cache_ptr);
 
   auto set = [&](auto &fe) {
     fe.ksp = ksp;
@@ -96,6 +100,7 @@ PetscErrorCode KspMat(KSP ksp, Mat A, Mat B, void *ctx) {
     fe.ksp_B = B;
     fe.ksp_ctx = KspMethod::CTX_OPERATORS;
     fe.data_ctx = PetscData::CtxSetA | PetscData::CtxSetB;
+    fe.cacheWeakPtr = cache_ptr;
   };
 
   auto unset = [&](auto &fe) {
@@ -118,10 +123,6 @@ PetscErrorCode KspMat(KSP ksp, Mat A, Mat B, void *ctx) {
     unset(*bit);
     ksp_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
-
-  auto cache_ptr = boost::make_shared<CacheTuple>();
-  CHKERR ksp_ctx->mField.cache_problem_entities(ksp_ctx->problemName,
-                                                cache_ptr);
 
   // operators
   for (auto &lit : ksp_ctx->loops_to_do_Mat) {

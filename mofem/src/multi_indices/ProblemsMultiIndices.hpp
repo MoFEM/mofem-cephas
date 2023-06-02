@@ -18,14 +18,28 @@ struct ComposedProblemsData {
   std::vector<const Problem *> rowProblemsAdd;
   std::vector<const Problem *> colProblemsAdd;
 
-  std::vector<IS> rowIs;
-  std::vector<IS> colIs;
+  std::vector<SmartPetscObj<IS>> rowIs;
+  std::vector<SmartPetscObj<IS>> colIs;
 
+  /**
+   * @brief Get the col sub dm IS 
+   * 
+   * @param is sub problem IS
+   * @param pp problem number
+   * @return MoFEMErrorCode 
+   */
   inline MoFEMErrorCode getRowIs(IS *is, const unsigned int pp) const;
 
+  /**
+   * @brief Get the Col sub dm IS object
+   * 
+   * @param is sub problem IS
+   * @param pp problem number
+   * @return MoFEMErrorCode 
+   */
   inline MoFEMErrorCode getColIs(IS *is, const unsigned int pp) const;
 
-  virtual ~ComposedProblemsData();
+  virtual ~ComposedProblemsData() = default;
 };
 
 /** \brief keeps basic data about problem
@@ -78,6 +92,14 @@ struct Problem {
   inline const auto &getNumeredFiniteElementsPtr() const {
     return numeredFiniteElementsPtr;
   }
+
+  /**
+   * @brief Erase elements by entities
+   *
+   * @param entities
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode eraseElements(Range entities) const;
 
   /**
    * \brief Subproblem problem data
@@ -565,8 +587,8 @@ struct Problem::SubProblemData {
    */
   inline MoFEMErrorCode getRowIs(IS *is) {
     MoFEMFunctionBeginHot;
-    PetscObjectReference((PetscObject)rowIs);
     *is = rowIs;
+    PetscObjectReference((PetscObject)(*is));
     MoFEMFunctionReturnHot(0);
   }
 
@@ -577,8 +599,8 @@ struct Problem::SubProblemData {
    */
   inline MoFEMErrorCode getColIs(IS *is) {
     MoFEMFunctionBeginHot;
-    PetscObjectReference((PetscObject)colIs);
     *is = colIs;
+    PetscObjectReference((PetscObject)(*is));
     MoFEMFunctionReturnHot(0);
   };
 
@@ -589,8 +611,8 @@ struct Problem::SubProblemData {
    */
   inline MoFEMErrorCode getRowMap(AO *ao) {
     MoFEMFunctionBeginHot;
-    PetscObjectReference((PetscObject)rowMap);
     *ao = rowMap;
+    PetscObjectReference((PetscObject)(*ao));
     MoFEMFunctionReturnHot(0);
   }
 
@@ -601,8 +623,8 @@ struct Problem::SubProblemData {
    */
   inline MoFEMErrorCode getColMap(AO *ao) {
     MoFEMFunctionBeginHot;
-    PetscObjectReference((PetscObject)colMap);
     *ao = colMap;
+    PetscObjectReference((PetscObject)(*ao));
     MoFEMFunctionReturnHot(0);
   }
 
@@ -721,24 +743,24 @@ struct ProblemClearComposedProblemData {
 inline MoFEMErrorCode
 ComposedProblemsData::getRowIs(IS *is, const unsigned int pp) const {
   MoFEMFunctionBeginHot;
-  PetscObjectReference((PetscObject)rowIs[pp]);
   if (pp <= rowIs.size()) {
     SETERRQ1(PETSC_COMM_WORLD, MOFEM_INVALID_DATA, "Exceed size of array pp<%d",
              rowIs.size());
   }
-  *is = rowIs[pp];
+  *is = rowIs[pp].get();
+  PetscObjectReference((PetscObject)(*is));
   MoFEMFunctionReturnHot(0);
 }
 
 inline MoFEMErrorCode
 ComposedProblemsData::getColIs(IS *is, const unsigned int pp) const {
   MoFEMFunctionBeginHot;
-  PetscObjectReference((PetscObject)colIs[pp]);
   if (pp <= colIs.size()) {
     SETERRQ1(PETSC_COMM_WORLD, MOFEM_INVALID_DATA, "Exceed size of array pp<%d",
              colIs.size());
   }
-  *is = colIs[pp];
+  *is = colIs[pp].get();
+  PetscObjectReference((PetscObject)(*is));
   MoFEMFunctionReturnHot(0);
 }
 

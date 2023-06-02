@@ -117,13 +117,13 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.loop_dofs("MESH_NODE_POSITIONS", ent_method);
 
     CHKERR DMRegister_MoFEM("DMMOFEM");
-    auto dM = createSmartDM(m_field.get_comm(), "DMMOFEM");
+    auto dM = createDM(m_field.get_comm(), "DMMOFEM");
     CHKERR DMMoFEMCreateMoFEM(dM, &m_field, "TET_PROBLEM", bit_level0);
     CHKERR DMMoFEMAddElement(dM, "TET_ELEM");
     CHKERR DMMoFEMSetIsPartitioned(dM, PETSC_FALSE);
     CHKERR DMSetUp_MoFEM(dM);
 
-    auto vol_vec = createSmartVectorMPI(m_field.get_comm(),
+    auto vol_vec = createVectorMPI(m_field.get_comm(),
                                         m_field.get_comm_rank() ? 0 : 1, 1);
 
     auto fe_ptr =

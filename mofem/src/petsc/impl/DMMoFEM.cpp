@@ -188,8 +188,6 @@ PetscErrorCode DMMoFEMDuplicateDMCtx(DM dm, DM dm_duplicate) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "data structure for MoFEM not yet created");
 
-  auto *dm_field = static_cast<DMCtx *>(dm->data);
-
   if (static_cast<DMCtx *>(dm_duplicate->data)->referenceNumber == 0)
     delete static_cast<DMCtx *>(dm_duplicate->data);
 

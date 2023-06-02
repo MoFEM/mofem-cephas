@@ -277,6 +277,11 @@ If you using \em lldb, that is usally a case of Mac OSX, you run debugging as fo
 mpirun -np 4 xterm -e lldb -- ./program [arg1] [arg2] [arg3]
 \endcode 
 
+If you do not heve graphic terminal, you can alos run screen sessions,
+\code
+mpirun -np 4 screen -AdmS mpi gdb -ex run --args ./program [arg1] [arg2] [arg3]
+\enddoce
+
 \subsection faq_memory_profiling_valgrind How to profile memory usage?
 
 Valgrind comes with a tool for measuring memory usage: 
@@ -474,6 +479,13 @@ Or you can do that in the code
 CHKERR MatView(A, PETSC_VIEWER_DRAW_WORLD);
 \endcode
 
+\subsection Resources about Python
+
+If you luking about resources about python, follow links,
+\li <a href="https://numpy.org/learn/">NumPy tutorials (both for beginners and advanced)</a>
+\li <a href="https://www.codecademy.com/catalog/language/python">Codecademy</a>
+\li <a href="https://www.coursera.org/learn/python">Coursera</a>
+
 
 \subsection petsc_print_matrix How to test and print jacobian matrix with PETSc?
 
@@ -600,6 +612,59 @@ fracture module is presented below.
       "cwd": "/Users/User1/mofem_install/users_modules_debug/fracture_mechanics"
     }
   ]
+\endcode
+
+\section faq_snippets How to iterate over field dofs?
+
+\code
+
+auto iterate_field_row_dofs = [m_field & ](auto field_name, auto prb_name) {
+  auto bit_number = m_field.get_field_bit_number(field_name);
+  auto prb_ptr = m_field.get_problem(prb_name);
+  auto row_dofs_ptr = prb_ptr->getNumeredRowDofsPtr();
+
+  auto lo_it = row_dofs_ptr->get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getLoBitNumberUId(bit_number));
+  auto hi_it = row_dofs_ptr->get<Unique_mi_tag>().upper_bound(
+      FieldEntity::getHiBitNumberUId(bit_number));
+
+  return std::make_pair(lo_it, hi_it);
+};
+
+auto iterate_field_and_range_row_dofs = [m_field & ](
+                                            auto field_name, auto prb_name,
+                                            auto first_ent, auto second_ent) {
+  auto bit_number = m_field.get_field_bit_number(field_name);
+  auto prb_ptr = m_field.get_problem(prb_name);
+  auto row_dofs_ptr = prb_ptr->getNumeredRowDofsPtr();
+
+  auto lo_it = row_dofs_ptr->get<Unique_mi_tag>().lower_bound(
+      DofEntity::getLoFieldEntityUId(bit_number, first_ent));
+  auto hi_it = row_dofs_ptr->get<Unique_mi_tag>().upper_bound(
+      DofEntity::getHiFieldEntityUId(bit_number, second_ent));
+
+  return std::make_pair(lo_it, hi_it);
+};
+
+
+auto iterate_field_and_type_row_dofs = [m_field & ](
+                                            auto field_name, auto prb_name) {
+  auto bit_number = m_field.get_field_bit_number(field_name);
+  auto prb_ptr = m_field.get_problem(prb_name);
+  auto row_dofs_ptr = prb_ptr->getNumeredRowDofsPtr();
+
+  // Note is a dynamic variant of get_id_for_min_type, when function takes an
+  // argument, not template variable
+  auto lo_it = row_dofs_ptr->get<Unique_mi_tag>().lower_bound(
+      DofEntity::getLoFieldEntityUId(bit_number,
+                                     get_id_for_min_type<MBVERTEX>()));
+  auto hi_it = row_dofs_ptr->get<Unique_mi_tag>().upper_bound(
+      DofEntity::getHiFieldEntityUId(bit_number,
+                                     get_id_for_max_type<MBVERTEX>()));
+
+  return std::make_pair(lo_it, hi_it);
+};
+
 \endcode
 
 */

@@ -167,6 +167,30 @@ struct CommInterface : public UnknownInterface {
    * \note collective - need tu be run on all processors in communicator
    *
    */
+
+  /**
+   * @brief synchronize entity range on processors (collective)
+   * 
+   * \note collective - need tu be run on all processors in communicator
+   * 
+   * @param ent ents to send and received
+   * @param received_ents pointer to map with received entities
+   * @param verb 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode synchroniseEntities(Range &ent,
+                                     std::map<int, Range> *received_ents,
+                                     int verb = DEFAULT_VERBOSITY);
+
+   /**
+   * @brief synchronize entity range on processors (collective)
+   * 
+   * \note collective - need tu be run on all processors in communicator
+   * 
+   * @param ent ents to send and received
+   * @param verb 
+   * @return MoFEMErrorCode 
+   */ 
   MoFEMErrorCode synchroniseEntities(Range &ent, int verb = DEFAULT_VERBOSITY);
 
   /** synchronize entity range on processors (collective)
@@ -224,28 +248,6 @@ struct CommInterface : public UnknownInterface {
                                Tag *th_part_weights = nullptr,
                                int verb = VERBOSE, const bool debug = false);
 
-
-  // /**
-  //  * @brief 
-  //  * 
-  //  * @param meshset 
-  //  * @param overlap 
-  //  * @param dim 
-  //  * @param adj_dim 
-  //  * @param n_parts 
-  //  * @param th_vertex_weights 
-  //  * @param th_edge_weights 
-  //  * @param th_part_weights 
-  //  * @param verb 
-  //  * @return MoFEMErrorCode 
-  //  */
-  // MoFEMErrorCode partitionAndShare(const EntityHandle meshset,
-  //                                  const int overlap = 0, const int dim,
-  //                                  const int adj_dim, const int n_parts,
-  //                                  Tag *th_vertex_weights = nullptr,
-  //                                  Tag *th_edge_weights = nullptr,
-  //                                  Tag *th_part_weights = nullptr,
-  //                                  int verb = VERBOSE);
 
   /**@}*/
 

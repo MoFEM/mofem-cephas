@@ -456,6 +456,19 @@ template <> struct RefEntityTmp<0> {
     MoFEMFunctionReturn(0);
   }
 
+  static MoFEMErrorCode
+  getBitRefLevel(Interface &moab, std::vector<EntityHandle> &ents,
+                 std::vector<const BitRefLevel *> &vec_ptr_bit_ref_level) {
+    MoFEMFunctionBegin;
+    Tag th_ref_bit_level;
+    CHKERR moab.tag_get_handle("_RefBitLevel", th_ref_bit_level);
+    vec_ptr_bit_ref_level.resize(ents.size());
+    CHKERR moab.tag_get_by_ptr(
+        th_ref_bit_level, &*ents.begin(), ents.size(),
+        reinterpret_cast<const void **>(&*vec_ptr_bit_ref_level.begin()));
+    MoFEMFunctionReturn(0);
+  }
+
   /**
    * \brief Get pointer to parent entity tag.
    *

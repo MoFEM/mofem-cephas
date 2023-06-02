@@ -207,8 +207,6 @@ MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceEdgeNodeEdge(
   FTensor::Tensor1<FTensor::PackPtr<const double *, 1>, 3> t_elem_coords = {
       &elem_coords[0], &elem_coords[3], &elem_coords[6]};
 
-  FTensor::Tensor1<const double, 2> t_n = {shapeFunMBEDGEAt00[0],
-                                           shapeFunMBEDGEAt00[1]};
   FTensor::Tensor1<double, 3> t_coords_at_0;
   // Build matrix and get coordinates of zero point
   // ii - global coordinates

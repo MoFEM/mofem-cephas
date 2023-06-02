@@ -1,5 +1,5 @@
 /**
- * @file TimeScaling.hpp
+ * @file ScalingMethod.hpp
  * @brief
  * @version 0.13.1
  * @date 2022-08-12
@@ -91,6 +91,41 @@ private:
     return time;
   };
 };
+
+/** \brief Force scale operator for reading four columns (time and vector)
+ */
+template <int SPACE_DIM> struct TimeScaleVector : public ScalingMethod {
+
+  TimeScaleVector(std::string name = "-time_vector_file",
+                  bool error_if_file_not_given = false);
+
+  TimeScaleVector(std::string name, int ms_id,
+                  bool error_if_file_not_given = false);
+
+  virtual FTensor::Tensor1<double, SPACE_DIM> getVector(const double time);
+  virtual FTensor::Tensor1<double, SPACE_DIM>
+  getVectorFromData(const double time);
+
+private:
+  MoFEMErrorCode timeData();
+
+  std::map<double, FTensor::Tensor1<double, SPACE_DIM>> tSeries;
+  int readFile, debug;
+  string nAme;
+  bool errorIfFileNotGiven;
+
+  PetscBool fLg;
+  std::function<FTensor::Tensor1<double, SPACE_DIM>(double)> scalingMethod =
+      [this](double time) {
+        FTensor::Index<'i', SPACE_DIM> i;
+        FTensor::Tensor1<double, SPACE_DIM> s;
+        s(i) = time;
+        return s;
+      };
+};
+using TimeScaleVector3 = TimeScaleVector<3>;
+using TimeScaleVector2 = TimeScaleVector<3>;
+
 } // namespace MoFEM
 
 #endif //_TIME_SCALING_HPP_

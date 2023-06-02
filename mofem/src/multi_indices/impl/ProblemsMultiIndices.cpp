@@ -5,15 +5,6 @@
 
 namespace MoFEM {
 
-ComposedProblemsData::~ComposedProblemsData() {
-  for (unsigned int ii = 0; ii != rowIs.size(); ii++) {
-    CHKERRABORT(PETSC_COMM_SELF, ISDestroy(&rowIs[ii]));
-  }
-  for (unsigned int jj = 0; jj != colIs.size(); jj++) {
-    CHKERRABORT(PETSC_COMM_SELF, ISDestroy(&colIs[jj]));
-  }
-}
-
 // moab problem
 Problem::Problem(moab::Interface &moab, const EntityHandle meshset)
     : meshset(meshset), numeredRowDofsPtr(new NumeredDofEntity_multiIndex()),
@@ -21,36 +12,26 @@ Problem::Problem(moab::Interface &moab, const EntityHandle meshset)
       numeredFiniteElementsPtr(new NumeredEntFiniteElement_multiIndex()),
       sequenceRowDofContainer(new SequenceDofContainer()),
       sequenceColDofContainer(new SequenceDofContainer()) {
-  ErrorCode rval;
   Tag th_ProblemId;
-  rval = moab.tag_get_handle("_ProblemId", th_ProblemId);
-  MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_ProblemId, &meshset, 1, (const void **)&tagId);
-  MOAB_THROW(rval);
+  MOAB_THROW(moab.tag_get_handle("_ProblemId", th_ProblemId));
+  MOAB_THROW(
+      moab.tag_get_by_ptr(th_ProblemId, &meshset, 1, (const void **)&tagId));
   Tag th_ProblemName;
-  rval = moab.tag_get_handle("_ProblemName", th_ProblemName);
-  MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_ProblemName, &meshset, 1,
-                             (const void **)&tagName, &tagNameSize);
-  MOAB_THROW(rval);
+  MOAB_THROW(moab.tag_get_handle("_ProblemName", th_ProblemName));
+  MOAB_THROW(moab.tag_get_by_ptr(th_ProblemName, &meshset, 1,
+                                 (const void **)&tagName, &tagNameSize));
   Tag th_ProblemFEId;
-  rval = moab.tag_get_handle("_ProblemFEId", th_ProblemFEId);
-  MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_ProblemFEId, &meshset, 1,
-                             (const void **)&tagBitFEId);
-  MOAB_THROW(rval);
+  MOAB_THROW(moab.tag_get_handle("_ProblemFEId", th_ProblemFEId));
+  MOAB_THROW(moab.tag_get_by_ptr(th_ProblemFEId, &meshset, 1,
+                                 (const void **)&tagBitFEId));
   Tag th_RefBitLevel;
-  rval = moab.tag_get_handle("_RefBitLevel", th_RefBitLevel);
-  MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_RefBitLevel, &meshset, 1,
-                             (const void **)&tagBitRefLevel);
-  MOAB_THROW(rval);
+  MOAB_THROW(moab.tag_get_handle("_RefBitLevel", th_RefBitLevel));
+  MOAB_THROW(moab.tag_get_by_ptr(th_RefBitLevel, &meshset, 1,
+                                 (const void **)&tagBitRefLevel));
   Tag th_RefBitLevel_Mask;
-  rval = moab.tag_get_handle("_RefBitLevelMask", th_RefBitLevel_Mask);
-  MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_RefBitLevel_Mask, &meshset, 1,
-                             (const void **)&tagBitRefLevelMask);
-  MOAB_THROW(rval);
+  MOAB_THROW(moab.tag_get_handle("_RefBitLevelMask", th_RefBitLevel_Mask));
+  MOAB_THROW(moab.tag_get_by_ptr(th_RefBitLevel_Mask, &meshset, 1,
+                                 (const void **)&tagBitRefLevelMask));
 }
 
 std::ostream &operator<<(std::ostream &os, const Problem &e) {
@@ -182,6 +163,17 @@ MoFEMErrorCode Problem::getDofByNameEntAndEntDofIdx(
     dof_ptr = *it;
   } else {
     dof_ptr = boost::shared_ptr<NumeredDofEntity>();
+  }
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode Problem::eraseElements(Range entities) const {
+  MoFEMFunctionBegin;
+  for (auto p = entities.pair_begin(); p != entities.pair_end(); ++p) {
+    auto lo = numeredFiniteElementsPtr->get<Ent_mi_tag>().lower_bound(p->first);
+    auto hi =
+        numeredFiniteElementsPtr->get<Ent_mi_tag>().upper_bound(p->second);
+    numeredFiniteElementsPtr->get<Ent_mi_tag>().erase(lo, hi);
   }
   MoFEMFunctionReturn(0);
 }

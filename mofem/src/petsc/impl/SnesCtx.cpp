@@ -62,6 +62,9 @@ PetscErrorCode SnesRhs(SNES snes, Vec x, Vec f, void *ctx) {
   CHKERR zero_ghost_vec(f);
 
   snes_ctx->vecAssembleSwitch = boost::movelib::make_unique<bool>(true);
+  auto cache_ptr = boost::make_shared<CacheTuple>();
+  CHKERR snes_ctx->mField.cache_problem_entities(snes_ctx->problemName,
+                                                 cache_ptr);
 
   auto set = [&](auto &fe) {
     fe.snes = snes;
@@ -70,6 +73,7 @@ PetscErrorCode SnesRhs(SNES snes, Vec x, Vec f, void *ctx) {
     fe.snes_ctx = SnesMethod::CTX_SNESSETFUNCTION;
     fe.ksp_ctx = KspMethod::CTX_SETFUNCTION;
     fe.data_ctx = PetscData::CtxSetF | PetscData::CtxSetX;
+    fe.cacheWeakPtr = cache_ptr;
   };
 
   auto unset = [&](auto &fe) {
@@ -86,10 +90,6 @@ PetscErrorCode SnesRhs(SNES snes, Vec x, Vec f, void *ctx) {
     unset(*bit);
     snes_ctx->vecAssembleSwitch = boost::move(bit->vecAssembleSwitch);
   }
-
-  auto cache_ptr = boost::make_shared<CacheTuple>();
-  CHKERR snes_ctx->mField.cache_problem_entities(snes_ctx->problemName,
-                                                 cache_ptr);
 
   for (auto &lit : snes_ctx->loops_to_do_Rhs) {
     lit.second->vecAssembleSwitch = boost::move(snes_ctx->vecAssembleSwitch);
@@ -142,6 +142,9 @@ PetscErrorCode SnesMat(SNES snes, Vec x, Mat A, Mat B, void *ctx) {
     CHKERR MatZeroEntries(B);
 
   snes_ctx->matAssembleSwitch = boost::movelib::make_unique<bool>(true);
+  auto cache_ptr = boost::make_shared<CacheTuple>();
+  CHKERR snes_ctx->mField.cache_problem_entities(snes_ctx->problemName,
+                                                 cache_ptr);
 
   auto set = [&](auto &fe) {
     fe.snes = snes;
@@ -151,6 +154,7 @@ PetscErrorCode SnesMat(SNES snes, Vec x, Mat A, Mat B, void *ctx) {
     fe.snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
     fe.ksp_ctx = KspMethod::CTX_OPERATORS;
     fe.data_ctx = PetscData::CtxSetA | PetscData::CtxSetB | PetscData::CtxSetX;
+    fe.cacheWeakPtr = cache_ptr;
   };
 
   auto unset = [&](auto &fe) {
@@ -173,9 +177,7 @@ PetscErrorCode SnesMat(SNES snes, Vec x, Mat A, Mat B, void *ctx) {
     snes_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
 
-  auto cache_ptr = boost::make_shared<CacheTuple>();
-  CHKERR snes_ctx->mField.cache_problem_entities(snes_ctx->problemName,
-                                                 cache_ptr);
+
 
   for (auto &lit : snes_ctx->loops_to_do_Mat) {
     lit.second->matAssembleSwitch = boost::move(snes_ctx->matAssembleSwitch);

@@ -385,8 +385,8 @@ MoFEMErrorCode AtomTest::solveSystem() {
   CHKERR KSPSetUp(solver);
 
   auto dm = simpleInterface->getDM();
-  auto D = smartCreateDMVector(dm);
-  auto F = smartVectorDuplicate(D);
+  auto D = createDMVector(dm);
+  auto F = vectorDuplicate(D);
 
   CHKERR KSPSolve(solver, F, D);
   CHKERR VecGhostUpdateBegin(D, INSERT_VALUES, SCATTER_FORWARD);
@@ -533,8 +533,8 @@ MoFEMErrorCode AtomTest::checkResults(
   pipeline_mng->getDomainRhsFE()->exeTestHook = test_bit;
 
   auto common_data_ptr = boost::make_shared<CommonData>();
-  common_data_ptr->resVec = smartCreateDMVector(simpleInterface->getDM());
-  common_data_ptr->L2Vec = createSmartVectorMPI(
+  common_data_ptr->resVec = createDMVector(simpleInterface->getDM());
+  common_data_ptr->L2Vec = createVectorMPI(
       mField.get_comm(), (!mField.get_comm_rank()) ? 1 : 0, 1);
   common_data_ptr->approxVals = boost::make_shared<VectorDouble>();
 

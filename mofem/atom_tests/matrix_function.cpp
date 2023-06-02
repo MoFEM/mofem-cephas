@@ -364,7 +364,7 @@ int main(int argc, char *argv[]) {
                                 -0.5, 0.,  3.};
 
         auto tuple = run_lapack(a);
-        auto &t_a = std::get<0>(tuple);
+        // auto &t_a = std::get<0>(tuple);
         auto &t_eig_vec = std::get<1>(tuple);
         auto &t_eig_vals = std::get<2>(tuple);
 
@@ -374,8 +374,6 @@ int main(int argc, char *argv[]) {
             << "t_eig_val_diff " << t_eig_val_diff;
 
         auto f = [](double v) { return exp(v); };
-        auto d_f = [](double v) { return exp(v); };
-        auto dd_f = [](double v) { return exp(v); };
 
         auto t_b = EigenMatrix::getMat(t_L, t_N, f);
         auto t_c = EigenMatrix::getMat(t_eig_vals, t_eig_vec, f);
@@ -544,7 +542,6 @@ int main(int argc, char *argv[]) {
 
       auto f = [](double v) { return v; };
       auto d_f = [](double v) { return 1; };
-      auto dd_f = [](double v) { return 0; };
 
       constexpr double eps = 1e-10;
       {
@@ -576,7 +573,6 @@ int main(int argc, char *argv[]) {
       {
         auto f = [](double v) { return v * v; };
         auto d_f = [](double v) { return 2 * v; };
-        auto dd_f = [](double v) { return 2; };
         auto t_d = EigenMatrix::getDiffMat(t_eig_vals, t_eig_vecs, f, d_f, 2);
         auto t_d_a = get_diff_matrix2(t_a, t_d, FTensor::Number<3>());
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d_a";
@@ -603,7 +599,6 @@ int main(int argc, char *argv[]) {
 
       auto f = [](double v) { return v; };
       auto d_f = [](double v) { return 1; };
-      auto dd_f = [](double v) { return 0; };
 
       auto tuple = run_lapack(a);
       auto &t_a = std::get<0>(tuple);
@@ -640,7 +635,6 @@ int main(int argc, char *argv[]) {
       {
         auto f = [](double v) { return v * v; };
         auto d_f = [](double v) { return 2 * v; };
-        auto dd_f = [](double v) { return 2; };
         auto t_d = EigenMatrix::getDiffMat(t_eig_vals, t_eig_vecs, f, d_f, 1);
         auto t_d_a = get_diff_matrix2(t_a, t_d, FTensor::Number<3>());
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d_a";
@@ -666,7 +660,7 @@ int main(int argc, char *argv[]) {
                               0.,  0.,  0.1};
 
       auto tuple = run_lapack(a);
-      auto &t_a = std::get<0>(tuple);
+      // auto &t_a = std::get<0>(tuple);
       auto &t_eig_vecs = std::get<1>(tuple);
       auto &t_eig_vals = std::get<2>(tuple);
 
@@ -714,7 +708,7 @@ int main(int argc, char *argv[]) {
                               0., 0., 2};
 
       auto tuple = run_lapack(a);
-      auto &t_a = std::get<0>(tuple);
+      // auto &t_a = std::get<0>(tuple);
       auto &t_eig_vecs = std::get<1>(tuple);
       auto &t_eig_vals = std::get<2>(tuple);
 
@@ -758,7 +752,7 @@ int main(int argc, char *argv[]) {
                               0., 0., 9};
 
       auto tuple = run_lapack(a, swap01);
-      auto &t_a = std::get<0>(tuple);
+      // auto &t_a = std::get<0>(tuple);
       auto &t_eig_vecs = std::get<1>(tuple);
       auto &t_eig_vals = std::get<2>(tuple);
 
@@ -803,7 +797,7 @@ int main(int argc, char *argv[]) {
                               0., 0., 2};
 
       auto tuple = run_lapack(a);
-      auto &t_a = std::get<0>(tuple);
+      // auto &t_a = std::get<0>(tuple);
       auto &t_eig_vecs = std::get<1>(tuple);
       auto &t_eig_vals = std::get<2>(tuple);
 
@@ -875,7 +869,7 @@ int main(int argc, char *argv[]) {
                               0., 0., 9};
 
       auto tuple = run_lapack(a, swap01);
-      auto &t_a = std::get<0>(tuple);
+      // auto &t_a = std::get<0>(tuple);
       auto &t_eig_vecs = std::get<1>(tuple);
       auto &t_eig_vals = std::get<2>(tuple);
 
@@ -948,7 +942,7 @@ int main(int argc, char *argv[]) {
                               0., 0., 9};
 
       auto tuple = run_lapack(a, swap01);
-      auto &t_a = std::get<0>(tuple);
+      // auto &t_a = std::get<0>(tuple);
       auto &t_eig_vecs = std::get<1>(tuple);
       auto &t_eig_vals = std::get<2>(tuple);
 
@@ -1023,7 +1017,7 @@ int main(int argc, char *argv[]) {
                               -0.5, 0.,  3.};
 
       auto tuple = run_lapack(a);
-      auto &t_a = std::get<0>(tuple);
+      // auto &t_a = std::get<0>(tuple);
       auto &t_eig_vecs = std::get<1>(tuple);
       auto &t_eig_vals = std::get<2>(tuple);
 
@@ -1047,6 +1041,8 @@ int main(int argc, char *argv[]) {
         auto t_d = EigenMatrix::getDiffMat(t_eig_vals, t_eig_vecs, f, d_f, 3);
         auto t_dd = EigenMatrix::getDiffDiffMat(t_eig_vals, t_eig_vecs, f, d_f,
                                                 dd_f, t_S_sym, 3);
+        std::ignore = t_d;
+        std::ignore = t_dd;
       }
       MOFEM_LOG("ATOM_TEST", Sev::inform) << "End";
     }

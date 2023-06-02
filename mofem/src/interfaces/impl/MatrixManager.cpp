@@ -81,7 +81,6 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
   BitRefLevel prb_mask = p_miit->getBitRefLevelMask();
 
   const EmptyFieldBlocks &empty_field_blocks = p_miit->getEmptyFieldBlocks();
-  const DofIdx nb_dofs_col = p_miit->getNbDofsCol();
 
   dofs_col_view.clear();
   for (auto r = entFEAdjacencies.get<Unique_mi_tag>().equal_range(
@@ -99,7 +98,6 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
       // if entity is not problem refinement level
       if ((fe_bit & prb_bit).any() && (fe_bit & prb_mask) == fe_bit) {
 
-        const BitRefLevel &dof_bit = (*mit_row)->getBitRefLevel();
         const bool empty_row_block =
             (empty_field_blocks.first & (*mit_row)->getId()).none();
 
@@ -118,6 +116,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
                     dofs_col_view.push_back(idx);
 
 #ifndef NDEBUG
+                  const DofIdx nb_dofs_col = p_miit->getNbDofsCol();
                   if (PetscUnlikely(idx >= nb_dofs_col)) {
                     MOFEM_LOG("SELF", Sev::error)
                         << "Problem with dof: " << std::endl
@@ -669,8 +668,6 @@ MatrixManager::createMPIAIJCUSPARSEWithArrays<PetscGlobalIdx_mi_tag>(
   CHKERR core_ptr->createMatArrays<PetscGlobalIdx_mi_tag>(
       p_miit, MATAIJCUSPARSE, i_vec, j_vec, false, verb);
 
-  int nb_row_dofs = p_miit->getNbDofsRow();
-  int nb_col_dofs = p_miit->getNbDofsCol();
   int nb_local_dofs_row = p_miit->getNbLocalDofsRow();
   int nb_local_dofs_col = p_miit->getNbLocalDofsCol();
 
@@ -1128,7 +1125,6 @@ template <>
 MoFEMErrorCode
 MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
     const std::string problem_name, int row_print, int col_print, int verb) {
-  MoFEM::CoreInterface &m_field = cOre;
   MatrixManagerFunctionBegin;
   // create matrix
   SmartPetscObj<Mat> A;
@@ -1141,7 +1137,6 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
 template <>
 MoFEMErrorCode MatrixManager::checkMPIAIJMatrixFillIn<PetscGlobalIdx_mi_tag>(
     const std::string problem_name, int row_print, int col_print, int verb) {
-  MoFEM::CoreInterface &m_field = cOre;
   MatrixManagerFunctionBegin;
   // create matrix
   SmartPetscObj<Mat> A;

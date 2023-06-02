@@ -239,9 +239,8 @@ MoFEMErrorCode VecManager::setLocalGhostVector(const Problem *problem_ptr,
              "ghost nodes %d != ",
              size, nb_local_dofs + nb_ghost_dofs);
   }
-  NumeredDofEntityByLocalIdx::iterator miit = dofs->lower_bound(0);
-  NumeredDofEntityByLocalIdx::iterator hi_miit =
-      dofs->upper_bound(nb_local_dofs + nb_ghost_dofs);
+  auto miit = dofs->lower_bound(0);
+  auto hi_miit = dofs->upper_bound(nb_local_dofs + nb_ghost_dofs);
   DofIdx ii = 0;
   switch (scatter_mode) {
   case SCATTER_FORWARD: {
@@ -267,8 +266,6 @@ MoFEMErrorCode VecManager::setLocalGhostVector(const Problem *problem_ptr,
     switch (mode) {
     case INSERT_VALUES:
       for (; miit != hi_miit; ++miit, ++ii) {
-        // std::cerr << *miit << std::endl;
-        // std::cerr << array[ii] << std::endl;
         (*miit)->getFieldData() = array[ii];
       }
       break;
@@ -551,7 +548,6 @@ MoFEMErrorCode VecManager::setOtherGlobalGhostVector(
   const MoFEM::Interface &m_field = cOre;
   auto fields_ptr = m_field.get_fields();
   auto dofs_ptr = m_field.get_dofs();
-  auto *field_ents = m_field.get_field_ents();
   MoFEMFunctionBegin;
   NumeredDofEntityByUId *dofs;
   DofIdx nb_dofs;
