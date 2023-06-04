@@ -34,6 +34,7 @@ OpBaseDerivativesMass<1>::doWork(int side, EntityType type,
     auto fe_ptr = getPtrFE();
     // Set data structure to store base
     dataL2->dataOnEntities[fe_type].clear();
+    dataL2->dataOnEntities[MBVERTEX].clear();
     dataL2->dataOnEntities[MBVERTEX].push_back(
         new EntitiesFieldData::EntData());
     dataL2->dataOnEntities[fe_type].push_back(new EntitiesFieldData::EntData());
