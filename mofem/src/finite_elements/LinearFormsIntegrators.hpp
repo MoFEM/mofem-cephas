@@ -302,8 +302,16 @@ struct OpMixVecTimesDivLambdaImpl<SPACE_DIM, GAUSS, OpBase> : public OpBase {
                              boost::shared_ptr<MatrixDouble> mat_vals)
       : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals) {}
 
+  OpMixVecTimesDivLambdaImpl(const std::string field_name,
+                             boost::shared_ptr<MatrixDouble> mat_vals,
+                             ScalarFun beta_fun)
+      : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals),
+        betaCoeff(beta_fun) {}
+
 protected:
   boost::shared_ptr<MatrixDouble> matVals;
+  ScalarFun betaCoeff = [](double, double, double) constexpr { return 1; };
+
   FTensor::Index<'i', SPACE_DIM> i;
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &data);
 };
@@ -317,8 +325,16 @@ struct OpMixTensorTimesGradUImpl<SPACE_DIM, GAUSS, OpBase> : public OpBase {
                             boost::shared_ptr<MatrixDouble> mat_vals)
       : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals) {}
 
+  OpMixTensorTimesGradUImpl(const std::string field_name,
+                            boost::shared_ptr<MatrixDouble> mat_vals,
+                            ScalarFun beta_fun)
+      : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals),
+        betaCoeff(beta_fun) {}
+
 protected:
   boost::shared_ptr<MatrixDouble> matVals;
+  ScalarFun betaCoeff = [](double, double, double) constexpr { return 1; };
+
   FTensor::Index<'i', SPACE_DIM> i;
   FTensor::Index<'j', SPACE_DIM> j;
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &data);
@@ -1044,6 +1060,7 @@ MoFEMErrorCode OpMixTensorTimesGradUImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
 
   const size_t nb_base_functions = row_data.getN().size2() / 3;
   auto t_w = this->getFTensor0IntegrationWeight();
+  auto t_coords = this->getFTensor1CoordsAtGaussPts();
   auto t_base = row_data.getFTensor1N<3>();
   auto t_grad = getFTensor2FromMat<SPACE_DIM, SPACE_DIM>(*(matVals));
 
@@ -1054,7 +1071,8 @@ MoFEMErrorCode OpMixTensorTimesGradUImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
 
     size_t bb = 0;
     for (; bb != this->nbRows / SPACE_DIM; ++bb) {
-      t_nf(i) += alpha * t_base(j) * t_grad(i, j);
+      t_nf(i) += alpha * betaCoeff(t_coords(0), t_coords(1), t_coords(2)) *
+                 t_base(j) * t_grad(i, j);
       ++t_nf;
       ++t_base;
     }
@@ -1062,6 +1080,7 @@ MoFEMErrorCode OpMixTensorTimesGradUImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
       ++t_base;
 
     ++t_grad;
+    ++t_coords;
     ++t_w;
   }
 
@@ -1075,6 +1094,7 @@ MoFEMErrorCode OpMixVecTimesDivLambdaImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
 
   const size_t nb_base_functions = row_data.getN().size2();
   auto t_w = this->getFTensor0IntegrationWeight();
+  auto t_coords = this->getFTensor1CoordsAtGaussPts();
   auto t_base = row_data.getFTensor0N();
   auto t_div = getFTensor1FromMat<SPACE_DIM>(*(matVals));
 
@@ -1084,13 +1104,15 @@ MoFEMErrorCode OpMixVecTimesDivLambdaImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
 
     size_t bb = 0;
     for (; bb != this->nbRows / SPACE_DIM; ++bb) {
-      t_nf(i) += alpha * t_base * t_div(i);
+      t_nf(i) += alpha * t_base *
+                 betaCoeff(t_coords(0), t_coords(1), t_coords(2)) * t_div(i);
       ++t_nf;
       ++t_base;
     }
     for (; bb < nb_base_functions; ++bb)
       ++t_base;
 
+    ++t_coords;
     ++t_div;
     ++t_w;
   }
