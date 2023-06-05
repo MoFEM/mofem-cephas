@@ -16,8 +16,6 @@
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-static int dummy_file_ptr = 1;
-
 namespace MoFEM {
 
 using namespace MoFEM::LogKeywords;
@@ -77,6 +75,16 @@ struct LogManager::InternalData
     MPI_Comm cOmm;
   };
 
+  class NulStreambuf : public std::streambuf {
+    char dummyBuffer[64];
+
+  protected:
+    virtual int overflow(int c) {
+      setp(dummyBuffer, dummyBuffer + sizeof(dummyBuffer));
+      return (c == traits_type::eof()) ? '\0' : c;
+    }
+  };
+
   SelfStreamBuf selfBuf;
   WorldStreamBuf worldBuf;
   SynchronizedStreamBuf syncBuf;
@@ -84,6 +92,14 @@ struct LogManager::InternalData
   std::ostream strmSelf;
   std::ostream strmWorld;
   std::ostream strmSync;
+
+  class NulOStream : private NulStreambuf, public std::ostream {
+  public:
+    NulOStream() : std::ostream(this) {}
+    NulStreambuf *rdbuf() { return this; }
+  };
+
+  NulOStream nullSelf;
 
   static bool logQuiet;
   static bool noColors;
@@ -100,6 +116,9 @@ struct LogManager::InternalData
   }
   boost::shared_ptr<std::ostream> getStrmSync() {
     return boost::shared_ptr<std::ostream>(shared_from_this(), &strmSync);
+  }
+  boost::shared_ptr<std::ostream> getStrmNull() {
+    return boost::shared_ptr<std::ostream>(shared_from_this(), &nullSelf);
   }
 
   InternalData(MPI_Comm comm)
@@ -144,7 +163,7 @@ MoFEMErrorCode LogManager::getOptions() {
   CHKERR PetscOptionsEList("-severity_level", "Severity level", "",
                            severityStrings.data(), SeverityLevel::error + 1,
                            severityStrings[sev_level], &sev_level, PETSC_NULL);
-  CHKERR PetscOptionsEList("-sl", "Seeverity level", "",
+  CHKERR PetscOptionsEList("-sl", "Severity level", "",
                            severityStrings.data(), SeverityLevel::error + 1,
                            severityStrings[sev_level], &sev_level, PETSC_NULL);
 
@@ -303,11 +322,13 @@ void LogManager::createDefaultSinks(MPI_Comm comm) {
   core_log->add_sink(createSink(getStrmSelf(), "SELF"));
   core_log->add_sink(createSink(getStrmWorld(), "WORLD"));
   core_log->add_sink(createSink(getStrmSync(), "SYNC"));
+  core_log->add_sink(createSink(getStrmNull(), "NULL"));
 
   LogManager::setLog("PETSC");
   LogManager::setLog("SELF");
   LogManager::setLog("WORLD");
-  LogManager::setLog("SYNC");   
+  LogManager::setLog("SYNC");
+  LogManager::setLog("NULL");
 
   MOFEM_LOG_TAG("PETSC", "petsc");
 
@@ -326,6 +347,10 @@ boost::shared_ptr<std::ostream> LogManager::getStrmWorld() {
 
 boost::shared_ptr<std::ostream> LogManager::getStrmSync() {
   return internalDataPtr->getStrmSync();
+}
+
+boost::shared_ptr<std::ostream> LogManager::getStrmNull() {
+  return internalDataPtr->getStrmNull();
 }
 
 static char dummy_file;

@@ -793,7 +793,8 @@ MoFEMErrorCode Core::setFieldOrderImpl(boost::shared_ptr<Field> field_ptr,
         ents_array->reserve(second - first + 1);
         auto vit_max_order = ents_max_order->begin();
         auto vit_field_data = ent_field_data->begin();
-        for (auto ent : ents_in_ref_ent) {
+        for (int i = 0; i != ents_in_ref_ent.size(); ++i) {
+
           ents_array->emplace_back(
               field_ptr, *miit_ref_ent,
               boost::shared_ptr<double *const>(ent_field_data,
@@ -865,7 +866,7 @@ MoFEMErrorCode Core::setFieldOrderImpl(boost::shared_ptr<Field> field_ptr,
   }
 
   if (verb > QUIET)
-    MOFEM_LOG_SYNCHRONISE(mofemComm);
+    MOFEM_LOG_SEVERITY_SYNC(mofemComm, Sev::noisy);
 
   MoFEMFunctionReturn(0);
 }
@@ -874,6 +875,8 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
                                      const ApproximationOrder order, int verb) {
   MOFEM_LOG_CHANNEL("WORLD");
   MOFEM_LOG_TAG("WORLD", "FieldCore");
+  MOFEM_LOG_CHANNEL("SYNC");
+  MOFEM_LOG_TAG("SYNC", "FieldCore");
   MOFEM_LOG_FUNCTION();
   MoFEMFunctionBegin;
 
@@ -1052,7 +1055,7 @@ Core::buildFieldForNoFieldImpl(boost::shared_ptr<Field> field_ptr,
         FieldEntity::getHiBitNumberUId(field_ptr->getBitNumber()));
     for (; lo_dof != hi_dof; lo_dof++)
       MOFEM_LOG("SYNC", Sev::noisy) << **lo_dof;
-    MOFEM_LOG_SYNCHRONISE(mofemComm);
+    MOFEM_LOG_SEVERITY_SYNC(mofemComm, Sev::noisy);
   }
 
   MoFEMFunctionReturn(0);
@@ -1097,16 +1100,14 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
   }
   const int bit_number = field_it->get()->getBitNumber();
   const int rank = field_it->get()->getNbOfCoeffs();
-  const boost::string_ref &field_name = field_it->get()->getNameRef();
 
   // Ents in the field meshset
   Range ents_of_id_meshset;
   CHKERR get_moab().get_entities_by_handle((*field_it)->meshSet,
                                            ents_of_id_meshset, false);
   if (verb > VERY_NOISY) {
-    PetscSynchronizedPrintf(PETSC_COMM_SELF, "Ents in field %s meshset %d\n",
-                            (*field_it)->getName().c_str(),
-                            ents_of_id_meshset.size());
+    MOFEM_LOG_C("SYNC", Sev::noisy, "Ents in field %s meshset %d",
+                (*field_it)->getName().c_str(), ents_of_id_meshset.size());
   }
 
   for (auto p_eit = ents_of_id_meshset.pair_begin();
@@ -1238,11 +1239,9 @@ MoFEMErrorCode Core::buildField(const boost::shared_ptr<Field> &field,
       nb_added_dofs += it.second;
       nb_inactive_added_dofs += inactive_dof_counter[it.first];
     }
-    if (verb > QUIET) {
-      MOFEM_LOG("SYNC", Sev::verbose)
-          << "Nb. added dofs " << nb_added_dofs << " (number of inactive dofs "
-          << nb_inactive_added_dofs << " )";
-    }
+    MOFEM_LOG("SYNC", Sev::verbose)
+        << "Nb. added dofs " << nb_added_dofs << " (number of inactive dofs "
+        << nb_inactive_added_dofs << " )";
   }
   MoFEMFunctionReturn(0);
 }

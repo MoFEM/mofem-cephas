@@ -17,7 +17,7 @@ namespace MoFEM {
  * \brief Section manager is used to create indexes and sections
  * \ingroup mofem_is_managers
  *
- * FIXME: ISManager is not properly testsed by atom tests.
+ * FIXME: ISManager is not properly tested by atom tests.
  *
  */
 struct ISManager : public UnknownInterface {
@@ -71,6 +71,28 @@ struct ISManager : public UnknownInterface {
   SmartPetscObj<PetscSection>
   sectionCreate(const std::string problem_name,
                 const RowColData row_col = COL) const;
+
+  /**
+   * @brief Create IS for problem
+   *
+   * @param problem_name
+   * @param rc
+   * @param is
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode isCreateProblem(const std::string problem_name, RowColData rc,
+                                 IS *is) const;
+
+  /**
+   * @brief Create IS for problem
+   *
+   * @param problem_name
+   * @param rc
+   * @param is
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode isCreateProblem(const std::string problem_name, RowColData rc,
+                                 SmartPetscObj<IS> &is) const;
 
   /**
     * \brief create IS for given order range (collective)

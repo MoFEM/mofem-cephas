@@ -200,7 +200,7 @@ struct EntitiesFieldData::EntData {
   inline VectorFieldEntities &getFieldEntities();
 
   //// \brief get entity bit ref level
-  virtual BitRefLevel &getEntDataBitRefLevel();
+  virtual std::vector<BitRefLevel> &getEntDataBitRefLevel();
 
   /**
    * @brief Return FTensor of rank 1, i.e. vector from filed data coeffinects
@@ -1067,12 +1067,12 @@ protected:
   ApproximationOrder oRder;          ///< Entity order
   FieldSpace sPace;                  ///< Entity space
   FieldApproximationBase bAse;       ///< Field approximation base
-  BitRefLevel entDataBitRefLevel;    ///< Bit ref level in entity
   VectorInt iNdices;                 ///< Global indices on entity
   VectorInt localIndices;            ///< Local indices on entity
   VectorDofs dOfs;                   ///< DoFs on entity
   VectorFieldEntities fieldEntities; ///< Field entities
   VectorDouble fieldData;            ///< Field data on entity
+  std::vector<BitRefLevel> entDataBitRefLevel; ///< Bit ref level in entity
 
   std::array<std::array<boost::shared_ptr<MatrixDouble>, LASTBASE>,
              LastDerivative>
@@ -1133,7 +1133,7 @@ struct DerivedEntitiesFieldData::DerivedEntData
   int getSense() const;
 
   //// \brief get entity bit ref level
-  BitRefLevel &getEntDataBitRefLevel();
+  std::vector<BitRefLevel> &getEntDataBitRefLevel();
 
   boost::shared_ptr<MatrixDouble> &
   getNSharedPtr(const FieldApproximationBase base,
@@ -1590,6 +1590,28 @@ VecSetValues<EntityStorage>(Vec V, const EntitiesFieldData::EntData &data,
 }
 
 /**
+ * @brief Assemble PETSc vector
+ *
+ * Function extract indices from entity data and assemble vector
+ *
+ * <a
+ * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Vec/VecSetValues.html>See
+ * PETSc documentation</a>
+ *
+ * @param V
+ * @param data
+ * @param vec
+ * @param iora
+ * @return MoFEMErrorCode
+ */
+template <typename T = EntityStorage>
+inline MoFEMErrorCode VecSetValues(Vec V,
+                                   const EntitiesFieldData::EntData &data,
+                                   const VectorDouble &vec, InsertMode iora) {
+  return VecSetValues<T>(V, data, &*vec.data().begin(), iora);
+}
+
+/**
  * @brief Assemble PETSc matrix
  *
  * Function extract indices from entity data and assemble vector
@@ -1613,6 +1635,30 @@ inline MoFEMErrorCode MatSetValues(Mat M,
   static_assert(!std::is_same<T, T>::value,
                 "MatSetValues value for this data storage is not implemented");
   return MOFEM_NOT_IMPLEMENTED;
+}
+
+/**
+ * @brief Assemble PETSc matrix
+ *
+ * Function extract indices from entity data and assemble vector
+ *
+ * <a
+ * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatSetValues.html>See
+ * PETSc documentation</a>
+ *
+ * @param M
+ * @param row_data
+ * @param col_data
+ * @param mat
+ * @param iora
+ * @return MoFEMErrorCode
+ */
+template <typename T = EntityStorage>
+inline MoFEMErrorCode MatSetValues(Mat M,
+                                   const EntitiesFieldData::EntData &row_data,
+                                   const EntitiesFieldData::EntData &col_data,
+                                   const MatrixDouble &mat, InsertMode iora) {
+  return MatSetValues<T>(M, row_data, col_data, &*mat.data().begin(), iora);
 }
 
 template <>

@@ -19,6 +19,11 @@ PetscErrorCode DMRegister_MoFEM(const char sname[]);
 
 /**
  * \brief Must be called by user to set MoFEM data structures
+ *
+ * \note If problem exist function create DM for it. If you set bit levels,
+ * those bits are to existing bits. Thus if you do not like to change bit ref
+ * level for existing problem, set bits to zero.
+ *
  * \ingroup dm
  */
 PetscErrorCode DMMoFEMCreateMoFEM(
@@ -714,17 +719,36 @@ PetscErrorCode DMSubDMSetUp_MoFEM(DM subdm);
  * Add field to sub dm problem on rows
  * \ingroup dm
  */
+PetscErrorCode DMMoFEMAddSubFieldRow(DM dm, const char field_name[]);
+
+/**
+ * @brief Add field to sub dm problem on rows
+ * \ingroup dm
+ * 
+ * @param dm 
+ * @param field_name 
+ * @param m 
+ * @return PetscErrorCode 
+ */
 PetscErrorCode DMMoFEMAddSubFieldRow(DM dm, const char field_name[],
-                                     EntityType lo_type = MBVERTEX,
-                                     EntityType hi_type = MBMAXTYPE);
+                                     boost::shared_ptr<Range> r_ptr);
 
 /**
  * Add field to sub dm problem on columns
  * \ingroup dm
  */
+PetscErrorCode DMMoFEMAddSubFieldCol(DM dm, const char field_name[]);
+
+/**
+ * @brief Add field to sub dm problem on columns
+ *
+ * @param dm
+ * @param field_name
+ * @param range of entities
+ * @return PetscErrorCode
+ */
 PetscErrorCode DMMoFEMAddSubFieldCol(DM dm, const char field_name[],
-                                     EntityType lo_type = MBVERTEX,
-                                     EntityType hi_type = MBMAXTYPE);
+                                     boost::shared_ptr<Range> r_ptr);
 
 /**
  * Return true if this DM is sub problem
@@ -892,9 +916,9 @@ PetscErrorCode DMMoFEMSetVerbosity(DM dm, const int verb);
 /**
  * \brief PETSc  Discrete Manager data structure
  *
- * This structure should not be accessed or modified by user. Is not available
- * from outside MoFEM DM manager. However user can inherit dat class and
- * add data for additional functionality.
+ * This structure should not be accessed or modified by user. Is not
+ * available from outside MoFEM DM manager. However user can inherit dat
+ * class and add data for additional functionality.
  *
  * This is part of implementation for PETSc interface, see more details in
  * <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/DM/index.html>
@@ -929,10 +953,8 @@ struct DMCtx : public UnknownInterface {
   PetscBool isCompDM;
   std::vector<std::string> rowCompPrb;
   std::vector<std::string> colCompPrb;
-  boost::shared_ptr<std::map<std::string, std::pair<EntityType, EntityType>>>
-      mapTypeRow;
-  boost::shared_ptr<std::map<std::string, std::pair<EntityType, EntityType>>>
-      mapTypeCol;
+  std::map<std::string, boost::shared_ptr<Range>> mapTypeRow;
+  std::map<std::string, boost::shared_ptr<Range>> mapTypeCol;
 
   PetscBool destroyProblem; ///< If true destroy problem with DM
 
@@ -963,56 +985,82 @@ inline auto getProblemPtr(DM dm) {
  * \ingroup dm
  * 
  */
-inline auto smartCreateDMMatrix(DM dm) {
+inline auto createDMMatrix(DM dm) {
   SmartPetscObj<Mat> a;
   ierr = DMCreateMatrix_MoFEM(dm, a);
   CHKERRABORT(getCommFromPetscObject(reinterpret_cast<PetscObject>(dm)), ierr);
   return a;
 };
 
+/** @deprecated use createDMMatrix */
+DEPRECATED inline auto smartCreateDMMatrix(DM dm) { return createDMMatrix(dm); }
+
 /**
  * @brief Get smart vector from DM
  * \ingroup dm
  * 
  */
-inline auto smartCreateDMVector(DM dm) {
+inline auto createDMVector(DM dm) {
   SmartPetscObj<Vec> v;
   ierr = DMCreateGlobalVector_MoFEM(dm, v);
   CHKERRABORT(getCommFromPetscObject(reinterpret_cast<PetscObject>(dm)), ierr);
   return v;
 };
 
+/** @deprecated use createDMVector*/
+DEPRECATED inline auto smartCreateDMVector(DM dm) { return createDMVector(dm); }
+
 /**
  * @brief Get KSP context data structure used by DM
  * 
  */
-inline auto smartGetDMKspCtx(DM dm) {
+inline auto getDMKspCtx(DM dm) {
   boost::shared_ptr<MoFEM::KspCtx> ksp_ctx;
   ierr = DMMoFEMGetKspCtx(dm, ksp_ctx);
   CHKERRABORT(getCommFromPetscObject(reinterpret_cast<PetscObject>(dm)), ierr);
   return ksp_ctx;
 };
 
+/** @deprecated getDMKspCtx  */
+DEPRECATED inline auto smartGetDMKspCtx(DM dm) { return getDMKspCtx(dm); }
+
 /**
  * @brief Get SNES context data structure used by DM
  * 
  */
-inline auto smartGetDMSnesCtx(DM dm) {
+inline auto getDMSnesCtx(DM dm) {
   boost::shared_ptr<MoFEM::SnesCtx> snes_ctx;
   ierr = DMMoFEMGetSnesCtx(dm, snes_ctx);
   CHKERRABORT(getCommFromPetscObject(reinterpret_cast<PetscObject>(dm)), ierr);
   return snes_ctx;
 };
 
+/** @deprecated use smartGetDMSnesCtx*/
+DEPRECATED inline auto smartGetDMSnesCtx(DM dm) { return getDMSnesCtx(dm); }
+
 /**
  * @brief Get TS context data structure used by DM
  * 
  */
-inline auto smartGetDMTsCtx(DM dm) {
+inline auto getDMTsCtx(DM dm) {
   boost::shared_ptr<MoFEM::TsCtx> ts_ctx;
   ierr = DMMoFEMGetTsCtx(dm, ts_ctx);
   CHKERRABORT(getCommFromPetscObject(reinterpret_cast<PetscObject>(dm)), ierr);
   return ts_ctx;
+};
+
+/** @deprecated use getDMTsCtx */
+DEPRECATED inline auto smartGetDMTsCtx(DM dm) { return getDMTsCtx(dm); }
+
+/**
+ * @brief  Get sub problem data structure
+ *
+ * @param dm
+ * @return auto
+ */
+inline auto getDMSubData(DM dm) {
+  auto prb_ptr = getProblemPtr(dm);
+  return prb_ptr->getSubData();
 };
 
 

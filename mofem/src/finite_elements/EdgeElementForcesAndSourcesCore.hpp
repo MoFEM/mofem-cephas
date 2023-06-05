@@ -41,10 +41,12 @@ struct EdgeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
   MoFEMErrorCode operator()();
 
+  static FTensor::Tensor1<double, 3> tFaceOrientation;
+
 protected:
 
-
   MatrixDouble tangentAtGaussPts;
+  MatrixDouble normalsAtGaussPts;
 
   double lEngth;
 
@@ -101,6 +103,25 @@ struct EdgeElementForcesAndSourcesCore::UserDataOperator
    * @return auto
    */
   inline auto getFTensor1Normal(const FTensor::Tensor1<double, 3> &vec);
+
+  inline auto
+  getFTensor1NormalsAtGaussPts(const FTensor::Tensor1<double, 3> &vec);
+
+  /** \brief get normal at integration points
+    
+  Example:
+  \code
+  double nrm2;
+  FTensor::Index<'i',3> i;
+  auto t_normal = getFTensor1NormalsAtGaussPts();
+  for(int gg = gg!=data.getN().size1();gg++) {
+    nrm2 = sqrt(t_normal(i)*t_normal(i));
+    ++t_normal;
+  }
+  \endcode
+
+  */
+  inline auto getFTensor1NormalsAtGaussPts();
 
   /**
    * \brief get edge node coordinates
@@ -232,10 +253,10 @@ EdgeElementForcesAndSourcesCore::UserDataOperator::getFTensor1TangentAtGaussPts<
 
 auto EdgeElementForcesAndSourcesCore::UserDataOperator::getFTensor1Normal(
     const FTensor::Tensor1<double, 3> &vec) {
-  FTensor::Tensor1<double, 3> t_normal;
   FTensor::Index<'i', 3> i;
   FTensor::Index<'j', 3> j;
   FTensor::Index<'k', 3> k;
+  FTensor::Tensor1<double, 3> t_normal;
   auto t_dir = getFTensor1Direction();
   t_normal(i) = FTensor::levi_civita(i, j, k) * t_dir(j) * vec(k);
   return t_normal;
@@ -243,8 +264,32 @@ auto EdgeElementForcesAndSourcesCore::UserDataOperator::getFTensor1Normal(
 
 auto EdgeElementForcesAndSourcesCore::UserDataOperator::
     getFTensor1Normal() {
-  FTensor::Tensor1<double, 3> t_normal{0., 0., 1.};
-  return getFTensor1Normal(t_normal);
+  return getFTensor1Normal(tFaceOrientation);
+}
+
+auto EdgeElementForcesAndSourcesCore::UserDataOperator::
+    getFTensor1NormalsAtGaussPts(const FTensor::Tensor1<double, 3> &vec) {
+  FTensor::Index<'i', 3> i;
+  FTensor::Index<'j', 3> j;
+  FTensor::Index<'k', 3> k;
+
+  auto &normals_at_gauss_pts =
+      static_cast<EdgeElementForcesAndSourcesCore *>(ptrFE)->normalsAtGaussPts;
+  normals_at_gauss_pts.resize(3, getGaussPts().size2(), false);
+  auto t_normal = getFTensor1FromMat<3>(normals_at_gauss_pts);
+  auto t_dir = getFTensor1TangentAtGaussPts<3>();
+  for(auto gg = 0; gg!=getGaussPts().size2(); ++gg) {
+    t_normal(i) = FTensor::levi_civita(i, j, k) * t_dir(j) * vec(k);
+    ++t_normal;
+    ++t_dir;
+  }
+
+  return getFTensor1FromMat<3>(normals_at_gauss_pts);
+}
+
+auto EdgeElementForcesAndSourcesCore::UserDataOperator::
+    getFTensor1NormalsAtGaussPts() {
+  return getFTensor1NormalsAtGaussPts(tFaceOrientation);
 }
 
 /**

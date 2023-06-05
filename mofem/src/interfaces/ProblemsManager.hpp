@@ -138,10 +138,8 @@ struct ProblemsManager : public UnknownInterface {
       const std::string out_name, const std::vector<std::string> &fields_row,
       const std::vector<std::string> &fields_col,
       const std::string main_problem, const bool square_matrix = true,
-      const map<std::string, std::pair<EntityType, EntityType>> *entityMapRow =
-          nullptr,
-      const map<std::string, std::pair<EntityType, EntityType>> *entityMapCol =
-          nullptr,
+      const map<std::string, boost::shared_ptr<Range>> *entityMapRow = nullptr,
+      const map<std::string, boost::shared_ptr<Range>> *entityMapCol = nullptr,
       int verb = VERBOSE);
 
   /**
@@ -228,8 +226,8 @@ struct ProblemsManager : public UnknownInterface {
    * \ingroup mofem_problems_manager
    * \param name problem name
    *
-   * DOFs are ghost dofs if are used by elements on given partitition, but not
-   * owned by that partitition.
+   * DOFs are ghost dofs if are used by elements on given partition, but not
+   * owned by that partition.
    *
    */
   MoFEMErrorCode partitionGhostDofs(const std::string name, int verb = VERBOSE);

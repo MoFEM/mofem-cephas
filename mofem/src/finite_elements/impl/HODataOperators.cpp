@@ -222,30 +222,55 @@ OpSetHOContravariantPiolaTransform::doWork(int side, EntityType type,
 
     FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
 
-    auto nb_gauss_pts = data.getN(base).size1();
-    auto nb_base_functions = data.getN(base).size2() / 3;
+    auto nb_gauss_pts = data.getNSharedPtr(base) ? data.getN(base).size1() : 0;
+    auto nb_base_functions =
+        data.getNSharedPtr(base) ? data.getN(base).size2() / 3 : 0;
+    auto nb_diff_base_functions =
+        data.getDiffNSharedPtr(base) ? data.getDiffN(base).size2() / 9 : 0;
 
 #ifndef NDEBUG
-    if (data.getDiffN(base).size1() != nb_gauss_pts)
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-              "Wrong number integration points");
-
-    if (data.getDiffN(base).size2() / 9 != nb_base_functions)
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-               "Wrong number base functions %d != %d",
-               data.getDiffN(base).size2(), nb_base_functions);
+    if (nb_diff_base_functions) {
+      if (nb_diff_base_functions != nb_base_functions)
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "Wrong number base functions %d != %d", nb_diff_base_functions,
+                 nb_base_functions);
+      if (data.getDiffN(base).size1() != nb_gauss_pts)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Wrong number integration points");
+    }
 #endif
 
     if (nb_gauss_pts && nb_base_functions) {
 
       piolaN.resize(nb_gauss_pts, data.getN(base).size2(), false);
-      piolaDiffN.resize(nb_gauss_pts, data.getDiffN(base).size2(), false);
 
       auto t_n = data.getFTensor1N<3>(base);
       double *t_transformed_n_ptr = &*piolaN.data().begin();
       FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_transformed_n(
           t_transformed_n_ptr, // HVEC0
           &t_transformed_n_ptr[HVEC1], &t_transformed_n_ptr[HVEC2]);
+
+      auto t_det = getFTensor0FromVec(*detPtr);
+      auto t_jac = getFTensor2FromMat<3, 3>(*jacPtr);
+
+      for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
+        for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
+          const double a = 1. / t_det;
+          t_transformed_n(i) = a * t_jac(i, k) * t_n(k);
+          ++t_n;
+          ++t_transformed_n;
+        }
+        ++t_det;
+        ++t_jac;
+      }
+
+      data.getN(base).swap(piolaN);
+    }
+
+    if (nb_gauss_pts && nb_diff_base_functions) {
+
+      piolaDiffN.resize(nb_gauss_pts, data.getDiffN(base).size2(), false);
+
       auto t_diff_n = data.getFTensor2DiffN<3, 3>(base);
       double *t_transformed_diff_n_ptr = &*piolaDiffN.data().begin();
       FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
@@ -263,12 +288,9 @@ OpSetHOContravariantPiolaTransform::doWork(int side, EntityType type,
       auto t_jac = getFTensor2FromMat<3, 3>(*jacPtr);
 
       for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
-        for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
+        for (unsigned int bb = 0; bb != nb_diff_base_functions; ++bb) {
           const double a = 1. / t_det;
-          t_transformed_n(i) = a * t_jac(i, k) * t_n(k);
           t_transformed_diff_n(i, k) = a * t_jac(i, j) * t_diff_n(j, k);
-          ++t_n;
-          ++t_transformed_n;
           ++t_diff_n;
           ++t_transformed_diff_n;
         }
@@ -276,7 +298,6 @@ OpSetHOContravariantPiolaTransform::doWork(int side, EntityType type,
         ++t_jac;
       }
 
-      data.getN(base).swap(piolaN);
       data.getDiffN(base).swap(piolaDiffN);
     }
   }
@@ -645,7 +666,7 @@ MoFEMErrorCode OpHOSetContravariantPiolaTransformOnEdge3D::doWork(
 }
 
 MoFEMErrorCode AddHOOps<2, 2, 2>::add(
-    boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+    boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
     std::vector<FieldSpace> spaces, std::string geom_field_name,
     boost::shared_ptr<MatrixDouble> jac_ptr,
     boost::shared_ptr<VectorDouble> det_ptr,
@@ -701,7 +722,7 @@ MoFEMErrorCode AddHOOps<2, 2, 2>::add(
 }
 
 MoFEMErrorCode AddHOOps<1, 2, 2>::add(
-    boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+    boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
     std::vector<FieldSpace> spaces, std::string geom_field_name) {
   MoFEMFunctionBegin;
 
@@ -733,7 +754,7 @@ MoFEMErrorCode AddHOOps<1, 2, 2>::add(
 }
 
 MoFEMErrorCode AddHOOps<1, 3, 3>::add(
-    boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+    boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
     std::vector<FieldSpace> spaces, std::string geom_field_name) {
   MoFEMFunctionBegin;
 
@@ -741,8 +762,8 @@ MoFEMErrorCode AddHOOps<1, 3, 3>::add(
 
   } else {
 
-    pipeline.push_back(new OpCalculateHOCoords<2>(geom_field_name));
-    pipeline.push_back(new OpGetHOTangentsOnEdge<2>(geom_field_name));
+    pipeline.push_back(new OpCalculateHOCoords<3>(geom_field_name));
+    pipeline.push_back(new OpGetHOTangentsOnEdge<3>(geom_field_name));
   }
 
   for (auto s : spaces) {
@@ -760,7 +781,7 @@ MoFEMErrorCode AddHOOps<1, 3, 3>::add(
 }
 
 MoFEMErrorCode AddHOOps<2, 3, 3>::add(
-    boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+    boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
     std::vector<FieldSpace> spaces, std::string geom_field_name) {
   MoFEMFunctionBegin;
 
@@ -792,7 +813,7 @@ MoFEMErrorCode AddHOOps<2, 3, 3>::add(
 }
 
 MoFEMErrorCode AddHOOps<3, 3, 3>::add(
-    boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+    boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
     std::vector<FieldSpace> spaces, std::string geom_field_name,
     boost::shared_ptr<MatrixDouble> jac, boost::shared_ptr<VectorDouble> det,
     boost::shared_ptr<MatrixDouble> inv_jac) {

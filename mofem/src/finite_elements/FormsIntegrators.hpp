@@ -4,8 +4,6 @@
 
 */
 
-
-
 #ifndef __FORMS_INTEGRATORS_HPP__
 #define __FORMS_INTEGRATORS_HPP__
 
@@ -16,6 +14,12 @@ namespace MoFEM {
 struct EssentialBcStorage : public EntityStorage {
   EssentialBcStorage(VectorInt &indices) : entityIndices(indices) {}
   VectorInt entityIndices;
+  /**
+   * @brief Store modifed indices by field
+   *
+   * Hash map, key is field name, value is storage.
+   *
+   */
   using HashVectorStorage =
       map<std::string, std::vector<boost::shared_ptr<EssentialBcStorage>>>;
   static HashVectorStorage feStorage;
@@ -52,6 +56,14 @@ struct OpUnSetBc : public ForcesAndSourcesCore::UserDataOperator {
  * @brief Set values to vector in operator
  * @ingroup mofem_forms
  *
+ * MoFEM::FieldEntity provides MoFEM::FieldEntity::getWeakStoragePtr() storage
+ * function which allows to transfer data between FEs or operators processing
+ * the same entities.
+ *
+ * When MoFEM::OpSetBc is pushed in weak storage indices taking in account
+ * indices which are skip to take boundary conditions are stored. Those entities
+ * are used by VecSetValues.
+ *
  * @param V
  * @param data
  * @param ptr
@@ -60,12 +72,13 @@ struct OpUnSetBc : public ForcesAndSourcesCore::UserDataOperator {
  */
 template <>
 MoFEMErrorCode
-VecSetValues<EssentialBcStorage>(Vec V,
-                                 const EntitiesFieldData::EntData &data,
+VecSetValues<EssentialBcStorage>(Vec V, const EntitiesFieldData::EntData &data,
                                  const double *ptr, InsertMode iora);
 
 /**
  * @brief Set values to matrix in operator
+ *
+ * See MoFEM::VecSetValues<EssentialBcStorage> for explanation.
  *
  * @param M
  * @param row_data
@@ -75,10 +88,11 @@ VecSetValues<EssentialBcStorage>(Vec V,
  * @return MoFEMErrorCode
  */
 template <>
-MoFEMErrorCode MatSetValues<EssentialBcStorage>(
-    Mat M, const EntitiesFieldData::EntData &row_data,
-    const EntitiesFieldData::EntData &col_data, const double *ptr,
-    InsertMode iora);
+MoFEMErrorCode
+MatSetValues<EssentialBcStorage>(Mat M,
+                                 const EntitiesFieldData::EntData &row_data,
+                                 const EntitiesFieldData::EntData &col_data,
+                                 const double *ptr, InsertMode iora);
 
 //! [Storage and set boundary conditions]
 
@@ -87,7 +101,24 @@ MoFEMErrorCode MatSetValues<EssentialBcStorage>(
  * @ingroup mofem_forms
  *
  */
-enum AssemblyType { PETSC, USER_ASSEMBLE, LAST_ASSEMBLE };
+enum AssemblyType { PETSC, SCHUR, USER_ASSEMBLE, LAST_ASSEMBLE };
+
+template <int A> struct AssemblyTypeSelector {};
+
+template <>
+inline MoFEMErrorCode MatSetValues<AssemblyTypeSelector<PETSC>>(
+    Mat M, const EntitiesFieldData::EntData &row_data,
+    const EntitiesFieldData::EntData &col_data, const double *ptr,
+    InsertMode iora) {
+  return MatSetValues<EssentialBcStorage>(M, row_data, col_data, ptr, iora);
+}
+
+template <>
+inline MoFEMErrorCode VecSetValues<AssemblyTypeSelector<PETSC>>(
+    Vec V, const EntitiesFieldData::EntData &data, const double *ptr,
+    InsertMode iora) {
+  return VecSetValues<EssentialBcStorage>(V, data, ptr, iora);
+}
 
 /**
  * @brief Form integrator integration types
@@ -110,13 +141,13 @@ inline double scalar_fun_one(const double, const double, const double) {
 
 /**
  * @brief Lambda function used to scale with time
- * 
+ *
  */
 using TimeFun = boost::function<double(double)>;
 
 /**
  * @brief Lambda function used to scale with time
- * 
+ *
  */
 using FEFun = boost::function<double(const FEMethod *fe_ptr)>;
 
@@ -149,8 +180,8 @@ template <AssemblyType A, typename EleOp> struct OpBaseImpl : public EleOp {
    * \brief Do calculations for the left hand side
    * @param  row_side row side number (local number) of entity on element
    * @param  col_side column side number (local number) of entity on element
-   * @param  row_type type of row entity 
-   * @param  col_type type of column entity 
+   * @param  row_type type of row entity
+   * @param  col_type type of column entity
    * @param  row_data data for row
    * @param  col_data data for column
    * @return          error code
@@ -169,11 +200,41 @@ template <AssemblyType A, typename EleOp> struct OpBaseImpl : public EleOp {
    */
   MoFEMErrorCode doWork(int row_side, EntityType row_type, EntData &row_data);
 
-  TimeFun timeScalingFun; ///< assumes that time variable is set
-  FEFun feScalingFun;     ///< assumes that time variable is set
+  TimeFun timeScalingFun;           ///< assumes that time variable is set
+  FEFun feScalingFun;               ///< assumes that time variable is set
   boost::shared_ptr<Range> entsPtr; ///< Entities on which element is run
 
+  enum AssembleTo { AMat, BMat };   ///< Where to assemble
+
+  /**
+   * @brief Where to assemble 
+   * 
+   * \note Default assembly is BMat, i.e. preconditioner matrix
+   * 
+   * @param a_to 
+   * @return MoFEMErrorCode 
+   */
+  inline void setAssembleTo(AssembleTo a_to) { assembleTo = a_to; };
+
 protected:
+  enum AssembleTo assembleTo = BMat;
+
+  /**
+   * @brief Select matrix
+   * 
+   * @return auto 
+   */
+  inline auto matSelector() {
+    switch (assembleTo) {
+      case AMat:
+        return this->getKSPA();
+      case BMat:
+        return this->getKSPB();
+    }
+    return this->getKSPB();
+  };
+
+
   template <int DIM>
   inline FTensor::Tensor1<FTensor::PackPtr<double *, DIM>, DIM> getNf() {
     return getFTensor1FromArray<DIM, DIM>(locF);
@@ -190,10 +251,10 @@ protected:
   int nbIntegrationPts;   ///< number of integration points
   int nbRowBaseFunctions; ///< number or row base functions
 
-  int rowSide;           ///< row side number
-  int colSide;           ///< column side number
-  EntityType rowType;    ///< row type
-  EntityType colType;    ///< column type
+  int rowSide;        ///< row side number
+  int colSide;        ///< column side number
+  EntityType rowType; ///< row type
+  EntityType colType; ///< column type
 
   bool assembleTranspose;
   bool onlyTranspose;
@@ -213,7 +274,7 @@ protected:
   }
 
   virtual MoFEMErrorCode aSsemble(EntData &row_data, EntData &col_data,
-                                  const bool trans) = 0;
+                                  const bool trans);
 
   /**
    * \brief Class dedicated to integrate operator
@@ -224,7 +285,7 @@ protected:
     return MOFEM_NOT_IMPLEMENTED;
   }
 
-  virtual MoFEMErrorCode aSsemble(EntData &data) = 0;
+  virtual MoFEMErrorCode aSsemble(EntData &data);
 };
 
 /**
@@ -310,7 +371,7 @@ OpBaseImpl<A, EleOp>::doWork(int row_side, int col_side, EntityType row_type,
     if (this->sYmm) {
       if (row_side != col_side || row_type != col_type)
         return true;
-      else 
+      else
         return false;
     } else if (assembleTranspose) {
       return true;
@@ -353,52 +414,45 @@ MoFEMErrorCode OpBaseImpl<A, EleOp>::doWork(int row_side, EntityType row_type,
   MoFEMFunctionReturn(0);
 }
 
-template <typename EleOp>
-struct OpBaseImpl<PETSC, EleOp> : public OpBaseImpl<LAST_ASSEMBLE, EleOp> {
-  using OpBaseImpl<LAST_ASSEMBLE, EleOp>::OpBaseImpl;
+template <AssemblyType A, typename EleOp>
+MoFEMErrorCode OpBaseImpl<A, EleOp>::aSsemble(EntData &row_data,
+                                              EntData &col_data,
+                                              const bool transpose) {
+  MoFEMFunctionBegin;
 
-protected:
-  MoFEMErrorCode aSsemble(EntitiesFieldData::EntData &row_data,
-                          EntitiesFieldData::EntData &col_data,
-                          const bool transpose) {
-    MoFEMFunctionBegin;
+  if (!this->timeScalingFun.empty())
+    this->locMat *= this->timeScalingFun(this->getFEMethod()->ts_t);
+  if (!this->feScalingFun.empty())
+    this->locMat *= this->feScalingFun(this->getFEMethod());
 
-    if (!this->timeScalingFun.empty())
-      this->locMat *= this->timeScalingFun(this->getFEMethod()->ts_t);
-    if (!this->feScalingFun.empty())
-      this->locMat *= this->feScalingFun(this->getFEMethod());
-
-    // Assemble transpose
-    if (transpose) {
-      this->locMatTranspose.resize(this->locMat.size2(), this->locMat.size1(),
-                                   false);
-      noalias(this->locMatTranspose) = trans(this->locMat);
-      CHKERR MatSetValues<EssentialBcStorage>(
-          this->getKSPB(), col_data, row_data,
-          &*this->locMatTranspose.data().begin(), ADD_VALUES);
-    }
-
-    if (!this->onlyTranspose) {
-      // assemble local matrix
-      CHKERR MatSetValues<EssentialBcStorage>(
-          this->getKSPB(), row_data, col_data, &*this->locMat.data().begin(),
-          ADD_VALUES);
-    }
-
-    MoFEMFunctionReturn(0);
+  // Assemble transpose
+  if (transpose) {
+    this->locMatTranspose.resize(this->locMat.size2(), this->locMat.size1(),
+                                 false);
+    noalias(this->locMatTranspose) = trans(this->locMat);
+    CHKERR MatSetValues<AssemblyTypeSelector<A>>(
+        matSelector(), col_data, row_data, this->locMatTranspose, ADD_VALUES);
   }
 
-  MoFEMErrorCode aSsemble(EntitiesFieldData::EntData &data) {
-
-    if (!this->timeScalingFun.empty())
-      this->locF *= this->timeScalingFun(this->getFEMethod()->ts_t);
-    if (!this->feScalingFun.empty())
-      this->locF *= this->feScalingFun(this->getFEMethod());
-
-    return VecSetValues<EssentialBcStorage>(
-        this->getKSPf(), data, &*this->locF.data().begin(), ADD_VALUES);
+  if (!this->onlyTranspose) {
+    // assemble local matrix
+    CHKERR MatSetValues<AssemblyTypeSelector<A>>(
+        matSelector(), row_data, col_data, this->locMat, ADD_VALUES);
   }
-};
+
+  MoFEMFunctionReturn(0);
+}
+
+template <AssemblyType A, typename EleOp>
+MoFEMErrorCode OpBaseImpl<A, EleOp>::aSsemble(EntData &data) {
+  if (!this->timeScalingFun.empty())
+    this->locF *= this->timeScalingFun(this->getFEMethod()->ts_t);
+  if (!this->feScalingFun.empty())
+    this->locF *= this->feScalingFun(this->getFEMethod());
+
+  return VecSetValues<AssemblyTypeSelector<A>>(this->getKSPf(), data,
+                                               this->locF, ADD_VALUES);
+}
 
 } // namespace MoFEM
 

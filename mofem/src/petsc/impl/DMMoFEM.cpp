@@ -188,8 +188,6 @@ PetscErrorCode DMMoFEMDuplicateDMCtx(DM dm, DM dm_duplicate) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "data structure for MoFEM not yet created");
 
-  auto *dm_field = static_cast<DMCtx *>(dm->data);
-
   if (static_cast<DMCtx *>(dm_duplicate->data)->referenceNumber == 0)
     delete static_cast<DMCtx *>(dm_duplicate->data);
 
@@ -241,8 +239,7 @@ PetscErrorCode DMMoFEMCreateSubDM(DM subdm, DM dm, const char problem_name[]) {
   MoFEMFunctionReturn(0);
 }
 
-PetscErrorCode DMMoFEMAddSubFieldRow(DM dm, const char field_name[],
-                                     EntityType lo_type, EntityType hi_type) {
+PetscErrorCode DMMoFEMAddSubFieldRow(DM dm, const char field_name[]) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
@@ -254,18 +251,28 @@ PetscErrorCode DMMoFEMAddSubFieldRow(DM dm, const char field_name[],
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "this is not sub-dm");
   }
   dm_field->rowFields.push_back(field_name);
-  if (lo_type != MBVERTEX || hi_type != MBMAXTYPE) {
-    if (!dm_field->mapTypeRow)
-      dm_field->mapTypeRow = boost::make_shared<
-          std::map<std::string, std::pair<EntityType, EntityType>>>();
-    (*dm_field->mapTypeRow)[field_name] =
-        std::pair<EntityType, EntityType>(lo_type, hi_type);
-  }
+  dm_field->mapTypeRow.erase(field_name);
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DMMoFEMAddSubFieldCol(DM dm, const char field_name[],
-                                     EntityType lo_type, EntityType hi_type) {
+PetscErrorCode DMMoFEMAddSubFieldRow(DM dm, const char field_name[],
+                                     boost::shared_ptr<Range> r_ptr) {
+  PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
+  MoFEMFunctionBeginHot;
+  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  if (!dm->data) {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+            "data structure for MoFEM not yet created");
+  }
+  if (!dm_field->isSubDM) {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "this is not sub-dm");
+  }
+  dm_field->rowFields.push_back(field_name);
+  dm_field->mapTypeRow[field_name] = r_ptr;
+  MoFEMFunctionReturnHot(0);
+}
+
+PetscErrorCode DMMoFEMAddSubFieldCol(DM dm, const char field_name[]) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
@@ -277,13 +284,24 @@ PetscErrorCode DMMoFEMAddSubFieldCol(DM dm, const char field_name[],
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "this is not sub-dm");
   }
   dm_field->colFields.push_back(field_name);
-  if (lo_type != MBVERTEX || hi_type != MBMAXTYPE) {
-    if (!dm_field->mapTypeCol)
-      dm_field->mapTypeCol = boost::make_shared<
-          std::map<std::string, std::pair<EntityType, EntityType>>>();
-    (*dm_field->mapTypeCol)[field_name] =
-        std::pair<EntityType, EntityType>(lo_type, hi_type);
+  dm_field->mapTypeCol.erase(field_name);
+  MoFEMFunctionReturnHot(0);
+}
+
+PetscErrorCode DMMoFEMAddSubFieldCol(DM dm, const char field_name[],
+                                     boost::shared_ptr<Range> r_ptr) {
+  PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
+  MoFEMFunctionBeginHot;
+  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  if (!dm->data) {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+            "data structure for MoFEM not yet created");
   }
+  if (!dm_field->isSubDM) {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "this is not sub-dm");
+  }
+  dm_field->colFields.push_back(field_name);
+  dm_field->mapTypeCol[field_name] = r_ptr;
   MoFEMFunctionReturnHot(0);
 }
 
@@ -1303,13 +1321,13 @@ PetscErrorCode DMSubDMSetUp_MoFEM(DM subdm) {
   // build sub dm problem
   CHKERR subdm_field->mField_ptr->getInterface(prb_mng_ptr);
 
-  map<std::string, std::pair<EntityType, EntityType>> *entity_map_row = nullptr;
-  map<std::string, std::pair<EntityType, EntityType>> *entity_map_col = nullptr;
+  map<std::string, boost::shared_ptr<Range>> *entity_map_row = nullptr;
+  map<std::string, boost::shared_ptr<Range>> *entity_map_col = nullptr;
 
-  if (subdm_field->mapTypeRow)
-    entity_map_row = subdm_field->mapTypeRow.get();
-  if (subdm_field->mapTypeCol)
-    entity_map_row = subdm_field->mapTypeCol.get();
+  if (subdm_field->mapTypeRow.size())
+    entity_map_row = &subdm_field->mapTypeRow;
+  if (subdm_field->mapTypeCol.size())
+    entity_map_col = &subdm_field->mapTypeCol;
 
   CHKERR prb_mng_ptr->buildSubProblem(
       subdm_field->problemName, subdm_field->rowFields, subdm_field->colFields,

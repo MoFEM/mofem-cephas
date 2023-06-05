@@ -2,8 +2,6 @@
  * \brief Implementation of VecManager
  */
 
-
-
 namespace MoFEM {
 
 MoFEMErrorCode
@@ -96,23 +94,25 @@ MoFEMErrorCode VecManager::vecCreateGhost(const std::string name, RowColData rc,
   if (count != nb_ghost_dofs) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
   }
-  std::vector<DofIdx> ghost_idx(count);
-  for (auto vit = ghost_idx.begin(); miit != hi_miit; ++miit, ++vit) {
-    *vit = (*miit)->petscGloablDofIdx;
+  std::vector<DofIdx> ghost_idx;
+  ghost_idx.reserve(count);
+  for (; miit != hi_miit; ++miit) {
+    if ((*miit)->getActive()) {
+      ghost_idx.emplace_back((*miit)->petscGloablDofIdx);
 
 #ifndef NDEBUG
-    if (PetscUnlikely(*vit > nb_dofs || *vit < 0)) {
-      MOFEM_LOG_FUNCTION();
-      MOFEM_LOG_ATTRIBUTES("VECSELF",
-                           LogManager::BitLineID | LogManager::BitScope);
-      MOFEM_LOG("VECSELF", Sev::error) << "Problem with DOF " << **miit;
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong ghost index");
+      if (PetscUnlikely(ghost_idx.back() > nb_dofs || ghost_idx.back() < 0)) {
+        MOFEM_LOG_FUNCTION();
+        MOFEM_LOG_ATTRIBUTES("VECSELF",
+                             LogManager::BitLineID | LogManager::BitScope);
+        MOFEM_LOG("VECSELF", Sev::error) << "Problem with DOF " << **miit;
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong ghost index");
+      }
+#endif
     }
-#endif    
-
   }
   CHKERR ::VecCreateGhost(m_field.get_comm(), nb_local_dofs, nb_dofs,
-                          nb_ghost_dofs, &ghost_idx[0], V);
+                          ghost_idx.size(), &*ghost_idx.begin(), V);
   CHKERR ::VecSetOption(
       *V, VEC_IGNORE_NEGATIVE_INDICES,
       PETSC_TRUE); // As default in MOFEM we will assume that this is always on
@@ -239,9 +239,8 @@ MoFEMErrorCode VecManager::setLocalGhostVector(const Problem *problem_ptr,
              "ghost nodes %d != ",
              size, nb_local_dofs + nb_ghost_dofs);
   }
-  NumeredDofEntityByLocalIdx::iterator miit = dofs->lower_bound(0);
-  NumeredDofEntityByLocalIdx::iterator hi_miit =
-      dofs->upper_bound(nb_local_dofs + nb_ghost_dofs);
+  auto miit = dofs->lower_bound(0);
+  auto hi_miit = dofs->upper_bound(nb_local_dofs + nb_ghost_dofs);
   DofIdx ii = 0;
   switch (scatter_mode) {
   case SCATTER_FORWARD: {
@@ -267,8 +266,6 @@ MoFEMErrorCode VecManager::setLocalGhostVector(const Problem *problem_ptr,
     switch (mode) {
     case INSERT_VALUES:
       for (; miit != hi_miit; ++miit, ++ii) {
-        // std::cerr << *miit << std::endl;
-        // std::cerr << array[ii] << std::endl;
         (*miit)->getFieldData() = array[ii];
       }
       break;
@@ -397,7 +394,7 @@ template <int MODE> struct SetOtherLocalGhostVector {
                                LogManager::BitLineID | LogManager::BitScope);
           MOFEM_LOG("VECSELF", Sev::error)
               << "Problem finding DOFs in the copy field";
-          MOFEM_LOG("VECSELF", Sev::error) << "Field DOF: "<< (**miit);
+          MOFEM_LOG("VECSELF", Sev::error) << "Field DOF: " << (**miit);
           MOFEM_LOG("VECSELF", Sev::error)
               << "Copy field name: " << cpy_field_name;
           SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
@@ -551,7 +548,6 @@ MoFEMErrorCode VecManager::setOtherGlobalGhostVector(
   const MoFEM::Interface &m_field = cOre;
   auto fields_ptr = m_field.get_fields();
   auto dofs_ptr = m_field.get_dofs();
-  auto *field_ents = m_field.get_field_ents();
   MoFEMFunctionBegin;
   NumeredDofEntityByUId *dofs;
   DofIdx nb_dofs;

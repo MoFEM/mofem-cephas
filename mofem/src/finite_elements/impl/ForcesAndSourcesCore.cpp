@@ -595,15 +595,11 @@ ForcesAndSourcesCore::getProblemTypeColIndices(const std::string &field_name,
 MoFEMErrorCode ForcesAndSourcesCore::getBitRefLevelOnData() {
   MoFEMFunctionBegin;
 
-  // for (int s = H1; s != LASTSPACE; ++s) {
-  //   dataOnElement[s]->dataOnEntities[MBENTITYSET].resize(0);
-  // }
-
   for (auto &data : dataOnElement) {
     if (data) {
       for (auto &dat : data->dataOnEntities) {
         for (auto &ent_dat : dat) {
-          ent_dat.getEntDataBitRefLevel().reset();
+          ent_dat.getEntDataBitRefLevel().clear();
         }
       }
     }
@@ -615,18 +611,25 @@ MoFEMErrorCode ForcesAndSourcesCore::getBitRefLevelOnData() {
       const FieldSpace space = e->getSpace();
       if (space > NOFIELD) {
         const EntityType type = e->getEntType();
-        const signed char side =
-            type == MBVERTEX ? 0 : e->getSideNumberPtr()->side_number;
+        const signed char side = e->getSideNumberPtr()->side_number;
         if (side >= 0) {
           if (auto &data = dataOnElement[space]) {
-            auto &dat = data->dataOnEntities[type][side];
-            dat.getEntDataBitRefLevel() |= e->getBitRefLevel();
+            if (type == MBVERTEX) {
+              auto &dat = data->dataOnEntities[type][0];
+              dat.getEntDataBitRefLevel().resize(getNumberOfNodes(), false);
+              dat.getEntDataBitRefLevel()[side] = e->getBitRefLevel();
+            } else {
+              auto &dat = data->dataOnEntities[type][side];
+              dat.getEntDataBitRefLevel().resize(1, false);
+              dat.getEntDataBitRefLevel()[0] = e->getBitRefLevel();
+            }
           }
         }
       } else {
         if (auto &data = dataOnElement[NOFIELD]) {
           auto &dat = data->dataOnEntities[MBENTITYSET][0];
-          dat.getEntDataBitRefLevel() |= e->getBitRefLevel();
+          dat.getEntDataBitRefLevel().resize(1, false);
+          dat.getEntDataBitRefLevel()[0] = e->getBitRefLevel();
         }
       }
     }
@@ -676,7 +679,12 @@ ForcesAndSourcesCore::getNodesFieldData(EntitiesFieldData &data,
           int nb_dofs = 0;
           for (auto it = lo; it != hi; ++it) {
             if (auto e = it->lock()) {
-              nb_dofs += e->getNbDofsOnEnt();
+              if (auto cache = e->entityCacheDataDofs.lock()) {
+                if (cache->loHi[0] != cache->loHi[1]) {
+                  nb_dofs += std::distance(cache->loHi[0], cache->loHi[1]);
+                  break;
+                }
+              }
             }
           }
 
@@ -931,7 +939,6 @@ ForcesAndSourcesCore::getFaceNodes(EntitiesFieldData &data) const {
     const auto side = (*side_ptr_it)->side_number;
     const auto sense = (*side_ptr_it)->sense;
     const auto offset = (*side_ptr_it)->offset;
-    const auto face_ent = (*side_ptr_it)->ent;
 
     EntityType face_type;
     int nb_nodes_face;
@@ -952,6 +959,7 @@ ForcesAndSourcesCore::getFaceNodes(EntitiesFieldData &data) const {
       face_nodes(side, n) = face_indices[face_nodes_order(side, n)];
 
 #ifndef NDEBUG
+    const auto face_ent = (*side_ptr_it)->ent;
     auto check = [&]() {
       MoFEMFunctionBegin;
       const EntityHandle *conn_face;
@@ -1125,7 +1133,6 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
             const int num_nodes = getNumberOfNodes();
             bb_node_order.resize(num_nodes, false);
             bb_node_order.clear();
-            const int nb_dof_idx = first_e->getNbOfCoeffs();
 
             std::vector<boost::weak_ptr<FieldEntity>> brother_ents_vec;
 
@@ -1719,7 +1726,6 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopThis(
     MOFEM_LOG("SELF", sev) << "This finite element: "
                            << *getNumeredEntFiniteElementPtr();
 
-  const auto *problem_ptr = getFEMethod()->problemPtr;
   this_fe->feName = fe_name;
 
   CHKERR this_fe->setRefineFEPtr(ptrFE);
@@ -1750,6 +1756,11 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopParent(
   auto &numered_fe =
       problem_ptr->numeredFiniteElementsPtr->get<Unique_mi_tag>();
 
+  auto &fes =
+      ptrFE->mField.get_finite_elements()->get<FiniteElement_name_mi_tag>();
+  auto fe_miit = fes.find(fe_name);
+  if (fe_miit != fes.end()) {
+
   parent_fe->feName = fe_name;
   CHKERR parent_fe->setRefineFEPtr(ptrFE);
   CHKERR parent_fe->copyBasicMethod(*getFEMethod());
@@ -1758,14 +1769,6 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopParent(
   CHKERR parent_fe->copySnes(*getFEMethod());
   CHKERR parent_fe->copyTs(*getFEMethod());
 
-  CHKERR parent_fe->preProcess();
-
-  auto fe_miit = ptrFE->mField.get_finite_elements()
-                     ->get<FiniteElement_name_mi_tag>()
-                     .find(fe_name);
-  if (fe_miit != ptrFE->mField.get_finite_elements()
-                     ->get<FiniteElement_name_mi_tag>()
-                     .end()) {
     const auto parent_ent = getNumeredEntFiniteElementPtr()->getParentEnt();
     auto miit = numered_fe.find(EntFiniteElement::getLocalUniqueIdCalculate(
         parent_ent, (*fe_miit)->getFEUId()));
@@ -1775,11 +1778,18 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopParent(
       parent_fe->loopSize = 1;
       parent_fe->nInTheLoop = 0;
       parent_fe->numeredEntFiniteElementPtr = *miit;
+      CHKERR parent_fe->preProcess();
       CHKERR (*parent_fe)();
+      CHKERR parent_fe->postProcess();
+    } else {
+      if (verb >= VERBOSE)
+        MOFEM_LOG("SELF", sev) << "Parent finite element: no parent";
+      parent_fe->loopSize = 0;
+      parent_fe->nInTheLoop = 0;
+      CHKERR parent_fe->preProcess();
+      CHKERR parent_fe->postProcess();     
     }
   }
-
-  CHKERR parent_fe->postProcess();
 
   MoFEMFunctionReturn(0);
 }

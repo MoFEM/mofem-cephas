@@ -14,6 +14,73 @@
 namespace MoFEM {
 
 /**
+ * @brief A specialized version of DisplacementCubitBcData that includes an
+ * additional rotation offset.
+ *
+ * DisplacementCubitBcDataWithRotation extends the DisplacementCubitBcData
+ * structure with a rotation offset and a method to calculate the rotated
+ * displacement given the rotation angles and coordinates.
+ */
+struct DisplacementCubitBcDataWithRotation : public DisplacementCubitBcData {
+
+  std::array<double, 3> rotOffset;
+  DisplacementCubitBcDataWithRotation() : rotOffset{0, 0, 0} {}
+
+  /**
+   * @brief Calculates the rotated displacement given the rotation angles,
+   * coordinates, and an optional offset.
+   *
+   * @param angles A FTensor::Tensor1 containing the rotation angles.
+   * @param coordinates A FTensor::Tensor1 containing the coordinates.
+   * @param offset An optional FTensor::Tensor1 containing the offset
+   * (default is {0., 0., 0.}).
+   * @return FTensor::Tensor1<double, 3> representing the rotated displacement.
+   */
+  static FTensor::Tensor1<double, 3>
+  GetRotDisp(const FTensor::Tensor1<double, 3> &angles,
+             FTensor::Tensor1<double, 3> coordinates,
+             FTensor::Tensor1<double, 3> offset = FTensor::Tensor1<double, 3>{
+                 0., 0., 0.}) {
+
+    FTensor::Index<'i', 3> i;
+    FTensor::Index<'j', 3> j;
+    FTensor::Index<'k', 3> k;
+
+    FTensor::Tensor1<double, 3> rotated_displacement;
+    rotated_displacement(i) = 0;
+
+    auto get_rotation = [&](auto &omega) {
+      FTensor::Tensor2<double, 3, 3> rotation_matrix;
+
+      constexpr auto kronecker_delta = FTensor::Kronecker_Delta<int>();
+      rotation_matrix(i, j) = kronecker_delta(i, j);
+
+      const double angle = sqrt(omega(i) * omega(i));
+      if (std::abs(angle) < std::numeric_limits<double>::epsilon())
+        return rotation_matrix;
+
+      FTensor::Tensor2<double, 3, 3> t_omega;
+      t_omega(i, j) = FTensor::levi_civita<double>(i, j, k) * omega(k);
+      const double a = sin(angle) / angle;
+      const double sin_squared = sin(angle / 2.) * sin(angle / 2.);
+      const double b = 2. * sin_squared / (angle * angle);
+      rotation_matrix(i, j) += a * t_omega(i, j);
+      rotation_matrix(i, j) += b * t_omega(i, k) * t_omega(k, j);
+
+      return rotation_matrix;
+    };
+
+    auto rotation = get_rotation(angles);
+    FTensor::Tensor1<double, 3> coordinate_distance;
+    coordinate_distance(i) = offset(i) - coordinates(i);
+    rotated_displacement(i) =
+        coordinate_distance(i) - rotation(j, i) * coordinate_distance(j);
+
+    return rotated_displacement;
+  }
+};
+
+/**
  * @brief Specialization for DisplacementCubitBcData
  *
  * Specialization to enforce blocksets which DisplacementCubitBcData ptr. That
@@ -51,7 +118,20 @@ struct OpEssentialRhsImpl<DisplacementCubitBcData, 1, FIELD_DIM, A, I, OpBase>
 
 private:
   FTensor::Tensor1<double, FIELD_DIM> tVal;
+  FTensor::Tensor1<double, 3> tAngles;
+  FTensor::Tensor1<double, 3> tOffset;
   VecOfTimeScalingMethods vecOfTimeScalingMethods;
+  VectorFun<FIELD_DIM> dispFunction;
+
+  FTensor::Tensor1<double, FIELD_DIM> rotFunction(double x, double y,
+                                                  double z) {
+    FTensor::Index<'i', FIELD_DIM> i;
+    auto rot = DisplacementCubitBcDataWithRotation::GetRotDisp(
+        tAngles, FTensor::Tensor1<double, 3>{x, y, z}, tOffset);
+    FTensor::Tensor1<double, FIELD_DIM> t_ret;
+    t_ret(i) = tVal(i) + rot(i);
+    return t_ret;
+  };
 };
 
 template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
@@ -60,20 +140,34 @@ OpEssentialRhsImpl<DisplacementCubitBcData, 1, FIELD_DIM, A, I, OpBase>::
                        boost::shared_ptr<DisplacementCubitBcData> bc_data,
                        boost::shared_ptr<Range> ents_ptr,
                        std::vector<boost::shared_ptr<ScalingMethod>> smv)
-    : OpSource(
-          field_name, [this](double, double, double) { return tVal; },
-          ents_ptr),
+    : OpSource(field_name, [this](double, double, double) { return tVal; }, ents_ptr),
       vecOfTimeScalingMethods(smv) {
   static_assert(FIELD_DIM > 1, "Is not implemented for scalar field");
 
   FTensor::Index<'i', FIELD_DIM> i;
   tVal(i) = 0;
+  tAngles(i) = 0;
+  tOffset(i) = 0;
+
   if (bc_data->data.flag1 == 1)
     tVal(0) = -bc_data->data.value1;
   if (bc_data->data.flag2 == 1 && FIELD_DIM > 1)
     tVal(1) = -bc_data->data.value2;
   if (bc_data->data.flag3 == 1 && FIELD_DIM > 2)
     tVal(2) = -bc_data->data.value3;
+  if (bc_data->data.flag4 == 1 && FIELD_DIM > 2)
+    tAngles(0) = -bc_data->data.value4;
+  if (bc_data->data.flag5 == 1 && FIELD_DIM > 2)
+    tAngles(1) = -bc_data->data.value5;
+  if (bc_data->data.flag6 == 1 && FIELD_DIM > 1)
+    tAngles(2) = -bc_data->data.value6;
+
+  if (auto ext_bc_data =
+          dynamic_cast<DisplacementCubitBcDataWithRotation const *>(
+              bc_data.get())) {
+    for (int a = 0; a != 3; ++a)
+      tOffset(a) = ext_bc_data->rotOffset[a];
+  }
 
   this->timeScalingFun = [this](const double t) {
     double s = 1;
@@ -82,6 +176,13 @@ OpEssentialRhsImpl<DisplacementCubitBcData, 1, FIELD_DIM, A, I, OpBase>::
     }
     return s;
   };
+  if (bc_data->data.flag4 || bc_data->data.flag5 || bc_data->data.flag6) {
+    this->dispFunction = [this](double x, double y, double z) {
+      return this->rotFunction(x, y, z);
+    };
+  } else { 
+    // use default set at construction
+  }
 }
 
 template <int BASE_DIM, int FIELD_DIM, AssemblyType A, IntegrationType I,
@@ -126,7 +227,7 @@ struct AddEssentialToRhsPipelineImpl<
   static MoFEMErrorCode add(
 
       MoFEM::Interface &m_field,
-      boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+      boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
       const std::string problem_name, std::string field_name,
       boost::shared_ptr<MatrixDouble> field_mat_ptr,
       std::vector<boost::shared_ptr<ScalingMethod>> smv
@@ -188,7 +289,7 @@ struct AddEssentialToLhsPipelineImpl<
   static MoFEMErrorCode add(
 
       MoFEM::Interface &m_field,
-      boost::ptr_vector<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+      boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
       const std::string problem_name, std::string field_name
 
   ) {

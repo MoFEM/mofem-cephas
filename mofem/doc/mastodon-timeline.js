@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		instance_uri: 'https://fosstodon.org',
 		user_id: '109327835614225266',
 		profile_name: '@mofem',
-		toots_limit: 8,
+		toots_limit: 64,
 		btn_see_more: 'See more posts at Mastodon'
 	});
 });

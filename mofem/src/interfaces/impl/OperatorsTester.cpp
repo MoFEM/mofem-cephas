@@ -34,7 +34,7 @@ OperatorsTester::setRandomFields(SmartPetscObj<DM> dm,
     return range[0] + r * (range[1] - range[0]);
   };
 
-  auto v = smartCreateDMVector(dm);
+  auto v = createDMVector(dm);
   double *array;
   CHKERR VecGetArray(v, &array);
 
@@ -87,12 +87,14 @@ OperatorsTester::assembleVec(SmartPetscObj<DM> dm, std::string fe_name,
                              double delta_t, CacheTupleWeakPtr cache_ptr) {
 
   pipeline->data_ctx = PetscData::CtxSetF | PetscData::CtxSetTime;
-  auto f = smartCreateDMVector(dm);
+  auto f = createDMVector(dm);
   pipeline->f = f;
   pipeline->ts_t = time;
   pipeline->ts_dt = delta_t;
 
   auto [v, a] = setPipelineX(pipeline, x, delta_x, delta2_x, delta_t);
+  std::ignore = a;
+  std::ignore = v;
 
   CHK_THROW_MESSAGE(
       DMoFEMMeshToLocalVector(dm, x, INSERT_VALUES, SCATTER_REVERSE),
@@ -120,7 +122,7 @@ OperatorsTester::assembleMat(SmartPetscObj<DM> dm, std::string fe_name,
                              SmartPetscObj<Vec> x, SmartPetscObj<Vec> delta_x,
                              SmartPetscObj<Vec> delta2_x, double time,
                              double delta_t, CacheTupleWeakPtr cache_ptr) {
-  auto m = smartCreateDMMatrix(dm);
+  auto m = createDMMatrix(dm);
 
   pipeline->data_ctx =
       PetscData::CtxSetA | PetscData::CtxSetB | PetscData::CtxSetTime;
@@ -134,6 +136,8 @@ OperatorsTester::assembleMat(SmartPetscObj<DM> dm, std::string fe_name,
   pipeline->ts_aa = 1. / pow(delta_t, 2);
 
   auto [v, a] = setPipelineX(pipeline, x, delta_x, delta2_x, delta_t);
+  std::ignore = a;
+  std::ignore = v;
 
   CHK_THROW_MESSAGE(
       DMoFEMMeshToLocalVector(dm, x, INSERT_VALUES, SCATTER_REVERSE),
@@ -156,7 +160,7 @@ SmartPetscObj<Vec> OperatorsTester::directionalCentralFiniteDifference(
   auto axpy = [&](auto v0, auto diff_v, auto eps) {
     SmartPetscObj<Vec> v;
     if (v0.use_count()) {
-      v = smartVectorDuplicate(v0);
+      v = vectorDuplicate(v0);
       CHK_THROW_MESSAGE(VecCopy(v0, v), "Cpy");
       CHK_THROW_MESSAGE(VecAXPY(v, eps, diff_v), "Add");
       CHK_THROW_MESSAGE(VecGhostUpdateBegin(v, INSERT_VALUES, SCATTER_FORWARD),
@@ -218,7 +222,7 @@ SmartPetscObj<Vec> OperatorsTester::checkCentralFiniteDifference(
   auto m = assembleMat(dm, fe_name, pipeline_lhs, x, delta_x, delta2_x, time,
                        delta_t, cache_ptr);
 
-  auto fm = smartVectorDuplicate(fd_diff);
+  auto fm = vectorDuplicate(fd_diff);
   CHK_THROW_MESSAGE(MatMult(m, diff_x, fm), "Mat mult");
   CHK_THROW_MESSAGE(VecAXPY(fd_diff, -1., fm), "Add");
 
@@ -240,7 +244,7 @@ OperatorsTester::setPipelineX(boost::shared_ptr<FEMethod> pipeline,
   // Set velocity dofs vector to finite element instance
 
   if (delta_x.use_count()) {
-    x_t = smartVectorDuplicate(x);
+    x_t = vectorDuplicate(x);
     VecCopy(delta_x, x_t);
     VecScale(x_t, 1. / delta_t);
     CHK_THROW_MESSAGE(VecGhostUpdateBegin(x_t, INSERT_VALUES, SCATTER_FORWARD),
@@ -256,7 +260,7 @@ OperatorsTester::setPipelineX(boost::shared_ptr<FEMethod> pipeline,
   // Set acceleration dofs vector to finite element instance
 
   if (delta2_x.use_count()) {
-    x_tt = smartVectorDuplicate(x);
+    x_tt = vectorDuplicate(x);
     VecCopy(delta2_x, x_tt);
     VecScale(x_tt, 1. / pow(delta_t, 2));
     CHK_THROW_MESSAGE(VecGhostUpdateBegin(x_tt, INSERT_VALUES, SCATTER_FORWARD),

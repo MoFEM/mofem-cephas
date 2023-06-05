@@ -225,7 +225,7 @@ struct OpGradTimesSymTensorImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>
     : public OpBase {
 
   OpGradTimesSymTensorImpl(
-      const std::string field_name, boost::shared_ptr<MatrixDouble> &mat_vals,
+      const std::string field_name, boost::shared_ptr<MatrixDouble> mat_vals,
       ScalarFun beta_coeff = [](double, double, double) constexpr { return 1; })
       : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals),
         betaCoeff(beta_coeff) {}
@@ -299,7 +299,7 @@ struct OpMixVecTimesDivLambdaImpl {};
 template <int SPACE_DIM, typename OpBase>
 struct OpMixVecTimesDivLambdaImpl<SPACE_DIM, GAUSS, OpBase> : public OpBase {
   OpMixVecTimesDivLambdaImpl(const std::string field_name,
-                             boost::shared_ptr<MatrixDouble> &mat_vals)
+                             boost::shared_ptr<MatrixDouble> mat_vals)
       : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals) {}
 
   OpMixVecTimesDivLambdaImpl(const std::string field_name,
@@ -322,7 +322,7 @@ struct OpMixTensorTimesGradUImpl {};
 template <int SPACE_DIM, typename OpBase>
 struct OpMixTensorTimesGradUImpl<SPACE_DIM, GAUSS, OpBase> : public OpBase {
   OpMixTensorTimesGradUImpl(const std::string field_name,
-                            boost::shared_ptr<MatrixDouble> &mat_vals)
+                            boost::shared_ptr<MatrixDouble> mat_vals)
       : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals) {}
 
   OpMixTensorTimesGradUImpl(const std::string field_name,
@@ -1127,7 +1127,6 @@ MoFEMErrorCode OpNormalMixVecTimesScalarImpl<3, GAUSS, OpBase>::iNtegrate(
 
   const size_t nb_base_functions = row_data.getN().size2() / 3;
   // get element volume
-  const double vol = OpBase::getMeasure();
   // get integration weights
   auto t_w = OpBase::getFTensor0IntegrationWeight();
   // get base function gradient on rows
@@ -1163,7 +1162,6 @@ MoFEMErrorCode OpNormalMixVecTimesScalarImpl<2, GAUSS, OpBase>::iNtegrate(
   const size_t nb_base_functions = row_data.getN().size2() / 3;
   FTensor::Tensor1<double, 3> t_z{0., 0., 1.};
   // get element volume
-  const double vol = OpBase::getMeasure();
   // get integration weights
   auto t_w = OpBase::getFTensor0IntegrationWeight();
   // get base function gradient on rows
@@ -1200,7 +1198,6 @@ OpConvectiveTermRhsImpl<1, 1, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
     EntitiesFieldData::EntData &row_data) {
   MoFEMFunctionBegin;
 
-  const size_t nb_base_functions = row_data.getN().size2();
   auto t_w = this->getFTensor0IntegrationWeight();
   auto t_base = row_data.getFTensor0N();
 
@@ -1238,7 +1235,6 @@ OpConvectiveTermRhsImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
     EntitiesFieldData::EntData &row_data) {
   MoFEMFunctionBegin;
 
-  const size_t nb_base_functions = row_data.getN().size2();
   auto t_w = this->getFTensor0IntegrationWeight();
   auto t_base = row_data.getFTensor0N();
 
