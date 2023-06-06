@@ -239,11 +239,12 @@ protected:
 };
 
 template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM, IntegrationType I,
-          typename OpBase>
+          typename OpBase, CoordinateTypes CoordSys>
 struct OpMixDivTimesUImpl {};
 
-template <int FIELD_DIM, int SPACE_DIM, typename OpBase>
-struct OpMixDivTimesUImpl<3, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>
+template <int FIELD_DIM, int SPACE_DIM, typename OpBase,
+          CoordinateTypes CoordSys>
+struct OpMixDivTimesUImpl<3, FIELD_DIM, SPACE_DIM, GAUSS, OpBase, CoordSys>
     : public OpBase {
   OpMixDivTimesUImpl(
       const std::string field_name, boost::shared_ptr<MatrixDouble> mat_vals,
@@ -260,8 +261,9 @@ protected:
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &data);
 };
 
-template <int SPACE_DIM, typename OpBase>
-struct OpMixDivTimesUImpl<3, 1, SPACE_DIM, GAUSS, OpBase> : public OpBase {
+template <int SPACE_DIM, typename OpBase, CoordinateTypes CoordSys>
+struct OpMixDivTimesUImpl<3, 1, SPACE_DIM, GAUSS, OpBase, CoordSys>
+    : public OpBase {
   OpMixDivTimesUImpl(
       const std::string field_name, boost::shared_ptr<VectorDouble> vec_vals,
       ScalarFun beta = [](double, double, double) constexpr { return 1; },
@@ -276,8 +278,8 @@ protected:
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &data);
 };
 
-template <int FIELD_DIM, typename OpBase>
-struct OpMixDivTimesUImpl<1, FIELD_DIM, FIELD_DIM, GAUSS, OpBase>
+template <int FIELD_DIM, typename OpBase, CoordinateTypes CoordSys>
+struct OpMixDivTimesUImpl<1, FIELD_DIM, FIELD_DIM, GAUSS, OpBase, CoordSys>
     : public OpBase {
 
   OpMixDivTimesUImpl(
@@ -525,9 +527,10 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
    * @tparam FIELD_DIM
    * @tparam SPACE_DIM
    */
-  template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM>
+  template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM,
+            CoordinateTypes CoordSys = CARTESIAN>
   using OpMixDivTimesU =
-      OpMixDivTimesUImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, I, OpBase>;
+      OpMixDivTimesUImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, I, OpBase, CoordSys>;
 
   /**
    * @brief Integrate \f$(\lambda_{ij},u_{i,j})_\Omega\f$
@@ -922,9 +925,10 @@ OpGradTimesSymTensorImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
   MoFEMFunctionReturn(0);
 }
 
-template <int FIELD_DIM, int SPACE_DIM, typename OpBase>
+template <int FIELD_DIM, int SPACE_DIM, typename OpBase,
+          CoordinateTypes CoordSys>
 MoFEMErrorCode
-OpMixDivTimesUImpl<3, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
+OpMixDivTimesUImpl<3, FIELD_DIM, SPACE_DIM, GAUSS, OpBase, CoordSys>::iNtegrate(
     EntitiesFieldData::EntData &row_data) {
   MoFEMFunctionBegin;
 
@@ -933,6 +937,7 @@ OpMixDivTimesUImpl<3, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
   // get coordinate at integration points
   auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
   auto t_diff_base = row_data.getFTensor2DiffN<3, SPACE_DIM>();
+  auto t_base = row_data.getFTensor1N<3>();
   auto t_u = getFTensor1FromMat<FIELD_DIM>(*(matVals));
 
   for (size_t gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
@@ -945,11 +950,17 @@ OpMixDivTimesUImpl<3, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
     for (; bb != this->nbRows / FIELD_DIM; ++bb) {
       const double t_div_base = t_diff_base(j, j);
       t_nf(i) += alpha * t_div_base * t_u(i);
+      if constexpr (CoordSys == CYLINDRICAL) {
+        t_nf(i) += alpha * (t_base(0) / t_coords(0)) * t_u(i);
+      }
       ++t_nf;
       ++t_diff_base;
+      ++t_base;
     }
-    for (; bb < nb_base_functions; ++bb)
+    for (; bb < nb_base_functions; ++bb) {
       ++t_diff_base;
+      ++t_base;
+    }
 
     ++t_u;
     ++t_w;
@@ -959,8 +970,9 @@ OpMixDivTimesUImpl<3, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
   MoFEMFunctionReturn(0);
 }
 
-template <int SPACE_DIM, typename OpBase>
-MoFEMErrorCode OpMixDivTimesUImpl<3, 1, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
+template <int SPACE_DIM, typename OpBase, CoordinateTypes CoordSys>
+MoFEMErrorCode
+OpMixDivTimesUImpl<3, 1, SPACE_DIM, GAUSS, OpBase, CoordSys>::iNtegrate(
     EntitiesFieldData::EntData &row_data) {
   MoFEMFunctionBegin;
 
@@ -1014,9 +1026,9 @@ MoFEMErrorCode OpMixDivTimesUImpl<3, 1, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
  * @param row_data
  * @return MoFEMErrorCode
  */
-template <int FIELD_DIM, typename OpBase>
+template <int FIELD_DIM, typename OpBase, CoordinateTypes CoordSys>
 MoFEMErrorCode
-OpMixDivTimesUImpl<1, FIELD_DIM, FIELD_DIM, GAUSS, OpBase>::iNtegrate(
+OpMixDivTimesUImpl<1, FIELD_DIM, FIELD_DIM, GAUSS, OpBase, CoordSys>::iNtegrate(
     EntitiesFieldData::EntData &row_data) {
   FTensor::Index<'i', FIELD_DIM> i;
   MoFEMFunctionBegin;

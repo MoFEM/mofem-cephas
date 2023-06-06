@@ -2629,7 +2629,8 @@ private:
  * @tparam Tensor_Dim0 rank of the field
  * @tparam Tensor_Dim1 dimension of space
  */
-template <int Tensor_Dim0, int Tensor_Dim1>
+template <int Tensor_Dim0, int Tensor_Dim1,
+          CoordinateTypes CoordSys = CARTESIAN>
 struct OpCalculateHVecTensorDivergence
     : public ForcesAndSourcesCore::UserDataOperator {
 
@@ -2659,18 +2660,27 @@ struct OpCalculateHVecTensorDivergence
       FTensor::Index<'j', Tensor_Dim1> j;
       auto t_n_diff_hvec = data.getFTensor2DiffN<3, Tensor_Dim1>();
       auto t_data = getFTensor1FromMat<Tensor_Dim0>(*dataPtr);
+      auto t_base = data.getFTensor1N<3>();
+      auto t_coords = getFTensor1CoordsAtGaussPts();
       for (size_t gg = 0; gg != nb_integration_points; ++gg) {
         auto t_dof = data.getFTensor1FieldData<Tensor_Dim0>();
         size_t bb = 0;
         for (; bb != nb_dofs / Tensor_Dim0; ++bb) {
           double div = t_n_diff_hvec(j, j);
           t_data(i) += t_dof(i) * div;
+          if constexpr (CoordSys == CYLINDRICAL) {
+            t_data(i) += t_dof(i) * (t_base(0) / t_coords(0));
+          }
           ++t_n_diff_hvec;
           ++t_dof;
+          ++t_base;
         }
-        for (; bb < nb_base_functions; ++bb)
+        for (; bb < nb_base_functions; ++bb) {
+          ++t_base;
           ++t_n_diff_hvec;
+        }
         ++t_data;
+        ++t_coords;
       }
     }
     MoFEMFunctionReturn(0);
