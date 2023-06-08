@@ -1,8 +1,0 @@
-reset
-brick x 1 y 1 z 1
-volume all scheme map
-
-volume all size 10000
-mesh volume all
-
-save as "/Users/ignatiosathanasiadis/mofem_install/mofem-cephas/mofem/atom_tests/HEX_element_char_length.cub" overwrite 

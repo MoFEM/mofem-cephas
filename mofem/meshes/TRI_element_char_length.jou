@@ -1,8 +1,0 @@
-reset
-create surface rectangle width 1 height 1 zplane
-#surface all scheme map
-surface all size 1
-surface 1 scheme qtri
-htri all
-mesh surface all
-save as "/Users/ignatiosathanasiadis/mofem_install/mofem-cephas/mofem/TRI_element_char_length.cub" overwrite 
