@@ -266,19 +266,19 @@ build_test(forces_and_sources_test_characteristic_element_size_2d forces_and_sou
 set_target_properties(
   forces_and_sources_test_characteristic_element_size_2d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=2")
 
-add_test(
-    forces_and_sources_test_characteristic_element_size_2d_TRI
-    ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_test_characteristic_element_size_2d
-    -file_name TRI_element_char_length.cub
-    -base_num 0
-    )
+# add_test(
+#     forces_and_sources_test_characteristic_element_size_2d_TRI
+#     ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_test_characteristic_element_size_2d
+#     -file_name TRI_element_char_length.cub
+#     -base_num 0
+#     )
 
-add_test(
-  forces_and_sources_test_characteristic_element_size_2d_QUAD
-  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_test_characteristic_element_size_2d
-  -file_name QUAD_element_char_length.cub
-  -base_num 1
-  )  
+# add_test(
+#   forces_and_sources_test_characteristic_element_size_2d_QUAD
+#   ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_test_characteristic_element_size_2d
+#   -file_name QUAD_element_char_length.cub
+#   -base_num 1
+#   )  
 
 build_test(forces_and_sources_test_characteristic_element_size_3d forces_and_sources_test_characteristic_element_size.cpp)
 set_target_properties(
@@ -287,17 +287,47 @@ set_target_properties(
 add_test(
     forces_and_sources_test_characteristic_element_size_3d_TET
     ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_test_characteristic_element_size_3d
-    -file_name TET_element_char_length.cub
+    -test_num 0
     -base_num 0
     )
 
 add_test(
   forces_and_sources_test_characteristic_element_size_3d_HEX
   ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_test_characteristic_element_size_3d
-  -file_name HEX_element_char_length.cub
+  -test_num 1
   -base_num 1
-  --oversubscribe
   )  
+
+add_test(
+    forces_and_sources_test_characteristic_element_size_2d_TRI
+    ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_test_characteristic_element_size_2d
+    -test_num 2
+    -base_num 0
+    )
+
+add_test(
+  forces_and_sources_test_characteristic_element_size_2d_QUAD
+  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_test_characteristic_element_size_2d
+  -test_num 3
+  -base_num 1
+  )  
+
+    # add_test(
+    # forces_and_sources_test_characteristic_element_size_3d_TET
+    # ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_test_characteristic_element_size_3d
+    # -file_name TET_element_char_length.cub
+    # -base_num 0
+    # )
+
+# add_test(
+#   forces_and_sources_test_characteristic_element_size_3d_HEX
+#   ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_test_characteristic_element_size_3d
+#   -file_name HEX_element_char_length.cub
+#   -base_num 1
+#   --oversubscribe
+#   )  
+
+  #-test_num
 
 build_test(forces_and_sources_testing_volume_element forces_and_sources_testing_volume_element.cpp)
 

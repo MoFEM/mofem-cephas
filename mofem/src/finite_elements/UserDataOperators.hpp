@@ -3359,22 +3359,21 @@ MoFEMErrorCode OpInvertMatrix<DIM>::doWorkImpl(int side, EntityType type,
   MoFEMFunctionReturn(0);
 }
 
-
-struct OpCalculateCharLength
-    : public ForcesAndSourcesCore::UserDataOperator {
-  OpCalculateCharLength(Interface &m_field, boost::shared_ptr<double> char_length)
+struct OpCalculateCharLength : public ForcesAndSourcesCore::UserDataOperator {
+  OpCalculateCharLength(Interface &m_field,
+                        boost::shared_ptr<double> char_length)
       : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPLAST),
-       mField(m_field), charLength(char_length) {}
+        mField(m_field), charLength(char_length) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data) {
     MoFEMFunctionBegin;
-    
+
     int num_nodes;
     VectorDouble coords;
     const EntityHandle *conn;
     FTensor::Index<'i', 3> i;
-    double volume;
+    double volume = getMeasure();
     // double element_radius;
 
     const auto ent = getNumeredEntFiniteElementPtr()->getEnt();
@@ -3386,9 +3385,8 @@ struct OpCalculateCharLength
 
     using T1_ptr = FTensor::Tensor1<double *, 3>;
     using T1 = FTensor::Tensor1<double, 3>;
-
-    if (type_fe == MBTET) {
-      volume *= G_TET_W1[0] / 6.;
+    switch (type_fe) {
+    case MBTET: {
       double center[3];
       tetcircumcenter_tp(&coords.data()[0], &coords.data()[3],
                          &coords.data()[6], &coords.data()[9], center, NULL,
@@ -3397,7 +3395,7 @@ struct OpCalculateCharLength
       T1_ptr t_first_vertex(&coords[0], &coords[1], &coords[2], 3);
       T1 t_rad;
       t_rad(i) = t_centre(i) - t_first_vertex(i);
-      // *charLength = sqrt(t_rad(i) * t_rad(i));
+      *charLength = 2. * sqrt(t_rad(i) * t_rad(i));
       // centre is wrong
 
       // cross check
@@ -3408,13 +3406,13 @@ struct OpCalculateCharLength
       T1_ptr t_v_3(&coords[9], &coords[10], &coords[11], 3);
 
       T1 edge_1, edge_2, edge_3, edge_4, edge_5, edge_6;
-      edge_1(i) = t_v_3(i) - t_v_2(i);
+      edge_1(i) = t_v_3(i) - t_v_0(i);
       edge_2(i) = t_v_3(i) - t_v_1(i);
-      edge_3(i) = t_v_3(i) - t_v_0(i);
+      edge_3(i) = t_v_3(i) - t_v_2(i);
 
-      edge_4(i) = t_v_1(i) - t_v_0(i);
-      edge_5(i) = t_v_2(i) - t_v_1(i);
-      edge_6(i) = t_v_0(i) - t_v_2(i);
+      edge_4(i) = t_v_2(i) - t_v_1(i);
+      edge_5(i) = t_v_2(i) - t_v_0(i);
+      edge_6(i) = t_v_1(i) - t_v_0(i);
 
       double a, b, c;
       double a_op, b_op, c_op;
@@ -3431,8 +3429,9 @@ struct OpCalculateCharLength
       const double prod_4 = -a * a_op + b * b_op + c * c_op;
       const double full_prod = sqrt(prod_1 * prod_2 * prod_3 * prod_4);
       *charLength = full_prod / (12. * volume);
-
-    } else if (type_fe == MBHEX) {
+      break;
+    }
+    case MBHEX: {
 
       T1_ptr t_v_0(&coords[0], &coords[1], &coords[2], 3);
       T1_ptr t_v_1(&coords[3], &coords[4], &coords[5], 3);
@@ -3455,9 +3454,9 @@ struct OpCalculateCharLength
       double l_4 = sqrt(diag_4(i) * diag_4(i));
       std::vector<double> v_edge{l_1, l_2, l_3, l_4};
       *charLength = *min_element(v_edge.begin(), v_edge.end());
+      break;
     }
-
-    if (type_fe == MBTRI) {
+    case MBTRI: {
 
       double center[3];
       tricircumcenter3d_tp(&coords.data()[0], &coords.data()[3],
@@ -3483,9 +3482,10 @@ struct OpCalculateCharLength
       double numerator = a * b * c;
       double denominator = sqrt(s * (a + b - s) * (a + c - s) * (b + c - s));
       *charLength = 0.5 * numerator / denominator;
+      break;
+    }
+    case MBQUAD: {
 
-    } else if (type_fe == MBQUAD) {
-      
       // from Parameshvara's circumradius formula for cyclic quadrilaterals
       T1_ptr t_v_1(&coords[0], &coords[1], &coords[2], 3);
       T1_ptr t_v_2(&coords[3], &coords[4], &coords[5], 3);
@@ -3516,8 +3516,14 @@ struct OpCalculateCharLength
         *charLength = l_diag_1;
       else
         *charLength = l_diag_2;
-    }
 
+      break;
+    }
+    default:
+      SETERRQ(
+          PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+          "Characteristic length for this entity/element is not implemented");
+    }
 
     MoFEMFunctionReturn(0);
   }
@@ -3526,7 +3532,6 @@ private:
   Interface &mField;
   boost::shared_ptr<double> charLength;
 };
-
 
 /**@}*/
 
