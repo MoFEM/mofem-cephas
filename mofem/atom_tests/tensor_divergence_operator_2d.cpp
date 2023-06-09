@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
         PETSC>::LinearForm<I>::OpMixVecTimesDivLambda<SPACE_DIM>;
 
     using OpMixNormalLambdaURhs = FormsIntegrators<BoundaryEleOp>::Assembly<
-        PETSC>::LinearForm<I>::OpNormalMixVecTimesU<SPACE_DIM>;
+        PETSC>::LinearForm<I>::OpNormalMixVecTimesVectorField<SPACE_DIM>;
 
     auto pip_mng = m_field.getInterface<PipelineManager>();
     // integration rule
@@ -151,7 +151,8 @@ int main(int argc, char *argv[]) {
     CHKERR pip_mng->setDomainRhsIntegrationRule(rule);
     CHKERR pip_mng->setBoundaryRhsIntegrationRule(rule);
 
-    auto beta = [](double x, double y, double z) { return 1; };
+    auto beta_domain = [](double x, double y, double z) { return 1; };
+    auto beta_bdy = [](double x, double y, double z) { return -1; };
 
     auto ops_rhs_interior = [&](auto &pip) {
       MoFEMFunctionBegin;
@@ -162,8 +163,8 @@ int main(int argc, char *argv[]) {
       pip.push_back(new OpCalculateVectorFieldGradient<SPACE_DIM, SPACE_DIM>(
           "U", grad_u_ptr));
 
-      pip.push_back(new OpMixDivURhs("SIGMA", u_ptr, beta));
-      pip.push_back(new OpMixLambdaGradURhs("SIGMA", grad_u_ptr, beta));
+      pip.push_back(new OpMixDivURhs("SIGMA", u_ptr, beta_domain));
+      pip.push_back(new OpMixLambdaGradURhs("SIGMA", grad_u_ptr, beta_domain));
 
       MoFEMFunctionReturn(0);
     };
@@ -173,7 +174,7 @@ int main(int argc, char *argv[]) {
       CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(pip, {HDIV});
       auto u_ptr = boost::make_shared<MatrixDouble>();
       pip.push_back(new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_ptr));
-      pip.push_back(new OpMixNormalLambdaURhs("SIGMA", u_ptr, beta));
+      pip.push_back(new OpMixNormalLambdaURhs("SIGMA", u_ptr, beta_bdy));
 
       MoFEMFunctionReturn(0);
     };
@@ -188,8 +189,8 @@ int main(int argc, char *argv[]) {
     CHKERR VecZeroEntries(f);
     MOFEM_LOG("ATOM", Sev::inform) << "f use count " << f.use_count();
 
-    // CHKERR DMoFEMLoopFiniteElements(simple->getDM(), simple->getDomainFEName(),
-    //                                 pip_mng->getDomainRhsFE());
+    CHKERR DMoFEMLoopFiniteElements(simple->getDM(), simple->getDomainFEName(),
+                                    pip_mng->getDomainRhsFE());
     CHKERR DMoFEMLoopFiniteElements(simple->getDM(),
                                     simple->getBoundaryFEName(),
                                     pip_mng->getBoundaryRhsFE());

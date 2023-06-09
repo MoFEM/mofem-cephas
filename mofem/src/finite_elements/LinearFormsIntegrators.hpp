@@ -399,6 +399,35 @@ protected:
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &data);
 };
 
+/**
+ * @brief Multiply vector times normal on the face times vector field
+ *
+ * This operator typically will be used to evaluate natural boundary conditions
+ * for mixed formulation.
+ *
+ * @tparam BASE_DIM
+ * @tparam SPACE_DIM
+ * @tparam OpBase
+ */
+template <int SPACE_DIM, IntegrationType I, typename OpBase>
+struct OpNormalMixVecTimesVectorFieldImpl;
+
+template <int SPACE_DIM, typename OpBase>
+struct OpNormalMixVecTimesVectorFieldImpl<SPACE_DIM, GAUSS, OpBase>
+    : public OpBase {
+  OpNormalMixVecTimesVectorFieldImpl(
+      const std::string field_name, boost::shared_ptr<MatrixDouble> u_ptr,
+      ScalarFun beta_coeff = [](double, double, double) constexpr { return 1; },
+      boost::shared_ptr<Range> ents_ptr = nullptr)
+      : OpBase(field_name, field_name, OpBase::OPROW, ents_ptr), uPtr(u_ptr),
+        betaCoeff(beta_coeff) {}
+
+protected:
+  boost::shared_ptr<MatrixDouble> uPtr;
+  ScalarFun betaCoeff;
+  MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &data);
+};
+
 template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM, IntegrationType I,
           typename OpBase>
 struct OpConvectiveTermRhsImpl;
@@ -562,6 +591,20 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
   template <int SPACE_DIM>
   using OpNormalMixVecTimesScalar =
       OpNormalMixVecTimesScalarImpl<SPACE_DIM, I, OpBase>;
+
+  /**
+   * @brief Multiply vector times normal on the face times vector field
+   *
+   * This operator typically will be used to evaluate natural boundary
+   * conditions for mixed formulation.
+   *
+   * @tparam BASE_DIM
+   * @tparam SPACE_DIM
+   * @tparam OpBase
+   */
+  template <int SPACE_DIM>
+  using OpNormalMixVecTimesVectorField =
+      OpNormalMixVecTimesVectorFieldImpl<SPACE_DIM, I, OpBase>;
 
   /**
    * @brief Convective term
@@ -1200,6 +1243,49 @@ MoFEMErrorCode OpNormalMixVecTimesScalarImpl<2, GAUSS, OpBase>::iNtegrate(
     ++t_coords;
     ++t_tangent;
     ++t_w; // move to another integration weight
+  }
+  MoFEMFunctionReturn(0);
+}
+
+template <int SPACE_DIM, typename OpBase>
+MoFEMErrorCode
+OpNormalMixVecTimesVectorFieldImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
+    EntitiesFieldData::EntData &row_data) {
+  MoFEMFunctionBegin;
+  FTensor::Index<'i', 3> i;
+  FTensor::Index<'J', SPACE_DIM> J;
+
+  const size_t nb_base_functions = row_data.getN().size2() / 3;
+  // get element volume
+  // get integration weights
+  auto t_w = OpBase::getFTensor0IntegrationWeight();
+  // get base function gradient on rows
+  auto t_row_base = row_data.getFTensor1N<3>();
+  // get coordinate at integration points
+  auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
+  // get normal
+  auto t_normal = OpBase::getFTensor1NormalsAtGaussPts();
+  // get field
+  auto t_u = getFTensor1FromMat<SPACE_DIM>(*uPtr);
+  // loop over integration points
+  for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
+    // take into account Jacobian
+    const double alpha = t_w * betaCoeff(t_coords(0), t_coords(1), t_coords(2));
+    // get rhs vector
+    auto t_nf = OpBase::template getNf<SPACE_DIM>();
+    // loop over rows base functions
+    int rr = 0;
+    for (; rr != OpBase::nbRows / SPACE_DIM; ++rr) {
+      t_nf(J) += alpha * (t_row_base(i) * t_normal(i)) * t_u(J);
+      ++t_row_base;
+      ++t_nf;
+    }
+    for (; rr < nb_base_functions; ++rr)
+      ++t_row_base;
+    ++t_coords;
+    ++t_w; // move to another integration weight
+    ++t_normal;
+    ++t_u;
   }
   MoFEMFunctionReturn(0);
 }
