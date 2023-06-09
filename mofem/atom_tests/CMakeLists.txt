@@ -731,6 +731,9 @@ add_test(hcurl_divergence_operator_2d_ainsworth_on_tri_embaded_in_3d
 # add test for recording series
 build_test(record_series_atom record_series_atom.cpp)
 
+build_test(tensor_divergence_operator_2d 
+  tensor_divergence_operator_2d.cpp)
+  
 add_test(
     record_series_atom
     ${CMAKE_COMMAND}
