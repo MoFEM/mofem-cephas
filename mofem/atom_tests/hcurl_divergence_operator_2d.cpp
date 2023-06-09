@@ -202,8 +202,7 @@ int main(int argc, char *argv[]) {
       double flux = 0;
       EdgeEle fe_edge(m_field);
       fe_edge.getRuleHook = rule;
-      fe_edge.getOpPtrVector().push_back(
-          new OpSetContravariantPiolaTransformOnEdge2D());
+      CHKERR AddHOOps<1, 2, 2>::add(fe_edge.getOpPtrVector(), {HDIV});
       fe_edge.getOpPtrVector().push_back(new OpFlux(flux));
       CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "EDGE_FE", fe_edge);
       return flux;
