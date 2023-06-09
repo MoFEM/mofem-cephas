@@ -1190,10 +1190,14 @@ MoFEMErrorCode OpNormalMixVecTimesScalarImpl<3, GAUSS, OpBase>::iNtegrate(
   auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
   // get normal
   auto t_normal = OpBase::getFTensor1NormalsAtGaussPts();
+  double a = 1;
+  if (this->getNumeredEntFiniteElementPtr()->getEntType() == MBTRI)
+    a *= 2;
   // loop over integration points
   for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
     // take into account Jacobian
-    const double alpha = t_w * sourceFun(t_coords(0), t_coords(1), t_coords(2));
+    const double alpha =
+        t_w * sourceFun(t_coords(0), t_coords(1), t_coords(2)) / a;
     // loop over rows base functions
     int rr = 0;
     for (; rr != OpBase::nbRows; ++rr) {
@@ -1268,9 +1272,13 @@ OpNormalMixVecTimesVectorFieldImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
   // get field
   auto t_u = getFTensor1FromMat<SPACE_DIM>(*uPtr);
   // loop over integration points
+  double a = 1;
+  if (this->getNumeredEntFiniteElementPtr()->getEntType() == MBTRI)
+    a *= 2;
   for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
     // take into account Jacobian
-    const double alpha = t_w * betaCoeff(t_coords(0), t_coords(1), t_coords(2));
+    const double alpha =
+        t_w * betaCoeff(t_coords(0), t_coords(1), t_coords(2)) / a;
     // get rhs vector
     auto t_nf = OpBase::template getNf<SPACE_DIM>();
     // loop over rows base functions

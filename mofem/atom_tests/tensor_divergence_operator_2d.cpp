@@ -19,7 +19,7 @@ constexpr AssemblyType A = AssemblyType::PETSC; //< selected assembly type
 constexpr IntegrationType I =
     IntegrationType::GAUSS;                     //< selected integration type
 
-constexpr int SPACE_DIM = 2;
+constexpr int SPACE_DIM = EXECUTABLE_DIMENSION;
 FTensor::Index<'i', SPACE_DIM> i;
 
 template <int DIM> struct ElementsAndOps {};
@@ -156,11 +156,11 @@ int main(int argc, char *argv[]) {
 
     auto pip_mng = m_field.getInterface<PipelineManager>();
     // integration rule
-    auto rule = [&](int, int, int p) { return 2 * p; };
+    auto rule = [&](int, int, int p) { return 2 * p + 1; };
     CHKERR pip_mng->setDomainRhsIntegrationRule(rule);
     CHKERR pip_mng->setBoundaryRhsIntegrationRule(rule);
 
-    auto beta_domain = [](double x, double y, double z) { return 1; };
+    auto beta_domain = [](double x, double y, double z) { return 1.; };
     auto beta_bdy = [](double x, double y, double z) { return -1; };
 
     auto ops_rhs_interior = [&](auto &pip) {
@@ -198,7 +198,6 @@ int main(int argc, char *argv[]) {
     pip_mng->getBoundaryRhsFE()->f = f;
 
     CHKERR VecZeroEntries(f);
-    MOFEM_LOG("ATOM", Sev::inform) << "f use count " << f.use_count();
 
     CHKERR DMoFEMLoopFiniteElements(simple->getDM(), simple->getDomainFEName(),
                                     pip_mng->getDomainRhsFE());
@@ -206,7 +205,6 @@ int main(int argc, char *argv[]) {
                                     simple->getBoundaryFEName(),
                                     pip_mng->getBoundaryRhsFE());
 
-    MOFEM_LOG("ATOM", Sev::inform) << "f use count " << f.use_count();
     CHKERR VecAssemblyBegin(f);
     CHKERR VecAssemblyEnd(f);
 
@@ -214,6 +212,8 @@ int main(int argc, char *argv[]) {
     CHKERR VecNorm(f, NORM_2, &f_nrm2);
 
     MOFEM_LOG("ATOM", Sev::inform) << "f_norm2 = " << f_nrm2;
+    if (std::fabs(f_nrm2) > 1e-10)
+      SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID, "Test failed");
   }
   CATCH_ERRORS;
 
