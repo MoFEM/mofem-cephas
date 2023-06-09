@@ -102,12 +102,21 @@ int main(int argc, char *argv[]) {
     CHKERR simple->addBoundaryField("SIGMA", HDIV_SPACE, DEMKOWICZ_JACOBI_BASE,
                                     SPACE_DIM);
 
+    CHKERR simple->addDataField("GEOMETRY", H1, base, SPACE_DIM);
+
     // set fields order, i.e. for most first cases order is sufficient.
     CHKERR simple->setFieldOrder("U", order);
     CHKERR simple->setFieldOrder("SIGMA", order);
+    CHKERR simple->setFieldOrder("GEOMETRY", 2);
 
     // setup problem
     CHKERR simple->setUp();
+
+    auto project_ho_geometry = [&]() {
+      Projection10NodeCoordsOnField ent_method(m_field, "GEOMETRY");
+      return m_field.loop_dofs("GEOMETRY", ent_method);
+    };
+    CHKERR project_ho_geometry();
 
     // auto bc_mng = mField.getInterface<BcManager>();
     // CHKERR bc_mng->removeBlockDOFsOnEntities(simple->getProblemName(), "SYM",
@@ -156,7 +165,8 @@ int main(int argc, char *argv[]) {
 
     auto ops_rhs_interior = [&](auto &pip) {
       MoFEMFunctionBegin;
-      CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(pip, {H1, HDIV});
+      CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(pip, {H1, HDIV},
+                                                            "GEOMETRY");
       auto u_ptr = boost::make_shared<MatrixDouble>();
       auto grad_u_ptr = boost::make_shared<MatrixDouble>();
       pip.push_back(new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_ptr));
@@ -171,7 +181,8 @@ int main(int argc, char *argv[]) {
 
     auto ops_rhs_boundary = [&](auto &pip) {
       MoFEMFunctionBegin;
-      CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(pip, {HDIV});
+      CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(pip, {HDIV},
+                                                                "GEOMETRY");
       auto u_ptr = boost::make_shared<MatrixDouble>();
       pip.push_back(new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_ptr));
       pip.push_back(new OpMixNormalLambdaURhs("SIGMA", u_ptr, beta_bdy));
