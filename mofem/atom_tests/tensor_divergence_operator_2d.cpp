@@ -236,6 +236,40 @@ int main(int argc, char *argv[]) {
     MOFEM_LOG("ATOM", Sev::inform) << "f_norm2 = " << f_nrm2;
     if (std::fabs(f_nrm2) > 1e-10)
       SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID, "Test failed");
+
+    // Testing Lhs domain operators
+
+    using OpMixDivULhs = FormsIntegrators<DomainEleOp>::Assembly<
+        PETSC>::BiLinearForm<I>::OpMixDivTimesVec<SPACE_DIM>;
+    using OpLambdaGraULhs = FormsIntegrators<DomainEleOp>::Assembly<
+        PETSC>::BiLinearForm<I>::OpMixTensorTimesGrad<SPACE_DIM>;
+
+    auto op_lhs_domain = [&](auto &pip) {
+      MoFEMFunctionBegin;
+      CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(pip, {H1, HDIV},
+                                                            "GEOMETRY");
+
+      auto unity = []() { return 1; };
+      pip.push_back(new OpMixDivULhs("SIGMA", "U", unity, true));
+      pip.push_back(new OpLambdaGraULhs("SIGMA", "U", unity, true));
+      MoFEMFunctionReturn(0);
+    };
+
+    CHKERR op_lhs_domain(pip_mng->getOpDomainLhsPipeline());
+
+    auto diff_x = opt->setRandomFields(simple->getDM(),
+                                       {{"U", {-1, 1}}, {"SIGMA", {-1, 1}}});
+    constexpr double eps = 1e-6;
+    auto diff_res = opt->checkCentralFiniteDifference(
+        simple->getDM(), simple->getDomainFEName(), pip->getDomainRhsFE(),
+        pip->getDomainLhsFE(), x, SmartPetscObj<Vec>(), SmartPetscObj<Vec>(),
+        diff_x, 0, 1, eps);
+
+    // Calculate norm of difference between directive calculated from finite
+    // difference, and tangent matrix.
+    double fnorm_res;
+    CHKERR VecNorm(diff_res, NORM_2, &fnorm_res);
+    MOFEM_LOG_C("ATOM", Sev::inform, "Test Lhs OPs %3.4e", fnorm_res);
   }
   CATCH_ERRORS;
 
