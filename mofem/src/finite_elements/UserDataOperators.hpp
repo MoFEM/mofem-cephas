@@ -2721,22 +2721,26 @@ struct OpCalculateHVecTensorTrace : public OpBase {
     }
     const size_t nb_dofs = data.getFieldData().size();
     if (nb_dofs) {
-      auto t_normal = OpBase::getFTensor1Normal();
-      t_normal(i) /= sqrt(t_normal(j) * t_normal(j));
+      auto t_normal = OpBase::getFTensor1NormalsAtGaussPts();
       const size_t nb_base_functions = data.getN().size2() / 3;
       auto t_base = data.getFTensor1N<3>();
       auto t_data = getFTensor1FromMat<Tensor_Dim>(*dataPtr);
       for (size_t gg = 0; gg != nb_integration_points; ++gg) {
+        FTensor::Tensor1<double, Tensor_Dim> t_normalized_normal;
+        t_normalized_normal(j) = t_normal(j);
+        t_normalized_normal.normalize();
         auto t_dof = data.getFTensor1FieldData<Tensor_Dim>();
         size_t bb = 0;
         for (; bb != nb_dofs / Tensor_Dim; ++bb) {
-          t_data(i) += t_dof(i) * (t_base(j) * t_normal(j));
+          t_data(i) += t_dof(i) * (t_base(j) * t_normalized_normal(j));
           ++t_base;
           ++t_dof;
         }
-        for (; bb < nb_base_functions; ++bb)
+        for (; bb < nb_base_functions; ++bb) {
           ++t_base;
+        }
         ++t_data;
+        ++t_normal;
       }
     }
     MoFEMFunctionReturn(0);
@@ -2748,65 +2752,6 @@ private:
   const int zeroSide;
   FTensor::Index<'i', Tensor_Dim> i;
   FTensor::Index<'j', Tensor_Dim> j;
-};
-
-template <>
-struct OpCalculateHVecTensorTrace<
-    3, FaceElementForcesAndSourcesCore::UserDataOperator>
-    : public FaceElementForcesAndSourcesCore::UserDataOperator {
-
-  OpCalculateHVecTensorTrace(const std::string field_name,
-                             boost::shared_ptr<MatrixDouble> data_ptr,
-                             const EntityType zero_type = MBEDGE,
-                             const int zero_side = 0)
-      : UserDataOperator(field_name, OPROW), dataPtr(data_ptr),
-        zeroType(zero_type), zeroSide(zero_side) {
-    if (!dataPtr)
-      THROW_MESSAGE("Pointer is not set");
-  }
-
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        EntitiesFieldData::EntData &data) {
-    MoFEMFunctionBegin;
-    const size_t nb_integration_points = getGaussPts().size2();
-    if (type == zeroType && side == 0) {
-      dataPtr->resize(3, nb_integration_points, false);
-      dataPtr->clear();
-    }
-    const size_t nb_dofs = data.getFieldData().size();
-    if (nb_dofs) {
-      auto t_normal = getFTensor1Normal();
-      t_normal(i) /= sqrt(t_normal(j) * t_normal(j));
-      const size_t nb_base_functions = data.getN().size2() / 3;
-      auto t_base = data.getFTensor1N<3>();
-      auto t_data = getFTensor1FromMat<3>(*dataPtr);
-      for (size_t gg = 0; gg != nb_integration_points; ++gg) {
-        auto t_dof = data.getFTensor1FieldData<3>();
-        if (getNormalsAtGaussPts().size1() == nb_integration_points) {
-          VectorDouble n = getNormalsAtGaussPts(gg);
-          auto t_n = getFTensor1FromPtr<3>(&*n.data().begin());
-          t_normal(i) = t_n(i) / sqrt(t_n(j) * t_n(j));
-        }
-        size_t bb = 0;
-        for (; bb != nb_dofs / 3; ++bb) {
-          t_data(i) += t_dof(i) * (t_base(j) * t_normal(j));
-          ++t_base;
-          ++t_dof;
-        }
-        for (; bb < nb_base_functions; ++bb)
-          ++t_base;
-        ++t_data;
-      }
-    }
-    MoFEMFunctionReturn(0);
-  }
-
-private:
-  boost::shared_ptr<MatrixDouble> dataPtr;
-  const EntityHandle zeroType;
-  const int zeroSide;
-  FTensor::Index<'i', 3> i;
-  FTensor::Index<'j', 3> j;
 };
 
 /**@}*/

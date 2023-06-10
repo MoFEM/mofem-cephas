@@ -151,8 +151,13 @@ int main(int argc, char *argv[]) {
     using OpMixUTimesDivLambdaRhs = FormsIntegrators<DomainEleOp>::Assembly<
         PETSC>::LinearForm<I>::OpMixVecTimesDivLambda<SPACE_DIM>;
 
+    using OpMixUTimesLambdaRhs = FormsIntegrators<DomainEleOp>::Assembly<
+        PETSC>::LinearForm<I>::OpGradTimesTensor<1, SPACE_DIM, SPACE_DIM>;
+
     using OpMixNormalLambdaURhs = FormsIntegrators<BoundaryEleOp>::Assembly<
         PETSC>::LinearForm<I>::OpNormalMixVecTimesVectorField<SPACE_DIM>;
+    using OpUTimeTractionRhs = FormsIntegrators<BoundaryEleOp>::Assembly<
+        PETSC>::LinearForm<I>::OpBaseTimesVector<1, SPACE_DIM, 1>;
 
     auto pip_mng = m_field.getInterface<PipelineManager>();
     // integration rule
@@ -176,6 +181,15 @@ int main(int argc, char *argv[]) {
       pip.push_back(new OpMixDivURhs("SIGMA", u_ptr, beta_domain));
       pip.push_back(new OpMixLambdaGradURhs("SIGMA", grad_u_ptr, beta_domain));
 
+      auto sigma_ptr = boost::make_shared<MatrixDouble>();
+      auto sigma_div_ptr = boost::make_shared<MatrixDouble>();
+      pip.push_back(new OpCalculateHVecTensorDivergence<SPACE_DIM, SPACE_DIM>(
+          "SIGMA", sigma_div_ptr));
+      pip.push_back(new OpCalculateHVecTensorField<SPACE_DIM, SPACE_DIM>(
+          "SIGMA", sigma_ptr));
+      pip.push_back(new OpMixUTimesDivLambdaRhs("U", sigma_div_ptr));
+      pip.push_back(new OpMixUTimesLambdaRhs("U", sigma_ptr));
+
       MoFEMFunctionReturn(0);
     };
 
@@ -186,6 +200,15 @@ int main(int argc, char *argv[]) {
       auto u_ptr = boost::make_shared<MatrixDouble>();
       pip.push_back(new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_ptr));
       pip.push_back(new OpMixNormalLambdaURhs("SIGMA", u_ptr, beta_bdy));
+
+      auto traction_ptr = boost::make_shared<MatrixDouble>();
+      pip.push_back(new OpCalculateHVecTensorTrace<SPACE_DIM, BoundaryEleOp>(
+          "SIGMA", traction_ptr));
+
+      // We have to integrate on curved face geometry, thus integration weight
+      // have to adjusted.
+      pip.push_back(new OpSetHOWeightsOnSubDim<SPACE_DIM>());
+      pip.push_back(new OpUTimeTractionRhs("U", traction_ptr, beta_bdy));
 
       MoFEMFunctionReturn(0);
     };

@@ -177,6 +177,31 @@ MoFEMErrorCode OpSetHOWeightsOnFace::doWork(int side, EntityType type,
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode OpSetHOWeightsOnEdge::doWork(int side, EntityType type,
+                                            EntitiesFieldData::EntData &data) {
+  MoFEMFunctionBegin;
+  const size_t nb_int_pts = getGaussPts().size2();
+  if (getTangentAtGaussPts().size1()) {
+    if (getTangentAtGaussPts().size1() == nb_int_pts) {
+      double a = getMeasure();
+      auto t_w = getFTensor0IntegrationWeight();
+      auto t_tangent = getFTensor1TangentAtGaussPts();
+      FTensor::Index<'i', 3> i;
+      for (size_t gg = 0; gg != nb_int_pts; ++gg) {
+        t_w *= sqrt(t_tangent(i) * t_tangent(i)) / a;
+        ++t_w;
+        ++t_tangent;
+      }
+    } else {
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
+               "Number of rows in getTangentAtGaussPts should be equal to "
+               "number of integration points, but is not, i.e. %d != %d",
+               getTangentAtGaussPts().size1(), nb_int_pts);
+    }
+  }
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode OpSetHOWeights::doWork(int side, EntityType type,
                                       EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
