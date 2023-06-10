@@ -241,7 +241,7 @@ struct OpMixDivTimesVecImpl<SPACE_DIM, GAUSS, OpBase, CoordSys>
   OpMixDivTimesVecImpl(const std::string row_field_name,
                        const std::string col_field_name, ConstantFun alpha_fun,
                        ScalarFun beta_fun, const bool assemble_transpose,
-                       const bool only_transpose = false)
+                       const bool only_transpose)
       : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
         alphaConstant(alpha_fun), betaCoeff(beta_fun) {
     this->assembleTranspose = assemble_transpose;
@@ -350,7 +350,7 @@ struct OpMixTensorTimesGradImpl<SPACE_DIM, GAUSS, OpBase> : public OpBase {
                            const std::string col_field_name,
                            ConstantFun alpha_fun, ScalarFun beta_coeff,
                            const bool assemble_transpose,
-                           const bool only_transpose = false)
+                           const bool only_transpose)
       : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
         alphaConstant(alpha_fun), betaCoeff(beta_coeff) {
     this->assembleTranspose = assemble_transpose;

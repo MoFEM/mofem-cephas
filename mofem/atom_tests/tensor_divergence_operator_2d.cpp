@@ -124,6 +124,9 @@ int main(int argc, char *argv[]) {
     // CHKERR bc_mng->removeBlockDOFsOnEntities(simple->getProblemName(), "SYM",
     //                                          "SIGMA", 0, 0, true);
 
+    auto beta_domain = [](double x, double y, double z) { return 1.; };
+    auto beta_bdy = [](double x, double y, double z) { return -1; };
+
     // get operators tester
     auto opt = m_field.getInterface<OperatorsTester>(); // get interface to
                                                         // OperatorsTester
@@ -165,10 +168,8 @@ int main(int argc, char *argv[]) {
       // integration rule
       auto rule = [&](int, int, int p) { return 2 * p + 1; };
       CHKERR pip_mng->setDomainRhsIntegrationRule(rule);
+      CHKERR pip_mng->setDomainLhsIntegrationRule(rule);
       CHKERR pip_mng->setBoundaryRhsIntegrationRule(rule);
-
-      auto beta_domain = [](double x, double y, double z) { return 1.; };
-      auto beta_bdy = [](double x, double y, double z) { return -1; };
 
       auto ops_rhs_interior = [&](auto &pip) {
         MoFEMFunctionBegin;
@@ -261,8 +262,10 @@ int main(int argc, char *argv[]) {
                                                               "GEOMETRY");
 
         auto unity = []() { return 1; };
-        pip.push_back(new OpMixDivULhs("SIGMA", "U", unity, true));
-        pip.push_back(new OpLambdaGraULhs("SIGMA", "U", unity, true));
+        pip.push_back(
+            new OpMixDivULhs("SIGMA", "U", unity, beta_domain, true, false));
+        pip.push_back(
+            new OpLambdaGraULhs("SIGMA", "U", unity, beta_domain, true, false));
         MoFEMFunctionReturn(0);
       };
 
@@ -281,6 +284,9 @@ int main(int argc, char *argv[]) {
       double fnorm_res;
       CHKERR VecNorm(diff_res, NORM_2, &fnorm_res);
       MOFEM_LOG_C("ATOM", Sev::inform, "Test Lhs OPs %3.4e", fnorm_res);
+      if (std::fabs(fnorm_res) > 1e-8)
+        SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID, "Test failed"); 
+
       MoFEMFunctionReturn(0);
     };
 
