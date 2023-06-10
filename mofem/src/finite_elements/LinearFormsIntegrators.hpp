@@ -1272,13 +1272,12 @@ OpNormalMixVecTimesVectorFieldImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
   // get field
   auto t_u = getFTensor1FromMat<SPACE_DIM>(*uPtr);
   // loop over integration points
-  double a = 1;
-  if (this->getNumeredEntFiniteElementPtr()->getEntType() == MBTRI)
-    a *= 2;
+  auto a = OpBase::getMeasure();
   for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
     // take into account Jacobian
+    auto l2 = std::sqrt(t_normal(i) * t_normal(i));
     const double alpha =
-        t_w * betaCoeff(t_coords(0), t_coords(1), t_coords(2)) / a;
+        t_w * betaCoeff(t_coords(0), t_coords(1), t_coords(2)) * (a / l2);
     // get rhs vector
     auto t_nf = OpBase::template getNf<SPACE_DIM>();
     // loop over rows base functions

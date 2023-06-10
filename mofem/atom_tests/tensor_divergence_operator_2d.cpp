@@ -199,8 +199,6 @@ int main(int argc, char *argv[]) {
                                                                 "GEOMETRY");
       auto u_ptr = boost::make_shared<MatrixDouble>();
       pip.push_back(new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_ptr));
-      pip.push_back(new OpMixNormalLambdaURhs("SIGMA", u_ptr, beta_bdy));
-
       auto traction_ptr = boost::make_shared<MatrixDouble>();
       pip.push_back(new OpCalculateHVecTensorTrace<SPACE_DIM, BoundaryEleOp>(
           "SIGMA", traction_ptr));
@@ -208,6 +206,7 @@ int main(int argc, char *argv[]) {
       // We have to integrate on curved face geometry, thus integration weight
       // have to adjusted.
       pip.push_back(new OpSetHOWeightsOnSubDim<SPACE_DIM>());
+      pip.push_back(new OpMixNormalLambdaURhs("SIGMA", u_ptr, beta_bdy));
       pip.push_back(new OpUTimeTractionRhs("U", traction_ptr, beta_bdy));
 
       MoFEMFunctionReturn(0);
