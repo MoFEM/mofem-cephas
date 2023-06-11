@@ -20,6 +20,8 @@ constexpr IntegrationType I =
     IntegrationType::GAUSS;                     //< selected integration type
 
 constexpr int SPACE_DIM = EXECUTABLE_DIMENSION;
+constexpr int COORD_TYPE = EXECUTABLE_COORD_TYPE;
+
 FTensor::Index<'i', SPACE_DIM> i;
 
 template <int DIM> struct ElementsAndOps {};

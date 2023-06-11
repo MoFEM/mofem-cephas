@@ -732,12 +732,12 @@ build_test(tensor_divergence_operator_2d
   tensor_divergence_operator_2d.cpp)
 set_target_properties(
   tensor_divergence_operator_2d PROPERTIES COMPILE_FLAGS 
-  "-DEXECUTABLE_DIMENSION=2")   
+  "-DEXECUTABLE_DIMENSION=2 -DEXECUTABLE_COORD_TYPE=CARTESIAN")   
 build_test(tensor_divergence_operator_3d 
   tensor_divergence_operator_2d.cpp)
 set_target_properties(
   tensor_divergence_operator_3d PROPERTIES COMPILE_FLAGS 
-  "-DEXECUTABLE_DIMENSION=3")   
+  "-DEXECUTABLE_DIMENSION=3 -DEXECUTABLE_COORD_TYPE=CARTESIAN")   
 
 cm_export_file("../meshes/tensor_div_test_circle.cub" export_atom_tests) 
 cm_export_file("../meshes/tensor_div_test_sphere.cub" export_atom_tests) 
