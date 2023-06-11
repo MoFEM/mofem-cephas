@@ -748,19 +748,19 @@ cm_export_file("../meshes/tensor_div_test_circle.cub" export_atom_tests)
 cm_export_file("../meshes/tensor_div_test_sphere.cub" export_atom_tests) 
 cm_export_file("../meshes/tensor_div_test_axi.cub" export_atom_tests) 
 
-add_test(tensor_divergence_operator_2d
+add_test(tensor_divergence_operator_2d_cartesian
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/tensor_divergence_operator_2d
   -file_name tensor_div_test_circle.cub
   -base ainsworth -order 3
   -log_no_color)
-add_test(tensor_divergence_operator_cylindrical
+add_test(tensor_divergence_operator_2d_cylindrical
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/tensor_divergence_operator_cylindrical
   -file_name tensor_div_test_axi.cub
   -base ainsworth -order 3
   -log_no_color)
-add_test(tensor_divergence_operator_3d
+add_test(tensor_divergence_operator_3d_cartesian
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/tensor_divergence_operator_3d
   -file_name tensor_div_test_sphere.cub
