@@ -738,14 +738,26 @@ build_test(tensor_divergence_operator_3d
 set_target_properties(
   tensor_divergence_operator_3d PROPERTIES COMPILE_FLAGS 
   "-DEXECUTABLE_DIMENSION=3 -DEXECUTABLE_COORD_TYPE=CARTESIAN")   
+build_test(tensor_divergence_operator_cylindrical
+  tensor_divergence_operator.cpp)
+set_target_properties(
+  tensor_divergence_operator_cylindrical PROPERTIES COMPILE_FLAGS 
+  "-DEXECUTABLE_DIMENSION=2 -DEXECUTABLE_COORD_TYPE=CYLINDRICAL")   
 
 cm_export_file("../meshes/tensor_div_test_circle.cub" export_atom_tests) 
 cm_export_file("../meshes/tensor_div_test_sphere.cub" export_atom_tests) 
+cm_export_file("../meshes/tensor_div_test_axi.cub" export_atom_tests) 
 
 add_test(tensor_divergence_operator_2d
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/tensor_divergence_operator_2d
   -file_name tensor_div_test_circle.cub
+  -base ainsworth -order 3
+  -log_no_color)
+add_test(tensor_divergence_operator_cylindrical
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/tensor_divergence_operator_cylindrical
+  -file_name tensor_div_test_axi.cub
   -base ainsworth -order 3
   -log_no_color)
 add_test(tensor_divergence_operator_3d

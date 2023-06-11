@@ -33,7 +33,7 @@ constexpr IntegrationType I =
     IntegrationType::GAUSS;                     //< selected integration type
 
 constexpr int SPACE_DIM = EXECUTABLE_DIMENSION;
-constexpr int COORD_TYPE = EXECUTABLE_COORD_TYPE;
+constexpr CoordinateTypes COORD_TYPE = EXECUTABLE_COORD_TYPE;
 
 FTensor::Index<'i', SPACE_DIM> i;
 
@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
       base = AINSWORTH_LEGENDRE_BASE;
     else if (choice_base_value == DEMKOWICZ)
       base = DEMKOWICZ_JACOBI_BASE;
-    int order = 5;
+    int order = 4;
     CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order, PETSC_NULL);
 
     // Register DM Manager
@@ -127,20 +127,17 @@ int main(int argc, char *argv[]) {
     // setup problem
     CHKERR simple->setUp();
 
+    auto bc_mng = m_field.getInterface<BcManager>();
+    CHKERR bc_mng->removeBlockDOFsOnEntities(simple->getProblemName(), "SYM",
+                                             "U", 0, MAX_DOFS_ON_ENTITY, true);
+    CHKERR bc_mng->removeBlockDOFsOnEntities(
+        simple->getProblemName(), "SYM", "SIGMA", 0, MAX_DOFS_ON_ENTITY, true);
+
     auto project_ho_geometry = [&]() {
       Projection10NodeCoordsOnField ent_method(m_field, "GEOMETRY");
       return m_field.loop_dofs("GEOMETRY", ent_method);
     };
     CHKERR project_ho_geometry();
-
-    // auto bc_mng = mField.getInterface<BcManager>();
-    // CHKERR bc_mng->removeBlockDOFsOnEntities(simple->getProblemName(), "SYM",
-    //                                          "U", 0, 0, true);
-    // CHKERR bc_mng->removeBlockDOFsOnEntities(simple->getProblemName(), "SYM",
-    //                                          "SIGMA", 0, 0, true);
-
-    auto beta_domain = [](double x, double y, double z) { return 1.; };
-    auto beta_bdy = [](double x, double y, double z) { return -1; };
 
     // get operators tester
     auto opt = m_field.getInterface<OperatorsTester>(); // get interface to
@@ -151,20 +148,70 @@ int main(int argc, char *argv[]) {
     pip_mng->getOpDomainLhsPipeline().clear();
     pip_mng->getOpDomainRhsPipeline().clear();
 
-    pip_mng->setDomainLhsIntegrationRule([](int, int, int o) { return 2 * o; });
-    pip_mng->setDomainLhsIntegrationRule([](int, int, int o) { return 2 * o; });
-    pip_mng->setBoundaryLhsIntegrationRule(
-        [](int, int, int o) { return 2 * o; });
+    // integration rule
+    auto rule = [&](int, int, int p) { return 2 * p + 2; };
+    CHKERR pip_mng->setDomainRhsIntegrationRule(rule);
+    CHKERR pip_mng->setDomainLhsIntegrationRule(rule);
+    CHKERR pip_mng->setBoundaryRhsIntegrationRule(rule);
 
     auto x = opt->setRandomFields(simple->getDM(),
                                   {{"U", {-1, 1}}, {"SIGMA", {-1, 1}}});
-    CHKERR DMoFEMMeshToLocalVector(simple->getDM(), x, ADD_VALUES,
+    CHKERR DMoFEMMeshToLocalVector(simple->getDM(), x, INSERT_VALUES,
                                    SCATTER_REVERSE);
+
+    // set integration rules
+
+    auto jacobian = [&](double r) {
+      if constexpr (COORD_TYPE == CYLINDRICAL)
+        return 2 * M_PI * r;
+      else
+        return 1.;
+    };
+
+    auto beta_domain = [jacobian](double r, double, double) {
+      return jacobian(r);
+    };
+    auto beta_bdy = [jacobian](double r, double, double) {
+      return -jacobian(r);
+    };
+
+    auto post_proc = [&](auto dm, auto f_res, auto out_name) {
+      MoFEMFunctionBegin;
+      auto post_proc_fe =
+          boost::make_shared<PostProcBrokenMeshInMoab<DomainEle>>(m_field);
+
+      using OpPPMap = OpPostProcMapInMoab<SPACE_DIM, SPACE_DIM>;
+
+      auto sigma_ptr = boost::make_shared<MatrixDouble>();
+      post_proc_fe->getOpPtrVector().push_back(
+          new OpCalculateHVecTensorField<SPACE_DIM, SPACE_DIM>("SIGMA",
+                                                               sigma_ptr));
+      auto u_ptr = boost::make_shared<MatrixDouble>();
+      post_proc_fe->getOpPtrVector().push_back(
+          new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_ptr));
+
+      post_proc_fe->getOpPtrVector().push_back(
+
+          new OpPPMap(
+
+              post_proc_fe->getPostProcMesh(), post_proc_fe->getMapGaussPts(),
+              {}, {{"U", u_ptr}}, {{"SIGMA", sigma_ptr}}, {})
+
+      );
+
+      CHKERR DMoFEMMeshToLocalVector(simple->getDM(), f_res, INSERT_VALUES,
+                                     SCATTER_REVERSE);
+      CHKERR DMoFEMLoopFiniteElements(dm, simple->getDomainFEName(),
+                                      post_proc_fe);
+      post_proc_fe->writeFile(out_name);
+      MoFEMFunctionReturn(0);
+    };
 
     auto test_consistency_of_domain_and_bdy_integrals = [&]() {
       MoFEMFunctionBegin;
-      using OpMixDivURhs = FormsIntegrators<DomainEleOp>::Assembly<
-          A>::LinearForm<GAUSS>::OpMixDivTimesU<3, SPACE_DIM, SPACE_DIM>;
+      using OpMixDivURhs =
+          FormsIntegrators<DomainEleOp>::Assembly<A>::LinearForm<
+              GAUSS>::OpMixDivTimesU<3, SPACE_DIM, SPACE_DIM, COORD_TYPE>;
       using OpMixLambdaGradURhs = FormsIntegrators<DomainEleOp>::Assembly<
           PETSC>::LinearForm<I>::OpMixTensorTimesGradU<SPACE_DIM>;
       using OpMixLambdaGradURhs = FormsIntegrators<DomainEleOp>::Assembly<
@@ -179,12 +226,6 @@ int main(int argc, char *argv[]) {
           PETSC>::LinearForm<I>::OpNormalMixVecTimesVectorField<SPACE_DIM>;
       using OpUTimeTractionRhs = FormsIntegrators<BoundaryEleOp>::Assembly<
           PETSC>::LinearForm<I>::OpBaseTimesVector<1, SPACE_DIM, 1>;
-
-      // integration rule
-      auto rule = [&](int, int, int p) { return 2 * p + 1; };
-      CHKERR pip_mng->setDomainRhsIntegrationRule(rule);
-      CHKERR pip_mng->setDomainLhsIntegrationRule(rule);
-      CHKERR pip_mng->setBoundaryRhsIntegrationRule(rule);
 
       auto ops_rhs_interior = [&](auto &pip) {
         MoFEMFunctionBegin;
@@ -202,12 +243,14 @@ int main(int argc, char *argv[]) {
 
         auto sigma_ptr = boost::make_shared<MatrixDouble>();
         auto sigma_div_ptr = boost::make_shared<MatrixDouble>();
-        pip.push_back(new OpCalculateHVecTensorDivergence<SPACE_DIM, SPACE_DIM>(
+        pip.push_back(new OpCalculateHVecTensorDivergence<SPACE_DIM, SPACE_DIM,
+                                                          COORD_TYPE>(
             "SIGMA", sigma_div_ptr));
         pip.push_back(new OpCalculateHVecTensorField<SPACE_DIM, SPACE_DIM>(
             "SIGMA", sigma_ptr));
-        pip.push_back(new OpMixUTimesDivLambdaRhs("U", sigma_div_ptr));
-        pip.push_back(new OpMixUTimesLambdaRhs("U", sigma_ptr));
+        pip.push_back(
+            new OpMixUTimesDivLambdaRhs("U", sigma_div_ptr, beta_domain));
+        pip.push_back(new OpMixUTimesLambdaRhs("U", sigma_ptr, beta_domain));
 
         MoFEMFunctionReturn(0);
       };
@@ -254,20 +297,21 @@ int main(int argc, char *argv[]) {
       CHKERR VecNorm(f, NORM_2, &f_nrm2);
 
       MOFEM_LOG("ATOM", Sev::inform) << "f_norm2 = " << f_nrm2;
-      if (std::fabs(f_nrm2) > 1e-10)
+      if (std::fabs(f_nrm2) > 1e-10) {
+        CHKERR post_proc(simple->getDM(), f,
+                         "tensor_divergence_operator_res_vec.h5m");
         SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID, "Test failed");
+      }
 
       MoFEMFunctionReturn(0);
     };
-
-    CHKERR test_consistency_of_domain_and_bdy_integrals();
 
     // Testing Lhs domain operators
 
     auto test_lhs_ops = [&]() {
       MoFEMFunctionBegin;
       using OpMixDivULhs = FormsIntegrators<DomainEleOp>::Assembly<
-          PETSC>::BiLinearForm<I>::OpMixDivTimesVec<SPACE_DIM>;
+          PETSC>::BiLinearForm<I>::OpMixDivTimesVec<SPACE_DIM, COORD_TYPE>;
       using OpLambdaGraULhs = FormsIntegrators<DomainEleOp>::Assembly<
           PETSC>::BiLinearForm<I>::OpMixTensorTimesGrad<SPACE_DIM>;
 
@@ -305,6 +349,7 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionReturn(0);
     };
 
+    CHKERR test_consistency_of_domain_and_bdy_integrals();
     CHKERR test_lhs_ops();
 }
 CATCH_ERRORS;
