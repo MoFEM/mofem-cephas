@@ -2,9 +2,13 @@
  * \file tensor_divergence_operator.cpp
  * \example tensor_divergence_operator.cpp
  * 
- * 1. Testing integration linear forms, and consistency of boundary integrals
- * 2. Testing integration on high-order geometry (2d and 3d)
- * 2. Integration for axi-symmetric case
+ * Unit test for:
+ * 1. Integration linear forms, and consistency of boundary integrals
+ * 2. Integration integration on high-order geometry (2d and 3d)
+ * 3. Integration for axi-symmetric case
+ * 4. Consistency of Lhs operators, and Rhs operators (using OperatorsTester)
+ * 
+ * Note: Two sets are tested, when Sigma or u is variation.
  * 
  * \f[
  * \int_\Gamma n_i \Sigma_{ij} u_j \textrm{d}\Gamma
