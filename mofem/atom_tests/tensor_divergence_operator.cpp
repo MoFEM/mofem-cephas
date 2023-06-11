@@ -1,11 +1,20 @@
 /**
- * \file hcurl_divergence_operator_2d.cpp
- * \example hcurl_divergence_operator_2d.cpp
- *
- * Testing Hcurl base, transfromed to Hdiv base in 2d using Green theorem.
- *
- * Note 0: This is low-level implementation.
- * Note 1: Generic implementation for Quad/Tri mesh of arbitrary order.
+ * \file tensor_divergence_operator.cpp
+ * \example tensor_divergence_operator.cpp
+ * 
+ * 1. Testing integration linear forms, and consistency of boundary integrals
+ * 2. Testing integration on high-order geometry (2d and 3d)
+ * 2. Integration for axi-symmetric case
+ * 
+ * \f[
+ * \int_\Gamma n_i \Sigma_{ij} u_j \textrm{d}\Gamma
+ * =
+ * \int_\Omega \left( \Sigma_{ij} u_j \right)_i \textrm{d}\Omega
+ * =
+ * \int_\Omega \Sigma_{ij,i} u_j \textrm{d}\Omega
+ * +
+ * \int_\Omega \Sigma_{ij} u_{j,i} \textrm{d}\Omega
+ * \f]
  *
  */
 

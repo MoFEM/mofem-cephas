@@ -729,12 +729,12 @@ add_test(hcurl_divergence_operator_2d_ainsworth_on_tri_embaded_in_3d
   -log_no_color)
 
 build_test(tensor_divergence_operator_2d 
-  tensor_divergence_operator_2d.cpp)
+  tensor_divergence_operator.cpp)
 set_target_properties(
   tensor_divergence_operator_2d PROPERTIES COMPILE_FLAGS 
   "-DEXECUTABLE_DIMENSION=2 -DEXECUTABLE_COORD_TYPE=CARTESIAN")   
 build_test(tensor_divergence_operator_3d 
-  tensor_divergence_operator_2d.cpp)
+  tensor_divergence_operator.cpp)
 set_target_properties(
   tensor_divergence_operator_3d PROPERTIES COMPILE_FLAGS 
   "-DEXECUTABLE_DIMENSION=3 -DEXECUTABLE_COORD_TYPE=CARTESIAN")   
