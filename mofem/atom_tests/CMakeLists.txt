@@ -747,24 +747,31 @@ set_target_properties(
 cm_export_file("../meshes/tensor_div_test_circle.cub" export_atom_tests) 
 cm_export_file("../meshes/tensor_div_test_sphere.cub" export_atom_tests) 
 cm_export_file("../meshes/tensor_div_test_axi.cub" export_atom_tests) 
+cm_export_file("../meshes/cub_with_cubs.cub" export_atom_tests) 
 
-add_test(tensor_divergence_operator_2d_cartesian
+add_test(tensor_divergence_operator_2d_cartesian_tri
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/tensor_divergence_operator_2d
   -file_name tensor_div_test_circle.cub
   -base ainsworth -order 3
   -log_no_color)
-add_test(tensor_divergence_operator_2d_cylindrical
+add_test(tensor_divergence_operator_2d_cylindrical_tri
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/tensor_divergence_operator_cylindrical
   -file_name tensor_div_test_axi.cub
   -base ainsworth -order 3
   -log_no_color)
-add_test(tensor_divergence_operator_3d_cartesian
+add_test(tensor_divergence_operator_3d_cartesian_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/tensor_divergence_operator_3d
   -file_name tensor_div_test_sphere.cub
   -base ainsworth -order 3
+  -log_no_color)
+add_test(tensor_divergence_operator_3d_cartesian_hex
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/tensor_divergence_operator_3d
+  -file_name cub_with_cubs.cub
+  -base ainsworth -order 3 -base demkowicz
   -log_no_color)
 
 # add test for recording series

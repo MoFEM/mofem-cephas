@@ -332,7 +332,7 @@ int main(int argc, char *argv[]) {
 
       auto diff_x = opt->setRandomFields(simple->getDM(),
                                          {{"U", {-1, 1}}, {"SIGMA", {-1, 1}}});
-      constexpr double eps = 1e-6;
+      constexpr double eps = 1e-5;
       auto diff_res = opt->checkCentralFiniteDifference(
           simple->getDM(), simple->getDomainFEName(), pip_mng->getDomainRhsFE(),
           pip_mng->getDomainLhsFE(), x, SmartPetscObj<Vec>(),
