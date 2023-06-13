@@ -2,16 +2,6 @@
  * \brief MoFEM interface
  */
 
-/*
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
- */
-
 #ifndef __INTERFACE_HPP__
 #define __INTERFACE_HPP__
 
@@ -500,14 +490,30 @@ struct CoreInterface : public UnknownInterface {
   virtual MoFEMErrorCode build_field(const std::string field_name,
                                      int verb = DEFAULT_VERBOSITY) = 0;
 
+  /**
+   * @brief Get field Id
+   * 
+   * @param name of field
+   * @return BitFieldId 
+   */
+  virtual BitFieldId get_field_id(const std::string &name) const = 0;
+
   /** \brief get field bit number
   *
-  * \param name of Field
+  * \param name of field
   * Example:\code
   auto field_number = mField.get_field_bit_number("DISPLACEMENT");
   * \endcode
   */
   virtual FieldBitNumber get_field_bit_number(const std::string name) const = 0;
+
+  /**
+   * @brief get field name from id
+   * 
+   * @param id 
+   * @return std::string 
+   */
+  virtual std::string get_field_name(const BitFieldId id) const = 0;
 
   /** \brief get field meshset
   *
@@ -567,17 +573,37 @@ struct CoreInterface : public UnknownInterface {
   /** \brief get field structure
    * \ingroup mofem_field
    *
+   * If field is not found throw error if bh == MF_EXIST, or return
+   * nullptr if bh == MF_ZERO, i.e. otherwise
+   *
    * \param name field name
+   * \param bh controls behaviour
    * \return const Field*
    *
    */
-  virtual const Field *get_field_structure(const std::string &name) = 0;
+  virtual const Field *
+  get_field_structure(const std::string &name,
+                      enum MoFEMTypes bh = MF_EXIST) const = 0;
 
   /**@}*/
 
   /** \name Finite elements */
 
   /**@{*/
+
+  /**
+   * @brief get finite element struture
+   *
+   * If finite element is not found throw error if bh == MF_EXIST, or return
+   * nullptr if bh == MF_ZERO, i.e. otherwise
+   *
+   * @param name
+   * @param bh 
+   * @return FiniteElement*
+   */
+  virtual const FiniteElement *
+  get_finite_element_structure(const std::string &name,
+                      enum MoFEMTypes bh = MF_EXIST) const = 0;
 
   /**
    * \brief Check if finite element is in database
@@ -631,7 +657,7 @@ struct CoreInterface : public UnknownInterface {
    */
   virtual MoFEMErrorCode
   modify_finite_element_add_field_data(const std::string &fe_name,
-                                       const std::string &name_filed) = 0;
+                                       const std::string name_filed) = 0;
 
   /** \brief unset finite element field data
    * \ingroup mofem_fe
@@ -646,7 +672,7 @@ struct CoreInterface : public UnknownInterface {
    */
   virtual MoFEMErrorCode
   modify_finite_element_off_field_data(const std::string &fe_name,
-                                       const std::string &name_filed) = 0;
+                                       const std::string name_filed) = 0;
 
   /** \brief set field row which finite element use
    * \ingroup mofem_fe
@@ -659,7 +685,7 @@ struct CoreInterface : public UnknownInterface {
    */
   virtual MoFEMErrorCode
   modify_finite_element_add_field_row(const std::string &fe_name,
-                                      const std::string &name_row) = 0;
+                                      const std::string name_row) = 0;
 
   /** \brief unset field row which finite element use
    * \ingroup mofem_fe
@@ -672,7 +698,7 @@ struct CoreInterface : public UnknownInterface {
    */
   virtual MoFEMErrorCode
   modify_finite_element_off_field_row(const std::string &fe_name,
-                                      const std::string &name_row) = 0;
+                                      const std::string name_row) = 0;
 
   /** \brief set field col which finite element use
    * \ingroup mofem_fe
@@ -685,7 +711,7 @@ struct CoreInterface : public UnknownInterface {
    */
   virtual MoFEMErrorCode
   modify_finite_element_add_field_col(const std::string &fe_name,
-                                      const std::string &name_row) = 0;
+                                      const std::string name_row) = 0;
 
   /** \brief unset field col which finite element use
    * \ingroup mofem_fe
@@ -698,7 +724,7 @@ struct CoreInterface : public UnknownInterface {
    */
   virtual MoFEMErrorCode
   modify_finite_element_off_field_col(const std::string &fe_name,
-                                      const std::string &name_row) = 0;
+                                      const std::string name_row) = 0;
 
   /**
    * \brief add entities to finite element
@@ -784,7 +810,7 @@ struct CoreInterface : public UnknownInterface {
    *
    */
   virtual EntityHandle
-  get_finite_element_meshset(const std::string &name) const = 0;
+  get_finite_element_meshset(const std::string name) const = 0;
 
   /**
   * \brief get entities in the finite element by dimension
@@ -921,7 +947,7 @@ struct CoreInterface : public UnknownInterface {
    * \param name Finite Element name
    */
   virtual MoFEMErrorCode
-  modify_problem_add_finite_element(const std::string &name_problem,
+  modify_problem_add_finite_element(const std::string name_problem,
                                     const std::string &fe_name) = 0;
 
   /** \brief unset finite element from problem, this remove entities assigned
@@ -936,7 +962,7 @@ struct CoreInterface : public UnknownInterface {
    * \param name Finite Element name
    */
   virtual MoFEMErrorCode
-  modify_problem_unset_finite_element(const std::string &name_problem,
+  modify_problem_unset_finite_element(const std::string name_problem,
                                       const std::string &fe_name) = 0;
 
   /** \brief add ref level to problem
@@ -1130,12 +1156,12 @@ struct CoreInterface : public UnknownInterface {
   /** clear finite elements
    */
   virtual MoFEMErrorCode
-  clear_finite_elements(const Range ents, int verb = DEFAULT_VERBOSITY) = 0;
+  clear_finite_elements(const Range &ents, int verb = DEFAULT_VERBOSITY) = 0;
 
   /** clear finite elements
    */
   virtual MoFEMErrorCode
-  clear_finite_elements(const std::string name, const Range ents,
+  clear_finite_elements(const std::string &fe_name, const Range &ents,
                         int verb = DEFAULT_VERBOSITY) = 0;
 
   /**@}*/
@@ -1257,7 +1283,7 @@ struct CoreInterface : public UnknownInterface {
    * \param meshset
    */
   virtual MoFEMErrorCode
-  get_problem_finite_elements_entities(const std::string &name,
+  get_problem_finite_elements_entities(const std::string name,
                                        const std::string &fe_name,
                                        const EntityHandle meshset) = 0;
 
@@ -1389,7 +1415,7 @@ struct CoreInterface : public UnknownInterface {
   * \ingroup mofem_loops
   **/
   virtual MoFEMErrorCode loop_finite_elements(
-      const std::string &problem_name, const std::string &fe_name,
+      const std::string problem_name, const std::string &fe_name,
       FEMethod &method,
       boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr = nullptr,
       MoFEMTypes bh = MF_EXIST,
@@ -1477,7 +1503,7 @@ struct CoreInterface : public UnknownInterface {
   * \ingroup mofem_loops
   **/
   virtual MoFEMErrorCode loop_finite_elements(
-      const std::string &problem_name, const std::string &fe_name,
+      const std::string problem_name, const std::string &fe_name,
       FEMethod &method, int lower_rank, int upper_rank,
       boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr = nullptr,
       MoFEMTypes bh = MF_EXIST,
@@ -1914,7 +1940,7 @@ struct CoreInterface : public UnknownInterface {
    *
    * \param fe_name
    */
-  virtual EntFiniteElementByName::iterator
+  virtual EntFiniteElement_multiIndex::index<Unique_mi_tag>::type::iterator
   get_fe_by_name_begin(const std::string &fe_name) const = 0;
 
   /**
@@ -1929,14 +1955,14 @@ struct CoreInterface : public UnknownInterface {
    *
    * \param fe_name
    */
-  virtual EntFiniteElementByName::iterator
+  virtual EntFiniteElement_multiIndex::index<Unique_mi_tag>::type::iterator
   get_fe_by_name_end(const std::string &fe_name) const = 0;
 
   /** \brief loop over all finite elements from a moFEM field and FE
    * \ingroup mofem_access
    */
 #define _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD, NAME, IT)                        \
-  EntFiniteElementByName::iterator IT = (MFIELD).get_fe_by_name_begin(NAME);   \
+  auto IT = (MFIELD).get_fe_by_name_begin(NAME);                               \
   IT != (MFIELD).get_fe_by_name_end(NAME);                                     \
   IT++
 };

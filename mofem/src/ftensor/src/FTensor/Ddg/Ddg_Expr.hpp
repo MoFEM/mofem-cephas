@@ -15,6 +15,7 @@
 #include "Ddg_times_Tensor1.hpp"
 #include "Ddg_times_Tensor2.hpp"
 #include "Ddg_times_Tensor4.hpp"
+#include "Ddg_times_Dg.hpp"
 #include "Ddg_times_Tensor2_symmetric.hpp"
 #include "Ddg_times_generic.hpp"
 #include "minus_Ddg.hpp"
@@ -84,14 +85,7 @@ namespace FTensor
 
     template <class U>
     Ddg_Expr<Ddg<A, Tensor_Dim01, Tensor_Dim23>, T, Dim01, Dim23, i, j, k, l> &
-    operator=(const U &d) {
-      for (int ii = 0; ii != Dim01;++ii)
-        for (int jj = ii; jj != Dim01;++jj)
-          for (int kk = 0; kk != Dim23;++kk)
-            for (int ll = kk; ll != Dim23;++ll)
-              iter(ii, jj, kk, ll) = d;
-      return *this;
-    }
+    operator=(const U &d);
   };
 }
 

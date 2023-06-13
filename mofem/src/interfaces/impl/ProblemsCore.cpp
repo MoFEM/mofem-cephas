@@ -2,19 +2,6 @@
  * \brief Managing complexities for problem
  */
 
-/* MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
- */
 
 #include <MoFEM.hpp>
 
@@ -153,7 +140,7 @@ MoFEMErrorCode Core::list_problem() const {
 }
 
 MoFEMErrorCode
-Core::modify_problem_add_finite_element(const std::string &name_problem,
+Core::modify_problem_add_finite_element(const std::string name_problem,
                                         const std::string &fe_name) {
   MoFEMFunctionBegin;
   typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
@@ -172,7 +159,7 @@ Core::modify_problem_add_finite_element(const std::string &name_problem,
 }
 
 MoFEMErrorCode
-Core::modify_problem_unset_finite_element(const std::string &name_problem,
+Core::modify_problem_unset_finite_element(const std::string name_problem,
                                           const std::string &fe_name) {
   MoFEMFunctionBegin;
   typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
@@ -486,7 +473,14 @@ MoFEMErrorCode Core::loop_finite_elements(
 
     method.nInTheLoop = nn; // Index of element in the loop
     method.numeredEntFiniteElementPtr = *miit;
-    CHKERR method();
+
+    if (method.exeTestHook) {
+      if (method.exeTestHook(&method)) {
+        CHKERR method();
+      }
+    } else {
+      CHKERR method();
+    }
 
   }
   PetscLogEventEnd(MOFEM_EVENT_operator, 0, 0, 0, 0);
@@ -499,7 +493,7 @@ MoFEMErrorCode Core::loop_finite_elements(
 }
 
 MoFEMErrorCode Core::loop_finite_elements(
-    const std::string &problem_name, const std::string &fe_name,
+    const std::string problem_name, const std::string &fe_name,
     FEMethod &method,
     boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr, MoFEMTypes bh,
     CacheTupleWeakPtr cache_ptr, int verb) {
@@ -514,7 +508,7 @@ MoFEMErrorCode Core::loop_finite_elements(
 }
 
 MoFEMErrorCode Core::loop_finite_elements(
-    const std::string &problem_name, const std::string &fe_name,
+    const std::string problem_name, const std::string &fe_name,
     FEMethod &method, int lower_rank, int upper_rank,
     boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr, MoFEMTypes bh,
     CacheTupleWeakPtr cache_ptr, int verb) {
@@ -811,9 +805,9 @@ MoFEMErrorCode Core::cache_problem_entities(const std::string prb_name,
       SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "problem not in database %s",
                prb_name.c_str());
 
-    const BitRefLevel prb_bit = p_miit->getBitRefLevel();
-    const BitRefLevel prb_mask = p_miit->getMaskBitRefLevel();
-    const BitFEId prb_fe_id = p_miit->getBitFEId();
+    const BitRefLevel &prb_bit = p_miit->getBitRefLevel();
+    const BitRefLevel &prb_mask = p_miit->getBitRefLevelMask();
+    const BitFEId &prb_fe_id = p_miit->getBitFEId();
 
     auto &row_dofs = p_miit->numeredRowDofsPtr;
     auto &col_dofs = p_miit->numeredColDofsPtr;
@@ -836,11 +830,10 @@ MoFEMErrorCode Core::cache_problem_entities(const std::string prb_name,
 
         if ((lo->getBitFEId() & prb_fe_id).any()) {
 
-          const BitRefLevel fe_bit = lo->entFePtr->getBitRefLevel();
+          const BitRefLevel &fe_bit = lo->entFePtr->getBitRefLevel();
 
           // if entity is not problem refinement level
-          if (((fe_bit & prb_mask) != fe_bit) ||
-              ((fe_bit & prb_bit) != prb_bit))
+          if (((fe_bit & prb_mask) != fe_bit) || ((fe_bit & prb_bit).none()))
             continue;
 
           auto cache_numered_dofs = [&](auto &numered_dofs, auto &cache_vec,

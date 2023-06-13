@@ -1,3 +1,22 @@
+### MoFEM v0.13.0
+
+- Improvements in mesh refinement
+- Storing parent ent in multi-index (makes initialisation data structures faster(
+- Fixes on side loops on the skeleton
+- Adding child and parent loops
+- Fixes testing postprocessing
+- Fixes in bit ref level in finite elements and problem dofs
+- Add user data operator hooks
+- Combine FieldBlas test in one programme. 
+- Fix getting 2d Dg tensor from matrix
+- Refactor FieldBals and add new functionality
+- Improvements in getFTensor1DiffN
+- Add variants for TS solver, in particular IMEX to pipelines.
+- Improve getting agencies with on building elements level with vector not range. 
+- Fixing parallel pertaining and scalability
+- Remove obsolete code and other fixes.
+- Other changes and fixes
+
 ### MoFEM v0.12.0
 
 - Higher order geometry operator for volume

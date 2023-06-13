@@ -2,19 +2,7 @@
  * \brief Context for PETSc Time Stepping
  */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 #ifndef __TSCTX_HPP__
 #define __TSCTX_HPP__
@@ -201,6 +189,13 @@ struct TsCtx {
     return postProcessRHSFunction;
   }
 
+  /**
+   * @brief Clear loops
+   *
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode clearLoops();
+
   friend PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t,
                                        Vec F, void *ctx);
   friend PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec U_t,
@@ -287,25 +282,6 @@ PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
  */
 PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
                             void *ctx);
-
-/// \deprecate Do not use, change to TsSetIFunction
-DEPRECATED inline PetscErrorCode f_TSSetIFunction(TS ts, PetscReal t, Vec u,
-                                                  Vec u_t, Vec F, void *ctx) {
-  return TsSetIFunction(ts, t, u, u_t, F, ctx);
-}
-
-/// \deprecated Do not use, change to TsSetIJacobian
-DEPRECATED inline PetscErrorCode f_TSSetIJacobian(TS ts, PetscReal t, Vec u,
-                                                  Vec u_t, PetscReal a, Mat A,
-                                                  Mat B, void *ctx) {
-  return TsSetIJacobian(ts, t, u, u_t, a, A, B, ctx);
-}
-
-/// \deprecated Do not use, change to TsMonitorSet
-DEPRECATED inline PetscErrorCode f_TSMonitorSet(TS ts, PetscInt step,
-                                                PetscReal t, Vec u, void *ctx) {
-  return TsMonitorSet(ts, step, t, u, ctx);
-}
 
 /**
  * @brief TS solver function

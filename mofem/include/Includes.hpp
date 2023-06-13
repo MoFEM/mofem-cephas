@@ -2,20 +2,6 @@
  * \brief Includes of header files form Blas/Lapack, Petsc, MOAB, Boost
  */
 
-/* MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-*/
-
 #ifndef __INCLUDES_HPP__
 #define __INCLUDES_HPP__
 
@@ -64,6 +50,8 @@
 #include <regex>
 
 //BOOST
+
+#define BOOST_ALLOW_DEPRECATED_HEADERS
 #define BOOST_LOG_DYN_LINK
 #define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
 
@@ -111,9 +99,11 @@
 #include <boost/numeric/ublas/lu.hpp>
 #include <boost/numeric/ublas/io.hpp>
 #include <boost/math/special_functions/fpclassify.hpp>
+#include <boost/container/static_vector.hpp>
 
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/ptr_container/ptr_map.hpp>
+#include <boost/ptr_container/ptr_deque.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/scoped_array.hpp>
 #include <boost/weak_ptr.hpp>

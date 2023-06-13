@@ -1,8 +1,8 @@
-FROM likask/mofem-spack-jupyter 
+FROM likask/mofem-intermidiate
 
 LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk"
 
-ENV MOFEM_JUPYTER_HOME_DIR=/jupyter
+ENV MOFEM_JUPYTER_HOME_DIR=/mofem_install/jupyter
 
 ADD . $MOFEM_JUPYTER_HOME_DIR
 
@@ -13,10 +13,13 @@ RUN apt-get update && \
   rm -rf /var/lib/apt/lists/*
 
 RUN useradd mofem \
-  -m -d /jupyter/mofem \
-  -k /jupyter/skel/ \
+  -m -d /mofem_install/jupyter/mofem \
+  -k /mofem_install/jupyter/skel/ \
   -p paN8aiEIonqJE && \
   usermod -aG sudo mofem
+
+# Copy static styles for JupyterHub
+RUN cp /mofem_install/jupyter/css/* /usr/local/share/jupyterhub/static/css
 
 WORKDIR $MOFEM_INSTALL_DIR
 

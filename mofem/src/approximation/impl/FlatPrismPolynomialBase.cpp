@@ -2,19 +2,7 @@
 \brief Implementation of Ainsworth-Cole H1 base on edge
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 using namespace MoFEM;
 
@@ -25,7 +13,7 @@ MoFEMErrorCode FlatPrismPolynomialBaseCtx::query_interface(
 }
 
 FlatPrismPolynomialBaseCtx::FlatPrismPolynomialBaseCtx(
-    DataForcesAndSourcesCore &data, moab::Interface &moab,
+    EntitiesFieldData &data, moab::Interface &moab,
     const NumeredEntFiniteElement *fe_ptr, const FieldSpace space,
     const FieldApproximationBase base,
     const FieldApproximationBase copy_node_base)
@@ -68,7 +56,7 @@ FlatPrismPolynomialBase::getValue(MatrixDouble &pts,
         "Wrong dimension of pts, should be at least 3 rows with coordinates");
 
   const FieldApproximationBase base = cTx->bAse;
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
 
   if (cTx->copyNodeBase == LASTBASE)
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
@@ -157,7 +145,7 @@ FlatPrismPolynomialBase::getValue(MatrixDouble &pts,
 MoFEMErrorCode FlatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
   MoFEMFunctionBeginHot;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
                                      double *diffL, const int dim) =
@@ -178,8 +166,8 @@ MoFEMErrorCode FlatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
     if (ent_data.getSense() == 0)
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
     sense[ee] = ent_data.getSense();
-    order[ee] = ent_data.getDataOrder();
-    int nb_dofs = NBEDGE_H1(ent_data.getDataOrder());
+    order[ee] = ent_data.getOrder();
+    int nb_dofs = NBEDGE_H1(ent_data.getOrder());
     ent_data.getN(base).resize(nb_gauss_pts, nb_dofs, false);
     ent_data.getDiffN(base).resize(nb_gauss_pts, 2 * nb_dofs, false);
     H1edgeN[ee] = &*ent_data.getN(base).data().begin();
@@ -210,13 +198,13 @@ MoFEMErrorCode FlatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
 
   if ((data.spacesOnEntities[MBTRI]).test(H1)) {
     for (int ff = 3; ff <= 4; ff++) {
-      int nb_dofs = NBFACETRI_H1(data.dataOnEntities[MBTRI][ff].getDataOrder());
+      int nb_dofs = NBFACETRI_H1(data.dataOnEntities[MBTRI][ff].getOrder());
       data.dataOnEntities[MBTRI][ff].getN(base).resize(nb_gauss_pts, nb_dofs,
                                                        false);
       data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(nb_gauss_pts,
                                                            2 * nb_dofs, false);
       CHKERR H1_FaceShapeFunctions_MBTRI(
-          faceNodes[ff - 3], data.dataOnEntities[MBTRI][ff].getDataOrder(),
+          faceNodes[ff - 3], data.dataOnEntities[MBTRI][ff].getOrder(),
           &*N.data().begin(), &*diffN.data().begin(),
           &*data.dataOnEntities[MBTRI][ff].getN(base).data().begin(),
           &*data.dataOnEntities[MBTRI][ff].getDiffN(base).data().begin(),

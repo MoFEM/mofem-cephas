@@ -1,19 +1,9 @@
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 #ifndef NDEBUG
-#define BOOST_DISABLE_ASSERTS
+#define BOOST_DISABLE_ASSERTS ///< If not set makes BOOST freezing, check what
+                              ///< happen fi boost recompiled with cxx17
+                              ///< standard
 #define BOOST_MULTI_INDEX_ENABLE_INVARIANT_CHECKING
 #define BOOST_MULTI_INDEX_ENABLE_SAFE_MODE
 #endif
@@ -30,6 +20,13 @@
 
 // FTensor
 #include <FTensor.hpp>
+
+namespace MoFEM {
+// FIXME: All operators in FTensor move to FTensor namespace.
+using FTensor::operator<<;
+using FTensor::operator>>;
+} // namespace MoFEM
+
 #include <Common.hpp>
 #include <UnknownInterface.hpp>
 #include <DeprecatedPetsc.hpp>
@@ -46,7 +43,7 @@
 #include <LobattoPolynomial.hpp>
 #include <JacobiPolynomial.hpp>
 #include <EntPolynomialBaseCtx.hpp>
-#include <QuadPolynomialBase.hpp>      // Base functions on quad
+#include <QuadPolynomialBase.hpp> // Base functions on quad
 #include <EdgePolynomialBase.hpp>
 #include <TriPolynomialBase.hpp>
 #include <TetPolynomialBase.hpp>
@@ -78,8 +75,6 @@
 #include <AuxPETSc.hpp>
 
 #include <LogManager.hpp>
-using Sev = MoFEM::LogManager::SeverityLevel;
-
 #include <BitRefManager.hpp>
 #include <Tools.hpp>
 #include <CommInterface.hpp>
@@ -110,7 +105,7 @@ using Sev = MoFEM::LogManager::SeverityLevel;
 #include <DMMoFEM.hpp>
 
 // SRC/FINITE_ELEMENTS
-#include <DataStructures.hpp>
+#include <EntitiesFieldData.hpp>
 #include <DataOperators.hpp>
 #include <ForcesAndSourcesCore.hpp>
 #include <VolumeElementForcesAndSourcesCore.hpp>
@@ -123,17 +118,36 @@ using Sev = MoFEM::LogManager::SeverityLevel;
 #include <VolumeElementForcesAndSourcesCoreOnSide.hpp>
 #include <VolumeElementForcesAndSourcesCoreOnContactPrismSide.hpp>
 #include <FaceElementForcesAndSourcesCoreOnSide.hpp>
+#include <FaceElementForcesAndSourcesCoreOnParent.hpp>
+#include <EdgeElementForcesAndSourcesCoreOnParent.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
 #include <UserDataOperators.hpp>
 #include <HODataOperators.hpp> // Manage HO order geometry
+#include <MeshProjectionDataOperators.hpp> // Operators for projections between bit ref levels
+#include <BaseDerivativesDataOperators.hpp> // Operators to calculate HO direcarives
 #include <FormsIntegrators.hpp>
 #include <LinearFormsIntegrators.hpp>
 #include <BiLinearFormsIntegrators.hpp>
+#include <Schur.hpp>
+#include <OperatorsTester.hpp>
+
 
 // More interfaces
 
 #include <PipelineManager.hpp>
 #include <FieldEvaluator.hpp>
 #include <BcManager.hpp>
+
+// Post-processing and boundary condition
+#include <PostProc.hpp>
+#include <ScalingMethod.hpp>
+#include <Natural.hpp>
+#include <NaturalMeshsetType.hpp>
+#include <NaturalForceMeshsets.hpp>
+#include <NaturalTemperatureMeshsets.hpp>
+#include <Essential.hpp>
+#include <EssentialDisplacementCubitBcData.hpp>
+#include <EssentialTemperatureCubitBcData.hpp>
+#include <EssentialHeatFluxCubitBcData.hpp>
 
 #endif // MOFEM_HPP__

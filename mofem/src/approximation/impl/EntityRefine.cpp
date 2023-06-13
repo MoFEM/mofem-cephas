@@ -8,19 +8,7 @@
 
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 // A scheme for Edge-based Adaptive Tetrahedral Subdivision; Delft Ruprecht
 
@@ -1121,31 +1109,120 @@ void tet_type_1(const EntityHandle *conn, const int split_edge,
 
 // TRIS
 MoFEMErrorCode tri_type_3(const EntityHandle *conn,
-                          const BitRefEdges split_edges,
                           const EntityHandle *edge_new_nodes,
                           EntityHandle *new_tris_conn) {
   MoFEMFunctionBeginHot;
-  for (int ee = 0; ee < 3; ee++) {
-    if (!split_edges.test(ee)) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
-    }
-  }
   // TRI0
-  new_tris_conn[0 * 3 + 0] = edge_new_nodes[0];
-  new_tris_conn[0 * 3 + 1] = edge_new_nodes[2];
-  new_tris_conn[0 * 3 + 2] = conn[0];
+  new_tris_conn[0 * 3 + 0] = conn[0];
+  new_tris_conn[0 * 3 + 1] = edge_new_nodes[0];
+  new_tris_conn[0 * 3 + 2] = edge_new_nodes[2];
+
   // TRI1
   new_tris_conn[1 * 3 + 0] = edge_new_nodes[0];
-  new_tris_conn[1 * 3 + 1] = edge_new_nodes[1];
-  new_tris_conn[1 * 3 + 2] = conn[1];
+  new_tris_conn[1 * 3 + 1] = conn[1];
+  new_tris_conn[1 * 3 + 2] = edge_new_nodes[1];
+
   // TRI2
-  new_tris_conn[2 * 3 + 0] = edge_new_nodes[1];
-  new_tris_conn[2 * 3 + 1] = edge_new_nodes[2];
+  new_tris_conn[2 * 3 + 0] = edge_new_nodes[2];
+  new_tris_conn[2 * 3 + 1] = edge_new_nodes[1];
   new_tris_conn[2 * 3 + 2] = conn[2];
+
   // TRI3
   new_tris_conn[3 * 3 + 0] = edge_new_nodes[0];
   new_tris_conn[3 * 3 + 1] = edge_new_nodes[1];
   new_tris_conn[3 * 3 + 2] = edge_new_nodes[2];
+  MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode tri_type_1(const EntityHandle *conn, const int split_edge,
+                          const EntityHandle edge_new_node,
+                          EntityHandle *new_tris_conn) {
+
+  MoFEMFunctionBeginHot;
+
+  if (split_edge == 0) {
+    // TRI0
+    new_tris_conn[0 * 3 + 0] = conn[0];
+    new_tris_conn[0 * 3 + 1] = edge_new_node;
+    new_tris_conn[0 * 3 + 2] = conn[2];
+    // TRI1
+    new_tris_conn[1 * 3 + 0] = edge_new_node;
+    new_tris_conn[1 * 3 + 1] = conn[1];
+    new_tris_conn[1 * 3 + 2] = conn[2];
+  } else if (split_edge == 1) {
+    // TRI0
+    new_tris_conn[0 * 3 + 0] = conn[0];
+    new_tris_conn[0 * 3 + 1] = conn[1];
+    new_tris_conn[0 * 3 + 2] = edge_new_node;
+    // TRI1
+    new_tris_conn[1 * 3 + 0] = conn[0];
+    new_tris_conn[1 * 3 + 1] = edge_new_node;
+    new_tris_conn[1 * 3 + 2] = conn[2]; 
+  } else if (split_edge == 2) {
+    // TRI0
+    new_tris_conn[0 * 3 + 0] = conn[0];
+    new_tris_conn[0 * 3 + 1] = conn[1];
+    new_tris_conn[0 * 3 + 2] = edge_new_node;
+    // TRI1
+    new_tris_conn[1 * 3 + 0] = edge_new_node;;
+    new_tris_conn[1 * 3 + 1] = conn[1];
+    new_tris_conn[1 * 3 + 2] = conn[2]; 
+  } else {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Impossible case");
+  }
+
+  MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode tri_type_2(const EntityHandle *conn, const int *split_edges,
+                          const EntityHandle *edge_new_nodes,
+                          EntityHandle *new_tris_conn) {
+
+  MoFEMFunctionBeginHot;
+
+  if(split_edges[0] == 0 && split_edges[1] == 1)  {
+    // TRI0
+    new_tris_conn[0 * 3 + 0] = conn[0];
+    new_tris_conn[0 * 3 + 1] = edge_new_nodes[0];
+    new_tris_conn[0 * 3 + 2] = edge_new_nodes[1];
+    // TRI1
+    new_tris_conn[1 * 3 + 0] = edge_new_nodes[0];
+    new_tris_conn[1 * 3 + 1] = conn[1];
+    new_tris_conn[1 * 3 + 2] = edge_new_nodes[1]; 
+    // TRI2
+    new_tris_conn[2 * 3 + 0] = conn[0];
+    new_tris_conn[2 * 3 + 1] = edge_new_nodes[1];
+    new_tris_conn[2 * 3 + 2] = conn[2]; 
+  } else if(split_edges[0] == 0 && split_edges[1] == 2) {
+    // TRI0
+    new_tris_conn[0 * 3 + 0] = conn[0];
+    new_tris_conn[0 * 3 + 1] = edge_new_nodes[0];
+    new_tris_conn[0 * 3 + 2] = edge_new_nodes[2];
+    // TRI1
+    new_tris_conn[1 * 3 + 0] = edge_new_nodes[0];
+    new_tris_conn[1 * 3 + 1] = conn[1];
+    new_tris_conn[1 * 3 + 2] = edge_new_nodes[2]; 
+    // TRI2
+    new_tris_conn[2 * 3 + 0] = edge_new_nodes[2];
+    new_tris_conn[2 * 3 + 1] = conn[1];
+    new_tris_conn[2 * 3 + 2] = conn[2]; 
+  } else if(split_edges[0] == 1 && split_edges[1] == 2) {
+    // TRI0
+    new_tris_conn[0 * 3 + 0] = conn[0];
+    new_tris_conn[0 * 3 + 1] = conn[1];
+    new_tris_conn[0 * 3 + 2] = edge_new_nodes[2];
+    // TRI1
+    new_tris_conn[1 * 3 + 0] = edge_new_nodes[2];
+    new_tris_conn[1 * 3 + 1] = conn[1];
+    new_tris_conn[1 * 3 + 2] = edge_new_nodes[1]; 
+    // TRI2
+    new_tris_conn[2 * 3 + 0] = edge_new_nodes[2];
+    new_tris_conn[2 * 3 + 1] = edge_new_nodes[1];
+    new_tris_conn[2 * 3 + 2] = conn[2];
+  } else {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Impossible case");
+  }
+
   MoFEMFunctionReturnHot(0);
 }
 

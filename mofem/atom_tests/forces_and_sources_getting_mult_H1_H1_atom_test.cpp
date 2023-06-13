@@ -3,19 +3,7 @@
 
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 #include <MoFEM.hpp>
 
@@ -63,7 +51,8 @@ int main(int argc, char *argv[]) {
     MoFEM::Interface &m_field = core;
 
     const char *option;
-    option = ""; ;
+    option = "";
+    ;
     CHKERR moab.load_file(mesh_file_name, 0, option);
 
     // set entitities bit level
@@ -162,8 +151,8 @@ int main(int argc, char *argv[]) {
 
         MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
                               EntityType col_type,
-                              DataForcesAndSourcesCore::EntData &row_data,
-                              DataForcesAndSourcesCore::EntData &col_data) {
+                              EntitiesFieldData::EntData &row_data,
+                              EntitiesFieldData::EntData &col_data) {
           MoFEMFunctionBegin;
 
           row_data.getBase() = AINSWORTH_LEGENDRE_BASE;
@@ -234,7 +223,7 @@ int main(int argc, char *argv[]) {
         MoFEMFunctionReturnHot(0);
       }
 
-      DataForcesAndSourcesCore data_row, data_col;
+      EntitiesFieldData data_row, data_col;
 
       MoFEMErrorCode operator()() {
         MoFEMFunctionBeginHot;
@@ -255,14 +244,18 @@ int main(int argc, char *argv[]) {
         CHKERR getEntityDataOrder<MBTET>(data_col, H1);
         data_row.dataOnEntities[MBVERTEX][0].getBase() =
             AINSWORTH_LEGENDRE_BASE;
-        CHKERR getEntityFieldData(data_row, "FIELD1", MBEDGE);
+
+        const auto bn1 = mField.get_field_bit_number("FIELD1");
+        const auto bn2 = mField.get_field_bit_number("FIELD2");
+
+        CHKERR getEntityFieldData(data_row, bn1, MBEDGE);
         data_col.dataOnEntities[MBVERTEX][0].getBase() =
             AINSWORTH_LEGENDRE_BASE;
-        CHKERR getEntityFieldData(data_col, "FIELD2", MBEDGE);    
-        CHKERR getRowNodesIndices(data_row, "FIELD1");
-        CHKERR getColNodesIndices(data_col, "FIELD2");
-        CHKERR getEntityRowIndices(data_row, "FIELD1", MBEDGE);
-        CHKERR getEntityColIndices(data_col, "FIELD2", MBEDGE);
+        CHKERR getEntityFieldData(data_col, bn2, MBEDGE);
+        CHKERR getRowNodesIndices(data_row, bn1);
+        CHKERR getColNodesIndices(data_col, bn2);
+        CHKERR getEntityRowIndices(data_row, bn1, MBEDGE);
+        CHKERR getEntityColIndices(data_col, bn2, MBEDGE);
         CHKERR getFaceNodes(data_row);
         CHKERR getFaceNodes(data_col);
 

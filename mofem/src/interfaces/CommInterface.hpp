@@ -6,16 +6,6 @@
  *
  */
 
-/*
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
- */
-
 #ifndef __COMMINTERFACE_HPP__
 #define __COMMINTERFACE_HPP__
 
@@ -41,7 +31,7 @@ struct CommInterface : public UnknownInterface {
   /**
    * \brief Destructor
    */
-  ~CommInterface();
+  ~CommInterface() = default;
 
   /** \name Make elemnts multishared */
 
@@ -96,7 +86,7 @@ struct CommInterface : public UnknownInterface {
 
   *
   */
-  MoFEMErrorCode resolveSharedFiniteElements(const std::string &name,
+  MoFEMErrorCode resolveSharedFiniteElements(const std::string name,
                                              const std::string &fe_name,
                                              int verb = DEFAULT_VERBOSITY);
 
@@ -177,6 +167,30 @@ struct CommInterface : public UnknownInterface {
    * \note collective - need tu be run on all processors in communicator
    *
    */
+
+  /**
+   * @brief synchronize entity range on processors (collective)
+   * 
+   * \note collective - need tu be run on all processors in communicator
+   * 
+   * @param ent ents to send and received
+   * @param received_ents pointer to map with received entities
+   * @param verb 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode synchroniseEntities(Range &ent,
+                                     std::map<int, Range> *received_ents,
+                                     int verb = DEFAULT_VERBOSITY);
+
+   /**
+   * @brief synchronize entity range on processors (collective)
+   * 
+   * \note collective - need tu be run on all processors in communicator
+   * 
+   * @param ent ents to send and received
+   * @param verb 
+   * @return MoFEMErrorCode 
+   */ 
   MoFEMErrorCode synchroniseEntities(Range &ent, int verb = DEFAULT_VERBOSITY);
 
   /** synchronize entity range on processors (collective)
@@ -191,7 +205,52 @@ struct CommInterface : public UnknownInterface {
   MoFEMErrorCode synchroniseFieldEntities(const std::string name,
                                           int verb = DEFAULT_VERBOSITY);
 
+  /**
+   * @brief Synchronise parent entities
+   *
+   *  \note collective - need tu be run on all processors in communicator
+   *
+   * Exchange parent entity tag and bitref of entity. Note thar parent handle
+   * can be different on each processor.
+   *
+   * @param ent
+   * @param verb
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode resolveParentEntities(const Range &ent,
+                                       int verb = DEFAULT_VERBOSITY);
+
   /**@}*/
+
+  /**@*/
+
+  /** \name Read load and boradcoast */
+
+  /**
+   * \brief Set partition tag to each finite element in the problem
+   * \ingroup mofem_problems_manager
+   *
+   * This will use one of the mesh partitioning programs available from PETSc
+   * See
+   * <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatPartitioningType.html>
+   *
+   * @param  ents        Entities to partition
+   * @param  dim         Dimension of entities to partition
+   * @param  adj_dim     Adjacency dimension
+   * @param  n_parts     Number of partitions
+   * @param  verb        Verbosity level
+   * @return             Error code
+   */
+  MoFEMErrorCode partitionMesh(const Range &ents, const int dim,
+                               const int adj_dim, const int n_parts,
+                               Tag *th_vertex_weights = nullptr,
+                               Tag *th_edge_weights = nullptr,
+                               Tag *th_part_weights = nullptr,
+                               int verb = VERBOSE, const bool debug = false);
+
+
+  /**@}*/
+
 };
 } // namespace MoFEM
 

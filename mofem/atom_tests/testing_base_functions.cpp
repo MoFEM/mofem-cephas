@@ -1,16 +1,4 @@
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 #include <MoFEM.hpp>
 #include <quad.h>
@@ -101,7 +89,7 @@ int main(int argc, char *argv[]) {
                                 &choice_value, &flg);
     CHKERRG(ierr);
     if (flg != PETSC_TRUE) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "base not set");
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "base not set");
     }
 
     MatrixDouble pts_1d(1, 3);
@@ -295,7 +283,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    DataForcesAndSourcesCore tet_data(MBTET);
+    EntitiesFieldData tet_data(MBTET);
     for (int type = MBVERTEX; type != MBMAXTYPE; type++) {
       tet_data.spacesOnEntities[type].set(L2);
       tet_data.spacesOnEntities[type].set(H1);
@@ -303,19 +291,19 @@ int main(int argc, char *argv[]) {
       tet_data.spacesOnEntities[type].set(HCURL);
     }
     tet_data.dataOnEntities[MBVERTEX].resize(1);
-    tet_data.dataOnEntities[MBVERTEX][0].getDataOrder() = 1;
+    tet_data.dataOnEntities[MBVERTEX][0].getOrder() = 1;
     tet_data.dataOnEntities[MBEDGE].resize(6);
     for (int ee = 0; ee < 6; ee++) {
-      tet_data.dataOnEntities[MBEDGE][ee].getDataOrder() = 3;
+      tet_data.dataOnEntities[MBEDGE][ee].getOrder() = 3;
       tet_data.dataOnEntities[MBEDGE][ee].getSense() = 1;
     }
     tet_data.dataOnEntities[MBTRI].resize(4);
     for (int ff = 0; ff < 4; ff++) {
-      tet_data.dataOnEntities[MBTRI][ff].getDataOrder() = 4;
+      tet_data.dataOnEntities[MBTRI][ff].getOrder() = 4;
       tet_data.dataOnEntities[MBTRI][ff].getSense() = 1;
     }
     tet_data.dataOnEntities[MBTET].resize(1);
-    tet_data.dataOnEntities[MBTET][0].getDataOrder() = 5;
+    tet_data.dataOnEntities[MBTET][0].getOrder() = 5;
     tet_data.dataOnEntities[MBVERTEX][0].getBBNodeOrder().resize(4, false);
     std::fill(tet_data.dataOnEntities[MBVERTEX][0].getBBNodeOrder().begin(),
               tet_data.dataOnEntities[MBVERTEX][0].getBBNodeOrder().end(), 5);
@@ -696,7 +684,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    DataForcesAndSourcesCore tri_data(MBTRI);
+    EntitiesFieldData tri_data(MBTRI);
     for (int type = MBVERTEX; type != MBMAXTYPE; type++) {
       tri_data.spacesOnEntities[type].set(L2);
       tri_data.spacesOnEntities[type].set(H1);
@@ -704,14 +692,14 @@ int main(int argc, char *argv[]) {
       tri_data.spacesOnEntities[type].set(HCURL);
     }
     tri_data.dataOnEntities[MBVERTEX].resize(1);
-    tri_data.dataOnEntities[MBVERTEX][0].getDataOrder() = 1;
+    tri_data.dataOnEntities[MBVERTEX][0].getOrder() = 1;
     tri_data.dataOnEntities[MBEDGE].resize(3);
     for (int ee = 0; ee < 3; ee++) {
-      tri_data.dataOnEntities[MBEDGE][ee].getDataOrder() = 3;
+      tri_data.dataOnEntities[MBEDGE][ee].getOrder() = 3;
       tri_data.dataOnEntities[MBEDGE][ee].getSense() = 1;
     }
     tri_data.dataOnEntities[MBTRI].resize(1);
-    tri_data.dataOnEntities[MBTRI][0].getDataOrder() = 4;
+    tri_data.dataOnEntities[MBTRI][0].getOrder() = 4;
     tri_data.dataOnEntities[MBVERTEX][0].getBBNodeOrder().resize(3, false);
     std::fill(tri_data.dataOnEntities[MBVERTEX][0].getBBNodeOrder().begin(),
               tri_data.dataOnEntities[MBVERTEX][0].getBBNodeOrder().end(), 4);
@@ -969,7 +957,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    DataForcesAndSourcesCore edge_data(MBTRI);
+    EntitiesFieldData edge_data(MBTRI);
     for (int type = MBVERTEX; type != MBMAXTYPE; type++) {
       edge_data.spacesOnEntities[type].set(L2);
       edge_data.spacesOnEntities[type].set(H1);
@@ -977,9 +965,9 @@ int main(int argc, char *argv[]) {
       edge_data.spacesOnEntities[type].set(HCURL);
     }
     edge_data.dataOnEntities[MBVERTEX].resize(1);
-    edge_data.dataOnEntities[MBVERTEX][0].getDataOrder() = 1;
+    edge_data.dataOnEntities[MBVERTEX][0].getOrder() = 1;
     edge_data.dataOnEntities[MBEDGE].resize(1);
-    edge_data.dataOnEntities[MBEDGE][0].getDataOrder() = 4;
+    edge_data.dataOnEntities[MBEDGE][0].getOrder() = 4;
     edge_data.dataOnEntities[MBEDGE][0].getSense() = 1;
     edge_data.dataOnEntities[MBVERTEX][0].getBBNodeOrder().resize(2, false);
     std::fill(edge_data.dataOnEntities[MBVERTEX][0].getBBNodeOrder().begin(),
@@ -1118,19 +1106,19 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    DataForcesAndSourcesCore quad_data(MBQUAD);
+    EntitiesFieldData quad_data(MBQUAD);
     for (int type = MBVERTEX; type != MBMAXTYPE; type++) {
       quad_data.spacesOnEntities[type].set(H1);
     }
     quad_data.dataOnEntities[MBVERTEX].resize(1);
-    quad_data.dataOnEntities[MBVERTEX][0].getDataOrder() = 1;
+    quad_data.dataOnEntities[MBVERTEX][0].getOrder() = 1;
     quad_data.dataOnEntities[MBEDGE].resize(4);
     for (int ee = 0; ee < 4; ee++) {
-      quad_data.dataOnEntities[MBEDGE][ee].getDataOrder() = 4;
+      quad_data.dataOnEntities[MBEDGE][ee].getOrder() = 4;
       quad_data.dataOnEntities[MBEDGE][ee].getSense() = 1;
     }
     quad_data.dataOnEntities[MBQUAD].resize(1);
-    quad_data.dataOnEntities[MBQUAD][0].getDataOrder() = 6;
+    quad_data.dataOnEntities[MBQUAD][0].getOrder() = 6;
 
     MatrixDouble pts_quad;
     int rule_ksi = 6;

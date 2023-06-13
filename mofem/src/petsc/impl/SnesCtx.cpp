@@ -1,18 +1,28 @@
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 namespace MoFEM {
+
+MoFEMErrorCode SnesCtx::copyLoops(const SnesCtx &snes_ctx) {
+  MoFEMFunctionBeginHot;
+  loops_to_do_Mat = snes_ctx.loops_to_do_Mat;
+  loops_to_do_Rhs = snes_ctx.loops_to_do_Rhs;
+  preProcess_Mat = snes_ctx.preProcess_Mat;
+  postProcess_Mat = snes_ctx.postProcess_Mat;
+  preProcess_Rhs = snes_ctx.preProcess_Rhs;
+  postProcess_Rhs = snes_ctx.postProcess_Rhs;
+  MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode SnesCtx::clearLoops() {
+  MoFEMFunctionBeginHot;
+  loops_to_do_Mat.clear();
+  loops_to_do_Rhs.clear();
+  preProcess_Mat.clear();
+  postProcess_Mat.clear();
+  preProcess_Rhs.clear();
+  postProcess_Rhs.clear();
+  MoFEMFunctionReturnHot(0);
+}
 
 PetscErrorCode SnesRhs(SNES snes, Vec x, Vec f, void *ctx) {
   SnesCtx *snes_ctx = (SnesCtx *)ctx;
@@ -52,6 +62,9 @@ PetscErrorCode SnesRhs(SNES snes, Vec x, Vec f, void *ctx) {
   CHKERR zero_ghost_vec(f);
 
   snes_ctx->vecAssembleSwitch = boost::movelib::make_unique<bool>(true);
+  auto cache_ptr = boost::make_shared<CacheTuple>();
+  CHKERR snes_ctx->mField.cache_problem_entities(snes_ctx->problemName,
+                                                 cache_ptr);
 
   auto set = [&](auto &fe) {
     fe.snes = snes;
@@ -60,6 +73,7 @@ PetscErrorCode SnesRhs(SNES snes, Vec x, Vec f, void *ctx) {
     fe.snes_ctx = SnesMethod::CTX_SNESSETFUNCTION;
     fe.ksp_ctx = KspMethod::CTX_SETFUNCTION;
     fe.data_ctx = PetscData::CtxSetF | PetscData::CtxSetX;
+    fe.cacheWeakPtr = cache_ptr;
   };
 
   auto unset = [&](auto &fe) {
@@ -76,10 +90,6 @@ PetscErrorCode SnesRhs(SNES snes, Vec x, Vec f, void *ctx) {
     unset(*bit);
     snes_ctx->vecAssembleSwitch = boost::move(bit->vecAssembleSwitch);
   }
-
-  auto cache_ptr = boost::make_shared<CacheTuple>();
-  CHKERR snes_ctx->mField.cache_problem_entities(snes_ctx->problemName,
-                                                 cache_ptr);
 
   for (auto &lit : snes_ctx->loops_to_do_Rhs) {
     lit.second->vecAssembleSwitch = boost::move(snes_ctx->vecAssembleSwitch);
@@ -132,6 +142,9 @@ PetscErrorCode SnesMat(SNES snes, Vec x, Mat A, Mat B, void *ctx) {
     CHKERR MatZeroEntries(B);
 
   snes_ctx->matAssembleSwitch = boost::movelib::make_unique<bool>(true);
+  auto cache_ptr = boost::make_shared<CacheTuple>();
+  CHKERR snes_ctx->mField.cache_problem_entities(snes_ctx->problemName,
+                                                 cache_ptr);
 
   auto set = [&](auto &fe) {
     fe.snes = snes;
@@ -141,6 +154,7 @@ PetscErrorCode SnesMat(SNES snes, Vec x, Mat A, Mat B, void *ctx) {
     fe.snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
     fe.ksp_ctx = KspMethod::CTX_OPERATORS;
     fe.data_ctx = PetscData::CtxSetA | PetscData::CtxSetB | PetscData::CtxSetX;
+    fe.cacheWeakPtr = cache_ptr;
   };
 
   auto unset = [&](auto &fe) {
@@ -163,9 +177,7 @@ PetscErrorCode SnesMat(SNES snes, Vec x, Mat A, Mat B, void *ctx) {
     snes_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
 
-  auto cache_ptr = boost::make_shared<CacheTuple>();
-  CHKERR snes_ctx->mField.cache_problem_entities(snes_ctx->problemName,
-                                                 cache_ptr);
+
 
   for (auto &lit : snes_ctx->loops_to_do_Mat) {
     lit.second->matAssembleSwitch = boost::move(snes_ctx->matAssembleSwitch);
@@ -208,6 +220,66 @@ MoFEMErrorCode SnesMoFEMSetBehavior(SNES snes, MoFEMTypes bh) {
   MoFEMFunctionBegin;
   CHKERR SNESGetApplicationContext(snes, &snes_ctx);
   snes_ctx->bH = bh;
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode MoFEMSNESMonitorFields(SNES snes, PetscInt its, PetscReal fgnorm,
+                                      SnesCtx *snes_ctx) {
+  MoFEMFunctionBegin;
+  auto &m_field =  snes_ctx->mField;
+  auto problem_ptr = m_field.get_problem(snes_ctx->problemName);
+  auto fields_ptr = m_field.get_fields();
+  auto dofs = problem_ptr->numeredRowDofsPtr;
+
+  std::vector<double> lnorms(fields_ptr->size(), 0),
+      norms(fields_ptr->size(), 0);
+
+  Vec res;
+  CHKERR SNESGetFunction(snes, &res, NULL, NULL);
+
+  const double *r;
+  CHKERR VecGetArrayRead(res, &r);
+  {
+    int f = 0;
+    for (auto fi : *fields_ptr) {
+      const auto lo_uid = FieldEntity::getLoBitNumberUId(fi->bitNumber);
+      const auto hi_uid = FieldEntity::getHiBitNumberUId(fi->bitNumber);
+      const auto hi = dofs->get<Unique_mi_tag>().upper_bound(hi_uid);
+      for (auto lo = dofs->get<Unique_mi_tag>().lower_bound(lo_uid); lo != hi;
+           ++lo) {
+        const DofIdx loc_idx = (*lo)->getPetscLocalDofIdx();
+        if (loc_idx >= 0 && loc_idx < problem_ptr->nbLocDofsRow) {
+          lnorms[f] += PetscRealPart(PetscSqr(r[loc_idx]));
+        }
+      }
+      ++f;
+    }
+  }
+  CHKERR VecRestoreArrayRead(res, &r);
+
+  MPIU_Allreduce(&*lnorms.begin(), &*norms.begin(), lnorms.size(), MPIU_REAL,
+                 MPIU_SUM, PetscObjectComm((PetscObject)snes));
+
+  std::stringstream s;
+  int tl;
+  CHKERR PetscObjectGetTabLevel((PetscObject)snes, &tl);
+  for (auto t = 0; t != tl; ++t)
+    s << "  ";
+  s << its << " Function norm " << boost::format("%14.12e") % (double)fgnorm
+    << " [";
+  {
+    int f = 0;
+    for (auto fi : *fields_ptr) {
+      if (f > 0)
+        s << ", ";
+      s << boost::format("%14.12e") % (double)PetscSqrtReal(norms[f]);
+      ++f;
+    }
+    s << "]";
+  }
+
+  MOFEM_LOG("SNES_WORLD", Sev::inform) << s.str();
+
   MoFEMFunctionReturn(0);
 }
 

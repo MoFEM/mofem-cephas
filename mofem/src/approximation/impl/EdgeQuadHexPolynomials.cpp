@@ -276,9 +276,8 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONQUAD(
     int *faces_nodes, int *p, double *N, double *diffN, double *faceN,
     double *diff_faceN, int nb_integration_pts) {
 
-  const int nb_dofs = (p[0] - 1) * (p[1] - 1);
-
-  if (nb_dofs > 0) {
+  if (p[0] > 1 && p[1] > 1) {
+    const int nb_dofs = (p[0] - 1) * (p[1] - 1);
 
     const int n0 = faces_nodes[0];
     const int n1 = faces_nodes[1];
@@ -816,8 +815,8 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONHEX(
 
   for (int face = 0; face != 6; face++) {
 
-    const int nb_dofs = (p[face] - 1) * (p[face] - 1);
-    if (nb_dofs > 0) {
+    if (p[face] > 1) {
+      const int nb_dofs = (p[face] - 1) * (p[face] - 1);
 
       const int n0 = face_nodes[4 * face + 0];
       const int n1 = face_nodes[4 * face + 1];
@@ -916,12 +915,12 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_InteriorShapeFunctions_ONHEX(
     CHKERR ::DemkowiczHexAndQuad::monom_ordering(&permute[0][0], p[0] - 2,
                                                  p[1] - 2, p[2] - 2);
 
-    double P0[p[0] + 2];
-    double diffL0[3 * (p[0] + 2)];
-    double P1[p[1] + 2];
-    double diffL1[3 * (p[1] + 2)];
-    double P2[p[2] + 2];
-    double diffL2[3 * (p[2] + 2)];
+    // double P0[p[0] + 2];
+    // double diffL0[3 * (p[0] + 2)];
+    // double P1[p[1] + 2];
+    // double diffL1[3 * (p[1] + 2)];
+    // double P2[p[2] + 2];
+    // double diffL2[3 * (p[2] + 2)];
 
     for (int qq = 0; qq != nb_integration_pts; ++qq) {
 

@@ -3,19 +3,7 @@
 
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 using namespace MoFEM;
 
@@ -30,7 +18,7 @@ MoFEMErrorCode QuadPolynomialBase::getValueH1(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
   const FieldApproximationBase base = cTx->bAse;
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   data.dataOnEntities[MBVERTEX][0].getNSharedPtr(base) =
       data.dataOnEntities[MBVERTEX][0].getNSharedPtr(cTx->copyNodeBase);
   data.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(base) =
@@ -55,7 +43,7 @@ MoFEMErrorCode QuadPolynomialBase::getValueH1(MatrixDouble &pts) {
 MoFEMErrorCode QuadPolynomialBase::getValueH1AinsworthBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   const auto copy_base = cTx->copyNodeBase;
 
@@ -87,8 +75,8 @@ MoFEMErrorCode QuadPolynomialBase::getValueH1AinsworthBase(MatrixDouble &pts) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "sense not set");
 
       sense[ee] = ent_dat.getSense();
-      order[ee] = ent_dat.getDataOrder();
-      int nb_dofs = NBEDGE_H1(ent_dat.getDataOrder());
+      order[ee] = ent_dat.getOrder();
+      int nb_dofs = NBEDGE_H1(ent_dat.getOrder());
       ent_dat.getN(base).resize(nb_gauss_pts, nb_dofs, false);
       ent_dat.getDiffN(base).resize(nb_gauss_pts, 2 * nb_dofs, false);
       H1edgeN[ee] = &*ent_dat.getN(base).data().begin();
@@ -108,12 +96,12 @@ MoFEMErrorCode QuadPolynomialBase::getValueH1AinsworthBase(MatrixDouble &pts) {
               "should be one quad to store bubble base on quad");
 
     auto &ent_dat = data.dataOnEntities[MBQUAD][0];
-    int nb_dofs = NBFACEQUAD_H1(ent_dat.getDataOrder());
+    int nb_dofs = NBFACEQUAD_H1(ent_dat.getOrder());
     ent_dat.getN(base).resize(nb_gauss_pts, nb_dofs, false);
     ent_dat.getDiffN(base).resize(nb_gauss_pts, 2 * nb_dofs, false);
     int face_nodes[] = {0, 1, 2, 3};
     CHKERR H1_QuadShapeFunctions_MBQUAD(
-        face_nodes, ent_dat.getDataOrder(),
+        face_nodes, ent_dat.getOrder(),
         &*vert_dat.getN(base).data().begin(),
         &*vert_dat.getDiffN(base).data().begin(),
         &*ent_dat.getN(base).data().begin(),
@@ -127,7 +115,7 @@ MoFEMErrorCode QuadPolynomialBase::getValueH1AinsworthBase(MatrixDouble &pts) {
 MoFEMErrorCode QuadPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   const auto copy_base = cTx->copyNodeBase;
 
@@ -150,8 +138,8 @@ MoFEMErrorCode QuadPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "sense not set");
 
       sense[ee] = ent_dat.getSense();
-      order[ee] = ent_dat.getDataOrder();
-      int nb_dofs = NBEDGE_H1(ent_dat.getDataOrder());
+      order[ee] = ent_dat.getOrder();
+      int nb_dofs = NBEDGE_H1(ent_dat.getOrder());
       ent_dat.getN(base).resize(nb_gauss_pts, nb_dofs, false);
       ent_dat.getDiffN(base).resize(nb_gauss_pts, 2 * nb_dofs, false);
       H1edgeN[ee] = &*ent_dat.getN(base).data().begin();
@@ -171,18 +159,20 @@ MoFEMErrorCode QuadPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
               "should be one quad to store bubble base on quad");
 
     auto &ent_dat = data.dataOnEntities[MBQUAD][0];
-    int nb_dofs = NBFACEQUAD_H1(ent_dat.getDataOrder());
-    int p = ent_dat.getDataOrder();
+    int nb_dofs = NBFACEQUAD_H1(ent_dat.getOrder());
+    int p = ent_dat.getOrder();
     int order[2] = {p, p};
     ent_dat.getN(base).resize(nb_gauss_pts, nb_dofs, false);
     ent_dat.getDiffN(base).resize(nb_gauss_pts, 2 * nb_dofs, false);
 
     int face_nodes[] = {0, 1, 2, 3};
-    CHKERR DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONQUAD(
-        face_nodes, order, &*copy_base_fun.data().begin(),
-        &*copy_diff_base_fun.data().begin(),
-        &*ent_dat.getN(base).data().begin(),
-        &*ent_dat.getDiffN(base).data().begin(), nb_gauss_pts);
+    if (nb_dofs) {
+      CHKERR DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONQUAD(
+          face_nodes, order, &*copy_base_fun.data().begin(),
+          &*copy_diff_base_fun.data().begin(),
+          &*ent_dat.getN(base).data().begin(),
+          &*ent_dat.getDiffN(base).data().begin(), nb_gauss_pts);
+    }
   }
 
   MoFEMFunctionReturn(0);
@@ -213,7 +203,7 @@ MoFEMErrorCode QuadPolynomialBase::getValueL2(MatrixDouble &pts) {
 MoFEMErrorCode QuadPolynomialBase::getValueL2DemkowiczBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   const auto copy_base = cTx->copyNodeBase;
 
@@ -223,7 +213,7 @@ MoFEMErrorCode QuadPolynomialBase::getValueL2DemkowiczBase(MatrixDouble &pts) {
       data.dataOnEntities[MBVERTEX][0].getDiffN(copy_base);
 
   auto &ent_dat = data.dataOnEntities[MBQUAD][0];
-  int p = ent_dat.getDataOrder();
+  int p = ent_dat.getOrder();
   int order[2] = {p, p};
   int nb_dofs = NBFACEQUAD_L2(p);
   ent_dat.getN(base).resize(nb_gauss_pts, nb_dofs, false);
@@ -261,7 +251,7 @@ MoFEMErrorCode
 QuadPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   const auto copy_base = cTx->copyNodeBase;
 
@@ -289,9 +279,9 @@ QuadPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
                 "orientation (sense) of edge is not set");
 
       sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
-      order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
+      order[ee] = data.dataOnEntities[MBEDGE][ee].getOrder();
       int nb_dofs = NBEDGE_DEMKOWICZ_HCURL(
-          data.dataOnEntities[MBEDGE][ee].getDataOrder());
+          data.dataOnEntities[MBEDGE][ee].getOrder());
 
       data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,
                                                         3 * nb_dofs, false);
@@ -316,7 +306,7 @@ QuadPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "No data struture to keep base functions on face");
 
-    int p = data.dataOnEntities[MBQUAD][0].getDataOrder();
+    int p = data.dataOnEntities[MBQUAD][0].getOrder();
     const int nb_dofs_family = NBFACEQUAD_DEMKOWICZ_FAMILY_HCURL(p, p);
     if (nb_dofs_family) {
       faceFamily.resize(2, 3 * nb_dofs_family * nb_gauss_pts, false);
@@ -402,7 +392,7 @@ MoFEMErrorCode
 QuadPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   const auto copy_base = cTx->copyNodeBase;
   int nb_gauss_pts = pts.size2();
@@ -418,7 +408,7 @@ QuadPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "No data struture to keep base functions on face");
 
-    int p = data.dataOnEntities[MBQUAD][0].getDataOrder();
+    int p = data.dataOnEntities[MBQUAD][0].getOrder();
     const int nb_dofs = NBFACEQUAD_DEMKOWICZ_HDIV(p);
     auto &face_n = data.dataOnEntities[MBQUAD][0].getN(base);
     auto &diff_face_n = data.dataOnEntities[MBQUAD][0].getDiffN(base);
@@ -457,7 +447,7 @@ QuadPolynomialBase::getValue(MatrixDouble &pts,
         "Wrong dimension of pts, should be at least 3 rows with coordinates");
 
   const FieldApproximationBase base = cTx->bAse;
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   if (cTx->copyNodeBase != NOBASE)
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "Shape base has to be on NOBASE", ApproximationBaseNames[base]);

@@ -8,19 +8,7 @@
  *
  */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 #include <MoFEM.hpp>
 using namespace MoFEM;
@@ -33,7 +21,7 @@ struct OpVolume : public VolumeElementForcesAndSourcesCore::UserDataOperator {
       : VolumeElementForcesAndSourcesCore::UserDataOperator(field_name, OPROW),
         vOl(vol) {}
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data) {
+                        EntitiesFieldData::EntData &data) {
 
     MoFEMFunctionBegin;
     if (type != MBVERTEX)
@@ -52,8 +40,8 @@ struct OpVolume : public VolumeElementForcesAndSourcesCore::UserDataOperator {
   }
   MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
                         EntityType col_type,
-                        DataForcesAndSourcesCore::EntData &row_data,
-                        DataForcesAndSourcesCore::EntData &col_data) {
+                        EntitiesFieldData::EntData &row_data,
+                        EntitiesFieldData::EntData &col_data) {
     MoFEMFunctionBeginHot;
     // PetscPrintf(PETSC_COMM_WORLD,"domain: calculate matrix\n");
     MoFEMFunctionReturnHot(0);
@@ -66,7 +54,7 @@ struct OpFace : public FaceElementForcesAndSourcesCore::UserDataOperator {
       : FaceElementForcesAndSourcesCore::UserDataOperator(field_name, OPROW),
         vOl(vol) {}
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data) {
+                        EntitiesFieldData::EntData &data) {
 
     MoFEMFunctionBegin;
     if (type != MBVERTEX)
@@ -89,8 +77,8 @@ struct OpFace : public FaceElementForcesAndSourcesCore::UserDataOperator {
   }
   MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
                         EntityType col_type,
-                        DataForcesAndSourcesCore::EntData &row_data,
-                        DataForcesAndSourcesCore::EntData &col_data) {
+                        EntitiesFieldData::EntData &row_data,
+                        EntitiesFieldData::EntData &col_data) {
     MoFEMFunctionBeginHot;
     // PetscPrintf(PETSC_COMM_WORLD,"boundary: calculate matrix\n");
     MoFEMFunctionReturnHot(0);
@@ -136,6 +124,9 @@ int main(int argc, char *argv[]) {
                                               AINSWORTH_LEGENDRE_BASE, 3);
       CHKERR simple_interface->addBoundaryField("MESH_NODE_POSITIONS", H1,
                                                 AINSWORTH_LEGENDRE_BASE, 3);
+      CHKERR simple_interface->addSkeletonField("MESH_NODE_POSITIONS", H1,
+                                                AINSWORTH_LEGENDRE_BASE, 3);
+
       // set fields order
       CHKERR simple_interface->setFieldOrder("MESH_NODE_POSITIONS", 1);
       // setup problem
@@ -157,10 +148,10 @@ int main(int argc, char *argv[]) {
       // create distributed vector to accumulate values from processors.
       int ghosts[] = {0};
       
-      auto vol = createSmartGhostVector(
+      auto vol = createGhostVector(
           PETSC_COMM_WORLD, m_field.get_comm_rank() == 0 ? 1 : 0, 1,
           m_field.get_comm_rank() == 0 ? 0 : 1, ghosts);
-      auto surf_vol = smartVectorDuplicate(vol);
+      auto surf_vol = vectorDuplicate(vol);
 
       // set operator to the volume element
       auto material_grad_mat = boost::make_shared<MatrixDouble>();
@@ -189,6 +180,44 @@ int main(int argc, char *argv[]) {
       // make integration on boundary
       CHKERR DMoFEMLoopFiniteElements(dm, simple_interface->getBoundaryFEName(),
                                       boundary_fe);
+
+      auto skeleton_fe = boost::make_shared<FEMethod>();
+      auto A = createDMMatrix(dm);
+      auto B = createDMMatrix(dm);
+      auto f = createDMVector(dm);
+      auto x = createDMVector(dm);
+      auto x_t = createDMVector(dm);
+      auto x_tt = createDMVector(dm);
+      skeleton_fe->f = f;
+      skeleton_fe->A = A;
+      skeleton_fe->B = B;
+      skeleton_fe->x = x;
+      skeleton_fe->x_t = x_t;
+      skeleton_fe->x_tt = x_tt;
+
+      skeleton_fe->preProcessHook = [&]() {
+        MoFEMFunctionBegin;
+        if (f != skeleton_fe->ts_F)
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong ptr");
+        if (A != skeleton_fe->ts_A)
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong ptr");
+        if (B != skeleton_fe->ts_B)
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong ptr");
+        if (x != skeleton_fe->ts_u)
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong ptr");
+        if (x_t != skeleton_fe->ts_u_t)
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong ptr");
+        if (x_tt != skeleton_fe->ts_u_tt)
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong ptr");
+        MoFEMFunctionReturn(0);
+      };
+
+      skeleton_fe->postProcessHook = []() { return 0; };
+      skeleton_fe->operatorHook = []() { return 0; };
+
+      CHKERR DMoFEMLoopFiniteElements(dm, simple_interface->getSkeletonFEName(),
+                                      skeleton_fe);
+
       // assemble volumes from processors and accumulate on processor of rank 0
       CHKERR VecAssemblyBegin(vol);
       CHKERR VecAssemblyEnd(vol);

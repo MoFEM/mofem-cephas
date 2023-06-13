@@ -5,16 +5,6 @@
  *
  */
 
-/*
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
- */
-
 #ifdef WITH_MED
 
 extern "C" {
@@ -100,7 +90,7 @@ MoFEMErrorCode MedInterface::medGetFieldNames(const string &file, int verb) {
 
     med_int num_comp = MEDfieldnComponent(fid, index + 1);
     if (num_comp <= 0) {
-      SETERRQ(m_field.get_comm(), MOFEM_IMPOSIBLE_CASE,
+      SETERRQ(m_field.get_comm(), MOFEM_IMPOSSIBLE_CASE,
               "Could not get number of components for MED field");
     }
 

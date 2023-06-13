@@ -2,23 +2,9 @@
  * \file scalar_check_approximation.cpp
  * \example scalar_check_approximation.cpp
  *
- * Approximate polynomial in 2D and check direvatives
+ * Approximate polynomial in 2D and check derivatives
  *
  */
-
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Publicrule
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <MoFEM.hpp>
 
@@ -26,27 +12,22 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
-static constexpr int approx_order = 4;
+static int approx_order = 4;
+
 template <int DIM> struct ApproxFunctionsImpl {};
 
 template <int DIM> struct ElementsAndOps {};
 
-template <> struct ElementsAndOps<2> {
-  using DomainEle = PipelineManager::FaceEle;
-  using DomainEleOp = DomainEle::UserDataOperator;
-};
-
-template <> struct ElementsAndOps<3> {
-  using DomainEle = VolumeElementForcesAndSourcesCore;
-  using DomainEleOp = DomainEle::UserDataOperator;
-};
-
 constexpr int SPACE_DIM =
     EXECUTABLE_DIMENSION; //< Space dimension of problem, mesh
 
-using EntData = DataForcesAndSourcesCore::EntData;
-using DomainEle = ElementsAndOps<SPACE_DIM>::DomainEle;
-using DomainEleOp = ElementsAndOps<SPACE_DIM>::DomainEleOp;
+using DomainEle = PipelineManager::ElementsAndOpsByDim<SPACE_DIM>::DomainEle;
+using BoundaryEle =
+    PipelineManager::ElementsAndOpsByDim<SPACE_DIM>::BoundaryEle;
+using EleOnSide = PipelineManager::ElementsAndOpsByDim<SPACE_DIM>::FaceSideEle;
+
+using EntData = EntitiesFieldData::EntData;
+using DomainEleOp = DomainEle::UserDataOperator;
 
 template <> struct ApproxFunctionsImpl<2> {
   static double fUn(const double x, const double y, double z) {
@@ -125,7 +106,7 @@ struct OpValsDiffVals : public DomainEleOp {
   FTensor::Index<'i', SPACE_DIM> i;
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data) {
+                        EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
     const int nb_gauss_pts = getGaussPts().size2();
     if (type == MBVERTEX) {
@@ -199,7 +180,7 @@ struct OpCheckValsDiffVals : public DomainEleOp {
   FTensor::Index<'i', SPACE_DIM> i;
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data) {
+                        EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
     const double eps = 1e-6;
     const int nb_gauss_pts = data.getN().size1();
@@ -219,7 +200,6 @@ struct OpCheckValsDiffVals : public DomainEleOp {
       if (err_val > eps)
         SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                  "Wrong value from operator %4.3e", err_val);
-
 
       const double x = getCoordsAtGaussPts()(gg, 0);
       const double y = getCoordsAtGaussPts()(gg, 1);
@@ -254,7 +234,7 @@ struct OpCheckValsDiffVals : public DomainEleOp {
 
         if (err_diff_val > eps)
           SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                   "Wrong direvatives from operator %4.3e", err_diff_val);
+                   "Wrong derivatives from operator %4.3e", err_diff_val);
 
         const double x = getCoordsAtGaussPts()(gg, 0);
         const double y = getCoordsAtGaussPts()(gg, 1);
@@ -265,7 +245,7 @@ struct OpCheckValsDiffVals : public DomainEleOp {
         t_delta_diff_val(i) = t_diff_vals(i) - t_diff_anal(i);
 
         err_diff_val = sqrt(t_delta_diff_val(i) * t_delta_diff_val(i));
-        if(SPACE_DIM == 3)
+        if (SPACE_DIM == 3)
           MOFEM_LOG("AT", Sev::noisy)
               << "Diff val " << err_diff_val << " : "
               << sqrt(t_diff_vals(i) * t_diff_vals(i)) << " :  "
@@ -324,10 +304,13 @@ int main(int argc, char *argv[]) {
     MoFEM::Core core(moab);
     MoFEM::Interface &m_field = core;
 
-    Simple *simple_interface = m_field.getInterface<Simple>();
+    Simple *simple = m_field.getInterface<Simple>();
     PipelineManager *pipeline_mng = m_field.getInterface<PipelineManager>();
-    CHKERR simple_interface->getOptions();
-    CHKERR simple_interface->loadFile("", "");
+    CHKERR simple->getOptions();
+
+    simple->getAddBoundaryFE() = true;
+
+    CHKERR simple->loadFile("", "");
 
     // Declare elements
     enum bases {
@@ -345,7 +328,7 @@ int main(int argc, char *argv[]) {
                                 LASBASETOP, &choice_base_value, &flg);
 
     if (flg != PETSC_TRUE)
-      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "base not set");
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "base not set");
     FieldApproximationBase base = AINSWORTH_LEGENDRE_BASE;
     if (choice_base_value == AINSWORTH)
       base = AINSWORTH_LEGENDRE_BASE;
@@ -362,17 +345,104 @@ int main(int argc, char *argv[]) {
     CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-space", list_spaces,
                                 LASBASETSPACE, &choice_space_value, &flg);
     if (flg != PETSC_TRUE)
-      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "space not set");
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "space not set");
     FieldSpace space = H1;
     if (choice_space_value == H1SPACE)
       space = H1;
     else if (choice_space_value == L2SPACE)
       space = L2;
 
-    CHKERR simple_interface->addDomainField("FIELD1", space, base, 1);
-    CHKERR simple_interface->setFieldOrder("FIELD1", approx_order);
-    CHKERR simple_interface->setUp();
-    auto dm = simple_interface->getDM();
+    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &approx_order,
+                              PETSC_NULL);
+
+    CHKERR simple->addDomainField("FIELD1", space, base, 1);
+    CHKERR simple->setFieldOrder("FIELD1", approx_order);
+
+    Range edges, faces;
+    CHKERR moab.get_entities_by_dimension(0, 1, edges);
+    CHKERR moab.get_entities_by_dimension(0, 2, faces);
+
+    if (choice_base_value != BERNSTEIN) {
+      Range rise_order;
+
+      int i = 0;
+      for (auto e : edges) {
+        if (!(i % 2)) {
+          rise_order.insert(e);
+        }
+        ++i;
+      }
+
+      for (auto f : faces) {
+        if (!(i % 3)) {
+          rise_order.insert(f);
+        }
+        ++i;
+      }
+
+      Range rise_twice;
+      for (auto e : rise_order) {
+        if (!(i % 2)) {
+          rise_twice.insert(e);
+        }
+        ++i;
+      }
+
+      CHKERR simple->setFieldOrder("FIELD1", approx_order + 1, &rise_order);
+
+      CHKERR simple->setFieldOrder("FIELD1", approx_order + 2, &rise_twice);
+    }
+
+    CHKERR simple->defineFiniteElements();
+
+    auto volume_adj = [](moab::Interface &moab, const Field &field,
+                         const EntFiniteElement &fe,
+                         std::vector<EntityHandle> &adjacency) {
+      MoFEMFunctionBegin;
+      EntityHandle fe_ent = fe.getEnt();
+      switch (field.getSpace()) {
+      case H1:
+        CHKERR moab.get_connectivity(&fe_ent, 1, adjacency, true);
+      case HCURL:
+        CHKERR moab.get_adjacencies(&fe_ent, 1, 1, false, adjacency,
+                                    moab::Interface::UNION);
+      case HDIV:
+      case L2:
+        CHKERR moab.get_adjacencies(&fe_ent, 1, 2, false, adjacency,
+                                    moab::Interface::UNION);
+        adjacency.push_back(fe_ent);
+        // build side table
+        for (auto ent : adjacency)
+          fe.getSideNumberPtr(ent);
+        break;
+      case NOFIELD: {
+        CHKERR moab.get_entities_by_handle(field.getMeshset(), adjacency,
+                                           false);
+        for (auto ent : adjacency) {
+          const_cast<SideNumber_multiIndex &>(fe.getSideNumberTable())
+              .insert(
+                  boost::shared_ptr<SideNumber>(new SideNumber(ent, -1, 0, 0)));
+        }
+      } break;
+      default:
+        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                "this field is not implemented for TRI finite element");
+      }
+
+      MoFEMFunctionReturn(0);
+    };
+
+    CHKERR m_field.modify_finite_element_adjacency_table(
+        simple->getDomainFEName(), MBTET, volume_adj);
+    CHKERR m_field.modify_finite_element_adjacency_table(
+        simple->getDomainFEName(), MBHEX, volume_adj);
+
+    CHKERR simple->defineProblem(PETSC_TRUE);
+    CHKERR simple->buildFields();
+    CHKERR simple->buildFiniteElements();
+    CHKERR simple->buildProblem();
+
+    auto dm = simple->getDM();
 
     VectorDouble vals;
     auto jac_ptr = boost::make_shared<MatrixDouble>();
@@ -382,46 +452,30 @@ int main(int argc, char *argv[]) {
 
     auto assemble_matrices_and_vectors = [&]() {
       MoFEMFunctionBegin;
-      if (SPACE_DIM == 2)
-        pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpSetHOWeightsOnFace());
 
       using OpSource = FormsIntegrators<DomainEleOp>::Assembly<
           PETSC>::LinearForm<GAUSS>::OpSource<1, 1>;
 
-      if (SPACE_DIM == 2) {
-        pipeline_mng->getOpDomainLhsPipeline().push_back(
-            new OpCalculateHOJacForFace(jac_ptr));
-        pipeline_mng->getOpDomainLhsPipeline().push_back(
-            new OpInvertMatrix<SPACE_DIM>(jac_ptr, det_ptr, inv_jac_ptr));
-        pipeline_mng->getOpDomainLhsPipeline().push_back(
-            new OpSetHOWeightsOnFace());
-      }
-
-      if (SPACE_DIM == 3) {
-        pipeline_mng->getOpDomainLhsPipeline().push_back(
-            new OpCalculateHOJacVolume(jac_ptr));
-        pipeline_mng->getOpDomainLhsPipeline().push_back(
-            new OpInvertMatrix<SPACE_DIM>(jac_ptr, det_ptr, nullptr));
-        pipeline_mng->getOpDomainLhsPipeline().push_back(
-            new OpSetHOWeights(det_ptr));
-        pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpCalculateHOJacVolume(jac_ptr));
-        pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpInvertMatrix<3>(jac_ptr, det_ptr, nullptr));
-        pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpSetHOWeights(det_ptr));
-      }
+      CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+          pipeline_mng->getOpDomainLhsPipeline(), {NOSPACE});
+      CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+          pipeline_mng->getOpDomainRhsPipeline(), {NOSPACE});
 
       using OpMass = FormsIntegrators<DomainEleOp>::Assembly<
-          PETSC>::BiLinearForm<GAUSS>::OpMass<1, 1>;
+          SCHUR>::BiLinearForm<GAUSS>::OpMass<1, 1>;
+
+      pipeline_mng->getOpDomainLhsPipeline().push_back(
+          new OpSchurAssembleBegin());
       pipeline_mng->getOpDomainLhsPipeline().push_back(new OpMass(
           "FIELD1", "FIELD1", [](double, double, double) { return 1.; }));
+      pipeline_mng->getOpDomainLhsPipeline().push_back(
+          new OpSchurAssembleEnd<SCHUR_DSYSV>({}, {}, {}, {}, {}));
+
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpSource("FIELD1", ApproxFunctions::fUn));
 
       auto integration_rule = [](int, int, int p_data) {
-        return 3 * p_data;
+        return 2 * p_data + 1;
       };
       CHKERR pipeline_mng->setDomainRhsIntegrationRule(integration_rule);
       CHKERR pipeline_mng->setDomainLhsIntegrationRule(integration_rule);
@@ -435,9 +489,9 @@ int main(int argc, char *argv[]) {
       CHKERR KSPSetFromOptions(solver);
       CHKERR KSPSetUp(solver);
 
-      auto dm = simple_interface->getDM();
-      auto D = smartCreateDMVector(dm);
-      auto F = smartVectorDuplicate(D);
+      auto dm = simple->getDM();
+      auto D = createDMVector(dm);
+      auto F = vectorDuplicate(D);
 
       CHKERR KSPSolve(solver, F, D);
       CHKERR VecGhostUpdateBegin(D, INSERT_VALUES, SCATTER_FORWARD);
@@ -450,29 +504,14 @@ int main(int argc, char *argv[]) {
     auto check_solution = [&] {
       MoFEMFunctionBegin;
 
-      boost::shared_ptr<VectorDouble> ptr_values(new VectorDouble());
-      boost::shared_ptr<MatrixDouble> ptr_diff_vals(new MatrixDouble());
+      auto ptr_values = boost::make_shared<VectorDouble>();
+      auto ptr_diff_vals = boost::make_shared<MatrixDouble>();
 
       pipeline_mng->getDomainLhsFE().reset();
       pipeline_mng->getOpDomainRhsPipeline().clear();
 
-      if (SPACE_DIM == 2) {
-        pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpCalculateHOJacForFace(jac_ptr));
-        pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpInvertMatrix<SPACE_DIM>(jac_ptr, det_ptr, inv_jac_ptr));
-        pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpSetInvJacSpaceForFaceImpl<2>(space, inv_jac_ptr));
-      }
-
-      if(SPACE_DIM == 3) {
-        pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpCalculateHOJacVolume(jac_ptr));
-        pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpInvertMatrix<SPACE_DIM>(jac_ptr, det_ptr, inv_jac_ptr));
-        pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpSetHOInvJacToScalarBases(space, inv_jac_ptr));
-      }
+      CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+          pipeline_mng->getOpDomainRhsPipeline(), {space});
 
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpValsDiffVals(vals, diff_vals, true));
@@ -489,9 +528,109 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionReturn(0);
     };
 
+    auto post_proc = [&] {
+      MoFEMFunctionBegin;
+
+      using OpPPMap = OpPostProcMapInMoab<SPACE_DIM, SPACE_DIM>;
+
+      auto get_domain_post_proc_fe = [&](auto post_proc_mesh_ptr) {
+        auto post_proc_fe =
+            boost::make_shared<PostProcBrokenMeshInMoabBaseCont<DomainEle>>(
+                m_field, post_proc_mesh_ptr);
+
+        CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+            post_proc_fe->getOpPtrVector(), {space});
+
+        auto ptr_values = boost::make_shared<VectorDouble>();
+        auto ptr_diff_vals = boost::make_shared<MatrixDouble>();
+
+        post_proc_fe->getOpPtrVector().push_back(
+            new OpCalculateScalarFieldValues("FIELD1", ptr_values));
+        post_proc_fe->getOpPtrVector().push_back(
+            new OpCalculateScalarFieldGradient<SPACE_DIM>("FIELD1",
+                                                          ptr_diff_vals));
+
+        post_proc_fe->getOpPtrVector().push_back(
+
+            new OpPPMap(
+
+                post_proc_fe->getPostProcMesh(), post_proc_fe->getMapGaussPts(),
+
+                {{"FIELD1", ptr_values}},
+
+                {{"FIELD1_GRAD", ptr_diff_vals}},
+
+                {}, {})
+
+        );
+        return post_proc_fe;
+      };
+
+      auto get_bdy_post_proc_fe = [&](auto post_proc_mesh_ptr) {
+        auto bdy_post_proc_fe =
+            boost::make_shared<PostProcBrokenMeshInMoabBaseCont<BoundaryEle>>(
+                m_field, post_proc_mesh_ptr);
+
+        auto op_loop_side = new OpLoopSide<EleOnSide>(
+            m_field, simple->getDomainFEName(), SPACE_DIM);
+
+        auto ptr_values = boost::make_shared<VectorDouble>();
+        auto ptr_diff_vals = boost::make_shared<MatrixDouble>();
+
+        // push operators to side element
+        CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+            op_loop_side->getOpPtrVector(), {space});
+        op_loop_side->getOpPtrVector().push_back(
+            new OpCalculateScalarFieldValues("FIELD1", ptr_values));
+        op_loop_side->getOpPtrVector().push_back(
+            new OpCalculateScalarFieldGradient<SPACE_DIM>("FIELD1",
+                                                          ptr_diff_vals));
+        // push op to boundary element
+        bdy_post_proc_fe->getOpPtrVector().push_back(op_loop_side);
+
+        bdy_post_proc_fe->getOpPtrVector().push_back(
+
+            new OpPPMap(
+
+                bdy_post_proc_fe->getPostProcMesh(),
+                bdy_post_proc_fe->getMapGaussPts(),
+
+                {{"FIELD1", ptr_values}},
+
+                {{"FIELD1_GRAD", ptr_diff_vals}},
+
+                {}, {})
+
+        );
+
+        return bdy_post_proc_fe;
+      };
+
+      auto post_proc_mesh_ptr = boost::make_shared<moab::Core>();
+      auto post_proc_begin =
+          boost::make_shared<PostProcBrokenMeshInMoabBaseBegin>(
+              m_field, post_proc_mesh_ptr);
+      auto post_proc_end =
+          boost::make_shared<PostProcBrokenMeshInMoabBaseEnd>(
+              m_field, post_proc_mesh_ptr);
+      auto domain_post_proc_fe = get_domain_post_proc_fe(post_proc_mesh_ptr);
+      auto bdy_post_proc_fe = get_bdy_post_proc_fe(post_proc_mesh_ptr);
+
+      CHKERR DMoFEMPreProcessFiniteElements(dm, post_proc_begin->getFEMethod());
+      CHKERR DMoFEMLoopFiniteElements(dm, simple->getDomainFEName(),
+                                      domain_post_proc_fe);
+      CHKERR DMoFEMLoopFiniteElements(dm, simple->getBoundaryFEName(),
+                                      bdy_post_proc_fe);
+      CHKERR DMoFEMPostProcessFiniteElements(dm, post_proc_end->getFEMethod());
+      CHKERR post_proc_end->writeFile("out_post_proc.h5m");
+
+      MoFEMFunctionReturn(0);
+    };
+
     CHKERR assemble_matrices_and_vectors();
     CHKERR solve_problem();
     CHKERR check_solution();
+    CHKERR post_proc();
   }
   CATCH_ERRORS;
 

@@ -1,4 +1,4 @@
-FROM likask/mofem-spack-build
+FROM likask/mofem-intermidiate
 
 LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk"
 
@@ -15,23 +15,33 @@ RUN apt-get update && \
   libnode64 \
   && apt-get clean && rm -rf /var/lib/apt/lists/*  
 
+RUN ln -s `which pip3.8` /usr/bin/pip3.8
+
 RUN pip3 -q install pip --upgrade && \
-  pip3 install \
+  pip3 install notebook 
+
+RUN pip3 install \
   pandas \
   scipy \
   gmsh \
   jupytext \
   pyvista \
-  jupyter \
-  jupyterhub \
+  pyvirtualdisplay \
+  ipyvtklink \
   jupyter_contrib_nbextensions \
   itkwidgets \
-  ipywidgets \
-  ipyvtk-simple==0.1.2 && \
-  jupyter contrib nbextension install && \
-  jupyter nbextension enable spellchecker/main && \
-  jupyter nbextension install --py jupytext && \
+  ipywidgets==7.7 \
+  pythreejs \
+  ipyvtk-simple \
+  panel \
+  jupyter-server \
+  jupyter \
+  jupyterhub-firstuseauthenticator && \
+  jupyter contrib nbextension install --sys-prefix && \
+  jupyter nbextension install --py jupytext --sys-prefix && \
   jupyter nbextension enable --py jupytext && \
+  jupyter nbextension install --py pythreejs --sys-prefix && \
+  jupyter nbextension enable --py pythreejs && \
   npm install -g configurable-http-proxy
 
 # allow jupyterlab for ipyvtk
@@ -44,6 +54,5 @@ ENV PYTHONPATH=$PYTHONPATH:/usr/local/lib/python3.8/site-packages/gmsh-4.8.3-Lin
 WORKDIR $MOFEM_INSTALL_DIR
 
 EXPOSE 8888
-CMD /bin/bash -c "Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &" && \
-  jupyter notebook --port=8888 --no-browser --ip=0.0.0.0 --allow-root
+CMD /bin/bash -c "jupyter notebook --port=8888 --no-browser --ip=0.0.0.0 --allow-root"
 

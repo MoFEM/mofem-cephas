@@ -57,6 +57,30 @@ namespace FTensor
                      : data[N2 + (N1 * (2 * Tensor_Dim - N1 - 1)) / 2];
     }
 
+    template <int N1, int N2>
+    inline T operator()(const Number<N1> &, const Number<N2>()) const {
+
+      static_assert(N1 < Tensor_Dim, "Bad index");
+      static_assert(N2 < Tensor_Dim, "Bad index");
+
+      if constexpr (N1 > N2)
+        return data[N1 + (N2 * (2 * Tensor_Dim - N2 - 1)) / 2];
+      else
+        return data[N2 + (N1 * (2 * Tensor_Dim - N1 - 1)) / 2];
+    }
+
+    template <int N1, int N2>
+    inline T &operator()(const Number<N1> &, const Number<N2>()) {
+
+      static_assert(N1 < Tensor_Dim, "Bad index");
+      static_assert(N2 < Tensor_Dim, "Bad index");
+
+      if constexpr (N1 > N2)
+        return data[N1 + (N2 * (2 * Tensor_Dim - N2 - 1)) / 2];
+      else
+        return data[N2 + (N1 * (2 * Tensor_Dim - N1 - 1)) / 2];
+    }
+
     /* These operator()'s are the first part in constructing template
        expressions.  They can be used to slice off lower dimensional
        parts. They are not entirely safe, since you can accidentally use a
@@ -242,24 +266,21 @@ namespace FTensor
     os << ']';
     return os;
   }
-}
 
-template <class T, int Tensor_Dim>
-std::ostream &operator<<(std::ostream &os,
-                         const FTensor::Tensor2_symmetric<T, Tensor_Dim> &t)
-{
-  os << '[';
-  for(int i = 0; i + 1 < Tensor_Dim; ++i)
-    {
+  template <class T, int Tensor_Dim>
+  std::ostream &operator<<(std::ostream &os,
+                           const FTensor::Tensor2_symmetric<T, Tensor_Dim> &t) {
+    os << '[';
+    for (int i = 0; i + 1 < Tensor_Dim; ++i) {
       FTensor::Tensor2_symmetric_ostream_row(os, t, i);
       os << ',';
     }
-  if(Tensor_Dim > 0)
-    {
+    if (Tensor_Dim > 0) {
       FTensor::Tensor2_symmetric_ostream_row(os, t, Tensor_Dim - 1);
     }
-  os << ']';
-  return os;
+    os << ']';
+    return os;
+  }
 }
 
 namespace FTensor
@@ -283,23 +304,20 @@ namespace FTensor
     is >> c;
     return is;
   }
-}
 
-template <class T, int Tensor_Dim>
-std::istream &
-operator>>(std::istream &is, FTensor::Tensor2_symmetric<T, Tensor_Dim> &t)
-{
-  char c;
-  is >> c;
-  for(int i = 0; i + 1 < Tensor_Dim; ++i)
-    {
+  template <class T, int Tensor_Dim>
+  std::istream &operator>>(std::istream &is,
+                           FTensor::Tensor2_symmetric<T, Tensor_Dim> &t) {
+    char c;
+    is >> c;
+    for (int i = 0; i + 1 < Tensor_Dim; ++i) {
       FTensor::Tensor2_symmetric_istream_row(is, t, i);
       is >> c;
     }
-  if(Tensor_Dim > 0)
-    {
+    if (Tensor_Dim > 0) {
       FTensor::Tensor2_symmetric_istream_row(is, t, Tensor_Dim - 1);
     }
-  is >> c;
-  return is;
+    is >> c;
+    return is;
+  }
 }

@@ -2,19 +2,6 @@
  * \brief Multi-index containers for finite elements
  */
 
-/* MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
- */
 
 namespace MoFEM {
 
@@ -478,7 +465,6 @@ RefElement_VERTEX::RefElement_VERTEX(
 }
 const boost::shared_ptr<SideNumber> &
 RefElement_VERTEX::getSideNumberPtr(const EntityHandle ent) const {
-  moab::Interface &moab = getRefEntityPtr()->getBasicDataPtr()->moab;
   SideNumber_multiIndex::iterator miit = side_number_table.find(ent);
   if (miit != side_number_table.end())
     return *miit;

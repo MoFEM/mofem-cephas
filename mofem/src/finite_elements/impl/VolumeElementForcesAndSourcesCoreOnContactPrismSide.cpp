@@ -4,28 +4,16 @@
 
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 namespace MoFEM {
 
-int VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::getRule(int order) {
+int VolumeElementForcesAndSourcesCoreOnContactPrismSide::getRule(int order) {
   return -1;
 };
 
 MoFEMErrorCode
-VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::setGaussPts(int order) {
+VolumeElementForcesAndSourcesCoreOnContactPrismSide::setGaussPts(int order) {
   MoFEMFunctionBegin;
 
   if (!sidePtrFE)
@@ -95,14 +83,13 @@ VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::setGaussPts(int order) 
   gaussPts.resize(4, nb_gauss_pts, false);
   gaussPts.clear();
 
-  const EntityType tri_type = MBTRI;
-  boost::shared_ptr<DataForcesAndSourcesCore> dataH1_on_face;
+  boost::shared_ptr<EntitiesFieldData> dataH1_on_face;
 
   if (side_of_vol_number == 3) {
-    dataH1_on_face = boost::shared_ptr<DataForcesAndSourcesCore>(
+    dataH1_on_face = boost::shared_ptr<EntitiesFieldData>(
         contact_prism_ptr_fe->getDataOnMasterFromEleSide()[H1]);
   } else if (side_of_vol_number == 4) {
-    dataH1_on_face = boost::shared_ptr<DataForcesAndSourcesCore>(
+    dataH1_on_face = boost::shared_ptr<EntitiesFieldData>(
         contact_prism_ptr_fe->getDataOnSlaveFromEleSide()[H1]);
   } else {
     SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,

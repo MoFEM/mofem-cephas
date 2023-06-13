@@ -3,20 +3,6 @@
 
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
-
 #ifndef __H1TRIPOLYNOMIAL_HPP__
 #define __H1TRIPOLYNOMIAL_HPP__
 
@@ -29,10 +15,11 @@ namespace MoFEM {
  */
 struct TriPolynomialBase : public BaseFunction {
 
-  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index, UnknownInterface **iface) const;
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
+                                 UnknownInterface **iface) const;
 
-  TriPolynomialBase();
-  ~TriPolynomialBase();
+  TriPolynomialBase() = default;
+  virtual ~TriPolynomialBase() = default;
 
   MoFEMErrorCode getValue(MatrixDouble &pts,
                           boost::shared_ptr<BaseFunctionCtx> ctx_ptr);
@@ -47,7 +34,7 @@ private:
   MoFEMErrorCode getValueL2(MatrixDouble &pts);
   MoFEMErrorCode getValueL2AinsworthBase(MatrixDouble &pts);
   MoFEMErrorCode getValueL2BernsteinBezierBase(MatrixDouble &pts);
-  
+
   ublas::matrix<MatrixDouble> N_face_edge;
   ublas::vector<MatrixDouble> N_face_bubble;
   ublas::matrix<MatrixDouble> diffN_face_edge;
@@ -62,7 +49,6 @@ private:
 
   MoFEMErrorCode getValueHdivDemkowiczBase(MatrixDouble &pts);
   MoFEMErrorCode getValueHcurlDemkowiczBase(MatrixDouble &pts);
-
 };
 
 } // namespace MoFEM

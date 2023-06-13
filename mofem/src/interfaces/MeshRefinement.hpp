@@ -4,16 +4,6 @@
  * \ingroup mofem_refiner
  */
 
-/*
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
- */
-
 #ifndef __MESHREFINE_HPP__
 #define __MESHREFINE_HPP__
 
@@ -88,28 +78,44 @@ struct MeshRefinement : public UnknownInterface {
    *
    * \param EntityHandle meshset
    * \param BitRefLevel bitLevel
-   * \param bool respect_interface If TRUE, interface elements would be refined
    * \param verb verbosity level
-   * \param Range * pointer to range in not null check consistency of refinement
    */
   MoFEMErrorCode refineTets(const EntityHandle meshset, const BitRefLevel &bit,
-                            const bool respect_interface = false,
-                            int verb = QUIET, Range *ref_edges = NULL,
-                            const bool debug = false);
+                            int verb = QUIET, const bool debug = false);
 
   /**\brief refine TET in the meshset
    *
    * \param Range of tets to refine
    * \param BitRefLevel bitLevel
    * \param BitRefLevel bitLevel
-   * \param bool respect_interface If TRUE, interface elements would be refined
    * \param verb verbosity level
-   * \param Range * pointer to range in not null check consistency of refinement
    */
   MoFEMErrorCode refineTets(const Range &tets, const BitRefLevel &bit,
-                            const bool respect_interface = false,
-                            int verb = QUIET, Range *ref_edges = NULL,
-                            const bool debug = false);
+                            int verb = QUIET, const bool debug = false);
+
+  /**\brief refine TET in the meshset
+   *
+   * \param Range of tets to refine
+   * \param BitRefLevel bitLevel
+   * \param BitRefLevel bitLevel
+   * \param verb verbosity level
+   */
+  MoFEMErrorCode refineTetsHangingNodes(const Range &tets,
+                                        const BitRefLevel &bit,
+                                        int verb = QUIET,
+                                        const bool debug = false);
+
+  /**\brief refine TET in the meshset
+   *
+   * \param Range of tets to refine
+   * \param BitRefLevel bitLevel
+   * \param BitRefLevel bitLevel
+   * \param verb verbosity level
+   */
+  MoFEMErrorCode refineTetsHangingNodes(const EntityHandle meshset,
+                                        const BitRefLevel &bit,
+                                        int verb = QUIET,
+                                        const bool debug = false);
 
   /**\brief refine PRISM in the meshset
    *
@@ -130,6 +136,85 @@ struct MeshRefinement : public UnknownInterface {
   MoFEMErrorCode refineMeshset(const EntityHandle meshset,
                                const BitRefLevel &bit,
                                const bool recursive = false, int verb = QUIET);
+
+  /**\brief refine triangles in the meshset
+   *
+   * \param EntityHandle meshset
+   * \param BitRefLevel bitLevel
+   * \param verb verbosity level
+   */
+  MoFEMErrorCode refineTris(const EntityHandle meshset, const BitRefLevel &bit,
+                            int verb = QUIET, const bool debug = false);
+
+  /**\brief refine TRI in the meshset
+   *
+   * \param meshset of entities to refine
+   * \param BitRefLevel bit level of created entities
+   * \param verb verbosity level
+   */
+  MoFEMErrorCode refineTris(const Range &tris, const BitRefLevel &bit,
+                            int verb = QUIET, const bool debug = false);
+
+  /**\brief refine TRI in the meshset
+   *
+   * \param Range of entities to refine
+   * \param BitRefLevel bit level of created entities
+   * \param verb verbosity level
+   */
+  MoFEMErrorCode refineTrisHangingNodes(const EntityHandle meshset,
+                                        const BitRefLevel &bit,
+                                        int verb = QUIET,
+                                        const bool debug = false);
+
+  /**\brief refine TRI in the meshset
+   *
+   * \param Range of entities to refine
+   * \param BitRefLevel bit level of created entities
+   * \param verb verbosity level
+   */
+  MoFEMErrorCode refineTrisHangingNodes(const Range &tris,
+                                        const BitRefLevel &bit,
+                                        int verb = QUIET,
+                                        const bool debug = false);
+
+private:
+  struct SetParent {
+    map<EntityHandle, EntityHandle> parentsToChange;
+    MoFEMErrorCode operator()(const EntityHandle ent, const EntityHandle parent,
+                              const RefEntity_multiIndex *ref_ents_ptr,
+                              MoFEM::Core &cOre);
+
+    MoFEMErrorCode operator()(const RefEntity_multiIndex *ref_ents_ptr);
+  };
+
+
+  /**
+   * @brief Functions setting edges for refinemnt on enetity level 
+   * 
+   */
+  using SetEdgeBitsFun = boost::function<
+
+      MoFEMErrorCode(moab::Interface &moab,
+                     RefEntity_multiIndex_view_by_ordered_parent_entity
+                         &ref_parent_ents_view,
+                     EntityHandle tet, BitRefEdges &parent_edges_bit,
+                     EntityHandle *edge_new_nodes, int *split_edges
+
+                     )>;
+
+  /**\brief refine TET in the meshset
+   *
+   * \param Range of tets to refine
+   * \param BitRefLevel bitLevel
+   * \param verb verbosity level
+   */
+  MoFEMErrorCode refineTets(const Range &tets, const BitRefLevel &bit,
+                            SetEdgeBitsFun set_edge_bits, int verb,
+                            const bool debug);
+
+  MoFEMErrorCode refineTris(const Range &tris, const BitRefLevel &bit,
+                            SetEdgeBitsFun set_edge_bits, int verb,
+                            const bool debug);
 };
 
 } // namespace MoFEM

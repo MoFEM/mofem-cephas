@@ -6,16 +6,6 @@
  *
  */
 
-/*
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
- */
-
 #ifndef _ISMANAGER_HPP__
 #define _ISMANAGER_HPP__
 
@@ -27,7 +17,7 @@ namespace MoFEM {
  * \brief Section manager is used to create indexes and sections
  * \ingroup mofem_is_managers
  *
- * FIXME: ISManager is not properly testsed by atom tests.
+ * FIXME: ISManager is not properly tested by atom tests.
  *
  */
 struct ISManager : public UnknownInterface {
@@ -62,6 +52,47 @@ struct ISManager : public UnknownInterface {
    */
   MoFEMErrorCode sectionCreate(const std::string problem_name, PetscSection *s,
                                const RowColData row_col = COL) const;
+
+  /**
+   * \brief Create global selection
+   * \ingroup mofem_is_managers
+   *
+   * Create section for given problem, such that points are sorted by UId,
+   * and number of dofs on point is equal to number of dofs on entity
+   *
+   * It takes all fields
+   *
+   * @param  problem_name
+   * @param  fields_list
+   * @param  s
+   * @param  row_col      ROE or COL, default is ROW
+   * @return              error code
+   */
+  SmartPetscObj<PetscSection>
+  sectionCreate(const std::string problem_name,
+                const RowColData row_col = COL) const;
+
+  /**
+   * @brief Create IS for problem
+   *
+   * @param problem_name
+   * @param rc
+   * @param is
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode isCreateProblem(const std::string problem_name, RowColData rc,
+                                 IS *is) const;
+
+  /**
+   * @brief Create IS for problem
+   *
+   * @param problem_name
+   * @param rc
+   * @param is
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode isCreateProblem(const std::string problem_name, RowColData rc,
+                                 SmartPetscObj<IS> &is) const;
 
   /**
     * \brief create IS for given order range (collective)

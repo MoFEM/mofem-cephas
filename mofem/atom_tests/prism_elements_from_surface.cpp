@@ -5,19 +5,7 @@
 
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 #include <MoFEM.hpp>
 
@@ -63,7 +51,7 @@ struct PrismOp : public FatPrismElementForcesAndSourcesCore::UserDataOperator {
 
   PrismOp(moab::Interface &post_proc, MapCoords &map_coords);
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
 public:
   moab::Interface &postProc;
@@ -91,7 +79,7 @@ template <typename OP> struct Op : public OP {
 
   Op(moab::Interface &post_proc, MapCoords &map_coords, EntityHandle prism);
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
 public:
   moab::Interface &postProc;
@@ -185,7 +173,8 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.getInterface(prisms_from_surface_interface);
 
     Range prisms;
-    CHKERR prisms_from_surface_interface->createPrisms(tris, prisms);
+    CHKERR prisms_from_surface_interface->createPrisms(
+        tris, PrismsFromSurfaceInterface::NO_SWAP, prisms);
     prisms_from_surface_interface->setThickness(prisms, d3.data(), d4.data());
     Range add_prims_layer;
     Range extrude_prisms = prisms;
@@ -324,7 +313,7 @@ int main(int argc, char *argv[]) {
 
     EdgeFE fe_edge(m_field, edge_block, one_prism);
     fe_edge.getOpPtrVector().push_back(
-        new Op<EdgeElementForcesAndSourcesCoreBase::UserDataOperator>(
+        new Op<EdgeElementForcesAndSourcesCore::UserDataOperator>(
             moab, map_coords, one_prism));
     CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "EDGE", fe_edge);
 
@@ -336,7 +325,7 @@ int main(int argc, char *argv[]) {
 
     QuadFE fe_quad(m_field, edge_block, one_prism);
     fe_quad.getOpPtrVector().push_back(
-        new Op<FaceElementForcesAndSourcesCoreBase::UserDataOperator>(
+        new Op<FaceElementForcesAndSourcesCore::UserDataOperator>(
             moab, map_coords, one_prism));
     CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "QUAD", fe_quad);
 
@@ -356,7 +345,7 @@ PrismOp::PrismOp(moab::Interface &post_proc, MapCoords &map_coords)
       postProc(post_proc), mapCoords(map_coords) {}
 
 MoFEMErrorCode PrismOp::doWork(int side, EntityType type,
-                               DataForcesAndSourcesCore::EntData &data) {
+                               EntitiesFieldData::EntData &data) {
   constexpr double def_val[] = {0, 0, 0};
   MoFEMFunctionBegin;
   switch (type) {
@@ -594,7 +583,7 @@ Op<OP>::Op(moab::Interface &post_proc, MapCoords &map_coords,
 
 template <typename OP>
 MoFEMErrorCode Op<OP>::doWork(int side, EntityType type,
-                              DataForcesAndSourcesCore::EntData &data) {
+                              EntitiesFieldData::EntData &data) {
   constexpr double def_val[] = {0, 0, 0};
   MoFEMFunctionBegin;
   switch (type) {

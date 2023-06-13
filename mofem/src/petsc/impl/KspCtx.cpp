@@ -1,16 +1,4 @@
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 // #if PETSC_VERSION_GE(3,6,0)
 //   #include <petsc/private/kspimpl.h>
@@ -20,6 +8,16 @@
 
 namespace MoFEM {
 
+MoFEMErrorCode KspCtx::clearLoops() {
+  MoFEMFunctionBegin;
+  loops_to_do_Mat.clear();
+  loops_to_do_Rhs.clear();
+  preProcess_Mat.clear();
+  postProcess_Mat.clear();
+  preProcess_Rhs.clear();
+  MoFEMFunctionReturn(0);
+}
+
 PetscErrorCode KspRhs(KSP ksp, Vec f, void *ctx) {
   // PetscValidHeaderSpecific(ksp,KSP_CLASSID,1);
   MoFEMFunctionBegin;
@@ -28,11 +26,16 @@ PetscErrorCode KspRhs(KSP ksp, Vec f, void *ctx) {
 
   ksp_ctx->vecAssembleSwitch = boost::movelib::make_unique<bool>(true);
 
+  auto cache_ptr = boost::make_shared<CacheTuple>();
+  CHKERR ksp_ctx->mField.cache_problem_entities(ksp_ctx->problemName,
+                                                cache_ptr);
+
   auto set = [&](auto &fe) {
     fe.ksp = ksp;
     fe.ksp_ctx = KspMethod::CTX_SETFUNCTION;
     fe.data_ctx = PetscData::CtxSetF;
     fe.ksp_f = f;
+    fe.cacheWeakPtr = cache_ptr;
   };
 
   auto unset = [&](auto &fe) {
@@ -49,10 +52,6 @@ PetscErrorCode KspRhs(KSP ksp, Vec f, void *ctx) {
     unset(*bit);
     ksp_ctx->vecAssembleSwitch = boost::move(bit->vecAssembleSwitch);
   }
-
-  auto cache_ptr = boost::make_shared<CacheTuple>();
-  CHKERR ksp_ctx->mField.cache_problem_entities(ksp_ctx->problemName,
-                                                cache_ptr);
 
   // operators
   for (auto &lit : ksp_ctx->loops_to_do_Rhs) {
@@ -91,6 +90,9 @@ PetscErrorCode KspMat(KSP ksp, Mat A, Mat B, void *ctx) {
   PetscLogEventBegin(ksp_ctx->MOFEM_EVENT_KspMat, 0, 0, 0, 0);
 
   ksp_ctx->matAssembleSwitch = boost::movelib::make_unique<bool>(true);
+  auto cache_ptr = boost::make_shared<CacheTuple>();
+  CHKERR ksp_ctx->mField.cache_problem_entities(ksp_ctx->problemName,
+                                                cache_ptr);
 
   auto set = [&](auto &fe) {
     fe.ksp = ksp;
@@ -98,6 +100,7 @@ PetscErrorCode KspMat(KSP ksp, Mat A, Mat B, void *ctx) {
     fe.ksp_B = B;
     fe.ksp_ctx = KspMethod::CTX_OPERATORS;
     fe.data_ctx = PetscData::CtxSetA | PetscData::CtxSetB;
+    fe.cacheWeakPtr = cache_ptr;
   };
 
   auto unset = [&](auto &fe) {
@@ -120,10 +123,6 @@ PetscErrorCode KspMat(KSP ksp, Mat A, Mat B, void *ctx) {
     unset(*bit);
     ksp_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
-
-  auto cache_ptr = boost::make_shared<CacheTuple>();
-  CHKERR ksp_ctx->mField.cache_problem_entities(ksp_ctx->problemName,
-                                                cache_ptr);
 
   // operators
   for (auto &lit : ksp_ctx->loops_to_do_Mat) {

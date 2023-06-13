@@ -1,16 +1,4 @@
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 #include <MoFEM.hpp>
 
@@ -70,7 +58,7 @@ int main(int argc, char *argv[]) {
                                 LASBASETOP, &choice_base_value, &flg);
 
     if (flg != PETSC_TRUE) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "base not set");
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "base not set");
     }
 
     FieldApproximationBase base = AINSWORTH_LEGENDRE_BASE;
@@ -249,7 +237,7 @@ int main(int argc, char *argv[]) {
             mField(m_field), tH(th) {}
 
       MoFEMErrorCode doWork(int side, EntityType type,
-                            DataForcesAndSourcesCore::EntData &data) {
+                            EntitiesFieldData::EntData &data) {
         MoFEMFunctionBegin;
 
         if (data.getFieldData().size() == 0)
@@ -389,7 +377,7 @@ int main(int argc, char *argv[]) {
             mField(m_field), tH1(th1), tH2(th2), mySplit(my_split) {}
 
       MoFEMErrorCode doWork(int side, EntityType type,
-                            DataForcesAndSourcesCore::EntData &data) {
+                            EntitiesFieldData::EntData &data) {
         MoFEMFunctionBegin;
 
         if (type != MBTRI)
@@ -453,7 +441,7 @@ int main(int argc, char *argv[]) {
             mField(m_field), tH1(_th1), tH2(_th2), mySplit(my_split) {}
 
       MoFEMErrorCode doWork(int side, EntityType type,
-                            DataForcesAndSourcesCore::EntData &data) {
+                            EntitiesFieldData::EntData &data) {
         MoFEMFunctionBegin;
 
         if (type != MBTRI)
@@ -522,7 +510,7 @@ int main(int argc, char *argv[]) {
             mField(m_field), tH1(_th1), tH2(_th2), mySplit(my_split) {}
 
       MoFEMErrorCode doWork(int side, EntityType type,
-                            DataForcesAndSourcesCore::EntData &data) {
+                            EntitiesFieldData::EntData &data) {
         MoFEMFunctionBegin;
 
         if (type != MBEDGE)
@@ -538,9 +526,9 @@ int main(int argc, char *argv[]) {
         CHKERR mField.get_moab().tag_get_by_ptr(tH2, &edge, 1,
                                                 (const void **)&tn_ptr);
 
-        *tn_ptr = getTangetAtGaussPts()(0, 0) * t_ptr[0] +
-                  getTangetAtGaussPts()(0, 1) * t_ptr[1] +
-                  getTangetAtGaussPts()(0, 2) * t_ptr[2];
+        *tn_ptr = getTangentAtGaussPts()(0, 0) * t_ptr[0] +
+                  getTangentAtGaussPts()(0, 1) * t_ptr[1] +
+                  getTangentAtGaussPts()(0, 2) * t_ptr[2];
 
         double tn = 0;
         unsigned int nb_dofs = data.getN().size2() / 3;
@@ -553,18 +541,18 @@ int main(int argc, char *argv[]) {
 
         for (unsigned int dd = 0; dd != nb_dofs; ++dd) {
           double val = data.getFieldData()[dd];
-          tn += getTangetAtGaussPts()(0, 0) * data.getN()(0, 3 * dd + 0) *
+          tn += getTangentAtGaussPts()(0, 0) * data.getN()(0, 3 * dd + 0) *
                     val +
-                getTangetAtGaussPts()(0, 1) * data.getN()(0, 3 * dd + 1) *
+                getTangentAtGaussPts()(0, 1) * data.getN()(0, 3 * dd + 1) *
                     val +
-                getTangetAtGaussPts()(0, 2) * data.getN()(0, 3 * dd + 2) *
+                getTangentAtGaussPts()(0, 2) * data.getN()(0, 3 * dd + 2) *
                     val;
         }
 
         // mySplit << *tn_ptr << "  " << tn << " " << getLength() << endl;
         *tn_ptr -= tn;
 
-        // mySplit << getTangetAtGaussPts() << " " << getDirection() << endl;
+        // mySplit << getTangentAtGaussPts() << " " << getDirection() << endl;
 
         // cerr << t_ptr[0] << " " << t_ptr[1] << " " << t_ptr[2] << endl;
 

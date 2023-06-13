@@ -3,20 +3,6 @@
  * low-level functions
  */
 
-/* MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
- */
-
 #ifndef __PROBLEMSMULTIINDICES_HPP__
 #define __PROBLEMSMULTIINDICES_HPP__
 
@@ -32,39 +18,28 @@ struct ComposedProblemsData {
   std::vector<const Problem *> rowProblemsAdd;
   std::vector<const Problem *> colProblemsAdd;
 
-  std::vector<IS> rowIs;
-  std::vector<IS> colIs;
+  std::vector<SmartPetscObj<IS>> rowIs;
+  std::vector<SmartPetscObj<IS>> colIs;
 
-  inline MoFEMErrorCode getRowIs(IS *is, const unsigned int pp) const {
-    MoFEMFunctionBeginHot;
-    PetscObjectReference((PetscObject)rowIs[pp]);
-    if (pp <= rowIs.size()) {
-      SETERRQ1(PETSC_COMM_WORLD, MOFEM_INVALID_DATA,
-               "Exceed size of array pp<%d", rowIs.size());
-    }
-    *is = rowIs[pp];
-    MoFEMFunctionReturnHot(0);
-  }
+  /**
+   * @brief Get the col sub dm IS 
+   * 
+   * @param is sub problem IS
+   * @param pp problem number
+   * @return MoFEMErrorCode 
+   */
+  inline MoFEMErrorCode getRowIs(IS *is, const unsigned int pp) const;
 
-  inline MoFEMErrorCode getColIs(IS *is, const unsigned int pp) const {
-    MoFEMFunctionBeginHot;
-    PetscObjectReference((PetscObject)colIs[pp]);
-    if (pp <= colIs.size()) {
-      SETERRQ1(PETSC_COMM_WORLD, MOFEM_INVALID_DATA,
-               "Exceed size of array pp<%d", colIs.size());
-    }
-    *is = colIs[pp];
-    MoFEMFunctionReturnHot(0);
-  }
+  /**
+   * @brief Get the Col sub dm IS object
+   * 
+   * @param is sub problem IS
+   * @param pp problem number
+   * @return MoFEMErrorCode 
+   */
+  inline MoFEMErrorCode getColIs(IS *is, const unsigned int pp) const;
 
-  virtual ~ComposedProblemsData() {
-    for (unsigned int ii = 0; ii != rowIs.size(); ii++) {
-      ISDestroy(&rowIs[ii]);
-    }
-    for (unsigned int jj = 0; jj != colIs.size(); jj++) {
-      ISDestroy(&colIs[jj]);
-    }
-  }
+  virtual ~ComposedProblemsData() = default;
 };
 
 /** \brief keeps basic data about problem
@@ -85,7 +60,7 @@ struct Problem {
   int tagNameSize;      ///< Size of problem name
   BitFEId *tagBitFEId;  ///< IDs of finite elements in problem
   BitRefLevel *tagBitRefLevel; ///< BitRef level of finite elements in problem
-  BitRefLevel *tagMaskBitRefLevel; ///< BItRefMask of elements in problem
+  BitRefLevel *tagBitRefLevelMask; ///< BItRefMask of elements in problem
 
   mutable DofIdx nbDofsRow;      ///< Global number of DOFs in  row
   mutable DofIdx nbDofsCol;      ///< Global number of DOFs in col
@@ -104,122 +79,32 @@ struct Problem {
   /**
    * \brief get access to numeredRowDofsPtr storing DOFs on rows
    */
-  boost::shared_ptr<NumeredDofEntity_multiIndex> &getNumeredRowDofsPtr() const {
-    return numeredRowDofsPtr;
-  }
+  inline auto &getNumeredRowDofsPtr() const { return numeredRowDofsPtr; }
 
   /**
    * \brief get access to numeredColDofsPtr storing DOFs on cols
    */
-  boost::shared_ptr<NumeredDofEntity_multiIndex> &getNumeredColDofsPtr() const {
-    return numeredColDofsPtr;
-  }
+  inline auto &getNumeredColDofsPtr() const { return numeredColDofsPtr; }
 
   /**
    * \brief get access to reference for multi-index storing finite elements
    */
-  const boost::shared_ptr<NumeredEntFiniteElement_multiIndex> &
-  getNumeredFiniteElementsPtr() const {
+  inline const auto &getNumeredFiniteElementsPtr() const {
     return numeredFiniteElementsPtr;
   }
 
   /**
-   * \brief get access to numeredRowDofsPtr storing DOFs on rows
-   * \deprected Use getNumeredRowDofsPtr
+   * @brief Erase elements by entities
+   *
+   * @param entities
+   * @return MoFEMErrorCode
    */
-  DEPRECATED boost::shared_ptr<NumeredDofEntity_multiIndex> &
-  getNumeredRowDofs() const {
-    return numeredRowDofsPtr;
-  }
-
-  /**
-   * \brief get access to numeredColDofsPtr storing DOFs on cols
-   * \deprecated Use getNumeredColDofsPtr
-   */
-  DEPRECATED boost::shared_ptr<NumeredDofEntity_multiIndex> &
-  getNumeredColDofs() const {
-    return numeredColDofsPtr;
-  }
-
-  /**
-   * \brief get access to reference for multi-index storing finite elements
-   * \deprecated getNumeredFiniteElementsPtr
-   */
-  const boost::shared_ptr<NumeredEntFiniteElement_multiIndex> &DEPRECATED
-  getNumeredFiniteElements() const {
-    return numeredFiniteElementsPtr;
-  }
+  MoFEMErrorCode eraseElements(Range entities) const;
 
   /**
    * \brief Subproblem problem data
    */
-  struct SubProblemData {
-
-    SmartPetscObj<IS>
-        rowIs; ///< indices of main problem of which sub problem is this
-    SmartPetscObj<IS>
-        colIs; ///< indices of main problem of which sub problem is this
-    SmartPetscObj<AO>
-        rowMap; ///< mapping form main problem indices to sub-problem indices
-    SmartPetscObj<AO>
-        colMap; ///< mapping form main problem indices to sub-problem indices
-
-    inline auto getSmartRowIs() { return rowIs; }
-    inline auto getSmartColIs() { return colIs; }
-    inline auto getSmartRowMap() { return rowMap; }
-    inline auto getSmartColMap() { return colMap; }
-
-    /**
-     * get row Is for sub problem
-     * @param  is create is
-     * @return    error code
-     */
-    inline MoFEMErrorCode getRowIs(IS *is) {
-      MoFEMFunctionBeginHot;
-      PetscObjectReference((PetscObject)rowIs);
-      *is = rowIs;
-      MoFEMFunctionReturnHot(0);
-    }
-
-    /**
-     * get col Is for sub problem
-     * @param  is create is
-     * @return    error code
-     */
-    inline MoFEMErrorCode getColIs(IS *is) {
-      MoFEMFunctionBeginHot;
-      PetscObjectReference((PetscObject)colIs);
-      *is = colIs;
-      MoFEMFunctionReturnHot(0);
-    };
-
-    /**
-     * get row AO mapping for sub problem
-     * @param  ao get mapping
-     * @return    error code
-     */
-    inline MoFEMErrorCode getRowMap(AO *ao) {
-      MoFEMFunctionBeginHot;
-      PetscObjectReference((PetscObject)rowMap);
-      *ao = rowMap;
-      MoFEMFunctionReturnHot(0);
-    }
-
-    /**
-     * get col AO mapping for sub problem
-     * @param  ao get mapping
-     * @return    error code
-     */
-    inline MoFEMErrorCode getColMap(AO *ao) {
-      MoFEMFunctionBeginHot;
-      PetscObjectReference((PetscObject)colMap);
-      *ao = colMap;
-      MoFEMFunctionReturnHot(0);
-    }
-
-    SubProblemData() = default;
-    virtual ~SubProblemData() = default;
-  };
+  struct SubProblemData;
 
   /**
    * Pointer to data structure. This pointer has allocated data only for
@@ -243,10 +128,7 @@ struct Problem {
   /**
    * \brief Het composed problems data structure
    */
-  inline boost::shared_ptr<ComposedProblemsData> &
-  getComposedProblemsData() const {
-    return composedProblemsData;
-  }
+  inline auto &getComposedProblemsData() const { return composedProblemsData; }
 
   /**
    * \brief get DOFs from problem
@@ -267,33 +149,6 @@ struct Problem {
       const int field_bit_number, const EntityHandle ent, const int ent_dof_idx,
       const RowColData row_or_col,
       boost::shared_ptr<NumeredDofEntity> &dof_ptr) const;
-
-/**
- * use with loops to iterate problem fes
- * \ingroup problems_multi_indices
- *
- * for(_IT_NUMEREDFE_BY_NAME_FOR_LOOP_(PROBLEMPTR,NAME,IT)) {
- *   ...
- * }
- *
- */
-#define _IT_NUMEREDFE_BY_NAME_FOR_LOOP_(PROBLEMPTR, NAME, IT)                  \
-  NumeredEntFiniteElementbyName::iterator IT =                                 \
-      PROBLEMPTR->getNumeredFEsBegin(NAME);                                    \
-  IT != PROBLEMPTR->getNumeredFEsEnd(NAME);                                    \
-  IT++
-
-  NumeredEntFiniteElementbyName::iterator
-  getNumeredFEsBegin(std::string fe_name) const {
-    return numeredFiniteElementsPtr->get<FiniteElement_name_mi_tag>()
-        .lower_bound(fe_name);
-  }
-
-  NumeredEntFiniteElementbyName::iterator
-  getNumeredFEsEnd(std::string fe_name) const {
-    return numeredFiniteElementsPtr->get<FiniteElement_name_mi_tag>()
-        .upper_bound(fe_name);
-  }
 
 /**
  * \brief use with loops to iterate row DOFs
@@ -390,29 +245,25 @@ struct Problem {
 
   /// get begin iterator for numeredRowDofsPtr (insted you can use
   /// #_IT_NUMEREDDOF_ROW_FOR_LOOP_ for loops)
-  NumeredDofEntityByLocalIdx::iterator
-  getNumeredRowDofsByLocIdxBegin(const DofIdx locidx) const {
+  auto getNumeredRowDofsByLocIdxBegin(const DofIdx locidx) const {
     return numeredRowDofsPtr->get<PetscLocalIdx_mi_tag>().lower_bound(locidx);
   }
 
   /// get end iterator for numeredRowDofsPtr (insted you can use
   /// #_IT_NUMEREDDOF_ROW_FOR_LOOP_ for loops)
-  NumeredDofEntityByLocalIdx::iterator
-  getNumeredRowDofsByLocIdxEnd(const DofIdx locidx) const {
+  auto getNumeredRowDofsByLocIdxEnd(const DofIdx locidx) const {
     return numeredRowDofsPtr->get<PetscLocalIdx_mi_tag>().upper_bound(locidx);
   }
 
   /// get begin iterator for numeredColDofsPtr (insted you can use
   /// #_IT_NUMEREDDOF_COL_FOR_LOOP_ for loops)
-  NumeredDofEntityByLocalIdx::iterator
-  getNumeredColDofsByLocIdxBegin(const DofIdx locidx) const {
+  auto getNumeredColDofsByLocIdxBegin(const DofIdx locidx) const {
     return numeredColDofsPtr->get<PetscLocalIdx_mi_tag>().lower_bound(locidx);
   }
 
   /// get end iterator for numeredColDofsPtr (insted you can use
   /// #_IT_NUMEREDDOF_COL_FOR_LOOP_ for loops)
-  NumeredDofEntityByLocalIdx::iterator
-  getNumeredColDofsByLocIdxEnd(const DofIdx locidx) const {
+  auto getNumeredColDofsByLocIdxEnd(const DofIdx locidx) const {
     return numeredColDofsPtr->get<PetscLocalIdx_mi_tag>().upper_bound(locidx);
   }
 
@@ -428,8 +279,7 @@ struct Problem {
  *
  */
 #define _IT_NUMEREDDOF_ROW_BY_ENT_FOR_LOOP_(PROBLEMPTR, ENT, IT)               \
-  NumeredDofEntityByEnt::iterator IT =                                         \
-      PROBLEMPTR->getNumeredRowDofsByEntBegin(ENT);                            \
+  auto IT = PROBLEMPTR->getNumeredRowDofsByEntBegin(ENT);                      \
   IT != PROBLEMPTR->getNumeredRowDofsByEntEnd(ENT);                            \
   IT++
 
@@ -445,36 +295,31 @@ struct Problem {
  *
  */
 #define _IT_NUMEREDDOF_COL_BY_ENT_FOR_LOOP_(PROBLEMPTR, ENT, IT)               \
-  NumeredDofEntityByEnt::iterator IT =                                         \
-      PROBLEMPTR->getNumeredColDofsByEntBegin(ENT);                            \
+  auto IT = PROBLEMPTR->getNumeredColDofsByEntBegin(ENT);                      \
   IT != PROBLEMPTR->getNumeredColDofsByEntEnd(ENT);                            \
   IT++
 
   /// get begin iterator for numeredRowDofsPtr (insted you can use
   /// #_IT_NUMEREDDOF_ROW_BY_ENT_FOR_LOOP_ for loops)
-  NumeredDofEntityByEnt::iterator
-  getNumeredRowDofsByEntBegin(const EntityHandle ent) const {
+  auto getNumeredRowDofsByEntBegin(const EntityHandle ent) const {
     return numeredRowDofsPtr->get<Ent_mi_tag>().lower_bound(ent);
   }
 
   /// get end iterator for numeredRowDofsPtr (insted you can use
   /// #_IT_NUMEREDDOF_ROW_BY_ENT_FOR_LOOP_ for loops)
-  NumeredDofEntityByEnt::iterator
-  getNumeredRowDofsByEntEnd(const EntityHandle ent) const {
+  auto getNumeredRowDofsByEntEnd(const EntityHandle ent) const {
     return numeredRowDofsPtr->get<Ent_mi_tag>().upper_bound(ent);
   }
 
   /// get begin iterator for numeredColDofsPtr (insted you can use
   /// #_IT_NUMEREDDOF_COL_BY_ENT_FOR_LOOP_ for loops)
-  NumeredDofEntityByEnt::iterator
-  getNumeredColDofsByEntBegin(const EntityHandle ent) const {
+  auto getNumeredColDofsByEntBegin(const EntityHandle ent) const {
     return numeredColDofsPtr->get<Ent_mi_tag>().lower_bound(ent);
   }
 
   /// get end iterator for numeredColDofsPtr (insted you can use
   /// #_IT_NUMEREDDOF_COL_BY_ENT_FOR_LOOP_ for loops)
-  NumeredDofEntityByEnt::iterator
-  getNumeredColDofsByEntEnd(const EntityHandle ent) const {
+  auto getNumeredColDofsByEntEnd(const EntityHandle ent) const {
     return numeredColDofsPtr->get<Ent_mi_tag>().upper_bound(ent);
   }
 
@@ -524,7 +369,7 @@ struct Problem {
 
   inline BitProblemId getId() const { return *((BitProblemId *)tagId); }
 
-  inline std::string getName() const {
+  inline auto getName() const {
     return std::string((char *)tagName, tagNameSize);
   }
 
@@ -536,7 +381,11 @@ struct Problem {
   inline DofIdx getNbGhostDofsCol() const { return nbGhostDofsCol; }
 
   inline BitRefLevel getBitRefLevel() const { return *tagBitRefLevel; }
-  inline BitRefLevel getMaskBitRefLevel() const { return *tagMaskBitRefLevel; }
+  inline BitRefLevel getBitRefLevelMask() const { return *tagBitRefLevelMask; }
+
+  // DEPRECATED inline BitRefLevel getMaskBitRefLevel() const {
+  //   return *tagBitRefLevelMask;
+  // }
 
   /**
    * @brief Get the Row Dofs By Petsc Global Dof Idx object
@@ -654,9 +503,7 @@ struct Problem {
 
    * @return MoFEM::Problem::SequenceDofContainer
    */
-  inline boost::shared_ptr<SequenceDofContainer> &getRowDofsSequence() const {
-    return sequenceRowDofContainer;
-  }
+  inline auto &getRowDofsSequence() const { return sequenceRowDofContainer; }
 
   /**
    * \brief Get reference to sequence data numbered dof container
@@ -672,18 +519,120 @@ struct Problem {
 
    * @return MoFEM::Problem::SequenceDofContainer
    */
-  inline boost::shared_ptr<SequenceDofContainer> &getColDofsSequence() const {
-    return sequenceColDofContainer;
+  inline auto &getColDofsSequence() const { return sequenceColDofContainer; }
+
+  using EmptyFieldBlocks = std::pair<BitFieldId, BitFieldId>;
+
+  /**
+   * @brief Get the empty field blocks
+   *
+   * Emtpy field blocks is a pair contains IDs of the fields for which matrix
+   * has zero entries.
+   *
+   * @return EmptyFieldBlocks&
+   */
+  inline EmptyFieldBlocks &getEmptyFieldBlocks() const {
+    return emptyFieldBlocks;
+  }
+
+  /**
+   * @brief Add fields to the empty field blocks
+   *
+   * Emtpy field blocks is a pair contains IDs of the fields for which matrix
+   * has zero entries.
+   *
+   * @param add_fields
+   * @return EmptyFieldBlocks&
+   */
+  inline EmptyFieldBlocks &
+  addFieldToEmptyFieldBlocks(const EmptyFieldBlocks add_fields) const {
+    emptyFieldBlocks.first |= add_fields.first;
+    emptyFieldBlocks.second |= add_fields.second;
+    return emptyFieldBlocks;
   }
 
 private:
   // Keep vector of DoFS on entity
   mutable boost::shared_ptr<SequenceDofContainer> sequenceRowDofContainer;
   mutable boost::shared_ptr<SequenceDofContainer> sequenceColDofContainer;
+
+  mutable EmptyFieldBlocks emptyFieldBlocks;
 };
 
-/// \deprecated use just Problem
-DEPRECATED typedef Problem MoFEMProblem;
+using EmptyFieldBlocks = Problem::EmptyFieldBlocks;
+
+/**
+ * \brief Subproblem problem data
+ */
+struct Problem::SubProblemData {
+
+  SmartPetscObj<IS>
+      rowIs; ///< indices of main problem of which sub problem is this
+  SmartPetscObj<IS>
+      colIs; ///< indices of main problem of which sub problem is this
+  SmartPetscObj<AO>
+      rowMap; ///< mapping form main problem indices to sub-problem indices
+  SmartPetscObj<AO>
+      colMap; ///< mapping form main problem indices to sub-problem indices
+
+  inline auto getSmartRowIs() { return rowIs; }
+  inline auto getSmartColIs() { return colIs; }
+  inline auto getSmartRowMap() { return rowMap; }
+  inline auto getSmartColMap() { return colMap; }
+
+  /**
+   * get row Is for sub problem
+   * @param  is create is
+   * @return    error code
+   */
+  inline MoFEMErrorCode getRowIs(IS *is) {
+    MoFEMFunctionBeginHot;
+    *is = rowIs;
+    PetscObjectReference((PetscObject)(*is));
+    MoFEMFunctionReturnHot(0);
+  }
+
+  /**
+   * get col Is for sub problem
+   * @param  is create is
+   * @return    error code
+   */
+  inline MoFEMErrorCode getColIs(IS *is) {
+    MoFEMFunctionBeginHot;
+    *is = colIs;
+    PetscObjectReference((PetscObject)(*is));
+    MoFEMFunctionReturnHot(0);
+  };
+
+  /**
+   * get row AO mapping for sub problem
+   * @param  ao get mapping
+   * @return    error code
+   */
+  inline MoFEMErrorCode getRowMap(AO *ao) {
+    MoFEMFunctionBeginHot;
+    *ao = rowMap;
+    PetscObjectReference((PetscObject)(*ao));
+    MoFEMFunctionReturnHot(0);
+  }
+
+  /**
+   * get col AO mapping for sub problem
+   * @param  ao get mapping
+   * @return    error code
+   */
+  inline MoFEMErrorCode getColMap(AO *ao) {
+    MoFEMFunctionBeginHot;
+    *ao = colMap;
+    PetscObjectReference((PetscObject)(*ao));
+    MoFEMFunctionReturnHot(0);
+  }
+
+  SubProblemData() = default;
+  virtual ~SubProblemData() = default;
+};
+
+using EmptyFieldBlocks = Problem::EmptyFieldBlocks;
 
 /**
  * @relates multi_index_container
@@ -726,7 +675,7 @@ struct ProblemChangeRefLevelBitSet {
 struct ProblemChangeRefLevelBitDofMaskSet {
   BitRefLevel bit;
   ProblemChangeRefLevelBitDofMaskSet(const BitRefLevel _bit) : bit(_bit){};
-  void operator()(Problem &p) { *(p.tagMaskBitRefLevel) = bit; };
+  void operator()(Problem &p) { *(p.tagBitRefLevelMask) = bit; };
 };
 
 /** \brief add finite element to problem
@@ -744,7 +693,7 @@ struct ProblemFiniteElementChangeBitAdd {
 struct ProblemChangeRefLevelBitDofMaskAdd {
   BitRefLevel bit;
   ProblemChangeRefLevelBitDofMaskAdd(const BitRefLevel _bit) : bit(_bit){};
-  void operator()(Problem &p) { *(p.tagMaskBitRefLevel) |= bit; };
+  void operator()(Problem &p) { *(p.tagBitRefLevelMask) |= bit; };
 };
 
 /** \brief remove finite element from problem
@@ -790,6 +739,30 @@ struct ProblemClearSubProblemData {
 struct ProblemClearComposedProblemData {
   void operator()(Problem &e) { e.composedProblemsData.reset(); }
 };
+
+inline MoFEMErrorCode
+ComposedProblemsData::getRowIs(IS *is, const unsigned int pp) const {
+  MoFEMFunctionBeginHot;
+  if (pp <= rowIs.size()) {
+    SETERRQ1(PETSC_COMM_WORLD, MOFEM_INVALID_DATA, "Exceed size of array pp<%d",
+             rowIs.size());
+  }
+  *is = rowIs[pp].get();
+  PetscObjectReference((PetscObject)(*is));
+  MoFEMFunctionReturnHot(0);
+}
+
+inline MoFEMErrorCode
+ComposedProblemsData::getColIs(IS *is, const unsigned int pp) const {
+  MoFEMFunctionBeginHot;
+  if (pp <= colIs.size()) {
+    SETERRQ1(PETSC_COMM_WORLD, MOFEM_INVALID_DATA, "Exceed size of array pp<%d",
+             colIs.size());
+  }
+  *is = colIs[pp].get();
+  PetscObjectReference((PetscObject)(*is));
+  MoFEMFunctionReturnHot(0);
+}
 
 } // namespace MoFEM
 

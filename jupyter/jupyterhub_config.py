@@ -45,7 +45,7 @@
 #  
 #  If set to 0, no limit is enforced.
 #  Default: 0
-c.JupyterHub.active_server_limit = 40
+c.JupyterHub.active_server_limit = 0
 
 ## Duration (in seconds) to determine the number of active users.
 #  Default: 1800
@@ -68,14 +68,22 @@ c.JupyterHub.admin_access = True
 
 ## DEPRECATED since version 0.7.2, use Authenticator.admin_users instead.
 #  Default: set()
+
+from jupyterhub.auth import LocalAuthenticator
+from firstuseauthenticator import FirstUseAuthenticator
+class LocalNativeAuthenticator(LocalAuthenticator, FirstUseAuthenticator):
+  pass
+c.JupyterHub.authenticator_class = LocalNativeAuthenticator
+
 c.Authenticator.admin_users = {'mofem'}
-c.LocalAuthenticator.add_user_cmd = [
-  'useradd', 
-  '-m', 
-  '-d', '/jupyter/USERNAME', 
-  '-k', '/jupyter/skel/', 
-  '-p', 'paN8aiEIonqJE']  
-c.LocalAuthenticator.create_system_users = True
+c.FirstUseAuthenticator.add_user_cmd = [
+  'useradd',
+  '-m',
+  '-d', '/mofem_install/jupyter/USERNAME',
+  '-k', '/mofem_install/jupyter/skel/',
+  '-p', 'paN8aiEIonqJE']
+c.FirstUseAuthenticator.create_system_users = True
+c.FirstUseAuthenticator.create_users = False
 
 ## Allow named single-user servers per user
 #  Default: False
@@ -181,7 +189,7 @@ c.LocalAuthenticator.create_system_users = True
 #  
 #  If set to 0, no limit is enforced.
 #  Default: 100
-c.JupyterHub.concurrent_spawn_limit = 10
+c.JupyterHub.concurrent_spawn_limit = 100
 
 ## The config file to load
 #  Default: 'jupyterhub_config.py'
@@ -641,7 +649,7 @@ c.JupyterHub.concurrent_spawn_limit = 10
 
 ## Paths to search for jinja templates, before using the default templates.
 #  Default: []
-# c.JupyterHub.template_paths = []
+c.JupyterHub.template_paths = ['/mofem_install/jupyter/templates']
 
 ## Extra variables to be passed into jinja templates
 #  Default: {}

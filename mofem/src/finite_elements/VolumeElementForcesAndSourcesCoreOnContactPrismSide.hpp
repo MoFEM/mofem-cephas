@@ -6,19 +6,7 @@
 
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 #ifndef __VOLUMEELEMENTFORCESANDSOURCESCORE_ONVOLUMESIDE_HPP__
 #define __VOLUMEELEMENTFORCESANDSOURCESCORE_ONVOLUMESIDE_HPP__
@@ -32,7 +20,7 @@ namespace MoFEM {
  * extended to other volume elements) \ingroup
  * mofem_forces_and_sources_volume_element
  */
-struct VolumeElementForcesAndSourcesCoreOnContactPrismSideBase
+struct VolumeElementForcesAndSourcesCoreOnContactPrismSide
     : public VolumeElementForcesAndSourcesCore {
 
   using VolumeElementForcesAndSourcesCore::VolumeElementForcesAndSourcesCore;
@@ -88,7 +76,7 @@ struct VolumeElementForcesAndSourcesCoreOnContactPrismSideBase
 
     using VolumeElementForcesAndSourcesCore::UserDataOperator::UserDataOperator;
 
-    inline VolumeElementForcesAndSourcesCoreOnContactPrismSideBase *
+    inline VolumeElementForcesAndSourcesCoreOnContactPrismSide *
     getVolumeFE() const;
 
     inline ContactPrismElementForcesAndSourcesCore *getContactFE() const;
@@ -135,96 +123,81 @@ private:
   int oppositeNode;
 };
 
-/**
- * @brief Volume side finite element with switches
- *
- * Using SWITCH to off functions
- *
- * @tparam SWITCH
- */
-template <int SWITCH>
-struct VolumeElementForcesAndSourcesCoreOnContactPrismSideSwitch
-    : public VolumeElementForcesAndSourcesCoreOnContactPrismSideBase {
-
-  using VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::
-      VolumeElementForcesAndSourcesCoreOnContactPrismSideBase;
-
-  using UserDataOperator =
-      VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::UserDataOperator;
-
-  MoFEMErrorCode operator()();
-};
-
-/** \brief Volume element used to integrate on contact element (could be
- extended for other volume elements) \ingroup
- mofem_forces_and_sources_volume_element
-
- */
-using VolumeElementForcesAndSourcesCoreOnContactPrismSide =
-    VolumeElementForcesAndSourcesCoreOnContactPrismSideSwitch<0>;
-
 const std::array<int, 4> &
-VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::getFaceConnMap() const {
+VolumeElementForcesAndSourcesCoreOnContactPrismSide::getFaceConnMap() const {
   return faceConnMap;
 }
 
 const std::array<int, 8> &
-VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::getTetConnMap() const {
+VolumeElementForcesAndSourcesCoreOnContactPrismSide::getTetConnMap() const {
   return tetConnMap;
 }
 
-int VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::getOppositeNode() const {
+int VolumeElementForcesAndSourcesCoreOnContactPrismSide::getOppositeNode() const {
   return oppositeNode;
 }
 
-int VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::getFaceSense() const {
+int VolumeElementForcesAndSourcesCoreOnContactPrismSide::getFaceSense() const {
   return faceSense;
 }
 
-int VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::getFaceSideNumber()
+int VolumeElementForcesAndSourcesCoreOnContactPrismSide::getFaceSideNumber()
     const {
   return faceSideNumber;
 }
 
-VolumeElementForcesAndSourcesCoreOnContactPrismSideBase *
-VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::UserDataOperator::
+VolumeElementForcesAndSourcesCoreOnContactPrismSide *
+VolumeElementForcesAndSourcesCoreOnContactPrismSide::UserDataOperator::
     getVolumeFE() const {
-  return static_cast<VolumeElementForcesAndSourcesCoreOnContactPrismSideBase *>(
+  return static_cast<VolumeElementForcesAndSourcesCoreOnContactPrismSide *>(
       ptrFE);
 }
 
 ContactPrismElementForcesAndSourcesCore *
-VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::UserDataOperator::
+VolumeElementForcesAndSourcesCoreOnContactPrismSide::UserDataOperator::
     getContactFE() const {
   return static_cast<ContactPrismElementForcesAndSourcesCore *>(
       getVolumeFE()->sidePtrFE);
 }
 
-MatrixDouble &VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::
+MatrixDouble &VolumeElementForcesAndSourcesCoreOnContactPrismSide::
     UserDataOperator::getMasterCoordsAtGaussPts() {
   return getContactFE()->getGaussPtsMasterFromEleSide();
 }
 
-MatrixDouble &VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::
+MatrixDouble &VolumeElementForcesAndSourcesCoreOnContactPrismSide::
     UserDataOperator::getSlaveCoordsAtGaussPts() {
   return getContactFE()->getGaussPtsSlaveFromEleSide();
 }
 
-int VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::UserDataOperator::
+int VolumeElementForcesAndSourcesCoreOnContactPrismSide::UserDataOperator::
     getFaceSense() const {
   return getVolumeFE()->faceSense;
 }
 
-int VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::UserDataOperator::
+int VolumeElementForcesAndSourcesCoreOnContactPrismSide::UserDataOperator::
     getFaceSideNumber() const {
   return getVolumeFE()->faceSideNumber;
 }
 
+/**
+ * @deprecated use VolumeElementForcesAndSourcesCore
+ * 
+ */
+DEPRECATED typedef VolumeElementForcesAndSourcesCoreOnContactPrismSide
+    VolumeElementForcesAndSourcesCoreOnContactPrismSideBase;
+
+/**
+ * @deprecated do not use this template, it is obsolete
+ */
 template <int SWITCH>
-MoFEMErrorCode VolumeElementForcesAndSourcesCoreOnContactPrismSideSwitch<SWITCH>::
-operator()() {
-  return opSwitch<SWITCH>();
-}
+struct VolumeElementForcesAndSourcesCoreOnContactPrismSideSwitch
+    : public VolumeElementForcesAndSourcesCoreOnContactPrismSide {
+  using VolumeElementForcesAndSourcesCoreOnContactPrismSide::
+      VolumeElementForcesAndSourcesCoreOnContactPrismSide;
+  using UserDataOperator =
+      VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator;
+};
 
 } // namespace MoFEM
 

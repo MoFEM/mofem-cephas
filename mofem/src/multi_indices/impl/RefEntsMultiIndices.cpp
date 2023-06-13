@@ -2,19 +2,6 @@
  * \brief Multi-index containers for entities
  */
 
-/* MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
- */
 
 #define IS_BUILDING_MB
 #include <moab/Error.hpp>
@@ -38,7 +25,15 @@ boost::weak_ptr<RefElement> RefEntityTmp<0>::refElementPtr;
 RefEntityTmp<0>::RefEntityTmp(
     const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
     const EntityHandle ent)
-    : ent(ent) {}
+    : ent(ent) {
+  entParentTagPtr = static_cast<EntityHandle *>(get_tag_ptr(
+      basic_data_ptr->moab, basic_data_ptr->th_RefParentHandle, ent, NULL));
+}
+
+RefEntityTmp<0>::RefEntityTmp(
+    const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
+    const EntityHandle ent, EntityHandle *ent_parent_tag_ptr)
+    : ent(ent), entParentTagPtr(ent_parent_tag_ptr) {}
 
 int RefEntityTmp<0>::getSideNumber() const {
   return getRefElementPtr()->getSideNumberPtr(ent)->side_number;

@@ -2,19 +2,7 @@
  * \brief Context for PETSc KSP, i.e. nonlinear solver
  */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 #ifndef __KSPCTX_HPP__
 #define __KSPCTX_HPP__
@@ -101,6 +89,13 @@ struct KspCtx {
 
   friend PetscErrorCode KspRhs(KSP ksp, Vec f, void *ctx);
   friend PetscErrorCode KspMat(KSP ksp, Mat A, Mat B, void *ctx);
+
+  /**
+   * @brief Clear loops 
+   * 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode clearLoops();
 
 private:
   PetscLogEvent MOFEM_EVENT_KspRhs;

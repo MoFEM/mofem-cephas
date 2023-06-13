@@ -4,19 +4,7 @@
 
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 #include <MoFEM.hpp>
 
@@ -69,11 +57,10 @@ int main(int argc, char *argv[]) {
                                th_vertex_weight, MB_TAG_CREAT | MB_TAG_DENSE,
                                &def_val);
 
-    ProblemsManager *prb_mng_ptr;
-    CHKERR m_field.getInterface(prb_mng_ptr);
-    CHKERR prb_mng_ptr->partitionMesh(tets, 3, 2, m_field.get_comm_size(),
-                                      &th_vertex_weight, NULL, NULL, VERBOSE,
-                                      false);
+    CommInterface *comm_interafce_ptr = m_field.getInterface<CommInterface>();
+    CHKERR comm_interafce_ptr->partitionMesh(
+        tets, 3, 2, m_field.get_comm_size(), &th_vertex_weight, NULL, NULL,
+        VERBOSE, false);
 
     if (!m_field.get_comm_rank()) {
       CHKERR moab.write_file("partitioned_mesh.h5m");

@@ -2,17 +2,32 @@
 
 \tableofcontents
 
+\htmlonly
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+  integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w=="
+  crossorigin="anonymous" referrerpolicy="no-referrer" />
+\endhtmlonly
+
 \section mofem_principal_authors Principal Authors
-  - <a href="https://www.gla.ac.uk/schools/engineering/staff/lukaszkaczmarczyk/">Łukasz Kaczmarczyk</a>, The University of Glasgow, Scotland, UK
+  - <a href="https://www.gla.ac.uk/schools/engineering/staff/lukaszkaczmarczyk/">Łukasz Kaczmarczyk</a>, The University of Glasgow, Scotland, UK, 
+    <a rel="me" href="https://fosstodon.org/@likask"><i class="fab fa-mastodon"></i></a> <a href="https://twitter.com/LukaszKaczmarcz"><i class="fab fa-twitter"></i></a> <a href="https://www.linkedin.com/feed/"><i class="fab fa-linkedin-in"></i></a>
   - <a href="https://www.gla.ac.uk/schools/engineering/staff/chrispearce/">Chris Pearce</a>, The University of Glasgow, Scotland, UK 
     
 \section mofem_core_developers Core Developers
-  - <a href="https://www.gla.ac.uk/schools/engineering/staff/lukaszkaczmarczyk/">Łukasz Kaczmarczyk</a>, The University of Glasgow, Scotland, UK
+  - <a href="https://www.gla.ac.uk/schools/engineering/staff/lukaszkaczmarczyk/">Łukasz Kaczmarczyk</a>, The University of Glasgow, Scotland, UK, 
+  <a rel="me" href="https://fosstodon.org/@likask"><i class="fab fa-mastodon"></i></a>
+  <a href="https://twitter.com/LukaszKaczmarcz"><i class="fab fa-twitter"></i></a>
+  <a href="https://www.linkedin.com/in/lukasz-kaczmarczyk-21a1455/"><i class="fab fa-linkedin-in"></i></a>
   - <a href="https://pure.qub.ac.uk/en/persons/zahur-ullah">Zahur Ullah</a>, Queen's University, North Ireland, UK
-  - <a href="https://www.gla.ac.uk/schools/engineering/staff/karollewandowski/">Karol Lewandowski</a>, The University of Glasgow, Scotland, UK
-  - <a href="https://www.gla.ac.uk/schools/engineering/staff/ignatiosathanasiadis/">Ignatios Athanasiadis</a>, The University of Glasgow, Scotland, UK
+  - <a href="https://www.gla.ac.uk/schools/engineering/staff/karollewandowski/">Karol Lewandowski</a>, The University of Glasgow, Scotland, UK,
+  <a href="https://twitter.com/inz_KaroleL"><i class="fab fa-twitter"></i></a>
+  <a href="https://www.linkedin.com/in/karol-lewandowski-b07080b1/"><i class="fab fa-linkedin-in"></i></a>
+  - <a href="https://www.gla.ac.uk/schools/engineering/staff/ignatiosathanasiadis/">Ignatios Athanasiadis</a>, The University of Glasgow, Scotland, UK, 
+  <a href="https://twitter.com/Ignatios_Ath"><i class="fab fa-twitter"></i></a>
+  <a href="https://www.linkedin.com/in/ignatios-athanasiadis-923937b7/"><i class="fab fa-linkedin-in"></i></a>
   - <a href="https://www.northumbria.ac.uk/about-us/our-staff/n/hoang-nguyen/">Hoang Nguyen</a>, Northumbria University, England, UK
-  - <a href="https://www.gla.ac.uk/schools/engineering/staff/andreishvarts/">Andrei Shvarts</a>, The University of Glasgow, Scotland, UK
+  - <a href="https://www.gla.ac.uk/schools/engineering/staff/andreishvarts/">Andrei Shvarts</a>, The University of Glasgow, Scotland, UK,
+  <a href="https://www.linkedin.com/in/andrei-shvarts/"><i class="fab fa-linkedin-in"></i></a>
   - <a href="https://www.gla.ac.uk/schools/engineering/staff/mebratuwakeni/">Mebratu Wakeni</a>, The University of Glasgow, Scotland, UK
     
 \section mofem_users_modules_developers Users Modules Contributors
@@ -21,7 +36,6 @@
   - Adriana Kuliková, The University of Glasgow, Scotland, UK
   - Richard Olley, The University of Glasgow, Scotland, UK
   - Joshua Gorham, The University of Glasgow, Scotland, UK
-  
   
 \section mofem_users_modules_past_contributors Past Contributors
 
@@ -32,5 +46,11 @@
 - Dimitrios Kourepinis
 - Xuan Meng
 - Xiao-Yi
+
+\section mofem_openhub_stat Commits and stats
+
+\htmlonly
+<script type='text/javascript' src='https://www.openhub.net/p/mofem/widgets/project_basic_stats?format=js'></script>
+\endhtmlonly
 
 */

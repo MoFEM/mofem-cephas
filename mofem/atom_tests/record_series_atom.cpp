@@ -1,16 +1,4 @@
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 #include <MoFEM.hpp>
 
@@ -148,8 +136,6 @@ int main(int argc, char *argv[]) {
     SeriesRecorder *recorder2_ptr;
     CHKERR m_field2.getInterface(recorder2_ptr);
     CHKERR recorder2_ptr->print_series_steps();
-
-    auto dofs_ptr = m_field.get_dofs();;
 
     my_split << "TEST_SERIES1" << std::endl;
     for (_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder2_ptr, "TEST_SERIES1",

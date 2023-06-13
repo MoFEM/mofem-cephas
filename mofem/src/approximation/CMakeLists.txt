@@ -1,21 +1,10 @@
-
-# the terms of the GNU Lesser General Public License as published by the
-# Free Software Foundation, either version 3 of the License, or (at your
-# option) any later version.
-#
-# MoFEM is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
-# License for more details.
-#
-# You should have received a copy of the GNU Lesser General Public
-# License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-
 include_directories(${PROJECT_SOURCE_DIR}/src/ftensor/src)
 include_directories(${PROJECT_SOURCE_DIR}/src/multi_indices)
 include_directories(${PROJECT_SOURCE_DIR}/src/interfaces)
 include_directories(${PROJECT_SOURCE_DIR}/src/finite_elements)
 include_directories(${PROJECT_SOURCE_DIR}/src/petsc)
+include_directories(${PROJECT_SOURCE_DIR}/src/post_proc)
+include_directories(${PROJECT_SOURCE_DIR}/src/boundary_conditions)
 
 # Approximation lib
 if(PRECOMPILED_HEADRES)
@@ -42,31 +31,34 @@ endif(PRECOMPILED_HEADRES)
 
 install(TARGETS mofem_approx DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 
-# Tetsing files
-if(PRECOMPILED_HEADRES)
-  set_source_files_properties(
-    impl/Hcurl.cpp
-    PROPERTIES
-    COMPILE_FLAGS "-DGENERATE_VTK_WITH_CURL_BASE -include ${PROJECT_BINARY_DIR}/include/precompiled/Includes.hpp"
-  )
+# FIXME: That is source of problems VTK out should be move to separate file.
+
+# # Tetsing files
+# if(PRECOMPILED_HEADRES)
+#   set_source_files_properties(
+#     impl/Hcurl.cpp
+#     PROPERTIES
+#     COMPILE_FLAGS "-DGENERATE_VTK_WITH_CURL_BASE -include ${PROJECT_BINARY_DIR}/include/precompiled/Includes.hpp"
+#   )
   
-else(PRECOMPILED_HEADRES)
-  set_source_files_properties(
-    impl/Hcurl.cpp
-    PROPERTIES
-    COMPILE_FLAGS "-DGENERATE_VTK_WITH_CURL_BASE"
-  )
-endif(PRECOMPILED_HEADRES)
-add_executable(vtk_curl_base_on_tet impl/Hcurl.cpp)
-if(PRECOMPILED_HEADRES)
-  add_dependencies(vtk_curl_base_on_tet Includes.hpp.pch_copy)
-endif(PRECOMPILED_HEADRES)
-target_link_libraries(vtk_curl_base_on_tet
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_petsc
-  mofem_approx
-  mofem_third_party
-  ${PROJECT_LIBS}
-)
+# else(PRECOMPILED_HEADRES)
+#   set_source_files_properties(
+#     impl/Hcurl.cpp
+#     PROPERTIES
+#     COMPILE_FLAGS "-DGENERATE_VTK_WITH_CURL_BASE"
+#   )
+# endif(PRECOMPILED_HEADRES)
+
+# add_executable(vtk_curl_base_on_tet impl/Hcurl.cpp)
+# if(PRECOMPILED_HEADRES)
+#   add_dependencies(vtk_curl_base_on_tet Includes.hpp.pch_copy)
+# endif(PRECOMPILED_HEADRES)
+# target_link_libraries(vtk_curl_base_on_tet
+#   mofem_finite_elements
+#   mofem_interfaces
+#   mofem_multi_indices
+#   mofem_petsc
+#   mofem_approx
+#   mofem_third_party
+#   ${PROJECT_LIBS}
+# )

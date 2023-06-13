@@ -4,24 +4,7 @@
  *
  */
 
-/**
- * The MoFEM package is copyrighted by Lukasz Kaczmarczyk.
- * It can be freely used for educational and research purposes
- * by other institutions. If you use this software pleas cite my work.
- *
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
- */
+
 
 using namespace std;
 namespace po = boost::program_options;
@@ -69,7 +52,6 @@ MoFEMErrorCode MeshsetsManager::clearMap() {
 }
 
 MoFEMErrorCode MeshsetsManager::initialiseDatabaseFromMesh(int verb) {
-  Interface &m_field = cOre;
   MoFEMFunctionBegin;
   CHKERR readMeshsets(verb);
   if (brodcastMeshsets)
@@ -522,6 +504,16 @@ MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
   MoFEMFunctionReturn(0);
 }
 
+const CubitMeshSets *
+MeshsetsManager::getCubitMeshsetPtr(const int ms_id,
+                                    const CubitBCType cubit_bc_type) const {
+  const CubitMeshSets *cubit_meshset_ptr;
+  CHK_THROW_MESSAGE(
+      getCubitMeshsetPtr(ms_id, cubit_bc_type, &cubit_meshset_ptr),
+      "Get not get meshset");
+  return cubit_meshset_ptr;
+}
+
 MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
     const string name, const CubitMeshSets **cubit_meshset_ptr) const {
   Interface &m_field = cOre;
@@ -541,9 +533,28 @@ MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
 }
 
 MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
+    const CubitBCType cubit_bc_type,
+    std::vector<const CubitMeshSets *> &vec_ptr) const {
+  MoFEMFunctionBegin;
+  for (auto &c : cubitMeshsets) {
+    if ((c.getBcType() & cubit_bc_type) == cubit_bc_type) {
+      vec_ptr.push_back(&c);
+    }
+  }
+  MoFEMFunctionReturn(0);
+}
+
+std::vector<const CubitMeshSets *>
+MeshsetsManager::getCubitMeshsetPtr(const CubitBCType cubit_bc_type) const {
+  std::vector<const CubitMeshSets *> vec_ptr;
+  CHK_MOAB_THROW(getCubitMeshsetPtr(cubit_bc_type, vec_ptr),
+                 "Error in getting meshsets by name");
+  return vec_ptr;
+}
+
+MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
     const std::regex reg_exp_name,
     std::vector<const CubitMeshSets *> &vec_ptr) const {
-  Interface &m_field = cOre;
   MoFEMFunctionBegin;
   auto r =
       cubitMeshsets.get<CubitMeshsetMaskedType_mi_tag>().equal_range(BLOCKSET);
@@ -554,6 +565,14 @@ MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
     }
   }
   MoFEMFunctionReturn(0);
+}
+
+std::vector<const CubitMeshSets *>
+MeshsetsManager::getCubitMeshsetPtr(const std::regex reg_exp_name) const {
+  std::vector<const CubitMeshSets *> vec_ptr;
+  CHK_MOAB_THROW(getCubitMeshsetPtr(reg_exp_name, vec_ptr),
+                 "Error in getting meshsets by name");
+  return vec_ptr;
 }
 
 MoFEMErrorCode MeshsetsManager::getEntitiesByDimension(

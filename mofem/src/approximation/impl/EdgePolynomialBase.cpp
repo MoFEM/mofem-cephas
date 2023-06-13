@@ -2,19 +2,7 @@
 \brief Implementation of Ainsworth-Cole H1 base on edge
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 using namespace MoFEM;
 
@@ -24,9 +12,6 @@ EdgePolynomialBase::query_interface(boost::typeindex::type_index type_index,
   *iface = const_cast<EdgePolynomialBase *>(this);
   return 0;
 }
-
-EdgePolynomialBase::~EdgePolynomialBase() {}
-EdgePolynomialBase::EdgePolynomialBase() {}
 
 MoFEMErrorCode
 EdgePolynomialBase::getValue(MatrixDouble &pts,
@@ -45,7 +30,7 @@ EdgePolynomialBase::getValue(MatrixDouble &pts,
         "Wrong dimension of pts, should be at least 3 rows with coordinates");
 
   const FieldApproximationBase base = cTx->bAse;
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
 
   if (base != AINSWORTH_BERNSTEIN_BEZIER_BASE) {
     if (cTx->copyNodeBase == LASTBASE) {
@@ -65,10 +50,12 @@ EdgePolynomialBase::getValue(MatrixDouble &pts,
                "for base %s",
                ApproximationBaseNames[base]);
 
-    data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(2, 1, false);
-    std::copy(Tools::diffShapeFunMBEDGE.begin(),
-              Tools::diffShapeFunMBEDGE.end(),
-              &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin());
+    data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(nb_gauss_pts, 2 * 1,
+                                                           false);
+    for (auto gg = 0; gg != nb_gauss_pts; ++gg)
+      std::copy(Tools::diffShapeFunMBEDGE.begin(),
+                Tools::diffShapeFunMBEDGE.end(),
+                &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(gg, 0));
   }
 
   switch (cTx->sPace) {
@@ -116,7 +103,7 @@ MoFEMErrorCode
 EdgePolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const std::string &field_name = cTx->fieldName;
   const int nb_gauss_pts = pts.size2();
 
@@ -183,7 +170,7 @@ EdgePolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "Wrong size ent of ent data");
 
-    int order = data.dataOnEntities[MBEDGE][0].getDataOrder();
+    int order = data.dataOnEntities[MBEDGE][0].getOrder();
     const int nb_dofs = NBEDGE_H1(order);
 
     auto &get_n = get_base(data.dataOnEntities[MBEDGE][0]);
@@ -211,7 +198,7 @@ EdgePolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
 MoFEMErrorCode EdgePolynomialBase::getValueH1AinsworthBase(MatrixDouble &pts) {
   MoFEMFunctionBeginHot;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
                                      double *diffL, const int dim) =
@@ -221,7 +208,7 @@ MoFEMErrorCode EdgePolynomialBase::getValueH1AinsworthBase(MatrixDouble &pts) {
 
   const int side_number = 0;
   int sense = data.dataOnEntities[MBEDGE][side_number].getSense();
-  int order = data.dataOnEntities[MBEDGE][side_number].getDataOrder();
+  int order = data.dataOnEntities[MBEDGE][side_number].getOrder();
   data.dataOnEntities[MBEDGE][side_number].getN(base).resize(
       nb_gauss_pts, NBEDGE_H1(order), false);
   data.dataOnEntities[MBEDGE][side_number].getDiffN(base).resize(
@@ -233,7 +220,7 @@ MoFEMErrorCode EdgePolynomialBase::getValueH1AinsworthBase(MatrixDouble &pts) {
   L.resize(NBEDGE_H1(order), false);
   diffL.resize(NBEDGE_H1(order), false);
 
-  if (data.dataOnEntities[MBEDGE][side_number].getDataOrder() > 1) {
+  if (data.dataOnEntities[MBEDGE][side_number].getOrder() > 1) {
 
     double diff_s = 2.; // s = s(xi), ds/dxi = 2., because change of basis
     for (int gg = 0; gg != nb_gauss_pts; gg++) {
@@ -275,13 +262,13 @@ MoFEMErrorCode EdgePolynomialBase::getValueH1AinsworthBase(MatrixDouble &pts) {
 MoFEMErrorCode EdgePolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
   MoFEMFunctionBeginHot;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
 
   int nb_gauss_pts = pts.size2();
 
   const int side_number = 0;
-  int order = data.dataOnEntities[MBEDGE][side_number].getDataOrder();
+  int order = data.dataOnEntities[MBEDGE][side_number].getOrder();
 
   data.dataOnEntities[MBEDGE][side_number].getN(base).resize(
                                  nb_gauss_pts, NBEDGE_H1(order), false);
@@ -294,7 +281,7 @@ MoFEMErrorCode EdgePolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
   double diff_shape[] = {-1, 1};
   MatrixDouble shape(nb_gauss_pts, 2);
 
-  if (data.dataOnEntities[MBEDGE][side_number].getDataOrder() > 1) {
+  if (data.dataOnEntities[MBEDGE][side_number].getOrder() > 1) {
     for (int gg = 0; gg != nb_gauss_pts; gg++) {
       const double mu0 = 1.0 - pts(0, gg); // pts ranges over [0, 1]
       const double mu1 = pts(0, gg);
@@ -332,13 +319,13 @@ MoFEMErrorCode EdgePolynomialBase::getValueL2(MatrixDouble &pts) {
 MoFEMErrorCode EdgePolynomialBase::getValueL2DemkowiczBase(MatrixDouble &pts) {
   MoFEMFunctionBeginHot;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
 
   int nb_gauss_pts = pts.size2();
 
   const int side_number = 0;
-  int order = data.dataOnEntities[MBEDGE][side_number].getDataOrder();
+  int order = data.dataOnEntities[MBEDGE][side_number].getOrder();
 
   data.dataOnEntities[MBEDGE][side_number].getN(base).resize(
       nb_gauss_pts, NBEDGE_L2(order), false);
@@ -349,7 +336,7 @@ MoFEMErrorCode EdgePolynomialBase::getValueL2DemkowiczBase(MatrixDouble &pts) {
 
   double diff_n[] = {-1, 1};
   MatrixDouble shape(nb_gauss_pts, 2);
-  if (data.dataOnEntities[MBEDGE][side_number].getDataOrder() > 1) {
+  if (data.dataOnEntities[MBEDGE][side_number].getOrder() > 1) {
     for (int gg = 0; gg != nb_gauss_pts; gg++) {
       const double mu0 = 1.0 - pts(0, gg); // pts ranges over [0, 1]
       const double mu1 = pts(0, gg);
@@ -379,7 +366,7 @@ MoFEMErrorCode
 EdgePolynomialBase::getValueHcurlAinsworthBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
 
   PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
@@ -393,9 +380,9 @@ EdgePolynomialBase::getValueHcurlAinsworthBase(MatrixDouble &pts) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
 
     int sense = data.dataOnEntities[MBEDGE][0].getSense();
-    int order = data.dataOnEntities[MBEDGE][0].getDataOrder();
+    int order = data.dataOnEntities[MBEDGE][0].getOrder();
     int nb_dofs =
-        NBEDGE_AINSWORTH_HCURL(data.dataOnEntities[MBEDGE][0].getDataOrder());
+        NBEDGE_AINSWORTH_HCURL(data.dataOnEntities[MBEDGE][0].getOrder());
     data.dataOnEntities[MBEDGE][0].getN(base).resize(nb_gauss_pts, 3 * nb_dofs,
                                                      false);
     data.dataOnEntities[MBEDGE][0].getDiffN(base).resize(nb_gauss_pts, 0,
@@ -420,7 +407,7 @@ MoFEMErrorCode
 EdgePolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
 
   int nb_gauss_pts = pts.size2();
@@ -431,9 +418,9 @@ EdgePolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
               "No data structure to store base functions");
 
     int sense = data.dataOnEntities[MBEDGE][0].getSense();
-    int order = data.dataOnEntities[MBEDGE][0].getDataOrder();
+    int order = data.dataOnEntities[MBEDGE][0].getOrder();
     int nb_dofs =
-        NBEDGE_DEMKOWICZ_HCURL(data.dataOnEntities[MBEDGE][0].getDataOrder());
+        NBEDGE_DEMKOWICZ_HCURL(data.dataOnEntities[MBEDGE][0].getOrder());
     data.dataOnEntities[MBEDGE][0].getN(base).resize(nb_gauss_pts, 3 * nb_dofs,
                                                      false);
     data.dataOnEntities[MBEDGE][0].getDiffN(base).resize(nb_gauss_pts, 0,

@@ -7,19 +7,7 @@
 
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 #ifndef __FATPRISMELEMENTFORCESANDSURCESCORE_HPP__
 #define __FATPRISMELEMENTFORCESANDSURCESCORE_HPP__
@@ -179,9 +167,9 @@ struct FatPrismElementForcesAndSourcesCore
      */
     inline MatrixDouble &getTangent2AtGaussPtF4();
 
-    inline DataForcesAndSourcesCore &getTrianglesOnlyDataStructure();
+    inline EntitiesFieldData &getTrianglesOnlyDataStructure();
 
-    inline DataForcesAndSourcesCore &getTroughThicknessDataStructure();
+    inline EntitiesFieldData &getTroughThicknessDataStructure();
 
     /** \brief return pointer to fat prism finite element
      */
@@ -202,8 +190,8 @@ protected:
   MatrixDouble coordsAtGaussPtsTrianglesOnly;
   MatrixDouble gaussPtsThroughThickness;
 
-  DataForcesAndSourcesCore dataH1TrianglesOnly;
-  DataForcesAndSourcesCore dataH1TroughThickness;
+  EntitiesFieldData dataH1TrianglesOnly;
+  EntitiesFieldData dataH1TroughThickness;
 
   MatrixDouble hoCoordsAtGaussPtsF3;
   MatrixDouble nOrmals_at_GaussPtF3;
@@ -346,13 +334,13 @@ inline MatrixDouble &FatPrismElementForcesAndSourcesCore::UserDataOperator::
       ->tAngent2_at_GaussPtF4;
 }
 
-inline DataForcesAndSourcesCore &FatPrismElementForcesAndSourcesCore::
+inline EntitiesFieldData &FatPrismElementForcesAndSourcesCore::
     UserDataOperator::getTrianglesOnlyDataStructure() {
   return static_cast<FatPrismElementForcesAndSourcesCore *>(ptrFE)
       ->dataH1TrianglesOnly;
 }
 
-inline DataForcesAndSourcesCore &FatPrismElementForcesAndSourcesCore::
+inline EntitiesFieldData &FatPrismElementForcesAndSourcesCore::
     UserDataOperator::getTroughThicknessDataStructure() {
   return static_cast<FatPrismElementForcesAndSourcesCore *>(ptrFE)
       ->dataH1TroughThickness;

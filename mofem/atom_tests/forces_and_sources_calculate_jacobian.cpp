@@ -5,19 +5,7 @@
 
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 #include <MoFEM.hpp>
 
@@ -141,7 +129,7 @@ int main(int argc, char *argv[]) {
         ~PrintJacobian() { my_split.close(); }
 
         MoFEMErrorCode doWork(int side, EntityType type,
-                              DataForcesAndSourcesCore::EntData &data) {
+                              EntitiesFieldData::EntData &data) {
           MoFEMFunctionBeginHot;
           const double eps = 1e-6;
           for (unsigned int ii = 0; ii != data.getDiffN().size1(); ii++) {
@@ -177,7 +165,7 @@ int main(int argc, char *argv[]) {
         MoFEMFunctionReturnHot(0);
       }
 
-      DataForcesAndSourcesCore data;
+      EntitiesFieldData data;
 
       MoFEMErrorCode operator()() {
         MoFEMFunctionBegin;
@@ -191,11 +179,12 @@ int main(int argc, char *argv[]) {
         CHKERR getEntityDataOrder<MBTET>(data, H1);
         CHKERR getFaceNodes(data);
 
-        CHKERR getRowNodesIndices(data, "FIELD1");
-        CHKERR getEntityRowIndices(data, "FIELD1", MBEDGE);
+        const auto bit_number = mField.get_field_bit_number("FIELD1");
+        CHKERR getRowNodesIndices(data, bit_number);
+        CHKERR getEntityRowIndices(data, bit_number, MBEDGE);
 
-        CHKERR getNodesFieldData(data, "FIELD1");
-        CHKERR getEntityFieldData(data, "FIELD1", MBEDGE);
+        CHKERR getNodesFieldData(data, bit_number);
+        CHKERR getEntityFieldData(data, bit_number, MBEDGE);
 
         MatrixDouble gauss_pts(4, 4);
         for (int gg = 0; gg < 4; gg++) {

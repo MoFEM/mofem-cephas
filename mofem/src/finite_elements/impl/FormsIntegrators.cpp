@@ -4,19 +4,7 @@
 
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 namespace MoFEM {
 
@@ -32,7 +20,7 @@ OpSetBc::OpSetBc(std::string field_name, bool yes_set,
       yesSet(yes_set), boundaryMarker(boundary_marker) {}
 
 MoFEMErrorCode OpSetBc::doWork(int side, EntityType type,
-                               DataForcesAndSourcesCore::EntData &data) {
+                               EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
   if (boundaryMarker) {
     if (!data.getIndices().empty())
@@ -68,7 +56,7 @@ OpUnSetBc::OpUnSetBc(std::string field_name)
           field_name, ForcesAndSourcesCore::UserDataOperator::OPROW) {}
 
 MoFEMErrorCode OpUnSetBc::doWork(int side, EntityType type,
-                                 DataForcesAndSourcesCore::EntData &data) {
+                                 EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
   EssentialBcStorage::feStorage[rowFieldName].clear();
   MoFEMFunctionReturn(0);
@@ -86,7 +74,7 @@ MoFEMErrorCode OpUnSetBc::doWork(int side, EntityType type,
 template <>
 MoFEMErrorCode
 VecSetValues<EssentialBcStorage>(Vec V,
-                                 const DataForcesAndSourcesCore::EntData &data,
+                                 const EntitiesFieldData::EntData &data,
                                  const double *ptr, InsertMode iora) {
   MoFEMFunctionBegin;
 
@@ -111,7 +99,7 @@ VecSetValues<EssentialBcStorage>(Vec V,
 }
 
 /**
- * @brief Set valyes to matrix in operator
+ * @brief Set values to matrix in operator
  *
  * @param M
  * @param row_data
@@ -122,8 +110,8 @@ VecSetValues<EssentialBcStorage>(Vec V,
  */
 template <>
 MoFEMErrorCode MatSetValues<EssentialBcStorage>(
-    Mat M, const DataForcesAndSourcesCore::EntData &row_data,
-    const DataForcesAndSourcesCore::EntData &col_data, const double *ptr,
+    Mat M, const EntitiesFieldData::EntData &row_data,
+    const EntitiesFieldData::EntData &col_data, const double *ptr,
     InsertMode iora) {
 
   if(!M)

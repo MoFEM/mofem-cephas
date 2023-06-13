@@ -3,19 +3,7 @@
 
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 #ifndef __FACEELEMENTFORCESANDSOURCESCORE_ONSIDE__HPP__
 #define __FACEELEMENTFORCESANDSOURCESCORE_ONSIDE__HPP__
@@ -28,11 +16,11 @@ namespace MoFEM {
  * \brief Base face element used to integrate on skeleton
  * \ingroup mofem_forces_and_sources_volume_element
  */
-struct FaceElementForcesAndSourcesCoreOnSideBase
-    : public FaceElementForcesAndSourcesCoreBase {
+struct FaceElementForcesAndSourcesCoreOnSide
+    : public FaceElementForcesAndSourcesCore {
 
-  using FaceElementForcesAndSourcesCoreBase::
-      FaceElementForcesAndSourcesCoreBase;
+  using FaceElementForcesAndSourcesCore::
+      FaceElementForcesAndSourcesCore;
 
   int getRule(int order);
 
@@ -53,7 +41,7 @@ struct FaceElementForcesAndSourcesCoreOnSideBase
   inline const std::array<int, 4> &getFaceConnMap() const;
 
   /**
-   * @brief Get node on volume opposite to volume element
+   * @brief Get node on volume opposite to skeleton element
    *
    * @return int
    */
@@ -61,10 +49,19 @@ struct FaceElementForcesAndSourcesCoreOnSideBase
 
   /**
    * @brief Sense face on volume
+   * @deprecated  use getSkeletonSense()
    *
    * @return int
    */
-  inline int getEdgeSense() const;
+  DEPRECATED inline int getEdgeSense() const;
+
+  /* @brief Get the skeleton sense
+   *
+   * calls getFaceSense()
+   *
+   * @return int
+   */
+  inline int getSkeletonSense() const;
 
   /**
    * @brief Face number on the volume
@@ -76,62 +73,9 @@ struct FaceElementForcesAndSourcesCoreOnSideBase
   /** \brief default operator for Face element
    * \ingroup mofem_forces_and_sources_volume_element
    */
-  struct UserDataOperator
-      : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
-
-    using FaceElementForcesAndSourcesCoreBase::UserDataOperator::
-        UserDataOperator;
-
-    /** \brief return pointer to Generic Volume Finite Element object
-     */
-    inline const FaceElementForcesAndSourcesCoreOnSideBase *getFaceFE() const;
-
-    /**
-     * @brief Get the edge side finite element
-     *
-     * @return EdgeElementForcesAndSourcesCoreBase*
-     */
-    inline EdgeElementForcesAndSourcesCoreBase *getEdgeFE() const;
-
-    /**
-     * \brief get face sense in respect to volume
-     * @return error code
-     */
-    inline int getEdgeSense() const;
-
-    /**
-     * \brief get face side number in respect to volume
-     * @return error code
-     */
-    inline int getEdgeSideNumber() const;
-
-    /**
-     * get face normal on side which is this element
-     * @return face normal
-     */
-    inline VectorDouble &getDirection();
-
-    /** \brief get normal as tensor
-     */
-    inline auto getFTensor1Direction();
-
-    /** \brief get face coordinates at Gauss pts.
-
-    \note Coordinates should be the same what function getCoordsAtGaussPts
-    on face is returning. If both coordinates are different it is error, or you
-    do something very unusual.
-
-     */
-    inline MatrixDouble &getEdgeCoordsAtGaussPts();
-
-  protected:
-
-    MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
-
-  };
+  struct UserDataOperator;
 
 protected:
-
   MoFEMErrorCode setGaussPts(int order);
 
 private:
@@ -142,89 +86,147 @@ private:
   int oppositeNode;
 };
 
-/**
- * @brief Face side finite element with switches
- *
- * Using SWITCH to off functions
- *
- * @tparam SWITCH
+/** \brief default operator for Face element
+ * \ingroup mofem_forces_and_sources_volume_element
  */
-template <int SWITCH>
-struct FaceElementForcesAndSourcesCoreOnSideSwitch
-    : public FaceElementForcesAndSourcesCoreOnSideBase {
+struct FaceElementForcesAndSourcesCoreOnSide::UserDataOperator
+    : public FaceElementForcesAndSourcesCore::UserDataOperator {
 
-  FaceElementForcesAndSourcesCoreOnSideSwitch(MoFEM::Interface &m_field)
-      : FaceElementForcesAndSourcesCoreOnSideBase(m_field) {}
+  using FaceElementForcesAndSourcesCore::UserDataOperator::UserDataOperator;
 
-  using UserDataOperator =
-      FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator;
+  /** \brief return pointer to Generic Volume Finite Element object
+   */
+  inline const FaceElementForcesAndSourcesCoreOnSide *getFaceFE() const;
 
-  MoFEMErrorCode operator()();
+  /**
+   * @brief Get the edge side finite element
+   *
+   * @return EdgeElementForcesAndSourcesCore*
+   */
+  inline EdgeElementForcesAndSourcesCore *getEdgeFE() const;
+
+  /**
+   * @brief get face sense in respect to volume
+   * @deprecated  use getSkeletonSense()
+   * @return edge sense
+   */
+   DEPRECATED inline int getEdgeSense() const;
+
+  /* @brief Get the skeleton sense
+   *
+   * calls getEdgeSense()
+   *
+   * @return int
+   */
+  inline int getSkeletonSense() const;
+
+  /**
+   * \brief get face side number in respect to volume
+   * @return edge side number
+   */
+  inline int getEdgeSideNumber() const;
+
+  /**
+   * get face normal on side which is this element
+   * @return face normal
+   */
+  inline VectorDouble &getDirection();
+
+  /** \brief get normal as tensor
+   */
+  inline auto getFTensor1Direction();
+
+  /** \brief get face coordinates at Gauss pts.
+
+  \note Coordinates should be the same what function getCoordsAtGaussPts
+  on face is returning. If both coordinates are different it is error, or you
+  do something very unusual.
+
+   */
+  inline MatrixDouble &getEdgeCoordsAtGaussPts();
+
+protected:
+  MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
 };
 
 const std::array<int, 2> &
-FaceElementForcesAndSourcesCoreOnSideBase::getEdgeConnMap() const {
+FaceElementForcesAndSourcesCoreOnSide::getEdgeConnMap() const {
   return edgeConnMap;
 }
 
 const std::array<int, 4> &
-FaceElementForcesAndSourcesCoreOnSideBase::getFaceConnMap() const {
+FaceElementForcesAndSourcesCoreOnSide::getFaceConnMap() const {
   return faceConnMap;
 }
 
-int FaceElementForcesAndSourcesCoreOnSideBase::getOppositeNode() const {
+int FaceElementForcesAndSourcesCoreOnSide::getOppositeNode() const {
   return oppositeNode;
 }
 
-int FaceElementForcesAndSourcesCoreOnSideBase::getEdgeSense() const {
+int FaceElementForcesAndSourcesCoreOnSide::getEdgeSense() const {
+  return getSkeletonSense();
+}
+
+int FaceElementForcesAndSourcesCoreOnSide::getSkeletonSense() const {
   return edgeSense;
 }
 
-int FaceElementForcesAndSourcesCoreOnSideBase::getEdgeSideNumber() const {
+int FaceElementForcesAndSourcesCoreOnSide::getEdgeSideNumber() const {
   return edgeSideNumber;
 }
 
-const FaceElementForcesAndSourcesCoreOnSideBase *
-FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::getFaceFE() const {
-  return static_cast<FaceElementForcesAndSourcesCoreOnSideBase *>(ptrFE);
+const FaceElementForcesAndSourcesCoreOnSide *
+FaceElementForcesAndSourcesCoreOnSide::UserDataOperator::getFaceFE() const {
+  return static_cast<FaceElementForcesAndSourcesCoreOnSide *>(ptrFE);
 }
 
-EdgeElementForcesAndSourcesCoreBase *
-FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::getEdgeFE() const {
-  return static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE->sidePtrFE);
+EdgeElementForcesAndSourcesCore *
+FaceElementForcesAndSourcesCoreOnSide::UserDataOperator::getEdgeFE() const {
+  return static_cast<EdgeElementForcesAndSourcesCore *>(ptrFE->sidePtrFE);
 }
 
-int FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::getEdgeSense()
+int FaceElementForcesAndSourcesCoreOnSide::UserDataOperator::getEdgeSense()
+    const {
+  return getSkeletonSense();
+}
+
+int FaceElementForcesAndSourcesCoreOnSide::UserDataOperator::getSkeletonSense()
     const {
   return getFaceFE()->edgeSense;
 }
 
-int FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::
+int FaceElementForcesAndSourcesCoreOnSide::UserDataOperator::
     getEdgeSideNumber() const {
   return getFaceFE()->edgeSideNumber;
 }
 
 VectorDouble &
-FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::getDirection() {
+FaceElementForcesAndSourcesCoreOnSide::UserDataOperator::getDirection() {
   return getEdgeFE()->dIrection;
 }
 
-auto FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::
+auto FaceElementForcesAndSourcesCoreOnSide::UserDataOperator::
     getFTensor1Direction() {
   double *ptr = &*getDirection().data().begin();
   return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
 }
 
-MatrixDouble &FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::
+MatrixDouble &FaceElementForcesAndSourcesCoreOnSide::UserDataOperator::
     getEdgeCoordsAtGaussPts() {
   return getEdgeFE()->coordsAtGaussPts;
 }
 
+/**
+ * @deprecated do not use needed for back compatibility
+ */
 template <int SWITCH>
-MoFEMErrorCode FaceElementForcesAndSourcesCoreOnSideSwitch<SWITCH>::
-operator()() {
-  return opSwitch<SWITCH>();
-}
+struct FaceElementForcesAndSourcesCoreOnSideSwitch
+    : public FaceElementForcesAndSourcesCoreOnSide {
+  using FaceElementForcesAndSourcesCoreOnSide::
+      FaceElementForcesAndSourcesCoreOnSide;
+  using UserDataOperator =
+      FaceElementForcesAndSourcesCoreOnSide::UserDataOperator;
+};
 
 } // namespace MoFEM
 

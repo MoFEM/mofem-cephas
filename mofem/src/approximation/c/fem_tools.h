@@ -5,16 +5,6 @@
  *
  */
 
-/*
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
- */
-
 #ifndef __FEM_H__
 #define __FEM_H__
 
@@ -288,7 +278,7 @@ PetscErrorCode ShapeMBTETQ_inverse(double *N, double *diffN,
 // complex part
 void ShapeDiffMBTETinvJ_complex(double *diffN, __CLPK_doublecomplex *invJac,
                                 __CLPK_doublecomplex *diffNinvJac,
-                                const CBLAS_TRANSPOSE Trans);
+                                enum CBLAS_TRANSPOSE Trans);
 PetscErrorCode ShapeFaceNormalMBTRI_complex(double *diffN,
                                             __CLPK_doublecomplex *xcoords,
                                             __CLPK_doublecomplex *xnormal);

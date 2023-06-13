@@ -4,19 +4,7 @@
  *
  */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 #include <MoFEM.hpp>
 
@@ -106,16 +94,7 @@ int main(int argc, char *argv[]) {
         EntityHandle cubit_meshset = ciit->meshset;
         CHKERR m_field.getInterface<BitRefManager>()
             ->updateMeshsetByEntitiesChildren(cubit_meshset, bit_levels.back(),
-                                              cubit_meshset, MBVERTEX, true);
-        CHKERR m_field.getInterface<BitRefManager>()
-            ->updateMeshsetByEntitiesChildren(cubit_meshset, bit_levels.back(),
-                                              cubit_meshset, MBEDGE, true);
-        CHKERR m_field.getInterface<BitRefManager>()
-            ->updateMeshsetByEntitiesChildren(cubit_meshset, bit_levels.back(),
-                                              cubit_meshset, MBTRI, true);
-        CHKERR m_field.getInterface<BitRefManager>()
-            ->updateMeshsetByEntitiesChildren(cubit_meshset, bit_levels.back(),
-                                              cubit_meshset, MBTET, true);
+                                              cubit_meshset, MBMAXTYPE, true);
       }
     }
 
@@ -242,7 +221,7 @@ int main(int argc, char *argv[]) {
             mySplit(mySplit) {}
 
       MoFEMErrorCode doWork(int side, EntityType type,
-                            DataForcesAndSourcesCore::EntData &data) {
+                            EntitiesFieldData::EntData &data) {
         MoFEMFunctionBeginHot;
 
         if (data.getFieldData().empty())
@@ -312,8 +291,8 @@ int main(int argc, char *argv[]) {
 
       MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
                             EntityType col_type,
-                            DataForcesAndSourcesCore::EntData &row_data,
-                            DataForcesAndSourcesCore::EntData &col_data) {
+                            EntitiesFieldData::EntData &row_data,
+                            EntitiesFieldData::EntData &col_data) {
         MoFEMFunctionBeginHot;
 
         if (row_data.getFieldData().empty())
@@ -342,13 +321,13 @@ int main(int argc, char *argv[]) {
             mySplit(my_split) {}
 
       MoFEMErrorCode doWork(int side, EntityType type,
-                            DataForcesAndSourcesCore::EntData &data) {
+                            EntitiesFieldData::EntData &data) {
         MoFEMFunctionBeginHot;
 
         if (type != MBENTITYSET)
           MoFEMFunctionReturnHot(0);
 
-        mySplit << "NPFIELD" << std::endl;
+        mySplit << "NOFIELD" << std::endl;
         mySplit << "side: " << side << " type: " << type << std::endl;
         mySplit << data << std::endl;
         MoFEMFunctionReturnHot(0);
@@ -356,8 +335,8 @@ int main(int argc, char *argv[]) {
 
       MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
                             EntityType col_type,
-                            DataForcesAndSourcesCore::EntData &row_data,
-                            DataForcesAndSourcesCore::EntData &col_data) {
+                            EntitiesFieldData::EntData &row_data,
+                            EntitiesFieldData::EntData &col_data) {
         MoFEMFunctionBeginHot;
 
         unSetSymm();

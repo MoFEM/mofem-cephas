@@ -1,18 +1,5 @@
 /** \file PetscSmartObj.hpp
  * \brief Petsc smart obj declarations
- *
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
  */
 
 #ifndef __PETSCSPARTOBJ_HPP__
@@ -99,10 +86,10 @@ struct SmartPetscObj
 
   /**
    * @brief Construct a new Smart Petsc Obj object
-   * 
+   *
    * \note If add_red is set to true, you have to destroy OBJ.
-   * 
-   * @param o 
+   *
+   * @param o
    * @param add_ref // if false ownership of OBJ is taken by SmartPetscObj
    */
   explicit SmartPetscObj(OBJ o, bool add_ref = false)
@@ -130,16 +117,16 @@ struct SmartPetscObj
  * @brief Creates smart DM object
  *
  * DM object can be used as any other object, but is destroyed as smart pointer
- * when no loneger used.
+ * when no longer used.
  *
  * \code
  * CHKERR DMRegister_MoFEM("MOFEM")
  * {
- *    auto dm = createSmartDM(PETSC_COMM_WORLD, "MOFEM");
+ *    auto dm = createDM(PETSC_COMM_WORLD, "MOFEM");
  *
  *    // ...
  *
- *    // dm is autmatically destroyed when program goes out of the scope
+ *    // dm is automatically destroyed when program goes out of the scope
  * }
  *
  *
@@ -147,14 +134,18 @@ struct SmartPetscObj
  * \endcode
  *
  */
-auto createSmartDM = [](MPI_Comm comm, const std::string dm_type_name) {
+inline auto createDM(MPI_Comm comm, const std::string dm_type_name) {
   DM dm;
-  ierr = DMCreate(comm, &dm);
-  CHKERRABORT(comm, ierr);
-  ierr = DMSetType(dm, dm_type_name.c_str());
-  CHKERRABORT(comm, ierr);
+  CHK_THROW_MESSAGE(DMCreate(comm, &dm), "Failed to create DM");
+  CHK_THROW_MESSAGE(DMSetType(dm, dm_type_name.c_str()), "Failed set DM type");
   return SmartPetscObj<DM>(dm);
 };
+
+/** @deprecated use createDM */
+DEPRECATED inline auto createSmartDM(MPI_Comm comm,
+                                     const std::string dm_type_name) {
+  return createDM(comm, dm_type_name);
+}
 
 /**
  * @brief Get the Comm From Petsc Object object
@@ -164,8 +155,8 @@ auto createSmartDM = [](MPI_Comm comm, const std::string dm_type_name) {
  */
 inline MPI_Comm getCommFromPetscObject(PetscObject obj) {
   MPI_Comm comm;
-  ierr = PetscObjectGetComm(obj, &comm);
-  CHKERRABORT(PETSC_COMM_SELF, ierr);
+  CHK_THROW_MESSAGE(PetscObjectGetComm(obj, &comm),
+                    "Failed to get comm from PETSc object");
   return comm;
 };
 
@@ -177,17 +168,24 @@ inline MPI_Comm getCommFromPetscObject(PetscObject obj) {
  * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Vec/VecCreateGhost.html>VecCreateGhost</a>.
  *
  * \code
- * auto vec = createSmartGhostVector(...);
+ * auto vec = createGhostVector(...);
  * \endcode
  *
  */
-auto createSmartGhostVector = [](MPI_Comm comm, PetscInt n, PetscInt N,
-                                 PetscInt nghost, const PetscInt ghosts[]) {
+inline auto createGhostVector(MPI_Comm comm, PetscInt n, PetscInt N,
+                              PetscInt nghost, const PetscInt ghosts[]) {
   Vec vv;
-  ierr = VecCreateGhost(comm, n, N, nghost, ghosts, &vv);
-  CHKERRABORT(comm, ierr);
+  CHK_THROW_MESSAGE(VecCreateGhost(comm, n, N, nghost, ghosts, &vv),
+                    "Failed to create ghosted Vec");
   return SmartPetscObj<Vec>(vv);
 };
+
+/** @deprecated use createGhostVector */
+DEPRECATED inline auto createSmartGhostVector(MPI_Comm comm, PetscInt n,
+                                              PetscInt N, PetscInt nghost,
+                                              const PetscInt ghosts[]) {
+  return createGhostVector(comm, n, N, nghost, ghosts);
+}
 
 /**
  * @brief Create MPI Vector
@@ -197,12 +195,17 @@ auto createSmartGhostVector = [](MPI_Comm comm, PetscInt n, PetscInt N,
  * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Vec/VecCreateMPI.html>VecCreateMPI</a>.
  *
  */
-auto createSmartVectorMPI = [](MPI_Comm comm, PetscInt n, PetscInt N) {
+inline auto createVectorMPI(MPI_Comm comm, PetscInt n, PetscInt N) {
   Vec vv;
-  ierr = VecCreateMPI(comm, n, N, &vv);
-  CHKERRABORT(comm, ierr);
+  CHK_THROW_MESSAGE(VecCreateMPI(comm, n, N, &vv), "Failed to create Vec");
   return SmartPetscObj<Vec>(vv);
 };
+
+/** @deprecated use createVectorMPI */
+DEPRECATED inline auto createSmartVectorMPI(MPI_Comm comm, PetscInt n,
+                                            PetscInt N) {
+  return createVectorMPI(comm, n, N);
+}
 
 /**
  * @brief Create duplicate vector of smart vector
@@ -211,70 +214,139 @@ auto createSmartVectorMPI = [](MPI_Comm comm, PetscInt n, PetscInt N) {
  * <a
  * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Vec/VecDuplicate.html>VecDuplicate</a>.
  */
-inline SmartPetscObj<Vec> smartVectorDuplicate(SmartPetscObj<Vec> &vec) {
-  if (vec.use_count()) {
-    Vec duplicate;
-    ierr = VecDuplicate(vec, &duplicate);
-    CHKERRABORT(PETSC_COMM_SELF, ierr);
-    return SmartPetscObj<Vec>(duplicate);
-  } else {
-    return SmartPetscObj<Vec>();
-  }
-};
-
-inline SmartPetscObj<Vec> smartVectorDuplicate(Vec &vec) {
+inline SmartPetscObj<Vec> vectorDuplicate(Vec vec) {
   Vec duplicate;
-  ierr = VecDuplicate(vec, &duplicate);
-  CHKERRABORT(PETSC_COMM_SELF, ierr);
+  CHK_THROW_MESSAGE(VecDuplicate(vec, &duplicate), "Failed to duplicate Vec");
   return SmartPetscObj<Vec>(duplicate);
 };
 
-inline SmartPetscObj<Mat> smartMatDuplicate(Mat &mat, MatDuplicateOption op) {
+/**
+ * @deprecated use vectorDuplicate
+ */
+DEPRECATED inline SmartPetscObj<Vec> smartVectorDuplicate(Vec vec) {
+  return vectorDuplicate(vec);
+}
+
+inline SmartPetscObj<Mat> matDuplicate(Mat mat, MatDuplicateOption op) {
   Mat duplicate;
-  ierr = MatDuplicate(mat, op, &duplicate);
-  CHKERRABORT(PETSC_COMM_SELF, ierr);
+  CHK_THROW_MESSAGE(MatDuplicate(mat, op, &duplicate),
+                    "Failed to duplicate Mat");
   return SmartPetscObj<Mat>(duplicate);
 };
 
-inline SmartPetscObj<Mat> smartMatDuplicate(SmartPetscObj<Mat> &mat,
-                                            MatDuplicateOption op) {
-  if (mat.use_count()) {
-    Mat duplicate;
-    ierr = MatDuplicate(mat, op, &duplicate);
-    CHKERRABORT(PETSC_COMM_SELF, ierr);
-    return SmartPetscObj<Mat>(duplicate);
-  } else {
-    return SmartPetscObj<Mat>();
-  }
-};
+/**
+ * @deprecated use matDuplicate
+ */
+DEPRECATED inline SmartPetscObj<Mat> smartMatDuplicate(Mat mat,
+                                                       MatDuplicateOption op) {
+  return matDuplicate(mat, op);
+}
 
-auto createTS = [](MPI_Comm comm) {
+inline auto createTS(MPI_Comm comm) {
   TS ts;
-  ierr = TSCreate(comm, &ts);
-  CHKERRABORT(comm, ierr);
+  CHK_THROW_MESSAGE(TSCreate(comm, &ts), "Failed to create TS");
   return SmartPetscObj<TS>(ts);
 };
 
-auto createSNES = [](MPI_Comm comm) {
+inline auto createSNES(MPI_Comm comm) {
   SNES snes;
-  ierr = SNESCreate(comm, &snes);
-  CHKERRABORT(comm, ierr);
+  CHK_THROW_MESSAGE(SNESCreate(comm, &snes), "Failed to create SNES");
   return SmartPetscObj<SNES>(snes);
 };
 
-auto createKSP = [](MPI_Comm comm) {
+inline auto createKSP(MPI_Comm comm) {
   KSP ksp;
-  ierr = KSPCreate(comm, &ksp);
-  CHKERRABORT(comm, ierr);
+  CHK_THROW_MESSAGE(KSPCreate(comm, &ksp), "Failed to create KSP");
   return SmartPetscObj<KSP>(ksp);
 };
 
-auto createPC = [](MPI_Comm comm) {
+inline auto createPC(MPI_Comm comm) {
   PC pc;
-  ierr = PCCreate(comm, &pc);
-  CHKERRABORT(comm, ierr);
+  CHK_THROW_MESSAGE(PCCreate(comm, &pc), "Failed to create PC");
   return SmartPetscObj<PC>(pc);
 };
+
+/**
+ * @brief Creates a data structure for an index set containing a list of
+ * integers.
+ *
+ * <a
+ * href=https://petsc.org/release/docs/manualpages/IS/ISCreateGeneral/>AOCreateMappingIS</a>.
+ *
+ * @param comm the MPI communicator
+ * @param n the length of the index set
+ * @param idx  the list of integers
+ * @param mode PETSC_COPY_VALUES, PETSC_OWN_POINTER, or PETSC_USE_POINTER; see
+ * PetscCopyMode for meaning of this flag.
+ * @return SmartPetscObj<IS>(is)
+ */
+inline auto createISGeneral(MPI_Comm comm, PetscInt n, const PetscInt idx[],
+                            PetscCopyMode mode) {
+  IS is;
+  CHK_THROW_MESSAGE(ISCreateGeneral(comm, n, idx, mode, &is), "Create IS");
+  return SmartPetscObj<IS>(is);
+}
+
+/**
+ * @brief Creates an application mapping using two index sets.
+ *
+ * <a
+ * href=https://petsc.org/release/docs/manualpages/AO/AOCreateMappingIS/>AOCreateMappingIS</a>.
+ *
+ * @param isapp  index set that defines an ordering
+ * @param ispetsc  index set that defines another ordering, maybe NULL for
+ * identity
+ * @param aoout the new application ordering
+ * @return SmartPetscObj<AO>(ao)
+ */
+inline auto createAOMappingIS(IS isapp, IS ispetsc) {
+  AO ao;
+  CHK_THROW_MESSAGE(AOCreateMappingIS(isapp, ispetsc, &ao),
+                    "Failed to create AO");
+  return SmartPetscObj<AO>(ao);
+};
+
+/**
+ * @brief Creates an application mapping using two integer arrays.
+ *
+ * <a
+ * href=https://petsc.org/release/docs/manualpages/AO/AOCreateMapping/>AOCreateMappingIS</a>.
+ *
+ * @param comm MPI communicator that is to share the AO
+ * @param napp size of integer arrays
+ * @param myapp  integer array that defines an ordering
+ * @param mypetsc  integer array that defines another ordering (may be NULL to
+ * indicate the identity ordering)
+ * @return SmartPetscObj<AO>(ao);
+ */
+inline auto createAOMapping(MPI_Comm comm, PetscInt napp,
+                            const PetscInt myapp[], const PetscInt mypetsc[]) {
+  AO ao;
+  CHK_THROW_MESSAGE(AOCreateMapping(comm, napp, myapp, mypetsc, &ao),
+                    "create ao");
+  return SmartPetscObj<AO>(ao);
+}
+
+/**
+ * @brief Create a Vec Scatter object
+ *
+ * <a
+ * href=https://petsc.org/release/manualpages/PetscSF/VecScatterCreate/>VecScatterCreate</a>.
+ *
+ * @param x a vector that defines the shape (parallel data layout of the vector)
+ * of vectors from which we scatter
+ * @param ix the indices of xin to scatter (if NULL scatters all values)
+ * @param y a vector that defines the shape (parallel data layout of the vector)
+ * of vectors to which we scatter
+ * @param iy the indices of yin to hold results (if NULL fills entire vector yin
+ * in order)
+ * @return
+ */
+inline auto createVecScatter(Vec x, IS ix, Vec y, IS iy) {
+  VecScatter s;
+  CHK_THROW_MESSAGE(VecScatterCreate(x, ix, y, iy, &s), "create scatter");
+  return SmartPetscObj<VecScatter>(s);
+}
 
 } // namespace MoFEM
 

@@ -1,16 +1,4 @@
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 #include <MoFEM.hpp>
 
@@ -168,7 +156,7 @@ int main(int argc, char *argv[]) {
             my_split(_my_split) {}
 
       MoFEMErrorCode doWork(int side, EntityType type,
-                            DataForcesAndSourcesCore::EntData &data) {
+                            EntitiesFieldData::EntData &data) {
         MoFEMFunctionBeginHot;
 
         const double eps = 1e-4;
@@ -195,8 +183,8 @@ int main(int argc, char *argv[]) {
 
       MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
                             EntityType col_type,
-                            DataForcesAndSourcesCore::EntData &row_data,
-                            DataForcesAndSourcesCore::EntData &col_data) {
+                            EntitiesFieldData::EntData &row_data,
+                            EntitiesFieldData::EntData &col_data) {
 
         MoFEMFunctionBeginHot;
         my_split << "NH1NH1" << std::endl;
@@ -257,7 +245,7 @@ int main(int argc, char *argv[]) {
        }
 
       MoFEMErrorCode doWork(int side, EntityType type,
-                            DataForcesAndSourcesCore::EntData &data) {
+                            EntitiesFieldData::EntData &data) {
         MoFEMFunctionBeginHot;
 
         if (type != MBENTITYSET)
@@ -271,8 +259,8 @@ int main(int argc, char *argv[]) {
 
       MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
                             EntityType col_type,
-                            DataForcesAndSourcesCore::EntData &row_data,
-                            DataForcesAndSourcesCore::EntData &col_data) {
+                            EntitiesFieldData::EntData &row_data,
+                            EntitiesFieldData::EntData &col_data) {
         MoFEMFunctionBeginHot;
 
         unSetSymm();

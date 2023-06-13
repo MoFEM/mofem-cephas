@@ -9,20 +9,7 @@
  * entities on which is spanning and DOFs on those entities.
  */
 
-/*
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
- */
+
 
 #ifndef __FIELDMULTIINDICES_HPP__
 #define __FIELDMULTIINDICES_HPP__
@@ -117,36 +104,6 @@ struct Field {
    * number of set bit
    */
   unsigned int bitNumber;
-
-  static UId generateGlobalUniqueIdForTypeLo(const char bit_number,
-                                             const EntityType type,
-                                             const int owner_proc) {
-    constexpr int ent_shift = 8 * sizeof(EntityHandle);
-    return (static_cast<UId>(type) << MB_ID_WIDTH |
-            static_cast<UId>(bit_number) << 8 * sizeof(EntityHandle) |
-            static_cast<UId>(owner_proc) << 5 + ent_shift)
-           << 9;
-  }
-
-  UId generateGlobalUniqueIdForTypeLo(const EntityType type,
-                                      const int owner_proc) const {
-    return generateGlobalUniqueIdForTypeLo(bitNumber, type, owner_proc);
-  }
-
-  static UId generateGlobalUniqueIdForTypeHi(const char bit_number,
-                                             const EntityType type,
-                                             const int owner_proc) {
-    constexpr int ent_shift = 8 * sizeof(EntityHandle);
-    return (static_cast<UId>(type) << MB_ID_WIDTH |
-            static_cast<UId>(bit_number) << ent_shift |
-            static_cast<UId>(owner_proc) << 5 + ent_shift)
-           << 9;
-  }
-
-  UId generateGlobalUniqueIdForTypeHi(const EntityType type,
-                                      const int owner_proc) const {
-    return generateGlobalUniqueIdForTypeHi(bitNumber, type, owner_proc);
-  }
 
   /**
    * \brief Get field meshset

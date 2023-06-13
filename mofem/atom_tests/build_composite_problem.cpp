@@ -4,19 +4,7 @@
 
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 #include <MoFEM.hpp>
 using namespace MoFEM;
@@ -58,10 +46,10 @@ int main(int argc, char *argv[]) {
     Range tets;
     CHKERR moab.get_entities_by_type(root_set, MBTET, tets, false);
 
-    ProblemsManager *prb_mng_ptr;
-    CHKERR m_field.getInterface(prb_mng_ptr);
-    CHKERR prb_mng_ptr->partitionMesh(tets, 3, 2, m_field.get_comm_size(), NULL,
-                                      NULL, NULL);
+    ProblemsManager *prb_mng_ptr = m_field.getInterface<ProblemsManager>();
+    CommInterface *comm_interface_ptr = m_field.getInterface<CommInterface>();
+    CHKERR comm_interface_ptr->partitionMesh(
+        tets, 3, 2, m_field.get_comm_size(), NULL, NULL, NULL);
 
     EntityHandle part_set;
     CHKERR moab.create_meshset(MESHSET_SET, part_set);
@@ -215,7 +203,7 @@ int main(int argc, char *argv[]) {
     DMType dm_name = "MOFEM";
     CHKERR DMRegister_MoFEM(dm_name);
     // create dm instance
-    auto dm = createSmartDM(m_field.get_comm(), dm_name);
+    auto dm = createDM(m_field.get_comm(), dm_name);
 
     CHKERR DMMoFEMCreateMoFEM(dm, &m_field, "COMP", bit_level0);
     CHKERR DMSetFromOptions(dm);

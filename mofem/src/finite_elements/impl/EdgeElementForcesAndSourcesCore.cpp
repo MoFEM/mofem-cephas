@@ -1,22 +1,10 @@
-/** \file EdgeElementForcesAndSourcesCoreBase.cpp
+/** \file EdgeElementForcesAndSourcesCore.cpp
 
 \brief Implementation of edge element
 
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,15 +19,20 @@ extern "C" {
 
 namespace MoFEM {
 
-EdgeElementForcesAndSourcesCoreBase::EdgeElementForcesAndSourcesCoreBase(
+FTensor::Tensor1<double, 3> EdgeElementForcesAndSourcesCore::tFaceOrientation{
+    0., 0., 1.};
+
+EdgeElementForcesAndSourcesCore::EdgeElementForcesAndSourcesCore(
     Interface &m_field)
     : ForcesAndSourcesCore(m_field),
       meshPositionsFieldName("MESH_NODE_POSITIONS") {
   getElementPolynomialBase() =
       boost::shared_ptr<BaseFunction>(new EdgePolynomialBase());
+  CHK_THROW_MESSAGE(createDataOnElement(MBEDGE),
+                 "Problem with creation data on element");
 }
 
-MoFEMErrorCode EdgeElementForcesAndSourcesCoreBase::calculateEdgeDirection() {
+MoFEMErrorCode EdgeElementForcesAndSourcesCore::calculateEdgeDirection() {
   MoFEMFunctionBegin;
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
   CHKERR mField.get_moab().get_connectivity(ent, cOnn, numNodes, true);
@@ -52,7 +45,7 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCoreBase::calculateEdgeDirection() {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode EdgeElementForcesAndSourcesCoreBase::setIntegrationPts() {
+MoFEMErrorCode EdgeElementForcesAndSourcesCore::setIntegrationPts() {
   MoFEMFunctionBegin;
   int order_data = getMaxDataOrder();
   int order_row = getMaxRowOrder();
@@ -105,7 +98,7 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCoreBase::setIntegrationPts() {
 }
 
 MoFEMErrorCode
-EdgeElementForcesAndSourcesCoreBase::calculateCoordsAtIntegrationPts() {
+EdgeElementForcesAndSourcesCore::calculateCoordsAtIntegrationPts() {
   FTensor::Index<'i', 3> i;
   MoFEMFunctionBeginHot;
   const auto nb_gauss_pts = gaussPts.size2();
@@ -139,13 +132,60 @@ EdgeElementForcesAndSourcesCoreBase::calculateCoordsAtIntegrationPts() {
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode EdgeElementForcesAndSourcesCoreBase::UserDataOperator::setPtrFE(
+MoFEMErrorCode EdgeElementForcesAndSourcesCore::UserDataOperator::setPtrFE(
     ForcesAndSourcesCore *ptr) {
   MoFEMFunctionBeginHot;
-  if (!(ptrFE = dynamic_cast<EdgeElementForcesAndSourcesCoreBase *>(ptr)))
+  if (!(ptrFE = dynamic_cast<EdgeElementForcesAndSourcesCore *>(ptr)))
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "User operator and finite element do not work together");
   MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode
+EdgeElementForcesAndSourcesCore::UserDataOperator::loopSideFaces(
+    const string fe_name, FaceElementForcesAndSourcesCoreOnSide &fe_side) {
+  return loopSide(fe_name, &fe_side, 2);
+}
+
+MoFEMErrorCode EdgeElementForcesAndSourcesCore::operator()() {
+  MoFEMFunctionBegin;
+
+  if (numeredEntFiniteElementPtr->getEntType() != MBEDGE)
+    MoFEMFunctionReturnHot(0);
+
+  CHKERR calculateEdgeDirection();
+  CHKERR getSpacesAndBaseOnEntities(dataH1);
+  CHKERR getEntityDataOrder<MBEDGE>(dataH1, H1);
+  dataH1.dataOnEntities[MBEDGE][0].getSense() =
+      1; // set sense to 1, this is this entity
+
+  // L2
+  if (dataH1.spacesOnEntities[MBEDGE].test(L2)) {
+    auto &data_l2 = *dataOnElement[L2];
+    CHKERR getEntityDataOrder<MBEDGE>(data_l2, L2);
+    data_l2.dataOnEntities[MBEDGE][0].getSense() =
+        1; // set sense to 1, this is this entity
+    data_l2.spacesOnEntities[MBEDGE].set(L2);
+  }
+
+  // Hcurl
+  if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
+    auto &data_curl = *dataOnElement[HCURL];
+    CHKERR getEntityDataOrder<MBEDGE>(data_curl, HCURL);
+    data_curl.dataOnEntities[MBEDGE][0].getSense() =
+        1; // set sense to 1, this is this entity
+    data_curl.spacesOnEntities[MBEDGE].set(HCURL);
+  }
+
+  CHKERR setIntegrationPts();
+  CHKERR calculateCoordsAtIntegrationPts();
+  CHKERR calHierarchicalBaseFunctionsOnElement();
+  CHKERR calBernsteinBezierBaseFunctionsOnElement();
+
+  // Iterate over operators
+  CHKERR loopOverOperators();
+
+  MoFEMFunctionReturn(0);
 }
 
 } // namespace MoFEM

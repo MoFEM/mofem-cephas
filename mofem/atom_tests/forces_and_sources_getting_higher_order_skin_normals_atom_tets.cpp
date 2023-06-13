@@ -5,19 +5,7 @@
 
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 #include <MoFEM.hpp>
 
@@ -135,7 +123,7 @@ int main(int argc, char *argv[]) {
     CHKERR prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM");
 
     struct ForcesAndSourcesCore_TestFE
-        : public FaceElementForcesAndSourcesCoreBase {
+        : public FaceElementForcesAndSourcesCore {
 
       typedef tee_device<std::ostream, std::ofstream> TeeDevice;
       typedef stream<TeeDevice> TeeStream;
@@ -144,7 +132,7 @@ int main(int argc, char *argv[]) {
       TeeStream my_split;
 
       ForcesAndSourcesCore_TestFE(MoFEM::Interface &m_field)
-          : FaceElementForcesAndSourcesCoreBase(m_field),
+          : FaceElementForcesAndSourcesCore(m_field),
             ofs("forces_and_sources_getting_higher_order_skin_normals_atom."
                 "txt"),
             my_tee(std::cout, ofs), my_split(my_tee){};
@@ -157,7 +145,7 @@ int main(int argc, char *argv[]) {
       MoFEMErrorCode operator()() {
         MoFEMFunctionBegin;
 
-        CHKERR opSwitch<0>();
+        CHKERR FaceElementForcesAndSourcesCore::operator()();
 
         my_split.precision(3);
         my_split << "coords: " << coordsAtGaussPts << std::endl;

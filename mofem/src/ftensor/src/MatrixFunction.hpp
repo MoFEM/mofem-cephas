@@ -56,19 +56,7 @@
  *
  */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 #pragma once
 
@@ -151,6 +139,14 @@ getDiffMat(Val<FTensor::PackPtr<double *, 1>, 3> &t_val,
  * @param nb number of nonzero eigen values
  * @return FTensor::Ddg<double, 3, 3>
  */
+FTensor::Ddg<double, 3, 3>
+getDiffDiffMat(Val<double, 3> &t_val, Vec<double, 3> &t_vec, Fun<double> f,
+               Fun<double> d_f, Fun<double> dd_f,
+               FTensor::Tensor2_symmetric<double, 3> &t_S, const int nb);
+
+/**
+ * @copydoc EigenMatrix::getDiffDiffMat
+ */
 FTensor::Ddg<double, 3, 3> getDiffDiffMat(Val<double, 3> &t_val,
                                           Vec<double, 3> &t_vec, Fun<double> f,
                                           Fun<double> d_f, Fun<double> dd_f,
@@ -164,14 +160,6 @@ getDiffDiffMat(Val<FTensor::PackPtr<double *, 1>, 3> &t_val,
                Vec<FTensor::PackPtr<double *, 1>, 3> &t_vec, Fun<double> f,
                Fun<double> d_f, Fun<double> dd_f,
                FTensor::Tensor2<double, 3, 3> &t_S, const int nb);
-
-/**
- * @copydoc EigenMatrix::getDiffDiffMat
- */
-FTensor::Ddg<double, 3, 3>
-getDiffDiffMat(Val<double, 3> &t_val, Vec<double, 3> &t_vec, Fun<double> f,
-               Fun<double> d_f, Fun<double> dd_f,
-               FTensor::Tensor2_symmetric<double, 3> &t_S, const int nb);
 
 /**
  * @copydoc EigenMatrix::getMat

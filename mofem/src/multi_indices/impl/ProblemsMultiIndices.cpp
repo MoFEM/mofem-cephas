@@ -2,19 +2,6 @@
  * \brief Multindex contains for problems
  */
 
-/* MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
- */
 
 namespace MoFEM {
 
@@ -25,41 +12,33 @@ Problem::Problem(moab::Interface &moab, const EntityHandle meshset)
       numeredFiniteElementsPtr(new NumeredEntFiniteElement_multiIndex()),
       sequenceRowDofContainer(new SequenceDofContainer()),
       sequenceColDofContainer(new SequenceDofContainer()) {
-  ErrorCode rval;
   Tag th_ProblemId;
-  rval = moab.tag_get_handle("_ProblemId", th_ProblemId);
-  MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_ProblemId, &meshset, 1, (const void **)&tagId);
-  MOAB_THROW(rval);
+  MOAB_THROW(moab.tag_get_handle("_ProblemId", th_ProblemId));
+  MOAB_THROW(
+      moab.tag_get_by_ptr(th_ProblemId, &meshset, 1, (const void **)&tagId));
   Tag th_ProblemName;
-  rval = moab.tag_get_handle("_ProblemName", th_ProblemName);
-  MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_ProblemName, &meshset, 1,
-                             (const void **)&tagName, &tagNameSize);
-  MOAB_THROW(rval);
+  MOAB_THROW(moab.tag_get_handle("_ProblemName", th_ProblemName));
+  MOAB_THROW(moab.tag_get_by_ptr(th_ProblemName, &meshset, 1,
+                                 (const void **)&tagName, &tagNameSize));
   Tag th_ProblemFEId;
-  rval = moab.tag_get_handle("_ProblemFEId", th_ProblemFEId);
-  MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_ProblemFEId, &meshset, 1,
-                             (const void **)&tagBitFEId);
-  MOAB_THROW(rval);
+  MOAB_THROW(moab.tag_get_handle("_ProblemFEId", th_ProblemFEId));
+  MOAB_THROW(moab.tag_get_by_ptr(th_ProblemFEId, &meshset, 1,
+                                 (const void **)&tagBitFEId));
   Tag th_RefBitLevel;
-  rval = moab.tag_get_handle("_RefBitLevel", th_RefBitLevel);
-  MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_RefBitLevel, &meshset, 1,
-                             (const void **)&tagBitRefLevel);
-  MOAB_THROW(rval);
+  MOAB_THROW(moab.tag_get_handle("_RefBitLevel", th_RefBitLevel));
+  MOAB_THROW(moab.tag_get_by_ptr(th_RefBitLevel, &meshset, 1,
+                                 (const void **)&tagBitRefLevel));
   Tag th_RefBitLevel_Mask;
-  rval = moab.tag_get_handle("_RefBitLevelMask", th_RefBitLevel_Mask);
-  MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_RefBitLevel_Mask, &meshset, 1,
-                             (const void **)&tagMaskBitRefLevel);
-  MOAB_THROW(rval);
+  MOAB_THROW(moab.tag_get_handle("_RefBitLevelMask", th_RefBitLevel_Mask));
+  MOAB_THROW(moab.tag_get_by_ptr(th_RefBitLevel_Mask, &meshset, 1,
+                                 (const void **)&tagBitRefLevelMask));
 }
 
 std::ostream &operator<<(std::ostream &os, const Problem &e) {
-  os << "problem id " << e.getId() << " FiniteElement id " << e.getBitFEId()
-     << " name " << e.getName();
+  os << "Problem id " << e.getId() << " name " << e.getName() << endl;
+  os << "FiniteElement id " << e.getBitFEId() << endl;
+  os << "BitRefLevel " << e.getBitRefLevel() << endl;
+  os << "BitRefLevelMask " << e.getBitRefLevelMask();
   return os;
 }
 
@@ -124,7 +103,7 @@ Problem::getNumberOfElementsByNameAndPart(MPI_Comm comm, const std::string name,
   MPI_Comm_rank(comm, &rank);
   CHKERR PetscLayoutCreate(comm, layout);
   CHKERR PetscLayoutSetBlockSize(*layout, 1);
-  const NumeredEntFiniteElementbyNameAndPart &fe_by_name_and_part =
+  const auto &fe_by_name_and_part =
       numeredFiniteElementsPtr->get<Composite_Name_And_Part_mi_tag>();
   int nb_elems;
   nb_elems = fe_by_name_and_part.count(boost::make_tuple(name, rank));
@@ -184,6 +163,17 @@ MoFEMErrorCode Problem::getDofByNameEntAndEntDofIdx(
     dof_ptr = *it;
   } else {
     dof_ptr = boost::shared_ptr<NumeredDofEntity>();
+  }
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode Problem::eraseElements(Range entities) const {
+  MoFEMFunctionBegin;
+  for (auto p = entities.pair_begin(); p != entities.pair_end(); ++p) {
+    auto lo = numeredFiniteElementsPtr->get<Ent_mi_tag>().lower_bound(p->first);
+    auto hi =
+        numeredFiniteElementsPtr->get<Ent_mi_tag>().upper_bound(p->second);
+    numeredFiniteElementsPtr->get<Ent_mi_tag>().erase(lo, hi);
   }
   MoFEMFunctionReturn(0);
 }

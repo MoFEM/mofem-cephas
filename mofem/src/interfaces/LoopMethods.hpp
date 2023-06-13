@@ -6,16 +6,6 @@
  *
  */
 
-/*
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
- */
-
 #ifndef __LOOPMETHODS_HPP__
 #define __LOOPMETHODS_HPP__
 
@@ -52,6 +42,8 @@ struct PetscData : public UnknownInterface {
   static constexpr Switches CtxSetTime = PetscData::Switches(CTX_SET_TIME);
 
   Switches data_ctx;
+
+  MoFEMErrorCode copyPetscData(const PetscData &petsc_data);
 
   Vec f;
   Mat A;
@@ -164,10 +156,11 @@ struct TSMethod : virtual protected PetscData {
 
   TSContext ts_ctx;
 
-  PetscInt ts_step; ///< time step
+  PetscInt ts_step; ///< time step number
   PetscReal ts_a;   ///< shift for U_t (see PETSc Time Solver)
   PetscReal ts_aa;  ///< shift for U_tt shift for U_tt
   PetscReal ts_t;   ///< time
+  PetscReal ts_dt;  ///< time step size
 
   Vec &ts_u;    ///< state vector
   Vec &ts_u_t;  ///< time derivative of state vector
@@ -390,6 +383,24 @@ struct FEMethod : public BasicMethod {
       numeredEntFiniteElementPtr; ///< Pointer to finite element database
                                   ///< structure
 
+  /**
+   * @brief get finite element name
+   *
+   * @return std::string
+   */
+  inline auto getFEName() const { return feName; }
+
+  /**
+   * @brief Tet if element to skip element
+   *
+   * If is set and return false  elemnent us skiped in
+   * MoFEM::Core::loop_finite_elements
+   * 
+   * \note That functionality is used to run elements on particular bit levels
+   *
+   */
+  boost::function<bool(FEMethod *fe_method_ptr)> exeTestHook;
+
   inline auto getDataDofsPtr() const {
     return numeredEntFiniteElementPtr->getDataDofsPtr();
   };
@@ -440,78 +451,6 @@ struct FEMethod : public BasicMethod {
   MoFEMErrorCode getNodeData(const std::string field_name, VectorDouble &data,
                              const bool reset_dofs = true);
 
-  template <class MULTIINDEX>
-  typename MULTIINDEX::iterator get_begin(const MULTIINDEX &index,
-                                          const std::string &field_name,
-                                          const EntityType type) const {
-    return index.lower_bound(boost::make_tuple(field_name, type));
-  }
-
-  template <class MULTIINDEX>
-  typename MULTIINDEX::iterator get_end(const MULTIINDEX &index,
-                                        const std::string &field_name,
-                                        const EntityType type) const {
-    return index.upper_bound(boost::make_tuple(field_name, type));
-  }
-
-/** \brief loop over all dofs which are on a particular FE data, field and
- * entity type \ingroup mofem_loops
- */
-#define _IT_GET_FEDATA_BY_TYPE_DOFS_FOR_LOOP_(FE, NAME, TYPE, IT)              \
-  auto IT = FE->get_begin<FEDofEntityByNameAndEnt>(                            \
-      FE->dataPtr->get<FEDofEntityByNameAndEnt>(), NAME,                       \
-      get_id_for_min_type(TYPE));                                              \
-  IT != FE->get_end<FEDofEntityByNameAndEnt>(                                  \
-            FE->dataPtr->get<FEDofEntityByNameAndEnt>(), NAME,                 \
-            get_id_for_max_type(TYPE));                                        \
-  IT++
-
-  template <class MULTIINDEX>
-  typename MULTIINDEX::iterator get_begin(const MULTIINDEX &index,
-                                          const std::string &field_name) const {
-    return index.lower_bound(field_name);
-  }
-  template <class MULTIINDEX>
-  typename MULTIINDEX::iterator get_end(const MULTIINDEX &index,
-                                        const std::string &field_name) const {
-    return index.upper_bound(field_name);
-  }
-
-/** \brief loop over all dofs which are on a particular FE row and field
- * \ingroup mofem_loops
- */
-#define _IT_GET_FEROW_BY_NAME_DOFS_FOR_LOOP_(FE, NAME, IT)                     \
-  auto IT = FE->get_begin<FENumeredDofEntityByUId>(                            \
-      FE->getRowDofs().get<Unique_mi_tag>(),                                   \
-      FieldEntity::getLoBitNumberUId(FE->getFieldBitNumber(NAME)));            \
-  IT != FE->get_end<FENumeredDofEntityByUId>(                                  \
-            FE->getRowDofs()->get<Unique_mi_tag>(),                            \
-            FieldEntity::getHiBitNumberUId(FE->getFieldBitNumber(NAME)));      \
-  IT++
-
-/** \brief loop over all dofs which are on a particular FE column and field
- * \ingroup mofem_loops
- */
-#define _IT_GET_FECOL_BY_NAME_DOFS_FOR_LOOP_(FE, NAME, IT)                     \
-  auto IT = FE->get_begin<FENumeredDofEntityByUId>(                            \
-      FE->getColDofs().get<Unique_mi_tag>(),                                   \
-      FieldEntity::getLoBitNumberUId(FE->getFieldBitNumber(NAME)));            \
-  IT != FE->get_end<FENumeredDofEntityByUId>(                                  \
-            FE->getColDofs()->get<Unique_mi_tag>(),                            \
-            FieldEntity::getHiBitNumberUId(FE->getFieldBitNumber(NAME)));      \
-  IT++
-
-/** \brief loop over all dofs which are on a particular FE data and field
- * \ingroup mofem_loops
- */
-#define _IT_GET_FEDATA_BY_NAME_DOFS_FOR_LOOP_(FE, NAME, IT)                    \
-  auto IT = FE->get_begin<FEDofEntityByUId>(                                   \
-      FE->dataPtr->get<Unique_mi_tag>(),                                       \
-      FieldEntity::getLoBitNumberUId(FE->getFieldBitNumber(NAME)));            \
-  IT != FE->get_end<FEDofEntityByUId>(                                         \
-            FE->dataPtr->get<Unique_mi_tag>(),                                 \
-            FieldEntity::getHiBitNumberUId(FE->getFieldBitNumber(NAME)));      \
-  IT++
 };
 
 inline auto FEMethod::getNumberOfNodes() const {

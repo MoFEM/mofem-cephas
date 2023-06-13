@@ -2,8 +2,8 @@
  * \file test_cache_on_entities.cpp
  * \example test_cache_on_entities.cpp
  *
- * Tetsing entities cache. Entities acache is data abstraction enabling user to
- * pass data between operators, finite elements, and problems, in convinient
+ * Testing entities cache. Entities cache is data abstraction enabling user to
+ * pass data between operators, finite elements, and problems, in convenient
  * way.
  *
  * It can be used to store indices, or history variables, and any other data,
@@ -12,19 +12,7 @@
  *
  */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 #include <MoFEM.hpp>
 using namespace MoFEM;
@@ -49,7 +37,7 @@ struct MyStorage : EntityStorage {
 struct OpVolumeSet : public VolOp {
   OpVolumeSet(const std::string &field_name) : VolOp(field_name, OPROW) {}
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data) {
+                        EntitiesFieldData::EntData &data) {
 
     MoFEMFunctionBegin;
     MOFEM_LOG_CHANNEL("SYNC");
@@ -113,7 +101,7 @@ std::vector<OpVolumeSet::SharedVecInt> OpVolumeSet::entsIndices;
 struct OpVolumeTest : public VolOp {
   OpVolumeTest(const std::string &field_name) : VolOp(field_name, OPROW) {}
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data) {
+                        EntitiesFieldData::EntData &data) {
 
     MoFEMFunctionBegin;
     MOFEM_LOG_CHANNEL("SYNC");
@@ -158,7 +146,7 @@ struct OpVolumeAssemble : public VolOp {
   OpVolumeAssemble(const std::string &field_name, Vec v)
       : VolOp(field_name, OPROW), V(v) {}
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data) {
+                        EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
     auto nb_dofs = data.getIndices().size();
     if (nb_dofs) {
@@ -242,7 +230,8 @@ int main(int argc, char *argv[]) {
       auto get_mark_skin_dofs = [&](Range &&skin) {
         auto problem_manager = m_field.getInterface<ProblemsManager>();
         auto marker_ptr = boost::make_shared<std::vector<unsigned char>>();
-        problem_manager->markDofs(simple_interface->getProblemName(), ROW, skin,
+        problem_manager->markDofs(simple_interface->getProblemName(), ROW,
+                                  ProblemsManager::OR, skin,
                                   *marker_ptr);
         return marker_ptr;
       };

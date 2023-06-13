@@ -3,20 +3,7 @@
  * low-level functions
  */
 
-/*
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
- */
+
 
 #ifndef __REF_ENTSMULTIINDICES_HPP__
 #define __REF_ENTSMULTIINDICES_HPP__
@@ -67,12 +54,12 @@ inline void *get_tag_ptr(moab::Interface &moab, Tag th, EntityHandle ent,
  * \brief keeps information about side number for the finite element
  * \ingroup ent_multi_indices
  */
-struct __attribute__((__packed__)) SideNumber {
+struct /*__attribute__((__packed__))*/ SideNumber {
   EntityHandle ent;
-  char side_number;
-  char sense;
-  char offset;
-  char brother_side_number;
+  signed char side_number;
+  signed char sense;
+  signed char offset;
+  signed char brother_side_number;
 
   inline EntityType getEntType() const {
     return static_cast<EntityType>((ent & MB_TYPE_MASK) >> MB_ID_WIDTH);
@@ -106,7 +93,7 @@ typedef multi_index_container<
             composite_key<
                 SideNumber,
                 const_mem_fun<SideNumber, EntityType, &SideNumber::getEntType>,
-                member<SideNumber, char, &SideNumber::side_number>
+                member<SideNumber, signed char, &SideNumber::side_number>
 
                 >>
 
@@ -150,14 +137,14 @@ struct RefElement;
 * \brief Struct keeps handle to refined handle.
 * \ingroup ent_multi_indices
 
-\todo th_RefType "_RefType" is set as two integers, need to be fixed, it is
-waste of space.
-
 */
 template <> struct RefEntityTmp<0> {
 
   RefEntityTmp(const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
                const EntityHandle ent);
+
+  RefEntityTmp(const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
+               const EntityHandle ent, EntityHandle *ent_parent_tag_ptr);
 
   virtual ~RefEntityTmp() = default;
 
@@ -469,6 +456,19 @@ template <> struct RefEntityTmp<0> {
     MoFEMFunctionReturn(0);
   }
 
+  static MoFEMErrorCode
+  getBitRefLevel(Interface &moab, std::vector<EntityHandle> &ents,
+                 std::vector<const BitRefLevel *> &vec_ptr_bit_ref_level) {
+    MoFEMFunctionBegin;
+    Tag th_ref_bit_level;
+    CHKERR moab.tag_get_handle("_RefBitLevel", th_ref_bit_level);
+    vec_ptr_bit_ref_level.resize(ents.size());
+    CHKERR moab.tag_get_by_ptr(
+        th_ref_bit_level, &*ents.begin(), ents.size(),
+        reinterpret_cast<const void **>(&*vec_ptr_bit_ref_level.begin()));
+    MoFEMFunctionReturn(0);
+  }
+
   /**
    * \brief Get pointer to parent entity tag.
    *
@@ -477,11 +477,7 @@ template <> struct RefEntityTmp<0> {
    *
    * @return Pointer to tag on entity
    */
-  EntityHandle *getParentEntPtr() const {
-    return static_cast<EntityHandle *>(get_tag_ptr(
-        this->getBasicDataPtr()->moab,
-        this->getBasicDataPtr()->th_RefParentHandle, this->ent, NULL));
-  }
+  inline EntityHandle *getParentEntPtr() const { return entParentTagPtr; }
 
   /**
    * \brief Get pointer to bit ref level tag
@@ -503,10 +499,7 @@ template <> struct RefEntityTmp<0> {
   /** \brief Get patent entity
    */
   inline EntityType getParentEntType() const {
-    EntityHandle *tag_parent_ent = getParentEntPtr();
-    if (*tag_parent_ent == 0)
-      return MBMAXTYPE;
-    return (EntityType)((*tag_parent_ent & MB_TYPE_MASK) >> MB_ID_WIDTH);
+    return (EntityType)((getParentEnt() & MB_TYPE_MASK) >> MB_ID_WIDTH);
   }
 
   /** \brief Get parent entity, i.e. entity form one refinement level up
@@ -547,6 +540,7 @@ private:
   }
 
   static boost::weak_ptr<RefElement> refElementPtr;
+  EntityHandle *entParentTagPtr; ///< Tag ptr to parent entity handle
 };
 
 template <> struct RefEntityTmp<-1> : public RefEntityTmp<0> {
@@ -554,6 +548,11 @@ template <> struct RefEntityTmp<-1> : public RefEntityTmp<0> {
   RefEntityTmp(const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
                const EntityHandle ent)
       : RefEntityTmp<0>(basic_data_ptr, ent), basicDataPtr(basic_data_ptr) {}
+
+  RefEntityTmp(const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
+               const EntityHandle ent, EntityHandle *ent_parent_tag_ptr)
+      : RefEntityTmp<0>(basic_data_ptr, ent, ent_parent_tag_ptr),
+        basicDataPtr(basic_data_ptr) {}
 
   virtual const boost::shared_ptr<BasicEntityData> getBasicDataPtr() const {
     if (auto ptr = basicDataPtr.lock())
@@ -720,7 +719,6 @@ template <typename T> struct interface_RefEntity {
  * \ingroup ent_multi_indices
  *
  * \param hashed_unique Ent_mi_tag
- * \param ordered_non_unique Meshset_mi_tag
  * \param ordered_non_unique Ent_Ent_mi_tag
  * \param ordered_non_unique Composite_EntType_And_ParentEntType_mi_tag
  * \param ordered_non_unique Composite_ParentEnt_And_EntType_mi_tag
@@ -757,7 +755,9 @@ using RefEntity_multiIndex = multi_index_container<
                                  const_mem_fun<RefEntity, EntityType,
                                                &RefEntity::getEntType>,
                                  const_mem_fun<RefEntity, EntityHandle,
-                                               &RefEntity::getParentEnt>>>>
+                                               &RefEntity::getParentEnt>>
+
+                   >>
 
     >;
 

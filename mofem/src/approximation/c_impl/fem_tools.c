@@ -2,19 +2,7 @@
  * \brief Loose implementation of some useful functions
  */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 #include <definitions.h>
 #include <stdlib.h>
@@ -448,7 +436,7 @@ PetscErrorCode GradientOfDeformation(double *diffN, double *dofs, double *F) {
 // using complex variable
 void ShapeDiffMBTETinvJ_complex(double *diffN, __CLPK_doublecomplex *invJac,
                                 __CLPK_doublecomplex *diffNinvJac,
-                                const CBLAS_TRANSPOSE Trans) {
+                                enum CBLAS_TRANSPOSE Trans) {
   __CLPK_doublecomplex tmp1 = {1., 0.}, tmp2 = {0., 0.};
   int ii = 0, jj;
   for (; ii < 4; ii++) {
@@ -983,7 +971,7 @@ PetscErrorCode ShapeJacMBTETQ(const double *diffN, const double *coords,
   bzero(Jac, sizeof(double) * 9);
   for (ii = 0; ii < 10; ii++)    // shape func.
     for (jj = 0; jj < 3; jj++)   // space
-      for (kk = 0; kk < 3; kk++) // direvative of shape func.
+      for (kk = 0; kk < 3; kk++) // derivative of shape func.
         Jac[jj * 3 + kk] += diffN[ii * 3 + kk] * coords[ii * 3 + jj];
   MoFEMFunctionReturnHot(0);
 }

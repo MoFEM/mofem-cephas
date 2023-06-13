@@ -1,16 +1,3 @@
-# MoFEM is free software: you can redistribute it and/or modify it under
-# the terms of the GNU Lesser General Public License as published by the
-# Free Software Foundation, either version 3 of the License, or (at your
-# option) any later version.
-#
-# MoFEM is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
-# License for more details.
-#
-# You should have received a copy of the GNU Lesser General Public
-# License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-
 cmake_minimum_required (VERSION 3.1.3)
 
 # Serch inlude directories before system directories
@@ -29,21 +16,35 @@ if(PETSCVAR_FC)
   set(CMAKE_Fortran_COMPILER ${PETSCVAR_FC})
 endif(PETSCVAR_FC)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wunused-variable")
+
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdiagnostics-color=always")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fdiagnostics-color=always")
+endif()
+
+
+if(PETSCVAR_CUDA_INCLUDE)
+  message(STATUS "PETSc is compiled with CUDA")
+  set(PETSC_HAVE_CUDA TRUE)
+  add_definitions(-DPETSC_HAVE_CUDA=1)
+endif(PETSCVAR_CUDA_INCLUDE)
+
 # Get mpirun path bin directory
 string(REGEX REPLACE "mpicc" "" "MPI_BIN_PATH" ${CMAKE_C_COMPILER})
 find_program(MPI_RUN mpirun HINTS ${MPI_BIN_PATH} /usr/bin PATH ${MPI_BIN_PATH})
 include(cmake/ResolveCompilerPaths.cmake)
 
 project(MoFEM 
-  VERSION 0.12.1 
+  VERSION 0.14.0
   DESCRIPTION "Finite element framework" 
   LANGUAGES C CXX)
 
 # Set fallback version. Fallback version is version of MoFEM which is used
 # as default version if version from the git tags can not be extracted. For exammple 
 # that is a keys when somone install mofem from tarball.
-set(MoFEM_FALLBACK_VERSION "0.12.2" CACHE STRING "Fallback version" FORCE)
-message(STATUS "Falback vecrsion v${MoFEM_FALLBACK_VERSION}")
+set(MoFEM_FALLBACK_VERSION "0.14.0" CACHE STRING "Fallback version" FORCE)
+message(STATUS "Fallback version v${MoFEM_FALLBACK_VERSION}")
 
 # Options
 option(BUILD_SHARED_LIBS "Build using shared libraries" OFF)
@@ -52,7 +53,7 @@ option(STAND_ALLONE_USERS_MODULES
 option(WITHCOVERAGE "Add gcc coverage compile tags" OFF)
 option(MOFEM_BUILD_TESTS "If is ON enbale testing" ON)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # If fortran is set by PETSc or user
@@ -91,6 +92,7 @@ else(SYMM_RESTRICT)
   add_definitions("-Drestrict=")
 endif(SYMM_RESTRICT)
 add_definitions(${DEFINE_RESTRICT})
+add_definitions("-D_LIBCPP_DISABLE_DEPRECATION_WARNINGS")
 
 # Installing extermal packages It is used to install prerequisites, ADOL-C,
 # TetGen, MED can be installed like that
@@ -126,10 +128,11 @@ message(STATUS "PETSc lib dirs " ${PETSc_LIBRARY_DIRS})
 message(STATUS "PETSc includ " ${PETSc_INCLUDE_DIRS})
 
 # PETSC tools
-pkg_check_modules(SLEPC SLEPc)
+pkg_check_modules(SLEPC slepc)
 message(STATUS "SLEPc version " ${SLEPC_VERSION})
 message(STATUS "SLEPc lib dirs " ${SLEPC_LIBRARY_DIRS})
 message(STATUS "SLEPc include " ${SLEPC_INCLUDE_DIRS})
+
 if(SLEPC_FOUND)
 
   # For some unknown reason pkg-confifig reeturning empty SLEPC_LINK_LIBRARIES,
@@ -149,6 +152,13 @@ if(SLEPC_FOUND)
   endif(SLEPC_LINK_LIBRARIES)
   
 endif(SLEPC_FOUND)
+
+# ccache (https://ccache.dev) 
+find_program(CCACHE_PROGRAM ccache)
+if(CCACHE_PROGRAM)
+  set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
+  message(STATUS "CCache found:" ${CCACHE_PROGRAM} )
+endif()
 
 # SIGMA tools
 include(cmake/FindCGM.cmake)
@@ -203,9 +213,12 @@ find_path(
   HINTS 
   ${BLAS_DIR}/include
   ${CBLAS_DIR}/include 
-  ${PETSC_DIR}/${PETSC_ARCH}/include)
+  ${PETSC_DIR}/${PETSC_ARCH}/include
+  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/Accelerate.framework/Versions/Current/Frameworks/vecLib.framework/Headers)
 message(STATUS "CBLAS include found: " ${CBLAS_INCLUDE_DIR})
-include_directories(${CBLAS_INCLUDE_DIR})
+if(CBLAS_INCLUDE_DIR)
+  include_directories(${CBLAS_INCLUDE_DIR})
+endif(CBLAS_INCLUDE_DIR)
 
 include_directories(
   ${PROJECT_INCLUDE_DIRECTORIES}
@@ -237,15 +250,21 @@ message(STATUS ${JUPYTEXT})
 
 # System project liblairoes
 resolve_libraries(SYSTEM_PROJECT_LIBS "
+# MoAB
+  ${MESHKIT_LIBS_LINK}
+  ${MOAB_LIBS_LINK}
 # PETSc
   ${SLEPC_LINK_LIBRARIES}
   -L${PETSC_DIR}/${PETSC_ARCH}/lib
   ${PETSCVAR_PETSC_WITH_EXTERNAL_LIB}
-# MoAB
-  ${MESHKIT_LIBS_LINK}
-  ${MOAB_LIBS_LINK}
 # Boost
-  ${Boost_LIBRARIES} 
+  ${Boost_LIBRARIES}
+  ${Boost_FILESYSTEM_LIBRARY_RELEASE}
+  ${Boost_LOG_LIBRARY_RELEASE}
+  ${Boost_LOG_SETUP_LIBRARY_RELEASE}
+  ${Boost_PROGRAM_OPTIONS_LIBRARY_RELEASE}
+  ${Boost_SYSTEM_LIBRARY_RELEASE}
+  ${Boost_THREAD_LIBRARY_RELEASE}
 # Other
   ${MPI_F90_LIB}
   ${MPI_F77_LIB}")
@@ -322,3 +341,5 @@ if(DOXYGEN_FOUND)
   )
   add_dependencies(doc doxygen_copy_scripts)
 endif(DOXYGEN_FOUND)
+
+add_definitions(-Wfatal-errors)

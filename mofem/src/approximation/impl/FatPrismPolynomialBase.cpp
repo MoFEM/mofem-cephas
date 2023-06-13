@@ -6,19 +6,7 @@ implementation do not take that opportunity. That can be viewed as a bug.
 
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 using namespace MoFEM;
 
@@ -29,9 +17,9 @@ MoFEMErrorCode FatPrismPolynomialBaseCtx::query_interface(
 }
 
 FatPrismPolynomialBaseCtx::FatPrismPolynomialBaseCtx(
-    DataForcesAndSourcesCore &data,
-    DataForcesAndSourcesCore &data_triangles_only,
-    DataForcesAndSourcesCore &data_trough_thickness,
+    EntitiesFieldData &data,
+    EntitiesFieldData &data_triangles_only,
+    EntitiesFieldData &data_trough_thickness,
     MatrixDouble &gauss_pts_triangles_only,
     MatrixDouble &gauss_pts_through_thickness, moab::Interface &moab,
     const NumeredEntFiniteElement *fe_ptr, const FieldSpace space,
@@ -83,7 +71,7 @@ FatPrismPolynomialBase::getValue(MatrixDouble &pts,
         "Wrong dimension of pts, should be at least 3 rows with coordinates");
 
   const FieldApproximationBase base = cTx->bAse;
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
 
   if (cTx->copyNodeBase == LASTBASE)
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
@@ -142,7 +130,7 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1TrianglesOnly() {
 MoFEMErrorCode FatPrismPolynomialBase::getValueH1ThroughThickness() {
   MoFEMFunctionBegin;
 
-  // DataForcesAndSourcesCore& data = cTx->dAta;
+  // EntitiesFieldData& data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
                                      double *diffL, const int dim) =
@@ -153,7 +141,7 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1ThroughThickness() {
   for (unsigned int ee = 3; ee <= 5; ee++) {
     auto &ent_data = cTx->dataTroughThickness.dataOnEntities[MBEDGE][ee];
     int sense = ent_data.getSense();
-    int order = ent_data.getDataOrder();
+    int order = ent_data.getOrder();
     int nb_dofs = NBEDGE_H1(order);
     ent_data.getN(base).resize(nb_gauss_pts_through_thickness, nb_dofs, false);
     ent_data.getDiffN(base).resize(nb_gauss_pts_through_thickness, nb_dofs,
@@ -183,7 +171,7 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1ThroughThickness() {
 MoFEMErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
 
   PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
@@ -217,7 +205,7 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
     auto &thickness_ent = cTx->dataTroughThickness.dataOnEntities[MBEDGE][ee];
     auto &prism_ent = data.dataOnEntities[MBEDGE][ee];
 
-    int order = thickness_ent.getDataOrder();
+    int order = thickness_ent.getOrder();
     int nb_dofs = NBEDGE_H1(order);
     if ((unsigned int)nb_dofs != thickness_ent.getN(base).size2())
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -412,7 +400,7 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
         quads_nodes[4 * side + nn] =
             std::distance(conn, std::find(conn, conn + 6, conn_quad[nn]));
       }
-      int order = data.dataOnEntities[MBQUAD][side].getDataOrder();
+      int order = data.dataOnEntities[MBQUAD][side].getOrder();
       quad_order[side] = order;
       data.dataOnEntities[MBQUAD][side].getN(base).resize(
           nb_gauss_pts, NBFACEQUAD_H1(order), false);
@@ -442,7 +430,7 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
 
   auto prim_base = [&]() {
     MoFEMFunctionBegin;
-    int order = data.dataOnEntities[MBPRISM][0].getDataOrder();
+    int order = data.dataOnEntities[MBPRISM][0].getOrder();
     double *vertex_n = &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0);
     double *diff_vertex_n =
         &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0, 0);

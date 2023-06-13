@@ -7,16 +7,6 @@
  * \ingroup field_evaluator
  */
 
-/*
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
- */
-
 #ifndef __FIELD_EVALUATOR_HPP__
 #define __FIELD_EVALUATOR_HPP__
 
@@ -37,6 +27,8 @@ struct FieldEvaluatorInterface : public UnknownInterface {
   FieldEvaluatorInterface(const MoFEM::Core &core);
 
   struct SetPtsData {
+
+    SetPtsData() = delete;
 
     /**
      * @brief Set the Gauss Pts data
@@ -115,19 +107,19 @@ struct FieldEvaluatorInterface : public UnknownInterface {
   getData(const double *ptr = nullptr, const int nb_eval_points = 0,
           const double eps = 1e-12, VERBOSITY_LEVELS verb = QUIET) {
     struct PackData {
-      boost::scoped_ptr<VE> volElePtr;
+      boost::scoped_ptr<VE> elePtr;
       boost::scoped_ptr<SPD> setPtsDataPtr;
       boost::scoped_ptr<SP> setPtsPtr;
     };
     boost::shared_ptr<PackData> pack_data(new PackData());
     MoFEM::Interface &m_field = cOre;
-    pack_data->volElePtr.reset(new VE(m_field));
+    pack_data->elePtr.reset(new VE(m_field));
     pack_data->setPtsDataPtr.reset(
-        new SPD(boost::shared_ptr<VE>(pack_data, pack_data->volElePtr.get()),
-                ptr, nb_eval_points, eps, verb));
+        new SPD(boost::shared_ptr<VE>(pack_data, pack_data->elePtr.get()), ptr,
+                nb_eval_points, eps, verb));
     pack_data->setPtsPtr.reset(new SP(
         boost::shared_ptr<SPD>(pack_data, pack_data->setPtsDataPtr.get())));
-    pack_data->volElePtr->setRuleHook = boost::ref(*pack_data->setPtsPtr);
+    pack_data->elePtr->setRuleHook = boost::ref(*pack_data->setPtsPtr);
     boost::shared_ptr<SPD> data(pack_data, pack_data->setPtsDataPtr.get());
     return data;
   }
@@ -139,6 +131,12 @@ struct FieldEvaluatorInterface : public UnknownInterface {
    * @return MoFEMErrorCode
    */
   MoFEMErrorCode buildTree3D(boost::shared_ptr<SetPtsData> spd_ptr,
+                             const std::string finite_element);
+
+  /**
+   * @copydoc buildTree3D
+   */
+  MoFEMErrorCode buildTree2D(boost::shared_ptr<SetPtsData> spd_ptr,
                              const std::string finite_element);
 
   /**
@@ -190,6 +188,38 @@ struct FieldEvaluatorInterface : public UnknownInterface {
                      boost::shared_ptr<SetPtsData> data_ptr, int lower_rank,
                      int upper_rank, boost::shared_ptr<CacheTuple> cache_ptr,
                      MoFEMTypes bh = MF_EXIST, VERBOSITY_LEVELS verb = QUIET);
+
+  /**
+     * @copydoc evalFEAtThePoint3D
+     */
+  MoFEMErrorCode
+  evalFEAtThePoint2D(const double *const point, const double distance,
+                     const std::string problem,
+                     const std::string finite_element,
+                     boost::shared_ptr<SetPtsData> data_ptr, int lower_rank,
+                     int upper_rank, boost::shared_ptr<CacheTuple> cache_ptr,
+                     MoFEMTypes bh = MF_EXIST, VERBOSITY_LEVELS verb = QUIET);
+
+private:
+  /**
+   * @copydoc buildTree3D
+   */
+  template <int D>
+  MoFEMErrorCode buildTree(boost::shared_ptr<SetPtsData> spd_ptr,
+                           const std::string finite_element);
+
+  /**
+     * @copydoc evalFEAtThePoint3D
+     */
+  template <int D>
+  MoFEMErrorCode
+  evalFEAtThePoint(const double *const point, const double distance,
+                     const std::string problem,
+                     const std::string finite_element,
+                     boost::shared_ptr<SetPtsData> data_ptr, int lower_rank,
+                     int upper_rank, boost::shared_ptr<CacheTuple> cache_ptr,
+                     MoFEMTypes bh = MF_EXIST, VERBOSITY_LEVELS verb = QUIET);
+
 };
 
 } // namespace MoFEM

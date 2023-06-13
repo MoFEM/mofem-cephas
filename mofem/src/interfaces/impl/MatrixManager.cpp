@@ -1,15 +1,7 @@
 /**
  * \brief Create adjacent matrices using different indices
-
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-
-*/
+ */
 
 #define MatrixManagerFunctionBegin                                             \
   MoFEMFunctionBegin;                                                          \
@@ -86,9 +78,9 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
   MoFEMFunctionBegin;
 
   BitRefLevel prb_bit = p_miit->getBitRefLevel();
-  BitRefLevel prb_mask = p_miit->getMaskBitRefLevel();
+  BitRefLevel prb_mask = p_miit->getBitRefLevelMask();
 
-  const DofIdx nb_dofs_col = p_miit->getNbDofsCol();
+  const EmptyFieldBlocks &empty_field_blocks = p_miit->getEmptyFieldBlocks();
 
   dofs_col_view.clear();
   for (auto r = entFEAdjacencies.get<Unique_mi_tag>().equal_range(
@@ -102,35 +94,44 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
         continue;
       }
 
-      const BitRefLevel fe_bit = r.first->entFePtr->getBitRefLevel();
+      const BitRefLevel &fe_bit = r.first->entFePtr->getBitRefLevel();
       // if entity is not problem refinement level
-      if ((fe_bit & prb_mask) != fe_bit)
-        continue;
-      if ((fe_bit & prb_bit) != prb_bit)
-        continue;
-      const BitRefLevel dof_bit = mit_row->get()->getBitRefLevel();
+      if ((fe_bit & prb_bit).any() && (fe_bit & prb_mask) == fe_bit) {
 
-      // if entity is not problem refinement level
-      if ((fe_bit & dof_bit).any()) {
+        const bool empty_row_block =
+            (empty_field_blocks.first & (*mit_row)->getId()).none();
 
         for (auto &it : r.first->entFePtr->getColFieldEnts()) {
           if (auto e = it.lock()) {
-            if (auto cache = e->entityCacheColDofs.lock()) {
-              const auto lo = cache->loHi[0];
-              const auto hi = cache->loHi[1];
-              for (auto vit = lo; vit != hi; ++vit) {
-                const int idx = TAG::get_index(vit);
-                if (PetscLikely(idx >= 0))
-                  dofs_col_view.push_back(idx);
-                if (PetscUnlikely(idx >= nb_dofs_col)) {
-                  std::ostringstream zz;
-                  zz << "rank " << rAnk << " ";
-                  zz << *(*vit) << std::endl;
-                  SETERRQ(mofemComm, PETSC_ERR_ARG_SIZ, zz.str().c_str());
+            if (empty_row_block ||
+                (empty_field_blocks.second & e->getId()).none()) {
+
+              if (auto cache = e->entityCacheColDofs.lock()) {
+                const auto lo = cache->loHi[0];
+                const auto hi = cache->loHi[1];
+                for (auto vit = lo; vit != hi; ++vit) {
+
+                  const int idx = TAG::get_index(vit);
+                  if (PetscLikely(idx >= 0))
+                    dofs_col_view.push_back(idx);
+
+#ifndef NDEBUG
+                  const DofIdx nb_dofs_col = p_miit->getNbDofsCol();
+                  if (PetscUnlikely(idx >= nb_dofs_col)) {
+                    MOFEM_LOG("SELF", Sev::error)
+                        << "Problem with dof: " << std::endl
+                        << "Rank " << rAnk << " : " << *(*vit);
+                    SETERRQ(
+                        mofemComm, PETSC_ERR_ARG_SIZ,
+                        "Index of dof larger than number of DOFs in column");
+                  }
+#endif
                 }
+
+              } else {
+                SETERRQ(mofemComm, MOFEM_DATA_INCONSISTENCY, "Cache not set");
               }
-            } else
-              SETERRQ(mofemComm, MOFEM_DATA_INCONSISTENCY, "Cache not set");
+            }
           }
         }
       }
@@ -161,14 +162,14 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
       if ((lo->getBitFEId() & p_miit->getBitFEId()).any()) {
 
-        const BitRefLevel prb_bit = p_miit->getBitRefLevel();
-        const BitRefLevel prb_mask = p_miit->getMaskBitRefLevel();
-        const BitRefLevel fe_bit = lo->entFePtr->getBitRefLevel();
+        const BitRefLevel &prb_bit = p_miit->getBitRefLevel();
+        const BitRefLevel &prb_mask = p_miit->getBitRefLevelMask();
+        const BitRefLevel &fe_bit = lo->entFePtr->getBitRefLevel();
 
         // if entity is not problem refinement level
         if ((fe_bit & prb_mask) != fe_bit)
           continue;
-        if ((fe_bit & prb_bit) != prb_bit)
+        if ((fe_bit & prb_bit).none())
           continue;
 
         auto dit = p_miit->numeredColDofsPtr->lower_bound(uid);
@@ -331,8 +332,8 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
     // (from-id,length) pairs for each message.
     int *onodes;   // list of node-ids from which messages are expected
     int *olengths; // corresponding message lengths
-    CHKERR PetscGatherMessageLengths(comm, nsends, nrecvs,
-                                     &dofs_vec_length[0], &onodes, &olengths);
+    CHKERR PetscGatherMessageLengths(comm, nsends, nrecvs, &dofs_vec_length[0],
+                                     &onodes, &olengths);
 
     // Gets a unique new tag from a PETSc communicator.
     int tag;
@@ -508,23 +509,61 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
     // Adjacency matrix used to partition problems, f.e. METIS
     if (i.size() - 1 != (unsigned int)nb_loc_row_from_iterators) {
-      SETERRQ(get_comm(), PETSC_ERR_ARG_SIZ, "data inconsistency");
+      SETERRQ2(
+          get_comm(), PETSC_ERR_ARG_SIZ,
+          "Number of rows from iterator is different than size of rows in "
+          "compressed row "
+          "matrix (unsigned int)nb_local_dofs_row != i.size() - 1, i.e. %d != "
+          "%d",
+          (unsigned int)nb_loc_row_from_iterators, i.size() - 1);
     }
 
   } else if (strcmp(type, MATMPIAIJ) == 0) {
 
     // Compressed MPIADJ matrix
     if (i.size() - 1 != (unsigned int)nb_loc_row_from_iterators) {
-      SETERRQ(get_comm(), PETSC_ERR_ARG_SIZ, "data inconsistency");
+      SETERRQ2(
+          get_comm(), PETSC_ERR_ARG_SIZ,
+          "Number of rows from iterator is different than size of rows in "
+          "compressed row "
+          "matrix (unsigned int)nb_local_dofs_row != i.size() - 1, i.e. %d != "
+          "%d",
+          (unsigned int)nb_loc_row_from_iterators, i.size() - 1);
     }
     PetscInt nb_local_dofs_row = p_miit->getNbLocalDofsRow();
     if ((unsigned int)nb_local_dofs_row != i.size() - 1) {
-      SETERRQ(get_comm(), PETSC_ERR_ARG_SIZ, "data inconsistency");
+      SETERRQ2(
+          get_comm(), PETSC_ERR_ARG_SIZ,
+          "Number of rows is different than size of rows in compressed row "
+          "matrix (unsigned int)nb_local_dofs_row != i.size() - 1, i.e. %d != "
+          "%d",
+          (unsigned int)nb_local_dofs_row, i.size() - 1);
     }
 
   } else if (strcmp(type, MATAIJ) == 0) {
 
     // Sequential compressed ADJ matrix
+    if (i.size() - 1 != (unsigned int)nb_loc_row_from_iterators) {
+      SETERRQ2(
+          get_comm(), PETSC_ERR_ARG_SIZ,
+          "Number of rows form iterator is different than size of rows in "
+          "compressed row "
+          "matrix (unsigned int)nb_local_dofs_row != i.size() - 1, i.e. %d != "
+          "%d",
+          (unsigned int)nb_loc_row_from_iterators, i.size() - 1);
+    }
+    PetscInt nb_local_dofs_row = p_miit->getNbLocalDofsRow();
+    if ((unsigned int)nb_local_dofs_row != i.size() - 1) {
+      SETERRQ2(
+          get_comm(), PETSC_ERR_ARG_SIZ,
+          "Number of rows is different than size of rows in compressed row "
+          "matrix (unsigned int)nb_local_dofs_row != i.size() - 1, i.e. %d != "
+          "%d",
+          (unsigned int)nb_local_dofs_row, i.size() - 1);
+    }
+
+  } else if (strcmp(type, MATAIJCUSPARSE) == 0) {
+
     if (i.size() - 1 != (unsigned int)nb_loc_row_from_iterators) {
       SETERRQ(get_comm(), PETSC_ERR_ARG_SIZ, "data inconsistency");
     }
@@ -557,6 +596,10 @@ MatrixManager::MatrixManager(const MoFEM::Core &core)
                         &MOFEM_EVENT_createMPIAIJWithArrays);
   PetscLogEventRegister("MatrixManagerCreateMPIAdjWithArrays", 0,
                         &MOFEM_EVENT_createMPIAdjWithArrays);
+  PetscLogEventRegister("MatrixManagerCreateMPIAIJCUSPARSEWithArrays", 0,
+                        &MOFEM_EVENT_createMPIAIJCUSPARSEWithArrays);
+  PetscLogEventRegister("MatrixManagerCreateSeqAIJCUSPARSEWithArrays", 0,
+                        &MOFEM_EVENT_createSeqAIJCUSPARSEWithArrays);
   PetscLogEventRegister("MatrixManagerCreateSeqAIJWithArrays", 0,
                         &MOFEM_EVENT_createSeqAIJWithArrays);
   PetscLogEventRegister("MatrixManagerCheckMPIAIJWithArraysMatrixFillIn", 0,
@@ -566,10 +609,11 @@ MatrixManager::MatrixManager(const MoFEM::Core &core)
 template <>
 MoFEMErrorCode MatrixManager::createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(
     const std::string name, Mat *Aij, int verb) {
+  MoFEMFunctionBegin;
+
   MoFEM::CoreInterface &m_field = cOre;
   CreateRowComressedADJMatrix *core_ptr =
       static_cast<CreateRowComressedADJMatrix *>(&cOre);
-  MoFEMFunctionBegin;
   PetscLogEventBegin(MOFEM_EVENT_createMPIAIJWithArrays, 0, 0, 0, 0);
 
   auto problems_ptr = m_field.get_problems();
@@ -596,6 +640,94 @@ MoFEMErrorCode MatrixManager::createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(
       nb_col_dofs, &*i_vec.begin(), &*j_vec.begin(), PETSC_NULL, Aij);
 
   PetscLogEventEnd(MOFEM_EVENT_createMPIAIJWithArrays, 0, 0, 0, 0);
+  MoFEMFunctionReturn(0);
+}
+
+template <>
+MoFEMErrorCode
+MatrixManager::createMPIAIJCUSPARSEWithArrays<PetscGlobalIdx_mi_tag>(
+    const std::string name, Mat *Aij, int verb) {
+  MoFEMFunctionBegin;
+
+  MoFEM::CoreInterface &m_field = cOre;
+  CreateRowComressedADJMatrix *core_ptr =
+      static_cast<CreateRowComressedADJMatrix *>(&cOre);
+  PetscLogEventBegin(MOFEM_EVENT_createMPIAIJCUSPARSEWithArrays, 0, 0, 0, 0);
+
+  auto problems_ptr = m_field.get_problems();
+  auto &prb = problems_ptr->get<Problem_mi_tag>();
+  auto p_miit = prb.find(name);
+  if (p_miit == prb.end()) {
+    SETERRQ1(m_field.get_comm(), MOFEM_NOT_FOUND,
+             "problem < %s > is not found (top tip: check spelling)",
+             name.c_str());
+  }
+
+  std::vector<int> i_vec, j_vec;
+  j_vec.reserve(10000);
+  CHKERR core_ptr->createMatArrays<PetscGlobalIdx_mi_tag>(
+      p_miit, MATAIJCUSPARSE, i_vec, j_vec, false, verb);
+
+  int nb_local_dofs_row = p_miit->getNbLocalDofsRow();
+  int nb_local_dofs_col = p_miit->getNbLocalDofsCol();
+
+  auto get_layout = [&]() {
+    int start_ranges, end_ranges;
+    PetscLayout layout;
+    CHKERR PetscLayoutCreate(m_field.get_comm(), &layout);
+    CHKERR PetscLayoutSetBlockSize(layout, 1);
+    CHKERR PetscLayoutSetLocalSize(layout, nb_local_dofs_col);
+    CHKERR PetscLayoutSetUp(layout);
+    CHKERR PetscLayoutGetRange(layout, &start_ranges, &end_ranges);
+    CHKERR PetscLayoutDestroy(&layout);
+    return std::make_pair(start_ranges, end_ranges);
+  };
+
+  auto get_nnz = [&](auto &d_nnz, auto &o_nnz) {
+    MoFEMFunctionBeginHot;
+    auto layout = get_layout();
+    int j = 0;
+    for (int i = 0; i != nb_local_dofs_row; ++i) {
+      for (; j != i_vec[i + 1]; ++j) {
+        if (j_vec[j] < layout.second && j_vec[j] >= layout.first)
+          ++(d_nnz[i]);
+        else
+          ++(o_nnz[i]);
+      }
+    }
+    MoFEMFunctionReturnHot(0);
+  };
+
+  std::vector<int> d_nnz(nb_local_dofs_row, 0), o_nnz(nb_local_dofs_row, 0);
+  CHKERR get_nnz(d_nnz, o_nnz);
+
+#ifdef PETSC_HAVE_CUDA
+  CHKERR ::MatCreateAIJCUSPARSE(m_field.get_comm(), nb_local_dofs_row,
+                                nb_local_dofs_col, nb_row_dofs, nb_col_dofs, 0,
+                                &*d_nnz.begin(), 0, &*o_nnz.begin(), Aij);
+#else
+  SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+          "Error: To use this matrix type compile PETSc with CUDA.");
+#endif
+
+  PetscLogEventEnd(MOFEM_EVENT_createMPIAIJCUSPARSEWithArrays, 0, 0, 0, 0);
+  
+  MoFEMFunctionReturn(0);
+}
+
+template <>
+MoFEMErrorCode
+MatrixManager::createSeqAIJCUSPARSEWithArrays<PetscLocalIdx_mi_tag>(
+    const std::string name, Mat *Aij, int verb) {
+  MoFEMFunctionBegin;
+
+#ifdef PETSC_HAVE_CUDA
+  // CHKERR ::MatCreateSeqAIJCUSPARSE(MPI_Comm comm, PetscInt m, PetscInt n,
+  //                                  PetscInt nz, const PetscInt nnz[], Mat *A);
+  SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+          "Not implemented type of matrix yet, try MPI version (aijcusparse)");
+#endif
+
   MoFEMFunctionReturn(0);
 }
 
@@ -828,8 +960,13 @@ MoFEMErrorCode MatrixManager::checkMatrixFillIn(const std::string problem_name,
           int max_order = (*cit)->getMaxOrder();
           if ((*cit)->getNbOfCoeffs() * (*cit)->getOrderNbDofs(max_order) !=
               nb_dofs_on_ent) {
+
+            /* It could be that you have
+            removed DOFs from problem, and for example if this was vector filed
+            with components {Ux,Uy,Uz}, you removed on Uz element.*/
+
             MOFEM_LOG("SELF", Sev::warning)
-                << "Warning: Number of Dofs in Col diffrent than number "
+                << "Warning: Number of Dofs in Col different than number "
                    "of dofs for given entity order "
                 << (*cit)->getNbOfCoeffs() * (*cit)->getOrderNbDofs(max_order)
                 << " " << nb_dofs_on_ent;
@@ -865,7 +1002,7 @@ MoFEMErrorCode MatrixManager::checkMatrixFillIn(const std::string problem_name,
           MOFEM_LOG("SELF", Sev::error)
               << "problem: " << problemPtr->getBitRefLevel();
           MOFEM_LOG("SELF", Sev::error)
-              << "problem mask: " << problemPtr->getMaskBitRefLevel();
+              << "problem mask: " << problemPtr->getBitRefLevelMask();
           SETERRQ(mFieldPtr->get_comm(), MOFEM_DATA_INCONSISTENCY,
                   "adjacencies data inconsistency");
         } else {
@@ -912,8 +1049,13 @@ MoFEMErrorCode MatrixManager::checkMatrixFillIn(const std::string problem_name,
           int max_order = (*rit)->getMaxOrder();
           if ((*rit)->getNbOfCoeffs() * (*rit)->getOrderNbDofs(max_order) !=
               nb_dofs_on_ent) {
+
+            /* It could be that you have removed DOFs from problem, and for
+             * example if this was vector filed with components {Ux,Uy,Uz}, you
+             * removed on Uz element. */
+            
             MOFEM_LOG("SELF", Sev::warning)
-                << "Warning: Number of Dofs in Row diffrent than number "
+                << "Warning: Number of Dofs in Row different than number "
                    "of dofs for given entity order "
                 << (*rit)->getNbOfCoeffs() * (*rit)->getOrderNbDofs(max_order)
                 << " " << nb_dofs_on_ent;
@@ -983,7 +1125,6 @@ template <>
 MoFEMErrorCode
 MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
     const std::string problem_name, int row_print, int col_print, int verb) {
-  MoFEM::CoreInterface &m_field = cOre;
   MatrixManagerFunctionBegin;
   // create matrix
   SmartPetscObj<Mat> A;
@@ -996,7 +1137,6 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
 template <>
 MoFEMErrorCode MatrixManager::checkMPIAIJMatrixFillIn<PetscGlobalIdx_mi_tag>(
     const std::string problem_name, int row_print, int col_print, int verb) {
-  MoFEM::CoreInterface &m_field = cOre;
   MatrixManagerFunctionBegin;
   // create matrix
   SmartPetscObj<Mat> A;

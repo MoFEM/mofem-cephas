@@ -4,24 +4,12 @@
 
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
-
 #include <MoFEM.hpp>
 using namespace MoFEM;
 
 static char help[] = "...\n\n";
+
+constexpr int SPACE_DIM = 3;
 
 int main(int argc, char *argv[]) {
 
@@ -70,18 +58,21 @@ int main(int argc, char *argv[]) {
     // meshset consisting all entities in mesh
     EntityHandle root_set = moab.get_root_set();
     // add entities to field
-    CHKERR m_field.add_ents_to_field_by_type(root_set, MBTET, "F1");
-    CHKERR m_field.add_ents_to_field_by_type(root_set, MBTET, "F2");
+    CHKERR m_field.add_ents_to_field_by_dim(root_set, SPACE_DIM, "F1");
+    CHKERR m_field.add_ents_to_field_by_dim(root_set, SPACE_DIM, "F2");
 
     // set app. order
     // see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes
     // (Mark Ainsworth & Joe Coyle)
     int order = 2;
-    CHKERR m_field.set_field_order(root_set, MBEDGE, "F1", order);
-    CHKERR m_field.set_field_order(root_set, MBTRI, "F1", order);
-    CHKERR m_field.set_field_order(root_set, MBTET, "F1", order);
-    CHKERR m_field.set_field_order(root_set, MBTET, "F2", order);
-    CHKERR m_field.set_field_order(root_set, MBTRI, "F2", order);
+    for (EntityType t = CN::TypeDimensionMap[1].first;
+         t <= CN::TypeDimensionMap[SPACE_DIM].second; ++t) {
+      CHKERR m_field.set_field_order(root_set, t, "F1", order);
+    }
+    for (EntityType t = CN::TypeDimensionMap[2].first;
+         t <= CN::TypeDimensionMap[SPACE_DIM].second; ++t) {
+      CHKERR m_field.set_field_order(root_set, t, "F2", order);
+    }
 
     CHKERR m_field.build_fields();
 
@@ -95,7 +86,7 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.modify_finite_element_add_field_data("E1", "F1");
     CHKERR m_field.modify_finite_element_add_field_data("E1", "F2");
 
-    CHKERR m_field.add_ents_to_finite_element_by_type(root_set, MBTET, "E1");
+    CHKERR m_field.add_ents_to_finite_element_by_dim(root_set, SPACE_DIM, "E1");
 
     CHKERR m_field.build_finite_elements();
     CHKERR m_field.build_adjacencies(bit_level);
@@ -117,24 +108,85 @@ int main(int argc, char *argv[]) {
     auto get_triangles_on_skin = [&](Range &tets_skin) {
       MoFEMFunctionBegin;
       Range tets;
-      CHKERR m_field.get_moab().get_entities_by_type(root_set, MBTET, tets);
-      Range tets_skin_part;
+      CHKERR m_field.get_moab().get_entities_by_dimension(root_set, SPACE_DIM,
+                                                          tets);
       Skinner skin(&m_field.get_moab());
-      CHKERR skin.find_skin(0, tets, false, tets_skin_part);
-      CHKERR pcomm->filter_pstatus(tets_skin_part,
-                                   PSTATUS_SHARED | PSTATUS_MULTISHARED,
-                                   PSTATUS_NOT, -1, &tets_skin);
+      CHKERR skin.find_skin(0, tets, false, tets_skin);
+      Range adj;
+      CHKERR m_field.get_moab().get_adjacencies(tets_skin, SPACE_DIM - 2, false,
+                                                adj, moab::Interface::UNION);
+      tets_skin.merge(adj);
       MoFEMFunctionReturn(0);
     };
 
+    Range tets;
+    CHKERR m_field.get_moab().get_entities_by_dimension(root_set, SPACE_DIM,
+                                                        tets);
+    SmartPetscObj<IS> is_before_remove;
+    CHKERR m_field.getInterface<ISManager>()->isCreateProblemFieldAndRank(
+        "P1", ROW, "F1", 0, 1, is_before_remove, &tets);
+
     Range tets_skin;
     CHKERR get_triangles_on_skin(tets_skin);
-    CHKERR prb_mng_ptr->removeDofsOnEntities("P1", "F1", tets_skin, 0, 1, NOISY,
-                                             true);
+    CHKERR prb_mng_ptr->removeDofsOnEntities("P1", "F1", tets_skin, 0, 1, 0,
+                                             100, NOISY, true);
+
+    SmartPetscObj<IS> is_after_remove;
+    CHKERR m_field.getInterface<ISManager>()->isCreateProblemFieldAndRank(
+        "P1", ROW, "F1", 0, 1, is_after_remove, &tets);
+
+    auto test_is = [&](auto prb_name, auto is_before, auto is_after) {
+      MoFEMFunctionBegin;
+      const Problem *prb_ptr = m_field.get_problem(prb_name);
+      if (auto sub_data = prb_ptr->getSubData()) {
+        auto sub_ao = sub_data->getSmartRowMap();
+        if (sub_ao) {
+          CHKERR AOApplicationToPetscIS(sub_ao, is_before);
+          PetscBool is_the_same;
+          CHKERR ISEqual(is_before, is_after, &is_the_same);
+          if (is_the_same == PETSC_FALSE) {
+            SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                    "IS should be the same if map is correctly implemented");
+          } else {
+            MOFEM_LOG("WORLD", Sev::inform) << "Sub data map is correct";
+          }
+        } else {
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                  "AO map should exist");
+        }
+      } else {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                "Sub DM should exist");
+      }
+      MoFEMFunctionReturn(0);
+    };
+
+    CHKERR test_is("P1", is_before_remove, is_after_remove);
 
     CHKERR m_field.getInterface<MatrixManager>()
         ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>("P1", -2, -2,
                                                                    0);
+
+    CHKERR m_field.add_problem("SUB");
+     // set refinement level for problem
+    CHKERR m_field.modify_problem_ref_level_add_bit("SUB", bit_level);
+    CHKERR m_field.modify_problem_add_finite_element("SUB", "E1");
+    CHKERR prb_mng_ptr->buildSubProblem("SUB", {"F1"}, {"F1"}, "P1", PETSC_TRUE,
+                                        nullptr, nullptr);
+    CHKERR prb_mng_ptr->partitionFiniteElements("SUB", true, 0,
+                                                m_field.get_comm_size());
+    CHKERR prb_mng_ptr->partitionGhostDofsOnDistributedMesh("SUB");
+
+    CHKERR prb_mng_ptr->removeDofsOnEntities("SUB", "F1", tets_skin, 0, 1, 0,
+                                             100, NOISY, true);
+    SmartPetscObj<IS> is_sub_after_remove;
+    CHKERR m_field.getInterface<ISManager>()->isCreateProblemFieldAndRank(
+        "SUB", ROW, "F1", 0, MAX_DOFS_ON_ENTITY, is_sub_after_remove, &tets);
+    CHKERR test_is("SUB", is_before_remove, is_after_remove);
+
+    CHKERR m_field.getInterface<MatrixManager>()
+        ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>("SUB", -2,
+                                                                   -2, 0);
   }
   CATCH_ERRORS;
 

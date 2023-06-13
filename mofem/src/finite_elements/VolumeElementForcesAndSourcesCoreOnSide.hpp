@@ -6,19 +6,7 @@
 
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 #ifndef __VOLUMEELEMENTFORCESANDSOURCESCORE_ONSIDE_HPP__
 #define __VOLUMEELEMENTFORCESANDSOURCESCORE_ONSIDE_HPP__
@@ -31,7 +19,7 @@ namespace MoFEM {
  * \brief Base volume element used to integrate on skeleton
  * \ingroup mofem_forces_and_sources_volume_element
  */
-struct VolumeElementForcesAndSourcesCoreOnSideBase
+struct VolumeElementForcesAndSourcesCoreOnSide
     : public VolumeElementForcesAndSourcesCore {
 
   using VolumeElementForcesAndSourcesCore::VolumeElementForcesAndSourcesCore;
@@ -67,10 +55,18 @@ struct VolumeElementForcesAndSourcesCoreOnSideBase
 
   /**
    * @brief Sense face on volume
+   * @deprecated use getSkeletonSense()
    *
    * @return int
    */
-  inline int getFaceSense() const;
+   DEPRECATED inline int getFaceSense() const;
+
+  /**
+   * @brief Sense face on volume
+   *
+   * @return int
+   */
+  inline int getSkeletonSense() const;
 
   /**
    * @brief Face number on the volume
@@ -98,20 +94,30 @@ private:
 /** \brief default operator for TET element
  * \ingroup mofem_forces_and_sources_volume_element
  */
-struct VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator
+struct VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator
     : public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
   using VolumeElementForcesAndSourcesCore::UserDataOperator::UserDataOperator;
 
-  inline VolumeElementForcesAndSourcesCoreOnSideBase *getVolumeFE() const;
+  inline VolumeElementForcesAndSourcesCoreOnSide *getVolumeFE() const;
 
-  inline FaceElementForcesAndSourcesCoreBase *getFaceFE() const;
+  inline FaceElementForcesAndSourcesCore *getFaceFE() const;
 
   /**
    * \brief get face sense in respect to volume
+   * \deprecated use getSkeletonSense
    * @return error code
    */
-  inline int getFaceSense() const;
+  DEPRECATED inline int getFaceSense() const;
+
+  /**
+   * @brief Get the skeleton sense 
+   * 
+   * calls getFaceSense()
+   * 
+   * @return int 
+   */
+  inline int getSkeletonSense() const;
 
   /**
    * \brief get face side number in respect to volume
@@ -190,129 +196,111 @@ protected:
   MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
 };
 
-/**
- * @brief Volume side finite element with switches
- *
- * Using SWITCH to off functions
- *
- * @tparam SWITCH
- */
-template <int SWITCH>
-struct VolumeElementForcesAndSourcesCoreOnSideSwitch
-    : public VolumeElementForcesAndSourcesCoreOnSideBase {
-
-  using VolumeElementForcesAndSourcesCoreOnSideBase::
-      VolumeElementForcesAndSourcesCoreOnSideBase;
-
-  using UserDataOperator =
-      VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator;
-
-  MoFEMErrorCode operator()();
-};
-
-/** \brief Volume element used to integrate on skeleton
- \ingroup mofem_forces_and_sources_volume_element
-
- */
-using VolumeElementForcesAndSourcesCoreOnSide =
-    VolumeElementForcesAndSourcesCoreOnSideSwitch<0>;
-
 const std::array<int, 4> &
-VolumeElementForcesAndSourcesCoreOnSideBase::getFaceConnMap() const {
+VolumeElementForcesAndSourcesCoreOnSide::getFaceConnMap() const {
   return faceConnMap;
 }
 
 const std::array<int, 8> &
-VolumeElementForcesAndSourcesCoreOnSideBase::getTetConnMap() const {
+VolumeElementForcesAndSourcesCoreOnSide::getTetConnMap() const {
   return tetConnMap;
 }
 
-int VolumeElementForcesAndSourcesCoreOnSideBase::getOppositeNode() const {
+int VolumeElementForcesAndSourcesCoreOnSide::getOppositeNode() const {
   return oppositeNode;
 }
 
-int VolumeElementForcesAndSourcesCoreOnSideBase::getFaceSense() const {
+int VolumeElementForcesAndSourcesCoreOnSide::getFaceSense() const {
+  return getSkeletonSense();
+}
+
+int VolumeElementForcesAndSourcesCoreOnSide::getSkeletonSense() const {
   return faceSense;
 }
 
-int VolumeElementForcesAndSourcesCoreOnSideBase::getFaceSideNumber() const {
+int VolumeElementForcesAndSourcesCoreOnSide::getFaceSideNumber() const {
   return faceSideNumber;
 }
 
-FaceElementForcesAndSourcesCoreBase *
-VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator::getFaceFE()
+FaceElementForcesAndSourcesCore *
+VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::getFaceFE()
     const {
-  return static_cast<FaceElementForcesAndSourcesCoreBase *>(
+  return static_cast<FaceElementForcesAndSourcesCore *>(
       getVolumeFE()->sidePtrFE);
 }
 
 VectorDouble &
-VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator::getNormal() {
+VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::getNormal() {
   return getFaceFE()->nOrmal;
 }
 
 VectorDouble &
-VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator::getTangent1() {
+VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::getTangent1() {
   return getFaceFE()->tangentOne;
 }
 
 VectorDouble &
-VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator::getTangent2() {
+VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::getTangent2() {
   return getFaceFE()->tangentTwo;
 }
 
-VolumeElementForcesAndSourcesCoreOnSideBase *
-VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator::getVolumeFE()
+VolumeElementForcesAndSourcesCoreOnSide *
+VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::getVolumeFE()
     const {
-  return static_cast<VolumeElementForcesAndSourcesCoreOnSideBase *>(ptrFE);
+  return static_cast<VolumeElementForcesAndSourcesCoreOnSide *>(ptrFE);
 }
 
-int VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator::
+int VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::
     getFaceSense() const {
+  return getSkeletonSense();
+}
+
+int VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::
+    getSkeletonSense() const {
   return getVolumeFE()->faceSense;
 }
 
-auto VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator::
+auto VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::
     getFTensor1Normal() {
   double *ptr = &*getNormal().data().begin();
   return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
 }
 
-auto VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator::
+auto VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::
     getFTensor1Tangent1() {
   double *ptr = &*getTangent1().data().begin();
   return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
 }
 
-auto VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator::
+auto VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::
     getFTensor1Tangent2() {
   double *ptr = &*getTangent2().data().begin();
   return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
 }
 
-inline auto VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator::
+inline auto VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::
     getFTensor1NormalsAtGaussPts() {
   double *ptr = &*getNormalsAtGaussPts().data().begin();
   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
                                                             &ptr[2]);
 }
 
-int VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator::
+int VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::
     getFaceSideNumber() const {
   return getVolumeFE()->faceSideNumber;
 }
 
-MatrixDouble &VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator::
+MatrixDouble &VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::
     getNormalsAtGaussPts() {
   return getFaceFE()->normalsAtGaussPts;
 }
 
-MatrixDouble &VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator::
+MatrixDouble &VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::
     getFaceCoordsAtGaussPts() {
   return getFaceFE()->coordsAtGaussPts;
 }
 
-bool VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator::getEdgeFace(
+bool VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::getEdgeFace(
     const int ee) const {
   constexpr bool edges_on_faces[6][4] = {{true, false, false, true}, // e0
                                          {false, true, false, true}, // e1
@@ -323,16 +311,31 @@ bool VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator::getEdgeFace(
   return edges_on_faces[ee][getFaceSideNumber()];
 }
 
-ublas::matrix_row<MatrixDouble> VolumeElementForcesAndSourcesCoreOnSideBase::
+ublas::matrix_row<MatrixDouble> VolumeElementForcesAndSourcesCoreOnSide::
     UserDataOperator::getNormalsAtGaussPts(const int gg) {
   return ublas::matrix_row<MatrixDouble>(getNormalsAtGaussPts(), gg);
 }
 
+/**
+ * @deprecated use VolumeElementForcesAndSourcesCore
+ * 
+ */
+DEPRECATED typedef VolumeElementForcesAndSourcesCoreOnSide
+    VolumeElementForcesAndSourcesCoreOnSideBase;
+
+/**
+ * @deprecated do not use this template, it is obsolete
+ */
 template <int SWITCH>
-MoFEMErrorCode
-VolumeElementForcesAndSourcesCoreOnSideSwitch<SWITCH>::operator()() {
-  return opSwitch<SWITCH>();
-}
+struct VolumeElementForcesAndSourcesCoreOnSideSwitch
+    : public VolumeElementForcesAndSourcesCoreOnSide {
+  using VolumeElementForcesAndSourcesCoreOnSide::
+      VolumeElementForcesAndSourcesCoreOnSide;
+  using UserDataOperator =
+      VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator;
+};
+
+
 
 } // namespace MoFEM
 

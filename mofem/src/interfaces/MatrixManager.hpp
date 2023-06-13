@@ -6,16 +6,6 @@
  *
  */
 
-/*
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
- */
-
 #ifndef __MATMANAGER_HPP__
 #define __MATMANAGER_HPP__
 
@@ -71,6 +61,46 @@ struct MatrixManager : public UnknownInterface {
     MoFEMFunctionBegin;
     Mat aij;
     CHKERR createMPIAIJWithArrays<Tag>(name, &aij, verb);
+    aij_ptr.reset(aij, false);
+    MoFEMFunctionReturn(0);
+  }
+
+  template <class Tag>
+  MoFEMErrorCode createMPIAIJCUSPARSEWithArrays(const std::string name,
+                                                Mat *Aij, int verb = QUIET) {
+    static_assert(!std::is_same<Tag, Tag>::value, "not implemented");
+    return 0;
+  }
+
+  /** \copydoc MoFEM::MatrixManager::createMPIAIJCUSPARSEWithArrays
+   */
+  template <class Tag>
+  MoFEMErrorCode createMPIAIJCUSPARSEWithArrays(const std::string name,
+                                                SmartPetscObj<Mat> &aij_ptr,
+                                                int verb = QUIET) {
+    MoFEMFunctionBegin;
+    Mat aij;
+    CHKERR createMPIAIJCUSPARSEWithArrays<Tag>(name, &aij, verb);
+    aij_ptr.reset(aij, false);
+    MoFEMFunctionReturn(0);
+  }
+
+  template <class Tag>
+  MoFEMErrorCode createSeqAIJCUSPARSEWithArrays(const std::string name,
+                                                Mat *Aij, int verb = QUIET) {
+    static_assert(!std::is_same<Tag, Tag>::value, "not implemented");
+    return 0;
+  }
+
+  /** \copydoc MoFEM::MatrixManager::createSeqAIJCUSPARSEWithArrays
+   */
+  template <class Tag>
+  MoFEMErrorCode createSeqAIJCUSPARSEWithArrays(const std::string name,
+                                                SmartPetscObj<Mat> &aij_ptr,
+                                                int verb = QUIET) {
+    MoFEMFunctionBegin;
+    Mat aij;
+    CHKERR createSeqAIJCUSPARSEWithArrays<Tag>(name, &aij, verb);
     aij_ptr.reset(aij, false);
     MoFEMFunctionReturn(0);
   }
@@ -265,11 +295,18 @@ private:
   PetscLogEvent MOFEM_EVENT_createMPIAIJWithArrays;
   PetscLogEvent MOFEM_EVENT_createMPIAdjWithArrays;
   PetscLogEvent MOFEM_EVENT_createSeqAIJWithArrays;
+  PetscLogEvent MOFEM_EVENT_createMPIAIJCUSPARSEWithArrays;
+  PetscLogEvent MOFEM_EVENT_createSeqAIJCUSPARSEWithArrays;
   PetscLogEvent MOFEM_EVENT_checkMatrixFillIn;
 };
 
 template <>
 MoFEMErrorCode MatrixManager::createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(
+    const std::string name, Mat *Aij, int verb);
+
+template <>
+MoFEMErrorCode
+MatrixManager::createMPIAIJCUSPARSEWithArrays<PetscGlobalIdx_mi_tag>(
     const std::string name, Mat *Aij, int verb);
 
 template <>
@@ -284,6 +321,11 @@ MatrixManager::createMPIAdjWithArrays<Idx_mi_tag>(const std::string name,
 
 template <>
 MoFEMErrorCode MatrixManager::createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(
+    const std::string name, Mat *Aij, int verb);
+
+template <>
+MoFEMErrorCode
+MatrixManager::createSeqAIJCUSPARSEWithArrays<PetscLocalIdx_mi_tag>(
     const std::string name, Mat *Aij, int verb);
 
 template <>

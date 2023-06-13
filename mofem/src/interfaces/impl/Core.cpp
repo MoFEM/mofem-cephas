@@ -2,19 +2,6 @@
  * \brief Multi-index containers, data structures and other low-level functions
  */
 
-/* MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
- */
 
 #include <MoFEM.hpp>
 
@@ -286,8 +273,6 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
 
   Range ref_elems_to_add;
 
-  auto m_moab = &get_moab();
-
   // Initialize database
   Range meshsets;
   CHKERR get_moab().get_entities_by_type(0, MBENTITYSET, meshsets, false);
@@ -358,7 +343,7 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
         MOFEM_LOG("WORLD", Sev::verbose) << "Read problem " << *p.first;
         MOFEM_LOG("WORLD", Sev::noisy)
             << "\tBitRef " << p.first->getBitRefLevel() << " BitMask "
-            << p.first->getMaskBitRefLevel();
+            << p.first->getBitRefLevelMask();
       }
 
       if (!p.second) {
@@ -457,6 +442,7 @@ MoFEMErrorCode Core::registerSubInterfaces() {
   // Register sub interfaces
   CHKERR regSubInterface<LogManager>();
   CHKERR regSubInterface<Simple>();
+  CHKERR regSubInterface<OperatorsTester>();
   CHKERR regSubInterface<PipelineManager>();
   CHKERR regSubInterface<ProblemsManager>();
   CHKERR regSubInterface<MatrixManager>();
@@ -580,6 +566,10 @@ MoFEMErrorCode Core::getTags(int verb) {
 
   // Tags Ref
   {
+
+    // Fix size of bir ref level tags
+    CHKERR BitRefManager::fixTagSize(get_moab());
+
     const int def_part = -1;
     CHKERR get_moab().tag_get_handle("_MeshsetPartition", 1, MB_TYPE_INTEGER,
                                      th_Part, MB_TAG_CREAT | MB_TAG_SPARSE,
@@ -601,9 +591,6 @@ MoFEMErrorCode Core::getTags(int verb) {
     CHKERR get_moab().tag_get_handle(
         "_RefBitEdge", sizeof(BitRefEdges), MB_TYPE_OPAQUE, th_RefBitEdge,
         MB_TAG_CREAT | MB_TAG_SPARSE | MB_TAG_BYTES, &def_bit_edge);
-    const int def_type[] = {0, 0};
-    CHKERR get_moab().tag_get_handle("_RefType", 2, MB_TYPE_INTEGER, th_RefType,
-                                     MB_TAG_CREAT | MB_TAG_SPARSE, def_type);
   }
 
   // Tags Field
@@ -869,7 +856,8 @@ const FieldEntity_multiIndex *Core::get_field_ents() const {
 const DofEntity_multiIndex *Core::get_dofs() const { return &dofsField; }
 const Problem *Core::get_problem(const std::string problem_name) const {
   const Problem *prb;
-  CHKERR get_problem(problem_name, &prb);
+  CHK_THROW_MESSAGE(get_problem(problem_name, &prb),
+                    "Problem of given name not found");
   return prb;
 }
 const Problem_multiIndex *Core::get_problems() const { return &pRoblems; }

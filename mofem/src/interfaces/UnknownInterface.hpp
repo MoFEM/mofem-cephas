@@ -4,16 +4,6 @@
  * Low level data structures not used directly by user
  */
 
-/*
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
- */
-
 #ifndef __MOFEMUNKNOWNINTERFACE_HPP__
 #define __MOFEMUNKNOWNINTERFACE_HPP__
 
@@ -105,7 +95,7 @@ struct UnknownInterface {
     UnknownInterface *ptr;
     CHKERR query_interface(boost::typeindex::type_id<IFACE>(), &ptr);
     if (!(iface = static_cast<IFACE *>(ptr)))
-      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Cast imposible");
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "Cast Impossible");
     MoFEMFunctionReturn(0);
   }
 

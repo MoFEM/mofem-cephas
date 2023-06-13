@@ -250,6 +250,11 @@ public:
 #endif
     return data[N1][N2][N3][N4];
   }
+
+  private:
+    template <int I>
+    Tensor4(const Tensor4<PackPtr<T *, I>, Tensor_Dim0, Tensor_Dim1,
+                          Tensor_Dim2, Tensor_Dim3> &) = delete;
 };
 
 template <class T, int Tensor_Dim0, int Tensor_Dim1, int Tensor_Dim2,

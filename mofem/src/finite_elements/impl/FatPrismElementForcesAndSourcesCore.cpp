@@ -4,19 +4,7 @@
 
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 namespace MoFEM {
 
@@ -27,14 +15,16 @@ FatPrismElementForcesAndSourcesCore::FatPrismElementForcesAndSourcesCore(
       opHOCoordsAndNormals(hoCoordsAtGaussPtsF3, nOrmals_at_GaussPtF3,
                            tAngent1_at_GaussPtF3, tAngent2_at_GaussPtF3,
                            hoCoordsAtGaussPtsF4, nOrmals_at_GaussPtF4,
-                           tAngent1_at_GaussPtF4, tAngent2_at_GaussPtF4) {}
+                           tAngent1_at_GaussPtF4, tAngent2_at_GaussPtF4) {
+  CHK_THROW_MESSAGE(createDataOnElement(MBPRISM),
+                 "Problem with creation data on element");
+}
 
 MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
   MoFEMFunctionBegin;
 
   if (numeredEntFiniteElementPtr->getEntType() != MBPRISM)
     MoFEMFunctionReturnHot(0);
-  CHKERR createDataOnElement();
 
   auto get_fe_coordinates = [&]() {
     MoFEMFunctionBegin;
@@ -111,21 +101,21 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
         continue;
       order_triangles_only = std::max(
           order_triangles_only,
-          dataH1TrianglesOnly.dataOnEntities[MBEDGE][ee].getDataOrder());
+          dataH1TrianglesOnly.dataOnEntities[MBEDGE][ee].getOrder());
     }
     for (unsigned int ff = 3; ff <= 4; ff++) {
       order_triangles_only = std::max(
           order_triangles_only,
-          dataH1TrianglesOnly.dataOnEntities[MBTRI][ff].getDataOrder());
+          dataH1TrianglesOnly.dataOnEntities[MBTRI][ff].getOrder());
     }
     for (unsigned int qq = 0; qq < 3; qq++) {
       order_triangles_only = std::max(
           order_triangles_only,
-          dataH1TroughThickness.dataOnEntities[MBQUAD][qq].getDataOrder());
+          dataH1TroughThickness.dataOnEntities[MBQUAD][qq].getOrder());
     }
     order_triangles_only = std::max(
         order_triangles_only,
-        dataH1TroughThickness.dataOnEntities[MBPRISM][0].getDataOrder());
+        dataH1TroughThickness.dataOnEntities[MBPRISM][0].getOrder());
 
     // integration pts on the triangles surfaces
     nb_gauss_pts_on_faces = 0;
@@ -203,16 +193,16 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
         for (unsigned int ee = 3; ee <= 5; ee++) {
           order_thickness = std::max(
               order_thickness,
-              dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getDataOrder());
+              dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getOrder());
         }
         for (unsigned int qq = 0; qq < 3; qq++) {
           order_thickness = std::max(
               order_thickness,
-              dataH1TroughThickness.dataOnEntities[MBQUAD][qq].getDataOrder());
+              dataH1TroughThickness.dataOnEntities[MBQUAD][qq].getOrder());
         }
         order_thickness = std::max(
             order_thickness,
-            dataH1TroughThickness.dataOnEntities[MBPRISM][0].getDataOrder());
+            dataH1TroughThickness.dataOnEntities[MBPRISM][0].getOrder());
         // integration points
         int rule = getRuleThroughThickness(order_thickness);
         if (rule >= 0) {
@@ -461,11 +451,11 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
       nOrmals_at_GaussPtF4.resize(nb_gauss_pts_on_faces, 3, false);
       tAngent1_at_GaussPtF4.resize(nb_gauss_pts_on_faces, 3, false);
       tAngent2_at_GaussPtF4.resize(nb_gauss_pts_on_faces, 3, false);
-      CHKERR getNodesFieldData(dataH1TrianglesOnly, meshPositionsFieldName);
-      CHKERR getEntityFieldData(dataH1TrianglesOnly, meshPositionsFieldName,
-                                MBEDGE);
-      CHKERR getEntityFieldData(dataH1TrianglesOnly, meshPositionsFieldName,
-                                MBEDGE);
+      const auto bit_number =
+          mField.get_field_bit_number(meshPositionsFieldName);
+      CHKERR getNodesFieldData(dataH1TrianglesOnly, bit_number);
+      CHKERR getEntityFieldData(dataH1TrianglesOnly, bit_number, MBEDGE);
+      CHKERR getEntityFieldData(dataH1TrianglesOnly, bit_number, MBEDGE);
       CHKERR opHOCoordsAndNormals.opRhs(dataH1TrianglesOnly);
       CHKERR opHOCoordsAndNormals.calculateNormals();
     } else {

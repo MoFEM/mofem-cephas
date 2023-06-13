@@ -1,19 +1,8 @@
 /** \file LobattoPolynomial.cpp
  * \brief implementation of multi-grid solver for p- adaptivity
- *
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
  */
+
+
 
 namespace MoFEM {
 
@@ -71,7 +60,6 @@ KernelLobattoPolynomial::getValue(MatrixDouble &pts,
                                   boost::shared_ptr<BaseFunctionCtx> ctx_ptr) {
 
   MoFEMFunctionBeginHot;
-  BaseFunctionUnknownInterface *iface;
   auto ctx = ctx_ptr->getInterface<KernelLobattoPolynomialCtx>();
   ctx->baseFunPtr->resize(pts.size2(), ctx->P + 1, false);
   ctx->baseDiffFunPtr->resize(pts.size2(), ctx->dIm * (ctx->P + 1), false);

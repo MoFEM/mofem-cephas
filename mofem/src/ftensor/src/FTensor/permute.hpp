@@ -27,6 +27,16 @@ namespace FTensor
   }
 
   template <class A, class T, class B, class U, int Dim0_0, int Dim0_1,
+            int Dim0_2, int Dim1_01, int Dim1_2, char i0, char j0, char k0,
+            char i1, char j1, char k1>
+  U permute(const Tensor3_Expr<A, T, Dim0_0, Dim0_1, Dim0_2, i0, j0, k0> &,
+            const Dg_Expr<B, U, Dim1_01, Dim1_2, i1, j1, k1> &rhs, const int N0,
+            const int N1, const int N2) {
+    return Permutation3<Dim0_0, Dim0_1, Dim0_2, i0, j0, k0>().eval(rhs, N0, N1,
+                                                                   N2);
+  }
+
+  template <class A, class T, class B, class U, int Dim0_0, int Dim0_1,
             int Dim0_2, int Dim0_3, int Dim1_0, int Dim1_1, int Dim1_2,
             int Dim1_3, char i0, char j0, char k0, char l0, char i1, char j1,
             char k1, char l1>
@@ -38,6 +48,17 @@ namespace FTensor
   {
     return Permutation4<Dim0_0, Dim0_1, Dim0_2, Dim0_3, i0, j0, k0, l0>().eval(
       rhs, N0, N1, N2, N3);
+  }
+
+  template <class A, class T, class B, class U, int Dim0_0, int Dim0_1,
+            int Dim0_2, int Dim0_3, int Dim1_01, int Dim1_23, char i0, char j0,
+            char k0, char l0, char i1, char j1, char k1, char l1>
+  U permute(const Tensor4_Expr<A, T, Dim0_0, Dim0_1, Dim0_2, Dim0_3, i0, j0, k0,
+                               l0> &,
+            const Ddg_Expr<B, U, Dim1_01, Dim1_23, i1, j1, k1, l1> &rhs,
+            const int N0, const int N1, const int N2, const int N3) {
+    return Permutation4<Dim0_0, Dim0_1, Dim0_2, Dim0_3, i0, j0, k0, l0>().eval(
+        rhs, N0, N1, N2, N3);
   }
 
   template <class A, class T, class B, class U, int Dim0_0, int Dim0_1,

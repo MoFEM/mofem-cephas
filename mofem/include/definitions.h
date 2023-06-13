@@ -2,23 +2,11 @@
  * \brief useful compiler directives and definitions
  */
 
-/* MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
- */
 
 #ifndef __DEFINITONS_H__
 #define __DEFINITONS_H__
 
+#ifndef DEPRECATED
 // taken from http://stackoverflow.com/questions/295120/c-mark-as-deprecated
 #ifdef __GNUC__
 #define DEPRECATED __attribute__((deprecated))
@@ -27,6 +15,7 @@
 #else
 #pragma message("WARNING: You need to implement DEPRECATED for this compiler")
 #define DEPRECATED
+#endif
 #endif
 
 /** \brief Error handling
@@ -43,7 +32,7 @@ enum MoFEMErrorCodes {
   MOFEM_NOT_IMPLEMENTED = 101,
   MOFEM_NOT_FOUND = 102,
   MOFEM_OPERATION_UNSUCCESSFUL = 103,
-  MOFEM_IMPOSIBLE_CASE = 104,
+  MOFEM_IMPOSSIBLE_CASE = 104,
   MOFEM_INVALID_DATA = 105,
   MOFEM_NOT_INSTALLED = 106,
   MOFEM_MOFEMEXCEPTION_THROW = 107,
@@ -58,7 +47,7 @@ const static char *const MoFEMErrorCodesNames[] = {
     "MOFEM_NOT_IMPLEMENTED",
     "MOFEM_NOT_FOUND",
     "MOFEM_OPERATION_UNSUCCESSFUL",
-    "MOFEM_IMPOSIBLE_CASE",
+    "MOFEM_IMPOSSIBLE_CASE",
     "MOFEM_INVALID_DATA",
     "MOFEM_MOFEMEXCEPTION_THROW",
     "MOFEM_STD_EXCEPTION_THROW",
@@ -110,6 +99,24 @@ enum MoFEMTypes {
   MF_EXCL = 1 << 0,
   MF_EXIST = 1 << 1,
   MF_NOT_THROW = 1 << 2
+};
+
+/**
+ * @brief Coordinate system names
+ * 
+ */
+const static char *const CoordinateTypesNames[] = {"Cartesian", "Polar",
+                                                   "Cylindrical", "Spherical"};
+/**
+ * @brief Coodinate system
+ *
+ */
+enum CoordinateTypes {
+  CARTESIAN,
+  POLAR,
+  CYLINDRICAL,
+  SPHERICAL,
+  LAST_COORDINATE_SYSTEM
 };
 
 /// \brief RowColData
@@ -209,7 +216,7 @@ enum VERBOSITY_LEVELS {
 
 #define MAX_CORE_TMP 1       ///< maximal number of cores
 #define BITREFEDGES_SIZE 32  ///< number refined edges
-#define BITREFLEVEL_SIZE 128 ///< max number of refinements
+#define BITREFLEVEL_SIZE 64  ///< max number of refinements
 #define BITFIELDID_SIZE 32   ///< max number of fields
 #define BITFEID_SIZE 32      ///< max number of finite elements
 #define BITPROBLEMID_SIZE 32 ///< max number of problems

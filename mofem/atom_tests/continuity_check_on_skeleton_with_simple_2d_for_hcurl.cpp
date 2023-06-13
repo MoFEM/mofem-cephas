@@ -4,31 +4,17 @@
  * \example continuity_check_on_skeleton_with_simple_2d_for_hcurl.cpp
  *
  * \brief Integration on skeleton for 2d
- * 
- * Teting integration on skeleton and checking of continuity of hcurl space on
+ *
+ * Testing integration on skeleton and checking of continuity of hcurl space on
  * edges.
  */
-
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <MoFEM.hpp>
 using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
-using FaceEleOnSide = MoFEM::FaceElementForcesAndSourcesCoreOnSideSwitch<0>;
+using FaceEleOnSide = MoFEM::FaceElementForcesAndSourcesCoreOnSide;
 using EdgeEle = MoFEM::EdgeElementForcesAndSourcesCore;
 using FaceEleOnSideOp = FaceEleOnSide::UserDataOperator;
 using EdgeEleOp = EdgeEle::UserDataOperator;
@@ -48,7 +34,7 @@ struct SkeletonFE : public EdgeEleOp {
         : FaceEleOnSideOp("FIELD", UserDataOperator::OPROW), elemData(elem_data) {}
 
     MoFEMErrorCode doWork(int side, EntityType type,
-                          DataForcesAndSourcesCore::EntData &data) {
+                          EntitiesFieldData::EntData &data) {
       MoFEMFunctionBeginHot;
 
       if (type == MBEDGE && side == getEdgeSideNumber()) {
@@ -91,13 +77,12 @@ struct SkeletonFE : public EdgeEleOp {
   SkeletonFE(MoFEM::Interface &m_field, CommonData &elem_data)
       : EdgeEle::UserDataOperator("FIELD", UserDataOperator::OPROW),
         faceSideFe(m_field), elemData(elem_data) {
-    faceSideFe.getOpPtrVector().push_back(
-        new OpHOSetCovariantPiolaTransformOnFace3D(HCURL));
+    CHKERR AddHOOps<2, 2, 2>::add(faceSideFe.getOpPtrVector(), {HCURL});
     faceSideFe.getOpPtrVector().push_back(new SkeletonFE::OpFaceSide(elemData));
   }
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data) {
+                        EntitiesFieldData::EntData &data) {
 
     MoFEMFunctionBeginHot;
     if (type == MBEDGE) {
@@ -224,8 +209,7 @@ int main(int argc, char *argv[]) {
       boost::shared_ptr<EdgeEle> skeleton_fe =
           boost::shared_ptr<EdgeEle>(new EdgeEle(m_field));
 
-      skeleton_fe->getOpPtrVector().push_back(
-          new OpHOSetContravariantPiolaTransformOnEdge3D(HCURL));
+      CHKERR AddHOOps<1, 2, 2>::add(skeleton_fe->getOpPtrVector(), {HCURL});
       skeleton_fe->getOpPtrVector().push_back(
           new SkeletonFE(m_field, elem_data));
 

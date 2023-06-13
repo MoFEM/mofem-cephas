@@ -10,21 +10,15 @@
  *
  */
 
-/* MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
- */
-
 #ifndef __SIMPLE_HPP__
 #define __SIMPLE_HPP__
 
 #include "UnknownInterface.hpp"
 
 namespace MoFEM {
+
+template <int DIM> struct ParentFiniteElementAdjacencyFunction;
+template <int DIM> struct ParentFiniteElementAdjacencyFunctionSkeleton;
 
 /**
  * \brief Simple interface for fast problem set-up
@@ -49,6 +43,12 @@ struct Simple : public UnknownInterface {
    * @param  options file load options
    * @param  mesh_file_name file name if not set default or set by command line
    * is used.
+   *
+   * \note If bitRefLevel is set to any, bit ref level of loaded entities is not
+   * changed. After mesh is load, bit ref level should be set to create problem.
+   * Default setting of bit ref level is on first bit, and if is set all mesh
+   * entities on load are set to set level.
+   *
    * @return            error code
    */
   MoFEMErrorCode loadFile(const std::string options,
@@ -207,9 +207,10 @@ struct Simple : public UnknownInterface {
    * @brief Set the skeleton adjacency object
    *
    * @param dim
+   * @param fe_name
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode setSkeletonAdjacency(int dim = -1);
+  MoFEMErrorCode setSkeletonAdjacency(int dim = -1, std::string fe_name = "");
 
   /**
    * \brief Build problem
@@ -233,7 +234,7 @@ struct Simple : public UnknownInterface {
    *
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode reSetUp();
+  MoFEMErrorCode reSetUp(bool only_dm = false);
 
   /**
    * \brief Get DM
@@ -277,11 +278,18 @@ struct Simple : public UnknownInterface {
   void setDim(int dim) { dIm = dim; };
 
   /**
+   * @deprecated Use getMeshset
+   *
+   * @return EntityHandle&
+   */
+  DEPRECATED inline EntityHandle &getMeshSet() { return meshSet; }
+
+  /**
    * @brief Get the MeshSet object
    *
    * @return EntityHandle&
    */
-  inline EntityHandle &getMeshSet() { return meshSet; }
+  inline EntityHandle &getMeshset() { return meshSet; }
 
   /**
    * @brief Get the BoundaryMeshSet object
@@ -291,11 +299,25 @@ struct Simple : public UnknownInterface {
   inline EntityHandle &getBoundaryMeshSet() { return boundaryMeshset; }
 
   /**
+   * @brief Get the SkeletonMeshSet object
+   *
+   * @return EntityHandle&
+   */
+  inline EntityHandle &getSkeletonMeshSet() { return skeletonMeshset; }
+
+  /**
    * @brief Get the BitRefLevel
    *
    * @return BitRefLevel
    */
-  inline BitRefLevel getBitRefLevel() const { return bitLevel; }
+  inline BitRefLevel &getBitRefLevel() { return bitLevel; }
+
+  /**
+   * @brief Get the BitRefLevel
+   *
+   * @return BitRefLevel
+   */
+  inline BitRefLevel &getBitRefLevelMask() { return bitLevelMask; }
 
   /**
    * @brief Get the Domain FE Name
@@ -365,31 +387,119 @@ struct Simple : public UnknownInterface {
 
   /**
    * @brief Delete dm
-   * 
-   * @return MoFEMErrorCode 
+   *
+   * @return MoFEMErrorCode
    */
   MoFEMErrorCode deleteDM();
 
-   /**
+  /**
    * @brief Delete finite elements
-   * 
-   * @return MoFEMErrorCode 
+   *
+   * @return MoFEMErrorCode
    */
-  MoFEMErrorCode deleteFiniteElements(); 
+  MoFEMErrorCode deleteFiniteElements();
+
+  /**
+   * @brief Get the addSkeletonFE
+   *
+   * If variable set to true, skeleton element is created regardless field on
+   * skelton is added or not.
+   *
+   * @return true
+   * @return false
+   */
+  bool &getAddSkeletonFE() { return addSkeletonFE; }
+
+  /**
+   * @brief Get the addSkeletonFE
+   *
+   * If variable set to true, boundary element is created regardless field on
+   * skelton is added or not.
+   *
+   * @return true
+   * @return false
+   */
+  bool &getAddBoundaryFE() { return addBoundaryFE; }
+
+  /**
+   * @brief Get the addParentAdjacencies
+   *
+   * If set true add parent adjacencies
+   *
+   * @return true
+   * @return false
+   */
+  bool &getParentAdjacencies() { return addParentAdjacencies; }
+
+  /**
+   * @brief  bit ref level for parent
+   *
+   * @return auto&
+   */
+  auto &getBitAdjParent() { return bitAdjParent; }
+
+  /**
+   * @brief bit ref level for parent parent
+   *
+   * @return auto&
+   */
+  auto &getBitAdjParentMask() { return bitAdjParentMask; }
+
+  /**
+   * @brief bit ref level for parent
+   *
+   * @return auto&
+   */
+  auto &getBitAdjEnt() { return bitAdjEnt; } 
+
+  /**
+   * @brief bit ref level for parent parent
+   *
+   * @return auto&
+   */
+  auto &getBitAdjEntMask() { return bitAdjEntMask; }
+
+  /**
+   * @brief add empty block to problem
+   *
+   * MatrixManager assumes that all blocks, i.e. all fields combinations are non
+   * zero. This is not always the case, to optimise code and reduce memory usage
+   * user can specifi which blocks are empty.
+   *
+   * @param row_field row filed name
+   * @param col_field col field name
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode addFieldToEmptyFieldBlocks(const std::string row_field,
+                                            const std::string col_field) const;
+
 
 private:
   MoFEM::Core &cOre;
 
-  const BitRefLevel bitLevel; ///< BitRefLevel of the probelm
+  BitRefLevel bitLevel;     ///< BitRefLevel of the problem
+  BitRefLevel bitLevelMask; ///< BitRefLevel of the problem
 
+  PetscLogEvent MOFEM_EVENT_SimpleSetUP;
   PetscLogEvent MOFEM_EVENT_SimpleLoadMesh;
   PetscLogEvent MOFEM_EVENT_SimpleBuildFields;
   PetscLogEvent MOFEM_EVENT_SimpleBuildFiniteElements;
   PetscLogEvent MOFEM_EVENT_SimpleBuildProblem;
   PetscLogEvent MOFEM_EVENT_SimpleKSPSolve;
 
-  EntityHandle meshSet;                       ///< domain meshset
-  EntityHandle boundaryMeshset;               ///< meshset with boundary
+  EntityHandle meshSet;         ///< domain meshset
+  EntityHandle boundaryMeshset; ///< meshset with boundary
+  EntityHandle skeletonMeshset; ///< skeleton meshset with boundary
+
+  bool addSkeletonFE;        ///< Add skeleton FE
+  bool addBoundaryFE;        ///< Add boundary FE
+  bool addParentAdjacencies; ///< If set to true parent adjacencies are build
+
+  BitRefLevel bitAdjParent;     ///< bit ref level for parent
+  BitRefLevel bitAdjParentMask; ///< bit ref level for parent parent
+  BitRefLevel bitAdjEnt;        ///< bit ref level for parent
+  BitRefLevel bitAdjEntMask;    ///< bit ref level for parent parent
+
   std::vector<std::string> domainFields;      ///< domain fields
   std::vector<std::string> boundaryFields;    ///< boundary fields
   std::vector<std::string> skeletonFields;    ///< fields on the skeleton
@@ -397,8 +507,9 @@ private:
   std::vector<std::string> noFieldFields;     ///< NOFIELD field name
   std::vector<std::string> noFieldDataFields; ///< NOFIELD field name
 
-  std::multimap<std::string, std::pair<int, Range>>
-      fieldsOrder; ///< fields order
+  std::list<std::tuple<std::string, int, Range, bool>>
+      fieldsOrder; ///< fields order. 1: field name, order, range, set by range
+                   ///< if true
 
   std::string nameOfProblem; ///< problem name
   std::string domainFE;      ///< domain finite element
@@ -413,7 +524,26 @@ private:
   SmartPetscObj<DM>
       dM; ///< Discrete manager (interface to PETSc/MoFEM functions)
 
-  template <int DIM = -1> MoFEMErrorCode setSkeletonAdjacency();
+  MoFEMErrorCode createBoundaryMeshset();
+  MoFEMErrorCode createSkeletonMeshset();
+  MoFEMErrorCode exchangeGhostCells();
+
+  template <int DIM = -1>
+  MoFEMErrorCode setSkeletonAdjacency(std::string fe_name);
+
+  template <int DIM = -1> MoFEMErrorCode setParentAdjacency();
+
+  boost::shared_ptr<ParentFiniteElementAdjacencyFunction<3>>
+      parentAdjFunctionDim3;
+  boost::shared_ptr<ParentFiniteElementAdjacencyFunction<2>>
+      parentAdjFunctionDim2;
+  boost::shared_ptr<ParentFiniteElementAdjacencyFunction<1>>
+      parentAdjFunctionDim1;
+
+  boost::shared_ptr<ParentFiniteElementAdjacencyFunctionSkeleton<2>>
+      parentAdjSkeletonFunctionDim2;
+  boost::shared_ptr<ParentFiniteElementAdjacencyFunctionSkeleton<1>>
+      parentAdjSkeletonFunctionDim1;
 };
 
 } // namespace MoFEM

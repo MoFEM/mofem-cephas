@@ -3,19 +3,7 @@
 
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 #ifndef __FATPRISMPOLYNOMIALBASE_HPP__
 #define __FATPRISMPOLYNOMIALBASE_HPP__
@@ -37,8 +25,8 @@ struct FatPrismPolynomialBaseCtx : public EntPolynomialBaseCtx {
   MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
-  DataForcesAndSourcesCore &dataTrianglesOnly;
-  DataForcesAndSourcesCore &dataTroughThickness;
+  EntitiesFieldData &dataTrianglesOnly;
+  EntitiesFieldData &dataTroughThickness;
 
   MatrixDouble &gaussPtsTrianglesOnly;
   MatrixDouble &gaussPtsThroughThickness;
@@ -47,9 +35,9 @@ struct FatPrismPolynomialBaseCtx : public EntPolynomialBaseCtx {
   const NumeredEntFiniteElement *fePtr;
 
   FatPrismPolynomialBaseCtx(
-      DataForcesAndSourcesCore &data,
-      DataForcesAndSourcesCore &data_triangles_only,
-      DataForcesAndSourcesCore &data_trough_thickness,
+      EntitiesFieldData &data,
+      EntitiesFieldData &data_triangles_only,
+      EntitiesFieldData &data_trough_thickness,
       MatrixDouble &gauss_pts_triangles_only,
       MatrixDouble &gauss_pts_through_thickness, moab::Interface &moab,
       const NumeredEntFiniteElement *fe_ptr, const FieldSpace space,

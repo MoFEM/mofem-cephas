@@ -4,20 +4,6 @@
 
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
-
 #include <MoFEM.hpp>
 
 using namespace MoFEM;
@@ -36,13 +22,12 @@ struct CountUp : FEMethod {
 
 private:
   int &cOunter;
-
 };
 
 struct CountDown : FEMethod {
 
   CountDown(int &counter) : FEMethod(), cOunter(counter) {}
-    MoFEMErrorCode preProcess() { return 0; }
+  MoFEMErrorCode preProcess() { return 0; }
   MoFEMErrorCode operator()() {
     --cOunter;
     return 0;
@@ -51,7 +36,6 @@ struct CountDown : FEMethod {
 
 private:
   int &cOunter;
-
 };
 
 int main(int argc, char *argv[]) {
@@ -90,8 +74,7 @@ int main(int argc, char *argv[]) {
     auto moab_comm_wrap =
         boost::make_shared<WrapMPIComm>(PETSC_COMM_WORLD, false);
     if (pcomm == NULL)
-      pcomm =
-          new ParallelComm(&moab, moab_comm_wrap->get_comm());
+      pcomm = new ParallelComm(&moab, moab_comm_wrap->get_comm());
 
     const char *option;
     option = "PARALLEL=BCAST_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION="
@@ -189,8 +172,7 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.getInterface<ISManager>()->sectionCreate("TEST_PROBLEM",
                                                             &section);
     CHKERR PetscSectionView(section, PETSC_VIEWER_STDOUT_WORLD);
-    CHKERR DMSetDefaultSection(dm, section);
-    CHKERR DMSetDefaultGlobalSection(dm, section);
+    CHKERR DMSetSection(dm, section);
     CHKERR PetscSectionDestroy(&section);
 
     PetscBool save_file = PETSC_TRUE;
@@ -215,13 +197,67 @@ int main(int argc, char *argv[]) {
                                     boost::make_shared<CountUp>(count));
     CHKERR DMoFEMLoopFiniteElements(dm, "FE_ONLY_DATA",
                                     boost::make_shared<CountDown>(count));
-    if(count)
+    if (count)
       SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "Should be zero %d",
                count);
 
+    auto check_consistency_of_uids = [&]() {
+      MoFEMFunctionBegin;
+      auto field_ents_ptr = m_field.get_field_ents();
+      for (auto &fe : *field_ents_ptr) {
+        if (fe->getOwnerProc() !=
+            (FieldEntity::getOwnerFromUniqueId(fe->getGlobalUniqueId()))) {
+          MOFEM_LOG("SELF", Sev::error) << *fe;
+          MOFEM_LOG("SELF", Sev::error)
+              << "UId owner proc "
+              << FieldEntity::getOwnerFromUniqueId(fe->getGlobalUniqueId());
+          MOFEM_LOG("SELF", Sev::error)
+              << "Entity owner proc " << fe->getOwnerProc();
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "UId and entity handle inconsistency");
+        }
+        if (fe->getEnt() !=
+            FieldEntity::getHandleFromUniqueId(fe->getLocalUniqueId())) {
+          MOFEM_LOG("SELF", Sev::error) << *fe;
+          MOFEM_LOG("SELF", Sev::error)
+              << "UId handle "
+              << FieldEntity::getHandleFromUniqueId(fe->getLocalUniqueId());
+          MOFEM_LOG("SELF", Sev::error) << "Entity handle " << fe->getEnt();
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "UId and entity handle inconsistency");
+        }
+        const auto field_bit_number_from_uid =
+            FieldEntity::getFieldBitNumberFromUniqueId(fe->getLocalUniqueId());
+        if (fe->getBitNumber() != field_bit_number_from_uid) {
+          MOFEM_LOG("SELF", Sev::error) << *fe;
+          MOFEM_LOG("SELF", Sev::error)
+              << "UId field bit " << field_bit_number_from_uid;
+          MOFEM_LOG("SELF", Sev::error)
+              << "Entity owner proc " << fe->getBitNumber();
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "UId and entity handle inconsistency");
+        }
+        if (fe->getName() != m_field.get_field_name(BitFieldId().set(
+                                 field_bit_number_from_uid - 1))) {
+          MOFEM_LOG("SELF", Sev::error) << *fe;
+          MOFEM_LOG("SELF", Sev::error)
+              << "UId field bit "
+              << m_field.get_field_name(
+                     BitFieldId().set(field_bit_number_from_uid - 1));
+          MOFEM_LOG("SELF", Sev::error)
+              << "Entity owner proc " << fe->getName();
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "UId and entity handle inconsistency");
+        }
+      }
+
+      MoFEMFunctionReturn(0);
+    };
+
+    CHKERR check_consistency_of_uids();
+
     // destry dm
     CHKERR DMDestroy(&dm);
-
   }
   CATCH_ERRORS;
 

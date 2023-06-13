@@ -84,8 +84,8 @@ vim
 
 ## macOS
 
-Xcode contains required compilers for macOS. Latest known working version of
-Xcode is 12.5.1 with clang 12.0.5; there may be issues with future/different
+Xcode contains required compilers for macOS. The latest known working version of
+Xcode is 13.3 with clang 13.1.6; there may be issues with future/different
 versions.
 
 You can install the latest version of Xcode for your macOS through App Store, or, alternatively, you can see Apple's Xcode
@@ -107,9 +107,9 @@ manager:
 Recent releases of macOS stopped shipping a Fortran compiler and therefore
 require [Mixed
 Toolchains](http://spack.readthedocs.io/en/latest/getting_started.html#mixed-toolchains).
-The installing of `gfortran` through `homebrew` is one way of solving this:
+The installation of `gfortran` through `homebrew` is one way of solving this:
 ~~~~~
-brew install gcc@9 
+brew install gcc
 ~~~~~
 Note that `gfortran` if part of `GCC`.
 
@@ -123,7 +123,7 @@ cd $HOME/mofem_install
 
 Retrieve Spack for MoFEM:
 ~~~~~~
-git clone -b develop https://github.com/likask/spack.git
+git clone -b master https://github.com/likask/spack.git
 ~~~~~~
 
 Initialise Spack's environment variables:
@@ -131,17 +131,15 @@ Initialise Spack's environment variables:
 . spack/share/spack/setup-env.sh
 ~~~~~~
 
-Download spack packages necessary for MoFEM into the mirror:
+You can download spack packages necessary for MoFEM into a mirror:
 ~~~~~~
 mkdir -p mofem_mirror &&
 curl -s -L  http://mofem.eng.gla.ac.uk/downloads/mirror_v0.16.tar.gz \
 | tar xzC $PWD/mofem_mirror  --strip 1
 spack mirror add mofem_mirror $PWD/mofem_mirror
 ~~~~~~
-Above option is not required. If you do not download and add a mirror, packages
-will be downloaded from the internet. However, locations of libraries can change,
-or some server could be temporarily down. Using spack mirror makes
-installation resistant to those problems.
+\note The above step is not required. If you do not download and add a mirror, packages will be downloaded from the Internet. However, locations of libraries can change, or a server could be temporarily down. Using spack mirror makes
+installation resistant to such problems.
 
 Spack's environment variables will be lost when the terminal session is closed.
 Consider adding the previous command to your `.bash_profile` or `.bashrc`, e.g.:
@@ -149,51 +147,51 @@ Consider adding the previous command to your `.bash_profile` or `.bashrc`, e.g.:
 echo ". $HOME/spack/share/spack/setup-env.sh" >> ~/.bash_profile
 ~~~~~~
 
-If you are using Big Sur or Catalina, or newer macOS, you have to add config to
+If you are using a newer macOS, you might need to add config to
 `.zshrc`, e.g.:
 ~~~~~~
 echo ". $HOME/spack/share/spack/setup-env.sh" >> ~/.zshrc
 ~~~~~~
 
-Finally, install packages required by Spack:
+Finally, find already installed compilers and external packages:
 ~~~~~~
 spack compiler find
 spack external find
 ~~~~~~
 
-If you are using a system where `gfortran` 10 or 11 is installed, some packages like
-`openblas` and `mumps` may not compile, especially on macOS. You can check this by running:
+If you are using a system where `gfortran` 10 or 11 is installed, some packages like `mumps` may not compile. You can check this by running:
 ~~~~~
 gfortran -v
 ~~~~~
-if as result you get
+If as a result you get something like
 ~~~~~
-gcc version 10.2.0 (GCC) 
+gcc version 11.2.0 (Homebrew GCC 11.2.0_3) 
 ~~~~~
-that means you have version 10. This is temporary problem and will be
+that means you have version 11. This is a temporary problem and will be
 fixed over the time, once various patches and fixes will be applied to those
-libraries. In the meantime you can fix that problem by editing `compilers.yaml`
-in macOS located in `~/.spack/darwin/compilers.yaml` to set version 9 of
-`gfortran` compiler:
+libraries. In the meantime, you can fix this problem by editing `compilers.yaml`
+file located in `~/.spack/darwin/compilers.yaml`, and setting compiler flag `-fallow-argument-mismatch`, which will allow to compile `mumps` with warnings rather than errors. The `compilers.yaml` file should then be similar to the following:
 ~~~~~~~
+compilers:
 - compiler:
-    spec: apple-clang@12.0.0
+    spec: apple-clang@13.1.6
     paths:
       cc: /usr/bin/clang
       cxx: /usr/bin/clang++
-      f77: /usr/local/bin/gfortran-9
-      fc: /usr/local/bin/gfortran-9
-    flags: {}
-    operating_system: macos
+      f77: /usr/local/bin/gfortran
+      fc: /usr/local/bin/gfortran
+    flags:
+      fflags: -fallow-argument-mismatch
+    operating_system: monterey
     target: x86_64
     modules: []
     environment: {}
     extra_rpaths: []
 ~~~~~~~
-Note that fortran compiler is set to version `9`, as follows
+Note the following line:
 ~~~~~~~
-      f77: /usr/local/bin/gfortran-9
-      fc: /usr/local/bin/gfortran-9
+flags:
+  fflags: -fallow-argument-mismatch
 ~~~~~~~
 
 Note that there are further instructions on [Spack usage and configuration](#spack_usage_config).
@@ -280,8 +278,7 @@ spack install mofem-minimal-surface-equation
 spack activate -v um_view_foo mofem-minimal-surface-equation
 ~~~~~~
 
-\note Not all MoFEM's modules have been added to Spack. If your module is not yet there, you
-can install manually by cloning the appropriate users module.
+\note Not all MoFEM's modules have been added to Spack. If your module is not yet there, you can install manually by cloning the appropriate users module.
 
 ## Running tests {#spack_running_tests}
 
@@ -305,13 +302,12 @@ before proceeding with the installation. In particular, the instructions below
 will use so-called *specs* to obtain the desired build configuration, see
 [Spack manual page](https://spack.readthedocs.io/en/latest/basic_usage.html#specs-dependencies)
 for more details. For example, the default Spack specifier for the build type
-is `build_type=RelWithDebInfo`, however keep in mind
+is `RelWithDebInfo`, however keep in mind
 that two other build types can be specified as
 `build_type=Release` or `build_type=Debug`, see also [Change the build_type](#spack_build_type).
 
-You can skip the first installation method and jump to second if you are not
-going to be the core MoFEM developer. However, to avoid having multiple installation
-paths, and potential bugs which are difficult to reproduce, we
+You can skip the first installation step and jump to second if you are not
+going to be the core MoFEM developer. However, to avoid having multiple installation paths, and potential bugs which are difficult to reproduce, we
 recommend following installation step 1 and step 2.
 
 ## 1. Core libraries {#spack_core_libraries}
@@ -342,19 +338,6 @@ spack dev-build \
 ~~~~~
 Note that here another specification of the build configuration (*spec*) was set as `~copy_user_modules` which is equivalent to `copy_user_modules=False`. 
 
-You can also do partial install, before of after some installation phase,
-using command line option `-b BEFORE` or `-u UNTIL`, for example if you would like
-to investigate build issues, you can do
-~~~~~
-spack dev-build \
-  -b build \
-  --source-path $HOME/mofem_install/mofem-cephas \
-  --keep-prefix \
-  --test root \
-  mofem-cephas@develop~copy_user_modules ^petsc+X
-~~~~~
-Note that installation at that point is partial.
-
 If installation is successfully, by executing
 ~~~~~
 spack find -lv mofem-cephas
@@ -367,8 +350,7 @@ vhv7opa mofem-cephas@develop+adol-c~copy_user_modules~ipo+med+slepc+tetgen build
 ~~~~~
 
 Furthermore, in the directory `$HOME/mofem_install/mofem-cephas` you will find
-build directory `core-build-WithDebugInfo-vhv7opa`. Note 
-that the suffix here is matching the first column in the list printed by executing `spack find -lv mofem-cephas`.
+build directory `core-build-WithDebugInfo-vhv7opa`. Note that the hash in the name of the directory is matching the one in first column in the list printed by executing `spack find -lv mofem-cephas`.
 
 You can now start to develop code in the MoFEM core library. If you change directory to
 ~~~~~
@@ -392,9 +374,20 @@ spack dev-build \
   mofem-cephas@develop~copy_user_modules build_type=Debug ^petsc+X
 ~~~~~ 
 
-\note By default `spack dev-build` will try to use all available processor slots to run `make` in parallel. To set a desired number of parallel jobs, you can add parameter `-j NP`, where `NP` is number of parallel processes to be used. Alternatively, you can edit Spack settings 
+\note By default `spack dev-build` will try to use all available processor slots to run `make` in parallel. To set a desired number of parallel jobs, you can use the parameter `-j NP`, where `NP` is number of parallel processes to be used. Alternatively, you can edit Spack settings 
 as discussed below in the section [Basic settings in config.yaml](#spack_config)
 
+\note You can also do partial install, before of after any installation phase,
+using command line option `-b BEFORE` or `-u UNTIL`. For example, if you would like to investigate build issues, you can do
+~~~~~
+spack dev-build \
+  -b build \
+  --source-path $HOME/mofem_install/mofem-cephas \
+  --keep-prefix \
+  --test root \
+  mofem-cephas@develop~copy_user_modules ^petsc+X
+~~~~~
+Note that installation at that point is partial.
 ## 2. Install users modules {#spack_users_modules}
 
 First, run: 
@@ -408,7 +401,7 @@ and check installed versions of the core library (`mofem-cephas@develop`):
 nnnvprd mofem-cephas@develop+adol-c~copy_user_modules~ipo+med+slepc+tetgen build_type=Debug dev_path=/home/lukasz/mofem_install/mofem-cephas install_id=0
 pa3httg mofem-cephas@develop+adol-c~copy_user_modules~ipo+med+slepc+tetgen build_type=RelWithDebInfo dev_path=/home/lukasz/mofem_install/mofem-cephas install_id=0
 ~~~~~
-For example, if you want to install users modules against core library built with the specification `build_type=RelWithDebInfo`, pick the second row, and copy to clipboard `pa3httg` . Next, change the directory:
+For example, if you want to install users modules against core library which was built with the specification `build_type=RelWithDebInfo`, pick the corresponding row and copy to clipboard the hash (`pa3httg`). Next, change the directory:
 ~~~~~
 cd $HOME/mofem_install/mofem-cephas/mofem/users_modules
 ~~~~~
@@ -416,25 +409,13 @@ and install users modules:
 ~~~~~
 spack dev-build \
   --test root  \
-  --source-pat $HOME/mofem_install/mofem-cephas/mofem/users_modules \
+  --source-path $HOME/mofem_install/mofem-cephas/mofem/users_modules \
   mofem-users-modules@develop build_type=RelWithDebInfo \
   ^/pa3httg
 ~~~~~
 In the `spack dev-build` command of the snippet above `^` is a *dependency
 spec*, i.e. a descriptor defining the dependency of the package that we are
 currently installing on another package (in this case, a particular version of the core library).
-
-You can do partial install, before of after some installation phase,
-using command line option `-b BEFORE` or `-u UNTIL`, for example if you like
-to investigate build issues, you can do,
-~~~~~
-spack dev-build \
-  -u configure \
-  --test root  \
-  --source-pat $HOME/mofem_install/mofem-cephas/mofem/users_modules \
-  mofem-users-modules@develop build_type=RelWithDebInfo \
-  ^/pa3httg
-~~~~~
 
 Once installation is successfully, you can execute 
 ~~~~~
@@ -457,6 +438,19 @@ ctest
 make install
 ~~~~~
 Later you can add other modules to that directory if needed.
+
+\note You can do partial install, before of after some installation phase,
+using command line option `-b BEFORE` or `-u UNTIL`, for example if you like
+to investigate build issues, you can do,
+~~~~~
+spack dev-build \
+  -b build \
+  --test root  \
+  --source-path $HOME/mofem_install/mofem-cephas/mofem/users_modules \
+  mofem-users-modules@develop build_type=RelWithDebInfo \
+  ^/pa3httg
+~~~~~
+
 # Installation on specific servers {#spack_servers}
 
 ## Server Buckethead {#spack_buckethead}
@@ -474,56 +468,43 @@ module load mpi/openmpi/3.1.6/gcc-9.3.0
 module load gridengine
 ~~~~~
 
+It is a good idea to put the above lines into your `.bash_profile` or `.bashrc` file.
+
 Clone spack:
 ~~~~~
-git clone -b develop https://github.com/likask/spack.git
+git clone -b master https://github.com/likask/spack.git
 ~~~~~
 
-Download packages mirror:
-~~~~~
-mkdir -p mofem_mirror &&\
-curl -s -L  http://mofem.eng.gla.ac.uk/downloads/mirror_v0.16.tar.gz \
-| tar xzC $PWD/mofem_mirror  --strip 1
-~~~~~
-
-Set spack environment and mirror:
-~~~~~
+and initialise Spack's environment variables (should also be placed into `.bash_profile` or `.bashrc`):
+~~~~~~
 . spack/share/spack/setup-env.sh
-spack mirror add mofem_mirror $PWD/mofem_mirror
-spack compiler find
-~~~~~
-#### Setup packages and compiler
+~~~~~~
 
-Edit file `$HOME/.spack/linux/compilers.yaml`:
+#### Setup compiler and external packages
+
+First, find available compilers and external packages:
+~~~~~
+spack compiler find
+spack external find
+~~~~~
+
+Edit file `$HOME/.spack/linux/compilers.yaml` and ensure it includes the following:
 ~~~~~
 compilers:
 - compiler:
-    environment: {}
-    modules: []
-    flags: {}
-    extra_rpaths:
-        - /software/compilers/gcc/9.3.0/lib64
-    operating_system: centos7
-    target: x86_64
+    spec: gcc@9.3.0
     paths:
       cc: /software/compilers/gcc/9.3.0/bin/gcc
-      f77: /software/compilers/gcc/9.3.0/bin/gfortran
       cxx: /software/compilers/gcc/9.3.0/bin/g++
+      f77: /software/compilers/gcc/9.3.0/bin/gfortran
       fc: /software/compilers/gcc/9.3.0/bin/gfortran
-    spec: gcc@9.3.0
-- compiler:
-    environment: {}
-    modules: []
     flags: {}
-    extra_rpaths: []
     operating_system: centos7
     target: x86_64
-    paths:
-      cc: /usr/bin/gcc
-      f77:
-      cxx: /usr/bin/g++
-      fc:
-    spec: gcc@4.8.5
+    modules: []
+    environment: {}
+    extra_rpaths:
+        - /software/compilers/gcc/9.3.0/lib64
 ~~~~~
 
 Note that most of the file was created by the command
@@ -532,26 +513,33 @@ spack compiler find
 ~~~~~
 however you have to put the line 
 ~~~~~
-    extra_rpaths: 
-        - /software/compilers/gcc/9.3.0/lib64
+extra_rpaths: 
+    - /software/compilers/gcc/9.3.0/lib64
 ~~~~~
 which enables linking std lib c++ libraries.
 
-Finally, ensure that you have only the following lines in the file `$HOME/.spack/packages.yaml`:
+Finally, edit the file `$HOME/.spack/packages.yaml` and ensure that it has information only about the `openmpi` library. **Information about all other packages should be deleted**, i.e. the file should look as follows:
 ~~~~~
 packages:
   openmpi:
     externals:
-    - prefix: /software/mpi/openmpi/3.1.6/gcc-9.3.0
-      spec: openmpi@3.1.6%gcc@9.3.0 arch=linux-x86_64-debian7
+    - spec: openmpi@3.1.6%gcc@9.3.0~cuda~cxx~cxx_exceptions~java~memchecker+pmi+pmix~sqlite3~static~thread_multiple~wrapper-rpath
+        schedulers=slurm
+      prefix: /software/mpi/openmpi/3.1.6/gcc-9.3.0
 ~~~~~      
 
 #### Installing dependencies 
 
-At this point, we can follow the standard installation procedure. To install dependencies run the following:
+At this point, we can follow the standard installation procedure (with a few adjustments). To install dependencies run the following:
 ~~~~~
-spack install -j2 --only dependencies mofem-cephas%gcc@9.3.0 ^petsc+X ^openmpi@3.1.6%gcc@9.3.0 ^slepc~arpack
+spack install -j4 --only dependencies mofem-cephas%gcc@9.3.0 ^petsc+X ^openmpi@3.1.6%gcc@9.3.0 ^slepc~arpack
 ~~~~~
+
+Once completed, check the installed packages by running 
+~~~~~
+spack find -p
+~~~~~
+Note that the path for the `openmpi` library should differ from all other packages: `/software/mpi/openmpi/3.1.6/gcc-9.3.0`
 
 #### User installation
 
@@ -561,7 +549,7 @@ spack install mofem-users-modules
 ~~~~~
 
 Now you can create a symlink to the install directory including dependent
-libraries, using commands below:
+libraries using commands below:
 ~~~~
 spack view symlink -i um_view mofem-cephas
 spack activate -v um_view mofem-users-modules
@@ -569,14 +557,60 @@ spack activate -v um_view mofem-users-modules
 
 #### Developer installation
 
-Alternatively, you may want to follow the [Developer installation](#spack_developers), 
-skipping the command `spack install --only dependencies mofem-cephas ^petsc+X` described there. 
+Alternatively, you may want to follow the developer installation, which will have a few differences from the [Developer installation](#spack_developers) discussed above.
 
-Note also that by default `spack dev-build` will try to use all available 
-processor slots to run `make` in parallel, which may result in performance degradation 
-of Buckethead. To set a desired number of parallel jobs (e.g. 2), you can add 
-parameter `-j2` to `spack dev-build`. Alternatively, you can edit Spack settings 
-as discussed below in the section [Basic settings in config.yaml](#spack_config).
+Create `mofem_install` folder in the `$HOME` directory and clone MoFEM repository:
+~~~~~
+mkdir $HOME/mofem_install
+cd $HOME/mofem_install
+git clone \
+  -b develop \
+  --recurse-submodules https://bitbucket.org/likask/mofem-cephas.git \
+  mofem-cephas
+~~~~~
+Kick-start installation of the core library:
+~~~~~
+spack dev-build -j4 \
+  --source-path $HOME/mofem_install/mofem-cephas \
+  --keep-prefix \
+  --test root \
+  mofem-cephas@develop~copy_user_modules ^petsc+X ^openmpi@3.1.6%gcc@9.3.0 ^slepc~arpack
+~~~~~
+
+
+If installation is successful, by executing
+~~~~~
+spack find -lv mofem-cephas
+~~~~~
+you should see something similar to
+~~~~~
+==> 1 installed package
+-- linux-centos7-zen / gcc@9.3.0 --------------------------------
+3prnmyj mofem-cephas@develop+adol-c~copy_user_modules~docker~ipo+med~shared+slepc+tetgen build_type=RelWithDebInfo dev_path=/home/staff/as601x/mofem_install/mofem-cephas install_id=0
+~~~~~
+
+Copy to clipboard the hash (`3prnmyj`). Next, change the directory:
+~~~~~
+cd $HOME/mofem_install/mofem-cephas/mofem/users_modules
+~~~~~
+and install users modules specifying the dependency on the previously installed core library using the hash (`3prnmyj`):
+~~~~~
+spack dev-build -j4 \
+  --test root  \
+  --source-path $HOME/mofem_install/mofem-cephas/mofem/users_modules \
+  mofem-users-modules@develop build_type=RelWithDebInfo \
+  ^/3prnmyj
+~~~~~
+
+Once installation is successfully, you will find a new directory, e.g. 
+`$HOME/mofem_install/mofem-cephas/mofem/users_modules/um-build-RelWithDebInfo-646hxk7`, which is the build directory for a particular version of `mofem-users-modules`. There you can do typical developer work:
+~~~~~
+cd $HOME/mofem_install/mofem-cephas/mofem/users_modules/um-build-WithDebugInfo-646hxk7
+make -j4
+ctest
+make install
+~~~~~
+Later you can add other modules to that directory if needed.
 
 ### Job file {#spack_buckedhead_job}
 
@@ -606,14 +640,15 @@ Create a script file with content as below and name it, for example, *job_spack*
 # Request for 1.0 GB of memory per task (needed on Miffy and Dusty)
 #$ -l mem_tokens=1.0G
 
-#$ -pe mofem-* 2 # where N is the number of processors required
+#$ -pe mpi 2 # where N is the number of processors required
 
 # List of commands which do the actual work
 echo "$NSLOTS received"
 cat $PE_HOSTFILE
 
 # Load compiler
-module load mpi/openmpi/3.1.4
+module load gcc/9.3.0
+module load mpi/openmpi/3.1.6/gcc-9.3.0
 
 # List of commands which do the actual work
 cd $HOME/um_view/elasticity
@@ -711,8 +746,8 @@ default number of jobs to use when running `make` in parallel. If set to 4,
 for example, `spack install` will run `make -j4`. This can be done by adding line to `config.yaml`. 
 Configuration file should look like this:
 ~~~~~ 
-config:	
-	build_jobs: 4 
+config:
+  build_jobs: 4 
 ~~~~~ 
 For more details see
 [here](https://spack.readthedocs.io/en/latest/config_yaml.html?highlight=-jobs#).
@@ -725,11 +760,11 @@ You can download mirror with all necessary packages from MoFEM repository and
 untar or unzip to directory:
 ~~~~~
 mkdir -p mofem_mirror &&
-curl -s -L  http://mofem.eng.gla.ac.uk/downloads/mirror_spack12.tar.gz \
+curl -s -L  http://mofem.eng.gla.ac.uk/downloads/mirror_v0.16.tar.gz \
 | tar xzC $PWD/mofem_mirror  --strip 1
 ~~~~~
 Note that packages are expanded to directory `mofem_mirror`, and mirror is
-made for MoFEM version v0.9.0.
+made for MoFEM version v0.16.0.
 
 Once mirror is downloaded, you can add it to your spack:
 ~~~~~
@@ -756,6 +791,30 @@ spack mirror add local_filesystem /$HOME/spack-mirror-2018-07-21
 and with that at hand kick-start installation process described above.
 
 # FAQ {#spack_faq}
+
+## Installation on MAC OS X Montery (XCode 13.4.1)
+
+Not all packages can be installed with spack currentlt. Temprorary solution utill bigs are fixed in other packages is
+installation following packages with homebrew
+~~~~~
+brew install openblas
+brew install openmpi
+~~~~~
+Then spack command has to be called
+~~~~~
+spack external find 
+~~~~~
+Command abouve will find homebrew installation for openmpi. Installation for
+openblas has to be added by editing file $HOME/.spack/packages.yaml, and adding
+at the end
+~~~~~
+  openblas:
+    version: [0.3.20]
+    buildable: false
+    externals:
+    - spec: openblas@0.3.20%apple-clang@13.1.6 arch=darwin-monterey-m1
+      prefix: /opt/homebrew/opt/openblas
+~~~~~
 
 ## How to get packages installed today?
 

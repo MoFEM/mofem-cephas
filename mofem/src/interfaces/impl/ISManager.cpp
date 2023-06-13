@@ -3,19 +3,6 @@
  * \ingroup mofem_is_managers
  */
 
-/* MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
- */
 
 namespace MoFEM {
 
@@ -34,18 +21,16 @@ MoFEMErrorCode ISManager::sectionCreate(const std::string problem_name,
                                         PetscSection *s,
                                         const RowColData row_col) const {
   const MoFEM::Interface &m_field = cOre;
-  const Problem *problem_ptr;
+  const Problem *problem_ptr = m_field.get_problem(problem_name);
   auto fields_ptr = m_field.get_fields();
   auto fe_ptr = m_field.get_finite_elements();
   MoFEMFunctionBegin;
-  CHKERR m_field.get_problem(problem_name, &problem_ptr);
   boost::shared_ptr<NumeredDofEntity_multiIndex> dofs;
-  BitFieldId fields_ids;
+  BitFieldId fields_ids(0);
   switch (row_col) {
   case ROW:
     dofs = problem_ptr->numeredRowDofsPtr;
-    for (FiniteElement_multiIndex::iterator fit = fe_ptr->begin();
-         fit != fe_ptr->end(); fit++) {
+    for (auto fit = fe_ptr->begin(); fit != fe_ptr->end(); fit++) {
       if ((fit->get()->getId() & problem_ptr->getBitFEId()).any()) {
         fields_ids |= fit->get()->getBitFieldIdRow();
       }
@@ -53,8 +38,7 @@ MoFEMErrorCode ISManager::sectionCreate(const std::string problem_name,
     break;
   case COL:
     dofs = problem_ptr->numeredColDofsPtr;
-    for (FiniteElement_multiIndex::iterator fit = fe_ptr->begin();
-         fit != fe_ptr->end(); fit++) {
+    for (auto fit = fe_ptr->begin(); fit != fe_ptr->end(); fit++) {
       if ((fit->get()->getId() & problem_ptr->getBitFEId()).any()) {
         fields_ids |= fit->get()->getBitFieldIdCol();
       }
@@ -68,8 +52,7 @@ MoFEMErrorCode ISManager::sectionCreate(const std::string problem_name,
   map<std::string, std::pair<int, int>> fields_map;
   {
     int field = 0;
-    for (Field_multiIndex::iterator fit = fields_ptr->begin();
-         fit != fields_ptr->end(); fit++) {
+    for (auto fit = fields_ptr->begin(); fit != fields_ptr->end(); fit++) {
       if ((fit->get()->getId() & fields_ids).any()) {
         fields_map[fit->get()->getName()].first = field++;
         fields_map[fit->get()->getName()].second = fit->get()->getNbOfCoeffs();
@@ -79,8 +62,7 @@ MoFEMErrorCode ISManager::sectionCreate(const std::string problem_name,
   const int proc = m_field.get_comm_rank();
   CHKERR PetscSectionCreate(PETSC_COMM_WORLD, s);
   CHKERR PetscSectionSetNumFields(*s, fields_map.size());
-  for (map<std::string, std::pair<int, int>>::iterator mit = fields_map.begin();
-       mit != fields_map.end(); mit++) {
+  for (auto mit = fields_map.begin(); mit != fields_map.end(); mit++) {
     CHKERR PetscSectionSetFieldName(*s, mit->second.first, mit->first.c_str());
     CHKERR PetscSectionSetFieldComponents(*s, mit->second.first,
                                           mit->second.second);
@@ -126,7 +108,9 @@ MoFEMErrorCode ISManager::sectionCreate(const std::string problem_name,
         int dd = 0;
         const auto &ent_uid = dit->get()->getEntLocalUniqueId();
         while (dit != hi_dit && dit->get()->getEntLocalUniqueId() == ent_uid) {
-          ++dd;
+          const DofIdx loc_idx = dit->get()->getPetscLocalDofIdx();
+          if (loc_idx >= 0)
+            ++dd;
           ++dit;
         }
 
@@ -149,6 +133,64 @@ MoFEMErrorCode ISManager::sectionCreate(const std::string problem_name,
   // cerr << "done " << proc << endl;
   CHKERR PetscSectionSetUp(*s);
   // cerr << "end " << proc << endl;
+  MoFEMFunctionReturn(0);
+}
+
+SmartPetscObj<PetscSection>
+ISManager::sectionCreate(const std::string problem_name,
+                         const RowColData row_col) const {
+
+  PetscSection s;
+  CHK_THROW_MESSAGE(sectionCreate(problem_name, &s, row_col),
+                    "Section not created");
+  return SmartPetscObj<PetscSection>(s, false);
+}
+
+MoFEMErrorCode ISManager::isCreateProblem(const std::string problem_name,
+                                          RowColData rc, IS *is) const {
+  const MoFEM::Interface &m_field = cOre;
+  const Problem *problem_ptr;
+  MoFEMFunctionBegin;
+  CHKERR m_field.get_problem(problem_name, &problem_ptr);
+
+  const int rank = m_field.get_comm_rank();
+
+  decltype(problem_ptr->numeredRowDofsPtr) dofs_ptr;
+
+  switch (rc) {
+  case ROW:
+    dofs_ptr = problem_ptr->numeredRowDofsPtr;
+    break;
+  case COL:
+    dofs_ptr = problem_ptr->numeredColDofsPtr;
+    break;
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
+  }
+
+  auto lo = dofs_ptr->get<Part_mi_tag>().lower_bound(rank);
+  auto hi = dofs_ptr->get<Part_mi_tag>().upper_bound(rank);
+  const int size = std::distance(lo, hi);
+
+  int *id;
+  CHKERR PetscMalloc(size * sizeof(int), &id);
+  int *id_it = id;
+  for (; lo != hi; ++lo, ++id_it)
+    *id_it = (*lo)->getPetscGlobalDofIdx();
+  sort(id, &id[size]);
+
+  CHKERR ISCreateGeneral(PETSC_COMM_WORLD, size, id, PETSC_OWN_POINTER, is);
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode ISManager::isCreateProblem(const std::string problem_name,
+                                          RowColData rc,
+                                          SmartPetscObj<IS> &is) const {
+  MoFEMFunctionBegin;
+  IS raw_is;
+  CHKERR isCreateProblem(problem_name, rc, &raw_is);
+  is = SmartPetscObj<IS>(raw_is);
   MoFEMFunctionReturn(0);
 }
 

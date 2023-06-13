@@ -3,20 +3,6 @@
 
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
-
 #ifndef __HO_DATA_OPERATORS_HPP__
 #define __HO_DATA_OPERATORS_HPP__
 
@@ -31,56 +17,68 @@ namespace MoFEM {
  * data.
  *
  */
-struct OpCalculateHOJacVolume
-    : public VolumeElementForcesAndSourcesCoreBase::UserDataOperator {
+struct OpCalculateHOJacForVolume
+    : public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-  OpCalculateHOJacVolume(boost::shared_ptr<MatrixDouble> jac_ptr);
+  OpCalculateHOJacForVolume(boost::shared_ptr<MatrixDouble> jac_ptr);
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
 private:
   boost::shared_ptr<MatrixDouble> jacPtr;
 };
 
+/** \deprecated use OpCalculateHOJacForVolume
+ */
+using OpCalculateHOJacVolume = OpCalculateHOJacForVolume;
+
 /**
  * @brief Calculate HO coordinates at gauss points
  *
  */
+template <int FIELD_DIM = 3>
 struct OpCalculateHOCoords : public ForcesAndSourcesCore::UserDataOperator {
 
   OpCalculateHOCoords(const std::string field_name)
       : ForcesAndSourcesCore::UserDataOperator(field_name, OPROW) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
+};
+
+/**
+ * @deprecated This class should be DIM = 3 specialization when default
+ * parameter is removed
+ *
+ */
+struct OpSetHOInvJacToScalarBasesImpl : public OpSetInvJacToScalarBasesBasic {
+
+  using OpSetInvJacToScalarBasesBasic::OpSetInvJacToScalarBasesBasic;
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        EntitiesFieldData::EntData &data);
 };
 
 /**
  * \brief Set inverse jacobian to base functions
  *
+ * \deprecated  Version with default variant DIM = 3 is deprecated, keep for
+ * back compatibility. Should be removed in future. Use of default variant make
+ * code implicit, what can be source of some hidden error. Explict interface is
+ * better, when user see and control outcome, and is aware of existing variants.
+ *
  */
-struct OpSetHOInvJacToScalarBases
-    : public ForcesAndSourcesCore::UserDataOperator {
+template <int DIM = 3>
+struct OpSetHOInvJacToScalarBases : public OpSetHOInvJacToScalarBasesImpl {
+  using OpSetHOInvJacToScalarBasesImpl::OpSetHOInvJacToScalarBasesImpl;
+};
 
-  OpSetHOInvJacToScalarBases(const FieldSpace space,
-                             boost::shared_ptr<MatrixDouble> inv_jac_ptr)
-      : ForcesAndSourcesCore::UserDataOperator(space), invJacPtr(inv_jac_ptr) {
+template <>
+struct OpSetHOInvJacToScalarBases<2>
+    : public OpSetInvJacSpaceForFaceImpl<2, 1> {
 
-    if (!inv_jac_ptr)
-      CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "invJacPtr not allocated");
-
-    if (space == L2) {
-      doVertices = false;
-    }
-  }
-
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
-
-private:
-  boost::shared_ptr<MatrixDouble> invJacPtr;
-  MatrixDouble diffNinvJac;
+  using OpSetInvJacSpaceForFaceImpl<2, 1>::OpSetInvJacSpaceForFaceImpl;
 };
 
 /**
@@ -105,8 +103,9 @@ struct OpSetHOInvJacVectorBase : public ForcesAndSourcesCore::UserDataOperator {
       doEdges = false;
   }
 
+	
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
 private:
   boost::shared_ptr<MatrixDouble> invJacPtr;
@@ -121,11 +120,36 @@ private:
  *
  */
 struct OpSetHOWeightsOnFace
-    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+    : public FaceElementForcesAndSourcesCore::UserDataOperator {
   OpSetHOWeightsOnFace()
-      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(NOSPACE) {}
+      : FaceElementForcesAndSourcesCore::UserDataOperator(NOSPACE) {}
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
+};
+
+/**
+ * @brief Modify integration weights on face to take in account higher-order
+ * geometry
+ * @ingroup mofem_forces_and_sources_tri_element
+ *
+ */
+struct OpSetHOWeightsOnEdge
+    : public EdgeElementForcesAndSourcesCore::UserDataOperator {
+  OpSetHOWeightsOnEdge()
+      : EdgeElementForcesAndSourcesCore::UserDataOperator(NOSPACE) {}
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        EntitiesFieldData::EntData &data);
+};
+
+template <int SPACE_DIM>
+struct OpSetHOWeightsOnSubDim;
+
+template <> struct OpSetHOWeightsOnSubDim<2> : public OpSetHOWeightsOnEdge {
+  using OpSetHOWeightsOnEdge::OpSetHOWeightsOnEdge;
+};
+
+template <> struct OpSetHOWeightsOnSubDim<3> : public OpSetHOWeightsOnFace {
+  using OpSetHOWeightsOnFace::OpSetHOWeightsOnFace;
 };
 
 /**
@@ -135,7 +159,7 @@ struct OpSetHOWeightsOnFace
 struct OpSetHOWeights : public ForcesAndSourcesCore::UserDataOperator {
 
   OpSetHOWeights(boost::shared_ptr<VectorDouble> det_ptr)
-      : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPLAST),
+      : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPSPACE),
         detPtr(det_ptr) {
     if (!detPtr)
       CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY,
@@ -143,13 +167,13 @@ struct OpSetHOWeights : public ForcesAndSourcesCore::UserDataOperator {
   }
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
 private:
   boost::shared_ptr<VectorDouble> detPtr;
 };
 
-/** \brief Apply contravariant (Piola) transfer to Hdiv space for HO geometr
+/** \brief Apply contravariant (Piola) transfer to Hdiv space for HO geometry
 
 * \ingroup mofem_forces_and_sources
 */
@@ -159,7 +183,7 @@ struct OpSetHOContravariantPiolaTransform
   OpSetHOContravariantPiolaTransform(const FieldSpace space,
                                      boost::shared_ptr<VectorDouble> det_ptr,
                                      boost::shared_ptr<MatrixDouble> jac_ptr)
-      : ForcesAndSourcesCore::UserDataOperator(space, OPLAST), detPtr(det_ptr),
+      : ForcesAndSourcesCore::UserDataOperator(space, OPSPACE), detPtr(det_ptr),
         jacPtr(jac_ptr) {
     doVertices = false;
     if (space == HDIV)
@@ -167,7 +191,7 @@ struct OpSetHOContravariantPiolaTransform
   }
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
 private:
   boost::shared_ptr<VectorDouble> detPtr;
@@ -184,7 +208,7 @@ struct OpSetHOCovariantPiolaTransform
 
   OpSetHOCovariantPiolaTransform(const FieldSpace space,
                                  boost::shared_ptr<MatrixDouble> jac_inv_ptr)
-      : ForcesAndSourcesCore::UserDataOperator(space, OPLAST),
+      : ForcesAndSourcesCore::UserDataOperator(space, OPSPACE),
         jacInvPtr(jac_inv_ptr) {
     doVertices = false;
     if (space == HDIV)
@@ -195,7 +219,7 @@ struct OpSetHOCovariantPiolaTransform
   }
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
 private:
   boost::shared_ptr<MatrixDouble> jacInvPtr;
@@ -217,12 +241,12 @@ template <int DIM> struct OpCalculateHOJacForFaceImpl;
 
 template <>
 struct OpCalculateHOJacForFaceImpl<2>
-    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+    : public FaceElementForcesAndSourcesCore::UserDataOperator {
 
   OpCalculateHOJacForFaceImpl(boost::shared_ptr<MatrixDouble> jac_ptr);
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
 protected:
   boost::shared_ptr<MatrixDouble> jacPtr;
@@ -234,23 +258,34 @@ struct OpCalculateHOJacForFaceImpl<3> : public OpCalculateHOJacForFaceImpl<2> {
   using OpCalculateHOJacForFaceImpl<2>::OpCalculateHOJacForFaceImpl;
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 };
 
 using OpCalculateHOJacForFace = OpCalculateHOJacForFaceImpl<2>;
 using OpCalculateHOJacForFaceEmbeddedIn3DSpace = OpCalculateHOJacForFaceImpl<3>;
 
+template <int DIM> struct OpCalculateHOJac;
+
+template <> struct OpCalculateHOJac<3> : public OpCalculateHOJacForVolume {
+  using OpCalculateHOJacForVolume::OpCalculateHOJacForVolume;
+};
+
+template <> struct OpCalculateHOJac<2> : public OpCalculateHOJacForFaceImpl<2> {
+  using OpCalculateHOJacForFaceImpl<2>::OpCalculateHOJacForFaceImpl;
+};
+
 /** \brief Calculate normals at Gauss points of triangle element
  * \ingroup mofem_forces_and_source
  */
+template <int FIELD_DIM = 3>
 struct OpGetHONormalsOnFace
-    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+    : public FaceElementForcesAndSourcesCore::UserDataOperator {
 
   OpGetHONormalsOnFace(std::string field_name)
-      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(field_name,
-                                                              OPROW) {}
+      : FaceElementForcesAndSourcesCore::UserDataOperator(field_name, OPROW) {}
+
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 };
 
 /** \brief transform Hdiv base fluxes from reference element to physical
@@ -261,16 +296,16 @@ struct OpGetHONormalsOnFace
  *
  */
 struct OpHOSetContravariantPiolaTransformOnFace3D
-    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+    : public FaceElementForcesAndSourcesCore::UserDataOperator {
 
   OpHOSetContravariantPiolaTransformOnFace3D(
       const FieldSpace space,
       boost::shared_ptr<MatrixDouble> normals_at_gauss_pts = nullptr)
-      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(space, OPLAST),
+      : FaceElementForcesAndSourcesCore::UserDataOperator(space, OPSPACE),
         normalsAtGaussPts(normals_at_gauss_pts) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
 private:
   boost::shared_ptr<MatrixDouble> normalsAtGaussPts;
@@ -280,16 +315,16 @@ private:
  * \ingroup mofem_forces_and_sources
  */
 struct OpHOSetContravariantPiolaTransformOnEdge3D
-    : public EdgeElementForcesAndSourcesCoreBase::UserDataOperator {
+    : public EdgeElementForcesAndSourcesCore::UserDataOperator {
 
   OpHOSetContravariantPiolaTransformOnEdge3D(
       const FieldSpace space = HCURL,
       boost::shared_ptr<MatrixDouble> tangent_at_pts = nullptr)
-      : EdgeElementForcesAndSourcesCoreBase::UserDataOperator(space),
+      : EdgeElementForcesAndSourcesCore::UserDataOperator(space),
         tangentAtGaussPts(tangent_at_pts) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
 private:
   boost::shared_ptr<MatrixDouble> tangentAtGaussPts;
@@ -299,14 +334,14 @@ private:
  * triangle \ingroup mofem_forces_and_sources
  */
 struct OpHOSetCovariantPiolaTransformOnFace3D
-    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+    : public FaceElementForcesAndSourcesCore::UserDataOperator {
 
   OpHOSetCovariantPiolaTransformOnFace3D(
       const FieldSpace space,
       boost::shared_ptr<MatrixDouble> normals_at_pts = nullptr,
       boost::shared_ptr<MatrixDouble> tangent1_at_pts = nullptr,
       boost::shared_ptr<MatrixDouble> tangent2_at_pts = nullptr)
-      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(space, OPLAST),
+      : FaceElementForcesAndSourcesCore::UserDataOperator(space, OPSPACE),
         normalsAtPts(normals_at_pts), tangent1AtPts(tangent1_at_pts),
         tangent2AtPts(tangent2_at_pts) {
     if (normals_at_pts || tangent1_at_pts || tangent2_at_pts)
@@ -316,7 +351,7 @@ struct OpHOSetCovariantPiolaTransformOnFace3D
   }
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
 private:
   boost::shared_ptr<MatrixDouble> normalsAtPts;
@@ -330,18 +365,18 @@ private:
 /** \brief Calculate tangent vector on edge form HO geometry approximation
  * \ingroup mofem_forces_and_sources
  */
+template <int FIELD_DIM = 3>
 struct OpGetHOTangentsOnEdge
-    : public EdgeElementForcesAndSourcesCoreBase::UserDataOperator {
+    : public EdgeElementForcesAndSourcesCore::UserDataOperator {
 
   OpGetHOTangentsOnEdge(
       std::string field_name,
       boost::shared_ptr<MatrixDouble> tangents_at_pts = nullptr)
-      : EdgeElementForcesAndSourcesCoreBase::UserDataOperator(field_name,
-                                                              OPROW),
+      : EdgeElementForcesAndSourcesCore::UserDataOperator(field_name, OPROW),
         tangentsAtPts(tangents_at_pts) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
 private:
   boost::shared_ptr<MatrixDouble> tangentsAtPts;
@@ -359,7 +394,7 @@ template <typename OP> struct OpScaleBaseBySpaceInverseOfMeasure : public OP {
       : OP(space), fieldSpace(space), detJacPtr(det_jac_ptr) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data) {
+                        EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
 
     if (!detJacPtr) {
@@ -374,7 +409,6 @@ template <typename OP> struct OpScaleBaseBySpaceInverseOfMeasure : public OP {
         if (detJacPtr) {
 
           auto &det_vec = *detJacPtr;
-          const auto nb_base_fun = base_fun.size2();
           const auto nb_int_pts = base_fun.size1();
 
           if (nb_int_pts != det_vec.size())
@@ -415,7 +449,7 @@ template <typename OP> struct OpScaleBaseBySpaceInverseOfMeasure : public OP {
           scale();
         break;
       default:
-        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "impossible case");
+        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "impossible case");
       }
     } else if (this->getFEDim() == 2) {
       switch (fieldSpace) {
@@ -432,7 +466,7 @@ template <typename OP> struct OpScaleBaseBySpaceInverseOfMeasure : public OP {
           scale();
         break;
       default:
-        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "impossible case");
+        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "impossible case");
       }
     } else if (this->getFEDim() == 1) {
       switch (fieldSpace) {
@@ -445,10 +479,10 @@ template <typename OP> struct OpScaleBaseBySpaceInverseOfMeasure : public OP {
           scale();
         break;
       default:
-        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "impossible case");
+        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "impossible case");
       }
     } else {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "impossible case");
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "impossible case");
     }
 
     MoFEMFunctionReturn(0);
@@ -459,55 +493,297 @@ private:
   boost::shared_ptr<VectorDouble> detJacPtr;
 };
 
-template <typename E>
-MoFEMErrorCode addHOOpsVol(const std::string field, E &e, bool h1, bool hcurl,
-                           bool hdiv, bool l2) {
+/**
+ * @brief Add operators pushing bases from local to physical configuration
+ *
+ * @tparam FE_DIM dimension of element
+ * @tparam PROBLEM_DIM problem dimension
+ * @tparam SPACE_DIM space dimension
+ */
+template <int FE_DIM, int PROBLEM_DIM, int SPACE_DIM> struct AddHOOps;
+
+template <> struct AddHOOps<2, 2, 2> {
+  AddHOOps() = delete;
+  static MoFEMErrorCode
+  add(boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+      std::vector<FieldSpace> spaces, std::string geom_field_name = "",
+      boost::shared_ptr<MatrixDouble> jac = nullptr,
+      boost::shared_ptr<VectorDouble> det = nullptr,
+      boost::shared_ptr<MatrixDouble> inv_jac = nullptr);
+};
+
+template <> struct AddHOOps<1, 2, 2> {
+  AddHOOps() = delete;
+  static MoFEMErrorCode
+  add(boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+      std::vector<FieldSpace> spaces, std::string geom_field_name = "");
+};
+template <> struct AddHOOps<1, 3, 3> {
+  AddHOOps() = delete;
+  static MoFEMErrorCode
+  add(boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+      std::vector<FieldSpace> space, std::string geom_field_name = "");
+};
+
+template <> struct AddHOOps<2, 3, 3> {
+  AddHOOps() = delete;
+  static MoFEMErrorCode
+  add(boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+      std::vector<FieldSpace> space, std::string geom_field_name = "");
+};
+
+template <> struct AddHOOps<3, 3, 3> {
+  AddHOOps() = delete;
+  static MoFEMErrorCode
+  add(boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+      std::vector<FieldSpace> space, std::string geom_field_name = "",
+      boost::shared_ptr<MatrixDouble> jac = nullptr,
+      boost::shared_ptr<VectorDouble> det = nullptr,
+      boost::shared_ptr<MatrixDouble> inv_jac = nullptr);
+};
+
+template <int FIELD_DIM>
+MoFEMErrorCode
+OpCalculateHOCoords<FIELD_DIM>::doWork(int side, EntityType type,
+                                       EntitiesFieldData::EntData &data) {
+  FTensor::Index<'i', FIELD_DIM> i;
   MoFEMFunctionBegin;
-  auto material_grad_mat = boost::make_shared<MatrixDouble>();
-  auto material_det_vec = boost::make_shared<VectorDouble>();
-  auto material_inv_grad_mat = boost::make_shared<MatrixDouble>();
-  e.getOpPtrVector().push_back(
-      new OpCalculateVectorFieldGradient<3, 3>(field, material_grad_mat));
-  e.getOpPtrVector().push_back(new OpInvertMatrix<3>(
-      material_grad_mat, material_det_vec, material_inv_grad_mat));
-  e.getOpPtrVector().push_back(new OpSetHOWeights(material_det_vec));
-  if (h1)
-    e.getOpPtrVector().push_back(
-        new OpSetHOInvJacToScalarBases(H1, material_inv_grad_mat));
-  if (l2)
-    e.getOpPtrVector().push_back(
-        new OpSetHOInvJacToScalarBases(L2, material_inv_grad_mat));
-  if (hdiv) {
-    e.getOpPtrVector().push_back(new OpSetHOContravariantPiolaTransform(
-        HDIV, material_det_vec, material_grad_mat));
-    e.getOpPtrVector().push_back(
-        new OpSetHOInvJacVectorBase(HDIV, material_inv_grad_mat));
-  }
-  if (hcurl) {
-    e.getOpPtrVector().push_back(
-        new OpSetHOCovariantPiolaTransform(HCURL, material_inv_grad_mat));
-    e.getOpPtrVector().push_back(
-        new OpSetHOInvJacVectorBase(HCURL, material_inv_grad_mat));
+  const auto nb_dofs = data.getFieldData().size() / FIELD_DIM;
+  if (nb_dofs) {
+    if (type == MBVERTEX)
+      getCoordsAtGaussPts().clear();
+    auto t_base = data.getFTensor0N();
+    auto t_coords = getFTensor1CoordsAtGaussPts();
+    const auto nb_integration_pts = data.getN().size1();
+    const auto nb_base_functions = data.getN().size2();
+    for (auto gg = 0; gg != nb_integration_pts; ++gg) {
+      auto t_dof = data.getFTensor1FieldData<FIELD_DIM>();
+      size_t bb = 0;
+      for (; bb != nb_dofs; ++bb) {
+        t_coords(i) += t_base * t_dof(i);
+        ++t_dof;
+        ++t_base;
+      }
+      for (; bb < nb_base_functions; ++bb)
+        ++t_base;
+      ++t_coords;
+    }
   }
   MoFEMFunctionReturn(0);
 }
 
-template <typename E>
-MoFEMErrorCode addHOOpsFace3D(const std::string field, E &e, bool hcurl,
-                              bool hdiv) {
-  MoFEMFunctionBegin;
-  e.meshPositionsFieldName = "none";
-  e.getOpPtrVector().push_back(new OpGetHONormalsOnFace(field));
-  e.getOpPtrVector().push_back(new OpCalculateHOCoords(field));
-  if (hcurl) {
-    e.getOpPtrVector().push_back(
-        new OpHOSetContravariantPiolaTransformOnFace3D(HDIV));
+template <int FIELD_DIM>
+MoFEMErrorCode
+OpGetHONormalsOnFace<FIELD_DIM>::doWork(int side, EntityType type,
+                                        EntitiesFieldData::EntData &data) {
+  MoFEMFunctionBeginHot;
+
+  FTensor::Number<0> N0;
+  FTensor::Number<1> N1;
+
+  auto get_ftensor1 = [](MatrixDouble &m) {
+    return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
+        &m(0, 0), &m(0, 1), &m(0, 2));
+  };
+
+  unsigned int nb_dofs = data.getFieldData().size();
+  if (nb_dofs != 0) {
+
+    int nb_gauss_pts = data.getN().size1();
+    auto &tangent1_at_gauss_pts = getTangent1AtGaussPts();
+    auto &tangent2_at_gauss_pts = getTangent2AtGaussPts();
+    tangent1_at_gauss_pts.resize(nb_gauss_pts, 3, false);
+    tangent2_at_gauss_pts.resize(nb_gauss_pts, 3, false);
+
+    switch (type) {
+    case MBVERTEX: {
+      tangent1_at_gauss_pts.clear();
+      tangent2_at_gauss_pts.clear();
+    }
+    case MBEDGE:
+    case MBTRI:
+    case MBQUAD: {
+
+#ifndef NDEBUG
+      if (2 * data.getN().size2() != data.getDiffN().size2()) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "expected two direcatives in local element coordinates");
+      }
+      if (nb_dofs % FIELD_DIM != 0) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "expected that number of dofs is multiplicative of field "
+                "dimension");
+      }
+#endif
+
+      if (nb_dofs > FIELD_DIM * data.getN().size2()) {
+        unsigned int nn = 0;
+        for (; nn != nb_dofs; nn++) {
+          if (!data.getFieldDofs()[nn]->getActive())
+            break;
+        }
+        if (nn > FIELD_DIM * data.getN().size2()) {
+          SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                   "Data inconsistency for base %s",
+                   ApproximationBaseNames[data.getBase()]);
+        } else {
+          nb_dofs = nn;
+          if (!nb_dofs)
+            MoFEMFunctionReturnHot(0);
+        }
+      }
+      const int nb_base_functions = data.getN().size2();
+      auto t_base = data.getFTensor0N();
+      auto t_diff_base = data.getFTensor1DiffN<2>();
+      auto t_t1 = get_ftensor1(tangent1_at_gauss_pts);
+      auto t_t2 = get_ftensor1(tangent2_at_gauss_pts);
+      for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+        auto t_data = data.getFTensor1FieldData<FIELD_DIM>();
+        int bb = 0;
+        for (; bb != nb_dofs / FIELD_DIM; ++bb) {
+          FTensor::Index<'i', FIELD_DIM> i;
+          t_t1(i) += t_data(i) * t_diff_base(N0);
+          t_t2(i) += t_data(i) * t_diff_base(N1);
+          ++t_data;
+          ++t_base;
+          ++t_diff_base;
+        }
+        for (; bb != nb_base_functions; ++bb) {
+          ++t_base;
+          ++t_diff_base;
+        }
+        ++t_t1;
+        ++t_t2;
+      }
+    } break;
+    default:
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
+    }
   }
-  if (hdiv) {
-    e.getOpPtrVector().push_back(
-        new OpHOSetCovariantPiolaTransformOnFace3D(HDIV));
+
+  if (moab::CN::Dimension(type) == 2) {
+
+    auto &normal_at_gauss_pts = getNormalsAtGaussPts();
+    auto &tangent1_at_gauss_pts = getTangent1AtGaussPts();
+    auto &tangent2_at_gauss_pts = getTangent2AtGaussPts();
+
+    const auto nb_gauss_pts = tangent1_at_gauss_pts.size1();
+    normal_at_gauss_pts.resize(nb_gauss_pts, 3, false);
+
+    auto t_normal = get_ftensor1(normal_at_gauss_pts);
+    auto t_t1 = get_ftensor1(tangent1_at_gauss_pts);
+    auto t_t2 = get_ftensor1(tangent2_at_gauss_pts);
+    for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
+      FTensor::Index<'i', 3> i;
+      FTensor::Index<'j', 3> j;
+      FTensor::Index<'k', 3> k;
+      t_normal(j) = FTensor::levi_civita(i, j, k) * t_t1(k) * t_t2(i);
+      ++t_normal;
+      ++t_t1;
+      ++t_t2;
+    }
+  }
+
+  MoFEMFunctionReturnHot(0);
+}
+
+template <int FIELD_DIM>
+MoFEMErrorCode
+OpGetHOTangentsOnEdge<FIELD_DIM>::doWork(int side, EntityType type,
+                                         EntitiesFieldData::EntData &data) {
+  MoFEMFunctionBegin;
+
+  auto get_tangent = [&]() -> MatrixDouble & {
+    if (tangentsAtPts)
+      return *tangentsAtPts;
+    else
+      return getTangentAtGaussPts();
+  };
+
+  auto &tangent = get_tangent();
+  int nb_gauss_pts = getGaussPts().size2();
+
+  if (type == MBVERTEX) {
+    tangent.resize(nb_gauss_pts, 3, false);
+    tangent.clear();
+  }
+
+  int nb_dofs = data.getFieldData().size();
+  if (nb_dofs != 0) {
+    const int nb_base_functions = data.getN().size2();
+    double *diff_base_function = &*data.getDiffN().data().begin();
+    auto tangent_at_gauss_pts =
+        getFTensor1FromPtr<FIELD_DIM, 3>(&*tangent.data().begin());
+
+    FTensor::Index<'i', FIELD_DIM> i;
+    int size = nb_dofs / FIELD_DIM;
+    if (nb_dofs % FIELD_DIM) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Inconsistent number of dofs and filed dimension");
+    }
+    for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+      auto field_data = data.getFTensor1FieldData<FIELD_DIM>();
+      int bb = 0;
+      for (; bb < size; ++bb) {
+        tangent_at_gauss_pts(i) += field_data(i) * (*diff_base_function);
+        ++field_data;
+        ++diff_base_function;
+      }
+      for (; bb != nb_base_functions; ++bb) {
+        ++diff_base_function;
+      }
+      ++tangent_at_gauss_pts;
+    }
   }
   MoFEMFunctionReturn(0);
+}
+
+/**
+ * @deprecated do not use this function, instead use AddHOOps.
+ *
+ * @tparam E
+ * @param field
+ * @param e
+ * @param h1
+ * @param hcurl
+ * @param hdiv
+ * @param l2
+ * @return MoFEMErrorCode
+ */
+template <typename E>
+MoFEMErrorCode addHOOpsVol(const std::string field, E &e, bool h1,
+                                      bool hcurl, bool hdiv, bool l2) {
+  std::vector<FieldSpace> spaces;
+  if (h1)
+    spaces.push_back(H1);
+  if (hcurl)
+    spaces.push_back(HCURL);
+  if (hdiv)
+    spaces.push_back(HDIV);
+  if (l2)
+    spaces.push_back(L2);
+  return AddHOOps<3, 3, 3>::add(e.getOpPtrVector(), spaces, field);
+}
+
+/**
+ * @deprecated do not use this function, instead use AddHOOps.
+ *
+ * @tparam E
+ * @param field
+ * @param e
+ * @param hcurl
+ * @param hdiv
+ * @return MoFEMErrorCode
+ */
+template <typename E>
+MoFEMErrorCode addHOOpsFace3D(const std::string field, E &e,
+                                         bool hcurl, bool hdiv) {
+  std::vector<FieldSpace> spaces;
+  if (hcurl)
+    spaces.push_back(HCURL);
+  if (hdiv)
+    spaces.push_back(HDIV);
+  return AddHOOps<2, 3, 3>::add(e.getOpPtrVector(), spaces, field);
 }
 
 }; // namespace MoFEM

@@ -1,4 +1,4 @@
-FROM       ubuntu
+FROM       ubuntu:focal
 
 LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk"
 
@@ -34,6 +34,7 @@ build-essential \
 libtool \
 libblas-dev \
 liblapack-dev \
+libpython3.8-dev \
 libsigsegv2 \
 libjpeg-dev \
 graphviz \
@@ -41,9 +42,9 @@ doxygen \
 cmake \
 pkg-config \
 gnuplot \
-pstack \
 ca-certificates \
 python \
+python-dev \
 python3-distutils \
 libx11-dev \
 xauth \
@@ -55,19 +56,24 @@ libxmu-dev \
 libxi-dev \
 libssl-dev \
 gawk \
+libopenmpi-dev \
 && rm -rf /var/lib/apt/lists/*
 
 ENV MOFEM_INSTALL_DIR=/mofem_install
 ENV SPACK_ROOT_DIR=$MOFEM_INSTALL_DIR/spack
 
+ENV TARGET=x86_64
+#ENV TARGET=aarch64
+
 # clone spack
 RUN mkdir -p $SPACK_ROOT_DIR && \
-    curl -s -L https://api.github.com/repos/likask/spack/tarball/develop_spack_v0.16.2 \
+    curl -s -L https://api.github.com/repos/likask/spack/tarball/spack_develop_v0.17.2 \
     | tar xzC $SPACK_ROOT_DIR --strip 1 && \
     . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
     echo ". $SPACK_ROOT_DIR/share/spack/setup-env.sh" >> ~/.bashrc && \
     spack external find && \
-    spack install --only dependencies mofem-cephas target=x86_64 ^petsc+X 
+    spack install --only dependencies mofem-cephas@lukasz \
+    target=$TARGET build_type=Release ^petsc+X ^boost+python
 
 # image run hook: the -l will make sure /etc/profile environments are loaded
 CMD        /bin/bash -l

@@ -2,19 +2,7 @@
   \brief Atome test for getting orders on entities
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 #include <MoFEM.hpp>
 
@@ -139,15 +127,15 @@ int main(int argc, char *argv[]) {
       TeeDevice my_tee;
       TeeStream my_split;
 
-      boost::shared_ptr<DataForcesAndSourcesCore> dataPtr;
-      boost::shared_ptr<DerivedDataForcesAndSourcesCore> derivedDataPtr;
+      boost::shared_ptr<EntitiesFieldData> dataPtr;
+      boost::shared_ptr<DerivedEntitiesFieldData> derivedDataPtr;
 
       ForcesAndSourcesCore_TestFE(MoFEM::Interface &_m_field)
           : ForcesAndSourcesCore(_m_field),
             ofs("forces_and_sources_getting_orders_indices_atom_test.txt"),
             my_tee(std::cout, ofs), my_split(my_tee),
-            dataPtr(new DataForcesAndSourcesCore(MBTET)),
-            derivedDataPtr(new DerivedDataForcesAndSourcesCore(dataPtr)){};
+            dataPtr(new EntitiesFieldData(MBTET)),
+            derivedDataPtr(new DerivedEntitiesFieldData(dataPtr)){};
 
       MoFEMErrorCode preProcess() {
         MoFEMFunctionBeginHot;
@@ -157,8 +145,8 @@ int main(int argc, char *argv[]) {
       MoFEMErrorCode operator()() {
         MoFEMFunctionBeginHot;
 
-        DataForcesAndSourcesCore &data = *dataPtr;
-        DerivedDataForcesAndSourcesCore &derived_data = *derivedDataPtr;
+        EntitiesFieldData &data = *dataPtr;
+        DerivedEntitiesFieldData &derived_data = *derivedDataPtr;
 
         my_split << "\n\nNEXT ELEM\n\n";
 
@@ -183,10 +171,11 @@ int main(int argc, char *argv[]) {
             boost::shared_ptr<BaseFunctionCtx>(
                 new EntPolynomialBaseCtx(data, H1, AINSWORTH_LEGENDRE_BASE)));
 
-        CHKERR getRowNodesIndices(data, "FIELD1");
-        CHKERR getEntityFieldData(data, "FIELD1", MBEDGE);
-        CHKERR getEntityRowIndices(data, "FIELD1", MBEDGE);
-        CHKERR getNodesFieldData(data, "FIELD1");
+        const auto bn1 = mField.get_field_bit_number("FIELD1");
+        CHKERR getRowNodesIndices(data, bn1);
+        CHKERR getEntityFieldData(data, bn1, MBEDGE);
+        CHKERR getEntityRowIndices(data, bn1, MBEDGE);
+        CHKERR getNodesFieldData(data, bn1);
 
         data.dataOnEntities[MBVERTEX][0].getFieldData().resize(0);
         my_split << "FIELD1:\n";
@@ -194,10 +183,11 @@ int main(int argc, char *argv[]) {
 
         derived_data.dataOnEntities[MBVERTEX][0].getBase() =
             AINSWORTH_LEGENDRE_BASE;
-        CHKERR getColNodesIndices(derived_data, "FIELD2");
-        CHKERR getEntityFieldData(derived_data, "FIELD2", MBEDGE);
-        CHKERR getEntityColIndices(derived_data, "FIELD2", MBEDGE);
-        CHKERR getNodesFieldData(derived_data, "FIELD2");
+        const auto bn2 = mField.get_field_bit_number("FIELD2");
+        CHKERR getColNodesIndices(derived_data, bn2);
+        CHKERR getEntityFieldData(derived_data, bn2, MBEDGE);
+        CHKERR getEntityColIndices(derived_data, bn2, MBEDGE);
+        CHKERR getNodesFieldData(derived_data, bn2);
         
         derived_data.dataOnEntities[MBVERTEX][0].getFieldData().resize(0);
 

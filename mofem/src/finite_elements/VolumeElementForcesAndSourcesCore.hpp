@@ -6,19 +6,7 @@
 
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 #ifndef __VOLUMEELEMENTFORCESANDSOURCESCORE_HPP__
 #define __VOLUMEELEMENTFORCESANDSOURCESCORE_HPP__
@@ -35,7 +23,11 @@ namespace MoFEM {
  number of operator can be added by pushing objects to OpPtrVector
 
  */
-struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
+struct VolumeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
+
+  VolumeElementForcesAndSourcesCore(Interface &m_field,
+                                        const EntityType type = MBTET);
+
 
   std::string meshPositionsFieldName; ///< \deprecated DO NOT USE!
 
@@ -45,14 +37,11 @@ struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
   struct UserDataOperator;
 
   enum Switches {
-    NO_TRANSFORM = 1 << 1 | 1 << 2,
   };
 
-  template <int SWITCH> MoFEMErrorCode opSwitch();
+  MoFEMErrorCode operator()();
 
 protected:
-  VolumeElementForcesAndSourcesCoreBase(Interface &m_field,
-                                        const EntityType type = MBTET);
 
   // Note that functions below could be overloaded by user to change default
   // behavior of the element.
@@ -116,7 +105,7 @@ protected:
   friend class UserDataOperator;
 };
 
-struct VolumeElementForcesAndSourcesCoreBase::UserDataOperator
+struct VolumeElementForcesAndSourcesCore::UserDataOperator
     : public ForcesAndSourcesCore::UserDataOperator {
 
   using ForcesAndSourcesCore::UserDataOperator::UserDataOperator;
@@ -153,120 +142,67 @@ struct VolumeElementForcesAndSourcesCoreBase::UserDataOperator
 
   /** \brief return pointer to Generic Volume Finite Element object
    */
-  inline VolumeElementForcesAndSourcesCoreBase *getVolumeFE() const;
+  inline VolumeElementForcesAndSourcesCore *getVolumeFE() const;
 
 protected:
   MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
 };
 
-/**
- * @brief Volume finite element with switches
- *
- * Using SWITCH to off functions
- *
- * @tparam SWITCH
- */
-template <int SWITCH>
-struct VolumeElementForcesAndSourcesCoreSwitch
-    : public VolumeElementForcesAndSourcesCoreBase {
-
-  VolumeElementForcesAndSourcesCoreSwitch(Interface &m_field,
-                                          const EntityType type = MBTET)
-      : VolumeElementForcesAndSourcesCoreBase(m_field, MBTET) {}
-  using UserDataOperator =
-      VolumeElementForcesAndSourcesCoreBase::UserDataOperator;
-
-  MoFEMErrorCode operator()();
-};
-
-/** \brief Volume finite element default
- \ingroup mofem_forces_and_sources_volume_element
-
- */
-using VolumeElementForcesAndSourcesCore =
-    VolumeElementForcesAndSourcesCoreSwitch<0>;
-
-template <int SWITCH>
-MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::opSwitch() {
-  MoFEMFunctionBegin;
-
-  const auto type = numeredEntFiniteElementPtr->getEntType();
-  if (type != lastEvaluatedElementEntityType) {
-    switch (type) {
-    case MBTET:
-      getElementPolynomialBase() =
-          boost::shared_ptr<BaseFunction>(new TetPolynomialBase());
-      break;
-    case MBHEX:
-      getElementPolynomialBase() =
-          boost::shared_ptr<BaseFunction>(new HexPolynomialBase());
-      break;
-    default:
-      MoFEMFunctionReturnHot(0);
-    }
-    CHKERR createDataOnElement();
-  }
-
-  CHKERR calculateVolumeAndJacobian();
-  CHKERR getSpaceBaseAndOrderOnElement();
-  CHKERR setIntegrationPts();
-  if (gaussPts.size2() == 0)
-    MoFEMFunctionReturnHot(0);
-  CHKERR calculateCoordinatesAtGaussPts();
-  CHKERR calHierarchicalBaseFunctionsOnElement();
-  CHKERR calBernsteinBezierBaseFunctionsOnElement();
-
-  if (!(NO_TRANSFORM & SWITCH))
-    CHKERR transformBaseFunctions();
-
-  // Iterate over operators
-  CHKERR loopOverOperators();
-
-  MoFEMFunctionReturn(0);
-}
-
-template <int SWITCH>
-MoFEMErrorCode VolumeElementForcesAndSourcesCoreSwitch<SWITCH>::operator()() {
-  return opSwitch<SWITCH>();
-}
-
-int VolumeElementForcesAndSourcesCoreBase::UserDataOperator::getNumNodes() {
-  return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)->num_nodes;
+int VolumeElementForcesAndSourcesCore::UserDataOperator::getNumNodes() {
+  return static_cast<VolumeElementForcesAndSourcesCore *>(ptrFE)->num_nodes;
 }
 
 const EntityHandle *
-VolumeElementForcesAndSourcesCoreBase::UserDataOperator::getConn() {
-  return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)->conn;
+VolumeElementForcesAndSourcesCore::UserDataOperator::getConn() {
+  return static_cast<VolumeElementForcesAndSourcesCore *>(ptrFE)->conn;
 }
 
 double
-VolumeElementForcesAndSourcesCoreBase::UserDataOperator::getVolume() const {
-  return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)->vOlume;
+VolumeElementForcesAndSourcesCore::UserDataOperator::getVolume() const {
+  return static_cast<VolumeElementForcesAndSourcesCore *>(ptrFE)->vOlume;
 }
 
-double &VolumeElementForcesAndSourcesCoreBase::UserDataOperator::getVolume() {
-  return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)->vOlume;
-}
-
-FTensor::Tensor2<double *, 3, 3> &
-VolumeElementForcesAndSourcesCoreBase::UserDataOperator::getJac() {
-  return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)->tJac;
+double &VolumeElementForcesAndSourcesCore::UserDataOperator::getVolume() {
+  return static_cast<VolumeElementForcesAndSourcesCore *>(ptrFE)->vOlume;
 }
 
 FTensor::Tensor2<double *, 3, 3> &
-VolumeElementForcesAndSourcesCoreBase::UserDataOperator::getInvJac() {
-  return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)->tInvJac;
+VolumeElementForcesAndSourcesCore::UserDataOperator::getJac() {
+  return static_cast<VolumeElementForcesAndSourcesCore *>(ptrFE)->tJac;
+}
+
+FTensor::Tensor2<double *, 3, 3> &
+VolumeElementForcesAndSourcesCore::UserDataOperator::getInvJac() {
+  return static_cast<VolumeElementForcesAndSourcesCore *>(ptrFE)->tInvJac;
 }
 
 VectorDouble &
-VolumeElementForcesAndSourcesCoreBase::UserDataOperator::getCoords() {
-  return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)->coords;
+VolumeElementForcesAndSourcesCore::UserDataOperator::getCoords() {
+  return static_cast<VolumeElementForcesAndSourcesCore *>(ptrFE)->coords;
 }
 
-VolumeElementForcesAndSourcesCoreBase *
-VolumeElementForcesAndSourcesCoreBase::UserDataOperator::getVolumeFE() const {
-  return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE);
+VolumeElementForcesAndSourcesCore *
+VolumeElementForcesAndSourcesCore::UserDataOperator::getVolumeFE() const {
+  return static_cast<VolumeElementForcesAndSourcesCore *>(ptrFE);
 }
+
+/**
+ * @deprecated use VolumeElementForcesAndSourcesCore
+ * 
+ */
+DEPRECATED typedef VolumeElementForcesAndSourcesCore
+    VolumeElementForcesAndSourcesCoreBase;
+
+/**
+ * @deprecated obsolete template. it will be removed in next versions
+ */
+template <int SWITCH>
+struct VolumeElementForcesAndSourcesCoreSwitch
+    : public VolumeElementForcesAndSourcesCore {
+
+  using VolumeElementForcesAndSourcesCore::VolumeElementForcesAndSourcesCore;
+  using UserDataOperator = VolumeElementForcesAndSourcesCore::UserDataOperator;
+};
 
 } // namespace MoFEM
 

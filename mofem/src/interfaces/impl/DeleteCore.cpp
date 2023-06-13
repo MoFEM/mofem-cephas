@@ -15,19 +15,6 @@
  * cleared as well.
  */
 
-/* MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
- */
 
 #include <MoFEM.hpp>
 
@@ -249,8 +236,6 @@ MoFEMErrorCode Core::clear_adjacencies_entities(const std::string name,
 
   const Field *field_ptr = get_field_structure(name);
   int field_bit_number = field_ptr->getBitNumber();
-  ParallelComm *pcomm =
-      ParallelComm::get_pcomm(&get_moab(), basicEntityDataPtr->pcommID);
 
   for (Range::const_pair_iterator p_eit = ents.pair_begin();
        p_eit != ents.pair_end(); p_eit++) {
@@ -285,7 +270,7 @@ MoFEMErrorCode Core::clear_finite_elements_by_bit_ref(const BitRefLevel bit,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::clear_finite_elements(const Range ents, int verb) {
+MoFEMErrorCode Core::clear_finite_elements(const Range &ents, int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
@@ -302,26 +287,24 @@ MoFEMErrorCode Core::clear_finite_elements(const Range ents, int verb) {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::clear_finite_elements(const std::string name,
-                                           const Range ents, int verb) {
+MoFEMErrorCode Core::clear_finite_elements(const std::string &fe_name,
+                                           const Range &ents, int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
-  CHKERR clear_adjacencies_finite_elements(name, ents, verb);
-  for (Range::const_pair_iterator p_eit = ents.pair_begin();
-       p_eit != ents.pair_end(); p_eit++) {
-    EntityHandle first = p_eit->first;
-    EntityHandle second = p_eit->second;
-    EntFiniteElement_multiIndex::index<
-        Composite_Name_And_Ent_mi_tag>::type::iterator fit,
-        hi_fit;
-    fit = entsFiniteElements.get<Composite_Name_And_Ent_mi_tag>().lower_bound(
-        boost::make_tuple(name, first));
-    hi_fit =
-        entsFiniteElements.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
-            boost::make_tuple(name, second));
-    fit = entsFiniteElements.get<Composite_Name_And_Ent_mi_tag>().erase(fit,
-                                                                        hi_fit);
+  CHKERR clear_adjacencies_finite_elements(fe_name, ents, verb);
+  auto fe_miit = finiteElements.get<FiniteElement_name_mi_tag>().find(fe_name);
+  if (fe_miit == finiteElements.get<FiniteElement_name_mi_tag>().end()) {
+    for (Range::const_pair_iterator p_eit = ents.pair_begin();
+         p_eit != ents.pair_end(); p_eit++) {
+      auto fit = entsFiniteElements.get<Unique_mi_tag>().lower_bound(
+          EntFiniteElement::getLocalUniqueIdCalculate(p_eit->first,
+                                                      (*fe_miit)->getFEUId()));
+      auto hi_fit = entsFiniteElements.get<Unique_mi_tag>().upper_bound(
+          EntFiniteElement::getLocalUniqueIdCalculate(p_eit->second,
+                                                      (*fe_miit)->getFEUId()));
+      fit = entsFiniteElements.get<Unique_mi_tag>().erase(fit, hi_fit);
+    }
   }
   MoFEMFunctionReturn(0);
 }

@@ -4,19 +4,7 @@
 
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,15 +38,15 @@ DataOperator::DataOperator(const bool symm)
 }
 
 template <bool Symm>
-MoFEMErrorCode DataOperator::opLhs(DataForcesAndSourcesCore &row_data,
-                                   DataForcesAndSourcesCore &col_data) {
+MoFEMErrorCode DataOperator::opLhs(EntitiesFieldData &row_data,
+                                   EntitiesFieldData &col_data) {
   MoFEMFunctionBeginHot;
 
   auto do_col_entity =
-      [&](boost::ptr_vector<DataForcesAndSourcesCore::EntData> &row_ent_data,
+      [&](boost::ptr_vector<EntitiesFieldData::EntData> &row_ent_data,
           const int ss, const EntityType row_type, const EntityType low_type,
           const EntityType hi_type) {
-        MoFEMFunctionBegin;
+        MoFEMFunctionBeginHot;
         for (EntityType col_type = low_type; col_type != hi_type; ++col_type) {
           auto &col_ent_data = col_data.dataOnEntities[col_type];
           for (size_t SS = 0; SS != col_ent_data.size(); SS++) {
@@ -67,48 +55,40 @@ MoFEMErrorCode DataOperator::opLhs(DataForcesAndSourcesCore &row_data,
                             col_ent_data[SS]);
           }
         }
-        MoFEMFunctionReturn(0);
+        MoFEMFunctionReturnHot(0);
       };
 
   auto do_row_entity = [&](const EntityType type) {
-    MoFEMFunctionBegin;
+    MoFEMFunctionBeginHot;
     auto &row_ent_data = row_data.dataOnEntities[type];
     for (size_t ss = 0; ss != row_ent_data.size(); ++ss) {
+      if constexpr (!Symm)
+        CHKERR do_col_entity(row_ent_data, ss, type, MBVERTEX, type);
       size_t SS = 0;
-      if (Symm)
+      if constexpr (Symm)
         SS = ss;
-      for (; SS < col_data.dataOnEntities[type].size(); SS++) {
+      for (; SS < col_data.dataOnEntities[type].size(); ++SS) {
         CHKERR doWork(ss, SS, type, type, row_ent_data[ss],
                       col_data.dataOnEntities[type][SS]);
       }
-      if (!Symm)
-        CHKERR do_col_entity(row_ent_data, ss, type, MBVERTEX, type);
       CHKERR do_col_entity(row_ent_data, ss, type,
                            static_cast<EntityType>(type + 1), MBMAXTYPE);
     }
-    MoFEMFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   };
 
-  for (EntityType row_type = MBVERTEX; row_type != MBENTITYSET; ++row_type) {
+  for (EntityType row_type = MBVERTEX; row_type != MBMAXTYPE; ++row_type) {
     if (doEntities[row_type]) {
       CHKERR do_row_entity(row_type);
     }
   }
 
-  if (doEntities[MBENTITYSET]) {
-    for (unsigned int mm = 0; mm != row_data.dataOnEntities[MBENTITYSET].size();
-         ++mm) {
-      if (!row_data.dataOnEntities[MBENTITYSET][mm].getFieldData().empty()) {
-        CHKERR do_row_entity(MBENTITYSET);
-      }
-    }
-  }
 
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode DataOperator::opLhs(DataForcesAndSourcesCore &row_data,
-                                   DataForcesAndSourcesCore &col_data) {
+MoFEMErrorCode DataOperator::opLhs(EntitiesFieldData &row_data,
+                                   EntitiesFieldData &col_data) {
   if (getSymm())
     return opLhs<true>(row_data, col_data);
   else
@@ -117,12 +97,12 @@ MoFEMErrorCode DataOperator::opLhs(DataForcesAndSourcesCore &row_data,
 
 template <bool ErrorIfNoBase>
 MoFEMErrorCode
-DataOperator::opRhs(DataForcesAndSourcesCore &data,
+DataOperator::opRhs(EntitiesFieldData &data,
                     const std::array<bool, MBMAXTYPE> &do_entities) {
-  MoFEMFunctionBegin;
+  MoFEMFunctionBeginHot;
 
   auto do_entity = [&](auto type) {
-    MoFEMFunctionBegin;
+    MoFEMFunctionBeginHot;
 
     auto &ent_data = data.dataOnEntities[type];
     const size_t size = ent_data.size();
@@ -144,30 +124,20 @@ DataOperator::opRhs(DataForcesAndSourcesCore &data,
       CHKERR doWork(ss, type, side_data);
     }
 
-    MoFEMFunctionReturn(0);
+    MoFEMFunctionReturnHot(0);
   };
 
-  for (EntityType row_type = MBVERTEX; row_type != MBENTITYSET; ++row_type) {
+  for (EntityType row_type = MBVERTEX; row_type != MBMAXTYPE; ++row_type) {
     if (do_entities[row_type]) {
       CHKERR do_entity(row_type);
     }
   }
 
-  if (do_entities[MBENTITYSET]) {
-    // This is odd behaviour, diffrent than for other entities. Should be
-    // changed that behaviour is consistent,
-    for (unsigned int mm = 0; mm != data.dataOnEntities[MBENTITYSET].size();
-         ++mm) {
-      if (!data.dataOnEntities[MBENTITYSET][mm].getFieldData().empty()) {
-        CHKERR doWork(mm, MBENTITYSET, data.dataOnEntities[MBENTITYSET][mm]);
-      }
-    }
-  }
 
-  MoFEMFunctionReturn(0);
+  MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode DataOperator::opRhs(DataForcesAndSourcesCore &data,
+MoFEMErrorCode DataOperator::opRhs(EntitiesFieldData &data,
                                    const bool error_if_no_base) {
   if (error_if_no_base)
     return opRhs<true>(data, doEntities);
@@ -197,37 +167,33 @@ MoFEMErrorCode invertTensor3by3<3, double, ublas::row_major, DoubleAllocator>(
 }
 
 MoFEMErrorCode OpSetInvJacH1::doWork(int side, EntityType type,
-                                     DataForcesAndSourcesCore::EntData &data) {
+                                     EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   auto transform_base = [&](MatrixDouble &diff_n) {
     MoFEMFunctionBeginHot;
 
-    if (!diff_n.size1())
-      MoFEMFunctionReturnHot(0);
-    if (!diff_n.size2())
-      MoFEMFunctionReturnHot(0);
+    if (diff_n.data().size()) {
+      const int nb_base_functions = diff_n.size2() / 3;
+      const int nb_gauss_pts = diff_n.size1();
+      diffNinvJac.resize(diff_n.size1(), diff_n.size2(), false);
 
-    const int nb_base_functions = diff_n.size2() / 3;
-    const int nb_gauss_pts = diff_n.size1();
-    diffNinvJac.resize(diff_n.size1(), diff_n.size2(), false);
+      double *t_diff_n_ptr = &*diff_n.data().begin();
+      FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_diff_n(
+          t_diff_n_ptr, &t_diff_n_ptr[1], &t_diff_n_ptr[2]);
+      double *t_inv_n_ptr = &*diffNinvJac.data().begin();
+      FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_inv_diff_n(
+          t_inv_n_ptr, &t_inv_n_ptr[1], &t_inv_n_ptr[2]);
 
-    double *t_diff_n_ptr = &*diff_n.data().begin();
-    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_diff_n(
-        t_diff_n_ptr, &t_diff_n_ptr[1], &t_diff_n_ptr[2]);
-    double *t_inv_n_ptr = &*diffNinvJac.data().begin();
-    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_inv_diff_n(
-        t_inv_n_ptr, &t_inv_n_ptr[1], &t_inv_n_ptr[2]);
-
-    for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
-      for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
-        t_inv_diff_n(i) = t_diff_n(j) * tInvJac(j, i);
-        ++t_diff_n;
-        ++t_inv_diff_n;
+      for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
+        for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
+          t_inv_diff_n(i) = t_diff_n(j) * tInvJac(j, i);
+          ++t_diff_n;
+          ++t_inv_diff_n;
+        }
       }
+      diff_n.swap(diffNinvJac);
     }
-
-    diff_n.swap(diffNinvJac);
 
     MoFEMFunctionReturnHot(0);
   };
@@ -254,7 +220,7 @@ MoFEMErrorCode OpSetInvJacH1::doWork(int side, EntityType type,
 
 MoFEMErrorCode
 OpSetInvJacHdivAndHcurl::doWork(int side, EntityType type,
-                                DataForcesAndSourcesCore::EntData &data) {
+                                EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   if (type == MBVERTEX)
@@ -298,7 +264,7 @@ OpSetInvJacHdivAndHcurl::doWork(int side, EntityType type,
 }
 
 MoFEMErrorCode OpSetContravariantPiolaTransform::doWork(
-    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+    int side, EntityType type, EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   if (CN::Dimension(type) > 1) {
@@ -362,7 +328,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransform::doWork(
 
 MoFEMErrorCode
 OpSetCovariantPiolaTransform::doWork(int side, EntityType type,
-                                     DataForcesAndSourcesCore::EntData &data) {
+                                     EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   if (type == MBVERTEX)
@@ -415,7 +381,7 @@ OpSetCovariantPiolaTransform::doWork(int side, EntityType type,
 
 MoFEMErrorCode
 OpGetCoordsAndNormalsOnPrism::doWork(int side, EntityType type,
-                                     DataForcesAndSourcesCore::EntData &data) {
+                                     EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   if (data.getFieldData().size() == 0)
@@ -524,7 +490,7 @@ MoFEMErrorCode OpGetCoordsAndNormalsOnPrism::calculateNormals() {
 }
 
 MoFEMErrorCode OpSetContravariantPiolaTransformOnFace::doWork(
-    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+    int side, EntityType type, EntitiesFieldData::EntData &data) {
   FTensor::Index<'i', 3> i;
   MoFEMFunctionBegin;
 
@@ -617,7 +583,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransformOnFace::doWork(
 }
 
 MoFEMErrorCode OpSetCovariantPiolaTransformOnFace::doWork(
-    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+    int side, EntityType type, EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   const auto type_dim = moab::CN::Dimension(type);
@@ -707,7 +673,7 @@ MoFEMErrorCode OpSetCovariantPiolaTransformOnFace::doWork(
         }
       }
       if (cc != nb_gauss_pts * nb_dofs)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Data inconsistency");
+        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "Data inconsistency");
 
       baseN.swap(piola_n);
       diffBaseN.swap(diff_piola_n);
@@ -719,7 +685,7 @@ MoFEMErrorCode OpSetCovariantPiolaTransformOnFace::doWork(
 
 MoFEMErrorCode
 OpGetHOTangentOnEdge::doWork(int side, EntityType type,
-                             DataForcesAndSourcesCore::EntData &data) {
+                             EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   int nb_dofs = data.getFieldData().size();
@@ -746,7 +712,7 @@ OpGetHOTangentOnEdge::doWork(int side, EntityType type,
     break;
   case MBEDGE:
     if (nb_dofs % 3) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
               "Approximated field should be rank 3, i.e. vector in 3d space");
     }
     for (int dd = 0; dd != 3; dd++) {
@@ -757,7 +723,7 @@ OpGetHOTangentOnEdge::doWork(int side, EntityType type,
     }
     break;
   default:
-    SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
             "This operator can calculate tangent vector only on edge");
   }
 
@@ -765,7 +731,7 @@ OpGetHOTangentOnEdge::doWork(int side, EntityType type,
 }
 
 MoFEMErrorCode OpSetCovariantPiolaTransformOnEdge::doWork(
-    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+    int side, EntityType type, EntitiesFieldData::EntData &data) {
   MoFEMFunctionBeginHot;
 
   if (type != MBEDGE)
@@ -840,7 +806,7 @@ MoFEMErrorCode OpSetCovariantPiolaTransformOnEdge::doWork(
       }
 
       if (cc != nb_gauss_pts * nb_dofs)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Data inconsistency");
+        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "Data inconsistency");
     }
   }
 
@@ -867,7 +833,7 @@ OpGetDataAndGradient<3, 3>::getGradAtGaussPtsTensor<3, 3>(MatrixDouble &data) {
 
 template <>
 MoFEMErrorCode OpGetDataAndGradient<3, 3>::calculateValAndGrad(
-    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+    int side, EntityType type, EntitiesFieldData::EntData &data) {
   MoFEMFunctionBeginHot;
   if (data.getBase() == NOBASE)
     MoFEMFunctionReturnHot(0);
@@ -925,7 +891,7 @@ MoFEMErrorCode OpGetDataAndGradient<3, 3>::calculateValAndGrad(
 
 template <>
 MoFEMErrorCode OpGetDataAndGradient<1, 3>::calculateValAndGrad(
-    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+    int side, EntityType type, EntitiesFieldData::EntData &data) {
   MoFEMFunctionBeginHot;
   const unsigned int nb_gauss_pts = data.getN().size1();
   const unsigned int nb_base_functions = data.getN().size2();

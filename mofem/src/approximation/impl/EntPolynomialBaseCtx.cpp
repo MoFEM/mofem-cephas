@@ -3,19 +3,7 @@
 
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 using namespace MoFEM;
 
@@ -27,7 +15,7 @@ EntPolynomialBaseCtx::query_interface(boost::typeindex::type_index type_index,
 }
 
 EntPolynomialBaseCtx::EntPolynomialBaseCtx(
-    DataForcesAndSourcesCore &data, const FieldSpace space,
+    EntitiesFieldData &data, const FieldSpace space,
     const FieldApproximationBase base,
     const FieldApproximationBase copy_node_base)
     : dAta(data), sPace(space), bAse(base), copyNodeBase(copy_node_base) {
@@ -36,7 +24,7 @@ EntPolynomialBaseCtx::EntPolynomialBaseCtx(
 }
 
 EntPolynomialBaseCtx::EntPolynomialBaseCtx(
-    DataForcesAndSourcesCore &data, const std::string field_name,
+    EntitiesFieldData &data, const std::string field_name,
     const FieldSpace space, const FieldApproximationBase base,
     const FieldApproximationBase copy_node_base)
     : dAta(data), sPace(space), bAse(base), fieldName(field_name),

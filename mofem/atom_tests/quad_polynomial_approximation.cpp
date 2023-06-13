@@ -4,19 +4,7 @@
 
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 #include <MoFEM.hpp>
 
@@ -24,7 +12,7 @@ using namespace MoFEM;
 
 using Ele = FaceElementForcesAndSourcesCore;
 using OpEle = FaceElementForcesAndSourcesCore::UserDataOperator;
-using EntData = DataForcesAndSourcesCore::EntData;
+using EntData = EntitiesFieldData::EntData;
 
 static char help[] = "...\n\n";
 
@@ -63,7 +51,7 @@ struct QuadOpCheck : public OpEle {
   QuadOpCheck(boost::shared_ptr<VectorDouble> &field_vals,
               boost::shared_ptr<MatrixDouble> &diff_field_vals);
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
 private:
   boost::shared_ptr<VectorDouble> fieldVals;
@@ -74,7 +62,7 @@ struct QuadOpRhs : public OpEle {
 
   QuadOpRhs(SmartPetscObj<Vec> &f);
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
 private:
   SmartPetscObj<Vec> F;
@@ -85,8 +73,8 @@ struct QuadOpLhs : public OpEle {
   QuadOpLhs(SmartPetscObj<Mat> &a);
   MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
                         EntityType col_type,
-                        DataForcesAndSourcesCore::EntData &row_data,
-                        DataForcesAndSourcesCore::EntData &col_data);
+                        EntitiesFieldData::EntData &row_data,
+                        EntitiesFieldData::EntData &col_data);
 
 private:
   SmartPetscObj<Mat> A;
@@ -114,7 +102,7 @@ int main(int argc, char *argv[]) {
                                 LASBASETOP, &choice_base_value, &flg);
 
     if (flg != PETSC_TRUE)
-      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "base not set");
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "base not set");
     FieldApproximationBase base = AINSWORTH_LEGENDRE_BASE;
     if (choice_base_value == AINSWORTH)
       base = AINSWORTH_LEGENDRE_BASE;
@@ -131,7 +119,7 @@ int main(int argc, char *argv[]) {
     CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-space", list_spaces,
                                 LASBASETSPACE, &choice_space_value, &flg);
     if (flg != PETSC_TRUE)
-      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "space not set");
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "space not set");
     FieldSpace space = H1;
     if (choice_space_value == H1SPACE)
       space = H1;
@@ -228,11 +216,13 @@ int main(int argc, char *argv[]) {
       auto jac_ptr = boost::make_shared<MatrixDouble>();
       auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
       auto det_ptr = boost::make_shared<VectorDouble>();
-      fe.getOpPtrVector().push_back(new OpCalculateHOJacForFace(jac_ptr));
+      fe.getOpPtrVector().push_back(new OpCalculateHOJac<2>(jac_ptr));
       fe.getOpPtrVector().push_back(
           new OpInvertMatrix<2>(jac_ptr, det_ptr, inv_jac_ptr));
-      fe.getOpPtrVector().push_back(new OpSetInvJacH1ForFace(inv_jac_ptr));
-      fe.getOpPtrVector().push_back(new OpSetInvJacL2ForFace(inv_jac_ptr));
+      fe.getOpPtrVector().push_back(
+          new OpSetHOInvJacToScalarBases<2>(H1, inv_jac_ptr));
+      fe.getOpPtrVector().push_back(
+          new OpSetHOInvJacToScalarBases<2>(L2, inv_jac_ptr));
       fe.getOpPtrVector().push_back(new OpSetHOWeightsOnFace());
       fe.getOpPtrVector().push_back(new QuadOpRhs(F));
       fe.getOpPtrVector().push_back(new QuadOpLhs(A));
@@ -272,11 +262,13 @@ int main(int argc, char *argv[]) {
 
       fe.getOpPtrVector().push_back(
           new OpCalculateScalarFieldValues("FIELD1", field_vals_ptr));
-      fe.getOpPtrVector().push_back(new OpCalculateHOJacForFace(jac_ptr));
+      fe.getOpPtrVector().push_back(new OpCalculateHOJac<2>(jac_ptr));
       fe.getOpPtrVector().push_back(
           new OpInvertMatrix<2>(jac_ptr, det_ptr, inv_jac_ptr));
-      fe.getOpPtrVector().push_back(new OpSetInvJacH1ForFace(inv_jac_ptr));
-      fe.getOpPtrVector().push_back(new OpSetInvJacL2ForFace(inv_jac_ptr));
+      fe.getOpPtrVector().push_back(
+          new OpSetHOInvJacToScalarBases<2>(H1, inv_jac_ptr));
+      fe.getOpPtrVector().push_back(
+          new OpSetHOInvJacToScalarBases<2>(L2, inv_jac_ptr));
       fe.getOpPtrVector().push_back(new OpSetHOWeightsOnFace());
       fe.getOpPtrVector().push_back(new OpCalculateScalarFieldGradient<2>(
           "FIELD1", diff_field_vals_ptr, space == L2 ? MBQUAD : MBVERTEX));
@@ -302,7 +294,7 @@ QuadOpCheck::QuadOpCheck(boost::shared_ptr<VectorDouble> &field_vals,
       fieldVals(field_vals), diffFieldVals(diff_field_vals) {}
 
 MoFEMErrorCode QuadOpCheck::doWork(int side, EntityType type,
-                                   DataForcesAndSourcesCore::EntData &data) {
+                                   EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   if (type == MBQUAD) {
@@ -325,7 +317,7 @@ MoFEMErrorCode QuadOpCheck::doWork(int side, EntityType type,
       for (auto d : {0, 1})
         if (std::abs(diff_f[d] - (*diffFieldVals)(d, gg)) > eps)
           SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                   "Wrong direvative value (%d) %6.4e != %6.4e", diff_f[d],
+                   "Wrong derivative value (%d) %6.4e != %6.4e", diff_f[d],
                    (*diffFieldVals)(d, gg));
 
       ++t_coords;
@@ -339,7 +331,7 @@ QuadOpRhs::QuadOpRhs(SmartPetscObj<Vec> &f)
       F(f) {}
 
 MoFEMErrorCode QuadOpRhs::doWork(int side, EntityType type,
-                                 DataForcesAndSourcesCore::EntData &data) {
+                                 EntitiesFieldData::EntData &data) {
   FTensor::Index<'i', 3> i;
   MoFEMFunctionBegin;
   const int nb_dofs = data.getIndices().size();
@@ -379,8 +371,8 @@ QuadOpLhs::QuadOpLhs(SmartPetscObj<Mat> &a)
 
 MoFEMErrorCode QuadOpLhs::doWork(int row_side, int col_side,
                                  EntityType row_type, EntityType col_type,
-                                 DataForcesAndSourcesCore::EntData &row_data,
-                                 DataForcesAndSourcesCore::EntData &col_data) {
+                                 EntitiesFieldData::EntData &row_data,
+                                 EntitiesFieldData::EntData &col_data) {
   FTensor::Index<'i', 3> i;
   MoFEMFunctionBegin;
   const int row_nb_dofs = row_data.getIndices().size();

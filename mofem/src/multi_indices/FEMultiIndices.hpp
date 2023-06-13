@@ -1,20 +1,8 @@
 /** \file FEMultiIndices.hpp
  * \brief Multi-index contains, data structures for mofem finite elements and
  * other low-level functions
- */
-
-/* MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
+ * 
+ * \todo Add proc into feUId to reduce number of keys is multi-index
  */
 
 #ifndef __FEMMULTIINDICES_HPP__
@@ -27,10 +15,9 @@ struct EntFiniteElement;
 /** \brief user adjacency function
  * \ingroup fe_multi_indices
  */
-typedef boost::function<MoFEMErrorCode(Interface &moab, const Field &field,
-                                       const EntFiniteElement &fe,
-                                       std::vector<EntityHandle> &adjacency)>
-    ElementAdjacencyFunct;
+using ElementAdjacencyFunct = boost::function<MoFEMErrorCode(
+    Interface &moab, const Field &field, const EntFiniteElement &fe,
+    std::vector<EntityHandle> &adjacency)>;
 
 /**
  * \brief Finite element definition
@@ -130,6 +117,9 @@ struct FiniteElement {
    * \brief print finite element
    */
   friend std::ostream &operator<<(std::ostream &os, const FiniteElement &e);
+
+private:
+  static constexpr int ent_shift = 64; // EntityHandle size
 };
 
 /** \brief default adjacency map
@@ -313,7 +303,7 @@ struct DefaultElementAdjacency {
 
   static inline bool getDefTypeMap(const EntityType fe_type,
                                    const EntityType ent_type) {
-    if(auto ptr = defTypeMap[fe_type])
+    if (auto ptr = defTypeMap[fe_type])
       return (*ptr)[ent_type];
     THROW_MESSAGE("DefTypeMap is not defined by this element. This is propably "
                   "new implementation, and has to be implemented");
@@ -788,15 +778,13 @@ struct NumeredEntFiniteElement
                                   const NumeredEntFiniteElement &e);
 };
 
-// TODO: [CORE-59] Fix multi-indices for element
-
 /**
  * @relates multi_index_container
  * \brief MultiIndex container for EntFiniteElement
  * \ingroup fe_multi_indices
  *
  */
-typedef multi_index_container<
+using EntFiniteElement_multiIndex = multi_index_container<
     boost::shared_ptr<EntFiniteElement>,
     indexed_by<
 
@@ -807,39 +795,16 @@ typedef multi_index_container<
         ordered_non_unique<
             tag<Ent_mi_tag>,
             const_mem_fun<EntFiniteElement::interface_type_RefEntity,
-                          EntityHandle, &EntFiniteElement::getEnt>>,
+                          EntityHandle, &EntFiniteElement::getEnt>>
 
-        ordered_non_unique<
-            tag<FiniteElement_name_mi_tag>,
-            const_mem_fun<EntFiniteElement::interface_type_FiniteElement,
-                          boost::string_ref, &EntFiniteElement::getNameRef>>,
-
-        ordered_non_unique<
-            tag<Composite_Name_And_Ent_mi_tag>,
-            composite_key<
-                EntFiniteElement,
-                const_mem_fun<EntFiniteElement::interface_type_FiniteElement,
-                              boost::string_ref, &EntFiniteElement::getNameRef>,
-                const_mem_fun<EntFiniteElement::interface_type_RefEntity,
-                              EntityHandle, &EntFiniteElement::getEnt>>>
-
-        >>
-    EntFiniteElement_multiIndex;
-
-/**
- *  \brief Entity finite element multi-index by finite element name
- *
- *  \ingroup fe_multi_indices
- */
-typedef EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type
-    EntFiniteElementByName;
+        >>;
 
 /**
   @relates multi_index_container
   \brief MultiIndex for entities for NumeredEntFiniteElement
   \ingroup fe_multi_indices
  */
-typedef multi_index_container<
+using NumeredEntFiniteElement_multiIndex = multi_index_container<
     boost::shared_ptr<NumeredEntFiniteElement>,
     indexed_by<
         ordered_unique<
@@ -851,23 +816,9 @@ typedef multi_index_container<
                            member<NumeredEntFiniteElement, unsigned int,
                                   &NumeredEntFiniteElement::part>>,
         ordered_non_unique<
-            tag<FiniteElement_name_mi_tag>,
-            const_mem_fun<NumeredEntFiniteElement::interface_type_FiniteElement,
-                          boost::string_ref,
-                          &NumeredEntFiniteElement::getNameRef>>,
-        ordered_non_unique<
             tag<Ent_mi_tag>,
             const_mem_fun<NumeredEntFiniteElement::interface_type_RefEntity,
                           EntityHandle, &NumeredEntFiniteElement::getEnt>>,
-        ordered_non_unique<
-            tag<Composite_Name_And_Ent_mi_tag>,
-            composite_key<
-                NumeredEntFiniteElement,
-                const_mem_fun<
-                    NumeredEntFiniteElement::interface_type_FiniteElement,
-                    boost::string_ref, &NumeredEntFiniteElement::getNameRef>,
-                const_mem_fun<NumeredEntFiniteElement::interface_type_RefEntity,
-                              EntityHandle, &NumeredEntFiniteElement::getEnt>>>,
         ordered_non_unique<
             tag<Composite_Name_And_Part_mi_tag>,
             composite_key<
@@ -876,25 +827,7 @@ typedef multi_index_container<
                     NumeredEntFiniteElement::interface_type_FiniteElement,
                     boost::string_ref, &NumeredEntFiniteElement::getNameRef>,
                 member<NumeredEntFiniteElement, unsigned int,
-                       &NumeredEntFiniteElement::part>>>>>
-    NumeredEntFiniteElement_multiIndex;
-
-/**
- *  \brief Entity finite element multi-index by finite element name
- *
- *  \ingroup fe_multi_indices
- */
-typedef NumeredEntFiniteElement_multiIndex::index<
-    FiniteElement_name_mi_tag>::type NumeredEntFiniteElementbyName;
-
-/**
- *  \brief Entity finite element multi-index by finite element name and
- * partition
- *
- *  \ingroup fe_multi_indices
- */
-typedef NumeredEntFiniteElement_multiIndex::index<
-    Composite_Name_And_Part_mi_tag>::type NumeredEntFiniteElementbyNameAndPart;
+                       &NumeredEntFiniteElement::part>>>>>;
 
 /**
   @relates multi_index_container

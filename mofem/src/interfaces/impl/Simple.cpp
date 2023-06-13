@@ -3,20 +3,6 @@
  * \ingroup mofem_simple_interface
  */
 
-/* MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
- */
-
 namespace MoFEM {
 
 MoFEMErrorCode Simple::query_interface(boost::typeindex::type_index type_index,
@@ -25,172 +11,148 @@ MoFEMErrorCode Simple::query_interface(boost::typeindex::type_index type_index,
   return 0;
 }
 
-template <int DIM> MoFEMErrorCode Simple::setSkeletonAdjacency() {
+template <int DIM>
+MoFEMErrorCode Simple::setSkeletonAdjacency(std::string fe_name) {
   static_assert(DIM == 2 || DIM == 3, "not implemented");
   return MOFEM_NOT_IMPLEMENTED;
 }
 
-template <> MoFEMErrorCode Simple::setSkeletonAdjacency<2>() {
+template <>
+MoFEMErrorCode Simple::setSkeletonAdjacency<2>(std::string fe_name) {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
 
-  auto defaultSkeletonEdge =
-      [&](moab::Interface &moab, const Field &field, const EntFiniteElement &fe,
-          std::vector<EntityHandle> &adjacency) -> MoFEMErrorCode {
-    MoFEMFunctionBegin;
-
-    CHKERR DefaultElementAdjacency::defaultEdge(moab, field, fe, adjacency);
-
-    if (std::find(domainFields.begin(), domainFields.end(), field.getName()) !=
-        domainFields.end()) {
-
-      const EntityHandle fe_ent = fe.getEnt();
-      std::vector<EntityHandle> bride_adjacency_edge;
-      CHKERR moab.get_adjacencies(&fe_ent, 1, 2, false, bride_adjacency_edge);
-
-      switch (field.getSpace()) {
-      case H1:
-        CHKERR moab.get_connectivity(&*bride_adjacency_edge.begin(),
-                                     bride_adjacency_edge.size(), adjacency,
-                                     true);
-      case HCURL:
-      case HDIV:
-        CHKERR moab.get_adjacencies(&*bride_adjacency_edge.begin(),
-                                    bride_adjacency_edge.size(), 1, false,
-                                    adjacency, moab::Interface::UNION);
-      case L2:
-        adjacency.insert(adjacency.end(), bride_adjacency_edge.begin(),
-                         bride_adjacency_edge.end());
-        break;
-      case NOFIELD:
-        break;
-      default:
-        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-                "this field is not implemented for TRI finite element");
-      }
-
-      std::sort(adjacency.begin(), adjacency.end());
-      auto it = std::unique(adjacency.begin(), adjacency.end());
-
-      std::vector<EntityHandle> new_adjacency(
-          std::distance(adjacency.begin(), it));
-      std::copy(adjacency.begin(), it, new_adjacency.begin());
-
-      for (auto e : new_adjacency) {
-        auto side_table = fe.getSideNumberTable();
-        if (side_table.find(e) == side_table.end())
-          const_cast<SideNumber_multiIndex &>(fe.getSideNumberTable())
-              .insert(
-                  boost::shared_ptr<SideNumber>(new SideNumber(e, -1, 0, 0)));
-      }
-
-      adjacency.swap(new_adjacency);
-    }
-
-    MoFEMFunctionReturn(0);
-  };
-
-  CHKERR m_field.modify_finite_element_adjacency_table(skeletonFE, MBEDGE,
-                                                       defaultSkeletonEdge);
+  parentAdjSkeletonFunctionDim1 =
+      boost::make_shared<ParentFiniteElementAdjacencyFunctionSkeleton<1>>(
+          bitAdjParent, bitAdjParentMask, bitAdjEnt, bitAdjEntMask);
+  CHKERR m_field.modify_finite_element_adjacency_table(
+      fe_name, MBEDGE, *parentAdjSkeletonFunctionDim1);
 
   MoFEMFunctionReturn(0);
 }
 
-template <> MoFEMErrorCode Simple::setSkeletonAdjacency<3>() {
+template <>
+MoFEMErrorCode Simple::setSkeletonAdjacency<3>(std::string fe_name) {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
 
-  auto defaultSkeletonEdge =
-      [&](moab::Interface &moab, const Field &field, const EntFiniteElement &fe,
-          std::vector<EntityHandle> &adjacency) -> MoFEMErrorCode {
-    MoFEMFunctionBegin;
+  parentAdjSkeletonFunctionDim2 =
+      boost::make_shared<ParentFiniteElementAdjacencyFunctionSkeleton<2>>(
+          bitAdjParent, bitAdjParentMask, bitAdjEnt, bitAdjEntMask);
 
-    CHKERR DefaultElementAdjacency::defaultFace(moab, field, fe, adjacency);
-
-    if (std::find(domainFields.begin(), domainFields.end(), field.getName()) !=
-        domainFields.end()) {
-
-      const EntityHandle fe_ent = fe.getEnt();
-      std::vector<EntityHandle> bride_adjacency_edge;
-      CHKERR moab.get_adjacencies(&fe_ent, 1, 2, false, bride_adjacency_edge);
-
-      switch (field.getSpace()) {
-      case H1:
-        CHKERR moab.get_connectivity(&*bride_adjacency_edge.begin(),
-                                     bride_adjacency_edge.size(), adjacency,
-                                     true);
-      case HCURL:
-        CHKERR moab.get_adjacencies(&*bride_adjacency_edge.begin(),
-                                    bride_adjacency_edge.size(), 1, false,
-                                    adjacency, moab::Interface::UNION);
-      case HDIV:
-        CHKERR moab.get_adjacencies(&*bride_adjacency_edge.begin(),
-                                    bride_adjacency_edge.size(), 2, false,
-                                    adjacency, moab::Interface::UNION);
-      case L2:
-        adjacency.insert(adjacency.end(), bride_adjacency_edge.begin(),
-                         bride_adjacency_edge.end());
-        break;
-      case NOFIELD:
-        break;
-      default:
-        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-                "this field is not implemented for TRI finite element");
-      }
-
-      std::sort(adjacency.begin(), adjacency.end());
-      auto it = std::unique(adjacency.begin(), adjacency.end());
-
-      std::vector<EntityHandle> new_adjacency(
-          std::distance(adjacency.begin(), it));
-      std::copy(adjacency.begin(), it, new_adjacency.begin());
-
-      for (auto e : new_adjacency) {
-        auto side_table = fe.getSideNumberTable();
-        if (side_table.find(e) == side_table.end())
-          const_cast<SideNumber_multiIndex &>(fe.getSideNumberTable())
-              .insert(
-                  boost::shared_ptr<SideNumber>(new SideNumber(e, -1, 0, 0)));
-      }
-
-      adjacency.swap(new_adjacency);
-    }
-
-    MoFEMFunctionReturn(0);
-  };
-
-  CHKERR m_field.modify_finite_element_adjacency_table(skeletonFE, MBTRI,
-                                                       defaultSkeletonEdge);
-  CHKERR m_field.modify_finite_element_adjacency_table(skeletonFE, MBQUAD,
-                                                       defaultSkeletonEdge);
+  CHKERR m_field.modify_finite_element_adjacency_table(
+      fe_name, MBTRI, *parentAdjSkeletonFunctionDim2);
+  CHKERR m_field.modify_finite_element_adjacency_table(
+      fe_name, MBQUAD, *parentAdjSkeletonFunctionDim2);
 
   MoFEMFunctionReturn(0);
 }
 
-template <> MoFEMErrorCode Simple::setSkeletonAdjacency<-1>() {
+template <>
+MoFEMErrorCode Simple::setSkeletonAdjacency<-1>(std::string fe_name) {
+  MoFEMFunctionBegin;
+
+  switch (getDim()) {
+  case 1:
+    THROW_MESSAGE("Not implemented");
+  case 2:
+    return setSkeletonAdjacency<2>(fe_name);
+  case 3:
+    return setSkeletonAdjacency<3>(fe_name);
+  default:
+    THROW_MESSAGE("Not implemented");
+  }
+  MoFEMFunctionReturn(0);
+}
+template <int DIM> MoFEMErrorCode Simple::setParentAdjacency() {
+  static_assert(DIM == 2 || DIM == 3, "not implemented");
+  return MOFEM_NOT_IMPLEMENTED;
+}
+
+template <> MoFEMErrorCode Simple::setParentAdjacency<3>() {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+
+  parentAdjFunctionDim3 =
+      boost::make_shared<ParentFiniteElementAdjacencyFunction<3>>(
+          bitAdjParent, bitAdjParentMask, bitAdjEnt, bitAdjEntMask);
+  parentAdjFunctionDim2 =
+      boost::make_shared<ParentFiniteElementAdjacencyFunction<2>>(
+          bitAdjParent, bitAdjParentMask, bitAdjEnt, bitAdjEntMask);
+
+  CHKERR m_field.modify_finite_element_adjacency_table(domainFE, MBTET,
+                                                       *parentAdjFunctionDim3);
+  CHKERR m_field.modify_finite_element_adjacency_table(domainFE, MBHEX,
+                                                       *parentAdjFunctionDim3);
+  if (addBoundaryFE || !boundaryFields.empty()) {
+    CHKERR m_field.modify_finite_element_adjacency_table(
+        boundaryFE, MBTRI, *parentAdjFunctionDim2);
+    CHKERR m_field.modify_finite_element_adjacency_table(
+        boundaryFE, MBQUAD, *parentAdjFunctionDim2);
+  }
+  if (addSkeletonFE || !skeletonFields.empty()) {
+    CHKERR m_field.modify_finite_element_adjacency_table(
+        skeletonFE, MBTRI, *parentAdjFunctionDim2);
+    CHKERR m_field.modify_finite_element_adjacency_table(
+        skeletonFE, MBQUAD, *parentAdjFunctionDim2);
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+template <> MoFEMErrorCode Simple::setParentAdjacency<2>() {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+
+  parentAdjFunctionDim2 =
+      boost::make_shared<ParentFiniteElementAdjacencyFunction<2>>(
+          bitAdjParent, bitAdjParentMask, bitAdjEnt, bitAdjEntMask);
+  parentAdjFunctionDim1 =
+      boost::make_shared<ParentFiniteElementAdjacencyFunction<1>>(
+          bitAdjParent, bitAdjParentMask, bitAdjEnt, bitAdjEntMask);
+
+  CHKERR m_field.modify_finite_element_adjacency_table(domainFE, MBTRI,
+                                                       *parentAdjFunctionDim2);
+  CHKERR m_field.modify_finite_element_adjacency_table(domainFE, MBQUAD,
+                                                       *parentAdjFunctionDim2);
+  if (addBoundaryFE || !boundaryFields.empty())
+    CHKERR m_field.modify_finite_element_adjacency_table(
+        boundaryFE, MBEDGE, *parentAdjFunctionDim1);
+  if (addSkeletonFE || !skeletonFields.empty())
+    CHKERR m_field.modify_finite_element_adjacency_table(
+        skeletonFE, MBEDGE, *parentAdjFunctionDim1);
+
+  MoFEMFunctionReturn(0);
+}
+
+template <> MoFEMErrorCode Simple::setParentAdjacency<-1>() {
   MoFEMFunctionBegin;
   switch (getDim()) {
   case 1:
     THROW_MESSAGE("Not implemented");
   case 2:
-    return setSkeletonAdjacency<2>();
+    return setParentAdjacency<2>();
   case 3:
-    return setSkeletonAdjacency<3>();
+    return setParentAdjacency<3>();
   default:
     THROW_MESSAGE("Not implemented");
   }
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Simple::setSkeletonAdjacency(int dim) {
+MoFEMErrorCode Simple::setSkeletonAdjacency(int dim, std::string fe_name) {
   MoFEMFunctionBegin;
   if (dim == -1)
     dim = getDim();
+
+  if (fe_name.empty())
+    fe_name = skeletonFE;
+
   switch (dim) {
   case 2:
-    return setSkeletonAdjacency<2>();
+    return setSkeletonAdjacency<2>(fe_name);
   case 3:
-    return setSkeletonAdjacency<3>();
+    return setSkeletonAdjacency<3>(fe_name);
   default:
     SETERRQ(PETSC_COMM_WORLD, MOFEM_NOT_IMPLEMENTED, "Not implemented");
   }
@@ -199,11 +161,16 @@ MoFEMErrorCode Simple::setSkeletonAdjacency(int dim) {
 
 Simple::Simple(const Core &core)
     : cOre(const_cast<Core &>(core)), bitLevel(BitRefLevel().set(0)),
-      meshSet(0), boundaryMeshset(0), nameOfProblem("SimpleProblem"),
-      domainFE("dFE"), boundaryFE("bFE"), skeletonFE("sFE"), dIm(-1) {
-  PetscLogEventRegister("LoadMesh", 0, &MOFEM_EVENT_SimpleLoadMesh);
-  PetscLogEventRegister("buildFields", 0, &MOFEM_EVENT_SimpleBuildFields);
-  PetscLogEventRegister("buildFiniteElements", 0,
+      bitLevelMask(BitRefLevel().set()), meshSet(0), boundaryMeshset(0),
+      skeletonMeshset(0), nameOfProblem("SimpleProblem"), domainFE("dFE"),
+      boundaryFE("bFE"), skeletonFE("sFE"), dIm(-1), addSkeletonFE(false),
+      addBoundaryFE(false), addParentAdjacencies(false),
+      bitAdjParent(BitRefLevel().set()), bitAdjParentMask(BitRefLevel().set()),
+      bitAdjEnt(BitRefLevel().set()), bitAdjEntMask(BitRefLevel().set()) {
+  PetscLogEventRegister("SimpleSetUp", 0, &MOFEM_EVENT_SimpleSetUP);
+  PetscLogEventRegister("SimpleLoadMesh", 0, &MOFEM_EVENT_SimpleLoadMesh);
+  PetscLogEventRegister("SimpleBuildFields", 0, &MOFEM_EVENT_SimpleBuildFields);
+  PetscLogEventRegister("SimpleBuildFiniteElements", 0,
                         &MOFEM_EVENT_SimpleBuildFiniteElements);
   PetscLogEventRegister("SimpleSetUp", 0, &MOFEM_EVENT_SimpleBuildProblem);
   PetscLogEventRegister("SimpleKSPSolve", 0, &MOFEM_EVENT_SimpleKSPSolve);
@@ -237,6 +204,7 @@ MoFEMErrorCode Simple::loadFile(const std::string options,
   // keep only part of the problem.
   CHKERR m_field.get_moab().load_file(meshFileName, 0, options.c_str());
   CHKERR m_field.rebuild_database();
+
   // determine problem dimension
   if (dIm == -1) {
     int nb_ents_3d;
@@ -255,14 +223,26 @@ MoFEMErrorCode Simple::loadFile(const std::string options,
       }
     }
   }
-  Range ents;
-  CHKERR m_field.get_moab().get_entities_by_dimension(meshSet, dIm, ents, true);
-  CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevel(ents, bitLevel,
-                                                               false);
-  ParallelComm *pcomm =
-      ParallelComm::get_pcomm(&m_field.get_moab(), MYPCOMM_INDEX);
-  if (pcomm == NULL)
-    pcomm = new ParallelComm(&m_field.get_moab(), m_field.get_comm());
+
+  if (!boundaryMeshset)
+    CHKERR createBoundaryMeshset();
+  if (!skeletonMeshset)
+    CHKERR createSkeletonMeshset();
+  if (addSkeletonFE)
+    CHKERR exchangeGhostCells();
+
+  if (bitLevel.any()) {
+    Range ents;
+    CHKERR m_field.get_moab().get_entities_by_dimension(meshSet, dIm, ents,
+                                                        true);
+    CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevel(ents, bitLevel,
+                                                                 false);
+  } else {
+    MOFEM_LOG("WORLD", Sev::warning) << "BitRefLevel is none and not set";
+    CHKERR m_field.getInterface<BitRefManager>()->addToDatabaseBitRefLevelByDim(
+        dIm, BitRefLevel().set(), BitRefLevel().set());
+  }
+
   PetscLogEventEnd(MOFEM_EVENT_SimpleLoadMesh, 0, 0, 0, 0);
   MoFEMFunctionReturn(0);
 }
@@ -332,6 +312,7 @@ Simple::addSkeletonField(const std::string &name, const FieldSpace space,
     SETERRQ(
         PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
         "NOFIELD space for boundary filed not implemented in Simple interface");
+
   MoFEMFunctionReturn(0);
 }
 
@@ -354,7 +335,6 @@ Simple::addDataField(const std::string &name, const FieldSpace space,
 }
 
 MoFEMErrorCode Simple::removeDomainField(const std::string &name) {
-  Interface &m_field = cOre;
   MoFEMFunctionBegin;
 
   auto remove_field_from_list = [&](auto &vec) {
@@ -370,7 +350,6 @@ MoFEMErrorCode Simple::removeDomainField(const std::string &name) {
 }
 
 MoFEMErrorCode Simple::removeBoundaryField(const std::string &name) {
-  Interface &m_field = cOre;
   MoFEMFunctionBegin;
 
   auto remove_field_from_list = [&](auto &vec) {
@@ -385,7 +364,6 @@ MoFEMErrorCode Simple::removeBoundaryField(const std::string &name) {
 }
 
 MoFEMErrorCode Simple::removeSkeletonField(const std::string &name) {
-  Interface &m_field = cOre;
   MoFEMFunctionBegin;
 
   auto remove_field_from_list = [&](auto &vec) {
@@ -450,20 +428,20 @@ MoFEMErrorCode Simple::defineFiniteElements() {
   CHKERR add_fields(domainFE, noFieldFields);
   CHKERR add_data_fields(domainFE, noFieldDataFields);
 
-  if (!boundaryFields.empty()) {
+  if (addBoundaryFE || !boundaryFields.empty()) {
     CHKERR m_field.add_finite_element(boundaryFE, MF_ZERO);
     CHKERR add_fields(boundaryFE, domainFields);
-    CHKERR add_fields(boundaryFE, boundaryFields);
-    CHKERR add_fields(boundaryFE, skeletonFields);
+    if (!boundaryFields.empty())
+      CHKERR add_fields(boundaryFE, boundaryFields);
     CHKERR add_data_fields(boundaryFE, dataFields);
     CHKERR add_data_fields(boundaryFE, noFieldDataFields);
     CHKERR add_fields(boundaryFE, noFieldFields);
   }
-  if (!skeletonFields.empty()) {
+  if (addSkeletonFE || !skeletonFields.empty()) {
     CHKERR m_field.add_finite_element(skeletonFE, MF_ZERO);
     CHKERR add_fields(skeletonFE, domainFields);
-    CHKERR add_fields(skeletonFE, boundaryFields);
-    CHKERR add_fields(skeletonFE, skeletonFields);
+    if (!skeletonFields.empty())
+      CHKERR add_fields(skeletonFE, skeletonFields);
     CHKERR add_data_fields(skeletonFE, dataFields);
     CHKERR add_data_fields(skeletonFE, noFieldDataFields);
     CHKERR add_fields(skeletonFE, noFieldFields);
@@ -475,21 +453,19 @@ MoFEMErrorCode Simple::defineProblem(const PetscBool is_partitioned) {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
   // Create dm instance
-  dM = createSmartDM(m_field.get_comm(), "DMMOFEM");
+  dM = createDM(m_field.get_comm(), "DMMOFEM");
   // set dm data structure which created mofem data structures
-  CHKERR DMMoFEMCreateMoFEM(dM, &m_field, nameOfProblem.c_str(), bitLevel);
+  CHKERR DMMoFEMCreateMoFEM(dM, &m_field, nameOfProblem.c_str(), bitLevel,
+                            bitLevelMask);
   CHKERR DMSetFromOptions(dM);
-  CHKERR DMMoFEMAddElement(dM, domainFE.c_str());
-  if (!boundaryFields.empty()) {
-    CHKERR DMMoFEMAddElement(dM, boundaryFE.c_str());
+  CHKERR DMMoFEMAddElement(dM, domainFE);
+  if (addBoundaryFE || !boundaryFields.empty()) {
+    CHKERR DMMoFEMAddElement(dM, boundaryFE);
   }
-  if (!skeletonFields.empty()) {
-    CHKERR DMMoFEMAddElement(dM, skeletonFE.c_str());
+  if (addSkeletonFE || !skeletonFields.empty()) {
+    CHKERR DMMoFEMAddElement(dM, skeletonFE);
   }
-  for (std::vector<std::string>::iterator fit = otherFEs.begin();
-       fit != otherFEs.end(); ++fit) {
-    CHKERR DMMoFEMAddElement(dM, fit->c_str());
-  }
+  CHKERR DMMoFEMAddElement(dM, otherFEs);
   CHKERR DMMoFEMSetIsPartitioned(dM, is_partitioned);
   MoFEMFunctionReturn(0);
 }
@@ -497,8 +473,9 @@ MoFEMErrorCode Simple::defineProblem(const PetscBool is_partitioned) {
 MoFEMErrorCode Simple::setFieldOrder(const std::string field_name,
                                      const int order, const Range *ents) {
   MoFEMFunctionBeginHot;
-  fieldsOrder.insert(
-      {field_name, {order, ents == NULL ? Range() : Range(*ents)}});
+  fieldsOrder.emplace_back(field_name, order,
+                           ents == NULL ? Range() : Range(*ents),
+                           ents == NULL ? false : true);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -506,43 +483,6 @@ MoFEMErrorCode Simple::buildFields() {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
   PetscLogEventBegin(MOFEM_EVENT_SimpleBuildFields, 0, 0, 0, 0);
-
-  auto get_skin = [&](auto meshset) {
-    Range domain_ents;
-    CHKERR m_field.get_moab().get_entities_by_dimension(meshset, dIm,
-                                                        domain_ents, true);
-    Skinner skin(&m_field.get_moab());
-    Range domain_skin;
-    CHKERR skin.find_skin(0, domain_ents, false, domain_skin);
-    // filter not owned entities, those are not on boundary
-    ParallelComm *pcomm =
-        ParallelComm::get_pcomm(&m_field.get_moab(), MYPCOMM_INDEX);
-    Range proc_domain_skin;
-    CHKERR pcomm->filter_pstatus(domain_skin,
-                                 PSTATUS_SHARED | PSTATUS_MULTISHARED,
-                                 PSTATUS_NOT, -1, &proc_domain_skin);
-    return proc_domain_skin;
-  };
-
-  auto create_boundary_meshset = [&](auto &&proc_domain_skin) {
-    MoFEMFunctionBeginHot;
-    // create boundary meshset
-    if (boundaryMeshset != 0) {
-      MoFEMFunctionReturnHot(0);
-      // CHKERR m_field.get_moab().delete_entities(&boundaryMeshset, 1);
-    }
-    CHKERR m_field.get_moab().create_meshset(MESHSET_SET, boundaryMeshset);
-    CHKERR m_field.get_moab().add_entities(boundaryMeshset, proc_domain_skin);
-    for (int dd = 0; dd != dIm - 1; dd++) {
-      Range adj;
-      CHKERR m_field.get_moab().get_adjacencies(proc_domain_skin, dd, false,
-                                                adj, moab::Interface::UNION);
-      CHKERR m_field.get_moab().add_entities(boundaryMeshset, adj);
-    }
-    MoFEMFunctionReturnHot(0);
-  };
-
-  CHKERR create_boundary_meshset(get_skin(meshSet));
 
   auto comm_interface_ptr = m_field.getInterface<CommInterface>();
   auto bit_ref_ptr = m_field.getInterface<BitRefManager>();
@@ -571,7 +511,7 @@ MoFEMErrorCode Simple::buildFields() {
   CHKERR add_ents_to_field(meshSet, dIm, domainFields);
   CHKERR add_ents_to_field(meshSet, dIm, dataFields);
   CHKERR add_ents_to_field(boundaryMeshset, dIm - 1, boundaryFields);
-  CHKERR add_ents_to_field(meshSet, dIm - 1, skeletonFields);
+  CHKERR add_ents_to_field(skeletonMeshset, dIm - 1, skeletonFields);
 
   std::set<std::string> nofield_fields;
   for (auto &f : noFieldFields)
@@ -582,69 +522,46 @@ MoFEMErrorCode Simple::buildFields() {
   CHKERR make_no_field_ents(nofield_fields);
 
   // Set order
-  auto set_order = [&](auto meshset, auto dim, auto &fields) {
-    MoFEMFunctionBeginHot;
-    for (auto &field : fields) {
-      if (fieldsOrder.find(field) == fieldsOrder.end()) {
-        SETERRQ1(PETSC_COMM_WORLD, MOFEM_INVALID_DATA,
-                 "Order for field not set %s", field.c_str());
-      }
-      int dds = 0;
-      const Field *field_ptr = m_field.get_field_structure(field);
-      switch (field_ptr->getSpace()) {
-      case L2:
-        dds = dim;
-        break;
-      case HDIV:
-        dds = 2;
-        break;
-      case HCURL:
-        dds = 1;
-        break;
-      case H1:
-        dds = 1;
-        break;
-      default:
-        SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
-                "Glasgow we have a problem");
-      }
 
-      auto set_order = [&](auto field, auto &ents) {
-        MoFEMFunctionBegin;
+  auto get_field_ptr = [&](auto &f) { return m_field.get_field_structure(f); };
+  for (auto &t : fieldsOrder) {
+    const auto f = std::get<0>(t);
+    const auto order = std::get<1>(t);
 
-        auto range = fieldsOrder.equal_range(field);
-        for (auto o = range.first; o != range.second; ++o) {
-          if (!o->second.second.empty())
-            ents = intersect(ents, o->second.second);
-          CHKERR m_field.set_field_order(ents, field, o->second.first);
-        }
+    MOFEM_TAG_AND_LOG("WORLD", Sev::inform, "Simple")
+        << "Set order to field " << f << " order " << order;
+    MOFEM_LOG_CHANNEL("SYNC");
+    if (std::get<3>(t)) {
+      MOFEM_TAG_AND_LOG("SYNC", Sev::verbose, "Simple")
+          << "To ents: " << std::endl
+          << std::get<2>(t) << std::endl;
+    }
+    MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::verbose);
 
-        MoFEMFunctionReturn(0);
-      };
+    if (std::get<3>(t)) {
 
-      if (field_ptr->getSpace() == H1) {
-        if (field_ptr->getApproxBase() == AINSWORTH_BERNSTEIN_BEZIER_BASE) {
-          Range ents;
-          CHKERR m_field.get_field_entities_by_dimension(field, 0, ents);
-          CHKERR set_order(field, ents);
+      CHKERR m_field.set_field_order(std::get<2>(t), f, order);
+
+    } else {
+      auto f_ptr = get_field_ptr(f);
+
+      if (f_ptr->getSpace() == H1) {
+        if (f_ptr->getApproxBase() == AINSWORTH_BERNSTEIN_BEZIER_BASE) {
+          CHKERR m_field.set_field_order(meshSet, MBVERTEX, f, order);
         } else {
-          CHKERR m_field.set_field_order(meshSet, MBVERTEX, field, 1);
+          CHKERR m_field.set_field_order(meshSet, MBVERTEX, f, 1);
         }
       }
-      for (int dd = dds; dd <= dim; dd++) {
-        Range ents;
-        CHKERR m_field.get_field_entities_by_dimension(field, dd, ents);
-        CHKERR set_order(field, ents);
+
+      for (auto d = 1; d <= dIm; ++d) {
+        for (EntityType t = CN::TypeDimensionMap[d].first;
+             t <= CN::TypeDimensionMap[d].second; ++t) {
+          CHKERR m_field.set_field_order(meshSet, t, f, order);
+        }
       }
     }
-    MoFEMFunctionReturnHot(0);
-  };
-
-  CHKERR set_order(meshSet, dIm, domainFields);
-  CHKERR set_order(meshSet, dIm, dataFields);
-  CHKERR set_order(meshSet, dIm - 1, boundaryFields);
-  CHKERR set_order(meshSet, dIm - 1, skeletonFields);
-
+  }
+  MOFEM_LOG_CHANNEL("WORLD");
   // Build fields
   CHKERR m_field.build_fields();
   PetscLogEventEnd(MOFEM_EVENT_SimpleBuildFields, 0, 0, 0, 0);
@@ -659,13 +576,13 @@ MoFEMErrorCode Simple::buildFiniteElements() {
   CHKERR m_field.add_ents_to_finite_element_by_dim(meshSet, dIm, domainFE,
                                                    true);
   CHKERR m_field.build_finite_elements(domainFE);
-  if (!boundaryFields.empty()) {
+  if (addBoundaryFE || boundaryFields.size()) {
     CHKERR m_field.add_ents_to_finite_element_by_dim(boundaryMeshset, dIm - 1,
                                                      boundaryFE, true);
     CHKERR m_field.build_finite_elements(boundaryFE);
   }
-  if (!skeletonFields.empty()) {
-    CHKERR m_field.add_ents_to_finite_element_by_dim(meshSet, dIm - 1,
+  if (addSkeletonFE || skeletonFields.size()) {
+    CHKERR m_field.add_ents_to_finite_element_by_dim(skeletonMeshset, dIm - 1,
                                                      skeletonFE, true);
     CHKERR m_field.build_finite_elements(skeletonFE);
   }
@@ -681,7 +598,7 @@ MoFEMErrorCode Simple::buildProblem() {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
   PetscLogEventBegin(MOFEM_EVENT_SimpleBuildProblem, 0, 0, 0, 0);
-  CHKERR m_field.build_adjacencies(bitLevel);
+  CHKERR m_field.build_adjacencies(bitLevel, bitLevelMask);
   // Set problem by the DOFs on the fields rather that by adding DOFs on the
   // elements
   m_field.getInterface<ProblemsManager>()->buildProblemFromFields = PETSC_TRUE;
@@ -693,35 +610,57 @@ MoFEMErrorCode Simple::buildProblem() {
 
 MoFEMErrorCode Simple::setUp(const PetscBool is_partitioned) {
   MoFEMFunctionBegin;
+
+  PetscLogEventBegin(MOFEM_EVENT_SimpleSetUP, 0, 0, 0, 0);
+
   CHKERR defineFiniteElements();
-  if (!skeletonFields.empty())
+
+  if (addSkeletonFE || !skeletonFields.empty())
     CHKERR setSkeletonAdjacency();
+
+  if (addParentAdjacencies)
+    CHKERR setParentAdjacency();
+
   CHKERR defineProblem(is_partitioned);
   CHKERR buildFields();
   CHKERR buildFiniteElements();
   CHKERR buildProblem();
+
+  PetscLogEventEnd(MOFEM_EVENT_SimpleSetUP, 0, 0, 0, 0);
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Simple::reSetUp() {
+MoFEMErrorCode Simple::reSetUp(bool only_dm) {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
-
-  CHKERR defineFiniteElements();
-  if (!skeletonFields.empty())
-    CHKERR setSkeletonAdjacency();
-  CHKERR buildFields();
-  CHKERR buildFiniteElements();
-
   PetscLogEventBegin(MOFEM_EVENT_SimpleBuildProblem, 0, 0, 0, 0);
-  CHKERR m_field.build_adjacencies(bitLevel);
+
+  if (!only_dm) {
+    CHKERR defineFiniteElements();
+    CHKERR buildFields();
+    if (addSkeletonFE || !skeletonFields.empty())
+      CHKERR setSkeletonAdjacency();
+    if (addParentAdjacencies)
+      CHKERR setParentAdjacency();
+    CHKERR buildFiniteElements();
+  }
+
+  CHKERR m_field.build_adjacencies(bitLevel, bitLevelMask);
+
+  const Problem *problem_ptr;
+  CHKERR DMMoFEMGetProblemPtr(dM, &problem_ptr);
+  const auto problem_name = problem_ptr->getName();
+  CHKERR m_field.modify_problem_ref_level_set_bit(problem_name, bitLevel);
+  CHKERR m_field.modify_problem_mask_ref_level_set_bit(problem_name,
+                                                       bitLevelMask);
+
   // Set problem by the DOFs on the fields rather that by adding DOFs on the
   // elements
   m_field.getInterface<ProblemsManager>()->buildProblemFromFields = PETSC_TRUE;
   CHKERR DMSetUp_MoFEM(dM);
   m_field.getInterface<ProblemsManager>()->buildProblemFromFields = PETSC_FALSE;
-  PetscLogEventEnd(MOFEM_EVENT_SimpleBuildProblem, 0, 0, 0, 0);
 
+  PetscLogEventEnd(MOFEM_EVENT_SimpleBuildProblem, 0, 0, 0, 0);
   MoFEMFunctionReturn(0);
 }
 
@@ -756,6 +695,127 @@ MoFEMErrorCode Simple::deleteFiniteElements() {
       CHKERR m_field.delete_finite_element(fe);
     }
   }
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+Simple::addFieldToEmptyFieldBlocks(const std::string row_field,
+                                   const std::string col_field) const {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+  CHKERR m_field.getInterface<ProblemsManager>()->addFieldToEmptyFieldBlocks(
+      getProblemName(), row_field, col_field);
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode Simple::createBoundaryMeshset() {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+  ParallelComm *pcomm =
+      ParallelComm::get_pcomm(&m_field.get_moab(), MYPCOMM_INDEX);
+
+  auto get_skin = [&](auto meshset) {
+    // filter not owned entities, those are not on boundary
+
+    Range domain_ents;
+    CHKERR m_field.get_moab().get_entities_by_dimension(meshset, dIm,
+                                                        domain_ents, true);
+    CHKERR pcomm->filter_pstatus(domain_ents,
+                                 PSTATUS_SHARED | PSTATUS_MULTISHARED,
+                                 PSTATUS_NOT, -1, nullptr);
+
+    Skinner skin(&m_field.get_moab());
+    Range domain_skin;
+    CHKERR skin.find_skin(0, domain_ents, false, domain_skin);
+    CHKERR pcomm->filter_pstatus(domain_skin,
+                                 PSTATUS_SHARED | PSTATUS_MULTISHARED,
+                                 PSTATUS_NOT, -1, nullptr);
+    return domain_skin;
+  };
+
+  auto create_boundary_meshset = [&](auto &&domain_skin) {
+    MoFEMFunctionBeginHot;
+    // create boundary meshset
+    if (boundaryMeshset != 0) {
+      MoFEMFunctionReturnHot(0);
+    }
+    CHKERR m_field.get_moab().create_meshset(MESHSET_SET, boundaryMeshset);
+    CHKERR m_field.get_moab().add_entities(boundaryMeshset, domain_skin);
+    for (int dd = 0; dd != dIm - 1; dd++) {
+      Range adj;
+      CHKERR m_field.get_moab().get_adjacencies(domain_skin, dd, false, adj,
+                                                moab::Interface::UNION);
+      CHKERR m_field.get_moab().add_entities(boundaryMeshset, adj);
+    }
+    MoFEMFunctionReturnHot(0);
+  };
+
+  CHKERR create_boundary_meshset(get_skin(meshSet));
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode Simple::createSkeletonMeshset() {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+
+  ParallelComm *pcomm =
+      ParallelComm::get_pcomm(&m_field.get_moab(), MYPCOMM_INDEX);
+
+  auto create_skeleton_meshset = [&](auto meshset) {
+    MoFEMFunctionBeginHot;
+    // create boundary meshset
+    if (skeletonMeshset != 0) {
+      MoFEMFunctionReturnHot(0);
+    }
+    Range boundary_ents, skeleton_ents;
+    CHKERR m_field.get_moab().get_entities_by_dimension(boundaryMeshset,
+                                                        dIm - 1, boundary_ents);
+    Range domain_ents;
+    CHKERR m_field.get_moab().get_entities_by_dimension(meshset, dIm,
+                                                        domain_ents, true);
+    CHKERR m_field.get_moab().get_adjacencies(
+        domain_ents, dIm - 1, false, skeleton_ents, moab::Interface::UNION);
+    skeleton_ents = subtract(skeleton_ents, boundary_ents);
+    CHKERR pcomm->filter_pstatus(skeleton_ents, PSTATUS_NOT_OWNED, PSTATUS_NOT,
+                                 -1, nullptr);
+    CHKERR m_field.get_moab().create_meshset(MESHSET_SET, skeletonMeshset);
+    CHKERR m_field.get_moab().add_entities(skeletonMeshset, skeleton_ents);
+    MoFEMFunctionReturnHot(0);
+  };
+
+  CHKERR create_skeleton_meshset(meshSet);
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode Simple::exchangeGhostCells() {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+  MOFEM_LOG("WORLD", Sev::verbose) << "Exchange ghost cells";
+
+  ParallelComm *pcomm =
+      ParallelComm::get_pcomm(&m_field.get_moab(), MYPCOMM_INDEX);
+  if (pcomm == NULL)
+    pcomm = new ParallelComm(&m_field.get_moab(), m_field.get_comm());
+
+  CHKERR pcomm->exchange_ghost_cells(getDim(), getDim() - 1, 1,
+                                     3 /**get all adjacent ghosted entities */,
+                                     true, false, meshSet ? &meshSet : nullptr);
+
+  Range shared;
+  CHKERR m_field.get_moab().get_entities_by_dimension(0, dIm, shared);
+  for (auto d = dIm - 1; d >= 0; --d) {
+    CHKERR m_field.get_moab().get_adjacencies(shared, d, false, shared,
+                                              moab::Interface::UNION);
+  }
+  CHKERR pcomm->filter_pstatus(shared, PSTATUS_SHARED | PSTATUS_MULTISHARED,
+                               PSTATUS_OR, -1, &shared);
+  Tag part_tag = pcomm->part_tag();
+  CHKERR pcomm->exchange_tags(part_tag, shared);
+  CHKERR m_field.getInterface<CommInterface>()->resolveParentEntities(shared,
+                                                                      VERBOSE);
+
   MoFEMFunctionReturn(0);
 }
 

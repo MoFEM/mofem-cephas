@@ -1,16 +1,4 @@
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 #include <MoFEM.hpp>
 
@@ -28,7 +16,7 @@ struct OpVolumeCalculation
         volumeVec(volume_vec) {}
 
   MoFEMErrorCode doWork(int row_side, EntityType row_type,
-                        DataForcesAndSourcesCore::EntData &row_data) {
+                        EntitiesFieldData::EntData &row_data) {
     MoFEMFunctionBegin;
 
     if (row_type != MBVERTEX)
@@ -129,13 +117,13 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.loop_dofs("MESH_NODE_POSITIONS", ent_method);
 
     CHKERR DMRegister_MoFEM("DMMOFEM");
-    auto dM = createSmartDM(m_field.get_comm(), "DMMOFEM");
+    auto dM = createDM(m_field.get_comm(), "DMMOFEM");
     CHKERR DMMoFEMCreateMoFEM(dM, &m_field, "TET_PROBLEM", bit_level0);
     CHKERR DMMoFEMAddElement(dM, "TET_ELEM");
     CHKERR DMMoFEMSetIsPartitioned(dM, PETSC_FALSE);
     CHKERR DMSetUp_MoFEM(dM);
 
-    auto vol_vec = createSmartVectorMPI(m_field.get_comm(),
+    auto vol_vec = createVectorMPI(m_field.get_comm(),
                                         m_field.get_comm_rank() ? 0 : 1, 1);
 
     auto fe_ptr =

@@ -2,24 +2,15 @@
  * \brief Multi-index containers for entities
  */
 
-/* MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
- */
 
 #define IS_BUILDING_MB
 #include <moab/Error.hpp>
 
 namespace MoFEM {
+
+constexpr int FieldEntity::dof_shift; // Maximal number of DOFs on entity
+constexpr int FieldEntity::ent_shift; // EntityHandle size
+constexpr int FieldEntity::proc_shift; // Maximal number of 1024 processors
 
 FieldEntity::FieldEntity(
     const boost::shared_ptr<Field> field_ptr,

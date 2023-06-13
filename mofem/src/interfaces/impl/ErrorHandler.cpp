@@ -1,16 +1,3 @@
-/* MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
- */
 
 #if PETSC_VERSION_GE(3, 8, 0)
 #include <petsc/private/petscimpl.h>
@@ -38,22 +25,23 @@ static PetscErrorCode mofem_error_handler(MPI_Comm comm, int line,
       PetscGetVersion(petsc_version, 255);
       MOFEM_LOG_CHANNEL("SELF");
 
-      MOFEM_LOG_C("SELF", Sev::error, "%s",
+      MOFEM_LOG_C("SELF", MoFEM::Sev::error, "%s",
                   "--------------------- MoFEM Error Message "
                   "---------------------------------------------------");
 
-      MOFEM_LOG_C("SELF", Sev::error, "MoFEM version %d.%d.%d (%s %s)",
+      MOFEM_LOG_C("SELF", MoFEM::Sev::error, "MoFEM version %d.%d.%d (%s %s)",
                   MoFEM_VERSION_MAJOR, MoFEM_VERSION_MINOR, MoFEM_VERSION_BUILD,
                   MOAB_VERSION_STRING, petsc_version);
 
-      MOFEM_LOG_C("SELF", Sev::error, "MoFEM git commit id %s", GIT_SHA1_NAME);
+      MOFEM_LOG_C("SELF", MoFEM::Sev::error, "MoFEM git commit id %s",
+                  GIT_SHA1_NAME);
 
-      MOFEM_LOG_C("SELF", Sev::error, "%s",
+      MOFEM_LOG_C("SELF", MoFEM::Sev::error, "%s",
                   "See http://mofem.eng.gla.ac.uk/mofem/html/ "
                   "guidelines_bug_reporting.html for bug reporting.");
 
       MOFEM_LOG_C(
-          "SELF", Sev::error, "%s",
+          "SELF", MoFEM::Sev::error, "%s",
           "Write to https://groups.google.com/forum/#!forum/mofem-group to "
           "seek help.");
     }
@@ -62,10 +50,10 @@ static PetscErrorCode mofem_error_handler(MPI_Comm comm, int line,
 
       if (p == PETSC_ERROR_INITIAL) {
         if (mess)
-          MOFEM_LOG_C("SELF", Sev::error, "%s", mess);
+          MOFEM_LOG_C("SELF", MoFEM::Sev::error, "%s", mess);
       }
-      MOFEM_LOG_C("SELF", Sev::error, "#%d %s() line %d in %s", cnt++, fun,
-                  line, file);
+      MOFEM_LOG_C("SELF", MoFEM::Sev::error, "#%d %s() line %d in %s", cnt++,
+                  fun, line, file);
 
     } else {
       PetscTraceBackErrorHandler(PETSC_COMM_SELF, line, fun, file, n, p, mess,
@@ -86,7 +74,7 @@ static PetscErrorCode mofem_error_handler(MPI_Comm comm, int line,
       }
 
       // error_printf_highlight();
-      MOFEM_LOG_C("SELF", Sev::error, "%s",
+      MOFEM_LOG_C("SELF", MoFEM::Sev::error, "%s",
                   "-- MoFEM End of Error Message -- send entire error "
                   "message to mofem-group@googlegroups.com --");
       // error_printf_normal();

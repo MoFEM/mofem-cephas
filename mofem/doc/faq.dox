@@ -200,6 +200,16 @@ will be sent. To get webhook URL click on the three-dot sign (next to a channel
 name) -> Connectors -> Configure (Incoming Webhook) -> Give a name and click
 Create -> Copy the URL.
 
+\section faq_post_processing Postprocessing 
+
+\subsection Postporcessing on refined post-proc mesh with PostProcGenerateRefMeshBase and derived classes
+
+If higher approximation orders are used is sometimes required to refine mesh used to postprocessing to visualise higher order polynomials fields. Classes derived from PostProcGenerateRefMeshBase enable adaptive refinement, such that elements only with high orders are refined. To set refinement, use the command line option.
+\code
+-max_post_proc_ref_level 2
+\endcode
+Above results int to refinment levels,
+
 \section faq_git Git and repository
 
 \subsection users_modules_changes_affects_mainRepo Why do users_modules changes affect mofem-cephas/mofem git repository?
@@ -222,6 +232,12 @@ index d18f43f88..42bcece0e 160000
 The commi t ID of the submodule is used to track which version to pull when
 pulling the main repo. Updating to the latest commit will then pull the your
 latest changes.
+
+\subsection git_squash Squashing for an external PR
+
+It is good practice to squash commits before the merge. That simplifies reviews and
+makes the git commits tree easier to browse and understand. Details on how to
+squash commits you will find here \ref SquashFAQ.
 
 \section faq_profiling Profiling
 
@@ -258,8 +274,13 @@ See OpenMPI <a href=https://www.open-mpi.org/faq/?category=debugging>documentati
 
 If you using \em lldb, that is usally a case of Mac OSX, you run debugging as follows:
 \code
-mpirun -np 4 xterm -e lldb ./program [arg1] [arg2] [arg3]
+mpirun -np 4 xterm -e lldb -- ./program [arg1] [arg2] [arg3]
 \endcode 
+
+If you do not heve graphic terminal, you can alos run screen sessions,
+\code
+mpirun -np 4 screen -AdmS mpi gdb -ex run --args ./program [arg1] [arg2] [arg3]
+\enddoce
 
 \subsection faq_memory_profiling_valgrind How to profile memory usage?
 
@@ -349,6 +370,18 @@ brew install qcachegrind --with-graphviz
 If you have packages installed, follow instruction from <http://kcachegrind.sourceforge.net/html/Documentation.html>
 
 \section faq_programing Programming
+
+\subsection stop_at_first_error How to stop at first error?
+
+When you compile code and programming, you make errors which produce long error
+messages that are diffcult to comprehend. If you like to code stop complying at
+the fatal fist error, you can do that by adding to the CMake file
+\code
+add_definitions(-Wfatal-errors)
+\endcode
+
+\note Remove addition to CMake when you push changes. Use -Wfatal-errors only
+for debuging and programming.
 
 \subsection adding_user_module How to add user module?
 
@@ -445,6 +478,13 @@ Or you can do that in the code
 \code
 CHKERR MatView(A, PETSC_VIEWER_DRAW_WORLD);
 \endcode
+
+\subsection Resources about Python
+
+If you luking about resources about python, follow links,
+\li <a href="https://numpy.org/learn/">NumPy tutorials (both for beginners and advanced)</a>
+\li <a href="https://www.codecademy.com/catalog/language/python">Codecademy</a>
+\li <a href="https://www.coursera.org/learn/python">Coursera</a>
 
 
 \subsection petsc_print_matrix How to test and print jacobian matrix with PETSc?
@@ -572,6 +612,59 @@ fracture module is presented below.
       "cwd": "/Users/User1/mofem_install/users_modules_debug/fracture_mechanics"
     }
   ]
+\endcode
+
+\section faq_snippets How to iterate over field dofs?
+
+\code
+
+auto iterate_field_row_dofs = [m_field & ](auto field_name, auto prb_name) {
+  auto bit_number = m_field.get_field_bit_number(field_name);
+  auto prb_ptr = m_field.get_problem(prb_name);
+  auto row_dofs_ptr = prb_ptr->getNumeredRowDofsPtr();
+
+  auto lo_it = row_dofs_ptr->get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getLoBitNumberUId(bit_number));
+  auto hi_it = row_dofs_ptr->get<Unique_mi_tag>().upper_bound(
+      FieldEntity::getHiBitNumberUId(bit_number));
+
+  return std::make_pair(lo_it, hi_it);
+};
+
+auto iterate_field_and_range_row_dofs = [m_field & ](
+                                            auto field_name, auto prb_name,
+                                            auto first_ent, auto second_ent) {
+  auto bit_number = m_field.get_field_bit_number(field_name);
+  auto prb_ptr = m_field.get_problem(prb_name);
+  auto row_dofs_ptr = prb_ptr->getNumeredRowDofsPtr();
+
+  auto lo_it = row_dofs_ptr->get<Unique_mi_tag>().lower_bound(
+      DofEntity::getLoFieldEntityUId(bit_number, first_ent));
+  auto hi_it = row_dofs_ptr->get<Unique_mi_tag>().upper_bound(
+      DofEntity::getHiFieldEntityUId(bit_number, second_ent));
+
+  return std::make_pair(lo_it, hi_it);
+};
+
+
+auto iterate_field_and_type_row_dofs = [m_field & ](
+                                            auto field_name, auto prb_name) {
+  auto bit_number = m_field.get_field_bit_number(field_name);
+  auto prb_ptr = m_field.get_problem(prb_name);
+  auto row_dofs_ptr = prb_ptr->getNumeredRowDofsPtr();
+
+  // Note is a dynamic variant of get_id_for_min_type, when function takes an
+  // argument, not template variable
+  auto lo_it = row_dofs_ptr->get<Unique_mi_tag>().lower_bound(
+      DofEntity::getLoFieldEntityUId(bit_number,
+                                     get_id_for_min_type<MBVERTEX>()));
+  auto hi_it = row_dofs_ptr->get<Unique_mi_tag>().upper_bound(
+      DofEntity::getHiFieldEntityUId(bit_number,
+                                     get_id_for_max_type<MBVERTEX>()));
+
+  return std::make_pair(lo_it, hi_it);
+};
+
 \endcode
 
 */

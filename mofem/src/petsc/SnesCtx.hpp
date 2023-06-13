@@ -2,20 +2,6 @@
  * \brief Context for PETSc SNES, i.e. nonlinear solver
  */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
-
 #ifndef __SNESCTX_HPP__
 #define __SNESCTX_HPP__
 
@@ -54,39 +40,19 @@ struct SnesCtx {
   BasicMethodsSequence
       postProcess_Rhs; ///< Sequence of methods run after residual is assembled
 
-  /**
-   * \brief Copy sequences from other SNES contex
-   * @param  snes_ctx SNES contex from which Sequence is copied from
-   * @return          error code
-   */
-  MoFEMErrorCode copyLoops(const SnesCtx &snes_ctx) {
-    MoFEMFunctionBeginHot;
-    loops_to_do_Mat = snes_ctx.loops_to_do_Mat;
-    loops_to_do_Rhs = snes_ctx.loops_to_do_Rhs;
-    preProcess_Mat = snes_ctx.preProcess_Mat;
-    postProcess_Mat = snes_ctx.postProcess_Mat;
-    preProcess_Rhs = snes_ctx.preProcess_Rhs;
-    postProcess_Rhs = snes_ctx.postProcess_Rhs;
-    MoFEMFunctionReturnHot(0);
-  }
-
-  MoFEMErrorCode clearLoops() {
-    MoFEMFunctionBeginHot;
-    loops_to_do_Mat.clear();
-    loops_to_do_Rhs.clear();
-    preProcess_Mat.clear();
-    postProcess_Mat.clear();
-    preProcess_Rhs.clear();
-    postProcess_Rhs.clear();
-    MoFEMFunctionReturnHot(0);
-  }
-
   SnesCtx(Interface &m_field, const std::string &problem_name)
       : mField(m_field), moab(m_field.get_moab()), problemName(problem_name),
         bH(MF_EXIST), zeroPreCondMatrixB(true),
         typeOfAssembly(MAT_FINAL_ASSEMBLY), vErify(false) {
     PetscLogEventRegister("LoopSNESRhs", 0, &MOFEM_EVENT_SnesRhs);
     PetscLogEventRegister("LoopSNESMat", 0, &MOFEM_EVENT_SnesMat);
+    if (!LogManager::checkIfChannelExist("SNES_WORLD")) {
+      auto core_log = logging::core::get();
+      core_log->add_sink(
+          LogManager::createSink(LogManager::getStrmWorld(), "SNES_WORLD"));
+      LogManager::setLog("SNES_WORLD");
+      MOFEM_LOG_TAG("SNES_WORLD", "SNES");
+    }
   }
 
   virtual ~SnesCtx() = default;
@@ -134,6 +100,20 @@ struct SnesCtx {
    */
   BasicMethodsSequence &get_postProcess_to_do_Mat() { return postProcess_Mat; }
 
+  /**
+   * \brief Copy sequences from other SNES contex
+   * @param  snes_ctx SNES contex from which Sequence is copied from
+   * @return          error code
+   */
+  MoFEMErrorCode copyLoops(const SnesCtx &snes_ctx);
+
+  /**
+   * @brief Clear loops
+   *
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode clearLoops();
+
   friend PetscErrorCode SnesRhs(SNES snes, Vec x, Vec f, void *ctx);
   friend PetscErrorCode SnesMat(SNES snes, Vec x, Mat A, Mat B, void *ctx);
 
@@ -142,12 +122,10 @@ struct SnesCtx {
   friend MoFEMErrorCode SnesMoFEMSetBehavior(SNES snes, MoFEMTypes bh);
 
 private:
-
   boost::movelib::unique_ptr<bool> vecAssembleSwitch;
   boost::movelib::unique_ptr<bool> matAssembleSwitch;
   PetscLogEvent MOFEM_EVENT_SnesRhs; ///< Log events to assemble residual
   PetscLogEvent MOFEM_EVENT_SnesMat; ///< Log events to assemble tangent matrix
-
 };
 
 /**
@@ -203,6 +181,13 @@ MoFEMErrorCode SnesMoFEMSetAssemblyType(SNES snes, MatAssemblyType type);
  * @return      error code
  */
 MoFEMErrorCode SnesMoFEMSetBehavior(SNES snes, MoFEMTypes bh);
+
+/**
+ * @brief Sens monitor printing residual field by field
+ *
+ */
+MoFEMErrorCode MoFEMSNESMonitorFields(SNES snes, PetscInt its, PetscReal fgnorm,
+                                      SnesCtx *snes_ctx);
 
 } // namespace MoFEM
 

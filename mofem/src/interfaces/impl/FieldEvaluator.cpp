@@ -3,21 +3,6 @@
  *
  */
 
-/**
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
- */
-
 namespace MoFEM {
 
 FieldEvaluatorInterface::FieldEvaluatorInterface(const MoFEM::Core &core)
@@ -52,19 +37,32 @@ MoFEMErrorCode FieldEvaluatorInterface::query_interface(
   MoFEMFunctionReturnHot(0);
 }
 
+template <int D>
 MoFEMErrorCode
-FieldEvaluatorInterface::buildTree3D(boost::shared_ptr<SetPtsData> spd_ptr,
-                                     const std::string finite_element) {
+FieldEvaluatorInterface::buildTree(boost::shared_ptr<SetPtsData> spd_ptr,
+                                   const std::string finite_element) {
   CoreInterface &m_field = cOre;
   MoFEMFunctionBegin;
   EntityHandle fe_meshset;
   fe_meshset = m_field.get_finite_element_meshset(finite_element);
-  Range entities_3d;
-  CHKERR m_field.get_moab().get_entities_by_dimension(fe_meshset, 3,
-                                                      entities_3d, true);
+  Range entities;
+  CHKERR m_field.get_moab().get_entities_by_dimension(fe_meshset, D, entities,
+                                                      true);
   spd_ptr->treePtr.reset(new AdaptiveKDTree(&m_field.get_moab()));
-  CHKERR spd_ptr->treePtr->build_tree(entities_3d, &spd_ptr->rooTreeSet);
+  CHKERR spd_ptr->treePtr->build_tree(entities, &spd_ptr->rooTreeSet);
   MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+FieldEvaluatorInterface::buildTree3D(boost::shared_ptr<SetPtsData> spd_ptr,
+                                     const std::string finite_element) {
+  return buildTree<3>(spd_ptr, finite_element);
+}
+
+MoFEMErrorCode
+FieldEvaluatorInterface::buildTree2D(boost::shared_ptr<SetPtsData> spd_ptr,
+                                     const std::string finite_element) {
+  return buildTree<2>(spd_ptr, finite_element);
 }
 
 MoFEMErrorCode
@@ -75,53 +73,78 @@ FieldEvaluatorInterface::SetPts::operator()(ForcesAndSourcesCore *fe_raw_ptr,
 
   if (auto data_ptr = dataPtr.lock()) {
 
-    decltype(data_ptr->nbEvalPoints) nbEvalPoints = data_ptr->nbEvalPoints;
-    decltype(data_ptr->verb) verb = data_ptr->verb;
-
-    decltype(data_ptr->shapeFunctions) &shapeFunctions =
-        data_ptr->shapeFunctions;
-    decltype(data_ptr->evalPointEntityHandle) &evalPointEntityHandle =
-        data_ptr->evalPointEntityHandle;
+    const auto nb_eval_points = data_ptr->nbEvalPoints;
+    const auto &shape_functions = data_ptr->shapeFunctions;
+    const auto &eval_pointentity_handle = data_ptr->evalPointEntityHandle;
 
     if (auto fe_ptr = data_ptr->feMethodPtr.lock()) {
 
-      VolumeElementForcesAndSourcesCore &fe =
-          static_cast<VolumeElementForcesAndSourcesCore &>(*fe_ptr);
+      auto &fe = static_cast<ForcesAndSourcesCore &>(*fe_ptr);
 
+#ifndef NDEBUG
       if (fe_ptr.get() != fe_raw_ptr)
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong FE ptr");
+#endif
 
-      MatrixDouble &gauss_pts = fe.gaussPts;
-      gauss_pts.resize(4, nbEvalPoints, false);
-      gauss_pts.clear();
+      const auto fe_ent = fe.numeredEntFiniteElementPtr->getEnt();
+      const auto fe_type = type_from_handle(fe_ent);
+      const auto fe_dim = moab::CN::Dimension(fe_type);
 
-      FTensor::Tensor1<FTensor::PackPtr<double *, 4>, 4> t_shape = {
-          &shapeFunctions(0, 0), &shapeFunctions(0, 1), &shapeFunctions(0, 2),
-          &shapeFunctions(0, 3)};
-      FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3> t_gauss_pts = {
-          &gauss_pts(0, 0), &gauss_pts(1, 0), &gauss_pts(2, 0)};
+      auto &gauss_pts = fe.gaussPts;
+      int nb_gauss_pts;
 
-      int nb_gauss_pts = 0;
-      for (int nn = 0; nn != nbEvalPoints; ++nn) {
-        if (evalPointEntityHandle[nn] ==
-            fe.numeredEntFiniteElementPtr->getEnt()) {
-          for (const int i : {0, 1, 2}) {
-            t_gauss_pts(i) = t_shape(i + 1);
+      if (fe_dim == 3) {
+        gauss_pts.resize(4, nb_eval_points, false);
+        FTensor::Tensor1<FTensor::PackPtr<const double *, 4>, 4> t_shape{
+            &shape_functions(0, 0), &shape_functions(0, 1),
+            &shape_functions(0, 2), &shape_functions(0, 3)};
+        FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3> t_gauss_pts{
+            &gauss_pts(0, 0), &gauss_pts(1, 0), &gauss_pts(2, 0)};
+
+        nb_gauss_pts = 0;
+        for (int nn = 0; nn != nb_eval_points; ++nn) {
+          if (eval_pointentity_handle[nn] == fe_ent) {
+            for (const int i : {0, 1, 2}) {
+              t_gauss_pts(i) = t_shape(i + 1);
+            }
             gauss_pts(3, nb_gauss_pts) = nn;
+            ++t_gauss_pts;
+            ++nb_gauss_pts;
           }
-          ++t_gauss_pts;
-          ++nb_gauss_pts;
+          ++t_shape;
         }
-        ++t_shape;
+        gauss_pts.resize(4, nb_gauss_pts, true);
+      } else if (fe_dim == 2) {
+        gauss_pts.resize(3, nb_eval_points, false);
+        FTensor::Tensor1<FTensor::PackPtr<const double *, 3>, 3> t_shape{
+            &shape_functions(0, 0), &shape_functions(0, 1),
+            &shape_functions(0, 2)};
+        FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 2> t_gauss_pts{
+            &gauss_pts(0, 0), &gauss_pts(1, 0)};
+        nb_gauss_pts = 0;
+        for (int nn = 0; nn != nb_eval_points; ++nn) {
+          if (eval_pointentity_handle[nn] == fe_ent) {
+            for (const int i : {0, 1}) {
+              t_gauss_pts(i) = t_shape(i + 1);
+            }
+            gauss_pts(2, nb_gauss_pts) = nn;
+            ++t_gauss_pts;
+            ++nb_gauss_pts;
+          }
+          ++t_shape;
+        }
+        gauss_pts.resize(3, nb_gauss_pts, true);
+      } else {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                "Dimension not implemented");
       }
 
-      if (verb >= VERY_NOISY)
-        std::cout << "nbEvalOPoints / nbGaussPts: " << nbEvalPoints << " / "
-                  << nb_gauss_pts << std::endl;
-      gauss_pts.resize(4, nb_gauss_pts, true);
-
-      if (verb >= VERY_NOISY)
-        std::cout << "gauss pts: " << gauss_pts << std::endl;
+#ifndef NDEBUG
+      MOFEM_LOG("SELF", Sev::noisy)
+          << "nbEvalOPoints / nbGau_sspt_s: " << nb_eval_points << " / "
+          << nb_gauss_pts;
+      MOFEM_LOG("SELF", Sev::noisy) << "gauss pts: " << gauss_pts;
+#endif
 
     } else
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -134,7 +157,8 @@ FieldEvaluatorInterface::SetPts::operator()(ForcesAndSourcesCore *fe_raw_ptr,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint3D(
+template <int D>
+MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint(
     const double *const point, const double distance, const std::string problem,
     const std::string finite_element, boost::shared_ptr<SetPtsData> data_ptr,
     int lower_rank, int upper_rank, boost::shared_ptr<CacheTuple> cache_ptr,
@@ -146,47 +170,123 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint3D(
   CHKERR data_ptr->treePtr->distance_search(point, distance, leafs_out);
   Range tree_ents;
   for (auto lit : leafs_out)
-    CHKERR m_field.get_moab().get_entities_by_dimension(lit, 3, tree_ents,
+    CHKERR m_field.get_moab().get_entities_by_dimension(lit, D, tree_ents,
                                                         true);
-
-  if (verb >= VERY_NOISY)
-    std::cout << "tree entities: " << tree_ents << endl;
+  if (verb >= NOISY)
+    MOFEM_LOG("SELF", Sev::noisy) << "tree entities: " << tree_ents;
 
   data_ptr->evalPointEntityHandle.resize(data_ptr->nbEvalPoints);
   std::fill(data_ptr->evalPointEntityHandle.begin(),
             data_ptr->evalPointEntityHandle.end(), 0);
 
-  for (auto tet : tree_ents) {
+  std::vector<double> local_coords;
+  std::vector<double> shape;
 
+  auto nb_eval_points = data_ptr->nbEvalPoints;
+
+  for (auto tet : tree_ents) {
     const EntityHandle *conn;
     int num_nodes;
     CHKERR m_field.get_moab().get_connectivity(tet, conn, num_nodes, true);
-    std::array<double, 12> coords;
-    CHKERR m_field.get_moab().get_coords(conn, num_nodes, coords.data());
 
-    for (int n = 0; n != data_ptr->nbEvalPoints; ++n) {
+    if constexpr (D == 3) {
 
-      std::array<double, 3> local_coords;
+      local_coords.resize(3 * nb_eval_points);
+      shape.resize(4 * nb_eval_points);
+
+      std::array<double, 12> coords;
+      CHKERR m_field.get_moab().get_coords(conn, num_nodes, coords.data());
+
       CHKERR Tools::getLocalCoordinatesOnReferenceFourNodeTet(
-          coords.data(), &data_ptr->evalPoints[3 * n], 1, local_coords.data());
+          coords.data(), &data_ptr->evalPoints[0], nb_eval_points,
+          &local_coords[0]);
+      CHKERR Tools::shapeFunMBTET<3>(&shape[0], &local_coords[0],
+                                     &local_coords[1], &local_coords[2],
+                                     nb_eval_points);
 
-      std::array<double, 4> shape;
-      CHKERR Tools::shapeFunMBTET<3>(shape.data(), &local_coords[0],
-                                     &local_coords[1], &local_coords[2], 1);
+      FTensor::Index<'i', 4> i4;
+      FTensor::Tensor1<FTensor::PackPtr<double *, 4>, 4> t_shape{
+          &shape[0], &shape[1], &shape[2], &shape[3]};
+      FTensor::Tensor1<FTensor::PackPtr<double *, 4>, 4> t_shape_data{
+          &data_ptr->shapeFunctions(0, 0), &data_ptr->shapeFunctions(0, 1),
+          &data_ptr->shapeFunctions(0, 2), &data_ptr->shapeFunctions(0, 3)};
 
-      const double eps = data_ptr->eps;
-      if (shape[0] >= 0 - eps && shape[0] <= 1 + eps &&
+      FTensor::Index<'j', 3> j3;
+      FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_local{
+          &local_coords[0], &local_coords[1], &local_coords[2]};
+      FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_local_data{
+          &(data_ptr->localCoords(0, 0)), &(data_ptr->localCoords(0, 1)),
+          &(data_ptr->localCoords(0, 2))};
 
-          shape[1] >= 0 - eps && shape[1] <= 1 + eps &&
+      for (int n = 0; n != nb_eval_points; ++n) {
 
-          shape[2] >= 0 - eps && shape[2] <= 1 + eps &&
+        const double eps = data_ptr->eps;
+        if (t_shape(0) >= 0 - eps && t_shape(0) <= 1 + eps &&
 
-          shape[3] >= 0 - eps && shape[3] <= 1 + eps) {
+            t_shape(1) >= 0 - eps && t_shape(1) <= 1 + eps &&
 
-        std::copy(shape.begin(), shape.end(), &data_ptr->shapeFunctions(n, 0));
-        std::copy(local_coords.begin(), local_coords.end(),
-                  &data_ptr->localCoords(n, 0));
-        data_ptr->evalPointEntityHandle[n] = tet;
+            t_shape(2) >= 0 - eps && t_shape(2) <= 1 + eps &&
+
+            t_shape(3) >= 0 - eps && t_shape(3) <= 1 + eps) {
+
+          data_ptr->evalPointEntityHandle[n] = tet;
+          t_shape_data(i4) = t_shape(i4);
+          t_local_data(j3) = t_local(j3);
+        }
+
+        ++t_shape;
+        ++t_shape_data;
+        ++t_local;
+        ++t_local_data;
+      }
+    }
+
+    if constexpr (D == 2) {
+
+      local_coords.resize(2 * nb_eval_points);
+      shape.resize(3 * nb_eval_points);
+
+      std::array<double, 9> coords;
+      CHKERR m_field.get_moab().get_coords(conn, num_nodes, coords.data());
+
+      CHKERR Tools::getLocalCoordinatesOnReferenceTriNodeTri(
+          coords.data(), &data_ptr->evalPoints[0], nb_eval_points,
+          &local_coords[0]);
+      CHKERR Tools::shapeFunMBTRI<2>(&shape[0], &local_coords[0],
+                                     &local_coords[1], nb_eval_points);
+
+      FTensor::Index<'i', 3> i3;
+      FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_shape{
+          &shape[0], &shape[1], &shape[2]};
+      FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_shape_data{
+          &data_ptr->shapeFunctions(0, 0), &data_ptr->shapeFunctions(0, 1),
+          &data_ptr->shapeFunctions(0, 2)};
+
+      FTensor::Index<'j', 2> j2;
+      FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2> t_local{
+          &local_coords[0], &local_coords[1]};
+      data_ptr->localCoords.resize(nb_eval_points, 2);
+      FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2> t_local_data{
+          &(data_ptr->localCoords(0, 0)), &(data_ptr->localCoords(0, 1))};
+
+      for (int n = 0; n != nb_eval_points; ++n) {
+
+        const double eps = data_ptr->eps;
+        if (t_shape(0) >= 0 - eps && t_shape(0) <= 1 + eps &&
+
+            t_shape(1) >= 0 - eps && t_shape(1) <= 1 + eps &&
+
+            t_shape(2) >= 0 - eps && t_shape(2) <= 1 + eps) {
+
+          data_ptr->evalPointEntityHandle[n] = tet;
+          t_shape_data(i3) = t_shape(i3);
+          t_local_data(j2) = t_local(j2);
+        }
+
+        ++t_shape;
+        ++t_shape_data;
+        ++t_local;
+        ++t_local_data;
       }
     }
   }
@@ -199,54 +299,83 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint3D(
   Range in_tets;
   in_tets.insert_list(data_ptr->evalPointEntityHandle.begin(),
                       data_ptr->evalPointEntityHandle.end());
-  in_tets = in_tets.subset_by_dimension(3);
+  in_tets = in_tets.subset_by_dimension(D);
 
-  if (verb >= VERY_NOISY)
-    std::cout << "in tets: " << in_tets << endl;
+  if (verb >= NOISY)
+    MOFEM_LOG("SELF", Sev::noisy) << "in tets: " << in_tets << endl;
 
-  for (auto peit = in_tets.pair_begin(); peit != in_tets.pair_end(); ++peit) {
-    auto lo =
-        prb_ptr->numeredFiniteElementsPtr->get<Composite_Name_And_Ent_mi_tag>()
-            .lower_bound(boost::make_tuple(finite_element, peit->first));
-    auto hi =
-        prb_ptr->numeredFiniteElementsPtr->get<Composite_Name_And_Ent_mi_tag>()
-            .upper_bound(boost::make_tuple(finite_element, peit->second));
-    numered_fes->insert(lo, hi);
+  auto fe_miit =
+      m_field.get_finite_elements()->get<FiniteElement_name_mi_tag>().find(
+          finite_element);
+  if (fe_miit !=
+      m_field.get_finite_elements()->get<FiniteElement_name_mi_tag>().end()) {
 
-    if (verb >= VERY_NOISY)
-      std::cout << "numered elements:" << std::endl;
-    for (; lo != hi; ++lo)
+    for (auto peit = in_tets.pair_begin(); peit != in_tets.pair_end(); ++peit) {
+
+      auto lo =
+          prb_ptr->numeredFiniteElementsPtr->get<Unique_mi_tag>().lower_bound(
+              EntFiniteElement::getLocalUniqueIdCalculate(
+                  peit->first, (*fe_miit)->getFEUId()));
+      auto hi =
+          prb_ptr->numeredFiniteElementsPtr->get<Unique_mi_tag>().upper_bound(
+              EntFiniteElement::getLocalUniqueIdCalculate(
+                  peit->second, (*fe_miit)->getFEUId()));
+      numered_fes->insert(lo, hi);
+
       if (verb >= VERY_NOISY)
-        std::cout << **lo << endl;
-  }
-  if (verb >= VERY_NOISY)
-    std::cout << std::endl;
-
-  if (auto fe_ptr = data_ptr->feMethodPtr.lock()) {
-
-    MOFEM_LOG_C("FieldEvaluatorSync", Sev::verbose,
-                "Number elements %d to evaluate at proc %d",
-                numered_fes->size(), m_field.get_comm_rank());
-    MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
-
-    if(!cache_ptr) {
-      cache_ptr = boost::make_shared<CacheTuple>();
-      CHKERR m_field.cache_problem_entities(prb_ptr->getName(), cache_ptr);
-
-      MOFEM_LOG("FieldEvaluatorSync", Sev::noisy)
-          << "If you call that function many times in the loop consider to set "
-             "cache_ptr outside of the loop. Otherwise code can be slow.";
+        std::cerr << "numered elements:" << std::endl;
+      for (; lo != hi; ++lo)
+        if (verb >= VERY_NOISY)
+          std::cerr << **lo << endl;
     }
+    if (verb >= VERY_NOISY)
+      std::cerr << std::endl;
 
-    CHKERR m_field.loop_finite_elements(prb_ptr, finite_element, *fe_ptr,
-                                        lower_rank, upper_rank, numered_fes, bh,
-                                        cache_ptr, verb);
+    if (auto fe_ptr = data_ptr->feMethodPtr.lock()) {
+
+      MOFEM_LOG_C("FieldEvaluatorSync", Sev::verbose,
+                  "Number elements %d to evaluate at proc %d",
+                  numered_fes->size(), m_field.get_comm_rank());
+      MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
+
+      if (!cache_ptr) {
+        cache_ptr = boost::make_shared<CacheTuple>();
+        CHKERR m_field.cache_problem_entities(prb_ptr->getName(), cache_ptr);
+
+        MOFEM_LOG("FieldEvaluatorSync", Sev::noisy)
+            << "If you call that function many times in the loop consider to "
+               "set "
+               "cache_ptr outside of the loop. Otherwise code can be slow.";
+      }
+
+      CHKERR m_field.loop_finite_elements(prb_ptr, finite_element, *fe_ptr,
+                                          lower_rank, upper_rank, numered_fes,
+                                          bh, cache_ptr, verb);
 
     } else
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "Pointer to element does not exists");
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Pointer to element does not exists");
+  }
 
   MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint3D(
+    const double *const point, const double distance, const std::string problem,
+    const std::string finite_element, boost::shared_ptr<SetPtsData> data_ptr,
+    int lower_rank, int upper_rank, boost::shared_ptr<CacheTuple> cache_ptr,
+    MoFEMTypes bh, VERBOSITY_LEVELS verb) {
+  return evalFEAtThePoint<3>(point, distance, problem, finite_element, data_ptr,
+                             lower_rank, upper_rank, cache_ptr, bh, verb);
+}
+
+MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint2D(
+    const double *const point, const double distance, const std::string problem,
+    const std::string finite_element, boost::shared_ptr<SetPtsData> data_ptr,
+    int lower_rank, int upper_rank, boost::shared_ptr<CacheTuple> cache_ptr,
+    MoFEMTypes bh, VERBOSITY_LEVELS verb) {
+  return evalFEAtThePoint<2>(point, distance, problem, finite_element, data_ptr,
+                             lower_rank, upper_rank, cache_ptr, bh, verb);
 }
 
 } // namespace MoFEM

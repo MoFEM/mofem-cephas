@@ -4,24 +4,12 @@
 
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
-
 #include <MoFEM.hpp>
 using namespace MoFEM;
 
 static char help[] = "...\n\n";
+
+constexpr int SPACE_DIM = 3;
 
 int main(int argc, char *argv[]) {
 
@@ -55,6 +43,9 @@ int main(int argc, char *argv[]) {
     MoFEM::Core core(moab);
     MoFEM::Interface &m_field = core;
 
+    MOFEM_LOG_CHANNEL("WORLD");
+    BOOST_LOG_SCOPED_THREAD_ATTR("Timeline", attrs::timer());
+
     // set entities bit level
     const auto bit_level = BitRefLevel().set(0);
     CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
@@ -67,18 +58,22 @@ int main(int argc, char *argv[]) {
     // meshset consisting all entities in mesh
     EntityHandle root_set = moab.get_root_set();
     // add entities to field
-    CHKERR m_field.add_ents_to_field_by_type(root_set, MBTET, "F1");
-    CHKERR m_field.add_ents_to_field_by_type(root_set, MBTET, "F2");
+    CHKERR m_field.add_ents_to_field_by_dim(root_set, SPACE_DIM, "F1");
+    CHKERR m_field.add_ents_to_field_by_dim(root_set, SPACE_DIM, "F2");
 
     // set app. order
     // see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes
     // (Mark Ainsworth & Joe Coyle)
     int order = 2;
-    CHKERR m_field.set_field_order(root_set, MBEDGE, "F1", order);
-    CHKERR m_field.set_field_order(root_set, MBTRI, "F1", order);
-    CHKERR m_field.set_field_order(root_set, MBTET, "F1", order);
-    CHKERR m_field.set_field_order(root_set, MBTET, "F2", order);
-    CHKERR m_field.set_field_order(root_set, MBTRI, "F2", order);
+
+    for (EntityType t = CN::TypeDimensionMap[1].first;
+         t <= CN::TypeDimensionMap[SPACE_DIM].second; ++t) {
+      CHKERR m_field.set_field_order(root_set, t, "F1", order);
+    }
+    for (EntityType t = CN::TypeDimensionMap[2].first;
+         t <= CN::TypeDimensionMap[SPACE_DIM].second; ++t) {
+      CHKERR m_field.set_field_order(root_set, t, "F2", order);
+    }
 
     CHKERR m_field.build_fields();
 
@@ -92,7 +87,7 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.modify_finite_element_add_field_data("E1", "F1");
     CHKERR m_field.modify_finite_element_add_field_data("E1", "F2");
 
-    CHKERR m_field.add_ents_to_finite_element_by_type(root_set, MBTET, "E1");
+    CHKERR m_field.add_ents_to_finite_element_by_dim(root_set, SPACE_DIM, "E1");
 
     CHKERR m_field.build_finite_elements();
     CHKERR m_field.build_adjacencies(bit_level);
@@ -113,21 +108,75 @@ int main(int argc, char *argv[]) {
     auto get_triangles_on_skin = [&](Range &tets_skin) {
       MoFEMFunctionBegin;
       Range tets;
-      CHKERR m_field.get_moab().get_entities_by_type(root_set, MBTET, tets);
-      Range tets_skin_part;
+      CHKERR m_field.get_moab().get_entities_by_dimension(root_set, SPACE_DIM,
+                                                          tets);
       Skinner skin(&m_field.get_moab());
       CHKERR skin.find_skin(0, tets, false, tets_skin);
+      Range adj;
+      CHKERR m_field.get_moab().get_adjacencies(tets_skin, SPACE_DIM - 2, false,
+                                                adj, moab::Interface::UNION);
+      tets_skin.merge(adj);
       MoFEMFunctionReturn(0);
     };
+
+    Range tets;
+    CHKERR m_field.get_moab().get_entities_by_dimension(root_set, SPACE_DIM,
+                                                        tets);
+    SmartPetscObj<IS> is_before_remove;
+    CHKERR m_field.getInterface<ISManager>()->isCreateProblemFieldAndRank(
+        "P1", ROW, "F1", 0, 1, is_before_remove, &tets);
+
+    MOFEM_LOG("WORLD", Sev::inform) << "Remove dofs";
 
     Range tets_skin;
     CHKERR get_triangles_on_skin(tets_skin);
     CHKERR prb_mng_ptr->removeDofsOnEntitiesNotDistributed(
-        "P1", "F1", tets_skin, 0, 1, VERBOSE, true);
+        "P1", "F1", tets_skin, 0, 1, 0, 100, VERBOSE, true);
+
+    MOFEM_LOG("WORLD", Sev::inform) << "Check consistency";
+
+    SmartPetscObj<IS> is_after_remove;
+    CHKERR m_field.getInterface<ISManager>()->isCreateProblemFieldAndRank(
+        "P1", ROW, "F1", 0, 1, is_after_remove, &tets);
+
+    auto test_is = [&]() {
+      MoFEMFunctionBegin;
+      const Problem *prb_ptr = m_field.get_problem("P1");
+      if (auto sub_data = prb_ptr->getSubData()) {
+        auto sub_ao = sub_data->getSmartRowMap();
+        if (sub_ao) {
+          CHKERR AOApplicationToPetscIS(sub_ao, is_before_remove);
+          PetscBool is_the_same;
+          CHKERR ISEqual(is_before_remove, is_after_remove, &is_the_same);
+          if (is_the_same == PETSC_FALSE) {
+            SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                    "IS should be the same if map is correctly implemented");
+          } else {
+            MOFEM_LOG("WORLD", Sev::inform) << "Sub data map is correct";
+          }
+        } else {
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                  "AO map should exist");
+        }
+      } else {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                "Sub DM should exist");
+      }
+      MoFEMFunctionReturn(0);
+    };
+
+    CHKERR test_is();
+
+    SmartPetscObj<Vec> v;
+    CHKERR m_field.getInterface<VecManager>()->vecCreateGhost("P1", ROW, v);
 
     CHKERR m_field.getInterface<MatrixManager>()
-        ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>("P1", -2, -2,
+        ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>("P1", -2,
+        -2,
                                                                    0);
+
+    MOFEM_LOG("WORLD", Sev::inform) << "done";
+
   }
   CATCH_ERRORS;
 

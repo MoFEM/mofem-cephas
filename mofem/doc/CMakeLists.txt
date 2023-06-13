@@ -1,16 +1,3 @@
-# MoFEM is free software: you can redistribute it and/or modify it under
-# the terms of the GNU Lesser General Public License as published by the
-# Free Software Foundation, either version 3 of the License, or (at your
-# option) any later version.
-#
-# MoFEM is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
-# License for more details.
-#
-# You should have received a copy of the GNU Lesser General Public
-# License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-
 find_package(Git)
 find_package(Doxygen)
 
@@ -84,6 +71,13 @@ if(DOXYGEN_FOUND)
     ${PROJECT_SOURCE_DIR}/scripts ${PROJECT_BINARY_DIR}/html/scripts
   )
   add_dependencies(doc doxygen_copy_script_files)
+
+  # copy mastadon files
+  add_custom_target(doxygen_mastadoc_files
+    ${CMAKE_COMMAND} -E copy
+    ${PROJECT_SOURCE_DIR}/doc/mastodon* ${PROJECT_BINARY_DIR}/html
+  )
+  add_dependencies(doc doxygen_mastadoc_files)
 
   # users modules docs
   # FIXME: This only works if modules are in ${PROJECT_SOURCE_DIR}/users_modules

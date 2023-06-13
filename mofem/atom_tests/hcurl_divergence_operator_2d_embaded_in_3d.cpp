@@ -6,19 +6,7 @@
  *
  */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 #include <MoFEM.hpp>
 
@@ -39,7 +27,7 @@ struct OpDivergence : public FaceEleOp {
   OpDivergence(double &div) : FaceEleOp("FIELD1", OPROW), dIv(div) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data) {
+                        EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
     const int nb_dofs = data.getIndices().size();
     if (nb_dofs == 0)
@@ -66,7 +54,7 @@ struct OpFlux : public EdgeEleOp {
   FTensor::Index<'i', 3> i;
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data) {
+                        EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
     const int nb_dofs = data.getIndices().size();
     if (nb_dofs == 0)
@@ -124,7 +112,7 @@ int main(int argc, char *argv[]) {
     CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list_bases,
                                 LASBASETOP, &choice_base_value, &flg);
     if (flg != PETSC_TRUE)
-      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "base not set");
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "base not set");
     FieldApproximationBase base = AINSWORTH_LEGENDRE_BASE;
     if (choice_base_value == AINSWORTH)
       base = AINSWORTH_LEGENDRE_BASE;

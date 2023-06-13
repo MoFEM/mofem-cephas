@@ -82,7 +82,7 @@ operator*(const Ddg_Expr<A, T, Dim, Dim, i, j, k, l> &a,
                                 Number<Dim>(), Number<Dim>());
 }
 
-/* A(m,m,i,j)*B(m,nk,l) -> Ddg */
+/* A(m,n,i,j)*B(m,n,k,l) -> Ddg */
 
 template <class A, class B, class T, class U, int Dim01, int Dim23, int Dim45,
           char i, char j, char k, char l, char m, char n>
@@ -129,10 +129,8 @@ public:
 
 template <class A, class B, class T, class U, int Dim01, int Dim23, int Dim45,
           char i, char j, char k, char l, char m, char n>
-Ddg_Expr<Ddg_times_Ddg_0101<A, B, T, U, Dim01, Dim23, Dim45, i, j, k, l, m, n>,
-         typename promote<T, U>::V, Dim01, Dim23, i, j, k, l>
-operator*(const Ddg_Expr<A, T, Dim45, Dim01, m, n, i, j> &a,
-          const Ddg_Expr<B, U, Dim45, Dim23, m, n, k, l> &b) {
+inline auto operator*(const Ddg_Expr<A, T, Dim45, Dim01, m, n, i, j> &a,
+                      const Ddg_Expr<B, U, Dim45, Dim23, m, n, k, l> &b) {
   using TensorExpr =
       Ddg_times_Ddg_0101<A, B, T, U, Dim01, Dim23, Dim45, i, j, k, l, m, n>;
   return Ddg_Expr<TensorExpr, typename promote<T, U>::V, Dim01, Dim23, i, j, k,

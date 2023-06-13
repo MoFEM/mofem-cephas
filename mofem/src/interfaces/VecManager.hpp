@@ -6,16 +6,6 @@
  *
  */
 
-/*
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
- */
-
 #ifndef __VECMANAGER_HPP__
 #define __VECMANAGER_HPP__
 
@@ -127,7 +117,7 @@ struct VecManager : public UnknownInterface {
                    SmartPetscObj<VecScatter> &smart_newctx) const;
 
   /**
-   * \brief set values of vector from/to meshdatabase
+   * \brief set values of vector from/to mesh database
    * \ingroup mofem_vectors
    *
    * \param pointer to problem struture
@@ -147,7 +137,7 @@ struct VecManager : public UnknownInterface {
                                      ScatterMode scatter_mode) const;
 
   /**
-   * \brief set values of vector from/to meshdatabase
+   * \brief set values of vector from/to mesh database
    * \ingroup mofem_vectors
    *
    * \param name of the problem

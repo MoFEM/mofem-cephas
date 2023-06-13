@@ -6,16 +6,6 @@
  *
  */
 
-/*
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
- */
-
 #ifndef __PROBLEMSMANAGER_HPP__
 #define __PROBLEMSMANAGER_HPP__
 
@@ -46,6 +36,7 @@ struct ProblemsManager : public UnknownInterface {
 
   /**
    * \brief Set partition tag to each finite element in the problem
+   * \deprecated Use CommInterface
    * \ingroup mofem_problems_manager
    *
    * This will use one of the mesh partitioning programs available from PETSc
@@ -59,12 +50,13 @@ struct ProblemsManager : public UnknownInterface {
    * @param  verb        Verbosity level
    * @return             Error code
    */
-  MoFEMErrorCode partitionMesh(const Range &ents, const int dim,
-                               const int adj_dim, const int n_parts,
-                               Tag *th_vertex_weights = nullptr,
-                               Tag *th_edge_weights = nullptr,
-                               Tag *th_part_weights = nullptr,
-                               int verb = VERBOSE, const bool debug = false);
+  DEPRECATED MoFEMErrorCode partitionMesh(const Range &ents, const int dim,
+                                          const int adj_dim, const int n_parts,
+                                          Tag *th_vertex_weights = nullptr,
+                                          Tag *th_edge_weights = nullptr,
+                                          Tag *th_part_weights = nullptr,
+                                          int verb = VERBOSE,
+                                          const bool debug = false);
 
   /** \brief build problem data structures
    * \ingroup mofem_problems_manager
@@ -146,10 +138,8 @@ struct ProblemsManager : public UnknownInterface {
       const std::string out_name, const std::vector<std::string> &fields_row,
       const std::vector<std::string> &fields_col,
       const std::string main_problem, const bool square_matrix = true,
-      const map<std::string, std::pair<EntityType, EntityType>> *entityMapRow =
-          nullptr,
-      const map<std::string, std::pair<EntityType, EntityType>> *entityMapCol =
-          nullptr,
+      const map<std::string, boost::shared_ptr<Range>> *entityMapRow = nullptr,
+      const map<std::string, boost::shared_ptr<Range>> *entityMapCol = nullptr,
       int verb = VERBOSE);
 
   /**
@@ -164,7 +154,7 @@ struct ProblemsManager : public UnknownInterface {
    * @return                  error code
    */
   MoFEMErrorCode
-  buildCompsedProblem(const std::string out_name,
+  buildComposedProblem(const std::string out_name,
                       const std::vector<std::string> add_row_problems,
                       const std::vector<std::string> add_col_problems,
                       const bool square_matrix = true, int verb = 1);
@@ -236,8 +226,8 @@ struct ProblemsManager : public UnknownInterface {
    * \ingroup mofem_problems_manager
    * \param name problem name
    *
-   * DOFs are ghost dofs if are used by elements on given partitition, but not
-   * owned by that partitition.
+   * DOFs are ghost dofs if are used by elements on given partition, but not
+   * owned by that partition.
    *
    */
   MoFEMErrorCode partitionGhostDofs(const std::string name, int verb = VERBOSE);
@@ -275,7 +265,7 @@ struct ProblemsManager : public UnknownInterface {
    * @return MoFEMErrorCode 
    */
   MoFEMErrorCode getFEMeshset(const std::string prb_name,
-                              const std::string fe_name,
+                              const std::string &fe_name,
                               EntityHandle *meshset) const;
 
   /**
@@ -293,7 +283,7 @@ struct ProblemsManager : public UnknownInterface {
    * @return         error code
    */
   MoFEMErrorCode getProblemElementsLayout(const std::string name,
-                                          const std::string fe_name,
+                                          const std::string &fe_name,
                                           PetscLayout *layout) const;
 
   /**
@@ -333,6 +323,42 @@ struct ProblemsManager : public UnknownInterface {
   MoFEMErrorCode removeDofsOnEntitiesNotDistributed(
       const std::string problem_name, const std::string field_name,
       const Range ents, const int lo_coeff = 0,
+      const int hi_coeff = MAX_DOFS_ON_ENTITY, const int lo_order = 0,
+      const int hi_order = 100, int verb = VERBOSE, const bool debug = false);
+
+  /**
+   * @brief Remove DOFs from problem by bit ref level
+   * @ingroup mofem_problems_manager
+   *
+   * See for more detail other implementation for removeDofsOnEntities.
+   *
+   * @param problem_name name of the problem
+   * @param field_name name of the field
+   * @param bit_ref_level bit ref level on which DOFs are removed
+   * @param bit_ref_mask bit ref mask on which DOFs are removed
+   * @param ents_ptr filter entities with given bit and mask
+   * @param lo_coeff low dof coefficient (rank)
+   * @param hi_coeff high dof coefficient (rank)
+   * @param verb  verbosity level
+   * @param debug to debug and seek for inconsistencies set to true
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode removeDofsOnEntities(
+      const std::string problem_name, const std::string field_name,
+      const BitRefLevel bit_ref_level, const BitRefLevel bit_ref_mask,
+      Range *ents_ptr = nullptr, const int lo_coeff = 0,
+      const int hi_coeff = MAX_DOFS_ON_ENTITY, const int lo_order = 0,
+      const int hi_order = 100, int verb = VERBOSE, const bool debug = false);
+
+  /**
+   * @copydoc removeDofsOnEntities
+   *
+   * \note Use this function for nondistributed meshes
+   */
+  MoFEMErrorCode removeDofsOnEntitiesNotDistributed(
+      const std::string problem_name, const std::string field_name,
+      const BitRefLevel bit_ref_level, const BitRefLevel bit_ref_mask,
+      Range *ents_ptr = nullptr, const int lo_coeff = 0,
       const int hi_coeff = MAX_DOFS_ON_ENTITY, const int lo_order = 0,
       const int hi_order = 100, int verb = VERBOSE, const bool debug = false);
 
@@ -380,6 +406,22 @@ struct ProblemsManager : public UnknownInterface {
                                 const int hi, const enum MarkOP op,
                                 const unsigned char c,
                                 std::vector<unsigned char> &marker) const;
+
+  /**
+   * @brief add empty block to problem
+   *
+   * MatrixManager assumes that all blocks, i.e. all fields combinations are non
+   * zero. This is not always the case, to optimise code and reduce memory usage
+   * user can specifi which blocks are empty.
+   *
+   * @param problem_name problem name
+   * @param row_field row filed name
+   * @param col_field col field name
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode addFieldToEmptyFieldBlocks(const std::string problem_name,
+                                            const std::string row_field,
+                                            const std::string col_field) const;
 
 private:
   PetscLogEvent MOFEM_EVENT_ProblemsManager;

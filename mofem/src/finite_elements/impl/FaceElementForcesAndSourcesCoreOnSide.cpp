@@ -4,28 +4,16 @@
 
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 namespace MoFEM {
 
-int FaceElementForcesAndSourcesCoreOnSideBase::getRule(int order) {
+int FaceElementForcesAndSourcesCoreOnSide::getRule(int order) {
   return -1;
 };
 
 MoFEMErrorCode
-FaceElementForcesAndSourcesCoreOnSideBase::setGaussPts(int order) {
+FaceElementForcesAndSourcesCoreOnSide::setGaussPts(int order) {
   MoFEMFunctionBegin;
   if (sidePtrFE == nullptr)
     SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
@@ -42,7 +30,7 @@ FaceElementForcesAndSourcesCoreOnSideBase::setGaussPts(int order) {
             "Edge can not be found on face element");
 
   auto edge_ptr_fe =
-      static_cast<EdgeElementForcesAndSourcesCoreBase *>(sidePtrFE);
+      static_cast<EdgeElementForcesAndSourcesCore *>(sidePtrFE);
 
   edgeSense = (*sit)->sense;
   edgeSideNumber = (*sit)->side_number;
@@ -59,7 +47,7 @@ FaceElementForcesAndSourcesCoreOnSideBase::setGaussPts(int order) {
   const int nb_gauss_pts = sidePtrFE->gaussPts.size2();
   gaussPts.resize(3, nb_gauss_pts, false);
   gaussPts.clear();
-  DataForcesAndSourcesCore &data_h1_on_edge = *edge_ptr_fe->dataOnElement[H1];
+  EntitiesFieldData &data_h1_on_edge = *edge_ptr_fe->dataOnElement[H1];
   const MatrixDouble &edge_shape_funtions =
       data_h1_on_edge.dataOnEntities[MBVERTEX][0].getN(NOBASE);
 
@@ -114,10 +102,10 @@ FaceElementForcesAndSourcesCoreOnSideBase::setGaussPts(int order) {
 }
 
 MoFEMErrorCode
-FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::setPtrFE(
+FaceElementForcesAndSourcesCoreOnSide::UserDataOperator::setPtrFE(
     ForcesAndSourcesCore *ptr) {
   MoFEMFunctionBeginHot;
-  if (!(ptrFE = dynamic_cast<FaceElementForcesAndSourcesCoreOnSideBase *>(ptr)))
+  if (!(ptrFE = dynamic_cast<FaceElementForcesAndSourcesCoreOnSide *>(ptr)))
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "User operator and finite element do not work together");
   MoFEMFunctionReturnHot(0);

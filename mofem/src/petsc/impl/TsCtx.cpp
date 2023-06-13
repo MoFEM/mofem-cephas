@@ -1,18 +1,26 @@
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 namespace MoFEM {
+
+MoFEMErrorCode TsCtx::clearLoops() {
+  MoFEMFunctionBeginHot;
+  loopsIJacobian.clear();
+  loopsIFunction.clear();
+  loopsMonitor.clear();
+  loopsRHSJacobian.clear();
+  loopsRHSFunction.clear();
+  preProcessIJacobian.clear();
+  postProcessIJacobian.clear();
+  preProcessIFunction.clear();
+  postProcessIFunction.clear();
+  preProcessMonitor.clear();
+  postProcessMonitor.clear();
+  preProcessRHSJacobian.clear();
+  preProcessRHSFunction.clear();
+  postProcessRHSJacobian.clear();
+  postProcessRHSFunction.clear();
+  MoFEMFunctionReturnHot(0);
+}
 
 PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
                               void *ctx) {
@@ -51,6 +59,9 @@ PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
   CHKERR TSGetTimeStepNumber(ts, &step);
 #endif
 
+  auto cache_ptr = boost::make_shared<CacheTuple>();
+  CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
+
   auto set = [&](auto &fe) {
     fe.ts = ts;
     fe.ts_u = u;
@@ -63,6 +74,8 @@ PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
     fe.ksp_ctx = KspMethod::CTX_SETFUNCTION;
     fe.data_ctx = PetscData::CtxSetF | PetscData::CtxSetX |
                   PetscData::CtxSetX_T | PetscData::CtxSetTime;
+    fe.cacheWeakPtr = cache_ptr;
+    CHK_THROW_MESSAGE(TSGetTimeStep(ts, &fe.ts_dt), "get time step failed");
   };
 
   auto unset = [&](auto &fe) {
@@ -82,8 +95,6 @@ PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
     ts_ctx->vecAssembleSwitch = boost::move(bit->vecAssembleSwitch);
   }
 
-  auto cache_ptr = boost::make_shared<CacheTuple>();
-  CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
 
   // fe loops
   for (auto &lit : ts_ctx->loopsIFunction) {
@@ -141,6 +152,8 @@ PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
 
   ts_ctx->matAssembleSwitch =
       boost::movelib::make_unique<bool>(ts_ctx->zeroMatrix);
+  auto cache_ptr = boost::make_shared<CacheTuple>();
+  CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
 
   auto set = [&](auto &fe) {
     fe.ts = ts;
@@ -156,6 +169,8 @@ PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
     fe.ksp_ctx = KspMethod::CTX_OPERATORS;
     fe.data_ctx = PetscData::CtxSetA | PetscData::CtxSetB | PetscData::CtxSetX |
                   PetscData::CtxSetX_T | PetscData::CtxSetTime;
+    fe.cacheWeakPtr = cache_ptr;
+    CHK_THROW_MESSAGE(TSGetTimeStep(ts, &fe.ts_dt), "get time step failed");
   };
 
   auto unset = [&](auto &fe) {
@@ -174,9 +189,6 @@ PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
     unset(*bit);
     ts_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
-
-  auto cache_ptr = boost::make_shared<CacheTuple>();
-  CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
 
   for (auto &lit : ts_ctx->loopsIJacobian) {
     lit.second->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
@@ -216,6 +228,9 @@ PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
   CHKERR ts_ctx->mField.getInterface<VecManager>()->setLocalGhostVector(
       ts_ctx->problemName, COL, u, INSERT_VALUES, SCATTER_REVERSE);
 
+  auto cache_ptr = boost::make_shared<CacheTuple>();
+  CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
+
   auto set = [&](auto &fe) {
     fe.ts = ts;
     fe.ts_u = u;
@@ -226,6 +241,8 @@ PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
     fe.snes_ctx = SnesMethod::CTX_SNESNONE;
     fe.ksp_ctx = KspMethod::CTX_KSPNONE;
     fe.data_ctx = PetscData::CtxSetX | PetscData::CtxSetTime;
+    fe.cacheWeakPtr = cache_ptr;
+    CHK_THROW_MESSAGE(TSGetTimeStep(ts, &fe.ts_dt), "get time step failed");
   };
 
   auto unset = [&](auto &fe) {
@@ -233,16 +250,13 @@ PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
-  // preproces
+  // preprocess
   for (auto &bit : ts_ctx->preProcessMonitor) {
     set(*bit);
     CHKERR ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problemName,
                                                           *bit);
     unset(*bit);
   }
-
-  auto cache_ptr = boost::make_shared<CacheTuple>();
-  CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
 
   for (auto &lit : ts_ctx->loopsMonitor) {
     set(*lit.second);
@@ -290,6 +304,8 @@ PetscErrorCode TsSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx) {
   CHKERR zero_ghost_vec(F);
 
   ts_ctx->vecAssembleSwitch = boost::movelib::make_unique<bool>(true);
+  auto cache_ptr = boost::make_shared<CacheTuple>();
+  CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
 
   int step;
 #if PETSC_VERSION_GE(3, 8, 0)
@@ -309,6 +325,8 @@ PetscErrorCode TsSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx) {
     fe.ksp_ctx = KspMethod::CTX_SETFUNCTION;
     fe.data_ctx =
         PetscData::CtxSetF | PetscData::CtxSetX | PetscData::CtxSetTime;
+    fe.cacheWeakPtr = cache_ptr;
+    CHK_THROW_MESSAGE(TSGetTimeStep(ts, &fe.ts_dt), "get time step failed");
   };
 
   auto unset = [&](auto &fe) {
@@ -326,9 +344,6 @@ PetscErrorCode TsSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx) {
     unset(*bit);
     ts_ctx->vecAssembleSwitch = boost::move(bit->vecAssembleSwitch);
   }
-
-  auto cache_ptr = boost::make_shared<CacheTuple>();
-  CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
 
   // fe loops
   for (auto &lit : ts_ctx->loopsRHSFunction) {
@@ -378,6 +393,8 @@ PetscErrorCode TsSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
 
   ts_ctx->matAssembleSwitch =
       boost::movelib::make_unique<bool>(ts_ctx->zeroMatrix);
+  auto cache_ptr = boost::make_shared<CacheTuple>();
+  CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
 
   int step;
 #if PETSC_VERSION_GE(3, 8, 0)
@@ -398,6 +415,8 @@ PetscErrorCode TsSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
     fe.data_ctx = PetscData::CtxSetA | PetscData::CtxSetB | PetscData::CtxSetX |
                   PetscData::CtxSetTime;
     fe.ts = ts;
+    fe.cacheWeakPtr = cache_ptr;
+    CHK_THROW_MESSAGE(TSGetTimeStep(ts, &fe.ts_dt), "get time step failed");
   };
 
   auto unset = [&](auto &fe) {
@@ -416,9 +435,6 @@ PetscErrorCode TsSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
     unset(*bit);
     ts_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
-
-  auto cache_ptr = boost::make_shared<CacheTuple>();
-  CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
 
   // fe loops
   for (auto &lit : ts_ctx->loopsRHSJacobian) {
@@ -477,6 +493,8 @@ PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
 
   ts_ctx->matAssembleSwitch =
       boost::movelib::make_unique<bool>(ts_ctx->zeroMatrix);
+  auto cache_ptr = boost::make_shared<CacheTuple>();
+  CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
 
   auto set = [&](auto &fe) {
     fe.ts_u = u;
@@ -496,6 +514,8 @@ PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
                   PetscData::CtxSetX_T | PetscData::CtxSetX_TT |
                   PetscData::CtxSetTime;
     fe.ts = ts;
+    fe.cacheWeakPtr = cache_ptr;
+    CHK_THROW_MESSAGE(TSGetTimeStep(ts, &fe.ts_dt), "get time step failed");
   };
 
   auto unset = [&](auto &fe) {
@@ -505,7 +525,7 @@ PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
-  // preproces
+  // preprocess
   for (auto &bit : ts_ctx->preProcessIJacobian) {
     bit->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
     set(*bit);
@@ -514,9 +534,6 @@ PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
     unset(*bit);
     ts_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
-
-  auto cache_ptr = boost::make_shared<CacheTuple>();
-  CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
 
   for (auto &lit : ts_ctx->loopsIJacobian) {
     lit.second->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
@@ -577,6 +594,8 @@ PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
   CHKERR zero_ghost_vec(F);
 
   ts_ctx->vecAssembleSwitch = boost::movelib::make_unique<bool>(true);
+  auto cache_ptr = boost::make_shared<CacheTuple>();
+  CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
 
   int step;
 #if PETSC_VERSION_GE(3, 8, 0)
@@ -599,6 +618,8 @@ PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
                   PetscData::CtxSetX_T | PetscData::CtxSetX_TT |
                   PetscData::CtxSetTime;
     fe.ts = ts;
+    fe.cacheWeakPtr = cache_ptr;
+    CHK_THROW_MESSAGE(TSGetTimeStep(ts, &fe.ts_dt), "get time step failed");
   };
 
   auto unset = [&](auto &fe) {
@@ -617,9 +638,6 @@ PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
     unset(*bit);
     ts_ctx->vecAssembleSwitch = boost::move(bit->vecAssembleSwitch);
   }
-
-  auto cache_ptr = boost::make_shared<CacheTuple>();
-  CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
 
   // fe loops
   for (auto &lit : ts_ctx->loopsIFunction) {

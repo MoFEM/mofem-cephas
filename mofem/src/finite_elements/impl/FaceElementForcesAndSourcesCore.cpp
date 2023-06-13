@@ -4,29 +4,15 @@
 
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
-
 namespace MoFEM {
 
-FaceElementForcesAndSourcesCoreBase::FaceElementForcesAndSourcesCoreBase(
+FaceElementForcesAndSourcesCore::FaceElementForcesAndSourcesCore(
     Interface &m_field)
     : ForcesAndSourcesCore(m_field),
       meshPositionsFieldName("MESH_NODE_POSITIONS") {}
 
 MoFEMErrorCode
-FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormalAtIntegrationPts() {
+FaceElementForcesAndSourcesCore::calculateAreaAndNormalAtIntegrationPts() {
   MoFEMFunctionBegin;
 
   auto type = numeredEntFiniteElementPtr->getEntType();
@@ -51,7 +37,7 @@ FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormalAtIntegrationPts() {
         &m(0, 0), &m(0, 1), &m(0, 2));
   };
 
-  if(type == MBTRI) {
+  if (type == MBTRI) {
 
     const size_t nb_gauss_pts = gaussPts.size2();
     normalsAtGaussPts.resize(nb_gauss_pts, 3);
@@ -124,7 +110,7 @@ FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormalAtIntegrationPts() {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormal() {
+MoFEMErrorCode FaceElementForcesAndSourcesCore::calculateAreaAndNormal() {
   MoFEMFunctionBegin;
 
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
@@ -188,13 +174,25 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormal() {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::setIntegrationPts() {
+MoFEMErrorCode FaceElementForcesAndSourcesCore::setIntegrationPts() {
   MoFEMFunctionBegin;
   // Set integration points
   int order_data = getMaxDataOrder();
   int order_row = getMaxRowOrder();
   int order_col = getMaxColOrder();
-  int rule = getRule(order_row, order_col, order_data);
+
+  const auto type = numeredEntFiniteElementPtr->getEntType();
+
+  auto get_rule_by_type = [&]() {
+    switch (type) {
+    case MBQUAD:
+      return getRule(order_row + 1, order_col + 1, order_data + 1);
+    default:
+      return getRule(order_row, order_col, order_data);
+    }
+  };
+
+  const int rule = get_rule_by_type();
 
   auto set_integration_pts_for_tri = [&]() {
     MoFEMFunctionBegin;
@@ -231,6 +229,21 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::setIntegrationPts() {
     MoFEMFunctionReturn(0);
   };
 
+  auto calc_base_for_tri = [&]() {
+    MoFEMFunctionBegin;
+    const size_t nb_gauss_pts = gaussPts.size2();
+    auto &base = dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE);
+    auto &diff_base = dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE);
+    base.resize(nb_gauss_pts, 3, false);
+    diff_base.resize(3, 2, false);
+    CHKERR ShapeMBTRI(&*base.data().begin(), &gaussPts(0, 0), &gaussPts(1, 0),
+                      nb_gauss_pts);
+    std::copy(
+        Tools::diffShapeFunMBTRI.begin(), Tools::diffShapeFunMBTRI.end(),
+        dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin());
+    MoFEMFunctionReturn(0);
+  };
+
   auto calc_base_for_quad = [&]() {
     MoFEMFunctionBegin;
     const size_t nb_gauss_pts = gaussPts.size2();
@@ -257,8 +270,6 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::setIntegrationPts() {
     MoFEMFunctionReturn(0);
   };
 
-  const auto type = numeredEntFiniteElementPtr->getEntType();
-
   if (rule >= 0) {
     switch (type) {
     case MBTRI:
@@ -278,18 +289,10 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::setIntegrationPts() {
     // If rule is negative, set user defined integration points
     CHKERR setGaussPts(order_row, order_col, order_data);
     const size_t nb_gauss_pts = gaussPts.size2();
-    auto &base = dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE);
-    auto &diff_base = dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE);
     if (nb_gauss_pts) {
       switch (type) {
       case MBTRI:
-        base.resize(nb_gauss_pts, 3, false);
-        diff_base.resize(3, 2, false);
-        CHKERR ShapeMBTRI(&*base.data().begin(), &gaussPts(0, 0),
-                          &gaussPts(1, 0), nb_gauss_pts);
-        std::copy(
-            Tools::diffShapeFunMBTRI.begin(), Tools::diffShapeFunMBTRI.end(),
-            dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin());
+        CHKERR calc_base_for_tri();
         break;
       case MBQUAD:
         CHKERR calc_base_for_quad();
@@ -304,7 +307,7 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::setIntegrationPts() {
 }
 
 MoFEMErrorCode
-FaceElementForcesAndSourcesCoreBase::getSpaceBaseAndOrderOnElement() {
+FaceElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
   MoFEMFunctionBegin;
   // Get spaces order/base and sense of entities.
 
@@ -369,7 +372,7 @@ FaceElementForcesAndSourcesCoreBase::getSpaceBaseAndOrderOnElement() {
 }
 
 MoFEMErrorCode
-FaceElementForcesAndSourcesCoreBase::calculateCoordinatesAtGaussPts() {
+FaceElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
   MoFEMFunctionBeginHot;
 
   const size_t nb_nodes =
@@ -386,13 +389,59 @@ FaceElementForcesAndSourcesCoreBase::calculateCoordinatesAtGaussPts() {
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::UserDataOperator::setPtrFE(
+MoFEMErrorCode FaceElementForcesAndSourcesCore::UserDataOperator::setPtrFE(
     ForcesAndSourcesCore *ptr) {
   MoFEMFunctionBeginHot;
-  if (!(ptrFE = dynamic_cast<FaceElementForcesAndSourcesCoreBase *>(ptr)))
+  if (!(ptrFE = dynamic_cast<FaceElementForcesAndSourcesCore *>(ptr)))
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "User operator and finite element do not work together");
   MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode FaceElementForcesAndSourcesCore::operator()() {
+  MoFEMFunctionBegin;
+
+  const auto type = numeredEntFiniteElementPtr->getEntType();
+  if (type != lastEvaluatedElementEntityType) {
+    switch (type) {
+    case MBTRI:
+      getElementPolynomialBase() =
+          boost::shared_ptr<BaseFunction>(new TriPolynomialBase());
+      break;
+    case MBQUAD:
+      getElementPolynomialBase() =
+          boost::shared_ptr<BaseFunction>(new QuadPolynomialBase());
+      break;
+    default:
+      MoFEMFunctionReturnHot(0);
+    }
+    CHKERR createDataOnElement(type);
+    lastEvaluatedElementEntityType = type;
+  }
+
+  // Calculate normal and tangent vectors for face geometry
+  CHKERR calculateAreaAndNormal();
+  CHKERR getSpaceBaseAndOrderOnElement();
+
+  CHKERR setIntegrationPts();
+  if (gaussPts.size2() == 0)
+    MoFEMFunctionReturnHot(0);
+
+  CHKERR calculateCoordinatesAtGaussPts();
+  CHKERR calHierarchicalBaseFunctionsOnElement();
+  CHKERR calBernsteinBezierBaseFunctionsOnElement();
+  CHKERR calculateAreaAndNormalAtIntegrationPts();
+
+  // Iterate over operators
+  CHKERR loopOverOperators();
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolumes(
+    const string fe_name, VolumeElementForcesAndSourcesCoreOnSide &fe_method) {
+  return loopSide(fe_name, &fe_method, 3);
 }
 
 } // namespace MoFEM

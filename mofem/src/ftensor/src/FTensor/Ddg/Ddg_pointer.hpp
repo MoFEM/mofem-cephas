@@ -317,6 +317,10 @@ namespace FTensor
           data[i][j] += inc;
       return *this;
     }
+
+  private:
+    template <int I>
+    Ddg(const Ddg<PackPtr<T *, I>, Tensor_Dim01, Tensor_Dim23> &) = delete;
   };
 
   template <class T, int Tensor_Dim01, int Tensor_Dim23, int I>

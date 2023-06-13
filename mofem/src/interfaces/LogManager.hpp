@@ -4,16 +4,6 @@
  *
  */
 
-/*
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
- */
-
 #ifndef __LOGMANAGER_HPP__
 #define __LOGMANAGER_HPP__
 
@@ -159,6 +149,13 @@ struct LogManager : public UnknownInterface {
    */
   static boost::shared_ptr<std::ostream> getStrmSync();
 
+   /**
+   * @brief Get the strm null object
+   * 
+   * @return boost::shared_ptr<std::ostream> 
+   */
+  static boost::shared_ptr<std::ostream> getStrmNull();
+
   /**
    * @brief Create a sink object
    *
@@ -242,6 +239,8 @@ private:
   static std::string petscStringCache;
 
 };
+
+using Sev = LogManager::SeverityLevel;
 
 // The operator puts a human-friendly representation of the severity level to
 // the stream
@@ -345,6 +344,16 @@ PetscErrorCode PetscVFPrintfDefault(FILE *fd, const char *format, va_list Argp);
  */
 #define MOFEM_LOG_SYNCHRONISE(comm)                                            \
   PetscSynchronizedFlush(comm, MoFEM::LogManager::dummy_mofem_fd);
+
+/**
+ * @brief Synchronise "SYNC" on curtain severity level
+ * 
+ */
+#define MOFEM_LOG_SEVERITY_SYNC(comm, severity)                                \
+  MOFEM_LOG("NULL", severity) << ([&] {                                        \
+    MOFEM_LOG_SYNCHRONISE(comm);                                               \
+    return 0;                                                                  \
+  })()
 
 /**
  * @brief Tag and log in channel

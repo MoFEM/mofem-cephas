@@ -6,19 +6,7 @@
 
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 #ifndef __FORCES_AND_SOURCES_CORE__HPP__
 #define __FORCES_AND_SOURCES_CORE__HPP__
@@ -27,7 +15,7 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
-/** \brief structure to get information form mofem into DataForcesAndSourcesCore
+/** \brief structure to get information form mofem into EntitiesFieldData
  * \ingroup mofem_forces_and_sources
  *
  */
@@ -92,7 +80,7 @@ struct ForcesAndSourcesCore : public FEMethod {
    It can be used to calculate nodal forces or other quantities on the mesh.
 
    */
-  boost::ptr_vector<UserDataOperator> &getOpPtrVector() { return opPtrVector; }
+  boost::ptr_deque<UserDataOperator> &getOpPtrVector() { return opPtrVector; }
 
   /**
    * @brief Get the Entity Polynomial Base object
@@ -151,26 +139,32 @@ public:
    * @param space
    * @param type
    * @param side
-   * @return const DataForcesAndSourcesCore::EntData&
+   * @return EntitiesFieldData::EntData&
    */
-  const DataForcesAndSourcesCore::EntData &getEntData(const FieldSpace space,
-                                                      const EntityType type,
-                                                      const int side) const {
+  auto &getEntData(const FieldSpace space, const EntityType type,
+                   const int side) {
     return dataOnElement[space]->dataOnEntities[type][side];
   }
 
   /**
-   * @brief Get the entity data
-   *
-   * @param space
-   * @param type
-   * @param side
-   * @return DataForcesAndSourcesCore::EntData&
+   * @brief Get data on entities and space
+   * 
+   * Entities data are stored by space, by entity type, and entity side.
+   * 
+   * @return std::array<boost::shared_ptr<EntitiesFieldData>, LASTSPACE>
    */
-  DataForcesAndSourcesCore::EntData &
-  getEntData(const FieldSpace space, const EntityType type, const int side) {
-    return dataOnElement[space]->dataOnEntities[type][side];
-  }
+  auto &getDataOnElementBySpaceArray() { return dataOnElement; }
+
+  /**
+   * @brief Get derived data on entities and space
+   *
+   * Entities data are stored by space, by entity type, and entity side. Derived
+   * data is used to store data on columns, so it shares infromatin about shape
+   * functions wih rows.
+   *
+   * @return std::array<boost::shared_ptr<EntitiesFieldData>, LASTSPACE>
+   */
+  auto &getDerivedDataOnElementBySpaceArray() { return derivedDataOnElement; }
 
 protected:
   /**
@@ -181,7 +175,7 @@ protected:
    */
   MoFEMErrorCode getEntitySense(
       const EntityType type,
-      boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const;
+      boost::ptr_vector<EntitiesFieldData::EntData> &data) const;
 
   /**
    * @brief Get the entity data order
@@ -193,7 +187,7 @@ protected:
    */
   MoFEMErrorCode getEntityDataOrder(
       const EntityType type, const FieldSpace space,
-      boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const;
+      boost::ptr_vector<EntitiesFieldData::EntData> &data) const;
 
   /**
    * @brief Get the entity sense (orientation)
@@ -203,7 +197,7 @@ protected:
    * @return MoFEMErrorCode
    */
   template <EntityType type>
-  inline MoFEMErrorCode getEntitySense(DataForcesAndSourcesCore &data) const {
+  inline MoFEMErrorCode getEntitySense(EntitiesFieldData &data) const {
     return getEntitySense(type, data.dataOnEntities[type]);
   }
 
@@ -216,7 +210,7 @@ protected:
    * @return MoFEMErrorCode
    */
   template <EntityType type>
-  inline MoFEMErrorCode getEntityDataOrder(DataForcesAndSourcesCore &data,
+  inline MoFEMErrorCode getEntityDataOrder(EntitiesFieldData &data,
                                            const FieldSpace space) const {
     return getEntityDataOrder(type, space, data.dataOnEntities[type]);
   }
@@ -228,51 +222,48 @@ protected:
   /// \brief get node indices
   template <typename EXTRACTOR>
   MoFEMErrorCode
-  getNodesIndices(const std::string &field_name,
+  getNodesIndices(const int bit_number,
                   FieldEntity_vector_view &ents_field, VectorInt &nodes_indices,
                   VectorInt &local_nodes_indices, EXTRACTOR &&extractor) const;
 
   /// \brief get row node indices from FENumeredDofEntity_multiIndex
-  MoFEMErrorCode getRowNodesIndices(DataForcesAndSourcesCore &data,
-                                    const std::string &field_name) const;
+  MoFEMErrorCode getRowNodesIndices(EntitiesFieldData &data,
+                                    const int bit_number) const;
 
   /// \brief get col node indices from FENumeredDofEntity_multiIndex
-  MoFEMErrorCode getColNodesIndices(DataForcesAndSourcesCore &data,
-                                    const std::string &field_name) const;
+  MoFEMErrorCode getColNodesIndices(EntitiesFieldData &data,
+                                    const int bit_number) const;
 
   template <typename EXTRACTOR>
-  MoFEMErrorCode getEntityIndices(DataForcesAndSourcesCore &data,
-                                  const std::string &field_name,
+  MoFEMErrorCode getEntityIndices(EntitiesFieldData &data, const int bit_number,
                                   FieldEntity_vector_view &ents_field,
                                   const EntityType type_lo,
                                   const EntityType type_hi,
                                   EXTRACTOR &&extractor) const;
 
   MoFEMErrorCode
-  getEntityRowIndices(DataForcesAndSourcesCore &data,
-                      const std::string &field_name,
+  getEntityRowIndices(EntitiesFieldData &data, const int bit_number,
                       const EntityType type_lo = MBVERTEX,
                       const EntityType type_hi = MBPOLYHEDRON) const;
 
   MoFEMErrorCode
-  getEntityColIndices(DataForcesAndSourcesCore &data,
-                      const std::string &field_name,
+  getEntityColIndices(EntitiesFieldData &data, const int bit_number,
                       const EntityType type_lo = MBVERTEX,
                       const EntityType type_hi = MBPOLYHEDRON) const;
 
   /// \brief get NoField indices
   MoFEMErrorCode
-  getNoFieldIndices(const std::string &field_name,
+  getNoFieldIndices(const int bit_number,
                     boost::shared_ptr<FENumeredDofEntity_multiIndex> dofs,
                     VectorInt &nodes_indices) const;
 
   /// \brief get col NoField indices
-  MoFEMErrorCode getNoFieldRowIndices(DataForcesAndSourcesCore &data,
-                                      const std::string &field_name) const;
+  MoFEMErrorCode getNoFieldRowIndices(EntitiesFieldData &data,
+                                      const int bit_number) const;
 
   /// \brief get col NoField indices
-  MoFEMErrorCode getNoFieldColIndices(DataForcesAndSourcesCore &data,
-                                      const std::string &field_name) const;
+  MoFEMErrorCode getNoFieldColIndices(EntitiesFieldData &data,
+                                      const int bit_number) const;
 
   /**@}*/
 
@@ -280,16 +271,20 @@ protected:
 
   /**@{*/
 
+  /** Get bit ref level in  entities, and set it to data
+   */
+  MoFEMErrorCode getBitRefLevelOnData();
+
   /**
    * \brief Get field data on nodes
    */
-  MoFEMErrorCode getNoFieldFieldData(const std::string field_name,
+  MoFEMErrorCode getNoFieldFieldData(const int bit_number,
                                      VectorDouble &ent_field_data,
                                      VectorDofs &ent_field_dofs,
                                      VectorFieldEntities &ent_field) const;
 
-  MoFEMErrorCode getNoFieldFieldData(DataForcesAndSourcesCore &data,
-                                     const std::string field_name) const;
+  MoFEMErrorCode getNoFieldFieldData(EntitiesFieldData &data,
+                                     const int bit_number) const;
 
   /**
    * \brief Get data on nodes
@@ -297,23 +292,22 @@ protected:
    * @param  field_name Field name
    * @return            Error code
    */
-  MoFEMErrorCode getNodesFieldData(DataForcesAndSourcesCore &data,
-                                   const std::string &field_name) const;
+  MoFEMErrorCode getNodesFieldData(EntitiesFieldData &data,
+                                   const int bit_number) const;
 
   MoFEMErrorCode
-  getEntityFieldData(DataForcesAndSourcesCore &data,
-                     const std::string &field_name,
+  getEntityFieldData(EntitiesFieldData &data, const int bit_number,
                      const EntityType type_lo = MBVERTEX,
                      const EntityType type_hi = MBPOLYHEDRON) const;
 
   /**@}*/
 
   /// \brief Get nodes on faces
-  MoFEMErrorCode getFaceNodes(DataForcesAndSourcesCore &data) const;
+  MoFEMErrorCode getFaceNodes(EntitiesFieldData &data) const;
 
   /// \brief Get field approximation space and base on entities
   MoFEMErrorCode
-  getSpacesAndBaseOnEntities(DataForcesAndSourcesCore &data) const;
+  getSpacesAndBaseOnEntities(EntitiesFieldData &data) const;
 
   /** \name Data form NumeredDofEntity_multiIndex */
 
@@ -436,7 +430,7 @@ protected:
    *
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode createDataOnElement();
+  MoFEMErrorCode createDataOnElement(EntityType type);
 
   /**
    * @brief Iterate user data operators
@@ -457,33 +451,33 @@ protected:
    */
   virtual MoFEMErrorCode setGaussPts(int order);
 
-  /**@/}*/
+  /**@}*/
 
   /**
    * @brief Entity data on element entity rows fields
    *
    */
-  const std::array<boost::shared_ptr<DataForcesAndSourcesCore>, LASTSPACE>
+  const std::array<boost::shared_ptr<EntitiesFieldData>, LASTSPACE>
       dataOnElement;
 
   /**
    * @brief Entity data on element entity columns fields
    *
-   */
-  const std::array<boost::shared_ptr<DataForcesAndSourcesCore>, LASTSPACE>
+  */
+  const std::array<boost::shared_ptr<EntitiesFieldData>, LASTSPACE>
       derivedDataOnElement;
 
-  DataForcesAndSourcesCore &dataNoField;
-  DataForcesAndSourcesCore &dataH1;
-  DataForcesAndSourcesCore &dataHcurl;
-  DataForcesAndSourcesCore &dataHdiv;
-  DataForcesAndSourcesCore &dataL2;
+  EntitiesFieldData &dataNoField;
+  EntitiesFieldData &dataH1;
+  EntitiesFieldData &dataHcurl;
+  EntitiesFieldData &dataHdiv;
+  EntitiesFieldData &dataL2;
 
   /**
    * @brief Vector of finite element users data operators
    *
    */
-  boost::ptr_vector<UserDataOperator> opPtrVector;
+  boost::ptr_deque<UserDataOperator> opPtrVector;
 
   friend class UserDataOperator;
 
@@ -523,9 +517,25 @@ private:
    */
   MoFEMErrorCode setSideFEPtr(const ForcesAndSourcesCore *side_fe_ptr);
 
-  friend class VolumeElementForcesAndSourcesCoreOnSideBase;
-  friend class FaceElementForcesAndSourcesCoreOnSideBase;
-  friend class VolumeElementForcesAndSourcesCoreOnContactPrismSideBase;
+  /**u
+   * @brief Element to integrate parent or child
+   *
+   */
+  ForcesAndSourcesCore *refinePtrFE;
+
+  /**
+   * @brief Set the pointer to face element refined
+   *
+   * @param refine_fe_ptr
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode setRefineFEPtr(const ForcesAndSourcesCore *refine_fe_ptr);
+
+  friend class VolumeElementForcesAndSourcesCoreOnSide;
+  friend class FaceElementForcesAndSourcesCoreOnSide;
+  friend class FaceElementForcesAndSourcesCoreOnChildParent;
+  friend class EdgeElementForcesAndSourcesCoreOnChildParent;
+  friend class VolumeElementForcesAndSourcesCoreOnContactPrismSide;
 
 protected:
   MatrixDouble coordsAtGaussPts; ///< coordinated at gauss points
@@ -538,9 +548,12 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
   /**
    * \brief Controls loop over entities on element
    *
-   * OPROW is used if row vector is assembled
-   * OPCOL is usually used if column vector is assembled
-   * OPROWCOL is usually used for assemble matrices.
+   * - OPROW is used if row vector is assembled
+   * - OPCOL is usually used if column vector is assembled
+   * - OPROWCOL is usually used for assemble matrices.
+   * - OPSPACE no field is defined for such operator. Is usually used to modify
+   * base
+   * 
    *
    * For typical problem like Bubnov-Galerkin OPROW and OPCOL are the same. In
    * more general case for example for non-square matrices columns and rows
@@ -548,11 +561,14 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
    *
    */
   enum OpType {
-    OPROW = 1 << 0,
-    OPCOL = 1 << 1,
-    OPROWCOL = 1 << 2,
-    OPLAST = 1 << 3
+    OPROW = 1 << 0,    ///< operator doWork function is executed on FE rows
+    OPCOL = 1 << 1,    ///< operator doWork function is executed on FE columns
+    OPROWCOL = 1 << 2, ///< operator doWork is executed on FE rows &columns
+    OPSPACE = 1 << 3,  ///< operator do Work is execute on space data
+    OPLAST = 1 << 3    ///< @deprecated would be removed
   };
+
+  static const char *const OpTypeNames[];
 
   char opType;
   std::string rowFieldName;
@@ -566,14 +582,14 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
    *
    * User has no access to field data from this operator.
    */
-  UserDataOperator(const FieldSpace space, const char type = OPLAST,
+  UserDataOperator(const FieldSpace space, const char type = OPSPACE,
                    const bool symm = true);
 
-  UserDataOperator(const std::string &field_name, const char type,
+  UserDataOperator(const std::string field_name, const char type,
                    const bool symm = true);
 
-  UserDataOperator(const std::string &row_field_name,
-                   const std::string &col_field_name, const char type,
+  UserDataOperator(const std::string row_field_name,
+                   const std::string col_field_name, const char type,
                    const bool symm = true);
 
   /** \brief Return raw pointer to NumeredEntFiniteElement
@@ -594,7 +610,7 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
    */
   inline int getFEDim() const;
 
-   /**
+  /**
    * @brief Get dimension of finite element
    *
    * @return int
@@ -604,7 +620,7 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
   /**
    * @brief Get the side number pointer
    *
-   * \note For vertex is expection. Side basses in argument of function doWork
+   * \note For vertex is expectation. Side basses in argument of function doWork
    * is zero. For other entity types side can be used as argument of this
    * function.
    *
@@ -618,13 +634,13 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
   /**
    * @brief Get the side entity
    *
-   * \note For vertex is expection. Side basses in argument of function
+   * \note For vertex is expectation. Side basses in argument of function
    * doWork is zero. For other entity types side can be used as argument of
    * this function.
    *
    * \code
    * MoFEMErrorCode doWork(int side, EntityType type,
-   *                     DataForcesAndSourcesCore::EntData &data) {
+   *                     EntitiesFieldData::EntData &data) {
    *  MoFEMFunctionBegin;
    *
    *  if (type == MBVERTEX) {
@@ -728,7 +744,7 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
 
   /** \brief Get name of the element
    */
-  inline const std::string &getFEName() const;
+  inline std::string getFEName() const;
 
   /** \name Accessing KSP */
 
@@ -766,18 +782,6 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
 
   inline Mat getSNESB() const;
 
-  //! \deprecated Use getSNESF intead
-  DEPRECATED inline Vec getSnesF() const { return getSNESf(); }
-
-  //! \deprecated Use getSNESX intead
-  DEPRECATED inline Vec getSnesX() const { return getSNESx(); }
-
-  //! \deprecated Use getSNESA intead
-  DEPRECATED inline Mat getSnesA() const { return getSNESA(); }
-
-  //! \deprecated Use getSNESB intead
-  DEPRECATED inline Mat getSnesB() const { return getSNESB(); }
-
   /**@}*/
 
   /** \name Accessing TS */
@@ -799,6 +803,8 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
   inline int getTSstep() const;
 
   inline double getTStime() const;
+
+  inline double getTStimeStep() const;
 
   inline double getTSa() const;
 
@@ -870,7 +876,7 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
 
   /**@{*/
 
-  /** \name Deprecated (do not use) */
+  /** \name Measures (area, volume, length, etc.) */
 
   /**
    * \brief get measure of element
@@ -888,25 +894,8 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
 
   /**@{*/
 
-  /** \name Deprecated (do not use) */
+  /** \name Loops */
 
-  // \deprecated Deprecated function with spelling mistake
-  DEPRECATED inline MoFEMErrorCode
-  getPorblemRowIndices(const std::string filed_name, const EntityType type,
-                       const int side, VectorInt &indices) const;
-
-  /**@}*/
-
-protected:
-  ForcesAndSourcesCore *ptrFE;
-
-  virtual MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
-
-  inline ForcesAndSourcesCore *getPtrFE() const;
-
-  inline ForcesAndSourcesCore *getSidePtrFE() const;
-
-private:
   /**
    * @brief User call this function to loop over elements on the side of
    * face. This function calls finite element with is operator to do
@@ -917,15 +906,78 @@ private:
    * @param dim           dimension the of side element
    * @param ent_for_side  entity handle for which adjacent volume or face will
    * be accessed
+   * @param verb
+   * @param sev
    * @return MoFEMErrorCode
    */
   MoFEMErrorCode loopSide(const string &fe_name, ForcesAndSourcesCore *side_fe,
-                          const size_t dim,
-                          const EntityHandle ent_for_side = 0);
+                          const size_t dim, const EntityHandle ent_for_side = 0,
+                          const int verb = QUIET,
+                          const LogManager::SeverityLevel sev = Sev::noisy);
 
+  /**
+   * @brief  User call this function to loop over parent elements. This function
+   * calls finite element with is operator to do calculations.
+   *
+   * @param fe_name
+   * @param parent_fe
+   * @param verb
+   * @param sev
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode loopThis(const string &fe_name,
+                          ForcesAndSourcesCore *parent_fe,
+                          const int verb = QUIET,
+                          const LogManager::SeverityLevel sev = Sev::noisy);
+
+  /**
+   * @brief  User call this function to loop over parent elements. This function
+   * calls finite element with is operator to do calculations.
+   *
+   * @param fe_name
+   * @param parent_fe
+   * @param verb
+   * @param sev
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode loopParent(const string &fe_name,
+                            ForcesAndSourcesCore *parent_fe,
+                            const int verb = QUIET,
+                            const LogManager::SeverityLevel sev = Sev::noisy);
+
+  /**
+   * @brief  User call this function to loop over parent elements. This function
+   * calls finite element with is operator to do calculations.
+   *
+   * @param fe_name
+   * @param child_fe
+   * @param verb
+   * @param sev
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode loopChildren(const string &fe_name,
+                              ForcesAndSourcesCore *child_fe,
+                              const int verb = QUIET,
+                              const LogManager::SeverityLevel sev = Sev::noisy);
+
+  /**@}*/
+
+  inline ForcesAndSourcesCore *getPtrFE() const;
+
+  inline ForcesAndSourcesCore *getSidePtrFE() const;
+
+  inline ForcesAndSourcesCore *getRefinePtrFE() const;
+
+
+protected:
+  ForcesAndSourcesCore *ptrFE;
+
+  virtual MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
+
+private:
   friend class ForcesAndSourcesCore;
-  friend class EdgeElementForcesAndSourcesCoreBase;
-  friend class FaceElementForcesAndSourcesCoreBase;
+  friend class EdgeElementForcesAndSourcesCore;
+  friend class FaceElementForcesAndSourcesCore;
   friend class ContactPrismElementForcesAndSourcesCore;
 };
 
@@ -942,7 +994,7 @@ EntityHandle ForcesAndSourcesCore::UserDataOperator::getFEEntityHandle() const {
 }
 
 int ForcesAndSourcesCore::UserDataOperator::getFEDim() const {
-  return ptrFE->mField.get_moab().dimension_from_handle(getFEEntityHandle());
+  return dimension_from_handle(getFEEntityHandle());
 };
 
 EntityType ForcesAndSourcesCore::UserDataOperator::getFEType() const {
@@ -997,8 +1049,8 @@ int ForcesAndSourcesCore::UserDataOperator::getLoopSize() const {
   return getFEMethod()->getLoopSize();
 }
 
-const std::string &ForcesAndSourcesCore::UserDataOperator::getFEName() const {
-  return getFEMethod()->feName;
+std::string ForcesAndSourcesCore::UserDataOperator::getFEName() const {
+  return getFEMethod()->getFEName();
 }
 
 const PetscData::Switches &
@@ -1022,70 +1074,150 @@ ForcesAndSourcesCore::UserDataOperator::getTSCtx() const {
 }
 
 Vec ForcesAndSourcesCore::UserDataOperator::getKSPf() const {
+#ifndef NDEBUG
+  if (getFEMethod()->ksp_f == PETSC_NULL)
+    THROW_MESSAGE("KSP not set F vector");
+#endif
   return getFEMethod()->ksp_f;
 }
 
 Mat ForcesAndSourcesCore::UserDataOperator::getKSPA() const {
+#ifndef NDEBUG
+  if (getFEMethod()->ksp_A == PETSC_NULL)
+    THROW_MESSAGE("KSP not set A vector");
+#endif
   return getFEMethod()->ksp_A;
 }
 
 Mat ForcesAndSourcesCore::UserDataOperator::getKSPB() const {
+#ifndef NDEBUG
+  if (getFEMethod()->ksp_B == PETSC_NULL)
+    THROW_MESSAGE("KSP not set B vector");
+#endif
   return getFEMethod()->ksp_B;
 }
 
 Vec ForcesAndSourcesCore::UserDataOperator::getSNESf() const {
+#ifndef NDEBUG
+  if (getFEMethod()->snes_f == PETSC_NULL)
+    THROW_MESSAGE("SNES not set F vector");
+#endif
   return getFEMethod()->snes_f;
 }
 
 Vec ForcesAndSourcesCore::UserDataOperator::getSNESx() const {
+#ifndef NDEBUG
+  if (getFEMethod()->snes_x == PETSC_NULL)
+    THROW_MESSAGE("SNESnot set X vector");
+#endif
   return getFEMethod()->snes_x;
 }
 
 Mat ForcesAndSourcesCore::UserDataOperator::getSNESA() const {
+#ifndef NDEBUG
+  if (getFEMethod()->snes_A == PETSC_NULL)
+    THROW_MESSAGE("SNES not set A vector");
+#endif
   return getFEMethod()->snes_A;
 }
 
 Mat ForcesAndSourcesCore::UserDataOperator::getSNESB() const {
+#ifndef NDEBUG
+  if (getFEMethod()->snes_B == PETSC_NULL)
+    THROW_MESSAGE("SNES not set A matrix");
+#endif
   return getFEMethod()->snes_B;
 }
 
 Vec ForcesAndSourcesCore::UserDataOperator::getTSu() const {
+#ifndef NDEBUG
+  if (getFEMethod()->ts_u == PETSC_NULL)
+    THROW_MESSAGE("TS not set U vector");
+#endif
   return getFEMethod()->ts_u;
 }
 
 Vec ForcesAndSourcesCore::UserDataOperator::getTSu_t() const {
+#ifndef NDEBUG
+  if (getFEMethod()->ts_u_t == PETSC_NULL)
+    THROW_MESSAGE("TS not set U_t vector");
+#endif
   return getFEMethod()->ts_u_t;
 }
 
 Vec ForcesAndSourcesCore::UserDataOperator::getTSu_tt() const {
+#ifndef NDEBUG
+  if (getFEMethod()->ts_u_tt == PETSC_NULL)
+    THROW_MESSAGE("TS not set U_tt vector");
+#endif
   return getFEMethod()->ts_u_tt;
 }
 
 Vec ForcesAndSourcesCore::UserDataOperator::getTSf() const {
+#ifndef NDEBUG
+  if (getFEMethod()->ts_F == PETSC_NULL)
+    THROW_MESSAGE("TS not set F vector");
+#endif
   return getFEMethod()->ts_F;
 }
 
 Mat ForcesAndSourcesCore::UserDataOperator::getTSA() const {
+#ifndef NDEBUG
+  if (getFEMethod()->ts_A == PETSC_NULL)
+    THROW_MESSAGE("TS not set A matrix");
+#endif
   return getFEMethod()->ts_A;
 }
 
 Mat ForcesAndSourcesCore::UserDataOperator::getTSB() const {
+#ifndef NDEBUG
+  if (getFEMethod()->ts_B == PETSC_NULL)
+    THROW_MESSAGE("TS not set B matrix");
+#endif
   return getFEMethod()->ts_B;
 }
 
 int ForcesAndSourcesCore::UserDataOperator::getTSstep() const {
+#ifndef NDEBUG
+  if ((getFEMethod()->data_ctx & PetscData::PetscData::CtxSetTime).none())
+    THROW_MESSAGE("TS not set time");
+#endif
   return getFEMethod()->ts_step;
 }
 
 double ForcesAndSourcesCore::UserDataOperator::getTStime() const {
+#ifndef NDEBUG
+  if ((getFEMethod()->data_ctx & PetscData::PetscData::CtxSetTime).none())
+    THROW_MESSAGE("TS not set time");
+#endif
   return getFEMethod()->ts_t;
 }
 
+double ForcesAndSourcesCore::UserDataOperator::getTStimeStep() const {
+#ifndef NDEBUG
+  if ((getFEMethod()->data_ctx & PetscData::PetscData::CtxSetTime).none())
+    THROW_MESSAGE("TS not set time");
+#endif
+  return getFEMethod()->ts_dt;
+}
+
 double ForcesAndSourcesCore::UserDataOperator::getTSa() const {
+#ifndef NDEBUG
+  if ((getFEMethod()->data_ctx & (PetscData::CtxSetA | PetscData::CtxSetB))
+          .none() ||
+      (getFEMethod()->data_ctx & (PetscData::CtxSetX_T)).none())
+    THROW_MESSAGE("TS not set B matrix");
+#endif
   return getFEMethod()->ts_a;
 }
 
 double ForcesAndSourcesCore::UserDataOperator::getTSaa() const {
+#ifndef NDEBUG
+  if ((getFEMethod()->data_ctx & (PetscData::CtxSetA | PetscData::CtxSetB))
+          .none() ||
+      (getFEMethod()->data_ctx & (PetscData::CtxSetX_TT)).none())
+    THROW_MESSAGE("TS not set B matrix");
+#endif
   return getFEMethod()->ts_aa;
 }
 
@@ -1098,11 +1230,11 @@ auto ForcesAndSourcesCore::UserDataOperator::getFTensor0IntegrationWeight() {
       &(getGaussPts()(getGaussPts().size1() - 1, 0)));
 }
 
-MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::getPorblemRowIndices(
-    const std::string filed_name, const EntityType type, const int side,
-    VectorInt &indices) const {
-  return getProblemRowIndices(filed_name, type, side, indices);
-}
+// MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::getPorblemRowIndices(
+//     const std::string filed_name, const EntityType type, const int side,
+//     VectorInt &indices) const {
+//   return getProblemRowIndices(filed_name, type, side, indices);
+// }
 
 ForcesAndSourcesCore *ForcesAndSourcesCore::UserDataOperator::getPtrFE() const {
   return ptrFE;
@@ -1111,6 +1243,11 @@ ForcesAndSourcesCore *ForcesAndSourcesCore::UserDataOperator::getPtrFE() const {
 ForcesAndSourcesCore *
 ForcesAndSourcesCore::UserDataOperator::getSidePtrFE() const {
   return ptrFE->sidePtrFE;
+}
+
+ForcesAndSourcesCore *
+ForcesAndSourcesCore::UserDataOperator::getRefinePtrFE() const {
+  return ptrFE->refinePtrFE;
 }
 
 MatrixDouble &ForcesAndSourcesCore::UserDataOperator::getCoordsAtGaussPts() {
@@ -1130,6 +1267,48 @@ double ForcesAndSourcesCore::UserDataOperator::getMeasure() const {
 double &ForcesAndSourcesCore::UserDataOperator::getMeasure() {
   return static_cast<ForcesAndSourcesCore *>(ptrFE)->elementMeasure;
 }
+
+/**
+ * @brief Element used to execute operators on side of the element
+ * 
+ * @tparam E template for side element type
+ * 
+ */
+template <typename E>
+struct OpLoopSide : public ForcesAndSourcesCore::UserDataOperator {
+
+  using UserDataOperator = ForcesAndSourcesCore::UserDataOperator;
+
+  /**
+   * @brief Construct a new Op Loop Side object
+   * 
+   * @param m_field 
+   * @param fe_name name of side (domain element)
+   * @param side_dim dimension
+   */
+  OpLoopSide(MoFEM::Interface &m_field, const std::string fe_name,
+             const int side_dim)
+      : UserDataOperator(NOSPACE, OPSPACE), sideFEPtr(new E(m_field)),
+        fieldName(fe_name), sideDim(side_dim) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        EntitiesFieldData::EntData &data) {
+    MoFEMFunctionBegin;
+    CHKERR loopSide(fieldName, sideFEPtr.get(), sideDim);
+    MoFEMFunctionReturn(0);
+  };
+
+  boost::ptr_deque<UserDataOperator> &getOpPtrVector() {
+    return sideFEPtr->getOpPtrVector();
+  }
+
+  boost::shared_ptr<E> &getSideFEPtr() { return sideFEPtr; }
+
+protected:
+  const std::string fieldName;
+  const int sideDim;
+  boost::shared_ptr<E> sideFEPtr;
+};
 
 } // namespace MoFEM
 

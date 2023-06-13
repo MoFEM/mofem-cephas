@@ -5,20 +5,6 @@ A l2, h1, h-div and h-curl spaces are implemented.
 
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
-
 using namespace MoFEM;
 
 MoFEMErrorCode
@@ -51,7 +37,7 @@ MoFEMErrorCode TetPolynomialBase::getValueH1(MatrixDouble &pts) {
 MoFEMErrorCode TetPolynomialBase::getValueH1AinsworthBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
                                      double *diffL, const int dim) =
@@ -72,8 +58,8 @@ MoFEMErrorCode TetPolynomialBase::getValueH1AinsworthBase(MatrixDouble &pts) {
                 "data inconsistency");
       }
       sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
-      order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
-      int nb_dofs = NBEDGE_H1(data.dataOnEntities[MBEDGE][ee].getDataOrder());
+      order[ee] = data.dataOnEntities[MBEDGE][ee].getOrder();
+      int nb_dofs = NBEDGE_H1(data.dataOnEntities[MBEDGE][ee].getOrder());
       data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts, nb_dofs,
                                                         false);
       data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_gauss_pts,
@@ -106,8 +92,8 @@ MoFEMErrorCode TetPolynomialBase::getValueH1AinsworthBase(MatrixDouble &pts) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "data inconsistency");
       }
-      int nb_dofs = NBFACETRI_H1(data.dataOnEntities[MBTRI][ff].getDataOrder());
-      order[ff] = data.dataOnEntities[MBTRI][ff].getDataOrder();
+      int nb_dofs = NBFACETRI_H1(data.dataOnEntities[MBTRI][ff].getOrder());
+      order[ff] = data.dataOnEntities[MBTRI][ff].getOrder();
       data.dataOnEntities[MBTRI][ff].getN(base).resize(nb_gauss_pts, nb_dofs,
                                                        false);
       data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(nb_gauss_pts,
@@ -138,14 +124,14 @@ MoFEMErrorCode TetPolynomialBase::getValueH1AinsworthBase(MatrixDouble &pts) {
 
   if (data.spacesOnEntities[MBTET].test(H1)) {
     // volume
-    int order = data.dataOnEntities[MBTET][0].getDataOrder();
+    int order = data.dataOnEntities[MBTET][0].getOrder();
     int nb_vol_dofs = NBVOLUMETET_H1(order);
     data.dataOnEntities[MBTET][0].getN(base).resize(nb_gauss_pts, nb_vol_dofs,
                                                     false);
     data.dataOnEntities[MBTET][0].getDiffN(base).resize(nb_gauss_pts,
                                                         3 * nb_vol_dofs, false);
     CHKERR H1_VolumeShapeFunctions_MBTET(
-        data.dataOnEntities[MBTET][0].getDataOrder(),
+        data.dataOnEntities[MBTET][0].getOrder(),
         &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
         &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
         &*data.dataOnEntities[MBTET][0].getN(base).data().begin(),
@@ -163,7 +149,7 @@ MoFEMErrorCode
 TetPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const std::string field_name = cTx->fieldName;
   const int nb_gauss_pts = pts.size2();
 
@@ -268,7 +254,7 @@ TetPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
       if (sense == 0)
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Sense of the edge unknown");
-      const int order = ent_data.getDataOrder();
+      const int order = ent_data.getOrder();
       const int nb_dofs = NBEDGE_H1(order);
 
       if (nb_dofs) {
@@ -334,7 +320,7 @@ TetPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
 
     for (int ff = 0; ff != 4; ++ff) {
       auto &ent_data = data.dataOnEntities[MBTRI][ff];
-      const int order = ent_data.getDataOrder();
+      const int order = ent_data.getOrder();
       const int nb_dofs = NBFACETRI_H1(order);
 
       if (nb_dofs) {
@@ -397,7 +383,7 @@ TetPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
               "Wrong size ent of ent data");
 
     auto &ent_data = data.dataOnEntities[MBTET][0];
-    const int order = ent_data.getDataOrder();
+    const int order = ent_data.getOrder();
     const int nb_dofs = NBVOLUMETET_H1(order);
     if (get_alpha_by_order_ptr(ent_data, order)) {
       get_alpha_by_name_ptr(ent_data, field_name) =
@@ -463,7 +449,7 @@ MoFEMErrorCode TetPolynomialBase::getValueL2(MatrixDouble &pts) {
 MoFEMErrorCode TetPolynomialBase::getValueL2AinsworthBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
                                      double *diffL, const int dim) =
@@ -473,13 +459,13 @@ MoFEMErrorCode TetPolynomialBase::getValueL2AinsworthBase(MatrixDouble &pts) {
 
   data.dataOnEntities[MBTET][0].getN(base).resize(
       nb_gauss_pts,
-      NBVOLUMETET_L2(data.dataOnEntities[MBTET][0].getDataOrder()), false);
+      NBVOLUMETET_L2(data.dataOnEntities[MBTET][0].getOrder()), false);
   data.dataOnEntities[MBTET][0].getDiffN(base).resize(
       nb_gauss_pts,
-      3 * NBVOLUMETET_L2(data.dataOnEntities[MBTET][0].getDataOrder()), false);
+      3 * NBVOLUMETET_L2(data.dataOnEntities[MBTET][0].getOrder()), false);
 
   CHKERR L2_Ainsworth_ShapeFunctions_MBTET(
-      data.dataOnEntities[MBTET][0].getDataOrder(),
+      data.dataOnEntities[MBTET][0].getOrder(),
       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
       &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
       &*data.dataOnEntities[MBTET][0].getN(base).data().begin(),
@@ -493,7 +479,7 @@ MoFEMErrorCode
 TetPolynomialBase::getValueL2BernsteinBezierBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const std::string field_name = cTx->fieldName;
   const int nb_gauss_pts = pts.size2();
 
@@ -565,7 +551,7 @@ TetPolynomialBase::getValueL2BernsteinBezierBase(MatrixDouble &pts) {
               "Wrong size ent of ent data");
 
     auto &ent_data = data.dataOnEntities[MBTET][0];
-    const int order = ent_data.getDataOrder();
+    const int order = ent_data.getOrder();
     const int nb_dofs = NBVOLUMETET_L2(order);
 
     if (get_alpha_by_order_ptr(ent_data, order)) {
@@ -669,7 +655,7 @@ TetPolynomialBase::getValueL2BernsteinBezierBase(MatrixDouble &pts) {
 MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
                                      double *diffL, const int dim) =
@@ -694,7 +680,7 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
     if (data.dataOnEntities[MBTRI][ff].getSense() == 0) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
     }
-    faces_order[ff] = data.dataOnEntities[MBTRI][ff].getDataOrder();
+    faces_order[ff] = data.dataOnEntities[MBTRI][ff].getOrder();
     // three edges on face
     for (int ee = 0; ee < 3; ee++) {
       N_face_edge(ff, ee).resize(
@@ -737,7 +723,7 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
   double *diff_phi_v_f[4];
   double *diff_phi_v;
 
-  int volume_order = data.dataOnEntities[MBTET][0].getDataOrder();
+  int volume_order = data.dataOnEntities[MBTET][0].getOrder();
 
   N_volume_edge.resize(6, false);
   diffN_volume_edge.resize(6, false);
@@ -1009,7 +995,7 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
 MoFEMErrorCode TetPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   if (base != DEMKOWICZ_JACOBI_BASE) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -1019,7 +1005,7 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
   }
   int nb_gauss_pts = pts.size2();
 
-  int volume_order = data.dataOnEntities[MBTET][0].getDataOrder();
+  int volume_order = data.dataOnEntities[MBTET][0].getOrder();
 
   int p_f[4];
   double *phi_f[4];
@@ -1027,7 +1013,7 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
 
   // Calculate base function on tet faces
   for (int ff = 0; ff != 4; ff++) {
-    int face_order = data.dataOnEntities[MBTRI][ff].getDataOrder();
+    int face_order = data.dataOnEntities[MBTRI][ff].getOrder();
     int order = volume_order > face_order ? volume_order : face_order;
     data.dataOnEntities[MBTRI][ff].getN(base).resize(
         nb_gauss_pts, 3 * NBFACETRI_DEMKOWICZ_HDIV(order), false);
@@ -1063,7 +1049,7 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
 
   // Set size of face base correctly
   for (int ff = 0; ff != 4; ff++) {
-    int face_order = data.dataOnEntities[MBTRI][ff].getDataOrder();
+    int face_order = data.dataOnEntities[MBTRI][ff].getOrder();
     data.dataOnEntities[MBTRI][ff].getN(base).resize(
         nb_gauss_pts, 3 * NBFACETRI_DEMKOWICZ_HDIV(face_order), true);
     data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(
@@ -1093,7 +1079,7 @@ MoFEMErrorCode
 TetPolynomialBase::getValueHcurlAinsworthBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
                                      double *diffL, const int dim) =
@@ -1114,9 +1100,9 @@ TetPolynomialBase::getValueHcurlAinsworthBase(MatrixDouble &pts) {
                 "data inconsistency");
       }
       sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
-      order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
+      order[ee] = data.dataOnEntities[MBEDGE][ee].getOrder();
       int nb_dofs = NBEDGE_AINSWORTH_HCURL(
-          data.dataOnEntities[MBEDGE][ee].getDataOrder());
+          data.dataOnEntities[MBEDGE][ee].getOrder());
       data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,
                                                         3 * nb_dofs, false);
       data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_gauss_pts,
@@ -1152,7 +1138,7 @@ TetPolynomialBase::getValueHcurlAinsworthBase(MatrixDouble &pts) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "data inconsistency");
       }
-      order[ff] = data.dataOnEntities[MBTRI][ff].getDataOrder();
+      order[ff] = data.dataOnEntities[MBTRI][ff].getOrder();
       int nb_dofs = NBFACETRI_AINSWORTH_HCURL(order[ff]);
       data.dataOnEntities[MBTRI][ff].getN(base).resize(nb_gauss_pts,
                                                        3 * nb_dofs, false);
@@ -1185,14 +1171,14 @@ TetPolynomialBase::getValueHcurlAinsworthBase(MatrixDouble &pts) {
   if (data.spacesOnEntities[MBTET].test(HCURL)) {
 
     // volume
-    int order = data.dataOnEntities[MBTET][0].getDataOrder();
+    int order = data.dataOnEntities[MBTET][0].getOrder();
     int nb_vol_dofs = NBVOLUMETET_AINSWORTH_HCURL(order);
     data.dataOnEntities[MBTET][0].getN(base).resize(nb_gauss_pts,
                                                     3 * nb_vol_dofs, false);
     data.dataOnEntities[MBTET][0].getDiffN(base).resize(nb_gauss_pts,
                                                         9 * nb_vol_dofs, false);
     CHKERR Hcurl_Ainsworth_VolumeFunctions_MBTET(
-        data.dataOnEntities[MBTET][0].getDataOrder(),
+        data.dataOnEntities[MBTET][0].getOrder(),
         &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
         &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
         &*data.dataOnEntities[MBTET][0].getN(base).data().begin(),
@@ -1211,7 +1197,7 @@ MoFEMErrorCode
 TetPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  DataForcesAndSourcesCore &data = cTx->dAta;
+  EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   if (base != DEMKOWICZ_JACOBI_BASE) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -1238,9 +1224,9 @@ TetPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
                 "orintation of edges is not set");
       }
       sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
-      order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
+      order[ee] = data.dataOnEntities[MBEDGE][ee].getOrder();
       int nb_dofs = NBEDGE_DEMKOWICZ_HCURL(
-          data.dataOnEntities[MBEDGE][ee].getDataOrder());
+          data.dataOnEntities[MBEDGE][ee].getOrder());
       data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,
                                                         3 * nb_dofs, false);
       data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_gauss_pts,
@@ -1281,7 +1267,7 @@ TetPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "orintation of face is not set");
       }
-      order[ff] = data.dataOnEntities[MBTRI][ff].getDataOrder();
+      order[ff] = data.dataOnEntities[MBTRI][ff].getOrder();
       int nb_dofs = NBFACETRI_DEMKOWICZ_HCURL(order[ff]);
       data.dataOnEntities[MBTRI][ff].getN(base).resize(nb_gauss_pts,
                                                        3 * nb_dofs, false);
@@ -1317,14 +1303,14 @@ TetPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
 
   if (data.spacesOnEntities[MBTET].test(HCURL)) {
     // volume
-    int order = data.dataOnEntities[MBTET][0].getDataOrder();
+    int order = data.dataOnEntities[MBTET][0].getOrder();
     int nb_vol_dofs = NBVOLUMETET_DEMKOWICZ_HCURL(order);
     data.dataOnEntities[MBTET][0].getN(base).resize(nb_gauss_pts,
                                                     3 * nb_vol_dofs, false);
     data.dataOnEntities[MBTET][0].getDiffN(base).resize(nb_gauss_pts,
                                                         9 * nb_vol_dofs, false);
     CHKERR Hcurl_Demkowicz_VolumeBaseFunctions_MBTET(
-        data.dataOnEntities[MBTET][0].getDataOrder(),
+        data.dataOnEntities[MBTET][0].getOrder(),
         &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
         &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
         &*data.dataOnEntities[MBTET][0].getN(base).data().begin(),
@@ -1376,7 +1362,7 @@ TetPolynomialBase::getValue(MatrixDouble &pts,
 
   if (cTx->bAse != AINSWORTH_BERNSTEIN_BEZIER_BASE) {
     const FieldApproximationBase base = cTx->bAse;
-    DataForcesAndSourcesCore &data = cTx->dAta;
+    EntitiesFieldData &data = cTx->dAta;
     if (cTx->copyNodeBase == LASTBASE) {
       data.dataOnEntities[MBVERTEX][0].getN(base).resize(nb_gauss_pts, 4,
                                                          false);

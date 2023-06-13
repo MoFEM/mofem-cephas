@@ -13,19 +13,7 @@
  *
  */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 #include <MoFEM.hpp>
 #include <Hdiv.hpp>
@@ -114,18 +102,18 @@ private:
     // This is example, simply use Demkowicz HDiv base to generate base
     // functions
 
-    DataForcesAndSourcesCore &data = cTx->dAta;
+    EntitiesFieldData &data = cTx->dAta;
     int nb_gauss_pts = pts.size2();
 
     // calculate shape functions, i.e. barycentric coordinates
     shapeFun.resize(nb_gauss_pts, 4, false);
     CHKERR ShapeMBTET(&*shapeFun.data().begin(), &pts(0, 0), &pts(1, 0),
                       &pts(2, 0), nb_gauss_pts);
-    // direvatives of shape functions
+    // derivatives of shape functions
     double diff_shape_fun[12];
     CHKERR ShapeDiffMBTET(diff_shape_fun);
 
-    int volume_order = data.dataOnEntities[MBTET][0].getDataOrder();
+    int volume_order = data.dataOnEntities[MBTET][0].getOrder();
 
     int p_f[4];
     double *phi_f[4];
@@ -133,7 +121,7 @@ private:
 
     // Calculate base function on tet faces
     for (int ff = 0; ff != 4; ff++) {
-      int face_order = data.dataOnEntities[MBTRI][ff].getDataOrder();
+      int face_order = data.dataOnEntities[MBTRI][ff].getOrder();
       int order = volume_order > face_order ? volume_order : face_order;
       data.dataOnEntities[MBTRI][ff].getN(base).resize(
           nb_gauss_pts, 3 * NBFACETRI_DEMKOWICZ_HDIV(order), false);
@@ -166,7 +154,7 @@ private:
 
     // Set size of face base correctly
     for (int ff = 0; ff != 4; ff++) {
-      int face_order = data.dataOnEntities[MBTRI][ff].getDataOrder();
+      int face_order = data.dataOnEntities[MBTRI][ff].getOrder();
       data.dataOnEntities[MBTRI][ff].getN(base).resize(
           nb_gauss_pts, 3 * NBFACETRI_DEMKOWICZ_HDIV(face_order), true);
       data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(
@@ -330,7 +318,7 @@ int main(int argc, char *argv[]) {
       }
 
       MoFEMErrorCode doWork(int side, EntityType type,
-                            DataForcesAndSourcesCore::EntData &data) {
+                            EntitiesFieldData::EntData &data) {
         MoFEMFunctionBeginHot;
         if (data.getIndices().empty()) {
           MoFEMFunctionReturnHot(0);
@@ -345,8 +333,8 @@ int main(int argc, char *argv[]) {
 
       MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
                             EntityType col_type,
-                            DataForcesAndSourcesCore::EntData &row_data,
-                            DataForcesAndSourcesCore::EntData &col_data) {
+                            EntitiesFieldData::EntData &row_data,
+                            EntitiesFieldData::EntData &col_data) {
         MoFEMFunctionBeginHot;
         if (row_data.getIndices().empty())
           MoFEMFunctionReturnHot(0);
@@ -366,7 +354,7 @@ int main(int argc, char *argv[]) {
 
     // create finite element instance
     VolumeElementForcesAndSourcesCore fe1(m_field);
-    // set class needed to cinstruct user approximation base
+    // set class needed to construct user approximation base
     fe1.getUserPolynomialBase() =
         boost::shared_ptr<BaseFunction>(new SomeUserPolynomialBase());
 

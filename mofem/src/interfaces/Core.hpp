@@ -7,16 +7,6 @@
  *
  */
 
-/*
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
- */
-
 #ifndef __CORE_HPP__
 #define __CORE_HPP__
 
@@ -63,7 +53,6 @@ template <int N> struct CoreTmp : public CoreTmp<N - 1> {
   );
 
   MoFEMErrorCode set_moab_interface(moab::Interface &new_moab, int verb);
-
 };
 
 template <int N> constexpr const int CoreTmp<N>::value;
@@ -196,7 +185,8 @@ template <> struct CoreTmp<0> : public Interface {
    * @param  iface returned pointer to interface
    * @return       error code
    */
-  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index, UnknownInterface **iface) const;
+  MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
+                                 UnknownInterface **iface) const;
 
   /**@}*/
 
@@ -207,7 +197,6 @@ template <> struct CoreTmp<0> : public Interface {
   inline Tag get_th_RefParentHandle() const { return th_RefParentHandle; }
   inline Tag get_th_RefBitLevel() const { return th_RefBitLevel; }
   inline Tag get_th_RefBitEdge() const { return th_RefBitEdge; }
-  inline Tag get_th_RefType() const { return th_RefType; }
 
   /**@}*/
 
@@ -268,7 +257,6 @@ protected:
   Tag th_Part; ///< Tag for partition number
   Tag th_RefParentHandle, th_RefBitLevel, th_RefBitLevel_Mask, th_RefBitEdge,
       th_RefFEMeshset;
-  Tag th_RefType;
   Tag th_FieldId, th_FieldName, th_FieldName_DataNamePrefix, th_FieldSpace,
       th_FieldBase;
   Tag th_FEId, th_FEName;
@@ -440,10 +428,9 @@ protected:
             const TagType tag_type = MB_TAG_SPARSE,
             const enum MoFEMTypes bh = MF_EXCL, int verb = DEFAULT_VERBOSITY);
 
-
   /**
    * @brief Delete field
-   * 
+   *
    * @param name field name
    * @param verb verbosity level
    * @return error code
@@ -592,8 +579,9 @@ protected:
 
   MoFEMErrorCode list_dofs_by_field_name(const std::string &name) const;
   MoFEMErrorCode list_fields() const;
-  BitFieldId getBitFieldId(const std::string &name) const;
+  BitFieldId get_field_id(const std::string &name) const;
   FieldBitNumber get_field_bit_number(const std::string name) const;
+  std::string get_field_name(const BitFieldId id) const;
   EntityHandle get_field_meshset(const BitFieldId id) const;
   EntityHandle get_field_meshset(const std::string name) const;
   MoFEMErrorCode get_field_entities_by_dimension(const std::string name,
@@ -603,7 +591,9 @@ protected:
   MoFEMErrorCode get_field_entities_by_handle(const std::string name,
                                               Range &ents) const;
   bool check_field(const std::string &name) const;
-  const Field *get_field_structure(const std::string &name);
+
+  const Field *get_field_structure(const std::string &name,
+                                   enum MoFEMTypes bh = MF_EXIST) const;
 
   /**@}*/
 
@@ -611,7 +601,12 @@ protected:
 
   /**@{*/
 
+  const FiniteElement *
+  get_finite_element_structure(const std::string &name,
+                               enum MoFEMTypes bh = MF_EXCL) const;
+
   bool check_finite_element(const std::string &name) const;
+
   MoFEMErrorCode add_finite_element(const std::string &fe_name,
                                     enum MoFEMTypes bh = MF_EXCL,
                                     int verb = DEFAULT_VERBOSITY);
@@ -621,22 +616,22 @@ protected:
                                         ElementAdjacencyFunct function);
   MoFEMErrorCode
   modify_finite_element_add_field_data(const std::string &fe_name,
-                                       const std::string &name_filed);
+                                       const std::string name_filed);
   MoFEMErrorCode
   modify_finite_element_add_field_row(const std::string &fe_name,
-                                      const std::string &name_row);
+                                      const std::string name_row);
   MoFEMErrorCode
   modify_finite_element_add_field_col(const std::string &fe_name,
-                                      const std::string &name_col);
+                                      const std::string name_col);
   MoFEMErrorCode
   modify_finite_element_off_field_data(const std::string &fe_name,
-                                       const std::string &name_filed);
+                                       const std::string name_filed);
   MoFEMErrorCode
   modify_finite_element_off_field_row(const std::string &fe_name,
-                                      const std::string &name_row);
+                                      const std::string name_row);
   MoFEMErrorCode
   modify_finite_element_off_field_col(const std::string &fe_name,
-                                      const std::string &name_col);
+                                      const std::string name_col);
   MoFEMErrorCode add_ents_to_finite_element_by_type(
       const EntityHandle meshset, const EntityType type,
       const std::string &name, const bool recursive = true);
@@ -687,7 +682,7 @@ protected:
    * @param  name field name
    * @return      field id
    */
-  BitFEId getBitFEId(const std::string &name) const;
+  BitFEId getBitFEId(const std::string &fe_name) const;
 
   /**
    * \brief Get field name
@@ -695,8 +690,9 @@ protected:
    * @return    field name
    */
   std::string getBitFEIdName(const BitFEId id) const;
+
   EntityHandle get_finite_element_meshset(const BitFEId id) const;
-  EntityHandle get_finite_element_meshset(const std::string &name) const;
+  EntityHandle get_finite_element_meshset(const std::string name) const;
   MoFEMErrorCode
   get_finite_element_entities_by_dimension(const std::string name, int dim,
                                            Range &ents) const;
@@ -719,11 +715,11 @@ protected:
   bool check_problem(const std::string name);
   MoFEMErrorCode delete_problem(const std::string name);
   MoFEMErrorCode
-  modify_problem_add_finite_element(const std::string &name_problem,
-                                    const std::string &MoFEMFiniteElement_name);
-  MoFEMErrorCode modify_problem_unset_finite_element(
-      const std::string &name_problem,
-      const std::string &MoFEMFiniteElement_name);
+  modify_problem_add_finite_element(const std::string name_problem,
+                                    const std::string &fe_name);
+  MoFEMErrorCode
+  modify_problem_unset_finite_element(const std::string name_problem,
+                                      const std::string &fe_name);
   MoFEMErrorCode
   modify_problem_ref_level_add_bit(const std::string &name_problem,
                                    const BitRefLevel &bit);
@@ -753,13 +749,14 @@ protected:
   MoFEMErrorCode clear_finite_elements_by_bit_ref(const BitRefLevel bit,
                                                   const BitRefLevel mask,
                                                   int verb = DEFAULT_VERBOSITY);
-  MoFEMErrorCode clear_finite_elements(const Range ents,
+  MoFEMErrorCode clear_finite_elements(const Range &ents,
                                        int verb = DEFAULT_VERBOSITY);
-  MoFEMErrorCode clear_finite_elements(const std::string name, const Range ents,
+  MoFEMErrorCode clear_finite_elements(const std::string &fe_name,
+                                       const Range &ents,
                                        int verb = DEFAULT_VERBOSITY);
 
   MoFEMErrorCode
-  get_problem_finite_elements_entities(const std::string &name,
+  get_problem_finite_elements_entities(const std::string name,
                                        const std::string &fe_name,
                                        const EntityHandle meshset);
 
@@ -837,7 +834,7 @@ protected:
       int verb = DEFAULT_VERBOSITY);
 
   MoFEMErrorCode loop_finite_elements(
-      const std::string &problem_name, const std::string &fe_name,
+      const std::string problem_name, const std::string &fe_name,
       FEMethod &method, int lower_rank, int upper_rank,
       boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr = nullptr,
       MoFEMTypes bh = MF_EXIST,
@@ -845,7 +842,7 @@ protected:
       int verb = DEFAULT_VERBOSITY);
 
   MoFEMErrorCode loop_finite_elements(
-      const std::string &problem_name, const std::string &fe_name,
+      const std::string problem_name, const std::string &fe_name,
       FEMethod &method,
       boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr = nullptr,
       MoFEMTypes bh = MF_EXIST,
@@ -939,9 +936,10 @@ protected:
   DofEntityByUId::iterator
   get_dofs_by_name_and_type_end(const std::string &field_name,
                                 const EntityType ent) const;
-  EntFiniteElementByName::iterator
+
+  EntFiniteElement_multiIndex::index<Unique_mi_tag>::type::iterator
   get_fe_by_name_begin(const std::string &fe_name) const;
-  EntFiniteElementByName::iterator
+  EntFiniteElement_multiIndex::index<Unique_mi_tag>::type::iterator
   get_fe_by_name_end(const std::string &fe_name) const;
 
   /**@}*/
@@ -965,7 +963,7 @@ protected:
 
   /**@{*/
 
-  mutable MPI_Comm mofemComm;       ///< MoFEM communicator
+  mutable MPI_Comm mofemComm;  ///< MoFEM communicator
   mutable ParallelComm *pComm; ///< MOAB communicator structure
 
   int sIze; ///< MoFEM communicator size
@@ -989,7 +987,6 @@ protected:
   /**@}*/
 
 protected:
-
   boost::shared_ptr<WrapMPIComm>
       wrapMPIMOABComm; ///< manage creation and destruction of MOAB communicator
 
@@ -1092,7 +1089,6 @@ template <> struct CoreTmp<-1> : public CoreTmp<0> {
 
   virtual MoFEMErrorCode set_moab_interface(moab::Interface &new_moab,
                                             int verb = VERBOSE);
-
 };
 
 using Core = CoreTmp<0>;

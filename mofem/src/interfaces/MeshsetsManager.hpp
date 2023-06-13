@@ -6,22 +6,10 @@
  * \ingroup mofem_meshset_mng
  */
 
-/*
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
- */
-
 #ifndef __MESHSETSMANAGER_HPP__
 #define __MESHSETSMANAGER_HPP__
 
 namespace MoFEM {
-
-using Sev = MoFEM::LogManager::SeverityLevel;
 
 typedef CubitMeshSet_multiIndex::index<CubitMeshsetType_mi_tag>::type
     CubitMeshsetByType;
@@ -286,7 +274,8 @@ struct MeshsetsManager : public UnknownInterface {
     */
   inline CubitMeshsetByType::iterator
   getBegin(const unsigned int cubit_bc_type) const {
-    return cubitMeshsets.get<CubitMeshsetType_mi_tag>().lower_bound(cubit_bc_type);
+    return cubitMeshsets.get<CubitMeshsetType_mi_tag>().lower_bound(
+        cubit_bc_type);
   }
 
   /**
@@ -305,7 +294,8 @@ struct MeshsetsManager : public UnknownInterface {
     */
   inline CubitMeshsetByType::iterator
   getEnd(const unsigned int cubit_bc_type) const {
-    return cubitMeshsets.get<CubitMeshsetType_mi_tag>().upper_bound(cubit_bc_type);
+    return cubitMeshsets.get<CubitMeshsetType_mi_tag>().upper_bound(
+        cubit_bc_type);
   }
 
   /**
@@ -496,6 +486,37 @@ struct MeshsetsManager : public UnknownInterface {
 
   /**
    * \brief get cubit meshset
+   * \ingroup mofem_meshset_mng
+   *
+   *
+   */
+  const CubitMeshSets *
+  getCubitMeshsetPtr(const int ms_id, const CubitBCType cubit_bc_type) const;
+
+  /**
+   * @brief Get vector of pointer by bc type
+   *
+   * \ingroup mofem_meshset_mng
+   *
+   * @param std::vector<const CubitMeshSets *>
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode
+  getCubitMeshsetPtr(const CubitBCType cubit_bc_type,
+                     std::vector<const CubitMeshSets *> &vec_ptr) const;
+
+/**
+   * @brief Get vector of pointer by bc type
+   *
+   * \ingroup mofem_meshset_mng
+   *
+   * @return MoFEMErrorCode
+   */
+  std::vector<const CubitMeshSets *>
+  getCubitMeshsetPtr(const CubitBCType cubit_bc_type) const;
+
+  /**
+   * \brief get cubit meshset
    *
    * \ingroup mofem_meshset_mng
    */
@@ -504,7 +525,7 @@ struct MeshsetsManager : public UnknownInterface {
                      const CubitMeshSets **cubit_meshset_ptr) const;
 
   /**
-   * @brief Get vector of poointer to blocksets with name satisfying regular
+   * @brief Get vector of pointer to blocksets with name satisfying regular
    * expression.
    *
    * \ingroup mofem_meshset_mng
@@ -516,6 +537,18 @@ struct MeshsetsManager : public UnknownInterface {
   MoFEMErrorCode
   getCubitMeshsetPtr(const std::regex reg_exp_name,
                      std::vector<const CubitMeshSets *> &vec_ptr) const;
+
+  /**
+   * @brief Get vector of pointer to blocksets with name satisfying regular
+   * expression.
+   *
+   * \ingroup mofem_meshset_mng
+   *
+   * @param reg_exp_name
+   * @return std::vector<const CubitMeshSets *>
+   */
+  std::vector<const CubitMeshSets *>
+  getCubitMeshsetPtr(const std::regex reg_exp_name) const;
 
   /**
     * \brief get entities from CUBIT/meshset of a particular entity dimension
@@ -805,6 +838,12 @@ struct MeshsetsManager : public UnknownInterface {
     return configFileOptionsPtr;
   }
 
+  /**
+   * @brief Update all blolsets, sidesets and node sets
+   * 
+   * @param bit 
+   * @return MoFEMErrorCode 
+   */
   MoFEMErrorCode updateAllMeshsetsByEntitiesChildren(const BitRefLevel &bit);
 
   static bool brodcastMeshsets; ///< if true meshsets are synchrinised between

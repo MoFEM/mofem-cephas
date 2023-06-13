@@ -7,9 +7,9 @@ namespace FTensor
 {
 
 template <class T, int Tensor_Dim> class Tensor1<T *, Tensor_Dim> {
-  const int inc;
-
 protected:
+
+  const int inc;
 
   /* Note that the T *'s are mutable, so the pointer can change,
      allowing iterating over a array. */
@@ -129,6 +129,17 @@ public:
         data[i] += inc;
       return *this;
     }
+
+    private:
+
+      /**
+       * @brief Preventing casting on derived class
+       * 
+       * That can be source of errors
+       * 
+       */
+      template <int I>
+      Tensor1(const Tensor1<PackPtr<T *, I>, Tensor_Dim> &) = delete;
   };
 
   template <class T, int Tensor_Dim, int I>

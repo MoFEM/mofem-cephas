@@ -3,20 +3,6 @@
   \brief Atom test for Data Manager Interface and create sub-problem
 */
 
-/* This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
- * License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
-
 #include <MoFEM.hpp>
 
 using namespace MoFEM;
@@ -161,8 +147,12 @@ int main(int argc, char *argv[]) {
     CHKERR DMMoFEMCreateSubDM(subdm0, dm, "SUB0");
     CHKERR DMMoFEMSetSquareProblem(subdm0, PETSC_TRUE);
     CHKERR DMMoFEMAddElement(subdm0, "FE11");
-    CHKERR DMMoFEMAddSubFieldRow(subdm0, "FIELD1", MBVERTEX, MBVERTEX);
-    CHKERR DMMoFEMAddSubFieldCol(subdm0, "FIELD1", MBVERTEX, MBVERTEX);
+
+    auto verts_ptr = boost::make_shared<Range>();
+    CHKERR moab.get_entities_by_type(0, MBVERTEX, *verts_ptr, true);
+
+    CHKERR DMMoFEMAddSubFieldRow(subdm0, "FIELD1", verts_ptr);
+    CHKERR DMMoFEMAddSubFieldCol(subdm0, "FIELD1", verts_ptr);
     CHKERR DMSetUp(subdm0);
     CHKERR m_field.getInterface<MatrixManager>()
         ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>("SUB0", -1,
