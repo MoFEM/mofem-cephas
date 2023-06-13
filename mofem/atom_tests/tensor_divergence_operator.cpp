@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
 
     auto boundary_ents = filter_true_skin(get_skin());
     CHKERR simple->setFieldOrder("SIGMA", 0);
-    CHKERR simple->setFieldOrder("SIGMA", order - 1, &boundary_ents);
+    CHKERR simple->setFieldOrder("SIGMA", order, &boundary_ents);
 
     // setup problem
     CHKERR simple->setUp();
