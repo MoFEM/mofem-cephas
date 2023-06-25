@@ -139,8 +139,7 @@ TimeScaleVector<SPACE_DIM>::TimeScaleVector(std::string name, int ms_id,
 
 template <int SPACE_DIM> 
 MoFEMErrorCode TimeScaleVector<SPACE_DIM>::timeData() {
-
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   char time_file_name[255];
   PetscBool flg = PETSC_FALSE;
@@ -161,11 +160,10 @@ MoFEMErrorCode TimeScaleVector<SPACE_DIM>::timeData() {
              "*** ERROR data file < %s > open unsuccessful", time_file_name);
   }
   double no1 = 0.0;
-  FTensor::Index<'i', SPACE_DIM> i;
-  FTensor::Tensor1<double, SPACE_DIM> no2;
-  no2(i) = 0.;
-  tSeries[no1] = no2;
+  FTensor::Index<'i', 3> i;
+  (tSeries[no1])(i) = 0.;
   while (!feof(time_data)) {
+    FTensor::Tensor1<double, 3> no2{0., 0., 0.};
     int n =
         fscanf(time_data, "%lf %lf %lf %lf", &no1, &no2(0), &no2(1), &no2(2));
     if (n < 0) {
@@ -178,19 +176,21 @@ MoFEMErrorCode TimeScaleVector<SPACE_DIM>::timeData() {
                "{ n = %d }",
                n);
     }
-    tSeries[no1] = no2;
+    (tSeries[no1])(i) = no2(i);
   }
   int r = fclose(time_data);
-  if (debug) {
 
-    for (auto &[ts, vec] : tSeries) {
-      PetscPrintf(PETSC_COMM_WORLD,
-                  "** read vector %3.2e time %3.2e %3.2e %3.2e\n",
-                  ts, vec(0), vec(1), vec(2));
-    }
+  MOFEM_LOG_CHANNEL("WORLD");
+  for (auto &[ts, vec] : tSeries) {
+    MOFEM_TAG_AND_LOG_C("WORLD", Sev::verbose, "TimeScaleVector",
+                        "** read vector %3.2e time %3.2e %3.2e %3.2e", ts,
+                        vec(0), vec(1), vec(2));
   }
+  MOFEM_LOG_CHANNEL("WORLD");
+
   if (r != 0) {
-    SETERRQ(PETSC_COMM_SELF, 1, "*** ERROR file close unsuccessful");
+    SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
+            "*** ERROR file close unsuccessful");
   }
   readFile = 1;
 
@@ -199,7 +199,7 @@ MoFEMErrorCode TimeScaleVector<SPACE_DIM>::timeData() {
       return this->getVectorFromData(time);
     };
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 
@@ -213,13 +213,11 @@ template <int SPACE_DIM>
 FTensor::Tensor1<double, SPACE_DIM>
 TimeScaleVector<SPACE_DIM>::getVectorFromData(const double time) {
 
-  // if (readFile == 0) {
-  //   CHK_THROW_MESSAGE(MOFEM_OPERATION_UNSUCCESSFUL, "Data file not read");
-  // }
-
-  FTensor::Tensor1<double, SPACE_DIM> acc;
-  FTensor::Tensor1<double, SPACE_DIM> acc0 = tSeries.begin()->second;
   FTensor::Tensor1<double, SPACE_DIM> Nf;
+  FTensor::Tensor1<double, 3> acc;
+  FTensor::Tensor1<double, 3> acc0 = tSeries.begin()->second;
+
+  FTensor::Index<'I', SPACE_DIM> I;
   FTensor::Index<'i', SPACE_DIM> i;
 
   double t0 = 0, t1, dt;
@@ -227,7 +225,7 @@ TimeScaleVector<SPACE_DIM>::getVectorFromData(const double time) {
     if (ts > time) {
       t1 = ts;
       dt = time - t0;
-      acc(i) = acc0(i) + ((vec(i) - acc0(i)) / (t1 - t0)) * dt;
+      acc(I) = acc0(I) + ((vec(I) - acc0(I)) / (t1 - t0)) * dt;
       break;
     }
     t0 = ts;
