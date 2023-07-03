@@ -363,7 +363,7 @@ MoFEMErrorCode ISManager::isCreateProblemFieldAndRankLocal(
 
   auto get_low_hi_uid_by_entities = [&](auto f, auto s) {
     return std::make_pair(DofEntity::getLoFieldEntityUId(bit_number, f),
-                          DofEntity::getLoFieldEntityUId(bit_number, s));
+                          DofEntity::getHiFieldEntityUId(bit_number, s));
   };
 
   auto get_low_hi = [&](auto lo_uid, auto hi_uid) {
