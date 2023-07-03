@@ -39,6 +39,22 @@ template <CubitBC BC> struct EssentialMeshsetType {};
 template <typename T> struct EssentialPreProc {};
 
 /**
+ * @brief Class (Function) to enforce essential constrains, by setting matrix
+ * diagonal
+ *
+ * @tparam T
+ */
+template <typename T> struct EssentialPreProcLhs {};
+
+/**
+ * @brief Class (Function) to enforce essential constrains, by setting matrix
+ * diagonal
+ *
+ * @tparam T
+ */
+template <typename T> struct EssentialPreProcRhs {};
+
+/**
  * @brief Enforce essential constrains on rhs.
  *
  * This class is used when constrains are enforced by least square method.

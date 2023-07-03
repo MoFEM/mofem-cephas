@@ -103,6 +103,46 @@ protected:
   bool getCoords;
 };
 
+/**
+ * @brief Specialization for DisplacementCubitBcData
+ *
+ * @tparam
+ */
+template <> struct EssentialPreProcRhs<DisplacementCubitBcData> {
+  EssentialPreProcRhs(MoFEM::Interface &m_field,
+                      boost::shared_ptr<FEMethod> fe_ptr, double diag,
+                      SmartPetscObj<Vec> rhs = nullptr);
+
+  MoFEMErrorCode operator()();
+
+protected:
+  MoFEM::Interface &mField;
+  boost::weak_ptr<FEMethod> fePtr;
+  double vDiag;
+  SmartPetscObj<Vec> vRhs;
+};
+
+/**
+ * @brief Specialization for DisplacementCubitBcData
+ *
+ * @tparam
+ */
+template <> struct EssentialPreProcLhs<DisplacementCubitBcData> {
+  EssentialPreProcLhs(MoFEM::Interface &m_field,
+                      boost::shared_ptr<FEMethod> fe_ptr, double diag,
+                      SmartPetscObj<Mat> lhs = nullptr,
+                      SmartPetscObj<AO> ao = nullptr);
+
+  MoFEMErrorCode operator()();
+
+protected:
+  MoFEM::Interface &mField;
+  boost::weak_ptr<FEMethod> fePtr;
+  double vDiag;
+  SmartPetscObj<Mat> vLhs;
+  SmartPetscObj<AO> vAO;
+};
+
 template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
 struct OpEssentialRhsImpl<DisplacementCubitBcData, 1, FIELD_DIM, A, I, OpBase>
     : FormsIntegrators<OpBase>::template Assembly<A>::template LinearForm<

@@ -90,6 +90,7 @@ MoFEMErrorCode EssentialPreProc<DisplacementCubitBcData>::operator()() {
 
           auto lambda = [&](boost::shared_ptr<FieldEntity> field_entity_ptr) {
             MoFEMFunctionBegin;
+
             auto v = t_vals(coeff);
             if (is_rotation) {
               FTensor::Tensor1<double, 3> t_coords(
@@ -101,13 +102,23 @@ MoFEMErrorCode EssentialPreProc<DisplacementCubitBcData>::operator()() {
               v += coords[coeff][idx];
             }
 
+
             field_entity_ptr->getEntFieldData()[coeff] = v;
             ++idx;
 
             MoFEMFunctionReturn(0);
           };
 
+          auto zero_lambda =
+              [&](boost::shared_ptr<FieldEntity> field_entity_ptr) {
+                MoFEMFunctionBegin;
+                field_entity_ptr->getEntFieldData()[coeff] = 0;
+                MoFEMFunctionReturn(0);
+              };
+
           auto verts = bc.second->bcEnts.subset_by_type(MBVERTEX);
+          auto not_verts = subtract(bc.second->bcEnts, verts);
+
           if (getCoords || is_rotation) {
             for (auto d : {0, 1, 2})
               coords[d].resize(verts.size());
@@ -121,22 +132,263 @@ MoFEMErrorCode EssentialPreProc<DisplacementCubitBcData>::operator()() {
             idx = 0;
             coeff = 0;
             CHKERR fb->fieldLambdaOnEntities(lambda, field_name, &verts);
+            CHKERR fb->fieldLambdaOnEntities(zero_lambda, field_name,
+                                             &not_verts);
           }
           if (disp_bc->data.flag2 || disp_bc->data.flag4 ||
               disp_bc->data.flag6) {
             idx = 0;
             coeff = 1;
-            if (nb_field_coeffs > 1)
+            if (nb_field_coeffs > 1) {
               CHKERR fb->fieldLambdaOnEntities(lambda, field_name, &verts);
+              CHKERR fb->fieldLambdaOnEntities(zero_lambda, field_name,
+                                               &not_verts);
+            }
           }
           if (disp_bc->data.flag3 || disp_bc->data.flag4 ||
               disp_bc->data.flag5 || is_rotation) {
             idx = 0;
             coeff = 2;
-            if (nb_field_coeffs > 2)
+            if (nb_field_coeffs > 2) {
               CHKERR fb->fieldLambdaOnEntities(lambda, field_name, &verts);
+              CHKERR fb->fieldLambdaOnEntities(zero_lambda, field_name,
+                                               &not_verts);
+            }
           }
         }
+      }
+    }
+
+  } else {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Can not lock shared pointer");
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+EssentialPreProcRhs<DisplacementCubitBcData>::EssentialPreProcRhs(
+    MoFEM::Interface &m_field, boost::shared_ptr<FEMethod> fe_ptr, double diag,
+    SmartPetscObj<Vec> rhs)
+    : mField(m_field), fePtr(fe_ptr), vDiag(diag), vRhs(rhs) {}
+
+MoFEMErrorCode EssentialPreProcRhs<DisplacementCubitBcData>::operator()() {
+  MOFEM_LOG_CHANNEL("WORLD");
+  MoFEMFunctionBegin;
+
+  if (auto fe_method_ptr = fePtr.lock()) {
+
+    auto bc_mng = mField.getInterface<BcManager>();
+    auto vec_mng = mField.getInterface<VecManager>();
+    auto is_mng = mField.getInterface<ISManager>();
+
+    const auto problem_name = fe_method_ptr->problemPtr->getName();
+    
+    SmartPetscObj<IS> is_sum;
+
+    for (auto bc : bc_mng->getBcMapByBlockName()) {
+      if (auto disp_bc = bc.second->dispBcPtr) {
+
+        auto &bc_id = bc.first;
+
+        auto regex_str = (boost::format("%s_(.*)") % problem_name).str();
+        if (std::regex_match(bc_id, std::regex(regex_str))) {
+
+          auto [field_name, block_name] =
+              BcManager::extractStringFromBlockId(bc_id, problem_name);
+
+          MOFEM_LOG("WORLD", Sev::noisy)
+              << "Apply EssentialPreProc<DisplacementCubitBcData>: "
+              << problem_name << "_" << field_name << "_" << block_name;
+
+          const bool is_rotation =
+              disp_bc->data.flag4 || disp_bc->data.flag5 || disp_bc->data.flag6;
+
+          auto verts = bc.second->bcEnts;
+
+          std::array<SmartPetscObj<IS>, 3> is_xyz;
+          auto prb_name = fe_method_ptr->problemPtr->getName();
+
+          if (disp_bc->data.flag1 || is_rotation) {
+            CHKERR is_mng->isCreateProblemFieldAndRankLocal(
+                prb_name, ROW, field_name, 0, 0, is_xyz[0], &verts);
+          }
+          if (disp_bc->data.flag2 || is_rotation) {
+            CHKERR is_mng->isCreateProblemFieldAndRankLocal(
+                prb_name, ROW, field_name, 1, 1, is_xyz[1], &verts);
+          }
+          if (disp_bc->data.flag3 || is_rotation) {
+            CHKERR is_mng->isCreateProblemFieldAndRankLocal(
+                prb_name, ROW, field_name, 2, 2, is_xyz[2], &verts);
+          }
+
+          auto get_is_sum = [](auto is1, auto is2) {
+            IS is;
+            CHK_THROW_MESSAGE(ISExpand(is1, is2, &is), "is sum");
+            return SmartPetscObj<IS>(is);
+          };
+
+
+          for (auto &is : is_xyz) {
+            if (is) {
+              if (!is_sum) {
+                is_sum = is;
+              } else {
+                is_sum = get_is_sum(is_sum, is);
+              }
+            }
+          }
+
+        }
+      }
+    }
+    
+    if (is_sum) {
+      if (auto fe_ptr = fePtr.lock()) {
+
+        auto snes_ctx = fe_ptr->snes_ctx;
+        auto ts_ctx = fe_ptr->ts_ctx;
+
+        SmartPetscObj<Vec> f =
+            vRhs ? vRhs : SmartPetscObj<Vec>(fe_ptr->f, true);
+        CHKERR VecAssemblyBegin(f);
+        CHKERR VecAssemblyEnd(f);
+
+        const int *index_ptr;
+        CHKERR ISGetIndices(is_sum, &index_ptr);
+        int size;
+        CHKERR ISGetLocalSize(is_sum, &size);
+        double *a;
+        CHKERR VecGetArray(f, &a);
+
+        auto tmp_x = vectorDuplicate(f);
+        CHKERR vec_mng->setLocalGhostVector(problem_name, ROW, tmp_x,
+                                            INSERT_VALUES, SCATTER_FORWARD);
+        const double *u;
+        CHKERR VecGetArrayRead(tmp_x, &u);
+
+        if (snes_ctx == FEMethod::CTX_SNESSETFUNCTION ||
+            ts_ctx == FEMethod::CTX_TSSETIFUNCTION) {
+
+          auto x = fe_ptr->x;
+        
+          const double *v;
+          CHKERR VecGetArrayRead(x, &v);
+
+          for (auto i = 0; i != size; ++i) {
+            a[index_ptr[i]] = -vDiag * (v[index_ptr[i]] - u[index_ptr[i]]);
+          }
+
+          CHKERR VecRestoreArrayRead(x, &v);
+
+        } else {
+          for (auto i = 0; i != size; ++i) {
+            a[index_ptr[i]] = vDiag * u[index_ptr[i]];
+          }
+        }
+
+        CHKERR VecRestoreArrayRead(tmp_x, &u);
+        CHKERR VecRestoreArray(f, &a);
+        CHKERR ISRestoreIndices(is_sum, &index_ptr);
+      }
+    }
+
+  } else {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Can not lock shared pointer");
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+EssentialPreProcLhs<DisplacementCubitBcData>::EssentialPreProcLhs(
+    MoFEM::Interface &m_field, boost::shared_ptr<FEMethod> fe_ptr, double diag,
+    SmartPetscObj<Mat> lhs, SmartPetscObj<AO> ao)
+    : mField(m_field), fePtr(fe_ptr), vDiag(diag), vLhs(lhs), vAO(ao) {}
+
+MoFEMErrorCode EssentialPreProcLhs<DisplacementCubitBcData>::operator()() {
+  MOFEM_LOG_CHANNEL("WORLD");
+  MoFEMFunctionBegin;
+
+  if (auto fe_method_ptr = fePtr.lock()) {
+
+    auto bc_mng = mField.getInterface<BcManager>();
+    auto is_mng = mField.getInterface<ISManager>();
+
+    const auto problem_name = fe_method_ptr->problemPtr->getName();
+
+    SmartPetscObj<IS> is_sum;
+
+    for (auto bc : bc_mng->getBcMapByBlockName()) {
+      if (auto disp_bc = bc.second->dispBcPtr) {
+
+        auto &bc_id = bc.first;
+
+        auto regex_str = (boost::format("%s_(.*)") % problem_name).str();
+        if (std::regex_match(bc_id, std::regex(regex_str))) {
+
+          auto [field_name, block_name] =
+              BcManager::extractStringFromBlockId(bc_id, problem_name);
+
+          MOFEM_LOG("WORLD", Sev::noisy)
+              << "Apply EssentialPreProc<DisplacementCubitBcData>: "
+              << problem_name << "_" << field_name << "_" << block_name;
+
+          const bool is_rotation =
+              disp_bc->data.flag4 || disp_bc->data.flag5 || disp_bc->data.flag6;
+
+          auto verts = bc.second->bcEnts;
+
+          std::array<SmartPetscObj<IS>, 3> is_xyz;
+          auto prb_name = fe_method_ptr->problemPtr->getName();
+
+          if (disp_bc->data.flag1 || is_rotation) {
+            CHKERR is_mng->isCreateProblemFieldAndRank(
+                prb_name, ROW, field_name, 0, 0, is_xyz[0], &verts);
+            }
+          if (disp_bc->data.flag2 || is_rotation) {
+            CHKERR is_mng->isCreateProblemFieldAndRank(
+                prb_name, ROW, field_name, 1, 1, is_xyz[1], &verts);
+          }
+          if (disp_bc->data.flag3 || is_rotation) {
+            CHKERR is_mng->isCreateProblemFieldAndRank(
+                prb_name, ROW, field_name, 2, 2, is_xyz[2], &verts);
+          }
+
+          auto get_is_sum = [](auto is1, auto is2) {
+            IS is;
+            CHK_THROW_MESSAGE(ISExpand(is1, is2, &is), "is sum");
+            return SmartPetscObj<IS>(is);
+          };
+
+          for (auto &is : is_xyz) {
+            if (is) {
+              if (!is_sum) {
+                is_sum = is;
+              } else {
+                is_sum = get_is_sum(is_sum, is);
+              }
+            }
+          }
+
+
+        }
+      }
+    }
+
+    if (is_sum) {
+      if (auto fe_ptr = fePtr.lock()) {
+        SmartPetscObj<Mat> B =
+            vLhs ? vLhs : SmartPetscObj<Mat>(fe_ptr->B, true);
+        if (vAO) {
+          // MOFEM_LOG("WORLD", Sev::noisy) << "Apply AO to IS";
+          CHKERR AOPetscToApplicationIS(vAO, is_sum);
+        }
+        CHKERR MatAssemblyBegin(B, MAT_FINAL_ASSEMBLY);
+        CHKERR MatAssemblyEnd(B, MAT_FINAL_ASSEMBLY);
+        // ISView(is_sum, PETSC_VIEWER_STDOUT_WORLD);
+        CHKERR MatZeroRowsColumnsIS(B, is_sum, vDiag, PETSC_NULL, PETSC_NULL);
+        *fe_ptr->matAssembleSwitch = false;
       }
     }
 
