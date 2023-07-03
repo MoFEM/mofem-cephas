@@ -251,8 +251,14 @@ MoFEMErrorCode EssentialPreProcRhs<DisplacementCubitBcData>::operator()() {
 
         SmartPetscObj<Vec> f =
             vRhs ? vRhs : SmartPetscObj<Vec>(fe_ptr->f, true);
-        CHKERR VecAssemblyBegin(f);
-        CHKERR VecAssemblyEnd(f);
+
+        if (fe_ptr->vecAssembleSwitch) {
+          CHKERR VecGhostUpdateBegin(f, ADD_VALUES, SCATTER_REVERSE);
+          CHKERR VecGhostUpdateEnd(f, ADD_VALUES, SCATTER_REVERSE);
+          CHKERR VecAssemblyBegin(f);
+          CHKERR VecAssemblyEnd(f);
+          *fe_ptr->vecAssembleSwitch = false;
+        }
 
         const int *index_ptr;
         CHKERR ISGetIndices(is_sum, &index_ptr);
@@ -380,15 +386,19 @@ MoFEMErrorCode EssentialPreProcLhs<DisplacementCubitBcData>::operator()() {
       if (auto fe_ptr = fePtr.lock()) {
         SmartPetscObj<Mat> B =
             vLhs ? vLhs : SmartPetscObj<Mat>(fe_ptr->B, true);
+        if (fe_ptr->matAssembleSwitch) {
+          if (*fe_ptr->matAssembleSwitch) {
+            CHKERR MatAssemblyBegin(B, MAT_FINAL_ASSEMBLY);
+            CHKERR MatAssemblyEnd(B, MAT_FINAL_ASSEMBLY);
+            *fe_ptr->matAssembleSwitch = false;
+          }
+        }
         if (vAO) {
           // MOFEM_LOG("WORLD", Sev::noisy) << "Apply AO to IS";
           CHKERR AOPetscToApplicationIS(vAO, is_sum);
         }
-        CHKERR MatAssemblyBegin(B, MAT_FINAL_ASSEMBLY);
-        CHKERR MatAssemblyEnd(B, MAT_FINAL_ASSEMBLY);
         // ISView(is_sum, PETSC_VIEWER_STDOUT_WORLD);
         CHKERR MatZeroRowsColumnsIS(B, is_sum, vDiag, PETSC_NULL, PETSC_NULL);
-        *fe_ptr->matAssembleSwitch = false;
       }
     }
 
