@@ -273,8 +273,8 @@ MoFEMErrorCode EssentialPreProcRhs<DisplacementCubitBcData>::operator()() {
         const double *u;
         CHKERR VecGetArrayRead(tmp_x, &u);
 
-        if (snes_ctx == FEMethod::CTX_SNESSETFUNCTION ||
-            ts_ctx == FEMethod::CTX_TSSETIFUNCTION) {
+        if (snes_ctx != FEMethod::CTX_SNESNONE ||
+            ts_ctx != FEMethod::CTX_TSNONE) {
 
           auto x = fe_ptr->x;
         
@@ -282,7 +282,7 @@ MoFEMErrorCode EssentialPreProcRhs<DisplacementCubitBcData>::operator()() {
           CHKERR VecGetArrayRead(x, &v);
 
           for (auto i = 0; i != size; ++i) {
-            a[index_ptr[i]] = -vDiag * (v[index_ptr[i]] - u[index_ptr[i]]);
+            a[index_ptr[i]] = vDiag * (v[index_ptr[i]] - u[index_ptr[i]]);
           }
 
           CHKERR VecRestoreArrayRead(x, &v);
