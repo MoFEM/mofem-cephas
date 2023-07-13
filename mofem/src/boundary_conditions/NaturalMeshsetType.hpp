@@ -117,6 +117,62 @@ protected:
   ScalarFun userFun;
 };
 
+template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
+struct OpFluxRhsImpl<NaturalMeshsetType<BLOCKSET>, 9, FIELD_DIM, A, I, OpBase>
+    : OpFluxRhsImpl<NaturalMeshsetType<UNKNOWNSET>, 9, FIELD_DIM, A, I,
+                    OpBase> {
+
+  OpFluxRhsImpl(
+      MoFEM::Interface &m_field, int ms_id, const std::string field_name,
+      std::vector<boost::shared_ptr<ScalingMethod>> smv,
+      ScalarFun user_fun = [](double, double, double) { return 1; });
+
+protected:
+  MoFEMErrorCode getMeshsetData(MoFEM::Interface &m_field, int ms_id);
+};
+
+/**
+ * @brief Base class for OpFluxRhsImpl<NaturalMeshsetType<T>, 9, FIELD_DIM, A,
+ I, OpBase>
+ *
+ * This is only for scalar bases.
+ *
+ * @note It is derivitive from FormsIntegrators<OpBase>::template
+ Assembly<A>::template LinearForm< I>::template OpSource<1, FIELD_DIM>
+ *
+ * @tparam FIELD_DIM field dimension
+ * @tparam A
+ * @tparam I
+ * @tparam OpBase Base element operator for integration volume, face, edge, or
+ vertex
+ */
+template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
+struct OpFluxRhsImpl<NaturalMeshsetType<UNKNOWNSET>, 9, FIELD_DIM, A, I, OpBase>
+    : FormsIntegrators<OpBase>::template Assembly<A>::template LinearForm<
+          I>::template OpSource<3, FIELD_DIM> {
+
+  using OpSource = typename FormsIntegrators<OpBase>::template Assembly<
+      A>::template LinearForm<I>::template OpSource<3, FIELD_DIM>;
+
+  OpFluxRhsImpl(
+      const std::string field_name, FTensor::Tensor1<double, FIELD_DIM> t_force,
+      boost::shared_ptr<Range> ents_ptr,
+      std::vector<boost::shared_ptr<ScalingMethod>> smv,
+      ScalarFun user_fun = [](double, double, double) { return 1; });
+
+protected:
+  OpFluxRhsImpl(
+      const std::string field_name,
+      std::vector<boost::shared_ptr<ScalingMethod>> smv,
+      ScalarFun user_fun = [](double, double, double) {
+        return 1;
+      });
+  FTensor::Tensor1<double, FIELD_DIM> tForce;
+  FTensor::Tensor1<double, FIELD_DIM> tScaledForce;
+  VecOfTimeScalingMethods vecOfTimeScalingMethods;
+  ScalarFun userFun;
+};
+
 template <AssemblyType A, IntegrationType I, typename OpBase>
 struct OpFluxRhsImpl<NaturalMeshsetType<UNKNOWNSET>, 1, 1, A, I, OpBase>
     : FormsIntegrators<OpBase>::template Assembly<A>::template LinearForm<
@@ -443,6 +499,94 @@ OpFluxRhsImpl<NaturalMeshsetType<PRESSURESET>, 1, FIELD_DIM, A, I,
   PressureCubitBcData pressure_data;
   CHKERR cubit_meshset_ptr->getBcDataStructure(pressure_data);
   this->surfacePressure = pressure_data.data.value1;
+
+  this->entsPtr = boost::make_shared<Range>();
+  CHKERR m_field.get_moab().get_entities_by_handle(cubit_meshset_ptr->meshset,
+                                                   *(this->entsPtr), true);
+
+  MoFEMFunctionReturn(0);
+}
+
+template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
+OpFluxRhsImpl<NaturalMeshsetType<UNKNOWNSET>, 9, FIELD_DIM, A, I, OpBase>::
+    OpFluxRhsImpl(const std::string field_name,
+                  FTensor::Tensor1<double, FIELD_DIM> t_force,
+                  boost::shared_ptr<Range> ents_ptr,
+                  std::vector<boost::shared_ptr<ScalingMethod>> smv,
+                  ScalarFun user_fun)
+    : OpFluxRhsImpl(field_name, smv, user_fun) {
+  FTensor::Index<'i', FIELD_DIM> i;
+  this->tForce(i) = t_force(i);
+  this->entsPtr = ents_ptr;
+}
+
+template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
+OpFluxRhsImpl<NaturalMeshsetType<UNKNOWNSET>, 9, FIELD_DIM, A, I, OpBase>::
+    OpFluxRhsImpl(const std::string field_name,
+                  std::vector<boost::shared_ptr<ScalingMethod>> smv,
+                  ScalarFun user_fun)
+    : OpSource(field_name,
+
+               [this](const double x, const double y, const double z) {
+                 FTensor::Index<'i', FIELD_DIM> i;
+                 tScaledForce(i) = tForce(i) * userFun(x, y, z);
+                 return tScaledForce;
+               }
+
+               ),
+      vecOfTimeScalingMethods(smv), userFun(user_fun) {
+  this->timeScalingFun = [this](const double t) {
+    double s = 1;
+    for (auto &o : vecOfTimeScalingMethods) {
+      s *= o->getScale(t);
+    }
+    return s;
+  };
+
+  static_assert(FIELD_DIM > 1, "Not implemented for scalar field");
+}
+
+template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
+OpFluxRhsImpl<NaturalMeshsetType<BLOCKSET>, 9, FIELD_DIM, A, I, OpBase>::
+    OpFluxRhsImpl(MoFEM::Interface &m_field, int ms_id,
+                  const std::string field_name,
+                  std::vector<boost::shared_ptr<ScalingMethod>> smv,
+                  ScalarFun user_fun)
+    : OpFluxRhsImpl<NaturalMeshsetType<UNKNOWNSET>, 9, FIELD_DIM, A, I, OpBase>(
+          field_name, smv, user_fun) {
+  CHK_THROW_MESSAGE(getMeshsetData(m_field, ms_id), "Get meshset data");
+}
+
+template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
+MoFEMErrorCode OpFluxRhsImpl<NaturalMeshsetType<BLOCKSET>, 9, FIELD_DIM, A, I,
+                             OpBase>::getMeshsetData(MoFEM::Interface &m_field,
+                                                     int ms_id) {
+  MoFEMFunctionBegin;
+
+  auto cubit_meshset_ptr =
+      m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(ms_id,
+                                                                  BLOCKSET);
+
+  std::vector<double> block_data;
+  CHKERR cubit_meshset_ptr->getAttributes(block_data);
+  if (block_data.size() != FIELD_DIM) {
+    MOFEM_LOG("SELF", Sev::warning)
+        << "BLOCKSET is expected to have " << FIELD_DIM
+        << " attributes but has size " << block_data.size();
+    if (block_data.size() < FIELD_DIM) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Size of attribute in BLOCKSET is too small");
+    }
+  }
+
+  MOFEM_LOG("WORLD", Sev::inform)
+      << "Flux blockset " << cubit_meshset_ptr->getName();
+  MOFEM_LOG("WORLD", Sev::inform)
+      << "Number of attributes " << block_data.size();
+
+  for (unsigned int ii = 0; ii != FIELD_DIM; ++ii) {
+    this->tForce(ii) = block_data[ii];
+  }
 
   this->entsPtr = boost::make_shared<Range>();
   CHKERR m_field.get_moab().get_entities_by_handle(cubit_meshset_ptr->meshset,
