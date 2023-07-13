@@ -26,7 +26,7 @@ struct FieldEntity : public interface_Field<Field, RefEntity> {
   using interface_type_Field = interface_Field<Field, RefEntity>;
   using interface_type_RefEntity = interface_RefEntity<RefEntity>;
 
-  UId localUId; ///< Global unique id for this entity
+  UId localUId; ///< Local unique id for this entity. Unique on CPU partition.
 
   FieldEntity(const boost::shared_ptr<Field> field_ptr,
               const boost::shared_ptr<RefEntity> ref_ents_ptr,
