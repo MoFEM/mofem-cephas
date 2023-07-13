@@ -138,7 +138,7 @@ protected:
  * This is only for scalar bases.
  *
  * @note It is derivitive from FormsIntegrators<OpBase>::template
- Assembly<A>::template LinearForm< I>::template OpSource<1, FIELD_DIM>
+ Assembly<A>::template LinearForm< I>::template OpSource<3, FIELD_DIM>
  *
  * @tparam FIELD_DIM field dimension
  * @tparam A
