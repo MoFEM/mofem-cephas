@@ -183,6 +183,12 @@ struct FieldEntity : public interface_Field<Field, RefEntity> {
     );
   };
 
+  /**
+   * @brief Get the Handle From Unique Id
+   * 
+   * @param uid 
+   * @return EntityHandle
+   */
   static inline auto getHandleFromUniqueId(const UId uid) {
     constexpr EntityHandle handle_mask = ~(EntityHandle(0));
     return static_cast<EntityHandle>(
@@ -190,6 +196,12 @@ struct FieldEntity : public interface_Field<Field, RefEntity> {
         dof_shift);
   };
 
+  /**
+   * @brief Get the Field Bit Number From Unique Id
+   *
+   * @param uid
+   * @return FieldId
+   */
   static inline auto getFieldBitNumberFromUniqueId(const UId uid) {
     constexpr int bit_field_mask = ~(char(0));
     return static_cast<char>(
