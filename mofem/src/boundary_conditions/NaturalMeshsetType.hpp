@@ -164,9 +164,7 @@ protected:
   OpFluxRhsImpl(
       const std::string field_name,
       std::vector<boost::shared_ptr<ScalingMethod>> smv,
-      ScalarFun user_fun = [](double, double, double) {
-        return 1;
-      });
+      ScalarFun user_fun = [](double, double, double) { return 1; });
   FTensor::Tensor1<double, FIELD_DIM> tForce;
   FTensor::Tensor1<double, FIELD_DIM> tScaledForce;
   VecOfTimeScalingMethods vecOfTimeScalingMethods;
@@ -966,8 +964,8 @@ struct AddFluxToRhsPipelineImpl<
   static MoFEMErrorCode
   add(boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
       MoFEM::Interface &m_field, const std::string field_name,
-      std::vector<boost::shared_ptr<ScalingMethod>> smv,
-      std::string block_name, Sev sev) {
+      std::vector<boost::shared_ptr<ScalingMethod>> smv, std::string block_name,
+      Sev sev) {
     return add(
         pipeline, m_field, field_name, smv, block_name,
         [](double, double, double) { return 1; }, sev);
