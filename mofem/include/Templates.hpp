@@ -1640,6 +1640,14 @@ inline auto type_from_handle(const EntityHandle h) {
 };
 
 /**
+ * @brief get entity handle from type and id
+ *
+ */
+inline auto ent_form_type_and_id(const EntityType type, const EntityID id) {
+  return (static_cast<EntityHandle>(type) << MB_ID_WIDTH) | id;
+};
+
+/**
  * @brief get entity dimension form handle
  * 
  */
