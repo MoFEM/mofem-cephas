@@ -60,7 +60,7 @@ ForcesAndSourcesCore::ForcesAndSourcesCore(Interface &m_field)
           boost::make_shared<DerivedEntitiesFieldData>(
               dataOnElement[HCURL]), // HCURL
           boost::make_shared<DerivedEntitiesFieldData>(
-              dataOnElement[HDIV]), // HDIV
+              dataOnElement[HDIV]),  // HDIV
           boost::make_shared<DerivedEntitiesFieldData>(dataOnElement[L2]) // L2
 
       },
@@ -1797,20 +1797,20 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopParent(
   auto fe_miit = fes.find(fe_name);
   if (fe_miit != fes.end()) {
 
-  parent_fe->feName = fe_name;
-  CHKERR parent_fe->setRefineFEPtr(ptrFE);
-  CHKERR parent_fe->copyBasicMethod(*getFEMethod());
-  CHKERR parent_fe->copyPetscData(*getFEMethod());
-  CHKERR parent_fe->copyKsp(*getFEMethod());
-  CHKERR parent_fe->copySnes(*getFEMethod());
-  CHKERR parent_fe->copyTs(*getFEMethod());
+    parent_fe->feName = fe_name;
+    CHKERR parent_fe->setRefineFEPtr(ptrFE);
+    CHKERR parent_fe->copyBasicMethod(*getFEMethod());
+    CHKERR parent_fe->copyPetscData(*getFEMethod());
+    CHKERR parent_fe->copyKsp(*getFEMethod());
+    CHKERR parent_fe->copySnes(*getFEMethod());
+    CHKERR parent_fe->copyTs(*getFEMethod());
 
-  parent_fe->cacheWeakPtr = getFEMethod()->cacheWeakPtr;
+    parent_fe->cacheWeakPtr = getFEMethod()->cacheWeakPtr;
 
-  const auto parent_ent = getNumeredEntFiniteElementPtr()->getParentEnt();
-  auto miit = numered_fe.find(EntFiniteElement::getLocalUniqueIdCalculate(
-      parent_ent, (*fe_miit)->getFEUId()));
-  if (miit != numered_fe.end()) {
+    const auto parent_ent = getNumeredEntFiniteElementPtr()->getParentEnt();
+    auto miit = numered_fe.find(EntFiniteElement::getLocalUniqueIdCalculate(
+        parent_ent, (*fe_miit)->getFEUId()));
+    if (miit != numered_fe.end()) {
       if (verb >= VERBOSE)
         MOFEM_LOG("SELF", sev) << "Parent finite element: " << **miit;
       parent_fe->loopSize = 1;
@@ -1825,7 +1825,7 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopParent(
       parent_fe->loopSize = 0;
       parent_fe->nInTheLoop = 0;
       CHKERR parent_fe->preProcess();
-      CHKERR parent_fe->postProcess();     
+      CHKERR parent_fe->postProcess();
     }
   }
 
