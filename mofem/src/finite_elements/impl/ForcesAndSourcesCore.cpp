@@ -1668,7 +1668,7 @@ MoFEMErrorCode ForcesAndSourcesCore::setRefineFEPtr(
 MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopSide(
     const string &fe_name, ForcesAndSourcesCore *side_fe, const size_t side_dim,
     const EntityHandle ent_for_side, const int verb,
-    const LogManager::SeverityLevel sev) {
+    const LogManager::SeverityLevel sev, AdjCache *adj_cache) {
   MoFEMFunctionBegin;
   const auto ent = ent_for_side ? ent_for_side : getFEEntityHandle();
   const auto *problem_ptr = getFEMethod()->problemPtr;
@@ -1686,9 +1686,13 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopSide(
 
   CHKERR side_fe->preProcess();
 
-  Range adjacent_ents;
-  CHKERR ptrFE->mField.getInterface<BitRefManager>()->getAdjacenciesAny(
-      ent, side_dim, adjacent_ents);
+  auto get_bit_entity_adjacency = [&]() {
+    Range adjacent_ents;
+    CHKERR ptrFE->mField.getInterface<BitRefManager>()->getAdjacenciesAny(
+        ent, side_dim, adjacent_ents);
+    return adjacent_ents;
+  };
+
   auto &numered_fe =
       problem_ptr->numeredFiniteElementsPtr->get<Unique_mi_tag>();
 
@@ -1698,19 +1702,47 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopSide(
   if (fe_miit != ptrFE->mField.get_finite_elements()
                      ->get<FiniteElement_name_mi_tag>()
                      .end()) {
+
+    auto get_numered_fe_ptr = [&](auto &fe_uid, Range &&adjacent_ents) {
+      std::vector<boost::weak_ptr<NumeredEntFiniteElement>> fe_vec;
+      fe_vec.reserve(adjacent_ents.size());
+      for (auto fe_ent : adjacent_ents) {
+        auto miit = numered_fe.find(
+            EntFiniteElement::getLocalUniqueIdCalculate(fe_ent, fe_uid));
+        if (miit != numered_fe.end()) {
+          fe_vec.emplace_back(*miit);
+        }
+      }
+      return fe_vec;
+    };
+
+    auto get_adj = [&](auto &fe_uid) {
+      if (adj_cache) {
+        try {
+          return (*adj_cache).at(ent);
+        } catch (const std::out_of_range &) {
+          return (*adj_cache)[ent] =
+                     get_numered_fe_ptr(fe_uid, get_bit_entity_adjacency());
+        }
+      } else {
+        return get_numered_fe_ptr(fe_uid, get_bit_entity_adjacency());
+      }
+    };
+
+    auto adj = get_adj((*fe_miit)->getFEUId());
+
     int nn = 0;
-    side_fe->loopSize = adjacent_ents.size();
-    for (auto fe_ent : adjacent_ents) {
-      auto miit = numered_fe.find(EntFiniteElement::getLocalUniqueIdCalculate(
-          fe_ent, (*fe_miit)->getFEUId()));
-      if (miit != numered_fe.end()) {
+    side_fe->loopSize = adj.size();
+    for (auto fe_weak_ptr : adj) {
+      if (auto fe_ptr = fe_weak_ptr.lock()) {
         if (verb >= VERBOSE)
           MOFEM_LOG("SELF", sev) << "Side finite element "
-                                 << "(" << nn << "): " << **miit;
-        side_fe->nInTheLoop = nn++;
-        side_fe->numeredEntFiniteElementPtr = *miit;
+                                 << "(" << nn << "): " << *fe_ptr;
+        side_fe->nInTheLoop = nn;
+        side_fe->numeredEntFiniteElementPtr = fe_ptr;
         CHKERR (*side_fe)();
       }
+      ++nn;
     }
   }
 
