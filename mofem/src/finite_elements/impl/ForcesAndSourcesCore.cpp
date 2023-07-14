@@ -1682,6 +1682,8 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopSide(
   CHKERR side_fe->copySnes(*getFEMethod());
   CHKERR side_fe->copyTs(*getFEMethod());
 
+  side_fe->cacheWeakPtr = getFEMethod()->cacheWeakPtr;
+
   CHKERR side_fe->preProcess();
 
   Range adjacent_ents;
@@ -1735,6 +1737,8 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopThis(
   CHKERR this_fe->copySnes(*getFEMethod());
   CHKERR this_fe->copyTs(*getFEMethod());
 
+  this_fe->cacheWeakPtr = getFEMethod()->cacheWeakPtr;
+
   CHKERR this_fe->preProcess();
 
   this_fe->nInTheLoop = getNinTheLoop();
@@ -1769,10 +1773,12 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopParent(
   CHKERR parent_fe->copySnes(*getFEMethod());
   CHKERR parent_fe->copyTs(*getFEMethod());
 
-    const auto parent_ent = getNumeredEntFiniteElementPtr()->getParentEnt();
-    auto miit = numered_fe.find(EntFiniteElement::getLocalUniqueIdCalculate(
-        parent_ent, (*fe_miit)->getFEUId()));
-    if (miit != numered_fe.end()) {
+  parent_fe->cacheWeakPtr = getFEMethod()->cacheWeakPtr;
+
+  const auto parent_ent = getNumeredEntFiniteElementPtr()->getParentEnt();
+  auto miit = numered_fe.find(EntFiniteElement::getLocalUniqueIdCalculate(
+      parent_ent, (*fe_miit)->getFEUId()));
+  if (miit != numered_fe.end()) {
       if (verb >= VERBOSE)
         MOFEM_LOG("SELF", sev) << "Parent finite element: " << **miit;
       parent_fe->loopSize = 1;
@@ -1832,6 +1838,8 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopChildren(
     CHKERR child_fe->copyKsp(*getFEMethod());
     CHKERR child_fe->copySnes(*getFEMethod());
     CHKERR child_fe->copyTs(*getFEMethod());
+
+    child_fe->cacheWeakPtr = getFEMethod()->cacheWeakPtr;
 
     CHKERR child_fe->preProcess();
 

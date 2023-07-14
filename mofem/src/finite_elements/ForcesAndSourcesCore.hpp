@@ -1287,14 +1287,15 @@ struct OpLoopSide : public ForcesAndSourcesCore::UserDataOperator {
    * @param side_dim dimension
    */
   OpLoopSide(MoFEM::Interface &m_field, const std::string fe_name,
-             const int side_dim)
+             const int side_dim,
+             const LogManager::SeverityLevel sev = Sev::noisy)
       : UserDataOperator(NOSPACE, OPSPACE), sideFEPtr(new E(m_field)),
-        fieldName(fe_name), sideDim(side_dim) {}
+        fieldName(fe_name), sideDim(side_dim), sevLevel(sev) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
-    CHKERR loopSide(fieldName, sideFEPtr.get(), sideDim);
+    CHKERR loopSide(fieldName, sideFEPtr.get(), sideDim, 0, VERBOSE, sevLevel);
     MoFEMFunctionReturn(0);
   };
 
@@ -1308,6 +1309,7 @@ protected:
   const std::string fieldName;
   const int sideDim;
   boost::shared_ptr<E> sideFEPtr;
+  const LogManager::SeverityLevel sevLevel;
 };
 
 } // namespace MoFEM
