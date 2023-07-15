@@ -890,13 +890,11 @@ MoFEMErrorCode OpMassImpl<3, 4, GAUSS, OpBase>::iNtegrate(
     EntitiesFieldData::EntData &row_data,
     EntitiesFieldData::EntData &col_data) {
   MoFEMFunctionBegin;
-  FTensor::Index<'i', 2> i;
+  FTensor::Index<'i', 2> I;
   FTensor::Index<'k', 3> k;
   auto get_t_vec = [&](const int rr) {
-    std::array<double *, 2> ptrs;
-    for (auto i = 0; i != 2; ++i)
-      ptrs[i] = &OpBase::locMat(rr + i, i);
-    return FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>(ptrs);
+    return FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>{
+        &OpBase::locMat(rr + 0, 0), &OpBase::locMat(rr + 1, 1)};
   };
   size_t nb_base_functions = row_data.getN().size2() / 3;
   // // get element volume
@@ -921,7 +919,7 @@ MoFEMErrorCode OpMassImpl<3, 4, GAUSS, OpBase>::iNtegrate(
       // loop over columns
       for (int cc = 0; cc != OpBase::nbCols / 2; cc++) {
         // calculate element of local matrix
-        t_vec(i) += alpha * (t_row_base(k) * t_col_base(k));
+        t_vec(I) += alpha * (t_row_base(k) * t_col_base(k));
         ++t_col_base;
         ++t_vec;
       }
@@ -943,10 +941,9 @@ MoFEMErrorCode OpMassImpl<3, 9, GAUSS, OpBase>::iNtegrate(
   FTensor::Index<'i', 3> i;
   FTensor::Index<'k', 3> k;
   auto get_t_vec = [&](const int rr) {
-    std::array<double *, 3> ptrs;
-    for (auto i = 0; i != 3; ++i)
-      ptrs[i] = &OpBase::locMat(rr + i, i);
-    return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptrs);
+    return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>{
+        &OpBase::locMat(rr + 0, 0), &OpBase::locMat(rr + 1, 1),
+        &OpBase::locMat(rr + 2, 2)};
   };
   size_t nb_base_functions = row_data.getN().size2() / 3;
   // // get element volume
