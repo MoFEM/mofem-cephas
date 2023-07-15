@@ -386,6 +386,7 @@ MoFEMErrorCode EssentialPreProcLhs<DisplacementCubitBcData>::operator()() {
       if (auto fe_ptr = fePtr.lock()) {
         SmartPetscObj<Mat> B =
             vLhs ? vLhs : SmartPetscObj<Mat>(fe_ptr->B, true);
+        // User is responsible for assembly if vLhs is provided
         if (fe_ptr->matAssembleSwitch && !vLhs) {
           if (*fe_ptr->matAssembleSwitch) {
             CHKERR MatAssemblyBegin(B, MAT_FINAL_ASSEMBLY);
@@ -394,8 +395,8 @@ MoFEMErrorCode EssentialPreProcLhs<DisplacementCubitBcData>::operator()() {
           }
         }
         if (vAO) {
-          // MOFEM_LOG("WORLD", Sev::noisy) << "Apply AO to IS";
-          CHKERR AOPetscToApplicationIS(vAO, is_sum);
+          MOFEM_LOG("WORLD", Sev::noisy) << "Apply AO to IS";
+          CHKERR AOApplicationToPetscIS(vAO, is_sum);
         }
         // ISView(is_sum, PETSC_VIEWER_STDOUT_WORLD);
         CHKERR MatZeroRowsColumnsIS(B, is_sum, vDiag, PETSC_NULL, PETSC_NULL);
