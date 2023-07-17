@@ -49,9 +49,9 @@ MoFEMErrorCode EssentialPreProc<DisplacementCubitBcData>::operator()() {
               << "Apply EssentialPreProc<DisplacementCubitBcData>: "
               << problem_name << "_" << field_name << "_" << block_name;
 
-          FTensor::Tensor1<double, 3> t_angles(0., 0., 0.);
-          FTensor::Tensor1<double, 3> t_vals(0., 0., 0.);
-          FTensor::Tensor1<double, 3> t_off(0., 0., 0.);
+          FTensor::Tensor1<double, 3> t_angles{0., 0., 0.};
+          FTensor::Tensor1<double, 3> t_vals{0., 0., 0.};
+          FTensor::Tensor1<double, 3> t_off{0., 0., 0.};
 
           if (auto ext_disp_bc =
                   dynamic_cast<DisplacementCubitBcDataWithRotation const *>(
@@ -101,7 +101,6 @@ MoFEMErrorCode EssentialPreProc<DisplacementCubitBcData>::operator()() {
             if (getCoords) {
               v += coords[coeff][idx];
             }
-
 
             field_entity_ptr->getEntFieldData()[coeff] = v;
             ++idx;
@@ -183,7 +182,7 @@ MoFEMErrorCode EssentialPreProcRhs<DisplacementCubitBcData>::operator()() {
     auto is_mng = mField.getInterface<ISManager>();
 
     const auto problem_name = fe_method_ptr->problemPtr->getName();
-    
+
     SmartPetscObj<IS> is_sum;
 
     for (auto bc : bc_mng->getBcMapByBlockName()) {
@@ -228,7 +227,6 @@ MoFEMErrorCode EssentialPreProcRhs<DisplacementCubitBcData>::operator()() {
             return SmartPetscObj<IS>(is);
           };
 
-
           for (auto &is : is_xyz) {
             if (is) {
               if (!is_sum) {
@@ -238,11 +236,10 @@ MoFEMErrorCode EssentialPreProcRhs<DisplacementCubitBcData>::operator()() {
               }
             }
           }
-
         }
       }
     }
-    
+
     if (is_sum) {
       if (auto fe_ptr = fePtr.lock()) {
 
@@ -277,7 +274,7 @@ MoFEMErrorCode EssentialPreProcRhs<DisplacementCubitBcData>::operator()() {
             ts_ctx != FEMethod::CTX_TSNONE) {
 
           auto x = fe_ptr->x;
-        
+
           const double *v;
           CHKERR VecGetArrayRead(x, &v);
 
@@ -351,7 +348,7 @@ MoFEMErrorCode EssentialPreProcLhs<DisplacementCubitBcData>::operator()() {
           if (disp_bc->data.flag1 || is_rotation) {
             CHKERR is_mng->isCreateProblemFieldAndRank(
                 prb_name, ROW, field_name, 0, 0, is_xyz[0], &verts);
-            }
+          }
           if (disp_bc->data.flag2 || is_rotation) {
             CHKERR is_mng->isCreateProblemFieldAndRank(
                 prb_name, ROW, field_name, 1, 1, is_xyz[1], &verts);
@@ -376,8 +373,6 @@ MoFEMErrorCode EssentialPreProcLhs<DisplacementCubitBcData>::operator()() {
               }
             }
           }
-
-
         }
       }
     }
@@ -402,6 +397,171 @@ MoFEMErrorCode EssentialPreProcLhs<DisplacementCubitBcData>::operator()() {
         CHKERR MatZeroRowsColumnsIS(B, is_sum, vDiag, PETSC_NULL, PETSC_NULL);
       }
     }
+
+  } else {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Can not lock shared pointer");
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+EssentialPreProcReaction<DisplacementCubitBcData>::EssentialPreProcReaction(
+    MoFEM::Interface &m_field, boost::shared_ptr<FEMethod> fe_ptr,
+    SmartPetscObj<Vec> rhs, LogManager::SeverityLevel sev)
+    : mField(m_field), fePtr(fe_ptr), vRhs(rhs), sevLevel(sev) {}
+
+MoFEMErrorCode EssentialPreProcReaction<DisplacementCubitBcData>::operator()() {
+  MOFEM_LOG_CHANNEL("WORLD");
+  MoFEMFunctionBegin;
+
+  if (auto fe_ptr = fePtr.lock()) {
+
+    SmartPetscObj<Vec> f = vRhs ? vRhs : SmartPetscObj<Vec>(fe_ptr->f, true);
+
+    if (fe_ptr->vecAssembleSwitch && !vRhs) {
+      CHKERR VecGhostUpdateBegin(f, ADD_VALUES, SCATTER_REVERSE);
+      CHKERR VecGhostUpdateEnd(f, ADD_VALUES, SCATTER_REVERSE);
+      CHKERR VecAssemblyBegin(f);
+      CHKERR VecAssemblyEnd(f);
+      *fe_ptr->vecAssembleSwitch = false;
+    }
+
+    auto get_low_hi_uid_by_entities = [](auto bit_number, auto f, auto s) {
+      return std::make_pair(DofEntity::getLoFieldEntityUId(bit_number, f),
+                            DofEntity::getHiFieldEntityUId(bit_number, s));
+    };
+
+    auto get_low_hi = [fe_ptr](auto lo_uid, auto hi_uid) {
+      auto it = fe_ptr->problemPtr->numeredRowDofsPtr->get<Unique_mi_tag>()
+                    .lower_bound(lo_uid);
+      auto hi_it = fe_ptr->problemPtr->numeredRowDofsPtr->get<Unique_mi_tag>()
+                       .upper_bound(hi_uid);
+      return std::make_pair(it, hi_it);
+    };
+
+    auto mpi_array_reduce = [this](auto &array) {
+      std::array<double, 6> array_sum{0, 0, 0, 0, 0, 0};
+      MPI_Allreduce(&array[0], &array_sum[0], 6, MPI_DOUBLE, MPI_SUM,
+                    mField.get_comm());
+      return array_sum;
+    };
+
+    const double *a;
+    CHKERR VecGetArrayRead(f, &a);
+
+    auto bc_mng = mField.getInterface<BcManager>();
+    const auto problem_name = fe_ptr->problemPtr->getName();
+    const auto nb_local_dofs = fe_ptr->problemPtr->nbLocDofsRow;
+
+    for (auto bc : bc_mng->getBcMapByBlockName()) {
+      if (auto disp_bc = bc.second->dispBcPtr) {
+
+        auto &bc_id = bc.first;
+
+        auto regex_str = (boost::format("%s_(.*)") % problem_name).str();
+        if (std::regex_match(bc_id, std::regex(regex_str))) {
+
+          auto [field_name, block_name] =
+              BcManager::extractStringFromBlockId(bc_id, problem_name);
+
+          MOFEM_TAG_AND_LOG("WORLD", sevLevel, "Essential")
+              << "EssentialPreProc<DisplacementCubitBcData>: " << problem_name
+              << "_" << field_name << "_" << block_name;
+          auto bit_number = mField.get_field_bit_number(field_name);
+
+          FTensor::Tensor1<double, 3> t_off{0., 0., 0.};
+          if (auto ext_disp_bc =
+                  dynamic_cast<DisplacementCubitBcDataWithRotation const *>(
+                      disp_bc.get())) {
+            for (int a = 0; a != 3; ++a)
+              t_off(a) = ext_disp_bc->rotOffset[a];
+          }
+
+          auto verts = bc.second->bcEnts.subset_by_type(MBVERTEX);
+
+          FTensor::Index<'i', 3> i;
+          FTensor::Index<'j', 3> j;
+          FTensor::Index<'k', 3> k;
+
+          auto get_coords_vec = [&]() {
+            VectorDouble coords_vec;
+            coords_vec.resize(3 * verts.size());
+            CHKERR mField.get_moab().get_coords(verts, &*coords_vec.begin());
+            auto t_coords = getFTensor1FromArray<3, 3>(coords_vec);
+            for (auto k = 0; k != verts.size(); ++k) {
+              t_coords(i) -= t_off(i);
+              ++t_coords;
+            }
+            return coords_vec;
+          };
+
+          auto coords_vec = get_coords_vec();
+
+          enum { X = 0, Y, Z, MX, MY, MZ, LAST };
+          std::array<double, LAST> reactions{0, 0, 0, 0, 0, 0};
+
+          auto t_coords = getFTensor1FromArray<3, 3>(coords_vec);
+
+          for (auto pit = verts.const_pair_begin();
+               pit != verts.const_pair_end(); ++pit) {
+            auto [lo_uid, hi_uid] =
+                get_low_hi_uid_by_entities(bit_number, pit->first, pit->second);
+            auto [lo, hi] = get_low_hi(lo_uid, hi_uid);
+
+            for (; lo != hi; ++lo) {
+              auto loc_dof = (*lo)->getPetscLocalDofIdx();
+              if (loc_dof < nb_local_dofs) {
+                auto ent = (*lo)->getEnt();
+                auto coeff = (*lo)->getDofCoeffIdx();
+                reactions[coeff] += a[loc_dof];
+
+                auto force = [&]() {
+                  FTensor::Tensor1<double, 3> t_force{0., 0., 0.};
+                  t_force(coeff) = a[loc_dof];
+                  return t_force;
+                };
+
+                auto coord = [&]() {
+                  const auto idx = verts.index(ent);
+                  return FTensor::Tensor1<double, 3>{coords_vec[3 * idx + X],
+                                                     coords_vec[3 * idx + Y],
+                                                     coords_vec[3 * idx + Z]};
+                };
+
+                auto moment = [&](auto &&t_force, auto &&t_coords) {
+                  FTensor::Tensor1<double, 3> t_moment;
+                  t_moment(i) =
+                      (FTensor::levi_civita<double>(i, j, k) * t_coords(k)) *
+                      t_force(j);
+                  return t_moment;
+                };
+
+                auto t_moment = moment(force(), coord());
+                reactions[MX] += t_moment(X);
+                reactions[MY] += t_moment(Y);
+                reactions[MZ] += t_moment(Z);
+
+              }
+              ++t_coords;
+            }
+          }
+
+          auto array_sum = mpi_array_reduce(reactions);
+          MOFEM_TAG_AND_LOG_C("WORLD", sevLevel, "Essential",
+                              "Offset: %4.3e %4.3e %4.3e", t_off(X), t_off(Y),
+                              t_off(Z));
+          MOFEM_TAG_AND_LOG_C("WORLD", sevLevel, "Essential",
+                              "Force: %4.3e %4.3e %4.3e", array_sum[X],
+                              array_sum[Y], array_sum[Z]);
+          MOFEM_TAG_AND_LOG_C("WORLD", sevLevel, "Essential",
+                              "Moment: %4.3e %4.3e %4.3e", array_sum[MX],
+                              array_sum[MY], array_sum[MZ]);
+        }
+      }
+    }
+
+    CHKERR VecRestoreArrayRead(f, &a);
 
   } else {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,

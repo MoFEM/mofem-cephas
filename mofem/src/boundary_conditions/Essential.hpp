@@ -19,14 +19,14 @@ namespace MoFEM {
  *
  * @tparam T
  */
-template <typename T> struct EssentialOpType {};
+template <typename T> struct EssentialOpType;
 
 /**
  * @brief Specialisation for b.c. applied by different types of meshsets
  *
  * @tparam BC
  */
-template <CubitBC BC> struct EssentialMeshsetType {};
+template <CubitBC BC> struct EssentialMeshsetType;
 
 /**
  * @brief Class (Function) to enforce essential constrains
@@ -36,23 +36,31 @@ template <CubitBC BC> struct EssentialMeshsetType {};
  *
  * @tparam T
  */
-template <typename T> struct EssentialPreProc {};
+template <typename T> struct EssentialPreProc;
 
 /**
- * @brief Class (Function) to enforce essential constrains, by setting matrix
+ * @brief Class (Function) to enforce essential constrains on the left hand side
  * diagonal
  *
  * @tparam T
  */
-template <typename T> struct EssentialPreProcLhs {};
+template <typename T> struct EssentialPreProcLhs;
 
 /**
- * @brief Class (Function) to enforce essential constrains, by setting matrix
- * diagonal
+ * @brief Class (Function) to enforce essential constrains on the right hand
+ * side diagonal
  *
  * @tparam T
  */
-template <typename T> struct EssentialPreProcRhs {};
+template <typename T> struct EssentialPreProcRhs;
+
+/**
+ * @brief Class (Function) to calculate residual
+ * side diagonal
+ *
+ * @tparam T
+ */
+template <typename T> struct EssentialPreProcReaction;
 
 /**
  * @brief Enforce essential constrains on rhs.
