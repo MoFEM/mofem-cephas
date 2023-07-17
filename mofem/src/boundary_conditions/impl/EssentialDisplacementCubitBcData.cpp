@@ -512,8 +512,8 @@ MoFEMErrorCode EssentialPreProcReaction<DisplacementCubitBcData>::operator()() {
             for (; lo != hi; ++lo) {
               auto loc_dof = (*lo)->getPetscLocalDofIdx();
               if (loc_dof < nb_local_dofs) {
-                auto ent = (*lo)->getEnt();
-                auto coeff = (*lo)->getDofCoeffIdx();
+                const auto ent = (*lo)->getEnt();
+                const auto coeff = (*lo)->getDofCoeffIdx();
                 reactions[coeff] += a[loc_dof];
 
                 auto force = [&]() {
