@@ -454,6 +454,9 @@ MoFEMErrorCode EssentialPreProcReaction<DisplacementCubitBcData>::operator()() {
     const auto problem_name = fe_ptr->problemPtr->getName();
     const auto nb_local_dofs = fe_ptr->problemPtr->nbLocDofsRow;
 
+    enum { X = 0, Y, Z, MX, MY, MZ, LAST };
+    std::array<double, LAST> total_reactions{0, 0, 0, 0, 0, 0};
+
     for (auto bc : bc_mng->getBcMapByBlockName()) {
       if (auto disp_bc = bc.second->dispBcPtr) {
 
@@ -488,20 +491,11 @@ MoFEMErrorCode EssentialPreProcReaction<DisplacementCubitBcData>::operator()() {
             VectorDouble coords_vec;
             coords_vec.resize(3 * verts.size());
             CHKERR mField.get_moab().get_coords(verts, &*coords_vec.begin());
-            auto t_coords = getFTensor1FromArray<3, 3>(coords_vec);
-            for (auto k = 0; k != verts.size(); ++k) {
-              t_coords(i) -= t_off(i);
-              ++t_coords;
-            }
             return coords_vec;
           };
 
           auto coords_vec = get_coords_vec();
-
-          enum { X = 0, Y, Z, MX, MY, MZ, LAST };
           std::array<double, LAST> reactions{0, 0, 0, 0, 0, 0};
-
-          auto t_coords = getFTensor1FromArray<3, 3>(coords_vec);
 
           for (auto pit = verts.const_pair_begin();
                pit != verts.const_pair_end(); ++pit) {
@@ -510,58 +504,94 @@ MoFEMErrorCode EssentialPreProcReaction<DisplacementCubitBcData>::operator()() {
             auto [lo, hi] = get_low_hi(lo_uid, hi_uid);
 
             for (; lo != hi; ++lo) {
-              auto loc_dof = (*lo)->getPetscLocalDofIdx();
+              const auto loc_dof = (*lo)->getPetscLocalDofIdx();
               if (loc_dof < nb_local_dofs) {
-                const auto ent = (*lo)->getEnt();
+
                 const auto coeff = (*lo)->getDofCoeffIdx();
-                reactions[coeff] += a[loc_dof];
 
-                auto force = [&]() {
-                  FTensor::Tensor1<double, 3> t_force{0., 0., 0.};
-                  t_force(coeff) = a[loc_dof];
-                  return t_force;
-                };
+                if (
 
-                auto coord = [&]() {
-                  const auto idx = verts.index(ent);
-                  return FTensor::Tensor1<double, 3>{coords_vec[3 * idx + X],
-                                                     coords_vec[3 * idx + Y],
-                                                     coords_vec[3 * idx + Z]};
-                };
+                    ((disp_bc->data.flag1 || disp_bc->data.flag4) &&
+                     coeff == 0) ||
+                    ((disp_bc->data.flag2 || disp_bc->data.flag5) &&
+                     coeff == 1) ||
+                    ((disp_bc->data.flag3 || disp_bc->data.flag6) &&
+                     coeff == 2)) {
 
-                auto moment = [&](auto &&t_force, auto &&t_coords) {
-                  FTensor::Tensor1<double, 3> t_moment;
-                  t_moment(i) =
-                      (FTensor::levi_civita<double>(i, j, k) * t_coords(k)) *
-                      t_force(j);
-                  return t_moment;
-                };
+                  const auto ent = (*lo)->getEnt();
+                  reactions[coeff] += a[loc_dof];
 
-                auto t_moment = moment(force(), coord());
-                reactions[MX] += t_moment(X);
-                reactions[MY] += t_moment(Y);
-                reactions[MZ] += t_moment(Z);
+                  auto force = [&]() {
+                    FTensor::Tensor1<double, 3> t_force{0., 0., 0.};
+                    t_force(coeff) = a[loc_dof];
+                    return t_force;
+                  };
 
+                  auto coord = [&]() {
+                    const auto idx = verts.index(ent);
+                    FTensor::Tensor1<double, 3> t_coords{
+                        coords_vec[3 * idx + X], coords_vec[3 * idx + Y],
+                        coords_vec[3 * idx + Z]};
+                    t_coords(i) -= t_off(i);
+                    return t_coords;
+                  };
+
+                  auto moment = [&](auto &&t_force, auto &&t_coords) {
+                    FTensor::Tensor1<double, 3> t_moment;
+                    t_moment(i) =
+                        (FTensor::levi_civita<double>(i, j, k) * t_coords(k)) *
+                        t_force(j);
+                    return t_moment;
+                  };
+
+                  auto t_moment = moment(force(), coord());
+                  reactions[MX] += t_moment(X);
+                  reactions[MY] += t_moment(Y);
+                  reactions[MZ] += t_moment(Z);
+                }
               }
-              ++t_coords;
             }
           }
 
-          auto array_sum = mpi_array_reduce(reactions);
+          FTensor::Tensor1<double, 3> t_force{reactions[X], reactions[Y],
+                                              reactions[Z]};
+          FTensor::Tensor1<double, 3> t_moment{reactions[MX], reactions[MY],
+                                               reactions[MZ]};
+          FTensor::Tensor1<FTensor::PackPtr<double *, 0>, 3> t_total_force{
+              &total_reactions[X], &total_reactions[Y], &total_reactions[Z]};
+          FTensor::Tensor1<FTensor::PackPtr<double *, 0>, 3> t_total_moment{
+              &total_reactions[MX], &total_reactions[MY], &total_reactions[MZ]};
+          t_total_force(i) += t_force(i);
+          t_total_moment(i) +=
+              t_moment(i) +
+              (FTensor::levi_civita<double>(i, j, k) * t_off(k)) * t_force(j);
+
+          auto mpi_reactions = mpi_array_reduce(reactions);
           MOFEM_TAG_AND_LOG_C("WORLD", sevLevel, "Essential",
                               "Offset: %4.3e %4.3e %4.3e", t_off(X), t_off(Y),
                               t_off(Z));
           MOFEM_TAG_AND_LOG_C("WORLD", sevLevel, "Essential",
-                              "Force: %4.3e %4.3e %4.3e", array_sum[X],
-                              array_sum[Y], array_sum[Z]);
+                              "Force: %4.3e %4.3e %4.3e", mpi_reactions[X],
+                              mpi_reactions[Y], mpi_reactions[Z]);
           MOFEM_TAG_AND_LOG_C("WORLD", sevLevel, "Essential",
-                              "Moment: %4.3e %4.3e %4.3e", array_sum[MX],
-                              array_sum[MY], array_sum[MZ]);
+                              "Moment: %4.3e %4.3e %4.3e", mpi_reactions[MX],
+                              mpi_reactions[MY], mpi_reactions[MZ]);
+          
+
         }
       }
     }
 
     CHKERR VecRestoreArrayRead(f, &a);
+
+    auto mpi_total_reactions = mpi_array_reduce(total_reactions);
+    MOFEM_TAG_AND_LOG_C(
+        "WORLD", sevLevel, "Essential", "Total force: %4.3e %4.3e %4.3e",
+        mpi_total_reactions[X], mpi_total_reactions[Y], mpi_total_reactions[Z]);
+    MOFEM_TAG_AND_LOG_C("WORLD", sevLevel, "Essential",
+                        "Total moment: %4.3e %4.3e %4.3e",
+                        mpi_total_reactions[MX], mpi_total_reactions[MY],
+                        mpi_total_reactions[MZ]);
 
   } else {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
