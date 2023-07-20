@@ -146,8 +146,6 @@ struct AtomTest::OpError : public DomainEleOp {
 
     const double volume = getMeasure(); // get finite element area
 
-    auto t_row_base = data.getFTensor0N();
-    auto t_diff_row_base = data.getFTensor1DiffN<2>();
 
     std::array<double, 3> error = {0, 0,
                                    0}; // array for storing operator errors
@@ -269,8 +267,8 @@ MoFEMErrorCode AtomTest::solveSystem() {
   CHKERR KSPSetUp(solver);
 
   auto dm = simpleInterface->getDM();
-  auto D = smartCreateDMVector(dm);
-  auto F = smartVectorDuplicate(D);
+  auto D = createDMVector(dm);
+  auto F = vectorDuplicate(D);
 
   CHKERR KSPSolve(solver, F, D);
   CHKERR VecGhostUpdateBegin(D, INSERT_VALUES, SCATTER_FORWARD);
@@ -293,7 +291,7 @@ MoFEMErrorCode AtomTest::checkResults() {
 
   // create data structures for operator
   auto common_data_ptr = boost::make_shared<CommonData>();
-  common_data_ptr->L2Vec = createSmartVectorMPI(
+  common_data_ptr->L2Vec = createVectorMPI(
       mField.get_comm(), (!mField.get_comm_rank()) ? 3 : 0, 3);
   common_data_ptr->approxVals = boost::make_shared<VectorDouble>();
   common_data_ptr->approxGradVals = boost::make_shared<MatrixDouble>();

@@ -16,6 +16,14 @@ if(PETSCVAR_FC)
   set(CMAKE_Fortran_COMPILER ${PETSCVAR_FC})
 endif(PETSCVAR_FC)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wunused-variable")
+
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdiagnostics-color=always")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fdiagnostics-color=always")
+endif()
+
+
 if(PETSCVAR_CUDA_INCLUDE)
   message(STATUS "PETSc is compiled with CUDA")
   set(PETSC_HAVE_CUDA TRUE)
@@ -28,14 +36,14 @@ find_program(MPI_RUN mpirun HINTS ${MPI_BIN_PATH} /usr/bin PATH ${MPI_BIN_PATH})
 include(cmake/ResolveCompilerPaths.cmake)
 
 project(MoFEM 
-  VERSION 0.13.3
+  VERSION 0.14.0
   DESCRIPTION "Finite element framework" 
   LANGUAGES C CXX)
 
 # Set fallback version. Fallback version is version of MoFEM which is used
 # as default version if version from the git tags can not be extracted. For exammple 
 # that is a keys when somone install mofem from tarball.
-set(MoFEM_FALLBACK_VERSION "0.13.3" CACHE STRING "Fallback version" FORCE)
+set(MoFEM_FALLBACK_VERSION "0.14.0" CACHE STRING "Fallback version" FORCE)
 message(STATUS "Fallback version v${MoFEM_FALLBACK_VERSION}")
 
 # Options

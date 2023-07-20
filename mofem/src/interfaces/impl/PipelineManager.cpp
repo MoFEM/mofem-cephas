@@ -55,7 +55,7 @@ SmartPetscObj<KSP> PipelineManager::createKSP(SmartPetscObj<DM> dm) {
     CHKERR PetscObjectGetComm(getPetscObject(simple_dm.get()), &comm);
     DMType type;
     CHKERR DMGetType(simple_dm, &type);
-    dm = createSmartDM(comm, type);
+    dm = createDM(comm, type);
     CHKERR DMMoFEMDuplicateDMCtx(simple_dm, dm);
     return dm;
   };
@@ -77,7 +77,7 @@ SmartPetscObj<KSP> PipelineManager::createKSP(SmartPetscObj<DM> dm) {
 
   boost::shared_ptr<FEMethod> null;
 
-  smartGetDMKspCtx(dm)->clearLoops();
+  getDMKspCtx(dm)->clearLoops();
 
   // Add element to calculate lhs of stiff part
   if (feDomainLhs)
@@ -115,7 +115,7 @@ SmartPetscObj<SNES> PipelineManager::createSNES(SmartPetscObj<DM> dm) {
     CHKERR PetscObjectGetComm(getPetscObject(simple_dm.get()), &comm);
     DMType type;
     CHKERR DMGetType(simple_dm, &type);
-    dm = createSmartDM(comm, type);
+    dm = createDM(comm, type);
     CHKERR DMMoFEMDuplicateDMCtx(simple_dm, dm);
     return dm;
   };
@@ -135,7 +135,7 @@ SmartPetscObj<SNES> PipelineManager::createSNES(SmartPetscObj<DM> dm) {
   };
   CHKERR set_dm_section(dm);
 
-  smartGetDMSnesCtx(dm)->clearLoops();
+  getDMSnesCtx(dm)->clearLoops();
 
   boost::shared_ptr<FEMethod> null;
 
@@ -198,7 +198,7 @@ SmartPetscObj<TS> PipelineManager::createTSEX(SmartPetscObj<DM> dm) {
     CHKERR PetscObjectGetComm(getPetscObject(simple_dm.get()), &comm);
     DMType type;
     CHKERR DMGetType(simple_dm, &type);
-    dm = createSmartDM(comm, type);
+    dm = createDM(comm, type);
     CHKERR DMMoFEMDuplicateDMCtx(simple_dm, dm);
     return dm;
   };
@@ -220,7 +220,7 @@ SmartPetscObj<TS> PipelineManager::createTSEX(SmartPetscObj<DM> dm) {
 
   boost::shared_ptr<FEMethod> null;
 
-  smartGetDMTsCtx(dm)->clearLoops();
+  getDMTsCtx(dm)->clearLoops();
 
   // Add element to calculate rhs of stiff part
   if (feDomainRhs)
@@ -250,7 +250,7 @@ SmartPetscObj<TS> PipelineManager::createTSIM(SmartPetscObj<DM> dm) {
     CHKERR PetscObjectGetComm(getPetscObject(simple_dm.get()), &comm);
     DMType type;
     CHKERR DMGetType(simple_dm, &type);
-    dm = createSmartDM(comm, type);
+    dm = createDM(comm, type);
     CHKERR DMMoFEMDuplicateDMCtx(simple_dm, dm);
     return dm;
   };
@@ -311,7 +311,7 @@ SmartPetscObj<TS> PipelineManager::createTSIM2(SmartPetscObj<DM> dm) {
     CHKERR PetscObjectGetComm(getPetscObject(simple_dm.get()), &comm);
     DMType type;
     CHKERR DMGetType(simple_dm, &type);
-    dm = createSmartDM(comm, type);
+    dm = createDM(comm, type);
     CHKERR DMMoFEMDuplicateDMCtx(simple_dm, dm);
     return dm;
   };
@@ -372,7 +372,7 @@ SmartPetscObj<TS> PipelineManager::createTSIMEX(SmartPetscObj<DM> dm) {
     CHKERR PetscObjectGetComm(getPetscObject(simple_dm.get()), &comm);
     DMType type;
     CHKERR DMGetType(simple_dm, &type);
-    dm = createSmartDM(comm, type);
+    dm = createDM(comm, type);
     CHKERR DMMoFEMDuplicateDMCtx(simple_dm, dm);
     return dm;
   };

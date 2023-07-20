@@ -220,14 +220,17 @@ protected:
                            EntitiesFieldData::EntData &col_data);
 };
 
-template <int SPACE_DIM, IntegrationType I, typename OpBase>
+template <int SPACE_DIM, IntegrationType I, typename OpBase,
+          CoordinateTypes CoordSys>
 struct OpMixDivTimesVecImpl {};
 
-template <int SPACE_DIM, typename OpBase>
-struct OpMixDivTimesVecImpl<SPACE_DIM, GAUSS, OpBase> : public OpBase {
+template <int SPACE_DIM, typename OpBase, CoordinateTypes CoordSys>
+struct OpMixDivTimesVecImpl<SPACE_DIM, GAUSS, OpBase, CoordSys>
+    : public OpBase {
+
   OpMixDivTimesVecImpl(const std::string row_field_name,
                        const std::string col_field_name, ConstantFun alpha_fun,
-                       const bool assemble_transpose = false,
+                       const bool assemble_transpose,
                        const bool only_transpose = false)
       : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
         alphaConstant(alpha_fun) {
@@ -235,9 +238,22 @@ struct OpMixDivTimesVecImpl<SPACE_DIM, GAUSS, OpBase> : public OpBase {
     this->onlyTranspose = only_transpose;
   }
 
+  OpMixDivTimesVecImpl(const std::string row_field_name,
+                       const std::string col_field_name, ConstantFun alpha_fun,
+                       ScalarFun beta_fun, const bool assemble_transpose,
+                       const bool only_transpose)
+      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
+        alphaConstant(alpha_fun), betaCoeff(beta_fun) {
+    this->assembleTranspose = assemble_transpose;
+    this->onlyTranspose = only_transpose;
+  }
+
 protected:
   FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
-  ConstantFun alphaConstant;
+
+  ConstantFun alphaConstant = []() constexpr { return 1; };
+  ScalarFun betaCoeff = [](double, double, double) constexpr { return 1; };
+
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data);
 };
@@ -318,10 +334,11 @@ struct OpMixTensorTimesGradImpl {};
 
 template <int SPACE_DIM, typename OpBase>
 struct OpMixTensorTimesGradImpl<SPACE_DIM, GAUSS, OpBase> : public OpBase {
+
   OpMixTensorTimesGradImpl(const std::string row_field_name,
                            const std::string col_field_name,
                            ConstantFun alpha_fun,
-                           const bool assemble_transpose = false,
+                           const bool assemble_transpose,
                            const bool only_transpose = false)
       : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
         alphaConstant(alpha_fun) {
@@ -329,10 +346,22 @@ struct OpMixTensorTimesGradImpl<SPACE_DIM, GAUSS, OpBase> : public OpBase {
     this->onlyTranspose = only_transpose;
   }
 
+  OpMixTensorTimesGradImpl(const std::string row_field_name,
+                           const std::string col_field_name,
+                           ConstantFun alpha_fun, ScalarFun beta_coeff,
+                           const bool assemble_transpose,
+                           const bool only_transpose)
+      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
+        alphaConstant(alpha_fun), betaCoeff(beta_coeff) {
+    this->assembleTranspose = assemble_transpose;
+    this->onlyTranspose = only_transpose;
+  }
+
 protected:
   FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
   FTensor::Index<'j', SPACE_DIM> j; ///< summit Index
-  ConstantFun alphaConstant;
+  ConstantFun alphaConstant = []() constexpr { return 1; };
+  ScalarFun betaCoeff = [](double, double, double) constexpr { return 1; };
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data);
 };
@@ -520,8 +549,8 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
    *
    * @tparam SPACE_DIM
    */
-  template <int SPACE_DIM>
-  using OpMixDivTimesVec = OpMixDivTimesVecImpl<SPACE_DIM, I, OpBase>;
+  template <int SPACE_DIM, CoordinateTypes CoordSys = CARTESIAN>
+  using OpMixDivTimesVec = OpMixDivTimesVecImpl<SPACE_DIM, I, OpBase, CoordSys>;
 
   /**
    * @brief Integrate \f$(\lambda,u_{i,i})_\Omega\f$
@@ -1213,20 +1242,24 @@ MoFEMErrorCode OpMixDivTimesScalarImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
   MoFEMFunctionReturn(0);
 }
 
-template <int SPACE_DIM, typename OpBase>
-MoFEMErrorCode OpMixDivTimesVecImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
+template <int SPACE_DIM, typename OpBase, CoordinateTypes CoordSys>
+MoFEMErrorCode
+OpMixDivTimesVecImpl<SPACE_DIM, GAUSS, OpBase, CoordSys>::iNtegrate(
     EntitiesFieldData::EntData &row_data,
     EntitiesFieldData::EntData &col_data) {
   MoFEMFunctionBegin;
 
   auto t_w = this->getFTensor0IntegrationWeight();
+  auto t_coords = this->getFTensor1CoordsAtGaussPts();
 
   size_t nb_base_functions = row_data.getN().size2() / 3;
   auto t_row_diff_base = row_data.getFTensor2DiffN<3, SPACE_DIM>();
-  const double alpha_constant = alphaConstant();
+  auto t_row_base = row_data.getFTensor1N<3>();
+  const double alpha_constant = alphaConstant() * this->getMeasure();
   for (size_t gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
 
-    const double alpha = alpha_constant * this->getMeasure() * t_w;
+    const double alpha =
+        alpha_constant * t_w * betaCoeff(t_coords(0), t_coords(1), t_coords(2));
 
     size_t rr = 0;
     for (; rr != OpBase::nbRows / SPACE_DIM; ++rr) {
@@ -1237,16 +1270,22 @@ MoFEMErrorCode OpMixDivTimesVecImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
 
       for (size_t cc = 0; cc != OpBase::nbCols / SPACE_DIM; ++cc) {
         t_mat_diag(i) += alpha * t_row_div_base * t_col_base;
+        if constexpr (CoordSys == CYLINDRICAL) {
+          t_mat_diag(i) += alpha * (t_row_base(0) / t_coords(0)) * t_col_base;
+        }
         ++t_col_base;
         ++t_mat_diag;
       }
-
+      ++t_row_base;
       ++t_row_diff_base;
     }
-    for (; rr < nb_base_functions; ++rr)
+    for (; rr < nb_base_functions; ++rr) {
       ++t_row_diff_base;
+      ++t_row_base;
+    }
 
     ++t_w;
+    ++t_coords;
   }
 
   MoFEMFunctionReturn(0);
@@ -1411,13 +1450,15 @@ MoFEMErrorCode OpMixTensorTimesGradImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
   MoFEMFunctionBegin;
 
   auto t_w = this->getFTensor0IntegrationWeight();
+  auto t_coords = this->getFTensor1CoordsAtGaussPts();
 
   size_t nb_base_functions = row_data.getN().size2() / 3;
   auto t_row_base = row_data.getFTensor1N<3>();
-  const double alpha_constant = alphaConstant();
+  const double alpha_constant = alphaConstant() * this->getMeasure();
   for (size_t gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
 
-    const double alpha = alpha_constant * this->getMeasure() * t_w;
+    const double alpha =
+        alpha_constant * betaCoeff(t_coords(0), t_coords(1), t_coords(2)) * t_w;
 
     size_t rr = 0;
     for (; rr != OpBase::nbRows / SPACE_DIM; ++rr) {
@@ -1437,6 +1478,7 @@ MoFEMErrorCode OpMixTensorTimesGradImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
       ++t_row_base;
 
     ++t_w;
+    ++t_coords;
   }
 
   MoFEMFunctionReturn(0);

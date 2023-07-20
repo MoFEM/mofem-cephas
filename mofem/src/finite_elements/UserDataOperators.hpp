@@ -97,7 +97,7 @@ struct OpCalculateScalarFieldValues
     MoFEMFunctionBegin;
     VectorDouble &vec = *dataPtr;
     const size_t nb_gauss_pts = getGaussPts().size2();
-    if (type == zeroType) {
+    if (type == zeroType || vec.size() != nb_gauss_pts) {
       vec.resize(nb_gauss_pts, false);
       vec.clear();
     }
@@ -173,7 +173,7 @@ struct OpCalculateScalarFieldValuesFromPetscVecImpl
     const size_t nb_gauss_pts = getGaussPts().size2();
 
     VectorDouble &vec = *dataPtr;
-    if (type == zeroAtType) {
+    if (type == zeroAtType || vec.size() != nb_gauss_pts) {
       vec.resize(nb_gauss_pts, false);
       vec.clear();
     }
@@ -384,7 +384,7 @@ MoFEMErrorCode OpCalculateVectorFieldValues_General<
 
   const size_t nb_gauss_pts = getGaussPts().size2();
   auto &mat = *dataPtr;
-  if (type == zeroType) {
+  if (type == zeroType || mat.size2() != nb_gauss_pts) {
     mat.resize(Tensor_Dim, nb_gauss_pts, false);
     mat.clear();
   }
@@ -2424,9 +2424,9 @@ struct OpCalculateHVecVectorHessian
       MoFEMFunctionReturnHot(0);
 
     const int nb_base_functions = data.getN().size2() / BASE_DIM;
-    auto &hessian_base = data.getN(BaseDerivatives::SecondDerivative);
 
 #ifndef NDEBUG
+    auto &hessian_base = data.getN(BaseDerivatives::SecondDerivative);
     if (hessian_base.size1() != nb_integration_points) {
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Wrong number of integration pts (%d != %d)",
@@ -2732,7 +2732,8 @@ private:
  * @tparam Tensor_Dim0 rank of the field
  * @tparam Tensor_Dim1 dimension of space
  */
-template <int Tensor_Dim0, int Tensor_Dim1>
+template <int Tensor_Dim0, int Tensor_Dim1,
+          CoordinateTypes CoordSys = CARTESIAN>
 struct OpCalculateHVecTensorDivergence
     : public ForcesAndSourcesCore::UserDataOperator {
 
@@ -2762,18 +2763,27 @@ struct OpCalculateHVecTensorDivergence
       FTensor::Index<'j', Tensor_Dim1> j;
       auto t_n_diff_hvec = data.getFTensor2DiffN<3, Tensor_Dim1>();
       auto t_data = getFTensor1FromMat<Tensor_Dim0>(*dataPtr);
+      auto t_base = data.getFTensor1N<3>();
+      auto t_coords = getFTensor1CoordsAtGaussPts();
       for (size_t gg = 0; gg != nb_integration_points; ++gg) {
         auto t_dof = data.getFTensor1FieldData<Tensor_Dim0>();
         size_t bb = 0;
         for (; bb != nb_dofs / Tensor_Dim0; ++bb) {
           double div = t_n_diff_hvec(j, j);
           t_data(i) += t_dof(i) * div;
+          if constexpr (CoordSys == CYLINDRICAL) {
+            t_data(i) += t_dof(i) * (t_base(0) / t_coords(0));
+          }
           ++t_n_diff_hvec;
           ++t_dof;
+          ++t_base;
         }
-        for (; bb < nb_base_functions; ++bb)
+        for (; bb < nb_base_functions; ++bb) {
+          ++t_base;
           ++t_n_diff_hvec;
+        }
         ++t_data;
+        ++t_coords;
       }
     }
     MoFEMFunctionReturn(0);
@@ -2814,22 +2824,26 @@ struct OpCalculateHVecTensorTrace : public OpBase {
     }
     const size_t nb_dofs = data.getFieldData().size();
     if (nb_dofs) {
-      auto t_normal = OpBase::getFTensor1Normal();
-      t_normal(i) /= sqrt(t_normal(j) * t_normal(j));
+      auto t_normal = OpBase::getFTensor1NormalsAtGaussPts();
       const size_t nb_base_functions = data.getN().size2() / 3;
       auto t_base = data.getFTensor1N<3>();
       auto t_data = getFTensor1FromMat<Tensor_Dim>(*dataPtr);
       for (size_t gg = 0; gg != nb_integration_points; ++gg) {
+        FTensor::Tensor1<double, Tensor_Dim> t_normalized_normal;
+        t_normalized_normal(j) = t_normal(j);
+        t_normalized_normal.normalize();
         auto t_dof = data.getFTensor1FieldData<Tensor_Dim>();
         size_t bb = 0;
         for (; bb != nb_dofs / Tensor_Dim; ++bb) {
-          t_data(i) += t_dof(i) * (t_base(j) * t_normal(j));
+          t_data(i) += t_dof(i) * (t_base(j) * t_normalized_normal(j));
           ++t_base;
           ++t_dof;
         }
-        for (; bb < nb_base_functions; ++bb)
+        for (; bb < nb_base_functions; ++bb) {
           ++t_base;
+        }
         ++t_data;
+        ++t_normal;
       }
     }
     MoFEMFunctionReturn(0);
@@ -2841,65 +2855,6 @@ private:
   const int zeroSide;
   FTensor::Index<'i', Tensor_Dim> i;
   FTensor::Index<'j', Tensor_Dim> j;
-};
-
-template <>
-struct OpCalculateHVecTensorTrace<
-    3, FaceElementForcesAndSourcesCore::UserDataOperator>
-    : public FaceElementForcesAndSourcesCore::UserDataOperator {
-
-  OpCalculateHVecTensorTrace(const std::string field_name,
-                             boost::shared_ptr<MatrixDouble> data_ptr,
-                             const EntityType zero_type = MBEDGE,
-                             const int zero_side = 0)
-      : UserDataOperator(field_name, OPROW), dataPtr(data_ptr),
-        zeroType(zero_type), zeroSide(zero_side) {
-    if (!dataPtr)
-      THROW_MESSAGE("Pointer is not set");
-  }
-
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        EntitiesFieldData::EntData &data) {
-    MoFEMFunctionBegin;
-    const size_t nb_integration_points = getGaussPts().size2();
-    if (type == zeroType && side == 0) {
-      dataPtr->resize(3, nb_integration_points, false);
-      dataPtr->clear();
-    }
-    const size_t nb_dofs = data.getFieldData().size();
-    if (nb_dofs) {
-      auto t_normal = getFTensor1Normal();
-      t_normal(i) /= sqrt(t_normal(j) * t_normal(j));
-      const size_t nb_base_functions = data.getN().size2() / 3;
-      auto t_base = data.getFTensor1N<3>();
-      auto t_data = getFTensor1FromMat<3>(*dataPtr);
-      for (size_t gg = 0; gg != nb_integration_points; ++gg) {
-        auto t_dof = data.getFTensor1FieldData<3>();
-        if (getNormalsAtGaussPts().size1() == nb_integration_points) {
-          VectorDouble n = getNormalsAtGaussPts(gg);
-          auto t_n = getFTensor1FromPtr<3>(&*n.data().begin());
-          t_normal(i) = t_n(i) / sqrt(t_n(j) * t_n(j));
-        }
-        size_t bb = 0;
-        for (; bb != nb_dofs / 3; ++bb) {
-          t_data(i) += t_dof(i) * (t_base(j) * t_normal(j));
-          ++t_base;
-          ++t_dof;
-        }
-        for (; bb < nb_base_functions; ++bb)
-          ++t_base;
-        ++t_data;
-      }
-    }
-    MoFEMFunctionReturn(0);
-  }
-
-private:
-  boost::shared_ptr<MatrixDouble> dataPtr;
-  const EntityHandle zeroType;
-  const int zeroSide;
-  FTensor::Index<'i', 3> i;
-  FTensor::Index<'j', 3> j;
 };
 
 /**@}*/

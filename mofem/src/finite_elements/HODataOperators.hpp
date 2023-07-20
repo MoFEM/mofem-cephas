@@ -103,6 +103,7 @@ struct OpSetHOInvJacVectorBase : public ForcesAndSourcesCore::UserDataOperator {
       doEdges = false;
   }
 
+	
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data);
 
@@ -124,6 +125,31 @@ struct OpSetHOWeightsOnFace
       : FaceElementForcesAndSourcesCore::UserDataOperator(NOSPACE) {}
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data);
+};
+
+/**
+ * @brief Modify integration weights on face to take in account higher-order
+ * geometry
+ * @ingroup mofem_forces_and_sources_tri_element
+ *
+ */
+struct OpSetHOWeightsOnEdge
+    : public EdgeElementForcesAndSourcesCore::UserDataOperator {
+  OpSetHOWeightsOnEdge()
+      : EdgeElementForcesAndSourcesCore::UserDataOperator(NOSPACE) {}
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        EntitiesFieldData::EntData &data);
+};
+
+template <int SPACE_DIM>
+struct OpSetHOWeightsOnSubDim;
+
+template <> struct OpSetHOWeightsOnSubDim<2> : public OpSetHOWeightsOnEdge {
+  using OpSetHOWeightsOnEdge::OpSetHOWeightsOnEdge;
+};
+
+template <> struct OpSetHOWeightsOnSubDim<3> : public OpSetHOWeightsOnFace {
+  using OpSetHOWeightsOnFace::OpSetHOWeightsOnFace;
 };
 
 /**
@@ -383,7 +409,6 @@ template <typename OP> struct OpScaleBaseBySpaceInverseOfMeasure : public OP {
         if (detJacPtr) {
 
           auto &det_vec = *detJacPtr;
-          const auto nb_base_fun = base_fun.size2();
           const auto nb_int_pts = base_fun.size1();
 
           if (nb_int_pts != det_vec.size())

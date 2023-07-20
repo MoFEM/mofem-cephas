@@ -335,7 +335,6 @@ Simple::addDataField(const std::string &name, const FieldSpace space,
 }
 
 MoFEMErrorCode Simple::removeDomainField(const std::string &name) {
-  Interface &m_field = cOre;
   MoFEMFunctionBegin;
 
   auto remove_field_from_list = [&](auto &vec) {
@@ -351,7 +350,6 @@ MoFEMErrorCode Simple::removeDomainField(const std::string &name) {
 }
 
 MoFEMErrorCode Simple::removeBoundaryField(const std::string &name) {
-  Interface &m_field = cOre;
   MoFEMFunctionBegin;
 
   auto remove_field_from_list = [&](auto &vec) {
@@ -366,7 +364,6 @@ MoFEMErrorCode Simple::removeBoundaryField(const std::string &name) {
 }
 
 MoFEMErrorCode Simple::removeSkeletonField(const std::string &name) {
-  Interface &m_field = cOre;
   MoFEMFunctionBegin;
 
   auto remove_field_from_list = [&](auto &vec) {
@@ -456,7 +453,7 @@ MoFEMErrorCode Simple::defineProblem(const PetscBool is_partitioned) {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
   // Create dm instance
-  dM = createSmartDM(m_field.get_comm(), "DMMOFEM");
+  dM = createDM(m_field.get_comm(), "DMMOFEM");
   // set dm data structure which created mofem data structures
   CHKERR DMMoFEMCreateMoFEM(dM, &m_field, nameOfProblem.c_str(), bitLevel,
                             bitLevelMask);
@@ -612,7 +609,6 @@ MoFEMErrorCode Simple::buildProblem() {
 }
 
 MoFEMErrorCode Simple::setUp(const PetscBool is_partitioned) {
-  Interface &m_field = cOre;
   MoFEMFunctionBegin;
 
   PetscLogEventBegin(MOFEM_EVENT_SimpleSetUP, 0, 0, 0, 0);

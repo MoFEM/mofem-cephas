@@ -16,8 +16,6 @@
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-static int dummy_file_ptr = 1;
-
 namespace MoFEM {
 
 using namespace MoFEM::LogKeywords;
@@ -165,7 +163,7 @@ MoFEMErrorCode LogManager::getOptions() {
   CHKERR PetscOptionsEList("-severity_level", "Severity level", "",
                            severityStrings.data(), SeverityLevel::error + 1,
                            severityStrings[sev_level], &sev_level, PETSC_NULL);
-  CHKERR PetscOptionsEList("-sl", "Seeverity level", "",
+  CHKERR PetscOptionsEList("-sl", "Severity level", "",
                            severityStrings.data(), SeverityLevel::error + 1,
                            severityStrings[sev_level], &sev_level, PETSC_NULL);
 

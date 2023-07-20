@@ -204,7 +204,37 @@ template <AssemblyType A, typename EleOp> struct OpBaseImpl : public EleOp {
   FEFun feScalingFun;               ///< assumes that time variable is set
   boost::shared_ptr<Range> entsPtr; ///< Entities on which element is run
 
+  enum AssembleTo { AMat, BMat };   ///< Where to assemble
+
+  /**
+   * @brief Where to assemble 
+   * 
+   * \note Default assembly is BMat, i.e. preconditioner matrix
+   * 
+   * @param a_to 
+   * @return MoFEMErrorCode 
+   */
+  inline void setAssembleTo(AssembleTo a_to) { assembleTo = a_to; };
+
 protected:
+  enum AssembleTo assembleTo = BMat;
+
+  /**
+   * @brief Select matrix
+   * 
+   * @return auto 
+   */
+  inline auto matSelector() {
+    switch (assembleTo) {
+      case AMat:
+        return this->getKSPA();
+      case BMat:
+        return this->getKSPB();
+    }
+    return this->getKSPB();
+  };
+
+
   template <int DIM>
   inline FTensor::Tensor1<FTensor::PackPtr<double *, DIM>, DIM> getNf() {
     return getFTensor1FromArray<DIM, DIM>(locF);
@@ -401,13 +431,13 @@ MoFEMErrorCode OpBaseImpl<A, EleOp>::aSsemble(EntData &row_data,
                                  false);
     noalias(this->locMatTranspose) = trans(this->locMat);
     CHKERR MatSetValues<AssemblyTypeSelector<A>>(
-        this->getKSPB(), col_data, row_data, this->locMatTranspose, ADD_VALUES);
+        matSelector(), col_data, row_data, this->locMatTranspose, ADD_VALUES);
   }
 
   if (!this->onlyTranspose) {
     // assemble local matrix
     CHKERR MatSetValues<AssemblyTypeSelector<A>>(
-        this->getKSPB(), row_data, col_data, this->locMat, ADD_VALUES);
+        matSelector(), row_data, col_data, this->locMat, ADD_VALUES);
   }
 
   MoFEMFunctionReturn(0);

@@ -148,10 +148,10 @@ int main(int argc, char *argv[]) {
       // create distributed vector to accumulate values from processors.
       int ghosts[] = {0};
       
-      auto vol = createSmartGhostVector(
+      auto vol = createGhostVector(
           PETSC_COMM_WORLD, m_field.get_comm_rank() == 0 ? 1 : 0, 1,
           m_field.get_comm_rank() == 0 ? 0 : 1, ghosts);
-      auto surf_vol = smartVectorDuplicate(vol);
+      auto surf_vol = vectorDuplicate(vol);
 
       // set operator to the volume element
       auto material_grad_mat = boost::make_shared<MatrixDouble>();
@@ -182,12 +182,12 @@ int main(int argc, char *argv[]) {
                                       boundary_fe);
 
       auto skeleton_fe = boost::make_shared<FEMethod>();
-      auto A = smartCreateDMMatrix(dm);
-      auto B = smartCreateDMMatrix(dm);
-      auto f = smartCreateDMVector(dm);
-      auto x = smartCreateDMVector(dm);
-      auto x_t = smartCreateDMVector(dm);
-      auto x_tt = smartCreateDMVector(dm);
+      auto A = createDMMatrix(dm);
+      auto B = createDMMatrix(dm);
+      auto f = createDMVector(dm);
+      auto x = createDMVector(dm);
+      auto x_t = createDMVector(dm);
+      auto x_tt = createDMVector(dm);
       skeleton_fe->f = f;
       skeleton_fe->A = A;
       skeleton_fe->B = B;

@@ -34,6 +34,13 @@ struct OpSchurAssembleBegin : public ForcesAndSourcesCore::UserDataOperator {
  */
 struct OpSchurAssembleEndImpl : public ForcesAndSourcesCore::UserDataOperator {
 
+  using MatSetValuesRaw = boost::function<MoFEMErrorCode(
+      Mat mat, PetscInt m, const PetscInt idxm[], PetscInt n,
+      const PetscInt idxn[], const PetscScalar v[], InsertMode addv)>;
+
+  MatSetValuesRaw matSetValuesRaw = ::MatSetValues;
+  MatSetValuesRaw matSetValuesSchurRaw = ::MatSetValues;
+
   /**
    * @brief Construct a new Op Schur Assemble End object
    *
@@ -50,7 +57,26 @@ struct OpSchurAssembleEndImpl : public ForcesAndSourcesCore::UserDataOperator {
                          std::vector<SmartPetscObj<Mat>> sequence_of_mats,
                          std::vector<bool> sym_schur, bool symm_op = true);
 
+  /**
+   * @brief Construct a new Op Schur Assemble End object
+   *
+   * @param fields_name list of fields
+   * @param field_ents list of entities on which schur complement is applied (can be empty)
+   * @param sequence_of_aos list of maps from base problem to Schur complement matrix
+   * @param sequence_of_mats list of Schur complement matrices
+   * @param sym_schur true if Schur complement is symmetric
+   * @param diag_eps add epsilon on diagonal of inverted matrix 
+   * @param symm_op true if block diagonal is symmetric
+   */
+  OpSchurAssembleEndImpl(std::vector<std::string> fields_name,
+                         std::vector<boost::shared_ptr<Range>> field_ents,
+                         std::vector<SmartPetscObj<AO>> sequence_of_aos,
+                         std::vector<SmartPetscObj<Mat>> sequence_of_mats,
+                         std::vector<bool> sym_schur,
+                         std::vector<double> diag_eps, bool symm_op = true);
+
 protected:
+
   template <typename I>
   MoFEMErrorCode doWorkImpl(int side, EntityType type,
                             EntitiesFieldData::EntData &data);
@@ -60,6 +86,7 @@ protected:
   std::vector<SmartPetscObj<AO>> sequenceOfAOs;
   std::vector<SmartPetscObj<Mat>> sequenceOfMats;
   std::vector<bool> symSchur;
+  std::vector<double> diagEps;
 
   MatrixDouble invMat;
   MatrixDouble invDiagOffMat;
@@ -67,8 +94,9 @@ protected:
   MatrixDouble transOffMatInvDiagOffMat;
 };
 
-struct SCHUR_DSYSV;
-struct SCHUR_DGESV;
+struct SCHUR_DSYSV; ///< SY	symmetric
+struct SCHUR_DGESV; ///< GE	general (i.e., nonsymmetric, in some cases
+                    ///< rectangular)
 
 /**
  * @brief Assemble Schur complement
@@ -105,6 +133,13 @@ struct SchurL2Mats : public boost::enable_shared_from_this<SchurL2Mats> {
   inline auto &getMat() const { return locMats[iDX]; }
   inline auto &getRowInd() const { return rowIndices[iDX]; }
   inline auto &getColInd() const { return colIndices[iDX]; }
+
+  using MatSetValuesPtr = boost::function<MoFEMErrorCode(
+      Mat M, const EntitiesFieldData::EntData &row_data,
+      const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
+      InsertMode iora)>;
+
+  static MatSetValuesPtr matSetValuesPtr; ///< backend assembly function
 
   static MoFEMErrorCode MatSetValues(Mat M,
                                      const EntitiesFieldData::EntData &row_data,

@@ -173,7 +173,8 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.getInterface(prisms_from_surface_interface);
 
     Range prisms;
-    CHKERR prisms_from_surface_interface->createPrisms(tris, prisms);
+    CHKERR prisms_from_surface_interface->createPrisms(
+        tris, PrismsFromSurfaceInterface::NO_SWAP, prisms);
     prisms_from_surface_interface->setThickness(prisms, d3.data(), d4.data());
     Range add_prims_layer;
     Range extrude_prisms = prisms;

@@ -55,12 +55,14 @@ struct AddFluxToRhsPipelineImpl<
 
     CHKERR
     NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
-        I>::template AddFluxToPipeline<OpFluxTempSet>::add(pipeline,
-                                                  m_field, field_name, smv, block_name, sev);
+        I>::template AddFluxToPipeline<OpFluxTempSet>::add(pipeline, m_field,
+                                                           field_name, smv,
+                                                           block_name, sev);
     CHKERR
     NaturalBC<OpBase>::template Assembly<A>::template LinearForm<
-        I>::template AddFluxToPipeline<OpFluxBlockset>::add(pipeline,
-                                                   m_field, field_name, smv, block_name, sev);
+        I>::template AddFluxToPipeline<OpFluxBlockset>::add(pipeline, m_field,
+                                                            field_name, smv,
+                                                            block_name, sev);
 
     MoFEMFunctionReturn(0);
   }

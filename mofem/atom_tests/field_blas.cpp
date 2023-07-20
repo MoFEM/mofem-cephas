@@ -204,7 +204,7 @@ int main(int argc, char *argv[]) {
             MoFEMFunctionBeginHot;
             auto x_data = ent_ptr_x->getEntFieldData();
             auto y_data = ent_ptr_y->getEntFieldData();
-            const auto size_x = x_data.size(); // scalar
+            // const auto size_x = x_data.size(); // scalar
             const auto size_y = y_data.size(); // vector
 
             for (size_t dd = 0; dd != size_y; ++dd)

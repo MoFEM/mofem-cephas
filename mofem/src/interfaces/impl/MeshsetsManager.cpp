@@ -52,7 +52,6 @@ MoFEMErrorCode MeshsetsManager::clearMap() {
 }
 
 MoFEMErrorCode MeshsetsManager::initialiseDatabaseFromMesh(int verb) {
-  Interface &m_field = cOre;
   MoFEMFunctionBegin;
   CHKERR readMeshsets(verb);
   if (brodcastMeshsets)
@@ -545,7 +544,6 @@ MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
 MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
     const CubitBCType cubit_bc_type,
     std::vector<const CubitMeshSets *> &vec_ptr) const {
-  Interface &m_field = cOre;
   MoFEMFunctionBegin;
   for (auto &c : cubitMeshsets) {
     if ((c.getBcType() & cubit_bc_type) == cubit_bc_type) {
@@ -566,7 +564,6 @@ MeshsetsManager::getCubitMeshsetPtr(const CubitBCType cubit_bc_type) const {
 MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
     const std::regex reg_exp_name,
     std::vector<const CubitMeshSets *> &vec_ptr) const {
-  Interface &m_field = cOre;
   MoFEMFunctionBegin;
   auto r =
       cubitMeshsets.get<CubitMeshsetMaskedType_mi_tag>().equal_range(BLOCKSET);

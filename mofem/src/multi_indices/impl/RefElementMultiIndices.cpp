@@ -465,7 +465,6 @@ RefElement_VERTEX::RefElement_VERTEX(
 }
 const boost::shared_ptr<SideNumber> &
 RefElement_VERTEX::getSideNumberPtr(const EntityHandle ent) const {
-  moab::Interface &moab = getRefEntityPtr()->getBasicDataPtr()->moab;
   SideNumber_multiIndex::iterator miit = side_number_table.find(ent);
   if (miit != side_number_table.end())
     return *miit;

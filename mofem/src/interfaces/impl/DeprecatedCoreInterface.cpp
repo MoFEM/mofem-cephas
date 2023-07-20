@@ -34,13 +34,13 @@ MoFEMErrorCode DeprecatedCoreInterface::partition_mesh(const Range &ents,
                                                        const int adj_dim,
                                                        const int n_parts,
                                                        int verb) {
-  return getInterface<ProblemsManager>()->partitionMesh(
+  return getInterface<CommInterface>()->partitionMesh(
       ents, dim, adj_dim, n_parts, NULL, NULL, NULL, verb);
 }
 
 MoFEMErrorCode DeprecatedCoreInterface::synchronise_entities(Range &ent,
                                                              int verb) {
-  return getInterface<CommInterface>()->synchroniseEntities(ent, verb);
+  return getInterface<CommInterface>()->synchroniseEntities(ent, nullptr, verb);
 }
 
 MoFEMErrorCode

@@ -1067,7 +1067,6 @@ MoFEMErrorCode BitRefManager::updateFieldMeshsetByEntitiesChildren(
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   auto fields_ptr = m_field.get_fields();
-  auto ref_ents_ptr = m_field.get_ref_ents();
   MoFEMFunctionBegin;
 
   for (auto &fit : (*fields_ptr)) {

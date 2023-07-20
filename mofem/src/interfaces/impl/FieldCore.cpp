@@ -793,7 +793,8 @@ MoFEMErrorCode Core::setFieldOrderImpl(boost::shared_ptr<Field> field_ptr,
         ents_array->reserve(second - first + 1);
         auto vit_max_order = ents_max_order->begin();
         auto vit_field_data = ent_field_data->begin();
-        for (auto ent : ents_in_ref_ent) {
+        for (int i = 0; i != ents_in_ref_ent.size(); ++i) {
+
           ents_array->emplace_back(
               field_ptr, *miit_ref_ent,
               boost::shared_ptr<double *const>(ent_field_data,
@@ -1099,7 +1100,6 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
   }
   const int bit_number = field_it->get()->getBitNumber();
   const int rank = field_it->get()->getNbOfCoeffs();
-  const boost::string_ref &field_name = field_it->get()->getNameRef();
 
   // Ents in the field meshset
   Range ents_of_id_meshset;
