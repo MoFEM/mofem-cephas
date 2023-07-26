@@ -57,7 +57,9 @@ MoFEMErrorCode TimeScale::timeData(std::string delimiter) {
         << "*** Warning data file " << fileName
         << " open unsuccessful. Using linear time scaling.";
     scalingMethod = [this](double time) { return this->getLinearScale(time); };
+    MoFEMFunctionReturnHot(0);
   }
+
   in_file_stream.seekg(0);
   std::string line;
   double time = 0.0, value = 0.0;
@@ -131,14 +133,13 @@ TimeScaleVector<SPACE_DIM>::TimeScaleVector(string name,
 
 template <int SPACE_DIM>
 TimeScaleVector<SPACE_DIM>::TimeScaleVector(std::string name, int ms_id,
-                  bool error_if_file_not_given) : readFile(0), debug(0),
-      errorIfFileNotGiven(error_if_file_not_given) {
+                                            bool error_if_file_not_given)
+    : readFile(0), debug(0), errorIfFileNotGiven(error_if_file_not_given) {
   nAme = name + std::to_string(ms_id);
   CHK_THROW_MESSAGE(timeData(), "Error in reading time data");
 }
 
-template <int SPACE_DIM> 
-MoFEMErrorCode TimeScaleVector<SPACE_DIM>::timeData() {
+template <int SPACE_DIM> MoFEMErrorCode TimeScaleVector<SPACE_DIM>::timeData() {
   MoFEMFunctionBegin;
 
   char time_file_name[255];
@@ -201,7 +202,6 @@ MoFEMErrorCode TimeScaleVector<SPACE_DIM>::timeData() {
 
   MoFEMFunctionReturn(0);
 }
-
 
 template <int SPACE_DIM>
 FTensor::Tensor1<double, SPACE_DIM>
