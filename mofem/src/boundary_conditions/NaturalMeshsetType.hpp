@@ -397,6 +397,11 @@ MoFEMErrorCode OpFluxRhsImpl<NaturalMeshsetType<BLOCKSET>, 1, FIELD_DIM, A, I,
   CHKERR m_field.get_moab().get_entities_by_handle(cubit_meshset_ptr->meshset,
                                                    *(this->entsPtr), true);
 
+  MOFEM_LOG("WORLD", Sev::inform)
+      << "tForce vector initialised: " << this->tForce;
+  MOFEM_LOG("WORLD", Sev::inform)
+      << "Number of elements " << this->entsPtr->size();
+
   MoFEMFunctionReturn(0);
 }
 
