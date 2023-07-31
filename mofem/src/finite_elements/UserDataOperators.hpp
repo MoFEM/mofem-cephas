@@ -962,6 +962,13 @@ inline auto OpCalculateTensor2FieldValuesDot<3, 3>::getFTensorDotData<3, 3>() {
       &dotVector[6], &dotVector[7], &dotVector[8]);
 }
 
+template <>
+template <>
+inline auto OpCalculateTensor2FieldValuesDot<2, 2>::getFTensorDotData<2, 2>() {
+  return FTensor::Tensor2<FTensor::PackPtr<double *, 4>, 2, 2>(
+      &dotVector[0], &dotVector[1], &dotVector[2], &dotVector[3]);
+}
+
 /**
  * @brief Calculate symmetric tensor field values at integration pts.
  *
