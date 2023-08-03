@@ -415,6 +415,8 @@ MoFEMErrorCode EssentialPreProcReaction<DisplacementCubitBcData>::operator()() {
   MOFEM_LOG_CHANNEL("WORLD");
   MoFEMFunctionBegin;
 
+  enum { X = 0, Y, Z, MX, MY, MZ, LAST };
+
   if (auto fe_ptr = fePtr.lock()) {
 
     SmartPetscObj<Vec> f = vRhs ? vRhs : SmartPetscObj<Vec>(fe_ptr->f, true);
@@ -441,8 +443,8 @@ MoFEMErrorCode EssentialPreProcReaction<DisplacementCubitBcData>::operator()() {
     };
 
     auto mpi_array_reduce = [this](auto &array) {
-      std::array<double, 6> array_sum{0, 0, 0, 0, 0, 0};
-      MPI_Allreduce(&array[0], &array_sum[0], 6, MPI_DOUBLE, MPI_SUM,
+      std::array<double, LAST> array_sum{0, 0, 0, 0, 0, 0};
+      MPI_Allreduce(&array[0], &array_sum[0], LAST, MPI_DOUBLE, MPI_SUM,
                     mField.get_comm());
       return array_sum;
     };
@@ -454,7 +456,6 @@ MoFEMErrorCode EssentialPreProcReaction<DisplacementCubitBcData>::operator()() {
     const auto problem_name = fe_ptr->problemPtr->getName();
     const auto nb_local_dofs = fe_ptr->problemPtr->nbLocDofsRow;
 
-    enum { X = 0, Y, Z, MX, MY, MZ, LAST };
     std::array<double, LAST> total_reactions{0, 0, 0, 0, 0, 0};
 
     for (auto bc : bc_mng->getBcMapByBlockName()) {
@@ -488,9 +489,10 @@ MoFEMErrorCode EssentialPreProcReaction<DisplacementCubitBcData>::operator()() {
           FTensor::Index<'k', 3> k;
 
           auto get_coords_vec = [&]() {
-            VectorDouble coords_vec;
-            coords_vec.resize(3 * verts.size());
-            CHKERR mField.get_moab().get_coords(verts, &*coords_vec.begin());
+            VectorDouble coords_vec(3 * verts.size());
+            if (verts.size()) {
+              CHKERR mField.get_moab().get_coords(verts, &*coords_vec.begin());
+            }
             return coords_vec;
           };
 
