@@ -44,11 +44,6 @@ cm_export_file("../meshes/reference_rectangle.h5m" export_atom_tests)
 cm_export_file("../meshes/half_of_sphere.h5m" export_atom_tests)
 cm_export_file("../meshes/unit_volume_sphere.cub" export_atom_tests)
 cm_export_file("../meshes/hex_cub.h5m" export_atom_tests)
-cm_export_file("../meshes/QUAD_element_char_length.cub" export_atom_tests)
-cm_export_file("../meshes/TRI_element_char_length.cub" export_atom_tests)
-cm_export_file("../meshes/HEX_element_char_length.cub" export_atom_tests)
-cm_export_file("../meshes/TET_element_char_length.cub" export_atom_tests)
-
 
 set(PERCOMPILED_MOFEM_HEADER
   "${PROJECT_BINARY_DIR}/include/precompiled/MoFEM.hpp")
