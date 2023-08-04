@@ -62,6 +62,12 @@ struct BcManager : public UnknownInterface {
    * @return error code
    */
   MoFEMErrorCode getOptions();
+  // FIXME: add functions to couple the dofs                        
+  MoFEMErrorCode addBlockDOFsToMPCs(const std::string problem_name,
+                                           const std::string block_name,
+                                           const std::string field_name, int lo,
+                                           int hi, bool get_low_dim_ents = true,
+                                           bool is_distributed_mesh = true);
 
   /**
    * @brief Remove DOFs from problem

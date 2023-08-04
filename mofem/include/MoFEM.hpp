@@ -149,5 +149,6 @@ using FTensor::operator>>;
 #include <EssentialDisplacementCubitBcData.hpp>
 #include <EssentialTemperatureCubitBcData.hpp>
 #include <EssentialHeatFluxCubitBcData.hpp>
+#include <EssentialMPCsData.hpp>
 
 #endif // MOFEM_HPP__

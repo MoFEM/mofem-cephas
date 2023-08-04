@@ -176,6 +176,75 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities(const std::string problem_name,
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode BcManager::addBlockDOFsToMPCs(const std::string problem_name,
+                                             const std::string block_name,
+                                             const std::string field_name,
+                                             int lo, int hi,
+                                             bool get_low_dim_ents,
+                                             bool is_distributed_mesh) {
+  Interface &m_field = cOre;
+  auto prb_mng = m_field.getInterface<ProblemsManager>();
+  MoFEMFunctionBegin;
+
+  for (auto m :
+       m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(BLOCKSET)) {
+
+    const auto block_name = m->getName();
+
+    std::string bc_id = problem_name + "_" + field_name + "_" + block_name;
+    std::string regex_master_str;
+    std::string regex_slave_str;
+
+    Range master_ents;
+    Range slave_ents;
+    const bool block_name_field_prefix = true;
+    if (block_name_field_prefix) {
+      regex_master_str = (boost::format("%s_%s_%s_((MPC_MASTER)(.*)") %
+                          problem_name % field_name % field_name)
+                             .str();
+      regex_slave_str = (boost::format("%s_%s_%s_((MPC_SLAVE)(.*)") %
+                         problem_name % field_name % field_name)
+                            .str();
+    } else {
+      regex_master_str =
+          (boost::format("%s_%s_(MASTER)(.*)") % problem_name % field_name)
+              .str();
+      regex_slave_str =
+          (boost::format("%s_%s_(SLAVE)(.*)") % problem_name % field_name)
+              .str();
+    }
+
+    if (std::regex_match(bc_id, std::regex(regex_master_str))) {
+
+      auto bc = bcMapByBlockName.at(bc_id);
+
+      if (auto disp_bc = bc->dispBcPtr) {
+        master_ents = bc->bcEnts;
+      } else {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "BC type not implemented");
+      }
+    } else if (std::regex_match(bc_id, std::regex(regex_slave_str))) {
+
+      auto bc = bcMapByBlockName.at(bc_id);
+
+      if (auto disp_bc = bc->dispBcPtr) {
+        slave_ents = bc->bcEnts;
+      } else {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "BC type not implemented");
+      }
+    }
+    // TODO: set the adjacency table according to the master and slave entities
+
+    // if (master_ents.size() && slave_ents.size()) {
+    //   CHKERR prb_mng->addDofsToMPCs(problem_name, field_name, master_ents,
+    //                                 slave_ents, lo, hi);
+    // }
+  }
+  MoFEMFunctionReturn(0);
+}
+
 boost::shared_ptr<BcManager::BCs>
 BcManager::popMarkDOFsOnEntities(const std::string block_name) {
   auto bc_it = bcMapByBlockName.find(block_name);

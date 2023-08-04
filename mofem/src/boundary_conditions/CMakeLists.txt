@@ -23,6 +23,7 @@ add_library(
   impl/ScalingMethod.cpp
   impl/EssentialDisplacementCubitBcData.cpp
   impl/EssentialTemperatureCubitBcData.cpp
+  impl/EssentialMPCsData.cpp
 )
 
 target_link_libraries(
