@@ -1697,8 +1697,9 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopSide(
 
     CHKERR side_fe->preProcess();
 
-    auto get_numered_fe_ptr = [&](auto &fe_uid, Range &&adjacent_ents) {
-      std::vector<boost::weak_ptr<NumeredEntFiniteElement>> fe_vec;
+    std::vector<boost::weak_ptr<NumeredEntFiniteElement>> fe_vec;
+    auto get_numered_fe_ptr = [&](auto &fe_uid, Range &&adjacent_ents)
+        -> std::vector<boost::weak_ptr<NumeredEntFiniteElement>> & {
       fe_vec.reserve(adjacent_ents.size());
       for (auto fe_ent : adjacent_ents) {
         auto miit = numered_fe.find(
@@ -1717,7 +1718,8 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopSide(
       return adjacent_ents;
     };
 
-    auto get_adj = [&](auto &fe_uid) {
+    auto get_adj = [&](auto &fe_uid)
+        -> std::vector<boost::weak_ptr<NumeredEntFiniteElement>> & {
       if (adj_cache) {
         try {
           return (*adj_cache).at(ent);
