@@ -47,6 +47,20 @@ public:
 
   Tensor1(const int i = 1) : inc(i) {}
 
+  Tensor1<T, Tensor_Dim> normalize() {
+    const Index<'a', Tensor_Dim> a;
+    (*this)(a) /= l2();
+    return *this;
+  }
+
+  T l2() const { return sqrt(l2_squared(Number<Tensor_Dim>())); }
+
+  template <int Current_Dim> T l2_squared(const Number<Current_Dim> &) const {
+    return (*data[Current_Dim - 1]) * (*data[Current_Dim - 1]) +
+           l2_squared(Number<Current_Dim - 1>());
+  }
+  T l2_squared(const Number<1> &) const { return (*data[0]) * (*data[0]); }
+
   /* There are two operator(int)'s, one for non-consts that lets you
      change the value, and one for consts that doesn't. */
 
