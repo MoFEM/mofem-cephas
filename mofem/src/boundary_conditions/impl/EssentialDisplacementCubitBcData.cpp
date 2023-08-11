@@ -111,7 +111,9 @@ MoFEMErrorCode EssentialPreProc<DisplacementCubitBcData>::operator()() {
           auto zero_lambda =
               [&](boost::shared_ptr<FieldEntity> field_entity_ptr) {
                 MoFEMFunctionBegin;
-                field_entity_ptr->getEntFieldData()[coeff] = 0;
+                auto size = field_entity_ptr->getEntFieldData().size();
+                for (int i = coeff; i < size; i += nb_field_coeffs)
+                  field_entity_ptr->getEntFieldData()[i] = 0;
                 MoFEMFunctionReturn(0);
               };
 
@@ -166,12 +168,12 @@ MoFEMErrorCode EssentialPreProc<DisplacementCubitBcData>::operator()() {
   MoFEMFunctionReturn(0);
 }
 
-EssentialPreProcRhs<DisplacementCubitBcData>::EssentialPreProcRhs(
+EssentialPostProcRhs<DisplacementCubitBcData>::EssentialPostProcRhs(
     MoFEM::Interface &m_field, boost::shared_ptr<FEMethod> fe_ptr, double diag,
     SmartPetscObj<Vec> rhs)
     : mField(m_field), fePtr(fe_ptr), vDiag(diag), vRhs(rhs) {}
 
-MoFEMErrorCode EssentialPreProcRhs<DisplacementCubitBcData>::operator()() {
+MoFEMErrorCode EssentialPostProcRhs<DisplacementCubitBcData>::operator()() {
   MOFEM_LOG_CHANNEL("WORLD");
   MoFEMFunctionBegin;
 
@@ -203,22 +205,22 @@ MoFEMErrorCode EssentialPreProcRhs<DisplacementCubitBcData>::operator()() {
           const bool is_rotation =
               disp_bc->data.flag4 || disp_bc->data.flag5 || disp_bc->data.flag6;
 
-          auto verts = bc.second->bcEnts;
+          auto ents = bc.second->bcEnts;
 
           std::array<SmartPetscObj<IS>, 3> is_xyz;
           auto prb_name = fe_method_ptr->problemPtr->getName();
 
           if (disp_bc->data.flag1 || is_rotation) {
             CHKERR is_mng->isCreateProblemFieldAndRankLocal(
-                prb_name, ROW, field_name, 0, 0, is_xyz[0], &verts);
+                prb_name, ROW, field_name, 0, 0, is_xyz[0], &ents);
           }
           if (disp_bc->data.flag2 || is_rotation) {
             CHKERR is_mng->isCreateProblemFieldAndRankLocal(
-                prb_name, ROW, field_name, 1, 1, is_xyz[1], &verts);
+                prb_name, ROW, field_name, 1, 1, is_xyz[1], &ents);
           }
           if (disp_bc->data.flag3 || is_rotation) {
             CHKERR is_mng->isCreateProblemFieldAndRankLocal(
-                prb_name, ROW, field_name, 2, 2, is_xyz[2], &verts);
+                prb_name, ROW, field_name, 2, 2, is_xyz[2], &ents);
           }
 
           auto get_is_sum = [](auto is1, auto is2) {
@@ -274,6 +276,8 @@ MoFEMErrorCode EssentialPreProcRhs<DisplacementCubitBcData>::operator()() {
             ts_ctx != FEMethod::CTX_TSNONE) {
 
           auto x = fe_ptr->x;
+          CHKERR VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
+          CHKERR VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
 
           const double *v;
           CHKERR VecGetArrayRead(x, &v);
@@ -304,12 +308,12 @@ MoFEMErrorCode EssentialPreProcRhs<DisplacementCubitBcData>::operator()() {
   MoFEMFunctionReturn(0);
 }
 
-EssentialPreProcLhs<DisplacementCubitBcData>::EssentialPreProcLhs(
+EssentialPostProcLhs<DisplacementCubitBcData>::EssentialPostProcLhs(
     MoFEM::Interface &m_field, boost::shared_ptr<FEMethod> fe_ptr, double diag,
     SmartPetscObj<Mat> lhs, SmartPetscObj<AO> ao)
     : mField(m_field), fePtr(fe_ptr), vDiag(diag), vLhs(lhs), vAO(ao) {}
 
-MoFEMErrorCode EssentialPreProcLhs<DisplacementCubitBcData>::operator()() {
+MoFEMErrorCode EssentialPostProcLhs<DisplacementCubitBcData>::operator()() {
   MOFEM_LOG_CHANNEL("WORLD");
   MoFEMFunctionBegin;
 
@@ -340,22 +344,22 @@ MoFEMErrorCode EssentialPreProcLhs<DisplacementCubitBcData>::operator()() {
           const bool is_rotation =
               disp_bc->data.flag4 || disp_bc->data.flag5 || disp_bc->data.flag6;
 
-          auto verts = bc.second->bcEnts;
+          auto ents = bc.second->bcEnts;
 
           std::array<SmartPetscObj<IS>, 3> is_xyz;
           auto prb_name = fe_method_ptr->problemPtr->getName();
 
           if (disp_bc->data.flag1 || is_rotation) {
             CHKERR is_mng->isCreateProblemFieldAndRank(
-                prb_name, ROW, field_name, 0, 0, is_xyz[0], &verts);
+                prb_name, ROW, field_name, 0, 0, is_xyz[0], &ents);
           }
           if (disp_bc->data.flag2 || is_rotation) {
             CHKERR is_mng->isCreateProblemFieldAndRank(
-                prb_name, ROW, field_name, 1, 1, is_xyz[1], &verts);
+                prb_name, ROW, field_name, 1, 1, is_xyz[1], &ents);
           }
           if (disp_bc->data.flag3 || is_rotation) {
             CHKERR is_mng->isCreateProblemFieldAndRank(
-                prb_name, ROW, field_name, 2, 2, is_xyz[2], &verts);
+                prb_name, ROW, field_name, 2, 2, is_xyz[2], &ents);
           }
 
           auto get_is_sum = [](auto is1, auto is2) {

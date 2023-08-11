@@ -108,8 +108,8 @@ protected:
  *
  * @tparam
  */
-template <> struct EssentialPreProcRhs<DisplacementCubitBcData> {
-  EssentialPreProcRhs(MoFEM::Interface &m_field,
+template <> struct EssentialPostProcRhs<DisplacementCubitBcData> {
+  EssentialPostProcRhs(MoFEM::Interface &m_field,
                       boost::shared_ptr<FEMethod> fe_ptr, double diag,
                       SmartPetscObj<Vec> rhs = nullptr);
 
@@ -127,8 +127,8 @@ protected:
  *
  * @tparam
  */
-template <> struct EssentialPreProcLhs<DisplacementCubitBcData> {
-  EssentialPreProcLhs(MoFEM::Interface &m_field,
+template <> struct EssentialPostProcLhs<DisplacementCubitBcData> {
+  EssentialPostProcLhs(MoFEM::Interface &m_field,
                       boost::shared_ptr<FEMethod> fe_ptr, double diag,
                       SmartPetscObj<Mat> lhs = nullptr,
                       SmartPetscObj<AO> ao = nullptr);

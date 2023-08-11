@@ -44,7 +44,7 @@ template <typename T> struct EssentialPreProc;
  *
  * @tparam T
  */
-template <typename T> struct EssentialPreProcLhs;
+template <typename T> struct EssentialPostProcLhs;
 
 /**
  * @brief Class (Function) to enforce essential constrains on the right hand
@@ -52,7 +52,7 @@ template <typename T> struct EssentialPreProcLhs;
  *
  * @tparam T
  */
-template <typename T> struct EssentialPreProcRhs;
+template <typename T> struct EssentialPostProcRhs;
 
 /**
  * @brief Class (Function) to calculate residual

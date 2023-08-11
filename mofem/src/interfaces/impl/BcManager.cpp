@@ -600,7 +600,6 @@ BcManager::pushMarkDOFsOnEntities<BcMeshsetType<DISPLACEMENTSET>>(
       CHKERR m_field.get_moab().get_adjacencies(ents, d, false, verts,
                                                 moab::Interface::UNION);
     verts.merge(ents);
-    CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(verts);
     return verts;
   };
 
@@ -613,6 +612,8 @@ BcManager::pushMarkDOFsOnEntities<BcMeshsetType<DISPLACEMENTSET>>(
         auto bc = boost::make_shared<BCs>();
         CHKERR m_field.get_moab().get_entities_by_handle(m->getMeshset(),
                                                          bc->bcEnts, true);
+        CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(
+            bc->bcEnts);
 
         bc->dispBcPtr = boost::make_shared<DisplacementCubitBcData>();
         CHKERR m->getBcDataStructure(*(bc->dispBcPtr));
@@ -665,12 +666,13 @@ BcManager::pushMarkDOFsOnEntities<BcMeshsetType<DISPLACEMENTSET>>(
 
         if (get_low_dim_ents) {
           auto low_dim_ents = get_adj_ents(bc->bcEnts);
-          CHKERR prb_mng->markDofs(problem_name, ROW, ProblemsManager::AND,
-                                   low_dim_ents, bc->bcMarkers);
           bc->bcEnts.swap(low_dim_ents);
-        } else
-          CHKERR prb_mng->markDofs(problem_name, ROW, ProblemsManager::AND,
-                                   bc->bcEnts, bc->bcMarkers);
+        }
+
+        CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(
+            bc->bcEnts);
+        CHKERR prb_mng->markDofs(problem_name, ROW, ProblemsManager::AND,
+                                 bc->bcEnts, bc->bcMarkers);
 
         const std::string bc_id =
             problem_name + "_" + field_name + "_DISPLACEMENTSET" +
