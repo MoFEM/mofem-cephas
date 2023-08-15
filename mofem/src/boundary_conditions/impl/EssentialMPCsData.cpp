@@ -67,12 +67,12 @@ MoFEMErrorCode EssentialPreProc<MPCsType>::operator()() {
   MoFEMFunctionReturn(0);
 }
 
-EssentialPreProcLhs<MPCsType>::EssentialPreProcLhs(
+EssentialPostProcLhs<MPCsType>::EssentialPostProcLhs(
     MoFEM::Interface &m_field, boost::shared_ptr<FEMethod> fe_ptr, double diag,
     SmartPetscObj<Mat> lhs, SmartPetscObj<AO> ao)
     : mField(m_field), fePtr(fe_ptr), vDiag(diag), vLhs(lhs), vAO(ao) {}
 
-MoFEMErrorCode EssentialPreProcLhs<MPCsType>::operator()() {
+MoFEMErrorCode EssentialPostProcLhs<MPCsType>::operator()() {
   MOFEM_LOG_CHANNEL("WORLD");
   MoFEMFunctionBegin;
 
@@ -221,12 +221,12 @@ MoFEMErrorCode EssentialPreProcLhs<MPCsType>::operator()() {
   MoFEMFunctionReturn(0);
 }
 
-EssentialPreProcRhs<MPCsType>::EssentialPreProcRhs(
+EssentialPostProcRhs<MPCsType>::EssentialPostProcRhs(
     MoFEM::Interface &m_field, boost::shared_ptr<FEMethod> fe_ptr, double diag,
     SmartPetscObj<Vec> rhs)
     : mField(m_field), fePtr(fe_ptr), vDiag(diag), vRhs(rhs) {}
 
-MoFEMErrorCode EssentialPreProcRhs<MPCsType>::operator()() {
+MoFEMErrorCode EssentialPostProcRhs<MPCsType>::operator()() {
   MOFEM_LOG_CHANNEL("WORLD");
   MoFEMFunctionBegin;
 

@@ -70,8 +70,8 @@ protected:
  *
  * @tparam
  */
-template <> struct EssentialPreProcRhs<MPCsType> {
-  EssentialPreProcRhs(MoFEM::Interface &m_field,
+template <> struct EssentialPostProcRhs<MPCsType> {
+  EssentialPostProcRhs(MoFEM::Interface &m_field,
                       boost::shared_ptr<FEMethod> fe_ptr,
                       double diag = 1, SmartPetscObj<Vec> rhs = nullptr);
 
@@ -89,8 +89,8 @@ protected:
  *
  * @tparam
  */
-template <> struct EssentialPreProcLhs<MPCsType> {
-  EssentialPreProcLhs(MoFEM::Interface &m_field,
+template <> struct EssentialPostProcLhs<MPCsType> {
+  EssentialPostProcLhs(MoFEM::Interface &m_field,
                       boost::shared_ptr<FEMethod> fe_ptr,
                       double diag = 1,
                       SmartPetscObj<Mat> lhs = nullptr,
