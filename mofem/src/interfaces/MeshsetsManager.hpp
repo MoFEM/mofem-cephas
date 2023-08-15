@@ -544,6 +544,19 @@ struct MeshsetsManager : public UnknownInterface {
    *
    * \ingroup mofem_meshset_mng
    *
+   * \code
+  for (auto m :
+       m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(std::regex(
+
+           (boost::format("%s(.*)") % block_name).str()
+
+               ))
+
+  ) {
+    MOFEM_LOG("WORLD", Sev::inform) << m->getName();
+  }
+   * \endcode
+   *
    * @param reg_exp_name
    * @return std::vector<const CubitMeshSets *>
    */
