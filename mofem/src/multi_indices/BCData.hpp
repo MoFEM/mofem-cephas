@@ -9,6 +9,10 @@
 
 namespace MoFEM {
 
+// declare MultiPointConstraintsType
+// TODO: reverse engineer Constraints Data structure from Cubit
+struct MPCsType;
+
 /*! \struct GenericCubitBcData
  * \brief Generic bc data structure
  * \ingroup mofem_bc

@@ -177,71 +177,127 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities(const std::string problem_name,
 }
 
 MoFEMErrorCode BcManager::addBlockDOFsToMPCs(const std::string problem_name,
-                                             const std::string block_name,
                                              const std::string field_name,
-                                             int lo, int hi,
                                              bool get_low_dim_ents,
+                                             bool block_name_field_prefix,
                                              bool is_distributed_mesh) {
   Interface &m_field = cOre;
   auto prb_mng = m_field.getInterface<ProblemsManager>();
   MoFEMFunctionBegin;
 
-  for (auto m :
-       m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(BLOCKSET)) {
+  if (block_name_field_prefix)
+    MOFEM_LOG("BcMngWorld", Sev::warning)
+        << "Argument block_name_field_prefix=true has no effect";
+  if (get_low_dim_ents)
+    MOFEM_LOG("BcMngWorld", Sev::warning)
+        << "Argument get_low_dim_ents=true has no effect";
+  if (get_low_dim_ents)
+    MOFEM_LOG("BcMngWorld", Sev::warning)
+        << "Argument is_distributed_mesh=true has no effect";
 
-    const auto block_name = m->getName();
+  auto get_dim = [&](const Range &ents) {
+    for (auto d : {3, 2, 1})
+      if (ents.num_of_dimension(d))
+        return d;
+    return 0;
+  };
 
-    std::string bc_id = problem_name + "_" + field_name + "_" + block_name;
-    std::string regex_master_str;
-    std::string regex_slave_str;
+  auto mark_fix_dofs = [&](std::vector<unsigned char> &marked_field_dofs,
+                           const auto lo, const auto hi) {
+    return prb_mng->modifyMarkDofs(problem_name, ROW, field_name, lo, hi,
+                                   ProblemsManager::MarkOP::OR, 1,
+                                   marked_field_dofs);
+  };
 
-    Range master_ents;
-    Range slave_ents;
-    const bool block_name_field_prefix = true;
-    if (block_name_field_prefix) {
-      regex_master_str = (boost::format("%s_%s_%s_((MPC_MASTER)(.*)") %
-                          problem_name % field_name % field_name)
-                             .str();
-      regex_slave_str = (boost::format("%s_%s_%s_((MPC_SLAVE)(.*)") %
-                         problem_name % field_name % field_name)
-                            .str();
-    } else {
-      regex_master_str =
-          (boost::format("%s_%s_(MASTER)(.*)") % problem_name % field_name)
-              .str();
-      regex_slave_str =
-          (boost::format("%s_%s_(SLAVE)(.*)") % problem_name % field_name)
-              .str();
+  auto setFlags = [](const auto &flags, auto data) {
+    char *flagPtr[] = {&data.flag1, &data.flag2, &data.flag3,
+                       &data.flag4, &data.flag5, &data.flag6};
+
+    for (size_t i = 0; i < std::min(int(flags.size()), 6); ++i) {
+      *flagPtr[i] = flags[i] > 0.0;
     }
+  };
 
-    if (std::regex_match(bc_id, std::regex(regex_master_str))) {
+  auto iterate_meshsets = [&]() {
+    MoFEMFunctionBegin;
 
-      auto bc = bcMapByBlockName.at(bc_id);
+    auto master_meshset_ptr =
+        m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(
+            std::regex((boost::format("%s(.*)") % "MPC_(.*)_MASTER").str()));
 
-      if (auto disp_bc = bc->dispBcPtr) {
-        master_ents = bc->bcEnts;
-      } else {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "BC type not implemented");
+    for (auto m : master_meshset_ptr) {
+      std::string corresponding_slave_id =
+          std::regex_replace(m->getName(), std::regex("MASTER"), "SLAVE");
+      const CubitMeshSets *sm;
+      CHKERR m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(
+          corresponding_slave_id, &sm);
+
+      auto bc = boost::make_shared<BCs>();
+      bc->mpcPtr = boost::make_shared<MPCsType>();
+
+      CHKERR m_field.get_moab().get_entities_by_handle(
+          m->getMeshset(), bc->mpcPtr->mpcMasterEnts, true);
+      CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(
+          bc->mpcPtr->mpcMasterEnts);
+
+      CHKERR m_field.get_moab().get_entities_by_handle(
+          sm->getMeshset(), bc->mpcPtr->mpcSlaveEnts, true);
+      CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(
+          bc->mpcPtr->mpcSlaveEnts);
+
+      vector<double> masterAttributes;
+      vector<double> slaveAttributes;
+
+      CHKERR m->getAttributes(masterAttributes);
+      CHKERR sm->getAttributes(slaveAttributes);
+      setFlags(masterAttributes, bc->mpcPtr->data);
+      setFlags(slaveAttributes, bc->mpcPtr->data);
+
+      MOFEM_LOG("BcMngWorld", Sev::verbose)
+          << "Found block " << m->getName() << " number of entities "
+          << bc->mpcPtr->mpcMasterEnts.size() << " number of attributes "
+          << masterAttributes.size() << " highest dim of entities "
+          << get_dim(bc->mpcPtr->mpcMasterEnts);
+
+      MOFEM_LOG("BcMngWorld", Sev::verbose)
+          << "Found block " << sm->getName() << " number of entities "
+          << bc->mpcPtr->mpcSlaveEnts.size() << " number of attributes "
+          << slaveAttributes.size() << " highest dim of entities "
+          << get_dim(bc->mpcPtr->mpcSlaveEnts);
+
+      for (int i = 0; i != masterAttributes.size(); ++i) {
+        if (masterAttributes[i] > 0.0)
+          CHKERR mark_fix_dofs(bc->mpcPtr->bcMasterMarkers, i, i);
       }
-    } else if (std::regex_match(bc_id, std::regex(regex_slave_str))) {
 
-      auto bc = bcMapByBlockName.at(bc_id);
-
-      if (auto disp_bc = bc->dispBcPtr) {
-        slave_ents = bc->bcEnts;
-      } else {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "BC type not implemented");
+      for (int i = 0; i != slaveAttributes.size(); ++i) {
+        if (slaveAttributes[i] > 0.0)
+          CHKERR mark_fix_dofs(bc->mpcPtr->bcSlaveMarkers, i, i);
       }
+
+      if (masterAttributes.empty())
+        CHKERR mark_fix_dofs(bc->mpcPtr->bcMasterMarkers, 0,
+                             MAX_DOFS_ON_ENTITY);
+      if (slaveAttributes.empty())
+        CHKERR mark_fix_dofs(bc->mpcPtr->bcSlaveMarkers, 0, MAX_DOFS_ON_ENTITY);
+
+      const std::string bc_id =
+          problem_name + "_" + field_name + "_" + m->getName();
+      bcMapByBlockName[bc_id] = bc;
+
+      if (std::regex_match(bc_id, std::regex("(.*)COUPLING(.*)")))
+        bc->mpcPtr->mpcType = MPC::COUPLING;
+      if (std::regex_match(bc_id, std::regex("(.*)TIE(.*)")))
+        bc->mpcPtr->mpcType = MPC::TIE;
+      if (std::regex_match(bc_id, std::regex("(.*)RIGID_BODY(.*)")))
+        bc->mpcPtr->mpcType = MPC::RIGID_BODY;
+      
     }
-    // TODO: set the adjacency table according to the master and slave entities
+    MoFEMFunctionReturn(0);
+  };
 
-    // if (master_ents.size() && slave_ents.size()) {
-    //   CHKERR prb_mng->addDofsToMPCs(problem_name, field_name, master_ents,
-    //                                 slave_ents, lo, hi);
-    // }
-  }
+  CHKERR iterate_meshsets();
+
   MoFEMFunctionReturn(0);
 }
 
