@@ -916,7 +916,7 @@ template <int DIM>
 boost::ptr_deque<PipelineManager::UserDataOperator> &
 PipelineManager::getOpBoundaryExplicitRhsPipeline() {
   return boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
-             createBoundaryFEPipeline<DIM>(feSkeletonExplicitRhs))
+             createBoundaryFEPipeline<DIM>(feBoundaryExplicitRhs))
       ->getOpPtrVector();
 }
 
