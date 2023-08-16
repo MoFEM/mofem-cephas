@@ -103,6 +103,66 @@ protected:
   bool getCoords;
 };
 
+/**
+ * @brief Specialization for DisplacementCubitBcData
+ *
+ * @tparam
+ */
+template <> struct EssentialPostProcRhs<DisplacementCubitBcData> {
+  EssentialPostProcRhs(MoFEM::Interface &m_field,
+                      boost::shared_ptr<FEMethod> fe_ptr, double diag,
+                      SmartPetscObj<Vec> rhs = nullptr);
+
+  MoFEMErrorCode operator()();
+
+protected:
+  MoFEM::Interface &mField;
+  boost::weak_ptr<FEMethod> fePtr;
+  double vDiag;
+  SmartPetscObj<Vec> vRhs;
+};
+
+/**
+ * @brief Specialization for DisplacementCubitBcData
+ *
+ * @tparam
+ */
+template <> struct EssentialPostProcLhs<DisplacementCubitBcData> {
+  EssentialPostProcLhs(MoFEM::Interface &m_field,
+                      boost::shared_ptr<FEMethod> fe_ptr, double diag,
+                      SmartPetscObj<Mat> lhs = nullptr,
+                      SmartPetscObj<AO> ao = nullptr);
+
+  MoFEMErrorCode operator()();
+
+protected:
+  MoFEM::Interface &mField;
+  boost::weak_ptr<FEMethod> fePtr;
+  double vDiag;
+  SmartPetscObj<Mat> vLhs;
+  SmartPetscObj<AO> vAO;
+};
+
+/**
+ * @brief Specialization for DisplacementCubitBcData
+ *
+ * @tparam
+ */
+template <> struct EssentialPreProcReaction<DisplacementCubitBcData> {
+  EssentialPreProcReaction(MoFEM::Interface &m_field,
+                           boost::shared_ptr<FEMethod> fe_ptr,
+                           SmartPetscObj<Vec> rhs = nullptr,
+                           LogManager::SeverityLevel sev = Sev::inform);
+
+  MoFEMErrorCode operator()();
+
+protected:
+  MoFEM::Interface &mField;
+  boost::weak_ptr<FEMethod> fePtr;
+  SmartPetscObj<Vec> vRhs;
+  LogManager::SeverityLevel sevLevel;
+};
+
 template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
 struct OpEssentialRhsImpl<DisplacementCubitBcData, 1, FIELD_DIM, A, I, OpBase>
     : FormsIntegrators<OpBase>::template Assembly<A>::template LinearForm<
@@ -140,7 +200,9 @@ OpEssentialRhsImpl<DisplacementCubitBcData, 1, FIELD_DIM, A, I, OpBase>::
                        boost::shared_ptr<DisplacementCubitBcData> bc_data,
                        boost::shared_ptr<Range> ents_ptr,
                        std::vector<boost::shared_ptr<ScalingMethod>> smv)
-    : OpSource(field_name, [this](double, double, double) { return tVal; }, ents_ptr),
+    : OpSource(
+          field_name, [this](double, double, double) { return tVal; },
+          ents_ptr),
       vecOfTimeScalingMethods(smv) {
   static_assert(FIELD_DIM > 1, "Is not implemented for scalar field");
 
@@ -180,7 +242,7 @@ OpEssentialRhsImpl<DisplacementCubitBcData, 1, FIELD_DIM, A, I, OpBase>::
     this->dispFunction = [this](double x, double y, double z) {
       return this->rotFunction(x, y, z);
     };
-  } else { 
+  } else {
     // use default set at construction
   }
 }

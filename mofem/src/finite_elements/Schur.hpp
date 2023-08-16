@@ -38,8 +38,7 @@ struct OpSchurAssembleEndImpl : public ForcesAndSourcesCore::UserDataOperator {
       Mat mat, PetscInt m, const PetscInt idxm[], PetscInt n,
       const PetscInt idxn[], const PetscScalar v[], InsertMode addv)>;
 
-  MatSetValuesRaw matSetValuesRaw = ::MatSetValues;
-  MatSetValuesRaw matSetValuesSchurRaw = ::MatSetValues;
+  static MatSetValuesRaw matSetValuesSchurRaw;
 
   /**
    * @brief Construct a new Op Schur Assemble End object

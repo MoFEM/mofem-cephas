@@ -1627,6 +1627,10 @@ inline auto get_temp_meshset_ptr(moab::Interface &moab) {
   return boost::make_shared<TempMeshset>(moab);
 };
 
+inline auto id_from_handle(const EntityHandle h) {
+  return static_cast<EntityID>(h & MB_ID_MASK);
+};
+
 /**
  * @brief get type from entity handle
  * 
@@ -1636,11 +1640,27 @@ inline auto type_from_handle(const EntityHandle h) {
 };
 
 /**
+ * @brief get entity handle from type and id
+ *
+ */
+inline auto ent_form_type_and_id(const EntityType type, const EntityID id) {
+  return (static_cast<EntityHandle>(type) << MB_ID_WIDTH) | id;
+};
+
+/**
  * @brief get entity dimension form handle
  * 
  */
 inline auto dimension_from_handle(const EntityHandle h) {
   return moab::CN::Dimension(type_from_handle(h));
+};
+
+/**
+ * @brief get entity type name from handle
+ * 
+ */
+inline auto type_name_from_handle(const EntityHandle h) {
+  return moab::CN::EntityTypeName(type_from_handle(h));
 };
 
 /**

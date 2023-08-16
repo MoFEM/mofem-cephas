@@ -891,6 +891,10 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
 
   /** \name Loops */
 
+  using AdjCache =
+      std::map<EntityHandle,
+               std::vector<boost::weak_ptr<NumeredEntFiniteElement>>>;
+
   /**
    * @brief User call this function to loop over elements on the side of
    * face. This function calls finite element with is operator to do
@@ -908,7 +912,10 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
   MoFEMErrorCode loopSide(const string &fe_name, ForcesAndSourcesCore *side_fe,
                           const size_t dim, const EntityHandle ent_for_side = 0,
                           const int verb = QUIET,
-                          const LogManager::SeverityLevel sev = Sev::noisy);
+                          const LogManager::SeverityLevel sev = Sev::noisy,
+                          AdjCache *adj_cache = nullptr
+
+  );
 
   /**
    * @brief  User call this function to loop over parent elements. This function
@@ -1281,14 +1288,18 @@ struct OpLoopSide : public ForcesAndSourcesCore::UserDataOperator {
    * @param side_dim dimension
    */
   OpLoopSide(MoFEM::Interface &m_field, const std::string fe_name,
-             const int side_dim)
+             const int side_dim,
+             const LogManager::SeverityLevel sev = Sev::noisy,
+             boost::shared_ptr<AdjCache> adj_cache = nullptr)
       : UserDataOperator(NOSPACE, OPSPACE), sideFEPtr(new E(m_field)),
-        fieldName(fe_name), sideDim(side_dim) {}
+        fieldName(fe_name), sideDim(side_dim), sevLevel(sev),
+        adjCache(adj_cache) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
-    CHKERR loopSide(fieldName, sideFEPtr.get(), sideDim);
+    CHKERR loopSide(fieldName, sideFEPtr.get(), sideDim, 0, VERBOSE, sevLevel,
+                    adjCache.get());
     MoFEMFunctionReturn(0);
   };
 
@@ -1302,6 +1313,8 @@ protected:
   const std::string fieldName;
   const int sideDim;
   boost::shared_ptr<E> sideFEPtr;
+  const LogManager::SeverityLevel sevLevel;
+  boost::shared_ptr<AdjCache> adjCache;
 };
 
 } // namespace MoFEM

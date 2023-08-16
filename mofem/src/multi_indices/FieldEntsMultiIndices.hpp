@@ -26,7 +26,15 @@ struct FieldEntity : public interface_Field<Field, RefEntity> {
   using interface_type_Field = interface_Field<Field, RefEntity>;
   using interface_type_RefEntity = interface_RefEntity<RefEntity>;
 
-  UId localUId; ///< Global unique id for this entity
+  /**
+   * @brief  Local unique id for this entity. Unique on CPU partition.
+   *
+   * @note Global UId use entity handle from owning processor, so is unique
+   * across all CPUs. Local UId, uses local entity handle.  Local id is
+   * convenient to use, is easley accessible from MOAB.
+   *
+   */
+  UId localUId; 
 
   FieldEntity(const boost::shared_ptr<Field> field_ptr,
               const boost::shared_ptr<RefEntity> ref_ents_ptr,
@@ -175,6 +183,12 @@ struct FieldEntity : public interface_Field<Field, RefEntity> {
     );
   };
 
+  /**
+   * @brief Get the Handle From Unique Id
+   * 
+   * @param uid 
+   * @return EntityHandle
+   */
   static inline auto getHandleFromUniqueId(const UId uid) {
     constexpr EntityHandle handle_mask = ~(EntityHandle(0));
     return static_cast<EntityHandle>(
@@ -182,6 +196,12 @@ struct FieldEntity : public interface_Field<Field, RefEntity> {
         dof_shift);
   };
 
+  /**
+   * @brief Get the Field Bit Number From Unique Id
+   *
+   * @param uid
+   * @return FieldId
+   */
   static inline auto getFieldBitNumberFromUniqueId(const UId uid) {
     constexpr int bit_field_mask = ~(char(0));
     return static_cast<char>(

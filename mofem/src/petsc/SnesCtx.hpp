@@ -15,7 +15,7 @@ struct SnesCtx {
   MoFEM::Interface &mField; ///< database Interface
   moab::Interface &moab;    ///< moab Interface
 
-  std::string problemName; ///< problem name
+  std::string problemName;  ///< problem name
   MoFEMTypes
       bH; ///< If set to MF_EXIST check if element exist, default MF_EXIST
   bool zeroPreCondMatrixB; ///< If true zero matrix, otherwise user need to do
@@ -36,7 +36,7 @@ struct SnesCtx {
   BasicMethodsSequence postProcess_Mat; ///< Sequence of methods run after
                                         ///< tangent matrix is assembled
   BasicMethodsSequence
-      preProcess_Rhs; ///< Sequence of methods run before residual is assembled
+      preProcess_Rhs;  ///< Sequence of methods run before residual is assembled
   BasicMethodsSequence
       postProcess_Rhs; ///< Sequence of methods run after residual is assembled
 
@@ -61,12 +61,12 @@ struct SnesCtx {
    * @return return reference to vector with FEMethod to calculate tangent
    * matrix
    */
-  FEMethodsSequence &get_loops_to_do_Mat() { return loops_to_do_Mat; }
+  FEMethodsSequence &getSetOperators() { return loops_to_do_Mat; }
 
   /**
    * @return return vector to vector with FEMethod to calculate residual
    */
-  FEMethodsSequence &get_loops_to_do_Rhs() { return loops_to_do_Rhs; }
+  FEMethodsSequence &getComputeRhs() { return loops_to_do_Rhs; }
 
   /**
    * The sequence of BasicMethod is executed before residual is calculated. It
@@ -75,7 +75,7 @@ struct SnesCtx {
    *
    * @return reference to BasicMethod for preprocessing
    */
-  BasicMethodsSequence &get_preProcess_to_do_Rhs() { return preProcess_Rhs; }
+  BasicMethodsSequence &getPreProcComputeRhs() { return preProcess_Rhs; }
 
   /**
    * The sequence of BasicMethod is executed after residual is calculated. It
@@ -84,12 +84,12 @@ struct SnesCtx {
    *
    * @return reference to BasicMethod for postprocessing
    */
-  BasicMethodsSequence &get_postProcess_to_do_Rhs() { return postProcess_Rhs; }
+  BasicMethodsSequence &getPostProcComputeRhs() { return postProcess_Rhs; }
 
   /**
    * @return reference to BasicMethod for preprocessing
    */
-  BasicMethodsSequence &get_preProcess_to_do_Mat() { return preProcess_Mat; }
+  BasicMethodsSequence &getPreProcSetOperators() { return preProcess_Mat; }
 
   /**
    * The sequence of BasicMethod is executed after tangent matrix is calculated.
@@ -98,7 +98,7 @@ struct SnesCtx {
    *
    * @return reference to BasicMethod for postprocessing
    */
-  BasicMethodsSequence &get_postProcess_to_do_Mat() { return postProcess_Mat; }
+  BasicMethodsSequence &getPostProcSetOperators() { return postProcess_Mat; }
 
   /**
    * \brief Copy sequences from other SNES contex
@@ -120,6 +120,36 @@ struct SnesCtx {
   friend MoFEMErrorCode SNESMoFEMSetAssmblyType(SNES snes,
                                                 MatAssemblyType type);
   friend MoFEMErrorCode SnesMoFEMSetBehavior(SNES snes, MoFEMTypes bh);
+
+  /** @deprecated use getSetOperators  */
+  DEPRECATED FEMethodsSequence &get_loops_to_do_Mat() {
+    return getSetOperators();
+  }
+
+  /** @deprecated use getComputeRhs */
+  DEPRECATED FEMethodsSequence &get_loops_to_do_Rhs() {
+    return getComputeRhs();
+  }
+
+  /** @deprecated use getPreProcComputeRhs */
+  DEPRECATED BasicMethodsSequence &get_preProcess_to_do_Rhs() {
+    return getPreProcComputeRhs();
+  }
+
+  /** @deprecated use getPostProcComputeRhs */
+  DEPRECATED BasicMethodsSequence &get_postProcess_to_do_Rhs() {
+    return getPostProcComputeRhs();
+  }
+
+  /** @deprecated use getPreProcSetOperators */
+  DEPRECATED BasicMethodsSequence &get_preProcess_to_do_Mat() {
+    return getPreProcSetOperators();
+  }
+
+  /** @deprecated use getPostProcSetOperators */
+  DEPRECATED BasicMethodsSequence &get_postProcess_to_do_Mat() {
+    return getPostProcSetOperators();
+  }
 
 private:
   boost::movelib::unique_ptr<bool> vecAssembleSwitch;

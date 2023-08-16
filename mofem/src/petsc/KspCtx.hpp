@@ -2,8 +2,6 @@
  * \brief Context for PETSc KSP, i.e. nonlinear solver
  */
 
-
-
 #ifndef __KSPCTX_HPP__
 #define __KSPCTX_HPP__
 
@@ -26,10 +24,10 @@ struct KspCtx {
 
   FEMethodsSequence loops_to_do_Mat; ///< Sequence of finite elements instances
                                      ///< assembling tangent matrix
-  FEMethodsSequence loops_to_do_Rhs;   ///< Sequence of finite elements
-                                       ///< instances assembling residual vector
-  BasicMethodsSequence preProcess_Mat; ///< Sequence of methods run before
-                                       ///< tangent matrix is assembled
+  FEMethodsSequence loops_to_do_Rhs; ///< Sequence of finite elements
+                                     ///< instances assembling residual vector
+  BasicMethodsSequence preProcess_Mat;  ///< Sequence of methods run before
+                                        ///< tangent matrix is assembled
   BasicMethodsSequence postProcess_Mat; ///< Sequence of methods run after
                                         ///< tangent matrix is assembled
   BasicMethodsSequence preProcess_Rhs;  ///< Sequence of methods run before
@@ -48,12 +46,12 @@ struct KspCtx {
   /**
    * @return return reference to vector with FEMethod to calculate matrix
    */
-  FEMethodsSequence &get_loops_to_do_Mat() { return loops_to_do_Mat; }
+  FEMethodsSequence &getSetOperators() { return loops_to_do_Mat; }
 
   /**
    * @return return vector to vector with FEMethod to vector
    */
-  FEMethodsSequence &get_loops_to_do_Rhs() { return loops_to_do_Rhs; }
+  FEMethodsSequence &getComputeRhs() { return loops_to_do_Rhs; }
 
   /**
    * The sequence of BasicMethod is executed before residual is calculated. It
@@ -62,7 +60,7 @@ struct KspCtx {
    *
    * @return reference to BasicMethod for preprocessing
    */
-  BasicMethodsSequence &get_preProcess_to_do_Rhs() { return preProcess_Rhs; }
+  BasicMethodsSequence &getPreProcComputeRhs() { return preProcess_Rhs; }
 
   /**
    * The sequence of BasicMethod is executed after residual is calculated. It
@@ -71,12 +69,12 @@ struct KspCtx {
    *
    * @return reference to BasicMethod for postprocessing
    */
-  BasicMethodsSequence &get_postProcess_to_do_Rhs() { return postProcess_Rhs; }
+  BasicMethodsSequence &getPostProcComputeRhs() { return postProcess_Rhs; }
 
   /**
    * @return reference to BasicMethod for preprocessing
    */
-  BasicMethodsSequence &get_preProcess_to_do_Mat() { return preProcess_Mat; }
+  BasicMethodsSequence &getPreProcSetOperators() { return preProcess_Mat; }
 
   /**
    * The sequence of BasicMethod is executed after tangent matrix is calculated.
@@ -85,17 +83,47 @@ struct KspCtx {
    *
    * @return reference to BasicMethod for postprocessing
    */
-  BasicMethodsSequence &get_postProcess_to_do_Mat() { return postProcess_Mat; }
+  BasicMethodsSequence &getPostProcSetOperators() { return postProcess_Mat; }
 
   friend PetscErrorCode KspRhs(KSP ksp, Vec f, void *ctx);
   friend PetscErrorCode KspMat(KSP ksp, Mat A, Mat B, void *ctx);
 
   /**
-   * @brief Clear loops 
-   * 
-   * @return MoFEMErrorCode 
+   * @brief Clear loops
+   *
+   * @return MoFEMErrorCode
    */
   MoFEMErrorCode clearLoops();
+
+  /** @deprecated use getSetOperator */
+  DEPRECATED FEMethodsSequence &get_loops_to_do_Mat() {
+    return getSetOperators();
+  }
+
+  /** @deprecated use getComputeRhs */
+  DEPRECATED FEMethodsSequence &get_loops_to_do_Rhs() {
+    return getComputeRhs();
+  }
+
+  /** @deprecated use getPreProcComputeRhs */
+  DEPRECATED BasicMethodsSequence &get_preProcess_to_do_Rhs() {
+    return getPreProcComputeRhs();
+  }
+
+  /** @deprecated use getPostProcComputeRhs */
+  BasicMethodsSequence &get_postProcess_to_do_Rhs() {
+    return getPostProcComputeRhs();
+  }
+
+  /** @deprecated use getPreProcSetOperators */
+  DEPRECATED BasicMethodsSequence &get_preProcess_to_do_Mat() {
+    return getPreProcSetOperators();
+  }
+
+  /** @deprecated use  getPostProcSetOperators */
+  DEPRECATED BasicMethodsSequence &get_postProcess_to_do_Mat() {
+    return getPostProcSetOperators();
+  }
 
 private:
   PetscLogEvent MOFEM_EVENT_KspRhs;
@@ -115,10 +143,10 @@ private:
 PetscErrorCode KspRhs(KSP ksp, Vec f, void *ctx);
 
 /**
- * \brief Run over elenents in the list
+ * \brief Run over elements in the list
  * @param  ksp KSP solver
  * @param  A   matrix
- * @param  B   Preconditioner matrix
+ * @param  B   Preconditioned matrix
  * @param  ctx data context, i.e. KspCtx
  * @return     error code
  */

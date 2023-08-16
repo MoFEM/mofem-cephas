@@ -109,7 +109,7 @@ template <int SPACE_DIM> struct TimeScaleVector : public ScalingMethod {
 private:
   MoFEMErrorCode timeData();
 
-  std::map<double, FTensor::Tensor1<double, SPACE_DIM>> tSeries;
+  std::map<double, FTensor::Tensor1<double, 3>> tSeries;
   int readFile, debug;
   string nAme;
   bool errorIfFileNotGiven;
