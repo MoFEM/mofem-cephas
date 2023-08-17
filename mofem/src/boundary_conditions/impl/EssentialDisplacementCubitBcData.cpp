@@ -251,7 +251,7 @@ MoFEMErrorCode EssentialPostProcRhs<DisplacementCubitBcData>::operator()() {
         SmartPetscObj<Vec> f =
             vRhs ? vRhs : SmartPetscObj<Vec>(fe_ptr->f, true);
 
-        if (fe_ptr->vecAssembleSwitch && !vRhs) {
+        if ((*fe_ptr->vecAssembleSwitch) && !vRhs) {
           CHKERR VecGhostUpdateBegin(f, ADD_VALUES, SCATTER_REVERSE);
           CHKERR VecGhostUpdateEnd(f, ADD_VALUES, SCATTER_REVERSE);
           CHKERR VecAssemblyBegin(f);
@@ -386,7 +386,7 @@ MoFEMErrorCode EssentialPostProcLhs<DisplacementCubitBcData>::operator()() {
         SmartPetscObj<Mat> B =
             vLhs ? vLhs : SmartPetscObj<Mat>(fe_ptr->B, true);
         // User is responsible for assembly if vLhs is provided
-        if (fe_ptr->matAssembleSwitch && !vLhs) {
+        if ((*fe_ptr->matAssembleSwitch) && !vLhs) {
           if (*fe_ptr->matAssembleSwitch) {
             CHKERR MatAssemblyBegin(B, MAT_FINAL_ASSEMBLY);
             CHKERR MatAssemblyEnd(B, MAT_FINAL_ASSEMBLY);
@@ -425,7 +425,7 @@ MoFEMErrorCode EssentialPreProcReaction<DisplacementCubitBcData>::operator()() {
 
     SmartPetscObj<Vec> f = vRhs ? vRhs : SmartPetscObj<Vec>(fe_ptr->f, true);
 
-    if (fe_ptr->vecAssembleSwitch && !vRhs) {
+    if ((*fe_ptr->vecAssembleSwitch) && !vRhs) {
       CHKERR VecGhostUpdateBegin(f, ADD_VALUES, SCATTER_REVERSE);
       CHKERR VecGhostUpdateEnd(f, ADD_VALUES, SCATTER_REVERSE);
       CHKERR VecAssemblyBegin(f);

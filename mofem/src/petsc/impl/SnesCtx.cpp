@@ -123,7 +123,7 @@ PetscErrorCode SnesRhs(SNES snes, Vec x, Vec f, void *ctx) {
     snes_ctx->vecAssembleSwitch = boost::move(bit->vecAssembleSwitch);
   }
 
-  if (snes_ctx->vecAssembleSwitch) {
+  if (*(snes_ctx->vecAssembleSwitch)) {
     CHKERR VecGhostUpdateBegin(f, ADD_VALUES, SCATTER_REVERSE);
     CHKERR VecGhostUpdateEnd(f, ADD_VALUES, SCATTER_REVERSE);
     CHKERR VecAssemblyBegin(f);
