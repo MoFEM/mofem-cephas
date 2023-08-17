@@ -209,13 +209,16 @@ MoFEMErrorCode BcManager::addBlockDOFsToMPCs(const std::string problem_name,
                                    marked_field_dofs);
   };
 
-  auto setFlags = [](const auto &flags, auto data) {
+  auto setFlags = [](const auto &flags, auto &data) {
     char *flagPtr[] = {&data.flag1, &data.flag2, &data.flag3,
                        &data.flag4, &data.flag5, &data.flag6};
 
-    for (size_t i = 0; i < std::min(int(flags.size()), 6); ++i) {
+    for (size_t i = 0; i < std::min(int(flags.size()), 6); ++i)
       *flagPtr[i] = flags[i] > 0.0;
-    }
+    if (flags.empty())
+      for (size_t i = 0; i < 6; ++i) {
+        *flagPtr[i] = true;
+      }
   };
 
   auto iterate_meshsets = [&]() {

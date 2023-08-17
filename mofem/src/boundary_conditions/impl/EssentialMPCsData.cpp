@@ -122,17 +122,54 @@ MoFEMErrorCode EssentialPostProcLhs<MPCsType>::operator()() {
           // FIXME: for now only ALL dofs
           auto prb_name = fe_method_ptr->problemPtr->getName();
 
+          auto get_flag = [&](int idx) {
+            switch(idx) {
+              case 0: return mpc_bc->data.flag1;
+              case 1: return mpc_bc->data.flag2;
+              case 2: return mpc_bc->data.flag3;
+              default: 
+                return char(true);
+            }
+          };
+
+          auto add_is = [](auto is1, auto is2) {
+            IS is;
+            CHK_THROW_MESSAGE(ISExpand(is1, is2, &is), "is sum");
+            return SmartPetscObj<IS>(is);
+          };
+
+          auto get_is_sum = [add_is](auto is, auto &is_sum) {
+            if (is) {
+              if (!is_sum) {
+                is_sum = is;
+              } else {
+                is_sum = add_is(is_sum, is);
+              }
+            }
+          };
+
           SmartPetscObj<IS> is_xyz_m[2];
           SmartPetscObj<IS> is_xyz_s[2];
           RowColData rc[] = {ROW, COL};
-          for (int i = 0; i != 2; i++) {
-            CHKERR is_mng->isCreateProblemFieldAndRank(
-                prb_name, rc[i], field_name, 0, MAX_DOFS_ON_ENTITY, is_xyz_m[i],
-                &master_verts);
-            CHKERR is_mng->isCreateProblemFieldAndRank(
-                prb_name, rc[i], field_name, 0, MAX_DOFS_ON_ENTITY, is_xyz_s[i],
-                &slave_verts);
+          for (int d = 0; d != 3; d++) {
+            if (get_flag(d)) {
+
+              SmartPetscObj<IS> is_m;
+              SmartPetscObj<IS> is_s;
+
+              for (int i = 0; i != 2; i++) {
+                CHKERR is_mng->isCreateProblemFieldAndRank(
+                    prb_name, rc[i], field_name, 0, MAX_DOFS_ON_ENTITY,
+                    is_xyz_m[i], &master_verts);
+                CHKERR is_mng->isCreateProblemFieldAndRank(
+                    prb_name, rc[i], field_name, 0, MAX_DOFS_ON_ENTITY,
+                    is_xyz_s[i], &slave_verts);
+                get_is_sum(is_m, is_xyz_m[i]);
+                get_is_sum(is_s, is_xyz_s[i]);
+              }
+            }
           }
+
           // PetscInt size_check;
           // ISGetSize(is_xyz_m[0], P&size_check);
 
@@ -153,11 +190,11 @@ MoFEMErrorCode EssentialPostProcLhs<MPCsType>::operator()() {
                 }
               }
 
-              // if (vAO) {
-              //   MOFEM_LOG("WORLD", Sev::noisy) << "Apply AO to IS";
-              //   CHKERR AOApplicationToPetscIS(vAO, is_xyz_m[0]);
-              //   CHKERR AOApplicationToPetscIS(vAO, is_xyz_s[0]);
-              // }
+              if (vAO) {
+                MOFEM_LOG("WORLD", Sev::noisy) << "Apply AO to IS";
+                CHKERR AOApplicationToPetscIS(vAO, is_xyz_m[0]);
+                CHKERR AOApplicationToPetscIS(vAO, is_xyz_s[0]);
+              }
 
               // CHKERR MatSetOption(B, MAT_USE_HASH_TABLE, PETSC_TRUE);
               CHKERR MatSetOption(B, MAT_NEW_NONZERO_LOCATIONS, PETSC_TRUE);
@@ -196,7 +233,7 @@ MoFEMErrorCode EssentialPostProcLhs<MPCsType>::operator()() {
 
                 MoFEMFunctionReturnHot(0);
               };
-              // CHKERR set_mat_values(is_xyz_m[0], is_xyz_m[1], 1);
+              
               CHKERR set_mat_values(is_xyz_s[0], is_xyz_s[1], vDiag);
               CHKERR set_mat_values(is_xyz_s[0], is_xyz_m[1], -vDiag);
             };
@@ -208,7 +245,7 @@ MoFEMErrorCode EssentialPostProcLhs<MPCsType>::operator()() {
             //                             PETSC_NULL);
           } else {
             MOFEM_LOG("WORLD", Sev::error)
-                << "Cannot create ISs for MPCs for field: " << field_name;
+                << "Cannot create ISs for MPCs for field (Lhs): " << field_name;
           }
         }
       }
@@ -274,28 +311,57 @@ MoFEMErrorCode EssentialPostProcRhs<MPCsType>::operator()() {
           auto master_verts = mpc_bc->mpcMasterEnts.subset_by_type(MBVERTEX);
           auto slave_verts = mpc_bc->mpcSlaveEnts.subset_by_type(MBVERTEX);
 
-          // FIXME: for now only ALL dofs
           auto prb_name = fe_method_ptr->problemPtr->getName();
+          
+          auto get_flag = [&](int idx) {
+            switch(idx) {
+              case 0: return mpc_bc->data.flag1;
+              case 1: return mpc_bc->data.flag2;
+              case 2: return mpc_bc->data.flag3;
+              default: 
+                return char(true);
+            }
+          };
+
+          auto add_is = [](auto is1, auto is2) {
+            IS is;
+            CHK_THROW_MESSAGE(ISExpand(is1, is2, &is), "is sum");
+            return SmartPetscObj<IS>(is);
+          };
+
+          auto get_is_sum = [add_is](auto is, auto &is_sum) {
+            if (is) {
+              if (!is_sum) {
+                is_sum = is;
+              } else {
+                is_sum = add_is(is_sum, is);
+              }
+            }
+          };
 
           SmartPetscObj<IS> is_xyz_m;
           SmartPetscObj<IS> is_xyz_s;
-          CHKERR is_mng->isCreateProblemFieldAndRank(prb_name, ROW, field_name,
-                                                     0, MAX_DOFS_ON_ENTITY,
-                                                     is_xyz_m, &master_verts);
-          CHKERR is_mng->isCreateProblemFieldAndRank(prb_name, ROW, field_name,
-                                                     0, MAX_DOFS_ON_ENTITY,
-                                                     is_xyz_s, &slave_verts);
 
-          // PetscInt size_check;
-          // ISGetSize(is_xyz_m[0], P&size_check);
+          for (int i = 0; i != 3; i++) {
+            if (get_flag(i)) {
+              SmartPetscObj<IS> is_m;
+              SmartPetscObj<IS> is_s;
 
-          // MOFEM_LOG("WORLD", Sev::noisy)
-          //     << "is_xyz_m[0] size: " << size_check;
+              CHKERR is_mng->isCreateProblemFieldAndRank(
+                  prb_name, ROW, field_name, i, i, is_m, &master_verts);
+              CHKERR is_mng->isCreateProblemFieldAndRank(
+                  prb_name, ROW, field_name, i, i, is_s, &slave_verts);
+              get_is_sum(is_m, is_xyz_m);
+              get_is_sum(is_s, is_xyz_s);
+            }
+          }
+            // PetscInt size_check;
+            // ISGetSize(is_xyz_m[0], P&size_check);
+            // MOFEM_LOG("WORLD", Sev::noisy)
+            //     << "is_xyz_m[0] size: " << size_check;
+            // ISView(is_xyz_m[0], PETSC_VIEWER_STDOUT_WORLD);
 
-          // ISView(is_xyz_m[0], PETSC_VIEWER_STDOUT_WORLD);
-          // ISView(is_xyz_s[0], PETSC_VIEWER_STDOUT_WORLD);
-          // ISView(is_xyz_m[1], PETSC_VIEWER_STDOUT_WORLD);
-          // ISView(is_xyz_s[1], PETSC_VIEWER_STDOUT_WORLD);
+      
 
           if (is_xyz_m && is_xyz_s) {
 
@@ -303,7 +369,7 @@ MoFEMErrorCode EssentialPostProcRhs<MPCsType>::operator()() {
               auto snes_ctx = fe_ptr->snes_ctx;
               auto ts_ctx = fe_ptr->ts_ctx;
               const bool is_nonlinear = snes_ctx != FEMethod::CTX_SNESNONE ||
-                                         ts_ctx != FEMethod::CTX_TSNONE;
+                                        ts_ctx != FEMethod::CTX_TSNONE;
               SmartPetscObj<Vec> F =
                   vRhs ? vRhs : SmartPetscObj<Vec>(fe_ptr->f, true);
 
@@ -316,7 +382,6 @@ MoFEMErrorCode EssentialPostProcRhs<MPCsType>::operator()() {
               }
 
               auto set_vec_values = [&]() {
-
                 MoFEMFunctionBeginHot;
                 const int *m_index_ptr;
                 CHKERR ISGetIndices(is_xyz_m, &m_index_ptr);
@@ -333,7 +398,7 @@ MoFEMErrorCode EssentialPostProcRhs<MPCsType>::operator()() {
                 if (is_nonlinear) {
                   auto x = fe_ptr->x;
                   auto tmp_x = vectorDuplicate(F);
-                  
+
                   CHKERR vec_mng->setLocalGhostVector(
                       problem_name, ROW, tmp_x, INSERT_VALUES, SCATTER_FORWARD);
                   const double *v;
@@ -362,18 +427,17 @@ MoFEMErrorCode EssentialPostProcRhs<MPCsType>::operator()() {
               };
 
               CHKERR set_vec_values();
-          
             };
 
             // User is responsible for assembly if vLhs is provided
 
-            // ISView(is_sum, PETSC_VIEWER_STDOUT_WORLD);
-            // CHKERR MatZeroRowsColumnsIS(B, is_sum, vDiag, PETSC_NULL,
+            // ISView(is_xyz_m, PETSC_VIEWER_STDOUT_WORLD);
+            // CHKERR MatZeroRowsColumnsIS(B, is_xyz_m, vDiag, PETSC_NULL,
             //                             PETSC_NULL);
-          } else {
-            MOFEM_LOG("WORLD", Sev::error)
-                << "Cannot create ISs for MPCs for field: " << field_name;
-          }
+            } else {
+              MOFEM_LOG("WORLD", Sev::error)
+                  << "Cannot create ISs for MPCs for field (Rhs): " << field_name;
+            }
         }
       }
     }
