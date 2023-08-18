@@ -210,7 +210,7 @@ PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
     ts_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
 
-  if (ts_ctx->matAssembleSwitch) {
+  if (*(ts_ctx->matAssembleSwitch)) {
     CHKERR MatAssemblyBegin(B, MAT_FINAL_ASSEMBLY);
     CHKERR MatAssemblyEnd(B, MAT_FINAL_ASSEMBLY);
   }
@@ -457,7 +457,7 @@ PetscErrorCode TsSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
     ts_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
 
-  if (ts_ctx->matAssembleSwitch) {
+  if (*(ts_ctx->matAssembleSwitch)) {
     CHKERR MatAssemblyBegin(B, MAT_FINAL_ASSEMBLY);
     CHKERR MatAssemblyEnd(B, MAT_FINAL_ASSEMBLY);
   }
@@ -555,7 +555,7 @@ PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
     ts_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
 
-  if (ts_ctx->matAssembleSwitch) {
+  if (*(ts_ctx->matAssembleSwitch)) {
     CHKERR MatAssemblyBegin(B, MAT_FINAL_ASSEMBLY);
     CHKERR MatAssemblyEnd(B, MAT_FINAL_ASSEMBLY);
   }

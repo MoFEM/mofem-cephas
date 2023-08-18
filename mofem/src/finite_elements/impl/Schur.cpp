@@ -17,6 +17,9 @@ boost::ptr_vector<VectorInt> SchurL2Mats::colIndices;
 SchurL2Mats::SchurL2Mats(const size_t idx, const UId uid_row, const UId uid_col)
     : iDX(idx), uidRow(uid_row), uidCol(uid_col) {}
 
+OpSchurAssembleEndImpl::MatSetValuesRaw
+    OpSchurAssembleEndImpl::matSetValuesSchurRaw = ::MatSetValues;
+
 MoFEMErrorCode
 schur_mat_set_values_wrap(Mat M, const EntitiesFieldData::EntData &row_data,
                           const EntitiesFieldData::EntData &col_data,
@@ -52,6 +55,17 @@ SchurL2Mats::MatSetValues(Mat M, const EntitiesFieldData::EntData &row_data,
   const auto nb_rows = row_ind.size();
   const auto nb_cols = col_ind.size();
 
+#ifndef NDEBUG
+  if (mat.size1() != nb_rows) {
+    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "Wrong mat size %d != %d", mat.size1(), nb_rows);
+  }
+  if (mat.size2() != nb_cols) {
+    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "Wrong mat size %d != %d", mat.size2(), nb_cols);
+  }
+#endif // NDEBUG
+
   const auto idx = SchurL2Mats::schurL2Storage.size();
   const auto size = SchurL2Mats::locMats.size();
 
@@ -63,11 +77,49 @@ SchurL2Mats::MatSetValues(Mat M, const EntitiesFieldData::EntData &row_data,
 
   // insert index
   auto get_uid = [](auto &data) {
-    return data.getFieldEntities()[0]->getLocalUniqueId();
+    if (data.getFieldEntities().size() == 1) {
+
+      return data.getFieldEntities()[0]->getLocalUniqueId();
+
+    } else {
+
+      // Is assumed that sum of entities ids gives unique id, that is not true,
+      // but corner case is improbable.
+
+      // @todo: debug version should have test
+
+      auto &uid0 = data.getFieldEntities()[0]->getLocalUniqueId();
+      auto field_id0 = FieldEntity::getFieldBitNumberFromUniqueId(uid0);
+      auto ent0 = FieldEntity::getHandleFromUniqueId(uid0);
+      auto type0 = type_from_handle(ent0);
+      auto id = id_from_handle(ent0);
+
+      for (auto i = 1; i < data.getFieldEntities().size(); ++i) {
+
+        // get entity id from ent
+        id += id_from_handle(
+
+            // get entity handle from unique uid
+            FieldEntity::getHandleFromUniqueId(
+                data.getFieldEntities()[i]->getLocalUniqueId())
+
+        );
+
+      }
+
+      return FieldEntity::getLocalUniqueIdCalculate(
+          field_id0,
+
+          ent_form_type_and_id(type0, id)
+
+      );
+
+    }
   };
 
-  auto p = SchurL2Mats::schurL2Storage.emplace(idx, get_uid(row_data),
-                                               get_uid(col_data));
+  auto uid_row = get_uid(row_data);
+  auto uid_col = get_uid(col_data);
+  auto p = SchurL2Mats::schurL2Storage.emplace(idx, uid_row, uid_col);
 
   auto get_storage = [&p]() { return const_cast<SchurL2Mats &>(*p.first); };
 
@@ -92,6 +144,18 @@ SchurL2Mats::MatSetValues(Mat M, const EntitiesFieldData::EntData &row_data,
 
     auto asmb = [&](auto &sm) {
       MoFEMFunctionBeginHot;
+
+#ifndef NDEBUG
+      if (sm.size1() != nb_rows) {
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "Wrong mat or storage size %d != %d", sm.size1(), nb_rows);
+      }
+      if (sm.size2() != nb_cols) {
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "Wrong mat or storage size %d != %d", sm.size2(), nb_cols);
+      }
+#endif // NDEBUG
+
       switch (iora) {
       case ADD_VALUES:
         sm += mat;

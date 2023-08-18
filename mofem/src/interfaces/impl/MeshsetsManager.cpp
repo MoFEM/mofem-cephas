@@ -541,6 +541,11 @@ MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
       vec_ptr.push_back(&c);
     }
   }
+  std::sort(vec_ptr.begin(), vec_ptr.end(),
+            [](const CubitMeshSets *a, const CubitMeshSets *b) {
+              return a->getMeshsetId() < b->getMeshsetId();
+            });
+
   MoFEMFunctionReturn(0);
 }
 
@@ -564,6 +569,10 @@ MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
       vec_ptr.push_back(&*r.first);
     }
   }
+  std::sort(vec_ptr.begin(), vec_ptr.end(),
+            [](const CubitMeshSets *a, const CubitMeshSets *b) {
+              return a->getMeshsetId() < b->getMeshsetId();
+            });
   MoFEMFunctionReturn(0);
 }
 
