@@ -128,9 +128,9 @@ getDiffMat(Val<FTensor::PackPtr<double *, 1>, 3> &t_val,
  * S_{ij} \frac{\partial^2 B_{ij}}{\partial A_{kl} \partial A_{mn} }
  * \f]
  *
- * \note Eiegn vetore are in rows.
+ * \note Eigen vector are in rows.
  *
- * @param t_val eiegn values
+ * @param t_val eigen values
  * @param t_vec eigen vectors
  * @param f function
  * @param d_f directive of function
