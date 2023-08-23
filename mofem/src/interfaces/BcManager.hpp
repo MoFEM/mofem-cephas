@@ -15,7 +15,9 @@ template <CubitBC BC> struct BcMeshsetType {};
 
 template <CubitBC BC> struct BcScalarMeshsetType {};
 
-template <CubitBC BC> struct BcVectorMeshsetType {};
+template <CubitBC BC> struct BcDisplacementMeshsetType {};
+
+template <CubitBC BC> struct BcForceMeshsetType {};
 
 /**
  * \brief Simple interface for fast problem set-up
@@ -41,6 +43,7 @@ struct BcManager : public UnknownInterface {
     boost::shared_ptr<DisplacementCubitBcData> dispBcPtr;
     boost::shared_ptr<TemperatureCubitBcData> tempBcPtr;
     boost::shared_ptr<HeatFluxCubitBcData> heatFluxBcPtr;
+    boost::shared_ptr<ForceCubitBcData> forceBcPtr;
 
     /// \deprecated use getBcEntsPtr
     DEPRECATED inline auto getBcEdgesPtr() {
@@ -207,9 +210,9 @@ struct BcManager : public UnknownInterface {
 
   /**
    * @brief Merge block ranges
-   * 
-   * @param bc_names 
-   * @return auto 
+   *
+   * @param bc_names
+   * @return auto
    */
   inline auto getMergedBlocksRange(std::vector<string> bc_names) {
     std::vector<std::regex> reg_vec(bc_names.size());
@@ -347,7 +350,7 @@ MoFEMErrorCode BcManager::removeBlockDOFsOnEntities<BcMeshsetType<HEATFLUXSET>>(
 
 template <>
 MoFEMErrorCode
-BcManager::removeBlockDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
+BcManager::removeBlockDOFsOnEntities<BcDisplacementMeshsetType<BLOCKSET>>(
     const std::string problem_name, const std::string field_name,
     bool get_low_dim_ents, bool block_name_field_prefix,
     bool is_distributed_mesh);
@@ -376,7 +379,8 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcMeshsetType<HEATFLUXSET>>(
     bool get_low_dim_ents, bool block_name_field_prefix);
 
 template <>
-MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
+MoFEMErrorCode
+BcManager::pushMarkDOFsOnEntities<BcDisplacementMeshsetType<BLOCKSET>>(
     const std::string problem_name, const std::string field_name,
     bool get_low_dim_ents, bool block_name_field_prefix);
 
@@ -414,6 +418,40 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<HeatFluxCubitBcData>(
 
 template <>
 MoFEMErrorCode BcManager::removeBlockDOFsOnEntities<HeatFluxCubitBcData>(
+    const std::string problem_name, const std::string field_name,
+    bool get_low_dim_ents, bool block_name_field_prefix,
+    bool is_distributed_mesh);
+
+template <>
+MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcMeshsetType<FORCESET>>(
+    const std::string problem_name, const std::string field_name,
+    bool get_low_dim_ents, bool block_name_field_prefix);
+
+template <>
+MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcForceMeshsetType<BLOCKSET>>(
+    const std::string problem_name, const std::string field_name,
+    bool get_low_dim_ents, bool block_name_field_prefix);
+
+template <>
+MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<ForceCubitBcData>(
+    const std::string problem_name, const std::string field_name,
+    bool get_low_dim_ents, bool block_name_field_prefix);
+
+template <>
+MoFEMErrorCode BcManager::removeBlockDOFsOnEntities<BcMeshsetType<FORCESET>>(
+    const std::string problem_name, const std::string field_name,
+    bool get_low_dim_ents, bool block_name_field_prefix,
+    bool is_distributed_mesh);
+
+template <>
+MoFEMErrorCode
+BcManager::removeBlockDOFsOnEntities<BcForceMeshsetType<BLOCKSET>>(
+    const std::string problem_name, const std::string field_name,
+    bool get_low_dim_ents, bool block_name_field_prefix,
+    bool is_distributed_mesh);
+
+template <>
+MoFEMErrorCode BcManager::removeBlockDOFsOnEntities<ForceCubitBcData>(
     const std::string problem_name, const std::string field_name,
     bool get_low_dim_ents, bool block_name_field_prefix,
     bool is_distributed_mesh);
