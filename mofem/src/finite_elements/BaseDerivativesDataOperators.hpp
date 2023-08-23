@@ -25,12 +25,10 @@ protected:
   boost::shared_ptr<MatrixDouble> baseMassPtr;
   boost::shared_ptr<EntitiesFieldData> dataL2;
 
-  boost::function<int(ForcesAndSourcesCore *)> getOrder =
-      [this](ForcesAndSourcesCore *fe_ptr) {
-        return std::max(0, fe_ptr->getMaxDataOrder() - 1);
-      };
-
-  MoFEMErrorCode calculateBase(EntityType fe_type);
+  using GetOrderFun = boost::function<int()>;
+  MoFEMErrorCode calculateBase(GetOrderFun get_order);
+  MoFEMErrorCode calculateMass();
+  
 };
 
 template <int BASE_DIM>

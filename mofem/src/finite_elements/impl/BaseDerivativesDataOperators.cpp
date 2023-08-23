@@ -17,9 +17,10 @@ OpBaseDerivativesBase::OpBaseDerivativesBase(
       verbosity(verb), severityLevel(sev), baseMassPtr(base_mass_ptr),
       dataL2(data_l2) {}
 
-MoFEMErrorCode OpBaseDerivativesBase::calculateBase(EntityType fe_type) {
+MoFEMErrorCode OpBaseDerivativesBase::calculateBase(GetOrderFun get_order) {
   MoFEMFunctionBeginHot;
   auto fe_ptr = getPtrFE();
+  auto fe_type = getFEType();
   // Set data structure to store base
   dataL2->dataOnEntities[fe_type].clear();
   dataL2->dataOnEntities[MBVERTEX].clear();
@@ -35,7 +36,7 @@ MoFEMErrorCode OpBaseDerivativesBase::calculateBase(EntityType fe_type) {
   auto &ent_data = dataL2->dataOnEntities[fe_type][0];
   ent_data.getSense() = 1;
   ent_data.getBase() = base;
-  ent_data.getOrder() = getOrder(fe_ptr);
+  ent_data.getOrder() = get_order();
 
   CHKERR fe_ptr->getElementPolynomialBase()->getValue(
       getGaussPts(), boost::make_shared<EntPolynomialBaseCtx>(
@@ -44,19 +45,9 @@ MoFEMErrorCode OpBaseDerivativesBase::calculateBase(EntityType fe_type) {
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode
-OpBaseDerivativesMass<1>::doWork(int side, EntityType type,
-                                 EntitiesFieldData::EntData &data) {
+MoFEMErrorCode OpBaseDerivativesBase::calculateMass() {
   MoFEMFunctionBegin;
-
-  if (sPace != L2) {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "Space should be set to L2");
-  }
-
   auto fe_type = getFEType();
-  CHKERR calculateBase(fe_type);
-
   auto &ent_data = dataL2->dataOnEntities[fe_type][0];
   auto &base_funcions = ent_data.getN(base);
   const auto nb = base_funcions.size2();
@@ -104,6 +95,22 @@ OpBaseDerivativesMass<1>::doWork(int side, EntityType type,
 
     cholesky_decompose(nN);
   }
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+OpBaseDerivativesMass<1>::doWork(int side, EntityType type,
+                                 EntitiesFieldData::EntData &data) {
+  MoFEMFunctionBegin;
+
+  if (sPace != L2) {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Space should be set to L2");
+  }
+
+  CHKERR calculateBase(
+      [this]() { return std::max(0, getPtrFE()->getMaxDataOrder() - 1); });
+  CHKERR calculateMass();
 
   MoFEMFunctionReturn(0);
 }
