@@ -901,8 +901,8 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
                std::vector<boost::weak_ptr<NumeredEntFiniteElement>>>;
 
   /**
-   * @brief User call this function to loop over elements on the side of
-   * face. This function calls finite element with is operator to do
+   * @brief User calls this function to loop over elements on the side of
+   * face. This function calls finite element with its operator to do
    * calculations.
    *
    * @param fe_name       name of the side element
@@ -923,23 +923,24 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
   );
 
   /**
-   * @brief  User call this function to loop over parent elements. This function
-   * calls finite element with is operator to do calculations.
+   * @brief  User calls this function to loop over the same element using a
+   * different set of integration points. This function calls finite element
+   * with its operator to do calculations.
    *
    * @param fe_name
-   * @param parent_fe
+   * @param this_fe
    * @param verb
    * @param sev
    * @return MoFEMErrorCode
    */
   MoFEMErrorCode loopThis(const string &fe_name,
-                          ForcesAndSourcesCore *parent_fe,
+                          ForcesAndSourcesCore *this_fe,
                           const int verb = QUIET,
                           const LogManager::SeverityLevel sev = Sev::noisy);
 
   /**
-   * @brief  User call this function to loop over parent elements. This function
-   * calls finite element with is operator to do calculations.
+   * @brief  User calls this function to loop over parent elements. This function
+   * calls finite element with its operator to do calculations.
    *
    * @param fe_name
    * @param parent_fe
@@ -953,8 +954,8 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
                             const LogManager::SeverityLevel sev = Sev::noisy);
 
   /**
-   * @brief  User call this function to loop over parent elements. This function
-   * calls finite element with is operator to do calculations.
+   * @brief  User calls this function to loop over parent elements. This function
+   * calls finite element with its operator to do calculations.
    *
    * @param fe_name
    * @param child_fe
