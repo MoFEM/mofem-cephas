@@ -17,6 +17,33 @@ OpBaseDerivativesBase::OpBaseDerivativesBase(
       verbosity(verb), severityLevel(sev), baseMassPtr(base_mass_ptr),
       dataL2(data_l2) {}
 
+MoFEMErrorCode OpBaseDerivativesBase::calculateBase(EntityType fe_type) {
+  MoFEMFunctionBeginHot;
+  auto fe_ptr = getPtrFE();
+  // Set data structure to store base
+  dataL2->dataOnEntities[fe_type].clear();
+  dataL2->dataOnEntities[MBVERTEX].clear();
+  dataL2->dataOnEntities[MBVERTEX].push_back(new EntitiesFieldData::EntData());
+  dataL2->dataOnEntities[fe_type].push_back(new EntitiesFieldData::EntData());
+
+  auto &vertex_data = dataL2->dataOnEntities[MBVERTEX][0];
+  vertex_data.getNSharedPtr(NOBASE) =
+      fe_ptr->getEntData(H1, MBVERTEX, 0).getNSharedPtr(NOBASE);
+  vertex_data.getDiffNSharedPtr(NOBASE) =
+      fe_ptr->getEntData(H1, MBVERTEX, 0).getDiffNSharedPtr(NOBASE);
+
+  auto &ent_data = dataL2->dataOnEntities[fe_type][0];
+  ent_data.getSense() = 1;
+  ent_data.getBase() = base;
+  ent_data.getOrder() = getOrder(fe_ptr);
+
+  CHKERR fe_ptr->getElementPolynomialBase()->getValue(
+      getGaussPts(), boost::make_shared<EntPolynomialBaseCtx>(
+                         *dataL2, static_cast<FieldSpace>(L2),
+                         static_cast<FieldApproximationBase>(base), NOBASE));
+  MoFEMFunctionReturnHot(0);
+}
+
 MoFEMErrorCode
 OpBaseDerivativesMass<1>::doWork(int side, EntityType type,
                                  EntitiesFieldData::EntData &data) {
@@ -28,36 +55,7 @@ OpBaseDerivativesMass<1>::doWork(int side, EntityType type,
   }
 
   auto fe_type = getFEType();
-
-  auto calculate_base = [&]() {
-    MoFEMFunctionBeginHot;
-    auto fe_ptr = getPtrFE();
-    // Set data structure to store base
-    dataL2->dataOnEntities[fe_type].clear();
-    dataL2->dataOnEntities[MBVERTEX].clear();
-    dataL2->dataOnEntities[MBVERTEX].push_back(
-        new EntitiesFieldData::EntData());
-    dataL2->dataOnEntities[fe_type].push_back(new EntitiesFieldData::EntData());
-
-    auto &vertex_data = dataL2->dataOnEntities[MBVERTEX][0];
-    vertex_data.getNSharedPtr(NOBASE) =
-        fe_ptr->getEntData(H1, MBVERTEX, 0).getNSharedPtr(NOBASE);
-    vertex_data.getDiffNSharedPtr(NOBASE) =
-        fe_ptr->getEntData(H1, MBVERTEX, 0).getDiffNSharedPtr(NOBASE);
-
-    auto &ent_data = dataL2->dataOnEntities[fe_type][0];
-    ent_data.getSense() = 1;
-    ent_data.getBase() = base;
-    ent_data.getOrder() = std::max(0, fe_ptr->getMaxDataOrder() - 1);
-
-    CHKERR fe_ptr->getElementPolynomialBase()->getValue(
-        getGaussPts(), boost::make_shared<EntPolynomialBaseCtx>(
-                           *dataL2, static_cast<FieldSpace>(L2),
-                           static_cast<FieldApproximationBase>(base), NOBASE));
-    MoFEMFunctionReturnHot(0);
-  };
-
-  CHKERR calculate_base();
+  CHKERR calculateBase(fe_type);
 
   auto &ent_data = dataL2->dataOnEntities[fe_type][0];
   auto &base_funcions = ent_data.getN(base);
