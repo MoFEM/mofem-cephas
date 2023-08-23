@@ -4,74 +4,102 @@
 
 namespace MoFEM {
 
-OpAliceProjector::OpAliceProjector(
+OpDGProjectionMassMatrix::OpDGProjectionMassMatrix(
     int order, boost::shared_ptr<MatrixDouble> mass_ptr,
     boost::shared_ptr<EntitiesFieldData> data_l2,
     const FieldApproximationBase b, const FieldSpace s, int verb, Sev sev)
-    : OpBaseDerivativesMass<1>(mass_ptr, data_l2, b, s, verb, sev),
-      baseOrder(order) {
-  getOrder = [this](ForcesAndSourcesCore *fe_ptr) { return baseOrder; };
+    : OpBaseDerivativesBase(mass_ptr, data_l2, b, s, verb, sev),
+      baseOrder(order) {}
+
+MoFEMErrorCode
+OpDGProjectionMassMatrix::doWork(int side, EntityType type,
+                                 EntitiesFieldData::EntData &data) {
+  MoFEMFunctionBegin;
+
+  if (sPace != L2) {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Space should be set to L2");
+  }
+
+  CHKERR calculateBase(
+
+      [this]() { return this->baseOrder; }
+
+  );
+  CHKERR calculateMass();
+
+  MoFEMFunctionReturn(0);
 }
 
-OpAliceMapping::OpAliceMapping(boost::shared_ptr<MatrixDouble> data_ptr,
-                               boost::shared_ptr<MatrixDouble> coeffs_ptr,
-                               boost::shared_ptr<MatrixDouble> mass_ptr,
-                               boost::shared_ptr<EntitiesFieldData> data_l2,
-                               const FieldApproximationBase b,
-                               const FieldSpace s,
-                               const LogManager::SeverityLevel sev)
-    : OpAliceProjector(0, mass_ptr, data_l2, b, s, VERBOSE, sev),
+OpDGProjectionCoefficients::OpDGProjectionCoefficients(
+    boost::shared_ptr<MatrixDouble> data_ptr,
+    boost::shared_ptr<MatrixDouble> coeffs_ptr,
+    boost::shared_ptr<MatrixDouble> mass_ptr,
+    boost::shared_ptr<EntitiesFieldData> data_l2,
+    const FieldApproximationBase b, const FieldSpace s,
+    const LogManager::SeverityLevel sev)
+    : OpBaseDerivativesBase(mass_ptr, data_l2, b, s, VERBOSE, sev),
       dataPtr(data_ptr), coeffsPtr(coeffs_ptr) {}
 
-MoFEMErrorCode OpAliceMapping::doWork(int side, EntityType type,
-                                      EntitiesFieldData::EntData &data) {
+MoFEMErrorCode
+OpDGProjectionCoefficients::doWork(int side, EntityType type,
+                                   EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
   auto nb_integration_pts = getGaussPts().size2();
-  auto t_w = getFTensor0IntegrationWeight();
 
   const auto fe_type = getFEType();
   auto &ent_data = dataL2->dataOnEntities[fe_type][0];
   auto nb_base_functions = ent_data.getN(base).size2();
-  auto t_base = ent_data.getFTensor0N(base, 0, 0);
+
   auto nb_data_coeffs = dataPtr->size2();
+  auto &rhs = *coeffsPtr;
+  auto &data = *dataPtr;
 
-  coeffsPtr->resize(nb_data_coeffs, nb_base_functions, false);
+  rhs.resize(nb_base_functions, nb_data_coeffs, false);
+  rhs.clear();
 
+  using Tensor0 = FTensor::Tensor0<FTensor::PackPtr<double *, 1>>;
+
+  // assemble rhs
+  auto t_base = ent_data.getFTensor0N(base, 0, 0);
+  auto t_w = getFTensor0IntegrationWeight();
   for (auto gg = 0; gg != nb_integration_pts; ++gg) {
+    Tensor0 t_rhs(&*rhs.data().begin());
     for (auto bb = 0; bb != nb_base_functions; ++bb) {
       double alpha = t_w * t_base;
-      auto t_f =
-          FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(&(*coeffsPtr)(bb, 0));
-      FTensor::Tensor0<FTensor::PackPtr<double *, 1>> t_data(
-          &(*dataPtr)(gg, 0));
+      Tensor0 t_data(&data(gg, 0));
       for (auto cc = 0; cc != nb_data_coeffs; ++cc) {
-        t_f += alpha * t_data;
-        ++t_f;
+        t_rhs += alpha * t_data;
         ++t_data;
+        ++t_rhs;
       }
       ++t_base;
     }
     ++t_w;
   }
 
+  // solve for coefficients
   for (auto cc = 0; cc != nb_data_coeffs; ++cc) {
-    ublas::matrix_row<MatrixDouble> mc(*coeffsPtr, cc);
+    ublas::matrix_column<MatrixDouble> mc(rhs, cc);
     cholesky_solve(*baseMassPtr, mc, ublas::lower());
   }
 
   MoFEMFunctionReturn(0);
 }
 
-OpBobMapping::OpBobMapping(boost::shared_ptr<MatrixDouble> data_ptr,
-                           boost::shared_ptr<MatrixDouble> coeffs_ptr,
-                           boost::shared_ptr<MatrixDouble> mass_ptr,
-                           boost::shared_ptr<EntitiesFieldData> data_l2,
-                           const FieldApproximationBase b, const FieldSpace s,
-                           const LogManager::SeverityLevel sev)
-    : OpAliceMapping(data_ptr, coeffs_ptr, mass_ptr, data_l2, b, s, sev) {}
+OpDGProjectionEvaluation::OpDGProjectionEvaluation(
+    boost::shared_ptr<MatrixDouble> data_ptr,
+    boost::shared_ptr<MatrixDouble> coeffs_ptr,
+    boost::shared_ptr<MatrixDouble> mass_ptr,
+    boost::shared_ptr<EntitiesFieldData> data_l2,
+    const FieldApproximationBase b, const FieldSpace s,
+    const LogManager::SeverityLevel sev)
+    : OpDGProjectionCoefficients(data_ptr, coeffs_ptr, mass_ptr, data_l2, b, s,
+                                 sev) {}
 
-MoFEMErrorCode OpBobMapping::doWork(int side, EntityType type,
-                                    EntitiesFieldData::EntData &data) {
+MoFEMErrorCode
+OpDGProjectionEvaluation::doWork(int side, EntityType type,
+                                 EntitiesFieldData::EntData &data) {
 
   MoFEMFunctionBegin;
 
@@ -82,32 +110,41 @@ MoFEMErrorCode OpBobMapping::doWork(int side, EntityType type,
 
   auto fe_type = getFEType();
   auto &ent_data = dataL2->dataOnEntities[fe_type][0];
-  // baseOrder = ent_data.getOrder(base);
-  CHKERR calculateBase(fe_type);
+  CHKERR calculateBase(
+
+      [&ent_data]() { return ent_data.getOrder(); }
+
+  );
 
   auto &base_functions = ent_data.getN(base);
   const auto nb_base_functions = base_functions.size2();
   auto nb_data_coeffs = dataPtr->size2();
+  auto &data = *dataPtr;
+  auto &coeffs = *coeffsPtr;
 
-  if (nb_base_functions) {
-    auto nb_integration_pts = getGaussPts().size2();
-    dataPtr->resize(nb_integration_pts, nb_data_coeffs);
-    auto t_base = ent_data.getFTensor0N(base);
-    for (int gg = 0; gg != nb_integration_pts; ++gg) {
-      for (int bb = 0; bb != nb_base_functions; ++bb) {
-        auto t_coeffs = FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(
-            &(*coeffsPtr)(bb, 0));
-        FTensor::Tensor0<FTensor::PackPtr<double *, 1>> t_data(
-            &(*dataPtr)(gg, 0));
-        for (auto cc = 0; cc != nb_data_coeffs; ++cc) {
-          t_data += t_base * t_coeffs;
-          ++t_coeffs;
-          ++t_data;
-        }
-        ++t_base;
+  auto nb_integration_pts = getGaussPts().size2();
+  data.resize(nb_integration_pts, nb_data_coeffs);
+  data.clear();
+
+  using Tensor0 = FTensor::Tensor0<FTensor::PackPtr<double *, 1>>;
+
+  auto t_base = ent_data.getFTensor0N(base, 0, 0);
+  auto t_w = getFTensor0IntegrationWeight();
+  for (auto gg = 0; gg != nb_integration_pts; ++gg) {
+    Tensor0 t_coeffs(&*coeffs.data().begin());
+    for (auto bb = 0; bb != nb_base_functions; ++bb) {
+      double alpha = t_w * t_base;
+      Tensor0 t_data(&data(gg, 0));
+      for (auto cc = 0; cc != nb_data_coeffs; ++cc) {
+        t_data += alpha * t_coeffs;
+        ++t_data;
+        ++t_coeffs;
       }
+      ++t_base;
     }
+    ++t_w;
   }
+
   MoFEMFunctionReturn(0);
 }
 } // namespace MoFEM

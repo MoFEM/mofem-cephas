@@ -15,26 +15,32 @@
 namespace MoFEM {
 
 /**
- * @brief
+ * @brief Execute "this" element in the operator
  *
  * \code An example of usage in post-processing
 
-          using PostProcFe =
- PostProcBrokenMeshInMoabBaseCont<VolumeElementForcesAndSourcesCore>; auto
- fe_bob = boost::make_shared<PostProcFe>(mField);
+using PostProcFe =
+    PostProcBrokenMeshInMoabBaseCont<VolumeElementForcesAndSourcesCore>;
+auto fe_bob = boost::make_shared<PostProcFe>(mField);
+auto op_this = new OpThis<VolumeElementForcesAndSourcesCore>(
+    m_field, "DomainFE", Sev::noisy);
 
-    auto op_this = new OpThis<VolumeElementForcesAndSourcesCore>(m_field,
-                        "DomainFE", Sev::noisy);
-        fe_bob->getOpPtrVector()->push_back(op_this);
+auto fe_alice = op_this->getThisFEPtr();
+fe_alice->getRuleHook = [](int, int, int o) {
+  return 2 * o; };
 
-                auto data_l2 = boost::make_shared<EntitiesFieldData>();
-                auto mass_alice_ptr = boost::make_shared<MatrixDouble>();
-                fe_bob->getOpPtrVector()->push_back(new
- OpAliceMapping(mass_alice_ptr, AINSWORTH_LEGENDRE_BASE, L2);
-
-                auto fe_alice = op_this->getThisFEPtr();
-                fe_alice->getRuleHook = [](int, int, int o) { return 2*o; }
-                fe_alice->getOpPtrVector()->push_back(new OpMFrontOPs(...));
+int order = 1;
+auto data_l2 = boost::make_shared<EntitiesFieldData>();
+auto mass_alice_ptr = boost::make_shared<MatrixDouble>();
+auto coeffs_ptr = boost::make_shared<MatrixDouble>();
+fe_alice->getOpPtrVector()->push_back(new
+ OpDGProjectionMassMatrix(order, mass_alice_ptr, data_l2,
+AINSWORTH_LEGENDRE_BASE, L2); fe_alice->getOpPtrVector()->push_back(new
+ OpDGProjectionCoefficients(data_ptr, coeff_ptr, mass_alice_ptr, data_l2,
+AINSWORTH_LEGENDRE_BASE, L2); fe_bob->getOpPtrVector()->push_back(op_this);
+fe_bob->getOpPtrVector()->push_back(new
+ OpDGProjectionEvaluation(data_ptr, coeff_ptr, mass_alice_ptr, data_l2,
+AINSWORTH_LEGENDRE_BASE, L2);
 
  * \endcode
  *
@@ -82,24 +88,27 @@ protected:
   const LogManager::SeverityLevel sevLevel;
 };
 
-struct OpAliceProjector : public OpBaseDerivativesMass<1> {
-  OpAliceProjector(int order, boost::shared_ptr<MatrixDouble> mass_ptr,
-                   boost::shared_ptr<EntitiesFieldData> data_l2,
-                   const FieldApproximationBase b, const FieldSpace s,
-                   int verb = QUIET, Sev sev = Sev::verbose);
+struct OpDGProjectionMassMatrix : public OpBaseDerivativesBase {
+  OpDGProjectionMassMatrix(int order, boost::shared_ptr<MatrixDouble> mass_ptr,
+                           boost::shared_ptr<EntitiesFieldData> data_l2,
+                           const FieldApproximationBase b, const FieldSpace s,
+                           int verb = QUIET, Sev sev = Sev::verbose);
 
-protected:
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        EntitiesFieldData::EntData &data);
+
+private:
   int baseOrder;
 };
 
-struct OpAliceMapping : public OpAliceProjector {
+struct OpDGProjectionCoefficients : public OpBaseDerivativesBase {
 
-  OpAliceMapping(boost::shared_ptr<MatrixDouble> data_ptr,
-                 boost::shared_ptr<MatrixDouble> coeffs_ptr,
-                 boost::shared_ptr<MatrixDouble> mass_ptr,
-                 boost::shared_ptr<EntitiesFieldData> data_l2,
-                 const FieldApproximationBase b, const FieldSpace s,
-                 const LogManager::SeverityLevel sev = Sev::noisy);
+  OpDGProjectionCoefficients(boost::shared_ptr<MatrixDouble> data_ptr,
+                             boost::shared_ptr<MatrixDouble> coeffs_ptr,
+                             boost::shared_ptr<MatrixDouble> mass_ptr,
+                             boost::shared_ptr<EntitiesFieldData> data_l2,
+                             const FieldApproximationBase b, const FieldSpace s,
+                             const LogManager::SeverityLevel sev = Sev::noisy);
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data);
@@ -109,14 +118,14 @@ protected:
   boost::shared_ptr<MatrixDouble> coeffsPtr;
 };
 
-struct OpBobMapping : public OpAliceMapping {
+struct OpDGProjectionEvaluation : public OpDGProjectionCoefficients {
 
-  OpBobMapping(boost::shared_ptr<MatrixDouble> data_ptr,
-               boost::shared_ptr<MatrixDouble> coeffs_ptr,
-               boost::shared_ptr<MatrixDouble> mass_ptr,
-               boost::shared_ptr<EntitiesFieldData> data_l2,
-               const FieldApproximationBase b, const FieldSpace s,
-               const LogManager::SeverityLevel sev = Sev::noisy);
+  OpDGProjectionEvaluation(boost::shared_ptr<MatrixDouble> data_ptr,
+                           boost::shared_ptr<MatrixDouble> coeffs_ptr,
+                           boost::shared_ptr<MatrixDouble> mass_ptr,
+                           boost::shared_ptr<EntitiesFieldData> data_l2,
+                           const FieldApproximationBase b, const FieldSpace s,
+                           const LogManager::SeverityLevel sev = Sev::noisy);
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data);
