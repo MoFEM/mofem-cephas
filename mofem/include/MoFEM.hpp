@@ -129,6 +129,7 @@ using FTensor::operator>>;
 #include <LinearFormsIntegrators.hpp>
 #include <BiLinearFormsIntegrators.hpp>
 #include <Schur.hpp>
+#include <DGProjection.hpp>
 #include <OperatorsTester.hpp>
 
 

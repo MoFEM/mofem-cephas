@@ -32,3 +32,4 @@ extern "C" {
 #include "impl/FaceElementForcesAndSourcesCoreOnParent.cpp"
 #include "impl/VolumeElementForcesAndSourcesCoreOnContactPrismSide.cpp"
 #include "impl/Schur.cpp"
+#include "impl/DGProjection.cpp"
