@@ -220,7 +220,7 @@ SmartPetscObj<TS> PipelineManager::createTSEX(SmartPetscObj<DM> dm) {
 
   boost::shared_ptr<FEMethod> null;
 
-  getDMTsCtx(dm)->clearLoops();
+  // getDMTsCtx(dm)->clearLoops();
 
   // Add element to calculate rhs of slow part
   if (feDomainExplicitRhs)
