@@ -22,7 +22,7 @@ namespace MoFEM {
 using PostProcFe =
     PostProcBrokenMeshInMoabBaseCont<VolumeElementForcesAndSourcesCore>;
 auto fe_bob = boost::make_shared<PostProcFe>(mField);
-auto op_this = new OpThis<VolumeElementForcesAndSourcesCore>(
+auto op_this = new OpLoopThis<VolumeElementForcesAndSourcesCore>(
     m_field, "DomainFE", Sev::noisy);
 
 auto fe_alice = op_this->getThisFEPtr();
@@ -50,7 +50,7 @@ AINSWORTH_LEGENDRE_BASE, L2);
  *
  */
 template <typename E>
-struct OpThis : public ForcesAndSourcesCore::UserDataOperator {
+struct OpLoopThis : public ForcesAndSourcesCore::UserDataOperator {
 
   using UserDataOperator = ForcesAndSourcesCore::UserDataOperator;
 
@@ -60,7 +60,7 @@ struct OpThis : public ForcesAndSourcesCore::UserDataOperator {
    * @param m_field
    * @param fe_name name of "this" element (domain element)
    */
-  OpThis(MoFEM::Interface &m_field, const std::string fe_name,
+  OpLoopThis(MoFEM::Interface &m_field, const std::string fe_name,
          const LogManager::SeverityLevel sev = Sev::noisy)
       : UserDataOperator(NOSPACE, OPSPACE), thisFEPtr(new E(m_field)),
         feName(fe_name), sevLevel(sev) {}
