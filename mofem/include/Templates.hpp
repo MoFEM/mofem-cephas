@@ -1322,7 +1322,7 @@ inline MoFEMErrorCode computeEigenValuesSymmetric(
     for (int jj = 0; jj != DIM; jj++)
       eigen_vec(ii, jj) = mat(ii, jj);
 
-  CHKERR computeEigenValuesSymmetric<DIM>(eigen_vec, eig);
+  CHKERR computeEigenValuesSymmetric(eigen_vec, eig);
 
   MoFEMFunctionReturn(0);
 }
@@ -1334,7 +1334,7 @@ template <int DIM>
 DEPRECATED MoFEMErrorCode
 computeEigenValuesSymmetric(FTensor::Tensor2<double, DIM, DIM> &eigen_vec,
                             FTensor::Tensor1<double, DIM> &eig) {
-  return computeEigenValuesSymmetric(eigen_vec, eig);
+  return computeEigenValuesSymmetric<DIM, double, double>(eigen_vec, eig);
 }
 
 /**
@@ -1345,7 +1345,8 @@ DEPRECATED MoFEMErrorCode
 computeEigenValuesSymmetric(const FTensor::Tensor2_symmetric<double, DIM> &mat,
                             FTensor::Tensor1<double, DIM> &eig,
                             FTensor::Tensor2<double, DIM, DIM> &eigen_vec) {
-  return computeEigenValuesSymmetric<DIM>(mat, eig, eigen_vec);
+  return computeEigenValuesSymmetric<DIM, double, double, double>(mat, eig,
+                                                                  eigen_vec);
 }
 
 /**
@@ -1356,7 +1357,8 @@ DEPRECATED MoFEMErrorCode computeEigenValuesSymmetric(
     const FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, DIM> &mat,
     FTensor::Tensor1<double, DIM> &eig,
     FTensor::Tensor2<double, DIM, DIM> &eigen_vec) {
-  return computeEigenValuesSymmetric<DIM>(mat, eig, eigen_vec);
+  return computeEigenValuesSymmetric<DIM, FTensor::PackPtr<double *, 1>, double,
+                                     double>(mat, eig, eigen_vec);
 }
 
 /**
