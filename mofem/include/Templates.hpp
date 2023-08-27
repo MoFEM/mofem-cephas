@@ -1328,6 +1328,38 @@ inline MoFEMErrorCode computeEigenValuesSymmetric(
 }
 
 /**
+ * @deprecated do not use, is kept for backward compatibility
+*/
+template <int DIM>
+DEPRECATED MoFEMErrorCode
+computeEigenValuesSymmetric(FTensor::Tensor2<double, DIM, DIM> &eigen_vec,
+                            FTensor::Tensor1<double, DIM> &eig) {
+  return computeEigenValuesSymmetric(eigen_vec, eig);
+}
+
+/**
+ * @deprecated do not use, is kept for backward compatibility
+*/
+template <int DIM>
+DEPRECATED MoFEMErrorCode
+computeEigenValuesSymmetric(const FTensor::Tensor2_symmetric<double, DIM> &mat,
+                            FTensor::Tensor1<double, DIM> &eig,
+                            FTensor::Tensor2<double, DIM, DIM> &eigen_vec) {
+  return computeEigenValuesSymmetric<DIM>(mat, eig, eigen_vec);
+}
+
+/**
+ * @deprecated do not use, is kept for backward compatibility
+*/
+template <int DIM>
+DEPRECATED MoFEMErrorCode computeEigenValuesSymmetric(
+    const FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, DIM> &mat,
+    FTensor::Tensor1<double, DIM> &eig,
+    FTensor::Tensor2<double, DIM, DIM> &eigen_vec) {
+  return computeEigenValuesSymmetric<DIM>(mat, eig, eigen_vec);
+}
+
+/**
  * @brief Calculate the determinant of a 3x3 matrix or a tensor of rank 2
  *
  * @tparam T
