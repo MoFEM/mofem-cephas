@@ -554,6 +554,25 @@ struct MeshsetsManager : public UnknownInterface {
 
   ) {
     MOFEM_LOG("WORLD", Sev::inform) << m->getName();
+
+    Rants ents;
+    m_field.get_moab().get_entities_by_dimension(
+        m->getMeshset(), 0, ents, false);
+
+    auto print_vets = [](boost::shared_ptr<FieldEntity> ent_ptr) {
+      MoFEMFunctionBegin;
+      if(!(ent_ptr->getPStatus() & PSTATUS_NOT_OWNED)) {
+        MOFEM_LOG("SYNC", Sev::inform) << ents_ptr->getName() << ": " <<
+  ent_ptr->getEntFieldData();
+      }
+      MoFEMFunctionReturn(0);
+    };
+
+    CHKERR m_field.getInterface<FieldBlas>()->fieldLambdaOnEntities(
+        print_vets, "VELOCITIES", &ents);
+    CHKERR m_field.getInterface<FieldBlas>()->fieldLambdaOnEntities(
+        print_vets, "DISPLACEMENTS", &ents);
+    MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::ifrom);
   }
    * \endcode
    *
