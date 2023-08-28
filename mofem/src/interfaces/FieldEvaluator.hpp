@@ -45,14 +45,20 @@ struct FieldEvaluatorInterface : public UnknownInterface {
         : feMethodPtr(fe_method_ptr), evalPoints(eval_points),
           nbEvalPoints(nb_eval_points), eps(eps), verb(verb) {
       localCoords.resize(nbEvalPoints, 3);
-      shapeFunctions.resize(nbEvalPoints, 4);
+      // cerr << "fe_method_ptr->getOpPtrVector().size() " << fe_method_ptr->getOpPtrVector().size() << "\n";
+      // if(fe_method_ptr->getOpPtrVector().front().getNumeredEntFiniteElementPtr()->getEntType() == MBTET)
+      //   shapeFunctions.resize(nbEvalPoints, 4);
+      // else if (fe_method_ptr->getOpPtrVector().back().getNumeredEntFiniteElementPtr()->getEntType() == MBHEX)
+        shapeFunctions.resize(nbEvalPoints, 8);
+      
     }
 
     inline void setEvalPoints(const double *ptr, const int nb_eval_points) {
       evalPoints = ptr;
       nbEvalPoints = nb_eval_points;
       localCoords.resize(nbEvalPoints, 3, false);
-      shapeFunctions.resize(nbEvalPoints, 4, false);
+      // shapeFunctions.resize(nbEvalPoints, 4, false);
+      shapeFunctions.resize(nbEvalPoints, 8, false);
     }
 
     boost::weak_ptr<MoFEM::ForcesAndSourcesCore> feMethodPtr;
@@ -114,6 +120,18 @@ struct FieldEvaluatorInterface : public UnknownInterface {
     boost::shared_ptr<PackData> pack_data(new PackData());
     MoFEM::Interface &m_field = cOre;
     pack_data->elePtr.reset(new VE(m_field));
+
+    // struct Op : public VE::UserDataOperator {
+    //   Op() : VE::UserDataOperator(NOSPACE, OpBaseDerivativesBase::OPLAST) {}
+    //   MoFEMErrorCode doWork(int side, int col_side, EntityType type,
+    //                         DataForcesAndSourcesCore::EntData &data) {
+    //     MoFEMFunctionBegin;
+    //     MoFEMFunctionReturn(0);
+    //   };
+    // };
+
+    // pack_data->elePtr->getOpPtrVector().push_back(new Op());
+ 
     pack_data->setPtsDataPtr.reset(
         new SPD(boost::shared_ptr<VE>(pack_data, pack_data->elePtr.get()), ptr,
                 nb_eval_points, eps, verb));

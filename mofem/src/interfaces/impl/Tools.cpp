@@ -87,6 +87,10 @@ constexpr std::array<double, 4> Tools::shapeFunMBTETAt000;
 constexpr std::array<double, 8> Tools::diffShapeFunMBQUADAtCenter;
 constexpr std::array<double, 24> Tools::diffShapeFunMBHEXAtCenter;
 
+//HEX
+constexpr std::array<double, 8> Tools::shapeFunMBHEXAt000;
+constexpr std::array<double, 24> Tools::diffShapeFunMBHEX;
+
 MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceFourNodeTet(
     const double *elem_coords, const double *global_coords, const int nb_nodes,
     double *local_coords) {
@@ -138,6 +142,62 @@ MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceFourNodeTet(
 
   MoFEMFunctionReturnHot(0);
 }
+
+MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceEightNodeHex(
+    const double *elem_coords, const double *global_coords, const int nb_nodes,
+    double *local_coords) {
+  FTensor::Index<'i', 8> i;
+  MoFEMFunctionBeginHot;
+
+  FTensor::Tensor1<FTensor::PackPtr<const double *, 1>, 8> t_elem_coords = {
+      &elem_coords[0],  &elem_coords[3],  &elem_coords[6],  &elem_coords[9],
+      &elem_coords[12], &elem_coords[15], &elem_coords[18], &elem_coords[21]};
+
+  FTensor::Tensor1<const double, 8> t_n = {
+      shapeFunMBHEXAt000[0], shapeFunMBHEXAt000[1], shapeFunMBHEXAt000[2],
+      shapeFunMBHEXAt000[3], shapeFunMBHEXAt000[4], shapeFunMBHEXAt000[5],
+      shapeFunMBHEXAt000[6], shapeFunMBHEXAt000[7]};
+  FTensor::Tensor1<double, 3> t_coords_at_0;
+
+  // Build matrix and get coordinates of zero point
+  // ii - global coordinates
+  // jj - local derivatives
+  MatrixDouble3by3 a(3, 3);
+  for (auto ii : {0, 1, 2}) {
+    FTensor::Tensor1<FTensor::PackPtr<const double *, 1>, 8> t_diff(
+        &diffShapeFunMBHEX[0], &diffShapeFunMBHEX[3], &diffShapeFunMBHEX[6],
+        &diffShapeFunMBHEX[9], &diffShapeFunMBHEX[12], &diffShapeFunMBHEX[15],
+        &diffShapeFunMBHEX[18], &diffShapeFunMBHEX[21]);
+    for (auto jj : {0, 1, 2}) {
+      a(jj, ii) = t_diff(i) * t_elem_coords(i);
+      ++t_diff;
+    }
+    t_coords_at_0(ii) = t_n(i) * t_elem_coords(i);
+    ++t_elem_coords;
+  }
+
+  FTensor::Tensor1<FTensor::PackPtr<const double *, 3>, 3> t_global_coords = {
+      &global_coords[0], &global_coords[1], &global_coords[2]};
+  FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_local_coords = {
+      &local_coords[0], &local_coords[1], &local_coords[2]};
+
+  // Calculate right hand side
+  FTensor::Index<'j', 3> j;
+  for (int ii = 0; ii != nb_nodes; ++ii) {
+    t_local_coords(j) = t_global_coords(j) - t_coords_at_0(j);
+    ++t_local_coords;
+    ++t_global_coords;
+  }
+
+  // Solve problem
+  int IPIV[3];
+  int info = lapack_dgesv(3, nb_nodes, &a(0, 0), 3, IPIV, local_coords, 3);
+  if (info != 0)
+    SETERRQ1(PETSC_COMM_SELF, 1, "info == %d", info);
+
+  MoFEMFunctionReturnHot(0);
+}
+
 
 MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceTriNodeTri(
     const double *elem_coords, const double *global_coords, const int nb_nodes,

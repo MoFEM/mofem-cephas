@@ -302,7 +302,7 @@ inline FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 2>
 getFTensor2FromMat(MatrixDouble &data) {
 #ifndef NDEBUG
   if (data.size1() != 6)
-    THROW_MESSAGE("getFTensor2FromMat<3,3>: wrong size of data matrix, numer "
+    THROW_MESSAGE("getFTensor2FromMat<3,2>: wrong size of data matrix, numer "
                   "of rows should be 6 but is " +
                   boost::lexical_cast<std::string>(data.size1()));
 #endif

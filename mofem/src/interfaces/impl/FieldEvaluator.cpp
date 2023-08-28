@@ -169,9 +169,19 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint(
   std::vector<EntityHandle> leafs_out;
   CHKERR data_ptr->treePtr->distance_search(point, distance, leafs_out);
   Range tree_ents;
-  for (auto lit : leafs_out)
+  for (auto lit : leafs_out)//{
     CHKERR m_field.get_moab().get_entities_by_dimension(lit, D, tree_ents,
                                                         true);
+
+  // for (auto tet_1 : tree_ents) {
+  //   const EntityHandle *conn;
+  //   int num_nodes;
+  //   CHKERR m_field.get_moab().get_connectivity(tet_1, conn, num_nodes, true);                                                  
+  //   std::array<double, 24> coords;
+  //   CHKERR m_field.get_moab().get_coords(conn, num_nodes, coords.data());
+  //   cerr << "asdad\n";
+  // }
+  //}
   if (verb >= NOISY)
     MOFEM_LOG("SELF", Sev::noisy) << "tree entities: " << tree_ents;
 
@@ -189,55 +199,122 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint(
     int num_nodes;
     CHKERR m_field.get_moab().get_connectivity(tet, conn, num_nodes, true);
 
+    EntityType entity_type = type_from_handle( tet );
+
     if constexpr (D == 3) {
+      if (entity_type == MBHEX) {
+        // cerr << "yes it is MBHEX\n";
+        local_coords.resize(3 * nb_eval_points);
+        shape.resize(8 * nb_eval_points);
 
-      local_coords.resize(3 * nb_eval_points);
-      shape.resize(4 * nb_eval_points);
+        std::array<double, 24> coords;
+        CHKERR m_field.get_moab().get_coords(conn, num_nodes, coords.data());
 
-      std::array<double, 12> coords;
-      CHKERR m_field.get_moab().get_coords(conn, num_nodes, coords.data());
+        CHKERR Tools::getLocalCoordinatesOnReferenceEightNodeHex(
+            coords.data(), &data_ptr->evalPoints[0], nb_eval_points,
+            &local_coords[0]);
 
-      CHKERR Tools::getLocalCoordinatesOnReferenceFourNodeTet(
-          coords.data(), &data_ptr->evalPoints[0], nb_eval_points,
-          &local_coords[0]);
-      CHKERR Tools::shapeFunMBTET<3>(&shape[0], &local_coords[0],
-                                     &local_coords[1], &local_coords[2],
-                                     nb_eval_points);
+        CHKERR Tools::shapeFunMBHEX<3>(&shape[0], &local_coords[0],
+                                       &local_coords[1], &local_coords[2],
+                                       nb_eval_points);
 
-      FTensor::Index<'i', 4> i4;
-      FTensor::Tensor1<FTensor::PackPtr<double *, 4>, 4> t_shape{
-          &shape[0], &shape[1], &shape[2], &shape[3]};
-      FTensor::Tensor1<FTensor::PackPtr<double *, 4>, 4> t_shape_data{
-          &data_ptr->shapeFunctions(0, 0), &data_ptr->shapeFunctions(0, 1),
-          &data_ptr->shapeFunctions(0, 2), &data_ptr->shapeFunctions(0, 3)};
+        FTensor::Index<'i', 8> i8;
+        FTensor::Tensor1<FTensor::PackPtr<double *, 8>, 8> t_shape{
+            &shape[0], &shape[1], &shape[2], &shape[3],
+            &shape[4], &shape[5], &shape[6], &shape[7]};
+        FTensor::Tensor1<FTensor::PackPtr<double *, 8>, 8> t_shape_data{
+            &data_ptr->shapeFunctions(0, 0), &data_ptr->shapeFunctions(0, 1),
+            &data_ptr->shapeFunctions(0, 2), &data_ptr->shapeFunctions(0, 3),
+            &data_ptr->shapeFunctions(0, 4), &data_ptr->shapeFunctions(0, 5),
+            &data_ptr->shapeFunctions(0, 6), &data_ptr->shapeFunctions(0, 7)};
 
-      FTensor::Index<'j', 3> j3;
-      FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_local{
-          &local_coords[0], &local_coords[1], &local_coords[2]};
-      FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_local_data{
-          &(data_ptr->localCoords(0, 0)), &(data_ptr->localCoords(0, 1)),
-          &(data_ptr->localCoords(0, 2))};
+        FTensor::Index<'j', 3> j3;
+        FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_local{
+            &local_coords[0], &local_coords[1], &local_coords[2]};
+        FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_local_data{
+            &(data_ptr->localCoords(0, 0)), &(data_ptr->localCoords(0, 1)),
+            &(data_ptr->localCoords(0, 2))};
 
-      for (int n = 0; n != nb_eval_points; ++n) {
+        for (int n = 0; n != nb_eval_points; ++n) {
 
-        const double eps = data_ptr->eps;
-        if (t_shape(0) >= 0 - eps && t_shape(0) <= 1 + eps &&
+          const double eps = data_ptr->eps;
+          if (t_shape(0) >= 0 - eps && t_shape(0) <= 1 + eps &&
 
-            t_shape(1) >= 0 - eps && t_shape(1) <= 1 + eps &&
+              t_shape(1) >= 0 - eps && t_shape(1) <= 1 + eps &&
 
-            t_shape(2) >= 0 - eps && t_shape(2) <= 1 + eps &&
+              t_shape(2) >= 0 - eps && t_shape(2) <= 1 + eps &&
 
-            t_shape(3) >= 0 - eps && t_shape(3) <= 1 + eps) {
+              t_shape(3) >= 0 - eps && t_shape(3) <= 1 + eps &&
 
-          data_ptr->evalPointEntityHandle[n] = tet;
-          t_shape_data(i4) = t_shape(i4);
-          t_local_data(j3) = t_local(j3);
+              t_shape(4) >= 0 - eps && t_shape(4) <= 1 + eps &&
+
+              t_shape(5) >= 0 - eps && t_shape(5) <= 1 + eps &&
+
+              t_shape(6) >= 0 - eps && t_shape(6) <= 1 + eps &&
+
+              t_shape(7) >= 0 - eps && t_shape(7) <= 1 + eps) {
+
+            data_ptr->evalPointEntityHandle[n] = tet;
+            t_shape_data(i8) = t_shape(i8);
+            t_local_data(j3) = t_local(j3);
+          }
+
+          ++t_shape;
+          ++t_shape_data;
+          ++t_local;
+          ++t_local_data;
         }
 
-        ++t_shape;
-        ++t_shape_data;
-        ++t_local;
-        ++t_local_data;
+      } else if (entity_type == MBTET) {
+        // cerr << "yes it is MBTET\n";
+        local_coords.resize(3 * nb_eval_points);
+        shape.resize(4 * nb_eval_points);
+
+        std::array<double, 12> coords;
+        CHKERR m_field.get_moab().get_coords(conn, num_nodes, coords.data());
+
+        CHKERR Tools::getLocalCoordinatesOnReferenceFourNodeTet(
+            coords.data(), &data_ptr->evalPoints[0], nb_eval_points,
+            &local_coords[0]);
+        CHKERR Tools::shapeFunMBTET<3>(&shape[0], &local_coords[0],
+                                       &local_coords[1], &local_coords[2],
+                                       nb_eval_points);
+
+        FTensor::Index<'i', 4> i4;
+        FTensor::Tensor1<FTensor::PackPtr<double *, 4>, 4> t_shape{
+            &shape[0], &shape[1], &shape[2], &shape[3]};
+        FTensor::Tensor1<FTensor::PackPtr<double *, 4>, 4> t_shape_data{
+            &data_ptr->shapeFunctions(0, 0), &data_ptr->shapeFunctions(0, 1),
+            &data_ptr->shapeFunctions(0, 2), &data_ptr->shapeFunctions(0, 3)};
+
+        FTensor::Index<'j', 3> j3;
+        FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_local{
+            &local_coords[0], &local_coords[1], &local_coords[2]};
+        FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_local_data{
+            &(data_ptr->localCoords(0, 0)), &(data_ptr->localCoords(0, 1)),
+            &(data_ptr->localCoords(0, 2))};
+
+        for (int n = 0; n != nb_eval_points; ++n) {
+
+          const double eps = data_ptr->eps;
+          if (t_shape(0) >= 0 - eps && t_shape(0) <= 1 + eps &&
+
+              t_shape(1) >= 0 - eps && t_shape(1) <= 1 + eps &&
+
+              t_shape(2) >= 0 - eps && t_shape(2) <= 1 + eps &&
+
+              t_shape(3) >= 0 - eps && t_shape(3) <= 1 + eps) {
+
+            data_ptr->evalPointEntityHandle[n] = tet;
+            t_shape_data(i4) = t_shape(i4);
+            t_local_data(j3) = t_local(j3);
+          }
+
+          ++t_shape;
+          ++t_shape_data;
+          ++t_local;
+          ++t_local_data;
+        }
       }
     }
 
