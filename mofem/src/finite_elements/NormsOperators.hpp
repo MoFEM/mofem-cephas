@@ -8,10 +8,36 @@
 
 namespace MoFEM {
 
-/** \brief Get norm of input MatrixDouble
+/** \brief Get norm of input VectorDouble for Tesnosr0
  *
  */
-template <int FIELD_DIM>
+
+struct OpCalcNormL2Tesnosr0 : public ForcesAndSourcesCore::UserDataOperator {
+
+  OpCalcNormL2Tesnosr0(const std::string field_name,
+                       boost::shared_ptr<VectorDouble> data_ptr,
+                       SmartPetscObj<Vec> data_vec, const int index);
+
+  /**
+   * \brief calculate values of scalar field at integration points
+   * @param  side side entity number
+   * @param  type side entity type
+   * @param  data entity data
+   * @return      error code
+   */
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        EntitiesFieldData::EntData &data);
+
+protected:
+  boost::shared_ptr<VectorDouble> dataPtr;
+  SmartPetscObj<Vec> dataVec;
+  const int iNdex;
+};
+
+/** \brief Get norm of input MatrixDouble for Tesnosr1
+ *
+ */
+template <int DIM>
 struct OpCalcNormL2Tesnosr1 : public ForcesAndSourcesCore::UserDataOperator {
 
   OpCalcNormL2Tesnosr1(const std::string field_name,
