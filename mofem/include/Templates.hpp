@@ -258,6 +258,25 @@ getFTensor2FromMat(ublas::matrix<T, L, A> &data) {
                 "Such getFTensor2FromMat specialisation is not implemented");
 }
 
+
+/**
+ * Template specialization for getFTensor2FromMat
+ */
+template <>
+inline FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 4, 4>
+getFTensor2FromMat(MatrixDouble &data) {
+#ifndef NDEBUG
+  if (data.size1() != 16)
+    THROW_MESSAGE("getFTensor2FromMat<4, 4>: wrong size of data matrix, numer "
+                  "of rows should be 16 but is " +
+                  boost::lexical_cast<std::string>(data.size1()));
+#endif
+  std::array<double *, 16> ptrs;
+  for (auto i = 0; i != 16; ++i)
+    ptrs[i] = &data(i, 0);
+  return FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 4, 4>(ptrs);
+}
+
 /**
  * Template specialization for getFTensor2FromMat
  */
@@ -274,6 +293,24 @@ getFTensor2FromMat(MatrixDouble &data) {
   for (auto i = 0; i != 36; ++i)
     ptrs[i] = &data(i, 0);
   return FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 6, 6>(ptrs);
+}
+
+/**
+ * Template specialization for getFTensor2FromMat
+ */
+template <>
+inline FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 9, 9>
+getFTensor2FromMat(MatrixDouble &data) {
+#ifndef NDEBUG
+  if (data.size1() != 81)
+    THROW_MESSAGE("getFTensor2FromMat<9, 9>: wrong size of data matrix, numer "
+                  "of rows should be 81 but is " +
+                  boost::lexical_cast<std::string>(data.size1()));
+#endif
+  std::array<double *, 81> ptrs;
+  for (auto i = 0; i != 81; ++i)
+    ptrs[i] = &data(i, 0);
+  return FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 9, 9>(ptrs);
 }
 
 /**
