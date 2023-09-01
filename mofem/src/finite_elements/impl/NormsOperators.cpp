@@ -35,7 +35,7 @@ MoFEMErrorCode OpCalcNormL2Tesnosr0::doWork(int side, EntityType type,
   // get values
   auto t_data = getFTensor0FromVec(*dataPtr);
   // initialise double to store norm values
-  double norm_on_element;
+  double norm_on_element = 0.;
   // loop over integration points
   for (int gg = 0; gg != nb_integration_points; gg++) {
     // take into account Jacobian
@@ -81,7 +81,7 @@ OpCalcNormL2Tesnosr1<DIM>::doWork(int side, EntityType type,
   // get vector values
   auto t_data = getFTensor1FromMat<DIM>(*dataPtr);
   // initialise double to store norm values
-  double norm_on_element;
+  double norm_on_element = 0.;
   // loop over integration points
   for (int gg = 0; gg != nb_integration_points; gg++) {
     // take into account Jacobian
@@ -128,7 +128,7 @@ OpCalcNormL2Tesnosr2<DIM_1, DIM_2>::doWork(int side, EntityType type,
   // get vector values
   auto t_data = getFTensor2FromMat<DIM_1, DIM_2>(*dataPtr);
   // initialise double to store norm values
-  double norm_on_element;
+  double norm_on_element = 0.;
   // loop over integration points
   for (int gg = 0; gg != nb_integration_points; gg++) {
     // take into account Jacobian
