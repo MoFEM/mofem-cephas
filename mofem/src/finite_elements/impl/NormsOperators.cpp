@@ -5,14 +5,14 @@
 
 // */
 
-template struct MoFEM::OpCalcNormL2Tesnosr1<2>;
-template struct MoFEM::OpCalcNormL2Tesnosr1<3>;
-template struct MoFEM::OpCalcNormL2Tesnosr2<2, 2>;
-template struct MoFEM::OpCalcNormL2Tesnosr2<3, 3>;
+template struct MoFEM::OpCalcNormL2Tensor1<2>;
+template struct MoFEM::OpCalcNormL2Tensor1<3>;
+template struct MoFEM::OpCalcNormL2Tensor2<2, 2>;
+template struct MoFEM::OpCalcNormL2Tensor2<3, 3>;
 
 namespace MoFEM {
 
-OpCalcNormL2Tesnosr0::OpCalcNormL2Tesnosr0(
+OpCalcNormL2Tensor0::OpCalcNormL2Tensor0(
     const std::string field_name, boost::shared_ptr<VectorDouble> data_ptr,
     SmartPetscObj<Vec> data_vec, const int index)
     : ForcesAndSourcesCore::UserDataOperator(
@@ -22,8 +22,8 @@ OpCalcNormL2Tesnosr0::OpCalcNormL2Tesnosr0(
     THROW_MESSAGE("Pointer is not set");
 }
 
-MoFEMErrorCode OpCalcNormL2Tesnosr0::doWork(int side, EntityType type,
-                                            EntitiesFieldData::EntData &data) {
+MoFEMErrorCode OpCalcNormL2Tensor0::doWork(int side, EntityType type,
+                                           EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   // get number of integration points
@@ -54,7 +54,7 @@ MoFEMErrorCode OpCalcNormL2Tesnosr0::doWork(int side, EntityType type,
 }
 
 template <int DIM>
-OpCalcNormL2Tesnosr1<DIM>::OpCalcNormL2Tesnosr1(
+OpCalcNormL2Tensor1<DIM>::OpCalcNormL2Tensor1(
     const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
     SmartPetscObj<Vec> data_vec, const int index)
     : ForcesAndSourcesCore::UserDataOperator(
@@ -66,8 +66,8 @@ OpCalcNormL2Tesnosr1<DIM>::OpCalcNormL2Tesnosr1(
 
 template <int DIM>
 MoFEMErrorCode
-OpCalcNormL2Tesnosr1<DIM>::doWork(int side, EntityType type,
-                                  EntitiesFieldData::EntData &data) {
+OpCalcNormL2Tensor1<DIM>::doWork(int side, EntityType type,
+                                 EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   // Declare FTensor index
@@ -100,7 +100,7 @@ OpCalcNormL2Tesnosr1<DIM>::doWork(int side, EntityType type,
 }
 
 template <int DIM_1, int DIM_2>
-OpCalcNormL2Tesnosr2<DIM_1, DIM_2>::OpCalcNormL2Tesnosr2(
+OpCalcNormL2Tensor2<DIM_1, DIM_2>::OpCalcNormL2Tensor2(
     const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
     SmartPetscObj<Vec> data_vec, const int index)
     : ForcesAndSourcesCore::UserDataOperator(
@@ -112,8 +112,8 @@ OpCalcNormL2Tesnosr2<DIM_1, DIM_2>::OpCalcNormL2Tesnosr2(
 
 template <int DIM_1, int DIM_2>
 MoFEMErrorCode
-OpCalcNormL2Tesnosr2<DIM_1, DIM_2>::doWork(int side, EntityType type,
-                                           EntitiesFieldData::EntData &data) {
+OpCalcNormL2Tensor2<DIM_1, DIM_2>::doWork(int side, EntityType type,
+                                          EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   // Declare FTensor index
