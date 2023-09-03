@@ -48,7 +48,7 @@ protected:
   MatrixDouble tangentAtGaussPts;
   MatrixDouble normalsAtGaussPts;
 
-  double lEngth;
+  double &lEngth;
 
   int numNodes;
   const EntityHandle *cOnn;
@@ -78,12 +78,6 @@ struct EdgeElementForcesAndSourcesCore::UserDataOperator
    * \brief get edge length
    */
   inline double getLength();
-
-  /**
-   * \brief get measure of element
-   * @return length of face
-   */
-  inline double getMeasure();
 
   /**
    * \brief get edge direction
@@ -194,10 +188,6 @@ EdgeElementForcesAndSourcesCore::UserDataOperator::getConn() {
 
 double EdgeElementForcesAndSourcesCore::UserDataOperator::getLength() {
   return static_cast<EdgeElementForcesAndSourcesCore *>(ptrFE)->lEngth;
-}
-
-double EdgeElementForcesAndSourcesCore::UserDataOperator::getMeasure() {
-  return getLength();
 }
 
 VectorDouble &
