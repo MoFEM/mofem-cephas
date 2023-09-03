@@ -13,10 +13,10 @@ template struct MoFEM::OpCalcNormL2Tensor2<3, 3>;
 namespace MoFEM {
 
 OpCalcNormL2Tensor0::OpCalcNormL2Tensor0(
-    const std::string field_name, boost::shared_ptr<VectorDouble> data_ptr,
-    SmartPetscObj<Vec> data_vec, const int index)
+    boost::shared_ptr<VectorDouble> data_ptr, SmartPetscObj<Vec> data_vec,
+    const int index)
     : ForcesAndSourcesCore::UserDataOperator(
-          field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
+          NOSPACE, ForcesAndSourcesCore::UserDataOperator::OPSPACE),
       dataPtr(data_ptr), dataVec(data_vec), iNdex(index) {
   if (!dataPtr)
     THROW_MESSAGE("Pointer is not set");
@@ -55,13 +55,16 @@ MoFEMErrorCode OpCalcNormL2Tensor0::doWork(int side, EntityType type,
 
 template <int DIM>
 OpCalcNormL2Tensor1<DIM>::OpCalcNormL2Tensor1(
-    const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
-    SmartPetscObj<Vec> data_vec, const int index)
+    boost::shared_ptr<MatrixDouble> data_ptr, SmartPetscObj<Vec> data_vec,
+    const int index, boost::shared_ptr<MatrixDouble> diff_data_ptr)
     : ForcesAndSourcesCore::UserDataOperator(
-          field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
-      dataPtr(data_ptr), dataVec(data_vec), iNdex(index) {
+          NOSPACE, ForcesAndSourcesCore::UserDataOperator::OPSPACE),
+      dataPtr(data_ptr), dataVec(data_vec), iNdex(index),
+      diffDataPtr(diff_data_ptr) {
   if (!dataPtr)
     THROW_MESSAGE("Pointer is not set");
+  if(!diffDataPtr)
+    diffDataPtr = dataPtr;
 }
 
 template <int DIM>
@@ -69,6 +72,9 @@ MoFEMErrorCode
 OpCalcNormL2Tensor1<DIM>::doWork(int side, EntityType type,
                                  EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
+
+  if(dataPtr != diffDataPtr)
+    *diffDataPtr -= *dataPtr;
 
   // Declare FTensor index
   FTensor::Index<'i', DIM> i;
@@ -79,21 +85,22 @@ OpCalcNormL2Tensor1<DIM>::doWork(int side, EntityType type,
   // get integration weights
   auto t_w = getFTensor0IntegrationWeight();
   // get vector values
-  auto t_data = getFTensor1FromMat<DIM>(*dataPtr);
+  auto t_data = getFTensor1FromMat<DIM>(*diffDataPtr);
   // initialise double to store norm values
   double norm_on_element = 0.;
   // loop over integration points
-  for (int gg = 0; gg != nb_integration_points; gg++) {
+  for (int gg = 0; gg != nb_integration_points; ++gg) {
     // take into account Jacobian
-    const double alpha = t_w * vol;
+    const double alpha = t_w;
     // add to element norm
-    norm_on_element += alpha * t_data(i) * t_data(i);
+    norm_on_element += alpha * (t_data(i) * t_data(i));
     // move to another integration weight
     ++t_w;
     // move to another data values
     ++t_data;
   }
 
+  norm_on_element *= vol;
   CHKERR VecSetValue(dataVec, iNdex, norm_on_element, ADD_VALUES);
 
   MoFEMFunctionReturn(0);
@@ -101,10 +108,10 @@ OpCalcNormL2Tensor1<DIM>::doWork(int side, EntityType type,
 
 template <int DIM_1, int DIM_2>
 OpCalcNormL2Tensor2<DIM_1, DIM_2>::OpCalcNormL2Tensor2(
-    const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
-    SmartPetscObj<Vec> data_vec, const int index)
+    boost::shared_ptr<MatrixDouble> data_ptr, SmartPetscObj<Vec> data_vec,
+    const int index)
     : ForcesAndSourcesCore::UserDataOperator(
-          field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
+          NOSPACE, ForcesAndSourcesCore::UserDataOperator::OPSPACE),
       dataPtr(data_ptr), dataVec(data_vec), iNdex(index) {
   if (!dataPtr)
     THROW_MESSAGE("Pointer is not set");
@@ -134,7 +141,7 @@ OpCalcNormL2Tensor2<DIM_1, DIM_2>::doWork(int side, EntityType type,
     // take into account Jacobian
     const double alpha = t_w * vol;
     // add to element norm
-    norm_on_element += alpha * t_data(i, j) * t_data(i, j);
+    norm_on_element += alpha * (t_data(i, j) * t_data(i, j));
     // move to another integration weight
     ++t_w;
     // move to another data values

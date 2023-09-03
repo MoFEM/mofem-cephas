@@ -14,8 +14,7 @@ namespace MoFEM {
 
 struct OpCalcNormL2Tensor0 : public ForcesAndSourcesCore::UserDataOperator {
 
-  OpCalcNormL2Tensor0(const std::string field_name,
-                      boost::shared_ptr<VectorDouble> data_ptr,
+  OpCalcNormL2Tensor0(boost::shared_ptr<VectorDouble> data_ptr,
                       SmartPetscObj<Vec> data_vec, const int index);
 
   /**
@@ -40,9 +39,9 @@ protected:
 template <int DIM>
 struct OpCalcNormL2Tensor1 : public ForcesAndSourcesCore::UserDataOperator {
 
-  OpCalcNormL2Tensor1(const std::string field_name,
-                      boost::shared_ptr<MatrixDouble> data_ptr,
-                      SmartPetscObj<Vec> data_vec, const int index);
+  OpCalcNormL2Tensor1(boost::shared_ptr<MatrixDouble> data_ptr,
+                      SmartPetscObj<Vec> data_vec, const int index,
+                      boost::shared_ptr<MatrixDouble> diff_data_ptr = nullptr);
 
   /**
    * \brief calculate values of scalar field at integration points
@@ -56,6 +55,7 @@ struct OpCalcNormL2Tensor1 : public ForcesAndSourcesCore::UserDataOperator {
 
 protected:
   boost::shared_ptr<MatrixDouble> dataPtr;
+  boost::shared_ptr<MatrixDouble> diffDataPtr;
   SmartPetscObj<Vec> dataVec;
   const int iNdex;
 };
@@ -66,8 +66,7 @@ protected:
 template <int DIM_1, int DIM_2>
 struct OpCalcNormL2Tensor2 : public ForcesAndSourcesCore::UserDataOperator {
 
-  OpCalcNormL2Tensor2(const std::string field_name,
-                      boost::shared_ptr<MatrixDouble> data_ptr,
+  OpCalcNormL2Tensor2(boost::shared_ptr<MatrixDouble> data_ptr,
                       SmartPetscObj<Vec> data_vec, const int index);
 
   /**
