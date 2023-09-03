@@ -8,7 +8,7 @@
 
 namespace MoFEM {
 
-/** \brief Get norm of input VectorDouble for Tesnosr0
+/** \brief Get norm of input VectorDouble for Tensor0
  *
  */
 
@@ -34,7 +34,7 @@ protected:
   const int iNdex;
 };
 
-/** \brief Get norm of input MatrixDouble for Tesnosr1
+/** \brief Get norm of input MatrixDouble for Tensor1
  *
  */
 template <int DIM>
@@ -60,7 +60,7 @@ protected:
   const int iNdex;
 };
 
-/** \brief Get norm of input MatrixDouble for Tesnosr2
+/** \brief Get norm of input MatrixDouble for Tensor2
  *
  */
 template <int DIM_1, int DIM_2>
