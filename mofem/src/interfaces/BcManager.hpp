@@ -12,12 +12,11 @@
 namespace MoFEM {
 
 template <CubitBC BC> struct BcMeshsetType {};
-
 template <CubitBC BC> struct BcScalarMeshsetType {};
-
+template <CubitBC BC> using BcTemperature = BcScalarMeshsetType<BC>;
 template <CubitBC BC> struct BcDisplacementMeshsetType {};
-
 template <CubitBC BC> struct BcForceMeshsetType {};
+template <CubitBC BC> struct BcFluxMeshsetType {};
 
 /**
  * \brief Simple interface for fast problem set-up

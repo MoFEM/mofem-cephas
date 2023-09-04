@@ -117,9 +117,9 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities(const std::string problem_name,
   auto prb_mng = m_field.getInterface<ProblemsManager>();
   MoFEMFunctionBegin;
 
-  if(problem_name.size())
-    MOFEM_LOG("BcMngWorld", Sev::warning)
-        << "Argument problem_name has no effect";
+  // if(problem_name.size())
+  //   MOFEM_LOG("BcMngWorld", Sev::warning)
+  //       << "Argument problem_name has no effect";
 
   auto fix_disp = [&]() {
     MoFEMFunctionBegin;
@@ -557,8 +557,8 @@ BcManager::removeBlockDOFsOnEntities<BcScalarMeshsetType<BLOCKSET>>(
 
       auto bc = bcMapByBlockName.at(bc_id);
 
-      if (auto disp_bc = bc->tempBcPtr) {
-        if (disp_bc->data.flag1) {
+      if (auto temp_bc = bc->tempBcPtr) {
+        if (temp_bc->data.flag1) {
           ents_to_remove.merge(bc->bcEnts);
         }
       } else {
@@ -592,9 +592,9 @@ BcManager::pushMarkDOFsOnEntities<BcMeshsetType<DISPLACEMENTSET>>(
   auto prb_mng = m_field.getInterface<ProblemsManager>();
   MoFEMFunctionBegin;
 
-  if(problem_name.size()==0)
-    MOFEM_LOG("BcMngWorld", Sev::warning)
-        << "Argument problem_name has no effect";
+  // if(problem_name.size()==0)
+  //   MOFEM_LOG("BcMngWorld", Sev::warning)
+  //       << "Argument problem_name has no effect";
 
   if (block_name_field_prefix)
     MOFEM_LOG("BcMngWorld", Sev::warning)
