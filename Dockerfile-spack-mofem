@@ -40,6 +40,11 @@ RUN . $MOFEM_ENV_FILE && \
   echo "export PATH=$MOFEM_INSTALL_DIR/um_view/bin:$PATH" >> $MOFEM_ENV_FILE && \
   chmod -R aug+rX `spack find -p mofem-users-modules | grep mofem-users-modules@lukasz | awk '{print $2}'`
 
+# Copy spack config
+RUN cp -r ~/.spack /mofem_install/spack_config_dir && \ 
+  chmod -R aug+rX /mofem_install/spack_config_dir && \
+  chmod -R aug+rwX /mofem_install/spack
+
 WORKDIR $MOFEM_INSTALL_DIR
 
 # image run hook: the -l will make sure /etc/profile environments are loaded
