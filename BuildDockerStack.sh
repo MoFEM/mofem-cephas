@@ -2,15 +2,15 @@
 
 mkdir -p empty
 
-export VERSION=0.14.0
+export VERSION=Workshop2023
 
 # Create environment
-#docker build -t likask/mofem-spack-env -f Dockerfile-spack-env empty/
-#docker tag likask/mofem-spack-env:latest likask/mofem-spack-env:$VERSION
+docker build -t likask/mofem-spack-env -f Dockerfile-spack-env empty/
+docker tag likask/mofem-spack-env:latest likask/mofem-spack-env:$VERSION
 
 #Build core and users modules
-#docker build -t likask/mofem-spack-mofem -f Dockerfile-spack-mofem . 
-#docker tag likask/mofem-spack-mofem:latest likask/mofem-spack-mofem:$VERSION
+docker build -t likask/mofem-spack-mofem -f Dockerfile-spack-mofem empty/
+docker tag likask/mofem-spack-mofem:latest likask/mofem-spack-mofem:$VERSION
 docker tag likask/mofem-spack-mofem:latest likask/mofem-intermidiate:latest
 
 #Install softmech module
@@ -26,7 +26,7 @@ docker tag likask/mofem-spack-jupyter:latest likask/mofem-spack-jupyter:$VERSION
 docker tag likask/mofem-spack-jupyter:latest likask/mofem-intermidiate:latest
 
 # Labs indentation
-docker build -t likask/mofem-spack-jupyter-labs-indentation:VERSION-new -f Dockerfile-spack-jupyter-labs-indentation .
+#dodocker build -t likask/mofem-spack-jupyter-labs-indentation:VERSION-new -f Dockerfile-spack-jupyter-labs-indentation .
 
 # Hub
 docker build -t likask/mofem-spack-jupyterhub -f Dockerfile-spack-jupyterhub jupyter
@@ -34,7 +34,7 @@ docker tag likask/mofem-spack-jupyterhub:latest likask/mofem-spack-jupyterhub:$V
 docker tag likask/mofem-spack-jupyterhub:latest likask/mofem-intermidiate:latest
 
 # Labs indentation
-docker build -t likask/mofem-spack-jupyterhub-labs-indentation:VERSION-new -f Dockerfile-spack-jupyterhub-labs-indentation .
+#docker build -t likask/mofem-spack-jupyterhub-labs-indentation:VERSION-new -f Dockerfile-spack-jupyterhub-labs-indentation .
 
 # Volume
 #docker build -t likask/mofem-spack-build -f Dockerfile-spack-volume empty

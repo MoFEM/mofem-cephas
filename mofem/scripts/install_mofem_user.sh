@@ -133,8 +133,7 @@ if [ ! -d "$SPACK_ROOT_DIR" ]; then
   if [ ! -f "$PWD/spack.tgz" ]; then
     echo "Downloading spack ..."
     mkdir -p $SPACK_ROOT_DIR &&\
-    curl -s -L https://api.github.com/repos/likask/spack/tarball/Version0.14.0 \
-    | tar xzC $SPACK_ROOT_DIR --strip 1
+    git clone -b Version0.14.0 https://github.com/likask/spack.git
     echo -e "Done.\n"
   else 
     mkdir -p $SPACK_ROOT_DIR &&\
@@ -203,7 +202,7 @@ echo "Current directory: $PWD"
   
 # Install MoFEM packages
 spack install --only dependencies mofem-cephas ^petsc+X
-spack install --test all mofem-fracture-module@0.14.0 build_type=Release ^petsc+X
+spack install --test all mofem-fracture-module@0.13.0 build_type=Release ^petsc+X
 
 # Activate fracture module
 spack view --verbose symlink -i um_view mofem-fracture-module

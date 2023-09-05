@@ -1,7 +1,7 @@
 // /** \file NormsOperators.cpp
 
-// \brief Generic user data operators for evaluate fields, and other common
-// purposes.
+// \brief User data operators for calculating norms and differences between
+// fields
 
 // */
 
@@ -14,17 +14,24 @@ namespace MoFEM {
 
 OpCalcNormL2Tensor0::OpCalcNormL2Tensor0(
     boost::shared_ptr<VectorDouble> data_ptr, SmartPetscObj<Vec> data_vec,
-    const int index)
+    const int index, boost::shared_ptr<VectorDouble> diff_data_ptr)
     : ForcesAndSourcesCore::UserDataOperator(
           NOSPACE, ForcesAndSourcesCore::UserDataOperator::OPSPACE),
-      dataPtr(data_ptr), dataVec(data_vec), iNdex(index) {
+      dataPtr(data_ptr), dataVec(data_vec), iNdex(index),
+      diffDataPtr(diff_data_ptr) {
   if (!dataPtr)
     THROW_MESSAGE("Pointer is not set");
+  if (!diffDataPtr)
+    diffDataPtr = dataPtr;
 }
 
 MoFEMErrorCode OpCalcNormL2Tensor0::doWork(int side, EntityType type,
                                            EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
+
+  // calculate the difference between data pointers and save them in diffDataPtr
+  if (dataPtr != diffDataPtr)
+    *diffDataPtr -= *dataPtr;
 
   // get number of integration points
   const auto nb_integration_points = getGaussPts().size2();
@@ -38,16 +45,16 @@ MoFEMErrorCode OpCalcNormL2Tensor0::doWork(int side, EntityType type,
   double norm_on_element = 0.;
   // loop over integration points
   for (int gg = 0; gg != nb_integration_points; gg++) {
-    // take into account Jacobian
-    const double alpha = t_w * vol;
     // add to element norm
-    norm_on_element += alpha * t_data * t_data;
+    norm_on_element += t_w * t_data * t_data;
     // move to another integration weight
     ++t_w;
     // move to another data values
     ++t_data;
   }
-
+  // scale with volume of the element
+  norm_on_element *= vol;
+  // add to dataVec at iNdex position
   CHKERR VecSetValue(dataVec, iNdex, norm_on_element, ADD_VALUES);
 
   MoFEMFunctionReturn(0);
@@ -63,7 +70,7 @@ OpCalcNormL2Tensor1<DIM>::OpCalcNormL2Tensor1(
       diffDataPtr(diff_data_ptr) {
   if (!dataPtr)
     THROW_MESSAGE("Pointer is not set");
-  if(!diffDataPtr)
+  if (!diffDataPtr)
     diffDataPtr = dataPtr;
 }
 
@@ -73,7 +80,8 @@ OpCalcNormL2Tensor1<DIM>::doWork(int side, EntityType type,
                                  EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
-  if(dataPtr != diffDataPtr)
+  // calculate the difference between data pointers and save them in diffDataPtr
+  if (dataPtr != diffDataPtr)
     *diffDataPtr -= *dataPtr;
 
   // Declare FTensor index
@@ -90,17 +98,16 @@ OpCalcNormL2Tensor1<DIM>::doWork(int side, EntityType type,
   double norm_on_element = 0.;
   // loop over integration points
   for (int gg = 0; gg != nb_integration_points; ++gg) {
-    // take into account Jacobian
-    const double alpha = t_w;
     // add to element norm
-    norm_on_element += alpha * (t_data(i) * t_data(i));
+    norm_on_element += t_w * (t_data(i) * t_data(i));
     // move to another integration weight
     ++t_w;
     // move to another data values
     ++t_data;
   }
-
+  // scale with volume of the element
   norm_on_element *= vol;
+  // add to dataVec at iNdex position
   CHKERR VecSetValue(dataVec, iNdex, norm_on_element, ADD_VALUES);
 
   MoFEMFunctionReturn(0);
@@ -109,12 +116,15 @@ OpCalcNormL2Tensor1<DIM>::doWork(int side, EntityType type,
 template <int DIM_1, int DIM_2>
 OpCalcNormL2Tensor2<DIM_1, DIM_2>::OpCalcNormL2Tensor2(
     boost::shared_ptr<MatrixDouble> data_ptr, SmartPetscObj<Vec> data_vec,
-    const int index)
+    const int index, boost::shared_ptr<MatrixDouble> diff_data_ptr)
     : ForcesAndSourcesCore::UserDataOperator(
           NOSPACE, ForcesAndSourcesCore::UserDataOperator::OPSPACE),
-      dataPtr(data_ptr), dataVec(data_vec), iNdex(index) {
+      dataPtr(data_ptr), dataVec(data_vec), iNdex(index),
+      diffDataPtr(diff_data_ptr) {
   if (!dataPtr)
     THROW_MESSAGE("Pointer is not set");
+  if (!diffDataPtr)
+    diffDataPtr = dataPtr;
 }
 
 template <int DIM_1, int DIM_2>
@@ -122,6 +132,10 @@ MoFEMErrorCode
 OpCalcNormL2Tensor2<DIM_1, DIM_2>::doWork(int side, EntityType type,
                                           EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
+
+  // calculate the difference between data pointers and save them in diffDataPtr
+  if (dataPtr != diffDataPtr)
+    *diffDataPtr -= *dataPtr;
 
   // Declare FTensor index
   FTensor::Index<'i', DIM_1> i;
@@ -138,16 +152,16 @@ OpCalcNormL2Tensor2<DIM_1, DIM_2>::doWork(int side, EntityType type,
   double norm_on_element = 0.;
   // loop over integration points
   for (int gg = 0; gg != nb_integration_points; gg++) {
-    // take into account Jacobian
-    const double alpha = t_w * vol;
     // add to element norm
-    norm_on_element += alpha * (t_data(i, j) * t_data(i, j));
+    norm_on_element += t_w * (t_data(i, j) * t_data(i, j));
     // move to another integration weight
     ++t_w;
     // move to another data values
     ++t_data;
   }
-
+  // scale with volume of the element
+  norm_on_element *= vol;
+  // add to dataVec at iNdex position
   CHKERR VecSetValue(dataVec, iNdex, norm_on_element, ADD_VALUES);
 
   MoFEMFunctionReturn(0);

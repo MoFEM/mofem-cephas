@@ -24,4 +24,4 @@ RUN cp /mofem_install/jupyter/css/* /usr/local/share/jupyterhub/static/css
 WORKDIR $MOFEM_INSTALL_DIR
 
 EXPOSE 8000
-CMD ["/bin/bash", "-c", ". ${MOFEM_ENV_FILE}; jupyterhub -f ${MOFEM_JUPYTER_HOME_DIR}/jupyterhub_config.py"]
+CMD ["/bin/bash", "-c", "service ssh start;. ${MOFEM_ENV_FILE}; jupyterhub -f ${MOFEM_JUPYTER_HOME_DIR}/jupyterhub_config.py"]
