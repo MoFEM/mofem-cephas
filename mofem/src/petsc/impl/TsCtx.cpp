@@ -336,7 +336,7 @@ PetscErrorCode TsSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx) {
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
-  for (auto &bit : ts_ctx->preProcessRHSJacobian) {
+  for (auto &bit : ts_ctx->preProcessRHSFunction) {
     bit->vecAssembleSwitch = boost::move(ts_ctx->vecAssembleSwitch);
     set(*bit);
     CHKERR ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problemName,
@@ -357,7 +357,7 @@ PetscErrorCode TsSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx) {
   }
 
   // post process
-  for (auto &bit : ts_ctx->postProcessRHSJacobian) {
+  for (auto &bit : ts_ctx->postProcessRHSFunction) {
     bit->vecAssembleSwitch = boost::move(ts_ctx->vecAssembleSwitch);
     set(*bit);
     CHKERR ts_ctx->mField.problem_basic_method_postProcess(ts_ctx->problemName,

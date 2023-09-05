@@ -128,9 +128,9 @@ getDiffMat(Val<FTensor::PackPtr<double *, 1>, 3> &t_val,
  * S_{ij} \frac{\partial^2 B_{ij}}{\partial A_{kl} \partial A_{mn} }
  * \f]
  *
- * \note Eiegn vetore are in rows.
+ * \note Eigen vector are in rows.
  *
- * @param t_val eiegn values
+ * @param t_val eigen values
  * @param t_vec eigen vectors
  * @param f function
  * @param d_f directive of function
@@ -147,13 +147,22 @@ getDiffDiffMat(Val<double, 3> &t_val, Vec<double, 3> &t_vec, Fun<double> f,
 /**
  * @copydoc EigenMatrix::getDiffDiffMat
  */
+FTensor::Ddg<double, 3, 3>
+getDiffDiffMat(Val<FTensor::PackPtr<double *, 1>, 3> &t_val,
+               Vec<FTensor::PackPtr<double *, 1>, 3> &t_vec, Fun<double> f,
+               Fun<double> d_f, Fun<double> dd_f,
+               FTensor::Tensor2_symmetric<double, 3> &t_S, const int nb);
+
+/**
+ * @copydoc EigenMatrix::getDiffDiffMat
+ */
 FTensor::Ddg<double, 3, 3> getDiffDiffMat(Val<double, 3> &t_val,
                                           Vec<double, 3> &t_vec, Fun<double> f,
                                           Fun<double> d_f, Fun<double> dd_f,
                                           FTensor::Tensor2<double, 3, 3> &t_S,
                                           const int nb);
 /**
- * @copydoc EigenMatrix::getDiffMat
+ * @copydoc EigenMatrix::getDiffDiffMat
  */
 FTensor::Ddg<double, 3, 3>
 getDiffDiffMat(Val<FTensor::PackPtr<double *, 1>, 3> &t_val,

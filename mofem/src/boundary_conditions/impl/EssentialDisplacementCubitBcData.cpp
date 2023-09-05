@@ -251,12 +251,14 @@ MoFEMErrorCode EssentialPostProcRhs<DisplacementCubitBcData>::operator()() {
         SmartPetscObj<Vec> f =
             vRhs ? vRhs : SmartPetscObj<Vec>(fe_ptr->f, true);
 
-        if ((*fe_ptr->vecAssembleSwitch) && !vRhs) {
-          CHKERR VecGhostUpdateBegin(f, ADD_VALUES, SCATTER_REVERSE);
-          CHKERR VecGhostUpdateEnd(f, ADD_VALUES, SCATTER_REVERSE);
-          CHKERR VecAssemblyBegin(f);
-          CHKERR VecAssemblyEnd(f);
-          *fe_ptr->vecAssembleSwitch = false;
+        if (fe_ptr->vecAssembleSwitch) {
+          if ((*fe_ptr->vecAssembleSwitch) && !vRhs) {
+            CHKERR VecGhostUpdateBegin(f, ADD_VALUES, SCATTER_REVERSE);
+            CHKERR VecGhostUpdateEnd(f, ADD_VALUES, SCATTER_REVERSE);
+            CHKERR VecAssemblyBegin(f);
+            CHKERR VecAssemblyEnd(f);
+            *fe_ptr->vecAssembleSwitch = false;
+          }
         }
 
         const int *index_ptr;
@@ -425,12 +427,14 @@ MoFEMErrorCode EssentialPreProcReaction<DisplacementCubitBcData>::operator()() {
 
     SmartPetscObj<Vec> f = vRhs ? vRhs : SmartPetscObj<Vec>(fe_ptr->f, true);
 
-    if ((*fe_ptr->vecAssembleSwitch) && !vRhs) {
-      CHKERR VecGhostUpdateBegin(f, ADD_VALUES, SCATTER_REVERSE);
-      CHKERR VecGhostUpdateEnd(f, ADD_VALUES, SCATTER_REVERSE);
-      CHKERR VecAssemblyBegin(f);
-      CHKERR VecAssemblyEnd(f);
-      *fe_ptr->vecAssembleSwitch = false;
+    if (fe_ptr->vecAssembleSwitch) {
+      if ((*fe_ptr->vecAssembleSwitch) && !vRhs) {
+        CHKERR VecGhostUpdateBegin(f, ADD_VALUES, SCATTER_REVERSE);
+        CHKERR VecGhostUpdateEnd(f, ADD_VALUES, SCATTER_REVERSE);
+        CHKERR VecAssemblyBegin(f);
+        CHKERR VecAssemblyEnd(f);
+        *fe_ptr->vecAssembleSwitch = false;
+      }
     }
 
     auto get_low_hi_uid_by_entities = [](auto bit_number, auto f, auto s) {

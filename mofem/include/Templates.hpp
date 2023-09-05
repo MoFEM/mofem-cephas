@@ -1077,6 +1077,14 @@ template <int DIM, int S> inline auto getFTensor1FromArray(VectorDouble &data) {
   return GetFTensor1FromArray<DIM, S>::get(data);
 }
 
+/** @copydoc getFTensor1FromArray */
+template <int DIM, int S = 0>
+inline auto getFTensor1FromArray(VectorDouble3 &data);
+
+template <> inline auto getFTensor1FromArray<3, 0>(VectorDouble3 &data) {
+  return GetFTensor1FromArray<3, 0>::get(data);
+}
+
 template <int DIM, int S>
 inline FTensor::Tensor1<FTensor::PackPtr<double *, S>, DIM>
 getFTensor1FromMat(MatrixDouble &data, const size_t rr);
@@ -1381,10 +1389,10 @@ inline MoFEMErrorCode computeEigenValuesSymmetric(const MatrixDouble &mat,
  * @param eig output eigen values sorted
  * @return MoFEMErrorCode
  */
-template <int DIM>
+template <int DIM, typename T1, typename T2>
 inline MoFEMErrorCode
-computeEigenValuesSymmetric(FTensor::Tensor2<double, DIM, DIM> &eigen_vec,
-                            FTensor::Tensor1<double, DIM> &eig) {
+computeEigenValuesSymmetric(FTensor::Tensor2<T1, DIM, DIM> &eigen_vec,
+                            FTensor::Tensor1<T2, DIM> &eig) {
   MoFEMFunctionBegin;
 
   const int n = DIM;
@@ -1398,6 +1406,7 @@ computeEigenValuesSymmetric(FTensor::Tensor2<double, DIM, DIM> &eigen_vec,
             "The algorithm failed to compute eigenvalues.");
   MoFEMFunctionReturn(0);
 }
+
 /**
  * @brief compute eigenvalues of a symmetric tensor using lapack dsyev
  *
@@ -1407,43 +1416,53 @@ computeEigenValuesSymmetric(FTensor::Tensor2<double, DIM, DIM> &eigen_vec,
  * @param eigen_vec output matrix of row eigen vectors
  * @return MoFEMErrorCode
  */
-template <int DIM>
+template <int DIM, typename T1, typename T2, typename T3>
 inline MoFEMErrorCode computeEigenValuesSymmetric(
-    const FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, DIM> &mat,
-    FTensor::Tensor1<double, DIM> &eig,
-    FTensor::Tensor2<double, DIM, DIM> &eigen_vec) {
+    const FTensor::Tensor2_symmetric<T1, DIM> &mat,
+    FTensor::Tensor1<T2, DIM> &eig,
+    FTensor::Tensor2<T3, DIM, DIM> &eigen_vec) {
   MoFEMFunctionBegin;
   for (int ii = 0; ii != DIM; ii++)
     for (int jj = 0; jj != DIM; jj++)
       eigen_vec(ii, jj) = mat(ii, jj);
 
-  CHKERR computeEigenValuesSymmetric<DIM>(eigen_vec, eig);
+  CHKERR computeEigenValuesSymmetric(eigen_vec, eig);
 
   MoFEMFunctionReturn(0);
 }
 
 /**
- * @brief compute eigenvalues of a symmetric tensor using lapack dsyev
- *
- * @tparam DIM
- * @param mat input tensor of size DIM x DIM
- * @param eig output eigen values sorted
- * @param eigen_vec output matrix of row eigen vectors
- * @return MoFEMErrorCode
- */
+ * @deprecated do not use, is kept for backward compatibility
+*/
 template <int DIM>
-inline MoFEMErrorCode
+DEPRECATED MoFEMErrorCode
+computeEigenValuesSymmetric(FTensor::Tensor2<double, DIM, DIM> &eigen_vec,
+                            FTensor::Tensor1<double, DIM> &eig) {
+  return computeEigenValuesSymmetric<DIM, double, double>(eigen_vec, eig);
+}
+
+/**
+ * @deprecated do not use, is kept for backward compatibility
+*/
+template <int DIM>
+DEPRECATED MoFEMErrorCode
 computeEigenValuesSymmetric(const FTensor::Tensor2_symmetric<double, DIM> &mat,
                             FTensor::Tensor1<double, DIM> &eig,
                             FTensor::Tensor2<double, DIM, DIM> &eigen_vec) {
-  MoFEMFunctionBegin;
-  for (int ii = 0; ii != DIM; ii++)
-    for (int jj = 0; jj != DIM; jj++)
-      eigen_vec(ii, jj) = mat(ii, jj);
+  return computeEigenValuesSymmetric<DIM, double, double, double>(mat, eig,
+                                                                  eigen_vec);
+}
 
-  CHKERR computeEigenValuesSymmetric<DIM>(eigen_vec, eig);
-
-  MoFEMFunctionReturn(0);
+/**
+ * @deprecated do not use, is kept for backward compatibility
+*/
+template <int DIM>
+DEPRECATED MoFEMErrorCode computeEigenValuesSymmetric(
+    const FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, DIM> &mat,
+    FTensor::Tensor1<double, DIM> &eig,
+    FTensor::Tensor2<double, DIM, DIM> &eigen_vec) {
+  return computeEigenValuesSymmetric<DIM, FTensor::PackPtr<double *, 1>, double,
+                                     double>(mat, eig, eigen_vec);
 }
 
 /**

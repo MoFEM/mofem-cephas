@@ -80,45 +80,9 @@
 </div>
 {% endblock login %}
 
-<style>
-  .notes {
-    text-align: left;
-    width: 50%;
-    margin-left: auto;
-    margin-right: auto;
-    padding-top: 15px;
-    padding-bottom: 100px;
-  }
-</style>
-
-<div class="notes">
-
-  <h3 id="password-and-login">Password and login</h3>
-  <ul>
-    <li>On the first login, select the password</li>
-    <li>The shell password on the SSH login is different than the JupyterHub password</li>
-    <li>Ask admin for SSH password</li>
-    <li>Change password in the shell using <a href="https://www.computerhope.com/unix/upasswor.htm">passwd</a> command
-    </li>
-    <li>Set up your shell with the command (e.g. bash):
-      <pre><code>$ usermod <span class="hljs-comment">--shell /bin/bash your_login_name</span>
-  </code></pre>
-    </li>
-  </ul>
-  <h3 id="ssh-config-if-you-have-account-on-cactus">SSH config</h3>
-  <p>Copy the following code into .ssh/config on your laptop or desktop.</p>
-  <pre><code>Host forward_greenstick
-    HostName cactus<span class="hljs-selector-class">.eng</span><span class="hljs-selector-class">.gla</span><span class="hljs-selector-class">.ac</span><span class="hljs-selector-class">.uk</span>
-    ForwardX11 yes
-    Compression yes
-    User YOUR_LOGIN_ON_HUB
-    Port <span class="hljs-number">2222</span>
-  </code></pre>
-  <p>Use <em>forward_greenstick</em> when you login in VSCode. Note tha you are connecting to <em>cactus</em> from which
-    is tunnel to <em>geenstick</em>.</p>
-
-
-</div>
+<!-- Include iframe -->
+<iframe src="https://mofem.github.io/Workshop2023/" 
+  width="100%" height="1600" title="Workshop 2023" frameborder="0" style="border:none;"></iframe>
 
 {% endblock %}
 
