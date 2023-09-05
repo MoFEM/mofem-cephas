@@ -191,6 +191,7 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint(
     CHKERR m_field.get_moab().get_connectivity(tet, conn, num_nodes, true);
 
     if constexpr (D == 3) {
+      
       local_coords.resize(3 * nb_eval_points);
       shape.resize(4 * nb_eval_points);
 
