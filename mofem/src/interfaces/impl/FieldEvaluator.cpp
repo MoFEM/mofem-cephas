@@ -191,54 +191,54 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint(
     CHKERR m_field.get_moab().get_connectivity(tet, conn, num_nodes, true);
 
     if constexpr (D == 3) {
-        local_coords.resize(3 * nb_eval_points);
-        shape.resize(4 * nb_eval_points);
+      local_coords.resize(3 * nb_eval_points);
+      shape.resize(4 * nb_eval_points);
 
-        std::array<double, 12> coords;
-        CHKERR m_field.get_moab().get_coords(conn, num_nodes, coords.data());
+      std::array<double, 12> coords;
+      CHKERR m_field.get_moab().get_coords(conn, num_nodes, coords.data());
 
-        CHKERR Tools::getLocalCoordinatesOnReferenceFourNodeTet(
-            coords.data(), &data_ptr->evalPoints[0], nb_eval_points,
-            &local_coords[0]);
-        CHKERR Tools::shapeFunMBTET<3>(&shape[0], &local_coords[0],
-                                       &local_coords[1], &local_coords[2],
-                                       nb_eval_points);
+      CHKERR Tools::getLocalCoordinatesOnReferenceFourNodeTet(
+          coords.data(), &data_ptr->evalPoints[0], nb_eval_points,
+          &local_coords[0]);
+      CHKERR Tools::shapeFunMBTET<3>(&shape[0], &local_coords[0],
+                                     &local_coords[1], &local_coords[2],
+                                     nb_eval_points);
 
-        FTensor::Index<'i', 4> i4;
-        FTensor::Tensor1<FTensor::PackPtr<double *, 4>, 4> t_shape{
-            &shape[0], &shape[1], &shape[2], &shape[3]};
-        FTensor::Tensor1<FTensor::PackPtr<double *, 4>, 4> t_shape_data{
-            &data_ptr->shapeFunctions(0, 0), &data_ptr->shapeFunctions(0, 1),
-            &data_ptr->shapeFunctions(0, 2), &data_ptr->shapeFunctions(0, 3)};
+      FTensor::Index<'i', 4> i4;
+      FTensor::Tensor1<FTensor::PackPtr<double *, 4>, 4> t_shape{
+          &shape[0], &shape[1], &shape[2], &shape[3]};
+      FTensor::Tensor1<FTensor::PackPtr<double *, 4>, 4> t_shape_data{
+          &data_ptr->shapeFunctions(0, 0), &data_ptr->shapeFunctions(0, 1),
+          &data_ptr->shapeFunctions(0, 2), &data_ptr->shapeFunctions(0, 3)};
 
-        FTensor::Index<'j', 3> j3;
-        FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_local{
-            &local_coords[0], &local_coords[1], &local_coords[2]};
-        FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_local_data{
-            &(data_ptr->localCoords(0, 0)), &(data_ptr->localCoords(0, 1)),
-            &(data_ptr->localCoords(0, 2))};
+      FTensor::Index<'j', 3> j3;
+      FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_local{
+          &local_coords[0], &local_coords[1], &local_coords[2]};
+      FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_local_data{
+          &(data_ptr->localCoords(0, 0)), &(data_ptr->localCoords(0, 1)),
+          &(data_ptr->localCoords(0, 2))};
 
-        for (int n = 0; n != nb_eval_points; ++n) {
+      for (int n = 0; n != nb_eval_points; ++n) {
 
-          const double eps = data_ptr->eps;
-          if (t_shape(0) >= 0 - eps && t_shape(0) <= 1 + eps &&
+        const double eps = data_ptr->eps;
+        if (t_shape(0) >= 0 - eps && t_shape(0) <= 1 + eps &&
 
-              t_shape(1) >= 0 - eps && t_shape(1) <= 1 + eps &&
+            t_shape(1) >= 0 - eps && t_shape(1) <= 1 + eps &&
 
-              t_shape(2) >= 0 - eps && t_shape(2) <= 1 + eps &&
+            t_shape(2) >= 0 - eps && t_shape(2) <= 1 + eps &&
 
-              t_shape(3) >= 0 - eps && t_shape(3) <= 1 + eps) {
+            t_shape(3) >= 0 - eps && t_shape(3) <= 1 + eps) {
 
-            data_ptr->evalPointEntityHandle[n] = tet;
-            t_shape_data(i4) = t_shape(i4);
-            t_local_data(j3) = t_local(j3);
-          }
-
-          ++t_shape;
-          ++t_shape_data;
-          ++t_local;
-          ++t_local_data;
+          data_ptr->evalPointEntityHandle[n] = tet;
+          t_shape_data(i4) = t_shape(i4);
+          t_local_data(j3) = t_local(j3);
         }
+
+        ++t_shape;
+        ++t_shape_data;
+        ++t_local;
+        ++t_local_data;
+      }
     }
 
     if constexpr (D == 2) {
