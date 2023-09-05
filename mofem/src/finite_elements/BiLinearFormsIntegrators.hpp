@@ -90,8 +90,8 @@ protected:
                            EntitiesFieldData::EntData &col_data);
 };
 
-template <int BASE_DIM, typename OpBase>
-struct OpMassImpl<3, BASE_DIM, GAUSS, OpBase> : public OpBase {
+template <int FIELD_DIM, typename OpBase>
+struct OpMassImpl<3, FIELD_DIM, GAUSS, OpBase> : public OpBase {
 
   OpMassImpl(const std::string row_field_name, const std::string col_field_name,
              ScalarFun beta = scalar_fun_one,
@@ -842,11 +842,11 @@ MoFEMErrorCode OpMassImpl<1, FIELD_DIM, GAUSS, OpBase>::iNtegrate(
   MoFEMFunctionReturn(0);
 };
 
-template <int BASE_DIM, typename OpBase>
-MoFEMErrorCode OpMassImpl<3, BASE_DIM, GAUSS, OpBase>::iNtegrate(
+template <int FIELD_DIM, typename OpBase>
+MoFEMErrorCode OpMassImpl<3, FIELD_DIM, GAUSS, OpBase>::iNtegrate(
     EntitiesFieldData::EntData &row_data,
     EntitiesFieldData::EntData &col_data) {
-  FTensor::Index<'i', BASE_DIM> i;
+  FTensor::Index<'i', FIELD_DIM> i;
   MoFEMFunctionBegin;
   size_t nb_base_functions = row_data.getN().size2() / 3;
   // // get element volume
