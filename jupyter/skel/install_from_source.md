@@ -32,21 +32,23 @@ id $UID
 Install users modules (Note Debug version, slower, for code developent)
 
 ```bash
-spack --config-scope /mofem_install/spack_config_dir dev-build -j 12 \
+spack --config-scope /mofem_install/spack_config_dir dev-build -j 4 \
   --test root  \
   --source-path $HOME/mofem_install/mofem-cephas/mofem/users_modules \
   mofem-users-modules@lukasz build_type=Debug install_id=$UID  \
-  ^mofem-cephas@lukasz+adol-c~copy_user_modules+docker~ipo+med~shared+slepc+tetgen build_system=cmake build_type=Release dev_path=/mofem_install/mofem-cephas install_id=0 \
+  ^mofem-cephas@lukasz+adol-c~copy_user_modules~docker~ipo+med~shared+slepc+tetgen build_system=cmake build_type=Debug dev_path=/mofem_install/mofem-cephas install_id=0 \
   ^/bkt46x3 ^/psobshg
 ```
 
 Create symbolic links to generic workshop installation, and user version
 
 ```bash
-rm -rf um_view_workshop
-rm -rf um_view_user
-spack view symlink -i um_view_workshop mofem-users-modules install_id=0
-spack view symlink -i um_view_user mofem-users-modules build_type=Debug install_id=$UID
+spack find -lv mofem-users-modules build_type=Debug install_id=$UID
+```
+
+```bash
+rm -rf um_view_debug
+spack view symlink -i um_view_debug mofem-users-modules build_type=Debug install_id=$UID
 ```
 
 ```python
