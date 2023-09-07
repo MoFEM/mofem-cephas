@@ -29,7 +29,7 @@ RUN pip3 install \
   scipy \
   gmsh \
   jupytext \
-  pyvista==0.38.5 \
+  pyvista==0.39.0 \
   pyvirtualdisplay \
   ipyvtklink \
   itkwidgets \
