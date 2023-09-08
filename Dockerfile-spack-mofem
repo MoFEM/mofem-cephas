@@ -44,11 +44,11 @@ RUN . $MOFEM_ENV_FILE && \
 RUN cp -r ~/.spack /mofem_install/spack_config_dir && \ 
   chmod -R aug+rX /mofem_install/spack_config_dir && \
   chmod -R aug+rwX /mofem_install/spack && \
-  chown -R mofem.mofem /mofem_install/mofem-cephas && \
-  chown -R mofem.mofem /mofem_install/spack && \
-  chown -R mofem.mofem /mofem_install/spack_config_dir && \
-  chown -R mofem.mofem /mofem_install/core-* && \
-  chown -R mofem.mofem /mofem_install/um-* 
+  chown -R mofem:mofem /mofem_install/mofem-cephas && \
+  chown -R mofem:mofem /mofem_install/spack && \
+  chown -R mofem:mofem /mofem_install/spack_config_dir && \
+  chown -R mofem:mofem /mofem_install/core-* && \
+  chown -R mofem:mofem /mofem_install/um-* 
   
 
 WORKDIR $MOFEM_INSTALL_DIR
