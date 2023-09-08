@@ -2,7 +2,7 @@ FROM likask/mofem-spack-env:latest
 
 LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk"
 
-ENV MOFEM_BRANCH=Workshop2023
+ENV MOFEM_BRANCH=Workspace2023
 
 RUN cd $MOFEM_INSTALL_DIR/ && \
   git clone -b $MOFEM_BRANCH https://bitbucket.org/likask/mofem-cephas.git && \
@@ -39,16 +39,6 @@ RUN . $MOFEM_ENV_FILE && \
   echo "export MOFEM_UM_HASH=$MOFEM_UM_HASH" >> $MOFEM_ENV_FILE && \
   echo "export PATH=$MOFEM_INSTALL_DIR/um_view/bin:$PATH" >> $MOFEM_ENV_FILE && \
   chmod -R aug+rX `spack find -p mofem-users-modules | grep mofem-users-modules@lukasz | awk '{print $2}'`
-
-# Copy spack config
-RUN cp -r ~/.spack /mofem_install/spack_config_dir && \ 
-  chmod -R aug+rX /mofem_install/spack_config_dir && \
-  chmod -R aug+rwX /mofem_install/spack && \
-  chown -R mofem:mofem /mofem_install/mofem-cephas && \
-  chown -R mofem:mofem /mofem_install/spack && \
-  chown -R mofem:mofem /mofem_install/spack_config_dir && \
-  chown -R mofem:mofem /mofem_install/core-* && \
-  chown -R mofem:mofem /mofem_install/um-* 
   
 
 WORKDIR $MOFEM_INSTALL_DIR

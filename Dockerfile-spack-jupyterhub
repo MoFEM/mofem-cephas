@@ -18,6 +18,16 @@ RUN useradd mofem \
   -p paN8aiEIonqJE && \
   usermod -aG sudo mofem
 
+# Copy spack config
+RUN cp -r ~/.spack /mofem_install/spack_config_dir && \ 
+  chmod -R aug+rX /mofem_install/spack_config_dir && \
+  chmod -R aug+rwX /mofem_install/spack && \
+  chown -R mofem:mofem /mofem_install/mofem-cephas && \
+  chown -R mofem:mofem /mofem_install/spack && \
+  chown -R mofem:mofem /mofem_install/spack_config_dir && \
+  chown -R mofem:mofem /mofem_install/core-* && \
+  chown -R mofem:mofem /mofem_install/um-*
+
 # Copy static styles for JupyterHub
 RUN cp /mofem_install/jupyter/css/* /usr/local/share/jupyterhub/static/css
 
