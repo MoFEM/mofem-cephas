@@ -44,12 +44,12 @@ RUN pip3 install \
   jupyter_contrib_nbextensions && \
   jupyter contrib nbextension install --sys-prefix && \
   jupyter nbextension install --py jupytext --sys-prefix && \
-  jupyter nbextension enable --py jupytext --sys-prefix  && \
-  jupyter nbextension enable equation-numbering/main && \
-  jupyter nbextension enable splitcell/splitcell && \
-  jupyter nbextension enable spellchecker/main && \
-  jupyter nbextension enable collapsible_headings/main && \
-  jupyter nbextension enable codefolding/main 
+  jupyter nbextension enable --py jupytext --sys-prefix && \
+  jupyter nbextension enable equation-numbering/main --sys-prefix && \
+  jupyter nbextension enable splitcell/splitcell --sys-prefix && \
+  jupyter nbextension enable spellchecker/main --sys-prefix && \
+  jupyter nbextension enable collapsible_headings/main --sys-prefix && \
+  jupyter nbextension enable codefolding/main --sys-prefix 
 
 # allow jupyterlab for ipyvtk
 ENV DISPLAY=:99.0
