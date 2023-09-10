@@ -1393,6 +1393,7 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcForceMeshsetType<BLOCKSET>>(
       }
 
       bc->forceBcPtr = boost::make_shared<ForceCubitBcData>();
+      // For details look at ForceCubitBcData in mofem/src/multi_indices/BCData.hpp
       bc->forceBcPtr->data.value1 = 1;
       bc->forceBcPtr->data.value3 = bc->bcAttributes[0];
       bc->forceBcPtr->data.value4 = bc->bcAttributes[1];
