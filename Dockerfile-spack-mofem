@@ -2,7 +2,12 @@ FROM likask/mofem-spack-env:latest
 
 LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk"
 
-ADD . $MOFEM_SRC_DIR/
+ENV MOFEM_BRANCH=Workshop2023
+
+RUN cd $MOFEM_INSTALL_DIR/ && \
+  git clone -b $MOFEM_BRANCH https://bitbucket.org/likask/mofem-cephas.git && \
+  git clone -b $MOFEM_BRANCH https://likask@bitbucket.org/mofem/users-modules-cephas.git mofem-cephas/mofem/users_modules && \
+  git clone -b $MOFEM_BRANCH https://likask@bitbucket.org/mofem/um_eshelbian_plasticity.git mofem-cephas/mofem/users_modules/eshelbian_plasticity
 
 ENV MOFEM_ENV_FILE=/etc/profile.d/mofem.sh
 
@@ -26,13 +31,15 @@ RUN . $MOFEM_ENV_FILE && \
   --test root  \
   --source-path $MOFEM_UM_SRC_DIR \
   mofem-users-modules@lukasz+docker build_type=Release \
-  ^/$MOFEM_CEPHAS_HASH && \
+  ^mofem-cephas@lukasz+adol-c~copy_user_modules+docker~ipo+med~shared+slepc+tetgen build_system=cmake build_type=Release dev_path=/mofem_install/mofem-cephas install_id=0 \
+  ^/psobshg ^/bkt46x3 && \
   export MOFEM_UM_HASH=`spack find -lv mofem-users-modules | awk '/mofem-users-modules/ {print $1}' | head -n 1` && \
   cd $MOFEM_INSTALL_DIR/um-build-Release-$MOFEM_UM_HASH && make clean && \
   spack view symlink -i $MOFEM_INSTALL_DIR/um_view /$MOFEM_UM_HASH && \
   echo "export MOFEM_UM_HASH=$MOFEM_UM_HASH" >> $MOFEM_ENV_FILE && \
   echo "export PATH=$MOFEM_INSTALL_DIR/um_view/bin:$PATH" >> $MOFEM_ENV_FILE && \
   chmod -R aug+rX `spack find -p mofem-users-modules | grep mofem-users-modules@lukasz | awk '{print $2}'`
+  
 
 WORKDIR $MOFEM_INSTALL_DIR
 
