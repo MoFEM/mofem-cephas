@@ -34,7 +34,19 @@ public:
     Tensor1_constructor<T * restrict, Tensor_Dim>(data, d0, d1, d2, d3);
   }
   Tensor1(T *d0, T *d1, T *d2, T *d3, T *d4, T *d5, const int i = 1) : inc(i) {
-    Tensor1_constructor<T * restrict, Tensor_Dim>(data, d0, d1, d2, d3, d4, d5);
+    Tensor1_constructor<T *restrict, Tensor_Dim>(data, d0, d1, d2, d3, d4, d5);
+  }
+  Tensor1(T *d0, T *d1, T *d2, T *d3, T *d4, T *d5, T *d6, T *d7,
+          const int i = 1)
+      : inc(i) {
+    Tensor1_constructor<T *restrict, Tensor_Dim>(data, d0, d1, d2, d3, d4, d5,
+                                                 d6, d7);
+  }
+  Tensor1(T *d0, T *d1, T *d2, T *d3, T *d4, T *d5, T *d6, T *d7, T *d8,
+          const int i = 1)
+      : inc(i) {
+    Tensor1_constructor<T *restrict, Tensor_Dim>(data, d0, d1, d2, d3, d4, d5,
+                                                 d6, d7, d8);
   }
   /* Initializations for varying numbers of elements. */
   template <class... U> Tensor1(U *... d) : data(d...), inc(1) {}
@@ -46,6 +58,20 @@ public:
   }
 
   Tensor1(const int i = 1) : inc(i) {}
+
+  Tensor1<T, Tensor_Dim> normalize() {
+    const Index<'a', Tensor_Dim> a;
+    (*this)(a) /= l2();
+    return *this;
+  }
+
+  T l2() const { return sqrt(l2_squared(Number<Tensor_Dim>())); }
+
+  template <int Current_Dim> T l2_squared(const Number<Current_Dim> &) const {
+    return (*data[Current_Dim - 1]) * (*data[Current_Dim - 1]) +
+           l2_squared(Number<Current_Dim - 1>());
+  }
+  T l2_squared(const Number<1> &) const { return (*data[0]) * (*data[0]); }
 
   /* There are two operator(int)'s, one for non-consts that lets you
      change the value, and one for consts that doesn't. */

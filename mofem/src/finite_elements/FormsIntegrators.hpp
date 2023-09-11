@@ -204,36 +204,14 @@ template <AssemblyType A, typename EleOp> struct OpBaseImpl : public EleOp {
   FEFun feScalingFun;               ///< assumes that time variable is set
   boost::shared_ptr<Range> entsPtr; ///< Entities on which element is run
 
-  enum AssembleTo { AMat, BMat };   ///< Where to assemble
+  using MatSetValuesHook = boost::function<MoFEMErrorCode(
+      ForcesAndSourcesCore::UserDataOperator *op_ptr,
+      const EntitiesFieldData::EntData &row_data,
+      const EntitiesFieldData::EntData &col_data, MatrixDouble &m)>;
 
-  /**
-   * @brief Where to assemble 
-   * 
-   * \note Default assembly is BMat, i.e. preconditioner matrix
-   * 
-   * @param a_to 
-   * @return MoFEMErrorCode 
-   */
-  inline void setAssembleTo(AssembleTo a_to) { assembleTo = a_to; };
+  static MatSetValuesHook matSetValuesHook;
 
 protected:
-  enum AssembleTo assembleTo = BMat;
-
-  /**
-   * @brief Select matrix
-   * 
-   * @return auto 
-   */
-  inline auto matSelector() {
-    switch (assembleTo) {
-      case AMat:
-        return this->getKSPA();
-      case BMat:
-        return this->getKSPB();
-    }
-    return this->getKSPB();
-  };
-
 
   template <int DIM>
   inline FTensor::Tensor1<FTensor::PackPtr<double *, DIM>, DIM> getNf() {
@@ -287,6 +265,16 @@ protected:
 
   virtual MoFEMErrorCode aSsemble(EntData &data);
 };
+
+template <AssemblyType A, typename EleOp>
+typename OpBaseImpl<A, EleOp>::MatSetValuesHook
+    OpBaseImpl<A, EleOp>::matSetValuesHook =
+        [](ForcesAndSourcesCore::UserDataOperator *op_ptr,
+           const EntitiesFieldData::EntData &row_data,
+           const EntitiesFieldData::EntData &col_data, MatrixDouble &m) {
+          return MatSetValues<AssemblyTypeSelector<A>>(
+              op_ptr->getKSPB(), row_data, col_data, m, ADD_VALUES);
+        };
 
 /**
  * @brief Integrator forms
@@ -430,14 +418,12 @@ MoFEMErrorCode OpBaseImpl<A, EleOp>::aSsemble(EntData &row_data,
     this->locMatTranspose.resize(this->locMat.size2(), this->locMat.size1(),
                                  false);
     noalias(this->locMatTranspose) = trans(this->locMat);
-    CHKERR MatSetValues<AssemblyTypeSelector<A>>(
-        matSelector(), col_data, row_data, this->locMatTranspose, ADD_VALUES);
+    CHKERR matSetValuesHook(this, col_data, row_data, this->locMatTranspose);
   }
 
   if (!this->onlyTranspose) {
     // assemble local matrix
-    CHKERR MatSetValues<AssemblyTypeSelector<A>>(
-        matSelector(), row_data, col_data, this->locMat, ADD_VALUES);
+    CHKERR matSetValuesHook(this, row_data, col_data, this->locMat);
   }
 
   MoFEMFunctionReturn(0);

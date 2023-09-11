@@ -210,7 +210,7 @@ PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
     ts_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
 
-  if (ts_ctx->matAssembleSwitch) {
+  if (*(ts_ctx->matAssembleSwitch)) {
     CHKERR MatAssemblyBegin(B, MAT_FINAL_ASSEMBLY);
     CHKERR MatAssemblyEnd(B, MAT_FINAL_ASSEMBLY);
   }
@@ -336,7 +336,7 @@ PetscErrorCode TsSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx) {
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
-  for (auto &bit : ts_ctx->preProcessRHSJacobian) {
+  for (auto &bit : ts_ctx->preProcessRHSFunction) {
     bit->vecAssembleSwitch = boost::move(ts_ctx->vecAssembleSwitch);
     set(*bit);
     CHKERR ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problemName,
@@ -357,7 +357,7 @@ PetscErrorCode TsSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx) {
   }
 
   // post process
-  for (auto &bit : ts_ctx->postProcessRHSJacobian) {
+  for (auto &bit : ts_ctx->postProcessRHSFunction) {
     bit->vecAssembleSwitch = boost::move(ts_ctx->vecAssembleSwitch);
     set(*bit);
     CHKERR ts_ctx->mField.problem_basic_method_postProcess(ts_ctx->problemName,
@@ -457,7 +457,7 @@ PetscErrorCode TsSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
     ts_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
 
-  if (ts_ctx->matAssembleSwitch) {
+  if (*(ts_ctx->matAssembleSwitch)) {
     CHKERR MatAssemblyBegin(B, MAT_FINAL_ASSEMBLY);
     CHKERR MatAssemblyEnd(B, MAT_FINAL_ASSEMBLY);
   }
@@ -555,7 +555,7 @@ PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
     ts_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
 
-  if (ts_ctx->matAssembleSwitch) {
+  if (*(ts_ctx->matAssembleSwitch)) {
     CHKERR MatAssemblyBegin(B, MAT_FINAL_ASSEMBLY);
     CHKERR MatAssemblyEnd(B, MAT_FINAL_ASSEMBLY);
   }

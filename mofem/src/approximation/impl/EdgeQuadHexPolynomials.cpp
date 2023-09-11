@@ -1428,7 +1428,8 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hdiv_FaceShapeFunctions_ONHEX(
 
   for (int face = 0; face != 6; face++) {
 
-    const int nb_dofs = (p[face] * p[face]);
+    const int nb_dofs =
+        NBFACEQUAD_DEMKOWICZ_QUAD_HDIV_GEMERAL(p[face], p[face]);
 
     if (nb_dofs > 0) {
 
@@ -1497,14 +1498,17 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hdiv_FaceShapeFunctions_ONHEX(
         t_cross(i) =
             FTensor::levi_civita(i, j, k) * t_diff_ksi01(j) * t_diff_ksi12(k);
 
-        double zeta[p[0] + 1];
-        double diff_zeta[3 * (p[0] + 1)];
-        CHKERR Legendre_polynomials(p[0], ksi01, &t_diff_ksi01(0), zeta,
+        const auto p_zeta = p[face];
+        const auto p_eta = p_zeta;
+
+        double zeta[p[face] + 1];
+        double diff_zeta[3 * (p[face] + 1)];
+        CHKERR Legendre_polynomials(p[face], ksi01, &t_diff_ksi01(0), zeta,
                                     diff_zeta, 3);
 
-        double eta[p[1] + 1];
-        double diff_eta[3 * (p[1] + 1)];
-        CHKERR Legendre_polynomials(p[1], ksi12, &t_diff_ksi12(0), eta,
+        double eta[p_eta + 1];
+        double diff_eta[3 * (p_eta + 1)];
+        CHKERR Legendre_polynomials(p_eta, ksi12, &t_diff_ksi12(0), eta,
                                     diff_eta, 3);
 
         for (int n = 0; n != nb_dofs; ++n) {
@@ -1516,11 +1520,11 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hdiv_FaceShapeFunctions_ONHEX(
           const double ez = e * z;
 
           auto t_diff_zeta = FTensor::Tensor1<double, 3>{
-              diff_zeta[ii], diff_zeta[1 * (p[0] + 1) + ii],
-              diff_zeta[2 * (p[0] + 1) + ii]};
+              diff_zeta[ii], diff_zeta[1 * (p_zeta + 1) + ii],
+              diff_zeta[2 * (p_zeta + 1) + ii]};
           auto t_diff_eta = FTensor::Tensor1<double, 3>{
-              diff_eta[jj], diff_eta[1 * (p[1] + 1) + jj],
-              diff_eta[2 * (p[1] + 1) + jj]};
+              diff_eta[jj], diff_eta[1 * (p_eta + 1) + jj],
+              diff_eta[2 * (p_eta + 1) + jj]};
 
           t_n(i) = t_cross(i) * ez * mu;
           t_diff_n(i, j) =

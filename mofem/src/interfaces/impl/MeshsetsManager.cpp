@@ -52,14 +52,30 @@ MoFEMErrorCode MeshsetsManager::clearMap() {
 }
 
 MoFEMErrorCode MeshsetsManager::initialiseDatabaseFromMesh(int verb) {
+  Interface &m_field = cOre;
   MoFEMFunctionBegin;
   CHKERR readMeshsets(verb);
   if (brodcastMeshsets)
     CHKERR broadcastMeshsets(verb);
 
+  std::vector<const CubitMeshSets *> vec_ptr;
+
   for (auto &m : cubitMeshsets) {
-    MOFEM_LOG("MeshsetMngWorld", Sev::inform) << m;
+    vec_ptr.push_back(&m);
   }
+  std::sort(vec_ptr.begin(), vec_ptr.end(),
+            [](const CubitMeshSets *a, const CubitMeshSets *b) {
+              return a->getMeshsetId() < b->getMeshsetId();
+            });
+
+  for (auto m_ptr : vec_ptr) {
+    MOFEM_LOG("MeshsetMngWorld", Sev::inform) << *m_ptr;
+  }
+  // Verbose synchronised print
+  for (auto m_ptr : vec_ptr) {
+    MOFEM_LOG("MeshsetMngSync", Sev::verbose) << *m_ptr;
+  }
+  MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::verbose);
 
   MoFEMFunctionReturn(0);
 }
@@ -541,6 +557,11 @@ MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
       vec_ptr.push_back(&c);
     }
   }
+  std::sort(vec_ptr.begin(), vec_ptr.end(),
+            [](const CubitMeshSets *a, const CubitMeshSets *b) {
+              return a->getMeshsetId() < b->getMeshsetId();
+            });
+
   MoFEMFunctionReturn(0);
 }
 
@@ -564,6 +585,10 @@ MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
       vec_ptr.push_back(&*r.first);
     }
   }
+  std::sort(vec_ptr.begin(), vec_ptr.end(),
+            [](const CubitMeshSets *a, const CubitMeshSets *b) {
+              return a->getMeshsetId() < b->getMeshsetId();
+            });
   MoFEMFunctionReturn(0);
 }
 

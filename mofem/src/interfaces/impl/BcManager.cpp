@@ -5,6 +5,31 @@
 
 namespace MoFEM {
 
+namespace BcManagerImplTools {
+
+auto get_dim(const Range &ents) {
+  for (auto d : {3, 2, 1})
+    if (ents.num_of_dimension(d))
+      return d;
+  return 0;
+};
+
+auto get_adj_ents(moab::Interface &moab, const Range &ents) {
+  Range verts;
+  CHK_MOAB_THROW(moab.get_connectivity(ents, verts, true), "get verts");
+  const auto dim = get_dim(ents);
+  for (size_t d = 1; d < dim; ++d) {
+    for (auto dd = d + 1; dd <= dim; ++dd) {
+      CHK_MOAB_THROW(moab.get_adjacencies(ents.subset_by_dimension(dd), d,
+                                          false, verts, moab::Interface::UNION),
+                     "get adj");
+    }
+  }
+  verts.merge(ents);
+  return verts;
+}
+} // namespace BcManagerImplTools
+
 MoFEMErrorCode
 BcManager::query_interface(boost::typeindex::type_index type_index,
                            UnknownInterface **iface) const {
@@ -92,24 +117,9 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities(const std::string problem_name,
   auto prb_mng = m_field.getInterface<ProblemsManager>();
   MoFEMFunctionBegin;
 
-  auto get_dim = [&](const Range &ents) {
-    for (auto d : {3, 2, 1})
-      if (ents.num_of_dimension(d))
-        return d;
-    return 0;
-  };
-
-  auto get_adj_ents = [&](const Range &ents) {
-    Range verts;
-    CHKERR m_field.get_moab().get_connectivity(ents, verts, true);
-    const auto dim = get_dim(ents);
-    for (size_t d = 1; d < dim; ++d)
-      CHKERR m_field.get_moab().get_adjacencies(ents, d, false, verts,
-                                                moab::Interface::UNION);
-    verts.merge(ents);
-    CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(verts);
-    return verts;
-  };
+  // if(problem_name.size())
+  //   MOFEM_LOG("BcMngWorld", Sev::warning)
+  //       << "Argument problem_name has no effect";
 
   auto fix_disp = [&]() {
     MoFEMFunctionBegin;
@@ -127,22 +137,23 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities(const std::string problem_name,
         auto bc = boost::make_shared<BCs>();
         CHKERR m_field.get_moab().get_entities_by_handle(m->getMeshset(),
                                                          bc->bcEnts, true);
-        CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(
-            bc->bcEnts);
         CHKERR m->getAttributes(bc->bcAttributes);
 
+        if (problem_name.size())
+          CHKERR mark_fix_dofs(bc->bcMarkers, lo, hi);
         MOFEM_LOG("BcMngWorld", Sev::verbose)
-            << "Found block " << m->getName() << " number of entities "
-            << bc->bcEnts.size() << " number of attributes "
-            << bc->bcAttributes.size() << " highest dim of entities "
-            << get_dim(bc->bcEnts);
-        CHKERR mark_fix_dofs(bc->bcMarkers, lo, hi);
+            << "Found block " << m->getName() << " number of attributes "
+            << bc->bcAttributes.size();
+
         if (get_low_dim_ents) {
-          auto low_dim_ents = get_adj_ents(bc->bcEnts);
-          CHKERR prb_mng->markDofs(problem_name, ROW, ProblemsManager::AND,
-                                   low_dim_ents, bc->bcMarkers);
+          auto low_dim_ents =
+              BcManagerImplTools::get_adj_ents(m_field.get_moab(), bc->bcEnts);
           bc->bcEnts.swap(low_dim_ents);
-        } else
+        }
+
+        CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(
+            bc->bcEnts);
+        if (problem_name.size())
           CHKERR prb_mng->markDofs(problem_name, ROW, ProblemsManager::AND,
                                    bc->bcEnts, bc->bcMarkers);
 
@@ -434,7 +445,7 @@ MoFEMErrorCode BcManager::removeBlockDOFsOnEntities<BcMeshsetType<HEATFLUXSET>>(
 
 template <>
 MoFEMErrorCode
-BcManager::removeBlockDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
+BcManager::removeBlockDOFsOnEntities<BcDisplacementMeshsetType<BLOCKSET>>(
     const std::string problem_name, const std::string field_name,
     bool get_low_dim_ents, bool block_name_field_prefix,
     bool is_distributed_mesh) {
@@ -442,7 +453,7 @@ BcManager::removeBlockDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
   auto prb_mng = m_field.getInterface<ProblemsManager>();
   MoFEMFunctionBegin;
 
-  CHKERR pushMarkDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
+  CHKERR pushMarkDOFsOnEntities<BcDisplacementMeshsetType<BLOCKSET>>(
       problem_name, field_name, get_low_dim_ents, block_name_field_prefix);
 
   std::array<Range, 3> ents_to_remove;
@@ -546,8 +557,8 @@ BcManager::removeBlockDOFsOnEntities<BcScalarMeshsetType<BLOCKSET>>(
 
       auto bc = bcMapByBlockName.at(bc_id);
 
-      if (auto disp_bc = bc->tempBcPtr) {
-        if (disp_bc->data.flag1) {
+      if (auto temp_bc = bc->tempBcPtr) {
+        if (temp_bc->data.flag1) {
           ents_to_remove.merge(bc->bcEnts);
         }
       } else {
@@ -581,28 +592,13 @@ BcManager::pushMarkDOFsOnEntities<BcMeshsetType<DISPLACEMENTSET>>(
   auto prb_mng = m_field.getInterface<ProblemsManager>();
   MoFEMFunctionBegin;
 
+  // if(problem_name.size()==0)
+  //   MOFEM_LOG("BcMngWorld", Sev::warning)
+  //       << "Argument problem_name has no effect";
+
   if (block_name_field_prefix)
     MOFEM_LOG("BcMngWorld", Sev::warning)
         << "Argument block_name_field_prefix=true has no effect";
-
-  auto get_dim = [&](const Range &ents) {
-    for (auto d : {3, 2, 1})
-      if (ents.num_of_dimension(d))
-        return d;
-    return 0;
-  };
-
-  auto get_adj_ents = [&](const Range &ents) {
-    Range verts;
-    CHKERR m_field.get_moab().get_connectivity(ents, verts, true);
-    const auto dim = get_dim(ents);
-    for (size_t d = 1; d < dim; ++d)
-      CHKERR m_field.get_moab().get_adjacencies(ents, d, false, verts,
-                                                moab::Interface::UNION);
-    verts.merge(ents);
-    CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(verts);
-    return verts;
-  };
 
   auto fix_disp = [&]() {
     MoFEMFunctionBegin;
@@ -613,62 +609,73 @@ BcManager::pushMarkDOFsOnEntities<BcMeshsetType<DISPLACEMENTSET>>(
         auto bc = boost::make_shared<BCs>();
         CHKERR m_field.get_moab().get_entities_by_handle(m->getMeshset(),
                                                          bc->bcEnts, true);
-
         bc->dispBcPtr = boost::make_shared<DisplacementCubitBcData>();
         CHKERR m->getBcDataStructure(*(bc->dispBcPtr));
 
         MOFEM_LOG("BcMngWorld", Sev::verbose)
-            << "Found block DISPLACEMENTSET number of entities "
-            << bc->bcEnts.size() << " highest dim of entities "
-            << get_dim(bc->bcEnts);
+            << "Found block DISPLACEMENTSET id = " << m->getMeshsetId();
         MOFEM_LOG("BcMngWorld", Sev::verbose) << *bc->dispBcPtr;
 
-        if (bc->dispBcPtr->data.flag1)
-          CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 0, 0,
-                                         ProblemsManager::MarkOP::OR, 1,
-                                         bc->bcMarkers);
-        if (bc->dispBcPtr->data.flag2)
-          CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 1, 1,
-                                         ProblemsManager::MarkOP::OR, 1,
-                                         bc->bcMarkers);
-        if (bc->dispBcPtr->data.flag3)
-          CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 2, 2,
-                                         ProblemsManager::MarkOP::OR, 1,
-                                         bc->bcMarkers);
-        if (bc->dispBcPtr->data.flag4) {
+        MOFEM_LOG("BcMngSync", Sev::noisy)
+            << "Found block DISPLACEMENTSET id = " << m->getMeshsetId()
+            << " nb. of entities " << bc->bcEnts.size()
+            << " highest dim of entities "
+            << BcManagerImplTools::get_dim(bc->bcEnts);
+        MOFEM_LOG("BcMngSync", Sev::noisy) << *bc->dispBcPtr;
+        MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::noisy);
 
-          CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 1, 1,
-                                         ProblemsManager::MarkOP::OR, 1,
-                                         bc->bcMarkers);
-          CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 2, 2,
-                                         ProblemsManager::MarkOP::OR, 1,
-                                         bc->bcMarkers);
-        }
-        if (bc->dispBcPtr->data.flag5) {
+        if (problem_name.size()) {
 
-          CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 0, 0,
-                                         ProblemsManager::MarkOP::OR, 1,
-                                         bc->bcMarkers);
-          CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 2, 2,
-                                         ProblemsManager::MarkOP::OR, 1,
-                                         bc->bcMarkers);
-        }
-        if (bc->dispBcPtr->data.flag6) {
+          if (bc->dispBcPtr->data.flag1)
+            CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 0, 0,
+                                           ProblemsManager::MarkOP::OR, 1,
+                                           bc->bcMarkers);
+          if (bc->dispBcPtr->data.flag2)
+            CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 1, 1,
+                                           ProblemsManager::MarkOP::OR, 1,
+                                           bc->bcMarkers);
+          if (bc->dispBcPtr->data.flag3)
+            CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 2, 2,
+                                           ProblemsManager::MarkOP::OR, 1,
+                                           bc->bcMarkers);
+          if (bc->dispBcPtr->data.flag4) {
 
-          CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 0, 0,
-                                         ProblemsManager::MarkOP::OR, 1,
-                                         bc->bcMarkers);
-          CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 1, 1,
-                                         ProblemsManager::MarkOP::OR, 1,
-                                         bc->bcMarkers);
+            CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 1, 1,
+                                           ProblemsManager::MarkOP::OR, 1,
+                                           bc->bcMarkers);
+            CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 2, 2,
+                                           ProblemsManager::MarkOP::OR, 1,
+                                           bc->bcMarkers);
+          }
+          if (bc->dispBcPtr->data.flag5) {
+
+            CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 0, 0,
+                                           ProblemsManager::MarkOP::OR, 1,
+                                           bc->bcMarkers);
+            CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 2, 2,
+                                           ProblemsManager::MarkOP::OR, 1,
+                                           bc->bcMarkers);
+          }
+          if (bc->dispBcPtr->data.flag6) {
+
+            CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 0, 0,
+                                           ProblemsManager::MarkOP::OR, 1,
+                                           bc->bcMarkers);
+            CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 1, 1,
+                                           ProblemsManager::MarkOP::OR, 1,
+                                           bc->bcMarkers);
+          }
         }
 
         if (get_low_dim_ents) {
-          auto low_dim_ents = get_adj_ents(bc->bcEnts);
-          CHKERR prb_mng->markDofs(problem_name, ROW, ProblemsManager::AND,
-                                   low_dim_ents, bc->bcMarkers);
+          auto low_dim_ents =
+              BcManagerImplTools::get_adj_ents(m_field.get_moab(), bc->bcEnts);
           bc->bcEnts.swap(low_dim_ents);
-        } else
+        }
+
+        CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(
+            bc->bcEnts);
+        if (problem_name.size())
           CHKERR prb_mng->markDofs(problem_name, ROW, ProblemsManager::AND,
                                    bc->bcEnts, bc->bcMarkers);
 
@@ -707,25 +714,6 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcMeshsetType<TEMPERATURESET>>(
     MOFEM_LOG("BcMngWorld", Sev::warning)
         << "Argument block_name_field_prefix=true has no effect";
 
-  auto get_dim = [&](const Range &ents) {
-    for (auto d : {3, 2, 1})
-      if (ents.num_of_dimension(d))
-        return d;
-    return 0;
-  };
-
-  auto get_adj_ents = [&](const Range &ents) {
-    Range verts;
-    CHKERR m_field.get_moab().get_connectivity(ents, verts, true);
-    const auto dim = get_dim(ents);
-    for (size_t d = 1; d < dim; ++d)
-      CHKERR m_field.get_moab().get_adjacencies(ents, d, false, verts,
-                                                moab::Interface::UNION);
-    verts.merge(ents);
-    CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(verts);
-    return verts;
-  };
-
   auto fix_temp = [&]() {
     MoFEMFunctionBegin;
 
@@ -739,9 +727,7 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcMeshsetType<TEMPERATURESET>>(
         CHKERR m->getBcDataStructure(*(bc->tempBcPtr));
 
         MOFEM_LOG("BcMngWorld", Sev::verbose)
-            << "Found block TEMPERATURESET number of entities "
-            << bc->bcEnts.size() << " highest dim of entities "
-            << get_dim(bc->bcEnts);
+            << "Found block TEMPERATURESET id = " << m->getMeshsetId();
         MOFEM_LOG("BcMngWorld", Sev::verbose) << *bc->tempBcPtr;
 
         CHKERR prb_mng->modifyMarkDofs(
@@ -749,13 +735,15 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcMeshsetType<TEMPERATURESET>>(
             ProblemsManager::MarkOP::OR, 1, bc->bcMarkers);
 
         if (get_low_dim_ents) {
-          auto low_dim_ents = get_adj_ents(bc->bcEnts);
-          CHKERR prb_mng->markDofs(problem_name, ROW, ProblemsManager::AND,
-                                   low_dim_ents, bc->bcMarkers);
+          auto low_dim_ents =
+              BcManagerImplTools::get_adj_ents(m_field.get_moab(), bc->bcEnts);
           bc->bcEnts.swap(low_dim_ents);
-        } else
-          CHKERR prb_mng->markDofs(problem_name, ROW, ProblemsManager::AND,
-                                   bc->bcEnts, bc->bcMarkers);
+        }
+
+        CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(
+            bc->bcEnts);
+        CHKERR prb_mng->markDofs(problem_name, ROW, ProblemsManager::AND,
+                                 bc->bcEnts, bc->bcMarkers);
 
         const std::string bc_id =
             problem_name + "_" + field_name + "_TEMPERATURESET" +
@@ -792,25 +780,6 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcMeshsetType<HEATFLUXSET>>(
     MOFEM_LOG("BcMngWorld", Sev::warning)
         << "Argument block_name_field_prefix=true has no effect";
 
-  auto get_dim = [&](const Range &ents) {
-    for (auto d : {3, 2, 1})
-      if (ents.num_of_dimension(d))
-        return d;
-    return 0;
-  };
-
-  auto get_adj_ents = [&](const Range &ents) {
-    Range verts;
-    CHKERR m_field.get_moab().get_connectivity(ents, verts, true);
-    const auto dim = get_dim(ents);
-    for (size_t d = 1; d < dim; ++d)
-      CHKERR m_field.get_moab().get_adjacencies(ents, d, false, verts,
-                                                moab::Interface::UNION);
-    verts.merge(ents);
-    CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(verts);
-    return verts;
-  };
-
   auto fix_disp = [&]() {
     MoFEMFunctionBegin;
 
@@ -823,23 +792,24 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcMeshsetType<HEATFLUXSET>>(
         bc->heatFluxBcPtr = boost::make_shared<HeatFluxCubitBcData>();
         CHKERR m->getBcDataStructure(*(bc->heatFluxBcPtr));
 
-        MOFEM_LOG("BcMngWorld", Sev::verbose)
-            << "Found block HEATFLUX number of entities " << bc->bcEnts.size()
-            << " highest dim of entities " << get_dim(bc->bcEnts);
-        MOFEM_LOG("BcMngWorld", Sev::verbose) << *bc->heatFluxBcPtr;
-
         CHKERR prb_mng->modifyMarkDofs(
             problem_name, ROW, field_name, 0, MAX_DOFS_ON_ENTITY,
             ProblemsManager::MarkOP::OR, 1, bc->bcMarkers);
 
+        MOFEM_LOG("BcMngWorld", Sev::verbose)
+            << "Found block HEATFLUX id = " << m->getMeshsetId();
+        MOFEM_LOG("BcMngWorld", Sev::verbose) << *bc->heatFluxBcPtr;
+
         if (get_low_dim_ents) {
-          auto low_dim_ents = get_adj_ents(bc->bcEnts);
-          CHKERR prb_mng->markDofs(problem_name, ROW, ProblemsManager::AND,
-                                   low_dim_ents, bc->bcMarkers);
+          auto low_dim_ents =
+              BcManagerImplTools::get_adj_ents(m_field.get_moab(), bc->bcEnts);
           bc->bcEnts.swap(low_dim_ents);
-        } else
-          CHKERR prb_mng->markDofs(problem_name, ROW, ProblemsManager::AND,
-                                   bc->bcEnts, bc->bcMarkers);
+        }
+
+        CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(
+            bc->bcEnts);
+        CHKERR prb_mng->markDofs(problem_name, ROW, ProblemsManager::AND,
+                                 bc->bcEnts, bc->bcMarkers);
 
         const std::string bc_id =
             problem_name + "_" + field_name + "_HEATFLUXSET" +
@@ -865,13 +835,14 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcMeshsetType<HEATFLUXSET>>(
 }
 
 template <>
-MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
+MoFEMErrorCode
+BcManager::pushMarkDOFsOnEntities<BcDisplacementMeshsetType<BLOCKSET>>(
     const std::string problem_name, const std::string field_name,
     bool get_low_dim_ents, bool block_name_field_prefix) {
   MoFEMFunctionBegin;
 
   auto mark_dofs = [&](const string block_name, const int &idx_0,
-                            const int &idx_1) {
+                       const int &idx_1) {
     MoFEMFunctionBeginHot;
     if (block_name_field_prefix) {
       const string field_block = field_name + "_" + block_name;
@@ -1149,11 +1120,11 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<DisplacementCubitBcData>(
     const std::string problem_name, const std::string field_name,
     bool get_low_dim_ents, bool block_name_field_prefix) {
   MoFEMFunctionBegin;
-  // that marks DOFs and create data when are set by cubit nodesets. 
+  // that marks DOFs and create data when are set by cubit nodesets.
   CHKERR pushMarkDOFsOnEntities<BcMeshsetType<DISPLACEMENTSET>>(
       problem_name, field_name, get_low_dim_ents, block_name_field_prefix);
   // that marks DOFs and create data when are set by blocsket.
-  CHKERR pushMarkDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
+  CHKERR pushMarkDOFsOnEntities<BcDisplacementMeshsetType<BLOCKSET>>(
       problem_name, field_name, get_low_dim_ents, block_name_field_prefix);
   MoFEMFunctionReturn(0);
 }
@@ -1164,12 +1135,12 @@ MoFEMErrorCode BcManager::removeBlockDOFsOnEntities<DisplacementCubitBcData>(
     bool get_low_dim_ents, bool block_name_field_prefix,
     bool is_distributed_mesh) {
   MoFEMFunctionBegin;
-  // that remove DOFs when are set by cubit nodesets. 
+  // that remove DOFs when are set by cubit nodesets.
   CHKERR removeBlockDOFsOnEntities<BcMeshsetType<DISPLACEMENTSET>>(
       problem_name, field_name, get_low_dim_ents, block_name_field_prefix,
       is_distributed_mesh);
-  // that remove DOFs when are by blocksets  
-  CHKERR removeBlockDOFsOnEntities<BcVectorMeshsetType<BLOCKSET>>(
+  // that remove DOFs when are by blocksets
+  CHKERR removeBlockDOFsOnEntities<BcDisplacementMeshsetType<BLOCKSET>>(
       problem_name, field_name, get_low_dim_ents, block_name_field_prefix,
       is_distributed_mesh);
   // add more ways to remove bcs when appropiate
@@ -1264,5 +1235,378 @@ BcManager::extractStringFromBlockId(const std::string block_id,
 
   return std::make_pair(field_name, block_name);
 }
+
+template <>
+MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcMeshsetType<FORCESET>>(
+    const std::string problem_name, const std::string field_name,
+    bool get_low_dim_ents, bool block_name_field_prefix) {
+  Interface &m_field = cOre;
+  auto prb_mng = m_field.getInterface<ProblemsManager>();
+  MoFEMFunctionBegin;
+
+  if (problem_name.empty())
+    MOFEM_LOG("BcMngWorld", Sev::warning) << "Argument problem_name is empty";
+
+  if (block_name_field_prefix)
+    MOFEM_LOG("BcMngWorld", Sev::warning)
+        << "Argument block_name_field_prefix=true has no effect";
+
+  auto fix_force = [&]() {
+    MoFEMFunctionBegin;
+
+    auto iterate_meshsets = [&](auto &&meshset_vec_ptr) {
+      MoFEMFunctionBegin;
+      for (auto m : meshset_vec_ptr) {
+        auto bc = boost::make_shared<BCs>();
+        CHKERR m_field.get_moab().get_entities_by_handle(m->getMeshset(),
+                                                         bc->bcEnts, true);
+        bc->forceBcPtr = boost::make_shared<ForceCubitBcData>();
+        CHKERR m->getBcDataStructure(*(bc->forceBcPtr));
+
+        MOFEM_LOG("BcMngWorld", Sev::verbose)
+            << "Found block FORCESET id = " << m->getMeshsetId();
+        MOFEM_LOG("BcMngWorld", Sev::verbose) << *bc->forceBcPtr;
+
+        MOFEM_LOG("BcMngSync", Sev::noisy)
+            << "Found block FORCESET id = " << m->getMeshsetId()
+            << " nb. of entities " << bc->bcEnts.size()
+            << " highest dim of entities "
+            << BcManagerImplTools::get_dim(bc->bcEnts);
+        MOFEM_LOG("BcMngSync", Sev::noisy) << *bc->forceBcPtr;
+        MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::noisy);
+
+        if (problem_name.size()) {
+
+          if (bc->forceBcPtr->data.value2 > 0)
+            CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 0, 0,
+                                           ProblemsManager::MarkOP::OR, 1,
+                                           bc->bcMarkers);
+          if (bc->forceBcPtr->data.value3 > 0)
+            CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 1, 1,
+                                           ProblemsManager::MarkOP::OR, 1,
+                                           bc->bcMarkers);
+          if (bc->forceBcPtr->data.value4 > 0)
+            CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 2, 2,
+                                           ProblemsManager::MarkOP::OR, 1,
+                                           bc->bcMarkers);
+
+          if (bc->forceBcPtr->data.value5 > 0) {
+
+            CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 1, 1,
+                                           ProblemsManager::MarkOP::OR, 1,
+                                           bc->bcMarkers);
+            CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 2, 2,
+                                           ProblemsManager::MarkOP::OR, 1,
+                                           bc->bcMarkers);
+          }
+          if (bc->forceBcPtr->data.value5) {
+
+            CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 0, 0,
+                                           ProblemsManager::MarkOP::OR, 1,
+                                           bc->bcMarkers);
+            CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 2, 2,
+                                           ProblemsManager::MarkOP::OR, 1,
+                                           bc->bcMarkers);
+          }
+          if (bc->forceBcPtr->data.value6) {
+
+            CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 0, 0,
+                                           ProblemsManager::MarkOP::OR, 1,
+                                           bc->bcMarkers);
+            CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 1, 1,
+                                           ProblemsManager::MarkOP::OR, 1,
+                                           bc->bcMarkers);
+          }
+        }
+
+        if (get_low_dim_ents) {
+          auto low_dim_ents =
+              BcManagerImplTools::get_adj_ents(m_field.get_moab(), bc->bcEnts);
+          bc->bcEnts.swap(low_dim_ents);
+        }
+
+        CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(
+            bc->bcEnts);
+        if (problem_name.size())
+          CHKERR prb_mng->markDofs(problem_name, ROW, ProblemsManager::AND,
+                                   bc->bcEnts, bc->bcMarkers);
+
+        const std::string bc_id =
+            problem_name + "_" + field_name + "_FORCESET" +
+            boost::lexical_cast<std::string>(m->getMeshsetId());
+        bcMapByBlockName[bc_id] = bc;
+      }
+      MoFEMFunctionReturn(0);
+    };
+
+    CHKERR iterate_meshsets(
+
+        m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(NODESET |
+                                                                    FORCESET)
+
+    );
+
+    MoFEMFunctionReturn(0);
+  };
+
+  CHKERR fix_force();
+
+  MoFEMFunctionReturn(0);
+}
+
+template <>
+MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcForceMeshsetType<BLOCKSET>>(
+    const std::string problem_name, const std::string field_name,
+    bool get_low_dim_ents, bool block_name_field_prefix) {
+  Interface &m_field = cOre;
+  auto prb_mng = m_field.getInterface<ProblemsManager>();
+  MoFEMFunctionBegin;
+
+  if (problem_name.size() == 0)
+    MOFEM_LOG("BcMngWorld", Sev::warning) << "Argument problem_name is empty";
+
+  auto get_force_block = [&](auto block_name) {
+    MoFEMFunctionBegin;
+
+    for (auto m :
+         m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(std::regex(
+
+             (boost::format("%s(.*)") % block_name).str()
+
+                 ))
+
+    ) {
+
+      const auto block_name = m->getName();
+
+      MOFEM_LOG("BcMngWorld", Sev::inform)
+          << "Found force block " << block_name;
+
+      auto bc = boost::make_shared<BCs>();
+      CHKERR m_field.get_moab().get_entities_by_handle(m->getMeshset(),
+                                                       bc->bcEnts, true);
+
+      CHKERR m->getAttributes(bc->bcAttributes);
+      if (bc->bcAttributes.size() != 3) {
+        SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                "Expect three block attributes for force block");
+      }
+
+      bc->forceBcPtr = boost::make_shared<ForceCubitBcData>();
+      // For details look at ForceCubitBcData in mofem/src/multi_indices/BCData.hpp
+      bc->forceBcPtr->data.value1 = 1;
+      bc->forceBcPtr->data.value3 = bc->bcAttributes[0];
+      bc->forceBcPtr->data.value4 = bc->bcAttributes[1];
+      bc->forceBcPtr->data.value5 = bc->bcAttributes[2];
+
+      MOFEM_LOG("BcMngWorld", Sev::inform) << *bc->forceBcPtr;
+      MOFEM_LOG("BcMngSync", Sev::noisy)
+          << "Found block FORCESET id = " << m->getMeshsetId()
+          << " nb. of entities " << bc->bcEnts.size()
+          << " highest dim of entities "
+          << BcManagerImplTools::get_dim(bc->bcEnts);
+      MOFEM_LOG("BcMngSync", Sev::noisy) << *bc->forceBcPtr;
+      MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::noisy);
+
+      if (problem_name.size()) {
+
+        if (bc->forceBcPtr->data.value2 > 0)
+          CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 0, 0,
+                                         ProblemsManager::MarkOP::OR, 1,
+                                         bc->bcMarkers);
+        if (bc->forceBcPtr->data.value3 > 0)
+          CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 1, 1,
+                                         ProblemsManager::MarkOP::OR, 1,
+                                         bc->bcMarkers);
+        if (bc->forceBcPtr->data.value4 > 0)
+          CHKERR prb_mng->modifyMarkDofs(problem_name, ROW, field_name, 2, 2,
+                                         ProblemsManager::MarkOP::OR, 1,
+                                         bc->bcMarkers);
+      }
+
+      if (get_low_dim_ents) {
+        auto low_dim_ents =
+            BcManagerImplTools::get_adj_ents(m_field.get_moab(), bc->bcEnts);
+        bc->bcEnts.swap(low_dim_ents);
+      }
+
+      CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(
+          bc->bcEnts);
+      if (problem_name.size())
+        CHKERR prb_mng->markDofs(problem_name, ROW, ProblemsManager::AND,
+                                 bc->bcEnts, bc->bcMarkers);
+
+      const std::string bc_id =
+          problem_name + "_" + field_name + "_" + block_name;
+      bcMapByBlockName[bc_id] = bc;
+    }
+    MoFEMFunctionReturn(0);
+  };
+
+  CHKERR get_force_block("FORCE");
+
+  MoFEMFunctionReturn(0);
+}
+
+template <>
+MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<ForceCubitBcData>(
+    const std::string problem_name, const std::string field_name,
+    bool get_low_dim_ents, bool block_name_field_prefix) {
+  MoFEMFunctionBegin;
+
+  CHKERR pushMarkDOFsOnEntities<BcMeshsetType<FORCESET>>(
+      problem_name, field_name, get_low_dim_ents, block_name_field_prefix);
+
+  CHKERR pushMarkDOFsOnEntities<BcForceMeshsetType<BLOCKSET>>(
+      problem_name, field_name, get_low_dim_ents, block_name_field_prefix);
+
+  MoFEMFunctionReturn(0);
+}
+
+template <>
+MoFEMErrorCode BcManager::removeBlockDOFsOnEntities<BcMeshsetType<FORCESET>>(
+    const std::string problem_name, const std::string field_name,
+    bool get_low_dim_ents, bool block_name_field_prefix,
+    bool is_distributed_mesh) {
+  Interface &m_field = cOre;
+  auto prb_mng = m_field.getInterface<ProblemsManager>();
+  MoFEMFunctionBegin;
+
+  CHKERR pushMarkDOFsOnEntities<BcMeshsetType<FORCESET>>(
+      problem_name, field_name, get_low_dim_ents);
+
+  std::array<Range, 3> ents_to_remove;
+
+  for (auto m :
+
+       m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(NODESET |
+                                                                   FORCESET)) {
+
+    const auto block_name = m->getName();
+    std::string bc_id = problem_name + "_" + field_name + "_" + block_name;
+
+    auto str = boost::format("%s_%s_%s(.*)")
+
+               % problem_name % field_name % block_name;
+
+    if (std::regex_match(bc_id, std::regex(str.str()))) {
+
+      auto bc = bcMapByBlockName.at(bc_id);
+
+      if (auto force_bc = bc->forceBcPtr) {
+        if (force_bc->data.value3 > 0) {
+          ents_to_remove[0].merge(bc->bcEnts);
+        }
+        if (force_bc->data.value4 > 0) {
+          ents_to_remove[1].merge(bc->bcEnts);
+        }
+        if (force_bc->data.value5 > 0) {
+          ents_to_remove[2].merge(bc->bcEnts);
+        }
+      } else {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "BC type not implemented");
+      }
+    }
+  }
+
+  auto remove_dofs_on_ents = [&](const Range &ents, const int lo,
+                                 const int hi) {
+    if (is_distributed_mesh)
+      return prb_mng->removeDofsOnEntities(problem_name, field_name, ents, lo,
+                                           hi);
+    else
+      return prb_mng->removeDofsOnEntitiesNotDistributed(
+          problem_name, field_name, ents, lo, hi);
+  };
+
+  CHKERR remove_dofs_on_ents(ents_to_remove[0], 0, 0);
+  CHKERR remove_dofs_on_ents(ents_to_remove[1], 1, 1);
+  CHKERR remove_dofs_on_ents(ents_to_remove[2], 2, 2);
+
+  MoFEMFunctionReturn(0);
+}
+
+template <>
+MoFEMErrorCode
+BcManager::removeBlockDOFsOnEntities<BcForceMeshsetType<BLOCKSET>>(
+    const std::string problem_name, const std::string field_name,
+    bool get_low_dim_ents, bool block_name_field_prefix,
+    bool is_distributed_mesh) {
+  Interface &m_field = cOre;
+  auto prb_mng = m_field.getInterface<ProblemsManager>();
+  MoFEMFunctionBegin;
+
+  CHKERR pushMarkDOFsOnEntities<BcForceMeshsetType<BLOCKSET>>(
+      problem_name, field_name, get_low_dim_ents);
+
+  std::array<Range, 3> ents_to_remove;
+
+  for (auto m :
+
+       m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(BLOCKSET)) {
+
+    const auto block_name = m->getName();
+    std::string bc_id = problem_name + "_" + field_name + "_" + block_name;
+
+    auto str = boost::format("%s_%s_%s(.*)")
+
+               % problem_name % field_name % block_name;
+
+    if (std::regex_match(bc_id, std::regex(str.str()))) {
+
+      auto bc = bcMapByBlockName.at(bc_id);
+
+      if (auto force_bc = bc->forceBcPtr) {
+        if (force_bc->data.value3 > 0) {
+          ents_to_remove[0].merge(bc->bcEnts);
+        }
+        if (force_bc->data.value4 > 0) {
+          ents_to_remove[1].merge(bc->bcEnts);
+        }
+        if (force_bc->data.value5 > 0) {
+          ents_to_remove[2].merge(bc->bcEnts);
+        }
+      } else {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "BC type not implemented");
+      }
+    }
+  }
+
+  auto remove_dofs_on_ents = [&](const Range &ents, const int lo,
+                                 const int hi) {
+    if (is_distributed_mesh)
+      return prb_mng->removeDofsOnEntities(problem_name, field_name, ents, lo,
+                                           hi);
+    else
+      return prb_mng->removeDofsOnEntitiesNotDistributed(
+          problem_name, field_name, ents, lo, hi);
+  };
+
+  CHKERR remove_dofs_on_ents(ents_to_remove[0], 0, 0);
+  CHKERR remove_dofs_on_ents(ents_to_remove[1], 1, 1);
+  CHKERR remove_dofs_on_ents(ents_to_remove[2], 2, 2);
+
+  MoFEMFunctionReturn(0);
+}
+
+template <>
+MoFEMErrorCode BcManager::removeBlockDOFsOnEntities<ForceCubitBcData>(
+    const std::string problem_name, const std::string field_name,
+    bool get_low_dim_ents, bool block_name_field_prefix,
+    bool is_distributed_mesh) {
+  MoFEMFunctionBegin;
+
+  CHKERR removeBlockDOFsOnEntities<BcMeshsetType<FORCESET>>(
+      problem_name, field_name, get_low_dim_ents, block_name_field_prefix,
+      is_distributed_mesh);
+
+  CHKERR removeBlockDOFsOnEntities<BcForceMeshsetType<BLOCKSET>>(
+      problem_name, field_name, get_low_dim_ents, block_name_field_prefix,
+      is_distributed_mesh);
+
+  MoFEMFunctionReturn(0);
+};
 
 } // namespace MoFEM

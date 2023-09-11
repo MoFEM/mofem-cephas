@@ -280,7 +280,7 @@ mpirun -np 4 xterm -e lldb -- ./program [arg1] [arg2] [arg3]
 If you do not heve graphic terminal, you can alos run screen sessions,
 \code
 mpirun -np 4 screen -AdmS mpi gdb -ex run --args ./program [arg1] [arg2] [arg3]
-\enddoce
+\endcode
 
 \subsection faq_memory_profiling_valgrind How to profile memory usage?
 

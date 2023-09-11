@@ -121,8 +121,31 @@ int main(int argc, char *argv[]) {
 
     // set fields order, i.e. for most first cases order is sufficient.
     CHKERR simple->setFieldOrder("U", order);
-    CHKERR simple->setFieldOrder("SIGMA", order);
+    // CHKERR simple->setFieldOrder("SIGMA", order);
     CHKERR simple->setFieldOrder("GEOMETRY", 2);
+
+    auto get_skin = [&]() {
+      Range body_ents;
+      CHKERR m_field.get_moab().get_entities_by_dimension(0, SPACE_DIM,
+                                                         body_ents);
+      Skinner skin(&m_field.get_moab());
+      Range skin_ents;
+      CHKERR skin.find_skin(0, body_ents, false, skin_ents);
+      return skin_ents;
+    };
+
+    auto filter_true_skin = [&](auto skin) {
+      Range boundary_ents;
+      ParallelComm *pcomm =
+          ParallelComm::get_pcomm(&m_field.get_moab(), MYPCOMM_INDEX);
+      CHKERR pcomm->filter_pstatus(skin, PSTATUS_SHARED | PSTATUS_MULTISHARED,
+                                   PSTATUS_NOT, -1, &boundary_ents);
+      return boundary_ents;
+    };
+
+    auto boundary_ents = filter_true_skin(get_skin());
+    CHKERR simple->setFieldOrder("SIGMA", 0);
+    CHKERR simple->setFieldOrder("SIGMA", order, &boundary_ents);
 
     // setup problem
     CHKERR simple->setUp();
@@ -332,7 +355,7 @@ int main(int argc, char *argv[]) {
 
       auto diff_x = opt->setRandomFields(simple->getDM(),
                                          {{"U", {-1, 1}}, {"SIGMA", {-1, 1}}});
-      constexpr double eps = 1e-6;
+      constexpr double eps = 1e-5;
       auto diff_res = opt->checkCentralFiniteDifference(
           simple->getDM(), simple->getDomainFEName(), pip_mng->getDomainRhsFE(),
           pip_mng->getDomainLhsFE(), x, SmartPetscObj<Vec>(),
