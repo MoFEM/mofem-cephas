@@ -1,14 +1,9 @@
-// /** \file NormsOperators.cpp
+/** \file NormsOperators.cpp
 
-// \brief User data operators for calculating norms and differences between
-// fields
+\brief User data operators for calculating norms and differences between
+fields
 
-// */
-
-template struct MoFEM::OpCalcNormL2Tensor1<2>;
-template struct MoFEM::OpCalcNormL2Tensor1<3>;
-template struct MoFEM::OpCalcNormL2Tensor2<2, 2>;
-template struct MoFEM::OpCalcNormL2Tensor2<3, 3>;
+*/
 
 namespace MoFEM {
 
@@ -166,5 +161,10 @@ OpCalcNormL2Tensor2<DIM_1, DIM_2>::doWork(int side, EntityType type,
 
   MoFEMFunctionReturn(0);
 }
+
+template struct OpCalcNormL2Tensor1<2>;
+template struct OpCalcNormL2Tensor1<3>;
+template struct MoFEM::OpCalcNormL2Tensor2<2, 2>;
+template struct MoFEM::OpCalcNormL2Tensor2<3, 3>;
 
 } // namespace MoFEM
