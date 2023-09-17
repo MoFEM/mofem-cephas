@@ -281,6 +281,24 @@ getFTensor2FromMat(MatrixDouble &data) {
  * Template specialization for getFTensor2FromMat
  */
 template <>
+inline FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 6>
+getFTensor2FromMat(MatrixDouble &data) {
+#ifndef NDEBUG
+  if (data.size1() != 18)
+    THROW_MESSAGE("getFTensor2FromMat<3, 6>: wrong size of data matrix, numer "
+                  "of rows should be 18 but is " +
+                  boost::lexical_cast<std::string>(data.size1()));
+#endif
+  std::array<double *, 18> ptrs;
+  for (auto i = 0; i != 18; ++i)
+    ptrs[i] = &data(i, 0);
+  return FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 6>(ptrs);
+}
+
+/**
+ * Template specialization for getFTensor2FromMat
+ */
+template <>
 inline FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 6, 6>
 getFTensor2FromMat(MatrixDouble &data) {
 #ifndef NDEBUG
