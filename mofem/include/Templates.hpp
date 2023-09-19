@@ -155,6 +155,21 @@ struct GetFTensor1FromMatImpl<3, S, T, ublas::row_major, A> {
 };
 
 template <int S, class T, class A>
+struct GetFTensor1FromMatImpl<4, S, T, ublas::row_major, A> {
+  static inline auto get(ublas::matrix<T, ublas::row_major, A> &data) {
+#ifndef NDDEBUG
+    if (data.size1() != 4)
+      THROW_MESSAGE(
+          "getFTensor1FromMat<4>: wrong size of data matrix, number of "
+          "rows should be 4 but is " +
+          boost::lexical_cast<std::string>(data.size1()));
+#endif
+    return FTensor::Tensor1<FTensor::PackPtr<double *, S>, 4>(
+        &data(0, 0), &data(1, 0), &data(2, 0), &data(3, 0));
+  }
+};
+
+template <int S, class T, class A>
 struct GetFTensor1FromMatImpl<6, S, T, ublas::row_major, A> {
   static inline auto get(ublas::matrix<T, ublas::row_major, A> &data) {
 #ifndef NDDEBUG
@@ -167,6 +182,22 @@ struct GetFTensor1FromMatImpl<6, S, T, ublas::row_major, A> {
     return FTensor::Tensor1<FTensor::PackPtr<double *, S>, 6>(
         &data(0, 0), &data(1, 0), &data(2, 0), &data(3, 0), &data(4, 0),
         &data(5, 0));
+  }
+};
+
+template <int S, class T, class A>
+struct GetFTensor1FromMatImpl<9, S, T, ublas::row_major, A> {
+  static inline auto get(ublas::matrix<T, ublas::row_major, A> &data) {
+#ifndef NDDEBUG
+    if (data.size1() != 9)
+      THROW_MESSAGE(
+          "getFTensor1FromMat<9>: wrong size of data matrix, number of "
+          "rows should be 9 but is " +
+          boost::lexical_cast<std::string>(data.size1()));
+#endif
+    return FTensor::Tensor1<FTensor::PackPtr<double *, S>, 9>(
+        &data(0, 0), &data(1, 0), &data(2, 0), &data(3, 0), &data(4, 0),
+        &data(5, 0), &data(6, 0), &data(7, 0), &data(8, 0));
   }
 };
 
@@ -227,6 +258,43 @@ getFTensor2FromMat(ublas::matrix<T, L, A> &data) {
                 "Such getFTensor2FromMat specialisation is not implemented");
 }
 
+
+/**
+ * Template specialization for getFTensor2FromMat
+ */
+template <>
+inline FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 4, 4>
+getFTensor2FromMat(MatrixDouble &data) {
+#ifndef NDEBUG
+  if (data.size1() != 16)
+    THROW_MESSAGE("getFTensor2FromMat<4, 4>: wrong size of data matrix, numer "
+                  "of rows should be 16 but is " +
+                  boost::lexical_cast<std::string>(data.size1()));
+#endif
+  std::array<double *, 16> ptrs;
+  for (auto i = 0; i != 16; ++i)
+    ptrs[i] = &data(i, 0);
+  return FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 4, 4>(ptrs);
+}
+
+/**
+ * Template specialization for getFTensor2FromMat
+ */
+template <>
+inline FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 6>
+getFTensor2FromMat(MatrixDouble &data) {
+#ifndef NDEBUG
+  if (data.size1() != 18)
+    THROW_MESSAGE("getFTensor2FromMat<3, 6>: wrong size of data matrix, numer "
+                  "of rows should be 18 but is " +
+                  boost::lexical_cast<std::string>(data.size1()));
+#endif
+  std::array<double *, 18> ptrs;
+  for (auto i = 0; i != 18; ++i)
+    ptrs[i] = &data(i, 0);
+  return FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 6>(ptrs);
+}
+
 /**
  * Template specialization for getFTensor2FromMat
  */
@@ -243,6 +311,24 @@ getFTensor2FromMat(MatrixDouble &data) {
   for (auto i = 0; i != 36; ++i)
     ptrs[i] = &data(i, 0);
   return FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 6, 6>(ptrs);
+}
+
+/**
+ * Template specialization for getFTensor2FromMat
+ */
+template <>
+inline FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 9, 9>
+getFTensor2FromMat(MatrixDouble &data) {
+#ifndef NDEBUG
+  if (data.size1() != 81)
+    THROW_MESSAGE("getFTensor2FromMat<9, 9>: wrong size of data matrix, numer "
+                  "of rows should be 81 but is " +
+                  boost::lexical_cast<std::string>(data.size1()));
+#endif
+  std::array<double *, 81> ptrs;
+  for (auto i = 0; i != 81; ++i)
+    ptrs[i] = &data(i, 0);
+  return FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 9, 9>(ptrs);
 }
 
 /**
@@ -271,7 +357,7 @@ inline FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 2>
 getFTensor2FromMat(MatrixDouble &data) {
 #ifndef NDEBUG
   if (data.size1() != 6)
-    THROW_MESSAGE("getFTensor2FromMat<3,3>: wrong size of data matrix, numer "
+    THROW_MESSAGE("getFTensor2FromMat<3,2>: wrong size of data matrix, numer "
                   "of rows should be 6 but is " +
                   boost::lexical_cast<std::string>(data.size1()));
 #endif
@@ -968,12 +1054,31 @@ template <int S> struct GetFTensor1FromArray<3, S> {
   }
 };
 
+template <int S> struct GetFTensor1FromArray<4, S> {
+  GetFTensor1FromArray() = delete;
+  template <typename V> static inline auto get(V &data) {
+    using T = typename std::remove_reference<decltype(data[0])>::type;
+    return FTensor::Tensor1<FTensor::PackPtr<T *, S>, 4>{&data[0], &data[1],
+                                                         &data[2], &data[3]};
+  }
+};
+
 template <int S> struct GetFTensor1FromArray<6, S> {
   GetFTensor1FromArray() = delete;
   template <typename V> static inline auto get(V &data) {
     using T = typename std::remove_reference<decltype(data[0])>::type;
     return FTensor::Tensor1<FTensor::PackPtr<T *, S>, 6>{
         &data[0], &data[1], &data[2], &data[3], &data[4], &data[5]};
+  }
+};
+
+template <int S> struct GetFTensor1FromArray<9, S> {
+  GetFTensor1FromArray() = delete;
+  template <typename V> static inline auto get(V &data) {
+    using T = typename std::remove_reference<decltype(data[0])>::type;
+    return FTensor::Tensor1<FTensor::PackPtr<T *, S>, 9>{
+        &data[0], &data[1], &data[2], &data[3], &data[4],
+        &data[5], &data[6], &data[7], &data[8]};
   }
 };
 
@@ -988,6 +1093,14 @@ template <int S> struct GetFTensor1FromArray<6, S> {
  */
 template <int DIM, int S> inline auto getFTensor1FromArray(VectorDouble &data) {
   return GetFTensor1FromArray<DIM, S>::get(data);
+}
+
+/** @copydoc getFTensor1FromArray */
+template <int DIM, int S = 0>
+inline auto getFTensor1FromArray(VectorDouble3 &data);
+
+template <> inline auto getFTensor1FromArray<3, 0>(VectorDouble3 &data) {
+  return GetFTensor1FromArray<3, 0>::get(data);
 }
 
 template <int DIM, int S>
@@ -1007,6 +1120,23 @@ getFTensor1FromMat(MatrixDouble &data, const size_t rr) {
   return FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3>{
       &data(rr + 0, 0), &data(rr + 1, 0), &data(rr + 2, 0)};
 }
+
+template <>
+inline FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 4>
+getFTensor1FromMat(MatrixDouble &data, const size_t rr) {
+  return FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 4>{
+      &data(rr + 0, 0), &data(rr + 1, 0), &data(rr + 2, 0), &data(rr + 3, 0)};
+}
+
+template <>
+inline FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 9>
+getFTensor1FromMat(MatrixDouble &data, const size_t rr) {
+  return FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 9>{
+      &data(rr + 0, 0), &data(rr + 1, 0), &data(rr + 2, 0),
+      &data(rr + 3, 0), &data(rr + 4, 0), &data(rr + 5, 0),
+      &data(rr + 6, 0), &data(rr + 7, 0), &data(rr + 8, 0)};
+}
+
 
 /**
  * @brief Get FTensor1 from array
@@ -1277,10 +1407,10 @@ inline MoFEMErrorCode computeEigenValuesSymmetric(const MatrixDouble &mat,
  * @param eig output eigen values sorted
  * @return MoFEMErrorCode
  */
-template <int DIM>
+template <int DIM, typename T1, typename T2>
 inline MoFEMErrorCode
-computeEigenValuesSymmetric(FTensor::Tensor2<double, DIM, DIM> &eigen_vec,
-                            FTensor::Tensor1<double, DIM> &eig) {
+computeEigenValuesSymmetric(FTensor::Tensor2<T1, DIM, DIM> &eigen_vec,
+                            FTensor::Tensor1<T2, DIM> &eig) {
   MoFEMFunctionBegin;
 
   const int n = DIM;
@@ -1294,6 +1424,7 @@ computeEigenValuesSymmetric(FTensor::Tensor2<double, DIM, DIM> &eigen_vec,
             "The algorithm failed to compute eigenvalues.");
   MoFEMFunctionReturn(0);
 }
+
 /**
  * @brief compute eigenvalues of a symmetric tensor using lapack dsyev
  *
@@ -1303,43 +1434,53 @@ computeEigenValuesSymmetric(FTensor::Tensor2<double, DIM, DIM> &eigen_vec,
  * @param eigen_vec output matrix of row eigen vectors
  * @return MoFEMErrorCode
  */
-template <int DIM>
+template <int DIM, typename T1, typename T2, typename T3>
 inline MoFEMErrorCode computeEigenValuesSymmetric(
-    const FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, DIM> &mat,
-    FTensor::Tensor1<double, DIM> &eig,
-    FTensor::Tensor2<double, DIM, DIM> &eigen_vec) {
+    const FTensor::Tensor2_symmetric<T1, DIM> &mat,
+    FTensor::Tensor1<T2, DIM> &eig,
+    FTensor::Tensor2<T3, DIM, DIM> &eigen_vec) {
   MoFEMFunctionBegin;
   for (int ii = 0; ii != DIM; ii++)
     for (int jj = 0; jj != DIM; jj++)
       eigen_vec(ii, jj) = mat(ii, jj);
 
-  CHKERR computeEigenValuesSymmetric<DIM>(eigen_vec, eig);
+  CHKERR computeEigenValuesSymmetric(eigen_vec, eig);
 
   MoFEMFunctionReturn(0);
 }
 
 /**
- * @brief compute eigenvalues of a symmetric tensor using lapack dsyev
- *
- * @tparam DIM
- * @param mat input tensor of size DIM x DIM
- * @param eig output eigen values sorted
- * @param eigen_vec output matrix of row eigen vectors
- * @return MoFEMErrorCode
- */
+ * @deprecated do not use, is kept for backward compatibility
+*/
 template <int DIM>
-inline MoFEMErrorCode
+DEPRECATED MoFEMErrorCode
+computeEigenValuesSymmetric(FTensor::Tensor2<double, DIM, DIM> &eigen_vec,
+                            FTensor::Tensor1<double, DIM> &eig) {
+  return computeEigenValuesSymmetric<DIM, double, double>(eigen_vec, eig);
+}
+
+/**
+ * @deprecated do not use, is kept for backward compatibility
+*/
+template <int DIM>
+DEPRECATED MoFEMErrorCode
 computeEigenValuesSymmetric(const FTensor::Tensor2_symmetric<double, DIM> &mat,
                             FTensor::Tensor1<double, DIM> &eig,
                             FTensor::Tensor2<double, DIM, DIM> &eigen_vec) {
-  MoFEMFunctionBegin;
-  for (int ii = 0; ii != DIM; ii++)
-    for (int jj = 0; jj != DIM; jj++)
-      eigen_vec(ii, jj) = mat(ii, jj);
+  return computeEigenValuesSymmetric<DIM, double, double, double>(mat, eig,
+                                                                  eigen_vec);
+}
 
-  CHKERR computeEigenValuesSymmetric<DIM>(eigen_vec, eig);
-
-  MoFEMFunctionReturn(0);
+/**
+ * @deprecated do not use, is kept for backward compatibility
+*/
+template <int DIM>
+DEPRECATED MoFEMErrorCode computeEigenValuesSymmetric(
+    const FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, DIM> &mat,
+    FTensor::Tensor1<double, DIM> &eig,
+    FTensor::Tensor2<double, DIM, DIM> &eigen_vec) {
+  return computeEigenValuesSymmetric<DIM, FTensor::PackPtr<double *, 1>, double,
+                                     double>(mat, eig, eigen_vec);
 }
 
 /**

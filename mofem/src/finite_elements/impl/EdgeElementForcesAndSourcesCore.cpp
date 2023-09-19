@@ -25,7 +25,7 @@ FTensor::Tensor1<double, 3> EdgeElementForcesAndSourcesCore::tFaceOrientation{
 EdgeElementForcesAndSourcesCore::EdgeElementForcesAndSourcesCore(
     Interface &m_field)
     : ForcesAndSourcesCore(m_field),
-      meshPositionsFieldName("MESH_NODE_POSITIONS") {
+      meshPositionsFieldName("MESH_NODE_POSITIONS"), lEngth(elementMeasure) {
   getElementPolynomialBase() =
       boost::shared_ptr<BaseFunction>(new EdgePolynomialBase());
   CHK_THROW_MESSAGE(createDataOnElement(MBEDGE),

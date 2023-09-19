@@ -15,6 +15,7 @@ extern "C" {
 #include "impl/DataOperators.cpp"
 #include "impl/ForcesAndSourcesCore.cpp"
 #include "impl/UserDataOperators.cpp"
+#include "impl/NormsOperators.cpp"
 #include "impl/HODataOperators.cpp"
 #include "impl/MeshProjectionDataOperators.cpp"
 #include "impl/BaseDerivativesDataOperators.cpp"

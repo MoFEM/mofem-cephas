@@ -13,18 +13,9 @@ jupyter:
     name: python3
 ---
 
-```python
-!whoami
-!$MOFEM_ENV_FILE
-!rm -rf um_view
-!spack view symlink -i um_view mofem-users-modules
-#!rm -f adv-0 && ln -s um_view/tutorials/adv-0 .
-#!rm -f vec-1 && ln -s um_view/tutorials/vec-1 .
-#!rm -f scl-8 && ln -s um_view/tutorials/scl-8 .
-#!rm -f nonlinear_elasticity && ln -s um_view/nonlinear_elasticity .
-#!rm -f unsaturated_2Dflow && um_view/softmech/unsaturated_2Dflow .
-```
-
-```python
-|
+```bash
+whoami
+$MOFEM_ENV_FILE
+rm -rf um_view
+spack view symlink -i um_view mofem-users-modules install_id=0
 ```

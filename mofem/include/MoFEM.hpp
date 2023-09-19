@@ -121,6 +121,7 @@ using FTensor::operator>>;
 #include <FaceElementForcesAndSourcesCoreOnParent.hpp>
 #include <EdgeElementForcesAndSourcesCoreOnParent.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
+#include <NormsOperators.hpp>
 #include <UserDataOperators.hpp>
 #include <HODataOperators.hpp> // Manage HO order geometry
 #include <MeshProjectionDataOperators.hpp> // Operators for projections between bit ref levels

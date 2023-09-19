@@ -75,7 +75,7 @@ protected:
    */
   virtual MoFEMErrorCode calculateCoordinatesAtGaussPts();
 
-  double aRea;
+  double &aRea;
   int num_nodes;
   const EntityHandle *conn;
   VectorDouble nOrmal, tangentOne, tangentTwo;
@@ -102,12 +102,6 @@ struct FaceElementForcesAndSourcesCore::UserDataOperator
    * @return area of face
    */
   inline double getArea();
-
-  /**
-   * \brief get measure of element
-   * @return area of face
-   */
-  inline double getMeasure();
 
   /** \brief get triangle normal
    */
@@ -245,10 +239,6 @@ private:
 
 double FaceElementForcesAndSourcesCore::UserDataOperator::getArea() {
   return static_cast<FaceElementForcesAndSourcesCore *>(ptrFE)->aRea;
-}
-
-double FaceElementForcesAndSourcesCore::UserDataOperator::getMeasure() {
-  return getArea();
 }
 
 VectorDouble &FaceElementForcesAndSourcesCore::UserDataOperator::getNormal() {
