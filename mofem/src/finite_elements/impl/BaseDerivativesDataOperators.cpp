@@ -22,10 +22,15 @@ MoFEMErrorCode OpBaseDerivativesBase::calculateBase(GetOrderFun get_order) {
   auto fe_ptr = getPtrFE();
   auto fe_type = getFEType();
   // Set data structure to store base
-  dataL2->dataOnEntities[fe_type].clear();
-  dataL2->dataOnEntities[MBVERTEX].clear();
-  dataL2->dataOnEntities[MBVERTEX].push_back(new EntitiesFieldData::EntData());
-  dataL2->dataOnEntities[fe_type].push_back(new EntitiesFieldData::EntData());
+  if (dataL2->dataOnEntities[MBVERTEX].size() != 1) {
+    dataL2->dataOnEntities[MBVERTEX].clear();
+    dataL2->dataOnEntities[MBVERTEX].push_back(
+        new EntitiesFieldData::EntData());
+  }
+  if (dataL2->dataOnEntities[fe_type].size() != 1) {
+    dataL2->dataOnEntities[fe_type].clear();
+    dataL2->dataOnEntities[fe_type].push_back(new EntitiesFieldData::EntData());
+  }
 
   auto &vertex_data = dataL2->dataOnEntities[MBVERTEX][0];
   vertex_data.getNSharedPtr(NOBASE) =
@@ -35,6 +40,7 @@ MoFEMErrorCode OpBaseDerivativesBase::calculateBase(GetOrderFun get_order) {
 
   auto &ent_data = dataL2->dataOnEntities[fe_type][0];
   ent_data.getSense() = 1;
+  ent_data.getSpace() = L2;
   ent_data.getBase() = base;
   ent_data.getOrder() = get_order();
 
