@@ -19,28 +19,42 @@ namespace MoFEM {
  *
  * \code An example of usage in post-processing
 
-using PostProcFe =
-    PostProcBrokenMeshInMoabBaseCont<VolumeElementForcesAndSourcesCore>;
-auto fe_bob = boost::make_shared<PostProcFe>(mField);
-auto op_this = new OpLoopThis<VolumeElementForcesAndSourcesCore>(
-    m_field, "DomainFE", Sev::noisy);
+using InteriorElem = VolumeElementForcesAndSourcesCore;
+using PostProcFe = PostProcGenerateRefMeshBase<InteriorElem>;
+auto fe_post_proc = boost::make_shared<PostProcFe>(mField);
+auto op_this = new OpLoopThis<InteriorElem>(m_field, "DomainFE", Sev::noisy);
+fe_post_proc->getOpPtrVector()->push_back(op_this);
 
-auto fe_alice = op_this->getThisFEPtr();
-fe_alice->getRuleHook = [](int, int, int o) {
+auto fe_physics = op_this->getThisFEPtr();
+fe_physics->getRuleHook = [](int, int, int o) {
   return 2 * o; };
 
 int order = 1;
-auto data_l2 = boost::make_shared<EntitiesFieldData>();
-auto mass_alice_ptr = boost::make_shared<MatrixDouble>();
-auto coeffs_ptr = boost::make_shared<MatrixDouble>();
-fe_alice->getOpPtrVector()->push_back(new
- OpDGProjectionMassMatrix(order, mass_alice_ptr, data_l2,
-AINSWORTH_LEGENDRE_BASE, L2); fe_alice->getOpPtrVector()->push_back(new
- OpDGProjectionCoefficients(data_ptr, coeff_ptr, mass_alice_ptr, data_l2,
-AINSWORTH_LEGENDRE_BASE, L2); fe_bob->getOpPtrVector()->push_back(op_this);
-fe_bob->getOpPtrVector()->push_back(new
- OpDGProjectionEvaluation(data_ptr, coeff_ptr, mass_alice_ptr, data_l2,
-AINSWORTH_LEGENDRE_BASE, L2);
+auto entity_data_l2 = boost::make_shared<EntitiesFieldData>(); // entity data 
+// shared between physical and post proc elements 
+auto mass_ptr = boost::make_shared<MatrixDouble>(); // integrated mass matrix
+// of post proc element
+auto coeffs_ptr = boost::make_shared<MatrixDouble>(); // vector of coeffs shared
+// between physical and post proc elements
+auto data_ptr = boost::make_shared<MatrixDouble>(); // data stored at 
+// integration points of the physical element and evaluated at integration 
+// points of the post proc element
+
+fe_physics->getOpPtrVector()->push_back(new
+ OpDGProjectionMassMatrix(order, mass_ptr, entity_data_l2,
+  AINSWORTH_LEGENDRE_BASE, L2);
+
+// You need to call operatpor which will evalaute data_ptr
+
+fe_physics->getOpPtrVector()->push_back(new
+  OpCalculateVectorFieldValues("V", data_ptr);
+fe_physics->getOpPtrVector()->push_back( new
+  OpDGProjectionCoefficients(data_ptr, coeffs_ptr, entity_data_l2,
+  AINSWORTH_LEGENDRE_BASE, L2);
+
+fe_post_proc->getOpPtrVector()->push_back(new
+  OpDGProjectionEvaluation(data_ptr, coeffs_ptr, mass_ptr, 
+  entity_data_l2, AINSWORTH_LEGENDRE_BASE, L2);
 
  * \endcode
  *
@@ -122,7 +136,6 @@ struct OpDGProjectionEvaluation : public OpDGProjectionCoefficients {
 
   OpDGProjectionEvaluation(boost::shared_ptr<MatrixDouble> data_ptr,
                            boost::shared_ptr<MatrixDouble> coeffs_ptr,
-                           boost::shared_ptr<MatrixDouble> mass_ptr,
                            boost::shared_ptr<EntitiesFieldData> data_l2,
                            const FieldApproximationBase b, const FieldSpace s,
                            const LogManager::SeverityLevel sev = Sev::noisy);

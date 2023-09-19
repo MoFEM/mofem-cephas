@@ -19,6 +19,7 @@ extern "C" {
 #include "impl/HODataOperators.cpp"
 #include "impl/MeshProjectionDataOperators.cpp"
 #include "impl/BaseDerivativesDataOperators.cpp"
+#include "impl/DGProjection.cpp"
 #include "impl/FormsIntegrators.cpp"
 #include "impl/VolumeElementForcesAndSourcesCore.cpp"
 #include "impl/FaceElementForcesAndSourcesCore.cpp"
@@ -33,4 +34,3 @@ extern "C" {
 #include "impl/FaceElementForcesAndSourcesCoreOnParent.cpp"
 #include "impl/VolumeElementForcesAndSourcesCoreOnContactPrismSide.cpp"
 #include "impl/Schur.cpp"
-#include "impl/DGProjection.cpp"
