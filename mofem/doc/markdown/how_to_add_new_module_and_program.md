@@ -82,18 +82,18 @@ Q&A](https://groups.google.com/forum/#!categories/mofem-group). We are happy to 
 
 The quickest way to add a new program to an existing module in your
 MoFEM installation directory is to replicate a program that already available in
-the same module of your choice. For example, you can replicate `elasticity`
+the same module of your choice. For example, you can replicate `vec-0`
 program in MoFEM Basic User Module following general steps as follows
 
 - Go to:
-  $HOME/mofem_install/mofem-cephas/mofem/users_modules/basic_finite_elements/
-- Copy `elasticity` and paste it in the same place
+  $HOME/mofem_install/mofem-cephas/mofem/users_modules/tutorials/
+- Copy tutorial, e.g. `vec-0` and paste it in the same place
 - Change file names and descriptions
 - Be careful with `CMakeLists.txt`. Make sure all the names and paths are consistent with the program name of your choice
 - Delete unnecessary source code files
 - Once everything done, compile source code by
 ```
-cd $HOME/mofem_install/mofem-cephas/mofem/users_modules/um-build-RelWithDebInfo-abcd1234/basic_finite_elements
+cd $HOME/mofem_install/mofem-cephas/mofem/users_modules/um-build-RelWithDebInfo-abcd1234/tutorials
 make -j4
 ```
 - You will see a new directory containing your new program
