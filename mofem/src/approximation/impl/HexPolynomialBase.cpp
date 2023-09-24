@@ -48,10 +48,10 @@ MoFEMErrorCode HexPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
 
   auto add_base_on_verts = [&] {
     MoFEMFunctionBeginHot;
-    data.dataOnEntities[MBVERTEX][0].getN(base).resize(nb_gauss_pts,
-                                                       copy_base_fun.size2());
+    data.dataOnEntities[MBVERTEX][0].getN(base).resize(
+        nb_gauss_pts, copy_base_fun.size2(), false);
     data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(
-        nb_gauss_pts, copy_diff_base_fun.size2());
+        nb_gauss_pts, copy_diff_base_fun.size2(), false);
     noalias(data.dataOnEntities[MBVERTEX][0].getN(base)) = copy_base_fun;
     noalias(data.dataOnEntities[MBVERTEX][0].getDiffN(base)) =
         copy_diff_base_fun;
