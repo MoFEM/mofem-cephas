@@ -1244,6 +1244,10 @@ OpGradTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
         // get sub matrix for the row
         auto t_m = OpBase::template getLocMat<SPACE_DIM>(SPACE_DIM * rr);
 
+        // calculate row
+        FTensor::Tensor3<double, 3, 3, 3> t_row;
+        t_row(i, k, l) = t_D(i, j, k, l) * (a * t_row_diff_base(j));
+
         // get derivatives of base functions for columns
         auto t_col_diff_base = col_data.getFTensor1DiffN<SPACE_DIM>(gg, 0);
 
@@ -1251,8 +1255,7 @@ OpGradTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
         for (int cc = 0; cc != OpBase::nbCols / SPACE_DIM; ++cc) {
 
           // integrate block local stiffens matrix
-          t_m(i, k) +=
-              a * (t_D(i, j, k, l) * (t_row_diff_base(j) * t_col_diff_base(l)));
+          t_m(i, k) += t_row(i, k, l) * t_col_diff_base(l);
 
           // move to next column base function
           ++t_col_diff_base;
