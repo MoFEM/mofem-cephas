@@ -11,6 +11,19 @@ namespace po = boost::program_options;
 
 namespace MoFEM {
 
+void MeshsetsManager::sortMeshsets(
+    std::vector<const CubitMeshSets *> &vec_ptr) {
+  std::sort(vec_ptr.begin(), vec_ptr.end(),
+            [](const CubitMeshSets *a, const CubitMeshSets *b) {
+              if (a->getBcType().to_ullong() < b->getBcType().to_ullong())
+                return true;
+              if (a->getBcType().to_ullong() > b->getBcType().to_ullong())
+                return false;
+              else
+                return a->getMeshsetId() < b->getMeshsetId();
+            });
+}
+
 bool MeshsetsManager::brodcastMeshsets = true;
 
 MoFEMErrorCode
@@ -59,21 +72,19 @@ MoFEMErrorCode MeshsetsManager::initialiseDatabaseFromMesh(int verb) {
     CHKERR broadcastMeshsets(verb);
 
   std::vector<const CubitMeshSets *> vec_ptr;
-
   for (auto &m : cubitMeshsets) {
     vec_ptr.push_back(&m);
   }
-  std::sort(vec_ptr.begin(), vec_ptr.end(),
-            [](const CubitMeshSets *a, const CubitMeshSets *b) {
-              return a->getMeshsetId() < b->getMeshsetId();
-            });
+  sortMeshsets(vec_ptr);
 
   for (auto m_ptr : vec_ptr) {
-    MOFEM_LOG("MeshsetMngWorld", Sev::inform) << *m_ptr;
+    MOFEM_LOG("MeshsetMngWorld", Sev::inform)
+        << "meshset in database " << *m_ptr;
   }
   // Verbose synchronised print
   for (auto m_ptr : vec_ptr) {
-    MOFEM_LOG("MeshsetMngSync", Sev::verbose) << *m_ptr;
+    MOFEM_LOG("MeshsetMngSync", Sev::verbose)
+        << "meshset in database " << *m_ptr;
   }
   MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::verbose);
 
@@ -92,12 +103,23 @@ MoFEMErrorCode MeshsetsManager::readMeshsets(int verb) {
     CubitMeshSets block(moab, m);
     if ((block.cubitBcType & CubitBCType(NODESET | SIDESET | BLOCKSET)).any()) {
       auto p = cubitMeshsets.insert(block);
-      if (!p.second)
+      if (!p.second) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "meshset not inserted");
-      MOFEM_LOG("MeshsetMngSelf", Sev::noisy) << "read " << block;
+      }
     }
   }
+
+  std::vector<const CubitMeshSets *> vec_ptr;
+  for (auto &m : cubitMeshsets) {
+    vec_ptr.push_back(&m);
+  }
+  sortMeshsets(vec_ptr);
+
+  for (auto m_ptr : vec_ptr) {
+    MOFEM_LOG("MeshsetMngSync", Sev::verbose) << "read " << *m_ptr;
+  }
+  MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::verbose);
 
   MoFEMFunctionReturn(0);
 }
@@ -129,16 +151,22 @@ MoFEMErrorCode MeshsetsManager::broadcastMeshsets(int verb) {
     MoFEMFunctionReturn(0);
   };
 
+  std::vector<const CubitMeshSets *> vec_ptr;
+  for (auto &m : cubitMeshsets) {
+    vec_ptr.push_back(&m);
+  }
+  sortMeshsets(vec_ptr);
+
   for (int from_proc = 0; from_proc < pcomm->size(); ++from_proc) {
 
     Range r_dummy_nodes;
 
     if (from_proc == pcomm->rank()) {
-      std::vector<EntityHandle> dummy_nodes(cubitMeshsets.size(), 0);
+      std::vector<EntityHandle> dummy_nodes(vec_ptr.size(), 0);
       int i = 0;
-      for (auto &m : cubitMeshsets) {
+      for (auto m_ptr : vec_ptr) {
         CHKERR moab.create_vertex(coords, dummy_nodes[i]);
-        CHKERR set_tags_dummy_node(dummy_nodes[i], m.getMeshset());
+        CHKERR set_tags_dummy_node(dummy_nodes[i], m_ptr->getMeshset());
         ++i;
       }
       r_dummy_nodes.insert_list(dummy_nodes.begin(), dummy_nodes.end());
@@ -146,24 +174,31 @@ MoFEMErrorCode MeshsetsManager::broadcastMeshsets(int verb) {
 
     CHKERR pcomm->broadcast_entities(from_proc, r_dummy_nodes, false, true);
 
-    for (auto dummy_node : r_dummy_nodes) {
-      EntityHandle m;
-      CHKERR moab.create_meshset(MESHSET_SET, m);
-      CHKERR set_tags_dummy_node(m, dummy_node);
+    if (from_proc != pcomm->rank()) {
+      for (auto dummy_node : r_dummy_nodes) {
+        EntityHandle m;
+        CHKERR moab.create_meshset(MESHSET_SET, m);
+        CHKERR set_tags_dummy_node(m, dummy_node);
 
-      CubitMeshSets broadcast_block(moab, m);
-      if ((broadcast_block.cubitBcType &
-           CubitBCType(NODESET | SIDESET | BLOCKSET))
-              .any()) {
-        auto p = cubitMeshsets.insert(broadcast_block);
-        if (!p.second) {
-          CHKERR moab.delete_entities(&m, 1);
-        } else {
-          MOFEM_LOG("MeshsetMngSelf", Sev::noisy)
-              << "broadcast " << broadcast_block;
+        CubitMeshSets broadcast_block(moab, m);
+        if ((broadcast_block.cubitBcType &
+             CubitBCType(NODESET | SIDESET | BLOCKSET))
+                .any()) {
+          auto p = cubitMeshsets.insert(broadcast_block);
+          if (!p.second) {
+            CHKERR moab.delete_entities(&m, 1);
+          } else {
+            MOFEM_LOG("MeshsetMngSync", Sev::verbose)
+                << "broadcast recived " << broadcast_block;
+          }
         }
       }
+    } else {
+      MOFEM_LOG("MeshsetMngSync", Sev::verbose)
+          << "broadcast send from " << from_proc;
     }
+
+    MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::verbose);
 
     CHKERR moab.delete_entities(r_dummy_nodes);
   }
@@ -557,11 +592,7 @@ MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
       vec_ptr.push_back(&c);
     }
   }
-  std::sort(vec_ptr.begin(), vec_ptr.end(),
-            [](const CubitMeshSets *a, const CubitMeshSets *b) {
-              return a->getMeshsetId() < b->getMeshsetId();
-            });
-
+  sortMeshsets(vec_ptr);
   MoFEMFunctionReturn(0);
 }
 
@@ -585,10 +616,7 @@ MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
       vec_ptr.push_back(&*r.first);
     }
   }
-  std::sort(vec_ptr.begin(), vec_ptr.end(),
-            [](const CubitMeshSets *a, const CubitMeshSets *b) {
-              return a->getMeshsetId() < b->getMeshsetId();
-            });
+  sortMeshsets(vec_ptr); 
   MoFEMFunctionReturn(0);
 }
 
