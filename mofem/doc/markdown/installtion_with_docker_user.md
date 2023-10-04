@@ -28,7 +28,7 @@ The containers available at the moment are:
 
 ## using Docker user interface
 
-This section describes how to set up and run the Docker container within the Docker user interface. For doing this in terminal, go to the next section.
+This section describes how to set up and run the Docker container within the Docker user interface. For doing this in terminal, go to the [next section](#docker_terminal_installation).
 
 After opening Docker you should be able to see and follow the following images, dependent on the operating system and version of Docker you have.
 
@@ -60,7 +60,7 @@ After filling in the fields as above, press `Run`. The installed container can b
 
 If you want to stop the container, you can do so from the `Actions` column on the right. Square to stop, and triangle to start it again. If you used this method, you can skip the next section and continue to [Accessing the hub section](#docker_access_hub) to find passwords and how to run things.
 
-## using terminal
+## using terminal {#docker_terminal_installation}
 
 For this section, initialise docker, open your terminal and use the following commands.
 
