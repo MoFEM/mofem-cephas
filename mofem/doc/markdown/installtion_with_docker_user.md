@@ -44,7 +44,7 @@ At the top you can see a search bar and if you are connected to internet you can
 <a id='figure_1'></a> 
     <center><b>Figure 2. Docker search for the relevant Image and tag.</b></center>
 
-Press `Run` to pull and run the container at the same time. Alternatively, if you want to see a progress bar, pull first and then navigate to the container to run it afterwards.
+Press `Run` to pull and run the container at the same time. Alternatively, if you want to see a progress bar, pull first and then navigate to the container to run it afterwards. After selecting `Run` a new window will appear. Expand <span style="color:red"> `Optional settings`</span> and fill the fields as shown in the following Figure 3.
 
 <!-- <img src="./../figures/docker_container_run_settings.png" alt="Docker - container run settings for ports: 2222:22 and 8000:8000" width="100%"/> -->
 <img src="docker_container_run_settings.png" alt="Docker - container run settings for ports: 2222:22 and 8000:8000" width="100%"/>
@@ -58,7 +58,7 @@ After filling in the fields as above, press `Run`. The installed container can b
 <a id='figure_1'></a> 
     <center><b>Figure 4. Stopping and starting a docker container.</b></center>
 
-If you want to stop the container, you can do so from the `Actions` column on the right. Square to stop, and triangle to start it again. If you used this method, you can skip the next section and continue to [Password and login section](#docker_password_login) and onwards to find passwords and how to run things.
+If you want to stop the container, you can do so from the `Actions` column on the right. Square to stop, and triangle to start it again. If you used this method, you can skip the next section and continue to [Accessing the hub section](#docker_access_hub) to find passwords and how to run things.
 
 ## using terminal
 
@@ -84,7 +84,7 @@ Once installed, you do not have to reinstall it. Instead, start it again by:
 docker start workshop2023
 ~~~~~
 
-#### M1 chip case on Mac
+#### ARM architecture case on Mac
 
 If you have a Mac with an ARM chip, you have to switch platforms when you run the compiler,
 ~~~~~~
@@ -94,7 +94,7 @@ That results in a suboptimal performance, however, it is a workable solution.
 
 > The base system is Ubuntu 20.04. To compile code for *arm* architecture, we would have to upgrade the system to Ubuntu 22.04, and then it would be possible to compile MoFEM ecosystem for M1 chip. That is tested and works. However, additionally, you would have to compile gMesh from scratch. Python pip installation for gMesh and *arm* architectures is not available. If you know how to do it, we will welcome PR from you to fix this problem.
 
-## How to connect to the container {#docker_connect_to_container}
+### How to connect to the container {#docker_connect_to_container}
 
 - If you run a container locally, [http://localhost:8000](http://localhost:8000)
 - If you install the Docker package into SSH you can attach directly to the running container as a *root* user.
@@ -112,6 +112,8 @@ docker exec -it workshop2023 /bin/bash
 ~~~~
 passwd mofem 
 ~~~~ 
+
+# Accessing and running with jupyter hub {#docker_access_hub}
 
 ## Password and login {#docker_password_login}
 
