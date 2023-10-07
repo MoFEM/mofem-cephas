@@ -521,7 +521,8 @@ struct Problem {
    */
   inline auto &getColDofsSequence() const { return sequenceColDofContainer; }
 
-  using EmptyFieldBlocks = std::pair<BitFieldId, BitFieldId>;
+  using BlockFieldPair = std::pair<BitFieldId, BitFieldId>;
+  using EmptyFieldBlocks = std::vector<BlockFieldPair>;
 
   /**
    * @brief Get the empty field blocks
@@ -544,11 +545,10 @@ struct Problem {
    * @param add_fields
    * @return EmptyFieldBlocks&
    */
-  inline EmptyFieldBlocks &
-  addFieldToEmptyFieldBlocks(const EmptyFieldBlocks add_fields) const {
-    emptyFieldBlocks.first |= add_fields.first;
-    emptyFieldBlocks.second |= add_fields.second;
-    return emptyFieldBlocks;
+  inline BlockFieldPair &
+  addFieldToEmptyFieldBlocks(const BlockFieldPair add_fields) const {
+    emptyFieldBlocks.push_back(add_fields);
+    return emptyFieldBlocks.back();
   }
 
 private:
@@ -559,6 +559,7 @@ private:
   mutable EmptyFieldBlocks emptyFieldBlocks;
 };
 
+using BlockFieldPair = Problem::BlockFieldPair;
 using EmptyFieldBlocks = Problem::EmptyFieldBlocks;
 
 /**
