@@ -104,7 +104,6 @@ SchurL2Mats::MatSetValues(Mat M, const EntitiesFieldData::EntData &row_data,
                 data.getFieldEntities()[i]->getLocalUniqueId())
 
         );
-
       }
 
       return FieldEntity::getLocalUniqueIdCalculate(
@@ -113,7 +112,6 @@ SchurL2Mats::MatSetValues(Mat M, const EntitiesFieldData::EntData &row_data,
           ent_form_type_and_id(type0, id)
 
       );
-
     }
   };
 
@@ -171,7 +169,6 @@ SchurL2Mats::MatSetValues(Mat M, const EntitiesFieldData::EntData &row_data,
     };
 
     CHKERR asmb(get_storage().getMat());
-
   }
 
   MoFEMFunctionReturn(0);
@@ -367,7 +364,13 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
                      "Wrong size %d != %d", invMat.size1(), cc_off_mat.size2());
           }
 #endif // NDEBUG
-          noalias(invDiagOffMat) = prod(cc_off_mat, invMat);
+
+          // noalias(invDiagOffMat) = prod(cc_off_mat, invMat);
+          cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+                      cc_off_mat.size1(), invMat.size2(), cc_off_mat.size2(),
+                      1., &*cc_off_mat.data().begin(), cc_off_mat.size2(),
+                      &*invMat.data().begin(), invMat.size2(), 0.,
+                      &*invDiagOffMat.data().begin(), invDiagOffMat.size2());
 
           for (auto r_lo : schur_row_ptr_view) {
             auto &col_uid = r_lo->uidCol;
@@ -390,7 +393,15 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
                        invDiagOffMat.size2());
             }
 #endif // NDEBUG
-            noalias(offMatInvDiagOffMat) = prod(invDiagOffMat, rr_off_mat);
+
+            // noalias(offMatInvDiagOffMat) = prod(invDiagOffMat, rr_off_mat);
+            cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+                        invDiagOffMat.size1(), rr_off_mat.size2(),
+                        invDiagOffMat.size2(), 1.,
+                        &*invDiagOffMat.data().begin(), invDiagOffMat.size2(),
+                        &*rr_off_mat.data().begin(), rr_off_mat.size2(), 0.,
+                        &*offMatInvDiagOffMat.data().begin(),
+                        offMatInvDiagOffMat.size2());
 
             CHKERR add_off_mat(row_uid, col_uid, c_lo->getRowInd(),
                                r_lo->getColInd(), offMatInvDiagOffMat);
