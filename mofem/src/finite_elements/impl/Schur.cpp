@@ -517,8 +517,9 @@ struct SCHUR_DSYSV {
 
     inv.resize(nb, nb, false);
     inv.clear();
-    for (int cc = 0; cc != nb; ++cc)
-      inv(cc, cc) = -1;
+    auto ptr = &*inv.data().begin();
+    for (int c = 0; c != nb; ++c, ptr += nb + 1)
+      *ptr = -1;
     ipiv.resize(nb, false);
     lapack_work.resize(nb * nb, false);
     const auto info =
@@ -551,8 +552,9 @@ struct SCHUR_DGESV {
 
     inv.resize(nb, nb, false);
     inv.clear();
-    for (int c = 0; c != nb; ++c)
-      inv(c, c) = -1;
+    auto ptr = &*inv.data().begin();
+    for (int c = 0; c != nb; ++c, ptr += nb + 1)
+      *ptr = -1;
     ipiv.resize(nb, false);
     const auto info = lapack_dgesv(nb, nb, &*m.data().begin(), nb,
                                    &*ipiv.begin(), &*inv.data().begin(), nb);
