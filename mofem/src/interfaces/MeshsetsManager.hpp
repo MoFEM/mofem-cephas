@@ -893,6 +893,8 @@ protected:
   CubitMeshSet_multiIndex cubitMeshsets; ///< cubit meshsets
   boost::shared_ptr<boost::program_options::options_description>
       configFileOptionsPtr; ///< config file options
+
+  static void sortMeshsets(std::vector<const CubitMeshSets *> &vec_ptr);
 };
 
 template <class CUBIT_BC_DATA_TYPE>

@@ -30,6 +30,7 @@ TimeScale::TimeScale(std::string file_name, std::string delimiter,
 
 MoFEMErrorCode TimeScale::timeData(std::string delimiter) {
   MoFEMFunctionBegin;
+  MOFEM_LOG_CHANNEL("WORLD");
   PetscBool arg_found = PETSC_FALSE;
   char time_file_name[255] = {'\0'};
   CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, fileNameFlag.c_str(),
