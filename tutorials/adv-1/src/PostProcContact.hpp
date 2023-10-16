@@ -27,12 +27,11 @@ using PostProcEleBdy = PostProcEleByDim<SPACE_DIM>::PostProcEleBdy;
 
 struct Monitor : public FEMethod {
 
-  Monitor(SmartPetscObj<DM> &dm,
-          std::tuple<SmartPetscObj<Vec>, SmartPetscObj<VecScatter>> ux_scatter,
-          std::tuple<SmartPetscObj<Vec>, SmartPetscObj<VecScatter>> uy_scatter,
-          std::tuple<SmartPetscObj<Vec>, SmartPetscObj<VecScatter>> uz_scatter)
-      : dM(dm), uXScatter(ux_scatter), uYScatter(uy_scatter),
-        uZScatter(uz_scatter), moabVertex(mbVertexPostproc), sTEP(0) {
+  Monitor(SmartPetscObj<DM> &dm, bool use_mfront = false,
+          boost::shared_ptr<GenericElementInterface> mfront_interface = nullptr,
+          bool is_axisymmetric = false)
+      : dM(dm), moabVertex(mbVertexPostproc), sTEP(0), useMFront(use_mfront),
+        mfrontInterface(mfront_interface), isAxisymmetric(is_axisymmetric) {
 
     MoFEM::Interface *m_field_ptr;
     CHKERR DMoFEMGetInterfacePtr(dM, &m_field_ptr);
@@ -264,26 +263,35 @@ struct Monitor : public FEMethod {
     auto post_proc = [&]() {
       MoFEMFunctionBegin;
 
-      auto post_proc_begin =
-          boost::make_shared<PostProcBrokenMeshInMoabBaseBegin>(*m_field_ptr,
+      if (!useMFront) {
+        auto post_proc_begin =
+            boost::make_shared<PostProcBrokenMeshInMoabBaseBegin>(*m_field_ptr,
+                                                                  postProcMesh);
+        auto post_proc_end =
+            boost::make_shared<PostProcBrokenMeshInMoabBaseEnd>(*m_field_ptr,
                                                                 postProcMesh);
-      auto post_proc_end = boost::make_shared<PostProcBrokenMeshInMoabBaseEnd>(
-          *m_field_ptr, postProcMesh);
 
-      CHKERR DMoFEMPreProcessFiniteElements(dM, post_proc_begin->getFEMethod());
-      if (!postProcBdyFe) {
-        postProcDomainFe->copyTs(*this); // this here is a Monitor
-        CHKERR DMoFEMLoopFiniteElements(dM, "bFE", postProcDomainFe);
+        CHKERR DMoFEMPreProcessFiniteElements(dM,
+                                              post_proc_begin->getFEMethod());
+        if (!postProcBdyFe) {
+          postProcDomainFe->copyTs(*this); // this here is a Monitor
+          CHKERR DMoFEMLoopFiniteElements(dM, "bFE", postProcDomainFe);
+        } else {
+          postProcDomainFe->copyTs(*this); // this here is a Monitor
+          postProcBdyFe->copyTs(*this);
+          CHKERR DMoFEMLoopFiniteElements(dM, "dFE", postProcDomainFe);
+          CHKERR DMoFEMLoopFiniteElements(dM, "bFE", postProcBdyFe);
+        }
+        CHKERR DMoFEMPostProcessFiniteElements(dM,
+                                               post_proc_end->getFEMethod());
+
+        CHKERR post_proc_end->writeFile(
+            "out_contact_" + boost::lexical_cast<std::string>(sTEP) + ".h5m");
       } else {
-        postProcDomainFe->copyTs(*this); // this here is a Monitor
-        postProcBdyFe->copyTs(*this);
-        CHKERR DMoFEMLoopFiniteElements(dM, "dFE", postProcDomainFe);
-        CHKERR DMoFEMLoopFiniteElements(dM, "bFE", postProcBdyFe);
+        mfrontInterface->updateElementVariables();
+        mfrontInterface->postProcessElement(ts_step);
       }
-      CHKERR DMoFEMPostProcessFiniteElements(dM, post_proc_end->getFEMethod());
 
-      CHKERR post_proc_end->writeFile(
-          "out_contact_" + boost::lexical_cast<std::string>(sTEP) + ".h5m");
       MoFEMFunctionReturn(0);
     };
 
@@ -413,6 +421,17 @@ struct Monitor : public FEMethod {
     MoFEMFunctionReturn(0);
   }
 
+  MoFEMErrorCode setScatterVectors(
+      std::tuple<SmartPetscObj<Vec>, SmartPetscObj<VecScatter>> ux_scatter,
+      std::tuple<SmartPetscObj<Vec>, SmartPetscObj<VecScatter>> uy_scatter,
+      std::tuple<SmartPetscObj<Vec>, SmartPetscObj<VecScatter>> uz_scatter) {
+    MoFEMFunctionBegin;
+    uXScatter = ux_scatter;
+    uYScatter = uy_scatter;
+    uZScatter = uz_scatter;
+    MoFEMFunctionReturn(0);
+  }
+
 private:
   SmartPetscObj<DM> dM;
   std::tuple<SmartPetscObj<Vec>, SmartPetscObj<VecScatter>> uXScatter;
@@ -432,6 +451,10 @@ private:
   double lastTime;
   double deltaTime;
   int sTEP;
+
+  bool useMFront;
+  bool isAxisymmetric;
+  boost::shared_ptr<GenericElementInterface> mfrontInterface;
 };
 
 } // namespace ContactOps

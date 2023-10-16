@@ -140,6 +140,8 @@ using namespace HenckyOps;
 #include <PostProcContact.hpp>
 #include <ContactNaturalBC.hpp>
 
+#include <MFrontMoFEMInterface.hpp>
+
 using DomainRhsBCs = NaturalBC<DomainEleOp>::Assembly<AT>::LinearForm<IT>;
 using OpDomainRhsBCs =
     DomainRhsBCs::OpFlux<ContactOps::DomainBCs, 1, SPACE_DIM>;
@@ -171,6 +173,9 @@ private:
   std::tuple<SmartPetscObj<Vec>, SmartPetscObj<VecScatter>> uXScatter;
   std::tuple<SmartPetscObj<Vec>, SmartPetscObj<VecScatter>> uYScatter;
   std::tuple<SmartPetscObj<Vec>, SmartPetscObj<VecScatter>> uZScatter;
+
+  boost::shared_ptr<GenericElementInterface> mfrontInterface;
+  boost::shared_ptr<Monitor> monitorPtr;
 
 #ifdef PYTHON_SFD
   boost::shared_ptr<SDFPython> sdfPythonPtr;
@@ -301,7 +306,46 @@ MoFEMErrorCode Contact::setupProblem() {
   CHKERR simple->setFieldOrder("SIGMA", 0);
   CHKERR simple->setFieldOrder("SIGMA", order - 1, &boundary_ents);
 
-  CHKERR simple->setUp();
+  if (!use_mfront) {
+    CHKERR simple->setUp();
+  } else {
+
+    if (SPACE_DIM == 3) {
+      mfrontInterface =
+          boost::make_shared<MFrontMoFEMInterface<TRIDIMENSIONAL>>(
+              mField, "U", "GEOMETRY", true, is_quasi_static);
+    } else if (SPACE_DIM == 2) {
+      if (is_axisymmetric) {
+        mfrontInterface =
+            boost::make_shared<MFrontMoFEMInterface<AXISYMMETRICAL>>(
+                mField, "U", "GEOMETRY", true, is_quasi_static);
+      } else {
+        mfrontInterface = boost::make_shared<MFrontMoFEMInterface<PLANESTRAIN>>(
+            mField, "U", "GEOMETRY", true, is_quasi_static);
+      }
+    }
+
+    CHKERR mfrontInterface->getCommandLineParameters();
+    CHKERR mfrontInterface->addElementFields();
+    CHKERR mfrontInterface->createElements();
+
+    CHKERR simple->defineFiniteElements();
+    CHKERR simple->defineProblem(PETSC_TRUE);
+    CHKERR simple->buildFields();
+    CHKERR simple->buildFiniteElements();
+
+    CHKERR mField.build_finite_elements("MFRONT_EL");
+    CHKERR mfrontInterface->addElementsToDM(simple->getDM());
+
+    CHKERR simple->buildProblem();
+  }
+
+  auto dm = simple->getDM();
+  monitorPtr = boost::make_shared<Monitor>(dm, use_mfront, mfrontInterface,
+                                           is_axisymmetric);
+  if (use_mfront) {
+    mfrontInterface->setMonitorPtr(monitorPtr);
+  }
 
   auto project_ho_geometry = [&]() {
     Projection10NodeCoordsOnField ent_method(mField, "GEOMETRY");
@@ -333,8 +377,10 @@ MoFEMErrorCode Contact::createCommonData() {
     CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-alpha_damping",
                                  &alpha_damping, PETSC_NULL);
 
-    MOFEM_LOG("CONTACT", Sev::inform) << "Young modulus " << young_modulus;
-    MOFEM_LOG("CONTACT", Sev::inform) << "Poisson_ratio " << poisson_ratio;
+    if (!use_mfront) {
+      MOFEM_LOG("CONTACT", Sev::inform) << "Young modulus " << young_modulus;
+      MOFEM_LOG("CONTACT", Sev::inform) << "Poisson_ratio " << poisson_ratio;
+    }
     MOFEM_LOG("CONTACT", Sev::inform) << "Density " << rho;
     MOFEM_LOG("CONTACT", Sev::inform) << "cn_contact " << cn_contact;
     MOFEM_LOG("CONTACT", Sev::inform)
@@ -400,6 +446,11 @@ MoFEMErrorCode Contact::bC() {
                                            "SIGMA", 0, 3, false, true);
   CHKERR bc_mng->removeBlockDOFsOnEntities(
       simple->getProblemName(), "NO_CONTACT", "SIGMA", 0, 3, false, true);
+
+  if (is_axisymmetric) {
+    CHKERR bc_mng->removeBlockDOFsOnEntities(
+        simple->getProblemName(), "REMOVE_X", "SIGMA", 0, 3, false, true);
+  }
 
   // Note remove has to be always before push. Then node marking will be
   // corrupted.
@@ -469,8 +520,10 @@ MoFEMErrorCode Contact::OPs() {
 
     }
 
-    CHKERR HenckyOps::opFactoryDomainLhs<SPACE_DIM, AT, IT, DomainEleOp>(
-        mField, pip, "U", "MAT_ELASTIC", Sev::verbose, scale);
+    if (!use_mfront) {
+      CHKERR HenckyOps::opFactoryDomainLhs<SPACE_DIM, AT, IT, DomainEleOp>(
+          mField, pip, "U", "MAT_ELASTIC", Sev::verbose, scale);
+    }
 
     MoFEMFunctionReturn(0);
   };
@@ -509,11 +562,13 @@ MoFEMErrorCode Contact::OPs() {
           }));
     }
 
-    CHKERR HenckyOps::opFactoryDomainRhs<SPACE_DIM, AT, IT, DomainEleOp>(
-        mField, pip, "U", "MAT_ELASTIC", Sev::inform, scale);
+    if (!use_mfront) {
+      CHKERR HenckyOps::opFactoryDomainRhs<SPACE_DIM, AT, IT, DomainEleOp>(
+          mField, pip, "U", "MAT_ELASTIC", Sev::inform, scale);
+    }
 
     CHKERR ContactOps::opFactoryDomainRhs<SPACE_DIM, AT, IT, DomainEleOp>(
-        pip, "SIGMA", "U");
+        pip, "SIGMA", "U", is_axisymmetric);
 
     MoFEMFunctionReturn(0);
   };
@@ -556,12 +611,13 @@ MoFEMErrorCode Contact::OPs() {
           ));
     }
 
-    CHKERR ContactOps::opFactoryBoundaryLhs<SPACE_DIM, AT, GAUSS,
-                                            BoundaryEleOp>(pip, "SIGMA", "U");
+    CHKERR
+    ContactOps::opFactoryBoundaryLhs<SPACE_DIM, AT, GAUSS, BoundaryEleOp>(
+        pip, "SIGMA", "U", is_axisymmetric);
     CHKERR ContactOps::opFactoryBoundaryToDomainLhs<SPACE_DIM, AT, GAUSS,
                                                     DomainEle>(
         mField, pip, simple->getDomainFEName(), "SIGMA", "U", "GEOMETRY",
-        integration_rule_vol);
+        integration_rule_vol, is_axisymmetric);
 
     MoFEMFunctionReturn(0);
   };
@@ -594,8 +650,9 @@ MoFEMErrorCode Contact::OPs() {
           }));
     }
 
-    CHKERR ContactOps::opFactoryBoundaryRhs<SPACE_DIM, AT, GAUSS,
-                                            BoundaryEleOp>(pip, "SIGMA", "U");
+    CHKERR
+    ContactOps::opFactoryBoundaryRhs<SPACE_DIM, AT, GAUSS, BoundaryEleOp>(
+        pip, "SIGMA", "U", is_axisymmetric);
 
     MoFEMFunctionReturn(0);
   };
@@ -609,6 +666,16 @@ MoFEMErrorCode Contact::OPs() {
   CHKERR add_boundary_base_ops(pip_mng->getOpBoundaryRhsPipeline());
   CHKERR add_boundary_ops_lhs(pip_mng->getOpBoundaryLhsPipeline());
   CHKERR add_boundary_ops_rhs(pip_mng->getOpBoundaryRhsPipeline());
+
+  if (use_mfront) {
+    auto t_type = GenericElementInterface::IM2;
+    if (is_quasi_static == PETSC_TRUE)
+      t_type = GenericElementInterface::IM;
+
+    mfrontInterface->setOperators();
+    mfrontInterface->setupSolverFunctionTS(t_type);
+    mfrontInterface->setupSolverJacobianTS(t_type);
+  }
 
   CHKERR pip_mng->setDomainRhsIntegrationRule(integration_rule_vol);
   CHKERR pip_mng->setDomainLhsIntegrationRule(integration_rule_vol);
@@ -666,11 +733,10 @@ MoFEMErrorCode Contact::tsSolve() {
 
   auto set_time_monitor = [&](auto dm, auto solver) {
     MoFEMFunctionBegin;
-    boost::shared_ptr<Monitor> monitor_ptr(
-        new Monitor(dm, uXScatter, uYScatter, uZScatter));
+    monitorPtr->setScatterVectors(uXScatter, uYScatter, uZScatter);
     boost::shared_ptr<ForcesAndSourcesCore> null;
     CHKERR DMMoFEMTSSetMonitor(dm, solver, simple->getDomainFEName(),
-                               monitor_ptr, null, null);
+                               monitorPtr, null, null);
     MoFEMFunctionReturn(0);
   };
 
