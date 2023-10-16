@@ -127,6 +127,9 @@ double alpha_damping = 0;
 
 double scale = 1.;
 
+bool use_mfront = true;
+bool is_axisymmetric = true;
+
 namespace ContactOps {
 double cn_contact = 0.1;
 }; // namespace ContactOps
