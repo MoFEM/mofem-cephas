@@ -3,6 +3,9 @@
  * \example approx_surface.cpp
  *
  */
+#ifndef EXECUTABLE_DIMENSION
+#define EXECUTABLE_DIMENSION 3
+#endif
 
 #include <MoFEM.hpp>
 
@@ -13,6 +16,9 @@ static char help[] = "...\n\n";
 #include <BasicFiniteElements.hpp>
 
 constexpr int FM_DIM = 2;
+
+constexpr int SPACE_DIM =
+    EXECUTABLE_DIMENSION; //< Space dimension of problem, mesh
 
 template <int DIM> struct ElementsAndOps {};
 
@@ -39,9 +45,7 @@ using AssemblyBoundaryEleOp =
     FormsIntegrators<BoundaryEleOp>::Assembly<PETSC>::OpBase;
 
 
-constexpr double a = 47.65;
-constexpr double a2 = a * a;
-constexpr double a4 = a2 * a2;
+double a = 47.65;
 
 constexpr double A = 1;
 
@@ -50,7 +54,7 @@ FTensor::Index<'j', 3> j;
 FTensor::Index<'k', 3> k;
 
 auto res_J = [](const double x, const double y, const double z) {
-  const double res = (x * x + y * y - a2);
+  const double res = (x * x + y * y - (a * a));
   return res;
 };
 
@@ -500,6 +504,13 @@ MoFEMFunctionBegin;
     MoFEMFunctionBegin;
     smoothing_ents.clear();
     string block_name = "SMOOTHING_SURFACE";
+    char block_name_char[255];
+    PetscBool flg = PETSC_FALSE;
+    CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-smooth_block_name", block_name_char, 255, &flg);
+
+    if(flg){
+      block_name = block_name_char;
+    }
 
     for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField, BLOCKSET, bit)) {
       if (bit->getName().compare(0, block_name.size(), block_name) == 0) {
@@ -531,12 +542,54 @@ MoFEMFunctionBegin;
   auto simple = mField.getInterface<Simple>();
   //is it domain or boundary?
   // CHKERR simple->addDomainField("GEOMETRY", H1, AINSWORTH_LEGENDRE_BASE, 3);
-  CHKERR simple->addBoundaryField("GEOMETRY", H1, AINSWORTH_LEGENDRE_BASE, 3);
-  CHKERR simple->addDataField("GEOMETRY", H1, AINSWORTH_LEGENDRE_BASE, 3);
+
+  Range domain_ents;
+  CHKERR mField.get_moab().get_entities_by_dimension(0, SPACE_DIM, domain_ents,
+                                                     true);
+
+  auto get_ents_by_dim = [&](const auto dim) {
+    if (dim == SPACE_DIM) {
+      return domain_ents;
+    } else {
+      Range ents;
+      if (dim == 0)
+        CHKERR mField.get_moab().get_connectivity(domain_ents, ents, true);
+      else
+        CHKERR mField.get_moab().get_entities_by_dimension(0, dim, ents, true);
+      return ents;
+    }
+  };
+
+  auto get_base = [&]() {
+    auto domain_ents = get_ents_by_dim(SPACE_DIM);
+    if (domain_ents.empty())
+      CHK_THROW_MESSAGE(MOFEM_NOT_FOUND, "Empty mesh");
+    const auto type = type_from_handle(domain_ents[0]);
+    switch (type) {
+    case MBQUAD:
+      return DEMKOWICZ_JACOBI_BASE;
+    case MBHEX:
+      return DEMKOWICZ_JACOBI_BASE;
+    case MBTRI:
+      return AINSWORTH_LEGENDRE_BASE;
+    case MBTET:
+      return AINSWORTH_LEGENDRE_BASE;
+    default:
+      CHK_THROW_MESSAGE(MOFEM_NOT_FOUND, "Element type not handled");
+    }
+    return NOBASE;
+  };
+
+  const auto base = get_base();
+
+  CHKERR simple->addBoundaryField("GEOMETRY", H1, base, 3);
+  CHKERR simple->addDataField("GEOMETRY", H1, base, 3);
 
   int order = 3;
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order, PETSC_NULL);
   cerr << "smoothing_ents.size()  " << smoothing_ents.size() <<"\n";
+
+  CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-radius", &a, PETSC_NULL);
   
   auto get_unused_skin = [&]() {
     Range body_ents;
@@ -590,10 +643,19 @@ MoFEMErrorCode ApproxSphere::setOPs() {
   auto bc_mng = mField.getInterface<BcManager>();
   auto simple = mField.getInterface<Simple>();
 
-  CHKERR bc_mng->removeBlockDOFsOnEntities(simple->getProblemName(), "REMOVE_Z",
+  CHKERR bc_mng->removeBlockDOFsOnEntities(simple->getProblemName(), "FIX_ALL",
                                            "GEOMETRY", 2, 2);
 
-  CHKERR bc_mng->removeBlockDOFsOnEntities(simple->getProblemName(), "SMOOTHING_SURFACE",
+  string block_name = "SMOOTHING_SURFACE";
+  char block_name_char[255];
+  PetscBool flg = PETSC_FALSE;
+  CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-smooth_block_name", block_name_char, 255, &flg);
+
+  if(flg){
+    block_name = block_name_char;
+   }
+
+  CHKERR bc_mng->removeBlockDOFsOnEntities(simple->getProblemName(), block_name,
                                            "GEOMETRY", 2, 2);
 
   auto integration_rule = [](int, int, int approx_order) {
@@ -622,6 +684,14 @@ MoFEMErrorCode ApproxSphere::setOPs() {
     MoFEMFunctionBegin;
     smoothing_ents.clear();
     string block_name = "SMOOTHING_SURFACE";
+    char block_name_char[255];
+    PetscBool flg = PETSC_FALSE;
+    CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-smooth_block_name", block_name_char, 255, &flg);
+
+    if(flg){
+      block_name = block_name_char;
+    }
+
     for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField, BLOCKSET, bit)) {
       if (bit->getName().compare(0, block_name.size(), block_name) == 0) {
         MOFEM_LOG("EXAMPLE", Sev::inform) << "Found smoothing blockset";
@@ -658,7 +728,7 @@ MoFEMErrorCode ApproxSphere::setOPs() {
   auto get_smoothing_edges = [&](Range &smoothing_edges) {
     MoFEMFunctionBegin;
     smoothing_edges.clear();
-    string block_name = "REMOVE_Z";
+    string block_name = "FIX_ALL";
 
     for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField, BLOCKSET, bit)) {
       if (bit->getName().compare(0, block_name.size(), block_name) == 0) {
@@ -708,6 +778,14 @@ MoFEMErrorCode ApproxSphere::solveSystem() {
     MoFEMFunctionBegin;
     smoothing_ents.clear();
     string block_name = "SMOOTHING_SURFACE";
+    char block_name_char[255];
+    PetscBool flg = PETSC_FALSE;
+    CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-smooth_block_name", block_name_char, 255, &flg);
+
+    if(flg)
+    {
+      block_name = block_name_char;
+    }
 
     for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField, BLOCKSET, bit)) {
       if (bit->getName().compare(0, block_name.size(), block_name) == 0) {
@@ -739,7 +817,7 @@ MoFEMErrorCode ApproxSphere::solveSystem() {
 auto get_smoothing_edges = [&](Range &smoothing_ents) {
     MoFEMFunctionBegin;
     smoothing_ents.clear();
-    string block_name = "REMOVE_Z";
+    string block_name = "FIX_ALL";
 
     for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField, BLOCKSET, bit)) {
       if (bit->getName().compare(0, block_name.size(), block_name) == 0) {
