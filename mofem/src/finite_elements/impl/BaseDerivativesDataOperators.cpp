@@ -17,48 +17,43 @@ OpBaseDerivativesBase::OpBaseDerivativesBase(
       verbosity(verb), severityLevel(sev), baseMassPtr(base_mass_ptr),
       dataL2(data_l2) {}
 
-MoFEMErrorCode
-OpBaseDerivativesMass<1>::doWork(int side, EntityType type,
-                                 EntitiesFieldData::EntData &data) {
-  MoFEMFunctionBegin;
-
-  if (sPace != L2) {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "Space should be set to L2");
-  }
-
+MoFEMErrorCode OpBaseDerivativesBase::calculateBase(GetOrderFun get_order) {
+  MoFEMFunctionBeginHot;
+  auto fe_ptr = getPtrFE();
   auto fe_type = getFEType();
-
-  auto calculate_base = [&]() {
-    MoFEMFunctionBeginHot;
-    auto fe_ptr = getPtrFE();
-    // Set data structure to store base
-    dataL2->dataOnEntities[fe_type].clear();
+  // Set data structure to store base
+  if (dataL2->dataOnEntities[MBVERTEX].size() != 1) {
     dataL2->dataOnEntities[MBVERTEX].clear();
     dataL2->dataOnEntities[MBVERTEX].push_back(
         new EntitiesFieldData::EntData());
+  }
+  if (dataL2->dataOnEntities[fe_type].size() != 1) {
+    dataL2->dataOnEntities[fe_type].clear();
     dataL2->dataOnEntities[fe_type].push_back(new EntitiesFieldData::EntData());
+  }
 
-    auto &vertex_data = dataL2->dataOnEntities[MBVERTEX][0];
-    vertex_data.getNSharedPtr(NOBASE) =
-        fe_ptr->getEntData(H1, MBVERTEX, 0).getNSharedPtr(NOBASE);
-    vertex_data.getDiffNSharedPtr(NOBASE) =
-        fe_ptr->getEntData(H1, MBVERTEX, 0).getDiffNSharedPtr(NOBASE);
+  auto &vertex_data = dataL2->dataOnEntities[MBVERTEX][0];
+  vertex_data.getNSharedPtr(NOBASE) =
+      fe_ptr->getEntData(H1, MBVERTEX, 0).getNSharedPtr(NOBASE);
+  vertex_data.getDiffNSharedPtr(NOBASE) =
+      fe_ptr->getEntData(H1, MBVERTEX, 0).getDiffNSharedPtr(NOBASE);
 
-    auto &ent_data = dataL2->dataOnEntities[fe_type][0];
-    ent_data.getSense() = 1;
-    ent_data.getBase() = base;
-    ent_data.getOrder() = std::max(0, fe_ptr->getMaxDataOrder() - 1);
+  auto &ent_data = dataL2->dataOnEntities[fe_type][0];
+  ent_data.getSense() = 1;
+  ent_data.getSpace() = L2;
+  ent_data.getBase() = base;
+  ent_data.getOrder() = get_order();
 
-    CHKERR fe_ptr->getElementPolynomialBase()->getValue(
-        getGaussPts(), boost::make_shared<EntPolynomialBaseCtx>(
-                           *dataL2, static_cast<FieldSpace>(L2),
-                           static_cast<FieldApproximationBase>(base), NOBASE));
-    MoFEMFunctionReturnHot(0);
-  };
+  CHKERR fe_ptr->getElementPolynomialBase()->getValue(
+      getGaussPts(), boost::make_shared<EntPolynomialBaseCtx>(
+                         *dataL2, static_cast<FieldSpace>(L2),
+                         static_cast<FieldApproximationBase>(base), NOBASE));
+  MoFEMFunctionReturnHot(0);
+}
 
-  CHKERR calculate_base();
-
+MoFEMErrorCode OpBaseDerivativesBase::calculateMass() {
+  MoFEMFunctionBegin;
+  auto fe_type = getFEType();
   auto &ent_data = dataL2->dataOnEntities[fe_type][0];
   auto &base_funcions = ent_data.getN(base);
   const auto nb = base_funcions.size2();
@@ -106,6 +101,22 @@ OpBaseDerivativesMass<1>::doWork(int side, EntityType type,
 
     cholesky_decompose(nN);
   }
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+OpBaseDerivativesMass<1>::doWork(int side, EntityType type,
+                                 EntitiesFieldData::EntData &data) {
+  MoFEMFunctionBegin;
+
+  if (sPace != L2) {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Space should be set to L2");
+  }
+
+  CHKERR calculateBase(
+      [this]() { return std::max(0, getPtrFE()->getMaxDataOrder() - 1); });
+  CHKERR calculateMass();
 
   MoFEMFunctionReturn(0);
 }

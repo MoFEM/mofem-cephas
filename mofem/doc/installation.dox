@@ -67,8 +67,8 @@ debug build types
 - Test run `elasticity` program
   ~~~~~~
   cd YOUR_INSTALLATION_DIRECTORY
-  cd mofem_install/mofem-cephas/mofem/users_modules/um-build-RelWithDebInfo-abcd1234/basic_finite_elements/elasticity
-  ./elasticity -my_file LShape.h5m -my_order 2
+  cd mofem_install/mofem-cephas/mofem/users_modules/um-build-RelWithDebInfo-abcd1234/tutorials/vec-0/
+  ./elastic_2d -file_name plate.cub -my_order 2
   ~~~~~~ 
   where `abcd1234` in `um-build-RelWithDebInfo-abcd1234` is the
   package hash and can different every time you install MoFEM.

@@ -114,6 +114,7 @@ struct FieldEvaluatorInterface : public UnknownInterface {
     boost::shared_ptr<PackData> pack_data(new PackData());
     MoFEM::Interface &m_field = cOre;
     pack_data->elePtr.reset(new VE(m_field));
+ 
     pack_data->setPtsDataPtr.reset(
         new SPD(boost::shared_ptr<VE>(pack_data, pack_data->elePtr.get()), ptr,
                 nb_eval_points, eps, verb));

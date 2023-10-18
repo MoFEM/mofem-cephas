@@ -156,6 +156,42 @@ struct ISManager : public UnknownInterface {
                               Range *ents = nullptr) const;
 
   /**
+    * \brief create IS for given problem, field and rank range (collective)
+    * \ingroup mofem_is_managers
+
+    * \param problem name
+    * \param rc ROW or COL
+    * \param field name
+    * \param min_coeff_idx
+    * \param max_coeff_idx
+    * \param ents if not null get dofs only on given entities
+    * \retval is out value
+
+    */
+  MoFEMErrorCode
+  isCreateProblemFieldAndRankLocal(const std::string problem_name,
+                                   RowColData rc, const std::string field,
+                                   int min_coeff_idx, int max_coeff_idx, IS *is,
+                                   Range *ents = nullptr) const;
+
+  /**
+   * \copybrief create IS for given problem, field and rank range (collective)
+   * \ingroup mofem_is_managers
+   *
+   * \param problem name
+   * \param rc ROW or COL
+   * \param field name
+   * \param min_coeff_idx
+   * \param max_coeff_idx
+   * \param ents if not null get dofs only on given entities
+   * \retval is out value
+   */
+  MoFEMErrorCode isCreateProblemFieldAndRankLocal(
+      const std::string problem_name, RowColData rc, const std::string field,
+      int min_coeff_idx, int max_coeff_idx, SmartPetscObj<IS> &smart_is,
+      Range *ents = nullptr) const;
+
+  /**
    * @brief create IS for given problem, field and type range (collective)
    * \ingroup mofem_is_managers
    *

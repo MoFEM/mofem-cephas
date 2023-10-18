@@ -544,6 +544,38 @@ struct MeshsetsManager : public UnknownInterface {
    *
    * \ingroup mofem_meshset_mng
    *
+   * \code
+  for (auto m :
+       m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(std::regex(
+
+           (boost::format("%s(.*)") % block_name).str()
+
+               ))
+
+  ) {
+    MOFEM_LOG("WORLD", Sev::inform) << m->getName();
+
+    Rants ents;
+    m_field.get_moab().get_entities_by_dimension(
+        m->getMeshset(), 0, ents, false);
+
+    auto print_vets = [](boost::shared_ptr<FieldEntity> ent_ptr) {
+      MoFEMFunctionBegin;
+      if(!(ent_ptr->getPStatus() & PSTATUS_NOT_OWNED)) {
+        MOFEM_LOG("SYNC", Sev::inform) << ents_ptr->getName() << ": " <<
+  ent_ptr->getEntFieldData();
+      }
+      MoFEMFunctionReturn(0);
+    };
+
+    CHKERR m_field.getInterface<FieldBlas>()->fieldLambdaOnEntities(
+        print_vets, "VELOCITIES", &ents);
+    CHKERR m_field.getInterface<FieldBlas>()->fieldLambdaOnEntities(
+        print_vets, "DISPLACEMENTS", &ents);
+    MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::ifrom);
+  }
+   * \endcode
+   *
    * @param reg_exp_name
    * @return std::vector<const CubitMeshSets *>
    */
@@ -861,6 +893,8 @@ protected:
   CubitMeshSet_multiIndex cubitMeshsets; ///< cubit meshsets
   boost::shared_ptr<boost::program_options::options_description>
       configFileOptionsPtr; ///< config file options
+
+  static void sortMeshsets(std::vector<const CubitMeshSets *> &vec_ptr);
 };
 
 template <class CUBIT_BC_DATA_TYPE>
@@ -869,7 +903,7 @@ MoFEMErrorCode MeshsetsManager::printBcSet(CUBIT_BC_DATA_TYPE &data,
   MoFEMFunctionBegin;
   const MoFEM::Interface &m_field = cOre;
   const moab::Interface &moab = m_field.get_moab();
-  for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_((*this), type, it)) {
+  for (auto it : getCubitMeshsetPtr(type)) {
     CHKERR it->getBcDataStructure(data);
     MOFEM_LOG("MeshsetMngWorld", Sev::inform) << *it;
     MOFEM_LOG("MeshsetMngWorld", Sev::inform) << data;
@@ -877,10 +911,13 @@ MoFEMErrorCode MeshsetsManager::printBcSet(CUBIT_BC_DATA_TYPE &data,
     for (EntityType t = MBVERTEX; t != MBENTITYSET; ++t) {
       int nb;
       CHKERR moab.get_number_entities_by_type(it->meshset, t, nb, true);
-      MOFEM_LOG("MeshsetMngWorld", Sev::inform)
-          << "msId " << it->getMeshsetId() << " number of "
-          << moab::CN::EntityTypeName(t) << " " << nb;
+      if (nb > 0) {
+        MOFEM_LOG("MeshsetMngSync", Sev::inform)
+            << "msId " << it->getMeshsetId() << " number of "
+            << moab::CN::EntityTypeName(t) << " " << nb;
+      }
     }
+    MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::inform);
   }
   MoFEMFunctionReturn(0);
 }

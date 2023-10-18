@@ -572,7 +572,9 @@ int main(int argc, char *argv[]) {
                 m_field, post_proc_mesh_ptr);
 
         auto op_loop_side = new OpLoopSide<EleOnSide>(
-            m_field, simple->getDomainFEName(), SPACE_DIM);
+            m_field, simple->getDomainFEName(), SPACE_DIM, Sev::noisy,
+            boost::make_shared<
+                ForcesAndSourcesCore::UserDataOperator::AdjCache>());
 
         auto ptr_values = boost::make_shared<VectorDouble>();
         auto ptr_diff_vals = boost::make_shared<MatrixDouble>();
