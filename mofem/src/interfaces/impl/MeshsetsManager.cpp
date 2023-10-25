@@ -587,10 +587,10 @@ MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
     const CubitBCType cubit_bc_type,
     std::vector<const CubitMeshSets *> &vec_ptr) const {
   MoFEMFunctionBegin;
-  for (auto &c : cubitMeshsets) {
-    if ((c.getBcType() & cubit_bc_type) == cubit_bc_type) {
-      vec_ptr.push_back(&c);
-    }
+  auto r = cubitMeshsets.get<CubitMeshsetType_mi_tag>().equal_range(
+      cubit_bc_type.to_ulong());
+  for (auto it = r.first; it != r.second; ++it) {
+    vec_ptr.push_back(&*it);
   }
   sortMeshsets(vec_ptr);
   MoFEMFunctionReturn(0);
