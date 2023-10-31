@@ -7,6 +7,9 @@
   operators should have iteration first over columns, then rows. ome operators.
   Since those operators are used in many problems, an implementation must be
   efficient.
+  Remove the convection terms from this file. They are in
+  TriLinearFormsIntegrators.hpp. Kept them here for now to avoid breaking other
+  codes.
 
 */
 
@@ -354,8 +357,7 @@ struct OpMixTensorTimesGradImpl<SPACE_DIM, GAUSS, OpBase> : public OpBase {
 
   OpMixTensorTimesGradImpl(const std::string row_field_name,
                            const std::string col_field_name,
-                           ConstantFun alpha_fun,
-                           const bool assemble_transpose,
+                           ConstantFun alpha_fun, const bool assemble_transpose,
                            const bool only_transpose = false)
       : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
         alphaConstant(alpha_fun) {
@@ -1082,7 +1084,6 @@ OpGradSymTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
         }
       }
     }
-
   }
 
   MoFEMFunctionReturn(0);
