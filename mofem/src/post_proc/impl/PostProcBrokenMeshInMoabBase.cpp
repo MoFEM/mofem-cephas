@@ -17,11 +17,13 @@ PostProcGenerateRefMeshBase::PostProcGenerateRefMeshBase()
 MoFEMErrorCode PostProcGenerateRefMeshBase::getOptions(std::string prefix) {
   MoFEMFunctionBegin;
 
-  CHKERR PetscOptionsGetInt(prefix.size() ? prefix.c_str() : PETSC_NULL,
-                            "-max_post_proc_ref_level", &defMaxLevel,
-                            PETSC_NULL);
-  CHKERR PetscOptionsGetBool(prefix.size() ? prefix.c_str() : PETSC_NULL,
-                             "-max_post_ho_nodes", &hoNodes, PETSC_NULL);
+  std::string opt1 = prefix.size() ? "-" + prefix + "_max_post_proc_ref_level"
+                                   : "-max_post_proc_ref_level";
+  CHKERR PetscOptionsGetInt(PETSC_NULL, opt1.c_str(), &defMaxLevel, PETSC_NULL);
+
+  std::string opt2 = prefix.size() ? "-" + prefix + "_max_post_ho_nodes"
+                                   : "-max_post_ho_nodes";
+  CHKERR PetscOptionsGetBool(PETSC_NULL, opt2.c_str(), &hoNodes, PETSC_NULL);
 
   if (defMaxLevel < 0)
     SETERRQ(PETSC_COMM_WORLD, MOFEM_INVALID_DATA,
