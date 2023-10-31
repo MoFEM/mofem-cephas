@@ -19,6 +19,7 @@ extern "C" {
 #include "impl/HODataOperators.cpp"
 #include "impl/MeshProjectionDataOperators.cpp"
 #include "impl/BaseDerivativesDataOperators.cpp"
+#include "impl/DGProjection.cpp"
 #include "impl/FormsIntegrators.cpp"
 #include "impl/VolumeElementForcesAndSourcesCore.cpp"
 #include "impl/FaceElementForcesAndSourcesCore.cpp"

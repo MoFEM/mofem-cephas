@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
       SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID, "No surface to cut");
     // Set surface entities. If surface entities are from existing side set,
     // copy those entities and do other geometrical transformations, like shift
-    // scale or streach, rotate.
+    // scale or stretch, rotate.
     if (meshset_manager->checkMeshset(side_set, SIDESET))
       CHKERR cut_mesh->copySurface(surface, NULL, shift, NULL, NULL,
                                    "surface.vtk");

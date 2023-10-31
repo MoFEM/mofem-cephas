@@ -107,13 +107,13 @@ Note that the script is compatible with both \em Python \em 2.x and \em 3.x.
 
 If problem is large, mesh can be partitioned for to save memory and improve efficiency. This can be done using native MoFEM tool,
 \code
-$USER_MODULES/tools/mofem_part -my_file $USER_MODULES/basic_finite_elements/nonlinear_elasticity/examples/cylinder.cub -my_nparts 16
+$USER_MODULES/tools/mofem_part -my_file cylinder.cub -my_nparts 16
 \endcode
 The partitioned mesh is saved to file *out.h5m* in current working directory.
 
 For large meshes, partitioning can be in parallel, for example
 \code
-mpirun -np 2 $USER_MODULES/tools/mofem_part -my_file $USER_MODULES/basic_finite_elements/nonlinear_elasticity/examples/cylinder.cub -my_nparts 16
+mpirun -np 2 $USER_MODULES/tools/mofem_part -my_file cylinder.cub -my_nparts 16
 \endcode
 
 \subsection running_multi_grid How to run multi-grid solver via approximation orders?

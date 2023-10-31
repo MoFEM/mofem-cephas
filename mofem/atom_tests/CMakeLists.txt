@@ -1601,6 +1601,23 @@ add_test(higher_derivatives
 )
 
 build_test(
+  dg_projection
+  dg_projection.cpp)
+
+add_test(dg_projection
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/dg_projection
+  -file_name rectangle_tri.h5m 
+  -ksp_atol 1e-12 -ksp_rtol 1e-12 
+  -ksp_type cg 
+  -pc_type lu 
+  -ksp_max_it 500 
+  -ksp_monitor
+  -log_severity_level inform
+  -log_no_color
+)
+
+build_test(
   hanging_node_approx
   hanging_node_approx.cpp)
 

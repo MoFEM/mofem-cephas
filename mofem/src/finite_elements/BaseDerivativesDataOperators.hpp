@@ -5,8 +5,8 @@
 
 
 
-#ifndef __BASE_DIREVATIVES_DATA_OPERATORS_HPP__
-#define __BASE_DIREVATIVES_DATA_OPERATORS_HPP__
+#ifndef __BASE_DERIVATIVES_DATA_OPERATORS_HPP__
+#define __BASE_DERIVATIVES_DATA_OPERATORS_HPP__
 
 namespace MoFEM {
 
@@ -24,6 +24,11 @@ protected:
 
   boost::shared_ptr<MatrixDouble> baseMassPtr;
   boost::shared_ptr<EntitiesFieldData> dataL2;
+
+  using GetOrderFun = boost::function<int()>;
+  MoFEMErrorCode calculateBase(GetOrderFun get_order);
+  MoFEMErrorCode calculateMass();
+  
 };
 
 template <int BASE_DIM>
@@ -104,4 +109,4 @@ template <> struct OpBaseDerivativesNext<3> : public OpBaseDerivativesNext<1> {
 
 } // namespace MoFEM
 
-#endif //__BASE_DIREVATIVES_DATA_OPERATORS_HPP__
+#endif //__BASE_DERIVATIVES_DATA_OPERATORS_HPP__

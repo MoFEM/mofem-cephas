@@ -23,18 +23,16 @@ PetscErrorCode Legendre_polynomials(int p, double s, double *diff_s, double *L,
   if (p < 0)
     SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "p < 0");
 #endif // NDEBUG
+
   L[0] = 1;
   if (diffL != NULL) {
-    diffL[0 * (p + 1) + 0] = 0;
-    if (dim >= 2) {
-      diffL[1 * (p + 1) + 0] = 0;
-      if (dim == 3) {
-        diffL[2 * (p + 1) + 0] = 0;
-      }
+    for (int d = 0; d != dim; ++d) {
+      diffL[d * (p + 1) + 0] = 0;
     }
   }
   if (p == 0)
     MoFEMFunctionReturnHot(0);
+
   L[1] = s;
   if (diffL != NULL) {
 #ifndef NDEBUG
@@ -42,37 +40,27 @@ PetscErrorCode Legendre_polynomials(int p, double s, double *diff_s, double *L,
       SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "diff_s == NULL");
     }
 #endif // NDEBUG
-    diffL[0 * (p + 1) + 1] = diff_s[0];
-    if (dim >= 2) {
-      diffL[1 * (p + 1) + 1] = diff_s[1];
-      if (dim == 3) {
-        diffL[2 * (p + 1) + 1] = diff_s[2];
-      }
+    for (int d = 0; d != dim; ++d) {
+      diffL[d * (p + 1) + 1] = diff_s[d];
     }
   }
   if (p == 1)
     MoFEMFunctionReturnHot(0);
+
   int l = 1;
   for (; l < p; l++) {
     double A = ((2 * (double)l + 1) / ((double)l + 1));
     double B = ((double)l / ((double)l + 1));
     L[l + 1] = A * s * L[l] - B * L[l - 1];
     if (diffL != NULL) {
-      diffL[0 * (p + 1) + l + 1] =
-          A * (s * diffL[0 * (p + 1) + l] + diff_s[0] * L[l]) -
-          B * diffL[0 * (p + 1) + l - 1];
-      if (dim >= 2) {
-        diffL[1 * (p + 1) + l + 1] =
-            A * (s * diffL[1 * (p + 1) + l] + diff_s[1] * L[l]) -
-            B * diffL[1 * (p + 1) + l - 1];
-        if (dim == 3) {
-          diffL[2 * (p + 1) + l + 1] =
-              A * (s * diffL[2 * (p + 1) + l] + diff_s[2] * L[l]) -
-              B * diffL[2 * (p + 1) + l - 1];
-        }
-      }
+      for (int d = 0; d != dim; ++d) {
+        diffL[d * (p + 1) + l + 1] =
+            A * (diff_s[d] * L[l] + s * diffL[d * (p + 1) + l]) -
+            B * diffL[d * (p + 1) + l - 1];
+      }      
     }
   }
+
   MoFEMFunctionReturnHot(0);
 }
 
@@ -220,18 +208,14 @@ PetscErrorCode Lobatto_polynomials(int p, double s, double *diff_s, double *L,
   if (p < 2)
     SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "p < 2");
 #endif // NDEBUG
-  double l[p + 5];
-  ierr = Legendre_polynomials(p + 4, s, NULL, l, NULL, 1);
+  double l[p + 1];
+  ierr = Legendre_polynomials(p, s, NULL, l, NULL, 1);
   CHKERRQ(ierr);
 
   L[0] = 1;
   if (diffL != NULL) {
-    diffL[0 * (p + 1) + 0] = 0;
-    if (dim >= 2) {
-      diffL[1 * (p + 1) + 0] = 0;
-      if (dim == 3) {
-        diffL[2 * (p + 1) + 0] = 0;
-      }
+    for (int d = 0; d != dim; ++d) {
+      diffL[d * (p + 1) + 0] = 0;
     }
   }
   L[1] = s;
@@ -241,12 +225,8 @@ PetscErrorCode Lobatto_polynomials(int p, double s, double *diff_s, double *L,
       SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "diff_s == NULL");
     }
 #endif // NDEBUG
-    diffL[0 * (p + 1) + 1] = diff_s[0];
-    if (dim >= 2) {
-      diffL[1 * (p + 1) + 1] = diff_s[1];
-      if (dim == 3) {
-        diffL[2 * (p + 1) + 1] = diff_s[2];
-      }
+    for (int d = 0; d != dim; ++d) {
+      diffL[d * (p + 1) + 1] = diff_s[d];
     }
   }
 
@@ -254,18 +234,13 @@ PetscErrorCode Lobatto_polynomials(int p, double s, double *diff_s, double *L,
   for (int k = 2; k <= p; k++) {
     const double factor = 2 * (2 * k - 1);
     L[k] = 1.0 / factor * (l[k] - l[k - 2]);
+  }
 
-    if (diffL != NULL) {
-      if (diff_s == NULL) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "diff_s == NULL");
-      }
+  if (diffL != NULL) {
+    for (int k = 2; k <= p; k++) {
       double a = l[k - 1] / 2.;
-      diffL[0 * (p + 1) + k] = a * diff_s[0];
-      if (dim >= 2) {
-        diffL[1 * (p + 1) + k] = a * diff_s[1];
-        if (dim == 3) {
-          diffL[2 * (p + 1) + k] = a * diff_s[2];
-        }
+      for (int d = 0; d != dim; ++d) {
+        diffL[d * (p + 1) + k] = a * diff_s[d];
       }
     }
   }
