@@ -130,6 +130,7 @@ using FTensor::operator>>;
 #include <FormsIntegrators.hpp>
 #include <LinearFormsIntegrators.hpp>
 #include <BiLinearFormsIntegrators.hpp>
+#include <TriLinearFormsIntegrators.hpp>
 #include <Schur.hpp>
 #include <OperatorsTester.hpp>
 
