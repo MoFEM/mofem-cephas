@@ -13,20 +13,6 @@
 
 namespace MoFEM {
 
-/**
- * @brief Wrapper on user dtat (element) operator used to select specialization
- * of essential bc.
- *
- * @tparam T
- */
-template <typename T> struct EssentialOpType;
-
-/**
- * @brief Specialisation for b.c. applied by different types of meshsets
- *
- * @tparam BC
- */
-template <CubitBC BC> struct EssentialMeshsetType;
 
 /**
  * @brief Class (Function) to enforce essential constrains
