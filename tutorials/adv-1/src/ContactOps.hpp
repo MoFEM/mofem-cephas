@@ -734,19 +734,19 @@ OpConstrainBoundaryLhs_dUImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::iNtegrate(
   auto dtype = np::dtype::get_builtin<double>();
   auto size = bp::make_tuple(nb_gauss_pts);
   auto stride = bp::make_tuple(3*sizeof(double));
-  np::ndarray spatial_coords_x = = np::empty(size, dtype);
-  np::ndarray spatial_coords_y = = np::empty(size, dtype);
-  np::ndarray spatial_coords_z = = np::empty(size, dtype);
+  //np::ndarray spatial_coords_x = = np::empty(size, dtype);
+  //np::ndarray spatial_coords_y = = np::empty(size, dtype);
+  //np::ndarray spatial_coords_z = = np::empty(size, dtype);
 
-  auto get_python_data = [&](np::ndarray &pythonData, VectorDouble &data, int *id ){
-      MoFEMFunctionBegin;
-      pythonData = np::from_data(data[id], dtype, size, stride, bp::object());
-      MoFEMFunctionReturn(0);
-  }
+  //auto get_python_data = [&](np::ndarray &pythonData, VectorDouble &data, int *id ){
+  //    MoFEMFunctionBegin;
+  //    pythonData = np::from_data(data[id], dtype, size, stride, bp::object());
+  //    MoFEMFunctionReturn(0);
+  //};
 
-  get_python_data(spatial_coords_x, t_spatial_coords_mat, 0)
-  get_python_data(spatial_coords_y, t_spatial_coords_mat, 1)
-  get_python_data(spatial_coords_z, t_spatial_coords_mat, 2)
+  //et_python_data(spatial_coords_x, t_spatial_coords_mat, 0);
+  //get_python_data(spatial_coords_y, t_spatial_coords_mat, 1);
+  //get_python_data(spatial_coords_z, t_spatial_coords_mat, 2);
 
   auto ts_time = AssemblyBoundaryEleOp::getTStime();
   auto ts_time_step = AssemblyBoundaryEleOp::getTStimeStep();
