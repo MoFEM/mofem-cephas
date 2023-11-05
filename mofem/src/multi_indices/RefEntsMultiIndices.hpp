@@ -179,7 +179,7 @@ template <> struct RefEntityTmp<0> {
   /** \brief Get entity type
    */
   inline EntityType getEntType() const {
-    return (EntityType)((this->ent & MB_TYPE_MASK) >> MB_ID_WIDTH);
+    return type_from_handle(this->ent);
   }
 
   /**
@@ -188,7 +188,7 @@ template <> struct RefEntityTmp<0> {
    * @return int 
    */
   inline int getEntDimension() const {
-    return moab::CN::Dimension(getEntType());
+    return dimension_from_handle(this->ent);
   }
 
   /**
@@ -197,14 +197,12 @@ template <> struct RefEntityTmp<0> {
    * @return const char* 
    */
   inline const char *getEntTypeName() const {
-    return moab::CN::EntityTypeName(getEntType());
+    return type_name_from_handle(this->ent);
   }
 
   /** \brief get entity id
    */
-  inline EntityID getEntId() const {
-    return (EntityID)(this->ent & MB_ID_MASK);
-  };
+  inline EntityID getEntId() const { return id_from_handle(this->ent); }
 
   static inline EntityHandle
   getOwnerEnt(const EntityHandle ent,

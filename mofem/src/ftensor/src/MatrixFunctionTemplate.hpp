@@ -920,7 +920,7 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
   }
 
   /**
-   * @brief Get second direvarive of matrix
+   * @brief Get second directive of matrix
    *
    * \f[
    * LS_{klmn} =
@@ -928,13 +928,13 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
    * \f]
    *
    * @tparam T
-   * @param t_val eiegn values vector
-   * @param t_vec eiegn vectors matrix
+   * @param t_val eigen values vector
+   * @param t_vec eigen vectors matrix
    * @param f function
    * @param d_f derivative of function
    * @param dd_f second derivative of function
    * @param t_S second rank tensor S
-   * @return auto second derivatives, forth order tensor with minor simetries
+   * @return auto second derivatives, forth order tensor with minor symmetries
    */
   template <typename T>
   inline auto getDiffDiffMat(Fun f, Fun d_f, Fun dd_f, T &t_S) {

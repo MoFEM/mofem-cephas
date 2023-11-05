@@ -9,7 +9,7 @@ namespace MoFEM {
 FaceElementForcesAndSourcesCore::FaceElementForcesAndSourcesCore(
     Interface &m_field)
     : ForcesAndSourcesCore(m_field),
-      meshPositionsFieldName("MESH_NODE_POSITIONS") {}
+      meshPositionsFieldName("MESH_NODE_POSITIONS"), aRea(elementMeasure) {}
 
 MoFEMErrorCode
 FaceElementForcesAndSourcesCore::calculateAreaAndNormalAtIntegrationPts() {

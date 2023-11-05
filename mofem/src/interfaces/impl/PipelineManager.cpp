@@ -222,11 +222,11 @@ SmartPetscObj<TS> PipelineManager::createTSEX(SmartPetscObj<DM> dm) {
 
   getDMTsCtx(dm)->clearLoops();
 
-  // Add element to calculate rhs of stiff part
-  if (feDomainRhs)
+  // Add element to calculate rhs of slow part
+  if (feDomainExplicitRhs)
     CHKERR DMMoFEMTSSetRHSFunction(dm, simple->getDomainFEName(),
                                    feDomainExplicitRhs, null, null);
-  if (feBoundaryRhs)
+  if (feBoundaryExplicitRhs)
     CHKERR DMMoFEMTSSetRHSFunction(dm, simple->getBoundaryFEName(),
                                    feBoundaryExplicitRhs, null, null);
   if (feSkeletonExplicitRhs)

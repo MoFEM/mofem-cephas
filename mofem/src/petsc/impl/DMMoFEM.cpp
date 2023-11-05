@@ -607,14 +607,14 @@ static PetscErrorCode DMMoFEMKSPSetComputeRHS(DM dm, S fe_name, T0 method,
   MoFEMFunctionBegin;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
   if (pre_only) {
-    dm_field->kspCtx->get_preProcess_to_do_Rhs().push_back(pre_only);
+    dm_field->kspCtx->getPreProcComputeRhs().push_back(pre_only);
   }
   if (method) {
-    dm_field->kspCtx->get_loops_to_do_Rhs().push_back(
+    dm_field->kspCtx->getComputeRhs().push_back(
         PairNameFEMethodPtr(fe_name, method));
   }
   if (post_only) {
-    dm_field->kspCtx->get_postProcess_to_do_Rhs().push_back(post_only);
+    dm_field->kspCtx->getPostProcComputeRhs().push_back(post_only);
   }
   CHKERR DMKSPSetComputeRHS(dm, KspRhs, dm_field->kspCtx.get());
   MoFEMFunctionReturn(0);
@@ -648,14 +648,14 @@ static PetscErrorCode DMMoFEMKSPSetComputeOperators(DM dm, S fe_name, T0 method,
   MoFEMFunctionBegin;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
   if (pre_only) {
-    dm_field->kspCtx->get_preProcess_to_do_Mat().push_back(pre_only);
+    dm_field->kspCtx->getPreProcSetOperators().push_back(pre_only);
   }
   if (method) {
-    dm_field->kspCtx->get_loops_to_do_Mat().push_back(
+    dm_field->kspCtx->getSetOperators().push_back(
         PairNameFEMethodPtr(fe_name, method));
   }
   if (post_only) {
-    dm_field->kspCtx->get_postProcess_to_do_Mat().push_back(post_only);
+    dm_field->kspCtx->getPostProcSetOperators().push_back(post_only);
   }
   CHKERR DMKSPSetComputeOperators(dm, KspMat, dm_field->kspCtx.get());
   MoFEMFunctionReturn(0);
@@ -688,14 +688,14 @@ static PetscErrorCode DMMoFEMSNESSetFunction(DM dm, S fe_name, T0 method,
   MoFEMFunctionBegin;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
   if (pre_only) {
-    dm_field->snesCtx->get_preProcess_to_do_Rhs().push_back(pre_only);
+    dm_field->snesCtx->getPreProcComputeRhs().push_back(pre_only);
   }
   if (method) {
-    dm_field->snesCtx->get_loops_to_do_Rhs().push_back(
+    dm_field->snesCtx->getComputeRhs().push_back(
         PairNameFEMethodPtr(fe_name, method));
   }
   if (post_only) {
-    dm_field->snesCtx->get_postProcess_to_do_Rhs().push_back(post_only);
+    dm_field->snesCtx->getPostProcComputeRhs().push_back(post_only);
   }
   CHKERR DMSNESSetFunction(dm, SnesRhs, dm_field->snesCtx.get());
   MoFEMFunctionReturn(0);
@@ -729,14 +729,14 @@ static PetscErrorCode DMMoFEMSNESSetJacobian(DM dm, S fe_name, T0 method,
   MoFEMFunctionBegin;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
   if (pre_only) {
-    dm_field->snesCtx->get_preProcess_to_do_Mat().push_back(pre_only);
+    dm_field->snesCtx->getPreProcSetOperators().push_back(pre_only);
   }
   if (method) {
-    dm_field->snesCtx->get_loops_to_do_Mat().push_back(
+    dm_field->snesCtx->getSetOperators().push_back(
         PairNameFEMethodPtr(fe_name, method));
   }
   if (post_only) {
-    dm_field->snesCtx->get_postProcess_to_do_Mat().push_back(post_only);
+    dm_field->snesCtx->getPostProcSetOperators().push_back(post_only);
   }
   CHKERR DMSNESSetJacobian(dm, SnesMat, dm_field->snesCtx.get());
   MoFEMFunctionReturn(0);

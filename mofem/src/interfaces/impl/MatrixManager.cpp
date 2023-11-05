@@ -98,13 +98,19 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
       // if entity is not problem refinement level
       if ((fe_bit & prb_bit).any() && (fe_bit & prb_mask) == fe_bit) {
 
-        const bool empty_row_block =
-            (empty_field_blocks.first & (*mit_row)->getId()).none();
+        auto check_block = [&empty_field_blocks](auto &r_if, auto &col_id) {
+          for(auto &b : empty_field_blocks) {
+            if((b.first & r_if).any() && (b.second & col_id).any()) {
+              return false;
+            }
+          }
+          return true;
+        };
 
         for (auto &it : r.first->entFePtr->getColFieldEnts()) {
           if (auto e = it.lock()) {
-            if (empty_row_block ||
-                (empty_field_blocks.second & e->getId()).none()) {
+
+            if (check_block((*mit_row)->getId(), e->getId())) {
 
               if (auto cache = e->entityCacheColDofs.lock()) {
                 const auto lo = cache->loHi[0];

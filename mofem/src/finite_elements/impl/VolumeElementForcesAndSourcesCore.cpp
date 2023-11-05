@@ -133,7 +133,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::setIntegrationPts() {
       cblas_dcopy(nb_gauss_pts, QUAD_3D_TABLE[rule]->weights, 1,
                   &gaussPts(3, 0), 1);
 
-      CHKERR calc_base_for_tet();
+      // CHKERR calc_base_for_tet();
 
       auto &base = dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE);
       auto &diff_base = dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE);

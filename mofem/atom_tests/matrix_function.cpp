@@ -1083,7 +1083,7 @@ int main(int argc, char *argv[]) {
       return std::make_tuple(t_a, t_eig_vecs, t_eig_vals);
     };
 
-    // Testsing quadratic function for 2d
+    // Testing quadratic function for 2d
     {
 
       std::array<double, 9> a{1., 0.1,
@@ -1161,7 +1161,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    // Testsing quadratic function for repeating eigen valsues
+    // Testing quadratic function for repeating eigen values
     {
 
       std::array<double, 9> a{2., 0,

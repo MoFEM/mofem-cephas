@@ -271,7 +271,7 @@ MoFEMErrorCode ISManager::isCreateProblemFieldAndRank(
   CHKERR m_field.get_problem(problem_name, &problem_ptr);
   const auto bit_number = m_field.get_field_bit_number(field);
 
-  typedef NumeredDofEntity_multiIndex::index<Unique_mi_tag>::type DofsByUId;
+  using DofsByUId = NumeredDofEntity_multiIndex::index<Unique_mi_tag>::type;
   DofsByUId::iterator it, hi_it;
   int nb_loc_dofs;
   switch (rc) {
@@ -306,12 +306,12 @@ MoFEMErrorCode ISManager::isCreateProblemFieldAndRank(
     };
 
     auto check = [&]() {
-      const auto ceff_idx = (*it)->getDofCoeffIdx();
+      const auto coeff_idx = (*it)->getDofCoeffIdx();
       if (
 
           (*it)->getPetscLocalDofIdx() >= nb_loc_dofs ||
 
-          ceff_idx < min_coeff_idx || ceff_idx > max_coeff_idx
+          coeff_idx < min_coeff_idx || coeff_idx > max_coeff_idx
 
       )
         return false;
@@ -329,7 +329,7 @@ MoFEMErrorCode ISManager::isCreateProblemFieldAndRank(
   int *id;
   CHKERR PetscMalloc(idx_vec.size() * sizeof(int), &id);
   std::copy(idx_vec.begin(), idx_vec.end(), id);
-  CHKERR ISCreateGeneral(PETSC_COMM_WORLD, idx_vec.size(), id,
+  CHKERR ISCreateGeneral(m_field.get_comm(), idx_vec.size(), id,
                          PETSC_OWN_POINTER, is);
 
   MoFEMFunctionReturn(0);
@@ -343,6 +343,105 @@ MoFEMErrorCode ISManager::isCreateProblemFieldAndRank(
   IS is;
   CHKERR isCreateProblemFieldAndRank(problem_name, rc, field, min_coeff_idx,
                                      max_coeff_idx, &is, ents_ptr);
+  smart_is = SmartPetscObj<IS>(is);
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode ISManager::isCreateProblemFieldAndRankLocal(
+    const std::string problem_name, RowColData rc, const std::string field,
+    int min_coeff_idx, int max_coeff_idx, IS *is, Range *ents_ptr) const {
+  const MoFEM::Interface &m_field = cOre;
+  const Problem *problem_ptr;
+  MoFEMFunctionBegin;
+  CHKERR m_field.get_problem(problem_name, &problem_ptr);
+  const auto bit_number = m_field.get_field_bit_number(field);
+
+  auto get_low_hi_uid = [&]() {
+    return std::make_pair(FieldEntity::getLoBitNumberUId(bit_number),
+                          FieldEntity::getHiBitNumberUId(bit_number));
+  };
+
+  auto get_low_hi_uid_by_entities = [&](auto f, auto s) {
+    return std::make_pair(DofEntity::getLoFieldEntityUId(bit_number, f),
+                          DofEntity::getHiFieldEntityUId(bit_number, s));
+  };
+
+  auto get_low_hi = [&](auto lo_uid, auto hi_uid) {
+    using DofsByUId = NumeredDofEntity_multiIndex::index<Unique_mi_tag>::type;
+    DofsByUId::iterator it, hi_it;
+    switch (rc) {
+    case ROW:
+      it = problem_ptr->numeredRowDofsPtr->get<Unique_mi_tag>().lower_bound(
+          lo_uid);
+      hi_it = problem_ptr->numeredRowDofsPtr->get<Unique_mi_tag>().upper_bound(
+          hi_uid);
+      break;
+    case COL:
+      it = problem_ptr->numeredColDofsPtr->get<Unique_mi_tag>().lower_bound(
+          lo_uid);
+      hi_it = problem_ptr->numeredColDofsPtr->get<Unique_mi_tag>().upper_bound(
+          hi_uid);
+      break;
+    default:
+      THROW_MESSAGE("not implemented");
+    }
+    return std::make_pair(it, hi_it);
+  };
+
+  auto check = [&](auto it) {
+    const auto coeff_idx = (*it)->getDofCoeffIdx();
+    if (
+
+        coeff_idx < min_coeff_idx || coeff_idx > max_coeff_idx
+
+    )
+      return false;
+    else
+      return true;
+  };
+
+  auto emplace_indices = [&](auto it, auto hi_it, auto &idx_vec) {
+    for (; it != hi_it; ++it) {
+      if (check(it))
+        idx_vec.emplace_back((*it)->getPetscLocalDofIdx());
+    }
+  };
+
+  auto [lo_uid, hi_uid] = get_low_hi_uid();
+  auto [lo, hi] = get_low_hi(lo_uid, hi_uid);
+  std::vector<int> idx_vec;
+  idx_vec.reserve(std::distance(lo, hi));
+
+  if (ents_ptr) {
+    for (auto pit = ents_ptr->const_pair_begin();
+         pit != ents_ptr->const_pair_end(); ++pit) {
+      auto [lo_uid, hi_uid] =
+          get_low_hi_uid_by_entities(pit->first, pit->second);
+      auto [lo, hi] = get_low_hi(lo_uid, hi_uid);
+      emplace_indices(lo, hi, idx_vec);
+    }
+  } else {
+    emplace_indices(lo, hi, idx_vec);
+  }
+
+  int *id;
+  CHKERR PetscMalloc(idx_vec.size() * sizeof(int), &id);
+  std::copy(idx_vec.begin(), idx_vec.end(), id);
+  CHKERR ISCreateGeneral(PETSC_COMM_SELF, idx_vec.size(), id, PETSC_OWN_POINTER,
+                         is);
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode ISManager::isCreateProblemFieldAndRankLocal(
+    const std::string problem_name, RowColData rc, const std::string field,
+    int min_coeff_idx, int max_coeff_idx, SmartPetscObj<IS> &smart_is,
+    Range *ents_ptr) const {
+  MoFEMFunctionBegin;
+  IS is;
+  CHKERR isCreateProblemFieldAndRankLocal(problem_name, rc, field,
+                                          min_coeff_idx, max_coeff_idx, &is,
+                                          ents_ptr);
   smart_is = SmartPetscObj<IS>(is);
   MoFEMFunctionReturn(0);
 }
@@ -473,14 +572,15 @@ MoFEMErrorCode ISManager::isCreateFromProblemFieldToOtherProblemField(
     RowColData x_rc, const std::string y_problem,
     const std::string y_field_name, RowColData y_rc, IS *ix, IS *iy) const {
   MoFEMFunctionBegin;
+  const MoFEM::Interface &m_field = cOre;
   std::vector<int> idx(0), idy(0);
   CHKERR isCreateFromProblemFieldToOtherProblemField(
       x_problem, x_field_name, x_rc, y_problem, y_field_name, y_rc, idx, idy);
   if (ix != PETSC_NULL) {
-    CHKERR ISCreateGeneral(PETSC_COMM_WORLD, idx.size(), &idx[0],
+    CHKERR ISCreateGeneral(m_field.get_comm(), idx.size(), &idx[0],
                            PETSC_COPY_VALUES, ix);
   }
-  CHKERR ISCreateGeneral(PETSC_COMM_WORLD, idy.size(), &idy[0],
+  CHKERR ISCreateGeneral(m_field.get_comm(), idy.size(), &idy[0],
                          PETSC_COPY_VALUES, iy);
   if (dEbug) {
     ISView(*ix, PETSC_VIEWER_STDOUT_WORLD);
@@ -545,13 +645,14 @@ MoFEMErrorCode ISManager::isCreateFromProblemToOtherProblem(
 MoFEMErrorCode ISManager::isCreateFromProblemToOtherProblem(
     const std::string x_problem, RowColData x_rc, const std::string y_problem,
     RowColData y_rc, IS *ix, IS *iy) const {
+  const MoFEM::Interface &m_field = cOre;
   MoFEMFunctionBegin;
   std::vector<int> idx(0), idy(0);
   CHKERR isCreateFromProblemToOtherProblem(x_problem, x_rc, y_problem, y_rc,
                                            idx, idy);
-  CHKERR ISCreateGeneral(PETSC_COMM_WORLD, idx.size(), &idx[0],
+  CHKERR ISCreateGeneral(m_field.get_comm(), idx.size(), &idx[0],
                          PETSC_COPY_VALUES, ix);
-  CHKERR ISCreateGeneral(PETSC_COMM_WORLD, idy.size(), &idy[0],
+  CHKERR ISCreateGeneral(m_field.get_comm(), idy.size(), &idy[0],
                          PETSC_COPY_VALUES, iy);
   if (dEbug) {
     ISView(*ix, PETSC_VIEWER_STDOUT_WORLD);
