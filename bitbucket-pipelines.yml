@@ -11,6 +11,7 @@ pipelines:
         runs-on: 
           - self.hosted
           - linux
+        size: 8x
         script:
           - echo "This step will run on a self hosted runner.";
           - ls $PWD
