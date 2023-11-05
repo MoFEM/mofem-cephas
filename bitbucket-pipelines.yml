@@ -15,6 +15,7 @@ pipelines:
         artifacts:
           - logs.txt
         script:
+          - set -o pipefail
           - SRC_DIR=$PWD
           - . /mofem_install/spack/share/spack/setup-env.sh
           - spack dev-build --before build --source-path $SRC_DIR --test root mofem-cephas@lukasz~copy_user_modules target=x86_64 build_type=Release ^petsc+X 2>&1 | tee $SRC_DIR/logs.txt
