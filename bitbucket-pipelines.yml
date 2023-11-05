@@ -1,6 +1,7 @@
 options:
-docker: true
-size: 10x
+  max-time: 120
+  docker: true
+  size: 100x
 
 pipelines:
   default:
