@@ -7,6 +7,9 @@ pipelines:
   default:
     - setp:
         name: Step 0
+        runs-on: 
+          - self.hosted
+          - linux
         script: 
           - echo "This step will run on a self hosted runner. Setp 0."
     - step:
