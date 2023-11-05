@@ -1,7 +1,7 @@
 options:
   max-time: 120
   docker: true
-  size: 8x
+  size: 2x
 
 pipelines:
   default:
