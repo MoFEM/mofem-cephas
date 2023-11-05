@@ -6,14 +6,7 @@ options:
 pipelines:
   default:
     - step:
-        name: Step 0
-        runs-on: 
-          - self.hosted
-          - linux
-        script: 
-          - echo "This step will run on a self hosted runner. Setp 0."
-    - step:
-        name: Step 1
+        name: Step Core
         image: likask/mofem-spack-env:0.13.0
         runs-on: 
           - self.hosted
@@ -22,11 +15,11 @@ pipelines:
         artifacts:
           - logs.txt
         script:
-          - echo "This step will run on a self hosted runner. Setp 1."
           - SRC_DIR=$PWD
           - . /mofem_install/spack/share/spack/setup-env.sh
-          - spack dev-build --before build --source-path $SRC_DIR --test root mofem-cephas@lukasz~copy_user_modules+docker target=x86_64 build_type=Release ^petsc+X | tee $SRC_DIR/logs.txt
-          - cd core*
-          - sed -i 's/WITHCOVERAGE:BOOL=OFF/WITHCOVERAGE:BOOL=ON/' CMakeCache.txt
+          - spack dev-build --before build --source-path $SRC_DIR --test root mofem-cephas@lukasz~copy_user_modules+docker target=x86_64 build_type=Release ^petsc+X 2>&1 | tee $SRC_DIR/logs.txt
+          - ls -lh 2>&1 | tee $SRC_DIR/logs.txt
+          - cd core* 
+          - sed -i 's/WITHCOVERAGE:BOOL=OFF/WITHCOVERAGE:BOOL=ON/' CMakeCache.txt 
           - sed -i 's/MOFEM_BUILD_TESTS:BOOL=OFF/MOFEM_BUILD_TESTS:BOOL=ON/' CMakeCache.txt 
-          - ctest --output-on-failure -V -S $SRC_DIR/script.cmake | tee -a $SRC_DIR/logs.txt
+          - ctest --output-on-failure -V -S $SRC_DIR/script.cmake 2>&1 | tee $SRC_DIR/logs.txt
