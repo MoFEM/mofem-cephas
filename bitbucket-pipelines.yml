@@ -1,9 +1,3 @@
-definitions:
-  services:
-    docker:
-      type: docker 
-      image: docker:dind
-
 pipelines:
   default:
     - step:
@@ -12,11 +6,8 @@ pipelines:
         runs-on: 
           - self.hosted
           - linux
-        services:
-          - docker
         script:
-          - docker --version
-          - ls /
-          - ls /src/
+          - echo "This step will run on a self hosted runner.";
+          - ls $PWD
           - . /mofem_install/spack/share/spack/setup-env.sh
           - spack dev-build -j 12 --source-path $PWD --test root mofem-cephas@lukasz~copy_user_modules+docker target=x86_64 build_type=Release ^petsc+X
