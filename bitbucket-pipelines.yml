@@ -22,4 +22,4 @@ pipelines:
           - cd core* 
           - sed -i 's/WITHCOVERAGE:BOOL=OFF/WITHCOVERAGE:BOOL=ON/' CMakeCache.txt 
           - sed -i 's/MOFEM_BUILD_TESTS:BOOL=OFF/MOFEM_BUILD_TESTS:BOOL=ON/' CMakeCache.txt 
-          - ctest --output-on-failure -V -S $SRC_DIR/script.cmake 2>&1 | tee -a $SRC_DIR/logs.txt
+          - ctest --output-on-failure -V -D Continuous 2>&1 | tee -a $SRC_DIR/logs.txt
