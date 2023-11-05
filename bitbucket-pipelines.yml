@@ -1,3 +1,7 @@
+options:
+docker: true
+size: 10x
+
 pipelines:
   default:
     - step:
