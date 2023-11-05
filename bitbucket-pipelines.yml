@@ -5,6 +5,10 @@ options:
 
 pipelines:
   default:
+    - setp:
+        name: Step 0
+        script: 
+          - echo "This step will run on a self hosted runner. Setp 0."
     - step:
         name: Step 1
         image: likask/mofem-spack-env:0.13.0
@@ -13,7 +17,7 @@ pipelines:
           - linux
         size: 8x
         script:
-          - echo "This step will run on a self hosted runner.";
+          - echo "This step will run on a self hosted runner. Setp 1."
           - ls $PWD
           - . /mofem_install/spack/share/spack/setup-env.sh
           - spack dev-build --before build --source-path $PWD --test root mofem-cephas@lukasz~copy_user_modules+docker target=x86_64 build_type=Release ^petsc+X
