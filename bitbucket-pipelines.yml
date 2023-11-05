@@ -21,6 +21,5 @@ pipelines:
           - spack dev-build --before build --source-path $SRC_DIR --test root mofem-cephas@lukasz~copy_user_modules target=x86_64 build_type=Release ^petsc+X 2>&1 | tee $SRC_DIR/logs.txt
           - ls -lh 2>&1 | tee -a $SRC_DIR/logs.txt
           - cd core* 
-          - sed -i 's/WITHCOVERAGE:BOOL=OFF/WITHCOVERAGE:BOOL=ON/' CMakeCache.txt 
           - sed -i 's/MOFEM_BUILD_TESTS:BOOL=OFF/MOFEM_BUILD_TESTS:BOOL=ON/' CMakeCache.txt 
-          - ctest --output-on-failure -V -D Continuous 2>&1 | tee -a $SRC_DIR/logs.txt
+          - ctest --output-on-failure -D Continuous 2>&1 | tee -a $SRC_DIR/logs.txt
