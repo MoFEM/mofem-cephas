@@ -1,12 +1,15 @@
-image: likask/mofem-spack-env:0.13.0
+definitions:
+  services:
+    docker:
+      image: likask/mofem-spack-env:0.13.0
+      variables:
+         DOCKER_OPTS: "--insecure-registry=my.docker.registry"
 
 pipelines:
   default:
     - step:
+        runs-on: self.hosted
+        services:
+          - docker
         script:
-          - echo PWD $PWD
-          - export MOFEM_SRC_DIR=$PWD
-          - echo MOFEM_SRC_DIR $MOFEM_SRC_DIR
-          - echo "Install with spack"
-          - . $SPACK_ROOT_DIR/share/spack/setup-env.sh
-          - spack dev-build -j 2 --source-path $MOFEM_SRC_DIR --test root mofem-cephas@lukasz~copy_user_modules+docker target=x86_64 build_type=Release ^petsc+X 
+          - docker docker run --rm -it --name test -v $PWD:/src likask/mofem-spack-env:0.13.0 /bin/bash -c ". /mofem_install/spack/share/spack/setup-env.sh;  spack dev-build -j 12 --source-path /src --test root mofem-cephas@lukasz~copy_user_modules+docker target=x86_64 build_type=Release ^petsc+X"
