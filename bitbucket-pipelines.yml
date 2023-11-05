@@ -16,4 +16,5 @@ pipelines:
           - echo "This step will run on a self hosted runner.";
           - ls $PWD
           - . /mofem_install/spack/share/spack/setup-env.sh
-          - spack dev-build -j 12 --source-path $PWD --test root mofem-cephas@lukasz~copy_user_modules+docker target=x86_64 build_type=Release ^petsc+X
+          - spack dev-build --before build --source-path $PWD --test root mofem-cephas@lukasz~copy_user_modules+docker target=x86_64 build_type=Release ^petsc+X
+          - cd core*; ctest --output-on-failure -V -S ../script.cmake
