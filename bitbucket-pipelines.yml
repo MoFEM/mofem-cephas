@@ -21,7 +21,10 @@ pipelines:
         size: 8x
         script:
           - echo "This step will run on a self hosted runner. Setp 1."
-          - ls $PWD
+          - SRC_DIR=$PWD
           - . /mofem_install/spack/share/spack/setup-env.sh
-          - spack dev-build --before build --source-path $PWD --test root mofem-cephas@lukasz~copy_user_modules+docker target=x86_64 build_type=Release ^petsc+X
-          - cd core*; ctest --output-on-failure -V -S ../script.cmake
+          - spack dev-build --before build --source-path $SRC_DIR --test root mofem-cephas@lukasz~copy_user_modules+docker target=x86_64 build_type=Release ^petsc+X
+          - cd core*
+          - sed -i 's/WITHCOVERAGE:BOOL=OFF/WITHCOVERAGE:BOOL=ON/' CMakeCache.txt
+          - sed -i 's/MOFEM_BUILD_TESTS:BOOL=OFF/MOFEM_BUILD_TESTS:BOOL=ON/' CMakeCache.txt 
+          - ctest --output-on-failure -V -S $SRC_DIR/script.cmake
