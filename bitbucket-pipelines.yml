@@ -22,4 +22,4 @@ pipelines:
           - ls -lh 2>&1 | tee -a $SRC_DIR/logs.txt
           - cd core* 
           - sed -i 's/MOFEM_BUILD_TESTS:BOOL=OFF/MOFEM_BUILD_TESTS:BOOL=ON/' CMakeCache.txt 
-          - ctest --output-on-failure -D Continuous 2>&1 | tee -a $SRC_DIR/logs.txt
+          - ctest --output-on-failure -D Experimental 2>&1 | tee -a $SRC_DIR/logs.txt
