@@ -441,7 +441,7 @@ struct OpCalculatePiolaStressImpl<DIM, GAUSS, DomainEleOp>
 
     for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
 
-#ifdef HECKY_SMALL_STRAIN
+#ifdef HENCKY_SMALL_STRAIN
       t_P(i, j) = t_D(i, j, k, l) * t_grad(k, l);
 #else
       FTensor::Tensor2<double, DIM, DIM> t_F;
@@ -512,7 +512,7 @@ struct OpHenckyTangentImpl<DIM, GAUSS, DomainEleOp> : public DomainEleOp {
 
     for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
 
-#ifdef HECKY_SMALL_STRAIN
+#ifdef HENCKY_SMALL_STRAIN
       dP_dF(i, j, k, l) = t_D(i, j, k, l);
 #else
 
