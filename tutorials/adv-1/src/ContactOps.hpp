@@ -118,7 +118,7 @@ struct SDFPython {
 
   MoFEMErrorCode evalSdf(
 
-      double deltaT, double t, np::ndarray &x, np::ndarray &y, np::ndarray &z, double tx, double ty, double tz,
+      double deltaT, double t, np::ndarray x, np::ndarray y, np::ndarray z, np::ndarray tx, np::ndarray ty, np::ndarray tz,
       np::ndarray &sdf
 
   ) {
@@ -139,7 +139,7 @@ struct SDFPython {
 
   MoFEMErrorCode evalGradSdf(
 
-      double deltaT, double t, np::ndarray x, np::ndarray y, np::ndarray z, double tx, double ty, double tz,
+      double deltaT, double t, np::ndarray x, np::ndarray y, np::ndarray z, np::ndarray tx, np::ndarray ty, np::ndarray tz,
       np::ndarray &grad_sdf
 
   ) {
@@ -164,7 +164,7 @@ struct SDFPython {
 
   MoFEMErrorCode evalHessSdf(
 
-      double deltaT, double t, np::ndarray x, np::ndarray y, np::ndarray z, double tx, double ty, double tz,
+      double deltaT, double t, np::ndarray x, np::ndarray y, np::ndarray z, np::ndarray tx, np::ndarray ty, np::ndarray tz,
       np::ndarray &hess_sdf
 
   ) {
@@ -200,67 +200,125 @@ static boost::weak_ptr<SDFPython> sdfPythonWeakPtr;
 //! [Surface distance function from python]
 
 using SurfaceDistanceFunction =
-    boost::function<np::ndarray(double deltaT, double t, np::ndarray x, np::ndarray y,
-                           np::ndarray z, double tx, double ty, double tz)>;
+    boost::function<np::ndarray(double deltaT, double t, int nb_gauss_pts, VectorDouble &spatial_coords, VectorDouble &normal_at_pts)>;
 
 using GradSurfaceDistanceFunction = boost::function<np::ndarray(
-    double deltaT, double t, np::ndarray x, np::ndarray y, np::ndarray z, double tx, double ty,
-    double tz)>;
+    double deltaT, double t, int nb_gauss_pts, VectorDouble &spatial_coords, VectorDouble &normal_at_pts)>;
 
 using HessSurfaceDistanceFunction =
     boost::function<np::ndarray(
-        double deltaT, double t, np::ndarray x, np::ndarray y, np::ndarray z, double tx,
-        double ty, double tz)>;
+        double deltaT, double t, int nb_gauss_pts, VectorDouble &spatial_coords, VectorDouble &normal_at_pts)>;
 
-inline np::ndarray surface_distance_function(double deltaT, double t, np::ndarray x,
-                                        np::ndarray y, np::ndarray z, double tx,
-                                        double ty, double tz) {
+inline np::ndarray convert_to_numpy(VectorDouble& data, int nb_gauss_pts,int id){
+        auto dtype = np::dtype::get_builtin<double>();
+        auto size = bp::make_tuple(nb_gauss_pts);
+        auto stride = bp::make_tuple(3*sizeof(double));
+        return(np::from_data(&data[id], dtype, size, stride, bp::object()));
+        };
+
+inline np::ndarray surface_distance_function(double deltaT, double t, int nb_gauss_pts, VectorDouble &spatial_coords, VectorDouble &normal_at_pts) {
 
 #ifdef PYTHON_SFD
   if (auto sdf_ptr = sdfPythonWeakPtr.lock()) {
-    np::ndarray sdf = x.copy();
-    CHK_MOAB_THROW(sdf_ptr->evalSdf(deltaT, t, x, y, z, tx, ty, tz, sdf),
+    auto dtype = np::dtype::get_builtin<double>();
+    auto size = bp::make_tuple(nb_gauss_pts);
+    auto stride = bp::make_tuple(3*sizeof(double));
+
+    bp::list python_coords;
+    bp::list python_normals;
+
+    for (int idx = 0; idx < 3; ++idx){
+      python_coords.append(convert_to_numpy(spatial_coords, nb_gauss_pts, idx));
+      python_normals.append(convert_to_numpy(normal_at_pts, nb_gauss_pts, idx));
+      };
+
+    np::ndarray sdf = np::empty(size,np::dtype::get_builtin<double>());
+    CHK_MOAB_THROW(sdf_ptr->evalSdf(deltaT, t, bp::extract<np::ndarray>(python_coords[0]), bp::extract<np::ndarray>(python_coords[1]), bp::extract<np::ndarray>(python_coords[2]), 
+    bp::extract<np::ndarray>(python_normals[0]), bp::extract<np::ndarray>(python_normals[1]), bp::extract<np::ndarray>(python_normals[2]), sdf),
                    "Failed python call");
     return sdf;
   }
 #endif
-  np::ndarray sdf = x.copy();
+  np::ndarray sdf = np::empty(bp::make_tuple(nb_gauss_pts),np::dtype::get_builtin<double>());
   return sdf;
 }
 
 inline np::ndarray
-grad_surface_distance_function(double deltaT, double t, np::ndarray x, np::ndarray y,
-                               np::ndarray z, double tx, double ty, double tz) {
+grad_surface_distance_function(double deltaT, double t, int nb_gauss_pts, VectorDouble &spatial_coords, VectorDouble &normal_at_pts) {
 #ifdef PYTHON_SFD
   if (auto sdf_ptr = sdfPythonWeakPtr.lock()) {
-    int size = x.shape(0);
-    np::ndarray grad_sdf = np::empty(bp::make_tuple(size,3),np::dtype::get_builtin<double>());
+    auto dtype = np::dtype::get_builtin<double>();
+    auto size = bp::make_tuple(nb_gauss_pts);
+    auto stride = bp::make_tuple(3*sizeof(double));
+
+    bp::list python_coords;
+    bp::list python_normals;
+
+    for (int idx = 0; idx < 3; ++idx){
+      python_coords.append(convert_to_numpy(spatial_coords, nb_gauss_pts, idx));
+      python_normals.append(convert_to_numpy(normal_at_pts, nb_gauss_pts, idx));
+      };
+
+    //np::ndarray x = bp::extract<np::ndarray>(python_coords[0]);
+    //np::ndarray y = bp::extract<np::ndarray>(python_coords[1]);
+    //np::ndarray z = bp::extract<np::ndarray>(python_coords[2]);
+    //np::ndarray x = np::from_data(&spatial_coords[0], dtype, size, stride, bp::object());
+    //np::ndarray y = np::from_data(&spatial_coords[1], dtype, size, stride, bp::object());
+    //np::ndarray z = np::from_data(&spatial_coords[2], dtype, size, stride, bp::object());
+
+    //np::ndarray tx = np::from_data(&normal_at_pts[0], dtype, size, stride, bp::object());
+    //np::ndarray ty = np::from_data(&normal_at_pts[1], dtype, size, stride, bp::object());
+    //np::ndarray tz = np::from_data(&normal_at_pts[2], dtype, size, stride, bp::object());
+
+    np::ndarray grad_sdf = np::empty(bp::make_tuple(nb_gauss_pts,3),np::dtype::get_builtin<double>());
     CHK_MOAB_THROW(
-        sdf_ptr->evalGradSdf(deltaT, t, x, y, z, tx, ty, tz, grad_sdf),
+        sdf_ptr->evalGradSdf(deltaT, t, bp::extract<np::ndarray>(python_coords[0]), bp::extract<np::ndarray>(python_coords[1]), bp::extract<np::ndarray>(python_coords[2]), 
+    bp::extract<np::ndarray>(python_normals[0]), bp::extract<np::ndarray>(python_normals[1]), bp::extract<np::ndarray>(python_normals[2]), grad_sdf),
         "Failed python call");
     return grad_sdf;
   }
 #endif
-  int size = x.shape(0);
-  np::ndarray grad_sdf = np::empty(bp::make_tuple(size,3),np::dtype::get_builtin<double>());
+  np::ndarray grad_sdf = np::empty(bp::make_tuple(nb_gauss_pts,3),np::dtype::get_builtin<double>());
   return grad_sdf;
 }
 
 inline np::ndarray
-hess_surface_distance_function(double deltaT, double t, np::ndarray x, np::ndarray y,
-                               np::ndarray z, double tx, double ty, double tz) {
+hess_surface_distance_function(double deltaT, double t, int nb_gauss_pts, VectorDouble &spatial_coords, VectorDouble &normal_at_pts) {
 #ifdef PYTHON_SFD
   if (auto sdf_ptr = sdfPythonWeakPtr.lock()) {
-    int size = x.shape(0);
-    np::ndarray hess_sdf = np::empty(bp::make_tuple(size,6),np::dtype::get_builtin<double>());
+    
+    auto dtype = np::dtype::get_builtin<double>();
+    auto size = bp::make_tuple(nb_gauss_pts);
+    auto stride = bp::make_tuple(3*sizeof(double));
+
+    bp::list python_coords;
+    bp::list python_normals;
+
+    for (int idx = 0; idx < 3; ++idx){
+      python_coords.append(convert_to_numpy(spatial_coords, nb_gauss_pts, idx));
+      python_normals.append(convert_to_numpy(normal_at_pts, nb_gauss_pts, idx));
+      };
+
+    //np::ndarray x = bp::extract<np::ndarray>(python_coords[0]);
+    //np::ndarray y = bp::extract<np::ndarray>(python_coords[1]);
+    //np::ndarray z = bp::extract<np::ndarray>(python_coords[2]);
+    //np::ndarray x = np::from_data(&spatial_coords[0], dtype, size, stride, bp::object());
+    //np::ndarray y = np::from_data(&spatial_coords[1], dtype, size, stride, bp::object());
+    //np::ndarray z = np::from_data(&spatial_coords[2], dtype, size, stride, bp::object());
+
+    //np::ndarray tx = np::from_data(&normal_at_pts[0], dtype, size, stride, bp::object());
+    //np::ndarray ty = np::from_data(&normal_at_pts[1], dtype, size, stride, bp::object());
+    //np::ndarray tz = np::from_data(&normal_at_pts[2], dtype, size, stride, bp::object());
+
+    np::ndarray hess_sdf = np::empty(bp::make_tuple(nb_gauss_pts,6),np::dtype::get_builtin<double>());
     CHK_MOAB_THROW(
-        sdf_ptr->evalHessSdf(deltaT, t, x, y, z, tx, ty, tz, hess_sdf),
+        sdf_ptr->evalHessSdf(deltaT, t, bp::extract<np::ndarray>(python_coords[0]), bp::extract<np::ndarray>(python_coords[1]), bp::extract<np::ndarray>(python_coords[2]), 
+    bp::extract<np::ndarray>(python_normals[0]), bp::extract<np::ndarray>(python_normals[1]), bp::extract<np::ndarray>(python_normals[2]), hess_sdf),
         "Failed python call");
     return hess_sdf;
   }
 #endif
-  int size = x.shape(0);
-  np::ndarray hess_sdf = np::empty(bp::make_tuple(size,6),np::dtype::get_builtin<double>());
+  np::ndarray hess_sdf = np::empty(bp::make_tuple(nb_gauss_pts,6),np::dtype::get_builtin<double>());
   return hess_sdf;
 }
 
@@ -503,27 +561,25 @@ OpEvaluateSDFImpl<DIM, GAUSS, BoundaryEleOp>::doWork(int side, EntityType type,
 
   MatrixDouble &disp = commonDataPtr->contactDisp;
   MatrixDouble &coords = BoundaryEleOp::getCoordsAtGaussPts();
-
+  //MatrixDouble &normal_at_pts = BoundaryEleOp::getNormalsAtGaussPts();
+  VectorDouble normal_at_pts;
   MatrixDouble spatial_coords;
   spatial_coords = coords + trans(disp);
   VectorDouble t_spatial_coords_mat = spatial_coords.data();
 
-  np::ndarray t_traction_mat_np = np::from_data(&t_traction_mat[0], np::dtype::get_builtin<double>(), bp::make_tuple(t_traction_mat.size()), bp::make_tuple(sizeof(double)), bp::object());
-  np::ndarray t_spatial_coords_mat_x_np = np::from_data(&t_spatial_coords_mat[0], np::dtype::get_builtin<double>(), bp::make_tuple(nb_gauss_pts), bp::make_tuple(3*sizeof(double)), bp::object());
-  np::ndarray t_spatial_coords_mat_y_np = np::from_data(&t_spatial_coords_mat[1], np::dtype::get_builtin<double>(), bp::make_tuple(nb_gauss_pts), bp::make_tuple(3*sizeof(double)), bp::object());
-  np::ndarray t_spatial_coords_mat_z_np = np::from_data(&t_spatial_coords_mat[2], np::dtype::get_builtin<double>(), bp::make_tuple(nb_gauss_pts), bp::make_tuple(3*sizeof(double)), bp::object());
+  //np::ndarray t_traction_mat_np = np::from_data(&t_traction_mat[0], np::dtype::get_builtin<double>(), bp::make_tuple(t_traction_mat.size()), bp::make_tuple(sizeof(double)), bp::object());
+  //np::ndarray t_spatial_coords_mat_x_np = np::from_data(&t_spatial_coords_mat[0], np::dtype::get_builtin<double>(), bp::make_tuple(nb_gauss_pts), bp::make_tuple(3*sizeof(double)), bp::object());
+  //np::ndarray t_spatial_coords_mat_y_np = np::from_data(&t_spatial_coords_mat[1], np::dtype::get_builtin<double>(), bp::make_tuple(nb_gauss_pts), bp::make_tuple(3*sizeof(double)), bp::object());
+  //np::ndarray t_spatial_coords_mat_z_np = np::from_data(&t_spatial_coords_mat[2], np::dtype::get_builtin<double>(), bp::make_tuple(nb_gauss_pts), bp::make_tuple(3*sizeof(double)), bp::object());
 
   auto sdf_array = surfaceDistanceFunction(
-        ts_time_step, ts_time, t_spatial_coords_mat_x_np, t_spatial_coords_mat_y_np, t_spatial_coords_mat_z_np,
-        0.0, 0.0, 0.0);
+        ts_time_step, ts_time, nb_gauss_pts, t_spatial_coords_mat, normal_at_pts);
   
   auto t_grad_sdf_array = gradSurfaceDistanceFunction(
-        ts_time_step, ts_time, t_spatial_coords_mat_x_np, t_spatial_coords_mat_y_np, t_spatial_coords_mat_z_np,
-        0.0, 0.0, 0.0);
+        ts_time_step, ts_time, nb_gauss_pts, t_spatial_coords_mat, normal_at_pts);
   
   auto t_hess_sdf_array = hessSurfaceDistanceFunction(
-        ts_time_step, ts_time, t_spatial_coords_mat_x_np, t_spatial_coords_mat_y_np, t_spatial_coords_mat_z_np,
-        0.0, 0.0, 0.0);
+        ts_time_step, ts_time, nb_gauss_pts, t_spatial_coords_mat, normal_at_pts);
 
 
   double* sdf_ptr = reinterpret_cast<double*>(sdf_array.get_data());
@@ -594,29 +650,22 @@ OpConstrainBoundaryRhsImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::iNtegrate(
 
   auto t_traction_mat = commonDataPtr->contactTraction.data();
   MatrixDouble &disp = commonDataPtr->contactDisp;
-  MatrixDouble &coords = BoundaryEleOp::getCoordsAtGaussPts();
-
+  MatrixDouble &coords = AssemblyBoundaryEleOp::getCoordsAtGaussPts();
+  //MatrixDouble &normal_at_pts = AssemblyBoundaryEleOp::getNormalsAtGaussPts();
+  VectorDouble normal_at_pts; // = normal_at_pts.data();
   MatrixDouble spatial_coords;
   spatial_coords = coords + trans(disp);
   VectorDouble t_spatial_coords_mat = spatial_coords.data();
-
-  np::ndarray t_traction_mat_np = np::from_data(&t_traction_mat[0], np::dtype::get_builtin<double>(), bp::make_tuple(t_traction_mat.size()), bp::make_tuple(sizeof(double)), bp::object());
-  np::ndarray t_spatial_coords_mat_x_np = np::from_data(&t_spatial_coords_mat[0], np::dtype::get_builtin<double>(), bp::make_tuple(nb_gauss_pts), bp::make_tuple(3*sizeof(double)), bp::object());
-  np::ndarray t_spatial_coords_mat_y_np = np::from_data(&t_spatial_coords_mat[1], np::dtype::get_builtin<double>(), bp::make_tuple(nb_gauss_pts), bp::make_tuple(3*sizeof(double)), bp::object());
-  np::ndarray t_spatial_coords_mat_z_np = np::from_data(&t_spatial_coords_mat[2], np::dtype::get_builtin<double>(), bp::make_tuple(nb_gauss_pts), bp::make_tuple(3*sizeof(double)), bp::object());
-
 
   auto ts_time = AssemblyBoundaryEleOp::getTStime();
   auto ts_time_step = AssemblyBoundaryEleOp::getTStimeStep();
 
   auto sdf_array = surfaceDistanceFunction(
-        ts_time_step, ts_time, t_spatial_coords_mat_x_np, t_spatial_coords_mat_y_np, t_spatial_coords_mat_z_np,
-        0.0, 0.0, 0.0);
+        ts_time_step, ts_time, nb_gauss_pts, t_spatial_coords_mat, normal_at_pts);
   
   auto t_grad_sdf_array = gradSurfaceDistanceFunction(
-        ts_time_step, ts_time, t_spatial_coords_mat_x_np, t_spatial_coords_mat_y_np, t_spatial_coords_mat_z_np,
-        0.0, 0.0, 0.0);
-  
+        ts_time_step, ts_time, nb_gauss_pts, t_spatial_coords_mat, normal_at_pts);
+    
   double* sdf_ptr = reinterpret_cast<double*>(sdf_array.get_data());
   double* grad_ptr = reinterpret_cast<double*>(t_grad_sdf_array.get_data());
 
@@ -719,49 +768,29 @@ OpConstrainBoundaryLhs_dUImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::iNtegrate(
 
   auto t_traction_mat = commonDataPtr->contactTraction.data();
   MatrixDouble &disp = commonDataPtr->contactDisp;
-  MatrixDouble &coords = BoundaryEleOp::getCoordsAtGaussPts();
-
+  MatrixDouble &coords = AssemblyBoundaryEleOp::getCoordsAtGaussPts();
+  //MatrixDouble &normal_at_pts = AssemblyBoundaryEleOp::getFTensor1NormalsAtGaussPts();
+  VectorDouble normal_at_pts;
   MatrixDouble spatial_coords;
   spatial_coords = coords + trans(disp);
   VectorDouble t_spatial_coords_mat = spatial_coords.data();
 
-  np::ndarray t_traction_mat_np = np::from_data(&t_traction_mat[0], np::dtype::get_builtin<double>(), bp::make_tuple(t_traction_mat.size()), bp::make_tuple(sizeof(double)), bp::object());
-  np::ndarray t_spatial_coords_mat_x_np = np::from_data(&t_spatial_coords_mat[0], np::dtype::get_builtin<double>(), bp::make_tuple(nb_gauss_pts), bp::make_tuple(3*sizeof(double)), bp::object());
-  np::ndarray t_spatial_coords_mat_y_np = np::from_data(&t_spatial_coords_mat[1], np::dtype::get_builtin<double>(), bp::make_tuple(nb_gauss_pts), bp::make_tuple(3*sizeof(double)), bp::object());
-  np::ndarray t_spatial_coords_mat_z_np = np::from_data(&t_spatial_coords_mat[2], np::dtype::get_builtin<double>(), bp::make_tuple(nb_gauss_pts), bp::make_tuple(3*sizeof(double)), bp::object());
-
-
-  auto dtype = np::dtype::get_builtin<double>();
-  auto size = bp::make_tuple(nb_gauss_pts);
-  auto stride = bp::make_tuple(3*sizeof(double));
-  //np::ndarray spatial_coords_x = = np::empty(size, dtype);
-  //np::ndarray spatial_coords_y = = np::empty(size, dtype);
-  //np::ndarray spatial_coords_z = = np::empty(size, dtype);
-
-  //auto get_python_data = [&](np::ndarray &pythonData, VectorDouble &data, int *id ){
-  //    MoFEMFunctionBegin;
-  //    pythonData = np::from_data(data[id], dtype, size, stride, bp::object());
-  //    MoFEMFunctionReturn(0);
-  //};
-
-  //et_python_data(spatial_coords_x, t_spatial_coords_mat, 0);
-  //get_python_data(spatial_coords_y, t_spatial_coords_mat, 1);
-  //get_python_data(spatial_coords_z, t_spatial_coords_mat, 2);
+  //np::ndarray t_traction_mat_np = np::from_data(&t_traction_mat[0], np::dtype::get_builtin<double>(), bp::make_tuple(t_traction_mat.size()), bp::make_tuple(sizeof(double)), bp::object());
+  //np::ndarray t_spatial_coords_mat_x_np = np::from_data(&t_spatial_coords_mat[0], np::dtype::get_builtin<double>(), bp::make_tuple(nb_gauss_pts), bp::make_tuple(3*sizeof(double)), bp::object());
+  //np::ndarray t_spatial_coords_mat_y_np = np::from_data(&t_spatial_coords_mat[1], np::dtype::get_builtin<double>(), bp::make_tuple(nb_gauss_pts), bp::make_tuple(3*sizeof(double)), bp::object());
+  //np::ndarray t_spatial_coords_mat_z_np = np::from_data(&t_spatial_coords_mat[2], np::dtype::get_builtin<double>(), bp::make_tuple(nb_gauss_pts), bp::make_tuple(3*sizeof(double)), bp::object());
 
   auto ts_time = AssemblyBoundaryEleOp::getTStime();
   auto ts_time_step = AssemblyBoundaryEleOp::getTStimeStep();
 
   auto sdf_array = surfaceDistanceFunction(
-        ts_time_step, ts_time, t_spatial_coords_mat_x_np, t_spatial_coords_mat_y_np, t_spatial_coords_mat_z_np,
-        0.0, 0.0, 0.0);
+        ts_time_step, ts_time, nb_gauss_pts, t_spatial_coords_mat, normal_at_pts);
   
   auto t_grad_sdf_array = gradSurfaceDistanceFunction(
-        ts_time_step, ts_time, t_spatial_coords_mat_x_np, t_spatial_coords_mat_y_np, t_spatial_coords_mat_z_np,
-        0.0, 0.0, 0.0);
+        ts_time_step, ts_time, nb_gauss_pts, t_spatial_coords_mat, normal_at_pts);
   
   auto t_hess_sdf_array = hessSurfaceDistanceFunction(
-        ts_time_step, ts_time, t_spatial_coords_mat_x_np, t_spatial_coords_mat_y_np, t_spatial_coords_mat_z_np,
-        0.0, 0.0, 0.0);
+        ts_time_step, ts_time, nb_gauss_pts, t_spatial_coords_mat, normal_at_pts);
   
   double* sdf_ptr = reinterpret_cast<double*>(sdf_array.get_data());
   double* grad_ptr = reinterpret_cast<double*>(t_grad_sdf_array.get_data());
@@ -876,29 +905,28 @@ OpConstrainBoundaryLhs_dTractionImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::
 
   auto t_traction_mat = commonDataPtr->contactTraction.data();
   MatrixDouble &disp = commonDataPtr->contactDisp;
-  MatrixDouble &coords = BoundaryEleOp::getCoordsAtGaussPts();
+  MatrixDouble &coords = AssemblyBoundaryEleOp::getCoordsAtGaussPts();
+  //MatrixDouble &normal_at_pts = AssemblyBoundaryEleOp::getFTensor1NormalsAtGaussPts();
+  VectorDouble normal_at_pts;
 
   MatrixDouble spatial_coords;
   spatial_coords = coords + trans(disp);
   VectorDouble t_spatial_coords_mat = spatial_coords.data();
 
-  np::ndarray t_traction_mat_np = np::from_data(&t_traction_mat[0], np::dtype::get_builtin<double>(), bp::make_tuple(t_traction_mat.size()), bp::make_tuple(sizeof(double)), bp::object());
-  np::ndarray t_spatial_coords_mat_x_np = np::from_data(&t_spatial_coords_mat[0], np::dtype::get_builtin<double>(), bp::make_tuple(nb_gauss_pts), bp::make_tuple(3*sizeof(double)), bp::object());
-  np::ndarray t_spatial_coords_mat_y_np = np::from_data(&t_spatial_coords_mat[1], np::dtype::get_builtin<double>(), bp::make_tuple(nb_gauss_pts), bp::make_tuple(3*sizeof(double)), bp::object());
-  np::ndarray t_spatial_coords_mat_z_np = np::from_data(&t_spatial_coords_mat[2], np::dtype::get_builtin<double>(), bp::make_tuple(nb_gauss_pts), bp::make_tuple(3*sizeof(double)), bp::object());
-
+  //np::ndarray t_traction_mat_np = np::from_data(&t_traction_mat[0], np::dtype::get_builtin<double>(), bp::make_tuple(t_traction_mat.size()), bp::make_tuple(sizeof(double)), bp::object());
+  //np::ndarray t_spatial_coords_mat_x_np = np::from_data(&t_spatial_coords_mat[0], np::dtype::get_builtin<double>(), bp::make_tuple(nb_gauss_pts), bp::make_tuple(3*sizeof(double)), bp::object());
+  //np::ndarray t_spatial_coords_mat_y_np = np::from_data(&t_spatial_coords_mat[1], np::dtype::get_builtin<double>(), bp::make_tuple(nb_gauss_pts), bp::make_tuple(3*sizeof(double)), bp::object());
+  //np::ndarray t_spatial_coords_mat_z_np = np::from_data(&t_spatial_coords_mat[2], np::dtype::get_builtin<double>(), bp::make_tuple(nb_gauss_pts), bp::make_tuple(3*sizeof(double)), bp::object());
 
   auto ts_time = AssemblyBoundaryEleOp::getTStime();
   auto ts_time_step = AssemblyBoundaryEleOp::getTStimeStep();
 
   auto sdf_array = surfaceDistanceFunction(
-        ts_time_step, ts_time, t_spatial_coords_mat_x_np, t_spatial_coords_mat_y_np, t_spatial_coords_mat_z_np,
-        0.0, 0.0, 0.0);
+        ts_time_step, ts_time, nb_gauss_pts, t_spatial_coords_mat, normal_at_pts);
   
   auto t_grad_sdf_array = gradSurfaceDistanceFunction(
-        ts_time_step, ts_time, t_spatial_coords_mat_x_np, t_spatial_coords_mat_y_np, t_spatial_coords_mat_z_np,
-        0.0, 0.0, 0.0);
-
+        ts_time_step, ts_time, nb_gauss_pts, t_spatial_coords_mat, normal_at_pts);
+  
   double* sdf_ptr = reinterpret_cast<double*>(sdf_array.get_data());
   double* grad_ptr = reinterpret_cast<double*>(t_grad_sdf_array.get_data());
 
