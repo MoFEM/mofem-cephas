@@ -460,7 +460,8 @@ BcManager::removeBlockDOFsOnEntities<BcDisplacementMeshsetType<BLOCKSET>>(
 
   for (auto m :
 
-       m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(BLOCKSET)) {
+       m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(
+           BLOCKSET | UNKNOWNNAME)) {
 
     const auto block_name = m->getName();
 
@@ -545,7 +546,8 @@ BcManager::removeBlockDOFsOnEntities<BcScalarMeshsetType<BLOCKSET>>(
 
   for (auto m :
 
-       m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(BLOCKSET)) {
+       m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(
+           BLOCKSET | UNKNOWNNAME)) {
 
     std::string bc_id = problem_name + "_" + field_name + "_" + m->getName();
 
@@ -1544,7 +1546,8 @@ BcManager::removeBlockDOFsOnEntities<BcForceMeshsetType<BLOCKSET>>(
 
   for (auto m :
 
-       m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(BLOCKSET)) {
+       m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(
+           BLOCKSET | UNKNOWNNAME)) {
 
     const auto block_name = m->getName();
     std::string bc_id = problem_name + "_" + field_name + "_" + block_name;
