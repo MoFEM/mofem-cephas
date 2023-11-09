@@ -68,7 +68,6 @@ add_test(
   contact_2d
   -file_name ${CMAKE_CURRENT_BINARY_DIR}/sphere_2d.h5m
   -ts_type beuler
-  -ts_max_time 1 -ts_dt 0.2 -log_no_color)
-
-  tutorials_build_and_install(
-  approx_surface ${CMAKE_CURRENT_SOURCE_DIR}/approx_surface.cpp)
+  -ts_max_time 1 -ts_dt 0.2 
+  -spring_stiffness 0.1
+  -log_no_color)
