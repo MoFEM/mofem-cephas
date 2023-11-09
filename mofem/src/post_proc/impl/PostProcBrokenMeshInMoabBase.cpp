@@ -11,16 +11,19 @@
 namespace MoFEM {
 
 PostProcGenerateRefMeshBase::PostProcGenerateRefMeshBase()
-    : hoNodes(PETSC_TRUE), defMaxLevel(0), optPrefix(""), countEle(0),
-      countVertEle(0), nbVertices(0) {}
+    : hoNodes(PETSC_TRUE), defMaxLevel(0), countEle(0), countVertEle(0),
+      nbVertices(0) {}
 
-MoFEMErrorCode PostProcGenerateRefMeshBase::getOptions() {
+MoFEMErrorCode PostProcGenerateRefMeshBase::getOptions(std::string prefix) {
   MoFEMFunctionBegin;
 
-  CHKERR PetscOptionsGetInt(optPrefix.c_str(), "-max_post_proc_ref_level",
-                            &defMaxLevel, PETSC_NULL);
-  CHKERR PetscOptionsGetBool(optPrefix.c_str(), "-max_post_ho_nodes", &hoNodes,
-                             PETSC_NULL);
+  std::string opt1 = prefix.size() ? "-" + prefix + "_max_post_proc_ref_level"
+                                   : "-max_post_proc_ref_level";
+  CHKERR PetscOptionsGetInt(PETSC_NULL, opt1.c_str(), &defMaxLevel, PETSC_NULL);
+
+  std::string opt2 = prefix.size() ? "-" + prefix + "_max_post_ho_nodes"
+                                   : "-max_post_ho_nodes";
+  CHKERR PetscOptionsGetBool(PETSC_NULL, opt2.c_str(), &hoNodes, PETSC_NULL);
 
   if (defMaxLevel < 0)
     SETERRQ(PETSC_COMM_WORLD, MOFEM_INVALID_DATA,
@@ -32,8 +35,6 @@ MoFEMErrorCode PostProcGenerateRefMeshBase::getOptions() {
 
 MoFEMErrorCode PostProcGenerateRefMesh<MBTET>::generateReferenceElementMesh() {
   MoFEMFunctionBegin;
-
-  CHKERR getOptions();
 
   const int max_level = defMaxLevel;
 
@@ -148,7 +149,6 @@ MoFEMErrorCode PostProcGenerateRefMesh<MBTET>::generateReferenceElementMesh() {
 MoFEMErrorCode PostProcGenerateRefMesh<MBHEX>::generateReferenceElementMesh() {
   MoFEMFunctionBegin;
 
-  CHKERR getOptions();
 #ifndef NDEBUG
   if (defMaxLevel > 0)
     MOFEM_LOG("WORLD", Sev::warning)
@@ -261,7 +261,6 @@ MoFEMErrorCode PostProcGenerateRefMesh<MBHEX>::generateReferenceElementMesh() {
 MoFEMErrorCode PostProcGenerateRefMesh<MBTRI>::generateReferenceElementMesh() {
   MoFEMFunctionBegin;
 
-  CHKERR getOptions();
   const int max_level = defMaxLevel;
 
   moab::Core core_ref;
@@ -411,7 +410,6 @@ MoFEMErrorCode PostProcGenerateRefMesh<MBTRI>::generateReferenceElementMesh() {
 MoFEMErrorCode PostProcGenerateRefMesh<MBQUAD>::generateReferenceElementMesh() {
   MoFEMFunctionBegin;
 
-  CHKERR getOptions();
 #ifndef NDEBUG
   if (defMaxLevel > 0)
     MOFEM_LOG("WORLD", Sev::warning)
@@ -532,7 +530,6 @@ MoFEMErrorCode PostProcGenerateRefMesh<MBQUAD>::generateReferenceElementMesh() {
 MoFEMErrorCode PostProcGenerateRefMesh<MBEDGE>::generateReferenceElementMesh() {
   MoFEMFunctionBegin;
 
-  CHKERR getOptions();
 #ifndef NDEBUG
   if (defMaxLevel > 0)
     MOFEM_LOG("WORLD", Sev::warning)

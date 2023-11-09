@@ -3303,7 +3303,7 @@ ProblemsManager::addFieldToEmptyFieldBlocks(const std::string problem_name,
   const auto row_id = get_field_id(row_field);
   const auto col_id = get_field_id(col_field);
 
-  problem_ptr->addFieldToEmptyFieldBlocks(EmptyFieldBlocks(row_id, col_id));
+  problem_ptr->addFieldToEmptyFieldBlocks(BlockFieldPair(row_id, col_id));
 
   MoFEMFunctionReturn(0);
 }

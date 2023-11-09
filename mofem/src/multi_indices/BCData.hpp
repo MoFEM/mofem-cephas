@@ -107,7 +107,8 @@ struct DisplacementCubitBcData : public GenericCubitBcData {
     MoFEMFunctionBeginHot;
     // Fill data
     if (bc_data.size() != sizeof(data))
-      SETERRQ(PETSC_COMM_SELF, 1, "data inconsistency");
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "data inconsistency %ld != %ld", bc_data.size(), sizeof(data));
     memcpy(&data, &bc_data[0], sizeof(data));
     MoFEMFunctionReturnHot(0);
   }
