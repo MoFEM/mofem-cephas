@@ -31,7 +31,15 @@ tutorials_copy_and_install("*.jou" "${permissions_execute}")
 tutorials_copy_and_install("*.py" "${permissions_execute}")
 tutorials_copy_and_install("meshes/*" "${permissions_execute}")
 
-if(Python_LIBRARY AND Boost_PYTHON_LIBRARY_RELEASE) 
+set(BOOST_ROOT ${MoFEM_BOOST_DIR})
+message(STATUS ${BOOST_ROOT})
+find_package(
+  Boost
+  OPTIONAL_COMPONENTS
+  numpy
+)
+
+if(Python_LIBRARY AND Boost_NUMPY_LIBRARY_RELEASE) 
   
   include_directories(${_Python_INCLUDE_DIR})
 
@@ -47,16 +55,10 @@ if(Python_LIBRARY AND Boost_PYTHON_LIBRARY_RELEASE)
     plastic_2d PROPERTIES COMPILE_FLAGS 
     "-DEXECUTABLE_DIMENSION=2 -DSCHUR_ASSEMBLE=1 -DPYTHON_SFD -DADD_CONTACT")
 
-  find_library(
-  BOOST_NUMPY_LIBRARY
-  NAMES boost_numpy38
-  )
-  target_link_libraries(plastic_2d 
-    ${Python_LIBRARY} ${Boost_LIBRARIES} ${Boost_PYTHON_LIBRARY_RELEASE} ${BOOST_NUMPY_LIBRARY})
-  target_link_libraries(plastic_3d 
-    ${Python_LIBRARY} ${Boost_LIBRARIES} ${Boost_PYTHON_LIBRARY_RELEASE} ${BOOST_NUMPY_LIBRARY})
+  target_link_libraries(plastic_2d ${Python_LIBRARY} ${Boost_LIBRARIES})
+  target_link_libraries(plastic_3d ${Python_LIBRARY} ${Boost_LIBRARIES})
 
-else (Python_LIBRARY AND Boost_PYTHON_LIBRARY_RELEASE)
+else (Python_LIBRARY AND Boost_NUMPY_LIBRARY_RELEASE)
 
 
   tutorials_build_and_install(
@@ -71,7 +73,7 @@ else (Python_LIBRARY AND Boost_PYTHON_LIBRARY_RELEASE)
     plastic_2d PROPERTIES COMPILE_FLAGS 
     "-DEXECUTABLE_DIMENSION=2 -DSCHUR_ASSEMBLE=1")
 
-endif(Python_LIBRARY AND Boost_PYTHON_LIBRARY_RELEASE)
+endif(Python_LIBRARY AND Boost_NUMPY_LIBRARY_RELEASE)
 
 add_test(
   plastic_3d_necking

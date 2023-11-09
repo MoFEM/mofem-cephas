@@ -26,7 +26,15 @@ tutorials_copy_and_install("*.sh" "${permissions_execute}")
 tutorials_copy_and_install("*.geo" "${permissions_execute}")
 tutorials_copy_and_install("*.py" "${permissions_execute}")
 
-if(Python_LIBRARY AND Boost_PYTHON_LIBRARY_RELEASE) 
+set(BOOST_ROOT ${MoFEM_BOOST_DIR})
+message(STATUS ${BOOST_ROOT})
+find_package(
+  Boost
+  OPTIONAL_COMPONENTS
+  numpy
+)
+
+if(Python_LIBRARY AND Boost_NUMPY_LIBRARY_RELEASE) 
 
   include_directories(${_Python_INCLUDE_DIR})
 
@@ -39,16 +47,11 @@ if(Python_LIBRARY AND Boost_PYTHON_LIBRARY_RELEASE)
     contact_2d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=2 -DPYTHON_SFD") 
   set_target_properties(
     contact_3d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=3 -DPYTHON_SFD") 
-  find_library(
-  BOOST_NUMPY_LIBRARY
-  NAMES boost_numpy38
-  )
-  target_link_libraries(contact_2d 
-    ${Python_LIBRARY} ${Boost_LIBRARIES} ${Boost_PYTHON_LIBRARY_RELEASE} ${BOOST_NUMPY_LIBRARY})
-  target_link_libraries(contact_3d 
-    ${Python_LIBRARY} ${Boost_LIBRARIES} ${Boost_PYTHON_LIBRARY_RELEASE} ${BOOST_NUMPY_LIBRARY})
 
-else (Python_LIBRARY AND Boost_PYTHON_LIBRARY_RELEASE)
+  target_link_libraries(contact_2d ${Python_LIBRARY} ${Boost_LIBRARIES})
+  target_link_libraries(contact_3d ${Python_LIBRARY} ${Boost_LIBRARIES})
+
+else (Python_LIBRARY AND Boost_NUMPY_LIBRARY_RELEASE)
 
   tutorials_build_and_install(
     contact_2d ${CMAKE_CURRENT_SOURCE_DIR}/contact.cpp)
@@ -60,7 +63,7 @@ else (Python_LIBRARY AND Boost_PYTHON_LIBRARY_RELEASE)
   set_target_properties(
     contact_3d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=3")  
 
-endif(Python_LIBRARY AND Boost_PYTHON_LIBRARY_RELEASE)
+endif(Python_LIBRARY AND Boost_NUMPY_LIBRARY_RELEASE)
 
 add_test(
   contact_2d
