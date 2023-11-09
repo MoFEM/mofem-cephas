@@ -18,7 +18,7 @@ RUN . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
   --keep-prefix \
   --test root \
   mofem-cephas@lukasz~copy_user_modules+docker \
-  target=$TARGET build_type=Release ^petsc+X ^boost+python && \
+  target=$TARGET build_type=Release ^petsc+X ^boost+python+numpy && \
   export MOFEM_CEPHAS_HASH=`spack find -lv mofem-cephas | awk '/mofem-cephas/ {print $1}' | head -n 1` && \
   cd $MOFEM_INSTALL_DIR/core-build-Release-$MOFEM_CEPHAS_HASH && make clean && \
   touch $MOFEM_ENV_FILE && \
@@ -32,7 +32,7 @@ RUN . $MOFEM_ENV_FILE && \
   --source-path $MOFEM_UM_SRC_DIR \
   mofem-users-modules@lukasz+docker build_type=Release \
   ^mofem-cephas@lukasz+adol-c~copy_user_modules+docker~ipo+med~shared+slepc+tetgen build_system=cmake build_type=Release dev_path=/mofem_install/mofem-cephas install_id=0 \
-  ^/psobshg ^/bkt46x3 && \
+  ^petsc+X ^boost+python+numpy && \
   export MOFEM_UM_HASH=`spack find -lv mofem-users-modules | awk '/mofem-users-modules/ {print $1}' | head -n 1` && \
   cd $MOFEM_INSTALL_DIR/um-build-Release-$MOFEM_UM_HASH && make clean && \
   spack view symlink -i $MOFEM_INSTALL_DIR/um_view /$MOFEM_UM_HASH && \
