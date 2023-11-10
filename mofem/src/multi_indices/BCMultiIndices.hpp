@@ -73,7 +73,12 @@ struct CubitMeshSets {
    * \brief get meshset type and mask
    * @return type is returned as unsigned integer
    */
-  inline unsigned long int getMaksedBcTypeULong() const {
+  inline unsigned long int getMaskedBcTypeULong() const {
+    return (cubitBcType & meshsetsMask).to_ulong();
+  }
+
+  /** @deprecated use getMaskedBcTypeULong */
+  DEPRECATED unsigned long int getMaksedBcTypeULong() const {
     return (cubitBcType & meshsetsMask).to_ulong();
   }
 
@@ -369,7 +374,7 @@ typedef multi_index_container<
                                          &CubitMeshSets::getBcTypeULong>>,
         ordered_non_unique<tag<CubitMeshsetMaskedType_mi_tag>,
                            const_mem_fun<CubitMeshSets, unsigned long int,
-                                         &CubitMeshSets::getMaksedBcTypeULong>>,
+                                         &CubitMeshSets::getMaskedBcTypeULong>>,
         ordered_non_unique<
             tag<CubitMeshsets_name>,
             const_mem_fun<CubitMeshSets, std::string, &CubitMeshSets::getName>>,
@@ -379,7 +384,7 @@ typedef multi_index_container<
                 CubitMeshSets,
                 const_mem_fun<CubitMeshSets, int, &CubitMeshSets::getMeshsetId>,
                 const_mem_fun<CubitMeshSets, unsigned long int,
-                              &CubitMeshSets::getMaksedBcTypeULong>>>>>
+                              &CubitMeshSets::getMaskedBcTypeULong>>>>>
     CubitMeshSet_multiIndex;
 
 /** \brief change meshset type
