@@ -313,6 +313,14 @@ template <typename EleOp> struct FormsIntegrators {
      */
     template <IntegrationType I> struct BiLinearForm;
 
+    /**
+     * @brief Bi linear form
+     * @ingroup mofem_forms
+     *
+     * @tparam I
+     */
+    template <IntegrationType I> struct TriLinearForm;
+
   }; // Assembly
 };   // namespace MoFEM
 
