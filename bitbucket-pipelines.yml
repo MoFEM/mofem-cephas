@@ -22,3 +22,4 @@ pipelines:
           - cd core* && sed -i "s@SITE:STRING=.*@SITE:STRING=Cactus\nBUILDNAME:UNINITIALIZED=$BITBUCKET_BRANCH@g" CMakeCache.txt && make rebuild_cache
           - spack load boost
           - ctest --output-on-failure -D Experimental 2>&1 | tee -a $SRC_DIR/logs.txt
+          - make
