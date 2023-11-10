@@ -349,9 +349,27 @@ MoFEMErrorCode Tools::checkVectorForNotANumber(const Problem *prb_ptr,
 
 MoFEMErrorCode Tools::getTriNormal(const double *coords, double *normal) {
   MoFEMFunctionBegin;
-  double diffN[6];
-  CHKERR ShapeDiffMBTRI(diffN);
-  CHKERR ShapeFaceNormalMBTRI(diffN, coords, normal);
+  FTensor::Index<'i', 3> i;
+  FTensor::Index<'j', 3> j;
+  FTensor::Index<'k', 3> k;
+  FTensor::Number<0> N0;
+  FTensor::Number<1> N1;
+  auto diff_ptr = Tools::diffShapeFunMBTRI.data();
+  FTensor::Tensor1<FTensor::PackPtr<const double *, 2>, 2> t_diff(diff_ptr,
+                                                                  &diff_ptr[1]);
+  FTensor::Tensor1<FTensor::PackPtr<const double *, 3>, 3> t_coords(
+      &coords[0], &coords[1], &coords[2]);
+  FTensor::Tensor1<double, 3> t_t1{0., 0., 0.};
+  FTensor::Tensor1<double, 3> t_t2{0., 0., 0.};
+  for (int nn = 0; nn != 3; ++nn) {
+    t_t1(i) += t_coords(i) * t_diff(N0);
+    t_t2(i) += t_coords(i) * t_diff(N1);
+    ++t_coords;
+    ++t_diff;
+  }
+  FTensor::Tensor1<FTensor::PackPtr<double *, 0>, 3> t_normal{
+      normal, normal + 1, normal + 2};
+  t_normal(j) = FTensor::levi_civita(i, j, k) * t_t1(k) * t_t2(i);
   MoFEMFunctionReturn(0);
 }
 
