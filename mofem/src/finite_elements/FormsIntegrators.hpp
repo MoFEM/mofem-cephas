@@ -314,7 +314,7 @@ template <typename EleOp> struct FormsIntegrators {
     template <IntegrationType I> struct BiLinearForm;
 
     /**
-     * @brief Bi linear form
+     * @brief Tri linear form
      * @ingroup mofem_forms
      *
      * @tparam I

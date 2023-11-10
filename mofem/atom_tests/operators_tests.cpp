@@ -53,11 +53,11 @@ using OpConvectiveTermRhs = FormsIntegrators<DomainEleOp>::Assembly<
 
 template <int FIELD_DIM>
 using OpConvectiveTermLhsDu = FormsIntegrators<DomainEleOp>::Assembly<
-    A>::BiLinearForm<I>::OpConvectiveTermLhsDu<1, FIELD_DIM, SPACE_DIM>;
+    A>::TriLinearForm<I>::OpConvectiveTermLhsDu<1, FIELD_DIM, SPACE_DIM>;
 
 template <int FIELD_DIM>
 using OpConvectiveTermLhsDy = FormsIntegrators<DomainEleOp>::Assembly<
-    A>::BiLinearForm<I>::OpConvectiveTermLhsDy<1, FIELD_DIM, SPACE_DIM>;
+    A>::TriLinearForm<I>::OpConvectiveTermLhsDy<1, FIELD_DIM, SPACE_DIM>;
 
 constexpr bool debug = false;
 
