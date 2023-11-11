@@ -340,7 +340,7 @@ struct Tools : public UnknownInterface {
       shapeFunMBTET2AtOneThird, shapeFunMBTET3AtOneThird};
 
   /**
-   * @brief Get the Local Coordinates On Reference Four Node Tet object
+   * @brief Get the local coordinates on reference four node tet object
    *
    * \code
    * MatrixDouble elem_coords(4, 3);
@@ -364,7 +364,7 @@ struct Tools : public UnknownInterface {
       double *local_coords);
 
   /**
-   * @brief Get the Local Coordinates On Reference Four Node Tet object
+   * @brief Get the local coordinates on reference three node tri object
    *
    * \code
    * MatrixDouble elem_coords(4, 3);
@@ -388,7 +388,7 @@ struct Tools : public UnknownInterface {
       double *local_coords);
 
   /**
-   * @brief Get the Local Coordinates On Reference Four Node Tet object
+   * @brief Get the local coordinates on reference four node tet object
    *
    * \code
    * MatrixDouble elem_coords(4, 3);
@@ -396,7 +396,7 @@ struct Tools : public UnknownInterface {
    * MatrixDouble global_coords(5, 3);
    * // Set global coordinates
    * MatrixDouble local_coords(global_coords.size1(), 3);
-   * CHKERR Tools::getLocalCoordinatesOnReferenceFourNodeTet(
+   * CHKERR Tools::getLocalCoordinatesOnReferenceEdgeNodeEdge(
    *     &elem_coords(0, 0), &global_coords(0, 0), global_coords.size1(),
    *     &local_coords(0, 0))
    * \endcode
