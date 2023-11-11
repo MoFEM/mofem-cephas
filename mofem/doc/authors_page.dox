@@ -18,27 +18,29 @@
   <a rel="me" href="https://fosstodon.org/@likask"><i class="fab fa-mastodon"></i></a>
   <a href="https://twitter.com/LukaszKaczmarcz"><i class="fab fa-twitter"></i></a>
   <a href="https://www.linkedin.com/in/lukasz-kaczmarczyk-21a1455/"><i class="fab fa-linkedin-in"></i></a>
-  - <a href="https://pure.qub.ac.uk/en/persons/zahur-ullah">Zahur Ullah</a>, Queen's University, North Ireland, UK
   - <a href="https://www.gla.ac.uk/schools/engineering/staff/karollewandowski/">Karol Lewandowski</a>, The University of Glasgow, Scotland, UK,
   <a href="https://twitter.com/inz_KaroleL"><i class="fab fa-twitter"></i></a>
   <a href="https://www.linkedin.com/in/karol-lewandowski-b07080b1/"><i class="fab fa-linkedin-in"></i></a>
   - <a href="https://www.gla.ac.uk/schools/engineering/staff/ignatiosathanasiadis/">Ignatios Athanasiadis</a>, The University of Glasgow, Scotland, UK, 
   <a href="https://twitter.com/Ignatios_Ath"><i class="fab fa-twitter"></i></a>
   <a href="https://www.linkedin.com/in/ignatios-athanasiadis-923937b7/"><i class="fab fa-linkedin-in"></i></a>
-  - <a href="https://www.northumbria.ac.uk/about-us/our-staff/n/hoang-nguyen/">Hoang Nguyen</a>, Northumbria University, England, UK
   - <a href="https://www.gla.ac.uk/schools/engineering/staff/andreishvarts/">Andrei Shvarts</a>, The University of Glasgow, Scotland, UK,
   <a href="https://www.linkedin.com/in/andrei-shvarts/"><i class="fab fa-linkedin-in"></i></a>
-  - <a href="https://www.gla.ac.uk/schools/engineering/staff/mebratuwakeni/">Mebratu Wakeni</a>, The University of Glasgow, Scotland, UK
     
 \section mofem_users_modules_developers Users Modules Contributors
 
-  - <a href="https://www.gla.ac.uk/schools/engineering/staff/danielebarbera/">Daniele Barbera</a>, The University of Glasgow, Scotland, UK
   - Adriana Kuliková, The University of Glasgow, Scotland, UK
   - Richard Olley, The University of Glasgow, Scotland, UK
+  - Callum Runice, The University of Glasgow, Scotland, UK
+  - Ross Williams, The University of Glasgow, Scotland, UK
   - Joshua Gorham, The University of Glasgow, Scotland, UK
-  
+  - <a href="https://www.gla.ac.uk/schools/engineering/staff/danielebarbera/">Daniele Barbera</a>, Advanced Forming Research Centre, Scotland, UK
+
 \section mofem_users_modules_past_contributors Past Contributors
 
+- <a href="https://pure.qub.ac.uk/en/persons/zahur-ullah">Zahur Ullah</a>, Queen's University, North Ireland, UK
+- <a href="https://www.northumbria.ac.uk/about-us/our-staff/n/hoang-nguyen/">Hoang Nguyen</a>, Northumbria University, England, UK
+- <a href="https://www.gla.ac.uk/schools/engineering/staff/mebratuwakeni/">Mebratu Wakeni</a>, The University of Glasgow, Scotland, UK
 - Ross Mackenzie
 - Euan Muir
 - Euan Richardson
