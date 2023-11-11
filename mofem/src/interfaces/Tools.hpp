@@ -469,7 +469,8 @@ struct Tools : public UnknownInterface {
    * @param normal
    * @return MoFEMErrorCode
    */
-  static MoFEMErrorCode getTriNormal(const double *coords, double *normal);
+  static MoFEMErrorCode getTriNormal(const double *coords, double *normal,
+                                     double *d_normal = nullptr);
 
   /**
    * @brief Get triangle normal

@@ -2,8 +2,6 @@
  * \brief Auxiliary tools
  */
 
-
-
 #include <phg-quadrule/quad.h>
 
 namespace MoFEM {
@@ -347,29 +345,41 @@ MoFEMErrorCode Tools::checkVectorForNotANumber(const Problem *prb_ptr,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Tools::getTriNormal(const double *coords, double *normal) {
+MoFEMErrorCode Tools::getTriNormal(const double *coords, double *normal,
+                                   double *d_normal) {
   MoFEMFunctionBegin;
   FTensor::Index<'i', 3> i;
   FTensor::Index<'j', 3> j;
   FTensor::Index<'k', 3> k;
+  FTensor::Index<'l', 3> l;
+  FTensor::Index<'n', 3> n;
+  FTensor::Index<'m', 3> m;
+  FTensor::Index<'J', 2> J;
   FTensor::Number<0> N0;
   FTensor::Number<1> N1;
   auto diff_ptr = Tools::diffShapeFunMBTRI.data();
-  FTensor::Tensor1<FTensor::PackPtr<const double *, 2>, 2> t_diff(diff_ptr,
-                                                                  &diff_ptr[1]);
-  FTensor::Tensor1<FTensor::PackPtr<const double *, 3>, 3> t_coords(
-      &coords[0], &coords[1], &coords[2]);
-  FTensor::Tensor1<double, 3> t_t1{0., 0., 0.};
-  FTensor::Tensor1<double, 3> t_t2{0., 0., 0.};
-  for (int nn = 0; nn != 3; ++nn) {
-    t_t1(i) += t_coords(i) * t_diff(N0);
-    t_t2(i) += t_coords(i) * t_diff(N1);
-    ++t_coords;
-    ++t_diff;
+  auto t_diff_tensor = getFTensor2FromPtr<3, 2>(const_cast<double *>(diff_ptr));
+  auto t_coords = getFTensor2FromPtr<3, 3>(const_cast<double *>(coords));
+  FTensor::Tensor2<double, 3, 2> t_tangent;
+  t_tangent(i, J) = t_coords(n, i) * t_diff_tensor(n, J);
+  auto t_normal = getFTensor1FromPtr<3>(normal);
+  t_normal(j) =
+      FTensor::levi_civita(i, j, k) * t_tangent(k, N0) * t_tangent(i, N1);
+  if (d_normal) {
+    constexpr auto t_kd = FTensor::Kronecker_Delta<int>();
+    FTensor::Tensor4<int, 3, 3, 3, 3> t_d_coords;
+    t_d_coords(i, j, k, n) = t_kd(i, k) * t_kd(j, n);
+    FTensor::Tensor4<double, 3, 3, 3, 2> t_d_tangent;
+    t_d_tangent(i, k, l, J) = t_d_coords(n, i, k, l) * t_diff_tensor(n, J);
+    auto t_d_normal = getFTensor3FromPtr<3, 3, 3>(d_normal);
+    t_d_normal(j, m, n) = (FTensor::levi_civita(i, j, k) * t_tangent(i, N1)) *
+                              t_d_tangent(k, m, n, N0)
+
+                          +
+
+                          (FTensor::levi_civita(i, j, k) * t_tangent(k, N0)) *
+                              t_d_tangent(i, m, n, N1);
   }
-  FTensor::Tensor1<FTensor::PackPtr<double *, 0>, 3> t_normal{
-      normal, normal + 1, normal + 2};
-  t_normal(j) = FTensor::levi_civita(i, j, k) * t_t1(k) * t_t2(i);
   MoFEMFunctionReturn(0);
 }
 
