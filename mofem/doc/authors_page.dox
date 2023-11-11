@@ -8,10 +8,13 @@
   crossorigin="anonymous" referrerpolicy="no-referrer" />
 \endhtmlonly
 
-\section mofem_principal_authors Principal Authors
+\section mofem_principal_authors Scientific Managment
   - <a href="https://www.gla.ac.uk/schools/engineering/staff/lukaszkaczmarczyk/">Łukasz Kaczmarczyk</a>, The University of Glasgow, Scotland, UK, 
     <a rel="me" href="https://fosstodon.org/@likask"><i class="fab fa-mastodon"></i></a> <a href="https://twitter.com/LukaszKaczmarcz"><i class="fab fa-twitter"></i></a> <a href="https://www.linkedin.com/feed/"><i class="fab fa-linkedin-in"></i></a>
   - <a href="https://www.gla.ac.uk/schools/engineering/staff/chrispearce/">Chris Pearce</a>, The University of Glasgow, Scotland, UK 
+  - <a href="https://www.gla.ac.uk/schools/engineering/staff/andreishvarts/">Andrei Shvarts</a>, The University of Glasgow, Scotland, UK,
+  <a href="https://www.linkedin.com/in/andrei-shvarts/"><i class="fab fa-linkedin-in"></i></a>
+  - <a href="https://www.gla.ac.uk/schools/engineering/staff/chrispearce/">Andrew McBride</a>, The University of Glasgow, Scotland, UK 
     
 \section mofem_core_developers Core Developers
   - <a href="https://www.gla.ac.uk/schools/engineering/staff/lukaszkaczmarczyk/">Łukasz Kaczmarczyk</a>, The University of Glasgow, Scotland, UK, 
