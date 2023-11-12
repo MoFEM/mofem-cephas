@@ -896,20 +896,20 @@ static inline auto getFTensor3FromMat(MatrixDouble &data) {
                                 DoubleAllocator>::get(data);
 }
 
-template <int DIM, int S = DIM> struct GetFTensor1FromPtrImpl;
+template <int DIM, int S, typename T> struct GetFTensor1FromPtrImpl;
 
-template <int S> struct GetFTensor1FromPtrImpl<2, S> {
+template <int S, typename T> struct GetFTensor1FromPtrImpl<2, S, T> {
   GetFTensor1FromPtrImpl() = delete;
-  inline static auto get(double *ptr) {
-    return FTensor::Tensor1<FTensor::PackPtr<double *, S>, 2>(&ptr[HVEC0],
-                                                              &ptr[HVEC1]);
+  inline static auto get(T *ptr) {
+    return FTensor::Tensor1<FTensor::PackPtr<T *, S>, 2>(&ptr[HVEC0],
+                                                         &ptr[HVEC1]);
   }
 };
 
-template <int S> struct GetFTensor1FromPtrImpl<3, S> {
+template <int S, typename T> struct GetFTensor1FromPtrImpl<3, S, T> {
   GetFTensor1FromPtrImpl() = delete;
-  inline static auto get(double *ptr) {
-    return FTensor::Tensor1<FTensor::PackPtr<double *, S>, 3>(
+  inline static auto get(T *ptr) {
+    return FTensor::Tensor1<FTensor::PackPtr<T *, S>, 3>(
         &ptr[HVEC0], &ptr[HVEC1], &ptr[HVEC2]);
   }
 };
@@ -924,7 +924,13 @@ template <int S> struct GetFTensor1FromPtrImpl<3, S> {
 template <int DIM, int S = DIM>
 inline FTensor::Tensor1<FTensor::PackPtr<double *, S>, DIM>
 getFTensor1FromPtr(double *ptr) {
-  return GetFTensor1FromPtrImpl<DIM, S>::get(ptr);
+  return GetFTensor1FromPtrImpl<DIM, S, double>::get(ptr);
+};
+
+template <int DIM, int S = DIM>
+inline FTensor::Tensor1<FTensor::PackPtr<std::complex<double> *, S>, DIM>
+getFTensor1FromPtr(std::complex<double> *ptr) {
+  return GetFTensor1FromPtrImpl<DIM, S, std::complex<double>>::get(ptr);
 };
 
 /**
