@@ -381,11 +381,15 @@ struct Tools : public UnknownInterface {
    * @param glob_coords Globale coordinates
    * @param nb_nodes Number of points
    * @param local_coords Result
+   * @param d_elem_coords Derivative of local coordinates 
+   * @param d_global_coords
    * @return MoFEMErrorCode
    */
-  static MoFEMErrorCode getLocalCoordinatesOnReferenceTriNodeTri(
-      const double *elem_coords, const double *glob_coords, const int nb_nodes,
-      double *local_coords);
+  template <typename T>
+  static MoFEMErrorCode
+  getLocalCoordinatesOnReferenceTriNodeTri(const T *elem_coords,
+                                           const T *glob_coords,
+                                           const int nb_nodes, T *local_coords);
 
   /**
    * @brief Get the local coordinates on reference four node tet object
@@ -467,6 +471,8 @@ struct Tools : public UnknownInterface {
    *
    * @param coords
    * @param normal
+   * @param d_normal derbiative, if pointer is null, derbiative is not
+   * calculated
    * @return MoFEMErrorCode
    */
   static MoFEMErrorCode getTriNormal(const double *coords, double *normal,
@@ -687,6 +693,17 @@ MoFEMErrorCode Tools::shapeFunMBTET(double *shape, const double *ksi,
   }
   MoFEMFunctionReturnHot(0);
 }
+
+template <>
+MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceTriNodeTri(
+    const double *elem_coords, const double *glob_coords, const int nb_nodes,
+    double *local_coords);
+
+template <>
+MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceTriNodeTri(
+    const std::complex<double> *elem_coords,
+    const std::complex<double> *glob_coords, const int nb_nodes,
+    std::complex<double> *local_coords);
 
 } // namespace MoFEM
 
