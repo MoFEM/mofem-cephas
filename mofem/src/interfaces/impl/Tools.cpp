@@ -148,41 +148,30 @@ MoFEMErrorCode getLocalCoordinatesOnReferenceTriNodeTriImpl(
   FTensor::Index<'L', 2> L2;
   MoFEMFunctionBeginHot;
 
-  FTensor::Tensor1<FTensor::PackPtr<const T *, 1>, 3> t_elem_coords = {
-      &elem_coords[0], &elem_coords[3], &elem_coords[6]};
-
   FTensor::Tensor1<const double, 3> t_n = {Tools::shapeFunMBTRIAt00[0],
                                            Tools::shapeFunMBTRIAt00[1],
                                            Tools::shapeFunMBTRIAt00[2]};
-  FTensor::Tensor1<T, 3> t_coords_at_0;
+  auto t_diff = getFTensor2FromPtr<3, 2>(
+      const_cast<double *>(Tools::diffShapeFunMBTRI.data()));
+  auto t_elem_coords = getFTensor2FromPtr<3, 3>(const_cast<T *>(elem_coords));
 
   // Build matrix and get coordinates of zero point
-  // ii - global coordinates
-  // jj - local derivatives
   FTensor::Tensor2<T, 2, 3> t_a;
-  for (auto ii : {0, 1, 2}) {
-    FTensor::Tensor1<FTensor::PackPtr<const double *, 1>, 3> t_diff(
-        &Tools::diffShapeFunMBTRI[0], &Tools::diffShapeFunMBTRI[2],
-        &Tools::diffShapeFunMBTRI[4]);
-    for (auto jj : {0, 1}) {
-      t_a(jj, ii) = t_diff(i3) * t_elem_coords(i3);
-      ++t_diff;
-    }
-    t_coords_at_0(ii) = t_n(i3) * t_elem_coords(i3);
-    ++t_elem_coords;
-  }
-
-  auto t_global_coords = getFTensor1FromPtr<3>(const_cast<T *>(global_coords));
-  auto t_local_coords = getFTensor1FromPtr<2>(local_coords);
-
+  t_a(K2, i3) = t_diff(j3, K2) * t_elem_coords(j3, i3);
   FTensor::Tensor2_symmetric<T, 2> t_b, t_inv_b;
   t_b(K2, L2) = t_a(K2, j3) ^ t_a(L2, j3);
-
   // Solve problem
   const auto inv_det = 1. / (t_b(0, 0) * t_b(1, 1) - t_b(0, 1) * t_b(1, 0));
   t_inv_b(0, 0) = t_b(1, 1) * inv_det;
   t_inv_b(0, 1) = -t_b(0, 1) * inv_det;
   t_inv_b(1, 1) = t_b(0, 0) * inv_det;
+
+  // Coords at corner
+  FTensor::Tensor1<T, 3> t_coords_at_0;
+  t_coords_at_0(i3) = t_n(j3) * t_elem_coords(j3, i3);
+
+  auto t_global_coords = getFTensor1FromPtr<3>(const_cast<T *>(global_coords));
+  auto t_local_coords = getFTensor1FromPtr<2>(local_coords);
 
   // Calculate right hand side
   for (int ii = 0; ii != nb_nodes; ++ii) {
