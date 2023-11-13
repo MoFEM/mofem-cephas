@@ -118,7 +118,8 @@ struct SDFPython {
 
   MoFEMErrorCode evalSdf(
 
-      double deltaT, double t, np::ndarray x, np::ndarray y, np::ndarray z, np::ndarray tx, np::ndarray ty, np::ndarray tz,
+      double delta_t, double t, np::ndarray x, np::ndarray y, np::ndarray z,
+      np::ndarray tx, np::ndarray ty, np::ndarray tz, int block_id,
       np::ndarray &sdf
 
   ) {
@@ -126,8 +127,8 @@ struct SDFPython {
     try {
 
       // call python function
-      sdf = bp::extract<np::ndarray>(sdfFun(deltaT, t, x, y, z, tx, ty, tz));
-
+      sdf = bp::extract<np::ndarray>(
+          sdfFun(delta_t, t, x, y, z, tx, ty, tz, block_id));
 
     } catch (bp::error_already_set const &) {
       // print all other errors to stderr
@@ -139,7 +140,8 @@ struct SDFPython {
 
   MoFEMErrorCode evalGradSdf(
 
-      double deltaT, double t, np::ndarray x, np::ndarray y, np::ndarray z, np::ndarray tx, np::ndarray ty, np::ndarray tz,
+      double delta_t, double t, np::ndarray x, np::ndarray y, np::ndarray z,
+      np::ndarray tx, np::ndarray ty, np::ndarray tz, int block_id,
       np::ndarray &grad_sdf
 
   ) {
@@ -147,7 +149,8 @@ struct SDFPython {
     try {
 
       // call python function
-      grad_sdf = bp::extract<np::ndarray>(sdfGradFun(deltaT, t, x, y, z, tx, ty, tz));
+      grad_sdf = bp::extract<np::ndarray>(
+          sdfGradFun(delta_t, t, x, y, z, tx, ty, tz, block_id));
 
     } catch (bp::error_already_set const &) {
       // print all other errors to stderr
@@ -155,16 +158,17 @@ struct SDFPython {
       CHK_THROW_MESSAGE(MOFEM_OPERATION_UNSUCCESSFUL, "Python error");
     }
 
-    //if (grad_sdf.size() != 3) {
-    //  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Expected size 3");
-    //}
+    // if (grad_sdf.size() != 3) {
+    //   SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Expected size 3");
+    // }
 
     MoFEMFunctionReturn(0);
   }
 
   MoFEMErrorCode evalHessSdf(
 
-      double deltaT, double t, np::ndarray x, np::ndarray y, np::ndarray z, np::ndarray tx, np::ndarray ty, np::ndarray tz,
+      double delta_t, double t, np::ndarray x, np::ndarray y, np::ndarray z,
+      np::ndarray tx, np::ndarray ty, np::ndarray tz, int block_id,
       np::ndarray &hess_sdf
 
   ) {
@@ -172,7 +176,8 @@ struct SDFPython {
     try {
 
       // call python function
-      hess_sdf = bp::extract<np::ndarray>(sdfHessFun(deltaT, t, x, y, z, tx, ty, tz));
+      hess_sdf = bp::extract<np::ndarray>(
+          sdfHessFun(delta_t, t, x, y, z, tx, ty, tz, block_id));
 
     } catch (bp::error_already_set const &) {
       // print all other errors to stderr
@@ -180,9 +185,9 @@ struct SDFPython {
       CHK_THROW_MESSAGE(MOFEM_OPERATION_UNSUCCESSFUL, "Python error");
     }
 
-    //if (hess_sdf.size() != 6) {
-    //  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Expected size 6");
-    //}
+    // if (hess_sdf.size() != 6) {
+    //   SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Expected size 6");
+    // }
 
     MoFEMFunctionReturn(0);
   }
@@ -196,98 +201,197 @@ private:
 
 static boost::weak_ptr<SDFPython> sdfPythonWeakPtr;
 
+inline np::ndarray convert_to_numpy(VectorDouble &data, int nb_gauss_pts,
+                                    int id) {
+  auto dtype = np::dtype::get_builtin<double>();
+  auto size = bp::make_tuple(nb_gauss_pts);
+  auto stride = bp::make_tuple(3 * sizeof(double));
+  return (np::from_data(&data[id], dtype, size, stride, bp::object()));
+};
 #endif
 //! [Surface distance function from python]
 
-using SurfaceDistanceFunction =
-    boost::function<np::ndarray(double deltaT, double t, int nb_gauss_pts, VectorDouble &spatial_coords, VectorDouble &normal_at_pts)>;
+using SurfaceDistanceFunction = boost::function<VectorDouble(
+    double delta_t, double t, int nb_gauss_pts, MatrixDouble &spatial_coords,
+    MatrixDouble &normals_at_pts, int block_id)>;
 
-using GradSurfaceDistanceFunction = boost::function<np::ndarray(
-    double deltaT, double t, int nb_gauss_pts, VectorDouble &spatial_coords, VectorDouble &normal_at_pts)>;
+using GradSurfaceDistanceFunction = boost::function<MatrixDouble(
+    double delta_t, double t, int nb_gauss_pts, MatrixDouble &spatial_coords,
+    MatrixDouble &normals_at_pts, int block_id)>;
 
-using HessSurfaceDistanceFunction =
-    boost::function<np::ndarray(
-        double deltaT, double t, int nb_gauss_pts, VectorDouble &spatial_coords, VectorDouble &normal_at_pts)>;
+using HessSurfaceDistanceFunction = boost::function<MatrixDouble(
+    double delta_t, double t, int nb_gauss_pts, MatrixDouble &spatial_coords,
+    MatrixDouble &normals_at_pts, int block_id)>;
 
-inline np::ndarray convert_to_numpy(VectorDouble& data, int nb_gauss_pts,int id){
-        auto dtype = np::dtype::get_builtin<double>();
-        auto size = bp::make_tuple(nb_gauss_pts);
-        auto stride = bp::make_tuple(3*sizeof(double));
-        return(np::from_data(&data[id], dtype, size, stride, bp::object()));
-        };
-
-inline np::ndarray surface_distance_function(double deltaT, double t, int nb_gauss_pts, VectorDouble &spatial_coords, VectorDouble &normal_at_pts) {
+inline VectorDouble surface_distance_function(double delta_t, double t,
+                                              int nb_gauss_pts,
+                                              MatrixDouble &m_spatial_coords,
+                                              MatrixDouble &m_normals_at_pts,
+                                              int block_id) {
 
 #ifdef PYTHON_SFD
   if (auto sdf_ptr = sdfPythonWeakPtr.lock()) {
 
+    VectorDouble v_spatial_coords = m_spatial_coords.data();
+    VectorDouble v_normal_at_pts = m_normals_at_pts.data();
+
     bp::list python_coords;
     bp::list python_normals;
 
-    for (int idx = 0; idx < 3; ++idx){
-      python_coords.append(convert_to_numpy(spatial_coords, nb_gauss_pts, idx));
-      python_normals.append(convert_to_numpy(normal_at_pts, nb_gauss_pts, idx));
-      };
+    for (int idx = 0; idx < 3; ++idx) {
+      python_coords.append(
+          convert_to_numpy(v_spatial_coords, nb_gauss_pts, idx));
+      python_normals.append(
+          convert_to_numpy(v_normal_at_pts, nb_gauss_pts, idx));
+    }
 
-    np::ndarray sdf = np::empty(bp::make_tuple(nb_gauss_pts),np::dtype::get_builtin<double>());
-    CHK_MOAB_THROW(sdf_ptr->evalSdf(deltaT, t, bp::extract<np::ndarray>(python_coords[0]), bp::extract<np::ndarray>(python_coords[1]), bp::extract<np::ndarray>(python_coords[2]), 
-    bp::extract<np::ndarray>(python_normals[0]), bp::extract<np::ndarray>(python_normals[1]), bp::extract<np::ndarray>(python_normals[2]), sdf),
+    np::ndarray np_sdf = np::empty(bp::make_tuple(nb_gauss_pts),
+                                   np::dtype::get_builtin<double>());
+    CHK_MOAB_THROW(sdf_ptr->evalSdf(delta_t, t,
+                                    bp::extract<np::ndarray>(python_coords[0]),
+                                    bp::extract<np::ndarray>(python_coords[1]),
+                                    bp::extract<np::ndarray>(python_coords[2]),
+                                    bp::extract<np::ndarray>(python_normals[0]),
+                                    bp::extract<np::ndarray>(python_normals[1]),
+                                    bp::extract<np::ndarray>(python_normals[2]),
+                                    block_id, np_sdf),
                    "Failed python call");
-    return sdf;
+
+    double *sdf_val_ptr = reinterpret_cast<double *>(np_sdf.get_data());
+
+    VectorDouble v_sdf;
+    v_sdf.resize(nb_gauss_pts, false);
+
+    for (size_t gg = 0; gg < nb_gauss_pts; ++gg)
+      v_sdf[gg] = *(sdf_val_ptr + gg);
+
+    return v_sdf;
   }
 #endif
-  np::ndarray sdf = np::empty(bp::make_tuple(nb_gauss_pts),np::dtype::get_builtin<double>());
-  return sdf;
+  VectorDouble v_sdf;
+  v_sdf.resize(nb_gauss_pts, false);
+  m_spatial_coords.resize(SPACE_DIM, nb_gauss_pts);
+  auto t_coords = getFTensor1FromMat<SPACE_DIM>(m_spatial_coords);
+
+  for (size_t gg = 0; gg < nb_gauss_pts; ++gg)
+    v_sdf[gg] = t_coords(1) + 0.5;
+
+  return v_sdf;
 }
 
-inline np::ndarray
-grad_surface_distance_function(double deltaT, double t, int nb_gauss_pts, VectorDouble &spatial_coords, VectorDouble &normal_at_pts) {
+inline MatrixDouble
+grad_surface_distance_function(double delta_t, double t, int nb_gauss_pts,
+                               MatrixDouble &m_spatial_coords,
+                               MatrixDouble &m_normals_at_pts, int block_id) {
 #ifdef PYTHON_SFD
   if (auto sdf_ptr = sdfPythonWeakPtr.lock()) {
+
+    VectorDouble v_spatial_coords = m_spatial_coords.data();
+    VectorDouble v_normal_at_pts = m_normals_at_pts.data();
 
     bp::list python_coords;
     bp::list python_normals;
 
-    for (int idx = 0; idx < 3; ++idx){
-      python_coords.append(convert_to_numpy(spatial_coords, nb_gauss_pts, idx));
-      python_normals.append(convert_to_numpy(normal_at_pts, nb_gauss_pts, idx));
-      };
+    for (int idx = 0; idx < 3; ++idx) {
+      python_coords.append(
+          convert_to_numpy(v_spatial_coords, nb_gauss_pts, idx));
+      python_normals.append(
+          convert_to_numpy(v_normal_at_pts, nb_gauss_pts, idx));
+    }
 
-    np::ndarray grad_sdf = np::empty(bp::make_tuple(nb_gauss_pts,3),np::dtype::get_builtin<double>());
-    CHK_MOAB_THROW(
-        sdf_ptr->evalGradSdf(deltaT, t, bp::extract<np::ndarray>(python_coords[0]), bp::extract<np::ndarray>(python_coords[1]), bp::extract<np::ndarray>(python_coords[2]), 
-    bp::extract<np::ndarray>(python_normals[0]), bp::extract<np::ndarray>(python_normals[1]), bp::extract<np::ndarray>(python_normals[2]), grad_sdf),
-        "Failed python call");
-    return grad_sdf;
+    np::ndarray np_grad_sdf = np::empty(bp::make_tuple(nb_gauss_pts, 3),
+                                        np::dtype::get_builtin<double>());
+    CHK_MOAB_THROW(sdf_ptr->evalGradSdf(
+                       delta_t, t, bp::extract<np::ndarray>(python_coords[0]),
+                       bp::extract<np::ndarray>(python_coords[1]),
+                       bp::extract<np::ndarray>(python_coords[2]),
+                       bp::extract<np::ndarray>(python_normals[0]),
+                       bp::extract<np::ndarray>(python_normals[1]),
+                       bp::extract<np::ndarray>(python_normals[2]), block_id,
+                       np_grad_sdf),
+                   "Failed python call");
+
+    double *grad_ptr = reinterpret_cast<double *>(np_grad_sdf.get_data());
+
+    MatrixDouble m_grad_sdf;
+    m_grad_sdf.resize(SPACE_DIM, nb_gauss_pts, false);
+    for (size_t gg = 0; gg < nb_gauss_pts; ++gg) {
+      for (int idx = 0; idx < 3; ++idx)
+        m_grad_sdf(idx, gg) = *(grad_ptr + (3 * gg + idx));
+    }
+    return m_grad_sdf;
   }
 #endif
-  np::ndarray grad_sdf = np::empty(bp::make_tuple(nb_gauss_pts,3),np::dtype::get_builtin<double>());
-  return grad_sdf;
+  MatrixDouble m_grad_sdf;
+  m_grad_sdf.resize(SPACE_DIM, nb_gauss_pts, false);
+  FTensor::Index<'i', SPACE_DIM> i;
+  FTensor::Tensor1<double, 3> t_grad_sdf_set{0.0, 0.0, 1.0};
+  auto t_grad_sdf = getFTensor1FromMat<3>(m_grad_sdf);
+
+  for (size_t gg = 0; gg < nb_gauss_pts; ++gg) {
+    t_grad_sdf(i) = t_grad_sdf_set(i);
+    ++t_grad_sdf;
+  }
+
+  return m_grad_sdf;
 }
 
-inline np::ndarray
-hess_surface_distance_function(double deltaT, double t, int nb_gauss_pts, VectorDouble &spatial_coords, VectorDouble &normal_at_pts) {
+inline MatrixDouble
+hess_surface_distance_function(double delta_t, double t, int nb_gauss_pts,
+                               MatrixDouble &m_spatial_coords,
+                               MatrixDouble &m_normals_at_pts, int block_id) {
 #ifdef PYTHON_SFD
   if (auto sdf_ptr = sdfPythonWeakPtr.lock()) {
+
+    VectorDouble v_spatial_coords = m_spatial_coords.data();
+    VectorDouble v_normal_at_pts = m_normals_at_pts.data();
 
     bp::list python_coords;
     bp::list python_normals;
 
-    for (int idx = 0; idx < 3; ++idx){
-      python_coords.append(convert_to_numpy(spatial_coords, nb_gauss_pts, idx));
-      python_normals.append(convert_to_numpy(normal_at_pts, nb_gauss_pts, idx));
-      };
+    for (int idx = 0; idx < 3; ++idx) {
+      python_coords.append(
+          convert_to_numpy(v_spatial_coords, nb_gauss_pts, idx));
+      python_normals.append(
+          convert_to_numpy(v_normal_at_pts, nb_gauss_pts, idx));
+    };
 
-    np::ndarray hess_sdf = np::empty(bp::make_tuple(nb_gauss_pts,6),np::dtype::get_builtin<double>());
-    CHK_MOAB_THROW(
-        sdf_ptr->evalHessSdf(deltaT, t, bp::extract<np::ndarray>(python_coords[0]), bp::extract<np::ndarray>(python_coords[1]), bp::extract<np::ndarray>(python_coords[2]), 
-    bp::extract<np::ndarray>(python_normals[0]), bp::extract<np::ndarray>(python_normals[1]), bp::extract<np::ndarray>(python_normals[2]), hess_sdf),
-        "Failed python call");
-    return hess_sdf;
+    np::ndarray np_hess_sdf = np::empty(bp::make_tuple(nb_gauss_pts, 6),
+                                        np::dtype::get_builtin<double>());
+    CHK_MOAB_THROW(sdf_ptr->evalHessSdf(
+                       delta_t, t, bp::extract<np::ndarray>(python_coords[0]),
+                       bp::extract<np::ndarray>(python_coords[1]),
+                       bp::extract<np::ndarray>(python_coords[2]),
+                       bp::extract<np::ndarray>(python_normals[0]),
+                       bp::extract<np::ndarray>(python_normals[1]),
+                       bp::extract<np::ndarray>(python_normals[2]), block_id,
+                       np_hess_sdf),
+                   "Failed python call");
+
+    double *hess_ptr = reinterpret_cast<double *>(np_hess_sdf.get_data());
+
+    MatrixDouble m_hess_sdf;
+    m_hess_sdf.resize((SPACE_DIM * (SPACE_DIM + 1)) / 2, nb_gauss_pts, false);
+    for (size_t gg = 0; gg < nb_gauss_pts; ++gg) {
+      for (int idx = 0; idx < (SPACE_DIM * (SPACE_DIM + 1)) / 2; ++idx)
+        m_hess_sdf(idx, gg) =
+            *(hess_ptr + ((SPACE_DIM * (SPACE_DIM + 1)) / 2 * gg + idx));
+    }
+    return m_hess_sdf;
   }
 #endif
-  np::ndarray hess_sdf = np::empty(bp::make_tuple(nb_gauss_pts,6),np::dtype::get_builtin<double>());
-  return hess_sdf;
+  MatrixDouble m_hess_sdf;
+  m_hess_sdf.resize((SPACE_DIM * (SPACE_DIM + 1)) / 2, nb_gauss_pts, false);
+  FTensor::Index<'i', SPACE_DIM> i;
+  FTensor::Index<'j', SPACE_DIM> j;
+  FTensor::Tensor2_symmetric<double, 3> t_hess_sdf_set{0., 0., 0., 0., 0., 0.};
+  auto t_hess_sdf = getFTensor2SymmetricFromMat<3>(m_hess_sdf);
+
+  for (size_t gg = 0; gg < nb_gauss_pts; ++gg) {
+    t_hess_sdf(i, j) = t_hess_sdf_set(i, j);
+    ++t_hess_sdf;
+  }
+  return m_hess_sdf;
 }
 
 template <int DIM, IntegrationType I, typename BoundaryEleOp>
@@ -511,66 +615,61 @@ OpEvaluateSDFImpl<DIM, GAUSS, BoundaryEleOp>::doWork(int side, EntityType type,
   FTensor::Index<'i', DIM> i;
   FTensor::Index<'j', DIM> j;
 
-  auto next = [&]() {
-    ++t_sdf;
-    ++t_grad_sdf;
-    ++t_hess_sdf;
-    ++t_disp;
-    //++t_coords;
-    ++t_traction;
-    ++t_constraint;
-    //++t_normal_at_pts;
-  };
-
   auto ts_time = BoundaryEleOp::getTStime();
   auto ts_time_step = BoundaryEleOp::getTStimeStep();
 
   auto m_disp = commonDataPtr->contactDisp;
   auto m_coords = BoundaryEleOp::getCoordsAtGaussPts();
 
-  
   MatrixDouble m_spatial_coords;
   m_spatial_coords = m_coords + trans(m_disp);
 
-
   MatrixDouble m_normals_at_pts(3, nb_gauss_pts);
   auto t_set_normal = getFTensor1FromMat<3>(m_normals_at_pts);
-  for(auto gg = 0; gg!=nb_gauss_pts;++gg) {
-    t_set_normal(i) = t_normal_at_pts(i) / std::sqrt(t_normal_at_pts(i) * t_normal_at_pts(i));
+  for (auto gg = 0; gg != nb_gauss_pts; ++gg) {
+    t_set_normal(i) =
+        t_normal_at_pts(i) / std::sqrt(t_normal_at_pts(i) * t_normal_at_pts(i));
     ++t_set_normal;
     ++t_normal_at_pts;
   }
 
-  VectorDouble v_spatial_coords = m_spatial_coords.data();
-  VectorDouble v_normal_at_pts = m_normals_at_pts.data();
-  
-  auto np_sdf = surfaceDistanceFunction(
-        ts_time_step, ts_time, nb_gauss_pts, v_spatial_coords, v_normal_at_pts);
-  
-  auto np_grad_sdf = gradSurfaceDistanceFunction(
-        ts_time_step, ts_time, nb_gauss_pts, v_spatial_coords, v_normal_at_pts);
-  
-  auto np_hess_sdf = hessSurfaceDistanceFunction(
-        ts_time_step, ts_time, nb_gauss_pts, v_spatial_coords, v_normal_at_pts);
+  // placeholder to pass boundary block id to python
+  int block_id = 0;
 
+  auto v_sdf =
+      surfaceDistanceFunction(ts_time_step, ts_time, nb_gauss_pts,
+                              m_spatial_coords, m_normals_at_pts, block_id);
 
-  double* sdf_ptr = reinterpret_cast<double*>(np_sdf.get_data());
-  double* grad_ptr = reinterpret_cast<double*>(np_grad_sdf.get_data());
-  double* hess_ptr = reinterpret_cast<double*>(np_hess_sdf.get_data());
+  auto m_grad_sdf =
+      gradSurfaceDistanceFunction(ts_time_step, ts_time, nb_gauss_pts,
+                                  m_spatial_coords, m_normals_at_pts, block_id);
+
+  auto m_hess_sdf =
+      hessSurfaceDistanceFunction(ts_time_step, ts_time, nb_gauss_pts,
+                                  m_spatial_coords, m_normals_at_pts, block_id);
+
+  auto t_sdf_v = getFTensor0FromVec(v_sdf);
+  auto t_grad_sdf_v = getFTensor1FromMat<3>(m_grad_sdf);
+  auto t_hess_sdf_v = getFTensor2SymmetricFromMat<3>(m_hess_sdf);
+
+  auto next = [&]() {
+    ++t_sdf;
+    ++t_sdf_v;
+    ++t_grad_sdf;
+    ++t_grad_sdf_v;
+    ++t_hess_sdf;
+    ++t_hess_sdf_v;
+    ++t_disp;
+    ++t_traction;
+    ++t_constraint;
+  };
 
   for (auto gg = 0; gg != nb_gauss_pts; ++gg) {
 
-    int id = gg*3;
-    int id2 = gg*6;
-
-    auto sdf_v = sdf_ptr[gg];
-    FTensor::Tensor1<double,3> t_grad_sdf_v {grad_ptr[id],grad_ptr[id+1],grad_ptr[id+2]};
-    FTensor::Tensor2_symmetric<double,3> t_hess_sdf_v {hess_ptr[id2],hess_ptr[id2+1],hess_ptr[id2+2],hess_ptr[id2+3],hess_ptr[id2+4],hess_ptr[id2+5]};
-
     auto tn = -t_traction(i) * t_grad_sdf_v(i);
-    auto c = constrain(sdf_v, tn);
+    auto c = constrain(t_sdf_v, tn);
 
-    t_sdf = sdf_v;
+    t_sdf = t_sdf_v;
     t_grad_sdf(i) = t_grad_sdf_v(i);
     t_hess_sdf(i, j) = t_hess_sdf_v(i, j);
     t_constraint = c;
@@ -618,45 +717,42 @@ OpConstrainBoundaryRhsImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::iNtegrate(
 
   MatrixDouble m_spatial_coords;
   m_spatial_coords = m_coords + trans(m_disp);
-  
 
   MatrixDouble m_normals_at_pts(3, nb_gauss_pts);
   auto t_set_normal = getFTensor1FromMat<3>(m_normals_at_pts);
-  for(auto gg = 0; gg!=nb_gauss_pts;++gg) {
-    t_set_normal(i) = t_normal_at_pts(i) / std::sqrt(t_normal_at_pts(i) * t_normal_at_pts(i));
+  for (auto gg = 0; gg != nb_gauss_pts; ++gg) {
+    t_set_normal(i) =
+        t_normal_at_pts(i) / std::sqrt(t_normal_at_pts(i) * t_normal_at_pts(i));
     ++t_set_normal;
     ++t_normal_at_pts;
   }
-  auto t_normal = getFTensor1FromMat<3>(m_normals_at_pts);
 
-  VectorDouble v_spatial_coords = m_spatial_coords.data();
-  VectorDouble v_normal_at_pts = m_normals_at_pts.data();
+  auto t_normal = getFTensor1FromMat<3>(m_normals_at_pts);
 
   auto ts_time = AssemblyBoundaryEleOp::getTStime();
   auto ts_time_step = AssemblyBoundaryEleOp::getTStimeStep();
 
-  auto np_sdf = surfaceDistanceFunction(
-        ts_time_step, ts_time, nb_gauss_pts, v_spatial_coords, v_normal_at_pts);
-  
-  auto np_grad_sdf = gradSurfaceDistanceFunction(
-        ts_time_step, ts_time, nb_gauss_pts, v_spatial_coords, v_normal_at_pts);
-    
-  double* sdf_ptr = reinterpret_cast<double*>(np_sdf.get_data());
-  double* grad_ptr = reinterpret_cast<double*>(np_grad_sdf.get_data());
+  // placeholder to pass boundary block id to python
+  int block_id = 0;
 
-  
+  auto v_sdf =
+      surfaceDistanceFunction(ts_time_step, ts_time, nb_gauss_pts,
+                              m_spatial_coords, m_normals_at_pts, block_id);
+
+  auto m_grad_sdf =
+      gradSurfaceDistanceFunction(ts_time_step, ts_time, nb_gauss_pts,
+                                  m_spatial_coords, m_normals_at_pts, block_id);
+
+  auto t_sdf = getFTensor0FromVec(v_sdf);
+  auto t_grad_sdf = getFTensor1FromMat<3>(m_grad_sdf);
+
   for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
-
-    int id = gg*3;
 
     auto t_nf = getFTensor1FromPtr<DIM>(&nf[0]);
     const double alpha = t_w * AssemblyBoundaryEleOp::getMeasure();
 
-    auto sdf = sdf_ptr[gg];
-    FTensor::Tensor1<double, 3> t_grad_sdf {grad_ptr[id],grad_ptr[id+1],grad_ptr[id+2]};
-
     auto tn = -t_traction(i) * t_grad_sdf(i);
-    auto c = constrain(sdf, tn);
+    auto c = constrain(t_sdf, tn);
 
     FTensor::Tensor2<double, DIM, DIM> t_cP;
     t_cP(i, j) = (c * t_grad_sdf(i)) * t_grad_sdf(j);
@@ -671,7 +767,7 @@ OpConstrainBoundaryRhsImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::iNtegrate(
         +
 
         t_cP(i, j) * t_disp(j) +
-        c * (sdf * t_grad_sdf(i)); // add gap0 displacements
+        c * (t_sdf * t_grad_sdf(i)); // add gap0 displacements
 
     size_t bb = 0;
     for (; bb != AssemblyBoundaryEleOp::nbRows / DIM; ++bb) {
@@ -688,6 +784,8 @@ OpConstrainBoundaryRhsImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::iNtegrate(
     ++t_traction;
     ++t_w;
     ++t_normal;
+    ++t_sdf;
+    ++t_grad_sdf;
   }
 
   MoFEMFunctionReturn(0);
@@ -736,8 +834,9 @@ OpConstrainBoundaryLhs_dUImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::iNtegrate(
 
   MatrixDouble m_normals_at_pts(3, nb_gauss_pts);
   auto t_set_normal = getFTensor1FromMat<3>(m_normals_at_pts);
-  for(auto gg = 0; gg!=nb_gauss_pts;++gg) {
-    t_set_normal(i) = t_normal_at_pts(i) / std::sqrt(t_normal_at_pts(i) * t_normal_at_pts(i));
+  for (auto gg = 0; gg != nb_gauss_pts; ++gg) {
+    t_set_normal(i) =
+        t_normal_at_pts(i) / std::sqrt(t_normal_at_pts(i) * t_normal_at_pts(i));
     ++t_set_normal;
     ++t_normal_at_pts;
   }
@@ -746,35 +845,31 @@ OpConstrainBoundaryLhs_dUImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::iNtegrate(
   auto ts_time = AssemblyBoundaryEleOp::getTStime();
   auto ts_time_step = AssemblyBoundaryEleOp::getTStimeStep();
 
-  VectorDouble v_spatial_coords = m_spatial_coords.data();
-  VectorDouble v_normal_at_pts = m_normals_at_pts.data();
-  
-  auto np_sdf = surfaceDistanceFunction(
-        ts_time_step, ts_time, nb_gauss_pts, v_spatial_coords, v_normal_at_pts);
-  
-  auto np_grad_sdf = gradSurfaceDistanceFunction(
-        ts_time_step, ts_time, nb_gauss_pts, v_spatial_coords, v_normal_at_pts);
-  
-  auto np_hess_sdf = hessSurfaceDistanceFunction(
-        ts_time_step, ts_time, nb_gauss_pts, v_spatial_coords, v_normal_at_pts);
-  
-  double* sdf_ptr = reinterpret_cast<double*>(np_sdf.get_data());
-  double* grad_ptr = reinterpret_cast<double*>(np_grad_sdf.get_data());
-  double* hess_ptr = reinterpret_cast<double*>(np_hess_sdf.get_data());
-  
-  for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
+  // placeholder to pass boundary block id to python
+  int block_id = 0;
 
-    int id = gg * 3;
-    int id2 = gg * 6;
+  auto v_sdf =
+      surfaceDistanceFunction(ts_time_step, ts_time, nb_gauss_pts,
+                              m_spatial_coords, m_normals_at_pts, block_id);
+
+  auto m_grad_sdf =
+      gradSurfaceDistanceFunction(ts_time_step, ts_time, nb_gauss_pts,
+                                  m_spatial_coords, m_normals_at_pts, block_id);
+
+  auto m_hess_sdf =
+      hessSurfaceDistanceFunction(ts_time_step, ts_time, nb_gauss_pts,
+                                  m_spatial_coords, m_normals_at_pts, block_id);
+
+  auto t_sdf = getFTensor0FromVec(v_sdf);
+  auto t_grad_sdf = getFTensor1FromMat<3>(m_grad_sdf);
+  auto t_hess_sdf = getFTensor2SymmetricFromMat<3>(m_hess_sdf);
+
+  for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
 
     const double alpha = t_w * AssemblyBoundaryEleOp::getMeasure();
 
-    auto sdf = sdf_ptr[gg];
-    FTensor::Tensor1<double,3> t_grad_sdf {grad_ptr[id],grad_ptr[id+1],grad_ptr[id+2]};
-    FTensor::Tensor2_symmetric<double,3> t_hess_sdf {hess_ptr[id2],hess_ptr[id2+1],hess_ptr[id2+2],hess_ptr[id2+3],hess_ptr[id2+4],hess_ptr[id2+5]};
-
     auto tn = -t_traction(i) * t_grad_sdf(i);
-    auto c = constrain(sdf, tn);
+    auto c = constrain(t_sdf, tn);
 
     FTensor::Tensor2<double, DIM, DIM> t_cP;
     t_cP(i, j) = (c * t_grad_sdf(i)) * t_grad_sdf(j);
@@ -789,7 +884,7 @@ OpConstrainBoundaryLhs_dUImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::iNtegrate(
           (c * cn_contact) *
               (t_hess_sdf(i, j) * (t_grad_sdf(k) * t_traction(k)) +
                t_grad_sdf(i) * t_hess_sdf(k, j) * t_traction(k)) +
-          c * sdf * t_hess_sdf(i, j);
+          c * t_sdf * t_hess_sdf(i, j);
     }
 
     size_t rr = 0;
@@ -817,6 +912,9 @@ OpConstrainBoundaryLhs_dUImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::iNtegrate(
     ++t_traction;
     ++t_w;
     ++t_normal;
+    ++t_sdf;
+    ++t_grad_sdf;
+    ++t_hess_sdf;
   }
 
   MoFEMFunctionReturn(0);
@@ -860,45 +958,42 @@ OpConstrainBoundaryLhs_dTractionImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::
 
   MatrixDouble m_spatial_coords;
   m_spatial_coords = m_coords + trans(m_disp);
-  
 
   MatrixDouble m_normals_at_pts(3, nb_gauss_pts);
   auto t_set_normal = getFTensor1FromMat<3>(m_normals_at_pts);
-  for(auto gg = 0; gg!=nb_gauss_pts;++gg) {
-     t_set_normal(i) = t_normal_at_pts(i) / std::sqrt(t_normal_at_pts(i) * t_normal_at_pts(i));
-     ++t_set_normal;
-     ++t_normal_at_pts;
+  for (auto gg = 0; gg != nb_gauss_pts; ++gg) {
+    t_set_normal(i) =
+        t_normal_at_pts(i) / std::sqrt(t_normal_at_pts(i) * t_normal_at_pts(i));
+    ++t_set_normal;
+    ++t_normal_at_pts;
   }
   auto t_normal = getFTensor1FromMat<3>(m_normals_at_pts);
 
   auto ts_time = AssemblyBoundaryEleOp::getTStime();
   auto ts_time_step = AssemblyBoundaryEleOp::getTStimeStep();
 
-  VectorDouble v_spatial_coords = m_spatial_coords.data();
-  VectorDouble v_normal_at_pts = m_normals_at_pts.data();
+  // placeholder to pass boundary block id to python
+  int block_id = 0;
 
-  auto np_sdf = surfaceDistanceFunction(
-        ts_time_step, ts_time, nb_gauss_pts, v_spatial_coords, v_normal_at_pts);
-  
-  auto np_grad_sdf = gradSurfaceDistanceFunction(
-        ts_time_step, ts_time, nb_gauss_pts, v_spatial_coords, v_normal_at_pts);
-  
-  double* sdf_ptr = reinterpret_cast<double*>(np_sdf.get_data());
-  double* grad_ptr = reinterpret_cast<double*>(np_grad_sdf.get_data());
- 
+  auto v_sdf =
+      surfaceDistanceFunction(ts_time_step, ts_time, nb_gauss_pts,
+                              m_spatial_coords, m_normals_at_pts, block_id);
+
+  auto m_grad_sdf =
+      gradSurfaceDistanceFunction(ts_time_step, ts_time, nb_gauss_pts,
+                                  m_spatial_coords, m_normals_at_pts, block_id);
+
+  auto t_sdf = getFTensor0FromVec(v_sdf);
+  auto t_grad_sdf = getFTensor1FromMat<3>(m_grad_sdf);
 
   for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
 
-    int id = gg*3;
+    int id = gg * 3;
 
     const double alpha = t_w * AssemblyBoundaryEleOp::getMeasure();
 
-    auto sdf = sdf_ptr[gg];
-
-    FTensor::Tensor1<double,3> t_grad_sdf {grad_ptr[id],grad_ptr[id+1],grad_ptr[id+2]};
-
     auto tn = -t_traction(i) * t_grad_sdf(i);
-    auto c = constrain(sdf, tn);
+    auto c = constrain(t_sdf, tn);
 
     FTensor::Tensor2<double, DIM, DIM> t_cP;
     t_cP(i, j) = (c * t_grad_sdf(i)) * t_grad_sdf(j);
@@ -933,6 +1028,8 @@ OpConstrainBoundaryLhs_dTractionImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::
     ++t_traction;
     ++t_w;
     ++t_normal;
+    ++t_sdf;
+    ++t_grad_sdf;
   }
 
   MoFEMFunctionReturn(0);

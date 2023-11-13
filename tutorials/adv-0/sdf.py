@@ -9,15 +9,15 @@ import numpy as np
 
 
 # Functions for MoFEM
-def sdf(deltaT, t, x, y, z, tx, ty, tz):
+def sdf(delta_t, t, x, y, z, tx, ty, tz, block_id):
   return list_indenters[0].sDF(x,y,z)
 
 
-def grad_sdf(deltaT, t, x, y, z, tx, ty, tz):
+def grad_sdf(delta_t, t, x, y, z, tx, ty, tz, block_id):
   return list_indenters[0].gradSdf(x,y,z)
 
 
-def hess_sdf(deltaT, t, x, y, z, tx, ty, tz):
+def hess_sdf(delta_t, t, x, y, z, tx, ty, tz, block_id):
   return list_indenters[0].hessSdf(x,y,z)
 
 # Example Indenters
