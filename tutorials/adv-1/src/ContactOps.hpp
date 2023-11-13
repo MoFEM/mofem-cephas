@@ -978,8 +978,6 @@ OpConstrainBoundaryLhs_dTractionImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::
 
   for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
 
-    int id = gg * 3;
-
     const double alpha = t_w * AssemblyBoundaryEleOp::getMeasure();
 
     auto tn = -t_traction(i) * t_grad_sdf(i);
