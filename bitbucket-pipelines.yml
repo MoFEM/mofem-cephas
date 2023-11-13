@@ -18,7 +18,7 @@ pipelines:
           - set -o pipefail
           - SRC_DIR=$PWD
           - . /mofem_install/spack/share/spack/setup-env.sh
-          - spack dev-build --before build --source-path $SRC_DIR --test root mofem-cephas@lukasz~copy_user_modules target=x86_64 build_type=Debug ^petsc+X ^boost+python+numpy 2>&1 | tee $SRC_DIR/logs.txt
+          - spack dev-build --before build --source-path $SRC_DIR --test root mofem-cephas@lukasz~copy_user_modules target=x86_64 build_type=Release ^petsc+X ^boost+python+numpy 2>&1 | tee $SRC_DIR/logs.txt
           - cd core* && sed -i "s@SITE:STRING=.*@SITE:STRING=Cactus\nBUILDNAME:UNINITIALIZED=$BITBUCKET_BRANCH@g" CMakeCache.txt && make rebuild_cache
           - spack load boost
           - ctest --output-on-failure -D Experimental 2>&1 | tee -a $SRC_DIR/logs.txt
