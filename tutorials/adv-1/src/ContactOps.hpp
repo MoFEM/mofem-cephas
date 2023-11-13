@@ -157,11 +157,6 @@ struct SDFPython {
       PyErr_Print();
       CHK_THROW_MESSAGE(MOFEM_OPERATION_UNSUCCESSFUL, "Python error");
     }
-
-    // if (grad_sdf.size() != 3) {
-    //   SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Expected size 3");
-    // }
-
     MoFEMFunctionReturn(0);
   }
 
@@ -184,11 +179,6 @@ struct SDFPython {
       PyErr_Print();
       CHK_THROW_MESSAGE(MOFEM_OPERATION_UNSUCCESSFUL, "Python error");
     }
-
-    // if (hess_sdf.size() != 6) {
-    //   SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Expected size 6");
-    // }
-
     MoFEMFunctionReturn(0);
   }
 
@@ -270,8 +260,8 @@ inline VectorDouble surface_distance_function(double delta_t, double t,
 #endif
   VectorDouble v_sdf;
   v_sdf.resize(nb_gauss_pts, false);
-  m_spatial_coords.resize(SPACE_DIM, nb_gauss_pts);
-  auto t_coords = getFTensor1FromMat<SPACE_DIM>(m_spatial_coords);
+  m_spatial_coords.resize(3, nb_gauss_pts);
+  auto t_coords = getFTensor1FromMat<3>(m_spatial_coords);
 
   for (size_t gg = 0; gg < nb_gauss_pts; ++gg)
     v_sdf[gg] = t_coords(1) + 0.5;
@@ -314,7 +304,7 @@ grad_surface_distance_function(double delta_t, double t, int nb_gauss_pts,
     double *grad_ptr = reinterpret_cast<double *>(np_grad_sdf.get_data());
 
     MatrixDouble m_grad_sdf;
-    m_grad_sdf.resize(SPACE_DIM, nb_gauss_pts, false);
+    m_grad_sdf.resize(3, nb_gauss_pts, false);
     for (size_t gg = 0; gg < nb_gauss_pts; ++gg) {
       for (int idx = 0; idx < 3; ++idx)
         m_grad_sdf(idx, gg) = *(grad_ptr + (3 * gg + idx));
@@ -323,8 +313,8 @@ grad_surface_distance_function(double delta_t, double t, int nb_gauss_pts,
   }
 #endif
   MatrixDouble m_grad_sdf;
-  m_grad_sdf.resize(SPACE_DIM, nb_gauss_pts, false);
-  FTensor::Index<'i', SPACE_DIM> i;
+  m_grad_sdf.resize(3, nb_gauss_pts, false);
+  FTensor::Index<'i', 3> i;
   FTensor::Tensor1<double, 3> t_grad_sdf_set{0.0, 0.0, 1.0};
   auto t_grad_sdf = getFTensor1FromMat<3>(m_grad_sdf);
 
@@ -371,19 +361,19 @@ hess_surface_distance_function(double delta_t, double t, int nb_gauss_pts,
     double *hess_ptr = reinterpret_cast<double *>(np_hess_sdf.get_data());
 
     MatrixDouble m_hess_sdf;
-    m_hess_sdf.resize((SPACE_DIM * (SPACE_DIM + 1)) / 2, nb_gauss_pts, false);
+    m_hess_sdf.resize(6, nb_gauss_pts, false);
     for (size_t gg = 0; gg < nb_gauss_pts; ++gg) {
-      for (int idx = 0; idx < (SPACE_DIM * (SPACE_DIM + 1)) / 2; ++idx)
+      for (int idx = 0; idx < 6; ++idx)
         m_hess_sdf(idx, gg) =
-            *(hess_ptr + ((SPACE_DIM * (SPACE_DIM + 1)) / 2 * gg + idx));
+            *(hess_ptr + (6 * gg + idx));
     }
     return m_hess_sdf;
   }
 #endif
   MatrixDouble m_hess_sdf;
-  m_hess_sdf.resize((SPACE_DIM * (SPACE_DIM + 1)) / 2, nb_gauss_pts, false);
-  FTensor::Index<'i', SPACE_DIM> i;
-  FTensor::Index<'j', SPACE_DIM> j;
+  m_hess_sdf.resize(6, nb_gauss_pts, false);
+  FTensor::Index<'i', 3> i;
+  FTensor::Index<'j', 3> j;
   FTensor::Tensor2_symmetric<double, 3> t_hess_sdf_set{0., 0., 0., 0., 0., 0.};
   auto t_hess_sdf = getFTensor2SymmetricFromMat<3>(m_hess_sdf);
 
