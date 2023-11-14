@@ -52,6 +52,10 @@ template <> struct EssentialPreProc<MPCsType> {
 
   MoFEMErrorCode setMPCParentAdjacency();
 
+  static MoFEMErrorCode loadFileWithMPCs(Interface &m_field,
+                                         const char *file_name,
+                                         const char *options);
+
 protected:
   MoFEM::Interface &mField;
   boost::weak_ptr<FEMethod> fePtr;
