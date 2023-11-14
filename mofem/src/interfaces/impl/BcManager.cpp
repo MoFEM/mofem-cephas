@@ -246,18 +246,18 @@ MoFEMErrorCode BcManager::addBlockDOFsToMPCs(const std::string problem_name,
               corresponding_master_ms, &l);
           bc->mpcPtr->isReprocitical = false;
 
-          std::cout << "master meshset is: " << master_nodes << "\n";
+          // std::cout << "master meshset is: " << master_nodes << "\n";
             CHKERR m_field.get_moab().get_entities_by_handle(
                 l->getMeshset(), master_nodes, true);
-            std::cout << "master meshset is: " << master_nodes << "\n";
+            // std::cout << "master meshset is: " << master_nodes << "\n";
           // if (master_nodes.subset_by_dimension(0).size() <  links_ents.subset_by_dimension(1))
           {
             auto low_dim_ents = BcManagerImplTools::get_adj_ents(
                 m_field.get_moab(), master_nodes);
-            std::cout << "lower_dim meshset is: " << low_dim_ents << "\n"; 
+            // std::cout << "lower_dim meshset is: " << low_dim_ents << "\n"; 
             low_dim_ents = low_dim_ents.subset_by_dimension(0);
             master_nodes.swap(low_dim_ents);
-            std::cout << "master meshset 2 is: " << master_nodes << "\n";
+            // std::cout << "master meshset 2 is: " << master_nodes << "\n";
           }
 
           MOFEM_LOG("BcMngWorld", Sev::verbose)
@@ -276,18 +276,18 @@ MoFEMErrorCode BcManager::addBlockDOFsToMPCs(const std::string problem_name,
         // if (std::regex_match(bc_id, std::regex("(.*)RIGID_BODY(.*)")))
         //   bc->mpcPtr->mpcType = MPC::RIGID_BODY;
 
-        std::cout << "links_ents range is: " << links_ents << "\n";
+        // std::cout << "links_ents range is: " << links_ents << "\n";
         for (auto &link : links_ents.subset_by_dimension(1)) {
           Range verts;
           CHKERR m_field.get_moab().get_connectivity(&link, 1, verts, true);
-          std::cout << "verts range is: " << verts << "\n";
+          // std::cout << "verts range is: " << verts << "\n";
           if (bc->mpcPtr->isReprocitical) {
             bc->mpcPtr->mpcMasterEnts.insert(verts[0]);
             bc->mpcPtr->mpcSlaveEnts.insert(verts[1]);
           } else {
             for (auto &m_node : verts)
               if (master_nodes.find(m_node) != master_nodes.end()) {
-                std::cout << "found ent: " << m_node << "\n";
+                // std::cout << "found ent: " << m_node << "\n";
                 bc->mpcPtr->mpcMasterEnts.insert(m_node);
                 bc->mpcPtr->mpcSlaveEnts.merge(subtract(verts, Range(m_node, m_node)));
                 break;
