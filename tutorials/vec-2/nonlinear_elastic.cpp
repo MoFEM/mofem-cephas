@@ -20,7 +20,6 @@ using BoundaryEle =
     PipelineManager::ElementsAndOpsByDim<SPACE_DIM>::BoundaryEle;
 using DomainEleOp = DomainEle::UserDataOperator;
 using BoundaryEleOp = BoundaryEle::UserDataOperator;
-using PostProcEle = PostProcBrokenMeshInMoab<DomainEle>;
 
 using DomainNaturalBC =
     NaturalBC<DomainEleOp>::Assembly<PETSC>::LinearForm<GAUSS>;
@@ -47,6 +46,7 @@ template <> struct PostProcEleByDim<3> {
 
 using SideEle = PostProcEleByDim<SPACE_DIM>::SideEle;
 using PostProcEleBdy = PostProcEleByDim<SPACE_DIM>::PostProcEleBdy;
+using PostProcEdges = PostProcBrokenMeshInMoabBase<EdgeElementForcesAndSourcesCore>;
 
 constexpr double young_modulus = 100;
 constexpr double poisson_ratio = 0.3;
@@ -93,7 +93,11 @@ MoFEMErrorCode Example::readMesh() {
   MoFEMFunctionBegin;
   auto simple = mField.getInterface<Simple>();
   CHKERR simple->getOptions();
-  CHKERR simple->loadFile();
+  char meshFileName[255];
+  CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-file_name",
+                               meshFileName, 255, PETSC_NULL);
+  CHKERR simple->loadFile("", meshFileName,
+                          EssentialPreProc<MPCsType>::loadFileWithMPCs);
   MoFEMFunctionReturn(0);
 }
 //! [Read mesh]
@@ -251,8 +255,7 @@ MoFEMErrorCode Example::solveSystem() {
       return common_ptr;
     };
 
-    auto post_proc_fe_bdy = boost::make_shared<
-        typename PostProcEleByDim<SPACE_DIM>::PostProcEleBdy>(mField);
+    auto post_proc_fe_bdy = boost::make_shared<PostProcEleBdy>(mField);
     auto u_ptr = boost::make_shared<MatrixDouble>();
     post_proc_fe_bdy->getOpPtrVector().push_back(
         new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_ptr));
@@ -463,8 +466,20 @@ MoFEMErrorCode Example::outputResults() {
     case 3:
       regression_value = 1.8841e+00;
       break;
-    case 4:
-      regression_value = 6.77003;
+    case 4: // just links
+      regression_value = 4.9625e+00;
+      break;
+    case 5: // link master 
+      regression_value = 6.6394e+00;
+      break;
+    case 6: // link master swap
+      regression_value = 4.98764e+00;
+      break;
+    case 7: // link Y
+      regression_value = 4.9473e+00;
+      break;
+    case 8: // link_3D_repr
+      regression_value = 2.5749e-01;
       break;
 
     default:

@@ -359,9 +359,22 @@ MoFEMErrorCode Example::boundaryCondition() {
                                            "REMOVE_ALL", "U", 0, 3);
   CHKERR bc_mng->pushMarkDOFsOnEntities<DisplacementCubitBcData>(
       simple->getProblemName(), "U");
-
+      
+  // adding MPCs
   CHKERR bc_mng->addBlockDOFsToMPCs(simple->getProblemName(), "U");
 
+  MoFEMFunctionReturn(0);
+}
+//! [Boundary condition]
+
+//! [Push operators to pipeline]
+MoFEMErrorCode Example::assembleSystem() {
+  MoFEMFunctionBegin;
+  auto pip = mField.getInterface<PipelineManager>();
+  auto simple = mField.getInterface<Simple>();
+  auto bc_mng = mField.getInterface<BcManager>();
+
+  //! [Integration rule]
   auto integration_rule = [](int, int, int approx_order) {
     return 2 * approx_order + 1;
   };
