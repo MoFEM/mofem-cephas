@@ -14,7 +14,7 @@
   - <a href="https://www.gla.ac.uk/schools/engineering/staff/chrispearce/">Chris Pearce</a>, The University of Glasgow, Scotland, UK 
   - <a href="https://www.gla.ac.uk/schools/engineering/staff/andreishvarts/">Andrei Shvarts</a>, The University of Glasgow, Scotland, UK,
   <a href="https://www.linkedin.com/in/andrei-shvarts/"><i class="fab fa-linkedin-in"></i></a>
-  - <a href="https://www.gla.ac.uk/schools/engineering/staff/chrispearce/">Andrew McBride</a>, The University of Glasgow, Scotland, UK 
+  - <a href="https://www.gla.ac.uk/schools/engineering/staff/andrewmcbride/">Andrew McBride</a>, The University of Glasgow, Scotland, UK 
     
 \section mofem_core_developers Core Developers
   - <a href="https://www.gla.ac.uk/schools/engineering/staff/lukaszkaczmarczyk/">Łukasz Kaczmarczyk</a>, The University of Glasgow, Scotland, UK, 
@@ -42,16 +42,18 @@
 
 \section mofem_users_modules_past_contributors Past Contributors
 
-- <a href="https://pure.qub.ac.uk/en/persons/zahur-ullah">Zahur Ullah</a>, Queen's University, North Ireland, UK
+- <a href="https://pure.qub.ac.uk/en/persons/zahur-ullah">Zahur Ullah</a>, Queen's University, Northern Ireland, UK
 - <a href="https://www.northumbria.ac.uk/about-us/our-staff/n/hoang-nguyen/">Hoang Nguyen</a>, Northumbria University, England, UK
-- <a href="https://www.gla.ac.uk/schools/engineering/staff/mebratuwakeni/">Mebratu Wakeni</a>, The University of Glasgow, Scotland, UK
+- Christophe-Alexandre Chalons-Mouriesse
+- Preslav Alexandrov
+- Mebratu Wakeni
 - Ross Mackenzie
 - Euan Muir
 - Euan Richardson
 - Michael Cortis
 - Dimitrios Kourepinis
 - Xuan Meng
-- Xiao-Yi
+- Xiao-Yi Zhou
 
 \section mofem_openhub_stat Commits and stats
 
