@@ -38,7 +38,7 @@ List of third party libraries and packages used by MoFEM:
 - ParaView <http://www.paraview.org>
 - FTensor <https://wlandry.net/Projects/FTensor/>
 
-\section Acknowledgments
+\section Acknowledgements
 
 \image html Acknowledgments.png width=100%
 
