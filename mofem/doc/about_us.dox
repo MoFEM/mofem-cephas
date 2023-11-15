@@ -36,8 +36,8 @@ List of third party libraries and packages used by MoFEM:
 - MFront <http://tfel.sourceforge.net>
 - MOAB <http://ftp.mcs.anl.gov/pub/fathom/moab-docs/index.html>.
 - ParaView <http://www.paraview.org>
-- PETSc <http://www.mcs.anl.gov/petsc/documentation/index.html>
-- SIGMA Tools <http://press3.mcs.anl.gov/sigma>
+- PETSc <https://petsc.org/release/>
+- SIGMA Tools <https://sigma.mcs.anl.gov>
 
 \section Acknowledgements
 
