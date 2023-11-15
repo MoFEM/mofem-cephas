@@ -1,4 +1,4 @@
-Installation with Docker (Linux, macOS and some versions of Windows) {#install_docker}
+Installation with Docker - advanced {#install_docker_advanced}
 =======================================================================
 
 Docker is an open platform that allows for the distribution and deployment of
