@@ -1,4 +1,4 @@
-Installation with Docker (Linux, macOS and some versions of Windows) {#install_docker_user}
+Installation with Docker - JupyterHub {#install_docker_jupyterhub}
 =======================================================================
 
 Docker is an open platform that allows for the distribution and deployment of
@@ -20,7 +20,7 @@ You can download and install Docker following instructions on the [Docker instal
 
 # How to get and run the container {#docker_getting_container}
 
-> These instructions are for installing specific versions of MoFEM containers. To have a more advanced installation for developers see [Installation with Docker](#install_docker).
+> These instructions are for installing specific versions of MoFEM containers. To have a more advanced installation for developers see [Installation with Docker - advanced](#install_docker).
 
 The containers available at the moment are: 
 
@@ -74,7 +74,7 @@ For this section, initialise Docker, open your terminal and use the following co
 ~~~~
 docker pull likask/mofem-spack-jupyterhub:Workshop2023
 ~~~~
-replace `likask/mofem-spack-jupyterhub:Workshop2023` required by `image_name:tag_name` taken from [table listing images and tags](#docker_getting_container).
+If you want to use a different image from the list, replace `likask/mofem-spack-jupyterhub:Workshop2023` by `image_name:tag_name` taken from [table listing images and tags](#docker_getting_container).
 
 2. Run container
 - If you would like to just try the container, removing the container after use, run docker as follows:
@@ -98,23 +98,23 @@ docker run -d --platform linux/amd64 --name workshop2023 -p 8000:8000 -p 2222:22
 ~~~~~~
 That results in a suboptimal performance, however, it is a workable solution. 
 
-> The base system is Ubuntu 20.04. To compile code for *arm* architecture, we would have to upgrade the system to Ubuntu 22.04, and then it would be possible to compile MoFEM ecosystem for M1 chip. That is tested and works. However, additionally, you would have to compile gMesh from scratch. Python pip installation for gMesh and *arm* architectures is not available. If you know how to do it, we will welcome PR from you to fix this problem.
+> The base system is Ubuntu 20.04. To compile code for *ARM* architecture, we would have to upgrade the system to Ubuntu 22.04, and then it would be possible to compile MoFEM ecosystem for Apple Silicon. That is tested and works. However, additionally, you would have to compile Gmsh from scratch. Python pip installation for Gmsh on *ARM* architectures is not currently available. If you know how to do it, we will welcome PR from you to fix this problem.
 
 # Accessing and running with JupyterHub {#docker_access_hub}
 
 ## Password and login {#docker_password_login}
 
-If you run a container locally, open [http://localhost:8000](http://localhost:8000) in your browser
+If you run a container locally, open [http://localhost:8000](http://localhost:8000) in your browser. Otherwise, substitute `localhost` by the name of your server.
 
 - The default login name is *mofem*
-- On the first login, the first password you input will be you password from then onwards. 
+- On the first login, the first password you input will be your password from then onwards. 
 Note this is the password to JupyterHub, not a password to the Linux environment.
 
 You have admin rights, and you can add more users.
 
 ## Start running 
 
-- **Important**. Before you start, execute *install.md* notebook. It will copy symbolic links to the executable binaries of MoFEM installation to your directory.
+- **Important**. Before you start, run the only cell in *install.md* notebook. It will copy symbolic links to the executable binaries of MoFEM installation to your directory.
 
 - Navigate to any of the Jupyter notebooks and more instructions should be included inside. 
 
@@ -133,7 +133,7 @@ If you wish to develop and debug in MoFEM using the just created containers, rea
 
 
 #### Password for debugging 
-First of all, set up your password. This is different on from the one you use to access JupyterHub in the browser. To change it, run the following command from a terminal:
+First of all, set up your SSH password. This is different from the one you use to access JupyterHub in the browser. To change it, run the following command from a terminal:
 
 ~~~~
 docker exec -it workshop2023 /bin/bash
@@ -144,13 +144,31 @@ passwd mofem
 ~~~~
 and afterwards choose a new password.
 
+### Start installation
+
+In your browser ([http://localhost:8000](http://localhost:8000)), open `install_from_source` notebook and run all of the cells in it. This will checkout the source code of MoFEM core and basic user modules including tutorials, and compile user modules for the user `mofem`. New folders will appear in your starting directory:
+
+- mofem_install - contains source code
+- um_view_debug - symbolic links to the executable binaries of the debugging version
+
+While this is installing, move to the next section.
+
 ### Connecting to the container
 
-We will only cover the process with using [Visual Studio Code](https://code.visualstudio.com). Start by making sure you have it installed. 
+We will only cover the process with using [Visual Studio Code](https://code.visualstudio.com). Start by making sure you have it installed. Figure 5 shows locations of the next steps. 
 
-Next, go to `Extensions` within VS Code and install `Remote Explorer` extension. This will allow you to connect to servers or containers like the one we created. While here, also install `C/C++ Extension Pack` extension.
+<span style="color:magenta"> a) </span> Go to `Extensions` within VS Code and install `Remote - SSH` extension. This will allow you to connect to servers or containers like the one we created. 
 
-Copy the following code into ~/.ssh/config on your laptop or desktop:
+<span style="color:turquoise"> b) </span> Open `Remote Explorer` extension
+
+<!-- <img src="./../figures/docker_ssh_container.png" alt="Docker - VS Code steps for SSH connection" width="100%"/> -->
+<img src="docker_ssh_container.png" alt="Docker - VS Code steps for SSH connection" width="100%"/>
+<a id='figure_1'></a> 
+    <center><b>Figure 5. Setting up SSH connection in VS Code to the container for debugging. Follow the written instructions for <span style="color:magenta"> a)</span>, <span style="color:turquoise"> b)</span>, <span style="color:lime"> c)</span>, <span style="color:orange"> d)</span> and <span style="color:blue"> e)</span>. </b></center>
+
+<!-- Next, go to `Extensions` within VS Code and install `Remote Explorer` extension. This will allow you to connect to servers or containers like the one we created. While here, also install `C/C++ Extension Pack` extension. -->
+
+<span style="color:lime"> c) </span> Copy the following code into your .ssh/config file (opened by pressing on <span style="color:lime"> c)</span>):
 ~~~~
 Host workshop2023
   HostName localhost
@@ -159,89 +177,47 @@ Host workshop2023
   User mofem
   Port 2222
 ~~~~
-Here, we can see the port forwarding number 2222 we set up for our container earlier. The option to SSH to the container should now appear in the `Remote Explorer` extension on VS Code. Connect to the container in VS Code (use the password for debugging) and you should see the same things as you do when you open it through a browser ([http://localhost:8000](http://localhost:8000)). 
+Here, we can see the port forwarding number 2222 we set up for our container earlier.
 
-The next step can be done on either platform. Open `install_from_source` notebook and run all of the cells in it. This will create a separate version of MoFEM for the user `mofem`. New folders will appear in your starting directory.
+<span style="color:orange"> d) </span> Refresh SSH connections to see the option to connect via SSH to the container in the `Remote Explorer` extension on VS Code.
 
-- mofem_install - contains source code
-- um_view_debug - symbolic links to the executable binaries of the debugging version
+<span style="color:blue"> e) </span> Connect to the container in VS Code (use the password for debugging) and you should see the same folders and files as you do when you open it through a browser ([http://localhost:8000](http://localhost:8000)). 
 
 ## VS Code debugging setup
 
 To set up debugging, follow these steps:
 
-- open `mofem_install/mofem-cephas/mofem/users_modules` folder through `File -> Open Folder...` 
-- create `.vscode` folder
-- create [`launch.json`](#launchjson) and [`tasks.json`](#tasksjson) files
-- copy the code from the following sections into these files respectively
-- replace the hash `5sehreo` with the hash in your folder
-- adjust the files to fit your purpose as described bellow 
+- open `~/mofem_install/mofem-cephas/mofem/users_modules` folder through `File -> Open Folder...` 
+- create `.vscode` folder, and [launch.json](launch.json "launch.json") & [tasks.json](tasks.json "tasks.json") files inside it, see Figure 6
+    - copy the code from the linked files or download them and place them to `.vscode` folder
+- replace the hash `5sehreo` with the hash in your folder, see <span style="color:orange"> `HASH`</span> in Figure 6
+- adjust the files to fit your purpose as described bellow Figure 6
+- go to `Extensions` within VS Code, see Figure 5 <span style="color:magenta"> a) </span> , and install `C/C++ Extension Pack` and `Code Runner` extensions
 
-#### launch.json {#launchjson}
-~~~
-{
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "type": "cppdbg",
-            "request": "launch",
-            "name": "nonlinear_elastic",
-            "program": "/mofem_install/jupyter/mofem/mofem_install/mofem-cephas/mofem/users_modules/um-build-Debug-5sehreo/tutorials/vec-2/nonlinear_elastic",
-            "args": [
-                "-file_name",
-                "beam_3D.cub",
-                "-order",
-                "2",
-            ], // , "-log_quiet"
-            "cwd": "/mofem_install/jupyter/mofem/mofem_install/mofem-cephas/mofem/users_modules/um-build-Debug-5sehreo/tutorials/vec-2/",
-            "preLaunchTask": "build_vec_2",
-            "environment": [],
-            "externalConsole": false,
-            "MIMode": "gdb",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                },
-                {
-                    "description": "Set Disassembly Flavor to Intel",
-                    "text": "-gdb-set disassembly-flavor intel",
-                    "ignoreFailures": true
-                }
-            ]
-            // "stopOnEntry": true
-        },
-    ]
-}
+<!-- <img src="./../figures/docker_ssh_vscode.png" alt="Docker - VS Code debugging setup" width="100%"/> -->
+<img src="docker_ssh_vscode.png" alt="Docker - VS Code debugging setup" width="100%"/>
+<a id='figure_1'></a> 
+    <center><b>Figure 6. Setting up debugging. </b></center>
 
-~~~
+In [launch.json](launch.json "launch.json"), `/mofem_install/jupyter/mofem/mofem_install/mofem-cephas/mofem/users_modules/um-build-Debug-5sehreo/tutorials/vec-2/` is the folder where the executable is located and you can change it to what you want to debug. `nonlinear_elastic` is the executable name. I would suggest copying and then searching for these terms to change them in all of the locations. Lastly, check what mesh is located at the new location (required by the flag `-file_name`).
 
-`/mofem_install/jupyter/mofem/mofem_install/mofem-cephas/mofem/users_modules/um-build-Debug-5sehreo/tutorials/vec-2/` is the folder where the executable is and you can change it to what you want to debug. `nonlinear_elastic` is the executable name. I would suggest copying and then searching for these terms to change them in all of the locations. Lastly, check what mesh is located at the new location (wanted by `-file_name`).
-
-#### tasks.json {#tasksjson}
-
-This file defines which folder should be rebuild before running your code with debugging.
-
-~~~
-{
-    "tasks": [
-        {
-            "label": "build_vec_2",
-            "type": "shell",
-            "command": "make -j6 -C /mofem_install/jupyter/mofem/mofem_install/mofem-cephas/mofem/users_modules/um-build-Debug-5sehreo/tutorials/vec-2",
-        },
-    ],
-    "version": "2.0.0"
-}
-~~~
+[tasks.json](tasks.json "tasks.json") file defines which folder should be rebuild before running your code with debugging.
 
 ## Run and debug
 
-- Go to the file you want to debug and place a breakpoint inside one of the functions.
-- `Run -> Start Debugging` from the dropdown menu to start debugging
+For this section refer to Figure 7.
 
-The program should now start and eventually stop at the breakpoint if everything was set correctly. For more information see [VS Code instructions for debugging](#https://code.visualstudio.com/Docs/editor/debugging).
+- Go to the file you want to debug and place a <span style="color:red"> breakpoint </span> inside one of the functions.
+    - it needs to be the same file you used in [launch.json](#launchjson)
+- Open <span style="color:magenta"> Run and Debug section </span> 
+- Press <span style="color:lime"> Run and Debug </span> button to start debugging
+
+<!-- <img src="./../figures/docker_ssh_debug.png" alt="Docker - VS Code debugging setup" width="100%"/> -->
+<img src="docker_ssh_debug.png" alt="Docker - VS Code debugging setup" width="100%"/>
+<a id='figure_1'></a> 
+    <center><b>Figure 7. Debugging in VS code. </b></center>
+
+This should trigger recompilation of the folder defined in [tasks.json](#tasksjson), start the analysis, and eventually stop at the breakpoint if everything was set correctly. You can use <span style="color:turquoise"> controls </span> to navigate the debugging session. For more information see [VS Code instructions for debugging](#https://code.visualstudio.com/Docs/editor/debugging).
 
 The same procedure can be applied for any other users you create and everyone can debug separately. 
 
