@@ -13,7 +13,8 @@
     </tab>
 
     <tab type="user" visible="yes" url="https://www.youtube.com/channel/UCxdPe3nK1n9cB1XPAvl7btQ/playlists" title="Videos" intro="">
-      <tab type="user" url="@ref mofem_school_page" title="School" intro=""/>
+      <tab type="user" url="@ref mofem_school_2023" title="UKACM School 2023" intro=""/>
+      <tab type="user" url="@ref mofem_school_2021" title="UKACM School 2021" intro=""/>
       <tab type="user" url="https://www.youtube.com/playlist?list=PLbqyPFhdeLn9r9n4Bphs1HFc-qGyaj1Vu" title="Video guides"/>   
       <tab type="user" url="https://www.youtube.com/playlist?list=PLbqyPFhdeLn86KomC9uG9IyF8vDyxIHfY" title="Conference talks"/>   
       <tab type="user" url="https://www.youtube.com/playlist?list=PLbqyPFhdeLn8fSQP7_L5G93eFYueEqK1d" title="Simulation examples"/>   
