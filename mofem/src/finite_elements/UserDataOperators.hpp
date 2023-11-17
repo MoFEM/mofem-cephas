@@ -418,8 +418,26 @@ MoFEMErrorCode OpCalculateVectorFieldValues_General<
       }
       for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
         auto field_data = data.getFTensor1FieldData<Tensor_Dim>();
-        size_t bb = 0;
-        for (; bb != size; ++bb) {
+
+#ifndef NDEBUG
+          if (field_data.l2() != field_data.l2()) {
+            MOFEM_LOG("SELF", Sev::error) << "field data: " << field_data;
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                    "Wrong number in coefficients");
+          }
+#endif
+
+          size_t bb = 0;
+          for (; bb != size; ++bb) {
+
+#ifndef NDEBUG
+          if (base_function != base_function) {
+            MOFEM_LOG("SELF", Sev::error) << "base finction: " << base_function;
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                    "Wrong number number in base functions");
+          }
+#endif
+
           values_at_gauss_pts(I) += field_data(I) * base_function;
           ++field_data;
           ++base_function;
@@ -1488,8 +1506,27 @@ MoFEMErrorCode OpCalculateVectorFieldGradient_General<
       }
       for (int gg = 0; gg < nb_gauss_pts; ++gg) {
         auto field_data = data.getFTensor1FieldData<Tensor_Dim0>();
+
+#ifndef NDEBUG
+          if (field_data.l2() != field_data.l2()) {
+            MOFEM_LOG("SELF", Sev::error) << "field data " << field_data;
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                    "Wrong number in coefficients");
+          }
+#endif
+
         int bb = 0;
         for (; bb < size; ++bb) {
+
+#ifndef NDEBUG
+          if (diff_base_function.l2() != diff_base_function.l2()) {
+            MOFEM_LOG("SELF", Sev::error)
+                << "diff_base_function: " << diff_base_function;
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                    "Wrong number number in base functions");
+          }
+#endif
+
           gradients_at_gauss_pts(I, J) += field_data(I) * diff_base_function(J);
           ++field_data;
           ++diff_base_function;
