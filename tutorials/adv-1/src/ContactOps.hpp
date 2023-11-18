@@ -301,7 +301,8 @@ template <int DIM, typename AssemblyBoundaryEleOp>
 struct OpConstrainBoundaryRhsImpl<DIM, GAUSS, AssemblyBoundaryEleOp>
     : public AssemblyBoundaryEleOp {
   OpConstrainBoundaryRhsImpl(const std::string field_name,
-                             boost::shared_ptr<CommonData> common_data_ptr);
+                             boost::shared_ptr<CommonData> common_data_ptr,
+                             bool is_axisymmetric = false);
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &data);
 
   SurfaceDistanceFunction surfaceDistanceFunction = surface_distance_function;
@@ -310,6 +311,7 @@ struct OpConstrainBoundaryRhsImpl<DIM, GAUSS, AssemblyBoundaryEleOp>
 
 private:
   boost::shared_ptr<CommonData> commonDataPtr;
+  bool isAxisymmetric;
 };
 
 template <int DIM, typename AssemblyBoundaryEleOp>
@@ -317,7 +319,8 @@ struct OpConstrainBoundaryLhs_dUImpl<DIM, GAUSS, AssemblyBoundaryEleOp>
     : public AssemblyBoundaryEleOp {
   OpConstrainBoundaryLhs_dUImpl(const std::string row_field_name,
                                 const std::string col_field_name,
-                                boost::shared_ptr<CommonData> common_data_ptr);
+                                boost::shared_ptr<CommonData> common_data_ptr,
+                                bool is_axisymmetric = false);
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data);
 
@@ -328,6 +331,7 @@ struct OpConstrainBoundaryLhs_dUImpl<DIM, GAUSS, AssemblyBoundaryEleOp>
       hess_surface_distance_function;
 
   boost::shared_ptr<CommonData> commonDataPtr;
+  bool isAxisymmetric;
 };
 
 template <int DIM, typename AssemblyBoundaryEleOp>
@@ -335,7 +339,8 @@ struct OpConstrainBoundaryLhs_dTractionImpl<DIM, GAUSS, AssemblyBoundaryEleOp>
     : public AssemblyBoundaryEleOp {
   OpConstrainBoundaryLhs_dTractionImpl(
       const std::string row_field_name, const std::string col_field_name,
-      boost::shared_ptr<CommonData> common_data_ptr);
+      boost::shared_ptr<CommonData> common_data_ptr,
+      bool is_axisymmetric = false);
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data);
 
@@ -345,6 +350,7 @@ struct OpConstrainBoundaryLhs_dTractionImpl<DIM, GAUSS, AssemblyBoundaryEleOp>
 
 private:
   boost::shared_ptr<CommonData> commonDataPtr;
+  bool isAxisymmetric;
 };
 
 template <typename BoundaryEleOp> struct ContactIntegrators {
@@ -522,10 +528,11 @@ OpEvaluateSDFImpl<DIM, GAUSS, BoundaryEleOp>::doWork(int side, EntityType type,
 template <int DIM, typename AssemblyBoundaryEleOp>
 OpConstrainBoundaryRhsImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::
     OpConstrainBoundaryRhsImpl(const std::string field_name,
-                               boost::shared_ptr<CommonData> common_data_ptr)
+                               boost::shared_ptr<CommonData> common_data_ptr,
+                               bool is_axisymmetric)
     : AssemblyBoundaryEleOp(field_name, field_name,
                             AssemblyBoundaryEleOp::OPROW),
-      commonDataPtr(common_data_ptr) {}
+      commonDataPtr(common_data_ptr), isAxisymmetric(is_axisymmetric) {}
 
 template <int DIM, typename AssemblyBoundaryEleOp>
 MoFEMErrorCode
@@ -558,7 +565,12 @@ OpConstrainBoundaryRhsImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::iNtegrate(
         t_normal_at_pts(i) / std::sqrt(t_normal_at_pts(i) * t_normal_at_pts(i));
 
     auto t_nf = getFTensor1FromPtr<DIM>(&nf[0]);
-    const double alpha = t_w * AssemblyBoundaryEleOp::getMeasure();
+
+    double jacobian = 1.;
+    if (isAxisymmetric) {
+      jacobian = 2. * M_PI * t_coords(0);
+    }
+    const double alpha = t_w * jacobian * AssemblyBoundaryEleOp::getMeasure();
 
     FTensor::Tensor1<double, 3> t_spatial_coords{0., 0., 0.};
     t_spatial_coords(i) = t_coords(i) + t_disp(i);
@@ -616,10 +628,11 @@ template <int DIM, typename AssemblyBoundaryEleOp>
 OpConstrainBoundaryLhs_dUImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::
     OpConstrainBoundaryLhs_dUImpl(const std::string row_field_name,
                                   const std::string col_field_name,
-                                  boost::shared_ptr<CommonData> common_data_ptr)
+                                  boost::shared_ptr<CommonData> common_data_ptr,
+                                  bool is_axisymmetric)
     : AssemblyBoundaryEleOp(row_field_name, col_field_name,
                             AssemblyBoundaryEleOp::OPROWCOL),
-      commonDataPtr(common_data_ptr) {
+      commonDataPtr(common_data_ptr), isAxisymmetric(is_axisymmetric) {
   AssemblyBoundaryEleOp::sYmm = false;
 }
 
@@ -655,7 +668,12 @@ OpConstrainBoundaryLhs_dUImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::iNtegrate(
     t_normal(i) =
         t_normal_at_pts(i) / std::sqrt(t_normal_at_pts(i) * t_normal_at_pts(i));
 
-    const double alpha = t_w * AssemblyBoundaryEleOp::getMeasure();
+    double jacobian = 1.;
+    if (isAxisymmetric) {
+      jacobian = 2. * M_PI * t_coords(0);
+    }
+
+    const double alpha = t_w * jacobian * AssemblyBoundaryEleOp::getMeasure();
 
     FTensor::Tensor1<double, 3> t_spatial_coords{0., 0., 0.};
     t_spatial_coords(i) = t_coords(i) + t_disp(i);
@@ -728,10 +746,10 @@ template <int DIM, typename AssemblyBoundaryEleOp>
 OpConstrainBoundaryLhs_dTractionImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::
     OpConstrainBoundaryLhs_dTractionImpl(
         const std::string row_field_name, const std::string col_field_name,
-        boost::shared_ptr<CommonData> common_data_ptr)
+        boost::shared_ptr<CommonData> common_data_ptr, bool is_axisymmetric)
     : AssemblyBoundaryEleOp(row_field_name, col_field_name,
                             AssemblyBoundaryEleOp::OPROWCOL),
-      commonDataPtr(common_data_ptr) {
+      commonDataPtr(common_data_ptr), isAxisymmetric(is_axisymmetric) {
   AssemblyBoundaryEleOp::sYmm = false;
 }
 
@@ -765,7 +783,12 @@ OpConstrainBoundaryLhs_dTractionImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::
     t_normal(i) =
         t_normal_at_pts(i) / std::sqrt(t_normal_at_pts(i) * t_normal_at_pts(i));
 
-    const double alpha = t_w * AssemblyBoundaryEleOp::getMeasure();
+    double jacobian = 1.;
+    if (isAxisymmetric) {
+      jacobian = 2. * M_PI * t_coords(0);
+    }
+
+    const double alpha = t_w * jacobian * AssemblyBoundaryEleOp::getMeasure();
 
     FTensor::Tensor1<double, 3> t_spatial_coords{0., 0., 0.};
     t_spatial_coords(i) = t_coords(i) + t_disp(i);
@@ -825,11 +848,15 @@ OpConstrainBoundaryLhs_dTractionImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::
 template <int DIM, AssemblyType A, IntegrationType I, typename DomainEleOp>
 MoFEMErrorCode opFactoryDomainRhs(
     boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pip,
-    std::string sigma, std::string u) {
+    std::string sigma, std::string u, bool is_axisymmetric) {
   MoFEMFunctionBegin;
+
   using B = typename FormsIntegrators<DomainEleOp>::template Assembly<
       A>::template LinearForm<I>;
   using OpMixDivURhs = typename B::template OpMixDivTimesU<3, DIM, DIM>;
+  using OpMixDivUCylRhs =
+      typename B::template OpMixDivTimesU<3, DIM, DIM, CYLINDRICAL>;
+
   using OpMixLambdaGradURhs = typename B::template OpMixTensorTimesGradU<DIM>;
   using OpMixUTimesDivLambdaRhs =
       typename B::template OpMixVecTimesDivLambda<SPACE_DIM>;
@@ -841,21 +868,47 @@ MoFEMErrorCode opFactoryDomainRhs(
   auto div_stress_ptr = boost::make_shared<MatrixDouble>();
   auto contact_stress_ptr = boost::make_shared<MatrixDouble>();
 
+  auto jacobian = [&](const double r, const double, const double) {
+    if (is_axisymmetric)
+      return 2. * M_PI * r;
+    else
+      return 1.;
+  };
+
   pip.push_back(new OpCalculateVectorFieldValues<DIM>(
       u, common_data_ptr->contactDispPtr()));
   pip.push_back(
       new OpCalculateHVecTensorField<DIM, DIM>(sigma, contact_stress_ptr));
-  pip.push_back(
-      new OpCalculateHVecTensorDivergence<DIM, DIM>(sigma, div_stress_ptr));
+  // pip.push_back(
+  //     new OpCalculateHVecTensorDivergence<DIM, DIM>(sigma, div_stress_ptr));
+
+  if (!is_axisymmetric) {
+    pip.push_back(
+        new OpCalculateHVecTensorDivergence<DIM, DIM>(sigma, div_stress_ptr));
+  } else {
+    pip.push_back(new OpCalculateHVecTensorDivergence<DIM, DIM, CYLINDRICAL>(
+        sigma, div_stress_ptr));
+  }
 
   pip.push_back(new OpCalculateVectorFieldGradient<DIM, DIM>(u, mat_grad_ptr));
 
-  pip.push_back(
-      new OpMixDivURhs(sigma, common_data_ptr->contactDispPtr(),
-                       [](double, double, double) constexpr { return 1; }));
-  pip.push_back(new OpMixLambdaGradURhs(sigma, mat_grad_ptr));
-  pip.push_back(new OpMixUTimesDivLambdaRhs(u, div_stress_ptr));
-  pip.push_back(new OpMixUTimesLambdaRhs(u, contact_stress_ptr));
+  // pip.push_back(
+  //     new OpMixDivURhs(sigma, common_data_ptr->contactDispPtr(),
+  //                      [](double, double, double) constexpr { return 1; }));
+  if (!is_axisymmetric) {
+    pip.push_back(
+        new OpMixDivURhs(sigma, common_data_ptr->contactDispPtr(), jacobian));
+  } else {
+    pip.push_back(new OpMixDivUCylRhs(sigma, common_data_ptr->contactDispPtr(),
+                                      jacobian));
+  }
+
+  // pip.push_back(new OpMixLambdaGradURhs(sigma, mat_grad_ptr));
+  pip.push_back(new OpMixLambdaGradURhs(sigma, mat_grad_ptr, jacobian));
+  // pip.push_back(new OpMixUTimesDivLambdaRhs(u, div_stress_ptr));
+  pip.push_back(new OpMixUTimesDivLambdaRhs(u, div_stress_ptr, jacobian));
+  // pip.push_back(new OpMixUTimesLambdaRhs(u, contact_stress_ptr));
+  pip.push_back(new OpMixUTimesLambdaRhs(u, contact_stress_ptr, jacobian));
 
   MoFEMFunctionReturn(0);
 }
@@ -883,7 +936,8 @@ MoFEMErrorCode opFactoryBoundaryToDomainLhs(
     MoFEM::Interface &m_field,
     boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pip,
     std::string fe_domain_name, std::string sigma, std::string u,
-    std::string geom, ForcesAndSourcesCore::RuleHookFun rule) {
+    std::string geom, ForcesAndSourcesCore::RuleHookFun rule,
+    bool is_axisymmetric) {
   MoFEMFunctionBegin;
 
   using DomainEleOp = typename DomainEle::UserDataOperator;
@@ -900,15 +954,35 @@ MoFEMErrorCode opFactoryBoundaryToDomainLhs(
       A>::template BiLinearForm<I>;
 
   using OpMixDivULhs = typename B::template OpMixDivTimesVec<DIM>;
+  using OpMixDivUCylLhs =
+      typename B::template OpMixDivTimesVec<DIM, CYLINDRICAL>;
   using OpLambdaGraULhs = typename B::template OpMixTensorTimesGrad<DIM>;
+
   using OpMixDivULhsSide = OpMixLhsSide<OpMixDivULhs>;
+  using OpMixDivUCylLhsSide = OpMixLhsSide<OpMixDivUCylLhs>;
   using OpLambdaGraULhsSide = OpMixLhsSide<OpLambdaGraULhs>;
 
   auto unity = []() { return 1; };
+  auto jacobian = [&](const double r, const double, const double) {
+    if (is_axisymmetric)
+      return 2. * M_PI * r;
+    else
+      return 1.;
+  };
+
+  // op_loop_side->getOpPtrVector().push_back(
+  //     new OpMixDivULhsSide(sigma, u, unity, true));
+  // op_loop_side->getOpPtrVector().push_back(
+  //     new OpLambdaGraULhsSide(sigma, u, unity, true));
+  if (!is_axisymmetric) {
+    op_loop_side->getOpPtrVector().push_back(
+        new OpMixDivULhsSide(sigma, u, unity, jacobian, true));
+  } else {
+    op_loop_side->getOpPtrVector().push_back(
+        new OpMixDivUCylLhsSide(sigma, u, unity, jacobian, true));
+  }
   op_loop_side->getOpPtrVector().push_back(
-      new OpMixDivULhsSide(sigma, u, unity, true));
-  op_loop_side->getOpPtrVector().push_back(
-      new OpLambdaGraULhsSide(sigma, u, unity, true));
+      new OpLambdaGraULhsSide(sigma, u, unity, jacobian, true));
 
   op_loop_side->getSideFEPtr()->getRuleHook = rule;
   MoFEMFunctionReturn(0);
@@ -917,7 +991,7 @@ MoFEMErrorCode opFactoryBoundaryToDomainLhs(
 template <int DIM, AssemblyType A, IntegrationType I, typename BoundaryEleOp>
 MoFEMErrorCode opFactoryBoundaryLhs(
     boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pip,
-    std::string sigma, std::string u) {
+    std::string sigma, std::string u, bool is_axisymmetric) {
   MoFEMFunctionBegin;
 
   using C = ContactIntegrators<BoundaryEleOp>;
@@ -930,10 +1004,10 @@ MoFEMErrorCode opFactoryBoundaryLhs(
       sigma, common_data_ptr->contactTractionPtr()));
   pip.push_back(
       new typename C::template Assembly<A>::template OpConstrainBoundaryLhs_dU<
-          DIM, GAUSS>(sigma, u, common_data_ptr));
+          DIM, GAUSS>(sigma, u, common_data_ptr, is_axisymmetric));
   pip.push_back(new typename C::template Assembly<A>::
                     template OpConstrainBoundaryLhs_dTraction<DIM, GAUSS>(
-                        sigma, sigma, common_data_ptr));
+                        sigma, sigma, common_data_ptr, is_axisymmetric));
 
   MoFEMFunctionReturn(0);
 }
@@ -941,7 +1015,7 @@ MoFEMErrorCode opFactoryBoundaryLhs(
 template <int DIM, AssemblyType A, IntegrationType I, typename BoundaryEleOp>
 MoFEMErrorCode opFactoryBoundaryRhs(
     boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pip,
-    std::string sigma, std::string u) {
+    std::string sigma, std::string u, bool is_axisymmetric) {
   MoFEMFunctionBegin;
 
   using C = ContactIntegrators<BoundaryEleOp>;
@@ -954,7 +1028,7 @@ MoFEMErrorCode opFactoryBoundaryRhs(
       sigma, common_data_ptr->contactTractionPtr()));
   pip.push_back(
       new typename C::template Assembly<A>::template OpConstrainBoundaryRhs<
-          DIM, GAUSS>(sigma, common_data_ptr));
+          DIM, GAUSS>(sigma, common_data_ptr, is_axisymmetric));
 
   MoFEMFunctionReturn(0);
 }
