@@ -133,7 +133,7 @@ if [ ! -d "$SPACK_ROOT_DIR" ]; then
   if [ ! -f "$PWD/spack.tgz" ]; then
     echo "Downloading spack ..."
     mkdir -p $SPACK_ROOT_DIR &&\
-    git clone -b Version0.14.0 https://github.com/likask/spack.git
+    git clone -b Version0.14.0  https://bitbucket.org/mofem/mofem-spack.git spack
     echo -e "Done.\n"
   else 
     mkdir -p $SPACK_ROOT_DIR &&\
