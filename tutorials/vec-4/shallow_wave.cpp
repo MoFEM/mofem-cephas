@@ -55,9 +55,9 @@ using OpSourceH = FormsIntegrators<DomainEleOp>::Assembly<PETSC>::LinearForm<
 using OpConvectiveH = FormsIntegrators<DomainEleOp>::Assembly<
     PETSC>::LinearForm<GAUSS>::OpConvectiveTermRhs<1, 1, 3>;
 using OpConvectiveH_dU = FormsIntegrators<DomainEleOp>::Assembly<
-    PETSC>::BiLinearForm<GAUSS>::OpConvectiveTermLhsDu<1, 1, 3>;
+    PETSC>::TriLinearForm<GAUSS>::OpConvectiveTermLhsDu<1, 1, 3>;
 using OpConvectiveH_dGradH = FormsIntegrators<DomainEleOp>::Assembly<
-    PETSC>::BiLinearForm<GAUSS>::OpConvectiveTermLhsDy<1, 1, 3>;
+    PETSC>::TriLinearForm<GAUSS>::OpConvectiveTermLhsDy<1, 1, 3>;
 
 constexpr double omega = 7.292 * 1e-5;
 constexpr double g = 9.80616;
