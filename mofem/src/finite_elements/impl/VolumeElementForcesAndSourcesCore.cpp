@@ -239,6 +239,13 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateVolumeAndJacobian() {
   if (type == MBTET)
     vOlume *= G_TET_W1[0] / 6.;
 
+#ifndef NDEBUG
+  if (vOlume <= std::numeric_limits<double>::epsilon() || vOlume != vOlume) {
+    MOFEM_LOG("SELF", Sev::warning) << "Volume is zero " << vOlume;
+    MOFEM_LOG("SELF", Sev::warning) << "Coords " << coords << endl;
+  }
+#endif
+
   MoFEMFunctionReturn(0);
 }
 

@@ -104,8 +104,11 @@ MoFEMErrorCode MeshsetsManager::readMeshsets(int verb) {
     if ((block.cubitBcType & CubitBCType(NODESET | SIDESET | BLOCKSET)).any()) {
       auto p = cubitMeshsets.insert(block);
       if (!p.second) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "meshset not inserted");
+        // blocsket/nodeset/sideste set exist, could be created on other processor.
+        Range ents;
+        CHKERR m_field.get_moab().get_entities_by_handle(m, ents, true);
+        CHKERR m_field.get_moab().add_entities(p.first->getMeshset(), ents);
+        CHKERR m_field.get_moab().delete_entities(&m, 1);
       }
     }
   }

@@ -1,7 +1,0 @@
-#!/bin/sh
-
-MOFEM_SOURCE=@CMAKE_SOURCE_DIR@
-MOFEM_BUILD=@CMAKE_BINARY_DIR@
-
-cd $MOFEM_SOURCE
-git fetch --prune && git pull

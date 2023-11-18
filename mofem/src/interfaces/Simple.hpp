@@ -37,11 +37,25 @@ struct Simple : public UnknownInterface {
    * @return error code
    */
   MoFEMErrorCode getOptions();
+  
+  typedef boost::function<MoFEMErrorCode(Interface &, const char *, const char *)> LoadFileFunc;
+  /**
+   * \brief Set function for loading mesh file
+   * @param  m_field interface
+   * @param  file_name file name
+   * @param  options loader options
+   * @return      error code
+   */
+  static MoFEMErrorCode defaultLoadFileFunc(Interface &m_field, const char *file_name, const char *options) {
+    // Default behavior using the member moab.load_file
+    return m_field.get_moab().load_file(file_name, 0, options);
+  }
 
   /**
    * \brief Load mesh file
    * @param  options file load options
    * @param  mesh_file_name file name if not set default or set by command line
+   * @param  loadFunc function for loading mesh file
    * is used.
    *
    * \note If bitRefLevel is set to any, bit ref level of loaded entities is not
@@ -52,7 +66,7 @@ struct Simple : public UnknownInterface {
    * @return            error code
    */
   MoFEMErrorCode loadFile(const std::string options,
-                          const std::string mesh_file_name);
+                          const std::string mesh_file_name, LoadFileFunc loadFunc = defaultLoadFileFunc);
   /**
    * \brief Load mesh file with parallel options if number of cores > 1
    * @param  mesh_file_name file name if not set default or set by command line
