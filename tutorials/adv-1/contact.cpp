@@ -25,7 +25,7 @@ namespace bp = boost::python;
 
 using namespace MoFEM;
 
-constexpr AssemblyType AT = AssemblyType::SCHUR; //< selected assembly type
+constexpr AssemblyType AT = AssemblyType::PETSC; //< selected assembly type
 constexpr IntegrationType IT =
     IntegrationType::GAUSS;                      //< selected integration type
 
