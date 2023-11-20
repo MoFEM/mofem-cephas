@@ -1121,10 +1121,15 @@ CommInterface::partitionMesh(const Range &ents, const int dim,
       // get lower dimension entities on each part
       for (int pp = 0; pp != n_parts; pp++) {
         Range dim_ents = parts_ents[pp].subset_by_dimension(dim);
-        for (int dd = dim - 1; dd >= 1; dd--) {
+        for (int dd = dim - 1; dd >= 0; dd--) {
           Range adj_ents;
-          CHKERR m_field.get_moab().get_adjacencies(
-              dim_ents, dd, false, adj_ents, moab::Interface::UNION);
+          if (dd > 0) {
+            CHKERR m_field.get_moab().get_adjacencies(
+                dim_ents, dd, false, adj_ents, moab::Interface::UNION);
+          } else {
+            CHKERR m_field.get_moab().get_connectivity(dim_ents, adj_ents,
+                                                       true);
+          }
           parts_ents[pp].merge(adj_ents);
         }
       }
@@ -1133,34 +1138,27 @@ CommInterface::partitionMesh(const Range &ents, const int dim,
           parts_ents[pp] = subtract(parts_ents[pp], parts_ents[ppp]);
         }
       }
+
       for (int pp = 0; pp != n_parts; pp++) {
         CHKERR m_field.get_moab().add_entities(tagged_sets[pp], parts_ents[pp]);
       }
 
       // set gid and part tag
-      auto set_part = [&]() {
-        MoFEMFunctionBegin;
-        for (int pp = 0; pp != n_parts; pp++) {
-          CHKERR m_field.get_moab().tag_clear_data(part_tag, parts_ents[pp],
-                                                   &pp);
-        }
-        MoFEMFunctionReturn(0);
-      };
-
-      auto set_vertex_gid = [&]() {
-        MoFEMFunctionBegin;
+      for (EntityType t = MBVERTEX; t != MBENTITYSET; ++t) {
 
         void *ptr;
         int count;
 
         int gid = 1; // moab indexing from 1a
         for (int pp = 0; pp != n_parts; pp++) {
-          Range verts;
-          CHKERR m_field.get_moab().get_connectivity(parts_ents[pp], verts);
+          Range type_ents = parts_ents[pp].subset_by_type(t);
+          if (t != MBVERTEX) {
+            CHKERR m_field.get_moab().tag_clear_data(part_tag, type_ents, &pp);
+          }
 
-          auto eit = verts.begin();
-          for (; eit != verts.end();) {
-            CHKERR m_field.get_moab().tag_iterate(gid_tag, eit, verts.end(),
+          auto eit = type_ents.begin();
+          for (; eit != type_ents.end();) {
+            CHKERR m_field.get_moab().tag_iterate(gid_tag, eit, type_ents.end(),
                                                   count, ptr);
             auto gid_tag_ptr = static_cast<int *>(ptr);
             for (; count > 0; --count) {
@@ -1171,57 +1169,23 @@ CommInterface::partitionMesh(const Range &ents, const int dim,
             }
           }
         }
+      }
+    }
 
-        MoFEMFunctionReturn(0);
-      };
-
-      auto set_entity_gid = [&]() {
-        MoFEMFunctionBegin;
-
-        void *ptr;
-        int count;
-
-        int gid = 1; // moab indexing from 1a
-        for (int pp = 0; pp != n_parts; pp++) {
-
-          auto eit = parts_ents[pp].begin();
-          for (; eit != parts_ents[pp].end();) {
-            CHKERR m_field.get_moab().tag_iterate(
-                gid_tag, eit, parts_ents[pp].end(), count, ptr);
-            auto gid_tag_ptr = static_cast<int *>(ptr);
-            for (; count > 0; --count) {
-              *gid_tag_ptr = gid;
-              ++eit;
-              ++gid;
-              ++gid_tag_ptr;
-            }
-          }
-        }
-
-        MoFEMFunctionReturn(0);
-      };
-
-      CHKERR set_part();
-      CHKERR set_vertex_gid();
-      CHKERR set_entity_gid();
-
-      if (debug) {
-        if (m_field.get_comm_rank() == 0) {
-          for (int rr = 0; rr != n_parts; rr++) {
-            ostringstream ss;
-            ss << "out_part_" << rr << ".vtk";
-            MOFEM_LOG("SELF", Sev::inform)
-                << "Save debug part mesh " << ss.str();
-            EntityHandle meshset;
-            CHKERR m_field.get_moab().create_meshset(MESHSET_SET, meshset);
-            CHKERR m_field.get_moab().add_entities(meshset, parts_ents[rr]);
-            CHKERR m_field.get_moab().write_file(ss.str().c_str(), "VTK", "",
-                                                 &meshset, 1);
-            CHKERR m_field.get_moab().delete_entities(&meshset, 1);
-          }
+    if (debug) {
+      if (m_field.get_comm_rank() == 0) {
+        for (int rr = 0; rr != n_parts; rr++) {
+          ostringstream ss;
+          ss << "out_part_" << rr << ".vtk";
+          MOFEM_LOG("SELF", Sev::inform) << "Save debug part mesh " << ss.str();
+          EntityHandle meshset;
+          CHKERR m_field.get_moab().create_meshset(MESHSET_SET, meshset);
+          CHKERR m_field.get_moab().add_entities(meshset, parts_ents[rr]);
+          CHKERR m_field.get_moab().write_file(ss.str().c_str(), "VTK", "",
+                                               &meshset, 1);
+          CHKERR m_field.get_moab().delete_entities(&meshset, 1);
         }
       }
-
     }
 
     CHKERR ISRestoreIndices(is_gather, &part_number);
