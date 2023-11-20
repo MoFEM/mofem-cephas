@@ -931,7 +931,19 @@ CommInterface::partitionMesh(const Range &ents, const int dim,
   CHKERR m_field.get_moab().get_adjacencies(
       proc_ents, adj_dim, true, all_dim_ents, moab::Interface::UNION);
 
-  MeshTopoUtil mtu(&m_field.get_moab());
+  AdjBridgeMap adj_bridge_map;
+  auto hint = adj_bridge_map.begin();
+  std::vector<int> adj;
+  for (auto ent : all_dim_ents) {
+    Range adj_ents;
+    CHKERR m_field.get_moab().get_adjacencies(&ent, 1, dim, false, adj_ents);
+    adj_ents = intersect(adj_ents, ents);
+    adj.clear();
+    adj.reserve(adj_ents.size());
+    for (auto a : adj_ents)
+      adj.emplace_back(ents.index(a));
+    hint = adj_bridge_map.emplace_hint(hint, ent, adj);
+  }
 
   int *_i;
   int *_j;
@@ -939,7 +951,6 @@ CommInterface::partitionMesh(const Range &ents, const int dim,
     const int nb_loc_elements = rend - rstart;
     std::vector<int> i(nb_loc_elements + 1, 0), j;
     {
-      Range adjs;
       std::vector<int> row_adj;
       Range::iterator fe_it;
       int ii, jj;
@@ -958,11 +969,18 @@ CommInterface::partitionMesh(const Range &ents, const int dim,
                                                     dim_ents);
           dim_ents = intersect(dim_ents, all_dim_ents);
 
-          adjs.clear();
-          CHKERR mtu.get_bridge_adjacencies(*fe_it, adj_dim, dim, adjs);
           row_adj.clear();
-          for(auto a : adjs)
-            row_adj.push_back(ents.index(a));
+          for (auto e : dim_ents) {
+            auto adj_it = adj_bridge_map.find(e);
+            if (adj_it != adj_bridge_map.end()) {
+
+              for (const auto idx : adj_it->adj)
+                row_adj.push_back(idx);
+
+            } else
+              SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                      "Entity not found");
+          }
 
           std::sort(row_adj.begin(), row_adj.end());
           auto end = std::unique(row_adj.begin(), row_adj.end());
@@ -1129,7 +1147,63 @@ CommInterface::partitionMesh(const Range &ents, const int dim,
         MoFEMFunctionReturn(0);
       };
 
+      auto set_vertex_gid = [&]() {
+        MoFEMFunctionBegin;
+
+        void *ptr;
+        int count;
+
+        int gid = 1; // moab indexing from 1a
+        for (int pp = 0; pp != n_parts; pp++) {
+          Range verts;
+          CHKERR m_field.get_moab().get_connectivity(parts_ents[pp], verts);
+
+          auto eit = verts.begin();
+          for (; eit != verts.end();) {
+            CHKERR m_field.get_moab().tag_iterate(gid_tag, eit, verts.end(),
+                                                  count, ptr);
+            auto gid_tag_ptr = static_cast<int *>(ptr);
+            for (; count > 0; --count) {
+              *gid_tag_ptr = gid;
+              ++eit;
+              ++gid;
+              ++gid_tag_ptr;
+            }
+          }
+        }
+
+        MoFEMFunctionReturn(0);
+      };
+
+      auto set_entity_gid = [&]() {
+        MoFEMFunctionBegin;
+
+        void *ptr;
+        int count;
+
+        int gid = 1; // moab indexing from 1a
+        for (int pp = 0; pp != n_parts; pp++) {
+
+          auto eit = parts_ents[pp].begin();
+          for (; eit != parts_ents[pp].end();) {
+            CHKERR m_field.get_moab().tag_iterate(
+                gid_tag, eit, parts_ents[pp].end(), count, ptr);
+            auto gid_tag_ptr = static_cast<int *>(ptr);
+            for (; count > 0; --count) {
+              *gid_tag_ptr = gid;
+              ++eit;
+              ++gid;
+              ++gid_tag_ptr;
+            }
+          }
+        }
+
+        MoFEMFunctionReturn(0);
+      };
+
       CHKERR set_part();
+      CHKERR set_vertex_gid();
+      CHKERR set_entity_gid();
 
       if (debug) {
         if (m_field.get_comm_rank() == 0) {
