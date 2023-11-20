@@ -1,0 +1,36 @@
+#!/bin/sh
+
+MOFEM_SOURCE=@CMAKE_SOURCE_DIR@
+MOFEM_BUILD=@CMAKE_BINARY_DIR@
+MOFEM_INSTALL_PREFIX=@CMAKE_INSTALL_PREFIX@
+
+DATE=`date "+DATE-%Y-%m-%d_TIME_%H_%M_%S"`
+
+NBCORES=`getconf _NPROCESSORS_ONLN`
+NBMAX=12
+if (($NBCORES > $NBMAX)); then
+  NB=$NBMAX
+else
+  NB=$NBCORES
+fi
+echo Nb. of cores $NBCORES and nb. of cores used to compilation $NB
+
+#build mofem
+cd $MOFEM_BUILD
+echo `pwd`
+
+LOG_DIR="log_dir"
+if [ ! -d "$LOG_DIR" ]; then
+  mkdir $LOG_DIR
+fi
+mkdir $LOG_DIR/$DATE
+
+make -j $NB install 2>&1 | tee $MOFEM_BUILD/$LOG_DIR/$DATE/build_log
+make doc | tee $MOFEM_BUILD/$LOG_DIR/$DATE/doc_build_log
+
+#build users modules
+cd $MOFEM_INSTALL_PREFIX
+echo `pwd`
+
+make update_users_modules 2>&1 | tee $MOFEM_BUILD/$LOG_DIR/$DATE/update_users_modules_log
+make -j $NB 2>&1 | tee $MOFEM_BUILD/$LOG_DIR/$DATE/build_users_modules_log
