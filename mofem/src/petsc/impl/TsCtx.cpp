@@ -671,4 +671,78 @@ PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
   MoFEMFunctionReturn(0);
 }
 
+static PetscErrorCode TSAdaptChoose_EP(TSAdapt adapt, TS ts, PetscReal h,
+                                       PetscInt *next_sc, PetscReal *next_h,
+                                       PetscBool *accept, PetscReal *wlte,
+                                       PetscReal *wltea, PetscReal *wlter) {
+  PetscFunctionBegin;
+
+  TSAdapt_EP *basic = static_cast<TSAdapt_EP *>(adapt->data);
+
+  *next_sc = 0; /* Reuse the same order scheme */
+  *wlte = -1;   /* Weighted local truncation error was not evaluated */
+  *wltea = -1;  /* Weighted absolute local truncation error is not used */
+  *wlter = -1;  /* Weighted relative local truncation error is not used */
+
+  *accept = PETSC_TRUE;
+  *next_h = h; /* Reuse the old step */
+
+  SNES snes;
+  ierr = TSGetSNES(ts,&snes);
+  CHKERRG(ierr);
+
+  SNESConvergedReason reason;
+  ierr = SNESGetConvergedReason(snes,&reason);
+  CHKERRG(ierr);
+
+  int it;
+  ierr = SNESGetIterationNumber(snes, &it);
+  CHKERRG(ierr);
+
+  if(reason < 0) {
+    h *= 0.75;
+    *next_h = h;
+    PetscPrintf(
+        PETSC_COMM_WORLD,
+        "\tDiverged set step length: it = %d, h = %3.4g set h = %3.4g \n", it,
+        h, *next_h);
+  } else if (reason > 0) {
+    h *= sqrt(static_cast<double>(6) / static_cast<double>(it + 1));
+    *next_h = PetscClipInterval(h, adapt->dt_min, adapt->dt_max);
+    PetscPrintf(
+        PETSC_COMM_WORLD,
+        "\tConverged set step length: it = %d, h = %3.4g set h = %3.4g \n", it,
+        h, *next_h);
+  }
+
+  PetscFunctionReturn(0);
+}
+
+static PetscErrorCode TSAdaptReset_EP(TSAdapt adapt) {
+  TSAdapt_EP *basic = static_cast<TSAdapt_EP *>(adapt->data);
+  PetscFunctionBegin;
+  PetscFunctionReturn(0);
+}
+
+static PetscErrorCode TSAdaptDestroy_EP(TSAdapt adapt) {
+  PetscFunctionBegin;
+  ierr = TSAdaptReset_EP(adapt);
+  CHKERRG(ierr);
+  ierr = PetscFree(adapt->data);
+  CHKERRG(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode TSAdaptCreate_EP(TSAdapt adapt) {
+  TSAdapt_EP *ep;
+  PetscFunctionBegin;
+  ierr = PetscNewLog(adapt, &ep);
+  CHKERRG(ierr);
+  adapt->data = (void *)ep;
+  adapt->ops->choose = TSAdaptChoose_EP;
+  adapt->ops->reset = TSAdaptReset_EP;
+  adapt->ops->destroy = TSAdaptDestroy_EP;
+  PetscFunctionReturn(0);
+}
+
 } // namespace MoFEM

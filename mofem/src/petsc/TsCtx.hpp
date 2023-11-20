@@ -7,6 +7,8 @@
 #ifndef __TSCTX_HPP__
 #define __TSCTX_HPP__
 
+#include <petsc/private/tsimpl.h> 
+
 namespace MoFEM {
 
 /** \brief Interface for Time Stepping (TS) solver
@@ -214,6 +216,17 @@ struct TsCtx {
                                         Vec U_tt, PetscReal v, PetscReal a,
                                         Mat J, Mat P, void *ctx);
 
+  friend PetscErrorCode TSAdaptChooseMoFEM(TSAdapt adapt, TS ts, PetscReal h,
+                                       PetscInt *next_sc, PetscReal *next_h,
+                                       PetscBool *accept, PetscReal *wlte,
+                                       PetscReal *wltea, PetscReal *wlter);
+
+  friend PetscErrorCode TSAdaptResetMoFEM(TSAdapt adapt);
+
+  friend PetscErrorCode TSAdaptDestroyMoFEM(TSAdapt adapt);
+
+  friend PetscErrorCode TSAdaptCreateMoFEM(TSAdapt adapt);
+
 private:
   PetscLogEvent MOFEM_EVENT_TsCtxRHSFunction;
   PetscLogEvent MOFEM_EVENT_TsCtxRHSJacobian;
@@ -359,6 +372,21 @@ PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
  */
 PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
                                Vec F, void *ctx);
+
+#define TSADAPT_TEST   "ep"
+
+struct TSAdapt_EP {};
+
+static PetscErrorCode TSAdaptChoose_EP(TSAdapt adapt, TS ts, PetscReal h,
+                                       PetscInt *next_sc, PetscReal *next_h,
+                                       PetscBool *accept, PetscReal *wlte,
+                                       PetscReal *wltea, PetscReal *wlter);
+
+static PetscErrorCode TSAdaptReset_EP(TSAdapt adapt);
+
+static PetscErrorCode TSAdaptDestroy_EP(TSAdapt adapt);
+
+PetscErrorCode TSAdaptCreate_EP(TSAdapt adapt);
 
 } // namespace MoFEM
 
