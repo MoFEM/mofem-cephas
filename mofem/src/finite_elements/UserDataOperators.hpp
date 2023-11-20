@@ -3245,7 +3245,7 @@ MoFEMErrorCode OpInvertMatrix<DIM>::doWorkImpl(int side, EntityType type,
     auto t_in = getFTensor2FromMat<3, 3>(*inPtr);
     auto t_det = getFTensor0FromVec(*detPtr);
     for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
-      determinantTensor3by3(t_in, t_det);
+      t_det = determinantTensor(t_in);
       ++t_in;
       ++t_det;
     }
@@ -3290,7 +3290,7 @@ MoFEMErrorCode OpInvertMatrix<DIM>::doWorkImpl(int side, EntityType type,
     auto t_in = getFTensor2FromMat<2, 2>(*inPtr);
     auto t_det = getFTensor0FromVec(*detPtr);
     for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
-      determinantTensor2by2(t_in, t_det);
+      t_det = determinantTensor(t_in);
       ++t_in;
       ++t_det;
     }
