@@ -151,57 +151,74 @@ MoFEMErrorCode MeshsetsManager::broadcastMeshsets(int verb) {
     MoFEMFunctionReturn(0);
   };
 
-  std::vector<const CubitMeshSets *> vec_ptr;
-  for (auto &m : cubitMeshsets) {
-    vec_ptr.push_back(&m);
-  }
-  sortMeshsets(vec_ptr);
-
-  for (int from_proc = 0; from_proc < pcomm->size(); ++from_proc) {
-
-    Range r_dummy_nodes;
-
-    if (from_proc == pcomm->rank()) {
-      std::vector<EntityHandle> dummy_nodes(vec_ptr.size(), 0);
-      int i = 0;
-      for (auto m_ptr : vec_ptr) {
-        CHKERR moab.create_vertex(coords, dummy_nodes[i]);
-        CHKERR set_tags_dummy_node(dummy_nodes[i], m_ptr->getMeshset());
-        ++i;
+  for (auto t : {NODESET, SIDESET, BLOCKSET}) {
+    std::vector<const CubitMeshSets *> vec_ptr;
+    for (auto &m : cubitMeshsets) {
+      if ((m.getBcType() & CubitBCType(t)).any()) {
+        vec_ptr.push_back(&m);
       }
-      r_dummy_nodes.insert_list(dummy_nodes.begin(), dummy_nodes.end());
     }
+    sortMeshsets(vec_ptr);
 
-    CHKERR pcomm->broadcast_entities(from_proc, r_dummy_nodes, false, true);
-
-    if (from_proc != pcomm->rank()) {
-      for (auto dummy_node : r_dummy_nodes) {
-        EntityHandle m;
-        CHKERR moab.create_meshset(MESHSET_SET, m);
-        CHKERR set_tags_dummy_node(m, dummy_node);
-
-        CubitMeshSets broadcast_block(moab, m);
-        if ((broadcast_block.cubitBcType &
-             CubitBCType(NODESET | SIDESET | BLOCKSET))
-                .any()) {
-          auto p = cubitMeshsets.insert(broadcast_block);
-          if (!p.second) {
-            CHKERR moab.delete_entities(&m, 1);
-          } else {
-            MOFEM_LOG("MeshsetMngSync", Sev::verbose)
-                << "broadcast recived " << broadcast_block;
-          }
-        }
-      }
-    } else {
+    switch (t) {
+    case NODESET:
       MOFEM_LOG("MeshsetMngSync", Sev::verbose)
-          << "broadcast send from " << from_proc;
+          << "broadcast NODESET " << vec_ptr.size();
+      break;
+    case SIDESET:
+      MOFEM_LOG("MeshsetMngSync", Sev::verbose)
+          << "broadcast SIDESET " << vec_ptr.size();
+      break;
+    case BLOCKSET:
+      MOFEM_LOG("MeshsetMngSync", Sev::verbose)
+          << "broadcast BLOCKSET " << vec_ptr.size();
+      break;
     }
 
-    MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::verbose);
+    for (int from_proc = 0; from_proc < pcomm->size(); ++from_proc) {
 
-    CHKERR moab.delete_entities(r_dummy_nodes);
+      Range r_dummy_nodes;
+
+      if (from_proc == pcomm->rank()) {
+        std::vector<EntityHandle> dummy_nodes(vec_ptr.size(), 0);
+        int i = 0;
+        for (auto m_ptr : vec_ptr) {
+          CHKERR moab.create_vertex(coords, dummy_nodes[i]);
+          CHKERR set_tags_dummy_node(dummy_nodes[i], m_ptr->getMeshset());
+          ++i;
+        }
+        r_dummy_nodes.insert_list(dummy_nodes.begin(), dummy_nodes.end());
+      }
+
+      CHKERR pcomm->broadcast_entities(from_proc, r_dummy_nodes, false, true);
+
+      if (from_proc != pcomm->rank()) {
+        for (auto dummy_node : r_dummy_nodes) {
+          EntityHandle m;
+          CHKERR moab.create_meshset(MESHSET_SET, m);
+          CHKERR set_tags_dummy_node(m, dummy_node);
+
+          CubitMeshSets broadcast_block(moab, m);
+          // if ((broadcast_block.cubitBcType & CubitBCType(t)).any()) {
+            auto p = cubitMeshsets.insert(broadcast_block);
+            if (!p.second) {
+              CHKERR moab.delete_entities(&m, 1);
+            } else {
+              MOFEM_LOG("MeshsetMngSync", Sev::verbose)
+                  << "broadcast recived " << broadcast_block;
+            }
+          // }
+        }
+      } else {
+        MOFEM_LOG("MeshsetMngSync", Sev::verbose)
+            << "broadcast send from " << from_proc;
+      }
+
+      CHKERR moab.delete_entities(r_dummy_nodes);
+    }
   }
+
+  MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::verbose);
 
   MoFEMFunctionReturn(0);
 }
