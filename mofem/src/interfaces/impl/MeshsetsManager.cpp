@@ -199,15 +199,13 @@ MoFEMErrorCode MeshsetsManager::broadcastMeshsets(int verb) {
           CHKERR set_tags_dummy_node(m, dummy_node);
 
           CubitMeshSets broadcast_block(moab, m);
-          // if ((broadcast_block.cubitBcType & CubitBCType(t)).any()) {
-            auto p = cubitMeshsets.insert(broadcast_block);
-            if (!p.second) {
-              CHKERR moab.delete_entities(&m, 1);
-            } else {
-              MOFEM_LOG("MeshsetMngSync", Sev::verbose)
-                  << "broadcast recived " << broadcast_block;
-            }
-          // }
+          auto p = cubitMeshsets.insert(broadcast_block);
+          if (!p.second) {
+            CHKERR moab.delete_entities(&m, 1);
+          } else {
+            MOFEM_LOG("MeshsetMngSync", Sev::verbose)
+                << "broadcast recived " << broadcast_block;
+          }
         }
       } else {
         MOFEM_LOG("MeshsetMngSync", Sev::verbose)
@@ -216,9 +214,10 @@ MoFEMErrorCode MeshsetsManager::broadcastMeshsets(int verb) {
 
       CHKERR moab.delete_entities(r_dummy_nodes);
     }
+    
+    MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::verbose);
   }
 
-  MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::verbose);
 
   MoFEMFunctionReturn(0);
 }
