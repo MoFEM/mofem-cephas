@@ -1517,7 +1517,7 @@ MoFEMErrorCode OpCalculateVectorFieldGradient_General<
 
         int bb = 0;
         for (; bb < size; ++bb) {
-
+#ifndef SINGULARITY
 #ifndef NDEBUG
           if (diff_base_function.l2() != diff_base_function.l2()) {
             MOFEM_LOG("SELF", Sev::error)
@@ -1525,6 +1525,7 @@ MoFEMErrorCode OpCalculateVectorFieldGradient_General<
             SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                     "Wrong number number in base functions");
           }
+#endif
 #endif
 
           gradients_at_gauss_pts(I, J) += field_data(I) * diff_base_function(J);
