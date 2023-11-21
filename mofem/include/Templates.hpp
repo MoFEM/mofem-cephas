@@ -1803,6 +1803,41 @@ invertTensor3by3<FTensor::Tensor2_symmetric<double, 3>, double,
   MoFEMFunctionReturnHot(0);
 }
 
+template <typename T1, typename T2, typename T3, int DIM>
+struct InvertTensorImpl;
+
+template <typename T1, typename T2, typename T3>
+struct InvertTensorImpl<T1, T2, T3, 3> {
+  inline static MoFEMErrorCode invert(T1 &t, T2 &det, T3 &inv_t) {
+    return invertTensor3by3(t, det, inv_t);
+  }
+};
+
+template <typename T1, typename T2, typename T3>
+struct InvertTensorImpl<T1, T2, T3, 2> {
+  inline static MoFEMErrorCode invert(T1 &t, T2 &det, T3 &inv_t) {
+    return invertTensor2by2(t, det, inv_t);
+  }
+};
+
+template <typename T1, typename T2, typename T3, int DIM>
+static inline MoFEMErrorCode
+invertTensor(FTensor::Tensor2<T1, DIM, DIM> &t, T2 &det,
+             FTensor::Tensor2<T3, DIM, DIM> &inv_t) {
+  return InvertTensorImpl<FTensor::Tensor2<T1, DIM, DIM>, T2,
+                          FTensor::Tensor2<T3, DIM, DIM>, DIM>::invert(t, det,
+                                                                       inv_t);
+}
+
+template <typename T1, typename T2, typename T3, int DIM>
+static inline MoFEMErrorCode
+invertTensor(FTensor::Tensor2_symmetric<T1, DIM> &t, T2 &det,
+             FTensor::Tensor2_symmetric<T3, DIM> &inv_t) {
+  return InvertTensorImpl<FTensor::Tensor2_symmetric<T1, DIM>, T2,
+                          FTensor::Tensor2_symmetric<T3, DIM>,
+                          DIM>::invert(t, det, inv_t);
+}
+
 /**
  * @brief Extract entity handle form multi-index container
  *
