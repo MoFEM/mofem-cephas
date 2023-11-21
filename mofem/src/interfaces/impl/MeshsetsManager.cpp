@@ -4,8 +4,6 @@
  *
  */
 
-
-
 using namespace std;
 namespace po = boost::program_options;
 
@@ -104,7 +102,8 @@ MoFEMErrorCode MeshsetsManager::readMeshsets(int verb) {
     if ((block.cubitBcType & CubitBCType(NODESET | SIDESET | BLOCKSET)).any()) {
       auto p = cubitMeshsets.insert(block);
       if (!p.second) {
-        // blocsket/nodeset/sideste set exist, could be created on other processor.
+        // blocsket/nodeset/sideste set exist, could be created on other
+        // processor.
         Range ents;
         CHKERR m_field.get_moab().get_entities_by_handle(m, ents, true);
         CHKERR m_field.get_moab().add_entities(p.first->getMeshset(), ents);
@@ -132,7 +131,7 @@ MoFEMErrorCode MeshsetsManager::broadcastMeshsets(int verb) {
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
 
- ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
+  ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
   if (pcomm == NULL)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "MOAB communicator not set");
@@ -202,15 +201,13 @@ MoFEMErrorCode MeshsetsManager::broadcastMeshsets(int verb) {
           CHKERR set_tags_dummy_node(m, dummy_node);
 
           CubitMeshSets broadcast_block(moab, m);
-          // if ((broadcast_block.cubitBcType & CubitBCType(t)).any()) {
-            auto p = cubitMeshsets.insert(broadcast_block);
-            if (!p.second) {
-              CHKERR moab.delete_entities(&m, 1);
-            } else {
-              MOFEM_LOG("MeshsetMngSync", Sev::verbose)
-                  << "broadcast recived " << broadcast_block;
-            }
-          // }
+          auto p = cubitMeshsets.insert(broadcast_block);
+          if (!p.second) {
+            CHKERR moab.delete_entities(&m, 1);
+          } else {
+            MOFEM_LOG("MeshsetMngSync", Sev::verbose)
+                << "broadcast recived " << broadcast_block;
+          }
         }
       } else {
         MOFEM_LOG("MeshsetMngSync", Sev::verbose)
@@ -219,9 +216,9 @@ MoFEMErrorCode MeshsetsManager::broadcastMeshsets(int verb) {
 
       CHKERR moab.delete_entities(r_dummy_nodes);
     }
-  }
 
-  MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::verbose);
+    MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::verbose);
+  }
 
   MoFEMFunctionReturn(0);
 }
@@ -636,7 +633,7 @@ MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
       vec_ptr.push_back(&*r.first);
     }
   }
-  sortMeshsets(vec_ptr); 
+  sortMeshsets(vec_ptr);
   MoFEMFunctionReturn(0);
 }
 
