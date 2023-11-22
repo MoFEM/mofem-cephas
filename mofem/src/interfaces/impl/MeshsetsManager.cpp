@@ -162,18 +162,24 @@ MoFEMErrorCode MeshsetsManager::broadcastMeshsets(int verb) {
     }
     sortMeshsets(vec_ptr);
 
+    std::vector<EntityHandle> vec_meshsets;
+    vec_meshsets.reserve(vec_ptr.size());
+    for (auto m_ptr : vec_ptr) {
+      vec_meshsets.push_back(m_ptr->getMeshset());
+    }
+
     switch (t) {
     case NODESET:
       MOFEM_LOG("MeshsetMngSync", Sev::verbose)
-          << "broadcast NODESET " << vec_ptr.size();
+          << "broadcast NODESET " << vec_meshsets.size();
       break;
     case SIDESET:
       MOFEM_LOG("MeshsetMngSync", Sev::verbose)
-          << "broadcast SIDESET " << vec_ptr.size();
+          << "broadcast SIDESET " << vec_meshsets.size();
       break;
     case BLOCKSET:
       MOFEM_LOG("MeshsetMngSync", Sev::verbose)
-          << "broadcast BLOCKSET " << vec_ptr.size();
+          << "broadcast BLOCKSET " << vec_meshsets.size();
       break;
     }
 
@@ -182,11 +188,11 @@ MoFEMErrorCode MeshsetsManager::broadcastMeshsets(int verb) {
       Range r_dummy_nodes;
 
       if (from_proc == pcomm->rank()) {
-        std::vector<EntityHandle> dummy_nodes(vec_ptr.size(), 0);
+        std::vector<EntityHandle> dummy_nodes(vec_meshsets.size(), 0);
         int i = 0;
-        for (auto m_ptr : vec_ptr) {
+        for (auto m : vec_meshsets) {
           CHKERR moab.create_vertex(coords, dummy_nodes[i]);
-          CHKERR set_tags_dummy_node(dummy_nodes[i], m_ptr->getMeshset());
+          CHKERR set_tags_dummy_node(dummy_nodes[i], m);
           ++i;
         }
         r_dummy_nodes.insert_list(dummy_nodes.begin(), dummy_nodes.end());
