@@ -60,22 +60,22 @@ using BoundaryEleOp = BoundaryEle::UserDataOperator;
 // preconditioning. 
 
 template <>
-typename MoFEM::OpBaseImpl<AT, DomainEleOp>::MatSetValuesHook
-    MoFEM::OpBaseImpl<AT, DomainEleOp>::matSetValuesHook =
+typename MoFEM::OpBaseImpl<SCHUR, DomainEleOp>::MatSetValuesHook
+    MoFEM::OpBaseImpl<SCHUR, DomainEleOp>::matSetValuesHook =
         [](ForcesAndSourcesCore::UserDataOperator *op_ptr,
            const EntitiesFieldData::EntData &row_data,
            const EntitiesFieldData::EntData &col_data, MatrixDouble &m) {
-          return MatSetValues<AssemblyTypeSelector<AT>>(
+          return MatSetValues<AssemblyTypeSelector<SCHUR>>(
               op_ptr->getKSPA(), row_data, col_data, m, ADD_VALUES);
         };
 
 template <>
-typename MoFEM::OpBaseImpl<AT, BoundaryEleOp>::MatSetValuesHook
-    MoFEM::OpBaseImpl<AT, BoundaryEleOp>::matSetValuesHook =
+typename MoFEM::OpBaseImpl<SCHUR, BoundaryEleOp>::MatSetValuesHook
+    MoFEM::OpBaseImpl<SCHUR, BoundaryEleOp>::matSetValuesHook =
         [](ForcesAndSourcesCore::UserDataOperator *op_ptr,
            const EntitiesFieldData::EntData &row_data,
            const EntitiesFieldData::EntData &col_data, MatrixDouble &m) {
-          return MatSetValues<AssemblyTypeSelector<AT>>(
+          return MatSetValues<AssemblyTypeSelector<SCHUR>>(
               op_ptr->getKSPA(), row_data, col_data, m, ADD_VALUES);
         };
 
@@ -93,12 +93,12 @@ struct BoundaryEleOpStab : public BoundaryEleOp {
  * @tparam
  */
 template <>
-typename MoFEM::OpBaseImpl<AT, BoundaryEleOpStab>::MatSetValuesHook
-    MoFEM::OpBaseImpl<AT, BoundaryEleOpStab>::matSetValuesHook =
+typename MoFEM::OpBaseImpl<SCHUR, BoundaryEleOpStab>::MatSetValuesHook
+    MoFEM::OpBaseImpl<SCHUR, BoundaryEleOpStab>::matSetValuesHook =
         [](ForcesAndSourcesCore::UserDataOperator *op_ptr,
            const EntitiesFieldData::EntData &row_data,
            const EntitiesFieldData::EntData &col_data, MatrixDouble &m) {
-          return MatSetValues<AssemblyTypeSelector<AT>>(
+          return MatSetValues<AssemblyTypeSelector<SCHUR>>(
               op_ptr->getKSPB(), row_data, col_data, m, ADD_VALUES);
         };
 //! [Specialisation for assembly]
@@ -127,14 +127,14 @@ double alpha_damping = 0;
 
 double scale = 1.;
 
-bool use_mfront = true;
-bool is_axisymmetric = true;
+bool use_mfront = false;
+bool is_axisymmetric = false;
 
 namespace ContactOps {
 double cn_contact = 0.1;
 }; // namespace ContactOps
 
-// #define HENCKY_SMALL_STRAIN
+#define HENCKY_SMALL_STRAIN
 
 #include <HenckyOps.hpp>
 using namespace HenckyOps;
