@@ -95,7 +95,6 @@ PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
     ts_ctx->vecAssembleSwitch = boost::move(bit->vecAssembleSwitch);
   }
 
-
   // fe loops
   for (auto &lit : ts_ctx->loopsIFunction) {
     lit.second->vecAssembleSwitch = boost::move(ts_ctx->vecAssembleSwitch);
@@ -671,13 +670,13 @@ PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
   MoFEMFunctionReturn(0);
 }
 
-static PetscErrorCode TSAdaptChoose_EP(TSAdapt adapt, TS ts, PetscReal h,
-                                       PetscInt *next_sc, PetscReal *next_h,
-                                       PetscBool *accept, PetscReal *wlte,
-                                       PetscReal *wltea, PetscReal *wlter) {
+static PetscErrorCode TSAdaptChooseMofem(TSAdapt adapt, TS ts, PetscReal h,
+                                         PetscInt *next_sc, PetscReal *next_h,
+                                         PetscBool *accept, PetscReal *wlte,
+                                         PetscReal *wltea, PetscReal *wlter) {
   PetscFunctionBegin;
 
-  TSAdapt_EP *basic = static_cast<TSAdapt_EP *>(adapt->data);
+  TSAdaptMofem *basic = static_cast<TSAdaptMofem *>(adapt->data);
 
   *next_sc = 0; /* Reuse the same order scheme */
   *wlte = -1;   /* Weighted local truncation error was not evaluated */
@@ -688,18 +687,18 @@ static PetscErrorCode TSAdaptChoose_EP(TSAdapt adapt, TS ts, PetscReal h,
   *next_h = h; /* Reuse the old step */
 
   SNES snes;
-  ierr = TSGetSNES(ts,&snes);
+  ierr = TSGetSNES(ts, &snes);
   CHKERRG(ierr);
 
   SNESConvergedReason reason;
-  ierr = SNESGetConvergedReason(snes,&reason);
+  ierr = SNESGetConvergedReason(snes, &reason);
   CHKERRG(ierr);
 
   int it;
   ierr = SNESGetIterationNumber(snes, &it);
   CHKERRG(ierr);
 
-  if(reason < 0) {
+  if (reason < 0) {
     h *= 0.75;
     *next_h = h;
     PetscPrintf(
@@ -718,30 +717,30 @@ static PetscErrorCode TSAdaptChoose_EP(TSAdapt adapt, TS ts, PetscReal h,
   PetscFunctionReturn(0);
 }
 
-static PetscErrorCode TSAdaptReset_EP(TSAdapt adapt) {
-  TSAdapt_EP *basic = static_cast<TSAdapt_EP *>(adapt->data);
+static PetscErrorCode TSAdaptResetMofem(TSAdapt adapt) {
+  TSAdaptMofem *basic = static_cast<TSAdaptMofem *>(adapt->data);
   PetscFunctionBegin;
   PetscFunctionReturn(0);
 }
 
-static PetscErrorCode TSAdaptDestroy_EP(TSAdapt adapt) {
+static PetscErrorCode TSAdaptDestroyMofem(TSAdapt adapt) {
   PetscFunctionBegin;
-  ierr = TSAdaptReset_EP(adapt);
+  ierr = TSAdaptResetMofem(adapt);
   CHKERRG(ierr);
   ierr = PetscFree(adapt->data);
   CHKERRG(ierr);
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode TSAdaptCreate_EP(TSAdapt adapt) {
-  TSAdapt_EP *ep;
+PetscErrorCode TSAdaptCreateMofem(TSAdapt adapt) {
+  TSAdaptMofem *ts_adapt_mofem;
   PetscFunctionBegin;
-  ierr = PetscNewLog(adapt, &ep);
+  ierr = PetscNewLog(adapt, &ts_adapt_mofem);
   CHKERRG(ierr);
-  adapt->data = (void *)ep;
-  adapt->ops->choose = TSAdaptChoose_EP;
-  adapt->ops->reset = TSAdaptReset_EP;
-  adapt->ops->destroy = TSAdaptDestroy_EP;
+  adapt->data = (void *)ts_adapt_mofem;
+  adapt->ops->choose = TSAdaptChooseMofem;
+  adapt->ops->reset = TSAdaptResetMofem;
+  adapt->ops->destroy = TSAdaptDestroyMofem;
   PetscFunctionReturn(0);
 }
 
