@@ -40,7 +40,7 @@ After opening Docker you should be able to see and follow the following images, 
 <a id='figure_1'></a> 
     <center><b>Figure 1. Docker startup screen.</b></center>
 
-At the top you can see a search bar and if you are connected to internet you can search for the container you want to run. Start typing `likask/mofem-spack-jupyterhub` and you should be able to see Workshop2023 option in the tag dropdown menu next to the Image. The steps are the same for the other containers listed above, searching for the relevant Image and tag names.
+At the top you can see a search bar and if you are connected to internet you can search for the container you want to run. Start typing `likask/mofem-spack-jupyterhub` and you should be able to see Workshop2023 option in the tag dropdown menu next to the Image. The steps are the same for the other containers listed above, using the relevant Image and tag names.
 
 <!-- <img src="./../figures/docker_search.png" alt="Docker - searching for the required Docker image and Tag" width="100%"/> -->
 <img src="docker_search.png" alt="Docker - searching for the required Docker image and Tag" width="100%"/>
@@ -64,11 +64,11 @@ After filling in the fields as above, press `Run`. The installed container can b
 <a id='figure_1'></a> 
     <center><b>Figure 4. Stopping and starting a docker container.</b></center>
 
-If you want to stop the container, you can do so from the `Actions` column on the right. Square to stop, and triangle to start it again. If you used this method, you can skip the next section and continue to [Accessing the hub section](#docker_access_hub) to find login options and how to run notebooks.
+If you want to stop the container, you can do so from the `Actions` column on the right. Square to stop, and triangle to start it again. If you used the Docker user interface for this installation, you can skip the next section and continue to [Accessing the hub section](#docker_access_hub) to find login options and how to run notebooks.
 
 ## Using terminal {#docker_terminal_installation}
 
-For this section, initialise Docker, open your terminal and use the following commands.
+For this section, initialise Docker, open your terminal and run the following commands.
 
 1. Pull image
 ~~~~
@@ -110,11 +110,11 @@ If you run a container locally, open [http://localhost:8000](http://localhost:80
 - On the first login, the first password you input will be your password from then onwards. 
 Note this is the password to JupyterHub, not a password to the Linux environment.
 
-You have admin rights, and you can add more users.
+`mofem` user has admin rights in JupyterHub, and can add more users there by going to `Controrl Panel -> Admin -> Add Users`
 
 ## Start running 
 
-- **Important**. Before you start, run the only cell in *install.md* notebook. It will copy symbolic links to the executable binaries of MoFEM installation to your directory.
+- **Important**. Before you start, open *install.md* notebook and run the only cell there. It will copy symbolic links to the executable binaries of MoFEM installation to your directory.
 
 - Navigate to any of the Jupyter notebooks and more instructions should be included inside. 
 
@@ -122,23 +122,23 @@ You have admin rights, and you can add more users.
 
 This is a case when the container is running on a server, and you share resources with other users.
 
-- If you run something with multiprocess which will run longer than 5-10 minutes, be nice, i.e. run the command as follows
+- If you run something with multiple processes, which will run longer than 5-10 minutes, be nice, i.e. run the command as follows
 ~~~~
 nice -n 10 mpirun -np 2 ./command_line
 ~~~~
 
 # Development and debugging setup  
 
-If you wish to develop and debug in MoFEM using the just created containers, read this section. Otherwise, you are done, and you can ignore the following instructions :) 
+If you wish to develop and debug in MoFEM using the just created container, read this section. Otherwise, you are done, and you can ignore the following instructions :) 
 
 
-#### Password for debugging 
+#### Password for SSH connection to the container {#ssh_paaswd}
 First of all, set up your SSH password. This is different from the one you use to access JupyterHub in the browser. To change it, run the following command from a terminal:
 
 ~~~~
 docker exec -it workshop2023 /bin/bash
 ~~~~
-where <span style="color:green">`workshop2023`</span> is the name of your container set in `Optional settings` and can be found in the `Name` column of the Containers section. To change the password use: 
+where <span style="color:green">`workshop2023`</span> is the name of your container set in `Optional settings` and can be found in the `Name` column of the Containers section. To change the password run: 
 ~~~~
 passwd mofem
 ~~~~
@@ -151,7 +151,7 @@ In your browser ([http://localhost:8000](http://localhost:8000)), open `install_
 - mofem_install - contains source code
 - um_view_debug - symbolic links to the executable binaries of the debugging version
 
-While this is installing, move to the next section.
+We advise you to wait until most of the cells have been run since some of the next steps refer to directories which are newly created by running this notebook.
 
 ### Connecting to the container
 
@@ -168,7 +168,7 @@ We will only cover the process with using [Visual Studio Code](https://code.visu
 
 <!-- Next, go to `Extensions` within VS Code and install `Remote Explorer` extension. This will allow you to connect to servers or containers like the one we created. While here, also install `C/C++ Extension Pack` extension. -->
 
-<span style="color:lime"> c) </span> Copy the following code into your .ssh/config file (opened by pressing on <span style="color:lime"> c)</span>):
+<span style="color:lime"> c) </span> Copy the following lines into your .ssh/config file (opened by pressing on  the gear button highlighted as <span style="color:lime"> c)</span>):
 ~~~~
 Host workshop2023
   HostName localhost
@@ -179,17 +179,16 @@ Host workshop2023
 ~~~~
 Here, we can see the port forwarding number 2222 we set up for our container earlier.
 
-<span style="color:orange"> d) </span> Refresh SSH connections to see the option to connect via SSH to the container in the `Remote Explorer` extension on VS Code.
+<span style="color:orange"> d) </span> Refresh SSH connections to see the option to connect via SSH to the container in the `Remote Explorer` extension in VS Code.
 
-<span style="color:blue"> e) </span> Connect to the container in VS Code (use the password for debugging) and you should see the same folders and files as you do when you open it through a browser ([http://localhost:8000](http://localhost:8000)). 
+<span style="color:blue"> e) </span> Connect to the container in VS Code (use the [SSH password](#ssh_paaswd)) and you should see the same folders and files as you do when you open it through a browser ([http://localhost:8000](http://localhost:8000)). 
 
 ## VS Code debugging setup
 
 To set up debugging, follow these steps:
 
 - open `~/mofem_install/mofem-cephas/mofem/users_modules` folder through `File -> Open Folder...` 
-- create `.vscode` folder, and [launch.json](launch.json "launch.json") & [tasks.json](tasks.json "tasks.json") files inside it, see Figure 6
-    - copy the code from the linked files or download them and place them to `.vscode` folder
+- create `.vscode` folder, download files [launch.json](launch.json "launch.json") & [tasks.json](tasks.json "tasks.json") and place them into the .vscode folder, see Figure 6
 - replace the hash `5sehreo` with the hash in your folder, see <span style="color:orange"> `HASH`</span> in Figure 6
 - adjust the files to fit your purpose as described bellow Figure 6
 - go to `Extensions` within VS Code, see Figure 5 <span style="color:magenta"> a) </span> , and install `C/C++ Extension Pack` and `Code Runner` extensions
@@ -207,7 +206,7 @@ In [launch.json](launch.json "launch.json"), `/mofem_install/jupyter/mofem/mofem
 
 For this section refer to Figure 7.
 
-- Go to the file you want to debug and place a <span style="color:red"> breakpoint </span> inside one of the functions.
+- Go to source directory, and open a cpp file with the same name as the executable you want to debug and place a <span style="color:red"> breakpoint </span> next to one of the lines inside one of the functions.
     - it needs to be the same file you used in [launch.json](#launchjson)
 - Open <span style="color:magenta"> Run and Debug section </span> 
 - Press <span style="color:lime"> Run and Debug </span> button to start debugging
