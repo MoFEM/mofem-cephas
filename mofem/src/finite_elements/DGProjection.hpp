@@ -20,7 +20,7 @@ namespace MoFEM {
  * \code An example of usage in post-processing
 
 using InteriorElem = VolumeElementForcesAndSourcesCore;
-using PostProcFe = PostProcGenerateRefMeshBase<InteriorElem>;
+using PostProcFe = PostProcBrokenMeshInMoab<InteriorElem>;
 auto fe_post_proc = boost::make_shared<PostProcFe>(mField);
 auto op_this = new OpLoopThis<InteriorElem>(m_field, "DomainFE", Sev::noisy);
 fe_post_proc->getOpPtrVector()->push_back(op_this);
@@ -53,7 +53,7 @@ fe_physics->getOpPtrVector()->push_back( new
   AINSWORTH_LEGENDRE_BASE, L2);
 
 fe_post_proc->getOpPtrVector()->push_back(new
-  OpDGProjectionEvaluation(data_ptr, coeffs_ptr, mass_ptr, 
+  OpDGProjectionEvaluation(data_ptr, coeffs_ptr, mass_ptr,
   entity_data_l2, AINSWORTH_LEGENDRE_BASE, L2);
 
  * \endcode

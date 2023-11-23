@@ -42,13 +42,12 @@ struct PostProcGenerateRefMeshBase {
 
   PostProcGenerateRefMeshBase();
   virtual ~PostProcGenerateRefMeshBase() = default;
-  MoFEMErrorCode getOptions(); //< get options from command
 
+  virtual MoFEMErrorCode getOptions(std::string prefix); //< get options from command
   virtual MoFEMErrorCode generateReferenceElementMesh() = 0;
 
   PetscBool hoNodes;     //< if true mid nodes are added
   int defMaxLevel;       //< default max number of refinement levels
-  std::string optPrefix; //< prefix for options
 };
 
 using PostProcGenerateRefMeshPtr =
@@ -94,7 +93,11 @@ struct PostProcGenerateRefMesh<MBEDGE> : public PostProcGenerateRefMeshBase {
 
 template <typename E> struct PostProcBrokenMeshInMoabBase : public E {
 
-  PostProcBrokenMeshInMoabBase(MoFEM::Interface &m_field);
+  PostProcBrokenMeshInMoabBase(MoFEM::Interface &m_field,
+                               std::string opts_prefix = "");
+  PostProcBrokenMeshInMoabBase(MoFEM::Interface &m_field,
+                               boost::shared_ptr<moab::Core> core_mesh_ptr,
+                               std::string opts_prefix = "");
 
   virtual ~PostProcBrokenMeshInMoabBase();
 
@@ -160,9 +163,6 @@ protected:
   virtual int getMaxLevel() const;
 
   boost::shared_ptr<moab::Core> coreMeshPtr = boost::make_shared<moab::Core>();
-  PostProcBrokenMeshInMoabBase(MoFEM::Interface &m_field,
-                               boost::shared_ptr<moab::Core> core_mesh_ptr);
-
 
   std::vector<EntityHandle> mapGaussPts;
   Range postProcElements;
@@ -173,6 +173,7 @@ protected:
                       ///< post-process mesh.
   std::vector<Tag> tagsToTransfer; ///< Set of tags on mesh to transfer to
                                    ///< postprocessing mesh
+  std::string optionsPrefix = "";  ///< Prefix for options
 
   virtual MoFEMErrorCode preProcPostProc();
   virtual MoFEMErrorCode postProcPostProc();
@@ -264,13 +265,14 @@ MoFEMErrorCode PostProcBrokenMeshInMoabBase<E>::transferTags() {
 
 template <typename E>
 PostProcBrokenMeshInMoabBase<E>::PostProcBrokenMeshInMoabBase(
-    MoFEM::Interface &m_field)
-    : E(m_field) {}
+    MoFEM::Interface &m_field, std::string opts_prefix)
+    : E(m_field), optionsPrefix(opts_prefix) {}
 
 template <typename E>
 PostProcBrokenMeshInMoabBase<E>::PostProcBrokenMeshInMoabBase(
-    MoFEM::Interface &m_field, boost::shared_ptr<moab::Core> core_mesh_ptr)
-    : PostProcBrokenMeshInMoabBase(m_field) {
+    MoFEM::Interface &m_field, boost::shared_ptr<moab::Core> core_mesh_ptr,
+    std::string opts_prefix)
+    : PostProcBrokenMeshInMoabBase(m_field, opts_prefix) {
   coreMeshPtr = core_mesh_ptr;
 }
 
@@ -449,6 +451,7 @@ MoFEMErrorCode PostProcBrokenMeshInMoabBase<E>::preProcPostProc() {
         CHK_THROW_MESSAGE(MOFEM_NOT_IMPLEMENTED, "Element not implemented");
       }
 
+      CHK_THROW_MESSAGE(ref_ele_ptr->getOptions(optionsPrefix), "getOptions");
       CHK_THROW_MESSAGE(ref_ele_ptr->generateReferenceElementMesh(),
                         "Error when generating reference element");
     }
@@ -853,9 +856,10 @@ template <typename E>
 struct PostProcBrokenMeshInMoabBaseBeginImpl
     : protected PostProcBrokenMeshInMoabBase<E> {
 
-  PostProcBrokenMeshInMoabBaseBeginImpl(MoFEM::Interface &m_field,
-                                    boost::shared_ptr<moab::Core> core_mesh_ptr)
-      : PostProcBrokenMeshInMoabBase<E>(m_field, core_mesh_ptr) {}
+  PostProcBrokenMeshInMoabBaseBeginImpl(
+      MoFEM::Interface &m_field, boost::shared_ptr<moab::Core> core_mesh_ptr,
+      std::string opts_prefix = "")
+      : PostProcBrokenMeshInMoabBase<E>(m_field, core_mesh_ptr, opts_prefix) {}
 
   MoFEMErrorCode preProcess() {
     MoFEMFunctionBegin;
@@ -882,8 +886,9 @@ struct PostProcBrokenMeshInMoabBaseContImpl
     : public PostProcBrokenMeshInMoabBase<E> {
 
   PostProcBrokenMeshInMoabBaseContImpl(
-      MoFEM::Interface &m_field, boost::shared_ptr<moab::Core> core_mesh_ptr)
-      : PostProcBrokenMeshInMoabBase<E>(m_field, core_mesh_ptr) {}
+      MoFEM::Interface &m_field, boost::shared_ptr<moab::Core> core_mesh_ptr,
+      std::string opts_prefix = "")
+      : PostProcBrokenMeshInMoabBase<E>(m_field, core_mesh_ptr, opts_prefix) {}
 
   MoFEMErrorCode preProcess() { return this->preProcPostProc(); };
   MoFEMErrorCode postProcess() { return this->postProcPostProc(); };
@@ -898,9 +903,10 @@ template <typename E>
 struct PostProcBrokenMeshInMoabBaseEndImpl
     : protected PostProcBrokenMeshInMoabBase<E> {
 
-  PostProcBrokenMeshInMoabBaseEndImpl(MoFEM::Interface &m_field,
-                                  boost::shared_ptr<moab::Core> core_mesh_ptr)
-      : PostProcBrokenMeshInMoabBase<E>(m_field, core_mesh_ptr) {}
+  PostProcBrokenMeshInMoabBaseEndImpl(
+      MoFEM::Interface &m_field, boost::shared_ptr<moab::Core> core_mesh_ptr,
+      std::string opts_prefix = "")
+      : PostProcBrokenMeshInMoabBase<E>(m_field, core_mesh_ptr, opts_prefix) {}
 
   MoFEMErrorCode preProcess() { return 0; }
   MoFEMErrorCode operator()() { return 0; }
