@@ -1497,6 +1497,46 @@ template <typename T> static inline auto determinantTensor3by3(T &t) {
 }
 
 /**
+ * @brief Calculate the determinant of a 2x2 matrix or a tensor of rank 2
+ *
+ * @tparam T
+ * @param t
+ * @return double
+ */
+template <typename T> static inline auto determinantTensor2by2(T &t) {
+  return t(0, 0) * t(1, 1) - t(0, 1) * t(1, 0);
+}
+
+template <typename T, int DIM>
+struct DeterminantTensorImpl;
+
+template <typename T>
+struct DeterminantTensorImpl<T, 3> {
+  static inline auto get(T &t) { return determinantTensor3by3(t); }
+};
+
+template <typename T>
+struct DeterminantTensorImpl<T, 2> {
+  static auto get(T &t) { return determinantTensor2by2(t); }
+};
+
+/**
+ * @brief Calculate the determinant of a tensor of rank DIM
+*/
+template <typename T, int DIM>
+static inline auto determinantTensor(FTensor::Tensor2<T, DIM, DIM> &t) {
+  return DeterminantTensorImpl<FTensor::Tensor2<T, DIM, DIM>, DIM>::get(t);
+}
+
+/**
+ * @brief Calculate the determinant of a tensor of rank DIM
+*/
+template <typename T, int DIM>
+static inline auto determinantTensor(FTensor::Tensor2_symmetric<T, DIM> &t) {
+  return DeterminantTensorImpl<FTensor::Tensor2_symmetric<T, DIM>, DIM>::get(t);
+}
+
+/**
  * \brief Calculate inverse of tensor rank 2 at integration points
 
  */
@@ -1533,7 +1573,7 @@ inline MoFEMErrorCode determinantTensor3by3(T1 &t, T2 &det) {
 template <class T1, class T2>
 inline MoFEMErrorCode determinantTensor2by2(T1 &t, T2 &det) {
   MoFEMFunctionBeginHot;
-  det = t(0, 0) * t(1, 1) - t(0, 1) * t(1, 0);
+  det = determinantTensor2by2(t);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -1663,6 +1703,41 @@ invertTensor3by3<FTensor::Tensor2_symmetric<double, 3>, double,
   inv_t(1, 2) = (t(0, 2) * t(1, 0) - t(0, 0) * t(1, 2)) * inv_det;
   inv_t(2, 2) = (t(0, 0) * t(1, 1) - t(0, 1) * t(1, 0)) * inv_det;
   MoFEMFunctionReturnHot(0);
+}
+
+template <typename T1, typename T2, typename T3, int DIM>
+struct InvertTensorImpl;
+
+template <typename T1, typename T2, typename T3>
+struct InvertTensorImpl<T1, T2, T3, 3> {
+  inline static MoFEMErrorCode invert(T1 &t, T2 &det, T3 &inv_t) {
+    return invertTensor3by3(t, det, inv_t);
+  }
+};
+
+template <typename T1, typename T2, typename T3>
+struct InvertTensorImpl<T1, T2, T3, 2> {
+  inline static MoFEMErrorCode invert(T1 &t, T2 &det, T3 &inv_t) {
+    return invertTensor2by2(t, det, inv_t);
+  }
+};
+
+template <typename T1, typename T2, typename T3, int DIM>
+static inline MoFEMErrorCode
+invertTensor(FTensor::Tensor2<T1, DIM, DIM> &t, T2 &det,
+             FTensor::Tensor2<T3, DIM, DIM> &inv_t) {
+  return InvertTensorImpl<FTensor::Tensor2<T1, DIM, DIM>, T2,
+                          FTensor::Tensor2<T3, DIM, DIM>, DIM>::invert(t, det,
+                                                                       inv_t);
+}
+
+template <typename T1, typename T2, typename T3, int DIM>
+static inline MoFEMErrorCode
+invertTensor(FTensor::Tensor2_symmetric<T1, DIM> &t, T2 &det,
+             FTensor::Tensor2_symmetric<T3, DIM> &inv_t) {
+  return InvertTensorImpl<FTensor::Tensor2_symmetric<T1, DIM>, T2,
+                          FTensor::Tensor2_symmetric<T3, DIM>,
+                          DIM>::invert(t, det, inv_t);
 }
 
 /**
