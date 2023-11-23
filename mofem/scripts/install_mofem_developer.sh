@@ -131,7 +131,7 @@ if [ ! -d "$SPACK_ROOT_DIR" ]; then
   fi
 
   echo "Cloning spack ..."
-  git clone -b master https://github.com/likask/spack.git
+  git clone -b Version0.14.0  https://bitbucket.org/mofem/mofem-spack.git spack
   echo -e "Done.\n"
 
   # Initialise Spack environment variables:
