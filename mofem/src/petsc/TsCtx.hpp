@@ -2,12 +2,12 @@
  * \brief Context for PETSc Time Stepping
  */
 
-
-
 #ifndef __TSCTX_HPP__
 #define __TSCTX_HPP__
 
-#include <petsc/private/tsimpl.h> 
+#include <petsc/private/tsimpl.h>
+
+#define TSADAPTMOFEM "mofem_adapt"
 
 namespace MoFEM {
 
@@ -216,17 +216,6 @@ struct TsCtx {
                                         Vec U_tt, PetscReal v, PetscReal a,
                                         Mat J, Mat P, void *ctx);
 
-  friend PetscErrorCode TSAdaptChooseMoFEM(TSAdapt adapt, TS ts, PetscReal h,
-                                       PetscInt *next_sc, PetscReal *next_h,
-                                       PetscBool *accept, PetscReal *wlte,
-                                       PetscReal *wltea, PetscReal *wlter);
-
-  friend PetscErrorCode TSAdaptResetMoFEM(TSAdapt adapt);
-
-  friend PetscErrorCode TSAdaptDestroyMoFEM(TSAdapt adapt);
-
-  friend PetscErrorCode TSAdaptCreateMoFEM(TSAdapt adapt);
-
 private:
   PetscLogEvent MOFEM_EVENT_TsCtxRHSFunction;
   PetscLogEvent MOFEM_EVENT_TsCtxRHSJacobian;
@@ -238,7 +227,6 @@ private:
 
   boost::movelib::unique_ptr<bool> vecAssembleSwitch;
   boost::movelib::unique_ptr<bool> matAssembleSwitch;
-
 };
 
 /**
@@ -260,7 +248,7 @@ PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
                               void *ctx);
 
 /**
- * @brief Set function evaluating jacobina in TS solver
+ * @brief Set function evaluating jacobian in TS solver
  *
  * <a
  * href=https://www.mcs.anl.gov/petsc/petsc-3.1/docs/manualpages/TS/TSSetIJacobian.html>See
@@ -331,7 +319,7 @@ PetscErrorCode TsSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
                                 void *ctx);
 
 /**
- * @brief Calculation Jaconian for second order PDE in time
+ * @brief Calculation Jacobian for second order PDE in time
  *
  * <a
  * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSSetI2Jacobian.html>See
@@ -373,20 +361,21 @@ PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
 PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
                                Vec F, void *ctx);
 
-#define TSADAPT_TEST   "ep"
+/** \brief Custom TSAdaptivity in MoFEM
+ *
+ */
+struct TSAdaptMofem {};
 
-struct TSAdapt_EP {};
+static PetscErrorCode TSAdaptChooseMofem(TSAdapt adapt, TS ts, PetscReal h,
+                                         PetscInt *next_sc, PetscReal *next_h,
+                                         PetscBool *accept, PetscReal *wlte,
+                                         PetscReal *wltea, PetscReal *wlter);
 
-static PetscErrorCode TSAdaptChoose_EP(TSAdapt adapt, TS ts, PetscReal h,
-                                       PetscInt *next_sc, PetscReal *next_h,
-                                       PetscBool *accept, PetscReal *wlte,
-                                       PetscReal *wltea, PetscReal *wlter);
+static PetscErrorCode TSAdaptResetMofem(TSAdapt adapt);
 
-static PetscErrorCode TSAdaptReset_EP(TSAdapt adapt);
+static PetscErrorCode TSAdaptDestroyMofem(TSAdapt adapt);
 
-static PetscErrorCode TSAdaptDestroy_EP(TSAdapt adapt);
-
-PetscErrorCode TSAdaptCreate_EP(TSAdapt adapt);
+PetscErrorCode TSAdaptCreateMofem(TSAdapt adapt);
 
 } // namespace MoFEM
 
