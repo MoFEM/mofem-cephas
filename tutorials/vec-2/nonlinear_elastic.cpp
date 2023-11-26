@@ -226,6 +226,9 @@ struct Monitor : public FEMethod {
     constexpr int save_every_nth_step = 1;
     if (ts_step % save_every_nth_step == 0) {
       CHKERR DMoFEMLoopFiniteElements(dM, "bFE", postProc);
+      CHKERR EssentialPreProc<MPCsType>::addLinksToPostProcMesh(
+          postProc->mField, postProc->getPostProcMesh(), {"U"});
+
       CHKERR postProc->writeFile(
           "out_step_" + boost::lexical_cast<std::string>(ts_step) + ".h5m");
     }
