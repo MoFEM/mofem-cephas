@@ -55,6 +55,16 @@ template <> struct EssentialPreProc<MPCsType> {
   static MoFEMErrorCode loadFileWithMPCs(Interface &m_field,
                                          const char *file_name,
                                          const char *options);
+  /* @brief add links edges to post proc mesh
+    *
+    * @param m_field
+    * @param post_proc_mesh_interface
+    * @param field_names
+    * @return MoFEMErrorCode
+    */
+  static MoFEMErrorCode addLinksToPostProcMesh(Interface &m_field,
+                                         moab::Interface &post_proc_mesh_interface,
+                                         vector<std::string> field_names);
 
 protected:
   MoFEM::Interface &mField;

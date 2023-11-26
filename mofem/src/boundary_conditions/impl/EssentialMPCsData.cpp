@@ -224,6 +224,93 @@ MoFEMErrorCode EssentialPreProc<MPCsType>::loadFileWithMPCs(
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode EssentialPreProc<MPCsType>::addLinksToPostProcMesh(
+    Interface &m_field, moab::Interface &post_proc_mesh_interface,
+    vector<std::string> field_names) {
+  MoFEMFunctionBegin;
+
+  // for each link vertex find entity in mfield database
+  // and add it to post_proc_mesh_interface
+  // for each field give in field_names save data on appropriate tag
+
+  std::array<double, 9> def;
+  std::fill(def.begin(), def.end(), 0);
+
+  auto get_tag = [&](const std::string name, size_t size) {
+    Tag th;
+    size = size <= 1 ? 1 : (size <= 3 ? 3 : 9);
+    CHKERR post_proc_mesh_interface.tag_get_handle(
+        name.c_str(), size, MB_TYPE_DOUBLE, th, MB_TAG_CREAT | MB_TAG_SPARSE,
+        def.data());
+    return th;
+  };
+
+  // get links from meshsets
+  auto master_meshset_ptr =
+      m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(
+          std::regex((boost::format("%s(.*)") % "MPC_(.*)_LINKS").str()));
+  Range links_ents;
+  for (auto m : master_meshset_ptr) {
+    Range ents;
+    CHKERR m_field.get_moab().get_entities_by_type(m->getMeshset(), MBEDGE,
+                                                           ents, true);
+    links_ents.merge(ents);
+  }
+
+  if(links_ents.empty()) {
+    MoFEMFunctionReturnHot(0);
+  }
+
+  // create edges in post_proc_mesh_interface
+  std::vector<EntityHandle> p_links_edges(links_ents.size()); // post_proc edges
+  std::vector<EntityHandle> o_nodes(links_ents.size() * 2); // original mesh nodes
+  std::vector<EntityHandle> p_nodes(links_ents.size() * 2); // post_proc nodes
+
+  int dd = 0;
+  for (auto &link : links_ents) {
+    Range verts;
+    CHKERR m_field.get_moab().get_connectivity(&link, 1, verts, true);
+    ublas::vector<EntityHandle> edge_conn(2);
+    int gg = 0;
+    for (auto &vert : verts) {
+      VectorDouble coords(3);
+      // fill o_nodes with vertices
+      CHKERR m_field.get_moab().get_coords(&vert, 1, &coords[0]);
+      CHKERR post_proc_mesh_interface.create_vertex(&coords[0], edge_conn[gg]);
+      o_nodes[dd * 2 + gg] = vert;
+      p_nodes[dd * 2 + gg] = edge_conn[gg];
+      gg++;
+    }
+
+    CHKERR post_proc_mesh_interface.create_element(MBEDGE, &edge_conn[0], 2,
+                                                   p_links_edges[dd++]);
+  }
+
+  const FieldEntity_multiIndex *field_ents;
+  CHKERR m_field.get_field_ents(&field_ents);
+  auto &field_ents_by_uid = field_ents->get<Unique_mi_tag>();
+
+  for (auto field : field_names) {
+    auto field_ptr = m_field.get_field_structure(field);
+    const int nb_coefficients = field_ptr->getNbOfCoeffs();
+    Tag tag = get_tag(field, nb_coefficients);
+
+    int gg = 0;
+    for (auto &node : o_nodes) {
+      VectorDouble data(nb_coefficients);
+      auto eit = field_ents_by_uid.find(FieldEntity::getLocalUniqueIdCalculate(
+          m_field.get_field_bit_number(field), node));
+      if (eit != field_ents_by_uid.end()) {
+        noalias(data) = (*eit)->getEntFieldData();
+      }
+      auto ent = p_nodes[gg++];
+      post_proc_mesh_interface.tag_set_data(tag, &ent, 1, &*data.begin());
+    }
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode EssentialPreProc<MPCsType>::operator()() {
   MOFEM_LOG_CHANNEL("WORLD");
   MoFEMFunctionBegin;
