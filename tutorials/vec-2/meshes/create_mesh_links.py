@@ -1,11 +1,26 @@
 cubit.cmd('reset')
 cubit.cmd('set developer commands on')
+cubit.cmd('set duplicate block elements on')
 
 one_master_node = False
 
-cubit.cmd('open "/Users/my_user/mofem_install/mofem-cephas/mofem/users_modules/tutorials/vec-2/beam_3D.cub"')
+cubit.cmd('brick x 0.5 y 0.05 z 0.02')
 
-cubit.cmd('delete mesh')
+cubit.cmd('block 1 add volume 1')
+cubit.cmd('block 1 name "BODY_FORCE"')
+cubit.cmd('block 1 attribute count 3')
+cubit.cmd('block 1 attribute index 1 0')
+cubit.cmd('block 1 attribute index 2 -1 ')
+cubit.cmd('block 1 attribute index 2 0')
+
+cubit.cmd('block 3 add surface 4 ')
+cubit.cmd('block 3 name "FIX_ALL"')
+
+cubit.cmd('block 4 add volume 1')
+cubit.cmd('block 4 name "MAT_ELASTIC"')
+cubit.cmd('block 4 attribute count 2')
+cubit.cmd('block 4 attribute index 1 100')
+cubit.cmd('block 4 attribute index 2 0.3')
 
 cubit.cmd('webcut volume 1 with plane xplane offset 0.05')
 cubit.cmd('webcut volume 2 with plane xplane offset 0')
@@ -92,7 +107,7 @@ cubit.cmd('block 4 name "MPC_COUPLING_LINKS4"')
 #renumber Edge all start_id 1
 
 
-cubit.cmd('save as "/Users/my_user/Desktop/beam3D_MPCs.cub" overwrite')
+cubit.cmd('save as "/home/my_user/Desktop/beam3D_MPCs.cub" overwrite')
 
 if one_master_node == True:
     cubit.cmd('delete volume 1')
@@ -100,7 +115,7 @@ if one_master_node == True:
     cubit.cmd('block 5 add node {}'.format(22))
     cubit.cmd('block 5 add vertex {}'.format(26))
     cubit.cmd('block 5 name "MPC_COUPLING_MASTER4"')
-    cubit.cmd('save as "/Users/my_user/Desktop/beam3D_MPCs_MASTER_SINGLE.cub" overwrite')
+    cubit.cmd('save as "/home/my_user/Desktop/beam3D_MPCs_MASTER_SINGLE.cub" overwrite')
 
 
 #cubit.cmd('block 5 add node all in surface {}'.format(22))
@@ -111,4 +126,4 @@ cubit.cmd('block 5 name "MPC_COUPLING_MASTER4"')
 #cubit.cmd('block 6 name "MPC_COUPLING_SLAVE4"')
 
 
-cubit.cmd('save as "/Users/my_user/Desktop/beam3D_MPCs_MASTER.cub" overwrite')
+cubit.cmd('save as "/home/my_user/Desktop/beam3D_MPCs_MASTER.cub" overwrite')
