@@ -22,7 +22,7 @@
 Users Modules are separate software entities in their own repository that can
 follow their license agreements and copyrights. If the Users Module license and
 copyright are not stated explicitly, it is assumed that it follows the copyright
-the MoFEM library.
+of the MoFEM library.
 
 \section thrid_party Third party libraries
 
