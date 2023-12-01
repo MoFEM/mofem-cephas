@@ -670,13 +670,13 @@ PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
   MoFEMFunctionReturn(0);
 }
 
-static PetscErrorCode TSAdaptChooseMofem(TSAdapt adapt, TS ts, PetscReal h,
-                                         PetscInt *next_sc, PetscReal *next_h,
-                                         PetscBool *accept, PetscReal *wlte,
-                                         PetscReal *wltea, PetscReal *wlter) {
+PetscErrorCode TSAdaptChooseMoFEM(TSAdapt adapt, TS ts, PetscReal h,
+                                  PetscInt *next_sc, PetscReal *next_h,
+                                  PetscBool *accept, PetscReal *wlte,
+                                  PetscReal *wltea, PetscReal *wlter) {
   PetscFunctionBegin;
 
-  TSAdaptMofem *basic = static_cast<TSAdaptMofem *>(adapt->data);
+  TSAdaptMoFEM *ts_adapt_mofem = static_cast<TSAdaptMoFEM *>(adapt->data);
 
   *next_sc = 0; /* Reuse the same order scheme */
   *wlte = -1;   /* Weighted local truncation error was not evaluated */
@@ -699,17 +699,21 @@ static PetscErrorCode TSAdaptChooseMofem(TSAdapt adapt, TS ts, PetscReal h,
   CHKERRG(ierr);
 
   if (reason < 0) {
-    h *= 0.75;
+    h *= ts_adapt_mofem->alpha;
     *next_h = h;
-    PetscPrintf(
-        PETSC_COMM_WORLD,
+    MOFEM_LOG_TAG("WORLD", "TSMoFEMAdapt");
+    MOFEM_LOG_C(
+        "WORLD", Sev::inform,
         "\tDiverged set step length: it = %d, h = %3.4g set h = %3.4g \n", it,
         h, *next_h);
   } else if (reason > 0) {
-    h *= sqrt(static_cast<double>(6) / static_cast<double>(it + 1));
+    h *= pow((static_cast<double>(ts_adapt_mofem->desiredIt) /
+              static_cast<double>(it + 1)),
+             static_cast<double>(ts_adapt_mofem->gamma));
     *next_h = PetscClipInterval(h, adapt->dt_min, adapt->dt_max);
-    PetscPrintf(
-        PETSC_COMM_WORLD,
+    MOFEM_LOG_TAG("WORLD", "TSMoFEMAdapt")
+    MOFEM_LOG_C(
+        "WORLD", Sev::inform,
         "\tConverged set step length: it = %d, h = %3.4g set h = %3.4g \n", it,
         h, *next_h);
   }
@@ -717,30 +721,29 @@ static PetscErrorCode TSAdaptChooseMofem(TSAdapt adapt, TS ts, PetscReal h,
   PetscFunctionReturn(0);
 }
 
-static PetscErrorCode TSAdaptResetMofem(TSAdapt adapt) {
-  TSAdaptMofem *basic = static_cast<TSAdaptMofem *>(adapt->data);
+PetscErrorCode TSAdaptResetMoFEM(TSAdapt adapt) {
+  TSAdaptMoFEM *ts_adapt_mofem = static_cast<TSAdaptMoFEM *>(adapt->data);
   PetscFunctionBegin;
   PetscFunctionReturn(0);
 }
 
-static PetscErrorCode TSAdaptDestroyMofem(TSAdapt adapt) {
+PetscErrorCode TSAdaptDestroyMoFEM(TSAdapt adapt) {
   PetscFunctionBegin;
-  ierr = TSAdaptResetMofem(adapt);
+  ierr = TSAdaptResetMoFEM(adapt);
   CHKERRG(ierr);
   ierr = PetscFree(adapt->data);
   CHKERRG(ierr);
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode TSAdaptCreateMofem(TSAdapt adapt) {
-  TSAdaptMofem *ts_adapt_mofem;
+PetscErrorCode TSAdaptCreateMoFEM(TSAdapt adapt) {
   PetscFunctionBegin;
-  ierr = PetscNewLog(adapt, &ts_adapt_mofem);
-  CHKERRG(ierr);
+  TSAdaptMoFEM *ts_adapt_mofem = new TSAdaptMoFEM;
+
   adapt->data = (void *)ts_adapt_mofem;
-  adapt->ops->choose = TSAdaptChooseMofem;
-  adapt->ops->reset = TSAdaptResetMofem;
-  adapt->ops->destroy = TSAdaptDestroyMofem;
+  adapt->ops->choose = TSAdaptChooseMoFEM;
+  adapt->ops->reset = TSAdaptResetMoFEM;
+  adapt->ops->destroy = TSAdaptDestroyMoFEM;
   PetscFunctionReturn(0);
 }
 
