@@ -12,8 +12,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-/** \file PlasticThermalOps.hpp
- * \example PlasticThermalOps.hpp
+/** \file SeepageOps.hpp
+ * \example SeepageOps.hpp
  */
 
 namespace SeepageOps {
@@ -23,10 +23,10 @@ struct OpDomainRhsHydrostaticStress
     : public AssemblyDomainEleOp { // changed opfaceele to AssemblyDomainEleOp
 public:
   OpDomainRhsHydrostaticStress(std::string field_name1,
-  boost::shared_ptr<VectorDouble> h_ptr,
+                               boost::shared_ptr<VectorDouble> h_ptr,
                                double specific_weight_water = 9.81)
-      : AssemblyDomainEleOp(field_name1, field_name1, DomainEleOp::OPROW), hPtr(h_ptr),
-        specificWeightWater(specific_weight_water) {}
+      : AssemblyDomainEleOp(field_name1, field_name1, DomainEleOp::OPROW),
+        hPtr(h_ptr), specificWeightWater(specific_weight_water) {}
 
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data) {
     MoFEMFunctionBegin;
@@ -57,10 +57,9 @@ public:
       auto t_h = getFTensor0FromVec(*hPtr);
       for (int gg = 0; gg != nb_integration_points; gg++) {
         auto t_nf = getFTensor1FromPtr<DIM>(&nf[0]);
-        // auto t_rhs = getFTensor1FromArray<DIM, DIM>(locRhs);
-        
+
         const double a = t_w * area * specificWeightWater * t_h;
-        
+
         for (int rr = 0; rr != nb_dofs / DIM; rr++) {
           // each degree of freedom gives a number of shape functions, for two
           // degrees of freedom there is one shape function, so that is why it
@@ -71,7 +70,6 @@ public:
 
           // move to the next base function
           ++t_base_diff; // moves the pointer to the next shape function
-          // ++t_rhs;
           ++t_nf;
         }
 
@@ -80,19 +78,15 @@ public:
         ++t_h;
       }
 
-      // FILL VALUES OF LOCAL VECTOR ENTRIES TO THE GLOBAL VECTOR
-
-      // // Ignoring DOFs on boundary (index -1)
-      // CHKERR VecSetOption(getKSPf(), VEC_IGNORE_NEGATIVE_INDICES, PETSC_TRUE);
-      // CHKERR VecSetValues(getKSPf(), data, &locRhs(0), ADD_VALUES);
     }
 
     MoFEMFunctionReturn(0);
   }
-  private:
+
+private:
   // VectorDouble locRhs;
   double specificWeightWater;
   boost::shared_ptr<VectorDouble> hPtr;
 };
 
-} // namespace PlasticThermalOps
+} // namespace SeepageOps
