@@ -7,7 +7,7 @@
 
 #include <petsc/private/tsimpl.h>
 
-#define TSADAPTMOFEM "mofem_adapt"
+#define TSADAPTMOFEM "TSMoFEMAdapt"
 
 namespace MoFEM {
 
@@ -84,7 +84,7 @@ struct TsCtx {
    * @brief Get the loops to do IJacobian object
    *
    * It is sequence of finite elements used to evalite the left hand sie of
-   * implimcit time solver.
+   * implicit time solver.
    *
    * @return FEMethodsSequence&
    */
@@ -94,7 +94,7 @@ struct TsCtx {
    * @brief Get the loops to do RHSJacobian object
    *
    * It is sequence of finite elements used to evalite the left hand sie of
-   * implimcit time solver.
+   * implicit time solver.
    *
    * @return FEMethodsSequence&
    */
@@ -364,18 +364,35 @@ PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
 /** \brief Custom TSAdaptivity in MoFEM
  *
  */
-struct TSAdaptMofem {};
+struct TSAdaptMoFEM {
 
-static PetscErrorCode TSAdaptChooseMofem(TSAdapt adapt, TS ts, PetscReal h,
+  TSAdaptMoFEM() : alpha(0.75), gamma(0.5), desiredIt(6) {
+    CHKERR PetscOptionsGetScalar("", "-ts_mofem_adapt_alpha", &alpha,
+                                 PETSC_NULL);
+    CHKERR PetscOptionsGetScalar("", "-ts_mofem_adapt_gamma", &gamma,
+                                 PETSC_NULL);
+    CHKERR PetscOptionsGetInt("", "-ts_mofem_adapt_desired_it", &desiredIt,
+                              PETSC_NULL);
+    MOFEM_LOG_TAG("WORLD", "TSMoFEMAdapt");
+    MOFEM_LOG("WORLD", Sev::inform)
+        << "TS adaptivity: alpha = " << alpha << ", gamma = " << gamma
+        << ", desiredIt = " << desiredIt;
+  }
+
+  double alpha;
+  double gamma;
+  int desiredIt;
+};
+
+static PetscErrorCode TSAdaptChooseMoFEM(TSAdapt adapt, TS ts, PetscReal h,
                                          PetscInt *next_sc, PetscReal *next_h,
                                          PetscBool *accept, PetscReal *wlte,
                                          PetscReal *wltea, PetscReal *wlter);
+static PetscErrorCode TSAdaptResetMoFEM(TSAdapt adapt);
 
-static PetscErrorCode TSAdaptResetMofem(TSAdapt adapt);
+static PetscErrorCode TSAdaptDestroyMoFEM(TSAdapt adapt);
 
-static PetscErrorCode TSAdaptDestroyMofem(TSAdapt adapt);
-
-PetscErrorCode TSAdaptCreateMofem(TSAdapt adapt);
+PetscErrorCode TSAdaptCreateMoFEM(TSAdapt adapt);
 
 } // namespace MoFEM
 
