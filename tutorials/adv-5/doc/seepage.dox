@@ -1,4 +1,4 @@
-/*! \page multi-physiscs ADV-5: Seepage in elsatic body example
+/*! \page tutorial_seepage ADV-5: Seepage in elsatic body example
 
 \note Prerequisites of this tutorial include \ref tutorial_elastic_problem
 

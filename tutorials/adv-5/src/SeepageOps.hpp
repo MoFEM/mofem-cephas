@@ -51,8 +51,6 @@ public:
       constexpr double g_acceleration = 9.81;
 
       FTensor::Index<'i', DIM> i;
-      // changed getting the base of the function to getting the
-      // differential of the base it gives a vector to a pointer of two
 
       auto t_h = getFTensor0FromVec(*hPtr);
       for (int gg = 0; gg != nb_integration_points; gg++) {
@@ -61,11 +59,6 @@ public:
         const double a = t_w * area * specificWeightWater * t_h;
 
         for (int rr = 0; rr != nb_dofs / DIM; rr++) {
-          // each degree of freedom gives a number of shape functions, for two
-          // degrees of freedom there is one shape function, so that is why it
-          // is devided by two. (this should be DIM)
-          // locRhs[rr] += t_base * body_source * a;
-
           t_nf(i) -= t_base_diff(i) * a;
 
           // move to the next base function
