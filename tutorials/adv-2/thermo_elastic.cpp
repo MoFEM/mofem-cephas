@@ -905,7 +905,7 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
     post_proc_fe->getOpPtrVector().push_back(
         new OpSymmetrizeTensor<SPACE_DIM>("U", mat_grad_ptr, mat_strain_ptr));
     post_proc_fe->getOpPtrVector().push_back(
-        new OpSymmetrizeTensor(mat_strain_ptr, vec_temp_ptr, mDPtr,
+        new OpStressThermal(mat_strain_ptr, vec_temp_ptr, mDPtr,
                             coeff_expansion_ptr, mat_stress_ptr));
 
     using OpPPMap = OpPostProcMapInMoab<SPACE_DIM, SPACE_DIM>;
