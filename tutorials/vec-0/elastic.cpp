@@ -412,13 +412,13 @@ MoFEMErrorCode Example::assembleSystem() {
   pip->getOpDomainRhsPipeline().push_back(
       new OpCalculateVectorFieldGradient<SPACE_DIM, SPACE_DIM>("U",
                                                                mat_grad_ptr));
-  pip->getOpDomainRhsPipeline().push_back(
-      new OpSymmetrizeTensor<SPACE_DIM>("U", mat_grad_ptr, mat_strain_ptr));
   CHKERR addMatBlockOps(pip->getOpDomainRhsPipeline(), "U", "MAT_ELASTIC",
                         mat_D_ptr, Sev::inform);
   pip->getOpDomainRhsPipeline().push_back(
+      new OpSymmetrizeTensor<SPACE_DIM>(mat_grad_ptr, mat_strain_ptr));
+  pip->getOpDomainRhsPipeline().push_back(
       new OpTensorTimesSymmetricTensor<SPACE_DIM, SPACE_DIM>(
-          "U", mat_strain_ptr, mat_stress_ptr, mat_D_ptr));
+          mat_strain_ptr, mat_stress_ptr, mat_D_ptr));
 
   pip->getOpDomainRhsPipeline().push_back(
       new OpInternalForce("U", mat_stress_ptr,
@@ -584,13 +584,12 @@ MoFEMErrorCode Example::outputResults() {
     auto mat_stress_ptr = boost::make_shared<MatrixDouble>();
     pip.push_back(new OpCalculateVectorFieldGradient<SPACE_DIM, SPACE_DIM>(
         "U", mat_grad_ptr));
-    pip.push_back(
-        new OpSymmetrizeTensor<SPACE_DIM>("U", mat_grad_ptr, mat_strain_ptr));
-
     auto mat_D_ptr = boost::make_shared<MatrixDouble>();
     CHKERR addMatBlockOps(pip, "U", "MAT_ELASTIC", mat_D_ptr, Sev::verbose);
+    pip.push_back(
+        new OpSymmetrizeTensor<SPACE_DIM>(mat_grad_ptr, mat_strain_ptr));
     pip.push_back(new OpTensorTimesSymmetricTensor<SPACE_DIM, SPACE_DIM>(
-        "U", mat_strain_ptr, mat_stress_ptr, mat_D_ptr));
+        mat_strain_ptr, mat_stress_ptr, mat_D_ptr));
     auto u_ptr = boost::make_shared<MatrixDouble>();
     pip.push_back(new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_ptr));
     auto x_ptr = boost::make_shared<MatrixDouble>();
