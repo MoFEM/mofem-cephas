@@ -903,7 +903,7 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
         new OpCalculateVectorFieldGradient<SPACE_DIM, SPACE_DIM>("U",
                                                                  mat_grad_ptr));
     post_proc_fe->getOpPtrVector().push_back(
-        new OpSymmetrizeTensor<SPACE_DIM>("U", mat_grad_ptr, mat_strain_ptr));
+        new OpSymmetrizeTensor<SPACE_DIM>(mat_grad_ptr, mat_strain_ptr));
     post_proc_fe->getOpPtrVector().push_back(
         new OpStressThermal(mat_strain_ptr, vec_temp_ptr, mDPtr,
                             coeff_expansion_ptr, mat_stress_ptr));
