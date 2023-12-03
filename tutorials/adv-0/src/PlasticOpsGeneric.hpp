@@ -736,9 +736,16 @@ MoFEMErrorCode OpCalculatePlasticityImpl<DIM, GAUSS, DomainEleOp>::doWork(
 
 template <int DIM, typename DomainEleOp>
 struct OpPlasticStressImpl<DIM, GAUSS, DomainEleOp> : public DomainEleOp {
-  OpPlasticStressImpl(const std::string field_name,
+
+  /**
+   * @deprecated do not use this constructor
+  */
+  DEPRECATED OpPlasticStressImpl(const std::string field_name,
                       boost::shared_ptr<CommonData> common_data_ptr,
                       boost::shared_ptr<MatrixDouble> mDPtr);
+  OpPlasticStressImpl(boost::shared_ptr<CommonData> common_data_ptr,
+                      boost::shared_ptr<MatrixDouble> mDPtr);
+
   MoFEMErrorCode doWork(int side, EntityType type, EntData &data);
 
 private:
@@ -756,6 +763,13 @@ OpPlasticStressImpl<DIM, GAUSS, DomainEleOp>::OpPlasticStressImpl(
   std::fill(&DomainEleOp::doEntities[MBEDGE],
             &DomainEleOp::doEntities[MBMAXTYPE], false);
 }
+
+template <int DIM, typename DomainEleOp>
+OpPlasticStressImpl<DIM, GAUSS, DomainEleOp>::OpPlasticStressImpl(
+    boost::shared_ptr<CommonData> common_data_ptr,
+    boost::shared_ptr<MatrixDouble> m_D_ptr)
+    : DomainEleOp(NOSPACE, DomainEleOp::OPSPACE),
+      commonDataPtr(common_data_ptr), mDPtr(m_D_ptr) {}
 
 //! [Calculate stress]
 template <int DIM, typename DomainEleOp>
