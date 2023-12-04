@@ -1944,7 +1944,7 @@ struct OpTensorTimesSymmetricTensor
   }
 
   /**
-   * @deprecated Do not use this constriuctor
+   * @deprecated Do not use this constructor
   */
   OpTensorTimesSymmetricTensor(boost::shared_ptr<MatrixDouble> in_mat,
                                boost::shared_ptr<MatrixDouble> out_mat,
@@ -1992,7 +1992,7 @@ struct OpSymmetrizeTensor : public ForcesAndSourcesCore::UserDataOperator {
   using UserOp = ForcesAndSourcesCore::UserDataOperator;
 
   /**
-   * @deprecated Do not use this constriuctor
+   * @deprecated Do not use this constructor
    */
   DEPRECATED OpSymmetrizeTensor(const std::string field_name,
                                 boost::shared_ptr<MatrixDouble> in_mat,
