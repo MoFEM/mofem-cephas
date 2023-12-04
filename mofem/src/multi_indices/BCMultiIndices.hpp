@@ -23,13 +23,13 @@ struct CubitMeshSets {
                            ///< SideSet and more
   std::vector<Tag>
       tag_handles; ///< vector of tag handles to types of data passed from cubit
-  int *msId;       ///< cubit meshset ID
-  char *tagBcData;
+  int *msId = nullptr; ///< cubit meshset ID
+  char *tagBcData = nullptr;
   int tagBcSize;
-  unsigned int *tagBlockHeaderData;
-  double *tagBlockAttributes;
+  unsigned int *tagBlockHeaderData = nullptr;
+  double *tagBlockAttributes = nullptr;
   int tagBlockAttributesSize;
-  char *tagName;
+  char *tagName = nullptr;
   const CubitBCType meshsetsMask;
 
   CubitMeshSets(Interface &moab, const EntityHandle meshset);
@@ -40,7 +40,7 @@ struct CubitMeshSets {
    * \brief get meshset id as it set in preprocessing software
    * @return id of meshset
    */
-  inline int getMeshsetId() const { return *msId; }
+  inline int getMeshsetId() const { return msId ? *msId : -1; }
 
   // /** \deprecated use getMeshsetId() instead
   // */

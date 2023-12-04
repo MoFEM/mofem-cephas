@@ -201,20 +201,30 @@ MoFEMErrorCode MeshsetsManager::broadcastMeshsets(int verb) {
       CHKERR pcomm->broadcast_entities(from_proc, r_dummy_nodes, false, true);
 
       if (from_proc != pcomm->rank()) {
-        for (auto dummy_node : r_dummy_nodes) {
-          EntityHandle m;
-          CHKERR moab.create_meshset(MESHSET_SET, m);
-          CHKERR set_tags_dummy_node(m, dummy_node);
 
-          CubitMeshSets broadcast_block(moab, m);
-          auto p = cubitMeshsets.insert(broadcast_block);
-          if (!p.second) {
-            CHKERR moab.delete_entities(&m, 1);
+        for (auto dummy_node : r_dummy_nodes) {
+          CubitMeshSets broadcast_block(moab, dummy_node);
+          auto id = broadcast_block.getMeshsetId();
+          if (id != -1) {
+            auto mit =
+                cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>()
+                    .find(boost::make_tuple(
+                        id, broadcast_block.getMaskedBcTypeULong()));
+            if (mit ==
+                cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>()
+                    .end()) {
+              EntityHandle m;
+              CHKERR moab.create_meshset(MESHSET_SET, m);
+              CHKERR set_tags_dummy_node(m, dummy_node);
+              auto p = cubitMeshsets.insert(CubitMeshSets(moab, m));
+            }
           } else {
-            MOFEM_LOG("MeshsetMngSync", Sev::verbose)
-                << "broadcast recived " << broadcast_block;
+            MOFEM_LOG("MeshsetMngSync", Sev::warning)
+                << "broadcasted vertex " << dummy_node << " has negative id";
           }
+          
         }
+
       } else {
         MOFEM_LOG("MeshsetMngSync", Sev::verbose)
             << "broadcast send from " << from_proc;
