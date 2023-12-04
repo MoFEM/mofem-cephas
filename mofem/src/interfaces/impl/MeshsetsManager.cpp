@@ -102,7 +102,8 @@ MoFEMErrorCode MeshsetsManager::readMeshsets(int verb) {
     if ((block.cubitBcType & CubitBCType(NODESET | SIDESET | BLOCKSET)).any()) {
       auto p = cubitMeshsets.insert(block);
       if (!p.second) {
-        // blocsket/nodeset/sideste set exist, could be created on other processor.
+        // blocsket/nodeset/sideste set exist, could be created on other
+        // processor.
         Range ents;
         CHKERR m_field.get_moab().get_entities_by_handle(m, ents, true);
         CHKERR m_field.get_moab().add_entities(p.first->getMeshset(), ents);

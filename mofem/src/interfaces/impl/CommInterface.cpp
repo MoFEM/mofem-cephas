@@ -1123,13 +1123,8 @@ CommInterface::partitionMesh(const Range &ents, const int dim,
         Range dim_ents = parts_ents[pp].subset_by_dimension(dim);
         for (int dd = dim - 1; dd >= 0; dd--) {
           Range adj_ents;
-          if (dd > 0) {
-            CHKERR m_field.get_moab().get_adjacencies(
-                dim_ents, dd, false, adj_ents, moab::Interface::UNION);
-          } else {
-            CHKERR m_field.get_moab().get_connectivity(dim_ents, adj_ents,
-                                                       true);
-          }
+          CHKERR m_field.get_moab().get_adjacencies(
+              dim_ents, dd, false, adj_ents, moab::Interface::UNION);
           parts_ents[pp].merge(adj_ents);
         }
       }
@@ -1143,33 +1138,49 @@ CommInterface::partitionMesh(const Range &ents, const int dim,
         CHKERR m_field.get_moab().add_entities(tagged_sets[pp], parts_ents[pp]);
       }
 
-      // set gid and part tag
-      for (EntityType t = MBVERTEX; t != MBENTITYSET; ++t) {
-
-        void *ptr;
-        int count;
-
-        int gid = 1; // moab indexing from 1a
-        for (int pp = 0; pp != n_parts; pp++) {
-          Range type_ents = parts_ents[pp].subset_by_type(t);
-          if (t != MBVERTEX) {
+      auto set_part = [&]() {
+        MoFEMFunctionBegin;
+        for (EntityType t = MBEDGE; t != MBENTITYSET; ++t) {
+          for (int pp = 0; pp != n_parts; pp++) {
+            Range type_ents = parts_ents[pp].subset_by_type(t);
             CHKERR m_field.get_moab().tag_clear_data(part_tag, type_ents, &pp);
           }
+        }
+        MoFEMFunctionReturn(0);
+      };
 
-          auto eit = type_ents.begin();
-          for (; eit != type_ents.end();) {
-            CHKERR m_field.get_moab().tag_iterate(gid_tag, eit, type_ents.end(),
-                                                  count, ptr);
-            auto gid_tag_ptr = static_cast<int *>(ptr);
-            for (; count > 0; --count) {
-              *gid_tag_ptr = gid;
-              ++eit;
-              ++gid;
-              ++gid_tag_ptr;
+      auto set_gid = [&]() {
+        MoFEMFunctionBegin;
+        for (EntityType t = MBVERTEX; t != MBENTITYSET; ++t) {
+
+          void *ptr;
+          int count;
+
+          int gid = 1; // moab indexing from 1a
+          for (int pp = 0; pp != n_parts; pp++) {
+            Range type_ents = parts_ents[pp].subset_by_type(t);
+
+            auto eit = type_ents.begin();
+            for (; eit != type_ents.end();) {
+              CHKERR m_field.get_moab().tag_iterate(
+                  gid_tag, eit, type_ents.end(), count, ptr);
+              auto gid_tag_ptr = static_cast<int *>(ptr);
+              for (; count > 0; --count) {
+                *gid_tag_ptr = gid;
+                ++eit;
+                ++gid;
+                ++gid_tag_ptr;
+              }
             }
           }
         }
-      }
+
+        MoFEMFunctionReturn(0);
+      };
+
+      CHKERR set_part();
+      CHKERR set_gid();
+
     }
 
     if (debug) {
