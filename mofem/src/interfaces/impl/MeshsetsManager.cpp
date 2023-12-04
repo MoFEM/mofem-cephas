@@ -220,7 +220,7 @@ MoFEMErrorCode MeshsetsManager::broadcastMeshsets(int verb) {
             }
           } else {
             MOFEM_LOG("MeshsetMngSync", Sev::warning)
-                << "broadcasted vetex " << dummy_node << " has negative id";
+                << "broadcasted vertex " << dummy_node << " has negative id";
           }
           
         }
