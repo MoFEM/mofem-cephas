@@ -2,7 +2,7 @@
  * \file seepage.cpp
  * \example seepage.cpp
  *
- * Hydorelasticiy
+ * Hydromechanical problem
  *
  */
 
