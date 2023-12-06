@@ -96,8 +96,14 @@ docker start workshop2023
 
 Similarly to viewing installed containers in GUI, you can view them in terminal, by running: 
 ~~~~~
-docker container ls
+docker container ls -a
 ~~~~~
+
+- the output will let you know container names, which containers are available or running, and should look as follows:
+~~~~
+CONTAINER ID   IMAGE                                        COMMAND                  CREATED       STATUS         PORTS                                                    NAMES
+0336cc3b5648   likask/mofem-spack-jupyterhub:Workshop2023   "/bin/bash -c 'servi…"   12 days ago   Up 2 seconds   0.0.0.0:8000->8000/tcp, 8888/tcp, 0.0.0.0:2222->22/tcp   workshop2023
+~~~~
 
 #### ARM architecture case on Mac
 
