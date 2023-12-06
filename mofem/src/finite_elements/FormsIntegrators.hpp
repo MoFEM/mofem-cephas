@@ -212,7 +212,6 @@ template <AssemblyType A, typename EleOp> struct OpBaseImpl : public EleOp {
   static MatSetValuesHook matSetValuesHook;
 
 protected:
-
   template <int DIM>
   inline FTensor::Tensor1<FTensor::PackPtr<double *, DIM>, DIM> getNf() {
     return getFTensor1FromArray<DIM, DIM>(locF);
@@ -264,6 +263,13 @@ protected:
   }
 
   virtual MoFEMErrorCode aSsemble(EntData &data);
+
+  /** \brief Get number of base functions
+   *
+   * @param data
+   * @return number of base functions
+   */
+  virtual size_t getNbOfBaseFunctions(EntitiesFieldData::EntData &data);
 };
 
 template <AssemblyType A, typename EleOp>
@@ -325,6 +331,38 @@ template <typename EleOp> struct FormsIntegrators {
 };   // namespace MoFEM
 
 template <AssemblyType A, typename EleOp>
+size_t
+OpBaseImpl<A, EleOp>::getNbOfBaseFunctions(EntitiesFieldData::EntData &data) {
+  auto nb_base_functions = data.getN().size2();
+  if (data.getBase() != USER_BASE) {
+    switch (data.getSpace()) {
+    case NOSPACE:
+      break;
+    case NOFIELD:
+      break;
+    case H1:
+      break;
+    case HCURL:
+    case HDIV:
+      nb_base_functions /= 3;
+#ifndef NDEBUG
+      if (data.getN().size2() % 3) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_CONSISTENT_DATA,
+                "Number of base functions is not divisible by 3");
+      }
+#endif
+      break;
+    case L2:
+      break;
+    default:
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+               "Space %s not implemented", FieldSpaceNames[data.getSpace()]);
+    }
+  }
+  return nb_base_functions;
+}
+
+template <AssemblyType A, typename EleOp>
 MoFEMErrorCode
 OpBaseImpl<A, EleOp>::doWork(int row_side, int col_side, EntityType row_type,
                              EntityType col_type,
@@ -354,28 +392,7 @@ OpBaseImpl<A, EleOp>::doWork(int row_side, int col_side, EntityType row_type,
   // get number of integration points
   nbIntegrationPts = EleOp::getGaussPts().size2();
   // get row base functions
-  nbRowBaseFunctions = row_data.getN().size2();
-  
-  if (row_data.getBase() != USER_BASE) {
-    switch (row_data.getSpace()) {
-    case NOSPACE:
-      break;
-    case NOFIELD:
-      break;
-    case H1:
-      break;
-    case HCURL:
-    case HDIV:
-      nbRowBaseFunctions /= 3;
-      break;
-    case L2:
-      break;
-    default:
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-               "Space %s not implemented",
-               FieldSpaceNames[row_data.getSpace()]);
-    }
-  }
+  nbRowBaseFunctions = getNbOfBaseFunctions(row_data);
 
   // set size of local entity bock
   locMat.resize(nbRows, nbCols, false);
@@ -421,7 +438,7 @@ MoFEMErrorCode OpBaseImpl<A, EleOp>::doWork(int row_side, EntityType row_type,
   // get number of integration points
   nbIntegrationPts = EleOp::getGaussPts().size2();
   // get row base functions
-  nbRowBaseFunctions = row_data.getN().size2();
+  nbRowBaseFunctions = getNbOfBaseFunctions(row_data);
   // resize and clear the right hand side vector
   locF.resize(nbRows);
   locF.clear();
