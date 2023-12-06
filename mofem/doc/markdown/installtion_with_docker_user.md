@@ -66,6 +66,8 @@ After filling in the fields as above, press `Run`. The installed container can b
 
 If you want to stop the container, you can do so from the `Actions` column on the right. Click on square to stop, and triangle to start it again.
 
+[![Watch the video](https://img.youtube.com/vi/xL3J8VHig68/hqdefault.jpg)](https://youtu.be/_qo4EqfjGc4)
+
 ## Using terminal {#docker_terminal_installation}
 
 If you used the Docker user interface for this installation, you can skip this section and continue to [Accessing the hub section](#docker_access_hub) to find login options and how to run notebooks.
@@ -235,11 +237,10 @@ This should trigger recompilation of the folder defined in [tasks.json](#tasksjs
 The same procedure can be applied for any other users you create and everyone can debug separately. 
 
 
-
 <!-- Use *workshop2023* when you log in through VS Code. Note that you are connecting to *jupyterhub cloud/docker container*. -->
 
 ## Video on JuputerHub, SSH and MoFEM
 
-[![Watch the video](https://img.youtube.com/vi/xL3J8VHig68/hqdefault.jpg)](https://youtu.be/xL3J8VHig68)
+[![Watch the video](https://img.youtube.com/vi/xL3J8VHig68/hqdefault.jpg)](https://youtu.be/pG_-VEplBOQ)
 
 Any problems with this installation, please contact us by [mofem-group@googlegroups.com](https://groups.google.com/forum/#!forum/mofem-group).
