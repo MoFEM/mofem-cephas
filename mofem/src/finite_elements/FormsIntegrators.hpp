@@ -355,6 +355,28 @@ OpBaseImpl<A, EleOp>::doWork(int row_side, int col_side, EntityType row_type,
   nbIntegrationPts = EleOp::getGaussPts().size2();
   // get row base functions
   nbRowBaseFunctions = row_data.getN().size2();
+  
+  if (row_data.getBase() != USER_BASE) {
+    switch (row_data.getSpace()) {
+    case NOSPACE:
+      break;
+    case NOFIELD:
+      break;
+    case H1:
+      break;
+    case HCURL:
+    case HDIV:
+      nbRowBaseFunctions /= 3;
+      break;
+    case L2:
+      break;
+    default:
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+               "Space %s not implemented",
+               FieldSpaceNames[row_data.getSpace()]);
+    }
+  }
+
   // set size of local entity bock
   locMat.resize(nbRows, nbCols, false);
   // clear matrix
