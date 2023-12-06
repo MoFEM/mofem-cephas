@@ -419,47 +419,45 @@ template <typename E>
 MoFEMErrorCode PostProcBrokenMeshInMoabBase<E>::preProcPostProc() {
   MoFEMFunctionBegin;
 
-  auto get_ref_ele = [&](const EntityType type) {
-    PostProcGenerateRefMeshPtr ref_ele_ptr;
-
-    try {
-
-      ref_ele_ptr = refElementsMap.at(type);
-
-    } catch (const out_of_range &e) {
-
-      switch (type) {
-      case MBTET:
-        ref_ele_ptr = boost::make_shared<PostProcGenerateRefMesh<MBTET>>();
-        break;
-      case MBHEX:
-        ref_ele_ptr = boost::make_shared<PostProcGenerateRefMesh<MBHEX>>();
-        break;
-      case MBTRI:
-        ref_ele_ptr = boost::make_shared<PostProcGenerateRefMesh<MBTRI>>();
-        break;
-      case MBQUAD:
-        ref_ele_ptr = boost::make_shared<PostProcGenerateRefMesh<MBQUAD>>();
-        break;
-      case MBEDGE:
-        ref_ele_ptr = boost::make_shared<PostProcGenerateRefMesh<MBEDGE>>();
-        break;
-      default:
-        MOFEM_LOG("SELF", Sev::error)
-            << "Generation of reference elements for type < "
-            << moab::CN::EntityTypeName(type) << " > is not implemented";
-        CHK_THROW_MESSAGE(MOFEM_NOT_IMPLEMENTED, "Element not implemented");
-      }
-
-      CHK_THROW_MESSAGE(ref_ele_ptr->getOptions(optionsPrefix), "getOptions");
-      CHK_THROW_MESSAGE(ref_ele_ptr->generateReferenceElementMesh(),
-                        "Error when generating reference element");
+auto get_ref_ele = [&](const EntityType type) {
+  PostProcGenerateRefMeshPtr ref_ele_ptr;
+  
+  auto it = refElementsMap.find(type);
+  if (it != refElementsMap.end()) {
+    ref_ele_ptr = it->second;
+  } else {
+    switch (type) {
+    case MBTET:
+      ref_ele_ptr = boost::make_shared<PostProcGenerateRefMesh<MBTET>>();
+      break;
+    case MBHEX:
+      ref_ele_ptr = boost::make_shared<PostProcGenerateRefMesh<MBHEX>>();
+      break;
+    case MBTRI:
+      ref_ele_ptr = boost::make_shared<PostProcGenerateRefMesh<MBTRI>>();
+      break;
+    case MBQUAD:
+      ref_ele_ptr = boost::make_shared<PostProcGenerateRefMesh<MBQUAD>>();
+      break;
+    case MBEDGE:
+      ref_ele_ptr = boost::make_shared<PostProcGenerateRefMesh<MBEDGE>>();
+      break;
+    default:
+      MOFEM_LOG("SELF", Sev::error)
+          << "Generation of reference elements for type < "
+          << moab::CN::EntityTypeName(type) << " > is not implemented";
+      CHK_THROW_MESSAGE(MOFEM_NOT_IMPLEMENTED, "Element not implemented");
     }
 
+    CHK_THROW_MESSAGE(ref_ele_ptr->getOptions(optionsPrefix), "getOptions");
+    CHK_THROW_MESSAGE(ref_ele_ptr->generateReferenceElementMesh(),
+                      "Error when generating reference element");
+    
     refElementsMap[type] = ref_ele_ptr;
+  }
 
-    return ref_ele_ptr;
-  };
+  return ref_ele_ptr;
+};
 
   auto fe_ptr = this->problemPtr->numeredFiniteElementsPtr;
 

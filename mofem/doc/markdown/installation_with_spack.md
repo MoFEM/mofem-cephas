@@ -123,7 +123,7 @@ cd $HOME/mofem_install
 
 Retrieve Spack for MoFEM:
 ~~~~~~
-git clone -b master https://github.com/likask/spack.git
+git clone -b master  https://bitbucket.org/mofem/mofem-spack.git spack
 ~~~~~~
 
 Initialise Spack's environment variables:
@@ -472,7 +472,7 @@ It is a good idea to put the above lines into your `.bash_profile` or `.bashrc` 
 
 Clone spack:
 ~~~~~
-git clone -b master https://github.com/likask/spack.git
+git clone -b master  https://bitbucket.org/mofem/mofem-spack.git spack
 ~~~~~
 
 and initialise Spack's environment variables (should also be placed into `.bash_profile` or `.bashrc`):
