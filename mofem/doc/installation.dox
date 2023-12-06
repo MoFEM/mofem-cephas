@@ -1,9 +1,11 @@
-/*! \page installation Installation
+/*! \page installation Installation with Spack (Scripts)
 
 \tableofcontents
 
 We prefer to use the scripts provided below to install user version or
 developer version of MoFEM with [Spack](https://spack.io) as a package manager.
+
+> We do recommend you to use the scripts below for installation; however, if you would like to read about different ways to install MoFEM, you can have a look at \subpage install_spack
 
 \section installation_user_version User version
 
@@ -91,13 +93,5 @@ codes and add new module in MoFEM
 
 \note If you have issues installing MoFEM, please let us know on [MoFEM
 Q&A](https://groups.google.com/forum/#!categories/mofem-group). Enjoy MoFEM!
-
-
-\section installation_reference Advanced install instructions
-
-We do recommend you to use the scripts above for installation; however, if you
-would like to read about different ways to install MoFEM, you can have a look here
-
-- \subpage install_spack
 
 */
