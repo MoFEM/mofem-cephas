@@ -347,7 +347,7 @@ OpBaseImpl<A, EleOp>::getNbOfBaseFunctions(EntitiesFieldData::EntData &data) {
       nb_base_functions /= 3;
 #ifndef NDEBUG
       if (data.getN().size2() % 3) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_CONSISTENT_DATA,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Number of base functions is not divisible by 3");
       }
 #endif
