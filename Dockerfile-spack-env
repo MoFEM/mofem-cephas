@@ -69,7 +69,7 @@ RUN mkdir -p $SPACK_ROOT_DIR && \
     . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
     echo ". $SPACK_ROOT_DIR/share/spack/setup-env.sh" >> ~/.bashrc && \
     spack external find && \
-    spack install --only dependencies mofem-cephas@lukasz \
+    spack install --only dependencies mofem-cephas@lukasz+mgis \
     target=$TARGET build_type=Release ^petsc+X ^boost+python+numpy
 
 # image run hook: the -l will make sure /etc/profile environments are loaded
