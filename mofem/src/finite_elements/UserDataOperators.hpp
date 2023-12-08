@@ -1928,10 +1928,10 @@ struct OpTensorTimesSymmetricTensor
   /**
    * @deprecated Do not use this constriuctor
   */
-  OpTensorTimesSymmetricTensor(const std::string field_name,
-                               boost::shared_ptr<MatrixDouble> in_mat,
-                               boost::shared_ptr<MatrixDouble> out_mat,
-                               boost::shared_ptr<MatrixDouble> d_mat)
+  DEPRECATED OpTensorTimesSymmetricTensor(const std::string field_name,
+                                          boost::shared_ptr<MatrixDouble> in_mat,
+                                          boost::shared_ptr<MatrixDouble> out_mat,
+                                          boost::shared_ptr<MatrixDouble> d_mat)
       : UserOp(field_name, OPROW), inMat(in_mat), outMat(out_mat), dMat(d_mat) {
     // Only is run for vertices
     std::fill(&doEntities[MBEDGE], &doEntities[MBMAXTYPE], false);
