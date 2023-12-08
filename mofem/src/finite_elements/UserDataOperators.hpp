@@ -1943,9 +1943,6 @@ struct OpTensorTimesSymmetricTensor
       THROW_MESSAGE("Pointer for tensor mat is null");
   }
 
-  /**
-   * @deprecated Do not use this constructor
-  */
   OpTensorTimesSymmetricTensor(boost::shared_ptr<MatrixDouble> in_mat,
                                boost::shared_ptr<MatrixDouble> out_mat,
                                boost::shared_ptr<MatrixDouble> d_mat)
