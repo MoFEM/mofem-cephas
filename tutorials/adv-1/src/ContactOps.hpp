@@ -868,7 +868,8 @@ MoFEMErrorCode opFactoryDomainRhs(
   auto div_stress_ptr = boost::make_shared<MatrixDouble>();
   auto contact_stress_ptr = boost::make_shared<MatrixDouble>();
 
-  auto jacobian = [&](const double r, const double, const double) {
+  auto jacobian = [is_axisymmetric](const double r, const double,
+                                    const double) {
     if (is_axisymmetric)
       return 2. * M_PI * r;
     else
@@ -963,7 +964,8 @@ MoFEMErrorCode opFactoryBoundaryToDomainLhs(
   using OpLambdaGraULhsSide = OpMixLhsSide<OpLambdaGraULhs>;
 
   auto unity = []() { return 1; };
-  auto jacobian = [&](const double r, const double, const double) {
+  auto jacobian = [is_axisymmetric](const double r, const double,
+                                    const double) {
     if (is_axisymmetric)
       return 2. * M_PI * r;
     else
