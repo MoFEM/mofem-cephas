@@ -484,9 +484,9 @@ auto createCommonPlasticOps(
   } else {
 
     pip.push_back(new OpSymmetrizeTensor<SPACE_DIM>(
-        u, common_plastic_ptr->mGradPtr, common_plastic_ptr->mStrainPtr));
+        common_plastic_ptr->mGradPtr, common_plastic_ptr->mStrainPtr));
     pip.push_back(new typename P::template OpPlasticStress<DIM, I>(
-        u, common_plastic_ptr, m_D_ptr));
+        common_plastic_ptr, m_D_ptr));
   }
 
   pip.push_back(new typename P::template OpCalculatePlasticSurface<DIM, I>(

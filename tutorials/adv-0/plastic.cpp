@@ -144,6 +144,10 @@ kinematic_hardening(FTensor::Tensor2_symmetric<T, DIM> &t_plastic_strain,
   FTensor::Index<'i', DIM> i;
   FTensor::Index<'j', DIM> j;
   FTensor::Tensor2_symmetric<double, DIM> t_alpha;
+  if (C1_k < std::numeric_limits<double>::epsilon()) {
+    t_alpha(i, j) = 0;
+    return t_alpha;
+  }
   t_alpha(i, j) = C1_k * t_plastic_strain(i, j);
   return t_alpha;
 }
