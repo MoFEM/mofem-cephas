@@ -240,7 +240,7 @@ struct Monitor : public FEMethod {
 
       CHK_THROW_MESSAGE(
           (opFactoryCalculateTraction<SPACE_DIM, GAUSS, BoundaryEleOp>(
-              integrate_traction->getOpPtrVector(), "SIGMA")),
+              integrate_traction->getOpPtrVector(), "SIGMA", is_axisymmetric)),
           "push operators to calculate traction");
 
       return integrate_traction;

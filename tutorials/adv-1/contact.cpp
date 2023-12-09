@@ -127,8 +127,8 @@ double alpha_damping = 0;
 
 double scale = 1.;
 
-bool use_mfront = false;
-bool is_axisymmetric = false;
+bool use_mfront = true;
+bool is_axisymmetric = true;
 
 namespace ContactOps {
 double cn_contact = 0.1;
@@ -392,7 +392,7 @@ MoFEMErrorCode Contact::createCommonData() {
 
     MOFEM_LOG("CONTACT", Sev::inform) << "alpha_damping " << alpha_damping;
 
-    PetscBool is_scale = PETSC_TRUE;
+    PetscBool is_scale = PETSC_FALSE;
     CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-is_scale", &is_scale,
                                PETSC_NULL);
     if (is_scale) {
