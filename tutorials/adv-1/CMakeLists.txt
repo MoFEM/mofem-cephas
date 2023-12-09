@@ -82,32 +82,6 @@ if(IS_MFRONT_MOD)
     mfront_lib_all)
 endif(IS_MFRONT_MOD)
 
-# target_link_libraries(contact_2d
-#   users_modules
-#   mofem_finite_elements
-#   mofem_interfaces
-#   mofem_multi_indices
-#   mofem_petsc
-#   mofem_approx
-#   mofem_third_party
-#   mofem_matrix_function
-#   mofem_post_proc
-#   mofem_boundary_conditions
-# ${MoFEM_PROJECT_LIBS})
-
-# target_link_libraries(contact_3d
-#   users_modules
-#   mofem_finite_elements
-#   mofem_interfaces
-#   mofem_multi_indices
-#   mofem_petsc
-#   mofem_approx
-#   mofem_third_party
-#   mofem_matrix_function
-#   mofem_post_proc
-#   mofem_boundary_conditions
-# ${MoFEM_PROJECT_LIBS})
-
 add_test(
   contact_2d
   ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1

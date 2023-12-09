@@ -9,15 +9,13 @@ r = 1
 
 
 def sdf(t, x, y, z, tx, ty, tz):
-  return CylinderZ.sDF(r, 0, -0.5-r, x, y)
-
+  return Sphere.sDF(r, 0, r - 0.1, 0, x, y, z)
 
 def grad_sdf(t, x, y, z, tx, ty, tz):
-  return CylinderZ.gradSdf(0, -0.5-r, x, y)
-
+  return Sphere.gradSdf(0, r - 0.1, 0, x, y, z)
 
 def hess_sdf(t, x, y, z, tx, ty, tz):
-  return CylinderZ.hessSdf(0, -0.5-r, x, y)
+  return Sphere.hessSdf(0, r - 0.1, 0, x, y, z)
 
 # Indenters
 
