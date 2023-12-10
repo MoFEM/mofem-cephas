@@ -237,7 +237,7 @@ private:
 
   /**
    * @brief Used to execute inital mesh approximation while mesh refinement
-   * 
+   *
    */
   struct WrapperClassInitalSolution : public WrapperClass {
 
@@ -280,21 +280,21 @@ private:
       return 0.05 * (*maxPtr);
     }
 
-    private:
-      boost::shared_ptr<double> maxPtr;
+  private:
+    boost::shared_ptr<double> maxPtr;
   };
 
   /**
    * @brief Use peculated errors on all levels while mesh projection
-   * 
+   *
    */
   struct WrapperClassErrorProjection : public WrapperClass {
-      WrapperClassErrorProjection(boost::shared_ptr<double> max_ptr)
-          : maxPtr(max_ptr) {}
+    WrapperClassErrorProjection(boost::shared_ptr<double> max_ptr)
+        : maxPtr(max_ptr) {}
 
-      MoFEMErrorCode setBits(LevelSet &level_set, int l) { return 0; };
-      MoFEMErrorCode runCalcs(LevelSet &level_set, int l) { return 0; }
-      MoFEMErrorCode setAggregateBit(LevelSet &level_set, int l) {
+    MoFEMErrorCode setBits(LevelSet &level_set, int l) { return 0; };
+    MoFEMErrorCode runCalcs(LevelSet &level_set, int l) { return 0; }
+    MoFEMErrorCode setAggregateBit(LevelSet &level_set, int l) {
       auto bit_mng = level_set.mField.getInterface<BitRefManager>();
       auto set_bit = [](auto l) { return BitRefLevel().set(l); };
       MoFEMFunctionBegin;
@@ -312,7 +312,6 @@ private:
 
   private:
     boost::shared_ptr<double> maxPtr;
-
   };
 
   MoFEMErrorCode refineMesh(WrapperClass &&wp);
@@ -345,7 +344,6 @@ private:
 
 private:
   boost::shared_ptr<double> maxPtr;
-
 };
 
 template <>
@@ -377,8 +375,8 @@ MoFEMErrorCode LevelSet::runProblem() {
   CHKERR refineMesh(WrapperClassInitalSolution(maxPtr));
 
   auto simple = mField.getInterface<Simple>();
-  simple->getBitRefLevel() = BitRefLevel().set(skeleton_bit) |
-                             BitRefLevel().set(aggregate_bit);
+  simple->getBitRefLevel() =
+      BitRefLevel().set(skeleton_bit) | BitRefLevel().set(aggregate_bit);
   simple->getBitRefLevelMask() = BitRefLevel().set();
   simple->reSetUp(true);
 
@@ -506,7 +504,7 @@ MoFEMErrorCode LevelSet::readMesh() {
     Range level0;
     CHKERR bit_mng->getEntitiesByRefLevel(BitRefLevel().set(0),
                                           BitRefLevel().set(), level0);
-                                          
+
     CHKERR bit_mng->setNthBitRefLevel(level0, current_bit, true);
     CHKERR bit_mng->setNthBitRefLevel(level0, aggregate_bit, true);
     CHKERR bit_mng->setNthBitRefLevel(level0, skeleton_bit, true);
