@@ -125,7 +125,7 @@ private:
    *
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode setupProblem();
+  MoFEMErrorCode setUpProblem();
 
   /**
    * @brief push operators to integrate operators on domain
@@ -359,7 +359,7 @@ double LevelSet::get_level_set(const double x, const double y, const double z) {
 MoFEMErrorCode LevelSet::runProblem() {
   MoFEMFunctionBegin;
   CHKERR readMesh();
-  CHKERR setupProblem();
+  CHKERR setUpProblem();
 
   if constexpr (debug) {
     CHKERR testSideFE();
@@ -530,7 +530,7 @@ MoFEMErrorCode LevelSet::readMesh() {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode LevelSet::setupProblem() {
+MoFEMErrorCode LevelSet::setUpProblem() {
   MoFEMFunctionBegin;
   auto simple = mField.getInterface<Simple>();
   // Scalar fields and vector field is tested. Add more fields, i.e. vector
