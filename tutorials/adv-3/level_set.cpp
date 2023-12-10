@@ -14,19 +14,21 @@ using namespace MoFEM;
 static char help[] = "...\n\n";
 
 //! [Define dimension]
-constexpr int SPACE_DIM = EXECUTABLE_DIMENSION;
+constexpr int FE_DIM = EXECUTABLE_DIMENSION;
+constexpr int SPACE_DIM = 3;
+
 constexpr AssemblyType A = AssemblyType::PETSC; //< selected assembly type
 constexpr IntegrationType I =
     IntegrationType::GAUSS; //< selected integration type
 
 using EntData = EntitiesFieldData::EntData;
-using DomainEle = PipelineManager::ElementsAndOpsByDim<SPACE_DIM>::DomainEle;
+using DomainEle = PipelineManager::ElementsAndOpsByDim<FE_DIM>::DomainEle;
 using DomianParentEle =
-    PipelineManager::ElementsAndOpsByDim<SPACE_DIM>::DomianParentEle;
+    PipelineManager::ElementsAndOpsByDim<FE_DIM>::DomianParentEle;
 using BoundaryEle =
-    PipelineManager::ElementsAndOpsByDim<SPACE_DIM>::BoundaryEle;
+    PipelineManager::ElementsAndOpsByDim<FE_DIM>::BoundaryEle;
 using FaceSideEle =
-    PipelineManager::ElementsAndOpsByDim<SPACE_DIM>::FaceSideEle;
+    PipelineManager::ElementsAndOpsByDim<FE_DIM>::FaceSideEle;
 
 using DomainEleOp = DomainEle::UserDataOperator;
 using BoundaryEleOp = BoundaryEle::UserDataOperator;
@@ -34,14 +36,14 @@ using FaceSideEleOp = FaceSideEle::UserDataOperator;
 
 using PostProcEle = PostProcBrokenMeshInMoab<DomainEle>;
 
-constexpr FieldSpace potential_velocity_space = SPACE_DIM == 2 ? H1 : HCURL;
-constexpr size_t potential_velocity_field_dim = SPACE_DIM == 2 ? 1 : 3;
+constexpr FieldSpace potential_velocity_space = FE_DIM == 2 ? H1 : HCURL;
+constexpr size_t potential_velocity_field_dim = FE_DIM == 2 ? 1 : 3;
 
-#ifndef NDEBUG
-constexpr bool debug = false;
-#else
+// #ifndef NDEBUG
+// constexpr bool debug = false;
+// #else
 constexpr bool debug = true;
-#endif
+// #endif
 
 constexpr int nb_levels = 3; //< number of refinement levels
 
@@ -99,13 +101,13 @@ private:
    * \note function define a vector velocity potential field, curl of potential
    * field gives velocity, thus velocity is divergence free.
    *
-   * @tparam SPACE_DIM
+   * @tparam FE_DIM
    * @param x
    * @param y
    * @param z
    * @return auto
    */
-  template <int SPACE_DIM>
+  template <int FE_DIM>
   static double get_velocity_potential(double x, double y, double z);
 
   /**
@@ -206,7 +208,7 @@ private:
    */
   MoFEMErrorCode initialiseFieldVelocity(
       boost::function<double(double, double, double)> vel_fun =
-          get_velocity_potential<SPACE_DIM>);
+          get_velocity_potential<FE_DIM>);
 
   /**
    * @brief dg level set projection
@@ -229,12 +231,12 @@ private:
    */
   struct WrapperClass {
     WrapperClass() = default;
-    
+
     /**
      * @brief Set bit ref level to problem
-    */
+     */
     virtual MoFEMErrorCode setBits(LevelSet &level_set, int l) = 0;
-    
+
     /**
      * @brief Run calculations
      */
@@ -533,7 +535,7 @@ MoFEMErrorCode LevelSet::readMesh() {
     if constexpr (debug) {
       auto proc_str = boost::lexical_cast<std::string>(mField.get_comm_rank());
       CHKERR bit_mng->writeBitLevelByDim(
-          BitRefLevel().set(0), BitRefLevel().set(), SPACE_DIM,
+          BitRefLevel().set(0), BitRefLevel().set(), FE_DIM,
           (proc_str + "level_base.vtk").c_str(), "VTK", "");
     }
 #endif
@@ -895,7 +897,7 @@ ForcesAndSourcesCore::UserDataOperator *
 LevelSet::getZeroLevelVelOp(boost::shared_ptr<MatrixDouble> vel_ptr) {
   auto get_parent_vel_this = [&]() {
     auto parent_fe_ptr = boost::make_shared<DomianParentEle>(mField);
-    CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+    CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(
         parent_fe_ptr->getOpPtrVector(), {potential_velocity_space});
     parent_fe_ptr->getOpPtrVector().push_back(
         new OpCalculateHcurlVectorCurl<potential_velocity_field_dim, SPACE_DIM>(
@@ -948,7 +950,7 @@ MoFEMErrorCode LevelSet::pushOpDomain() {
   auto l_dot_ptr = boost::make_shared<VectorDouble>();
   auto vel_ptr = boost::make_shared<MatrixDouble>();
 
-  CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+  CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(
       pip->getOpDomainRhsPipeline(), {potential_velocity_space, L2});
   pip->getOpDomainRhsPipeline().push_back(
       new OpCalculateScalarFieldValues("L", l_ptr));
@@ -958,7 +960,7 @@ MoFEMErrorCode LevelSet::pushOpDomain() {
   pip->getOpDomainRhsPipeline().push_back(
       new OpRhsDomain("L", l_ptr, l_dot_ptr, vel_ptr));
 
-  CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+  CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(
       pip->getOpDomainLhsPipeline(), {potential_velocity_space, L2});
   pip->getOpDomainLhsPipeline().push_back(getZeroLevelVelOp(vel_ptr));
   pip->getOpDomainLhsPipeline().push_back(new OpLhsDomain("L", vel_ptr));
@@ -979,8 +981,8 @@ LevelSet::getSideFE(boost::shared_ptr<SideData> side_data_ptr) {
         : FaceSideEleOp("L", "L", FaceSideEleOp::OPROWCOL),
           sideDataPtr(side_data_ptr) {
       std::fill(&doEntities[MBVERTEX], &doEntities[MBMAXTYPE], false);
-      for (auto t = moab::CN::TypeDimensionMap[SPACE_DIM].first;
-           t <= moab::CN::TypeDimensionMap[SPACE_DIM].second; ++t)
+      for (auto t = moab::CN::TypeDimensionMap[FE_DIM].first;
+           t <= moab::CN::TypeDimensionMap[FE_DIM].second; ++t)
         doEntities[t] = true;
       sYmm = false;
     }
@@ -989,8 +991,8 @@ LevelSet::getSideFE(boost::shared_ptr<SideData> side_data_ptr) {
                           EntityType col_type, EntData &row_data,
                           EntData &col_data) {
       MoFEMFunctionBegin;
-      if ((CN::Dimension(row_type) == SPACE_DIM) &&
-          (CN::Dimension(col_type) == SPACE_DIM)) {
+      if ((CN::Dimension(row_type) == FE_DIM) &&
+          (CN::Dimension(col_type) == FE_DIM)) {
 
         auto reset = [&](auto nb_in_loop) {
           sideDataPtr->feSideHandle[nb_in_loop] = 0;
@@ -1028,8 +1030,8 @@ LevelSet::getSideFE(boost::shared_ptr<SideData> side_data_ptr) {
         : DomainEleOp("L", "L", DomainEleOp::OPROWCOL),
           sideDataPtr(side_data_ptr), lPtr(l_ptr), velPtr(vel_ptr) {
       std::fill(&doEntities[MBVERTEX], &doEntities[MBMAXTYPE], false);
-      for (auto t = moab::CN::TypeDimensionMap[SPACE_DIM].first;
-           t <= moab::CN::TypeDimensionMap[SPACE_DIM].second; ++t)
+      for (auto t = moab::CN::TypeDimensionMap[FE_DIM].first;
+           t <= moab::CN::TypeDimensionMap[FE_DIM].second; ++t)
         doEntities[t] = true;
       sYmm = false;
     }
@@ -1039,8 +1041,8 @@ LevelSet::getSideFE(boost::shared_ptr<SideData> side_data_ptr) {
                           EntData &col_data) {
       MoFEMFunctionBegin;
 
-      if ((CN::Dimension(row_type) == SPACE_DIM) &&
-          (CN::Dimension(col_type) == SPACE_DIM)) {
+      if ((CN::Dimension(row_type) == FE_DIM) &&
+          (CN::Dimension(col_type) == FE_DIM)) {
         const auto nb_in_loop = sideDataPtr->currentFESide;
         sideDataPtr->feSideHandle[nb_in_loop] = getFEEntityHandle();
         sideDataPtr->indicesRowSideMap[nb_in_loop] = row_data.getIndices();
@@ -1099,7 +1101,7 @@ LevelSet::getSideFE(boost::shared_ptr<SideData> side_data_ptr) {
   // Calculate fields on param mesh bit element
   auto get_parent_this = [&]() {
     auto parent_fe_ptr = boost::make_shared<DomianParentEle>(mField);
-    CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+    CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(
         parent_fe_ptr->getOpPtrVector(), {potential_velocity_space, L2});
     parent_fe_ptr->getOpPtrVector().push_back(
         new OpCalculateScalarFieldValues("L", l_ptr));
@@ -1257,7 +1259,7 @@ std::tuple<double, Tag> LevelSet::evaluateError() {
   auto clear_tags = [&]() {
     MoFEMFunctionBegin;
     Range fe_ents;
-    CHKERR mField.get_moab().get_entities_by_dimension(0, SPACE_DIM, fe_ents);
+    CHKERR mField.get_moab().get_entities_by_dimension(0, FE_DIM, fe_ents);
     double zero;
     CHKERR mField.get_moab().tag_clear_data(th_error, fe_ents, &zero);
     MoFEMFunctionReturn(0);
@@ -1508,7 +1510,7 @@ MoFEMErrorCode LevelSet::testSideFE() {
   auto side_data_ptr = boost::make_shared<SideData>();
   auto side_fe_ptr = getSideFE(side_data_ptr);
 
-  CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+  CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(
       vol_fe->getOpPtrVector(), {potential_velocity_space, L2});
   vol_fe->getOpPtrVector().push_back(
       new OpCalculateScalarFieldValues("L", l_ptr));
@@ -1700,9 +1702,9 @@ MoFEMErrorCode LevelSet::initialiseFieldLevelSet(
   pip->getDomainLhsFE()->exeTestHook = test_bit_ele;
   pip->getDomainRhsFE()->exeTestHook = test_bit_ele;
 
-  CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+  CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(
       pip->getOpDomainRhsPipeline(), {potential_velocity_space, L2});
-  CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+  CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(
       pip->getOpDomainLhsPipeline(), {potential_velocity_space, L2});
   pip->getOpDomainLhsPipeline().push_back(new OpMassLL("L", "L"));
   pip->getOpDomainRhsPipeline().push_back(new OpSourceL("L", level_fun));
@@ -1744,7 +1746,7 @@ MoFEMErrorCode LevelSet::initialiseFieldLevelSet(
 
     auto l_vec = boost::make_shared<VectorDouble>();
     auto l_grad_mat = boost::make_shared<MatrixDouble>();
-    CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+    CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(
         post_proc_fe->getOpPtrVector(), {potential_velocity_space, L2});
     post_proc_fe->getOpPtrVector().push_back(
         new OpCalculateScalarFieldValues("L", l_vec));
@@ -1820,9 +1822,9 @@ MoFEMErrorCode LevelSet::initialiseFieldVelocity(
   pip->getDomainLhsFE()->exeTestHook = test_bit;
   pip->getDomainRhsFE()->exeTestHook = test_bit;
 
-  CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+  CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(
       pip->getOpDomainLhsPipeline(), {potential_velocity_space, L2});
-  CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+  CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(
       pip->getOpDomainRhsPipeline(), {potential_velocity_space, L2});
 
   pip->getOpDomainLhsPipeline().push_back(new OpMassVV("V", "V"));
@@ -1847,12 +1849,13 @@ MoFEMErrorCode LevelSet::initialiseFieldVelocity(
         boost::make_shared<PostProcBrokenMeshInMoab<DomainEle>>(mField);
     post_proc_fe->exeTestHook = test_bit;
 
-    CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
-        post_proc_fe->getOpPtrVector(), {potential_velocity_space});
+    if constexpr (FE_DIM == 2) {
 
-    using OpPPMap = OpPostProcMapInMoab<SPACE_DIM, SPACE_DIM>;
+      CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(
+          post_proc_fe->getOpPtrVector(), {potential_velocity_space});
 
-    if constexpr (SPACE_DIM == 2) {
+      using OpPPMap = OpPostProcMapInMoab<SPACE_DIM, SPACE_DIM>;
+
       auto l_vec = boost::make_shared<VectorDouble>();
       auto potential_vec = boost::make_shared<VectorDouble>();
       auto velocity_mat = boost::make_shared<MatrixDouble>();
@@ -1943,7 +1946,7 @@ MoFEMErrorCode LevelSet::solveAdvection() {
     auto l_vec = boost::make_shared<VectorDouble>();
     auto vel_ptr = boost::make_shared<MatrixDouble>();
 
-    CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+    CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(
         post_proc_fe->getOpPtrVector(), {H1});
     post_proc_fe->getOpPtrVector().push_back(
         new OpCalculateScalarFieldValues("L", l_vec));
@@ -2132,7 +2135,7 @@ MoFEMErrorCode LevelSet::refineMesh(WrapperClass &&wp) {
   // select domain elements to refine by threshold
   auto get_refined_elements_meshset = [&](auto bit, auto mask) {
     Range fe_ents;
-    CHKERR bit_mng->getEntitiesByDimAndRefLevel(bit, mask, SPACE_DIM, fe_ents);
+    CHKERR bit_mng->getEntitiesByDimAndRefLevel(bit, mask, FE_DIM, fe_ents);
 
     Tag th_error;
     CHK_MOAB_THROW(mField.get_moab().tag_get_handle("Error", th_error),
@@ -2168,7 +2171,7 @@ MoFEMErrorCode LevelSet::refineMesh(WrapperClass &&wp) {
     auto get_neighbours_by_bridge_vertices = [&](auto &&ents) {
       Range verts;
       CHKERR mField.get_moab().get_connectivity(ents, verts, true);
-      CHKERR mField.get_moab().get_adjacencies(verts, SPACE_DIM, false, ents,
+      CHKERR mField.get_moab().get_adjacencies(verts, FE_DIM, false, ents,
                                                moab::Interface::UNION);
       CHKERR mField.getInterface<CommInterface>()->synchroniseEntities(ents);
       return ents;
@@ -2198,7 +2201,7 @@ MoFEMErrorCode LevelSet::refineMesh(WrapperClass &&wp) {
     // get entities in "l-1" level
     Range level_ents;
     CHKERR bit_mng->getEntitiesByDimAndRefLevel(
-        set_bit(start_bit + l - 1), BitRefLevel().set(), SPACE_DIM, level_ents);
+        set_bit(start_bit + l - 1), BitRefLevel().set(), FE_DIM, level_ents);
     // select entities to refine
     fe_to_refine = intersect(level_ents, fe_to_refine);
     // select entities not to refine
@@ -2209,7 +2212,7 @@ MoFEMErrorCode LevelSet::refineMesh(WrapperClass &&wp) {
     bit_mng->updateRangeByChildren(fe_to_refine, fe_to_refine_children);
     // add entities to to level "l"
     fe_to_refine_children =
-        fe_to_refine_children.subset_by_dimension(SPACE_DIM);
+        fe_to_refine_children.subset_by_dimension(FE_DIM);
     level_ents.merge(fe_to_refine_children);
 
     auto fix_neighbour_level = [&](auto ll) {
@@ -2233,7 +2236,7 @@ MoFEMErrorCode LevelSet::refineMesh(WrapperClass &&wp) {
       }
       // get adjacents to parents
       Range skin_adj_ents;
-      CHKERR mField.get_moab().get_adjacencies(skin_parents, SPACE_DIM, false,
+      CHKERR mField.get_moab().get_adjacencies(skin_parents, FE_DIM, false,
                                                skin_adj_ents,
                                                moab::Interface::UNION);
       CHKERR bit_mng->filterEntitiesByRefLevel(bad_bit, BitRefLevel().set(),
@@ -2254,13 +2257,13 @@ MoFEMErrorCode LevelSet::refineMesh(WrapperClass &&wp) {
         level_ents);
 
     // get lower dimension entities for level "l"
-    for (auto d = 0; d != SPACE_DIM; ++d) {
+    for (auto d = 0; d != FE_DIM; ++d) {
       if (d == 0) {
         CHKERR mField.get_moab().get_connectivity(
-            level_ents.subset_by_dimension(SPACE_DIM), level_ents, true);
+            level_ents.subset_by_dimension(FE_DIM), level_ents, true);
       } else {
         CHKERR mField.get_moab().get_adjacencies(
-            level_ents.subset_by_dimension(SPACE_DIM), d, false, level_ents,
+            level_ents.subset_by_dimension(FE_DIM), d, false, level_ents,
             moab::Interface::UNION);
       }
     }
@@ -2274,7 +2277,7 @@ MoFEMErrorCode LevelSet::refineMesh(WrapperClass &&wp) {
 #ifndef NDEBUG
     auto proc_str = boost::lexical_cast<std::string>(mField.get_comm_rank());
     CHKERR bit_mng->writeBitLevelByDim(
-        set_bit(start_bit + l), BitRefLevel().set(), SPACE_DIM,
+        set_bit(start_bit + l), BitRefLevel().set(), FE_DIM,
         (boost::lexical_cast<std::string>(l) + "_" + proc_str + "_ref_mesh.vtk")
             .c_str(),
         "VTK", "");
@@ -2291,13 +2294,13 @@ MoFEMErrorCode LevelSet::refineMesh(WrapperClass &&wp) {
     Range level_edges;
     CHKERR bit_mng->getEntitiesByDimAndRefLevel(set_bit(start_bit + l),
                                                 BitRefLevel().set(),
-                                                SPACE_DIM - 1, level_edges);
+                                                FE_DIM - 1, level_edges);
 
     // get parent of entities of level "l"
     Range level_edges_parents;
     CHKERR bit_mng->updateRangeByParent(level_edges, level_edges_parents);
     level_edges_parents =
-        level_edges_parents.subset_by_dimension(SPACE_DIM - 1);
+        level_edges_parents.subset_by_dimension(FE_DIM - 1);
     CHKERR bit_mng->filterEntitiesByRefLevel(
         set_bit(start_bit + l), BitRefLevel().set(), level_edges_parents);
 
@@ -2307,7 +2310,7 @@ MoFEMErrorCode LevelSet::refineMesh(WrapperClass &&wp) {
 
     // add adjacent domain entities
     CHKERR mField.get_moab().get_adjacencies(unite(parent_skeleton, skeleton),
-                                             SPACE_DIM, false, skeleton,
+                                             FE_DIM, false, skeleton,
                                              moab::Interface::UNION);
 
     // set levels
@@ -2394,11 +2397,11 @@ MoFEMErrorCode LevelSet::dgProjection(const int projection_bit) {
 
   Range current_ents; // ents used to do calculations
   CHKERR bit_mng->getEntitiesByDimAndRefLevel(BitRefLevel().set(current_bit),
-                                              BitRefLevel().set(), SPACE_DIM,
+                                              BitRefLevel().set(), FE_DIM,
                                               current_ents);
   Range prj_ents; // ents from which data are projected
   CHKERR bit_mng->getEntitiesByDimAndRefLevel(BitRefLevel().set(projection_bit),
-                                              BitRefLevel().set(), SPACE_DIM,
+                                              BitRefLevel().set(), FE_DIM,
                                               prj_ents);
   for (auto l = 0; l != nb_levels; ++l) {
     CHKERR bit_mng->updateRangeByParent(prj_ents, prj_ents);
@@ -2433,7 +2436,7 @@ MoFEMErrorCode LevelSet::dgProjection(const int projection_bit) {
       true); // remove all DOFs which are not
              // on current bit. This case works for L2 space
 
-  CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+  CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(
       lhs_fe->getOpPtrVector(), {potential_velocity_space, L2});
   lhs_fe->getOpPtrVector().push_back(
       new OpMassLL("L", "L")); // Assemble projection matrix
@@ -2442,7 +2445,7 @@ MoFEMErrorCode LevelSet::dgProjection(const int projection_bit) {
 
   // This assumes that projection mesh is finer, current mesh is coarsened.
   auto set_prj_from_child = [&](auto rhs_fe_prj) {
-    CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+    CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(
         rhs_fe_prj->getOpPtrVector(), {potential_velocity_space, L2});
 
     // Evaluate field value on projection mesh
@@ -2569,7 +2572,7 @@ MoFEMErrorCode LevelSet::dgProjection(const int projection_bit) {
 
     auto l_vec = boost::make_shared<VectorDouble>();
     auto l_grad_mat = boost::make_shared<MatrixDouble>();
-    CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+    CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(
         post_proc_fe->getOpPtrVector(), {potential_velocity_space, L2});
     post_proc_fe->getOpPtrVector().push_back(
         new OpCalculateScalarFieldValues("L", l_vec));
