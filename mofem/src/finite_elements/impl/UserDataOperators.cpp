@@ -884,4 +884,54 @@ OpCalculateHcurlVectorCurl<1, 2>::doWork(int side, EntityType type,
   MoFEMFunctionReturn(0);
 }
 
+OpCalculateHcurlVectorCurl<1, 3>::OpCalculateHcurlVectorCurl(
+    const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
+    const EntityType zero_type, const int zero_side)
+    : FaceElementForcesAndSourcesCore::UserDataOperator(
+          field_name, FaceElementForcesAndSourcesCore::UserDataOperator::OPROW),
+      dataPtr(data_ptr), zeroType(zero_type), zeroSide(zero_side) {
+  if (!dataPtr)
+    THROW_MESSAGE("Pointer is not set");
+}
+
+MoFEMErrorCode
+OpCalculateHcurlVectorCurl<1, 3>::doWork(int side, EntityType type,
+                                         EntitiesFieldData::EntData &data) {
+  MoFEMFunctionBegin;
+  const auto nb_integration_points = getGaussPts().size2();
+  if (type == zeroType && side == zeroSide) {
+    dataPtr->resize(3, nb_integration_points, false);
+    dataPtr->clear();
+  }
+  const auto nb_dofs = data.getFieldData().size();
+  if (!nb_dofs)
+    MoFEMFunctionReturnHot(0);
+
+  FTensor::Index<'i', 3> i;
+  FTensor::Index<'j', 3> j;
+  FTensor::Index<'k', 3> k;
+
+  const auto nb_base_functions = data.getN().size2();
+  auto t_n_diff_hcurl = data.getFTensor1DiffN<3>();
+  auto t_data = getFTensor1FromMat<3>(*dataPtr);
+  auto t_normal = getFTensor1NormalsAtGaussPts();
+  for (auto gg = 0; gg != nb_integration_points; ++gg) {
+    auto t_dof = data.getFTensor0FieldData();
+    auto nrm = t_normal.l2();
+    int bb = 0;
+    for (; bb != nb_dofs; ++bb) {
+      t_data(k) += (t_dof / nrm) *
+                   ((levi_civita(i, j, k) * t_normal(i)) * t_n_diff_hcurl(j));
+      ++t_n_diff_hcurl;
+      ++t_dof;
+    }
+    for (; bb < nb_base_functions; ++bb)
+      ++t_n_diff_hcurl;
+    ++t_data;
+    ++t_normal;
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
 } // namespace MoFEM

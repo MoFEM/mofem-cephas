@@ -2578,6 +2578,31 @@ private:
 };
 
 /**
+ * @brief Calculate curl of vector field
+ * @ingroup mofem_forces_and_sources_user_data_operators
+ *
+ * @tparam Field_Dim dimension of field
+ * @tparam Space_Dim dimension of space
+ */
+template <>
+struct OpCalculateHcurlVectorCurl<1, 3>
+    : public FaceElementForcesAndSourcesCore::UserDataOperator {
+
+  OpCalculateHcurlVectorCurl(const std::string field_name,
+                             boost::shared_ptr<MatrixDouble> data_ptr,
+                             const EntityType zero_type = MBVERTEX,
+                             const int zero_side = 0);
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        EntitiesFieldData::EntData &data);
+
+private:
+  boost::shared_ptr<MatrixDouble> dataPtr;
+  const EntityHandle zeroType;
+  const int zeroSide;
+};
+
+/**
  * @brief Calculate tenor field using vectorial base, i.e. Hdiv/Hcurl
  * \ingroup mofem_forces_and_sources_user_data_operators
  *
