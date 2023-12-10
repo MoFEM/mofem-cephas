@@ -157,7 +157,6 @@ int main(int argc, char *argv[]) {
       auto material_grad_mat = boost::make_shared<MatrixDouble>();
       auto material_det_vec = boost::make_shared<VectorDouble>();
 
-      domain_fe->meshPositionsFieldName = "none";
       domain_fe->getOpPtrVector().push_back(
           new OpCalculateVectorFieldGradient<3, 3>("MESH_NODE_POSITIONS",
                                                    material_grad_mat));
