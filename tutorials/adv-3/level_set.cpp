@@ -229,8 +229,21 @@ private:
    */
   struct WrapperClass {
     WrapperClass() = default;
+    
+    /**
+     * @brief Set bit ref level to problem
+    */
     virtual MoFEMErrorCode setBits(LevelSet &level_set, int l) = 0;
+    
+    /**
+     * @brief Run calculations
+     */
     virtual MoFEMErrorCode runCalcs(LevelSet &level_set, int l) = 0;
+
+    /**
+     * @brief Add bit to current element, so it aggregate all previious current
+     * elements
+     */
     virtual MoFEMErrorCode setAggregateBit(LevelSet &level_set, int l) = 0;
     virtual double getThreshold(const double max) = 0;
   };
