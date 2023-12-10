@@ -2379,18 +2379,19 @@ MoFEMErrorCode LevelSet::dgProjection(const int projection_bit) {
   CHKERR DMMoFEMAddSubFieldRow(sub_dm, "L");
   CHKERR DMSetUp(sub_dm);
 
-  Range current_ents;
+  Range current_ents; // ents used to do calculations
   CHKERR bit_mng->getEntitiesByDimAndRefLevel(BitRefLevel().set(current_bit),
                                               BitRefLevel().set(), SPACE_DIM,
                                               current_ents);
-  Range prj_ents;
+  Range prj_ents; // ents from which data are projected
   CHKERR bit_mng->getEntitiesByDimAndRefLevel(BitRefLevel().set(projection_bit),
                                               BitRefLevel().set(), SPACE_DIM,
                                               prj_ents);
   for (auto l = 0; l != nb_levels; ++l) {
     CHKERR bit_mng->updateRangeByParent(prj_ents, prj_ents);
   }
-  current_ents = subtract(current_ents, prj_ents);
+  current_ents = subtract(
+      current_ents, prj_ents); // only crestric to entities needed projection
 
   auto test_mesh_bit = [&](FEMethod *fe_ptr) {
     return fe_ptr->numeredEntFiniteElementPtr->getBitRefLevel().test(
@@ -2404,32 +2405,38 @@ MoFEMErrorCode LevelSet::dgProjection(const int projection_bit) {
     return current_ents.find(fe_ptr->getFEEntityHandle()) != current_ents.end();
   };
 
-  lhs_fe->exeTestHook = test_mesh_bit;
-  rhs_fe_prj->exeTestHook = test_prj_bit;
-  rhs_fe_current->exeTestHook = test_current_bit;
+  lhs_fe->exeTestHook =
+      test_mesh_bit; // that element only is run when current bit is set
+  rhs_fe_prj->exeTestHook =
+      test_prj_bit; // that element is run only when projection bit is set
+  rhs_fe_current->exeTestHook =
+      test_current_bit; // that elemet is only run when current bit is set
 
   BitRefLevel remove_mask = BitRefLevel().set(current_bit);
   remove_mask.flip(); // DOFs which are not on bit_domain_ele should be removed
   CHKERR prb_mng->removeDofsOnEntities(
       "DG_PROJECTION", "L", BitRefLevel().set(), remove_mask, nullptr, 0,
-      MAX_DOFS_ON_ENTITY, 0, 100, NOISY, true);
+      MAX_DOFS_ON_ENTITY, 0, 100, NOISY,
+      true); // remove all DOFs which are not
+             // on current bit. This case works for L2 space
 
   CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
       lhs_fe->getOpPtrVector(), {potential_velocity_space, L2});
-  lhs_fe->getOpPtrVector().push_back(new OpMassLL("L", "L"));
+  lhs_fe->getOpPtrVector().push_back(
+      new OpMassLL("L", "L")); // Assemble projection matrix
 
   auto l_vec = boost::make_shared<VectorDouble>();
 
-  // This assumes that projection mesh is refined, current mesh is coarsened.
+  // This assumes that projection mesh is finer, current mesh is coarsened.
   auto set_prj_from_child = [&](auto rhs_fe_prj) {
     CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
-        rhs_fe_prj->getOpPtrVector(), {potential_velocity_space, L2}); 
+        rhs_fe_prj->getOpPtrVector(), {potential_velocity_space, L2});
 
-    // Evaluate field value on projection mesh      
+    // Evaluate field value on projection mesh
     rhs_fe_prj->getOpPtrVector().push_back(
         new OpCalculateScalarFieldValues("L", l_vec));
 
-    // This element is used to assemble    
+    // This element is used to assemble
     auto get_parent_this = [&]() {
       auto fe_parent_this = boost::make_shared<DomianParentEle>(mField);
       fe_parent_this->getOpPtrVector().push_back(
@@ -2464,7 +2471,6 @@ MoFEMErrorCode LevelSet::dgProjection(const int projection_bit) {
 
   // This assumed that current mesh is refined, and projection mesh is coarser
   auto set_prj_from_parent = [&](auto rhs_fe_current) {
-
     // Evaluate field on coarser element
     auto get_parent_this = [&]() {
       auto fe_parent_this = boost::make_shared<DomianParentEle>(mField);
