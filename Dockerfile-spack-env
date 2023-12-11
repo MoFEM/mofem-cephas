@@ -64,7 +64,7 @@ ENV TARGET=x86_64
 
 # clone spack
 RUN mkdir -p $SPACK_ROOT_DIR && \
-    curl -s -L https://api.github.com/repos/likask/spack/tarball/Workshop23 \
+    curl -s -L https://bitbucket.org/mofem/mofem-spack/get/8f3bd613a479827164b5506181915395d075077e.tar.gz \
     | tar xzC $SPACK_ROOT_DIR --strip 1 && \
     . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
     echo ". $SPACK_ROOT_DIR/share/spack/setup-env.sh" >> ~/.bashrc && \
