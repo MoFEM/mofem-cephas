@@ -29,7 +29,8 @@ RUN cp -r ~/.spack /mofem_install/spack_config_dir && \
   chown -R mofem:mofem /mofem_install/um-*
 
 # Copy static styles for JupyterHub
-RUN cp /mofem_install/jupyter/css/* /usr/local/share/jupyterhub/static/css
+RUN mkdir -p /usr/local/share/jupyterhub/static/css && \
+  cp /mofem_install/jupyter/css/* /usr/local/share/jupyterhub/static/css
 
 WORKDIR $MOFEM_INSTALL_DIR
 
