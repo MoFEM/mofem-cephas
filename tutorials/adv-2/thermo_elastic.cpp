@@ -677,19 +677,21 @@ MoFEMErrorCode ThermoElasticProblem::OPs() {
   auto heat_conductivity_ptr = block_params->getHeatConductivityPtr();
   auto heat_capacity_ptr = block_params->getHeatCapacityPtr();
 
+  // Default time scaling of BCs and sources, from command line arguments
   auto time_scale = boost::make_shared<TimeScale>();
 
+  // Files which define scaling for separate variables, if provided
   auto time_bodyforce_scaling =
-      boost::make_shared<TimeScale>("bodyforce.txt");
+      boost::make_shared<TimeScale>("bodyforce_scale.txt");
   auto time_heatsource_scaling =
-      boost::make_shared<TimeScale>("heatsource.txt");
-  auto time_force_scaling =
-      boost::make_shared<TimeScale>("force_scaling.txt");
-  auto time_temerature_scaling =
-      boost::make_shared<TimeScale>("temperature_scale.txt");
+      boost::make_shared<TimeScale>("heatsource_scale.txt");
+  auto time_temperature_scaling =
+      boost::make_shared<TimeScale>("temperature_bc_scale.txt");
   auto time_displacement_scaling =
-      boost::make_shared<TimeScale>("displacememt_scale.txt");
-  auto time_flux_scaling = boost::make_shared<TimeScale>("flux_scale.txt");
+      boost::make_shared<TimeScale>("displacement_bc_scale.txt");
+  auto time_flux_scaling = boost::make_shared<TimeScale>("flux_bc_scale.txt");
+  auto time_force_scaling =
+      boost::make_shared<TimeScale>("force_bc_scale.txt");
 
   auto add_domain_rhs_ops = [&](auto &pipeline) {
     MoFEMFunctionBegin;
@@ -747,6 +749,7 @@ MoFEMErrorCode ThermoElasticProblem::OPs() {
 
     pipeline.push_back(new OpUnSetBc("FLUX"));
 
+    // Set source terms
     CHKERR DomainNaturalBCRhs::AddFluxToPipeline<OpHeatSource>::add(
         pipeline, mField, "T", {time_scale, time_heatsource_scaling},
         "HEAT_SOURCE", Sev::inform);
@@ -806,13 +809,14 @@ MoFEMErrorCode ThermoElasticProblem::OPs() {
 
     pipeline.push_back(new OpSetBc("FLUX", true, boundary_marker));
 
+    // Set BCs using the least squares imposition
     CHKERR BoundaryNaturalBC::AddFluxToPipeline<OpForce>::add(
         pipeline_mng->getOpBoundaryRhsPipeline(), mField, "U",
         {time_scale, time_force_scaling}, "FORCE", Sev::inform);
 
     CHKERR BoundaryNaturalBC::AddFluxToPipeline<OpTemperatureBC>::add(
         pipeline_mng->getOpBoundaryRhsPipeline(), mField, "FLUX",
-        {time_scale, time_temerature_scaling}, "TEMPERATURE", Sev::inform);
+        {time_scale, time_temperature_scaling}, "TEMPERATURE", Sev::inform);
 
     pipeline.push_back(new OpUnSetBc("FLUX"));
 
@@ -839,6 +843,7 @@ MoFEMErrorCode ThermoElasticProblem::OPs() {
     MoFEMFunctionReturn(0);
   };
 
+  // Set BCs by eliminating degrees of freedom
   auto get_bc_hook_rhs = [&]() {
     EssentialPreProc<DisplacementCubitBcData> hook(
         mField, pipeline_mng->getDomainRhsFE(),
