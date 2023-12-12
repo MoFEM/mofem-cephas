@@ -9,7 +9,7 @@ The lectures are focused on both the mechanical and mathematical aspects.
 The specific topics of this course include saddle point formulations to handle incompressibility constraints, block-solvers, thermo-elasticity, novel multifield formulations for plasticity, contact and incompressible hyperelasticity, and the recent development on the first-order hyperbolic framework for fast-transient solid dynamics. 
 Moreover, we also provide hands-on tutorials for training with MoFEM on these topics.
 
-\note To access hands-on tutorials, you would need to run our Docker container (comprising MoFEM and JupyterHub) on your laptop/workstation/server/cloud. See \ref install_docker_user for installation and usage instructions.
+\note To access hands-on tutorials, you can run our Docker container comprising MoFEM and JupyterHub on your laptop/workstation/server/cloud. See \ref install_docker_user for installation and usage instructions.
 
 \subsection lecture_1 Lecture 1: Mixed Formulation for Incompressible Linear Elasticity
  
@@ -17,7 +17,7 @@ Moreover, we also provide hands-on tutorials for training with MoFEM on these to
 - Mixed formulation and resolution for incompressibility​
 - Taylor-Hood and Crouzeix–Raviart element: stability, energy spaces, the patch test and inf-sup conditions​
 - MoFEM tutorials general code structure​
-- Taylor-Hood and Crouzeix–Raviart elements convergence  for incompressibility​
+- Taylor-Hood and Crouzeix–Raviart elements convergence for incompressibility​
 - Discussion on block solvers
 
 \htmlonly
@@ -30,9 +30,10 @@ PDF slides of the presentation can be found <a href=https://gla-my.sharepoint.co
 
 \subsubsection hands_on_1 Hands-on 1: Jupyter tutorial on mixed incompressible linear elasticity
 
-- Keyword 1
-- Keyword 2
-- Keyword 3
+- Example: Cook's membrane
+- Generating the mesh and setting input parameters
+- Running the analysis and visualising the results
+- Global convergence study
 
 \htmlonly
 <center>
@@ -81,5 +82,26 @@ PDF slides of the presentation can be found <a href=https://gla-my.sharepoint.co
 <iframe width="560" height="315" src="https://www.youtube.com/embed/d1EEJIj-JNk?si=yrcpkeBellD4CToI" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 </center>
 \endhtmlonly
+
+\subsection lectures_3_4 Lectures 3 and 4: Mixed Formulations for Plasticity, Contact and Hyperelasticity
+
+Multifield plasticity:
+- Motivation for multifield plasticity
+- Governing equations of elastoplasticity using a logarithmic strain formulation
+- Multifield formulation for plasticity: theory and numerics​
+- Physics-based block solver
+
+H(div) contact mechanics:
+- H(div) contact mechanics formulation​: stability and efficiency
+- Variational problem statement
+- Virtual work of contact conditions: extension to volume
+- Contact examples
+
+Mixed formulation for large strains and incompressible elasticity
+- Governing equations for large strains and incompressible hyperelasticity
+- Logarithm of stretches and error estimators
+- Approximation spaces for tensorial fields and stabilisation using zero-normal bubble functions
+- Example: Cook's membrane with nearly incompressible material
+- Block solver: Schur complement
 
 */
