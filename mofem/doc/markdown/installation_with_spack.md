@@ -1,4 +1,4 @@
-Installation with Spack (Linux, macOS, HPC) {#install_spack}
+Installation with Spack (Advanced) {#install_spack}
 ==========================================================
 
 Spack is "A flexible package manager supporting multiple versions, configurations, 
@@ -20,7 +20,7 @@ pre-compiled binaries are not available. If you have any problems, feedback or w
 
 The remaining of this article presents a step-by-step guidance with
 comments/explanations on how to install MoFEM using Spack on different
-platforms (Linux, macOS, HPC). However, those who prefer to automise the process of the
+platforms (Linux, macOS, HPC). However, those who prefer to automatise the process of the
 installation can use the following scripts for different purposes:
 
 - For user only (just the binary files): [`install_mofem_user.sh`](scripts/install_mofem_user.sh)
@@ -32,7 +32,7 @@ it from the terminal, for example:
 ./install_mofem_user.sh
 ~~~~~~ 
 
-\note Running the scripts may require user password for sudo privileges.
+\note Running the scripts may require user password for sudo privileges. 
 
 ## Scripts on secure server
 
@@ -123,7 +123,7 @@ cd $HOME/mofem_install
 
 Retrieve Spack for MoFEM:
 ~~~~~~
-git clone -b master https://github.com/likask/spack.git
+git clone -b master  https://bitbucket.org/mofem/mofem-spack.git spack
 ~~~~~~
 
 Initialise Spack's environment variables:
@@ -472,7 +472,7 @@ It is a good idea to put the above lines into your `.bash_profile` or `.bashrc` 
 
 Clone spack:
 ~~~~~
-git clone -b master https://github.com/likask/spack.git
+git clone -b master  https://bitbucket.org/mofem/mofem-spack.git spack
 ~~~~~
 
 and initialise Spack's environment variables (should also be placed into `.bash_profile` or `.bashrc`):

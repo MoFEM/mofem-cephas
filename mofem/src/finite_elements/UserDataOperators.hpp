@@ -418,8 +418,26 @@ MoFEMErrorCode OpCalculateVectorFieldValues_General<
       }
       for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
         auto field_data = data.getFTensor1FieldData<Tensor_Dim>();
-        size_t bb = 0;
-        for (; bb != size; ++bb) {
+
+#ifndef NDEBUG
+          if (field_data.l2() != field_data.l2()) {
+            MOFEM_LOG("SELF", Sev::error) << "field data: " << field_data;
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                    "Wrong number in coefficients");
+          }
+#endif
+
+          size_t bb = 0;
+          for (; bb != size; ++bb) {
+
+#ifndef NDEBUG
+          if (base_function != base_function) {
+            MOFEM_LOG("SELF", Sev::error) << "base finction: " << base_function;
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                    "Wrong number number in base functions");
+          }
+#endif
+
           values_at_gauss_pts(I) += field_data(I) * base_function;
           ++field_data;
           ++base_function;
@@ -1488,8 +1506,28 @@ MoFEMErrorCode OpCalculateVectorFieldGradient_General<
       }
       for (int gg = 0; gg < nb_gauss_pts; ++gg) {
         auto field_data = data.getFTensor1FieldData<Tensor_Dim0>();
+
+#ifndef NDEBUG
+          if (field_data.l2() != field_data.l2()) {
+            MOFEM_LOG("SELF", Sev::error) << "field data " << field_data;
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                    "Wrong number in coefficients");
+          }
+#endif
+
         int bb = 0;
         for (; bb < size; ++bb) {
+#ifndef SINGULARITY
+#ifndef NDEBUG
+          if (diff_base_function.l2() != diff_base_function.l2()) {
+            MOFEM_LOG("SELF", Sev::error)
+                << "diff_base_function: " << diff_base_function;
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                    "Wrong number number in base functions");
+          }
+#endif
+#endif
+
           gradients_at_gauss_pts(I, J) += field_data(I) * diff_base_function(J);
           ++field_data;
           ++diff_base_function;
@@ -3205,28 +3243,18 @@ struct OpInvertMatrix : public ForcesAndSourcesCore::UserDataOperator {
         outPtr(out_ptr), detPtr(det_ptr) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        EntitiesFieldData::EntData &data) {
-    return doWorkImpl(side, type, data, FTensor::Number<DIM>());
-  }
-
+                        EntitiesFieldData::EntData &data);
+                        
 private:
   boost::shared_ptr<MatrixDouble> inPtr;
   boost::shared_ptr<MatrixDouble> outPtr;
   boost::shared_ptr<VectorDouble> detPtr;
 
-  MoFEMErrorCode doWorkImpl(int side, EntityType type,
-                            EntitiesFieldData::EntData &data,
-                            const FTensor::Number<3> &);
-
-  MoFEMErrorCode doWorkImpl(int side, EntityType type,
-                            EntitiesFieldData::EntData &data,
-                            const FTensor::Number<2> &);
 };
 
 template <int DIM>
-MoFEMErrorCode OpInvertMatrix<DIM>::doWorkImpl(int side, EntityType type,
-                                               EntitiesFieldData::EntData &data,
-                                               const FTensor::Number<3> &) {
+MoFEMErrorCode OpInvertMatrix<DIM>::doWork(int side, EntityType type,
+                                           EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   if (!inPtr)
@@ -3242,10 +3270,10 @@ MoFEMErrorCode OpInvertMatrix<DIM>::doWorkImpl(int side, EntityType type,
   // Calculate determinant
   {
     detPtr->resize(nb_integration_pts, false);
-    auto t_in = getFTensor2FromMat<3, 3>(*inPtr);
+    auto t_in = getFTensor2FromMat<DIM, DIM>(*inPtr);
     auto t_det = getFTensor0FromVec(*detPtr);
     for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
-      determinantTensor3by3(t_in, t_det);
+      t_det = determinantTensor(t_in);
       ++t_in;
       ++t_det;
     }
@@ -3254,56 +3282,11 @@ MoFEMErrorCode OpInvertMatrix<DIM>::doWorkImpl(int side, EntityType type,
   // Invert jacobian
   if (outPtr) {
     outPtr->resize(nb_rows, nb_integration_pts, false);
-    auto t_in = getFTensor2FromMat<3, 3>(*inPtr);
-    auto t_out = getFTensor2FromMat<3, 3>(*outPtr);
+    auto t_in = getFTensor2FromMat<DIM, DIM>(*inPtr);
+    auto t_out = getFTensor2FromMat<DIM, DIM>(*outPtr);
     auto t_det = getFTensor0FromVec(*detPtr);
     for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
-      invertTensor3by3(t_in, t_det, t_out);
-      ++t_in;
-      ++t_out;
-      ++t_det;
-    }
-  }
-
-  MoFEMFunctionReturn(0);
-}
-
-template <int DIM>
-MoFEMErrorCode OpInvertMatrix<DIM>::doWorkImpl(int side, EntityType type,
-                                               EntitiesFieldData::EntData &data,
-                                               const FTensor::Number<2> &) {
-  MoFEMFunctionBegin;
-
-  if (!inPtr)
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "Pointer for inPtr matrix not allocated");
-  if (!detPtr)
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "Pointer for detPtr matrix not allocated");
-
-  const auto nb_rows = inPtr->size1();
-  const auto nb_integration_pts = inPtr->size2();
-
-  // Calculate determinant
-  {
-    detPtr->resize(nb_integration_pts, false);
-    auto t_in = getFTensor2FromMat<2, 2>(*inPtr);
-    auto t_det = getFTensor0FromVec(*detPtr);
-    for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
-      determinantTensor2by2(t_in, t_det);
-      ++t_in;
-      ++t_det;
-    }
-  }
-
-  // Invert jacobian
-  if (outPtr) {
-    outPtr->resize(nb_rows, nb_integration_pts, false);
-    auto t_in = getFTensor2FromMat<2, 2>(*inPtr);
-    auto t_out = getFTensor2FromMat<2, 2>(*outPtr);
-    auto t_det = getFTensor0FromVec(*detPtr);
-    for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
-      invertTensor2by2(t_in, t_det, t_out);
+      CHKERR invertTensor(t_in, t_det, t_out);
       ++t_in;
       ++t_out;
       ++t_det;

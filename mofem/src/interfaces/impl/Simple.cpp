@@ -192,7 +192,8 @@ MoFEMErrorCode Simple::getOptions() {
 }
 
 MoFEMErrorCode Simple::loadFile(const std::string options,
-                                const std::string mesh_file_name) {
+                                const std::string mesh_file_name,
+                                LoadFileFunc loadFunc) {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
   PetscLogEventBegin(MOFEM_EVENT_SimpleLoadMesh, 0, 0, 0, 0);
@@ -200,9 +201,8 @@ MoFEMErrorCode Simple::loadFile(const std::string options,
   if (!mesh_file_name.empty())
     strcpy(meshFileName, mesh_file_name.c_str());
 
-  // This is a case of distributed mesh and algebra. In that case each processor
-  // keep only part of the problem.
-  CHKERR m_field.get_moab().load_file(meshFileName, 0, options.c_str());
+  // Invoke the boost function, passing in required arguments
+  CHKERR loadFunc(m_field, meshFileName, options.c_str());
   CHKERR m_field.rebuild_database();
 
   // determine problem dimension

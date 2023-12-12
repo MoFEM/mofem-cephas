@@ -1,4 +1,4 @@
-Installation with Docker (Linux, macOS and some versions of Windows) {#install_docker}
+Installation with Docker - advanced {#install_docker_advanced}
 =======================================================================
 
 Docker is an open platform that allows for the distribution and deployment of
@@ -9,7 +9,7 @@ by the Linux kernel to provide lightweight containers and thereby avoiding the
 need to run costly virtual machines. It’s through the use of containers that
 MoFEM is compiled and run.
 
-In macOS, a lightweight Linux distribution is virtualized to run the Docker
+This installation is suitable for Linux, macOS and some versions of Windows. In macOS, a lightweight Linux distribution is virtualized to run the Docker
 containers in.
 
 [TOC]
