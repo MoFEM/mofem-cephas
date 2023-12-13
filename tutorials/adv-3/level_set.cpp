@@ -40,9 +40,9 @@ constexpr FieldSpace potential_velocity_space = FE_DIM == 2 ? H1 : HCURL;
 constexpr size_t potential_velocity_field_dim = FE_DIM == 2 ? 1 : 3;
 
 // #ifndef NDEBUG
-// constexpr bool debug = false;
+constexpr bool debug = false;
 // #else
-constexpr bool debug = true;
+// constexpr bool debug = true;
 // #endif
 
 constexpr int nb_levels = 3; //< number of refinement levels
