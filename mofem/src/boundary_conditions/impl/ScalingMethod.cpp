@@ -33,15 +33,20 @@ MoFEMErrorCode TimeScale::timeData(std::string fileName,
                                    std::string delimiter) {
   MoFEMFunctionBegin;
   MOFEM_LOG_CHANNEL("WORLD");
+  // Set the argument found flag to false as default
   PetscBool arg_found = PETSC_FALSE;
   char time_file_name[255] = {'\0'};
+  // Check to see if a filename has been provided
   if (fileName.empty()) {
+    // If no filename, look for command line argument
     CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, fileNameFlag.c_str(),
                                  time_file_name, 255, &arg_found);
     if (arg_found) {
       fileName = std::string(time_file_name);
     }
   } else {
+    // Set the command line flag to true for correct flow control using provided
+    // filename
     arg_found = PETSC_TRUE;
   }
   if (!arg_found && fileName.empty() && errorIfFileNotGiven) {
