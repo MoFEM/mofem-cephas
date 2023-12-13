@@ -15,7 +15,7 @@ static char help[] = "...\n\n";
 
 //! [Define dimension]
 constexpr int FE_DIM = EXECUTABLE_DIMENSION;
-constexpr int SPACE_DIM = 3;
+constexpr int SPACE_DIM = 2;
 
 constexpr AssemblyType A = AssemblyType::PETSC; //< selected assembly type
 constexpr IntegrationType I =
@@ -155,8 +155,7 @@ private:
    * @return DomainEleOp*
    */
   ForcesAndSourcesCore::UserDataOperator *
-  getZeroLevelVelOp(boost::shared_ptr<MatrixDouble> vel_ptr,
-                    boost::shared_ptr<DomainEle> domain_ptr);
+  getZeroLevelVelOp(boost::shared_ptr<MatrixDouble> vel_ptr);
 
   /**
    * @brief create side element to assemble data from sides
@@ -558,21 +557,12 @@ MoFEMErrorCode LevelSet::setUpProblem() {
   CHKERR simple->addDomainField("V", potential_velocity_space,
                                 AINSWORTH_LEGENDRE_BASE, 1);
 
-  CHKERR simple->addDomainField("GEOMETRY", H1, AINSWORTH_LEGENDRE_BASE, 3);
-
   // set fields order, i.e. for most first cases order is sufficient.
   CHKERR simple->setFieldOrder("L", 4);
   CHKERR simple->setFieldOrder("V", 4);
-  CHKERR simple->setFieldOrder("GEOMETRY", 2);
 
   // setup problem
   CHKERR simple->setUp();
-
-  auto project_ho_geometry = [&]() {
-    Projection10NodeCoordsOnField ent_method(mField, "GEOMETRY");
-    return mField.loop_dofs("GEOMETRY", ent_method);
-  };
-  CHKERR project_ho_geometry();
 
   MoFEMFunctionReturn(0);
 }
@@ -904,15 +894,11 @@ LevelSet::OpLhsSkeleton::doWork(int side, EntityType type,
 }
 
 ForcesAndSourcesCore::UserDataOperator *
-LevelSet::getZeroLevelVelOp(boost::shared_ptr<MatrixDouble> vel_ptr,
-                            boost::shared_ptr<DomainEle> domain_ptr) {
-
+LevelSet::getZeroLevelVelOp(boost::shared_ptr<MatrixDouble> vel_ptr) {
   auto get_parent_vel_this = [&]() {
     auto parent_fe_ptr = boost::make_shared<DomianParentEle>(mField);
     CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(
         parent_fe_ptr->getOpPtrVector(), {potential_velocity_space});
-    parent_fe_ptr->getOpPtrVector().push_back(
-        new OpCopyGoemDataToE<2, DomainEle>(domain_ptr));
     parent_fe_ptr->getOpPtrVector().push_back(
         new OpCalculateHcurlVectorCurl<potential_velocity_field_dim, SPACE_DIM>(
             "V", vel_ptr));
@@ -965,7 +951,7 @@ MoFEMErrorCode LevelSet::pushOpDomain() {
   auto vel_ptr = boost::make_shared<MatrixDouble>();
 
   pip->getOpDomainRhsPipeline().push_back(getZeroLevelVelOp(
-      vel_ptr, boost::dynamic_pointer_cast<DomainEle>(pip->getDomainRhsFE())));
+      vel_ptr));
   CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(
       pip->getOpDomainRhsPipeline(), {L2});
   pip->getOpDomainRhsPipeline().push_back(
@@ -975,8 +961,9 @@ MoFEMErrorCode LevelSet::pushOpDomain() {
   pip->getOpDomainRhsPipeline().push_back(
       new OpRhsDomain("L", l_ptr, l_dot_ptr, vel_ptr));
 
+
   pip->getOpDomainLhsPipeline().push_back(getZeroLevelVelOp(
-      vel_ptr, boost::dynamic_pointer_cast<DomainEle>(pip->getDomainLhsFE())));
+      vel_ptr));
   CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(
       pip->getOpDomainLhsPipeline(), {L2});
   pip->getOpDomainLhsPipeline().push_back(new OpLhsDomain("L", vel_ptr));
@@ -1144,13 +1131,12 @@ LevelSet::getSideFE(boost::shared_ptr<SideData> side_data_ptr) {
   // is destroyed
   auto get_side_fe_ptr = [&]() {
     auto side_fe_ptr = boost::make_shared<FaceSideEle>(mField);
-    side_fe_ptr->getOpPtrVector().push_back(getZeroLevelVelOp(
-        vel_ptr, boost::dynamic_pointer_cast<DomainEle>(side_fe_ptr)));
 
     auto this_fe_ptr = get_parent_this();
     auto parent_fe_ptr = get_parents_fe_ptr(this_fe_ptr);
 
     side_fe_ptr->getOpPtrVector().push_back(new OpSideData(side_data_ptr));
+    side_fe_ptr->getOpPtrVector().push_back(getZeroLevelVelOp(vel_ptr));
     side_fe_ptr->getOpPtrVector().push_back(
         new OpRunParent(parent_fe_ptr, BitRefLevel().set(),
                         BitRefLevel().set(current_bit).flip(), this_fe_ptr,
@@ -1527,11 +1513,11 @@ MoFEMErrorCode LevelSet::testSideFE() {
   auto side_data_ptr = boost::make_shared<SideData>();
   auto side_fe_ptr = getSideFE(side_data_ptr);
 
-  vol_fe->getOpPtrVector().push_back(getZeroLevelVelOp(vel_ptr, vol_fe));
   CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(vol_fe->getOpPtrVector(),
                                                   {L2});
   vol_fe->getOpPtrVector().push_back(
       new OpCalculateScalarFieldValues("L", l_ptr));
+  vol_fe->getOpPtrVector().push_back(getZeroLevelVelOp(vel_ptr));
   vol_fe->getOpPtrVector().push_back(
       new DivergenceVol(l_ptr, vel_ptr, div_vol_vec));
 
@@ -1963,12 +1949,11 @@ MoFEMErrorCode LevelSet::solveAdvection() {
     auto l_vec = boost::make_shared<VectorDouble>();
     auto vel_ptr = boost::make_shared<MatrixDouble>();
 
-    post_proc_fe->getOpPtrVector().push_back(
-        getZeroLevelVelOp(vel_ptr, post_proc_fe));
     CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(
         post_proc_fe->getOpPtrVector(), {L2});
     post_proc_fe->getOpPtrVector().push_back(
         new OpCalculateScalarFieldValues("L", l_vec));
+    post_proc_fe->getOpPtrVector().push_back(getZeroLevelVelOp(vel_ptr));
 
     post_proc_fe->getOpPtrVector().push_back(
 
