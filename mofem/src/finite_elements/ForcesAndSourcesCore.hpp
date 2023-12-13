@@ -537,6 +537,8 @@ private:
   friend class EdgeElementForcesAndSourcesCoreOnChildParent;
   friend class VolumeElementForcesAndSourcesCoreOnContactPrismSide;
 
+  template <int DIM> friend struct OpCopyGoemDataToE;
+
 protected:
   MatrixDouble coordsAtGaussPts; ///< coordinated at gauss points
   double elementMeasure; ///< Depending on dimension of elements, stores length,
@@ -1323,6 +1325,17 @@ protected:
   const LogManager::SeverityLevel sevLevel;
   boost::shared_ptr<AdjCache> adjCache;
 };
+
+/**
+ * \brief Copy gemetric realted data from one element to other
+ *
+ * That can be used to copy high order geomeytry data from coarse element to
+ * children. That is often a case when higher order gemetry is defined only on
+ * coarse elements.
+ * 
+ * FIXME: Write atom test
+ */
+template <int DIM> struct OpCopyGoemDataToE;
 
 } // namespace MoFEM
 

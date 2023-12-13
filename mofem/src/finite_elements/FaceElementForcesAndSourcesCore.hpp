@@ -3,8 +3,6 @@
 
 */
 
-
-
 #ifndef __FACEELEMENTFORCESANDSOURCESCORE_HPP__
 #define __FACEELEMENTFORCESANDSOURCESCORE_HPP__
 
@@ -25,8 +23,8 @@ struct VolumeElementForcesAndSourcesCoreOnSide;
 struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
   /**
-   * @deprecated not used anumore, will be removed in next versions 
-   * 
+   * @deprecated not used anumore, will be removed in next versions
+   *
    */
   std::string meshPositionsFieldName;
 
@@ -87,6 +85,7 @@ protected:
 
   friend class UserDataOperator;
   friend class VolumeElementForcesAndSourcesCoreOnSide;
+  template <int DIM> friend struct OpCopyGoemDataToE;
 };
 
 /** \brief default operator for TRI element
@@ -343,6 +342,30 @@ FaceElementForcesAndSourcesCore::UserDataOperator::getFaceFE() {
  */
 DEPRECATED typedef FaceElementForcesAndSourcesCore
     FaceElementForcesAndSourcesCoreBase;
+
+/**
+ * \brief Copy gemetric realted data from one element to other
+ *
+ * That can be used to copy high order geomeytry data from coarse element to
+ * children. That is often a case when higher order gemetry is defined only on
+ * coarse elements.
+ */
+template <>
+struct OpCopyGoemDataToE<2>
+    : public FaceElementForcesAndSourcesCore::UserDataOperator {
+
+  template <typename E>
+  OpCopyGoemDataToE(boost::shared_ptr<E> to_ele_ptr)
+      : FaceElementForcesAndSourcesCore::UserDataOperator(NOSPACE, OPSPACE),
+        toElePtr(boost::dynamic_pointer_cast<FaceElementForcesAndSourcesCore>(
+            to_ele_ptr)) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        EntitiesFieldData::EntData &data);
+
+protected:
+  boost::shared_ptr<FaceElementForcesAndSourcesCore> toElePtr;
+};
 
 } // namespace MoFEM
 

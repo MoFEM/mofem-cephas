@@ -444,4 +444,125 @@ FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolumes(
   return loopSide(fe_name, &fe_method, 3);
 }
 
+MoFEMErrorCode OpCopyGoemDataToE<2>::doWork(int side, EntityType type,
+                                            EntitiesFieldData::EntData &data) {
+  MoFEMFunctionBegin;
+
+#ifndef NDEBUG
+  if (toElePtr->gaussPts.size1() != getGaussPts().size1()) {
+    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "Inconsistent numer of weights %d != %d",
+             toElePtr->gaussPts.size1(), getGaussPts().size1());
+  }
+  if (toElePtr->gaussPts.size2() != getGaussPts().size2()) {
+    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "Inconsistent numer of integtaion pts %d != %d",
+             toElePtr->gaussPts.size2(), getGaussPts().size2());
+  }
+#endif
+
+  // TODO: add support for quad element types
+  switch (getFEType()) {
+  case MBTRI:
+    break;
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+            "Element type not implemented");
+  }
+
+  auto get_ftensor_from_mat_3d = [](MatrixDouble &m) {
+    return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
+        &m(0, 0), &m(0, 1), &m(0, 2));
+  };
+
+  // get local coordinates, i.e. coordinates or child element in partent local
+  // cooridinates
+  auto get_local_coords_triangle = [&]() {
+    double ref_gauss_pts[2][3] = {{0, 1, 0}, {0, 0, 1}};
+    std::array<double, 3> ksi0 = {0, 1, 0};
+    std::array<double, 3> ksi1 = {0, 0, 1};
+    std::array<double, 9> ref_shapes;
+    CHKERR Tools::shapeFunMBTRI<1>(ref_shapes.data(), ksi0.data(), ksi1.data(),
+                                   3);
+    auto &node_coords = getCoords();
+    auto &glob_coords = toElePtr->coords;
+    std::array<double, 6> local_coords;
+    CHKERR Tools::getLocalCoordinatesOnReferenceTriNodeTri(
+        &*node_coords.begin(), &*glob_coords.begin(), 3, local_coords.data());
+    return local_coords;
+  };
+
+  // get derivative of shape functions
+  auto get_diff_triangle = [&]() {
+    auto diff_ptr = Tools::diffShapeFunMBTRI.data();
+    return FTensor::Tensor1<FTensor::PackPtr<const double *, 2>, 2>(
+        diff_ptr, &diff_ptr[1]);
+  };
+
+  // get jaconbian to map local coordinates of parent to child element
+  auto get_jac = [&](auto &&local_coords, auto &&t_diff) {
+    FTensor::Index<'I', 2> I;
+    FTensor::Index<'J', 2> J;
+    FTensor::Tensor2<double, 2, 2> t_jac;
+    auto t_local_coords = getFTensor1FromPtr<2>(local_coords.data());
+    t_jac(I, J) = 0;
+    for (int nn = 0; nn != 3; ++nn) {
+      t_jac(I, J) += t_local_coords(I) * t_diff(J);
+      ++t_local_coords;
+      ++t_diff;
+    }
+    return t_jac;
+  };
+
+  // get tangent vectors tensor
+  auto t_mat_tangent = [&](auto &t1, auto &t2) {
+    return FTensor::Tensor2<FTensor::PackPtr<double *, 3>, 2, 3>{
+        &t1(0), &t1(1), &t1(2), &t2(0), &t2(1), &t2(2)};
+  };
+
+  // transform tangent vectors to child element tangents
+  auto transfrom = [&](auto &&t_mat_t, auto &&t_mat_out_t, auto &&t_inv_jac) {
+    FTensor::Index<'I', 2> I;
+    FTensor::Index<'J', 2> J;
+    FTensor::Index<'i', 3> i;
+    FTensor::Number<0> N0;
+    FTensor::Number<1> N1;
+    for (auto gg = 0; gg != getGaussPts().size2(); ++gg) {
+      FTensor::Tensor2<double, 2, 3> t_tmp;
+      t_mat_out_t(J, i) = t_mat_t(I, i) * t_inv_jac(I, J);
+      ++t_mat_t;
+      ++t_mat_out_t;
+    }
+  };
+
+  // calculate normal vector on child element
+  auto calc_normal = [&](auto &n, auto &t1, auto &t2) {
+    FTensor::Index<'i', 3> i;
+    FTensor::Index<'j', 3> j;
+    FTensor::Index<'k', 3> k;
+    auto t_t1 = get_ftensor_from_mat_3d(t1);
+    auto t_t2 = get_ftensor_from_mat_3d(t2);
+    auto t_n = get_ftensor_from_mat_3d(n);
+    for (auto gg = 0; gg != getGaussPts().size2(); ++gg) {
+      t_n(j) = FTensor::levi_civita(i, j, k) * t_t1(k) * t_t2(i);
+      ++t_t1;
+      ++t_t2;
+      ++t_n;
+    }
+  };
+
+  transfrom(
+
+      t_mat_tangent(getTangent1AtGaussPts(), getTangent2AtGaussPts()),
+      t_mat_tangent(toElePtr->tangentOneAtGaussPts,
+                    toElePtr->tangentTwoAtGaussPts),
+      get_jac(get_local_coords_triangle(), get_diff_triangle())
+
+  );
+  calc_normal(toElePtr->normalsAtGaussPts, toElePtr->tangentOneAtGaussPts,
+              toElePtr->tangentTwoAtGaussPts);
+
+  MoFEMFunctionReturn(0);
+}
+
 } // namespace MoFEM
