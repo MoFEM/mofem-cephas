@@ -2,7 +2,7 @@ FROM likask/mofem-spack-env:latest
 
 LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk"
 
-ENV MOFEM_BRANCH=Workshop2023
+ENV MOFEM_BRANCH=lukasz/Workshop2023
 
 RUN cd $MOFEM_INSTALL_DIR/ && \
   git clone -b $MOFEM_BRANCH https://bitbucket.org/likask/mofem-cephas.git && \
