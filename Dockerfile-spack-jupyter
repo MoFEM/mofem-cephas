@@ -44,8 +44,8 @@ RUN pip3 install \
 RUN pip3 install \
   jupyter_contrib_nbextensions && \
   jupyter contrib nbextension install --sys-prefix && \
-  jupyter nbextension install --py jupytext --sys-prefix && \
-  jupyter nbextension enable --py jupytext --sys-prefix && \
+  #jupyter nbextension install --py jupytext --sys-prefix && \
+  #jupyter nbextension enable --py jupytext --sys-prefix && \
   jupyter nbextension enable equation-numbering/main --sys-prefix && \
   jupyter nbextension enable splitcell/splitcell --sys-prefix && \
   jupyter nbextension enable spellchecker/main --sys-prefix && \
