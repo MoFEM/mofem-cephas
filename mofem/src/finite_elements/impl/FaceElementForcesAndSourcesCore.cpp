@@ -475,7 +475,7 @@ MoFEMErrorCode OpCopyGoemDataToE<2>::doWork(int side, EntityType type,
         &m(0, 0), &m(0, 1), &m(0, 2));
   };
 
-  // get local coordinates, i.e. coordinates or child element in partent local
+  // get local coordinates, i.e. local coordinates on child element using partent local
   // cooridinates
   auto get_local_coords_triangle = [&]() {
     double ref_gauss_pts[2][3] = {{0, 1, 0}, {0, 0, 1}};
