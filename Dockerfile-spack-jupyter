@@ -37,7 +37,8 @@ RUN pip3 install \
   pythreejs \
   ipyvtk-simple \
   panel \
-  ipygany
+  ipygany \
+  imageio
 
 
 RUN pip3 install \

@@ -5,8 +5,6 @@ purposes.
 
 */
 
-
-
 namespace MoFEM {
 
 OpSetInvJacToScalarBasesBasic::OpSetInvJacToScalarBasesBasic(
@@ -274,9 +272,8 @@ OpSetInvJacHcurlFaceImpl<3>::doWork(int side, EntityType type,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode
-OpMakeHdivFromHcurl::doWork(int side, EntityType type,
-                            EntitiesFieldData::EntData &data) {
+MoFEMErrorCode OpMakeHdivFromHcurl::doWork(int side, EntityType type,
+                                           EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   if (type != MBEDGE && type != MBTRI && type != MBQUAD)
@@ -370,7 +367,7 @@ MoFEMErrorCode OpSetCovariantPiolaTransformOnFace2DImpl<2>::doWork(
       if (diffBaseN.data().size() > 0) {
         auto t_diff_h_curl = data.getFTensor2DiffN<3, 2>(base);
         auto t_transformed_diff_h_curl =
-            getFTensor2FromPtr<3, 2>(&*diffPiolaN.data().begin());
+            getFTensor2HVecFromPtr<3, 2>(&*diffPiolaN.data().begin());
         auto t_inv_jac = getFTensor2FromMat<2, 2>(*invJacPtr);
         for (int gg = 0; gg != nb_gauss_pts; ++gg) {
           for (int ll = 0; ll != nb_dofs; ll++) {
@@ -854,7 +851,7 @@ OpCalculateHcurlVectorCurl<1, 2>::OpCalculateHcurlVectorCurl(
 
 MoFEMErrorCode
 OpCalculateHcurlVectorCurl<1, 2>::doWork(int side, EntityType type,
-                                            EntitiesFieldData::EntData &data) {
+                                         EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
   const auto nb_integration_points = getGaussPts().size2();
   if (type == zeroType && side == zeroSide) {

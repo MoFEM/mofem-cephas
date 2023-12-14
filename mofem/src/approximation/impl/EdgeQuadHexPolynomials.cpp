@@ -455,7 +455,7 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_EdgeShapeFunctions_ONQUAD(
         double *t_n_ptr = &edgeN[e][3 * qd_shift];
         double *t_diff_n_ptr = &diff_edgeN[e][3 * 2 * qd_shift];
         auto t_n = getFTensor1FromPtr<3>(t_n_ptr);
-        auto t_diff_n = getFTensor2FromPtr<3, 2>(t_diff_n_ptr);
+        auto t_diff_n = getFTensor2HVecFromPtr<3, 2>(t_diff_n_ptr);
 
         for (int n = 0; n != p[e]; ++n) {
           const double a = mu_const[e] * L[n];
@@ -554,7 +554,7 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_FaceShapeFunctions_ONQUAD(
         double *t_n_ptr = &faceN[family][3 * qd_shift];
         double *t_diff_n_ptr = &diff_faceN[family][6 * qd_shift];
         auto t_n = getFTensor1FromPtr<3>(t_n_ptr);
-        auto t_diff_n = getFTensor2FromPtr<3, 2>(t_diff_n_ptr);
+        auto t_diff_n = getFTensor2HVecFromPtr<3, 2>(t_diff_n_ptr);
 
         for (int n = 0; n != nb_dofs; n++) {
           int i = permute[family][3 * n + 0];
@@ -610,7 +610,7 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hdiv_FaceShapeFunctions_ONQUAD(
     FTensor::Index<'k', 3> k;
 
     auto t_n = getFTensor1FromPtr<3>(faceN);
-    auto t_diff_n = getFTensor2FromPtr<3, 2>(diff_faceN);
+    auto t_diff_n = getFTensor2HVecFromPtr<3, 2>(diff_faceN);
 
     for (int q = 0; q != nb_integration_pts; q++) {
 
@@ -1102,7 +1102,7 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_EdgeShapeFunctions_ONHEX(
           int qd_shift = p[ee] * qq;
           auto t_n = getFTensor1FromPtr<3>(&edgeN[ee][3 * qd_shift]);
           auto t_diff_n =
-              getFTensor2FromPtr<3, 3>(&diff_edgeN[ee][9 * qd_shift]);
+              getFTensor2HVecFromPtr<3, 3>(&diff_edgeN[ee][9 * qd_shift]);
 
           for (int ii = 0; ii != p[ee]; ii++) {
 
@@ -1245,7 +1245,7 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_FaceShapeFunctions_ONHEX(
             double *t_n_ptr = &(faceN[face][family][3 * qd_shift]);
             double *t_diff_n_ptr = &(diff_faceN[face][family][9 * qd_shift]);
             auto t_n = getFTensor1FromPtr<3>(t_n_ptr);
-            auto t_diff_n = getFTensor2FromPtr<3, 3>(t_diff_n_ptr);
+            auto t_diff_n = getFTensor2HVecFromPtr<3, 3>(t_diff_n_ptr);
 
             for (int n = 0; n != nb_dofs; n++) {
               int i = permute[n][0];
@@ -1359,7 +1359,7 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_InteriorShapeFunctions_ONHEX(
         double *t_n_ptr = &volN[fam][3 * qd_shift];
         double *t_diff_n_ptr = &diff_volN[fam][3 * 3 * qd_shift];
         auto t_n = getFTensor1FromPtr<3>(t_n_ptr);
-        auto t_diff_n = getFTensor2FromPtr<3, 3>(t_diff_n_ptr);
+        auto t_diff_n = getFTensor2HVecFromPtr<3, 3>(t_diff_n_ptr);
 
         int n = 0;
         for (; n != nb_dofs; n++) {
@@ -1434,7 +1434,7 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hdiv_FaceShapeFunctions_ONHEX(
     if (nb_dofs > 0) {
 
       auto t_n = getFTensor1FromPtr<3>(faceN[face]);
-      auto t_diff_n = getFTensor2FromPtr<3, 3>(div_faceN[face]);
+      auto t_diff_n = getFTensor2HVecFromPtr<3, 3>(div_faceN[face]);
 
       const int n0 = face_nodes[4 * face + 0];
       const int n1 = face_nodes[4 * face + 1];
@@ -1629,7 +1629,7 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hdiv_InteriorShapeFunctions_ONHEX(
         double *t_n_ptr = &volN[fam][3 * qd_shift];
         double *t_diff_n_ptr = &diff_volN[fam][9 * qd_shift];
         auto t_n = getFTensor1FromPtr<3>(t_n_ptr);
-        auto t_diff_n = getFTensor2FromPtr<3, 3>(t_diff_n_ptr);
+        auto t_diff_n = getFTensor2HVecFromPtr<3, 3>(t_diff_n_ptr);
 
         for (int n = 0; n != nb_dofs; n++) {
           int ii = permute[fam][3 * n + 0];

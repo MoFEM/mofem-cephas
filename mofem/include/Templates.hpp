@@ -258,7 +258,6 @@ getFTensor2FromMat(ublas::matrix<T, L, A> &data) {
                 "Such getFTensor2FromMat specialisation is not implemented");
 }
 
-
 /**
  * Template specialization for getFTensor2FromMat
  */
@@ -897,21 +896,20 @@ static inline auto getFTensor3FromMat(MatrixDouble &data) {
                                 DoubleAllocator>::get(data);
 }
 
-template<int DIM, int S = DIM>
-struct GetFTensor1FromPtrImpl;
+template <int DIM, int S, typename T> struct GetFTensor1FromPtrImpl;
 
-template <int S> struct GetFTensor1FromPtrImpl<2, S> {
+template <int S, typename T> struct GetFTensor1FromPtrImpl<2, S, T> {
   GetFTensor1FromPtrImpl() = delete;
-  inline static auto get(double *ptr) {
-    return FTensor::Tensor1<FTensor::PackPtr<double *, S>, 2>(&ptr[HVEC0],
-                                                              &ptr[HVEC1]);
+  inline static auto get(T *ptr) {
+    return FTensor::Tensor1<FTensor::PackPtr<T *, S>, 2>(&ptr[HVEC0],
+                                                         &ptr[HVEC1]);
   }
 };
 
-template <int S> struct GetFTensor1FromPtrImpl<3, S> {
+template <int S, typename T> struct GetFTensor1FromPtrImpl<3, S, T> {
   GetFTensor1FromPtrImpl() = delete;
-  inline static auto get(double *ptr) {
-    return FTensor::Tensor1<FTensor::PackPtr<double *, S>, 3>(
+  inline static auto get(T *ptr) {
+    return FTensor::Tensor1<FTensor::PackPtr<T *, S>, 3>(
         &ptr[HVEC0], &ptr[HVEC1], &ptr[HVEC2]);
   }
 };
@@ -926,7 +924,13 @@ template <int S> struct GetFTensor1FromPtrImpl<3, S> {
 template <int DIM, int S = DIM>
 inline FTensor::Tensor1<FTensor::PackPtr<double *, S>, DIM>
 getFTensor1FromPtr(double *ptr) {
-  return GetFTensor1FromPtrImpl<DIM, S>::get(ptr);
+  return GetFTensor1FromPtrImpl<DIM, S, double>::get(ptr);
+};
+
+template <int DIM, int S = DIM>
+inline FTensor::Tensor1<FTensor::PackPtr<std::complex<double> *, S>, DIM>
+getFTensor1FromPtr(std::complex<double> *ptr) {
+  return GetFTensor1FromPtrImpl<DIM, S, std::complex<double>>::get(ptr);
 };
 
 /**
@@ -943,9 +947,93 @@ getFTensor2FromPtr(double *ptr) {
                 "Such getFTensor2FromPtr is not implemented");
 };
 
+template <int DIM1, int DIM2>
+inline FTensor::Tensor2<FTensor::PackPtr<std::complex<double> *, DIM1 * DIM2>,
+                        DIM1, DIM2>
+getFTensor2FromPtr(std::complex<double> *ptr) {
+  static_assert(DIM1 == DIM1 || DIM2 != DIM2,
+                "Such getFTensor2FromPtr is not implemented");
+};
+
+template <int DIM1, int DIM2, int S, typename T> struct GetFTensor2FromPtr;
+
+template <int S, typename T> struct GetFTensor2FromPtr<3, 2, S, T> {
+  GetFTensor2FromPtr() = delete;
+  inline static auto get(T *ptr) {
+    return FTensor::Tensor2<FTensor::PackPtr<T *, S>, 3, 2>(
+        &ptr[0], &ptr[1], &ptr[2], &ptr[3], &ptr[4], &ptr[5]);
+  }
+};
+
+template <int S, typename T> struct GetFTensor2FromPtr<3, 3, S, T> {
+  GetFTensor2FromPtr() = delete;
+  inline static auto get(T *ptr) {
+    return FTensor::Tensor2<FTensor::PackPtr<T *, S>, 3, 3>(
+        &ptr[0], &ptr[1], &ptr[2], &ptr[3], &ptr[4], &ptr[5], &ptr[6], &ptr[7],
+        &ptr[8]);
+  }
+};
+
+/**
+ * @brief Make Tensor2 from pointer
+ *
+ * @tparam DIM
+ * @param ptr
+ * @return FTensor::Tensor2<FTensor::PackPtr<double *, DIM1 * DIM2>, DIM1, DIM2>
+ * 
+ * \note Can not be used for to get tensor of direvatives for Hdiv/Hcurl space
+ * in 2d.
+ */
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3,
                  2> inline getFTensor2FromPtr<3, 2>(double *ptr) {
+  return GetFTensor2FromPtr<3, 2, 6, double>::get(ptr);
+};
+
+/**
+ * @brief Make Tensor2 from pointer
+ *
+ * @tparam DIM
+ * @param ptr
+ * @return FTensor::Tensor2<FTensor::PackPtr<double *, DIM1 * DIM2>, DIM1, DIM2>
+ * \note Can not be used for to get tensor of direvatives for Hdiv/Hcurl space
+ * in 3d.
+ */
+template <>
+FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3,
+                 3> inline getFTensor2FromPtr<3, 3>(double *ptr) {
+  return GetFTensor2FromPtr<3, 3, 9, double>::get(ptr);
+};
+
+template <>
+FTensor::Tensor2<FTensor::PackPtr<std::complex<double> *, 6>, 3,
+                 2> inline getFTensor2FromPtr<3, 2>(std::complex<double> *ptr) {
+  return GetFTensor2FromPtr<3, 2, 6, std::complex<double>>::get(ptr);
+};
+
+template <>
+FTensor::Tensor2<FTensor::PackPtr<std::complex<double> *, 9>, 3,
+                 3> inline getFTensor2FromPtr<3, 3>(std::complex<double> *ptr) {
+  return GetFTensor2FromPtr<3, 3, 9, std::complex<double>>::get(ptr);
+};
+
+/**
+ * @brief Make Tensor2 for HVec base from pointer
+ *
+ * @tparam DIM
+ * @param ptr
+ * @return FTensor::Tensor2<FTensor::PackPtr<double *, DIM1 * DIM2>, DIM1, DIM2>
+ */
+template <int DIM1, int DIM2>
+inline FTensor::Tensor2<FTensor::PackPtr<double *, DIM1 * DIM2>, DIM1, DIM2>
+getFTensor2HVecFromPtr(double *ptr) {
+  static_assert(DIM1 == DIM1 || DIM2 != DIM2,
+                "Such getFTensor2HVecFromPtr is not implemented");
+};
+
+template <>
+FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3,
+                 2> inline getFTensor2HVecFromPtr<3, 2>(double *ptr) {
   return FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>(
       &ptr[HVEC0_0], &ptr[HVEC0_1],
 
@@ -956,7 +1044,7 @@ FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3,
 
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3,
-                 3> inline getFTensor2FromPtr<3, 3>(double *ptr) {
+                 3> inline getFTensor2HVecFromPtr<3, 3>(double *ptr) {
   return FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>(
       &ptr[HVEC0_0], &ptr[HVEC0_1], &ptr[HVEC0_2],
 
@@ -1001,6 +1089,16 @@ getFTensor3FromPtr<3, 2, 2>(double *ptr) {
       &ptr[9], &ptr[10], &ptr[11]
 
   );
+};
+
+template <>
+inline FTensor::Tensor3<FTensor::PackPtr<double *, 27>, 3, 3, 3>
+getFTensor3FromPtr<3, 3, 3>(double *ptr) {
+  return FTensor::Tensor3<FTensor::PackPtr<double *, 27>, 3, 3, 3>(
+      &ptr[0], &ptr[1], &ptr[2], &ptr[3], &ptr[4], &ptr[5], &ptr[6], &ptr[7],
+      &ptr[8], &ptr[9], &ptr[10], &ptr[11], &ptr[12], &ptr[13], &ptr[14],
+      &ptr[15], &ptr[16], &ptr[17], &ptr[18], &ptr[19], &ptr[20], &ptr[21],
+      &ptr[22], &ptr[23], &ptr[24], &ptr[25], &ptr[26]);
 };
 
 /**
@@ -1049,8 +1147,8 @@ template <int S> struct GetFTensor1FromArray<3, S> {
   GetFTensor1FromArray() = delete;
   template <typename V> static inline auto get(V &data) {
     using T = typename std::remove_reference<decltype(data[0])>::type;
-    return FTensor::Tensor1<FTensor::PackPtr<T *, S>, 3>{
-        &data[0], &data[1], &data[2]};
+    return FTensor::Tensor1<FTensor::PackPtr<T *, S>, 3>{&data[0], &data[1],
+                                                         &data[2]};
   }
 };
 
@@ -1136,7 +1234,6 @@ getFTensor1FromMat(MatrixDouble &data, const size_t rr) {
       &data(rr + 3, 0), &data(rr + 4, 0), &data(rr + 5, 0),
       &data(rr + 6, 0), &data(rr + 7, 0), &data(rr + 8, 0)};
 }
-
 
 /**
  * @brief Get FTensor1 from array
@@ -1247,7 +1344,8 @@ inline FTensor::Tensor2<double *, DIM1, DIM2>
 getFTensor2FromArray(MatrixDouble &data, const size_t rr, const size_t cc,
                      const int ss) {
   return GetFTensor2FromArrayRawPtrImpl<DIM1, DIM2, double, ublas::row_major,
-                                  VecAllocator<double>>::get(data, rr, cc, ss);
+                                        VecAllocator<double>>::get(data, rr, cc,
+                                                                   ss);
 }
 
 template <int S, typename T, typename L, typename A>
@@ -1435,10 +1533,10 @@ computeEigenValuesSymmetric(FTensor::Tensor2<T1, DIM, DIM> &eigen_vec,
  * @return MoFEMErrorCode
  */
 template <int DIM, typename T1, typename T2, typename T3>
-inline MoFEMErrorCode computeEigenValuesSymmetric(
-    const FTensor::Tensor2_symmetric<T1, DIM> &mat,
-    FTensor::Tensor1<T2, DIM> &eig,
-    FTensor::Tensor2<T3, DIM, DIM> &eigen_vec) {
+inline MoFEMErrorCode
+computeEigenValuesSymmetric(const FTensor::Tensor2_symmetric<T1, DIM> &mat,
+                            FTensor::Tensor1<T2, DIM> &eig,
+                            FTensor::Tensor2<T3, DIM, DIM> &eigen_vec) {
   MoFEMFunctionBegin;
   for (int ii = 0; ii != DIM; ii++)
     for (int jj = 0; jj != DIM; jj++)
@@ -1447,40 +1545,6 @@ inline MoFEMErrorCode computeEigenValuesSymmetric(
   CHKERR computeEigenValuesSymmetric(eigen_vec, eig);
 
   MoFEMFunctionReturn(0);
-}
-
-/**
- * @deprecated do not use, is kept for backward compatibility
-*/
-template <int DIM>
-DEPRECATED MoFEMErrorCode
-computeEigenValuesSymmetric(FTensor::Tensor2<double, DIM, DIM> &eigen_vec,
-                            FTensor::Tensor1<double, DIM> &eig) {
-  return computeEigenValuesSymmetric<DIM, double, double>(eigen_vec, eig);
-}
-
-/**
- * @deprecated do not use, is kept for backward compatibility
-*/
-template <int DIM>
-DEPRECATED MoFEMErrorCode
-computeEigenValuesSymmetric(const FTensor::Tensor2_symmetric<double, DIM> &mat,
-                            FTensor::Tensor1<double, DIM> &eig,
-                            FTensor::Tensor2<double, DIM, DIM> &eigen_vec) {
-  return computeEigenValuesSymmetric<DIM, double, double, double>(mat, eig,
-                                                                  eigen_vec);
-}
-
-/**
- * @deprecated do not use, is kept for backward compatibility
-*/
-template <int DIM>
-DEPRECATED MoFEMErrorCode computeEigenValuesSymmetric(
-    const FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, DIM> &mat,
-    FTensor::Tensor1<double, DIM> &eig,
-    FTensor::Tensor2<double, DIM, DIM> &eigen_vec) {
-  return computeEigenValuesSymmetric<DIM, FTensor::PackPtr<double *, 1>, double,
-                                     double>(mat, eig, eigen_vec);
 }
 
 /**
@@ -1755,7 +1819,7 @@ struct RefEntExtractor {
  * @brief Insert ordered mofem multi-index into range
  *
  * \note Inserted range has to be ordered.
- * 
+ *
  * \code
  * auto hi_rit = refEntsPtr->upper_bound(start);
  * auto hi_rit = refEntsPtr->upper_bound(end);
@@ -1837,7 +1901,7 @@ private:
 
 /**
  * @brief  Create smart pointer to temporary meshset
- * 
+ *
  */
 inline auto get_temp_meshset_ptr(moab::Interface &moab) {
   return boost::make_shared<TempMeshset>(moab);
@@ -1849,7 +1913,7 @@ inline auto id_from_handle(const EntityHandle h) {
 
 /**
  * @brief get type from entity handle
- * 
+ *
  */
 inline auto type_from_handle(const EntityHandle h) {
   return static_cast<EntityType>(h >> MB_ID_WIDTH);
@@ -1865,7 +1929,7 @@ inline auto ent_form_type_and_id(const EntityType type, const EntityID id) {
 
 /**
  * @brief get entity dimension form handle
- * 
+ *
  */
 inline auto dimension_from_handle(const EntityHandle h) {
   return moab::CN::Dimension(type_from_handle(h));
@@ -1873,7 +1937,7 @@ inline auto dimension_from_handle(const EntityHandle h) {
 
 /**
  * @brief get entity type name from handle
- * 
+ *
  */
 inline auto type_name_from_handle(const EntityHandle h) {
   return moab::CN::EntityTypeName(type_from_handle(h));
@@ -1881,7 +1945,7 @@ inline auto type_name_from_handle(const EntityHandle h) {
 
 /**
  * @brief get field bit id from bit number
- * 
+ *
  */
 inline auto field_bit_from_bit_number(const int bit_number) {
   return BitFieldId().set(bit_number - 1);
