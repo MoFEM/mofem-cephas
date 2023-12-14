@@ -944,7 +944,8 @@ struct OpCalculateTensor2FieldValuesDot
       FTensor::Index<'j', Tensor_Dim1> j;
       const size_t size = nb_dofs / (Tensor_Dim0 * Tensor_Dim1);
       for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
-        auto field_data = getFTensorDotData<Tensor_Dim0, Tensor_Dim1>();
+        auto field_data =
+            getFTensor2FromPtr<Tensor_Dim0, Tensor_Dim1>(&*dotVector.begin());
         size_t bb = 0;
         for (; bb != size; ++bb) {
           values_at_gauss_pts(i, j) += field_data(i, j) * base_function;
@@ -964,28 +965,7 @@ protected:
   EntityType zeroAtType;  ///< Zero values at Gauss point at this type
   VectorDouble dotVector; ///< Keeps temoorary values of time directives
 
-  template <int Dim0, int Dim1> auto getFTensorDotData() {
-    static_assert(Dim0 || !Dim0 || Dim1 || !Dim1, "not implemented");
-  }
 };
-
-template <>
-template <>
-inline auto OpCalculateTensor2FieldValuesDot<3, 3>::getFTensorDotData<3, 3>() {
-  return FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>(
-      &dotVector[0], &dotVector[1], &dotVector[2],
-
-      &dotVector[3], &dotVector[4], &dotVector[5],
-
-      &dotVector[6], &dotVector[7], &dotVector[8]);
-}
-
-template <>
-template <>
-inline auto OpCalculateTensor2FieldValuesDot<2, 2>::getFTensorDotData<2, 2>() {
-  return FTensor::Tensor2<FTensor::PackPtr<double *, 4>, 2, 2>(
-      &dotVector[0], &dotVector[1], &dotVector[2], &dotVector[3]);
-}
 
 /**
  * @brief Calculate symmetric tensor field values at integration pts.
@@ -1148,7 +1128,7 @@ struct OpCalculateTensor2SymmetricFieldValuesDot
     FTensor::Index<'j', Tensor_Dim> j;
     const int size = nb_dofs / symm_size;
     for (int gg = 0; gg != nb_gauss_pts; ++gg) {
-      auto field_data = getFTensorDotData<Tensor_Dim>();
+      auto field_data = getFTensor1FromPtr<Tensor_Dim>(&*dotVector.begin());
       int bb = 0;
       for (; bb != size; ++bb) {
         values_at_gauss_pts(i, j) += field_data(i, j) * base_function;
@@ -1168,28 +1148,7 @@ protected:
   const EntityHandle zeroType;
   const int zeroSide;
   VectorDouble dotVector;
-
-  template <int Dim> inline auto getFTensorDotData() {
-    static_assert(Dim || !Dim, "not implemented");
-  }
 };
-
-template <>
-template <>
-inline auto
-OpCalculateTensor2SymmetricFieldValuesDot<3>::getFTensorDotData<3>() {
-  return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 6>, 3>(
-      &dotVector[0], &dotVector[1], &dotVector[2], &dotVector[3], &dotVector[4],
-      &dotVector[5]);
-}
-
-template <>
-template <>
-inline auto
-OpCalculateTensor2SymmetricFieldValuesDot<2>::getFTensorDotData<2>() {
-  return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 3>, 2>(
-      &dotVector[0], &dotVector[1], &dotVector[2]);
-}
 
 /**@}*/
 
@@ -1619,7 +1578,7 @@ struct OpCalculateVectorFieldGradientDot
     }
 
     for (int gg = 0; gg < nb_gauss_pts; ++gg) {
-      auto field_data = getFTensorDotData<Tensor_Dim0>();
+      auto field_data = getFTensor1FromPtr<Tensor_Dim0>(&*dotVector.begin());
       int bb = 0;
       for (; bb < size; ++bb) {
         gradients_at_gauss_pts(I, J) += field_data(I) * diff_base_function(J);
@@ -1640,24 +1599,7 @@ private:
   EntityType zeroAtType;  ///< Zero values at Gauss point at this type
   VectorDouble dotVector; ///< Keeps temoorary values of time directives
 
-  template <int Dim> inline auto getFTensorDotData() {
-    static_assert(Dim || !Dim, "not implemented");
-  }
 };
-
-template <>
-template <>
-inline auto OpCalculateVectorFieldGradientDot<3, 3>::getFTensorDotData<3>() {
-  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
-      &dotVector[0], &dotVector[1], &dotVector[2]);
-}
-
-template <>
-template <>
-inline auto OpCalculateVectorFieldGradientDot<2, 2>::getFTensorDotData<2>() {
-  return FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>(&dotVector[0],
-                                                            &dotVector[1]);
-}
 
 /**
  * \brief Evaluate field gradient values for symmetric 2nd order tensor field,
