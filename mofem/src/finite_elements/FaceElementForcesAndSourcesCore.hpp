@@ -85,7 +85,7 @@ protected:
 
   friend class UserDataOperator;
   friend class VolumeElementForcesAndSourcesCoreOnSide;
-  template <int DIM> friend struct OpCopyGoemDataToE;
+  template <int DIM> friend struct OpCopyGeomDataToE;
 };
 
 /** \brief default operator for TRI element
@@ -355,11 +355,11 @@ DEPRECATED typedef FaceElementForcesAndSourcesCore
  *
  */
 template <>
-struct OpCopyGoemDataToE<2>
+struct OpCopyGeomDataToE<2>
     : public FaceElementForcesAndSourcesCore::UserDataOperator {
 
   template <typename E>
-  OpCopyGoemDataToE(boost::shared_ptr<E> to_ele_ptr)
+  OpCopyGeomDataToE(boost::shared_ptr<E> to_ele_ptr)
       : FaceElementForcesAndSourcesCore::UserDataOperator(NOSPACE, OPSPACE),
         toElePtr(boost::dynamic_pointer_cast<FaceElementForcesAndSourcesCore>(
             to_ele_ptr)) {}

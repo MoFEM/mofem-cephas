@@ -1338,7 +1338,7 @@ protected:
  * 
  * FIXME: Write atom test
  */
-template <int DIM> struct OpCopyGoemDataToE;
+template <int DIM> struct OpCopyGeomDataToE;
 
 } // namespace MoFEM
 

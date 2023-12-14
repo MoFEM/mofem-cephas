@@ -444,7 +444,7 @@ FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolumes(
   return loopSide(fe_name, &fe_method, 3);
 }
 
-MoFEMErrorCode OpCopyGoemDataToE<2>::doWork(int side, EntityType type,
+MoFEMErrorCode OpCopyGeomDataToE<2>::doWork(int side, EntityType type,
                                             EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
