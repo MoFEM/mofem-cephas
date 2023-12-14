@@ -537,7 +537,8 @@ private:
   friend class EdgeElementForcesAndSourcesCoreOnChildParent;
   friend class VolumeElementForcesAndSourcesCoreOnContactPrismSide;
 
-  template <int DIM> friend struct OpCopyGoemDataToE;
+  template <int DIM> friend struct OpCopyGeomDataToE;
+                                   
 
 protected:
   MatrixDouble coordsAtGaussPts; ///< coordinated at gauss points
