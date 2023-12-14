@@ -344,11 +344,15 @@ DEPRECATED typedef FaceElementForcesAndSourcesCore
     FaceElementForcesAndSourcesCoreBase;
 
 /**
- * \brief Copy gemetric realted data from one element to other
+ * \brief Copy geometry-related data from one element to other
  *
- * That can be used to copy high order geomeytry data from coarse element to
- * children. That is often a case when higher order gemetry is defined only on
+ * That can be used to copy high order geometry data from coarse element to
+ * children. That is often a case when higher order geometry is defined only on
  * coarse elements.
+ *
+ * \note Element have to share the same integration points, i.e. number of
+ * integration points has to be the same, and geometric location.
+ *
  */
 template <>
 struct OpCopyGoemDataToE<2>
