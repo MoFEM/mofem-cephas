@@ -131,7 +131,7 @@ If you run a container locally, open [http://localhost:8000](http://localhost:80
 Note this is the password to JupyterHub, not a password to the Linux environment.
 
 
-> If you login as `mofem` user, you will have admin right in the JupyterHub, and you can add more users there by going to `Controrl Panel -> Admin -> Add Users`
+> If you login as `mofem` user, you will have admin right in the JupyterHub, and you can add more users there by going to `Control Panel -> Admin -> Add Users`
 
 ## Start running 
 
@@ -213,7 +213,7 @@ To set up debugging, follow these steps:
 - go to `Extensions` within VS Code, see Figure 6 <span style="color:magenta"> a) </span> , and install `C/C++ Extension Pack` and `Code Runner` extensions
 - create `.vscode` folder, download files [launch.json](launch.json "launch.json") & [tasks.json](tasks.json "tasks.json") and place them into the .vscode folder, see Figure 7
 - replace the hash `5sehreo` with the hash in your folder, see <span style="color:orange"> `HASH`</span> in Figure 7
-- adjust the files to fit your purpose as described bellow Figure 7
+- adjust the files to fit your purpose as described below Figure 7
 
 <!-- <img src="./../figures/docker_ssh_vscode.png" alt="Docker - VS Code debugging setup" width="100%"/> -->
 <img src="docker_ssh_vscode.png" alt="Docker - VS Code debugging setup" width="100%"/>
