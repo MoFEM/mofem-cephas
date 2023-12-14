@@ -23,7 +23,7 @@ struct VolumeElementForcesAndSourcesCoreOnSide;
 struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
   /**
-   * @deprecated not used anumore, will be removed in next versions
+   * @deprecated not used anymore, will be removed in next versions
    *
    */
   std::string meshPositionsFieldName;
