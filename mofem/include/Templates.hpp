@@ -933,28 +933,6 @@ getFTensor1FromPtr(std::complex<double> *ptr) {
   return GetFTensor1FromPtrImpl<DIM, S, std::complex<double>>::get(ptr);
 };
 
-/**
- * @brief Make Tensor2 from pointer
- *
- * @tparam DIM
- * @param ptr
- * @return FTensor::Tensor2<FTensor::PackPtr<double *, DIM1 * DIM2>, DIM1, DIM2>
- */
-template <int DIM1, int DIM2>
-inline FTensor::Tensor2<FTensor::PackPtr<double *, DIM1 * DIM2>, DIM1, DIM2>
-getFTensor2FromPtr(double *ptr) {
-  static_assert(DIM1 == DIM1 || DIM2 != DIM2,
-                "Such getFTensor2FromPtr is not implemented");
-};
-
-template <int DIM1, int DIM2>
-inline FTensor::Tensor2<FTensor::PackPtr<std::complex<double> *, DIM1 * DIM2>,
-                        DIM1, DIM2>
-getFTensor2FromPtr(std::complex<double> *ptr) {
-  static_assert(DIM1 == DIM1 || DIM2 != DIM2,
-                "Such getFTensor2FromPtr is not implemented");
-};
-
 template <int DIM1, int DIM2, int S, typename T> struct GetFTensor2FromPtr;
 
 template <int S, typename T> struct GetFTensor2FromPtr<3, 2, S, T> {
@@ -974,20 +952,34 @@ template <int S, typename T> struct GetFTensor2FromPtr<3, 3, S, T> {
   }
 };
 
-/**
- * @brief Make Tensor2 from pointer
- *
- * @tparam DIM
- * @param ptr
- * @return FTensor::Tensor2<FTensor::PackPtr<double *, DIM1 * DIM2>, DIM1, DIM2>
- * 
- * \note Can not be used for to get tensor of direvatives for Hdiv/Hcurl space
- * in 2d.
- */
-template <>
-FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3,
-                 2> inline getFTensor2FromPtr<3, 2>(double *ptr) {
-  return GetFTensor2FromPtr<3, 2, 6, double>::get(ptr);
+template <int S, typename T> struct GetFTensor2FromPtr<2, 2, S, T> {
+  GetFTensor2FromPtr() = delete;
+  inline static auto get(T *ptr) {
+    return FTensor::Tensor2<FTensor::PackPtr<T *, S>, 2, 2>(&ptr[0], &ptr[1],
+                                                            &ptr[2], &ptr[3]);
+  }
+};
+
+template <int S, typename T> struct GetFTensor2FromPtr<1, 3, S, T> {
+  GetFTensor2FromPtr() = delete;
+  inline static auto get(T *ptr) {
+    return FTensor::Tensor2<FTensor::PackPtr<T *, S>, 1, 3>(&ptr[0], &ptr[1],
+                                                            &ptr[2]);
+  }
+};
+
+template <int S, typename T> struct GetFTensor2FromPtr<1, 2, S, T> {
+  GetFTensor2FromPtr() = delete;
+  inline static auto get(T *ptr) {
+    return FTensor::Tensor2<FTensor::PackPtr<T *, S>, 1, 2>(&ptr[0], &ptr[1]);
+  }
+};
+
+template <int S, typename T> struct GetFTensor2FromPtr<1, 1, S, T> {
+  GetFTensor2FromPtr() = delete;
+  inline static auto get(T *ptr) {
+    return FTensor::Tensor2<FTensor::PackPtr<T *, S>, 1, 1>(&ptr[0]);
+  }
 };
 
 /**
@@ -995,26 +987,23 @@ FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3,
  *
  * @tparam DIM
  * @param ptr
- * @return FTensor::Tensor2<FTensor::PackPtr<double *, DIM1 * DIM2>, DIM1, DIM2>
- * \note Can not be used for to get tensor of direvatives for Hdiv/Hcurl space
- * in 3d.
+ * @return FTensor::Tensor2<FTensor::PackPtr<double *, S>, DIM1, DIM2>
  */
-template <>
-FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3,
-                 3> inline getFTensor2FromPtr<3, 3>(double *ptr) {
-  return GetFTensor2FromPtr<3, 3, 9, double>::get(ptr);
+template <int DIM1, int DIM2, int S = DIM1 * DIM2>
+inline auto getFTensor2FromPtr(double *ptr) {
+  return GetFTensor2FromPtr<DIM1, DIM2, S, double>::get(ptr);
 };
 
-template <>
-FTensor::Tensor2<FTensor::PackPtr<std::complex<double> *, 6>, 3,
-                 2> inline getFTensor2FromPtr<3, 2>(std::complex<double> *ptr) {
-  return GetFTensor2FromPtr<3, 2, 6, std::complex<double>>::get(ptr);
-};
-
-template <>
-FTensor::Tensor2<FTensor::PackPtr<std::complex<double> *, 9>, 3,
-                 3> inline getFTensor2FromPtr<3, 3>(std::complex<double> *ptr) {
-  return GetFTensor2FromPtr<3, 3, 9, std::complex<double>>::get(ptr);
+/**
+ * @brief Make Tensor2 from pointer
+ *
+ * @tparam DIM
+ * @param ptr
+ * @return FTensor::Tensor2<FTensor::PackPtr<double *, S>, DIM1, DIM2>
+ */
+template <int DIM1, int DIM2, int S = DIM1 * DIM2>
+inline auto getFTensor2FromPtr(std::complex<double> *ptr) {
+  return GetFTensor2FromPtr<DIM1, DIM2, S, std::complex<double>>::get(ptr);
 };
 
 /**
@@ -1051,13 +1040,6 @@ FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3,
       &ptr[HVEC1_0], &ptr[HVEC1_1], &ptr[HVEC1_2],
 
       &ptr[HVEC2_0], &ptr[HVEC2_1], &ptr[HVEC2_2]);
-};
-
-template <>
-FTensor::Tensor2<FTensor::PackPtr<double *, 4>, 2,
-                 2> inline getFTensor2FromPtr<2, 2>(double *ptr) {
-  return FTensor::Tensor2<FTensor::PackPtr<double *, 4>, 2, 2>(
-      &ptr[0], &ptr[1], &ptr[2], &ptr[3]);
 };
 
 /*
@@ -1571,22 +1553,19 @@ template <typename T> static inline auto determinantTensor2by2(T &t) {
   return t(0, 0) * t(1, 1) - t(0, 1) * t(1, 0);
 }
 
-template <typename T, int DIM>
-struct DeterminantTensorImpl;
+template <typename T, int DIM> struct DeterminantTensorImpl;
 
-template <typename T>
-struct DeterminantTensorImpl<T, 3> {
+template <typename T> struct DeterminantTensorImpl<T, 3> {
   static inline auto get(T &t) { return determinantTensor3by3(t); }
 };
 
-template <typename T>
-struct DeterminantTensorImpl<T, 2> {
+template <typename T> struct DeterminantTensorImpl<T, 2> {
   static auto get(T &t) { return determinantTensor2by2(t); }
 };
 
 /**
  * @brief Calculate the determinant of a tensor of rank DIM
-*/
+ */
 template <typename T, int DIM>
 static inline auto determinantTensor(FTensor::Tensor2<T, DIM, DIM> &t) {
   return DeterminantTensorImpl<FTensor::Tensor2<T, DIM, DIM>, DIM>::get(t);
@@ -1594,7 +1573,7 @@ static inline auto determinantTensor(FTensor::Tensor2<T, DIM, DIM> &t) {
 
 /**
  * @brief Calculate the determinant of a tensor of rank DIM
-*/
+ */
 template <typename T, int DIM>
 static inline auto determinantTensor(FTensor::Tensor2_symmetric<T, DIM> &t) {
   return DeterminantTensorImpl<FTensor::Tensor2_symmetric<T, DIM>, DIM>::get(t);
