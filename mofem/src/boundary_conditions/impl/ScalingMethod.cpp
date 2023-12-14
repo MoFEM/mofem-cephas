@@ -25,18 +25,29 @@ TimeScale::TimeScale(std::string file_name, bool error_if_file_not_given)
 TimeScale::TimeScale(std::string file_name, std::string delimiter,
                      bool error_if_file_not_given)
     : fileName(file_name), errorIfFileNotGiven(error_if_file_not_given) {
-  CHK_THROW_MESSAGE(timeData(delimiter), "Error in reading time data");
+  CHK_THROW_MESSAGE(timeData(file_name, delimiter),
+                    "Error in reading time data");
 }
 
-MoFEMErrorCode TimeScale::timeData(std::string delimiter) {
+MoFEMErrorCode TimeScale::timeData(std::string fileName,
+                                   std::string delimiter) {
   MoFEMFunctionBegin;
   MOFEM_LOG_CHANNEL("WORLD");
+  // Set the argument found flag to false as default
   PetscBool arg_found = PETSC_FALSE;
   char time_file_name[255] = {'\0'};
-  CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, fileNameFlag.c_str(),
-                               time_file_name, 255, &arg_found);
-  if (arg_found) {
-    fileName = std::string(time_file_name);
+  // Check to see if a filename has been provided
+  if (fileName.empty()) {
+    // If no filename, look for command line argument
+    CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, fileNameFlag.c_str(),
+                                 time_file_name, 255, &arg_found);
+    if (arg_found) {
+      fileName = std::string(time_file_name);
+    }
+  } else {
+    // Set the command line flag to true for correct flow control using provided
+    // filename
+    arg_found = PETSC_TRUE;
   }
   if (!arg_found && fileName.empty() && errorIfFileNotGiven) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
