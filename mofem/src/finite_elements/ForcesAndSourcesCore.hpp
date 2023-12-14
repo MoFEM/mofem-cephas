@@ -1327,11 +1327,13 @@ protected:
 };
 
 /**
- * \brief Copy gemetric realted data from one element to other
+ * \brief Copy geometry-related data from one element to other
  *
- * That can be used to copy high order geomeytry data from coarse element to
- * children. That is often a case when higher order gemetry is defined only on
+ * That can be used to copy high order geometry data from coarse element to
+ * children. That is often a case when higher order geometry is defined only on
  * coarse elements.
+ *
+ * \note Integration points have to be located at the same gometric positions
  * 
  * FIXME: Write atom test
  */
