@@ -249,4 +249,15 @@ The same procedure can be applied for any other users you create and everyone ca
 
 [![Watch the video](https://img.youtube.com/vi/xL3J8VHig68/hqdefault.jpg)](https://youtu.be/pG_-VEplBOQ)
 
+# Running jupyter notebooks with the amended code
+
+To run the example notebooks with the code which was amended during debugging, new compilation will be needed. The existing symbolic links are:
+
+- *um_view* -  symbolic links to the executable binaries of the release version common to all users (does not depend on the mofem_install source directory in your folder)
+
+- *um_view_debug* -  symbolic links to the executable binaries of the debugging version
+
+For running bigger problems, like the ones in the example notebooks, using a release version is advised as it is much faster. *um_view* is a release version but not of the code which you might have amended during the debugging part of these instructions. To compile this code with a release version run the *install_from_source_release.md* notebook, located in your home folder. 
+
+
 Any problems with this installation, please contact us by [mofem-group@googlegroups.com](https://groups.google.com/forum/#!forum/mofem-group).
