@@ -30,7 +30,7 @@ spack --config-scope /mofem_install/spack_config_dir dev-build -j 4 \
   --source-path $HOME/mofem_install/mofem-cephas/mofem/users_modules \
   mofem-users-modules@lukasz build_type=Release install_id=$UID  \
   ^mofem-cephas@lukasz+adol-c~copy_user_modules~docker~ipo+med~shared+slepc+tetgen build_system=cmake build_type=Release dev_path=/mofem_install/mofem-cephas install_id=0 \
-  ^/bkt46x3 ^/psobshg
+  ^boost+python ^petsc+X
 ```
 
 Create symbolic links to generic workshop installation, and user version
@@ -40,7 +40,10 @@ spack find -lv mofem-users-modules build_type=Release install_id=$UID
 ```
 
 ```bash
-rm -rf um_view_debug
+rm -rf um_view_release
 spack view symlink -i um_view_release mofem-users-modules build_type=Release install_id=$UID
 ```
 
+```python
+
+```
