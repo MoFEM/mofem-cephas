@@ -13,7 +13,10 @@ jupyter:
     name: python3
 ---
 
-This notebook assumes that you have already run install_from_source_debug.md
+This notebook is for installing a Release version of what you might have changed during your exercises with debugging.
+
+> Do not run this notebook if you have not run install_from_source_Debug
+
 
 Print User Id
 
@@ -21,28 +24,49 @@ Print User Id
 id $UID
 ```
 
-Install users modules
-> Release version is faster but you cannot run debugger with it.
+Install MoFEM core - Release version
 
 ```bash
-spack --config-scope /mofem_install/spack_config_dir dev-build -j 4 \
-  --test root  \
+export TARGET=x86_64
+spack --config-scope /mofem_install/spack_config_dir dev-build -j4 \
+  --source-path $HOME/mofem_install/mofem-cephas \
+  --keep-prefix \
+  mofem-cephas@lukasz~copy_user_modules \
+  target=$TARGET build_type=Release install_id=$UID ^/bkt46x3 ^/psobshg
+```
+
+Check existing installations of mofem-cephas
+
+```bash
+export TARGET=x86_64 
+spack --config-scope /mofem_install/spack_config_dir find -lv mofem-cephas 
+```
+
+Install updated user modules which you have ammended.
+
+```bash
+spack --config-scope /mofem_install/spack_config_dir dev-build -j 6 \
   --source-path $HOME/mofem_install/mofem-cephas/mofem/users_modules \
   mofem-users-modules@lukasz build_type=Release install_id=$UID  \
-  ^mofem-cephas@lukasz+adol-c~copy_user_modules~docker~ipo+med~shared+slepc+tetgen build_system=cmake build_type=Release dev_path=/mofem_install/mofem-cephas install_id=0 \
-  ^boost+python ^petsc+X
+  ^mofem-cephas@lukasz+adol-c~copy_user_modules~docker~ipo+med~shared+slepc+tetgen build_system=cmake build_type=Release dev_path=/mofem_install/jupyter/mofem/mofem_install/mofem-cephas install_id=$UID \
+  ^/bkt46x3 ^/psobshg 
 ```
 
-Create symbolic links to generic workshop installation, and user version
+Check existing installations of mofem-users-modules
 
 ```bash
-spack find -lv mofem-users-modules build_type=Release install_id=$UID
+export TARGET=x86_64 
+spack --config-scope /mofem_install/spack_config_dir find -lv mofem-users-modules 
 ```
+
+Create symbolic links to the Release version of the code
 
 ```bash
 rm -rf um_view_release
 spack view symlink -i um_view_release mofem-users-modules build_type=Release install_id=$UID
 ```
+
+To run the notebooks provided with the amended version of the code, replace all of the `um_view` in the path definitions in the notebooks you want to run with `um_view_release`.
 
 ```python
 

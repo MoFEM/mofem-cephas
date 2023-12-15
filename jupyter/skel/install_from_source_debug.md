@@ -13,7 +13,11 @@ jupyter:
     name: python3
 ---
 
-We clone both core and users modules, but we will compile only users modules.
+This notebook is for installing a Debug version of MoFEM.
+
+> Debug version is slower and mainly used for code developent
+
+Clone MoFEM core and users modules.
 
 ```bash
 mkdir -p mofem_install
@@ -29,23 +33,42 @@ Print User Id
 id $UID
 ```
 
-Install users modules 
->Debug version is slower, mainly used for code developent
+Install MoFEM core - Debug version
 
 ```bash
-spack --config-scope /mofem_install/spack_config_dir dev-build -j 4 \
-  --test root  \
+export TARGET=x86_64
+spack --config-scope /mofem_install/spack_config_dir dev-build -j4 \
+  --source-path $HOME/mofem_install/mofem-cephas \
+  --keep-prefix \
+  mofem-cephas@lukasz~copy_user_modules \
+  target=$TARGET build_type=Debug install_id=$UID ^/bkt46x3 ^/psobshg
+```
+
+Check existing installations of `mofem-cephas`
+
+```bash
+export TARGET=x86_64 
+spack --config-scope /mofem_install/spack_config_dir find -lv mofem-cephas 
+```
+
+Install user modules including tutorials which you can learn from.
+
+```bash
+spack --config-scope /mofem_install/spack_config_dir dev-build -j 6 \
   --source-path $HOME/mofem_install/mofem-cephas/mofem/users_modules \
   mofem-users-modules@lukasz build_type=Debug install_id=$UID  \
-  ^mofem-cephas@lukasz+adol-c~copy_user_modules~docker~ipo+med~shared+slepc+tetgen build_system=cmake build_type=Debug dev_path=/mofem_install/mofem-cephas install_id=0 \
-  ^boost+python ^petsc+X
+  ^mofem-cephas@lukasz+adol-c~copy_user_modules~docker~ipo+med~shared+slepc+tetgen build_system=cmake build_type=Debug dev_path=/mofem_install/jupyter/mofem/mofem_install/mofem-cephas install_id=$UID \
+  ^/bkt46x3 ^/psobshg 
 ```
 
-Create symbolic links to generic workshop installation, and user version
+Check existing installations of `mofem-users-modules`
 
 ```bash
-spack find -lv mofem-users-modules build_type=Debug install_id=$UID
+export TARGET=x86_64 
+spack --config-scope /mofem_install/spack_config_dir find -lv mofem-users-modules 
 ```
+
+Create symbolic links to the Debug version of the code
 
 ```bash
 rm -rf um_view_debug
