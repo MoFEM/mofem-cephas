@@ -985,6 +985,14 @@ getFTensor2SymmetricLowerFromPtr<2>(double *ptr) {
 
 template <int DIM, int S> struct GetFTensor1FromArray;
 
+template <int S> struct GetFTensor1FromArray<1, S> {
+  GetFTensor1FromArray() = delete;
+  template <typename V> static inline auto get(V &data) {
+    using T = typename std::remove_reference<decltype(data[0])>::type;
+    return FTensor::Tensor1<FTensor::PackPtr<T *, S>, 1>{&data[0]};
+  }
+};
+
 template <int S> struct GetFTensor1FromArray<2, S> {
   GetFTensor1FromArray() = delete;
   template <typename V> static inline auto get(V &data) {
