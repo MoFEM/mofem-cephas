@@ -16,19 +16,22 @@ static char help[] = "...\n\n";
 //! [Define dimension]
 constexpr int FE_DIM = EXECUTABLE_DIMENSION;
 constexpr int SPACE_DIM = 2;
+constexpr int DIM1 = 1;
+constexpr int DIM2 = 1;
+
+FTensor::Index<'I', DIM1> I;
+FTensor::Index<'J', DIM1> J;
 
 constexpr AssemblyType A = AssemblyType::PETSC; //< selected assembly type
-constexpr IntegrationType I =
+constexpr IntegrationType G =
     IntegrationType::GAUSS; //< selected integration type
 
 using EntData = EntitiesFieldData::EntData;
 using DomainEle = PipelineManager::ElementsAndOpsByDim<FE_DIM>::DomainEle;
 using DomianParentEle =
     PipelineManager::ElementsAndOpsByDim<FE_DIM>::DomianParentEle;
-using BoundaryEle =
-    PipelineManager::ElementsAndOpsByDim<FE_DIM>::BoundaryEle;
-using FaceSideEle =
-    PipelineManager::ElementsAndOpsByDim<FE_DIM>::FaceSideEle;
+using BoundaryEle = PipelineManager::ElementsAndOpsByDim<FE_DIM>::BoundaryEle;
+using FaceSideEle = PipelineManager::ElementsAndOpsByDim<FE_DIM>::FaceSideEle;
 
 using DomainEleOp = DomainEle::UserDataOperator;
 using BoundaryEleOp = BoundaryEle::UserDataOperator;
@@ -40,7 +43,7 @@ constexpr FieldSpace potential_velocity_space = FE_DIM == 2 ? H1 : HCURL;
 constexpr size_t potential_velocity_field_dim = FE_DIM == 2 ? 1 : 3;
 
 // #ifndef NDEBUG
-constexpr bool debug = false;
+constexpr bool debug = true;
 // #else
 // constexpr bool debug = true;
 // #endif
@@ -67,7 +70,6 @@ struct LevelSet {
   MoFEMErrorCode runProblem();
 
 private:
-  using VecSideArray = std::array<VectorDouble, 2>;
   using MatSideArray = std::array<MatrixDouble, 2>;
 
   /**
@@ -86,7 +88,7 @@ private:
     std::array<int, 2> senseMap; // orientation of local element edge/face in
                                  // respect to global orientation of edge/face
 
-    VecSideArray lVec;   //< Values of level set field
+    MatSideArray lVec;   //< Values of level set field
     MatSideArray velMat; //< Values of velocity field
 
     int currentFESide; ///< current side counter
@@ -341,16 +343,16 @@ private:
 
   using AssemblyDomainEleOp =
       FormsIntegrators<DomainEleOp>::Assembly<A>::OpBase;
-  using OpMassLL =
-      FormsIntegrators<DomainEleOp>::Assembly<A>::BiLinearForm<I>::OpMass<1, 1>;
-  using OpSourceL =
-      FormsIntegrators<DomainEleOp>::Assembly<A>::LinearForm<I>::OpSource<1, 1>;
+  using OpMassLL = FormsIntegrators<DomainEleOp>::Assembly<A>::BiLinearForm<
+      G>::OpMass<1, DIM1 * DIM2>;
+  using OpSourceL = FormsIntegrators<DomainEleOp>::Assembly<A>::LinearForm<
+      G>::OpSource<1, DIM1 * DIM2>;
   using OpMassVV = FormsIntegrators<DomainEleOp>::Assembly<A>::BiLinearForm<
-      I>::OpMass<potential_velocity_field_dim, potential_velocity_field_dim>;
+      G>::OpMass<potential_velocity_field_dim, potential_velocity_field_dim>;
   using OpSourceV = FormsIntegrators<DomainEleOp>::Assembly<A>::LinearForm<
-      I>::OpSource<potential_velocity_field_dim, potential_velocity_field_dim>;
+      G>::OpSource<potential_velocity_field_dim, potential_velocity_field_dim>;
   using OpScalarFieldL = FormsIntegrators<DomainEleOp>::Assembly<A>::LinearForm<
-      I>::OpBaseTimesScalar<1>;
+      G>::OpBaseTimesVector<1, DIM1 * DIM2, 1>;
 
   using AssemblyBoundaryEleOp =
       FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase;
@@ -403,14 +405,14 @@ MoFEMErrorCode LevelSet::runProblem() {
 struct LevelSet::OpRhsDomain : public AssemblyDomainEleOp {
 
   OpRhsDomain(const std::string field_name,
-              boost::shared_ptr<VectorDouble> l_ptr,
-              boost::shared_ptr<VectorDouble> l_dot_ptr,
+              boost::shared_ptr<MatrixDouble> l_ptr,
+              boost::shared_ptr<MatrixDouble> l_dot_ptr,
               boost::shared_ptr<MatrixDouble> vel_ptr);
   MoFEMErrorCode iNtegrate(EntData &data);
 
 private:
-  boost::shared_ptr<VectorDouble> lPtr;
-  boost::shared_ptr<VectorDouble> lDotPtr;
+  boost::shared_ptr<MatrixDouble> lPtr;
+  boost::shared_ptr<MatrixDouble> lDotPtr;
   boost::shared_ptr<MatrixDouble> velPtr;
 };
 
@@ -572,8 +574,8 @@ FTensor::Index<'j', SPACE_DIM> j;
 FTensor::Index<'k', SPACE_DIM> k;
 
 LevelSet::OpRhsDomain::OpRhsDomain(const std::string field_name,
-                                   boost::shared_ptr<VectorDouble> l_ptr,
-                                   boost::shared_ptr<VectorDouble> l_dot_ptr,
+                                   boost::shared_ptr<MatrixDouble> l_ptr,
+                                   boost::shared_ptr<MatrixDouble> l_dot_ptr,
                                    boost::shared_ptr<MatrixDouble> vel_ptr)
     : AssemblyDomainEleOp(field_name, field_name, AssemblyDomainEleOp::OPROW),
       lPtr(l_ptr), lDotPtr(l_dot_ptr), velPtr(vel_ptr) {}
@@ -605,8 +607,8 @@ MoFEMErrorCode LevelSet::OpRhsDomain::iNtegrate(EntData &data) {
   const auto nb_dofs = data.getIndices().size();
   const auto nb_base_func = data.getN().size2();
 
-  auto t_l = getFTensor0FromVec(*lPtr);
-  auto t_l_dot = getFTensor0FromVec(*lDotPtr);
+  auto t_l = getFTensor2FromMat<DIM1, DIM2>(*lPtr);
+  auto t_l_dot = getFTensor2FromMat<DIM1, DIM2>(*lDotPtr);
   auto t_vel = getFTensor1FromMat<SPACE_DIM>(*velPtr);
 
   auto t_base = data.getFTensor0N();
@@ -615,21 +617,24 @@ MoFEMErrorCode LevelSet::OpRhsDomain::iNtegrate(EntData &data) {
   auto t_w = getFTensor0IntegrationWeight();
   for (auto gg = 0; gg != nb_int_points; ++gg) {
     const auto alpha = t_w * getMeasure();
-    auto res0 = alpha * t_l_dot;
-    FTensor::Tensor1<double, SPACE_DIM> t_res1;
-    t_res1(i) = (alpha * t_l) * t_vel(i);
+    FTensor::Tensor2<double, DIM1, DIM2> t_res0;
+    t_res0(I, J) = alpha * t_l_dot(I, J);
+    FTensor::Tensor3<double, SPACE_DIM, DIM1, DIM2> t_res1;
+    t_res1(i, I, J) = (alpha * t_l(I, J)) * t_vel(i);
     ++t_w;
     ++t_l;
     ++t_l_dot;
     ++t_vel;
 
     auto &nf = this->locF;
+    auto t_nf = getFTensor2FromPtr<DIM1, DIM2>(&*nf.begin());
 
     int rr = 0;
     for (; rr != nb_dofs; ++rr) {
-      nf(rr) += res0 * t_base - t_res1(i) * t_diff_base(i);
+      t_nf(I, J) += t_res0(I, J) * t_base - t_res1(i, I, J) * t_diff_base(i);
       ++t_base;
       ++t_diff_base;
+      ++t_nf;
     }
     for (; rr < nb_base_func; ++rr) {
       ++t_base;
@@ -665,11 +670,13 @@ MoFEMErrorCode LevelSet::OpLhsDomain::iNtegrate(EntData &row_data,
     int rr = 0;
     for (; rr != nb_row_dofs; ++rr) {
       auto t_col_base = col_data.getFTensor0N(gg, 0);
+      auto t_mat = getFTensor2FromPtr<DIM1, DIM2>(&mat(rr * DIM1, 0));
       for (int cc = 0; cc != nb_col_dofs; ++cc) {
-        mat(rr, cc) +=
+        t_mat(I, J) +=
             (beta * t_row_base - alpha * (t_row_diff_base(i) * t_vel(i))) *
             t_col_base;
         ++t_col_base;
+        ++t_mat;
       }
       ++t_row_base;
       ++t_row_diff_base;
@@ -735,9 +742,9 @@ LevelSet::OpRhsSkeleton::doWork(int side, EntityType type,
             sideDataPtr->rowBaseSideMap[s0].size2();
 
         auto t_w = getFTensor0IntegrationWeight();
-        auto arr_t_l =
-            make_array(getFTensor0FromVec(sideDataPtr->lVec[LEFT_SIDE]),
-                       getFTensor0FromVec(sideDataPtr->lVec[RIGHT_SIDE]));
+        auto arr_t_l = make_array(
+            getFTensor2FromMat<DIM1, DIM2>(sideDataPtr->lVec[LEFT_SIDE]),
+            getFTensor2FromMat<DIM1, DIM2>(sideDataPtr->lVec[RIGHT_SIDE]));
         auto arr_t_vel = make_array(
             getFTensor1FromMat<SPACE_DIM>(sideDataPtr->velMat[LEFT_SIDE]),
             getFTensor1FromMat<SPACE_DIM>(sideDataPtr->velMat[RIGHT_SIDE]));
@@ -762,13 +769,18 @@ LevelSet::OpRhsSkeleton::doWork(int side, EntityType type,
           const auto dot = sense_row * (t_normal(i) * t_vel(i));
           const auto l_upwind_side = (dot > 0) ? s0 : opposite_s0;
           const auto l_upwind = arr_t_l[l_upwind_side];
-          const auto res = t_w * dot * l_upwind;
+          FTensor::Tensor2<double, DIM1, DIM2> t_res;
+          t_res(I, J) = t_w * dot * l_upwind(I, J);
           next();
           ++t_w;
+
+          auto t_res_skeleton =
+              getFTensor2FromPtr<DIM1, DIM2>(&*resSkelton.data().begin());
           auto rr = 0;
           for (; rr != nb_rows; ++rr) {
-            resSkelton[rr] += t_row_base * res;
+            t_res_skeleton(I, J) += t_row_base * t_res(I, J);
             ++t_row_base;
+            ++t_res_skeleton;
           }
           for (; rr < nb_row_base_functions; ++rr) {
             ++t_row_base;
@@ -854,7 +866,8 @@ LevelSet::OpLhsSkeleton::doWork(int side, EntityType type,
             const auto dot = sense_row * (t_normal(i) * t_vel(i));
             const auto l_upwind_side = (dot > 0) ? s0 : opposite_s0;
             const auto sense_upwind = sideDataPtr->senseMap[l_upwind_side];
-            auto res = t_w * dot; // * sense_row * sense_upwind;
+            FTensor::Tensor2<double, DIM1, DIM2> t_res;
+            t_res(I, J) = t_w * dot;
             next();
             ++t_w;
             auto rr = 0;
@@ -866,12 +879,17 @@ LevelSet::OpLhsSkeleton::doWork(int side, EntityType type,
                 };
                 auto t_col_base =
                     get_ntensor(sideDataPtr->colBaseSideMap[s1], gg, 0);
-                const auto res_row = res * t_row_base;
+
+                auto t_mat_sleton =
+                    getFTensor2FromPtr<DIM1, DIM2>(&matSkeleton(rr * DIM1, 0));
+                FTensor::Tensor2<double, DIM1, DIM2> t_res_row;
+                t_res_row(I, J) = t_res(I, J) * t_row_base;
                 ++t_row_base;
                 // iterate columns
                 for (size_t cc = 0; cc != nb_cols; ++cc) {
-                  matSkeleton(rr, cc) += res_row * t_col_base;
+                  t_mat_sleton(I, J) += t_res_row(I, J) * t_col_base;
                   ++t_col_base;
+                  ++t_mat_sleton;
                 }
               }
             }
@@ -946,26 +964,23 @@ MoFEMErrorCode LevelSet::pushOpDomain() {
         current_bit);
   };
 
-  auto l_ptr = boost::make_shared<VectorDouble>();
-  auto l_dot_ptr = boost::make_shared<VectorDouble>();
+  auto l_ptr = boost::make_shared<MatrixDouble>();
+  auto l_dot_ptr = boost::make_shared<MatrixDouble>();
   auto vel_ptr = boost::make_shared<MatrixDouble>();
 
-  pip->getOpDomainRhsPipeline().push_back(getZeroLevelVelOp(
-      vel_ptr));
-  CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(
-      pip->getOpDomainRhsPipeline(), {L2});
+  pip->getOpDomainRhsPipeline().push_back(getZeroLevelVelOp(vel_ptr));
+  CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(pip->getOpDomainRhsPipeline(),
+                                                  {L2});
   pip->getOpDomainRhsPipeline().push_back(
-      new OpCalculateScalarFieldValues("L", l_ptr));
+      new OpCalculateTensor2FieldValues<DIM1, DIM2>("L", l_ptr));
   pip->getOpDomainRhsPipeline().push_back(
-      new OpCalculateScalarFieldValuesDot("L", l_dot_ptr));
+      new OpCalculateTensor2FieldValuesDot<DIM1, DIM2>("L", l_dot_ptr));
   pip->getOpDomainRhsPipeline().push_back(
       new OpRhsDomain("L", l_ptr, l_dot_ptr, vel_ptr));
 
-
-  pip->getOpDomainLhsPipeline().push_back(getZeroLevelVelOp(
-      vel_ptr));
-  CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(
-      pip->getOpDomainLhsPipeline(), {L2});
+  pip->getOpDomainLhsPipeline().push_back(getZeroLevelVelOp(vel_ptr));
+  CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(pip->getOpDomainLhsPipeline(),
+                                                  {L2});
   pip->getOpDomainLhsPipeline().push_back(new OpLhsDomain("L", vel_ptr));
 
   MoFEMFunctionReturn(0);
@@ -976,7 +991,7 @@ LevelSet::getSideFE(boost::shared_ptr<SideData> side_data_ptr) {
 
   auto simple = mField.getInterface<Simple>();
 
-  auto l_ptr = boost::make_shared<VectorDouble>();
+  auto l_ptr = boost::make_shared<MatrixDouble>();
   auto vel_ptr = boost::make_shared<MatrixDouble>();
 
   struct OpSideData : public FaceSideEleOp {
@@ -1028,7 +1043,7 @@ LevelSet::getSideFE(boost::shared_ptr<SideData> side_data_ptr) {
   struct OpSideDataOnParent : public DomainEleOp {
 
     OpSideDataOnParent(boost::shared_ptr<SideData> side_data_ptr,
-                       boost::shared_ptr<VectorDouble> l_ptr,
+                       boost::shared_ptr<MatrixDouble> l_ptr,
                        boost::shared_ptr<MatrixDouble> vel_ptr)
         : DomainEleOp("L", "L", DomainEleOp::OPROWCOL),
           sideDataPtr(side_data_ptr), lPtr(l_ptr), velPtr(vel_ptr) {
@@ -1056,11 +1071,11 @@ LevelSet::getSideFE(boost::shared_ptr<SideData> side_data_ptr) {
         (sideDataPtr->velMat)[nb_in_loop] = *velPtr;
 
 #ifndef NDEBUG
-        if ((sideDataPtr->lVec)[nb_in_loop].size() !=
+        if ((sideDataPtr->lVec)[nb_in_loop].size2() !=
             (sideDataPtr->velMat)[nb_in_loop].size2())
           SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                    "Wrong number of integaration pts %d != %d",
-                   (sideDataPtr->lVec)[nb_in_loop].size(),
+                   (sideDataPtr->lVec)[nb_in_loop].size2(),
                    (sideDataPtr->velMat)[nb_in_loop].size2());
         if ((sideDataPtr->velMat)[nb_in_loop].size1() != SPACE_DIM)
           SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -1097,7 +1112,7 @@ LevelSet::getSideFE(boost::shared_ptr<SideData> side_data_ptr) {
 
   private:
     boost::shared_ptr<SideData> sideDataPtr;
-    boost::shared_ptr<VectorDouble> lPtr;
+    boost::shared_ptr<MatrixDouble> lPtr;
     boost::shared_ptr<MatrixDouble> velPtr;
   };
 
@@ -1107,7 +1122,7 @@ LevelSet::getSideFE(boost::shared_ptr<SideData> side_data_ptr) {
     CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(
         parent_fe_ptr->getOpPtrVector(), {L2});
     parent_fe_ptr->getOpPtrVector().push_back(
-        new OpCalculateScalarFieldValues("L", l_ptr));
+        new OpCalculateTensor2FieldValues<DIM1, DIM2>("L", l_ptr));
     parent_fe_ptr->getOpPtrVector().push_back(
         new OpSideDataOnParent(side_data_ptr, l_ptr, vel_ptr));
     return parent_fe_ptr;
@@ -1205,9 +1220,9 @@ std::tuple<double, Tag> LevelSet::evaluateError() {
 
       for (auto s : {LEFT_SIDE, RIGHT_SIDE}) {
 
-        auto arr_t_l =
-            make_array(getFTensor0FromVec(sideDataPtr->lVec[LEFT_SIDE]),
-                       getFTensor0FromVec(sideDataPtr->lVec[RIGHT_SIDE]));
+        auto arr_t_l = make_array(
+            getFTensor2FromMat<DIM1, DIM2>(sideDataPtr->lVec[LEFT_SIDE]),
+            getFTensor2FromMat<DIM1, DIM2>(sideDataPtr->lVec[RIGHT_SIDE]));
         auto arr_t_vel = make_array(
             getFTensor1FromMat<SPACE_DIM>(sideDataPtr->velMat[LEFT_SIDE]),
             getFTensor1FromMat<SPACE_DIM>(sideDataPtr->velMat[RIGHT_SIDE]));
@@ -1222,8 +1237,9 @@ std::tuple<double, Tag> LevelSet::evaluateError() {
         double e = 0;
         auto t_w = getFTensor0IntegrationWeight();
         for (int gg = 0; gg != nb_gauss_pts; ++gg) {
-          e += t_w * getMeasure() *
-               pow(arr_t_l[LEFT_SIDE] - arr_t_l[RIGHT_SIDE], 2);
+          FTensor::Tensor2<double, DIM1, DIM2> t_diff;
+          t_diff(I, J) = arr_t_l[LEFT_SIDE](I, J) - arr_t_l[RIGHT_SIDE](I, J);
+          e += t_w * getMeasure() * t_diff(I, J) * t_diff(I, J);
           next();
           ++t_w;
         }
@@ -1369,7 +1385,7 @@ MoFEMErrorCode LevelSet::testSideFE() {
    *
    */
   struct DivergenceVol : public DomainEleOp {
-    DivergenceVol(boost::shared_ptr<VectorDouble> l_ptr,
+    DivergenceVol(boost::shared_ptr<MatrixDouble> l_ptr,
                   boost::shared_ptr<MatrixDouble> vel_ptr,
                   SmartPetscObj<Vec> div_vec)
         : DomainEleOp("L", DomainEleOp::OPROW), lPtr(l_ptr), velPtr(vel_ptr),
@@ -1382,12 +1398,12 @@ MoFEMErrorCode LevelSet::testSideFE() {
         const auto nb_gauss_pts = getGaussPts().size2();
         const auto t_w = getFTensor0IntegrationWeight();
         auto t_diff = data.getFTensor1DiffN<SPACE_DIM>();
-        auto t_l = getFTensor0FromVec(*lPtr);
+        auto t_l = getFTensor2FromMat<DIM1, DIM2>(*lPtr);
         auto t_vel = getFTensor1FromMat<SPACE_DIM>(*velPtr);
         double div = 0;
         for (auto gg = 0; gg != nb_gauss_pts; ++gg) {
           for (int rr = 0; rr != nb_dofs; ++rr) {
-            div += getMeasure() * t_w * t_l * (t_diff(i) * t_vel(i));
+            div += getMeasure() * t_w * t_l(I, I) * (t_diff(i) * t_vel(i));
             ++t_diff;
           }
           ++t_w;
@@ -1400,7 +1416,7 @@ MoFEMErrorCode LevelSet::testSideFE() {
     }
 
   private:
-    boost::shared_ptr<VectorDouble> lPtr;
+    boost::shared_ptr<MatrixDouble> lPtr;
     boost::shared_ptr<MatrixDouble> velPtr;
     SmartPetscObj<Vec> divVec;
   };
@@ -1443,9 +1459,9 @@ MoFEMErrorCode LevelSet::testSideFE() {
           auto side_sense = sideDataPtr->senseMap[s0];
           auto opposite_s0 = not_side(s0);
 
-          auto arr_t_l =
-              make_array(getFTensor0FromVec(sideDataPtr->lVec[LEFT_SIDE]),
-                         getFTensor0FromVec(sideDataPtr->lVec[RIGHT_SIDE]));
+          auto arr_t_l = make_array(
+              getFTensor2FromMat<DIM1, DIM2>(sideDataPtr->lVec[LEFT_SIDE]),
+              getFTensor2FromMat<DIM1, DIM2>(sideDataPtr->lVec[RIGHT_SIDE]));
           auto arr_t_vel = make_array(
               getFTensor1FromMat<SPACE_DIM>(sideDataPtr->velMat[LEFT_SIDE]),
               getFTensor1FromMat<SPACE_DIM>(sideDataPtr->velMat[RIGHT_SIDE]));
@@ -1471,7 +1487,7 @@ MoFEMErrorCode LevelSet::testSideFE() {
                                         // initialisation field has to be smooth
                                         // and exactly approximated by approx
                                         // base
-            auto res = t_w * l_upwind * dot;
+            auto res = t_w * l_upwind(I, I) * dot;
             ++t_w;
             next();
             int rr = 0;
@@ -1508,7 +1524,7 @@ MoFEMErrorCode LevelSet::testSideFE() {
   auto div_vol_vec = createVectorMPI(mField.get_comm(), PETSC_DECIDE, 1);
   auto div_skel_vec = createVectorMPI(mField.get_comm(), PETSC_DECIDE, 1);
 
-  auto l_ptr = boost::make_shared<VectorDouble>();
+  auto l_ptr = boost::make_shared<MatrixDouble>();
   auto vel_ptr = boost::make_shared<MatrixDouble>();
   auto side_data_ptr = boost::make_shared<SideData>();
   auto side_fe_ptr = getSideFE(side_data_ptr);
@@ -1516,7 +1532,7 @@ MoFEMErrorCode LevelSet::testSideFE() {
   CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(vol_fe->getOpPtrVector(),
                                                   {L2});
   vol_fe->getOpPtrVector().push_back(
-      new OpCalculateScalarFieldValues("L", l_ptr));
+      new OpCalculateTensor2FieldValues<DIM1, DIM2>("L", l_ptr));
   vol_fe->getOpPtrVector().push_back(getZeroLevelVelOp(vel_ptr));
   vol_fe->getOpPtrVector().push_back(
       new DivergenceVol(l_ptr, vel_ptr, div_vol_vec));
@@ -1594,25 +1610,27 @@ MoFEMErrorCode LevelSet::testOp() {
     auto post_proc_fe =
         boost::make_shared<PostProcBrokenMeshInMoab<DomainEle>>(mField);
 
-    using OpPPMap = OpPostProcMapInMoab<SPACE_DIM, SPACE_DIM>;
+    if constexpr (DIM1 == 1 && DIM2 == 1) {
+      using OpPPMap = OpPostProcMapInMoab<SPACE_DIM, SPACE_DIM>;
 
-    auto l_vec = boost::make_shared<VectorDouble>();
-    post_proc_fe->getOpPtrVector().push_back(
-        new OpCalculateScalarFieldValues("L", l_vec, f_res));
+      auto l_vec = boost::make_shared<VectorDouble>();
+      post_proc_fe->getOpPtrVector().push_back(
+          new OpCalculateScalarFieldValues("L", l_vec, f_res));
 
-    post_proc_fe->getOpPtrVector().push_back(
+      post_proc_fe->getOpPtrVector().push_back(
 
-        new OpPPMap(
+          new OpPPMap(
 
-            post_proc_fe->getPostProcMesh(), post_proc_fe->getMapGaussPts(),
+              post_proc_fe->getPostProcMesh(), post_proc_fe->getMapGaussPts(),
 
-            {{"L", l_vec}},
+              {{"L", l_vec}},
 
-            {},
+              {},
 
-            {}, {})
+              {}, {})
 
-    );
+      );
+    }
 
     CHKERR DMoFEMLoopFiniteElements(dm, simple->getDomainFEName(),
                                     post_proc_fe);
@@ -1745,30 +1763,32 @@ MoFEMErrorCode LevelSet::initialiseFieldLevelSet(
     post_proc_fe->setTagsToTransfer({th_error});
     post_proc_fe->exeTestHook = test_bit_ele;
 
-    using OpPPMap = OpPostProcMapInMoab<SPACE_DIM, SPACE_DIM>;
+    if constexpr (DIM1 == 1 && DIM2 == 1) {
+      using OpPPMap = OpPostProcMapInMoab<SPACE_DIM, SPACE_DIM>;
 
-    auto l_vec = boost::make_shared<VectorDouble>();
-    auto l_grad_mat = boost::make_shared<MatrixDouble>();
-    CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(
-        post_proc_fe->getOpPtrVector(), {L2});
-    post_proc_fe->getOpPtrVector().push_back(
-        new OpCalculateScalarFieldValues("L", l_vec));
-    post_proc_fe->getOpPtrVector().push_back(
-        new OpCalculateScalarFieldGradient<SPACE_DIM>("L", l_grad_mat));
+      auto l_vec = boost::make_shared<VectorDouble>();
+      auto l_grad_mat = boost::make_shared<MatrixDouble>();
+      CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(
+          post_proc_fe->getOpPtrVector(), {L2});
+      post_proc_fe->getOpPtrVector().push_back(
+          new OpCalculateScalarFieldValues("L", l_vec));
+      post_proc_fe->getOpPtrVector().push_back(
+          new OpCalculateScalarFieldGradient<SPACE_DIM>("L", l_grad_mat));
 
-    post_proc_fe->getOpPtrVector().push_back(
+      post_proc_fe->getOpPtrVector().push_back(
 
-        new OpPPMap(
+          new OpPPMap(
 
-            post_proc_fe->getPostProcMesh(), post_proc_fe->getMapGaussPts(),
+              post_proc_fe->getPostProcMesh(), post_proc_fe->getMapGaussPts(),
 
-            {{"L", l_vec}},
+              {{"L", l_vec}},
 
-            {{"GradL", l_grad_mat}},
+              {{"GradL", l_grad_mat}},
 
-            {}, {})
+              {}, {})
 
-    );
+      );
+    }
 
     CHKERR DMoFEMLoopFiniteElements(dm, simple->getDomainFEName(),
                                     post_proc_fe);
@@ -1825,10 +1845,10 @@ MoFEMErrorCode LevelSet::initialiseFieldVelocity(
   pip->getDomainLhsFE()->exeTestHook = test_bit;
   pip->getDomainRhsFE()->exeTestHook = test_bit;
 
-  CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(
-      pip->getOpDomainLhsPipeline(), {potential_velocity_space});
-  CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(
-      pip->getOpDomainRhsPipeline(), {potential_velocity_space});
+  CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(pip->getOpDomainLhsPipeline(),
+                                                  {potential_velocity_space});
+  CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(pip->getOpDomainRhsPipeline(),
+                                                  {potential_velocity_space});
 
   pip->getOpDomainLhsPipeline().push_back(new OpMassVV("V", "V"));
   pip->getOpDomainRhsPipeline().push_back(new OpSourceV("V", vel_fun));
@@ -1859,7 +1879,6 @@ MoFEMErrorCode LevelSet::initialiseFieldVelocity(
 
       using OpPPMap = OpPostProcMapInMoab<SPACE_DIM, SPACE_DIM>;
 
-      auto l_vec = boost::make_shared<VectorDouble>();
       auto potential_vec = boost::make_shared<VectorDouble>();
       auto velocity_mat = boost::make_shared<MatrixDouble>();
 
@@ -1946,30 +1965,33 @@ MoFEMErrorCode LevelSet::solveAdvection() {
     };
 
     using OpPPMap = OpPostProcMapInMoab<SPACE_DIM, SPACE_DIM>;
-    auto l_vec = boost::make_shared<VectorDouble>();
+
     auto vel_ptr = boost::make_shared<MatrixDouble>();
 
     CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(
         post_proc_fe->getOpPtrVector(), {L2});
-    post_proc_fe->getOpPtrVector().push_back(
-        new OpCalculateScalarFieldValues("L", l_vec));
     post_proc_fe->getOpPtrVector().push_back(getZeroLevelVelOp(vel_ptr));
 
-    post_proc_fe->getOpPtrVector().push_back(
+    if constexpr (DIM1 == 1 && DIM2 == 1) {
+      auto l_vec = boost::make_shared<VectorDouble>();
+      post_proc_fe->getOpPtrVector().push_back(
+          new OpCalculateScalarFieldValues("L", l_vec));
+      post_proc_fe->getOpPtrVector().push_back(
 
-        new OpPPMap(
+          new OpPPMap(
 
-            post_proc_fe->getPostProcMesh(),
+              post_proc_fe->getPostProcMesh(),
 
-            post_proc_fe->getMapGaussPts(),
+              post_proc_fe->getMapGaussPts(),
 
-            {{"L", l_vec}},
+              {{"L", l_vec}},
 
-            {{"V", vel_ptr}},
+              {{"V", vel_ptr}},
 
-            {}, {})
+              {}, {})
 
-    );
+      );
+    }
     return post_proc_fe;
   };
 
@@ -2214,8 +2236,7 @@ MoFEMErrorCode LevelSet::refineMesh(WrapperClass &&wp) {
     Range fe_to_refine_children;
     bit_mng->updateRangeByChildren(fe_to_refine, fe_to_refine_children);
     // add entities to to level "l"
-    fe_to_refine_children =
-        fe_to_refine_children.subset_by_dimension(FE_DIM);
+    fe_to_refine_children = fe_to_refine_children.subset_by_dimension(FE_DIM);
     level_ents.merge(fe_to_refine_children);
 
     auto fix_neighbour_level = [&](auto ll) {
@@ -2239,9 +2260,8 @@ MoFEMErrorCode LevelSet::refineMesh(WrapperClass &&wp) {
       }
       // get adjacents to parents
       Range skin_adj_ents;
-      CHKERR mField.get_moab().get_adjacencies(skin_parents, FE_DIM, false,
-                                               skin_adj_ents,
-                                               moab::Interface::UNION);
+      CHKERR mField.get_moab().get_adjacencies(
+          skin_parents, FE_DIM, false, skin_adj_ents, moab::Interface::UNION);
       CHKERR bit_mng->filterEntitiesByRefLevel(bad_bit, BitRefLevel().set(),
                                                skin_adj_ents);
       skin_adj_ents = intersect(skin_adj_ents, level_ents);
@@ -2295,15 +2315,13 @@ MoFEMErrorCode LevelSet::refineMesh(WrapperClass &&wp) {
 
     // get entities of dim-1 on level "l"
     Range level_edges;
-    CHKERR bit_mng->getEntitiesByDimAndRefLevel(set_bit(start_bit + l),
-                                                BitRefLevel().set(),
-                                                FE_DIM - 1, level_edges);
+    CHKERR bit_mng->getEntitiesByDimAndRefLevel(
+        set_bit(start_bit + l), BitRefLevel().set(), FE_DIM - 1, level_edges);
 
     // get parent of entities of level "l"
     Range level_edges_parents;
     CHKERR bit_mng->updateRangeByParent(level_edges, level_edges_parents);
-    level_edges_parents =
-        level_edges_parents.subset_by_dimension(FE_DIM - 1);
+    level_edges_parents = level_edges_parents.subset_by_dimension(FE_DIM - 1);
     CHKERR bit_mng->filterEntitiesByRefLevel(
         set_bit(start_bit + l), BitRefLevel().set(), level_edges_parents);
 
@@ -2403,9 +2421,8 @@ MoFEMErrorCode LevelSet::dgProjection(const int projection_bit) {
                                               BitRefLevel().set(), FE_DIM,
                                               current_ents);
   Range prj_ents; // ents from which data are projected
-  CHKERR bit_mng->getEntitiesByDimAndRefLevel(BitRefLevel().set(projection_bit),
-                                              BitRefLevel().set(), FE_DIM,
-                                              prj_ents);
+  CHKERR bit_mng->getEntitiesByDimAndRefLevel(
+      BitRefLevel().set(projection_bit), BitRefLevel().set(), FE_DIM, prj_ents);
   for (auto l = 0; l != nb_levels; ++l) {
     CHKERR bit_mng->updateRangeByParent(prj_ents, prj_ents);
   }
@@ -2439,12 +2456,10 @@ MoFEMErrorCode LevelSet::dgProjection(const int projection_bit) {
       true); // remove all DOFs which are not
              // on current bit. This case works for L2 space
 
-  CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(
-      lhs_fe->getOpPtrVector(), {L2});
+  CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(lhs_fe->getOpPtrVector(),
+                                                  {L2});
   lhs_fe->getOpPtrVector().push_back(
       new OpMassLL("L", "L")); // Assemble projection matrix
-
-  auto l_vec = boost::make_shared<VectorDouble>();
 
   // This assumes that projection mesh is finer, current mesh is coarsened.
   auto set_prj_from_child = [&](auto rhs_fe_prj) {
@@ -2452,8 +2467,9 @@ MoFEMErrorCode LevelSet::dgProjection(const int projection_bit) {
         rhs_fe_prj->getOpPtrVector(), {L2});
 
     // Evaluate field value on projection mesh
+    auto l_vec = boost::make_shared<MatrixDouble>();
     rhs_fe_prj->getOpPtrVector().push_back(
-        new OpCalculateScalarFieldValues("L", l_vec));
+        new OpCalculateTensor2FieldValues<DIM1, DIM2>("L", l_vec));
 
     // This element is used to assemble
     auto get_parent_this = [&]() {
@@ -2490,11 +2506,15 @@ MoFEMErrorCode LevelSet::dgProjection(const int projection_bit) {
 
   // This assumed that current mesh is refined, and projection mesh is coarser
   auto set_prj_from_parent = [&](auto rhs_fe_current) {
+
+    // Evaluate field value on projection mesh
+    auto l_vec = boost::make_shared<MatrixDouble>();
+
     // Evaluate field on coarser element
     auto get_parent_this = [&]() {
       auto fe_parent_this = boost::make_shared<DomianParentEle>(mField);
       fe_parent_this->getOpPtrVector().push_back(
-          new OpCalculateScalarFieldValues("L", l_vec));
+          new OpCalculateTensor2FieldValues<DIM1, DIM2>("L", l_vec));
       return fe_parent_this;
     };
 
@@ -2571,30 +2591,31 @@ MoFEMErrorCode LevelSet::dgProjection(const int projection_bit) {
     post_proc_fe->setTagsToTransfer({th_error});
     post_proc_fe->exeTestHook = test_mesh_bit;
 
-    using OpPPMap = OpPostProcMapInMoab<SPACE_DIM, SPACE_DIM>;
+    if constexpr (DIM1 == 1 && DIM2 == 1) {
+      using OpPPMap = OpPostProcMapInMoab<SPACE_DIM, SPACE_DIM>;
+      auto l_vec = boost::make_shared<VectorDouble>();
+      auto l_grad_mat = boost::make_shared<MatrixDouble>();
+      CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(
+          post_proc_fe->getOpPtrVector(), {L2});
+      post_proc_fe->getOpPtrVector().push_back(
+          new OpCalculateScalarFieldValues("L", l_vec));
+      post_proc_fe->getOpPtrVector().push_back(
+          new OpCalculateScalarFieldGradient<SPACE_DIM>("L", l_grad_mat));
 
-    auto l_vec = boost::make_shared<VectorDouble>();
-    auto l_grad_mat = boost::make_shared<MatrixDouble>();
-    CHKERR AddHOOps<FE_DIM, FE_DIM, SPACE_DIM>::add(
-        post_proc_fe->getOpPtrVector(), {L2});
-    post_proc_fe->getOpPtrVector().push_back(
-        new OpCalculateScalarFieldValues("L", l_vec));
-    post_proc_fe->getOpPtrVector().push_back(
-        new OpCalculateScalarFieldGradient<SPACE_DIM>("L", l_grad_mat));
+      post_proc_fe->getOpPtrVector().push_back(
 
-    post_proc_fe->getOpPtrVector().push_back(
+          new OpPPMap(
 
-        new OpPPMap(
+              post_proc_fe->getPostProcMesh(), post_proc_fe->getMapGaussPts(),
 
-            post_proc_fe->getPostProcMesh(), post_proc_fe->getMapGaussPts(),
+              {{"L", l_vec}},
 
-            {{"L", l_vec}},
+              {{"GradL", l_grad_mat}},
 
-            {{"GradL", l_grad_mat}},
+              {}, {})
 
-            {}, {})
-
-    );
+      );
+    }
 
     CHKERR DMoFEMLoopFiniteElements(dm, simple->getDomainFEName(),
                                     post_proc_fe);
