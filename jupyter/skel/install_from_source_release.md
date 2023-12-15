@@ -17,6 +17,7 @@ This notebook is for installing a Release version of what you might have changed
 
 > Do not run this notebook if you have not run install_from_source_Debug
 
+If you have run this notebook before and just want to recompile the latest changes, run the last cell only.
 
 Print User Id
 
@@ -67,6 +68,14 @@ spack view symlink -i um_view_release mofem-users-modules build_type=Release ins
 ```
 
 To run the notebooks provided with the amended version of the code, replace all of the `um_view` in the path definitions in the notebooks you want to run with `um_view_release`.
+
+
+# Cell to run to update changes when debugging
+(assuming you run all of the cells once before)
+
+```bash
+cd mofem_install/mofem-cephas/mofem/users_modules/um-build-Release-* && make -j4 install
+```
 
 ```python
 
