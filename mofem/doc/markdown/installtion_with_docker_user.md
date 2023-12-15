@@ -242,11 +242,6 @@ This should trigger recompilation of the folder defined in [tasks.json](#tasksjs
 
 The same procedure can be applied for any other users you create and everyone can debug separately. 
 
-
-<!-- Use *workshop2023* when you log in through VS Code. Note that you are connecting to *jupyterhub cloud/docker container*. -->
-
-## Video on JuputerHub, SSH and MoFEM
-
 [![Watch the video](https://img.youtube.com/vi/xL3J8VHig68/hqdefault.jpg)](https://youtu.be/pG_-VEplBOQ)
 
 # Running jupyter notebooks with the amended code
@@ -257,7 +252,16 @@ To run the example notebooks with the code which was amended during debugging, n
 
 - *um_view_debug* -  symbolic links to the executable binaries of the debugging version
 
-For running bigger problems, like the ones in the example notebooks, using a release version is advised as it is much faster. *um_view* is a release version but not of the code which you might have amended during the debugging part of these instructions. To compile this code with a release version run the *install_from_source_release.md* notebook, located in your home folder. 
+For running bigger problems, like the ones in the example notebooks, using a release version is advised as it is much faster. *um_view* is a release version but not of the code which you might have amended during the debugging part of these instructions. To compile this code with a release version run the *install_from_source_release.md* notebook, located in your home folder. This will compile a new release version and create *um_view_debug* folder in your home folder.
 
+- *um_view_debug* - new folder with symbolic links to the executable binaries of the amended release version
+
+To run the notebooks provided with the amended version of the code, replace all of the *um_view* in the path definitions in the notebooks you want to run with *um_view_release*.
+
+If you change the code again, do not rerun this notebook. Instead, run just the last cell in *install_from_source_release.md* or run the following in the integrated terminal when connected to the container in VS Code:
+
+~~~~
+cd ~/mofem_install/mofem-cephas/mofem/users_modules/um-build-Release-* && make -j4 install
+~~~~
 
 Any problems with this installation, please contact us by [mofem-group@googlegroups.com](https://groups.google.com/forum/#!forum/mofem-group).
