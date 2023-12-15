@@ -9,7 +9,7 @@ by the Linux kernel to provide lightweight containers and thereby avoiding the
 need to run costly virtual machines. It’s through the use of containers that
 MoFEM is compiled and run.
 
-In macOS, a lightweight Linux distribution is virtualized to run the Docker
+This installation is suitable for Linux, macOS and some versions of Windows. In macOS, a lightweight Linux distribution is virtualized to run the Docker
 containers in.
 
 [TOC]
@@ -66,6 +66,8 @@ After filling in the fields as above, press `Run`. The installed container can b
 
 If you want to stop the container, you can do so from the `Actions` column on the right. Click on square to stop, and triangle to start it again.
 
+[![Watch the video](https://img.youtube.com/vi/xL3J8VHig68/hqdefault.jpg)](https://youtu.be/_qo4EqfjGc4)
+
 ## Using terminal {#docker_terminal_installation}
 
 If you used the Docker user interface for this installation, you can skip this section and continue to [Accessing the hub section](#docker_access_hub) to find login options and how to run notebooks.
@@ -94,8 +96,14 @@ docker start workshop2023
 
 Similarly to viewing installed containers in GUI, you can view them in terminal, by running: 
 ~~~~~
-docker container ls
+docker container ls -a
 ~~~~~
+
+- the output will let you know container names, which containers are available or running, and should look as follows:
+~~~~
+CONTAINER ID   IMAGE                                        COMMAND                  CREATED       STATUS         PORTS                                                    NAMES
+0336cc3b5648   likask/mofem-spack-jupyterhub:Workshop2023   "/bin/bash -c 'servi…"   12 days ago   Up 2 seconds   0.0.0.0:8000->8000/tcp, 8888/tcp, 0.0.0.0:2222->22/tcp   workshop2023
+~~~~
 
 #### ARM architecture case on Mac
 
@@ -123,7 +131,7 @@ If you run a container locally, open [http://localhost:8000](http://localhost:80
 Note this is the password to JupyterHub, not a password to the Linux environment.
 
 
-> If you login as `mofem` user, you will have admin right in the JupyterHub, and you can add more users there by going to `Controrl Panel -> Admin -> Add Users`
+> If you login as `mofem` user, you will have admin right in the JupyterHub, and you can add more users there by going to `Control Panel -> Admin -> Add Users`
 
 ## Start running 
 
@@ -205,7 +213,7 @@ To set up debugging, follow these steps:
 - go to `Extensions` within VS Code, see Figure 6 <span style="color:magenta"> a) </span> , and install `C/C++ Extension Pack` and `Code Runner` extensions
 - create `.vscode` folder, download files [launch.json](launch.json "launch.json") & [tasks.json](tasks.json "tasks.json") and place them into the .vscode folder, see Figure 7
 - replace the hash `5sehreo` with the hash in your folder, see <span style="color:orange"> `HASH`</span> in Figure 7
-- adjust the files to fit your purpose as described bellow Figure 7
+- adjust the files to fit your purpose as described below Figure 7
 
 <!-- <img src="./../figures/docker_ssh_vscode.png" alt="Docker - VS Code debugging setup" width="100%"/> -->
 <img src="docker_ssh_vscode.png" alt="Docker - VS Code debugging setup" width="100%"/>
@@ -235,11 +243,10 @@ This should trigger recompilation of the folder defined in [tasks.json](#tasksjs
 The same procedure can be applied for any other users you create and everyone can debug separately. 
 
 
-
 <!-- Use *workshop2023* when you log in through VS Code. Note that you are connecting to *jupyterhub cloud/docker container*. -->
 
 ## Video on JuputerHub, SSH and MoFEM
 
-[![Watch the video](https://img.youtube.com/vi/xL3J8VHig68/hqdefault.jpg)](https://youtu.be/xL3J8VHig68)
+[![Watch the video](https://img.youtube.com/vi/xL3J8VHig68/hqdefault.jpg)](https://youtu.be/pG_-VEplBOQ)
 
 Any problems with this installation, please contact us by [mofem-group@googlegroups.com](https://groups.google.com/forum/#!forum/mofem-group).

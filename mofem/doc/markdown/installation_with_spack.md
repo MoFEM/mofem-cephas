@@ -18,9 +18,9 @@ pre-compiled binaries are not available. If you have any problems, feedback or w
 
 # Installation using scripts {#installation_scripts}
 
-The remaining of this article presents a step-by-step guidance with
+The remainder of this article presents a step-by-step guidance with
 comments/explanations on how to install MoFEM using Spack on different
-platforms (Linux, macOS, HPC). However, those who prefer to automatise the process of the
+platforms (Linux, macOS, HPC). However, those who prefer to automate the process of the
 installation can use the following scripts for different purposes:
 
 - For user only (just the binary files): [`install_mofem_user.sh`](scripts/install_mofem_user.sh)
