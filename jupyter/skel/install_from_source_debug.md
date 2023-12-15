@@ -29,7 +29,8 @@ Print User Id
 id $UID
 ```
 
-Install users modules (Note Debug version, slower, for code developent)
+Install users modules 
+>Debug version is slower, mainly used for code developent
 
 ```bash
 spack --config-scope /mofem_install/spack_config_dir dev-build -j 4 \
@@ -49,8 +50,4 @@ spack find -lv mofem-users-modules build_type=Debug install_id=$UID
 ```bash
 rm -rf um_view_debug
 spack view symlink -i um_view_debug mofem-users-modules build_type=Debug install_id=$UID
-```
-
-```python
-
 ```
