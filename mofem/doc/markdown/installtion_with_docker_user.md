@@ -17,6 +17,7 @@ containers in.
 ## Download and Install Docker {#docker_install}
 
 You can download and install Docker following instructions on the [Docker installation webpage](https://docs.docker.com/installation/#installation).
+> If you are using Windows you might have to set up some additional settings. For that you can follow [video with instructions](https://youtu.be/GmNNn6xiTy8) or [instructions on docker website](https://docs.docker.com/desktop/install/windows-install/) and come back to these instructions once Docker is running.
 
 # How to get and run the container {#docker_getting_container}
 
@@ -168,7 +169,7 @@ and afterwards choose a new password.
 
 ### Start installation
 
-In your browser ([http://localhost:8000](http://localhost:8000)), login to the JupyterHub and open `install_from_source` notebook and run all of the cells in it. This will checkout the source code of MoFEM core and basic user modules including tutorials, and compile user modules. New folders will appear in your starting directory:
+In your browser ([http://localhost:8000](http://localhost:8000)), login to the JupyterHub and open `install_from_source_debug` notebook and run all of the cells in it. This will checkout the source code of MoFEM core and basic user modules including tutorials, and compile user modules. New folders will appear in your starting directory:
 
 - mofem_install - contains source code
 - um_view_debug - symbolic links to the executable binaries of the debugging version
@@ -203,7 +204,9 @@ Here, we can see the port forwarding number 2222 we set up for our container ear
 
 <span style="color:orange"> d) </span> Refresh SSH connections to see the option to connect via SSH to the container in the `Remote Explorer` extension in VS Code.
 
-<span style="color:blue"> e) </span> Connect to the container in VS Code (use the [SSH password](#ssh_paaswd)) and you should see the same folders and files as you do when you open it through a browser ([http://localhost:8000](http://localhost:8000)). 
+<span style="color:blue"> e) </span> Connect to the container in VS Code (use the [SSH password](#ssh_paaswd)) and you should see the same folders and files as you do when you open it through a browser ([http://localhost:8000](http://localhost:8000)).
+
+> If you are asked about the environment by VS Code during these steps, select `Linux`.
 
 ## VS Code debugging setup
 
