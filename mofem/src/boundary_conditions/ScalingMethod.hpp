@@ -63,7 +63,7 @@ struct TimeScale : public ScalingMethod {
   double getScale(const double time);
 
 private:
-  MoFEMErrorCode timeData(std::string delimiter);
+  MoFEMErrorCode timeData(std::string fileName, std::string delimiter);
 
   /**
    * @brief Get scaling at a given time when the scalar values have been
