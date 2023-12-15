@@ -1925,13 +1925,29 @@ struct OpTensorTimesSymmetricTensor
   using EntData = EntitiesFieldData::EntData;
   using UserOp = ForcesAndSourcesCore::UserDataOperator;
 
-  OpTensorTimesSymmetricTensor(const std::string field_name,
-                               boost::shared_ptr<MatrixDouble> in_mat,
-                               boost::shared_ptr<MatrixDouble> out_mat,
-                               boost::shared_ptr<MatrixDouble> d_mat)
+  /**
+   * @deprecated Do not use this constriuctor
+  */
+  DEPRECATED OpTensorTimesSymmetricTensor(const std::string field_name,
+                                          boost::shared_ptr<MatrixDouble> in_mat,
+                                          boost::shared_ptr<MatrixDouble> out_mat,
+                                          boost::shared_ptr<MatrixDouble> d_mat)
       : UserOp(field_name, OPROW), inMat(in_mat), outMat(out_mat), dMat(d_mat) {
     // Only is run for vertices
     std::fill(&doEntities[MBEDGE], &doEntities[MBMAXTYPE], false);
+    if (!inMat)
+      THROW_MESSAGE("Pointer for in mat is null");
+    if (!outMat)
+      THROW_MESSAGE("Pointer for out mat is null");
+    if (!dMat)
+      THROW_MESSAGE("Pointer for tensor mat is null");
+  }
+
+  OpTensorTimesSymmetricTensor(boost::shared_ptr<MatrixDouble> in_mat,
+                               boost::shared_ptr<MatrixDouble> out_mat,
+                               boost::shared_ptr<MatrixDouble> d_mat)
+      : UserOp(NOSPACE, OPSPACE), inMat(in_mat), outMat(out_mat), dMat(d_mat) {
+    // Only is run for vertices
     if (!inMat)
       THROW_MESSAGE("Pointer for in mat is null");
     if (!outMat)
@@ -1972,12 +1988,25 @@ struct OpSymmetrizeTensor : public ForcesAndSourcesCore::UserDataOperator {
   using EntData = EntitiesFieldData::EntData;
   using UserOp = ForcesAndSourcesCore::UserDataOperator;
 
-  OpSymmetrizeTensor(const std::string field_name,
-                     boost::shared_ptr<MatrixDouble> in_mat,
-                     boost::shared_ptr<MatrixDouble> out_mat)
+  /**
+   * @deprecated Do not use this constructor
+   */
+  DEPRECATED OpSymmetrizeTensor(const std::string field_name,
+                                boost::shared_ptr<MatrixDouble> in_mat,
+                                boost::shared_ptr<MatrixDouble> out_mat)
       : UserOp(field_name, OPROW), inMat(in_mat), outMat(out_mat) {
     // Only is run for vertices
     std::fill(&doEntities[MBEDGE], &doEntities[MBMAXTYPE], false);
+    if (!inMat)
+      THROW_MESSAGE("Pointer not set for in matrix");
+    if (!outMat)
+      THROW_MESSAGE("Pointer not set for in matrix");
+  }
+
+  OpSymmetrizeTensor(boost::shared_ptr<MatrixDouble> in_mat,
+                     boost::shared_ptr<MatrixDouble> out_mat)
+      : UserOp(NOSPACE, OPSPACE), inMat(in_mat), outMat(out_mat) {
+    // Only is run for vertices
     if (!inMat)
       THROW_MESSAGE("Pointer not set for in matrix");
     if (!outMat)
