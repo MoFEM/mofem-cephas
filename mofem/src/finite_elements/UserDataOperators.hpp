@@ -1128,7 +1128,7 @@ struct OpCalculateTensor2SymmetricFieldValuesDot
     FTensor::Index<'j', Tensor_Dim> j;
     const int size = nb_dofs / symm_size;
     for (int gg = 0; gg != nb_gauss_pts; ++gg) {
-      auto field_data = getFTensor1FromPtr<Tensor_Dim>(&*dotVector.begin());
+      auto field_data = getFTensorDotData<Tensor_Dim>();
       int bb = 0;
       for (; bb != size; ++bb) {
         values_at_gauss_pts(i, j) += field_data(i, j) * base_function;
@@ -1148,7 +1148,28 @@ protected:
   const EntityHandle zeroType;
   const int zeroSide;
   VectorDouble dotVector;
+
+  template <int Dim> inline auto getFTensorDotData() {
+    static_assert(Dim || !Dim, "not implemented");
+  }
 };
+
+template <>
+template <>
+inline auto
+OpCalculateTensor2SymmetricFieldValuesDot<3>::getFTensorDotData<3>() {
+  return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 6>, 3>(
+      &dotVector[0], &dotVector[1], &dotVector[2], &dotVector[3], &dotVector[4],
+      &dotVector[5]);
+}
+
+template <>
+template <>
+inline auto
+OpCalculateTensor2SymmetricFieldValuesDot<2>::getFTensorDotData<2>() {
+  return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 3>, 2>(
+      &dotVector[0], &dotVector[1], &dotVector[2]);
+}
 
 /**@}*/
 
