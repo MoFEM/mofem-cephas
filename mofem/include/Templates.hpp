@@ -782,6 +782,14 @@ template <int S, typename T> struct GetFTensor1FromPtrImpl<3, S, T> {
   }
 };
 
+template <int S, typename T> struct GetFTensor1FromPtrImpl<6, S, T> {
+  GetFTensor1FromPtrImpl() = delete;
+  inline static auto get(T *ptr) {
+    return FTensor::Tensor1<FTensor::PackPtr<T *, S>, 6>(
+        &ptr[0], &ptr[1], &ptr[2], &ptr[3], &ptr[4], &ptr[5]);
+  }
+};
+
 /**
  * @brief Make Tensor1 from pointer
  *
@@ -794,6 +802,14 @@ inline FTensor::Tensor1<FTensor::PackPtr<double *, S>, DIM>
 getFTensor1FromPtr(double *ptr) {
   return GetFTensor1FromPtrImpl<DIM, S, double>::get(ptr);
 };
+
+#ifdef WITH_ADOL_C
+template <int DIM, int S = DIM>
+inline FTensor::Tensor1<FTensor::PackPtr<adouble *, S>, DIM>
+getFTensor1FromPtr(adouble *ptr) {
+  return GetFTensor1FromPtrImpl<DIM, S, adouble>::get(ptr);
+};
+#endif
 
 template <int DIM, int S = DIM>
 inline FTensor::Tensor1<FTensor::PackPtr<std::complex<double> *, S>, DIM>
