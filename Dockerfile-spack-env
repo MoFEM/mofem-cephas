@@ -64,12 +64,12 @@ ENV TARGET=x86_64
 
 # clone spack
 RUN mkdir -p $SPACK_ROOT_DIR && \
-    curl -s -L https://api.github.com/repos/likask/spack/tarball/spack_develop_v0.19 \
+    curl -s -L https://bitbucket.org/mofem/mofem-spack/get/79247dac0be149b8f66687add7e8d9d730b559bb.tar.gz \
     | tar xzC $SPACK_ROOT_DIR --strip 1 && \
     . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
     echo ". $SPACK_ROOT_DIR/share/spack/setup-env.sh" >> ~/.bashrc && \
     spack external find && \
-    spack install --only dependencies mofem-cephas@lukasz \
+    spack install --only dependencies mofem-cephas@lukasz+mgis \
     target=$TARGET build_type=Release ^petsc+X ^boost+python+numpy
 
 # image run hook: the -l will make sure /etc/profile environments are loaded
