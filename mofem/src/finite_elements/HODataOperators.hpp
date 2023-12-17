@@ -512,6 +512,16 @@ template <> struct AddHOOps<2, 2, 2> {
       boost::shared_ptr<MatrixDouble> inv_jac = nullptr);
 };
 
+template <> struct AddHOOps<2, 2, 3> {
+  AddHOOps() = delete;
+  static MoFEMErrorCode
+  add(boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+      std::vector<FieldSpace> spaces, std::string geom_field_name = "",
+      boost::shared_ptr<MatrixDouble> jac = nullptr,
+      boost::shared_ptr<VectorDouble> det = nullptr,
+      boost::shared_ptr<MatrixDouble> inv_jac = nullptr);
+};
+
 template <> struct AddHOOps<1, 2, 2> {
   AddHOOps() = delete;
   static MoFEMErrorCode
