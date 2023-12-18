@@ -26,61 +26,69 @@ CubitMeshSets::CubitMeshSets(moab::Interface &moab, const EntityHandle meshset)
       tagBlockAttributes(nullptr), tagBlockAttributesSize(0), tagName(nullptr),
       meshsetsMask(NODESET | SIDESET | BLOCKSET) {
 
-  CHKERR getTagsHandlers(moab);
-  CHKERR moab.tag_get_tags_on_entity(meshset, tag_handles);
-  for (auto tit = tag_handles.begin(); tit != tag_handles.end(); tit++) {
-    if (*tit == nsTag || *tit == ssTag || *tit == bhTag) {
-      CHKERR moab.tag_get_by_ptr(*tit, &meshset, 1, (const void **)&msId);
-    }
-    if (*tit == nsTag) {
-      if (*msId != -1) {
-        cubitBcType = NODESET;
-      }
-    }
-    if (*tit == ssTag) {
-      if (*msId != -1) {
-        cubitBcType = SIDESET;
-      }
-    }
-    if (*tit == bhTag) {
-      if (*msId != -1) {
-        cubitBcType = BLOCKSET;
-      }
-    }
-    if ((*tit == nsTag_data) || (*tit == ssTag_data)) {
-      CHKERR moab.tag_get_by_ptr(*tit, &meshset, 1, (const void **)&tagBcData,
-                                 &tagBcSize);
+  auto construct = [&]() {
+    MoFEMFunctionBegin;
 
-      CHKERR getTypeFromBcData(cubitBcType);
-    }
-    if (*tit == bhTag_header) {
-      int tag_length;
-      CHKERR moab.tag_get_length(*tit, tag_length);
-      CHKERR moab.tag_get_by_ptr(*tit, &meshset, 1,
-                                 (const void **)&tagBlockHeaderData);
-      if (tagBlockHeaderData[1] > 0)
-        cubitBcType |= MATERIALSET;
-    }
-    if (*tit == thBlockAttribs) {
-      CHKERR moab.tag_get_by_ptr(*tit, &meshset, 1,
-                                 (const void **)&tagBlockAttributes,
-                                 &tagBlockAttributesSize);
-    }
-    if (*tit == entityNameTag) {
-      CHKERR moab.tag_get_by_ptr(entityNameTag, &meshset, 1,
-                                 (const void **)&tagName);
-      CHKERR getTypeFromName(cubitBcType);
-    }
-  }
+    CHKERR getTagsHandlers(moab);
+    CHKERR moab.tag_get_tags_on_entity(meshset, tag_handles);
+    for (auto tit = tag_handles.begin(); tit != tag_handles.end(); tit++) {
+      if (*tit == nsTag || *tit == ssTag || *tit == bhTag) {
+        CHKERR moab.tag_get_by_ptr(*tit, &meshset, 1, (const void **)&msId);
+      }
+      if (*tit == nsTag) {
+        if (*msId != -1) {
+          cubitBcType = NODESET;
+        }
+      }
+      if (*tit == ssTag) {
+        if (*msId != -1) {
+          cubitBcType = SIDESET;
+        }
+      }
+      if (*tit == bhTag) {
+        if (*msId != -1) {
+          cubitBcType = BLOCKSET;
+        }
+      }
+      if ((*tit == nsTag_data) || (*tit == ssTag_data)) {
+        CHKERR moab.tag_get_by_ptr(*tit, &meshset, 1, (const void **)&tagBcData,
+                                   &tagBcSize);
 
-  // If BC set has name, unset UNKNOWNNAME
-  if (cubitBcType.to_ulong() &
-      (DISPLACEMENTSET | FORCESET | PRESSURESET | VELOCITYSET |
-       ACCELERATIONSET | TEMPERATURESET | HEATFLUXSET | INTERFACESET)) {
-    if ((cubitBcType & CubitBCType(UNKNOWNNAME)).any()) {
-      cubitBcType = cubitBcType & (~CubitBCType(UNKNOWNNAME));
+        CHKERR getTypeFromBcData(cubitBcType);
+      }
+      if (*tit == bhTag_header) {
+        int tag_length;
+        CHKERR moab.tag_get_length(*tit, tag_length);
+        CHKERR moab.tag_get_by_ptr(*tit, &meshset, 1,
+                                   (const void **)&tagBlockHeaderData);
+        if (tagBlockHeaderData[1] > 0)
+          cubitBcType |= MATERIALSET;
+      }
+      if (*tit == thBlockAttribs) {
+        CHKERR moab.tag_get_by_ptr(*tit, &meshset, 1,
+                                   (const void **)&tagBlockAttributes,
+                                   &tagBlockAttributesSize);
+      }
+      if (*tit == entityNameTag) {
+        CHKERR moab.tag_get_by_ptr(entityNameTag, &meshset, 1,
+                                   (const void **)&tagName);
+        CHKERR getTypeFromName(cubitBcType);
+      }
     }
-  }
+
+    // If BC set has name, unset UNKNOWNNAME
+    if (cubitBcType.to_ulong() &
+        (DISPLACEMENTSET | FORCESET | PRESSURESET | VELOCITYSET |
+         ACCELERATIONSET | TEMPERATURESET | HEATFLUXSET | INTERFACESET)) {
+      if ((cubitBcType & CubitBCType(UNKNOWNNAME)).any()) {
+        cubitBcType = cubitBcType & (~CubitBCType(UNKNOWNNAME));
+      }
+    }
+
+    MoFEMFunctionReturn(0);
+  };
+
+  CHK_THROW_MESSAGE(construct(), "construct CubitMeshSets");
 }
 CubitMeshSets::CubitMeshSets(moab::Interface &moab,
                              const CubitBCType cubit_bc_type, const int ms_id)

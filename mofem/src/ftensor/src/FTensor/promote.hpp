@@ -30,6 +30,15 @@ namespace FTensor
   DECLARE_PROMOTE(double, std::complex<double>, std::complex<double>);
   DECLARE_PROMOTE(std::complex<double>, double, std::complex<double>);
 
+  DECLARE_PROMOTE(const double, std::complex<double>, std::complex<double>);
+  DECLARE_PROMOTE(const std::complex<double>, double, std::complex<double>);
+  DECLARE_PROMOTE(double, const std::complex<double>, std::complex<double>);
+  DECLARE_PROMOTE(std::complex<double>, const double, std::complex<double>);
+  DECLARE_PROMOTE(const std::complex<double>, const double,
+                  std::complex<double>);
+  DECLARE_PROMOTE(const double, const std::complex<double>,
+                  std::complex<double>);
+
 #ifdef WITH_ADOL_C 
   DECLARE_PROMOTE(adouble, double, adouble);
   DECLARE_PROMOTE(double, adouble, adouble);

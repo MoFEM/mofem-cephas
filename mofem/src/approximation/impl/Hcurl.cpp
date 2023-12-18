@@ -1559,8 +1559,8 @@ MoFEMErrorCode VTK_Ainsworth_Hcurl_MBTET(const string file_name) {
     // refine mesh
     MeshRefinement *m_ref;
     CHKERR m_field_ref.getInterface(m_ref);
-    CHKERR m_ref->addVerticesInTheMiddleOfEdges(
-        edges, BitRefLevel().set(ll + 1));
+    CHKERR m_ref->addVerticesInTheMiddleOfEdges(edges,
+                                                BitRefLevel().set(ll + 1));
     CHKERR m_ref->refineTets(tets, BitRefLevel().set(ll + 1));
   }
 
@@ -2084,7 +2084,7 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_EdgeBaseFunctions_MBTET(
   for (int ee = 0; ee != 6; ++ee) {
 
     auto t_phi = getFTensor1FromPtr<3>(phi[ee]);
-    auto t_diff_phi = getFTensor2FromPtr<3, 3>(diff_phi[ee]);
+    auto t_diff_phi = getFTensor2HVecFromPtr<3, 3>(diff_phi[ee]);
 
     int n0_idx = e_nodes[ee][0];
     int n1_idx = e_nodes[ee][1];
@@ -2122,7 +2122,7 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_EdgeBaseFunctions_MBTRI(
     if (p[ee]) {
 
       auto t_phi = getFTensor1FromPtr<3>(phi[ee]);
-      auto t_diff_phi = getFTensor2FromPtr<3, 2>(diff_phi[ee]);
+      auto t_diff_phi = getFTensor2HVecFromPtr<3, 2>(diff_phi[ee]);
 
       int n0_idx = e_nodes[ee][0];
       int n1_idx = e_nodes[ee][1];
@@ -2410,7 +2410,7 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_FaceBaseFunctions_MBTET(
     if (p[ff] > 1) {
 
       auto t_phi = getFTensor1FromPtr<3>(phi[ff]);
-      auto t_diff_phi = getFTensor2FromPtr<3, 3>(diff_phi[ff]);
+      auto t_diff_phi = getFTensor2HVecFromPtr<3, 3>(diff_phi[ff]);
 
       // f0, f1 - family I and family II
       const int n0f0_idx = faces_nodes[3 * ff + 0];
@@ -2446,7 +2446,7 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_FaceBaseFunctions_MBTRI(
   if (p > 1) {
 
     auto t_phi = getFTensor1FromPtr<3>(phi);
-    auto t_diff_phi = getFTensor2FromPtr<3, 2>(diff_phi);
+    auto t_diff_phi = getFTensor2HVecFromPtr<3, 2>(diff_phi);
 
     // f0, f1 - family I and family II
     const int n0f0_idx = faces_nodes[0];
@@ -2478,7 +2478,7 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_VolumeBaseFunctions_MBTET(
   if (p > 2) {
 
     auto t_phi = getFTensor1FromPtr<3>(phi);
-    auto t_diff_phi = getFTensor2FromPtr<3, 3>(diff_phi);
+    auto t_diff_phi = getFTensor2HVecFromPtr<3, 3>(diff_phi);
 
     FTensor::Tensor1<double, 3> t_grad_n[4];
     for (int nn = 0; nn != 4; ++nn) {
@@ -2499,7 +2499,7 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_VolumeBaseFunctions_MBTET(
       double *diff_phi_ij_ptr = &diff_phi_ij(ff, 0);
 
       auto t_phi_ij = getFTensor1FromPtr<3>(phi_ij_ptr);
-      auto t_diff_phi_ij = getFTensor2FromPtr<3, 3>(diff_phi_ij_ptr);
+      auto t_diff_phi_ij = getFTensor2HVecFromPtr<3, 3>(diff_phi_ij_ptr);
 
       const int n0_idx = family[ff][0];
       const int n1_idx = family[ff][1];
@@ -2537,13 +2537,13 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_VolumeBaseFunctions_MBTET(
 
         auto t_phi_face_f0 = getFTensor1FromPtr<3>(&phi_ij(0, phi_shift));
         auto t_diff_phi_face_f0 =
-            getFTensor2FromPtr<3, 3>(&diff_phi_ij(0, diff_phi_shift));
+            getFTensor2HVecFromPtr<3, 3>(&diff_phi_ij(0, diff_phi_shift));
         auto t_phi_face_f1 = getFTensor1FromPtr<3>(&phi_ij(1, phi_shift));
         auto t_diff_phi_face_f1 =
-            getFTensor2FromPtr<3, 3>(&diff_phi_ij(1, diff_phi_shift));
+            getFTensor2HVecFromPtr<3, 3>(&diff_phi_ij(1, diff_phi_shift));
         auto t_phi_face_f2 = getFTensor1FromPtr<3>(&phi_ij(2, phi_shift));
         auto t_diff_phi_face_f2 =
-            getFTensor2FromPtr<3, 3>(&diff_phi_ij(2, diff_phi_shift));
+            getFTensor2HVecFromPtr<3, 3>(&diff_phi_ij(2, diff_phi_shift));
 
         int ij = 0;
         for (int oo_ij = 2; oo_ij != oo; ++oo_ij) {
@@ -2646,8 +2646,8 @@ MoFEMErrorCode VTK_Demkowicz_Hcurl_MBTET(const string file_name) {
     // refine mesh
     MeshRefinement *m_ref;
     CHKERR m_field_ref.getInterface(m_ref);
-    CHKERR m_ref->addVerticesInTheMiddleOfEdges(
-        edges, BitRefLevel().set(ll + 1));
+    CHKERR m_ref->addVerticesInTheMiddleOfEdges(edges,
+                                                BitRefLevel().set(ll + 1));
     CHKERR m_ref->refineTets(tets, BitRefLevel().set(ll + 1));
   }
 
