@@ -9,7 +9,7 @@ The lectures are focused on both the mechanical and mathematical aspects.
 The specific topics of this course include saddle point formulations to handle incompressibility constraints, block-solvers, thermo-elasticity, novel multifield formulations for plasticity, contact and incompressible hyperelasticity, and the recent development on the first-order hyperbolic framework for fast-transient solid dynamics. 
 Moreover, we also provide hands-on tutorials for training with MoFEM on these topics.
 
-\note To access hands-on tutorials, you can run our Docker container comprising MoFEM and JupyterHub on your laptop/workstation/server/cloud. See \ref install_docker_user for installation and usage instructions.
+\note To access hands-on tutorials, you can run our Docker container comprising MoFEM and JupyterHub on your laptop/workstation/server/cloud, see \ref install_docker_jupyterhub for instructions.
 
 \subsection lecture_1 Lecture 1: Mixed Formulation for Incompressible Linear Elasticity
  
