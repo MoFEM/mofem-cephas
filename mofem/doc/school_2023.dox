@@ -1,0 +1,184 @@
+/*! \page mofem_school_2023 %MoFEM UKACM Autumn School 2023: Mixed Finite Element Formulations in Solid Mechanics
+
+\tableofcontents
+ 
+Organised by  <a href=https://www.gla.ac.uk/research/az/gcec/>Glasgow Computational Engineering Centre (GCEC)</a>. 
+
+The objective of this online course is to present new advances in mixed finite element formulations in solid mechanics and novel techniques for modelling deformable solids at finite strains.
+The lectures are focused on both the mechanical and mathematical aspects.
+The specific topics of this course include saddle point formulations to handle incompressibility constraints, block-solvers, thermo-elasticity, novel multifield formulations for plasticity, contact and incompressible hyperelasticity, and the recent development on the first-order hyperbolic framework for fast-transient solid dynamics. 
+Moreover, we also provide hands-on tutorials for training with MoFEM on these topics.
+
+\note To access hands-on tutorials, you can run our Docker container comprising MoFEM and JupyterHub on your laptop/workstation/server/cloud, see \ref install_docker_jupyterhub for instructions.
+
+<hr>
+
+\subsection lecture_1 Lecture 1: Mixed Formulation for Incompressible Linear Elasticity
+ 
+- Standard linear elasticity and inherent problems with incompressibilityâ€‹
+- Mixed formulation and resolution for incompressibilityâ€‹
+- Taylor-Hood and Crouzeixâ€“Raviart element: stability, energy spaces, the patch test and inf-sup conditionsâ€‹
+- MoFEM tutorials general code structureâ€‹
+- Taylor-Hood and Crouzeixâ€“Raviart elements convergence for incompressibilityâ€‹
+- Discussion on block solvers
+
+PDF slides of the presentation can be found <a href=https://gla-my.sharepoint.com/:b:/g/personal/andrei_shvarts_glasgow_ac_uk/ESzK9GNWXvlOse5qqiuPDq0BiyPhaitJE98cgTYWendBaA?e=MljmxZ> here</a>. 
+
+\htmlonly
+<center>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/4uMiY-4gIjQ?si=cw33C3jssYiOlxPF" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+</center>
+\endhtmlonly
+
+\subsubsection hands_on_1 Hands-on 1: Jupyter tutorial on mixed incompressible linear elasticity
+
+- Example: Cook's membrane
+- Generating the mesh and setting input parameters
+- Running the analysis and visualising the results
+- Global convergence study
+
+\htmlonly
+<center>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/2-nspBym0hI?si=B1apeZSYT7h7AvCq" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+</center>
+\endhtmlonly
+
+<hr>
+
+\subsection lecture_2 Lecture 2: Mixed Formulation for Thermo-Elasticity
+ 
+- Motivation for using mixed problem formulation
+- Preliminaries for function spaces: L2, H1, H(div) and H(curl)
+- Example: derivation of the mixed weak form for the Poisson equation
+- Implementation of the mixed weak form and error indicatorsâ€‹
+- Convergence analysis for adaptive p-refinementâ€‹
+- Standard and mixed weak forms for the thermoelasticity problemâ€‹
+- Example: problem with a low regularity solution
+
+PDF slides of the presentation can be found <a href=https://gla-my.sharepoint.com/:b:/g/personal/andrei_shvarts_glasgow_ac_uk/EQC4NvIyJ7VMsTIrbzYx6iYBwpDS4sY9toHZYxBEsnqKgA?e=ehDuOK> here</a>. 
+
+\htmlonly
+<center>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/lfwJgHBWoSA?si=tpFhYKOgkwTYv89A" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+</center>
+\endhtmlonly
+
+\subsubsection hands_on_2 Hands-on 2: Jupyter tutorial on mixed formulation for the Poisson problem
+
+- Global convergence analysis
+- Error indicator analysis
+- Adaptive p-refinement
+
+\htmlonly
+<center>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/K0sArP2UDwI?si=QIJzKCBkK3n2RRLA" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+</center>
+\endhtmlonly
+
+\subsubsection hands_on_3 Hands-on 3: Jupyter tutorial on mixed formulation for thermo-elasticity
+
+- Visualising thermoelastic problem solution
+- Comparing solutions of standard and mixed weak forms
+- Convergence study
+
+\htmlonly
+<center>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/d1EEJIj-JNk?si=yrcpkeBellD4CToI" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+</center>
+\endhtmlonly
+
+<hr>
+
+\subsection lectures_3_4 Lectures 3 and 4: Mixed Formulations for Plasticity, Contact and Hyperelasticity
+
+<b>Multifield plasticity:</b>
+- Motivation for multifield plasticity
+- Governing equations of elastoplasticity using a logarithmic strain formulation
+- Multifield formulation for plasticity: theory and numericsâ€‹
+- Physics-based block solver
+
+<b>H(div) contact mechanics:</b>
+- H(div) contact mechanics formulationâ€‹: stability and efficiency
+- Variational problem statement
+- Virtual work of contact conditions: extension to volume
+- Contact examples
+
+<b>Mixed formulation for large strains and incompressible elasticity:</b>
+- Governing equations for large strains and incompressible hyperelasticity
+- Logarithm of stretches and error estimators
+- Approximation spaces for tensorial fields and stabilisation using zero-normal bubble functions
+- Example: Cook's membrane with nearly incompressible material
+- Block solver: Schur complement
+
+PDF slides of the presentation can be found <a href=https://gla-my.sharepoint.com/:b:/g/personal/andrei_shvarts_glasgow_ac_uk/ERVTSEu-UsZHvAfYSwyj5c0BxQXpKu_xHbsu_24fg9eRWg?e=Jxbyh0> here</a>. 
+
+\htmlonly
+<center>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/83TM6lgTFkg?si=dSZdvh-mUR_59IRC" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+</center>
+\endhtmlonly
+
+\subsubsection hands_on_4 Hands-on 4: Jupyter tutorial on multifield formulation for plasticity
+
+- Example: necking of a bar under uniaxial loading
+- Setting material and simulation parameters
+- Running and post-processing of results
+- Candidate parameters worthy of investigation
+
+\htmlonly
+<center>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/p4DnJroJpLo?si=8pYi0SPKXs87omKs" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+</center>
+\endhtmlonly
+
+\subsubsection hands_on_5 Hands-on 5: Jupyter tutorial on mixed formulation for hyperelasticity
+
+- Analysis parameters definition and mesh generation
+- Shear locking and approximation orders
+- Exercise description: Cook's beam
+- Results of convergence study and error estimators
+- Solution speed and element connectivity
+- Rotations and stretches explained
+
+\htmlonly
+<center>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/5wvIBLqSF2o?si=wcmwf5xLV5GWrkeN" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+</center>
+\endhtmlonly
+
+<hr>
+
+\subsection lectures_5_6 Lectures 5 and 6: Computational challenges for fast-transient solid dynamics
+
+- Introduction & Motivation
+- Classical solid dynamics formulation
+- First-order conservation laws
+- Hamiltonian, conjugate fields and stress-rates equations
+- 1D conservation laws
+- Hyperbolicity
+- Weak form: Petrov-Galerkin and Variational multi-scale
+- FE low-order (linear) spatial discretisation
+- Explicit time integrator
+
+PDF slides of the presentation can be found <a href=https://gla-my.sharepoint.com/:b:/g/personal/andrei_shvarts_glasgow_ac_uk/EWHHQWnmHThFiEmIV8Sl5-kBIl0vStH2zRxiHtu8dlFcAA?e=PbJLdz> here</a>. 
+
+\htmlonly
+<center>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/ecIH6jHbSfA?si=MM5YwCbgLvg--asq" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+</center>
+\endhtmlonly
+
+\subsubsection hands_on_6 Hands-on 6: Jupyter tutorial on mixed formulation for the elastodynamics problem
+
+- Example 1: 1D bar with sinusoidal traction
+- Unstabilised formulation
+- Example 2: 1D bar with constant traction
+- Example 3: Bending of a beam
+
+\htmlonly
+<center>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/2IZbi0beui0?si=VRI6782CulH4l3oh" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+</center>
+\endhtmlonly
+
+*/

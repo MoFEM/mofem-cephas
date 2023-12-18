@@ -4,18 +4,22 @@
  <navindex>
     <tab type="user" visible="yes" url="@ref mainpage" title="" intro=""/>
 
-    <!-- <tab type="user" url="@ref news" title="News" intro=""/> -->
-
-    <tab type="user" visible="yes" title="Getting started" url="@ref installation" intro="">
+    <tab type="user" visible="yes" title="Why MoFEM" url="@ref motivation" intro="">
       <tab type="user" url="@ref motivation" title="Features" intro=""/>
+      <tab type="user" url="@ref applications" title="Applications" intro=""/>
+      <tab type="user" url="@ref publications" title="Publications" intro=""/>
+    </tab>
+
+    <tab type="user" visible="yes" title="Installation" url="@ref installation" intro="">
       <tab type="user" url="@ref install_docker_jupyterhub" title="Installation with Docker - JupyterHub" intro=""/>
-      <tab type="user" url="@ref install_docker_advanced" title="Installation with Docker - advanced" intro=""/>
-      <tab type="user" url="@ref installation" title="Installation with Spack - scripts" intro=""/>
-      <tab type="user" url="@ref install_spack" title="Installation with Spack - advanced" intro=""/>
+      <tab type="user" url="@ref install_docker_advanced" title="Installation with Docker - Advanced" intro=""/>
+      <tab type="user" url="@ref installation" title="Installation with Spack - Scripts" intro=""/>
+      <tab type="user" url="@ref install_spack" title="Installation with Spack - Advanced" intro=""/>
     </tab>
 
     <tab type="user" visible="yes" url="https://www.youtube.com/channel/UCxdPe3nK1n9cB1XPAvl7btQ/playlists" title="Videos" intro="">
-      <tab type="user" url="@ref mofem_school_page" title="School" intro=""/>
+      <tab type="user" url="@ref mofem_school_2023" title="UKACM School 2023" intro=""/>
+      <tab type="user" url="@ref mofem_school_2021" title="UKACM School 2021" intro=""/>
       <tab type="user" url="https://www.youtube.com/playlist?list=PLbqyPFhdeLn9r9n4Bphs1HFc-qGyaj1Vu" title="Video guides"/>   
       <tab type="user" url="https://www.youtube.com/playlist?list=PLbqyPFhdeLn86KomC9uG9IyF8vDyxIHfY" title="Conference talks"/>   
       <tab type="user" url="https://www.youtube.com/playlist?list=PLbqyPFhdeLn8fSQP7_L5G93eFYueEqK1d" title="Simulation examples"/>   
