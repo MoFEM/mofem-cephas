@@ -1,13 +1,34 @@
 Recent applications of MoFEM {#applications}
 =======================================================================
 
-MoFEM delivers a software development platform which enhances scientific innovation by providing a flexible and adaptable modelling framework, using novel disruptive approaches to long-standing problems in continuum mechanics and tackling conflicting requirements of accuracy and computational efficiency. This is achieved in MoFEM by developing and adopting state-of-the-art FE technologies, for example: \f$H^1\f$-, \f$H(\text{curl})\f$-, \f$H(\text{div}\f$)- and \f$L^2\f$-conforming finite elements equipped with hierarchical, heterogeneous and anisotropic approximation bases; error-driven hp-adaptivity; mesh topology evolution. In addition, MoFEM’s HPC capabilities are supported by its unique data structures that are capable of handling generic multi-field, multi-physics, multi-scale problems and building tailored composite solvers.
+MoFEM delivers a software development platform which enhances scientific innovation by providing a flexible and adaptable modelling framework, using novel disruptive approaches to long-standing problems in continuum mechanics and tackling conflicting requirements of accuracy and computational efficiency. This is achieved in MoFEM by developing and adopting state-of-the-art FE technologies, for example: \f$H^1\f$-, \f$H(\text{curl})\f$-, \f$H(\text{div}\f$)- and \f$L^2\f$-conforming finite elements equipped with hierarchical, heterogeneous and anisotropic approximation bases; error-driven hp-adaptivity; mesh topology evolution. In addition, %MoFEM’s HPC capabilities are supported by its unique data structures that are capable of handling generic multi-field, multi-physics, multi-scale problems and building tailored composite solvers.
 
 Therefore, MoFEM provides users with an effective tool for solving Partial Differential Equations arising in various fields of Engineering and Applied Physics: solid mechanics, fluid mechanics, soft matter physics, heat transfer, electromagnetism, etc. Furthermore, MoFEM features an extendable modular design: while its open-source core library is developed to manage the complexities of FEM, additional user modules are devoted to particular applications. Such a toolkit-like structure allows for independent development of modules with different repositories, owners and licenses.
 
 [TOC]
 
 # Solid mechanics problems {#solid_mechanics}
+
+## MoFEM – sustainable development of research software for HPC {#HPC}
+
+\f$\textbf{Karol Lewandowski}^{1}, \textbf{Andrei Shvarts}^{1}, \textbf{Ignatios Athanasiadis}^{1}, \textbf{Lukasz Kaczmarczyk}^{1}, \textbf{Chris Pearce}^{1}\f$
+
+\f$^1 \textit{Glasgow Computational Engineering Centre, James Watt School of Engineering, University of Glasgow}\f$
+
+<div style="text-align: justify"> %MoFEM is one of the most advanced open-source Finite Element (FE) libraries \cite Lukasz_MOFEM. The catalyst for the creation of %MoFEM was the need for a flexible and numerically accurate modelling environment for multi-physics problems posed by our partners, including industry (EDF Energy, Jacobs, Advanced Forming Research Centre, Rolls-Royce, etc).
+
+%MoFEM delivers a software development platform which enhances scientific innovation by providing a flexible and adaptable modelling framework, using novel disruptive approaches to long-standing problems in continuum mechanics and tackling conflicting requirements of accuracy and computational efficiency. This is achieved in MoFEM by developing and adopting state-of-the-art FE technologies, for example: \f$H^1\f$, \f$H(\text{curl})\f$, \f$H(\text{div}\f$) and \f$L^2\f$-conforming finite elements equipped with hierarchical, heterogeneous and anisotropic approximation bases; error-driven hp-adaptivity; mesh topology evolution. In addition, MoFEM’s HPC capabilities are supported by its unique data structures that are capable of handling generic multi-field, multi-physics, multi-scale problems and building tailored composite solvers.
+
+Therefore, %%MoFEM provides users with an effective tool for solving Partial Differential Equations arising in various fields of Engineering and Applied Physics: solid mechanics, fluid mechanics , soft matter physics, heat transfer, electromagnetism, etc. Furthermore, MoFEM features an extendable modular design: while its open-source core library is developed to manage the complexities of FEM, additional user modules are devoted to particular applications. Such a toolkit-like structure allows for independent development of modules with different repositories, owners and licences.
+</div>
+<div align="center">
+  <img src="hpc_Scability.png" alt="Docker - searching for the required Docker image and Tag" width="92%"/>
+  <p><b>Figure: (a) Scalability of the block preconditioner with algebraic multigrid for shallow wave equation, (b) schematic side view showing the brick slice, the seal ring and the loading collar, (c) Parallel partitions (left) and solution of shallow wave equation (right) on the surface of Earth</b></p>
+</div>
+
+
+---
+<br>
 
 ## Brittle crack propagation under contact loading {#fracture}
 
@@ -42,7 +63,7 @@ Therefore, MoFEM provides users with an effective tool for solving Partial Diffe
 ---
 <br>
 ## Multifield finite strain plasticity: Theory and numerics {#MFsp}
-\f$\textbf{Karol Lewandowski}^{1}, \textbf{Daniele Barbera}^{2}, \textbf{Callum J. Runcie}^{1}, \textbf{Ross Williams}^{1}, \textbf{Andrew McBride}^{1}, \textbf{Paul Steinmann}^{1,3}, \textbf{Chris Pearce}^{1}, \textbf{\L{}ukasz Kaczmarczyk}^{1}\f$
+\f$\textbf{Karol Lewandowski}^{1}, \textbf{Daniele Barbera}^{2}, \textbf{Callum J. Runcie}^{1}, \textbf{Ross Williams}^{1}, \textbf{Andrew McBride}^{1}, \textbf{Paul Steinmann}^{1,3}, \textbf{Chris Pearce}^{1}, \textbf{Lukasz Kaczmarczyk}^{1}\f$
 
 \f$^{1} \textit{Glasgow Computational Engineering Centre, James Watt School of Engineering, University of Glasgow}\f$
 \f$^{2} \textit {Advanced Forming Research Centre, University of Strathclyde} \f$
@@ -52,11 +73,11 @@ Therefore, MoFEM provides users with an effective tool for solving Partial Diffe
 To avoid the local integration of the elastoplastic material model, the balance of linear momentum, the flow relation, and the Karush–Kuhn–Tucker constraints are collectively cast in a variational format.
 
 An additive kinematic split, proposed by Miehe et al \cite Miehe_Karol, facilitates the expression of finite strain models in a classical small strain setting by introducing a logarithmic strain measure.
-The measures of plastic deformation are directly approximated using finite element basis functions in $L^2$ space.
-The ensuing proliferation of global degrees of freedom is addressed by exploiting the block sparse structure of the algebraic system (Fig. \ref{fig:1_block_structure}) together with a tailored efficient and scalable block matrix solver which can utilise emerging hardware architectures.
+The measures of plastic deformation are directly approximated using finite element basis functions in \f$L^2\f$ space.
+The ensuing proliferation of global degrees of freedom is addressed by exploiting the block sparse structure of the algebraic system together with a tailored efficient and scalable block matrix solver which can utilise emerging hardware architectures.
 The problem is solved implicitly on a global level with a monolithic Newton-Raphson scheme.
 The flexible approach allows for straightforward coupling with physical phenomena such as contact mechanics and thermally-driven material behaviours.
-A series of numerical problems (Fig. \ref{fig:2_bar}) demonstrate the validity, capability, and efficiency of the proposed approach.</div>
+A series of numerical problems in fig. (b) demonstrate the validity, capability, and efficiency of the proposed approach.</div>
 <div align="center">
   <img src="Block_structure_mf.png" alt="Description of your image" width="80%"/>
   <p><b>Figure: (a) Block structure of the resulting linear system (b) Necking benchmark results comparison</b></p>
@@ -69,7 +90,7 @@ A series of numerical problems (Fig. \ref{fig:2_bar}) demonstrate the validity, 
 
 \f$^1 \textit{Glasgow Computational Engineering Centre, James Watt School of Engineering, University of Glasgow}\f$
 
-<div style="text-align: justify"> We show an extension of the mixed finite element for small strain elasticity to large strain problems. This work develops finite element formulation, where are independently approximated four fields, i.e. stresses, logarithm stretches, rotations vector, and displacements. Each field is associated with sets of equations, i.e. conservation of linear momentum, conservation of angular momentum, constitutive equation, and consistency equation between displacements and deformation. The connection between rotations vector and rotation tensor is established by exponential map. The stresses are approximate in \f$H(\text{div})\f$ space, and remaining three fields in \f$L^2\f$ space. Such formulation creates a very sparse system of equations, easy to parallelise, enabling highly-scalable and robust solvers. The finite element is implemented in open-source software, MoFEM \cite Lukasz_MOFEM, developed at the Glasgow Computational Engineering Centre. This novel finite element technology enables us to tackle problems nearly incompressible soft materials. Also, finite element mixed-formulation opens new possibilities to tackle robust problems in DD-driven approaches for large strains and multi-field formulations for computational plasticity and efficient error estimators for \f$p\f$-adaptivity.</div>
+<div style="text-align: justify"> We show an extension of the mixed finite element for small strain elasticity to large strain problems. This work develops finite element formulation, where are independently approximated four fields, i.e. stresses, logarithm stretches, rotations vector, and displacements. Each field is associated with sets of equations, i.e. conservation of linear momentum, conservation of angular momentum, constitutive equation, and consistency equation between displacements and deformation. The connection between rotations vector and rotation tensor is established by exponential map. The stresses are approximate in \f$H(\text{div})\f$ space, and remaining three fields in \f$L^2\f$ space. Such formulation creates a very sparse system of equations, easy to parallelise, enabling highly-scalable and robust solvers. The finite element is implemented in open-source software, %MoFEM \cite Lukasz_MOFEM, developed at the Glasgow Computational Engineering Centre. This novel finite element technology enables us to tackle problems nearly incompressible soft materials. Also, finite element mixed-formulation opens new possibilities to tackle robust problems in DD-driven approaches for large strains and multi-field formulations for computational plasticity and efficient error estimators for \f$p\f$-adaptivity.</div>
 <div align="center">
   <img src="mix-fe.png" alt="Description of your image" width="60%"/>
   <p><b>Figure: Deformation of nearly incompressible tube under rotation</b></p>
@@ -84,8 +105,8 @@ A series of numerical problems (Fig. \ref{fig:2_bar}) demonstrate the validity, 
 \f$^1 \textit{Glasgow Computational Engineering Centre, James Watt School of Engineering, University of Glasgow}\f$
 \f$^2 \textit{Chair of Applied Mechanics, Friedrich-Alexander University Erlangen-Nürnberg}\f$
 
-<div style="text-align: justify"> This work focuses on 3D modelling of contact between rigid and elasto-plastic bodies within the Finite Element (FE) framework using the Lagrange Multipliers (LM) approach to fulfill Karush-Kuhn-Tucker~(KKT) conditions. The dual base proposed in \cite Wohlmuth2004 and successfully used for large strains \cite DualMortar2DPop to approximate the LM field is in the appropriate energy space $H^{-1/2}$ and can be explicitly used for \f$h\f$-refinement. However, for \f$p\f$-refinement a new approach must be proposed to take advantage of inherent benefits of 
-heterogeneous basis functions such as compatibility with optimal multi-grid solvers. We present a novel approach for modelling contact problems, where the discrete functional space for LM  defined on contact surfaces emerges from the trace of Raviart-Thomas space defined inside the domain. This approach enables to evaluate terms present in contact formulation both on the boundary and within the volume via Gauss theorem, providing stability to the discrete solution. Furthermore, it allows for higher-order approximation, permitting to combine $h$-refinement with $p$-refinement. The framework was successfully used for modelling Incremental Cold Flow Forming (ICFF) and flat tyre rolling on a rigid flat surface. The framework will be extended to model contact between two flexible bodies for elastic and crack propagation conditions.
+<div style="text-align: justify"> This work focuses on 3D modelling of contact between rigid and elasto-plastic bodies within the Finite Element (FE) framework using the Lagrange Multipliers (LM) approach to fulfill Karush-Kuhn-Tucker~(KKT) conditions. The dual base proposed in \cite Wohlmuth2004 and successfully used for large strains \cite DualMortar2DPop to approximate the LM field is in the appropriate energy space \f$H^{-1/2}\f$ and can be explicitly used for \f$h\f$-refinement. However, for \f$p\f$-refinement a new approach must be proposed to take advantage of inherent benefits of 
+heterogeneous basis functions such as compatibility with optimal multi-grid solvers. We present a novel approach for modelling contact problems, where the discrete functional space for LM  defined on contact surfaces emerges from the trace of Raviart-Thomas space defined inside the domain. This approach enables to evaluate terms present in contact formulation both on the boundary and within the volume via Gauss theorem, providing stability to the discrete solution. Furthermore, it allows for higher-order approximation, permitting to combine \f$h\f$-refinement with \f$p\f$-refinement. The framework was successfully used for modelling Incremental Cold Flow Forming (ICFF) and flat tyre rolling on a rigid flat surface. The framework will be extended to model contact between two flexible bodies for elastic and crack propagation conditions.
 </div>
 
 <div align="center">
@@ -101,12 +122,12 @@ heterogeneous basis functions such as compatibility with optimal multi-grid solv
 \f$^1 \textit{Glasgow Computational Engineering Centre, James Watt School of Engineering, University of Glasgow}\f$
 
 <div style="text-align: justify"> In the last two decades, incremental cold flow forming (ICFF) has progressively advanced as a metal forming process. The design of this process is inherently difficult and still poorly understood, due to complex underlying physical phenomena involving hollow cylindrical geometry, undergoing fast rotational rigid body contact loading, resulting in large plastic deformations.
-Commercially available finite element packages are currently providing unreliable and computationally expensive solutions in an attempt to understand the process. To address these challenges, a multifield approach to plasticity was developed in MoFEM by the co-authors \cite Lewandowski2023. This approach is highly flexible, allowing for straightforward coupling with other physical phenomena including contact mechanics and advection of the plastic variables as part of an arbitrary Lagrangian Eulerian (ALE) formulation improving the overall robustness of the numerical scheme for modelling ICFF. \\
-Furthermore, to aid engineers in understanding the manufacturing process, the ability to modify and adjust the rigid indenter geometry and movement paths easily are a top priority to investigate different process setups quickly and efficiently, such as those shown in Figure \ref{fig:1_prototype}. Therefore a simple python interface was developed in MoFEM to allow any user to easily implement custom rigid body geometry or a movement path through a signed distance function (SDF). A SDF is used to define the location of a surface and when provided a set of coordinates it returns either a positive value (gap) to the rigid surface, a negative value (penetration) or zero when on the surface itself. This can easily be adopted into any contact formulation in order to resolve the classical KKT contact conditions.
+Commercially available finite element packages are currently providing unreliable and computationally expensive solutions in an attempt to understand the process. To address these challenges, a multifield approach to plasticity was developed in %MoFEM by the co-authors \cite Lewandowski2023. This approach is highly flexible, allowing for straightforward coupling with other physical phenomena including contact mechanics and advection of the plastic variables as part of an Arbitrary Lagrangian Eulerian (ALE) formulation improving the overall robustness of the numerical scheme for modelling ICFF. 
+Furthermore, to aid engineers in understanding the manufacturing process, the ability to modify and adjust the rigid indenter geometry and movement paths easily are a top priority to investigate different process setups quickly and efficiently, such as those shown in the following Figure. Therefore a simple python interface was developed in %MoFEM to allow any user to easily implement custom rigid body geometry or a movement path through a signed distance function (SDF). A SDF is used to define the location of a surface and when provided a set of coordinates it returns either a positive value (gap) to the rigid surface, a negative value (penetration) or zero when on the surface itself. This can easily be adopted into any contact formulation in order to resolve the classical KKT contact conditions.
 </div>
 
 <div align="center">
-  <img src="iccf_flow_forming.jpg" alt="Description of your image" width="60%"/>
+  <img src="iccf_flow_forming.jpg" alt="Description of your image" width="55%"/>
   <p><b>Figure: %Contact of rigid rollers with rotating elasto-plastic workpiece</b></p>
 </div>
 
@@ -120,11 +141,11 @@ Furthermore, to aid engineers in understanding the manufacturing process, the ab
 \f$^1 \textit{Glasgow Computational Engineering Centre, James Watt School of Engineering, University of Glasgow}\f$
 \f$^2 Institute of Applied Mechanics, Erlangen, Germany\f$
 
-<div style="text-align: justify"> A new class of implicit-explicit methods combined with a p-adaptive mixed finite element formulation is proposed to simulate the diffusion of reacting species in MoFEM. Hierarchical polynomial functions are used to construct a conforming base for the flux vectors, and a non-conforming base for the mass concentration of the species. The mixed formulation captures the distinct nonlinearities associated with the flux constitutive equations and the reaction terms. The IMEX method conveniently treats these two sources of nonlinearity implicitly and explicitly, respectively,  within a single time-stepping framework. A reliable a posteriori error estimate is proposed and analysed. A p-adaptive algorithm based on the proposed a posteriori error estimate is also constructed. The combination of the p-adaptive mixed formulation and the IMEX method delivers a robust and efficient algorithm. The proposed methods eliminate the coupled effect of  mesh size and time step duration on the algorithmic stability. A residual-based a posteriori error estimate is derived, and when combined with the hierarchical finite element spaces allow for the formulation of an efficient p-adaptive algorithm \cite wakeni2021p . A series of numerical examples demonstrate the performance of the approach for problems involving travelling waves, and possessing discontinuities and singularities. 
+<div style="text-align: justify"> A new class of implicit-explicit methods combined with a p-adaptive mixed finite element formulation is proposed to simulate the diffusion of reacting species in %MoFEM. Hierarchical polynomial functions are used to construct a conforming base for the flux vectors, and a non-conforming base for the mass concentration of the species. The mixed formulation captures the distinct nonlinearities associated with the flux constitutive equations and the reaction terms. The IMEX method conveniently treats these two sources of nonlinearity implicitly and explicitly, respectively,  within a single time-stepping framework. A reliable a posteriori error estimate is proposed and analysed. A p-adaptive algorithm based on the proposed a posteriori error estimate is also constructed. The combination of the p-adaptive mixed formulation and the IMEX method delivers a robust and efficient algorithm. The proposed methods eliminate the coupled effect of  mesh size and time step duration on the algorithmic stability. A residual-based a posteriori error estimate is derived, and when combined with the hierarchical finite element spaces allow for the formulation of an efficient p-adaptive algorithm \cite wakeni2021p . A series of numerical examples demonstrate the performance of the approach for problems involving travelling waves, and possessing discontinuities and singularities. 
 </div>
 
 <div align="center">
-  <img src="spiral.png" alt="Description of your image" width="85%"/>
+  <img src="spiral.png" alt="Description of your image" width="78%"/>
   <p><b>Figure: Development of a spiral pattern as a result of cyclic interactions of three species. Observe adapting heterogeneous approximation order at time steps</b></p>
 </div>
 
@@ -159,9 +180,9 @@ To satisfy the conservation laws and boundary conditions, we use a finite elemen
 \f$^2 \textit{Extreme Light Group, School of Physics and Astronomy, University of Glasgow}\f$
 
 
-<div style="text-align: justify"> Our colleagues at the Extreme Light research group at the University of Glasgow are working on optical imaging through highly disperse (scattering) media for biological and health applications \cite lyons2019computational,radford2020role , see Figure 1. In particular, the Bayesian Neural Network (BNN) are used to reconstruct images of hidden objects \cite tonolini2020variational , however, experiments are time consuming, and do not provide necessary number of data sets for training of BNN. A possible solution to this problem is to simulate numerically photon transmission through the scattering medium. 
+<div style="text-align: justify"> Our colleagues at the Extreme Light research group at the University of Glasgow are working on optical imaging through highly disperse (scattering) media for biological and health applications \cite lyons2019computational, \cite radford2020role , see following fig. (a). In particular, the Bayesian Neural Network (BNN) are used to reconstruct images of hidden objects \cite tonolini2020variational , however, experiments are time consuming, and do not provide necessary number of data sets for training of BNN. A possible solution to this problem is to simulate numerically photon transmission through the scattering medium. 
 
-Since the photon diffusion equation has the same differential operator as the classic diffusion equation, the spatial and temporal distribution of the photon flux can be obtained using MoFEM's functionality, see Figure 2. Therefore, MoFEM provides a reliable, robust and fast tool which enriches the analysis methodology and improves the quality of BNN predictions \cite radford2022imaging . The next step of the project is modelling of photon transmission through human organs, e.g. brain, the geometry of which can be built based on MRI scans. This study will help to understand, validate and test the feasibility of the optical imaging technique.
+Since the photon diffusion equation has the same differential operator as the classic diffusion equation, the spatial and temporal distribution of the photon flux can be obtained using %MoFEM's functionality, see Fig (b). Therefore, %MoFEM provides a reliable, robust and fast tool which enriches the analysis methodology and improves the quality of BNN predictions \cite radford2022imaging . The next step of the project is modelling of photon transmission through human organs, e.g. brain, the geometry of which can be built based on MRI scans. This study will help to understand, validate and test the feasibility of the optical imaging technique.
 </div>
 
 <div align="center">
@@ -186,7 +207,7 @@ For a given contact force and measured surface roughness data, the simulation is
 The obtained results show good agreement with both experimental observations and a simplified analytical solution \cite Yang_Andrei, see Fig. b. At the same time, the developed coupled finite-element framework permits extensions accounting for non-linear (e.g. elastoplastic) material behaviour of dielectric layers and/or interfacial friction during the contact stage. Moreover, the proposed framework allows to consider heterogeneous materials and predict the effect of inclusions in the dielectric layers, facilitating the optimization and design of new TENG.
 </div>
 <div align="center">
-  <img src="resultsTENG_shvarts.png" alt="Description of your image" width="90%"/>
+  <img src="resultsTENG_shvarts.png" alt="Description of your image" width="95%"/>
   <p><b>Figure: (a) FEM modeling of TENG with rough surface: contact stage, (b) Evolution of the open-circuit voltage under increasing external load</b></p>
 </div>
 
@@ -194,16 +215,16 @@ The obtained results show good agreement with both experimental observations and
 <br>
 
 ## Modelling of macrosegregation during steel ingot casting {#ingot}
-\f$\textbf{Richard Olley}^{1}, \textbf{Ignatios Athanasiadis}^{1}, \textbf{Andrei Shvarts}^{1}, \textbf{\L{}ukasz Kaczmarczyk}^{1}, \textbf{Chris Pearce}^{1}\f$
+\f$\textbf{Richard Olley}^{1}, \textbf{Ignatios Athanasiadis}^{1}, \textbf{Andrei Shvarts}^{1}, \textbf{Lukasz Kaczmarczyk}^{1}, \textbf{Chris Pearce}^{1}\f$
 
 \f$^1 \textit{Glasgow Computational Engineering Centre, James Watt School of Engineering, University of Glasgow}\f$
 
 <div style="text-align: justify"> A finite element model is presented for the  prediction of macrosegregation in binary alloys for both 2D and 3D problems utilising a monolithic solution scheme. In this work we present simulations of Pb-18wt\% Sn and Sn-5wt\% Pb binary alloys assuming columnar solidification with the Lever rule assumption at the microscopic scale. For solving Navier-Stokes equations, we chose the Taylor-Hood (TH) element, where both velocity and pressure fields are sought in the \f$H^1\f$ energy space. The model implementation allows for the arbitrary choice of order of approximation, \f$p\f$, for the various approximated fields which allows for \f$\mbox{$p$-refinement}\f$. TH element is chosen since it is known to theoretically exhibit an optimal convergence rate. Other assumptions for the macrosegregation model include: incompressible flow and newtonian fluid; Boussinesq approximation to account for thermo-solutal buoyancy; thermodynamic equilibrium and perfect solute diffusion in both liquid and solid phases.
-The monolithic scheme proposed encompasses a full coupling between the conservation equations. Results obtained show good agreement with other columnar solidification models \cite bellet2009call,chen2020finite,combeau2012analysis. The velocity, temperature and concentration fields are presented; alongside the evolution of liquid fraction, see figure.
+The monolithic scheme proposed encompasses a full coupling between the conservation equations. Results obtained show good agreement with other columnar solidification models \cite bellet2009call, \cite chen2020finite and \cite combeau2012analysis. The velocity, temperature and concentration fields are presented; alongside the evolution of liquid fraction, see figure.
 The proposed model has been developed as a module  which allows for an extendable and versatile implementation of multi-phase macrosegregation models alongside single-phase models.
 </div>
 <div align="center">
-  <img src="richard.png" alt="Description of your image" width="50%"/>
+  <img src="richard.png" alt="Description of your image" width="40%"/>
   <p><b>Figure: Simulation of macrosegregation of Pb-18wt% Sn binary alloys</b></p>
 </div>
 
@@ -221,7 +242,7 @@ The aim of this project is to develop advanced computational framework for simul
 Due to the smaller nanoelectronic devices, the arrangement of the various components in the chip becomes more important \cite Takashi_Hisada2012. For example, the heat emitted by various components on the chip can lead to crack forming and propagation in the material used for packaging. As a result such effects could lead to decreasing of the performance not only on specific chip but also on the whole system. The best way to capture the compexity of the problem is by utilizing the finite element method simulations wich can give a precise physical and material analysis of all the mechanical, thermal and electrical effects inside the electronic device and chips
 </div>
 <div align="center">
-  <img src="nanowire.png" alt="Description of your image" width="75%"/>
+  <img src="nanowire.png" alt="Description of your image" width="68%"/>
   <p><b>Figure: (a) A sketch of the nanowire transistor surrounded by insulating packaging material. (b) Temperature distribution in the system. (c) Stress in the nanowire transistor due to heating</b></p>
 </div>
 
@@ -233,11 +254,33 @@ Due to the smaller nanoelectronic devices, the arrangement of the various compon
 \f$^1 \textit{Glasgow Computational Engineering Centre, James Watt School of Engineering, University of Glasgow}\f$
 \f$^2 \textit{Tennent Institute of Ophthalmology, Gartnavel General Hospital, 1053 Great Western Road, Glasgow, G12 0YN, United Kingdom}\f$
 
-<div style="text-align: justify"> The model \cite lockington2022evaluating assumed incompressibility for both fluids within realistically achievable pressure ranges. Cahn-Hilliard Navier-Stokes equations were discretised through the application of the Finite Element Method. Mathematical modelling and computer simulation showed bubble size, corneal curvature and force intensity influences surface tension support for DMEK tissue in Scenario A (see Fig.~\ref{fig:dmek}). Scenario B demonstrated complex, uneven distribution of surface pressure on the DMEK graft during uncontrolled bubble release. Uneven pressure concentration can cause local tissue warping, with air/fluid displacement via capillary waves generated on the fluid-air interface adversely impacting DMEK support. We have quantitatively and qualitatively modelled the forces involved in DMEK adherence in normal circumstances. We have shown releasing air/gas can abruptly reduce DMEK tissue support via generation of large pressure gradients at the liquid/bubble/graft interfaces, creating negative local forces. Surgeons should consider these principles to reduce DMEK graft dislocation rates via optimised bubble size to graft size, longer acting bubble support and avoiding rapid decompression.
+<div style="text-align: justify"> The model \cite lockington2022evaluating assumed incompressibility for both fluids within realistically achievable pressure ranges. Cahn-Hilliard Navier-Stokes equations were discretised through the application of the Finite Element Method. Mathematical modelling and computer simulation showed bubble size, corneal curvature and force intensity influences surface tension support for DMEK tissue in Scenario in the following figure. Scenario B demonstrated complex, uneven distribution of surface pressure on the DMEK graft during uncontrolled bubble release. Uneven pressure concentration can cause local tissue warping, with air/fluid displacement via capillary waves generated on the fluid-air interface adversely impacting DMEK support. We have quantitatively and qualitatively modelled the forces involved in DMEK adherence in normal circumstances. We have shown releasing air/gas can abruptly reduce DMEK tissue support via generation of large pressure gradients at the liquid/bubble/graft interfaces, creating negative local forces. Surgeons should consider these principles to reduce DMEK graft dislocation rates via optimised bubble size to graft size, longer acting bubble support and avoiding rapid decompression.
 </div>
 <div align="center">
   <img src="eye.png" alt="Description of your image" width="70%"/>
   <p><b>Figure: DMEK graft and four snapshots in time of air bubble release in the vertical position, with a corresponding graph showing total horizontal and vertical forces acting on the DMEK graft. Subsequent snapshots represent the transition from the complete bubble-filled stage (Snapshot 1) to the final mobile bubble stage (Snapshot 4). The top-left illustration shows the bubble in red and the fluid/liquid in blue. The bottom-left illustration shows the distribution of pressure as the bubble is released</b></p>
+</div>
+
+---
+
+## A finite element model updating approach for the characterisation of piezoelectric materials {#piezo}
+\f$\textbf{Ignatios Athanasiadis}^{1*}, \textbf{Andrei Shvarts}^{1}, \textbf{Sakineh Fotouhi}^{2}, \textbf{Lukasz Kaczmarczyk}^{1}, \textbf{Sandy Cohran}^{2}, \textbf{Chris Pearce}^{1}\f$
+
+\f$^1 \textit{Glasgow Computational Engineering Centre, James Watt School of Engineering, University of Glasgow}\f$
+\f$^1 \textit{Centre for Medical and Industrial Ultrasonics, James Watt School of Engineering, University of Glasgow}\f$
+
+<div style="text-align: justify"> The physical response of piezoelectric materials is governed by the strong coupling of mechanical and electrical phenomena as their mechanical deformation generates electric potential gradients and vice versa.
+There has been an increasing interest in these materials due to the breadth of engineering applications where they have been successfully used, such as power harvesting and smart sensing \cite COCHRAN20123, \cite piezo_electrics_2021.
+Therefore, the accurate determination of piezoelectric materials' parameters is essential which has lead to an increasing demand for improved numerical tools to support this scope. 
+In this work, we propose a coupled numerical framework for piezoelectric material characterisation. 
+For our analysis, experimentally obtained electric impedance phase diagrams are used, where a cubic specimen is subjected to a voltage pulse that generates its mechanical and voltage damping oscillation in the figure.
+Thereafter, the experimentally obtained resonance frequencies and their amplitude are used to determine a set of objective functions that are minimised via the Finite Element Model Updating method (FEMU) in order to find the material parameters.
+The minimisation procedure involves a series of fully implicit dynamic FEM analyses with changing the material input parameters between simulations.
+The proposed framework is aimed to aid new piezoelectric material technologies where more complex structures are involved and to be extended to account for more physical phenomena.
+</div>
+<div align="center">
+  <img src="piezo_1.png" alt="Description of your image" width="70%"/>
+  <p><b>Figure: A snapshot of simulation results - (a) electric potential, (b) mechanical displacement</b></p>
 </div>
 
 ---
@@ -247,36 +290,15 @@ Due to the smaller nanoelectronic devices, the arrangement of the various compon
 
 \f$^1 \textit{Glasgow Computational Engineering Centre, James Watt School of Engineering, University of Glasgow}\f$
 
-<div style="text-align: justify"> Triboelectric nanogenerator (TENG) is a cutting-edge energy harvester that transforms mechanical excitation to electric energy during contact electrification and electrostatic induction. Prior research which studied the electrostatic characteristics of TENG performance mostly relied on approximate analytical models. However, an accurate numerical model is crucial for understanding the relation between TENG output performance and various geometric and material parameters of the device. This study aims to develop a detailed finite element model to predict the TENG behaviour at different configurations.
-The investigation underlines the generation of the open circuit voltage, \f$V_{oc}\f$ due to the surface charges at the interface between dissimilar tribo-layers of the contact-separation TENG. A series of simulations were conducted to anticipate \f$$V_{oc}\f$ at different air gaps between the layers. The results in figure shows the comparison between FEM results and approximate analytical solutions. The numerical solution conforms to analytical for the small gaps, while for the larger gaps, it converges with the approximations. We anticipate gaining a deeper understanding of the performance characteristics through the FE model and corresponding quantitative analysis. Furthermore, we aim to develop a multi-physical FE framework encompassing contact mechanics, electrostatics and electric circuit equations, to facilitate the optimization and design of TENGs.
+<div style="text-align: justify"> %Triboelectric nanogenerator (TENG) is a cutting-edge energy harvester that transforms mechanical excitation to electric energy during contact electrification and electrostatic induction. Prior research which studied the electrostatic characteristics of TENG performance mostly relied on approximate analytical models. However, an accurate numerical model is crucial for understanding the relation between TENG output performance and various geometric and material parameters of the device. This study aims to develop a detailed finite element model to predict the TENG behaviour at different configurations.
+The investigation underlines the generation of the open circuit voltage, \f$V_{oc}\f$ due to the surface charges at the interface between dissimilar tribo-layers of the contact-separation TENG. A series of simulations were conducted to anticipate \f$V_{oc}\f$ at different air gaps between the layers. The results in figure shows the comparison between FEM results and approximate analytical solutions. The numerical solution conforms to analytical for the small gaps, while for the larger gaps, it converges with the approximations. We anticipate gaining a deeper understanding of the performance characteristics through the FE model and corresponding quantitative analysis. Furthermore, we aim to develop a multi-physical FE framework encompassing contact mechanics, electrostatics and electric circuit equations, to facilitate the optimization and design of TENGs.
 
 </div>
 <div align="center">
-  <img src="tanzib_elec.png" alt="Description of your image" width="78%"/>
-  <p><b>Figure: (a) Implementation schematics. (b) FEM results for the potential and electric field between two tribo-layers. (c) Comparison of approximate analytical models and MoFEM simulations to investigate the dependence of the open-circuit voltage on the air gap</b></p>
+  <img src="tanzib_elec.png" alt="Description of your image" width="70%"/>
+  <p><b>Figure: (a) Implementation schematics. (b) FEM results for the potential and electric field between two tribo-layers. (c) Comparison of approximate analytical models and %MoFEM simulations to investigate the dependence of the open-circuit voltage on the air gap</b></p>
 </div>
 
 ---
-<br>
-## A finite element model updating approach for the characterisation of piezoelectric materials {#piezo}
-\f$\textbf{Ignatios Athanasiadis}^{1*}, \textbf{Andrei Shvarts}^{1}, \textbf{Sakineh Fotouhi}^{2}, \textbf{\Lukasz Kaczmarczyk}^{1}, \textbf{Sandy Cohran}^{2}, \textbf{Chris Pearce}^{1}\f$
 
-\f$^1 \textit{Glasgow Computational Engineering Centre, James Watt School of Engineering, University of Glasgow}\f$
-\f$^1 \textit{Centre for Medical and Industrial Ultrasonics, James Watt School of Engineering, University of Glasgow}\f$
-
-<div style="text-align: justify"> The physical response of piezoelectric materials is governed by the strong coupling of mechanical and electrical phenomena as their mechanical deformation generates electric potential gradients and vice versa.
-There has been an increasing interest in these materials due to the breadth of engineering applications where they have been successfully used, such as power harvesting and smart sensing \cite COCHRAN20123, piezo_electrics_2021.
-Therefore, the accurate determination of piezoelectric materials' parameters is essential which has lead to an increasing demand for improved numerical tools to support this scope. 
-In this work, we propose a coupled numerical framework for piezoelectric material characterisation. 
-For our analysis, experimentally obtained electric impedance phase diagrams are used, where a cubic specimen is subjected to a voltage pulse that generates its mechanical and voltage damping oscillation (see Fig.~\ref{fig:piezo}).
-Thereafter, the experimentally obtained resonance frequencies and their amplitude are used to determine a set of objective functions that are minimised via the Finite Element Model Updating method (FEMU) in order to find the material parameters.
-The minimisation procedure involves a series of fully implicit dynamic FEM analyses with changing the material input parameters between simulations.
-The proposed framework is aimed to aid new piezoelectric material technologies where more complex structures are involved and to be extended to account for more physical phenomena.
-</div>
-<div align="center">
-  <img src="piezo_1.png" alt="Description of your image" width="65%"/>
-  <p><b>Figure: A snapshot of simulation results - (a) electric potential, (b) mechanical displacement</b></p>
-</div>
-
----
 
