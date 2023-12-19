@@ -4,33 +4,14 @@ Recent applications of MoFEM {#applications}
 MoFEM delivers a software development platform which enhances scientific innovation by providing a flexible and adaptable modelling framework, using novel disruptive approaches to long-standing problems in continuum mechanics and tackling conflicting requirements of accuracy and computational efficiency. This is achieved in MoFEM by developing and adopting state-of-the-art FE technologies, for example: \f$H^1\f$-, \f$H(\text{curl})\f$-, \f$H(\text{div}\f$)- and \f$L^2\f$-conforming finite elements equipped with hierarchical, heterogeneous and anisotropic approximation bases; error-driven hp-adaptivity; mesh topology evolution. In addition, %MoFEM’s HPC capabilities are supported by its unique data structures that are capable of handling generic multi-field, multi-physics, multi-scale problems and building tailored composite solvers.
 
 Therefore, MoFEM provides users with an effective tool for solving Partial Differential Equations arising in various fields of Engineering and Applied Physics: solid mechanics, fluid mechanics, soft matter physics, heat transfer, electromagnetism, etc. Furthermore, MoFEM features an extendable modular design: while its open-source core library is developed to manage the complexities of FEM, additional user modules are devoted to particular applications. Such a toolkit-like structure allows for independent development of modules with different repositories, owners and licenses.
-
+<br>
+<div align="center">
+  <img src="hpc_Scability.png" alt="Docker - searching for the required Docker image and Tag" width="70%"/>
+  <p><b>Figure: (a) Scalability of the block preconditioner with algebraic multigrid for shallow wave equation, (b) schematic side view showing the brick slice, the seal ring and the loading collar, (c) Parallel partitions (left) and solution of shallow wave equation (right) on the surface of Earth</b></p>
+</div>
 [TOC]
 
 # Solid mechanics problems {#solid_mechanics}
-
-## MoFEM – sustainable development of research software for HPC {#HPC}
-\f$\textbf{Karol Lewandowski}^{1}, \textbf{Andrei Shvarts}^{1},\textbf{Ignatios Athanasiadis}^{1}\f$
-\f$ \textbf{Lukasz Kaczmarczyk}^{1}, \textbf{Chris Pearce}^{1}\f$
-\f$^1 \textit{Glasgow Computational Engineering Centre, James Watt School of Engineering}\f$
-\f$\textit{University of Glasgow}\f$
-<div style="text-align: justify"> %MoFEM is one of the most advanced open-source Finite Element (FE) libraries \cite Lukasz_MOFEM. The catalyst for the creation of %MoFEM was the need for a flexible and numerically accurate modelling environment for multi-physics problems posed by our partners, including industry (EDF Energy, Jacobs, Advanced Forming Research Centre, Rolls-Royce, etc).
-
-%MoFEM delivers a software development platform which enhances scientific innovation by providing a flexible and adaptable modelling framework, using novel disruptive approaches to long-standing problems in continuum mechanics and tackling conflicting requirements of accuracy and computational efficiency. This is achieved in MoFEM by developing and adopting state-of-the-art FE technologies, for example: \f$H^1\f$, \f$H(\text{curl})\f$, \f$H(\text{div}\f$) and \f$L^2\f$-conforming finite elements equipped with hierarchical, heterogeneous and anisotropic approximation bases; error-driven hp-adaptivity; mesh topology evolution. In addition, MoFEM’s HPC capabilities are supported by its unique data structures that are capable of handling generic multi-field, multi-physics, multi-scale problems and building tailored composite solvers.
-
-Therefore, %%MoFEM provides users with an effective tool for solving Partial Differential Equations arising in various fields of Engineering and Applied Physics: solid mechanics, fluid mechanics , soft matter physics, heat transfer, electromagnetism, etc. Furthermore, MoFEM features an extendable modular design: while its open-source core library is developed to manage the complexities of FEM, additional user modules are devoted to particular applications. Such a toolkit-like structure allows for independent development of modules with different repositories, owners and licences.
-</div>
-<div align="center">
-  <img src="hpc_Scability.png" alt="Docker - searching for the required Docker image and Tag" width="85%"/>
-  <p><b>Figure: (a) Scalability of the block preconditioner with algebraic multigrid for shallow wave equation, (b) schematic side view showing the brick slice, the seal ring and the loading collar, (c) Parallel partitions (left) and solution of shallow wave equation (right) on the surface of Earth</b></p>
-</div>
-
-
-
-
-
----
-<br>
 
 ## Brittle crack propagation under contact loading {#fracture}
 
