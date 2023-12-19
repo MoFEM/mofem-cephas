@@ -25,7 +25,6 @@
 -ts_type theta
 -ts_theta_theta 1
 
-
 -ts_monitor
 -ts_adapt_monitor
 
@@ -35,6 +34,3 @@
 -my_save_skin 0
 -my_ref_temp 0
 -my_is_post_proc_volume 0
-
-#-my_is_partitioned 1
-#-dm_is_partitioned 1
