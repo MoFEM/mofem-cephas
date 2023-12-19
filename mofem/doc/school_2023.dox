@@ -1,4 +1,4 @@
-/*! \page mofem_school_2023 %MoFEM UKACM Autumn School 2023: Mixed Finite Element Formulations in Solid Mechanics
+/*! \page mofem_school_2023 %%MoFEM UKACM Autumn School 2023: Mixed Finite Element Formulations in Solid Mechanics
 
 \tableofcontents
  
@@ -7,9 +7,9 @@ Organised by  <a href=https://www.gla.ac.uk/research/az/gcec/>Glasgow Computatio
 The objective of this online course is to present new advances in mixed finite element formulations in solid mechanics and novel techniques for modelling deformable solids at finite strains.
 The lectures are focused on both the mechanical and mathematical aspects.
 The specific topics of this course include saddle point formulations to handle incompressibility constraints, block-solvers, thermo-elasticity, novel multifield formulations for plasticity, contact and incompressible hyperelasticity, and the recent development on the first-order hyperbolic framework for fast-transient solid dynamics. 
-Moreover, we also provide hands-on tutorials for training with MoFEM on these topics.
+Moreover, we also provide hands-on tutorials for training with %MoFEM on these topics.
 
-\note To access hands-on tutorials, you can run our Docker container comprising MoFEM and JupyterHub on your laptop/workstation/server/cloud, see \ref install_docker_jupyterhub for instructions.
+\note To access hands-on tutorials, you can run our Docker container comprising %MoFEM and JupyterHub on your laptop/workstation/server/cloud, see \ref install_docker_jupyterhub for instructions.
 
 <hr>
 
@@ -18,7 +18,7 @@ Moreover, we also provide hands-on tutorials for training with MoFEM on these to
 - Standard linear elasticity and inherent problems with incompressibilityâ€‹
 - Mixed formulation and resolution for incompressibilityâ€‹
 - Taylor-Hood and Crouzeixâ€“Raviart element: stability, energy spaces, the patch test and inf-sup conditionsâ€‹
-- MoFEM tutorials general code structureâ€‹
+- %MoFEM tutorials general code structureâ€‹
 - Taylor-Hood and Crouzeixâ€“Raviart elements convergence for incompressibilityâ€‹
 - Discussion on block solvers
 
@@ -32,7 +32,7 @@ PDF slides of the presentation can be found <a href=https://gla-my.sharepoint.co
 
 \subsubsection hands_on_1 Hands-on 1: Jupyter tutorial on mixed incompressible linear elasticity
 
-- Example: Cook's membrane
+- %Example: Cook's membrane
 - Generating the mesh and setting input parameters
 - Running the analysis and visualising the results
 - Global convergence study
@@ -49,11 +49,11 @@ PDF slides of the presentation can be found <a href=https://gla-my.sharepoint.co
  
 - Motivation for using mixed problem formulation
 - Preliminaries for function spaces: L2, H1, H(div) and H(curl)
-- Example: derivation of the mixed weak form for the Poisson equation
+- %Example: derivation of the mixed weak form for the Poisson equation
 - Implementation of the mixed weak form and error indicatorsâ€‹
 - Convergence analysis for adaptive p-refinementâ€‹
 - Standard and mixed weak forms for the thermoelasticity problemâ€‹
-- Example: problem with a low regularity solution
+- %Example: problem with a low regularity solution
 
 PDF slides of the presentation can be found <a href=https://gla-my.sharepoint.com/:b:/g/personal/andrei_shvarts_glasgow_ac_uk/EQC4NvIyJ7VMsTIrbzYx6iYBwpDS4sY9toHZYxBEsnqKgA?e=ehDuOK> here</a>. 
 
@@ -107,7 +107,7 @@ PDF slides of the presentation can be found <a href=https://gla-my.sharepoint.co
 - Governing equations for large strains and incompressible hyperelasticity
 - Logarithm of stretches and error estimators
 - Approximation spaces for tensorial fields and stabilisation using zero-normal bubble functions
-- Example: Cook's membrane with nearly incompressible material
+- %Example: Cook's membrane with nearly incompressible material
 - Block solver: Schur complement
 
 PDF slides of the presentation can be found <a href=https://gla-my.sharepoint.com/:b:/g/personal/andrei_shvarts_glasgow_ac_uk/ERVTSEu-UsZHvAfYSwyj5c0BxQXpKu_xHbsu_24fg9eRWg?e=Jxbyh0> here</a>. 
@@ -120,7 +120,7 @@ PDF slides of the presentation can be found <a href=https://gla-my.sharepoint.co
 
 \subsubsection hands_on_4 Hands-on 4: Jupyter tutorial on multifield formulation for plasticity
 
-- Example: necking of a bar under uniaxial loading
+- %Example: necking of a bar under uniaxial loading
 - Setting material and simulation parameters
 - Running and post-processing of results
 - Candidate parameters worthy of investigation
@@ -170,10 +170,10 @@ PDF slides of the presentation can be found <a href=https://gla-my.sharepoint.co
 
 \subsubsection hands_on_6 Hands-on 6: Jupyter tutorial on mixed formulation for the elastodynamics problem
 
-- Example 1: 1D bar with sinusoidal traction
+- %Example 1: 1D bar with sinusoidal traction
 - Unstabilised formulation
-- Example 2: 1D bar with constant traction
-- Example 3: Bending of a beam
+- %Example 2: 1D bar with constant traction
+- %Example 3: Bending of a beam
 
 \htmlonly
 <center>

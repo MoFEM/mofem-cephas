@@ -5,7 +5,7 @@ How to add a new module and program {#how_to_add_new_module_and_program}
 
 This tutorial assumes that you have installed MoFEM with developer version using
 the script provided in \ref installation. And therefore, you probably have paths
-for the source code and the binary files (e.g. for `release` build type) of the
+for the source code and the binary files (e.g. for `Release` build type) of the
 Core Library and the Basic User Module as follows
 
 - Core Library
