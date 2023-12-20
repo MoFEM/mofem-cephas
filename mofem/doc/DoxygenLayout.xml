@@ -10,7 +10,7 @@
       <tab type="user" url="@ref publications" title="Publications" intro=""/>
     </tab>
 
-    <tab type="user" visible="yes" title="Installation" url="@ref installation" intro="">
+    <tab type="user" visible="yes" title="Installation" url="@ref install_docker_jupyterhub" intro="">
       <tab type="user" url="@ref install_docker_jupyterhub" title="Installation with Docker - JupyterHub" intro=""/>
       <tab type="user" url="@ref install_docker_advanced" title="Installation with Docker - Advanced" intro=""/>
       <tab type="user" url="@ref installation" title="Installation with Spack - Scripts" intro=""/>

@@ -1,4 +1,4 @@
-/*! \page mofem_school_2023 %%MoFEM UKACM Autumn School 2023: Mixed Finite Element Formulations in Solid Mechanics
+/*! \page mofem_school_2023 %MoFEM UKACM Autumn School 2023: Mixed Finite Element Formulations in Solid Mechanics
 
 \tableofcontents
  
@@ -9,17 +9,23 @@ The lectures are focused on both the mechanical and mathematical aspects.
 The specific topics of this course include saddle point formulations to handle incompressibility constraints, block-solvers, thermo-elasticity, novel multifield formulations for plasticity, contact and incompressible hyperelasticity, and the recent development on the first-order hyperbolic framework for fast-transient solid dynamics. 
 Moreover, we also provide hands-on tutorials for training with %MoFEM on these topics.
 
-\note To access hands-on tutorials, you can run our Docker container comprising %MoFEM and JupyterHub on your laptop/workstation/server/cloud, see \ref install_docker_jupyterhub for instructions.
+\note To access hands-on tutorials, you can run our Docker container comprising %MoFEM and JupyterHub on your laptop/workstation/server/cloud, see \ref install_docker_jupyterhub for instructions. You can also watch thse step-by-step instructions for running container with %MoFEM and JupyterHub using Docker user interface:
+
+\htmlonly
+<center>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/_qo4EqfjGc4?si=prodjyJyDC9UsNhW" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+</center>
+\endhtmlonly
 
 <hr>
 
 \subsection lecture_1 Lecture 1: Mixed Formulation for Incompressible Linear Elasticity
  
-- Standard linear elasticity and inherent problems with incompressibilityâ€‹
-- Mixed formulation and resolution for incompressibilityâ€‹
-- Taylor-Hood and Crouzeixâ€“Raviart element: stability, energy spaces, the patch test and inf-sup conditionsâ€‹
-- %MoFEM tutorials general code structureâ€‹
-- Taylor-Hood and Crouzeixâ€“Raviart elements convergence for incompressibilityâ€‹
+- Standard linear elasticity and inherent problems with incompressibility
+- Mixed formulation and resolution for incompressibility
+- Taylor-Hood and Crouzeixâ€“Raviart element: stability, energy spaces, the patch test and inf-sup conditions
+- %MoFEM tutorials general code structure
+- Taylor-Hood and Crouzeixâ€“Raviart elements convergence for incompressibility
 - Discussion on block solvers
 
 PDF slides of the presentation can be found <a href=https://gla-my.sharepoint.com/:b:/g/personal/andrei_shvarts_glasgow_ac_uk/ESzK9GNWXvlOse5qqiuPDq0BiyPhaitJE98cgTYWendBaA?e=MljmxZ> here</a>. 
@@ -50,9 +56,9 @@ PDF slides of the presentation can be found <a href=https://gla-my.sharepoint.co
 - Motivation for using mixed problem formulation
 - Preliminaries for function spaces: L2, H1, H(div) and H(curl)
 - %Example: derivation of the mixed weak form for the Poisson equation
-- Implementation of the mixed weak form and error indicatorsâ€‹
-- Convergence analysis for adaptive p-refinementâ€‹
-- Standard and mixed weak forms for the thermoelasticity problemâ€‹
+- Implementation of the mixed weak form and error indicators
+- Convergence analysis for adaptive p-refinement
+- Standard and mixed weak forms for the thermoelasticity problem
 - %Example: problem with a low regularity solution
 
 PDF slides of the presentation can be found <a href=https://gla-my.sharepoint.com/:b:/g/personal/andrei_shvarts_glasgow_ac_uk/EQC4NvIyJ7VMsTIrbzYx6iYBwpDS4sY9toHZYxBEsnqKgA?e=ehDuOK> here</a>. 
@@ -94,11 +100,11 @@ PDF slides of the presentation can be found <a href=https://gla-my.sharepoint.co
 <b>Multifield plasticity:</b>
 - Motivation for multifield plasticity
 - Governing equations of elastoplasticity using a logarithmic strain formulation
-- Multifield formulation for plasticity: theory and numericsâ€‹
+- Multifield formulation for plasticity: theory and numerics
 - Physics-based block solver
 
 <b>H(div) contact mechanics:</b>
-- H(div) contact mechanics formulationâ€‹: stability and efficiency
+- H(div) contact mechanics formulation: stability and efficiency
 - Variational problem statement
 - Virtual work of contact conditions: extension to volume
 - Contact examples
