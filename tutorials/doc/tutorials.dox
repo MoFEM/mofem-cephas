@@ -1,7 +1,7 @@
 /*! \page tutorials Tutorials
 
 The tutorials contain a number of basic programs that are built on top of each
-other. Those with the full source code has the following structure
+other. Those with the full source code has the following structure:
 
 1. **Introduction**: Problem being solved,
 mathematical equations and derivations leading to finite element implementation
@@ -11,12 +11,14 @@ and comments, possible extensions.
 4. **Plain program**: Full source code without extended comments
 
 The source code and corresponding binary files of the tutorials are located at
-the following directories when you install MoFEM with developer version \ref installation
+the following directories when you install MoFEM using either instructions in \ref install_docker_jupyterhub or the script provided in \ref installation
 
 - Source code:
   `$HOME/mofem_install/mofem-cephas/mofem/users_modules/tutorials`
 - Binary files (build directory):
-  `$HOME/mofem_install/mofem-cephas/mofem/users_modules/um-build-RelWithDebInfo-abcd1234/tutorials/`
+  `$HOME/mofem_install/mofem-cephas/mofem/users_modules/um-build-Release-5sehreo/tutorials/`
+
+In the directory described above, `5sehreo` is the `hash` of the particular build, and it may be different on your machine.
 
 Each tutorial in this page includes code name and keywords for quick reference
 and search within the browser. 
@@ -42,6 +44,20 @@ continuing with the one you are most excited about.
        <td>\ref lessons_introduction</td>
        <td> Brief introduction about MoFEM interfaces which enable users to implement the codes with different level of complexity.
        <br/> *Keywords:* Design
+       </td>
+  </tr>
+
+ <tr valign="top">
+       <td>\ref how_to_compile_program</td>
+       <td> Brief introduction about compiling MoFEM - Developer version
+       <br/> *Keywords:* Compilation
+       </td>
+  </tr>
+
+  <tr valign="top">
+       <td>\ref how_to_add_new_module_and_program</td>
+       <td> Tutorial on adding a new %MoFEM module (you might want to skip this tutorial for now and return after reading other tutorials)
+       <br/> *Keywords:* modules
        </td>
   </tr>
 
