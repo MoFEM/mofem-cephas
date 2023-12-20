@@ -75,7 +75,7 @@ A series of numerical problems in fig. (b) demonstrate the validity, capability,
 
 <div style="text-align: justify"> We show an extension of the mixed finite element for small strain elasticity to large strain problems. This work develops finite element formulation, where are independently approximated four fields, i.e. stresses, logarithm stretches, rotations vector, and displacements. Each field is associated with sets of equations, i.e. conservation of linear momentum, conservation of angular momentum, constitutive equation, and consistency equation between displacements and deformation. The connection between rotations vector and rotation tensor is established by exponential map. The stresses are approximate in \f$H(\text{div})\f$ space, and remaining three fields in \f$L^2\f$ space. Such formulation creates a very sparse system of equations, easy to parallelise, enabling highly-scalable and robust solvers. The finite element is implemented in open-source software, %MoFEM \cite Lukasz_MOFEM, developed at the Glasgow Computational Engineering Centre. This novel finite element technology enables us to tackle problems nearly incompressible soft materials. Also, finite element mixed-formulation opens new possibilities to tackle robust problems in DD-driven approaches for large strains and multi-field formulations for computational plasticity and efficient error estimators for \f$p\f$-adaptivity.</div>
 <div align="center">
-  <img src="mix-fe.png" alt="Description of your image" width="60%"/>
+  <img src="mix-fe.png" alt="Description of your image" width="50%"/>
   <p><b>Figure: Deformation of nearly incompressible tube under rotation</b></p>
 </div>
 
@@ -178,7 +178,7 @@ Since the photon diffusion equation has the same differential operator as the cl
 
 # Multiphysics problems
 ## Computational framework for simulation of triboelectric nanogenerators accounting for surface roughness {#TENG}
-\f$\textbf{Andrei G. Shvarts}^{1}, \textbf{Charchit Kumar}^{2}, \textbf{MD Tanzib Ehsan Sanglap}^{1}, \textbf{Ignatios Athanasiadis}^{1}, \textbf{Lukasz Kaczmarczyk}^{1}, \textbf{Daniel M. Mulvihill}^{2}, \textbf{Chris Pearce}^{1}\f$
+\f$\textbf{Andrei G. Shvarts}^{1}, \textbf{Charchit Kumar}^{2}, \textbf{MD Tanzib E. Sanglap}^{1}, \textbf{Ignatios Athanasiadis}^{1}, \textbf{Lukasz Kaczmarczyk}^{1}, \textbf{Daniel M. Mulvihill}^{2}, \textbf{Chris Pearce}^{1}\f$
 
 \f$^1 \textit{Glasgow Computational Engineering Centre, James Watt School of Engineering, University of Glasgow}\f$
 \f$^2 \textit{Materials and Manufacturing Research Group, James Watt School of Engineering, University of Glasgow}\f$
@@ -207,7 +207,7 @@ The monolithic scheme proposed encompasses a full coupling between the conservat
 The proposed model has been developed as a module  which allows for an extendable and versatile implementation of multi-phase macrosegregation models alongside single-phase models.
 </div>
 <div align="center">
-  <img src="richard.png" alt="Description of your image" width="40%"/>
+  <img src="richard.png" alt="Description of your image" width="45%"/>
   <p><b>Figure: Simulation of macrosegregation of Pb-18wt% Sn binary alloys</b></p>
 </div>
 
@@ -273,8 +273,8 @@ The proposed framework is aimed to aid new piezoelectric material technologies w
 
 \f$^1 \textit{Glasgow Computational Engineering Centre, James Watt School of Engineering, University of Glasgow}\f$
 
-<div style="text-align: justify"> %Triboelectric nanogenerator (TENG) is a cutting-edge energy harvester that transforms mechanical excitation to electric energy during contact electrification and electrostatic induction. Prior research which studied the electrostatic characteristics of TENG performance mostly relied on approximate analytical models. However, an accurate numerical model is crucial for understanding the relation between TENG output performance and various geometric and material parameters of the device. This study aims to develop a detailed finite element model to predict the TENG behaviour at different configurations.
-The investigation underlines the generation of the open circuit voltage, \f$V_{oc}\f$ due to the surface charges at the interface between dissimilar tribo-layers of the contact-separation TENG. A series of simulations were conducted to anticipate \f$V_{oc}\f$ at different air gaps between the layers. The results in figure shows the comparison between FEM results and approximate analytical solutions. The numerical solution conforms to analytical for the small gaps, while for the larger gaps, it converges with the approximations. We anticipate gaining a deeper understanding of the performance characteristics through the FE model and corresponding quantitative analysis. Furthermore, we aim to develop a multi-physical FE framework encompassing contact mechanics, electrostatics and electric circuit equations, to facilitate the optimization and design of TENGs.
+<div style="text-align: justify"> %Triboelectric nanogenerator (TENG) is a cutting-edge energy harvester that transforms mechanical excitation to electric energy during contact electrification and electrostatic induction. Prior research which studied the electrostatic characteristics of TENG performance mostly relied on approximate analytical models. However, an accurate numerical model is crucial for understanding the relation between the output performance and various geometric and material parameters of the device. This study aims to develop a detailed finite element model to predict the TENG behaviour at different configurations.
+The investigation underlines the generation of the open circuit voltage, \f$V_{oc}\f$ due to the surface charges at the interface between dissimilar tribo-layers of the contact-separation model of TENG. A series of simulations were conducted to anticipate \f$V_{oc}\f$ at different air gaps between the layers. The results in figure shows the comparison between FEM results and approximate analytical solutions. The numerical solution conforms to analytical for the small gaps, while for the larger gaps, it converges with the approximations. We anticipate gaining a deeper understanding of the performance characteristics through the FE model and corresponding quantitative analysis. Furthermore, we aim to develop a multi-physical FE framework encompassing contact mechanics, electrostatics and electric circuit equations, to facilitate the optimization and design of TENGs.
 
 </div>
 <div align="center">

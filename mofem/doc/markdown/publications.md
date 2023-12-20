@@ -1,3 +1,4 @@
+<!-- [TOC] -->
 Recent publications using MoFEM {#publications}
 =======================================================================
 
