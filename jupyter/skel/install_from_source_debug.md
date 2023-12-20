@@ -41,7 +41,7 @@ spack --config-scope /mofem_install/spack_config_dir dev-build -j4 \
   --source-path $HOME/mofem_install/mofem-cephas \
   --keep-prefix \
   mofem-cephas@lukasz~copy_user_modules \
-  target=$TARGET build_type=Debug install_id=$UID
+  target=$TARGET build_type=Debug install_id=$UID ^petsc+X ^boost+python+numpy
 ```
 
 Check existing installations of `mofem-cephas`
@@ -57,7 +57,8 @@ Install user modules including tutorials which you can learn from.
 spack --config-scope /mofem_install/spack_config_dir dev-build -j4 \
   --source-path $HOME/mofem_install/mofem-cephas/mofem/users_modules \
   mofem-users-modules@lukasz build_type=Debug install_id=$UID  \
-  ^mofem-cephas@lukasz+adol-c~copy_user_modules~docker~ipo+med+mgis~shared+slepc+tetgen build_system=cmake build_type=Debug dev_path=/mofem_install/jupyter/mofem/mofem_install/mofem-cephas install_id=$UID
+  ^mofem-cephas@lukasz+adol-c~copy_user_modules~docker~ipo+med+mgis~shared+slepc+tetgen build_system=cmake build_type=Debug dev_path=/mofem_install/jupyter/mofem/mofem_install/mofem-cephas install_id=$UID \
+  ^petsc+X ^boost+python+numpy
 ```
 
 Check existing installations of `mofem-users-modules`
