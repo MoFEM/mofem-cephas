@@ -10,15 +10,15 @@ mathematical equations and derivations leading to finite element implementation
 and comments, possible extensions.
 4. **Plain program**: Full source code without extended comments
 
-The source code and corresponding binary files of the tutorials are located at
-the following directories when you install MoFEM using either instructions in \ref install_docker_jupyterhub or the script provided in \ref installation
+If you install %MoFEM using either instructions in \ref install_docker_jupyterhub or the script provided in \ref installation
+the source code and corresponding binary files of the tutorials are located in the following directories:
 
 - Source code:
   `$HOME/mofem_install/mofem-cephas/mofem/users_modules/tutorials`
 - Binary files (build directory):
   `$HOME/mofem_install/mofem-cephas/mofem/users_modules/um-build-Release-5sehreo/tutorials/`
 
-In the directory described above, `5sehreo` is the `hash` of the particular build, and it may be different on your machine.
+In the build directory described above, `5sehreo` is the `hash` of the particular build, and it may be different on your machine.
 
 Each tutorial in this page includes code name and keywords for quick reference
 and search within the browser. 
