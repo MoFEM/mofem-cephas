@@ -10,8 +10,7 @@
       <tab type="user" url="@ref publications" title="Publications" intro=""/>
     </tab>
 
-    <tab type="user" visible="yes" title="Installation" url="@ref installation" intro="">
-      <!-- <tab type="user" url="@ref motivation" title="Features" intro=""/> -->
+    <tab type="user" visible="yes" title="Installation" url="@ref install_docker_jupyterhub" intro="">
       <tab type="user" url="@ref install_docker_jupyterhub" title="Installation with Docker - JupyterHub" intro=""/>
       <tab type="user" url="@ref install_docker_advanced" title="Installation with Docker - Advanced" intro=""/>
       <tab type="user" url="@ref installation" title="Installation with Spack - Scripts" intro=""/>
@@ -27,9 +26,9 @@
     </tab>
     
     <tab type="user" visible="yes" title="Developer" url="@ref general_data_structure" intro="">
+      <tab type="user" url="@ref general_data_structure" title="Architecture" intro=""/>
       <tab type="user" url="@ref tutorials" title="Tutorials"/>
       <tab type="user" url="@ref user_data_operators_table" title="Operators"/>
-      <tab type="user" url="@ref general_data_structure" title="Architecture" intro=""/>
       <tab type="user" url="@ref faqs" title="Frequently Asked Questions" intro=""/>
       <tab type="user" url="@ref a_guide_to_writing_documentation" title="Writing documentation" intro=""/>
       <tab type="user" url="@ref coding_practice" title="Coding practice" intro=""/>

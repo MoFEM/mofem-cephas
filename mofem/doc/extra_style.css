@@ -8,6 +8,13 @@ div.contents {
         border-radius: 8px;
 }
 
+hr {
+    height: 2px; /* Set the thickness of the line */
+    border: none; /* Removes the default border */
+    background-color: #003865; /* Sets the color of the line, here it is black */
+    margin: 24px 0; /* Space above and below the line */
+}
+
 #titlearea {
         background-color: white;
 }

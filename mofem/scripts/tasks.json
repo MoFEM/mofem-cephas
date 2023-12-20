@@ -3,7 +3,7 @@
         {
             "label": "build_tutorials",
             "type": "shell",
-            "command": "make -j6 -C /mofem_install/jupyter/mofem/mofem_install/mofem-cephas/mofem/users_modules/um-build-Debug-*",
+            "command": "make -j4 -C /mofem_install/jupyter/mofem/mofem_install/mofem-cephas/mofem/users_modules/um-build-Debug-*",
         },
     ],
     "version": "2.0.0"

@@ -25,5 +25,5 @@
 -ts_monitor
 -ts_adapt_monitor
 
--log_sl verbose
+-log_sl inform
 -log_no_color
