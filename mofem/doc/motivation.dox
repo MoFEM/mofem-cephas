@@ -17,13 +17,13 @@ Unique for %MoFEM is that it was created for engineers to solve practical proble
  
 \subsection Supported File Formats
  
-Support for handling boundary conditions and material sets
+%MoFEM works with the following popular mesh preprocessors:
 
-- Salome/Code_Aster 
-- Cubit/Trelis
-- Gmsh
+- <a style="font-weight:bold" href=https://code-aster.org/V2/spip.php?article303>Salome-Meca (code_aster)</a>
+- <a style="font-weight:bold" href=https://coreform.com/products/coreform-cubit/>Coreform Cubit (Trelis)</a>
+- <a style="font-weight:bold" href=http://gmsh.info>Gmsh</a>
 
-Moreover, using the <a style="font-weight:bold" href=https://ftp.mcs.anl.gov/pub/fathom/moab-docs/index.html>MOAB</a> library, MoFEM can read/write from file formats
+Moreover, using the <a style="font-weight:bold" href=https://ftp.mcs.anl.gov/pub/fathom/moab-docs/index.html>MOAB</a> library, MoFEM can read/write from/to the following file formats:
 \verbatim
 Format               Name     Read    Write   File name description
 ------------------  ------  -------- -------  ----------------
@@ -49,11 +49,11 @@ Template input      TEMPLATE  yes      yes
 
 \subsection mofem_features_ho Higher-order finite element spaces
 
-- %MoFEM supports wide range of spaces, L2, H1, H-div and H-curl
+- %MoFEM supports wide range of FE spaces: L2, H1, H(div) and H(curl)
 
-- Numerical trace (interfacial) spaces, on faces and edges
+- Numerical trace (interfacial) spaces on faces and edges
 
-- Integration on skeleton, (enabling easy implementation of Discontinuous Galerkin or Nitsche method)
+- Integration on skeleton enabling easy implementation of Discontinuous Galerkin or Nitsche method
 
 - Problems with mixed elements shapes (tetrahedrons, prisms, quads, triangles, edges, etc.)
 
@@ -67,21 +67,21 @@ Template input      TEMPLATE  yes      yes
 
 \subsection mofem_features_mesh_types Range of mesh types and topological operations
 
-%MoFEM is implemented with the use of MOAB and deliver the great flexibility of
+%MoFEM is implemented with the use of MOAB and delivers the great flexibility of
 managing meshes. We can manage range elements types, e.g. prisms, triangles,
 quads, bricks and more.
 
 - Unique and extremely flexible \e BitRef Levels (see \ref mix_mesh_refinement)
 
-- Conforming mesh refinement and through MoAB non-conforming mesh refinement.
+- Conforming and non-conforming mesh refinement
 
-- Spatial searching and ray tracing (MOAB)
+- Spatial searching and ray tracing
 
-- Distributed meshes (MOAB)
+- Distributed meshes 
 
 - Arbitrary order definition of mesh geometry
 
-- Readers and writers for many file formats (MOAB)
+- Readers and writers for many file formats
 
 - Meshing and re-meshing on the fly
 
@@ -91,18 +91,19 @@ quads, bricks and more.
 
 \subsection mofem_features_hpc Parallel and scalable
 
-%MoFEM supports MPI-based parallelism throughout the library, and can readily be
+%MoFEM supports MPI-based parallelism throughout <a style="font-weight:bold" href=https://petsc.org/release/>PETSc</a> library, and can readily be
 used as a scalable unstructured finite element problem generator. Algebra is
-building on top of PETSc and geometry description on top of MoAB, both
+building on top of PETSc and geometry description on top of MOAB, both
 implementations are tailored for massive parallel calculations.
 
-- %Number of solvers available from PETSc
+- %Number of solvers available from PETS (linear, nonlinear, time-dependent, eigenvalue)
 
-- Multi-grid solvers
+- Physics-based precoditioners (e.g. block solvers, Schur complement, etc.)
+
+- Multi-grid solvers (e.g. algebraic, geometric, etc.)
 
 - Efficient tensor library (see \ref ftenso_readme)
 
 - h/p- mesh adaptivity
-
 
 */

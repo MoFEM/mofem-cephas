@@ -9,7 +9,7 @@ The lectures are focused on both the mechanical and mathematical aspects.
 The specific topics of this course include saddle point formulations to handle incompressibility constraints, block-solvers, thermo-elasticity, novel multifield formulations for plasticity, contact and incompressible hyperelasticity, and the recent development on the first-order hyperbolic framework for fast-transient solid dynamics. 
 Moreover, we also provide hands-on tutorials for training with %MoFEM on these topics.
 
-\note To access hands-on tutorials, you can run our Docker container comprising %MoFEM and JupyterHub on your laptop/workstation/server/cloud, see \ref install_docker_jupyterhub for instructions. You can also watch thse step-by-step instructions for running container with %MoFEM and JupyterHub using Docker user interface:
+\note To access hands-on tutorials, you can run our Docker container comprising %MoFEM and JupyterHub on your laptop/workstation/server/cloud, see \ref install_docker_jupyterhub for instructions. You can also watch thse step-by-step instructions for running container with %MoFEM and JupyterHub using Docker:
 
 \htmlonly
 <center>
@@ -23,9 +23,9 @@ Moreover, we also provide hands-on tutorials for training with %MoFEM on these t
  
 - Standard linear elasticity and inherent problems with incompressibility
 - Mixed formulation and resolution for incompressibility
-- Taylor-Hood and Crouzeixâ€“Raviart element: stability, energy spaces, the patch test and inf-sup conditions
+- Taylor-Hood and Crouzeix-Raviart element: stability, energy spaces, the patch test and inf-sup conditions
 - %MoFEM tutorials general code structure
-- Taylor-Hood and Crouzeixâ€“Raviart elements convergence for incompressibility
+- Taylor-Hood and Crouzeix-Raviart elements convergence for incompressibility
 - Discussion on block solvers
 
 PDF slides of the presentation can be found <a href=https://gla-my.sharepoint.com/:b:/g/personal/andrei_shvarts_glasgow_ac_uk/ESzK9GNWXvlOse5qqiuPDq0BiyPhaitJE98cgTYWendBaA?e=MljmxZ> here</a>. 

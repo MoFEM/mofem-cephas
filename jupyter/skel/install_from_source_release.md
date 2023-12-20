@@ -49,7 +49,7 @@ Install updated user modules which you have ammended.
 spack --config-scope /mofem_install/spack_config_dir dev-build -j4 \
   --source-path $HOME/mofem_install/mofem-cephas/mofem/users_modules \
   mofem-users-modules@lukasz build_type=Release install_id=$UID  \
-  ^mofem-cephas@lukasz+adol-c~copy_user_modules~docker~ipo+med+mgis~shared+slepc+tetgen build_system=cmake build_type=Release dev_path=/mofem_install/jupyter/mofem/mofem_install/mofem-cephas install_id=$UID \
+  ^mofem-cephas@lukasz+adol-c~copy_user_modules~docker~ipo+med+mgis~shared+slepc+tetgen build_system=cmake build_type=Release dev_path=/mofem_install/jupyter/$USER/mofem_install/mofem-cephas install_id=$UID \
   ^petsc+X ^boost+python+numpy
 ```
 

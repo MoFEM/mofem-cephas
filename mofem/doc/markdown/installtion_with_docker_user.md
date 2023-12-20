@@ -152,6 +152,7 @@ You can also watch the step-by-step instructions for running container with %MoF
 [![Watch the video](https://img.youtube.com/vi/xL3J8VHig68/hqdefault.jpg)](https://youtu.be/_qo4EqfjGc4)
 </center>
 
+<br>
 # Development and debugging setup  
 
 > If you wish to develop and debug in %MoFEM using the just created container, read this section. Otherwise, you are done, and you can ignore the following instructions 

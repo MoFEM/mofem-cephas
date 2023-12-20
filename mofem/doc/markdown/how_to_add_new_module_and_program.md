@@ -3,26 +3,26 @@ How to add a new module and program {#how_to_add_new_module_and_program}
 
 [TOC]
 
-This tutorial assumes that you have installed MoFEM with developer version using
-the script provided in \ref installation. And therefore, you probably have paths
-for the source code and the binary files (e.g. for `Release` build type) of the
-Core Library and the Basic User Module as follows
+This tutorial assumes that you have installed MoFEM with developer version using either instructions in \ref install_docker_jupyterhub or the script provided in \ref installation. Therefore, you should have paths
+for the source code and the binary files (e.g. for the `Release`  build type) of the Core Library and Users Modules as follows:
 
 - Core Library
-  - Source code: *$HOME/mofem_install/mofem-cephas/*
-  - Binary files (build directory): *$HOME/mofem_install/mofem-cephas/core-build-RelWithDebInfo-abcd1234*
-- Basic User Module
-  - Source code: *$HOME/mofem_install/mofem-cephas/mofem/users_modules/*
-  - Binary files (build directory): *$HOME/mofem_install/mofem-cephas/mofem/users_modules/um-build-RelWithDebInfo-abcd1234*
+  - Source code: `$HOME/mofem_install/mofem-cephas/`
+  - Binary files (build directory): `$HOME/mofem_install/mofem-cephas/core-build-Release-*`
+- Users Modules
+  - Source code: `$HOME/mofem_install/mofem-cephas/mofem/users_modules/`
+  - Binary files (build directory): `$HOME/mofem_install/mofem-cephas/mofem/users_modules/um-build-Release-*`
+
+> In build directories described above, symbol `*` stands for the `hash` of the particular build, e.g. `5sehreo`
 
 # How to add a new module
 
 ## An existing module
 
-To add a new MoFEM module that already developed, for example [Solid Shell
+To add a new MoFEM module that is already developed, for example [Solid Shell
 Module](https://bitbucket.org/likask/mofem_um_solid_shell_prism_element/src/master/), you may wish to follow these steps
 
-- Locate Basic User Module source code
+- Locate Users Modules source code
 ```
 cd $HOME/mofem_install/mofem-cephas/mofem/users_modules/
 ```
@@ -34,11 +34,13 @@ git clone https://bitbucket.org/likask/mofem_um_solid_shell_prism_element.git
 
 - Compile codes for all modules
 ```
-cd $HOME/mofem_install/mofem-cephas/mofem/users_modules/um-build-RelWithDebInfo-abcd1234
+cd $HOME/mofem_install/mofem-cephas/mofem/users_modules/um-build-Release-*
 make -j4
 ```
 
-- By now you should see all the executables generated in the folder within `um-build-RelWithDebInfo-abcd1234`
+> If you have several builds of the Users Modules, e.g. `Debug` and `Release`, you will need to substitute the symbol `*` in the command above by the `hash` of the build you want to recompile.
+
+- By now you should see all the executables generated in the folder within `um-build-Release-*`
 ```
 cd mofem_um_solid_shell_prism_element
 ```
@@ -49,19 +51,17 @@ spack load cmake
 ctest
 ```
 
-If you did every thing correctly, you should see the paths for MoFEM
-Solid Shell Module are as follows
+If you did everything correctly, you should see the paths for %MoFEM Solid Shell Module are as follows
 
 - MoFEM Solid Shell Module
-  - Source code: *$HOME/mofem_install/mofem-cephas/mofem/users_modules/mofem_um_solid_shell_prism_element*
-  - Binary files (build directory): *$HOME/mofem_install/mofem-cephas/mofem/users_modules/um-build-RelWithDebInfo-abcd1234/mofem_um_solid_shell_prism_element*
+  - Source code: `$HOME/mofem_install/mofem-cephas/mofem/users_modules/mofem_um_solid_shell_prism_element`
+  - Binary files (build directory): `$HOME/mofem_install/mofem-cephas/mofem/users_modules/um-build-Release-*/mofem_um_solid_shell_prism_element`
 
 ## New module for your own purpose
 
-The quickest way to create your own module is to replicate a module that already
+The quickest way to create your own module is to replicate a module that is already
 available in MoFEM and then replace the existing source codes with your own. For
-example, you can replicate MoFEM Solid Shell Module 
-following general steps as follows
+example, you can replicate MoFEM Solid Shell Module following general steps as follows:
 
 - Clone the module to somewhere outside of MoFEM installation directory
 - Change file names and descriptions
@@ -75,7 +75,7 @@ following general steps as follows
   MoFEM (How to add a new module - An existing module).
 
 \note If you have issues creating new module of your own, please contact us at [MoFEM
-Q&A](https://groups.google.com/forum/#!categories/mofem-group). We are happy to help.
+Q&A](https://groups.google.com/forum/#!categories/mofem-group). 
 
 
 # How to add a new program
@@ -83,20 +83,20 @@ Q&A](https://groups.google.com/forum/#!categories/mofem-group). We are happy to 
 The quickest way to add a new program to an existing module in your
 MoFEM installation directory is to replicate a program that already available in
 the same module of your choice. For example, you can replicate `vec-0`
-program in MoFEM Basic User Module following general steps as follows
+program in MoFEM tutorials following general steps as follows
 
 - Go to:
-  $HOME/mofem_install/mofem-cephas/mofem/users_modules/tutorials/
+  `$HOME/mofem_install/mofem-cephas/mofem/users_modules/tutorials/`
 - Copy tutorial, e.g. `vec-0` and paste it in the same place
 - Change file names and descriptions
 - Be careful with `CMakeLists.txt`. Make sure all the names and paths are consistent with the program name of your choice
 - Delete unnecessary source code files
 - Once everything done, compile source code by
 ```
-cd $HOME/mofem_install/mofem-cephas/mofem/users_modules/um-build-RelWithDebInfo-abcd1234/tutorials
+cd $HOME/mofem_install/mofem-cephas/mofem/users_modules/um-build-Release-*/tutorials
 make -j4
 ```
 - You will see a new directory containing your new program
 
 \note If you have issues creating a new program of your own, please contact us at [MoFEM
-Q&A](https://groups.google.com/forum/#!categories/mofem-group). We are happy to help.
+Q&A](https://groups.google.com/forum/#!categories/mofem-group). 

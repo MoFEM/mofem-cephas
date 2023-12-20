@@ -152,8 +152,8 @@
                 </td>
 
                 <td style="text-align:left;background-color:#FAFAFA;padding:12px" valign="top"><a
-                        style="font-weight:bold" href="@ref motivation">Why MoFEM</a> section offers an introduction to features and applications,
-                    <a style="font-weight:bold" href="@ref install_docker_jupyterhub">Installation</a> provides instructions on getting started, 
+                        style="font-weight:bold" href="motivation.html">Why MoFEM</a> section offers an introduction to features and applications,
+                    <a style="font-weight:bold" href="install_docker_jupyterhub.html">Installation</a> provides instructions on getting started, 
                     while a set of recorded lectures and hands-on tutorials are available in  
                     <a style="font-weight:bold" href="https://www.youtube.com/channel/UCxdPe3nK1n9cB1XPAvl7btQ/playlists">Videos</a>. The <a style="font-weight:bold" href="tutorials.html">Developer</a> section
                     explains the design philosophy and contains tutorials on how to implement a range of problems.
