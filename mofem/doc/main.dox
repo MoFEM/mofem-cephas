@@ -152,13 +152,11 @@
                 </td>
 
                 <td style="text-align:left;background-color:#FAFAFA;padding:12px" valign="top"><a
-                        style="font-weight:bold" href="running_code.html">Getting started</a> offers a wide
-                    range of information including guides on installation, basic tutorials,
-                    instructive videos. <a style="font-weight:bold" href="tutorials.html">Developer</a> section
-                    contains <a style="font-weight:bold" href="namespace_mo_f_e_m.html">MoFEM</a> design
-                    philosophy and tutorials on how to implement problems from solid
-                    mechanics to fluid
-                    mechanics.
+                        style="font-weight:bold" href="@ref motivation">Why MoFEM</a> section offers an introduction to features and applications,
+                    <a style="font-weight:bold" href="@ref install_docker_jupyterhub">Installation</a> provides instructions on getting started, 
+                    while a set of recorded lectures and hands-on tutorials are available in  
+                    <a style="font-weight:bold" href="https://www.youtube.com/channel/UCxdPe3nK1n9cB1XPAvl7btQ/playlists">Videos</a>. The <a style="font-weight:bold" href="tutorials.html">Developer</a> section
+                    explains the design philosophy and contains tutorials on how to implement a range of problems.
                 </td>
             </tr>
         </table>
