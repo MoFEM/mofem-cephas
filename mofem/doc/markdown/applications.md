@@ -1,4 +1,4 @@
-Recent applications of MoFEM {#applications}
+Recent applications of %MoFEM {#applications}
 =======================================================================
 
 MoFEM delivers a software development platform which enhances scientific innovation by providing a flexible and adaptable modelling framework, using novel disruptive approaches to long-standing problems in continuum mechanics and tackling conflicting requirements of accuracy and computational efficiency. This is achieved in MoFEM by developing and adopting state-of-the-art FE technologies, for example: \f$H^1\f$-, \f$H(\text{curl})\f$-, \f$H(\text{div}\f$)- and \f$L^2\f$-conforming finite elements equipped with hierarchical, heterogeneous and anisotropic approximation bases; error-driven hp-adaptivity; mesh topology evolution. In addition, %MoFEM’s HPC capabilities are supported by its unique data structures that are capable of handling generic multi-field, multi-physics, multi-scale problems and building tailored composite solvers.
@@ -7,7 +7,7 @@ Therefore, MoFEM provides users with an effective tool for solving Partial Diffe
 <br>
 <div align="center">
   <img src="hpc_Scability.png" alt="Docker - searching for the required Docker image and Tag" width="70%"/>
-  <p><b>Figure: (a) Scalability of the block preconditioner with algebraic multigrid for shallow wave equation, (b) schematic side view showing the brick slice, the seal ring and the loading collar, (c) Parallel partitions (left) and solution of shallow wave equation (right) on the surface of Earth</b></p>
+  <p><b>Figure: (a) Scalability of the block preconditioner with algebraic multigrid for shallow wave equation, (b) schematic side view showing the brick slice, the seal ring and the loading collar,(c) Parallel partitions (left) and solution of shallow wave equation (right) on the surface of Earth</b></p>
 </div>
 [TOC]
 
@@ -28,7 +28,6 @@ Therefore, MoFEM provides users with an effective tool for solving Partial Diffe
 
 
 ---
-<br>
 
 ## Simulation-augmented atomic force microscopy of cells {#Cells}
 \f$\textbf{Andrei G. Shvarts}^{1}, \textbf{Giuseppe Ciccone}^{2}, \textbf{Łukasz Kaczmarczyk}^{1}, \textbf{Massimo Vassalli}^{2}\f$
@@ -39,12 +38,12 @@ Therefore, MoFEM provides users with an effective tool for solving Partial Diffe
 <div style="text-align: justify"> Mechanobiology is an emerging multidisciplinary field at the crossroads of medicine, biology, physics and engineering. It focusses on how physical forces drive pathophysiological processes from the cell to the tissue level scale \cite krieg2019atomic. A key role in understanding of these processes is attributed to mechanical properties of cells. The state-of-the-art approach for identification of elastic properties of cells is based on nanoindentation experiments exploiting atomic force microscopy (AFM). While these experiments provide wealth of information on the elastic response of cells, the current analysis is often limited to fitting using analytical contact mechanics models based on the assumption that cells can be treated as homogeneous isotropic linear elastic solids. However, much more can be learned from single cell nanoindentation by augmenting experimental procedures with numerical simulation, for example, by using the finite-element method considering heterogeneous solids and nonlinear behaviours.  Our objective is to provide an increase in the detail and reliability of extracted mechanical data from AFM experiments by developing an experimentally-informed numerical model of the nanoindentation process. We consider hyperelastic and viscoelastic materials undergoing large deformations, while the contact interaction is handled by consistent and stable numerical algorithms. This permits to extract mechanical properties of cells from experimental data with high precision, setting a new standard in the analysis of nanoindentation curves.
 </div>
 <div align="center">
-  <img src="cell_shvarts.png" alt="Docker - searching for the required Docker image and Tag" width="90%"/>
+  <img src="cell_shvarts.png" alt="Docker - searching for the required Docker image and Tag" width="85%"/>
   <p><b>Figure: (a) Sketch of the experimental setup; (b) force-indentation data fitting~\cite luchtefeld2020elasticity  (b) finite-element simulation of cell nanoindentation using hyperelastic neo-Hookean material model (c) Cell layer's surface roughness reconstructed using finite-element solution of the transport-of-intensity equation</b></p>
 </div>
 
 ---
-<br>
+
 ## Multifield finite strain plasticity: Theory and numerics {#MFsp}
 \f$\textbf{Karol Lewandowski}^{1}, \textbf{Daniele Barbera}^{2}, \textbf{Callum J. Runcie}^{1}, \textbf{Ross Williams}^{1}, \textbf{Andrew McBride}^{1}, \textbf{Paul Steinmann}^{1,3}, \textbf{Chris Pearce}^{1}, \textbf{Lukasz Kaczmarczyk}^{1}\f$
 
@@ -80,7 +79,6 @@ A series of numerical problems in fig. (b) demonstrate the validity, capability,
 </div>
 
 ---
-<br>
 
 ## A stable formulation of Lagrange multipliers for enforcing contact constraints using arbitrary orders of approximation {#tire}
 \f$\textbf{I. Athanasiadis}^{1}, \textbf{A. Shvarts}^{1}, \textbf{K. Lewandowski}^{1}, \textbf{C. J. Runcie}^{1}, \textbf{R. Williams}^{1}, \textbf{A. McBride}^{1}, \textbf{P. Steinmann}^{1, 2}, \textbf{C. Pearce}^{1}, \textbf{L. Kaczmarczyk}^{1}\f$
@@ -98,11 +96,12 @@ heterogeneous basis functions such as compatibility with optimal multi-grid solv
 </div>
 
 ---
-<br>
+
 ## An industry driven approach to numerical modelling of the Incremental Cold Flow Forming process {#ColdFlow}
 \f$\textbf{Callum J. Runcie}^{1}, \textbf{Karol Lewandowski}^{1}, \textbf{Daniele Barbera}^{1}, \textbf{Andrew McBride}^{1}, \textbf{Paul Steinmann}^{1, 2}, \textbf{Chris Pearce}^{1}, \textbf{Lukasz Kaczmarczyk}^{1}\f$
 
 \f$^1 \textit{Glasgow Computational Engineering Centre, James Watt School of Engineering, University of Glasgow}\f$
+\f$^2 \textit{Chair of Applied Mechanics, Friedrich-Alexander University Erlangen-Nürnberg}\f$
 
 <div style="text-align: justify"> In the last two decades, incremental cold flow forming (ICFF) has progressively advanced as a metal forming process. The design of this process is inherently difficult and still poorly understood, due to complex underlying physical phenomena involving hollow cylindrical geometry, undergoing fast rotational rigid body contact loading, resulting in large plastic deformations.
 Commercially available finite element packages are currently providing unreliable and computationally expensive solutions in an attempt to understand the process. To address these challenges, a multifield approach to plasticity was developed in %MoFEM by the co-authors \cite Lewandowski2023. This approach is highly flexible, allowing for straightforward coupling with other physical phenomena including contact mechanics and advection of the plastic variables as part of an Arbitrary Lagrangian Eulerian (ALE) formulation improving the overall robustness of the numerical scheme for modelling ICFF. 
@@ -110,12 +109,12 @@ Furthermore, to aid engineers in understanding the manufacturing process, the ab
 </div>
 
 <div align="center">
-  <img src="iccf_flow_forming.jpg" alt="Description of your image" width="55%"/>
+  <img src="iccf_flow_forming.jpg" alt="Description of your image" width="65%"/>
   <p><b>Figure: %Contact of rigid rollers with rotating elasto-plastic workpiece</b></p>
 </div>
 
 ---
-<br>
+
 # Transport problems
 
 ## A p-adaptive, implicit-explicit mixed finite element method for diffusion-reaction problems {#PIMPEXP}
@@ -128,12 +127,12 @@ Furthermore, to aid engineers in understanding the manufacturing process, the ab
 </div>
 
 <div align="center">
-  <img src="spiral.png" alt="Description of your image" width="78%"/>
+  <img src="spiral.png" alt="Description of your image" width="82%"/>
   <p><b>Figure: Development of a spiral pattern as a result of cyclic interactions of three species. Observe adapting heterogeneous approximation order at time steps</b></p>
 </div>
 
 ---
-<br>
+
 ## Weaker mixed finite element formulation for data-driven approach {#MFEDD}
 \f$\textbf{Adriana Kuliková}^{1}, \textbf{Andrei G. Shvarts}^{1}, \textbf{Lukasz Kaczmarczyk}^{1}, \textbf{Chris Pearce}^{1}\f$
 
@@ -154,7 +153,6 @@ To satisfy the conservation laws and boundary conditions, we use a finite elemen
 </div>
 
 ---
-<br>
 
 ## Numerical simulation of photon diffusion through highly disperse media for optical imaging applications {#ddiff}
 \f$\textbf{Andrei G. Shvarts}^{1}, \textbf{Lukasz Kaczmarczyk}^{1}, \textbf{Jack Radford}^{2}, \textbf{Samuel L. Nerenberg}^{2}, \textbf{Daniele Faccio}^{2}\f$
@@ -169,12 +167,11 @@ Since the photon diffusion equation has the same differential operator as the cl
 </div>
 
 <div align="center">
-  <img src="diff_photon.png" alt="Description of your image" width="76%"/>
+  <img src="diff_photon.png" alt="Description of your image" width="79%"/>
   <p><b>Figure: (a) Experimental setup for diffuse optical imaging of hidden objects (b) Image of a hidden object obtained by numerical simulation of photon diffusion</b></p>
 </div>
 
 ---
-<br>
 
 # Multiphysics problems
 ## Computational framework for simulation of triboelectric nanogenerators accounting for surface roughness {#TENG}
@@ -195,7 +192,6 @@ The obtained results show good agreement with both experimental observations and
 </div>
 
 ---
-<br>
 
 ## Modelling of macrosegregation during steel ingot casting {#ingot}
 \f$\textbf{Richard Olley}^{1}, \textbf{Ignatios Athanasiadis}^{1}, \textbf{Andrei Shvarts}^{1}, \textbf{Lukasz Kaczmarczyk}^{1}, \textbf{Chris Pearce}^{1}\f$
@@ -207,12 +203,12 @@ The monolithic scheme proposed encompasses a full coupling between the conservat
 The proposed model has been developed as a module  which allows for an extendable and versatile implementation of multi-phase macrosegregation models alongside single-phase models.
 </div>
 <div align="center">
-  <img src="richard.png" alt="Description of your image" width="45%"/>
+  <img src="richard.png" alt="Description of your image" width="49%"/>
   <p><b>Figure: Simulation of macrosegregation of Pb-18wt% Sn binary alloys</b></p>
 </div>
 
 ---
-<br>
+
 ## Simulations and modelling of novel electronic devices and materials from an electronic device packaging perspective {#nanowire}
 \f$\textbf{Yingjia Gao}^{1,2}, \textbf{Preslav Aleksandrov}^{2}, \textbf{Andrei G. Shvarts}^{1}, \textbf{Lukasz Kaczmarczyk}^{1}, \textbf{Chris Pearce}^{1}, \textbf{Asen Asenov}^{2}, \textbf{Vihar P. Georgiev}^{1,2}\f$
 
@@ -225,12 +221,12 @@ The aim of this project is to develop advanced computational framework for simul
 Due to the smaller nanoelectronic devices, the arrangement of the various components in the chip becomes more important \cite Takashi_Hisada2012. For example, the heat emitted by various components on the chip can lead to crack forming and propagation in the material used for packaging. As a result such effects could lead to decreasing of the performance not only on specific chip but also on the whole system. The best way to capture the compexity of the problem is by utilizing the finite element method simulations wich can give a precise physical and material analysis of all the mechanical, thermal and electrical effects inside the electronic device and chips
 </div>
 <div align="center">
-  <img src="nanowire.png" alt="Description of your image" width="68%"/>
+  <img src="nanowire.png" alt="Description of your image" width="72%"/>
   <p><b>Figure: (a) A sketch of the nanowire transistor surrounded by insulating packaging material. (b) Temperature distribution in the system. (c) Stress in the nanowire transistor due to heating</b></p>
 </div>
 
 ---
-<br>
+
 ## Evaluating the forces involved in bubble management in DMEK surgery – a mathematical and computational model with clinical implications {#DMEK}
 \f$\textbf{David Lockington}^{2}, \textbf{Gordon MD Brown}^{2}, \textbf{Chris Pearce}^{1}, \textbf{Lukasz Kaczmarczyk}^{1}\f$
 
@@ -240,7 +236,7 @@ Due to the smaller nanoelectronic devices, the arrangement of the various compon
 <div style="text-align: justify"> The model \cite lockington2022evaluating assumed incompressibility for both fluids within realistically achievable pressure ranges. Cahn-Hilliard Navier-Stokes equations were discretised through the application of the Finite Element Method. Mathematical modelling and computer simulation showed bubble size, corneal curvature and force intensity influences surface tension support for DMEK tissue in Scenario in the following figure. Scenario B demonstrated complex, uneven distribution of surface pressure on the DMEK graft during uncontrolled bubble release. Uneven pressure concentration can cause local tissue warping, with air/fluid displacement via capillary waves generated on the fluid-air interface adversely impacting DMEK support. We have quantitatively and qualitatively modelled the forces involved in DMEK adherence in normal circumstances. We have shown releasing air/gas can abruptly reduce DMEK tissue support via generation of large pressure gradients at the liquid/bubble/graft interfaces, creating negative local forces. Surgeons should consider these principles to reduce DMEK graft dislocation rates via optimised bubble size to graft size, longer acting bubble support and avoiding rapid decompression.
 </div>
 <div align="center">
-  <img src="eye.png" alt="Description of your image" width="70%"/>
+  <img src="eye.png" alt="Description of your image" width="72%"/>
   <p><b>Figure: DMEK graft and four snapshots in time of air bubble release in the vertical position, with a corresponding graph showing total horizontal and vertical forces acting on the DMEK graft. Subsequent snapshots represent the transition from the complete bubble-filled stage (Snapshot 1) to the final mobile bubble stage (Snapshot 4). The top-left illustration shows the bubble in red and the fluid/liquid in blue. The bottom-left illustration shows the distribution of pressure as the bubble is released</b></p>
 </div>
 
@@ -262,12 +258,12 @@ The minimisation procedure involves a series of fully implicit dynamic FEM analy
 The proposed framework is aimed to aid new piezoelectric material technologies where more complex structures are involved and to be extended to account for more physical phenomena.
 </div>
 <div align="center">
-  <img src="piezo_1.png" alt="Description of your image" width="70%"/>
+  <img src="piezo_1.png" alt="Description of your image" width="74%"/>
   <p><b>Figure: A snapshot of simulation results - (a) electric potential, (b) mechanical displacement</b></p>
 </div>
 
 ---
-<br>
+
 ## Numerical Simulation of Triboelectric Nanogenerators {#Triboelectric}
 \f$\textbf{MD Tanzib Ehsan Sanglap}^{1}, \textbf{Andrei G. Shvarts}^{1}, \textbf{Lukasz Kaczmarczyk}^{1}\f$
 
@@ -278,7 +274,7 @@ The investigation underlines the generation of the open circuit voltage, \f$V_{o
 
 </div>
 <div align="center">
-  <img src="tanzib_elec.png" alt="Description of your image" width="70%"/>
+  <img src="tanzib_elec.png" alt="Description of your image" width="75%"/>
   <p><b>Figure: (a) Implementation schematics. (b) FEM results for the potential and electric field between two tribo-layers. (c) Comparison of approximate analytical models and %MoFEM simulations to investigate the dependence of the open-circuit voltage on the air gap</b></p>
 </div>
 
