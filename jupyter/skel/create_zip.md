@@ -6,7 +6,7 @@ jupyter:
       extension: .md
       format_name: markdown
       format_version: '1.3'
-      jupytext_version: 1.14.1
+      jupytext_version: 1.16.0
   kernelspec:
     display_name: Python 3 (ipykernel)
     language: python
@@ -23,8 +23,4 @@ for root, dirs, files in os.walk(path):
         if file.endswith('.vtk') or file.endswith('.png'):        
             zipf.write(os.path.join(root, file), os.path.relpath(os.path.join(root, file), os.path.join(path, '..')))
 zipf.close()
-```
-
-```python
-
 ```
