@@ -21,12 +21,22 @@ private:
 };
 
 struct OpStressThermal : public DomainEleOp {
-  OpStressThermal(const std::string field_name,
-                  boost::shared_ptr<MatrixDouble> strain_ptr,
-                  boost::shared_ptr<VectorDouble> temp_ptr,
-                  boost::shared_ptr<MatrixDouble> m_D_ptr,
-                  boost::shared_ptr<double> coeff_expansion_ptr,
-                  boost::shared_ptr<MatrixDouble> stress_ptr);
+  /**
+   * @deprecated do not use this constructor
+  */
+  DEPRECATED OpStressThermal(const std::string field_name,
+                             boost::shared_ptr<MatrixDouble> strain_ptr,
+                             boost::shared_ptr<VectorDouble> temp_ptr,
+                             boost::shared_ptr<MatrixDouble> m_D_ptr,
+                             boost::shared_ptr<double> coeff_expansion_ptr,
+                             boost::shared_ptr<MatrixDouble> stress_ptr);
+
+  DEPRECATED OpStressThermal(boost::shared_ptr<MatrixDouble> strain_ptr,
+                             boost::shared_ptr<VectorDouble> temp_ptr,
+                             boost::shared_ptr<MatrixDouble> m_D_ptr,
+                             boost::shared_ptr<double> coeff_expansion_ptr,
+                             boost::shared_ptr<MatrixDouble> stress_ptr);
+
   MoFEMErrorCode doWork(int side, EntityType type, EntData &data);
 
 private:
@@ -108,6 +118,15 @@ OpStressThermal::OpStressThermal(const std::string field_name,
   // Operator is only executed for vertices
   std::fill(&doEntities[MBEDGE], &doEntities[MBMAXTYPE], false);
 }
+
+OpStressThermal::OpStressThermal(boost::shared_ptr<MatrixDouble> strain_ptr,
+                                 boost::shared_ptr<VectorDouble> temp_ptr,
+                                 boost::shared_ptr<MatrixDouble> m_D_ptr,
+                                 boost::shared_ptr<double> coeff_expansion_ptr,
+                                 boost::shared_ptr<MatrixDouble> stress_ptr)
+    : DomainEleOp(NOSPACE, DomainEleOp::OPSPACE), strainPtr(strain_ptr),
+      tempPtr(temp_ptr), mDPtr(m_D_ptr), coeffExpansionPtr(coeff_expansion_ptr),
+      stressPtr(stress_ptr) {}
 
 //! [Calculate stress]
 MoFEMErrorCode OpStressThermal::doWork(int side, EntityType type,

@@ -359,6 +359,9 @@ MoFEMErrorCode Example::boundaryCondition() {
                                            "REMOVE_ALL", "U", 0, 3);
   CHKERR bc_mng->pushMarkDOFsOnEntities<DisplacementCubitBcData>(
       simple->getProblemName(), "U");
+      
+  // adding MPCs
+  CHKERR bc_mng->addBlockDOFsToMPCs(simple->getProblemName(), "U");
 
   MoFEMFunctionReturn(0);
 }
@@ -412,13 +415,13 @@ MoFEMErrorCode Example::assembleSystem() {
   pip->getOpDomainRhsPipeline().push_back(
       new OpCalculateVectorFieldGradient<SPACE_DIM, SPACE_DIM>("U",
                                                                mat_grad_ptr));
-  pip->getOpDomainRhsPipeline().push_back(
-      new OpSymmetrizeTensor<SPACE_DIM>("U", mat_grad_ptr, mat_strain_ptr));
   CHKERR addMatBlockOps(pip->getOpDomainRhsPipeline(), "U", "MAT_ELASTIC",
                         mat_D_ptr, Sev::inform);
   pip->getOpDomainRhsPipeline().push_back(
+      new OpSymmetrizeTensor<SPACE_DIM>(mat_grad_ptr, mat_strain_ptr));
+  pip->getOpDomainRhsPipeline().push_back(
       new OpTensorTimesSymmetricTensor<SPACE_DIM, SPACE_DIM>(
-          "U", mat_strain_ptr, mat_stress_ptr, mat_D_ptr));
+          mat_strain_ptr, mat_stress_ptr, mat_D_ptr));
 
   pip->getOpDomainRhsPipeline().push_back(
       new OpInternalForce("U", mat_stress_ptr,
@@ -478,16 +481,26 @@ MoFEMErrorCode Example::solveSystem() {
     };
     pre_proc_rhs->preProcessHook = get_pre_proc_hook();
 
-    auto get_post_proc_hook_rhs = [&]() {
-      return EssentialPostProcRhs<DisplacementCubitBcData>(mField,
-                                                           post_proc_rhs, 1.);
+    auto get_post_proc_hook_rhs = [this, post_proc_rhs]() {
+      MoFEMFunctionBeginHot;
+      
+      CHKERR EssentialPostProcRhs<DisplacementCubitBcData>(mField, post_proc_rhs,
+                                                          1.)();
+      CHKERR EssentialPostProcRhs<MPCsType>(mField, post_proc_rhs, 1.)();
+      MoFEMFunctionReturnHot(0);
     };
-    auto get_post_proc_hook_lhs = [&]() {
-      return EssentialPostProcLhs<DisplacementCubitBcData>(mField,
-                                                           post_proc_lhs, 1.);
+
+    auto get_post_proc_hook_lhs = [this, post_proc_lhs]() {
+      MoFEMFunctionBeginHot;
+
+      CHKERR EssentialPostProcLhs<DisplacementCubitBcData>(mField, post_proc_lhs,
+                                                          1.)();
+      CHKERR EssentialPostProcLhs<MPCsType>(mField, post_proc_lhs)();
+      MoFEMFunctionReturnHot(0);
     };
-    post_proc_rhs->postProcessHook = get_post_proc_hook_rhs();
-    post_proc_lhs->postProcessHook = get_post_proc_hook_lhs();
+
+    post_proc_rhs->postProcessHook = get_post_proc_hook_rhs;
+    post_proc_lhs->postProcessHook = get_post_proc_hook_lhs;
 
     ksp_ctx_ptr->getPreProcComputeRhs().push_front(pre_proc_rhs);
     ksp_ctx_ptr->getPostProcComputeRhs().push_back(post_proc_rhs);
@@ -584,13 +597,12 @@ MoFEMErrorCode Example::outputResults() {
     auto mat_stress_ptr = boost::make_shared<MatrixDouble>();
     pip.push_back(new OpCalculateVectorFieldGradient<SPACE_DIM, SPACE_DIM>(
         "U", mat_grad_ptr));
-    pip.push_back(
-        new OpSymmetrizeTensor<SPACE_DIM>("U", mat_grad_ptr, mat_strain_ptr));
-
     auto mat_D_ptr = boost::make_shared<MatrixDouble>();
     CHKERR addMatBlockOps(pip, "U", "MAT_ELASTIC", mat_D_ptr, Sev::verbose);
+    pip.push_back(
+        new OpSymmetrizeTensor<SPACE_DIM>(mat_grad_ptr, mat_strain_ptr));
     pip.push_back(new OpTensorTimesSymmetricTensor<SPACE_DIM, SPACE_DIM>(
-        "U", mat_strain_ptr, mat_stress_ptr, mat_D_ptr));
+        mat_strain_ptr, mat_stress_ptr, mat_D_ptr));
     auto u_ptr = boost::make_shared<MatrixDouble>();
     pip.push_back(new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_ptr));
     auto x_ptr = boost::make_shared<MatrixDouble>();
@@ -760,6 +772,8 @@ MoFEMErrorCode Example::checkResults() {
       CHKERR EssentialPreProcReaction<DisplacementCubitBcData>(
           mField, fe_post_proc_ptr, res)();
       CHKERR EssentialPostProcRhs<DisplacementCubitBcData>(
+          mField, fe_post_proc_ptr, 0, res)();
+      CHKERR EssentialPostProcRhs<MPCsType>(
           mField, fe_post_proc_ptr, 0, res)();
       MoFEMFunctionReturn(0);
     };

@@ -533,8 +533,7 @@ MoFEMErrorCode Incompressible::OPs() {
         "U", grad_u_ptr));
 
     auto strain_ptr = boost::make_shared<MatrixDouble>();
-    pip.push_back(
-        new OpSymmetrizeTensor<SPACE_DIM>("U", grad_u_ptr, strain_ptr));
+    pip.push_back(new OpSymmetrizeTensor<SPACE_DIM>(grad_u_ptr, strain_ptr));
 
     auto get_four_mu = [](const double, const double, const double) {
       return -2. * mu;
@@ -654,8 +653,7 @@ MoFEMErrorCode Incompressible::tsSolve() {
           "U", grad_u_ptr));
 
       auto strain_ptr = boost::make_shared<MatrixDouble>();
-      pip.push_back(
-          new OpSymmetrizeTensor<SPACE_DIM>("U", grad_u_ptr, strain_ptr));
+      pip.push_back(new OpSymmetrizeTensor<SPACE_DIM>(grad_u_ptr, strain_ptr));
 
       auto stress_ptr = boost::make_shared<MatrixDouble>();
       pip.push_back(new OpCalculateLameStress<SPACE_DIM>(

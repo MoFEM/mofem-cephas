@@ -23,6 +23,8 @@ tutorials_copy_and_install("*.geo" "${permissions_execute}")
 
 tutorials_copy_and_install("../vec-2/beam_2D.cub" "${permissions_default}")
 tutorials_copy_and_install("../vec-2/beam_3D.cub" "${permissions_default}")
+tutorials_copy_and_install("../vec-2/meshes/LShape_Rot_MPC_link.cub" "${permissions_default}")
+tutorials_copy_and_install("../vec-2/meshes/LShape_Rot_MPC_link_master.cub" "${permissions_default}")
 
 tutorials_build_and_install(
   elastic_2d ${CMAKE_CURRENT_SOURCE_DIR}/elastic.cpp)
@@ -50,6 +52,20 @@ add_test(
   ${CMAKE_CURRENT_BINARY_DIR}/elastic_2d
   -file_name part.h5m -order 3 
   -ksp_rtol 1e-12 -ksp_atol 1e-9 -test -log_no_color)
+
+add_test(
+  elastic_mpc_XYZ
+  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/elastic_2d
+  -file_name LShape_Rot_MPC_link.cub -order 2 
+  -ksp_rtol 1e-12 -ksp_atol 1e-12 -test -log_no_color -pc_type lu)
+
+add_test(
+  elastic_mpc_master_only
+  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/elastic_2d
+  -file_name LShape_Rot_MPC_link_master.cub -order 2 
+  -ksp_rtol 1e-12 -ksp_atol 1e-12 -test -log_no_color -pc_type lu)
 
 add_test(
   elastic_3d_rotation0

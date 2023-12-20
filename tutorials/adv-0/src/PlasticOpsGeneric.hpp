@@ -275,7 +275,7 @@ inline double constrain_abs(double x) {
 
 inline double w(double eqiv, double dot_tau, double f, double sigma_y,
                 double sigma_Y) {
-  return (f - sigma_y) / sigma_Y + cn1 * (eqiv);
+  return (f - sigma_y) / sigma_Y + cn1 * (dot_tau);
 };
 
 /**
@@ -292,19 +292,19 @@ c_n \sigma_y \dot{\tau} - \frac{1}{2}\left\{c_n\sigma_y \dot{\tau} +
 inline double constraint(double eqiv, double dot_tau, double f, double sigma_y,
                          double abs_w, double vis_H, double sigma_Y) {
   return vis_H * dot_tau +
-         (sigma_Y / 2) * ((cn0 * (dot_tau - eqiv) + cn1 * (eqiv) -
+         (sigma_Y / 2) * ((cn0 * (dot_tau - eqiv) + cn1 * (dot_tau) -
                            (f - sigma_y) / sigma_Y) -
                           abs_w);
 };
 
 inline double diff_constrain_ddot_tau(double sign, double eqiv, double dot_tau,
                                       double vis_H, double sigma_Y) {
-  return vis_H + (sigma_Y / 2) * (cn0);
+  return vis_H + (sigma_Y / 2) * (cn0 + cn1 * (1 - sign));
 };
 
 inline double diff_constrain_deqiv(double sign, double eqiv, double dot_tau,
                                    double sigma_Y) {
-  return (sigma_Y / 2) * (-cn0 + cn1 * (1 - sign));
+  return (sigma_Y / 2) * (-cn0);
 };
 
 inline auto diff_constrain_df(double sign) { return (-1 - sign) / 2; };
@@ -736,9 +736,16 @@ MoFEMErrorCode OpCalculatePlasticityImpl<DIM, GAUSS, DomainEleOp>::doWork(
 
 template <int DIM, typename DomainEleOp>
 struct OpPlasticStressImpl<DIM, GAUSS, DomainEleOp> : public DomainEleOp {
-  OpPlasticStressImpl(const std::string field_name,
+
+  /**
+   * @deprecated do not use this constructor
+  */
+  DEPRECATED OpPlasticStressImpl(const std::string field_name,
                       boost::shared_ptr<CommonData> common_data_ptr,
                       boost::shared_ptr<MatrixDouble> mDPtr);
+  OpPlasticStressImpl(boost::shared_ptr<CommonData> common_data_ptr,
+                      boost::shared_ptr<MatrixDouble> mDPtr);
+
   MoFEMErrorCode doWork(int side, EntityType type, EntData &data);
 
 private:
@@ -756,6 +763,13 @@ OpPlasticStressImpl<DIM, GAUSS, DomainEleOp>::OpPlasticStressImpl(
   std::fill(&DomainEleOp::doEntities[MBEDGE],
             &DomainEleOp::doEntities[MBMAXTYPE], false);
 }
+
+template <int DIM, typename DomainEleOp>
+OpPlasticStressImpl<DIM, GAUSS, DomainEleOp>::OpPlasticStressImpl(
+    boost::shared_ptr<CommonData> common_data_ptr,
+    boost::shared_ptr<MatrixDouble> m_D_ptr)
+    : DomainEleOp(NOSPACE, DomainEleOp::OPSPACE),
+      commonDataPtr(common_data_ptr), mDPtr(m_D_ptr) {}
 
 //! [Calculate stress]
 template <int DIM, typename DomainEleOp>
