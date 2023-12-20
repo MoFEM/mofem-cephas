@@ -181,7 +181,6 @@ private:
   FTensor::Tensor1<double, 3> tAngles;
   FTensor::Tensor1<double, 3> tOffset;
   VecOfTimeScalingMethods vecOfTimeScalingMethods;
-  VectorFun<FIELD_DIM> dispFunction;
 
   FTensor::Tensor1<double, FIELD_DIM> rotFunction(double x, double y,
                                                   double z) {
@@ -192,6 +191,16 @@ private:
     t_ret(i) = tVal(i) + rot(i);
     return t_ret;
   };
+
+  VectorFun<FIELD_DIM>
+  initDispFunction(boost::shared_ptr<DisplacementCubitBcData> bc_data) {
+    if (bc_data->data.flag4 || bc_data->data.flag5 || bc_data->data.flag6) {
+      return [this](double x, double y, double z) {
+        return this->rotFunction(x, y, z);
+      };
+    }
+    return [this](double x, double y, double z) { return tVal; };
+  }
 };
 
 template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
@@ -200,9 +209,7 @@ OpEssentialRhsImpl<DisplacementCubitBcData, 1, FIELD_DIM, A, I, OpBase>::
                        boost::shared_ptr<DisplacementCubitBcData> bc_data,
                        boost::shared_ptr<Range> ents_ptr,
                        std::vector<boost::shared_ptr<ScalingMethod>> smv)
-    : OpSource(
-          field_name, [this](double, double, double) { return tVal; },
-          ents_ptr),
+    : OpSource(field_name, initDispFunction(bc_data), ents_ptr),
       vecOfTimeScalingMethods(smv) {
   static_assert(FIELD_DIM > 1, "Is not implemented for scalar field");
 
@@ -238,13 +245,6 @@ OpEssentialRhsImpl<DisplacementCubitBcData, 1, FIELD_DIM, A, I, OpBase>::
     }
     return s;
   };
-  if (bc_data->data.flag4 || bc_data->data.flag5 || bc_data->data.flag6) {
-    this->dispFunction = [this](double x, double y, double z) {
-      return this->rotFunction(x, y, z);
-    };
-  } else {
-    // use default set at construction
-  }
 }
 
 template <int BASE_DIM, int FIELD_DIM, AssemblyType A, IntegrationType I,

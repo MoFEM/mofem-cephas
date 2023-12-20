@@ -124,13 +124,6 @@ int main(int argc, char *argv[]) {
     auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
     auto det_ptr = boost::make_shared<VectorDouble>();
 
-    boost::dynamic_pointer_cast<VolumeElementForcesAndSourcesCore>(
-        pipeline_mng->getDomainRhsFE())
-        ->meshPositionsFieldName = "none";
-    boost::dynamic_pointer_cast<PipelineManager::FaceEle>(
-        pipeline_mng->getBoundaryRhsFE())
-        ->meshPositionsFieldName = "none";
-
     pipeline_mng->getOpDomainRhsPipeline().push_back(
         new OpCalculateHOJac<3>(jac_ptr));
     pipeline_mng->getOpDomainRhsPipeline().push_back(

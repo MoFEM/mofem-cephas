@@ -163,7 +163,6 @@ int main(int argc, char *argv[]) {
     };
 
     ForcesAndSourcesCore_TestFE fe1(m_field);
-    fe1.meshPositionsFieldName = "FIELD1";
 
     fe1.getRuleHook = [](int, int, int approx_order) { return -1; };
     fe1.setRuleHook = [](ForcesAndSourcesCore *fe_ptr, int ro, int co, int ao) {

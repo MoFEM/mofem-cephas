@@ -182,6 +182,177 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities(const std::string problem_name,
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode BcManager::addBlockDOFsToMPCs(const std::string problem_name,
+                                             const std::string field_name,
+                                             bool get_low_dim_ents,
+                                             bool block_name_field_prefix,
+                                             bool is_distributed_mesh) {
+  Interface &m_field = cOre;
+  auto prb_mng = m_field.getInterface<ProblemsManager>();
+  MoFEMFunctionBegin;
+
+  if (block_name_field_prefix)
+    MOFEM_LOG("BcMngWorld", Sev::warning)
+        << "Argument block_name_field_prefix=true has no effect";
+  if (is_distributed_mesh)
+    MOFEM_LOG("BcMngWorld", Sev::warning)
+        << "Argument is_distributed_mesh=true has no effect";
+  if (get_low_dim_ents)
+    MOFEM_LOG("BcMngWorld", Sev::warning)
+        << "Argument get_low_dim_ents=true has no effect";
+
+  auto get_dim = [&](const Range &ents) {
+    for (auto d : {3, 2, 1})
+      if (ents.num_of_dimension(d))
+        return d;
+    return 0;
+  };
+
+  auto mark_fix_dofs = [&](std::vector<unsigned char> &marked_field_dofs,
+                           const auto lo, const auto hi) {
+    return prb_mng->modifyMarkDofs(problem_name, ROW, field_name, lo, hi,
+                                   ProblemsManager::MarkOP::OR, 1,
+                                   marked_field_dofs);
+  };
+
+  auto iterate_mpc_meshsets = [&]() {
+    MoFEMFunctionBegin;
+
+    auto mpc_meshset_ptr =
+        m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(
+            std::regex((boost::format("%s(.*)") % "MPC_(.*)").str()));
+
+    for (auto m : mpc_meshset_ptr) {
+
+      if (std::regex_match(m->getName(),
+                           std::regex("(.*)COUPLING_LINKS(.*)"))) {
+
+        auto bc = boost::make_shared<BCs>();
+        bc->mpcPtr = boost::make_shared<MPCsType>();
+        bc->mpcPtr->mpcType = MPC::COUPLING;
+
+        std::string const corresponding_master_ms =
+            std::regex_replace(m->getName(), std::regex("LINKS"), "MASTER");
+
+        Range links_ents;
+        CHKERR m_field.get_moab().get_entities_by_handle(m->getMeshset(),
+                                                         links_ents, true);
+
+        Range master_nodes;
+        if (m_field.getInterface<MeshsetsManager>()->checkMeshset(
+                corresponding_master_ms)) {
+          const CubitMeshSets *l;
+          CHKERR m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(
+              corresponding_master_ms, &l);
+          bc->mpcPtr->isReprocitical = false;
+
+          // std::cout << "master meshset is: " << master_nodes << "\n";
+            CHKERR m_field.get_moab().get_entities_by_handle(
+                l->getMeshset(), master_nodes, true);
+            // std::cout << "master meshset is: " << master_nodes << "\n";
+          // if (master_nodes.subset_by_dimension(0).size() <  links_ents.subset_by_dimension(1))
+          {
+            auto low_dim_ents = BcManagerImplTools::get_adj_ents(
+                m_field.get_moab(), master_nodes);
+            // std::cout << "lower_dim meshset is: " << low_dim_ents << "\n"; 
+            low_dim_ents = low_dim_ents.subset_by_dimension(0);
+            master_nodes.swap(low_dim_ents);
+            // std::cout << "master meshset 2 is: " << master_nodes << "\n";
+          }
+
+          MOFEM_LOG("BcMngWorld", Sev::verbose)
+              << "Found block MASTER LINKS block: " << l->getName()
+              << " Entities size: " << master_nodes.size();
+
+        } else {
+          MOFEM_LOG("BcMngWorld", Sev::warning)
+              << "MASTER LINKS block not found: " << corresponding_master_ms
+              << " setting reprocitical constraint. ("
+              << bc->mpcPtr->isReprocitical << ").";
+        }
+
+        // if (std::regex_match(bc_id, std::regex("(.*)TIE(.*)")))
+        //   bc->mpcPtr->mpcType = MPC::TIE;
+        // if (std::regex_match(bc_id, std::regex("(.*)RIGID_BODY(.*)")))
+        //   bc->mpcPtr->mpcType = MPC::RIGID_BODY;
+
+        // std::cout << "links_ents range is: " << links_ents << "\n";
+        for (auto &link : links_ents.subset_by_dimension(1)) {
+          Range verts;
+          CHKERR m_field.get_moab().get_connectivity(&link, 1, verts, true);
+          // std::cout << "verts range is: " << verts << "\n";
+          if (bc->mpcPtr->isReprocitical) {
+            bc->mpcPtr->mpcMasterEnts.insert(verts[0]);
+            bc->mpcPtr->mpcSlaveEnts.insert(verts[1]);
+          } else {
+            for (auto &m_node : verts)
+              if (master_nodes.find(m_node) != master_nodes.end()) {
+                // std::cout << "found ent: " << m_node << "\n";
+                bc->mpcPtr->mpcMasterEnts.insert(m_node);
+                bc->mpcPtr->mpcSlaveEnts.merge(subtract(verts, Range(m_node, m_node)));
+                break;
+              }
+          }
+        }
+
+        MOFEM_LOG("BcMngWorld", Sev::verbose)
+            << "Found block MPC LINKS block: " << m->getName()
+            << " Entities size (edges): " << links_ents.size()
+            << " Entities size (nodes): " << bc->mpcPtr->mpcMasterEnts.size() + bc->mpcPtr->mpcSlaveEnts.size()
+            << " (" << bc->mpcPtr->mpcMasterEnts.size() << " " << bc->mpcPtr->mpcSlaveEnts.size() << ")";
+            
+            MOFEM_LOG("BcMngSync", Sev::noisy) << *bc->mpcPtr;
+            MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::noisy);
+
+            // CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(
+            //     bc->mpcPtr->mpcMasterEnts);
+            // CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(
+            //     bc->mpcPtr->mpcSlaveEnts);
+            vector<double> mAttributes;
+            CHKERR m->getAttributes(mAttributes);
+
+            auto setFlags = [&](const auto &flags) {
+              auto &d = bc->mpcPtr->data;
+              if (flags.empty()) {
+                d.flag1 = d.flag2 = d.flag3 = d.flag4 = d.flag5 = d.flag6 =
+                    true;
+                return;
+              }
+              for (size_t i = 0; i < std::min(flags.size(), size_t(6)); ++i)
+                (&d.flag1)[i] = flags[i] > 0.0;
+            };
+
+            setFlags(mAttributes);
+
+            MOFEM_LOG("BcMngWorld", Sev::verbose)
+                << "Found block " << m->getName() << " number of entities "
+                << bc->mpcPtr->mpcMasterEnts.size() << " number of attributes "
+                << mAttributes.size() << " highest dim of entities "
+                << get_dim(bc->mpcPtr->mpcMasterEnts);
+
+            // NOTE: we are not using markers at the moment
+            // for (int i = 0; i != mAttributes.size(); ++i) {
+            //   if (mAttributes[i] > 0.0)
+            //     CHKERR mark_fix_dofs(bc->mpcPtr->bcMasterMarkers, i, i);
+            // }
+
+            // if (mAttributes.empty())
+            //   CHKERR mark_fix_dofs(bc->mpcPtr->bcMasterMarkers, 0,
+            //                        MAX_DOFS_ON_ENTITY);
+
+            const std::string bc_id =
+                problem_name + "_" + field_name + "_" + m->getName();
+            bcMapByBlockName[bc_id] = bc;
+      }
+    }
+    MoFEMFunctionReturn(0);
+  };
+
+  CHKERR iterate_mpc_meshsets();
+
+  MoFEMFunctionReturn(0);
+}
+
 boost::shared_ptr<BcManager::BCs>
 BcManager::popMarkDOFsOnEntities(const std::string block_name) {
   auto bc_it = bcMapByBlockName.find(block_name);

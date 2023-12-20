@@ -1741,6 +1741,22 @@ FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 1>
 EntitiesFieldData::EntData::getFTensor1FieldData<1>();
 
 template <>
+FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 1, 1>
+EntitiesFieldData::EntData::getFTensor2FieldData<1, 1>();
+
+template <>
+FTensor::Tensor2<FTensor::PackPtr<double *, 2>, 1, 2>
+EntitiesFieldData::EntData::getFTensor2FieldData<1, 2>();
+
+template <>
+FTensor::Tensor2<FTensor::PackPtr<double *, 3>, 1, 3>
+EntitiesFieldData::EntData::getFTensor2FieldData<1, 3>();
+
+template <>
+FTensor::Tensor2<FTensor::PackPtr<double *, 4>, 2, 2>
+EntitiesFieldData::EntData::getFTensor2FieldData<2, 2>();
+
+template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
 EntitiesFieldData::EntData::getFTensor2FieldData<3, 3>();
 

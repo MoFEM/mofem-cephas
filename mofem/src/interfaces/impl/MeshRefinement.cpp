@@ -121,11 +121,14 @@ MoFEMErrorCode MeshRefinement::addVerticesInTheMiddleOfEdges(
   std::vector<EntityHandle> parent_edge;
   parent_edge.reserve(edges.size());
 
-  std::array<double, 6> coords;
+  std::array<double, 9> coords;
   FTensor::Tensor1<FTensor::PackPtr<double *, 0>, 3> t_0 = {
       &coords[0], &coords[1], &coords[2]};
   FTensor::Tensor1<FTensor::PackPtr<double *, 0>, 3> t_1 = {
       &coords[3], &coords[4], &coords[5]};
+  FTensor::Tensor1<FTensor::PackPtr<double *, 0>, 3> t_2 = {
+      &coords[6], &coords[7], &coords[8]};
+
   FTensor::Index<'i', 3> i;
 
   Range add_bit;
@@ -152,17 +155,21 @@ MoFEMErrorCode MeshRefinement::addVerticesInTheMiddleOfEdges(
 
       const EntityHandle *conn;
       int num_nodes;
-      CHKERR moab.get_connectivity(e, conn, num_nodes, true);
-      if (PetscUnlikely(num_nodes != 2)) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "edge should have 2 edges");
-      }
-      CHKERR moab.get_coords(conn, num_nodes, coords.data());
-      t_0(i) += t_1(i);
-      t_0(i) *= 0.5;
+      CHKERR moab.get_connectivity(e, conn, num_nodes, false);
+      if(num_nodes == 2) {
+        CHKERR moab.get_coords(conn, num_nodes, coords.data());
+        t_0(i) += t_1(i);
+        t_0(i) *= 0.5;
+        for (auto j : {0, 1, 2})
+          vert_coords[j].emplace_back(t_0(j));
 
-      for (auto j : {0, 1, 2})
-        vert_coords[j].emplace_back(t_0(j));
+      } else if (num_nodes == 3) {
+       for (auto j : {0, 1, 2})
+         vert_coords[j].emplace_back(t_2(j));
+      } else {
+        SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "edge should have 2 or 3 nodes but have %d", num_nodes);
+      }
     }
   }
 

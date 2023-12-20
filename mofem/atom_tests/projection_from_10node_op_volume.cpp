@@ -130,7 +130,6 @@ int main(int argc, char *argv[]) {
         boost::make_shared<VolumeElementForcesAndSourcesCore>(m_field);
     auto material_grad_mat = boost::make_shared<MatrixDouble>();
     auto material_det_vec = boost::make_shared<VectorDouble>();
-    fe_ptr->meshPositionsFieldName = "none";
     fe_ptr->getOpPtrVector().push_back(new OpCalculateVectorFieldGradient<3, 3>(
         "MESH_NODE_POSITIONS", material_grad_mat));
     fe_ptr->getOpPtrVector().push_back(

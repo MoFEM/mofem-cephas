@@ -746,6 +746,62 @@ MoFEMErrorCode AddHOOps<2, 2, 2>::add(
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode AddHOOps<2, 2, 3>::add(
+    boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+    std::vector<FieldSpace> spaces, std::string geom_field_name,
+    boost::shared_ptr<MatrixDouble> jac_ptr,
+    boost::shared_ptr<VectorDouble> det_ptr,
+    boost::shared_ptr<MatrixDouble> inv_jac_ptr) {
+  MoFEMFunctionBegin;
+
+  if (!jac_ptr)
+    jac_ptr = boost::make_shared<MatrixDouble>();
+  if (!det_ptr)
+    det_ptr = boost::make_shared<VectorDouble>();
+  if (!inv_jac_ptr)
+    inv_jac_ptr = boost::make_shared<MatrixDouble>();
+
+  if (geom_field_name.empty()) {
+
+  } else {
+
+    pipeline.push_back(new OpCalculateHOCoords<3>(geom_field_name));
+    pipeline.push_back(new OpGetHONormalsOnFace<3>(geom_field_name));
+  }
+
+  pipeline.push_back(new OpCalculateHOJacForFaceEmbeddedIn3DSpace(jac_ptr));
+  pipeline.push_back(new OpInvertMatrix<3>(jac_ptr, det_ptr, inv_jac_ptr));
+  pipeline.push_back(new OpSetHOWeightsOnFace());
+
+  for (auto s : spaces) {
+    switch (s) {
+    case NOSPACE:
+      break;
+    case H1:
+      pipeline.push_back(
+          new OpSetInvJacH1ForFaceEmbeddedIn3DSpace(inv_jac_ptr));
+      break;
+    case HDIV:
+      pipeline.push_back(new OpMakeHdivFromHcurl());
+      pipeline.push_back(
+          new OpSetContravariantPiolaTransformOnFace2DEmbeddedIn3DSpace(
+              jac_ptr));
+      pipeline.push_back(
+          new OpSetInvJacHcurlFaceEmbeddedIn3DSpace(inv_jac_ptr));
+      break;
+    case L2:
+      pipeline.push_back(
+          new OpSetInvJacL2ForFaceEmbeddedIn3DSpace(inv_jac_ptr));
+      break;
+    default:
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+               "Space %s not yet implemented", FieldSpaceNames[s]);
+    }
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode AddHOOps<1, 2, 2>::add(
     boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
     std::vector<FieldSpace> spaces, std::string geom_field_name) {

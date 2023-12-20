@@ -537,6 +537,9 @@ private:
   friend class EdgeElementForcesAndSourcesCoreOnChildParent;
   friend class VolumeElementForcesAndSourcesCoreOnContactPrismSide;
 
+  template <int DIM> friend struct OpCopyGeomDataToE;
+                                   
+
 protected:
   MatrixDouble coordsAtGaussPts; ///< coordinated at gauss points
   double elementMeasure; ///< Depending on dimension of elements, stores length,
@@ -1323,6 +1326,19 @@ protected:
   const LogManager::SeverityLevel sevLevel;
   boost::shared_ptr<AdjCache> adjCache;
 };
+
+/**
+ * \brief Copy geometry-related data from one element to other
+ *
+ * That can be used to copy high order geometry data from coarse element to
+ * children. That is often a case when higher order geometry is defined only on
+ * coarse elements.
+ *
+ * \note Integration points have to be located at the same gometric positions
+ * 
+ * FIXME: Write atom test
+ */
+template <int DIM> struct OpCopyGeomDataToE;
 
 } // namespace MoFEM
 
