@@ -43,6 +43,7 @@ struct BcManager : public UnknownInterface {
     boost::shared_ptr<TemperatureCubitBcData> tempBcPtr;
     boost::shared_ptr<HeatFluxCubitBcData> heatFluxBcPtr;
     boost::shared_ptr<ForceCubitBcData> forceBcPtr;
+    boost::shared_ptr<MPCsType> mpcPtr;
 
     /// \deprecated use getBcEntsPtr
     DEPRECATED inline auto getBcEdgesPtr() {
@@ -64,6 +65,12 @@ struct BcManager : public UnknownInterface {
    * @return error code
    */
   MoFEMErrorCode getOptions();
+  // FIXME: add functions to couple the dofs
+  MoFEMErrorCode addBlockDOFsToMPCs(const std::string problem_name,
+                                    const std::string field_name,
+                                    bool get_low_dim_ents = false,
+                                    bool block_name_field_prefix = false,
+                                    bool is_distributed_mesh = false);
 
   /**
    * @brief Remove DOFs from problem

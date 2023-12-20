@@ -323,6 +323,64 @@ EntitiesFieldData::EntData::getFTensor1FieldData<1>() {
 }
 
 template <>
+FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 1, 1>
+EntitiesFieldData::EntData::getFTensor2FieldData<1, 1>() {
+  if (dOfs[0]->getNbOfCoeffs() != 1) {
+    std::stringstream s;
+    s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
+    s << " but you ask for tensor rank 2 dimensions 1 by 1 so 1 coefficients "
+         "is expected";
+    THROW_MESSAGE(s.str());
+  }
+  double *ptr = &*fieldData.data().begin();
+  return FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 1, 1>(ptr);
+}
+
+template <>
+FTensor::Tensor2<FTensor::PackPtr<double *, 2>, 1, 2>
+EntitiesFieldData::EntData::getFTensor2FieldData<1, 2>() {
+  if (dOfs[0]->getNbOfCoeffs() != 1) {
+    std::stringstream s;
+    s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
+    s << " but you ask for tensor rank 2 dimensions 1 by 2 so 2 coefficients "
+         "is expected";
+    THROW_MESSAGE(s.str());
+  }
+  double *ptr = &*fieldData.data().begin();
+  return FTensor::Tensor2<FTensor::PackPtr<double *, 2>, 1, 2>(ptr, &ptr[1]);
+}
+
+template <>
+FTensor::Tensor2<FTensor::PackPtr<double *, 3>, 1, 3>
+EntitiesFieldData::EntData::getFTensor2FieldData<1, 3>() {
+  if (dOfs[0]->getNbOfCoeffs() != 1) {
+    std::stringstream s;
+    s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
+    s << " but you ask for tensor rank 2 dimensions 1 by 3 so 3 coefficients "
+         "is expected";
+    THROW_MESSAGE(s.str());
+  }
+  double *ptr = &*fieldData.data().begin();
+  return FTensor::Tensor2<FTensor::PackPtr<double *, 3>, 1, 3>(ptr, &ptr[1],
+                                                               &ptr[2]);
+}
+
+template <>
+FTensor::Tensor2<FTensor::PackPtr<double *, 4>, 2, 2>
+EntitiesFieldData::EntData::getFTensor2FieldData<2, 2>() {
+  if (dOfs[0]->getNbOfCoeffs() != 4) {
+    std::stringstream s;
+    s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
+    s << " but you ask for tensor rank 2 dimensions 2 by 2 so 4 coefficients "
+         "is expected";
+    THROW_MESSAGE(s.str());
+  }
+  double *ptr = &*fieldData.data().begin();
+  return FTensor::Tensor2<FTensor::PackPtr<double *, 4>, 2, 2>(
+      ptr, &ptr[1], &ptr[2], &ptr[3]);
+}
+
+template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
 EntitiesFieldData::EntData::getFTensor2FieldData<3, 3>() {
   if (dOfs[0]->getNbOfCoeffs() != 9) {
