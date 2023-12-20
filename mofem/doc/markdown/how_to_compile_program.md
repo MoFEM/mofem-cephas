@@ -41,7 +41,7 @@ to C++ source codes that are located in
 The changes include those when you modify the codes of Basic User Modules or when
 you add a new module of your own and change its source code.
 
-You can compile both the Basic User Modules and your own module (if added any) by
+You can compile both the Basic User Modules and your own module (if any) by
 running the following command lines:
 
 ```
