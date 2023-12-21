@@ -22,9 +22,9 @@ Clone MoFEM core and users modules.
 ```bash
 mkdir -p mofem_install
 cd mofem_install
-git clone -b Workshop2023 --recurse-submodules https://bitbucket.org/likask/mofem-cephas.git
-cd $HOME/mofem_install/mofem-cephas/mofem/users_modules
-git checkout Workshop2023
+git clone -b Workshop2023 https://bitbucket.org/likask/mofem-cephas.git
+cd $HOME/mofem_install/mofem-cephas/mofem/
+git clone -b Workshop2023 https://likask@bitbucket.org/mofem/users-modules-cephas.git users_modules
 ```
 
 Print User Id
