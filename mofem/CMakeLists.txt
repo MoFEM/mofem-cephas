@@ -17,7 +17,7 @@ if(PETSCVAR_FC)
 endif(PETSCVAR_FC)
 
 project(MoFEM 
-  VERSION 0.14.0
+  VERSION 0.14.1
   DESCRIPTION "Finite element framework" 
   LANGUAGES C CXX)
 
