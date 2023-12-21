@@ -7,7 +7,7 @@ pipelines:
   default:
     - step:
         name: Step Core
-        image: likask/mofem-spack-env:0.14.0
+        image: likask/mofem-spack-env:0.14.1
         runs-on: 
           - self.hosted
           - linux
