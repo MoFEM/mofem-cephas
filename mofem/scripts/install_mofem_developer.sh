@@ -234,7 +234,9 @@ spack dev-build \
   --test root  \
   --source-path $MOFEM_INSTALL_DIR/mofem-cephas/mofem/users_modules \
   mofem-users-modules@develop build_type=RelWithDebInfo \
-  ^/$MOFEM_CEPHAS_HASH
+  ^mofem-cephas@develop+adol-c~copy_user_modules~docker~ipo+med~shared+slepc+tetgen \
+  build_system=cmake build_type=Release dev_path=/home/ananyabijaya7/mofem_install/mofem-cephas generator=make \
+  install_id=0 ^petsc+X
 
 TODAY=`date +%F` 
 MOFEM_UN_HASH=`spack find -lv --start-date $TODAY | grep mofem-users-modulesdevelop | grep RelWithDebInfo | awk '{print $1}'` 
