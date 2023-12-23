@@ -74,6 +74,10 @@ PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
     fe.ksp_ctx = KspMethod::CTX_SETFUNCTION;
     fe.data_ctx = PetscData::CtxSetF | PetscData::CtxSetX |
                   PetscData::CtxSetX_T | PetscData::CtxSetTime;
+
+    CHKERR TSGetSNES(ts, &fe.snes);
+    CHKERR SNESGetKSP(fe.snes, &fe.ksp);
+
     fe.cacheWeakPtr = cache_ptr;
     CHK_THROW_MESSAGE(TSGetTimeStep(ts, &fe.ts_dt), "get time step failed");
   };
@@ -168,6 +172,10 @@ PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
     fe.ksp_ctx = KspMethod::CTX_OPERATORS;
     fe.data_ctx = PetscData::CtxSetA | PetscData::CtxSetB | PetscData::CtxSetX |
                   PetscData::CtxSetX_T | PetscData::CtxSetTime;
+
+    CHKERR TSGetSNES(ts, &fe.snes);
+    CHKERR SNESGetKSP(fe.snes, &fe.ksp);
+
     fe.cacheWeakPtr = cache_ptr;
     CHK_THROW_MESSAGE(TSGetTimeStep(ts, &fe.ts_dt), "get time step failed");
   };
@@ -240,6 +248,10 @@ PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
     fe.snes_ctx = SnesMethod::CTX_SNESNONE;
     fe.ksp_ctx = KspMethod::CTX_KSPNONE;
     fe.data_ctx = PetscData::CtxSetX | PetscData::CtxSetTime;
+
+    CHKERR TSGetSNES(ts, &fe.snes);
+    CHKERR SNESGetKSP(fe.snes, &fe.ksp);
+
     fe.cacheWeakPtr = cache_ptr;
     CHK_THROW_MESSAGE(TSGetTimeStep(ts, &fe.ts_dt), "get time step failed");
   };
@@ -512,6 +524,10 @@ PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
     fe.data_ctx = PetscData::CtxSetA | PetscData::CtxSetB | PetscData::CtxSetX |
                   PetscData::CtxSetX_T | PetscData::CtxSetX_TT |
                   PetscData::CtxSetTime;
+
+    CHKERR TSGetSNES(ts, &fe.snes);
+    CHKERR SNESGetKSP(fe.snes, &fe.ksp);
+                  
     fe.ts = ts;
     fe.cacheWeakPtr = cache_ptr;
     CHK_THROW_MESSAGE(TSGetTimeStep(ts, &fe.ts_dt), "get time step failed");
@@ -616,6 +632,10 @@ PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
     fe.data_ctx = PetscData::CtxSetF | PetscData::CtxSetX |
                   PetscData::CtxSetX_T | PetscData::CtxSetX_TT |
                   PetscData::CtxSetTime;
+
+    CHKERR TSGetSNES(ts, &fe.snes);
+    CHKERR SNESGetKSP(fe.snes, &fe.ksp);
+
     fe.ts = ts;
     fe.cacheWeakPtr = cache_ptr;
     CHK_THROW_MESSAGE(TSGetTimeStep(ts, &fe.ts_dt), "get time step failed");
