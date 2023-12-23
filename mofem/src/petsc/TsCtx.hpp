@@ -44,19 +44,7 @@ struct TsCtx {
 
   bool zeroMatrix;
 
-  TsCtx(MoFEM::Interface &m_field, const std::string &problem_name)
-      : mField(m_field), moab(m_field.get_moab()), problemName(problem_name),
-        bH(MF_EXIST), zeroMatrix(true) {
-    PetscLogEventRegister("LoopTsIFunction", 0, &MOFEM_EVENT_TsCtxIFunction);
-    PetscLogEventRegister("LoopTsIJacobian", 0, &MOFEM_EVENT_TsCtxIJacobian);
-    PetscLogEventRegister("LoopTsRHSFunction", 0,
-                          &MOFEM_EVENT_TsCtxRHSFunction);
-    PetscLogEventRegister("LoopTsRHSJacobian", 0,
-                          &MOFEM_EVENT_TsCtxRHSJacobian);
-    PetscLogEventRegister("LoopTsMonitor", 0, &MOFEM_EVENT_TsCtxMonitor);
-    PetscLogEventRegister("LoopTsI2Function", 0, &MOFEM_EVENT_TsCtxI2Function);
-    PetscLogEventRegister("LoopTsI2Jacobian", 0, &MOFEM_EVENT_TsCtxI2Jacobian);
-  }
+  TsCtx(MoFEM::Interface &m_field, const std::string &problem_name);
 
   virtual ~TsCtx() = default;
 
@@ -364,30 +352,21 @@ PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
 /** \brief Custom TSAdaptivity in MoFEM
  * 
  * \code
- *  CHKERR TSAdaptRegister(TSADAPTMOFEM, TSAdaptCreateMoFEM);
-    TSAdapt adapt;
-    CHKERR TSGetAdapt(solver, &adapt);
-    \endcode
+ * CHKERR TSAdaptRegister(TSADAPTMOFEM, TSAdaptCreateMoFEM);
+ * TSAdapt adapt;
+ * CHKERR TSGetAdapt(solver, &adapt);
+ * CHKERR TSAdaptSetType(adapt, TSADAPTMOFEM);
+ * \endcode
  *
  */
 struct TSAdaptMoFEM {
 
-  TSAdaptMoFEM() : alpha(0.75), gamma(0.5), desiredIt(6) {
-    CHKERR PetscOptionsGetScalar("", "-ts_mofem_adapt_alpha", &alpha,
-                                 PETSC_NULL);
-    CHKERR PetscOptionsGetScalar("", "-ts_mofem_adapt_gamma", &gamma,
-                                 PETSC_NULL);
-    CHKERR PetscOptionsGetInt("", "-ts_mofem_adapt_desired_it", &desiredIt,
-                              PETSC_NULL);
-    MOFEM_LOG_TAG("WORLD", "TSMoFEMAdapt");
-    MOFEM_LOG("WORLD", Sev::inform)
-        << "TS adaptivity: alpha = " << alpha << ", gamma = " << gamma
-        << ", desiredIt = " << desiredIt;
-  }
+  TSAdaptMoFEM();
 
-  double alpha;
-  double gamma;
-  int desiredIt;
+  double alpha; //< step reduction if divergence
+  double gamma; //< adpaticity exponet
+  int desiredIt; //< desired number of iterations
+  PetscBool offApat; //< off adpaticity
 };
 
 static PetscErrorCode TSAdaptChooseMoFEM(TSAdapt adapt, TS ts, PetscReal h,
@@ -403,8 +382,9 @@ static PetscErrorCode TSAdaptDestroyMoFEM(TSAdapt adapt);
  *
  * \code
  *  CHKERR TSAdaptRegister(TSADAPTMOFEM, TSAdaptCreateMoFEM);
- *   TSAdapt adapt;
+ *  TSAdapt adapt;
  *  CHKERR TSGetAdapt(solver, &adapt);
+ *  CHKERR TSAdaptSetType(adapt, TSADAPTMOFEM);
  * \endcode
  *
  * @param adapt

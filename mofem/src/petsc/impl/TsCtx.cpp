@@ -2,6 +2,37 @@
 
 namespace MoFEM {
 
+TsCtx::TsCtx(MoFEM::Interface &m_field, const std::string &problem_name)
+    : mField(m_field), moab(m_field.get_moab()), problemName(problem_name),
+      bH(MF_EXIST), zeroMatrix(true) {
+  PetscLogEventRegister("LoopTsIFunction", 0, &MOFEM_EVENT_TsCtxIFunction);
+  PetscLogEventRegister("LoopTsIJacobian", 0, &MOFEM_EVENT_TsCtxIJacobian);
+  PetscLogEventRegister("LoopTsRHSFunction", 0, &MOFEM_EVENT_TsCtxRHSFunction);
+  PetscLogEventRegister("LoopTsRHSJacobian", 0, &MOFEM_EVENT_TsCtxRHSJacobian);
+  PetscLogEventRegister("LoopTsMonitor", 0, &MOFEM_EVENT_TsCtxMonitor);
+  PetscLogEventRegister("LoopTsI2Function", 0, &MOFEM_EVENT_TsCtxI2Function);
+  PetscLogEventRegister("LoopTsI2Jacobian", 0, &MOFEM_EVENT_TsCtxI2Jacobian);
+
+  if (!LogManager::checkIfChannelExist("TSWORLD")) {
+    auto core_log = logging::core::get();
+
+    core_log->add_sink(
+        LogManager::createSink(LogManager::getStrmWorld(), "TSWORLD"));
+    core_log->add_sink(
+        LogManager::createSink(LogManager::getStrmSync(), "TSSYNC"));
+    core_log->add_sink(
+        LogManager::createSink(LogManager::getStrmSelf(), "TSSELF"));
+
+    LogManager::setLog("TSWORLD");
+    LogManager::setLog("TSSYNC");
+    LogManager::setLog("TSSELF");
+
+    MOFEM_LOG_TAG("TSWORLD", "TS");
+    MOFEM_LOG_TAG("TSSYNC", "TS");
+    MOFEM_LOG_TAG("TSSELF", "TS");
+  }
+}
+
 MoFEMErrorCode TsCtx::clearLoops() {
   MoFEMFunctionBeginHot;
   loopsIJacobian.clear();
@@ -690,11 +721,24 @@ PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
   MoFEMFunctionReturn(0);
 }
 
+TSAdaptMoFEM::TSAdaptMoFEM()
+    : alpha(0.75), gamma(0.5), desiredIt(6), offApat(PETSC_FALSE) {
+  CHKERR PetscOptionsGetScalar("", "-ts_mofem_adapt_alpha", &alpha, PETSC_NULL);
+  CHKERR PetscOptionsGetScalar("", "-ts_mofem_adapt_gamma", &gamma, PETSC_NULL);
+  CHKERR PetscOptionsGetInt("", "-ts_mofem_adapt_desired_it", &desiredIt,
+                            PETSC_NULL);
+  CHKERR PetscOptionsGetInt("", "-ts_mofem_adapt_off", &desiredIt, PETSC_NULL);
+
+  MOFEM_LOG("TSWORLD", Sev::inform)
+      << "TS adaptivity: alpha = " << alpha << ", gamma = " << gamma
+      << ", desiredIt = " << desiredIt << ", offApat = " << offApat;
+}
+
 PetscErrorCode TSAdaptChooseMoFEM(TSAdapt adapt, TS ts, PetscReal h,
                                   PetscInt *next_sc, PetscReal *next_h,
                                   PetscBool *accept, PetscReal *wlte,
                                   PetscReal *wltea, PetscReal *wlter) {
-  PetscFunctionBegin;
+  MoFEMFunctionBegin;
 
   TSAdaptMoFEM *ts_adapt_mofem = static_cast<TSAdaptMoFEM *>(adapt->data);
 
@@ -706,60 +750,54 @@ PetscErrorCode TSAdaptChooseMoFEM(TSAdapt adapt, TS ts, PetscReal h,
   *accept = PETSC_TRUE;
   *next_h = h; /* Reuse the old step */
 
-  SNES snes;
-  ierr = TSGetSNES(ts, &snes);
-  CHKERRG(ierr);
+  if (!ts_adapt_mofem->offApat) {
 
-  SNESConvergedReason reason;
-  ierr = SNESGetConvergedReason(snes, &reason);
-  CHKERRG(ierr);
+    SNES snes;
+    CHKERR TSGetSNES(ts, &snes);
 
-  int it;
-  ierr = SNESGetIterationNumber(snes, &it);
-  CHKERRG(ierr);
+    SNESConvergedReason reason;
+    CHKERR SNESGetConvergedReason(snes, &reason);
 
-  if (reason < 0) {
-    h *= ts_adapt_mofem->alpha;
-    *next_h = h;
-    MOFEM_LOG_TAG("WORLD", "TSMoFEMAdapt");
-    MOFEM_LOG_C(
-        "WORLD", Sev::inform,
-        "\tDiverged set step length: it = %d, h = %3.4g set h = %3.4g \n", it,
-        h, *next_h);
-  } else if (reason > 0) {
-    h *= pow((static_cast<double>(ts_adapt_mofem->desiredIt) /
-              static_cast<double>(it + 1)),
-             static_cast<double>(ts_adapt_mofem->gamma));
-    *next_h = PetscClipInterval(h, adapt->dt_min, adapt->dt_max);
-    MOFEM_LOG_TAG("WORLD", "TSMoFEMAdapt")
-    MOFEM_LOG_C(
-        "WORLD", Sev::inform,
-        "\tConverged set step length: it = %d, h = %3.4g set h = %3.4g \n", it,
-        h, *next_h);
+    int it;
+    CHKERR SNESGetIterationNumber(snes, &it);
+
+    if (reason < 0) {
+      h *= ts_adapt_mofem->alpha;
+      *next_h = h;
+      MOFEM_LOG_C(
+          "TSWORLD", Sev::warning,
+          "\tDiverged set step length: it = %d, h = %3.4g set h = %3.4g \n", it,
+          h, *next_h);
+    } else if (reason > 0) {
+      h *= pow((static_cast<double>(ts_adapt_mofem->desiredIt) /
+                static_cast<double>(it + 1)),
+               static_cast<double>(ts_adapt_mofem->gamma));
+      *next_h = PetscClipInterval(h, adapt->dt_min, adapt->dt_max);
+      MOFEM_LOG_C(
+          "TSWORLD", Sev::inform,
+          "\tConverged set step length: it = %d, h = %3.4g set h = %3.4g \n",
+          it, h, *next_h);
+    }
   }
 
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturn(0);
 }
 
 PetscErrorCode TSAdaptResetMoFEM(TSAdapt adapt) {
-  TSAdaptMoFEM *ts_adapt_mofem = static_cast<TSAdaptMoFEM *>(adapt->data);
   PetscFunctionBegin;
   PetscFunctionReturn(0);
 }
 
 PetscErrorCode TSAdaptDestroyMoFEM(TSAdapt adapt) {
-  PetscFunctionBegin;
-  ierr = TSAdaptResetMoFEM(adapt);
-  CHKERRG(ierr);
-  ierr = PetscFree(adapt->data);
-  CHKERRG(ierr);
-  PetscFunctionReturn(0);
+  MoFEMFunctionBegin;
+  CHKERR TSAdaptResetMoFEM(adapt);
+  CHKERR PetscFree(adapt->data);
+  MoFEMFunctionReturn(0);
 }
 
 PetscErrorCode TSAdaptCreateMoFEM(TSAdapt adapt) {
   PetscFunctionBegin;
   TSAdaptMoFEM *ts_adapt_mofem = new TSAdaptMoFEM;
-
   adapt->data = (void *)ts_adapt_mofem;
   adapt->ops->choose = TSAdaptChooseMoFEM;
   adapt->ops->reset = TSAdaptResetMoFEM;
