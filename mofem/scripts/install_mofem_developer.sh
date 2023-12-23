@@ -235,7 +235,7 @@ spack dev-build \
   --source-path $MOFEM_INSTALL_DIR/mofem-cephas/mofem/users_modules \
   mofem-users-modules@develop build_type=RelWithDebInfo \
   ^mofem-cephas@develop+adol-c~copy_user_modules~docker~ipo+med~shared+slepc+tetgen \
-  build_system=cmake build_type=Release dev_path=/home/ananyabijaya7/mofem_install/mofem-cephas generator=make \
+  build_system=cmake build_type=Release dev_path=$HOME/mofem_install/mofem-cephas generator=make \
   install_id=0 ^petsc+X
 
 TODAY=`date +%F` 
