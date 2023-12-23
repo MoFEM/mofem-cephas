@@ -33,22 +33,25 @@ MoFEMErrorCode EssentialPreProc<MPCsType>::loadFileWithMPCs(
   auto &moab = m_field.get_moab();
 
   // CHKERR moab.load_file(file_name, 0, options);
+  // Note: In this scheme whole mesh is read by all processors. In massive
+  // parallel analysis that could be bouttleneck. We shoudl look into MOAB hdf5
+  // reader and optimise that part.
   CHKERR simple->loadFile("", file_name);
 
   constexpr bool is_debug = false;
 
-  Range all_ents;
-  CHKERR moab.get_entities_by_handle(0, all_ents, false);
-
   if (m_field.get_comm_size() == 1)
     MoFEMFunctionReturnHot(0);
+
+  Range all_ents;
+  CHKERR moab.get_entities_by_handle(0, all_ents, false);
 
   auto print_range_on_procs = [&](const Range &range, std::string name) {
     if(!is_debug) return;
     MOFEM_LOG("SYNC", Sev::inform)
         << name << " on proc [" << m_field.get_comm_rank() << "] : \n"
         << range;
-    MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
+    MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::inform);
   };
 
   auto save_range_to_file = [&](const Range range, std::string name = "part") {
@@ -90,10 +93,10 @@ MoFEMErrorCode EssentialPreProc<MPCsType>::loadFileWithMPCs(
   print_range_on_procs(mpc_ents, "mpc_ents");
   print_range_on_procs(links_ents, "links_ents");
 
-  const int dim = simple->getDim();
+  const int dim = simple->getDim(); // that assumes that simple reading file and
+                                    // set-up parameters
 
-  ParallelComm *pcomm =
-      ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
+  auto pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
   if (pcomm == NULL)
     pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
 
@@ -196,7 +199,8 @@ MoFEMErrorCode EssentialPreProc<MPCsType>::loadFileWithMPCs(
   print_range_on_procs(all_tets.subset_by_dimension(2), "all_tets to delete");
   save_range_to_file(all_tets.subset_by_dimension(2), "part_delete");
 
-  // vertices do not need to be deleted
+  // vertices do not need to be deleted 
+  // why?? 
   for (int dd = dim; dd > 0; --dd) {
     CHKERR moab.delete_entities(all_tets.subset_by_dimension(dd));
   }
@@ -207,19 +211,23 @@ MoFEMErrorCode EssentialPreProc<MPCsType>::loadFileWithMPCs(
     CHKERR moab.get_entities_by_handle(0, all_ents);
     std::vector<unsigned char> pstat_tag(all_ents.size(), 0);
     save_range_to_file(all_ents, "all_ents_part");
+    // FIXME: Why pstaus is zeroed?
     CHKERR moab.tag_set_data(pcomm->pstatus_tag(), all_ents,
                              &*pstat_tag.begin());
   }
 
-  Range all_ents_before;
-  CHKERR moab.get_entities_by_handle(0, all_ents_before);
-  save_range_to_file(all_ents_before, "all_ents_part_before");
+  if (is_debug) {
 
-  CHKERR pcomm->resolve_shared_ents(0, proc_ents, dim, -1, proc_ents_skin);
+    Range all_ents_before;
+    CHKERR moab.get_entities_by_handle(0, all_ents_before);
+    save_range_to_file(all_ents_before, "all_ents_part_before");
 
-  Range all_ents_after;
-  CHKERR moab.get_entities_by_handle(0, all_ents_after);
-  save_range_to_file(all_ents_after, "all_ents_part_after");
+    CHKERR pcomm->resolve_shared_ents(0, proc_ents, dim, -1, proc_ents_skin);
+
+    Range all_ents_after;
+    CHKERR moab.get_entities_by_handle(0, all_ents_after);
+    save_range_to_file(all_ents_after, "all_ents_part_after");
+  }
 
   MoFEMFunctionReturn(0);
 }
