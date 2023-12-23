@@ -42,7 +42,7 @@ auto data_ptr = boost::make_shared<MatrixDouble>(); // data stored at
 
 fe_physics->getOpPtrVector()->push_back(new
  OpDGProjectionMassMatrix(order, mass_ptr, entity_data_l2,
-  AINSWORTH_LEGENDRE_BASE, L2);
+  AINSWORTH_LEGENDRE_BASE, L2));
 
 // You need to call operatpor which will evalaute data_ptr
 
@@ -50,11 +50,11 @@ fe_physics->getOpPtrVector()->push_back(new
   OpCalculateVectorFieldValues("V", data_ptr);
 fe_physics->getOpPtrVector()->push_back( new
   OpDGProjectionCoefficients(data_ptr, coeffs_ptr, entity_data_l2,
-  AINSWORTH_LEGENDRE_BASE, L2);
+  AINSWORTH_LEGENDRE_BASE, L2));
 
 fe_post_proc->getOpPtrVector()->push_back(new
   OpDGProjectionEvaluation(data_ptr, coeffs_ptr, mass_ptr,
-  entity_data_l2, AINSWORTH_LEGENDRE_BASE, L2);
+  entity_data_l2, AINSWORTH_LEGENDRE_BASE, L2));
 
  * \endcode
  *
