@@ -362,6 +362,12 @@ PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
                                Vec F, void *ctx);
 
 /** \brief Custom TSAdaptivity in MoFEM
+ * 
+ * \code
+ *  CHKERR TSAdaptRegister(TSADAPTMOFEM, TSAdaptCreateMoFEM);
+    TSAdapt adapt;
+    CHKERR TSGetAdapt(solver, &adapt);
+    \endcode
  *
  */
 struct TSAdaptMoFEM {
@@ -392,6 +398,18 @@ static PetscErrorCode TSAdaptResetMoFEM(TSAdapt adapt);
 
 static PetscErrorCode TSAdaptDestroyMoFEM(TSAdapt adapt);
 
+/**
+ * @brief Craete MOFEM adapt 
+ *
+ * \code
+ *  CHKERR TSAdaptRegister(TSADAPTMOFEM, TSAdaptCreateMoFEM);
+ *   TSAdapt adapt;
+ *  CHKERR TSGetAdapt(solver, &adapt);
+ * \endcode
+ *
+ * @param adapt
+ * @return PetscErrorCode
+ */
 PetscErrorCode TSAdaptCreateMoFEM(TSAdapt adapt);
 
 } // namespace MoFEM
