@@ -73,6 +73,9 @@ PetscErrorCode SnesRhs(SNES snes, Vec x, Vec f, void *ctx) {
     fe.snes_ctx = SnesMethod::CTX_SNESSETFUNCTION;
     fe.ksp_ctx = KspMethod::CTX_SETFUNCTION;
     fe.data_ctx = PetscData::CtxSetF | PetscData::CtxSetX;
+
+    CHKERR SNESGetKSP(snes, &fe.ksp);
+
     fe.cacheWeakPtr = cache_ptr;
   };
 
@@ -154,6 +157,9 @@ PetscErrorCode SnesMat(SNES snes, Vec x, Mat A, Mat B, void *ctx) {
     fe.snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
     fe.ksp_ctx = KspMethod::CTX_OPERATORS;
     fe.data_ctx = PetscData::CtxSetA | PetscData::CtxSetB | PetscData::CtxSetX;
+
+    CHKERR SNESGetKSP(snes, &fe.ksp);
+    
     fe.cacheWeakPtr = cache_ptr;
   };
 
