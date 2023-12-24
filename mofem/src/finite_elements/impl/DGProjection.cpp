@@ -122,6 +122,10 @@ OpDGProjectionEvaluation::doWork(int side, EntityType type,
   auto &ent_data = dataL2->dataOnEntities[fe_type][side_number];
   const auto nb_base_functions = ent_data.getN(base).size2();
   auto nb_data_coeffs = dataPtr->size1();
+  if (!nb_data_coeffs) {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Number of data coefficients should be set");
+  }
   auto &data = *dataPtr;
   auto &coeffs = *coeffsPtr;
 
