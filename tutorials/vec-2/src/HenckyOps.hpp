@@ -596,18 +596,17 @@ template <int DIM>
 MoFEMErrorCode
 addMatBlockOps(MoFEM::Interface &m_field,
                boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pip,
-               std::string field_name, std::string block_name,
+               std::string block_name,
                boost::shared_ptr<MatrixDouble> mat_D_Ptr, Sev sev,
                double scale = 1) {
   MoFEMFunctionBegin;
 
   struct OpMatBlocks : public DomainEleOp {
-    OpMatBlocks(std::string field_name, boost::shared_ptr<MatrixDouble> m,
-                double bulk_modulus_K, double shear_modulus_G,
-                MoFEM::Interface &m_field, Sev sev,
+    OpMatBlocks(boost::shared_ptr<MatrixDouble> m, double bulk_modulus_K,
+                double shear_modulus_G, MoFEM::Interface &m_field, Sev sev,
                 std::vector<const CubitMeshSets *> meshset_vec_ptr,
                 double scale)
-        : DomainEleOp(field_name, DomainEleOp::OPROW), matDPtr(m),
+        : DomainEleOp(NOSPACE, DomainEleOp::OPSPACE), matDPtr(m),
           bulkModulusKDefault(bulk_modulus_K),
           shearModulusGDefault(shear_modulus_G), scaleYoungModulus(scale) {
       std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
@@ -724,7 +723,7 @@ addMatBlockOps(MoFEM::Interface &m_field,
   double bulk_modulus_K = E / (3 * (1 - 2 * nu));
   double shear_modulus_G = E / (2 * (1 + nu));
   pip.push_back(new OpMatBlocks(
-      field_name, mat_D_Ptr, bulk_modulus_K, shear_modulus_G, m_field, sev,
+      mat_D_Ptr, bulk_modulus_K, shear_modulus_G, m_field, sev,
 
       // Get blockset using regular expression
       m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(std::regex(
@@ -749,7 +748,7 @@ auto commonDataFactory(
   common_ptr->matDPtr = boost::make_shared<MatrixDouble>();
   common_ptr->matGradPtr = boost::make_shared<MatrixDouble>();
 
-  CHK_THROW_MESSAGE(addMatBlockOps<DIM>(m_field, pip, field_name, block_name,
+  CHK_THROW_MESSAGE(addMatBlockOps<DIM>(m_field, pip, block_name,
                                         common_ptr->matDPtr, sev, scale),
                     "addMatBlockOps");
 
