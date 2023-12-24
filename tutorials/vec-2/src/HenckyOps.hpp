@@ -609,7 +609,6 @@ addMatBlockOps(MoFEM::Interface &m_field,
         : DomainEleOp(NOSPACE, DomainEleOp::OPSPACE), matDPtr(m),
           bulkModulusKDefault(bulk_modulus_K),
           shearModulusGDefault(shear_modulus_G), scaleYoungModulus(scale) {
-      std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
       CHK_THROW_MESSAGE(extractBlockData(m_field, meshset_vec_ptr, sev),
                         "Can not get data from block");
     }
