@@ -727,7 +727,7 @@ TSAdaptMoFEM::TSAdaptMoFEM()
   CHKERR PetscOptionsGetScalar("", "-ts_mofem_adapt_gamma", &gamma, PETSC_NULL);
   CHKERR PetscOptionsGetInt("", "-ts_mofem_adapt_desired_it", &desiredIt,
                             PETSC_NULL);
-  CHKERR PetscOptionsGetInt("", "-ts_mofem_adapt_off", &desiredIt, PETSC_NULL);
+  CHKERR PetscOptionsGetBool("", "-ts_mofem_adapt_off", &offApat, PETSC_NULL);
 
   MOFEM_LOG("TSWORLD", Sev::inform)
       << "TS adaptivity: alpha = " << alpha << ", gamma = " << gamma
