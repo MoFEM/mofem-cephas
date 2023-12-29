@@ -740,7 +740,7 @@ PetscErrorCode TSAdaptChooseMoFEM(TSAdapt adapt, TS ts, PetscReal h,
                                   PetscReal *wltea, PetscReal *wlter) {
   MoFEMFunctionBegin;
 
-  TSAdaptMoFEM *ts_adapt_mofem = static_cast<TSAdaptMoFEM *>(adapt->data);
+  auto ts_adapt_mofem = boost::make_shared<TSAdaptMoFEM>();
 
   *next_sc = 0; /* Reuse the same order scheme */
   *wlte = -1;   /* Weighted local truncation error was not evaluated */
@@ -791,14 +791,11 @@ PetscErrorCode TSAdaptResetMoFEM(TSAdapt adapt) {
 PetscErrorCode TSAdaptDestroyMoFEM(TSAdapt adapt) {
   MoFEMFunctionBegin;
   CHKERR TSAdaptResetMoFEM(adapt);
-  CHKERR PetscFree(adapt->data);
   MoFEMFunctionReturn(0);
 }
 
 PetscErrorCode TSAdaptCreateMoFEM(TSAdapt adapt) {
   PetscFunctionBegin;
-  TSAdaptMoFEM *ts_adapt_mofem = new TSAdaptMoFEM;
-  adapt->data = (void *)ts_adapt_mofem;
   adapt->ops->choose = TSAdaptChooseMoFEM;
   adapt->ops->reset = TSAdaptResetMoFEM;
   adapt->ops->destroy = TSAdaptDestroyMoFEM;
