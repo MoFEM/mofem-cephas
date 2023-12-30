@@ -415,7 +415,14 @@ MoFEMErrorCode EssentialPostProcLhs<DisplacementCubitBcData>::operator()() {
 EssentialPreProcReaction<DisplacementCubitBcData>::EssentialPreProcReaction(
     MoFEM::Interface &m_field, boost::shared_ptr<FEMethod> fe_ptr,
     SmartPetscObj<Vec> rhs, LogManager::SeverityLevel sev)
-    : mField(m_field), fePtr(fe_ptr), vRhs(rhs), sevLevel(sev) {}
+    : mField(m_field), fePtr(fe_ptr), vRhs(rhs), sevLevel(sev),
+      printBlockName(PETSC_FALSE) {
+
+  CHK_THROW_MESSAGE(PetscOptionsGetBool(PETSC_NULL, PETSC_NULL,
+                                        "-reaction_print_block_name",
+                                        &printBlockName, PETSC_NULL),
+                    "can not get option");
+}
 
 MoFEMErrorCode EssentialPreProcReaction<DisplacementCubitBcData>::operator()() {
   MOFEM_LOG_CHANNEL("WORLD");
@@ -577,17 +584,30 @@ MoFEMErrorCode EssentialPreProcReaction<DisplacementCubitBcData>::operator()() {
               (FTensor::levi_civita<double>(i, j, k) * t_off(k)) * t_force(j);
 
           auto mpi_reactions = mpi_array_reduce(reactions);
-          MOFEM_TAG_AND_LOG_C("WORLD", sevLevel, "Essential",
-                              "Block %s Offset: %4.3e %4.3e %4.3e",
-                              block_name.c_str(), t_off(X), t_off(Y), t_off(Z));
-          MOFEM_TAG_AND_LOG_C("WORLD", sevLevel, "Essential",
-                              "Block %s Force: %4.3e %4.3e %4.3e",
-                              block_name.c_str(), mpi_reactions[X],
-                              mpi_reactions[Y], mpi_reactions[Z]);
-          MOFEM_TAG_AND_LOG_C("WORLD", sevLevel, "Essential",
-                              "Block %s Moment: %4.3e %4.3e %4.3e",
-                              block_name.c_str(), mpi_reactions[MX],
-                              mpi_reactions[MY], mpi_reactions[MZ]);
+          if (printBlockName) {
+            MOFEM_TAG_AND_LOG_C("WORLD", sevLevel, "Essential",
+                                "Block %s Offset: %4.3e %4.3e %4.3e",
+                                block_name.c_str(), t_off(X), t_off(Y),
+                                t_off(Z));
+            MOFEM_TAG_AND_LOG_C("WORLD", sevLevel, "Essential",
+                                "Block %s Force: %4.3e %4.3e %4.3e",
+                                block_name.c_str(), mpi_reactions[X],
+                                mpi_reactions[Y], mpi_reactions[Z]);
+            MOFEM_TAG_AND_LOG_C("WORLD", sevLevel, "Essential",
+                                "Block %s Moment: %4.3e %4.3e %4.3e",
+                                block_name.c_str(), mpi_reactions[MX],
+                                mpi_reactions[MY], mpi_reactions[MZ]);
+          } else {
+            MOFEM_TAG_AND_LOG_C("WORLD", sevLevel, "Essential",
+                                "Offset: %4.3e %4.3e %4.3e", t_off(X), t_off(Y),
+                                t_off(Z));
+            MOFEM_TAG_AND_LOG_C("WORLD", sevLevel, "Essential",
+                                "Force: %4.3e %4.3e %4.3e", mpi_reactions[X],
+                                mpi_reactions[Y], mpi_reactions[Z]);
+            MOFEM_TAG_AND_LOG_C("WORLD", sevLevel, "Essential",
+                                "Moment: %4.3e %4.3e %4.3e", mpi_reactions[MX],
+                                mpi_reactions[MY], mpi_reactions[MZ]);
+          }
         }
       }
     }
