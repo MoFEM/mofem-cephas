@@ -528,7 +528,9 @@ c_cpp_properties configuration on Mac should look like follows:
         {
             "name": "Mac",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "${env:HOME}/um_view/include/**",
+                "${env:HOME}/um_view_release/include/boost/**"
             ],
             "defines": [
                 "WITH_ADOL_C",
@@ -543,7 +545,7 @@ c_cpp_properties configuration on Mac should look like follows:
             "cStandard": "gnu17",
             "cppStandard": "gnu++14",
             "intelliSenseMode": "macos-clang-x64",
-            "compileCommands": "${workspaceFolder}/um-build-Debug-l3ew3vn/compile_commands.json"
+            "compileCommands": "${workspaceFolder}/um-build-Debug-*/compile_commands.json"
             "browse": {
                 "databaseFilename": "${default}",
                 "limitSymbolsToIncludedHeaders": true
@@ -556,7 +558,7 @@ c_cpp_properties configuration on Mac should look like follows:
 
 Note line
 \code
-"compileCommands": "${workspaceFolder}/um-build-Debug-l3ew3vn/compile_commands.json"
+"compileCommands": "${workspaceFolder}/um-build-Debug-*/compile_commands.json"
 \endcode
 
 which points to the particular build directory, i.e. um-build-Debug-l3ew3vn,
