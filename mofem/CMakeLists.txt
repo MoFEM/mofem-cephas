@@ -43,9 +43,9 @@ find_program(MPI_RUN mpirun HINTS ${MPI_BIN_PATH} /usr/bin PATH ${MPI_BIN_PATH})
 include(cmake/ResolveCompilerPaths.cmake)
 
 
-# Set fallback version. Fallback version is version of MoFEM which is used
-# as default version if version from the git tags can not be extracted. For exammple 
-# that is a keys when somone install mofem from tarball.
+# Set fallback version. The fallback version is a version of MoFEM which is used
+# as the default version if the version from the git tags can not be extracted. For exammple 
+# that is key when somone installs MoFEM from tarball.
 set(MoFEM_FALLBACK_VERSION "0.14.0" CACHE STRING "Fallback version" FORCE)
 message(STATUS "Fallback version v${MoFEM_FALLBACK_VERSION}")
 
