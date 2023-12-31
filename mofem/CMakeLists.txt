@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.1.3)
 
-# Serch inlude directories before system directories
+# Serch include directories before system directories
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 
 # Petsc (parse config files)
@@ -44,34 +44,34 @@ include(cmake/ResolveCompilerPaths.cmake)
 
 
 # Set fallback version. The fallback version is a version of MoFEM which is used
-# as the default version if the version from the git tags can not be extracted. For exammple 
-# that is key when somone installs MoFEM from tarball.
-set(MoFEM_FALLBACK_VERSION "0.14.0" CACHE STRING "Fallback version" FORCE)
+# as the default version if the version from the git tags can not be extracted. For example, 
+# that is key when someone installs MoFEM from tarball.
+set(MoFEM_FALLBACK_VERSION "${CMAKE_PROJECT_VERSION}" CACHE STRING "Fallback version" FORCE)
 message(STATUS "Fallback version v${MoFEM_FALLBACK_VERSION}")
 
 # Options
 option(BUILD_SHARED_LIBS "Build using shared libraries" OFF)
 option(STAND_ALLONE_USERS_MODULES 
-  "If if ON copy files, othrewise make link" OFF)
+  "If if ON copy files, otherwise link" OFF)
 option(WITHCOVERAGE "Add gcc coverage compile tags" OFF)
-option(MOFEM_BUILD_TESTS "If is ON enbale testing" ON)
+option(MOFEM_BUILD_TESTS "If is ON enable testing" ON)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# If fortran is set by PETSc or user
+# If Fortran is set by PETSc or the user
 if(CMAKE_Fortran_COMPILER)
   # Optional language
   enable_language(Fortran)
 endif(CMAKE_Fortran_COMPILER)
 
-# Add options unique to compiliation with Spack
+# Add options unique to compilation with Spack
 include(cmake/WithSpack.cmake)
 
 # http://cellperformance.beyond3d.com/articles/2006/05/demystifying-the-restrict-keyword.html
-# The restrict keyword can be considered an extension to the strict aliasing rule.
-# It allows the programmer to declare that pointers which share the same type (or
-# were otherwise validly created) do not alias eachother. By using restrict the
+# The restrict keyword can be considered an extension of the strict aliasing rule.
+# It allows the programmer to declare that pointers that share the same type (or
+# were otherwise validly created) do not alias each other. By using restrict the
 # programmer can declare that any loads and stores through the qualified pointer
 # (or through another pointer copied either directly or indirectly from the
 # restricted pointer) are the only loads and stores to the same address during the
@@ -79,7 +79,7 @@ include(cmake/WithSpack.cmake)
 # pointers other than its own copies.
 # Restrict is a "no data hazards will be generated" contract between the
 # programmer and the compiler. The compiler relies on this information to make
-# optimizations. If the data is, in fact, aliased, the results are undefined and a
+# optimizations. If the data is aliased, the results are undefined and a
 # programmer should not expect the compiler to output a warning. The compiler
 # assumes the programmer is not lying.
 
