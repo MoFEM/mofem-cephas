@@ -728,21 +728,21 @@ MoFEMErrorCode Example::checkResults() {
       new OpCalculateVectorFieldGradient<SPACE_DIM, SPACE_DIM>("U",
                                                                mat_grad_ptr));
   pip->getOpDomainRhsPipeline().push_back(
-      new OpSymmetrizeTensor<SPACE_DIM>("U", mat_grad_ptr, mat_strain_ptr));
+      new OpSymmetrizeTensor<SPACE_DIM>(mat_grad_ptr, mat_strain_ptr));
 
   auto mat_D_ptr = boost::make_shared<MatrixDouble>();
   CHKERR addMatBlockOps(pip->getOpDomainRhsPipeline(), "U", "MAT_ELASTIC",
                         mat_D_ptr, Sev::verbose);
   pip->getOpDomainRhsPipeline().push_back(
       new OpTensorTimesSymmetricTensor<SPACE_DIM, SPACE_DIM>(
-          "U", mat_strain_ptr, mat_stress_ptr, mat_D_ptr));
+          mat_strain_ptr, mat_stress_ptr, mat_D_ptr));
 
   pip->getOpDomainRhsPipeline().push_back(
       new OpInternalForce("U", mat_stress_ptr));
 
   pip->getOpBoundaryRhsPipeline().push_back(
       new OpTensorTimesSymmetricTensor<SPACE_DIM, SPACE_DIM>(
-          "U", mat_strain_ptr, mat_stress_ptr, mat_D_ptr));
+          mat_strain_ptr, mat_stress_ptr, mat_D_ptr));
   CHKERR DomainRhsBCs::AddFluxToPipeline<OpDomainRhsBCs>::add(
       pip->getOpDomainRhsPipeline(), mField, "U", Sev::verbose);
   CHKERR BoundaryRhsBCs::AddFluxToPipeline<OpBoundaryRhsBCs>::add(
