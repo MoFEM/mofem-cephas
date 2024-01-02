@@ -14,6 +14,7 @@ struct DomainBCs;
 } // namespace ContactOps
 
 #include <ElasticSpring.hpp>
+#include <FluidLevel.hpp>
 
 template <int BASE_DIM, int FIELD_DIM, AssemblyType A, IntegrationType I,
           typename OpBase>
@@ -34,6 +35,9 @@ struct AddFluxToRhsPipelineImpl<
   using OpSpringRhs =
       typename T::template OpFlux<ElasticExample::SpringBcType<BLOCKSET>, 1,
                                   SPACE_DIM>;
+  using OpFluidLevelRhs =
+      typename T::template OpFlux<ElasticExample::FluidLevelType<BLOCKSET>, 1,
+                                  SPACE_DIM>;
 
   static MoFEMErrorCode add(
 
@@ -45,6 +49,8 @@ struct AddFluxToRhsPipelineImpl<
     MoFEMFunctionBegin;
     CHKERR T::template AddFluxToPipeline<OpForce>::add(
         pipeline, m_field, field_name, smv, "FORCE", sev);
+    CHKERR T::template AddFluxToPipeline<OpFluidLevelRhs>::add(
+        pipeline, m_field, field_name, 1, "FLUID_PRESSURE", sev);
     auto u_ptr = boost::make_shared<MatrixDouble>();
     pipeline.push_back(
         new OpCalculateVectorFieldValues<SPACE_DIM>(field_name, u_ptr));
