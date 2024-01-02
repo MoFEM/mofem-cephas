@@ -530,7 +530,7 @@ c_cpp_properties configuration on Mac should look like follows:
             "includePath": [
                 "${workspaceFolder}/**",
                 "${env:HOME}/um_view/include/**",
-                "${env:HOME}/um_view_release/include/boost/**"
+                "${env:HOME}/um_view/include/boost/**"
             ],
             "defines": [
                 "WITH_ADOL_C",
@@ -545,7 +545,7 @@ c_cpp_properties configuration on Mac should look like follows:
             "cStandard": "gnu17",
             "cppStandard": "gnu++14",
             "intelliSenseMode": "macos-clang-x64",
-            "compileCommands": "${workspaceFolder}/um-build-Debug-*/compile_commands.json"
+            "compileCommands": "${workspaceFolder}/um-build-Debug-XXXXX/compile_commands.json"
             "browse": {
                 "databaseFilename": "${default}",
                 "limitSymbolsToIncludedHeaders": true
