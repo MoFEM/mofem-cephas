@@ -71,6 +71,7 @@ using SideEle = PostProcEleByDim<SPACE_DIM>::SideEle;
 using PostProcEleBdy = PostProcEleByDim<SPACE_DIM>::PostProcEleBdy;
 
 #include <ElasticSpring.hpp>
+#include <FluidLevel.hpp>
 #include <CalculateTraction.hpp>
 #include <NaturalDomainBC.hpp>
 #include <NaturalBoundaryBC.hpp>
@@ -746,7 +747,7 @@ MoFEMErrorCode Example::checkResults() {
   CHKERR DomainRhsBCs::AddFluxToPipeline<OpDomainRhsBCs>::add(
       pip->getOpDomainRhsPipeline(), mField, "U", Sev::verbose);
   CHKERR BoundaryRhsBCs::AddFluxToPipeline<OpBoundaryRhsBCs>::add(
-      pip->getOpBoundaryRhsPipeline(), mField, "U", 1, Sev::verbose);
+      pip->getOpBoundaryRhsPipeline(), mField, "U", -1, Sev::verbose);
 
   auto dm = simple->getDM();
   auto res = createDMVector(dm);

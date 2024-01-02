@@ -80,3 +80,10 @@ add_test(
   ${CMAKE_CURRENT_BINARY_DIR}/elastic_3d
   -file_name LShape_Rot_D1.cub -order 2
   -ksp_rtol 1e-12 -ksp_atol 1e-12 -test)
+
+add_test(
+  elastic_3d_dam_fluid_pressure
+  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/elastic_3d
+  -file_name dam.cub -order 2 -pc_type lu
+  -ksp_rtol 1e-12 -ksp_atol 1e-12 -test)
