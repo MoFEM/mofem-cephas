@@ -56,8 +56,6 @@ then
     pkgconf \
     cmake \
     git \
-    python \
-    python-dev \
     python3 \
     python3-dev \
     python3-distutils \
@@ -120,7 +118,6 @@ cd $MOFEM_INSTALL_DIR
 echo "$PWD"
 
 SPACK_ROOT_DIR=$MOFEM_INSTALL_DIR/spack
-SPACK_MIRROR_DIR=$MOFEM_INSTALL_DIR/mofem_mirror
 
 # Retrieve Spack for MoFEM
 if [ ! -d "$SPACK_ROOT_DIR" ]; then
@@ -131,7 +128,7 @@ if [ ! -d "$SPACK_ROOT_DIR" ]; then
   fi
 
   echo "Cloning spack ..."
-  git clone -b Version0.14.0  https://bitbucket.org/mofem/mofem-spack.git spack
+  git clone -b Workshop23 https://bitbucket.org/mofem/mofem-spack.git spack
   echo -e "Done.\n"
 
   # Initialise Spack environment variables:
@@ -146,36 +143,12 @@ if [ ! -d "$SPACK_ROOT_DIR" ]; then
     echo ". $SPACK_ROOT_DIR/share/spack/setup-env.sh" >> ~/.zshrc
   fi
 
-  # # Download mirror
-  # if [ ! -d "$SPACK_MIRROR_DIR" ]; then
-  #   if [ ! -f "$PWD/mirror.tgz" ]; then
-  #     # echo "Downloading mirror of spack packages for MoFEM..."
-  #     # mkdir -p $SPACK_MIRROR_DIR && \
-  #     # curl -s -L http://mofem.eng.gla.ac.uk/mofem/downloads/mirror_v0.16.tar.gz \
-  #     # | tar xzC $SPACK_MIRROR_DIR --strip 1
-  #     # echo -e "Done.\n"
-  #   else 
-  #     # mkdir -p $SPACK_MIRROR_DIR && \
-  #     # tar xzf $PWD/mirror.tgz -C $SPACK_MIRROR_DIR  --strip 1
-  #   fi
-  # fi
- 
-  # FIXME: We do not have mirror build for most recent version
-  # Add mirror
-  # spack mirror remove mofem_mirror 2> /dev/null
-  # spack mirror add mofem_mirror $SPACK_MIRROR_DIR
-
   # Install packages required by Spack
   spack compiler find
   spack external find
 
-  # # Set fortran compiler to version 9
-  # if [ ${machine} = "Mac" ]
-  # then
-  #   sed 's/gfortran$/gfortran-9/g' $HOME/.spack/darwin/compilers.yaml
-  # fi
-
 else
+  . $SPACK_ROOT_DIR/share/spack/setup-env.sh
   spack external find  
 fi
 
@@ -197,7 +170,8 @@ echo "Current directory: $PWD"
   
 # Clone MoFEM core library
 if [ ! -d "$PWD/mofem-cephas" ]; then
-  git clone -b develop --recurse-submodules https://bitbucket.org/likask/mofem-cephas.git mofem-cephas
+  git clone -b develop https://bitbucket.org/likask/mofem-cephas.git mofem-cephas
+  git clone -b develop https://likask@bitbucket.org/mofem/users-modules-cephas.git mofem-cephas/mofem/users_modules
 lse 
   echo -e "\nMoFEM source directory is found"
 fi
@@ -210,7 +184,7 @@ echo -e "CORE LIBRARY - Install depenencies ..."
 echo -e "\n----------------------------\n"
 
 spack install --only dependencies \
- mofem-cephas@develop+adol-c~copy_user_modules~docker~ipo+med~shared+slepc+tetgen \
+ mofem-cephas@develop+adol-c~copy_user_modules+docker~ipo+med+mgis~shared+slepc+tetgen \
  build_type=RelWithDebInfo install_id=0 ^petsc+X ^boost+python+numpy
 
 echo -e "\n----------------------------\n"
@@ -221,7 +195,7 @@ spack dev-build \
   --source-path $MOFEM_INSTALL_DIR/mofem-cephas \
   --keep-prefix \
   --test root \
-  mofem-cephas@develop+adol-c~copy_user_modules~docker~ipo+med~shared+slepc+tetgen \
+  mofem-cephas@develop+adol-c~copy_user_modules+docker~ipo+med+mgis~shared+slepc+tewtgen \
   build_type=RelWithDebInfo install_id=0 ^petsc+X ^boost+python+numpy
 
 echo -e "\n********************************************************\n"
@@ -237,7 +211,7 @@ spack dev-build \
   --test root  \
   --source-path $MOFEM_INSTALL_DIR/mofem-cephas/mofem/users_modules \
   mofem-users-modules@develop build_type=RelWithDebInfo \
-  ^mofem-cephas@develop+adol-c~copy_user_modules~docker~ipo+med~shared+slepc+tetgen \
+  ^mofem-cephas@develop+adol-c~copy_user_modules+docker~ipo+med+mgis~shared+slepc+tetgen \
   build_system=cmake build_type=RelWithDebInfo dev_path=$HOME/mofem_install/mofem-cephas generator=make \
   install_id=0 ^petsc+X ^boost+python+numpy
 
@@ -266,7 +240,7 @@ spack dev-build \
   --source-path $MOFEM_INSTALL_DIR/mofem-cephas \
   --keep-prefix \
   --test root \
-  mofem-cephas@develop+adol-c~copy_user_modules~docker~ipo+med~shared+slepc+tetgen \
+  mofem-cephas@develop+adol-c~copy_user_modules+docker~ipo+med+mgis~shared+slepc+tetgen \
   build_type=Debug install_id=0 ^petsc+X ^boost+python+numpy
 
 echo -e "\n********************************************************\n"
@@ -286,7 +260,7 @@ spack dev-build \
   --test root  \
   --source-path $MOFEM_INSTALL_DIR/mofem-cephas/mofem/users_modules \
   mofem-users-modules@develop build_type=Debug \
-  ^mofem-cephas@develop+adol-c~copy_user_modules~docker~ipo+med~shared+slepc+tetgen \
+  ^mofem-cephas@develop+adol-c~copy_user_modules+docker~ipo+med+mgis~shared+slepc+tetgen \
   build_system=cmake build_type=Debug dev_path=$HOME/mofem_install/mofem-cephas generator=make \
   install_id=0 ^petsc+X ^boost+python+numpy
 

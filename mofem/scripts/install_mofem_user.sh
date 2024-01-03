@@ -61,12 +61,12 @@ then
     pkgconf \
     cmake \
     git \
-    python \
+    python3 \
     python3-distutils \
     unzip \
     ssh \
     vim \
-    gfortran
+    gfortran 
   
 elif [ ${machine} = "Mac" ]
 then
@@ -120,7 +120,6 @@ cd $MOFEM_INSTALL_DIR
 echo "$PWD"
 
 SPACK_ROOT_DIR=$MOFEM_INSTALL_DIR/spack
-SPACK_MIRROR_DIR=$MOFEM_INSTALL_DIR/mofem_mirror
 
 # Retrieve Spack for MoFEM
 if [ ! -d "$SPACK_ROOT_DIR" ]; then
@@ -133,7 +132,7 @@ if [ ! -d "$SPACK_ROOT_DIR" ]; then
   if [ ! -f "$PWD/spack.tgz" ]; then
     echo "Downloading spack ..."
     mkdir -p $SPACK_ROOT_DIR &&\
-    git clone -b Version0.14.0  https://bitbucket.org/mofem/mofem-spack.git spack
+    git clone -b Workshop23 https://bitbucket.org/mofem/mofem-spack.git spack
     echo -e "Done.\n"
   else 
     mkdir -p $SPACK_ROOT_DIR &&\
@@ -152,35 +151,9 @@ if [ ! -d "$SPACK_ROOT_DIR" ]; then
     echo ". $SPACK_ROOT_DIR/share/spack/setup-env.sh" >> ~/.zshrc
   fi
   
-  # # Download mirror
-  # if [ ! -d "$SPACK_MIRROR_DIR" ]; then
-  #   if [ ! -f "$PWD/mirror.tgz" ]; then
-  #     # echo "Downloading mirror of spack packages for MoFEM..."
-  #     # mkdir -p $SPACK_MIRROR_DIR && \
-  #     # curl -s -L http://mofem.eng.gla.ac.uk/mofem/downloads/mirror_v0.16.tar.gz \
-  #     # | tar xzC $SPACK_MIRROR_DIR --strip 1
-  #     # echo -e "Done.\n"
-  #   else 
-  #     # mkdir -p $SPACK_MIRROR_DIR && \
-  #     # tar xzf $PWD/mirror.tgz -C $SPACK_MIRROR_DIR  --strip 1
-  #   fi
-  # fi
- 
-  # FIXME: We do not have mirror build for most recent version
-  # Add mirror
-  # spack mirror remove mofem_mirror 2> /dev/null
-  # spack mirror add mofem_mirror $SPACK_MIRROR_DIR
-
   # Install packages required by Spack
   spack compiler find
   spack external find
-
-  # # Set fortran compiler to version 9
-  # # Set fortran compiler to version 9
-  # if [ ${machine} = "Mac" ]
-  # then
-  #   sed 's/gfortran$/gfortran-9/g' $HOME/.spack/darwin/compilers.yaml
-  # fi
 
 fi
  
@@ -193,7 +166,7 @@ echo "Current directory: $PWD"
 ##############################
   
 echo -e "\n********************************************************\n"
-echo -e "Installing USER MODULE & FRACTURE MODULE..."
+echo -e "Installing USER MODULE ..."
 echo -e "\n********************************************************\n"
   
 # Locate MoFEM installation directory
@@ -202,10 +175,10 @@ echo "Current directory: $PWD"
   
 # Install MoFEM packages
 spack install --only dependencies mofem-cephas ^petsc+X
-spack install --test all mofem-fracture-module@0.13.0 build_type=Release ^petsc+X
+spack install --test root mofem-users-modules build_type=Release ^petsc+X
 
 # Activate fracture module
-spack view --verbose symlink -i um_view mofem-fracture-module
+spack view --verbose symlink -i um_view mofem-users-modules
  
 # Export view and make view visible from any directory
 export PATH=$PWD/um_view/bin:$PATH 
