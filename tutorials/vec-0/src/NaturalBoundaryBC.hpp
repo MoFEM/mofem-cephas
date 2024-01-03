@@ -40,7 +40,7 @@ struct AddFluxToRhsPipelineImpl<
     CHKERR T::template AddFluxToPipeline<OpForce>::add(
         pipeline, m_field, field_name, {}, "FORCE", sev);
     CHKERR T::template AddFluxToPipeline<OpFluidLevelRhs>::add(
-        pipeline, m_field, field_name, scale, "FLUID_PRESSURE", sev);
+        pipeline, m_field, field_name, {}, scale, "FLUID_PRESSURE", sev);
     auto u_ptr = boost::make_shared<MatrixDouble>();
     pipeline.push_back(
         new OpCalculateVectorFieldValues<SPACE_DIM>(field_name, u_ptr));

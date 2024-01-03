@@ -69,23 +69,28 @@ struct OpFluxRhsImpl<ElasticExample::FluidLevelType<BLOCKSET>, 1, FIELD_DIM, A,
   using OpBase = OpBaseImpl<A, EleOp>;
 
   OpFluxRhsImpl(MoFEM::Interface &m_field, int ms_id, std::string field_name,
+                std::vector<boost::shared_ptr<ScalingMethod>> smv,
                 double scale);
 
 protected:
   double fluidDensity;
   std::array<double, 3> gravityAcceleration;
   std::array<double, 3> zeroPressure;
-
+  std::vector<boost::shared_ptr<ScalingMethod>> vecOfTimeScalingMethods;
   double rhsScale;
-  boost::shared_ptr<MatrixDouble> uPtr;
+
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &data);
 };
 
 template <int FIELD_DIM, AssemblyType A, typename EleOp>
-OpFluxRhsImpl<ElasticExample::FluidLevelType<BLOCKSET>, 1, FIELD_DIM, A, GAUSS,
-              EleOp>::OpFluxRhsImpl(MoFEM::Interface &m_field, int ms_id,
-                                    std::string field_name, double scale)
-    : OpBase(field_name, field_name, OpBase::OPROW), rhsScale(scale) {
+OpFluxRhsImpl<
+    ElasticExample::FluidLevelType<BLOCKSET>, 1, FIELD_DIM, A, GAUSS,
+    EleOp>::OpFluxRhsImpl(MoFEM::Interface &m_field, int ms_id,
+                          std::string field_name,
+                          std::vector<boost::shared_ptr<ScalingMethod>> smv,
+                          double scale)
+    : OpBase(field_name, field_name, OpBase::OPROW),
+      vecOfTimeScalingMethods(smv), rhsScale(scale) {
   CHK_THROW_MESSAGE(ElasticExample::GetFluidLevel<BLOCKSET>::getParams(
                         this->fluidDensity, this->gravityAcceleration,
                         this->zeroPressure, this->entsPtr, m_field, ms_id),
@@ -115,6 +120,11 @@ MoFEM::OpFluxRhsImpl<ElasticExample::FluidLevelType<BLOCKSET>, 1, FIELD_DIM, A,
   auto t_gravity = getFTensor1FromPtr<FIELD_DIM>(gravityAcceleration.data());
   auto t_zero_pressure = getFTensor1FromPtr<FIELD_DIM>(zeroPressure.data());
 
+  double s = 1;
+  for (auto &o : vecOfTimeScalingMethods) {
+    s *= o->getScale(OpBase::getTStime());
+  }
+
   // loop over integration points
   for (int gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
     // take into account Jacobian
@@ -125,7 +135,7 @@ MoFEM::OpFluxRhsImpl<ElasticExample::FluidLevelType<BLOCKSET>, 1, FIELD_DIM, A,
     auto dot = t_gravity(i) * t_level(i);
 
     FTensor::Tensor1<double, FIELD_DIM> t_force;
-    t_force(i) = -fluidDensity * dot * t_normal(i);
+    t_force(i) = -s * fluidDensity * dot * t_normal(i);
 
     // loop over rows base functions
     auto t_nf = getFTensor1FromArray<FIELD_DIM, FIELD_DIM>(OpBase::locF);
@@ -161,7 +171,8 @@ struct AddFluxToRhsPipelineImpl<
   static MoFEMErrorCode add(
 
       boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
-      MoFEM::Interface &m_field, std::string field_name, double scale,
+      MoFEM::Interface &m_field, std::string field_name,
+      std::vector<boost::shared_ptr<ScalingMethod>> smv, double scale,
       std::string block_name, Sev sev
 
   ) {
@@ -174,7 +185,7 @@ struct AddFluxToRhsPipelineImpl<
       for (auto m : meshset_vec_ptr) {
         MOFEM_TAG_AND_LOG("WORLD", sev, "OFluidLevelRhs") << "Add " << *m;
         pipeline.push_back(
-            new OP(m_field, m->getMeshsetId(), field_name, scale));
+            new OP(m_field, m->getMeshsetId(), field_name, smv, scale));
       }
       MOFEM_LOG_CHANNEL("WORLD");
     };
