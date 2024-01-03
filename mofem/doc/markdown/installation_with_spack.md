@@ -326,15 +326,15 @@ git clone \
 ~~~~~
 and kick-start installation of the core library. First install all dependencies:
 ~~~~~
-spack install --only dependencies mofem-cephas ^petsc+X
+spack install --only dependencies mofem-cephas ^petsc+X ^boost+python+numpy
 ~~~~~
 and then core MoFEM library:
 ~~~~~
-spack dev-build \
+spack dev-build -j4 \
   --source-path $HOME/mofem_install/mofem-cephas \
   --keep-prefix \
-  --test root \
-  mofem-cephas@develop~copy_user_modules ^petsc+X
+  mofem-cephas@develop+adol-c~copy_user_modules+docker~ipo+med+mgis~shared+slepc+tetgen \
+  build_type=Release install_id=0 ^petsc+X ^boost+python+numpy
 ~~~~~
 Note that here another specification of the build configuration (*spec*) was set as `~copy_user_modules` which is equivalent to `copy_user_modules=False`. 
 
@@ -344,9 +344,9 @@ spack find -lv mofem-cephas
 ~~~~~
 you should see something similar to
 ~~~~~
-==> 1 installed package
--- darwin-macos-haswell / apple-clang@12.0.0-gfortran9 ----------
-vhv7opa mofem-cephas@develop+adol-c~copy_user_modules~ipo+med+slepc+tetgen build_type=RelWithDebInfo dev_path=/Users/lukaszkaczmarczyk/mofem_install/mofem-cephas install_id=0
+-- linux-ubuntu20.04-x86_64 / gcc@9.4.0 -------------------------
+c4fmrqz mofem-cephas@develop+adol-c~copy_user_modules+docker~ipo+med+mgis~shared+slepc+tetgen build_system=cmake build_type=RelWithDebInfo dev_path=/mofem_install/mofem-cephas generator=make install_id=0
+==> 1 installed packages
 ~~~~~
 
 Furthermore, in the directory `$HOME/mofem_install/mofem-cephas` you will find
@@ -367,11 +367,11 @@ i.e. do typical developer work.
 
 Moreover, you can install simultaneously debugging version of code, as follows:
 ~~~~~
-spack dev-build \
+spack dev-build -j4 \
   --source-path $HOME/mofem_install/mofem-cephas \
   --keep-prefix \
-  --test root \
-  mofem-cephas@develop~copy_user_modules build_type=Debug ^petsc+X
+  mofem-cephas@develop+adol-c~copy_user_modules+docker~ipo+med+mgis~shared+slepc+tetgen \
+  build_type=Debug install_id=0 ^petsc+X ^boost+python+numpy
 ~~~~~ 
 
 \note By default `spack dev-build` will try to use all available processor slots to run `make` in parallel. To set a desired number of parallel jobs, you can use the parameter `-j NP`, where `NP` is number of parallel processes to be used. Alternatively, you can edit Spack settings 
@@ -384,23 +384,13 @@ spack dev-build \
   -b build \
   --source-path $HOME/mofem_install/mofem-cephas \
   --keep-prefix \
-  --test root \
-  mofem-cephas@develop~copy_user_modules ^petsc+X
+  mofem-cephas@develop+adol-c~copy_user_modules+docker~ipo+med+mgis~shared+slepc+tetgen \
+  build_type=RelWithDebInfo install_id=0 ^petsc+X ^boost+python+numpy
 ~~~~~
 Note that installation at that point is partial.
+
 ## 2. Install users modules {#spack_users_modules}
 
-First, run: 
-~~~~~
-spack find -lv mofem-cephas
-~~~~~ 
-and check installed versions of the core library (`mofem-cephas@develop`):
-~~~~~
-==> 2 installed packages
--- linux-ubuntu18.04-zen / gcc@7.5.0 ----------------------------
-nnnvprd mofem-cephas@develop+adol-c~copy_user_modules~ipo+med+slepc+tetgen build_type=Debug dev_path=/home/lukasz/mofem_install/mofem-cephas install_id=0
-pa3httg mofem-cephas@develop+adol-c~copy_user_modules~ipo+med+slepc+tetgen build_type=RelWithDebInfo dev_path=/home/lukasz/mofem_install/mofem-cephas install_id=0
-~~~~~
 For example, if you want to install users modules against core library which was built with the specification `build_type=RelWithDebInfo`, pick the corresponding row and copy to clipboard the hash (`pa3httg`). Next, change the directory:
 ~~~~~
 cd $HOME/mofem_install/mofem-cephas/mofem/users_modules
@@ -411,7 +401,7 @@ spack dev-build \
   --test root  \
   --source-path $HOME/mofem_install/mofem-cephas/mofem/users_modules \
   mofem-users-modules@develop build_type=RelWithDebInfo \
-  ^/pa3httg
+  ^/mofem-cephas@develop+adol-c~copy_user_modules+docker~ipo+med+mgis~shared+slepc+tetgen build_system=cmake build_type=RelWithDebInfo dev_path=/mofem_install/mofem-cephas generator=make install_id=0 ^petsc+X ^boost+python+numpy
 ~~~~~
 In the `spack dev-build` command of the snippet above `^` is a *dependency
 spec*, i.e. a descriptor defining the dependency of the package that we are
@@ -424,9 +414,9 @@ spack find -lv mofem-users-modules
 and
 as result you will get something similar to:
 ~~~~~
-==> 1 installed package
--- darwin-macos-haswell / apple-clang@12.0.0-gfortran9 ----------
-c6ts56b mofem-users-modules@develop+copy_user_modules~ipo build_type=Debug dev_path=/Users/lukaszkaczmarczyk/mofem_install/mofem-cephas/mofem/users_modules install_id=0
+-- linux-ubuntu20.04-x86_64 / gcc@9.4.0 -------------------------
+mofem-users-modules@lukasz+basic_fe+basic_tutorials+build_tut_adv0+build_tut_adv1+build_tut_adv2+build_tut_clx0+build_tut_cor0to1+build_tut_cor10+build_tut_cor2to5+build_tut_cor6+build_tut_cor7+build_tut_cor8+build_tut_cor9+build_tut_fun0+build_tut_fun1+build_tut_fun2+build_tut_max0+build_tut_max1+build_tut_mix0+build_tut_mix1+build_tut_msh1+build_tut_msh2+build_tut_scl0+build_tut_scl1+build_tut_scl10+build_tut_scl11+build_tut_scl2+build_tut_scl3+build_tut_scl4+build_tut_scl5+build_tut_scl6+build_tut_scl7+build_tut_scl8+build_tut_scl9+build_tut_vec0+build_tut_vec1+build_tut_vec2+build_tut_vec3+build_tut_vec4+build_tut_vec5+build_tut_vec6+copy_user_modules+docker~ipo~mgis~shared build_system=cmake build_type=RelWithDebInfo dev_path=/mofem_install/mofem-cephas/mofem/users_modules generator=make install_id=0
+==> 1 installed packages
 ~~~~~
 Also, you will find new directory
 `$HOME/mofem_install/mofem-cephas/mofem/users_modules/um-build-WithDebugInfo-c6ts56b`, which is the build directory for a particular version of
@@ -447,8 +437,8 @@ spack dev-build \
   -b build \
   --test root  \
   --source-path $HOME/mofem_install/mofem-cephas/mofem/users_modules \
-  mofem-users-modules@develop build_type=RelWithDebInfo \
-  ^/pa3httg
+  mofem-users-modules@develop build_type=Debug \
+  ^/mofem-cephas@develop+adol-c~copy_user_modules+docker~ipo+med+mgis~shared+slepc+tetgen build_system=cmake build_type=Debug dev_path=/mofem_install/mofem-cephas generator=make install_id=0 ^petsc+X ^boost+python+numpy
 ~~~~~
 
 # Installation on specific servers {#spack_servers}
