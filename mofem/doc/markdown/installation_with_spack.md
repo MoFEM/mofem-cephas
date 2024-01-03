@@ -131,16 +131,6 @@ Initialise Spack's environment variables:
 . spack/share/spack/setup-env.sh
 ~~~~~~
 
-You can download spack packages necessary for MoFEM into a mirror:
-~~~~~~
-mkdir -p mofem_mirror &&
-curl -s -L  http://mofem.eng.gla.ac.uk/downloads/mirror_v0.16.tar.gz \
-| tar xzC $PWD/mofem_mirror  --strip 1
-spack mirror add mofem_mirror $PWD/mofem_mirror
-~~~~~~
-\note The above step is not required. If you do not download and add a mirror, packages will be downloaded from the Internet. However, locations of libraries can change, or a server could be temporarily down. Using spack mirror makes
-installation resistant to such problems.
-
 Spack's environment variables will be lost when the terminal session is closed.
 Consider adding the previous command to your `.bash_profile` or `.bashrc`, e.g.:
 ~~~~~~
@@ -158,41 +148,6 @@ Finally, find already installed compilers and external packages:
 spack compiler find
 spack external find
 ~~~~~~
-
-If you are using a system where `gfortran` 10 or 11 is installed, some packages like `mumps` may not compile. You can check this by running:
-~~~~~
-gfortran -v
-~~~~~
-If as a result you get something like
-~~~~~
-gcc version 11.2.0 (Homebrew GCC 11.2.0_3) 
-~~~~~
-that means you have version 11. This is a temporary problem and will be
-fixed over the time, once various patches and fixes will be applied to those
-libraries. In the meantime, you can fix this problem by editing `compilers.yaml`
-file located in `~/.spack/darwin/compilers.yaml`, and setting compiler flag `-fallow-argument-mismatch`, which will allow to compile `mumps` with warnings rather than errors. The `compilers.yaml` file should then be similar to the following:
-~~~~~~~
-compilers:
-- compiler:
-    spec: apple-clang@13.1.6
-    paths:
-      cc: /usr/bin/clang
-      cxx: /usr/bin/clang++
-      f77: /usr/local/bin/gfortran
-      fc: /usr/local/bin/gfortran
-    flags:
-      fflags: -fallow-argument-mismatch
-    operating_system: monterey
-    target: x86_64
-    modules: []
-    environment: {}
-    extra_rpaths: []
-~~~~~~~
-Note the following line:
-~~~~~~~
-flags:
-  fflags: -fallow-argument-mismatch
-~~~~~~~
 
 Note that there are further instructions on [Spack usage and configuration](#spack_usage_config).
 
@@ -238,25 +193,6 @@ Consider also adding this command to your `.bash_profile` or `.bashrc`, or `.zsh
 echo "export PATH=$PWD/um_view/bin:\$PATH" >> ~/.bash_profile
 ~~~~~~
 
-## Test elasticity module
-
-To tests the installed MoFEM's basic users module, run:
-~~~~~~
-cd um_view/elasticity
-
-mpirun -np 2 ./elasticity \
--my_file LShape.h5m \
--my_order 2 \
--ksp_type gmres \
--pc_type lu -pc_factor_mat_solver_type mumps \
--ksp_monitor
-mbconvert out_skin.h5m out_skin.vtk
-~~~~~~
-
-Open the output VTK file in [ParaView](https://www.paraview.org). You can
-install ParaView using Spack, [directly from the
-website](https://www.paraview.org/download/) or through your OS package manager.
-
 ## Install additional users modules
 
 MoFEM can be extended by adding user modules. More modules are available as
@@ -269,13 +205,13 @@ The extensions can be installed using `spack install <extension>`. For example, 
 ~~~~~~
 spack install mofem-fracture-module
 cd $HOME
-spack view --verbose symlink -i um_view_foo mofem-cephas
-spack activate -v um_view_foo mofem-fracture-module
+spack view --verbose symlink -i um_view mofem-cephas
+spack activate -v um_view mofem-fracture-module
 ~~~~~~
 or the minimal surface equation tutorial module:
 ~~~~~~
 spack install mofem-minimal-surface-equation
-spack activate -v um_view_foo mofem-minimal-surface-equation
+spack activate -v um_view mofem-minimal-surface-equation
 ~~~~~~
 
 \note Not all MoFEM's modules have been added to Spack. If your module is not yet there, you can install manually by cloning the appropriate users module.
@@ -284,9 +220,9 @@ spack activate -v um_view_foo mofem-minimal-surface-equation
 
 You can automatically run tests after installing a package, for example:
 ~~~~~~
-spack install --test=root -j 1 mofem-cephas
-spack install --test=root -j 1 mofem-users-modules
-spack install --test=root -j 1 mofem-fracture-module
+spack install --test=root -j 4 mofem-cephas
+spack install --test=root -j 4 mofem-users-modules
+spack install --test=root -j 4 mofem-fracture-module
 ~~~~~~
 
 # Developers {#spack_developers}
