@@ -880,16 +880,16 @@ LevelSet::OpLhsSkeleton::doWork(int side, EntityType type,
                 auto t_col_base =
                     get_ntensor(sideDataPtr->colBaseSideMap[s1], gg, 0);
 
-                auto t_mat_sleton =
+                auto t_mat_skeleton =
                     getFTensor2FromPtr<DIM1, DIM2>(&matSkeleton(rr * DIM1, 0));
                 FTensor::Tensor2<double, DIM1, DIM2> t_res_row;
                 t_res_row(I, J) = t_res(I, J) * t_row_base;
                 ++t_row_base;
                 // iterate columns
                 for (size_t cc = 0; cc != nb_cols; ++cc) {
-                  t_mat_sleton(I, J) += t_res_row(I, J) * t_col_base;
+                  t_mat_skeleton(I, J) += t_res_row(I, J) * t_col_base;
                   ++t_col_base;
-                  ++t_mat_sleton;
+                  ++t_mat_skeleton;
                 }
               }
             }
