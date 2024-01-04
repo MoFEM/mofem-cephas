@@ -14,10 +14,17 @@ using namespace MoFEM;
 static char help[] = "...\n\n";
 
 //! [Define dimension]
-constexpr int FE_DIM = EXECUTABLE_DIMENSION;
-constexpr int SPACE_DIM = 2;
+
+// We can have 2D elements embedded in 3D space or 2D element embedded in 2D
+constexpr int FE_DIM = EXECUTABLE_DIMENSION; //< dimension of the element
+constexpr int SPACE_DIM = FE_DIM; //< dimension of the space
 constexpr int DIM1 = 1;
 constexpr int DIM2 = 1;
+
+// \todo We do not have implemented embedding of the edge elements in 3D space,
+// thus integration on skeleton will not work for 
+// case FE_DIM = 2 and SPACE_DIM = 3. Since FE_DIM = 2, skeleton is 1D, i.e.
+// edge elements.
 
 FTensor::Index<'I', DIM1> I;
 FTensor::Index<'J', DIM1> J;
