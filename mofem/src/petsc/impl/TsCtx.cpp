@@ -731,7 +731,7 @@ TSAdaptMoFEM::TSAdaptMoFEM()
 
   MOFEM_LOG("TSWORLD", Sev::inform)
       << "TS adaptivity: alpha = " << alpha << ", gamma = " << gamma
-      << ", desiredIt = " << desiredIt << ", offApat = " << offApat;
+      << ", desiredIt = " << desiredIt << ", offAdapt = " << offApat;
 }
 
 PetscErrorCode TSAdaptChooseMoFEM(TSAdapt adapt, TS ts, PetscReal h,

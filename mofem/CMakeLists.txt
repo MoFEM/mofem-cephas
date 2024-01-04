@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.1.3)
 
-# Serch include directories before system directories
+# Serch includes directories before system directories
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 
 # Petsc (parse config files)

@@ -364,9 +364,9 @@ struct TSAdaptMoFEM {
   TSAdaptMoFEM();
 
   double alpha; //< step reduction if divergence
-  double gamma; //< adpaticity exponet
+  double gamma; //< adaptivity exponent
   int desiredIt; //< desired number of iterations
-  PetscBool offApat; //< off adpaticity
+  PetscBool offApat; //< off adaptivity
 };
 
 static PetscErrorCode TSAdaptChooseMoFEM(TSAdapt adapt, TS ts, PetscReal h,
