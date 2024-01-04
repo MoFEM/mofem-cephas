@@ -2434,7 +2434,7 @@ MoFEMErrorCode LevelSet::dgProjection(const int projection_bit) {
     CHKERR bit_mng->updateRangeByParent(prj_ents, prj_ents);
   }
   current_ents = subtract(
-      current_ents, prj_ents); // only crestric to entities needed projection
+      current_ents, prj_ents); // only restric to entities needed projection
 
   auto test_mesh_bit = [&](FEMethod *fe_ptr) {
     return fe_ptr->numeredEntFiniteElementPtr->getBitRefLevel().test(
