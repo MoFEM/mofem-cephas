@@ -34,27 +34,6 @@ it from the terminal, for example:
 
 \note Running the scripts may require user password for sudo privileges. 
 
-## Scripts on secure server
-
-If you are going to install MoFEM on a secure server, or on a server without
-access to the internet (or on a train/during long flight), you can download
-spack and spack mirror first, and then start the installation.
-
-Download spack:
-~~~~~~
-curl -L https://api.github.com/repos/likask/spack/tarball/mofem \
---output spack.tgz
-~~~~~~
-and download mirror:
-~~~~~~
-curl -L  http://mofem.eng.gla.ac.uk/downloads/mirror_v0.16.tar.gz \
---output mirror.tgz
-~~~~~~
-and then you can install MoFEM:
-~~~~~
-./install_mofem_user.sh
-~~~~~
-
 # Prerequisites {#spack_prerequisites}
 
 The installation of MoFEM requires
