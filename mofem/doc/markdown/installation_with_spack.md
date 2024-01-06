@@ -51,7 +51,6 @@ build-essential \
 ca-certificates \
 coreutils \
 environment-modules \
-python \
 python3-distutils \
 gfortran \
 curl \
