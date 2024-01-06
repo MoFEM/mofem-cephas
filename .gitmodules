@@ -1,3 +1,0 @@
-[submodule "mofem/users_modules"]
-	path = mofem/users_modules
-	url = https://bitbucket.org/mofem/users-modules-cephas.git
