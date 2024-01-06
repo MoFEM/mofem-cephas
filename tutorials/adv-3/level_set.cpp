@@ -62,7 +62,7 @@ constexpr int start_bit =
 
 constexpr int current_bit =
     2 * start_bit + 1; ///< dofs bit used to do calculations
-constexpr int skeleton_bit = 2 * start_bit + 2; ///< skeleton elemets bit
+constexpr int skeleton_bit = 2 * start_bit + 2; ///< skeleton elements bit
 constexpr int aggregate_bit =
     2 * start_bit + 3; ///< all bits for advection problem
 constexpr int projection_bit =
@@ -2453,7 +2453,7 @@ MoFEMErrorCode LevelSet::dgProjection(const int projection_bit) {
   rhs_fe_prj->exeTestHook =
       test_prj_bit; // that element is run only when projection bit is set
   rhs_fe_current->exeTestHook =
-      test_current_bit; // that elemet is only run when current bit is set
+      test_current_bit; // that element is only run when current bit is set
 
   BitRefLevel remove_mask = BitRefLevel().set(current_bit);
   remove_mask.flip(); // DOFs which are not on bit_domain_ele should be removed
