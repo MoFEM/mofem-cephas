@@ -532,7 +532,8 @@ c_cpp_properties configuration on Mac should look like follows:
             "includePath": [
                 "${workspaceFolder}/**",
                 "${env:HOME}/um_view/include/**",
-                "${env:HOME}/um_view/include/boost/**"
+                "${env:HOME}/um_view/include/boost/**",
+                "${env:HOME}/mofem_install/mofem-cephas/mofem/include/MoFEM.hpp"
             ],
             "defines": [
                 "WITH_ADOL_C",
