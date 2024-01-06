@@ -56,8 +56,7 @@ gfortran \
 curl \
 git \
 cmake \
-doxygen \
-vim 
+doxygen
 ~~~~~
 
 ## macOS
