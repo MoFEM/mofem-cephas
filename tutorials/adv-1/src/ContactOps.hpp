@@ -384,6 +384,8 @@ hess_surface_distance_function(double delta_t, double t, int nb_gauss_pts,
   return m_hess_sdf;
 }
 
+
+
 template <int DIM, IntegrationType I, typename BoundaryEleOp>
 struct OpAssembleTotalContactTractionImpl;
 
@@ -398,6 +400,23 @@ struct OpConstrainBoundaryLhs_dUImpl;
 
 template <int DIM, IntegrationType I, typename AssemblyBoundaryEleOp>
 struct OpConstrainBoundaryLhs_dTractionImpl;
+
+template <typename T1, typename T2, int DIM1, int DIM2>
+inline auto get_spatial_coords(FTensor::Tensor1<T1, DIM1> &&t_coords,
+                               FTensor::Tensor1<T2, DIM2> &&t_disp,
+                               size_t nb_gauss_pts) {
+  MatrixDouble m_spatial_coords(nb_gauss_pts, 3);
+  m_spatial_coords.clear();
+  auto t_spatial_coords = getFTensor1FromPtr<3>(&m_spatial_coords(0, 0));
+  FTensor::Index<'i', DIM2> i;
+  for (auto gg = 0; gg != nb_gauss_pts; ++gg) {
+    t_spatial_coords(i) = t_coords(i) + t_disp(i);
+    ++t_spatial_coords;
+    ++t_coords;
+    ++t_disp;
+  }
+  return m_spatial_coords;
+};
 
 template <int DIM, typename BoundaryEleOp>
 struct OpAssembleTotalContactTractionImpl<DIM, GAUSS, BoundaryEleOp>
@@ -608,11 +627,9 @@ OpEvaluateSDFImpl<DIM, GAUSS, BoundaryEleOp>::doWork(int side, EntityType type,
   auto ts_time = BoundaryEleOp::getTStime();
   auto ts_time_step = BoundaryEleOp::getTStimeStep();
 
-  auto m_disp = commonDataPtr->contactDisp;
-  auto m_coords = BoundaryEleOp::getCoordsAtGaussPts();
-
-  MatrixDouble m_spatial_coords;
-  m_spatial_coords = m_coords + trans(m_disp);
+  auto m_spatial_coords = get_spatial_coords(
+      BoundaryEleOp::getFTensor1CoordsAtGaussPts(),
+      getFTensor1FromMat<DIM>(commonDataPtr->contactDisp), nb_gauss_pts);
 
   MatrixDouble m_normals_at_pts(3, nb_gauss_pts);
   auto t_set_normal = getFTensor1FromMat<3>(m_normals_at_pts);
@@ -702,11 +719,9 @@ OpConstrainBoundaryRhsImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::iNtegrate(
   size_t nb_base_functions = data.getN().size2() / 3;
   auto t_base = data.getFTensor1N<3>();
 
-  auto m_disp = commonDataPtr->contactDisp;
-  auto m_coords = AssemblyBoundaryEleOp::getCoordsAtGaussPts();
-
-  MatrixDouble m_spatial_coords;
-  m_spatial_coords = m_coords + trans(m_disp);
+  auto m_spatial_coords = get_spatial_coords(
+      BoundaryEleOp::getFTensor1CoordsAtGaussPts(),
+      getFTensor1FromMat<DIM>(commonDataPtr->contactDisp), nb_gauss_pts);
 
   MatrixDouble m_normals_at_pts(3, nb_gauss_pts);
   auto t_set_normal = getFTensor1FromMat<3>(m_normals_at_pts);
@@ -816,11 +831,9 @@ OpConstrainBoundaryLhs_dUImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::iNtegrate(
 
   constexpr auto t_kd = FTensor::Kronecker_Delta<int>();
 
-  auto m_disp = commonDataPtr->contactDisp;
-  auto m_coords = AssemblyBoundaryEleOp::getCoordsAtGaussPts();
-
-  MatrixDouble m_spatial_coords;
-  m_spatial_coords = m_coords + trans(m_disp);
+  auto m_spatial_coords = get_spatial_coords(
+      BoundaryEleOp::getFTensor1CoordsAtGaussPts(),
+      getFTensor1FromMat<DIM>(commonDataPtr->contactDisp), nb_gauss_pts);
 
   MatrixDouble m_normals_at_pts(3, nb_gauss_pts);
   auto t_set_normal = getFTensor1FromMat<3>(m_normals_at_pts);
@@ -943,11 +956,9 @@ OpConstrainBoundaryLhs_dTractionImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::
   auto t_row_base = row_data.getFTensor1N<3>();
   size_t nb_face_functions = row_data.getN().size2() / 3;
 
-  auto m_disp = commonDataPtr->contactDisp;
-  auto m_coords = AssemblyBoundaryEleOp::getCoordsAtGaussPts();
-
-  MatrixDouble m_spatial_coords;
-  m_spatial_coords = m_coords + trans(m_disp);
+  auto m_spatial_coords = get_spatial_coords(
+      BoundaryEleOp::getFTensor1CoordsAtGaussPts(),
+      getFTensor1FromMat<DIM>(commonDataPtr->contactDisp), nb_gauss_pts);
 
   MatrixDouble m_normals_at_pts(3, nb_gauss_pts);
   auto t_set_normal = getFTensor1FromMat<3>(m_normals_at_pts);
