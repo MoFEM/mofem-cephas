@@ -1,16 +1,15 @@
 Installation with Spack (Advanced) {#install_spack}
 ==========================================================
 
-Spack is "A flexible package manager supporting multiple versions, configurations, 
-platforms, and compilers." -
-[https://spack.io](https://spack.io)
+ [Spack.pm](https://spack.io) is "A flexible package manager supporting multiple versions, configurations,
+platforms, and compilers."
 
-A community of Spack users and developers contributes to development of package
+A community of Spack.pm users and developers contributes to development of package
 configurations for a range of platforms, including macOS and Linux. This creates
 a consistent build setup for supported scientific packages.
 
-MoFEM can be deployed and developed using Spack, which is the recommended way of
-installation. It should be noted that Spack compiles packages from sources, 
+MoFEM can be deployed and developed using Spack.pm, which is the recommended way of
+installation. It should be noted that Spack.pm compiles packages from sources, 
 pre-compiled binaries are not available. If you have any problems, feedback or would like to suggest corrections, please email to
 [mofem-group@googlegroups.com](https://groups.google.com/forum/#!forum/mofem-group).
 
@@ -257,7 +256,7 @@ spack find -lv mofem-cephas
 you should see something similar to
 ~~~~~
 -- linux-ubuntu20.04-x86_64 / gcc@9.4.0 -------------------------
-c4fmrqz mofem-cephas@develop+adol-c~copy_user_modules+docker~ipo+med+mgis~shared+slepc+tetgen build_system=cmake build_type=RelWithDebInfo dev_path=/mofem_install/mofem-cephas generator=make install_id=0
+c4fmrqz mofem-cephas@develop+adol-c~copy_user_modules+docker~ipo+med+mgis~shared+slepc+tetgen build_system=cmake build_type=Release dev_path=/mofem_install/mofem-cephas generator=make install_id=0
 ==> 1 installed packages
 ~~~~~
 
@@ -266,7 +265,7 @@ build directory `core-build-WithDebugInfo-vhv7opa`. Note that the hash in the na
 
 You can now start to develop code in the MoFEM core library. If you change directory to
 ~~~~~
-cd $HOME/mofem_install/mofem-cephas/core-build-WithDebugInfo-vhv7opa
+cd $HOME/mofem_install/mofem-cephas/core-build-Release*
 ~~~~~ 
 you
 can compile, test and install:
@@ -319,11 +318,11 @@ cd $HOME/mofem_install/mofem-cephas/mofem/users_modules
 ~~~~~
 and install users modules:
 ~~~~~
-export hash=$(spack find -v mofem-cephas@develop build_type=RelWithDebInfo | grep mofem-cephas@develop)
+export hash=$(spack find -v mofem-cephas@develop build_type=Release | grep mofem-cephas@develop)
 spack dev-build \
   --test root  \
   --source-path $HOME/mofem_install/mofem-cephas/mofem/users_modules \
-  mofem-users-modules@develop build_type=RelWithDebInfo \
+  mofem-users-modules@develop build_type=Release \
   ^$hash ^petsc+X ^boost+python+numpy
 ~~~~~
 In the `spack dev-build` command of the snippet above `^` is a *dependency
