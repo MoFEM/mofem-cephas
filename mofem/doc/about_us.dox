@@ -21,14 +21,14 @@
 
 \subsection license_users_modules Users Modules License
 
-Users Modules are separate software entities in their own repository that can
+Users Modules are separate software entities in their repository that can
 follow their license agreements and copyrights. If the Users Module license and
 copyright are not stated explicitly, it is assumed that it follows the copyright
 of the MoFEM library.
 
-\section thrid_party Third party libraries
+\section thrid_party Third-party libraries
 
-List of third party libraries and packages used by MoFEM:
+List of third-party libraries and packages used by MoFEM:
 
 - ADOL-C <https://projects.coin-or.org/ADOL-C>
 - BOOST <http://www.boost.org>
