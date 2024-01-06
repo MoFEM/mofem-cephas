@@ -234,8 +234,7 @@ mkdir $HOME/mofem_install
 cd $HOME/mofem_install
 git clone \
   -b develop \
-  --recurse-submodules https://bitbucket.org/likask/mofem-cephas.git \
-  mofem-cephas
+  https://bitbucket.org/likask/mofem-cephas.git mofem-cephas
 ~~~~~
 and kick-start installation of the core library. First install all dependencies:
 ~~~~~
@@ -304,17 +303,28 @@ Note that installation at that point is partial.
 
 ## 2. Install users modules {#spack_users_modules}
 
+Clone users modules repository:
+~~~~~
+mkdir $HOME/mofem_install
+cd $HOME/mofem_install
+git clone \
+  -b develop \
+  https://likask@bitbucket.org/mofem/users-modules-cephas.git \
+  mofem-cephas/mofem/users_modules
+~~~~~
+
 For example, if you want to install users modules against core library which was built with the specification `build_type=RelWithDebInfo`, pick the corresponding row and copy to clipboard the hash (`pa3httg`). Next, change the directory:
 ~~~~~
 cd $HOME/mofem_install/mofem-cephas/mofem/users_modules
 ~~~~~
 and install users modules:
 ~~~~~
+export hash=$(spack find -v mofem-cephas@develop build_type=RelWithDebInfo | grep mofem-cephas@develop)
 spack dev-build \
   --test root  \
   --source-path $HOME/mofem_install/mofem-cephas/mofem/users_modules \
   mofem-users-modules@develop build_type=RelWithDebInfo \
-  ^/mofem-cephas@develop+adol-c~copy_user_modules+docker~ipo+med+mgis~shared+slepc+tetgen build_system=cmake build_type=RelWithDebInfo dev_path=/mofem_install/mofem-cephas generator=make install_id=0 ^petsc+X ^boost+python+numpy
+  ^$hash ^petsc+X ^boost+python+numpy
 ~~~~~
 In the `spack dev-build` command of the snippet above `^` is a *dependency
 spec*, i.e. a descriptor defining the dependency of the package that we are
@@ -344,15 +354,17 @@ Later you can add other modules to that directory if needed.
 
 \note You can do partial install, before of after some installation phase,
 using command line option `-b BEFORE` or `-u UNTIL`, for example if you like
-to investigate build issues, you can do,
-~~~~~
+to investigate build issues, you can do
+
+~~~~
+export hash=$(spack find -v mofem-cephas@develop  build_type=Debug | grep mofem-cephas@develop)
 spack dev-build \
   -b build \
   --test root  \
   --source-path $HOME/mofem_install/mofem-cephas/mofem/users_modules \
   mofem-users-modules@develop build_type=Debug \
-  ^/mofem-cephas@develop+adol-c~copy_user_modules+docker~ipo+med+mgis~shared+slepc+tetgen build_system=cmake build_type=Debug dev_path=/mofem_install/mofem-cephas generator=make install_id=0 ^petsc+X ^boost+python+numpy
-~~~~~
+  ^$hash ^petsc+X ^boost+python+numpy
+~~~~
 
 # Installation on specific servers {#spack_servers}
 
@@ -468,8 +480,12 @@ mkdir $HOME/mofem_install
 cd $HOME/mofem_install
 git clone \
   -b develop \
-  --recurse-submodules https://bitbucket.org/likask/mofem-cephas.git \
+  https://bitbucket.org/likask/mofem-cephas.git \
   mofem-cephas
+git clone \
+  -b develop \
+  https://likask@bitbucket.org/mofem/users-modules-cephas.git \
+  mofem-cephas/mofem/users_modules
 ~~~~~
 Kick-start installation of the core library:
 ~~~~~
@@ -479,7 +495,6 @@ spack dev-build -j4 \
   --test root \
   mofem-cephas@develop~copy_user_modules ^petsc+X ^openmpi@3.1.6%gcc@9.3.0 ^slepc~arpack
 ~~~~~
-
 
 If installation is successful, by executing
 ~~~~~
@@ -492,17 +507,18 @@ you should see something similar to
 3prnmyj mofem-cephas@develop+adol-c~copy_user_modules~docker~ipo+med~shared+slepc+tetgen build_type=RelWithDebInfo dev_path=/home/staff/as601x/mofem_install/mofem-cephas install_id=0
 ~~~~~
 
-Copy to clipboard the hash (`3prnmyj`). Next, change the directory:
+Next, change the directory:
 ~~~~~
 cd $HOME/mofem_install/mofem-cephas/mofem/users_modules
 ~~~~~
-and install users modules specifying the dependency on the previously installed core library using the hash (`3prnmyj`):
+and install users modules specifying the dependency on the previously installed core library using the:
 ~~~~~
+export hash=$(spack find -v mofem-cephas@develop | grep mofem-cephas@develop)
 spack dev-build -j4 \
   --test root  \
   --source-path $HOME/mofem_install/mofem-cephas/mofem/users_modules \
   mofem-users-modules@develop build_type=RelWithDebInfo \
-  ^/3prnmyj
+  ^$hash ^petsc+X ^openmpi@3.1.6%gcc@9.3.0 ^slepc~arpack
 ~~~~~
 
 Once installation is successfully, you will find a new directory, e.g. 

@@ -207,13 +207,12 @@ TODAY=`date +%F`
 MOFEM_CEPHAS_HASH=`spack find -lv --start-date $TODAY | grep mofem-cephas@develop | grep RelWithDebInfo | awk '{print $1}'` 
 echo "mofem-cephas id for release: $MOFEM_CEPHAS_HASH"
 
+hash=$(spack find -v mofem-cephas@develop build_type=RelWithDebInfo | grep mofem-cephas@develop)
 spack dev-build \
   --test root  \
   --source-path $MOFEM_INSTALL_DIR/mofem-cephas/mofem/users_modules \
   mofem-users-modules@develop build_type=RelWithDebInfo \
-  ^mofem-cephas@develop+adol-c~copy_user_modules+docker~ipo+med+mgis~shared+slepc+tetgen \
-  build_system=cmake build_type=RelWithDebInfo dev_path=$HOME/mofem_install/mofem-cephas generator=make \
-  install_id=0 ^petsc+X ^boost+python+numpy
+  ^$hash ^petsc+X ^boost+python+numpy
 
 TODAY=`date +%F` 
 MOFEM_UN_HASH=`spack find -lv --start-date $TODAY | grep mofem-users-modulesdevelop | grep RelWithDebInfo | awk '{print $1}'` 
@@ -256,13 +255,12 @@ echo -e "\n----------------------------\n"
 echo -e "USER MODULE - Debug version ..."
 echo -e "\n----------------------------\n"
 
+hash=$(spack find -v mofem-cephas@develop build_type=Debug | grep mofem-cephas@develop)
 spack dev-build \
   --test root  \
   --source-path $MOFEM_INSTALL_DIR/mofem-cephas/mofem/users_modules \
   mofem-users-modules@develop build_type=Debug \
-  ^mofem-cephas@develop+adol-c~copy_user_modules+docker~ipo+med+mgis~shared+slepc+tetgen \
-  build_system=cmake build_type=Debug dev_path=$HOME/mofem_install/mofem-cephas generator=make \
-  install_id=0 ^petsc+X ^boost+python+numpy
+  ^$hash ^petsc+X ^boost+python+numpy
 
 TODAY=`date +%F` 
 MOFEM_UN_HASH=`spack find -lv --start-date $TODAY | grep mofem-users-modulesdevelop | grep Debug | awk '{print $1}'` 
