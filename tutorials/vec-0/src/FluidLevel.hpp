@@ -1,12 +1,14 @@
 /**
  * @file FluidLevel.hpp
- * @author your name (you@domain.com)
- * @brief
- * @version 0.1
+ * @brief Natural boundary condition applying pressure from fluid.
  * @date 2024-01-02
  *
  * @copyright Copyright (c) 2024
  *
+ * Fluid level is type of linear pressure boundary condition. 
+ * 
+ * \todo Implement time depended fluid level.
+ * 
  */
 
 namespace ElasticExample {
