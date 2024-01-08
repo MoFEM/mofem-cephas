@@ -138,7 +138,7 @@ MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceFourNodeTet(
 }
 
 template <typename T>
-MoFEMErrorCode getLocalCoordinatesOnReferenceTriNodeTriImpl(
+MoFEMErrorCode getLocalCoordinatesOnReferenceThreeNodeTriImpl(
     const T *elem_coords, const T *global_coords, const int nb_nodes,
     T *local_coords) {
 
@@ -186,19 +186,19 @@ MoFEMErrorCode getLocalCoordinatesOnReferenceTriNodeTriImpl(
 }
 
 template <>
-MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceTriNodeTri(
+MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceThreeNodeTri(
     const double *elem_coords, const double *global_coords, const int nb_nodes,
     double *local_coords) {
-  return getLocalCoordinatesOnReferenceTriNodeTriImpl<double>(
+  return getLocalCoordinatesOnReferenceThreeNodeTriImpl<double>(
       elem_coords, global_coords, nb_nodes, local_coords);
 }
 
 template <>
-MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceTriNodeTri(
+MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceThreeNodeTri(
     const std::complex<double> *elem_coords,
     const std::complex<double> *global_coords, const int nb_nodes,
     std::complex<double> *local_coords) {
-  return getLocalCoordinatesOnReferenceTriNodeTriImpl<std::complex<double>>(
+  return getLocalCoordinatesOnReferenceThreeNodeTriImpl<std::complex<double>>(
       elem_coords, global_coords, nb_nodes, local_coords);
 }
 

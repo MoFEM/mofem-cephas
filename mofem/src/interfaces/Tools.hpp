@@ -378,7 +378,7 @@ struct Tools : public UnknownInterface {
    * \endcode
    *
    * @param elem_coords Global element node coordinates
-   * @param glob_coords Globale coordinates
+   * @param glob_coords Global coordinates
    * @param nb_nodes Number of points
    * @param local_coords Result
    * @param d_elem_coords Derivative of local coordinates 
@@ -387,9 +387,18 @@ struct Tools : public UnknownInterface {
    */
   template <typename T>
   static MoFEMErrorCode
-  getLocalCoordinatesOnReferenceTriNodeTri(const T *elem_coords,
+  getLocalCoordinatesOnReferenceThreeNodeTri(const T *elem_coords,
                                            const T *glob_coords,
                                            const int nb_nodes, T *local_coords);
+
+  /** @deprecated usegetLocalCoordinatesOnReferenceThreeNodeTri*/
+  template <typename T>
+  DEPRECATED static MoFEMErrorCode getLocalCoordinatesOnReferenceTriNodeTri(
+      const T *elem_coords, const T *glob_coords, const int nb_nodes,
+      T *local_coords) {
+    return getLocalCoordinatesOnReferenceThreeNodeTri(elem_coords, glob_coords,
+                                                      nb_nodes, local_coords);
+  }
 
   /**
    * @brief Get the local coordinates on reference four node tet object
@@ -406,7 +415,7 @@ struct Tools : public UnknownInterface {
    * \endcode
    *
    * @param elem_coords Global element node coordinates
-   * @param glob_coords Globale coordinates
+   * @param glob_coords Global coordinates
    * @param nb_nodes Number of points
    * @param local_coords Result
    * @return MoFEMErrorCode
@@ -695,12 +704,12 @@ MoFEMErrorCode Tools::shapeFunMBTET(double *shape, const double *ksi,
 }
 
 template <>
-MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceTriNodeTri(
+MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceThreeNodeTri(
     const double *elem_coords, const double *glob_coords, const int nb_nodes,
     double *local_coords);
 
 template <>
-MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceTriNodeTri(
+MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceThreeNodeTri(
     const std::complex<double> *elem_coords,
     const std::complex<double> *glob_coords, const int nb_nodes,
     std::complex<double> *local_coords);
