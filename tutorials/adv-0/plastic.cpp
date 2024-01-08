@@ -199,7 +199,9 @@ double alpha_damping = 0;
 #ifdef PYTHON_SFD
 #include <boost/python.hpp>
 #include <boost/python/def.hpp>
+#include <boost/python/numpy.hpp>
 namespace bp = boost::python;
+namespace np = boost::python::numpy;
 #endif
 
 namespace ContactOps {
@@ -430,7 +432,12 @@ MoFEMErrorCode Example::setupProblem() {
     Projection10NodeCoordsOnField ent_method(mField, "GEOMETRY");
     return mField.loop_dofs("GEOMETRY", ent_method);
   };
-  CHKERR project_ho_geometry();
+  PetscBool project_geometry = PETSC_TRUE;
+  CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-project_geometry",
+                               &project_geometry, PETSC_NULL);
+  if (project_geometry){
+    CHKERR project_ho_geometry();
+  }
 
   MoFEMFunctionReturn(0);
 }
@@ -1194,6 +1201,7 @@ int main(int argc, char *argv[]) {
 #ifdef ADD_CONTACT
 #ifdef PYTHON_SFD
   Py_Initialize();
+  np::initialize();
 #endif
 #endif // ADD_CONTACT
 
