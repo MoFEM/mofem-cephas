@@ -416,7 +416,22 @@ inline auto get_spatial_coords(FTensor::Tensor1<T1, DIM1> &&t_coords,
     ++t_disp;
   }
   return m_spatial_coords;
-};
+}
+
+template <typename T1, int DIM1>
+inline auto get_normalize_normals(FTensor::Tensor1<T1, DIM1> &&t_normal_at_pts,
+                                  size_t nb_gauss_pts) {
+  MatrixDouble m_normals_at_pts(3, nb_gauss_pts);
+  m_normals_at_pts.clear();
+  FTensor::Index<'i', DIM1> i;
+  auto t_set_normal = getFTensor1FromMat<3>(m_normals_at_pts);
+  for (auto gg = 0; gg != nb_gauss_pts; ++gg) {
+    t_set_normal(i) = t_normal_at_pts(i) / t_normal_at_pts.l2();
+    ++t_set_normal;
+    ++t_normal_at_pts;
+  }
+  return m_normals_at_pts;
+}
 
 template <int DIM, typename BoundaryEleOp>
 struct OpAssembleTotalContactTractionImpl<DIM, GAUSS, BoundaryEleOp>
@@ -630,15 +645,8 @@ OpEvaluateSDFImpl<DIM, GAUSS, BoundaryEleOp>::doWork(int side, EntityType type,
   auto m_spatial_coords = get_spatial_coords(
       BoundaryEleOp::getFTensor1CoordsAtGaussPts(),
       getFTensor1FromMat<DIM>(commonDataPtr->contactDisp), nb_gauss_pts);
-
-  MatrixDouble m_normals_at_pts(3, nb_gauss_pts);
-  auto t_set_normal = getFTensor1FromMat<3>(m_normals_at_pts);
-  for (auto gg = 0; gg != nb_gauss_pts; ++gg) {
-    t_set_normal(i) =
-        t_normal_at_pts(i) / std::sqrt(t_normal_at_pts(i) * t_normal_at_pts(i));
-    ++t_set_normal;
-    ++t_normal_at_pts;
-  }
+  auto m_normals_at_pts = get_normalize_normals(
+      BoundaryEleOp::getFTensor1NormalsAtGaussPts(), nb_gauss_pts);
 
   // placeholder to pass boundary block id to python
   int block_id = 0;
@@ -722,15 +730,8 @@ OpConstrainBoundaryRhsImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::iNtegrate(
   auto m_spatial_coords = get_spatial_coords(
       BoundaryEleOp::getFTensor1CoordsAtGaussPts(),
       getFTensor1FromMat<DIM>(commonDataPtr->contactDisp), nb_gauss_pts);
-
-  MatrixDouble m_normals_at_pts(3, nb_gauss_pts);
-  auto t_set_normal = getFTensor1FromMat<3>(m_normals_at_pts);
-  for (auto gg = 0; gg != nb_gauss_pts; ++gg) {
-    t_set_normal(i) =
-        t_normal_at_pts(i) / std::sqrt(t_normal_at_pts(i) * t_normal_at_pts(i));
-    ++t_set_normal;
-    ++t_normal_at_pts;
-  }
+  auto m_normals_at_pts = get_normalize_normals(
+      BoundaryEleOp::getFTensor1NormalsAtGaussPts(), nb_gauss_pts);
 
   auto t_normal = getFTensor1FromMat<3>(m_normals_at_pts);
 
@@ -834,15 +835,9 @@ OpConstrainBoundaryLhs_dUImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::iNtegrate(
   auto m_spatial_coords = get_spatial_coords(
       BoundaryEleOp::getFTensor1CoordsAtGaussPts(),
       getFTensor1FromMat<DIM>(commonDataPtr->contactDisp), nb_gauss_pts);
+  auto m_normals_at_pts = get_normalize_normals(
+      BoundaryEleOp::getFTensor1NormalsAtGaussPts(), nb_gauss_pts);
 
-  MatrixDouble m_normals_at_pts(3, nb_gauss_pts);
-  auto t_set_normal = getFTensor1FromMat<3>(m_normals_at_pts);
-  for (auto gg = 0; gg != nb_gauss_pts; ++gg) {
-    t_set_normal(i) =
-        t_normal_at_pts(i) / std::sqrt(t_normal_at_pts(i) * t_normal_at_pts(i));
-    ++t_set_normal;
-    ++t_normal_at_pts;
-  }
   auto t_normal = getFTensor1FromMat<3>(m_normals_at_pts);
 
   auto ts_time = AssemblyBoundaryEleOp::getTStime();
@@ -959,15 +954,9 @@ OpConstrainBoundaryLhs_dTractionImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::
   auto m_spatial_coords = get_spatial_coords(
       BoundaryEleOp::getFTensor1CoordsAtGaussPts(),
       getFTensor1FromMat<DIM>(commonDataPtr->contactDisp), nb_gauss_pts);
+  auto m_normals_at_pts = get_normalize_normals(
+      BoundaryEleOp::getFTensor1NormalsAtGaussPts(), nb_gauss_pts);
 
-  MatrixDouble m_normals_at_pts(3, nb_gauss_pts);
-  auto t_set_normal = getFTensor1FromMat<3>(m_normals_at_pts);
-  for (auto gg = 0; gg != nb_gauss_pts; ++gg) {
-    t_set_normal(i) =
-        t_normal_at_pts(i) / std::sqrt(t_normal_at_pts(i) * t_normal_at_pts(i));
-    ++t_set_normal;
-    ++t_normal_at_pts;
-  }
   auto t_normal = getFTensor1FromMat<3>(m_normals_at_pts);
 
   auto ts_time = AssemblyBoundaryEleOp::getTStime();
