@@ -13,7 +13,9 @@ namespace ElasticExample {
 
 template <CubitBC BC> struct SpringBcType {};
 
-template <CubitBC> struct GetSpringStiffness {
+template <CubitBC BC> struct GetSpringStiffness;
+
+template <> struct GetSpringStiffness<BLOCKSET> {
   GetSpringStiffness() = delete;
 
   static MoFEMErrorCode getStiffness(double &normal_stiffness,
