@@ -26,7 +26,7 @@ tutorials_copy_and_install("*.sh" "${permissions_execute}")
 tutorials_copy_and_install("*.geo" "${permissions_execute}")
 tutorials_copy_and_install("*.py" "${permissions_execute}")
 
-cmake_policy(SET CMP0144 NEW)
+# cmake_policy(SET CMP0144 NEW)
 set(BOOST_ROOT ${MoFEM_BOOST_DIR})
 message(STATUS ${BOOST_ROOT})
 find_package(
