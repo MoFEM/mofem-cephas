@@ -44,7 +44,7 @@ struct Tools : public UnknownInterface {
   /**
    * \brief calculate minimal quality of tetrahedra in range
    * @param  tets        range
-   * @param  min_quality mimimal quality
+   * @param  min_quality minimal quality
    * @return             error code
    */
   MoFEMErrorCode minTetsQuality(
