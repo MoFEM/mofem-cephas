@@ -391,7 +391,7 @@ struct Tools : public UnknownInterface {
                                            const T *glob_coords,
                                            const int nb_nodes, T *local_coords);
 
-  /** @deprecated usegetLocalCoordinatesOnReferenceThreeNodeTri*/
+  /** @deprecated use getLocalCoordinatesOnReferenceThreeNodeTri*/
   template <typename T>
   DEPRECATED static MoFEMErrorCode getLocalCoordinatesOnReferenceTriNodeTri(
       const T *elem_coords, const T *glob_coords, const int nb_nodes,
