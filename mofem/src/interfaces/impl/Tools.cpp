@@ -137,10 +137,10 @@ MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceFourNodeTet(
   MoFEMFunctionReturnHot(0);
 }
 
-template <typename T>
+template <typename T1, typename T2>
 MoFEMErrorCode getLocalCoordinatesOnReferenceThreeNodeTriImpl(
-    const T *elem_coords, const T *global_coords, const int nb_nodes,
-    T *local_coords) {
+    const T1 *elem_coords, const T2 *global_coords, const int nb_nodes,
+    typename FTensor::promote<T1, T2>::V *local_coords) {
 
   FTensor::Index<'i', 3> i3;
   FTensor::Index<'j', 3> j3;
@@ -153,12 +153,12 @@ MoFEMErrorCode getLocalCoordinatesOnReferenceThreeNodeTriImpl(
                                            Tools::shapeFunMBTRIAt00[2]};
   auto t_diff = getFTensor2FromPtr<3, 2>(
       const_cast<double *>(Tools::diffShapeFunMBTRI.data()));
-  auto t_elem_coords = getFTensor2FromPtr<3, 3>(const_cast<T *>(elem_coords));
+  auto t_elem_coords = getFTensor2FromPtr<3, 3>(const_cast<T1 *>(elem_coords));
 
   // Build matrix and get coordinates of zero point
-  FTensor::Tensor2<T, 2, 3> t_a;
+  FTensor::Tensor2<T1, 2, 3> t_a;
   t_a(K2, i3) = t_diff(j3, K2) * t_elem_coords(j3, i3);
-  FTensor::Tensor2_symmetric<T, 2> t_b, t_inv_b;
+  FTensor::Tensor2_symmetric<T1, 2> t_b, t_inv_b;
   t_b(K2, L2) = t_a(K2, j3) ^ t_a(L2, j3);
   // Solve problem
   const auto inv_det = 1. / (t_b(0, 0) * t_b(1, 1) - t_b(0, 1) * t_b(1, 0));
@@ -167,10 +167,10 @@ MoFEMErrorCode getLocalCoordinatesOnReferenceThreeNodeTriImpl(
   t_inv_b(1, 1) = t_b(0, 0) * inv_det;
 
   // Coords at corner
-  FTensor::Tensor1<T, 3> t_coords_at_0;
+  FTensor::Tensor1<T1, 3> t_coords_at_0;
   t_coords_at_0(i3) = t_n(j3) * t_elem_coords(j3, i3);
 
-  auto t_global_coords = getFTensor1FromPtr<3>(const_cast<T *>(global_coords));
+  auto t_global_coords = getFTensor1FromPtr<3>(const_cast<T2 *>(global_coords));
   auto t_local_coords = getFTensor1FromPtr<2>(local_coords);
 
   // Calculate right hand side
@@ -185,21 +185,19 @@ MoFEMErrorCode getLocalCoordinatesOnReferenceThreeNodeTriImpl(
   MoFEMFunctionReturnHot(0);
 }
 
-template <>
 MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceThreeNodeTri(
-    const double *elem_coords, const double *global_coords, const int nb_nodes,
-    double *local_coords) {
-  return getLocalCoordinatesOnReferenceThreeNodeTriImpl<double>(
-      elem_coords, global_coords, nb_nodes, local_coords);
+      const double *elem_coords, const double *glob_coords, const int nb_nodes,
+      double *local_coords) {
+  return getLocalCoordinatesOnReferenceThreeNodeTriImpl<double, double>(
+      elem_coords, glob_coords, nb_nodes, local_coords);
 }
 
-template <>
 MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceThreeNodeTri(
-    const std::complex<double> *elem_coords,
-    const std::complex<double> *global_coords, const int nb_nodes,
-    std::complex<double> *local_coords) {
-  return getLocalCoordinatesOnReferenceThreeNodeTriImpl<std::complex<double>>(
-      elem_coords, global_coords, nb_nodes, local_coords);
+    const double *elem_coords, const std::complex<double> *glob_coords,
+    const int nb_nodes, std::complex<double> *local_coords) {
+  return getLocalCoordinatesOnReferenceThreeNodeTriImpl<double,
+                                                        std::complex<double>>(
+      elem_coords, glob_coords, nb_nodes, local_coords);
 }
 
 MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceEdgeNodeEdge(
