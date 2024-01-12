@@ -354,7 +354,7 @@ struct Tools : public UnknownInterface {
    * \endcode
    *
    * @param elem_coords Global element node coordinates
-   * @param glob_coords Globale coordinates
+   * @param glob_coords Global coordinates
    * @param nb_nodes Number of points
    * @param local_coords Result
    * @return MoFEMErrorCode
@@ -385,17 +385,19 @@ struct Tools : public UnknownInterface {
    * @param d_global_coords
    * @return MoFEMErrorCode
    */
-  template <typename T>
-  static MoFEMErrorCode
-  getLocalCoordinatesOnReferenceThreeNodeTri(const T *elem_coords,
-                                           const T *glob_coords,
-                                           const int nb_nodes, T *local_coords);
+  static MoFEMErrorCode getLocalCoordinatesOnReferenceThreeNodeTri(
+      const double *elem_coords, const double *glob_coords, const int nb_nodes,
+      double *local_coords);
 
-  /** @deprecated use getLocalCoordinatesOnReferenceThreeNodeTri*/
-  template <typename T>
+  /** @copydoc getLocalCoordinatesOnReferenceThreeNodeTri */
+  static MoFEMErrorCode getLocalCoordinatesOnReferenceThreeNodeTri(
+      const double *elem_coords, const std::complex<double> *glob_coords,
+      const int nb_nodes, std::complex<double> *local_coords);
+
+/** @deprecated use getLocalCoordinatesOnReferenceThreeNodeTri */
   DEPRECATED static MoFEMErrorCode getLocalCoordinatesOnReferenceTriNodeTri(
-      const T *elem_coords, const T *glob_coords, const int nb_nodes,
-      T *local_coords) {
+      const double *elem_coords, const double *glob_coords, const int nb_nodes,
+      double *local_coords) {
     return getLocalCoordinatesOnReferenceThreeNodeTri(elem_coords, glob_coords,
                                                       nb_nodes, local_coords);
   }
@@ -703,16 +705,6 @@ MoFEMErrorCode Tools::shapeFunMBTET(double *shape, const double *ksi,
   MoFEMFunctionReturnHot(0);
 }
 
-template <>
-MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceThreeNodeTri(
-    const double *elem_coords, const double *glob_coords, const int nb_nodes,
-    double *local_coords);
-
-template <>
-MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceThreeNodeTri(
-    const std::complex<double> *elem_coords,
-    const std::complex<double> *glob_coords, const int nb_nodes,
-    std::complex<double> *local_coords);
 
 } // namespace MoFEM
 
