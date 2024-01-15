@@ -539,9 +539,10 @@ template <typename BoundaryEleOp> struct ContactIntegrators {
 };
 
 inline double sign(double x) {
-  if (x == 0)
+  constexpr auto eps = std::numeric_limits<float>::epsilon();
+  if (std::abs(x) < eps)
     return 0;
-  else if (x > 0)
+  else if (x > eps)
     return 1;
   else
     return -1;
