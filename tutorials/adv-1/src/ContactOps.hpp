@@ -740,6 +740,7 @@ OpConstrainBoundaryRhsImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::iNtegrate(
   auto t_w = AssemblyBoundaryEleOp::getFTensor0IntegrationWeight();
   auto t_disp = getFTensor1FromMat<DIM>(commonDataPtr->contactDisp);
   auto t_traction = getFTensor1FromMat<DIM>(commonDataPtr->contactTraction);
+  auto t_coords = AssemblyBoundaryEleOp::getFTensor1CoordsAtGaussPts();
 
   size_t nb_base_functions = data.getN().size2() / 3;
   auto t_base = data.getFTensor1N<3>();
@@ -772,7 +773,12 @@ OpConstrainBoundaryRhsImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::iNtegrate(
   for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
 
     auto t_nf = getFTensor1FromPtr<DIM>(&nf[0]);
-    const double alpha = t_w * AssemblyBoundaryEleOp::getMeasure();
+
+    double jacobian = 1.;
+    if (isAxisymmetric) {
+      jacobian = 2. * M_PI * t_coords(0);
+    }
+    const double alpha = t_w * jacobian * AssemblyBoundaryEleOp::getMeasure();
 
     auto tn = -t_traction(i) * t_grad_sdf(i);
     auto c = constrain(t_sdf, tn);
@@ -805,6 +811,7 @@ OpConstrainBoundaryRhsImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::iNtegrate(
 
     ++t_disp;
     ++t_traction;
+    ++t_coords;
     ++t_w;
     ++t_normal;
     ++t_sdf;
@@ -841,8 +848,8 @@ OpConstrainBoundaryLhs_dUImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::iNtegrate(
   auto &locMat = AssemblyBoundaryEleOp::locMat;
 
   auto t_normal_at_pts = AssemblyBoundaryEleOp::getFTensor1NormalsAtGaussPts();
-
   auto t_traction = getFTensor1FromMat<DIM>(commonDataPtr->contactTraction);
+  auto t_coords = AssemblyBoundaryEleOp::getFTensor1CoordsAtGaussPts();
 
   auto t_w = AssemblyBoundaryEleOp::getFTensor0IntegrationWeight();
   auto t_row_base = row_data.getFTensor1N<3>();
@@ -882,7 +889,11 @@ OpConstrainBoundaryLhs_dUImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::iNtegrate(
 
   for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
 
-    const double alpha = t_w * AssemblyBoundaryEleOp::getMeasure();
+    double jacobian = 1.;
+    if (isAxisymmetric) {
+      jacobian = 2. * M_PI * t_coords(0);
+    }
+    const double alpha = t_w * jacobian * AssemblyBoundaryEleOp::getMeasure();
 
     auto tn = -t_traction(i) * t_grad_sdf(i);
     auto c = constrain(t_sdf, tn);
@@ -926,6 +937,7 @@ OpConstrainBoundaryLhs_dUImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::iNtegrate(
       ++t_row_base;
 
     ++t_traction;
+    ++t_coords;
     ++t_w;
     ++t_normal;
     ++t_sdf;
@@ -962,8 +974,8 @@ OpConstrainBoundaryLhs_dTractionImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::
   auto &locMat = AssemblyBoundaryEleOp::locMat;
 
   auto t_normal_at_pts = AssemblyBoundaryEleOp::getFTensor1NormalsAtGaussPts();
-
   auto t_traction = getFTensor1FromMat<DIM>(commonDataPtr->contactTraction);
+  auto t_coords = AssemblyBoundaryEleOp::getFTensor1CoordsAtGaussPts();
 
   auto t_w = AssemblyBoundaryEleOp::getFTensor0IntegrationWeight();
   auto t_row_base = row_data.getFTensor1N<3>();
@@ -996,7 +1008,11 @@ OpConstrainBoundaryLhs_dTractionImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::
 
   for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
 
-    const double alpha = t_w * AssemblyBoundaryEleOp::getMeasure();
+    double jacobian = 1.;
+    if (isAxisymmetric) {
+      jacobian = 2. * M_PI * t_coords(0);
+    }
+    const double alpha = t_w * jacobian * AssemblyBoundaryEleOp::getMeasure();
 
     auto tn = -t_traction(i) * t_grad_sdf(i);
     auto c = constrain(t_sdf, tn);
@@ -1032,6 +1048,7 @@ OpConstrainBoundaryLhs_dTractionImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::
       ++t_row_base;
 
     ++t_traction;
+    ++t_coords;
     ++t_w;
     ++t_normal;
     ++t_sdf;
