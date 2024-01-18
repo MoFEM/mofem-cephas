@@ -29,4 +29,16 @@ tutorials_build_and_install(
 set_target_properties(
   level_set_2d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=2")
 
+add_test(
+  level_set
+  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 2
+  ${CMAKE_CURRENT_BINARY_DIR}/level_set_2d
+  -file_name um_out_p2.h5m 
+  -ksp_monitor 
+  -max_post_proc_ref_level 0 
+  -ts_dt 0.01 
+  -ksp_monitor 
+  -ts_max_steps 2)
+
+
 add_definitions(-Wfatal-errors)

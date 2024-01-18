@@ -20,7 +20,6 @@ using BoundaryEle =
     PipelineManager::ElementsAndOpsByDim<SPACE_DIM>::BoundaryEle;
 using DomainEleOp = DomainEle::UserDataOperator;
 using BoundaryEleOp = BoundaryEle::UserDataOperator;
-using PostProcEle = PostProcBrokenMeshInMoab<DomainEle>;
 
 using DomainNaturalBC =
     NaturalBC<DomainEleOp>::Assembly<PETSC>::LinearForm<GAUSS>;
@@ -47,6 +46,7 @@ template <> struct PostProcEleByDim<3> {
 
 using SideEle = PostProcEleByDim<SPACE_DIM>::SideEle;
 using PostProcEleBdy = PostProcEleByDim<SPACE_DIM>::PostProcEleBdy;
+using PostProcEdges = PostProcBrokenMeshInMoabBase<EdgeElementForcesAndSourcesCore>;
 
 constexpr double young_modulus = 100;
 constexpr double poisson_ratio = 0.3;
@@ -93,7 +93,11 @@ MoFEMErrorCode Example::readMesh() {
   MoFEMFunctionBegin;
   auto simple = mField.getInterface<Simple>();
   CHKERR simple->getOptions();
-  CHKERR simple->loadFile();
+  char meshFileName[255];
+  CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-file_name",
+                               meshFileName, 255, PETSC_NULL);
+  CHKERR simple->loadFile("", meshFileName,
+                          EssentialPreProc<MPCsType>::loadFileWithMPCs);
   MoFEMFunctionReturn(0);
 }
 //! [Read mesh]
@@ -172,6 +176,9 @@ MoFEMErrorCode Example::boundaryCondition() {
   CHKERR bc_mng->pushMarkDOFsOnEntities<DisplacementCubitBcData>(
       simple->getProblemName(), "U");
 
+  // Essential MPCs BC
+  CHKERR bc_mng->addBlockDOFsToMPCs(simple->getProblemName(), "U");
+
   MoFEMFunctionReturn(0);
 }
 //! [Boundary condition]
@@ -219,6 +226,9 @@ struct Monitor : public FEMethod {
     constexpr int save_every_nth_step = 1;
     if (ts_step % save_every_nth_step == 0) {
       CHKERR DMoFEMLoopFiniteElements(dM, "bFE", postProc);
+      CHKERR EssentialPreProc<MPCsType>::addLinksToPostProcMesh(
+          postProc->mField, postProc->getPostProcMesh(), {"U"});
+
       CHKERR postProc->writeFile(
           "out_step_" + boost::lexical_cast<std::string>(ts_step) + ".h5m");
     }
@@ -248,8 +258,7 @@ MoFEMErrorCode Example::solveSystem() {
       return common_ptr;
     };
 
-    auto post_proc_fe_bdy = boost::make_shared<
-        typename PostProcEleByDim<SPACE_DIM>::PostProcEleBdy>(mField);
+    auto post_proc_fe_bdy = boost::make_shared<PostProcEleBdy>(mField);
     auto u_ptr = boost::make_shared<MatrixDouble>();
     post_proc_fe_bdy->getOpPtrVector().push_back(
         new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_ptr));
@@ -292,11 +301,13 @@ MoFEMErrorCode Example::solveSystem() {
     auto time_scale = boost::make_shared<TimeScale>();
 
     auto get_bc_hook_rhs = [this, pre_proc_ptr, time_scale]() {
-      EssentialPreProc<DisplacementCubitBcData> hook(mField, pre_proc_ptr,
-                                                     {time_scale}, false);
-      return hook;
+      MoFEMFunctionBeginHot;
+      CHKERR EssentialPreProc<DisplacementCubitBcData>(mField, pre_proc_ptr,
+                                                       {time_scale}, false)();
+      MoFEMFunctionReturnHot(0);
     };
-    pre_proc_ptr->preProcessHook = get_bc_hook_rhs();
+
+    pre_proc_ptr->preProcessHook = get_bc_hook_rhs;
 
     auto get_post_proc_hook_rhs = [this, post_proc_rhs_ptr]() {
       MoFEMFunctionBegin;
@@ -304,14 +315,18 @@ MoFEMErrorCode Example::solveSystem() {
           mField, post_proc_rhs_ptr, nullptr, Sev::verbose)();
       CHKERR EssentialPostProcRhs<DisplacementCubitBcData>(
           mField, post_proc_rhs_ptr, 1.)();
+      CHKERR EssentialPostProcRhs<MPCsType>(mField, post_proc_rhs_ptr)();
       MoFEMFunctionReturn(0);
     };
     auto get_post_proc_hook_lhs = [this, post_proc_lhs_ptr]() {
-      return EssentialPostProcLhs<DisplacementCubitBcData>(
-          mField, post_proc_lhs_ptr, 1.);
+      MoFEMFunctionBegin;
+      CHKERR EssentialPostProcLhs<DisplacementCubitBcData>(
+          mField, post_proc_lhs_ptr, 1.)();
+      CHKERR EssentialPostProcLhs<MPCsType>(mField, post_proc_lhs_ptr)();
+      MoFEMFunctionReturn(0);
     };
     post_proc_rhs_ptr->postProcessHook = get_post_proc_hook_rhs;
-    post_proc_lhs_ptr->postProcessHook = get_post_proc_hook_lhs();
+    post_proc_lhs_ptr->postProcessHook = get_post_proc_hook_lhs;
 
     // This is low level pushing finite elements (pipelines) to solver
     auto ts_ctx_ptr = getDMTsCtx(simple->getDM());
@@ -453,6 +468,21 @@ MoFEMErrorCode Example::outputResults() {
       break;
     case 3:
       regression_value = 1.8841e+00;
+      break;
+    case 4: // just links
+      regression_value = 4.9625e+00;
+      break;
+    case 5: // link master 
+      regression_value = 6.6394e+00;
+      break;
+    case 6: // link master swap
+      regression_value = 4.98764e+00;
+      break;
+    case 7: // link Y
+      regression_value = 4.9473e+00;
+      break;
+    case 8: // link_3D_repr
+      regression_value = 2.5749e-01;
       break;
 
     default:
