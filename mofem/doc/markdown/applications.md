@@ -293,7 +293,7 @@ The proposed framework is aimed to aid new piezoelectric material technologies w
 ---
 
 ## Numerical Simulation of Triboelectric Nanogenerators {#Triboelectric}
-\f$\textbf{MD Tanzib Ehsan Sanglap}^{1}, \textbf{Lukasz Kaczmarczyk}^{1}\f$, \textbf{Andrei G. Shvarts}^{1}
+\f$\textbf{MD Tanzib Ehsan Sanglap}^{1}, \textbf{Lukasz Kaczmarczyk}^{1}, \textbf{Andrei G. Shvarts}^{1}\f$
 
 \f$^1 \textit{Glasgow Computational Engineering Centre, James Watt School of Engineering, University of Glasgow}\f$
 

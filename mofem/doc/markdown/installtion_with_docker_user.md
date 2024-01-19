@@ -272,4 +272,10 @@ If you change the code again, do not rerun the *install_from_source_release.md* 
 cd ~/mofem_install/mofem-cephas/mofem/users_modules/um-build-Release-* && make -j4 install
 ~~~~
 
+For developer, you may wish to have a look at these two tutorials for compiling the code and adding new modules in MoFEM:
+
+- \ref how_to_compile_program
+
+- \ref how_to_add_new_module_and_program
+
 Any problems with this installation, please contact us by [mofem-group@googlegroups.com](https://groups.google.com/forum/#!forum/mofem-group).
