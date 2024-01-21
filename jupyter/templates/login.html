@@ -12,6 +12,12 @@
   .aligncenter {
     text-align: center;
   }
+
+  .block-align-left {
+    display: inline-block;
+    text-align: left;
+    margin-top: 30px;
+  }
 </style>
 
 <p class="aligncenter">
@@ -20,6 +26,23 @@
 <h1 style="font-weight:200;font-size:150%">
   <center>An open source, parallel finite element library</center>
 </h1>
+<h1 style="font-weight:200;font-size:180%;">
+  <center>Welcome to Biosensors and Diagnostics 4/M</center>
+</h1>
+
+<div class="aligncenter">
+  <div class="block-align-left">
+    <h4>
+      Sign-in instructions:
+    </h4>
+    <ul>
+      <li><b>Username:</b> your GUID (7 digits and a letter)</li>
+      <li><b>Password:</b> whatever you enter at the first sign-in (at least 7 characters)</li>
+      <li>If you forget your password, contact <a
+          href="mailto:andrei.shvarts@glasgow.ac.uk">andrei.shvarts@glasgow.ac.uk</a> or message us on Teams</li>
+    </ul>
+  </div>
+</div>
 
 {% block login %}
 <div id="login-main" class="container">
@@ -79,18 +102,6 @@
   {% endblock login_container %}
 </div>
 {% endblock login %}
-
-<!-- How to log in -->
-<div class="notes">
-  <h1>
-    <center>Welcome to JWSoE Teaching server!</center>
-  </h1>
-  <h3>Login and password:</h3>
-  <ul>
-    <li>username: your GUID (7 digits and a letter)</li>
-    <li>password: whatever you enter at the first login (at least 7 characters) </li>
-  </ul>
-</div>
 
 {% endblock %}
 
