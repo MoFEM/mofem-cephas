@@ -1,5 +1,5 @@
  -order 1                      # order of approximation
- -saturated_conductivity 0.1   
+ -saturated_conductivity 0.02   
  -theta_r 0.0 
  -theta_s 0.17 
  -theta_m 0.17 
@@ -11,8 +11,8 @@
 # petsc time solver (ts) arguments
  -ts_monitor                    # to print messages about the time step computations                  
  -ts_exact_final_time stepover  # rule when to stop at the final time
- -ts_dt 0.0000005               # time step size
- -ts_final_time 0.0005          # final time
+ -ts_dt 0.1              # time step size
+ -ts_final_time 120         # final time
  -ts_adapt_type none            # no time-adaptivity, i.e., fixed step size
  
  # petsc linear solver arguments, fixed
