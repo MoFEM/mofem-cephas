@@ -255,6 +255,10 @@ PetscErrorCode DMMoFEMAddSubFieldRow(DM dm, const char field_name[]) {
   MoFEMFunctionReturnHot(0);
 }
 
+PetscErrorCode DMMoFEMAddSubFieldRow(DM dm, std::string field_name) {
+  return DMMoFEMAddSubFieldRow(dm, field_name.c_str());
+}
+
 PetscErrorCode DMMoFEMAddSubFieldRow(DM dm, const char field_name[],
                                      boost::shared_ptr<Range> r_ptr) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
@@ -270,6 +274,11 @@ PetscErrorCode DMMoFEMAddSubFieldRow(DM dm, const char field_name[],
   dm_field->rowFields.push_back(field_name);
   dm_field->mapTypeRow[field_name] = r_ptr;
   MoFEMFunctionReturnHot(0);
+}
+
+PetscErrorCode DMMoFEMAddSubFieldRow(DM dm, std::string field_name,
+                                     boost::shared_ptr<Range> r_ptr) {
+  return DMMoFEMAddSubFieldRow(dm, field_name.c_str(), r_ptr);
 }
 
 PetscErrorCode DMMoFEMAddSubFieldCol(DM dm, const char field_name[]) {
@@ -288,6 +297,10 @@ PetscErrorCode DMMoFEMAddSubFieldCol(DM dm, const char field_name[]) {
   MoFEMFunctionReturnHot(0);
 }
 
+PetscErrorCode DMMoFEMAddSubFieldCol(DM dm, std::string field_name) {
+  return DMMoFEMAddSubFieldCol(dm, field_name.c_str());
+}
+
 PetscErrorCode DMMoFEMAddSubFieldCol(DM dm, const char field_name[],
                                      boost::shared_ptr<Range> r_ptr) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
@@ -303,6 +316,11 @@ PetscErrorCode DMMoFEMAddSubFieldCol(DM dm, const char field_name[],
   dm_field->colFields.push_back(field_name);
   dm_field->mapTypeCol[field_name] = r_ptr;
   MoFEMFunctionReturnHot(0);
+}
+
+PetscErrorCode DMMoFEMAddSubFieldCol(DM dm, std::string field_name,
+                                     boost::shared_ptr<Range> r_ptr) {
+  return DMMoFEMAddSubFieldCol(dm, field_name.c_str(), r_ptr);
 }
 
 PetscErrorCode DMMoFEMGetIsSubDM(DM dm, PetscBool *is_sub_dm) {
