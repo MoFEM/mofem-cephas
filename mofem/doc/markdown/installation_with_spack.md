@@ -104,19 +104,19 @@ git clone -b master  https://bitbucket.org/mofem/mofem-spack.git spack
 
 Initialise Spack's environment variables:
 ~~~~~~
-. spack/share/spack/setup-env.sh
+. $HOME/mofem_install/spack/share/spack/setup-env.sh
 ~~~~~~
 
 Spack's environment variables will be lost when the terminal session is closed.
 Consider adding the previous command to your `.bash_profile` or `.bashrc`, e.g.:
 ~~~~~~
-echo ". $HOME/spack/share/spack/setup-env.sh" >> ~/.bash_profile
+echo ". $HOME/mofem_install/spack/share/spack/setup-env.sh" >> ~/.bash_profile
 ~~~~~~
 
 If you are using a newer macOS, you might need to add config to
 `.zshrc`, e.g.:
 ~~~~~~
-echo ". $HOME/spack/share/spack/setup-env.sh" >> ~/.zshrc
+echo ". $HOME/mofem_install/spack/share/spack/setup-env.sh" >> ~/.zshrc
 ~~~~~~
 
 Finally, find already installed compilers and external packages:
@@ -244,7 +244,7 @@ and then core MoFEM library:
 spack dev-build -j4 \
   --source-path $HOME/mofem_install/mofem-cephas \
   --keep-prefix \
-  mofem-cephas@develop+adol-c~copy_user_modules+docker~ipo+med+mgis~shared+slepc+tetgen \
+  mofem-cephas@develop+adol-c~copy_user_modules~ipo+med+mgis~shared+slepc+tetgen \
   build_type=Release install_id=0 ^petsc+X ^boost+python+numpy
 ~~~~~
 Note that here another specification of the build configuration (*spec*) was set as `~copy_user_modules` which is equivalent to `copy_user_modules=False`. 
@@ -256,7 +256,7 @@ spack find -lv mofem-cephas
 you should see something similar to
 ~~~~~
 -- linux-ubuntu20.04-x86_64 / gcc@9.4.0 -------------------------
-c4fmrqz mofem-cephas@develop+adol-c~copy_user_modules+docker~ipo+med+mgis~shared+slepc+tetgen build_system=cmake build_type=Release dev_path=/mofem_install/mofem-cephas generator=make install_id=0
+c4fmrqz mofem-cephas@develop+adol-c~copy_user_modules~ipo+med+mgis~shared+slepc+tetgen build_system=cmake build_type=Release dev_path=/mofem_install/mofem-cephas generator=make install_id=0
 ==> 1 installed packages
 ~~~~~
 
@@ -281,7 +281,7 @@ Moreover, you can install simultaneously debugging version of code, as follows:
 spack dev-build -j4 \
   --source-path $HOME/mofem_install/mofem-cephas \
   --keep-prefix \
-  mofem-cephas@develop+adol-c~copy_user_modules+docker~ipo+med+mgis~shared+slepc+tetgen \
+  mofem-cephas@develop+adol-c~copy_user_modules~ipo+med+mgis~shared+slepc+tetgen \
   build_type=Debug install_id=0 ^petsc+X ^boost+python+numpy
 ~~~~~ 
 
@@ -295,7 +295,7 @@ spack dev-build \
   -b build \
   --source-path $HOME/mofem_install/mofem-cephas \
   --keep-prefix \
-  mofem-cephas@develop+adol-c~copy_user_modules+docker~ipo+med+mgis~shared+slepc+tetgen \
+  mofem-cephas@develop+adol-c~copy_user_modules~ipo+med+mgis~shared+slepc+tetgen \
   build_type=RelWithDebInfo install_id=0 ^petsc+X ^boost+python+numpy
 ~~~~~
 Note that installation at that point is partial.
