@@ -129,8 +129,8 @@ double alpha_damping = 0;
 
 double scale = 1.;
 
-bool use_mfront = true;
-bool is_axisymmetric = true;
+PetscBool use_mfront = PETSC_FALSE;
+PetscBool is_axisymmetric = PETSC_FALSE;
 
 namespace ContactOps {
 double cn_contact = 0.1;
@@ -387,10 +387,32 @@ MoFEMErrorCode Contact::createCommonData() {
     CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-alpha_damping",
                                  &alpha_damping, PETSC_NULL);
 
+    CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-use_mfront", &use_mfront,
+                               PETSC_NULL);
+    CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-is_axisymmetric",
+                               &is_axisymmetric, PETSC_NULL);
+                               
     if (!use_mfront) {
       MOFEM_LOG("CONTACT", Sev::inform) << "Young modulus " << young_modulus;
       MOFEM_LOG("CONTACT", Sev::inform) << "Poisson_ratio " << poisson_ratio;
+    } else {
+      MOFEM_LOG("CONTACT", Sev::inform) << "Using MFront for material model";
     }
+
+    if (is_axisymmetric) {
+      if (SPACE_DIM == 3) {
+        SETERRQ(PETSC_COMM_SELF, 1,
+                "is_axisymmetric set to true, use executable contact_2d for "
+                "axisymmetric model");
+      } else {
+        MOFEM_LOG("CONTACT", Sev::inform) << "Using axisymmetric model";
+      }
+    } else {
+      if (SPACE_DIM == 2) {
+        MOFEM_LOG("CONTACT", Sev::inform) << "Using plane strain model";
+      }
+    }
+
     MOFEM_LOG("CONTACT", Sev::inform) << "Density " << rho;
     MOFEM_LOG("CONTACT", Sev::inform) << "cn_contact " << cn_contact;
     MOFEM_LOG("CONTACT", Sev::inform)
@@ -400,10 +422,10 @@ MoFEMErrorCode Contact::createCommonData() {
 
     MOFEM_LOG("CONTACT", Sev::inform) << "alpha_damping " << alpha_damping;
 
-    PetscBool is_scale = PETSC_FALSE;
-    CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-is_scale", &is_scale,
+    PetscBool use_scale = PETSC_FALSE;
+    CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-use_scale", &use_scale,
                                PETSC_NULL);
-    if (is_scale) {
+    if (use_scale) {
       scale /= young_modulus;
     }
 
