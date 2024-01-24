@@ -25,6 +25,7 @@ tutorials_copy_and_install("*.petsc" "${permissions_default}")
 tutorials_copy_and_install("*.sh" "${permissions_execute}")
 tutorials_copy_and_install("*.geo" "${permissions_execute}")
 tutorials_copy_and_install("*.py" "${permissions_execute}")
+tutorials_copy_and_install("sdf/*" "${permissions_execute}")
 
 # cmake_policy(SET CMP0144 NEW)
 set(BOOST_ROOT ${MoFEM_BOOST_DIR})
@@ -74,4 +75,5 @@ add_test(
   -ts_type beuler
   -ts_max_time 1 -ts_dt 0.2 
   -spring_stiffness 0.1
-  -log_no_color)
+  -log_no_color
+  -my_sdf_file sdf_ydirection.py)
