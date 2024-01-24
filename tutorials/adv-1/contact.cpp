@@ -376,7 +376,7 @@ MoFEMErrorCode Contact::createCommonData() {
                                sdf_file_name, 255, PETSC_NULL);
 
   sdfPythonPtr = boost::make_shared<SDFPython>();
-  CHKERR sdfPythonPtr->sdfInit("sdf.py");
+  CHKERR sdfPythonPtr->sdfInit(sdf_file_name);
   sdfPythonWeakPtr = sdfPythonPtr;
 #endif
 
