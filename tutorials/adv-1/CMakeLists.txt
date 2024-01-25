@@ -25,7 +25,6 @@ tutorials_copy_and_install("*.petsc" "${permissions_default}")
 tutorials_copy_and_install("*.sh" "${permissions_execute}")
 tutorials_copy_and_install("*.geo" "${permissions_execute}")
 tutorials_copy_and_install("*.py" "${permissions_execute}")
-tutorials_copy_and_install("sdf/*" "${permissions_execute}")
 
 # cmake_policy(SET CMP0144 NEW)
 set(BOOST_ROOT ${MoFEM_BOOST_DIR})
@@ -76,4 +75,13 @@ add_test(
   -ts_max_time 1 -ts_dt 0.2 
   -spring_stiffness 0.1
   -log_no_color
-  -sdf_file sdf_ydirection.py)
+  -sdf_file ./sdf_files/sdf_ydirection.py)
+
+# Copy scripts to build directory
+add_custom_target(
+  um_copy_sdf_files_directory
+  ALL
+  COMMAND ${CMAKE_COMMAND} -E copy_directory 
+  ${CMAKE_CURRENT_SOURCE_DIR}/sdf_files ${CMAKE_CURRENT_BINARY_DIR}/sdf_files
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  COMMENT "Copying sdf_files directory" VERBATIM)
