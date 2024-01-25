@@ -217,6 +217,11 @@ MoFEMErrorCode Contact::setupProblem() {
   MOFEM_LOG("CONTACT", Sev::inform) << "Order " << order;
   MOFEM_LOG("CONTACT", Sev::inform) << "Geom order " << geom_order;
 
+  CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-use_mfront", &use_mfront,
+                             PETSC_NULL);
+  CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-is_axisymmetric",
+                             &is_axisymmetric, PETSC_NULL);
+
   // Select base
   enum bases { AINSWORTH, DEMKOWICZ, LASBASETOPT };
   const char *list_bases[LASBASETOPT] = {"ainsworth", "demkowicz"};
@@ -310,6 +315,25 @@ MoFEMErrorCode Contact::setupProblem() {
   CHKERR simple->setFieldOrder("SIGMA", 0);
   CHKERR simple->setFieldOrder("SIGMA", order - 1, &boundary_ents);
 
+  if (is_axisymmetric) {
+    if (SPACE_DIM == 3) {
+      SETERRQ(PETSC_COMM_SELF, 1,
+              "Use executable contact_2d with axisymmetric model");
+    } else {
+      if (!use_mfront) {
+        SETERRQ(PETSC_COMM_SELF, 1,
+                "Axisymmetric model is only available with MFront (set "
+                "use_mfront to 1)");
+      } else {
+        MOFEM_LOG("CONTACT", Sev::inform) << "Using axisymmetric model";
+      }
+    }
+  } else {
+    if (SPACE_DIM == 2) {
+      MOFEM_LOG("CONTACT", Sev::inform) << "Using plane strain model";
+    }
+  }
+
   if (!use_mfront) {
     CHKERR simple->setUp();
   } else {
@@ -386,31 +410,12 @@ MoFEMErrorCode Contact::createCommonData() {
                                  &vis_spring_stiffness, PETSC_NULL);
     CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-alpha_damping",
                                  &alpha_damping, PETSC_NULL);
-
-    CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-use_mfront", &use_mfront,
-                               PETSC_NULL);
-    CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-is_axisymmetric",
-                               &is_axisymmetric, PETSC_NULL);
                                
     if (!use_mfront) {
       MOFEM_LOG("CONTACT", Sev::inform) << "Young modulus " << young_modulus;
       MOFEM_LOG("CONTACT", Sev::inform) << "Poisson_ratio " << poisson_ratio;
     } else {
       MOFEM_LOG("CONTACT", Sev::inform) << "Using MFront for material model";
-    }
-
-    if (is_axisymmetric) {
-      if (SPACE_DIM == 3) {
-        SETERRQ(PETSC_COMM_SELF, 1,
-                "is_axisymmetric set to true, use executable contact_2d for "
-                "axisymmetric model");
-      } else {
-        MOFEM_LOG("CONTACT", Sev::inform) << "Using axisymmetric model";
-      }
-    } else {
-      if (SPACE_DIM == 2) {
-        MOFEM_LOG("CONTACT", Sev::inform) << "Using plane strain model";
-      }
     }
 
     MOFEM_LOG("CONTACT", Sev::inform) << "Density " << rho;
