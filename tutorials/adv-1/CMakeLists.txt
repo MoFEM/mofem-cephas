@@ -88,17 +88,6 @@ if(IS_MFRONT_MOD)
     mfront_lib_all)
 endif(IS_MFRONT_MOD)
 
-add_test(
-  contact_2d
-  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  contact_2d
-  -file_name ${CMAKE_CURRENT_BINARY_DIR}/sphere_2d.h5m
-  -ts_type beuler
-  -ts_max_time 1 -ts_dt 0.2 
-  -spring_stiffness 0.1
-  -log_no_color
-  -sdf_file ./sdf_files/sdf_ydirection.py)
-
 # Copy scripts to build directory
 add_custom_target(
   um_copy_sdf_files_directory
@@ -107,3 +96,64 @@ add_custom_target(
   ${CMAKE_CURRENT_SOURCE_DIR}/sdf_files ${CMAKE_CURRENT_BINARY_DIR}/sdf_files
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   COMMENT "Copying sdf_files directory" VERBATIM)
+
+add_custom_target(
+    um_copy_mesh_files_directory
+    ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory 
+    ${CMAKE_CURRENT_SOURCE_DIR}/mesh_files ${CMAKE_CURRENT_BINARY_DIR}/mesh_files
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Copying mesh_files directory" VERBATIM)
+  
+
+add_test(
+  contact_2d
+  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  contact_2d
+  -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/sphere_2d.h5m
+  -ts_type beuler
+  -ts_max_time 1 -ts_dt 0.2 
+  -spring_stiffness 0.1
+  -log_no_color
+  -sdf_file ${CMAKE_CURRENT_BINARY_DIR}/sdf_files/sdf_ydirection.py
+)
+
+if(IS_MFRONT_MOD)
+  if(TFEL_DIR)
+    message("TFEL DIR FOUND")
+
+    add_test(adv_1_compile_example_behaviour_test
+      ${TFEL_DIR}/bin/mfront --obuild --interface=generic ${PROJECT_SOURCE_DIR}/mfront_interface/behaviours/LinearElasticity.mfront)
+
+    if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+      target_compile_definitions(mfront_lib_all PUBLIC DEFAULT_LIB_EXTENSION="dylib")
+      set(DEFAULT_LIB_EXTENSION "dylib")
+    else()
+      target_compile_definitions(mfront_lib_all PUBLIC DEFAULT_LIB_EXTENSION="so")
+      set(DEFAULT_LIB_EXTENSION "so")
+    endif()
+
+    # add_test(hd_contact_mfront_cube_test
+    #   ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+    #   ${MM_BIN_PATH}/mofem_manager
+    #   -file_name ${MM_SRC_PATH}/examples/3D_cube_contact_mfront.cub -ts_dt 0.05 -ts_max_time 1.0 -ts_adapt_type none -hd_contact -hd_direction_data3 ${MM_SRC_PATH}/examples/direction_data.in -hd_body3 cylinder -hd_radius3 1 -hd_position_data3 ${MM_SRC_PATH}/examples/my_gcode.in -hd_cn 1 -order 2 -log_sl verbose -mi_block_2 LogarithmicStrainPlasticity -mi_lib_path_2 ${CMAKE_CURRENT_BINARY_DIR}/src/libBehaviour.${DEFAULT_LIB_EXTENSION} -mi_print_gauss 0 -order 2 -mi_param_2_0 1e9 -mi_param_2_1 130 -atom_test 3 -ts_theta_initial_guess_extrapolate 1 -log_view
+    # )
+
+    add_test(
+      hertz_mfront_axisymm
+      ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
+      contact_2d
+      -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/hertz_axisymm_4p.h5m
+      -ts_max_time 1 -ts_dt 0.2 
+      -sdf_file ./sdf_files/sdf_hertz.py
+      -use_mfront 1
+      -is_axisymmetric 1
+      -mi_lib_path_2 ${CMAKE_CURRENT_BINARY_DIR}/src/libBehaviour.${DEFAULT_LIB_EXTENSION}
+      -mi_block_2 LinearElasticity
+      -mi_param_2_0 1e2
+      -mi_param_2_1 0.4
+      -atom_test 1
+    )
+
+  endif(TFEL_DIR)
+endif()

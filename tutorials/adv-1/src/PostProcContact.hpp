@@ -29,9 +29,10 @@ struct Monitor : public FEMethod {
 
   Monitor(SmartPetscObj<DM> &dm, bool use_mfront = false,
           boost::shared_ptr<GenericElementInterface> mfront_interface = nullptr,
-          bool is_axisymmetric = false)
+          bool is_axisymmetric = false, int atom_test = 0)
       : dM(dm), moabVertex(mbVertexPostproc), sTEP(0), useMFront(use_mfront),
-        mfrontInterface(mfront_interface), isAxisymmetric(is_axisymmetric) {
+        mfrontInterface(mfront_interface), isAxisymmetric(is_axisymmetric),
+        atomTest(atom_test) {
 
     MoFEM::Interface *m_field_ptr;
     CHKERR DMoFEMGetInterfacePtr(dM, &m_field_ptr);
@@ -394,6 +395,15 @@ struct Monitor : public FEMethod {
         CHKERR VecGetArrayRead(CommonData::totalTraction, &t_ptr);
         MOFEM_LOG_C("CONTACT", Sev::inform, "%s time %3.4e %3.4e %3.4e %3.4e",
                     msg.c_str(), ts_t, t_ptr[0], t_ptr[1], t_ptr[2]);
+        if (atomTest == 1 && fabs(ts_t - 1.0) < 1e-3) {
+          double hertz_tract = 158.73;
+          double tol = 4e-3;
+          if ((t_ptr[1] - hertz_tract) / hertz_tract > tol) {
+            SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                     "atom test %d diverged! %3.4e != %3.4e", atom_test,
+                     t_ptr[1], hertz_tract);
+          }
+        }
         CHKERR VecRestoreArrayRead(CommonData::totalTraction, &t_ptr);
       }
       MoFEMFunctionReturn(0);
@@ -455,6 +465,7 @@ private:
   bool useMFront;
   bool isAxisymmetric;
   boost::shared_ptr<GenericElementInterface> mfrontInterface;
+  int atomTest;
 };
 
 } // namespace ContactOps

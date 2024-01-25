@@ -132,6 +132,8 @@ double scale = 1.;
 PetscBool use_mfront = PETSC_FALSE;
 PetscBool is_axisymmetric = PETSC_FALSE;
 
+int atom_test = 0;
+
 namespace ContactOps {
 double cn_contact = 0.1;
 }; // namespace ContactOps
@@ -221,6 +223,7 @@ MoFEMErrorCode Contact::setupProblem() {
                              PETSC_NULL);
   CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-is_axisymmetric",
                              &is_axisymmetric, PETSC_NULL);
+  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-atom_test", &atom_test, PETSC_NULL);
 
   // Select base
   enum bases { AINSWORTH, DEMKOWICZ, LASBASETOPT };
@@ -370,7 +373,7 @@ MoFEMErrorCode Contact::setupProblem() {
 
   auto dm = simple->getDM();
   monitorPtr = boost::make_shared<Monitor>(dm, use_mfront, mfrontInterface,
-                                           is_axisymmetric);
+                                           is_axisymmetric, atom_test);
   if (use_mfront) {
     mfrontInterface->setMonitorPtr(monitorPtr);
   }
