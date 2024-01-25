@@ -69,7 +69,6 @@ endif(Python_LIBRARY AND Boost_NUMPY_LIBRARY_RELEASE)
 set(IS_MFRONT_MOD false)  
 
 # Add mfront interface
-# if(MFRONT_INTERFACE_DIR) #in spack
 if(MFRONT_INTERFACE_INSTALL_PREFIX)
   include(${MFRONT_INTERFACE_INSTALL_PREFIX}/mfront_interface/mfront_interface_all_targets.cmake)
   include_directories(${MFRONT_INTERFACE_INSTALL_PREFIX}/mfront_interface/src)
