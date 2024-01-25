@@ -98,4 +98,4 @@ add_test(
   -ts_max_time 1 -ts_dt 0.2 
   -spring_stiffness 0.1
   -log_no_color
-  -my_sdf_file sdf_ydirection.py)
+  -sdf_file sdf_ydirection.py)
