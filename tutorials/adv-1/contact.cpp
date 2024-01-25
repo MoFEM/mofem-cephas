@@ -372,7 +372,7 @@ MoFEMErrorCode Contact::createCommonData() {
 
 #ifdef PYTHON_SFD
   char sdf_file_name[255];
-  CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-my_sdf_file",
+  CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-sdf_file",
                                sdf_file_name, 255, PETSC_NULL);
 
   sdfPythonPtr = boost::make_shared<SDFPython>();
