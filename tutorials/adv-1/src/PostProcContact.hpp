@@ -398,7 +398,7 @@ struct Monitor : public FEMethod {
         if (atomTest == 1 && fabs(ts_t - 1.0) < 1e-3) {
           double hertz_tract = 158.73;
           double tol = 4e-3;
-          if ((t_ptr[1] - hertz_tract) / hertz_tract > tol) {
+          if (fabs(t_ptr[1] - hertz_tract) / hertz_tract > tol) {
             SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                      "atom test %d diverged! %3.4e != %3.4e", atom_test,
                      t_ptr[1], hertz_tract);

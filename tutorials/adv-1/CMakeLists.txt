@@ -133,12 +133,6 @@ if(IS_MFRONT_MOD)
       set(DEFAULT_LIB_EXTENSION "so")
     endif()
 
-    # add_test(hd_contact_mfront_cube_test
-    #   ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-    #   ${MM_BIN_PATH}/mofem_manager
-    #   -file_name ${MM_SRC_PATH}/examples/3D_cube_contact_mfront.cub -ts_dt 0.05 -ts_max_time 1.0 -ts_adapt_type none -hd_contact -hd_direction_data3 ${MM_SRC_PATH}/examples/direction_data.in -hd_body3 cylinder -hd_radius3 1 -hd_position_data3 ${MM_SRC_PATH}/examples/my_gcode.in -hd_cn 1 -order 2 -log_sl verbose -mi_block_2 LogarithmicStrainPlasticity -mi_lib_path_2 ${CMAKE_CURRENT_BINARY_DIR}/src/libBehaviour.${DEFAULT_LIB_EXTENSION} -mi_print_gauss 0 -order 2 -mi_param_2_0 1e9 -mi_param_2_1 130 -atom_test 3 -ts_theta_initial_guess_extrapolate 1 -log_view
-    # )
-
     add_test(
       hertz_mfront_axisymm
       ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
@@ -150,7 +144,7 @@ if(IS_MFRONT_MOD)
       -is_axisymmetric 1
       -mi_lib_path_2 ${CMAKE_CURRENT_BINARY_DIR}/src/libBehaviour.${DEFAULT_LIB_EXTENSION}
       -mi_block_2 LinearElasticity
-      -mi_param_2_0 1e2
+      -mi_param_2_0 1e3
       -mi_param_2_1 0.4
       -atom_test 1
     )
