@@ -114,8 +114,6 @@ using OpSpringRhs = FormsIntegrators<BoundaryEleOp>::Assembly<AT>::LinearForm<
     IT>::OpBaseTimesVector<1, SPACE_DIM, 1>;
 //! [Operators used for contact]
 
-
-
 PetscBool is_quasi_static = PETSC_TRUE;
 
 int order = 2;
@@ -146,7 +144,9 @@ using namespace HenckyOps;
 #include <PostProcContact.hpp>
 #include <ContactNaturalBC.hpp>
 
+#ifdef WITH_MODULE_MFRONT_INTERFACE
 #include <MFrontMoFEMInterface.hpp>
+#endif
 
 using DomainRhsBCs = NaturalBC<DomainEleOp>::Assembly<AT>::LinearForm<IT>;
 using OpDomainRhsBCs =
