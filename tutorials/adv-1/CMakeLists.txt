@@ -105,7 +105,6 @@ add_custom_target(
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     COMMENT "Copying mesh_files directory" VERBATIM)
   
-
 add_test(
   contact_2d
   ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
