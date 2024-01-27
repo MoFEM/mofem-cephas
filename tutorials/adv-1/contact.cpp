@@ -162,7 +162,9 @@ using namespace ContactOps;
 
 struct Contact {
 
-  Contact(MoFEM::Interface &m_field) : mField(m_field) {}
+  Contact(MoFEM::Interface &m_field) : mField(m_field) {
+    mfrontInterface = nullptr;
+  }
 
   MoFEMErrorCode runProblem();
 
@@ -341,6 +343,11 @@ MoFEMErrorCode Contact::setupProblem() {
     CHKERR simple->setUp();
   } else {
 
+#ifndef WITH_MODULE_MFRONT_INTERFACE
+    SETERRQ(
+        PETSC_COMM_SELF, 1,
+        "MFrontInterface module was not found while use_mfront was set to 1");
+#else
     if (SPACE_DIM == 3) {
       mfrontInterface =
           boost::make_shared<MFrontMoFEMInterface<TRIDIMENSIONAL>>(
@@ -355,6 +362,7 @@ MoFEMErrorCode Contact::setupProblem() {
             mField, "U", "GEOMETRY", true, is_quasi_static);
       }
     }
+#endif
 
     CHKERR mfrontInterface->getCommandLineParameters();
     CHKERR mfrontInterface->addElementFields();
