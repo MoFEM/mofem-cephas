@@ -621,6 +621,30 @@ struct Tools : public UnknownInterface {
   static MoFEMErrorCode
   outerProductOfEdgeIntegrationPtsForHex(MatrixDouble &pts, const int edge0,
                                          const int edge1, const int edge2);
+
+  /** \name Mesh refinement */
+
+  /**@{*/
+
+  static constexpr std::array<int, 12> uniformTriangleRefineTriangles = {
+
+      0, 3, 5, // 0
+      3, 1, 4, // 1
+      5, 4, 2, // 2
+      5, 3, 4  // 3
+
+  };
+
+  static std::tuple<std::vector<double>, std::vector<int>, std::vector<int>>
+  refineTriangle(int nb_levels);
+
+  static MatrixDouble refineTriangleIntegrationPts(
+      MatrixDouble pts,
+      std::tuple<std::vector<double>, std::vector<int>, std::vector<int>>
+          refined);
+
+  /**@}*/
+
 };
 
 double Tools::shapeFunMBEDGE0(const double x) {
