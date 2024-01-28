@@ -186,8 +186,8 @@ MoFEMErrorCode getLocalCoordinatesOnReferenceThreeNodeTriImpl(
 }
 
 MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceThreeNodeTri(
-      const double *elem_coords, const double *glob_coords, const int nb_nodes,
-      double *local_coords) {
+    const double *elem_coords, const double *glob_coords, const int nb_nodes,
+    double *local_coords) {
   return getLocalCoordinatesOnReferenceThreeNodeTriImpl<double, double>(
       elem_coords, glob_coords, nb_nodes, local_coords);
 }
@@ -713,6 +713,140 @@ MoFEMErrorCode Tools::outerProductOfEdgeIntegrationPtsForHex(
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong size of matrix");
 
   MoFEMFunctionReturn(0);
+}
+
+constexpr std::array<int, 12> Tools::uniformTriangleRefineTriangles;
+
+std::tuple<std::vector<double>, std::vector<int>, std::vector<int>>
+Tools::refineTriangle(int nb_levels) {
+
+  std::vector<int> triangles{0, 1, 2, 3, 4, 5};
+  std::vector<double> nodes{0., 0., 0., 1., 1., 0.};
+  std::map<std::pair<int, int>, int> edges{
+      {{0, 1}, 0}, {{1, 2}, 1}, {{2, 0}, 2}};
+
+  auto add_edge = [&](auto a, auto b) {
+    if (a > b) {
+      std::swap(a, b);
+    }
+    auto it = edges.find(std::make_pair(a, b));
+    if (it == edges.end()) {
+      int e = edges.size();
+      edges[std::make_pair(a, b)] = e;
+      for (auto n : {0, 1}) {
+        nodes.push_back((nodes[2 * a + n] + nodes[2 * b + n]) / 2);
+      }
+      return e;
+    }
+    return it->second;
+  };
+
+  auto add_triangle = [&](auto t) {
+    for (auto tt : {0, 1, 2, 3}) {
+      for (auto n : {0, 1, 2}) {
+        auto last = triangles.size();
+        // add triangle nodes
+        triangles.push_back(
+            triangles[3 * t + uniformTriangleRefineTriangles[3 * t + tt]] +
+            6 * n);
+        // add triangle edges
+        auto cycle = std::array<int, 4>{0, 1, 2, 0};
+        for (auto e : {0, 1, 2}) {
+          triangles.push_back(add_edge(triangles[last + cycle[e]],
+                                       triangles[last + cycle[e + 1]]));
+        }
+      }
+    }
+  };
+
+  std::vector<int> level_index{0};
+  for (auto l = 0; l != nb_levels; ++l) {
+    auto nb_last_level_test = pow(4, l);
+    auto first_tet = level_index.back();
+    for (auto t = first_tet; t != (first_tet + nb_last_level_test); ++t) {
+      add_triangle(t);
+    }
+    level_index.push_back(first_tet + nb_last_level_test);
+  }
+
+  return std::make_tuple(nodes, triangles, level_index);
+}
+
+MatrixDouble Tools::refineTriangleIntegrationPts(
+    MatrixDouble pts,
+    std::tuple<std::vector<double>, std::vector<int>, std::vector<int>>
+        refined) {
+
+  auto [nodes, triangles, level_index] = refined;
+
+  auto get_coords = [&](auto t) {
+    std::array<double, 9> ele_coords;
+    for (auto n : {0, 1, 2}) {
+      for (auto i : {0, 1}) {
+        ele_coords[3 * n + i] = nodes[2 * triangles[3 * t + n] + i];
+      }
+      ele_coords[3 * n + 2] = 0;
+    }
+    return ele_coords;
+  };
+
+  auto get_normal = [](auto &ele_coords) {
+    FTensor::Tensor1<double, 3> t_normal;
+    Tools::getTriNormal(ele_coords.data(), &t_normal(0));
+    return t_normal;
+  };
+
+  int nb_elems = level_index.back() - level_index[level_index.size() - 2];
+  MatrixDouble new_pts(3, pts.size2() * nb_elems);
+  FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 2> t_gauss_pt{&new_pts(0, 0),
+                                                                &new_pts(1, 0)};
+  FTensor::Tensor0<FTensor::PackPtr<double *, 1>> t_gauss_weight{
+      &new_pts(2, 0)};
+
+  for (auto t = level_index[level_index.size() - 2]; t != level_index.back();
+       ++t) {
+
+    auto ele_coords = get_coords(t);
+    auto t_normal = get_normal(ele_coords);
+    auto area = t_normal.l2();
+
+    std::vector<double> ele_shape(3 * pts.size2());
+    shapeFunMBTRI<1>(&*ele_shape.begin(), &pts(0, 0), &pts(1, 0), pts.size2());
+
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_ele_shape{
+        &ele_shape[0], &ele_shape[1], &ele_shape[2]};
+    FTensor::Tensor2<double, 3, 2> t_ele_coords{ele_coords[0], ele_coords[1],
+                                                ele_coords[3], ele_coords[4],
+                                                ele_coords[6], ele_coords[7]};
+
+    FTensor::Index<'i', 3> i;
+    FTensor::Index<'J', 2> J;
+
+    for (auto gg = 0; gg != pts.size2(); ++gg) {
+      t_gauss_pt(J) = t_ele_shape(i) * t_ele_coords(i, J);
+      t_gauss_weight = area * pts(2, gg);
+      ++t_gauss_pt;
+      ++t_gauss_weight;
+    }
+
+#ifdef NDEBUG
+    {
+      FTensor::Tensor0<FTensor::PackPtr<double *, 1>> t_gauss_weight{
+          &new_pts(2, 0)};
+      double v = 0;
+      for (auto gg = 0; gg != new_pts.size2(); ++gg) {
+        v += t_gauss_weight;
+        ++t_gauss_weight;
+      }
+      if (std::abs(v - 1) > std::numeric_limits<float>::epsilon()) {
+        MOFEM_LOG("SELF", Sev::error) << "Wrong integration weight: " << v;
+        THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Wrong integration weight");
+      }
+    }
+#endif // NDEBUG
+
+    return new_pts;
+  }
 }
 
 } // namespace MoFEM
