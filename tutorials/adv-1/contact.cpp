@@ -14,10 +14,14 @@ to 3" */
 #define EXECUTABLE_DIMENSION 3
 #endif
 
+#ifndef ASSEMBLY_TYPE
+#define ASSEMBLY_TYPE PETSC
+#endif
+
 #include <MoFEM.hpp>
 #include <MatrixFunction.hpp>
 
-#ifdef PYTHON_SFD
+#ifdef PYTHON_SDF
 #include <boost/python.hpp>
 #include <boost/python/def.hpp>
 #include <boost/python/numpy.hpp>
@@ -27,9 +31,10 @@ namespace np = boost::python::numpy;
 
 using namespace MoFEM;
 
-constexpr AssemblyType AT = AssemblyType::PETSC; //< selected assembly type
+constexpr AssemblyType AT =
+    AssemblyType::ASSEMBLY_TYPE; //< selected assembly type
 constexpr IntegrationType IT =
-    IntegrationType::GAUSS;                      //< selected integration type
+    IntegrationType::GAUSS; //< selected integration type
 
 template <int DIM> struct ElementsAndOps;
 
@@ -185,7 +190,7 @@ private:
   boost::shared_ptr<GenericElementInterface> mfrontInterface;
   boost::shared_ptr<Monitor> monitorPtr;
 
-#ifdef PYTHON_SFD
+#ifdef PYTHON_SDF
   boost::shared_ptr<SDFPython> sdfPythonPtr;
 #endif
 
@@ -342,12 +347,15 @@ MoFEMErrorCode Contact::setupProblem() {
   if (!use_mfront) {
     CHKERR simple->setUp();
   } else {
-
 #ifndef WITH_MODULE_MFRONT_INTERFACE
     SETERRQ(
         PETSC_COMM_SELF, 1,
         "MFrontInterface module was not found while use_mfront was set to 1");
 #else
+    if (ASSEMBLY_TYPE == SCHUR) {
+      SETERRQ(PETSC_COMM_SELF, 1,
+              "MFrontInterface module is not compatible with SCHUR assembly");
+    }
     if (SPACE_DIM == 3) {
       mfrontInterface =
           boost::make_shared<MFrontMoFEMInterface<TRIDIMENSIONAL>>(
@@ -457,7 +465,7 @@ MoFEMErrorCode Contact::createCommonData() {
 
   CHKERR get_options();
 
-#ifdef PYTHON_SFD
+#ifdef PYTHON_SDF
   char sdf_file_name[255];
   CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-sdf_file",
                                sdf_file_name, 255, PETSC_NULL);
@@ -895,7 +903,7 @@ static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
 
-#ifdef PYTHON_SFD
+#ifdef PYTHON_SDF
   Py_Initialize();
   np::initialize();
 #endif
@@ -943,7 +951,7 @@ int main(int argc, char *argv[]) {
 
   CHKERR MoFEM::Core::Finalize();
 
-#ifdef PYTHON_SFD
+#ifdef PYTHON_SDF
   if (Py_FinalizeEx() < 0) {
     exit(120);
   }
@@ -1004,8 +1012,8 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<TS> solver) {
     if (A || P || S) {
       CHK_THROW_MESSAGE(
           MOFEM_DATA_INCONSISTENCY,
-          "Is expected that schur matrix is not allocated. This is "
-          "possible only is PC is set up twice");
+          "It is expected that Schur matrix is not allocated. This is "
+          "possible only if PC is set up twice");
     }
 
     A = createDMMatrix(dm);

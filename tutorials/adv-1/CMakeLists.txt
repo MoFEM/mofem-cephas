@@ -44,13 +44,26 @@ if(Python_LIBRARY AND Boost_NUMPY_LIBRARY_RELEASE)
   tutorials_build_and_install(
     contact_3d ${CMAKE_CURRENT_SOURCE_DIR}/contact.cpp)
 
+  tutorials_build_and_install(
+    contact_2d_schur ${CMAKE_CURRENT_SOURCE_DIR}/contact.cpp)
+  tutorials_build_and_install(
+    contact_3d_schur ${CMAKE_CURRENT_SOURCE_DIR}/contact.cpp)
+
   set_target_properties(
-    contact_2d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=2 -DPYTHON_SFD") 
+    contact_2d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=2 -DASSEMBLY_TYPE=PETSC -DPYTHON_SDF") 
   set_target_properties(
-    contact_3d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=3 -DPYTHON_SFD") 
+    contact_3d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=3 -DASSEMBLY_TYPE=PETSC -DPYTHON_SDF") 
+
+  set_target_properties(
+    contact_2d_schur PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=2 -DASSEMBLY_TYPE=SCHUR -DPYTHON_SDF") 
+  set_target_properties(
+    contact_3d_schur PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=3 -DASSEMBLY_TYPE=SCHUR -DPYTHON_SDF") 
 
   target_link_libraries(contact_2d ${Python_LIBRARY} ${Boost_LIBRARIES})
   target_link_libraries(contact_3d ${Python_LIBRARY} ${Boost_LIBRARIES})
+
+  target_link_libraries(contact_2d_schur ${Python_LIBRARY} ${Boost_LIBRARIES})
+  target_link_libraries(contact_3d_schur ${Python_LIBRARY} ${Boost_LIBRARIES})
 
 else (Python_LIBRARY AND Boost_NUMPY_LIBRARY_RELEASE)
 
@@ -59,10 +72,20 @@ else (Python_LIBRARY AND Boost_NUMPY_LIBRARY_RELEASE)
   tutorials_build_and_install(
     contact_3d ${CMAKE_CURRENT_SOURCE_DIR}/contact.cpp)
 
+  tutorials_build_and_install(
+    contact_2d_schur ${CMAKE_CURRENT_SOURCE_DIR}/contact.cpp)
+  tutorials_build_and_install(
+    contact_3d_schur ${CMAKE_CURRENT_SOURCE_DIR}/contact.cpp)
+
   set_target_properties(
-    contact_2d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=2")
+    contact_2d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=2 -DASSEMBLY_TYPE=PETSC")
   set_target_properties(
-    contact_3d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=3")  
+    contact_3d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=3 -DASSEMBLY_TYPE=PETSC")  
+  
+  set_target_properties(
+    contact_2d_schur PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=2 -DASSEMBLY_TYPE=SCHUR")
+  set_target_properties(
+    contact_3d_schur PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=3 -DASSEMBLY_TYPE=SCHUR")  
 
 endif(Python_LIBRARY AND Boost_NUMPY_LIBRARY_RELEASE)
 
@@ -86,6 +109,10 @@ if(IS_MFRONT_MOD)
     mfront_lib_all)
   target_link_libraries(contact_3d
     mfront_lib_all)
+  target_link_libraries(contact_2d_schur
+    mfront_lib_all)
+  target_link_libraries(contact_3d_schur
+    mfront_lib_all)
 endif(IS_MFRONT_MOD)
 
 # Copy scripts to build directory
@@ -104,12 +131,30 @@ add_custom_target(
     ${CMAKE_CURRENT_SOURCE_DIR}/mesh_files ${CMAKE_CURRENT_BINARY_DIR}/mesh_files
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     COMMENT "Copying mesh_files directory" VERBATIM)
-  
+
+#################
+##### TESTS #####
+#################
+
 add_test(
   contact_2d
   ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   contact_2d
   -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/sphere_2d.h5m
+  -pc_type lu 
+  -ts_type beuler
+  -ts_max_time 1 -ts_dt 0.2 
+  -spring_stiffness 0.1
+  -log_no_color
+  -sdf_file ${CMAKE_CURRENT_BINARY_DIR}/sdf_files/sdf_ydirection.py
+)
+
+add_test(
+  contact_2d_schur
+  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  contact_2d_schur
+  -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/sphere_2d.h5m
+  -pc_type fieldsplit
   -ts_type beuler
   -ts_max_time 1 -ts_dt 0.2 
   -spring_stiffness 0.1
@@ -137,6 +182,8 @@ if(IS_MFRONT_MOD)
       ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
       contact_2d
       -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/hertz_axisymm_4p.h5m
+      -pc_type lu
+      -ts_type beuler
       -ts_max_time 1 -ts_dt 0.2 
       -sdf_file ./sdf_files/sdf_hertz.py
       -use_mfront 1
