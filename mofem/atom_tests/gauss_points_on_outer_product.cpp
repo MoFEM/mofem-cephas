@@ -80,23 +80,8 @@ int main(int argc, char *argv[]) {
     auto test_refined_triangle = [&]() {
       MoFEMFunctionBegin;
 
-      constexpr int rule = 4;
-      MatrixDouble gauss_pts;
-
-      const size_t nb_gauss_pts = QUAD_2D_TABLE[rule]->npoints;
-      gauss_pts.resize(3, nb_gauss_pts, false);
-      cblas_dcopy(nb_gauss_pts, &QUAD_2D_TABLE[rule]->points[1], 3,
-                  &gauss_pts(0, 0), 1);
-      cblas_dcopy(nb_gauss_pts, &QUAD_2D_TABLE[rule]->points[2], 3,
-                  &gauss_pts(1, 0), 1);
-      cblas_dcopy(nb_gauss_pts, QUAD_2D_TABLE[rule]->weights, 1,
-                  &gauss_pts(2, 0), 1);
-
       auto refine = Tools::refineTriangle(2);
-      auto new_gauss_pts =
-          Tools::refineTriangleIntegrationPts(gauss_pts, refine);
-
-      auto [nodes, triangles, level_index] = refine;
+      auto new_gauss_pts = Tools::refineTriangleIntegrationPts(4, refine);
 
       int new_nb_gauss_pts = new_gauss_pts.size2();
       double sum_coords = 0, sum_gauss_pts = 0;
@@ -113,7 +98,6 @@ int main(int argc, char *argv[]) {
         SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "wrong result %3.4e", sum_gauss_pts);
       }
- 
 
 
       MoFEMFunctionReturn(0);

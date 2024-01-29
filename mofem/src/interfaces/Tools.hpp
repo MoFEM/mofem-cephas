@@ -638,10 +638,33 @@ struct Tools : public UnknownInterface {
   using RefineTrianglesReturn =
       std::tuple<std::vector<double>, std::vector<int>, std::vector<int>>;
 
+  /**
+   * @brief create uniform triangle mesh of refined elements
+   * 
+   * @param nb_levels 
+   * @return RefineTrianglesReturn 
+   */
   static RefineTrianglesReturn refineTriangle(int nb_levels);
 
+  /**
+   * @brief generate integration points for refined triangle mesh for last level
+   * 
+   * @param pts 
+   * @param refined 
+   * @return MatrixDouble 
+   */
   static MatrixDouble
   refineTriangleIntegrationPts(MatrixDouble pts, RefineTrianglesReturn refined);
+
+  /**
+   * @brief generate integration points for refined triangle mesh for last level
+   * 
+   * @param rule Gauss integration rule
+   * @param refined 
+   * @return MatrixDouble 
+   */
+  static MatrixDouble
+  refineTriangleIntegrationPts(int rule, RefineTrianglesReturn refined);
 
   /**@}*/
 
