@@ -14,8 +14,8 @@ to 3" */
 #define EXECUTABLE_DIMENSION 3
 #endif
 
-#ifndef ASSEMBLY_TYPE
-#define ASSEMBLY_TYPE PETSC
+#ifndef SCHUR_ASSEMBLE
+#define SCHUR_ASSEMBLE 0
 #endif
 
 #include <MoFEM.hpp>
@@ -32,7 +32,8 @@ namespace np = boost::python::numpy;
 using namespace MoFEM;
 
 constexpr AssemblyType AT =
-    AssemblyType::ASSEMBLY_TYPE; //< selected assembly type
+    (SCHUR_ASSEMBLE) ? AssemblyType::SCHUR
+                     : AssemblyType::PETSC; //< selected assembly type
 constexpr IntegrationType IT =
     IntegrationType::GAUSS; //< selected integration type
 
@@ -352,9 +353,9 @@ MoFEMErrorCode Contact::setupProblem() {
         PETSC_COMM_SELF, 1,
         "MFrontInterface module was not found while use_mfront was set to 1");
 #else
-    if (ASSEMBLY_TYPE == SCHUR) {
+    if (SCHUR_ASSEMBLE) {
       SETERRQ(PETSC_COMM_SELF, 1,
-              "MFrontInterface module is not compatible with SCHUR assembly");
+              "MFrontInterface module is not compatible with Schur assembly");
     }
     if (SPACE_DIM == 3) {
       mfrontInterface =
