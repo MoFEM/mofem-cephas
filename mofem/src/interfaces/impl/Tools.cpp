@@ -835,4 +835,21 @@ MatrixDouble Tools::refineTriangleIntegrationPts(
   return new_pts;
 }
 
+MatrixDouble
+Tools::refineTriangleIntegrationPts(int rule, RefineTrianglesReturn refined) {
+
+  MatrixDouble gauss_pts;
+
+  const size_t nb_gauss_pts = QUAD_2D_TABLE[rule]->npoints;
+  gauss_pts.resize(3, nb_gauss_pts, false);
+  cblas_dcopy(nb_gauss_pts, &QUAD_2D_TABLE[rule]->points[1], 3,
+              &gauss_pts(0, 0), 1);
+  cblas_dcopy(nb_gauss_pts, &QUAD_2D_TABLE[rule]->points[2], 3,
+              &gauss_pts(1, 0), 1);
+  cblas_dcopy(nb_gauss_pts, QUAD_2D_TABLE[rule]->weights, 1, &gauss_pts(2, 0),
+              1);
+
+  return Tools::refineTriangleIntegrationPts(gauss_pts, refined);
+}
+
 } // namespace MoFEM
