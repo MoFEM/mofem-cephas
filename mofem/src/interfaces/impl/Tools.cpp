@@ -721,9 +721,9 @@ std::tuple<std::vector<double>, std::vector<int>, std::vector<int>>
 Tools::refineTriangle(int nb_levels) {
 
   std::vector<int> triangles{0, 1, 2, 3, 4, 5};
-  std::vector<double> nodes{0., 0., 0., 1., 1., 0.};
+  std::vector<double> nodes{0., 0., 0., 1., 1., 0., 0.5, 0., 0.5, 0.5, 0., 0.5};
   std::map<std::pair<int, int>, int> edges{
-      {{0, 1}, 0}, {{1, 2}, 1}, {{2, 0}, 2}};
+      {{0, 1}, 3}, {{1, 2}, 4}, {{0, 2}, 5}};
 
   auto add_edge = [&](auto a, auto b) {
     if (a > b) {
@@ -731,7 +731,7 @@ Tools::refineTriangle(int nb_levels) {
     }
     auto it = edges.find(std::make_pair(a, b));
     if (it == edges.end()) {
-      int e = edges.size();
+      int e = 3 + edges.size();
       edges[std::make_pair(a, b)] = e;
       for (auto n : {0, 1}) {
         nodes.push_back((nodes[2 * a + n] + nodes[2 * b + n]) / 2);
@@ -743,30 +743,30 @@ Tools::refineTriangle(int nb_levels) {
 
   auto add_triangle = [&](auto t) {
     for (auto tt : {0, 1, 2, 3}) {
+      auto last = triangles.size() / 6;
       for (auto n : {0, 1, 2}) {
-        auto last = triangles.size();
         // add triangle nodes
         triangles.push_back(
-            triangles[3 * t + uniformTriangleRefineTriangles[3 * t + tt]] +
-            6 * n);
-        // add triangle edges
-        auto cycle = std::array<int, 4>{0, 1, 2, 0};
-        for (auto e : {0, 1, 2}) {
-          triangles.push_back(add_edge(triangles[last + cycle[e]],
-                                       triangles[last + cycle[e + 1]]));
-        }
+            triangles[6 * t + uniformTriangleRefineTriangles[3 * tt + n]]);
+      }
+      // add triangle edges
+      auto cycle = std::array<int, 4>{0, 1, 2, 0};
+      for (auto e : {0, 1, 2}) {
+        triangles.push_back(add_edge(triangles[6 * last + cycle[e]],
+                                     triangles[6 * last + cycle[e + 1]]));
       }
     }
   };
 
-  std::vector<int> level_index{0};
-  for (auto l = 0; l != nb_levels; ++l) {
-    auto nb_last_level_test = pow(4, l);
-    auto first_tet = level_index.back();
+  std::vector<int> level_index{0, 1};
+  auto l = 0;
+  for (; l != nb_levels; ++l) {
+    auto first_tet = level_index[l];
+    auto nb_last_level_test = level_index.back() - level_index[l];
     for (auto t = first_tet; t != (first_tet + nb_last_level_test); ++t) {
       add_triangle(t);
     }
-    level_index.push_back(first_tet + nb_last_level_test);
+    level_index.push_back(triangles.size() / 6);
   }
 
   return std::make_tuple(nodes, triangles, level_index);
@@ -783,7 +783,7 @@ MatrixDouble Tools::refineTriangleIntegrationPts(
     std::array<double, 9> ele_coords;
     for (auto n : {0, 1, 2}) {
       for (auto i : {0, 1}) {
-        ele_coords[3 * n + i] = nodes[2 * triangles[3 * t + n] + i];
+        ele_coords[3 * n + i] = nodes[2 * triangles[6 * t + n] + i];
       }
       ele_coords[3 * n + 2] = 0;
     }
@@ -795,6 +795,9 @@ MatrixDouble Tools::refineTriangleIntegrationPts(
     Tools::getTriNormal(ele_coords.data(), &t_normal(0));
     return t_normal;
   };
+
+  std::vector<double> ele_shape(3 * pts.size2());
+  shapeFunMBTRI<1>(&*ele_shape.begin(), &pts(0, 0), &pts(1, 0), pts.size2());
 
   int nb_elems = level_index.back() - level_index[level_index.size() - 2];
   MatrixDouble new_pts(3, pts.size2() * nb_elems);
@@ -809,9 +812,6 @@ MatrixDouble Tools::refineTriangleIntegrationPts(
     auto ele_coords = get_coords(t);
     auto t_normal = get_normal(ele_coords);
     auto area = t_normal.l2();
-
-    std::vector<double> ele_shape(3 * pts.size2());
-    shapeFunMBTRI<1>(&*ele_shape.begin(), &pts(0, 0), &pts(1, 0), pts.size2());
 
     FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_ele_shape{
         &ele_shape[0], &ele_shape[1], &ele_shape[2]};
@@ -829,24 +829,10 @@ MatrixDouble Tools::refineTriangleIntegrationPts(
       ++t_gauss_weight;
     }
 
-#ifdef NDEBUG
-    {
-      FTensor::Tensor0<FTensor::PackPtr<double *, 1>> t_gauss_weight{
-          &new_pts(2, 0)};
-      double v = 0;
-      for (auto gg = 0; gg != new_pts.size2(); ++gg) {
-        v += t_gauss_weight;
-        ++t_gauss_weight;
-      }
-      if (std::abs(v - 1) > std::numeric_limits<float>::epsilon()) {
-        MOFEM_LOG("SELF", Sev::error) << "Wrong integration weight: " << v;
-        THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Wrong integration weight");
-      }
-    }
-#endif // NDEBUG
 
-    return new_pts;
   }
+
+  return new_pts;
 }
 
 } // namespace MoFEM
