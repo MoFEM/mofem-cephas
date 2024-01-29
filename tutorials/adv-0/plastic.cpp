@@ -196,7 +196,7 @@ double alpha_damping = 0;
 #include <PlasticNaturalBCs.hpp>
 
 #ifdef ADD_CONTACT
-#ifdef PYTHON_SFD
+#ifdef PYTHON_SDF
 #include <boost/python.hpp>
 #include <boost/python/def.hpp>
 #include <boost/python/numpy.hpp>
@@ -254,7 +254,7 @@ private:
   };
 
 #ifdef ADD_CONTACT
-#ifdef PYTHON_SFD
+#ifdef PYTHON_SDF
   boost::shared_ptr<ContactOps::SDFPython> sdfPythonPtr;
 #endif
 #endif // ADD_CONTACT
@@ -540,7 +540,7 @@ MoFEMErrorCode Example::createCommonData() {
   CHKERR get_command_line_parameters();
 
 #ifdef ADD_CONTACT
-#ifdef PYTHON_SFD
+#ifdef PYTHON_SDF
   sdfPythonPtr = boost::make_shared<ContactOps::SDFPython>();
   CHKERR sdfPythonPtr->sdfInit("sdf.py");
   ContactOps::sdfPythonWeakPtr = sdfPythonPtr;
@@ -1199,7 +1199,7 @@ static char help[] = "...\n\n";
 int main(int argc, char *argv[]) {
 
 #ifdef ADD_CONTACT
-#ifdef PYTHON_SFD
+#ifdef PYTHON_SDF
   Py_Initialize();
   np::initialize();
 #endif
@@ -1258,7 +1258,7 @@ int main(int argc, char *argv[]) {
   CHKERR MoFEM::Core::Finalize();
 
 #ifdef ADD_CONTACT
-#ifdef PYTHON_SFD
+#ifdef PYTHON_SDF
   if (Py_FinalizeEx() < 0) {
     exit(120);
   }

@@ -79,7 +79,7 @@ SmartPetscObj<Vec> CommonData::totalTraction;
 //! [Common data]
 
 //! [Surface distance function from python]
-#ifdef PYTHON_SFD
+#ifdef PYTHON_SDF
 struct SDFPython {
   SDFPython() = default;
   virtual ~SDFPython() = default;
@@ -210,7 +210,7 @@ using HessSurfaceDistanceFunction =
 inline double surface_distance_function(double t, double x, double y, double z,
                                         double tx, double ty, double tz) {
 
-#ifdef PYTHON_SFD
+#ifdef PYTHON_SDF
   if (auto sdf_ptr = sdfPythonWeakPtr.lock()) {
     double sdf;
     CHK_MOAB_THROW(sdf_ptr->evalSdf(t, x, y, z, tx, ty, tz, sdf),
@@ -224,7 +224,7 @@ inline double surface_distance_function(double t, double x, double y, double z,
 inline FTensor::Tensor1<double, 3>
 grad_surface_distance_function(double t, double x, double y, double z,
                                double tx, double ty, double tz) {
-#ifdef PYTHON_SFD
+#ifdef PYTHON_SDF
   if (auto sdf_ptr = sdfPythonWeakPtr.lock()) {
     std::vector<double> grad_sdf;
     CHK_MOAB_THROW(sdf_ptr->evalGradSdf(t, x, y, z, tx, ty, tz, grad_sdf),
@@ -238,7 +238,7 @@ grad_surface_distance_function(double t, double x, double y, double z,
 inline FTensor::Tensor2_symmetric<double, 3>
 hess_surface_distance_function(double t, double x, double y, double z,
                                double tx, double ty, double tz) {
-#ifdef PYTHON_SFD
+#ifdef PYTHON_SDF
   if (auto sdf_ptr = sdfPythonWeakPtr.lock()) {
     std::vector<double> hess_sdf;
     CHK_MOAB_THROW(sdf_ptr->evalHessSdf(t, x, y, z, tx, ty, tz, hess_sdf),

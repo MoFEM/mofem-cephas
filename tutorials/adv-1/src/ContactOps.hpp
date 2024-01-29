@@ -83,7 +83,7 @@ SmartPetscObj<Vec> CommonData::totalTraction;
 //! [Common data]
 
 //! [Surface distance function from python]
-#ifdef PYTHON_SFD
+#ifdef PYTHON_SDF
 struct SDFPython {
   SDFPython() = default;
   virtual ~SDFPython() = default;
@@ -219,7 +219,7 @@ inline VectorDouble surface_distance_function(double delta_t, double t,
                                               MatrixDouble &m_normals_at_pts,
                                               int block_id) {
 
-#ifdef PYTHON_SFD
+#ifdef PYTHON_SDF
   if (auto sdf_ptr = sdfPythonWeakPtr.lock()) {
 
     VectorDouble v_spatial_coords = m_spatial_coords.data();
@@ -273,7 +273,7 @@ inline MatrixDouble
 grad_surface_distance_function(double delta_t, double t, int nb_gauss_pts,
                                MatrixDouble &m_spatial_coords,
                                MatrixDouble &m_normals_at_pts, int block_id) {
-#ifdef PYTHON_SFD
+#ifdef PYTHON_SDF
   if (auto sdf_ptr = sdfPythonWeakPtr.lock()) {
 
     VectorDouble v_spatial_coords = m_spatial_coords.data();
@@ -330,7 +330,7 @@ inline MatrixDouble
 hess_surface_distance_function(double delta_t, double t, int nb_gauss_pts,
                                MatrixDouble &m_spatial_coords,
                                MatrixDouble &m_normals_at_pts, int block_id) {
-#ifdef PYTHON_SFD
+#ifdef PYTHON_SDF
   if (auto sdf_ptr = sdfPythonWeakPtr.lock()) {
 
     VectorDouble v_spatial_coords = m_spatial_coords.data();
