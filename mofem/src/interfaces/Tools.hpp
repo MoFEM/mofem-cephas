@@ -635,13 +635,13 @@ struct Tools : public UnknownInterface {
 
   };
 
-  static std::tuple<std::vector<double>, std::vector<int>, std::vector<int>>
-  refineTriangle(int nb_levels);
+  using RefineTrianglesReturn =
+      std::tuple<std::vector<double>, std::vector<int>, std::vector<int>>;
 
-  static MatrixDouble refineTriangleIntegrationPts(
-      MatrixDouble pts,
-      std::tuple<std::vector<double>, std::vector<int>, std::vector<int>>
-          refined);
+  static RefineTrianglesReturn refineTriangle(int nb_levels);
+
+  static MatrixDouble
+  refineTriangleIntegrationPts(MatrixDouble pts, RefineTrianglesReturn refined);
 
   /**@}*/
 
