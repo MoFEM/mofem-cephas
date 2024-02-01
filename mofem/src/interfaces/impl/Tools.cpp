@@ -721,7 +721,16 @@ std::tuple<std::vector<double>, std::vector<int>, std::vector<int>>
 Tools::refineTriangle(int nb_levels) {
 
   std::vector<int> triangles{0, 1, 2, 3, 4, 5};
-  std::vector<double> nodes{0., 0., 0., 1., 1., 0., 0.5, 0., 0.5, 0.5, 0., 0.5};
+  std::vector<double> nodes{
+
+      0.,  0.,  // 0
+      1.,  0.,  // 1
+      0.,  1.,  // 2
+      0.5, 0.,  // 3
+      0.5, 0.5, // 4
+      0.,  0.5  // 5
+
+  };
   std::map<std::pair<int, int>, int> edges{
       {{0, 1}, 3}, {{1, 2}, 4}, {{0, 2}, 5}};
 
@@ -736,6 +745,10 @@ Tools::refineTriangle(int nb_levels) {
       for (auto n : {0, 1}) {
         nodes.push_back((nodes[2 * a + n] + nodes[2 * b + n]) / 2);
       }
+#ifndef NDEBUG
+      if (e != nodes.size() / 2 - 1)
+        CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "wrong node/edge index");
+#endif
       return e;
     }
     return it->second;
@@ -827,8 +840,8 @@ MatrixDouble Tools::refineTriangleIntegrationPts(
       t_gauss_weight = area * pts(2, gg);
       ++t_gauss_pt;
       ++t_gauss_weight;
+      ++t_ele_shape;
     }
-
 
   }
 
