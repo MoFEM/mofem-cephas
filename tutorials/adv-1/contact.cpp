@@ -133,8 +133,7 @@ double alpha_damping = 0;
 
 double scale = 1.;
 
-PetscBool use_mfront = PETSC_FALSE;
-PetscBool is_axisymmetric = PETSC_FALSE;
+PetscBool is_axisymmetric = PETSC_FALSE; //< Axisymmetric model
 
 int atom_test = 0;
 
@@ -168,9 +167,7 @@ using namespace ContactOps;
 
 struct Contact {
 
-  Contact(MoFEM::Interface &m_field) : mField(m_field) {
-    mfrontInterface = nullptr;
-  }
+  Contact(MoFEM::Interface &m_field) : mField(m_field) {}
 
   MoFEMErrorCode runProblem();
 
@@ -220,6 +217,7 @@ MoFEMErrorCode Contact::runProblem() {
 MoFEMErrorCode Contact::setupProblem() {
   MoFEMFunctionBegin;
   Simple *simple = mField.getInterface<Simple>();
+  PetscBool use_mfront = PETSC_FALSE;
 
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order, PETSC_NULL);
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-geom_order", &geom_order,
@@ -291,8 +289,8 @@ MoFEMErrorCode Contact::setupProblem() {
 
     ) {
       is_contact_block =
-          true; ///< bloks interation is collectibe, so that is set irrespective
-                ///< if there are enerities in given rank or not in the block
+          true; ///< blocs interation is collective, so that is set irrespective
+                ///< if there are entities in given rank or not in the block
       MOFEM_LOG("CONTACT", Sev::inform)
           << "Find contact block set:  " << m->getName();
       auto meshset = m->getMeshset();
@@ -328,11 +326,11 @@ MoFEMErrorCode Contact::setupProblem() {
 
   if (is_axisymmetric) {
     if (SPACE_DIM == 3) {
-      SETERRQ(PETSC_COMM_SELF, 1,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "Use executable contact_2d with axisymmetric model");
     } else {
       if (!use_mfront) {
-        SETERRQ(PETSC_COMM_SELF, 1,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Axisymmetric model is only available with MFront (set "
                 "use_mfront to 1)");
       } else {
@@ -350,11 +348,11 @@ MoFEMErrorCode Contact::setupProblem() {
   } else {
 #ifndef WITH_MODULE_MFRONT_INTERFACE
     SETERRQ(
-        PETSC_COMM_SELF, 1,
+        PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
         "MFrontInterface module was not found while use_mfront was set to 1");
 #else
     if (SCHUR_ASSEMBLE) {
-      SETERRQ(PETSC_COMM_SELF, 1,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "MFrontInterface module is not compatible with Schur assembly");
     }
     if (SPACE_DIM == 3) {
@@ -389,10 +387,10 @@ MoFEMErrorCode Contact::setupProblem() {
   }
 
   auto dm = simple->getDM();
-  monitorPtr = boost::make_shared<Monitor>(dm, use_mfront, mfrontInterface,
-                                           is_axisymmetric, atom_test);
-  if (use_mfront) {
-    mfrontInterface->setMonitorPtr(monitorPtr);
+  monitorPtr = boost::make_shared<Monitor>(dm, mfrontInterface, is_axisymmetric,
+                                           atom_test);
+  if (mfrontInterface) {
+    CHKERR mfrontInterface->setMonitorPtr(monitorPtr);
   }
 
   auto project_ho_geometry = [&]() {
@@ -431,7 +429,7 @@ MoFEMErrorCode Contact::createCommonData() {
     CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-alpha_damping",
                                  &alpha_damping, PETSC_NULL);
                                
-    if (!use_mfront) {
+    if (!mfrontInterface) {
       MOFEM_LOG("CONTACT", Sev::inform) << "Young modulus " << young_modulus;
       MOFEM_LOG("CONTACT", Sev::inform) << "Poisson_ratio " << poisson_ratio;
     } else {
@@ -581,7 +579,7 @@ MoFEMErrorCode Contact::OPs() {
 
     }
 
-    if (!use_mfront) {
+    if (!mfrontInterface) {
       CHKERR HenckyOps::opFactoryDomainLhs<SPACE_DIM, AT, IT, DomainEleOp>(
           mField, pip, "U", "MAT_ELASTIC", Sev::verbose, scale);
     }
@@ -623,7 +621,7 @@ MoFEMErrorCode Contact::OPs() {
           }));
     }
 
-    if (!use_mfront) {
+    if (!mfrontInterface) {
       CHKERR HenckyOps::opFactoryDomainRhs<SPACE_DIM, AT, IT, DomainEleOp>(
           mField, pip, "U", "MAT_ELASTIC", Sev::inform, scale);
     }
@@ -728,14 +726,14 @@ MoFEMErrorCode Contact::OPs() {
   CHKERR add_boundary_ops_lhs(pip_mng->getOpBoundaryLhsPipeline());
   CHKERR add_boundary_ops_rhs(pip_mng->getOpBoundaryRhsPipeline());
 
-  if (use_mfront) {
+  if (mfrontInterface) {
     auto t_type = GenericElementInterface::IM2;
     if (is_quasi_static == PETSC_TRUE)
       t_type = GenericElementInterface::IM;
 
-    mfrontInterface->setOperators();
-    mfrontInterface->setupSolverFunctionTS(t_type);
-    mfrontInterface->setupSolverJacobianTS(t_type);
+    CHKERR mfrontInterface->setOperators();
+    CHKERR mfrontInterface->setupSolverFunctionTS(t_type);
+    CHKERR mfrontInterface->setupSolverJacobianTS(t_type);
   }
 
   CHKERR pip_mng->setDomainRhsIntegrationRule(integration_rule_vol);

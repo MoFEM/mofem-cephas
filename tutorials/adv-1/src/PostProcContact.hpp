@@ -27,12 +27,11 @@ using PostProcEleBdy = PostProcEleByDim<SPACE_DIM>::PostProcEleBdy;
 
 struct Monitor : public FEMethod {
 
-  Monitor(SmartPetscObj<DM> &dm, bool use_mfront = false,
+  Monitor(SmartPetscObj<DM> &dm,
           boost::shared_ptr<GenericElementInterface> mfront_interface = nullptr,
           bool is_axisymmetric = false, int atom_test = 0)
-      : dM(dm), moabVertex(mbVertexPostproc), sTEP(0), useMFront(use_mfront),
-        mfrontInterface(mfront_interface), isAxisymmetric(is_axisymmetric),
-        atomTest(atom_test) {
+      : dM(dm), moabVertex(mbVertexPostproc), sTEP(0),
+        mfrontInterface(mfront_interface), atomTest(atom_test) {
 
     MoFEM::Interface *m_field_ptr;
     CHKERR DMoFEMGetInterfacePtr(dM, &m_field_ptr);
@@ -264,7 +263,7 @@ struct Monitor : public FEMethod {
     auto post_proc = [&]() {
       MoFEMFunctionBegin;
 
-      if (!useMFront) {
+      if (!mfrontInterface) {
         auto post_proc_begin =
             boost::make_shared<PostProcBrokenMeshInMoabBaseBegin>(*m_field_ptr,
                                                                   postProcMesh);
@@ -289,8 +288,8 @@ struct Monitor : public FEMethod {
         CHKERR post_proc_end->writeFile(
             "out_contact_" + boost::lexical_cast<std::string>(sTEP) + ".h5m");
       } else {
-        mfrontInterface->updateElementVariables();
-        mfrontInterface->postProcessElement(ts_step);
+        CHKERR mfrontInterface->updateElementVariables();
+        CHKERR mfrontInterface->postProcessElement(ts_step);
       }
 
       MoFEMFunctionReturn(0);
@@ -462,8 +461,6 @@ private:
   double deltaTime;
   int sTEP;
 
-  bool useMFront;
-  bool isAxisymmetric;
   boost::shared_ptr<GenericElementInterface> mfrontInterface;
   int atomTest;
 };
