@@ -123,6 +123,7 @@ using OpSpringRhs = FormsIntegrators<BoundaryEleOp>::Assembly<AT>::LinearForm<
 PetscBool is_quasi_static = PETSC_TRUE;
 
 int order = 2;
+int contact_order = 2;
 int geom_order = 1;
 double young_modulus = 100;
 double poisson_ratio = 0.25;
@@ -137,6 +138,7 @@ PetscBool use_mfront = PETSC_FALSE;
 PetscBool is_axisymmetric = PETSC_FALSE;
 
 int atom_test = 0;
+bool test_complited = false;
 
 namespace ContactOps {
 double cn_contact = 0.1;
@@ -222,9 +224,14 @@ MoFEMErrorCode Contact::setupProblem() {
   Simple *simple = mField.getInterface<Simple>();
 
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order, PETSC_NULL);
+  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-contact_order", &contact_order,
+                            PETSC_NULL);
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-geom_order", &geom_order,
                             PETSC_NULL);
+
   MOFEM_LOG("CONTACT", Sev::inform) << "Order " << order;
+  if (contact_order != order)
+    MOFEM_LOG("CONTACT", Sev::inform) << "Contact order " << contact_order;
   MOFEM_LOG("CONTACT", Sev::inform) << "Geom order " << geom_order;
 
   CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-use_mfront", &use_mfront,
@@ -324,15 +331,29 @@ MoFEMErrorCode Contact::setupProblem() {
 
   auto boundary_ents = filter_true_skin(filter_blocks(get_skin()));
   CHKERR simple->setFieldOrder("SIGMA", 0);
-  CHKERR simple->setFieldOrder("SIGMA", order - 1, &boundary_ents);
+  int sigma_order = std::max(order, contact_order) - 1;
+  CHKERR simple->setFieldOrder("SIGMA", sigma_order, &boundary_ents);
+
+  if (contact_order > order) {
+    Range ho_ents;
+    if constexpr (SPACE_DIM == 3) {
+      CHKERR mField.get_moab().get_adjacencies(boundary_ents, 1, false, ho_ents,
+                                               moab::Interface::UNION);
+    } else {
+      ho_ents = boundary_ents;
+    }
+    CHKERR mField.getInterface<CommInterface>()->synchroniseEntities(ho_ents);
+    CHKERR simple->setFieldOrder("U", contact_order, &ho_ents);
+    CHKERR mField.getInterface<CommInterface>()->synchroniseFieldEntities("U");
+  }
 
   if (is_axisymmetric) {
     if (SPACE_DIM == 3) {
-      SETERRQ(PETSC_COMM_SELF, 1,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
               "Use executable contact_2d with axisymmetric model");
     } else {
       if (!use_mfront) {
-        SETERRQ(PETSC_COMM_SELF, 1,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                 "Axisymmetric model is only available with MFront (set "
                 "use_mfront to 1)");
       } else {
@@ -350,11 +371,11 @@ MoFEMErrorCode Contact::setupProblem() {
   } else {
 #ifndef WITH_MODULE_MFRONT_INTERFACE
     SETERRQ(
-        PETSC_COMM_SELF, 1,
+        PETSC_COMM_SELF, MOFEM_NOT_FOUND,
         "MFrontInterface module was not found while use_mfront was set to 1");
 #else
     if (SCHUR_ASSEMBLE) {
-      SETERRQ(PETSC_COMM_SELF, 1,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
               "MFrontInterface module is not compatible with Schur assembly");
     }
     if (SPACE_DIM == 3) {
@@ -389,8 +410,9 @@ MoFEMErrorCode Contact::setupProblem() {
   }
 
   auto dm = simple->getDM();
-  monitorPtr = boost::make_shared<Monitor>(dm, use_mfront, mfrontInterface,
-                                           is_axisymmetric, atom_test);
+  monitorPtr =
+      boost::make_shared<Monitor>(dm, use_mfront, mfrontInterface,
+                                  is_axisymmetric, atom_test, &test_complited);
   if (use_mfront) {
     mfrontInterface->setMonitorPtr(monitorPtr);
   }
@@ -507,11 +529,6 @@ MoFEMErrorCode Contact::bC() {
                                            "SIGMA", 0, 3, false, true);
   CHKERR bc_mng->removeBlockDOFsOnEntities(
       simple->getProblemName(), "NO_CONTACT", "SIGMA", 0, 3, false, true);
-
-  if (is_axisymmetric) {
-    CHKERR bc_mng->removeBlockDOFsOnEntities(
-        simple->getProblemName(), "REMOVE_X", "SIGMA", 0, 3, false, true);
-  }
 
   // Note remove has to be always before push. Then node marking will be
   // corrupted.
@@ -897,7 +914,13 @@ MoFEMErrorCode Contact::tsSolve() {
 //! [Solve]
 
 //! [Check]
-MoFEMErrorCode Contact::checkResults() { return 0; }
+MoFEMErrorCode Contact::checkResults() {
+  if (atom_test == 1 && !test_complited) {
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+             "atom test %d was not completed", atom_test);
+  }
+  return 0;
+}
 //! [Check]
 
 static char help[] = "...\n\n";

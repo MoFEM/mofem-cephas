@@ -188,10 +188,10 @@ if(IS_MFRONT_MOD)
       -sdf_file ./sdf_files/sdf_hertz.py
       -use_mfront 1
       -is_axisymmetric 1
-      -mi_lib_path_2 ${CMAKE_CURRENT_BINARY_DIR}/src/libBehaviour.${DEFAULT_LIB_EXTENSION}
-      -mi_block_2 LinearElasticity
-      -mi_param_2_0 1e3
-      -mi_param_2_1 0.4
+      -mi_lib_path_10 ${CMAKE_CURRENT_BINARY_DIR}/src/libBehaviour.${DEFAULT_LIB_EXTENSION}
+      -mi_block_10 LinearElasticity
+      -mi_param_10_0 1e3
+      -mi_param_10_1 0.4
       -atom_test 1
     )
 
