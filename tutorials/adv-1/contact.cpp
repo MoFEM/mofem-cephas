@@ -915,7 +915,7 @@ MoFEMErrorCode Contact::tsSolve() {
 
 //! [Check]
 MoFEMErrorCode Contact::checkResults() {
-  if (atom_test == 1 && !test_complited) {
+  if (atom_test == 1 && !mField.get_comm_rank() && !test_complited) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
              "atom test %d was not completed", atom_test);
   }
