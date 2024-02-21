@@ -115,7 +115,7 @@ if(IS_MFRONT_MOD)
     mfront_lib_all)
 endif(IS_MFRONT_MOD)
 
-# Copy scripts to build directory
+# Copy scripts to build a directory
 add_custom_target(
   um_copy_sdf_files_directory
   ALL
