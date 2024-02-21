@@ -138,7 +138,6 @@ PetscBool use_mfront = PETSC_FALSE;
 PetscBool is_axisymmetric = PETSC_FALSE;
 
 int atom_test = 0;
-bool test_complited = false;
 
 namespace ContactOps {
 double cn_contact = 0.1;
@@ -410,9 +409,8 @@ MoFEMErrorCode Contact::setupProblem() {
   }
 
   auto dm = simple->getDM();
-  monitorPtr =
-      boost::make_shared<Monitor>(dm, use_mfront, mfrontInterface,
-                                  is_axisymmetric, atom_test, &test_complited);
+  monitorPtr = boost::make_shared<Monitor>(dm, use_mfront, mfrontInterface,
+                                           is_axisymmetric);
   if (use_mfront) {
     mfrontInterface->setMonitorPtr(monitorPtr);
   }
@@ -907,19 +905,29 @@ MoFEMErrorCode Contact::tsSolve() {
     CHKERR TSSolve(solver, NULL);
   }
 
-  ContactOps::CommonData::totalTraction.reset();
-
   MoFEMFunctionReturn(0);
 }
 //! [Solve]
 
 //! [Check]
 MoFEMErrorCode Contact::checkResults() {
-  if (atom_test == 1 && !mField.get_comm_rank() && !test_complited) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-             "atom test %d was not completed", atom_test);
+  MoFEMFunctionBegin;
+  if (atom_test == 1 && !mField.get_comm_rank()) {
+    const double *t_ptr;
+    CHKERR VecGetArrayRead(ContactOps::CommonData::totalTraction, &t_ptr);
+    double hertz_tract = 158.73;
+    double tol = 4e-3;
+    if (fabs(t_ptr[1] - hertz_tract) / hertz_tract > tol) {
+      SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+               "atom test %d diverged! %3.4e != %3.4e", atom_test, t_ptr[1],
+               hertz_tract);
+    }
+    CHKERR VecRestoreArrayRead(ContactOps::CommonData::totalTraction, &t_ptr);
   }
-  return 0;
+
+  ContactOps::CommonData::totalTraction.reset();
+
+  MoFEMFunctionReturn(0);
 }
 //! [Check]
 
