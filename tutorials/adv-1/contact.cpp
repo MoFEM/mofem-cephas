@@ -407,7 +407,8 @@ MoFEMErrorCode Contact::setupProblem() {
   }
 
   auto dm = simple->getDM();
-  monitorPtr = boost::make_shared<Monitor>(dm, use_mfront, mfrontInterface);
+  monitorPtr =
+      boost::make_shared<Monitor>(dm, mfrontInterface, is_axisymmetric);
   if (use_mfront) {
     mfrontInterface->setMonitorPtr(monitorPtr);
   }

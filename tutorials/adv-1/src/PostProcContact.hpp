@@ -30,8 +30,8 @@ struct Monitor : public FEMethod {
   Monitor(SmartPetscObj<DM> &dm,
           boost::shared_ptr<GenericElementInterface> mfront_interface = nullptr,
           bool is_axisymmetric = false)
-      : dM(dm), moabVertex(mbVertexPostproc), sTEP(0), useMFront(use_mfront),
-        mfrontInterface(mfront_interface), atomTest(atom_test) {
+      : dM(dm), moabVertex(mbVertexPostproc), sTEP(0),
+        mfrontInterface(mfront_interface) {
 
     MoFEM::Interface *m_field_ptr;
     CHKERR DMoFEMGetInterfacePtr(dM, &m_field_ptr);
