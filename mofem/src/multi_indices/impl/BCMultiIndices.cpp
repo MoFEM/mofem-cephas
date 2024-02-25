@@ -231,6 +231,9 @@ CubitMeshSets::getTypeFromBcData(const std::vector<char> &bc_data,
     MoFEMFunctionReturnHot(0);
   }
 
+  type &= ~(DISPLACEMENTSET | FORCESET | VELOCITYSET | ACCELERATIONSET |
+            TEMPERATURESET | PRESSURESET | HEATFLUXSET | INTERFACESET |
+            UNKNOWNNAME);
   if (strcmp(&bc_data[0], "Displacement") == 0)
     type |= DISPLACEMENTSET;
   else if (strcmp(&bc_data[0], "Force") == 0)
