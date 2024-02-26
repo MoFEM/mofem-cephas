@@ -9,9 +9,11 @@
 If you write a paper using results obtained with the help of MoFEM, please
 cite our publication in \em The \em Journal \em of \em Open \em Source \em Software
 \htmlonly
-<a href="http://joss.theoj.org/papers/43d9625e5ed28d5c493bfc0fae6d8215"><img src="http://joss.theoj.org/papers/43d9625e5ed28d5c493bfc0fae6d8215/status.svg"></a>
+<a href="http://joss.theoj.org/papers/43d9625e5ed28d5c493bfc0fae6d8215">
+<img src="https://joss.theoj.org/papers/10.21105/joss.01441/status.svg" alt="DOI">
+</a>
 \endhtmlonly
-(follow link on the badge).
+(follow the link on the badge).
 
 The BibTex entry for MoFEM paper \cite mofemJoss is 
 \code
@@ -30,8 +32,8 @@ The BibTex entry for MoFEM paper \cite mofemJoss is
 }
 \endcode
 
-\note Each user module can have own DOI and reference. All module references
-supplements  MoFEM reference. For example homogenisation module DOI is on the badge
+\note Each user module can have its own DOI and reference. All module references
+supplement MoFEM references. For example, the homogenization module DOI is on the badge
 \htmlonly
 <a href="https://doi.org/10.5281/zenodo.439368"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.439368.svg" alt="DOI"></a>
 \endhtmlonly
@@ -42,11 +44,11 @@ supplements  MoFEM reference. For example homogenisation module DOI is on the ba
 \subsection policy_of_for_version How MoFEM version is changed?
 
 The current MoFEM version can be identified by \e Semantic \e Versioning and \e
-Git \e Commit \e Id. \e Git \e Commit \e Id is unique and points to particular
-code commit. \e Semantic \e Versioning is not unique, more than one commits to git
+Git \e Commit \e Id. \e Git \e Commit \e Id is unique and points to a particular
+code commit. \e Semantic \e Versioning is not unique, more than one commit to the git
 repository can have the same version.
 
-First two lines of every executed code which is build with MoFEM library look like that
+The first two lines of every executed code which is built with MoFEM library look like that
 \code
 version 0.3.24  <---  (MAJOR_VERSION.MINOR_VERSION.BUILD_VERSION)
 git commit id 3d06924d27973df16e3260c6e962929330cf9348
@@ -528,7 +530,10 @@ c_cpp_properties configuration on Mac should look like follows:
         {
             "name": "Mac",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "${env:HOME}/um_view/include/**",
+                "${env:HOME}/um_view/include/boost/**",
+                "${env:HOME}/mofem_install/mofem-cephas/mofem/include/MoFEM.hpp"
             ],
             "defines": [
                 "WITH_ADOL_C",
@@ -543,7 +548,7 @@ c_cpp_properties configuration on Mac should look like follows:
             "cStandard": "gnu17",
             "cppStandard": "gnu++14",
             "intelliSenseMode": "macos-clang-x64",
-            "compileCommands": "${workspaceFolder}/um-build-Debug-l3ew3vn/compile_commands.json"
+            "compileCommands": "${workspaceFolder}/um-build-Debug-XXXXX/compile_commands.json"
             "browse": {
                 "databaseFilename": "${default}",
                 "limitSymbolsToIncludedHeaders": true
@@ -556,7 +561,7 @@ c_cpp_properties configuration on Mac should look like follows:
 
 Note line
 \code
-"compileCommands": "${workspaceFolder}/um-build-Debug-l3ew3vn/compile_commands.json"
+"compileCommands": "${workspaceFolder}/um-build-Debug-*/compile_commands.json"
 \endcode
 
 which points to the particular build directory, i.e. um-build-Debug-l3ew3vn,

@@ -2,10 +2,12 @@
  * \brief Context for PETSc Time Stepping
  */
 
-
-
 #ifndef __TSCTX_HPP__
 #define __TSCTX_HPP__
+
+#include <petsc/private/tsimpl.h>
+
+#define TSADAPTMOFEM "TSMoFEMAdapt"
 
 namespace MoFEM {
 
@@ -42,19 +44,7 @@ struct TsCtx {
 
   bool zeroMatrix;
 
-  TsCtx(MoFEM::Interface &m_field, const std::string &problem_name)
-      : mField(m_field), moab(m_field.get_moab()), problemName(problem_name),
-        bH(MF_EXIST), zeroMatrix(true) {
-    PetscLogEventRegister("LoopTsIFunction", 0, &MOFEM_EVENT_TsCtxIFunction);
-    PetscLogEventRegister("LoopTsIJacobian", 0, &MOFEM_EVENT_TsCtxIJacobian);
-    PetscLogEventRegister("LoopTsRHSFunction", 0,
-                          &MOFEM_EVENT_TsCtxRHSFunction);
-    PetscLogEventRegister("LoopTsRHSJacobian", 0,
-                          &MOFEM_EVENT_TsCtxRHSJacobian);
-    PetscLogEventRegister("LoopTsMonitor", 0, &MOFEM_EVENT_TsCtxMonitor);
-    PetscLogEventRegister("LoopTsI2Function", 0, &MOFEM_EVENT_TsCtxI2Function);
-    PetscLogEventRegister("LoopTsI2Jacobian", 0, &MOFEM_EVENT_TsCtxI2Jacobian);
-  }
+  TsCtx(MoFEM::Interface &m_field, const std::string &problem_name);
 
   virtual ~TsCtx() = default;
 
@@ -82,7 +72,7 @@ struct TsCtx {
    * @brief Get the loops to do IJacobian object
    *
    * It is sequence of finite elements used to evalite the left hand sie of
-   * implimcit time solver.
+   * implicit time solver.
    *
    * @return FEMethodsSequence&
    */
@@ -92,7 +82,7 @@ struct TsCtx {
    * @brief Get the loops to do RHSJacobian object
    *
    * It is sequence of finite elements used to evalite the left hand sie of
-   * implimcit time solver.
+   * implicit time solver.
    *
    * @return FEMethodsSequence&
    */
@@ -225,7 +215,6 @@ private:
 
   boost::movelib::unique_ptr<bool> vecAssembleSwitch;
   boost::movelib::unique_ptr<bool> matAssembleSwitch;
-
 };
 
 /**
@@ -247,7 +236,7 @@ PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
                               void *ctx);
 
 /**
- * @brief Set function evaluating jacobina in TS solver
+ * @brief Set function evaluating jacobian in TS solver
  *
  * <a
  * href=https://www.mcs.anl.gov/petsc/petsc-3.1/docs/manualpages/TS/TSSetIJacobian.html>See
@@ -318,7 +307,7 @@ PetscErrorCode TsSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
                                 void *ctx);
 
 /**
- * @brief Calculation Jaconian for second order PDE in time
+ * @brief Calculation Jacobian for second order PDE in time
  *
  * <a
  * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSSetI2Jacobian.html>See
@@ -359,6 +348,49 @@ PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
  */
 PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
                                Vec F, void *ctx);
+
+/** \brief Custom TSAdaptivity in MoFEM
+ * 
+ * \code
+ * CHKERR TSAdaptRegister(TSADAPTMOFEM, TSAdaptCreateMoFEM);
+ * TSAdapt adapt;
+ * CHKERR TSGetAdapt(solver, &adapt);
+ * CHKERR TSAdaptSetType(adapt, TSADAPTMOFEM);
+ * \endcode
+ *
+ */
+struct TSAdaptMoFEM {
+
+  TSAdaptMoFEM();
+
+  double alpha; //< step reduction if divergence
+  double gamma; //< adaptivity exponent
+  int desiredIt; //< desired number of iterations
+  PetscBool offApat; //< off adaptivity
+};
+
+static PetscErrorCode TSAdaptChooseMoFEM(TSAdapt adapt, TS ts, PetscReal h,
+                                         PetscInt *next_sc, PetscReal *next_h,
+                                         PetscBool *accept, PetscReal *wlte,
+                                         PetscReal *wltea, PetscReal *wlter);
+static PetscErrorCode TSAdaptResetMoFEM(TSAdapt adapt);
+
+static PetscErrorCode TSAdaptDestroyMoFEM(TSAdapt adapt);
+
+/**
+ * @brief Craete MOFEM adapt 
+ *
+ * \code
+ *  CHKERR TSAdaptRegister(TSADAPTMOFEM, TSAdaptCreateMoFEM);
+ *  TSAdapt adapt;
+ *  CHKERR TSGetAdapt(solver, &adapt);
+ *  CHKERR TSAdaptSetType(adapt, TSADAPTMOFEM);
+ * \endcode
+ *
+ * @param adapt
+ * @return PetscErrorCode
+ */
+PetscErrorCode TSAdaptCreateMoFEM(TSAdapt adapt);
 
 } // namespace MoFEM
 

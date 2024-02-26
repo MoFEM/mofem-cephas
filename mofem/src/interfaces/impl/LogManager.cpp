@@ -393,7 +393,12 @@ LogManager::LoggerType &LogManager::setLog(const std::string channel) {
 }
 
 LogManager::LoggerType &LogManager::getLog(const std::string channel) {
-  return InternalData::logChannels.at(channel);
+  auto it = InternalData::logChannels.find(channel);
+  if (it == InternalData::logChannels.end()) {
+    CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY,
+                      "Channel <" + channel + "> not found");
+  }
+  return it->second;
 }
 
 bool LogManager::checkIfChannelExist(const std::string channel) {

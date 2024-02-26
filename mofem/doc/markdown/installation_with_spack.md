@@ -1,16 +1,15 @@
 Installation with Spack (Advanced) {#install_spack}
 ==========================================================
 
-Spack is "A flexible package manager supporting multiple versions, configurations, 
-platforms, and compilers." -
-[https://spack.io](https://spack.io)
+ [Spack.pm](https://spack.io) is "A flexible package manager supporting multiple versions, configurations,
+platforms, and compilers."
 
-A community of Spack users and developers contributes to development of package
+A community of Spack.pm users and developers contributes to development of package
 configurations for a range of platforms, including macOS and Linux. This creates
 a consistent build setup for supported scientific packages.
 
-MoFEM can be deployed and developed using Spack, which is the recommended way of
-installation. It should be noted that Spack compiles packages from sources, 
+MoFEM can be deployed and developed using Spack.pm, which is the recommended way of
+installation. It should be noted that Spack.pm compiles packages from sources, 
 pre-compiled binaries are not available. If you have any problems, feedback or would like to suggest corrections, please email to
 [mofem-group@googlegroups.com](https://groups.google.com/forum/#!forum/mofem-group).
 
@@ -34,27 +33,6 @@ it from the terminal, for example:
 
 \note Running the scripts may require user password for sudo privileges. 
 
-## Scripts on secure server
-
-If you are going to install MoFEM on a secure server, or on a server without
-access to the internet (or on a train/during long flight), you can download
-spack and spack mirror first, and then start the installation.
-
-Download spack:
-~~~~~~
-curl -L https://api.github.com/repos/likask/spack/tarball/mofem \
---output spack.tgz
-~~~~~~
-and download mirror:
-~~~~~~
-curl -L  http://mofem.eng.gla.ac.uk/downloads/mirror_v0.16.tar.gz \
---output mirror.tgz
-~~~~~~
-and then you can install MoFEM:
-~~~~~
-./install_mofem_user.sh
-~~~~~
-
 # Prerequisites {#spack_prerequisites}
 
 The installation of MoFEM requires
@@ -72,14 +50,12 @@ build-essential \
 ca-certificates \
 coreutils \
 environment-modules \
-python \
 python3-distutils \
 gfortran \
 curl \
 git \
 cmake \
-doxygen \
-vim 
+doxygen
 ~~~~~
 
 ## macOS
@@ -128,29 +104,19 @@ git clone -b master  https://bitbucket.org/mofem/mofem-spack.git spack
 
 Initialise Spack's environment variables:
 ~~~~~~
-. spack/share/spack/setup-env.sh
+. $HOME/mofem_install/spack/share/spack/setup-env.sh
 ~~~~~~
-
-You can download spack packages necessary for MoFEM into a mirror:
-~~~~~~
-mkdir -p mofem_mirror &&
-curl -s -L  http://mofem.eng.gla.ac.uk/downloads/mirror_v0.16.tar.gz \
-| tar xzC $PWD/mofem_mirror  --strip 1
-spack mirror add mofem_mirror $PWD/mofem_mirror
-~~~~~~
-\note The above step is not required. If you do not download and add a mirror, packages will be downloaded from the Internet. However, locations of libraries can change, or a server could be temporarily down. Using spack mirror makes
-installation resistant to such problems.
 
 Spack's environment variables will be lost when the terminal session is closed.
 Consider adding the previous command to your `.bash_profile` or `.bashrc`, e.g.:
 ~~~~~~
-echo ". $HOME/spack/share/spack/setup-env.sh" >> ~/.bash_profile
+echo ". $HOME/mofem_install/spack/share/spack/setup-env.sh" >> ~/.bash_profile
 ~~~~~~
 
 If you are using a newer macOS, you might need to add config to
 `.zshrc`, e.g.:
 ~~~~~~
-echo ". $HOME/spack/share/spack/setup-env.sh" >> ~/.zshrc
+echo ". $HOME/mofem_install/spack/share/spack/setup-env.sh" >> ~/.zshrc
 ~~~~~~
 
 Finally, find already installed compilers and external packages:
@@ -158,41 +124,6 @@ Finally, find already installed compilers and external packages:
 spack compiler find
 spack external find
 ~~~~~~
-
-If you are using a system where `gfortran` 10 or 11 is installed, some packages like `mumps` may not compile. You can check this by running:
-~~~~~
-gfortran -v
-~~~~~
-If as a result you get something like
-~~~~~
-gcc version 11.2.0 (Homebrew GCC 11.2.0_3) 
-~~~~~
-that means you have version 11. This is a temporary problem and will be
-fixed over the time, once various patches and fixes will be applied to those
-libraries. In the meantime, you can fix this problem by editing `compilers.yaml`
-file located in `~/.spack/darwin/compilers.yaml`, and setting compiler flag `-fallow-argument-mismatch`, which will allow to compile `mumps` with warnings rather than errors. The `compilers.yaml` file should then be similar to the following:
-~~~~~~~
-compilers:
-- compiler:
-    spec: apple-clang@13.1.6
-    paths:
-      cc: /usr/bin/clang
-      cxx: /usr/bin/clang++
-      f77: /usr/local/bin/gfortran
-      fc: /usr/local/bin/gfortran
-    flags:
-      fflags: -fallow-argument-mismatch
-    operating_system: monterey
-    target: x86_64
-    modules: []
-    environment: {}
-    extra_rpaths: []
-~~~~~~~
-Note the following line:
-~~~~~~~
-flags:
-  fflags: -fallow-argument-mismatch
-~~~~~~~
 
 Note that there are further instructions on [Spack usage and configuration](#spack_usage_config).
 
@@ -238,25 +169,6 @@ Consider also adding this command to your `.bash_profile` or `.bashrc`, or `.zsh
 echo "export PATH=$PWD/um_view/bin:\$PATH" >> ~/.bash_profile
 ~~~~~~
 
-## Test elasticity module
-
-To tests the installed MoFEM's basic users module, run:
-~~~~~~
-cd um_view/elasticity
-
-mpirun -np 2 ./elasticity \
--my_file LShape.h5m \
--my_order 2 \
--ksp_type gmres \
--pc_type lu -pc_factor_mat_solver_type mumps \
--ksp_monitor
-mbconvert out_skin.h5m out_skin.vtk
-~~~~~~
-
-Open the output VTK file in [ParaView](https://www.paraview.org). You can
-install ParaView using Spack, [directly from the
-website](https://www.paraview.org/download/) or through your OS package manager.
-
 ## Install additional users modules
 
 MoFEM can be extended by adding user modules. More modules are available as
@@ -269,13 +181,13 @@ The extensions can be installed using `spack install <extension>`. For example, 
 ~~~~~~
 spack install mofem-fracture-module
 cd $HOME
-spack view --verbose symlink -i um_view_foo mofem-cephas
-spack activate -v um_view_foo mofem-fracture-module
+spack view --verbose symlink -i um_view mofem-cephas
+spack activate -v um_view mofem-fracture-module
 ~~~~~~
 or the minimal surface equation tutorial module:
 ~~~~~~
 spack install mofem-minimal-surface-equation
-spack activate -v um_view_foo mofem-minimal-surface-equation
+spack activate -v um_view mofem-minimal-surface-equation
 ~~~~~~
 
 \note Not all MoFEM's modules have been added to Spack. If your module is not yet there, you can install manually by cloning the appropriate users module.
@@ -284,9 +196,9 @@ spack activate -v um_view_foo mofem-minimal-surface-equation
 
 You can automatically run tests after installing a package, for example:
 ~~~~~~
-spack install --test=root -j 1 mofem-cephas
-spack install --test=root -j 1 mofem-users-modules
-spack install --test=root -j 1 mofem-fracture-module
+spack install --test=root -j 4 mofem-cephas
+spack install --test=root -j 4 mofem-users-modules
+spack install --test=root -j 4 mofem-fracture-module
 ~~~~~~
 
 # Developers {#spack_developers}
@@ -321,20 +233,19 @@ mkdir $HOME/mofem_install
 cd $HOME/mofem_install
 git clone \
   -b develop \
-  --recurse-submodules https://bitbucket.org/likask/mofem-cephas.git \
-  mofem-cephas
+  https://bitbucket.org/likask/mofem-cephas.git mofem-cephas
 ~~~~~
 and kick-start installation of the core library. First install all dependencies:
 ~~~~~
-spack install --only dependencies mofem-cephas ^petsc+X
+spack install --only dependencies mofem-cephas ^petsc+X ^boost+python+numpy
 ~~~~~
 and then core MoFEM library:
 ~~~~~
-spack dev-build \
+spack dev-build -j4 \
   --source-path $HOME/mofem_install/mofem-cephas \
   --keep-prefix \
-  --test root \
-  mofem-cephas@develop~copy_user_modules ^petsc+X
+  mofem-cephas@develop+adol-c~copy_user_modules~ipo+med+mgis~shared+slepc+tetgen \
+  build_type=Release install_id=0 ^petsc+X ^boost+python+numpy
 ~~~~~
 Note that here another specification of the build configuration (*spec*) was set as `~copy_user_modules` which is equivalent to `copy_user_modules=False`. 
 
@@ -344,9 +255,9 @@ spack find -lv mofem-cephas
 ~~~~~
 you should see something similar to
 ~~~~~
-==> 1 installed package
--- darwin-macos-haswell / apple-clang@12.0.0-gfortran9 ----------
-vhv7opa mofem-cephas@develop+adol-c~copy_user_modules~ipo+med+slepc+tetgen build_type=RelWithDebInfo dev_path=/Users/lukaszkaczmarczyk/mofem_install/mofem-cephas install_id=0
+-- linux-ubuntu20.04-x86_64 / gcc@9.4.0 -------------------------
+c4fmrqz mofem-cephas@develop+adol-c~copy_user_modules~ipo+med+mgis~shared+slepc+tetgen build_system=cmake build_type=Release dev_path=/mofem_install/mofem-cephas generator=make install_id=0
+==> 1 installed packages
 ~~~~~
 
 Furthermore, in the directory `$HOME/mofem_install/mofem-cephas` you will find
@@ -354,7 +265,7 @@ build directory `core-build-WithDebugInfo-vhv7opa`. Note that the hash in the na
 
 You can now start to develop code in the MoFEM core library. If you change directory to
 ~~~~~
-cd $HOME/mofem_install/mofem-cephas/core-build-WithDebugInfo-vhv7opa
+cd $HOME/mofem_install/mofem-cephas/core-build-Release*
 ~~~~~ 
 you
 can compile, test and install:
@@ -367,11 +278,11 @@ i.e. do typical developer work.
 
 Moreover, you can install simultaneously debugging version of code, as follows:
 ~~~~~
-spack dev-build \
+spack dev-build -j4 \
   --source-path $HOME/mofem_install/mofem-cephas \
   --keep-prefix \
-  --test root \
-  mofem-cephas@develop~copy_user_modules build_type=Debug ^petsc+X
+  mofem-cephas@develop+adol-c~copy_user_modules~ipo+med+mgis~shared+slepc+tetgen \
+  build_type=Debug install_id=0 ^petsc+X ^boost+python+numpy
 ~~~~~ 
 
 \note By default `spack dev-build` will try to use all available processor slots to run `make` in parallel. To set a desired number of parallel jobs, you can use the parameter `-j NP`, where `NP` is number of parallel processes to be used. Alternatively, you can edit Spack settings 
@@ -384,34 +295,35 @@ spack dev-build \
   -b build \
   --source-path $HOME/mofem_install/mofem-cephas \
   --keep-prefix \
-  --test root \
-  mofem-cephas@develop~copy_user_modules ^petsc+X
+  mofem-cephas@develop+adol-c~copy_user_modules~ipo+med+mgis~shared+slepc+tetgen \
+  build_type=RelWithDebInfo install_id=0 ^petsc+X ^boost+python+numpy
 ~~~~~
 Note that installation at that point is partial.
+
 ## 2. Install users modules {#spack_users_modules}
 
-First, run: 
+Clone users modules repository:
 ~~~~~
-spack find -lv mofem-cephas
-~~~~~ 
-and check installed versions of the core library (`mofem-cephas@develop`):
+mkdir $HOME/mofem_install
+cd $HOME/mofem_install
+git clone \
+  -b develop \
+  https://likask@bitbucket.org/mofem/users-modules-cephas.git \
+  mofem-cephas/mofem/users_modules
 ~~~~~
-==> 2 installed packages
--- linux-ubuntu18.04-zen / gcc@7.5.0 ----------------------------
-nnnvprd mofem-cephas@develop+adol-c~copy_user_modules~ipo+med+slepc+tetgen build_type=Debug dev_path=/home/lukasz/mofem_install/mofem-cephas install_id=0
-pa3httg mofem-cephas@develop+adol-c~copy_user_modules~ipo+med+slepc+tetgen build_type=RelWithDebInfo dev_path=/home/lukasz/mofem_install/mofem-cephas install_id=0
-~~~~~
+
 For example, if you want to install users modules against core library which was built with the specification `build_type=RelWithDebInfo`, pick the corresponding row and copy to clipboard the hash (`pa3httg`). Next, change the directory:
 ~~~~~
 cd $HOME/mofem_install/mofem-cephas/mofem/users_modules
 ~~~~~
 and install users modules:
 ~~~~~
+export hash=$(spack find -v mofem-cephas@develop build_type=Release | grep mofem-cephas@develop)
 spack dev-build \
   --test root  \
   --source-path $HOME/mofem_install/mofem-cephas/mofem/users_modules \
-  mofem-users-modules@develop build_type=RelWithDebInfo \
-  ^/pa3httg
+  mofem-users-modules@develop build_type=Release \
+  ^$hash ^petsc+X ^boost+python+numpy
 ~~~~~
 In the `spack dev-build` command of the snippet above `^` is a *dependency
 spec*, i.e. a descriptor defining the dependency of the package that we are
@@ -424,9 +336,9 @@ spack find -lv mofem-users-modules
 and
 as result you will get something similar to:
 ~~~~~
-==> 1 installed package
--- darwin-macos-haswell / apple-clang@12.0.0-gfortran9 ----------
-c6ts56b mofem-users-modules@develop+copy_user_modules~ipo build_type=Debug dev_path=/Users/lukaszkaczmarczyk/mofem_install/mofem-cephas/mofem/users_modules install_id=0
+-- linux-ubuntu20.04-x86_64 / gcc@9.4.0 -------------------------
+mofem-users-modules@lukasz+basic_fe+basic_tutorials+build_tut_adv0+build_tut_adv1+build_tut_adv2+build_tut_clx0+build_tut_cor0to1+build_tut_cor10+build_tut_cor2to5+build_tut_cor6+build_tut_cor7+build_tut_cor8+build_tut_cor9+build_tut_fun0+build_tut_fun1+build_tut_fun2+build_tut_max0+build_tut_max1+build_tut_mix0+build_tut_mix1+build_tut_msh1+build_tut_msh2+build_tut_scl0+build_tut_scl1+build_tut_scl10+build_tut_scl11+build_tut_scl2+build_tut_scl3+build_tut_scl4+build_tut_scl5+build_tut_scl6+build_tut_scl7+build_tut_scl8+build_tut_scl9+build_tut_vec0+build_tut_vec1+build_tut_vec2+build_tut_vec3+build_tut_vec4+build_tut_vec5+build_tut_vec6+copy_user_modules+docker~ipo~mgis~shared build_system=cmake build_type=RelWithDebInfo dev_path=/mofem_install/mofem-cephas/mofem/users_modules generator=make install_id=0
+==> 1 installed packages
 ~~~~~
 Also, you will find new directory
 `$HOME/mofem_install/mofem-cephas/mofem/users_modules/um-build-WithDebugInfo-c6ts56b`, which is the build directory for a particular version of
@@ -441,15 +353,17 @@ Later you can add other modules to that directory if needed.
 
 \note You can do partial install, before of after some installation phase,
 using command line option `-b BEFORE` or `-u UNTIL`, for example if you like
-to investigate build issues, you can do,
-~~~~~
+to investigate build issues, you can do
+
+~~~~
+export hash=$(spack find -v mofem-cephas@develop  build_type=Debug | grep mofem-cephas@develop)
 spack dev-build \
   -b build \
   --test root  \
   --source-path $HOME/mofem_install/mofem-cephas/mofem/users_modules \
-  mofem-users-modules@develop build_type=RelWithDebInfo \
-  ^/pa3httg
-~~~~~
+  mofem-users-modules@develop build_type=Debug \
+  ^$hash ^petsc+X ^boost+python+numpy
+~~~~
 
 # Installation on specific servers {#spack_servers}
 
@@ -565,8 +479,12 @@ mkdir $HOME/mofem_install
 cd $HOME/mofem_install
 git clone \
   -b develop \
-  --recurse-submodules https://bitbucket.org/likask/mofem-cephas.git \
+  https://bitbucket.org/likask/mofem-cephas.git \
   mofem-cephas
+git clone \
+  -b develop \
+  https://likask@bitbucket.org/mofem/users-modules-cephas.git \
+  mofem-cephas/mofem/users_modules
 ~~~~~
 Kick-start installation of the core library:
 ~~~~~
@@ -576,7 +494,6 @@ spack dev-build -j4 \
   --test root \
   mofem-cephas@develop~copy_user_modules ^petsc+X ^openmpi@3.1.6%gcc@9.3.0 ^slepc~arpack
 ~~~~~
-
 
 If installation is successful, by executing
 ~~~~~
@@ -589,17 +506,18 @@ you should see something similar to
 3prnmyj mofem-cephas@develop+adol-c~copy_user_modules~docker~ipo+med~shared+slepc+tetgen build_type=RelWithDebInfo dev_path=/home/staff/as601x/mofem_install/mofem-cephas install_id=0
 ~~~~~
 
-Copy to clipboard the hash (`3prnmyj`). Next, change the directory:
+Next, change the directory:
 ~~~~~
 cd $HOME/mofem_install/mofem-cephas/mofem/users_modules
 ~~~~~
-and install users modules specifying the dependency on the previously installed core library using the hash (`3prnmyj`):
+and install users modules specifying the dependency on the previously installed core library using the:
 ~~~~~
+export hash=$(spack find -v mofem-cephas@develop | grep mofem-cephas@develop)
 spack dev-build -j4 \
   --test root  \
   --source-path $HOME/mofem_install/mofem-cephas/mofem/users_modules \
   mofem-users-modules@develop build_type=RelWithDebInfo \
-  ^/3prnmyj
+  ^$hash ^petsc+X ^openmpi@3.1.6%gcc@9.3.0 ^slepc~arpack
 ~~~~~
 
 Once installation is successfully, you will find a new directory, e.g. 

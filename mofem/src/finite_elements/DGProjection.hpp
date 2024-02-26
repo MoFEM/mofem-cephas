@@ -30,31 +30,32 @@ fe_physics->getRuleHook = [](int, int, int o) {
   return 2 * o; };
 
 int order = 1;
-auto entity_data_l2 = boost::make_shared<EntitiesFieldData>(); // entity data 
-// shared between physical and post proc elements 
-auto mass_ptr = boost::make_shared<MatrixDouble>(); // integrated mass matrix
-// of post proc element
-auto coeffs_ptr = boost::make_shared<MatrixDouble>(); // vector of coeffs shared
-// between physical and post proc elements
-auto data_ptr = boost::make_shared<MatrixDouble>(); // data stored at 
-// integration points of the physical element and evaluated at integration 
-// points of the post proc element
 
+// entity data shared between physical and post proc elements
+auto entity_data_l2 = boost::make_shared<EntitiesFieldData>(MBENTITYSET); 
+// integrated mass matrix of post proc element
+auto mass_ptr = boost::make_shared<MatrixDouble>(); 
+// vector of coeffs shared between physical and post proc elements
+auto coeffs_ptr = boost::make_shared<MatrixDouble>();
+// data stored at
+// integration points of the physical element and evaluated at integration
+// points of the post proc element
+auto data_ptr = boost::make_shared<MatrixDouble>(); 
 fe_physics->getOpPtrVector()->push_back(new
  OpDGProjectionMassMatrix(order, mass_ptr, entity_data_l2,
-  AINSWORTH_LEGENDRE_BASE, L2);
+  AINSWORTH_LEGENDRE_BASE, L2));
 
 // You need to call operatpor which will evalaute data_ptr
 
 fe_physics->getOpPtrVector()->push_back(new
   OpCalculateVectorFieldValues("V", data_ptr);
 fe_physics->getOpPtrVector()->push_back( new
-  OpDGProjectionCoefficients(data_ptr, coeffs_ptr, entity_data_l2,
-  AINSWORTH_LEGENDRE_BASE, L2);
+  OpDGProjectionCoefficients(data_ptr, coeffs_ptr, mass_ptr, entity_data_l2,
+  AINSWORTH_LEGENDRE_BASE, L2));
 
 fe_post_proc->getOpPtrVector()->push_back(new
-  OpDGProjectionEvaluation(data_ptr, coeffs_ptr, mass_ptr,
-  entity_data_l2, AINSWORTH_LEGENDRE_BASE, L2);
+  OpDGProjectionEvaluation(data_ptr, coeffs_ptr, 
+  entity_data_l2, AINSWORTH_LEGENDRE_BASE, L2));
 
  * \endcode
  *

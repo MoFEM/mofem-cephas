@@ -250,7 +250,7 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint(
       std::array<double, 9> coords;
       CHKERR m_field.get_moab().get_coords(conn, num_nodes, coords.data());
 
-      CHKERR Tools::getLocalCoordinatesOnReferenceTriNodeTri(
+      CHKERR Tools::getLocalCoordinatesOnReferenceThreeNodeTri(
           coords.data(), &data_ptr->evalPoints[0], nb_eval_points,
           &local_coords[0]);
       CHKERR Tools::shapeFunMBTRI<2>(&shape[0], &local_coords[0],

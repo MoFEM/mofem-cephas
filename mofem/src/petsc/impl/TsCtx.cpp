@@ -2,6 +2,37 @@
 
 namespace MoFEM {
 
+TsCtx::TsCtx(MoFEM::Interface &m_field, const std::string &problem_name)
+    : mField(m_field), moab(m_field.get_moab()), problemName(problem_name),
+      bH(MF_EXIST), zeroMatrix(true) {
+  PetscLogEventRegister("LoopTsIFunction", 0, &MOFEM_EVENT_TsCtxIFunction);
+  PetscLogEventRegister("LoopTsIJacobian", 0, &MOFEM_EVENT_TsCtxIJacobian);
+  PetscLogEventRegister("LoopTsRHSFunction", 0, &MOFEM_EVENT_TsCtxRHSFunction);
+  PetscLogEventRegister("LoopTsRHSJacobian", 0, &MOFEM_EVENT_TsCtxRHSJacobian);
+  PetscLogEventRegister("LoopTsMonitor", 0, &MOFEM_EVENT_TsCtxMonitor);
+  PetscLogEventRegister("LoopTsI2Function", 0, &MOFEM_EVENT_TsCtxI2Function);
+  PetscLogEventRegister("LoopTsI2Jacobian", 0, &MOFEM_EVENT_TsCtxI2Jacobian);
+
+  if (!LogManager::checkIfChannelExist("TSWORLD")) {
+    auto core_log = logging::core::get();
+
+    core_log->add_sink(
+        LogManager::createSink(LogManager::getStrmWorld(), "TSWORLD"));
+    core_log->add_sink(
+        LogManager::createSink(LogManager::getStrmSync(), "TSSYNC"));
+    core_log->add_sink(
+        LogManager::createSink(LogManager::getStrmSelf(), "TSSELF"));
+
+    LogManager::setLog("TSWORLD");
+    LogManager::setLog("TSSYNC");
+    LogManager::setLog("TSSELF");
+
+    MOFEM_LOG_TAG("TSWORLD", "TS");
+    MOFEM_LOG_TAG("TSSYNC", "TS");
+    MOFEM_LOG_TAG("TSSELF", "TS");
+  }
+}
+
 MoFEMErrorCode TsCtx::clearLoops() {
   MoFEMFunctionBeginHot;
   loopsIJacobian.clear();
@@ -74,6 +105,10 @@ PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
     fe.ksp_ctx = KspMethod::CTX_SETFUNCTION;
     fe.data_ctx = PetscData::CtxSetF | PetscData::CtxSetX |
                   PetscData::CtxSetX_T | PetscData::CtxSetTime;
+
+    CHKERR TSGetSNES(ts, &fe.snes);
+    CHKERR SNESGetKSP(fe.snes, &fe.ksp);
+
     fe.cacheWeakPtr = cache_ptr;
     CHK_THROW_MESSAGE(TSGetTimeStep(ts, &fe.ts_dt), "get time step failed");
   };
@@ -94,7 +129,6 @@ PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
     unset(*bit);
     ts_ctx->vecAssembleSwitch = boost::move(bit->vecAssembleSwitch);
   }
-
 
   // fe loops
   for (auto &lit : ts_ctx->loopsIFunction) {
@@ -169,6 +203,10 @@ PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
     fe.ksp_ctx = KspMethod::CTX_OPERATORS;
     fe.data_ctx = PetscData::CtxSetA | PetscData::CtxSetB | PetscData::CtxSetX |
                   PetscData::CtxSetX_T | PetscData::CtxSetTime;
+
+    CHKERR TSGetSNES(ts, &fe.snes);
+    CHKERR SNESGetKSP(fe.snes, &fe.ksp);
+
     fe.cacheWeakPtr = cache_ptr;
     CHK_THROW_MESSAGE(TSGetTimeStep(ts, &fe.ts_dt), "get time step failed");
   };
@@ -241,6 +279,10 @@ PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
     fe.snes_ctx = SnesMethod::CTX_SNESNONE;
     fe.ksp_ctx = KspMethod::CTX_KSPNONE;
     fe.data_ctx = PetscData::CtxSetX | PetscData::CtxSetTime;
+
+    CHKERR TSGetSNES(ts, &fe.snes);
+    CHKERR SNESGetKSP(fe.snes, &fe.ksp);
+
     fe.cacheWeakPtr = cache_ptr;
     CHK_THROW_MESSAGE(TSGetTimeStep(ts, &fe.ts_dt), "get time step failed");
   };
@@ -513,6 +555,10 @@ PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
     fe.data_ctx = PetscData::CtxSetA | PetscData::CtxSetB | PetscData::CtxSetX |
                   PetscData::CtxSetX_T | PetscData::CtxSetX_TT |
                   PetscData::CtxSetTime;
+
+    CHKERR TSGetSNES(ts, &fe.snes);
+    CHKERR SNESGetKSP(fe.snes, &fe.ksp);
+                  
     fe.ts = ts;
     fe.cacheWeakPtr = cache_ptr;
     CHK_THROW_MESSAGE(TSGetTimeStep(ts, &fe.ts_dt), "get time step failed");
@@ -617,6 +663,10 @@ PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
     fe.data_ctx = PetscData::CtxSetF | PetscData::CtxSetX |
                   PetscData::CtxSetX_T | PetscData::CtxSetX_TT |
                   PetscData::CtxSetTime;
+
+    CHKERR TSGetSNES(ts, &fe.snes);
+    CHKERR SNESGetKSP(fe.snes, &fe.ksp);
+
     fe.ts = ts;
     fe.cacheWeakPtr = cache_ptr;
     CHK_THROW_MESSAGE(TSGetTimeStep(ts, &fe.ts_dt), "get time step failed");
@@ -669,6 +719,87 @@ PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
 
   PetscLogEventEnd(ts_ctx->MOFEM_EVENT_TsCtxIFunction, 0, 0, 0, 0);
   MoFEMFunctionReturn(0);
+}
+
+TSAdaptMoFEM::TSAdaptMoFEM()
+    : alpha(0.75), gamma(0.5), desiredIt(6), offApat(PETSC_FALSE) {
+  CHKERR PetscOptionsGetScalar("", "-ts_mofem_adapt_alpha", &alpha, PETSC_NULL);
+  CHKERR PetscOptionsGetScalar("", "-ts_mofem_adapt_gamma", &gamma, PETSC_NULL);
+  CHKERR PetscOptionsGetInt("", "-ts_mofem_adapt_desired_it", &desiredIt,
+                            PETSC_NULL);
+  CHKERR PetscOptionsGetBool("", "-ts_mofem_adapt_off", &offApat, PETSC_NULL);
+
+  MOFEM_LOG("TSWORLD", Sev::inform)
+      << "TS adaptivity: alpha = " << alpha << ", gamma = " << gamma
+      << ", desiredIt = " << desiredIt << ", offAdapt = " << offApat;
+}
+
+PetscErrorCode TSAdaptChooseMoFEM(TSAdapt adapt, TS ts, PetscReal h,
+                                  PetscInt *next_sc, PetscReal *next_h,
+                                  PetscBool *accept, PetscReal *wlte,
+                                  PetscReal *wltea, PetscReal *wlter) {
+  MoFEMFunctionBegin;
+
+  auto ts_adapt_mofem = boost::make_shared<TSAdaptMoFEM>();
+
+  *next_sc = 0; /* Reuse the same order scheme */
+  *wlte = -1;   /* Weighted local truncation error was not evaluated */
+  *wltea = -1;  /* Weighted absolute local truncation error is not used */
+  *wlter = -1;  /* Weighted relative local truncation error is not used */
+
+  *accept = PETSC_TRUE;
+  *next_h = h; /* Reuse the old step */
+
+  if (!ts_adapt_mofem->offApat) {
+
+    SNES snes;
+    CHKERR TSGetSNES(ts, &snes);
+
+    SNESConvergedReason reason;
+    CHKERR SNESGetConvergedReason(snes, &reason);
+
+    int it;
+    CHKERR SNESGetIterationNumber(snes, &it);
+
+    if (reason < 0) {
+      h *= ts_adapt_mofem->alpha;
+      *next_h = h;
+      MOFEM_LOG_C(
+          "TSWORLD", Sev::warning,
+          "\tDiverged set step length: it = %d, h = %3.4g set h = %3.4g \n", it,
+          h, *next_h);
+    } else if (reason > 0) {
+      h *= pow((static_cast<double>(ts_adapt_mofem->desiredIt) /
+                static_cast<double>(it + 1)),
+               static_cast<double>(ts_adapt_mofem->gamma));
+      *next_h = PetscClipInterval(h, adapt->dt_min, adapt->dt_max);
+      MOFEM_LOG_C(
+          "TSWORLD", Sev::inform,
+          "\tConverged set step length: it = %d, h = %3.4g set h = %3.4g \n",
+          it, h, *next_h);
+    }
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+PetscErrorCode TSAdaptResetMoFEM(TSAdapt adapt) {
+  PetscFunctionBegin;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode TSAdaptDestroyMoFEM(TSAdapt adapt) {
+  MoFEMFunctionBegin;
+  CHKERR TSAdaptResetMoFEM(adapt);
+  MoFEMFunctionReturn(0);
+}
+
+PetscErrorCode TSAdaptCreateMoFEM(TSAdapt adapt) {
+  PetscFunctionBegin;
+  adapt->ops->choose = TSAdaptChooseMoFEM;
+  adapt->ops->reset = TSAdaptResetMoFEM;
+  adapt->ops->destroy = TSAdaptDestroyMoFEM;
+  PetscFunctionReturn(0);
 }
 
 } // namespace MoFEM

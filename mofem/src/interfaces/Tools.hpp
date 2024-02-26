@@ -44,7 +44,7 @@ struct Tools : public UnknownInterface {
   /**
    * \brief calculate minimal quality of tetrahedra in range
    * @param  tets        range
-   * @param  min_quality mimimal quality
+   * @param  min_quality minimal quality
    * @return             error code
    */
   MoFEMErrorCode minTetsQuality(
@@ -354,7 +354,7 @@ struct Tools : public UnknownInterface {
    * \endcode
    *
    * @param elem_coords Global element node coordinates
-   * @param glob_coords Globale coordinates
+   * @param glob_coords Global coordinates
    * @param nb_nodes Number of points
    * @param local_coords Result
    * @return MoFEMErrorCode
@@ -378,18 +378,29 @@ struct Tools : public UnknownInterface {
    * \endcode
    *
    * @param elem_coords Global element node coordinates
-   * @param glob_coords Globale coordinates
+   * @param glob_coords Global coordinates
    * @param nb_nodes Number of points
    * @param local_coords Result
    * @param d_elem_coords Derivative of local coordinates 
    * @param d_global_coords
    * @return MoFEMErrorCode
    */
-  template <typename T>
-  static MoFEMErrorCode
-  getLocalCoordinatesOnReferenceTriNodeTri(const T *elem_coords,
-                                           const T *glob_coords,
-                                           const int nb_nodes, T *local_coords);
+  static MoFEMErrorCode getLocalCoordinatesOnReferenceThreeNodeTri(
+      const double *elem_coords, const double *glob_coords, const int nb_nodes,
+      double *local_coords);
+
+  /** @copydoc getLocalCoordinatesOnReferenceThreeNodeTri */
+  static MoFEMErrorCode getLocalCoordinatesOnReferenceThreeNodeTri(
+      const double *elem_coords, const std::complex<double> *glob_coords,
+      const int nb_nodes, std::complex<double> *local_coords);
+
+/** @deprecated use getLocalCoordinatesOnReferenceThreeNodeTri */
+  DEPRECATED static MoFEMErrorCode getLocalCoordinatesOnReferenceTriNodeTri(
+      const double *elem_coords, const double *glob_coords, const int nb_nodes,
+      double *local_coords) {
+    return getLocalCoordinatesOnReferenceThreeNodeTri(elem_coords, glob_coords,
+                                                      nb_nodes, local_coords);
+  }
 
   /**
    * @brief Get the local coordinates on reference four node tet object
@@ -406,7 +417,7 @@ struct Tools : public UnknownInterface {
    * \endcode
    *
    * @param elem_coords Global element node coordinates
-   * @param glob_coords Globale coordinates
+   * @param glob_coords Global coordinates
    * @param nb_nodes Number of points
    * @param local_coords Result
    * @return MoFEMErrorCode
@@ -610,6 +621,53 @@ struct Tools : public UnknownInterface {
   static MoFEMErrorCode
   outerProductOfEdgeIntegrationPtsForHex(MatrixDouble &pts, const int edge0,
                                          const int edge1, const int edge2);
+
+  /** \name Mesh refinement */
+
+  /**@{*/
+
+  static constexpr std::array<int, 12> uniformTriangleRefineTriangles = {
+
+      0, 3, 5, // 0
+      3, 1, 4, // 1
+      5, 4, 2, // 2
+      5, 3, 4  // 3
+
+  };
+
+  using RefineTrianglesReturn =
+      std::tuple<std::vector<double>, std::vector<int>, std::vector<int>>;
+
+  /**
+   * @brief create uniform triangle mesh of refined elements
+   * 
+   * @param nb_levels 
+   * @return RefineTrianglesReturn 
+   */
+  static RefineTrianglesReturn refineTriangle(int nb_levels);
+
+  /**
+   * @brief generate integration points for refined triangle mesh for last level
+   * 
+   * @param pts 
+   * @param refined 
+   * @return MatrixDouble 
+   */
+  static MatrixDouble
+  refineTriangleIntegrationPts(MatrixDouble pts, RefineTrianglesReturn refined);
+
+  /**
+   * @brief generate integration points for refined triangle mesh for last level
+   * 
+   * @param rule Gauss integration rule
+   * @param refined 
+   * @return MatrixDouble 
+   */
+  static MatrixDouble
+  refineTriangleIntegrationPts(int rule, RefineTrianglesReturn refined);
+
+  /**@}*/
+
 };
 
 double Tools::shapeFunMBEDGE0(const double x) {
@@ -694,16 +752,6 @@ MoFEMErrorCode Tools::shapeFunMBTET(double *shape, const double *ksi,
   MoFEMFunctionReturnHot(0);
 }
 
-template <>
-MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceTriNodeTri(
-    const double *elem_coords, const double *glob_coords, const int nb_nodes,
-    double *local_coords);
-
-template <>
-MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceTriNodeTri(
-    const std::complex<double> *elem_coords,
-    const std::complex<double> *glob_coords, const int nb_nodes,
-    std::complex<double> *local_coords);
 
 } // namespace MoFEM
 

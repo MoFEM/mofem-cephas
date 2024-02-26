@@ -161,6 +161,7 @@ protected:
   boost::weak_ptr<FEMethod> fePtr;
   SmartPetscObj<Vec> vRhs;
   LogManager::SeverityLevel sevLevel;
+  PetscBool printBlockName; //< print block name when printing reaction
 };
 
 template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>

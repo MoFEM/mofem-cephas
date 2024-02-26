@@ -721,6 +721,9 @@ PetscErrorCode DMSubDMSetUp_MoFEM(DM subdm);
  */
 PetscErrorCode DMMoFEMAddSubFieldRow(DM dm, const char field_name[]);
 
+/** @copydoc DMMoFEMAddSubFieldRow(DM dm, const char field_name[]) */
+PetscErrorCode DMMoFEMAddSubFieldRow(DM dm, std::string field_name);
+
 /**
  * @brief Add field to sub dm problem on rows
  * \ingroup dm
@@ -733,11 +736,18 @@ PetscErrorCode DMMoFEMAddSubFieldRow(DM dm, const char field_name[]);
 PetscErrorCode DMMoFEMAddSubFieldRow(DM dm, const char field_name[],
                                      boost::shared_ptr<Range> r_ptr);
 
+/** @copydoc DMMoFEMAddSubFieldRow(DM dm, const char field_name[], boost::shared_ptr<Range> r_ptr) */
+PetscErrorCode DMMoFEMAddSubFieldRow(DM dm, std::string field_name,
+                                     boost::shared_ptr<Range> r_ptr);
+
 /**
  * Add field to sub dm problem on columns
  * \ingroup dm
  */
 PetscErrorCode DMMoFEMAddSubFieldCol(DM dm, const char field_name[]);
+
+/** @copydoc DMMoFEMAddSubFieldCol(DM dm, const char field_name[]) */
+PetscErrorCode DMMoFEMAddSubFieldCol(DM dm, std::string field_name);
 
 /**
  * @brief Add field to sub dm problem on columns
@@ -748,6 +758,11 @@ PetscErrorCode DMMoFEMAddSubFieldCol(DM dm, const char field_name[]);
  * @return PetscErrorCode
  */
 PetscErrorCode DMMoFEMAddSubFieldCol(DM dm, const char field_name[],
+                                     boost::shared_ptr<Range> r_ptr);
+
+
+/** @copydoc DMMoFEMAddSubFieldCol(DM dm, const char field_name[], boost::shared_ptr<Range> r_ptr); */
+PetscErrorCode DMMoFEMAddSubFieldCol(DM dm, std::string field_name,
                                      boost::shared_ptr<Range> r_ptr);
 
 /**

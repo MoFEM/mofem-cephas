@@ -827,6 +827,18 @@ template <int S, typename T> struct GetFTensor2FromPtr<3, 2, S, T> {
   }
 };
 
+template <int S, typename T> struct GetFTensor2FromPtr<6, 6, S, T> {
+  GetFTensor2FromPtr() = delete;
+  inline static auto get(T *ptr) {
+    return FTensor::Tensor2<FTensor::PackPtr<T *, S>, 6, 6>(
+        &ptr[0], &ptr[1], &ptr[2], &ptr[3], &ptr[4], &ptr[5], &ptr[6], &ptr[7],
+        &ptr[8], &ptr[9], &ptr[10], &ptr[11], &ptr[12], &ptr[13], &ptr[14],
+        &ptr[15], &ptr[16], &ptr[17], &ptr[18], &ptr[19], &ptr[20], &ptr[21],
+        &ptr[22], &ptr[23], &ptr[24], &ptr[25], &ptr[26], &ptr[27], &ptr[28],
+        &ptr[29], &ptr[30], &ptr[31], &ptr[32], &ptr[33], &ptr[34], &ptr[35]);
+  }
+};
+
 template <int S, typename T> struct GetFTensor2FromPtr<3, 3, S, T> {
   GetFTensor2FromPtr() = delete;
   inline static auto get(T *ptr) {
@@ -939,7 +951,7 @@ inline FTensor::Tensor3<FTensor::PackPtr<double *, DIM1 * DIM2 * DIM3>, DIM1,
                         DIM2, DIM3>
 getFTensor3FromPtr(double *ptr) {
   static_assert(DIM1 == DIM1 || DIM2 != DIM2 || DIM3 != DIM3,
-                "Such getFTensor2FromPtr is not implemented");
+                "Such getFTensor3FromPtr is not implemented");
 };
 
 template <>
@@ -968,6 +980,74 @@ getFTensor3FromPtr<3, 3, 3>(double *ptr) {
 };
 
 /**
+ * @brief Make symmetric Tensor2 from pointer
+ *
+ * @tparam DIM
+ * @param ptr
+ * @return FTensor::Tensor2<FTensor::PackPtr<double *, DIM1 * DIM2>, DIM1, DIM2>
+ */
+template <int DIM>
+inline FTensor::Tensor2_symmetric<
+    FTensor::PackPtr<double *, (DIM * (DIM + 1)) / 2>, DIM>
+getFTensor2SymmetricFromPtr(double *ptr) {
+  static_assert(DIM, "Such getFTensor2SymmetricFromPtr is not implemented");
+}
+
+template <>
+inline FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 6>, 3>
+getFTensor2SymmetricFromPtr<3>(double *ptr) {
+  return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 6>, 3>(
+      &ptr[0], &ptr[1], &ptr[2],
+
+      &ptr[3], &ptr[4],
+
+      &ptr[5]);
+};
+
+template <>
+inline FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 3>, 2>
+getFTensor2SymmetricFromPtr<2>(double *ptr) {
+  return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 3>, 2>(
+      &ptr[0], &ptr[1], &ptr[2]);
+};
+
+#ifdef WITH_ADOL_C
+
+/**
+ * @brief Make symmetric Tensor2 from pointer
+ *
+ * @tparam DIM
+ * @param ptr
+ * @return FTensor::Tensor2<FTensor::PackPtr<double *, DIM1 * DIM2>, DIM1, DIM2>
+ */
+template <int DIM>
+inline FTensor::Tensor2_symmetric<
+    FTensor::PackPtr<adouble *, (DIM * (DIM + 1)) / 2>, DIM>
+getFTensor2SymmetricFromPtr(adouble *ptr) {
+  static_assert(DIM, "Such getFTensor2SymmetricFromPtr is not implemented");
+}
+
+template <>
+inline FTensor::Tensor2_symmetric<FTensor::PackPtr<adouble *, 6>, 3>
+getFTensor2SymmetricFromPtr<3>(adouble *ptr) {
+  return FTensor::Tensor2_symmetric<FTensor::PackPtr<adouble *, 6>, 3>(
+      &ptr[0], &ptr[1], &ptr[2],
+
+      &ptr[3], &ptr[4],
+
+      &ptr[5]);
+};
+
+template <>
+inline FTensor::Tensor2_symmetric<FTensor::PackPtr<adouble *, 3>, 2>
+getFTensor2SymmetricFromPtr<2>(adouble *ptr) {
+  return FTensor::Tensor2_symmetric<FTensor::PackPtr<adouble *, 3>, 2>(
+      &ptr[0], &ptr[1], &ptr[2]);
+};
+
+#endif
+
+/**
  * @brief Make symmetric Tensor2 from pointer, taking lower triangle of matrix
  *
  * @tparam DIM
@@ -978,7 +1058,7 @@ template <int DIM>
 inline FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, DIM * DIM>, DIM>
 getFTensor2SymmetricLowerFromPtr(double *ptr) {
   static_assert(DIM,
-                "Such getFTensor2SymmetricUpperFromPtr is not implemented");
+                "Such getFTensor2SymmetricLowerFromPtr is not implemented");
 }
 
 template <>
