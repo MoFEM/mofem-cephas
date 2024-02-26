@@ -110,6 +110,7 @@ int main(int argc, char *argv[]) {
         auto [nodes, triangles, level_index] = refine;
 
         auto get_coords = [&](auto t) {
+          auto [nodes, triangles, level_index] = refine;
           std::array<double, 9> ele_coords;
           for (auto n : {0, 1, 2}) {
             for (auto i : {0, 1}) {

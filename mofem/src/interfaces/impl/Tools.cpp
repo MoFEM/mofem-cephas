@@ -791,8 +791,9 @@ MatrixDouble Tools::refineTriangleIntegrationPts(
         refined) {
 
   auto [nodes, triangles, level_index] = refined;
-
+  
   auto get_coords = [&](auto t) {
+    auto [nodes, triangles, level_index] = refined;
     std::array<double, 9> ele_coords;
     for (auto n : {0, 1, 2}) {
       for (auto i : {0, 1}) {
