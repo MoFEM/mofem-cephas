@@ -251,7 +251,7 @@ endif(PETSCVAR_PARMETIS_INCLUDE)
 find_file(JUPYTEXT jupytext)
 message(STATUS ${JUPYTEXT})
 
-# System project liblairoes
+# System project libraries
 resolve_libraries(SYSTEM_PROJECT_LIBS "
 # MoAB
   ${MESHKIT_LIBS_LINK}
