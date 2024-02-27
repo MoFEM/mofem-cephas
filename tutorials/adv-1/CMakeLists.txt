@@ -35,9 +35,7 @@ find_package(
   numpy
 )
 
-if(Python_LIBRARY AND Boost_NUMPY_LIBRARY_RELEASE) 
-
-  include_directories(${_Python_INCLUDE_DIR})
+if(Boost_NUMPY_LIBRARY_RELEASE) 
 
   tutorials_build_and_install(
     contact_2d ${CMAKE_CURRENT_SOURCE_DIR}/contact.cpp)
@@ -59,13 +57,13 @@ if(Python_LIBRARY AND Boost_NUMPY_LIBRARY_RELEASE)
   set_target_properties(
     contact_3d_schur PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=3 -DSCHUR_ASSEMBLE=1 -DPYTHON_SDF") 
 
-  target_link_libraries(contact_2d ${Python_LIBRARY} ${Boost_LIBRARIES})
-  target_link_libraries(contact_3d ${Python_LIBRARY} ${Boost_LIBRARIES})
+  target_link_libraries(contact_2d ${Boost_LIBRARIES})
+  target_link_libraries(contact_3d ${Boost_LIBRARIES})
 
-  target_link_libraries(contact_2d_schur ${Python_LIBRARY} ${Boost_LIBRARIES})
-  target_link_libraries(contact_3d_schur ${Python_LIBRARY} ${Boost_LIBRARIES})
+  target_link_libraries(contact_2d_schur ${Boost_LIBRARIES})
+  target_link_libraries(contact_3d_schur ${Boost_LIBRARIES})
 
-else (Python_LIBRARY AND Boost_NUMPY_LIBRARY_RELEASE)
+else (Boost_NUMPY_LIBRARY_RELEASE)
 
   tutorials_build_and_install(
     contact_2d ${CMAKE_CURRENT_SOURCE_DIR}/contact.cpp)
@@ -87,7 +85,7 @@ else (Python_LIBRARY AND Boost_NUMPY_LIBRARY_RELEASE)
   set_target_properties(
     contact_3d_schur PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=3 -DSCHUR_ASSEMBLE=1")  
 
-endif(Python_LIBRARY AND Boost_NUMPY_LIBRARY_RELEASE)
+endif(Boost_NUMPY_LIBRARY_RELEASE)
 
 set(IS_MFRONT_MOD false)  
 
