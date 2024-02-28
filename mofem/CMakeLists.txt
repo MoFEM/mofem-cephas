@@ -1,4 +1,5 @@
 cmake_minimum_required (VERSION 3.1.3)
+#cmake_policy(SET CMP0144 NEW)
 
 # Serch includes directories before system directories
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
