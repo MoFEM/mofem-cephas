@@ -24,8 +24,6 @@ tutorials_copy_and_install("*.py" "${permissions_default}")
 
 if(Boost_PYTHON_LIBRARY_RELEASE) 
 
-  include_directories(${_Python_INCLUDE_DIR})
-
   tutorials_build_and_install(
     free_surface ${CMAKE_CURRENT_SOURCE_DIR}/free_surface.cpp)
   set_target_properties(
