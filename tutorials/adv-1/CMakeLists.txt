@@ -26,7 +26,6 @@ tutorials_copy_and_install("*.sh" "${permissions_execute}")
 tutorials_copy_and_install("*.geo" "${permissions_execute}")
 tutorials_copy_and_install("*.py" "${permissions_execute}")
 
-# cmake_policy(SET CMP0144 NEW)
 set(BOOST_ROOT ${MoFEM_BOOST_DIR})
 message(STATUS ${BOOST_ROOT})
 find_package(
@@ -36,6 +35,8 @@ find_package(
 )
 
 if(Boost_NUMPY_LIBRARY_RELEASE) 
+
+  message(STATUS "Boost numpy found - SDF in pythoon enabled")
 
   tutorials_build_and_install(
     contact_2d ${CMAKE_CURRENT_SOURCE_DIR}/contact.cpp)
@@ -64,6 +65,8 @@ if(Boost_NUMPY_LIBRARY_RELEASE)
   target_link_libraries(contact_3d_schur ${Boost_LIBRARIES})
 
 else (Boost_NUMPY_LIBRARY_RELEASE)
+
+  message(STATUS "Boost numpy NOT found - SDF is hardcodes in C++")
 
   tutorials_build_and_install(
     contact_2d ${CMAKE_CURRENT_SOURCE_DIR}/contact.cpp)
