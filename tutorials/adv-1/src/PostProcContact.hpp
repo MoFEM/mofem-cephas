@@ -315,12 +315,17 @@ struct Monitor : public FEMethod {
         auto &pip = fe_rhs->getOpPtrVector();
         fe_rhs->f = res;
 
-        auto integration_rule = [](int, int, int approx_order) {
-          return 2 * approx_order + geom_order - 1;
-        };
-        fe_rhs->getRuleHook = integration_rule;
-        CHKERR HenckyOps::opFactoryDomainRhs<SPACE_DIM, PETSC, IT, DomainEleOp>(
-            *m_field_ptr, pip, "U", "MAT_ELASTIC", Sev::inform);
+        if (!mfrontInterface) {
+          auto integration_rule = [](int, int, int approx_order) {
+            return 2 * approx_order + geom_order - 1;
+          };
+          fe_rhs->getRuleHook = integration_rule;
+          CHKERR
+          HenckyOps::opFactoryDomainRhs<SPACE_DIM, PETSC, IT, DomainEleOp>(
+              *m_field_ptr, pip, "U", "MAT_ELASTIC", Sev::inform);
+        } else {
+          CHKERR mfrontInterface->setRhsOperators(fe_rhs);
+        }
         CHKERR DMoFEMLoopFiniteElements(dM, "dFE", fe_rhs);
         MoFEMFunctionReturn(0);
       };
