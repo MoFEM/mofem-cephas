@@ -288,7 +288,6 @@ struct Monitor : public FEMethod {
         CHKERR post_proc_end->writeFile(
             "out_contact_" + boost::lexical_cast<std::string>(sTEP) + ".h5m");
       } else {
-        CHKERR mfrontInterface->updateElementVariables();
         CHKERR mfrontInterface->postProcessElement(ts_step);
       }
 
@@ -409,6 +408,10 @@ struct Monitor : public FEMethod {
 
     int se = 1;
     CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-save_every", &se, PETSC_NULL);
+
+    if (mfrontInterface) {
+      CHKERR mfrontInterface->updateElementVariables();
+    }
 
     if (!(ts_step % se)) {
       MOFEM_LOG("CONTACT", Sev::inform)
