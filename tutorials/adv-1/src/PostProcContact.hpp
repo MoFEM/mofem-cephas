@@ -319,6 +319,9 @@ struct Monitor : public FEMethod {
           return 2 * approx_order + geom_order - 1;
         };
         fe_rhs->getRuleHook = integration_rule;
+
+        CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(pip, {H1},
+                                                              "GEOMETRY");
         CHKERR HenckyOps::opFactoryDomainRhs<SPACE_DIM, PETSC, IT, DomainEleOp>(
             *m_field_ptr, pip, "U", "MAT_ELASTIC", Sev::inform);
         CHKERR DMoFEMLoopFiniteElements(dM, "dFE", fe_rhs);
@@ -336,7 +339,7 @@ struct Monitor : public FEMethod {
         };
         fe_rhs->getRuleHook = integration_rule;
 
-        CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(pip, {HDIV},
+        CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(pip, {},
                                                                   "GEOMETRY");
         // We have to integrate on curved face geometry, thus integration weight
         // have to adjusted.
