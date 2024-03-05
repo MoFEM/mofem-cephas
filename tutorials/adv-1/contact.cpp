@@ -910,15 +910,21 @@ MoFEMErrorCode Contact::tsSolve() {
 //! [Check]
 MoFEMErrorCode Contact::checkResults() {
   MoFEMFunctionBegin;
-  if (atom_test == 1 && !mField.get_comm_rank()) {
+  if (atom_test && !mField.get_comm_rank()) {
     const double *t_ptr;
     CHKERR VecGetArrayRead(ContactOps::CommonData::totalTraction, &t_ptr);
-    double hertz_tract = 158.73;
+    double hertz_force = 158.73;
+    double fem_force = t_ptr[1];
     double tol = 4e-3;
-    if (fabs(t_ptr[1] - hertz_tract) / hertz_tract > tol) {
+    if (atom_test == 2) {
+      hertz_force /= 4;
+      fem_force = t_ptr[2];
+      tol = 7e-3;
+    }
+    if (fabs(fem_force - hertz_force) / hertz_force > tol) {
       SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-               "atom test %d diverged! %3.4e != %3.4e", atom_test, t_ptr[1],
-               hertz_tract);
+               "atom test %d diverged! %3.4e != %3.4e", atom_test, fem_force,
+               hertz_force);
     }
     CHKERR VecRestoreArrayRead(ContactOps::CommonData::totalTraction, &t_ptr);
   }

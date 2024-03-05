@@ -185,7 +185,7 @@ if(IS_MFRONT_MOD)
       -pc_type lu
       -ts_type beuler
       -ts_max_time 1 -ts_dt 0.2 
-      -sdf_file ./sdf_files/sdf_hertz.py
+      -sdf_file ./sdf_files/sdf_hertz_axisymm.py
       -use_mfront 1
       -is_axisymmetric 1
       -mi_lib_path_10 ${CMAKE_CURRENT_BINARY_DIR}/src/libBehaviour.${DEFAULT_LIB_EXTENSION}
@@ -193,6 +193,23 @@ if(IS_MFRONT_MOD)
       -mi_param_10_0 1e3
       -mi_param_10_1 0.4
       -atom_test 1
+    )
+
+    add_test(
+      hertz_mfront_3d
+      ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
+      contact_3d
+      -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/hertz_3d_4p.h5m
+      -pc_type lu
+      -ts_type beuler
+      -ts_max_time 1 -ts_dt 1
+      -sdf_file ./sdf_files/sdf_hertz_3d.py
+      -use_mfront 1
+      -mi_lib_path_10 ${CMAKE_CURRENT_BINARY_DIR}/src/libBehaviour.${DEFAULT_LIB_EXTENSION}
+      -mi_block_10 LinearElasticity
+      -mi_param_10_0 1e3
+      -mi_param_10_1 0.4
+      -atom_test 2
     )
 
   endif(TFEL_DIR)
