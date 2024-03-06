@@ -387,7 +387,7 @@ struct Monitor : public FEMethod {
       double max, min;
       CHKERR VecMax(std::get<0>(tuple), PETSC_NULL, &max);
       CHKERR VecMin(std::get<0>(tuple), PETSC_NULL, &min);
-      MOFEM_LOG_C("CONTACT", Sev::inform, "%s time %3.4e min %3.4e max %3.4e",
+      MOFEM_LOG_C("CONTACT", Sev::inform, "%s time %6.4e min %6.4e max %6.4e",
                   msg.c_str(), ts_t, min, max);
       MoFEMFunctionReturn(0);
     };
@@ -399,7 +399,7 @@ struct Monitor : public FEMethod {
       if (!m_field_ptr->get_comm_rank()) {
         const double *t_ptr;
         CHKERR VecGetArrayRead(CommonData::totalTraction, &t_ptr);
-        MOFEM_LOG_C("CONTACT", Sev::inform, "%s time %3.4e %3.4e %3.4e %3.4e",
+        MOFEM_LOG_C("CONTACT", Sev::inform, "%s time %6.4e %6.4e %6.4e %6.4e",
                     msg.c_str(), ts_t, t_ptr[0], t_ptr[1], t_ptr[2]);
         CHKERR VecRestoreArrayRead(CommonData::totalTraction, &t_ptr);
       }

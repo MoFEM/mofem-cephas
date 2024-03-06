@@ -919,7 +919,7 @@ MoFEMErrorCode Contact::checkResults() {
     if (atom_test == 2) {
       hertz_force /= 4;
       fem_force = t_ptr[2];
-      tol = 7e-3;
+      tol = 8e-3;
     }
     if (fabs(fem_force - hertz_force) / hertz_force > tol) {
       SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,

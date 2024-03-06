@@ -162,6 +162,20 @@ add_test(
   -sdf_file ${CMAKE_CURRENT_BINARY_DIR}/sdf_files/sdf_ydirection.py
 )
 
+add_test(
+  hertz_3d
+  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
+  contact_3d
+  -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/hertz_3d_4p.h5m
+  -pc_type lu
+  -ts_type beuler
+  -ts_max_time 1 -ts_dt 1
+  -sdf_file ./sdf_files/sdf_hertz_3d.py
+  -young_modulus 1e3
+  -poisson_ratio 0.4
+  -atom_test 2
+)
+
 if(IS_MFRONT_MOD)
   if(TFEL_DIR)
     message("TFEL DIR FOUND")
