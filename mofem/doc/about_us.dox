@@ -39,7 +39,7 @@ List of third party libraries and packages used by MoFEM:
 - PETSc <https://petsc.org/release/>
 - SIGMA Tools <https://sigma.mcs.anl.gov>
 
-\section Acknowledgements
+\section acknowledgements_main Acknowledgements
 
 \image html Acknowledgments.png width=100%
 
