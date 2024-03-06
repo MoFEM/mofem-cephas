@@ -329,6 +329,12 @@ struct Monitor : public FEMethod {
           CHKERR mfrontInterface->setRhsOperators(fe_rhs);
         }
         CHKERR DMoFEMLoopFiniteElements(dM, "dFE", fe_rhs);
+
+        CHKERR VecAssemblyBegin(res);
+        CHKERR VecAssemblyEnd(res);
+        CHKERR VecGhostUpdateBegin(res, ADD_VALUES, SCATTER_REVERSE);
+        CHKERR VecGhostUpdateEnd(res, ADD_VALUES, SCATTER_REVERSE);
+
         MoFEMFunctionReturn(0);
       };
 
