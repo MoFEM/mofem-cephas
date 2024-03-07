@@ -348,6 +348,22 @@ inline auto createVecScatter(Vec x, IS ix, Vec y, IS iy) {
   return SmartPetscObj<VecScatter>(s);
 }
 
+/**
+ * @brief Get ISDifference
+ *
+ * <a
+ * href=https://petsc.org/release/docs/manualpages/IS/ISDifference/>ISDifference</a>.
+ *
+ * @param is1 first index, to have items removed from it
+ * @param is2 index values to be removed
+ * @return is1 - is2
+ */
+inline auto isDifference(IS is1, IS is2) {
+  IS is_raw;
+  CHK_THROW_MESSAGE(ISDifference(is1, is2, &is_raw), "create difference");
+  return SmartPetscObj<IS>(is_raw);
+}
+
 } // namespace MoFEM
 
 #endif
