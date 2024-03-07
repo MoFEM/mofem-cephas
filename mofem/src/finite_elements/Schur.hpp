@@ -214,6 +214,21 @@ inline MoFEMErrorCode VecSetValues<AssemblyTypeSelector<SCHUR>>(
   return VecSetValues<SchurL2Mats>(V, data, nf, iora);
 }
 
+/** Get nested matrix
+ *
+ * @param dm
+ * @param schur_is
+ * @param mat_array
+ *
+ */
+std::tuple<SmartPetscObj<IS>, SmartPetscObj<Mat>> createSchurNested(
+
+    DM dm, IS schur_is,
+
+    std::array<Mat, 4> mat_array
+
+);
+
 } // namespace MoFEM
 
 #endif //__SCHUR_HPP__
