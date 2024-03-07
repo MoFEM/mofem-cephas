@@ -582,4 +582,41 @@ OpSchurAssembleEnd<SCHUR_DGESV>::doWork(int side, EntityType type,
   return doWorkImpl<SCHUR_DGESV>(side, type, data);
 }
 
+std::tuple<SmartPetscObj<IS>, SmartPetscObj<Mat>> createSchurNested(
+
+    DM dm, IS is_schur,
+
+    std::array<Mat, 4> mat_array
+
+) {
+
+  auto get_is_diff = [](DM dm, IS is_schur) {
+    MoFEM::Interface *m_field_ptr;
+    const MoFEM::Problem *problem_ptr;
+    CHK_THROW_MESSAGE(DMoFEMGetInterfacePtr(dm, &m_field_ptr),
+                      "get m_field_ptr failed");
+    CHK_THROW_MESSAGE(DMMoFEMGetProblemPtr(dm, &problem_ptr),
+                      "get problem_ptr failed");
+    auto is_mng = m_field_ptr->getInterface<ISManager>();
+    SmartPetscObj<IS> is_dm;
+    CHK_THROW_MESSAGE(
+        is_mng->isCreateProblem(problem_ptr->getName(), ROW, is_dm),
+        "isCreateProblem failed");
+    return isDifference(is_dm, is_schur);
+  };
+
+  auto is_diff = get_is_diff(dm, is_schur);
+
+  MPI_Comm comm;
+  CHKERR PetscObjectGetComm((PetscObject)dm, &comm);
+  IS is_array[2] = { is_schur, is_diff };
+
+  Mat a_raw;
+  CHK_THROW_MESSAGE(
+      MatCreateNest(comm, 2, is_array, 2, is_array, mat_array.data(), &a_raw),
+      "MatCreateNest failed");
+
+  return std::make_tuple(is_diff, SmartPetscObj<Mat>(a_raw));
+}
+
 } // namespace MoFEM
