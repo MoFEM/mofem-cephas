@@ -199,6 +199,30 @@ private:
       return scale * MoFEM::TimeScale::getScale(time);
     };
   };
+  //! [Analytical function]
+  // Hertzian contact problem
+  static double analyticalFunctionHertzPressure(double x, double y, double z) {
+    double E_star = young_modulus / (1 - poisson_ratio * poisson_ratio);
+    // Radius
+    double R = 10.;
+    // Indentation
+    double d = 0.1;
+    // Force
+    double F = 4./3. * E_star * R^0.5 * d ^(3./2.);
+    // Contact area
+    double a = (R * d)^(1./2.);
+    // Maximum pressure
+    double p_max = (1./M_PI) * ((6.* F * E_star * E_star) / (R * R)) * (1./3.);
+
+    double r = (x^2 + y^2)^(0.5);
+
+    if (r > a) {
+      return 0.;
+    }
+    // Pressure = p_max * (1 - r^2 /a^2)^0.5;
+    return p_max * (1 - (r^2) /a^2)^(0.5);
+  }
+  //! [Analytical function]
 };
 
 //! [Run problem]
