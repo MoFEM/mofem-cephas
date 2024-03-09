@@ -8,7 +8,7 @@ MoFEM (Mesh-oriented Finite Element Method) is a C++ library for managing comple
 
 \subsection intro_video Unlocking advanced capabilities with a new paradigm for a finite element library design
 
-MoFEM introduces a novel architecture of FEM software, designed to exploit advantages of emerging finite element technologies and to enable rapid implementation of numerical models for complex engineering problems involving multi-physics and multi-scale processes.
+MoFEM introduces a novel architecture of FEM software, designed to exploit advantages of emerging finite element technologies and to enable rapid implementation of numerical models for complex engineering problems involving multi-physics and multi-scale processes. Watch the video below to learn about the motivation behind the development of #MoFEM, its capabilities, and its applications in research and industry.
 
 \htmlonly
 <center>
