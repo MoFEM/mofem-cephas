@@ -140,22 +140,22 @@
                     finite element library. It is capable of dealing with complex
                     multi-physics problems with arbitrary levels of approximation
                     and refinement. <a style="font-weight:bold" href="namespace_mo_f_e_m.html">MoFEM</a> can read
-                    various input file formats, and work with preprocessors like Gmsh, Salome, Cubit, and many more.
+                    various input file formats, and work with preprocessors like Gmsh, Salome, Cubit, and more.
                 </td>
 
                 <td style="text-align:left;background-color:#FAFAFA;padding:12px" valign="top"><a
                         style="font-weight:bold" href="namespace_mo_f_e_m.html">MoFEM</a> can be used for
-                    parallel processing on desktop computers and high-performance clusters. Its modular toolkit-like
-                    structure allows for development of open modules and private industrial
-                    sensitive projects. At the same time, it is designed to suit both researchers
-                    developing computer methods and engineers solving real practical problems.
+                    parallel processing on desktop computers and high-performance clusters. Its modular 
+                    structure allows for development of open modules and private 
+                    sensitive projects. It is designed to suit both researchers
+                    developing computer methods and engineers solving undustrial problems.
                 </td>
 
                 <td style="text-align:left;background-color:#FAFAFA;padding:12px" valign="top"><a
                         style="font-weight:bold" href="motivation.html">Why MoFEM</a> section offers an introduction to features and applications,
                     <a style="font-weight:bold" href="install_docker_jupyterhub.html">Installation</a> provides instructions on getting started, 
-                    while a set of recorded lectures and hands-on tutorials are available in  
-                    <a style="font-weight:bold" href="https://www.youtube.com/channel/UCxdPe3nK1n9cB1XPAvl7btQ/playlists">Videos</a>. The <a style="font-weight:bold" href="tutorials.html">Developer</a> section
+                    while recorded lectures and hands-on tutorials are available in  
+                    <a style="font-weight:bold" href="https://www.youtube.com/channel/UCxdPe3nK1n9cB1XPAvl7btQ/playlists">Videos</a>. <a style="font-weight:bold" href="tutorials.html">Developer</a> 
                     explains the design philosophy and contains tutorials on how to implement a range of problems.
                 </td>
             </tr>
