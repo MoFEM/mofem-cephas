@@ -2,20 +2,28 @@
 
 \tableofcontents
 
-MoFEM (Mesh-oriented Finite Element Method) is a C++ library for managing complexities related to the finite element method (FEM). FEM is a widely used numerical approach for solving partial differential equations (PDEs) arising in various physical problems. %MoFEM is developed to provide a finite element library incorporating modern approximation approaches and data structures for engineers, students and academics.
+MoFEM (Mesh-oriented Finite Element Method) is a C++ library for managing complexities related to the finite element method (FEM). FEM is a widely used numerical approach for solving partial differential equations (PDEs) arising in various physical problems. %MoFEM is developed to provide a finite element library incorporating modern approximation approaches and high-performance computing capabilities for engineers, students and academics.
 
-%MoFEM belongs to a class of open-source finite element libraries, which provides users with generic tools for solving PDEs and developers with frameworks for implementing bespoke finite elements. %MoFEM is specifically designed to solve complex engineering problems, enabling seamless integration of meshes that comprise multiple element types and element shapes, which are typically encountered in industrial applications. The development of %MoFEM has been primarily targeting the problem of crack propagation for structural integrity assessment of safety-critical structures like on \ref Figure_1_motivation "Figure 1".
- 
-Unique for %MoFEM is that it was created for engineers to solve practical problems, which can not be easily (or not at all) solved by commercial codes. In particular, %MoFEM development was driven by the needs of nuclear engineers at EDF Energy and Jacobs to model crack propagation in nuclear graphite bricks in real core environment. %MOFEM is currently the main numerical tool to predict cracks morphology in Advanced Gas-Cooled Reactors (AGR) in the UK. %MoFEM is a research tool, which is design for researchers in computational mechanics that like to make their methods available to engineers.
- 
-%MoFEM is generic too to solve systems of partial differential equations using the finite element method; however, the development of particular applications of %MoFEM is separated from the development of the core library. Core %MoFEM library serves to implement various research and commercial applications and is open, free and has MIT license. Users modules are problem-focused applications of %MoFEM. The key idea is that anyone can contribute to the core library to serve the whole community. However, the copyright and license of the users modules repository are accessible at the discretion of developers. This will adapt the needs of the research projects, research groups or industrial partners. 
- 
+%MoFEM belongs to a class of open-source finite element libraries, which provides users with generic tools for solving PDEs and developers with frameworks for implementing bespoke finite elements. %MoFEM is specifically designed to solve complex engineering problems, enabling seamless integration of meshes that comprise multiple element types and element shapes, which are typically encountered in industrial applications. 
+
+\subsection intro_video Unlocking advanced capabilities with a new paradigm for a finite element library design
+
+MoFEM introduces a novel architecture of FEM software, designed to exploit advantages of emerging finite element technologies and to enable rapid implementation of numerical models for complex engineering problems involving multi-physics and multi-scale processes.
+
+\htmlonly
+<center>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/AdjUWOGivEU?si=J-ZR-nMgoBdPQT1p" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+</center>
+\endhtmlonly
+
+Unique for %MoFEM is that it was created for engineers to solve practical problems, which can not be easily (or not at all) solved by commercial codes. In particular, %MoFEM development was driven by the needs of nuclear engineers at EDF Energy and Jacobs to model crack propagation in nuclear graphite bricks in real core environment, see \ref Figure_1_motivation "Figure 1". %MoFEM is currently the main numerical tool to predict cracks morphology in Advanced Gas-Cooled Reactors (AGR) in the UK. You can find out about other use cases on \ref applications and \ref publications pages.
+
 \anchor Figure_1_motivation
 \image html motivation_brick.png "Figure 1: Numerical simulation of brittle crack propagation." width=600px
+
+%MoFEM is a generic tool for solving systems of partial differential equations using the finite element method; however, the development of particular applications of %MoFEM is separated from the development of the core library. Core %MoFEM library serves to implement various research and commercial applications and is open, free and has MIT license, while the Users Modules are problem-focused applications of %MoFEM. The key idea is that anyone can contribute to the core library to serve the whole community. However, the copyright and license of the users modules repository are accessible at the discretion of developers, permitting to adapt to the needs of the research projects, research groups or industrial partners. You can find more details on the \ref general_data_structure page.
  
-\section mofem_features Features
- 
-\subsection Supported File Formats
+\subsection file_formats Supported File Formats
  
 %MoFEM works with the following popular mesh preprocessors:
 
@@ -104,6 +112,6 @@ implementations are tailored for massive parallel calculations.
 
 - Efficient tensor library (see \ref ftenso_readme)
 
-- h/p- mesh adaptivity
+- h/p mesh adaptivity
 
 */
