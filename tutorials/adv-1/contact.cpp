@@ -363,9 +363,7 @@ MoFEMErrorCode Contact::setupProblem() {
     }
   }
 
-  if (!use_mfront) {
-    CHKERR simple->setUp();
-  } else {
+  if (use_mfront) {
 #ifndef WITH_MODULE_MFRONT_INTERFACE
     SETERRQ(
         PETSC_COMM_SELF, MOFEM_NOT_FOUND,
@@ -390,21 +388,10 @@ MoFEMErrorCode Contact::setupProblem() {
       }
     }
 #endif
-
     CHKERR mfrontInterface->getCommandLineParameters();
-    CHKERR mfrontInterface->addElementFields();
-    CHKERR mfrontInterface->createElements();
-
-    CHKERR simple->defineFiniteElements();
-    CHKERR simple->defineProblem(PETSC_TRUE);
-    CHKERR simple->buildFields();
-    CHKERR simple->buildFiniteElements();
-
-    CHKERR mField.build_finite_elements("MFRONT_EL");
-    CHKERR mfrontInterface->addElementsToDM(simple->getDM());
-
-    CHKERR simple->buildProblem();
   }
+
+  CHKERR simple->setUp();
 
   auto dm = simple->getDM();
   monitorPtr =
@@ -597,6 +584,8 @@ MoFEMErrorCode Contact::OPs() {
     if (!mfrontInterface) {
       CHKERR HenckyOps::opFactoryDomainLhs<SPACE_DIM, AT, IT, DomainEleOp>(
           mField, pip, "U", "MAT_ELASTIC", Sev::verbose, scale);
+    } else {
+      CHKERR mfrontInterface->opFactoryDomainLhs(pip);
     }
 
     MoFEMFunctionReturn(0);
@@ -639,6 +628,8 @@ MoFEMErrorCode Contact::OPs() {
     if (!mfrontInterface) {
       CHKERR HenckyOps::opFactoryDomainRhs<SPACE_DIM, AT, IT, DomainEleOp>(
           mField, pip, "U", "MAT_ELASTIC", Sev::inform, scale);
+    } else {
+      CHKERR mfrontInterface->opFactoryDomainRhs(pip);
     }
 
     CHKERR ContactOps::opFactoryDomainRhs<SPACE_DIM, AT, IT, DomainEleOp>(
@@ -742,13 +733,7 @@ MoFEMErrorCode Contact::OPs() {
   CHKERR add_boundary_ops_rhs(pip_mng->getOpBoundaryRhsPipeline());
 
   if (mfrontInterface) {
-    auto t_type = GenericElementInterface::IM2;
-    if (is_quasi_static == PETSC_TRUE)
-      t_type = GenericElementInterface::IM;
-
-    CHKERR mfrontInterface->setOperators();
-    CHKERR mfrontInterface->setupSolverFunctionTS(t_type);
-    CHKERR mfrontInterface->setupSolverJacobianTS(t_type);
+    CHKERR mfrontInterface->setUpdateElementVariablesOperators();
   }
 
   CHKERR pip_mng->setDomainRhsIntegrationRule(integration_rule_vol);

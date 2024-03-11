@@ -288,7 +288,9 @@ struct Monitor : public FEMethod {
         CHKERR post_proc_end->writeFile(
             "out_contact_" + boost::lexical_cast<std::string>(sTEP) + ".h5m");
       } else {
-        CHKERR mfrontInterface->postProcessElement(ts_step);
+        CHKERR mfrontInterface->postProcessElement(
+            ts_step, dM,
+            m_field_ptr->getInterface<Simple>()->getDomainFEName());
       }
 
       MoFEMFunctionReturn(0);
@@ -314,19 +316,23 @@ struct Monitor : public FEMethod {
         auto &pip = fe_rhs->getOpPtrVector();
         fe_rhs->f = res;
 
-        if (!mfrontInterface) {
-          auto integration_rule = [](int, int, int approx_order) {
-            return 2 * approx_order + geom_order - 1;
-          };
-          fe_rhs->getRuleHook = integration_rule;
+        auto integration_rule = [](int, int, int approx_order) {
+          return 2 * approx_order + geom_order - 1;
+        };
+        fe_rhs->getRuleHook = integration_rule;
 
-          CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(pip, {H1},
-                                                                "GEOMETRY");
+        CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(pip, {H1},
+                                                              "GEOMETRY");
+        CHKERR
+        ContactOps::opFactoryDomainRhs<SPACE_DIM, PETSC, IT, DomainEleOp>(
+            pip, "SIGMA", "U", is_axisymmetric);
+
+        if (!mfrontInterface) {
           CHKERR
           HenckyOps::opFactoryDomainRhs<SPACE_DIM, PETSC, IT, DomainEleOp>(
               *m_field_ptr, pip, "U", "MAT_ELASTIC", Sev::inform);
         } else {
-          CHKERR mfrontInterface->setRhsOperators(fe_rhs);
+          CHKERR mfrontInterface->opFactoryDomainRhs(pip);
         }
         CHKERR DMoFEMLoopFiniteElements(dM, "dFE", fe_rhs);
 
@@ -405,19 +411,21 @@ struct Monitor : public FEMethod {
       if (!m_field_ptr->get_comm_rank()) {
         const double *t_ptr;
         CHKERR VecGetArrayRead(CommonData::totalTraction, &t_ptr);
-        MOFEM_LOG_C("CONTACT", Sev::inform, "%s time %6.4e %6.4e %6.4e %6.4e",
-                    msg.c_str(), ts_t, t_ptr[0], t_ptr[1], t_ptr[2]);
+        MOFEM_LOG_C("CONTACT", Sev::inform,
+                    "%s time %6.4e %6.16e %6.16e %6.16e", msg.c_str(), ts_t,
+                    t_ptr[0], t_ptr[1], t_ptr[2]);
         CHKERR VecRestoreArrayRead(CommonData::totalTraction, &t_ptr);
       }
       MoFEMFunctionReturn(0);
     };
 
+    if (mfrontInterface) {
+      CHKERR mfrontInterface->updateElementVariables(
+          dM, m_field_ptr->getInterface<Simple>()->getDomainFEName());
+    }
+
     int se = 1;
     CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-save_every", &se, PETSC_NULL);
-
-    if (mfrontInterface) {
-      CHKERR mfrontInterface->updateElementVariables();
-    }
 
     if (!(ts_step % se)) {
       MOFEM_LOG("CONTACT", Sev::inform)
