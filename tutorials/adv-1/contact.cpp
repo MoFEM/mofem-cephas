@@ -830,9 +830,11 @@ MoFEMErrorCode Contact::tsSolve() {
     MoFEMFunctionReturn(0);
   };
 
+  // Set up Schur preconditioner
   auto set_schur_pc = [&](auto solver) {
     boost::shared_ptr<SetUpSchur> schur_ptr;
     if (AT == AssemblyType::SCHUR) {
+      // Set up Schur preconditioner
       schur_ptr = SetUpSchur::createSetUpSchur(mField);
       CHK_MOAB_THROW(schur_ptr->setUp(solver), "SetUpSchur::setUp");
     }
