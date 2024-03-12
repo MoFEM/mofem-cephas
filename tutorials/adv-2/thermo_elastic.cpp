@@ -122,6 +122,7 @@ using OpEssentialFluxLhs =
 double default_young_modulus = 1;
 double default_poisson_ratio = 0.25;
 double ref_temp = 0.0;
+double init_temp = 0.0;
 
 double default_coeff_expansion = 1;
 double default_heat_conductivity =
@@ -518,6 +519,8 @@ MoFEMErrorCode ThermoElasticProblem::createCommonData() {
                                  &default_coeff_expansion, PETSC_NULL);
     CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-ref_temp", &ref_temp,
                                  PETSC_NULL);
+    CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-init_temp", &init_temp,
+                                 PETSC_NULL);
 
     CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-capacity",
                                  &default_heat_capacity, PETSC_NULL);
@@ -536,7 +539,9 @@ MoFEMErrorCode ThermoElasticProblem::createCommonData() {
         << "Heat conductivity " << default_heat_conductivity;
 
     MOFEM_LOG("ThermoElastic", Sev::inform)
-        << "Reference_temperature  " << ref_temp;
+        << "Reference temperature  " << ref_temp;
+    MOFEM_LOG("ThermoElastic", Sev::inform)
+        << "Initial temperature  " << init_temp;
 
     MoFEMFunctionReturn(0);
   };
@@ -644,6 +649,13 @@ MoFEMErrorCode ThermoElasticProblem::bC() {
 
   CHKERR mField.getInterface<ProblemsManager>()->removeDofsOnEntities(
       simple->getProblemName(), "FLUX", remove_flux_ents);
+
+  auto set_init_temp = [](boost::shared_ptr<FieldEntity> field_entity_ptr) {
+    field_entity_ptr->getEntFieldData()[0] = init_temp;
+    return 0;
+  };
+  CHKERR mField.getInterface<FieldBlas>()->fieldLambdaOnEntities(set_init_temp,
+                                                                 "T");
 
   MoFEMFunctionReturn(0);
 }
@@ -1068,6 +1080,7 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
   };
 
   auto D = createDMVector(dm);
+  CHKERR DMoFEMMeshToLocalVector(dm, D, INSERT_VALUES, SCATTER_FORWARD);
   CHKERR TSSetSolution(solver, D);
   CHKERR TSSetFromOptions(solver);
 
