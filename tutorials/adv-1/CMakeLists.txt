@@ -174,6 +174,7 @@ add_test(
   -young_modulus 1e3
   -poisson_ratio 0.4
   -atom_test 2
+  -hencky_small_strain 1
 )
 
 if(IS_MFRONT_MOD)

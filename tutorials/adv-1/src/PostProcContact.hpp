@@ -27,9 +27,9 @@ using PostProcEleBdy = PostProcEleByDim<SPACE_DIM>::PostProcEleBdy;
 
 struct Monitor : public FEMethod {
 
-  Monitor(SmartPetscObj<DM> &dm,
+  Monitor(SmartPetscObj<DM> &dm, double scale, 
           boost::shared_ptr<GenericElementInterface> mfront_interface = nullptr,
-          bool is_axisymmetric = false)
+          bool is_axisymmetric = false, bool hencky_small_strain = false)
       : dM(dm), moabVertex(mbVertexPostproc), sTEP(0),
         mfrontInterface(mfront_interface) {
 
@@ -58,7 +58,8 @@ struct Monitor : public FEMethod {
                         "Apply base transform");
       auto henky_common_data_ptr =
           commonDataFactory<SPACE_DIM, GAUSS, DomainEleOp>(
-              *m_field_ptr, pip, "U", "MAT_ELASTIC", Sev::inform);
+              *m_field_ptr, pip, "U", "MAT_ELASTIC", Sev::inform, scale,
+              hencky_small_strain);
       auto contact_stress_ptr = boost::make_shared<MatrixDouble>();
       pip.push_back(new OpCalculateHVecTensorField<SPACE_DIM, SPACE_DIM>(
           "SIGMA", contact_stress_ptr));
@@ -330,7 +331,8 @@ struct Monitor : public FEMethod {
         if (!mfrontInterface) {
           CHKERR
           HenckyOps::opFactoryDomainRhs<SPACE_DIM, PETSC, IT, DomainEleOp>(
-              *m_field_ptr, pip, "U", "MAT_ELASTIC", Sev::inform);
+              *m_field_ptr, pip, "U", "MAT_ELASTIC", Sev::inform, scale,
+              hencky_small_strain);
         } else {
           CHKERR mfrontInterface->opFactoryDomainRhs(pip);
         }
