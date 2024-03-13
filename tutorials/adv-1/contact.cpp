@@ -65,7 +65,7 @@ using BoundaryEleOp = BoundaryEle::UserDataOperator;
 //! [Specialisation for assembly]
 
 // Assemble to A matrix, by default, however, some terms are assembled only to
-// preconditioning. 
+// preconditioning.
 
 template <>
 typename MoFEM::OpBaseImpl<SCHUR, DomainEleOp>::MatSetValuesHook
@@ -89,7 +89,7 @@ typename MoFEM::OpBaseImpl<SCHUR, BoundaryEleOp>::MatSetValuesHook
 
 /**
  * @brief Element used to specialise assembly
- * 
+ *
  */
 struct BoundaryEleOpStab : public BoundaryEleOp {
   using BoundaryEleOp::BoundaryEleOp;
@@ -134,7 +134,7 @@ double alpha_damping = 0;
 
 double scale = 1.;
 
-PetscBool is_axisymmetric = PETSC_FALSE; //< Axisymmetric model
+PetscBool is_axisymmetric = PETSC_FALSE;     //< Axisymmetric model
 PetscBool hencky_small_strain = PETSC_FALSE; //< Use small strain version of
                                              // Hencky model (slower than Hooke)
 
@@ -218,7 +218,6 @@ MoFEMErrorCode Contact::runProblem() {
 MoFEMErrorCode Contact::setupProblem() {
   MoFEMFunctionBegin;
   Simple *simple = mField.getInterface<Simple>();
-  PetscBool use_mfront = PETSC_FALSE;
 
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order, PETSC_NULL);
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-contact_order", &contact_order,
@@ -230,15 +229,6 @@ MoFEMErrorCode Contact::setupProblem() {
   if (contact_order != order)
     MOFEM_LOG("CONTACT", Sev::inform) << "Contact order " << contact_order;
   MOFEM_LOG("CONTACT", Sev::inform) << "Geom order " << geom_order;
-
-  CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-use_mfront", &use_mfront,
-                             PETSC_NULL);
-  CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-is_axisymmetric",
-                             &is_axisymmetric, PETSC_NULL);
-  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-atom_test", &atom_test,
-                            PETSC_NULL);
-  CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-hencky_small_strain",
-                            &hencky_small_strain, PETSC_NULL);
 
   // Select base
   enum bases { AINSWORTH, DEMKOWICZ, LASBASETOPT };
@@ -347,6 +337,90 @@ MoFEMErrorCode Contact::setupProblem() {
     CHKERR mField.getInterface<CommInterface>()->synchroniseFieldEntities("U");
   }
 
+  CHKERR simple->setUp();
+
+  auto project_ho_geometry = [&]() {
+    Projection10NodeCoordsOnField ent_method(mField, "GEOMETRY");
+    return mField.loop_dofs("GEOMETRY", ent_method);
+  };
+
+  PetscBool project_geometry = PETSC_TRUE;
+  CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-project_geometry",
+                             &project_geometry, PETSC_NULL);
+  if (project_geometry) {
+    CHKERR project_ho_geometry();
+  }
+
+  MoFEMFunctionReturn(0);
+} //! [Set up problem]
+
+//! [Create common data]
+MoFEMErrorCode Contact::createCommonData() {
+  MoFEMFunctionBegin;
+
+  PetscBool use_mfront = PETSC_FALSE;
+  CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-use_mfront", &use_mfront,
+                             PETSC_NULL);
+  CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-is_axisymmetric",
+                             &is_axisymmetric, PETSC_NULL);
+  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-atom_test", &atom_test,
+                            PETSC_NULL);
+  CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-hencky_small_strain",
+                             &hencky_small_strain, PETSC_NULL);
+
+  CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-scale", &scale, PETSC_NULL);
+  CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-young_modulus", &young_modulus,
+                               PETSC_NULL);
+  CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-poisson_ratio", &poisson_ratio,
+                               PETSC_NULL);
+  CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-rho", &rho, PETSC_NULL);
+  CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-cn", &cn_contact, PETSC_NULL);
+  CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-spring_stiffness",
+                               &spring_stiffness, PETSC_NULL);
+  CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-vis_spring_stiffness",
+                               &vis_spring_stiffness, PETSC_NULL);
+  CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-alpha_damping", &alpha_damping,
+                               PETSC_NULL);
+
+  if (!mfrontInterface) {
+    MOFEM_LOG("CONTACT", Sev::inform) << "Young modulus " << young_modulus;
+    MOFEM_LOG("CONTACT", Sev::inform) << "Poisson_ratio " << poisson_ratio;
+  } else {
+    MOFEM_LOG("CONTACT", Sev::inform) << "Using MFront for material model";
+  }
+
+  MOFEM_LOG("CONTACT", Sev::inform) << "Density " << rho;
+  MOFEM_LOG("CONTACT", Sev::inform) << "cn_contact " << cn_contact;
+  MOFEM_LOG("CONTACT", Sev::inform) << "Spring stiffness " << spring_stiffness;
+  MOFEM_LOG("CONTACT", Sev::inform)
+      << "Vis spring_stiffness " << vis_spring_stiffness;
+
+  MOFEM_LOG("CONTACT", Sev::inform) << "alpha_damping " << alpha_damping;
+
+  PetscBool use_scale = PETSC_FALSE;
+  CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-use_scale", &use_scale,
+                             PETSC_NULL);
+  if (use_scale) {
+    scale /= young_modulus;
+  }
+
+  MOFEM_LOG("CONTACT", Sev::inform) << "Scale " << scale;
+
+  CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-is_quasi_static",
+                             &is_quasi_static, PETSC_NULL);
+  MOFEM_LOG("CONTACT", Sev::inform)
+      << "Is quasi-static: " << (is_quasi_static ? "true" : "false");
+
+#ifdef PYTHON_SDF
+  char sdf_file_name[255];
+  CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-sdf_file",
+                               sdf_file_name, 255, PETSC_NULL);
+
+  sdfPythonPtr = boost::make_shared<SDFPython>();
+  CHKERR sdfPythonPtr->sdfInit(sdf_file_name);
+  sdfPythonWeakPtr = sdfPythonPtr;
+#endif
+
   if (is_axisymmetric) {
     if (SPACE_DIM == 3) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -394,95 +468,14 @@ MoFEMErrorCode Contact::setupProblem() {
     CHKERR mfrontInterface->getCommandLineParameters();
   }
 
-  CHKERR simple->setUp();
-
+  Simple *simple = mField.getInterface<Simple>();
   auto dm = simple->getDM();
   monitorPtr = boost::make_shared<Monitor>(
       dm, scale, mfrontInterface, is_axisymmetric, hencky_small_strain);
+
   if (use_mfront) {
     mfrontInterface->setMonitorPtr(monitorPtr);
   }
-
-  auto project_ho_geometry = [&]() {
-    Projection10NodeCoordsOnField ent_method(mField, "GEOMETRY");
-    return mField.loop_dofs("GEOMETRY", ent_method);
-  };
-  
-  PetscBool project_geometry = PETSC_TRUE;
-  CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-project_geometry",
-                               &project_geometry, PETSC_NULL);
-  if (project_geometry){
-    CHKERR project_ho_geometry();
-  }
-
-  MoFEMFunctionReturn(0);
-} //! [Set up problem]
-
-//! [Create common data]
-MoFEMErrorCode Contact::createCommonData() {
-  MoFEMFunctionBegin;
-
-  auto get_options = [&]() {
-    MoFEMFunctionBegin;
-    CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-scale", &scale, PETSC_NULL);
-    CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-young_modulus",
-                                 &young_modulus, PETSC_NULL);
-    CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-poisson_ratio",
-                                 &poisson_ratio, PETSC_NULL);
-    CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-rho", &rho, PETSC_NULL);
-    CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-cn", &cn_contact,
-                                 PETSC_NULL);
-    CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-spring_stiffness",
-                                 &spring_stiffness, PETSC_NULL);
-    CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-vis_spring_stiffness",
-                                 &vis_spring_stiffness, PETSC_NULL);
-    CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-alpha_damping",
-                                 &alpha_damping, PETSC_NULL);
-                               
-    if (!mfrontInterface) {
-      MOFEM_LOG("CONTACT", Sev::inform) << "Young modulus " << young_modulus;
-      MOFEM_LOG("CONTACT", Sev::inform) << "Poisson_ratio " << poisson_ratio;
-    } else {
-      MOFEM_LOG("CONTACT", Sev::inform) << "Using MFront for material model";
-    }
-
-    MOFEM_LOG("CONTACT", Sev::inform) << "Density " << rho;
-    MOFEM_LOG("CONTACT", Sev::inform) << "cn_contact " << cn_contact;
-    MOFEM_LOG("CONTACT", Sev::inform)
-        << "Spring stiffness " << spring_stiffness;
-    MOFEM_LOG("CONTACT", Sev::inform)
-        << "Vis spring_stiffness " << vis_spring_stiffness;
-
-    MOFEM_LOG("CONTACT", Sev::inform) << "alpha_damping " << alpha_damping;
-
-    PetscBool use_scale = PETSC_FALSE;
-    CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-use_scale", &use_scale,
-                               PETSC_NULL);
-    if (use_scale) {
-      scale /= young_modulus;
-    }
-
-    MOFEM_LOG("CONTACT", Sev::inform) << "Scale " << scale;
-
-    CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-is_quasi_static",
-                               &is_quasi_static, PETSC_NULL);
-    MOFEM_LOG("CONTACT", Sev::inform)
-        << "Is quasi-static: " << (is_quasi_static ? "true" : "false");
-
-    MoFEMFunctionReturn(0);
-  };
-
-  CHKERR get_options();
-
-#ifdef PYTHON_SDF
-  char sdf_file_name[255];
-  CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-sdf_file",
-                               sdf_file_name, 255, PETSC_NULL);
-
-  sdfPythonPtr = boost::make_shared<SDFPython>();
-  CHKERR sdfPythonPtr->sdfInit(sdf_file_name);
-  sdfPythonWeakPtr = sdfPythonPtr;
-#endif
 
   MoFEMFunctionReturn(0);
 }
@@ -581,7 +574,6 @@ MoFEMErrorCode Contact::OPs() {
             return (alpha_damping * scale) * fe_domain_lhs->ts_a;
           };
       pip.push_back(new OpMass("U", "U", get_inertia_and_mass_damping));
-
     }
 
     if (!mfrontInterface) {
@@ -615,7 +607,6 @@ MoFEMErrorCode Contact::OPs() {
           new OpInertiaForce("U", mat_acceleration, [](double, double, double) {
             return rho * scale;
           }));
-
     }
 
     // only in case of viscosity
@@ -699,7 +690,7 @@ MoFEMErrorCode Contact::OPs() {
     using OpSpringRhs = FormsIntegrators<BoundaryEleOp>::Assembly<
         AT>::LinearForm<IT>::OpBaseTimesVector<1, SPACE_DIM, 1>;
     //! [Operators used for contact]
-    
+
     // Add Natural BCs to RHS
     CHKERR BoundaryRhsBCs::AddFluxToPipeline<OpBoundaryRhsBCs>::add(
         pip, mField, "U", {time_scale}, Sev::inform);
