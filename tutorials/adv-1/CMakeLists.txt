@@ -137,18 +137,33 @@ add_custom_target(
 #################
 
 add_test(
-  hertz_2d_plane_strain
-  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  hertz_2d_plane_stress
+  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
   contact_2d
-  -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/test_2d.cub
+  -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/cyl_2d_4p.h5m
   -pc_type lu
   -ts_type beuler
   -ts_max_time 1 -ts_dt 1
-  -sdf_file ./sdf_files/sdf_hertz_2d_plane_strain.py
+  -sdf_file ./sdf_files/sdf_hertz_2d_plane.py
   -young_modulus 1e3
   -poisson_ratio 0.4
-  # -atom_test 2
-  -hencky_small_strain 0
+  -atom_test 1
+  -hencky_small_strain 1
+)
+
+add_test(
+  hertz_2d_plane_stress_schur
+  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
+  contact_2d_schur
+  -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/cyl_2d_4p.h5m
+  -pc_type fieldsplit
+  -ts_type beuler
+  -ts_max_time 1 -ts_dt 1
+  -sdf_file ./sdf_files/sdf_hertz_2d_plane.py
+  -young_modulus 1e3
+  -poisson_ratio 0.4
+  -atom_test 1
+  -hencky_small_strain 1
 )
 
 add_test(
@@ -162,7 +177,7 @@ add_test(
   -sdf_file ./sdf_files/sdf_hertz_3d.py
   -young_modulus 1e3
   -poisson_ratio 0.4
-  -atom_test 2
+  -atom_test 4
   -hencky_small_strain 1
 )
 
@@ -177,7 +192,7 @@ add_test(
   -sdf_file ./sdf_files/sdf_hertz_3d.py
   -young_modulus 1e3
   -poisson_ratio 0.4
-  -atom_test 2
+  -atom_test 4
   -hencky_small_strain 1
 )
 
@@ -198,20 +213,20 @@ if(IS_MFRONT_MOD)
 
     add_test(
       hertz_mfront_2d_plane_strain
-      ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+      ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
       contact_2d
-      -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/test_2d.cub
+      -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/cyl_2d_4p.h5m
       -pc_type lu
       -ts_type beuler
       -ts_max_time 1 -ts_dt 1
-      -sdf_file ./sdf_files/sdf_hertz_2d_plane_strain.py
+      -sdf_file ./sdf_files/sdf_hertz_2d_plane.py
       -use_mfront 1
       -is_axisymmetric 0
       -mi_lib_path_10 ${CMAKE_CURRENT_BINARY_DIR}/src/libBehaviour.${DEFAULT_LIB_EXTENSION}
       -mi_block_10 LinearElasticity
       -mi_param_10_0 1e3
       -mi_param_10_1 0.4
-      # -atom_test 1
+      -atom_test 2
     )
 
     add_test(
@@ -229,7 +244,7 @@ if(IS_MFRONT_MOD)
       -mi_block_10 LinearElasticity
       -mi_param_10_0 1e3
       -mi_param_10_1 0.4
-      -atom_test 1
+      -atom_test 3
     )
 
     add_test(
@@ -246,7 +261,7 @@ if(IS_MFRONT_MOD)
       -mi_block_10 LinearElasticity
       -mi_param_10_0 1e3
       -mi_param_10_1 0.4
-      -atom_test 2
+      -atom_test 4
     )
 
   endif(TFEL_DIR)

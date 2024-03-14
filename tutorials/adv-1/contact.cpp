@@ -894,12 +894,29 @@ MoFEMErrorCode Contact::checkResults() {
   if (atom_test && !mField.get_comm_rank()) {
     const double *t_ptr;
     CHKERR VecGetArrayRead(ContactOps::CommonData::totalTraction, &t_ptr);
-    double hertz_force = 158.73;
-    double fem_force = t_ptr[1];
+    double hertz_force;
+    double fem_force;
     double tol = 5e-3;
-    if (atom_test == 2) {
-      hertz_force /= 4;
+    switch (atom_test) {
+    case 1: // plane stress
+      hertz_force = 19.635;
+      fem_force = t_ptr[1];
+      break;
+    case 2: // plane strain
+      hertz_force = 23.375;
+      fem_force = t_ptr[1];
+      break;
+    case 3: // axisymmetric
+      hertz_force = 158.73;
+      fem_force = t_ptr[1];
+      break;
+    case 4: // 3D
+      hertz_force = 39.6825;
       fem_force = t_ptr[2];
+      break;
+    default:
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
+               "atom test %d does not exist", atom_test);
     }
     if (fabs(fem_force - hertz_force) / hertz_force > tol) {
       SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
