@@ -68,11 +68,22 @@ struct MedInterface : public UnknownInterface {
    * \brief read MED file
    *
    * File name is form command line
+   * ////
    *
    * @param  verb verbosity level
    * @return      error code
    */
   MoFEMErrorCode readMed(int verb = 1);
+
+    /**
+   * \brief write MED file
+   * 
+   * File name is form command line
+   * 
+   * @param  verb verbosity level
+   * @return      error code
+   */
+  MoFEMErrorCode writeMed(int verb = 1);
 
   /**
    * \brief write MED file
@@ -115,6 +126,8 @@ private:
   MoFEM::Core &cOre; ///< core database
   // std::vector<std::string> fieldNames;  ///< list of fields in MED file
   PetscBool flgFile; ///< true if file name given in command line
+  // cubit
+  CubitMeshSet_multiIndex cubitMeshsets; ///< cubit meshsets
 
   /**
    * \brief read mesh from MED file
