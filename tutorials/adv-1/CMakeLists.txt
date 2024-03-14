@@ -137,6 +137,21 @@ add_custom_target(
 #################
 
 add_test(
+  hertz_2d_plane_strain
+  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  contact_2d
+  -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/test_2d.cub
+  -pc_type lu
+  -ts_type beuler
+  -ts_max_time 1 -ts_dt 1
+  -sdf_file ./sdf_files/sdf_hertz_2d_plane_strain.py
+  -young_modulus 1e3
+  -poisson_ratio 0.4
+  # -atom_test 2
+  -hencky_small_strain 0
+)
+
+add_test(
   hertz_3d
   ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
   contact_3d
@@ -182,14 +197,32 @@ if(IS_MFRONT_MOD)
     endif()
 
     add_test(
-      hertz_mfront_axisymm
+      hertz_mfront_2d_plane_strain
+      ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+      contact_2d
+      -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/test_2d.cub
+      -pc_type lu
+      -ts_type beuler
+      -ts_max_time 1 -ts_dt 1
+      -sdf_file ./sdf_files/sdf_hertz_2d_plane_strain.py
+      -use_mfront 1
+      -is_axisymmetric 0
+      -mi_lib_path_10 ${CMAKE_CURRENT_BINARY_DIR}/src/libBehaviour.${DEFAULT_LIB_EXTENSION}
+      -mi_block_10 LinearElasticity
+      -mi_param_10_0 1e3
+      -mi_param_10_1 0.4
+      # -atom_test 1
+    )
+
+    add_test(
+      hertz_mfront_2d_axisymm
       ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
       contact_2d
       -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/hertz_2d_4p.h5m
       -pc_type lu
       -ts_type beuler
-      -ts_max_time 1 -ts_dt 0.2 
-      -sdf_file ./sdf_files/sdf_hertz_axisymm.py
+      -ts_max_time 1 -ts_dt 1 
+      -sdf_file ./sdf_files/sdf_hertz_2d_axisymm.py
       -use_mfront 1
       -is_axisymmetric 1
       -mi_lib_path_10 ${CMAKE_CURRENT_BINARY_DIR}/src/libBehaviour.${DEFAULT_LIB_EXTENSION}
