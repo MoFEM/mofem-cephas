@@ -101,7 +101,13 @@ MatSetValues<EssentialBcStorage>(Mat M,
  * @ingroup mofem_forms
  *
  */
-enum AssemblyType { PETSC, SCHUR, USER_ASSEMBLE, LAST_ASSEMBLE };
+enum AssemblyType {
+  PETSC,
+  SCHUR,
+  BLOCK_MAT,
+  USER_ASSEMBLE,
+  LAST_ASSEMBLE
+};
 
 template <int A> struct AssemblyTypeSelector {};
 
