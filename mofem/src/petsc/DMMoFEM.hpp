@@ -985,6 +985,19 @@ struct DMCtx : public UnknownInterface {
 };
 
 /**
+ * @brief Get the Interface Ptr object
+ * 
+ * @param dm 
+ * @return auto 
+ */
+inline auto getInterfacePtr(DM dm) {
+  MoFEM::Interface *m_field_ptr;
+  CHK_THROW_MESSAGE(DMoFEMGetInterfacePtr(dm, &m_field_ptr),
+                    "Get cot get interface ptr from DM");
+  return m_field_ptr;
+};
+
+/**
  * @brief get problem pointer from DM
  * 
  */
