@@ -899,12 +899,13 @@ boost::shared_ptr<DiagBlockStruture> createSchurBlockMatStructure(
 
   auto field_ptr = getInterfacePtr(dm);
   auto prb_ptr = getProblemPtr(dm);
-  auto is = field_ptr->getInterface<ISManager>()->isCreateProblem(
-      prb_ptr->getName(), ROW);
-  auto scatter = createVecScatter(ghost_x, is, ghost_y, is);
   data_ptr->ghostX = ghost_x;
   data_ptr->ghostY = ghost_y;
-  data_ptr->scatterVec = scatter;
+
+  // auto is = field_ptr->getInterface<ISManager>()->isCreateProblem(
+  //     prb_ptr->getName(), ROW);
+  // auto scatter = createVecScatter(ghost_x, is, ghost_y, is);
+  // data_ptr->scatterVec = scatter;
 
   return data_ptr;
 }
@@ -1009,10 +1010,14 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
   auto ghost_x = ctx->ghostX;
   auto ghost_y = ctx->ghostY;
 
-  CHKERR VecScatterBegin(ctx->scatterVec, x, ghost_x, INSERT_VALUES,
+  if (ctx->scatterVec) {
+    CHKERR VecScatterBegin(ctx->scatterVec, x, ghost_x, INSERT_VALUES,
+                           SCATTER_FORWARD);
+    CHKERR VecScatterEnd(ctx->scatterVec, x, ghost_x, INSERT_VALUES,
                          SCATTER_FORWARD);
-  CHKERR VecScatterEnd(ctx->scatterVec, x, ghost_x, INSERT_VALUES,
-                       SCATTER_FORWARD);
+  } else {
+    CHKERR VecCopy(x, ghost_x);
+  }
 
   // CHKERR VecCopy(x, ghost_x);
   CHKERR VecGhostUpdateBegin(ghost_x, INSERT_VALUES, SCATTER_FORWARD);
@@ -1044,8 +1049,15 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
         block_ptr = &(*ctx->dataInvBlocksPtr)[shift];
       else
         block_ptr = &(*ctx->dataBlocksPtr)[shift];
-      cblas_dgemv(CblasRowMajor, trans, v.nb_rows, v.nb_cols, 1., block_ptr,
-                  v.nb_cols, x_ptr, 1, 1., y_ptr, 1);
+      cblas_dgemv(
+
+          CblasRowMajor, trans,
+
+          v.nb_rows, v.nb_cols, 1., block_ptr, v.nb_cols, x_ptr, 1,
+
+          1., y_ptr, 1
+
+      );
     }
   }
 
@@ -1057,9 +1069,12 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
   CHKERR VecGhostUpdateBegin(ghost_y, ADD_VALUES, SCATTER_REVERSE);
   CHKERR VecGhostUpdateEnd(ghost_y, ADD_VALUES, SCATTER_REVERSE);
 
-  // CHKERR VecCopy(ghost_y, y);
-  CHKERR VecScatterBegin(ctx->scatterVec, ghost_y, y, iora, SCATTER_REVERSE);
-  CHKERR VecScatterEnd(ctx->scatterVec, ghost_y, y, iora, SCATTER_REVERSE);
+  if (ctx->scatterVec) {
+    CHKERR VecScatterBegin(ctx->scatterVec, ghost_y, y, iora, SCATTER_REVERSE);
+    CHKERR VecScatterEnd(ctx->scatterVec, ghost_y, y, iora, SCATTER_REVERSE);
+  } else {
+    CHKERR VecCopy(ghost_y, y);
+  }
 
   // PetscLogFlops(xxx)
   PetscLogEventEnd(SchurEvents::MOFEM_EVENT_diagBlockStrutureMult, 0, 0, 0, 0);
