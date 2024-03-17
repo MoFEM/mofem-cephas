@@ -147,6 +147,19 @@ static auto get_sub_iface_options_imp(T *const ptr, long) -> MoFEMErrorCode {
   return 0;
 };
 
+template <class T>
+static auto get_event_options_imp(T *const ptr, int)
+    -> decltype(ptr->getEventOptions()) {
+  return ptr->getEventptions();
+};
+
+// Use SFINAE to decide which template should be run,
+// if getSubInterfaceOptions not exist run this one.
+template <class T>
+static auto get_event_options_imp(T *const ptr, long) -> MoFEMErrorCode {
+  return 0;
+};
+
 template <class IFACE> MoFEMErrorCode Core::regSubInterface() {
   MoFEMFunctionBegin;
   CHKERR registerInterface<IFACE>(true);
