@@ -597,17 +597,17 @@ MatrixManager::query_interface(boost::typeindex::type_index type_index,
 MatrixManager::MatrixManager(const MoFEM::Core &core)
     : cOre(const_cast<MoFEM::Core &>(core)) {
   PetscLogEventRegister("MatMngCrtMPIAIJ", 0, &MOFEM_EVENT_createMPIAIJ);
-  PetscLogEventRegister("MatMngCrtMPIAIJWithArrays", 0,
+  PetscLogEventRegister("MatMngCrtMPIAIJWthArr", 0,
                         &MOFEM_EVENT_createMPIAIJWithArrays);
-  PetscLogEventRegister("MatMnhCrtMPIAdjWithArrays", 0,
+  PetscLogEventRegister("MatMnhCrtMPIAdjWithArr", 0,
                         &MOFEM_EVENT_createMPIAdjWithArrays);
-  PetscLogEventRegister("MatMngCrtMPIAIJCUSPARSEWithArrays", 0,
+  PetscLogEventRegister("MatMngCrtMPIAIJCUSPARSEWthArr", 0,
                         &MOFEM_EVENT_createMPIAIJCUSPARSEWithArrays);
-  PetscLogEventRegister("MatMngCrtSeqAIJCUSPARSEWithArrays", 0,
+  PetscLogEventRegister("MatMngCrtSeqAIJCUSPARSEWthArrs", 0,
                         &MOFEM_EVENT_createSeqAIJCUSPARSEWithArrays);
-  PetscLogEventRegister("MatMngCrtSeqAIJWithArrays", 0,
+  PetscLogEventRegister("MatMngCrtSeqAIJWthArrs", 0,
                         &MOFEM_EVENT_createSeqAIJWithArrays);
-  PetscLogEventRegister("MatMngCrtCheckMPIAIJWithArraysMatrixFillIn", 0,
+  PetscLogEventRegister("MatMngCrtCheckMPIAIJWthArrFillIn", 0,
                         &MOFEM_EVENT_checkMatrixFillIn);
 }
 
