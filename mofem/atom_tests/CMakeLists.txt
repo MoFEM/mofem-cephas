@@ -52,8 +52,8 @@ function(build_test target source)
   my_add_executable(${target} ${source})
   target_link_libraries(
     ${target}
-    mofem_finite_elements
     mofem_interfaces
+    mofem_finite_elements
     mofem_multi_indices
     mofem_petsc
     mofem_approx
