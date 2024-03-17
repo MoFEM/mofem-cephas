@@ -364,6 +364,13 @@ inline auto isDifference(IS is1, IS is2) {
   return SmartPetscObj<IS>(is_raw);
 }
 
+inline auto createISLocalToGlobalMapping(IS is) {
+  ISLocalToGlobalMapping map_raw;
+  CHK_THROW_MESSAGE(ISLocalToGlobalMappingCreateIS(is, &map_raw),
+                    "create local to global mapping");
+  return SmartPetscObj<ISLocalToGlobalMapping>(map_raw);
+}
+
 } // namespace MoFEM
 
 #endif
