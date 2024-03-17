@@ -64,7 +64,7 @@ struct UnknownInterface {
   }
 
   /**
-   * @brief Get interface refernce to pointer of interface
+   * @brief Get interface reference to pointer of interface
    *
    * \code
    * // Create moab database
