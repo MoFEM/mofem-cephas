@@ -167,13 +167,13 @@ Simple::Simple(const Core &core)
       addBoundaryFE(false), addParentAdjacencies(false),
       bitAdjParent(BitRefLevel().set()), bitAdjParentMask(BitRefLevel().set()),
       bitAdjEnt(BitRefLevel().set()), bitAdjEntMask(BitRefLevel().set()) {
-  PetscLogEventRegister("SimpleSetUp", 0, &MOFEM_EVENT_SimpleSetUP);
-  PetscLogEventRegister("SimpleLoadMesh", 0, &MOFEM_EVENT_SimpleLoadMesh);
-  PetscLogEventRegister("SimpleBuildFields", 0, &MOFEM_EVENT_SimpleBuildFields);
-  PetscLogEventRegister("SimpleBuildFiniteElements", 0,
+  PetscLogEventRegister("SimpSetUp", 0, &MOFEM_EVENT_SimpleSetUP);
+  PetscLogEventRegister("SimpLoadMesh", 0, &MOFEM_EVENT_SimpleLoadMesh);
+  PetscLogEventRegister("SimpBuildFields", 0, &MOFEM_EVENT_SimpleBuildFields);
+  PetscLogEventRegister("SimpBuildFEs", 0,
                         &MOFEM_EVENT_SimpleBuildFiniteElements);
-  PetscLogEventRegister("SimpleSetUp", 0, &MOFEM_EVENT_SimpleBuildProblem);
-  PetscLogEventRegister("SimpleKSPSolve", 0, &MOFEM_EVENT_SimpleKSPSolve);
+  PetscLogEventRegister("SimpSetUp", 0, &MOFEM_EVENT_SimpleBuildProblem);
+  PetscLogEventRegister("SimpKSPSolve", 0, &MOFEM_EVENT_SimpleKSPSolve);
   strcpy(meshFileName, "mesh.h5m");
 }
 
