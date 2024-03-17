@@ -15,14 +15,21 @@
 
 namespace MoFEM {
 
+struct SchurEvents {
+  static PetscLogEvent MOFEM_EVENT_schurL2MatsMatSetValues;
+  static PetscLogEvent MOFEM_EVENT_opSchurAssembleEnd;
+  static PetscLogEvent MOFEM_EVENT_diagBlockStrutureSetValues;
+  static PetscLogEvent MOFEM_EVENT_diagBlockStrutureMult;
+  SchurEvents();
+};
+
 /**
  * @brief Clear Schur complement internal data
  * 
  */
 struct OpSchurAssembleBegin : public ForcesAndSourcesCore::UserDataOperator {
 
-  OpSchurAssembleBegin()
-      : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPSPACE) {}
+  OpSchurAssembleBegin();
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data);
@@ -117,80 +124,13 @@ struct OpSchurAssembleEnd<SCHUR_DGESV> : public OpSchurAssembleEndImpl {
                         EntitiesFieldData::EntData &data);
 };
 
-/**
- * @brief Schur complement data storage
- * 
- */
-struct SchurL2Mats : public boost::enable_shared_from_this<SchurL2Mats> {
-
-  SchurL2Mats(const size_t idx, const UId uid_row, const UId uid_col);
-  virtual ~SchurL2Mats() = default;
-
-  const UId uidRow;
-  const UId uidCol;
-
-  inline auto &getMat() const { return locMats[iDX]; }
-  inline auto &getRowInd() const { return rowIndices[iDX]; }
-  inline auto &getColInd() const { return colIndices[iDX]; }
-
-  using MatSetValuesPtr = boost::function<MoFEMErrorCode(
-      Mat M, const EntitiesFieldData::EntData &row_data,
-      const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
-      InsertMode iora)>;
-
-  static MatSetValuesPtr matSetValuesPtr; ///< backend assembly function
-
-  static MoFEMErrorCode MatSetValues(Mat M,
-                                     const EntitiesFieldData::EntData &row_data,
-                                     const EntitiesFieldData::EntData &col_data,
-                                     const MatrixDouble &mat, InsertMode iora);
-
-private:
-  const size_t iDX;
-
-  friend OpSchurAssembleBegin;
-  friend OpSchurAssembleEndImpl;
-
-  struct idx_mi_tag {};
-  struct uid_mi_tag {};
-  struct row_mi_tag {};
-  struct col_mi_tag {};
-
-  using SchurL2Storage = multi_index_container<
-      SchurL2Mats,
-      indexed_by<
-
-          ordered_unique<
-              tag<uid_mi_tag>,
-              composite_key<
-                  SchurL2Mats,
-
-                  member<SchurL2Mats, const UId, &SchurL2Mats::uidRow>,
-                  member<SchurL2Mats, const UId, &SchurL2Mats::uidCol>
-
-                  >>,
-
-          ordered_non_unique<tag<row_mi_tag>, member<SchurL2Mats, const UId,
-                                                     &SchurL2Mats::uidRow>>,
-
-          ordered_non_unique<tag<col_mi_tag>, member<SchurL2Mats, const UId,
-                                                     &SchurL2Mats::uidCol>>
-
-          >>;
-
-  static boost::ptr_vector<MatrixDouble> locMats;
-  static boost::ptr_vector<VectorInt> rowIndices;
-  static boost::ptr_vector<VectorInt> colIndices;
-  static SchurL2Storage schurL2Storage;
-};
+struct SchurL2Mats;
 
 template <>
-inline MoFEMErrorCode
+MoFEMErrorCode
 MatSetValues<SchurL2Mats>(Mat M, const EntitiesFieldData::EntData &row_data,
                           const EntitiesFieldData::EntData &col_data,
-                          const MatrixDouble &mat, InsertMode iora) {
-  return SchurL2Mats::MatSetValues(M, row_data, col_data, mat, iora);
-}
+                          const MatrixDouble &mat, InsertMode iora);
 
 template <>
 inline MoFEMErrorCode
@@ -214,20 +154,72 @@ inline MoFEMErrorCode VecSetValues<AssemblyTypeSelector<SCHUR>>(
   return VecSetValues<SchurL2Mats>(V, data, nf, iora);
 }
 
-/** Get nested matrix
- *
- * @param dm
- * @param schur_is
- * @param mat_array
- *
+/**
+ * @brief Create Schur complement
+ * 
+ * @param dm 
+ * @param schur_is 
+ * @return std::tuple<SmartPetscObj<IS>, SmartPetscObj<Mat>> 
  */
-std::tuple<SmartPetscObj<IS>, SmartPetscObj<Mat>> createSchurNested(
+std::tuple<SmartPetscObj<IS>, SmartPetscObj<IS>> createSchurISDiff(DM dm,
+                                                                   IS schur_is);
+struct DiagBlockStruture;
 
-    DM dm, IS schur_is,
+/**
+ * @brief Create a Mat Diag Blocks object
+ * 
+ * @return Mat 
+ */
+boost::shared_ptr<DiagBlockStruture> createSchurBlockMatStructure(
 
-    std::array<Mat, 4> mat_array
+    DM dm,                                 //< dm
+    std::vector<std::string> fields_names, //< block field
+    std::vector<std::string> fe_names,     //< block fes
+    std::vector<boost::shared_ptr<ForcesAndSourcesCore>>
+        fe_ptrs //< block elements
 
 );
+
+/**
+ * @brief Create a Schur Mat object
+ * 
+ * @param dm 
+ * @param data 
+ * @return std::pair<SmartPetscObj<Mat>, boost::shared_ptr<DiagBlockStruture>> 
+ */
+std::pair<SmartPetscObj<Mat>, boost::shared_ptr<DiagBlockStruture>>
+createSchurBlockMat(DM dm, boost::shared_ptr<DiagBlockStruture> data);
+
+/**
+ * @brief Create a Mat Diag Blocks object
+ * 
+ * @return Mat 
+ */
+SmartPetscObj<Mat>
+createNestedMatrix(std::tuple<SmartPetscObj<IS>, SmartPetscObj<IS>> is_tuple,
+                   std::array<Mat, 4> mats);
+
+template <>
+MoFEMErrorCode
+MatSetValues<DiagBlockStruture>(Mat M,
+                                const EntitiesFieldData::EntData &row_data,
+                                const EntitiesFieldData::EntData &col_data,
+                                const MatrixDouble &mat, InsertMode iora);
+
+template <>
+inline MoFEMErrorCode MatSetValues<AssemblyTypeSelector<BLOCK_MAT>>(
+    Mat M, const EntitiesFieldData::EntData &row_data,
+    const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
+    InsertMode iora) {
+  return MatSetValues<DiagBlockStruture>(M, row_data, col_data, mat, iora);
+}
+
+template <>
+inline MoFEMErrorCode VecSetValues<AssemblyTypeSelector<BLOCK_MAT>>(
+    Vec V, const EntitiesFieldData::EntData &data, const VectorDouble &nf,
+    InsertMode iora) {
+  return VecSetValues<EssentialBcStorage>(V, data, nf, iora);
+}
 
 } // namespace MoFEM
 

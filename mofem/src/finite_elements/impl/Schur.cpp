@@ -9,10 +9,126 @@
 
 namespace MoFEM {
 
+PetscLogEvent SchurEvents::MOFEM_EVENT_schurL2MatsMatSetValues;
+PetscLogEvent SchurEvents::MOFEM_EVENT_opSchurAssembleEnd;
+PetscLogEvent SchurEvents::MOFEM_EVENT_diagBlockStrutureSetValues;
+PetscLogEvent SchurEvents::MOFEM_EVENT_diagBlockStrutureMult;
+
+SchurEvents::SchurEvents() {
+  PetscLogEventRegister("schurMatSetVal", 0,
+                        &MOFEM_EVENT_schurL2MatsMatSetValues);
+  PetscLogEventRegister("opSchurAsmbEnd", 0, &MOFEM_EVENT_opSchurAssembleEnd);
+  PetscLogEventRegister("diagBlockSetVal", 0,
+                        &MOFEM_EVENT_diagBlockStrutureSetValues);
+  PetscLogEventRegister("diagBlockMult", 0, &MOFEM_EVENT_diagBlockStrutureMult);
+}
+
+/**
+ * @brief Schur complement data storage
+ *
+ */
+struct SchurL2Mats : public boost::enable_shared_from_this<SchurL2Mats> {
+
+  SchurL2Mats(const size_t idx, const UId uid_row, const UId uid_col);
+  virtual ~SchurL2Mats() = default;
+
+  const UId uidRow;
+  const UId uidCol;
+
+  inline auto &getMat() const { return locMats[iDX]; }
+  inline auto &getRowInd() const { return rowIndices[iDX]; }
+  inline auto &getColInd() const { return colIndices[iDX]; }
+
+  using MatSetValuesPtr = boost::function<MoFEMErrorCode(
+      Mat M, const EntitiesFieldData::EntData &row_data,
+      const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
+      InsertMode iora)>;
+
+  static MatSetValuesPtr matSetValuesPtr; ///< backend assembly function
+
+  static MoFEMErrorCode MatSetValues(Mat M,
+                                     const EntitiesFieldData::EntData &row_data,
+                                     const EntitiesFieldData::EntData &col_data,
+                                     const MatrixDouble &mat, InsertMode iora);
+
+private:
+  const size_t iDX;
+
+  friend OpSchurAssembleBegin;
+  friend OpSchurAssembleEndImpl;
+
+  struct idx_mi_tag {};
+  struct uid_mi_tag {};
+  struct row_mi_tag {};
+  struct col_mi_tag {};
+
+  using SchurL2Storage = multi_index_container<
+      SchurL2Mats,
+      indexed_by<
+
+          ordered_unique<
+              tag<uid_mi_tag>,
+              composite_key<
+                  SchurL2Mats,
+
+                  member<SchurL2Mats, const UId, &SchurL2Mats::uidRow>,
+                  member<SchurL2Mats, const UId, &SchurL2Mats::uidCol>
+
+                  >>,
+
+          ordered_non_unique<tag<row_mi_tag>, member<SchurL2Mats, const UId,
+                                                     &SchurL2Mats::uidRow>>,
+
+          ordered_non_unique<tag<col_mi_tag>, member<SchurL2Mats, const UId,
+                                                     &SchurL2Mats::uidCol>>
+
+          >>;
+
+  static boost::ptr_vector<MatrixDouble> locMats;
+  static boost::ptr_vector<VectorInt> rowIndices;
+  static boost::ptr_vector<VectorInt> colIndices;
+  static SchurL2Storage schurL2Storage;
+
+  static SmartPetscObj<Mat> a00;
+  static SmartPetscObj<Mat> a01;
+  static SmartPetscObj<Mat> a10;
+  static SmartPetscObj<Mat> a11;
+
+  static SmartPetscObj<Mat> ao0;
+  static SmartPetscObj<Mat> ao1;
+
+  static std::vector<int> rowIndices0;
+  static std::vector<int> colIndices0;
+  static std::vector<int> rowIndices1;
+  static std::vector<int> colIndices1;
+
+};
+
+template <>
+inline MoFEMErrorCode
+MatSetValues<SchurL2Mats>(Mat M, const EntitiesFieldData::EntData &row_data,
+                          const EntitiesFieldData::EntData &col_data,
+                          const MatrixDouble &mat, InsertMode iora) {
+  return SchurL2Mats::MatSetValues(M, row_data, col_data, mat, iora);
+}
+
 SchurL2Mats::SchurL2Storage SchurL2Mats::schurL2Storage;
 boost::ptr_vector<MatrixDouble> SchurL2Mats::locMats;
 boost::ptr_vector<VectorInt> SchurL2Mats::rowIndices;
 boost::ptr_vector<VectorInt> SchurL2Mats::colIndices;
+
+SmartPetscObj<Mat> SchurL2Mats::a00;
+SmartPetscObj<Mat> SchurL2Mats::a01;
+SmartPetscObj<Mat> SchurL2Mats::a10;
+SmartPetscObj<Mat> SchurL2Mats::a11;
+
+SmartPetscObj<Mat> SchurL2Mats::ao0;
+SmartPetscObj<Mat> SchurL2Mats::ao1;
+
+std::vector<int> SchurL2Mats::rowIndices0;
+std::vector<int> SchurL2Mats::colIndices0;
+std::vector<int> SchurL2Mats::rowIndices1;
+std::vector<int> SchurL2Mats::colIndices1;
 
 SchurL2Mats::SchurL2Mats(const size_t idx, const UId uid_row, const UId uid_col)
     : iDX(idx), uidRow(uid_row), uidCol(uid_col) {}
@@ -37,7 +153,16 @@ SchurL2Mats::MatSetValues(Mat M, const EntitiesFieldData::EntData &row_data,
                           const MatrixDouble &mat, InsertMode iora) {
   MoFEMFunctionBegin;
 
+  PetscLogEventBegin(SchurEvents::MOFEM_EVENT_schurL2MatsMatSetValues, 0, 0, 0,
+                     0);
+
+  // PetscBool is_nested = PETSC_FALSE;
+  // PetscObjectTypeCompare((PetscObject)M, MATNEST, &is_nested);
+  // if (is_nested) {
+  //   CHKERR matSetValuesNestedPtr(M, row_data, col_data, mat, iora);
+  // } else {
   CHKERR matSetValuesPtr(M, row_data, col_data, mat, iora);
+  // }
 
   auto get_row_indices = [&]() -> const VectorInt & {
     if (auto e_ptr = row_data.getFieldEntities()[0]) {
@@ -171,8 +296,14 @@ SchurL2Mats::MatSetValues(Mat M, const EntitiesFieldData::EntData &row_data,
     CHKERR asmb(get_storage().getMat());
   }
 
+  PetscLogEventEnd(SchurEvents::MOFEM_EVENT_schurL2MatsMatSetValues, 0, 0, 0,
+                   0);
+
   MoFEMFunctionReturn(0);
 }
+
+OpSchurAssembleBegin::OpSchurAssembleBegin()
+    : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPSPACE) {}
 
 MoFEMErrorCode OpSchurAssembleBegin::doWork(int side, EntityType type,
                                             EntitiesFieldData::EntData &data) {
@@ -181,14 +312,6 @@ MoFEMErrorCode OpSchurAssembleBegin::doWork(int side, EntityType type,
   MOFEM_LOG("SELF", Sev::noisy) << "Schur assemble begin";
 #endif
   SchurL2Mats::schurL2Storage.clear();
-
-  // auto zero_mats = [&](auto &mats) {
-  //   for (auto &m : mats) {
-  //     m.resize(0, 0, false);
-  //   }
-  // };
-
-  // zero_mats(SchurL2Mats::locMats);
 
   MoFEMFunctionReturn(0);
 }
@@ -221,6 +344,10 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
                                    EntitiesFieldData::EntData &data) {
 
   MoFEMFunctionBegin;
+
+  PetscLogEventBegin(SchurEvents::MOFEM_EVENT_opSchurAssembleEnd, 0, 0, 0,
+                     0);
+
 #ifndef NDEBUG
   MOFEM_LOG("SELF", Sev::noisy) << "Schur assemble begin -> end";
 #endif
@@ -504,6 +631,8 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
   MOFEM_LOG("SELF", Sev::noisy) << "Schur assemble done";
 #endif
 
+  PetscLogEventEnd(SchurEvents::MOFEM_EVENT_opSchurAssembleEnd, 0, 0, 0, 0);
+
   MoFEMFunctionReturn(0);
 }
 
@@ -582,13 +711,8 @@ OpSchurAssembleEnd<SCHUR_DGESV>::doWork(int side, EntityType type,
   return doWorkImpl<SCHUR_DGESV>(side, type, data);
 }
 
-std::tuple<SmartPetscObj<IS>, SmartPetscObj<Mat>> createSchurNested(
-
-    DM dm, IS is_schur,
-
-    std::array<Mat, 4> mat_array
-
-) {
+std::tuple<SmartPetscObj<IS>, SmartPetscObj<IS>>
+createSchurISDiff(DM dm, IS is_schur) {
 
   auto get_is_diff = [](DM dm, IS is_schur) {
     MoFEM::Interface *m_field_ptr;
@@ -607,16 +731,485 @@ std::tuple<SmartPetscObj<IS>, SmartPetscObj<Mat>> createSchurNested(
 
   auto is_diff = get_is_diff(dm, is_schur);
 
+  return std::make_pair(SmartPetscObj<IS>(is_schur),
+                        SmartPetscObj<IS>(is_diff));
+}
+
+struct DiagBlockStruture {};
+
+struct DiagBlockStrutureImpl : public DiagBlockStruture {
+
+  DiagBlockStrutureImpl() = default;
+  virtual ~DiagBlockStrutureImpl() = default;
+
+  SmartPetscObj<Vec> ghostX;
+  SmartPetscObj<Vec> ghostY;
+  SmartPetscObj<VecScatter> scatterVec;
+
+  boost::shared_ptr<std::vector<double>> dataBlocksPtr;
+  boost::shared_ptr<std::vector<double>> dataInvBlocksPtr;
+
+  struct Indexes {
+    int row;
+    int col;
+    int nb_rows;
+    int nb_cols;
+    int loc_row;
+    int loc_col;
+    mutable int shift;
+  };
+
+  using BlockIndex = multi_index_container<
+
+      Indexes,
+
+      indexed_by<
+
+          ordered_non_unique<member<Indexes, int, &Indexes::col>>,
+
+          hashed_unique<
+
+              composite_key<Indexes,
+
+                            member<Indexes, int, &Indexes::row>,
+                            member<Indexes, int, &Indexes::col>,
+                            member<Indexes, int, &Indexes::nb_cols>,
+                            member<Indexes, int, &Indexes::nb_rows>
+
+                            >>
+
+          >>;
+
+  boost::shared_ptr<BlockIndex> blockIndexPtr;
+
+};
+
+struct CountBlocks : public ForcesAndSourcesCore::UserDataOperator {
+  using OP = ForcesAndSourcesCore::UserDataOperator;
+  CountBlocks(std::string field_name,
+              boost::shared_ptr<DiagBlockStrutureImpl> data_ptr)
+      : OP(field_name, OP::OPROWCOL), dataPtr(data_ptr) {
+    sYmm = false;
+    hintInt = dataPtr->blockIndexPtr->get<1>().end();
+  }
+  MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
+                        EntityType col_type,
+                        EntitiesFieldData::EntData &row_data,
+                        EntitiesFieldData::EntData &col_data) {
+    MoFEMFunctionBegin;
+
+    auto nb_rows = row_data.getIndices().size();
+    auto nb_cols = col_data.getIndices().size();
+
+    auto add = [&](auto r, auto c, int nb_r, int nb_c) {
+      dataPtr->blockIndexPtr->insert(
+
+          DiagBlockStrutureImpl::Indexes{
+              row_data.getIndices()[r], col_data.getIndices()[c], nb_r, nb_c,
+              row_data.getLocalIndices()[r], col_data.getLocalIndices()[c], -1}
+
+      );
+    };
+
+    if (nb_rows && nb_cols) {
+      if (row_type == MBVERTEX && col_type == MBVERTEX) {
+        auto row_nb_coeff = row_data.getFieldDofs()[0]->getNbOfCoeffs();
+        auto col_nb_coeff = col_data.getFieldDofs()[0]->getNbOfCoeffs();
+        for (auto i = 0; i < nb_rows / row_nb_coeff; ++i) {
+          for (auto j = 0; j < nb_cols / col_nb_coeff; ++j) {
+            add(i * row_nb_coeff, j * col_nb_coeff, row_nb_coeff, col_nb_coeff);
+          }
+        }
+      } else if (row_type == MBVERTEX) {
+        auto row_nb_coeff = row_data.getFieldDofs()[0]->getNbOfCoeffs();
+        for (auto i = 0; i < nb_rows / row_nb_coeff; ++i) {
+          add(i * row_nb_coeff, 0, row_nb_coeff, nb_cols);
+        }
+      } else if (col_type == MBVERTEX) {
+        auto col_nb_coeff = col_data.getFieldDofs()[0]->getNbOfCoeffs();
+        for (auto j = 0; j < nb_cols / col_nb_coeff; ++j) {
+          add(0, j * col_nb_coeff, nb_rows, col_nb_coeff);
+        }
+      } else {
+        add(0, 0, nb_rows, nb_cols);
+      }
+    }
+    MoFEMFunctionReturn(0);
+  }
+
+private:
+  boost::shared_ptr<DiagBlockStrutureImpl> dataPtr;
+
+  DiagBlockStrutureImpl::BlockIndex::nth_index<1>::type::iterator hintInt;
+};
+
+boost::shared_ptr<DiagBlockStruture> createSchurBlockMatStructure(
+
+    DM dm,                                 //< dm
+    std::vector<std::string> fields_names, //< block field
+    std::vector<std::string> fe_names,     //< block fes
+    std::vector<boost::shared_ptr<ForcesAndSourcesCore>>
+        fe_ptrs //< block elements
+
+) {
+  auto data_ptr = boost::make_shared<DiagBlockStrutureImpl>();
+  data_ptr->blockIndexPtr =
+      boost::make_shared<DiagBlockStrutureImpl::BlockIndex>();
+
+  if (fe_ptrs.size() != fields_names.size()) {
+    MOFEM_LOG("SELF", Sev::error)
+        << "Wrong size " << fe_ptrs.size() << " != " << fields_names.size();
+    CHK_MOAB_THROW(MOFEM_DATA_INCONSISTENCY, "Wrong size");
+  }
+  if (fe_ptrs.size() != fe_names.size()) {
+    MOFEM_LOG("SELF", Sev::error)
+        << "Wrong size " << fe_ptrs.size() << " != " << fe_names.size();
+    CHK_MOAB_THROW(MOFEM_DATA_INCONSISTENCY, "Wrong size");
+  }
+
+  auto fe_it = fe_ptrs.begin();
+  auto fe_name_it = fe_names.begin();
+
+  auto count_ptr = boost::make_shared<int>(0);
+  auto mem_ptr = boost::make_shared<int>(0);
+  for (auto f : fields_names) {
+    (*fe_it)->getOpPtrVector().push_back(new CountBlocks(f, data_ptr));
+    CHKERR DMoFEMLoopFiniteElements(dm, *fe_name_it, *fe_it);
+    ++fe_it;
+    ++fe_name_it;
+  }
+
+  auto mem_size = 0;
+  for (auto &v : data_ptr->blockIndexPtr->get<0>()) {
+    v.shift = mem_size;
+    mem_size += v.nb_cols * v.nb_rows;
+  }
+  data_ptr->dataBlocksPtr =
+      boost::make_shared<std::vector<double>>(mem_size, 0);
+  data_ptr->dataInvBlocksPtr =
+      boost::make_shared<std::vector<double>>(mem_size, 0);
+
+  auto ghost_x = createDMVector(dm);
+  auto ghost_y = createDMVector(dm);
+
+  auto field_ptr = getInterfacePtr(dm);
+  auto prb_ptr = getProblemPtr(dm);
+  auto is = field_ptr->getInterface<ISManager>()->isCreateProblem(
+      prb_ptr->getName(), ROW);
+  auto scatter = createVecScatter(ghost_x, is, ghost_y, is);
+  data_ptr->ghostX = ghost_x;
+  data_ptr->ghostY = ghost_y;
+  data_ptr->scatterVec = scatter;
+
+  return data_ptr;
+}
+
+static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
+                                             InsertMode iora,
+                                             CBLAS_TRANSPOSE trans, bool solve);
+
+static PetscErrorCode mult(Mat mat, Vec x, Vec y) {
+  return mult_schur_block_shell(mat, x, y, INSERT_VALUES, CblasNoTrans, false);
+}
+static PetscErrorCode mult_add(Mat mat, Vec x, Vec y) {
+  return mult_schur_block_shell(mat, x, y, ADD_VALUES, CblasNoTrans, false);
+}
+static PetscErrorCode mult_trans(Mat mat, Vec x, Vec y) {
+  return mult_schur_block_shell(mat, x, y, INSERT_VALUES, CblasTrans, false);
+}
+static PetscErrorCode mult_trans_add(Mat mat, Vec x, Vec y) {
+  return mult_schur_block_shell(mat, x, y, ADD_VALUES, CblasTrans, false);
+}
+
+static PetscErrorCode solve(Mat mat, Vec x, Vec y) {
+  return mult_schur_block_shell(mat, x, y, INSERT_VALUES, CblasNoTrans, true);
+}
+static PetscErrorCode solve_add(Mat mat, Vec x, Vec y) {
+  return mult_schur_block_shell(mat, x, y, ADD_VALUES, CblasNoTrans, true);
+}
+static PetscErrorCode solve_trans(Mat mat, Vec x, Vec y) {
+  return mult_schur_block_shell(mat, x, y, INSERT_VALUES, CblasTrans, true);
+}
+static PetscErrorCode solve_trans_add(Mat mat, Vec x, Vec y) {
+  return mult_schur_block_shell(mat, x, y, ADD_VALUES, CblasTrans, true);
+}
+static PetscErrorCode mat_zero(Mat m) {
+  MoFEMFunctionBegin;
+  DiagBlockStrutureImpl *ctx;
+  CHKERR MatShellGetContext(m, (void **)&ctx);
+  ctx->dataBlocksPtr->clear();
+  MoFEMFunctionReturn(0);
+}
+
+std::pair<SmartPetscObj<Mat>, boost::shared_ptr<DiagBlockStruture>>
+createSchurBlockMat(DM dm, boost::shared_ptr<DiagBlockStruture> data) {
+
+  auto problem_ptr = getProblemPtr(dm);
+  auto nb_local = problem_ptr->nbLocDofsRow;
+  auto nb_global = problem_ptr->nbDofsRow;
+
+  // check in nb, rows is equal to nb. columns.
+  if (nb_local != problem_ptr->nbLocDofsCol) {
+    MOFEM_LOG("SELF", Sev::error)
+        << "Wrong size " << nb_local << " != " << problem_ptr->nbLocDofsCol;
+    CHK_MOAB_THROW(MOFEM_DATA_INCONSISTENCY,
+                   "nb. cols is inconsistent with nb. rows");
+  }
+  if (nb_global != problem_ptr->nbDofsCol) {
+    MOFEM_LOG("SELF", Sev::error)
+        << "Wrong size " << nb_global << " != " << problem_ptr->nbDofsCol;
+    CHK_MOAB_THROW(MOFEM_DATA_INCONSISTENCY,
+                   "nb. cols is inconsistent with nb. rows");
+  }
+
+  // get comm from DM
   MPI_Comm comm;
   CHKERR PetscObjectGetComm((PetscObject)dm, &comm);
-  IS is_array[2] = { is_schur, is_diff };
 
-  Mat a_raw;
-  CHK_THROW_MESSAGE(
-      MatCreateNest(comm, 2, is_array, 2, is_array, mat_array.data(), &a_raw),
-      "MatCreateNest failed");
+  Mat mat_raw;
+  CHKERR MatCreateShell(comm, nb_local, nb_local, nb_global, nb_global,
+                        (void *)data.get(), &mat_raw);
 
-  return std::make_tuple(is_diff, SmartPetscObj<Mat>(a_raw));
+  CHKERR MatShellSetOperation(mat_raw, MATOP_MULT, (void (*)(void))mult);
+  CHKERR MatShellSetOperation(mat_raw, MATOP_MULT_ADD,
+                              (void (*)(void))mult_add);
+  CHKERR MatShellSetOperation(mat_raw, MATOP_MULT_TRANSPOSE,
+                              (void (*)(void))mult_trans);
+  CHKERR MatShellSetOperation(mat_raw, MATOP_MULT_TRANSPOSE_ADD,
+                              (void (*)(void))mult_trans_add);
+  CHKERR MatShellSetOperation(mat_raw, MATOP_SOLVE, (void (*)(void))solve);
+  CHKERR MatShellSetOperation(mat_raw, MATOP_SOLVE_ADD,
+                              (void (*)(void))solve_add);
+  CHKERR MatShellSetOperation(mat_raw, MATOP_SOLVE_TRANSPOSE,
+                              (void (*)(void))solve_trans);
+  CHKERR MatShellSetOperation(mat_raw, MATOP_SOLVE_TRANSPOSE_ADD,
+                              (void (*)(void))solve_trans_add);
+  CHKERR MatShellSetOperation(mat_raw, MATOP_ZERO_ENTRIES,
+                              (void (*)(void))mat_zero);
+
+  return std::make_pair(SmartPetscObj<Mat>(mat_raw), data);
+}
+
+static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
+                                             InsertMode iora,
+                                             CBLAS_TRANSPOSE trans,
+                                             bool solve) {
+  MoFEMFunctionBegin;
+  DiagBlockStrutureImpl *ctx;
+  CHKERR MatShellGetContext(mat, (void **)&ctx);
+
+  PetscLogEventBegin(SchurEvents::MOFEM_EVENT_diagBlockStrutureSetValues, 0, 0,
+                     0, 0);
+
+  auto ghost_x = ctx->ghostX;
+  auto ghost_y = ctx->ghostY;
+
+  // CHKERR VecScatterBegin(ctx->scatterVec, x, ghost_x, INSERT_VALUES,
+  //                        SCATTER_FORWARD);
+  // CHKERR VecScatterEnd(ctx->scatterVec, x, ghost_x, INSERT_VALUES,
+  //                      SCATTER_FORWARD);
+
+  CHKERR VecCopy(x, ghost_x);
+  CHKERR VecGhostUpdateBegin(ghost_x, INSERT_VALUES, SCATTER_FORWARD);
+  CHKERR VecGhostUpdateEnd(ghost_x, INSERT_VALUES, SCATTER_FORWARD);
+
+  const double *x_array;
+  Vec loc_x;
+  CHKERR VecGhostGetLocalForm(ghost_x, &loc_x);
+  CHKERR VecGetArrayRead(loc_x, &x_array);
+
+  double *y_array;
+  Vec loc_y;
+  CHKERR VecGhostGetLocalForm(ghost_y, &loc_y);
+  int nb_y;
+  CHKERR VecGetLocalSize(loc_y, &nb_y);
+  CHKERR VecGetArray(loc_y, &y_array);
+
+  for (auto i = 0; i != nb_y; ++i)
+    y_array[i] = 0.;
+
+  for (auto &v : ctx->blockIndexPtr->get<0>()) {
+    if (v.row != -1 && v.col != -1) {
+      auto shift = v.shift;
+
+      auto x_ptr = &x_array[v.loc_col];
+      auto y_ptr = &y_array[v.loc_row];
+      double *block_ptr;
+      if (solve)
+        block_ptr = &(*ctx->dataInvBlocksPtr)[shift];
+      else
+        block_ptr = &(*ctx->dataBlocksPtr)[shift];
+      cblas_dgemv(CblasRowMajor, trans, v.nb_rows, v.nb_cols, 1., block_ptr,
+                  v.nb_cols, x_ptr, 1, 1., y_ptr, 1);
+    }
+  }
+
+  CHKERR VecRestoreArrayRead(loc_x, &x_array);
+  CHKERR VecRestoreArray(loc_y, &y_array);
+  CHKERR VecGhostRestoreLocalForm(ghost_x, &loc_x);
+  CHKERR VecGhostRestoreLocalForm(ghost_y, &loc_y);
+
+  CHKERR VecGhostUpdateBegin(ghost_y, ADD_VALUES, SCATTER_REVERSE);
+  CHKERR VecGhostUpdateEnd(ghost_y, ADD_VALUES, SCATTER_REVERSE);
+
+  CHKERR VecCopy(ghost_y, y);
+
+  // CHKERR VecScatterBegin(ctx->scatterVec, ghost_y, x, iora, SCATTER_REVERSE);
+  // CHKERR VecScatterEnd(ctx->scatterVec, ghost_y, x, iora, SCATTER_REVERSE);
+
+  PetscLogEventEnd(SchurEvents::MOFEM_EVENT_diagBlockStrutureSetValues, 0, 0, 0,
+                   0);
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+shell_schur_mat_set_values_wrap(Mat M,
+                                const EntitiesFieldData::EntData &row_data,
+                                const EntitiesFieldData::EntData &col_data,
+                                const MatrixDouble &mat, InsertMode iora) {
+  MoFEMFunctionBegin;
+
+  DiagBlockStrutureImpl *ctx;
+  CHKERR MatShellGetContext(M, (void **)&ctx);
+
+  PetscLogEventBegin(SchurEvents::MOFEM_EVENT_diagBlockStrutureMult, 0, 0, 0,
+                     0);
+
+  auto nb_rows = row_data.getIndices().size();
+  auto nb_cols = col_data.getIndices().size();
+
+  auto set = [&](auto r, auto c, auto nb_r, auto nb_c, auto &mat) {
+    MoFEMFunctionBegin;
+    auto size = nb_r * nb_c;
+    auto it = ctx->blockIndexPtr->get<1>().find(boost::make_tuple(
+        row_data.getIndices()[r], col_data.getIndices()[c], nb_c, nb_r));
+
+#ifndef NDEBUG
+
+    if (it == ctx->blockIndexPtr->get<1>().end()) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Block not allocated");
+    }
+    if (it->nb_rows != nb_r) {
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong size %d != %d",
+               it->nb_rows, nb_r);
+    }
+    if (it->nb_cols != nb_c) {
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong size %d != %d",
+               it->nb_cols, nb_c);
+    }
+    if (nb_r != mat.size1()) {
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong size %d != %d",
+               nb_r, mat.size1());
+    }
+    if (nb_c != mat.size2()) {
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong size %d != %d",
+               nb_c, mat.size2());
+    }
+    if (nb_r * nb_c != mat.data().size()) {
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong size %d != %d",
+               nb_r * nb_c, mat.data().size());
+    }
+
+#endif // NDEBUG
+
+    auto shift = it->shift;
+    if (shift != -1) {
+
+      if (iora == ADD_VALUES) {
+        cblas_daxpy(size, 1., &*mat.data().begin(), 1,
+                    &(*ctx->dataBlocksPtr)[shift], 1);
+      } else {
+        std::copy(mat.data().begin(), mat.data().end(),
+                  &(*ctx->dataBlocksPtr)[shift]);
+      }
+    }
+    MoFEMFunctionReturn(0);
+  };
+
+  if (nb_rows && nb_cols) {
+    auto row_type = row_data.getFieldDofs()[0]->getEntType();
+    auto col_type = col_data.getFieldDofs()[0]->getEntType();
+
+    if (row_type == MBVERTEX && col_type == MBVERTEX) {
+      auto row_nb_coeff = row_data.getFieldDofs()[0]->getNbOfCoeffs();
+      auto col_nb_coeff = col_data.getFieldDofs()[0]->getNbOfCoeffs();
+      MatrixDouble m(row_nb_coeff, col_nb_coeff);
+      for (auto i = 0; i != nb_rows / row_nb_coeff; ++i) {
+        for (auto j = 0; j != nb_cols / col_nb_coeff; ++j) {
+
+          for (auto k = 0; k != row_nb_coeff; ++k) {
+            for (auto l = 0; l != col_nb_coeff; ++l) {
+              m(k, l) = mat(i * row_nb_coeff + k, j * col_nb_coeff + l);
+            }
+          }
+
+          CHKERR set(i * row_nb_coeff, j * col_nb_coeff, row_nb_coeff,
+                     col_nb_coeff, m);
+        }
+      }
+
+    } else if (row_type == MBVERTEX) {
+      auto row_nb_coeff = row_data.getFieldDofs()[0]->getNbOfCoeffs();
+      MatrixDouble m(row_nb_coeff, nb_cols);
+      for (auto i = 0; i != nb_rows / row_nb_coeff; ++i) {
+
+        for (auto k = 0; k != row_nb_coeff; ++k) {
+          for (auto l = 0; l != nb_cols; ++l) {
+            m(k, l) = mat(i * row_nb_coeff + k, l);
+          }
+        }
+
+        CHKERR set(i * row_nb_coeff, 0, row_nb_coeff, nb_cols, m);
+      }
+
+    } else if (col_type == MBVERTEX) {
+      auto col_nb_coeff = col_data.getFieldDofs()[0]->getNbOfCoeffs();
+      MatrixDouble m(nb_rows, col_nb_coeff);
+      for (auto j = 0; j != nb_cols / col_nb_coeff; ++j) {
+        for (auto k = 0; k != nb_rows; ++k) {
+          for (auto l = 0; l != col_nb_coeff; ++l) {
+            m(k, l) = mat(k, j * col_nb_coeff + l);
+          }
+        }
+        CHKERR set(0, j * col_nb_coeff, nb_rows, col_nb_coeff, m);
+      }
+
+    } else {
+
+      CHKERR set(0, 0, nb_rows, nb_cols, mat);
+    }
+  }
+
+  PetscLogEventEnd(SchurEvents::MOFEM_EVENT_diagBlockStrutureMult, 0, 0, 0, 0);
+
+  MoFEMFunctionReturn(0);
+}
+
+template <>
+MoFEMErrorCode
+MatSetValues<DiagBlockStruture>(Mat M,
+                                const EntitiesFieldData::EntData &row_data,
+                                const EntitiesFieldData::EntData &col_data,
+                                const MatrixDouble &mat, InsertMode iora) {
+  return shell_schur_mat_set_values_wrap(M, row_data, col_data, mat, iora);
+}
+
+SmartPetscObj<Mat>
+createNestedMatrix(std::tuple<SmartPetscObj<IS>, SmartPetscObj<IS>> is_tuple,
+                   std::array<Mat, 4> mats) {
+
+  auto [is0, is1] = is_tuple;
+  std::array<IS, 2> is_a = {is0, is1};
+
+  Mat mat_raw;
+  CHKERR MatCreateNest(
+
+      PETSC_COMM_WORLD, 2, &is_a[0], 2, &is_a[0], &mats[0], &mat_raw
+
+  );
+
+  return SmartPetscObj<Mat>(mat_raw);
 }
 
 } // namespace MoFEM
