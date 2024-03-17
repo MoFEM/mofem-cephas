@@ -1062,12 +1062,20 @@ protected:
   MoFEMErrorCode getOptions(int verb = DEFAULT_VERBOSITY);
 
   /**
-   * @brief Register subinterfac in core interface
+   * @brief Register sub-interfaces in core interface
    *
    * @tparam IFACE
    * @return MoFEMErrorCode
    */
   template <class IFACE> MoFEMErrorCode regSubInterface();
+
+  /**
+   * @brief Register petsc events
+   *
+   * @tparam IFACE
+   * @return MoFEMErrorCode
+   */
+  template <class IFACE> MoFEMErrorCode regSubEvents();
 };
 
 template <> struct CoreTmp<-1> : public CoreTmp<0> {
