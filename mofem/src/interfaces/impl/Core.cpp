@@ -181,6 +181,19 @@ template <class IFACE> MoFEMErrorCode Core::regSubInterface() {
   MoFEMFunctionReturn(0);
 }
 
+template <class IFACE> MoFEMErrorCode Core::regSubEvents() {
+  MoFEMFunctionBegin;
+  auto ptr = boost::make_shared<IFACE>();
+  // See SFINAE:
+  // https://stackoverflow.com/questions/257288/is-it-possible-to-write-a-template-to-check-for-a-functions-existence
+  // https://en.wikipedia.org/wiki/Substitution_failure_is_not_an_error
+  auto get_event_options = [](auto *const ptr) {
+    return get_event_options_imp(ptr, 0);
+  };
+  CHKERR get_event_options(ptr.get());
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode Core::coreGenericConstructor(moab::Interface &moab,
                                             MPI_Comm comm, const int verbose) {
   MoFEMFunctionBegin;
@@ -480,6 +493,9 @@ MoFEMErrorCode Core::registerSubInterfaces() {
 #endif
   CHKERR regSubInterface<FieldEvaluatorInterface>();
   CHKERR regSubInterface<BcManager>();
+
+  // Register events
+  CHKERR regSubEvents<SchurEvents>();
 
   MoFEMFunctionReturn(0);
 };

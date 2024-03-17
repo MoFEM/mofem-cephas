@@ -1644,3 +1644,14 @@ add_test(operators_tests
   -file_name sphere.h5m
   -log_no_color
 )
+
+build_test(
+  schur_test_diag_mat
+  schur_test_diag_mat.cpp)
+
+add_test(mofem/atom_tests/schur_test_diag_mat
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 2
+  ${CMAKE_CURRENT_BINARY_DIR}/schur_test_diag_mat
+  -file_name disp01_2parts.h5m
+  -log_no_color
+)
