@@ -140,12 +140,10 @@ VecSetValues<SchurL2Mats>(Vec V, const EntitiesFieldData::EntData &data,
 }
 
 template <>
-inline MoFEMErrorCode MatSetValues<AssemblyTypeSelector<SCHUR>>(
+MoFEMErrorCode MatSetValues<AssemblyTypeSelector<SCHUR>>(
     Mat M, const EntitiesFieldData::EntData &row_data,
     const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
-    InsertMode iora) {
-  return MatSetValues<SchurL2Mats>(M, row_data, col_data, mat, iora);
-}
+    InsertMode iora);
 
 template <>
 inline MoFEMErrorCode VecSetValues<AssemblyTypeSelector<SCHUR>>(

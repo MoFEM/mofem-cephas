@@ -101,7 +101,6 @@ private:
   static std::vector<int> colIndices0;
   static std::vector<int> rowIndices1;
   static std::vector<int> colIndices1;
-
 };
 
 template <>
@@ -110,6 +109,14 @@ MatSetValues<SchurL2Mats>(Mat M, const EntitiesFieldData::EntData &row_data,
                           const EntitiesFieldData::EntData &col_data,
                           const MatrixDouble &mat, InsertMode iora) {
   return SchurL2Mats::MatSetValues(M, row_data, col_data, mat, iora);
+}
+
+template <>
+MoFEMErrorCode MatSetValues<AssemblyTypeSelector<SCHUR>>(
+    Mat M, const EntitiesFieldData::EntData &row_data,
+    const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
+    InsertMode iora) {
+  return MatSetValues<SchurL2Mats>(M, row_data, col_data, mat, iora);
 }
 
 SchurL2Mats::SchurL2Storage SchurL2Mats::schurL2Storage;
@@ -345,8 +352,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 
   MoFEMFunctionBegin;
 
-  PetscLogEventBegin(SchurEvents::MOFEM_EVENT_opSchurAssembleEnd, 0, 0, 0,
-                     0);
+  PetscLogEventBegin(SchurEvents::MOFEM_EVENT_opSchurAssembleEnd, 0, 0, 0, 0);
 
 #ifndef NDEBUG
   MOFEM_LOG("SELF", Sev::noisy) << "Schur assemble begin -> end";
@@ -781,7 +787,6 @@ struct DiagBlockStrutureImpl : public DiagBlockStruture {
           >>;
 
   boost::shared_ptr<BlockIndex> blockIndexPtr;
-
 };
 
 struct CountBlocks : public ForcesAndSourcesCore::UserDataOperator {
@@ -998,18 +1003,18 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
   DiagBlockStrutureImpl *ctx;
   CHKERR MatShellGetContext(mat, (void **)&ctx);
 
-  PetscLogEventBegin(SchurEvents::MOFEM_EVENT_diagBlockStrutureSetValues, 0, 0,
-                     0, 0);
+  PetscLogEventBegin(SchurEvents::MOFEM_EVENT_diagBlockStrutureMult, 0, 0, 0,
+                     0);
 
   auto ghost_x = ctx->ghostX;
   auto ghost_y = ctx->ghostY;
 
-  // CHKERR VecScatterBegin(ctx->scatterVec, x, ghost_x, INSERT_VALUES,
-  //                        SCATTER_FORWARD);
-  // CHKERR VecScatterEnd(ctx->scatterVec, x, ghost_x, INSERT_VALUES,
-  //                      SCATTER_FORWARD);
+  CHKERR VecScatterBegin(ctx->scatterVec, x, ghost_x, INSERT_VALUES,
+                         SCATTER_FORWARD);
+  CHKERR VecScatterEnd(ctx->scatterVec, x, ghost_x, INSERT_VALUES,
+                       SCATTER_FORWARD);
 
-  CHKERR VecCopy(x, ghost_x);
+  // CHKERR VecCopy(x, ghost_x);
   CHKERR VecGhostUpdateBegin(ghost_x, INSERT_VALUES, SCATTER_FORWARD);
   CHKERR VecGhostUpdateEnd(ghost_x, INSERT_VALUES, SCATTER_FORWARD);
 
@@ -1052,13 +1057,12 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
   CHKERR VecGhostUpdateBegin(ghost_y, ADD_VALUES, SCATTER_REVERSE);
   CHKERR VecGhostUpdateEnd(ghost_y, ADD_VALUES, SCATTER_REVERSE);
 
-  CHKERR VecCopy(ghost_y, y);
+  // CHKERR VecCopy(ghost_y, y);
+  CHKERR VecScatterBegin(ctx->scatterVec, ghost_y, y, iora, SCATTER_REVERSE);
+  CHKERR VecScatterEnd(ctx->scatterVec, ghost_y, y, iora, SCATTER_REVERSE);
 
-  // CHKERR VecScatterBegin(ctx->scatterVec, ghost_y, x, iora, SCATTER_REVERSE);
-  // CHKERR VecScatterEnd(ctx->scatterVec, ghost_y, x, iora, SCATTER_REVERSE);
-
-  PetscLogEventEnd(SchurEvents::MOFEM_EVENT_diagBlockStrutureSetValues, 0, 0, 0,
-                   0);
+  // PetscLogFlops(xxx)
+  PetscLogEventEnd(SchurEvents::MOFEM_EVENT_diagBlockStrutureMult, 0, 0, 0, 0);
 
   MoFEMFunctionReturn(0);
 }
@@ -1073,8 +1077,8 @@ shell_schur_mat_set_values_wrap(Mat M,
   DiagBlockStrutureImpl *ctx;
   CHKERR MatShellGetContext(M, (void **)&ctx);
 
-  PetscLogEventBegin(SchurEvents::MOFEM_EVENT_diagBlockStrutureMult, 0, 0, 0,
-                     0);
+  PetscLogEventBegin(SchurEvents::MOFEM_EVENT_diagBlockStrutureSetValues, 0, 0,
+                     0, 0);
 
   auto nb_rows = row_data.getIndices().size();
   auto nb_cols = col_data.getIndices().size();
@@ -1181,7 +1185,8 @@ shell_schur_mat_set_values_wrap(Mat M,
     }
   }
 
-  PetscLogEventEnd(SchurEvents::MOFEM_EVENT_diagBlockStrutureMult, 0, 0, 0, 0);
+  PetscLogEventEnd(SchurEvents::MOFEM_EVENT_diagBlockStrutureSetValues, 0, 0, 0,
+                   0);
 
   MoFEMFunctionReturn(0);
 }
