@@ -95,6 +95,16 @@ struct ISManager : public UnknownInterface {
                                  SmartPetscObj<IS> &is) const;
 
   /**
+   * @brief Create problem IS
+   *
+   * @param problem_name
+   * @param rc
+   * @return SmartPetscObj<IS>
+   */
+  SmartPetscObj<IS> isCreateProblem(std::string problem_name,
+                                    RowColData rc) const;
+
+  /**
     * \brief create IS for given order range (collective)
     * \ingroup mofem_is_managers
 
