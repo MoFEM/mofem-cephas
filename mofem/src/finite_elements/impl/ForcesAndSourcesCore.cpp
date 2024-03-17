@@ -1423,7 +1423,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
   };
 
   // set entity data
-  auto set_op_entityties_data = [&](auto ss, auto &op) {
+  auto set_op_entities_data = [&](auto ss, auto &op) {
     MoFEMFunctionBeginHot;
 
 #ifndef NDEBUG
@@ -1506,7 +1506,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
     MoFEMFunctionReturnHot(0);
   };
 
-  // evalate operators with field data
+  // evaluate operators with field data
   auto evaluate_op_for_fields = [&](auto &op) {
     MoFEMFunctionBeginHot;
 
@@ -1533,13 +1533,13 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
     MoFEMFunctionReturnHot(0);
   };
 
-  // Collect bit ref level on all entities, fields and spaces
+  // collect bit ref level on all entities, fields and spaces
   CHKERR getBitRefLevelOnData();
 
   auto oit = opPtrVector.begin();
   auto hi_oit = opPtrVector.end();
 
-  // interate over all operators on element
+  // iterate over all operators on element
   for (; oit != hi_oit; oit++) {
 
     try {
@@ -1587,7 +1587,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
           if (oit->getOpType() & types[ss] ||
               oit->getOpType() & UDO::OPROWCOL) {
             if (last_eval_field_id[ss] != field_id[ss]) {
-              CHKERR set_op_entityties_data(ss, *oit);
+              CHKERR set_op_entities_data(ss, *oit);
               last_eval_field_id[ss] = field_id[ss];
             }
           }
