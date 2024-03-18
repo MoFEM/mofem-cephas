@@ -27,9 +27,9 @@ using PostProcEleBdy = PostProcEleByDim<SPACE_DIM>::PostProcEleBdy;
 
 struct Monitor : public FEMethod {
 
-  Monitor(SmartPetscObj<DM> &dm,
+  Monitor(SmartPetscObj<DM> &dm, double scale, 
           boost::shared_ptr<GenericElementInterface> mfront_interface = nullptr,
-          bool is_axisymmetric = false)
+          bool is_axisymmetric = false, bool hencky_small_strain = false)
       : dM(dm), moabVertex(mbVertexPostproc), sTEP(0),
         mfrontInterface(mfront_interface) {
 
@@ -58,7 +58,8 @@ struct Monitor : public FEMethod {
                         "Apply base transform");
       auto henky_common_data_ptr =
           commonDataFactory<SPACE_DIM, GAUSS, DomainEleOp>(
-              *m_field_ptr, pip, "U", "MAT_ELASTIC", Sev::inform);
+              *m_field_ptr, pip, "U", "MAT_ELASTIC", Sev::inform, scale,
+              hencky_small_strain);
       auto contact_stress_ptr = boost::make_shared<MatrixDouble>();
       pip.push_back(new OpCalculateHVecTensorField<SPACE_DIM, SPACE_DIM>(
           "SIGMA", contact_stress_ptr));
@@ -128,7 +129,7 @@ struct Monitor : public FEMethod {
 
                   {"G", henky_common_data_ptr->matGradPtr},
 
-                  {"P2", henky_common_data_ptr->getMatFirstPiolaStress()}
+                  {"PK1", henky_common_data_ptr->getMatFirstPiolaStress()}
 
               },
               {}
@@ -288,8 +289,9 @@ struct Monitor : public FEMethod {
         CHKERR post_proc_end->writeFile(
             "out_contact_" + boost::lexical_cast<std::string>(sTEP) + ".h5m");
       } else {
-        CHKERR mfrontInterface->updateElementVariables();
-        CHKERR mfrontInterface->postProcessElement(ts_step);
+        CHKERR mfrontInterface->postProcessElement(
+            ts_step, dM,
+            m_field_ptr->getInterface<Simple>()->getDomainFEName());
       }
 
       MoFEMFunctionReturn(0);
@@ -322,9 +324,25 @@ struct Monitor : public FEMethod {
 
         CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(pip, {H1},
                                                               "GEOMETRY");
-        CHKERR HenckyOps::opFactoryDomainRhs<SPACE_DIM, PETSC, IT, DomainEleOp>(
-            *m_field_ptr, pip, "U", "MAT_ELASTIC", Sev::inform);
+        CHKERR
+        ContactOps::opFactoryDomainRhs<SPACE_DIM, PETSC, IT, DomainEleOp>(
+            pip, "SIGMA", "U", is_axisymmetric);
+
+        if (!mfrontInterface) {
+          CHKERR
+          HenckyOps::opFactoryDomainRhs<SPACE_DIM, PETSC, IT, DomainEleOp>(
+              *m_field_ptr, pip, "U", "MAT_ELASTIC", Sev::inform, scale,
+              hencky_small_strain);
+        } else {
+          CHKERR mfrontInterface->opFactoryDomainRhs(pip);
+        }
         CHKERR DMoFEMLoopFiniteElements(dM, "dFE", fe_rhs);
+
+        CHKERR VecAssemblyBegin(res);
+        CHKERR VecAssemblyEnd(res);
+        CHKERR VecGhostUpdateBegin(res, ADD_VALUES, SCATTER_REVERSE);
+        CHKERR VecGhostUpdateEnd(res, ADD_VALUES, SCATTER_REVERSE);
+
         MoFEMFunctionReturn(0);
       };
 
@@ -383,7 +401,7 @@ struct Monitor : public FEMethod {
       double max, min;
       CHKERR VecMax(std::get<0>(tuple), PETSC_NULL, &max);
       CHKERR VecMin(std::get<0>(tuple), PETSC_NULL, &min);
-      MOFEM_LOG_C("CONTACT", Sev::inform, "%s time %3.4e min %3.4e max %3.4e",
+      MOFEM_LOG_C("CONTACT", Sev::inform, "%s time %6.4e min %6.4e max %6.4e",
                   msg.c_str(), ts_t, min, max);
       MoFEMFunctionReturn(0);
     };
@@ -395,12 +413,18 @@ struct Monitor : public FEMethod {
       if (!m_field_ptr->get_comm_rank()) {
         const double *t_ptr;
         CHKERR VecGetArrayRead(CommonData::totalTraction, &t_ptr);
-        MOFEM_LOG_C("CONTACT", Sev::inform, "%s time %3.4e %3.4e %3.4e %3.4e",
-                    msg.c_str(), ts_t, t_ptr[0], t_ptr[1], t_ptr[2]);
+        MOFEM_LOG_C("CONTACT", Sev::inform,
+                    "%s time %6.4e %6.16e %6.16e %6.16e", msg.c_str(), ts_t,
+                    t_ptr[0], t_ptr[1], t_ptr[2]);
         CHKERR VecRestoreArrayRead(CommonData::totalTraction, &t_ptr);
       }
       MoFEMFunctionReturn(0);
     };
+
+    if (mfrontInterface) {
+      CHKERR mfrontInterface->updateElementVariables(
+          dM, m_field_ptr->getInterface<Simple>()->getDomainFEName());
+    }
 
     auto calculate_error = [&]{
       MoFEMFunctionBegin;
