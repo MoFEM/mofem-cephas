@@ -779,8 +779,8 @@ struct DiagBlockStrutureImpl : public DiagBlockStruture {
 
                             member<Indexes, int, &Indexes::row>,
                             member<Indexes, int, &Indexes::col>,
-                            member<Indexes, int, &Indexes::nb_cols>,
-                            member<Indexes, int, &Indexes::nb_rows>
+                            member<Indexes, int, &Indexes::nb_rows>,
+                            member<Indexes, int, &Indexes::nb_cols>
 
                             >>
 
@@ -897,11 +897,11 @@ boost::shared_ptr<DiagBlockStruture> createSchurBlockMatStructure(
   auto ghost_x = createDMVector(dm);
   auto ghost_y = createDMVector(dm);
 
-  auto field_ptr = getInterfacePtr(dm);
-  auto prb_ptr = getProblemPtr(dm);
   data_ptr->ghostX = ghost_x;
   data_ptr->ghostY = ghost_y;
 
+  // auto field_ptr = getInterfacePtr(dm);
+  // auto prb_ptr = getProblemPtr(dm);
   // auto is = field_ptr->getInterface<ISManager>()->isCreateProblem(
   //     prb_ptr->getName(), ROW);
   // auto scatter = createVecScatter(ghost_x, is, ghost_y, is);
@@ -1007,14 +1007,30 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
   PetscLogEventBegin(SchurEvents::MOFEM_EVENT_diagBlockStrutureMult, 0, 0, 0,
                      0);
 
-  auto ghost_x = ctx->ghostX;
-  auto ghost_y = ctx->ghostY;
+  Vec ghost_x = ctx->ghostX;
+  Vec ghost_y = ctx->ghostY;
 
   if (ctx->scatterVec) {
-    CHKERR VecScatterBegin(ctx->scatterVec, x, ghost_x, INSERT_VALUES,
+
+    switch (trans) {
+    case CblasNoTrans:
+
+      CHKERR VecScatterBegin(ctx->scatterVec, x, ghost_x, INSERT_VALUES,
+                             SCATTER_FORWARD);
+      CHKERR VecScatterEnd(ctx->scatterVec, x, ghost_x, INSERT_VALUES,
                            SCATTER_FORWARD);
-    CHKERR VecScatterEnd(ctx->scatterVec, x, ghost_x, INSERT_VALUES,
-                         SCATTER_FORWARD);
+
+      break;
+    case CblasTrans:
+      CHKERR VecScatterBegin(ctx->scatterVec, ghost_x, x, INSERT_VALUES,
+                             SCATTER_REVERSE);
+      CHKERR VecScatterEnd(ctx->scatterVec, ghost_x, x, INSERT_VALUES,
+                           SCATTER_REVERSE);
+      break;
+    default:
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
+    }
+
   } else {
     CHKERR VecCopy(x, ghost_x);
   }
@@ -1038,22 +1054,28 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
   for (auto i = 0; i != nb_y; ++i)
     y_array[i] = 0.;
 
+  double *block_ptr;
+  if (solve)
+    block_ptr = &*ctx->dataInvBlocksPtr->begin();
+  else
+    block_ptr = &*ctx->dataBlocksPtr->begin();
+
   for (auto &v : ctx->blockIndexPtr->get<0>()) {
     if (v.row != -1 && v.col != -1) {
       auto shift = v.shift;
 
       auto x_ptr = &x_array[v.loc_col];
       auto y_ptr = &y_array[v.loc_row];
-      double *block_ptr;
-      if (solve)
-        block_ptr = &(*ctx->dataInvBlocksPtr)[shift];
-      else
-        block_ptr = &(*ctx->dataBlocksPtr)[shift];
+
       cblas_dgemv(
 
           CblasRowMajor, trans,
 
-          v.nb_rows, v.nb_cols, 1., block_ptr, v.nb_cols, x_ptr, 1,
+          v.nb_rows, v.nb_cols,
+
+          1., &(block_ptr[shift]), v.nb_cols,
+
+          x_ptr, 1,
 
           1., y_ptr, 1
 
@@ -1070,8 +1092,26 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
   CHKERR VecGhostUpdateEnd(ghost_y, ADD_VALUES, SCATTER_REVERSE);
 
   if (ctx->scatterVec) {
-    CHKERR VecScatterBegin(ctx->scatterVec, ghost_y, y, iora, SCATTER_REVERSE);
-    CHKERR VecScatterEnd(ctx->scatterVec, ghost_y, y, iora, SCATTER_REVERSE);
+
+    switch (trans) {
+    case CblasNoTrans:
+
+      CHKERR VecScatterBegin(ctx->scatterVec, ghost_y, y, iora,
+                             SCATTER_REVERSE);
+      CHKERR VecScatterEnd(ctx->scatterVec, ghost_y, y, iora, SCATTER_REVERSE);
+
+      break;
+    case CblasTrans:
+
+      CHKERR VecScatterBegin(ctx->scatterVec, y, ghost_y, iora,
+                             SCATTER_FORWARD);
+      CHKERR VecScatterEnd(ctx->scatterVec, y, ghost_y, iora, SCATTER_FORWARD);
+
+      break;
+    default:
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
+    }
+
   } else {
     CHKERR VecCopy(ghost_y, y);
   }
@@ -1102,7 +1142,7 @@ shell_schur_mat_set_values_wrap(Mat M,
     MoFEMFunctionBegin;
     auto size = nb_r * nb_c;
     auto it = ctx->blockIndexPtr->get<1>().find(boost::make_tuple(
-        row_data.getIndices()[r], col_data.getIndices()[c], nb_c, nb_r));
+        row_data.getIndices()[r], col_data.getIndices()[c], nb_r, nb_c));
 
 #ifndef NDEBUG
 
