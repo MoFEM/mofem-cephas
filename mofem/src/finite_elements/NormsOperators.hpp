@@ -89,9 +89,6 @@ protected:
   const int iNdex;
 };
 
-typedef boost::function<double(const double, const double, const double)>
-    ScalarFunc;
-
 typedef boost::function<VectorDouble(const double, const double, const double)>
     VectorFunc;
 
@@ -103,7 +100,7 @@ typedef boost::function<VectorDouble(const double, const double, const double)>
 struct OpGetTensor0fromFunc : public ForcesAndSourcesCore::UserDataOperator {
 
   OpGetTensor0fromFunc(boost::shared_ptr<VectorDouble> data_ptr,
-                       ScalarFunc scalar_function);
+                       ScalarFun scalar_function);
 
   /**
    * \brief calculate values of scalar function at integration points
@@ -116,7 +113,7 @@ struct OpGetTensor0fromFunc : public ForcesAndSourcesCore::UserDataOperator {
                         EntitiesFieldData::EntData &data);
 
 protected:
-  ScalarFunc sFunc;
+  ScalarFun sFunc;
   boost::shared_ptr<VectorDouble> dataPtr;
 };
 

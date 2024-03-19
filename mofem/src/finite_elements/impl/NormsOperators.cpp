@@ -163,7 +163,7 @@ OpCalcNormL2Tensor2<DIM_1, DIM_2>::doWork(int side, EntityType type,
 }
 
 OpGetTensor0fromFunc::OpGetTensor0fromFunc(
-    boost::shared_ptr<VectorDouble> data_ptr, ScalarFunc scalar_function)
+    boost::shared_ptr<VectorDouble> data_ptr, ScalarFun scalar_function)
     : ForcesAndSourcesCore::UserDataOperator(
           NOSPACE, ForcesAndSourcesCore::UserDataOperator::OPSPACE),
       dataPtr(data_ptr), sFunc(scalar_function) {}
