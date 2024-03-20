@@ -164,6 +164,18 @@ int main(int argc, char *argv[]) {
     CHKERR MatMult(block_mat, v, y_block);
     CHKERR VecAXPY(y_petsc, -1.0, y_block);
 
+    // CHKERR MatMultAdd(petsc_mat, v, y_pesc, y_pesc);
+    // CHKERR MatMultAdd(block_mat, v, y_block, y_block);
+    // CHKERR VecAXPY(y_petsc, -1.0, y_block);
+
+    // CHKERR MatMultTranspose(petsc_mat, v, y_petsc);
+    // CHKERR MatMultTranspose(block_mat, v, y_block);
+    // CHKERR VecAXPY(y_petsc, -1.0, y_block);
+
+    // CHKERR MatMultTransposeAdd(petsc_mat, v, y_petsc);
+    // CHKERR MatMultTransposeAdd(block_mat, v, y_block);
+    // CHKERR VecAXPY(y_petsc, -1.0, y_block);
+
     CHKERR test("mult", y_petsc);
 
     petsc_mat.reset();
