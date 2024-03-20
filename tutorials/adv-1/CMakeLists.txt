@@ -248,6 +248,24 @@ if(IS_MFRONT_MOD)
     )
 
     add_test(
+      hertz_mfront_2d_axisymm_sphere
+      ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
+      contact_2d
+      -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/hertz_axisymm_sphere_4p.h5m
+      -pc_type lu
+      -ts_type beuler
+      -ts_max_time 1 -ts_dt 1 
+      -sdf_file ./sdf_files/sdf_hertz_2d_axisymm_plane.py
+      -use_mfront 1
+      -is_axisymmetric 1
+      -mi_lib_path_10 ${CMAKE_CURRENT_BINARY_DIR}/src/libBehaviour.${DEFAULT_LIB_EXTENSION}
+      -mi_block_10 LinearElasticity
+      -mi_param_10_0 1e3
+      -mi_param_10_1 0.4
+      -atom_test 3
+    )
+
+    add_test(
       hertz_mfront_3d
       ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
       contact_3d

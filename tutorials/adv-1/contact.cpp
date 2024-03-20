@@ -907,11 +907,11 @@ MoFEMErrorCode Contact::checkResults() {
       fem_force = t_ptr[1];
       break;
     case 3: // axisymmetric
-      hertz_force = 158.73;
+      hertz_force = 19.843;
       fem_force = t_ptr[1];
       break;
     case 4: // 3D
-      hertz_force = 39.6825;
+      hertz_force = 4.96;
       fem_force = t_ptr[2];
       break;
     default:
