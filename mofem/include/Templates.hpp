@@ -255,9 +255,9 @@ struct GetFTensor2FromMatImpl {
     if (data.size1() != Tensor_Dim1 * Tensor_Dim2) {
       THROW_MESSAGE(
           "getFTensor2FromMat<" +
-          boost::lexical_cast<std::string>(Tensor_Dim1) +
-          "," + boost::lexical_cast<std::string>(
-              Tensor_Dim2) + ">: wrong size of rows in data matrix, should be " +
+          boost::lexical_cast<std::string>(Tensor_Dim1) + "," +
+          boost::lexical_cast<std::string>(Tensor_Dim2) +
+          ">: wrong size of rows in data matrix, should be " +
           boost::lexical_cast<std::string>(Tensor_Dim1 * Tensor_Dim2) +
           " but is " + boost::lexical_cast<std::string>(data.size1()));
     }
@@ -271,14 +271,13 @@ struct GetFTensor2FromMatImpl {
 };
 
 /**
- * \brief Get tensor rank 2 (matrix) form data matrix 
+ * \brief Get tensor rank 2 (matrix) form data matrix
  */
 template <int Tensor_Dim1, int Tensor_Dim2>
 inline FTensor::Tensor2<FTensor::PackPtr<double *, 1>, Tensor_Dim1, Tensor_Dim2>
 getFTensor2FromMat(MatrixDouble &data) {
   return GetFTensor2FromMatImpl<Tensor_Dim1, Tensor_Dim2, 1, double,
-                                ublas::row_major,
-                                DoubleAllocator>::get(data);
+                                ublas::row_major, DoubleAllocator>::get(data);
 }
 
 template <int Tensor_Dim1, int Tensor_Dim2>
@@ -779,6 +778,14 @@ template <int S, typename T> struct GetFTensor1FromPtrImpl<3, S, T> {
   inline static auto get(T *ptr) {
     return FTensor::Tensor1<FTensor::PackPtr<T *, S>, 3>(
         &ptr[HVEC0], &ptr[HVEC1], &ptr[HVEC2]);
+  }
+};
+
+template <int S, typename T> struct GetFTensor1FromPtrImpl<4, S, T> {
+  GetFTensor1FromPtrImpl() = delete;
+  inline static auto get(T *ptr) {
+    return FTensor::Tensor1<FTensor::PackPtr<T *, S>, 4>(&ptr[0], &ptr[1],
+                                                         &ptr[2], &ptr[3]);
   }
 };
 
@@ -1753,6 +1760,136 @@ invertTensor(FTensor::Tensor2_symmetric<T1, DIM> &t, T2 &det,
   return InvertTensorImpl<FTensor::Tensor2_symmetric<T1, DIM>, T2,
                           FTensor::Tensor2_symmetric<T3, DIM>,
                           DIM>::invert(t, det, inv_t);
+}
+
+template <int DIM1, int DIM2> struct TensorVectorMultImpl;
+
+template <int DIM2> struct TensorVectorMultImpl<3, DIM2> {
+
+  template <typename Z1, typename Z2, typename Z3>
+  static inline void mult(
+
+      int nr, int nb,
+
+      Z1 *ptr_m, Z2 *ptr_v, Z3 *ptr_r
+
+  ) {
+
+    FTensor::Index<'i', DIM2> i;
+    FTensor::Number<0> N0;
+    FTensor::Number<1> N1;
+    FTensor::Number<2> N2;
+
+    auto t_r = getFTensor1FromPtr<3>(ptr_r);
+
+    int ir = 0;
+    for (; ir <= nr - 3; ir += 3) {
+      auto t_m0 = getFTensor1FromPtr<DIM2>(ptr_m);
+      auto t_m1 = getFTensor1FromPtr<DIM2>(ptr_m + nb);
+      auto t_m2 = getFTensor1FromPtr<DIM2>(ptr_m + 2 * nb);
+      auto t_v = getFTensor1FromPtr<DIM2>(ptr_v);
+      int ib = 0;
+      for (; ib <= nb - DIM2; ib += DIM2) {
+        t_r(N0) += t_m0(i) * t_v(i);
+        t_r(N1) += t_m1(i) * t_v(i);
+        t_r(N2) += t_m2(i) * t_v(i);
+
+        ++t_v;
+        ++t_m0;
+        ++t_m1;
+        ++t_m2;
+      }
+      for (; ib < nb; ++ib) {
+        t_r(N0) += ptr_m[ib] * ptr_v[ib];
+        t_r(N1) += ptr_m[nb + ib] * ptr_v[ib];
+        t_r(N2) += ptr_m[2 * nb + ib] * ptr_v[ib];
+      }
+      ptr_m += 3 * nb;
+      ++t_r;
+    }
+    for (; ir < nr; ir++) {
+      auto t_m = getFTensor1FromPtr<DIM2>(ptr_m);
+      auto t_v = getFTensor1FromPtr<DIM2>(ptr_v);
+      int ib = 0;
+      for (; ib < nb - DIM2; ib += DIM2) {
+        ptr_r[ir] += t_m(i) * t_v(i);
+        ++t_v;
+        ++t_m;
+      }
+      for (; ib < nb; ++ib) {
+        ptr_r[ir] += ptr_m[ib] * ptr_v[ib];
+      }
+      ptr_m += nb;
+    }
+  }
+};
+
+template <int DIM2> struct TensorVectorMultImpl<1, DIM2> {
+
+  template <typename Z1, typename Z2, typename Z3>
+  static inline void mult(
+
+      int nr, int nb,
+
+      Z1 *ptr_m, Z2 *ptr_v, Z3 *ptr_r
+
+  ) {
+
+    FTensor::Index<'i', DIM2> i;
+    FTensor::Number<0> N0;
+    FTensor::Number<1> N1;
+    FTensor::Number<2> N2;
+
+    auto t_r = FTensor::Tensor0<FTensor::PackPtr<Z3 *, 1>>(ptr_r);
+
+    int ir = 0;
+    for (; ir < nr; ++ir) {
+      auto t_m0 = getFTensor1FromPtr<DIM2>(ptr_m);
+      auto t_v = getFTensor1FromPtr<DIM2>(ptr_v);
+      int ib = 0;
+      for (; ib <= nb - DIM2; ib += DIM2) {
+        t_r += t_m0(i) * t_v(i);
+        ++t_v;
+        ++t_m0;
+      }
+      for (; ib < nb; ++ib) {
+        t_r += ptr_m[ib] * ptr_v[ib];
+      }
+      ptr_m += nb;
+      ++t_r;
+    }
+  }
+};
+
+template <> struct TensorVectorMultImpl<1, 1> {
+
+  template <typename Z1, typename Z2, typename Z3>
+  static inline void mult(
+
+      int nr, int nb,
+
+      Z1 *ptr_m, Z2 *ptr_v, Z3 *ptr_r
+
+  ) {
+
+    for (int ir = 0; ir < nr; ++ir) {
+      for (int ib = 0; ib < nb; ++ib) {
+        *ptr_r += (*ptr_m) * ptr_v[ib];
+        ++ptr_m;
+      }
+      ++ptr_r;
+    }
+  }
+};
+
+template <int DIM1, int DIM2>
+inline MoFEMErrorCode tensorVectorMult(
+
+    int nr, int nb, double *m, double *v, double *r
+
+) {
+  TensorVectorMultImpl<DIM1, DIM2>::mult(nr, nb, m, v, r);
+  return 0;
 }
 
 /**

@@ -1039,10 +1039,10 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
   CHKERR VecGhostUpdateBegin(ghost_x, INSERT_VALUES, SCATTER_FORWARD);
   CHKERR VecGhostUpdateEnd(ghost_x, INSERT_VALUES, SCATTER_FORWARD);
 
-  const double *x_array;
+  double *x_array;
   Vec loc_x;
   CHKERR VecGhostGetLocalForm(ghost_x, &loc_x);
-  CHKERR VecGetArrayRead(loc_x, &x_array);
+  CHKERR VecGetArray(loc_x, &x_array);
 
   double *y_array;
   Vec loc_y;
@@ -1060,30 +1060,21 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
   else
     block_ptr = &*ctx->dataBlocksPtr->begin();
 
-  for (auto &v : ctx->blockIndexPtr->get<0>()) {
-    if (v.row != -1 && v.col != -1) {
-      auto shift = v.shift;
+  auto it = ctx->blockIndexPtr->get<0>().lower_bound(0);
+  auto hi = ctx->blockIndexPtr->get<0>().end();
 
-      auto x_ptr = &x_array[v.loc_col];
-      auto y_ptr = &y_array[v.loc_row];
+  for (; it != hi; ++it) {
+    auto shift = it->shift;
 
-      cblas_dgemv(
+    auto x_ptr = &x_array[it->loc_col];
+    auto y_ptr = &y_array[it->loc_row];
+    auto nb_rows = it->nb_rows;
+    auto nb_cols = it->nb_cols;
 
-          CblasRowMajor, trans,
-
-          v.nb_rows, v.nb_cols,
-
-          1., &(block_ptr[shift]), v.nb_cols,
-
-          x_ptr, 1,
-
-          1., y_ptr, 1
-
-      );
-    }
+    tensorVectorMult<1, 1>(nb_rows, nb_cols, &block_ptr[shift], x_ptr, y_ptr);
   }
 
-  CHKERR VecRestoreArrayRead(loc_x, &x_array);
+  CHKERR VecRestoreArray(loc_x, &x_array);
   CHKERR VecRestoreArray(loc_y, &y_array);
   CHKERR VecGhostRestoreLocalForm(ghost_x, &loc_x);
   CHKERR VecGhostRestoreLocalForm(ghost_y, &loc_y);
