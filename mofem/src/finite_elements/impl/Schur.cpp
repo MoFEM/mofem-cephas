@@ -911,34 +911,21 @@ boost::shared_ptr<DiagBlockStruture> createSchurBlockMatStructure(
 }
 
 static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
-                                             InsertMode iora,
-                                             CBLAS_TRANSPOSE trans, bool solve);
+                                             InsertMode iora, bool solve);
 
 static PetscErrorCode mult(Mat mat, Vec x, Vec y) {
-  return mult_schur_block_shell(mat, x, y, INSERT_VALUES, CblasNoTrans, false);
+  return mult_schur_block_shell(mat, x, y, INSERT_VALUES, false);
 }
 static PetscErrorCode mult_add(Mat mat, Vec x, Vec y) {
-  return mult_schur_block_shell(mat, x, y, ADD_VALUES, CblasNoTrans, false);
+  return mult_schur_block_shell(mat, x, y, ADD_VALUES, false);
 }
-static PetscErrorCode mult_trans(Mat mat, Vec x, Vec y) {
-  return mult_schur_block_shell(mat, x, y, INSERT_VALUES, CblasTrans, false);
-}
-static PetscErrorCode mult_trans_add(Mat mat, Vec x, Vec y) {
-  return mult_schur_block_shell(mat, x, y, ADD_VALUES, CblasTrans, false);
-}
-
 static PetscErrorCode solve(Mat mat, Vec x, Vec y) {
-  return mult_schur_block_shell(mat, x, y, INSERT_VALUES, CblasNoTrans, true);
+  return mult_schur_block_shell(mat, x, y, INSERT_VALUES, true);
 }
 static PetscErrorCode solve_add(Mat mat, Vec x, Vec y) {
-  return mult_schur_block_shell(mat, x, y, ADD_VALUES, CblasNoTrans, true);
+  return mult_schur_block_shell(mat, x, y, ADD_VALUES, true);
 }
-static PetscErrorCode solve_trans(Mat mat, Vec x, Vec y) {
-  return mult_schur_block_shell(mat, x, y, INSERT_VALUES, CblasTrans, true);
-}
-static PetscErrorCode solve_trans_add(Mat mat, Vec x, Vec y) {
-  return mult_schur_block_shell(mat, x, y, ADD_VALUES, CblasTrans, true);
-}
+
 static PetscErrorCode mat_zero(Mat m) {
   MoFEMFunctionBegin;
   DiagBlockStrutureImpl *ctx;
@@ -979,17 +966,9 @@ createSchurBlockMat(DM dm, boost::shared_ptr<DiagBlockStruture> data) {
   CHKERR MatShellSetOperation(mat_raw, MATOP_MULT, (void (*)(void))mult);
   CHKERR MatShellSetOperation(mat_raw, MATOP_MULT_ADD,
                               (void (*)(void))mult_add);
-  CHKERR MatShellSetOperation(mat_raw, MATOP_MULT_TRANSPOSE,
-                              (void (*)(void))mult_trans);
-  CHKERR MatShellSetOperation(mat_raw, MATOP_MULT_TRANSPOSE_ADD,
-                              (void (*)(void))mult_trans_add);
   CHKERR MatShellSetOperation(mat_raw, MATOP_SOLVE, (void (*)(void))solve);
   CHKERR MatShellSetOperation(mat_raw, MATOP_SOLVE_ADD,
                               (void (*)(void))solve_add);
-  CHKERR MatShellSetOperation(mat_raw, MATOP_SOLVE_TRANSPOSE,
-                              (void (*)(void))solve_trans);
-  CHKERR MatShellSetOperation(mat_raw, MATOP_SOLVE_TRANSPOSE_ADD,
-                              (void (*)(void))solve_trans_add);
   CHKERR MatShellSetOperation(mat_raw, MATOP_ZERO_ENTRIES,
                               (void (*)(void))mat_zero);
 
@@ -997,9 +976,7 @@ createSchurBlockMat(DM dm, boost::shared_ptr<DiagBlockStruture> data) {
 }
 
 static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
-                                             InsertMode iora,
-                                             CBLAS_TRANSPOSE trans,
-                                             bool solve) {
+                                             InsertMode iora, bool solve) {
   MoFEMFunctionBegin;
   DiagBlockStrutureImpl *ctx;
   CHKERR MatShellGetContext(mat, (void **)&ctx);
@@ -1012,24 +989,10 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
 
   if (ctx->scatterVec) {
 
-    switch (trans) {
-    case CblasNoTrans:
-
-      CHKERR VecScatterBegin(ctx->scatterVec, x, ghost_x, INSERT_VALUES,
-                             SCATTER_FORWARD);
-      CHKERR VecScatterEnd(ctx->scatterVec, x, ghost_x, INSERT_VALUES,
+    CHKERR VecScatterBegin(ctx->scatterVec, x, ghost_x, INSERT_VALUES,
                            SCATTER_FORWARD);
-
-      break;
-    case CblasTrans:
-      CHKERR VecScatterBegin(ctx->scatterVec, ghost_x, x, INSERT_VALUES,
-                             SCATTER_REVERSE);
-      CHKERR VecScatterEnd(ctx->scatterVec, ghost_x, x, INSERT_VALUES,
-                           SCATTER_REVERSE);
-      break;
-    default:
-      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
-    }
+    CHKERR VecScatterEnd(ctx->scatterVec, x, ghost_x, INSERT_VALUES,
+                         SCATTER_FORWARD);
 
   } else {
     CHKERR VecCopy(x, ghost_x);
@@ -1040,16 +1003,16 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
   CHKERR VecGhostUpdateEnd(ghost_x, INSERT_VALUES, SCATTER_FORWARD);
 
   double *x_array;
-  Vec loc_x;
-  CHKERR VecGhostGetLocalForm(ghost_x, &loc_x);
-  CHKERR VecGetArray(loc_x, &x_array);
+  Vec loc_ghost_x;
+  CHKERR VecGhostGetLocalForm(ghost_x, &loc_ghost_x);
+  CHKERR VecGetArray(loc_ghost_x, &x_array);
 
   double *y_array;
-  Vec loc_y;
-  CHKERR VecGhostGetLocalForm(ghost_y, &loc_y);
+  Vec loc_ghost_y;
+  CHKERR VecGhostGetLocalForm(ghost_y, &loc_ghost_y);
   int nb_y;
-  CHKERR VecGetLocalSize(loc_y, &nb_y);
-  CHKERR VecGetArray(loc_y, &y_array);
+  CHKERR VecGetLocalSize(loc_ghost_y, &nb_y);
+  CHKERR VecGetArray(loc_ghost_y, &y_array);
 
   for (auto i = 0; i != nb_y; ++i)
     y_array[i] = 0.;
@@ -1060,48 +1023,62 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
   else
     block_ptr = &*ctx->dataBlocksPtr->begin();
 
+  std::vector<int> loc_rows;
+  std::vector<int> loc_nb_rows;
+  std::vector<double> loc_y;
+
   auto it = ctx->blockIndexPtr->get<0>().lower_bound(0);
   auto hi = ctx->blockIndexPtr->get<0>().end();
 
-  for (; it != hi; ++it) {
+  for (; it != hi;) {
     auto shift = it->shift;
 
-    auto x_ptr = &x_array[it->loc_col];
-    auto y_ptr = &y_array[it->loc_row];
-    auto nb_rows = it->nb_rows;
+    auto loc_col = it->loc_col;
     auto nb_cols = it->nb_cols;
+    auto x_ptr = &x_array[loc_col];
 
-    tensorVectorMult<1, 1>(nb_rows, nb_cols, &block_ptr[shift], x_ptr, y_ptr);
+    loc_rows.resize(0);
+    loc_nb_rows.resize(0);
+    loc_nb_rows.push_back(0);
+    while (it->loc_col == loc_col && it->nb_cols == nb_cols && it != hi) {
+      loc_rows.push_back(it->loc_row);
+      loc_nb_rows.push_back(loc_nb_rows.back() + it->nb_rows);
+      ++it;
+    }
+    loc_y.resize(loc_nb_rows.back());
+
+    cblas_dgemv(
+
+        CblasRowMajor, CblasNoTrans,
+
+        loc_nb_rows.back(), nb_cols,
+
+        1., &(block_ptr[shift]), nb_cols,
+
+        x_ptr, 1,
+
+        0., &*loc_y.begin(), 1
+
+    );
+
+    for (auto r = 0; r != loc_rows.size(); ++r) {
+      cblas_daxpy(loc_nb_rows[r + 1] - loc_nb_rows[r], 1.,
+                  &loc_y[loc_nb_rows[r]], 1, &y_array[loc_rows[r]], 1);
+    }
   }
 
-  CHKERR VecRestoreArray(loc_x, &x_array);
-  CHKERR VecRestoreArray(loc_y, &y_array);
-  CHKERR VecGhostRestoreLocalForm(ghost_x, &loc_x);
-  CHKERR VecGhostRestoreLocalForm(ghost_y, &loc_y);
+  CHKERR VecRestoreArray(loc_ghost_x, &x_array);
+  CHKERR VecRestoreArray(loc_ghost_y, &y_array);
+  CHKERR VecGhostRestoreLocalForm(ghost_x, &loc_ghost_x);
+  CHKERR VecGhostRestoreLocalForm(ghost_y, &loc_ghost_y);
 
   CHKERR VecGhostUpdateBegin(ghost_y, ADD_VALUES, SCATTER_REVERSE);
   CHKERR VecGhostUpdateEnd(ghost_y, ADD_VALUES, SCATTER_REVERSE);
 
   if (ctx->scatterVec) {
 
-    switch (trans) {
-    case CblasNoTrans:
-
-      CHKERR VecScatterBegin(ctx->scatterVec, ghost_y, y, iora,
-                             SCATTER_REVERSE);
-      CHKERR VecScatterEnd(ctx->scatterVec, ghost_y, y, iora, SCATTER_REVERSE);
-
-      break;
-    case CblasTrans:
-
-      CHKERR VecScatterBegin(ctx->scatterVec, y, ghost_y, iora,
-                             SCATTER_FORWARD);
-      CHKERR VecScatterEnd(ctx->scatterVec, y, ghost_y, iora, SCATTER_FORWARD);
-
-      break;
-    default:
-      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
-    }
+    CHKERR VecScatterBegin(ctx->scatterVec, ghost_y, y, iora, SCATTER_REVERSE);
+    CHKERR VecScatterEnd(ctx->scatterVec, ghost_y, y, iora, SCATTER_REVERSE);
 
   } else {
     CHKERR VecCopy(ghost_y, y);
