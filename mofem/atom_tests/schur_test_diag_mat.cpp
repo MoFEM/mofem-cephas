@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
       MOFEM_LOG("WORLD", Sev::inform)
           << msg << ": norm of difference: " << norm;
       constexpr double eps = 1e-12;
-      if (norm > eps) {
+      if (norm > eps || std::isnan(norm) || std::isinf(norm)) {
         SETERRQ(PETSC_COMM_WORLD, 1, "norm of difference is too big");
       }
       MoFEMFunctionReturn(0);
@@ -164,17 +164,11 @@ int main(int argc, char *argv[]) {
     CHKERR MatMult(block_mat, v, y_block);
     CHKERR VecAXPY(y_petsc, -1.0, y_block);
 
-    // CHKERR MatMultAdd(petsc_mat, v, y_pesc, y_pesc);
-    // CHKERR MatMultAdd(block_mat, v, y_block, y_block);
-    // CHKERR VecAXPY(y_petsc, -1.0, y_block);
+    CHKERR test("mult", y_petsc);
 
-    // CHKERR MatMultTranspose(petsc_mat, v, y_petsc);
-    // CHKERR MatMultTranspose(block_mat, v, y_block);
-    // CHKERR VecAXPY(y_petsc, -1.0, y_block);
-
-    // CHKERR MatMultTransposeAdd(petsc_mat, v, y_petsc);
-    // CHKERR MatMultTransposeAdd(block_mat, v, y_block);
-    // CHKERR VecAXPY(y_petsc, -1.0, y_block);
+    CHKERR MatMultAdd(petsc_mat, v, y_petsc, y_petsc);
+    CHKERR MatMultAdd(block_mat, v, y_block, y_block);
+    CHKERR VecAXPY(y_petsc, -1.0, y_block);
 
     CHKERR test("mult", y_petsc);
 
