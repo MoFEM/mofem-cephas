@@ -9,11 +9,12 @@ namespace MoFEM {
 
 OpCalcNormL2Tensor0::OpCalcNormL2Tensor0(
     boost::shared_ptr<VectorDouble> data_ptr, SmartPetscObj<Vec> data_vec,
-    const int index, boost::shared_ptr<VectorDouble> diff_data_ptr)
+    const int index, boost::shared_ptr<VectorDouble> diff_data_ptr,
+    boost::shared_ptr<Range> ent_ptr)
     : ForcesAndSourcesCore::UserDataOperator(
           NOSPACE, ForcesAndSourcesCore::UserDataOperator::OPSPACE),
       dataPtr(data_ptr), dataVec(data_vec), iNdex(index),
-      diffDataPtr(diff_data_ptr) {
+      diffDataPtr(diff_data_ptr), entsPtr(ent_ptr) {
   if (!dataPtr)
     THROW_MESSAGE("Pointer is not set");
   if (!diffDataPtr)
@@ -23,6 +24,12 @@ OpCalcNormL2Tensor0::OpCalcNormL2Tensor0(
 MoFEMErrorCode OpCalcNormL2Tensor0::doWork(int side, EntityType type,
                                            EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
+
+  // check if entity is in the range
+  if (entsPtr) {
+    if (entsPtr->find(this->getFEEntityHandle()) == entsPtr->end())
+      MoFEMFunctionReturnHot(0);
+  }
 
   // calculate the difference between data pointers and save them in diffDataPtr
   if (dataPtr != diffDataPtr)
@@ -58,11 +65,12 @@ MoFEMErrorCode OpCalcNormL2Tensor0::doWork(int side, EntityType type,
 template <int DIM>
 OpCalcNormL2Tensor1<DIM>::OpCalcNormL2Tensor1(
     boost::shared_ptr<MatrixDouble> data_ptr, SmartPetscObj<Vec> data_vec,
-    const int index, boost::shared_ptr<MatrixDouble> diff_data_ptr)
+    const int index, boost::shared_ptr<MatrixDouble> diff_data_ptr,
+    boost::shared_ptr<Range> ent_ptr)
     : ForcesAndSourcesCore::UserDataOperator(
           NOSPACE, ForcesAndSourcesCore::UserDataOperator::OPSPACE),
       dataPtr(data_ptr), dataVec(data_vec), iNdex(index),
-      diffDataPtr(diff_data_ptr) {
+      diffDataPtr(diff_data_ptr), entsPtr(ent_ptr) {
   if (!dataPtr)
     THROW_MESSAGE("Pointer is not set");
   if (!diffDataPtr)
@@ -74,6 +82,12 @@ MoFEMErrorCode
 OpCalcNormL2Tensor1<DIM>::doWork(int side, EntityType type,
                                  EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
+
+  // check if entity is in the range
+  if (entsPtr) {
+    if (entsPtr->find(this->getFEEntityHandle()) == entsPtr->end())
+      MoFEMFunctionReturnHot(0);
+  }
 
   // calculate the difference between data pointers and save them in diffDataPtr
   if (dataPtr != diffDataPtr)
@@ -111,11 +125,12 @@ OpCalcNormL2Tensor1<DIM>::doWork(int side, EntityType type,
 template <int DIM_1, int DIM_2>
 OpCalcNormL2Tensor2<DIM_1, DIM_2>::OpCalcNormL2Tensor2(
     boost::shared_ptr<MatrixDouble> data_ptr, SmartPetscObj<Vec> data_vec,
-    const int index, boost::shared_ptr<MatrixDouble> diff_data_ptr)
+    const int index, boost::shared_ptr<MatrixDouble> diff_data_ptr,
+    boost::shared_ptr<Range> ent_ptr)
     : ForcesAndSourcesCore::UserDataOperator(
           NOSPACE, ForcesAndSourcesCore::UserDataOperator::OPSPACE),
       dataPtr(data_ptr), dataVec(data_vec), iNdex(index),
-      diffDataPtr(diff_data_ptr) {
+      diffDataPtr(diff_data_ptr), entsPtr(ent_ptr) {
   if (!dataPtr)
     THROW_MESSAGE("Pointer is not set");
   if (!diffDataPtr)
@@ -127,6 +142,12 @@ MoFEMErrorCode
 OpCalcNormL2Tensor2<DIM_1, DIM_2>::doWork(int side, EntityType type,
                                           EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
+
+  // check if entity is in the range
+  if (entsPtr) {
+    if (entsPtr->find(this->getFEEntityHandle()) == entsPtr->end())
+      MoFEMFunctionReturnHot(0);
+  }
 
   // calculate the difference between data pointers and save them in diffDataPtr
   if (dataPtr != diffDataPtr)

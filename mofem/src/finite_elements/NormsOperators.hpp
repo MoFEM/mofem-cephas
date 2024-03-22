@@ -16,7 +16,8 @@ struct OpCalcNormL2Tensor0 : public ForcesAndSourcesCore::UserDataOperator {
 
   OpCalcNormL2Tensor0(boost::shared_ptr<VectorDouble> data_ptr,
                       SmartPetscObj<Vec> data_vec, const int index,
-                      boost::shared_ptr<VectorDouble> diff_data_ptr = nullptr);
+                      boost::shared_ptr<VectorDouble> diff_data_ptr = nullptr,
+                      boost::shared_ptr<Range> ent_ptr = nullptr);
 
   /**
    * \brief calculate norm of scalar values at integration points
@@ -31,6 +32,7 @@ struct OpCalcNormL2Tensor0 : public ForcesAndSourcesCore::UserDataOperator {
 protected:
   boost::shared_ptr<VectorDouble> dataPtr;
   boost::shared_ptr<VectorDouble> diffDataPtr;
+  boost::shared_ptr<Range> entsPtr;
   SmartPetscObj<Vec> dataVec;
   const int iNdex;
 };
@@ -43,8 +45,8 @@ struct OpCalcNormL2Tensor1 : public ForcesAndSourcesCore::UserDataOperator {
 
   OpCalcNormL2Tensor1(boost::shared_ptr<MatrixDouble> data_ptr,
                       SmartPetscObj<Vec> data_vec, const int index,
-                      boost::shared_ptr<MatrixDouble> diff_data_ptr = nullptr);
-
+                      boost::shared_ptr<MatrixDouble> diff_data_ptr = nullptr,
+                      boost::shared_ptr<Range> ent_ptr = nullptr);
   /**
    * \brief calculate norm of vector values at integration points
    * @param  side side entity number
@@ -58,6 +60,7 @@ struct OpCalcNormL2Tensor1 : public ForcesAndSourcesCore::UserDataOperator {
 protected:
   boost::shared_ptr<MatrixDouble> dataPtr;
   boost::shared_ptr<MatrixDouble> diffDataPtr;
+  boost::shared_ptr<Range> entsPtr;
   SmartPetscObj<Vec> dataVec;
   const int iNdex;
 };
@@ -70,7 +73,8 @@ struct OpCalcNormL2Tensor2 : public ForcesAndSourcesCore::UserDataOperator {
 
   OpCalcNormL2Tensor2(boost::shared_ptr<MatrixDouble> data_ptr,
                       SmartPetscObj<Vec> data_vec, const int index,
-                      boost::shared_ptr<MatrixDouble> diff_data_ptr = nullptr);
+                      boost::shared_ptr<MatrixDouble> diff_data_ptr = nullptr,
+                      boost::shared_ptr<Range> ent_ptr = nullptr);
 
   /**
    * \brief calculate norm of tensor values at integration points
@@ -86,6 +90,7 @@ protected:
   boost::shared_ptr<MatrixDouble> dataPtr;
   boost::shared_ptr<MatrixDouble> diffDataPtr;
   SmartPetscObj<Vec> dataVec;
+  boost::shared_ptr<Range> entsPtr;
   const int iNdex;
 };
 
