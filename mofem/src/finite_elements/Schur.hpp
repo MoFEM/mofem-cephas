@@ -163,6 +163,16 @@ std::tuple<SmartPetscObj<IS>, SmartPetscObj<IS>> createSchurISDiff(DM dm,
                                                                    IS schur_is);
 struct DiagBlockStruture;
 
+using SchurFEPair =
+    std::pair<std::string, boost::shared_ptr<ForcesAndSourcesCore>>;
+using SchurFieldPair = std::pair<std::string, std::string>;
+
+using SchurFEOpVec = std::vector<
+
+    std::pair<SchurFEPair, std::vector<SchurFieldPair>>
+
+    >;
+
 /**
  * @brief Create a Mat Diag Blocks object
  * 
@@ -170,12 +180,9 @@ struct DiagBlockStruture;
  */
 boost::shared_ptr<DiagBlockStruture> createSchurBlockMatStructure(
 
-    DM dm,                                 //< dm
-    std::vector<std::string> fields_names, //< block field
-    std::vector<std::string> fe_names,     //< block fes
-    std::vector<boost::shared_ptr<ForcesAndSourcesCore>>
-        fe_ptrs //< block elements
-
+    DM dm,                       //< dm
+    SchurFEOpVec schur_fe_op_vec //< block elements
+    
 );
 
 using SchurShellMatData =

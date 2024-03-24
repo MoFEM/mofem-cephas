@@ -788,9 +788,9 @@ struct DiagBlockStruture {
 
 struct CountBlocks : public ForcesAndSourcesCore::UserDataOperator {
   using OP = ForcesAndSourcesCore::UserDataOperator;
-  CountBlocks(std::string field_name,
+  CountBlocks(std::string fr, std::string fc,
               boost::shared_ptr<DiagBlockStruture> data_ptr)
-      : OP(field_name, OP::OPROWCOL), dataPtr(data_ptr) {
+      : OP(fr, fc, OP::OPROWCOL), dataPtr(data_ptr) {
     sYmm = false;
     hintInt = dataPtr->blockIndexPtr->get<1>().end();
   }
@@ -847,37 +847,28 @@ private:
 
 boost::shared_ptr<DiagBlockStruture> createSchurBlockMatStructure(
 
-    DM dm,                                 //< dm
-    std::vector<std::string> fields_names, //< block field
-    std::vector<std::string> fe_names,     //< block fes
-    std::vector<boost::shared_ptr<ForcesAndSourcesCore>>
-        fe_ptrs //< block elements
+    DM dm, //< dm
+
+    SchurFEOpVec schur_fe_op_vec //< block elements
 
 ) {
   auto data_ptr = boost::make_shared<DiagBlockStruture>();
   data_ptr->blockIndexPtr = boost::make_shared<DiagBlockStruture::BlockIndex>();
 
-  if (fe_ptrs.size() != fields_names.size()) {
-    MOFEM_LOG("SELF", Sev::error)
-        << "Wrong size " << fe_ptrs.size() << " != " << fields_names.size();
-    CHK_MOAB_THROW(MOFEM_DATA_INCONSISTENCY, "Wrong size");
-  }
-  if (fe_ptrs.size() != fe_names.size()) {
-    MOFEM_LOG("SELF", Sev::error)
-        << "Wrong size " << fe_ptrs.size() << " != " << fe_names.size();
-    CHK_MOAB_THROW(MOFEM_DATA_INCONSISTENCY, "Wrong size");
-  }
-
-  auto fe_it = fe_ptrs.begin();
-  auto fe_name_it = fe_names.begin();
-
   auto count_ptr = boost::make_shared<int>(0);
   auto mem_ptr = boost::make_shared<int>(0);
-  for (auto f : fields_names) {
-    (*fe_it)->getOpPtrVector().push_back(new CountBlocks(f, data_ptr));
-    CHKERR DMoFEMLoopFiniteElements(dm, *fe_name_it, *fe_it);
-    ++fe_it;
-    ++fe_name_it;
+
+  for (auto &d : schur_fe_op_vec) {
+
+    auto fe_name = d.first.first;
+    auto fe_ptr = d.first.second;
+
+    for (auto &f : d.second) {
+      fe_ptr->getOpPtrVector().push_back(
+          new CountBlocks(f.first, f.second, data_ptr));
+    }
+
+    CHKERR DMoFEMLoopFiniteElements(dm, fe_name, fe_ptr);
   }
 
   auto mem_size = 0;
@@ -895,13 +886,6 @@ boost::shared_ptr<DiagBlockStruture> createSchurBlockMatStructure(
 
   data_ptr->ghostX = ghost_x;
   data_ptr->ghostY = ghost_y;
-
-  // auto field_ptr = getInterfacePtr(dm);
-  // auto prb_ptr = getProblemPtr(dm);
-  // auto is = field_ptr->getInterface<ISManager>()->isCreateProblem(
-  //     prb_ptr->getName(), ROW);
-  // auto scatter = createVecScatter(ghost_x, is, ghost_y, is);
-  // data_ptr->scatterVec = scatter;
 
   return data_ptr;
 }
@@ -1034,7 +1018,7 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
       loc_rows.resize(0);
       loc_nb_rows.resize(0);
       loc_nb_rows.push_back(0);
-      while (it->loc_col == loc_col && it->nb_cols == nb_cols && it != hi) {
+      while (it != hi && (it->loc_col == loc_col && it->nb_cols == nb_cols)) {
         loc_rows.push_back(it->loc_row);
         loc_nb_rows.push_back(loc_nb_rows.back() + it->nb_rows);
         ++it;
