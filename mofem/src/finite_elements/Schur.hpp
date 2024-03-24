@@ -178,24 +178,18 @@ boost::shared_ptr<DiagBlockStruture> createSchurBlockMatStructure(
 
 );
 
+using SchurShellMatData =
+    std::pair<SmartPetscObj<Mat>, boost::shared_ptr<DiagBlockStruture>>;
+
 /**
  * @brief Create a Schur Mat object
  * 
  * @param dm 
  * @param data 
- * @return std::pair<SmartPetscObj<Mat>, boost::shared_ptr<DiagBlockStruture>> 
+ * @return std::pair<SmartPetscObj<Mat>, boost::shared_ptr<DiagBlockStruture>>
  */
-std::pair<SmartPetscObj<Mat>, boost::shared_ptr<DiagBlockStruture>>
+SchurShellMatData
 createSchurBlockMat(DM dm, boost::shared_ptr<DiagBlockStruture> data);
-
-/**
- * @brief Create a Mat Diag Blocks object
- * 
- * @return Mat 
- */
-SmartPetscObj<Mat>
-createNestedMatrix(std::tuple<SmartPetscObj<IS>, SmartPetscObj<IS>> is_tuple,
-                   std::array<Mat, 4> mats);
 
 template <>
 MoFEMErrorCode
@@ -218,6 +212,23 @@ inline MoFEMErrorCode VecSetValues<AssemblyTypeSelector<BLOCK_MAT>>(
     InsertMode iora) {
   return VecSetValues<EssentialBcStorage>(V, data, nf, iora);
 }
+
+using SchurNestMatrixData =
+    std::pair<std::array<SmartPetscObj<Mat>, 4>,
+              std::array<boost::shared_ptr<DiagBlockStruture>, 4>>;
+
+SchurNestMatrixData
+getSchurNestMatArray(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
+                     SchurShellMatData A);
+
+/**
+ * @brief Create a Mat Diag Blocks object
+ *
+ * @return Mat
+ */
+std::pair<SmartPetscObj<Mat>, SchurNestMatrixData>
+createSchurNestedMatrix(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
+                        SchurNestMatrixData schur_net_dat);
 
 } // namespace MoFEM
 
