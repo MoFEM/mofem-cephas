@@ -122,7 +122,8 @@ int main(int argc, char *argv[]) {
           {{"VECTOR", "VECTOR"}, {"TENSOR", "TENSOR"}}}}
 
     );
-    auto [mat, data] = createSchurBlockMat(simple->getDM(), data_struture);
+    auto shell_data = createSchurBlockMat(simple->getDM(), data_struture);
+    auto [mat, data] = shell_data;
     block_mat = mat;
 
     using OpMassPETSCAssemble = FormsIntegrators<DomainEleOp>::Assembly<
@@ -182,7 +183,38 @@ int main(int argc, char *argv[]) {
     CHKERR MatMultAdd(block_mat, v, y_block, y_block);
     CHKERR VecAXPY(y_petsc, -1.0, y_block);
 
-    CHKERR test("mult", y_petsc);
+    CHKERR test("mult add", y_petsc);
+
+    auto schur_dm = createDM(m_field.get_comm(), "DMMOFEM");
+    CHKERR DMMoFEMCreateSubDM(schur_dm, simple->getDM(), "SCHUR");
+    CHKERR DMMoFEMSetSquareProblem(schur_dm, PETSC_TRUE);
+    CHKERR DMMoFEMAddElement(schur_dm, simple->getDomainFEName());
+    CHKERR DMMoFEMAddSubFieldRow(schur_dm, "VECTOR");
+    CHKERR DMMoFEMAddSubFieldCol(schur_dm, "VECTOR");
+    CHKERR DMSetUp(schur_dm);
+
+    auto block_dm = createDM(m_field.get_comm(), "DMMOFEM");
+    CHKERR DMMoFEMCreateSubDM(block_dm, simple->getDM(), "BLOCK");
+    CHKERR DMMoFEMSetSquareProblem(block_dm, PETSC_TRUE);
+    CHKERR DMMoFEMAddElement(block_dm, simple->getDomainFEName());
+    CHKERR DMMoFEMAddSubFieldRow(block_dm, "TENSOR");
+    CHKERR DMMoFEMAddSubFieldCol(block_dm, "TENSOR");
+    CHKERR DMSetUp(block_dm);
+
+    auto nested_data = getSchurNestMatArray(
+
+        {schur_dm, block_dm}, shell_data
+
+    );
+    auto [nested_mat, nested_data_] =
+        createSchurNestedMatrix({schur_dm, block_dm}, nested_data);
+
+    auto y_nested = createDMVector(simple->getDM());
+    CHKERR MatMult(petsc_mat, v, y_petsc);
+    CHKERR MatMult(nested_mat, v, y_nested);
+    CHKERR VecAXPY(y_petsc, -1.0, y_nested);
+
+    // CHKERR test("mult nested", y_petsc);
 
     petsc_mat.reset();
     block_mat.reset();

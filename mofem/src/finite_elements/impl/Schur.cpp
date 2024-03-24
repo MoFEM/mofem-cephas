@@ -1007,7 +1007,7 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
   auto hi = ctx->blockIndexPtr->get<0>().end();
 
   for (; it != hi;) {
-    if (it->row != 1) {
+    if (it->row != -1) {
 
       auto shift = it->shift;
 
@@ -1018,7 +1018,8 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
       loc_rows.resize(0);
       loc_nb_rows.resize(0);
       loc_nb_rows.push_back(0);
-      while (it != hi && (it->loc_col == loc_col && it->nb_cols == nb_cols)) {
+      while (it != hi && (it->loc_col == loc_col && it->nb_cols == nb_cols &&
+                          it->row != -1)) {
         loc_rows.push_back(it->loc_row);
         loc_nb_rows.push_back(loc_nb_rows.back() + it->nb_rows);
         ++it;
@@ -1219,11 +1220,6 @@ getSchurNestMatArray(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
   auto schur_vec = createDMVector(schur_dm);
   auto block_vec = createDMVector(block_dm);
 
-  auto schur_nb_global = schur_prb->getNbDofsRow();
-  auto block_nb_global = block_prb->getNbDofsRow();
-  auto schur_nb_local = schur_prb->getNbLocalDofsRow();
-  auto block_nb_local = block_prb->getNbLocalDofsRow();
-
   auto [schur_mat, schur_data] = A;
 
   auto get_vec = [&]() {
@@ -1250,6 +1246,22 @@ getSchurNestMatArray(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
 
   std::array<boost::shared_ptr<DiagBlockStruture>, 4> data_ptrs;
 
+  for (auto r = 0; r != 4; ++r) {
+    data_ptrs[r] = boost::make_shared<DiagBlockStruture>();
+    data_ptrs[r]->blockIndexPtr =
+        boost::make_shared<DiagBlockStruture::BlockIndex>();
+    data_ptrs[r]->dataBlocksPtr = schur_data->dataBlocksPtr;
+  }
+
+  data_ptrs[0]->ghostX = schur_vec;
+  data_ptrs[0]->ghostY = schur_vec;
+  data_ptrs[1]->ghostX = block_vec;
+  data_ptrs[1]->ghostY = schur_vec;
+  data_ptrs[2]->ghostX = schur_vec;
+  data_ptrs[2]->ghostY = block_vec;
+  data_ptrs[3]->ghostX = block_vec;
+  data_ptrs[3]->ghostY = block_vec;
+
   int idx = 0;
   for (auto &d : *schur_data->blockIndexPtr) {
 
@@ -1267,56 +1279,36 @@ getSchurNestMatArray(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
       );
     };
 
-    if (vec_r_schur[idx] != 1 && vec_c_schur[idx] != -1) {
+    if (vec_r_schur[idx] != -1 && vec_c_schur[idx] != -1) {
       auto schur_dof_r =
           schur_dofs->get<PetscGlobalIdx_mi_tag>().find(vec_r_schur[idx]);
       auto schur_dof_c =
           schur_dofs->get<PetscGlobalIdx_mi_tag>().find(vec_c_schur[idx]);
-      auto d_ptr = boost::make_shared<DiagBlockStruture>();
-      d_ptr->dataBlocksPtr = schur_data->dataBlocksPtr;
-      insert(d_ptr->blockIndexPtr, *schur_dof_r, *schur_dof_c, d);
-      d_ptr->ghostX = schur_vec;
-      d_ptr->ghostY = schur_vec;
-      data_ptrs[0] = d_ptr;
+      insert(data_ptrs[0]->blockIndexPtr, *schur_dof_r, *schur_dof_c, d);
     }
 
-    if (vec_r_schur[idx] != 1 && vec_c_block[idx] != -1) {
+    if (vec_r_schur[idx] != -1 && vec_c_block[idx] != -1) {
       auto schur_dof_r =
           schur_dofs->get<PetscGlobalIdx_mi_tag>().find(vec_r_schur[idx]);
       auto block_dof_c =
-          schur_dofs->get<PetscGlobalIdx_mi_tag>().find(vec_c_block[idx]);
-      auto d_ptr = boost::make_shared<DiagBlockStruture>();
-      d_ptr->dataBlocksPtr = schur_data->dataBlocksPtr;
-      insert(d_ptr->blockIndexPtr, *schur_dof_r, *block_dof_c, d);
-      d_ptr->ghostX = schur_vec;
-      d_ptr->ghostY = block_vec;
-      data_ptrs[1] = d_ptr;
+          block_dofs->get<PetscGlobalIdx_mi_tag>().find(vec_c_block[idx]);
+      insert(data_ptrs[1]->blockIndexPtr, *schur_dof_r, *block_dof_c, d);
     }
 
-    if (vec_r_block[idx] != 1 && vec_c_schur[idx] != -1) {
+    if (vec_r_block[idx] != -1 && vec_c_schur[idx] != -1) {
       auto block_dof_r =
-          schur_dofs->get<PetscGlobalIdx_mi_tag>().find(vec_r_block[idx]);
+          block_dofs->get<PetscGlobalIdx_mi_tag>().find(vec_r_block[idx]);
       auto schur_dof_c =
           schur_dofs->get<PetscGlobalIdx_mi_tag>().find(vec_c_schur[idx]);
-      auto d_ptr = boost::make_shared<DiagBlockStruture>();
-      d_ptr->dataBlocksPtr = schur_data->dataBlocksPtr;
-      insert(d_ptr->blockIndexPtr, *block_dof_r, *schur_dof_c, d);
-      d_ptr->ghostX = block_vec;
-      d_ptr->ghostY = schur_vec;
-      data_ptrs[2] = d_ptr;
+      insert(data_ptrs[2]->blockIndexPtr, *block_dof_r, *schur_dof_c, d);
     }
 
-    if (vec_r_block[idx] != 1 && vec_c_block[idx] != -1) {
+    if (vec_r_block[idx] != -1 && vec_c_block[idx] != -1) {
       auto block_dof_r =
-          schur_dofs->get<PetscGlobalIdx_mi_tag>().find(vec_r_block[idx]);
+          block_dofs->get<PetscGlobalIdx_mi_tag>().find(vec_r_block[idx]);
       auto block_dof_c =
-          schur_dofs->get<PetscGlobalIdx_mi_tag>().find(vec_c_block[idx]);
-      auto d_ptr = boost::make_shared<DiagBlockStruture>();
-      d_ptr->dataBlocksPtr = schur_data->dataBlocksPtr;
-      insert(d_ptr->blockIndexPtr, *block_dof_r, *block_dof_c, d);
-      d_ptr->ghostX = block_vec;
-      d_ptr->ghostY = block_vec;
-      data_ptrs[3] = d_ptr;
+          block_dofs->get<PetscGlobalIdx_mi_tag>().find(vec_c_block[idx]);
+      insert(data_ptrs[3]->blockIndexPtr, *block_dof_r, *block_dof_c, d);
     }
 
     ++idx;
@@ -1333,6 +1325,11 @@ getSchurNestMatArray(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
     CHKERR setSchurBlockMatOps(mat_raw);
     return SmartPetscObj<Mat>(mat_raw);
   };
+
+  auto schur_nb_global = schur_prb->getNbDofsRow();
+  auto block_nb_global = block_prb->getNbDofsRow();
+  auto schur_nb_local = schur_prb->getNbLocalDofsRow();
+  auto block_nb_local = block_prb->getNbLocalDofsRow();
 
   std::array<SmartPetscObj<Mat>, 4> mats_array;
   mats_array[0] =
@@ -1365,8 +1362,11 @@ createSchurNestedMatrix(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
   auto block_is = block_prb->getSubData()->getSmartRowIs();
 
   std::array<IS, 2> is_a = {schur_is, block_is};
-  std::array<Mat, 4> mats_a = {mat_arrays[0], mat_arrays[1], mat_arrays[2],
-                               mat_arrays[3]};
+  std::array<Mat, 4> mats_a = {
+
+      mat_arrays[0], mat_arrays[1], mat_arrays[2], mat_arrays[3]
+
+  };
 
   MPI_Comm comm;
   CHKERR PetscObjectGetComm((PetscObject)schur_dm, &comm);
