@@ -741,16 +741,13 @@ createSchurISDiff(DM dm, IS is_schur) {
                         SmartPetscObj<IS>(is_diff));
 }
 
-struct DiagBlockStruture {};
+struct DiagBlockStruture {
 
-struct DiagBlockStrutureImpl : public DiagBlockStruture {
-
-  DiagBlockStrutureImpl() = default;
-  virtual ~DiagBlockStrutureImpl() = default;
+  DiagBlockStruture() = default;
+  virtual ~DiagBlockStruture() = default;
 
   SmartPetscObj<Vec> ghostX;
   SmartPetscObj<Vec> ghostY;
-  SmartPetscObj<VecScatter> scatterVec;
 
   boost::shared_ptr<std::vector<double>> dataBlocksPtr;
   boost::shared_ptr<std::vector<double>> dataInvBlocksPtr;
@@ -792,7 +789,7 @@ struct DiagBlockStrutureImpl : public DiagBlockStruture {
 struct CountBlocks : public ForcesAndSourcesCore::UserDataOperator {
   using OP = ForcesAndSourcesCore::UserDataOperator;
   CountBlocks(std::string field_name,
-              boost::shared_ptr<DiagBlockStrutureImpl> data_ptr)
+              boost::shared_ptr<DiagBlockStruture> data_ptr)
       : OP(field_name, OP::OPROWCOL), dataPtr(data_ptr) {
     sYmm = false;
     hintInt = dataPtr->blockIndexPtr->get<1>().end();
@@ -809,7 +806,7 @@ struct CountBlocks : public ForcesAndSourcesCore::UserDataOperator {
     auto add = [&](auto r, auto c, int nb_r, int nb_c) {
       dataPtr->blockIndexPtr->insert(
 
-          DiagBlockStrutureImpl::Indexes{
+          DiagBlockStruture::Indexes{
               row_data.getIndices()[r], col_data.getIndices()[c], nb_r, nb_c,
               row_data.getLocalIndices()[r], col_data.getLocalIndices()[c], -1}
 
@@ -843,9 +840,9 @@ struct CountBlocks : public ForcesAndSourcesCore::UserDataOperator {
   }
 
 private:
-  boost::shared_ptr<DiagBlockStrutureImpl> dataPtr;
+  boost::shared_ptr<DiagBlockStruture> dataPtr;
 
-  DiagBlockStrutureImpl::BlockIndex::nth_index<1>::type::iterator hintInt;
+  DiagBlockStruture::BlockIndex::nth_index<1>::type::iterator hintInt;
 };
 
 boost::shared_ptr<DiagBlockStruture> createSchurBlockMatStructure(
@@ -857,9 +854,8 @@ boost::shared_ptr<DiagBlockStruture> createSchurBlockMatStructure(
         fe_ptrs //< block elements
 
 ) {
-  auto data_ptr = boost::make_shared<DiagBlockStrutureImpl>();
-  data_ptr->blockIndexPtr =
-      boost::make_shared<DiagBlockStrutureImpl::BlockIndex>();
+  auto data_ptr = boost::make_shared<DiagBlockStruture>();
+  data_ptr->blockIndexPtr = boost::make_shared<DiagBlockStruture::BlockIndex>();
 
   if (fe_ptrs.size() != fields_names.size()) {
     MOFEM_LOG("SELF", Sev::error)
@@ -928,13 +924,26 @@ static PetscErrorCode solve_add(Mat mat, Vec x, Vec y) {
 
 static PetscErrorCode mat_zero(Mat m) {
   MoFEMFunctionBegin;
-  DiagBlockStrutureImpl *ctx;
+  DiagBlockStruture *ctx;
   CHKERR MatShellGetContext(m, (void **)&ctx);
   ctx->dataBlocksPtr->clear();
   MoFEMFunctionReturn(0);
 }
 
-std::pair<SmartPetscObj<Mat>, boost::shared_ptr<DiagBlockStruture>>
+static MoFEMErrorCode setSchurBlockMatOps(Mat mat_raw) {
+  MoFEMFunctionBegin;
+  CHKERR MatShellSetOperation(mat_raw, MATOP_MULT, (void (*)(void))mult);
+  CHKERR MatShellSetOperation(mat_raw, MATOP_MULT_ADD,
+                              (void (*)(void))mult_add);
+  CHKERR MatShellSetOperation(mat_raw, MATOP_SOLVE, (void (*)(void))solve);
+  CHKERR MatShellSetOperation(mat_raw, MATOP_SOLVE_ADD,
+                              (void (*)(void))solve_add);
+  CHKERR MatShellSetOperation(mat_raw, MATOP_ZERO_ENTRIES,
+                              (void (*)(void))mat_zero);
+  MoFEMFunctionReturn(0);
+};
+
+SchurShellMatData
 createSchurBlockMat(DM dm, boost::shared_ptr<DiagBlockStruture> data) {
 
   auto problem_ptr = getProblemPtr(dm);
@@ -962,15 +971,7 @@ createSchurBlockMat(DM dm, boost::shared_ptr<DiagBlockStruture> data) {
   Mat mat_raw;
   CHKERR MatCreateShell(comm, nb_local, nb_local, nb_global, nb_global,
                         (void *)data.get(), &mat_raw);
-
-  CHKERR MatShellSetOperation(mat_raw, MATOP_MULT, (void (*)(void))mult);
-  CHKERR MatShellSetOperation(mat_raw, MATOP_MULT_ADD,
-                              (void (*)(void))mult_add);
-  CHKERR MatShellSetOperation(mat_raw, MATOP_SOLVE, (void (*)(void))solve);
-  CHKERR MatShellSetOperation(mat_raw, MATOP_SOLVE_ADD,
-                              (void (*)(void))solve_add);
-  CHKERR MatShellSetOperation(mat_raw, MATOP_ZERO_ENTRIES,
-                              (void (*)(void))mat_zero);
+  CHKERR setSchurBlockMatOps(mat_raw);
 
   return std::make_pair(SmartPetscObj<Mat>(mat_raw), data);
 }
@@ -978,7 +979,7 @@ createSchurBlockMat(DM dm, boost::shared_ptr<DiagBlockStruture> data) {
 static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
                                              InsertMode iora, bool solve) {
   MoFEMFunctionBegin;
-  DiagBlockStrutureImpl *ctx;
+  DiagBlockStruture *ctx;
   CHKERR MatShellGetContext(mat, (void **)&ctx);
 
   PetscLogEventBegin(SchurEvents::MOFEM_EVENT_diagBlockStrutureMult, 0, 0, 0,
@@ -987,16 +988,7 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
   Vec ghost_x = ctx->ghostX;
   Vec ghost_y = ctx->ghostY;
 
-  if (ctx->scatterVec) {
-
-    CHKERR VecScatterBegin(ctx->scatterVec, x, ghost_x, INSERT_VALUES,
-                           SCATTER_FORWARD);
-    CHKERR VecScatterEnd(ctx->scatterVec, x, ghost_x, INSERT_VALUES,
-                         SCATTER_FORWARD);
-
-  } else {
-    CHKERR VecCopy(x, ghost_x);
-  }
+  CHKERR VecCopy(x, ghost_x);
 
   // CHKERR VecCopy(x, ghost_x);
   CHKERR VecGhostUpdateBegin(ghost_x, INSERT_VALUES, SCATTER_FORWARD);
@@ -1031,39 +1023,42 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
   auto hi = ctx->blockIndexPtr->get<0>().end();
 
   for (; it != hi;) {
-    auto shift = it->shift;
+    if (it->row != 1) {
 
-    auto loc_col = it->loc_col;
-    auto nb_cols = it->nb_cols;
-    auto x_ptr = &x_array[loc_col];
+      auto shift = it->shift;
 
-    loc_rows.resize(0);
-    loc_nb_rows.resize(0);
-    loc_nb_rows.push_back(0);
-    while (it->loc_col == loc_col && it->nb_cols == nb_cols && it != hi) {
-      loc_rows.push_back(it->loc_row);
-      loc_nb_rows.push_back(loc_nb_rows.back() + it->nb_rows);
-      ++it;
-    }
-    loc_y.resize(loc_nb_rows.back());
+      auto loc_col = it->loc_col;
+      auto nb_cols = it->nb_cols;
+      auto x_ptr = &x_array[loc_col];
 
-    cblas_dgemv(
+      loc_rows.resize(0);
+      loc_nb_rows.resize(0);
+      loc_nb_rows.push_back(0);
+      while (it->loc_col == loc_col && it->nb_cols == nb_cols && it != hi) {
+        loc_rows.push_back(it->loc_row);
+        loc_nb_rows.push_back(loc_nb_rows.back() + it->nb_rows);
+        ++it;
+      }
+      loc_y.resize(loc_nb_rows.back());
 
-        CblasRowMajor, CblasNoTrans,
+      cblas_dgemv(
 
-        loc_nb_rows.back(), nb_cols,
+          CblasRowMajor, CblasNoTrans,
 
-        1., &(block_ptr[shift]), nb_cols,
+          loc_nb_rows.back(), nb_cols,
 
-        x_ptr, 1,
+          1., &(block_ptr[shift]), nb_cols,
 
-        0., &*loc_y.begin(), 1
+          x_ptr, 1,
 
-    );
+          0., &*loc_y.begin(), 1
 
-    for (auto r = 0; r != loc_rows.size(); ++r) {
-      cblas_daxpy(loc_nb_rows[r + 1] - loc_nb_rows[r], 1.,
-                  &loc_y[loc_nb_rows[r]], 1, &y_array[loc_rows[r]], 1);
+      );
+
+      for (auto r = 0; r != loc_rows.size(); ++r) {
+        cblas_daxpy(loc_nb_rows[r + 1] - loc_nb_rows[r], 1.,
+                    &loc_y[loc_nb_rows[r]], 1, &y_array[loc_rows[r]], 1);
+      }
     }
   }
 
@@ -1075,14 +1070,7 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
   CHKERR VecGhostUpdateBegin(ghost_y, ADD_VALUES, SCATTER_REVERSE);
   CHKERR VecGhostUpdateEnd(ghost_y, ADD_VALUES, SCATTER_REVERSE);
 
-  if (ctx->scatterVec) {
-
-    CHKERR VecScatterBegin(ctx->scatterVec, ghost_y, y, iora, SCATTER_REVERSE);
-    CHKERR VecScatterEnd(ctx->scatterVec, ghost_y, y, iora, SCATTER_REVERSE);
-
-  } else {
-    CHKERR VecCopy(ghost_y, y);
-  }
+  CHKERR VecCopy(ghost_y, y);
 
   // PetscLogFlops(xxx)
   PetscLogEventEnd(SchurEvents::MOFEM_EVENT_diagBlockStrutureMult, 0, 0, 0, 0);
@@ -1097,7 +1085,7 @@ shell_schur_mat_set_values_wrap(Mat M,
                                 const MatrixDouble &mat, InsertMode iora) {
   MoFEMFunctionBegin;
 
-  DiagBlockStrutureImpl *ctx;
+  DiagBlockStruture *ctx;
   CHKERR MatShellGetContext(M, (void **)&ctx);
 
   PetscLogEventBegin(SchurEvents::MOFEM_EVENT_diagBlockStrutureSetValues, 0, 0,
@@ -1223,21 +1211,181 @@ MatSetValues<DiagBlockStruture>(Mat M,
   return shell_schur_mat_set_values_wrap(M, row_data, col_data, mat, iora);
 }
 
-SmartPetscObj<Mat>
-createNestedMatrix(std::tuple<SmartPetscObj<IS>, SmartPetscObj<IS>> is_tuple,
-                   std::array<Mat, 4> mats) {
+SchurNestMatrixData
+getSchurNestMatArray(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
+                     SchurShellMatData A) {
+  auto [schur_dm, block_dm] = dms;
+  auto schur_prb = getProblemPtr(schur_dm);
+  auto block_prb = getProblemPtr(block_dm);
 
-  auto [is0, is1] = is_tuple;
-  std::array<IS, 2> is_a = {is0, is1};
+  auto schur_dofs = schur_prb->getNumeredRowDofsPtr();
+  auto block_dofs = block_prb->getNumeredRowDofsPtr();
+  auto ao_schur = schur_prb->getSubData()->getSmartRowMap();
+  auto ao_block = block_prb->getSubData()->getSmartRowMap();
+
+  auto schur_vec = createDMVector(schur_dm);
+  auto block_vec = createDMVector(block_dm);
+
+  auto schur_nb_global = schur_prb->getNbDofsRow();
+  auto block_nb_global = block_prb->getNbDofsRow();
+  auto schur_nb_local = schur_prb->getNbLocalDofsRow();
+  auto block_nb_local = block_prb->getNbLocalDofsRow();
+
+  auto [schur_mat, schur_data] = A;
+
+  auto get_vec = [&]() {
+    std::vector<int> vec_r, vec_c;
+    vec_r.reserve(schur_data->blockIndexPtr->size());
+    vec_c.reserve(schur_data->blockIndexPtr->size());
+    for (auto &d : *schur_data->blockIndexPtr) {
+      vec_r.push_back(d.row);
+      vec_c.push_back(d.col);
+    }
+    return std::make_pair(vec_r, vec_c);
+  };
+
+  auto [vec_r_schur, vec_c_schur] = get_vec();
+  CHKERR AOApplicationToPetsc(ao_schur, vec_r_schur.size(),
+                              &*vec_r_schur.begin());
+  CHKERR AOApplicationToPetsc(ao_schur, vec_c_schur.size(),
+                              &*vec_c_schur.begin());
+  auto [vec_r_block, vec_c_block] = get_vec();
+  CHKERR AOApplicationToPetsc(ao_block, vec_r_block.size(),
+                              &*vec_r_block.begin());
+  CHKERR AOApplicationToPetsc(ao_block, vec_c_block.size(),
+                              &*vec_c_block.begin());
+
+  std::array<boost::shared_ptr<DiagBlockStruture>, 4> data_ptrs;
+
+  int idx = 0;
+  for (auto &d : *schur_data->blockIndexPtr) {
+
+    auto insert = [&](auto &m_ptr, auto &dof_r, auto &dof_c, auto &d) {
+      m_ptr->insert(
+
+          DiagBlockStruture::Indexes{dof_r->getPetscGlobalDofIdx(),
+                                     dof_c->getPetscGlobalDofIdx(),
+
+                                     d.nb_rows, d.nb_cols,
+
+                                     dof_r->getPetscLocalDofIdx(),
+                                     dof_c->getPetscLocalDofIdx(), d.shift}
+
+      );
+    };
+
+    if (vec_r_schur[idx] != 1 && vec_c_schur[idx] != -1) {
+      auto schur_dof_r =
+          schur_dofs->get<PetscGlobalIdx_mi_tag>().find(vec_r_schur[idx]);
+      auto schur_dof_c =
+          schur_dofs->get<PetscGlobalIdx_mi_tag>().find(vec_c_schur[idx]);
+      auto d_ptr = boost::make_shared<DiagBlockStruture>();
+      d_ptr->dataBlocksPtr = schur_data->dataBlocksPtr;
+      insert(d_ptr->blockIndexPtr, *schur_dof_r, *schur_dof_c, d);
+      d_ptr->ghostX = schur_vec;
+      d_ptr->ghostY = schur_vec;
+      data_ptrs[0] = d_ptr;
+    }
+
+    if (vec_r_schur[idx] != 1 && vec_c_block[idx] != -1) {
+      auto schur_dof_r =
+          schur_dofs->get<PetscGlobalIdx_mi_tag>().find(vec_r_schur[idx]);
+      auto block_dof_c =
+          schur_dofs->get<PetscGlobalIdx_mi_tag>().find(vec_c_block[idx]);
+      auto d_ptr = boost::make_shared<DiagBlockStruture>();
+      d_ptr->dataBlocksPtr = schur_data->dataBlocksPtr;
+      insert(d_ptr->blockIndexPtr, *schur_dof_r, *block_dof_c, d);
+      d_ptr->ghostX = schur_vec;
+      d_ptr->ghostY = block_vec;
+      data_ptrs[1] = d_ptr;
+    }
+
+    if (vec_r_block[idx] != 1 && vec_c_schur[idx] != -1) {
+      auto block_dof_r =
+          schur_dofs->get<PetscGlobalIdx_mi_tag>().find(vec_r_block[idx]);
+      auto schur_dof_c =
+          schur_dofs->get<PetscGlobalIdx_mi_tag>().find(vec_c_schur[idx]);
+      auto d_ptr = boost::make_shared<DiagBlockStruture>();
+      d_ptr->dataBlocksPtr = schur_data->dataBlocksPtr;
+      insert(d_ptr->blockIndexPtr, *block_dof_r, *schur_dof_c, d);
+      d_ptr->ghostX = block_vec;
+      d_ptr->ghostY = schur_vec;
+      data_ptrs[2] = d_ptr;
+    }
+
+    if (vec_r_block[idx] != 1 && vec_c_block[idx] != -1) {
+      auto block_dof_r =
+          schur_dofs->get<PetscGlobalIdx_mi_tag>().find(vec_r_block[idx]);
+      auto block_dof_c =
+          schur_dofs->get<PetscGlobalIdx_mi_tag>().find(vec_c_block[idx]);
+      auto d_ptr = boost::make_shared<DiagBlockStruture>();
+      d_ptr->dataBlocksPtr = schur_data->dataBlocksPtr;
+      insert(d_ptr->blockIndexPtr, *block_dof_r, *block_dof_c, d);
+      d_ptr->ghostX = block_vec;
+      d_ptr->ghostY = block_vec;
+      data_ptrs[3] = d_ptr;
+    }
+
+    ++idx;
+  }
+
+  MPI_Comm comm;
+  CHKERR PetscObjectGetComm((PetscObject)schur_dm, &comm);
+
+  auto create_shell_mat = [&](auto nb_r_loc, auto nb_c_loc, auto nb_r_glob,
+                              auto nb_c_glob, auto data_ptr) {
+    Mat mat_raw;
+    CHKERR MatCreateShell(comm, nb_r_loc, nb_c_loc, nb_r_glob, nb_c_glob,
+                          (void *)data_ptr.get(), &mat_raw);
+    CHKERR setSchurBlockMatOps(mat_raw);
+    return SmartPetscObj<Mat>(mat_raw);
+  };
+
+  std::array<SmartPetscObj<Mat>, 4> mats_array;
+  mats_array[0] =
+      create_shell_mat(schur_nb_local, schur_nb_local, schur_nb_global,
+                       schur_nb_global, data_ptrs[0]);
+  mats_array[1] =
+      create_shell_mat(schur_nb_local, block_nb_local, schur_nb_global,
+                       block_nb_global, data_ptrs[1]);
+  mats_array[2] =
+      create_shell_mat(block_nb_local, schur_nb_local, block_nb_global,
+                       schur_nb_global, data_ptrs[2]);
+  mats_array[3] =
+      create_shell_mat(block_nb_local, block_nb_local, block_nb_global,
+                       block_nb_global, data_ptrs[3]);
+
+  return std::make_pair(mats_array, data_ptrs);
+}
+
+std::pair<SmartPetscObj<Mat>, SchurNestMatrixData>
+createSchurNestedMatrix(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
+                        SchurNestMatrixData schur_net_data) {
+
+  auto [schur_dm, block_dm] = dms;
+  auto [mat_arrays, data_ptrs] = schur_net_data;
+
+  auto schur_prb = getProblemPtr(schur_dm);
+  auto block_prb = getProblemPtr(block_dm);
+
+  auto schur_is = schur_prb->getSubData()->getSmartRowIs();
+  auto block_is = block_prb->getSubData()->getSmartRowIs();
+
+  std::array<IS, 2> is_a = {schur_is, block_is};
+  std::array<Mat, 4> mats_a = {mat_arrays[0], mat_arrays[1], mat_arrays[2],
+                               mat_arrays[3]};
+
+  MPI_Comm comm;
+  CHKERR PetscObjectGetComm((PetscObject)schur_dm, &comm);
 
   Mat mat_raw;
   CHKERR MatCreateNest(
 
-      PETSC_COMM_WORLD, 2, &is_a[0], 2, &is_a[0], &mats[0], &mat_raw
+      comm, 2, is_a.data(), 2, is_a.data(), mats_a.data(), &mat_raw
 
   );
 
-  return SmartPetscObj<Mat>(mat_raw);
+  return std::make_pair(SmartPetscObj<Mat>(mat_raw), schur_net_data);
 }
 
 } // namespace MoFEM
