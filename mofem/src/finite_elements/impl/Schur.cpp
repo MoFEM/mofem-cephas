@@ -1070,7 +1070,16 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
   CHKERR VecGhostUpdateBegin(ghost_y, ADD_VALUES, SCATTER_REVERSE);
   CHKERR VecGhostUpdateEnd(ghost_y, ADD_VALUES, SCATTER_REVERSE);
 
-  CHKERR VecCopy(ghost_y, y);
+  switch (iora) {
+  case INSERT_VALUES:
+    CHKERR VecCopy(ghost_y, y);
+    break;
+  case ADD_VALUES:
+    CHKERR VecAXPY(y, 1., ghost_y);
+    break;
+  default:
+    CHK_MOAB_THROW(MOFEM_NOT_IMPLEMENTED, "Wrong InsertMode");
+  }
 
   // PetscLogFlops(xxx)
   PetscLogEventEnd(SchurEvents::MOFEM_EVENT_diagBlockStrutureMult, 0, 0, 0, 0);

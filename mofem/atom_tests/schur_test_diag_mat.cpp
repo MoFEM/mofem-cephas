@@ -166,6 +166,8 @@ int main(int argc, char *argv[]) {
 
     CHKERR test("mult", y_petsc);
 
+    CHKERR MatMult(petsc_mat, v, y_petsc);
+    CHKERR MatMult(block_mat, v, y_block);
     CHKERR MatMultAdd(petsc_mat, v, y_petsc, y_petsc);
     CHKERR MatMultAdd(block_mat, v, y_block, y_block);
     CHKERR VecAXPY(y_petsc, -1.0, y_block);
