@@ -101,10 +101,13 @@ int main(int argc, char *argv[]) {
     // field if needed.
     CHKERR simple->addDomainField("VECTOR", H1, AINSWORTH_LEGENDRE_BASE,
                                   FIELD_DIM);
+    CHKERR simple->addDomainField("TENSOR", L2, AINSWORTH_LEGENDRE_BASE,
+                                  FIELD_DIM);
 
     // set fields order, i.e. for most first cases order is sufficient.
     constexpr int order = 4;
     CHKERR simple->setFieldOrder("VECTOR", order);
+    CHKERR simple->setFieldOrder("TENSOR", order);
 
     // setup problem
     CHKERR simple->setUp();
@@ -112,8 +115,13 @@ int main(int argc, char *argv[]) {
     petsc_mat = createDMMatrix(simple->getDM());
 
     auto data_struture = createSchurBlockMatStructure(
-        simple->getDM(), {"VECTOR"}, {simple->getDomainFEName()},
-        {boost::make_shared<DomainEle>(m_field)});
+        simple->getDM(),
+
+        {{{simple->getDomainFEName(), boost::make_shared<DomainEle>(m_field)},
+
+          {{"VECTOR", "VECTOR"}, {"TENSOR", "TENSOR"}}}}
+
+    );
     auto [mat, data] = createSchurBlockMat(simple->getDM(), data_struture);
     block_mat = mat;
 
@@ -129,6 +137,8 @@ int main(int argc, char *argv[]) {
 
     pip_lhs.push_back(new OpMassPETSCAssemble("VECTOR", "VECTOR"));
     pip_lhs.push_back(new OpMassBlockAssemble("VECTOR", "VECTOR"));
+    pip_lhs.push_back(new OpMassPETSCAssemble("TENSOR", "TENSOR"));
+    pip_lhs.push_back(new OpMassBlockAssemble("TENSOR", "TENSOR"));
     CHKERR DMoFEMLoopFiniteElements(simple->getDM(), simple->getDomainFEName(),
                                     pip_mng->getDomainLhsFE());
     CHKERR MatAssemblyBegin(petsc_mat, MAT_FINAL_ASSEMBLY);
