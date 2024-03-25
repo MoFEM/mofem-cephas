@@ -974,7 +974,6 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
 
   CHKERR VecCopy(x, ghost_x);
 
-  // CHKERR VecCopy(x, ghost_x);
   CHKERR VecGhostUpdateBegin(ghost_x, INSERT_VALUES, SCATTER_FORWARD);
   CHKERR VecGhostUpdateEnd(ghost_x, INSERT_VALUES, SCATTER_FORWARD);
 
@@ -1065,6 +1064,21 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
   default:
     CHK_MOAB_THROW(MOFEM_NOT_IMPLEMENTED, "Wrong InsertMode");
   }
+
+#ifndef NDEBUG
+
+  auto print_norm = [&](auto msg, auto y) {
+    MoFEMFunctionBegin;
+    PetscReal norm;
+    CHKERR VecNorm(y, NORM_2, &norm);
+    MOFEM_LOG("WORLD", Sev::noisy) << msg << " norm " << norm;
+    MoFEMFunctionReturn(0);
+  };
+
+  print_norm("mult_schur_block_shell x", x);
+  print_norm("mult_schur_block_shell y", y);
+
+#endif // NDEBUG
 
   // PetscLogFlops(xxx)
   PetscLogEventEnd(SchurEvents::MOFEM_EVENT_diagBlockStrutureMult, 0, 0, 0, 0);
@@ -1217,8 +1231,10 @@ getSchurNestMatArray(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
   auto ao_schur = schur_prb->getSubData()->getSmartRowMap();
   auto ao_block = block_prb->getSubData()->getSmartRowMap();
 
-  auto schur_vec = createDMVector(schur_dm);
-  auto block_vec = createDMVector(block_dm);
+  auto schur_vec_x = createDMVector(schur_dm);
+  auto block_vec_x = createDMVector(block_dm);
+  auto schur_vec_y = vectorDuplicate(schur_vec_x);
+  auto block_vec_y = vectorDuplicate(block_vec_x);
 
   auto [schur_mat, schur_data] = A;
 
@@ -1253,14 +1269,14 @@ getSchurNestMatArray(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
     data_ptrs[r]->dataBlocksPtr = schur_data->dataBlocksPtr;
   }
 
-  data_ptrs[0]->ghostX = schur_vec;
-  data_ptrs[0]->ghostY = schur_vec;
-  data_ptrs[1]->ghostX = block_vec;
-  data_ptrs[1]->ghostY = schur_vec;
-  data_ptrs[2]->ghostX = schur_vec;
-  data_ptrs[2]->ghostY = block_vec;
-  data_ptrs[3]->ghostX = block_vec;
-  data_ptrs[3]->ghostY = block_vec;
+  data_ptrs[0]->ghostX = schur_vec_x;
+  data_ptrs[0]->ghostY = schur_vec_y;
+  data_ptrs[1]->ghostX = block_vec_x;
+  data_ptrs[1]->ghostY = schur_vec_y;
+  data_ptrs[2]->ghostX = schur_vec_x;
+  data_ptrs[2]->ghostY = block_vec_y;
+  data_ptrs[3]->ghostX = block_vec_x;
+  data_ptrs[3]->ghostY = block_vec_y;
 
   int idx = 0;
   for (auto &d : *schur_data->blockIndexPtr) {
@@ -1344,6 +1360,23 @@ getSchurNestMatArray(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
   mats_array[3] =
       create_shell_mat(block_nb_local, block_nb_local, block_nb_global,
                        block_nb_global, data_ptrs[3]);
+
+  MOFEM_TAG_AND_LOG("SYNC", Sev::verbose, "NetsetSchur")
+      << "(0, 0) " << schur_nb_local << " " << schur_nb_global << " "
+      << data_ptrs[0]->blockIndexPtr->size();
+  MOFEM_TAG_AND_LOG("SYNC", Sev::verbose, "NetsetSchur")
+      << "(0, 1) " << schur_nb_local << " " << block_nb_global << " "
+      << schur_nb_global << " " << block_nb_global << " "
+      << data_ptrs[1]->blockIndexPtr->size();
+  MOFEM_TAG_AND_LOG("SYNC", Sev::verbose, "NetsetSchur")
+      << "(1, 0) " << block_nb_global << " " << schur_nb_local << " "
+      << block_nb_global << " " << schur_nb_global << " "
+      << data_ptrs[2]->blockIndexPtr->size();
+  MOFEM_TAG_AND_LOG("SYNC", Sev::verbose, "NetsetSchur")
+      << "(1, 1) " << block_nb_local << " " << block_nb_global << " "
+      << data_ptrs[3]->blockIndexPtr->size();
+      
+  MOFEM_LOG_SEVERITY_SYNC(comm, Sev::verbose);
 
   return std::make_pair(mats_array, data_ptrs);
 }

@@ -214,7 +214,7 @@ int main(int argc, char *argv[]) {
     CHKERR MatMult(nested_mat, v, y_nested);
     CHKERR VecAXPY(y_petsc, -1.0, y_nested);
 
-    // CHKERR test("mult nested", y_petsc);
+    CHKERR test("mult nested", y_petsc);
 
     petsc_mat.reset();
     block_mat.reset();
