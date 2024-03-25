@@ -2,7 +2,6 @@
  * \brief Structures for managing boundary conditions
  */
 
-
 namespace MoFEM {
 
 // moab base meshsets
@@ -50,29 +49,35 @@ CubitMeshSets::CubitMeshSets(moab::Interface &moab, const EntityHandle meshset)
           cubitBcType = BLOCKSET;
         }
       }
-      if ((*tit == nsTag_data) || (*tit == ssTag_data)) {
-        CHKERR moab.tag_get_by_ptr(*tit, &meshset, 1, (const void **)&tagBcData,
-                                   &tagBcSize);
+    }
 
-        CHKERR getTypeFromBcData(cubitBcType);
+    for (auto tit = tag_handles.begin(); tit != tag_handles.end(); tit++) {
+      if ((cubitBcType & CubitBCType(NODESET | SIDESET)).any()) {
+        if ((*tit == nsTag_data) || (*tit == ssTag_data)) {
+          CHKERR moab.tag_get_by_ptr(*tit, &meshset, 1,
+                                     (const void **)&tagBcData, &tagBcSize);
+          CHKERR getTypeFromBcData(cubitBcType);
+        }
       }
-      if (*tit == bhTag_header) {
-        int tag_length;
-        CHKERR moab.tag_get_length(*tit, tag_length);
-        CHKERR moab.tag_get_by_ptr(*tit, &meshset, 1,
-                                   (const void **)&tagBlockHeaderData);
-        if (tagBlockHeaderData[1] > 0)
-          cubitBcType |= MATERIALSET;
-      }
-      if (*tit == thBlockAttribs) {
-        CHKERR moab.tag_get_by_ptr(*tit, &meshset, 1,
-                                   (const void **)&tagBlockAttributes,
-                                   &tagBlockAttributesSize);
-      }
-      if (*tit == entityNameTag) {
-        CHKERR moab.tag_get_by_ptr(entityNameTag, &meshset, 1,
-                                   (const void **)&tagName);
-        CHKERR getTypeFromName(cubitBcType);
+      if ((cubitBcType & CubitBCType(BLOCKSET)).any()) {
+        if (*tit == bhTag_header) {
+          int tag_length;
+          CHKERR moab.tag_get_length(*tit, tag_length);
+          CHKERR moab.tag_get_by_ptr(*tit, &meshset, 1,
+                                     (const void **)&tagBlockHeaderData);
+          if (tagBlockHeaderData[1] > 0)
+            cubitBcType |= MATERIALSET;
+        }
+        if (*tit == thBlockAttribs) {
+          CHKERR moab.tag_get_by_ptr(*tit, &meshset, 1,
+                                     (const void **)&tagBlockAttributes,
+                                     &tagBlockAttributesSize);
+        }
+        if (*tit == entityNameTag) {
+          CHKERR moab.tag_get_by_ptr(entityNameTag, &meshset, 1,
+                                     (const void **)&tagName);
+          CHKERR getTypeFromName(cubitBcType);
+        }
       }
     }
 
@@ -231,6 +236,9 @@ CubitMeshSets::getTypeFromBcData(const std::vector<char> &bc_data,
     MoFEMFunctionReturnHot(0);
   }
 
+  type &= ~(DISPLACEMENTSET | FORCESET | VELOCITYSET | ACCELERATIONSET |
+            TEMPERATURESET | PRESSURESET | HEATFLUXSET | INTERFACESET |
+            UNKNOWNNAME);
   if (strcmp(&bc_data[0], "Displacement") == 0)
     type |= DISPLACEMENTSET;
   else if (strcmp(&bc_data[0], "Force") == 0)
@@ -321,6 +329,9 @@ MoFEMErrorCode CubitMeshSets::getTypeFromName(const std::string &name,
                                               CubitBCType &type) const {
   MoFEMFunctionBegin;
   // See CubitBCType in common.hpp
+  type &= ~(MAT_ELASTICSET | MAT_THERMALSET | MAT_MOISTURESET | MAT_INTERFSET |
+            BODYFORCESSET);
+
   if (name.compare(0, 11, "MAT_ELASTIC") == 0) {
     type |= MAT_ELASTICSET;
   } else if (name.compare(0, 11, "MAT_THERMAL") == 0) {

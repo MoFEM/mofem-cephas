@@ -6,7 +6,9 @@
 
 - \ref mofem_citation
 \htmlonly
-<a href="http://joss.theoj.org/papers/43d9625e5ed28d5c493bfc0fae6d8215"><img src="http://joss.theoj.org/papers/43d9625e5ed28d5c493bfc0fae6d8215/status.svg"></a>
+<a href="http://joss.theoj.org/papers/43d9625e5ed28d5c493bfc0fae6d8215">
+<img src="https://joss.theoj.org/papers/10.21105/joss.01441/status.svg" alt="DOI">
+</a>
 \endhtmlonly
 - Google groups Q&A forum: <a href="https://groups.google.com/forum/#!forum/mofem-group">mofem-group@googlegroups.com</a>
 - Version repository: <https://bitbucket.org/likask/mofem-cephas>
@@ -19,14 +21,14 @@
 
 \subsection license_users_modules Users Modules License
 
-Users Modules are separate software entities in their own repository that can
+Users Modules are separate software entities in their repository that can
 follow their license agreements and copyrights. If the Users Module license and
 copyright are not stated explicitly, it is assumed that it follows the copyright
 of the MoFEM library.
 
-\section thrid_party Third party libraries
+\section thrid_party Third-party libraries
 
-List of third party libraries and packages used by MoFEM:
+List of third-party libraries and packages used by MoFEM:
 
 - ADOL-C <https://projects.coin-or.org/ADOL-C>
 - BOOST <http://www.boost.org>

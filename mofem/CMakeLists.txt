@@ -1,4 +1,5 @@
 cmake_minimum_required (VERSION 3.1.3)
+#cmake_policy(SET CMP0144 NEW)
 
 # Serch includes directories before system directories
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
@@ -170,6 +171,16 @@ include(cmake/FindMESHKIT.cmake)
 # Find boost
 include(cmake/FindBoost.cmake)
 
+# Python
+message(STATUS "PETSCVAR_PYTHON ${PETSCVAR_PYTHON}")
+execute_process( COMMAND ${PETSCVAR_PYTHON} -c 
+  "import sys; print(sys.exec_prefix)" 
+  OUTPUT_VARIABLE Python_ROOT_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
+execute_process( COMMAND ${Python_ROOT_DIR}/bin/python3-config --embed --includes 
+  OUTPUT_VARIABLE Python_INCLUDES_CONFIG)
+execute_process( COMMAND ${Python_ROOT_DIR}/bin/python3-config --embed --ldflags 
+  OUTPUT_VARIABLE Python_LIBRARY_CONFIG)
+
 # Other tools
 include(cmake/FindADOL-C.cmake)
 include(cmake/FindTetGen.cmake)
@@ -207,7 +218,8 @@ endif(WITHCOVERAGE)
 
 resolve_includes(PROJECT_INCLUDE_DIRECTORIES 
   "${PETSCVAR_PACKAGES_INCLUDES}
-  ${MOAB_INCLUDES0} ${MOAB_INCLUDES1} ${MOAB_CPPFLAGS}")
+  ${MOAB_INCLUDES0} ${MOAB_INCLUDES1} ${MOAB_CPPFLAGS}
+  ${Python_INCLUDES_CONFIG}")
 
 # Check CBlas
 find_path(
@@ -251,7 +263,7 @@ endif(PETSCVAR_PARMETIS_INCLUDE)
 find_file(JUPYTEXT jupytext)
 message(STATUS ${JUPYTEXT})
 
-# System project liblairoes
+# System project libraries
 resolve_libraries(SYSTEM_PROJECT_LIBS "
 # MoAB
   ${MESHKIT_LIBS_LINK}
@@ -260,6 +272,8 @@ resolve_libraries(SYSTEM_PROJECT_LIBS "
   ${SLEPC_LINK_LIBRARIES}
   -L${PETSC_DIR}/${PETSC_ARCH}/lib
   ${PETSCVAR_PETSC_WITH_EXTERNAL_LIB}
+# Python
+  ${Python_LIBRARY_CONFIG}
 # Boost
   ${Boost_LIBRARIES}
   ${Boost_FILESYSTEM_LIBRARY_RELEASE}
