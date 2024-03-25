@@ -613,9 +613,9 @@ MoFEM::ScalarFun func = [](double x, double y, double z) {
   static double analyticalFunctionHertzPressure(double x, double y, double z) {
     double E_star = young_modulus / (1 - poisson_ratio * poisson_ratio);
     // Radius
-    double R = 10.;
+    double R = 100.;
     // Indentation
-    double d = 0.1;
+    double d = 0.01;
     // Force
     double F = (4. / 3.) * E_star * std::sqrt(R) * std::pow(d, 1.5);
     // Contact area radius
@@ -625,7 +625,7 @@ MoFEM::ScalarFun func = [](double x, double y, double z) {
 
     double r = std::sqrt((x * x) + (y * y));
 
-    if (r > a || y < 0) {
+    if (r > a ) {
         return 0.;
     }
     // Pressure = p_max * sqrt(1 - (r^2 / a^2))
