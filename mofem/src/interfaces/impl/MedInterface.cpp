@@ -30,6 +30,8 @@ extern "C" {
 #define MEDnChamp MEDfieldnComponent
 #define MEDnValProfil MEDprofileSizeByName
 #define MEDfichDesEcr MEDfileCommentWr
+#define MED_ARETE MED_EDGE
+#define MED_FACETTE MED_FACE
 #else
 #error "MED file is not MED_MAJOR_NUM == 3"
 #endif
@@ -244,6 +246,41 @@ moab2med_element_type(const EntityType type) {
 
   return types;
 }
+
+// static EntityType
+// med2moab_element_type(std::vector<med_geometrie_element> med_type) {
+
+//   EntityType type;
+
+//   switch (med_type) {
+//   case MED_SEG2 || MED_SEG3:
+//     type = MBEDGE;
+//     break;
+//   case MED_TRIA3 || MED_TRIA6:
+//     type = MBTRI;
+//     break;
+//   case MED_QUAD4:
+//     type = MBQUAD;
+//     break;
+//   case MED_TETRA4 || MED_TETRA10:
+//     type = MBTET;
+//     break;
+//   case MED_HEXA8:
+//     type = MBHEX;
+//     break;
+//   case MED_PENTA6: 
+//     type = MBPRISM;
+//     break;
+//   case MED_PYRA5:
+//     type = MBPYRAMID;
+//     break;
+//   case MED_POINT1:
+//     type = MBVERTEX;
+//   default:
+//     break;
+//   }
+//   return type;
+// }
 
 MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
                                       std::map<int, Range> &family_elem_map,
@@ -677,7 +714,7 @@ MoFEMErrorCode MedInterface::writeMed(const string &file, int verb) {
   // Throw an error if the file could not be opened
   if (fid < 0) {
     SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
-            "Cannot create MED file older than V3.2.1");
+            "Cannot create MED file");
     return 0;
   }
 
@@ -690,10 +727,7 @@ MoFEMErrorCode MedInterface::writeMed(const string &file, int verb) {
   char axisUnit[3 * MED_SNAME_SIZE + 1] = ""; // axis unit
   CHKERR MEDmeshCr(fid, "MESH", 3, 3, MED_UNSTRUCTURED_MESH, "Mesh created",
                    dtUnit, MED_SORT_DTIT, MED_CARTESIAN, axisName, axisUnit);
-
-  // Get all the meshsets
-  Range meshsets;
-  CHKERR moab.get_entities_by_type(0, MBENTITYSET, meshsets, false);
+  MEDfamilyCr(fid, "MESH", "FAMILY_0", 0, NULL, "");
 
   // write coords
   Range verts;
@@ -701,7 +735,7 @@ MoFEMErrorCode MedInterface::writeMed(const string &file, int verb) {
   // Prepare arrays to hold the coordinates
   std::vector<med_float> coord_med(3 * verts.size());
   std::vector<med_int> fam;
-  // std::vector<med_int> tags;
+  std::vector<med_int> tags;
 
   // For each vertex, get its coordinates
   for (Range::iterator it = verts.begin(); it != verts.end(); ++it) {
@@ -711,104 +745,175 @@ MoFEMErrorCode MedInterface::writeMed(const string &file, int verb) {
     coord_med[3 * (it - verts.begin()) + 1] = coords[1];
     coord_med[3 * (it - verts.begin()) + 2] = coords[2];
     fam.push_back(0);
-    // tags.push_back(*it);
+    tags.push_back(*it);
   }
   // Write the coordinates to the MED file
-CHKERR MEDmeshNodeWr(fid, "MESH", MED_NO_DT, MED_NO_IT, MED_UNDEF_DT,
-                     MED_FULL_INTERLACE, verts.size(), coord_med.data(),
-                     MED_FALSE, "", MED_FALSE, NULL, MED_FALSE, NULL);
-  // MEDmeshNodeWr(fid, "MESH", MED_NO_DT, MED_NO_IT, 0., MED_FULL_INTERLACE,
-  //               (med_int)fam.size(), &coord_med[0], MED_FALSE, "", MED_TRUE,
-  //               &tags[0], MED_TRUE, &fam[0]);
+  CHKERR MEDmeshNodeWr(fid, "MESH", MED_NO_DT, MED_NO_IT, MED_UNDEF_DT,
+                       MED_FULL_INTERLACE, verts.size(), &coord_med[0],
+                       MED_FALSE, "", MED_FALSE, NULL, MED_TRUE, &fam[0]);
 
-  // Write elements
-  Range elems;
-  moab.get_entities_by_type(0, MBTET, elems);
-  std::vector<med_int> connectivity(elems.size() * 4);
-  std::vector<med_int> famNums(elems.size(), 1);
-  // For each element, get its connectivity
-  for (Range::iterator it = elems.begin(); it != elems.end(); ++it) {
-    const EntityHandle *conn;
-    int num_nodes;
-    moab.get_connectivity(*it, conn, num_nodes);
-    for (int i = 0; i < num_nodes; ++i) {
-      connectivity[4 * (it - elems.begin()) + i] = conn[i];
+  // Get all the meshsets
+  Range meshsets;
+  CHKERR moab.get_entities_by_type(0, MBENTITYSET, meshsets, false);
+  std::vector<med_int> meshset_ids;
+  std::vector<std::string> meshset_names;
+  std::map<med_int, std::string> meshset_map;
+  std::multimap<EntityType, med_int> entity_multimap;
+  std::multimap<med_int, Range> range_multimap;
+  std::map<med_int, EntityHandle> entity_handle_map;
+
+  for (_IT_CUBITMESHSETS_FOR_LOOP_(m_field, iit)) {
+    // check if meshset is cubit meshset
+    EntityHandle meshset = iit->getMeshset();
+    meshset_ids.push_back(iit->getMeshsetId());
+    meshset_names.push_back(iit->getName());
+    meshset_map[iit->getMeshsetId()] = iit->getName();
+    entity_handle_map.insert(std::make_pair(iit->getMeshsetId(), meshset));
+
+    for (EntityType ent_type = MBVERTEX; ent_type < MBMAXTYPE; ent_type++) {
+      Range range;
+      CHKERR moab.get_entities_by_type(meshset, ent_type, range);
+      if (!range.empty()) {
+        // std::cout << "name: " << iit->getName() << std::endl;
+        // std::cout << "Meshset id: " << iit->getMeshsetId() << std::endl;
+        entity_multimap.insert(std::make_pair(ent_type, iit->getMeshsetId()));
+        // std::cout << "Entity type: " << ent_type << std::endl;
+        range_multimap.insert(std::make_pair(iit->getMeshsetId(), range));
+        // std::cout << "Range size: " << range.size() << std::endl;
+      }
     }
-    famNums.push_back(0);
   }
-  CHKERR MEDmeshElementConnectivityWr(
-      fid, "MESH", MED_NO_DT, MED_NO_IT, MED_UNDEF_DT, MED_CELL, MED_TETRA4,
-      MED_NODAL, MED_FULL_INTERLACE, elems.size(), connectivity.data());
 
-  CHKERR MEDmeshEntityFamilyNumberWr(fid, "MESH", MED_NO_DT, MED_NO_IT, MED_CELL, MED_TETRA4, elems.size(), famNums.data());
+  // create families and groups family = entity type, group = meshset
+  for (EntityType ent_type = MBVERTEX; ent_type < MBMAXTYPE; ent_type++) {
+    std::string family_name = "F_" + std::to_string(ent_type + 1);
+    med_int family_id = ent_type + 1;
+    Range range;
+    std::string group_name;
+    int index = 0;
+    for (auto it = entity_handle_map.begin(); it != entity_handle_map.end();
+         ++it) {
+      EntityHandle meshset = it->second;
+      med_int meshsetId = it->first;
+      CHKERR moab.get_entities_by_type(meshset, ent_type, range);
 
-  // // Create family 0 with no groups or attributes
-  // CHKERR MEDfamilyCr(fid, "MESH", "F_0", 0, 0, "");
-  // // Create families based on cubit meshests in moab
-  // // Get all the meshsets
-  // Range meshsets;
-  // CHKERR moab.get_entities_by_type(0, MBENTITYSET, meshsets, false);
+      if (!range.empty()) {
+        group_name += meshset_map[meshsetId];
+        group_name.resize((index) * 80, ' ');
+        index += 1;
+      }
+    }
+    if (!group_name.empty()) {
+      med_int group_size = 4;
+      CHKERR MEDfamilyCr(fid, "MESH", family_name.c_str(), family_id,
+                         group_size, group_name.c_str());
+      std::cout << "Creating family " << family_name << " with id " << family_id
+                << std::endl;
+      std::cout << "Group name: " << group_name << std::endl;
+    }
+  }
 
-  // for(_IT_CUBITMESHSETS_FOR_LOOP_(m_field, iit)) {
-  //   // check if meshset is cubit meshset
-  //   EntityHandle meshset = iit->getMeshset();
-  //   int meshsetId = iit->getMeshsetId();
-  //   std::string name = iit->getName();
+  // works for 0 family
+  //  Write elements
+  // for (EntityType ent_type = MBVERTEX; ent_type < MBMAXTYPE; ent_type++)
+  // { std::cout << "Outer loop" << std::endl; std::cout << "Entity type: "
+  // << ent_type << std::endl;
+  std::map<med_int, Range> meshset_range_map;
 
-  //   for(MBType : MBENTITYSET){
-  //     CHKERR moab.get_entities_by_type(meshset, MBType, meshsets, false);
+  for (auto it = entity_multimap.begin(); it != entity_multimap.end();) {
+    std::vector<med_int> group_number;
+    std::vector<med_int> family_number;
+    std::vector<med_int> global_connectivity;
+    EntityType ent_type = it->first;
+    auto range = entity_multimap.equal_range(ent_type);
 
+    for (auto iit = range.first; iit != range.second; ++iit) {
+      Range elems;
+      med_int meshsetId = iit->second;
+      EntityHandle meshset = entity_handle_map.find(meshsetId)->second;
+      Range ent_range = range_multimap.find(meshsetId)->second;
 
-  //   }
+      if (ent_type == MBTET) {
 
+        moab.get_entities_by_type(meshset, MBTET, elems);
+        if (!elems.empty()) {
+          std::vector<med_int> connectivity(elems.size() * 4);
+          std::vector<med_int> famNums;
+          std::vector<med_int> groupNums;
+          // For each element, get its connectivity
+          for (Range::iterator it = elems.begin(); it != elems.end(); ++it) {
+            const EntityHandle *conn;
+            int num_nodes;
+            moab.get_connectivity(*it, conn, num_nodes);
+            for (int i = 0; i < num_nodes; ++i) {
+              connectivity[4 * (it - elems.begin()) + i] = conn[i];
+            }
+            famNums.push_back(ent_type + 1);
+            groupNums.push_back(meshsetId);
+          }
+          global_connectivity.insert(global_connectivity.end(),
+                                     connectivity.begin(), connectivity.end());
+          family_number.insert(family_number.end(), famNums.begin(),
+                               famNums.end());
+          group_number.insert(group_number.end(), groupNums.begin(),
+                              groupNums.end());
+        }
+      }
 
-      // Get the name of the meshset
-      //std::string familyName;
-      //CHKERR moab.tag_get_data(nameTag, &meshset, 1, &familyName);
-      //int groupNum = 0;  // assumming no groups
-      //int meshsetId = static_cast<int>(meshset);
-      // Create the family
-      //CHKERR MEDfamilyCr(fid, "MESH", name.c_str(), meshsetId, groupNum,
-      //                   "");
+      // elems.clear();
+      if (ent_type == MBTRI) {
+        moab.get_entities_by_type(meshset, MBTRI, elems);
+        if (!elems.empty()) {
+          std::vector<med_int> connectivity(elems.size() * 3);
+          std::vector<med_int> famNums;
+          std::vector<med_int> groupNums;
+          // For each element, get its connectivity
+          for (Range::iterator it = elems.begin(); it != elems.end(); ++it) {
+            const EntityHandle *conn;
+            int num_nodes;
+            moab.get_connectivity(*it, conn, num_nodes);
+            for (int i = 0; i < num_nodes; ++i) {
+              connectivity[3 * (it - elems.begin()) + i] = conn[i];
+            }
+            famNums.push_back(ent_type + 1);
+            groupNums.push_back(meshsetId);
+          }
 
+          global_connectivity.insert(global_connectivity.end(),
+                                     connectivity.begin(), connectivity.end());
+          family_number.insert(family_number.end(), famNums.begin(),
+                               famNums.end());
+          group_number.insert(group_number.end(), groupNums.begin(),
+                              groupNums.end());
+        }
+      }
+      if (ent_type == MBTET) {
+        if (meshsetId == 1) {
+          CHKERR MEDmeshElementWr(
+              fid, "MESH", MED_NO_DT, MED_NO_IT, 0., MED_CELL, MED_TETRA4,
+              MED_NODAL, MED_FULL_INTERLACE, family_number.size(),
+              &global_connectivity[0], MED_FALSE, nullptr, MED_TRUE,
+              &group_number[0], MED_TRUE, &family_number[0]);
+          std::cout << "Writing MED file with " << MED_TETRA4 << " type"
+                    << std::endl;
+        }
+      }
+      if (ent_type == MBTRI) {
+        CHKERR MEDmeshElementWr(fid, "MESH", MED_NO_DT, MED_NO_IT, 0., MED_CELL,
+                                MED_TRIA3, MED_NODAL, MED_FULL_INTERLACE,
+                                family_number.size(), &global_connectivity[0],
+                                MED_FALSE, nullptr, MED_TRUE, &group_number[0],
+                                MED_TRUE, &family_number[0]);
+        std::cout << "Writing MED file with " << MED_TRIA3 << " type"
+                  << std::endl;
+      }
+    }
+    it = range.second;
+  }
 
-
-
-      // write elements
-      // med_geometrie_element typ = MED_NONE;
-      // std::vector<med_int> conn_med;
-      // for (EntityType ent_type = MBEDGE; ent_type < MBMAXTYPE; ent_type++) {
-      //   auto types = moab2med_element_type(ent_type);
-      //   for (auto type : types) {
-      //     Range ents;
-      //     moab.get_entities_by_type(meshset, ent_type, ents);
-      //     if (ents.empty())
-      //       continue;
-      //     int num_nod_per_ele = type % 100;
-      //     conn_med.resize(ents.size() * num_nod_per_ele);
-      //     fam.resize(ents.size());
-      //     tags.resize(ents.size());
-      //     int ii = 0;
-      //     for (Range::iterator it = ents.begin(); it != ents.end(); ++it) {
-      //       EntityHandle *conn_moab;
-      //       EntityHandle entity = *it;
-      //       CHKERR moab.get_connectivity(entity, 1, conn_moab,
-      //                                    num_nod_per_ele);
-      //       for (int nn = 0; nn != num_nod_per_ele; nn++, ii++) {
-      //         conn_med[ii] = conn_moab[nn];
-      //       }
-      //       fam[ii] = 0;
-      //       tags[ii] = *it;
-      //     }
-      //     MEDmeshElementWr(fid, "MESH", MED_NO_DT, MED_NO_IT, 0., MED_FULL_INTERLACE,
-      //                      ents.size(), &conn_med[0], MED_FALSE, "", MED_TRUE,
-      //                      &tags[0], MED_TRUE, &fam[0], MED_TRUE, type);
-      //   }
-      // }
-      // write groups
-    //}
+  CHKERR MEDfermer(fid);
   MoFEMFunctionReturnHot(0);
-  }
+}
 
 MoFEMErrorCode MedInterface::readFields(const std::string &file_name,
                                         const std::string &field_name,
@@ -1081,6 +1186,6 @@ std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
-} // namespace MoFEM
+  } // namespace MoFEM
 
 #endif // WITH_MED
