@@ -1,4 +1,4 @@
-/**
+**
  * \file thermo_elastic.cpp
  * \example thermo_elastic.cpp
  *
