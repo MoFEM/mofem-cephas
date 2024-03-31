@@ -171,6 +171,14 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionReturn(0);
     };
 
+    std::vector<int> zero_rows_and_cols = {0, 1, 10, 20, 500, 1000};
+    CHKERR MatZeroRowsColumns(petsc_mat, zero_rows_and_cols.size(),
+                              &*zero_rows_and_cols.begin(), 1, PETSC_NULL,
+                              PETSC_NULL);
+    CHKERR MatZeroRowsColumns(block_mat, zero_rows_and_cols.size(),
+                              &*zero_rows_and_cols.begin(), 1, PETSC_NULL,
+                              PETSC_NULL);
+
     CHKERR MatMult(petsc_mat, v, y_petsc);
     CHKERR MatMult(block_mat, v, y_block);
     CHKERR VecAXPY(y_petsc, -1.0, y_block);
