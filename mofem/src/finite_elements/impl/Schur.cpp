@@ -792,7 +792,6 @@ struct CountBlocks : public ForcesAndSourcesCore::UserDataOperator {
               boost::shared_ptr<DiagBlockStruture> data_ptr)
       : OP(fr, fc, OP::OPROWCOL), dataPtr(data_ptr) {
     sYmm = false;
-    hintInt = dataPtr->blockIndexPtr->get<1>().end();
   }
   MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
                         EntityType col_type,
@@ -841,8 +840,6 @@ struct CountBlocks : public ForcesAndSourcesCore::UserDataOperator {
 
 private:
   boost::shared_ptr<DiagBlockStruture> dataPtr;
-
-  DiagBlockStruture::BlockIndex::nth_index<1>::type::iterator hintInt;
 };
 
 boost::shared_ptr<DiagBlockStruture> createSchurBlockMatStructure(
@@ -906,6 +903,87 @@ static PetscErrorCode solve_add(Mat mat, Vec x, Vec y) {
   return mult_schur_block_shell(mat, x, y, ADD_VALUES, true);
 }
 
+static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
+                                        const PetscInt rows[], PetscScalar diag,
+                                        Vec x, Vec b) {
+
+  MoFEMFunctionBeginHot;
+  DiagBlockStruture *ctx;
+  CHKERR MatShellGetContext(A, (void **)&ctx);
+
+  struct ShiftedBlockView : DiagBlockStruture::Indexes {
+    inline auto rowShift() const {
+      return row + nb_rows;
+    } // shift such that lower bound is included
+    inline auto colShift() const { return col + nb_cols; }
+  };
+
+  using BlockIndexView = multi_index_container<
+
+      const ShiftedBlockView *,
+
+      indexed_by<
+
+          ordered_non_unique<
+
+              const_mem_fun<ShiftedBlockView, int, &ShiftedBlockView::rowShift>
+
+              >,
+
+          ordered_non_unique<
+              const_mem_fun<ShiftedBlockView, int, &ShiftedBlockView::colShift>>
+
+          >>;
+
+  BlockIndexView view;
+  for (auto &v : ctx->blockIndexPtr->get<0>()) {
+    view.insert(static_cast<const ShiftedBlockView *>(&v));
+  }
+
+  for (auto n = 0; n != N; ++n) {
+    auto row = rows[n];
+    auto rlo = view.get<0>().lower_bound(row);
+    auto rhi = view.get<0>().upper_bound(
+        row + MAX_DOFS_ON_ENTITY); // add such that upper bound is included
+    for (; rlo != rhi; ++rlo) {
+      auto r_shift = row - (*rlo)->row;
+      if (r_shift >= 0 && r_shift < (*rlo)->nb_rows) {
+        auto *ptr = &(*ctx->dataBlocksPtr)[(*rlo)->shift];
+        for (auto i = 0; i != (*rlo)->nb_cols; ++i) {
+          ptr[i + r_shift * (*rlo)->nb_cols] = 0;
+        }
+      }
+    }
+  }
+
+  for (auto n = 0; n != N; ++n) {
+    auto col = rows[n];
+    auto clo = view.get<1>().lower_bound(col);
+    auto chi = view.get<1>().upper_bound(
+        col + MAX_DOFS_ON_ENTITY); // add such that upper bound is included
+    for (; clo != chi; ++clo) {
+      auto c_shift = col - (*clo)->col;
+      if (c_shift >= 0 && c_shift < (*clo)->nb_cols) {
+
+        auto *ptr = &(*ctx->dataBlocksPtr)[(*clo)->shift];
+        for (auto i = 0; i != (*clo)->nb_rows; ++i) {
+          ptr[c_shift + i * (*clo)->nb_cols] = 0;
+        }
+
+        // diagonal
+        if ((*clo)->row == (*clo)->col) {
+          auto r_shift = col - (*clo)->row;
+          if (r_shift >= 0 && r_shift < (*clo)->nb_rows) {
+            ptr[c_shift + r_shift * (*clo)->nb_cols] = diag;
+          }
+        }
+      }
+    }
+  }
+
+  MoFEMFunctionReturnHot(0);
+}
+
 static PetscErrorCode mat_zero(Mat m) {
   MoFEMFunctionBegin;
   DiagBlockStruture *ctx;
@@ -916,6 +994,7 @@ static PetscErrorCode mat_zero(Mat m) {
 
 static MoFEMErrorCode setSchurBlockMatOps(Mat mat_raw) {
   MoFEMFunctionBegin;
+  CHKERR MatShellSetManageScalingShifts(mat_raw);
   CHKERR MatShellSetOperation(mat_raw, MATOP_MULT, (void (*)(void))mult);
   CHKERR MatShellSetOperation(mat_raw, MATOP_MULT_ADD,
                               (void (*)(void))mult_add);
@@ -924,6 +1003,9 @@ static MoFEMErrorCode setSchurBlockMatOps(Mat mat_raw) {
                               (void (*)(void))solve_add);
   CHKERR MatShellSetOperation(mat_raw, MATOP_ZERO_ENTRIES,
                               (void (*)(void))mat_zero);
+  CHKERR MatShellSetOperation(mat_raw, MATOP_ZERO_ROWS_COLUMNS,
+                              (void (*)(void))zero_rows_columns);
+
   MoFEMFunctionReturn(0);
 };
 
@@ -1375,7 +1457,7 @@ getSchurNestMatArray(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
   MOFEM_TAG_AND_LOG("SYNC", Sev::verbose, "NetsetSchur")
       << "(1, 1) " << block_nb_local << " " << block_nb_global << " "
       << data_ptrs[3]->blockIndexPtr->size();
-      
+
   MOFEM_LOG_SEVERITY_SYNC(comm, Sev::verbose);
 
   return std::make_pair(mats_array, data_ptrs);
