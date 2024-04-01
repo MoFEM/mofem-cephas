@@ -41,19 +41,17 @@ struct SchurL2Mats : public boost::enable_shared_from_this<SchurL2Mats> {
   inline auto &getRowInd() const { return rowIndices[iDX]; }
   inline auto &getColInd() const { return colIndices[iDX]; }
 
-  using MatSetValuesPtr = boost::function<MoFEMErrorCode(
-      Mat M, const EntitiesFieldData::EntData &row_data,
-      const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
-      InsertMode iora)>;
-
-  static MatSetValuesPtr matSetValuesPtr; ///< backend assembly function
-
   static MoFEMErrorCode MatSetValues(Mat M,
                                      const EntitiesFieldData::EntData &row_data,
                                      const EntitiesFieldData::EntData &col_data,
                                      const MatrixDouble &mat, InsertMode iora);
 
-private:
+protected:
+  static MoFEMErrorCode
+  assembleStorage(const EntitiesFieldData::EntData &row_data,
+                  const EntitiesFieldData::EntData &col_data,
+                  const MatrixDouble &mat, InsertMode iora);
+
   const size_t iDX;
 
   friend OpSchurAssembleBegin;
@@ -153,26 +151,31 @@ schur_mat_set_values_wrap(Mat M, const EntitiesFieldData::EntData &row_data,
                                                    iora);
 }
 
-SchurL2Mats::MatSetValuesPtr SchurL2Mats::matSetValuesPtr =
-    schur_mat_set_values_wrap;
+SchurBackendMatSetValuesPtr::MatSetValuesPtr
+    SchurBackendMatSetValuesPtr::matSetValuesPtr = schur_mat_set_values_wrap;
 
 MoFEMErrorCode
 SchurL2Mats::MatSetValues(Mat M, const EntitiesFieldData::EntData &row_data,
                           const EntitiesFieldData::EntData &col_data,
                           const MatrixDouble &mat, InsertMode iora) {
   MoFEMFunctionBegin;
+  CHKERR SchurBackendMatSetValuesPtr::matSetValuesPtr(M, row_data, col_data, mat,
+                                                 iora);
+  CHKERR assembleStorage(row_data, col_data, mat, iora);
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+SchurL2Mats::assembleStorage(const EntitiesFieldData::EntData &row_data,
+                             const EntitiesFieldData::EntData &col_data,
+                             const MatrixDouble &mat, InsertMode iora) {
+  MoFEMFunctionBegin;
 
   PetscLogEventBegin(SchurEvents::MOFEM_EVENT_schurL2MatsMatSetValues, 0, 0, 0,
                      0);
 
-  // PetscBool is_nested = PETSC_FALSE;
-  // PetscObjectTypeCompare((PetscObject)M, MATNEST, &is_nested);
-  // if (is_nested) {
-  //   CHKERR matSetValuesNestedPtr(M, row_data, col_data, mat, iora);
-  // } else {
-  CHKERR matSetValuesPtr(M, row_data, col_data, mat, iora);
-  // }
-
+  // get row indices, in case of store, get indices from storage
+  // storage keeps marked indices to manage boundary conditions
   auto get_row_indices = [&]() -> const VectorInt & {
     if (auto e_ptr = row_data.getFieldEntities()[0]) {
       if (auto stored_data_ptr =
@@ -200,16 +203,19 @@ SchurL2Mats::MatSetValues(Mat M, const EntitiesFieldData::EntData &row_data,
   }
 #endif // NDEBUG
 
+  // get size of storage
   const auto idx = SchurL2Mats::schurL2Storage.size();
+  // get size of arrays of matrices
   const auto size = SchurL2Mats::locMats.size();
 
+  // expand memory allocation
   if (idx >= size) {
     SchurL2Mats::locMats.push_back(new MatrixDouble());
     SchurL2Mats::rowIndices.push_back(new VectorInt());
     SchurL2Mats::colIndices.push_back(new VectorInt());
   }
 
-  // insert index
+  // get entity uid
   auto get_uid = [](auto &data) {
     if (data.getFieldEntities().size() == 1) {
 
@@ -251,11 +257,13 @@ SchurL2Mats::MatSetValues(Mat M, const EntitiesFieldData::EntData &row_data,
 
   auto uid_row = get_uid(row_data);
   auto uid_col = get_uid(col_data);
-  auto p = SchurL2Mats::schurL2Storage.emplace(idx, uid_row, uid_col);
 
+  // add matrix to storage
+  auto p = SchurL2Mats::schurL2Storage.emplace(idx, uid_row, uid_col);
   auto get_storage = [&p]() { return const_cast<SchurL2Mats &>(*p.first); };
 
   if (p.second) {
+    // new entry is created
 
     auto asmb = [&](auto &sm) {
       sm.resize(nb_rows, nb_cols, false);
@@ -273,6 +281,7 @@ SchurL2Mats::MatSetValues(Mat M, const EntitiesFieldData::EntData &row_data,
     add_indices(get_storage().getColInd(), col_ind);
 
   } else {
+    // entry (submatrix) already exists
 
     auto asmb = [&](auto &sm) {
       MoFEMFunctionBeginHot;
@@ -303,6 +312,7 @@ SchurL2Mats::MatSetValues(Mat M, const EntitiesFieldData::EntData &row_data,
     };
 
     CHKERR asmb(get_storage().getMat());
+    // no need to set indices
   }
 
   PetscLogEventEnd(SchurEvents::MOFEM_EVENT_schurL2MatsMatSetValues, 0, 0, 0,
@@ -892,6 +902,7 @@ static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
   CHKERR MatGetLocalSize(A, &loc_m, &loc_n);
 
   struct ShiftedBlockView : DiagBlockStruture::Indexes {
+    ShiftedBlockView() = delete;
     inline auto rowShift() const {
       return row + nb_rows;
     } // shift such that lower bound is included
@@ -1589,6 +1600,41 @@ createSchurNestedMatrix(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
   );
 
   return std::make_pair(SmartPetscObj<Mat>(mat_raw), schur_net_data);
+}
+
+struct SchurL2MatsBlock : public SchurL2Mats {
+
+  static MoFEMErrorCode MatSetValues(Mat M,
+                                     const EntitiesFieldData::EntData
+                                     &row_data, const
+                                     EntitiesFieldData::EntData &col_data,
+                                     const MatrixDouble &mat, InsertMode
+                                     iora);
+};
+
+SchurBackendMatSetValuesPtr::MatSetValuesPtr
+    SchurBackendMatSetValuesPtr::matSetValuesBlockPtr =
+        shell_schur_mat_set_values_wrap;
+
+MoFEMErrorCode
+SchurL2MatsBlock::MatSetValues(Mat M,
+                               const EntitiesFieldData::EntData &row_data,
+                               const EntitiesFieldData::EntData &col_data,
+                               const MatrixDouble &mat, InsertMode iora) {
+  MoFEMFunctionBegin;
+  CHKERR SchurBackendMatSetValuesPtr::matSetValuesBlockPtr(M, row_data, col_data,
+                                                      mat, iora);
+  CHKERR assembleStorage(row_data, col_data, mat, iora);
+  MoFEMFunctionReturn(0);
+}
+
+template <>
+MoFEMErrorCode
+MatSetValues<SchurL2MatsBlock>(Mat M,
+                                const EntitiesFieldData::EntData &row_data,
+                                const EntitiesFieldData::EntData &col_data,
+                                const MatrixDouble &mat, InsertMode iora) {
+  return SchurL2MatsBlock::MatSetValues(M, row_data, col_data, mat, iora);
 }
 
 } // namespace MoFEM

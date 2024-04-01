@@ -125,6 +125,16 @@ struct OpSchurAssembleEnd<SCHUR_DGESV> : public OpSchurAssembleEndImpl {
                         EntitiesFieldData::EntData &data);
 };
 
+struct SchurBackendMatSetValuesPtr {
+  SchurBackendMatSetValuesPtr() = delete;
+  using MatSetValuesPtr = boost::function<MoFEMErrorCode(
+      Mat M, const EntitiesFieldData::EntData &row_data,
+      const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
+      InsertMode iora)>;
+  static MatSetValuesPtr matSetValuesPtr; ///< backend assembly function
+  static MatSetValuesPtr matSetValuesBlockPtr; ///< backend assembly function
+};
+
 struct SchurL2Mats;
 
 template <>
@@ -228,6 +238,37 @@ getSchurNestMatArray(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
 std::pair<SmartPetscObj<Mat>, SchurNestMatrixData>
 createSchurNestedMatrix(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
                         SchurNestMatrixData schur_net_dat);
+
+struct SchurL2MatsBlock;
+
+template <>
+MoFEMErrorCode
+MatSetValues<SchurL2MatsBlock>(Mat M,
+                                const EntitiesFieldData::EntData &row_data,
+                                const EntitiesFieldData::EntData &col_data,
+                                const MatrixDouble &mat, InsertMode iora);
+
+template <>
+inline MoFEMErrorCode
+VecSetValues<SchurL2MatsBlock>(Vec V, const EntitiesFieldData::EntData &data,
+                          const VectorDouble &nf, InsertMode iora) {
+  return VecSetValues<EssentialBcStorage>(V, data, nf, iora);
+}
+
+template <>
+inline MoFEMErrorCode MatSetValues<AssemblyTypeSelector<BLOCK_SCHUR>>(
+    Mat M, const EntitiesFieldData::EntData &row_data,
+    const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
+    InsertMode iora) {
+  return MatSetValues<SchurL2MatsBlock>(M, row_data, col_data, mat, iora);
+}
+
+template <>
+inline MoFEMErrorCode VecSetValues<AssemblyTypeSelector<BLOCK_SCHUR>>(
+    Vec V, const EntitiesFieldData::EntData &data, const VectorDouble &nf,
+    InsertMode iora) {
+  return VecSetValues<EssentialBcStorage>(V, data, nf, iora);
+}
 
 } // namespace MoFEM
 
