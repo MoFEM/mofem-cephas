@@ -1179,6 +1179,8 @@ shell_schur_mat_set_values_wrap(Mat M,
                                 const EntitiesFieldData::EntData &row_data,
                                 const EntitiesFieldData::EntData &col_data,
                                 const MatrixDouble &mat, InsertMode iora) {
+
+  MatrixDouble tmp_mat;
   MoFEMFunctionBegin;
 
   DiagBlockStruture *ctx;
@@ -1187,52 +1189,106 @@ shell_schur_mat_set_values_wrap(Mat M,
   PetscLogEventBegin(SchurEvents::MOFEM_EVENT_diagBlockStrutureSetValues, 0, 0,
                      0, 0);
 
+  auto get_row_indices_ptr = [&row_data]() -> const VectorInt * {
+    boost::shared_ptr<EssentialBcStorage> stored_data_ptr;
+    if (!row_data.getFieldEntities().empty()) {
+      if (auto e_ptr = row_data.getFieldEntities()[0]) {
+        if (auto stored_data_ptr =
+                e_ptr->getSharedStoragePtr<EssentialBcStorage>()) {
+          return &(stored_data_ptr->entityIndices);
+        }
+      }
+    }
+    return &row_data.getIndices();
+  };
+
+  // that is not tested (fix it)
+  auto skip_negative_indices_mat =
+      [&mat, &tmp_mat](auto &&row_indices_ptr) -> const MatrixDouble * {
+    std::vector<int> negative;
+    int i = 0;
+    for (auto &v : *row_indices_ptr) {
+      if (v == -1)
+        negative.push_back(i);
+      ++i;
+    }
+
+    if (negative.size()) {
+      tmp_mat.resize(mat.size1(), mat.size2());
+      noalias(tmp_mat) = mat;
+      for (auto v : negative) {
+        ublas::matrix_row<decltype(tmp_mat)> mr(tmp_mat, v);
+        std::fill(mr.begin(), mr.end(), 0);
+      }
+      return &tmp_mat;
+    } else {
+      return &mat;
+    }
+  };
+
+  auto get_row_first_index = [](auto *row_index_ptr, int nb_r) {
+    for (auto i = 0; i != nb_r; ++i) {
+      if (row_index_ptr[i] != -1)
+        return row_index_ptr[i] - i;
+      return -1;
+    }
+  };
+
+  auto m_ptr = skip_negative_indices_mat(get_row_indices_ptr());
+
   auto nb_rows = row_data.getIndices().size();
   auto nb_cols = col_data.getIndices().size();
 
   auto set = [&](auto r, auto c, auto nb_r, auto nb_c, auto &mat) {
     MoFEMFunctionBegin;
-    auto size = nb_r * nb_c;
-    auto it = ctx->blockIndexPtr->get<1>().find(boost::make_tuple(
-        row_data.getIndices()[r], col_data.getIndices()[c], nb_r, nb_c));
+
+    auto row_first_index =
+        get_row_first_index(&(*get_row_indices_ptr())[r], nb_r);
+    if (row_first_index != -1) {
+
+      auto size = nb_r * nb_c;
+      auto it = ctx->blockIndexPtr->get<1>().find(boost::make_tuple(
+          row_first_index, col_data.getIndices()[c], nb_r, nb_c));
 
 #ifndef NDEBUG
 
-    if (it == ctx->blockIndexPtr->get<1>().end()) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Block not allocated");
-    }
-    if (it->nb_rows != nb_r) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong size %d != %d",
-               it->nb_rows, nb_r);
-    }
-    if (it->nb_cols != nb_c) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong size %d != %d",
-               it->nb_cols, nb_c);
-    }
-    if (nb_r != mat.size1()) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong size %d != %d",
-               nb_r, mat.size1());
-    }
-    if (nb_c != mat.size2()) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong size %d != %d",
-               nb_c, mat.size2());
-    }
-    if (nb_r * nb_c != mat.data().size()) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong size %d != %d",
-               nb_r * nb_c, mat.data().size());
-    }
+      if (it == ctx->blockIndexPtr->get<1>().end()) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Block not allocated");
+      }
+      if (it->nb_rows != nb_r) {
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "Wrong size %d != %d", it->nb_rows, nb_r);
+      }
+      if (it->nb_cols != nb_c) {
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "Wrong size %d != %d", it->nb_cols, nb_c);
+      }
+      if (nb_r != mat.size1()) {
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "Wrong size %d != %d", nb_r, mat.size1());
+      }
+      if (nb_c != mat.size2()) {
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "Wrong size %d != %d", nb_c, mat.size2());
+      }
+      if (nb_r * nb_c != mat.data().size()) {
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "Wrong size %d != %d", nb_r * nb_c, mat.data().size());
+      }
 
 #endif // NDEBUG
 
-    auto shift = it->shift;
-    if (shift != -1) {
+      auto shift = it->shift;
+      if (shift != -1) {
 
-      if (iora == ADD_VALUES) {
-        cblas_daxpy(size, 1., &*mat.data().begin(), 1,
-                    &(*ctx->dataBlocksPtr)[shift], 1);
-      } else {
-        std::copy(mat.data().begin(), mat.data().end(),
-                  &(*ctx->dataBlocksPtr)[shift]);
+        if (iora == ADD_VALUES) {
+          cblas_daxpy(size, 1., &*mat.data().begin(), 1,
+                      &(*ctx->dataBlocksPtr)[shift], 1);
+        } else {
+          std::copy(mat.data().begin(), mat.data().end(),
+                    &(*ctx->dataBlocksPtr)[shift]);
+        }
       }
     }
     MoFEMFunctionReturn(0);
@@ -1251,7 +1307,7 @@ shell_schur_mat_set_values_wrap(Mat M,
 
           for (auto k = 0; k != row_nb_coeff; ++k) {
             for (auto l = 0; l != col_nb_coeff; ++l) {
-              m(k, l) = mat(i * row_nb_coeff + k, j * col_nb_coeff + l);
+              m(k, l) = (*m_ptr)(i * row_nb_coeff + k, j * col_nb_coeff + l);
             }
           }
 
@@ -1267,7 +1323,7 @@ shell_schur_mat_set_values_wrap(Mat M,
 
         for (auto k = 0; k != row_nb_coeff; ++k) {
           for (auto l = 0; l != nb_cols; ++l) {
-            m(k, l) = mat(i * row_nb_coeff + k, l);
+            m(k, l) = (*m_ptr)(i * row_nb_coeff + k, l);
           }
         }
 
@@ -1280,7 +1336,7 @@ shell_schur_mat_set_values_wrap(Mat M,
       for (auto j = 0; j != nb_cols / col_nb_coeff; ++j) {
         for (auto k = 0; k != nb_rows; ++k) {
           for (auto l = 0; l != col_nb_coeff; ++l) {
-            m(k, l) = mat(k, j * col_nb_coeff + l);
+            m(k, l) = (*m_ptr)(k, j * col_nb_coeff + l);
           }
         }
         CHKERR set(0, j * col_nb_coeff, nb_rows, col_nb_coeff, m);
@@ -1288,7 +1344,7 @@ shell_schur_mat_set_values_wrap(Mat M,
 
     } else {
 
-      CHKERR set(0, 0, nb_rows, nb_cols, mat);
+      CHKERR set(0, 0, nb_rows, nb_cols, (*m_ptr));
     }
   }
 
