@@ -105,6 +105,7 @@ enum AssemblyType {
   PETSC,
   SCHUR,
   BLOCK_MAT,
+  BLOCK_SCHUR,
   USER_ASSEMBLE,
   LAST_ASSEMBLE
 };
