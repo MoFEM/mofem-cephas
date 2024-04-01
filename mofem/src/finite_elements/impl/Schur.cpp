@@ -828,9 +828,6 @@ boost::shared_ptr<DiagBlockStruture> createSchurBlockMatStructure(
   auto data_ptr = boost::make_shared<DiagBlockStruture>();
   data_ptr->blockIndexPtr = boost::make_shared<DiagBlockStruture::BlockIndex>();
 
-  auto count_ptr = boost::make_shared<int>(0);
-  auto mem_ptr = boost::make_shared<int>(0);
-
   for (auto &d : schur_fe_op_vec) {
 
     auto fe_name = d.first.first;
@@ -1070,43 +1067,43 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
   auto hi = ctx->blockIndexPtr->get<0>().end();
 
   for (; it != hi;) {
-    if (it->row != -1) {
 
-      auto shift = it->shift;
+    auto shift = it->shift;
 
-      auto loc_col = it->loc_col;
-      auto nb_cols = it->nb_cols;
-      auto x_ptr = &x_array[loc_col];
+    auto loc_col = it->loc_col;
+    auto nb_cols = it->nb_cols;
+    auto x_ptr = &x_array[loc_col];
 
-      loc_rows.resize(0);
-      loc_nb_rows.resize(0);
-      loc_nb_rows.push_back(0);
-      while (it != hi && (it->loc_col == loc_col && it->nb_cols == nb_cols &&
-                          it->row != -1)) {
-        loc_rows.push_back(it->loc_row);
-        loc_nb_rows.push_back(loc_nb_rows.back() + it->nb_rows);
-        ++it;
-      }
-      loc_y.resize(loc_nb_rows.back());
+    int it_shift = shift;
+    loc_rows.resize(0);
+    loc_nb_rows.resize(0);
+    loc_nb_rows.push_back(0);
+    while (it != hi && (it->loc_col == loc_col && it->nb_cols == nb_cols &&
+                        it->shift == it_shift)) {
+      loc_rows.push_back(it->loc_row);
+      loc_nb_rows.push_back(loc_nb_rows.back() + it->nb_rows);
+      it_shift += it->nb_cols * it->nb_rows;
+      ++it;
+    }
+    loc_y.resize(loc_nb_rows.back());
 
-      cblas_dgemv(
+    cblas_dgemv(
 
-          CblasRowMajor, CblasNoTrans,
+        CblasRowMajor, CblasNoTrans,
 
-          loc_nb_rows.back(), nb_cols,
+        loc_nb_rows.back(), nb_cols,
 
-          1., &(block_ptr[shift]), nb_cols,
+        1., &(block_ptr[shift]), nb_cols,
 
-          x_ptr, 1,
+        x_ptr, 1,
 
-          0., &*loc_y.begin(), 1
+        0., &*loc_y.begin(), 1
 
-      );
+    );
 
-      for (auto r = 0; r != loc_rows.size(); ++r) {
-        cblas_daxpy(loc_nb_rows[r + 1] - loc_nb_rows[r], 1.,
-                    &loc_y[loc_nb_rows[r]], 1, &y_array[loc_rows[r]], 1);
-      }
+    for (auto r = 0; r != loc_rows.size(); ++r) {
+      cblas_daxpy(loc_nb_rows[r + 1] - loc_nb_rows[r], 1.,
+                  &loc_y[loc_nb_rows[r]], 1, &y_array[loc_rows[r]], 1);
     }
   }
 
@@ -1135,12 +1132,27 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
     MoFEMFunctionBegin;
     PetscReal norm;
     CHKERR VecNorm(y, NORM_2, &norm);
-    MOFEM_LOG("WORLD", Sev::noisy) << msg << " norm " << norm;
+    int nb_loc_y;
+    CHKERR VecGetLocalSize(y, &nb_loc_y);
+    int nb_y;
+    CHKERR VecGetSize(y, &nb_y);
+    MOFEM_LOG("WORLD", Sev::noisy)
+        << msg << " " << nb_y << " " << nb_loc_y << " norm " << norm;
     MoFEMFunctionReturn(0);
   };
 
-  print_norm("mult_schur_block_shell x", x);
-  print_norm("mult_schur_block_shell y", y);
+  switch (iora) {
+  case INSERT_VALUES:
+    print_norm("mult_schur_block_shell insert x", x);
+    print_norm("mult_schur_block_shell insert y", y);
+    break;
+  case ADD_VALUES:
+    print_norm("mult_schur_block_shell add x", x);
+    print_norm("mult_schur_block_shell add y", y);
+    break;
+  default:
+    CHK_MOAB_THROW(MOFEM_NOT_IMPLEMENTED, "Wrong InsertMode");
+  }
 
 #endif // NDEBUG
 
@@ -1350,10 +1362,15 @@ getSchurNestMatArray(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
   auto schur_prb = getProblemPtr(schur_dm);
   auto block_prb = getProblemPtr(block_dm);
 
-  auto schur_dofs = schur_prb->getNumeredRowDofsPtr();
-  auto block_dofs = block_prb->getNumeredRowDofsPtr();
-  auto ao_schur = schur_prb->getSubData()->getSmartRowMap();
-  auto ao_block = block_prb->getSubData()->getSmartRowMap();
+  auto schur_dofs_row = schur_prb->getNumeredRowDofsPtr();
+  auto schur_dofs_col = schur_prb->getNumeredColDofsPtr();
+  auto block_dofs_row = block_prb->getNumeredRowDofsPtr();
+  auto block_dofs_col = block_prb->getNumeredColDofsPtr();
+
+  auto ao_schur_row = schur_prb->getSubData()->getSmartRowMap();
+  auto ao_schur_col = schur_prb->getSubData()->getSmartColMap();
+  auto ao_block_row = block_prb->getSubData()->getSmartRowMap();
+  auto ao_block_col = block_prb->getSubData()->getSmartColMap();
 
   auto schur_vec_x = createDMVector(schur_dm);
   auto block_vec_x = createDMVector(block_dm);
@@ -1374,14 +1391,14 @@ getSchurNestMatArray(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
   };
 
   auto [vec_r_schur, vec_c_schur] = get_vec();
-  CHKERR AOApplicationToPetsc(ao_schur, vec_r_schur.size(),
+  CHKERR AOApplicationToPetsc(ao_schur_row, vec_r_schur.size(),
                               &*vec_r_schur.begin());
-  CHKERR AOApplicationToPetsc(ao_schur, vec_c_schur.size(),
+  CHKERR AOApplicationToPetsc(ao_schur_col, vec_c_schur.size(),
                               &*vec_c_schur.begin());
   auto [vec_r_block, vec_c_block] = get_vec();
-  CHKERR AOApplicationToPetsc(ao_block, vec_r_block.size(),
+  CHKERR AOApplicationToPetsc(ao_block_row, vec_r_block.size(),
                               &*vec_r_block.begin());
-  CHKERR AOApplicationToPetsc(ao_block, vec_c_block.size(),
+  CHKERR AOApplicationToPetsc(ao_block_col, vec_c_block.size(),
                               &*vec_c_block.begin());
 
   std::array<boost::shared_ptr<DiagBlockStruture>, 4> data_ptrs;
@@ -1421,33 +1438,63 @@ getSchurNestMatArray(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
 
     if (vec_r_schur[idx] != -1 && vec_c_schur[idx] != -1) {
       auto schur_dof_r =
-          schur_dofs->get<PetscGlobalIdx_mi_tag>().find(vec_r_schur[idx]);
+          schur_dofs_row->get<PetscGlobalIdx_mi_tag>().find(vec_r_schur[idx]);
       auto schur_dof_c =
-          schur_dofs->get<PetscGlobalIdx_mi_tag>().find(vec_c_schur[idx]);
+          schur_dofs_col->get<PetscGlobalIdx_mi_tag>().find(vec_c_schur[idx]);
+#ifndef NDEBUG
+      if (schur_dof_r == schur_dofs_row->get<PetscGlobalIdx_mi_tag>().end()) {
+        CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY,
+                          "Block <Schur> not not fund");
+      }
+      if (schur_dof_c == schur_dofs_col->get<PetscGlobalIdx_mi_tag>().end()) {
+        CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY,
+                          "Block <Schur> not not fund");
+      }
+#endif // NDEBUG
       insert(data_ptrs[0]->blockIndexPtr, *schur_dof_r, *schur_dof_c, d);
     }
 
     if (vec_r_schur[idx] != -1 && vec_c_block[idx] != -1) {
       auto schur_dof_r =
-          schur_dofs->get<PetscGlobalIdx_mi_tag>().find(vec_r_schur[idx]);
+          schur_dofs_row->get<PetscGlobalIdx_mi_tag>().find(vec_r_schur[idx]);
       auto block_dof_c =
-          block_dofs->get<PetscGlobalIdx_mi_tag>().find(vec_c_block[idx]);
+          block_dofs_col->get<PetscGlobalIdx_mi_tag>().find(vec_c_block[idx]);
+#ifndef NDEBUG
+      if (schur_dof_r == schur_dofs_row->get<PetscGlobalIdx_mi_tag>().end()) {
+        CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY,
+                          "Block <Schur> not not fund");
+      }
+      if (block_dof_c == block_dofs_col->get<PetscGlobalIdx_mi_tag>().end()) {
+        CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY,
+                          "Block <Block> not not fund");
+      }
+#endif
       insert(data_ptrs[1]->blockIndexPtr, *schur_dof_r, *block_dof_c, d);
     }
 
     if (vec_r_block[idx] != -1 && vec_c_schur[idx] != -1) {
       auto block_dof_r =
-          block_dofs->get<PetscGlobalIdx_mi_tag>().find(vec_r_block[idx]);
+          block_dofs_row->get<PetscGlobalIdx_mi_tag>().find(vec_r_block[idx]);
       auto schur_dof_c =
-          schur_dofs->get<PetscGlobalIdx_mi_tag>().find(vec_c_schur[idx]);
+          schur_dofs_col->get<PetscGlobalIdx_mi_tag>().find(vec_c_schur[idx]);
+#ifndef NDEBUG
+      if (block_dof_r == block_dofs_row->get<PetscGlobalIdx_mi_tag>().end()) {
+        CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY,
+                          "Block <Block> not not fund");
+      }
+      if (schur_dof_c == schur_dofs_col->get<PetscGlobalIdx_mi_tag>().end()) {
+        CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY,
+                          "Block <Schur> not not fund");
+      }
+#endif // NDEBUG
       insert(data_ptrs[2]->blockIndexPtr, *block_dof_r, *schur_dof_c, d);
     }
 
     if (vec_r_block[idx] != -1 && vec_c_block[idx] != -1) {
       auto block_dof_r =
-          block_dofs->get<PetscGlobalIdx_mi_tag>().find(vec_r_block[idx]);
+          block_dofs_row->get<PetscGlobalIdx_mi_tag>().find(vec_r_block[idx]);
       auto block_dof_c =
-          block_dofs->get<PetscGlobalIdx_mi_tag>().find(vec_c_block[idx]);
+          block_dofs_col->get<PetscGlobalIdx_mi_tag>().find(vec_c_block[idx]);
       insert(data_ptrs[3]->blockIndexPtr, *block_dof_r, *block_dof_c, d);
     }
 
@@ -1489,11 +1536,11 @@ getSchurNestMatArray(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
       << "(0, 0) " << schur_nb_local << " " << schur_nb_global << " "
       << data_ptrs[0]->blockIndexPtr->size();
   MOFEM_TAG_AND_LOG("SYNC", Sev::verbose, "NetsetSchur")
-      << "(0, 1) " << schur_nb_local << " " << block_nb_global << " "
+      << "(0, 1) " << schur_nb_local << " " << block_nb_local << " "
       << schur_nb_global << " " << block_nb_global << " "
       << data_ptrs[1]->blockIndexPtr->size();
   MOFEM_TAG_AND_LOG("SYNC", Sev::verbose, "NetsetSchur")
-      << "(1, 0) " << block_nb_global << " " << schur_nb_local << " "
+      << "(1, 0) " << block_nb_local << " " << schur_nb_local << " "
       << block_nb_global << " " << schur_nb_global << " "
       << data_ptrs[2]->blockIndexPtr->size();
   MOFEM_TAG_AND_LOG("SYNC", Sev::verbose, "NetsetSchur")
