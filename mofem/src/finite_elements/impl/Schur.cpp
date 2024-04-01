@@ -717,30 +717,6 @@ OpSchurAssembleEnd<SCHUR_DGESV>::doWork(int side, EntityType type,
   return doWorkImpl<SCHUR_DGESV>(side, type, data);
 }
 
-std::tuple<SmartPetscObj<IS>, SmartPetscObj<IS>>
-createSchurISDiff(DM dm, IS is_schur) {
-
-  auto get_is_diff = [](DM dm, IS is_schur) {
-    MoFEM::Interface *m_field_ptr;
-    const MoFEM::Problem *problem_ptr;
-    CHK_THROW_MESSAGE(DMoFEMGetInterfacePtr(dm, &m_field_ptr),
-                      "get m_field_ptr failed");
-    CHK_THROW_MESSAGE(DMMoFEMGetProblemPtr(dm, &problem_ptr),
-                      "get problem_ptr failed");
-    auto is_mng = m_field_ptr->getInterface<ISManager>();
-    SmartPetscObj<IS> is_dm;
-    CHK_THROW_MESSAGE(
-        is_mng->isCreateProblem(problem_ptr->getName(), ROW, is_dm),
-        "isCreateProblem failed");
-    return isDifference(is_dm, is_schur);
-  };
-
-  auto is_diff = get_is_diff(dm, is_schur);
-
-  return std::make_pair(SmartPetscObj<IS>(is_schur),
-                        SmartPetscObj<IS>(is_diff));
-}
-
 struct DiagBlockStruture {
 
   DiagBlockStruture() = default;
