@@ -911,13 +911,19 @@ static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
   DiagBlockStruture *ctx;
   CHKERR MatShellGetContext(A, (void **)&ctx);
 
+  int loc_m, loc_n;
+  CHKERR MatGetLocalSize(A, &loc_m, &loc_n);
+
   struct ShiftedBlockView : DiagBlockStruture::Indexes {
     inline auto rowShift() const {
       return row + nb_rows;
     } // shift such that lower bound is included
-    inline auto colShift() const { return col + nb_cols; }
+    inline auto colShift() const {
+      return col + nb_cols;
+    } // shift such that lower bound is included
   };
 
+  // this enable esrch by varying ranges
   using BlockIndexView = multi_index_container<
 
       const ShiftedBlockView *,
@@ -971,7 +977,7 @@ static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
         }
 
         // diagonal
-        if ((*clo)->row == (*clo)->col) {
+        if ((*clo)->row == (*clo)->col && (*clo)->loc_row < loc_m) {
           auto r_shift = col - (*clo)->row;
           if (r_shift >= 0 && r_shift < (*clo)->nb_rows) {
             ptr[c_shift + r_shift * (*clo)->nb_cols] = diag;
