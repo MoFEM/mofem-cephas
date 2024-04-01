@@ -20,6 +20,7 @@ struct SchurEvents {
   static PetscLogEvent MOFEM_EVENT_opSchurAssembleEnd;
   static PetscLogEvent MOFEM_EVENT_diagBlockStrutureSetValues;
   static PetscLogEvent MOFEM_EVENT_diagBlockStrutureMult;
+  static PetscLogEvent MOFEM_EVENT_zeroRowsAndCols;
   SchurEvents();
 };
 
