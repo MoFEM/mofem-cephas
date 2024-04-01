@@ -13,6 +13,7 @@ PetscLogEvent SchurEvents::MOFEM_EVENT_schurL2MatsMatSetValues;
 PetscLogEvent SchurEvents::MOFEM_EVENT_opSchurAssembleEnd;
 PetscLogEvent SchurEvents::MOFEM_EVENT_diagBlockStrutureSetValues;
 PetscLogEvent SchurEvents::MOFEM_EVENT_diagBlockStrutureMult;
+PetscLogEvent SchurEvents::MOFEM_EVENT_zeroRowsAndCols;
 
 SchurEvents::SchurEvents() {
   PetscLogEventRegister("schurMatSetVal", 0,
@@ -21,6 +22,7 @@ SchurEvents::SchurEvents() {
   PetscLogEventRegister("diagBlockSetVal", 0,
                         &MOFEM_EVENT_diagBlockStrutureSetValues);
   PetscLogEventRegister("diagBlockMult", 0, &MOFEM_EVENT_diagBlockStrutureMult);
+  PetscLogEventRegister("schurZeroRandC", 0, &MOFEM_EVENT_zeroRowsAndCols);
 }
 
 /**
@@ -884,6 +886,8 @@ static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
   DiagBlockStruture *ctx;
   CHKERR MatShellGetContext(A, (void **)&ctx);
 
+  PetscLogEventBegin(SchurEvents::MOFEM_EVENT_zeroRowsAndCols, 0, 0, 0, 0);
+
   int loc_m, loc_n;
   CHKERR MatGetLocalSize(A, &loc_m, &loc_n);
 
@@ -959,6 +963,8 @@ static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
       }
     }
   }
+
+  PetscLogEventEnd(SchurEvents::MOFEM_EVENT_zeroRowsAndCols, 0, 0, 0, 0);
 
   MoFEMFunctionReturnHot(0);
 }

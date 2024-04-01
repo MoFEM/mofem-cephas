@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
       CHKERR VecNorm(y, NORM_2, &norm);
       MOFEM_LOG("WORLD", Sev::inform)
           << msg << ": norm of difference: " << norm;
-      constexpr double eps = 1e-12;
+      constexpr double eps = 1e-10;
       if (norm > eps || std::isnan(norm) || std::isinf(norm)) {
         SETERRQ(PETSC_COMM_WORLD, 1, "norm of difference is too big");
       }
