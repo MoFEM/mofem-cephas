@@ -119,7 +119,15 @@ int main(int argc, char *argv[]) {
 
         {{{simple->getDomainFEName(), boost::make_shared<DomainEle>(m_field)},
 
-          {{"VECTOR", "VECTOR"}, {"TENSOR", "TENSOR"}}}}
+          {{"VECTOR", "VECTOR"},
+           {"TENSOR", "TENSOR"}
+
+           ,
+
+           {"VECTOR", "TENSOR"},
+           {"TENSOR", "VECTOR"}
+
+          }}}
 
     );
     auto shell_data = createSchurBlockMat(simple->getDM(), data_struture);
@@ -140,6 +148,11 @@ int main(int argc, char *argv[]) {
     pip_lhs.push_back(new OpMassBlockAssemble("VECTOR", "VECTOR"));
     pip_lhs.push_back(new OpMassPETSCAssemble("TENSOR", "TENSOR"));
     pip_lhs.push_back(new OpMassBlockAssemble("TENSOR", "TENSOR"));
+    pip_lhs.push_back(new OpMassPETSCAssemble("VECTOR", "TENSOR"));
+    pip_lhs.push_back(new OpMassBlockAssemble("VECTOR", "TENSOR"));
+    pip_lhs.push_back(new OpMassPETSCAssemble("TENSOR", "VECTOR"));
+    pip_lhs.push_back(new OpMassBlockAssemble("TENSOR", "VECTOR"));
+
     CHKERR DMoFEMLoopFiniteElements(simple->getDM(), simple->getDomainFEName(),
                                     pip_mng->getDomainLhsFE());
     CHKERR MatAssemblyBegin(petsc_mat, MAT_FINAL_ASSEMBLY);
