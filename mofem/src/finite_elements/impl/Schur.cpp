@@ -1202,9 +1202,7 @@ shell_schur_mat_set_values_wrap(Mat M,
     return &row_data.getIndices();
   };
 
-  // that is not tested (fix it)
-  auto skip_negative_indices_mat =
-      [&mat, &tmp_mat](auto &&row_indices_ptr) -> const MatrixDouble * {
+  auto get_negative_indices = [](auto &&row_indices_ptr) {
     std::vector<int> negative;
     int i = 0;
     for (auto &v : *row_indices_ptr) {
@@ -1212,7 +1210,12 @@ shell_schur_mat_set_values_wrap(Mat M,
         negative.push_back(i);
       ++i;
     }
+    return negative;
+  };
 
+  // that is not tested (fix it)
+  auto skip_negative_indices_mat =
+      [&mat, &tmp_mat](auto &&negative) -> const MatrixDouble * {
     if (negative.size()) {
       tmp_mat.resize(mat.size1(), mat.size2());
       noalias(tmp_mat) = mat;
@@ -1234,7 +1237,8 @@ shell_schur_mat_set_values_wrap(Mat M,
     }
   };
 
-  auto m_ptr = skip_negative_indices_mat(get_row_indices_ptr());
+  auto m_ptr =
+      skip_negative_indices_mat(get_negative_indices(get_row_indices_ptr()));
 
   auto nb_rows = row_data.getIndices().size();
   auto nb_cols = col_data.getIndices().size();
