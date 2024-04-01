@@ -152,15 +152,6 @@ inline MoFEMErrorCode VecSetValues<AssemblyTypeSelector<SCHUR>>(
   return VecSetValues<SchurL2Mats>(V, data, nf, iora);
 }
 
-/**
- * @brief Create Schur complement
- * 
- * @param dm 
- * @param schur_is 
- * @return std::tuple<SmartPetscObj<IS>, SmartPetscObj<Mat>> 
- */
-std::tuple<SmartPetscObj<IS>, SmartPetscObj<IS>> createSchurISDiff(DM dm,
-                                                                   IS schur_is);
 struct DiagBlockStruture;
 
 using SchurFEPair =
