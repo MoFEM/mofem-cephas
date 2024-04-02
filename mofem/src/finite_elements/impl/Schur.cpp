@@ -499,7 +499,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
       // only diagonals to get inverted diaconal
       if (row_it->uidRow == row_it->uidCol) {
 
-        CHKERR I::invertMat(row_it->getMat(), invMat, eps);
+        CHKERR I::invertMat(row_it, invMat, eps);
 
         // iterate column entities
         for (auto c_lo : schur_col_ptr_view) {
@@ -663,8 +663,12 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 }
 
 struct SCHUR_DSYSV {
-  static auto invertMat(MatrixDouble &m, MatrixDouble &inv, double eps) {
+  static auto invertMat(const SchurL2Mats *row_ptr, MatrixDouble &inv,
+                        double eps) {
     MoFEMFunctionBeginHot;
+
+    auto &m = row_ptr->getMat();
+
     VectorInt ipiv;
     VectorDouble lapack_work;
     const int nb = m.size1();
@@ -693,8 +697,12 @@ struct SCHUR_DSYSV {
 };
 
 struct SCHUR_DGESV {
-  static auto invertMat(MatrixDouble &m, MatrixDouble &inv, double eps) {
+  static auto invertMat(const SchurL2Mats *row_ptr, MatrixDouble &inv,
+                        double eps) {
     MoFEMFunctionBeginHot;
+
+    auto &m = row_ptr->getMat();
+
     VectorInt ipiv;
     const auto nb = m.size1();
 #ifndef NDEBUG
