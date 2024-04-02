@@ -370,6 +370,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
   MOFEM_LOG("SELF", Sev::noisy) << "Schur assemble begin -> end";
 #endif
 
+  // Assemble Schur complement
   auto assemble = [&](SmartPetscObj<Mat> M, MatSetValuesRaw mat_set_values,
                       auto &storage) {
     MoFEMFunctionBegin;
@@ -380,9 +381,10 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
           auto &row_ind = s.getRowInd();
           auto &col_ind = s.getColInd();
 
-          if (mat_set_values(M, row_ind.size(), &*row_ind.begin(),
-                             col_ind.size(), &*col_ind.begin(),
-                             &*m.data().begin(), ADD_VALUES)) {
+          if (auto ierr = mat_set_values(M, row_ind.size(), &*row_ind.begin(),
+                                         col_ind.size(), &*col_ind.begin(),
+                                         &*m.data().begin(), ADD_VALUES)) {
+#ifndef NDEBUG
             auto field_ents = getPtrFE()->mField.get_field_ents();
             auto row_ent_it = field_ents->find(s.uidRow);
             auto col_ent_it = field_ents->find(s.uidCol);
@@ -397,6 +399,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
                   << "Assemble col entity: " << (*col_ent_it)->getName() << " "
                   << (*col_ent_it)->getEntTypeName() << " side "
                   << (*col_ent_it)->getSideNumber();
+#endif // NDEBUG
             CHK_THROW_MESSAGE(ierr, "MatSetValues");
           }
         }
