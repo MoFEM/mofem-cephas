@@ -412,6 +412,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
                          auto lo_uid, auto hi_uid, double eps) {
     MoFEMFunctionBegin;
 
+    // add off diagonal matrix, i.e. schur complement
     auto add_off_mat = [&](auto row_uid, auto col_uid, auto &row_ind,
                            auto &col_ind, auto &offMatInvDiagOffMat) {
       MoFEMFunctionBegin;
@@ -490,11 +491,14 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
     auto schur_row_ptr_view = get_row_view();
     auto schur_col_ptr_view = get_col_view();
 
+    // iterate row entities
     for (auto row_it : schur_row_ptr_view) {
+      // only diagonals to get inverted diaconal
       if (row_it->uidRow == row_it->uidCol) {
 
         CHKERR I::invertMat(row_it->getMat(), invMat, eps);
 
+        // iterate column entities
         for (auto c_lo : schur_col_ptr_view) {
 
           auto &row_uid = c_lo->uidRow;
@@ -517,6 +521,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
                       &*invMat.data().begin(), invMat.size2(), 0.,
                       &*invDiagOffMat.data().begin(), invDiagOffMat.size2());
 
+          // iterate row entities
           for (auto r_lo : schur_row_ptr_view) {
             auto &col_uid = r_lo->uidCol;
 
@@ -747,7 +752,8 @@ struct DiagBlockStruture {
     int nb_cols;
     int loc_row;
     int loc_col;
-    mutable int shift;
+    mutable int mat_shift;
+    mutable int inv_shift;
   };
 
   using BlockIndex = multi_index_container<
@@ -855,13 +861,25 @@ boost::shared_ptr<DiagBlockStruture> createSchurBlockMatStructure(
 
   auto mem_size = 0;
   for (auto &v : data_ptr->blockIndexPtr->get<0>()) {
-    v.shift = mem_size;
+    v.mat_shift = mem_size;
     mem_size += v.nb_cols * v.nb_rows;
+
   }
+
+  auto inv_size = 0;
+  for (auto &v : data_ptr->blockIndexPtr->get<0>()) {
+    if(v.row == v.col && v.nb_cols == v.nb_rows) {
+      v.inv_shift = inv_size;
+      inv_size += v.nb_cols * v.nb_rows;
+    } else {
+      v.inv_shift = -1;
+    }
+  }
+
   data_ptr->dataBlocksPtr =
       boost::make_shared<std::vector<double>>(mem_size, 0);
   data_ptr->dataInvBlocksPtr =
-      boost::make_shared<std::vector<double>>(mem_size, 0);
+      boost::make_shared<std::vector<double>>(inv_size, 0);
 
   auto ghost_x = createDMVector(dm);
   auto ghost_y = createDMVector(dm);
@@ -942,7 +960,7 @@ static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
     for (; rlo != rhi; ++rlo) {
       auto r_shift = row - (*rlo)->row;
       if (r_shift >= 0 && r_shift < (*rlo)->nb_rows) {
-        auto *ptr = &(*ctx->dataBlocksPtr)[(*rlo)->shift];
+        auto *ptr = &(*ctx->dataBlocksPtr)[(*rlo)->mat_shift];
         for (auto i = 0; i != (*rlo)->nb_cols; ++i) {
           ptr[i + r_shift * (*rlo)->nb_cols] = 0;
         }
@@ -959,7 +977,7 @@ static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
       auto c_shift = col - (*clo)->col;
       if (c_shift >= 0 && c_shift < (*clo)->nb_cols) {
 
-        auto *ptr = &(*ctx->dataBlocksPtr)[(*clo)->shift];
+        auto *ptr = &(*ctx->dataBlocksPtr)[(*clo)->mat_shift];
         for (auto i = 0; i != (*clo)->nb_rows; ++i) {
           ptr[c_shift + i * (*clo)->nb_cols] = 0;
         }
@@ -1085,7 +1103,7 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
 
   for (; it != hi;) {
 
-    auto shift = it->shift;
+    auto shift = it->mat_shift;
 
     auto loc_col = it->loc_col;
     auto nb_cols = it->nb_cols;
@@ -1096,7 +1114,7 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
     loc_nb_rows.resize(0);
     loc_nb_rows.push_back(0);
     while (it != hi && (it->loc_col == loc_col && it->nb_cols == nb_cols &&
-                        it->shift == it_shift)) {
+                        it->mat_shift == it_shift)) {
       loc_rows.push_back(it->loc_row);
       loc_nb_rows.push_back(loc_nb_rows.back() + it->nb_rows);
       it_shift += it->nb_cols * it->nb_rows;
@@ -1288,7 +1306,7 @@ shell_schur_mat_set_values_wrap(Mat M,
 
 #endif // NDEBUG
 
-      auto shift = it->shift;
+      auto shift = it->mat_shift;
       if (shift != -1) {
 
         if (iora == ADD_VALUES) {
@@ -1448,7 +1466,7 @@ getSchurNestMatArray(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
                                      d.nb_rows, d.nb_cols,
 
                                      dof_r->getPetscLocalDofIdx(),
-                                     dof_c->getPetscLocalDofIdx(), d.shift}
+                                     dof_c->getPetscLocalDofIdx(), d.mat_shift}
 
       );
     };
