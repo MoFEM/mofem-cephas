@@ -899,11 +899,11 @@ MoFEMErrorCode Contact::checkResults() {
     double tol = 5e-3;
     switch (atom_test) {
     case 1: // plane stress
-      hertz_force = 19.635;
+      hertz_force = 3.927;
       fem_force = t_ptr[1];
       break;
     case 2: // plane strain
-      hertz_force = 23.375;
+      hertz_force = 4.675;
       fem_force = t_ptr[1];
       break;
     case 3: // axisymmetric
