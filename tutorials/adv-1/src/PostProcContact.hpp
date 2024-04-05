@@ -586,8 +586,8 @@ struct Monitor : public FEMethod {
       auto traction_y_ptr = boost::make_shared<VectorDouble>();
       auto contact_range_ptr = boost::make_shared<Range>(contact_range);
 
-      post_proc_norm_fe->getOpPtrVector().push_back(
-          new OpGetTensor0fromFunc(analytical_pressure_ptr, fun));
+       post_proc_norm_fe->getOpPtrVector().push_back(
+           new OpGetTensor0fromFunc(analytical_pressure_ptr, fun));
 
       post_proc_norm_fe->getOpPtrVector().push_back(new OpCalcTractions(
           analytical_traction_ptr, analytical_pressure_ptr, mag_traction_ptr,
@@ -663,6 +663,7 @@ struct Monitor : public FEMethod {
 
     MoFEMFunctionReturn(0);
   }
+
 
   //! [Analytical function]
   MoFEM::ScalarFun analyticalWavy2DPressure = [](double x, double y, double z) {
@@ -811,6 +812,14 @@ struct Monitor : public FEMethod {
     MoFEMFunctionReturn(0);
   }
 
+MoFEMErrorCode getErrorNorm(int normType) {
+  const double *norm;
+  CHKERR VecGetArrayRead(norms_vec, &norm);
+  double norm_val = std::sqrt(norm[normType]);
+  CHKERR VecRestoreArrayRead(norms_vec, &norm);
+  return norm_val;
+}
+
   MoFEMErrorCode getErrorNorm(int normType) {
     const double *norm;
     CHKERR VecGetArrayRead(normsVec, &norm);
@@ -831,15 +840,9 @@ private:
   boost::shared_ptr<PostProcEleBdy> postProcBdyFe;
 
   boost::shared_ptr<BoundaryEle> integrateTraction;
-  boost::shared_ptr<BoundaryEle> integrateArea;
 
-  enum NORMS {
-    TRACTION_NORM_L2 = 0,
-    MAG_TRACTION_NORM_L2,
-    TRACTION_Y_NORM_L2,
-    LAST_NORM
-  };
-  SmartPetscObj<Vec> normsVec;
+  enum NORMS { TRACTION_NORM_L2 = 0, MAG_TRACTION_NORM_L2, TRACTION_Y_NORM_L2, LAST_NORM };
+  SmartPetscObj<Vec> norms_vec;
 
   moab::Core mbVertexPostproc;
   moab::Interface &moabVertex;
