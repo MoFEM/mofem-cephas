@@ -251,6 +251,10 @@ struct Monitor : public FEMethod {
     if constexpr (SPACE_DIM == 2)
       postProcBdyFe = get_post_proc_bdy_fe();
     integrateTraction = get_integrate_traction();
+
+    norms_vec = createVectorMPI(
+        m_field_ptr->get_comm(),
+        (m_field_ptr->get_comm_rank() == 0) ? LAST_NORM : 0, LAST_NORM);
   }
 
   MoFEMErrorCode preProcess() { return 0; }
@@ -426,7 +430,7 @@ struct Monitor : public FEMethod {
           dM, m_field_ptr->getInterface<Simple>()->getDomainFEName());
     }
 
-    auto calculate_error = [&] {
+    auto calculate_error = [&](MoFEM::ScalarFun &fun) {
       MoFEMFunctionBegin;
       struct OpCalcTractions : public BoundaryEleOp {
         OpCalcTractions(boost::shared_ptr<MatrixDouble> m_ptr,
@@ -477,10 +481,9 @@ struct Monitor : public FEMethod {
         boost::shared_ptr<MatrixDouble> gradSDFPtr;
       };
 
-      enum NORMS { TRACTION_NORM_L2 = 0, MAG_TRACTION_NORM_L2, TRACTION_Y_NORM_L2, LAST_NORM };
-      auto norms_vec = createVectorMPI(
-          m_field_ptr->get_comm(),
-          (m_field_ptr->get_comm_rank() == 0) ? LAST_NORM : 0, LAST_NORM);
+      // auto norms_vec = createVectorMPI(
+      //     m_field_ptr->get_comm(),
+      //     (m_field_ptr->get_comm_rank() == 0) ? LAST_NORM : 0, LAST_NORM);
 
       auto post_proc_norm_fe = boost::make_shared<BoundaryEle>(*m_field_ptr);
       auto common_data_ptr = boost::make_shared<ContactOps::CommonData>();
@@ -535,7 +538,7 @@ struct Monitor : public FEMethod {
        auto contact_range_ptr = boost::make_shared<Range>(contact_range);
 
        post_proc_norm_fe->getOpPtrVector().push_back(
-           new OpGetTensor0fromFunc(analytical_pressure_ptr, func));
+           new OpGetTensor0fromFunc(analytical_pressure_ptr, fun));
 
        post_proc_norm_fe->getOpPtrVector().push_back(new OpCalcTractions(
            analytical_traction_ptr, analytical_pressure_ptr, mag_traction_ptr,
@@ -590,8 +593,12 @@ struct Monitor : public FEMethod {
     }
     CHKERR calculate_traction();
     CHKERR calculate_reactions();
-    if(sTEP > 0)
-      CHKERR calculate_error();
+    if(atom_test == 1 && sTEP > 0)
+      CHKERR calculate_error(analyticalHertzPressurePlaneStress);
+    if(atom_test == 2 && sTEP > 0)
+      CHKERR calculate_error(analyticalHertzPressurePlaneStrain);
+    if(atom_test == 3 && sTEP > 0)
+      CHKERR calculate_error(analyticalHertzPressureAxisymmetric);
 
     CHKERR print_max_min(uXScatter, "Ux");
     CHKERR print_max_min(uYScatter, "Uy");
@@ -604,13 +611,11 @@ struct Monitor : public FEMethod {
     MoFEMFunctionReturn(0);
   }
 
-MoFEM::ScalarFun func = [](double x, double y, double z) {
-    return analyticalFunctionHertzPressure(x, y, z);
-};
 
   //! [Analytical function]
 
-  static double analyticalFunctionHertzPressure(double x, double y, double z) {
+  MoFEM::ScalarFun analyticalHertzPressureAxisymmetric = [](double x, double y, double z) {
+    // update to atom test values
     double E_star = young_modulus / (1 - poisson_ratio * poisson_ratio);
     // Radius
     double R = 100.;
@@ -630,7 +635,44 @@ MoFEM::ScalarFun func = [](double x, double y, double z) {
     }
     // Pressure = p_max * sqrt(1 - (r^2 / a^2))
     return p_max * std::sqrt(1 - ((r * r) / (a * a)));
-}
+};
+
+  MoFEM::ScalarFun analyticalHertzPressurePlaneStrain = [](double x, double y, double z) {
+    // update to atom test values
+    double E_star = young_modulus / (1 - poisson_ratio * poisson_ratio);
+    // Radius
+    double R = 100.;
+    // Indentation
+    double d = 0.02745732273553991;
+    // Contact area radius
+    double a = 1;
+    // current radius
+    double r = std::sqrt((x * x) + (y * y));
+
+    if (r > a ) {
+        return 0.;
+    }
+    // Pressure = p_max * sqrt(1 - (r^2 / a^2))
+    return E_star / (2. * R) * std::sqrt(a * a - r * r);
+};
+  MoFEM::ScalarFun analyticalHertzPressurePlaneStress = [](double x, double y, double z) {
+    // update to atom test values
+    double E_star = young_modulus;
+    // Radius
+    double R = 100.;
+    // Indentation
+    double d = 0.02745732273553991;
+    // Contact area radius
+    double a = 1;
+    // current radius
+    double r = std::sqrt((x * x) + (y * y));
+
+    if (r > a ) {
+        return 0.;
+    }
+    // Pressure = p_max * sqrt(1 - (r^2 / a^2))
+    return E_star / (2. * R) * std::sqrt(a * a - r * r);
+};
 
 
   MoFEMErrorCode setScatterVectors(
@@ -644,6 +686,14 @@ MoFEM::ScalarFun func = [](double x, double y, double z) {
     MoFEMFunctionReturn(0);
   }
 
+MoFEMErrorCode getErrorNorm(int normType) {
+  const double *norm;
+  CHKERR VecGetArrayRead(norms_vec, &norm);
+  double norm_val = std::sqrt(norm[normType]);
+  CHKERR VecRestoreArrayRead(norms_vec, &norm);
+  return norm_val;
+}
+
 private:
   SmartPetscObj<DM> dM;
   std::tuple<SmartPetscObj<Vec>, SmartPetscObj<VecScatter>> uXScatter;
@@ -656,7 +706,9 @@ private:
   boost::shared_ptr<PostProcEleBdy> postProcBdyFe;
 
   boost::shared_ptr<BoundaryEle> integrateTraction;
-  //boost::shared_ptr<BoundaryEle> normOfTractions;
+
+  enum NORMS { TRACTION_NORM_L2 = 0, MAG_TRACTION_NORM_L2, TRACTION_Y_NORM_L2, LAST_NORM };
+  SmartPetscObj<Vec> norms_vec;
 
   moab::Core mbVertexPostproc;
   moab::Interface &moabVertex;
@@ -666,8 +718,6 @@ private:
   int sTEP;
 
   boost::shared_ptr<GenericElementInterface> mfrontInterface;
-
-  //static double analyticalFunctionHertzPressure(double, double, double);
 };
 
 } // namespace ContactOps
