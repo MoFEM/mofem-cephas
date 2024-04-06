@@ -474,6 +474,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
       // only diagonals to get inverted diaconal
       if (row_it->uidRow == row_it->uidCol) {
 
+        // note invMat is multiplied by -1
         CHKERR I::invertMat(row_it, invMat, eps);
 
         // iterate column entities
@@ -493,6 +494,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 #endif // NDEBUG
 
           // noalias(invDiagOffMat) = prod(cc_off_mat, invMat);
+          // A10*inv(A00)
           cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
                       cc_off_mat.size1(), invMat.size2(), cc_off_mat.size2(),
                       1., &*cc_off_mat.data().begin(), cc_off_mat.size2(),
@@ -523,6 +525,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 #endif // NDEBUG
 
             // noalias(offMatInvDiagOffMat) = prod(invDiagOffMat, rr_off_mat);
+            // A10*inv(A00)*A01
             cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
                         invDiagOffMat.size1(), rr_off_mat.size2(),
                         invDiagOffMat.size2(), 1.,
@@ -531,6 +534,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
                         &*offMatInvDiagOffMat.data().begin(),
                         offMatInvDiagOffMat.size2());
 
+            // Make on diagonal A11 have Schur complement S
             CHKERR add_off_mat(row_uid, col_uid, c_lo->getRowInd(),
                                r_lo->getColInd(), offMatInvDiagOffMat);
 
@@ -856,24 +860,14 @@ boost::shared_ptr<DiagBlockStruture> createSchurBlockMatStructure(
   auto mem_size = 0;
   for (auto &v : data_ptr->blockIndexPtr->get<0>()) {
     v.mat_shift = mem_size;
+    v.inv_shift = mem_size;
     mem_size += v.nb_cols * v.nb_rows;
-
-  }
-
-  auto inv_size = 0;
-  for (auto &v : data_ptr->blockIndexPtr->get<0>()) {
-    if(v.row == v.col && v.nb_cols == v.nb_rows) {
-      v.inv_shift = inv_size;
-      inv_size += v.nb_cols * v.nb_rows;
-    } else {
-      v.inv_shift = -1;
-    }
   }
 
   data_ptr->dataBlocksPtr =
       boost::make_shared<std::vector<double>>(mem_size, 0);
   data_ptr->dataInvBlocksPtr =
-      boost::make_shared<std::vector<double>>(inv_size, 0);
+      boost::make_shared<std::vector<double>>(mem_size, 0);
 
   auto ghost_x = createDMVector(dm);
   auto ghost_y = createDMVector(dm);
