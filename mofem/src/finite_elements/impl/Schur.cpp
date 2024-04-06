@@ -385,9 +385,9 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 
   auto apply_schur = [&](auto &storage,
 
-                         const auto ss,
-
-                         auto lo_uid, auto hi_uid, double eps) {
+                         auto lo_uid, auto hi_uid, 
+                         
+                         double eps, bool symm) {
     MoFEMFunctionBegin;
 
     // add off diagonal matrix, i.e. schur complement
@@ -508,7 +508,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
               continue;
 
             // If symmetry only run upper off diagonal terms
-            if (symSchur[ss] && row_uid > col_uid)
+            if (symm && row_uid > col_uid)
               continue;
 
             auto &rr_off_mat = r_lo->getMat();
@@ -534,7 +534,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
             CHKERR add_off_mat(row_uid, col_uid, c_lo->getRowInd(),
                                r_lo->getColInd(), offMatInvDiagOffMat);
 
-            if (symSchur[ss] && row_uid != col_uid) {
+            if (symm && row_uid != col_uid) {
               transOffMatInvDiagOffMat.resize(offMatInvDiagOffMat.size2(),
                                               offMatInvDiagOffMat.size1(),
                                               false);
@@ -550,9 +550,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
     MoFEMFunctionReturn(0);
   };
 
-  auto erase_factored = [&](auto &storage,
-
-                            const auto ss, auto lo_uid, auto hi_uid) {
+  auto erase_factored = [&](auto &storage, auto lo_uid, auto hi_uid) {
     MoFEMFunctionBegin;
 
     auto r_lo =
@@ -570,64 +568,73 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
     MoFEMFunctionReturn(0);
   };
 
-  auto assemble_off_diagonal = [&](auto &storage, const auto ss) {
+  auto assemble_off_diagonal = [&](auto &storage, auto ao, auto mat) {
     MoFEMFunctionBegin;
 
     // apply AO
-    for (auto &m : storage) {
-      if (auto ao = sequenceOfAOs[ss]) {
-        auto &ind_row = m.getRowInd();
-        CHKERR AOApplicationToPetsc(ao, ind_row.size(), &*ind_row.begin());
-        auto &ind_col = m.getColInd();
-        CHKERR AOApplicationToPetsc(ao, ind_col.size(), &*ind_col.begin());
+    if (ao) {
+      for (auto &m : storage) {
+          auto &ind_row = m.getRowInd();
+          CHKERR AOApplicationToPetsc(ao, ind_row.size(), &*ind_row.begin());
+          auto &ind_col = m.getColInd();
+          CHKERR AOApplicationToPetsc(ao, ind_col.size(), &*ind_col.begin());
       }
     }
 
     // assemble Schur
-    if (sequenceOfMats[ss]) {
-      CHKERR assemble(sequenceOfMats[ss], matSetValuesSchurRaw, storage);
+    if (mat) {
+      CHKERR assemble(mat, matSetValuesSchurRaw, storage);
     }
 
     MoFEMFunctionReturn(0);
   };
 
-  auto &storage = SchurL2Mats::schurL2Storage;
-  
-  // Assemble to global matrix
+  auto get_a00_uids = [&]() {
+    std::vector<std::pair<UId, UId>> a00_uids;
+    a00_uids.reserve(fieldsName.size());
+    for (auto ss = 0; ss != fieldsName.size(); ++ss) {
+      auto field_bit = getPtrFE()->mField.get_field_bit_number(fieldsName[ss]);
+      auto row_ents = fieldEnts[ss];
+      for (auto ss = 0; ss != fieldsName.size(); ++ss) {
+        if (row_ents) {
+          for (auto p = row_ents->pair_begin(); p != row_ents->pair_end();
+               ++p) {
+            auto lo_uid =
+                FieldEntity::getLoLocalEntityBitNumber(field_bit, p->first);
+            auto hi_uid =
+                FieldEntity::getHiLocalEntityBitNumber(field_bit, p->second);
+            a00_uids.push_back(std::make_pair(lo_uid, hi_uid));
+          }
+        } else {
+          auto lo_uid = FieldEntity::getLoLocalEntityBitNumber(
+              field_bit, get_id_for_min_type<MBVERTEX>());
+          auto hi_uid = FieldEntity::getHiLocalEntityBitNumber(
+              field_bit, get_id_for_max_type<MBENTITYSET>());
+          a00_uids.push_back(std::make_pair(lo_uid, hi_uid));
+        }
+      }
+    }
+    return a00_uids;
+  };
+
+  auto assemble_S = [&](auto &&a00_uids) {
+    MoFEMFunctionBegin;
+    auto &storage = SchurL2Mats::schurL2Storage;
+    int ss = 0;
+    for (auto &p : a00_uids) {
+      auto [lo_uid, hi_uid] = p;
+      CHKERR apply_schur(storage, lo_uid, hi_uid, diagEps[ss], symSchur[ss]);
+      CHKERR erase_factored(storage, lo_uid, hi_uid);
+      CHKERR assemble_off_diagonal(storage, sequenceOfAOs[ss],
+                                   sequenceOfMats[ss]);
+      ++ss;
+    }
+    MoFEMFunctionReturn(0);
+  };
+
 
   // Assemble Schur complements
-  // Iterate complements
-  for (auto ss = 0; ss != fieldsName.size(); ++ss) {
-
-    auto assemble = [&](auto &storage, auto ss, auto lo_uid, auto hi_uid) {
-      MoFEMFunctionBegin;
-
-      CHKERR apply_schur(storage, ss, lo_uid, hi_uid, diagEps[ss]);
-      CHKERR erase_factored(storage, ss, lo_uid, hi_uid);
-      CHKERR assemble_off_diagonal(storage, ss);
-      MoFEMFunctionReturn(0);
-    };
-
-    auto field_bit = getPtrFE()->mField.get_field_bit_number(fieldsName[ss]);
-    auto row_ents = fieldEnts[ss];
-
-    if (row_ents) {
-      for (auto p = row_ents->pair_begin(); p != row_ents->pair_end(); ++p) {
-        auto lo_uid =
-            FieldEntity::getLoLocalEntityBitNumber(field_bit, p->first);
-        auto hi_uid =
-            FieldEntity::getHiLocalEntityBitNumber(field_bit, p->second);
-        CHKERR assemble(storage, ss, lo_uid, hi_uid);
-      }
-    } else {
-      // Iterate all entities (typically L2)
-      auto lo_uid = FieldEntity::getLoLocalEntityBitNumber(
-          field_bit, get_id_for_min_type<MBVERTEX>());
-      auto hi_uid = FieldEntity::getHiLocalEntityBitNumber(
-          field_bit, get_id_for_max_type<MBENTITYSET>());
-      CHKERR assemble(storage, ss, lo_uid, hi_uid);
-    }
-  }
+  CHKERR assemble_S(get_a00_uids());
 
 #ifndef NDEBUG
   MOFEM_LOG("SELF", Sev::noisy) << "Schur assemble done";
