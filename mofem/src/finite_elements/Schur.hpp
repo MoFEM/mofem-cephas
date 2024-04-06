@@ -105,6 +105,10 @@ struct SCHUR_DSYSV; ///< SY	symmetric
 struct SCHUR_DGESV; ///< GE	general (i.e., nonsymmetric, in some cases
                     ///< rectangular)
 
+struct SCHUR_BLOCK_DSYSV; ///< SY	symmetric
+struct SCHUR_BLOCK_DGESV; ///< GE	general (i.e., nonsymmetric, in some cases
+                          ///< rectangular)
+
 /**
  * @brief Assemble Schur complement
  *
