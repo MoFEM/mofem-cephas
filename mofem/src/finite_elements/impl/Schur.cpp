@@ -89,18 +89,6 @@ protected:
   static boost::ptr_vector<VectorInt> colIndices;
   static SchurL2Storage schurL2Storage;
 
-  static SmartPetscObj<Mat> a00;
-  static SmartPetscObj<Mat> a01;
-  static SmartPetscObj<Mat> a10;
-  static SmartPetscObj<Mat> a11;
-
-  static SmartPetscObj<Mat> ao0;
-  static SmartPetscObj<Mat> ao1;
-
-  static std::vector<int> rowIndices0;
-  static std::vector<int> colIndices0;
-  static std::vector<int> rowIndices1;
-  static std::vector<int> colIndices1;
 };
 
 template <>
@@ -123,19 +111,6 @@ SchurL2Mats::SchurL2Storage SchurL2Mats::schurL2Storage;
 boost::ptr_vector<MatrixDouble> SchurL2Mats::locMats;
 boost::ptr_vector<VectorInt> SchurL2Mats::rowIndices;
 boost::ptr_vector<VectorInt> SchurL2Mats::colIndices;
-
-SmartPetscObj<Mat> SchurL2Mats::a00;
-SmartPetscObj<Mat> SchurL2Mats::a01;
-SmartPetscObj<Mat> SchurL2Mats::a10;
-SmartPetscObj<Mat> SchurL2Mats::a11;
-
-SmartPetscObj<Mat> SchurL2Mats::ao0;
-SmartPetscObj<Mat> SchurL2Mats::ao1;
-
-std::vector<int> SchurL2Mats::rowIndices0;
-std::vector<int> SchurL2Mats::colIndices0;
-std::vector<int> SchurL2Mats::rowIndices1;
-std::vector<int> SchurL2Mats::colIndices1;
 
 SchurL2Mats::SchurL2Mats(const size_t idx, const UId uid_row, const UId uid_col)
     : iDX(idx), uidRow(uid_row), uidCol(uid_col) {}
@@ -617,6 +592,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
   };
 
   auto &storage = SchurL2Mats::schurL2Storage;
+  
   // Assemble to global matrix
 
   // Assemble Schur complements
