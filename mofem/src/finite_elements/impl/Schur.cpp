@@ -9,22 +9,6 @@
 
 namespace MoFEM {
 
-PetscLogEvent SchurEvents::MOFEM_EVENT_schurL2MatsMatSetValues;
-PetscLogEvent SchurEvents::MOFEM_EVENT_opSchurAssembleEnd;
-PetscLogEvent SchurEvents::MOFEM_EVENT_diagBlockStrutureSetValues;
-PetscLogEvent SchurEvents::MOFEM_EVENT_diagBlockStrutureMult;
-PetscLogEvent SchurEvents::MOFEM_EVENT_zeroRowsAndCols;
-
-SchurEvents::SchurEvents() {
-  PetscLogEventRegister("schurMatSetVal", 0,
-                        &MOFEM_EVENT_schurL2MatsMatSetValues);
-  PetscLogEventRegister("opSchurAsmbEnd", 0, &MOFEM_EVENT_opSchurAssembleEnd);
-  PetscLogEventRegister("diagBlockSetVal", 0,
-                        &MOFEM_EVENT_diagBlockStrutureSetValues);
-  PetscLogEventRegister("diagBlockMult", 0, &MOFEM_EVENT_diagBlockStrutureMult);
-  PetscLogEventRegister("schurZeroRandC", 0, &MOFEM_EVENT_zeroRowsAndCols);
-}
-
 /**
  * @brief Schur complement data storage
  *
@@ -89,6 +73,68 @@ protected:
   static boost::ptr_vector<VectorInt> colIndices;
   static SchurL2Storage schurL2Storage;
 };
+
+struct DiagBlockStruture {
+
+  DiagBlockStruture() = default;
+  virtual ~DiagBlockStruture() = default;
+
+  SmartPetscObj<Vec> ghostX;
+  SmartPetscObj<Vec> ghostY;
+
+  boost::shared_ptr<std::vector<double>> dataBlocksPtr;
+  boost::shared_ptr<std::vector<double>> dataInvBlocksPtr;
+
+  struct Indexes {
+    int row;
+    int col;
+    int nb_rows;
+    int nb_cols;
+    int loc_row;
+    int loc_col;
+    mutable int mat_shift;
+    mutable int inv_shift;
+  };
+
+  using BlockIndex = multi_index_container<
+
+      Indexes,
+
+      indexed_by<
+
+          ordered_non_unique<member<Indexes, int, &Indexes::col>>,
+
+          hashed_unique<
+
+              composite_key<Indexes,
+
+                            member<Indexes, int, &Indexes::row>,
+                            member<Indexes, int, &Indexes::col>,
+                            member<Indexes, int, &Indexes::nb_rows>,
+                            member<Indexes, int, &Indexes::nb_cols>
+
+                            >>
+
+          >>;
+
+  boost::shared_ptr<BlockIndex> blockIndexPtr;
+};
+
+PetscLogEvent SchurEvents::MOFEM_EVENT_schurL2MatsMatSetValues;
+PetscLogEvent SchurEvents::MOFEM_EVENT_opSchurAssembleEnd;
+PetscLogEvent SchurEvents::MOFEM_EVENT_diagBlockStrutureSetValues;
+PetscLogEvent SchurEvents::MOFEM_EVENT_diagBlockStrutureMult;
+PetscLogEvent SchurEvents::MOFEM_EVENT_zeroRowsAndCols;
+
+SchurEvents::SchurEvents() {
+  PetscLogEventRegister("schurMatSetVal", 0,
+                        &MOFEM_EVENT_schurL2MatsMatSetValues);
+  PetscLogEventRegister("opSchurAsmbEnd", 0, &MOFEM_EVENT_opSchurAssembleEnd);
+  PetscLogEventRegister("diagBlockSetVal", 0,
+                        &MOFEM_EVENT_diagBlockStrutureSetValues);
+  PetscLogEventRegister("diagBlockMult", 0, &MOFEM_EVENT_diagBlockStrutureMult);
+  PetscLogEventRegister("schurZeroRandC", 0, &MOFEM_EVENT_zeroRowsAndCols);
+}
 
 template <>
 inline MoFEMErrorCode
@@ -593,27 +639,41 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
     MoFEMFunctionReturn(0);
   };
 
-  // auto assemble_A00 = [&](auto &storage, auto ao, auto mat) {
-  //   MoFEMFunctionBegin;
+  auto assemble_A00 = [&](auto &storage, auto lo_uid, auto hi_uid) {
+    MoFEMFunctionBegin;
 
-  //   auto r_lo =
-  //       storage.template get<SchurL2Mats::row_mi_tag>().lower_bound(lo_uid);
-  //   auto r_hi =
-  //       storage.template get<SchurL2Mats::row_mi_tag>().upper_bound(hi_uid);
-  //   for (auto r_it = r_lo; r_it != r_hi; ++r_it) {
+    auto add = [&](auto lo, auto hi) {
+      MoFEMFunctionBegin;
+      for (; lo != hi; ++lo) {
+        auto &m = lo->getMat();
+        if (m.size1() && m.size2()) {
+          auto row_ind = lo->getRowInd()[0];
+          auto col_ind = lo->getColInd()[0];
+          auto nb_rows = m.size1();
+          auto nb_cols = m.size2();
+          auto it = diagBlocks->blockIndexPtr->get<1>().find(
+              boost::make_tuple(row_ind, col_ind, nb_rows, nb_cols));
+          if (it == diagBlocks->blockIndexPtr->get<1>().end()) {
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                    "Block not allocated");
+          }
+          auto inv_shift = it->inv_shift;
+          auto *ptr = &((*diagBlocks->dataInvBlocksPtr)[inv_shift]);
+          cblas_dcopy(m.data().size(), &*m.data().begin(), 1, ptr, 1);
+        }
+      }
+      MoFEMFunctionReturn(0);
+    };
 
-  //   }
+    CHKERR add(
 
-  //   storage.template get<SchurL2Mats::row_mi_tag>().erase(r_lo, r_hi);
+        storage.template get<SchurL2Mats::row_mi_tag>().lower_bound(lo_uid),
+        storage.template get<SchurL2Mats::row_mi_tag>().upper_bound(hi_uid)
 
-  //   auto c_lo =
-  //       storage.template get<SchurL2Mats::col_mi_tag>().lower_bound(lo_uid);
-  //   auto c_hi =
-  //       storage.template get<SchurL2Mats::col_mi_tag>().upper_bound(hi_uid);
-  //   storage.template get<SchurL2Mats::col_mi_tag>().erase(c_lo, c_hi);
+    );
 
-  //   MoFEMFunctionReturn(0);
-  // };
+    MoFEMFunctionReturn(0);
+  };
 
   auto get_a00_uids = [&]() {
     std::vector<std::pair<UId, UId>> a00_uids;
@@ -650,6 +710,8 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
     for (auto &p : a00_uids) {
       auto [lo_uid, hi_uid] = p;
       CHKERR apply_schur(storage, lo_uid, hi_uid, diagEps[ss], symSchur[ss]);
+      if (diagBlocks)
+        CHKERR assemble_A00(storage, lo_uid, hi_uid);
       CHKERR erase_factored(storage, lo_uid, hi_uid);
       CHKERR assemble_S(storage, sequenceOfAOs[ss], sequenceOfMats[ss]);
       ++ss;
@@ -752,52 +814,6 @@ OpSchurAssembleEnd<SCHUR_DGESV>::doWork(int side, EntityType type,
   return doWorkImpl<SCHUR_DGESV>(side, type, data);
 }
 
-struct DiagBlockStruture {
-
-  DiagBlockStruture() = default;
-  virtual ~DiagBlockStruture() = default;
-
-  SmartPetscObj<Vec> ghostX;
-  SmartPetscObj<Vec> ghostY;
-
-  boost::shared_ptr<std::vector<double>> dataBlocksPtr;
-  boost::shared_ptr<std::vector<double>> dataInvBlocksPtr;
-
-  struct Indexes {
-    int row;
-    int col;
-    int nb_rows;
-    int nb_cols;
-    int loc_row;
-    int loc_col;
-    mutable int mat_shift;
-    mutable int inv_shift;
-  };
-
-  using BlockIndex = multi_index_container<
-
-      Indexes,
-
-      indexed_by<
-
-          ordered_non_unique<member<Indexes, int, &Indexes::col>>,
-
-          hashed_unique<
-
-              composite_key<Indexes,
-
-                            member<Indexes, int, &Indexes::row>,
-                            member<Indexes, int, &Indexes::col>,
-                            member<Indexes, int, &Indexes::nb_rows>,
-                            member<Indexes, int, &Indexes::nb_cols>
-
-                            >>
-
-          >>;
-
-  boost::shared_ptr<BlockIndex> blockIndexPtr;
-};
-
 boost::shared_ptr<DiagBlockStruture> createSchurBlockMatStructure(
 
     DM dm, //< dm
@@ -873,8 +889,8 @@ boost::shared_ptr<DiagBlockStruture> createSchurBlockMatStructure(
               auto loc = (*cache->loHi[0])->getPetscLocalDofIdx();
               data.emplace_back(glob, nb_dofs, loc);
             }
-          } 
-        } 
+          }
+        }
       }
       return data;
     };
@@ -910,7 +926,6 @@ boost::shared_ptr<DiagBlockStruture> createSchurBlockMatStructure(
             }
           }
         }
-
       }
 
       MoFEMFunctionReturn(0);
