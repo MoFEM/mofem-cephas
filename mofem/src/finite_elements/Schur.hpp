@@ -24,6 +24,9 @@ struct SchurEvents {
   SchurEvents();
 };
 
+struct SchurL2Mats;
+struct DiagBlockStruture;
+
 /**
  * @brief Clear Schur complement internal data
  * 
@@ -99,15 +102,13 @@ protected:
   MatrixDouble invDiagOffMat;
   MatrixDouble offMatInvDiagOffMat;
   MatrixDouble transOffMatInvDiagOffMat;
+
+  boost::shared_ptr<DiagBlockStruture> diagBlocks;
 };
 
 struct SCHUR_DSYSV; ///< SY	symmetric
 struct SCHUR_DGESV; ///< GE	general (i.e., nonsymmetric, in some cases
                     ///< rectangular)
-
-struct SCHUR_BLOCK_DSYSV; ///< SY	symmetric
-struct SCHUR_BLOCK_DGESV; ///< GE	general (i.e., nonsymmetric, in some cases
-                          ///< rectangular)
 
 /**
  * @brief Assemble Schur complement
@@ -139,8 +140,6 @@ struct SchurBackendMatSetValuesPtr {
   static MatSetValuesPtr matSetValuesBlockPtr; ///< backend assembly function
 };
 
-struct SchurL2Mats;
-
 template <>
 MoFEMErrorCode
 MatSetValues<SchurL2Mats>(Mat M, const EntitiesFieldData::EntData &row_data,
@@ -166,8 +165,6 @@ inline MoFEMErrorCode VecSetValues<AssemblyTypeSelector<SCHUR>>(
     InsertMode iora) {
   return VecSetValues<SchurL2Mats>(V, data, nf, iora);
 }
-
-struct DiagBlockStruture;
 
 using SchurFEPair =
     std::pair<std::string, boost::shared_ptr<ForcesAndSourcesCore>>;
