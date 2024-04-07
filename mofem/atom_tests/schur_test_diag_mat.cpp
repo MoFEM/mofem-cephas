@@ -114,22 +114,22 @@ int main(int argc, char *argv[]) {
 
     petsc_mat = createDMMatrix(simple->getDM());
 
-    auto data_struture = createSchurBlockMatStructure(
-        simple->getDM(),
+    auto data_struture =
+        createSchurBlockMatStructure(simple->getDM(),
 
-        {{{simple->getDomainFEName(), boost::make_shared<DomainEle>(m_field)},
+                                     {{simple->getDomainFEName(),
 
-          {{"VECTOR", "VECTOR"},
-           {"TENSOR", "TENSOR"}
+                                       {{"VECTOR", "VECTOR"},
+                                        {"TENSOR", "TENSOR"}
 
-           ,
+                                        ,
 
-           {"VECTOR", "TENSOR"},
-           {"TENSOR", "VECTOR"}
+                                        {"VECTOR", "TENSOR"},
+                                        {"TENSOR", "VECTOR"}
 
-          }}}
+                                       }}}
 
-    );
+        );
     auto shell_data = createSchurBlockMat(simple->getDM(), data_struture);
     auto [mat, data] = shell_data;
     block_mat = mat;
