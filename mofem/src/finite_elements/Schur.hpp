@@ -61,11 +61,13 @@ struct OpSchurAssembleEndImpl : public ForcesAndSourcesCore::UserDataOperator {
    * @param sym_schur true if Schur complement is symmetric
    * @param symm_op true if block diagonal is symmetric
    */
-  OpSchurAssembleEndImpl(std::vector<std::string> fields_name,
-                         std::vector<boost::shared_ptr<Range>> field_ents,
-                         std::vector<SmartPetscObj<AO>> sequence_of_aos,
-                         std::vector<SmartPetscObj<Mat>> sequence_of_mats,
-                         std::vector<bool> sym_schur, bool symm_op = true);
+  OpSchurAssembleEndImpl(
+      std::vector<std::string> fields_name,
+      std::vector<boost::shared_ptr<Range>> field_ents,
+      std::vector<SmartPetscObj<AO>> sequence_of_aos,
+      std::vector<SmartPetscObj<Mat>> sequence_of_mats,
+      std::vector<bool> sym_schur, bool symm_op = true,
+      boost::shared_ptr<DiagBlockStruture> diag_blocks = nullptr);
 
   /**
    * @brief Construct a new Op Schur Assemble End object
@@ -78,12 +80,14 @@ struct OpSchurAssembleEndImpl : public ForcesAndSourcesCore::UserDataOperator {
    * @param diag_eps add epsilon on diagonal of inverted matrix 
    * @param symm_op true if block diagonal is symmetric
    */
-  OpSchurAssembleEndImpl(std::vector<std::string> fields_name,
-                         std::vector<boost::shared_ptr<Range>> field_ents,
-                         std::vector<SmartPetscObj<AO>> sequence_of_aos,
-                         std::vector<SmartPetscObj<Mat>> sequence_of_mats,
-                         std::vector<bool> sym_schur,
-                         std::vector<double> diag_eps, bool symm_op = true);
+  OpSchurAssembleEndImpl(
+      std::vector<std::string> fields_name,
+      std::vector<boost::shared_ptr<Range>> field_ents,
+      std::vector<SmartPetscObj<AO>> sequence_of_aos,
+      std::vector<SmartPetscObj<Mat>> sequence_of_mats,
+      std::vector<bool> sym_schur, std::vector<double> diag_eps,
+      bool symm_op = true,
+      boost::shared_ptr<DiagBlockStruture> diag_blocks = nullptr);
 
 protected:
 
@@ -166,13 +170,11 @@ inline MoFEMErrorCode VecSetValues<AssemblyTypeSelector<SCHUR>>(
   return VecSetValues<SchurL2Mats>(V, data, nf, iora);
 }
 
-using SchurFEPair =
-    std::pair<std::string, boost::shared_ptr<ForcesAndSourcesCore>>;
 using SchurFieldPair = std::pair<std::string, std::string>;
 
 using SchurFEOpVec = std::vector<
 
-    std::pair<SchurFEPair, std::vector<SchurFieldPair>>
+    std::pair<std::string, std::vector<SchurFieldPair>>
 
     >;
 
