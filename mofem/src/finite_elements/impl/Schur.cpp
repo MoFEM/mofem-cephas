@@ -327,10 +327,9 @@ OpSchurAssembleEndImpl::OpSchurAssembleEndImpl(
     std::vector<SmartPetscObj<AO>> sequence_of_aos,
     std::vector<SmartPetscObj<Mat>> sequence_of_mats,
     std::vector<bool> sym_schur, bool symm_op)
-    : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPSPACE, symm_op),
-      fieldsName(fields_name), fieldEnts(field_ents),
-      sequenceOfAOs(sequence_of_aos), sequenceOfMats(sequence_of_mats),
-      symSchur(sym_schur), diagEps(fields_name.size(), 0) {}
+    : OpSchurAssembleEndImpl(
+          fields_name, field_ents, sequence_of_aos, sequence_of_mats, sym_schur,
+          std::vector<double>(fields_name.size(), 0), symm_op) {}
 
 template <typename I>
 MoFEMErrorCode
@@ -346,8 +345,8 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 #endif
 
   // Assemble Schur complement
-  auto assemble = [&](SmartPetscObj<Mat> M, MatSetValuesRaw mat_set_values,
-                      auto &storage) {
+  auto assemble_mat = [&](SmartPetscObj<Mat> M, MatSetValuesRaw mat_set_values,
+                          auto &storage) {
     MoFEMFunctionBegin;
     if (M) {
       for (auto &s : storage) {
@@ -572,7 +571,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
     MoFEMFunctionReturn(0);
   };
 
-  auto assemble_off_diagonal = [&](auto &storage, auto ao, auto mat) {
+  auto assemble_S = [&](auto &storage, auto ao, auto mat) {
     MoFEMFunctionBegin;
 
     // apply AO
@@ -585,13 +584,32 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
       }
     }
 
-    // assemble Schur
+    // assemble matrix
     if (mat) {
-      CHKERR assemble(mat, matSetValuesSchurRaw, storage);
+      CHKERR assemble_mat(mat, matSetValuesSchurRaw, storage);
     }
 
     MoFEMFunctionReturn(0);
   };
+
+  // auto assemble_A00 = [&](auto &storage, auto ao, auto mat) {
+  //   MoFEMFunctionBegin;
+
+  //   auto r_lo =
+  //       storage.template get<SchurL2Mats::row_mi_tag>().lower_bound(lo_uid);
+  //   auto r_hi =
+  //       storage.template get<SchurL2Mats::row_mi_tag>().upper_bound(hi_uid);
+  //   storage.template get<SchurL2Mats::row_mi_tag>().erase(r_lo, r_hi);
+
+  //   auto c_lo =
+  //       storage.template get<SchurL2Mats::col_mi_tag>().lower_bound(lo_uid);
+  //   auto c_hi =
+  //       storage.template get<SchurL2Mats::col_mi_tag>().upper_bound(hi_uid);
+  //   storage.template get<SchurL2Mats::col_mi_tag>().erase(c_lo, c_hi);
+
+
+  //   MoFEMFunctionReturn(0);
+  // };
 
   auto get_a00_uids = [&]() {
     std::vector<std::pair<UId, UId>> a00_uids;
@@ -621,7 +639,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
     return a00_uids;
   };
 
-  auto assemble_S = [&](auto &&a00_uids) {
+  auto assemble = [&](auto &&a00_uids) {
     MoFEMFunctionBegin;
     auto &storage = SchurL2Mats::schurL2Storage;
     int ss = 0;
@@ -629,8 +647,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
       auto [lo_uid, hi_uid] = p;
       CHKERR apply_schur(storage, lo_uid, hi_uid, diagEps[ss], symSchur[ss]);
       CHKERR erase_factored(storage, lo_uid, hi_uid);
-      CHKERR assemble_off_diagonal(storage, sequenceOfAOs[ss],
-                                   sequenceOfMats[ss]);
+      CHKERR assemble_S(storage, sequenceOfAOs[ss], sequenceOfMats[ss]);
       ++ss;
     }
     MoFEMFunctionReturn(0);
@@ -638,7 +655,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 
 
   // Assemble Schur complements
-  CHKERR assemble_S(get_a00_uids());
+  CHKERR assemble(get_a00_uids());
 
 #ifndef NDEBUG
   MOFEM_LOG("SELF", Sev::noisy) << "Schur assemble done";
