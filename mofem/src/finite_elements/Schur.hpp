@@ -29,7 +29,7 @@ struct DiagBlockStruture;
 
 /**
  * @brief Clear Schur complement internal data
- * 
+ *
  */
 struct OpSchurAssembleBegin : public ForcesAndSourcesCore::UserDataOperator {
 
@@ -55,8 +55,10 @@ struct OpSchurAssembleEndImpl : public ForcesAndSourcesCore::UserDataOperator {
    * @brief Construct a new Op Schur Assemble End object
    *
    * @param fields_name list of fields
-   * @param field_ents list of entities on which schur complement is applied (can be empty)
-   * @param sequence_of_aos list of maps from base problem to Schur complement matrix
+   * @param field_ents list of entities on which schur complement is applied
+   * (can be empty)
+   * @param sequence_of_aos list of maps from base problem to Schur complement
+   * matrix
    * @param sequence_of_mats list of Schur complement matrices
    * @param sym_schur true if Schur complement is symmetric
    * @param symm_op true if block diagonal is symmetric
@@ -73,11 +75,13 @@ struct OpSchurAssembleEndImpl : public ForcesAndSourcesCore::UserDataOperator {
    * @brief Construct a new Op Schur Assemble End object
    *
    * @param fields_name list of fields
-   * @param field_ents list of entities on which schur complement is applied (can be empty)
-   * @param sequence_of_aos list of maps from base problem to Schur complement matrix
+   * @param field_ents list of entities on which schur complement is applied
+   * (can be empty)
+   * @param sequence_of_aos list of maps from base problem to Schur complement
+   * matrix
    * @param sequence_of_mats list of Schur complement matrices
    * @param sym_schur true if Schur complement is symmetric
-   * @param diag_eps add epsilon on diagonal of inverted matrix 
+   * @param diag_eps add epsilon on diagonal of inverted matrix
    * @param symm_op true if block diagonal is symmetric
    */
   OpSchurAssembleEndImpl(
@@ -90,7 +94,6 @@ struct OpSchurAssembleEndImpl : public ForcesAndSourcesCore::UserDataOperator {
       boost::shared_ptr<DiagBlockStruture> diag_blocks = nullptr);
 
 protected:
-
   template <typename I>
   MoFEMErrorCode doWorkImpl(int side, EntityType type,
                             EntitiesFieldData::EntData &data);
@@ -140,7 +143,7 @@ struct SchurBackendMatSetValuesPtr {
       Mat M, const EntitiesFieldData::EntData &row_data,
       const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
       InsertMode iora)>;
-  static MatSetValuesPtr matSetValuesPtr; ///< backend assembly function
+  static MatSetValuesPtr matSetValuesPtr;      ///< backend assembly function
   static MatSetValuesPtr matSetValuesBlockPtr; ///< backend assembly function
 };
 
@@ -172,7 +175,7 @@ inline MoFEMErrorCode VecSetValues<AssemblyTypeSelector<SCHUR>>(
 
 using SchurFieldPair = std::pair<std::string, std::string>;
 
-using SchurFEOpVec = std::vector<
+using SchurFEOpsFEandFields = std::vector<
 
     std::pair<std::string, std::vector<SchurFieldPair>>
 
@@ -180,15 +183,14 @@ using SchurFEOpVec = std::vector<
 
 /**
  * @brief Create a Mat Diag Blocks object
- * 
- * @return Mat 
+ *
+ * @return Mat
  */
 boost::shared_ptr<DiagBlockStruture> createSchurBlockMatStructure(
 
-    DM dm,                        //< dm
-    SchurFEOpVec schur_fe_op_vec //< block elements
+    DM dm,                                 //< dm
+    SchurFEOpsFEandFields schur_fe_op_vec //< block elements
 
-    
 
 );
 
@@ -197,9 +199,9 @@ using SchurShellMatData =
 
 /**
  * @brief Create a Schur Mat object
- * 
- * @param dm 
- * @param data 
+ *
+ * @param dm
+ * @param data
  * @return std::pair<SmartPetscObj<Mat>, boost::shared_ptr<DiagBlockStruture>>
  */
 SchurShellMatData
@@ -233,7 +235,13 @@ using SchurNestMatrixData =
 
 SchurNestMatrixData
 getSchurNestMatArray(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
-                     SchurShellMatData A);
+                     SchurShellMatData A,
+
+                     std::vector<std::string> fields_name, //< a00 fields
+                     std::vector<boost::shared_ptr<Range>>
+                         field_ents //< a00 ranges (can be null)
+
+);
 
 /**
  * @brief Create a Mat Diag Blocks object
@@ -249,14 +257,14 @@ struct SchurL2MatsBlock;
 template <>
 MoFEMErrorCode
 MatSetValues<SchurL2MatsBlock>(Mat M,
-                                const EntitiesFieldData::EntData &row_data,
-                                const EntitiesFieldData::EntData &col_data,
-                                const MatrixDouble &mat, InsertMode iora);
+                               const EntitiesFieldData::EntData &row_data,
+                               const EntitiesFieldData::EntData &col_data,
+                               const MatrixDouble &mat, InsertMode iora);
 
 template <>
 inline MoFEMErrorCode
 VecSetValues<SchurL2MatsBlock>(Vec V, const EntitiesFieldData::EntData &data,
-                          const VectorDouble &nf, InsertMode iora) {
+                               const VectorDouble &nf, InsertMode iora) {
   return VecSetValues<EssentialBcStorage>(V, data, nf, iora);
 }
 

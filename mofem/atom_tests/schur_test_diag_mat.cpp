@@ -224,7 +224,9 @@ int main(int argc, char *argv[]) {
 
     auto nested_data = getSchurNestMatArray(
 
-        {schur_dm, block_dm}, shell_data
+        {schur_dm, block_dm}, shell_data,
+
+        {"TENSOR"}, {nullptr}
 
     );
     auto [nested_mat, nested_data_] =
