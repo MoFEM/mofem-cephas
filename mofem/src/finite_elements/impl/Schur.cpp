@@ -80,7 +80,7 @@ struct DiagBlockIndex {
 
   /**
    * @brief block data indexes
-   * 
+   *
    */
   struct Indexes {
     int row;
@@ -830,7 +830,7 @@ OpSchurAssembleEnd<SCHUR_DGESV>::doWork(int side, EntityType type,
 
 boost::shared_ptr<DiagBlockStruture> createSchurBlockMatStructure(
 
-    DM dm,                                 //< dm
+    DM dm,                                //< dm
     SchurFEOpsFEandFields schur_fe_op_vec //< block elements
 
 ) {
@@ -1303,11 +1303,7 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec x, Vec y,
   for (auto i = 0; i != nb_y; ++i)
     y_array[i] = 0.;
 
-  // double *block_ptr;
-  // if (solve)
-  //   block_ptr = &*ctx->dataInvBlocksPtr->begin();
-  // else
-  //   block_ptr = &*ctx->dataBlocksPtr->begin();
+  auto inv_block_ptr = &*ctx->dataBlocksPtr->begin();
 
   std::vector<int> loc_rows;
   std::vector<int> loc_nb_rows;
@@ -1321,6 +1317,9 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec x, Vec y,
   CHKERR VecGhostUpdateBegin(ghost_y, ADD_VALUES, SCATTER_REVERSE);
   CHKERR VecGhostUpdateEnd(ghost_y, ADD_VALUES, SCATTER_REVERSE);
 
+  for (auto &d : ctx->blockIndex.get<1>()) {
+  }
+
   switch (iora) {
   case INSERT_VALUES:
     CHKERR VecCopy(ghost_y, y);
@@ -1330,7 +1329,7 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec x, Vec y,
     break;
   default:
     CHK_MOAB_THROW(MOFEM_NOT_IMPLEMENTED, "Wrong InsertMode");
-    }
+  }
 
 #ifndef NDEBUG
 
@@ -1592,23 +1591,23 @@ SchurNestMatrixData getSchurNestMatArray(
 
   auto [schur_mat, schur_data] = A;
 
-  auto get_vec = [&]() {
+  auto get_vec = [&](auto schur_data) {
     std::vector<int> vec_r, vec_c;
     vec_r.reserve(schur_data->blockIndex.size());
     vec_c.reserve(schur_data->blockIndex.size());
-    for (auto &d : schur_data->blockIndex.get<1>()) {
+    for (auto &d : schur_data->blockIndex.template get<1>()) {
       vec_r.push_back(d.row);
       vec_c.push_back(d.col);
     }
     return std::make_pair(vec_r, vec_c);
   };
 
-  auto [vec_r_schur, vec_c_schur] = get_vec();
+  auto [vec_r_schur, vec_c_schur] = get_vec(schur_data);
   CHKERR AOApplicationToPetsc(ao_schur_row, vec_r_schur.size(),
                               &*vec_r_schur.begin());
   CHKERR AOApplicationToPetsc(ao_schur_col, vec_c_schur.size(),
                               &*vec_c_schur.begin());
-  auto [vec_r_block, vec_c_block] = get_vec();
+  auto [vec_r_block, vec_c_block] = get_vec(schur_data);
   CHKERR AOApplicationToPetsc(ao_block_row, vec_r_block.size(),
                               &*vec_r_block.begin());
   CHKERR AOApplicationToPetsc(ao_block_col, vec_c_block.size(),
@@ -1621,7 +1620,7 @@ SchurNestMatrixData getSchurNestMatArray(
     data_ptrs[r]->dataBlocksPtr = schur_data->dataBlocksPtr;
   }
 
-  auto set_up_a00_data = [&]() {
+  auto set_up_a00_data = [&](auto schur_data) {
     auto data_a00 = boost::make_shared<DiagBlockInvStruture>();
     data_a00->dataBlocksPtr = schur_data->dataBlocksPtr;
     data_a00->a00Fields = fields_name;
@@ -1629,7 +1628,7 @@ SchurNestMatrixData getSchurNestMatArray(
     data_a00->numeredRowDofsPtr = block_prb->getNumeredRowDofsPtr();
     return data_a00;
   };
-  data_ptrs[3] = set_up_a00_data();
+  data_ptrs[3] = set_up_a00_data(schur_data);
 
   data_ptrs[0]->ghostX = schur_vec_x;
   data_ptrs[0]->ghostY = schur_vec_y;
