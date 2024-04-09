@@ -101,7 +101,7 @@ struct DiagBlockIndex {
 
           ordered_non_unique<member<Indexes, int, &Indexes::col>>,
 
-          hashed_unique<
+          ordered_unique<
 
               composite_key<Indexes,
 
@@ -123,22 +123,10 @@ struct DiagBlockStruture : public DiagBlockIndex {
   SmartPetscObj<Vec> ghostY;
 
   boost::shared_ptr<std::vector<double>> dataBlocksPtr;
+  boost::shared_ptr<std::vector<double>> dataInvBlocksPtr;
 };
 
 struct DiagBlockInvStruture : public DiagBlockStruture {
-
-  using BlockInvIndexView = multi_index_container<
-
-      const Indexes *,
-
-      indexed_by<
-
-          ordered_non_unique<member<Indexes, int, &Indexes::row>>
-
-          >>;
-
-  BlockInvIndexView blockInvIndexView;
-  boost::shared_ptr<std::vector<double>> dataInvBlocksPtr;
 
   boost::shared_ptr<NumeredDofEntity_multiIndex>
       numeredRowDofsPtr; ///< store DOFs on rows for this problem
@@ -668,35 +656,35 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
   auto assemble_A00 = [&](auto &storage, auto lo_uid, auto hi_uid) {
     MoFEMFunctionBegin;
 
-    // auto add = [&](auto lo, auto hi) {
-    //   MoFEMFunctionBegin;
-    //   for (; lo != hi; ++lo) {
-    //     auto &m = lo->getMat();
-    //     if (m.size1() && m.size2()) {
-    //       auto row_ind = lo->getRowInd()[0];
-    //       auto col_ind = lo->getColInd()[0];
-    //       auto nb_rows = m.size1();
-    //       auto nb_cols = m.size2();
-    //       auto it = diagBlocks->blockIndex.get<1>().find(
-    //           boost::make_tuple(row_ind, col_ind, nb_rows, nb_cols));
-    //       if (it == diagBlocks->blockIndex.get<1>().end()) {
-    //         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-    //                 "Block not allocated");
-    //       }
-    //       auto inv_shift = it->inv_shift;
-    //       // auto *ptr = &((*diagBlocks->dataInvBlocksPtr)[inv_shift]);
-    //       // cblas_dcopy(m.data().size(), &*m.data().begin(), 1, ptr, 1);
-    //     }
-    //   }
-    //   MoFEMFunctionReturn(0);
-    // };
+    auto add = [&](auto lo, auto hi) {
+      MoFEMFunctionBegin;
+      for (; lo != hi; ++lo) {
+        auto &m = lo->getMat();
+        if (m.size1() && m.size2()) {
+          auto row_ind = lo->getRowInd()[0];
+          auto col_ind = lo->getColInd()[0];
+          auto nb_rows = m.size1();
+          auto nb_cols = m.size2();
+          auto it = diagBlocks->blockIndex.get<1>().find(
+              boost::make_tuple(row_ind, col_ind, nb_rows, nb_cols));
+          if (it == diagBlocks->blockIndex.get<1>().end()) {
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                    "Block not allocated");
+          }
+          auto inv_shift = it->inv_shift;
+          auto *ptr = &((*diagBlocks->dataInvBlocksPtr)[inv_shift]);
+          cblas_dcopy(m.data().size(), &*m.data().begin(), 1, ptr, 1);
+        }
+      }
+      MoFEMFunctionReturn(0);
+    };
 
-    // CHKERR add(
+    CHKERR add(
 
-    //     storage.template get<SchurL2Mats::row_mi_tag>().lower_bound(lo_uid),
-    //     storage.template get<SchurL2Mats::row_mi_tag>().upper_bound(hi_uid)
+        storage.template get<SchurL2Mats::row_mi_tag>().lower_bound(lo_uid),
+        storage.template get<SchurL2Mats::row_mi_tag>().upper_bound(hi_uid)
 
-    // );
+    );
 
     MoFEMFunctionReturn(0);
   };
@@ -1441,6 +1429,7 @@ shell_schur_mat_set_values_wrap(Mat M,
         return row_index_ptr[i] - i;
       return -1;
     }
+    return -1;
   };
 
   auto m_ptr =
@@ -1607,7 +1596,7 @@ SchurNestMatrixData getSchurNestMatArray(
     std::vector<int> vec_r, vec_c;
     vec_r.reserve(schur_data->blockIndex.size());
     vec_c.reserve(schur_data->blockIndex.size());
-    for (auto &d : schur_data->blockIndex) {
+    for (auto &d : schur_data->blockIndex.get<1>()) {
       vec_r.push_back(d.row);
       vec_c.push_back(d.col);
     }
@@ -1627,14 +1616,20 @@ SchurNestMatrixData getSchurNestMatArray(
 
   std::array<boost::shared_ptr<DiagBlockStruture>, 4> data_ptrs;
 
-  for (auto r = 0; r != 4; ++r) {
+  for (auto r = 0; r != 3; ++r) {
     data_ptrs[r] = boost::make_shared<DiagBlockStruture>();
     data_ptrs[r]->dataBlocksPtr = schur_data->dataBlocksPtr;
   }
-  
-  // data_ptrs[3]->a00Fields = fields_name;
-  // data_ptrs[3]->a00Ranges = field_ents;
-  // data_ptrs[3]->numeredRowDofsPtr = block_prb->getNumeredRowDofsPtr();
+
+  auto set_up_a00_data = [&]() {
+    auto data_a00 = boost::make_shared<DiagBlockInvStruture>();
+    data_a00->dataBlocksPtr = schur_data->dataBlocksPtr;
+    data_a00->a00Fields = fields_name;
+    data_a00->a00Ranges = field_ents;
+    data_a00->numeredRowDofsPtr = block_prb->getNumeredRowDofsPtr();
+    return data_a00;
+  };
+  data_ptrs[3] = set_up_a00_data();
 
   data_ptrs[0]->ghostX = schur_vec_x;
   data_ptrs[0]->ghostY = schur_vec_y;
@@ -1645,8 +1640,9 @@ SchurNestMatrixData getSchurNestMatArray(
   data_ptrs[3]->ghostX = block_vec_x;
   data_ptrs[3]->ghostY = block_vec_y;
 
+  auto inv_mem_size = 0;
   int idx = 0;
-  for (auto &d : schur_data->blockIndex) {
+  for (auto &d : schur_data->blockIndex.get<1>()) {
 
     auto insert = [&](auto &m, auto &dof_r, auto &dof_c, auto &d) {
       m.insert(
@@ -1658,7 +1654,7 @@ SchurNestMatrixData getSchurNestMatArray(
 
               dof_r->getPetscLocalDofIdx(), dof_c->getPetscLocalDofIdx(),
 
-              d.mat_shift, -1}
+              d.mat_shift, d.inv_shift}
 
       );
     };
@@ -1722,11 +1718,17 @@ SchurNestMatrixData getSchurNestMatArray(
           block_dofs_row->get<PetscGlobalIdx_mi_tag>().find(vec_r_block[idx]);
       auto block_dof_c =
           block_dofs_col->get<PetscGlobalIdx_mi_tag>().find(vec_c_block[idx]);
+      d.inv_shift = inv_mem_size;
+      inv_mem_size += d.nb_cols * d.nb_rows;
       insert(data_ptrs[3]->blockIndex, *block_dof_r, *block_dof_c, d);
     }
 
     ++idx;
   }
+
+  schur_data->dataInvBlocksPtr =
+      boost::make_shared<std::vector<double>>(inv_mem_size, 0);
+  data_ptrs[3]->dataInvBlocksPtr = schur_data->dataInvBlocksPtr;
 
   MPI_Comm comm;
   CHKERR PetscObjectGetComm((PetscObject)schur_dm, &comm);
