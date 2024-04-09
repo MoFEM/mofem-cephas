@@ -816,8 +816,7 @@ OpSchurAssembleEnd<SCHUR_DGESV>::doWork(int side, EntityType type,
 
 boost::shared_ptr<DiagBlockStruture> createSchurBlockMatStructure(
 
-    DM dm, //< dm
-
+    DM dm,                       //< dm
     SchurFEOpVec schur_fe_op_vec //< block elements
 
 ) {
@@ -958,6 +957,9 @@ boost::shared_ptr<DiagBlockStruture> createSchurBlockMatStructure(
 static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
                                              InsertMode iora, bool solve);
 
+static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec x, Vec y,
+                                              InsertMode iora, bool solve);
+
 static PetscErrorCode mult(Mat mat, Vec x, Vec y) {
   return mult_schur_block_shell(mat, x, y, INSERT_VALUES, false);
 }
@@ -965,11 +967,11 @@ static PetscErrorCode mult_add(Mat mat, Vec x, Vec y) {
   return mult_schur_block_shell(mat, x, y, ADD_VALUES, false);
 }
 static PetscErrorCode solve(Mat mat, Vec x, Vec y) {
-  return mult_schur_block_shell(mat, x, y, INSERT_VALUES, true);
+  return solve_schur_block_shell(mat, x, y, INSERT_VALUES, true);
 }
-static PetscErrorCode solve_add(Mat mat, Vec x, Vec y) {
-  return mult_schur_block_shell(mat, x, y, ADD_VALUES, true);
-}
+// static PetscErrorCode solve_add(Mat mat, Vec x, Vec y) {
+//   return mult_schur_block_shell(mat, x, y, ADD_VALUES, true);
+// }
 
 static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
                                         const PetscInt rows[], PetscScalar diag,
@@ -1078,8 +1080,8 @@ static MoFEMErrorCode setSchurBlockMatOps(Mat mat_raw) {
   CHKERR MatShellSetOperation(mat_raw, MATOP_MULT_ADD,
                               (void (*)(void))mult_add);
   CHKERR MatShellSetOperation(mat_raw, MATOP_SOLVE, (void (*)(void))solve);
-  CHKERR MatShellSetOperation(mat_raw, MATOP_SOLVE_ADD,
-                              (void (*)(void))solve_add);
+  // CHKERR MatShellSetOperation(mat_raw, MATOP_SOLVE_ADD,
+  //                             (void (*)(void))solve_add);
   CHKERR MatShellSetOperation(mat_raw, MATOP_ZERO_ENTRIES,
                               (void (*)(void))mat_zero);
   CHKERR MatShellSetOperation(mat_raw, MATOP_ZERO_ROWS_COLUMNS,
@@ -1206,6 +1208,105 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
                   &loc_y[loc_nb_rows[r]], 1, &y_array[loc_rows[r]], 1);
     }
   }
+
+  CHKERR VecRestoreArray(loc_ghost_x, &x_array);
+  CHKERR VecRestoreArray(loc_ghost_y, &y_array);
+  CHKERR VecGhostRestoreLocalForm(ghost_x, &loc_ghost_x);
+  CHKERR VecGhostRestoreLocalForm(ghost_y, &loc_ghost_y);
+
+  CHKERR VecGhostUpdateBegin(ghost_y, ADD_VALUES, SCATTER_REVERSE);
+  CHKERR VecGhostUpdateEnd(ghost_y, ADD_VALUES, SCATTER_REVERSE);
+
+  switch (iora) {
+  case INSERT_VALUES:
+    CHKERR VecCopy(ghost_y, y);
+    break;
+  case ADD_VALUES:
+    CHKERR VecAXPY(y, 1., ghost_y);
+    break;
+  default:
+    CHK_MOAB_THROW(MOFEM_NOT_IMPLEMENTED, "Wrong InsertMode");
+  }
+
+#ifndef NDEBUG
+
+  auto print_norm = [&](auto msg, auto y) {
+    MoFEMFunctionBegin;
+    PetscReal norm;
+    CHKERR VecNorm(y, NORM_2, &norm);
+    int nb_loc_y;
+    CHKERR VecGetLocalSize(y, &nb_loc_y);
+    int nb_y;
+    CHKERR VecGetSize(y, &nb_y);
+    MOFEM_LOG("WORLD", Sev::noisy)
+        << msg << " " << nb_y << " " << nb_loc_y << " norm " << norm;
+    MoFEMFunctionReturn(0);
+  };
+
+  switch (iora) {
+  case INSERT_VALUES:
+    print_norm("mult_schur_block_shell insert x", x);
+    print_norm("mult_schur_block_shell insert y", y);
+    break;
+  case ADD_VALUES:
+    print_norm("mult_schur_block_shell add x", x);
+    print_norm("mult_schur_block_shell add y", y);
+    break;
+  default:
+    CHK_MOAB_THROW(MOFEM_NOT_IMPLEMENTED, "Wrong InsertMode");
+  }
+
+#endif // NDEBUG
+
+  // PetscLogFlops(xxx)
+  PetscLogEventEnd(SchurEvents::MOFEM_EVENT_diagBlockStrutureMult, 0, 0, 0, 0);
+
+  MoFEMFunctionReturn(0);
+}
+
+static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec x, Vec y,
+                                              InsertMode iora, bool solve) {
+  MoFEMFunctionBegin;
+  DiagBlockStruture *ctx;
+  CHKERR MatShellGetContext(mat, (void **)&ctx);
+
+  PetscLogEventBegin(SchurEvents::MOFEM_EVENT_diagBlockStrutureMult, 0, 0, 0,
+                     0);
+
+  Vec ghost_x = ctx->ghostX;
+  Vec ghost_y = ctx->ghostY;
+
+  CHKERR VecCopy(x, ghost_x);
+
+  CHKERR VecGhostUpdateBegin(ghost_x, INSERT_VALUES, SCATTER_FORWARD);
+  CHKERR VecGhostUpdateEnd(ghost_x, INSERT_VALUES, SCATTER_FORWARD);
+
+  double *x_array;
+  Vec loc_ghost_x;
+  CHKERR VecGhostGetLocalForm(ghost_x, &loc_ghost_x);
+  CHKERR VecGetArray(loc_ghost_x, &x_array);
+
+  double *y_array;
+  Vec loc_ghost_y;
+  CHKERR VecGhostGetLocalForm(ghost_y, &loc_ghost_y);
+  int nb_y;
+  CHKERR VecGetLocalSize(loc_ghost_y, &nb_y);
+  CHKERR VecGetArray(loc_ghost_y, &y_array);
+
+  for (auto i = 0; i != nb_y; ++i)
+    y_array[i] = 0.;
+
+  double *block_ptr;
+  if (solve)
+    block_ptr = &*ctx->dataInvBlocksPtr->begin();
+  else
+    block_ptr = &*ctx->dataBlocksPtr->begin();
+
+  std::vector<int> loc_rows;
+  std::vector<int> loc_nb_rows;
+  std::vector<double> loc_y;
+
+
 
   CHKERR VecRestoreArray(loc_ghost_x, &x_array);
   CHKERR VecRestoreArray(loc_ghost_y, &y_array);

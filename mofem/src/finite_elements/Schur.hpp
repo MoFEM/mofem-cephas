@@ -185,9 +185,11 @@ using SchurFEOpVec = std::vector<
  */
 boost::shared_ptr<DiagBlockStruture> createSchurBlockMatStructure(
 
-    DM dm,                       //< dm
+    DM dm,                        //< dm
     SchurFEOpVec schur_fe_op_vec //< block elements
+
     
+
 );
 
 using SchurShellMatData =
