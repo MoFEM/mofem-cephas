@@ -74,17 +74,14 @@ protected:
   static SchurL2Storage schurL2Storage;
 };
 
-struct DiagBlockStruture {
+struct DiagBlockIndex {
 
-  DiagBlockStruture() = default;
-  virtual ~DiagBlockStruture() = default;
+  virtual ~DiagBlockIndex() = default;
 
-  SmartPetscObj<Vec> ghostX;
-  SmartPetscObj<Vec> ghostY;
-
-  boost::shared_ptr<std::vector<double>> dataBlocksPtr;
-  boost::shared_ptr<std::vector<double>> dataInvBlocksPtr;
-
+  /**
+   * @brief block data indexes
+   * 
+   */
   struct Indexes {
     int row;
     int col;
@@ -117,7 +114,36 @@ struct DiagBlockStruture {
 
           >>;
 
-  boost::shared_ptr<BlockIndex> blockIndexPtr;
+  BlockIndex blockIndex; ///< blocks indexes storage
+};
+
+struct DiagBlockStruture : public DiagBlockIndex {
+
+  SmartPetscObj<Vec> ghostX;
+  SmartPetscObj<Vec> ghostY;
+
+  boost::shared_ptr<std::vector<double>> dataBlocksPtr;
+};
+
+struct DiagBlockInvStruture : public DiagBlockStruture {
+
+  using BlockInvIndexView = multi_index_container<
+
+      const Indexes *,
+
+      indexed_by<
+
+          ordered_non_unique<member<Indexes, int, &Indexes::row>>
+
+          >>;
+
+  BlockInvIndexView blockInvIndexView;
+  boost::shared_ptr<std::vector<double>> dataInvBlocksPtr;
+
+  boost::shared_ptr<NumeredDofEntity_multiIndex>
+      numeredRowDofsPtr; ///< store DOFs on rows for this problem
+  std::vector<std::string> a00Fields;
+  std::vector<boost::shared_ptr<Range>> a00Ranges;
 };
 
 PetscLogEvent SchurEvents::MOFEM_EVENT_schurL2MatsMatSetValues;
@@ -129,7 +155,7 @@ PetscLogEvent SchurEvents::MOFEM_EVENT_zeroRowsAndCols;
 SchurEvents::SchurEvents() {
   PetscLogEventRegister("schurMatSetVal", 0,
                         &MOFEM_EVENT_schurL2MatsMatSetValues);
-  PetscLogEventRegister("opSchurAsmbEnd", 0, &MOFEM_EVENT_opSchurAssembleEnd);
+  PetscLogEventRegister("opSchurAsmEnd", 0, &MOFEM_EVENT_opSchurAssembleEnd);
   PetscLogEventRegister("diagBlockSetVal", 0,
                         &MOFEM_EVENT_diagBlockStrutureSetValues);
   PetscLogEventRegister("diagBlockMult", 0, &MOFEM_EVENT_diagBlockStrutureMult);
@@ -642,35 +668,35 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
   auto assemble_A00 = [&](auto &storage, auto lo_uid, auto hi_uid) {
     MoFEMFunctionBegin;
 
-    auto add = [&](auto lo, auto hi) {
-      MoFEMFunctionBegin;
-      for (; lo != hi; ++lo) {
-        auto &m = lo->getMat();
-        if (m.size1() && m.size2()) {
-          auto row_ind = lo->getRowInd()[0];
-          auto col_ind = lo->getColInd()[0];
-          auto nb_rows = m.size1();
-          auto nb_cols = m.size2();
-          auto it = diagBlocks->blockIndexPtr->get<1>().find(
-              boost::make_tuple(row_ind, col_ind, nb_rows, nb_cols));
-          if (it == diagBlocks->blockIndexPtr->get<1>().end()) {
-            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                    "Block not allocated");
-          }
-          auto inv_shift = it->inv_shift;
-          auto *ptr = &((*diagBlocks->dataInvBlocksPtr)[inv_shift]);
-          cblas_dcopy(m.data().size(), &*m.data().begin(), 1, ptr, 1);
-        }
-      }
-      MoFEMFunctionReturn(0);
-    };
+    // auto add = [&](auto lo, auto hi) {
+    //   MoFEMFunctionBegin;
+    //   for (; lo != hi; ++lo) {
+    //     auto &m = lo->getMat();
+    //     if (m.size1() && m.size2()) {
+    //       auto row_ind = lo->getRowInd()[0];
+    //       auto col_ind = lo->getColInd()[0];
+    //       auto nb_rows = m.size1();
+    //       auto nb_cols = m.size2();
+    //       auto it = diagBlocks->blockIndex.get<1>().find(
+    //           boost::make_tuple(row_ind, col_ind, nb_rows, nb_cols));
+    //       if (it == diagBlocks->blockIndex.get<1>().end()) {
+    //         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    //                 "Block not allocated");
+    //       }
+    //       auto inv_shift = it->inv_shift;
+    //       // auto *ptr = &((*diagBlocks->dataInvBlocksPtr)[inv_shift]);
+    //       // cblas_dcopy(m.data().size(), &*m.data().begin(), 1, ptr, 1);
+    //     }
+    //   }
+    //   MoFEMFunctionReturn(0);
+    // };
 
-    CHKERR add(
+    // CHKERR add(
 
-        storage.template get<SchurL2Mats::row_mi_tag>().lower_bound(lo_uid),
-        storage.template get<SchurL2Mats::row_mi_tag>().upper_bound(hi_uid)
+    //     storage.template get<SchurL2Mats::row_mi_tag>().lower_bound(lo_uid),
+    //     storage.template get<SchurL2Mats::row_mi_tag>().upper_bound(hi_uid)
 
-    );
+    // );
 
     MoFEMFunctionReturn(0);
   };
@@ -816,12 +842,11 @@ OpSchurAssembleEnd<SCHUR_DGESV>::doWork(int side, EntityType type,
 
 boost::shared_ptr<DiagBlockStruture> createSchurBlockMatStructure(
 
-    DM dm,                       //< dm
-    SchurFEOpVec schur_fe_op_vec //< block elements
+    DM dm,                                 //< dm
+    SchurFEOpsFEandFields schur_fe_op_vec //< block elements
 
 ) {
   auto data_ptr = boost::make_shared<DiagBlockStruture>();
-  data_ptr->blockIndexPtr = boost::make_shared<DiagBlockStruture::BlockIndex>();
 
   auto m_field_ptr = getInterfacePtr(dm);
 
@@ -920,8 +945,8 @@ boost::shared_ptr<DiagBlockStruture> createSchurBlockMatStructure(
           for (auto &c : col_data) {
             auto [c_glob, c_nb_dofs, c_loc] = c;
             if (r_glob != -1 && c_glob != -1) {
-              data_ptr->blockIndexPtr->insert(DiagBlockStruture::Indexes{
-                  r_glob, c_glob, r_nb_dofs, c_nb_dofs, r_loc, c_loc, -1});
+              data_ptr->blockIndex.insert(DiagBlockStruture::Indexes{
+                  r_glob, c_glob, r_nb_dofs, c_nb_dofs, r_loc, c_loc, -1, -1});
             }
           }
         }
@@ -933,16 +958,14 @@ boost::shared_ptr<DiagBlockStruture> createSchurBlockMatStructure(
     CHKERR DMoFEMLoopFiniteElements(dm, d.first, fe_method);
   };
 
+  // order by colum (that is for matrix multiplication)
   auto mem_size = 0;
-  for (auto &v : data_ptr->blockIndexPtr->get<0>()) {
+  for (auto &v : data_ptr->blockIndex.get<0>()) {
     v.mat_shift = mem_size;
-    v.inv_shift = mem_size;
     mem_size += v.nb_cols * v.nb_rows;
   }
 
   data_ptr->dataBlocksPtr =
-      boost::make_shared<std::vector<double>>(mem_size, 0);
-  data_ptr->dataInvBlocksPtr =
       boost::make_shared<std::vector<double>>(mem_size, 0);
 
   auto ghost_x = createDMVector(dm);
@@ -955,19 +978,19 @@ boost::shared_ptr<DiagBlockStruture> createSchurBlockMatStructure(
 }
 
 static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
-                                             InsertMode iora, bool solve);
+                                             InsertMode iora);
 
 static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec x, Vec y,
-                                              InsertMode iora, bool solve);
+                                              InsertMode iora);
 
 static PetscErrorCode mult(Mat mat, Vec x, Vec y) {
-  return mult_schur_block_shell(mat, x, y, INSERT_VALUES, false);
+  return mult_schur_block_shell(mat, x, y, INSERT_VALUES);
 }
 static PetscErrorCode mult_add(Mat mat, Vec x, Vec y) {
-  return mult_schur_block_shell(mat, x, y, ADD_VALUES, false);
+  return mult_schur_block_shell(mat, x, y, ADD_VALUES);
 }
 static PetscErrorCode solve(Mat mat, Vec x, Vec y) {
-  return solve_schur_block_shell(mat, x, y, INSERT_VALUES, true);
+  return solve_schur_block_shell(mat, x, y, INSERT_VALUES);
 }
 // static PetscErrorCode solve_add(Mat mat, Vec x, Vec y) {
 //   return mult_schur_block_shell(mat, x, y, ADD_VALUES, true);
@@ -1015,7 +1038,7 @@ static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
           >>;
 
   BlockIndexView view;
-  for (auto &v : ctx->blockIndexPtr->get<0>()) {
+  for (auto &v : ctx->blockIndex.get<0>()) {
     view.insert(static_cast<const ShiftedBlockView *>(&v));
   }
 
@@ -1124,7 +1147,7 @@ createSchurBlockMat(DM dm, boost::shared_ptr<DiagBlockStruture> data) {
 }
 
 static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
-                                             InsertMode iora, bool solve) {
+                                             InsertMode iora) {
   MoFEMFunctionBegin;
   DiagBlockStruture *ctx;
   CHKERR MatShellGetContext(mat, (void **)&ctx);
@@ -1155,20 +1178,16 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
   for (auto i = 0; i != nb_y; ++i)
     y_array[i] = 0.;
 
-  double *block_ptr;
-  if (solve)
-    block_ptr = &*ctx->dataInvBlocksPtr->begin();
-  else
-    block_ptr = &*ctx->dataBlocksPtr->begin();
+  double *block_ptr = &*ctx->dataBlocksPtr->begin();
 
   std::vector<int> loc_rows;
   std::vector<int> loc_nb_rows;
   std::vector<double> loc_y;
 
-  auto it = ctx->blockIndexPtr->get<0>().lower_bound(0);
-  auto hi = ctx->blockIndexPtr->get<0>().end();
+  auto it = ctx->blockIndex.get<0>().lower_bound(0);
+  auto hi = ctx->blockIndex.get<0>().end();
 
-  for (; it != hi;) {
+  while (it != hi) {
 
     auto shift = it->mat_shift;
 
@@ -1265,7 +1284,7 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
 }
 
 static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec x, Vec y,
-                                              InsertMode iora, bool solve) {
+                                              InsertMode iora) {
   MoFEMFunctionBegin;
   DiagBlockStruture *ctx;
   CHKERR MatShellGetContext(mat, (void **)&ctx);
@@ -1296,17 +1315,15 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec x, Vec y,
   for (auto i = 0; i != nb_y; ++i)
     y_array[i] = 0.;
 
-  double *block_ptr;
-  if (solve)
-    block_ptr = &*ctx->dataInvBlocksPtr->begin();
-  else
-    block_ptr = &*ctx->dataBlocksPtr->begin();
+  // double *block_ptr;
+  // if (solve)
+  //   block_ptr = &*ctx->dataInvBlocksPtr->begin();
+  // else
+  //   block_ptr = &*ctx->dataBlocksPtr->begin();
 
   std::vector<int> loc_rows;
   std::vector<int> loc_nb_rows;
   std::vector<double> loc_y;
-
-
 
   CHKERR VecRestoreArray(loc_ghost_x, &x_array);
   CHKERR VecRestoreArray(loc_ghost_y, &y_array);
@@ -1325,7 +1342,7 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec x, Vec y,
     break;
   default:
     CHK_MOAB_THROW(MOFEM_NOT_IMPLEMENTED, "Wrong InsertMode");
-  }
+    }
 
 #ifndef NDEBUG
 
@@ -1440,12 +1457,12 @@ shell_schur_mat_set_values_wrap(Mat M,
     if (row_first_index != -1) {
 
       auto size = nb_r * nb_c;
-      auto it = ctx->blockIndexPtr->get<1>().find(boost::make_tuple(
+      auto it = ctx->blockIndex.get<1>().find(boost::make_tuple(
           row_first_index, col_data.getIndices()[c], nb_r, nb_c));
 
 #ifndef NDEBUG
 
-      if (it == ctx->blockIndexPtr->get<1>().end()) {
+      if (it == ctx->blockIndex.get<1>().end()) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Block not allocated");
       }
@@ -1556,9 +1573,15 @@ MatSetValues<DiagBlockStruture>(Mat M,
   return shell_schur_mat_set_values_wrap(M, row_data, col_data, mat, iora);
 }
 
-SchurNestMatrixData
-getSchurNestMatArray(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
-                     SchurShellMatData A) {
+SchurNestMatrixData getSchurNestMatArray(
+
+    std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms, SchurShellMatData A,
+
+    std::vector<std::string> fields_name, //< a00 fields
+    std::vector<boost::shared_ptr<Range>>
+        field_ents //< a00 ranges (can be null)
+
+) {
   auto [schur_dm, block_dm] = dms;
   auto schur_prb = getProblemPtr(schur_dm);
   auto block_prb = getProblemPtr(block_dm);
@@ -1582,9 +1605,9 @@ getSchurNestMatArray(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
 
   auto get_vec = [&]() {
     std::vector<int> vec_r, vec_c;
-    vec_r.reserve(schur_data->blockIndexPtr->size());
-    vec_c.reserve(schur_data->blockIndexPtr->size());
-    for (auto &d : *schur_data->blockIndexPtr) {
+    vec_r.reserve(schur_data->blockIndex.size());
+    vec_c.reserve(schur_data->blockIndex.size());
+    for (auto &d : schur_data->blockIndex) {
       vec_r.push_back(d.row);
       vec_c.push_back(d.col);
     }
@@ -1606,10 +1629,12 @@ getSchurNestMatArray(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
 
   for (auto r = 0; r != 4; ++r) {
     data_ptrs[r] = boost::make_shared<DiagBlockStruture>();
-    data_ptrs[r]->blockIndexPtr =
-        boost::make_shared<DiagBlockStruture::BlockIndex>();
     data_ptrs[r]->dataBlocksPtr = schur_data->dataBlocksPtr;
   }
+  
+  // data_ptrs[3]->a00Fields = fields_name;
+  // data_ptrs[3]->a00Ranges = field_ents;
+  // data_ptrs[3]->numeredRowDofsPtr = block_prb->getNumeredRowDofsPtr();
 
   data_ptrs[0]->ghostX = schur_vec_x;
   data_ptrs[0]->ghostY = schur_vec_y;
@@ -1621,18 +1646,19 @@ getSchurNestMatArray(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
   data_ptrs[3]->ghostY = block_vec_y;
 
   int idx = 0;
-  for (auto &d : *schur_data->blockIndexPtr) {
+  for (auto &d : schur_data->blockIndex) {
 
-    auto insert = [&](auto &m_ptr, auto &dof_r, auto &dof_c, auto &d) {
-      m_ptr->insert(
+    auto insert = [&](auto &m, auto &dof_r, auto &dof_c, auto &d) {
+      m.insert(
 
-          DiagBlockStruture::Indexes{dof_r->getPetscGlobalDofIdx(),
-                                     dof_c->getPetscGlobalDofIdx(),
+          DiagBlockStruture::Indexes{
+              dof_r->getPetscGlobalDofIdx(), dof_c->getPetscGlobalDofIdx(),
 
-                                     d.nb_rows, d.nb_cols,
+              d.nb_rows, d.nb_cols,
 
-                                     dof_r->getPetscLocalDofIdx(),
-                                     dof_c->getPetscLocalDofIdx(), d.mat_shift}
+              dof_r->getPetscLocalDofIdx(), dof_c->getPetscLocalDofIdx(),
+
+              d.mat_shift, -1}
 
       );
     };
@@ -1652,7 +1678,7 @@ getSchurNestMatArray(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
                           "Block <Schur> not not fund");
       }
 #endif // NDEBUG
-      insert(data_ptrs[0]->blockIndexPtr, *schur_dof_r, *schur_dof_c, d);
+      insert(data_ptrs[0]->blockIndex, *schur_dof_r, *schur_dof_c, d);
     }
 
     if (vec_r_schur[idx] != -1 && vec_c_block[idx] != -1) {
@@ -1670,7 +1696,7 @@ getSchurNestMatArray(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
                           "Block <Block> not not fund");
       }
 #endif
-      insert(data_ptrs[1]->blockIndexPtr, *schur_dof_r, *block_dof_c, d);
+      insert(data_ptrs[1]->blockIndex, *schur_dof_r, *block_dof_c, d);
     }
 
     if (vec_r_block[idx] != -1 && vec_c_schur[idx] != -1) {
@@ -1688,7 +1714,7 @@ getSchurNestMatArray(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
                           "Block <Schur> not not fund");
       }
 #endif // NDEBUG
-      insert(data_ptrs[2]->blockIndexPtr, *block_dof_r, *schur_dof_c, d);
+      insert(data_ptrs[2]->blockIndex, *block_dof_r, *schur_dof_c, d);
     }
 
     if (vec_r_block[idx] != -1 && vec_c_block[idx] != -1) {
@@ -1696,7 +1722,7 @@ getSchurNestMatArray(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
           block_dofs_row->get<PetscGlobalIdx_mi_tag>().find(vec_r_block[idx]);
       auto block_dof_c =
           block_dofs_col->get<PetscGlobalIdx_mi_tag>().find(vec_c_block[idx]);
-      insert(data_ptrs[3]->blockIndexPtr, *block_dof_r, *block_dof_c, d);
+      insert(data_ptrs[3]->blockIndex, *block_dof_r, *block_dof_c, d);
     }
 
     ++idx;
@@ -1735,18 +1761,18 @@ getSchurNestMatArray(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
 
   MOFEM_TAG_AND_LOG("SYNC", Sev::verbose, "NetsetSchur")
       << "(0, 0) " << schur_nb_local << " " << schur_nb_global << " "
-      << data_ptrs[0]->blockIndexPtr->size();
+      << data_ptrs[0]->blockIndex.size();
   MOFEM_TAG_AND_LOG("SYNC", Sev::verbose, "NetsetSchur")
       << "(0, 1) " << schur_nb_local << " " << block_nb_local << " "
       << schur_nb_global << " " << block_nb_global << " "
-      << data_ptrs[1]->blockIndexPtr->size();
+      << data_ptrs[1]->blockIndex.size();
   MOFEM_TAG_AND_LOG("SYNC", Sev::verbose, "NetsetSchur")
       << "(1, 0) " << block_nb_local << " " << schur_nb_local << " "
       << block_nb_global << " " << schur_nb_global << " "
-      << data_ptrs[2]->blockIndexPtr->size();
+      << data_ptrs[2]->blockIndex.size();
   MOFEM_TAG_AND_LOG("SYNC", Sev::verbose, "NetsetSchur")
       << "(1, 1) " << block_nb_local << " " << block_nb_global << " "
-      << data_ptrs[3]->blockIndexPtr->size();
+      << data_ptrs[3]->blockIndex.size();
 
   MOFEM_LOG_SEVERITY_SYNC(comm, Sev::verbose);
 
