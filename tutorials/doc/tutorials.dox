@@ -37,46 +37,54 @@ continuing with the one you are most excited about.
 
 \note The tutorials are under development. Send us your feedback on [Q&A](https://groups.google.com/forum/#!categories/mofem-group) regarding the tutorials that already done and the missing ones that you most prefer to see.
 
+<!-- <b> Legend: </b> -->
+<p>
+<img src="BlankCheckBox.png" alt="Not started" width="18px"/> Source code &nbsp;&nbsp;
+<img src="GreenTickBoxed.png" alt="Not started" width="18px"/> Partial Desciption &nbsp;&nbsp;
+<img src="GreenTickColBoxed.png" alt="Complete" width="18px"/> Detailed desciption
+</p>
+
+
 \section tutorials_fundamentals Fundamentals
 
 <table style="width:100%">
   <tr valign="top">
-       <td>\ref lessons_introduction</td>
+       <td> \ref lessons_introduction &nbsp; <img src="GreenTickColBoxed.png" alt="Complete" width="18px"/></td>
        <td> Brief introduction about MoFEM interfaces which enable users to implement the codes with different level of complexity.
        <br/> *Keywords:* Design
        </td>
   </tr>
 
  <tr valign="top">
-       <td>\ref how_to_compile_program</td>
+       <td>\ref how_to_compile_program &nbsp; <img src="GreenTickColBoxed.png" alt="Complete" width="18px"/></td>
        <td> Brief introduction about compiling MoFEM - Developer version
        <br/> *Keywords:* Compilation
        </td>
   </tr>
 
   <tr valign="top">
-       <td>\ref how_to_add_new_module_and_program</td>
+       <td>\ref how_to_add_new_module_and_program &nbsp; <img src="GreenTickColBoxed.png" alt="Complete" width="18px"/></td>
        <td> Tutorial on adding a new %MoFEM module (you might want to skip this tutorial for now and return after reading other tutorials)
        <br/> *Keywords:* modules
        </td>
   </tr>
 
   <tr valign="top">
-       <td>\ref hello_world_tut1</td>
+       <td>\ref hello_world_tut1 &nbsp; <img src="GreenTickColBoxed.png" alt="Complete" width="18px"/></td>
        <td> Creating Simple problem, and pushing operators to pipelines
        <br/> *Keywords:* UDOs, pipelines
        </td>
   </tr>
 
   <tr valign="top">
-       <td>\ref integration</td>
+       <td>\ref integration &nbsp; <img src="GreenTickColBoxed.png" alt="Complete" width="18px"/></td>
        <td> Numerical integration is essential for most of the numerical methods employed to solve partial differential equations (PDEs)
        <br/> *Keywords:* UDOs and integration
        </td>
   </tr>
 
   <tr valign="top">
-       <td width="350px">\ref hierarchical_approximation_1</td>
+       <td width="350px">\ref hierarchical_approximation_1 &nbsp; <img src="GreenTickColBoxed.png" alt="Complete" width="18px"/></td>
        <td> Introduce elementary concepts of the Finite Element Method (FEM) with hierarchical shape functions and their implementation in MoFEM
        <br/> *Keywords:* Hierarchical approximation
        </td>
@@ -90,14 +98,14 @@ continuing with the one you are most excited about.
 <table style="width:100%">
 
   <tr valign="top">
-       <td width="350px">\ref basic_tutorials_mesh_generation_2d</td>
+       <td width="350px">\ref basic_tutorials_mesh_generation_2d &nbsp; <img src="GreenTickColBoxed.png" alt="Complete" width="18px"/></td>
        <td> This document shows how to create a MoFEM-compatible 2D input mesh from [Gmsh](https://gmsh.info) 
        <br/> *Keywords:* [Gmsh](https://gmsh.info), block definition, config file, [read_med](http://mofem.eng.gla.ac.uk/mofem/html/read__med_8cpp.html)
        </td>
   </tr>
 
   <tr valign="top">
-       <td>\ref basic_tutorials_mesh_generation_3d</td>
+       <td>\ref basic_tutorials_mesh_generation_3d &nbsp; <img src="GreenTickColBoxed.png" alt="Complete" width="18px"/></td>
        <td> This document shows how to create a MoFEM-compatible 3D input mesh from [Gmsh](https://gmsh.info) 
        <br/> *Keywords:* [Gmsh](https://gmsh.info), block definition, config file, [read_med](http://mofem.eng.gla.ac.uk/mofem/html/read__med_8cpp.html)
        </td>
@@ -110,84 +118,84 @@ continuing with the one you are most excited about.
 <table style="width:100%">
 
   <tr valign="top">
-       <td width="350px">\ref basic_tutorials_least_square_approximation</td>
+       <td width="350px">\ref basic_tutorials_least_square_approximation &nbsp; <img src="BlankCheckBox.png" alt="Complete" width="18px"/></td>
        <td> Solve the least square problem to approximate scalar function
        <br/> *Keywords:* [Simple Interface](http://mofem.eng.gla.ac.uk/mofem/html/group__mofem__simple__interface.html#details), [KSP](https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/KSP/index.html) solver, [mofem_part](http://mofem.eng.gla.ac.uk/mofem/html/mofem__part_8cpp.html), [mbconvert](https://gitlab.kitware.com/third-party/moab/-/blob/17ddd284930a23d8e8e48efa4510ff6fe56ade4f/tools/mbconvert.man), 3D extension
        </td>
   </tr>
 
   <tr valign="top">
-       <td width="350px">\ref basic_tutorials_poisson_homogeneous</td>
+       <td width="350px">\ref basic_tutorials_poisson_homogeneous &nbsp; <img src="GreenTickColBoxed.png" alt="Complete" width="18px"/></td>
        <td> Solve the %Poisson's equation with zero value boundary conditions
        <br/> *Keywords:* [Simple Interface](http://mofem.eng.gla.ac.uk/mofem/html/group__mofem__simple__interface.html#details), [KSP](https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/KSP/index.html) solver, [mofem_part](http://mofem.eng.gla.ac.uk/mofem/html/mofem__part_8cpp.html), [mbconvert](https://gitlab.kitware.com/third-party/moab/-/blob/17ddd284930a23d8e8e48efa4510ff6fe56ade4f/tools/mbconvert.man), 3D extension
        </td>
   </tr>
 
   <tr valign="top">
-       <td>\ref basic_tutorials_poisson_nonhomogeneous</td>
+       <td>\ref basic_tutorials_poisson_nonhomogeneous &nbsp; <img src="GreenTickColBoxed.png" alt="Complete" width="18px"/></td>
        <td> An expansion of previous tutorial to cover non-homogeneous (non-zero value) boundary condition of %Poisson's equation
        <br/> *Keywords:* Least square approximation
        </td>
   </tr>
 
   <tr valign="top">
-       <td>\ref basic_tutorials_poisson_lagrange_multiplier</td>
+       <td>\ref basic_tutorials_poisson_lagrange_multiplier &nbsp; <img src="BlankCheckBox.png" alt="Complete" width="18px"/></td>
        <td> Solve the %Poisson's equation using Lagrange multiplier for the non-homogeneous boundary condition
        <br/> *Keywords:* [PCFIELDSPLIT](http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/PC/PCFIELDSPLIT.html) block solver
        </td>
   </tr>
 
   <tr valign="top">
-       <td>\ref basic_tutorials_poisson_nonlinear</td>
+       <td>\ref basic_tutorials_poisson_nonlinear &nbsp; <img src="BlankCheckBox.png" alt="Complete" width="18px"/></td>
        <td> Solve nonlinear %Poisson's equation using Newton iterative scheme
        <br/> *Keywords:* [SNES](https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/index.html) solver
        </td>
   </tr>
 
   <tr valign="top">
-       <td>\ref basic_tutorials_minimal_surface_equation</td>
+       <td>\ref basic_tutorials_minimal_surface_equation &nbsp; <img src="BlankCheckBox.png" alt="Complete" width="18px"/></td>
        <td> A variant of the nonlinear %Poisson's equation
        <br/> *Keywords:* [SNES](https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/index.html) solver
        </td>
   </tr>
 
   <tr valign="top">
-       <td>\ref basic_tutorials_heat_equation</td>
+       <td>\ref basic_tutorials_heat_equation &nbsp; <img src="BlankCheckBox.png" alt="Complete" width="18px"/></td>
        <td> This is the first tutorial to solve a time-dependent problem with first-order time derivative
        <br/> *Keywords:* [TS](https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/index.html) solver, implicit scheme, remove dofs on skin
        </td>
   </tr>
 
   <tr valign="top">
-       <td>\ref basic_tutorials_wave_equation</td>
+       <td>\ref basic_tutorials_wave_equation &nbsp; <img src="BlankCheckBox.png" alt="Complete" width="18px"/></td>
        <td> Time-dependent problem with second-order time derivative
        <br/> *Keywords:* [TS](https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/index.html) solver, implicit scheme, non-homegenous time dependent boundaru condition
        </td>
   </tr>
 
   <tr valign="top">
-       <td>\ref radiation_pluto</td>
+       <td>\ref radiation_pluto &nbsp; <img src="BlankCheckBox.png" alt="Complete" width="18px"/></td>
        <td> Nonlinear problem at the boundary
        <br/> *Keywords:* axisymmetric problem, linearisation 
        </td>
   </tr>
 
   <tr valign="top">
-       <td>\ref tutorial_heat_method</td>
+       <td>\ref tutorial_heat_method &nbsp; <img src="BlankCheckBox.png" alt="Complete" width="18px"/></td>
        <td> Finding geodesic distance with heat method
        <br/> *Keywords:*  face elements embedded in 3d space
        </td>
   </tr>
 
   <tr valign="top">
-       <td>\ref tutorials_photon_diffusion</td>
+       <td>\ref tutorials_photon_diffusion &nbsp; <img src="BlankCheckBox.png" alt="Complete" width="18px"/></td>
        <td> Photon diffusion equation
        <br/> *Keywords:*  inital boundary conditions, parabolic equation, adding user element, postprocessing on skin, initial vector
        </td>
   </tr>
 
   <tr valign="top">
-       <td>\ref tutorial_dg_poisson</td>
+       <td>\ref tutorial_dg_poisson &nbsp; <img src="BlankCheckBox.png" alt="Complete" width="18px"/></td>
        <td> Discountinous Galerkin for Poisson problem
        <br/> *Keywords:* integartion on skeleton
        </td>
