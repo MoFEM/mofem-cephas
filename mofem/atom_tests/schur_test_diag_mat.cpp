@@ -61,6 +61,16 @@ typename MoFEM::OpBaseImpl<BLOCK_MAT, DomainEleOp>::MatSetValuesHook
               block_mat, row_data, col_data, m, ADD_VALUES);
         };
 
+template <>
+typename MoFEM::OpBaseImpl<BLOCK_SCHUR, DomainEleOp>::MatSetValuesHook
+    MoFEM::OpBaseImpl<BLOCK_SCHUR, DomainEleOp>::matSetValuesHook =
+        [](ForcesAndSourcesCore::UserDataOperator *op_ptr,
+           const EntitiesFieldData::EntData &row_data,
+           const EntitiesFieldData::EntData &col_data, MatrixDouble &m) {
+          return MatSetValues<AssemblyTypeSelector<BLOCK_SCHUR>>(
+              block_mat, row_data, col_data, m, ADD_VALUES);
+        };
+
 constexpr bool debug = false;
 
 int main(int argc, char *argv[]) {
@@ -137,7 +147,7 @@ int main(int argc, char *argv[]) {
     using OpMassPETSCAssemble = FormsIntegrators<DomainEleOp>::Assembly<
         PETSC>::BiLinearForm<GAUSS>::OpMass<1, FIELD_DIM>;
     using OpMassBlockAssemble = FormsIntegrators<DomainEleOp>::Assembly<
-        BLOCK_MAT>::BiLinearForm<GAUSS>::OpMass<1, FIELD_DIM>;
+        BLOCK_SCHUR>::BiLinearForm<GAUSS>::OpMass<1, FIELD_DIM>;
 
     // get operators tester
     auto pip_mng = m_field.getInterface<PipelineManager>(); // get interface to
@@ -148,10 +158,12 @@ int main(int argc, char *argv[]) {
     pip_lhs.push_back(new OpMassPETSCAssemble("TENSOR", "TENSOR"));
     pip_lhs.push_back(new OpMassPETSCAssemble("VECTOR", "TENSOR"));
     pip_lhs.push_back(new OpMassPETSCAssemble("TENSOR", "VECTOR"));
+    pip_lhs.push_back(new OpSchurAssembleBegin());
     pip_lhs.push_back(new OpMassBlockAssemble("VECTOR", "VECTOR"));
     pip_lhs.push_back(new OpMassBlockAssemble("TENSOR", "TENSOR"));
     pip_lhs.push_back(new OpMassBlockAssemble("VECTOR", "TENSOR"));
     pip_lhs.push_back(new OpMassBlockAssemble("TENSOR", "VECTOR"));
+    pip_lhs.push_back(new OpSchurAssembleEnd<SCHUR_DSYSV>({}, {}, {}, {}, {}));
 
     CHKERR DMoFEMLoopFiniteElements(simple->getDM(), simple->getDomainFEName(),
                                     pip_mng->getDomainLhsFE());
