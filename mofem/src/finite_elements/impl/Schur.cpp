@@ -1624,8 +1624,8 @@ SchurNestMatrixData getSchurNestMatArray(
     data_ptrs[r] = boost::make_shared<DiagBlockStruture>();
     data_ptrs[r]->dataBlocksPtr = schur_data->dataBlocksPtr;
   }
-
   data_ptrs[3] = boost::make_shared<DiagBlockInvStruture>();
+  data_ptrs[3]->dataBlocksPtr = schur_data->dataBlocksPtr;
 
   data_ptrs[0]->ghostX = schur_vec_x;
   data_ptrs[0]->ghostY = schur_vec_y;
@@ -1776,31 +1776,48 @@ SchurNestMatrixData getSchurNestMatArray(
         boost::dynamic_pointer_cast<DiagBlockInvStruture>(inv_block_data)
             ->indexView;
 
+    // this enable esrch by varying ranges
+    using BlockIndexView = multi_index_container<
+
+        const DiagBlockIndex::Indexes *,
+
+        indexed_by<
+
+            ordered_non_unique<member<DiagBlockIndex::Indexes, const int,
+                                      &DiagBlockIndex::Indexes::row>>
+
+            >>;
+
+    BlockIndexView block_index_view;
+    for (auto it = inv_block_data->blockIndex.begin();
+         it != inv_block_data->blockIndex.end(); ++it) {
+      block_index_view.insert(&*it);
+    }
+
     for (auto p : glob_idx_pairs) {
 
       auto [lo_idx, nb] = p;
-      auto it = inv_block_data->blockIndex.template get<1>().lower_bound(
-          boost::make_tuple(lo_idx, 0, 0, 0));
-      auto hi = inv_block_data->blockIndex.template get<1>().end();
-      while (it != hi && (it->row + it->nb_rows) < lo_idx + nb) {
+      auto it = block_index_view.lower_bound(lo_idx);
+      auto hi = block_index_view.end();
+      while (it != hi && ((*it)->row + (*it)->nb_rows) < lo_idx + nb) {
 
         int count = 0;
-        auto row = it->row;
+        auto row = (*it)->row;
         auto it_count = it;
-        while (it_count != hi && it_count->row == row) {
+        while (it_count != hi && (*it_count)->row == row) {
           ++count;
           ++it_count;
         }
 
         const DiagBlockIndex::Indexes *diag_ptr = nullptr;
         std::vector<const DiagBlockIndex::Indexes *> off_diag;
-        off_diag.reserve(count - 1);
+        off_diag.reserve(std::max(count - 1, 0));
 
         for (auto c = 0; c != count; ++c, ++it) {
-          if (it->row != it->col) {
-            diag_ptr = &*it;
+          if ((*it)->row == (*it)->col) {
+            diag_ptr = *it;
           } else {
-            off_diag.push_back(&*it);
+            off_diag.push_back(*it);
           }
         }
 
