@@ -145,12 +145,12 @@ int main(int argc, char *argv[]) {
     auto &pip_lhs = pip_mng->getOpDomainLhsPipeline();
 
     pip_lhs.push_back(new OpMassPETSCAssemble("VECTOR", "VECTOR"));
-    pip_lhs.push_back(new OpMassBlockAssemble("VECTOR", "VECTOR"));
     pip_lhs.push_back(new OpMassPETSCAssemble("TENSOR", "TENSOR"));
-    pip_lhs.push_back(new OpMassBlockAssemble("TENSOR", "TENSOR"));
     pip_lhs.push_back(new OpMassPETSCAssemble("VECTOR", "TENSOR"));
-    pip_lhs.push_back(new OpMassBlockAssemble("VECTOR", "TENSOR"));
     pip_lhs.push_back(new OpMassPETSCAssemble("TENSOR", "VECTOR"));
+    pip_lhs.push_back(new OpMassBlockAssemble("VECTOR", "VECTOR"));
+    pip_lhs.push_back(new OpMassBlockAssemble("TENSOR", "TENSOR"));
+    pip_lhs.push_back(new OpMassBlockAssemble("VECTOR", "TENSOR"));
     pip_lhs.push_back(new OpMassBlockAssemble("TENSOR", "VECTOR"));
 
     CHKERR DMoFEMLoopFiniteElements(simple->getDM(), simple->getDomainFEName(),
