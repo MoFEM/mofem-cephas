@@ -128,10 +128,10 @@ struct DiagBlockStruture : public DiagBlockIndex {
 
 struct DiagBlockInvStruture : public DiagBlockStruture {
 
-  boost::shared_ptr<NumeredDofEntity_multiIndex>
-      numeredRowDofsPtr; ///< store DOFs on rows for this problem
-  std::vector<std::string> a00Fields;
-  std::vector<boost::shared_ptr<Range>> a00Ranges;
+  using SchurSolverView =
+      std::vector<std::pair<const Indexes *, std::vector<const Indexes *>>>;
+
+  SchurSolverView indexView;
 };
 
 PetscLogEvent SchurEvents::MOFEM_EVENT_schurL2MatsMatSetValues;
@@ -151,7 +151,7 @@ SchurEvents::SchurEvents() {
 }
 
 template <>
-inline MoFEMErrorCode
+MoFEMErrorCode
 MatSetValues<SchurL2Mats>(Mat M, const EntitiesFieldData::EntData &row_data,
                           const EntitiesFieldData::EntData &col_data,
                           const MatrixDouble &mat, InsertMode iora) {
@@ -690,28 +690,29 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
   };
 
   auto get_a00_uids = [&]() {
+    auto get_field_bit = [&](auto &name) {
+      return getPtrFE()->mField.get_field_bit_number(name);
+    };
+
     std::vector<std::pair<UId, UId>> a00_uids;
     a00_uids.reserve(fieldsName.size());
     for (auto ss = 0; ss != fieldsName.size(); ++ss) {
-      auto field_bit = getPtrFE()->mField.get_field_bit_number(fieldsName[ss]);
+      auto field_bit = get_field_bit(fieldsName[ss]);
       auto row_ents = fieldEnts[ss];
-      for (auto ss = 0; ss != fieldsName.size(); ++ss) {
-        if (row_ents) {
-          for (auto p = row_ents->pair_begin(); p != row_ents->pair_end();
-               ++p) {
-            auto lo_uid =
-                FieldEntity::getLoLocalEntityBitNumber(field_bit, p->first);
-            auto hi_uid =
-                FieldEntity::getHiLocalEntityBitNumber(field_bit, p->second);
-            a00_uids.push_back(std::make_pair(lo_uid, hi_uid));
-          }
-        } else {
-          auto lo_uid = FieldEntity::getLoLocalEntityBitNumber(
-              field_bit, get_id_for_min_type<MBVERTEX>());
-          auto hi_uid = FieldEntity::getHiLocalEntityBitNumber(
-              field_bit, get_id_for_max_type<MBENTITYSET>());
+      if (row_ents) {
+        for (auto p = row_ents->pair_begin(); p != row_ents->pair_end(); ++p) {
+          auto lo_uid =
+              FieldEntity::getLoLocalEntityBitNumber(field_bit, p->first);
+          auto hi_uid =
+              FieldEntity::getHiLocalEntityBitNumber(field_bit, p->second);
           a00_uids.push_back(std::make_pair(lo_uid, hi_uid));
         }
+      } else {
+        auto lo_uid = FieldEntity::getLoLocalEntityBitNumber(
+            field_bit, get_id_for_min_type<MBVERTEX>());
+        auto hi_uid = FieldEntity::getHiLocalEntityBitNumber(
+            field_bit, get_id_for_max_type<MBENTITYSET>());
+        a00_uids.push_back(std::make_pair(lo_uid, hi_uid));
       }
     }
     return a00_uids;
@@ -1317,8 +1318,11 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec x, Vec y,
   CHKERR VecGhostUpdateBegin(ghost_y, ADD_VALUES, SCATTER_REVERSE);
   CHKERR VecGhostUpdateEnd(ghost_y, ADD_VALUES, SCATTER_REVERSE);
 
-  for (auto &d : ctx->blockIndex.get<1>()) {
-  }
+  // for(auto f = 0; f!=a00_fields; ++f) {
+  //   auto field = a00_fields[f];
+  //   auto range = a00_ranges[f];
+
+  // }
 
   switch (iora) {
   case INSERT_VALUES:
@@ -1565,7 +1569,7 @@ SchurNestMatrixData getSchurNestMatArray(
 
     std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms, SchurShellMatData A,
 
-    std::vector<std::string> fields_name, //< a00 fields
+    std::vector<std::string> fields_names, //< a00 fields
     std::vector<boost::shared_ptr<Range>>
         field_ents //< a00 ranges (can be null)
 
@@ -1573,6 +1577,7 @@ SchurNestMatrixData getSchurNestMatArray(
   auto [schur_dm, block_dm] = dms;
   auto schur_prb = getProblemPtr(schur_dm);
   auto block_prb = getProblemPtr(block_dm);
+  auto m_field_ptr = getInterfacePtr(block_dm);
 
   auto schur_dofs_row = schur_prb->getNumeredRowDofsPtr();
   auto schur_dofs_col = schur_prb->getNumeredColDofsPtr();
@@ -1620,15 +1625,7 @@ SchurNestMatrixData getSchurNestMatArray(
     data_ptrs[r]->dataBlocksPtr = schur_data->dataBlocksPtr;
   }
 
-  auto set_up_a00_data = [&](auto schur_data) {
-    auto data_a00 = boost::make_shared<DiagBlockInvStruture>();
-    data_a00->dataBlocksPtr = schur_data->dataBlocksPtr;
-    data_a00->a00Fields = fields_name;
-    data_a00->a00Ranges = field_ents;
-    data_a00->numeredRowDofsPtr = block_prb->getNumeredRowDofsPtr();
-    return data_a00;
-  };
-  data_ptrs[3] = set_up_a00_data(schur_data);
+  data_ptrs[3] = boost::make_shared<DiagBlockInvStruture>();
 
   data_ptrs[0]->ghostX = schur_vec_x;
   data_ptrs[0]->ghostY = schur_vec_y;
@@ -1725,9 +1722,113 @@ SchurNestMatrixData getSchurNestMatArray(
     ++idx;
   }
 
-  schur_data->dataInvBlocksPtr =
-      boost::make_shared<std::vector<double>>(inv_mem_size, 0);
-  data_ptrs[3]->dataInvBlocksPtr = schur_data->dataInvBlocksPtr;
+  auto set_up_a00_data = [&](auto inv_block_data) {
+    MoFEMFunctionBegin;
+
+    auto get_a00_uids = [&]() {
+      auto get_field_bit = [&](auto field_name) {
+        return m_field_ptr->get_field_bit_number(field_name);
+      };
+
+      std::vector<std::pair<UId, UId>> a00_uids;
+      a00_uids.reserve(fields_names.size());
+      for (auto ss = 0; ss != fields_names.size(); ++ss) {
+        auto field_bit = get_field_bit(fields_names[ss]);
+        auto row_ents = field_ents[ss];
+        if (row_ents) {
+          for (auto p = row_ents->pair_begin(); p != row_ents->pair_end();
+               ++p) {
+            auto lo_uid =
+                FieldEntity::getLoLocalEntityBitNumber(field_bit, p->first);
+            auto hi_uid =
+                FieldEntity::getHiLocalEntityBitNumber(field_bit, p->second);
+            a00_uids.push_back(std::make_pair(lo_uid, hi_uid));
+          }
+        } else {
+          auto lo_uid = FieldEntity::getLoLocalEntityBitNumber(
+              field_bit, get_id_for_min_type<MBVERTEX>());
+          auto hi_uid = FieldEntity::getHiLocalEntityBitNumber(
+              field_bit, get_id_for_max_type<MBENTITYSET>());
+          a00_uids.push_back(std::make_pair(lo_uid, hi_uid));
+        }
+      }
+      return a00_uids;
+    };
+
+    auto get_glob_idex_pairs = [&](auto &&uid_pairs) {
+      std::vector<std::pair<int, int>> glob_idex_pairs;
+      glob_idex_pairs.reserve(uid_pairs.size());
+      auto dofs = block_prb->getNumeredRowDofsPtr();
+      for (auto &p : uid_pairs) {
+        auto [lo_uid, hi_uid] = p;
+        auto lo_it = dofs->lower_bound(lo_uid);
+        auto hi_it = dofs->upper_bound(hi_uid);
+        if (lo_it != hi_it) {
+          auto lo_idx = (*lo_it)->getPetscGlobalDofIdx();
+          glob_idex_pairs.emplace_back(lo_idx, std::distance(lo_it, hi_it));
+        }
+      }
+      return glob_idex_pairs;
+    };
+
+    auto glob_idx_pairs = get_glob_idex_pairs(get_a00_uids());
+    auto &index_view =
+        boost::dynamic_pointer_cast<DiagBlockInvStruture>(inv_block_data)
+            ->indexView;
+
+    for (auto p : glob_idx_pairs) {
+
+      auto [lo_idx, nb] = p;
+      auto it = inv_block_data->blockIndex.template get<1>().lower_bound(
+          boost::make_tuple(lo_idx, 0, 0, 0));
+      auto hi = inv_block_data->blockIndex.template get<1>().end();
+      while (it != hi && (it->row + it->nb_rows) < lo_idx + nb) {
+
+        int count = 0;
+        auto row = it->row;
+        auto it_count = it;
+        while (it_count != hi && it_count->row == row) {
+          ++count;
+          ++it_count;
+        }
+
+        const DiagBlockIndex::Indexes *diag_ptr = nullptr;
+        std::vector<const DiagBlockIndex::Indexes *> off_diag;
+        off_diag.reserve(count - 1);
+
+        for (auto c = 0; c != count; ++c, ++it) {
+          if (it->row != it->col) {
+            diag_ptr = &*it;
+          } else {
+            off_diag.push_back(&*it);
+          }
+        }
+
+        if (count) {
+          index_view.emplace_back(diag_ptr, off_diag);
+        }
+      }
+    }
+
+    auto inv_mem_size = 0;
+    for(auto &d : index_view) {
+      d.first->inv_shift = inv_mem_size;
+      inv_mem_size = d.first->nb_cols * d.first->nb_rows;
+      for(auto &o : d.second) {
+        o->inv_shift = inv_mem_size;
+        inv_mem_size += o->nb_cols * o->nb_rows;
+      }
+    }
+
+
+    auto inv_data_ptr = boost::make_shared<std::vector<double>>(inv_mem_size);
+    inv_block_data->dataInvBlocksPtr = inv_data_ptr;
+    inv_data_ptr->resize(inv_mem_size, 0);
+
+    MoFEMFunctionReturn(0);
+  };
+
+  CHKERR set_up_a00_data(data_ptrs[3]);
 
   MPI_Comm comm;
   CHKERR PetscObjectGetComm((PetscObject)schur_dm, &comm);
