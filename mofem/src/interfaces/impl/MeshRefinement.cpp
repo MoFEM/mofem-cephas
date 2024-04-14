@@ -1288,7 +1288,7 @@ MoFEMErrorCode MeshRefinement::refineTris(const Range &_tris,
           }
         }
         if (ee < 3)
-          continue; // this refined edge is contained by edge of triangel
+          continue; // this refined edge is contained by edge of triangle
 
         // check if ref edge is in coarse tetrahedral (i.e. that is internal
         // edge of refined tetrahedral)

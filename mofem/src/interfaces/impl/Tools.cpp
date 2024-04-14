@@ -137,10 +137,10 @@ MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceFourNodeTet(
   MoFEMFunctionReturnHot(0);
 }
 
-template <typename T>
-MoFEMErrorCode getLocalCoordinatesOnReferenceTriNodeTriImpl(
-    const T *elem_coords, const T *global_coords, const int nb_nodes,
-    T *local_coords) {
+template <typename T1, typename T2>
+MoFEMErrorCode getLocalCoordinatesOnReferenceThreeNodeTriImpl(
+    const T1 *elem_coords, const T2 *global_coords, const int nb_nodes,
+    typename FTensor::promote<T1, T2>::V *local_coords) {
 
   FTensor::Index<'i', 3> i3;
   FTensor::Index<'j', 3> j3;
@@ -153,12 +153,12 @@ MoFEMErrorCode getLocalCoordinatesOnReferenceTriNodeTriImpl(
                                            Tools::shapeFunMBTRIAt00[2]};
   auto t_diff = getFTensor2FromPtr<3, 2>(
       const_cast<double *>(Tools::diffShapeFunMBTRI.data()));
-  auto t_elem_coords = getFTensor2FromPtr<3, 3>(const_cast<T *>(elem_coords));
+  auto t_elem_coords = getFTensor2FromPtr<3, 3>(const_cast<T1 *>(elem_coords));
 
   // Build matrix and get coordinates of zero point
-  FTensor::Tensor2<T, 2, 3> t_a;
+  FTensor::Tensor2<T1, 2, 3> t_a;
   t_a(K2, i3) = t_diff(j3, K2) * t_elem_coords(j3, i3);
-  FTensor::Tensor2_symmetric<T, 2> t_b, t_inv_b;
+  FTensor::Tensor2_symmetric<T1, 2> t_b, t_inv_b;
   t_b(K2, L2) = t_a(K2, j3) ^ t_a(L2, j3);
   // Solve problem
   const auto inv_det = 1. / (t_b(0, 0) * t_b(1, 1) - t_b(0, 1) * t_b(1, 0));
@@ -167,10 +167,10 @@ MoFEMErrorCode getLocalCoordinatesOnReferenceTriNodeTriImpl(
   t_inv_b(1, 1) = t_b(0, 0) * inv_det;
 
   // Coords at corner
-  FTensor::Tensor1<T, 3> t_coords_at_0;
+  FTensor::Tensor1<T1, 3> t_coords_at_0;
   t_coords_at_0(i3) = t_n(j3) * t_elem_coords(j3, i3);
 
-  auto t_global_coords = getFTensor1FromPtr<3>(const_cast<T *>(global_coords));
+  auto t_global_coords = getFTensor1FromPtr<3>(const_cast<T2 *>(global_coords));
   auto t_local_coords = getFTensor1FromPtr<2>(local_coords);
 
   // Calculate right hand side
@@ -185,21 +185,19 @@ MoFEMErrorCode getLocalCoordinatesOnReferenceTriNodeTriImpl(
   MoFEMFunctionReturnHot(0);
 }
 
-template <>
-MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceTriNodeTri(
-    const double *elem_coords, const double *global_coords, const int nb_nodes,
+MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceThreeNodeTri(
+    const double *elem_coords, const double *glob_coords, const int nb_nodes,
     double *local_coords) {
-  return getLocalCoordinatesOnReferenceTriNodeTriImpl<double>(
-      elem_coords, global_coords, nb_nodes, local_coords);
+  return getLocalCoordinatesOnReferenceThreeNodeTriImpl<double, double>(
+      elem_coords, glob_coords, nb_nodes, local_coords);
 }
 
-template <>
-MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceTriNodeTri(
-    const std::complex<double> *elem_coords,
-    const std::complex<double> *global_coords, const int nb_nodes,
-    std::complex<double> *local_coords) {
-  return getLocalCoordinatesOnReferenceTriNodeTriImpl<std::complex<double>>(
-      elem_coords, global_coords, nb_nodes, local_coords);
+MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceThreeNodeTri(
+    const double *elem_coords, const std::complex<double> *glob_coords,
+    const int nb_nodes, std::complex<double> *local_coords) {
+  return getLocalCoordinatesOnReferenceThreeNodeTriImpl<double,
+                                                        std::complex<double>>(
+      elem_coords, glob_coords, nb_nodes, local_coords);
 }
 
 MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceEdgeNodeEdge(
@@ -715,6 +713,157 @@ MoFEMErrorCode Tools::outerProductOfEdgeIntegrationPtsForHex(
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong size of matrix");
 
   MoFEMFunctionReturn(0);
+}
+
+constexpr std::array<int, 12> Tools::uniformTriangleRefineTriangles;
+
+std::tuple<std::vector<double>, std::vector<int>, std::vector<int>>
+Tools::refineTriangle(int nb_levels) {
+
+  std::vector<int> triangles{0, 1, 2, 3, 4, 5};
+  std::vector<double> nodes{
+
+      0.,  0.,  // 0
+      1.,  0.,  // 1
+      0.,  1.,  // 2
+      0.5, 0.,  // 3
+      0.5, 0.5, // 4
+      0.,  0.5  // 5
+
+  };
+  std::map<std::pair<int, int>, int> edges{
+      {{0, 1}, 3}, {{1, 2}, 4}, {{0, 2}, 5}};
+
+  auto add_edge = [&](auto a, auto b) {
+    if (a > b) {
+      std::swap(a, b);
+    }
+    auto it = edges.find(std::make_pair(a, b));
+    if (it == edges.end()) {
+      int e = 3 + edges.size();
+      edges[std::make_pair(a, b)] = e;
+      for (auto n : {0, 1}) {
+        nodes.push_back((nodes[2 * a + n] + nodes[2 * b + n]) / 2);
+      }
+#ifndef NDEBUG
+      if (e != nodes.size() / 2 - 1)
+        CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "wrong node/edge index");
+#endif
+      return e;
+    }
+    return it->second;
+  };
+
+  auto add_triangle = [&](auto t) {
+    for (auto tt : {0, 1, 2, 3}) {
+      auto last = triangles.size() / 6;
+      for (auto n : {0, 1, 2}) {
+        // add triangle nodes
+        triangles.push_back(
+            triangles[6 * t + uniformTriangleRefineTriangles[3 * tt + n]]);
+      }
+      // add triangle edges
+      auto cycle = std::array<int, 4>{0, 1, 2, 0};
+      for (auto e : {0, 1, 2}) {
+        triangles.push_back(add_edge(triangles[6 * last + cycle[e]],
+                                     triangles[6 * last + cycle[e + 1]]));
+      }
+    }
+  };
+
+  std::vector<int> level_index{0, 1};
+  auto l = 0;
+  for (; l != nb_levels; ++l) {
+    auto first_tet = level_index[l];
+    auto nb_last_level_test = level_index.back() - level_index[l];
+    for (auto t = first_tet; t != (first_tet + nb_last_level_test); ++t) {
+      add_triangle(t);
+    }
+    level_index.push_back(triangles.size() / 6);
+  }
+
+  return std::make_tuple(nodes, triangles, level_index);
+}
+
+MatrixDouble Tools::refineTriangleIntegrationPts(
+    MatrixDouble pts,
+    std::tuple<std::vector<double>, std::vector<int>, std::vector<int>>
+        refined) {
+
+  auto [nodes, triangles, level_index] = refined;
+  
+  auto get_coords = [&](auto t) {
+    auto [nodes, triangles, level_index] = refined;
+    std::array<double, 9> ele_coords;
+    for (auto n : {0, 1, 2}) {
+      for (auto i : {0, 1}) {
+        ele_coords[3 * n + i] = nodes[2 * triangles[6 * t + n] + i];
+      }
+      ele_coords[3 * n + 2] = 0;
+    }
+    return ele_coords;
+  };
+
+  auto get_normal = [](auto &ele_coords) {
+    FTensor::Tensor1<double, 3> t_normal;
+    Tools::getTriNormal(ele_coords.data(), &t_normal(0));
+    return t_normal;
+  };
+
+  std::vector<double> ele_shape(3 * pts.size2());
+  shapeFunMBTRI<1>(&*ele_shape.begin(), &pts(0, 0), &pts(1, 0), pts.size2());
+
+  int nb_elems = level_index.back() - level_index[level_index.size() - 2];
+  MatrixDouble new_pts(3, pts.size2() * nb_elems);
+  FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 2> t_gauss_pt{&new_pts(0, 0),
+                                                                &new_pts(1, 0)};
+  FTensor::Tensor0<FTensor::PackPtr<double *, 1>> t_gauss_weight{
+      &new_pts(2, 0)};
+
+  for (auto t = level_index[level_index.size() - 2]; t != level_index.back();
+       ++t) {
+
+    auto ele_coords = get_coords(t);
+    auto t_normal = get_normal(ele_coords);
+    auto area = t_normal.l2();
+
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_ele_shape{
+        &ele_shape[0], &ele_shape[1], &ele_shape[2]};
+    FTensor::Tensor2<double, 3, 2> t_ele_coords{ele_coords[0], ele_coords[1],
+                                                ele_coords[3], ele_coords[4],
+                                                ele_coords[6], ele_coords[7]};
+
+    FTensor::Index<'i', 3> i;
+    FTensor::Index<'J', 2> J;
+
+    for (auto gg = 0; gg != pts.size2(); ++gg) {
+      t_gauss_pt(J) = t_ele_shape(i) * t_ele_coords(i, J);
+      t_gauss_weight = area * pts(2, gg);
+      ++t_gauss_pt;
+      ++t_gauss_weight;
+      ++t_ele_shape;
+    }
+
+  }
+
+  return new_pts;
+}
+
+MatrixDouble
+Tools::refineTriangleIntegrationPts(int rule, RefineTrianglesReturn refined) {
+
+  MatrixDouble gauss_pts;
+
+  const size_t nb_gauss_pts = QUAD_2D_TABLE[rule]->npoints;
+  gauss_pts.resize(3, nb_gauss_pts, false);
+  cblas_dcopy(nb_gauss_pts, &QUAD_2D_TABLE[rule]->points[1], 3,
+              &gauss_pts(0, 0), 1);
+  cblas_dcopy(nb_gauss_pts, &QUAD_2D_TABLE[rule]->points[2], 3,
+              &gauss_pts(1, 0), 1);
+  cblas_dcopy(nb_gauss_pts, QUAD_2D_TABLE[rule]->weights, 1, &gauss_pts(2, 0),
+              1);
+
+  return Tools::refineTriangleIntegrationPts(gauss_pts, refined);
 }
 
 } // namespace MoFEM

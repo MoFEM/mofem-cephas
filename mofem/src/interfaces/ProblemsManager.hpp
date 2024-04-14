@@ -353,7 +353,7 @@ struct ProblemsManager : public UnknownInterface {
   /**
    * @copydoc removeDofsOnEntities
    *
-   * \note Use this function for nondistributed meshes
+   * \note Use this function for non distributed meshes
    */
   MoFEMErrorCode removeDofsOnEntitiesNotDistributed(
       const std::string problem_name, const std::string field_name,

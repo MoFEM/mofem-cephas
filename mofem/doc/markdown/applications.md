@@ -1,4 +1,4 @@
-Applications of %MoFEM in research and industry (2021-2023) {#applications}
+Applications of %MoFEM in research and industry {#applications}
 =======================================================================
 
 The catalyst for the creation of MoFEM was the need for a flexible and numerically accurate modelling environment for multi-physics problems posed by our partners, including industry (EDF Energy, Jacobs, Advanced Forming Research Centre (University of Strathclyde), Rolls-Royce, etc).

@@ -7,6 +7,7 @@ find_package(
   program_options log log_setup thread system filesystem
   OPTIONAL_COMPONENTS
   python
+  numpy
 )
 
 message(STATUS "Boost_LIBRARIES ${Boost_LIBRARIES}")

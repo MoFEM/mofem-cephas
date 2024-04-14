@@ -82,7 +82,7 @@ FaceElementForcesAndSourcesCoreOnChildParent::setGaussPts(int order) {
     auto glob_coords = get_glob_coords();
     MatrixDouble local_coords(nb_integration_points, 2);
 
-    CHKERR Tools::getLocalCoordinatesOnReferenceTriNodeTri(
+    CHKERR Tools::getLocalCoordinatesOnReferenceThreeNodeTri(
         node_coords.data(), &glob_coords(0, 0), nb_integration_points,
         &local_coords(0, 0));
 
