@@ -122,7 +122,24 @@ int main(int argc, char *argv[]) {
     // setup problem
     CHKERR simple->setUp();
 
+    auto schur_dm = createDM(m_field.get_comm(), "DMMOFEM");
+    CHKERR DMMoFEMCreateSubDM(schur_dm, simple->getDM(), "SCHUR");
+    CHKERR DMMoFEMSetSquareProblem(schur_dm, PETSC_TRUE);
+    CHKERR DMMoFEMAddElement(schur_dm, simple->getDomainFEName());
+    CHKERR DMMoFEMAddSubFieldRow(schur_dm, "VECTOR");
+    CHKERR DMMoFEMAddSubFieldCol(schur_dm, "VECTOR");
+    CHKERR DMSetUp(schur_dm);
+
+    auto block_dm = createDM(m_field.get_comm(), "DMMOFEM");
+    CHKERR DMMoFEMCreateSubDM(block_dm, simple->getDM(), "BLOCK");
+    CHKERR DMMoFEMSetSquareProblem(block_dm, PETSC_TRUE);
+    CHKERR DMMoFEMAddElement(block_dm, simple->getDomainFEName());
+    CHKERR DMMoFEMAddSubFieldRow(block_dm, "TENSOR");
+    CHKERR DMMoFEMAddSubFieldCol(block_dm, "TENSOR");
+    CHKERR DMSetUp(block_dm);
+
     petsc_mat = createDMMatrix(simple->getDM());
+    auto S = createDMMatrix(schur_dm);
 
     auto data_struture =
         createSchurBlockMatStructure(simple->getDM(),
@@ -163,7 +180,23 @@ int main(int argc, char *argv[]) {
     pip_lhs.push_back(new OpMassBlockAssemble("TENSOR", "TENSOR"));
     pip_lhs.push_back(new OpMassBlockAssemble("VECTOR", "TENSOR"));
     pip_lhs.push_back(new OpMassBlockAssemble("TENSOR", "VECTOR"));
-    pip_lhs.push_back(new OpSchurAssembleEnd<SCHUR_DSYSV>({}, {}, {}, {}, {}));
+
+    auto schur_is = getDMSubData(schur_dm)->getSmartRowIs();
+    auto ao_up = createAOMappingIS(schur_is, PETSC_NULL);
+
+    auto nested_data = getSchurNestMatArray(
+
+        {schur_dm, block_dm}, shell_data,
+
+        {"TENSOR"}, {nullptr}
+
+    );
+
+    pip_lhs.push_back(new OpSchurAssembleEnd<SCHUR_DSYSV>(
+
+        {"TENSOR"}, {nullptr}, {ao_up}, {S}, {false}, false)
+
+    );
 
     CHKERR DMoFEMLoopFiniteElements(simple->getDM(), simple->getDomainFEName(),
                                     pip_mng->getDomainLhsFE());
@@ -218,29 +251,6 @@ int main(int argc, char *argv[]) {
 
     CHKERR test("mult add", y_petsc);
 
-    auto schur_dm = createDM(m_field.get_comm(), "DMMOFEM");
-    CHKERR DMMoFEMCreateSubDM(schur_dm, simple->getDM(), "SCHUR");
-    CHKERR DMMoFEMSetSquareProblem(schur_dm, PETSC_TRUE);
-    CHKERR DMMoFEMAddElement(schur_dm, simple->getDomainFEName());
-    CHKERR DMMoFEMAddSubFieldRow(schur_dm, "VECTOR");
-    CHKERR DMMoFEMAddSubFieldCol(schur_dm, "VECTOR");
-    CHKERR DMSetUp(schur_dm);
-
-    auto block_dm = createDM(m_field.get_comm(), "DMMOFEM");
-    CHKERR DMMoFEMCreateSubDM(block_dm, simple->getDM(), "BLOCK");
-    CHKERR DMMoFEMSetSquareProblem(block_dm, PETSC_TRUE);
-    CHKERR DMMoFEMAddElement(block_dm, simple->getDomainFEName());
-    CHKERR DMMoFEMAddSubFieldRow(block_dm, "TENSOR");
-    CHKERR DMMoFEMAddSubFieldCol(block_dm, "TENSOR");
-    CHKERR DMSetUp(block_dm);
-
-    auto nested_data = getSchurNestMatArray(
-
-        {schur_dm, block_dm}, shell_data,
-
-        {"TENSOR"}, {nullptr}
-
-    );
     auto [nested_mat, nested_data_] =
         createSchurNestedMatrix({schur_dm, block_dm}, nested_data);
 

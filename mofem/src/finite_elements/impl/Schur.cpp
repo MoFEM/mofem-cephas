@@ -668,12 +668,17 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
           auto it = diagBlocks->blockIndex.get<1>().find(
               boost::make_tuple(row_ind, col_ind, nb_rows, nb_cols));
           if (it == diagBlocks->blockIndex.get<1>().end()) {
-            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                    "Block not allocated");
+            auto inv_shift = it->inv_shift;
+            if (inv_shift != -1) {
+              auto *ptr = &((*diagBlocks->dataBlocksPtr)[inv_shift]);
+              // assemble inverted diag
+              if (row_ind == col_ind && nb_rows == nb_cols) {
+                std::copy(invMat.data().begin(), invMat.data().end(), ptr);
+              } else {
+                std::copy(m.data().begin(), m.data().end(), ptr);
+              }
+            }
           }
-          auto inv_shift = it->inv_shift;
-          auto *ptr = &((*diagBlocks->dataInvBlocksPtr)[inv_shift]);
-          cblas_dcopy(m.data().size(), &*m.data().begin(), 1, ptr, 1);
         }
       }
       MoFEMFunctionReturn(0);
@@ -1804,7 +1809,8 @@ SchurNestMatrixData getSchurNestMatArray(
         int count = 0;
         auto row = (*it)->row;
         auto it_count = it;
-        while (it_count != hi && (*it_count)->row == row) {
+        while (it_count != hi && (*it_count)->row == row &&
+               (*it_count)->nb_rows == (*it_count)->nb_cols) {
           ++count;
           ++it_count;
         }
@@ -1814,7 +1820,7 @@ SchurNestMatrixData getSchurNestMatArray(
         off_diag.reserve(std::max(count - 1, 0));
 
         for (auto c = 0; c != count; ++c, ++it) {
-          if ((*it)->row == (*it)->col) {
+          if ((*it)->row == (*it)->col && (*it)->nb_rows == (*it)->nb_cols) {
             diag_ptr = *it;
           } else {
             off_diag.push_back(*it);
