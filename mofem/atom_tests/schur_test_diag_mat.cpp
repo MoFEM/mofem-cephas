@@ -184,13 +184,7 @@ int main(int argc, char *argv[]) {
     auto schur_is = getDMSubData(schur_dm)->getSmartRowIs();
     auto ao_up = createAOMappingIS(schur_is, PETSC_NULL);
 
-    auto nested_data = getSchurNestMatArray(
 
-        {schur_dm, block_dm}, shell_data,
-
-        {"TENSOR"}, {nullptr}
-
-    );
 
     pip_lhs.push_back(new OpSchurAssembleEnd<SCHUR_DSYSV>(
 
@@ -203,15 +197,15 @@ int main(int argc, char *argv[]) {
     CHKERR MatAssemblyBegin(petsc_mat, MAT_FINAL_ASSEMBLY);
     CHKERR MatAssemblyEnd(petsc_mat, MAT_FINAL_ASSEMBLY);
 
-    auto get_random_vector = [&]() {
-      auto v = createDMVector(simple->getDM());
+    auto get_random_vector = [&](auto dm) {
+      auto v = createDMVector(dm);
       PetscRandom rctx;
       PetscRandomCreate(PETSC_COMM_WORLD, &rctx);
       CHK_MOAB_THROW(VecSetRandom(v, rctx), "generate rand vector");
       PetscRandomDestroy(&rctx);
       return v;
     };
-    auto v = get_random_vector();
+    auto v = get_random_vector(simple->getDM());
 
     auto y_petsc = createDMVector(simple->getDM());
     auto y_block = createDMVector(simple->getDM());
@@ -251,8 +245,19 @@ int main(int argc, char *argv[]) {
 
     CHKERR test("mult add", y_petsc);
 
-    auto [nested_mat, nested_data_] =
-        createSchurNestedMatrix({schur_dm, block_dm}, nested_data);
+    auto [nested_mat, nested_data] = createSchurNestedMatrix(
+
+        {schur_dm, block_dm},
+
+        getSchurNestMatArray(
+
+            {schur_dm, block_dm}, shell_data,
+
+            {"TENSOR"}, {nullptr}
+
+        )
+
+    );
 
     auto y_nested = createDMVector(simple->getDM());
     CHKERR MatMult(petsc_mat, v, y_petsc);
@@ -260,6 +265,16 @@ int main(int argc, char *argv[]) {
     CHKERR VecAXPY(y_petsc, -1.0, y_nested);
 
     CHKERR test("mult nested", y_petsc);
+
+    auto diag_mat = nested_data.first[3];
+    auto diag_block_x = get_random_vector(block_dm);
+    auto diag_block_f = vectorDuplicate(diag_block_x);
+    CHKERR MatMult(diag_mat, diag_block_x, diag_block_f);
+    auto block_solved_x = vectorDuplicate(diag_block_x);
+    CHKERR MatSolve(diag_mat, diag_block_f, block_solved_x);
+
+    CHKERR VecAXPY(diag_block_x, -1.0, block_solved_x);
+    CHKERR test("diag solve", diag_block_x);
 
     petsc_mat.reset();
     block_mat.reset();

@@ -1299,30 +1299,18 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
   Vec loc_ghost_x;
   CHKERR VecGhostGetLocalForm(ghost_x, &loc_ghost_x);
   CHKERR VecGetArray(loc_ghost_x, &x_array);
+  int nb_x;
+  CHKERR VecGetLocalSize(loc_ghost_x, &nb_x);
 
   double *y_array;
   Vec loc_ghost_y;
   CHKERR VecGhostGetLocalForm(ghost_y, &loc_ghost_y);
-  int nb_y;
-  CHKERR VecGetLocalSize(loc_ghost_y, &nb_y);
   CHKERR VecGetArray(loc_ghost_y, &y_array);
 
-  for (auto i = 0; i != nb_y; ++i)
+  for (auto i = 0; i != nb_x; ++i)
     x_array[i] = 0.;
 
   auto inv_block_ptr = &*ctx->dataBlocksPtr->begin();
-
-  std::vector<int> loc_rows;
-  std::vector<int> loc_nb_rows;
-  std::vector<double> loc_y;
-
-  CHKERR VecRestoreArray(loc_ghost_x, &x_array);
-  CHKERR VecRestoreArray(loc_ghost_y, &y_array);
-  CHKERR VecGhostRestoreLocalForm(ghost_x, &loc_ghost_x);
-  CHKERR VecGhostRestoreLocalForm(ghost_y, &loc_ghost_y);
-
-  CHKERR VecGhostUpdateBegin(ghost_y, ADD_VALUES, SCATTER_REVERSE);
-  CHKERR VecGhostUpdateEnd(ghost_y, ADD_VALUES, SCATTER_REVERSE);
 
   auto *data_inv = dynamic_cast<DiagBlockInvStruture *>(ctx);
   auto data_inv_blocks = data_inv->dataInvBlocksPtr;
@@ -1386,6 +1374,13 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
     );
   }
 
+  CHKERR VecRestoreArray(loc_ghost_x, &x_array);
+  CHKERR VecRestoreArray(loc_ghost_y, &y_array);
+  CHKERR VecGhostRestoreLocalForm(ghost_x, &loc_ghost_x);
+  CHKERR VecGhostRestoreLocalForm(ghost_y, &loc_ghost_y);
+
+  CHKERR VecGhostUpdateBegin(ghost_y, ADD_VALUES, SCATTER_REVERSE);
+  CHKERR VecGhostUpdateEnd(ghost_y, ADD_VALUES, SCATTER_REVERSE);
 
   switch (iora) {
   case INSERT_VALUES:
