@@ -239,7 +239,7 @@ using SchurNestMatrixData =
 /**
  * @brief Get the Schur Nest Mat Array object
  *
- * \code
+ * \code {.cpp}
  *
  * auto nested_data = getSchurNestMatArray(
  *
@@ -252,7 +252,7 @@ using SchurNestMatrixData =
  * auto [nested_mat, nested_data_] =
  *  createSchurNestedMatrix({schur_dm, block_dm}, nested_data);
  * \endcode
- *
+ * 
  * @param dms schur dm, and block dm
  * @param block
  * @param fields_name
@@ -271,6 +271,24 @@ getSchurNestMatArray(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
 
 /**
  * @brief Create a Mat Diag Blocks object
+ *
+ * \code {.cpp}
+ *
+ * auto [nested_mat, nested_data] = createSchurNestedMatrix(
+ *
+ *       {schur_dm, block_dm},
+ *
+ *       getSchurNestMatArray(
+ *
+ *           {schur_dm, block_dm}, shell_data,
+ *
+ *           {"TENSOR"}, {nullptr}
+ *
+ *       )
+ *
+ *  );
+ *
+ * \endcode
  *
  * @return Mat
  */
