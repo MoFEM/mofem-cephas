@@ -40,8 +40,8 @@ continuing with the one you are most excited about.
 <!-- <b> Legend: </b> -->
 <p>
 <img src="BlankCheckBox.png" alt="Source code" width="18px"/> Source code &nbsp;&nbsp;
-<img src="GreenTickBoxed.png" alt="Partial description" width="18px"/> Partial Desciption &nbsp;&nbsp;
-<img src="GreenTickColBoxed.png" alt="Detailed description" width="18px"/> Detailed desciption
+<img src="GreenTickBoxed.png" alt="Partial description" width="18px"/> Partial description &nbsp;&nbsp;
+<img src="GreenTickColBoxed.png" alt="Detailed description" width="18px"/> Detailed description
 </p>
 
 
@@ -139,7 +139,7 @@ continuing with the one you are most excited about.
   </tr>
 
   <tr valign="top">
-       <td>\ref basic_tutorials_poisson_lagrange_multiplier &nbsp; <img src="BlankCheckBox.png" alt="Source code" width="18px"/></td>
+       <td>\ref basic_tutorials_poisson_lagrange_multiplier &nbsp;&nbsp; <img src="BlankCheckBox.png" alt="Source code" width="18px"/></td>
        <td> Solve the %Poisson's equation using Lagrange multiplier for the non-homogeneous boundary condition
        <br/> *Keywords:* [PCFIELDSPLIT](http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/PC/PCFIELDSPLIT.html) block solver
        </td>
