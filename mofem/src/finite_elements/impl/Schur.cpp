@@ -1277,7 +1277,7 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
   MoFEMFunctionReturn(0);
 }
 
-static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec x, Vec y,
+static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
                                               InsertMode iora) {
   MoFEMFunctionBegin;
   DiagBlockStruture *ctx;
@@ -1286,8 +1286,9 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec x, Vec y,
   PetscLogEventBegin(SchurEvents::MOFEM_EVENT_diagBlockStrutureMult, 0, 0, 0,
                      0);
 
-  Vec ghost_x = ctx->ghostX;
-  Vec ghost_y = ctx->ghostY;
+  // Note that for solver those two are swapped
+  Vec ghost_x = ctx->ghostY;
+  Vec ghost_y = ctx->ghostX;
 
   CHKERR VecCopy(x, ghost_x);
 
@@ -1307,7 +1308,7 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec x, Vec y,
   CHKERR VecGetArray(loc_ghost_y, &y_array);
 
   for (auto i = 0; i != nb_y; ++i)
-    y_array[i] = 0.;
+    x_array[i] = 0.;
 
   auto inv_block_ptr = &*ctx->dataBlocksPtr->begin();
 
@@ -1323,18 +1324,75 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec x, Vec y,
   CHKERR VecGhostUpdateBegin(ghost_y, ADD_VALUES, SCATTER_REVERSE);
   CHKERR VecGhostUpdateEnd(ghost_y, ADD_VALUES, SCATTER_REVERSE);
 
-  // for(auto f = 0; f!=a00_fields; ++f) {
-  //   auto field = a00_fields[f];
-  //   auto range = a00_ranges[f];
+  auto *data_inv = dynamic_cast<DiagBlockInvStruture *>(ctx);
+  auto data_inv_blocks = data_inv->dataInvBlocksPtr;
+  auto index_view = data_inv->indexView;
 
-  // }
+  std::vector<double> f;
+
+  for(auto &v : index_view) {
+    auto &diag_index_ptr = v.first;
+    auto row = diag_index_ptr->loc_row;
+    auto col = diag_index_ptr->loc_col;
+    auto nb_rows = diag_index_ptr->nb_rows;
+    auto nb_cols = diag_index_ptr->nb_cols;
+    auto inv_shift = diag_index_ptr->inv_shift;
+
+    f.resize(nb_cols);
+    std::copy(&y_array[col], &y_array[col + nb_cols], f.begin());
+
+    for (auto &off : v.second) {
+
+      auto off_col = off->loc_col;
+      auto off_nb_cols = off->nb_cols;
+      auto off_inv_shift = off->inv_shift;
+
+#ifndef NDEBUG
+      if (off->row != row && off->nb_rows != nb_rows) {
+        MOFEM_LOG("SELF", Sev::error)
+            << "Wrong size " << off->row << " != " << row << " || "
+            << off->nb_rows << " != " << nb_rows;
+        CHK_MOAB_THROW(MOFEM_DATA_INCONSISTENCY, "Wrong size");
+      }
+#endif // NDEBUG
+
+      cblas_dgemv(
+
+          CblasRowMajor, CblasNoTrans,
+
+          nb_rows, off_nb_cols,
+
+          -1., &(inv_block_ptr[off_inv_shift]), off_nb_cols,
+
+          &y_array[off_col], 1,
+
+          1., &*f.begin(), 1
+
+      );
+    }
+
+    cblas_dgemv(
+
+        CblasRowMajor, CblasNoTrans,
+
+        nb_rows, nb_cols,
+
+        1., &(inv_block_ptr[inv_shift]), nb_cols,
+
+        &*f.begin(), 1,
+
+        1., &x_array[row], 1
+
+    );
+  }
+
 
   switch (iora) {
   case INSERT_VALUES:
-    CHKERR VecCopy(ghost_y, y);
+    CHKERR VecCopy(ghost_y, x);
     break;
   case ADD_VALUES:
-    CHKERR VecAXPY(y, 1., ghost_y);
+    CHKERR VecAXPY(x, 1., ghost_y);
     break;
   default:
     CHK_MOAB_THROW(MOFEM_NOT_IMPLEMENTED, "Wrong InsertMode");
