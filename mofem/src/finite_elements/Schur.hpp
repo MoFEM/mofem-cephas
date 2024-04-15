@@ -7,6 +7,9 @@
  *
  * To create nested system of Schur complements, you push sequence of operator,
  * to set up data on entities, and then assemble complements.
+ * 
+ * \note Try septate floating points operations from book keeping. Also, align
+ * memory that blocks follow floating point operations.
  *
  */
 
@@ -233,6 +236,29 @@ using SchurNestMatrixData =
     std::pair<std::array<SmartPetscObj<Mat>, 4>,
               std::array<boost::shared_ptr<DiagBlockStruture>, 4>>;
 
+/**
+ * @brief Get the Schur Nest Mat Array object
+ *
+ * \code
+ *
+ * auto nested_data = getSchurNestMatArray(
+ *
+ *       {schur_dm, block_dm}, shell_data,
+ *
+ *       {"TENSOR"}, {nullptr}
+ *
+ *   );
+ *
+ * auto [nested_mat, nested_data_] =
+ *  createSchurNestedMatrix({schur_dm, block_dm}, nested_data);
+ * \endcode
+ *
+ * @param dms schur dm, and block dm
+ * @param block
+ * @param fields_name
+ * @param field_ents
+ * @return SchurNestMatrixData
+ */
 SchurNestMatrixData
 getSchurNestMatArray(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
                      SchurShellMatData A,
