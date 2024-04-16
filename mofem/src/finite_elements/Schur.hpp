@@ -30,115 +30,63 @@ struct SchurEvents {
 struct SchurL2Mats;
 struct DiagBlockStruture;
 
-/**
- * @brief Clear Schur complement internal data
- *
- */
-struct OpSchurAssembleBegin : public ForcesAndSourcesCore::UserDataOperator {
+struct OpSchurAssembleBase
+    : public ForcesAndSourcesCore::UserDataOperator {
 
-  OpSchurAssembleBegin();
-
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        EntitiesFieldData::EntData &data);
-};
-
-/**
- * @brief Assemble Schur complement (Implementation)
- *
- */
-struct OpSchurAssembleEndImpl : public ForcesAndSourcesCore::UserDataOperator {
+  OpSchurAssembleBase() = delete;
 
   using MatSetValuesRaw = boost::function<MoFEMErrorCode(
       Mat mat, PetscInt m, const PetscInt idxm[], PetscInt n,
       const PetscInt idxn[], const PetscScalar v[], InsertMode addv)>;
-
   static MatSetValuesRaw matSetValuesSchurRaw;
 
-  /**
-   * @brief Construct a new Op Schur Assemble End object
-   *
-   * @param fields_name list of fields
-   * @param field_ents list of entities on which schur complement is applied
-   * (can be empty)
-   * @param sequence_of_aos list of maps from base problem to Schur complement
-   * matrix
-   * @param sequence_of_mats list of Schur complement matrices
-   * @param sym_schur true if Schur complement is symmetric
-   * @param symm_op true if block diagonal is symmetric
-   */
-  OpSchurAssembleEndImpl(
-      std::vector<std::string> fields_name,
-      std::vector<boost::shared_ptr<Range>> field_ents,
-      std::vector<SmartPetscObj<AO>> sequence_of_aos,
-      std::vector<SmartPetscObj<Mat>> sequence_of_mats,
-      std::vector<bool> sym_schur, bool symm_op = true,
-      boost::shared_ptr<DiagBlockStruture> diag_blocks = nullptr);
-
-  /**
-   * @brief Construct a new Op Schur Assemble End object
-   *
-   * @param fields_name list of fields
-   * @param field_ents list of entities on which schur complement is applied
-   * (can be empty)
-   * @param sequence_of_aos list of maps from base problem to Schur complement
-   * matrix
-   * @param sequence_of_mats list of Schur complement matrices
-   * @param sym_schur true if Schur complement is symmetric
-   * @param diag_eps add epsilon on diagonal of inverted matrix
-   * @param symm_op true if block diagonal is symmetric
-   */
-  OpSchurAssembleEndImpl(
-      std::vector<std::string> fields_name,
-      std::vector<boost::shared_ptr<Range>> field_ents,
-      std::vector<SmartPetscObj<AO>> sequence_of_aos,
-      std::vector<SmartPetscObj<Mat>> sequence_of_mats,
-      std::vector<bool> sym_schur, std::vector<double> diag_eps,
-      bool symm_op = true,
-      boost::shared_ptr<DiagBlockStruture> diag_blocks = nullptr);
-
-protected:
-  template <typename I>
-  MoFEMErrorCode doWorkImpl(int side, EntityType type,
-                            EntitiesFieldData::EntData &data);
-
-  std::vector<std::string> fieldsName;
-  std::vector<boost::shared_ptr<Range>> fieldEnts;
-  std::vector<SmartPetscObj<AO>> sequenceOfAOs;
-  std::vector<SmartPetscObj<Mat>> sequenceOfMats;
-  std::vector<bool> symSchur;
-  std::vector<double> diagEps;
-
-  MatrixDouble invMat;
-  MatrixDouble invDiagOffMat;
-  MatrixDouble offMatInvDiagOffMat;
-  MatrixDouble transOffMatInvDiagOffMat;
-
-  boost::shared_ptr<DiagBlockStruture> diagBlocks;
+private:
+  using UserDataOperator::UserDataOperator;
 };
 
-struct SCHUR_DSYSV; ///< SY	symmetric
-struct SCHUR_DGESV; ///< GE	general (i.e., nonsymmetric, in some cases
-                    ///< rectangular)
+OpSchurAssembleBase *createOpSchurAssembleBegin();
 
 /**
- * @brief Assemble Schur complement
+ * @brief Construct a new Op Schur Assemble End object
  *
+ * @param fields_name list of fields
+ * @param field_ents list of entities on which schur complement is applied
+ * (can be empty)
+ * @param sequence_of_aos list of maps from base problem to Schur complement
+ * matrix
+ * @param sequence_of_mats list of Schur complement matrices
+ * @param sym_schur true if Schur complement is symmetric
+ * @param symm_op true if block diagonal is symmetric
  */
-template <typename I> struct OpSchurAssembleEnd;
+OpSchurAssembleBase *createOpSchurAssembleEnd(
+    std::vector<std::string> fields_name,
+    std::vector<boost::shared_ptr<Range>> field_ents,
+    std::vector<SmartPetscObj<AO>> sequence_of_aos,
+    std::vector<SmartPetscObj<Mat>> sequence_of_mats,
+    std::vector<bool> sym_schur, bool symm_op = false,
+    boost::shared_ptr<DiagBlockStruture> diag_blocks = nullptr);
 
-template <>
-struct OpSchurAssembleEnd<SCHUR_DSYSV> : public OpSchurAssembleEndImpl {
-  using OpSchurAssembleEndImpl::OpSchurAssembleEndImpl;
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        EntitiesFieldData::EntData &data);
-};
-
-template <>
-struct OpSchurAssembleEnd<SCHUR_DGESV> : public OpSchurAssembleEndImpl {
-  using OpSchurAssembleEndImpl::OpSchurAssembleEndImpl;
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        EntitiesFieldData::EntData &data);
-};
+/**
+ * @brief Construct a new Op Schur Assemble End object
+ *
+ * @param fields_name list of fields
+ * @param field_ents list of entities on which schur complement is applied
+ * (can be empty)
+ * @param sequence_of_aos list of maps from base problem to Schur complement
+ * matrix
+ * @param sequence_of_mats list of Schur complement matrices
+ * @param sym_schur true if Schur complement is symmetric
+ * @param diag_eps add epsilon on diagonal of inverted matrix
+ * @param symm_op true if block diagonal is symmetric
+ */
+OpSchurAssembleBase *createOpSchurAssembleEnd(
+    std::vector<std::string> fields_name,
+    std::vector<boost::shared_ptr<Range>> field_ents,
+    std::vector<SmartPetscObj<AO>> sequence_of_aos,
+    std::vector<SmartPetscObj<Mat>> sequence_of_mats,
+    std::vector<bool> sym_schur, std::vector<double> diag_eps,
+    bool symm_op = false,
+    boost::shared_ptr<DiagBlockStruture> diag_blocks = nullptr);
 
 struct SchurBackendMatSetValuesPtr {
   SchurBackendMatSetValuesPtr() = delete;
