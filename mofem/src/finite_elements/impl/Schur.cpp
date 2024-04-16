@@ -1888,12 +1888,12 @@ SchurNestMatrixData getSchurNestMatArray(
 
     auto inv_mem_size = 0;
     for(auto &d : index_view) {
-      d.first->inv_shift = inv_mem_size;
-      inv_mem_size = d.first->nb_cols * d.first->nb_rows;
       for(auto &o : d.second) {
         o->inv_shift = inv_mem_size;
         inv_mem_size += o->nb_cols * o->nb_rows;
       }
+      d.first->inv_shift = inv_mem_size;
+      inv_mem_size = d.first->nb_cols * d.first->nb_rows;
     }
 
 
