@@ -986,9 +986,9 @@ static PetscErrorCode mult_add(Mat mat, Vec x, Vec y) {
 static PetscErrorCode solve(Mat mat, Vec x, Vec y) {
   return solve_schur_block_shell(mat, x, y, INSERT_VALUES);
 }
-// static PetscErrorCode solve_add(Mat mat, Vec x, Vec y) {
-//   return mult_schur_block_shell(mat, x, y, ADD_VALUES, true);
-// }
+static PetscErrorCode solve_add(Mat mat, Vec x, Vec y) {
+  return mult_schur_block_shell(mat, x, y, ADD_VALUES);
+}
 
 static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
                                         const PetscInt rows[], PetscScalar diag,
@@ -1097,8 +1097,8 @@ static MoFEMErrorCode setSchurBlockMatOps(Mat mat_raw) {
   CHKERR MatShellSetOperation(mat_raw, MATOP_MULT_ADD,
                               (void (*)(void))mult_add);
   CHKERR MatShellSetOperation(mat_raw, MATOP_SOLVE, (void (*)(void))solve);
-  // CHKERR MatShellSetOperation(mat_raw, MATOP_SOLVE_ADD,
-  //                             (void (*)(void))solve_add);
+  CHKERR MatShellSetOperation(mat_raw, MATOP_SOLVE_ADD,
+                              (void (*)(void))solve_add);
   CHKERR MatShellSetOperation(mat_raw, MATOP_ZERO_ENTRIES,
                               (void (*)(void))mat_zero);
   CHKERR MatShellSetOperation(mat_raw, MATOP_ZERO_ROWS_COLUMNS,
