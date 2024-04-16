@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
     pip_lhs.push_back(new OpMassPETSCAssemble("TENSOR", "TENSOR"));
     pip_lhs.push_back(new OpMassPETSCAssemble("VECTOR", "TENSOR"));
     pip_lhs.push_back(new OpMassPETSCAssemble("TENSOR", "VECTOR"));
-    pip_lhs.push_back(new OpSchurAssembleBegin());
+    pip_lhs.push_back(createOpSchurAssembleBegin());
     pip_lhs.push_back(new OpMassBlockAssemble("VECTOR", "VECTOR"));
     pip_lhs.push_back(new OpMassBlockAssemble("TENSOR", "TENSOR"));
     pip_lhs.push_back(new OpMassBlockAssemble("VECTOR", "TENSOR"));
@@ -184,11 +184,9 @@ int main(int argc, char *argv[]) {
     auto schur_is = getDMSubData(schur_dm)->getSmartRowIs();
     auto ao_up = createAOMappingIS(schur_is, PETSC_NULL);
 
+    pip_lhs.push_back(createOpSchurAssembleEnd(
 
-
-    pip_lhs.push_back(new OpSchurAssembleEnd<SCHUR_DSYSV>(
-
-        {"TENSOR"}, {nullptr}, {ao_up}, {S}, {false}, false)
+        {"TENSOR"}, {nullptr}, {ao_up}, {S}, {false}, true)
 
     );
 
@@ -273,8 +271,20 @@ int main(int argc, char *argv[]) {
     auto block_solved_x = vectorDuplicate(diag_block_x);
     CHKERR MatSolve(diag_mat, diag_block_f, block_solved_x);
 
+    // auto ksp = createKSP(m_field.get_comm());
+    // CHKERR KSPSetOperators(ksp, diag_mat, diag_mat);
+    // CHKERR KSPSetFromOptions(ksp);
+
+    // PC pc;
+    // CHKERR KSPGetPC(ksp, &pc);
+    // CHKERR PCSetType(pc, PCNONE);
+
+    // CHKERR KSPSetFromOptions(ksp);
+    // CHKERR KSPSolve(ksp, diag_block_f, block_solved_x);
+
     CHKERR VecAXPY(diag_block_x, -1.0, block_solved_x);
     CHKERR test("diag solve", diag_block_x);
+
 
     petsc_mat.reset();
     block_mat.reset();
