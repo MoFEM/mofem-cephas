@@ -18,11 +18,15 @@
 
 namespace MoFEM {
 
+/**
+ * @brief Structure to register events for Schur block assembly and solver
+ */
 struct SchurEvents {
   static PetscLogEvent MOFEM_EVENT_schurL2MatsMatSetValues;
   static PetscLogEvent MOFEM_EVENT_opSchurAssembleEnd;
   static PetscLogEvent MOFEM_EVENT_diagBlockStrutureSetValues;
   static PetscLogEvent MOFEM_EVENT_diagBlockStrutureMult;
+  static PetscLogEvent MOFEM_EVENT_diagBlockStrutureSolve;
   static PetscLogEvent MOFEM_EVENT_zeroRowsAndCols;
   SchurEvents();
 };
@@ -158,6 +162,9 @@ using SchurShellMatData =
 SchurShellMatData
 createSchurBlockMat(DM dm, boost::shared_ptr<DiagBlockStruture> data);
 
+/***
+ * @brief Specialization of MatSetValues for DiagBlockStruture
+ */
 template <>
 MoFEMErrorCode
 MatSetValues<DiagBlockStruture>(Mat M,
@@ -165,6 +172,9 @@ MatSetValues<DiagBlockStruture>(Mat M,
                                 const EntitiesFieldData::EntData &col_data,
                                 const MatrixDouble &mat, InsertMode iora);
 
+/***
+ * @brief Specialisation of MatSetValues for AssemblyTypeSelector<BLOCK_MAT>
+ */
 template <>
 inline MoFEMErrorCode MatSetValues<AssemblyTypeSelector<BLOCK_MAT>>(
     Mat M, const EntitiesFieldData::EntData &row_data,
@@ -173,6 +183,9 @@ inline MoFEMErrorCode MatSetValues<AssemblyTypeSelector<BLOCK_MAT>>(
   return MatSetValues<DiagBlockStruture>(M, row_data, col_data, mat, iora);
 }
 
+/***
+ * @brief Specialisation of VecSetValues for AssemblyTypeSelector<BLOCK_MAT>
+ */
 template <>
 inline MoFEMErrorCode VecSetValues<AssemblyTypeSelector<BLOCK_MAT>>(
     Vec V, const EntitiesFieldData::EntData &data, const VectorDouble &nf,
@@ -246,6 +259,9 @@ createSchurNestedMatrix(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
 
 struct SchurL2MatsBlock;
 
+/***
+ * @brief Specialization of MatSetValues for SchurL2MatsBlock
+*/
 template <>
 MoFEMErrorCode
 MatSetValues<SchurL2MatsBlock>(Mat M,
@@ -253,6 +269,9 @@ MatSetValues<SchurL2MatsBlock>(Mat M,
                                const EntitiesFieldData::EntData &col_data,
                                const MatrixDouble &mat, InsertMode iora);
 
+/***
+ * @brief Specialization of VecSetValues for SchurL2MatsBlock
+*/
 template <>
 inline MoFEMErrorCode
 VecSetValues<SchurL2MatsBlock>(Vec V, const EntitiesFieldData::EntData &data,
@@ -260,6 +279,9 @@ VecSetValues<SchurL2MatsBlock>(Vec V, const EntitiesFieldData::EntData &data,
   return VecSetValues<EssentialBcStorage>(V, data, nf, iora);
 }
 
+/***
+ * @brief Specialisation of MatSetValues for AssemblyTypeSelector<BLOCK_SCHUR>
+*/
 template <>
 inline MoFEMErrorCode MatSetValues<AssemblyTypeSelector<BLOCK_SCHUR>>(
     Mat M, const EntitiesFieldData::EntData &row_data,
@@ -268,6 +290,9 @@ inline MoFEMErrorCode MatSetValues<AssemblyTypeSelector<BLOCK_SCHUR>>(
   return MatSetValues<SchurL2MatsBlock>(M, row_data, col_data, mat, iora);
 }
 
+/***
+ * @brief Specialisation of VecSetValues for AssemblyTypeSelector<BLOCK_SCHUR>
+*/
 template <>
 inline MoFEMErrorCode VecSetValues<AssemblyTypeSelector<BLOCK_SCHUR>>(
     Vec V, const EntitiesFieldData::EntData &data, const VectorDouble &nf,
