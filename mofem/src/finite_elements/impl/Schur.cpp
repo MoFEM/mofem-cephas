@@ -242,6 +242,7 @@ PetscLogEvent SchurEvents::MOFEM_EVENT_schurL2MatsMatSetValues;
 PetscLogEvent SchurEvents::MOFEM_EVENT_opSchurAssembleEnd;
 PetscLogEvent SchurEvents::MOFEM_EVENT_diagBlockStrutureSetValues;
 PetscLogEvent SchurEvents::MOFEM_EVENT_diagBlockStrutureMult;
+PetscLogEvent SchurEvents::MOFEM_EVENT_diagBlockStrutureSolve;
 PetscLogEvent SchurEvents::MOFEM_EVENT_zeroRowsAndCols;
 
 SchurEvents::SchurEvents() {
@@ -251,6 +252,8 @@ SchurEvents::SchurEvents() {
   PetscLogEventRegister("diagBlockSetVal", 0,
                         &MOFEM_EVENT_diagBlockStrutureSetValues);
   PetscLogEventRegister("diagBlockMult", 0, &MOFEM_EVENT_diagBlockStrutureMult);
+  PetscLogEventRegister("diagBlockSolve", 0,
+                        &MOFEM_EVENT_diagBlockStrutureSolve);
   PetscLogEventRegister("schurZeroRandC", 0, &MOFEM_EVENT_zeroRowsAndCols);
 }
 
@@ -1387,7 +1390,7 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
   DiagBlockStruture *ctx;
   CHKERR MatShellGetContext(mat, (void **)&ctx);
 
-  PetscLogEventBegin(SchurEvents::MOFEM_EVENT_diagBlockStrutureMult, 0, 0, 0,
+  PetscLogEventBegin(SchurEvents::MOFEM_EVENT_diagBlockStrutureSolve, 0, 0, 0,
                      0);
 
   // Note that for solver those two are swapped
@@ -1528,7 +1531,7 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
 #endif // NDEBUG
 
   // PetscLogFlops(xxx)
-  PetscLogEventEnd(SchurEvents::MOFEM_EVENT_diagBlockStrutureMult, 0, 0, 0, 0);
+  PetscLogEventEnd(SchurEvents::MOFEM_EVENT_diagBlockStrutureSolve, 0, 0, 0, 0);
 
   MoFEMFunctionReturn(0);
 }
