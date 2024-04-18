@@ -67,7 +67,7 @@ OpSchurAssembleBase *createOpSchurAssembleEnd(
     std::vector<boost::shared_ptr<Range>> field_ents,
     std::vector<SmartPetscObj<AO>> sequence_of_aos,
     std::vector<SmartPetscObj<Mat>> sequence_of_mats,
-    std::vector<bool> sym_schur, bool symm_op = false,
+    std::vector<bool> sym_schur, bool symm_op,
     boost::shared_ptr<DiagBlockStruture> diag_blocks = nullptr);
 
 /**
@@ -88,8 +88,7 @@ OpSchurAssembleBase *createOpSchurAssembleEnd(
     std::vector<boost::shared_ptr<Range>> field_ents,
     std::vector<SmartPetscObj<AO>> sequence_of_aos,
     std::vector<SmartPetscObj<Mat>> sequence_of_mats,
-    std::vector<bool> sym_schur, std::vector<double> diag_eps,
-    bool symm_op = false,
+    std::vector<bool> sym_schur, std::vector<double> diag_eps, bool symm_op,
     boost::shared_ptr<DiagBlockStruture> diag_blocks = nullptr);
 
 struct SchurBackendMatSetValuesPtr {
