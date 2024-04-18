@@ -37,6 +37,7 @@ extern "C" {
 #endif
 
 #include <MedInterface.hpp>
+#include <unordered_set>
 
 namespace MoFEM {
 
@@ -730,11 +731,13 @@ MoFEMErrorCode MedInterface::writeMed(const string &file, int verb) {
   // Assume meshsetID 1 is the first meshset
   // Get meshsetID 1
   std::string mesh_name = "MESH";
-  // for (_IT_CUBITMESHSETS_FOR_LOOP_(m_field, iit)) {
-  //   // check if meshset is cubit meshset
-  //   if (iit->getMeshsetId() == 1)
-  //     mesh_name = iit->getName();
-  // }
+  int max_id = 0;
+  for (_IT_CUBITMESHSETS_FOR_LOOP_(m_field, iit)) {
+    // check if meshset is cubit meshset
+    if (iit->getMeshsetId() == 1)
+      mesh_name = iit->getName();
+    max_id = (max_id < iit->getMeshsetId()) ? iit->getMeshsetId() : max_id;
+  }
 
   CHKERR MEDmeshCr(fid, mesh_name.c_str(), 3, 3, MED_UNSTRUCTURED_MESH,
                    "Mesh created", dtUnit, MED_SORT_DTIT, MED_CARTESIAN,
@@ -771,6 +774,8 @@ MoFEMErrorCode MedInterface::writeMed(const string &file, int verb) {
 
   // Create a map of meshset id to meshset name
   std::map<med_int, std::string> meshset_map;
+  std::map<med_int, std::string> family_group_map;
+  std::map<med_int, med_int> group_map;
 
   std::multimap<EntityType, std::tuple<med_int, med_int, Range>>
       combined_multimap;
@@ -778,8 +783,8 @@ MoFEMErrorCode MedInterface::writeMed(const string &file, int verb) {
   med_int family_id = 1;
   for (_IT_CUBITMESHSETS_FOR_LOOP_(m_field, iit)) {
     // check if meshset is cubit meshset
-    // if (iit->getMeshsetId() == 1)
-    //   continue;
+    //if (iit->getMeshsetId() == 1)
+    // continue;
 
     if (iit->getBcTypeULong() & BLOCKSET) {
       EntityHandle meshset = iit->getMeshset();
@@ -790,30 +795,140 @@ MoFEMErrorCode MedInterface::writeMed(const string &file, int verb) {
         name += std::to_string(iit->getMeshsetId());
       }
       meshset_map[iit->getMeshsetId()] = name;
-      family_id = iit->getMeshsetId();
 
       for (EntityType ent_type = MBVERTEX; ent_type < MBENTITYSET; ent_type++) {
         Range range;
         CHKERR moab.get_entities_by_type(meshset, ent_type, range, true);
         // }
         if (!range.empty()) {
-          // for (auto it = combined_multimap.begin(); it !=
-          // combined_multimap.end();
-          //      ++it) {
-          //   if (it->first == ent_type && range != std::get<2>(it->second)) {
-          //     family_id++;
-          //     break;
-          //   } else if (it->first != ent_type &&
-          //              std::next(it) == combined_multimap.end()) {
-          //     family_id++;
-          //   }
-          // }
+          // std::string group_name;
+          // med_int group_index = 1;
+          // family_id = iit->getMeshsetId();
+          // group_name += meshset_map[iit->getMeshsetId()];
+          // group_name.resize(group_index * MED_LNAME_SIZE, ' ');
+          // family_group_map[family_id] = group_name;
+          // group_map[family_id] = group_index;
 
-          combined_multimap.insert(std::make_pair(
-              ent_type,
-              std::make_tuple(family_id, iit->getMeshsetId(), range)));
-        }
+          // combined_multimap.insert(std::make_pair(
+          //     ent_type,
+          //     std::make_tuple(family_id, iit->getMeshsetId(), range)));
+
+          // check if new range already has a family
+          std::string group_name;
+          med_int group_index;
+          //std::cout << "Range = " << range.size() << std::endl;
+          //std::cout << "Range = " << range << std::endl;
+          bool duplicate = false;
+          for (auto it = combined_multimap.begin();
+               it != combined_multimap.end();
+               it = combined_multimap.upper_bound(it->first)) {
+
+            auto range_map = combined_multimap.equal_range(ent_type);
+
+            for (auto it2 = range_map.first; it2 != range_map.second; ++it2) {
+              Range difference1 = subtract(range, std::get<2>(it2->second));
+              Range difference2 = subtract(std::get<2>(it2->second), range);
+              //std::cout << "Range check = " << std::get<2>(it2->second)
+              //          << std::endl;
+              if (range == std::get<2>(it2->second)) {
+                int matched_meshsetId = std::get<1>(it2->second);
+                family_id = std::get<0>(it2->second);
+                group_name = family_group_map[family_id];
+                std::string test_name = meshset_map[iit->getMeshsetId()];
+                std::string matched_name = meshset_map[matched_meshsetId];
+                group_index = group_map[family_id];
+                group_index++;
+                if (matched_name != test_name) {
+                  group_name += meshset_map[iit->getMeshsetId()];
+                  group_name.resize(group_index * MED_LNAME_SIZE, ' ');
+                  family_group_map[family_id] = group_name;
+                  group_map[family_id] = group_index;
+                }
+                duplicate = true;
+                break;
+              }
+              else if (difference1.empty() || difference2.empty())
+              {
+                int matched_meshsetId = std::get<1>(it2->second);
+                max_id++;
+                family_id = max_id;
+                std::string test_name = meshset_map[iit->getMeshsetId()];
+                std::string matched_name = meshset_map[matched_meshsetId];
+                group_index = group_map[family_id];
+                group_index++;
+                if (matched_name != test_name) {
+                  group_name += meshset_map[iit->getMeshsetId()];
+                  group_name.resize(group_index * MED_LNAME_SIZE, ' ');
+                  family_group_map[family_id] = group_name;
+                  group_map[family_id] = group_index;
+                }
+                // update the ranges
+                // if new enitiy range is subset of old range
+                if (difference1.empty()) {
+                  // add new range
+                  Range subset_range = range; 
+                  combined_multimap.insert(std::make_pair(
+                      ent_type,
+                      std::make_tuple(family_id, iit->getMeshsetId(), subset_range)));
+                  
+                  // update old range to not include subset_range
+                  med_int old_family_id = std::get<0>(it2->second);
+                  med_int old_meshsetId = std::get<1>(it2->second);
+                  Range old_range = std::get<2>(it2->second);
+                  Range::iterator it_range = old_range.begin();
+                  while (it_range != old_range.end()) {
+                    if (subset_range.find(*it_range) != subset_range.end()) {
+                      it_range = old_range.erase(it_range);
+                    }
+                    else {
+                      ++it_range;
+                    }
+                  }
+                  combined_multimap.erase(it2);
+                  // update combined_multimap
+                  combined_multimap.insert(std::make_pair(
+                      ent_type,
+                      std::make_tuple(old_family_id, old_meshsetId, old_range)));
+
+                  break;
+                }
+                else if (difference2.empty()) {
+                  // if old range is subset of new range
+                  Range subset_range = std::get<2>(it2->second);
+                  // remove old range from new range
+                  Range::iterator it_range = range.begin();
+                  while (it_range != range.end()) {
+                    if (subset_range.find(*it_range) != subset_range.end()) {
+                      it_range = range.erase(it_range);
+                    }
+                    else {
+                      ++it_range;
+                    }
+                  }
+
+                  combined_multimap.insert(std::make_pair(
+                      ent_type,
+                      std::make_tuple(family_id, iit->getMeshsetId(), range)));
+                  break;
+                }
+              }
+              
+            }
+          }
+          if (!duplicate) {
+            group_name = meshset_map[iit->getMeshsetId()];
+            group_index = 1;
+            family_id = iit->getMeshsetId();  
+            group_name.resize(group_index * MED_LNAME_SIZE, ' ');
+            family_group_map[family_id] = group_name;
+            group_map[family_id] = group_index;
+
+            combined_multimap.insert(std::make_pair(
+                ent_type,
+                std::make_tuple(family_id, iit->getMeshsetId(), range)));
+          }
       }
+    }
     }
 
     if (iit->getBcTypeULong() & SIDESET || iit->getBcTypeULong() & NODESET) {
@@ -855,38 +970,40 @@ MoFEMErrorCode MedInterface::writeMed(const string &file, int verb) {
     // family_id++;
   }
 
-  for (auto it = combined_multimap.begin(); it != combined_multimap.end();
-       it = combined_multimap.upper_bound(it->first)) {
-    // iterate over entity type multimap
-    EntityType ent_type = it->first;
-    auto range = combined_multimap.equal_range(ent_type);
-    for (auto it2 = range.first; it2 != range.second; ++it2) {
-
+  // for (auto it = combined_multimap.begin(); it != combined_multimap.end();
+  //      it = combined_multimap.upper_bound(it->first)) {
+  //   // iterate over entity type multimap
+  //   EntityType ent_type = it->first;
+  //   auto range = combined_multimap.equal_range(ent_type);
+  //   for (auto it2 = range.first; it2 != range.second; ++it2) {
+  for (auto iter = family_group_map.begin(); iter != family_group_map.end();
+       ++iter) {
+    // iterate over family group map
     // get family id
-    med_int family_id = std::get<0>(it2->second);
-    med_int meshsetId = std::get<1>(it2->second);
-    Range range = std::get<2>(it2->second);
+    med_int family_id = iter->first;
+    std::string group_name = iter->second;
 
     std::string family_name = "F_" + std::to_string(family_id);
-    // multiple groups?
-    //int group_index = 0;
-    std::string group_name;
-    //group_index += 1;
-    
-    // add group name for node and side sets
 
-    group_name += meshset_map[meshsetId];
-    group_name.resize(MED_LNAME_SIZE, ' ');
+    // check if multiple families have the same elements
+    // int group_index = 0;
+    // std::string group_name;
+    // //group_name += meshset_map[meshsetId];
+    // auto range_ids = familyIdToMeshsetid.equal_range(family_id);
+    // for (auto it = range_ids.first; it != range_ids.second; ++it) {
+    //   med_int meshsetId = it->second;
+    //   group_name += meshset_map[meshsetId];
+    //   group_index += 1;
+    //   group_name.resize(group_index * MED_LNAME_SIZE, ' ');
+    // }
+    med_int group_index = group_map[family_id];
 
     CHKERR MEDfamilyCr(fid, mesh_name.c_str(), family_name.c_str(), family_id,
-                       1, group_name.c_str());
-    MOFEM_LOG("MEDWORLD", Sev::inform) << "Creating family " << family_name
-                                       << " with id " << family_id << " and group "
-                                       << group_name;
-    }
-  }
-
-
+                       group_index, group_name.c_str());
+    MOFEM_LOG("MEDWORLD", Sev::inform)
+        << "Creating family " << family_name << " with id " << family_id
+        << " and group " << group_name;
+}
 
   // Iterate over combined_multimap
   for (auto it = combined_multimap.begin(); it != combined_multimap.end();
@@ -897,10 +1014,16 @@ MoFEMErrorCode MedInterface::writeMed(const string &file, int verb) {
     std::vector<med_int> group_number;
     std::vector<med_int> family_number;
     std::vector<med_int> connectivity;
+    std::unordered_set<med_int> seen_family_ids;
 
     for (auto it2 = range.first; it2 != range.second; ++it2) {
       med_int family_id = std::get<0>(it2->second);
       Range range_ent = std::get<2>(it2->second);
+      if (seen_family_ids.count(family_id) > 0) {
+        continue;
+      }
+    // Add the current family_id to the set of seen family_ids
+    seen_family_ids.insert(family_id);
 
       auto get_elements =
           [&](Range range_ent, std::vector<med_int> &connectivity,
@@ -931,7 +1054,6 @@ MoFEMErrorCode MedInterface::writeMed(const string &file, int verb) {
       }
 
       get_elements(range_ent, connectivity, family_number, group_number, ent_type);
-
       auto next_it = it2;
       ++next_it;
       if (next_it == range.second ||
