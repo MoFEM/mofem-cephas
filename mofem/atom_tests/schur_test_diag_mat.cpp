@@ -269,22 +269,23 @@ int main(int argc, char *argv[]) {
     auto diag_block_f = vectorDuplicate(diag_block_x);
     CHKERR MatMult(diag_mat, diag_block_x, diag_block_f);
     auto block_solved_x = vectorDuplicate(diag_block_x);
-    CHKERR MatSolve(diag_mat, diag_block_f, block_solved_x);
+    // CHKERR MatSolve(diag_mat, diag_block_f, block_solved_x);
 
-    // auto ksp = createKSP(m_field.get_comm());
-    // CHKERR KSPSetOperators(ksp, diag_mat, diag_mat);
-    // CHKERR KSPSetFromOptions(ksp);
+    auto ksp = createKSP(m_field.get_comm());
+    CHKERR KSPSetOperators(ksp, diag_mat, diag_mat);
 
-    // PC pc;
-    // CHKERR KSPGetPC(ksp, &pc);
-    // CHKERR PCSetType(pc, PCNONE);
+    auto get_pc = [](auto ksp) {
+      PC pc_raw;
+      CHKERR KSPGetPC(ksp, &pc_raw);
+      return SmartPetscObj<PC>(pc_raw, true); // bump reference
+    };
+    CHKERR setSchurMatSolvePC(get_pc(ksp));
 
-    // CHKERR KSPSetFromOptions(ksp);
-    // CHKERR KSPSolve(ksp, diag_block_f, block_solved_x);
+    CHKERR KSPSetFromOptions(ksp);
+    CHKERR KSPSolve(ksp, diag_block_f, block_solved_x);
 
     CHKERR VecAXPY(diag_block_x, -1.0, block_solved_x);
     CHKERR test("diag solve", diag_block_x);
-
 
     petsc_mat.reset();
     block_mat.reset();

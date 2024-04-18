@@ -2168,4 +2168,22 @@ createOpSchurAssembleEnd(std::vector<std::string> fields_name,
         diag_eps, symm_op, diag_blocks);
 }
 
+MoFEMErrorCode setSchurMatSolvePC(SmartPetscObj<PC> pc) {
+  MoFEMFunctionBegin;
+
+  auto apply = [](PC pc, Vec f, Vec x) {
+    MoFEMFunctionBeginHot;
+    Mat A, P;
+    CHKERR PCGetOperators(pc, &A, &P);
+    CHKERR MatSolve(P, f, x);
+    MoFEMFunctionReturnHot(0);
+  };
+
+  CHKERR PCSetType(pc, PCSHELL);
+  CHKERR PCShellSetApply(pc, apply);
+  CHKERR PCShellSetName(pc, "MoFEMSchurBlockPC");
+
+  MoFEMFunctionReturn(0);
+}
+
 } // namespace MoFEM

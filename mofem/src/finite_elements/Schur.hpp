@@ -257,6 +257,15 @@ std::pair<SmartPetscObj<Mat>, SchurNestMatrixData>
 createSchurNestedMatrix(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
                         SchurNestMatrixData schur_net_dat);
 
+
+/**
+ * @brief Set PC for Schur block
+ * 
+ * @param pc 
+ * @return MoFEMErrorCode 
+ */
+MoFEMErrorCode setSchurMatSolvePC(SmartPetscObj<PC> pc);
+
 struct SchurL2MatsBlock;
 
 /***
