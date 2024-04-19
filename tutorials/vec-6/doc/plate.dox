@@ -1,4 +1,4 @@
-/*! \page tutorial_plate VEC-6: Discountinous Galrekin for Kirchoff-Love Plate
+/*! \page tutorial_plate VEC-6: Discontinuous Galerkin for Kirchoff-Love Plate
 
 \note Prerequisites of this tutorial include \ref tutorial_dg_poisson
 

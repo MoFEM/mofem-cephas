@@ -196,7 +196,7 @@ continuing with the one you are most excited about.
 
   <tr valign="top">
        <td>\ref tutorial_dg_poisson &nbsp; <img src="BlankBox.png" alt="Source code" width="18px"/></td>
-       <td> Discountinous Galerkin for Poisson problem
+       <td> Discontinuous Galerkin for Poisson problem
        <br/> *Keywords:* integartion on skeleton
        </td>
   </tr>
@@ -265,7 +265,7 @@ continuing with the one you are most excited about.
   <tr valign="top">
        <td width="350px">\ref tutorial_plate &nbsp; <img src="BlankBox.png" alt="Source code" width="18px"/></td>
        <td> Solving forth order eliptic equation describing plate bending
-       <br/> *Keywords:* discountinous Galerkin method, plate theroy
+       <br/> *Keywords:* discontinuous Galerkin method, plate theroy
        </td>
   </tr>
 
@@ -303,6 +303,7 @@ continuing with the one you are most excited about.
 
 </table>
 
+<!-- 
 \section tutorials_data_driven Data driven problems
 
 <table style="width:100%">
@@ -312,8 +313,8 @@ continuing with the one you are most excited about.
        <td> Data driven for transport or heat conduction problems
        <br/> *Keywords:* Scalar problem
        </td>
-  </tr>
-
+  </tr>       
+-->
 \section tutorials_magnetics Maxwell problems
 
 <table style="width:100%">
@@ -362,7 +363,7 @@ continuing with the one you are most excited about.
 
   <tr valign="top">
        <td width="350px">\ref tutorial_level_set &nbsp; <img src="BlankBox.png" alt="Source code" width="18px"/></td>
-       <td> Upwind Discountinous Galerkin for Level-Set
+       <td> Upwind Discontinuous Galerkin for Level-Set
        <br/> *Keywords:* *Keywords:* upwind dg, level set
        </td>
   </tr>
