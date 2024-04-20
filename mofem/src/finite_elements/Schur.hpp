@@ -198,6 +198,7 @@ using SchurNestMatrixData = std::tuple<
 
     std::array<SmartPetscObj<Mat>, 4>,
     std::array<boost::shared_ptr<DiagBlockStruture>, 4>,
+    boost::shared_ptr<DiagBlockStruture>,
     std::pair<SmartPetscObj<IS>, SmartPetscObj<IS>>
 
     >;
