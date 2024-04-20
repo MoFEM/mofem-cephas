@@ -15,12 +15,50 @@
 
 namespace MoFEM {
 
-DMCtx::DMCtx()
-    : mField_ptr(PETSC_NULL), isProblemBuild(PETSC_FALSE),
-      isPartitioned(PETSC_FALSE), isSquareMatrix(PETSC_TRUE),
-      isSubDM(PETSC_FALSE), isCompDM(PETSC_FALSE), destroyProblem(PETSC_FALSE),
-      verbosity(VERBOSE), referenceNumber(0) {
+MoFEMErrorCode DMCtx::query_interface(boost::typeindex::type_index type_index,
+                                      UnknownInterface **iface) const {
+  *iface = const_cast<DMCtx *>(this);
+  return 0;
+}
 
+struct DMCtxImpl : public DMCtx {
+
+  DMCtxImpl();
+
+  int rAnk = -1; //< processor rank
+  int sIze = -1; //< communication size
+
+  int verbosity = VERBOSE; ///< verbosity
+  int referenceNumber = 0; //< reference number
+
+  // sub problem
+  PetscBool isSubDM = PETSC_FALSE;
+  std::vector<std::string> rowSubFields;
+  std::vector<std::string> colSubFields;
+  const Problem *problemMainOfSubPtr; ///< pinter to main problem to sub-problem
+
+  PetscBool isCompDM = PETSC_FALSE;
+  std::vector<std::string> rowCompPrb;
+  std::vector<std::string> colCompPrb;
+  std::map<std::string, boost::shared_ptr<Range>> mapTypeRow;
+  std::map<std::string, boost::shared_ptr<Range>> mapTypeCol;
+
+  // Options
+  PetscBool isPartitioned = PETSC_FALSE;  ///< true if read mesh is on parts
+  PetscBool isSquareMatrix = PETSC_TRUE;  ///< true if rows equals to cols
+  PetscBool destroyProblem = PETSC_FALSE; ///< If true destroy problem with DM
+  PetscBool isProblemBuild = PETSC_FALSE; ///< True if problem is build
+
+  Interface *mField_ptr = nullptr;    ///< MoFEM interface
+
+  // pointer to data structures
+  const Problem *problemPtr = nullptr; ///< pinter to problem data structure
+  std::string problemName;  ///< Problem name
+
+
+};
+
+DMCtxImpl::DMCtxImpl() : DMCtx() {
   if (!LogManager::checkIfChannelExist("DMWORLD")) {
     auto core_log = logging::core::get();
     core_log->add_sink(
@@ -36,12 +74,6 @@ DMCtx::DMCtx()
     MOFEM_LOG_TAG("DMSYNC", "DM");
     MOFEM_LOG_TAG("DMSELF", "DM");
   }
-}
-
-MoFEMErrorCode DMCtx::query_interface(boost::typeindex::type_index type_index,
-                                      UnknownInterface **iface) const {
-  *iface = const_cast<DMCtx *>(this);
-  return 0;
 }
 
 PetscErrorCode DMRegister_MoFEM(const char sname[]) {
@@ -75,14 +107,14 @@ PetscErrorCode DMSetOperators_MoFEM(DM dm) {
 PetscErrorCode DMCreate_MoFEM(DM dm) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
-  dm->data = new DMCtx();
+  dm->data = new DMCtxImpl();
   CHKERR DMSetOperators_MoFEM(dm);
   MoFEMFunctionReturn(0);
 }
 
 PetscErrorCode DMDestroy_MoFEM(DM dm) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   MoFEMFunctionBeginHot;
 
   MPI_Comm comm;
@@ -107,7 +139,7 @@ PetscErrorCode DMDestroy_MoFEM(DM dm) {
       } // else problem has to be deleted by the user
     }
 
-    delete static_cast<DMCtx *>(dm->data);
+    delete static_cast<DMCtxImpl *>(dm->data);
 
   } else
     --dm_field->referenceNumber;
@@ -121,7 +153,7 @@ PetscErrorCode DMMoFEMCreateMoFEM(DM dm, MoFEM::Interface *m_field_ptr,
                                   const MoFEM::BitRefLevel bit_mask) {
   MoFEMFunctionBegin;
 
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   if (!dm->data) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
             "data structure for MoFEM not yet created");
@@ -188,11 +220,11 @@ PetscErrorCode DMMoFEMDuplicateDMCtx(DM dm, DM dm_duplicate) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "data structure for MoFEM not yet created");
 
-  if (static_cast<DMCtx *>(dm_duplicate->data)->referenceNumber == 0)
-    delete static_cast<DMCtx *>(dm_duplicate->data);
+  if (static_cast<DMCtxImpl *>(dm_duplicate->data)->referenceNumber == 0)
+    delete static_cast<DMCtxImpl *>(dm_duplicate->data);
 
   dm_duplicate->data = dm->data;
-  ++(static_cast<DMCtx *>(dm_duplicate->data)->referenceNumber);
+  ++(static_cast<DMCtxImpl *>(dm_duplicate->data)->referenceNumber);
 
   MoFEMFunctionReturn(0);
 }
@@ -206,8 +238,8 @@ PetscErrorCode DMMoFEMSwapDMCtx(DM dm, DM dm_swap) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "data structure for MoFEM not yet created on swap dm");
 
-  auto *dm_field = static_cast<DMCtx *>(dm->data);
-  auto *dm_field_swap = static_cast<DMCtx *>(dm_swap->data);
+  auto *dm_field = static_cast<DMCtxImpl *>(dm->data);
+  auto *dm_field_swap = static_cast<DMCtxImpl *>(dm_swap->data);
 
   auto tmp_field = dm_field;
   dm_field = dm_field_swap;
@@ -223,13 +255,13 @@ PetscErrorCode DMMoFEMCreateSubDM(DM subdm, DM dm, const char problem_name[]) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "data structure for MoFEM not yet created");
   }
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
 
   CHKERR DMMoFEMCreateMoFEM(subdm, dm_field->mField_ptr, problem_name,
                             dm_field->problemPtr->getBitRefLevel(),
                             dm_field->problemPtr->getBitRefLevelMask());
 
-  DMCtx *subdm_field = (DMCtx *)subdm->data;
+  DMCtxImpl *subdm_field = (DMCtxImpl *)subdm->data;
   subdm_field->isSubDM = PETSC_TRUE;
   subdm_field->problemMainOfSubPtr = dm_field->problemPtr;
   subdm_field->isPartitioned = dm_field->isPartitioned;
@@ -242,7 +274,7 @@ PetscErrorCode DMMoFEMCreateSubDM(DM subdm, DM dm, const char problem_name[]) {
 PetscErrorCode DMMoFEMAddSubFieldRow(DM dm, const char field_name[]) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   if (!dm->data) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
             "data structure for MoFEM not yet created");
@@ -250,7 +282,7 @@ PetscErrorCode DMMoFEMAddSubFieldRow(DM dm, const char field_name[]) {
   if (!dm_field->isSubDM) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "this is not sub-dm");
   }
-  dm_field->rowFields.push_back(field_name);
+  dm_field->rowSubFields.push_back(field_name);
   dm_field->mapTypeRow.erase(field_name);
   MoFEMFunctionReturnHot(0);
 }
@@ -263,7 +295,7 @@ PetscErrorCode DMMoFEMAddSubFieldRow(DM dm, const char field_name[],
                                      boost::shared_ptr<Range> r_ptr) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   if (!dm->data) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
             "data structure for MoFEM not yet created");
@@ -271,7 +303,7 @@ PetscErrorCode DMMoFEMAddSubFieldRow(DM dm, const char field_name[],
   if (!dm_field->isSubDM) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "this is not sub-dm");
   }
-  dm_field->rowFields.push_back(field_name);
+  dm_field->rowSubFields.push_back(field_name);
   dm_field->mapTypeRow[field_name] = r_ptr;
   MoFEMFunctionReturnHot(0);
 }
@@ -284,7 +316,7 @@ PetscErrorCode DMMoFEMAddSubFieldRow(DM dm, std::string field_name,
 PetscErrorCode DMMoFEMAddSubFieldCol(DM dm, const char field_name[]) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   if (!dm->data) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
             "data structure for MoFEM not yet created");
@@ -292,7 +324,7 @@ PetscErrorCode DMMoFEMAddSubFieldCol(DM dm, const char field_name[]) {
   if (!dm_field->isSubDM) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "this is not sub-dm");
   }
-  dm_field->colFields.push_back(field_name);
+  dm_field->colSubFields.push_back(field_name);
   dm_field->mapTypeCol.erase(field_name);
   MoFEMFunctionReturnHot(0);
 }
@@ -305,7 +337,7 @@ PetscErrorCode DMMoFEMAddSubFieldCol(DM dm, const char field_name[],
                                      boost::shared_ptr<Range> r_ptr) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   if (!dm->data) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
             "data structure for MoFEM not yet created");
@@ -313,7 +345,7 @@ PetscErrorCode DMMoFEMAddSubFieldCol(DM dm, const char field_name[],
   if (!dm_field->isSubDM) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "this is not sub-dm");
   }
-  dm_field->colFields.push_back(field_name);
+  dm_field->colSubFields.push_back(field_name);
   dm_field->mapTypeCol[field_name] = r_ptr;
   MoFEMFunctionReturnHot(0);
 }
@@ -327,7 +359,7 @@ PetscErrorCode DMMoFEMGetIsSubDM(DM dm, PetscBool *is_sub_dm) {
   MoFEMFunctionBeginHot;
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   *is_sub_dm = dm_field->isSubDM;
   MoFEMFunctionReturnHot(0);
 }
@@ -336,7 +368,7 @@ PetscErrorCode DMMoFEMGetSubRowIS(DM dm, IS *is) {
   MoFEMFunctionBegin;
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   if (dm_field->isSubDM != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
             "This DM is not created as a SubDM");
@@ -354,7 +386,7 @@ PetscErrorCode DMMoFEMGetSubColIS(DM dm, IS *is) {
   MoFEMFunctionBegin;
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   if (dm_field->isSubDM != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
             "This DM is not created as a SubDM");
@@ -371,7 +403,7 @@ PetscErrorCode DMMoFEMGetSubColIS(DM dm, IS *is) {
 PetscErrorCode DMMoFEMAddRowCompositeProblem(DM dm, const char prb_name[]) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   if (!dm->data) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
             "data structure for MoFEM not yet created");
@@ -389,7 +421,7 @@ PetscErrorCode DMMoFEMAddRowCompositeProblem(DM dm, const char prb_name[]) {
 PetscErrorCode DMMoFEMAddColCompositeProblem(DM dm, const char prb_name[]) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   if (!dm->data) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
             "data structure for MoFEM not yet created");
@@ -410,7 +442,7 @@ PetscErrorCode DMMoFEMGetIsCompDM(DM dm, PetscBool *is_comp_dm) {
   MoFEMFunctionBeginHot;
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   *is_comp_dm = dm_field->isCompDM;
   MoFEMFunctionReturnHot(0);
 }
@@ -418,7 +450,7 @@ PetscErrorCode DMMoFEMGetIsCompDM(DM dm, PetscBool *is_comp_dm) {
 PetscErrorCode DMoFEMGetInterfacePtr(DM dm, MoFEM::Interface **m_field_ptr) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   if (!dm->data) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
             "data structure for MoFEM not yet created");
@@ -430,7 +462,7 @@ PetscErrorCode DMoFEMGetInterfacePtr(DM dm, MoFEM::Interface **m_field_ptr) {
 PetscErrorCode DMMoFEMGetProblemPtr(DM dm, const MoFEM::Problem **problem_ptr) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   if (!dm->data) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
             "data structure for MoFEM not yet created");
@@ -443,7 +475,7 @@ PetscErrorCode DMMoFEMSetDestroyProblem(DM dm, PetscBool destroy_problem) {
   MoFEMFunctionBeginHot;
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   dm_field->destroyProblem = destroy_problem;
   MoFEMFunctionReturnHot(0);
 }
@@ -452,7 +484,7 @@ PetscErrorCode DMMoFEMGetDestroyProblem(DM dm, PetscBool *destroy_problem) {
   MoFEMFunctionBeginHot;
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   *destroy_problem = dm_field->destroyProblem;
   MoFEMFunctionReturnHot(0);
 }
@@ -460,7 +492,7 @@ PetscErrorCode DMMoFEMGetDestroyProblem(DM dm, PetscBool *destroy_problem) {
 PetscErrorCode DMMoFEMSetSquareProblem(DM dm, PetscBool square_problem) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   dm_field->isSquareMatrix = square_problem;
   MoFEMFunctionReturnHot(0);
 }
@@ -468,7 +500,7 @@ PetscErrorCode DMMoFEMSetSquareProblem(DM dm, PetscBool square_problem) {
 PetscErrorCode DMMoFEMResolveSharedFiniteElements(DM dm, std::string fe_name) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   CHKERR dm_field->mField_ptr->getInterface<CommInterface>()
       ->resolveSharedFiniteElements(dm_field->problemPtr, fe_name);
   MoFEMFunctionReturn(0);
@@ -479,7 +511,7 @@ PetscErrorCode DMMoFEMGetProblemFiniteElementLayout(DM dm, std::string fe_name,
   MoFEMFunctionBeginHot;
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
 
   MPI_Comm comm;
   CHKERR PetscObjectGetComm((PetscObject)dm, &comm);
@@ -493,7 +525,7 @@ PetscErrorCode DMMoFEMGetSquareProblem(DM dm, PetscBool *square_problem) {
   MoFEMFunctionBeginHot;
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   *square_problem = dm_field->isSquareMatrix;
   MoFEMFunctionReturnHot(0);
 }
@@ -501,7 +533,7 @@ PetscErrorCode DMMoFEMGetSquareProblem(DM dm, PetscBool *square_problem) {
 PetscErrorCode DMMoFEMAddElement(DM dm, std::string fe_name) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   CHKERR dm_field->mField_ptr->modify_problem_add_finite_element(
       dm_field->problemName, fe_name);
   MoFEMFunctionReturn(0);
@@ -518,7 +550,7 @@ PetscErrorCode DMMoFEMAddElement(DM dm, std::vector<std::string> fe_name) {
 PetscErrorCode DMMoFEMUnSetElement(DM dm, std::string fe_name) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   CHKERR dm_field->mField_ptr->modify_problem_unset_finite_element(
       dm_field->problemName, fe_name);
   MoFEMFunctionReturn(0);
@@ -529,7 +561,7 @@ PetscErrorCode DMoFEMMeshToLocalVector(DM dm, Vec l, InsertMode mode,
   MoFEMFunctionBeginHot;
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   ierr = dm_field->mField_ptr->getInterface<VecManager>()->setLocalGhostVector(
       dm_field->problemPtr, COL, l, mode, scatter_mode);
   CHKERRG(ierr);
@@ -540,7 +572,7 @@ PetscErrorCode DMoFEMMeshToGlobalVector(DM dm, Vec g, InsertMode mode,
                                         ScatterMode scatter_mode) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   ierr = dm_field->mField_ptr->getInterface<VecManager>()->setGlobalGhostVector(
       dm_field->problemPtr, COL, g, mode, scatter_mode);
   CHKERRG(ierr);
@@ -550,7 +582,7 @@ PetscErrorCode DMoFEMMeshToGlobalVector(DM dm, Vec g, InsertMode mode,
 PetscErrorCode DMoFEMPreProcessFiniteElements(DM dm, MoFEM::FEMethod *method) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   ierr = dm_field->mField_ptr->problem_basic_method_preProcess(
       dm_field->problemPtr, *method);
   CHKERRG(ierr);
@@ -560,7 +592,7 @@ PetscErrorCode DMoFEMPreProcessFiniteElements(DM dm, MoFEM::FEMethod *method) {
 PetscErrorCode DMoFEMPostProcessFiniteElements(DM dm, MoFEM::FEMethod *method) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   ierr = dm_field->mField_ptr->problem_basic_method_postProcess(
       dm_field->problemPtr, *method);
   CHKERRG(ierr);
@@ -572,7 +604,7 @@ DMoFEMLoopFiniteElementsUpAndLowRank(DM dm, const char fe_name[],
                                      MoFEM::FEMethod *method, int low_rank,
                                      int up_rank, CacheTupleWeakPtr cache_ptr) {
   MoFEMFunctionBeginHot;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   ierr = dm_field->mField_ptr->loop_finite_elements(
       dm_field->problemPtr, fe_name, *method, low_rank, up_rank, nullptr,
       MF_EXIST, cache_ptr);
@@ -592,7 +624,7 @@ PetscErrorCode DMoFEMLoopFiniteElements(DM dm, const char fe_name[],
                                         CacheTupleWeakPtr cache_ptr) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   ierr = DMoFEMLoopFiniteElementsUpAndLowRank(
       dm, fe_name, method, dm_field->rAnk, dm_field->rAnk, cache_ptr);
   CHKERRG(ierr);
@@ -610,7 +642,7 @@ PetscErrorCode DMoFEMLoopDofs(DM dm, const char field_name[],
                               MoFEM::DofMethod *method) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   ierr =
       dm_field->mField_ptr->loop_dofs(dm_field->problemPtr, field_name, COL,
                                       *method, dm_field->rAnk, dm_field->rAnk);
@@ -623,7 +655,7 @@ static PetscErrorCode DMMoFEMKSPSetComputeRHS(DM dm, S fe_name, T0 method,
                                               T1 pre_only, T2 post_only) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   if (pre_only) {
     dm_field->kspCtx->getPreProcComputeRhs().push_back(pre_only);
   }
@@ -664,7 +696,7 @@ static PetscErrorCode DMMoFEMKSPSetComputeOperators(DM dm, S fe_name, T0 method,
                                                     T1 pre_only, T2 post_only) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   if (pre_only) {
     dm_field->kspCtx->getPreProcSetOperators().push_back(pre_only);
   }
@@ -704,7 +736,7 @@ static PetscErrorCode DMMoFEMSNESSetFunction(DM dm, S fe_name, T0 method,
                                              T1 pre_only, T2 post_only) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   if (pre_only) {
     dm_field->snesCtx->getPreProcComputeRhs().push_back(pre_only);
   }
@@ -745,7 +777,7 @@ static PetscErrorCode DMMoFEMSNESSetJacobian(DM dm, S fe_name, T0 method,
                                              T1 pre_only, T2 post_only) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   if (pre_only) {
     dm_field->snesCtx->getPreProcSetOperators().push_back(pre_only);
   }
@@ -786,7 +818,7 @@ static PetscErrorCode DMMoFEMTSSetIFunction(DM dm, S fe_name, T0 method,
                                             T1 pre_only, T2 post_only) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   if (pre_only) {
     dm_field->tsCtx->getPreProcessIFunction().push_back(pre_only);
   }
@@ -829,7 +861,7 @@ static PetscErrorCode DMMoFEMTSSetIJacobian(DM dm, S fe_name, T0 method,
                                             T1 pre_only, T2 post_only) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   if (pre_only) {
     dm_field->tsCtx->getPreProcessIJacobian().push_back(pre_only);
   }
@@ -870,7 +902,7 @@ static PetscErrorCode DMMoFEMTSSetRHSFunction(DM dm, S fe_name, T0 method,
                                               T1 pre_only, T2 post_only) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   if (pre_only)
     dm_field->tsCtx->getPreProcessRHSFunction().push_back(pre_only);
   if (method)
@@ -910,7 +942,7 @@ static PetscErrorCode DMMoFEMTSSetRHSJacobian(DM dm, S fe_name, T0 method,
                                               T1 pre_only, T2 post_only) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   if (pre_only)
     dm_field->tsCtx->getPreProcessRHSFunction().push_back(pre_only);
   if (method)
@@ -950,7 +982,7 @@ static PetscErrorCode DMMoFEMTSSetI2Function(DM dm, S fe_name, T0 method,
                                              T1 pre_only, T2 post_only) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   if (pre_only) {
     dm_field->tsCtx->getPreProcessIFunction().push_back(pre_only);
   }
@@ -993,7 +1025,7 @@ static PetscErrorCode DMMoFEMTSSetI2Jacobian(DM dm, S fe_name, T0 method,
                                              T1 pre_only, T2 post_only) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   if (pre_only) {
     dm_field->tsCtx->getPreProcessIJacobian().push_back(pre_only);
   }
@@ -1034,7 +1066,7 @@ static PetscErrorCode DMMoFEMTSSetMonitor(DM dm, TS ts, S fe_name, T0 method,
                                           T1 pre_only, T2 post_only) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   if (pre_only)
     dm_field->tsCtx->getPreProcessMonitor().push_back(pre_only);
   if (method)
@@ -1072,7 +1104,7 @@ DMMoFEMTSSetMonitor(DM dm, TS ts, const std::string fe_name,
 PetscErrorCode DMMoFEMGetKspCtx(DM dm, MoFEM::KspCtx **ksp_ctx) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   *ksp_ctx = dm_field->kspCtx.get();
   MoFEMFunctionReturnHot(0);
 }
@@ -1081,7 +1113,7 @@ PetscErrorCode
 DMMoFEMGetKspCtx(DM dm, const boost::shared_ptr<MoFEM::KspCtx> &ksp_ctx) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   const_cast<boost::shared_ptr<MoFEM::KspCtx> &>(ksp_ctx) = dm_field->kspCtx;
   MoFEMFunctionReturnHot(0);
 }
@@ -1090,7 +1122,7 @@ PetscErrorCode DMMoFEMSetKspCtx(DM dm,
                                 boost::shared_ptr<MoFEM::KspCtx> ksp_ctx) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   dm_field->kspCtx = ksp_ctx;
   MoFEMFunctionReturnHot(0);
 }
@@ -1098,7 +1130,7 @@ PetscErrorCode DMMoFEMSetKspCtx(DM dm,
 PetscErrorCode DMMoFEMGetSnesCtx(DM dm, MoFEM::SnesCtx **snes_ctx) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
-  DMCtx *dm_field = (DMCtx *)dm->data;
+  DMCtxImpl *dm_field = (DMCtxImpl *)dm->data;
   *snes_ctx = dm_field->snesCtx.get();
   MoFEMFunctionReturnHot(0);
 }
@@ -1107,7 +1139,7 @@ PetscErrorCode
 DMMoFEMGetSnesCtx(DM dm, const boost::shared_ptr<MoFEM::SnesCtx> &snes_ctx) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   const_cast<boost::shared_ptr<MoFEM::SnesCtx> &>(snes_ctx) = dm_field->snesCtx;
   MoFEMFunctionReturnHot(0);
 }
@@ -1116,7 +1148,7 @@ PetscErrorCode DMMoFEMSetSnesCtx(DM dm,
                                  boost::shared_ptr<MoFEM::SnesCtx> snes_ctx) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   dm_field->snesCtx = snes_ctx;
   MoFEMFunctionReturnHot(0);
 }
@@ -1127,7 +1159,7 @@ PetscErrorCode DMMoFEMSetSnesCtx(DM dm,
 PetscErrorCode DMMoFEMSetIsPartitioned(DM dm, PetscBool is_partitioned) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   dm_field->isPartitioned = is_partitioned;
   MoFEMFunctionReturnHot(0);
 }
@@ -1138,7 +1170,7 @@ PetscErrorCode DMMoFEMSetIsPartitioned(DM dm, PetscBool is_partitioned) {
 PetscErrorCode DMMoFEMGetIsPartitioned(DM dm, PetscBool *is_partitioned) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   *is_partitioned = dm_field->isPartitioned;
   MoFEMFunctionReturnHot(0);
 }
@@ -1146,7 +1178,7 @@ PetscErrorCode DMMoFEMGetIsPartitioned(DM dm, PetscBool *is_partitioned) {
 PetscErrorCode DMMoFEMGetTsCtx(DM dm, MoFEM::TsCtx **ts_ctx) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   *ts_ctx = dm_field->tsCtx.get();
   MoFEMFunctionReturnHot(0);
 }
@@ -1155,7 +1187,7 @@ PetscErrorCode DMMoFEMGetTsCtx(DM dm,
                                const boost::shared_ptr<MoFEM::TsCtx> &ts_ctx) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   const_cast<boost::shared_ptr<MoFEM::TsCtx> &>(ts_ctx) = dm_field->tsCtx;
   MoFEMFunctionReturnHot(0);
 }
@@ -1163,7 +1195,7 @@ PetscErrorCode DMMoFEMGetTsCtx(DM dm,
 PetscErrorCode DMMoFEMSetTsCtx(DM dm, boost::shared_ptr<MoFEM::TsCtx> ts_ctx) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   dm_field->tsCtx = ts_ctx;
   MoFEMFunctionReturnHot(0);
 }
@@ -1171,7 +1203,7 @@ PetscErrorCode DMMoFEMSetTsCtx(DM dm, boost::shared_ptr<MoFEM::TsCtx> ts_ctx) {
 PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm, Vec *g) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   CHKERR dm_field->mField_ptr->getInterface<VecManager>()->vecCreateGhost(
       dm_field->problemName, COL, g);
   CHKERR VecSetDM(*g, dm);
@@ -1181,7 +1213,7 @@ PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm, Vec *g) {
 PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm, SmartPetscObj<Vec> &g_ptr) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   CHKERR dm_field->mField_ptr->getInterface<VecManager>()->vecCreateGhost(
       dm_field->problemName, COL, g_ptr);
   CHKERR VecSetDM(g_ptr, dm);
@@ -1191,7 +1223,7 @@ PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm, SmartPetscObj<Vec> &g_ptr) {
 PetscErrorCode DMCreateLocalVector_MoFEM(DM dm, Vec *l) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   CHKERR dm_field->mField_ptr->getInterface<VecManager>()->vecCreateSeq(
       dm_field->problemName, COL, l);
   CHKERR VecSetDM(*l, dm);
@@ -1201,7 +1233,7 @@ PetscErrorCode DMCreateLocalVector_MoFEM(DM dm, Vec *l) {
 PetscErrorCode DMCreateMatrix_MoFEM(DM dm, Mat *M) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   if (strcmp(dm->mattype, MATMPIAIJ) == 0) {
     CHKERR dm_field->mField_ptr->getInterface<MatrixManager>()
         ->createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(dm_field->problemName,
@@ -1229,7 +1261,7 @@ PetscErrorCode DMCreateMatrix_MoFEM(DM dm, Mat *M) {
 PetscErrorCode DMCreateMatrix_MoFEM(DM dm, SmartPetscObj<Mat> &M) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   if (strcmp(dm->mattype, MATMPIAIJ) == 0) {
     CHKERR dm_field->mField_ptr->getInterface<MatrixManager>()
         ->createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(dm_field->problemName,
@@ -1265,7 +1297,7 @@ PetscErrorCode DMSetFromOptions_MoFEM(DM dm) {
 
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
 #if PETSC_VERSION_GE(3, 5, 3)
   ierr = PetscOptionsHead(PetscOptionsObject, "DMMoFEM Options");
   CHKERRG(ierr);
@@ -1286,7 +1318,7 @@ PetscErrorCode DMSetUp_MoFEM(DM dm) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   ProblemsManager *prb_mng_ptr;
   MoFEMFunctionBegin;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   CHKERR dm_field->mField_ptr->getInterface(prb_mng_ptr);
 
   if (dm_field->isCompDM) {
@@ -1334,7 +1366,7 @@ PetscErrorCode DMSubDMSetUp_MoFEM(DM subdm) {
   ProblemsManager *prb_mng_ptr;
   MoFEMFunctionBegin;
 
-  DMCtx *subdm_field = static_cast<DMCtx *>(subdm->data);
+  DMCtxImpl *subdm_field = static_cast<DMCtxImpl *>(subdm->data);
 
   // build sub dm problem
   CHKERR subdm_field->mField_ptr->getInterface(prb_mng_ptr);
@@ -1348,7 +1380,7 @@ PetscErrorCode DMSubDMSetUp_MoFEM(DM subdm) {
     entity_map_col = &subdm_field->mapTypeCol;
 
   CHKERR prb_mng_ptr->buildSubProblem(
-      subdm_field->problemName, subdm_field->rowFields, subdm_field->colFields,
+      subdm_field->problemName, subdm_field->rowSubFields, subdm_field->colSubFields,
       subdm_field->problemMainOfSubPtr->getName(),
       subdm_field->isSquareMatrix == PETSC_TRUE, entity_map_row, entity_map_col,
       subdm_field->verbosity);
@@ -1391,7 +1423,7 @@ PetscErrorCode DMGlobalToLocalEnd_MoFEM(DM dm, Vec g, InsertMode mode, Vec l) {
 
   CHKERR VecGhostUpdateEnd(g, INSERT_VALUES, SCATTER_FORWARD);
 
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   int nb_dofs = dm_field->problemPtr->getNbLocalDofsRow();
   int nb_ghost = dm_field->problemPtr->getNbGhostDofsRow();
 
@@ -1419,7 +1451,7 @@ PetscErrorCode DMLocalToGlobalBegin_MoFEM(DM dm, Vec l, InsertMode mode,
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
 
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   int nb_dofs = dm_field->problemPtr->getNbLocalDofsRow();
   int nb_ghost = dm_field->problemPtr->getNbGhostDofsRow();
 
@@ -1463,7 +1495,7 @@ PetscErrorCode DMCreateFieldIS_MoFEM(DM dm, PetscInt *numFields,
     *fields = NULL;
   }
 
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   auto fields_ptr = dm_field->mField_ptr->get_fields();
   Field_multiIndex::iterator fit, hi_fit;
   fit = fields_ptr->begin();
@@ -1497,7 +1529,7 @@ PetscErrorCode DMMoFEMGetFieldIS(DM dm, RowColData rc, const char field_name[],
                                  IS *is) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   CHKERR dm_field->mField_ptr->getInterface<ISManager>()
       ->isCreateProblemFieldAndRank(dm_field->problemPtr->getName(), ROW,
                                     field_name, 0, 1000, is);
@@ -1507,7 +1539,7 @@ PetscErrorCode DMMoFEMGetFieldIS(DM dm, RowColData rc, const char field_name[],
 PetscErrorCode DMMoFEMSetVerbosity(DM dm, const int verb) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   dm_field->verbosity = verb;
   MoFEMFunctionReturnHot(0);
 }

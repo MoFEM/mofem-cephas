@@ -946,42 +946,14 @@ struct DMCtx : public UnknownInterface {
   MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
-  Interface *mField_ptr;    ///< MoFEM interface
-  PetscBool isProblemBuild; ///< True if problem is build
-  std::string problemName;  ///< Problem name
-
-  // Options
-  PetscBool isPartitioned;  ///< true if read mesh is on parts
-  PetscBool isSquareMatrix; ///< true if rows equals to cols
-
-  int rAnk, sIze;
-
-  // pointer to data structures
-  const Problem *problemPtr; ///< pinter to problem data structure
-
-  // sub problem
-  PetscBool isSubDM;
-  std::vector<std::string> rowFields;
-  std::vector<std::string> colFields;
-  const Problem *problemMainOfSubPtr; ///< pinter to main problem to sub-problem
-
-  PetscBool isCompDM;
-  std::vector<std::string> rowCompPrb;
-  std::vector<std::string> colCompPrb;
-  std::map<std::string, boost::shared_ptr<Range>> mapTypeRow;
-  std::map<std::string, boost::shared_ptr<Range>> mapTypeCol;
-
-  PetscBool destroyProblem; ///< If true destroy problem with DM
-
-  DMCtx();
   virtual ~DMCtx() = default;
-
-  int verbosity; ///< verbosity
-  int referenceNumber;
 
   boost::shared_ptr<KspCtx> kspCtx;   ///< data structure KSP
   boost::shared_ptr<SnesCtx> snesCtx; ///< data structure SNES
   boost::shared_ptr<TsCtx> tsCtx;     ///< data structure for TS solver
+
+protected:
+  DMCtx() = default;
 };
 
 /**
