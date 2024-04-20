@@ -213,7 +213,7 @@ using SchurNestMatrixData = std::tuple<
  */
 boost::shared_ptr<SchurNestMatrixData>
 getSchurNestMatArray(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
-                     SchurShellMatData A,
+                     boost::shared_ptr<DiagBlockStruture> block_mat_data,
 
                      std::vector<std::string> fields_name, //< a00 fields
                      std::vector<boost::shared_ptr<Range>>

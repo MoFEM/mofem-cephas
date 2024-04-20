@@ -141,8 +141,9 @@ int main(int argc, char *argv[]) {
     petsc_mat = createDMMatrix(simple->getDM());
     auto S = createDMMatrix(schur_dm);
 
-    auto data_struture =
-        createSchurBlockMatStructure(simple->getDM(),
+    auto shell_data = createSchurBlockMat(simple->getDM(), 
+
+      createSchurBlockMatStructure(simple->getDM(),
 
                                      {{simple->getDomainFEName(),
 
@@ -156,9 +157,11 @@ int main(int argc, char *argv[]) {
 
                                        }}}
 
-        );
-    auto shell_data = createSchurBlockMat(simple->getDM(), data_struture);
-    auto [mat, data] = shell_data;
+        )
+
+    );
+
+    auto [mat, block_data_ptr] = shell_data;
     block_mat = mat;
 
     using OpMassPETSCAssemble = FormsIntegrators<DomainEleOp>::Assembly<
@@ -247,7 +250,7 @@ int main(int argc, char *argv[]) {
 
         getSchurNestMatArray(
 
-            {schur_dm, block_dm}, shell_data,
+            {schur_dm, block_dm}, block_data_ptr,
 
             {"TENSOR"}, {nullptr}
 

@@ -1744,13 +1744,19 @@ MatSetValues<DiagBlockStruture>(Mat M,
 
 boost::shared_ptr<SchurNestMatrixData> getSchurNestMatArray(
 
-    std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms, SchurShellMatData A,
+    std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
+    boost::shared_ptr<DiagBlockStruture> block_mat_data_ptr,
 
     std::vector<std::string> fields_names, //< a00 fields
     std::vector<boost::shared_ptr<Range>>
         field_ents //< a00 ranges (can be null)
 
 ) {
+
+  if(!block_mat_data_ptr) {
+    CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Block data not set");
+  }
+
   auto [schur_dm, block_dm] = dms;
   auto schur_prb = getProblemPtr(schur_dm);
   auto block_prb = getProblemPtr(block_dm);
@@ -1771,8 +1777,6 @@ boost::shared_ptr<SchurNestMatrixData> getSchurNestMatArray(
   auto schur_vec_y = vectorDuplicate(schur_vec_x);
   auto block_vec_y = vectorDuplicate(block_vec_x);
 
-  auto [schur_mat, schur_data] = A;
-
   auto get_vec = [&](auto schur_data) {
     std::vector<int> vec_r, vec_c;
     vec_r.reserve(schur_data->blockIndex.size());
@@ -1784,12 +1788,12 @@ boost::shared_ptr<SchurNestMatrixData> getSchurNestMatArray(
     return std::make_pair(vec_r, vec_c);
   };
 
-  auto [vec_r_schur, vec_c_schur] = get_vec(schur_data);
+  auto [vec_r_schur, vec_c_schur] = get_vec(block_mat_data_ptr);
   CHKERR AOApplicationToPetsc(ao_schur_row, vec_r_schur.size(),
                               &*vec_r_schur.begin());
   CHKERR AOApplicationToPetsc(ao_schur_col, vec_c_schur.size(),
                               &*vec_c_schur.begin());
-  auto [vec_r_block, vec_c_block] = get_vec(schur_data);
+  auto [vec_r_block, vec_c_block] = get_vec(block_mat_data_ptr);
   CHKERR AOApplicationToPetsc(ao_block_row, vec_r_block.size(),
                               &*vec_r_block.begin());
   CHKERR AOApplicationToPetsc(ao_block_col, vec_c_block.size(),
@@ -1799,10 +1803,10 @@ boost::shared_ptr<SchurNestMatrixData> getSchurNestMatArray(
 
   for (auto r = 0; r != 3; ++r) {
     data_ptrs[r] = boost::make_shared<DiagBlockStruture>();
-    data_ptrs[r]->dataBlocksPtr = schur_data->dataBlocksPtr;
+    data_ptrs[r]->dataBlocksPtr = block_mat_data_ptr->dataBlocksPtr;
   }
   data_ptrs[3] = boost::make_shared<DiagBlockInvStruture>();
-  data_ptrs[3]->dataBlocksPtr = schur_data->dataBlocksPtr;
+  data_ptrs[3]->dataBlocksPtr = block_mat_data_ptr->dataBlocksPtr;
 
   data_ptrs[0]->ghostX = schur_vec_x;
   data_ptrs[0]->ghostY = schur_vec_y;
@@ -1815,7 +1819,7 @@ boost::shared_ptr<SchurNestMatrixData> getSchurNestMatArray(
 
   auto inv_mem_size = 0;
   int idx = 0;
-  for (auto &d : schur_data->blockIndex.get<1>()) {
+  for (auto &d : block_mat_data_ptr->blockIndex.get<1>()) {
 
     auto insert = [&](auto &m, auto &dof_r, auto &dof_c, auto &d) {
       m.insert(
