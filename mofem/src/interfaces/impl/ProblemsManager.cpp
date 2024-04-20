@@ -2743,6 +2743,8 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
         if (s == 0) {
           sub_data->rowIs = is;
           sub_data->rowMap = ao;
+          sub_data->colIs = is; // if square problem col is equal to row
+          sub_data->colMap = ao;
         } else {
           sub_data->colIs = is;
           sub_data->colMap = ao;
@@ -3033,6 +3035,8 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntitiesNotDistributed(
         if (s == 0) {
           sub_data->rowIs = is;
           sub_data->rowMap = ao;
+          sub_data->colIs = is;
+          sub_data->colMap = ao;
         } else {
           sub_data->colIs = is;
           sub_data->colMap = ao;
