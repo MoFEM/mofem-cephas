@@ -1075,7 +1075,7 @@ protected:
    * @tparam IFACE
    * @return MoFEMErrorCode
    */
-  template <class IFACE> MoFEMErrorCode regSubEvents();
+  template <class IFACE> MoFEMErrorCode regEvents();
 };
 
 template <> struct CoreTmp<-1> : public CoreTmp<0> {
