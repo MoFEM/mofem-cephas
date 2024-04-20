@@ -255,6 +255,17 @@ SchurEvents::SchurEvents() {
   PetscLogEventRegister("diagBlockSolve", 0,
                         &MOFEM_EVENT_diagBlockStrutureSolve);
   PetscLogEventRegister("schurZeroRandC", 0, &MOFEM_EVENT_zeroRowsAndCols);
+
+  // // Register
+
+  // auto create_mat_block = [](Mat mat) {
+  //   MoFEMFunctionBegin;
+  //   SETERRQ1(PETSC_COMM_WORLD, MOFEM_NOT_IMPLEMENTED,
+  //            "Use createSchurBlockMat to create %s", MoFEM_BLOCK_MAT);
+  //   MoFEMFunctionReturn(0);
+  // };
+
+  // MatRegister(MoFEM_BLOCK_MAT, create_mat_block);
 }
 
 template <>
@@ -1243,6 +1254,7 @@ createSchurBlockMat(DM dm, boost::shared_ptr<DiagBlockStruture> data) {
   CHKERR MatCreateShell(comm, nb_local, nb_local, nb_global, nb_global,
                         (void *)data.get(), &mat_raw);
   CHKERR setSchurBlockMatOps(mat_raw);
+  // CHKERR PetscObjectSetName((PetscObject)mat_raw, MoFEM_BLOCK_MAT);
 
   return std::make_pair(SmartPetscObj<Mat>(mat_raw), data);
 }
@@ -2060,21 +2072,18 @@ SchurNestMatrixData getSchurNestMatArray(
 
   MOFEM_LOG_SEVERITY_SYNC(comm, Sev::verbose);
 
-  return std::make_pair(mats_array, data_ptrs);
+  auto schur_is = schur_prb->getSubData()->getSmartRowIs();
+  auto block_is = block_prb->getSubData()->getSmartRowIs();
+
+  return std::make_tuple(mats_array, data_ptrs,
+                         std::make_pair(schur_is, block_is));
 }
 
 std::pair<SmartPetscObj<Mat>, SchurNestMatrixData>
-createSchurNestedMatrix(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
-                        SchurNestMatrixData schur_net_data) {
+createSchurNestedMatrix(SchurNestMatrixData schur_net_data) {
 
-  auto [schur_dm, block_dm] = dms;
-  auto [mat_arrays, data_ptrs] = schur_net_data;
-
-  auto schur_prb = getProblemPtr(schur_dm);
-  auto block_prb = getProblemPtr(block_dm);
-
-  auto schur_is = schur_prb->getSubData()->getSmartRowIs();
-  auto block_is = block_prb->getSubData()->getSmartRowIs();
+  auto [mat_arrays, data_ptrs, iss] = schur_net_data;
+  auto [schur_is, block_is] = iss;
 
   std::array<IS, 2> is_a = {schur_is, block_is};
   std::array<Mat, 4> mats_a = {
@@ -2084,7 +2093,7 @@ createSchurNestedMatrix(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
   };
 
   MPI_Comm comm;
-  CHKERR PetscObjectGetComm((PetscObject)schur_dm, &comm);
+  CHKERR PetscObjectGetComm((PetscObject)mat_arrays[0], &comm);
 
   Mat mat_raw;
   CHKERR MatCreateNest(
