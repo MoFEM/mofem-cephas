@@ -181,7 +181,7 @@ template <class IFACE> MoFEMErrorCode Core::regSubInterface() {
   MoFEMFunctionReturn(0);
 }
 
-template <class IFACE> MoFEMErrorCode Core::regSubEvents() {
+template <class IFACE> MoFEMErrorCode Core::regEvents() {
   MoFEMFunctionBegin;
   auto ptr = boost::make_shared<IFACE>();
   // See SFINAE:
@@ -495,7 +495,7 @@ MoFEMErrorCode Core::registerSubInterfaces() {
   CHKERR regSubInterface<BcManager>();
 
   // Register events
-  CHKERR regSubEvents<SchurEvents>();
+  CHKERR regEvents<SchurEvents>();
 
   MoFEMFunctionReturn(0);
 };
