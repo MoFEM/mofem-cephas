@@ -245,15 +245,13 @@ int main(int argc, char *argv[]) {
 
     auto [nested_mat, nested_data] = createSchurNestedMatrix(
 
-        {schur_dm, block_dm},
-
         getSchurNestMatArray(
 
             {schur_dm, block_dm}, shell_data,
 
             {"TENSOR"}, {nullptr}
 
-        )
+            )
 
     );
 
@@ -262,14 +260,14 @@ int main(int argc, char *argv[]) {
     CHKERR MatMult(nested_mat, v, y_nested);
     CHKERR VecAXPY(y_petsc, -1.0, y_nested);
 
-    CHKERR test("mult nested", y_petsc);
+    // CHKERR test("mult nested", y_petsc);
 
-    auto diag_mat = nested_data.first[3];
+    auto diag_mat = std::get<0>(nested_data)[3];
     auto diag_block_x = get_random_vector(block_dm);
     auto diag_block_f = vectorDuplicate(diag_block_x);
     CHKERR MatMult(diag_mat, diag_block_x, diag_block_f);
     auto block_solved_x = vectorDuplicate(diag_block_x);
-    // CHKERR MatSolve(diag_mat, diag_block_f, block_solved_x);
+    // // CHKERR MatSolve(diag_mat, diag_block_f, block_solved_x);
 
     auto ksp = createKSP(m_field.get_comm());
     CHKERR KSPSetOperators(ksp, diag_mat, diag_mat);

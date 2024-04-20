@@ -18,6 +18,8 @@
 
 namespace MoFEM {
 
+constexpr const char MoFEM_BLOCK_MAT[] = "mofem_block_mat";
+
 /**
  * @brief Structure to register events for Schur block assembly and solver
  */
@@ -192,26 +194,16 @@ inline MoFEMErrorCode VecSetValues<AssemblyTypeSelector<BLOCK_MAT>>(
   return VecSetValues<EssentialBcStorage>(V, data, nf, iora);
 }
 
-using SchurNestMatrixData =
-    std::pair<std::array<SmartPetscObj<Mat>, 4>,
-              std::array<boost::shared_ptr<DiagBlockStruture>, 4>>;
+using SchurNestMatrixData = std::tuple<
+
+    std::array<SmartPetscObj<Mat>, 4>,
+    std::array<boost::shared_ptr<DiagBlockStruture>, 4>,
+    std::pair<SmartPetscObj<IS>, SmartPetscObj<IS>>
+
+    >;
 
 /**
  * @brief Get the Schur Nest Mat Array object
- *
- * \code {.cpp}
- *
- * auto nested_data = getSchurNestMatArray(
- *
- *       {schur_dm, block_dm}, shell_data,
- *
- *       {"TENSOR"}, {nullptr}
- *
- *   );
- *
- * auto [nested_mat, nested_data_] =
- *  createSchurNestedMatrix({schur_dm, block_dm}, nested_data);
- * \endcode
  * 
  * @param dms schur dm, and block dm
  * @param block
@@ -236,8 +228,6 @@ getSchurNestMatArray(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
  *
  * auto [nested_mat, nested_data] = createSchurNestedMatrix(
  *
- *       {schur_dm, block_dm},
- *
  *       getSchurNestMatArray(
  *
  *           {schur_dm, block_dm}, shell_data,
@@ -253,9 +243,7 @@ getSchurNestMatArray(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
  * @return Mat
  */
 std::pair<SmartPetscObj<Mat>, SchurNestMatrixData>
-createSchurNestedMatrix(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
-                        SchurNestMatrixData schur_net_dat);
-
+createSchurNestedMatrix(SchurNestMatrixData schur_net_dat);
 
 /**
  * @brief Set PC for Schur block
