@@ -243,7 +243,7 @@ int main(int argc, char *argv[]) {
 
     CHKERR test("mult add", y_petsc);
 
-    auto [nested_mat, nested_data] = createSchurNestedMatrix(
+    auto [nested_mat, nested_data_ptr] = createSchurNestedMatrix(
 
         getSchurNestMatArray(
 
@@ -262,7 +262,7 @@ int main(int argc, char *argv[]) {
 
     // CHKERR test("mult nested", y_petsc);
 
-    auto diag_mat = std::get<0>(nested_data)[3];
+    auto diag_mat = std::get<0>(*nested_data_ptr)[3];
     auto diag_block_x = get_random_vector(block_dm);
     auto diag_block_f = vectorDuplicate(diag_block_x);
     CHKERR MatMult(diag_mat, diag_block_x, diag_block_f);

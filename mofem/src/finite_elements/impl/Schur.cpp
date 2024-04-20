@@ -1742,7 +1742,7 @@ MatSetValues<DiagBlockStruture>(Mat M,
   return shell_schur_mat_set_values_wrap(M, row_data, col_data, mat, iora);
 }
 
-SchurNestMatrixData getSchurNestMatArray(
+boost::shared_ptr<SchurNestMatrixData> getSchurNestMatArray(
 
     std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms, SchurShellMatData A,
 
@@ -2075,14 +2075,21 @@ SchurNestMatrixData getSchurNestMatArray(
   auto schur_is = schur_prb->getSubData()->getSmartRowIs();
   auto block_is = block_prb->getSubData()->getSmartRowIs();
 
-  return std::make_tuple(mats_array, data_ptrs,
-                         std::make_pair(schur_is, block_is));
+  return boost::make_shared<SchurNestMatrixData>(
+
+      mats_array, data_ptrs, std::make_pair(schur_is, block_is)
+
+  );
 }
 
-std::pair<SmartPetscObj<Mat>, SchurNestMatrixData>
-createSchurNestedMatrix(SchurNestMatrixData schur_net_data) {
+std::pair<SmartPetscObj<Mat>, boost::shared_ptr<SchurNestMatrixData>>
+createSchurNestedMatrix(
+    boost::shared_ptr<SchurNestMatrixData> schur_net_data_ptr) {
 
-  auto [mat_arrays, data_ptrs, iss] = schur_net_data;
+  if(!schur_net_data_ptr)
+    CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "No data");
+
+  auto [mat_arrays, data_ptrs, iss] = *schur_net_data_ptr;
   auto [schur_is, block_is] = iss;
 
   std::array<IS, 2> is_a = {schur_is, block_is};
@@ -2102,7 +2109,7 @@ createSchurNestedMatrix(SchurNestMatrixData schur_net_data) {
 
   );
 
-  return std::make_pair(SmartPetscObj<Mat>(mat_raw), schur_net_data);
+  return std::make_pair(SmartPetscObj<Mat>(mat_raw), schur_net_data_ptr);
 }
 
 struct SchurL2MatsBlock : public SchurL2Mats {
