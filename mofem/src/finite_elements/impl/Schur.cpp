@@ -2081,7 +2081,8 @@ boost::shared_ptr<SchurNestMatrixData> getSchurNestMatArray(
 
   return boost::make_shared<SchurNestMatrixData>(
 
-      mats_array, data_ptrs, std::make_pair(schur_is, block_is)
+      mats_array, data_ptrs, block_mat_data_ptr,
+      std::make_pair(schur_is, block_is)
 
   );
 }
@@ -2093,7 +2094,7 @@ createSchurNestedMatrix(
   if(!schur_net_data_ptr)
     CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "No data");
 
-  auto [mat_arrays, data_ptrs, iss] = *schur_net_data_ptr;
+  auto [mat_arrays, data_ptrs, block_mat_data_ptr, iss] = *schur_net_data_ptr;
   auto [schur_is, block_is] = iss;
 
   std::array<IS, 2> is_a = {schur_is, block_is};
