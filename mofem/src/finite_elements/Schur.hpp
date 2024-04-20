@@ -209,9 +209,9 @@ using SchurNestMatrixData = std::tuple<
  * @param block
  * @param fields_name
  * @param field_ents
- * @return SchurNestMatrixData
+ * @return boost::shared_ptr<SchurNestMatrixData>
  */
-SchurNestMatrixData
+boost::shared_ptr<SchurNestMatrixData>
 getSchurNestMatArray(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
                      SchurShellMatData A,
 
@@ -226,7 +226,7 @@ getSchurNestMatArray(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
  *
  * \code {.cpp}
  *
- * auto [nested_mat, nested_data] = createSchurNestedMatrix(
+ * auto [nested_mat, nested_data_ptr] = createSchurNestedMatrix(
  *
  *       getSchurNestMatArray(
  *
@@ -242,8 +242,9 @@ getSchurNestMatArray(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
  *
  * @return Mat
  */
-std::pair<SmartPetscObj<Mat>, SchurNestMatrixData>
-createSchurNestedMatrix(SchurNestMatrixData schur_net_dat);
+std::pair<SmartPetscObj<Mat>, boost::shared_ptr<SchurNestMatrixData>>
+createSchurNestedMatrix(
+    boost::shared_ptr<SchurNestMatrixData> schur_net_data_ptr);
 
 /**
  * @brief Set PC for Schur block
