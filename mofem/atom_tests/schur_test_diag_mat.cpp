@@ -272,14 +272,17 @@ int main(int argc, char *argv[]) {
     auto block_solved_x = vectorDuplicate(diag_block_x);
     // // CHKERR MatSolve(diag_mat, diag_block_f, block_solved_x);
 
+    // set matrix type to shell, set data
     CHKERR DMSetMatType(block_dm, MATSHELL);
     CHKERR DMMoFEMSetBlocMatData(block_dm, std::get<1>(*nested_data_ptr)[3]);
+    // set empty operator, sice block data are calculated
     CHKERR DMKSPSetComputeOperators(
         block_dm, [](KSP, Mat, Mat, void *) { return 0; }, nullptr);
 
     auto ksp = createKSP(m_field.get_comm());
     CHKERR KSPSetDM(ksp, block_dm);
 
+    // set preconditioner to block mat
     auto get_pc = [](auto ksp) {
       PC pc_raw;
       CHKERR KSPGetPC(ksp, &pc_raw);
