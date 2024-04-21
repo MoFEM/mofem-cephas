@@ -928,6 +928,47 @@ PetscErrorCode DMMoFEMGetFieldIS(DM dm, RowColData rc, const char field_name[],
  */
 PetscErrorCode DMMoFEMSetVerbosity(DM dm, const int verb);
 
+struct BlockStruture;
+
+/** @brief Set data for block mat
+ *
+ * \note You can reset data by setting nullptr
+ *
+ */
+MoFEMErrorCode DMMoFEMSetBlocMatData(DM dm,
+                                     boost::shared_ptr<BlockStruture>);
+
+/**
+ * @brief Create block matrix
+  \ingroup dm
+ * 
+ * @param dm 
+ * @param mat 
+ * @return MoFEMErrorCode 
+ */
+MoFEMErrorCode DMMoFEMCreateBlockMat(DM dm, Mat *mat);
+
+/**
+ * @brief Set data for nest schur (see specialisation in Schur.hpp)
+ * 
+ * \note You can reset data by setting nullptr
+ * 
+ * @tparam T = NestSchurData
+ * @param dm 
+ * @return MoFEMErrorCode 
+ */
+template <typename T>
+MoFEMErrorCode DMMoFEMSetNestSchurData(DM dm, boost::shared_ptr<T>);
+
+/**
+ * @brief Create nest schur matrix
+ * 
+ * @param dm 
+ * @param mat 
+ * @return MoFEMErrorCode 
+ */
+MoFEMErrorCode DMMoFEMCreateNestSchurMat(DM dm, Mat *mat);
+
 /**
  * \brief PETSc  Discrete Manager data structure
  *

@@ -45,7 +45,7 @@ struct OpSchurAssembleEndImpl : public OpSchurAssembleBase {
       std::vector<SmartPetscObj<AO>> sequence_of_aos,
       std::vector<SmartPetscObj<Mat>> sequence_of_mats,
       std::vector<bool> sym_schur, bool symm_op = true,
-      boost::shared_ptr<DiagBlockStruture> diag_blocks = nullptr);
+      boost::shared_ptr<BlockStruture> diag_blocks = nullptr);
 
   /**
    * @brief Construct a new Op Schur Assemble End object
@@ -67,7 +67,7 @@ struct OpSchurAssembleEndImpl : public OpSchurAssembleBase {
       std::vector<SmartPetscObj<Mat>> sequence_of_mats,
       std::vector<bool> sym_schur, std::vector<double> diag_eps,
       bool symm_op = true,
-      boost::shared_ptr<DiagBlockStruture> diag_blocks = nullptr);
+      boost::shared_ptr<BlockStruture> diag_blocks = nullptr);
 
 protected:
   template <typename I>
@@ -86,7 +86,7 @@ protected:
   MatrixDouble offMatInvDiagOffMat;
   MatrixDouble transOffMatInvDiagOffMat;
 
-  boost::shared_ptr<DiagBlockStruture> diagBlocks;
+  boost::shared_ptr<BlockStruture> diagBlocks;
 };
 
 struct SchurDSYSV; ///< SY	symmetric
@@ -221,7 +221,7 @@ struct DiagBlockIndex {
   BlockIndex blockIndex; ///< blocks indexes storage
 };
 
-struct DiagBlockStruture : public DiagBlockIndex {
+struct BlockStruture : public DiagBlockIndex {
 
   SmartPetscObj<Vec> ghostX;
   SmartPetscObj<Vec> ghostY;
@@ -230,7 +230,7 @@ struct DiagBlockStruture : public DiagBlockIndex {
   boost::shared_ptr<std::vector<double>> dataInvBlocksPtr;
 };
 
-struct DiagBlockInvStruture : public DiagBlockStruture {
+struct DiagBlockInvStruture : public BlockStruture {
 
   using SchurSolverView =
       std::vector<std::pair<const Indexes *, std::vector<const Indexes *>>>;
@@ -256,16 +256,6 @@ SchurEvents::SchurEvents() {
                         &MOFEM_EVENT_diagBlockStrutureSolve);
   PetscLogEventRegister("schurZeroRandC", 0, &MOFEM_EVENT_zeroRowsAndCols);
 
-  // // Register
-
-  // auto create_mat_block = [](Mat mat) {
-  //   MoFEMFunctionBegin;
-  //   SETERRQ1(PETSC_COMM_WORLD, MOFEM_NOT_IMPLEMENTED,
-  //            "Use createSchurBlockMat to create %s", MoFEM_BLOCK_MAT);
-  //   MoFEMFunctionReturn(0);
-  // };
-
-  // MatRegister(MoFEM_BLOCK_MAT, create_mat_block);
 }
 
 template <>
@@ -292,8 +282,8 @@ boost::ptr_vector<VectorInt> SchurL2Mats::colIndices;
 SchurL2Mats::SchurL2Mats(const size_t idx, const UId uid_row, const UId uid_col)
     : iDX(idx), uidRow(uid_row), uidCol(uid_col) {}
 
-OpSchurAssembleBase::MatSetValuesRaw
-    OpSchurAssembleBase::matSetValuesSchurRaw = ::MatSetValues;
+OpSchurAssembleBase::MatSetValuesRaw OpSchurAssembleBase::matSetValuesSchurRaw =
+    ::MatSetValues;
 
 MoFEMErrorCode
 schur_mat_set_values_wrap(Mat M, const EntitiesFieldData::EntData &row_data,
@@ -493,11 +483,11 @@ OpSchurAssembleEndImpl::OpSchurAssembleEndImpl(
     std::vector<SmartPetscObj<AO>> sequence_of_aos,
     std::vector<SmartPetscObj<Mat>> sequence_of_mats,
     std::vector<bool> sym_schur, std::vector<double> diag_eps, bool symm_op,
-    boost::shared_ptr<DiagBlockStruture> diag_blocks)
-    : OpSchurAssembleBase(NOSPACE, OPSPACE, symm_op),
-      fieldsName(fields_name), fieldEnts(field_ents),
-      sequenceOfAOs(sequence_of_aos), sequenceOfMats(sequence_of_mats),
-      symSchur(sym_schur), diagEps(diag_eps), diagBlocks(diag_blocks) {}
+    boost::shared_ptr<BlockStruture> diag_blocks)
+    : OpSchurAssembleBase(NOSPACE, OPSPACE, symm_op), fieldsName(fields_name),
+      fieldEnts(field_ents), sequenceOfAOs(sequence_of_aos),
+      sequenceOfMats(sequence_of_mats), symSchur(sym_schur), diagEps(diag_eps),
+      diagBlocks(diag_blocks) {}
 
 OpSchurAssembleEndImpl::OpSchurAssembleEndImpl(
     std::vector<std::string> fields_name,
@@ -505,7 +495,7 @@ OpSchurAssembleEndImpl::OpSchurAssembleEndImpl(
     std::vector<SmartPetscObj<AO>> sequence_of_aos,
     std::vector<SmartPetscObj<Mat>> sequence_of_mats,
     std::vector<bool> sym_schur, bool symm_op,
-    boost::shared_ptr<DiagBlockStruture> diag_blocks)
+    boost::shared_ptr<BlockStruture> diag_blocks)
     : OpSchurAssembleEndImpl(
           fields_name, field_ents, sequence_of_aos, sequence_of_mats, sym_schur,
           std::vector<double>(fields_name.size(), 0), symm_op, diag_blocks) {}
@@ -952,13 +942,13 @@ OpSchurAssembleEnd<SchurDGESV>::doWork(int side, EntityType type,
   return doWorkImpl<SchurDGESV>(side, type, data);
 }
 
-boost::shared_ptr<DiagBlockStruture> createSchurBlockMatStructure(
+boost::shared_ptr<BlockStruture> createBlockMatStructure(
 
     DM dm,                                //< dm
     SchurFEOpsFEandFields schur_fe_op_vec //< block elements
 
 ) {
-  auto data_ptr = boost::make_shared<DiagBlockStruture>();
+  auto data_ptr = boost::make_shared<BlockStruture>();
 
   auto m_field_ptr = getInterfacePtr(dm);
 
@@ -1057,7 +1047,7 @@ boost::shared_ptr<DiagBlockStruture> createSchurBlockMatStructure(
           for (auto &c : col_data) {
             auto [c_glob, c_nb_dofs, c_loc] = c;
             if (r_glob != -1 && c_glob != -1) {
-              data_ptr->blockIndex.insert(DiagBlockStruture::Indexes{
+              data_ptr->blockIndex.insert(BlockStruture::Indexes{
                   r_glob, c_glob, r_nb_dofs, c_nb_dofs, r_loc, c_loc, -1, -1});
             }
           }
@@ -1113,7 +1103,7 @@ static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
                                         Vec x, Vec b) {
 
   MoFEMFunctionBeginHot;
-  DiagBlockStruture *ctx;
+  BlockStruture *ctx;
   CHKERR MatShellGetContext(A, (void **)&ctx);
 
   PetscLogEventBegin(SchurEvents::MOFEM_EVENT_zeroRowsAndCols, 0, 0, 0, 0);
@@ -1121,7 +1111,7 @@ static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
   int loc_m, loc_n;
   CHKERR MatGetLocalSize(A, &loc_m, &loc_n);
 
-  struct ShiftedBlockView : DiagBlockStruture::Indexes {
+  struct ShiftedBlockView : BlockStruture::Indexes {
     ShiftedBlockView() = delete;
     inline auto rowShift() const {
       return row + nb_rows;
@@ -1202,7 +1192,7 @@ static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
 
 static PetscErrorCode mat_zero(Mat m) {
   MoFEMFunctionBegin;
-  DiagBlockStruture *ctx;
+  BlockStruture *ctx;
   CHKERR MatShellGetContext(m, (void **)&ctx);
   ctx->dataBlocksPtr->clear();
   MoFEMFunctionReturn(0);
@@ -1225,8 +1215,7 @@ static MoFEMErrorCode setSchurBlockMatOps(Mat mat_raw) {
   MoFEMFunctionReturn(0);
 };
 
-SchurShellMatData
-createSchurBlockMat(DM dm, boost::shared_ptr<DiagBlockStruture> data) {
+SchurShellMatData createBlockMat(DM dm, boost::shared_ptr<BlockStruture> data) {
 
   auto problem_ptr = getProblemPtr(dm);
   auto nb_local = problem_ptr->nbLocDofsRow;
@@ -1262,7 +1251,7 @@ createSchurBlockMat(DM dm, boost::shared_ptr<DiagBlockStruture> data) {
 static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
                                              InsertMode iora) {
   MoFEMFunctionBegin;
-  DiagBlockStruture *ctx;
+  BlockStruture *ctx;
   CHKERR MatShellGetContext(mat, (void **)&ctx);
 
   PetscLogEventBegin(SchurEvents::MOFEM_EVENT_diagBlockStrutureMult, 0, 0, 0,
@@ -1399,7 +1388,7 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
 static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
                                               InsertMode iora) {
   MoFEMFunctionBegin;
-  DiagBlockStruture *ctx;
+  BlockStruture *ctx;
   CHKERR MatShellGetContext(mat, (void **)&ctx);
 
   PetscLogEventBegin(SchurEvents::MOFEM_EVENT_diagBlockStrutureSolve, 0, 0, 0,
@@ -1557,7 +1546,7 @@ shell_schur_mat_set_values_wrap(Mat M,
   MatrixDouble tmp_mat;
   MoFEMFunctionBegin;
 
-  DiagBlockStruture *ctx;
+  BlockStruture *ctx;
   CHKERR MatShellGetContext(M, (void **)&ctx);
 
   PetscLogEventBegin(SchurEvents::MOFEM_EVENT_diagBlockStrutureSetValues, 0, 0,
@@ -1735,17 +1724,16 @@ shell_schur_mat_set_values_wrap(Mat M,
 
 template <>
 MoFEMErrorCode
-MatSetValues<DiagBlockStruture>(Mat M,
-                                const EntitiesFieldData::EntData &row_data,
-                                const EntitiesFieldData::EntData &col_data,
-                                const MatrixDouble &mat, InsertMode iora) {
+MatSetValues<BlockStruture>(Mat M, const EntitiesFieldData::EntData &row_data,
+                            const EntitiesFieldData::EntData &col_data,
+                            const MatrixDouble &mat, InsertMode iora) {
   return shell_schur_mat_set_values_wrap(M, row_data, col_data, mat, iora);
 }
 
-boost::shared_ptr<SchurNestMatrixData> getSchurNestMatArray(
+boost::shared_ptr<NestSchurData> getNestSchurData(
 
     std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
-    boost::shared_ptr<DiagBlockStruture> block_mat_data_ptr,
+    boost::shared_ptr<BlockStruture> block_mat_data_ptr,
 
     std::vector<std::string> fields_names, //< a00 fields
     std::vector<boost::shared_ptr<Range>>
@@ -1753,7 +1741,7 @@ boost::shared_ptr<SchurNestMatrixData> getSchurNestMatArray(
 
 ) {
 
-  if(!block_mat_data_ptr) {
+  if (!block_mat_data_ptr) {
     CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Block data not set");
   }
 
@@ -1799,10 +1787,10 @@ boost::shared_ptr<SchurNestMatrixData> getSchurNestMatArray(
   CHKERR AOApplicationToPetsc(ao_block_col, vec_c_block.size(),
                               &*vec_c_block.begin());
 
-  std::array<boost::shared_ptr<DiagBlockStruture>, 4> data_ptrs;
+  std::array<boost::shared_ptr<BlockStruture>, 4> data_ptrs;
 
   for (auto r = 0; r != 3; ++r) {
-    data_ptrs[r] = boost::make_shared<DiagBlockStruture>();
+    data_ptrs[r] = boost::make_shared<BlockStruture>();
     data_ptrs[r]->dataBlocksPtr = block_mat_data_ptr->dataBlocksPtr;
   }
   data_ptrs[3] = boost::make_shared<DiagBlockInvStruture>();
@@ -1824,7 +1812,7 @@ boost::shared_ptr<SchurNestMatrixData> getSchurNestMatArray(
     auto insert = [&](auto &m, auto &dof_r, auto &dof_c, auto &d) {
       m.insert(
 
-          DiagBlockStruture::Indexes{
+          BlockStruture::Indexes{
               dof_r->getPetscGlobalDofIdx(), dof_c->getPetscGlobalDofIdx(),
 
               d.nb_rows, d.nb_cols,
@@ -2079,7 +2067,7 @@ boost::shared_ptr<SchurNestMatrixData> getSchurNestMatArray(
   auto schur_is = schur_prb->getSubData()->getSmartRowIs();
   auto block_is = block_prb->getSubData()->getSmartRowIs();
 
-  return boost::make_shared<SchurNestMatrixData>(
+  return boost::make_shared<NestSchurData>(
 
       mats_array, data_ptrs, block_mat_data_ptr,
       std::make_pair(schur_is, block_is)
@@ -2087,11 +2075,10 @@ boost::shared_ptr<SchurNestMatrixData> getSchurNestMatArray(
   );
 }
 
-std::pair<SmartPetscObj<Mat>, boost::shared_ptr<SchurNestMatrixData>>
-createSchurNestedMatrix(
-    boost::shared_ptr<SchurNestMatrixData> schur_net_data_ptr) {
+std::pair<SmartPetscObj<Mat>, boost::shared_ptr<NestSchurData>>
+createSchurNestedMatrix(boost::shared_ptr<NestSchurData> schur_net_data_ptr) {
 
-  if(!schur_net_data_ptr)
+  if (!schur_net_data_ptr)
     CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "No data");
 
   auto [mat_arrays, data_ptrs, block_mat_data_ptr, iss] = *schur_net_data_ptr;
@@ -2160,7 +2147,7 @@ createOpSchurAssembleEnd(std::vector<std::string> fields_name,
                          std::vector<SmartPetscObj<AO>> sequence_of_aos,
                          std::vector<SmartPetscObj<Mat>> sequence_of_mats,
                          std::vector<bool> sym_schur, bool symm_op,
-                         boost::shared_ptr<DiagBlockStruture> diag_blocks) {
+                         boost::shared_ptr<BlockStruture> diag_blocks) {
   if (symm_op)
     return new OpSchurAssembleEnd<SchurDSYSV>(fields_name, field_ents,
                                               sequence_of_aos, sequence_of_mats,
@@ -2178,7 +2165,7 @@ createOpSchurAssembleEnd(std::vector<std::string> fields_name,
                          std::vector<SmartPetscObj<Mat>> sequence_of_mats,
                          std::vector<bool> sym_schur,
                          std::vector<double> diag_eps, bool symm_op,
-                         boost::shared_ptr<DiagBlockStruture> diag_blocks) {
+                         boost::shared_ptr<BlockStruture> diag_blocks) {
   if (symm_op)
     return new OpSchurAssembleEnd<SchurDSYSV>(
         fields_name, field_ents, sequence_of_aos, sequence_of_mats, sym_schur,

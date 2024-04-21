@@ -141,9 +141,9 @@ int main(int argc, char *argv[]) {
     petsc_mat = createDMMatrix(simple->getDM());
     auto S = createDMMatrix(schur_dm);
 
-    auto shell_data = createSchurBlockMat(simple->getDM(), 
+    auto shell_data = createBlockMat(simple->getDM(), 
 
-      createSchurBlockMatStructure(simple->getDM(),
+      createBlockMatStructure(simple->getDM(),
 
                                      {{simple->getDomainFEName(),
 
@@ -248,7 +248,7 @@ int main(int argc, char *argv[]) {
 
     auto [nested_mat, nested_data_ptr] = createSchurNestedMatrix(
 
-        getSchurNestMatArray(
+        getNestSchurData(
 
             {schur_dm, block_dm}, block_data_ptr,
 
@@ -272,8 +272,13 @@ int main(int argc, char *argv[]) {
     auto block_solved_x = vectorDuplicate(diag_block_x);
     // // CHKERR MatSolve(diag_mat, diag_block_f, block_solved_x);
 
+    CHKERR DMSetMatType(block_dm, MATSHELL);
+    CHKERR DMMoFEMSetBlocMatData(block_dm, std::get<1>(*nested_data_ptr)[3]);
+    CHKERR DMKSPSetComputeOperators(
+        block_dm, [](KSP, Mat, Mat, void *) { return 0; }, nullptr);
+
     auto ksp = createKSP(m_field.get_comm());
-    CHKERR KSPSetOperators(ksp, diag_mat, diag_mat);
+    CHKERR KSPSetDM(ksp, block_dm);
 
     auto get_pc = [](auto ksp) {
       PC pc_raw;
