@@ -26,9 +26,9 @@ constexpr const char MoFEM_BLOCK_MAT[] = "mofem_block_mat";
 struct SchurEvents {
   static PetscLogEvent MOFEM_EVENT_schurL2MatsMatSetValues;
   static PetscLogEvent MOFEM_EVENT_opSchurAssembleEnd;
-  static PetscLogEvent MOFEM_EVENT_diagBlockStrutureSetValues;
-  static PetscLogEvent MOFEM_EVENT_diagBlockStrutureMult;
-  static PetscLogEvent MOFEM_EVENT_diagBlockStrutureSolve;
+  static PetscLogEvent MOFEM_EVENT_blockStrutureSetValues;
+  static PetscLogEvent MOFEM_EVENT_blockStrutureMult;
+  static PetscLogEvent MOFEM_EVENT_blockStrutureSolve;
   static PetscLogEvent MOFEM_EVENT_zeroRowsAndCols;
   SchurEvents();
 };
