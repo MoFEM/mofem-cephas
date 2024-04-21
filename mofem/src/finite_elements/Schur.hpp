@@ -33,7 +33,7 @@ struct SchurEvents {
   SchurEvents();
 };
 
-struct SchurL2Mats;
+struct SchurElemMats;
 
 struct OpSchurAssembleBase : public ForcesAndSourcesCore::UserDataOperator {
 
@@ -103,13 +103,13 @@ struct SchurBackendMatSetValuesPtr {
 
 template <>
 MoFEMErrorCode
-MatSetValues<SchurL2Mats>(Mat M, const EntitiesFieldData::EntData &row_data,
+MatSetValues<SchurElemMats>(Mat M, const EntitiesFieldData::EntData &row_data,
                           const EntitiesFieldData::EntData &col_data,
                           const MatrixDouble &mat, InsertMode iora);
 
 template <>
 inline MoFEMErrorCode
-VecSetValues<SchurL2Mats>(Vec V, const EntitiesFieldData::EntData &data,
+VecSetValues<SchurElemMats>(Vec V, const EntitiesFieldData::EntData &data,
                           const VectorDouble &nf, InsertMode iora) {
   return VecSetValues<EssentialBcStorage>(V, data, nf, iora);
 }
@@ -124,7 +124,7 @@ template <>
 inline MoFEMErrorCode VecSetValues<AssemblyTypeSelector<SCHUR>>(
     Vec V, const EntitiesFieldData::EntData &data, const VectorDouble &nf,
     InsertMode iora) {
-  return VecSetValues<SchurL2Mats>(V, data, nf, iora);
+  return VecSetValues<SchurElemMats>(V, data, nf, iora);
 }
 
 using SchurFieldPair = std::pair<std::string, std::string>;
@@ -252,24 +252,24 @@ MoFEMErrorCode DMMoFEMSetNestSchurData(DM dm, boost::shared_ptr<NestSchurData>);
  */
 MoFEMErrorCode setSchurMatSolvePC(SmartPetscObj<PC> pc);
 
-struct SchurL2MatsBlock;
+struct SchurElemMatsBlock;
 
 /***
- * @brief Specialization of MatSetValues for SchurL2MatsBlock
+ * @brief Specialization of MatSetValues for SchurElemMatsBlock
  */
 template <>
 MoFEMErrorCode
-MatSetValues<SchurL2MatsBlock>(Mat M,
+MatSetValues<SchurElemMatsBlock>(Mat M,
                                const EntitiesFieldData::EntData &row_data,
                                const EntitiesFieldData::EntData &col_data,
                                const MatrixDouble &mat, InsertMode iora);
 
 /***
- * @brief Specialization of VecSetValues for SchurL2MatsBlock
+ * @brief Specialization of VecSetValues for SchurElemMatsBlock
  */
 template <>
 inline MoFEMErrorCode
-VecSetValues<SchurL2MatsBlock>(Vec V, const EntitiesFieldData::EntData &data,
+VecSetValues<SchurElemMatsBlock>(Vec V, const EntitiesFieldData::EntData &data,
                                const VectorDouble &nf, InsertMode iora) {
   return VecSetValues<EssentialBcStorage>(V, data, nf, iora);
 }
@@ -282,7 +282,7 @@ inline MoFEMErrorCode MatSetValues<AssemblyTypeSelector<BLOCK_SCHUR>>(
     Mat M, const EntitiesFieldData::EntData &row_data,
     const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
     InsertMode iora) {
-  return MatSetValues<SchurL2MatsBlock>(M, row_data, col_data, mat, iora);
+  return MatSetValues<SchurElemMatsBlock>(M, row_data, col_data, mat, iora);
 }
 
 /***
