@@ -117,10 +117,10 @@ struct OpSchurAssembleEnd<SchurDGESV> : public OpSchurAssembleEndImpl {
  * @brief Schur complement data storage
  *
  */
-struct SchurL2Mats : public boost::enable_shared_from_this<SchurL2Mats> {
+struct SchurElemMats : public boost::enable_shared_from_this<SchurElemMats> {
 
-  SchurL2Mats(const size_t idx, const UId uid_row, const UId uid_col);
-  virtual ~SchurL2Mats() = default;
+  SchurElemMats(const size_t idx, const UId uid_row, const UId uid_col);
+  virtual ~SchurElemMats() = default;
 
   const UId uidRow;
   const UId uidCol;
@@ -150,32 +150,32 @@ protected:
   struct row_mi_tag {};
   struct col_mi_tag {};
 
-  using SchurL2Storage = multi_index_container<
-      SchurL2Mats,
+  using SchurElemStorage = multi_index_container<
+      SchurElemMats,
       indexed_by<
 
           ordered_unique<
               tag<uid_mi_tag>,
               composite_key<
-                  SchurL2Mats,
+                  SchurElemMats,
 
-                  member<SchurL2Mats, const UId, &SchurL2Mats::uidRow>,
-                  member<SchurL2Mats, const UId, &SchurL2Mats::uidCol>
+                  member<SchurElemMats, const UId, &SchurElemMats::uidRow>,
+                  member<SchurElemMats, const UId, &SchurElemMats::uidCol>
 
                   >>,
 
-          ordered_non_unique<tag<row_mi_tag>, member<SchurL2Mats, const UId,
-                                                     &SchurL2Mats::uidRow>>,
+          ordered_non_unique<tag<row_mi_tag>, member<SchurElemMats, const UId,
+                                                     &SchurElemMats::uidRow>>,
 
-          ordered_non_unique<tag<col_mi_tag>, member<SchurL2Mats, const UId,
-                                                     &SchurL2Mats::uidCol>>
+          ordered_non_unique<tag<col_mi_tag>, member<SchurElemMats, const UId,
+                                                     &SchurElemMats::uidCol>>
 
           >>;
 
   static boost::ptr_vector<MatrixDouble> locMats;
   static boost::ptr_vector<VectorInt> rowIndices;
   static boost::ptr_vector<VectorInt> colIndices;
-  static SchurL2Storage schurL2Storage;
+  static SchurElemStorage schurL2Storage;
 };
 
 struct DiagBlockIndex {
@@ -250,21 +250,18 @@ SchurEvents::SchurEvents() {
   PetscLogEventRegister("schurMatSetVal", 0,
                         &MOFEM_EVENT_schurL2MatsMatSetValues);
   PetscLogEventRegister("opSchurAsmEnd", 0, &MOFEM_EVENT_opSchurAssembleEnd);
-  PetscLogEventRegister("blockSetVal", 0,
-                        &MOFEM_EVENT_blockStrutureSetValues);
+  PetscLogEventRegister("blockSetVal", 0, &MOFEM_EVENT_blockStrutureSetValues);
   PetscLogEventRegister("blockMult", 0, &MOFEM_EVENT_blockStrutureMult);
-  PetscLogEventRegister("blockSolve", 0,
-                        &MOFEM_EVENT_blockStrutureSolve);
+  PetscLogEventRegister("blockSolve", 0, &MOFEM_EVENT_blockStrutureSolve);
   PetscLogEventRegister("schurZeroRandC", 0, &MOFEM_EVENT_zeroRowsAndCols);
-
 }
 
 template <>
 MoFEMErrorCode
-MatSetValues<SchurL2Mats>(Mat M, const EntitiesFieldData::EntData &row_data,
-                          const EntitiesFieldData::EntData &col_data,
-                          const MatrixDouble &mat, InsertMode iora) {
-  return SchurL2Mats::MatSetValues(M, row_data, col_data, mat, iora);
+MatSetValues<SchurElemMats>(Mat M, const EntitiesFieldData::EntData &row_data,
+                            const EntitiesFieldData::EntData &col_data,
+                            const MatrixDouble &mat, InsertMode iora) {
+  return SchurElemMats::MatSetValues(M, row_data, col_data, mat, iora);
 }
 
 template <>
@@ -272,15 +269,16 @@ MoFEMErrorCode MatSetValues<AssemblyTypeSelector<SCHUR>>(
     Mat M, const EntitiesFieldData::EntData &row_data,
     const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
     InsertMode iora) {
-  return MatSetValues<SchurL2Mats>(M, row_data, col_data, mat, iora);
+  return MatSetValues<SchurElemMats>(M, row_data, col_data, mat, iora);
 }
 
-SchurL2Mats::SchurL2Storage SchurL2Mats::schurL2Storage;
-boost::ptr_vector<MatrixDouble> SchurL2Mats::locMats;
-boost::ptr_vector<VectorInt> SchurL2Mats::rowIndices;
-boost::ptr_vector<VectorInt> SchurL2Mats::colIndices;
+SchurElemMats::SchurElemStorage SchurElemMats::schurL2Storage;
+boost::ptr_vector<MatrixDouble> SchurElemMats::locMats;
+boost::ptr_vector<VectorInt> SchurElemMats::rowIndices;
+boost::ptr_vector<VectorInt> SchurElemMats::colIndices;
 
-SchurL2Mats::SchurL2Mats(const size_t idx, const UId uid_row, const UId uid_col)
+SchurElemMats::SchurElemMats(const size_t idx, const UId uid_row,
+                             const UId uid_col)
     : iDX(idx), uidRow(uid_row), uidCol(uid_col) {}
 
 OpSchurAssembleBase::MatSetValuesRaw OpSchurAssembleBase::matSetValuesSchurRaw =
@@ -298,9 +296,9 @@ SchurBackendMatSetValuesPtr::MatSetValuesPtr
     SchurBackendMatSetValuesPtr::matSetValuesPtr = schur_mat_set_values_wrap;
 
 MoFEMErrorCode
-SchurL2Mats::MatSetValues(Mat M, const EntitiesFieldData::EntData &row_data,
-                          const EntitiesFieldData::EntData &col_data,
-                          const MatrixDouble &mat, InsertMode iora) {
+SchurElemMats::MatSetValues(Mat M, const EntitiesFieldData::EntData &row_data,
+                            const EntitiesFieldData::EntData &col_data,
+                            const MatrixDouble &mat, InsertMode iora) {
   MoFEMFunctionBegin;
   CHKERR SchurBackendMatSetValuesPtr::matSetValuesPtr(M, row_data, col_data,
                                                       mat, iora);
@@ -309,9 +307,9 @@ SchurL2Mats::MatSetValues(Mat M, const EntitiesFieldData::EntData &row_data,
 }
 
 MoFEMErrorCode
-SchurL2Mats::assembleStorage(const EntitiesFieldData::EntData &row_data,
-                             const EntitiesFieldData::EntData &col_data,
-                             const MatrixDouble &mat, InsertMode iora) {
+SchurElemMats::assembleStorage(const EntitiesFieldData::EntData &row_data,
+                               const EntitiesFieldData::EntData &col_data,
+                               const MatrixDouble &mat, InsertMode iora) {
   MoFEMFunctionBegin;
 
   PetscLogEventBegin(SchurEvents::MOFEM_EVENT_schurL2MatsMatSetValues, 0, 0, 0,
@@ -347,15 +345,15 @@ SchurL2Mats::assembleStorage(const EntitiesFieldData::EntData &row_data,
 #endif // NDEBUG
 
   // get size of storage
-  const auto idx = SchurL2Mats::schurL2Storage.size();
+  const auto idx = SchurElemMats::schurL2Storage.size();
   // get size of arrays of matrices
-  const auto size = SchurL2Mats::locMats.size();
+  const auto size = SchurElemMats::locMats.size();
 
   // expand memory allocation
   if (idx >= size) {
-    SchurL2Mats::locMats.push_back(new MatrixDouble());
-    SchurL2Mats::rowIndices.push_back(new VectorInt());
-    SchurL2Mats::colIndices.push_back(new VectorInt());
+    SchurElemMats::locMats.push_back(new MatrixDouble());
+    SchurElemMats::rowIndices.push_back(new VectorInt());
+    SchurElemMats::colIndices.push_back(new VectorInt());
   }
 
   // get entity uid
@@ -402,8 +400,8 @@ SchurL2Mats::assembleStorage(const EntitiesFieldData::EntData &row_data,
   auto uid_col = get_uid(col_data);
 
   // add matrix to storage
-  auto p = SchurL2Mats::schurL2Storage.emplace(idx, uid_row, uid_col);
-  auto get_storage = [&p]() { return const_cast<SchurL2Mats &>(*p.first); };
+  auto p = SchurElemMats::schurL2Storage.emplace(idx, uid_row, uid_col);
+  auto get_storage = [&p]() { return const_cast<SchurElemMats &>(*p.first); };
 
   if (p.second) {
     // new entry is created
@@ -473,7 +471,7 @@ MoFEMErrorCode OpSchurAssembleBegin::doWork(int side, EntityType type,
 #ifndef NDEBUG
   MOFEM_LOG("SELF", Sev::noisy) << "Schur assemble begin";
 #endif
-  SchurL2Mats::schurL2Storage.clear();
+  SchurElemMats::schurL2Storage.clear();
 
   MoFEMFunctionReturn(0);
 }
@@ -564,21 +562,21 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
                            auto &col_ind, auto &offMatInvDiagOffMat) {
       MoFEMFunctionBegin;
 
-      const auto idx = SchurL2Mats::schurL2Storage.size();
-      const auto size = SchurL2Mats::locMats.size();
+      const auto idx = SchurElemMats::schurL2Storage.size();
+      const auto size = SchurElemMats::locMats.size();
 
       if (idx >= size) {
-        SchurL2Mats::locMats.push_back(new MatrixDouble());
-        SchurL2Mats::rowIndices.push_back(new VectorInt());
-        SchurL2Mats::colIndices.push_back(new VectorInt());
+        SchurElemMats::locMats.push_back(new MatrixDouble());
+        SchurElemMats::rowIndices.push_back(new VectorInt());
+        SchurElemMats::colIndices.push_back(new VectorInt());
       }
 
-      auto it = storage.template get<SchurL2Mats::uid_mi_tag>().find(
+      auto it = storage.template get<SchurElemMats::uid_mi_tag>().find(
           boost::make_tuple(row_uid, col_uid));
 
-      if (it == storage.template get<SchurL2Mats::uid_mi_tag>().end()) {
+      if (it == storage.template get<SchurElemMats::uid_mi_tag>().end()) {
 
-        auto p = SchurL2Mats::schurL2Storage.emplace(idx, row_uid, col_uid);
+        auto p = SchurElemMats::schurL2Storage.emplace(idx, row_uid, col_uid);
         auto &mat = p.first->getMat();
         auto &set_row_ind = p.first->getRowInd();
         auto &set_col_ind = p.first->getColInd();
@@ -611,10 +609,10 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 
     auto get_row_view = [&]() {
       auto row_it =
-          storage.template get<SchurL2Mats::row_mi_tag>().lower_bound(lo_uid);
+          storage.template get<SchurElemMats::row_mi_tag>().lower_bound(lo_uid);
       auto hi_row_it =
-          storage.template get<SchurL2Mats::row_mi_tag>().upper_bound(hi_uid);
-      std::vector<const SchurL2Mats *> schur_row_ptr_view;
+          storage.template get<SchurElemMats::row_mi_tag>().upper_bound(hi_uid);
+      std::vector<const SchurElemMats *> schur_row_ptr_view;
       schur_row_ptr_view.reserve(std::distance(row_it, hi_row_it));
       for (; row_it != hi_row_it; ++row_it) {
         schur_row_ptr_view.push_back(&*row_it);
@@ -624,10 +622,10 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 
     auto get_col_view = [&]() {
       auto col_it =
-          storage.template get<SchurL2Mats::col_mi_tag>().lower_bound(lo_uid);
+          storage.template get<SchurElemMats::col_mi_tag>().lower_bound(lo_uid);
       auto hi_col_it =
-          storage.template get<SchurL2Mats::col_mi_tag>().upper_bound(hi_uid);
-      std::vector<const SchurL2Mats *> schur_col_ptr_view;
+          storage.template get<SchurElemMats::col_mi_tag>().upper_bound(hi_uid);
+      std::vector<const SchurElemMats *> schur_col_ptr_view;
       schur_col_ptr_view.reserve(std::distance(col_it, hi_col_it));
       for (; col_it != hi_col_it; ++col_it) {
         schur_col_ptr_view.push_back(&*col_it);
@@ -727,16 +725,16 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
     MoFEMFunctionBegin;
 
     auto r_lo =
-        storage.template get<SchurL2Mats::row_mi_tag>().lower_bound(lo_uid);
+        storage.template get<SchurElemMats::row_mi_tag>().lower_bound(lo_uid);
     auto r_hi =
-        storage.template get<SchurL2Mats::row_mi_tag>().upper_bound(hi_uid);
-    storage.template get<SchurL2Mats::row_mi_tag>().erase(r_lo, r_hi);
+        storage.template get<SchurElemMats::row_mi_tag>().upper_bound(hi_uid);
+    storage.template get<SchurElemMats::row_mi_tag>().erase(r_lo, r_hi);
 
     auto c_lo =
-        storage.template get<SchurL2Mats::col_mi_tag>().lower_bound(lo_uid);
+        storage.template get<SchurElemMats::col_mi_tag>().lower_bound(lo_uid);
     auto c_hi =
-        storage.template get<SchurL2Mats::col_mi_tag>().upper_bound(hi_uid);
-    storage.template get<SchurL2Mats::col_mi_tag>().erase(c_lo, c_hi);
+        storage.template get<SchurElemMats::col_mi_tag>().upper_bound(hi_uid);
+    storage.template get<SchurElemMats::col_mi_tag>().erase(c_lo, c_hi);
 
     MoFEMFunctionReturn(0);
   };
@@ -795,8 +793,8 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 
     CHKERR add(
 
-        storage.template get<SchurL2Mats::row_mi_tag>().lower_bound(lo_uid),
-        storage.template get<SchurL2Mats::row_mi_tag>().upper_bound(hi_uid)
+        storage.template get<SchurElemMats::row_mi_tag>().lower_bound(lo_uid),
+        storage.template get<SchurElemMats::row_mi_tag>().upper_bound(hi_uid)
 
     );
 
@@ -834,7 +832,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 
   auto assemble = [&](auto &&a00_uids) {
     MoFEMFunctionBegin;
-    auto &storage = SchurL2Mats::schurL2Storage;
+    auto &storage = SchurElemMats::schurL2Storage;
     int ss = 0;
     for (auto &p : a00_uids) {
       auto [lo_uid, hi_uid] = p;
@@ -861,7 +859,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 }
 
 struct SchurDSYSV {
-  static auto invertMat(const SchurL2Mats *row_ptr, MatrixDouble &inv,
+  static auto invertMat(const SchurElemMats *row_ptr, MatrixDouble &inv,
                         double eps) {
     MoFEMFunctionBeginHot;
 
@@ -895,7 +893,7 @@ struct SchurDSYSV {
 };
 
 struct SchurDGESV {
-  static auto invertMat(const SchurL2Mats *row_ptr, MatrixDouble &inv,
+  static auto invertMat(const SchurElemMats *row_ptr, MatrixDouble &inv,
                         double eps) {
     MoFEMFunctionBeginHot;
 
@@ -1255,8 +1253,7 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
   BlockStruture *ctx;
   CHKERR MatShellGetContext(mat, (void **)&ctx);
 
-  PetscLogEventBegin(SchurEvents::MOFEM_EVENT_blockStrutureMult, 0, 0, 0,
-                     0);
+  PetscLogEventBegin(SchurEvents::MOFEM_EVENT_blockStrutureMult, 0, 0, 0, 0);
 
   Vec ghost_x = ctx->ghostX;
   Vec ghost_y = ctx->ghostY;
@@ -1392,8 +1389,7 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
   BlockStruture *ctx;
   CHKERR MatShellGetContext(mat, (void **)&ctx);
 
-  PetscLogEventBegin(SchurEvents::MOFEM_EVENT_blockStrutureSolve, 0, 0, 0,
-                     0);
+  PetscLogEventBegin(SchurEvents::MOFEM_EVENT_blockStrutureSolve, 0, 0, 0, 0);
 
   // Note that for solver those two are swapped
   Vec ghost_x = ctx->ghostY;
@@ -1547,8 +1543,8 @@ shell_schur_mat_set_values_wrap_impl(BlockStruture *ctx,
   MatrixDouble tmp_mat;
   MoFEMFunctionBegin;
 
-  PetscLogEventBegin(SchurEvents::MOFEM_EVENT_blockStrutureSetValues, 0, 0,
-                     0, 0);
+  PetscLogEventBegin(SchurEvents::MOFEM_EVENT_blockStrutureSetValues, 0, 0, 0,
+                     0);
 
   auto get_row_indices_ptr = [&row_data]() -> const VectorInt * {
     boost::shared_ptr<EssentialBcStorage> stored_data_ptr;
@@ -1714,8 +1710,7 @@ shell_schur_mat_set_values_wrap_impl(BlockStruture *ctx,
     }
   }
 
-  PetscLogEventEnd(SchurEvents::MOFEM_EVENT_blockStrutureSetValues, 0, 0, 0,
-                   0);
+  PetscLogEventEnd(SchurEvents::MOFEM_EVENT_blockStrutureSetValues, 0, 0, 0, 0);
 
   MoFEMFunctionReturn(0);
 }
@@ -2117,7 +2112,7 @@ createSchurNestedMatrix(boost::shared_ptr<NestSchurData> schur_net_data_ptr) {
   return std::make_pair(SmartPetscObj<Mat>(mat_raw), schur_net_data_ptr);
 }
 
-struct SchurL2MatsBlock : public SchurL2Mats {
+struct SchurElemMatsBlock : public SchurElemMats {
 
   static MoFEMErrorCode MatSetValues(Mat M,
                                      const EntitiesFieldData::EntData &row_data,
@@ -2130,7 +2125,7 @@ SchurBackendMatSetValuesPtr::MatSetValuesPtr
         shell_schur_mat_set_values_wrap;
 
 MoFEMErrorCode
-SchurL2MatsBlock::MatSetValues(Mat M,
+SchurElemMatsBlock::MatSetValues(Mat M,
                                const EntitiesFieldData::EntData &row_data,
                                const EntitiesFieldData::EntData &col_data,
                                const MatrixDouble &mat, InsertMode iora) {
@@ -2143,11 +2138,11 @@ SchurL2MatsBlock::MatSetValues(Mat M,
 
 template <>
 MoFEMErrorCode
-MatSetValues<SchurL2MatsBlock>(Mat M,
+MatSetValues<SchurElemMatsBlock>(Mat M,
                                const EntitiesFieldData::EntData &row_data,
                                const EntitiesFieldData::EntData &col_data,
                                const MatrixDouble &mat, InsertMode iora) {
-  return SchurL2MatsBlock::MatSetValues(M, row_data, col_data, mat, iora);
+  return SchurElemMatsBlock::MatSetValues(M, row_data, col_data, mat, iora);
 }
 
 OpSchurAssembleBase *createOpSchurAssembleBegin() {
