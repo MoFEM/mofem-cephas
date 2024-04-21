@@ -55,7 +55,9 @@ struct DMCtxImpl : public DMCtx {
   const Problem *problemPtr = nullptr; ///< pinter to problem data structure
   std::string problemName;  ///< Problem name
 
-
+  // schur block matrix
+  boost::shared_ptr<BlockStruture> blocMatDataPtr;
+  boost::shared_ptr<NestSchurData> nestedSchurDataPtr;
 };
 
 DMCtxImpl::DMCtxImpl() : DMCtx() {
@@ -1234,7 +1236,21 @@ PetscErrorCode DMCreateMatrix_MoFEM(DM dm, Mat *M) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
   DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
-  if (strcmp(dm->mattype, MATMPIAIJ) == 0) {
+
+  if (strcmp(dm->mattype, MATSHELL) == 0) {
+
+    if (dm_field->nestedSchurDataPtr) {
+      CHKERR DMMoFEMCreateNestSchurMat(dm, M);
+      MoFEMFunctionReturnHot(0);
+    } else if (dm_field->blocMatDataPtr) {
+      CHKERR DMMoFEMCreateBlockMat(dm, M);
+      MoFEMFunctionReturnHot(0);
+    } else {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+              "Matrix shell data not set, or matrix type implemented");
+    }
+
+  } else if (strcmp(dm->mattype, MATMPIAIJ) == 0) {
     CHKERR dm_field->mField_ptr->getInterface<MatrixManager>()
         ->createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(dm_field->problemName,
                                                         M);
@@ -1542,6 +1558,45 @@ PetscErrorCode DMMoFEMSetVerbosity(DM dm, const int verb) {
   DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   dm_field->verbosity = verb;
   MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode DMMoFEMSetBlocMatData(DM dm,
+                                     boost::shared_ptr<BlockStruture> data) {
+  PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
+  MoFEMFunctionBegin;
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
+  dm_field->blocMatDataPtr = data;
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode DMMoFEMCreateBlockMat(DM dm, Mat *mat) {
+   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
+  MoFEMFunctionBegin;
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data); 
+  auto mat_data = createBlockMat(dm, dm_field->blocMatDataPtr);
+  *mat = mat_data.first;
+  CHKERR PetscObjectReference((PetscObject)(*mat));
+  MoFEMFunctionReturn(0);
+}
+
+template <>
+MoFEMErrorCode DMMoFEMSetNestSchurData(DM dm,
+                                       boost::shared_ptr<NestSchurData> data) {
+  PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
+  MoFEMFunctionBegin;
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
+  dm_field->nestedSchurDataPtr = data;
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode DMMoFEMCreateNestSchurMat(DM dm, Mat *mat) {
+   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
+  MoFEMFunctionBegin;
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
+  auto mat_data = createSchurNestedMatrix(dm_field->nestedSchurDataPtr);
+  *mat = mat_data.first;
+  CHKERR PetscObjectReference((PetscObject)(*mat));
+  MoFEMFunctionReturn(0);
 }
 
 } // namespace MoFEM
