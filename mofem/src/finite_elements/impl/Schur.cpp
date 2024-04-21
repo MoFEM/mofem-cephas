@@ -228,6 +228,7 @@ struct BlockStruture : public DiagBlockIndex {
 
   boost::shared_ptr<std::vector<double>> dataBlocksPtr;
   boost::shared_ptr<std::vector<double>> dataInvBlocksPtr;
+  boost::shared_ptr<BlockStruture> parentBlockStruturePtr;
 };
 
 struct DiagBlockInvStruture : public BlockStruture {
@@ -240,20 +241,20 @@ struct DiagBlockInvStruture : public BlockStruture {
 
 PetscLogEvent SchurEvents::MOFEM_EVENT_schurL2MatsMatSetValues;
 PetscLogEvent SchurEvents::MOFEM_EVENT_opSchurAssembleEnd;
-PetscLogEvent SchurEvents::MOFEM_EVENT_diagBlockStrutureSetValues;
-PetscLogEvent SchurEvents::MOFEM_EVENT_diagBlockStrutureMult;
-PetscLogEvent SchurEvents::MOFEM_EVENT_diagBlockStrutureSolve;
+PetscLogEvent SchurEvents::MOFEM_EVENT_blockStrutureSetValues;
+PetscLogEvent SchurEvents::MOFEM_EVENT_blockStrutureMult;
+PetscLogEvent SchurEvents::MOFEM_EVENT_blockStrutureSolve;
 PetscLogEvent SchurEvents::MOFEM_EVENT_zeroRowsAndCols;
 
 SchurEvents::SchurEvents() {
   PetscLogEventRegister("schurMatSetVal", 0,
                         &MOFEM_EVENT_schurL2MatsMatSetValues);
   PetscLogEventRegister("opSchurAsmEnd", 0, &MOFEM_EVENT_opSchurAssembleEnd);
-  PetscLogEventRegister("diagBlockSetVal", 0,
-                        &MOFEM_EVENT_diagBlockStrutureSetValues);
-  PetscLogEventRegister("diagBlockMult", 0, &MOFEM_EVENT_diagBlockStrutureMult);
-  PetscLogEventRegister("diagBlockSolve", 0,
-                        &MOFEM_EVENT_diagBlockStrutureSolve);
+  PetscLogEventRegister("blockSetVal", 0,
+                        &MOFEM_EVENT_blockStrutureSetValues);
+  PetscLogEventRegister("blockMult", 0, &MOFEM_EVENT_blockStrutureMult);
+  PetscLogEventRegister("blockSolve", 0,
+                        &MOFEM_EVENT_blockStrutureSolve);
   PetscLogEventRegister("schurZeroRandC", 0, &MOFEM_EVENT_zeroRowsAndCols);
 
 }
@@ -1254,7 +1255,7 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
   BlockStruture *ctx;
   CHKERR MatShellGetContext(mat, (void **)&ctx);
 
-  PetscLogEventBegin(SchurEvents::MOFEM_EVENT_diagBlockStrutureMult, 0, 0, 0,
+  PetscLogEventBegin(SchurEvents::MOFEM_EVENT_blockStrutureMult, 0, 0, 0,
                      0);
 
   Vec ghost_x = ctx->ghostX;
@@ -1380,7 +1381,7 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
 #endif // NDEBUG
 
   // PetscLogFlops(xxx)
-  PetscLogEventEnd(SchurEvents::MOFEM_EVENT_diagBlockStrutureMult, 0, 0, 0, 0);
+  PetscLogEventEnd(SchurEvents::MOFEM_EVENT_blockStrutureMult, 0, 0, 0, 0);
 
   MoFEMFunctionReturn(0);
 }
@@ -1391,7 +1392,7 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
   BlockStruture *ctx;
   CHKERR MatShellGetContext(mat, (void **)&ctx);
 
-  PetscLogEventBegin(SchurEvents::MOFEM_EVENT_diagBlockStrutureSolve, 0, 0, 0,
+  PetscLogEventBegin(SchurEvents::MOFEM_EVENT_blockStrutureSolve, 0, 0, 0,
                      0);
 
   // Note that for solver those two are swapped
@@ -1532,24 +1533,21 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
 #endif // NDEBUG
 
   // PetscLogFlops(xxx)
-  PetscLogEventEnd(SchurEvents::MOFEM_EVENT_diagBlockStrutureSolve, 0, 0, 0, 0);
+  PetscLogEventEnd(SchurEvents::MOFEM_EVENT_blockStrutureSolve, 0, 0, 0, 0);
 
   MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
-shell_schur_mat_set_values_wrap(Mat M,
-                                const EntitiesFieldData::EntData &row_data,
-                                const EntitiesFieldData::EntData &col_data,
-                                const MatrixDouble &mat, InsertMode iora) {
+shell_schur_mat_set_values_wrap_impl(BlockStruture *ctx,
+                                     const EntitiesFieldData::EntData &row_data,
+                                     const EntitiesFieldData::EntData &col_data,
+                                     const MatrixDouble &mat, InsertMode iora) {
 
   MatrixDouble tmp_mat;
   MoFEMFunctionBegin;
 
-  BlockStruture *ctx;
-  CHKERR MatShellGetContext(M, (void **)&ctx);
-
-  PetscLogEventBegin(SchurEvents::MOFEM_EVENT_diagBlockStrutureSetValues, 0, 0,
+  PetscLogEventBegin(SchurEvents::MOFEM_EVENT_blockStrutureSetValues, 0, 0,
                      0, 0);
 
   auto get_row_indices_ptr = [&row_data]() -> const VectorInt * {
@@ -1716,9 +1714,22 @@ shell_schur_mat_set_values_wrap(Mat M,
     }
   }
 
-  PetscLogEventEnd(SchurEvents::MOFEM_EVENT_diagBlockStrutureSetValues, 0, 0, 0,
+  PetscLogEventEnd(SchurEvents::MOFEM_EVENT_blockStrutureSetValues, 0, 0, 0,
                    0);
 
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+shell_schur_mat_set_values_wrap(Mat M,
+                                const EntitiesFieldData::EntData &row_data,
+                                const EntitiesFieldData::EntData &col_data,
+                                const MatrixDouble &mat, InsertMode iora) {
+  MoFEMFunctionBegin;
+  BlockStruture *ctx;
+  CHKERR MatShellGetContext(M, (void **)&ctx);
+  CHKERR shell_schur_mat_set_values_wrap_impl(ctx, row_data, col_data, mat,
+                                              iora);
   MoFEMFunctionReturn(0);
 }
 
@@ -1792,9 +1803,11 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
   for (auto r = 0; r != 3; ++r) {
     data_ptrs[r] = boost::make_shared<BlockStruture>();
     data_ptrs[r]->dataBlocksPtr = block_mat_data_ptr->dataBlocksPtr;
+    data_ptrs[r]->parentBlockStruturePtr = block_mat_data_ptr;
   }
   data_ptrs[3] = boost::make_shared<DiagBlockInvStruture>();
   data_ptrs[3]->dataBlocksPtr = block_mat_data_ptr->dataBlocksPtr;
+  data_ptrs[3]->parentBlockStruturePtr = block_mat_data_ptr;
 
   data_ptrs[0]->ghostX = schur_vec_x;
   data_ptrs[0]->ghostY = schur_vec_y;
