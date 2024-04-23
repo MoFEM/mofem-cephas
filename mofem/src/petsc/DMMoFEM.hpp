@@ -988,7 +988,7 @@ struct DMCtx : public UnknownInterface {
                                  UnknownInterface **iface) const;
 
   virtual ~DMCtx() = default;
-
+  
   boost::shared_ptr<KspCtx> kspCtx;   ///< data structure KSP
   boost::shared_ptr<SnesCtx> snesCtx; ///< data structure SNES
   boost::shared_ptr<TsCtx> tsCtx;     ///< data structure for TS solver
@@ -1032,6 +1032,21 @@ inline auto createDMMatrix(DM dm) {
   CHKERRABORT(getCommFromPetscObject(reinterpret_cast<PetscObject>(dm)), ierr);
   return a;
 };
+
+inline auto createDMBlockMat(DM dm) {
+  Mat raw_a;
+  ierr = DMMoFEMCreateBlockMat(dm, &raw_a);
+  CHKERRABORT(getCommFromPetscObject(reinterpret_cast<PetscObject>(dm)), ierr);
+  return SmartPetscObj<Mat>(raw_a);
+};
+
+inline auto createDMNestSchurMat(DM dm) {
+  Mat raw_a;
+  ierr = DMMoFEMCreateNestSchurMat(dm, &raw_a);
+  CHKERRABORT(getCommFromPetscObject(reinterpret_cast<PetscObject>(dm)), ierr);
+  return SmartPetscObj<Mat>(raw_a);
+};
+
 
 /** @deprecated use createDMMatrix */
 DEPRECATED inline auto smartCreateDMMatrix(DM dm) { return createDMMatrix(dm); }

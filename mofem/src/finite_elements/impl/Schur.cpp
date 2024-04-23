@@ -9,6 +9,8 @@
 
 namespace MoFEM {
 
+constexpr bool debug_schur = false;
+
 /**
  * @brief Clear Schur complement internal data
  *
@@ -239,7 +241,7 @@ struct DiagBlockInvStruture : public BlockStruture {
   SchurSolverView indexView;
 };
 
-PetscLogEvent SchurEvents::MOFEM_EVENT_schurL2MatsMatSetValues;
+PetscLogEvent SchurEvents::MOFEM_EVENT_schurMatSetValues;
 PetscLogEvent SchurEvents::MOFEM_EVENT_opSchurAssembleEnd;
 PetscLogEvent SchurEvents::MOFEM_EVENT_blockStrutureSetValues;
 PetscLogEvent SchurEvents::MOFEM_EVENT_blockStrutureMult;
@@ -247,29 +249,12 @@ PetscLogEvent SchurEvents::MOFEM_EVENT_blockStrutureSolve;
 PetscLogEvent SchurEvents::MOFEM_EVENT_zeroRowsAndCols;
 
 SchurEvents::SchurEvents() {
-  PetscLogEventRegister("schurMatSetVal", 0,
-                        &MOFEM_EVENT_schurL2MatsMatSetValues);
+  PetscLogEventRegister("schurMatSetVal", 0, &MOFEM_EVENT_schurMatSetValues);
   PetscLogEventRegister("opSchurAsmEnd", 0, &MOFEM_EVENT_opSchurAssembleEnd);
   PetscLogEventRegister("blockSetVal", 0, &MOFEM_EVENT_blockStrutureSetValues);
   PetscLogEventRegister("blockMult", 0, &MOFEM_EVENT_blockStrutureMult);
   PetscLogEventRegister("blockSolve", 0, &MOFEM_EVENT_blockStrutureSolve);
   PetscLogEventRegister("schurZeroRandC", 0, &MOFEM_EVENT_zeroRowsAndCols);
-}
-
-template <>
-MoFEMErrorCode
-MatSetValues<SchurElemMats>(Mat M, const EntitiesFieldData::EntData &row_data,
-                            const EntitiesFieldData::EntData &col_data,
-                            const MatrixDouble &mat, InsertMode iora) {
-  return SchurElemMats::MatSetValues(M, row_data, col_data, mat, iora);
-}
-
-template <>
-MoFEMErrorCode MatSetValues<AssemblyTypeSelector<SCHUR>>(
-    Mat M, const EntitiesFieldData::EntData &row_data,
-    const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
-    InsertMode iora) {
-  return MatSetValues<SchurElemMats>(M, row_data, col_data, mat, iora);
 }
 
 SchurElemMats::SchurElemStorage SchurElemMats::schurL2Storage;
@@ -281,39 +266,13 @@ SchurElemMats::SchurElemMats(const size_t idx, const UId uid_row,
                              const UId uid_col)
     : iDX(idx), uidRow(uid_row), uidCol(uid_col) {}
 
-OpSchurAssembleBase::MatSetValuesRaw OpSchurAssembleBase::matSetValuesSchurRaw =
-    ::MatSetValues;
-
-MoFEMErrorCode
-schur_mat_set_values_wrap(Mat M, const EntitiesFieldData::EntData &row_data,
-                          const EntitiesFieldData::EntData &col_data,
-                          const MatrixDouble &mat, InsertMode iora) {
-  return MatSetValues<AssemblyTypeSelector<PETSC>>(M, row_data, col_data, mat,
-                                                   iora);
-}
-
-SchurBackendMatSetValuesPtr::MatSetValuesPtr
-    SchurBackendMatSetValuesPtr::matSetValuesPtr = schur_mat_set_values_wrap;
-
-MoFEMErrorCode
-SchurElemMats::MatSetValues(Mat M, const EntitiesFieldData::EntData &row_data,
-                            const EntitiesFieldData::EntData &col_data,
-                            const MatrixDouble &mat, InsertMode iora) {
-  MoFEMFunctionBegin;
-  CHKERR SchurBackendMatSetValuesPtr::matSetValuesPtr(M, row_data, col_data,
-                                                      mat, iora);
-  CHKERR assembleStorage(row_data, col_data, mat, iora);
-  MoFEMFunctionReturn(0);
-}
-
 MoFEMErrorCode
 SchurElemMats::assembleStorage(const EntitiesFieldData::EntData &row_data,
                                const EntitiesFieldData::EntData &col_data,
                                const MatrixDouble &mat, InsertMode iora) {
   MoFEMFunctionBegin;
 
-  PetscLogEventBegin(SchurEvents::MOFEM_EVENT_schurL2MatsMatSetValues, 0, 0, 0,
-                     0);
+  PetscLogEventBegin(SchurEvents::MOFEM_EVENT_schurMatSetValues, 0, 0, 0, 0);
 
   // get row indices, in case of store, get indices from storage
   // storage keeps marked indices to manage boundary conditions
@@ -456,8 +415,7 @@ SchurElemMats::assembleStorage(const EntitiesFieldData::EntData &row_data,
     // no need to set indices
   }
 
-  PetscLogEventEnd(SchurEvents::MOFEM_EVENT_schurL2MatsMatSetValues, 0, 0, 0,
-                   0);
+  PetscLogEventEnd(SchurEvents::MOFEM_EVENT_schurMatSetValues, 0, 0, 0, 0);
 
   MoFEMFunctionReturn(0);
 }
@@ -774,10 +732,15 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
           auto nb_cols = m.size2();
           auto it = diagBlocks->blockIndex.get<1>().find(
               boost::make_tuple(row_ind, col_ind, nb_rows, nb_cols));
-          if (it == diagBlocks->blockIndex.get<1>().end()) {
+          if (it != diagBlocks->blockIndex.get<1>().end()) {
             auto inv_shift = it->inv_shift;
             if (inv_shift != -1) {
-              auto *ptr = &((*diagBlocks->dataBlocksPtr)[inv_shift]);
+#ifndef NDEBUG
+              if (!diagBlocks->dataInvBlocksPtr)
+                SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                        "No dataInvBlocksPtr");
+#endif // NDEBUG
+              auto *ptr = &((*diagBlocks->dataInvBlocksPtr)[inv_shift]);
               // assemble inverted diag
               if (row_ind == col_ind && nb_rows == nb_cols) {
                 std::copy(invMat.data().begin(), invMat.data().end(), ptr);
@@ -1094,7 +1057,7 @@ static PetscErrorCode solve(Mat mat, Vec x, Vec y) {
   return solve_schur_block_shell(mat, x, y, INSERT_VALUES);
 }
 static PetscErrorCode solve_add(Mat mat, Vec x, Vec y) {
-  return mult_schur_block_shell(mat, x, y, ADD_VALUES);
+  return solve_schur_block_shell(mat, x, y, ADD_VALUES);
 }
 
 static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
@@ -1274,7 +1237,6 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
   int nb_y;
   CHKERR VecGetLocalSize(loc_ghost_y, &nb_y);
   CHKERR VecGetArray(loc_ghost_y, &y_array);
-
   for (auto i = 0; i != nb_y; ++i)
     y_array[i] = 0.;
 
@@ -1395,30 +1357,28 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
   Vec ghost_x = ctx->ghostY;
   Vec ghost_y = ctx->ghostX;
 
-  CHKERR VecCopy(x, ghost_x);
+  CHKERR VecCopy(y, ghost_y);
+  CHKERR VecZeroEntries(ghost_x);
 
-  CHKERR VecGhostUpdateBegin(ghost_x, INSERT_VALUES, SCATTER_FORWARD);
-  CHKERR VecGhostUpdateEnd(ghost_x, INSERT_VALUES, SCATTER_FORWARD);
+  CHKERR VecGhostUpdateBegin(ghost_y, INSERT_VALUES, SCATTER_FORWARD);
+  CHKERR VecGhostUpdateEnd(ghost_y, INSERT_VALUES, SCATTER_FORWARD);
 
   double *x_array;
   Vec loc_ghost_x;
   CHKERR VecGhostGetLocalForm(ghost_x, &loc_ghost_x);
   CHKERR VecGetArray(loc_ghost_x, &x_array);
-  int nb_x;
-  CHKERR VecGetLocalSize(loc_ghost_x, &nb_x);
 
   double *y_array;
   Vec loc_ghost_y;
   CHKERR VecGhostGetLocalForm(ghost_y, &loc_ghost_y);
   CHKERR VecGetArray(loc_ghost_y, &y_array);
 
-  for (auto i = 0; i != nb_x; ++i)
-    x_array[i] = 0.;
-
-  auto inv_block_ptr = &*ctx->dataBlocksPtr->begin();
+  auto data_inv_blocks = ctx->dataInvBlocksPtr;
+  auto inv_block_ptr = &*data_inv_blocks->begin();
+  auto data_blocks = ctx->dataBlocksPtr;
+  auto block_ptr = &*data_blocks->begin();
 
   auto *data_inv = dynamic_cast<DiagBlockInvStruture *>(ctx);
-  auto data_inv_blocks = data_inv->dataInvBlocksPtr;
   auto index_view = data_inv->indexView;
 
   std::vector<double> f;
@@ -1430,6 +1390,15 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
     auto nb_rows = diag_index_ptr->nb_rows;
     auto nb_cols = diag_index_ptr->nb_cols;
     auto inv_shift = diag_index_ptr->inv_shift;
+
+#ifndef NDEBUG
+    if (inv_shift == -1)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "inv_shift == -1");
+    if (inv_shift + nb_rows * nb_cols > data_inv_blocks->size())
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "inv_shift out of range %d > %d", inv_shift + nb_rows * nb_cols,
+               data_inv_blocks->size());
+#endif // NDEBUG
 
     f.resize(nb_cols);
     std::copy(&y_array[col], &y_array[col + nb_cols], f.begin());
@@ -1464,13 +1433,37 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
       );
     }
 
+#ifndef NDEBUG
+    if constexpr (debug_schur) {
+      MatrixDouble test(nb_rows, nb_cols);
+      auto inv_m =
+          getMatrixAdaptor(&inv_block_ptr[inv_shift], nb_rows, nb_cols);
+      auto shift = diag_index_ptr->mat_shift;
+      auto m = getMatrixAdaptor(&block_ptr[shift], nb_rows, nb_cols);
+      test = prod(inv_m, m);
+      double sum = 0;
+      for (auto &d : test.data()) {
+        if (std::abs(d) < 1e-6)
+          d = 0;
+        sum += d * d;
+      }
+      if (std::abs(sum - nb_rows) > 1e-6) {
+        MOFEM_LOG("SELF", Sev::error) << "sum: " << sum;
+        MOFEM_LOG("SELF", Sev::error)
+            << "test matrix (shuld be diagonal) " << test;
+        SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong sum %3.4f",
+                 sum);
+      }
+    }
+#endif // NDEBUG
+
     cblas_dgemv(
 
         CblasRowMajor, CblasNoTrans,
 
         nb_rows, nb_cols,
 
-        1., &(inv_block_ptr[inv_shift]), nb_cols,
+        -1., &(inv_block_ptr[inv_shift]), nb_cols,
 
         &*f.begin(), 1,
 
@@ -1489,10 +1482,10 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
 
   switch (iora) {
   case INSERT_VALUES:
-    CHKERR VecCopy(ghost_y, x);
+    CHKERR VecCopy(ghost_x, x);
     break;
   case ADD_VALUES:
-    CHKERR VecAXPY(x, 1., ghost_y);
+    CHKERR VecAXPY(x, 1., ghost_x);
     break;
   default:
     CHK_MOAB_THROW(MOFEM_NOT_IMPLEMENTED, "Wrong InsertMode");
@@ -1515,12 +1508,12 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
 
   switch (iora) {
   case INSERT_VALUES:
-    print_norm("mult_schur_block_shell insert x", x);
-    print_norm("mult_schur_block_shell insert y", y);
+    print_norm("solve_schur_block_shell insert x", x);
+    print_norm("solve_schur_block_shell insert y", y);
     break;
   case ADD_VALUES:
-    print_norm("mult_schur_block_shell add x", x);
-    print_norm("mult_schur_block_shell add y", y);
+    print_norm("solve_schur_block_shell add x", x);
+    print_norm("solve_schur_block_shell add y", y);
     break;
   default:
     CHK_MOAB_THROW(MOFEM_NOT_IMPLEMENTED, "Wrong InsertMode");
@@ -1535,10 +1528,10 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
 }
 
 MoFEMErrorCode
-shell_schur_mat_set_values_wrap_impl(BlockStruture *ctx,
-                                     const EntitiesFieldData::EntData &row_data,
-                                     const EntitiesFieldData::EntData &col_data,
-                                     const MatrixDouble &mat, InsertMode iora) {
+shell_block_mat_asmb_wrap_impl(BlockStruture *ctx,
+                               const EntitiesFieldData::EntData &row_data,
+                               const EntitiesFieldData::EntData &col_data,
+                               const MatrixDouble &mat, InsertMode iora) {
 
   MatrixDouble tmp_mat;
   MoFEMFunctionBegin;
@@ -1716,24 +1709,14 @@ shell_schur_mat_set_values_wrap_impl(BlockStruture *ctx,
 }
 
 MoFEMErrorCode
-shell_schur_mat_set_values_wrap(Mat M,
-                                const EntitiesFieldData::EntData &row_data,
-                                const EntitiesFieldData::EntData &col_data,
-                                const MatrixDouble &mat, InsertMode iora) {
+shell_block_mat_asmb_wrap(Mat M, const EntitiesFieldData::EntData &row_data,
+                          const EntitiesFieldData::EntData &col_data,
+                          const MatrixDouble &mat, InsertMode iora) {
   MoFEMFunctionBegin;
   BlockStruture *ctx;
   CHKERR MatShellGetContext(M, (void **)&ctx);
-  CHKERR shell_schur_mat_set_values_wrap_impl(ctx, row_data, col_data, mat,
-                                              iora);
+  CHKERR shell_block_mat_asmb_wrap_impl(ctx, row_data, col_data, mat, iora);
   MoFEMFunctionReturn(0);
-}
-
-template <>
-MoFEMErrorCode
-MatSetValues<BlockStruture>(Mat M, const EntitiesFieldData::EntData &row_data,
-                            const EntitiesFieldData::EntData &col_data,
-                            const MatrixDouble &mat, InsertMode iora) {
-  return shell_schur_mat_set_values_wrap(M, row_data, col_data, mat, iora);
 }
 
 boost::shared_ptr<NestSchurData> getNestSchurData(
@@ -1813,8 +1796,8 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
   data_ptrs[3]->ghostX = block_vec_x;
   data_ptrs[3]->ghostY = block_vec_y;
 
-  auto inv_mem_size = 0;
   int idx = 0;
+  int inv_mem_size = 0;
   for (auto &d : block_mat_data_ptr->blockIndex.get<1>()) {
 
     auto insert = [&](auto &m, auto &dof_r, auto &dof_c, auto &d) {
@@ -1898,6 +1881,9 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
 
     ++idx;
   }
+  auto inv_data_ptr = boost::make_shared<std::vector<double>>(inv_mem_size, 0);
+  data_ptrs[3]->dataInvBlocksPtr = inv_data_ptr;
+  block_mat_data_ptr->dataInvBlocksPtr = data_ptrs[3]->dataInvBlocksPtr;
 
   auto set_up_a00_data = [&](auto inv_block_data) {
     MoFEMFunctionBegin;
@@ -1976,13 +1962,12 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
       auto [lo_idx, nb] = p;
       auto it = block_index_view.lower_bound(lo_idx);
       auto hi = block_index_view.end();
-      while (it != hi && ((*it)->row + (*it)->nb_rows) < lo_idx + nb) {
+      while (it != hi && ((*it)->row + (*it)->nb_rows) <= lo_idx + nb) {
 
         int count = 0;
         auto row = (*it)->row;
         auto it_count = it;
-        while (it_count != hi && (*it_count)->row == row &&
-               (*it_count)->nb_rows == (*it_count)->nb_cols) {
+        while (it_count != hi && (*it_count)->row == row) {
           ++count;
           ++it_count;
         }
@@ -2004,20 +1989,6 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
         }
       }
     }
-
-    auto inv_mem_size = 0;
-    for (auto &d : index_view) {
-      for (auto &o : d.second) {
-        o->inv_shift = inv_mem_size;
-        inv_mem_size += o->nb_cols * o->nb_rows;
-      }
-      d.first->inv_shift = inv_mem_size;
-      inv_mem_size = d.first->nb_cols * d.first->nb_rows;
-    }
-
-    auto inv_data_ptr = boost::make_shared<std::vector<double>>(inv_mem_size);
-    inv_block_data->dataInvBlocksPtr = inv_data_ptr;
-    inv_data_ptr->resize(inv_mem_size, 0);
 
     MoFEMFunctionReturn(0);
   };
@@ -2112,39 +2083,6 @@ createSchurNestedMatrix(boost::shared_ptr<NestSchurData> schur_net_data_ptr) {
   return std::make_pair(SmartPetscObj<Mat>(mat_raw), schur_net_data_ptr);
 }
 
-struct SchurElemMatsBlock : public SchurElemMats {
-
-  static MoFEMErrorCode MatSetValues(Mat M,
-                                     const EntitiesFieldData::EntData &row_data,
-                                     const EntitiesFieldData::EntData &col_data,
-                                     const MatrixDouble &mat, InsertMode iora);
-};
-
-SchurBackendMatSetValuesPtr::MatSetValuesPtr
-    SchurBackendMatSetValuesPtr::matSetValuesBlockPtr =
-        shell_schur_mat_set_values_wrap;
-
-MoFEMErrorCode
-SchurElemMatsBlock::MatSetValues(Mat M,
-                               const EntitiesFieldData::EntData &row_data,
-                               const EntitiesFieldData::EntData &col_data,
-                               const MatrixDouble &mat, InsertMode iora) {
-  MoFEMFunctionBegin;
-  CHKERR SchurBackendMatSetValuesPtr::matSetValuesBlockPtr(M, row_data,
-                                                           col_data, mat, iora);
-  CHKERR assembleStorage(row_data, col_data, mat, iora);
-  MoFEMFunctionReturn(0);
-}
-
-template <>
-MoFEMErrorCode
-MatSetValues<SchurElemMatsBlock>(Mat M,
-                               const EntitiesFieldData::EntData &row_data,
-                               const EntitiesFieldData::EntData &col_data,
-                               const MatrixDouble &mat, InsertMode iora) {
-  return SchurElemMatsBlock::MatSetValues(M, row_data, col_data, mat, iora);
-}
-
 OpSchurAssembleBase *createOpSchurAssembleBegin() {
   return new OpSchurAssembleBegin();
 }
@@ -2200,6 +2138,99 @@ MoFEMErrorCode setSchurMatSolvePC(SmartPetscObj<PC> pc) {
   CHKERR PCShellSetName(pc, "MoFEMSchurBlockPC");
 
   MoFEMFunctionReturn(0);
+}
+
+// Assemble specialisations
+
+// This is used to assemble Schur complement "S"
+OpSchurAssembleBase::MatSetValuesRaw OpSchurAssembleBase::matSetValuesSchurRaw =
+    ::MatSetValues;
+
+// This used to assemble element assemble local matrices for Schur complement,
+// and matrix for KSP
+template <>
+MoFEMErrorCode
+MatSetValues<SchurElemMats>(Mat M, const EntitiesFieldData::EntData &row_data,
+                            const EntitiesFieldData::EntData &col_data,
+                            const MatrixDouble &mat, InsertMode iora) {
+  return SchurElemMats::MatSetValues(M, row_data, col_data, mat, iora);
+}
+
+MoFEMErrorCode
+schur_mat_set_values_wrap(Mat M, const EntitiesFieldData::EntData &row_data,
+                          const EntitiesFieldData::EntData &col_data,
+                          const MatrixDouble &mat, InsertMode iora) {
+  return MatSetValues<AssemblyTypeSelector<PETSC>>(M, row_data, col_data, mat,
+                                                   iora);
+}
+
+// Is assumed that standard PETSc assembly works for matrices used by KSP
+SchurBackendMatSetValuesPtr::MatSetValuesPtr
+    SchurBackendMatSetValuesPtr::matSetValuesPtr = schur_mat_set_values_wrap;
+
+// We assemble matrix for KSP and store local matrices for Schur complement.
+// Schur complement is calculated and assembled in OpSchurAssembleEnd.
+MoFEMErrorCode
+SchurElemMats::MatSetValues(Mat M, const EntitiesFieldData::EntData &row_data,
+                            const EntitiesFieldData::EntData &col_data,
+                            const MatrixDouble &mat, InsertMode iora) {
+  MoFEMFunctionBegin;
+  CHKERR SchurBackendMatSetValuesPtr::matSetValuesPtr(M, row_data, col_data,
+                                                      mat, iora);
+  CHKERR assembleStorage(row_data, col_data, mat, iora);
+  MoFEMFunctionReturn(0);
+}
+
+// All is now wrapped in specialisation of
+// MatSetValues<AssemblyTypeSelector<SCHUR>>
+template <>
+MoFEMErrorCode MatSetValues<AssemblyTypeSelector<SCHUR>>(
+    Mat M, const EntitiesFieldData::EntData &row_data,
+    const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
+    InsertMode iora) {
+  return MatSetValues<SchurElemMats>(M, row_data, col_data, mat, iora);
+}
+
+// Standard (PETSc) assembly block matrices do noe work
+template <>
+MoFEMErrorCode
+MatSetValues<BlockStruture>(Mat M, const EntitiesFieldData::EntData &row_data,
+                            const EntitiesFieldData::EntData &col_data,
+                            const MatrixDouble &mat, InsertMode iora) {
+  return shell_block_mat_asmb_wrap(M, row_data, col_data, mat, iora);
+}
+
+struct SchurElemMatsBlock : public SchurElemMats {
+
+  static MoFEMErrorCode MatSetValues(Mat M,
+                                     const EntitiesFieldData::EntData &row_data,
+                                     const EntitiesFieldData::EntData &col_data,
+                                     const MatrixDouble &mat, InsertMode iora);
+};
+
+SchurBackendMatSetValuesPtr::MatSetValuesPtr
+    SchurBackendMatSetValuesPtr::matSetValuesBlockPtr =
+        shell_block_mat_asmb_wrap;
+
+MoFEMErrorCode
+SchurElemMatsBlock::MatSetValues(Mat M,
+                                 const EntitiesFieldData::EntData &row_data,
+                                 const EntitiesFieldData::EntData &col_data,
+                                 const MatrixDouble &mat, InsertMode iora) {
+  MoFEMFunctionBegin;
+  CHKERR SchurBackendMatSetValuesPtr::matSetValuesBlockPtr(M, row_data,
+                                                           col_data, mat, iora);
+  CHKERR assembleStorage(row_data, col_data, mat, iora);
+  MoFEMFunctionReturn(0);
+}
+
+template <>
+MoFEMErrorCode
+MatSetValues<SchurElemMatsBlock>(Mat M,
+                                 const EntitiesFieldData::EntData &row_data,
+                                 const EntitiesFieldData::EntData &col_data,
+                                 const MatrixDouble &mat, InsertMode iora) {
+  return SchurElemMatsBlock::MatSetValues(M, row_data, col_data, mat, iora);
 }
 
 } // namespace MoFEM
