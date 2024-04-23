@@ -164,6 +164,18 @@ int main(int argc, char *argv[]) {
     auto [mat, block_data_ptr] = shell_data;
     block_mat = mat;
 
+    auto [nested_mat, nested_data_ptr] = createSchurNestedMatrix(
+
+        getNestSchurData(
+
+            {schur_dm, block_dm}, block_data_ptr,
+
+            {"TENSOR"}, {nullptr}
+
+            )
+
+    );
+
     using OpMassPETSCAssemble = FormsIntegrators<DomainEleOp>::Assembly<
         PETSC>::BiLinearForm<GAUSS>::OpMass<1, FIELD_DIM>;
     using OpMassBlockAssemble = FormsIntegrators<DomainEleOp>::Assembly<
@@ -189,7 +201,7 @@ int main(int argc, char *argv[]) {
 
     pip_lhs.push_back(createOpSchurAssembleEnd(
 
-        {"TENSOR"}, {nullptr}, {ao_up}, {S}, {false}, true)
+        {"TENSOR"}, {nullptr}, {ao_up}, {S}, {false}, true, block_data_ptr)
 
     );
 
@@ -224,7 +236,9 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionReturn(0);
     };
 
-    std::vector<int> zero_rows_and_cols = {0, 1, 10, 20, 500, 1000};
+    std::vector<int> zero_rows_and_cols = {
+        0, 1, 10, 20,
+        500}; // not to remove dofs for TENSOR filed, inverse will not work
     CHKERR MatZeroRowsColumns(petsc_mat, zero_rows_and_cols.size(),
                               &*zero_rows_and_cols.begin(), 1, PETSC_NULL,
                               PETSC_NULL);
@@ -246,18 +260,6 @@ int main(int argc, char *argv[]) {
 
     CHKERR test("mult add", y_petsc);
 
-    auto [nested_mat, nested_data_ptr] = createSchurNestedMatrix(
-
-        getNestSchurData(
-
-            {schur_dm, block_dm}, block_data_ptr,
-
-            {"TENSOR"}, {nullptr}
-
-            )
-
-    );
-
     auto y_nested = createDMVector(simple->getDM());
     CHKERR MatMult(petsc_mat, v, y_petsc);
     CHKERR MatMult(nested_mat, v, y_nested);
@@ -267,31 +269,38 @@ int main(int argc, char *argv[]) {
 
     auto diag_mat = std::get<0>(*nested_data_ptr)[3];
     auto diag_block_x = get_random_vector(block_dm);
-    auto diag_block_f = vectorDuplicate(diag_block_x);
+    auto diag_block_f = createDMVector(block_dm);
+    auto block_solved_x = createDMVector(block_dm);
     CHKERR MatMult(diag_mat, diag_block_x, diag_block_f);
-    auto block_solved_x = vectorDuplicate(diag_block_x);
-    // // CHKERR MatSolve(diag_mat, diag_block_f, block_solved_x);
+    CHKERR MatSolve(diag_mat, diag_block_f, block_solved_x);
 
-    // set matrix type to shell, set data
-    CHKERR DMSetMatType(block_dm, MATSHELL);
-    CHKERR DMMoFEMSetBlocMatData(block_dm, std::get<1>(*nested_data_ptr)[3]);
-    // set empty operator, sice block data are calculated
-    CHKERR DMKSPSetComputeOperators(
-        block_dm, [](KSP, Mat, Mat, void *) { return 0; }, nullptr);
+    // // set matrix type to shell, set data
+    // CHKERR DMSetMatType(block_dm, MATSHELL);
+    // CHKERR DMMoFEMSetBlocMatData(block_dm, std::get<1>(*nested_data_ptr)[3]);
+    // // set empty operator, sice block data are calculated
+    // CHKERR DMKSPSetComputeOperators(
+    //     block_dm,
+    //     [](KSP, Mat, Mat, void *) {
+    //       MOFEM_LOG("WORLD", Sev::inform) << "empty operator";
+    //       return 0;
+    //     },
+    //     nullptr);
 
-    auto ksp = createKSP(m_field.get_comm());
-    CHKERR KSPSetDM(ksp, block_dm);
+    // auto ksp = createKSP(m_field.get_comm());
+    // CHKERR KSPSetDM(ksp, block_dm);
+    // CHKERR KSPSetFromOptions(ksp);
 
-    // set preconditioner to block mat
-    auto get_pc = [](auto ksp) {
-      PC pc_raw;
-      CHKERR KSPGetPC(ksp, &pc_raw);
-      return SmartPetscObj<PC>(pc_raw, true); // bump reference
-    };
-    CHKERR setSchurMatSolvePC(get_pc(ksp));
+    // // set preconditioner to block mat
+    // auto get_pc = [](auto ksp) {
+    //   PC pc_raw;
+    //   CHKERR KSPGetPC(ksp, &pc_raw);
+    //   return SmartPetscObj<PC>(pc_raw, true); // bump reference
+    // };
+    // CHKERR setSchurMatSolvePC(get_pc(ksp));
+    // CHKERR KSPSetUp(ksp);
 
-    CHKERR KSPSetFromOptions(ksp);
-    CHKERR KSPSolve(ksp, diag_block_f, block_solved_x);
+    // CHKERR VecZeroEntries(block_solved_x);
+    // CHKERR KSPSolve(ksp, diag_block_f, block_solved_x);
 
     CHKERR VecAXPY(diag_block_x, -1.0, block_solved_x);
     CHKERR test("diag solve", diag_block_x);

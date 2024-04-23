@@ -12,6 +12,7 @@
 #endif
 
 #include <DMMoFEM.hpp>
+#include <DMCtxImpl.hpp>
 
 namespace MoFEM {
 
@@ -20,45 +21,6 @@ MoFEMErrorCode DMCtx::query_interface(boost::typeindex::type_index type_index,
   *iface = const_cast<DMCtx *>(this);
   return 0;
 }
-
-struct DMCtxImpl : public DMCtx {
-
-  DMCtxImpl();
-
-  int rAnk = -1; //< processor rank
-  int sIze = -1; //< communication size
-
-  int verbosity = VERBOSE; ///< verbosity
-  int referenceNumber = 0; //< reference number
-
-  // sub problem
-  PetscBool isSubDM = PETSC_FALSE;
-  std::vector<std::string> rowSubFields;
-  std::vector<std::string> colSubFields;
-  const Problem *problemMainOfSubPtr; ///< pinter to main problem to sub-problem
-
-  PetscBool isCompDM = PETSC_FALSE;
-  std::vector<std::string> rowCompPrb;
-  std::vector<std::string> colCompPrb;
-  std::map<std::string, boost::shared_ptr<Range>> mapTypeRow;
-  std::map<std::string, boost::shared_ptr<Range>> mapTypeCol;
-
-  // Options
-  PetscBool isPartitioned = PETSC_FALSE;  ///< true if read mesh is on parts
-  PetscBool isSquareMatrix = PETSC_TRUE;  ///< true if rows equals to cols
-  PetscBool destroyProblem = PETSC_FALSE; ///< If true destroy problem with DM
-  PetscBool isProblemBuild = PETSC_FALSE; ///< True if problem is build
-
-  Interface *mField_ptr = nullptr;    ///< MoFEM interface
-
-  // pointer to data structures
-  const Problem *problemPtr = nullptr; ///< pinter to problem data structure
-  std::string problemName;  ///< Problem name
-
-  // schur block matrix
-  boost::shared_ptr<BlockStruture> blocMatDataPtr;
-  boost::shared_ptr<NestSchurData> nestedSchurDataPtr;
-};
 
 DMCtxImpl::DMCtxImpl() : DMCtx() {
   if (!LogManager::checkIfChannelExist("DMWORLD")) {
@@ -1239,10 +1201,7 @@ PetscErrorCode DMCreateMatrix_MoFEM(DM dm, Mat *M) {
 
   if (strcmp(dm->mattype, MATSHELL) == 0) {
 
-    if (dm_field->nestedSchurDataPtr) {
-      CHKERR DMMoFEMCreateNestSchurMat(dm, M);
-      MoFEMFunctionReturnHot(0);
-    } else if (dm_field->blocMatDataPtr) {
+    if (dm_field->blocMatDataPtr) {
       CHKERR DMMoFEMCreateBlockMat(dm, M);
       MoFEMFunctionReturnHot(0);
     } else {
@@ -1586,6 +1545,7 @@ MoFEMErrorCode DMMoFEMSetNestSchurData(DM dm,
   MoFEMFunctionBegin;
   DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   dm_field->nestedSchurDataPtr = data;
+  dm_field->blocMatDataPtr = get<2>(*(data));
   MoFEMFunctionReturn(0);
 }
 

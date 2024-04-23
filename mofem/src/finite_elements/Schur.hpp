@@ -24,7 +24,7 @@ constexpr const char MoFEM_BLOCK_MAT[] = "mofem_block_mat";
  * @brief Structure to register events for Schur block assembly and solver
  */
 struct SchurEvents {
-  static PetscLogEvent MOFEM_EVENT_schurL2MatsMatSetValues;
+  static PetscLogEvent MOFEM_EVENT_schurMatSetValues;
   static PetscLogEvent MOFEM_EVENT_opSchurAssembleEnd;
   static PetscLogEvent MOFEM_EVENT_blockStrutureSetValues;
   static PetscLogEvent MOFEM_EVENT_blockStrutureMult;
@@ -91,41 +91,6 @@ OpSchurAssembleBase *createOpSchurAssembleEnd(
     std::vector<bool> sym_schur, std::vector<double> diag_eps, bool symm_op,
     boost::shared_ptr<BlockStruture> diag_blocks = nullptr);
 
-struct SchurBackendMatSetValuesPtr {
-  SchurBackendMatSetValuesPtr() = delete;
-  using MatSetValuesPtr = boost::function<MoFEMErrorCode(
-      Mat M, const EntitiesFieldData::EntData &row_data,
-      const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
-      InsertMode iora)>;
-  static MatSetValuesPtr matSetValuesPtr;      ///< backend assembly function
-  static MatSetValuesPtr matSetValuesBlockPtr; ///< backend assembly function
-};
-
-template <>
-MoFEMErrorCode
-MatSetValues<SchurElemMats>(Mat M, const EntitiesFieldData::EntData &row_data,
-                          const EntitiesFieldData::EntData &col_data,
-                          const MatrixDouble &mat, InsertMode iora);
-
-template <>
-inline MoFEMErrorCode
-VecSetValues<SchurElemMats>(Vec V, const EntitiesFieldData::EntData &data,
-                          const VectorDouble &nf, InsertMode iora) {
-  return VecSetValues<EssentialBcStorage>(V, data, nf, iora);
-}
-
-template <>
-MoFEMErrorCode MatSetValues<AssemblyTypeSelector<SCHUR>>(
-    Mat M, const EntitiesFieldData::EntData &row_data,
-    const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
-    InsertMode iora);
-
-template <>
-inline MoFEMErrorCode VecSetValues<AssemblyTypeSelector<SCHUR>>(
-    Vec V, const EntitiesFieldData::EntData &data, const VectorDouble &nf,
-    InsertMode iora) {
-  return VecSetValues<SchurElemMats>(V, data, nf, iora);
-}
 
 using SchurFieldPair = std::pair<std::string, std::string>;
 
@@ -158,36 +123,6 @@ using SchurShellMatData =
  * @return std::pair<SmartPetscObj<Mat>, boost::shared_ptr<BlockStruture>>
  */
 SchurShellMatData createBlockMat(DM dm, boost::shared_ptr<BlockStruture> data);
-
-/***
- * @brief Specialization of MatSetValues for BlockStruture
- */
-template <>
-MoFEMErrorCode
-MatSetValues<BlockStruture>(Mat M, const EntitiesFieldData::EntData &row_data,
-                            const EntitiesFieldData::EntData &col_data,
-                            const MatrixDouble &mat, InsertMode iora);
-
-/***
- * @brief Specialisation of MatSetValues for AssemblyTypeSelector<BLOCK_MAT>
- */
-template <>
-inline MoFEMErrorCode MatSetValues<AssemblyTypeSelector<BLOCK_MAT>>(
-    Mat M, const EntitiesFieldData::EntData &row_data,
-    const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
-    InsertMode iora) {
-  return MatSetValues<BlockStruture>(M, row_data, col_data, mat, iora);
-}
-
-/***
- * @brief Specialisation of VecSetValues for AssemblyTypeSelector<BLOCK_MAT>
- */
-template <>
-inline MoFEMErrorCode VecSetValues<AssemblyTypeSelector<BLOCK_MAT>>(
-    Vec V, const EntitiesFieldData::EntData &data, const VectorDouble &nf,
-    InsertMode iora) {
-  return VecSetValues<EssentialBcStorage>(V, data, nf, iora);
-}
 
 using NestSchurData = std::tuple<
 
@@ -251,6 +186,74 @@ MoFEMErrorCode DMMoFEMSetNestSchurData(DM dm, boost::shared_ptr<NestSchurData>);
  * @return MoFEMErrorCode
  */
 MoFEMErrorCode setSchurMatSolvePC(SmartPetscObj<PC> pc);
+
+
+struct SchurBackendMatSetValuesPtr {
+  SchurBackendMatSetValuesPtr() = delete;
+  using MatSetValuesPtr = boost::function<MoFEMErrorCode(
+      Mat M, const EntitiesFieldData::EntData &row_data,
+      const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
+      InsertMode iora)>;
+  static MatSetValuesPtr matSetValuesPtr;      ///< backend assembly function
+  static MatSetValuesPtr matSetValuesBlockPtr; ///< backend assembly function
+};
+
+template <>
+MoFEMErrorCode
+MatSetValues<SchurElemMats>(Mat M, const EntitiesFieldData::EntData &row_data,
+                          const EntitiesFieldData::EntData &col_data,
+                          const MatrixDouble &mat, InsertMode iora);
+
+template <>
+inline MoFEMErrorCode
+VecSetValues<SchurElemMats>(Vec V, const EntitiesFieldData::EntData &data,
+                          const VectorDouble &nf, InsertMode iora) {
+  return VecSetValues<EssentialBcStorage>(V, data, nf, iora);
+}
+
+template <>
+MoFEMErrorCode MatSetValues<AssemblyTypeSelector<SCHUR>>(
+    Mat M, const EntitiesFieldData::EntData &row_data,
+    const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
+    InsertMode iora);
+
+template <>
+inline MoFEMErrorCode VecSetValues<AssemblyTypeSelector<SCHUR>>(
+    Vec V, const EntitiesFieldData::EntData &data, const VectorDouble &nf,
+    InsertMode iora) {
+  return VecSetValues<SchurElemMats>(V, data, nf, iora);
+}
+
+
+/***
+ * @brief Specialization of MatSetValues for BlockStruture
+ */
+template <>
+MoFEMErrorCode
+MatSetValues<BlockStruture>(Mat M, const EntitiesFieldData::EntData &row_data,
+                            const EntitiesFieldData::EntData &col_data,
+                            const MatrixDouble &mat, InsertMode iora);
+
+/***
+ * @brief Specialisation of MatSetValues for AssemblyTypeSelector<BLOCK_MAT>
+ */
+template <>
+inline MoFEMErrorCode MatSetValues<AssemblyTypeSelector<BLOCK_MAT>>(
+    Mat M, const EntitiesFieldData::EntData &row_data,
+    const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
+    InsertMode iora) {
+  return MatSetValues<BlockStruture>(M, row_data, col_data, mat, iora);
+}
+
+/***
+ * @brief Specialisation of VecSetValues for AssemblyTypeSelector<BLOCK_MAT>
+ */
+template <>
+inline MoFEMErrorCode VecSetValues<AssemblyTypeSelector<BLOCK_MAT>>(
+    Vec V, const EntitiesFieldData::EntData &data, const VectorDouble &nf,
+    InsertMode iora) {
+  return VecSetValues<EssentialBcStorage>(V, data, nf, iora);
+}
 
 struct SchurElemMatsBlock;
 
