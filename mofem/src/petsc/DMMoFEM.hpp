@@ -939,6 +939,14 @@ MoFEMErrorCode DMMoFEMSetBlocMatData(DM dm,
                                      boost::shared_ptr<BlockStruture>);
 
 /**
+ * @brief Get data for block mat
+ * 
+ * @param dm 
+ * @return MoFEMErrorCode 
+ */
+MoFEMErrorCode DMMoFEMGetBlocMatData(DM dm, boost::shared_ptr<BlockStruture> &);
+
+/**
  * @brief Create block matrix
   \ingroup dm
  * 
