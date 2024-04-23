@@ -1528,6 +1528,15 @@ MoFEMErrorCode DMMoFEMSetBlocMatData(DM dm,
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode DMMoFEMGetBlocMatData(DM dm,
+                                     boost::shared_ptr<BlockStruture> &data) {
+  PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
+  MoFEMFunctionBegin;
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
+  data = dm_field->blocMatDataPtr;
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode DMMoFEMCreateBlockMat(DM dm, Mat *mat) {
    PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
