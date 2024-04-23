@@ -2783,7 +2783,7 @@ struct OpCalculateHVecTensorTrace : public OpBase {
     }
     const size_t nb_dofs = data.getFieldData().size();
     if (nb_dofs) {
-      auto t_normal = OpBase::getFTensor1sAtGaussPts();
+      auto t_normal = OpBase::getFTensor1NormalsAtGaussPts();
       const size_t nb_base_functions = data.getN().size2() / 3;
       auto t_base = data.getFTensor1N<3>();
       auto t_data = getFTensor1FromMat<Tensor_Dim>(*dataPtr);
