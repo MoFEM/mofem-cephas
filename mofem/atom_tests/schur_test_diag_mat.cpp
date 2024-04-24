@@ -109,15 +109,20 @@ int main(int argc, char *argv[]) {
 
     // Scalar fields and vector field is tested. Add more fields, i.e. vector
     // field if needed.
+    // Note all vector are vectors, so names are misleading, but hat is to not
+    // make code for pushing OPs simple.
     CHKERR simple->addDomainField("VECTOR", H1, AINSWORTH_LEGENDRE_BASE,
                                   FIELD_DIM);
     CHKERR simple->addDomainField("TENSOR", L2, AINSWORTH_LEGENDRE_BASE,
+                                  FIELD_DIM);
+    CHKERR simple->addDomainField("SCALAR", L2, AINSWORTH_LEGENDRE_BASE,
                                   FIELD_DIM);
 
     // set fields order, i.e. for most first cases order is sufficient.
     constexpr int order = 4;
     CHKERR simple->setFieldOrder("VECTOR", order);
     CHKERR simple->setFieldOrder("TENSOR", order);
+    CHKERR simple->setFieldOrder("SCALAR", order);
 
     // setup problem
     CHKERR simple->setUp();
@@ -136,30 +141,37 @@ int main(int argc, char *argv[]) {
     CHKERR DMMoFEMAddElement(block_dm, simple->getDomainFEName());
     CHKERR DMMoFEMAddSubFieldRow(block_dm, "TENSOR");
     CHKERR DMMoFEMAddSubFieldCol(block_dm, "TENSOR");
+    CHKERR DMMoFEMAddSubFieldRow(block_dm, "SCALAR");
+    CHKERR DMMoFEMAddSubFieldCol(block_dm, "SCALAR");
     CHKERR DMSetUp(block_dm);
 
     petsc_mat = createDMMatrix(simple->getDM());
     auto S = createDMMatrix(schur_dm);
 
-    auto shell_data = createBlockMat(simple->getDM(), 
+    auto shell_data =
+        createBlockMat(simple->getDM(),
 
-      createBlockMatStructure(simple->getDM(),
+                       createBlockMatStructure(simple->getDM(),
 
-                                     {{simple->getDomainFEName(),
+                                               {{simple->getDomainFEName(),
 
-                                       {{"VECTOR", "VECTOR"},
-                                        {"TENSOR", "TENSOR"}
+                                                 {
+                                                     {"VECTOR", "VECTOR"},
+                                                     {"TENSOR", "TENSOR"},
+                                                     {"SCALAR", "SCALAR"}
 
-                                        ,
+                                                     ,
 
-                                        {"VECTOR", "TENSOR"},
-                                        {"TENSOR", "VECTOR"}
+                                                     {"VECTOR", "TENSOR"},
+                                                     {"TENSOR", "VECTOR"},
+                                                     {"SCALAR", "TENSOR"},
+                                                     {"TENSOR", "SCALAR"},
 
-                                       }}}
+                                                 }}}
 
-        )
+                                               )
 
-    );
+        );
 
     auto [mat, block_data_ptr] = shell_data;
     block_mat = mat;
@@ -170,7 +182,7 @@ int main(int argc, char *argv[]) {
 
             {schur_dm, block_dm}, block_data_ptr,
 
-            {"TENSOR"}, {nullptr}
+            {"TENSOR", "SCALAR"}, {nullptr, nullptr}
 
             )
 
@@ -190,18 +202,31 @@ int main(int argc, char *argv[]) {
     pip_lhs.push_back(new OpMassPETSCAssemble("TENSOR", "TENSOR"));
     pip_lhs.push_back(new OpMassPETSCAssemble("VECTOR", "TENSOR"));
     pip_lhs.push_back(new OpMassPETSCAssemble("TENSOR", "VECTOR"));
+    pip_lhs.push_back(new OpMassPETSCAssemble("SCALAR", "SCALAR"));
+    pip_lhs.push_back(new OpMassPETSCAssemble("SCALAR", "TENSOR"));
+    // pip_lhs.push_back(new OpMassPETSCAssemble("TENSOR", "SCALAR"));
+
     pip_lhs.push_back(createOpSchurAssembleBegin());
     pip_lhs.push_back(new OpMassBlockAssemble("VECTOR", "VECTOR"));
     pip_lhs.push_back(new OpMassBlockAssemble("TENSOR", "TENSOR"));
     pip_lhs.push_back(new OpMassBlockAssemble("VECTOR", "TENSOR"));
     pip_lhs.push_back(new OpMassBlockAssemble("TENSOR", "VECTOR"));
+    pip_lhs.push_back(new OpMassBlockAssemble("SCALAR", "SCALAR"));
+    pip_lhs.push_back(new OpMassBlockAssemble("SCALAR", "TENSOR"));
+    // pip_lhs.push_back(new OpMassBlockAssemble("TENSOR", "SCALAR"));
 
     auto schur_is = getDMSubData(schur_dm)->getSmartRowIs();
     auto ao_up = createAOMappingIS(schur_is, PETSC_NULL);
 
     pip_lhs.push_back(createOpSchurAssembleEnd(
 
-        {"TENSOR"}, {nullptr}, {ao_up}, {S}, {false}, true, block_data_ptr)
+        {"TENSOR", "SCALAR"},
+
+        {nullptr, nullptr},
+
+        {nullptr, ao_up}, {nullptr, S},
+
+        {false, false}, true, block_data_ptr)
 
     );
 

@@ -741,8 +741,8 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
                         "No dataInvBlocksPtr");
 #endif // NDEBUG
               auto *ptr = &((*diagBlocks->dataInvBlocksPtr)[inv_shift]);
-              // assemble inverted diag
               if (row_ind == col_ind && nb_rows == nb_cols) {
+                // assemble inverted diag
                 std::copy(invMat.data().begin(), invMat.data().end(), ptr);
               } else {
                 std::copy(m.data().begin(), m.data().end(), ptr);
