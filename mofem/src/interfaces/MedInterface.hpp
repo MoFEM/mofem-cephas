@@ -84,14 +84,22 @@ struct MedInterface : public UnknownInterface {
    * @return      error code
    */
   MoFEMErrorCode writeMed(int verb = 1);
-
+  
+  /**
+   * Retrieves the meshsets
+   *
+   * @param meshsets_ptr A pointer to a vector of const CubitMeshSets objects. If provided, the retrieved meshsets will be stored in this vector.
+   * @return A MoFEMErrorCode indicating the success or failure of the operation.
+   */
+  MoFEMErrorCode getMeshsets(boost::shared_ptr<std::vector< const CubitMeshSets * >> &meshsets_ptr);
   /**
    * \brief write MED file
    * @param  file file name
+   * @param  meshsets_ptr meshsets
    * @param  verb verbosity level
    * @return      error code
    */
-  MoFEMErrorCode writeMed(const string &file, int verb = 1);
+  MoFEMErrorCode writeMed(const string &file, boost::shared_ptr<std::vector< const CubitMeshSets * >> meshsets_ptr, int verb = 1);
 
   /**
    * Read fields
@@ -121,7 +129,7 @@ struct MedInterface : public UnknownInterface {
   std::vector<EntityHandle> meshMeshsets; ///< meshset for each mesh
   std::map<std::string, FieldData> fieldNames;
   std::string medFileName; ///< MED file name
-  std::vector<int> tessssssssssss1; //
+  std::vector<int> tesssssssssssssssss1; //
 
 private:
   MoFEM::Core &cOre; ///< core database

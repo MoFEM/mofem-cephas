@@ -693,16 +693,37 @@ MoFEMErrorCode MedInterface::readMed(int verb) {
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode MedInterface::getMeshsets(
+    boost::shared_ptr<std::vector<const CubitMeshSets *>> &meshsets_ptr) {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+
+  auto &meshsets_idx =
+      m_field.getInterface<MeshsetsManager>()->getMeshsetsMultindex();
+  std::vector<const CubitMeshSets *> meshsets;
+
+  for (auto &m : meshsets_idx) {
+    meshsets.push_back(&m);
+  }
+
+  meshsets_ptr = boost::make_shared<std::vector<const CubitMeshSets *>>(meshsets);
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode MedInterface::writeMed(int verb) {
   MoFEMFunctionBegin;
   if (medFileName.empty()) {
     CHKERR getFileNameFromCommandLine(verb);
   }
-  CHKERR writeMed(medFileName, verb);
+
+  boost::shared_ptr<std::vector<const CubitMeshSets *>> meshsets_ptr;
+  getMeshsets(meshsets_ptr);
+
+  CHKERR writeMed(medFileName, meshsets_ptr, verb);
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode MedInterface::writeMed(const string &file, int verb) {
+MoFEMErrorCode MedInterface::writeMed(const string &file, boost::shared_ptr<std::vector< const CubitMeshSets * >> meshsets_ptr, int verb) {
   Interface &m_field = cOre;
   // Get the MOAB instance from the field
   moab::Interface &moab = m_field.get_moab();
@@ -732,12 +753,18 @@ MoFEMErrorCode MedInterface::writeMed(const string &file, int verb) {
   // Get meshsetID 1
   std::string mesh_name = "MESH";
   int max_id = 0;
-  for (_IT_CUBITMESHSETS_FOR_LOOP_(m_field, iit)) {
-    // check if meshset is cubit meshset
-    if (iit->getMeshsetId() == 1)
-      mesh_name = iit->getName();
-    max_id = (max_id < iit->getMeshsetId()) ? iit->getMeshsetId() : max_id;
+  for (auto &m : *meshsets_ptr) {
+    if (m->getMeshsetId() == 1)
+      mesh_name = m->getName();
+    max_id = (max_id < m->getMeshsetId()) ? m->getMeshsetId() : max_id;
   }
+
+  // for (_IT_CUBITMESHSETS_FOR_LOOP_(m_field, iit)) {
+  //   // check if meshset is cubit meshset
+  //   if (iit->getMeshsetId() == 1)
+  //     mesh_name = iit->getName();
+  //   max_id = (max_id < iit->getMeshsetId()) ? iit->getMeshsetId() : max_id;
+  // }
 
   CHKERR MEDmeshCr(fid, mesh_name.c_str(), 3, 3, MED_UNSTRUCTURED_MESH,
                    "Mesh created", dtUnit, MED_SORT_DTIT, MED_CARTESIAN,
@@ -781,10 +808,24 @@ MoFEMErrorCode MedInterface::writeMed(const string &file, int verb) {
       combined_multimap;
 
   med_int family_id = 1;
-  for (_IT_CUBITMESHSETS_FOR_LOOP_(m_field, iit)) {
+  for (auto &iit : *meshsets_ptr) {
     // check if meshset is cubit meshset
-    //if (iit->getMeshsetId() == 1)
-    // continue;
+    // if (iit->getMeshsetId() == 1)
+    //   continue;
+    // Range test0;
+    // Range test1;
+    // Range test2;
+    // Range test3;
+
+    // iit->getMeshsetIdEntitiesByDimension(moab, 0, test0);
+    // std::cout << "test0 = " << test0 << std::endl;
+    // iit->getMeshsetIdEntitiesByDimension(moab, 1, test1);
+    // std::cout << "test1 = " << test1 << std::endl;
+    // iit->getMeshsetIdEntitiesByDimension(moab, 2, test2);
+    // std::cout << "test2 = " << test2 << std::endl;
+    // iit->getMeshsetIdEntitiesByDimension(moab, 3, test3);
+    // std::cout << "test3 = " << test3 << std::endl;
+
 
     if (iit->getBcTypeULong() & BLOCKSET) {
       EntityHandle meshset = iit->getMeshset();
@@ -801,21 +842,10 @@ MoFEMErrorCode MedInterface::writeMed(const string &file, int verb) {
         CHKERR moab.get_entities_by_type(meshset, ent_type, range, true);
         // }
         if (!range.empty()) {
-          // std::string group_name;
-          // med_int group_index = 1;
-          // family_id = iit->getMeshsetId();
-          // group_name += meshset_map[iit->getMeshsetId()];
-          // group_name.resize(group_index * MED_LNAME_SIZE, ' ');
-          // family_group_map[family_id] = group_name;
-          // group_map[family_id] = group_index;
-
-          // combined_multimap.insert(std::make_pair(
-          //     ent_type,
-          //     std::make_tuple(family_id, iit->getMeshsetId(), range)));
-
           // check if new range already has a family
           std::string group_name;
           med_int group_index;
+          std::set<std::string> appended_names;
           //std::cout << "Range = " << range.size() << std::endl;
           //std::cout << "Range = " << range << std::endl;
           bool duplicate = false;
@@ -835,14 +865,16 @@ MoFEMErrorCode MedInterface::writeMed(const string &file, int verb) {
                 family_id = std::get<0>(it2->second);
                 group_name = family_group_map[family_id];
                 std::string test_name = meshset_map[iit->getMeshsetId()];
-                std::string matched_name = meshset_map[matched_meshsetId];
+                std::string matched_name;
+                matched_name = meshset_map[matched_meshsetId];
                 group_index = group_map[family_id];
                 group_index++;
-                if (matched_name != test_name) {
-                  group_name += meshset_map[iit->getMeshsetId()];
+                if (matched_name != test_name && appended_names.find(test_name) == appended_names.end()) {
+                  group_name += test_name;
                   group_name.resize(group_index * MED_LNAME_SIZE, ' ');
                   family_group_map[family_id] = group_name;
                   group_map[family_id] = group_index;
+                  appended_names.insert(test_name);
                 }
                 duplicate = true;
                 break;
@@ -918,14 +950,24 @@ MoFEMErrorCode MedInterface::writeMed(const string &file, int verb) {
           if (!duplicate) {
             group_name = meshset_map[iit->getMeshsetId()];
             group_index = 1;
-            family_id = iit->getMeshsetId();  
-            group_name.resize(group_index * MED_LNAME_SIZE, ' ');
-            family_group_map[family_id] = group_name;
-            group_map[family_id] = group_index;
-
+            if (iit->getMeshsetId() == 1) {
+             family_id = 0;
+             group_name = "";
+             group_index = NULL;
+             family_group_map[family_id] = group_name;
+             group_map[family_id] = group_index;
             combined_multimap.insert(std::make_pair(
                 ent_type,
                 std::make_tuple(family_id, iit->getMeshsetId(), range)));
+            } else {
+              family_id = iit->getMeshsetId();
+              group_name.resize(group_index * MED_LNAME_SIZE, ' ');
+              family_group_map[family_id] = group_name;
+              group_map[family_id] = group_index;
+              combined_multimap.insert(std::make_pair(
+                ent_type,
+                std::make_tuple(family_id, iit->getMeshsetId(), range)));
+            }
           }
       }
     }
@@ -985,17 +1027,6 @@ MoFEMErrorCode MedInterface::writeMed(const string &file, int verb) {
 
     std::string family_name = "F_" + std::to_string(family_id);
 
-    // check if multiple families have the same elements
-    // int group_index = 0;
-    // std::string group_name;
-    // //group_name += meshset_map[meshsetId];
-    // auto range_ids = familyIdToMeshsetid.equal_range(family_id);
-    // for (auto it = range_ids.first; it != range_ids.second; ++it) {
-    //   med_int meshsetId = it->second;
-    //   group_name += meshset_map[meshsetId];
-    //   group_index += 1;
-    //   group_name.resize(group_index * MED_LNAME_SIZE, ' ');
-    // }
     med_int group_index = group_map[family_id];
 
     CHKERR MEDfamilyCr(fid, mesh_name.c_str(), family_name.c_str(), family_id,
