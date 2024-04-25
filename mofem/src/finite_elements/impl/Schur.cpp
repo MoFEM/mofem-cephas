@@ -236,7 +236,7 @@ struct BlockStruture : public DiagBlockIndex {
 struct DiagBlockInvStruture : public BlockStruture {
 
   using SchurSolverView =
-      std::vector<std::pair<const Indexes *, std::vector<const Indexes *>>>;
+      std::pair<std::vector<const Indexes *>, std::vector<int>>;
 
   SchurSolverView indexView;
 };
@@ -744,8 +744,6 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
               if (row_ind == col_ind && nb_rows == nb_cols) {
                 // assemble inverted diag
                 std::copy(invMat.data().begin(), invMat.data().end(), ptr);
-              } else {
-                std::copy(m.data().begin(), m.data().end(), ptr);
               }
             }
           }
@@ -1379,17 +1377,47 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
   auto block_ptr = &*data_blocks->begin();
 
   auto *data_inv = dynamic_cast<DiagBlockInvStruture *>(ctx);
-  auto index_view = data_inv->indexView;
+  auto index_view = &data_inv->indexView;
 
   std::vector<double> f;
 
-  for (auto &v : index_view) {
-    auto &diag_index_ptr = v.first;
+  for (auto s1 = 0; s1 != index_view->second.size() - 1; ++s1) {
+    auto lo = index_view->second[s1];
+    auto hi = index_view->second[s1 + 1];
+
+    auto diag_index_ptr = index_view->first[lo];
+    ++lo;
+
     auto row = diag_index_ptr->loc_row;
     auto col = diag_index_ptr->loc_col;
     auto nb_rows = diag_index_ptr->nb_rows;
     auto nb_cols = diag_index_ptr->nb_cols;
     auto inv_shift = diag_index_ptr->inv_shift;
+
+    f.resize(nb_cols);
+    std::copy(&y_array[col], &y_array[col + nb_cols], f.begin());
+
+    for (; lo != hi; ++lo) {
+      auto off_index_ptr = index_view->first[lo];
+      auto off_col = off_index_ptr->loc_col;
+      auto off_nb_cols = off_index_ptr->nb_cols;
+      auto off_shift = off_index_ptr->mat_shift;
+
+      cblas_dgemv(
+
+          CblasRowMajor, CblasNoTrans,
+
+          nb_rows, off_nb_cols,
+
+          1., &(block_ptr[off_shift]), off_nb_cols,
+
+          &x_array[off_col], 1,
+
+          -1., &*f.begin(), 1
+
+      );
+
+    }
 
 #ifndef NDEBUG
     if (inv_shift == -1)
@@ -1398,40 +1426,7 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "inv_shift out of range %d > %d", inv_shift + nb_rows * nb_cols,
                data_inv_blocks->size());
-#endif // NDEBUG
-
-    f.resize(nb_cols);
-    std::copy(&y_array[col], &y_array[col + nb_cols], f.begin());
-
-    for (auto &off : v.second) {
-
-      auto off_col = off->loc_col;
-      auto off_nb_cols = off->nb_cols;
-      auto off_inv_shift = off->inv_shift;
-
-#ifndef NDEBUG
-      if (off->row != row && off->nb_rows != nb_rows) {
-        MOFEM_LOG("SELF", Sev::error)
-            << "Wrong size " << off->row << " != " << row << " || "
-            << off->nb_rows << " != " << nb_rows;
-        CHK_MOAB_THROW(MOFEM_DATA_INCONSISTENCY, "Wrong size");
-      }
-#endif // NDEBUG
-
-      cblas_dgemv(
-
-          CblasRowMajor, CblasNoTrans,
-
-          nb_rows, off_nb_cols,
-
-          -1., &(inv_block_ptr[off_inv_shift]), off_nb_cols,
-
-          &y_array[off_col], 1,
-
-          1., &*f.begin(), 1
-
-      );
-    }
+#endif // NDEBUG 
 
 #ifndef NDEBUG
     if constexpr (debug_schur) {
@@ -1874,8 +1869,11 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
           block_dofs_row->get<PetscGlobalIdx_mi_tag>().find(vec_r_block[idx]);
       auto block_dof_c =
           block_dofs_col->get<PetscGlobalIdx_mi_tag>().find(vec_c_block[idx]);
-      d.inv_shift = inv_mem_size;
-      inv_mem_size += d.nb_cols * d.nb_rows;
+      if (d.row == d.col && d.nb_rows == d.nb_cols) {
+        // Only store inverse of diaconal blocks
+        d.inv_shift = inv_mem_size;
+        inv_mem_size += d.nb_cols * d.nb_rows;
+      }
       insert(data_ptrs[3]->blockIndex, *block_dof_r, *block_dof_c, d);
     }
 
@@ -1922,8 +1920,12 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
       std::vector<std::pair<int, int>> glob_idex_pairs;
       glob_idex_pairs.reserve(uid_pairs.size());
       auto dofs = block_prb->getNumeredRowDofsPtr();
-      for (auto &p : uid_pairs) {
-        auto [lo_uid, hi_uid] = p;
+
+      auto it = uid_pairs.rbegin();
+      auto hi = uid_pairs.rend();
+
+      for (; it != hi; ++it) {
+        auto [lo_uid, hi_uid] = *it;
         auto lo_it = dofs->lower_bound(lo_uid);
         auto hi_it = dofs->upper_bound(hi_uid);
         if (lo_it != hi_it) {
@@ -1934,10 +1936,15 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
       return glob_idex_pairs;
     };
 
-    auto glob_idx_pairs = get_glob_idex_pairs(get_a00_uids());
     auto &index_view =
         boost::dynamic_pointer_cast<DiagBlockInvStruture>(inv_block_data)
             ->indexView;
+
+    index_view.first.resize(0);
+    index_view.second.resize(0);
+    index_view.first.reserve(inv_block_data->blockIndex.size());
+    index_view.second.reserve(inv_block_data->blockIndex.size());
+    index_view.second.push_back(0);
 
     // this enable esrch by varying ranges
     using BlockIndexView = multi_index_container<
@@ -1957,37 +1964,56 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
       block_index_view.insert(&*it);
     }
 
-    for (auto p : glob_idx_pairs) {
+    auto glob_idx_pairs = get_glob_idex_pairs(get_a00_uids());
 
-      auto [lo_idx, nb] = p;
+    // iterate field & entities pairs
+    for (auto s1 = 0; s1 != glob_idx_pairs.size(); ++s1) {
+
+      // iterate matrix indexes 
+      auto [lo_idx, nb] = glob_idx_pairs[s1];
       auto it = block_index_view.lower_bound(lo_idx);
       auto hi = block_index_view.end();
+
+      // iterate rows
       while (it != hi && ((*it)->row + (*it)->nb_rows) <= lo_idx + nb) {
 
-        int count = 0;
         auto row = (*it)->row;
-        auto it_count = it;
-        while (it_count != hi && (*it_count)->row == row) {
-          ++count;
-          ++it_count;
-        }
 
-        const DiagBlockIndex::Indexes *diag_ptr = nullptr;
-        std::vector<const DiagBlockIndex::Indexes *> off_diag;
-        off_diag.reserve(std::max(count - 1, 0));
-
-        for (auto c = 0; c != count; ++c, ++it) {
-          if ((*it)->row == (*it)->col && (*it)->nb_rows == (*it)->nb_cols) {
-            diag_ptr = *it;
-          } else {
-            off_diag.push_back(*it);
+        auto get_diag_index =
+            [&](auto it) -> const MoFEM::DiagBlockIndex::Indexes * {
+          while (it != hi && (*it)->row == row) {
+            if ((*it)->col == row && (*it)->nb_cols == (*it)->nb_rows) {
+              auto ptr = *it;
+              return ptr;
+            }
+            ++it;
           }
-        }
+          CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Diagonal not found");
+          return nullptr;
+        };
 
-        if (count) {
-          index_view.emplace_back(diag_ptr, off_diag);
+        auto push_off_diag = [&](auto it, auto s1) {
+          while (it != hi && (*it)->row == row) {
+            for (int s2 = 0; s2 < s1; ++s2) {
+              auto [col_lo_idx, col_nb] = glob_idx_pairs[s2];
+              if ((*it)->col >= col_lo_idx &&
+                  (*it)->col + (*it)->nb_cols <= col_lo_idx + col_nb) {
+                index_view.first.push_back(*it);
+              }
+            }
+            ++it;
+          }
+        };
+
+        index_view.first.push_back(get_diag_index(it));
+        push_off_diag(it, s1);
+        index_view.second.push_back(index_view.first.size());
+
+        while (it != hi && (*it)->row == row) {
+          ++it;
         }
       }
+      
     }
 
     MoFEMFunctionReturn(0);

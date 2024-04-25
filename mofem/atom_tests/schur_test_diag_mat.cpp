@@ -119,10 +119,10 @@ int main(int argc, char *argv[]) {
                                   FIELD_DIM);
 
     // set fields order, i.e. for most first cases order is sufficient.
-    constexpr int order = 4;
+    constexpr int order = 2;
     CHKERR simple->setFieldOrder("VECTOR", order);
     CHKERR simple->setFieldOrder("TENSOR", order);
-    CHKERR simple->setFieldOrder("SCALAR", order);
+    CHKERR simple->setFieldOrder("SCALAR", order - 1);
 
     // setup problem
     CHKERR simple->setUp();
@@ -196,24 +196,29 @@ int main(int argc, char *argv[]) {
     // get operators tester
     auto pip_mng = m_field.getInterface<PipelineManager>(); // get interface to
                                                         // pipeline manager
+
+    auto close_zero = [](double, double, double) { return 0; };
+    auto beta = [](double, double, double) { return -1./2; };
+
+    pip_mng->setDomainLhsIntegrationRule([](int, int, int o) { return 3 * o; });
     auto &pip_lhs = pip_mng->getOpDomainLhsPipeline();
 
     pip_lhs.push_back(new OpMassPETSCAssemble("VECTOR", "VECTOR"));
     pip_lhs.push_back(new OpMassPETSCAssemble("TENSOR", "TENSOR"));
     pip_lhs.push_back(new OpMassPETSCAssemble("VECTOR", "TENSOR"));
     pip_lhs.push_back(new OpMassPETSCAssemble("TENSOR", "VECTOR"));
-    pip_lhs.push_back(new OpMassPETSCAssemble("SCALAR", "SCALAR"));
-    pip_lhs.push_back(new OpMassPETSCAssemble("SCALAR", "TENSOR"));
-    // pip_lhs.push_back(new OpMassPETSCAssemble("TENSOR", "SCALAR"));
+    pip_lhs.push_back(new OpMassPETSCAssemble("SCALAR", "SCALAR", close_zero));
+    pip_lhs.push_back(new OpMassPETSCAssemble("SCALAR", "TENSOR", beta));
+    pip_lhs.push_back(new OpMassPETSCAssemble("TENSOR", "SCALAR", beta));
 
     pip_lhs.push_back(createOpSchurAssembleBegin());
     pip_lhs.push_back(new OpMassBlockAssemble("VECTOR", "VECTOR"));
     pip_lhs.push_back(new OpMassBlockAssemble("TENSOR", "TENSOR"));
     pip_lhs.push_back(new OpMassBlockAssemble("VECTOR", "TENSOR"));
     pip_lhs.push_back(new OpMassBlockAssemble("TENSOR", "VECTOR"));
-    pip_lhs.push_back(new OpMassBlockAssemble("SCALAR", "SCALAR"));
-    pip_lhs.push_back(new OpMassBlockAssemble("SCALAR", "TENSOR"));
-    // pip_lhs.push_back(new OpMassBlockAssemble("TENSOR", "SCALAR"));
+    pip_lhs.push_back(new OpMassBlockAssemble("SCALAR", "SCALAR", close_zero));
+    pip_lhs.push_back(new OpMassBlockAssemble("SCALAR", "TENSOR", beta));
+    pip_lhs.push_back(new OpMassBlockAssemble("TENSOR", "SCALAR", beta));
 
     auto schur_is = getDMSubData(schur_dm)->getSmartRowIs();
     auto ao_up = createAOMappingIS(schur_is, PETSC_NULL);
@@ -226,7 +231,7 @@ int main(int argc, char *argv[]) {
 
         {nullptr, ao_up}, {nullptr, S},
 
-        {false, false}, true, block_data_ptr)
+        {false, false}, false, block_data_ptr)
 
     );
 
@@ -290,42 +295,42 @@ int main(int argc, char *argv[]) {
     CHKERR MatMult(nested_mat, v, y_nested);
     CHKERR VecAXPY(y_petsc, -1.0, y_nested);
 
-    // CHKERR test("mult nested", y_petsc);
+    CHKERR test("mult nested", y_petsc);
 
     auto diag_mat = std::get<0>(*nested_data_ptr)[3];
     auto diag_block_x = get_random_vector(block_dm);
     auto diag_block_f = createDMVector(block_dm);
     auto block_solved_x = createDMVector(block_dm);
     CHKERR MatMult(diag_mat, diag_block_x, diag_block_f);
-    CHKERR MatSolve(diag_mat, diag_block_f, block_solved_x);
+    // CHKERR MatSolve(diag_mat, diag_block_f, block_solved_x);
 
-    // // set matrix type to shell, set data
-    // CHKERR DMSetMatType(block_dm, MATSHELL);
-    // CHKERR DMMoFEMSetBlocMatData(block_dm, std::get<1>(*nested_data_ptr)[3]);
-    // // set empty operator, sice block data are calculated
-    // CHKERR DMKSPSetComputeOperators(
-    //     block_dm,
-    //     [](KSP, Mat, Mat, void *) {
-    //       MOFEM_LOG("WORLD", Sev::inform) << "empty operator";
-    //       return 0;
-    //     },
-    //     nullptr);
+    // set matrix type to shell, set data
+    CHKERR DMSetMatType(block_dm, MATSHELL);
+    CHKERR DMMoFEMSetBlocMatData(block_dm, std::get<1>(*nested_data_ptr)[3]);
+    // set empty operator, sice block data are calculated
+    CHKERR DMKSPSetComputeOperators(
+        block_dm,
+        [](KSP, Mat, Mat, void *) {
+          MOFEM_LOG("WORLD", Sev::inform) << "empty operator";
+          return 0;
+        },
+        nullptr);
 
-    // auto ksp = createKSP(m_field.get_comm());
-    // CHKERR KSPSetDM(ksp, block_dm);
-    // CHKERR KSPSetFromOptions(ksp);
+    auto ksp = createKSP(m_field.get_comm());
+    CHKERR KSPSetDM(ksp, block_dm);
+    CHKERR KSPSetFromOptions(ksp);
 
-    // // set preconditioner to block mat
-    // auto get_pc = [](auto ksp) {
-    //   PC pc_raw;
-    //   CHKERR KSPGetPC(ksp, &pc_raw);
-    //   return SmartPetscObj<PC>(pc_raw, true); // bump reference
-    // };
-    // CHKERR setSchurMatSolvePC(get_pc(ksp));
-    // CHKERR KSPSetUp(ksp);
+    // set preconditioner to block mat
+    auto get_pc = [](auto ksp) {
+      PC pc_raw;
+      CHKERR KSPGetPC(ksp, &pc_raw);
+      return SmartPetscObj<PC>(pc_raw, true); // bump reference
+    };
+    CHKERR setSchurMatSolvePC(get_pc(ksp));
+    CHKERR KSPSetUp(ksp);
 
-    // CHKERR VecZeroEntries(block_solved_x);
-    // CHKERR KSPSolve(ksp, diag_block_f, block_solved_x);
+    CHKERR VecZeroEntries(block_solved_x);
+    CHKERR KSPSolve(ksp, diag_block_f, block_solved_x);
 
     CHKERR VecAXPY(diag_block_x, -1.0, block_solved_x);
     CHKERR test("diag solve", diag_block_x);
