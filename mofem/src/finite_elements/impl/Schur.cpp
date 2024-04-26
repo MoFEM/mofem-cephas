@@ -470,6 +470,11 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
   MOFEM_LOG("SELF", Sev::noisy) << "Schur assemble begin -> end";
 #endif
 
+  auto get_field_name = [&](auto uid) {
+    return getPtrFE()->mField.get_field_name(field_bit_from_bit_number(
+        FieldEntity::getFieldBitNumberFromUniqueId(uid)));
+  };
+
   // Assemble Schur complement
   auto assemble_mat = [&](SmartPetscObj<Mat> M, MatSetValuesRaw mat_set_values,
                           auto &storage) {
@@ -544,7 +549,9 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
         set_col_ind.resize(col_ind.size(), false);
         noalias(set_col_ind) = col_ind;
 
-        mat.swap(offMatInvDiagOffMat);
+        mat.resize(offMatInvDiagOffMat.size1(),
+                   offMatInvDiagOffMat.size2(), false);
+        noalias(mat) = offMatInvDiagOffMat;
 
       } else {
         auto &mat = it->getMat();
@@ -619,6 +626,9 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
           invDiagOffMat.resize(cc_off_mat.size1(), invMat.size2(), false);
 #ifndef NDEBUG
           if (invMat.size1() != cc_off_mat.size2()) {
+            MOFEM_LOG("SELF", Sev::error)
+                << "row_uid " << get_field_name(row_it->uidRow) << " row uid "
+                << get_field_name(row_uid);
             SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                      "Wrong size %d != %d", invMat.size1(), cc_off_mat.size2());
           }
@@ -657,6 +667,10 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
                                        rr_off_mat.size2(), false);
 #ifndef NDEBUG
             if (rr_off_mat.size1() != invDiagOffMat.size2()) {
+              MOFEM_LOG("SELF", Sev::error)
+                  << "row_uid " << get_field_name(row_it->uidRow)
+                  << ": col uid " << get_field_name(col_uid) << " row uid "
+                  << get_field_name(row_uid);
               SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                        "Wrong size %d != %d", rr_off_mat.size1(),
                        invDiagOffMat.size2());
@@ -811,6 +825,12 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
     int ss = 0;
     for (auto &p : a00_uids) {
       auto [lo_uid, hi_uid] = p;
+#ifndef NDEBUG
+      if constexpr (debug_schur) {
+        MOFEM_LOG("SELF", Sev::noisy)
+            << "Schur assemble: " << get_field_name(lo_uid);
+      }
+#endif
       CHKERR apply_schur(storage, lo_uid, hi_uid, diagEps[ss], symSchur[ss]);
       if (diagBlocks)
         CHKERR assemble_A00(storage, lo_uid, hi_uid);
