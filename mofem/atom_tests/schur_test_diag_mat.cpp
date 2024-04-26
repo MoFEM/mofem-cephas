@@ -229,7 +229,7 @@ int main(int argc, char *argv[]) {
 
         {nullptr, ao_up}, {nullptr, S},
 
-        {false, false}, false, block_data_ptr)
+        {true, true}, true, block_data_ptr)
 
     );
 
