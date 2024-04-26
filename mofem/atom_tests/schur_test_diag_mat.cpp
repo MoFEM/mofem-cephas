@@ -155,17 +155,13 @@ int main(int argc, char *argv[]) {
 
                                                {{simple->getDomainFEName(),
 
-                                                 {
-                                                     {"VECTOR", "VECTOR"},
-                                                     {"TENSOR", "TENSOR"},
-                                                     {"SCALAR", "SCALAR"}
-
-                                                     ,
-
-                                                     {"VECTOR", "TENSOR"},
-                                                     {"TENSOR", "VECTOR"},
-                                                     {"SCALAR", "TENSOR"},
-                                                     {"TENSOR", "SCALAR"},
+                                                 {{"VECTOR", "VECTOR"},
+                                                  {"TENSOR", "TENSOR"},
+                                                  {"SCALAR", "SCALAR"},
+                                                  {"VECTOR", "TENSOR"},
+                                                  {"TENSOR", "VECTOR"},
+                                                  {"SCALAR", "TENSOR"},
+                                                  {"TENSOR", "SCALAR"}
 
                                                  }}}
 
@@ -176,13 +172,15 @@ int main(int argc, char *argv[]) {
     auto [mat, block_data_ptr] = shell_data;
     block_mat = mat;
 
+    std::vector<std::string> fields{"TENSOR", "SCALAR"};
+
     auto [nested_mat, nested_data_ptr] = createSchurNestedMatrix(
 
         getNestSchurData(
 
             {schur_dm, block_dm}, block_data_ptr,
 
-            {"TENSOR", "SCALAR"}, {nullptr, nullptr}
+            fields, {nullptr, nullptr}
 
             )
 
@@ -197,7 +195,7 @@ int main(int argc, char *argv[]) {
     auto pip_mng = m_field.getInterface<PipelineManager>(); // get interface to
                                                         // pipeline manager
 
-    auto close_zero = [](double, double, double) { return 0; };
+    auto close_zero = [](double, double, double) { return 1; };
     auto beta = [](double, double, double) { return -1./2; };
 
     pip_mng->setDomainLhsIntegrationRule([](int, int, int o) { return 3 * o; });
@@ -225,7 +223,7 @@ int main(int argc, char *argv[]) {
 
     pip_lhs.push_back(createOpSchurAssembleEnd(
 
-        {"TENSOR", "SCALAR"},
+        fields,
 
         {nullptr, nullptr},
 
@@ -266,15 +264,15 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionReturn(0);
     };
 
-    std::vector<int> zero_rows_and_cols = {
-        0, 1, 10, 20,
-        500}; // not to remove dofs for TENSOR filed, inverse will not work
-    CHKERR MatZeroRowsColumns(petsc_mat, zero_rows_and_cols.size(),
-                              &*zero_rows_and_cols.begin(), 1, PETSC_NULL,
-                              PETSC_NULL);
-    CHKERR MatZeroRowsColumns(block_mat, zero_rows_and_cols.size(),
-                              &*zero_rows_and_cols.begin(), 1, PETSC_NULL,
-                              PETSC_NULL);
+    // std::vector<int> zero_rows_and_cols = {
+    //     0, 1, 10, 20,
+    //     500}; // not to remove dofs for TENSOR filed, inverse will not work
+    // CHKERR MatZeroRowsColumns(petsc_mat, zero_rows_and_cols.size(),
+    //                           &*zero_rows_and_cols.begin(), 1, PETSC_NULL,
+    //                           PETSC_NULL);
+    // CHKERR MatZeroRowsColumns(block_mat, zero_rows_and_cols.size(),
+    //                           &*zero_rows_and_cols.begin(), 1, PETSC_NULL,
+    //                           PETSC_NULL);
 
     CHKERR MatMult(petsc_mat, v, y_petsc);
     CHKERR MatMult(block_mat, v, y_block);

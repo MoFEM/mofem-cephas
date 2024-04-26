@@ -604,10 +604,16 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 
         // iterate column entities
         for (auto c_lo : schur_col_ptr_view) {
+#ifndef NDEBUG
+          if (c_lo->uidCol != row_it->uidRow)
+            SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                     "Wrong size %d != %d", c_lo->uidCol, row_it->uidRow);
+#endif // NDEBUG
 
           auto &row_uid = c_lo->uidRow;
-          if (row_uid == row_it->uidRow)
+          if (row_uid == row_it->uidRow) {
             continue;
+          }
 
           auto &cc_off_mat = c_lo->getMat();
           invDiagOffMat.resize(cc_off_mat.size1(), invMat.size2(), false);
@@ -628,15 +634,23 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 
           // iterate row entities
           for (auto r_lo : schur_row_ptr_view) {
+#ifndef NDEBUG
+            if (c_lo->uidCol != row_it->uidRow)
+              SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                       "Wrong size %d != %d", c_lo->uidCol, row_it->uidRow);
+#endif // NDEBUG
+
             auto &col_uid = r_lo->uidCol;
 
             // Skip diagonal
-            if (col_uid == row_it->uidRow)
+            if (col_uid == row_it->uidRow) {
               continue;
+            }
 
             // If symmetry only run upper off diagonal terms
-            if (symm && row_uid > col_uid)
+            if (symm && row_uid > col_uid) {
               continue;
+            }
 
             auto &rr_off_mat = r_lo->getMat();
             offMatInvDiagOffMat.resize(invDiagOffMat.size1(),
@@ -1409,14 +1423,13 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
 
           nb_rows, off_nb_cols,
 
-          1., &(block_ptr[off_shift]), off_nb_cols,
+          -1., &(block_ptr[off_shift]), off_nb_cols,
 
           &x_array[off_col], 1,
 
-          -1., &*f.begin(), 1
+          1., &*f.begin(), 1
 
       );
-
     }
 
 #ifndef NDEBUG
@@ -1426,7 +1439,7 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "inv_shift out of range %d > %d", inv_shift + nb_rows * nb_cols,
                data_inv_blocks->size());
-#endif // NDEBUG 
+#endif // NDEBUG
 
 #ifndef NDEBUG
     if constexpr (debug_schur) {
@@ -1969,7 +1982,7 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
     // iterate field & entities pairs
     for (auto s1 = 0; s1 != glob_idx_pairs.size(); ++s1) {
 
-      // iterate matrix indexes 
+      // iterate matrix indexes
       auto [lo_idx, nb] = glob_idx_pairs[s1];
       auto it = block_index_view.lower_bound(lo_idx);
       auto hi = block_index_view.end();
@@ -2013,7 +2026,6 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
           ++it;
         }
       }
-      
     }
 
     MoFEMFunctionReturn(0);
