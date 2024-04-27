@@ -117,12 +117,16 @@ int main(int argc, char *argv[]) {
                                   FIELD_DIM);
     CHKERR simple->addDomainField("SCALAR", L2, AINSWORTH_LEGENDRE_BASE,
                                   FIELD_DIM);
+    // CHKERR simple->addDomainField("ONE_MORE_FIELD", L2, AINSWORTH_LEGENDRE_BASE,
+    //                               FIELD_DIM);
 
     // set fields order, i.e. for most first cases order is sufficient.
-    constexpr int order = 2;
+    int order = 3;
+    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order, PETSC_NULL);
     CHKERR simple->setFieldOrder("VECTOR", order);
     CHKERR simple->setFieldOrder("TENSOR", order);
     CHKERR simple->setFieldOrder("SCALAR", order - 1);
+    // CHKERR simple->setFieldOrder("ONE_MORE_FIELD", order - 1);
 
     // setup problem
     CHKERR simple->setUp();
@@ -143,6 +147,7 @@ int main(int argc, char *argv[]) {
     CHKERR DMMoFEMAddSubFieldCol(block_dm, "TENSOR");
     CHKERR DMMoFEMAddSubFieldRow(block_dm, "SCALAR");
     CHKERR DMMoFEMAddSubFieldCol(block_dm, "SCALAR");
+    // CHKERR DMMoFEMAddSubFieldCol(block_dm, "ONE_MORE_FIELD");
     CHKERR DMSetUp(block_dm);
 
     petsc_mat = createDMMatrix(simple->getDM());
@@ -198,7 +203,7 @@ int main(int argc, char *argv[]) {
     auto close_zero = [](double, double, double) { return 1; };
     auto beta = [](double, double, double) { return -1./2; };
 
-    pip_mng->setDomainLhsIntegrationRule([](int, int, int o) { return 3 * o; });
+    pip_mng->setDomainLhsIntegrationRule([](int, int, int o) { return 2 * o; });
     auto &pip_lhs = pip_mng->getOpDomainLhsPipeline();
 
     pip_lhs.push_back(new OpMassPETSCAssemble("VECTOR", "VECTOR"));
