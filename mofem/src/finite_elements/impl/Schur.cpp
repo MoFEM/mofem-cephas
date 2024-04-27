@@ -1912,10 +1912,7 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
 
     ++idx;
   }
-  auto inv_data_ptr = boost::make_shared<std::vector<double>>(inv_mem_size, 0);
-  data_ptrs[3]->dataInvBlocksPtr = inv_data_ptr;
-  block_mat_data_ptr->dataInvBlocksPtr = data_ptrs[3]->dataInvBlocksPtr;
-
+  
   auto set_up_a00_data = [&](auto inv_block_data) {
     MoFEMFunctionBegin;
 
@@ -2047,6 +2044,54 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
         }
       }
     }
+
+    auto get_vec = [&]() {
+      std::vector<int> vec_r, vec_c;
+      vec_r.reserve(index_view.first.size());
+      vec_c.reserve(index_view.first.size());
+      for (auto &i : index_view.first) {
+        vec_r.push_back(i->row);
+        vec_c.push_back(i->col);
+      }
+      return std::make_pair(vec_r, vec_c);
+    };
+
+    auto [vec_r_block, vec_c_block] = get_vec();
+    CHKERR AOPetscToApplication(ao_block_row, vec_r_block.size(),
+                                &*vec_r_block.begin());
+    CHKERR AOPetscToApplication(ao_block_col, vec_c_block.size(),
+                                &*vec_c_block.begin());
+
+    int inv_mem_size = 0;
+    for (auto s1 = 0; s1 != index_view.second.size() - 1; ++s1) {
+      auto lo = index_view.second[s1];
+      auto hi = index_view.second[s1 + 1];
+
+      auto diag_index_ptr = index_view.first[lo];
+      auto row = vec_r_block[lo];
+      auto col = vec_c_block[lo];
+      auto nb_rows = diag_index_ptr->nb_rows;
+      auto nb_cols = diag_index_ptr->nb_cols;
+      ++lo;
+
+      auto it = block_mat_data_ptr->blockIndex.get<1>().find(
+          boost::make_tuple(row, col, nb_rows, nb_cols));
+      if (it == block_mat_data_ptr->blockIndex.get<1>().end()) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Block not found");
+      }
+
+      it->inv_shift = inv_mem_size;
+      diag_index_ptr->inv_shift = it->inv_shift;
+      inv_mem_size += nb_rows * nb_cols;
+
+      for (; lo != hi; ++lo) {
+      }
+    }
+
+    auto inv_data_ptr =
+        boost::make_shared<std::vector<double>>(inv_mem_size, 0);
+    data_ptrs[3]->dataInvBlocksPtr = inv_data_ptr;
+    block_mat_data_ptr->dataInvBlocksPtr = data_ptrs[3]->dataInvBlocksPtr;
 
     MoFEMFunctionReturn(0);
   };
