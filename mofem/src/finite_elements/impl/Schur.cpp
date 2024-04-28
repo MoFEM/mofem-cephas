@@ -1505,37 +1505,20 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
       auto off_col = off_index_ptr->loc_col;
       auto off_nb_cols = off_index_ptr->nb_cols;
       auto off_shift = off_index_ptr->mat_shift;
-      auto off_inv_shift = off_index_ptr->inv_shift;
 
-      if (off_inv_shift != -1) {
-        cblas_dgemv(
+      cblas_dgemv(
 
-            CblasRowMajor, CblasNoTrans,
+          CblasRowMajor, CblasNoTrans,
 
-            nb_rows, off_nb_cols,
+          nb_rows, off_nb_cols,
 
-            -1., &(inv_block_ptr[inv_shift]), off_nb_cols,
+          -1., &(block_ptr[off_shift]), off_nb_cols,
 
-            &x_array[off_col], 1,
+          &x_array[off_col], 1,
 
-            1., &*f.begin(), 1
+          1., &*f.begin(), 1
 
-        );
-      } else {
-        cblas_dgemv(
-
-            CblasRowMajor, CblasNoTrans,
-
-            nb_rows, off_nb_cols,
-
-            -1., &(block_ptr[off_shift]), off_nb_cols,
-
-            &x_array[off_col], 1,
-
-            1., &*f.begin(), 1
-
-        );
-      }
+      );
     }
 
 #ifndef NDEBUG
@@ -2151,7 +2134,7 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
     int inv_mem_size = 0;
     for (auto s1 = 0; s1 != index_view.second.size() - 1; ++s1) {
       auto lo = index_view.second[s1];
-      auto hi = index_view.second[s1 + 1];
+      // auto hi = index_view.second[s1 + 1];
 
       auto diag_index_ptr = index_view.first[lo];
       auto row = vec_r_block[lo];
@@ -2170,23 +2153,8 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
       diag_index_ptr->inv_shift = it->inv_shift;
       inv_mem_size += nb_rows * nb_cols;
 
-      for (; lo != hi; ++lo) {
-        // auto off_index_ptr = index_view.first[lo];
-        // auto row = vec_r_block[lo];
-        // auto col = vec_c_block[lo];
-        // auto nb_rows = off_index_ptr->nb_rows;
-        // auto nb_cols = off_index_ptr->nb_cols;
-        // auto it = block_mat_data_ptr->blockIndex.get<1>().find(
-        //     boost::make_tuple(row, col, nb_rows, nb_cols));
-        // if (it == block_mat_data_ptr->blockIndex.get<1>().end()) {
-        //   SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Block not
-        //   found");
-        // }
-
-        // it->inv_shift = inv_mem_size;
-        // off_index_ptr->inv_shift = it->inv_shift;
-        // inv_mem_size += nb_rows * nb_cols;
-      }
+      // for (; lo != hi; ++lo) {
+      // }
     }
 
     auto inv_data_ptr =
