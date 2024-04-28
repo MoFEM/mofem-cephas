@@ -164,6 +164,17 @@ MoFEMErrorCode
 schurSwitchPreconditioner(boost::shared_ptr<BlockStruture> block_mat_data);
 
 /**
+ * @brief Save block matrix as a mesh
+ * 
+ * @param block_mat_data 
+ * @param filename 
+ * @return MoFEMErrorCode 
+ */
+MoFEMErrorCode
+schurSaveBlockMesh(boost::shared_ptr<BlockStruture> block_mat_data,
+                   std::string filename);
+
+/**
  * @brief Create a Mat Diag Blocks object
  *
  * \code {.cpp}

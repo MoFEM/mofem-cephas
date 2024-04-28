@@ -2596,7 +2596,79 @@ schurSwitchPreconditioner(boost::shared_ptr<BlockStruture> block_mat_data) {
     block_mat_data->multiplyByPreconditioner = true;
   }
   MoFEMFunctionReturn(0);
+}
 
+MoFEMErrorCode
+schurSaveBlockMesh(boost::shared_ptr<BlockStruture> block_mat_data,
+                   std::string filename) {
+  MoFEMFunctionBegin;
+
+
+  moab::Core core;
+  moab::Interface &moab = core;
+
+  ReadUtilIface *iface;
+  CHKERR moab.query_interface(iface);
+
+  auto size = block_mat_data->blockIndex.size();
+
+  EntityHandle starting_vertex;
+  vector<double *> arrays_coord;
+  CHKERR iface->get_node_coords(3, 4 * size, 0, starting_vertex, arrays_coord);
+  EntityHandle starting_handle;
+  EntityHandle *array;
+  CHKERR iface->get_element_connect(size, 4, MBQUAD, 0, starting_handle, array);
+
+  double def_val_nrm2 = 0;
+  Tag th_nrm2;
+  CHKERR moab.tag_get_handle("nrm2", 1, MB_TYPE_DOUBLE, th_nrm2,
+                             MB_TAG_CREAT | MB_TAG_DENSE, &def_val_nrm2);
+
+  int i = 0;
+  for(auto &d : block_mat_data->blockIndex) {
+    auto row = d.row;
+    auto col = d.col;
+    auto nb_rows = d.nb_rows;
+    auto nb_cols = d.nb_cols;
+
+    // q0
+    arrays_coord[0][4 * i + 0] = row;
+    arrays_coord[1][4 * i + 0] = col;
+    arrays_coord[2][4 * i + 0] = 0;
+
+    // q1
+    arrays_coord[0][4 * i + 1] = row + nb_rows;
+    arrays_coord[1][4 * i + 1] = col;
+    arrays_coord[2][4 * i + 1] = 0;
+
+    // q2
+    arrays_coord[0][4 * i + 2] = row + nb_rows;
+    arrays_coord[1][4 * i + 2] = col + nb_cols;
+    arrays_coord[2][4 * i + 2] = 0;
+
+    // q3
+    arrays_coord[0][4 * i + 3] = row;
+    arrays_coord[1][4 * i + 3] = col + nb_cols;
+    arrays_coord[2][4 * i + 3] = 0;
+
+    //ele conn
+    array[4 * i + 0] = starting_vertex + 4 * i + 0;
+    array[4 * i + 1] = starting_vertex + 4 * i + 1;
+    array[4 * i + 2] = starting_vertex + 4 * i + 2;
+    array[4 * i + 3] = starting_vertex + 4 * i + 3;
+
+    auto prt = &(*block_mat_data->dataBlocksPtr)[d.mat_shift];
+    auto nrm2 = cblas_dnrm2(nb_rows * nb_cols, prt, 1);
+    EntityHandle ele = starting_handle + i;
+    CHKERR moab.tag_set_data(th_nrm2, &ele, 1, &nrm2);
+
+    ++i;
+  }
+
+  CHKERR iface->update_adjacencies(starting_handle, size, 4, array);
+  CHKERR moab.write_file(filename.c_str(), "VTK", "");
+
+  MoFEMFunctionReturn(0);
 }
 
 } // namespace MoFEM
