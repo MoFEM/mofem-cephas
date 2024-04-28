@@ -9,7 +9,8 @@
 
 namespace MoFEM {
 
-constexpr bool debug_schur = false;
+constexpr bool debug_schur = true;
+constexpr bool inverse_diag_test = false;
 
 /**
  * @brief Clear Schur complement internal data
@@ -166,6 +167,9 @@ protected:
 
                   >>,
 
+          ordered_unique<tag<idx_mi_tag>, member<SchurElemMats, const size_t,
+                                                 &SchurElemMats::iDX>>,
+
           ordered_non_unique<tag<row_mi_tag>, member<SchurElemMats, const UId,
                                                      &SchurElemMats::uidRow>>,
 
@@ -309,10 +313,13 @@ SchurElemMats::assembleStorage(const EntitiesFieldData::EntData &row_data,
   const auto size = SchurElemMats::locMats.size();
 
   // expand memory allocation
-  if (idx >= size) {
+  if (idx == size) {
     SchurElemMats::locMats.push_back(new MatrixDouble());
     SchurElemMats::rowIndices.push_back(new VectorInt());
     SchurElemMats::colIndices.push_back(new VectorInt());
+  } else if (idx > size) {
+    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong size %d != %d",
+             idx, size);
   }
 
   // get entity uid
@@ -528,10 +535,13 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
       const auto idx = SchurElemMats::schurL2Storage.size();
       const auto size = SchurElemMats::locMats.size();
 
-      if (idx >= size) {
+      if (idx == size) {
         SchurElemMats::locMats.push_back(new MatrixDouble());
         SchurElemMats::rowIndices.push_back(new VectorInt());
         SchurElemMats::colIndices.push_back(new VectorInt());
+      } else if (idx > size) {
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "Wrong size %d != %d", idx, size);
       }
 
       auto it = storage.template get<SchurElemMats::uid_mi_tag>().find(
@@ -539,7 +549,19 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 
       if (it == storage.template get<SchurElemMats::uid_mi_tag>().end()) {
 
-        auto p = SchurElemMats::schurL2Storage.emplace(idx, row_uid, col_uid);
+        auto get_index = [&](auto storage) {
+          size_t tmp_idx = 0;
+          for (auto &s : storage.template get<SchurElemMats::idx_mi_tag>()) {
+            if (tmp_idx != s.iDX) {
+              return tmp_idx;
+            }
+            ++tmp_idx;
+          }
+          return storage.size();
+        };
+
+        auto p = SchurElemMats::schurL2Storage.emplace(
+            get_index(SchurElemMats::schurL2Storage), row_uid, col_uid);
         auto &mat = p.first->getMat();
         auto &set_row_ind = p.first->getRowInd();
         auto &set_col_ind = p.first->getColInd();
@@ -549,12 +571,30 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
         set_col_ind.resize(col_ind.size(), false);
         noalias(set_col_ind) = col_ind;
 
-        mat.resize(offMatInvDiagOffMat.size1(),
-                   offMatInvDiagOffMat.size2(), false);
+        mat.resize(offMatInvDiagOffMat.size1(), offMatInvDiagOffMat.size2(),
+                   false);
         noalias(mat) = offMatInvDiagOffMat;
 
+#ifndef NDEBUG
+        if constexpr (debug_schur) {
+          MOFEM_LOG("SELF", Sev::noisy) << "insert: " << get_field_name(row_uid)
+                                        << " " << get_field_name(col_uid)<< " "
+                                        << mat.size1() << " " << mat.size2();
+        }
+#endif // NDEBUG
+
       } else {
+
         auto &mat = it->getMat();
+#ifndef NDEBUG
+        if constexpr (debug_schur) {
+          MOFEM_LOG("SELF", Sev::noisy) << "add: " << get_field_name(row_uid)
+                                        << " " << get_field_name(col_uid) << " "
+                                        << mat.size1() << " " << mat.size2();
+        }
+#endif // NDEBUG
+
+
 #ifndef NDEBUG
         if (mat.size1() != offMatInvDiagOffMat.size1()) {
           SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -605,6 +645,14 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
     for (auto row_it : schur_row_ptr_view) {
       // only diagonals to get inverted diaconal
       if (row_it->uidRow == row_it->uidCol) {
+#ifndef NDEBUG
+        if constexpr (debug_schur) {
+          MOFEM_LOG("SELF", Sev::noisy)
+              << "invert: row_uid " << get_field_name(row_it->uidRow)
+              << " row uid " << get_field_name(row_it->uidCol) << " : "
+              << row_it->getMat().size1() << " " << row_it->getMat().size2();
+        }
+#endif // NDEBUG
 
         // note invMat is multiplied by -1
         CHKERR I::invertMat(row_it, invMat, eps);
@@ -772,6 +820,10 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
               if (row_ind == col_ind && nb_rows == nb_cols) {
                 // assemble inverted diag
                 std::copy(invMat.data().begin(), invMat.data().end(), ptr);
+              } else {
+                // assemble of diag terms, witch might be changed by Schur
+                // complement
+                std::copy(m.data().begin(), m.data().end(), ptr);
               }
             }
           }
@@ -819,6 +871,21 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
     return a00_uids;
   };
 
+#ifndef NDEBUG
+  auto list_storage = [&](auto &storage) {
+    MoFEMFunctionBegin;
+    int i = 0;
+    for (auto &p : storage) {
+      MOFEM_LOG("SELF", Sev::noisy)
+          << "List schur storage: " << i << " " << p.iDX << ": "
+          << get_field_name(p.uidRow) << " " << get_field_name(p.uidCol)
+          << " : " << p.getMat().size1() << " " << p.getMat().size2();
+      ++i;
+    }
+    MoFEMFunctionReturn(0);
+  };
+#endif // NDEBUG
+
   auto assemble = [&](auto &&a00_uids) {
     MoFEMFunctionBegin;
     auto &storage = SchurElemMats::schurL2Storage;
@@ -827,8 +894,10 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
       auto [lo_uid, hi_uid] = p;
 #ifndef NDEBUG
       if constexpr (debug_schur) {
+        list_storage(storage);
         MOFEM_LOG("SELF", Sev::noisy)
-            << "Schur assemble: " << get_field_name(lo_uid);
+            << "Schur assemble: " << get_field_name(lo_uid) << " - "
+            << get_field_name(hi_uid);
       }
 #endif
       CHKERR apply_schur(storage, lo_uid, hi_uid, diagEps[ss], symSchur[ss]);
@@ -898,8 +967,8 @@ struct SchurDGESV {
     const auto nb = m.size1();
 #ifndef NDEBUG
     if (nb != m.size2()) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-              "It should be square matrix");
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "It should be square matrix %d != %d", nb, m.size2());
     }
 #endif
 
@@ -1436,20 +1505,37 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
       auto off_col = off_index_ptr->loc_col;
       auto off_nb_cols = off_index_ptr->nb_cols;
       auto off_shift = off_index_ptr->mat_shift;
+      auto off_inv_shift = off_index_ptr->inv_shift;
 
-      cblas_dgemv(
+      if (off_inv_shift != -1) {
+        cblas_dgemv(
 
-          CblasRowMajor, CblasNoTrans,
+            CblasRowMajor, CblasNoTrans,
 
-          nb_rows, off_nb_cols,
+            nb_rows, off_nb_cols,
 
-          -1., &(block_ptr[off_shift]), off_nb_cols,
+            -1., &(inv_block_ptr[inv_shift]), off_nb_cols,
 
-          &x_array[off_col], 1,
+            &x_array[off_col], 1,
 
-          1., &*f.begin(), 1
+            1., &*f.begin(), 1
 
-      );
+        );
+      } else {
+        cblas_dgemv(
+
+            CblasRowMajor, CblasNoTrans,
+
+            nb_rows, off_nb_cols,
+
+            -1., &(block_ptr[off_shift]), off_nb_cols,
+
+            &x_array[off_col], 1,
+
+            1., &*f.begin(), 1
+
+        );
+      }
     }
 
 #ifndef NDEBUG
@@ -1462,7 +1548,7 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
 #endif // NDEBUG
 
 #ifndef NDEBUG
-    if constexpr (debug_schur) {
+    if constexpr (inverse_diag_test) {
       MatrixDouble test(nb_rows, nb_cols);
       auto inv_m =
           getMatrixAdaptor(&inv_block_ptr[inv_shift], nb_rows, nb_cols);
@@ -1478,7 +1564,7 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
       if (std::abs(sum - nb_rows) > 1e-6) {
         MOFEM_LOG("SELF", Sev::error) << "sum: " << sum;
         MOFEM_LOG("SELF", Sev::error)
-            << "test matrix (shuld be diagonal) " << test;
+            << "test matrix (should be diagonal) " << test;
         SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong sum %3.4f",
                  sum);
       }
@@ -1912,7 +1998,7 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
 
     ++idx;
   }
-  
+
   auto set_up_a00_data = [&](auto inv_block_data) {
     MoFEMFunctionBegin;
 
@@ -2085,6 +2171,21 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
       inv_mem_size += nb_rows * nb_cols;
 
       for (; lo != hi; ++lo) {
+        // auto off_index_ptr = index_view.first[lo];
+        // auto row = vec_r_block[lo];
+        // auto col = vec_c_block[lo];
+        // auto nb_rows = off_index_ptr->nb_rows;
+        // auto nb_cols = off_index_ptr->nb_cols;
+        // auto it = block_mat_data_ptr->blockIndex.get<1>().find(
+        //     boost::make_tuple(row, col, nb_rows, nb_cols));
+        // if (it == block_mat_data_ptr->blockIndex.get<1>().end()) {
+        //   SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Block not
+        //   found");
+        // }
+
+        // it->inv_shift = inv_mem_size;
+        // off_index_ptr->inv_shift = it->inv_shift;
+        // inv_mem_size += nb_rows * nb_cols;
       }
     }
 
