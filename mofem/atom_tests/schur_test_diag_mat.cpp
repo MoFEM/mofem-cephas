@@ -123,14 +123,10 @@ int main(int argc, char *argv[]) {
     // field if needed.
     // Note all vector are vectors, so names are misleading, but hat is to not
     // make code for pushing OPs simple.
-    CHKERR simple->addDomainField("V", L2, AINSWORTH_LEGENDRE_BASE,
-                                  FIELD_DIM);
-    CHKERR simple->addDomainField("T", L2, AINSWORTH_LEGENDRE_BASE,
-                                  FIELD_DIM);
-    CHKERR simple->addDomainField("S", L2, AINSWORTH_LEGENDRE_BASE,
-                                  FIELD_DIM);
-    CHKERR simple->addDomainField("O", L2, AINSWORTH_LEGENDRE_BASE,
-                                  FIELD_DIM);
+    CHKERR simple->addDomainField("V", H1, AINSWORTH_LEGENDRE_BASE, FIELD_DIM);
+    CHKERR simple->addDomainField("T", L2, AINSWORTH_LEGENDRE_BASE, FIELD_DIM);
+    CHKERR simple->addDomainField("S", L2, AINSWORTH_LEGENDRE_BASE, FIELD_DIM);
+    CHKERR simple->addDomainField("O", L2, AINSWORTH_LEGENDRE_BASE, FIELD_DIM);
 
     // set fields order, i.e. for most first cases order is sufficient.
     int order = 3;
@@ -375,6 +371,8 @@ int main(int argc, char *argv[]) {
     CHKERR MatMult(diag_mat, block_solved_x, diag_block_f_test);
     CHKERR VecAXPY(diag_block_f_test, -1.0, diag_block_f);
     CHKERR test("diag solve", diag_block_f_test);
+
+    CHKERR schurSaveBlockMesh(block_data_ptr, "block_mesh.vtk");
 
     petsc_mat.reset();
     block_mat.reset();
