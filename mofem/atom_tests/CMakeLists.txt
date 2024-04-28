@@ -1653,5 +1653,11 @@ add_test(mofem/atom_tests/schur_test_diag_mat
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 2
   ${CMAKE_CURRENT_BINARY_DIR}/schur_test_diag_mat
   -file_name disp01_2parts.h5m
+  -log_sl inform 
+  -ksp_type fgmres 
+  -ksp_monitor -order 5 
+  -ksp_atol 1e-16 
+  -ksp_rtol 1e-16 
+  -ksp_gmres_modifiedgram schmidt  
   -log_no_color
 )
