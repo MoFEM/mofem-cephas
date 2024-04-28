@@ -235,7 +235,9 @@ struct BlockStruture : public DiagBlockIndex {
   boost::shared_ptr<std::vector<double>> dataBlocksPtr;
   boost::shared_ptr<std::vector<double>> dataInvBlocksPtr;
   boost::shared_ptr<std::vector<double>> preconditionerBlocksPtr;
-  boost::shared_ptr<BlockStruture> parentBlockStruturePtr;
+  boost::shared_ptr<std::vector<double>> parentBlockStruturePtr;
+
+  bool multiplyByPreconditioner = false;
 };
 
 struct DiagBlockInvStruture : public BlockStruture {
@@ -579,7 +581,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 #ifndef NDEBUG
         if constexpr (debug_schur) {
           MOFEM_LOG("SELF", Sev::noisy) << "insert: " << get_field_name(row_uid)
-                                        << " " << get_field_name(col_uid)<< " "
+                                        << " " << get_field_name(col_uid) << " "
                                         << mat.size1() << " " << mat.size2();
         }
 #endif // NDEBUG
@@ -594,7 +596,6 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
                                         << mat.size1() << " " << mat.size2();
         }
 #endif // NDEBUG
-
 
 #ifndef NDEBUG
         if (mat.size1() != offMatInvDiagOffMat.size1()) {
@@ -1396,6 +1397,43 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
     }
   }
 
+  if (ctx->multiplyByPreconditioner) {
+
+    if (!ctx->preconditionerBlocksPtr)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "No parentBlockStruturePtr");
+
+    auto preconditioner_ptr = &*ctx->preconditionerBlocksPtr->begin();
+
+    auto it = ctx->blockIndex.get<0>().lower_bound(0);
+    auto hi = ctx->blockIndex.get<0>().end();
+
+    while (it != hi) {
+      if (it->row == it->col && it->inv_shift != -1) {
+        auto nb_rows = it->nb_rows;
+        auto nb_cols = it->nb_cols;
+        auto x_ptr = &x_array[it->loc_col];
+        auto y_ptr = &y_array[it->loc_row];
+
+        cblas_dgemv(
+
+            CblasRowMajor, CblasNoTrans,
+
+            nb_rows, nb_cols,
+
+            1., &(preconditioner_ptr[it->inv_shift]), nb_cols,
+
+            x_ptr, 1,
+
+            1., y_ptr, 1
+
+        );
+      }
+
+      ++it;
+    }
+  }
+
   CHKERR VecRestoreArray(loc_ghost_x, &x_array);
   CHKERR VecRestoreArray(loc_ghost_y, &y_array);
   CHKERR VecGhostRestoreLocalForm(ghost_x, &loc_ghost_x);
@@ -1746,6 +1784,8 @@ shell_block_mat_asmb_wrap_impl(BlockStruture *ctx,
           std::copy(mat.data().begin(), mat.data().end(),
                     &(*ctx->dataBlocksPtr)[shift]);
         }
+      } else {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "shift == -1");
       }
     }
     MoFEMFunctionReturn(0);
@@ -1821,6 +1861,100 @@ shell_block_mat_asmb_wrap(Mat M, const EntitiesFieldData::EntData &row_data,
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode shell_block_preconditioner_mat_asmb_wrap_impl(
+    BlockStruture *ctx, const EntitiesFieldData::EntData &row_data,
+    const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
+    InsertMode iora) {
+
+  MoFEMFunctionBegin;
+
+  PetscLogEventBegin(SchurEvents::MOFEM_EVENT_blockStrutureSetValues, 0, 0, 0,
+                     0);
+
+  if (!ctx->preconditionerBlocksPtr) {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "preconditionerBlocksPtr not set");
+  }
+
+  auto nb_rows = row_data.getIndices().size();
+  auto nb_cols = col_data.getIndices().size();
+
+  auto set = [&](auto r, auto c, auto nb_r, auto nb_c, auto &mat) {
+    MoFEMFunctionBegin;
+
+    auto row_first_index = row_data.getIndices()[r];
+    if (row_first_index != -1) {
+
+      auto size = nb_r * nb_c;
+      auto it = ctx->blockIndex.get<1>().find(boost::make_tuple(
+          row_first_index, col_data.getIndices()[c], nb_r, nb_c));
+
+#ifndef NDEBUG
+
+      if (it == ctx->blockIndex.get<1>().end()) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Block not allocated");
+      }
+      if (it->nb_rows != nb_r) {
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "Wrong size %d != %d", it->nb_rows, nb_r);
+      }
+      if (it->nb_cols != nb_c) {
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "Wrong size %d != %d", it->nb_cols, nb_c);
+      }
+      if (nb_r != mat.size1()) {
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "Wrong size %d != %d", nb_r, mat.size1());
+      }
+      if (nb_c != mat.size2()) {
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "Wrong size %d != %d", nb_c, mat.size2());
+      }
+      if (nb_r * nb_c != mat.data().size()) {
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "Wrong size %d != %d", nb_r * nb_c, mat.data().size());
+      }
+
+#endif // NDEBUG
+
+      auto inv_shift = it->inv_shift;
+      if (inv_shift != -1) {
+        if (iora == ADD_VALUES) {
+          cblas_daxpy(size, 1., &*mat.data().begin(), 1,
+                      &(*ctx->preconditionerBlocksPtr)[inv_shift], 1);
+        } else {
+          std::copy(mat.data().begin(), mat.data().end(),
+                    &(*ctx->preconditionerBlocksPtr)[inv_shift]);
+        }
+      } else {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "inv_shift == -1");
+      }
+    }
+    MoFEMFunctionReturn(0);
+  };
+
+  if (nb_rows && nb_cols) {
+    CHKERR set(0, 0, nb_rows, nb_cols, mat);
+  }
+
+  PetscLogEventEnd(SchurEvents::MOFEM_EVENT_blockStrutureSetValues, 0, 0, 0, 0);
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode shell_block_preconditioner_mat_asmb_wrap(
+    Mat M, const EntitiesFieldData::EntData &row_data,
+    const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
+    InsertMode iora) {
+  MoFEMFunctionBegin;
+  BlockStruture *ctx;
+  CHKERR MatShellGetContext(M, (void **)&ctx);
+  CHKERR shell_block_preconditioner_mat_asmb_wrap_impl(ctx, row_data, col_data,
+                                                       mat, iora);
+  MoFEMFunctionReturn(0);
+}
+
 boost::shared_ptr<NestSchurData> getNestSchurData(
 
     std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
@@ -1882,11 +2016,9 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
   for (auto r = 0; r != 3; ++r) {
     data_ptrs[r] = boost::make_shared<BlockStruture>();
     data_ptrs[r]->dataBlocksPtr = block_mat_data_ptr->dataBlocksPtr;
-    data_ptrs[r]->parentBlockStruturePtr = block_mat_data_ptr;
   }
   data_ptrs[3] = boost::make_shared<DiagBlockInvStruture>();
   data_ptrs[3]->dataBlocksPtr = block_mat_data_ptr->dataBlocksPtr;
-  data_ptrs[3]->parentBlockStruturePtr = block_mat_data_ptr;
 
   data_ptrs[0]->ghostX = schur_vec_x;
   data_ptrs[0]->ghostY = schur_vec_y;
@@ -2166,11 +2298,14 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
     data_ptrs[3]->dataInvBlocksPtr = inv_data_ptr;
     block_mat_data_ptr->dataInvBlocksPtr = data_ptrs[3]->dataInvBlocksPtr;
 
-    if(add_preconditioner_block) {
-      auto precond_block =
+    if (add_preconditioner_block) {
+      auto preconditioned_block =
           boost::make_shared<std::vector<double>>(inv_mem_size, 0);
-      data_ptrs[3]->dataBlocksPtr = precond_block;
-      block_mat_data_ptr->dataBlocksPtr = data_ptrs[3]->dataBlocksPtr;
+      data_ptrs[3]->preconditionerBlocksPtr = preconditioned_block;
+      data_ptrs[3]->multiplyByPreconditioner = true;
+      block_mat_data_ptr->preconditionerBlocksPtr =
+          data_ptrs[3]->preconditionerBlocksPtr;
+      block_mat_data_ptr->multiplyByPreconditioner = false;
     }
 
     MoFEMFunctionReturn(0);
@@ -2414,6 +2549,54 @@ MatSetValues<SchurElemMatsBlock>(Mat M,
                                  const EntitiesFieldData::EntData &col_data,
                                  const MatrixDouble &mat, InsertMode iora) {
   return SchurElemMatsBlock::MatSetValues(M, row_data, col_data, mat, iora);
+}
+
+struct SchurElemMatsPreconditionedBlock : public SchurElemMats {
+
+  static MoFEMErrorCode MatSetValues(Mat M,
+                                     const EntitiesFieldData::EntData &row_data,
+                                     const EntitiesFieldData::EntData &col_data,
+                                     const MatrixDouble &mat, InsertMode iora);
+};
+
+SchurBackendMatSetValuesPtr::MatSetValuesPtr
+    SchurBackendMatSetValuesPtr::matSetValuesPreconditionedBlockPtr =
+        shell_block_preconditioner_mat_asmb_wrap;
+
+MoFEMErrorCode SchurElemMatsPreconditionedBlock::MatSetValues(
+    Mat M, const EntitiesFieldData::EntData &row_data,
+    const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
+    InsertMode iora) {
+  MoFEMFunctionBegin;
+  CHKERR SchurBackendMatSetValuesPtr::matSetValuesPreconditionedBlockPtr(
+      M, row_data, col_data, mat, iora);
+  CHKERR assembleStorage(row_data, col_data, mat, iora);
+  MoFEMFunctionReturn(0);
+}
+
+template <>
+MoFEMErrorCode MatSetValues<SchurElemMatsPreconditionedBlock>(
+    Mat M, const EntitiesFieldData::EntData &row_data,
+    const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
+    InsertMode iora) {
+  return SchurElemMatsPreconditionedBlock::MatSetValues(M, row_data, col_data,
+                                                        mat, iora);
+}
+
+MoFEMErrorCode
+schurSwitchPreconditioner(boost::shared_ptr<BlockStruture> block_mat_data) {
+  MoFEMFunctionBegin;
+  if(block_mat_data->multiplyByPreconditioner) {
+    block_mat_data->multiplyByPreconditioner = false;
+  } else {
+    if(!block_mat_data->preconditionerBlocksPtr) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "preconditionerBlocksPtr not set");
+    }
+    block_mat_data->multiplyByPreconditioner = true;
+  }
+  MoFEMFunctionReturn(0);
+
 }
 
 } // namespace MoFEM

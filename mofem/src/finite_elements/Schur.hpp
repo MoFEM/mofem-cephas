@@ -34,6 +34,8 @@ struct SchurEvents {
 };
 
 struct SchurElemMats;
+struct SchurElemMatsBlock;
+struct SchurElemMatsPreconditionedBlock;
 
 struct OpSchurAssembleBase : public ForcesAndSourcesCore::UserDataOperator {
 
@@ -90,7 +92,6 @@ OpSchurAssembleBase *createOpSchurAssembleEnd(
     std::vector<SmartPetscObj<Mat>> sequence_of_mats,
     std::vector<bool> sym_schur, std::vector<double> diag_eps, bool symm_op,
     boost::shared_ptr<BlockStruture> diag_blocks = nullptr);
-
 
 using SchurFieldPair = std::pair<std::string, std::string>;
 
@@ -154,6 +155,15 @@ getNestSchurData(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
 );
 
 /**
+ * @brief Switch preconditioner
+ * 
+ * @param block_mat_data 
+ * @return MoFEMErrorCode 
+ */
+MoFEMErrorCode
+schurSwitchPreconditioner(boost::shared_ptr<BlockStruture> block_mat_data);
+
+/**
  * @brief Create a Mat Diag Blocks object
  *
  * \code {.cpp}
@@ -188,27 +198,30 @@ MoFEMErrorCode DMMoFEMSetNestSchurData(DM dm, boost::shared_ptr<NestSchurData>);
  */
 MoFEMErrorCode setSchurMatSolvePC(SmartPetscObj<PC> pc);
 
-
 struct SchurBackendMatSetValuesPtr {
   SchurBackendMatSetValuesPtr() = delete;
   using MatSetValuesPtr = boost::function<MoFEMErrorCode(
       Mat M, const EntitiesFieldData::EntData &row_data,
       const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
       InsertMode iora)>;
-  static MatSetValuesPtr matSetValuesPtr;      ///< backend assembly function
-  static MatSetValuesPtr matSetValuesBlockPtr; ///< backend assembly function
+  static MatSetValuesPtr matSetValuesPtr; ///< backend assembly function
+  static MatSetValuesPtr
+      matSetValuesBlockPtr; ///< backend assembly block mat function
+  static MatSetValuesPtr
+      matSetValuesPreconditionedBlockPtr; ///< backend assembly block
+                                          ///< preconditioner mat function
 };
 
 template <>
 MoFEMErrorCode
 MatSetValues<SchurElemMats>(Mat M, const EntitiesFieldData::EntData &row_data,
-                          const EntitiesFieldData::EntData &col_data,
-                          const MatrixDouble &mat, InsertMode iora);
+                            const EntitiesFieldData::EntData &col_data,
+                            const MatrixDouble &mat, InsertMode iora);
 
 template <>
 inline MoFEMErrorCode
 VecSetValues<SchurElemMats>(Vec V, const EntitiesFieldData::EntData &data,
-                          const VectorDouble &nf, InsertMode iora) {
+                            const VectorDouble &nf, InsertMode iora) {
   return VecSetValues<EssentialBcStorage>(V, data, nf, iora);
 }
 
@@ -224,7 +237,6 @@ inline MoFEMErrorCode VecSetValues<AssemblyTypeSelector<SCHUR>>(
     InsertMode iora) {
   return VecSetValues<SchurElemMats>(V, data, nf, iora);
 }
-
 
 /***
  * @brief Specialization of MatSetValues for BlockStruture
@@ -256,17 +268,15 @@ inline MoFEMErrorCode VecSetValues<AssemblyTypeSelector<BLOCK_MAT>>(
   return VecSetValues<EssentialBcStorage>(V, data, nf, iora);
 }
 
-struct SchurElemMatsBlock;
-
 /***
  * @brief Specialization of MatSetValues for SchurElemMatsBlock
  */
 template <>
 MoFEMErrorCode
 MatSetValues<SchurElemMatsBlock>(Mat M,
-                               const EntitiesFieldData::EntData &row_data,
-                               const EntitiesFieldData::EntData &col_data,
-                               const MatrixDouble &mat, InsertMode iora);
+                                 const EntitiesFieldData::EntData &row_data,
+                                 const EntitiesFieldData::EntData &col_data,
+                                 const MatrixDouble &mat, InsertMode iora);
 
 /***
  * @brief Specialization of VecSetValues for SchurElemMatsBlock
@@ -274,7 +284,7 @@ MatSetValues<SchurElemMatsBlock>(Mat M,
 template <>
 inline MoFEMErrorCode
 VecSetValues<SchurElemMatsBlock>(Vec V, const EntitiesFieldData::EntData &data,
-                               const VectorDouble &nf, InsertMode iora) {
+                                 const VectorDouble &nf, InsertMode iora) {
   return VecSetValues<EssentialBcStorage>(V, data, nf, iora);
 }
 
@@ -297,6 +307,41 @@ inline MoFEMErrorCode VecSetValues<AssemblyTypeSelector<BLOCK_SCHUR>>(
     Vec V, const EntitiesFieldData::EntData &data, const VectorDouble &nf,
     InsertMode iora) {
   return VecSetValues<EssentialBcStorage>(V, data, nf, iora);
+}
+
+/***
+ * @brief Specialization of MatSetValues for SchurElemMatsPreconditionedBlock
+ */
+template <>
+MoFEMErrorCode MatSetValues<SchurElemMatsPreconditionedBlock>(
+    Mat M, const EntitiesFieldData::EntData &row_data,
+    const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
+    InsertMode iora);
+
+/***
+ * @brief Specialisation of MatSetValues for
+ * AssemblyTypeSelector<BLOCK_PRECONDITIONER_SCHUR>
+ */
+template <>
+inline MoFEMErrorCode
+MatSetValues<AssemblyTypeSelector<BLOCK_PRECONDITIONER_SCHUR>>(
+    Mat M, const EntitiesFieldData::EntData &row_data,
+    const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
+    InsertMode iora) {
+  return MatSetValues<SchurElemMatsPreconditionedBlock>(M, row_data, col_data,
+                                                        mat, iora);
+}
+
+/***
+ * @brief Specialisation of VecSetValues for AssemblyTypeSelector<BLOCK_SCHUR>
+ */
+template <>
+inline MoFEMErrorCode
+VecSetValues<AssemblyTypeSelector<BLOCK_PRECONDITIONER_SCHUR>>(
+    Vec V, const EntitiesFieldData::EntData &data, const VectorDouble &nf,
+    InsertMode iora) {
+  return ::VecSetValues(V, data.getIndices().size(),
+                        &*data.getIndices().begin(), &*nf.begin(), iora);
 }
 
 } // namespace MoFEM
