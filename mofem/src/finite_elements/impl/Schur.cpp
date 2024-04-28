@@ -1362,8 +1362,12 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
     loc_rows.resize(0);
     loc_nb_rows.resize(0);
     loc_nb_rows.push_back(0);
-    while (it != hi && (it->loc_col == loc_col && it->nb_cols == nb_cols &&
-                        it->mat_shift == it_shift)) {
+    while (
+
+        it != hi && (it->loc_col == loc_col && it->nb_cols == nb_cols &&
+                     it->mat_shift == it_shift)
+
+    ) {
       loc_rows.push_back(it->loc_row);
       loc_nb_rows.push_back(loc_nb_rows.back() + it->nb_rows);
       it_shift += it->nb_cols * it->nb_rows;
