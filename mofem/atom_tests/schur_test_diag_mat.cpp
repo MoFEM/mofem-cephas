@@ -111,22 +111,22 @@ int main(int argc, char *argv[]) {
     // field if needed.
     // Note all vector are vectors, so names are misleading, but hat is to not
     // make code for pushing OPs simple.
-    CHKERR simple->addDomainField("VECTOR", H1, AINSWORTH_LEGENDRE_BASE,
+    CHKERR simple->addDomainField("V", L2, AINSWORTH_LEGENDRE_BASE,
                                   FIELD_DIM);
-    CHKERR simple->addDomainField("TENSOR", L2, AINSWORTH_LEGENDRE_BASE,
+    CHKERR simple->addDomainField("T", L2, AINSWORTH_LEGENDRE_BASE,
                                   FIELD_DIM);
-    CHKERR simple->addDomainField("SCALAR", L2, AINSWORTH_LEGENDRE_BASE,
+    CHKERR simple->addDomainField("S", L2, AINSWORTH_LEGENDRE_BASE,
                                   FIELD_DIM);
-    // CHKERR simple->addDomainField("ONE_MORE_FIELD", L2, AINSWORTH_LEGENDRE_BASE,
-    //                               FIELD_DIM);
+    CHKERR simple->addDomainField("O", L2, AINSWORTH_LEGENDRE_BASE,
+                                  FIELD_DIM);
 
     // set fields order, i.e. for most first cases order is sufficient.
     int order = 3;
     CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order, PETSC_NULL);
-    CHKERR simple->setFieldOrder("VECTOR", order);
-    CHKERR simple->setFieldOrder("TENSOR", order);
-    CHKERR simple->setFieldOrder("SCALAR", order - 1);
-    // CHKERR simple->setFieldOrder("ONE_MORE_FIELD", order - 1);
+    CHKERR simple->setFieldOrder("V", order);
+    CHKERR simple->setFieldOrder("T", order);
+    CHKERR simple->setFieldOrder("S", order - 1);
+    CHKERR simple->setFieldOrder("O", order - 2);
 
     // setup problem
     CHKERR simple->setUp();
@@ -135,19 +135,20 @@ int main(int argc, char *argv[]) {
     CHKERR DMMoFEMCreateSubDM(schur_dm, simple->getDM(), "SCHUR");
     CHKERR DMMoFEMSetSquareProblem(schur_dm, PETSC_TRUE);
     CHKERR DMMoFEMAddElement(schur_dm, simple->getDomainFEName());
-    CHKERR DMMoFEMAddSubFieldRow(schur_dm, "VECTOR");
-    CHKERR DMMoFEMAddSubFieldCol(schur_dm, "VECTOR");
+    CHKERR DMMoFEMAddSubFieldRow(schur_dm, "V");
+    CHKERR DMMoFEMAddSubFieldCol(schur_dm, "V");
     CHKERR DMSetUp(schur_dm);
 
     auto block_dm = createDM(m_field.get_comm(), "DMMOFEM");
     CHKERR DMMoFEMCreateSubDM(block_dm, simple->getDM(), "BLOCK");
     CHKERR DMMoFEMSetSquareProblem(block_dm, PETSC_TRUE);
     CHKERR DMMoFEMAddElement(block_dm, simple->getDomainFEName());
-    CHKERR DMMoFEMAddSubFieldRow(block_dm, "TENSOR");
-    CHKERR DMMoFEMAddSubFieldCol(block_dm, "TENSOR");
-    CHKERR DMMoFEMAddSubFieldRow(block_dm, "SCALAR");
-    CHKERR DMMoFEMAddSubFieldCol(block_dm, "SCALAR");
-    // CHKERR DMMoFEMAddSubFieldCol(block_dm, "ONE_MORE_FIELD");
+    CHKERR DMMoFEMAddSubFieldRow(block_dm, "T");
+    CHKERR DMMoFEMAddSubFieldCol(block_dm, "T");
+    CHKERR DMMoFEMAddSubFieldRow(block_dm, "S");
+    CHKERR DMMoFEMAddSubFieldCol(block_dm, "S");
+    CHKERR DMMoFEMAddSubFieldRow(block_dm, "O");
+    CHKERR DMMoFEMAddSubFieldCol(block_dm, "O");
     CHKERR DMSetUp(block_dm);
 
     petsc_mat = createDMMatrix(simple->getDM());
@@ -160,13 +161,18 @@ int main(int argc, char *argv[]) {
 
                                                {{simple->getDomainFEName(),
 
-                                                 {{"VECTOR", "VECTOR"},
-                                                  {"TENSOR", "TENSOR"},
-                                                  {"SCALAR", "SCALAR"},
-                                                  {"VECTOR", "TENSOR"},
-                                                  {"TENSOR", "VECTOR"},
-                                                  {"SCALAR", "TENSOR"},
-                                                  {"TENSOR", "SCALAR"}
+                                                 {{"V", "V"},
+                                                  {"T", "T"},
+                                                  {"S", "S"},
+                                                  {"O", "O"},
+                                                  {"V", "T"},
+                                                  {"T", "V"},
+                                                  {"S", "T"},
+                                                  {"T", "S"},
+                                                  {"T", "O"},
+                                                  {"O", "T"},
+                                                  {"S", "O"},
+                                                  {"O", "S"}
 
                                                  }}}
 
@@ -177,7 +183,7 @@ int main(int argc, char *argv[]) {
     auto [mat, block_data_ptr] = shell_data;
     block_mat = mat;
 
-    std::vector<std::string> fields{"TENSOR", "SCALAR"};
+    std::vector<std::string> fields{"T", "S", "O"};
 
     auto [nested_mat, nested_data_ptr] = createSchurNestedMatrix(
 
@@ -185,7 +191,7 @@ int main(int argc, char *argv[]) {
 
             {schur_dm, block_dm}, block_data_ptr,
 
-            fields, {nullptr, nullptr}
+            fields, {nullptr, nullptr, nullptr}
 
             )
 
@@ -202,26 +208,38 @@ int main(int argc, char *argv[]) {
 
     auto close_zero = [](double, double, double) { return 1; };
     auto beta = [](double, double, double) { return -1./2; };
+    auto gamma = [](double, double, double) { return -1. / 4; };
 
-    pip_mng->setDomainLhsIntegrationRule([](int, int, int o) { return 2 * o; });
+    pip_mng->setDomainLhsIntegrationRule(
+        [](int, int, int o) { return 2 * o; });
     auto &pip_lhs = pip_mng->getOpDomainLhsPipeline();
 
-    pip_lhs.push_back(new OpMassPETSCAssemble("VECTOR", "VECTOR"));
-    pip_lhs.push_back(new OpMassPETSCAssemble("TENSOR", "TENSOR"));
-    pip_lhs.push_back(new OpMassPETSCAssemble("VECTOR", "TENSOR"));
-    pip_lhs.push_back(new OpMassPETSCAssemble("TENSOR", "VECTOR"));
-    pip_lhs.push_back(new OpMassPETSCAssemble("SCALAR", "SCALAR", close_zero));
-    pip_lhs.push_back(new OpMassPETSCAssemble("SCALAR", "TENSOR", beta));
-    pip_lhs.push_back(new OpMassPETSCAssemble("TENSOR", "SCALAR", beta));
+    pip_lhs.push_back(new OpMassPETSCAssemble("V", "V"));
+    pip_lhs.push_back(new OpMassPETSCAssemble("T", "T"));
+    pip_lhs.push_back(new OpMassPETSCAssemble("V", "T"));
+    pip_lhs.push_back(new OpMassPETSCAssemble("T", "V"));
+    pip_lhs.push_back(new OpMassPETSCAssemble("S", "S", close_zero));
+    pip_lhs.push_back(new OpMassPETSCAssemble("S", "T", beta));
+    pip_lhs.push_back(new OpMassPETSCAssemble("T", "S", beta));
+    pip_lhs.push_back(new OpMassPETSCAssemble("O", "O", close_zero));
+    pip_lhs.push_back(new OpMassPETSCAssemble("T", "O", beta));
+    pip_lhs.push_back(new OpMassPETSCAssemble("O", "T", beta));
+    pip_lhs.push_back(new OpMassPETSCAssemble("S", "O", gamma));
+    pip_lhs.push_back(new OpMassPETSCAssemble("O", "S", gamma));
 
     pip_lhs.push_back(createOpSchurAssembleBegin());
-    pip_lhs.push_back(new OpMassBlockAssemble("VECTOR", "VECTOR"));
-    pip_lhs.push_back(new OpMassBlockAssemble("TENSOR", "TENSOR"));
-    pip_lhs.push_back(new OpMassBlockAssemble("VECTOR", "TENSOR"));
-    pip_lhs.push_back(new OpMassBlockAssemble("TENSOR", "VECTOR"));
-    pip_lhs.push_back(new OpMassBlockAssemble("SCALAR", "SCALAR", close_zero));
-    pip_lhs.push_back(new OpMassBlockAssemble("SCALAR", "TENSOR", beta));
-    pip_lhs.push_back(new OpMassBlockAssemble("TENSOR", "SCALAR", beta));
+    pip_lhs.push_back(new OpMassBlockAssemble("V", "V"));
+    pip_lhs.push_back(new OpMassBlockAssemble("T", "T"));
+    pip_lhs.push_back(new OpMassBlockAssemble("V", "T"));
+    pip_lhs.push_back(new OpMassBlockAssemble("T", "V"));
+    pip_lhs.push_back(new OpMassBlockAssemble("S", "S", close_zero));
+    pip_lhs.push_back(new OpMassBlockAssemble("S", "T", beta));
+    pip_lhs.push_back(new OpMassBlockAssemble("T", "S", beta));
+    pip_lhs.push_back(new OpMassBlockAssemble("O", "O", close_zero));
+    pip_lhs.push_back(new OpMassBlockAssemble("T", "O", beta));
+    pip_lhs.push_back(new OpMassBlockAssemble("O", "T", beta));
+    pip_lhs.push_back(new OpMassBlockAssemble("S", "O", gamma));
+    pip_lhs.push_back(new OpMassBlockAssemble("O", "S", gamma));
 
     auto schur_is = getDMSubData(schur_dm)->getSmartRowIs();
     auto ao_up = createAOMappingIS(schur_is, PETSC_NULL);
@@ -230,11 +248,11 @@ int main(int argc, char *argv[]) {
 
         fields,
 
-        {nullptr, nullptr},
+        {nullptr, nullptr, nullptr},
 
-        {nullptr, ao_up}, {nullptr, S},
+        {nullptr, nullptr, ao_up}, {nullptr, nullptr, S},
 
-        {true, true}, true, block_data_ptr)
+        {false, false, false}, false, block_data_ptr)
 
     );
 
@@ -335,8 +353,10 @@ int main(int argc, char *argv[]) {
     CHKERR VecZeroEntries(block_solved_x);
     CHKERR KSPSolve(ksp, diag_block_f, block_solved_x);
 
-    CHKERR VecAXPY(diag_block_x, -1.0, block_solved_x);
-    CHKERR test("diag solve", diag_block_x);
+    auto diag_block_f_test = createDMVector(block_dm);
+    CHKERR MatMult(diag_mat, block_solved_x, diag_block_f_test);
+    CHKERR VecAXPY(diag_block_f_test, -1.0, diag_block_f);
+    CHKERR test("diag solve", diag_block_f_test);
 
     petsc_mat.reset();
     block_mat.reset();
