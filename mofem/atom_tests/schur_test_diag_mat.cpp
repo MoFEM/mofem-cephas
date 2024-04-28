@@ -71,6 +71,18 @@ typename MoFEM::OpBaseImpl<BLOCK_SCHUR, DomainEleOp>::MatSetValuesHook
               block_mat, row_data, col_data, m, ADD_VALUES);
         };
 
+template <>
+typename MoFEM::OpBaseImpl<BLOCK_PRECONDITIONER_SCHUR,
+                           DomainEleOp>::MatSetValuesHook
+    MoFEM::OpBaseImpl<BLOCK_PRECONDITIONER_SCHUR,
+                      DomainEleOp>::matSetValuesHook =
+        [](ForcesAndSourcesCore::UserDataOperator *op_ptr,
+           const EntitiesFieldData::EntData &row_data,
+           const EntitiesFieldData::EntData &col_data, MatrixDouble &m) {
+          return MatSetValues<AssemblyTypeSelector<BLOCK_PRECONDITIONER_SCHUR>>(
+              block_mat, row_data, col_data, m, ADD_VALUES);
+        };
+
 constexpr bool debug = false;
 
 int main(int argc, char *argv[]) {
@@ -191,7 +203,7 @@ int main(int argc, char *argv[]) {
 
             {schur_dm, block_dm}, block_data_ptr,
 
-            fields, {nullptr, nullptr, nullptr}, false
+            fields, {nullptr, nullptr, nullptr}, true
 
             )
 
@@ -201,6 +213,9 @@ int main(int argc, char *argv[]) {
         PETSC>::BiLinearForm<GAUSS>::OpMass<1, FIELD_DIM>;
     using OpMassBlockAssemble = FormsIntegrators<DomainEleOp>::Assembly<
         BLOCK_SCHUR>::BiLinearForm<GAUSS>::OpMass<1, FIELD_DIM>;
+    using OpMassBlockPreconditionerAssemble =
+        FormsIntegrators<DomainEleOp>::Assembly<BLOCK_PRECONDITIONER_SCHUR>::
+            BiLinearForm<GAUSS>::OpMass<1, FIELD_DIM>;
 
     // get operators tester
     auto pip_mng = m_field.getInterface<PipelineManager>(); // get interface to
@@ -240,6 +255,7 @@ int main(int argc, char *argv[]) {
     pip_lhs.push_back(new OpMassBlockAssemble("O", "T", beta));
     pip_lhs.push_back(new OpMassBlockAssemble("S", "O", gamma));
     pip_lhs.push_back(new OpMassBlockAssemble("O", "S", gamma));
+    pip_lhs.push_back(new OpMassBlockPreconditionerAssemble("T", "T"));
 
     auto schur_is = getDMSubData(schur_dm)->getSmartRowIs();
     auto ao_up = createAOMappingIS(schur_is, PETSC_NULL);
@@ -310,14 +326,16 @@ int main(int argc, char *argv[]) {
     CHKERR VecAXPY(y_petsc, -1.0, y_block);
 
     CHKERR test("mult add", y_petsc);
-
+    CHKERR schurSwitchPreconditioner(std::get<1>(*nested_data_ptr)[3]);
     auto y_nested = createDMVector(simple->getDM());
     CHKERR MatMult(petsc_mat, v, y_petsc);
+
     CHKERR MatMult(nested_mat, v, y_nested);
     CHKERR VecAXPY(y_petsc, -1.0, y_nested);
 
     CHKERR test("mult nested", y_petsc);
 
+    CHKERR schurSwitchPreconditioner(std::get<1>(*nested_data_ptr)[3]);
     auto diag_mat = std::get<0>(*nested_data_ptr)[3];
     auto diag_block_x = get_random_vector(block_dm);
     auto diag_block_f = createDMVector(block_dm);
