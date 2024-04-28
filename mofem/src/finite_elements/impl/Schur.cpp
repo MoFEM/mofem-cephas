@@ -234,6 +234,7 @@ struct BlockStruture : public DiagBlockIndex {
 
   boost::shared_ptr<std::vector<double>> dataBlocksPtr;
   boost::shared_ptr<std::vector<double>> dataInvBlocksPtr;
+  boost::shared_ptr<std::vector<double>> preconditionerBlocksPtr;
   boost::shared_ptr<BlockStruture> parentBlockStruturePtr;
 };
 
@@ -1827,9 +1828,8 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
 
     std::vector<std::string> fields_names, //< a00 fields
     std::vector<boost::shared_ptr<Range>>
-        field_ents //< a00 ranges (can be null)
-
-) {
+        field_ents, //< a00 ranges (can be null),
+    bool add_preconditioner_block) {
 
   if (!block_mat_data_ptr) {
     CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Block data not set");
@@ -2165,6 +2165,13 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
         boost::make_shared<std::vector<double>>(inv_mem_size, 0);
     data_ptrs[3]->dataInvBlocksPtr = inv_data_ptr;
     block_mat_data_ptr->dataInvBlocksPtr = data_ptrs[3]->dataInvBlocksPtr;
+
+    if(add_preconditioner_block) {
+      auto precond_block =
+          boost::make_shared<std::vector<double>>(inv_mem_size, 0);
+      data_ptrs[3]->dataBlocksPtr = precond_block;
+      block_mat_data_ptr->dataBlocksPtr = data_ptrs[3]->dataBlocksPtr;
+    }
 
     MoFEMFunctionReturn(0);
   };

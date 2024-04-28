@@ -137,9 +137,10 @@ using NestSchurData = std::tuple<
  * @brief Get the Schur Nest Mat Array object
  *
  * @param dms schur dm, and block dm
- * @param block
- * @param fields_name
- * @param field_ents
+ * @param block mat A data
+ * @param fields_name list of fields
+ * @param field_ents list of entities on which schur complement is applied
+ * @param add_preconditioner_block add block for preconditioner
  * @return boost::shared_ptr<NestSchurData>
  */
 boost::shared_ptr<NestSchurData>
@@ -147,8 +148,8 @@ getNestSchurData(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
                  boost::shared_ptr<BlockStruture> block_mat_data,
 
                  std::vector<std::string> fields_name, //< a00 fields
-                 std::vector<boost::shared_ptr<Range>>
-                     field_ents //< a00 ranges (can be null)
+                 std::vector<boost::shared_ptr<Range>> field_ents, //< a00 ents
+                 bool add_preconditioner_block = false
 
 );
 
