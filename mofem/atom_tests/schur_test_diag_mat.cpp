@@ -230,7 +230,7 @@ int main(int argc, char *argv[]) {
     auto &pip_lhs = pip_mng->getOpDomainLhsPipeline();
 
     pip_lhs.push_back(new OpMassPETSCAssemble("V", "V"));
-    pip_lhs.push_back(new OpMassPETSCAssemble("T", "T"));
+    // pip_lhs.push_back(new OpMassPETSCAssemble("T", "T"));
     pip_lhs.push_back(new OpMassPETSCAssemble("V", "T"));
     pip_lhs.push_back(new OpMassPETSCAssemble("T", "V"));
     pip_lhs.push_back(new OpMassPETSCAssemble("S", "S", close_zero));
@@ -244,7 +244,7 @@ int main(int argc, char *argv[]) {
 
     pip_lhs.push_back(createOpSchurAssembleBegin());
     pip_lhs.push_back(new OpMassBlockAssemble("V", "V"));
-    pip_lhs.push_back(new OpMassBlockAssemble("T", "T"));
+    // pip_lhs.push_back(new OpMassBlockAssemble("T", "T"));
     pip_lhs.push_back(new OpMassBlockAssemble("V", "T"));
     pip_lhs.push_back(new OpMassBlockAssemble("T", "V"));
     pip_lhs.push_back(new OpMassBlockAssemble("S", "S", close_zero));
