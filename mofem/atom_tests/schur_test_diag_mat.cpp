@@ -191,7 +191,7 @@ int main(int argc, char *argv[]) {
 
             {schur_dm, block_dm}, block_data_ptr,
 
-            fields, {nullptr, nullptr, nullptr}
+            fields, {nullptr, nullptr, nullptr}, false
 
             )
 
@@ -252,7 +252,7 @@ int main(int argc, char *argv[]) {
 
         {nullptr, nullptr, ao_up}, {nullptr, nullptr, S},
 
-        {false, false, false}, false, block_data_ptr)
+        {true, true, true}, true, block_data_ptr)
 
     );
 
