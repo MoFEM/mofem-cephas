@@ -123,7 +123,8 @@ using OpSpringRhs = FormsIntegrators<BoundaryEleOp>::Assembly<AT>::LinearForm<
 PetscBool is_quasi_static = PETSC_TRUE;
 
 int order = 2;
-int contact_order = 2;
+int contact_order;
+int sigma_order;
 int geom_order = 1;
 double young_modulus = 100;
 double poisson_ratio = 0.25;
@@ -219,16 +220,27 @@ MoFEMErrorCode Contact::setupProblem() {
   MoFEMFunctionBegin;
   Simple *simple = mField.getInterface<Simple>();
   PetscBool use_mfront = PETSC_FALSE;
+  PetscBool defined_contact_order = PETSC_FALSE;
+  PetscBool defined_sigma_order = PETSC_FALSE;
 
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order, PETSC_NULL);
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-contact_order", &contact_order,
-                            PETSC_NULL);
+                            &defined_contact_order);
+  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-sigma_order", &sigma_order,
+                            &defined_sigma_order);
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-geom_order", &geom_order,
                             PETSC_NULL);
 
   MOFEM_LOG("CONTACT", Sev::inform) << "Order " << order;
-  if (contact_order != order)
+  if (defined_contact_order)
     MOFEM_LOG("CONTACT", Sev::inform) << "Contact order " << contact_order;
+  else
+    contact_order = order;
+  if (defined_sigma_order)
+    MOFEM_LOG("CONTACT", Sev::inform) << "Sigma order " << sigma_order;
+  else
+    sigma_order = std::max(order, contact_order) - 1;
+
   MOFEM_LOG("CONTACT", Sev::inform) << "Geom order " << geom_order;
 
   CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-use_mfront", &use_mfront,
@@ -328,7 +340,6 @@ MoFEMErrorCode Contact::setupProblem() {
 
   auto boundary_ents = filter_true_skin(filter_blocks(get_skin()));
   CHKERR simple->setFieldOrder("SIGMA", 0);
-  int sigma_order = std::max(order, contact_order) - 1;
   CHKERR simple->setFieldOrder("SIGMA", sigma_order, &boundary_ents);
 
   if (contact_order > order) {
