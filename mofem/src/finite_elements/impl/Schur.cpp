@@ -9,7 +9,7 @@
 
 namespace MoFEM {
 
-constexpr bool debug_schur = true;
+constexpr bool debug_schur = false;
 constexpr bool inverse_diag_test = false;
 
 /**
@@ -1181,6 +1181,28 @@ static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
 
   PetscLogEventBegin(SchurEvents::MOFEM_EVENT_zeroRowsAndCols, 0, 0, 0, 0);
 
+  const int *ptr = &rows[0];
+  int is_nb_rows = N;
+  SmartPetscObj<IS> is_local;
+
+  MPI_Comm comm;
+  CHKERR PetscObjectGetComm((PetscObject)A, &comm);
+  int size;
+  MPI_Comm_size(comm, &size);
+  if (size > 1) {
+    auto is = createISGeneral(comm, N, rows, PETSC_USE_POINTER);
+    is_local = isAllGather(is);
+  }
+  if (is_local) {
+    CHKERR ISGetSize(is_local, &is_nb_rows);
+#ifndef NDEBUG
+    if constexpr (debug_schur) {
+      CHKERR ISView(is_local, PETSC_VIEWER_STDOUT_WORLD);
+    }
+#endif
+    CHKERR ISGetIndices(is_local, &ptr);
+  }
+
   int loc_m, loc_n;
   CHKERR MatGetLocalSize(A, &loc_m, &loc_n);
 
@@ -1217,8 +1239,8 @@ static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
     view.insert(static_cast<const ShiftedBlockView *>(&v));
   }
 
-  for (auto n = 0; n != N; ++n) {
-    auto row = rows[n];
+  for (auto n = 0; n != is_nb_rows; ++n) {
+    auto row = ptr[n];
     auto rlo = view.get<0>().lower_bound(row);
     auto rhi = view.get<0>().upper_bound(
         row + MAX_DOFS_ON_ENTITY); // add such that upper bound is included
@@ -1233,8 +1255,8 @@ static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
     }
   }
 
-  for (auto n = 0; n != N; ++n) {
-    auto col = rows[n];
+  for (auto n = 0; n != is_nb_rows; ++n) {
+    auto col = ptr[n];
     auto clo = view.get<1>().lower_bound(col);
     auto chi = view.get<1>().upper_bound(
         col + MAX_DOFS_ON_ENTITY); // add such that upper bound is included
@@ -1248,14 +1270,19 @@ static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
         }
 
         // diagonal
-        if ((*clo)->row == (*clo)->col && (*clo)->loc_row < loc_m) {
-          auto r_shift = col - (*clo)->row;
+        if ((*clo)->row == (*clo)->col && (*clo)->loc_row < loc_m &&
+            (*clo)->loc_col < loc_n) {
+          auto r_shift = col - (*clo)->col;
           if (r_shift >= 0 && r_shift < (*clo)->nb_rows) {
             ptr[c_shift + r_shift * (*clo)->nb_cols] = diag;
           }
         }
       }
     }
+  }
+
+  if (is_local) {
+    CHKERR ISRestoreIndices(is_local, &ptr);
   }
 
   PetscLogEventEnd(SchurEvents::MOFEM_EVENT_zeroRowsAndCols, 0, 0, 0, 0);
@@ -1374,10 +1401,10 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
 
     while (
 
-        it != hi 
-        
-        && 
-        
+        it != hi
+
+        &&
+
         // continue block of matrices
         (it->mat_shift == it_shift)
 
@@ -1410,7 +1437,6 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
         1., &y_array[loc_row_start], 1
 
     );
-
   }
 
   if (ctx->multiplyByPreconditioner) {
@@ -2602,10 +2628,10 @@ MoFEMErrorCode MatSetValues<SchurElemMatsPreconditionedBlock>(
 MoFEMErrorCode
 schurSwitchPreconditioner(boost::shared_ptr<BlockStruture> block_mat_data) {
   MoFEMFunctionBegin;
-  if(block_mat_data->multiplyByPreconditioner) {
+  if (block_mat_data->multiplyByPreconditioner) {
     block_mat_data->multiplyByPreconditioner = false;
   } else {
-    if(!block_mat_data->preconditionerBlocksPtr) {
+    if (!block_mat_data->preconditionerBlocksPtr) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "preconditionerBlocksPtr not set");
     }
@@ -2618,7 +2644,6 @@ MoFEMErrorCode
 schurSaveBlockMesh(boost::shared_ptr<BlockStruture> block_mat_data,
                    std::string filename) {
   MoFEMFunctionBegin;
-
 
   moab::Core core;
   moab::Interface &moab = core;
@@ -2646,7 +2671,7 @@ schurSaveBlockMesh(boost::shared_ptr<BlockStruture> block_mat_data,
                              MB_TAG_CREAT | MB_TAG_DENSE, &def_val_mat_shift);
 
   int i = 0;
-  for(auto &d : block_mat_data->blockIndex) {
+  for (auto &d : block_mat_data->blockIndex) {
     auto row = d.row;
     auto col = d.col;
     auto nb_rows = d.nb_rows;
@@ -2673,7 +2698,7 @@ schurSaveBlockMesh(boost::shared_ptr<BlockStruture> block_mat_data,
     arrays_coord[1][4 * i + 3] = col + nb_cols;
     arrays_coord[2][4 * i + 3] = 0;
 
-    //ele conn
+    // ele conn
     array[4 * i + 0] = starting_vertex + 4 * i + 0;
     array[4 * i + 1] = starting_vertex + 4 * i + 1;
     array[4 * i + 2] = starting_vertex + 4 * i + 2;
