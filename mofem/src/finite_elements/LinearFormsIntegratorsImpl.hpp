@@ -858,7 +858,7 @@ OpMixDivTimesUImpl<3, FIELD_DIM, SPACE_DIM, GAUSS, OpBase, CoordSys>::iNtegrate(
       const double t_div_base = t_diff_base(j, j);
       t_nf(i) += alpha * t_div_base * t_u(i);
       if constexpr (CoordSys == CYLINDRICAL) {
-        t_nf(i) += alpha * (t_base(0) / t_coords(0)) * t_u(i);
+        t_nf(i) += t_base(0) * (alpha / t_coords(0)) * t_u(i);
       }
       ++t_nf;
       ++t_diff_base;
