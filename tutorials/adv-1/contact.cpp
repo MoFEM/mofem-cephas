@@ -1070,10 +1070,10 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<TS> solver) {
 
     pip->getOpBoundaryLhsPipeline().push_front(createOpSchurAssembleBegin());
     pip->getOpBoundaryLhsPipeline().push_back(
-        new OpSchurAssembleEnd<SCHUR_DGESV>({}, {}, {}, {}, {}));
+        createOpSchurAssembleEnd({}, {}, {}, {}, {}, false));
     pip->getOpDomainLhsPipeline().push_front(createOpSchurAssembleBegin());
     pip->getOpDomainLhsPipeline().push_back(
-        new OpSchurAssembleEnd<SCHUR_DGESV>({}, {}, {}, {}, {}));
+        createOpSchurAssembleEnd({}, {}, {}, {}, {}, false));
 
     auto post_proc_schur_lhs_ptr = boost::make_shared<FEMethod>();
     post_proc_schur_lhs_ptr->postProcessHook = [this,
@@ -1125,13 +1125,21 @@ MoFEMErrorCode SetUpSchurImpl::setOperator() {
   pip->getOpBoundaryLhsPipeline().push_back(
       new OpMassStab("SIGMA", "SIGMA",
                      [eps_stab](double, double, double) { return eps_stab; }));
-  pip->getOpBoundaryLhsPipeline().push_back(new OpSchurAssembleEnd<SCHUR_DGESV>(
-      {"SIGMA"}, {nullptr}, {ao_up}, {S}, {false}, false));
+  pip->getOpBoundaryLhsPipeline().push_back(
+
+      createOpSchurAssembleEnd({"SIGMA"}, {nullptr}, {ao_up}, {S}, {false},
+                               false)
+
+  );
 
   // Domain
   pip->getOpDomainLhsPipeline().push_front(createOpSchurAssembleBegin());
-  pip->getOpDomainLhsPipeline().push_back(new OpSchurAssembleEnd<SCHUR_DGESV>(
-      {"SIGMA"}, {nullptr}, {ao_up}, {S}, {false}, false));
+  pip->getOpDomainLhsPipeline().push_back(
+
+      createOpSchurAssembleEnd({"SIGMA"}, {nullptr}, {ao_up}, {S}, {false},
+                               false)
+
+  );
 
   auto pre_proc_schur_lhs_ptr = boost::make_shared<FEMethod>();
   auto post_proc_schur_lhs_ptr = boost::make_shared<FEMethod>();
