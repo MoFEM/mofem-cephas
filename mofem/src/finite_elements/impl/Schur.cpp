@@ -1268,6 +1268,10 @@ static PetscErrorCode mat_zero(Mat m) {
   BlockStruture *ctx;
   CHKERR MatShellGetContext(m, (void **)&ctx);
   ctx->dataBlocksPtr->clear();
+  if (ctx->dataInvBlocksPtr)
+    ctx->dataInvBlocksPtr->clear();
+  if (ctx->preconditionerBlocksPtr)
+    ctx->preconditionerBlocksPtr->clear();
   MoFEMFunctionReturn(0);
 }
 
