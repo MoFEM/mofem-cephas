@@ -123,7 +123,7 @@ using OpSpringRhs = FormsIntegrators<BoundaryEleOp>::Assembly<AT>::LinearForm<
 PetscBool is_quasi_static = PETSC_TRUE;
 
 int order = 2;
-int contact_order;
+int contact_order; //< Order of displacements on boundary
 int sigma_order;
 int geom_order = 1;
 double young_modulus = 100;
