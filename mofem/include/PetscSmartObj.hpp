@@ -288,6 +288,18 @@ inline auto createISGeneral(MPI_Comm comm, PetscInt n, const PetscInt idx[],
 }
 
 /**
+ * @brief IS All gather
+ * 
+ * @param is 
+ * @return auto 
+ */
+inline auto  isAllGather(IS is) {
+  IS isout;
+  CHK_THROW_MESSAGE(ISAllGather(is, &isout), "Failed to create ISAllGather");
+  return SmartPetscObj<IS>(isout);
+}
+
+/**
  * @brief Creates an application mapping using two index sets.
  *
  * <a
