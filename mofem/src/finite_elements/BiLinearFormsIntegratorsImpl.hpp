@@ -1115,7 +1115,7 @@ OpMixDivTimesVecImpl<SPACE_DIM, GAUSS, OpBase, CoordSys>::iNtegrate(
       for (size_t cc = 0; cc != OpBase::nbCols / SPACE_DIM; ++cc) {
         t_mat_diag(i) += alpha * t_row_div_base * t_col_base;
         if constexpr (CoordSys == CYLINDRICAL) {
-          t_mat_diag(i) += alpha * (t_row_base(0) / t_coords(0)) * t_col_base;
+          t_mat_diag(i) += t_row_base(0) * (alpha / t_coords(0)) * t_col_base;
         }
         ++t_col_base;
         ++t_mat_diag;
