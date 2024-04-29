@@ -123,7 +123,8 @@ int main(int argc, char *argv[]) {
     // field if needed.
     // Note all vector are vectors, so names are misleading, but hat is to not
     // make code for pushing OPs simple.
-    CHKERR simple->addDomainField("V", H1, AINSWORTH_LEGENDRE_BASE, FIELD_DIM);
+    CHKERR simple->addDomainField("V", H1, AINSWORTH_LEGENDRE_BASE,
+                                  FIELD_DIM);
     CHKERR simple->addDomainField("T", L2, AINSWORTH_LEGENDRE_BASE, FIELD_DIM);
     CHKERR simple->addDomainField("S", L2, AINSWORTH_LEGENDRE_BASE, FIELD_DIM);
     CHKERR simple->addDomainField("O", L2, AINSWORTH_LEGENDRE_BASE, FIELD_DIM);

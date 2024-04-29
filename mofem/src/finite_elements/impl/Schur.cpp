@@ -209,7 +209,15 @@ struct DiagBlockIndex {
 
       indexed_by<
 
-          ordered_non_unique<member<Indexes, int, &Indexes::col>>,
+          ordered_non_unique<
+
+              composite_key<Indexes,
+
+                            member<Indexes, int, &Indexes::col>,
+                            member<Indexes, int, &Indexes::nb_cols>,
+                            member<Indexes, int, &Indexes::row>>
+
+              >,
 
           ordered_unique<
 
@@ -1345,10 +1353,6 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
 
   double *block_ptr = &*ctx->dataBlocksPtr->begin();
 
-  std::vector<int> loc_rows;
-  std::vector<int> loc_nb_rows;
-  std::vector<double> loc_y;
-
   auto it = ctx->blockIndex.get<0>().lower_bound(0);
   auto hi = ctx->blockIndex.get<0>().end();
 
@@ -1361,40 +1365,48 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
     auto x_ptr = &x_array[loc_col];
 
     int it_shift = shift;
-    loc_rows.resize(0);
-    loc_nb_rows.resize(0);
-    loc_nb_rows.push_back(0);
+    int loc_row_start = it->loc_row;
+    int loc_row_end = it->loc_row;
+
     while (
 
-        it != hi && (it->loc_col == loc_col && it->nb_cols == nb_cols &&
-                     it->mat_shift == it_shift)
+        it != hi 
+        
+        && 
+        
+        // continue block of matrices
+        (it->mat_shift == it_shift)
+
+        &&
+
+        // the same columns
+        (it->loc_col == loc_col && it->nb_cols == nb_cols)
+
+        &&
+
+        // growing rows
+        (it->loc_row == loc_row_end)
 
     ) {
-      loc_rows.push_back(it->loc_row);
-      loc_nb_rows.push_back(loc_nb_rows.back() + it->nb_rows);
+      loc_row_end += it->nb_rows;
       it_shift += it->nb_cols * it->nb_rows;
       ++it;
     }
-    loc_y.resize(loc_nb_rows.back());
 
     cblas_dgemv(
 
         CblasRowMajor, CblasNoTrans,
 
-        loc_nb_rows.back(), nb_cols,
+        loc_row_end - loc_row_start, nb_cols,
 
         1., &(block_ptr[shift]), nb_cols,
 
         x_ptr, 1,
 
-        0., &*loc_y.begin(), 1
+        1., &y_array[loc_row_start], 1
 
     );
 
-    for (auto r = 0; r != loc_rows.size(); ++r) {
-      cblas_daxpy(loc_nb_rows[r + 1] - loc_nb_rows[r], 1.,
-                  &loc_y[loc_nb_rows[r]], 1, &y_array[loc_rows[r]], 1);
-    }
   }
 
   if (ctx->multiplyByPreconditioner) {
@@ -2624,12 +2636,18 @@ schurSaveBlockMesh(boost::shared_ptr<BlockStruture> block_mat_data,
   CHKERR moab.tag_get_handle("nrm2", 1, MB_TYPE_DOUBLE, th_nrm2,
                              MB_TAG_CREAT | MB_TAG_DENSE, &def_val_nrm2);
 
+  double def_val_mat_shift = 0;
+  Tag th_mat_shift;
+  CHKERR moab.tag_get_handle("mat_shift", 1, MB_TYPE_INTEGER, th_mat_shift,
+                             MB_TAG_CREAT | MB_TAG_DENSE, &def_val_mat_shift);
+
   int i = 0;
   for(auto &d : block_mat_data->blockIndex) {
     auto row = d.row;
     auto col = d.col;
     auto nb_rows = d.nb_rows;
     auto nb_cols = d.nb_cols;
+    auto mat_shift = d.mat_shift;
 
     // q0
     arrays_coord[0][4 * i + 0] = row;
@@ -2661,6 +2679,7 @@ schurSaveBlockMesh(boost::shared_ptr<BlockStruture> block_mat_data,
     auto nrm2 = cblas_dnrm2(nb_rows * nb_cols, prt, 1);
     EntityHandle ele = starting_handle + i;
     CHKERR moab.tag_set_data(th_nrm2, &ele, 1, &nrm2);
+    CHKERR moab.tag_set_data(th_mat_shift, &ele, 1, &mat_shift);
 
     ++i;
   }
