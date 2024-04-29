@@ -1346,7 +1346,7 @@ MoFEMErrorCode SetUpSchurImpl::setUp(TS solver) {
 #ifndef ADD_CONTACT
       // Boundary
       pip_mng->getOpBoundaryLhsPipeline().push_front(
-          new OpSchurAssembleBegin());
+          createOpSchurAssembleBegin());
       pip_mng->getOpBoundaryLhsPipeline().push_back(
           new OpSchurAssembleEnd<SCHUR_DGESV>(
 
@@ -1355,7 +1355,8 @@ MoFEMErrorCode SetUpSchurImpl::setUp(TS solver) {
 
               ));
       // Domain
-      pip_mng->getOpDomainLhsPipeline().push_front(new OpSchurAssembleBegin());
+      pip_mng->getOpDomainLhsPipeline().push_front(
+          createOpSchurAssembleBegin());
       pip_mng->getOpDomainLhsPipeline().push_back(
           new OpSchurAssembleEnd<SCHUR_DGESV>(
 
@@ -1375,7 +1376,7 @@ MoFEMErrorCode SetUpSchurImpl::setUp(TS solver) {
 
       // Boundary
       pip_mng->getOpBoundaryLhsPipeline().push_front(
-          new OpSchurAssembleBegin());
+          createOpSchurAssembleBegin());
       pip_mng->getOpBoundaryLhsPipeline().push_back(
           new OpMassStab("SIGMA", "SIGMA", [eps_stab](double, double, double) {
             return eps_stab;
@@ -1390,7 +1391,8 @@ MoFEMErrorCode SetUpSchurImpl::setUp(TS solver) {
 
               ));
       // Domain
-      pip_mng->getOpDomainLhsPipeline().push_front(new OpSchurAssembleBegin());
+      pip_mng->getOpDomainLhsPipeline().push_front(
+          createOpSchurAssembleBegin());
       pip_mng->getOpDomainLhsPipeline().push_back(
           new OpSchurAssembleEnd<SCHUR_DGESV>(
 
@@ -1463,10 +1465,11 @@ MoFEMErrorCode SetUpSchurImpl::setUp(TS solver) {
     CHKERR set_assemble_elems();
 
   } else {
-    pip_mng->getOpBoundaryLhsPipeline().push_front(new OpSchurAssembleBegin());
+    pip_mng->getOpBoundaryLhsPipeline().push_front(
+        createOpSchurAssembleBegin());
     pip_mng->getOpBoundaryLhsPipeline().push_back(
         new OpSchurAssembleEnd<SCHUR_DGESV>({}, {}, {}, {}, {}));
-    pip_mng->getOpDomainLhsPipeline().push_front(new OpSchurAssembleBegin());
+    pip_mng->getOpDomainLhsPipeline().push_front(createOpSchurAssembleBegin());
     pip_mng->getOpDomainLhsPipeline().push_back(
         new OpSchurAssembleEnd<SCHUR_DGESV>({}, {}, {}, {}, {}));
   }

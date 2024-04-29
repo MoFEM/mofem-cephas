@@ -992,7 +992,7 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<TS> solver) {
   auto dm_is = getDMSubData(subDM)->getSmartRowIs();
   auto ao_up = createAOMappingIS(dm_is, PETSC_NULL);
   // Domain
-  pip->getOpDomainLhsPipeline().push_front(new OpSchurAssembleBegin());
+  pip->getOpDomainLhsPipeline().push_front(createOpSchurAssembleBegin());
   pip->getOpDomainLhsPipeline().push_back(new OpSchurAssembleEnd<SCHUR_DSYSV>(
       {"P"}, {nullptr}, {ao_up}, {S}, {false}, false));
 

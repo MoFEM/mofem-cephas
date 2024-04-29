@@ -1068,10 +1068,10 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<TS> solver) {
   } else {
     MOFEM_LOG("CONTACT", Sev::inform) << "No Schur pc";
 
-    pip->getOpBoundaryLhsPipeline().push_front(new OpSchurAssembleBegin());
+    pip->getOpBoundaryLhsPipeline().push_front(createOpSchurAssembleBegin());
     pip->getOpBoundaryLhsPipeline().push_back(
         new OpSchurAssembleEnd<SCHUR_DGESV>({}, {}, {}, {}, {}));
-    pip->getOpDomainLhsPipeline().push_front(new OpSchurAssembleBegin());
+    pip->getOpDomainLhsPipeline().push_front(createOpSchurAssembleBegin());
     pip->getOpDomainLhsPipeline().push_back(
         new OpSchurAssembleEnd<SCHUR_DGESV>({}, {}, {}, {}, {}));
 
@@ -1121,7 +1121,7 @@ MoFEMErrorCode SetUpSchurImpl::setOperator() {
   auto dm_is = getDMSubData(subDM)->getSmartRowIs();
   auto ao_up = createAOMappingIS(dm_is, PETSC_NULL);
 
-  pip->getOpBoundaryLhsPipeline().push_front(new OpSchurAssembleBegin());
+  pip->getOpBoundaryLhsPipeline().push_front(createOpSchurAssembleBegin());
   pip->getOpBoundaryLhsPipeline().push_back(
       new OpMassStab("SIGMA", "SIGMA",
                      [eps_stab](double, double, double) { return eps_stab; }));
@@ -1129,7 +1129,7 @@ MoFEMErrorCode SetUpSchurImpl::setOperator() {
       {"SIGMA"}, {nullptr}, {ao_up}, {S}, {false}, false));
 
   // Domain
-  pip->getOpDomainLhsPipeline().push_front(new OpSchurAssembleBegin());
+  pip->getOpDomainLhsPipeline().push_front(createOpSchurAssembleBegin());
   pip->getOpDomainLhsPipeline().push_back(new OpSchurAssembleEnd<SCHUR_DGESV>(
       {"SIGMA"}, {nullptr}, {ao_up}, {S}, {false}, false));
 
