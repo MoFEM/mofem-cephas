@@ -235,8 +235,8 @@ struct EntitiesFieldData::EntData {
   getFTensor2FieldData();
 
   /**
-   * @brief  Return symmetric FTensor rank 2, i.e. matrix from filed data
-   * coeffinects
+   * @brief  Return symmetric FTensor rank 2, i.e. matrix from field data
+   * coefficients
    *
    * \code
    * auto t_mat = data.getFTensor2SymmetricFieldData<3>();
