@@ -525,7 +525,7 @@ MoFEMErrorCode Example::solveSystem() {
 
   CHKERR set_essential_bc();
 
-  if (A == AssemblyType::BLOCK_SCHUR) {
+  if (A == AssemblyType::BLOCK_SCHUR || A == AssemblyType::SCHUR) {
     auto schur_ptr = SetUpSchur::createSetUpSchur(mField);
     CHKERR schur_ptr->setUp(solver);
     CHKERR setup_and_solve();
