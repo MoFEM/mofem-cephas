@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.modify_finite_element_add_field_data("FE", "FIELD");
     // add entities to finite element
     CHKERR m_field.add_ents_to_finite_element_by_type(root_set, MBTET, "FE");
-    // build finite elemets
+    // build finite elements
     CHKERR m_field.build_finite_elements();
     // build adjacencies
     CHKERR m_field.build_adjacencies(bit_level0);
