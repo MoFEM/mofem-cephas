@@ -1145,6 +1145,8 @@ boost::shared_ptr<BlockStruture> createBlockMatStructure(
 
   auto ghost_x = createDMVector(dm);
   auto ghost_y = createDMVector(dm);
+  CHKERR VecSetDM(ghost_x, PETSC_NULL);
+  CHKERR VecSetDM(ghost_y, PETSC_NULL);
 
   data_ptr->ghostX = ghost_x;
   data_ptr->ghostY = ghost_y;
@@ -2030,6 +2032,10 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
   auto block_vec_x = createDMVector(block_dm);
   auto schur_vec_y = vectorDuplicate(schur_vec_x);
   auto block_vec_y = vectorDuplicate(block_vec_x);
+  CHKERR VecSetDM(schur_vec_x, PETSC_NULL);
+  CHKERR VecSetDM(block_vec_x, PETSC_NULL);
+  CHKERR VecSetDM(schur_vec_y, PETSC_NULL);
+  CHKERR VecSetDM(block_vec_y, PETSC_NULL);
 
   auto get_vec = [&](auto schur_data) {
     std::vector<int> vec_r, vec_c;
