@@ -288,7 +288,8 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionBegin;
       PetscReal norm;
       CHKERR VecNorm(y, NORM_2, &norm);
-      MOFEM_LOG("WORLD", Sev::inform)
+      MOFEM_LOG_CHANNEL("WORLD");
+      MOFEM_TAG_AND_LOG("WORLD", Sev::inform, "TestBlockMat")
           << msg << ": norm of difference: " << norm;
       constexpr double eps = 1e-10;
       if (norm > eps || std::isnan(norm) || std::isinf(norm)) {
