@@ -599,7 +599,7 @@ MatrixManager::MatrixManager(const MoFEM::Core &core)
   PetscLogEventRegister("MatMngCrtMPIAIJ", 0, &MOFEM_EVENT_createMPIAIJ);
   PetscLogEventRegister("MatMngCrtMPIAIJWthArr", 0,
                         &MOFEM_EVENT_createMPIAIJWithArrays);
-  PetscLogEventRegister("MatMnhCrtMPIAdjWithArr", 0,
+  PetscLogEventRegister("MatMngCrtMPIAdjWithArr", 0,
                         &MOFEM_EVENT_createMPIAdjWithArrays);
   PetscLogEventRegister("MatMngCrtMPIAIJCUSPARSEWthArr", 0,
                         &MOFEM_EVENT_createMPIAIJCUSPARSEWithArrays);
