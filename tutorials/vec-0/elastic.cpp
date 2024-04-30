@@ -469,7 +469,7 @@ MoFEMErrorCode Example::solveSystem() {
   auto set_essential_bc = [&]() {
     MoFEMFunctionBegin;
     // This is low level pushing finite elements (pipelines) to solver
-    auto ksp_ctx_ptr = getDMKspCtx(simple->getDM());
+    auto ksp_ctx_ptr = getDMKspCtx(dm);
 
     auto pre_proc_rhs = boost::make_shared<FEMethod>();
     auto post_proc_rhs = boost::make_shared<FEMethod>();
@@ -563,6 +563,7 @@ MoFEMErrorCode Example::solveSystem() {
 
     MOFEM_LOG_SYNCHRONISE(mField.get_comm());
   }
+
   MoFEMFunctionReturn(0);
 }
 //! [Solve]
@@ -750,6 +751,8 @@ MoFEMErrorCode Example::checkResults() {
 
   auto dm = simple->getDM();
   auto res = createDMVector(dm);
+  CHKERR VecSetDM(res, PETSC_NULL);
+
   pip->getDomainRhsFE()->f = res;
   pip->getBoundaryRhsFE()->f = res;
 
@@ -767,7 +770,7 @@ MoFEMErrorCode Example::checkResults() {
   auto zero_residual_at_constrains = [&]() {
     MoFEMFunctionBegin;
     auto fe_post_proc_ptr = boost::make_shared<FEMethod>();
-    auto get_post_proc_hook_rhs = [this, fe_post_proc_ptr, res]() {
+    auto get_post_proc_hook_rhs = [&]() {
       MoFEMFunctionBegin;
       CHKERR EssentialPreProcReaction<DisplacementCubitBcData>(
           mField, fe_post_proc_ptr, res)();
@@ -886,7 +889,7 @@ struct SetUpSchurImpl : public SetUpSchur {
           "possible only is PC is set up twice");
     }
   }
-  virtual ~SetUpSchurImpl() { S.reset(); }
+  virtual ~SetUpSchurImpl() = default;
 
   MoFEMErrorCode setUp(SmartPetscObj<KSP> solver);
 
@@ -927,6 +930,7 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> solver) {
 
     // Add data to DM storage
     S = createDMMatrix(subDM);
+    CHKERR MatSetDM(S, PETSC_NULL);
     CHKERR MatSetBlockSize(S, SPACE_DIM);
     CHKERR MatSetOption(S, MAT_SYMMETRIC, PETSC_TRUE);
 
