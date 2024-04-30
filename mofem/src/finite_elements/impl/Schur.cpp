@@ -1236,16 +1236,18 @@ static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
 
           >>;
 
+  int max_dofs_on_ent = 0;
   BlockIndexView view;
   for (auto &v : ctx->blockIndex.get<0>()) {
     view.insert(static_cast<const ShiftedBlockView *>(&v));
+    max_dofs_on_ent = std::max(max_dofs_on_ent, v.nb_rows);
   }
 
   for (auto n = 0; n != is_nb_rows; ++n) {
     auto row = ptr[n];
     auto rlo = view.get<0>().lower_bound(row);
     auto rhi = view.get<0>().upper_bound(
-        row + MAX_DOFS_ON_ENTITY); // add such that upper bound is included
+        row + max_dofs_on_ent); // add such that upper bound is included
     for (; rlo != rhi; ++rlo) {
       auto r_shift = row - (*rlo)->row;
       if (r_shift >= 0 && r_shift < (*rlo)->nb_rows) {
@@ -1261,7 +1263,7 @@ static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
     auto col = ptr[n];
     auto clo = view.get<1>().lower_bound(col);
     auto chi = view.get<1>().upper_bound(
-        col + MAX_DOFS_ON_ENTITY); // add such that upper bound is included
+        col + max_dofs_on_ent); // add such that upper bound is included
     for (; clo != chi; ++clo) {
       auto c_shift = col - (*clo)->col;
       if (c_shift >= 0 && c_shift < (*clo)->nb_cols) {
@@ -1720,8 +1722,12 @@ shell_block_mat_asmb_wrap_impl(BlockStruture *ctx,
   MatrixDouble tmp_mat;
   MoFEMFunctionBegin;
 
+#ifndef NDEBUG
+
   PetscLogEventBegin(SchurEvents::MOFEM_EVENT_blockStrutureSetValues, 0, 0, 0,
                      0);
+
+#endif // NDEBUG
 
   auto get_row_indices_ptr = [&row_data]() -> const VectorInt * {
     boost::shared_ptr<EssentialBcStorage> stored_data_ptr;
@@ -1889,7 +1895,9 @@ shell_block_mat_asmb_wrap_impl(BlockStruture *ctx,
     }
   }
 
+#ifndef NDEBUG
   PetscLogEventEnd(SchurEvents::MOFEM_EVENT_blockStrutureSetValues, 0, 0, 0, 0);
+#endif // NDEBUG
 
   MoFEMFunctionReturn(0);
 }
@@ -1912,8 +1920,10 @@ MoFEMErrorCode shell_block_preconditioner_mat_asmb_wrap_impl(
 
   MoFEMFunctionBegin;
 
+#ifndef NDEBUG
   PetscLogEventBegin(SchurEvents::MOFEM_EVENT_blockStrutureSetValues, 0, 0, 0,
                      0);
+#endif // NDEBUG
 
   if (!ctx->preconditionerBlocksPtr) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -1982,7 +1992,9 @@ MoFEMErrorCode shell_block_preconditioner_mat_asmb_wrap_impl(
     CHKERR set(0, 0, nb_rows, nb_cols, mat);
   }
 
+#ifndef NDEBUG
   PetscLogEventEnd(SchurEvents::MOFEM_EVENT_blockStrutureSetValues, 0, 0, 0, 0);
+#endif // NDEBUG
 
   MoFEMFunctionReturn(0);
 }
