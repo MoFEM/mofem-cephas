@@ -309,10 +309,10 @@ int main(int argc, char *argv[]) {
     struct MyOp1 : public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
       TeeStream &my_split;
-      MyOp1(const std::string &row_filed, const std::string &col_field,
+      MyOp1(const std::string &row_field, const std::string &col_field,
             TeeStream &_my_split, char type)
           : VolumeElementForcesAndSourcesCore::UserDataOperator(
-                row_filed, col_field, type),
+                row_field, col_field, type),
             my_split(_my_split) {
         sYmm = false;
       }
