@@ -21,8 +21,10 @@ template <typename T> inline PetscObject getPetscObject(T obj) {
  * @param obj
  */
 template <typename OBJ> void intrusive_ptr_add_ref(OBJ obj) {
-  PetscErrorCode ierr = PetscObjectReference(MoFEM::getPetscObject(obj));
-  CHKERRABORT(PetscObjectComm(MoFEM::getPetscObject(obj)), ierr);
+  if (obj) {
+    PetscErrorCode ierr = PetscObjectReference(MoFEM::getPetscObject(obj));
+    CHKERRABORT(PetscObjectComm(MoFEM::getPetscObject(obj)), ierr);
+  }
 }
 
 /**
@@ -35,19 +37,21 @@ template <typename OBJ> void intrusive_ptr_add_ref(OBJ obj) {
  * @param obj
  */
 template <typename OBJ> void intrusive_ptr_release(OBJ obj) {
-  int cnt = 0;
-  PetscErrorCode ierr =
-      PetscObjectGetReference(MoFEM::getPetscObject(obj), &cnt);
-  if (!ierr) {
-    if (cnt) {
-      if (cnt > 1) {
-        ierr = PetscObjectDereference(MoFEM::getPetscObject(obj));
-      } else {
-        ierr = PetscObjectDestroy(reinterpret_cast<PetscObject *>(&obj));
+  if (obj) {
+    int cnt = 0;
+    PetscErrorCode ierr =
+        PetscObjectGetReference(MoFEM::getPetscObject(obj), &cnt);
+    if (!ierr) {
+      if (cnt) {
+        if (cnt > 1) {
+          ierr = PetscObjectDereference(MoFEM::getPetscObject(obj));
+        } else {
+          ierr = PetscObjectDestroy(reinterpret_cast<PetscObject *>(&obj));
+        }
       }
+      auto comm = PetscObjectComm(MoFEM::getPetscObject(obj));
+      CHKERRABORT(comm, ierr);
     }
-    auto comm = PetscObjectComm(MoFEM::getPetscObject(obj));
-    CHKERRABORT(comm, ierr);
   }
 }
 
