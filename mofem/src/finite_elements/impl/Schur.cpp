@@ -215,7 +215,8 @@ struct DiagBlockIndex {
 
                             member<Indexes, int, &Indexes::col>,
                             member<Indexes, int, &Indexes::nb_cols>,
-                            member<Indexes, int, &Indexes::row>>
+                            member<Indexes, int, &Indexes::row>,
+                            member<Indexes, int, &Indexes::nb_rows>>
 
               >,
 
