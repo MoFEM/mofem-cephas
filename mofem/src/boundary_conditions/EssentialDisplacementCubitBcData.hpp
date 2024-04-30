@@ -94,6 +94,8 @@ template <> struct EssentialPreProc<DisplacementCubitBcData> {
                    std::vector<boost::shared_ptr<ScalingMethod>> smv,
                    bool get_coords = false);
 
+  virtual ~EssentialPreProc() = default;
+
   MoFEMErrorCode operator()();
 
 protected:
@@ -112,6 +114,8 @@ template <> struct EssentialPostProcRhs<DisplacementCubitBcData> {
   EssentialPostProcRhs(MoFEM::Interface &m_field,
                       boost::shared_ptr<FEMethod> fe_ptr, double diag,
                       SmartPetscObj<Vec> rhs = nullptr);
+
+  virtual ~EssentialPostProcRhs() = default;
 
   MoFEMErrorCode operator()();
 
@@ -132,6 +136,8 @@ template <> struct EssentialPostProcLhs<DisplacementCubitBcData> {
                       boost::shared_ptr<FEMethod> fe_ptr, double diag,
                       SmartPetscObj<Mat> lhs = nullptr,
                       SmartPetscObj<AO> ao = nullptr);
+
+  virtual ~EssentialPostProcLhs() = default;
 
   MoFEMErrorCode operator()();
 
