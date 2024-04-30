@@ -1,12 +1,9 @@
 /**
- * @file operators_tests.cpp
- * @example operators_tests.cpp
- * @brief Test operators in forms integrators
- * @date 2022-12-11
+ * @file schur_test_diag_mat.cpp
+ * @example schur_test_diag_mat.cpp
+ * @brief Test block matrix and Schur complement matrix.
  *
- * @copyright Copyright (c) 2022
- *
- * TODO: Add more operators.
+ * @copyright Copyright (c) 2024
  *
  */
 
