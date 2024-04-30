@@ -1256,6 +1256,8 @@ static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
         for (auto i = 0; i != (*rlo)->nb_cols; ++i) {
           ptr[i + r_shift * (*rlo)->nb_cols] = 0;
         }
+      } else if ((*rlo)->row > row) {
+        break;
       }
     }
   }
@@ -1282,6 +1284,8 @@ static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
             ptr[c_shift + r_shift * (*clo)->nb_cols] = diag;
           }
         }
+      } else if ((*clo)->row > col) {
+        break;
       }
     }
   }
