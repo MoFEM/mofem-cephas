@@ -10,7 +10,6 @@
 namespace MoFEM {
 
 constexpr bool debug_schur = false;
-constexpr bool inverse_diag_test = false;
 
 /**
  * @brief Clear Schur complement internal data
@@ -288,7 +287,9 @@ SchurElemMats::assembleStorage(const EntitiesFieldData::EntData &row_data,
                                const MatrixDouble &mat, InsertMode iora) {
   MoFEMFunctionBegin;
 
+#ifndef NDEBUG
   PetscLogEventBegin(SchurEvents::MOFEM_EVENT_schurMatSetValues, 0, 0, 0, 0);
+#endif // NDEBUG
 
   // get row indices, in case of store, get indices from storage
   // storage keeps marked indices to manage boundary conditions
@@ -434,7 +435,9 @@ SchurElemMats::assembleStorage(const EntitiesFieldData::EntData &row_data,
     // no need to set indices
   }
 
+#ifndef NDEBUG
   PetscLogEventEnd(SchurEvents::MOFEM_EVENT_schurMatSetValues, 0, 0, 0, 0);
+#endif // NDEBUG
 
   MoFEMFunctionReturn(0);
 }
@@ -1397,55 +1400,17 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
   auto hi = ctx->blockIndex.get<0>().end();
 
   while (it != hi) {
-
-    auto shift = it->mat_shift;
-
-    auto loc_col = it->loc_col;
+    auto nb_rows = it->nb_rows;
     auto nb_cols = it->nb_cols;
-    auto x_ptr = &x_array[loc_col];
-
-    int it_shift = shift;
-    int loc_row_start = it->loc_row;
-    int loc_row_end = it->loc_row;
-
-    while (
-
-        it != hi
-
-        &&
-
-        // continue block of matrices
-        (it->mat_shift == it_shift)
-
-        &&
-
-        // the same columns
-        (it->loc_col == loc_col && it->nb_cols == nb_cols)
-
-        &&
-
-        // growing rows
-        (it->loc_row == loc_row_end)
-
-    ) {
-      loc_row_end += it->nb_rows;
-      it_shift += it->nb_cols * it->nb_rows;
-      ++it;
+    auto x_ptr = &x_array[it->loc_col];
+    auto y_ptr = &y_array[it->loc_row];
+    auto ptr = &block_ptr[it->mat_shift];
+    for (auto r = 0; r != nb_rows; ++r) {
+      for (auto c = 0; c != nb_cols; ++c) {
+        y_ptr[r] += ptr[r * nb_cols + c] * x_ptr[c];
+      }
     }
-
-    cblas_dgemv(
-
-        CblasRowMajor, CblasNoTrans,
-
-        loc_row_end - loc_row_start, nb_cols,
-
-        1., &(block_ptr[shift]), nb_cols,
-
-        x_ptr, 1,
-
-        1., &y_array[loc_row_start], 1
-
-    );
+    ++it;
   }
 
   if (ctx->multiplyByPreconditioner) {
@@ -1465,22 +1430,13 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
         auto nb_cols = it->nb_cols;
         auto x_ptr = &x_array[it->loc_col];
         auto y_ptr = &y_array[it->loc_row];
-
-        cblas_dgemv(
-
-            CblasRowMajor, CblasNoTrans,
-
-            nb_rows, nb_cols,
-
-            1., &(preconditioner_ptr[it->inv_shift]), nb_cols,
-
-            x_ptr, 1,
-
-            1., y_ptr, 1
-
-        );
+        auto ptr = &preconditioner_ptr[it->inv_shift];
+        for (auto r = 0; r != nb_rows; ++r) {
+          for (auto c = 0; c != nb_cols; ++c) {
+            y_ptr[r] += ptr[r * nb_cols + c] * x_ptr[c];
+          }
+        }
       }
-
       ++it;
     }
   }
@@ -1599,20 +1555,13 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
       auto off_col = off_index_ptr->loc_col;
       auto off_nb_cols = off_index_ptr->nb_cols;
       auto off_shift = off_index_ptr->mat_shift;
-
-      cblas_dgemv(
-
-          CblasRowMajor, CblasNoTrans,
-
-          nb_rows, off_nb_cols,
-
-          -1., &(block_ptr[off_shift]), off_nb_cols,
-
-          &x_array[off_col], 1,
-
-          1., &*f.begin(), 1
-
-      );
+      auto x_ptr = &x_array[off_col];
+      auto ptr = &block_ptr[off_shift];
+      for (auto r = 0; r != nb_rows; ++r) {
+        for (auto c = 0; c != off_nb_cols; ++c) {
+          f[r] -= ptr[r * off_nb_cols + c] * x_ptr[c];
+        }
+      }
     }
 
 #ifndef NDEBUG
@@ -1624,43 +1573,12 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
                data_inv_blocks->size());
 #endif // NDEBUG
 
-#ifndef NDEBUG
-    if constexpr (inverse_diag_test) {
-      MatrixDouble test(nb_rows, nb_cols);
-      auto inv_m =
-          getMatrixAdaptor(&inv_block_ptr[inv_shift], nb_rows, nb_cols);
-      auto shift = diag_index_ptr->mat_shift;
-      auto m = getMatrixAdaptor(&block_ptr[shift], nb_rows, nb_cols);
-      test = prod(inv_m, m);
-      double sum = 0;
-      for (auto &d : test.data()) {
-        if (std::abs(d) < 1e-6)
-          d = 0;
-        sum += d * d;
-      }
-      if (std::abs(sum - nb_rows) > 1e-6) {
-        MOFEM_LOG("SELF", Sev::error) << "sum: " << sum;
-        MOFEM_LOG("SELF", Sev::error)
-            << "test matrix (should be diagonal) " << test;
-        SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong sum %3.4f",
-                 sum);
+    auto ptr = &inv_block_ptr[inv_shift];
+    for (auto r = 0; r != nb_rows; ++r) {
+      for (auto c = 0; c != nb_cols; ++c) {
+        x_array[row + r] += inv_block_ptr[inv_shift + r * nb_cols + c] * f[c];
       }
     }
-#endif // NDEBUG
-
-    cblas_dgemv(
-
-        CblasRowMajor, CblasNoTrans,
-
-        nb_rows, nb_cols,
-
-        -1., &(inv_block_ptr[inv_shift]), nb_cols,
-
-        &*f.begin(), 1,
-
-        1., &x_array[row], 1
-
-    );
   }
 
   CHKERR VecRestoreArray(loc_ghost_x, &x_array);
