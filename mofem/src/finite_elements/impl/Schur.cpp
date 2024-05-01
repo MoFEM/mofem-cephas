@@ -2091,7 +2091,7 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
       auto block_dof_c =
           block_dofs_col->get<PetscGlobalIdx_mi_tag>().find(vec_c_block[idx]);
       if (d.row == d.col && d.nb_rows == d.nb_cols) {
-        // Only store inverse of diaconal blocks
+        // Only store inverse of diagonal blocks
         d.inv_shift = inv_mem_size;
         inv_mem_size += d.nb_cols * d.nb_rows;
       }
