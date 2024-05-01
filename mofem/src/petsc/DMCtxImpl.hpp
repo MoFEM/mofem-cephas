@@ -24,7 +24,7 @@ struct DMCtxImpl : public DMCtx {
   PetscBool isSubDM = PETSC_FALSE;
   std::vector<std::string> rowSubFields;
   std::vector<std::string> colSubFields;
-  const Problem *problemMainOfSubPtr; ///< pinter to main problem to sub-problem
+  const Problem *problemMainOfSubPtr; ///< pointer to main problem to sub-problem
 
   PetscBool isCompDM = PETSC_FALSE;
   std::vector<std::string> rowCompPrb;
@@ -41,7 +41,7 @@ struct DMCtxImpl : public DMCtx {
   Interface *mField_ptr = nullptr; ///< MoFEM interface
 
   // pointer to data structures
-  const Problem *problemPtr = nullptr; ///< pinter to problem data structure
+  const Problem *problemPtr = nullptr; ///< pointer to problem data structure
   std::string problemName;             ///< Problem name
 
   // schur block matrix
