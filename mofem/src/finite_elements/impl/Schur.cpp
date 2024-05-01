@@ -1240,18 +1240,15 @@ static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
 
           >>;
 
-  int max_dofs_on_ent = 0;
   BlockIndexView view;
   for (auto &v : ctx->blockIndex.get<0>()) {
     view.insert(static_cast<const ShiftedBlockView *>(&v));
-    max_dofs_on_ent = std::max(max_dofs_on_ent, v.nb_rows);
   }
 
   for (auto n = 0; n != is_nb_rows; ++n) {
     auto row = ptr[n];
     auto rlo = view.get<0>().lower_bound(row);
-    auto rhi = view.get<0>().upper_bound(
-        row + max_dofs_on_ent); // add such that upper bound is included
+    auto rhi = view.get<0>().end();
     for (; rlo != rhi; ++rlo) {
       auto r_shift = row - (*rlo)->row;
       if (r_shift >= 0 && r_shift < (*rlo)->nb_rows) {
@@ -1268,8 +1265,7 @@ static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
   for (auto n = 0; n != is_nb_rows; ++n) {
     auto col = ptr[n];
     auto clo = view.get<1>().lower_bound(col);
-    auto chi = view.get<1>().upper_bound(
-        col + max_dofs_on_ent); // add such that upper bound is included
+    auto chi = view.get<1>().end();
     for (; clo != chi; ++clo) {
       auto c_shift = col - (*clo)->col;
       if (c_shift >= 0 && c_shift < (*clo)->nb_cols) {
