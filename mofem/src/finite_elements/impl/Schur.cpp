@@ -2039,11 +2039,11 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
 #ifndef NDEBUG
       if (schur_dof_r == schur_dofs_row->get<PetscGlobalIdx_mi_tag>().end()) {
         CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY,
-                          "Block <Schur> not not fund");
+                          "Block <Schur> not not found");
       }
       if (schur_dof_c == schur_dofs_col->get<PetscGlobalIdx_mi_tag>().end()) {
         CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY,
-                          "Block <Schur> not not fund");
+                          "Block <Schur> not not found");
       }
 #endif // NDEBUG
       insert(data_ptrs[0]->blockIndex, *schur_dof_r, *schur_dof_c, d);
@@ -2057,11 +2057,11 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
 #ifndef NDEBUG
       if (schur_dof_r == schur_dofs_row->get<PetscGlobalIdx_mi_tag>().end()) {
         CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY,
-                          "Block <Schur> not not fund");
+                          "Block <Schur> not not found");
       }
       if (block_dof_c == block_dofs_col->get<PetscGlobalIdx_mi_tag>().end()) {
         CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY,
-                          "Block <Block> not not fund");
+                          "Block <Block> not not found");
       }
 #endif
       insert(data_ptrs[1]->blockIndex, *schur_dof_r, *block_dof_c, d);
@@ -2075,11 +2075,11 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
 #ifndef NDEBUG
       if (block_dof_r == block_dofs_row->get<PetscGlobalIdx_mi_tag>().end()) {
         CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY,
-                          "Block <Block> not not fund");
+                          "Block <Block> not not found");
       }
       if (schur_dof_c == schur_dofs_col->get<PetscGlobalIdx_mi_tag>().end()) {
         CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY,
-                          "Block <Schur> not not fund");
+                          "Block <Schur> not not found");
       }
 #endif // NDEBUG
       insert(data_ptrs[2]->blockIndex, *block_dof_r, *schur_dof_c, d);
