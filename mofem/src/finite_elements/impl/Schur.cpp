@@ -657,7 +657,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 
     // iterate row entities
     for (auto row_it : schur_row_ptr_view) {
-      // only diagonals to get inverted diaconal
+      // only diagonals to get inverted diagonal
       if (row_it->uidRow == row_it->uidCol) {
 #ifndef NDEBUG
         if constexpr (debug_schur) {
