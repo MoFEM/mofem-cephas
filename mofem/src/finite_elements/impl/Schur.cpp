@@ -1259,7 +1259,7 @@ static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
         for (auto i = 0; i != (*rlo)->nb_cols; ++i) {
           ptr[i + r_shift * (*rlo)->nb_cols] = 0;
         }
-      } else if ((*rlo)->row > row) {
+      } else if ((*rlo)->row + (*rlo)->nb_rows > row) {
         break;
       }
     }
@@ -1287,7 +1287,7 @@ static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
             ptr[c_shift + r_shift * (*clo)->nb_cols] = diag;
           }
         }
-      } else if ((*clo)->row > col) {
+      } else if ((*clo)->col + (*clo)->nb_cols > col) {
         break;
       }
     }
@@ -1576,7 +1576,7 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
     auto ptr = &inv_block_ptr[inv_shift];
     for (auto r = 0; r != nb_rows; ++r) {
       for (auto c = 0; c != nb_cols; ++c) {
-        x_array[row + r] += inv_block_ptr[inv_shift + r * nb_cols + c] * f[c];
+        x_array[row + r] -= ptr[r * nb_cols + c] * f[c];
       }
     }
   }
