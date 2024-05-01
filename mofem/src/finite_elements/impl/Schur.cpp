@@ -1137,7 +1137,7 @@ boost::shared_ptr<BlockStruture> createBlockMatStructure(
     CHKERR DMoFEMLoopFiniteElements(dm, d.first, fe_method);
   };
 
-  // order by colum (that is for matrix multiplication)
+  // order by column (that is for matrix multiplication)
   auto mem_size = 0;
   for (auto &v : data_ptr->blockIndex.get<0>()) {
     v.mat_shift = mem_size;
