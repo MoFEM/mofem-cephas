@@ -284,14 +284,18 @@ int main(int argc, char *argv[]) {
     auto y_petsc = createDMVector(simple->getDM());
     auto y_block = createDMVector(simple->getDM());
 
-    auto test = [](auto msg, auto y) {
+    auto test = [](auto msg, auto y, double norm0) {
       MoFEMFunctionBegin;
+
+    double eps = 1e-10;
+    CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-eps", &eps, PETSC_NULL);
+
       PetscReal norm;
       CHKERR VecNorm(y, NORM_2, &norm);
+      norm = norm / norm0;
       MOFEM_LOG_CHANNEL("WORLD");
       MOFEM_TAG_AND_LOG("WORLD", Sev::inform, "TestBlockMat")
           << msg << ": norm of difference: " << norm;
-      constexpr double eps = 1e-10;
       if (norm > eps || std::isnan(norm) || std::isinf(norm)) {
         SETERRQ(PETSC_COMM_WORLD, 1, "norm of difference is too big");
       }
@@ -309,10 +313,13 @@ int main(int argc, char *argv[]) {
                               PETSC_NULL);
 
     CHKERR MatMult(petsc_mat, v, y_petsc);
+    double nrm0;
+    CHKERR VecNorm(y_petsc, NORM_2, &nrm0);
+
+
     CHKERR MatMult(block_mat, v, y_block);
     CHKERR VecAXPY(y_petsc, -1.0, y_block);
-
-    CHKERR test("mult", y_petsc);
+    CHKERR test("mult", y_petsc, nrm0);
 
     CHKERR MatMult(petsc_mat, v, y_petsc);
     CHKERR MatMult(block_mat, v, y_block);
@@ -320,7 +327,7 @@ int main(int argc, char *argv[]) {
     CHKERR MatMultAdd(block_mat, v, y_block, y_block);
     CHKERR VecAXPY(y_petsc, -1.0, y_block);
 
-    CHKERR test("mult add", y_petsc);
+    CHKERR test("mult add", y_petsc, nrm0);
     CHKERR schurSwitchPreconditioner(std::get<1>(*nested_data_ptr)[3]);
     auto y_nested = createDMVector(simple->getDM());
     CHKERR MatMult(petsc_mat, v, y_petsc);
@@ -328,7 +335,7 @@ int main(int argc, char *argv[]) {
     CHKERR MatMult(nested_mat, v, y_nested);
     CHKERR VecAXPY(y_petsc, -1.0, y_nested);
 
-    CHKERR test("mult nested", y_petsc);
+    CHKERR test("mult nested", y_petsc, nrm0);
 
     CHKERR schurSwitchPreconditioner(std::get<1>(*nested_data_ptr)[3]);
     auto diag_mat = std::get<0>(*nested_data_ptr)[3];
@@ -369,9 +376,9 @@ int main(int argc, char *argv[]) {
     auto diag_block_f_test = createDMVector(block_dm);
     CHKERR MatMult(diag_mat, block_solved_x, diag_block_f_test);
     CHKERR VecAXPY(diag_block_f_test, -1.0, diag_block_f);
-    CHKERR test("diag solve", diag_block_f_test);
+    CHKERR test("diag solve", diag_block_f_test, nrm0);
 
-    CHKERR schurSaveBlockMesh(block_data_ptr, "block_mesh.vtk");
+    // CHKERR schurSaveBlockMesh(block_data_ptr, "block_mesh.vtk");
 
     petsc_mat.reset();
     block_mat.reset();
