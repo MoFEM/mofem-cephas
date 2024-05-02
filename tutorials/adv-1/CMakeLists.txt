@@ -208,6 +208,24 @@ if(IS_MFRONT_MOD)
     endif()
 
     add_test(
+      wavy_2d_mfront
+      ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+      contact_2d
+      -file_name ${CMAKE_CURRENT_BINARY_DIR}/wavy_2d.h5m
+      -pc_type lu
+      -ts_type beuler
+      -ts_max_time 1 -ts_dt 1
+      -sdf_file ./sdf_files/sdf_plane_2d.py
+      -use_mfront 1
+      -is_axisymmetric 0
+      -mi_lib_path_10 ${CMAKE_CURRENT_BINARY_DIR}/src/libBehaviour.${DEFAULT_LIB_EXTENSION}
+      -mi_block_10 LinearElasticity
+      -mi_param_10_0 1e3
+      -mi_param_10_1 0.4
+      # -atom_test 2
+    )
+
+    add_test(
       hertz_mfront_2d_plane_strain
       ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
       contact_2d
