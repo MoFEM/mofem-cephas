@@ -1,4 +1,4 @@
-/*! \page tutorial_dg_poisson SCL-11: Discountinous Galrekin for Poisson problem
+/*! \page tutorial_dg_poisson SCL-11: Discontinuous Galerkin for Poisson problem
 
 \note Prerequisites of this tutorial include \ref basic_tutorials_poisson_homogeneous
 
