@@ -148,7 +148,6 @@ add_test(
   -young_modulus 1e3
   -poisson_ratio 0.4
   -atom_test 1
-  -hencky_small_strain 1
 )
 
 add_test(
@@ -163,7 +162,6 @@ add_test(
   -young_modulus 1e3
   -poisson_ratio 0.4
   -atom_test 1
-  -hencky_small_strain 1
 )
 
 add_test(
@@ -177,8 +175,7 @@ add_test(
   -sdf_file ./sdf_files/sdf_hertz_3d.py
   -young_modulus 1e3
   -poisson_ratio 0.4
-  -atom_test 4
-  -hencky_small_strain 1
+  -atom_test 3
 )
 
 add_test(
@@ -192,8 +189,7 @@ add_test(
   -sdf_file ./sdf_files/sdf_hertz_3d.py
   -young_modulus 1e3
   -poisson_ratio 0.4
-  -atom_test 4
-  -hencky_small_strain 1
+  -atom_test 3
 )
 
 if(IS_MFRONT_MOD)
@@ -230,28 +226,28 @@ if(IS_MFRONT_MOD)
     )
 
     add_test(
-      hertz_mfront_2d_axisymm
-      ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
+      hertz_mfront_2d_axisymm_flat
+      ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
       contact_2d
-      -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/hertz_2d_4p.h5m
+      -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/hertz_2d.cub
       -pc_type lu
       -ts_type beuler
       -ts_max_time 1 -ts_dt 1 
-      -sdf_file ./sdf_files/sdf_hertz_2d_axisymm.py
+      -sdf_file ./sdf_files/sdf_hertz_2d_axisymm_sphere.py
       -use_mfront 1
       -is_axisymmetric 1
       -mi_lib_path_10 ${CMAKE_CURRENT_BINARY_DIR}/src/libBehaviour.${DEFAULT_LIB_EXTENSION}
       -mi_block_10 LinearElasticity
       -mi_param_10_0 1e3
       -mi_param_10_1 0.4
-      -atom_test 3
+      -atom_test 5
     )
 
     add_test(
       hertz_mfront_2d_axisymm_sphere
       ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
       contact_2d
-      -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/hertz_axisymm_sphere_4p.h5m
+      -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/cyl_2d_4p.h5m
       -pc_type lu
       -ts_type beuler
       -ts_max_time 1 -ts_dt 1 
@@ -262,7 +258,7 @@ if(IS_MFRONT_MOD)
       -mi_block_10 LinearElasticity
       -mi_param_10_0 1e3
       -mi_param_10_1 0.4
-      -atom_test 3
+      -atom_test 4
     )
 
     add_test(
@@ -279,7 +275,7 @@ if(IS_MFRONT_MOD)
       -mi_block_10 LinearElasticity
       -mi_param_10_0 1e3
       -mi_param_10_1 0.4
-      -atom_test 4
+      -atom_test 3
     )
 
   endif(TFEL_DIR)

@@ -135,8 +135,8 @@ double alpha_damping = 0;
 double scale = 1.;
 
 PetscBool is_axisymmetric = PETSC_FALSE;     //< Axisymmetric model
-PetscBool hencky_small_strain = PETSC_FALSE; //< Use small strain version of
-                                             // Hencky model (slower than Hooke)
+
+//##define HENCKY_SMALL_STRAIN
 
 int atom_test = 0;
 
@@ -365,8 +365,6 @@ MoFEMErrorCode Contact::createCommonData() {
                              &is_axisymmetric, PETSC_NULL);
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-atom_test", &atom_test,
                             PETSC_NULL);
-  CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-hencky_small_strain",
-                             &hencky_small_strain, PETSC_NULL);
 
   CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-scale", &scale, PETSC_NULL);
   CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-young_modulus", &young_modulus,
@@ -447,8 +445,9 @@ MoFEMErrorCode Contact::createCommonData() {
         "MFrontInterface module was not found while use_mfront was set to 1");
 #else
     if (SCHUR_ASSEMBLE) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-              "MFrontInterface module is not compatible with Schur assembly");
+      SETERRQ(
+          PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+          "MFrontInterface module is not yet compatible with Schur assembly");
     }
     if (SPACE_DIM == 3) {
       mfrontInterface =
@@ -470,8 +469,8 @@ MoFEMErrorCode Contact::createCommonData() {
 
   Simple *simple = mField.getInterface<Simple>();
   auto dm = simple->getDM();
-  monitorPtr = boost::make_shared<Monitor>(
-      dm, scale, mfrontInterface, is_axisymmetric, hencky_small_strain);
+  monitorPtr =
+      boost::make_shared<Monitor>(dm, scale, mfrontInterface, is_axisymmetric);
 
   if (use_mfront) {
     mfrontInterface->setMonitorPtr(monitorPtr);
@@ -578,8 +577,7 @@ MoFEMErrorCode Contact::OPs() {
 
     if (!mfrontInterface) {
       CHKERR HenckyOps::opFactoryDomainLhs<SPACE_DIM, AT, IT, DomainEleOp>(
-          mField, pip, "U", "MAT_ELASTIC", Sev::verbose, scale,
-          hencky_small_strain);
+          mField, pip, "U", "MAT_ELASTIC", Sev::verbose, scale);
     } else {
       CHKERR mfrontInterface->opFactoryDomainLhs(pip);
     }
@@ -622,8 +620,7 @@ MoFEMErrorCode Contact::OPs() {
 
     if (!mfrontInterface) {
       CHKERR HenckyOps::opFactoryDomainRhs<SPACE_DIM, AT, IT, DomainEleOp>(
-          mField, pip, "U", "MAT_ELASTIC", Sev::inform, scale,
-          hencky_small_strain);
+          mField, pip, "U", "MAT_ELASTIC", Sev::inform, scale);
     } else {
       CHKERR mfrontInterface->opFactoryDomainRhs(pip);
     }
@@ -896,7 +893,7 @@ MoFEMErrorCode Contact::checkResults() {
     CHKERR VecGetArrayRead(ContactOps::CommonData::totalTraction, &t_ptr);
     double hertz_force;
     double fem_force;
-    double tol = 5e-3;
+    double tol = 1e-3;
     switch (atom_test) {
     case 1: // plane stress
       hertz_force = 3.927;
@@ -906,13 +903,14 @@ MoFEMErrorCode Contact::checkResults() {
       hertz_force = 4.675;
       fem_force = t_ptr[1];
       break;
-    case 3: // axisymmetric
-      hertz_force = 19.843;
-      fem_force = t_ptr[1];
-      break;
-    case 4: // 3D
-      hertz_force = 4.96;
+    case 3: // 3D
+      hertz_force = 3.968;
       fem_force = t_ptr[2];
+    case 4: // axisymmetric
+      tol = 5e3;
+    case 5: // axisymmetric
+      hertz_force = 15.873;
+      fem_force = t_ptr[1];
       break;
     default:
       SETERRQ1(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
