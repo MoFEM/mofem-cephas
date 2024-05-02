@@ -129,7 +129,7 @@ struct MedInterface : public UnknownInterface {
   std::vector<EntityHandle> meshMeshsets; ///< meshset for each mesh
   std::map<std::string, FieldData> fieldNames;
   std::string medFileName; ///< MED file name
-  std::vector<int> tesssssssssssssssss1; //
+  std::vector<int> tesssssssssssssssssssssssssssssssssssssssssssssssssssssss1; //
 
 private:
   MoFEM::Core &cOre; ///< core database
