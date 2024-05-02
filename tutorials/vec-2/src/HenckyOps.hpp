@@ -408,10 +408,9 @@ struct OpCalculatePiolaStressImpl<DIM, GAUSS, DomainEleOp>
     : public DomainEleOp {
 
   OpCalculatePiolaStressImpl(const std::string field_name,
-                             boost::shared_ptr<CommonData> common_data,
-                             bool use_small_strain = false)
-      : DomainEleOp(field_name, DomainEleOp::OPROW), commonDataPtr(common_data),
-        useSmallStrain(use_small_strain) {
+                             boost::shared_ptr<CommonData> common_data)
+      : DomainEleOp(field_name, DomainEleOp::OPROW),
+        commonDataPtr(common_data) {
     std::fill(&DomainEleOp::doEntities[MBEDGE],
               &DomainEleOp::doEntities[MBMAXTYPE], false);
   }
@@ -442,14 +441,14 @@ struct OpCalculatePiolaStressImpl<DIM, GAUSS, DomainEleOp>
 
     for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
 
-      if (useSmallStrain) {
-        t_P(i, j) = t_D(i, j, k, l) * t_grad(k, l);
-      } else {
-        FTensor::Tensor2<double, DIM, DIM> t_F;
-        t_F(i, j) = t_grad(i, j) + t_kd(i, j);
-        t_S(k, l) = t_T(i, j) * t_logC_dC(i, j, k, l);
-        t_P(i, l) = t_F(i, k) * t_S(k, l);
-      }
+#ifdef HENCKY_SMALL_STRAIN
+      t_P(i, j) = t_D(i, j, k, l) * t_grad(k, l);
+#else
+      FTensor::Tensor2<double, DIM, DIM> t_F;
+      t_F(i, j) = t_grad(i, j) + t_kd(i, j);
+      t_S(k, l) = t_T(i, j) * t_logC_dC(i, j, k, l);
+      t_P(i, l) = t_F(i, k) * t_S(k, l);
+#endif
 
       ++t_grad;
       ++t_logC;
@@ -465,17 +464,15 @@ struct OpCalculatePiolaStressImpl<DIM, GAUSS, DomainEleOp>
 
 private:
   boost::shared_ptr<CommonData> commonDataPtr;
-  bool useSmallStrain;
 };
 
 template <int DIM, typename DomainEleOp>
 struct OpHenckyTangentImpl<DIM, GAUSS, DomainEleOp> : public DomainEleOp {
   OpHenckyTangentImpl(const std::string field_name,
                       boost::shared_ptr<CommonData> common_data,
-                      boost::shared_ptr<MatrixDouble> mat_D_ptr = nullptr,
-                      bool use_small_strain = false)
-      : DomainEleOp(field_name, DomainEleOp::OPROW), commonDataPtr(common_data),
-        useSmallStrain(use_small_strain) {
+                      boost::shared_ptr<MatrixDouble> mat_D_ptr = nullptr)
+      : DomainEleOp(field_name, DomainEleOp::OPROW),
+        commonDataPtr(common_data) {
     std::fill(&DomainEleOp::doEntities[MBEDGE],
               &DomainEleOp::doEntities[MBMAXTYPE], false);
     if (mat_D_ptr)
@@ -515,38 +512,40 @@ struct OpHenckyTangentImpl<DIM, GAUSS, DomainEleOp> : public DomainEleOp {
 
     for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
 
-      if (useSmallStrain) {
-        dP_dF(i, j, k, l) = t_D(i, j, k, l);
-      } else {
-        FTensor::Tensor2<double, DIM, DIM> t_F;
-        t_F(i, j) = t_grad(i, j) + t_kd(i, j);
+#ifdef HENCKY_SMALL_STRAIN
+      dP_dF(i, j, k, l) = t_D(i, j, k, l);
+#else
 
-        FTensor::Tensor1<double, DIM> eig;
-        FTensor::Tensor2<double, DIM, DIM> eigen_vec;
-        FTensor::Tensor2_symmetric<double, DIM> T;
-        eig(i) = t_eig_val(i);
-        eigen_vec(i, j) = t_eig_vec(i, j);
-        T(i, j) = t_T(i, j);
+      FTensor::Tensor2<double, DIM, DIM> t_F;
+      t_F(i, j) = t_grad(i, j) + t_kd(i, j);
 
-        // rare case when two eigen values are equal
-        auto nb_uniq = get_uniq_nb<DIM>(&eig(0));
+      FTensor::Tensor1<double, DIM> eig;
+      FTensor::Tensor2<double, DIM, DIM> eigen_vec;
+      FTensor::Tensor2_symmetric<double, DIM> T;
+      eig(i) = t_eig_val(i);
+      eigen_vec(i, j) = t_eig_vec(i, j);
+      T(i, j) = t_T(i, j);
 
-        FTensor::Tensor4<double, DIM, DIM, DIM, DIM> dC_dF;
-        dC_dF(i, j, k, l) = (t_kd(i, l) * t_F(k, j)) + (t_kd(j, l) * t_F(k, i));
+      // rare case when two eigen values are equal
+      auto nb_uniq = get_uniq_nb<DIM>(&eig(0));
 
-        auto TL = EigenMatrix::getDiffDiffMat(eig, eigen_vec, f, d_f, dd_f, T,
-                                              nb_uniq);
+      FTensor::Tensor4<double, DIM, DIM, DIM, DIM> dC_dF;
+      dC_dF(i, j, k, l) = (t_kd(i, l) * t_F(k, j)) + (t_kd(j, l) * t_F(k, i));
 
-        TL(i, j, k, l) *= 4;
-        FTensor::Ddg<double, DIM, DIM> P_D_P_plus_TL;
-        P_D_P_plus_TL(i, j, k, l) =
-            TL(i, j, k, l) +
-            (t_logC_dC(i, j, o, p) * t_D(o, p, m, n)) * t_logC_dC(m, n, k, l);
-        P_D_P_plus_TL(i, j, k, l) *= 0.5;
-        dP_dF(i, j, m, n) = t_kd(i, m) * (t_kd(k, n) * t_S(k, j));
-        dP_dF(i, j, m, n) +=
-            t_F(i, k) * (P_D_P_plus_TL(k, j, o, p) * dC_dF(o, p, m, n));
-      }
+      auto TL =
+          EigenMatrix::getDiffDiffMat(eig, eigen_vec, f, d_f, dd_f, T, nb_uniq);
+
+      TL(i, j, k, l) *= 4;
+      FTensor::Ddg<double, DIM, DIM> P_D_P_plus_TL;
+      P_D_P_plus_TL(i, j, k, l) =
+          TL(i, j, k, l) +
+          (t_logC_dC(i, j, o, p) * t_D(o, p, m, n)) * t_logC_dC(m, n, k, l);
+      P_D_P_plus_TL(i, j, k, l) *= 0.5;
+      dP_dF(i, j, m, n) = t_kd(i, m) * (t_kd(k, n) * t_S(k, j));
+      dP_dF(i, j, m, n) +=
+          t_F(i, k) * (P_D_P_plus_TL(k, j, o, p) * dC_dF(o, p, m, n));
+
+#endif
 
       ++dP_dF;
 
@@ -565,7 +564,6 @@ struct OpHenckyTangentImpl<DIM, GAUSS, DomainEleOp> : public DomainEleOp {
 private:
   boost::shared_ptr<CommonData> commonDataPtr;
   boost::shared_ptr<MatrixDouble> matDPtr;
-  bool useSmallStrain;
 };
 
 template <typename DomainEleOp> struct HenkyIntegrators {
@@ -743,8 +741,7 @@ template <int DIM, IntegrationType I, typename DomainEleOp>
 auto commonDataFactory(
     MoFEM::Interface &m_field,
     boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pip,
-    std::string field_name, std::string block_name, Sev sev, double scale = 1,
-    bool use_small_strain = false) {
+    std::string field_name, std::string block_name, Sev sev, double scale = 1) {
 
   auto common_ptr = boost::make_shared<HenckyOps::CommonData>();
   common_ptr->matDPtr = boost::make_shared<MatrixDouble>();
@@ -767,7 +764,7 @@ auto commonDataFactory(
   pip.push_back(new typename H::template OpCalculateHenckyStress<DIM, I>(
       field_name, common_ptr));
   pip.push_back(new typename H::template OpCalculatePiolaStress<DIM, I>(
-      field_name, common_ptr, use_small_strain));
+      field_name, common_ptr));
 
   return common_ptr;
 }
@@ -794,12 +791,11 @@ template <int DIM, AssemblyType A, IntegrationType I, typename DomainEleOp>
 MoFEMErrorCode opFactoryDomainRhs(
     MoFEM::Interface &m_field,
     boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pip,
-    std::string field_name, std::string block_name, Sev sev, double scale = 1,
-    bool use_small_strain = false) {
+    std::string field_name, std::string block_name, Sev sev, double scale = 1) {
   MoFEMFunctionBegin;
 
   auto common_ptr = commonDataFactory<DIM, I, DomainEleOp>(
-      m_field, pip, field_name, block_name, sev, scale, use_small_strain);
+      m_field, pip, field_name, block_name, sev, scale);
   CHKERR opFactoryDomainRhs<DIM, A, I, DomainEleOp>(m_field, pip, field_name,
                                                     common_ptr, sev);
 
@@ -811,7 +807,7 @@ MoFEMErrorCode opFactoryDomainLhs(
     MoFEM::Interface &m_field,
     boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pip,
     std::string field_name, boost::shared_ptr<HenckyOps::CommonData> common_ptr,
-    Sev sev, bool use_small_strain = false) {
+    Sev sev) {
   MoFEMFunctionBegin;
 
   using B = typename FormsIntegrators<DomainEleOp>::template Assembly<
@@ -819,8 +815,8 @@ MoFEMErrorCode opFactoryDomainLhs(
   using OpKPiola = typename B::template OpGradTensorGrad<1, DIM, DIM, 1>;
 
   using H = HenkyIntegrators<DomainEleOp>;
-  pip.push_back(new typename H::template OpHenckyTangent<DIM, I>(
-      field_name, common_ptr, nullptr, use_small_strain));
+  pip.push_back(
+      new typename H::template OpHenckyTangent<DIM, I>(field_name, common_ptr));
   pip.push_back(
       new OpKPiola(field_name, field_name, common_ptr->getMatTangent()));
 
@@ -831,14 +827,13 @@ template <int DIM, AssemblyType A, IntegrationType I, typename DomainEleOp>
 MoFEMErrorCode opFactoryDomainLhs(
     MoFEM::Interface &m_field,
     boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pip,
-    std::string field_name, std::string block_name, Sev sev, double scale = 1,
-    bool use_small_strain = false) {
+    std::string field_name, std::string block_name, Sev sev, double scale = 1) {
   MoFEMFunctionBegin;
 
   auto common_ptr = commonDataFactory<DIM, I, DomainEleOp>(
-      m_field, pip, field_name, block_name, sev, scale, use_small_strain);
-  CHKERR opFactoryDomainLhs<DIM, A, I, DomainEleOp>(
-      m_field, pip, field_name, common_ptr, sev, use_small_strain);
+      m_field, pip, field_name, block_name, sev, scale);
+  CHKERR opFactoryDomainLhs<DIM, A, I, DomainEleOp>(m_field, pip, field_name,
+                                                    common_ptr, sev);
 
   MoFEMFunctionReturn(0);
 }
