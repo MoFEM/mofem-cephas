@@ -1161,6 +1161,10 @@ boost::shared_ptr<BlockStruture> createBlockMatStructure(
     mem_size += v.getNbCols() * v.getNbRows();
   }
 
+  std::vector<double> tmp;
+  if (mem_size > tmp.max_size())
+    CHK_THROW_MESSAGE(MOFEM_OPERATION_UNSUCCESSFUL, "Vector too big");
+
   data_ptr->dataBlocksPtr =
       boost::make_shared<std::vector<double>>(mem_size, 0);
 
