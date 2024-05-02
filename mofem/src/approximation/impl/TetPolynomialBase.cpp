@@ -458,8 +458,8 @@ MoFEMErrorCode TetPolynomialBase::getValueL2AinsworthBase(MatrixDouble &pts) {
   int nb_gauss_pts = pts.size2();
 
   data.dataOnEntities[MBTET][0].getN(base).resize(
-      nb_gauss_pts,
-      NBVOLUMETET_L2(data.dataOnEntities[MBTET][0].getOrder()), false);
+      nb_gauss_pts, NBVOLUMETET_L2(data.dataOnEntities[MBTET][0].getOrder()),
+      false);
   data.dataOnEntities[MBTET][0].getDiffN(base).resize(
       nb_gauss_pts,
       3 * NBVOLUMETET_L2(data.dataOnEntities[MBTET][0].getOrder()), false);
@@ -1011,6 +1011,11 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
   double *phi_f[4];
   double *diff_phi_f[4];
 
+  if (!cacheHDivBaseFaceDemkowiczCache)
+    hDivBaseDemkowiczCache.clear();
+  if (!cacheHdivBaseInteriorDemkowiczCache)
+    hdivBaseInteriorDemkowiczCache.clear();
+
   // Calculate base function on tet faces
   for (int ff = 0; ff != 4; ff++) {
     int face_order = data.dataOnEntities[MBTRI][ff].getOrder();
@@ -1025,11 +1030,34 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
         &*data.dataOnEntities[MBTRI][ff].getDiffN(base).data().begin();
     if (NBFACETRI_DEMKOWICZ_HDIV(order) == 0)
       continue;
+
+    if (cacheHDivBaseFaceDemkowiczCache) {
+      auto it = hDivBaseDemkowiczCache.find(boost::make_tuple(
+
+          face_order, nb_gauss_pts,
+
+          data.facesNodes(ff, 0), data.facesNodes(ff, 1), data.facesNodes(ff, 2)
+
+              ));
+      if (it != hDivBaseDemkowiczCache.end()) {
+        noalias(data.dataOnEntities[MBTRI][ff].getN(base)) = it->N;
+        noalias(data.dataOnEntities[MBTRI][ff].getDiffN(base)) = it->diffN;
+        continue;
+      }
+    }
+
     CHKERR Hdiv_Demkowicz_Face_MBTET_ON_FACE(
         &data.facesNodes(ff, 0), order,
         &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
         &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
         phi_f[ff], diff_phi_f[ff], nb_gauss_pts, 4);
+    if (cacheHDivBaseFaceDemkowiczCache) {
+      auto p = hDivBaseDemkowiczCache.emplace(
+          HDivBaseCacheItem{face_order, nb_gauss_pts, data.facesNodes(ff, 0),
+                            data.facesNodes(ff, 1), data.facesNodes(ff, 2)});
+      p.first->N = data.dataOnEntities[MBTRI][ff].getN(base);
+      p.first->diffN = data.dataOnEntities[MBTRI][ff].getDiffN(base);
+    }
   }
 
   // Calculate base functions in tet interior
@@ -1041,10 +1069,28 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
     double *phi_v = &*data.dataOnEntities[MBTET][0].getN(base).data().begin();
     double *diff_phi_v =
         &*data.dataOnEntities[MBTET][0].getDiffN(base).data().begin();
-    CHKERR Hdiv_Demkowicz_Interior_MBTET(
-        volume_order, &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0),
-        &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0, 0), p_f, phi_f,
-        diff_phi_f, phi_v, diff_phi_v, nb_gauss_pts);
+
+    for (int v = 0; v != 1; ++v) {
+      if (cacheHdivBaseInteriorDemkowiczCache) {
+        auto it = hdivBaseInteriorDemkowiczCache.find(
+            boost::make_tuple(volume_order, nb_gauss_pts));
+        if (it != hdivBaseInteriorDemkowiczCache.end()) {
+          noalias(data.dataOnEntities[MBTET][0].getN(base)) = it->N;
+          noalias(data.dataOnEntities[MBTET][0].getDiffN(base)) = it->diffN;
+          continue;
+        }
+      }
+      CHKERR Hdiv_Demkowicz_Interior_MBTET(
+          volume_order, &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0),
+          &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0, 0), p_f, phi_f,
+          diff_phi_f, phi_v, diff_phi_v, nb_gauss_pts);
+      if (cacheHdivBaseInteriorDemkowiczCache) {
+        auto p = hdivBaseInteriorDemkowiczCache.emplace(
+            BaseCacheItem{volume_order, nb_gauss_pts});
+        p.first->N = data.dataOnEntities[MBTET][0].getN(base);
+        p.first->diffN = data.dataOnEntities[MBTET][0].getDiffN(base);
+      }
+    }
   }
 
   // Set size of face base correctly
@@ -1101,8 +1147,8 @@ TetPolynomialBase::getValueHcurlAinsworthBase(MatrixDouble &pts) {
       }
       sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
       order[ee] = data.dataOnEntities[MBEDGE][ee].getOrder();
-      int nb_dofs = NBEDGE_AINSWORTH_HCURL(
-          data.dataOnEntities[MBEDGE][ee].getOrder());
+      int nb_dofs =
+          NBEDGE_AINSWORTH_HCURL(data.dataOnEntities[MBEDGE][ee].getOrder());
       data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,
                                                         3 * nb_dofs, false);
       data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_gauss_pts,
@@ -1225,8 +1271,8 @@ TetPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
       }
       sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
       order[ee] = data.dataOnEntities[MBEDGE][ee].getOrder();
-      int nb_dofs = NBEDGE_DEMKOWICZ_HCURL(
-          data.dataOnEntities[MBEDGE][ee].getOrder());
+      int nb_dofs =
+          NBEDGE_DEMKOWICZ_HCURL(data.dataOnEntities[MBEDGE][ee].getOrder());
       data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,
                                                         3 * nb_dofs, false);
       data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_gauss_pts,
@@ -1404,3 +1450,6 @@ TetPolynomialBase::getValue(MatrixDouble &pts,
 
   MoFEMFunctionReturn(0);
 }
+
+bool TetPolynomialBase::cacheHDivBaseFaceDemkowiczCache = false;
+bool TetPolynomialBase::cacheHdivBaseInteriorDemkowiczCache = false;
