@@ -613,6 +613,19 @@ struct Monitor : public FEMethod {
 
 
   //! [Analytical function]
+  MoFEM::ScalarFun analyticalWavy2DPressure = [](double x, double y, double z) {
+    // update to atom test values
+    double E_star = young_modulus / (1 - poisson_ratio * poisson_ratio);
+    // delta
+    double delta = 0.0002;
+    // lambda
+    double lambda = 2;
+    // pressure star
+    double p_star = M_PI * E_star * delta / lambda;
+
+    // Pressure = p_bar + p_star * cos(2 * pi * x / lambda)
+    return p_star * std::cos(2.*M_PI*x/lambda);
+    };
 
   MoFEM::ScalarFun analyticalHertzPressureAxisymmetric = [](double x, double y, double z) {
     // update to atom test values
