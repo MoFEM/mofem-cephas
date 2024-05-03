@@ -209,9 +209,9 @@ if(IS_MFRONT_MOD)
 
     add_test(
       wavy_2d_mfront
-      ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+      ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
       contact_2d
-      -file_name ${CMAKE_CURRENT_BINARY_DIR}/wavy_2d.h5m
+      -file_name ${CMAKE_CURRENT_BINARY_DIR}/wavy_2d_4p.h5m
       -pc_type lu
       -ts_type beuler
       -ts_max_time 1 -ts_dt 1
@@ -222,7 +222,7 @@ if(IS_MFRONT_MOD)
       -mi_block_10 LinearElasticity
       -mi_param_10_0 1e3
       -mi_param_10_1 0.4
-      # -atom_test 2
+      -atom_test 6
     )
 
     add_test(

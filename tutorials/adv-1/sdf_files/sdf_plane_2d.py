@@ -1,7 +1,7 @@
 import math
 import numpy as np
 
-d = 0.005785 # indentation depth
+d = 0.001596239 # indentation depth
  
 xc = 0
 yc = 0
