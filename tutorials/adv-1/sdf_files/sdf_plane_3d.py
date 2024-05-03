@@ -1,29 +1,29 @@
 import math
 import numpy as np
 
-d = 0.01 # indentation depth
+d = 0.04 # indentation depth
  
 xc = 0
 yc = 0
 zc = 0
 
 def sdf(delta_t, t, x, y, z, tx, ty, tz, block_id):
-    return yPlane.sDF(xc, yc - d * t, zc, x, y, z)
+    return zPlane.sDF(xc, yc, zc - d * t, x, y, z)
 
 def grad_sdf(delta_t, t, x, y, z, tx, ty, tz, block_id):
-    return yPlane.gradSdf(xc, yc - d * t, zc, x, y, z)
+    return zPlane.gradSdf(xc, yc, zc - d * t, x, y, z)
 
 def hess_sdf(delta_t, t, x, y, z, tx, ty, tz, block_id):
-    return yPlane.hessSdf(xc, yc - d * t, zc, x, y, z)
+    return zPlane.hessSdf(xc, yc, zc - d * t, x, y, z)
 
-class yPlane:
+class zPlane:
 	def sDF(xc, yc, zc, x, y, z):
-		return np.subtract(yc, y)
+		return np.subtract(zc, z)
 
 	def gradSdf(xc, yc, zc, x, y, z):
 		dx = np.zeros_like(x).reshape((-1, 1))
-		dy = np.full_like(y, -1).reshape((-1, 1))
-		dz = np.zeros_like(z).reshape((-1, 1))
+		dy = np.zeros_like(y).reshape((-1, 1))
+		dz = np.full_like(z, -1).reshape((-1, 1))
 		return np.hstack([dx, dy, dz])
 	
 	def hessSdf(xc, yc, zc, x, y, z):
