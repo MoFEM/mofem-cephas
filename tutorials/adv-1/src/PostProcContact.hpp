@@ -595,8 +595,10 @@ struct Monitor : public FEMethod {
       CHKERR calculate_error(analyticalHertzPressurePlaneStress);
     if(atom_test == 2 && sTEP > 0)
       CHKERR calculate_error(analyticalHertzPressurePlaneStrain);
-    if(atom_test == 3 && sTEP > 0)
+    if(atom_test == 5 && sTEP > 0)
       CHKERR calculate_error(analyticalHertzPressureAxisymmetric);
+    if(atom_test == 6 && sTEP > 0)
+      CHKERR calculate_error(analyticalWavy2DPressure);
 
     CHKERR print_max_min(uXScatter, "Ux");
     CHKERR print_max_min(uYScatter, "Uy");
@@ -622,7 +624,7 @@ struct Monitor : public FEMethod {
     double p_star = M_PI * E_star * delta / lambda;
 
     // Pressure = p_bar + p_star * cos(2 * pi * x / lambda)
-    return p_star * std::cos(2.*M_PI*x/lambda);
+    return p_star + p_star * std::cos(2.*M_PI*x/lambda);
     };
 
   MoFEM::ScalarFun analyticalHertzPressureAxisymmetric = [](double x, double y, double z) {
