@@ -104,9 +104,9 @@ int main(int argc, char *argv[]) {
     // Add logging channel for example
     auto core_log = logging::core::get();
     core_log->add_sink(
-        LogManager::createSink(LogManager::getStrmWorld(), "OpTester"));
-    LogManager::setLog("OpTester");
-    MOFEM_LOG_TAG("OpTester", "OpTester");
+        LogManager::createSink(LogManager::getStrmWorld(), "Timeline"));
+    LogManager::setLog("Timeline");
+    MOFEM_LOG_TAG("Timeline", "Timeline");
 
     // Simple interface
     auto simple = m_field.getInterface<Simple>();
@@ -120,8 +120,7 @@ int main(int argc, char *argv[]) {
     // field if needed.
     // Note all vector are vectors, so names are misleading, but hat is to not
     // make code for pushing OPs simple.
-    CHKERR simple->addDomainField("V", H1, AINSWORTH_LEGENDRE_BASE,
-                                  FIELD_DIM);
+    CHKERR simple->addDomainField("V", H1, AINSWORTH_LEGENDRE_BASE, FIELD_DIM);
     CHKERR simple->addDomainField("T", L2, AINSWORTH_LEGENDRE_BASE, FIELD_DIM);
     CHKERR simple->addDomainField("S", L2, AINSWORTH_LEGENDRE_BASE, FIELD_DIM);
     CHKERR simple->addDomainField("O", L2, AINSWORTH_LEGENDRE_BASE, FIELD_DIM);
@@ -266,10 +265,25 @@ int main(int argc, char *argv[]) {
 
     );
 
-    CHKERR DMoFEMLoopFiniteElements(simple->getDM(), simple->getDomainFEName(),
-                                    pip_mng->getDomainLhsFE());
-    CHKERR MatAssemblyBegin(petsc_mat, MAT_FINAL_ASSEMBLY);
-    CHKERR MatAssemblyEnd(petsc_mat, MAT_FINAL_ASSEMBLY);
+    {
+      MOFEM_LOG_CHANNEL("Timeline");
+      MOFEM_LOG_TAG("Timeline", "timer");
+      BOOST_LOG_SCOPED_THREAD_ATTR("Timeline", attrs::timer());
+      MOFEM_LOG("Timeline", Sev::inform) << "Assemble start";
+      CHKERR DMoFEMLoopFiniteElements(simple->getDM(),
+                                      simple->getDomainFEName(),
+                                      pip_mng->getDomainLhsFE());
+      MOFEM_LOG("Timeline", Sev::inform) << "Assemble end";
+    }
+    {
+      MOFEM_LOG_CHANNEL("Timeline");
+      MOFEM_LOG_TAG("Timeline", "timer");
+      BOOST_LOG_SCOPED_THREAD_ATTR("Timeline", attrs::timer());
+      MOFEM_LOG("Timeline", Sev::inform) << "Mat assemble start";
+      CHKERR MatAssemblyBegin(petsc_mat, MAT_FINAL_ASSEMBLY);
+      CHKERR MatAssemblyEnd(petsc_mat, MAT_FINAL_ASSEMBLY);
+      MOFEM_LOG("Timeline", Sev::inform) << "Mat assemble end";
+    }
 
     auto get_random_vector = [&](auto dm) {
       auto v = createDMVector(dm);
@@ -312,14 +326,35 @@ int main(int argc, char *argv[]) {
                               &*zero_rows_and_cols.begin(), 1, PETSC_NULL,
                               PETSC_NULL);
 
-    CHKERR MatMult(petsc_mat, v, y_petsc);
+    {
+      MOFEM_LOG_CHANNEL("Timeline");
+      MOFEM_LOG_TAG("Timeline", "timer");
+      BOOST_LOG_SCOPED_THREAD_ATTR("Timeline", attrs::timer());
+      MOFEM_LOG("Timeline", Sev::inform)
+          << "MatMult(petsc_mat, v, y_petsc) star";
+      CHKERR MatMult(petsc_mat, v, y_petsc);
+      MOFEM_LOG("Timeline", Sev::inform)
+          << "MatMult(petsc_mat, v, y_petsc) end";
+    }
     double nrm0;
     CHKERR VecNorm(y_petsc, NORM_2, &nrm0);
 
+    {
+      MOFEM_LOG_CHANNEL("Timeline");
+      MOFEM_LOG_TAG("Timeline", "timer");
+      BOOST_LOG_SCOPED_THREAD_ATTR("Timeline", attrs::timer());
+      MOFEM_LOG("Timeline", Sev::inform)
+          << "MatMult(block_mat, v, y_block) star";
+      CHKERR MatMult(block_mat, v, y_block);
+      MOFEM_LOG("Timeline", Sev::inform)
+          << "MatMult(block_mat, v, y_block) end";
+    }
 
-    CHKERR MatMult(block_mat, v, y_block);
     CHKERR VecAXPY(y_petsc, -1.0, y_block);
     CHKERR test("mult", y_petsc, nrm0);
+
+    MOFEM_LOG_CHANNEL("Timeline");
+    MOFEM_LOG_TAG("Timeline", "timer");
 
     CHKERR MatMult(petsc_mat, v, y_petsc);
     CHKERR MatMult(block_mat, v, y_block);
@@ -378,7 +413,7 @@ int main(int argc, char *argv[]) {
     CHKERR VecAXPY(diag_block_f_test, -1.0, diag_block_f);
     CHKERR test("diag solve", diag_block_f_test, nrm0);
 
-    // CHKERR schurSaveBlockMesh(block_data_ptr, "block_mesh.vtk");
+    CHKERR schurSaveBlockMesh(block_data_ptr, "block_mesh.vtk");
 
     petsc_mat.reset();
     block_mat.reset();

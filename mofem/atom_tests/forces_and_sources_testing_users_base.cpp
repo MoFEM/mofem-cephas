@@ -380,18 +380,24 @@ int main(int argc, char *argv[]) {
     CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-base_cache", &base_cache,
                                PETSC_NULL);
 
-    if(base_cache) {
-      if (TetPolynomialBase::swichCacheHDivBaseFaceDemkowiczCache()) {
-        TetPolynomialBase::swichCacheHDivBaseFaceDemkowiczCache();
+    if (base_cache) {
+      if (!TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(&fe1)) {
+        TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(&fe1);
       }
-      if (TetPolynomialBase::swichCacheHdivBaseInteriorDemkowiczCache()) {
-        TetPolynomialBase::swichCacheHdivBaseInteriorDemkowiczCache();
+      if (!TetPolynomialBase::swichCacheHdivBaseInteriorDemkowicz(&fe1)) {
+        TetPolynomialBase::swichCacheHdivBaseInteriorDemkowicz(&fe1);
       }
     }
 
     // iterate over finite elements, and execute user data operators on each
     // of them
     CHKERR m_field.loop_finite_elements("PROBLEM", "FE", fe1);
+
+    if(base_cache) {
+      if(TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(&fe1)) {}
+      if(TetPolynomialBase::swichCacheHdivBaseInteriorDemkowicz(&fe1)) {};
+    }
+
   }
   CATCH_ERRORS;
 
