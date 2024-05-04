@@ -454,7 +454,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::operator()() {
     switch (type) {
     case MBTET:
       getElementPolynomialBase() =
-          boost::shared_ptr<BaseFunction>(new TetPolynomialBase());
+          boost::shared_ptr<BaseFunction>(new TetPolynomialBase(this));
       break;
     case MBHEX:
       getElementPolynomialBase() =

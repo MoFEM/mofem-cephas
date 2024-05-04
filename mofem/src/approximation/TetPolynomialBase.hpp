@@ -21,23 +21,17 @@ struct TetPolynomialBase : public BaseFunction {
   MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
-  TetPolynomialBase() = default;
-  ~TetPolynomialBase() = default;
+  TetPolynomialBase(const void *ptr = nullptr);
+  virtual ~TetPolynomialBase();
 
-  static bool swichCacheHDivBaseFaceDemkowiczCache() {
-    cacheHDivBaseFaceDemkowiczCache = !cacheHDivBaseFaceDemkowiczCache;
-    return cacheHDivBaseFaceDemkowiczCache;
-  };
-
-  static bool swichCacheHdivBaseInteriorDemkowiczCache() {
-    cacheHdivBaseInteriorDemkowiczCache = !cacheHdivBaseInteriorDemkowiczCache;
-    return cacheHdivBaseInteriorDemkowiczCache;
-  };
+  static bool swichCacheHDivBaseFaceDemkowicz(const void *ptr);
+  static bool swichCacheHdivBaseInteriorDemkowicz(const void *ptr);
 
   MoFEMErrorCode getValue(MatrixDouble &pts,
                           boost::shared_ptr<BaseFunctionCtx> ctx_ptr);
 
 private:
+  const void *vPtr;
   EntPolynomialBaseCtx *cTx;
 
   /**
@@ -46,8 +40,8 @@ private:
    * @param pts matrix of integration pts
    * @return MoFEMErrorCode
    *
-   * \note matrix of integration points on rows has local coordinates of finite
-   * element on columns are integration pts.
+   * \note matrix of integration points on rows has local coordinates of
+   * finite element on columns are integration pts.
    */
   MoFEMErrorCode getValueH1(MatrixDouble &pts);
 
@@ -110,66 +104,6 @@ private:
   MoFEMErrorCode getValueHcurlDemkowiczBase(MatrixDouble &pts);
 
   MatrixInt senseFaceAlpha;
-
-  struct BaseCacheItem {
-    int order;
-    int nb_gauss_pts;
-    mutable MatrixDouble N;
-    mutable MatrixDouble diffN;
-  };
-
-  using BaseCacheMI = boost::multi_index_container<
-      BaseCacheItem,
-      boost::multi_index::indexed_by<
-
-          boost::multi_index::hashed_unique<
-
-              composite_key<
-
-                  BaseCacheItem,
-                  member<BaseCacheItem, int, &BaseCacheItem::order>,
-                  member<BaseCacheItem, int, &BaseCacheItem::nb_gauss_pts>>>>
-
-      >;
-
-  struct HDivBaseCacheItem {
-
-    int order;
-    int nb_gauss_pts;
-
-    // Number of permeations for tetrahedron
-    // That is P(3, 4) = 24
-    
-    int n0;
-    int n1;
-    int n2;
-
-    mutable MatrixDouble N;
-    mutable MatrixDouble diffN;
-  };
-
-  using HDivBaseFaceCacheMI = boost::multi_index_container<
-      HDivBaseCacheItem,
-      boost::multi_index::indexed_by<
-
-          boost::multi_index::hashed_unique<
-
-              composite_key<
-
-                  HDivBaseCacheItem,
-                  member<HDivBaseCacheItem, int, &HDivBaseCacheItem::order>,
-                  member<HDivBaseCacheItem, int,
-                         &HDivBaseCacheItem::nb_gauss_pts>,
-                  member<HDivBaseCacheItem, int, &HDivBaseCacheItem::n0>,
-                  member<HDivBaseCacheItem, int, &HDivBaseCacheItem::n1>,
-                  member<HDivBaseCacheItem, int, &HDivBaseCacheItem::n2>>>>
-
-      >;
-
-  static bool cacheHDivBaseFaceDemkowiczCache;
-  HDivBaseFaceCacheMI hDivBaseDemkowiczCache;
-  static bool cacheHdivBaseInteriorDemkowiczCache;
-  BaseCacheMI hdivBaseInteriorDemkowiczCache;
 
 };
 
