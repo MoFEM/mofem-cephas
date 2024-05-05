@@ -895,7 +895,7 @@ struct SetUpSchurImpl : public SetUpSchur {
 
 private:
   MoFEMErrorCode setEntities();
-  MoFEMErrorCode setDMs();
+  MoFEMErrorCode createSubDM();
   MoFEMErrorCode setOperator();
   MoFEMErrorCode setPC(PC pc);
   MoFEMErrorCode setDiagonalPC(PC pc);
@@ -904,7 +904,7 @@ private:
 
   MoFEM::Interface &mField;
 
-  SmartPetscObj<DM> subDM;
+  SmartPetscObj<DM> schurDM;
   SmartPetscObj<DM> blockDM;
   Range volEnts;
   Range subEnts;
@@ -926,10 +926,10 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> solver) {
           "possible only is PC is set up twice");
     }
     CHKERR setEntities();
-    CHKERR setDMs();
+    CHKERR createSubDM();
 
     // Add data to DM storage
-    S = createDMMatrix(subDM);
+    S = createDMMatrix(schurDM);
     CHKERR MatSetDM(S, PETSC_NULL);
     CHKERR MatSetBlockSize(S, SPACE_DIM);
     CHKERR MatSetOption(S, MAT_SYMMETRIC, PETSC_TRUE);
@@ -968,7 +968,7 @@ MoFEMErrorCode SetUpSchurImpl::setEntities() {
   MoFEMFunctionReturn(0);
 };
 
-MoFEMErrorCode SetUpSchurImpl::setDMs() {
+MoFEMErrorCode SetUpSchurImpl::createSubDM() {
   MoFEMFunctionBegin;
   auto simple = mField.getInterface<Simple>();
 
@@ -986,12 +986,12 @@ MoFEMErrorCode SetUpSchurImpl::setDMs() {
       MoFEMFunctionReturn(0);
     };
     CHK_THROW_MESSAGE(create_dm_imp(),
-                      "Error in creating subDM. It is possible that subDM is "
+                      "Error in creating schurDM. It is possible that schurDM is "
                       "already created");
     return dm;
   };
 
-  subDM = create_dm("SUB", subEnts);
+  schurDM = create_dm("SCHUR", subEnts);
   blockDM = create_dm("BLOCK", volEnts);
 
   if constexpr (A == AssemblyType::BLOCK_SCHUR) {
@@ -1012,7 +1012,7 @@ MoFEMErrorCode SetUpSchurImpl::setDMs() {
 
       return getNestSchurData(
 
-          {subDM, blockDM}, block_mat_data,
+          {schurDM, blockDM}, block_mat_data,
 
           {"U"}, {boost::make_shared<Range>(volEnts)}
 
@@ -1036,7 +1036,7 @@ MoFEMErrorCode SetUpSchurImpl::setOperator() {
   CHKERR DMMoFEMGetBlocMatData(simple->getDM(), block_data);
 
   // Boundary
-  auto dm_is = getDMSubData(subDM)->getSmartRowIs();
+  auto dm_is = getDMSubData(schurDM)->getSmartRowIs();
   auto ao_up = createAOMappingIS(dm_is, PETSC_NULL);
   pip->getOpBoundaryLhsPipeline().push_front(createOpSchurAssembleBegin());
   pip->getOpBoundaryLhsPipeline().push_back(
