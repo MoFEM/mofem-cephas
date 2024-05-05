@@ -287,7 +287,7 @@ typename OpBaseImpl<A, EleOp>::MatSetValuesHook
            const EntitiesFieldData::EntData &row_data,
            const EntitiesFieldData::EntData &col_data, MatrixDouble &m) {
           return MatSetValues<AssemblyTypeSelector<A>>(
-              op_ptr->getKSPA(), row_data, col_data, m, ADD_VALUES);
+              op_ptr->getKSPB(), row_data, col_data, m, ADD_VALUES);
         };
 
 /**
