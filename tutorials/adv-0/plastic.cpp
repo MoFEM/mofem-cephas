@@ -1381,27 +1381,25 @@ MoFEMErrorCode SetUpSchurImpl::setUp(TS solver) {
           new OpMassStab("SIGMA", "SIGMA", [eps_stab](double, double, double) {
             return eps_stab;
           }));
-      pip_mng->getOpBoundaryLhsPipeline().push_back(
-          new OpSchurAssembleEnd<SCHUR_DGESV>(
+      pip_mng->getOpBoundaryLhsPipeline().push_back(createOpSchurAssembleEnd(
 
-              {"SIGMA", "EP", "TAU"}, {nullptr, nullptr, nullptr},
-              {SmartPetscObj<AO>(), SmartPetscObj<AO>(), aoUp},
-              {SmartPetscObj<Mat>(), SmartPetscObj<Mat>(), S},
-              {false, false, false}
+          {"SIGMA", "EP", "TAU"}, {nullptr, nullptr, nullptr},
+          {SmartPetscObj<AO>(), SmartPetscObj<AO>(), aoUp},
+          {SmartPetscObj<Mat>(), SmartPetscObj<Mat>(), S},
+          {false, false, false}, false
 
-              ));
+          ));
       // Domain
       pip_mng->getOpDomainLhsPipeline().push_front(
           createOpSchurAssembleBegin());
-      pip_mng->getOpDomainLhsPipeline().push_back(
-          new OpSchurAssembleEnd<SCHUR_DGESV>(
+      pip_mng->getOpDomainLhsPipeline().push_back(createOpSchurAssembleEnd(
 
-              {"SIGMA", "EP", "TAU"}, {nullptr, nullptr, nullptr},
-              {SmartPetscObj<AO>(), SmartPetscObj<AO>(), aoUp},
-              {SmartPetscObj<Mat>(), SmartPetscObj<Mat>(), S},
-              {false, false, false}
+          {"SIGMA", "EP", "TAU"}, {nullptr, nullptr, nullptr},
+          {SmartPetscObj<AO>(), SmartPetscObj<AO>(), aoUp},
+          {SmartPetscObj<Mat>(), SmartPetscObj<Mat>(), S},
+          {false, false, false}, false
 
-              ));
+          ));
 #endif // ADD_CONTACT
       MoFEMFunctionReturn(0);
     };
@@ -1468,10 +1466,10 @@ MoFEMErrorCode SetUpSchurImpl::setUp(TS solver) {
     pip_mng->getOpBoundaryLhsPipeline().push_front(
         createOpSchurAssembleBegin());
     pip_mng->getOpBoundaryLhsPipeline().push_back(
-        new OpSchurAssembleEnd<SCHUR_DGESV>({}, {}, {}, {}, {}));
+        createOpSchurAssembleEnd({}, {}, {}, {}, {}, false));
     pip_mng->getOpDomainLhsPipeline().push_front(createOpSchurAssembleBegin());
     pip_mng->getOpDomainLhsPipeline().push_back(
-        new OpSchurAssembleEnd<SCHUR_DGESV>({}, {}, {}, {}, {}));
+        createOpSchurAssembleEnd({}, {}, {}, {}, {}, false));
   }
 
   // we do not those anymore
