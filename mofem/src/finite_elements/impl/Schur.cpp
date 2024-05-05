@@ -1747,13 +1747,13 @@ shell_block_mat_asmb_wrap_impl(BlockStruture *ctx,
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Block not allocated");
       }
-      if (it->nb_rows != nb_r) {
+      if (it->getNbRows() != nb_r) {
         SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                 "Wrong size %d != %d", it->nb_rows, nb_r);
+                 "Wrong size %d != %d", it->getNbRows(), nb_r);
       }
-      if (it->nb_cols != nb_c) {
+      if (it->getNbCols() != nb_c) {
         SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                 "Wrong size %d != %d", it->nb_cols, nb_c);
+                 "Wrong size %d != %d", it->getNbCols(), nb_c);
       }
       if (nb_r != mat.size1()) {
         SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
