@@ -1885,7 +1885,6 @@ MoFEMErrorCode shell_block_preconditioner_mat_asmb_wrap_impl(
     auto row_first_index = row_data.getIndices()[r];
     if (row_first_index != -1) {
 
-      auto size = nb_r * nb_c;
       auto it = ctx->blockIndex.get<1>().find(boost::make_tuple(
           row_first_index, col_data.getIndices()[c], nb_r, nb_c));
 
@@ -1895,13 +1894,13 @@ MoFEMErrorCode shell_block_preconditioner_mat_asmb_wrap_impl(
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Block not allocated");
       }
-      if (it->nb_rows != nb_r) {
+      if (it->getNbRows() != nb_r) {
         SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                 "Wrong size %d != %d", it->nb_rows, nb_r);
+                 "Wrong size %d != %d", it->getNbRows(), nb_r);
       }
-      if (it->nb_cols != nb_c) {
+      if (it->getNbCols() != nb_c) {
         SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                 "Wrong size %d != %d", it->nb_cols, nb_c);
+                 "Wrong size %d != %d", it->getNbCols(), nb_c);
       }
       if (nb_r != mat.size1()) {
         SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -1921,7 +1920,7 @@ MoFEMErrorCode shell_block_preconditioner_mat_asmb_wrap_impl(
       auto inv_shift = it->getInvShift();
       if (inv_shift != -1) {
         if (iora == ADD_VALUES) {
-          cblas_daxpy(size, 1., &*mat.data().begin(), 1,
+          cblas_daxpy(nb_r * nb_c, 1., &*mat.data().begin(), 1,
                       &(*ctx->preconditionerBlocksPtr)[inv_shift], 1);
         } else {
           std::copy(mat.data().begin(), mat.data().end(),
