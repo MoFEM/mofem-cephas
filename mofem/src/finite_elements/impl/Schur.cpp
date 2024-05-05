@@ -1327,11 +1327,13 @@ static PetscErrorCode mat_zero(Mat m) {
   MoFEMFunctionBegin;
   BlockStruture *ctx;
   CHKERR MatShellGetContext(m, (void **)&ctx);
-  ctx->dataBlocksPtr->clear();
+  if (ctx->dataBlocksPtr)
+    std::fill(ctx->dataBlocksPtr->begin(), ctx->dataBlocksPtr->end(), 0.);
   if (ctx->dataInvBlocksPtr)
-    ctx->dataInvBlocksPtr->clear();
+    std::fill(ctx->dataInvBlocksPtr->begin(), ctx->dataInvBlocksPtr->end(), 0.);
   if (ctx->preconditionerBlocksPtr)
-    ctx->preconditionerBlocksPtr->clear();
+    std::fill(ctx->preconditionerBlocksPtr->begin(),
+              ctx->preconditionerBlocksPtr->end(), 0.);
   MoFEMFunctionReturn(0);
 }
 
