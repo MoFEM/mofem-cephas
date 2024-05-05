@@ -466,7 +466,8 @@ MoFEMErrorCode OpSchurAssembleBegin::doWork(int side, EntityType type,
                                             EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 #ifndef NDEBUG
-  MOFEM_LOG("SELF", Sev::noisy) << "Schur assemble begin";
+  if constexpr (debug_schur)
+    MOFEM_LOG("SELF", Sev::noisy) << "Schur assemble begin";
 #endif
   SchurElemMats::schurL2Storage.clear();
 
@@ -506,7 +507,8 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
   PetscLogEventBegin(SchurEvents::MOFEM_EVENT_opSchurAssembleEnd, 0, 0, 0, 0);
 
 #ifndef NDEBUG
-  MOFEM_LOG("SELF", Sev::noisy) << "Schur assemble begin -> end";
+  if constexpr (debug_schur)
+    MOFEM_LOG("SELF", Sev::noisy) << "Schur assemble begin -> end";
 #endif
 
   auto get_field_name = [&](auto uid) {
@@ -945,7 +947,8 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
   CHKERR assemble(get_a00_uids());
 
 #ifndef NDEBUG
-  MOFEM_LOG("SELF", Sev::noisy) << "Schur assemble done";
+  if constexpr (debug_schur)
+    MOFEM_LOG("SELF", Sev::noisy) << "Schur assemble done";
 #endif
 
   PetscLogEventEnd(SchurEvents::MOFEM_EVENT_opSchurAssembleEnd, 0, 0, 0, 0);
