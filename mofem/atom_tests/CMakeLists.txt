@@ -1649,7 +1649,7 @@ build_test(
   schur_test_diag_mat
   schur_test_diag_mat.cpp)
 
-add_test(mofem/atom_tests/schur_test_diag_mat
+add_test(schur_test_diag_mat
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 2
   ${CMAKE_CURRENT_BINARY_DIR}/schur_test_diag_mat
   -file_name disp01_2parts.h5m
