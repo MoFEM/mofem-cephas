@@ -964,8 +964,6 @@ private:
   MoFEM::Interface &mField;
 
   SmartPetscObj<Mat> S;
-  SmartPetscObj<Mat> A;
-  SmartPetscObj<Mat> P;
   SmartPetscObj<DM> schurDM;
   SmartPetscObj<DM> blockDM;
 };
@@ -990,7 +988,7 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<TS> solver) {
 
     MOFEM_LOG("CONTACT", Sev::inform) << "Setup Schur pc";
 
-    if (A || P || S) {
+    if (S) {
       CHK_THROW_MESSAGE(
           MOFEM_DATA_INCONSISTENCY,
           "It is expected that Schur matrix is not allocated. This is "
@@ -1011,8 +1009,8 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<TS> solver) {
     CHKERR DMSetMatType(solver_dm, MATSHELL);
 
     auto ts_ctx_ptr = getDMTsCtx(solver_dm);
-    A = createDMBlockMat(simple->getDM());
-    P = createDMNestSchurMat(simple->getDM());
+    auto A = createDMBlockMat(simple->getDM());
+    auto P = createDMNestSchurMat(simple->getDM());
 
     auto swap_assemble = [](TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
                             Mat A, Mat B, void *ctx) {

@@ -187,6 +187,8 @@ add_test(
   contact_3d_schur
   -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/hertz_3d_4p.h5m
   -pc_type fieldsplit
+  -fieldsplit_1_pc_type lu 
+  -eps_stab 1e-8
   -ts_type beuler
   -ts_max_time 1 -ts_dt 1
   -sdf_file ./sdf_files/sdf_hertz_3d.py
