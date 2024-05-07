@@ -959,7 +959,7 @@ MoFEMErrorCode Example::tsSolve() {
     auto name_prb = simple->getProblemName();
 
     // create sub dm for Schur complement
-    auto create_sub_u_dm = [&](SmartPetscObj<DM> base_dm,
+    auto create_schur_dm = [&](SmartPetscObj<DM> base_dm,
                                SmartPetscObj<DM> &dm_sub) {
       MoFEMFunctionBegin;
       dm_sub = createDM(mField.get_comm(), "DMMOFEM");
@@ -1010,7 +1010,7 @@ MoFEMErrorCode Example::tsSolve() {
 #endif // ADD_CONTACT
 
       SmartPetscObj<DM> dm_u_sub;
-      CHKERR create_sub_u_dm(simple->getDM(), dm_u_sub);
+      CHKERR create_schur_dm(simple->getDM(), dm_u_sub);
 
       // Indices has to be map fro very to level, while assembling Schur
       // complement.
