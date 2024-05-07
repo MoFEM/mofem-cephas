@@ -999,9 +999,8 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<TS> solver) {
 
     // Add data to DM storage
     S = createDMMatrix(schurDM);
-    // CHKERR MatSetDM(S, PETSC_NULL);
     CHKERR MatSetBlockSize(S, SPACE_DIM);
-    //CHKERR MatSetOption(S, MAT_SYMMETRIC, PETSC_TRUE);
+    // CHKERR MatSetOption(S, MAT_SYMMETRIC, PETSC_TRUE);
 
     // Set DM to use shell block matrix
     DM solver_dm;
@@ -1012,12 +1011,20 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<TS> solver) {
     auto A = createDMBlockMat(simple->getDM());
     auto P = createDMNestSchurMat(simple->getDM());
 
-    auto swap_assemble = [](TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
-                            Mat A, Mat B, void *ctx) {
-      return TsSetIJacobian(ts, t, u, u_t, a, B, A, ctx);
-    };
-
-    CHKERR TSSetIJacobian(solver, A, P, swap_assemble, ts_ctx_ptr.get());
+    if (is_quasi_static == PETSC_TRUE) {
+      auto swap_assemble = [](TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
+                              Mat A, Mat B, void *ctx) {
+        return TsSetIJacobian(ts, t, u, u_t, a, B, A, ctx);
+      };
+      CHKERR TSSetIJacobian(solver, A, P, swap_assemble, ts_ctx_ptr.get());
+    } else {
+      auto swap_assemble = [](TS ts, PetscReal t, Vec u, Vec u_t, Vec utt,
+                              PetscReal a, PetscReal aa, Mat A, Mat B,
+                              void *ctx) {
+        return TsSetI2Jacobian(ts, t, u, u_t, utt, a, aa, B, A, ctx);
+      };
+      CHKERR TSSetI2Jacobian(solver, A, P, swap_assemble, ts_ctx_ptr.get());
+    }
     CHKERR KSPSetOperators(ksp, A, P);
 
     CHKERR setOperator();
