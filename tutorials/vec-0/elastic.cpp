@@ -1032,7 +1032,7 @@ MoFEMErrorCode SetUpSchurImpl::setOperator() {
   auto simple = mField.getInterface<Simple>();
   auto pip = mField.getInterface<PipelineManager>();
 
-  boost::shared_ptr<BlockStruture> block_data;
+  boost::shared_ptr<BlockStructure> block_data;
   CHKERR DMMoFEMGetBlocMatData(simple->getDM(), block_data);
 
   // Boundary
