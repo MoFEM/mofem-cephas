@@ -45,7 +45,7 @@ struct DMCtxImpl : public DMCtx {
   std::string problemName;             ///< Problem name
 
   // schur block matrix
-  boost::shared_ptr<BlockStruture> blocMatDataPtr;
+  boost::shared_ptr<BlockStructure> blocMatDataPtr;
   boost::shared_ptr<NestSchurData> nestedSchurDataPtr;
 };
 

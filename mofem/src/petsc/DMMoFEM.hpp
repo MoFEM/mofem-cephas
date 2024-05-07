@@ -928,7 +928,7 @@ PetscErrorCode DMMoFEMGetFieldIS(DM dm, RowColData rc, const char field_name[],
  */
 PetscErrorCode DMMoFEMSetVerbosity(DM dm, const int verb);
 
-struct BlockStruture;
+struct BlockStructure;
 
 /** @brief Set data for block mat
  *
@@ -936,7 +936,7 @@ struct BlockStruture;
  *
  */
 MoFEMErrorCode DMMoFEMSetBlocMatData(DM dm,
-                                     boost::shared_ptr<BlockStruture>);
+                                     boost::shared_ptr<BlockStructure>);
 
 /**
  * @brief Get data for block mat
@@ -944,7 +944,7 @@ MoFEMErrorCode DMMoFEMSetBlocMatData(DM dm,
  * @param dm 
  * @return MoFEMErrorCode 
  */
-MoFEMErrorCode DMMoFEMGetBlocMatData(DM dm, boost::shared_ptr<BlockStruture> &);
+MoFEMErrorCode DMMoFEMGetBlocMatData(DM dm, boost::shared_ptr<BlockStructure> &);
 
 /**
  * @brief Create block matrix
@@ -1014,7 +1014,7 @@ protected:
 inline auto getInterfacePtr(DM dm) {
   MoFEM::Interface *m_field_ptr;
   CHK_THROW_MESSAGE(DMoFEMGetInterfacePtr(dm, &m_field_ptr),
-                    "Get cot get interface ptr from DM");
+                    "Can not get interface ptr from DM");
   return m_field_ptr;
 };
 

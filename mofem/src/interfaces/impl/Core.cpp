@@ -155,6 +155,9 @@ static auto get_event_options_imp(T *const ptr, int)
 
 // Use SFINAE to decide which template should be run,
 // if getSubInterfaceOptions not exist run this one.
+// See SFINAE:
+// https://stackoverflow.com/questions/257288/is-it-possible-to-write-a-template-to-check-for-a-functions-existence
+// https://en.wikipedia.org/wiki/Substitution_failure_is_not_an_error
 template <class T>
 static auto get_event_options_imp(T *const ptr, long) -> MoFEMErrorCode {
   return 0;
@@ -168,9 +171,6 @@ template <class IFACE> MoFEMErrorCode Core::regSubInterface() {
   // If sub interface has function getSubInterfaceOptions run
   // it after construction. getSubInterfaceOptions is used to
   // get parameters from command line.
-  // See SFINAE:
-  // https://stackoverflow.com/questions/257288/is-it-possible-to-write-a-template-to-check-for-a-functions-existence
-  // https://en.wikipedia.org/wiki/Substitution_failure_is_not_an_error
   auto get_sub_iface_options = [](auto *const ptr) {
     return get_sub_iface_options_imp(ptr, 0);
   };
