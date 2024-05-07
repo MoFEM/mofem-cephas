@@ -1206,7 +1206,7 @@ PetscErrorCode DMCreateMatrix_MoFEM(DM dm, Mat *M) {
       MoFEMFunctionReturnHot(0);
     } else {
       SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-              "Matrix shell data not set, or matrix type implemented");
+              "Matrix shell data not set, or matrix type not implemented");
     }
 
   } else if (strcmp(dm->mattype, MATMPIAIJ) == 0) {
@@ -1520,7 +1520,7 @@ PetscErrorCode DMMoFEMSetVerbosity(DM dm, const int verb) {
 }
 
 MoFEMErrorCode DMMoFEMSetBlocMatData(DM dm,
-                                     boost::shared_ptr<BlockStruture> data) {
+                                     boost::shared_ptr<BlockStructure> data) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
   DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
@@ -1529,7 +1529,7 @@ MoFEMErrorCode DMMoFEMSetBlocMatData(DM dm,
 }
 
 MoFEMErrorCode DMMoFEMGetBlocMatData(DM dm,
-                                     boost::shared_ptr<BlockStruture> &data) {
+                                     boost::shared_ptr<BlockStructure> &data) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
   DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);

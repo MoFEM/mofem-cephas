@@ -8,7 +8,7 @@
  * To create nested system of Schur complements, you push sequence of operator,
  * to set up data on entities, and then assemble complements.
  *
- * \note Try septate floating points operations from book keeping. Also, align
+ * \note Try separate floating points operations from book keeping. Also, align
  * memory that blocks follow floating point operations.
  *
  */
@@ -26,9 +26,9 @@ constexpr const char MoFEM_BLOCK_MAT[] = "mofem_block_mat";
 struct SchurEvents {
   static PetscLogEvent MOFEM_EVENT_schurMatSetValues;
   static PetscLogEvent MOFEM_EVENT_opSchurAssembleEnd;
-  static PetscLogEvent MOFEM_EVENT_blockStrutureSetValues;
-  static PetscLogEvent MOFEM_EVENT_blockStrutureMult;
-  static PetscLogEvent MOFEM_EVENT_blockStrutureSolve;
+  static PetscLogEvent MOFEM_EVENT_BlockStructureSetValues;
+  static PetscLogEvent MOFEM_EVENT_BlockStructureMult;
+  static PetscLogEvent MOFEM_EVENT_BlockStructureSolve;
   static PetscLogEvent MOFEM_EVENT_zeroRowsAndCols;
   SchurEvents();
 };
@@ -70,7 +70,7 @@ OpSchurAssembleBase *createOpSchurAssembleEnd(
     std::vector<SmartPetscObj<AO>> sequence_of_aos,
     std::vector<SmartPetscObj<Mat>> sequence_of_mats,
     std::vector<bool> sym_schur, bool symm_op,
-    boost::shared_ptr<BlockStruture> diag_blocks = nullptr);
+    boost::shared_ptr<BlockStructure> diag_blocks = nullptr);
 
 /**
  * @brief Construct a new Op Schur Assemble End object
@@ -91,7 +91,7 @@ OpSchurAssembleBase *createOpSchurAssembleEnd(
     std::vector<SmartPetscObj<AO>> sequence_of_aos,
     std::vector<SmartPetscObj<Mat>> sequence_of_mats,
     std::vector<bool> sym_schur, std::vector<double> diag_eps, bool symm_op,
-    boost::shared_ptr<BlockStruture> diag_blocks = nullptr);
+    boost::shared_ptr<BlockStructure> diag_blocks = nullptr);
 
 using SchurFieldPair = std::pair<std::string, std::string>;
 
@@ -106,7 +106,7 @@ using SchurFEOpsFEandFields = std::vector<
  *
  * @return Mat
  */
-boost::shared_ptr<BlockStruture> createBlockMatStructure(
+boost::shared_ptr<BlockStructure> createBlockMatStructure(
 
     DM dm,                                //< dm
     SchurFEOpsFEandFields schur_fe_op_vec //< block elements
@@ -114,22 +114,22 @@ boost::shared_ptr<BlockStruture> createBlockMatStructure(
 );
 
 using SchurShellMatData =
-    std::pair<SmartPetscObj<Mat>, boost::shared_ptr<BlockStruture>>;
+    std::pair<SmartPetscObj<Mat>, boost::shared_ptr<BlockStructure>>;
 
 /**
  * @brief Create a Schur Mat object
  *
  * @param dm
  * @param data
- * @return std::pair<SmartPetscObj<Mat>, boost::shared_ptr<BlockStruture>>
+ * @return std::pair<SmartPetscObj<Mat>, boost::shared_ptr<BlockStructure>>
  */
-SchurShellMatData createBlockMat(DM dm, boost::shared_ptr<BlockStruture> data);
+SchurShellMatData createBlockMat(DM dm, boost::shared_ptr<BlockStructure> data);
 
 using NestSchurData = std::tuple<
 
     std::array<SmartPetscObj<Mat>, 4>,
-    std::array<boost::shared_ptr<BlockStruture>, 4>,
-    boost::shared_ptr<BlockStruture>,
+    std::array<boost::shared_ptr<BlockStructure>, 4>,
+    boost::shared_ptr<BlockStructure>,
     std::pair<SmartPetscObj<IS>, SmartPetscObj<IS>>
 
     >;
@@ -146,7 +146,7 @@ using NestSchurData = std::tuple<
  */
 boost::shared_ptr<NestSchurData>
 getNestSchurData(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
-                 boost::shared_ptr<BlockStruture> block_mat_data,
+                 boost::shared_ptr<BlockStructure> block_mat_data,
 
                  std::vector<std::string> fields_name, //< a00 fields
                  std::vector<boost::shared_ptr<Range>> field_ents, //< a00 ents
@@ -161,7 +161,7 @@ getNestSchurData(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
  * @return MoFEMErrorCode 
  */
 MoFEMErrorCode
-schurSwitchPreconditioner(boost::shared_ptr<BlockStruture> block_mat_data);
+schurSwitchPreconditioner(boost::shared_ptr<BlockStructure> block_mat_data);
 
 /**
  * @brief Save block matrix as a mesh
@@ -171,7 +171,7 @@ schurSwitchPreconditioner(boost::shared_ptr<BlockStruture> block_mat_data);
  * @return MoFEMErrorCode 
  */
 MoFEMErrorCode
-schurSaveBlockMesh(boost::shared_ptr<BlockStruture> block_mat_data,
+schurSaveBlockMesh(boost::shared_ptr<BlockStructure> block_mat_data,
                    std::string filename);
 
 /**
@@ -250,11 +250,11 @@ inline MoFEMErrorCode VecSetValues<AssemblyTypeSelector<SCHUR>>(
 }
 
 /***
- * @brief Specialization of MatSetValues for BlockStruture
+ * @brief Specialization of MatSetValues for BlockStructure
  */
 template <>
 MoFEMErrorCode
-MatSetValues<BlockStruture>(Mat M, const EntitiesFieldData::EntData &row_data,
+MatSetValues<BlockStructure>(Mat M, const EntitiesFieldData::EntData &row_data,
                             const EntitiesFieldData::EntData &col_data,
                             const MatrixDouble &mat, InsertMode iora);
 
@@ -266,7 +266,7 @@ inline MoFEMErrorCode MatSetValues<AssemblyTypeSelector<BLOCK_MAT>>(
     Mat M, const EntitiesFieldData::EntData &row_data,
     const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
     InsertMode iora) {
-  return MatSetValues<BlockStruture>(M, row_data, col_data, mat, iora);
+  return MatSetValues<BlockStructure>(M, row_data, col_data, mat, iora);
 }
 
 /***
