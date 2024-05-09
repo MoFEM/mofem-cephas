@@ -1,8 +1,8 @@
 import math
 import numpy as np
 
-R = 10 # radius of the indenter
-d = 0.1 # indentation depth
+R = 100 # radius of the indenter
+d = 0.01 # indentation depth
 
 xc = 0
 yc = R
