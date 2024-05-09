@@ -49,42 +49,48 @@ continuing with the one you are most excited about.
 
 <table style="width:100%">
   <tr valign="top">
-       <td><img src="GreenTickBoxed.png" alt="Description" width="18px"/> &nbsp; \ref lessons_introduction</td>
+       <td width="20px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/></td>
+       <td> \ref lessons_introduction</td>
        <td> Brief introduction about MoFEM interfaces which enable users to implement the codes with different level of complexity.
        <br/> *Keywords:* Design
        </td>
   </tr>
 
  <tr valign="top">
-       <td><img src="GreenTickBoxed.png" alt="Description" width="18px"/> &nbsp; \ref how_to_compile_program</td>
+       <td width="20px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/></td>
+       <td> \ref how_to_compile_program</td>
        <td> Brief introduction about compiling MoFEM - Developer version
        <br/> *Keywords:* Compilation
        </td>
   </tr>
 
   <tr valign="top">
-       <td><img src="GreenTickBoxed.png" alt="Description" width="18px"/> &nbsp; \ref how_to_add_new_module_and_program </td>
+       <td width="20px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/></td>
+       <td>\ref how_to_add_new_module_and_program </td>
        <td> Tutorial on adding a new %MoFEM module (you might want to skip this tutorial for now and return after reading other tutorials)
        <br/> *Keywords:* modules
        </td>
   </tr>
 
   <tr valign="top">
-       <td><img src="GreenTickBoxed.png" alt="Description" width="18px"/> &nbsp; \ref hello_world_tut1</td>
+       <td width="20px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/></td>
+       <td>\ref hello_world_tut1</td>
        <td> Creating Simple problem, and pushing operators to pipelines
        <br/> *Keywords:* UDOs, pipelines
        </td>
   </tr>
 
   <tr valign="top">
-       <td><img src="GreenTickBoxed.png" alt="Description" width="18px"/> &nbsp; \ref integration</td>
+       <td width="20px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/></td>
+       <td>\ref integration</td>
        <td> Numerical integration is essential for most of the numerical methods employed to solve partial differential equations (PDEs)
        <br/> *Keywords:* UDOs and integration
        </td>
   </tr>
 
   <tr valign="top">
-       <td width="350px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/> &nbsp; \ref hierarchical_approximation_1</td>
+       <td width="20px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/></td>
+       <td width="350px">\ref hierarchical_approximation_1</td>
        <td> Introduce elementary concepts of the Finite Element Method (FEM) with hierarchical shape functions and their implementation in MoFEM
        <br/> *Keywords:* Hierarchical approximation
        </td>
@@ -98,14 +104,16 @@ continuing with the one you are most excited about.
 <table style="width:100%">
 
   <tr valign="top">
-       <td width="350px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/> &nbsp; \ref basic_tutorials_mesh_generation_2d</td>
+       <td width="20px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/></td>
+       <td width="350px"> \ref basic_tutorials_mesh_generation_2d</td>
        <td> This document shows how to create a MoFEM-compatible 2D input mesh from [Gmsh](https://gmsh.info) 
        <br/> *Keywords:* [Gmsh](https://gmsh.info), block definition, config file, [read_med](http://mofem.eng.gla.ac.uk/mofem/html/read__med_8cpp.html)
        </td>
   </tr>
 
   <tr valign="top">
-       <td><img src="GreenTickBoxed.png" alt="Description" width="18px"/> &nbsp; \ref basic_tutorials_mesh_generation_3d</td>
+       <td width="20px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/></td>
+       <td> \ref basic_tutorials_mesh_generation_3d</td>
        <td> This document shows how to create a MoFEM-compatible 3D input mesh from [Gmsh](https://gmsh.info) 
        <br/> *Keywords:* [Gmsh](https://gmsh.info), block definition, config file, [read_med](http://mofem.eng.gla.ac.uk/mofem/html/read__med_8cpp.html)
        </td>
@@ -118,84 +126,96 @@ continuing with the one you are most excited about.
 <table style="width:100%">
 
   <tr valign="top">
-       <td width="350px"><img src="BlankBox.png" alt="Source code" width="18px"/> &nbsp; \ref basic_tutorials_least_square_approximation</td>
+        <td width="20px"><img src="BlankBox.png" alt="Source code" width="18px"/> </td>
+       <td width="350px"> \ref basic_tutorials_least_square_approximation</td>
        <td> Solve the least square problem to approximate scalar function
        <br/> *Keywords:* [Simple Interface](http://mofem.eng.gla.ac.uk/mofem/html/group__mofem__simple__interface.html#details), [KSP](https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/KSP/index.html) solver, [mofem_part](http://mofem.eng.gla.ac.uk/mofem/html/mofem__part_8cpp.html), [mbconvert](https://gitlab.kitware.com/third-party/moab/-/blob/17ddd284930a23d8e8e48efa4510ff6fe56ade4f/tools/mbconvert.man), 3D extension
        </td>
   </tr>
 
   <tr valign="top">
-       <td width="350px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/> &nbsp; \ref basic_tutorials_poisson_homogeneous</td>
+       <td width="20px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/></td>   
+       <td width="350px">\ref basic_tutorials_poisson_homogeneous</td>
        <td> Solve the %Poisson's equation with zero value boundary conditions
        <br/> *Keywords:* [Simple Interface](http://mofem.eng.gla.ac.uk/mofem/html/group__mofem__simple__interface.html#details), [KSP](https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/KSP/index.html) solver, [mofem_part](http://mofem.eng.gla.ac.uk/mofem/html/mofem__part_8cpp.html), [mbconvert](https://gitlab.kitware.com/third-party/moab/-/blob/17ddd284930a23d8e8e48efa4510ff6fe56ade4f/tools/mbconvert.man), 3D extension
        </td>
   </tr>
 
   <tr valign="top">
-       <td><img src="GreenTickBoxed.png" alt="Description" width="18px"/> &nbsp; \ref basic_tutorials_poisson_nonhomogeneous</td>
+       <td width="20px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/></td>
+       <td> \ref basic_tutorials_poisson_nonhomogeneous</td>
        <td> An expansion of previous tutorial to cover non-homogeneous (non-zero value) boundary condition of %Poisson's equation
        <br/> *Keywords:* Least square approximation
        </td>
   </tr>
 
   <tr valign="top">
-       <td><img src="BlankBox.png" alt="Source code" width="18px"/> &nbsp; \ref basic_tutorials_poisson_lagrange_multiplier</td>
+       <td width="20px"><img src="BlankBox.png" alt="Source code" width="18px"/> </td>
+       <td> \ref basic_tutorials_poisson_lagrange_multiplier</td>
        <td> Solve the %Poisson's equation using Lagrange multiplier for the non-homogeneous boundary condition
        <br/> *Keywords:* [PCFIELDSPLIT](http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/PC/PCFIELDSPLIT.html) block solver
        </td>
   </tr>
 
   <tr valign="top">
-       <td><img src="BlankBox.png" alt="Source code" width="18px"/> &nbsp; \ref basic_tutorials_poisson_nonlinear</td>
+       <td width="20px"><img src="BlankBox.png" alt="Source code" width="18px"/> </td>
+       <td> \ref basic_tutorials_poisson_nonlinear</td>
        <td> Solve nonlinear %Poisson's equation using Newton iterative scheme
        <br/> *Keywords:* [SNES](https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/index.html) solver
        </td>
   </tr>
 
   <tr valign="top">
-       <td><img src="BlankBox.png" alt="Source code" width="18px"/> &nbsp; \ref basic_tutorials_minimal_surface_equation</td>
+       <td width="20px"><img src="BlankBox.png" alt="Source code" width="18px"/> </td>
+       <td> \ref basic_tutorials_minimal_surface_equation</td>
        <td> A variant of the nonlinear %Poisson's equation
        <br/> *Keywords:* [SNES](https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/index.html) solver
        </td>
   </tr>
 
   <tr valign="top">
-       <td><img src="BlankBox.png" alt="Source code" width="18px"/> &nbsp; \ref basic_tutorials_heat_equation</td>
+       <td width="20px"><img src="BlankBox.png" alt="Source code" width="18px"/> </td>
+       <td> \ref basic_tutorials_heat_equation</td>
        <td> This is the first tutorial to solve a time-dependent problem with first-order time derivative
        <br/> *Keywords:* [TS](https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/index.html) solver, implicit scheme, remove dofs on skin
        </td>
   </tr>
 
   <tr valign="top">
-       <td><img src="BlankBox.png" alt="Source code" width="18px"/> &nbsp; \ref basic_tutorials_wave_equation</td>
+       <td width="20px"><img src="BlankBox.png" alt="Source code" width="18px"/> </td>
+       <td>\ref basic_tutorials_wave_equation</td>
        <td> Time-dependent problem with second-order time derivative
        <br/> *Keywords:* [TS](https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/index.html) solver, implicit scheme, non-homegenous time dependent boundaru condition
        </td>
   </tr>
 
   <tr valign="top">
-       <td><img src="BlankBox.png" alt="Source code" width="18px"/> &nbsp; \ref radiation_pluto</td>
+       <td width="20px"><img src="BlankBox.png" alt="Source code" width="18px"/> </td>
+       <td>\ref jup_radiation_pluto</td>
        <td> Nonlinear problem at the boundary
        <br/> *Keywords:* axisymmetric problem, linearisation 
        </td>
   </tr>
 
   <tr valign="top">
-       <td><img src="BlankBox.png" alt="Source code" width="18px"/> &nbsp; \ref tutorial_heat_method</td>
+       <td width="20px"><img src="BlankBox.png" alt="Source code" width="18px"/> </td>
+       <td>\ref tutorial_heat_method</td>
        <td> Finding geodesic distance with heat method
        <br/> *Keywords:*  face elements embedded in 3d space
        </td>
   </tr>
 
   <tr valign="top">
-       <td><img src="BlankBox.png" alt="Source code" width="18px"/> &nbsp; \ref tutorials_photon_diffusion</td>
+       <td width="20px"><img src="BlankBox.png" alt="Source code" width="18px"/> </td>
+       <td>\ref tutorials_photon_diffusion</td>
        <td> Photon diffusion equation
        <br/> *Keywords:*  inital boundary conditions, parabolic equation, adding user element, postprocessing on skin, initial vector
        </td>
   </tr>
 
   <tr valign="top">
-       <td><img src="BlankBox.png" alt="Source code" width="18px"/> &nbsp; \ref tutorial_dg_poisson</td>
+       <td width="20px"><img src="BlankBox.png" alt="Source code" width="18px"/> </td>
+       <td>\ref tutorial_dg_poisson</td>
        <td> Discontinuous Galerkin for Poisson problem
        <br/> *Keywords:* integartion on skeleton
        </td>
@@ -208,7 +228,8 @@ continuing with the one you are most excited about.
 <table style="width:100%">
 
   <tr valign="top">
-       <td width="350px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/> &nbsp; \ref tutorial_hemholtz_problem</td>
+       <td width="20px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/></td>
+       <td width="350px">\ref tutorial_hemholtz_problem</td>
        <td> Helmholtz problem for acoustics
        <br/> *Keywords:* complex variable, linear solver, boundary markers, remove dofs on skin
        </td>
@@ -221,60 +242,62 @@ continuing with the one you are most excited about.
 <table style="width:100%">
 
   <tr valign="top">
-       <td width="350px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/> &nbsp; \ref tutorial_elastic_problem</td>
+       <td width="20px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/></td>
+       <td width="350px">\ref tutorial_elastic_problem</td>
        <td> Linear elasticity
        <br/> *Keywords:* Hooke equation
        </td>
   </tr>
 
   <tr valign="top">
-       <td width="350px"><img src="BlankBox.png" alt="Source code" width="18px"/> &nbsp; \ref tutorial_eigen_elastic</td>
+       <td width="20px"><img src="BlankBox.png" alt="Source code" width="18px"/> </td>
+       <td width="350px">\ref tutorial_eigen_elastic</td>
        <td> Eigen elastic
        <br/> *Keywords:* eigen values, SLEPC
        </td>
   </tr>
 
   <tr valign="top">
-       <td width="350px"><img src="BlankBox.png" alt="Source code" width="18px"/> &nbsp; \ref tutorial_nonlinear_elastic</td>
+       <td width="20px"><img src="BlankBox.png" alt="Source code" width="18px"/> </td>
+       <td width="350px">\ref tutorial_nonlinear_elastic</td>
        <td> Nonlinear elastic with Hencky material
        <br/> *Keywords:* nonlinear problem, [SNES](https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/index.html)
        </td>
   </tr>
 
   <tr valign="top">
-       <td width="350px"><img src="BlankBox.png" alt="Source code" width="18px"/> &nbsp; \ref tutorial_nonlinear_dynamic_elastic</td>
+       <td width="20px"><img src="BlankBox.png" alt="Source code" width="18px"/> </td>
+       <td width="350px">\ref tutorial_nonlinear_dynamic_elastic</td>
        <td> Time-dependent nonlinear elastic (dynamics)
        <br/> *Keywords:* Alpha2 method
        </td>
   </tr>
 
   <tr valign="top">
-       <td width="350px"><img src="BlankBox.png" alt="Source code" width="18px"/> &nbsp; \ref shallow_wave_doc</td>
+       <td width="20px"><img src="BlankBox.png" alt="Source code" width="18px"/> </td>
+       <td width="350px">\ref shallow_wave_doc</td>
        <td> Shallow wave equation on mainfold (atmospheric processes)
        <br/> *Keywords:* Alpha method, initail conditions, hyperbolic equation, sphere approximation, explicit/implicit time integration, restart vector
        </td>
   </tr>
 
   <tr valign="top">
-       <td width="350px"><img src="BlankBox.png" alt="Source code" width="18px"/> &nbsp; \ref phase_field_doc</td>
+       <td width="20px"><img src="BlankBox.png" alt="Source code" width="18px"/> </td>
+       <td width="350px">\ref phase_field_doc</td>
        <td> Phase field model and Navier-Sokes equations
        <br/> *Keywords:* phase field, Navier-Stokes, hyberbolic equation, inital boundary condition
        </td>
   </tr>
 
   <tr valign="top">
-       <td width="350px"><img src="BlankBox.png" alt="Source code" width="18px"/> &nbsp; \ref tutorial_plate</td>
+       <td width="20px"><img src="BlankBox.png" alt="Source code" width="18px"/> </td>
+       <td width="350px">\ref tutorial_plate</td>
        <td> Solving forth order eliptic equation describing plate bending
        <br/> *Keywords:* discontinuous Galerkin method, plate theroy
        </td>
   </tr>
 
-  <tr valign="top">
-       <td width="350px">\ref tutorial_adolc_plasticity</td>
-       <td> Automatic differentiation for elato-plasticity
-       <br/> *Keywords:* ADOL-C, plasticity, nonlinear problem, dg projection, user module
-       </td>
-  </tr>
+  
 
 </table>
 
@@ -284,7 +307,8 @@ continuing with the one you are most excited about.
 <table style="width:100%">
 
   <tr valign="top">
-       <td width="350px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/> &nbsp; \ref tut_mix_poisson</td>
+       <td width="20px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/></td>
+       <td width="350px">\ref tut_mix_poisson</td>
        <td> A mixed problem
        <br/> *Keywords:* H-div space, homogenous boundary conditions by DOFs removal 
        </td>
@@ -295,9 +319,18 @@ continuing with the one you are most excited about.
 <table style="width:100%">
 
   <tr valign="top">
-       <td width="350px"><img src="BlankBox.png" alt="Source code" width="18px"/> &nbsp; \ref tutorial_phase</td>
+       <td width="20px"><img src="BlankBox.png" alt="Source code" width="18px"/> </td>
+       <td width="350px">\ref tutorial_phase</td>
        <td> A mixed problem for transport intensity equation
        <br/> *Keywords:* Hetergenous paramterers and source function
+       </td>
+  </tr>
+
+ <tr valign="top">
+       <td width="20px"><img src="BlankBox.png" alt="Source code" width="18px"/> </td>
+       <td width="350px">\ref tutorial_incompressible_elast</td>
+       <td> A mixed problem for incompressible elasticity
+       <br/> *Keywords:* incompressibility
        </td>
   </tr>
 
@@ -320,14 +353,16 @@ continuing with the one you are most excited about.
 <table style="width:100%">
 
   <tr valign="top">
-       <td width="350px"><img src="BlankBox.png" alt="Source code" width="18px"/> &nbsp; \ref tutorial_magnetostatic </td>
+       <td width="20px"><img src="BlankBox.png" alt="Source code" width="18px"/> </td>
+       <td width="350px">\ref tutorial_magnetostatic </td>
        <td> Magnetostatics
        <br/> *Keywords:* 
        </td>
   </tr>
 
   <tr valign="top">
-       <td width="350px"><img src="BlankBox.png" alt="Source code" width="18px"/> &nbsp; \ref tutorial_lorenz_force</td>
+       <td width="20px"><img src="BlankBox.png" alt="Source code" width="18px"/> </td>
+       <td width="350px">\ref tutorial_lorenz_force</td>
        <td> Lorenz force
        <br/> *Keywords:* 
        </td>
@@ -341,35 +376,40 @@ continuing with the one you are most excited about.
 <table style="width:100%">
 
   <tr valign="top">
-       <td width="350px"><img src="BlankBox.png" alt="Source code" width="18px"/> &nbsp; \ref tutorial_plastic_problem</td>
+       <td width="20px"><img src="BlankBox.png" alt="Source code" width="18px"/> </td>
+       <td width="350px">\ref tutorial_plastic_problem</td>
        <td> Plasticity problem
        <br/> *Keywords:* Nonlinear problem, linearisation, L2 space, boundary markers, displacement control, force control
        </td>
   </tr>
 
   <tr valign="top">
-       <td width="350px"><img src="BlankBox.png" alt="Source code" width="18px"/> &nbsp; \ref tutorial_contact_problem</td>
+       <td width="20px"><img src="BlankBox.png" alt="Source code" width="18px"/> </td>
+       <td width="350px">\ref tutorial_contact_problem</td>
        <td> Contact problem
        <br/> *Keywords:* H-curl/H-div space, mix formulations
        </td>
   </tr>
 
   <tr valign="top">
-       <td width="350px"><img src="BlankBox.png" alt="Source code" width="18px"/> &nbsp; \ref tutorial_thermo_elastic</td>
+       <td width="20px"><img src="BlankBox.png" alt="Source code" width="18px"/> </td>
+       <td width="350px">\ref tutorial_thermo_elastic</td>
        <td> Solve thermo-elasto-plastic probelm
        <br/> *Keywords:* *Keywords:* multi-physics
        </td>
   </tr>
 
   <tr valign="top">
-       <td width="350px"><img src="BlankBox.png" alt="Source code" width="18px"/> &nbsp; \ref tutorial_level_set</td>
+       <td width="20px"><img src="BlankBox.png" alt="Source code" width="18px"/> </td>
+       <td width="350px">\ref tutorial_level_set</td>
        <td> Upwind Discontinuous Galerkin for Level-Set
        <br/> *Keywords:* *Keywords:* upwind dg, level set
        </td>
   </tr>
 
 <tr valign="top">
-       <td width="350px"><img src="BlankBox.png" alt="Source code" width="18px"/> &nbsp; \ref tutorial_seepage</td>
+       <td width="20px"><img src="BlankBox.png" alt="Source code" width="18px"/> </td>
+       <td width="350px">\ref tutorial_seepage</td>
        <td> Seepgae problem in deformable porous media
        <br/> *Keywords:* *Keywords:* multi-physiscs
        </td>
@@ -382,70 +422,80 @@ continuing with the one you are most excited about.
 <table style="width:100%">
 
   <tr valign="top">
-       <td width="350px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/> &nbsp; \subpage mix_transport</td>
+       <td width="20px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/></td>
+       <td width="350px">\subpage mix_transport</td>
        <td> Mix formulation for transport problem
        <br/> *Keywords:* h-adaptivity and error estimator
        </td>
   </tr>
 
   <tr valign="top">
-       <td width="350px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/> &nbsp; \subpage mix_us_flow</td>
+       <td width="20px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/></td>
+       <td width="350px">\subpage mix_us_flow</td>
        <td> Mix formulation for capillary flow
        <br/> *Keywords:* capillary flow, unsaturated soil, nonlinear mix-formulation
        </td>
   </tr>
 
   <tr valign="top">
-       <td width="350px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/> &nbsp; \subpage poisson_tut1</td>
+       <td width="20px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/></td>
+       <td width="350px">\subpage poisson_tut1</td>
        <td> Poison equation again with different implementations
        <br/> *Keywords:* %Poisson problem
        </td>
   </tr>
 
   <tr valign="top">
-       <td width="350px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/> &nbsp; \subpage poisson_tut2</td>
+       <td width="20px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/></td>
+       <td width="350px">\subpage poisson_tut2</td>
        <td> Poison equation implementation of differentiation operators
        <br/> *Keywords:* %Poisson problem
        </td>
   </tr>
 
   <tr valign="top">
-       <td width="350px"> <img src="GreenTickBoxed.png" alt="Description" width="18px"/> &nbsp; \subpage poisson_tut3</td>
+       <td width="20px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/></td>
+       <td width="350px"> \subpage poisson_tut3</td>
        <td> Poison equation implementation of differentiation operators
        <br/> *Keywords:* Using subproblems and nested matrices
        </td>
   </tr>
 
   <tr valign="top">
-       <td width="350px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/> &nbsp; \subpage poisson_tut4</td>
+       <td width="20px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/></td>
+       <td width="350px">\subpage poisson_tut4</td>
        <td> Poison nonlinear equation again
        <br/> *Keywords:* SNES solver and linearisation
        </td>
   </tr>
 
   <tr valign="top">
-        <td width="350px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/> &nbsp; \subpage simple_elasticity_1</td>
+        <td width="20px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/></td>
+        <td width="350px">\subpage simple_elasticity_1</td>
         <td> Older implementation of elastic problem
         <br/> *Keywords:* Operators and low level implementation
         </td>
   </tr>
 
   <tr valign="top">
-        <td width="350px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/> &nbsp; \subpage elasticity_mixed_formulation</td>
+        <td width="20px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/></td>
+        <td width="350px">\subpage elasticity_mixed_formulation</td>
         <td> Older implementation of mixed elastic problem
         <br/> *Keywords:* pressure field, incompressibility
         </td>
   </tr>
 
   <tr valign="top">
-        <td width="350px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/> &nbsp; \subpage spring_element</td>
+        <td width="20px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/></td>
+        <td width="350px">\subpage spring_element</td>
         <td> Implementation of boundary element with springs
         <br/> *Keywords:* face element, spring, user data operators
         </td>
   </tr>
 
   <tr valign="top">
-        <td width="350px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/> &nbsp; \subpage reaction_diffusion_imp</td>
+        <td width="20px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/></td>
+        <td width="350px">\subpage reaction_diffusion_imp</td>
         <td> Reaction-diffusion Fisher's equation
         <br/> *Keywords:* time solver, monitor, nonlinearity
         </td>
@@ -453,14 +503,16 @@ continuing with the one you are most excited about.
 
 
   <tr valign="top">
-        <td width="350px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/> &nbsp; \subpage tutorial_navier_stokes</td>
+        <td width="20px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/></td>
+        <td width="350px">\subpage tutorial_navier_stokes</td>
         <td> Navier-Stokes equations
         <br/> *Keywords:* viscous fluid flow, mixed formulation, drag force computation 
         </td>
   </tr>
 
    <tr valign="top">
-        <td width="350px"><img src="BlankBox.png" alt="Source code" width="18px"/> &nbsp; \subpage tutorial_ep</td>
+        <td width="20px"><img src="BlankBox.png" alt="Source code" width="18px"/> </td>
+        <td width="350px">\subpage tutorial_ep</td>
         <td> Mixed formulation for large strain elasticity
         <br/> *Keywords:* H-div space, Schur complement, ADOL-C (automatic differentiation)
         </td>
@@ -473,9 +525,18 @@ continuing with the one you are most excited about.
 <table style="width:100%">
 
   <tr valign="top">
-       <td width="350px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/> &nbsp; MOD-0: \subpage sope_film</td>
+       <td width="20px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/></td>
+       <td width="350px">MOD-0: \subpage sope_film</td>
        <td> Soap film as an external module
        <br/> *Keywords:* Module implementations
+       </td>
+  </tr>
+  
+  <tr valign="top">
+       <td width="20px"><img src="GreenTickBoxed.png" alt="Description" width="18px"/></td>
+       <td width="350px"> \ref tutorial_adolc_plasticity</td>
+       <td> Automatic differentiation for elato-plasticity
+       <br/> *Keywords:* ADOL-C, plasticity, nonlinear problem, dg projection, user module
        </td>
   </tr>
 
