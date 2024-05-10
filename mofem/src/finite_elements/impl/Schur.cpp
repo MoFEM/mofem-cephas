@@ -208,6 +208,14 @@ struct DiagBlockIndex {
     inline int &getMatShift() const { return mat_shift; }
     inline int &getInvShift() const { return inv_shift; }
 
+    inline int rowShift() const {
+      return getRow() + getNbRows();
+    } // shift such that lower bound is included
+
+    inline int colShift() const {
+      return getCol() + getNbCols();
+    } // shift such that lower bound is included
+
   private:
     int row;
     int col;
@@ -243,9 +251,21 @@ struct DiagBlockIndex {
                             const_mem_fun<Indexes, int, &Indexes::getRow>,
                             const_mem_fun<Indexes, int, &Indexes::getCol>,
                             const_mem_fun<Indexes, int, &Indexes::getNbRows>,
-                            const_mem_fun<Indexes, int, &Indexes::getNbCols>
+                            const_mem_fun<Indexes, int, &Indexes::getNbCols>>
 
-                            >>
+              >,
+
+          ordered_non_unique<
+
+              const_mem_fun<Indexes, int, &Indexes::rowShift>
+
+              >,
+
+          ordered_non_unique<
+
+              const_mem_fun<Indexes, int, &Indexes::colShift>
+
+              >
 
           >>;
 
@@ -511,10 +531,12 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
     MOFEM_LOG("SELF", Sev::noisy) << "Schur assemble begin -> end";
 #endif
 
+#ifndef NDEBUG
   auto get_field_name = [&](auto uid) {
     return getPtrFE()->mField.get_field_name(field_bit_from_bit_number(
         FieldEntity::getFieldBitNumberFromUniqueId(uid)));
   };
+#endif 
 
   // Assemble Schur complement
   auto assemble_mat = [&](SmartPetscObj<Mat> M, MatSetValuesRaw mat_set_values,
@@ -1236,51 +1258,18 @@ static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
   int loc_m, loc_n;
   CHKERR MatGetLocalSize(A, &loc_m, &loc_n);
 
-  struct ShiftedBlockView : BlockStructure::Indexes {
-    ShiftedBlockView() = delete;
-    inline auto rowShift() const {
-      return getRow() + getNbRows();
-    } // shift such that lower bound is included
-    inline auto colShift() const {
-      return getCol() + getNbCols();
-    } // shift such that lower bound is included
-  };
-
-  // this enable esrch by varying ranges
-  using BlockIndexView = multi_index_container<
-
-      const ShiftedBlockView *,
-
-      indexed_by<
-
-          ordered_non_unique<
-
-              const_mem_fun<ShiftedBlockView, int, &ShiftedBlockView::rowShift>
-
-              >,
-
-          ordered_non_unique<
-              const_mem_fun<ShiftedBlockView, int, &ShiftedBlockView::colShift>>
-
-          >>;
-
-  BlockIndexView view;
-  for (auto &v : ctx->blockIndex.get<0>()) {
-    view.insert(static_cast<const ShiftedBlockView *>(&v));
-  }
-
   for (auto n = 0; n != is_nb_rows; ++n) {
     auto row = ptr[n];
-    auto rlo = view.get<0>().lower_bound(row);
-    auto rhi = view.get<0>().end();
+    auto rlo = ctx->blockIndex.get<2>().lower_bound(row);
+    auto rhi = ctx->blockIndex.get<2>().end();
     for (; rlo != rhi; ++rlo) {
-      auto r_shift = row - (*rlo)->getRow();
-      if (r_shift >= 0 && r_shift < (*rlo)->getNbRows()) {
-        auto *ptr = &(*ctx->dataBlocksPtr)[(*rlo)->getMatShift()];
-        for (auto i = 0; i != (*rlo)->getNbCols(); ++i) {
-          ptr[i + r_shift * (*rlo)->getNbCols()] = 0;
+      auto r_shift = row - rlo->getRow();
+      if (r_shift >= 0 && r_shift < rlo->getNbRows()) {
+        auto *ptr = &(*ctx->dataBlocksPtr)[rlo->getMatShift()];
+        for (auto i = 0; i != rlo->getNbCols(); ++i) {
+          ptr[i + r_shift * rlo->getNbCols()] = 0;
         }
-      } else if ((*rlo)->getRow() + (*rlo)->getNbRows() > row) {
+      } else if (rlo->getRow() + rlo->getNbRows() > row) {
         break;
       }
     }
@@ -1288,30 +1277,30 @@ static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
 
   for (auto n = 0; n != is_nb_rows; ++n) {
     auto col = ptr[n];
-    auto clo = view.get<1>().lower_bound(col);
-    auto chi = view.get<1>().end();
+    auto clo = ctx->blockIndex.get<3>().lower_bound(col);
+    auto chi = ctx->blockIndex.get<3>().end();
     for (; clo != chi; ++clo) {
-      auto c_shift = col - (*clo)->getCol();
-      if (c_shift >= 0 && c_shift < (*clo)->getNbCols()) {
+      auto c_shift = col - clo->getCol();
+      if (c_shift >= 0 && c_shift < clo->getNbCols()) {
 
-        auto *ptr = &(*ctx->dataBlocksPtr)[(*clo)->getMatShift()];
-        for (auto i = 0; i != (*clo)->getNbRows(); ++i) {
-          ptr[c_shift + i * (*clo)->getNbCols()] = 0;
+        auto *ptr = &(*ctx->dataBlocksPtr)[clo->getMatShift()];
+        for (auto i = 0; i != clo->getNbRows(); ++i) {
+          ptr[c_shift + i * clo->getNbCols()] = 0;
         }
 
         // diagonal
         if (
 
-            (*clo)->getRow() == (*clo)->getCol() &&
-            (*clo)->getLocRow() < loc_m && (*clo)->getLocCol() < loc_n
+            clo->getRow() == clo->getCol() && clo->getLocRow() < loc_m &&
+            clo->getLocCol() < loc_n
 
         ) {
-          auto r_shift = col - (*clo)->getCol();
-          if (r_shift >= 0 && r_shift < (*clo)->getNbRows()) {
-            ptr[c_shift + r_shift * (*clo)->getNbCols()] = diag;
+          auto r_shift = col - clo->getCol();
+          if (r_shift >= 0 && r_shift < clo->getNbRows()) {
+            ptr[c_shift + r_shift * clo->getNbCols()] = diag;
           }
         }
-      } else if ((*clo)->getCol() + (*clo)->getNbCols() > col) {
+      } else if (clo->getCol() + clo->getNbCols() > col) {
         break;
       }
     }
