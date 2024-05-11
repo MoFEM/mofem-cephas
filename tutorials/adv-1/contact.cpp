@@ -1121,8 +1121,6 @@ MoFEMErrorCode SetUpSchurImpl::setOperator() {
 
   using B = FormsIntegrators<BoundaryEleOp>::Assembly<
       BLOCK_PRECONDITIONER_SCHUR>::BiLinearForm<IT>;
-  // using B =
-  //     FormsIntegrators<BoundaryEleOp>::Assembly<BLOCK_SCHUR>::BiLinearForm<IT>;
   using OpMassStab = B::OpMass<3, SPACE_DIM * SPACE_DIM>;
 
   auto simple = mField.getInterface<Simple>();
