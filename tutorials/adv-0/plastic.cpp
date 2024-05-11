@@ -1287,10 +1287,6 @@ struct SetUpSchurImpl : public SetUpSchur {
     }
   }
   virtual ~SetUpSchurImpl() {
-#ifdef ADD_CONTACT
-    A.reset();
-    P.reset();
-#endif // ADD_CONTACT
     S.reset();
   }
 
