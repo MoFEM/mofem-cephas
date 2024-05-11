@@ -1845,9 +1845,16 @@ shell_block_mat_asmb_wrap(Mat M, const EntitiesFieldData::EntData &row_data,
                           const EntitiesFieldData::EntData &col_data,
                           const MatrixDouble &mat, InsertMode iora) {
   MoFEMFunctionBegin;
-  BlockStructure *ctx;
-  CHKERR MatShellGetContext(M, (void **)&ctx);
-  CHKERR shell_block_mat_asmb_wrap_impl(ctx, row_data, col_data, mat, iora);
+  PetscBool is_mat_shell = PETSC_FALSE;
+  PetscObjectTypeCompare((PetscObject)M, MATSHELL, &is_mat_shell);
+  if (is_mat_shell) {
+    BlockStructure *ctx;
+    CHKERR MatShellGetContext(M, (void **)&ctx);
+    CHKERR shell_block_mat_asmb_wrap_impl(ctx, row_data, col_data, mat, iora);
+  } else {
+    CHKERR MatSetValues<AssemblyTypeSelector<PETSC>>(M, row_data, col_data, mat,
+                                                     iora);
+  }
   MoFEMFunctionReturn(0);
 }
 
