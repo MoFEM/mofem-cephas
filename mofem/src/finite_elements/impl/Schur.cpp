@@ -1686,8 +1686,13 @@ shell_block_mat_asmb_wrap_impl(BlockStructure *ctx,
 
 #endif // NDEBUG
 
+  if (row_data.getIndices().empty())
+    MoFEMFunctionReturnHot(0);
+  if (col_data.getIndices().empty())
+    MoFEMFunctionReturnHot(0);
+
   auto row_nb_coeff = row_data.getFieldDofs()[0]->getNbOfCoeffs();
-  auto col_nb_coeff = row_data.getFieldDofs()[0]->getNbOfCoeffs();
+  auto col_nb_coeff = col_data.getFieldDofs()[0]->getNbOfCoeffs();
 
   auto row_ent = 0;
   for (auto rent : row_data.getFieldEntities()) {
@@ -1711,6 +1716,7 @@ shell_block_mat_asmb_wrap_impl(BlockStructure *ctx,
 #ifndef NDEBUG
 
               if (it == ctx->blockIndex.get<1>().end()) {
+                MOFEM_LOG_CHANNEL("SELF");
                 MOFEM_TAG_AND_LOG("SELF", Sev::error, "BlockMat")
                     << "missing block: "
                     << row_data.getFieldDofs()[0]->getName() << " : "
@@ -1736,6 +1742,26 @@ shell_block_mat_asmb_wrap_impl(BlockStructure *ctx,
                   }
 
                 } else if (nb_r == mat.size1()) {
+
+#ifndef NDEBUG
+                  if (col_nb_coeff * col_ent > col_data.getIndices().size()) {
+                    MOFEM_LOG_CHANNEL("SELF");
+                    MOFEM_TAG_AND_LOG("SELF", Sev::error, "BlockMat")
+                        << "col_nb_coeff: " << col_nb_coeff
+                        << " col_ent: " << col_ent;
+                    MOFEM_TAG_AND_LOG("SELF", Sev::error, "BlockMat")
+                        << col_data.getIndices() << endl;
+                    MOFEM_TAG_AND_LOG("SELF", Sev::error, "BlockMat")
+                        << "missing block: "
+                        << row_data.getFieldDofs()[0]->getName() << " : "
+                        << col_data.getFieldDofs()[0]->getName();
+
+                    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                            "col_nb_coeff * col_ent > "
+                            "col_data.getIndices().size()");
+                  }
+#endif
+
                   int c = 0;
                   auto c_ind_ptr =
                       &col_data.getIndices()[col_nb_coeff * col_ent];
@@ -1746,6 +1772,15 @@ shell_block_mat_asmb_wrap_impl(BlockStructure *ctx,
 
                     ) {
                       if (iora == ADD_VALUES) {
+
+#ifndef NDEBUG
+
+                        if (col_nb_coeff * col_ent + cc > mat.size2())
+                          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                                  "col_nb_coeff * col_ent + cc > mat.size2()");
+
+#endif // NDEBUG
+
                         for (auto r = 0; r != nb_r; ++r) {
                           data_m_ptr[r * nb_c + c] +=
                               mat(r, col_nb_coeff * col_ent + cc);
