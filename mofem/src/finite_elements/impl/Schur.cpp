@@ -536,7 +536,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
     return getPtrFE()->mField.get_field_name(field_bit_from_bit_number(
         FieldEntity::getFieldBitNumberFromUniqueId(uid)));
   };
-#endif 
+#endif
 
   // Assemble Schur complement
   auto assemble_mat = [&](SmartPetscObj<Mat> M, MatSetValuesRaw mat_set_values,
@@ -1067,81 +1067,99 @@ boost::shared_ptr<BlockStructure> createBlockMatStructure(
     SchurFEOpsFEandFields schur_fe_op_vec //< block elements
 
 ) {
-  auto data_ptr = boost::make_shared<BlockStructure>();
 
+  auto cmp_uid_lo = [](const boost::weak_ptr<FieldEntity> &a, const UId &b) {
+    if (auto a_ptr = a.lock()) {
+      if (a_ptr->getLocalUniqueId() < b)
+        return true;
+      else
+        return false;
+    } else {
+      return false;
+    }
+  };
+
+  auto cmp_uid_hi = [](const UId &b, const boost::weak_ptr<FieldEntity> &a) {
+    if (auto a_ptr = a.lock()) {
+      if (b < a_ptr->getLocalUniqueId())
+        return true;
+      else
+        return false;
+    } else {
+      return true;
+    }
+  };
+
+  // get uids for fields
+  auto get_uid_pair = [](const auto &field_id) {
+    auto lo_uid = FieldEntity::getLocalUniqueIdCalculate(
+        field_id, get_id_for_min_type<MBVERTEX>());
+    auto hi_uid = FieldEntity::getLocalUniqueIdCalculate(
+        field_id, get_id_for_max_type<MBENTITYSET>());
+    return std::make_pair(lo_uid, hi_uid);
+  };
+
+  // get uids pair
+  auto get_it_pair = [cmp_uid_lo, cmp_uid_hi](auto &&field_ents, auto &&p_uid) {
+    auto lo = std::lower_bound(field_ents.begin(), field_ents.end(),
+                               p_uid.first, cmp_uid_lo);
+    auto hi = std::upper_bound(field_ents.begin(), field_ents.end(),
+                               p_uid.second, cmp_uid_hi);
+    return std::make_pair(lo, hi);
+  };
+
+  auto row_extractor = [](auto &e) { return e->entityCacheRowDofs; };
+  auto col_extractor = [](auto &e) { return e->entityCacheColDofs; };
+
+  auto extract_data = [](auto &&its, auto extractor) {
+    std::vector<std::tuple<int, int, int>> data;
+    data.reserve(std::distance(its.first, its.second));
+    for (; its.first != its.second; ++its.first) {
+      if (auto e = its.first->lock()) {
+        if (auto cache = extractor(e).lock()) {
+          auto nb_dofs = std::distance(cache->loHi[0], cache->loHi[1]);
+          if (nb_dofs) {
+            auto glob = (*cache->loHi[0])->getPetscGlobalDofIdx();
+            auto loc = (*cache->loHi[0])->getPetscLocalDofIdx();
+            data.emplace_back(glob, nb_dofs, loc);
+
+#ifndef NDEBUG
+
+            for (auto lo = cache->loHi[0]; lo != cache->loHi[1]; ++lo) {
+              auto glob = (*lo)->getPetscGlobalDofIdx();
+              if (glob == -1) {
+                CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY,
+                                  "Wrong global index");
+              }
+            }
+
+#endif
+          }
+        }
+      }
+    }
+    return data;
+  };
+
+  auto data_ptr = boost::make_shared<BlockStructure>();
   auto m_field_ptr = getInterfacePtr(dm);
 
-  for (auto &d : schur_fe_op_vec) {
-    auto fe_method = boost::shared_ptr<MoFEM::FEMethod>(new MoFEM::FEMethod());
+  // create element to extract data
+  auto fe_method = boost::shared_ptr<MoFEM::FEMethod>(new MoFEM::FEMethod());
 
+  for (auto &d : schur_fe_op_vec) {
+
+    // extract bit numbers  for row and column
     auto get_bit_numbers = [&d](auto op) {
       std::vector<FieldBitNumber> bit_numbers(d.second.size());
       std::transform(d.second.begin(), d.second.end(), bit_numbers.begin(), op);
       return bit_numbers;
     };
 
-    auto get_uid_pair = [](const auto &field_id) {
-      auto lo_uid = FieldEntity::getLocalUniqueIdCalculate(
-          field_id, get_id_for_min_type<MBVERTEX>());
-      auto hi_uid = FieldEntity::getLocalUniqueIdCalculate(
-          field_id, get_id_for_max_type<MBENTITYSET>());
-      return std::make_pair(lo_uid, hi_uid);
-    };
-
-    auto cmp_uid_lo = [](const boost::weak_ptr<FieldEntity> &a, const UId &b) {
-      if (auto a_ptr = a.lock()) {
-        if (a_ptr->getLocalUniqueId() < b)
-          return true;
-        else
-          return false;
-      } else {
-        return false;
-      }
-    };
-
-    auto cmp_uid_hi = [](const UId &b, const boost::weak_ptr<FieldEntity> &a) {
-      if (auto a_ptr = a.lock()) {
-        if (b < a_ptr->getLocalUniqueId())
-          return true;
-        else
-          return false;
-      } else {
-        return true;
-      }
-    };
-
-    auto get_it_pair = [cmp_uid_lo, cmp_uid_hi](auto &&field_ents,
-                                                auto &&p_uid) {
-      auto lo = std::lower_bound(field_ents.begin(), field_ents.end(),
-                                 p_uid.first, cmp_uid_lo);
-      auto hi = std::upper_bound(field_ents.begin(), field_ents.end(),
-                                 p_uid.second, cmp_uid_hi);
-      return std::make_pair(lo, hi);
-    };
-
-    auto row_extractor = [](auto &e) { return e->entityCacheRowDofs; };
-    auto col_extractor = [](auto &e) { return e->entityCacheColDofs; };
-
-    auto extract_data = [](auto &&its, auto extractor) {
-      std::vector<std::tuple<int, int, int>> data;
-      data.reserve(std::distance(its.first, its.second));
-      for (; its.first != its.second; ++its.first) {
-        if (auto e = its.first->lock()) {
-          if (auto cache = extractor(e).lock()) {
-            auto nb_dofs = std::distance(cache->loHi[0], cache->loHi[1]);
-            if (nb_dofs) {
-              auto glob = (*cache->loHi[0])->getPetscGlobalDofIdx();
-              auto loc = (*cache->loHi[0])->getPetscLocalDofIdx();
-              data.emplace_back(glob, nb_dofs, loc);
-            }
-          }
-        }
-      }
-      return data;
-    };
-
+    // extract bit numbers  for row
     auto row_bit_numbers = get_bit_numbers(
         [&](auto &p) { return m_field_ptr->get_field_bit_number(p.first); });
+    // extract bit numbers  for row
     auto col_bit_numbers = get_bit_numbers(
         [&](auto &p) { return m_field_ptr->get_field_bit_number(p.second); });
 
@@ -1346,7 +1364,8 @@ static MoFEMErrorCode setSchurBlockMatOps(Mat mat_raw) {
   MoFEMFunctionReturn(0);
 };
 
-SchurShellMatData createBlockMat(DM dm, boost::shared_ptr<BlockStructure> data) {
+SchurShellMatData createBlockMat(DM dm,
+                                 boost::shared_ptr<BlockStructure> data) {
 
   auto problem_ptr = getProblemPtr(dm);
   auto nb_local = problem_ptr->nbLocDofsRow;
@@ -1660,182 +1679,171 @@ shell_block_mat_asmb_wrap_impl(BlockStructure *ctx,
   MatrixDouble tmp_mat;
   MoFEMFunctionBegin;
 
-#ifndef NDEBUG
+  // #ifndef NDEBUG
 
   PetscLogEventBegin(SchurEvents::MOFEM_EVENT_BlockStructureSetValues, 0, 0, 0,
                      0);
 
-#endif // NDEBUG
+  // #endif // NDEBUG
 
-  auto get_row_indices_ptr = [&row_data]() -> const VectorInt * {
-    boost::shared_ptr<EssentialBcStorage> stored_data_ptr;
-    if (!row_data.getFieldEntities().empty()) {
-      if (auto e_ptr = row_data.getFieldEntities()[0]) {
-        if (auto stored_data_ptr =
-                e_ptr->getSharedStoragePtr<EssentialBcStorage>()) {
-          return &(stored_data_ptr->entityIndices);
-        }
-      }
-    }
-    return &row_data.getIndices();
-  };
+  auto row_nb_coeff = row_data.getFieldDofs()[0]->getNbOfCoeffs();
+  auto col_nb_coeff = row_data.getFieldDofs()[0]->getNbOfCoeffs();
 
-  auto get_negative_indices = [](auto &&row_indices_ptr) {
-    std::vector<int> negative;
-    int i = 0;
-    for (auto &v : *row_indices_ptr) {
-      if (v == -1)
-        negative.push_back(i);
-      ++i;
-    }
-    return negative;
-  };
+  auto row_ent = 0;
+  for (auto rent : row_data.getFieldEntities()) {
 
-  // TODO: That is not tested (fix it)
-  auto skip_negative_indices_mat =
-      [&mat, &tmp_mat](auto &&negative) -> const MatrixDouble * {
-    if (negative.size()) {
-      tmp_mat.resize(mat.size1(), mat.size2());
-      noalias(tmp_mat) = mat;
-      for (auto v : negative) {
-        ublas::matrix_row<decltype(tmp_mat)> mr(tmp_mat, v);
-        std::fill(mr.begin(), mr.end(), 0);
-      }
-      return &tmp_mat;
-    } else {
-      return &mat;
-    }
-  };
+    if (auto r_cache = rent->entityCacheRowDofs.lock()) {
 
-  auto get_row_first_index = [](auto *row_index_ptr, int nb_r) {
-    for (auto i = 0; i != nb_r; ++i) {
-      if (row_index_ptr[i] != -1)
-        return row_index_ptr[i] - i;
-      return -1;
-    }
-    return -1;
-  };
+      if (auto nb_r = std::distance(r_cache->loHi[0], r_cache->loHi[1])) {
+        auto gr = (*r_cache->loHi[0])->getPetscGlobalDofIdx();
 
-  auto m_ptr =
-      skip_negative_indices_mat(get_negative_indices(get_row_indices_ptr()));
+        auto col_ent = 0;
+        for (auto cent : col_data.getFieldEntities()) {
 
-  auto nb_rows = row_data.getIndices().size();
-  auto nb_cols = col_data.getIndices().size();
+          if (auto c_cache = cent->entityCacheColDofs.lock()) {
 
-  auto set = [&](auto r, auto c, auto nb_r, auto nb_c, auto &mat) {
-    MoFEMFunctionBegin;
+            if (auto nb_c = std::distance(c_cache->loHi[0], c_cache->loHi[1])) {
+              auto gc = (*c_cache->loHi[0])->getPetscGlobalDofIdx();
 
-    auto row_first_index =
-        get_row_first_index(&(*get_row_indices_ptr())[r], nb_r);
-    if (row_first_index != -1) {
-
-      auto size = nb_r * nb_c;
-      auto it = ctx->blockIndex.get<1>().find(boost::make_tuple(
-          row_first_index, col_data.getIndices()[c], nb_r, nb_c));
+              auto it = ctx->blockIndex.get<1>().find(
+                  boost::make_tuple(gr, gc, nb_r, nb_c));
 
 #ifndef NDEBUG
 
-      if (it == ctx->blockIndex.get<1>().end()) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "Block not allocated");
-      }
-      if (it->getNbRows() != nb_r) {
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                 "Wrong size %d != %d", it->getNbRows(), nb_r);
-      }
-      if (it->getNbCols() != nb_c) {
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                 "Wrong size %d != %d", it->getNbCols(), nb_c);
-      }
-      if (nb_r != mat.size1()) {
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                 "Wrong size %d != %d", nb_r, mat.size1());
-      }
-      if (nb_c != mat.size2()) {
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                 "Wrong size %d != %d", nb_c, mat.size2());
-      }
-      if (nb_r * nb_c != mat.data().size()) {
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                 "Wrong size %d != %d", nb_r * nb_c, mat.data().size());
-      }
+              if (it == ctx->blockIndex.get<1>().end()) {
+                MOFEM_TAG_AND_LOG("SELF", Sev::error, "BlockMat")
+                    << "missing block: "
+                    << row_data.getFieldDofs()[0]->getName() << " : "
+                    << col_data.getFieldDofs()[0]->getName();
+                SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                        "Block not allocated");
+              }
 
-#endif // NDEBUG
+#endif
 
-      auto shift = it->getMatShift();
-      if (shift != -1) {
+              auto shift = it->getMatShift();
+              if (shift != -1) {
 
-        if (iora == ADD_VALUES) {
-          cblas_daxpy(size, 1., &*mat.data().begin(), 1,
-                      &(*ctx->dataBlocksPtr)[shift], 1);
-        } else {
-          std::copy(mat.data().begin(), mat.data().end(),
-                    &(*ctx->dataBlocksPtr)[shift]);
-        }
-      } else {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "shift == -1");
-      }
-    }
-    MoFEMFunctionReturn(0);
-  };
+                auto data_m_ptr = &((*ctx->dataBlocksPtr)[shift]);
 
-  if (nb_rows && nb_cols) {
-    auto row_type = row_data.getFieldDofs()[0]->getEntType();
-    auto col_type = col_data.getFieldDofs()[0]->getEntType();
+                if (nb_r == mat.size1() && nb_c == mat.size2()) {
 
-    if (row_type == MBVERTEX && col_type == MBVERTEX) {
-      auto row_nb_coeff = row_data.getFieldDofs()[0]->getNbOfCoeffs();
-      auto col_nb_coeff = col_data.getFieldDofs()[0]->getNbOfCoeffs();
-      MatrixDouble m(row_nb_coeff, col_nb_coeff);
-      for (auto i = 0; i != nb_rows / row_nb_coeff; ++i) {
-        for (auto j = 0; j != nb_cols / col_nb_coeff; ++j) {
+                  if (iora == ADD_VALUES) {
+                    cblas_daxpy(mat.data().size(), 1., &*mat.data().begin(), 1,
+                                data_m_ptr, 1);
+                  } else {
+                    std::copy(mat.data().begin(), mat.data().end(), data_m_ptr);
+                  }
 
-          for (auto k = 0; k != row_nb_coeff; ++k) {
-            for (auto l = 0; l != col_nb_coeff; ++l) {
-              m(k, l) = (*m_ptr)(i * row_nb_coeff + k, j * col_nb_coeff + l);
+                } else if (nb_r == mat.size1()) {
+                  int c = 0;
+                  auto c_ind_ptr =
+                      &col_data.getIndices()[col_nb_coeff * col_ent];
+                  for (auto cc = 0; cc != col_nb_coeff; ++cc, ++c_ind_ptr) {
+                    if (
+
+                        gc == *c_ind_ptr && c != nb_c
+
+                    ) {
+                      if (iora == ADD_VALUES) {
+                        for (auto r = 0; r != nb_r; ++r) {
+                          data_m_ptr[r * nb_c + c] +=
+                              mat(r, col_nb_coeff * col_ent + cc);
+                        }
+                      } else {
+                        for (auto r = 0; r != nb_r; ++r) {
+                          data_m_ptr[r * nb_c + c] +=
+                              mat(r, col_nb_coeff * col_ent + cc);
+                        }
+                      }
+                      ++gc;
+                      ++c;
+                    }
+                  }
+                } else if (nb_c == mat.size2()) {
+                  auto gr = (*r_cache->loHi[0])->getPetscGlobalDofIdx();
+                  int r = 0;
+                  auto r_ind_ptr =
+                      &row_data.getIndices()[row_nb_coeff * row_ent];
+                  for (auto rr = 0; rr != row_nb_coeff; ++rr, ++r_ind_ptr) {
+                    if (
+
+                        gr == *r_ind_ptr && r != nb_r
+
+                    ) {
+                      auto m_ptr = &mat(row_nb_coeff * row_ent + rr, 0);
+                      if (iora == ADD_VALUES) {
+                        for (auto c = 0; c != nb_c; ++c) {
+                          data_m_ptr[r * nb_c + c] += m_ptr[c];
+                        }
+                      } else {
+                        for (auto c = 0; c != nb_c; ++c) {
+                          data_m_ptr[r * nb_c + c] = m_ptr[c];
+                        }
+                      }
+                      ++gr;
+                      ++r;
+                    }
+                  }
+                } else {
+
+                  auto gr = (*r_cache->loHi[0])->getPetscGlobalDofIdx();
+                  auto gc0 = (*c_cache->loHi[0])->getPetscGlobalDofIdx();
+                  
+                  int r = 0;
+                  auto r_ind_ptr =
+                      &row_data.getIndices()[row_nb_coeff * row_ent];
+                  auto col_ind_ptr =
+                      &col_data.getIndices()[col_nb_coeff * col_ent];
+                  for (auto rr = 0; rr != row_nb_coeff; ++rr, ++r_ind_ptr) {
+                    if (gr == *r_ind_ptr && r != nb_r) {
+                      auto m_ptr = &mat(row_nb_coeff * row_ent + rr,
+                                        col_nb_coeff * col_ent);
+                      auto gc = gc0;
+                      int c = 0;
+                      for (auto cc = 0; cc != col_nb_coeff; ++cc) {
+                        if (
+
+                            gc == col_ind_ptr[cc] && c != nb_c
+
+                        ) {
+
+                          if (iora == ADD_VALUES) {
+                            data_m_ptr[r * nb_c + c] += m_ptr[cc];
+                          } else {
+                            data_m_ptr[r * nb_c + c] = m_ptr[cc];
+                          }
+
+                          ++gc;
+                          ++c;
+                        }
+                      }
+
+                      ++gr;
+                      ++r;
+                    }
+                  }
+                }
+
+              } else {
+                SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                        "shift == -1");
+              }
             }
           }
 
-          CHKERR set(i * row_nb_coeff, j * col_nb_coeff, row_nb_coeff,
-                     col_nb_coeff, m);
+          ++col_ent;
         }
       }
-
-    } else if (row_type == MBVERTEX) {
-      auto row_nb_coeff = row_data.getFieldDofs()[0]->getNbOfCoeffs();
-      MatrixDouble m(row_nb_coeff, nb_cols);
-      for (auto i = 0; i != nb_rows / row_nb_coeff; ++i) {
-
-        for (auto k = 0; k != row_nb_coeff; ++k) {
-          for (auto l = 0; l != nb_cols; ++l) {
-            m(k, l) = (*m_ptr)(i * row_nb_coeff + k, l);
-          }
-        }
-
-        CHKERR set(i * row_nb_coeff, 0, row_nb_coeff, nb_cols, m);
-      }
-
-    } else if (col_type == MBVERTEX) {
-      auto col_nb_coeff = col_data.getFieldDofs()[0]->getNbOfCoeffs();
-      MatrixDouble m(nb_rows, col_nb_coeff);
-      for (auto j = 0; j != nb_cols / col_nb_coeff; ++j) {
-        for (auto k = 0; k != nb_rows; ++k) {
-          for (auto l = 0; l != col_nb_coeff; ++l) {
-            m(k, l) = (*m_ptr)(k, j * col_nb_coeff + l);
-          }
-        }
-        CHKERR set(0, j * col_nb_coeff, nb_rows, col_nb_coeff, m);
-      }
-
-    } else {
-
-      CHKERR set(0, 0, nb_rows, nb_cols, (*m_ptr));
     }
+
+    ++row_ent;
   }
 
-#ifndef NDEBUG
-  PetscLogEventEnd(SchurEvents::MOFEM_EVENT_BlockStructureSetValues, 0, 0, 0, 0);
-#endif // NDEBUG
+  // #ifndef NDEBUG
+  PetscLogEventEnd(SchurEvents::MOFEM_EVENT_BlockStructureSetValues, 0, 0, 0,
+                   0);
+  // #endif // NDEBUG
 
   MoFEMFunctionReturn(0);
 }
@@ -1937,7 +1945,8 @@ MoFEMErrorCode shell_block_preconditioner_mat_asmb_wrap_impl(
   }
 
 #ifndef NDEBUG
-  PetscLogEventEnd(SchurEvents::MOFEM_EVENT_BlockStructureSetValues, 0, 0, 0, 0);
+  PetscLogEventEnd(SchurEvents::MOFEM_EVENT_BlockStructureSetValues, 0, 0, 0,
+                   0);
 #endif // NDEBUG
 
   MoFEMFunctionReturn(0);
@@ -2513,8 +2522,8 @@ MoFEMErrorCode MatSetValues<AssemblyTypeSelector<SCHUR>>(
 template <>
 MoFEMErrorCode
 MatSetValues<BlockStructure>(Mat M, const EntitiesFieldData::EntData &row_data,
-                            const EntitiesFieldData::EntData &col_data,
-                            const MatrixDouble &mat, InsertMode iora) {
+                             const EntitiesFieldData::EntData &col_data,
+                             const MatrixDouble &mat, InsertMode iora) {
   return shell_block_mat_asmb_wrap(M, row_data, col_data, mat, iora);
 }
 
