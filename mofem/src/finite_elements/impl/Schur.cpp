@@ -1679,12 +1679,12 @@ shell_block_mat_asmb_wrap_impl(BlockStructure *ctx,
   MatrixDouble tmp_mat;
   MoFEMFunctionBegin;
 
-  // #ifndef NDEBUG
+#ifndef NDEBUG
 
   PetscLogEventBegin(SchurEvents::MOFEM_EVENT_BlockStructureSetValues, 0, 0, 0,
                      0);
 
-  // #endif // NDEBUG
+#endif // NDEBUG
 
   auto row_nb_coeff = row_data.getFieldDofs()[0]->getNbOfCoeffs();
   auto col_nb_coeff = row_data.getFieldDofs()[0]->getNbOfCoeffs();
@@ -1789,7 +1789,7 @@ shell_block_mat_asmb_wrap_impl(BlockStructure *ctx,
 
                   auto gr = (*r_cache->loHi[0])->getPetscGlobalDofIdx();
                   auto gc0 = (*c_cache->loHi[0])->getPetscGlobalDofIdx();
-                  
+
                   int r = 0;
                   auto r_ind_ptr =
                       &row_data.getIndices()[row_nb_coeff * row_ent];
@@ -1840,10 +1840,10 @@ shell_block_mat_asmb_wrap_impl(BlockStructure *ctx,
     ++row_ent;
   }
 
-  // #ifndef NDEBUG
+#ifndef NDEBUG
   PetscLogEventEnd(SchurEvents::MOFEM_EVENT_BlockStructureSetValues, 0, 0, 0,
                    0);
-  // #endif // NDEBUG
+#endif // NDEBUG
 
   MoFEMFunctionReturn(0);
 }
