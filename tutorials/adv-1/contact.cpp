@@ -397,11 +397,6 @@ MoFEMErrorCode Contact::createCommonData() {
         PETSC_COMM_SELF, MOFEM_NOT_FOUND,
         "MFrontInterface module was not found while use_mfront was set to 1");
 #else
-    if (SCHUR_ASSEMBLE) {
-      SETERRQ(
-          PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-          "MFrontInterface module is not yet compatible with Schur assembly");
-    }
     if (SPACE_DIM == 3) {
       mfrontInterface =
           boost::make_shared<MFrontMoFEMInterface<TRIDIMENSIONAL>>(
