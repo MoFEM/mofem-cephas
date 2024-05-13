@@ -1679,12 +1679,12 @@ shell_block_mat_asmb_wrap_impl(BlockStructure *ctx,
   MatrixDouble tmp_mat;
   MoFEMFunctionBegin;
 
-  // #ifndef NDEBUG
+#ifndef NDEBUG
 
   PetscLogEventBegin(SchurEvents::MOFEM_EVENT_BlockStructureSetValues, 0, 0, 0,
                      0);
 
-  // #endif // NDEBUG
+#endif // NDEBUG
 
   if (row_data.getIndices().empty())
     MoFEMFunctionReturnHot(0);
@@ -1802,10 +1802,10 @@ shell_block_mat_asmb_wrap_impl(BlockStructure *ctx,
 
   CHKERR set_mat(get_rows(), get_cols());
 
-  // #ifndef NDEBUG
+#ifndef NDEBUG
   PetscLogEventEnd(SchurEvents::MOFEM_EVENT_BlockStructureSetValues, 0, 0, 0,
                    0);
-  // #endif // NDEBUG
+#endif // NDEBUG
 
   MoFEMFunctionReturn(0);
 }
