@@ -13,7 +13,7 @@ the " */
 #define EXECUTABLE_DIMENSION 3
 #endif
 
-// #define ADD_CONTACT
+// #undef ADD_CONTACT
 
 #include <MoFEM.hpp>
 #include <MatrixFunction.hpp>
@@ -338,8 +338,8 @@ MoFEMErrorCode Example::setupProblem() {
 
     ) {
       is_contact_block =
-          true; ///< bloks interation is collectibe, so that is set irrespective
-                ///< if there are enerities in given rank or not in the block
+          true; ///< blocs interation is collective, so that is set irrespective
+                ///< if there are entities in given rank or not in the block
       MOFEM_LOG("CONTACT", Sev::inform)
           << "Find contact block set:  " << m->getName();
       auto meshset = m->getMeshset();
@@ -383,8 +383,8 @@ MoFEMErrorCode Example::setupProblem() {
   };
   PetscBool project_geometry = PETSC_TRUE;
   CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-project_geometry",
-                               &project_geometry, PETSC_NULL);
-  if (project_geometry){
+                             &project_geometry, PETSC_NULL);
+  if (project_geometry) {
     CHKERR project_ho_geometry();
   }
 
@@ -863,8 +863,8 @@ MoFEMErrorCode Example::tsSolve() {
 
       auto simple = mField.getInterface<Simple>();
       auto pp_fe = boost::make_shared<SkinPostProcEle>(mField);
-      auto op_side = new OpLoopSide<SideEle>(
-          mField, simple->getDomainFEName(), SPACE_DIM, Sev::verbose);
+      auto op_side = new OpLoopSide<SideEle>(mField, simple->getDomainFEName(),
+                                             SPACE_DIM, Sev::verbose);
       pp_fe->getOpPtrVector().push_back(op_side);
       CHK_MOAB_THROW(push_vol_post_proc_ops(
                          pp_fe, push_vol_ops(op_side->getOpPtrVector())),
@@ -956,73 +956,80 @@ MoFEMErrorCode Example::tsSolve() {
       SmartPetscObj<DM> dm_block;
       CHKERR create_block_dm(simple->getDM(), dm_block);
 
-  #ifdef ADD_CONTACT
+#ifdef ADD_CONTACT
 
-      auto get_nested_mat_data =
-          [&](auto schur_dm, auto block_dm) {
-            auto block_mat_data =
-                createBlockMatStructure(simple->getDM(),
+      auto get_nested_mat_data = [&](auto schur_dm, auto block_dm) {
+        auto block_mat_data = createBlockMatStructure(
+            simple->getDM(),
 
-                                        {{simple->getDomainFEName(),
+            {
 
-                                          {{"U", "U"},
-                                           {"SIGMA", "SIGMA"},
-                                           {"EP", "EP"},
-                                           {"TAU", "TAU"},
-                                           {"U", "SIGMA"},
-                                           {"SIGMA", "U"},
-                                           {"U", "EP"},
-                                           {"EP", "U"},
-                                           {"EP", "TAU"},
-                                           {"TAU", "EP"},
-                                           {"TAU", "U"}
+                {simple->getDomainFEName(),
 
-                                          }}}
+                 {{"U", "U"},
+                  {"SIGMA", "SIGMA"},
+                  {"U", "SIGMA"},
+                  {"SIGMA", "U"},
+                  {"EP", "EP"},
+                  {"TAU", "TAU"},
+                  {"U", "EP"},
+                  {"EP", "U"},
+                  {"EP", "TAU"},
+                  {"TAU", "EP"},
+                  {"TAU", "U"}
 
-                );
+                 }},
 
-            return getNestSchurData(
+                {simple->getBoundaryFEName(),
 
-                {dm_schur, dm_block}, block_mat_data,
+                 {{"SIGMA", "SIGMA"}, {"U", "SIGMA"}, {"SIGMA", "U"}
 
-                {"SIGMA", "EP", "TAU"}, {nullptr, nullptr, nullptr}, false
+                 }}
+
+            }
+
+        );
+
+        return getNestSchurData(
+
+            {dm_schur, dm_block}, block_mat_data,
+
+            {"SIGMA", "EP", "TAU"}, {nullptr, nullptr, nullptr}, true
+
+        );
+      };
+
+#else
+
+      auto get_nested_mat_data = [&](auto schur_dm, auto block_dm) {
+        auto block_mat_data =
+            createBlockMatStructure(simple->getDM(),
+
+                                    {{simple->getDomainFEName(),
+
+                                      {{"U", "U"},
+                                       {"EP", "EP"},
+                                       {"TAU", "TAU"},
+                                       {"U", "EP"},
+                                       {"EP", "U"},
+                                       {"EP", "TAU"},
+                                       {"TAU", "U"},
+                                       {"TAU", "EP"}
+
+                                      }}}
 
             );
-          };
 
-  #else
+        return getNestSchurData(
 
-        auto get_nested_mat_data =
-          [&](auto schur_dm, auto block_dm) {
-            auto block_mat_data =
-                createBlockMatStructure(simple->getDM(),
+            {dm_schur, dm_block}, block_mat_data,
 
-                                        {{simple->getDomainFEName(),
+            {"EP", "TAU"}, {nullptr, nullptr}, false
 
-                                          {{"U", "U"},
-                                           {"EP", "EP"},
-                                           {"TAU", "TAU"},
-                                           {"U", "EP"},
-                                           {"EP", "U"},
-                                           {"EP", "TAU"},
-                                           {"TAU", "U"},
-                                           {"TAU", "EP"}
-
-                                          }}}
-
-                );
-
-            return getNestSchurData(
-
-                {dm_schur, dm_block}, block_mat_data,
-
-                {"EP", "TAU"}, {nullptr, nullptr}, false
-
-            );
-          };
+        );
+      };
 
 #endif
-
 
       auto nested_mat_data = get_nested_mat_data(dm_schur, dm_block);
       CHKERR DMMoFEMSetNestSchurData(simple->getDM(), nested_mat_data);
@@ -1164,7 +1171,7 @@ MoFEMErrorCode Example::tsSolve() {
     ts_ctx_ptr->getPostProcessIFunction().push_back(post_proc_rhs_ptr);
     post_proc_lhs_ptr->postProcessHook = get_post_proc_hook_lhs();
     ts_ctx_ptr->getPostProcessIJacobian().push_back(post_proc_lhs_ptr);
-    
+
     MoFEMFunctionReturn(0);
   };
 
@@ -1286,9 +1293,7 @@ struct SetUpSchurImpl : public SetUpSchur {
           "possible only is PC is set up twice");
     }
   }
-  virtual ~SetUpSchurImpl() {
-    S.reset();
-  }
+  virtual ~SetUpSchurImpl() { S.reset(); }
 
   MoFEMErrorCode setUp(TS solver);
   MoFEMErrorCode preProc();
@@ -1300,7 +1305,7 @@ private:
   MoFEM::Interface &mField;
   SmartPetscObj<DM> subDM;        ///< field split sub dm
   SmartPetscObj<IS> fieldSplitIS; ///< IS for split Schur block
-  SmartPetscObj<AO> aoSchur;         ///> main DM to subDM
+  SmartPetscObj<AO> aoSchur;      ///> main DM to subDM
 };
 
 MoFEMErrorCode SetUpSchurImpl::setUp(TS solver) {
