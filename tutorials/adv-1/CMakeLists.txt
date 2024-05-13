@@ -109,13 +109,13 @@ endif(MFRONT_INTERFACE_INSTALL_PREFIX)
 if(IS_MFRONT_MOD)
   message("WITH MFRONT")
   target_link_libraries(contact_2d
-    mfront_lib_all)
+    mfront_lib)
   target_link_libraries(contact_3d
-    mfront_lib_all)
+    mfront_lib)
   target_link_libraries(contact_2d_schur
-    mfront_lib_all)
+    mfront_schur_lib)
   target_link_libraries(contact_3d_schur
-    mfront_lib_all)
+    mfront_schur_lib)
 endif(IS_MFRONT_MOD)
 
 # Copy scripts to build a directory
@@ -145,20 +145,6 @@ add_test(
   contact_2d
   -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/cyl_2d_4p.h5m
   -pc_type lu
-  -ts_type beuler
-  -ts_max_time 1 -ts_dt 1
-  -sdf_file ./sdf_files/sdf_hertz_2d_plane.py
-  -young_modulus 1e3
-  -poisson_ratio 0.4
-  -atom_test 1
-)
-
-add_test(
-  hertz_2d_plane_stress_schur
-  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
-  contact_2d_schur
-  -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/cyl_2d_4p.h5m
-  -pc_type fieldsplit
   -ts_type beuler
   -ts_max_time 1 -ts_dt 1
   -sdf_file ./sdf_files/sdf_hertz_2d_plane.py
@@ -205,10 +191,12 @@ if(IS_MFRONT_MOD)
       ${TFEL_DIR}/bin/mfront --obuild --interface=generic ${PROJECT_SOURCE_DIR}/mfront_interface/behaviours/LinearElasticity.mfront)
 
     if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-      target_compile_definitions(mfront_lib_all PUBLIC DEFAULT_LIB_EXTENSION="dylib")
+      target_compile_definitions(mfront_lib PUBLIC DEFAULT_LIB_EXTENSION="dylib")
+      target_compile_definitions(mfront_schur_lib PUBLIC DEFAULT_LIB_EXTENSION="dylib")
       set(DEFAULT_LIB_EXTENSION "dylib")
     else()
-      target_compile_definitions(mfront_lib_all PUBLIC DEFAULT_LIB_EXTENSION="so")
+      target_compile_definitions(mfront_lib PUBLIC DEFAULT_LIB_EXTENSION="so")
+      target_compile_definitions(mfront_schur_lib PUBLIC DEFAULT_LIB_EXTENSION="so")
       set(DEFAULT_LIB_EXTENSION "so")
     endif()
 
@@ -228,6 +216,24 @@ if(IS_MFRONT_MOD)
       -mi_param_10_0 1e3
       -mi_param_10_1 0.4
       -atom_test 6
+    )
+
+    add_test(
+      wavy_2d_test
+      ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+      contact_2d
+      -file_name wavy_2d.h5m
+      -pc_type lu
+      -ts_type beuler
+      -ts_max_time 1 -ts_dt 1
+      -sdf_file ./sdf_files/sdf_plane_2d.py
+      -use_mfront 1
+      -is_axisymmetric 0
+      -mi_lib_path_10 ${CMAKE_CURRENT_BINARY_DIR}/src/libBehaviour.${DEFAULT_LIB_EXTENSION}
+      -mi_block_10 LinearElasticity
+      -mi_param_10_0 1e3
+      -mi_param_10_1 0.4
+      # -atom_test 6
     )
 
     add_test(
@@ -290,6 +296,23 @@ if(IS_MFRONT_MOD)
       contact_3d
       -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/hertz_3d_4p.h5m
       -pc_type lu
+      -ts_type beuler
+      -ts_max_time 1 -ts_dt 1
+      -sdf_file ./sdf_files/sdf_hertz_3d.py
+      -use_mfront 1
+      -mi_lib_path_10 ${CMAKE_CURRENT_BINARY_DIR}/src/libBehaviour.${DEFAULT_LIB_EXTENSION}
+      -mi_block_10 LinearElasticity
+      -mi_param_10_0 1e3
+      -mi_param_10_1 0.4
+      -atom_test 3
+    )
+
+    add_test(
+      hertz_mfront_3d_schur
+      ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
+      contact_3d_schur
+      -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/hertz_3d_4p.h5m
+      -pc_type fieldsplit
       -ts_type beuler
       -ts_max_time 1 -ts_dt 1
       -sdf_file ./sdf_files/sdf_hertz_3d.py
