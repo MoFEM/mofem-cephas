@@ -1684,12 +1684,12 @@ MoFEMErrorCode shell_block_mat_asmb_wrap_impl(
   if (col_data.getIndices().empty())
     MoFEMFunctionReturnHot(0);
 
-// #ifndef NDEBUG
+  // #ifndef NDEBUG
 
   PetscLogEventBegin(SchurEvents::MOFEM_EVENT_BlockStructureSetValues, 0, 0, 0,
                      0);
 
-// #endif // NDEBUG
+  // #endif // NDEBUG
 
   auto get_row_data = [&]() -> std::pair<bool, VectorInt> {
     if (auto e_ptr = row_data.getFieldEntities()[0]) {
@@ -1834,28 +1834,48 @@ MoFEMErrorCode shell_block_mat_asmb_wrap_impl(
 
           auto shift = shift_extractor(&*it);
           if (shift != -1) {
-            if(
-              
-              nbr == row_indices.second.size()
 
-              && nbc == col_data.getIndices().size()
+            auto mat_row_ptr0 = &mat(row, col);
+            auto s_mat = &(*data_blocks_ptr)[shift];
 
-              && it_r && it_c
+            if (
+
+                nbr == row_indices.second.size() &&
+                nbc == col_data.getIndices().size()
+
+                && it_r && it_c
 
             ) {
 
-              auto s_mat = &(*data_blocks_ptr)[shift];
               if (iora == ADD_VALUES) {
-                cblas_daxpy(nbr * nbc, 1.0, &mat(row, col), 1, s_mat, 1);
+                cblas_daxpy(nbr * nbc, 1.0, mat_row_ptr0, 1, s_mat, 1);
               } else {
-                cblas_dcopy(nbr * nbc, &mat(row, col), 1, s_mat, 1);
+                cblas_dcopy(nbr * nbc, mat_row_ptr0, 1, s_mat, 1);
+              }
+
+            } else if (
+
+                nbc == col_data.getIndices().size()
+
+                && it_r && it_c
+
+            ) {
+
+              if (iora == ADD_VALUES) {
+                for (auto r : row_ent_idx) {
+                  auto mat_row_ptr = mat_row_ptr0 + r * mat.size2();
+                  cblas_daxpy(nbc, 1.0, mat_row_ptr, 1, s_mat + r * nbc, 1);
+                }
+              } else {
+                for (auto r : row_ent_idx) {
+                  auto mat_row_ptr = mat_row_ptr0 + r * mat.size2();
+                  cblas_dcopy(nbc, mat_row_ptr, 1, s_mat + r * nbc, 1);
+                }
               }
 
             } else {
 
               get_ent_idx(c, col_ent_idx);
-              auto s_mat = &(*data_blocks_ptr)[shift];
-              auto mat_row_ptr0 = &mat(row, col);
               auto row_idx = &row_indices.second[row];
               auto col_idx = &col_data.getIndices()[col];
               if (iora == ADD_VALUES) {
@@ -1877,7 +1897,6 @@ MoFEMErrorCode shell_block_mat_asmb_wrap_impl(
                   }
                 }
               }
-              
             }
           }
 
@@ -1891,10 +1910,10 @@ MoFEMErrorCode shell_block_mat_asmb_wrap_impl(
     CHKERR set_mat(get_rows(), get_cols());
   }
 
-// #ifndef NDEBUG
+  // #ifndef NDEBUG
   PetscLogEventEnd(SchurEvents::MOFEM_EVENT_BlockStructureSetValues, 0, 0, 0,
                    0);
-// #endif // NDEBUG
+  // #endif // NDEBUG
 
   MoFEMFunctionReturn(0);
 }
@@ -1927,7 +1946,7 @@ MoFEMErrorCode shell_block_preconditioner_mat_asmb_wrap(
   MoFEMFunctionBegin;
   BlockStructure *ctx;
   CHKERR MatShellGetContext(M, (void **)&ctx);
-  if(!ctx->preconditionerBlocksPtr)
+  if (!ctx->preconditionerBlocksPtr)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "No preconditionerBlocksPtr");
   CHKERR shell_block_mat_asmb_wrap_impl(
