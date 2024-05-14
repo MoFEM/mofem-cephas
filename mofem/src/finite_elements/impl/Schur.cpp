@@ -1670,7 +1670,7 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode shell_block_mat_asmb_wrap_impl(
+inline MoFEMErrorCode shell_block_mat_asmb_wrap_impl(
     BlockStructure *ctx, const EntitiesFieldData::EntData &row_data,
     const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
     InsertMode iora,
@@ -1684,12 +1684,12 @@ MoFEMErrorCode shell_block_mat_asmb_wrap_impl(
   if (col_data.getIndices().empty())
     MoFEMFunctionReturnHot(0);
 
-#ifndef NDEBUG
+  // #ifndef NDEBUG
 
   PetscLogEventBegin(SchurEvents::MOFEM_EVENT_BlockStructureSetValues, 0, 0, 0,
                      0);
 
-#endif // NDEBUG
+  // #endif // NDEBUG
 
   auto get_row_data = [&]() -> std::pair<bool, VectorInt> {
     if (auto e_ptr = row_data.getFieldEntities()[0]) {
@@ -1745,11 +1745,26 @@ MoFEMErrorCode shell_block_mat_asmb_wrap_impl(
     auto shift = shift_extractor(&*it);
     if (shift != -1) {
 
+      auto nbr = row_indices.second.size();
+      auto nbc = col_data.getIndices().size();
+      auto mat_row_ptr = &mat(0, 0);
       auto s_mat = &(*data_blocks_ptr)[shift];
       if (iora == ADD_VALUES) {
-        cblas_daxpy(mat.data().size(), 1.0, &*mat.data().begin(), 1, s_mat, 1);
+        for (int r = 0; r != nbr; ++r) {
+          for (int c = 0; c != nbc; ++c) {
+            *s_mat += *mat_row_ptr;
+            ++mat_row_ptr;
+            ++s_mat;
+          }
+        }
       } else {
-        cblas_dcopy(mat.data().size(), &*mat.data().begin(), 1, s_mat, 1);
+        for (int r = 0; r != nbr; ++r) {
+          for (int c = 0; c != nbc; ++c) {
+            *s_mat = *mat_row_ptr;
+            ++mat_row_ptr;
+            ++s_mat;
+          }
+        }
       }
     }
 
@@ -1758,162 +1773,159 @@ MoFEMErrorCode shell_block_mat_asmb_wrap_impl(
     // This is to manage all complexities with negative indices, etc., nodes
     // etc. It is much slower than the above, but it is more general
 
-    auto get_rows = [&]() {
-      std::vector<std::pair<NumeredDofEntity_multiIndex::iterator,
-                            NumeredDofEntity_multiIndex::iterator>>
-          rows;
-      rows.reserve(row_data.getFieldEntities().size());
-      for (auto &rent : row_data.getFieldEntities()) {
-        if (auto r_cache = rent->entityCacheRowDofs.lock()) {
-          rows.emplace_back(r_cache->loHi[0], r_cache->loHi[1]);
-        }
+    std::vector<int> row_ent_idx;
+    std::vector<int> col_ent_idx;
+
+    auto get_ent_idx = [&](auto lo, auto hi, auto &idx) {
+      idx.clear();
+      idx.reserve(std::distance(lo, hi));
+      for (; lo != hi; ++lo) {
+        idx.emplace_back((*lo)->getEntDofIdx());
       }
-      return rows;
     };
 
-    auto get_cols = [&]() {
-      std::vector<std::pair<NumeredDofEntity_multiIndex::iterator,
-                            NumeredDofEntity_multiIndex::iterator>>
-          cols;
-      cols.reserve(col_data.getFieldEntities().size());
-      for (auto &cent : col_data.getFieldEntities()) {
-        if (auto c_cache = cent->entityCacheColDofs.lock()) {
-          cols.emplace_back(c_cache->loHi[0], c_cache->loHi[1]);
-        }
-      }
-      return cols;
-    };
+    auto row = 0;
+    for (auto &rent : row_data.getFieldEntities()) {
+      if (auto r_cache = rent->entityCacheRowDofs.lock()) {
 
-    auto set_mat = [&](auto &&rows, auto &&cols) {
-      MoFEMFunctionBegin;
-
-      std::vector<int> row_ent_idx;
-      std::vector<int> col_ent_idx;
-
-      auto get_ent_idx = [&](auto &r, auto &idx) {
-        auto [rlo, rhi] = r;
-        idx.clear();
-        idx.reserve(std::distance(rlo, rhi));
-        for (; rlo != rhi; ++rlo) {
-          idx.emplace_back((*rlo)->getEntDofIdx());
-        }
-      };
-
-      auto row = 0;
-      for (auto &r : rows) {
-        auto [rlo, rhi] = r;
+        auto rlo = r_cache->loHi[0];
+        auto rhi = r_cache->loHi[1];
         if (rlo == rhi)
           continue;
-        get_ent_idx(r, row_ent_idx);
+
+        get_ent_idx(rlo, rhi, row_ent_idx);
         auto gr = (*rlo)->getPetscGlobalDofIdx();
         auto nbr = std::distance(rlo, rhi);
         auto col = 0;
-        for (auto &c : cols) {
-          auto [clo, chi] = c;
-          if (clo == chi)
-            continue;
-          auto nbc = std::distance(clo, chi);
-          auto it = ctx->blockIndex.get<1>().find(
 
-              boost::make_tuple(gr, (*clo)->getPetscGlobalDofIdx(), nbr, nbc)
+        for (auto &cent : col_data.getFieldEntities()) {
+          if (auto c_cache = cent->entityCacheColDofs.lock()) {
 
-          );
+            auto clo = c_cache->loHi[0];
+            auto chi = c_cache->loHi[1];
+            if (clo == chi)
+              continue;
+
+            auto nbc = std::distance(clo, chi);
+            auto it = ctx->blockIndex.get<1>().find(
+
+                boost::make_tuple(gr, (*clo)->getPetscGlobalDofIdx(), nbr, nbc)
+
+            );
 
 #ifndef NDEBUG
 
-          if (it == ctx->blockIndex.get<1>().end()) {
-            MOFEM_LOG_CHANNEL("SELF");
-            MOFEM_TAG_AND_LOG("SELF", Sev::error, "BlockMat")
-                << "missing block: " << row_data.getFieldDofs()[0]->getName()
-                << " : " << col_data.getFieldDofs()[0]->getName();
-            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                    "Block not allocated");
-          }
+            if (it == ctx->blockIndex.get<1>().end()) {
+              MOFEM_LOG_CHANNEL("SELF");
+              MOFEM_TAG_AND_LOG("SELF", Sev::error, "BlockMat")
+                  << "missing block: " << row_data.getFieldDofs()[0]->getName()
+                  << " : " << col_data.getFieldDofs()[0]->getName();
+              SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                      "Block not allocated");
+            }
 
 #endif
 
-          auto shift = shift_extractor(&*it);
-          if (shift != -1) {
+            auto shift = shift_extractor(&*it);
+            if (shift != -1) {
 
-            auto mat_row_ptr0 = &mat(row, col);
-            auto s_mat = &(*data_blocks_ptr)[shift];
+              auto mat_row_ptr0 = &mat(row, col);
+              auto s_mat = &(*data_blocks_ptr)[shift];
 
-            if (
+              if (
 
-                nbr == row_indices.second.size() &&
-                nbc == col_data.getIndices().size()
+                  nbr == rent->getNbDofsOnEnt() && nbc == cent->getNbDofsOnEnt()
 
-                && it_r && it_c
+                  && it_r && it_c
 
-            ) {
+              ) {
 
-              if (iora == ADD_VALUES) {
-                cblas_daxpy(nbr * nbc, 1.0, mat_row_ptr0, 1, s_mat, 1);
-              } else {
-                cblas_dcopy(nbr * nbc, mat_row_ptr0, 1, s_mat, 1);
-              }
-
-            } else if (
-
-                nbc == col_data.getIndices().size()
-
-                && it_r && it_c
-
-            ) {
-
-              if (iora == ADD_VALUES) {
-                for (auto r : row_ent_idx) {
-                  auto mat_row_ptr = mat_row_ptr0 + r * mat.size2();
-                  cblas_daxpy(nbc, 1.0, mat_row_ptr, 1, s_mat + r * nbc, 1);
-                }
-              } else {
-                for (auto r : row_ent_idx) {
-                  auto mat_row_ptr = mat_row_ptr0 + r * mat.size2();
-                  cblas_dcopy(nbc, mat_row_ptr, 1, s_mat + r * nbc, 1);
-                }
-              }
-
-            } else {
-
-              get_ent_idx(c, col_ent_idx);
-              auto row_idx = &row_indices.second[row];
-              auto col_idx = &col_data.getIndices()[col];
-              if (iora == ADD_VALUES) {
-                for (auto r : row_ent_idx) {
-                  auto mat_row_ptr = mat_row_ptr0 + r * mat.size2();
-                  for (auto c : col_ent_idx) {
-                    if (row_idx[r] != -1 && col_idx[c] != -1)
-                      *s_mat += mat_row_ptr[c];
-                    ++s_mat;
+                if (iora == ADD_VALUES) {
+                  for (int r = 0; r != nbr; ++r) {
+                    auto mat_row_ptr = mat_row_ptr0 + r * mat.size2();
+                    for (int c = 0; c != nbc; ++c) {
+                      *s_mat += *mat_row_ptr;
+                      ++mat_row_ptr;
+                      ++s_mat;
+                    }
+                  }
+                } else {
+                  for (int r = 0; r != nbr; ++r) {
+                    auto mat_row_ptr = mat_row_ptr0 + r * mat.size2();
+                    for (int c = 0; c != nbc; ++c) {
+                      *s_mat = *mat_row_ptr;
+                      ++mat_row_ptr;
+                      ++s_mat;
+                    }
                   }
                 }
+
+              } else if (
+
+                  nbc == cent->getNbDofsOnEnt()
+
+                  && it_r && it_c
+
+              ) {
+
+                if (iora == ADD_VALUES) {
+                  for (auto r : row_ent_idx) {
+                    auto mat_row_ptr = mat_row_ptr0 + r * mat.size2();
+                    for (int c = 0; c != nbc; ++c) {
+                      *s_mat += *mat_row_ptr;
+                      ++mat_row_ptr;
+                      ++s_mat;
+                    }
+                  }
+                } else {
+                  for (auto r : row_ent_idx) {
+                    auto mat_row_ptr = mat_row_ptr0 + r * mat.size2();
+                    for (int c = 0; c != nbc; ++c) {
+                      *s_mat = *mat_row_ptr;
+                      ++mat_row_ptr;
+                      ++s_mat;
+                    }
+                  }
+                }
+
               } else {
-                for (auto r : row_ent_idx) {
-                  auto mat_row_ptr = mat_row_ptr0 + r * mat.size2();
-                  for (auto c : col_ent_idx) {
-                    if (row_idx[r] != -1 && col_idx[c] != -1)
-                      *s_mat = mat_row_ptr[c];
-                    ++s_mat;
+
+                get_ent_idx(clo, chi, col_ent_idx);
+                auto row_idx = &row_indices.second[row];
+                auto col_idx = &col_data.getIndices()[col];
+                if (iora == ADD_VALUES) {
+                  for (auto r : row_ent_idx) {
+                    auto mat_row_ptr = mat_row_ptr0 + r * mat.size2();
+                    for (auto c : col_ent_idx) {
+                      if (row_idx[r] != -1 && col_idx[c] != -1)
+                        *s_mat += mat_row_ptr[c];
+                      ++s_mat;
+                    }
+                  }
+                } else {
+                  for (auto r : row_ent_idx) {
+                    auto mat_row_ptr = mat_row_ptr0 + r * mat.size2();
+                    for (auto c : col_ent_idx) {
+                      if (row_idx[r] != -1 && col_idx[c] != -1)
+                        *s_mat = mat_row_ptr[c];
+                      ++s_mat;
+                    }
                   }
                 }
               }
             }
           }
-
-          col += (*clo)->getNbDofsOnEnt();
+          col += cent->getNbDofsOnEnt();
         }
-        row += (*rlo)->getNbDofsOnEnt();
       }
-      MoFEMFunctionReturn(0);
-    };
-
-    CHKERR set_mat(get_rows(), get_cols());
+      row += rent->getNbDofsOnEnt();
+    }
   }
 
-#ifndef NDEBUG
+  // #ifndef NDEBUG
   PetscLogEventEnd(SchurEvents::MOFEM_EVENT_BlockStructureSetValues, 0, 0, 0,
                    0);
-#endif // NDEBUG
+  // #endif // NDEBUG
 
   MoFEMFunctionReturn(0);
 }
