@@ -1684,12 +1684,12 @@ inline MoFEMErrorCode shell_block_mat_asmb_wrap_impl(
   if (col_data.getIndices().empty())
     MoFEMFunctionReturnHot(0);
 
-  // #ifndef NDEBUG
+#ifndef NDEBUG
 
   PetscLogEventBegin(SchurEvents::MOFEM_EVENT_BlockStructureSetValues, 0, 0, 0,
                      0);
 
-  // #endif // NDEBUG
+#endif // NDEBUG
 
   auto get_row_data = [&]() -> std::pair<bool, VectorInt> {
     if (auto e_ptr = row_data.getFieldEntities()[0]) {
@@ -1922,10 +1922,10 @@ inline MoFEMErrorCode shell_block_mat_asmb_wrap_impl(
     }
   }
 
-  // #ifndef NDEBUG
+#ifndef NDEBUG
   PetscLogEventEnd(SchurEvents::MOFEM_EVENT_BlockStructureSetValues, 0, 0, 0,
                    0);
-  // #endif // NDEBUG
+#endif // NDEBUG
 
   MoFEMFunctionReturn(0);
 }
