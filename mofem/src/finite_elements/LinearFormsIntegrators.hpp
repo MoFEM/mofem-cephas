@@ -295,8 +295,19 @@ protected:
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &data);
 };
 
+/**
+ * @brief Vector filed time divergence of tensor
+ *
+ * \f[
+ * (v_i,\lambda_{ij,j})_\Omega
+ * \f]
+ *
+ * @tparam SPACE_DIM
+ * @tparam I
+ * @tparam OpBase
+ */
 template <int SPACE_DIM, IntegrationType I, typename OpBase>
-struct OpMixVecTimesDivLambdaImpl {};
+struct OpMixVecTimesDivLambdaImpl;
 
 template <int SPACE_DIM, typename OpBase>
 struct OpMixVecTimesDivLambdaImpl<SPACE_DIM, GAUSS, OpBase> : public OpBase {
@@ -318,8 +329,19 @@ protected:
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &data);
 };
 
+/**
+ * @brief Tensor field time gradient of vector field
+ * 
+ * \f[
+ * (u_i,\lambda_{ij,j})_\Omega
+ * \f]
+ * 
+ * @tparam SPACE_DIM 
+ * @tparam I 
+ * @tparam OpBase 
+ */
 template <int SPACE_DIM, IntegrationType I, typename OpBase>
-struct OpMixTensorTimesGradUImpl {};
+struct OpMixTensorTimesGradUImpl;
 
 template <int SPACE_DIM, typename OpBase>
 struct OpMixTensorTimesGradUImpl<SPACE_DIM, GAUSS, OpBase> : public OpBase {
@@ -994,7 +1016,7 @@ OpMixDivTimesUImpl<3, FIELD_DIM, SPACE_DIM, GAUSS, OpBase, CoordSys>::iNtegrate(
       const double t_div_base = t_diff_base(j, j);
       t_nf(i) += alpha * t_div_base * t_u(i);
       if constexpr (CoordSys == CYLINDRICAL) {
-        t_nf(i) += alpha * (t_base(0) / t_coords(0)) * t_u(i);
+        t_nf(i) += t_base(0) * (alpha / t_coords(0)) * t_u(i);
       }
       ++t_nf;
       ++t_diff_base;

@@ -421,15 +421,17 @@ EdgePolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
     int order = data.dataOnEntities[MBEDGE][0].getOrder();
     int nb_dofs =
         NBEDGE_DEMKOWICZ_HCURL(data.dataOnEntities[MBEDGE][0].getOrder());
-    data.dataOnEntities[MBEDGE][0].getN(base).resize(nb_gauss_pts, 3 * nb_dofs,
-                                                     false);
-    data.dataOnEntities[MBEDGE][0].getDiffN(base).resize(nb_gauss_pts, 0,
-                                                         false);
-    CHKERR Hcurl_Demkowicz_EdgeBaseFunctions_MBEDGE(
-        sense, order, &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0),
-        &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
-        &*data.dataOnEntities[MBEDGE][0].getN(base).data().begin(), NULL,
-        nb_gauss_pts);
+      data.dataOnEntities[MBEDGE][0].getN(base).resize(nb_gauss_pts,
+                                                       3 * nb_dofs, false);
+      data.dataOnEntities[MBEDGE][0].getDiffN(base).resize(nb_gauss_pts, 0,
+                                                           false);
+      if (nb_dofs) {
+        CHKERR Hcurl_Demkowicz_EdgeBaseFunctions_MBEDGE(
+            sense, order, &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0),
+            &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
+            &*data.dataOnEntities[MBEDGE][0].getN(base).data().begin(), NULL,
+            nb_gauss_pts);
+      }
   } else {
 
     data.dataOnEntities[MBEDGE][0].getN(base).resize(nb_gauss_pts, 0, false);

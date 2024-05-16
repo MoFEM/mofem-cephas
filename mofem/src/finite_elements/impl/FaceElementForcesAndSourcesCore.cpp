@@ -487,7 +487,7 @@ MoFEMErrorCode OpCopyGeomDataToE<2>::doWork(int side, EntityType type,
     auto &node_coords = getCoords();
     auto &glob_coords = toElePtr->coords;
     std::array<double, 6> local_coords;
-    CHKERR Tools::getLocalCoordinatesOnReferenceTriNodeTri(
+    CHKERR Tools::getLocalCoordinatesOnReferenceThreeNodeTri(
         &*node_coords.begin(), &*glob_coords.begin(), 3, local_coords.data());
     return local_coords;
   };

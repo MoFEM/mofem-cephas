@@ -559,7 +559,7 @@ struct OpCalculateDivergenceVectorFieldValues
             for (; bb != size; ++bb) {
               values_at_gauss_pts += field_data(I) * diff_base_function(I);
               values_at_gauss_pts +=
-                  field_data(0) * base_function / t_coords(0);
+                  base_function * (field_data(0) / t_coords(0));
               ++field_data;
               ++base_function;
               ++diff_base_function;
@@ -2731,7 +2731,7 @@ struct OpCalculateHVecTensorDivergence
           double div = t_n_diff_hvec(j, j);
           t_data(i) += t_dof(i) * div;
           if constexpr (CoordSys == CYLINDRICAL) {
-            t_data(i) += t_dof(i) * (t_base(0) / t_coords(0));
+            t_data(i) += t_base(0) * (t_dof(i) / t_coords(0));
           }
           ++t_n_diff_hvec;
           ++t_dof;
