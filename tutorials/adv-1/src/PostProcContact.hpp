@@ -687,6 +687,63 @@ struct Monitor : public FEMethod {
     return E_star / (2. * R) * std::sqrt(a * a - r * r);
 };
 
+  // ***DISPLACMENT NOT TESTED***
+  MoFEM::VectorFun<SPACE_DIM> analyticalHertzDisplacement3D = [](double x,
+                                                                 double y,
+                                                                 double z) {
+    // update to atom test values
+    double E_star = young_modulus / (1 - poisson_ratio * poisson_ratio);
+    // Radius
+    double R = 100.;
+    // Contact area radius
+    double a = 1;
+    // max pressure
+    double p_0 = (2. * E_star * a) / (M_PI * R);
+    // current radius
+    double r = std::sqrt((x * x) + (y * y));
+    FTensor::Tensor1<double, SPACE_DIM> u;
+    std::vector<double> v_u;
+
+    double u_z = 0.;
+    double u_r = 0.;
+    // outside contact zone
+    if (r > a) {
+      u_z = (1. - std::pow(poisson_ratio, 2.)) / young_modulus *
+            ((p_0) / (2. * a)) *
+            ((2. * std::pow(a, 2.) - std::pow(r, 2.)) * asin(a / r) +
+             std::pow(r, 2.) * (a / r) *
+                 std::pow(1 - (std::pow(a, 2.) / std::pow(r, 2.)), 2.));
+      u_r = -((1. - 2. * poisson_ratio) * (1. + poisson_ratio)) /
+            (3. * young_modulus) * ((std::pow(a, 2) / r)) * p_0;
+
+      if (SPACE_DIM == 2)
+        v_u = {u_r, u_z};
+      else
+        v_u = {u_r, u_z, u_r};
+
+      for (int i = 0; i < SPACE_DIM; ++i)
+        u(i) = v_u[i];
+
+      return u;
+    }
+
+    // In contact zone
+    u_z = ((1. - std::pow(poisson_ratio, 2.)) / young_modulus) *
+          ((M_PI * p_0) / 4. * a) * (2. * std::pow(a, 2.) - std::pow(r, 2.));
+    u_r = -((1. - 2. * poisson_ratio) * (1. + poisson_ratio)) /
+          (3. * young_modulus) * ((std::pow(a, 2.) / r)) * p_0 *
+          (1 - std::pow(1 - (std::pow(r, 2.) / std::pow(a, 2.)), 1.5));
+
+    if (SPACE_DIM == 2)
+      v_u = {u_r, u_z};
+    else
+      v_u = {u_r, u_z, u_r};
+
+    for (int i = 0; i < SPACE_DIM; ++i)
+      u(i) = v_u[i];
+
+    return u;
+  };
 
   MoFEMErrorCode setScatterVectors(
       std::tuple<SmartPetscObj<Vec>, SmartPetscObj<VecScatter>> ux_scatter,
