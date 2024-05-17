@@ -7,7 +7,7 @@
 \note Intended learning outcome:
 - general structure of a program developed using MoFEM
 - integartion on skeleton
-- Upwind Discountinous Galerkin
+- Upwind Discontinuous Galerkin
 - Level-set
 
 \tableofcontents

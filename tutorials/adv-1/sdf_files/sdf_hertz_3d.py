@@ -1,9 +1,9 @@
 import math
 import numpy as np
 
-R = 60 # radius of the indenter
-# d = 0.0125 # indentation depth
-d = 1 # indentation depth
+R = 100 # radius of the indenter
+d = 0.01 # indentation depth
+
 xc = 0
 yc = 0
 zc = R
