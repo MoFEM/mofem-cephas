@@ -1,7 +1,7 @@
 import math
 import numpy as np
 
-R = 80 # radius of the indenter
+R = 80.0 # radius of the indenter
 d = 0.0125 # indentation depth
 
 xc = 0
@@ -19,6 +19,9 @@ def hess_sdf(delta_t, t, x, y, z, tx, ty, tz, block_id):
 
 class Sphere:
 	def sDF(r, xc, yc, zc, x, y, z):
+		p = np.sqrt((x - xc)**2 + (y - yc)**2 + (z - zc)**2) - r
+		# print(x)
+		print(p)
 		return np.sqrt((x - xc)**2 + (y - yc)**2 + (z - zc)**2) - r
 
 	def gradSdf(xc, yc, zc, x, y, z):

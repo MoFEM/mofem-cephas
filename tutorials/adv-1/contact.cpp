@@ -11,7 +11,7 @@
 "EXECUTABLE_DIMENSION" has been defined. If it has not been defined, it is set
 to 3" */
 #ifndef EXECUTABLE_DIMENSION
-#define EXECUTABLE_DIMENSION 3
+#define EXECUTABLE_DIMENSION 2
 #endif
 
 #ifndef SCHUR_ASSEMBLE
