@@ -863,6 +863,10 @@ MoFEMErrorCode Contact::checkResults() {
       hertz_force = 0.374;
       fem_force = t_ptr[1];
       break;
+    case 7: // wavy 3d
+      hertz_force = 0.5289;
+      fem_force = t_ptr[2];
+      break;
     default:
       SETERRQ1(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
                "atom test %d does not exist", atom_test);

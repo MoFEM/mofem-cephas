@@ -197,6 +197,21 @@ add_test(
   -atom_test 3
 )
 
+add_test(
+  wavy_3d
+  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
+  contact_3d
+  -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/wavy_3d_4p.h5m
+  -base demkowicz
+  -pc_type lu
+  -ts_type beuler
+  -ts_max_time 1 -ts_dt 1
+  -sdf_file ./sdf_files/sdf_plane_3d.py
+  -young_modulus 1e3
+  -poisson_ratio 0.4
+  -atom_test 7
+)
+
 if(IS_MFRONT_MOD)
   if(TFEL_DIR)
     message("TFEL DIR FOUND")
@@ -218,7 +233,7 @@ if(IS_MFRONT_MOD)
       wavy_2d_mfront
       ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
       contact_2d
-      -file_name ${CMAKE_CURRENT_BINARY_DIR}/wavy_2d_4p.h5m
+      -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/wavy_2d_4p.h5m
       -pc_type lu
       -ts_type beuler
       -ts_max_time 1 -ts_dt 1
