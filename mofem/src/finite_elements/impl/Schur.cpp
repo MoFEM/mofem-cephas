@@ -149,12 +149,14 @@ protected:
 
   struct idx_mi_tag {};
   struct uid_mi_tag {};
-  struct row_mi_tag {};
   struct col_mi_tag {};
 
   using SchurElemStorage = multi_index_container<
       SchurElemMats,
       indexed_by<
+
+          ordered_unique<tag<idx_mi_tag>, member<SchurElemMats, const size_t,
+                                                 &SchurElemMats::iDX>>,
 
           ordered_unique<
               tag<uid_mi_tag>,
@@ -165,12 +167,6 @@ protected:
                   member<SchurElemMats, const UId, &SchurElemMats::uidCol>
 
                   >>,
-
-          ordered_unique<tag<idx_mi_tag>, member<SchurElemMats, const size_t,
-                                                 &SchurElemMats::iDX>>,
-
-          ordered_non_unique<tag<row_mi_tag>, member<SchurElemMats, const UId,
-                                                     &SchurElemMats::uidRow>>,
 
           ordered_non_unique<tag<col_mi_tag>, member<SchurElemMats, const UId,
                                                      &SchurElemMats::uidCol>>
@@ -669,9 +665,12 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 
     auto get_row_view = [&]() {
       auto row_it =
-          storage.template get<SchurElemMats::row_mi_tag>().lower_bound(lo_uid);
+          storage.template get<SchurElemMats::uid_mi_tag>().lower_bound(
+              boost::make_tuple(lo_uid, 0));
       auto hi_row_it =
-          storage.template get<SchurElemMats::row_mi_tag>().upper_bound(hi_uid);
+          storage.template get<SchurElemMats::uid_mi_tag>().upper_bound(
+              boost::make_tuple(
+                  hi_uid, FieldEntity::getHiBitNumberUId(BITFIELDID_SIZE - 1)));
       std::vector<const SchurElemMats *> schur_row_ptr_view;
       schur_row_ptr_view.reserve(std::distance(row_it, hi_row_it));
       for (; row_it != hi_row_it; ++row_it) {
@@ -813,11 +812,12 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
   auto erase_factored = [&](auto &storage, auto lo_uid, auto hi_uid) {
     MoFEMFunctionBegin;
 
-    auto r_lo =
-        storage.template get<SchurElemMats::row_mi_tag>().lower_bound(lo_uid);
-    auto r_hi =
-        storage.template get<SchurElemMats::row_mi_tag>().upper_bound(hi_uid);
-    storage.template get<SchurElemMats::row_mi_tag>().erase(r_lo, r_hi);
+    auto r_lo = storage.template get<SchurElemMats::uid_mi_tag>().lower_bound(
+        boost::make_tuple(lo_uid, 0));
+    auto r_hi = storage.template get<SchurElemMats::uid_mi_tag>().upper_bound(
+        boost::make_tuple(hi_uid,
+                          FieldEntity::getHiBitNumberUId(BITFIELDID_SIZE - 1)));
+    storage.template get<SchurElemMats::uid_mi_tag>().erase(r_lo, r_hi);
 
     auto c_lo =
         storage.template get<SchurElemMats::col_mi_tag>().lower_bound(lo_uid);
@@ -889,8 +889,11 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 
     CHKERR add(
 
-        storage.template get<SchurElemMats::row_mi_tag>().lower_bound(lo_uid),
-        storage.template get<SchurElemMats::row_mi_tag>().upper_bound(hi_uid)
+        storage.template get<SchurElemMats::uid_mi_tag>().lower_bound(
+            boost::make_tuple(lo_uid, 0)),
+        storage.template get<SchurElemMats::uid_mi_tag>().upper_bound(
+            boost::make_tuple(
+                hi_uid, FieldEntity::getHiBitNumberUId(BITFIELDID_SIZE - 1)))
 
     );
 
