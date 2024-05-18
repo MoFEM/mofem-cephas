@@ -353,21 +353,6 @@ SchurElemMats::assembleStorage(const EntitiesFieldData::EntData &row_data,
   }
 #endif // NDEBUG
 
-  // get size of storage
-  const auto idx = SchurElemMats::schurL2Storage.size();
-  // get size of arrays of matrices
-  const auto size = SchurElemMats::locMats.size();
-
-  // expand memory allocation
-  if (idx == size) {
-    SchurElemMats::locMats.push_back(new MatrixDouble());
-    SchurElemMats::rowIndices.push_back(new VectorInt());
-    SchurElemMats::colIndices.push_back(new VectorInt());
-  } else if (idx > size) {
-    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong size %d != %d",
-             idx, size);
-  }
-
   // get entity uid
   auto get_uid = [](auto &data) {
     if (data.getFieldEntities().size() == 1) {
@@ -411,27 +396,47 @@ SchurElemMats::assembleStorage(const EntitiesFieldData::EntData &row_data,
   auto uid_row = get_uid(row_data);
   auto uid_col = get_uid(col_data);
 
-  // add matrix to storage
-  auto p = SchurElemMats::schurL2Storage.emplace(idx, uid_row, uid_col);
-  auto get_storage = [&p]() { return const_cast<SchurElemMats &>(*p.first); };
+  auto it =
+      SchurElemMats::schurL2Storage.template get<SchurElemMats::uid_mi_tag>()
+          .find(boost::make_tuple(uid_row, uid_col));
 
-  if (p.second) {
-    // new entry is created
+  if (it ==
+      SchurElemMats::schurL2Storage.template get<SchurElemMats::uid_mi_tag>()
+          .end()) {
+
+    // get size of arrays of matrices
+    const auto size = SchurElemMats::locMats.size();
+
+    // expand memory allocation
+    if (SchurElemMats::maxIndexCounter == size) {
+      SchurElemMats::locMats.push_back(new MatrixDouble());
+      SchurElemMats::rowIndices.push_back(new VectorInt());
+      SchurElemMats::colIndices.push_back(new VectorInt());
+    }
+
+    // add matrix to storage
+    auto p = SchurElemMats::schurL2Storage.emplace(
+        SchurElemMats::maxIndexCounter++, uid_row, uid_col);
+#ifndef NDEBUG
+    if (!p.second) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Failed to insert");
+    }
+#endif // NDEBUG
 
     auto asmb = [&](auto &sm) {
       sm.resize(nb_rows, nb_cols, false);
       noalias(sm) = mat;
     };
 
-    asmb(get_storage().getMat());
+    asmb(p.first->getMat());
 
     auto add_indices = [](auto &storage, auto &ind) {
       storage.resize(ind.size(), false);
       noalias(storage) = ind;
     };
 
-    add_indices(get_storage().getRowInd(), row_ind);
-    add_indices(get_storage().getColInd(), col_ind);
+    add_indices(p.first->getRowInd(), row_ind);
+    add_indices(p.first->getColInd(), col_ind);
 
   } else {
     // entry (submatrix) already exists
@@ -464,7 +469,7 @@ SchurElemMats::assembleStorage(const EntitiesFieldData::EntData &row_data,
       MoFEMFunctionReturnHot(0);
     };
 
-    CHKERR asmb(get_storage().getMat());
+    CHKERR asmb(it->getMat());
     // no need to set indices
   }
 
@@ -599,7 +604,14 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
         }
 
         auto p = SchurElemMats::schurL2Storage.emplace(
-            ++SchurElemMats::maxIndexCounter, row_uid, col_uid);
+            SchurElemMats::maxIndexCounter++, row_uid, col_uid);
+#ifndef NDEBUG
+        if (!p.second) {
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "Failed to insert");
+        }
+#endif // NDEBUG
+
         auto &mat = p.first->getMat();
         auto &set_row_ind = p.first->getRowInd();
         auto &set_col_ind = p.first->getColInd();
