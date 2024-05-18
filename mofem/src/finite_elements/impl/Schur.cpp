@@ -147,16 +147,12 @@ protected:
   friend OpSchurAssembleBegin;
   friend OpSchurAssembleEndImpl;
 
-  struct idx_mi_tag {};
   struct uid_mi_tag {};
   struct col_mi_tag {};
 
   using SchurElemStorage = multi_index_container<
       SchurElemMats,
       indexed_by<
-
-          ordered_unique<tag<idx_mi_tag>, member<SchurElemMats, const size_t,
-                                                 &SchurElemMats::iDX>>,
 
           ordered_unique<
               tag<uid_mi_tag>,
@@ -176,8 +172,11 @@ protected:
   static boost::ptr_vector<MatrixDouble> locMats;
   static boost::ptr_vector<VectorInt> rowIndices;
   static boost::ptr_vector<VectorInt> colIndices;
+  static size_t maxIndexCounter;
+
   static SchurElemStorage schurL2Storage;
-};
+
+ };
 
 struct DiagBlockIndex {
 
@@ -309,6 +308,7 @@ SchurElemMats::SchurElemStorage SchurElemMats::schurL2Storage;
 boost::ptr_vector<MatrixDouble> SchurElemMats::locMats;
 boost::ptr_vector<VectorInt> SchurElemMats::rowIndices;
 boost::ptr_vector<VectorInt> SchurElemMats::colIndices;
+size_t SchurElemMats::maxIndexCounter = 0;
 
 SchurElemMats::SchurElemMats(const size_t idx, const UId uid_row,
                              const UId uid_col)
@@ -486,6 +486,7 @@ MoFEMErrorCode OpSchurAssembleBegin::doWork(int side, EntityType type,
     MOFEM_LOG("SELF", Sev::noisy) << "Schur assemble begin";
 #endif
   SchurElemMats::schurL2Storage.clear();
+  SchurElemMats::maxIndexCounter = 0;
 
   MoFEMFunctionReturn(0);
 }
@@ -584,36 +585,21 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
                            auto &col_ind, auto &offMatInvDiagOffMat) {
       MoFEMFunctionBegin;
 
-      const auto idx = SchurElemMats::schurL2Storage.size();
-      const auto size = SchurElemMats::locMats.size();
-
-      if (idx == size) {
-        SchurElemMats::locMats.push_back(new MatrixDouble());
-        SchurElemMats::rowIndices.push_back(new VectorInt());
-        SchurElemMats::colIndices.push_back(new VectorInt());
-      } else if (idx > size) {
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                 "Wrong size %d != %d", idx, size);
-      }
-
       auto it = storage.template get<SchurElemMats::uid_mi_tag>().find(
           boost::make_tuple(row_uid, col_uid));
 
       if (it == storage.template get<SchurElemMats::uid_mi_tag>().end()) {
 
-        auto get_index = [&](auto storage) {
-          size_t tmp_idx = 0;
-          for (auto &s : storage.template get<SchurElemMats::idx_mi_tag>()) {
-            if (tmp_idx != s.iDX) {
-              return tmp_idx;
-            }
-            ++tmp_idx;
-          }
-          return storage.size();
-        };
+        const auto size = SchurElemMats::locMats.size();
+
+        if (SchurElemMats::maxIndexCounter == size) {
+          SchurElemMats::locMats.push_back(new MatrixDouble());
+          SchurElemMats::rowIndices.push_back(new VectorInt());
+          SchurElemMats::colIndices.push_back(new VectorInt());
+        }
 
         auto p = SchurElemMats::schurL2Storage.emplace(
-            get_index(SchurElemMats::schurL2Storage), row_uid, col_uid);
+            ++SchurElemMats::maxIndexCounter, row_uid, col_uid);
         auto &mat = p.first->getMat();
         auto &set_row_ind = p.first->getRowInd();
         auto &set_col_ind = p.first->getColInd();
