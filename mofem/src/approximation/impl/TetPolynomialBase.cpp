@@ -1585,3 +1585,25 @@ bool TetPolynomialBase::swichCacheHdivBaseInteriorDemkowicz(const void *ptr) {
     return true;
   }
 }
+
+void TetPolynomialBase::swichCacheHDivBaseFaceDemkowiczOn(
+    std::vector<void *> v) {
+  for (auto fe_ptr : v) {
+    if (!TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(fe_ptr)) {
+      TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(fe_ptr);
+    }
+    if (!TetPolynomialBase::swichCacheHdivBaseInteriorDemkowicz(fe_ptr)) {
+      TetPolynomialBase::swichCacheHdivBaseInteriorDemkowicz(fe_ptr);
+    }
+  }
+}
+
+void TetPolynomialBase::swichCacheHDivBaseFaceDemkowiczOff(
+    std::vector<void *> v) {
+  for (auto fe_ptr : v) {
+    if (TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(fe_ptr)) {
+    }
+    if (TetPolynomialBase::swichCacheHdivBaseInteriorDemkowicz(fe_ptr)) {
+    }
+  }
+}
