@@ -37,6 +37,8 @@ if(Boost_NUMPY_LIBRARY_RELEASE)
     plastic_2d ${CMAKE_CURRENT_SOURCE_DIR}/plastic.cpp)
   tutorials_build_and_install(
     plastic_3d ${CMAKE_CURRENT_SOURCE_DIR}/plastic.cpp)
+  tutorials_build_and_install(
+      plastic_old_schur_3d ${CMAKE_CURRENT_SOURCE_DIR}/plasticity_old_schur.cpp)
 
   set_target_properties(
     plastic_3d PROPERTIES COMPILE_FLAGS 
@@ -44,9 +46,13 @@ if(Boost_NUMPY_LIBRARY_RELEASE)
   set_target_properties(
     plastic_2d PROPERTIES COMPILE_FLAGS 
     "-DEXECUTABLE_DIMENSION=2 -DSCHUR_ASSEMBLE=1 -DPYTHON_SDF -DADD_CONTACT")
+  set_target_properties(
+    plastic_old_schur_3d PROPERTIES COMPILE_FLAGS 
+    "-DEXECUTABLE_DIMENSION=3 -DSCHUR_ASSEMBLE=1 -DPYTHON_SDF -DADD_CONTACT")  
 
   target_link_libraries(plastic_2d ${Boost_LIBRARIES})
   target_link_libraries(plastic_3d ${Boost_LIBRARIES})
+  target_link_libraries(plastic_old_schur_3d ${Boost_LIBRARIES})
 
 else (Boost_NUMPY_LIBRARY_RELEASE)
 
@@ -55,6 +61,8 @@ else (Boost_NUMPY_LIBRARY_RELEASE)
     plastic_2d ${CMAKE_CURRENT_SOURCE_DIR}/plastic.cpp)
   tutorials_build_and_install(
     plastic_3d ${CMAKE_CURRENT_SOURCE_DIR}/plastic.cpp)
+  tutorials_build_and_install(
+    plastic_old_schur_3d ${CMAKE_CURRENT_SOURCE_DIR}/plasticity_old_schur.cpp)
 
   set_target_properties(
     plastic_3d PROPERTIES COMPILE_FLAGS 
@@ -62,6 +70,9 @@ else (Boost_NUMPY_LIBRARY_RELEASE)
   set_target_properties(
     plastic_2d PROPERTIES COMPILE_FLAGS 
     "-DEXECUTABLE_DIMENSION=2 -DSCHUR_ASSEMBLE=1")
+  set_target_properties(
+    plastic_old_schur_3d PROPERTIES COMPILE_FLAGS 
+    "-DEXECUTABLE_DIMENSION=3 -DSCHUR_ASSEMBLE=1")
 
 endif(Boost_NUMPY_LIBRARY_RELEASE)
 
@@ -80,4 +91,42 @@ add_test(
   -scale 1
   -hardening_viscous 0
   -cn0 1 -ksp_monitor 
+  -log_summary
+  -log_no_color)
+
+add_test(
+  plastic_3d_old_necking
+  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 2
+  plastic_old_schur_3d 
+  -file_name necking_3D_p2.h5m
+  -ts_dt 0.01
+  -ts_max_time 1.2
+  -ts_max_steps 1
+  -ts_type theta
+  -snes_atol 1e-9
+  -order 2
+  -large_strains 1
+  -scale 1
+  -hardening_viscous 0
+  -cn0 1 -ksp_monitor 
+  -log_summary
+  -log_no_color)  
+
+add_test(
+  plastic_3d_necking_petsc
+  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 2
+  plastic_3d 
+  -file_name necking_3D_p2.h5m
+  -ts_dt 0.01
+  -ts_max_time 1.2
+  -ts_max_steps 1
+  -ts_type theta
+  -snes_atol 1e-9
+  -order 2
+  -large_strains 1
+  -scale 1
+  -hardening_viscous 0
+  -cn0 1 -ksp_monitor 
+  -pc_type lu
+  -log_summary
   -log_no_color)
