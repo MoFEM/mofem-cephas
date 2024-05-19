@@ -1586,7 +1586,7 @@ bool TetPolynomialBase::swichCacheHdivBaseInteriorDemkowicz(const void *ptr) {
   }
 }
 
-void TetPolynomialBase::swichCacheHDivBaseFaceDemkowiczOn(
+void TetPolynomialBase::swichCacheHDivBaseDemkowiczOn(
     std::vector<void *> v) {
   for (auto fe_ptr : v) {
     if (!TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(fe_ptr)) {
@@ -1598,7 +1598,7 @@ void TetPolynomialBase::swichCacheHDivBaseFaceDemkowiczOn(
   }
 }
 
-void TetPolynomialBase::swichCacheHDivBaseFaceDemkowiczOff(
+void TetPolynomialBase::swichCacheHDivBaseDemkowiczOff(
     std::vector<void *> v) {
   for (auto fe_ptr : v) {
     if (TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(fe_ptr)) {

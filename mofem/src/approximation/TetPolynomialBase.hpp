@@ -26,8 +26,8 @@ struct TetPolynomialBase : public BaseFunction {
 
   static bool swichCacheHDivBaseFaceDemkowicz(const void *ptr);
   static bool swichCacheHdivBaseInteriorDemkowicz(const void *ptr);
-  static void swichCacheHDivBaseFaceDemkowiczOn(std::vector<void *> v);
-  static void swichCacheHDivBaseFaceDemkowiczOff(std::vector<void *> v);
+  static void swichCacheHDivBaseDemkowiczOn(std::vector<void *> v);
+  static void swichCacheHDivBaseDemkowiczOff(std::vector<void *> v);
 
   MoFEMErrorCode getValue(MatrixDouble &pts,
                           boost::shared_ptr<BaseFunctionCtx> ctx_ptr);
