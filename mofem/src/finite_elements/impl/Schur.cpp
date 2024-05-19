@@ -533,7 +533,9 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 
   MoFEMFunctionBegin;
 
+#ifndef NDEBUG
   PetscLogEventBegin(SchurEvents::MOFEM_EVENT_opSchurAssembleEnd, 0, 0, 0, 0);
+#endif
 
 #ifndef NDEBUG
   if constexpr (debug_schur)
@@ -989,7 +991,9 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
     MOFEM_LOG("SELF", Sev::noisy) << "Schur assemble done";
 #endif
 
+#ifndef NDEBUG
   PetscLogEventEnd(SchurEvents::MOFEM_EVENT_opSchurAssembleEnd, 0, 0, 0, 0);
+#endif
 
   MoFEMFunctionReturn(0);
 }
