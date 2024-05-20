@@ -116,10 +116,6 @@ int main(int argc, char *argv[]) {
     // load mesh file
     CHKERR simple->loadFile();
 
-    // Scalar fields and vector field is tested. Add more fields, i.e. vector
-    // field if needed.
-    // Note all vector are vectors, so names are misleading, but hat is to not
-    // make code for pushing OPs simple.
     CHKERR simple->addDomainField("V", H1, AINSWORTH_LEGENDRE_BASE, FIELD_DIM);
     CHKERR simple->addDomainField("T", L2, AINSWORTH_LEGENDRE_BASE, FIELD_DIM);
     CHKERR simple->addDomainField("S", L2, AINSWORTH_LEGENDRE_BASE, FIELD_DIM);
@@ -378,12 +374,14 @@ int main(int argc, char *argv[]) {
     auto diag_block_f = createDMVector(block_dm);
     auto block_solved_x = createDMVector(block_dm);
     CHKERR MatMult(diag_mat, diag_block_x, diag_block_f);
-    // CHKERR MatSolve(diag_mat, diag_block_f, block_solved_x);
+    // That is if one like to use MatSolve directly, not though PC, as it is
+    // below 
+    //CHKERR MatSolve(diag_mat, diag_block_f, block_solved_x);
 
     // set matrix type to shell, set data
     CHKERR DMSetMatType(block_dm, MATSHELL);
     CHKERR DMMoFEMSetBlocMatData(block_dm, std::get<1>(*nested_data_ptr)[3]);
-    // set empty operator, sice block data are calculated
+    // set empty operator, since block data are already calculated
     CHKERR DMKSPSetComputeOperators(
         block_dm,
         [](KSP, Mat, Mat, void *) {
