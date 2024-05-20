@@ -1,8 +1,8 @@
 import math
 import numpy as np
 
-d = 0.001596239 # indentation depth
- 
+d = 0.00159624 # indentation depth
+
 xc = 0
 yc = 0
 zc = 0
