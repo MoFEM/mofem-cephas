@@ -219,7 +219,6 @@ MoFEMErrorCode Contact::runProblem() {
 MoFEMErrorCode Contact::setupProblem() {
   MoFEMFunctionBegin;
   Simple *simple = mField.getInterface<Simple>();
-  PetscBool use_mfront = PETSC_FALSE;
 
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order, PETSC_NULL);
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-contact_order", &contact_order,
