@@ -229,14 +229,12 @@ MoFEMErrorCode Contact::setupProblem() {
                             PETSC_NULL);
 
   MOFEM_LOG("CONTACT", Sev::inform) << "Order " << order;
-  if (contact_order != 2)
-    MOFEM_LOG("CONTACT", Sev::inform) << "Contact order " << contact_order;
-  else
+  if (contact_order == 2)
     contact_order = order;
-  if (sigma_order != 1)
-    MOFEM_LOG("CONTACT", Sev::inform) << "Sigma order " << sigma_order;
-  else
+  MOFEM_LOG("CONTACT", Sev::inform) << "Contact order " << contact_order;
+  if (sigma_order == 1)
     sigma_order = std::max(order, contact_order) - 1;
+  MOFEM_LOG("CONTACT", Sev::inform) << "Sigma order " << sigma_order;
 
   MOFEM_LOG("CONTACT", Sev::inform) << "Geom order " << geom_order;
 
