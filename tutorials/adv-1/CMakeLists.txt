@@ -299,10 +299,10 @@ if(IS_MFRONT_MOD)
     )
 
     add_test(
-      wavy_mfront_2d
+      wavy_mfront_plane_2d
       ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
       contact_2d
-      -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/wavy_2d.cub
+      -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/wavy_plane_2d.cub
       -pc_type lu
       -ts_type beuler
       -ts_max_time 1 -ts_dt 1
@@ -312,8 +312,7 @@ if(IS_MFRONT_MOD)
       -mi_lib_path_10 ${CMAKE_CURRENT_BINARY_DIR}/src/libBehaviour.${DEFAULT_LIB_EXTENSION}
       -mi_block_10 LinearElasticity     
       -mi_param_10_0 1e3
-      -mi_param_10_1 0.4 
-      # -atom_test 6
+      -mi_param_10_1 0.4
     )
 
   endif(TFEL_DIR)
