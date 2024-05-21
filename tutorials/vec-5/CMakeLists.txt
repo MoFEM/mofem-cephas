@@ -22,9 +22,7 @@ tutorials_copy_and_install("*.sh" "${permissions_execute}")
 tutorials_copy_and_install("*.geo" "${permissions_execute}")
 tutorials_copy_and_install("*.py" "${permissions_default}")
 
-if(Python_LIBRARY AND Boost_PYTHON_LIBRARY_RELEASE) 
-
-  include_directories(${_Python_INCLUDE_DIR})
+if(Boost_PYTHON_LIBRARY_RELEASE) 
 
   tutorials_build_and_install(
     free_surface ${CMAKE_CURRENT_SOURCE_DIR}/free_surface.cpp)
@@ -32,10 +30,9 @@ if(Python_LIBRARY AND Boost_PYTHON_LIBRARY_RELEASE)
     free_surface PROPERTIES COMPILE_FLAGS 
     "-DEXECUTABLE_COORD_TYPE=CARTESIAN -DPYTHON_INIT_SURFACE")  
 
-  target_link_libraries(free_surface 
-    ${Python_LIBRARY} ${Boost_LIBRARIES} ${Boost_PYTHON_LIBRARY_RELEASE})
+  target_link_libraries(free_surface ${Boost_LIBRARIES})
 
-else (Python_LIBRARY AND Boost_PYTHON_LIBRARY_RELEASE)
+else (Boost_PYTHON_LIBRARY_RELEASE)
 
   tutorials_build_and_install(
     free_surface ${CMAKE_CURRENT_SOURCE_DIR}/free_surface.cpp)
@@ -43,4 +40,4 @@ else (Python_LIBRARY AND Boost_PYTHON_LIBRARY_RELEASE)
     free_surface PROPERTIES COMPILE_FLAGS 
     "-DEXECUTABLE_COORD_TYPE=CARTESIAN")  
 
-endif(Python_LIBRARY AND Boost_PYTHON_LIBRARY_RELEASE)
+endif(Boost_PYTHON_LIBRARY_RELEASE)

@@ -263,8 +263,10 @@ inline VectorDouble surface_distance_function(double delta_t, double t,
   m_spatial_coords.resize(3, nb_gauss_pts);
   auto t_coords = getFTensor1FromMat<3>(m_spatial_coords);
 
-  for (size_t gg = 0; gg < nb_gauss_pts; ++gg)
+  for (size_t gg = 0; gg < nb_gauss_pts; ++gg) {
     v_sdf[gg] = t_coords(1) + 0.5;
+    ++t_coords;
+  }
 
   return v_sdf;
 }
@@ -315,7 +317,7 @@ grad_surface_distance_function(double delta_t, double t, int nb_gauss_pts,
   MatrixDouble m_grad_sdf;
   m_grad_sdf.resize(3, nb_gauss_pts, false);
   FTensor::Index<'i', 3> i;
-  FTensor::Tensor1<double, 3> t_grad_sdf_set{0.0, 0.0, 1.0};
+  FTensor::Tensor1<double, 3> t_grad_sdf_set{0.0, 1.0, 0.0};
   auto t_grad_sdf = getFTensor1FromMat<3>(m_grad_sdf);
 
   for (size_t gg = 0; gg < nb_gauss_pts; ++gg) {
