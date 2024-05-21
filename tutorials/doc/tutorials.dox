@@ -190,7 +190,7 @@ continuing with the one you are most excited about.
   </tr>
 
   <tr valign="top">
-       <td width="20px"><img src="BlankBox.png" alt="Source code" width="18px"/> </td>
+       <td width="20px"><img src="GreenTickBoxed.png" alt="Source code" width="18px"/> </td>
        <td>\ref jup_radiation_pluto</td>
        <td> Nonlinear problem at the boundary
        <br/> *Keywords:* axisymmetric problem, linearisation 
@@ -327,7 +327,7 @@ continuing with the one you are most excited about.
   </tr>
 
  <tr valign="top">
-       <td width="20px"><img src="BlankBox.png" alt="Source code" width="18px"/> </td>
+       <td width="20px"><img src="GreenTickBoxed.png" alt="Source code" width="18px"/> </td>
        <td width="350px">\ref incompressible_elasticity</td>
        <td> A mixed problem for incompressible elasticity
        <br/> *Keywords:* incompressibility
