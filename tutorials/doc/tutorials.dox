@@ -328,7 +328,7 @@ continuing with the one you are most excited about.
 
  <tr valign="top">
        <td width="20px"><img src="BlankBox.png" alt="Source code" width="18px"/> </td>
-       <td width="350px">\ref tutorial_incompressible_elast</td>
+       <td width="350px">\ref incompressible_elasticity</td>
        <td> A mixed problem for incompressible elasticity
        <br/> *Keywords:* incompressibility
        </td>
