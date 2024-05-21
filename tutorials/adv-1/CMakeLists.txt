@@ -197,7 +197,7 @@ if(IS_MFRONT_MOD)
     message("TFEL DIR FOUND")
 
     add_test(adv_1_compile_example_behaviour_test
-      ${TFEL_DIR}/bin/mfront --obuild --interface=generic ${PROJECT_SOURCE_DIR}/mfront_interface/behaviours/LinearElasticity.mfront)
+      ${TFEL_DIR}/bin/mfront --obuild --interface=generic ${PROJECT_SOURCE_DIR}/mfront_interface/behaviours/LinearElasticity.mfront ${PROJECT_SOURCE_DIR}/mfront_interface/behaviours/SignoriniHyperElasticity.mfront)
 
     if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
       target_compile_definitions(mfront_lib_all PUBLIC DEFAULT_LIB_EXTENSION="dylib")
@@ -297,22 +297,6 @@ if(IS_MFRONT_MOD)
       -mi_param_10_1 0.4
       -atom_test 3
     )
-    # add_test(
-    #   wavy_hertz_mfront_3d
-    #   ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-    #   contact_3d
-    #   -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/hertz_3d.cub
-    #   -pc_type lu
-    #   -ts_type beuler
-    #   -ts_max_time 1 -ts_dt 1
-    #   -sdf_file ./sdf_files/sdf_hertz_3d.py
-    #   -use_mfront 1
-    #   -mi_lib_path_10 ${CMAKE_CURRENT_BINARY_DIR}/src/libBehaviour.${DEFAULT_LIB_EXTENSION}
-    #   -mi_block_10 LinearElasticity
-    #   -mi_param_10_0 1e3
-    #   -mi_param_10_1 0.4
-    #   # -atom_test 4
-    # )
 
     add_test(
       wavy_mfront_2d
@@ -323,14 +307,13 @@ if(IS_MFRONT_MOD)
       -ts_type beuler
       -ts_max_time 1 -ts_dt 1
       -sdf_file ./sdf_files/sdf_wavy_2d.py
-      -use_mfront 0
+      -use_mfront 1
       -is_axisymmetric 0
-      # -mi_lib_path_10 ${CMAKE_CURRENT_BINARY_DIR}/src/libBehaviour.${DEFAULT_LIB_EXTENSION}
-      # -mi_block_10 LinearElasticity
-      # -mi_param_10_0 1e3
-      # -mi_param_10_1 0.4
-      -snes_fd
-      # -atom_test 2
+      -mi_lib_path_10 ${CMAKE_CURRENT_BINARY_DIR}/src/libBehaviour.${DEFAULT_LIB_EXTENSION}
+      -mi_block_10 LinearElasticity     
+      -mi_param_10_0 1e3
+      -mi_param_10_1 0.4 
+      # -atom_test 6
     )
 
   endif(TFEL_DIR)

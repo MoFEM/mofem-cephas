@@ -1,7 +1,7 @@
 import math
 import numpy as np
 
-d = 0.005785 # indentation depth
+d = 0.02745732273553991 # indentation depth
  
 xc = 0
 yc = 0
@@ -24,7 +24,10 @@ class yPlane:
 		dx = np.zeros_like(x).reshape((-1, 1))
 		dy = np.full_like(y, -1).reshape((-1, 1))
 		dz = np.zeros_like(z).reshape((-1, 1))
-		return np.hstack([dx, dy, dz])
+		print('dx: ', dx , 'dy: ', dy, 'dz: ', dz)
+		c = np.hstack([dx, dy, dz])
+		print('c: ', c)
+		return c
 	
 	def hessSdf(xc, yc, zc, x, y, z):
 		zeros = np.zeros_like(x).reshape((-1, 1))

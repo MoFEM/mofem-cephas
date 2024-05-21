@@ -11,7 +11,7 @@
 "EXECUTABLE_DIMENSION" has been defined. If it has not been defined, it is set
 to 3" */
 #ifndef EXECUTABLE_DIMENSION
-#define EXECUTABLE_DIMENSION 2
+#define EXECUTABLE_DIMENSION 3
 #endif
 
 #ifndef SCHUR_ASSEMBLE
@@ -134,9 +134,9 @@ double alpha_damping = 0;
 
 double scale = 1.;
 
-PetscBool is_axisymmetric = PETSC_FALSE;     //< Axisymmetric model
+PetscBool is_axisymmetric = PETSC_FALSE; //< Axisymmetric model
 
-//##define HENCKY_SMALL_STRAIN
+// ##define HENCKY_SMALL_STRAIN
 
 int atom_test = 0;
 
