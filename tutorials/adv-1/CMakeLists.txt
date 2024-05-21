@@ -333,6 +333,7 @@ if(IS_MFRONT_MOD)
       -mi_block_10 LinearElasticity     
       -mi_param_10_0 1e3
       -mi_param_10_1 0.4
+      -atom_test 6
     )
     add_test(
       hertz_mfront_3d_schur

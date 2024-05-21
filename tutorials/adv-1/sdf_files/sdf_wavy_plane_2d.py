@@ -6,6 +6,7 @@ A = 0.0002
 wave_len = 2
 w = 2. * np.pi / wave_len
 ind = 0.00159624
+
 class WavySurface:
     def F(p, x, y, t):
         q = A * (1. - np.cos(w * p)) - ind * t
