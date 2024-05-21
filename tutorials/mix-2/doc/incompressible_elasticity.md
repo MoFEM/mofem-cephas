@@ -1,6 +1,6 @@
  MIX-2: Mixed  formulation for incompressible elasticity {#incompressible_elasticity}
 =======================================================================
-# Part 1: Theory 
+# Part: Theory 
 
 ## Mixed  formulation for incompressible elasticity
 
