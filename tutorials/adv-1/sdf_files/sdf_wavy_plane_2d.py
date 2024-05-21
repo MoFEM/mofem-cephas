@@ -23,7 +23,7 @@ class WavySurface:
 
     def sDF(x, y,z, t):
         y0 = A * (1. - np.cos(w * x)) - ind * t
-        if np.any(np.abs(y0 - y)) < 1e-12:
+        if np.any(np.abs(y0 - y)) < 1e-9:
             return 0.0
 
         x = np.abs(x) % wave_len
@@ -37,11 +37,11 @@ class WavySurface:
 
         wave_y_d2 = -ind * t
         sgn_d2 = np.sign(wave_y_d2 - y)
-        d2 = np.sqrt((0.0 - x)**2 + (A * (1 - np.cos(w * 0.0)) - ind * t - y)**2)
+        d2 = np.sqrt(x**2 + (wave_y_d2 - y)**2) # when xp to be 0
         
         wave_y_d3 = A * (1 - np.cos(w * (wave_len / 2))) - ind * t
         sgn_d3 = np.sign(wave_y_d3 - y)
-        d3 = np.sqrt((wave_len / 2 - x)**2 + (A * (1 - np.cos(w * (wave_len / 2))) - ind * t - y)**2) 
+        d3 = np.sqrt((wave_len / 2 - x)**2 + (A * (1 - np.cos(w * (wave_len / 2))) - ind * t - y)**2) # when xp to be wave_len/2
         
         d_min = np.minimum(d2, d3)
         d_final = np.where(d1 < d_min, d1, np.where(d2 < d3, d2, d3))

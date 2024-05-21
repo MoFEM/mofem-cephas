@@ -320,13 +320,13 @@ if(IS_MFRONT_MOD)
 
     add_test(
       wavy_mfront_plane_2d
-      ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+      ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
       contact_2d
-      -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/wavy_plane_2d.cub
+      -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/wavy_plane_2d_4p.h5m
       -pc_type lu
       -ts_type beuler
       -ts_max_time 1 -ts_dt 1
-      -sdf_file ./sdf_files/sdf_wavy_2d.py
+      -sdf_file ./sdf_files/sdf_wavy_plane_2d.py
       -use_mfront 1
       -is_axisymmetric 0
       -mi_lib_path_10 ${CMAKE_CURRENT_BINARY_DIR}/src/libBehaviour.${DEFAULT_LIB_EXTENSION}
