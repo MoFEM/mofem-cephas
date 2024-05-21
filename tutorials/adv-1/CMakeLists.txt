@@ -26,7 +26,6 @@ tutorials_copy_and_install("*.sh" "${permissions_execute}")
 tutorials_copy_and_install("*.geo" "${permissions_execute}")
 tutorials_copy_and_install("*.py" "${permissions_execute}")
 
-# cmake_policy(SET CMP0144 NEW)
 set(BOOST_ROOT ${MoFEM_BOOST_DIR})
 message(STATUS ${BOOST_ROOT})
 find_package(
@@ -35,9 +34,9 @@ find_package(
   numpy
 )
 
-if(Python_LIBRARY AND Boost_NUMPY_LIBRARY_RELEASE) 
+if(Boost_NUMPY_LIBRARY_RELEASE) 
 
-  include_directories(${_Python_INCLUDE_DIR})
+  message(STATUS "Boost numpy found - SDF in pythoon enabled")
 
   tutorials_build_and_install(
     contact_2d ${CMAKE_CURRENT_SOURCE_DIR}/contact.cpp)
@@ -55,17 +54,21 @@ if(Python_LIBRARY AND Boost_NUMPY_LIBRARY_RELEASE)
     contact_3d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=3 -DPYTHON_SDF") 
 
   set_target_properties(
-    contact_2d_schur PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=2 -DSCHUR_ASSEMBLE=1 -DPYTHON_SDF") 
+    contact_2d_schur PROPERTIES COMPILE_FLAGS 
+    "-DEXECUTABLE_DIMENSION=2 -DSCHUR_ASSEMBLE=1 -DPYTHON_SDF") 
   set_target_properties(
-    contact_3d_schur PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=3 -DSCHUR_ASSEMBLE=1 -DPYTHON_SDF") 
+    contact_3d_schur PROPERTIES COMPILE_FLAGS 
+    "-DEXECUTABLE_DIMENSION=3 -DSCHUR_ASSEMBLE=1 -DPYTHON_SDF") 
 
-  target_link_libraries(contact_2d ${Python_LIBRARY} ${Boost_LIBRARIES})
-  target_link_libraries(contact_3d ${Python_LIBRARY} ${Boost_LIBRARIES})
+  target_link_libraries(contact_2d ${Boost_LIBRARIES})
+  target_link_libraries(contact_3d ${Boost_LIBRARIES})
 
-  target_link_libraries(contact_2d_schur ${Python_LIBRARY} ${Boost_LIBRARIES})
-  target_link_libraries(contact_3d_schur ${Python_LIBRARY} ${Boost_LIBRARIES})
+  target_link_libraries(contact_2d_schur ${Boost_LIBRARIES})
+  target_link_libraries(contact_3d_schur ${Boost_LIBRARIES})
 
-else (Python_LIBRARY AND Boost_NUMPY_LIBRARY_RELEASE)
+else (Boost_NUMPY_LIBRARY_RELEASE)
+
+  message(STATUS "Boost numpy NOT found - SDF is hardcodes in C++")
 
   tutorials_build_and_install(
     contact_2d ${CMAKE_CURRENT_SOURCE_DIR}/contact.cpp)
@@ -87,7 +90,7 @@ else (Python_LIBRARY AND Boost_NUMPY_LIBRARY_RELEASE)
   set_target_properties(
     contact_3d_schur PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=3 -DSCHUR_ASSEMBLE=1")  
 
-endif(Python_LIBRARY AND Boost_NUMPY_LIBRARY_RELEASE)
+endif(Boost_NUMPY_LIBRARY_RELEASE)
 
 set(IS_MFRONT_MOD false)  
 
@@ -106,13 +109,13 @@ endif(MFRONT_INTERFACE_INSTALL_PREFIX)
 if(IS_MFRONT_MOD)
   message("WITH MFRONT")
   target_link_libraries(contact_2d
-    mfront_lib_all)
+    mfront_lib)
   target_link_libraries(contact_3d
-    mfront_lib_all)
+    mfront_lib)
   target_link_libraries(contact_2d_schur
-    mfront_lib_all)
+    mfront_schur_lib)
   target_link_libraries(contact_3d_schur
-    mfront_lib_all)
+    mfront_schur_lib)
 endif(IS_MFRONT_MOD)
 
 # Copy scripts to build a directory
@@ -184,12 +187,29 @@ add_test(
   contact_3d_schur
   -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/hertz_3d_4p.h5m
   -pc_type fieldsplit
+  -fieldsplit_1_pc_type lu 
+  -eps_stab 1e-8
   -ts_type beuler
   -ts_max_time 1 -ts_dt 1
   -sdf_file ./sdf_files/sdf_hertz_3d.py
   -young_modulus 1e3
   -poisson_ratio 0.4
   -atom_test 3
+)
+
+add_test(
+  wavy_3d
+  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
+  contact_3d
+  -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/wavy_3d_4p.h5m
+  -base demkowicz
+  -pc_type lu
+  -ts_type beuler
+  -ts_max_time 1 -ts_dt 1
+  -sdf_file ./sdf_files/sdf_plane_3d.py
+  -young_modulus 1e3
+  -poisson_ratio 0.4
+  -atom_test 7
 )
 
 if(IS_MFRONT_MOD)
@@ -200,10 +220,12 @@ if(IS_MFRONT_MOD)
       ${TFEL_DIR}/bin/mfront --obuild --interface=generic ${PROJECT_SOURCE_DIR}/mfront_interface/behaviours/LinearElasticity.mfront ${PROJECT_SOURCE_DIR}/mfront_interface/behaviours/SignoriniHyperElasticity.mfront)
 
     if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-      target_compile_definitions(mfront_lib_all PUBLIC DEFAULT_LIB_EXTENSION="dylib")
+      target_compile_definitions(mfront_lib PUBLIC DEFAULT_LIB_EXTENSION="dylib")
+      target_compile_definitions(mfront_schur_lib PUBLIC DEFAULT_LIB_EXTENSION="dylib")
       set(DEFAULT_LIB_EXTENSION "dylib")
     else()
-      target_compile_definitions(mfront_lib_all PUBLIC DEFAULT_LIB_EXTENSION="so")
+      target_compile_definitions(mfront_lib PUBLIC DEFAULT_LIB_EXTENSION="so")
+      target_compile_definitions(mfront_schur_lib PUBLIC DEFAULT_LIB_EXTENSION="so")
       set(DEFAULT_LIB_EXTENSION "so")
     endif()
 
@@ -211,7 +233,7 @@ if(IS_MFRONT_MOD)
       wavy_2d_mfront
       ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
       contact_2d
-      -file_name ${CMAKE_CURRENT_BINARY_DIR}/wavy_2d_4p.h5m
+      -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/wavy_2d_4p.h5m
       -pc_type lu
       -ts_type beuler
       -ts_max_time 1 -ts_dt 1
@@ -242,8 +264,6 @@ if(IS_MFRONT_MOD)
       -mi_param_10_1 0.4
       -atom_test 2
     )
-
-
 
     add_test(
       hertz_mfront_2d_axisymm_flat
@@ -313,6 +333,22 @@ if(IS_MFRONT_MOD)
       -mi_block_10 LinearElasticity     
       -mi_param_10_0 1e3
       -mi_param_10_1 0.4
+    )
+    add_test(
+      hertz_mfront_3d_schur
+      ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
+      contact_3d_schur
+      -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/hertz_3d_4p.h5m
+      -pc_type fieldsplit
+      -ts_type beuler
+      -ts_max_time 1 -ts_dt 1
+      -sdf_file ./sdf_files/sdf_hertz_3d.py
+      -use_mfront 1
+      -mi_lib_path_10 ${CMAKE_CURRENT_BINARY_DIR}/src/libBehaviour.${DEFAULT_LIB_EXTENSION}
+      -mi_block_10 LinearElasticity
+      -mi_param_10_0 1e3
+      -mi_param_10_1 0.4
+      -atom_test 3
     )
 
   endif(TFEL_DIR)
