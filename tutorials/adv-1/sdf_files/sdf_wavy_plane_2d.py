@@ -54,8 +54,7 @@ class WavySurface:
         df_dx = ((WavySurface.sDF(x + delta, y, z, t) - WavySurface.sDF(x - delta, y, z, t)) / (2 * delta)).reshape((-1, 1))
         df_dy = ((WavySurface.sDF(x, y + delta,z, t) - WavySurface.sDF(x, y - delta,z, t)) / (2 * delta)).reshape((-1, 1))
         df_dz = np.zeros_like(df_dy).reshape((-1, 1))
-        c = np.hstack([df_dx, df_dy, df_dz])
-        return c
+        return np.hstack([df_dx, df_dy, df_dz])
 
     def hessSDF(x, y, z, t):
         delta = 1e-6
@@ -64,7 +63,6 @@ class WavySurface:
         df2_dxdy = (WavySurface.sDF(x + delta, y + delta,z,t) - WavySurface.sDF(x + delta, y - delta, z, t) - WavySurface.sDF(x - delta, y + delta,z, t) + WavySurface.sDF(x - delta, y - delta,z,t)) / (4 * delta ** 2)
 
         return np.hstack([df2_dx2.reshape((-1,1)), df2_dxdy.reshape((-1,1)),   np.zeros_like(df2_dy2).reshape((-1,1)),df2_dy2.reshape((-1,1)), np.zeros_like(df2_dy2).reshape((-1,1)), np.zeros_like(df2_dy2).reshape((-1,1))])
-        # return np.hstack([df2_dx2.reshape((-1,1)), df2_dxdy.reshape((-1,1)),  df2_dy2.reshape((-1,1))])
     
 def sdf(delta_t, t, x, y, z, tx, ty, tz, block_id):
     return WavySurface.sDF(x, y, z, t)
