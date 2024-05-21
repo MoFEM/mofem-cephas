@@ -24,10 +24,7 @@ class yPlane:
 		dx = np.zeros_like(x).reshape((-1, 1))
 		dy = np.full_like(y, -1).reshape((-1, 1))
 		dz = np.zeros_like(z).reshape((-1, 1))
-		print('dx: ', dx , 'dy: ', dy, 'dz: ', dz)
-		c = np.hstack([dx, dy, dz])
-		print('c: ', c)
-		return c
+		return np.hstack([dx, dy, dz])
 	
 	def hessSdf(xc, yc, zc, x, y, z):
 		zeros = np.zeros_like(x).reshape((-1, 1))
