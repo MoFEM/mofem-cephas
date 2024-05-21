@@ -465,11 +465,11 @@ int main(int argc, char *argv[]) {
           SCHUR>::BiLinearForm<GAUSS>::OpMass<1, 1>;
 
       pipeline_mng->getOpDomainLhsPipeline().push_back(
-          new OpSchurAssembleBegin());
+          createOpSchurAssembleBegin());
       pipeline_mng->getOpDomainLhsPipeline().push_back(new OpMass(
           "FIELD1", "FIELD1", [](double, double, double) { return 1.; }));
       pipeline_mng->getOpDomainLhsPipeline().push_back(
-          new OpSchurAssembleEnd<SCHUR_DSYSV>({}, {}, {}, {}, {}));
+          createOpSchurAssembleEnd({}, {}, {}, {}, {}, true));
 
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpSource("FIELD1", ApproxFunctions::fUn));

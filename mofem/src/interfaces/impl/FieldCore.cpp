@@ -1269,7 +1269,7 @@ MoFEMErrorCode Core::build_fields(int verb) {
 
   *buildMoFEM = 1 << 0;
   if (verb > QUIET) {
-    MOFEM_LOG("SYNC", Sev::inform) << "Number of dofs " << dofsField.size();
+    MOFEM_LOG("SYNC", Sev::verbose) << "Number of dofs " << dofsField.size();
     MOFEM_LOG_SYNCHRONISE(mofemComm);
   }
 

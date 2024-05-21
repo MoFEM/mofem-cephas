@@ -8,6 +8,9 @@
  * To create nested system of Schur complements, you push sequence of operator,
  * to set up data on entities, and then assemble complements.
  *
+ * \note Try separate floating points operations from book keeping. Also, align
+ * memory that blocks follow floating point operations.
+ *
  */
 
 #ifndef __SCHUR_HPP__
@@ -15,203 +18,341 @@
 
 namespace MoFEM {
 
+constexpr const char MoFEM_BLOCK_MAT[] = "mofem_block_mat";
+
 /**
- * @brief Clear Schur complement internal data
- * 
+ * @brief Structure to register events for Schur block assembly and solver
  */
-struct OpSchurAssembleBegin : public ForcesAndSourcesCore::UserDataOperator {
-
-  OpSchurAssembleBegin()
-      : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPSPACE) {}
-
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        EntitiesFieldData::EntData &data);
+struct SchurEvents {
+  static PetscLogEvent MOFEM_EVENT_schurMatSetValues;
+  static PetscLogEvent MOFEM_EVENT_opSchurAssembleEnd;
+  static PetscLogEvent MOFEM_EVENT_BlockStructureSetValues;
+  static PetscLogEvent MOFEM_EVENT_BlockStructureMult;
+  static PetscLogEvent MOFEM_EVENT_BlockStructureSolve;
+  static PetscLogEvent MOFEM_EVENT_zeroRowsAndCols;
+  SchurEvents();
 };
 
-/**
- * @brief Assemble Schur complement (Implementation)
- *
- */
-struct OpSchurAssembleEndImpl : public ForcesAndSourcesCore::UserDataOperator {
+struct SchurElemMats;
+struct SchurElemMatsBlock;
+struct SchurElemMatsPreconditionedBlock;
+
+struct OpSchurAssembleBase : public ForcesAndSourcesCore::UserDataOperator {
+
+  OpSchurAssembleBase() = delete;
 
   using MatSetValuesRaw = boost::function<MoFEMErrorCode(
       Mat mat, PetscInt m, const PetscInt idxm[], PetscInt n,
       const PetscInt idxn[], const PetscScalar v[], InsertMode addv)>;
-
   static MatSetValuesRaw matSetValuesSchurRaw;
 
-  /**
-   * @brief Construct a new Op Schur Assemble End object
-   *
-   * @param fields_name list of fields
-   * @param field_ents list of entities on which schur complement is applied (can be empty)
-   * @param sequence_of_aos list of maps from base problem to Schur complement matrix
-   * @param sequence_of_mats list of Schur complement matrices
-   * @param sym_schur true if Schur complement is symmetric
-   * @param symm_op true if block diagonal is symmetric
-   */
-  OpSchurAssembleEndImpl(std::vector<std::string> fields_name,
-                         std::vector<boost::shared_ptr<Range>> field_ents,
-                         std::vector<SmartPetscObj<AO>> sequence_of_aos,
-                         std::vector<SmartPetscObj<Mat>> sequence_of_mats,
-                         std::vector<bool> sym_schur, bool symm_op = true);
-
-  /**
-   * @brief Construct a new Op Schur Assemble End object
-   *
-   * @param fields_name list of fields
-   * @param field_ents list of entities on which schur complement is applied (can be empty)
-   * @param sequence_of_aos list of maps from base problem to Schur complement matrix
-   * @param sequence_of_mats list of Schur complement matrices
-   * @param sym_schur true if Schur complement is symmetric
-   * @param diag_eps add epsilon on diagonal of inverted matrix 
-   * @param symm_op true if block diagonal is symmetric
-   */
-  OpSchurAssembleEndImpl(std::vector<std::string> fields_name,
-                         std::vector<boost::shared_ptr<Range>> field_ents,
-                         std::vector<SmartPetscObj<AO>> sequence_of_aos,
-                         std::vector<SmartPetscObj<Mat>> sequence_of_mats,
-                         std::vector<bool> sym_schur,
-                         std::vector<double> diag_eps, bool symm_op = true);
-
-protected:
-
-  template <typename I>
-  MoFEMErrorCode doWorkImpl(int side, EntityType type,
-                            EntitiesFieldData::EntData &data);
-
-  std::vector<std::string> fieldsName;
-  std::vector<boost::shared_ptr<Range>> fieldEnts;
-  std::vector<SmartPetscObj<AO>> sequenceOfAOs;
-  std::vector<SmartPetscObj<Mat>> sequenceOfMats;
-  std::vector<bool> symSchur;
-  std::vector<double> diagEps;
-
-  MatrixDouble invMat;
-  MatrixDouble invDiagOffMat;
-  MatrixDouble offMatInvDiagOffMat;
-  MatrixDouble transOffMatInvDiagOffMat;
+private:
+  using UserDataOperator::UserDataOperator;
 };
 
-struct SCHUR_DSYSV; ///< SY	symmetric
-struct SCHUR_DGESV; ///< GE	general (i.e., nonsymmetric, in some cases
-                    ///< rectangular)
+OpSchurAssembleBase *createOpSchurAssembleBegin();
 
 /**
- * @brief Assemble Schur complement
+ * @brief Construct a new Op Schur Assemble End object
  *
+ * @param fields_name list of fields
+ * @param field_ents list of entities on which schur complement is applied
+ * (can be empty)
+ * @param sequence_of_aos list of maps from base problem to Schur complement
+ * matrix
+ * @param sequence_of_mats list of Schur complement matrices
+ * @param sym_schur true if Schur complement is symmetric
+ * @param symm_op true if block diagonal is symmetric
  */
-template <typename I> struct OpSchurAssembleEnd;
-
-template <>
-struct OpSchurAssembleEnd<SCHUR_DSYSV> : public OpSchurAssembleEndImpl {
-  using OpSchurAssembleEndImpl::OpSchurAssembleEndImpl;
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        EntitiesFieldData::EntData &data);
-};
-
-template <>
-struct OpSchurAssembleEnd<SCHUR_DGESV> : public OpSchurAssembleEndImpl {
-  using OpSchurAssembleEndImpl::OpSchurAssembleEndImpl;
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        EntitiesFieldData::EntData &data);
-};
+OpSchurAssembleBase *createOpSchurAssembleEnd(
+    std::vector<std::string> fields_name,
+    std::vector<boost::shared_ptr<Range>> field_ents,
+    std::vector<SmartPetscObj<AO>> sequence_of_aos,
+    std::vector<SmartPetscObj<Mat>> sequence_of_mats,
+    std::vector<bool> sym_schur, bool symm_op,
+    boost::shared_ptr<BlockStructure> diag_blocks = nullptr);
 
 /**
- * @brief Schur complement data storage
- * 
+ * @brief Construct a new Op Schur Assemble End object
+ *
+ * @param fields_name list of fields
+ * @param field_ents list of entities on which schur complement is applied
+ * (can be empty)
+ * @param sequence_of_aos list of maps from base problem to Schur complement
+ * matrix
+ * @param sequence_of_mats list of Schur complement matrices
+ * @param sym_schur true if Schur complement is symmetric
+ * @param diag_eps add epsilon on diagonal of inverted matrix
+ * @param symm_op true if block diagonal is symmetric
  */
-struct SchurL2Mats : public boost::enable_shared_from_this<SchurL2Mats> {
+OpSchurAssembleBase *createOpSchurAssembleEnd(
+    std::vector<std::string> fields_name,
+    std::vector<boost::shared_ptr<Range>> field_ents,
+    std::vector<SmartPetscObj<AO>> sequence_of_aos,
+    std::vector<SmartPetscObj<Mat>> sequence_of_mats,
+    std::vector<bool> sym_schur, std::vector<double> diag_eps, bool symm_op,
+    boost::shared_ptr<BlockStructure> diag_blocks = nullptr);
 
-  SchurL2Mats(const size_t idx, const UId uid_row, const UId uid_col);
-  virtual ~SchurL2Mats() = default;
+using SchurFieldPair = std::pair<std::string, std::string>;
 
-  const UId uidRow;
-  const UId uidCol;
+using SchurFEOpsFEandFields = std::vector<
 
-  inline auto &getMat() const { return locMats[iDX]; }
-  inline auto &getRowInd() const { return rowIndices[iDX]; }
-  inline auto &getColInd() const { return colIndices[iDX]; }
+    std::pair<std::string, std::vector<SchurFieldPair>>
 
+    >;
+
+/**
+ * @brief Create a Mat Diag Blocks object
+ *
+ * @return Mat
+ */
+boost::shared_ptr<BlockStructure> createBlockMatStructure(
+
+    DM dm,                                //< dm
+    SchurFEOpsFEandFields schur_fe_op_vec //< block elements
+
+);
+
+using SchurShellMatData =
+    std::pair<SmartPetscObj<Mat>, boost::shared_ptr<BlockStructure>>;
+
+/**
+ * @brief Create a Schur Mat object
+ *
+ * @param dm
+ * @param data
+ * @return std::pair<SmartPetscObj<Mat>, boost::shared_ptr<BlockStructure>>
+ */
+SchurShellMatData createBlockMat(DM dm, boost::shared_ptr<BlockStructure> data);
+
+using NestSchurData = std::tuple<
+
+    std::array<SmartPetscObj<Mat>, 4>,
+    std::array<boost::shared_ptr<BlockStructure>, 4>,
+    boost::shared_ptr<BlockStructure>,
+    std::pair<SmartPetscObj<IS>, SmartPetscObj<IS>>
+
+    >;
+
+/**
+ * @brief Get the Schur Nest Mat Array object
+ *
+ * @param dms schur dm, and block dm
+ * @param block mat A data
+ * @param fields_name list of fields
+ * @param field_ents list of entities on which schur complement is applied
+ * @param add_preconditioner_block add block for preconditioner
+ * @return boost::shared_ptr<NestSchurData>
+ */
+boost::shared_ptr<NestSchurData>
+getNestSchurData(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
+                 boost::shared_ptr<BlockStructure> block_mat_data,
+
+                 std::vector<std::string> fields_name, //< a00 fields
+                 std::vector<boost::shared_ptr<Range>> field_ents, //< a00 ents
+                 bool add_preconditioner_block = false
+
+);
+
+/**
+ * @brief Switch preconditioner
+ * 
+ * @param block_mat_data 
+ * @return MoFEMErrorCode 
+ */
+MoFEMErrorCode
+schurSwitchPreconditioner(boost::shared_ptr<BlockStructure> block_mat_data);
+
+/**
+ * @brief Save block matrix as a mesh
+ * 
+ * @param block_mat_data 
+ * @param filename 
+ * @return MoFEMErrorCode 
+ */
+MoFEMErrorCode
+schurSaveBlockMesh(boost::shared_ptr<BlockStructure> block_mat_data,
+                   std::string filename);
+
+/**
+ * @brief Create a Mat Diag Blocks object
+ *
+ * \code {.cpp}
+ *
+ * auto [nested_mat, nested_data_ptr] = createSchurNestedMatrix(
+ *
+ *       getNestSchurData(
+ *
+ *           {schur_dm, block_dm}, shell_data,
+ *
+ *           {"TENSOR"}, {nullptr}
+ *
+ *       )
+ *
+ *  );
+ *
+ * \endcode
+ *
+ * @return Mat
+ */
+std::pair<SmartPetscObj<Mat>, boost::shared_ptr<NestSchurData>>
+createSchurNestedMatrix(boost::shared_ptr<NestSchurData> schur_net_data_ptr);
+
+template <>
+MoFEMErrorCode DMMoFEMSetNestSchurData(DM dm, boost::shared_ptr<NestSchurData>);
+
+/**
+ * @brief Set PC for Schur block
+ *
+ * @param pc
+ * @return MoFEMErrorCode
+ */
+MoFEMErrorCode setSchurMatSolvePC(SmartPetscObj<PC> pc);
+
+struct SchurBackendMatSetValuesPtr {
+  SchurBackendMatSetValuesPtr() = delete;
   using MatSetValuesPtr = boost::function<MoFEMErrorCode(
       Mat M, const EntitiesFieldData::EntData &row_data,
       const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
       InsertMode iora)>;
-
   static MatSetValuesPtr matSetValuesPtr; ///< backend assembly function
-
-  static MoFEMErrorCode MatSetValues(Mat M,
-                                     const EntitiesFieldData::EntData &row_data,
-                                     const EntitiesFieldData::EntData &col_data,
-                                     const MatrixDouble &mat, InsertMode iora);
-
-private:
-  const size_t iDX;
-
-  friend OpSchurAssembleBegin;
-  friend OpSchurAssembleEndImpl;
-
-  struct idx_mi_tag {};
-  struct uid_mi_tag {};
-  struct row_mi_tag {};
-  struct col_mi_tag {};
-
-  using SchurL2Storage = multi_index_container<
-      SchurL2Mats,
-      indexed_by<
-
-          ordered_unique<
-              tag<uid_mi_tag>,
-              composite_key<
-                  SchurL2Mats,
-
-                  member<SchurL2Mats, const UId, &SchurL2Mats::uidRow>,
-                  member<SchurL2Mats, const UId, &SchurL2Mats::uidCol>
-
-                  >>,
-
-          ordered_non_unique<tag<row_mi_tag>, member<SchurL2Mats, const UId,
-                                                     &SchurL2Mats::uidRow>>,
-
-          ordered_non_unique<tag<col_mi_tag>, member<SchurL2Mats, const UId,
-                                                     &SchurL2Mats::uidCol>>
-
-          >>;
-
-  static boost::ptr_vector<MatrixDouble> locMats;
-  static boost::ptr_vector<VectorInt> rowIndices;
-  static boost::ptr_vector<VectorInt> colIndices;
-  static SchurL2Storage schurL2Storage;
+  static MatSetValuesPtr
+      matSetValuesBlockPtr; ///< backend assembly block mat function
+  static MatSetValuesPtr
+      matSetValuesPreconditionedBlockPtr; ///< backend assembly block
+                                          ///< preconditioner mat function
 };
 
 template <>
-inline MoFEMErrorCode
-MatSetValues<SchurL2Mats>(Mat M, const EntitiesFieldData::EntData &row_data,
-                          const EntitiesFieldData::EntData &col_data,
-                          const MatrixDouble &mat, InsertMode iora) {
-  return SchurL2Mats::MatSetValues(M, row_data, col_data, mat, iora);
-}
+MoFEMErrorCode
+MatSetValues<SchurElemMats>(Mat M, const EntitiesFieldData::EntData &row_data,
+                            const EntitiesFieldData::EntData &col_data,
+                            const MatrixDouble &mat, InsertMode iora);
 
 template <>
 inline MoFEMErrorCode
-VecSetValues<SchurL2Mats>(Vec V, const EntitiesFieldData::EntData &data,
-                          const VectorDouble &nf, InsertMode iora) {
+VecSetValues<SchurElemMats>(Vec V, const EntitiesFieldData::EntData &data,
+                            const VectorDouble &nf, InsertMode iora) {
   return VecSetValues<EssentialBcStorage>(V, data, nf, iora);
 }
 
 template <>
-inline MoFEMErrorCode MatSetValues<AssemblyTypeSelector<SCHUR>>(
+MoFEMErrorCode MatSetValues<AssemblyTypeSelector<SCHUR>>(
     Mat M, const EntitiesFieldData::EntData &row_data,
     const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
-    InsertMode iora) {
-  return MatSetValues<SchurL2Mats>(M, row_data, col_data, mat, iora);
-}
+    InsertMode iora);
 
 template <>
 inline MoFEMErrorCode VecSetValues<AssemblyTypeSelector<SCHUR>>(
     Vec V, const EntitiesFieldData::EntData &data, const VectorDouble &nf,
     InsertMode iora) {
-  return VecSetValues<SchurL2Mats>(V, data, nf, iora);
+  return VecSetValues<SchurElemMats>(V, data, nf, iora);
+}
+
+/***
+ * @brief Specialization of MatSetValues for BlockStructure
+ */
+template <>
+MoFEMErrorCode
+MatSetValues<BlockStructure>(Mat M, const EntitiesFieldData::EntData &row_data,
+                            const EntitiesFieldData::EntData &col_data,
+                            const MatrixDouble &mat, InsertMode iora);
+
+/***
+ * @brief Specialisation of MatSetValues for AssemblyTypeSelector<BLOCK_MAT>
+ */
+template <>
+inline MoFEMErrorCode MatSetValues<AssemblyTypeSelector<BLOCK_MAT>>(
+    Mat M, const EntitiesFieldData::EntData &row_data,
+    const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
+    InsertMode iora) {
+  return MatSetValues<BlockStructure>(M, row_data, col_data, mat, iora);
+}
+
+/***
+ * @brief Specialisation of VecSetValues for AssemblyTypeSelector<BLOCK_MAT>
+ */
+template <>
+inline MoFEMErrorCode VecSetValues<AssemblyTypeSelector<BLOCK_MAT>>(
+    Vec V, const EntitiesFieldData::EntData &data, const VectorDouble &nf,
+    InsertMode iora) {
+  return VecSetValues<EssentialBcStorage>(V, data, nf, iora);
+}
+
+/***
+ * @brief Specialization of MatSetValues for SchurElemMatsBlock
+ */
+template <>
+MoFEMErrorCode
+MatSetValues<SchurElemMatsBlock>(Mat M,
+                                 const EntitiesFieldData::EntData &row_data,
+                                 const EntitiesFieldData::EntData &col_data,
+                                 const MatrixDouble &mat, InsertMode iora);
+
+/***
+ * @brief Specialization of VecSetValues for SchurElemMatsBlock
+ */
+template <>
+inline MoFEMErrorCode
+VecSetValues<SchurElemMatsBlock>(Vec V, const EntitiesFieldData::EntData &data,
+                                 const VectorDouble &nf, InsertMode iora) {
+  return VecSetValues<EssentialBcStorage>(V, data, nf, iora);
+}
+
+/***
+ * @brief Specialisation of MatSetValues for AssemblyTypeSelector<BLOCK_SCHUR>
+ */
+template <>
+inline MoFEMErrorCode MatSetValues<AssemblyTypeSelector<BLOCK_SCHUR>>(
+    Mat M, const EntitiesFieldData::EntData &row_data,
+    const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
+    InsertMode iora) {
+  return MatSetValues<SchurElemMatsBlock>(M, row_data, col_data, mat, iora);
+}
+
+/***
+ * @brief Specialisation of VecSetValues for AssemblyTypeSelector<BLOCK_SCHUR>
+ */
+template <>
+inline MoFEMErrorCode VecSetValues<AssemblyTypeSelector<BLOCK_SCHUR>>(
+    Vec V, const EntitiesFieldData::EntData &data, const VectorDouble &nf,
+    InsertMode iora) {
+  return VecSetValues<EssentialBcStorage>(V, data, nf, iora);
+}
+
+/***
+ * @brief Specialization of MatSetValues for SchurElemMatsPreconditionedBlock
+ */
+template <>
+MoFEMErrorCode MatSetValues<SchurElemMatsPreconditionedBlock>(
+    Mat M, const EntitiesFieldData::EntData &row_data,
+    const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
+    InsertMode iora);
+
+/***
+ * @brief Specialisation of MatSetValues for
+ * AssemblyTypeSelector<BLOCK_PRECONDITIONER_SCHUR>
+ */
+template <>
+inline MoFEMErrorCode
+MatSetValues<AssemblyTypeSelector<BLOCK_PRECONDITIONER_SCHUR>>(
+    Mat M, const EntitiesFieldData::EntData &row_data,
+    const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
+    InsertMode iora) {
+  return MatSetValues<SchurElemMatsPreconditionedBlock>(M, row_data, col_data,
+                                                        mat, iora);
+}
+
+/***
+ * @brief Specialisation of VecSetValues for AssemblyTypeSelector<BLOCK_SCHUR>
+ */
+template <>
+inline MoFEMErrorCode
+VecSetValues<AssemblyTypeSelector<BLOCK_PRECONDITIONER_SCHUR>>(
+    Vec V, const EntitiesFieldData::EntData &data, const VectorDouble &nf,
+    InsertMode iora) {
+  return ::VecSetValues(V, data.getIndices().size(),
+                        &*data.getIndices().begin(), &*nf.begin(), iora);
 }
 
 } // namespace MoFEM

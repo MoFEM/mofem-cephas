@@ -337,7 +337,7 @@ struct BasicMethod : public KspMethod, SnesMethod, TSMethod {
    * store different information. If you iterate over finite elements in
    * preprocessor of TS solve element, us TS cache in the loop. Otherwise you
    * will create undetermined behaviour or segmentation error. This is necessary
-   * compromise over bug resilience for memory saving and preformans.
+   * compromise over bug resilience for memory saving and performance.
    *
    * @return boost::weak_ptr<CacheTuple>
    */

@@ -52,8 +52,8 @@ function(build_test target source)
   my_add_executable(${target} ${source})
   target_link_libraries(
     ${target}
-    mofem_finite_elements
     mofem_interfaces
+    mofem_finite_elements
     mofem_multi_indices
     mofem_petsc
     mofem_approx
@@ -1642,5 +1642,22 @@ add_test(operators_tests
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/operators_tests
   -file_name sphere.h5m
+  -log_no_color
+)
+
+build_test(
+  schur_test_diag_mat
+  schur_test_diag_mat.cpp)
+
+add_test(schur_test_diag_mat
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 2
+  ${CMAKE_CURRENT_BINARY_DIR}/schur_test_diag_mat
+  -file_name disp01_2parts.h5m
+  -log_sl inform 
+  -ksp_type fgmres 
+  -ksp_monitor -order 5 
+  -ksp_atol 1e-16 
+  -ksp_rtol 1e-16 
+  -ksp_gmres_modifiedgram schmidt  
   -log_no_color
 )

@@ -24,6 +24,10 @@ using bio::tee_device;
 
 using namespace MoFEM;
 
+// used for profiling
+static PetscBool quiet = PETSC_FALSE;
+static PetscBool base_cache = PETSC_FALSE;
+
 static char help[] = "...\n\n";
 
 /**
@@ -268,6 +272,7 @@ int main(int argc, char *argv[]) {
 
     // set app. order
     int order = 3;
+    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order, PETSC_NULL);
     CHKERR m_field.set_field_order(root_set, MBTRI, "FILED_CGG", order);
     CHKERR m_field.set_field_order(root_set, MBTET, "FILED_CGG", order);
     CHKERR m_field.set_field_order(root_set, MBTRI, "FILED_RT", order);
@@ -303,16 +308,16 @@ int main(int argc, char *argv[]) {
 
     /**
      * Simple user data operator which main purpose is to print values
-     * of base functions at intergation points.
+     * of base functions at integration points.
      *
      */
     struct MyOp1 : public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
       TeeStream &my_split;
-      MyOp1(const std::string &row_filed, const std::string &col_field,
+      MyOp1(const std::string &row_field, const std::string &col_field,
             TeeStream &_my_split, char type)
           : VolumeElementForcesAndSourcesCore::UserDataOperator(
-                row_filed, col_field, type),
+                row_field, col_field, type),
             my_split(_my_split) {
         sYmm = false;
       }
@@ -323,11 +328,13 @@ int main(int argc, char *argv[]) {
         if (data.getIndices().empty()) {
           MoFEMFunctionReturnHot(0);
         }
-        my_split << rowFieldName << endl;
-        my_split << "side: " << side << " type: " << type << std::endl;
-        my_split << data << endl;
-        my_split << data.getN() << endl;
-        my_split << endl;
+        if (!quiet) {
+          my_split << rowFieldName << endl;
+          my_split << "side: " << side << " type: " << type << std::endl;
+          my_split << data << endl;
+          my_split << data.getN() << endl;
+          my_split << endl;
+        }
         MoFEMFunctionReturnHot(0);
       }
 
@@ -340,14 +347,16 @@ int main(int argc, char *argv[]) {
           MoFEMFunctionReturnHot(0);
         if (col_data.getIndices().empty())
           MoFEMFunctionReturnHot(0);
-        my_split << rowFieldName << " : " << colFieldName << endl;
-        my_split << "row side: " << row_side << " row_type: " << row_type
-                 << std::endl;
-        my_split << "col side: " << col_side << " col_type: " << col_type
-                 << std::endl;
-        my_split << row_data.getIndices().size() << " : "
-                 << col_data.getIndices().size() << endl;
-        my_split << endl;
+        if (!quiet) {
+          my_split << rowFieldName << " : " << colFieldName << endl;
+          my_split << "row side: " << row_side << " row_type: " << row_type
+                   << std::endl;
+          my_split << "col side: " << col_side << " col_type: " << col_type
+                   << std::endl;
+          my_split << row_data.getIndices().size() << " : "
+                   << col_data.getIndices().size() << endl;
+          my_split << endl;
+        }
         MoFEMFunctionReturnHot(0);
       }
     };
@@ -358,7 +367,9 @@ int main(int argc, char *argv[]) {
     fe1.getUserPolynomialBase() =
         boost::shared_ptr<BaseFunction>(new SomeUserPolynomialBase());
 
-    // push user data oprators
+    CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-quiet", &quiet, PETSC_NULL);
+
+    // push user data operators
     fe1.getOpPtrVector().push_back(
         new MyOp1("FILED_CGG", "FILED_CGG", my_split,
                   ForcesAndSourcesCore::UserDataOperator::OPROW));
@@ -366,9 +377,27 @@ int main(int argc, char *argv[]) {
         new MyOp1("FILED_CGG", "FILED_RT", my_split,
                   ForcesAndSourcesCore::UserDataOperator::OPROWCOL));
 
+    CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-base_cache", &base_cache,
+                               PETSC_NULL);
+
+    if (base_cache) {
+      if (!TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(&fe1)) {
+        TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(&fe1);
+      }
+      if (!TetPolynomialBase::swichCacheHdivBaseInteriorDemkowicz(&fe1)) {
+        TetPolynomialBase::swichCacheHdivBaseInteriorDemkowicz(&fe1);
+      }
+    }
+
     // iterate over finite elements, and execute user data operators on each
     // of them
     CHKERR m_field.loop_finite_elements("PROBLEM", "FE", fe1);
+
+    if(base_cache) {
+      if(TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(&fe1)) {}
+      if(TetPolynomialBase::swichCacheHdivBaseInteriorDemkowicz(&fe1)) {};
+    }
+
   }
   CATCH_ERRORS;
 

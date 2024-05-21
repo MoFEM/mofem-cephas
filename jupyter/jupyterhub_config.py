@@ -843,7 +843,7 @@ c.JupyterHub.template_paths = ['/mofem_install/jupyter/templates']
 #  process's environment (such as `CONFIGPROXY_AUTH_TOKEN`) is not passed to the
 #  single-user server's process.
 #  Default: ['PATH', 'PYTHONPATH', 'CONDA_ROOT', 'CONDA_DEFAULT_ENV', 'VIRTUAL_ENV', 'LANG', 'LC_ALL', 'JUPYTERHUB_SINGLEUSER_APP']
-# c.Spawner.env_keep = ['PATH', 'PYTHONPATH', 'CONDA_ROOT', 'CONDA_DEFAULT_ENV', 'VIRTUAL_ENV', 'LANG', 'LC_ALL', 'JUPYTERHUB_SINGLEUSER_APP']
+c.Spawner.env_keep = ['LD_LIBRARY_PATH', 'PATH', 'PYTHONPATH', 'CONDA_ROOT', 'CONDA_DEFAULT_ENV', 'VIRTUAL_ENV', 'LANG', 'LC_ALL', 'JUPYTERHUB_SINGLEUSER_APP']
 
 ## Extra environment variables to set for the single-user server's process.
 #  

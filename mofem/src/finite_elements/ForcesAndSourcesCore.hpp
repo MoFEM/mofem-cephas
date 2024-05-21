@@ -496,7 +496,7 @@ private:
   boost::shared_ptr<BaseFunction> elementPolynomialBasePtr;
 
   /**
-   * @brief Pointer to user polynomail base
+   * @brief Pointer to user polynomial base
    */
   boost::shared_ptr<BaseFunction> userPolynomialBasePtr;
 

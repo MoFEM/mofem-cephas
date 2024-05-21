@@ -203,7 +203,7 @@ struct EntitiesFieldData::EntData {
   virtual std::vector<BitRefLevel> &getEntDataBitRefLevel();
 
   /**
-   * @brief Return FTensor of rank 1, i.e. vector from filed data coeffinects
+   * @brief Return FTensor of rank 1, i.e. vector from filed data coefficients
    *
    * \code
    * auto t_vec = data.getFTensor1FieldData<3>();
@@ -218,7 +218,7 @@ struct EntitiesFieldData::EntData {
   getFTensor1FieldData();
 
   /**
-   * @brief  Return FTensor rank 2, i.e. matrix from filed data coeffinects
+   * @brief  Return FTensor rank 2, i.e. matrix from filed data coefficients
    *
    * \code
    * auto t_mat = data.getFTensor2FieldData<3,3>();
@@ -235,8 +235,8 @@ struct EntitiesFieldData::EntData {
   getFTensor2FieldData();
 
   /**
-   * @brief  Return symmetric FTensor rank 2, i.e. matrix from filed data
-   * coeffinects
+   * @brief  Return symmetric FTensor rank 2, i.e. matrix from field data
+   * coefficients
    *
    * \code
    * auto t_mat = data.getFTensor2SymmetricFieldData<3>();

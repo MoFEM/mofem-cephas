@@ -194,6 +194,13 @@ MoFEMErrorCode ISManager::isCreateProblem(const std::string problem_name,
   MoFEMFunctionReturn(0);
 }
 
+SmartPetscObj<IS> ISManager::isCreateProblem(const std::string problem_name,
+                                             RowColData rc) const {
+  SmartPetscObj<IS> is;
+  CHK_THROW_MESSAGE(isCreateProblem(problem_name, rc, is), "IS not created");
+  return is;
+}
+
 MoFEMErrorCode ISManager::isCreateProblemOrder(const std::string problem_name,
                                                RowColData rc, int min_order,
                                                int max_order, IS *is) const {

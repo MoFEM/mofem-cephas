@@ -255,9 +255,9 @@ struct GetFTensor2FromMatImpl {
     if (data.size1() != Tensor_Dim1 * Tensor_Dim2) {
       THROW_MESSAGE(
           "getFTensor2FromMat<" +
-          boost::lexical_cast<std::string>(Tensor_Dim1) +
-          "," + boost::lexical_cast<std::string>(
-              Tensor_Dim2) + ">: wrong size of rows in data matrix, should be " +
+          boost::lexical_cast<std::string>(Tensor_Dim1) + "," +
+          boost::lexical_cast<std::string>(Tensor_Dim2) +
+          ">: wrong size of rows in data matrix, should be " +
           boost::lexical_cast<std::string>(Tensor_Dim1 * Tensor_Dim2) +
           " but is " + boost::lexical_cast<std::string>(data.size1()));
     }
@@ -271,14 +271,13 @@ struct GetFTensor2FromMatImpl {
 };
 
 /**
- * \brief Get tensor rank 2 (matrix) form data matrix 
+ * \brief Get tensor rank 2 (matrix) form data matrix
  */
 template <int Tensor_Dim1, int Tensor_Dim2>
 inline FTensor::Tensor2<FTensor::PackPtr<double *, 1>, Tensor_Dim1, Tensor_Dim2>
 getFTensor2FromMat(MatrixDouble &data) {
   return GetFTensor2FromMatImpl<Tensor_Dim1, Tensor_Dim2, 1, double,
-                                ublas::row_major,
-                                DoubleAllocator>::get(data);
+                                ublas::row_major, DoubleAllocator>::get(data);
 }
 
 template <int Tensor_Dim1, int Tensor_Dim2>
@@ -779,6 +778,14 @@ template <int S, typename T> struct GetFTensor1FromPtrImpl<3, S, T> {
   inline static auto get(T *ptr) {
     return FTensor::Tensor1<FTensor::PackPtr<T *, S>, 3>(
         &ptr[HVEC0], &ptr[HVEC1], &ptr[HVEC2]);
+  }
+};
+
+template <int S, typename T> struct GetFTensor1FromPtrImpl<4, S, T> {
+  GetFTensor1FromPtrImpl() = delete;
+  inline static auto get(T *ptr) {
+    return FTensor::Tensor1<FTensor::PackPtr<T *, S>, 4>(&ptr[0], &ptr[1],
+                                                         &ptr[2], &ptr[3]);
   }
 };
 

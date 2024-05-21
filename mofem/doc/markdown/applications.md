@@ -1,4 +1,4 @@
-Applications of %MoFEM in research and industry (2021-2023) {#applications}
+Applications of %MoFEM in research and industry {#applications}
 =======================================================================
 
 The catalyst for the creation of MoFEM was the need for a flexible and numerically accurate modelling environment for multi-physics problems posed by our partners, including industry (EDF Energy, Jacobs, Advanced Forming Research Centre (University of Strathclyde), Rolls-Royce, etc).
@@ -293,7 +293,7 @@ The proposed framework is aimed to aid new piezoelectric material technologies w
 ---
 
 ## Numerical Simulation of Triboelectric Nanogenerators {#Triboelectric}
-\f$\textbf{MD Tanzib Ehsan Sanglap}^{1}, \textbf{Lukasz Kaczmarczyk}^{1}\f$, \textbf{Andrei G. Shvarts}^{1}
+\f$\textbf{MD Tanzib Ehsan Sanglap}^{1}, \textbf{Lukasz Kaczmarczyk}^{1}, \textbf{Andrei G. Shvarts}^{1}\f$
 
 \f$^1 \textit{Glasgow Computational Engineering Centre, James Watt School of Engineering, University of Glasgow}\f$
 

@@ -573,18 +573,19 @@ DEPRECATED void macro_is_deprecated_using_deprecated_function();
  * @param  err MoABErrorCode
  * @param  msg error message
  */
-#define CHK_MOAB_THROW(err, msg)                                               \
-  {                                                                            \
-    if (PetscUnlikely(MB_SUCCESS != (err))) {                                  \
-      std::string str;                                                         \
-      throw MoFEMException(                                                    \
-          MOFEM_MOAB_ERROR,                                                    \
-          ("MOAB error (" + boost::lexical_cast<std::string>((err)) + ") " +   \
-           boost::lexical_cast<std::string>((msg)) + " at line " +             \
-           boost::lexical_cast<std::string>(__LINE__) + " : " +                \
-           std::string(__FILE__))                                              \
-              .c_str());                                                       \
-    }                                                                          \
+#define CHK_MOAB_THROW(err, msg)                                             \
+  {                                                                          \
+    if (PetscUnlikely(static_cast<int>(MB_SUCCESS) != (err)))                \
+    {                                                                        \
+      std::string str;                                                       \
+      throw MoFEMException(                                                  \
+          MOFEM_MOAB_ERROR,                                                  \
+          ("MOAB error (" + boost::lexical_cast<std::string>((err)) + ") " + \
+           boost::lexical_cast<std::string>((msg)) + " at line " +           \
+           boost::lexical_cast<std::string>(__LINE__) + " : " +              \
+           std::string(__FILE__))                                            \
+              .c_str());                                                     \
+    }                                                                        \
   }
 
 /**

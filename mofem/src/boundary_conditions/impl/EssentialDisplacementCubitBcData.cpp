@@ -586,26 +586,26 @@ MoFEMErrorCode EssentialPreProcReaction<DisplacementCubitBcData>::operator()() {
           auto mpi_reactions = mpi_array_reduce(reactions);
           if (printBlockName) {
             MOFEM_TAG_AND_LOG_C("WORLD", sevLevel, "Essential",
-                                "Block %s Offset: %4.3e %4.3e %4.3e",
+                                "Block %s Offset: %6.4e %6.4e %6.4e",
                                 block_name.c_str(), t_off(X), t_off(Y),
                                 t_off(Z));
             MOFEM_TAG_AND_LOG_C("WORLD", sevLevel, "Essential",
-                                "Block %s Force: %4.3e %4.3e %4.3e",
+                                "Block %s Force: %6.4e %6.4e %6.4e",
                                 block_name.c_str(), mpi_reactions[X],
                                 mpi_reactions[Y], mpi_reactions[Z]);
             MOFEM_TAG_AND_LOG_C("WORLD", sevLevel, "Essential",
-                                "Block %s Moment: %4.3e %4.3e %4.3e",
+                                "Block %s Moment: %6.4e %6.4e %6.4e",
                                 block_name.c_str(), mpi_reactions[MX],
                                 mpi_reactions[MY], mpi_reactions[MZ]);
           } else {
             MOFEM_TAG_AND_LOG_C("WORLD", sevLevel, "Essential",
-                                "Offset: %4.3e %4.3e %4.3e", t_off(X), t_off(Y),
+                                "Offset: %6.4e %6.4e %6.4e", t_off(X), t_off(Y),
                                 t_off(Z));
             MOFEM_TAG_AND_LOG_C("WORLD", sevLevel, "Essential",
-                                "Force: %4.3e %4.3e %4.3e", mpi_reactions[X],
+                                "Force: %6.4e %6.4e %6.4e", mpi_reactions[X],
                                 mpi_reactions[Y], mpi_reactions[Z]);
             MOFEM_TAG_AND_LOG_C("WORLD", sevLevel, "Essential",
-                                "Moment: %4.3e %4.3e %4.3e", mpi_reactions[MX],
+                                "Moment: %6.4e %6.4e %6.4e", mpi_reactions[MX],
                                 mpi_reactions[MY], mpi_reactions[MZ]);
           }
         }
@@ -616,10 +616,10 @@ MoFEMErrorCode EssentialPreProcReaction<DisplacementCubitBcData>::operator()() {
 
     auto mpi_total_reactions = mpi_array_reduce(total_reactions);
     MOFEM_TAG_AND_LOG_C(
-        "WORLD", sevLevel, "Essential", "Total force: %4.3e %4.3e %4.3e",
+        "WORLD", sevLevel, "Essential", "Total force: %6.4e %6.4e %6.4e",
         mpi_total_reactions[X], mpi_total_reactions[Y], mpi_total_reactions[Z]);
     MOFEM_TAG_AND_LOG_C("WORLD", sevLevel, "Essential",
-                        "Total moment: %4.3e %4.3e %4.3e",
+                        "Total moment: %6.4e %6.4e %6.4e",
                         mpi_total_reactions[MX], mpi_total_reactions[MY],
                         mpi_total_reactions[MZ]);
 
