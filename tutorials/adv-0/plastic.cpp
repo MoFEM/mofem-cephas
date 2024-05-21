@@ -1320,7 +1320,6 @@ MoFEMErrorCode SetUpSchurImpl::setUp(TS solver) {
   CHKERR KSPSetFromOptions(ksp);
 
   PC pc;
-  CHKERR KSPSetFromOptions(ksp);
   CHKERR KSPGetPC(ksp, &pc);
   PetscBool is_pcfs = PETSC_FALSE;
   PetscObjectTypeCompare((PetscObject)pc, PCFIELDSPLIT, &is_pcfs);
