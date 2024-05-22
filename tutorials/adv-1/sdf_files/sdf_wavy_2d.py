@@ -23,7 +23,7 @@ class WavySurface:
 
     def sDF(x, y,z, t):
         y0 = A * (1. - np.cos(w * x)) - ind * t
-        if np.any(np.abs(y0 - y)) < 1e-9:
+        if np.any(np.abs(y0 - y)) < 1e-12:
             return 0.0
 
         x = np.abs(x) % wave_len
