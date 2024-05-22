@@ -251,7 +251,7 @@ struct Monitor : public FEMethod {
       postProcBdyFe = get_post_proc_bdy_fe();
     integrateTraction = get_integrate_traction();
 
-    norms_vec = createVectorMPI(
+    normsVec = createVectorMPI(
         m_field_ptr->get_comm(),
         (m_field_ptr->get_comm_rank() == 0) ? LAST_NORM : 0, LAST_NORM);
   }
@@ -432,8 +432,14 @@ struct Monitor : public FEMethod {
       MoFEMFunctionBegin;
       struct OpCalcTractions : public BoundaryEleOp {
         OpCalcTractions(boost::shared_ptr<MatrixDouble> m_ptr,
-                                   boost::shared_ptr<VectorDouble> p_ptr, boost::shared_ptr<VectorDouble> mag_ptr, boost::shared_ptr<VectorDouble> traction_y_ptr, boost::shared_ptr<MatrixDouble> t_ptr, boost::shared_ptr<MatrixDouble> grad_sdf_ptr)
-            : BoundaryEleOp(NOSPACE, OPSPACE), mPtr(m_ptr), pPtr(p_ptr), magPtr(mag_ptr), tyPtr(traction_y_ptr), tPtr(t_ptr), gradSDFPtr(grad_sdf_ptr) {}
+                        boost::shared_ptr<VectorDouble> p_ptr,
+                        boost::shared_ptr<VectorDouble> mag_ptr,
+                        boost::shared_ptr<VectorDouble> traction_y_ptr,
+                        boost::shared_ptr<MatrixDouble> t_ptr,
+                        boost::shared_ptr<MatrixDouble> grad_sdf_ptr)
+            : BoundaryEleOp(NOSPACE, OPSPACE), mPtr(m_ptr), pPtr(p_ptr),
+              magPtr(mag_ptr), tyPtr(traction_y_ptr), tPtr(t_ptr),
+              gradSDFPtr(grad_sdf_ptr) {}
         MoFEMErrorCode doWork(int, EntityType, EntitiesFieldData::EntData &) {
           MoFEMFunctionBegin;
           FTensor::Index<'i', SPACE_DIM> i;
@@ -455,7 +461,7 @@ struct Monitor : public FEMethod {
 
           for (int gg = 0; gg != nb_gauss_pts; gg++) {
             FTensor::Tensor1<double, SPACE_DIM> normal;
-            t_traction(i) = t_p * (- (t_normal(i) / t_normal.l2()));
+            t_traction(i) = t_p * (-(t_normal(i) / t_normal.l2()));
             t_mag = t_contact_traction.l2();
             t_ty = t_contact_traction(1);
 
@@ -479,104 +485,99 @@ struct Monitor : public FEMethod {
         boost::shared_ptr<MatrixDouble> gradSDFPtr;
       };
 
-      // auto norms_vec = createVectorMPI(
-      //     m_field_ptr->get_comm(),
-      //     (m_field_ptr->get_comm_rank() == 0) ? LAST_NORM : 0, LAST_NORM);
-
       auto post_proc_norm_fe = boost::make_shared<BoundaryEle>(*m_field_ptr);
       auto common_data_ptr = boost::make_shared<ContactOps::CommonData>();
       auto simple = m_field_ptr->getInterface<Simple>();
-       Range contact_range;
-       for (auto m : m_field_ptr->getInterface<MeshsetsManager>()->getCubitMeshsetPtr(
-                std::regex(
-                    (boost::format("%s(.*)") % "CONTACT").str()
-                        ))
-       ) {
-         auto meshset = m->getMeshset();
-         Range contact_meshset_range;
-         CHKERR m_field_ptr->get_moab().get_entities_by_dimension(
-             meshset, SPACE_DIM - 1, contact_meshset_range, true);
+      Range contact_range;
+      for (auto m :
+           m_field_ptr->getInterface<MeshsetsManager>()->getCubitMeshsetPtr(
+               std::regex((boost::format("%s(.*)") % "CONTACT").str()))) {
+        auto meshset = m->getMeshset();
+        Range contact_meshset_range;
+        CHKERR m_field_ptr->get_moab().get_entities_by_dimension(
+            meshset, SPACE_DIM - 1, contact_meshset_range, true);
 
-         CHKERR m_field_ptr->getInterface<CommInterface>()->synchroniseEntities(
-             contact_meshset_range);
-         contact_range.merge(contact_meshset_range);
-       }
-       //std::cout << "contact_range.size() " << contact_range.size() << std::endl;
+        CHKERR m_field_ptr->getInterface<CommInterface>()->synchroniseEntities(
+            contact_meshset_range);
+        contact_range.merge(contact_meshset_range);
+      }
+      // std::cout << "contact_range.size() " << contact_range.size() <<
+      // std::endl;
 
-       CHK_THROW_MESSAGE(
-           (AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
-               post_proc_norm_fe->getOpPtrVector(), {HDIV}, "GEOMETRY")),
-           "Apply transform");
-       // We have to integrate on curved face geometry, thus integration weight
-       // have to adjusted.
-       post_proc_norm_fe->getOpPtrVector().push_back(
-           new OpSetHOWeightsOnSubDim<SPACE_DIM>());
-       post_proc_norm_fe->getRuleHook = [](int, int, int approx_order) {
-         return 2 * approx_order + geom_order - 1;
-       };
+      CHK_THROW_MESSAGE(
+          (AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
+              post_proc_norm_fe->getOpPtrVector(), {HDIV}, "GEOMETRY")),
+          "Apply transform");
+      // We have to integrate on curved face geometry, thus integration weight
+      // have to adjusted.
+      post_proc_norm_fe->getOpPtrVector().push_back(
+          new OpSetHOWeightsOnSubDim<SPACE_DIM>());
+      post_proc_norm_fe->getRuleHook = [](int, int, int approx_order) {
+        return 2 * approx_order + geom_order - 1;
+      };
 
-       post_proc_norm_fe->getOpPtrVector().push_back(
-           new OpCalculateVectorFieldValues<SPACE_DIM>(
-               "U", common_data_ptr->contactDispPtr()));
-       post_proc_norm_fe->getOpPtrVector().push_back(
-           new OpCalculateHVecTensorTrace<SPACE_DIM, BoundaryEleOp>(
-               "SIGMA", common_data_ptr->contactTractionPtr()));
-       using C = ContactIntegrators<BoundaryEleOp>;
-       post_proc_norm_fe->getOpPtrVector().push_back(
-           new typename C::template OpEvaluateSDF<SPACE_DIM, GAUSS>(
-               common_data_ptr));
+      post_proc_norm_fe->getOpPtrVector().push_back(
+          new OpCalculateVectorFieldValues<SPACE_DIM>(
+              "U", common_data_ptr->contactDispPtr()));
+      post_proc_norm_fe->getOpPtrVector().push_back(
+          new OpCalculateHVecTensorTrace<SPACE_DIM, BoundaryEleOp>(
+              "SIGMA", common_data_ptr->contactTractionPtr()));
+      using C = ContactIntegrators<BoundaryEleOp>;
+      post_proc_norm_fe->getOpPtrVector().push_back(
+          new typename C::template OpEvaluateSDF<SPACE_DIM, GAUSS>(
+              common_data_ptr));
 
-       // post_proc_norm_fe->getOpPtrVector().push_back(
-       //     new OpScale(common_data_ptr->contactTractionPtr(), scale));
+      // post_proc_norm_fe->getOpPtrVector().push_back(
+      //     new OpScale(common_data_ptr->contactTractionPtr(), scale));
 
-       auto analytical_traction_ptr = boost::make_shared<MatrixDouble>();
-       auto analytical_pressure_ptr = boost::make_shared<VectorDouble>();
-       auto mag_traction_ptr = boost::make_shared<VectorDouble>();
-       auto traction_y_ptr = boost::make_shared<VectorDouble>();
-       auto contact_range_ptr = boost::make_shared<Range>(contact_range);
+      auto analytical_traction_ptr = boost::make_shared<MatrixDouble>();
+      auto analytical_pressure_ptr = boost::make_shared<VectorDouble>();
+      auto mag_traction_ptr = boost::make_shared<VectorDouble>();
+      auto traction_y_ptr = boost::make_shared<VectorDouble>();
+      auto contact_range_ptr = boost::make_shared<Range>(contact_range);
 
-       post_proc_norm_fe->getOpPtrVector().push_back(
-           new OpGetTensor0fromFunc(analytical_pressure_ptr, fun));
+      post_proc_norm_fe->getOpPtrVector().push_back(
+          new OpGetTensor0fromFunc(analytical_pressure_ptr, fun));
 
-       post_proc_norm_fe->getOpPtrVector().push_back(new OpCalcTractions(
-           analytical_traction_ptr, analytical_pressure_ptr, mag_traction_ptr,
-           traction_y_ptr, common_data_ptr->contactTractionPtr(),
-           common_data_ptr->gradSdfPtr()));
+      post_proc_norm_fe->getOpPtrVector().push_back(new OpCalcTractions(
+          analytical_traction_ptr, analytical_pressure_ptr, mag_traction_ptr,
+          traction_y_ptr, common_data_ptr->contactTractionPtr(),
+          common_data_ptr->gradSdfPtr()));
 
-       post_proc_norm_fe->getOpPtrVector().push_back(
-           new OpCalcNormL2Tensor1<SPACE_DIM>(
-               common_data_ptr->contactTractionPtr(), norms_vec,
-               TRACTION_NORM_L2, analytical_traction_ptr, contact_range_ptr));
+      post_proc_norm_fe->getOpPtrVector().push_back(
+          new OpCalcNormL2Tensor1<SPACE_DIM>(
+              common_data_ptr->contactTractionPtr(), normsVec, TRACTION_NORM_L2,
+              analytical_traction_ptr, contact_range_ptr));
 
-       // calculate magnitude of traction
+      // calculate magnitude of traction
 
-       post_proc_norm_fe->getOpPtrVector().push_back(new OpCalcNormL2Tensor0(
-           mag_traction_ptr, norms_vec, MAG_TRACTION_NORM_L2,
-           analytical_pressure_ptr, contact_range_ptr));
+      post_proc_norm_fe->getOpPtrVector().push_back(new OpCalcNormL2Tensor0(
+          mag_traction_ptr, normsVec, MAG_TRACTION_NORM_L2,
+          analytical_pressure_ptr, contact_range_ptr));
 
-       post_proc_norm_fe->getOpPtrVector().push_back(new OpCalcNormL2Tensor0(
-           traction_y_ptr, norms_vec, TRACTION_Y_NORM_L2,
-           analytical_pressure_ptr, contact_range_ptr));
+      post_proc_norm_fe->getOpPtrVector().push_back(
+          new OpCalcNormL2Tensor0(traction_y_ptr, normsVec, TRACTION_Y_NORM_L2,
+                                  analytical_pressure_ptr, contact_range_ptr));
 
-       CHKERR VecZeroEntries(norms_vec);
-       CHKERR DMoFEMLoopFiniteElements(dM, "bFE", post_proc_norm_fe);
-       CHKERR VecAssemblyBegin(norms_vec);
-       CHKERR VecAssemblyEnd(norms_vec);
+      CHKERR VecZeroEntries(normsVec);
+      CHKERR DMoFEMLoopFiniteElements(dM, "bFE", post_proc_norm_fe);
+      CHKERR VecAssemblyBegin(normsVec);
+      CHKERR VecAssemblyEnd(normsVec);
 
-       MOFEM_LOG_CHANNEL("SELF"); // Clear channel from old tags
-       if (m_field_ptr->get_comm_rank() == 0) {
-         const double *norms;
-         CHKERR VecGetArrayRead(norms_vec, &norms);
-         MOFEM_TAG_AND_LOG("SELF", Sev::inform, "Errors")
-             << "norm_traction: " << std::scientific
-             << std::sqrt(norms[TRACTION_NORM_L2]);
-         MOFEM_TAG_AND_LOG("SELF", Sev::inform, "Errors")
-             << "norm_mag_traction: " << std::scientific
-             << std::sqrt(norms[MAG_TRACTION_NORM_L2]);
-         MOFEM_TAG_AND_LOG("SELF", Sev::inform, "Errors")
-             << "norm_traction_y: " << std::scientific
-             << std::sqrt(norms[TRACTION_Y_NORM_L2]);
-         CHKERR VecRestoreArrayRead(norms_vec, &norms);
+      MOFEM_LOG_CHANNEL("SELF"); // Clear channel from old tags
+      if (m_field_ptr->get_comm_rank() == 0) {
+        const double *norms;
+        CHKERR VecGetArrayRead(normsVec, &norms);
+        MOFEM_TAG_AND_LOG("SELF", Sev::inform, "Errors")
+            << "norm_traction: " << std::scientific
+            << std::sqrt(norms[TRACTION_NORM_L2]);
+        MOFEM_TAG_AND_LOG("SELF", Sev::inform, "Errors")
+            << "norm_mag_traction: " << std::scientific
+            << std::sqrt(norms[MAG_TRACTION_NORM_L2]);
+        MOFEM_TAG_AND_LOG("SELF", Sev::inform, "Errors")
+            << "norm_traction_y: " << std::scientific
+            << std::sqrt(norms[TRACTION_Y_NORM_L2]);
+        CHKERR VecRestoreArrayRead(normsVec, &norms);
       }
       MoFEMFunctionReturn(0);
     };
@@ -586,18 +587,18 @@ struct Monitor : public FEMethod {
 
     if (!(ts_step % se)) {
       MOFEM_LOG("CONTACT", Sev::inform)
-        << "Write file at time " << ts_t << " write step " << sTEP;
+          << "Write file at time " << ts_t << " write step " << sTEP;
       CHKERR post_proc();
     }
     CHKERR calculate_traction();
     CHKERR calculate_reactions();
-    if(atom_test == 1 && sTEP > 0)
+    if (atom_test == 1 && sTEP > 0)
       CHKERR calculate_error(analyticalHertzPressurePlaneStress);
-    if(atom_test == 2 && sTEP > 0)
+    if (atom_test == 2 && sTEP > 0)
       CHKERR calculate_error(analyticalHertzPressurePlaneStrain);
-    if(atom_test == 5 && sTEP > 0)
+    if (atom_test == 5 && sTEP > 0)
       CHKERR calculate_error(analyticalHertzPressureAxisymmetric);
-    if(atom_test == 6 && sTEP > 0)
+    if (atom_test == 6 && sTEP > 0)
       CHKERR calculate_error(analyticalWavy2DPressure);
 
     CHKERR print_max_min(uXScatter, "Ux");
@@ -611,7 +612,6 @@ struct Monitor : public FEMethod {
     MoFEMFunctionReturn(0);
   }
 
-
   //! [Analytical function]
   MoFEM::ScalarFun analyticalWavy2DPressure = [](double x, double y, double z) {
     // update to atom test values
@@ -624,10 +624,11 @@ struct Monitor : public FEMethod {
     double p_star = M_PI * E_star * delta / lambda;
 
     // Pressure = p_bar + p_star * cos(2 * pi * x / lambda)
-    return p_star + p_star * std::cos(2.*M_PI*x/lambda);
-    };
+    return p_star + p_star * std::cos(2. * M_PI * x / lambda);
+  };
 
-  MoFEM::ScalarFun analyticalHertzPressureAxisymmetric = [](double x, double y, double z) {
+  MoFEM::ScalarFun analyticalHertzPressureAxisymmetric = [](double x, double y,
+                                                            double z) {
     // update to atom test values
     double E_star = young_modulus / (1 - poisson_ratio * poisson_ratio);
     // Radius
@@ -643,14 +644,15 @@ struct Monitor : public FEMethod {
 
     double r = std::sqrt((x * x) + (y * y));
 
-    if (r > a ) {
-        return 0.;
+    if (r > a) {
+      return 0.;
     }
     // Pressure = p_max * sqrt(1 - (r^2 / a^2))
     return p_max * std::sqrt(1 - ((r * r) / (a * a)));
-};
+  };
 
-  MoFEM::ScalarFun analyticalHertzPressurePlaneStrain = [](double x, double y, double z) {
+  MoFEM::ScalarFun analyticalHertzPressurePlaneStrain = [](double x, double y,
+                                                           double z) {
     // update to atom test values
     double E_star = young_modulus / (1 - poisson_ratio * poisson_ratio);
     // Radius
@@ -662,13 +664,14 @@ struct Monitor : public FEMethod {
     // current radius
     double r = std::sqrt((x * x) + (y * y));
 
-    if (r > a ) {
-        return 0.;
+    if (r > a) {
+      return 0.;
     }
     // Pressure = p_max * sqrt(1 - (r^2 / a^2))
     return E_star / (2. * R) * std::sqrt(a * a - r * r);
-};
-  MoFEM::ScalarFun analyticalHertzPressurePlaneStress = [](double x, double y, double z) {
+  };
+  MoFEM::ScalarFun analyticalHertzPressurePlaneStress = [](double x, double y,
+                                                           double z) {
     // update to atom test values
     double E_star = young_modulus;
     // Radius
@@ -680,12 +683,12 @@ struct Monitor : public FEMethod {
     // current radius
     double r = std::sqrt((x * x) + (y * y));
 
-    if (r > a ) {
-        return 0.;
+    if (r > a) {
+      return 0.;
     }
     // Pressure = p_max * sqrt(1 - (r^2 / a^2))
     return E_star / (2. * R) * std::sqrt(a * a - r * r);
-};
+  };
 
   // ***DISPLACMENT NOT TESTED***
   MoFEM::VectorFun<SPACE_DIM> analyticalHertzDisplacement3D = [](double x,
@@ -756,13 +759,13 @@ struct Monitor : public FEMethod {
     MoFEMFunctionReturn(0);
   }
 
-MoFEMErrorCode getErrorNorm(int normType) {
-  const double *norm;
-  CHKERR VecGetArrayRead(norms_vec, &norm);
-  double norm_val = std::sqrt(norm[normType]);
-  CHKERR VecRestoreArrayRead(norms_vec, &norm);
-  return norm_val;
-}
+  MoFEMErrorCode getErrorNorm(int normType) {
+    const double *norm;
+    CHKERR VecGetArrayRead(normsVec, &norm);
+    double norm_val = std::sqrt(norm[normType]);
+    CHKERR VecRestoreArrayRead(normsVec, &norm);
+    return norm_val;
+  }
 
 private:
   SmartPetscObj<DM> dM;
@@ -777,8 +780,13 @@ private:
 
   boost::shared_ptr<BoundaryEle> integrateTraction;
 
-  enum NORMS { TRACTION_NORM_L2 = 0, MAG_TRACTION_NORM_L2, TRACTION_Y_NORM_L2, LAST_NORM };
-  SmartPetscObj<Vec> norms_vec;
+  enum NORMS {
+    TRACTION_NORM_L2 = 0,
+    MAG_TRACTION_NORM_L2,
+    TRACTION_Y_NORM_L2,
+    LAST_NORM
+  };
+  SmartPetscObj<Vec> normsVec;
 
   moab::Core mbVertexPostproc;
   moab::Interface &moabVertex;
