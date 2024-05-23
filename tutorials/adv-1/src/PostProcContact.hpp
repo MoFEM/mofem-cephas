@@ -625,7 +625,6 @@ struct Monitor : public FEMethod {
       CHKERR post_proc();
     }
     CHKERR calculate_force();
-    CHKERR calculate_area();
     CHKERR calculate_reactions();
     if (atom_test == 1 && sTEP > 0)
       CHKERR calculate_error(analyticalHertzPressurePlaneStress);
@@ -635,6 +634,9 @@ struct Monitor : public FEMethod {
       CHKERR calculate_error(analyticalHertzPressureAxisymmetric);
     if (atom_test == 6 && sTEP > 0)
       CHKERR calculate_error(analyticalWavy2DPressure);
+
+    if (sTEP > 0)
+      CHKERR calculate_area();
 
     CHKERR print_max_min(uXScatter, "Ux");
     CHKERR print_max_min(uYScatter, "Uy");
