@@ -43,7 +43,7 @@ struct Monitor : public FEMethod {
           : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPSPACE),
             mPtr(m_ptr), scale(s) {}
       MoFEMErrorCode doWork(int, EntityType, EntitiesFieldData::EntData &) {
-        *mPtr *= 1./scale;
+        *mPtr *= 1. / scale;
         return 0;
       }
 
@@ -107,8 +107,6 @@ struct Monitor : public FEMethod {
       auto X_ptr = boost::make_shared<MatrixDouble>();
       pip.push_back(
           new OpCalculateVectorFieldValues<SPACE_DIM>("GEOMETRY", X_ptr));
-
-
 
       pip.push_back(
 
@@ -225,7 +223,7 @@ struct Monitor : public FEMethod {
 
     auto get_integrate_traction = [&]() {
       auto integrate_traction = boost::make_shared<BoundaryEle>(*m_field_ptr);
-      auto common_data_ptr = boost::make_shared<ContactOps::CommonData>();
+      // auto common_data_ptr = boost::make_shared<ContactOps::CommonData>();
       CHK_THROW_MESSAGE(
           (AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
               integrate_traction->getOpPtrVector(), {HDIV}, "GEOMETRY")),
@@ -233,7 +231,7 @@ struct Monitor : public FEMethod {
       // We have to integrate on curved face geometry, thus integration weight
       // have to adjusted.
       integrate_traction->getOpPtrVector().push_back(
-          new OpSetHOWeightsOnSubDim<SPACE_DIM>());
+          new OpSetHOWeightsOnSubDim<SPACE_DIM>()); // Ask Lukasz
       integrate_traction->getRuleHook = [](int, int, int approx_order) {
         return 2 * approx_order + geom_order - 1;
       };
@@ -246,10 +244,34 @@ struct Monitor : public FEMethod {
       return integrate_traction;
     };
 
+    auto get_integrate_area = [&]() {
+      auto integrate_area = boost::make_shared<BoundaryEle>(*m_field_ptr);
+      // auto common_data_ptr = boost::make_shared<ContactOps::CommonData>();
+      CHK_THROW_MESSAGE(
+          (AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
+              integrate_area->getOpPtrVector(), {HDIV}, "GEOMETRY")),
+          "Apply transform");
+      // We have to integrate on curved face geometry, thus integration weight
+      // have to adjusted.
+      integrate_area->getOpPtrVector().push_back(
+          new OpSetHOWeightsOnSubDim<SPACE_DIM>()); // Ask Lukasz
+      integrate_area->getRuleHook = [](int, int, int approx_order) {
+        return 2 * approx_order + geom_order - 1;
+      };
+
+      CHK_THROW_MESSAGE(
+          (opFactoryCalculateArea<SPACE_DIM, GAUSS, BoundaryEleOp>(
+              integrate_area->getOpPtrVector(), "SIGMA", "U", is_axisymmetric)),
+          "push operators to calculate area");
+
+      return integrate_area;
+    };
+
     postProcDomainFe = get_post_proc_domain_fe();
     if constexpr (SPACE_DIM == 2)
       postProcBdyFe = get_post_proc_bdy_fe();
     integrateTraction = get_integrate_traction();
+    integrateArea = get_integrate_area();
   }
 
   MoFEMErrorCode preProcess() { return 0; }
@@ -296,10 +318,19 @@ struct Monitor : public FEMethod {
       MoFEMFunctionReturn(0);
     };
 
-    auto calculate_traction = [&] {
+    auto calculate_force = [&] {
       MoFEMFunctionBegin;
       CHKERR VecZeroEntries(CommonData::totalTraction);
       CHKERR DMoFEMLoopFiniteElements(dM, "bFE", integrateTraction);
+      CHKERR VecAssemblyBegin(CommonData::totalTraction);
+      CHKERR VecAssemblyEnd(CommonData::totalTraction);
+      MoFEMFunctionReturn(0);
+    };
+
+    auto calculate_area = [&] {
+      MoFEMFunctionBegin;
+      CHKERR VecZeroEntries(CommonData::totalTraction);
+      CHKERR DMoFEMLoopFiniteElements(dM, "bFE", integrateArea);
       CHKERR VecAssemblyBegin(CommonData::totalTraction);
       CHKERR VecAssemblyEnd(CommonData::totalTraction);
       MoFEMFunctionReturn(0);
@@ -404,7 +435,7 @@ struct Monitor : public FEMethod {
       MoFEMFunctionReturn(0);
     };
 
-    auto print_traction = [&](const std::string msg) {
+    auto print_force_and_area = [&]() {
       MoFEMFunctionBegin;
       MoFEM::Interface *m_field_ptr;
       CHKERR DMoFEMGetInterfacePtr(dM, &m_field_ptr);
@@ -412,8 +443,11 @@ struct Monitor : public FEMethod {
         const double *t_ptr;
         CHKERR VecGetArrayRead(CommonData::totalTraction, &t_ptr);
         MOFEM_LOG_C("CONTACT", Sev::inform,
-                    "%s time %6.4e %6.16e %6.16e %6.16e", msg.c_str(), ts_t,
-                    t_ptr[0], t_ptr[1], t_ptr[2]);
+                    "Contact force: time %6.4e Fx %6.16e Fy %6.16e Fz %6.16e",
+                    ts_t, t_ptr[0], t_ptr[1], t_ptr[2]);
+        MOFEM_LOG_C("CONTACT", Sev::inform,
+                    "Contact area: time %6.16e Active %6.16e Total %6.16e",
+                    ts_t, t_ptr[3], t_ptr[4]);
         CHKERR VecRestoreArrayRead(CommonData::totalTraction, &t_ptr);
       }
       MoFEMFunctionReturn(0);
@@ -429,17 +463,19 @@ struct Monitor : public FEMethod {
 
     if (!(ts_step % se)) {
       MOFEM_LOG("CONTACT", Sev::inform)
-        << "Write file at time " << ts_t << " write step " << sTEP;
+          << "Write file at time " << ts_t << " write step " << sTEP;
       CHKERR post_proc();
     }
-    CHKERR calculate_traction();
+    CHKERR calculate_force();
+    CHKERR calculate_area();
     CHKERR calculate_reactions();
 
     CHKERR print_max_min(uXScatter, "Ux");
     CHKERR print_max_min(uYScatter, "Uy");
     if (SPACE_DIM == 3)
       CHKERR print_max_min(uZScatter, "Uz");
-    CHKERR print_traction("Contact force");
+
+    CHKERR print_force_and_area();
 
     ++sTEP;
 
@@ -469,6 +505,7 @@ private:
   boost::shared_ptr<PostProcEleBdy> postProcBdyFe;
 
   boost::shared_ptr<BoundaryEle> integrateTraction;
+  boost::shared_ptr<BoundaryEle> integrateArea;
 
   moab::Core mbVertexPostproc;
   moab::Interface &moabVertex;
