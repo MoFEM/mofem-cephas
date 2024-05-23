@@ -594,6 +594,7 @@ struct Monitor : public FEMethod {
                                   analytical_pressure_ptr, contact_range_ptr));
 
       CHKERR VecZeroEntries(normsVec);
+      post_proc_norm_fe->copyTs(*this); // set time as is in Monitor
       CHKERR DMoFEMLoopFiniteElements(dM, "bFE", post_proc_norm_fe);
       CHKERR VecAssemblyBegin(normsVec);
       CHKERR VecAssemblyEnd(normsVec);
