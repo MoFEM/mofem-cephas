@@ -840,7 +840,9 @@ MoFEMErrorCode Contact::checkResults() {
     CHKERR VecGetArrayRead(ContactOps::CommonData::totalTraction, &t_ptr);
     double hertz_force;
     double fem_force;
+    double norm = 1e-5;
     double tol = 1e-3;
+    double tol_norm = 7.5; // change when analytical functions are updated
     switch (atom_test) {
     case 1: // plane stress
       hertz_force = 3.927;
@@ -849,6 +851,7 @@ MoFEMErrorCode Contact::checkResults() {
     case 2: // plane strain
       hertz_force = 4.675;
       fem_force = t_ptr[1];
+      norm = monitorPtr->getErrorNorm(1);
       break;
     case 3: // 3D
       hertz_force = 3.968;
@@ -858,6 +861,7 @@ MoFEMErrorCode Contact::checkResults() {
     case 5: // axisymmetric
       hertz_force = 15.873;
       fem_force = t_ptr[1];
+      norm = monitorPtr->getErrorNorm(1);
       break;
     case 6: // wavy 2d
       hertz_force = 0.374;
@@ -875,6 +879,11 @@ MoFEMErrorCode Contact::checkResults() {
       SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                "atom test %d diverged! %3.4e != %3.4e", atom_test, fem_force,
                hertz_force);
+    }
+    if (norm > tol_norm) {
+      SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+               "atom test %d diverged! %3.4e > %3.4e", atom_test, norm,
+               tol_norm);
     }
     CHKERR VecRestoreArrayRead(ContactOps::CommonData::totalTraction, &t_ptr);
   }
