@@ -378,7 +378,7 @@ Buckethead you will find
 Load cluster modules:
 ~~~~~
 module load gcc/9.3.0
-module load mpi/openmpi/3.1.6/gcc-9.3.0
+module load mpi/openmpi/4.1.1/gcc-9.3.0
 module load gridengine
 ~~~~~
 
@@ -396,10 +396,9 @@ and initialise Spack's environment variables (should also be placed into `.bash_
 
 #### Setup compiler and external packages
 
-First, find available compilers and external packages:
+First, find available compilers:
 ~~~~~
 spack compiler find
-spack external find
 ~~~~~
 
 Edit file `$HOME/.spack/linux/compilers.yaml` and ensure it includes the following:
@@ -432,28 +431,33 @@ extra_rpaths:
 ~~~~~
 which enables linking std lib c++ libraries.
 
-Finally, edit the file `$HOME/.spack/packages.yaml` and ensure that it has information only about the `openmpi` library. **Information about all other packages should be deleted**, i.e. the file should look as follows:
+Second, find the locally compiled `openmpi` library:
+~~~~~
+spack external find openmpi
+~~~~~
+
+Open the file `$HOME/.spack/packages.yaml` and ensure that it has information only about the `openmpi` library, i.e. the file should look as follows:
 ~~~~~
 packages:
   openmpi:
     externals:
-    - spec: openmpi@3.1.6%gcc@9.3.0~cuda~cxx~cxx_exceptions~java~memchecker+pmi+pmix~sqlite3~static~thread_multiple~wrapper-rpath
+    - spec: openmpi@4.1.1%gcc@=9.3.0~cuda~cxx~cxx_exceptions~java~memchecker+pmi~static~wrapper-rpath
         schedulers=slurm
-      prefix: /software/mpi/openmpi/3.1.6/gcc-9.3.0
+      prefix: /software/mpi/openmpi/4.1.1/gcc-9.3.0
 ~~~~~      
 
 #### Installing dependencies 
 
 At this point, we can follow the standard installation procedure (with a few adjustments). To install dependencies run the following:
 ~~~~~
-spack install -j4 --only dependencies mofem-cephas%gcc@9.3.0 ^petsc+X ^openmpi@3.1.6%gcc@9.3.0 ^slepc~arpack
+spack install -j8 --only dependencies mofem-cephas%gcc@9.3.0 ^petsc+X ^openmpi@4.1.1%gcc@9.3.0 ^slepc~arpack ^boost+python+numpy
 ~~~~~
 
 Once completed, check the installed packages by running 
 ~~~~~
 spack find -p
 ~~~~~
-Note that the path for the `openmpi` library should differ from all other packages: `/software/mpi/openmpi/3.1.6/gcc-9.3.0`
+Note that the path for the `openmpi` library should differ from all other packages: `/software/mpi/openmpi/4.1.1/gcc-9.3.0`
 
 #### User installation
 
@@ -488,11 +492,11 @@ git clone \
 ~~~~~
 Kick-start installation of the core library:
 ~~~~~
-spack dev-build -j4 \
+spack dev-build -j8 \
   --source-path $HOME/mofem_install/mofem-cephas \
   --keep-prefix \
   --test root \
-  mofem-cephas@develop~copy_user_modules ^petsc+X ^openmpi@3.1.6%gcc@9.3.0 ^slepc~arpack
+  mofem-cephas@develop~copy_user_modules build_type=RelWithDebInfo ^petsc+X ^openmpi@4.1.1%gcc@9.3.0 ^slepc~arpack ^boost+python+numpy
 ~~~~~
 
 If installation is successful, by executing
@@ -513,11 +517,10 @@ cd $HOME/mofem_install/mofem-cephas/mofem/users_modules
 and install users modules specifying the dependency on the previously installed core library using the:
 ~~~~~
 export hash=$(spack find -v mofem-cephas@develop | grep mofem-cephas@develop)
-spack dev-build -j4 \
-  --test root  \
+spack dev-build -j8 \
   --source-path $HOME/mofem_install/mofem-cephas/mofem/users_modules \
   mofem-users-modules@develop build_type=RelWithDebInfo \
-  ^$hash ^petsc+X ^openmpi@3.1.6%gcc@9.3.0 ^slepc~arpack
+  ^$hash ^petsc+X ^openmpi@4.1.1%gcc@9.3.0 ^slepc~arpack ^boost+python+numpy
 ~~~~~
 
 Once installation is successfully, you will find a new directory, e.g. 
@@ -566,7 +569,7 @@ cat $PE_HOSTFILE
 
 # Load compiler
 module load gcc/9.3.0
-module load mpi/openmpi/3.1.6/gcc-9.3.0
+module load mpi/openmpi/4.1.1/gcc-9.3.0
 
 # List of commands which do the actual work
 cd $HOME/um_view/elasticity
