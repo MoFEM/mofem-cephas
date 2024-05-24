@@ -223,7 +223,6 @@ struct Monitor : public FEMethod {
 
     auto get_integrate_traction = [&]() {
       auto integrate_traction = boost::make_shared<BoundaryEle>(*m_field_ptr);
-      // auto common_data_ptr = boost::make_shared<ContactOps::CommonData>();
       CHK_THROW_MESSAGE(
           (AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
               integrate_traction->getOpPtrVector(), {HDIV}, "GEOMETRY")),
@@ -246,7 +245,6 @@ struct Monitor : public FEMethod {
 
     auto get_integrate_area = [&]() {
       auto integrate_area = boost::make_shared<BoundaryEle>(*m_field_ptr);
-      // auto common_data_ptr = boost::make_shared<ContactOps::CommonData>();
       CHK_THROW_MESSAGE(
           (AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
               integrate_area->getOpPtrVector(), {HDIV}, "GEOMETRY")),
@@ -258,10 +256,29 @@ struct Monitor : public FEMethod {
       integrate_area->getRuleHook = [](int, int, int approx_order) {
         return 2 * approx_order + geom_order - 1;
       };
+      Range contact_range;
+      for (auto m :
+           m_field_ptr->getInterface<MeshsetsManager>()->getCubitMeshsetPtr(
+               std::regex((boost::format("%s(.*)") % "CONTACT").str()))) {
+        auto meshset = m->getMeshset();
+        Range contact_meshset_range;
+        CHKERR m_field_ptr->get_moab().get_entities_by_dimension(
+            meshset, SPACE_DIM - 1, contact_meshset_range, true);
+
+        CHKERR m_field_ptr->getInterface<CommInterface>()->synchroniseEntities(
+            contact_meshset_range);
+        contact_range.merge(contact_meshset_range);
+      }
+
+      auto contact_range_ptr = boost::make_shared<Range>(contact_range);
+      std::cout << "contact_range.size() " << contact_range.size() << endl;
+      std::cout << "contact_range_ptr->size() " << contact_range_ptr->size()
+                << endl;
 
       CHK_THROW_MESSAGE(
           (opFactoryCalculateArea<SPACE_DIM, GAUSS, BoundaryEleOp>(
-              integrate_area->getOpPtrVector(), "SIGMA", "U", is_axisymmetric)),
+              integrate_area->getOpPtrVector(), "SIGMA", "U", is_axisymmetric,
+              contact_range_ptr)),
           "push operators to calculate area");
 
       return integrate_area;
@@ -325,6 +342,7 @@ struct Monitor : public FEMethod {
     auto calculate_force = [&] {
       MoFEMFunctionBegin;
       CHKERR VecZeroEntries(CommonData::totalTraction);
+      // integrateTraction->copyTs(*this);
       CHKERR DMoFEMLoopFiniteElements(dM, "bFE", integrateTraction);
       CHKERR VecAssemblyBegin(CommonData::totalTraction);
       CHKERR VecAssemblyEnd(CommonData::totalTraction);
@@ -333,7 +351,8 @@ struct Monitor : public FEMethod {
 
     auto calculate_area = [&] {
       MoFEMFunctionBegin;
-      CHKERR VecZeroEntries(CommonData::totalTraction);
+      // CHKERR VecZeroEntries(CommonData::totalTraction);
+      integrateArea->copyTs(*this);
       CHKERR DMoFEMLoopFiniteElements(dM, "bFE", integrateArea);
       CHKERR VecAssemblyBegin(CommonData::totalTraction);
       CHKERR VecAssemblyEnd(CommonData::totalTraction);
@@ -535,8 +554,6 @@ struct Monitor : public FEMethod {
             contact_meshset_range);
         contact_range.merge(contact_meshset_range);
       }
-      // std::cout << "contact_range.size() " << contact_range.size() <<
-      // std::endl;
 
       CHK_THROW_MESSAGE(
           (AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
@@ -626,6 +643,8 @@ struct Monitor : public FEMethod {
       CHKERR post_proc();
     }
     CHKERR calculate_force();
+    CHKERR calculate_area();
+
     CHKERR calculate_reactions();
     if (atom_test == 1 && sTEP > 0)
       CHKERR calculate_error(analyticalHertzPressurePlaneStress);
@@ -636,16 +655,11 @@ struct Monitor : public FEMethod {
     if (atom_test == 6 && sTEP > 0)
       CHKERR calculate_error(analyticalWavy2DPressure);
 
-    if (sTEP > 0)
-      CHKERR calculate_area();
-
     CHKERR print_max_min(uXScatter, "Ux");
     CHKERR print_max_min(uYScatter, "Uy");
     if (SPACE_DIM == 3)
       CHKERR print_max_min(uZScatter, "Uz");
-
     CHKERR print_force_and_area();
-
     ++sTEP;
 
     MoFEMFunctionReturn(0);
