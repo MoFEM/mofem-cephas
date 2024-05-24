@@ -9,7 +9,14 @@
 #include <MoFEM.hpp>
 using namespace MoFEM;
 
-static char help[] = "...\n\n";
+static char help[] = "-file_name <filename> : mesh file name\n"
+                     "-output_file <filename> : output mesh file name\n"
+                     "-nparts <int> : number of parts\n"
+                     "-dim <int> : entities dim\n"
+                     "-adj_dim <int> : adjacency dim\n"
+                     "-my_create_lower_dim_ents <bool> : "
+                     "if true create lower dimension entireties\n"
+                     "-block_tags <bool> : only  block and meshsests tags \n\n";
 
 int main(int argc, char *argv[]) {
 
