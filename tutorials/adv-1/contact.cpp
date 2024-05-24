@@ -178,6 +178,8 @@ MoFEMErrorCode Contact::setupProblem() {
                             PETSC_NULL);
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-sigma_order", &sigma_order,
                             PETSC_NULL);
+  if (sigma_order == 1)
+    sigma_order = std::max(order, contact_order) - 1;
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-geom_order", &geom_order,
                             PETSC_NULL);
 
