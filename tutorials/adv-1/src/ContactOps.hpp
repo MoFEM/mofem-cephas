@@ -656,6 +656,7 @@ MoFEMErrorCode
 OpAssembleTotalContactAreaImpl<DIM, GAUSS, BoundaryEleOp>::doWork(
     int side, EntityType type, EntData &data) {
   MoFEMFunctionBegin;
+  const auto fe_ent = getFEEntityHandle();
   // if (contactRange) {
   FTensor::Index<'i', DIM> i;
   FTensor::Tensor1<double, 2> t_sum_a{0., 0.};
@@ -1354,24 +1355,24 @@ MoFEMErrorCode opFactoryCalculateArea(
   using C = ContactIntegrators<BoundaryEleOp>;
 
   auto common_data_ptr = boost::make_shared<ContactOps::CommonData>();
+  if (contact_range_ptr) {
+    pip.push_back(new OpCalculateVectorFieldValues<DIM>(
+        u, common_data_ptr->contactDispPtr()));
+    pip.push_back(new OpCalculateHVecTensorTrace<DIM, BoundaryEleOp>(
+        sigma, common_data_ptr->contactTractionPtr()));
+    pip.push_back(new typename C::template OpAssembleTotalContactArea<DIM, I>(
+        common_data_ptr, is_axisymmetric, contact_range_ptr));
 
-  pip.push_back(new OpCalculateVectorFieldValues<DIM>(
-      u, common_data_ptr->contactDispPtr()));
-  pip.push_back(new OpCalculateHVecTensorTrace<DIM, BoundaryEleOp>(
-      sigma, common_data_ptr->contactTractionPtr()));
-  pip.push_back(new typename C::template OpAssembleTotalContactArea<DIM, I>(
-      common_data_ptr, is_axisymmetric, contact_range_ptr));
-
-  // if (contact_range_ptr) {
-  //   std::cout << "Contact range contains the following elements:" <<
-  //   std::endl; for (auto it = contact_range_ptr->begin(); it !=
-  //   contact_range_ptr->end();
-  //        ++it) {
-  //     std::cout << *it << std::endl;
-  //   }
-  // } else {
-  //   std::cout << "Contact range is null." << std::endl;
-  // }
+    // if (contact_range_ptr) {
+    //   std::cout << "Contact range contains the following elements:" <<
+    //   std::endl; for (auto it = contact_range_ptr->begin(); it !=
+    //   contact_range_ptr->end();
+    //        ++it) {
+    //     std::cout << *it << std::endl;
+    //   }
+  } else {
+    std::cout << "Contact range is null." << std::endl;
+  }
   MoFEMFunctionReturn(0);
 }
 
