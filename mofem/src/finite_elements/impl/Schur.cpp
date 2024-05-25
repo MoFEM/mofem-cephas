@@ -281,10 +281,12 @@ struct BlockStructure : public DiagBlockIndex {
 
 struct DiagBlockInvStruture : public BlockStructure {
 
-  using SchurSolverView =
+  // first value is value of off diagonal block index data, second is shift on
+  // the diagonal
+  using A00SolverView =
       std::pair<std::vector<const Indexes *>, std::vector<int>>;
 
-  SchurSolverView indexView;
+  A00SolverView indexView;
 };
 
 PetscLogEvent SchurEvents::MOFEM_EVENT_schurMatSetValues;
@@ -1592,6 +1594,7 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
     auto lo = index_view->second[s1];
     auto hi = index_view->second[s1 + 1];
 
+    // first index is off diag
     auto diag_index_ptr = index_view->first[lo];
     ++lo;
 
@@ -2149,9 +2152,11 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
     ++idx;
   }
 
+  // set data for a00 solve (inverse blocks)
   auto set_up_a00_data = [&](auto inv_block_data) {
     MoFEMFunctionBegin;
 
+    // get uids on the diagonal of a00 block
     auto get_a00_uids = [&]() {
       auto get_field_bit = [&](auto field_name) {
         return m_field_ptr->get_field_bit_number(field_name);
@@ -2182,6 +2187,7 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
       return a00_uids;
     };
 
+    // get global indexes for a00 block
     auto get_glob_idex_pairs = [&](auto &&uid_pairs) {
       std::vector<std::pair<int, int>> glob_idex_pairs;
       glob_idex_pairs.reserve(uid_pairs.size());
@@ -2199,6 +2205,7 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
           glob_idex_pairs.emplace_back(lo_idx, std::distance(lo_it, hi_it));
         }
       }
+      // pair of local index and number of dofs
       return glob_idex_pairs;
     };
 
@@ -2206,6 +2213,7 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
         boost::dynamic_pointer_cast<DiagBlockInvStruture>(inv_block_data)
             ->indexView;
 
+    // set struture to keep indices to mat solve of a00
     index_view.first.resize(0);
     index_view.second.resize(0);
     index_view.first.reserve(inv_block_data->blockIndex.size());
@@ -2236,6 +2244,7 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
     for (auto s1 = 0; s1 != glob_idx_pairs.size(); ++s1) {
 
       // iterate matrix indexes
+      // index, and numer of dofs 
       auto [lo_idx, nb] = glob_idx_pairs[s1];
       auto it = block_index_view.lower_bound(lo_idx);
       auto hi = block_index_view.end();
