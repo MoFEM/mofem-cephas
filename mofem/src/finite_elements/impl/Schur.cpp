@@ -2164,7 +2164,7 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
 
       std::vector<std::pair<UId, UId>> a00_uids;
       a00_uids.reserve(fields_names.size());
-      for (auto ss = 0; ss != fields_names.size(); ++ss) {
+      for (int ss = fields_names.size() - 1; ss >= 0; --ss) {
         auto field_bit = get_field_bit(fields_names[ss]);
         auto row_ents = field_ents[ss];
         if (row_ents) {
