@@ -271,10 +271,6 @@ struct Monitor : public FEMethod {
       }
 
       auto contact_range_ptr = boost::make_shared<Range>(contact_range);
-      std::cout << "contact_range.size() " << contact_range.size() << endl;
-      std::cout << "contact_range_ptr->size() " << contact_range_ptr->size()
-                << endl;
-
       CHK_THROW_MESSAGE(
           (opFactoryCalculateArea<SPACE_DIM, GAUSS, BoundaryEleOp>(
               integrate_area->getOpPtrVector(), "SIGMA", "U", is_axisymmetric,
@@ -342,7 +338,6 @@ struct Monitor : public FEMethod {
     auto calculate_force = [&] {
       MoFEMFunctionBegin;
       CHKERR VecZeroEntries(CommonData::totalTraction);
-      // integrateTraction->copyTs(*this);
       CHKERR DMoFEMLoopFiniteElements(dM, "bFE", integrateTraction);
       CHKERR VecAssemblyBegin(CommonData::totalTraction);
       CHKERR VecAssemblyEnd(CommonData::totalTraction);
@@ -351,7 +346,6 @@ struct Monitor : public FEMethod {
 
     auto calculate_area = [&] {
       MoFEMFunctionBegin;
-      // CHKERR VecZeroEntries(CommonData::totalTraction);
       integrateArea->copyTs(*this);
       CHKERR DMoFEMLoopFiniteElements(dM, "bFE", integrateArea);
       CHKERR VecAssemblyBegin(CommonData::totalTraction);
@@ -465,11 +459,12 @@ struct Monitor : public FEMethod {
       if (!m_field_ptr->get_comm_rank()) {
         const double *t_ptr;
         CHKERR VecGetArrayRead(CommonData::totalTraction, &t_ptr);
+        MOFEM_LOG_C(
+            "CONTACT", Sev::inform,
+            "Contact force: time %6.4e Fx: %6.12e Fy: %6.12e Fz: %6.12e", ts_t,
+            t_ptr[0], t_ptr[1], t_ptr[2]);
         MOFEM_LOG_C("CONTACT", Sev::inform,
-                    "Contact force: time %6.4e Fx %6.16e Fy %6.16e Fz %6.16e",
-                    ts_t, t_ptr[0], t_ptr[1], t_ptr[2]);
-        MOFEM_LOG_C("CONTACT", Sev::inform,
-                    "Contact area: time %6.16e Active %6.16e Total %6.16e",
+                    "Contact area: time %6.4e Active: %6.5e Potential: %6.5e",
                     ts_t, t_ptr[3], t_ptr[4]);
         CHKERR VecRestoreArrayRead(CommonData::totalTraction, &t_ptr);
       }
@@ -577,9 +572,6 @@ struct Monitor : public FEMethod {
       post_proc_norm_fe->getOpPtrVector().push_back(
           new typename C::template OpEvaluateSDF<SPACE_DIM, GAUSS>(
               common_data_ptr));
-
-      // post_proc_norm_fe->getOpPtrVector().push_back(
-      //     new OpScale(common_data_ptr->contactTractionPtr(), scale));
 
       auto analytical_traction_ptr = boost::make_shared<MatrixDouble>();
       auto analytical_pressure_ptr = boost::make_shared<VectorDouble>();

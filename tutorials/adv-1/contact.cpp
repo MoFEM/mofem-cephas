@@ -220,6 +220,9 @@ MoFEMErrorCode Contact::setupProblem() {
   CHKERR simple->setFieldOrder("U", order);
   CHKERR simple->setFieldOrder("GEOMETRY", geom_order);
 
+  CHKERR simple->addDataField("SP", H1, base, SPACE_DIM);
+  CHKERR simple->setFieldOrder("SP", order);
+
   auto get_skin = [&]() {
     Range body_ents;
     CHKERR mField.get_moab().get_entities_by_dimension(0, SPACE_DIM, body_ents);

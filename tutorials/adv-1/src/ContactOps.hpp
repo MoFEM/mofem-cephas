@@ -656,57 +656,57 @@ MoFEMErrorCode
 OpAssembleTotalContactAreaImpl<DIM, GAUSS, BoundaryEleOp>::doWork(
     int side, EntityType type, EntData &data) {
   MoFEMFunctionBegin;
-  const auto fe_ent = getFEEntityHandle();
-  // if (contactRange) {
-  FTensor::Index<'i', DIM> i;
-  FTensor::Tensor1<double, 2> t_sum_a{0., 0.};
+  const auto fe_ent = BoundaryEleOp::getFEEntityHandle();
+  if (contactRange->find(fe_ent) != contactRange->end()) {
+    FTensor::Index<'i', DIM> i;
+    FTensor::Tensor1<double, 2> t_sum_a{0., 0.};
 
-  auto t_w = BoundaryEleOp::getFTensor0IntegrationWeight();
-  auto t_traction = getFTensor1FromMat<DIM>(commonDataPtr->contactTraction);
-  auto t_coords = BoundaryEleOp::getFTensor1CoordsAtGaussPts();
+    auto t_w = BoundaryEleOp::getFTensor0IntegrationWeight();
+    auto t_traction = getFTensor1FromMat<DIM>(commonDataPtr->contactTraction);
+    auto t_coords = BoundaryEleOp::getFTensor1CoordsAtGaussPts();
 
-  // copy code to get ftensors
-  const auto nb_gauss_pts = BoundaryEleOp::getGaussPts().size2();
-  auto m_spatial_coords = get_spatial_coords(
-      BoundaryEleOp::getFTensor1CoordsAtGaussPts(),
-      getFTensor1FromMat<DIM>(commonDataPtr->contactDisp), nb_gauss_pts);
-  auto m_normals_at_pts = get_normalize_normals(
-      BoundaryEleOp::getFTensor1NormalsAtGaussPts(), nb_gauss_pts);
+    // copy code to get ftensors
+    const auto nb_gauss_pts = BoundaryEleOp::getGaussPts().size2();
+    auto m_spatial_coords = get_spatial_coords(
+        BoundaryEleOp::getFTensor1CoordsAtGaussPts(),
+        getFTensor1FromMat<DIM>(commonDataPtr->contactDisp), nb_gauss_pts);
+    auto m_normals_at_pts = get_normalize_normals(
+        BoundaryEleOp::getFTensor1NormalsAtGaussPts(), nb_gauss_pts);
 
-  auto t_normal = getFTensor1FromMat<3>(m_normals_at_pts);
-  auto ts_time = BoundaryEleOp::getTStime(); // beleop
-  auto ts_time_step = BoundaryEleOp::getTStimeStep();
-  int block_id = 0;
-  auto v_sdf =
-      surfaceDistanceFunction(ts_time_step, ts_time, nb_gauss_pts,
-                              m_spatial_coords, m_normals_at_pts, block_id);
-  auto m_grad_sdf =
-      gradSurfaceDistanceFunction(ts_time_step, ts_time, nb_gauss_pts,
-                                  m_spatial_coords, m_normals_at_pts, block_id);
-  auto t_sdf = getFTensor0FromVec(v_sdf);
-  auto t_grad_sdf = getFTensor1FromMat<3>(m_grad_sdf);
-  for (auto gg = 0; gg != nb_gauss_pts; ++gg) {
-    double jacobian = 1.;
-    if (isAxisymmetric) {
-      jacobian = 2. * M_PI * t_coords(0); // Axisymmetric Jacobian
+    auto t_normal = getFTensor1FromMat<3>(m_normals_at_pts);
+    auto ts_time = BoundaryEleOp::getTStime(); // beleop
+    auto ts_time_step = BoundaryEleOp::getTStimeStep();
+    int block_id = 0;
+    auto v_sdf =
+        surfaceDistanceFunction(ts_time_step, ts_time, nb_gauss_pts,
+                                m_spatial_coords, m_normals_at_pts, block_id);
+    auto m_grad_sdf = gradSurfaceDistanceFunction(
+        ts_time_step, ts_time, nb_gauss_pts, m_spatial_coords, m_normals_at_pts,
+        block_id);
+    auto t_sdf = getFTensor0FromVec(v_sdf);
+    auto t_grad_sdf = getFTensor1FromMat<3>(m_grad_sdf);
+    for (auto gg = 0; gg != nb_gauss_pts; ++gg) {
+      double jacobian = 1.;
+      if (isAxisymmetric) {
+        jacobian = 2. * M_PI * t_coords(0); // Axisymmetric Jacobian
+      }
+      auto tn = -t_traction(i) * t_grad_sdf(i);
+      auto c = constrain(t_sdf, tn);
+      const double alpha = t_w * jacobian * BoundaryEleOp::getMeasure();
+      if (c > 1e-12) {
+        t_sum_a(0) += alpha; // real area
+      }
+      t_sum_a(1) += alpha; // Potential area
+      ++t_w;
+      ++t_traction;
+      ++t_coords;
+      ++t_sdf;
+      ++t_grad_sdf;
     }
-    auto tn = -t_traction(i) * t_grad_sdf(i);
-    auto c = constrain(t_sdf, tn);
-    const double alpha = t_w * jacobian * BoundaryEleOp::getMeasure();
-    if (c > 1e-12) {
-      t_sum_a(0) += alpha;
-    }
-    t_sum_a(1) += alpha; // total area
-    ++t_w;
-    ++t_traction;
-    ++t_coords;
-    ++t_sdf;
-    ++t_grad_sdf;
+    constexpr int ind[] = {3, 4};
+    CHKERR VecSetValues(commonDataPtr->totalTraction, 2, ind, &t_sum_a(0),
+                        ADD_VALUES);
   }
-  constexpr int ind[] = {3, 4};
-  CHKERR VecSetValues(commonDataPtr->totalTraction, 2, ind, &t_sum_a(0),
-                      ADD_VALUES);
-  // }
   MoFEMFunctionReturn(0);
 }
 

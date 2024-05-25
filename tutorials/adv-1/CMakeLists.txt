@@ -236,7 +236,7 @@ if(IS_MFRONT_MOD)
       -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/wavy_2d_4p.h5m
       -pc_type lu
       -ts_type beuler
-      -ts_max_time 1 -ts_dt 1
+      -ts_max_time 1 -ts_dt 0.05
       -sdf_file ./sdf_files/sdf_plane_2d.py
       -use_mfront 1
       -is_axisymmetric 0
