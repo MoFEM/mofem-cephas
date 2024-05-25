@@ -283,8 +283,10 @@ struct DiagBlockInvStruture : public BlockStructure {
 
   // first value is value of off diagonal block index data, second is shift on
   // the diagonal
-  using A00SolverView =
-      std::pair<std::vector<const Indexes *>, std::vector<int>>;
+  struct A00SolverView {
+    std::vector<const Indexes *> lowView;
+    std::vector<int> diagRange;
+  };
 
   A00SolverView indexView;
 };
@@ -1590,12 +1592,13 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
 
   std::vector<double> f;
 
-  for (auto s1 = 0; s1 != index_view->second.size() - 1; ++s1) {
-    auto lo = index_view->second[s1];
-    auto hi = index_view->second[s1 + 1];
+  for (auto s1 = 0; s1 != index_view->diagRange.size() - 1; ++s1) {
+    auto lo = index_view->diagRange[s1];
+    auto hi = index_view->diagRange[s1 + 1];
 
     // first index is off diag
-    auto diag_index_ptr = index_view->first[lo];
+    auto diag_index_ptr =
+        index_view->lowView[lo]; // First index is inverted diagonal
     ++lo;
 
     auto row = diag_index_ptr->getLocRow();
@@ -1608,7 +1611,7 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
     std::copy(&y_array[col], &y_array[col + nb_cols], f.begin());
 
     for (; lo != hi; ++lo) {
-      auto off_index_ptr = index_view->first[lo];
+      auto off_index_ptr = index_view->lowView[lo];
       auto off_col = off_index_ptr->getLocCol();
       auto off_nb_cols = off_index_ptr->getNbCols();
       auto off_shift = off_index_ptr->getMatShift();
@@ -2214,11 +2217,11 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
             ->indexView;
 
     // set struture to keep indices to mat solve of a00
-    index_view.first.resize(0);
-    index_view.second.resize(0);
-    index_view.first.reserve(inv_block_data->blockIndex.size());
-    index_view.second.reserve(inv_block_data->blockIndex.size());
-    index_view.second.push_back(0);
+    index_view.lowView.resize(0);
+    index_view.lowView.reserve(inv_block_data->blockIndex.size());
+    index_view.diagRange.resize(0);
+    index_view.diagRange.reserve(inv_block_data->blockIndex.size() + 1);
+    index_view.diagRange.push_back(0);
 
     // this enable search by varying ranges
     using BlockIndexView = multi_index_container<
@@ -2275,16 +2278,16 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
               auto [col_lo_idx, col_nb] = glob_idx_pairs[s2];
               if ((*it)->getCol() >= col_lo_idx &&
                   (*it)->getCol() + (*it)->getNbCols() <= col_lo_idx + col_nb) {
-                index_view.first.push_back(*it);
+                index_view.lowView.push_back(*it);
               }
             }
             ++it;
           }
         };
 
-        index_view.first.push_back(get_diag_index(it));
+        index_view.lowView.push_back(get_diag_index(it));
         push_off_diag(it, s1);
-        index_view.second.push_back(index_view.first.size());
+        index_view.diagRange.push_back(index_view.lowView.size());
 
         while (it != hi && (*it)->getRow() == row) {
           ++it;
@@ -2294,9 +2297,9 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
 
     auto get_vec = [&]() {
       std::vector<int> vec_r, vec_c;
-      vec_r.reserve(index_view.first.size());
-      vec_c.reserve(index_view.first.size());
-      for (auto &i : index_view.first) {
+      vec_r.reserve(index_view.lowView.size());
+      vec_c.reserve(index_view.lowView.size());
+      for (auto &i : index_view.lowView) {
         vec_r.push_back(i->getRow());
         vec_c.push_back(i->getCol());
       }
@@ -2310,11 +2313,10 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
                                 &*vec_c_block.begin());
 
     int inv_mem_size = 0;
-    for (auto s1 = 0; s1 != index_view.second.size() - 1; ++s1) {
-      auto lo = index_view.second[s1];
-      // auto hi = index_view.second[s1 + 1];
+    for (auto s1 = 0; s1 != index_view.diagRange.size() - 1; ++s1) {
+      auto lo = index_view.diagRange[s1];
 
-      auto diag_index_ptr = index_view.first[lo];
+      auto diag_index_ptr = index_view.lowView[lo];
       auto row = vec_r_block[lo];
       auto col = vec_c_block[lo];
       auto nb_rows = diag_index_ptr->getNbRows();
@@ -2330,9 +2332,6 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
       it->getInvShift() = inv_mem_size;
       diag_index_ptr->getInvShift() = it->getInvShift();
       inv_mem_size += nb_rows * nb_cols;
-
-      // for (; lo != hi; ++lo) {
-      // }
     }
 
     auto inv_data_ptr =
