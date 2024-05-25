@@ -285,7 +285,7 @@ struct DiagBlockInvStruture : public BlockStructure {
   // the diagonal
   struct A00SolverView {
     std::vector<const Indexes *> lowView;
-    std::vector<int> diagRange;
+    std::vector<int> diagLoRange;
   };
 
   A00SolverView indexView;
@@ -1592,9 +1592,9 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
 
   std::vector<double> f;
 
-  for (auto s1 = 0; s1 != index_view->diagRange.size() - 1; ++s1) {
-    auto lo = index_view->diagRange[s1];
-    auto hi = index_view->diagRange[s1 + 1];
+  for (auto s1 = 0; s1 != index_view->diagLoRange.size() - 1; ++s1) {
+    auto lo = index_view->diagLoRange[s1];
+    auto hi = index_view->diagLoRange[s1 + 1];
 
     // first index is off diag
     auto diag_index_ptr =
@@ -2219,9 +2219,9 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
     // set struture to keep indices to mat solve of a00
     index_view.lowView.resize(0);
     index_view.lowView.reserve(inv_block_data->blockIndex.size());
-    index_view.diagRange.resize(0);
-    index_view.diagRange.reserve(inv_block_data->blockIndex.size() + 1);
-    index_view.diagRange.push_back(0);
+    index_view.diagLoRange.resize(0);
+    index_view.diagLoRange.reserve(inv_block_data->blockIndex.size() + 1);
+    index_view.diagLoRange.push_back(0);
 
     // this enable search by varying ranges
     using BlockIndexView = multi_index_container<
@@ -2287,7 +2287,7 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
 
         index_view.lowView.push_back(get_diag_index(it));
         push_off_diag(it, s1);
-        index_view.diagRange.push_back(index_view.lowView.size());
+        index_view.diagLoRange.push_back(index_view.lowView.size());
 
         while (it != hi && (*it)->getRow() == row) {
           ++it;
@@ -2313,8 +2313,8 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
                                 &*vec_c_block.begin());
 
     int inv_mem_size = 0;
-    for (auto s1 = 0; s1 != index_view.diagRange.size() - 1; ++s1) {
-      auto lo = index_view.diagRange[s1];
+    for (auto s1 = 0; s1 != index_view.diagLoRange.size() - 1; ++s1) {
+      auto lo = index_view.diagLoRange[s1];
 
       auto diag_index_ptr = index_view.lowView[lo];
       auto row = vec_r_block[lo];
