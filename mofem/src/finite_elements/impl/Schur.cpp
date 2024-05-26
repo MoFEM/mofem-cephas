@@ -2133,7 +2133,6 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
   data_ptrs[3]->ghostY = block_vec_y;
 
   int idx = 0;
-  int inv_mem_size = 0;
   for (auto &d : block_mat_data_ptr->blockIndex.get<1>()) {
 
     auto insert = [&](auto &m, auto &dof_r, auto &dof_c, auto &d) {
@@ -2204,11 +2203,6 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
           block_dofs_row->get<PetscGlobalIdx_mi_tag>().find(vec_r_block[idx]);
       auto block_dof_c =
           block_dofs_col->get<PetscGlobalIdx_mi_tag>().find(vec_c_block[idx]);
-      if (d.getRow() == d.getCol() && d.getNbRows() == d.getNbCols()) {
-        // Only store inverse of diagonal blocks
-        d.getInvShift() = inv_mem_size;
-        inv_mem_size += d.getNbCols() * d.getNbCols();
-      }
       insert(data_ptrs[3]->blockIndex, *block_dof_r, *block_dof_c, d);
     }
 
@@ -2408,72 +2402,62 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
 
     );
 
-    auto get_vec = [&](auto &view) {
-      std::vector<int> vec_r, vec_c;
-      vec_r.reserve(view.size());
-      vec_c.reserve(view.size());
-      for (auto &i : view) {
-        vec_r.push_back(i->getRow());
-        vec_c.push_back(i->getCol());
+    auto set_inv_mat = [&](auto &view, auto &range, bool set_inv_shift) {
+      MoFEMFunctionBegin;
+      auto get_vec = [&](auto &view) {
+        std::vector<int> vec_r, vec_c;
+        vec_r.reserve(view.size());
+        vec_c.reserve(view.size());
+        for (auto &i : view) {
+          vec_r.push_back(i->getRow());
+          vec_c.push_back(i->getCol());
+        }
+        return std::make_pair(vec_r, vec_c);
+      };
+
+      auto [vec_row, vec_col] = get_vec(view);
+      CHKERR AOPetscToApplication(ao_block_row, vec_row.size(),
+                                  &*vec_row.begin());
+      CHKERR AOPetscToApplication(ao_block_col, vec_col.size(),
+                                  &*vec_col.begin());
+
+      int inv_mem_size = 0;
+      for (auto s1 = 0; s1 != range.size() - 1; ++s1) {
+        auto lo = range[s1];
+        auto diag_index_ptr = view[lo];
+        auto row = vec_row[lo];
+        auto col = vec_col[lo];
+        auto nb_rows = diag_index_ptr->getNbRows();
+        auto nb_cols = diag_index_ptr->getNbCols();
+        ++lo;
+        auto it = block_mat_data_ptr->blockIndex.get<1>().find(
+            boost::make_tuple(row, col, nb_rows, nb_cols));
+        if (it == block_mat_data_ptr->blockIndex.get<1>().end()) {
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Block not found");
+        }
+        if (set_inv_shift) {
+          it->getInvShift() = inv_mem_size;
+          inv_mem_size += nb_rows * nb_cols;
+        }
+        diag_index_ptr->getInvShift() = it->getInvShift();
       }
-      return std::make_pair(vec_r, vec_c);
+
+      if(set_inv_shift) {
+        auto inv_data_ptr =
+            boost::make_shared<std::vector<double>>(inv_mem_size, 0);
+        data_ptrs[3]->dataInvBlocksPtr = inv_data_ptr;
+        block_mat_data_ptr->dataInvBlocksPtr = data_ptrs[3]->dataInvBlocksPtr;
+      }
+
+      MoFEMFunctionReturn(0);
     };
 
-    auto [vec_lo_r_block, vec_lo_c_block] = get_vec(index_view.lowView);
-    CHKERR AOPetscToApplication(ao_block_row, vec_lo_r_block.size(),
-                                &*vec_lo_r_block.begin());
-    CHKERR AOPetscToApplication(ao_block_col, vec_lo_c_block.size(),
-                                &*vec_lo_c_block.begin());
-
-    int inv_mem_size = 0;
-    for (auto s1 = 0; s1 != index_view.diagLoRange.size() - 1; ++s1) {
-      auto lo = index_view.diagLoRange[s1];
-      auto diag_index_ptr = index_view.lowView[lo];
-      auto row = vec_lo_r_block[lo];
-      auto col = vec_lo_c_block[lo];
-      auto nb_rows = diag_index_ptr->getNbRows();
-      auto nb_cols = diag_index_ptr->getNbCols();
-      ++lo;
-      auto it = block_mat_data_ptr->blockIndex.get<1>().find(
-          boost::make_tuple(row, col, nb_rows, nb_cols));
-      if (it == block_mat_data_ptr->blockIndex.get<1>().end()) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Block not found");
-      }
-      it->getInvShift() = inv_mem_size;
-      diag_index_ptr->getInvShift() = it->getInvShift();
-      inv_mem_size += nb_rows * nb_cols;
-    }
-
-    auto [vec_up_r_block, vec_up_c_block] = get_vec(index_view.upView);
-    CHKERR AOPetscToApplication(ao_block_row, vec_up_r_block.size(),
-                                &*vec_up_r_block.begin());
-    CHKERR AOPetscToApplication(ao_block_col, vec_up_c_block.size(),
-                                &*vec_up_c_block.begin());
-
-    for (auto s1 = 0; s1 != index_view.diagUpRange.size() - 1; ++s1) {
-      auto lo = index_view.diagUpRange[s1];
-      auto diag_index_ptr = index_view.upView[lo];
-      auto row = vec_up_r_block[lo];
-      auto col = vec_up_c_block[lo];
-      auto nb_rows = diag_index_ptr->getNbRows();
-      auto nb_cols = diag_index_ptr->getNbCols();
-      ++lo;
-      auto it = block_mat_data_ptr->blockIndex.get<1>().find(
-          boost::make_tuple(row, col, nb_rows, nb_cols));
-      if (it == block_mat_data_ptr->blockIndex.get<1>().end()) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Block not found");
-      }
-      diag_index_ptr->getInvShift() = it->getInvShift();
-    }
-
-    auto inv_data_ptr =
-        boost::make_shared<std::vector<double>>(inv_mem_size, 0);
-    data_ptrs[3]->dataInvBlocksPtr = inv_data_ptr;
-    block_mat_data_ptr->dataInvBlocksPtr = data_ptrs[3]->dataInvBlocksPtr;
+    CHKERR set_inv_mat(index_view.lowView, index_view.diagLoRange, true);
+    CHKERR set_inv_mat(index_view.upView, index_view.diagUpRange, false);
 
     if (add_preconditioner_block) {
-      auto preconditioned_block =
-          boost::make_shared<std::vector<double>>(inv_mem_size, 0);
+      auto preconditioned_block = boost::make_shared<std::vector<double>>(
+          data_ptrs[3]->dataInvBlocksPtr->size(), 0);
       data_ptrs[3]->preconditionerBlocksPtr = preconditioned_block;
       data_ptrs[3]->multiplyByPreconditioner = true;
       block_mat_data_ptr->preconditionerBlocksPtr =
