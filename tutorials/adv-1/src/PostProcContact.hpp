@@ -501,8 +501,6 @@ struct Monitor : public FEMethod {
             contact_meshset_range);
         contact_range.merge(contact_meshset_range);
       }
-      // std::cout << "contact_range.size() " << contact_range.size() <<
-      // std::endl;
 
       CHK_THROW_MESSAGE(
           (AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
@@ -593,14 +591,25 @@ struct Monitor : public FEMethod {
     }
     CHKERR calculate_traction();
     CHKERR calculate_reactions();
-    if (atom_test == 1 && sTEP > 0)
-      CHKERR calculate_error(analyticalHertzPressurePlaneStress);
-    if (atom_test == 2 && sTEP > 0)
-      CHKERR calculate_error(analyticalHertzPressurePlaneStrain);
-    if (atom_test == 5 && sTEP > 0)
-      CHKERR calculate_error(analyticalHertzPressureAxisymmetric);
-    if (atom_test == 6 && sTEP > 0)
-      CHKERR calculate_error(analyticalWavy2DPressure);
+
+    if (atom_test && sTEP) {
+      switch (atom_test) {
+      case 1:
+        CHKERR calculate_error(analyticalHertzPressurePlaneStress);
+        break;
+      case 2:
+        CHKERR calculate_error(analyticalHertzPressurePlaneStrain);
+        break;
+      case 5:
+        CHKERR calculate_error(analyticalHertzPressureAxisymmetric);
+        break;
+      case 6:
+        CHKERR calculate_error(analyticalWavy2DPressure);
+        break;
+      default:
+        break;
+      }
+    }
 
     CHKERR print_max_min(uXScatter, "Ux");
     CHKERR print_max_min(uYScatter, "Uy");

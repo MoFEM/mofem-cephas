@@ -75,9 +75,9 @@ using OpSpringRhs = FormsIntegrators<BoundaryEleOp>::Assembly<AT>::LinearForm<
 
 PetscBool is_quasi_static = PETSC_TRUE;
 
-int order = 2;         //< Order of displacements in domain
-int contact_order = 2; //< Order of displacements in boundary elements
-int sigma_order = 1;   //< Order of Lagrange multiplier in boundary
+int order = 2;         //< Order of displacements in the domain
+int contact_order = 2; //< Order of displacements in boundary and side elements 
+int sigma_order = 1;   //< Order of Lagrange multiplier in side elements
 int geom_order = 1;
 double young_modulus = 100;
 double poisson_ratio = 0.25;
@@ -90,7 +90,7 @@ double scale = 1.;
 
 PetscBool is_axisymmetric = PETSC_FALSE; //< Axisymmetric model
 
-// ##define HENCKY_SMALL_STRAIN
+#define HENCKY_SMALL_STRAIN
 
 int atom_test = 0;
 
@@ -176,20 +176,15 @@ MoFEMErrorCode Contact::setupProblem() {
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order, PETSC_NULL);
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-contact_order", &contact_order,
                             PETSC_NULL);
+  sigma_order = std::max(order, contact_order) - 1;
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-sigma_order", &sigma_order,
                             PETSC_NULL);
-  if (sigma_order == 1)
-    sigma_order = std::max(order, contact_order) - 1;
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-geom_order", &geom_order,
                             PETSC_NULL);
 
   MOFEM_LOG("CONTACT", Sev::inform) << "Order " << order;
-  
-  if (contact_order != 2)
-    MOFEM_LOG("CONTACT", Sev::inform) << "Contact order " << contact_order;
-    
+  MOFEM_LOG("CONTACT", Sev::inform) << "Contact order " << contact_order;
   MOFEM_LOG("CONTACT", Sev::inform) << "Sigma order " << sigma_order;
-
   MOFEM_LOG("CONTACT", Sev::inform) << "Geom order " << geom_order;
 
   // Select base
@@ -287,12 +282,15 @@ MoFEMErrorCode Contact::setupProblem() {
 
   if (contact_order > order) {
     Range ho_ents;
-    if constexpr (SPACE_DIM == 3) {
-      CHKERR mField.get_moab().get_adjacencies(boundary_ents, 1, false, ho_ents,
-                                               moab::Interface::UNION);
-    } else {
-      ho_ents = boundary_ents;
+    CHKERR mField.get_moab().get_adjacencies(boundary_ents, SPACE_DIM, false,
+                                             ho_ents, moab::Interface::UNION);
+    Range low_dim_ents;
+    for (int dim = 1; dim < SPACE_DIM; dim++) {
+      CHKERR mField.get_moab().get_adjacencies(
+          ho_ents, dim, false, low_dim_ents, moab::Interface::UNION);
     }
+    ho_ents.merge(low_dim_ents);
+
     CHKERR mField.getInterface<CommInterface>()->synchroniseEntities(ho_ents);
     CHKERR simple->setFieldOrder("U", contact_order, &ho_ents);
     CHKERR mField.getInterface<CommInterface>()->synchroniseFieldEntities("U");
