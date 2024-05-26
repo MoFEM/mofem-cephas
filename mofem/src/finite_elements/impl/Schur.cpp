@@ -921,7 +921,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
     MoFEMFunctionReturn(0);
   };
 
-    auto assemble_col_a00 = [&](auto &storage, auto lo_uid, auto hi_uid) {
+  auto assemble_col_a00 = [&](auto &storage, auto lo_uid, auto hi_uid) {
     MoFEMFunctionBegin;
 
     auto add = [&](auto lo, auto hi) {
@@ -1669,13 +1669,15 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
       auto off_col = off_index_ptr->getLocCol();
       auto off_nb_cols = off_index_ptr->getNbCols();
       auto off_shift = off_index_ptr->getInvShift();
-      if (off_shift != -1) {
-        auto ptr = &inv_block_ptr[off_shift];
-        for (auto r = 0; r != nb_rows; ++r) {
-          for (auto c = 0; c != off_nb_cols; ++c) {
-            y_add_array[row + r] -=
-                ptr[r * off_nb_cols + c] * y_inv_array[off_col + c];
-          }
+#ifndef NDEBUG
+      if (off_shift == -1)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "off_shift == -1");
+#endif // NDEBUG
+      auto ptr = &inv_block_ptr[off_shift];
+      for (auto r = 0; r != nb_rows; ++r) {
+        for (auto c = 0; c != off_nb_cols; ++c) {
+          y_add_array[row + r] -=
+              ptr[r * off_nb_cols + c] * y_inv_array[off_col + c];
         }
       }
     }
@@ -1721,13 +1723,15 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
       auto off_col = off_index_ptr->getLocCol();
       auto off_nb_cols = off_index_ptr->getNbCols();
       auto off_shift = off_index_ptr->getInvShift();
-      if (off_shift != -1) {
-        auto x_ptr = &x_array[off_col];
-        auto ptr = &inv_block_ptr[off_shift];
-        for (auto r = 0; r != nb_rows; ++r) {
-          for (auto c = 0; c != off_nb_cols; ++c) {
-            f[r] -= ptr[r * off_nb_cols + c] * x_ptr[c];
-          }
+#ifndef NDEBUG
+      if (off_shift == -1)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "off_shift == -1");
+#endif // NDEBUG
+      auto x_ptr = &x_array[off_col];
+      auto ptr = &inv_block_ptr[off_shift];
+      for (auto r = 0; r != nb_rows; ++r) {
+        for (auto c = 0; c != off_nb_cols; ++c) {
+          f[r] -= ptr[r * off_nb_cols + c] * x_ptr[c];
         }
       }
     }
