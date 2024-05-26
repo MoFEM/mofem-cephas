@@ -870,7 +870,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
     MoFEMFunctionReturn(0);
   };
 
-  auto assemble_A00 = [&](auto &storage, auto lo_uid, auto hi_uid) {
+  auto assemble_a00 = [&](auto &storage, auto lo_uid, auto hi_uid) {
     MoFEMFunctionBegin;
 
     auto add = [&](auto lo, auto hi) {
@@ -915,6 +915,51 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
         storage.template get<SchurElemMats::uid_mi_tag>().upper_bound(
             boost::make_tuple(
                 hi_uid, FieldEntity::getHiBitNumberUId(BITFIELDID_SIZE - 1)))
+
+    );
+
+    MoFEMFunctionReturn(0);
+  };
+
+    auto assemble_col_a00 = [&](auto &storage, auto lo_uid, auto hi_uid) {
+    MoFEMFunctionBegin;
+
+    auto add = [&](auto lo, auto hi) {
+      MoFEMFunctionBegin;
+      for (; lo != hi; ++lo) {
+        auto &m = (*lo)->getMat();
+        if (m.size1() && m.size2()) {
+          auto row_ind = (*lo)->getRowInd()[0];
+          auto col_ind = (*lo)->getColInd()[0];
+          auto nb_rows = m.size1();
+          auto nb_cols = m.size2();
+          auto it = diagBlocks->blockIndex.get<1>().find(
+              boost::make_tuple(row_ind, col_ind, nb_rows, nb_cols));
+          if (it != diagBlocks->blockIndex.get<1>().end()) {
+            auto inv_shift = it->getInvShift();
+            if (inv_shift != -1) {
+#ifndef NDEBUG
+              if (!diagBlocks->dataInvBlocksPtr)
+                SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                        "No dataInvBlocksPtr");
+#endif // NDEBUG
+              auto *ptr = &((*diagBlocks->dataInvBlocksPtr)[inv_shift]);
+              if (row_ind != col_ind || nb_rows != nb_cols) {
+                // assemble of diag terms, witch might be changed by Schur
+                // complement
+                std::copy(m.data().begin(), m.data().end(), ptr);
+              }
+            }
+          }
+        }
+      }
+      MoFEMFunctionReturn(0);
+    };
+
+    CHKERR add(
+
+        storage.template get<SchurElemMats::col_mi_tag>().lower_bound(lo_uid),
+        storage.template get<SchurElemMats::col_mi_tag>().upper_bound(hi_uid)
 
     );
 
@@ -980,8 +1025,10 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
       }
 #endif
       CHKERR apply_schur(storage, lo_uid, hi_uid, diagEps[ss], symSchur[ss]);
-      if (diagBlocks)
-        CHKERR assemble_A00(storage, lo_uid, hi_uid);
+      if (diagBlocks) {
+        CHKERR assemble_a00(storage, lo_uid, hi_uid);
+        CHKERR assemble_col_a00(storage, lo_uid, hi_uid);
+      }
       CHKERR erase_factored(storage, lo_uid, hi_uid);
       CHKERR assemble_S(storage, sequenceOfAOs[ss], sequenceOfMats[ss]);
       ++ss;
@@ -1595,7 +1642,6 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
   auto data_inv_blocks = ctx->dataInvBlocksPtr;
   auto inv_block_ptr = &*data_inv_blocks->begin();
   auto data_blocks = ctx->dataBlocksPtr;
-  auto block_ptr = &*data_blocks->begin();
 
   auto *data_inv = dynamic_cast<DiagBlockInvStruture *>(ctx);
   auto index_view = &data_inv->indexView;
@@ -1622,12 +1668,14 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
       auto off_index_ptr = index_view->upView[lo];
       auto off_col = off_index_ptr->getLocCol();
       auto off_nb_cols = off_index_ptr->getNbCols();
-      auto off_shift = off_index_ptr->getMatShift();
-      auto ptr = &block_ptr[off_shift];
-      for (auto r = 0; r != nb_rows; ++r) {
-        for (auto c = 0; c != off_nb_cols; ++c) {
-          y_add_array[row + r] -=
-              ptr[r * off_nb_cols + c] * y_inv_array[off_col + c];
+      auto off_shift = off_index_ptr->getInvShift();
+      if (off_shift != -1) {
+        auto ptr = &inv_block_ptr[off_shift];
+        for (auto r = 0; r != nb_rows; ++r) {
+          for (auto c = 0; c != off_nb_cols; ++c) {
+            y_add_array[row + r] -=
+                ptr[r * off_nb_cols + c] * y_inv_array[off_col + c];
+          }
         }
       }
     }
@@ -1672,12 +1720,14 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
       auto off_index_ptr = index_view->lowView[lo];
       auto off_col = off_index_ptr->getLocCol();
       auto off_nb_cols = off_index_ptr->getNbCols();
-      auto off_shift = off_index_ptr->getMatShift();
-      auto x_ptr = &x_array[off_col];
-      auto ptr = &block_ptr[off_shift];
-      for (auto r = 0; r != nb_rows; ++r) {
-        for (auto c = 0; c != off_nb_cols; ++c) {
-          f[r] -= ptr[r * off_nb_cols + c] * x_ptr[c];
+      auto off_shift = off_index_ptr->getInvShift();
+      if (off_shift != -1) {
+        auto x_ptr = &x_array[off_col];
+        auto ptr = &inv_block_ptr[off_shift];
+        for (auto r = 0; r != nb_rows; ++r) {
+          for (auto c = 0; c != off_nb_cols; ++c) {
+            f[r] -= ptr[r * off_nb_cols + c] * x_ptr[c];
+          }
         }
       }
     }
@@ -2402,8 +2452,8 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
 
     );
 
-    auto set_inv_mat = [&](auto &view, auto &range, bool set_inv_shift) {
-      MoFEMFunctionBegin;
+    // calculate size of invert matrix vector, and set internal data
+    auto set_inv_mat = [&](auto inv_mem_size, auto &view, auto &range) {
       auto get_vec = [&](auto &view) {
         std::vector<int> vec_r, vec_c;
         vec_r.reserve(view.size());
@@ -2416,44 +2466,53 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
       };
 
       auto [vec_row, vec_col] = get_vec(view);
-      CHKERR AOPetscToApplication(ao_block_row, vec_row.size(),
-                                  &*vec_row.begin());
-      CHKERR AOPetscToApplication(ao_block_col, vec_col.size(),
-                                  &*vec_col.begin());
+      CHK_THROW_MESSAGE(
+          AOPetscToApplication(ao_block_row, vec_row.size(), &*vec_row.begin()),
+          "apply ao");
+      CHK_THROW_MESSAGE(
+          AOPetscToApplication(ao_block_col, vec_col.size(), &*vec_col.begin()),
+          "apply ao");
 
-      int inv_mem_size = 0;
       for (auto s1 = 0; s1 != range.size() - 1; ++s1) {
         auto lo = range[s1];
-        auto diag_index_ptr = view[lo];
-        auto row = vec_row[lo];
-        auto col = vec_col[lo];
-        auto nb_rows = diag_index_ptr->getNbRows();
-        auto nb_cols = diag_index_ptr->getNbCols();
-        ++lo;
-        auto it = block_mat_data_ptr->blockIndex.get<1>().find(
-            boost::make_tuple(row, col, nb_rows, nb_cols));
-        if (it == block_mat_data_ptr->blockIndex.get<1>().end()) {
-          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Block not found");
+        auto hi = range[s1 + 1];
+        for (; lo != hi; ++lo) {
+          auto diag_index_ptr = view[lo];
+          auto row = vec_row[lo];
+          auto col = vec_col[lo];
+          auto nb_rows = diag_index_ptr->getNbRows();
+          auto nb_cols = diag_index_ptr->getNbCols();
+          auto it = block_mat_data_ptr->blockIndex.get<1>().find(
+              boost::make_tuple(row, col, nb_rows, nb_cols));
+          if (it == block_mat_data_ptr->blockIndex.get<1>().end()) {
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                    "Block not found");
+          }
+          if (it->getInvShift() == -1) {
+            it->getInvShift() = inv_mem_size;
+            inv_mem_size += nb_rows * nb_cols;
+          }
+          diag_index_ptr->getInvShift() = it->getInvShift();
         }
-        if (set_inv_shift) {
-          it->getInvShift() = inv_mem_size;
-          inv_mem_size += nb_rows * nb_cols;
-        }
-        diag_index_ptr->getInvShift() = it->getInvShift();
       }
 
-      if(set_inv_shift) {
-        auto inv_data_ptr =
-            boost::make_shared<std::vector<double>>(inv_mem_size, 0);
-        data_ptrs[3]->dataInvBlocksPtr = inv_data_ptr;
-        block_mat_data_ptr->dataInvBlocksPtr = data_ptrs[3]->dataInvBlocksPtr;
-      }
-
-      MoFEMFunctionReturn(0);
+      return inv_mem_size;
     };
 
-    CHKERR set_inv_mat(index_view.lowView, index_view.diagLoRange, true);
-    CHKERR set_inv_mat(index_view.upView, index_view.diagUpRange, false);
+    // allocate memory for invert matrix solver
+    auto allocate_inv_block = [&](auto inv_mem_size) {
+      auto inv_data_ptr =
+          boost::make_shared<std::vector<double>>(inv_mem_size, 0);
+      data_ptrs[3]->dataInvBlocksPtr = inv_data_ptr;
+      block_mat_data_ptr->dataInvBlocksPtr = data_ptrs[3]->dataInvBlocksPtr;
+    };
+
+    int inv_mem_size = 0;
+    inv_mem_size =
+        set_inv_mat(inv_mem_size, index_view.lowView, index_view.diagLoRange);
+    inv_mem_size =
+        set_inv_mat(inv_mem_size, index_view.upView, index_view.diagUpRange);
+    allocate_inv_block(inv_mem_size);
 
     if (add_preconditioner_block) {
       auto preconditioned_block = boost::make_shared<std::vector<double>>(
