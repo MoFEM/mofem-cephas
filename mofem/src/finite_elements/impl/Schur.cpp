@@ -870,100 +870,111 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
     MoFEMFunctionReturn(0);
   };
 
-  auto assemble_a00 = [&](auto &storage, auto lo_uid, auto hi_uid) {
+  auto assemble_mat_a00_solver = [&](auto &&list) {
     MoFEMFunctionBegin;
-
-    auto add = [&](auto lo, auto hi) {
-      MoFEMFunctionBegin;
-      for (; lo != hi; ++lo) {
-        auto &m = (*lo)->getMat();
-        if (m.size1() && m.size2()) {
-          auto row_ind = (*lo)->getRowInd()[0];
-          auto col_ind = (*lo)->getColInd()[0];
-          auto nb_rows = m.size1();
-          auto nb_cols = m.size2();
-          auto it = diagBlocks->blockIndex.get<1>().find(
-              boost::make_tuple(row_ind, col_ind, nb_rows, nb_cols));
-          if (it != diagBlocks->blockIndex.get<1>().end()) {
-            auto inv_shift = it->getInvShift();
-            if (inv_shift != -1) {
 #ifndef NDEBUG
-              if (!diagBlocks->dataInvBlocksPtr)
-                SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                        "No dataInvBlocksPtr");
+    if (!diagBlocks->dataInvBlocksPtr)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "No dataInvBlocksPtr");
 #endif // NDEBUG
-              auto *ptr = &((*diagBlocks->dataInvBlocksPtr)[inv_shift]);
-              if (row_ind == col_ind && nb_rows == nb_cols) {
-                // assemble inverted diag
-                std::copy(invMat.data().begin(), invMat.data().end(), ptr);
-              } else {
-                // assemble of diag terms, witch might be changed by Schur
-                // complement
-                std::copy(m.data().begin(), m.data().end(), ptr);
-              }
-            }
+
+    for (auto lo : list) {
+      auto &m = lo->getMat();
+      if (m.size1() && m.size2()) {
+        auto row_ind = lo->getRowInd()[0];
+        auto col_ind = lo->getColInd()[0];
+        auto nb_rows = m.size1();
+        auto nb_cols = m.size2();
+        auto it = diagBlocks->blockIndex.get<1>().find(
+            boost::make_tuple(row_ind, col_ind, nb_rows, nb_cols));
+        if (it != diagBlocks->blockIndex.get<1>().end()) {
+          auto inv_shift = it->getInvShift();
+          if (inv_shift != -1) {
+            auto *ptr = &((*diagBlocks->dataInvBlocksPtr)[inv_shift]);
+            // assemble of diag terms, witch might be changed by Schur
+            // complement
+            std::copy(m.data().begin(), m.data().end(), ptr);
           }
         }
       }
-      MoFEMFunctionReturn(0);
-    };
-
-    CHKERR add(
-
-        storage.template get<SchurElemMats::uid_mi_tag>().lower_bound(
-            boost::make_tuple(lo_uid, 0)),
-        storage.template get<SchurElemMats::uid_mi_tag>().upper_bound(
-            boost::make_tuple(
-                hi_uid, FieldEntity::getHiBitNumberUId(BITFIELDID_SIZE - 1)))
-
-    );
-
+    }
     MoFEMFunctionReturn(0);
   };
 
-  auto assemble_col_a00 = [&](auto &storage, auto lo_uid, auto hi_uid) {
+  auto assemble_inv_diag_a00_solver = [&](auto &&list) {
     MoFEMFunctionBegin;
-
-    auto add = [&](auto lo, auto hi) {
-      MoFEMFunctionBegin;
-      for (; lo != hi; ++lo) {
-        auto &m = (*lo)->getMat();
-        if (m.size1() && m.size2()) {
-          auto row_ind = (*lo)->getRowInd()[0];
-          auto col_ind = (*lo)->getColInd()[0];
-          auto nb_rows = m.size1();
-          auto nb_cols = m.size2();
-          auto it = diagBlocks->blockIndex.get<1>().find(
-              boost::make_tuple(row_ind, col_ind, nb_rows, nb_cols));
-          if (it != diagBlocks->blockIndex.get<1>().end()) {
-            auto inv_shift = it->getInvShift();
-            if (inv_shift != -1) {
 #ifndef NDEBUG
-              if (!diagBlocks->dataInvBlocksPtr)
-                SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                        "No dataInvBlocksPtr");
+    if (!diagBlocks->dataInvBlocksPtr)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "No dataInvBlocksPtr");
 #endif // NDEBUG
-              auto *ptr = &((*diagBlocks->dataInvBlocksPtr)[inv_shift]);
-              if (row_ind != col_ind || nb_rows != nb_cols) {
-                // assemble of diag terms, witch might be changed by Schur
-                // complement
-                std::copy(m.data().begin(), m.data().end(), ptr);
-              }
-            }
-          }
+
+    for (auto lo : list) {
+      if (invMat.size1() && invMat.size2()) {
+        auto row_ind = lo->getRowInd()[0];
+        auto col_ind = lo->getColInd()[0];
+        auto nb_rows = invMat.size1();
+        auto nb_cols = invMat.size2();
+        auto it = diagBlocks->blockIndex.get<1>().find(
+            boost::make_tuple(row_ind, col_ind, nb_rows, nb_cols));
+        if (it != diagBlocks->blockIndex.get<1>().end()) {
+          auto inv_shift = it->getInvShift();
+#ifndef NDEBUG
+          if (inv_shift == -1)
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "No inv_shift");
+#endif // NDEBUG
+          auto *ptr = &((*diagBlocks->dataInvBlocksPtr)[inv_shift]);
+          // assemble inverted diag
+          std::copy(invMat.data().begin(), invMat.data().end(), ptr);
         }
       }
-      MoFEMFunctionReturn(0);
-    };
-
-    CHKERR add(
-
-        storage.template get<SchurElemMats::col_mi_tag>().lower_bound(lo_uid),
-        storage.template get<SchurElemMats::col_mi_tag>().upper_bound(hi_uid)
-
-    );
-
+    }
     MoFEMFunctionReturn(0);
+  };
+
+  auto gey_a00_diag_list = [&](auto &storage, auto lo_uid, auto hi_uid) {
+    std::vector<const SchurElemMats *> list;
+    auto lo = storage.template get<SchurElemMats::uid_mi_tag>().lower_bound(
+        boost::make_tuple(lo_uid, 0));
+    auto hi = storage.template get<SchurElemMats::uid_mi_tag>().upper_bound(
+        boost::make_tuple(hi_uid,
+                          FieldEntity::getHiBitNumberUId(BITFIELDID_SIZE - 1)));
+    list.reserve(std::distance(lo, hi));
+    for (auto it = lo; it != hi; ++it) {
+      if ((*it)->getRowInd()[0] == (*it)->getColInd()[0]) {
+        list.push_back(*it);
+      }
+    }
+    return list;
+  };
+
+  auto get_a00_row_list = [&](auto &storage, auto lo_uid, auto hi_uid) {
+    std::vector<const SchurElemMats *> list;
+    auto lo = storage.template get<SchurElemMats::uid_mi_tag>().lower_bound(
+        boost::make_tuple(lo_uid, 0));
+    auto hi = storage.template get<SchurElemMats::uid_mi_tag>().upper_bound(
+        boost::make_tuple(hi_uid,
+                          FieldEntity::getHiBitNumberUId(BITFIELDID_SIZE - 1)));
+    list.reserve(std::distance(lo, hi));
+    for (auto it = lo; it != hi; ++it) {
+      if ((*it)->getRowInd()[0] != (*it)->getColInd()[0]) {
+        list.push_back(*it);
+      }
+    }
+    return list;
+  };
+
+  auto get_a00_col_list = [&](auto &storage, auto lo_uid, auto hi_uid) {
+    std::vector<const SchurElemMats *> list;
+    auto lo =
+        storage.template get<SchurElemMats::col_mi_tag>().lower_bound(lo_uid);
+    auto hi =
+        storage.template get<SchurElemMats::col_mi_tag>().upper_bound(hi_uid);
+    list.reserve(std::distance(lo, hi));
+    for (auto it = lo; it != hi; ++it) {
+      if ((*it)->getRowInd()[0] != (*it)->getColInd()[0]) {
+        list.push_back(*it);
+      }
+    }
+    return list;
   };
 
   auto get_a00_uids = [&]() {
@@ -1026,8 +1037,12 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 #endif
       CHKERR apply_schur(storage, lo_uid, hi_uid, diagEps[ss], symSchur[ss]);
       if (diagBlocks) {
-        CHKERR assemble_a00(storage, lo_uid, hi_uid);
-        CHKERR assemble_col_a00(storage, lo_uid, hi_uid);
+        CHKERR assemble_mat_a00_solver(
+            get_a00_row_list(storage, lo_uid, hi_uid));
+        CHKERR assemble_mat_a00_solver(
+            get_a00_col_list(storage, lo_uid, hi_uid));
+        CHKERR assemble_inv_diag_a00_solver(
+            gey_a00_diag_list(storage, lo_uid, hi_uid));
       }
       CHKERR erase_factored(storage, lo_uid, hi_uid);
       CHKERR assemble_S(storage, sequenceOfAOs[ss], sequenceOfMats[ss]);
