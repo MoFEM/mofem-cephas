@@ -245,6 +245,7 @@ struct Monitor : public FEMethod {
 
     auto get_integrate_area = [&]() {
       auto integrate_area = boost::make_shared<BoundaryEle>(*m_field_ptr);
+
       CHK_THROW_MESSAGE(
           (AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
               integrate_area->getOpPtrVector(), {HDIV}, "GEOMETRY")),
@@ -271,10 +272,17 @@ struct Monitor : public FEMethod {
       }
 
       auto contact_range_ptr = boost::make_shared<Range>(contact_range);
+
+      auto op_loop_side = new OpLoopSide<SideEle>(
+          *m_field_ptr, m_field_ptr->getInterface<Simple>()->getDomainFEName(),
+          SPACE_DIM);
+      CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+          op_loop_side->getOpPtrVector(), {H1}, "GEOMETRY");
+
       CHK_THROW_MESSAGE(
           (opFactoryCalculateArea<SPACE_DIM, GAUSS, BoundaryEleOp>(
-              integrate_area->getOpPtrVector(), "SIGMA", "U", is_axisymmetric,
-              contact_range_ptr)),
+              integrate_area->getOpPtrVector(), op_loop_side, "SIGMA", "U",
+              is_axisymmetric, contact_range_ptr)),
           "push operators to calculate area");
 
       return integrate_area;

@@ -61,7 +61,7 @@ using DomainEle = ElementsAndOps<SPACE_DIM>::DomainEle;
 using DomainEleOp = DomainEle::UserDataOperator;
 using BoundaryEle = ElementsAndOps<SPACE_DIM>::BoundaryEle;
 using BoundaryEleOp = BoundaryEle::UserDataOperator;
-
+using SideEle = ElementsAndOps<SPACE_DIM>::FaceSideEle;
 //! [Specialisation for assembly]
 
 constexpr FieldSpace CONTACT_SPACE = ElementsAndOps<SPACE_DIM>::CONTACT_SPACE;
