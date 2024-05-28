@@ -16,8 +16,10 @@ users. Solutions can be close, fit to problem.
 
 ## Hide complexities.
 
-- Perfect operator is a black box. Do not expose members of user data operators. Make members of the function private. 
-- Common data for series of operators are local. Push operators in factory function, or lambda function if ad hoc solution.
+- Perfect operator is a black box. 
+- Do not expose members of user data operators. Make members of the function private. 
+- Common data for series of operators are local. 
+- Push operators in factory function, or lambda function if ad hoc solution.
 - Push operator by operator defined in "cpp" file. Hide implementation.
 
 hpp file:
@@ -31,7 +33,8 @@ OpBlackBox* createOpBlackBox();
 cpp: file:
 ```c++
 namespace BlackBox  {
-struct OpBalckBox: public  ForcesAndSourcesCore::UserDataOperator {
+struct OpBalckBox: private ForcesAndSourcesCore::UserDataOperator {
+	private:
 	// definition
 };
 OpBlackBox* createOpBlackBox() { return new OpBalckBox(); }
