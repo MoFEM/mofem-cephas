@@ -1,5 +1,12 @@
 # Development rules
 
+- MoFEM core has to allow for evolution on the future. Need to be modular, and extendable, remain small as possible. Free from implementation of specific physics.
+- MoFEM Users modules should present good development practices. Examples of
+implementation for particular physical problems.
+- User module is specific code, with bespoke solutions, to be used by external 
+users. Solutions can be close, fit to problem.
+
+
 ## General rules
 
 - If code part do not have be fast, make it generic.
