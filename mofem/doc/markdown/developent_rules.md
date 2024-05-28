@@ -17,6 +17,7 @@ users. Solutions can be close, fit to problem.
 ## Hide complexities.
 
 - Perfect operator is a black box. 
+- Black box do not create dependencies. Enable future evolution and development.
 - Do not expose members of user data operators. Make members of the function private. 
 - Common data for series of operators are local. 
 - Push operators in factory function, or lambda function if ad hoc solution.
@@ -49,4 +50,5 @@ OpBlackBox* createOpBlackBox() { return new OpBalckBox(); }
 
 - Do not add software dependencies to core library.
 - If you have to add dependency, make it optional.
+- More libraries bigger likelihood that code will break at compilation.
 
