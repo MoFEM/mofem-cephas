@@ -16,6 +16,7 @@ users. Solutions can be close, fit to problem.
 
 ## Hide complexities.
 
+- Isolate complexities. You can focus only on one thing. 
 - Perfect operator is a black box. 
 - Black box do not create dependencies. Enable future evolution and development.
 - Do not expose members of user data operators. Make members of the function private. 
