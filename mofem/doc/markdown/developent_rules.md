@@ -11,7 +11,7 @@ users. Solutions can be close, fit to problem.
 
 - If code part do not have be fast, make it generic.
 - Make generic code as simple as possible.
-- Do not delicate code with similar funionality
+- Do not duplicate code with similar functionality.
 - Make code fast. To check what need to be fast profile code.
 
 ## Hide complexities.
