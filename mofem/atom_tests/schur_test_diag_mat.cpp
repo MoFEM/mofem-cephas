@@ -411,7 +411,9 @@ int main(int argc, char *argv[]) {
     CHKERR VecAXPY(diag_block_f_test, -1.0, diag_block_f);
     CHKERR test("diag solve", diag_block_f_test, nrm0);
 
-    CHKERR schurSaveBlockMesh(block_data_ptr, "block_mesh.vtk");
+    if (m_field.get_comm_rank() == 0) {
+      CHKERR schurSaveBlockMesh(block_data_ptr, "block_mesh.vtk");
+    }
 
     petsc_mat.reset();
     block_mat.reset();
