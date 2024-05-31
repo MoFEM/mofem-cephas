@@ -1237,7 +1237,18 @@ PetscErrorCode DMCreateMatrix_MoFEM(DM dm, SmartPetscObj<Mat> &M) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
   DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
-  if (strcmp(dm->mattype, MATMPIAIJ) == 0) {
+
+  if (strcmp(dm->mattype, MATSHELL) == 0) {
+    if (dm_field->blocMatDataPtr) {
+      Mat mat_raw;
+      CHKERR DMMoFEMCreateBlockMat(dm, &mat_raw);
+      M = SmartPetscObj<Mat>(mat_raw);
+      MoFEMFunctionReturnHot(0);
+    } else {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+              "Matrix shell data not set, or matrix type not implemented");
+    }
+  } else if (strcmp(dm->mattype, MATMPIAIJ) == 0) {
     CHKERR dm_field->mField_ptr->getInterface<MatrixManager>()
         ->createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(dm_field->problemName,
                                                         M);
@@ -1355,8 +1366,8 @@ PetscErrorCode DMSubDMSetUp_MoFEM(DM subdm) {
     entity_map_col = &subdm_field->mapTypeCol;
 
   CHKERR prb_mng_ptr->buildSubProblem(
-      subdm_field->problemName, subdm_field->rowSubFields, subdm_field->colSubFields,
-      subdm_field->problemMainOfSubPtr->getName(),
+      subdm_field->problemName, subdm_field->rowSubFields,
+      subdm_field->colSubFields, subdm_field->problemMainOfSubPtr->getName(),
       subdm_field->isSquareMatrix == PETSC_TRUE, entity_map_row, entity_map_col,
       subdm_field->verbosity);
 
@@ -1538,9 +1549,9 @@ MoFEMErrorCode DMMoFEMGetBlocMatData(DM dm,
 }
 
 MoFEMErrorCode DMMoFEMCreateBlockMat(DM dm, Mat *mat) {
-   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
+  PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
-  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data); 
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   auto mat_data = createBlockMat(dm, dm_field->blocMatDataPtr);
   *mat = mat_data.first;
   CHKERR PetscObjectReference((PetscObject)(*mat));
@@ -1559,7 +1570,7 @@ MoFEMErrorCode DMMoFEMSetNestSchurData(DM dm,
 }
 
 MoFEMErrorCode DMMoFEMCreateNestSchurMat(DM dm, Mat *mat) {
-   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
+  PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
   DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
   auto mat_data = createSchurNestedMatrix(dm_field->nestedSchurDataPtr);
