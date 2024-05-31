@@ -2865,7 +2865,7 @@ schurSaveBlockMesh(boost::shared_ptr<BlockStructure> block_mat_data,
   CHKERR moab.tag_get_handle("nrm2", 1, MB_TYPE_DOUBLE, th_nrm2,
                              MB_TAG_CREAT | MB_TAG_DENSE, &def_val_nrm2);
 
-  double def_val_mat_shift = 0;
+  int def_val_mat_shift = 0;
   Tag th_mat_shift;
   CHKERR moab.tag_get_handle("mat_shift", 1, MB_TYPE_INTEGER, th_mat_shift,
                              MB_TAG_CREAT | MB_TAG_DENSE, &def_val_mat_shift);
