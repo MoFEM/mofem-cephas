@@ -17,7 +17,7 @@ users. Solutions can be close, fit to problem.
 ## Hide complexities.
 
 - Isolate complexities. You can focus only on one thing. 
-- Avoid bool flags and code branching. That makes code default to debug and understand.
+- Avoid bool flags and code branching. That makes code difficult to test, debug and understand.
 - Perfect operator is a black box. 
 - Black box do not create dependencies. Enable future evolution and development.
 - Do not expose members of user data operators. Make members of the function private. 
