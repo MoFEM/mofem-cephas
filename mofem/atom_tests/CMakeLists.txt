@@ -1661,3 +1661,22 @@ add_test(schur_test_diag_mat
   -ksp_gmres_modifiedgram schmidt  
   -log_no_color
 )
+
+build_test(
+  schur_test_hdiv_contact
+  schur_test_hdiv_contact.cpp)
+
+  cm_export_file("../meshes/wavy_2d_quad.cub" export_atom_tests)
+
+add_test(schur_test_hdiv_contact
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/schur_test_hdiv_contact
+  -file_name wavy_2d_quad.cub
+  -log_sl inform 
+  -ksp_type fgmres 
+  -ksp_monitor -order 5 
+  -ksp_atol 1e-16 
+  -ksp_rtol 1e-16 
+  -ksp_gmres_modifiedgram schmidt  
+  -log_no_color
+)
