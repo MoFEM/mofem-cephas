@@ -754,612 +754,696 @@ MoFEMErrorCode MedInterface::writeMed(const string &file, boost::shared_ptr<std:
   char axisName[3 * MED_SNAME_SIZE + 1] = ""; // axis name
   char axisUnit[3 * MED_SNAME_SIZE + 1] = ""; // axis unit
 
+  PetscBool is_cubit_meshset = PETSC_TRUE;
+
   // Create the mesh
   // Assume meshsetID 1 is the first meshset
   // Get meshsetID 1
   std::string mesh_name = "MESH";
   int max_id = 0;
-  for (auto &m : *meshsets_ptr) {
-    if (m->getMeshsetId() == 1)
-      mesh_name = m->getName();
-    max_id = (max_id < m->getMeshsetId()) ? m->getMeshsetId() : max_id;
+  if (is_cubit_meshset) {
+    for (auto &m : *meshsets_ptr) {
+      std::cout << "Meshset: " << m->getName()
+                << " with Id: " << m->getMeshsetId() << std::endl;
+      max_id = (max_id < m->getMeshsetId()) ? m->getMeshsetId() : max_id;
+    }
+  } else {
+
+    for (auto &m : *meshsets_ptr) {
+      if (m->getMeshsetId() == 1)
+        mesh_name = m->getName();
+      std::cout << "Meshset: " << m->getName()
+                << " with Id: " << m->getMeshsetId() << std::endl;
+      max_id = (max_id < m->getMeshsetId()) ? m->getMeshsetId() : max_id;
+    }
   }
 
-  // for (_IT_CUBITMESHSETS_FOR_LOOP_(m_field, iit)) {
-  //   // check if meshset is cubit meshset
-  //   if (iit->getMeshsetId() == 1)
-  //     mesh_name = iit->getName();
-  //   max_id = (max_id < iit->getMeshsetId()) ? iit->getMeshsetId() : max_id;
-  // }
+    // for (_IT_CUBITMESHSETS_FOR_LOOP_(m_field, iit)) {
+    //   // check if meshset is cubit meshset
+    //   if (iit->getMeshsetId() == 1)
+    //     mesh_name = iit->getName();
+    //   max_id = (max_id < iit->getMeshsetId()) ? iit->getMeshsetId() : max_id;
+    // }
 
-  CHKERR MEDmeshCr(fid, mesh_name.c_str(), 3, 3, MED_UNSTRUCTURED_MESH,
-                   "Mesh created", dtUnit, MED_SORT_DTIT, MED_CARTESIAN,
-                   axisName, axisUnit);
-  //MEDfamilyCr(fid, mesh_name.c_str(), "F_0", 0, NULL, "");
+    CHKERR MEDmeshCr(fid, mesh_name.c_str(), 3, 3, MED_UNSTRUCTURED_MESH,
+                     "Mesh created", dtUnit, MED_SORT_DTIT, MED_CARTESIAN,
+                     axisName, axisUnit);
+    // MEDfamilyCr(fid, mesh_name.c_str(), "F_0", 0, NULL, "");
 
-  // write coords
-  Range verts;
-  moab.get_entities_by_type(0, MBVERTEX, verts);
-  // Prepare arrays to hold the coordinates
-  std::vector<med_float> coord_med(3 * verts.size());
-  std::vector<med_int> fam;
-  std::vector<med_int> tags;
+    // Create a map of meshset id to meshset name
+    std::map<med_int, std::string> meshset_map;
+    std::map<med_int, std::string> family_group_map;
+    std::map<med_int, med_int> group_map;
+    std::map<med_int, Range> family_range_map;
+    med_int family_id_1 = 0;
+    std::map<std::vector<int>, med_int> shared_meshsets_map;
+    std::map<EntityHandle, med_int> entityHandle_family_map;
 
-  // For each vertex, get its coordinates
-  for (Range::iterator it = verts.begin(); it != verts.end(); ++it) {
-    double coords[3];
-    moab.get_coords(&(*it), 1, coords);
-    coord_med[3 * (it - verts.begin())] = coords[0];
-    coord_med[3 * (it - verts.begin()) + 1] = coords[1];
-    coord_med[3 * (it - verts.begin()) + 2] = coords[2];
-    fam.push_back(0);
-    tags.push_back(*it);
-  }
-  // Write the coordinates to the MED file
-  CHKERR MEDmeshNodeWr(fid, mesh_name.c_str(), MED_NO_DT, MED_NO_IT,
-                       MED_UNDEF_DT, MED_FULL_INTERLACE, verts.size(),
-                       &coord_med[0], MED_FALSE, "", MED_TRUE, &tags[0],
-                       MED_TRUE, &fam[0]);
+    // initialise zero family id
+    shared_meshsets_map[std::vector<int>()] = family_id_1;
 
-  // Create a map of meshset id to meshset name
-  std::map<med_int, std::string> meshset_map;
-  std::map<med_int, std::string> family_group_map;
-  std::map<med_int, med_int> group_map;
-  std::map<med_int, Range> family_range_map;
-  med_int family_id_1 = 0;
-  std::map<std::vector<int>, med_int> shared_meshsets_map;
-  std::map<EntityHandle, med_int> entityHandle_family_map;
+    // loop over all meshsets to identify shared meshsets and assign family ids
+    for (auto &iit : *meshsets_ptr) {
+      if ((iit->getMeshsetId() == 1 && !is_cubit_meshset) || is_cubit_meshset) {
 
-  // initialise zero family id
-  shared_meshsets_map[std::vector<int>()] = family_id_1;
-  
-  // loop over all meshsets to identify shared meshsets and assign family ids
-  for (auto &iit : *meshsets_ptr) {
-    if (iit->getMeshsetId() == 1) {
+        // Assume meshset is the meshset you want to check
+        EntityHandle meshset = iit->getMeshset();
 
-      // Assume meshset is the meshset you want to check
-      EntityHandle meshset = iit->getMeshset();
+        // Get the entities in the meshset
+        Range entities;
+        moab.get_entities_by_handle(meshset, entities);
+        // std::cout << "Entities = " << entities << std::endl;
 
-      // Get the entities in the meshset
-      Range entities;
-      moab.get_entities_by_handle(meshset, entities);
-      // std::cout << "Entities = " << entities << std::endl;
+        // loop all entities by handle in the meshset
+        for (const auto &entity : entities) {
+          // check if entity is shared with other meshsets
+          std::vector<int> shared_meshsets;
+          // std::cout << " Checking Entity = " << entity << std::endl;
+          for (auto &other_meshset : *meshsets_ptr) {
+            if (iit == other_meshset)
+              continue;
+            // std::cout << "Checking other meshset = " <<
+            // other_meshset->getMeshsetId() << std::endl; std::cout <<
+            // "Checking other meshset = " << other_meshset->getName() <<
+            // std::endl;
+            Range other_entities;
+            EntityHandle other_set = other_meshset->getMeshset();
+            moab.get_entities_by_handle(other_set, other_entities);
+            // std::cout << "other_entities = " << other_entities << std::endl;
+            //  get entity type
+            EntityType ent_type = moab.type_from_handle(entity);
 
-      // loop all entities by handle in the meshset
-      for (const auto &entity : entities) {
-        // check if entity is shared with other meshsets
-        std::vector<int> shared_meshsets;
-        // std::cout << " Checking Entity = " << entity << std::endl;
-        for (auto &other_meshset : *meshsets_ptr) {
-          if (iit == other_meshset)
-            continue;
-
-          Range other_entities;
-          EntityHandle other_set = other_meshset->getMeshset();
-          moab.get_entities_by_handle(other_set, other_entities);
-          Range entity_range;
-          entity_range.insert(entity);
-
-          bool is_in_meshset = moab.contains_entities(other_set, &entity, 1);
-          if (is_in_meshset) {
-            // add shared meshset id to list
-            // std::cout << "Entity " << entity << " is in meshset "
-            //           << other_meshset->getMeshsetId() << std::endl;
-            shared_meshsets.push_back(other_meshset->getMeshsetId());
+            bool is_in_meshset = moab.contains_entities(other_set, &entity, 1);
+            if (is_in_meshset) {
+              if (ent_type == MBVERTEX) {
+                // add shared meshset id to list
+                // check if higher dimension entity is in meshset
+                bool is_in_higher_dim = false;
+                Range entities_in_higher_dim;
+                for (int i = 1; i < 4; i++) {
+                  moab.get_entities_by_dimension(other_set, i,
+                                                 entities_in_higher_dim);
+                  if (!entities_in_higher_dim.empty()) {
+                    is_in_higher_dim = true;
+                    break;
+                  }
+                }
+                if (is_in_higher_dim) {
+                  //  std::cout << "Entity " << entity << " is in meshset "
+                  //           << other_meshset->getMeshsetId() << " and in
+                  //           higher dimension meshset" << std::endl;
+                  continue;
+                }
+                // add shared meshset id to list
+                // if (other_meshset->getMeshsetId() != 12){
+                // std::cout << "MBVERTEX Entity " << entity << " is in meshset
+                // "
+                //           << other_meshset->getMeshsetId() << std::endl;
+                // }
+                shared_meshsets.push_back(other_meshset->getMeshsetId());
+              } else {
+                // add shared meshset id to list
+                // std::cout << "Entity " << entity << " is in meshset "
+                //           << other_meshset->getMeshsetId() << std::endl;
+                shared_meshsets.push_back(other_meshset->getMeshsetId());
+              }
+            }
           }
+          // check if shared meshset is already in map
+          if (shared_meshsets_map.find(shared_meshsets) !=
+              shared_meshsets_map.end()) {
+            // assign family id to entity
+            // std::cout << "Shared meshsets have family id = "
+            //           << shared_meshsets_map[shared_meshsets] << std::endl;
+            // family_range_map[shared_meshsets].insert(family_id_1);
+          } else {
+            // create new family id
+            family_id_1++;
+            // std::cout << "New shared meshsets found" << std::endl;
+            shared_meshsets_map[shared_meshsets] = family_id_1;
+            // std::cout << "Shared meshsets have family id = "
+            //           << shared_meshsets_map[shared_meshsets] << std::endl;
+          }
+          entityHandle_family_map[entity] =
+              shared_meshsets_map[shared_meshsets];
         }
-        // check if shared meshset is already in map
-        if (shared_meshsets_map.find(shared_meshsets) !=
-            shared_meshsets_map.end()) {
-          // assign family id to entity
-          // std::cout << "Shared meshsets have family id = "
-          //           << shared_meshsets_map[shared_meshsets] << std::endl;
-          // family_range_map[shared_meshsets].insert(family_id_1);
+      }
+        if (iit->getBcTypeULong() & BLOCKSET) {
+          EntityHandle meshset = iit->getMeshset();
+
+          std::string name = iit->getName();
+          if (name == "NoNameSet") {
+            name = "BLOCKSET_NoNameSet_";
+            name += std::to_string(iit->getMeshsetId());
+          }
+          meshset_map[iit->getMeshsetId()] = name;
+        } else if (iit->getBcTypeULong() & SIDESET ||
+                   iit->getBcTypeULong() & NODESET) {
+          EntityHandle meshset = iit->getMeshset();
+
+          CubitBCType cubitBcType(iit->getBcTypeULong());
+          auto test = iit->getBcType();
+
+          std::cout << iit->getBcTypeULong() << std::endl;
+
+          unsigned jj = 0;
+          string bc_type_name;
+          while (1 << jj != LASTSET_BC) {
+            const CubitBCType jj_bc_type = 1 << jj;
+            if ((iit->getBcType() & jj_bc_type).any()) {
+
+              bc_type_name += string(CubitBCNames[jj + 1]);
+              bc_type_name += "_";
+            }
+            ++jj;
+          }
+          bc_type_name += std::to_string(iit->getMeshsetId());
+          meshset_map[iit->getMeshsetId()] = bc_type_name;
         } else {
-          // create new family id
-          family_id_1++;
-          // std::cout << "New shared meshsets found" << std::endl;
-          shared_meshsets_map[shared_meshsets] = family_id_1;
-          // std::cout << "Shared meshsets have family id = "
-          //           << shared_meshsets_map[shared_meshsets] << std::endl;
+          meshset_map[iit->getMeshsetId()] = iit->getName();
         }
-        entityHandle_family_map[entity] = shared_meshsets_map[shared_meshsets];
       }
-    } else {
-      if (iit->getBcTypeULong() & BLOCKSET) {
-        EntityHandle meshset = iit->getMeshset();
+    // display entityHandle_family_map
+    // for (auto &it : entityHandle_family_map) {
+    //   std::cout << "Entity = " << it.first << " Family id = " << it.second
+    //             << std::endl;
+    // }
 
-        std::string name = iit->getName();
-        if (name == "NoNameSet") {
-          name = "BLOCKSET_NoNameSet_";
-          name += std::to_string(iit->getMeshsetId());
-        }
-        meshset_map[iit->getMeshsetId()] = name;
-      } else if (iit->getBcTypeULong() & SIDESET ||
-                 iit->getBcTypeULong() & NODESET) {
-        EntityHandle meshset = iit->getMeshset();
+    // loop to create families based on shared meshsets map
+    for (auto &it : shared_meshsets_map) {
+      // create family
+      std::string family_name = "F_";
+      family_name += std::to_string(it.second);
+      std::vector<int> shared_meshset_ids = it.first;
+      std::string group_name;
+      for (auto &id : shared_meshset_ids) {
+        // get meshset name
+        std::string meshset_name = meshset_map[id];
+        meshset_name.resize(MED_LNAME_SIZE, ' ');
+        group_name += meshset_name;
+      }
+      // group_name.resize(shared_meshset_ids.size() * MED_LNAME_SIZE, ' ');
 
-        CubitBCType cubitBcType(iit->getBcTypeULong());
-        auto test = iit->getBcType();
+      CHKERR MEDfamilyCr(fid, mesh_name.c_str(), family_name.c_str(), it.second,
+                         shared_meshset_ids.size(), group_name.c_str());
+      MOFEM_LOG("MEDWORLD", Sev::inform)
+          << "Creating family " << family_name << " with id " << it.second
+          << " and " << shared_meshset_ids.size() << " groups with name "
+          << group_name << std::endl;
+    }
 
-        std::cout << iit->getBcTypeULong() << std::endl;
+    // write nodes
+    Range verts;
+    moab.get_entities_by_type(0, MBVERTEX, verts);
+    // Prepare arrays to hold the coordinates
+    std::vector<med_float> coord_med(3 * verts.size());
+    std::vector<med_int> fam;
+    std::vector<med_int> tags;
 
-        unsigned jj = 0;
-        string bc_type_name;
-        while (1 << jj != LASTSET_BC) {
-          const CubitBCType jj_bc_type = 1 << jj;
-          if ((iit->getBcType() & jj_bc_type).any()) {
+    // For each vertex, get its coordinates
+    for (Range::iterator it = verts.begin(); it != verts.end(); ++it) {
+      double coords[3];
+      moab.get_coords(&(*it), 1, coords);
+      coord_med[3 * (it - verts.begin())] = coords[0];
+      coord_med[3 * (it - verts.begin()) + 1] = coords[1];
+      coord_med[3 * (it - verts.begin()) + 2] = coords[2];
+      fam.push_back(entityHandle_family_map[*it]);
+      tags.push_back(*it);
+    }
+    // Write the coordinates to the MED file
+    CHKERR MEDmeshNodeWr(fid, mesh_name.c_str(), MED_NO_DT, MED_NO_IT,
+                         MED_UNDEF_DT, MED_FULL_INTERLACE, verts.size(),
+                         &coord_med[0], MED_FALSE, "", MED_TRUE, &tags[0],
+                         MED_TRUE, &fam[0]);
 
-            bc_type_name += string(CubitBCNames[jj + 1]);
-            bc_type_name += "_";
+    // loop to write elements to families from meshset 1
+    for (EntityType ent_type = MBVERTEX; ent_type < MBMAXTYPE; ent_type++) {
+      // get all entities of type ent_type
+      std::cout << "Entity type = " << ent_type << std::endl;
+      Range entities;
+      EntityHandle meshset = meshsets_ptr->at(0)->getMeshset();
+      moab.get_entities_by_type(meshset, ent_type, entities);
+      if (entities.empty())
+        continue;
+
+      // vectors to write
+      std::vector<med_int> tag_number;
+      std::vector<med_int> family_number;
+      std::vector<med_int> connectivity;
+
+      // loop over all entities
+      for (auto &entity : entities) {
+        if (ent_type != MBVERTEX) {
+          // get family id for entity
+          family_number.push_back(entityHandle_family_map[entity]);
+          // get tag number for entity
+          tag_number.push_back(entity);
+          // get connectivity for entity
+          std::vector<EntityHandle> conn;
+          moab.get_connectivity(&entity, 1, conn);
+          for (auto &c : conn) {
+            connectivity.push_back(c);
           }
-          ++jj;
-        }
-        bc_type_name += std::to_string(iit->getMeshsetId());
-        meshset_map[iit->getMeshsetId()] = bc_type_name;
-      } else {
-        meshset_map[iit->getMeshsetId()] = iit->getName();
-      }
-    }
-  }
-  // display entityHandle_family_map
-  // for (auto &it : entityHandle_family_map) {
-  //   std::cout << "Entity = " << it.first << " Family id = " << it.second
-  //             << std::endl;
-  // }
-
-  // loop to create families based on shared meshsets map
-  for (auto &it : shared_meshsets_map) {
-    // create family
-    std::string family_name = "F_";
-    family_name += std::to_string(it.second);
-    std::vector<int> shared_meshset_ids = it.first;
-    std::string group_name;
-    for (auto &id : shared_meshset_ids) {
-      // get meshset name
-      std::string meshset_name = meshset_map[id];
-      meshset_name.resize(MED_LNAME_SIZE, ' ');
-      group_name += meshset_name;
-    }
-    //group_name.resize(shared_meshset_ids.size() * MED_LNAME_SIZE, ' ');
-
-    CHKERR MEDfamilyCr(fid, mesh_name.c_str(), family_name.c_str(), it.second,
-                       shared_meshset_ids.size(), group_name.c_str());
-    MOFEM_LOG("MEDWORLD", Sev::inform)
-        << "Creating family " << family_name << " with id "
-        << it.second << " and " << shared_meshset_ids.size() << "groups" << std::endl;
-  }
-
-  // loop to write entities to families from meshset 1
-  for (EntityType ent_type = MBVERTEX; ent_type < MBMAXTYPE; ent_type++) {
-   // get all entities of type ent_type
-    Range entities;
-    EntityHandle meshset = meshsets_ptr->at(0)->getMeshset();
-    moab.get_entities_by_type(meshset, ent_type, entities);
-    if (entities.empty())
-      continue;
-
-    // vectors to write
-    std::vector<med_int> tag_number;
-    std::vector<med_int> family_number;
-    std::vector<med_int> connectivity;
-
-    // loop over all entities
-    for (auto &entity : entities) {
-      // get family id for entity
-      family_number.push_back(entityHandle_family_map[entity]);
-      // get tag number for entity
-      tag_number.push_back(entity);
-      // get connectivity for entity
-      if (ent_type != MBVERTEX) {
-        // get connectivity for entity
-        std::vector<EntityHandle> conn;
-        moab.get_connectivity(&entity, 1, conn);
-        for (auto &c : conn) {
-          connectivity.push_back(c);
+        } else {
+          // check family number for vertices
+          continue;
+          // if (entityHandle_family_map[entity] != 1 &&
+          // entityHandle_family_map[entity] != 0 &&
+          // entityHandle_family_map[entity] != 2){ std::cout << "Entity = " <<
+          // entity << std::endl; std::cout << "Entity type = " << ent_type <<
+          // std::endl; std::cout << "Family numb = " <<
+          // entityHandle_family_map[entity] << std::endl;
+          // }
+          // connectivity.push_back(entity);
         }
       }
-      else{
-        connectivity.push_back(entity);
-      }
-  }
 
-  auto get_med_element_type = [](EntityType ent_type) {
-    med_geometrie_element type;
-    switch (ent_type) {
-    case MBHEX:
-      type = MED_HEXA8;
-      break;
-    case MBTET:
-      type = MED_TETRA4;
-      break;
-    case MBQUAD:
-      type = MED_QUAD4;
-      break;
-    case MBTRI:
-      type = MED_TRIA3;
-      break;
-    case MBEDGE:
-      type = MED_SEG2;
-      break;
-    default:
-      type = MED_POINT1;
-      break;
+      auto get_med_element_type = [](EntityType ent_type) {
+        med_geometrie_element type;
+        switch (ent_type) {
+        case MBHEX:
+          type = MED_HEXA8;
+          break;
+        case MBTET:
+          type = MED_TETRA4;
+          break;
+        case MBQUAD:
+          type = MED_QUAD4;
+          break;
+        case MBTRI:
+          type = MED_TRIA3;
+          break;
+        case MBEDGE:
+          type = MED_SEG2;
+          break;
+        default:
+          type = MED_POINT1;
+          break;
+        }
+        return type;
+      };
+
+      med_geometrie_element med_type = get_med_element_type(ent_type);
+      CHKERR MEDmeshElementWr(fid, mesh_name.c_str(), MED_NO_DT, MED_NO_IT, 0.,
+                              MED_CELL, med_type, MED_NODAL, MED_FULL_INTERLACE,
+                              family_number.size(), &connectivity[0], MED_FALSE,
+                              nullptr, MED_TRUE, &tag_number[0], MED_TRUE,
+                              &family_number[0]);
+
+      MOFEM_LOG_C("MEDWORLD", Sev::inform,
+                  "Writing %i elements of type %i (%s) ", family_number.size(),
+                  med_type, moab::CN::EntityTypeName(ent_type));
     }
-    return type;
-  };
 
-  med_geometrie_element med_type = get_med_element_type(ent_type);
-  CHKERR MEDmeshElementWr(fid, mesh_name.c_str(), MED_NO_DT, MED_NO_IT, 0.,
-                          MED_CELL, med_type, MED_NODAL, MED_FULL_INTERLACE,
-                          family_number.size(), &connectivity[0], MED_FALSE,
-                          nullptr, MED_TRUE, &tag_number[0], MED_TRUE,
-                          &family_number[0]);
+    // std::multimap<EntityType, std::tuple<med_int, med_int, Range>>
+    //     combined_multimap;
+    // std::multimap<EntityType,
+    //               std::tuple<med_int, med_int, Range, med_int, std::string>>
+    //     combined_multimap_from_meshset1;
 
-  MOFEM_LOG_C("MEDWORLD", Sev::inform, "Writing %i elements of type %i (%s) ",
-              family_number.size(), med_type,
-              moab::CN::EntityTypeName(ent_type));
-  }              
+    // med_int family_id = 1;
+    // for (auto &iit : *meshsets_ptr) {
+    //   // check if meshset is cubit meshset
+    //   // if (iit->getMeshsetId() == 1)
+    //   //   continue;
 
-  // std::multimap<EntityType, std::tuple<med_int, med_int, Range>>
-  //     combined_multimap;
-  // std::multimap<EntityType,
-  //               std::tuple<med_int, med_int, Range, med_int, std::string>>
-  //     combined_multimap_from_meshset1;
+    //   if (iit->getBcTypeULong() & BLOCKSET) {
+    //     EntityHandle meshset = iit->getMeshset();
 
-  // med_int family_id = 1;
-  // for (auto &iit : *meshsets_ptr) {
-  //   // check if meshset is cubit meshset
-  //   // if (iit->getMeshsetId() == 1)
-  //   //   continue;
+    //     std::string name = iit->getName();
+    //     if (name == "NoNameSet") {
+    //       name = "BLOCKSET_NoNameSet_";
+    //       name += std::to_string(iit->getMeshsetId());
+    //     }
+    //     meshset_map[iit->getMeshsetId()] = name;
 
+    //     for (EntityType ent_type = MBVERTEX; ent_type < MBENTITYSET;
+    //     ent_type++) {
+    //       Range range;
+    //       CHKERR moab.get_entities_by_type(meshset, ent_type, range, true);
+    //       // }
+    //       if (!range.empty()) {
+    //         // check if new range already has a family
+    //         std::string group_name;
+    //         med_int group_index;
+    //         std::set<std::string> appended_names;
+    //         // std::cout << "Range = " << range.size() << std::endl;
+    //         // std::cout << "Range = " << range << std::endl;
+    //         bool duplicate = false;
+    //         for (auto it = combined_multimap.begin();
+    //              it != combined_multimap.end();
+    //              it = combined_multimap.upper_bound(it->first)) {
 
+    //           auto range_map = combined_multimap.equal_range(ent_type);
 
+    //           for (auto it2 = range_map.first; it2 != range_map.second;
+    //           ++it2) {
+    //             Range difference1 = subtract(range,
+    //             std::get<2>(it2->second)); Range difference2 =
+    //             subtract(std::get<2>(it2->second), range);
+    //             // std::cout << "Range check it2 = " <<
+    //             std::get<2>(it2->second)
+    //             //           << std::endl;
+    //             // std::cout << "difference1 (range - it2) = " << difference1
+    //             <<
+    //             // std::endl; std::cout << "difference2 (it2 - range) = " <<
+    //             // difference2 << std::endl; check if ranges are equal
+    //             if (range == std::get<2>(it2->second)) {
+    //               // std::cout << "Range is equal" << std::endl;
+    //               int matched_meshsetId = std::get<1>(it2->second);
+    //               int matched_familyId = std::get<0>(it2->second);
+    //               // check if matched family id is 0
+    //               if (matched_familyId == 0) {
+    //                 // create new family
+    //                 max_id++;
+    //                 family_id = max_id;
+    //                 group_name = meshset_map[iit->getMeshsetId()];
+    //                 group_index = 1;
+    //                 group_name.resize(group_index * MED_LNAME_SIZE, ' ');
+    //                 family_group_map[family_id] = group_name;
+    //                 group_map[family_id] = group_index;
+    //                 combined_multimap.insert(std::make_pair(
+    //                     ent_type,
+    //                     std::make_tuple(family_id, iit->getMeshsetId(),
+    //                     range)));
+    //                 // remove old range from combined_multimap
+    //                 combined_multimap.erase(it2);
+    //               } else {
+    //                 group_name = family_group_map[family_id];
+    //                 std::string meshset_name =
+    //                     meshset_map[iit->getMeshsetId()] + " ";
+    //                 group_index = group_map[matched_familyId]; // group index
+    //                 for
+    //                                                            // matched
+    //                                                            family
+    //                 group_name =
+    //                     family_group_map[matched_familyId]; // group name for
+    //                                                         // matched family
+    //                 // append name of current meshset to group name if not
+    //                 already
+    //                 // appended
+    //                 if (group_name.find(meshset_name) == std::string::npos) {
+    //                   group_index++; // increment group index
+    //                   group_name += meshset_name;
+    //                   group_name.resize(group_index * MED_LNAME_SIZE, ' ');
+    //                   family_group_map[family_id] = group_name;
+    //                   group_map[family_id] = group_index;
+    //                 }
+    //               }
+    //               // std::cout <<"Family id = " <<family_id << " "<< "Group
+    //               name =
+    //               // " << group_name << std::endl; std::cout <<" Range
+    //               updated = "
+    //               // << range << std::endl;
+    //               duplicate = true;
+    //               break;
+    //             } else if (difference1.empty() || difference2.empty()) {
+    //               // update the ranges
+    //               // if new entity range is subset of old range
+    //               if (difference1.empty()) {
+    //                 int matched_familyId = std::get<0>(it2->second);
+    //                 int matched_meshsetId = std::get<1>(it2->second);
 
-  //   if (iit->getBcTypeULong() & BLOCKSET) {
-  //     EntityHandle meshset = iit->getMeshset();
+    //                 max_id++;
+    //                 family_id = max_id; // new family id for current range
+    //                 std::string meshset_name =
+    //                 meshset_map[iit->getMeshsetId()] +
+    //                                            " "; // name of current
+    //                                            meshset
+    //                 group_index = group_map[matched_familyId]; // group index
+    //                 for
+    //                                                            // matched
+    //                                                            family
+    //                 group_name =
+    //                     family_group_map[matched_familyId]; // group name for
+    //                                                         // matched family
+    //                 // append name of current meshset to group name if not
+    //                 already
+    //                 // appended
+    //                 if (group_name.find(meshset_name) == std::string::npos) {
+    //                   group_index++; // increment group index
+    //                   group_name += meshset_name;
+    //                   group_name.resize(group_index * MED_LNAME_SIZE, ' ');
+    //                   family_group_map[family_id] = group_name;
+    //                   group_map[family_id] = group_index;
+    //                 }
+    //                 // add new range
+    //                 // std::cout << "Range is subset of old range" <<
+    //                 std::endl; Range subset_range = range;
+    //                 combined_multimap.insert(std::make_pair(
+    //                     ent_type, std::make_tuple(family_id,
+    //                     iit->getMeshsetId(),
+    //                                               subset_range)));
+    //                 // std::cout <<"Family id = " <<family_id << " "<< "Group
+    //                 name
+    //                 // = " << group_name << std::endl; std::cout <<" Range
+    //                 added =
+    //                 // " << range << std::endl;
 
-  //     std::string name = iit->getName();
-  //     if (name == "NoNameSet") {
-  //       name = "BLOCKSET_NoNameSet_";
-  //       name += std::to_string(iit->getMeshsetId());
-  //     }
-  //     meshset_map[iit->getMeshsetId()] = name;
+    //                 // update old range to not include subset_range
+    //                 Range old_range = std::get<2>(it2->second);
+    //                 Range::iterator it_range = old_range.begin();
+    //                 while (it_range != old_range.end()) {
+    //                   if (subset_range.find(*it_range) != subset_range.end())
+    //                   {
+    //                     it_range = old_range.erase(it_range);
+    //                   } else {
+    //                     ++it_range;
+    //                   }
+    //                 }
+    //                 combined_multimap.erase(it2);
+    //                 // update combined_multimap
+    //                 combined_multimap.insert(std::make_pair(
+    //                     ent_type, std::make_tuple(matched_familyId,
+    //                                               matched_meshsetId,
+    //                                               old_range)));
+    //                 // std::cout <<"Family id = " <<matched_familyId << " "<<
+    //                 // "Group name = " << group_name << std::endl; std::cout
+    //                 <<"
+    //                 // Range updated = " << old_range << std::endl;
+    //                 break;
+    //               } else if (difference2.empty()) {
+    //                 // if old range is subset of new range
+    //                 // std::cout << "Old range is subset of new range" <<
+    //                 // std::endl;
+    //                 Range subset_range = std::get<2>(it2->second);
+    //                 // remove old range from new range
+    //                 Range::iterator it_range = range.begin();
+    //                 while (it_range != range.end()) {
+    //                   if (subset_range.find(*it_range) != subset_range.end())
+    //                   {
+    //                     it_range = range.erase(it_range);
+    //                   } else {
+    //                     ++it_range;
+    //                   }
+    //                 }
+    //                 // std::cout <<"Family id = " <<family_id << " "<< "Group
+    //                 name
+    //                 // = " << group_name << std::endl; std::cout <<" Range
+    //                 added =
+    //                 // " << range << std::endl;
+    //                 combined_multimap.insert(std::make_pair(
+    //                     ent_type,
+    //                     std::make_tuple(family_id, iit->getMeshsetId(),
+    //                     range)));
+    //                 break;
+    //               }
+    //             }
+    //           }
+    //         }
+    //         if (!duplicate) {
+    //           group_name = meshset_map[iit->getMeshsetId()];
+    //           group_index = 1;
+    //           if (iit->getMeshsetId() == 1) {
+    //             family_id = 0;
+    //             group_name = "";
+    //             group_index = NULL;
+    //             family_group_map[family_id] = group_name;
+    //             group_map[family_id] = group_index;
+    //             combined_multimap.insert(std::make_pair(
+    //                 ent_type,
+    //                 std::make_tuple(family_id, iit->getMeshsetId(), range)));
+    //           } else {
+    //             family_id = iit->getMeshsetId();
+    //             group_name.resize(group_index * MED_LNAME_SIZE, ' ');
+    //             family_group_map[family_id] = group_name;
+    //             group_map[family_id] = group_index;
+    //             combined_multimap.insert(std::make_pair(
+    //                 ent_type,
+    //                 std::make_tuple(family_id, iit->getMeshsetId(), range)));
+    //           }
+    //         }
+    //       }
+    //     }
+    //   }
 
-  //     for (EntityType ent_type = MBVERTEX; ent_type < MBENTITYSET; ent_type++) {
-  //       Range range;
-  //       CHKERR moab.get_entities_by_type(meshset, ent_type, range, true);
-  //       // }
-  //       if (!range.empty()) {
-  //         // check if new range already has a family
-  //         std::string group_name;
-  //         med_int group_index;
-  //         std::set<std::string> appended_names;
-  //         // std::cout << "Range = " << range.size() << std::endl;
-  //         // std::cout << "Range = " << range << std::endl;
-  //         bool duplicate = false;
-  //         for (auto it = combined_multimap.begin();
-  //              it != combined_multimap.end();
-  //              it = combined_multimap.upper_bound(it->first)) {
+    //   if (iit->getBcTypeULong() & SIDESET || iit->getBcTypeULong() & NODESET)
+    //   {
+    //     EntityHandle meshset = iit->getMeshset();
+    //     family_id++;
+    //     // meshset_map[family_id] = iit->getName();
 
-  //           auto range_map = combined_multimap.equal_range(ent_type);
+    //     CubitBCType cubitBcType(iit->getBcTypeULong());
+    //     auto test = iit->getBcType();
 
-  //           for (auto it2 = range_map.first; it2 != range_map.second; ++it2) {
-  //             Range difference1 = subtract(range, std::get<2>(it2->second));
-  //             Range difference2 = subtract(std::get<2>(it2->second), range);
-  //             // std::cout << "Range check it2 = " << std::get<2>(it2->second)
-  //             //           << std::endl;
-  //             // std::cout << "difference1 (range - it2) = " << difference1 <<
-  //             // std::endl; std::cout << "difference2 (it2 - range) = " <<
-  //             // difference2 << std::endl; check if ranges are equal
-  //             if (range == std::get<2>(it2->second)) {
-  //               // std::cout << "Range is equal" << std::endl;
-  //               int matched_meshsetId = std::get<1>(it2->second);
-  //               int matched_familyId = std::get<0>(it2->second);
-  //               // check if matched family id is 0
-  //               if (matched_familyId == 0) {
-  //                 // create new family
-  //                 max_id++;
-  //                 family_id = max_id;
-  //                 group_name = meshset_map[iit->getMeshsetId()];
-  //                 group_index = 1;
-  //                 group_name.resize(group_index * MED_LNAME_SIZE, ' ');
-  //                 family_group_map[family_id] = group_name;
-  //                 group_map[family_id] = group_index;
-  //                 combined_multimap.insert(std::make_pair(
-  //                     ent_type,
-  //                     std::make_tuple(family_id, iit->getMeshsetId(), range)));
-  //                 // remove old range from combined_multimap
-  //                 combined_multimap.erase(it2);
-  //               } else {
-  //                 group_name = family_group_map[family_id];
-  //                 std::string meshset_name =
-  //                     meshset_map[iit->getMeshsetId()] + " ";
-  //                 group_index = group_map[matched_familyId]; // group index for
-  //                                                            // matched family
-  //                 group_name =
-  //                     family_group_map[matched_familyId]; // group name for
-  //                                                         // matched family
-  //                 // append name of current meshset to group name if not already
-  //                 // appended
-  //                 if (group_name.find(meshset_name) == std::string::npos) {
-  //                   group_index++; // increment group index
-  //                   group_name += meshset_name;
-  //                   group_name.resize(group_index * MED_LNAME_SIZE, ' ');
-  //                   family_group_map[family_id] = group_name;
-  //                   group_map[family_id] = group_index;
-  //                 }
-  //               }
-  //               // std::cout <<"Family id = " <<family_id << " "<< "Group name =
-  //               // " << group_name << std::endl; std::cout <<" Range updated = "
-  //               // << range << std::endl;
-  //               duplicate = true;
-  //               break;
-  //             } else if (difference1.empty() || difference2.empty()) {
-  //               // update the ranges
-  //               // if new entity range is subset of old range
-  //               if (difference1.empty()) {
-  //                 int matched_familyId = std::get<0>(it2->second);
-  //                 int matched_meshsetId = std::get<1>(it2->second);
+    //     std::cout << iit->getBcTypeULong() << std::endl;
 
-  //                 max_id++;
-  //                 family_id = max_id; // new family id for current range
-  //                 std::string meshset_name = meshset_map[iit->getMeshsetId()] +
-  //                                            " "; // name of current meshset
-  //                 group_index = group_map[matched_familyId]; // group index for
-  //                                                            // matched family
-  //                 group_name =
-  //                     family_group_map[matched_familyId]; // group name for
-  //                                                         // matched family
-  //                 // append name of current meshset to group name if not already
-  //                 // appended
-  //                 if (group_name.find(meshset_name) == std::string::npos) {
-  //                   group_index++; // increment group index
-  //                   group_name += meshset_name;
-  //                   group_name.resize(group_index * MED_LNAME_SIZE, ' ');
-  //                   family_group_map[family_id] = group_name;
-  //                   group_map[family_id] = group_index;
-  //                 }
-  //                 // add new range
-  //                 // std::cout << "Range is subset of old range" << std::endl;
-  //                 Range subset_range = range;
-  //                 combined_multimap.insert(std::make_pair(
-  //                     ent_type, std::make_tuple(family_id, iit->getMeshsetId(),
-  //                                               subset_range)));
-  //                 // std::cout <<"Family id = " <<family_id << " "<< "Group name
-  //                 // = " << group_name << std::endl; std::cout <<" Range added =
-  //                 // " << range << std::endl;
+    //     unsigned jj = 0;
+    //     string bc_type_name;
+    //     while (1 << jj != LASTSET_BC) {
+    //       const CubitBCType jj_bc_type = 1 << jj;
+    //       if ((iit->getBcType() & jj_bc_type).any()) {
 
-  //                 // update old range to not include subset_range
-  //                 Range old_range = std::get<2>(it2->second);
-  //                 Range::iterator it_range = old_range.begin();
-  //                 while (it_range != old_range.end()) {
-  //                   if (subset_range.find(*it_range) != subset_range.end()) {
-  //                     it_range = old_range.erase(it_range);
-  //                   } else {
-  //                     ++it_range;
-  //                   }
-  //                 }
-  //                 combined_multimap.erase(it2);
-  //                 // update combined_multimap
-  //                 combined_multimap.insert(std::make_pair(
-  //                     ent_type, std::make_tuple(matched_familyId,
-  //                                               matched_meshsetId, old_range)));
-  //                 // std::cout <<"Family id = " <<matched_familyId << " "<<
-  //                 // "Group name = " << group_name << std::endl; std::cout <<"
-  //                 // Range updated = " << old_range << std::endl;
-  //                 break;
-  //               } else if (difference2.empty()) {
-  //                 // if old range is subset of new range
-  //                 // std::cout << "Old range is subset of new range" <<
-  //                 // std::endl;
-  //                 Range subset_range = std::get<2>(it2->second);
-  //                 // remove old range from new range
-  //                 Range::iterator it_range = range.begin();
-  //                 while (it_range != range.end()) {
-  //                   if (subset_range.find(*it_range) != subset_range.end()) {
-  //                     it_range = range.erase(it_range);
-  //                   } else {
-  //                     ++it_range;
-  //                   }
-  //                 }
-  //                 // std::cout <<"Family id = " <<family_id << " "<< "Group name
-  //                 // = " << group_name << std::endl; std::cout <<" Range added =
-  //                 // " << range << std::endl;
-  //                 combined_multimap.insert(std::make_pair(
-  //                     ent_type,
-  //                     std::make_tuple(family_id, iit->getMeshsetId(), range)));
-  //                 break;
-  //               }
-  //             }
-  //           }
-  //         }
-  //         if (!duplicate) {
-  //           group_name = meshset_map[iit->getMeshsetId()];
-  //           group_index = 1;
-  //           if (iit->getMeshsetId() == 1) {
-  //             family_id = 0;
-  //             group_name = "";
-  //             group_index = NULL;
-  //             family_group_map[family_id] = group_name;
-  //             group_map[family_id] = group_index;
-  //             combined_multimap.insert(std::make_pair(
-  //                 ent_type,
-  //                 std::make_tuple(family_id, iit->getMeshsetId(), range)));
-  //           } else {
-  //             family_id = iit->getMeshsetId();
-  //             group_name.resize(group_index * MED_LNAME_SIZE, ' ');
-  //             family_group_map[family_id] = group_name;
-  //             group_map[family_id] = group_index;
-  //             combined_multimap.insert(std::make_pair(
-  //                 ent_type,
-  //                 std::make_tuple(family_id, iit->getMeshsetId(), range)));
-  //           }
-  //         }
-  //       }
-  //     }
-  //   }
+    //         bc_type_name += string(CubitBCNames[jj + 1]);
+    //         bc_type_name += "_";
+    //       }
+    //       ++jj;
+    //     }
+    //     bc_type_name += std::to_string(iit->getMeshsetId());
+    //     meshset_map[family_id] = bc_type_name;
+    //     std::cout << " " << meshset_map[family_id] << std::endl;
 
-  //   if (iit->getBcTypeULong() & SIDESET || iit->getBcTypeULong() & NODESET) {
-  //     EntityHandle meshset = iit->getMeshset();
-  //     family_id++;
-  //     // meshset_map[family_id] = iit->getName();
+    //     for (EntityType ent_type = MBVERTEX; ent_type < MBENTITYSET;
+    //     ent_type++) {
+    //       Range range;
+    //       CHKERR moab.get_entities_by_type(meshset, ent_type, range, true);
+    //       // }
+    //       if (!range.empty()) {
+    //         combined_multimap.insert(std::make_pair(
+    //             ent_type, std::make_tuple(family_id, family_id, range)));
+    //       }
+    //     }
+    //   }
+    //   // family_id++;
+    // }
 
-  //     CubitBCType cubitBcType(iit->getBcTypeULong());
-  //     auto test = iit->getBcType();
+    // for (auto it = combined_multimap.begin(); it != combined_multimap.end();
+    //      it = combined_multimap.upper_bound(it->first)) {
+    //   // iterate over entity type multimap
+    //   EntityType ent_type = it->first;
+    //   auto range = combined_multimap.equal_range(ent_type);
+    //   for (auto it2 = range.first; it2 != range.second; ++it2) {
+    //   std::cout<< "family size = " << family_group_map.size() << std::endl;
+    //   std::cout<< "group size = " << group_map.size() << std::endl;
+    //   for (auto iter = family_group_map.begin(); iter !=
+    //   family_group_map.end();
+    //        ++iter) {
+    //     // iterate over family group map
+    //     // get family id
 
-  //     std::cout << iit->getBcTypeULong() << std::endl;
+    //     med_int found_family_id = iter->first;
+    //     std::string found_group_name = iter->second;
 
-  //     unsigned jj = 0;
-  //     string bc_type_name;
-  //     while (1 << jj != LASTSET_BC) {
-  //       const CubitBCType jj_bc_type = 1 << jj;
-  //       if ((iit->getBcType() & jj_bc_type).any()) {
+    //     std::string found_family_name = "F_" +
+    //     std::to_string(found_family_id);
 
-  //         bc_type_name += string(CubitBCNames[jj + 1]);
-  //         bc_type_name += "_";
-  //       }
-  //       ++jj;
-  //     }
-  //     bc_type_name += std::to_string(iit->getMeshsetId());
-  //     meshset_map[family_id] = bc_type_name;
-  //     std::cout << " " << meshset_map[family_id] << std::endl;
+    //     med_int found_group_index = group_map[found_family_id];
 
-  //     for (EntityType ent_type = MBVERTEX; ent_type < MBENTITYSET; ent_type++) {
-  //       Range range;
-  //       CHKERR moab.get_entities_by_type(meshset, ent_type, range, true);
-  //       // }
-  //       if (!range.empty()) {
-  //         combined_multimap.insert(std::make_pair(
-  //             ent_type, std::make_tuple(family_id, family_id, range)));
-  //       }
-  //     }
-  //   }
-  //   // family_id++;
-  // }
+    //     CHKERR MEDfamilyCr(fid, mesh_name.c_str(), found_family_name.c_str(),
+    //     found_family_id,
+    //                        found_group_index, found_group_name.c_str());
+    //     MOFEM_LOG("MEDWORLD", Sev::inform)
+    //         << "Creating family " << found_family_name << " with id " <<
+    //         found_family_id
+    //         << " and group " << found_group_name;
+    // }
 
-  // for (auto it = combined_multimap.begin(); it != combined_multimap.end();
-  //      it = combined_multimap.upper_bound(it->first)) {
-  //   // iterate over entity type multimap
-  //   EntityType ent_type = it->first;
-  //   auto range = combined_multimap.equal_range(ent_type);
-  //   for (auto it2 = range.first; it2 != range.second; ++it2) {
-//   std::cout<< "family size = " << family_group_map.size() << std::endl;
-//   std::cout<< "group size = " << group_map.size() << std::endl;
-//   for (auto iter = family_group_map.begin(); iter != family_group_map.end();
-//        ++iter) {
-//     // iterate over family group map
-//     // get family id
+    // Iterate over combined_multimap
+    // for (auto it = combined_multimap.begin(); it != combined_multimap.end();
+    //      it = combined_multimap.upper_bound(it->first)) {
+    //   EntityType ent_type = it->first;
+    //   auto range = combined_multimap.equal_range(ent_type);
 
-//     med_int found_family_id = iter->first;
-//     std::string found_group_name = iter->second;
+    //   std::vector<med_int> group_number;
+    //   std::vector<med_int> family_number;
+    //   std::vector<med_int> connectivity;
+    //   std::unordered_set<med_int> seen_family_ids;
 
-//     std::string found_family_name = "F_" + std::to_string(found_family_id);
+    //   for (auto it2 = range.first; it2 != range.second; ++it2) {
+    //     med_int family_id = std::get<0>(it2->second);
+    //     Range range_ent = std::get<2>(it2->second);
+    //     if (seen_family_ids.count(family_id) > 0) {
+    //       continue;
+    //     }
+    //   // Add the current family_id to the set of seen family_ids
+    //   seen_family_ids.insert(family_id);
 
-//     med_int found_group_index = group_map[found_family_id];
+    //     auto get_elements =
+    //         [&](Range range_ent, std::vector<med_int> &connectivity,
+    //             std::vector<med_int> &famNums, std::vector<med_int>
+    //             &groupNums, EntityType ent_type) {
+    //           // For each element, get its connectivity
+    //           for (Range::iterator it = range_ent.begin(); it !=
+    //           range_ent.end();
+    //                ++it) {
+    //             const EntityHandle *conn;
+    //             int num_nodes;
+    //             if (ent_type != MBVERTEX) {
 
-//     CHKERR MEDfamilyCr(fid, mesh_name.c_str(), found_family_name.c_str(), found_family_id,
-//                        found_group_index, found_group_name.c_str());
-//     MOFEM_LOG("MEDWORLD", Sev::inform)
-//         << "Creating family " << found_family_name << " with id " << found_family_id
-//         << " and group " << found_group_name;
-// }
+    //               moab.get_connectivity(*it, conn, num_nodes);
+    //               for (int i = 0; i < num_nodes; ++i) {
+    //                 connectivity.push_back(conn[i]);
+    //               }
+    //             }
+    //             else {
+    //               connectivity.push_back(*it);
+    //             }
+    //             famNums.push_back(family_id);
+    //             groupNums.push_back(*it);
+    //           }
+    //         };
 
-  // Iterate over combined_multimap
-  // for (auto it = combined_multimap.begin(); it != combined_multimap.end();
-  //      it = combined_multimap.upper_bound(it->first)) {
-  //   EntityType ent_type = it->first;
-  //   auto range = combined_multimap.equal_range(ent_type);
+    //     if (range_ent.empty()) {
+    //       continue;
+    //     }
 
-  //   std::vector<med_int> group_number;
-  //   std::vector<med_int> family_number;
-  //   std::vector<med_int> connectivity;
-  //   std::unordered_set<med_int> seen_family_ids;
+    //     get_elements(range_ent, connectivity, family_number, group_number,
+    //     ent_type); auto next_it = it2;
+    //     ++next_it;
+    //     if (next_it == range.second ||
+    //         family_id == std::get<0>(next_it->second)) {
 
-  //   for (auto it2 = range.first; it2 != range.second; ++it2) {
-  //     med_int family_id = std::get<0>(it2->second);
-  //     Range range_ent = std::get<2>(it2->second);
-  //     if (seen_family_ids.count(family_id) > 0) {
-  //       continue;
-  //     }
-  //   // Add the current family_id to the set of seen family_ids
-  //   seen_family_ids.insert(family_id);
+    //       auto get_med_element_type = [](EntityType ent_type) {
+    //         med_geometrie_element type;
+    //         switch (ent_type) {
+    //         case MBHEX:
+    //           type = MED_HEXA8;
+    //           break;
+    //         case MBTET:
+    //           type = MED_TETRA4;
+    //           break;
+    //         case MBQUAD:
+    //           type = MED_QUAD4;
+    //           break;
+    //         case MBTRI:
+    //           type = MED_TRIA3;
+    //           break;
+    //         case MBEDGE:
+    //           type = MED_SEG2;
+    //           break;
+    //         default:
+    //           type = MED_POINT1;
+    //           break;
+    //         }
+    //         return type;
+    //       };
 
-  //     auto get_elements =
-  //         [&](Range range_ent, std::vector<med_int> &connectivity,
-  //             std::vector<med_int> &famNums, std::vector<med_int> &groupNums,
-  //             EntityType ent_type) {
-  //           // For each element, get its connectivity
-  //           for (Range::iterator it = range_ent.begin(); it != range_ent.end();
-  //                ++it) {
-  //             const EntityHandle *conn;
-  //             int num_nodes;
-  //             if (ent_type != MBVERTEX) {
+    //         med_geometrie_element med_type = get_med_element_type(ent_type);
+    //         CHKERR MEDmeshElementWr(
+    //             fid, mesh_name.c_str(), MED_NO_DT, MED_NO_IT, 0., MED_CELL,
+    //             med_type, MED_NODAL, MED_FULL_INTERLACE,
+    //             family_number.size(), &connectivity[0], MED_FALSE, nullptr,
+    //             MED_TRUE, &group_number[0], MED_TRUE, &family_number[0]);
 
-  //               moab.get_connectivity(*it, conn, num_nodes);
-  //               for (int i = 0; i < num_nodes; ++i) {
-  //                 connectivity.push_back(conn[i]);
-  //               }
-  //             }
-  //             else {
-  //               connectivity.push_back(*it);
-  //             }
-  //             famNums.push_back(family_id);
-  //             groupNums.push_back(*it);
-  //           }
-  //         };
-
-  //     if (range_ent.empty()) {
-  //       continue;
-  //     }
-
-  //     get_elements(range_ent, connectivity, family_number, group_number, ent_type);
-  //     auto next_it = it2;
-  //     ++next_it;
-  //     if (next_it == range.second ||
-  //         family_id == std::get<0>(next_it->second)) {
-
-  //       auto get_med_element_type = [](EntityType ent_type) {
-  //         med_geometrie_element type;
-  //         switch (ent_type) {
-  //         case MBHEX:
-  //           type = MED_HEXA8;
-  //           break;
-  //         case MBTET:
-  //           type = MED_TETRA4;
-  //           break;
-  //         case MBQUAD:
-  //           type = MED_QUAD4;
-  //           break;
-  //         case MBTRI:
-  //           type = MED_TRIA3;
-  //           break;
-  //         case MBEDGE:
-  //           type = MED_SEG2;
-  //           break;
-  //         default:
-  //           type = MED_POINT1;
-  //           break;
-  //         }
-  //         return type;
-  //       };
-
-  //         med_geometrie_element med_type = get_med_element_type(ent_type);
-  //         CHKERR MEDmeshElementWr(
-  //             fid, mesh_name.c_str(), MED_NO_DT, MED_NO_IT, 0., MED_CELL,
-  //             med_type, MED_NODAL, MED_FULL_INTERLACE, family_number.size(),
-  //             &connectivity[0], MED_FALSE, nullptr, MED_TRUE, &group_number[0],
-  //             MED_TRUE, &family_number[0]);
-
-  //         MOFEM_LOG_C("MEDWORLD", Sev::inform,
-  //                     "Writing %i elements of type %i (%s) ",
-  //                     family_number.size(), med_type,
-  //                     moab::CN::EntityTypeName(ent_type));
-  //     }
-  //   }
-  //}
-  CHKERR MEDfermer(fid);
-  MoFEMFunctionReturnHot(0);
+    //         MOFEM_LOG_C("MEDWORLD", Sev::inform,
+    //                     "Writing %i elements of type %i (%s) ",
+    //                     family_number.size(), med_type,
+    //                     moab::CN::EntityTypeName(ent_type));
+    //     }
+    //   }
+    //}
+    CHKERR MEDfermer(fid);
+    MoFEMFunctionReturnHot(0);
   }
 
 MoFEMErrorCode MedInterface::readFields(const std::string &file_name,
