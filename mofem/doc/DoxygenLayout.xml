@@ -46,7 +46,7 @@
     
     <tab type="user" title="Modules" url="@ref mod_gallery" intro=""/>
     <tab type="user" url="https://groups.google.com/forum/#!categories/mofem-group" title="Q&amp;A"/>
-    <tab type="user" url="https://bitbucket.org/likask/mofem-cephas" title="Repository"/>
+    <tab type="user" url="https://bitbucket.org/mofem/workspace/repositories/" title="Repository"/>
     <tab type="user" url="https://zenodo.org/communities/mofem/" title="Library"/>
 
     <tab type="user" visible="yes" title="About" url="@ref about_us" intro="">
