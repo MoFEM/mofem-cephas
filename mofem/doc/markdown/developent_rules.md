@@ -48,7 +48,7 @@ OpBlackBox* createOpBlackBox() { return new OpBalckBox(); }
 
 - Test code not method.
 
-## Avoid decencies
+## Avoid dependencies
 
 - Do not add software dependencies to core library.
 - If you have to add dependency, make it optional.
