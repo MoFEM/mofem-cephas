@@ -19,12 +19,12 @@
 
 -fieldsplit_1_ksp_type gmres
 -fieldsplit_1_ksp_monitor
--fieldsplit_1_pc_type gamg
--fieldsplit_1_pc_mg_smoothup 1
--fieldsplit_1_pc_mg_smoothdown 1
--fieldsplit_1_pc_gamg_reuse_interpolation 1
+#-fieldsplit_1_pc_type gamg
+#-fieldsplit_1_pc_mg_smoothup 1
+#-fieldsplit_1_pc_mg_smoothdown 1
+#-fieldsplit_1_pc_gamg_reuse_interpolation 1
 
--fieldsplit_0_ksp_monitor
+#-fieldsplit_0_ksp_monitor
 -fieldsplit_1_ksp_monitor
 
 -fieldsplit_0_mat_mumps_icntl_14 800 
@@ -41,4 +41,12 @@
 -mat_mumps_icntl_24 1 
 -mat_mumps_icntl_13 1
 
+-mofem_mg_coarse_order 1
+-mofem_mg_levels 4
 
+-fieldsplit_1_pc_type mg 
+-fieldsplit_1_mg_coarse_ksp_type preonly 
+-fieldsplit_1_mg_coarse_pc_type bjacobi 
+-fieldsplit_1_pc_mg_smoothup 10 
+-fieldsplit_1_pc_mg_smoothdown 10 
+-fieldsplit_1_pc_mg_type multiplicative 
