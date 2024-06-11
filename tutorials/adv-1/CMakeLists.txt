@@ -159,8 +159,12 @@ add_test(
   contact_2d_schur
   -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/cyl_2d_4p.h5m
   -pc_type fieldsplit
+  -mofem_mg_levels 2
+  -order 2 
+  -eps_stab 1e-4
   -ts_type beuler
-  -ts_max_time 1 -ts_dt 1
+  -ts_max_time 1 
+  -ts_dt 1
   -sdf_file ./sdf_files/sdf_hertz_2d_plane.py
   -young_modulus 1e3
   -poisson_ratio 0.4
@@ -174,7 +178,8 @@ add_test(
   -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/hertz_3d_4p.h5m
   -pc_type lu
   -ts_type beuler
-  -ts_max_time 1 -ts_dt 1
+  -ts_max_time 1 
+  -ts_dt 1
   -sdf_file ./sdf_files/sdf_hertz_3d.py
   -young_modulus 1e3
   -poisson_ratio 0.4
@@ -186,11 +191,19 @@ add_test(
   ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
   contact_3d_schur
   -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/hertz_3d_4p.h5m
+  -snes_max_it 40
+  -ksp_atol 1e-10
+  -ksp_rtol 1e-8
   -pc_type fieldsplit
-  -fieldsplit_1_pc_type lu 
-  -eps_stab 1e-8
+  -fieldsplit_1_ksp_type gmres
+  -fieldsplit_1_ksp_rtol 1e-2
+  -fieldsplit_1_pc_type mg
+  -mofem_mg_levels 2
+  -order 2 
+  -eps_stab 1e-5
   -ts_type beuler
-  -ts_max_time 1 -ts_dt 1
+  -ts_max_time 1 
+  -ts_dt 1
   -sdf_file ./sdf_files/sdf_hertz_3d.py
   -young_modulus 1e3
   -poisson_ratio 0.4

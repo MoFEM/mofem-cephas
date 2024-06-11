@@ -43,10 +43,9 @@
 
 -mofem_mg_coarse_order 1
 -mofem_mg_levels 4
+-mg_levels_ksp_max_it 4
 
 -fieldsplit_1_pc_type mg 
 -fieldsplit_1_mg_coarse_ksp_type preonly 
--fieldsplit_1_mg_coarse_pc_type bjacobi 
--fieldsplit_1_pc_mg_smoothup 10 
--fieldsplit_1_pc_mg_smoothdown 10 
+-fieldsplit_1_mg_coarse_pc_type lu
 -fieldsplit_1_pc_mg_type multiplicative 
