@@ -180,14 +180,12 @@ Simple::Simple(const Core &core)
 MoFEMErrorCode Simple::getOptions() {
   PetscBool flg = PETSC_TRUE;
   MoFEMFunctionBeginHot;
-  ierr = PetscOptionsBegin(PETSC_COMM_WORLD, "", "Simple interface options",
+  PetscOptionsBegin(PETSC_COMM_WORLD, "", "Simple interface options",
                            "none");
-  CHKERRG(ierr);
   ierr = PetscOptionsString("-file_name", "file name", "", "mesh.h5m",
                             meshFileName, 255, &flg);
   CHKERRG(ierr);
-  ierr = PetscOptionsEnd();
-  CHKERRG(ierr);
+  PetscOptionsEnd();
   MoFEMFunctionReturnHot(0);
 }
 

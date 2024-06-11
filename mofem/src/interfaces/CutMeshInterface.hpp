@@ -36,7 +36,7 @@ struct CutMeshInterface : public UnknownInterface {
    */
   MoFEMErrorCode getOptions() {
     MoFEMFunctionBegin;
-    CHKERR PetscOptionsBegin(PETSC_COMM_WORLD, "cut_", "MOFEM Cut mesh options",
+    PetscOptionsBegin(PETSC_COMM_WORLD, "cut_", "MOFEM Cut mesh options",
                              "none");
 
     CHKERR PetscOptionsInt("-linesearch_steps",
@@ -53,8 +53,7 @@ struct CutMeshInterface : public UnknownInterface {
                               projectEntitiesQualityTrashold,
                               &projectEntitiesQualityTrashold, PETSC_NULL);
 
-    ierr = PetscOptionsEnd();
-    CHKERRG(ierr);
+    PetscOptionsEnd();
     MoFEMFunctionReturn(0);
   }
 

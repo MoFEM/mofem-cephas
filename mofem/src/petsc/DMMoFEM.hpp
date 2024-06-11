@@ -694,7 +694,10 @@ PetscErrorCode DMCreateMatrix_MoFEM(DM dm, SmartPetscObj<Mat> &M);
  * Set options for MoFEM DM
  * \ingroup dm
  */
-#if PETSC_VERSION_GE(3, 7, 0)
+#if PETSC_VERSION_GE(3, 16, 0)
+PetscErrorCode DMSetFromOptions_MoFEM(DM dm, 
+                                      PetscOptionItems *PetscOptionsObject);
+#elif PETSC_VERSION_GE(3, 7, 0)
 PetscErrorCode DMSetFromOptions_MoFEM(PetscOptionItems *PetscOptionsObject,
                                       DM dm);
 #elif PETSC_VERSION_GE(3, 5, 3)

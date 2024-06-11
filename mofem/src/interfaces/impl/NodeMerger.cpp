@@ -24,12 +24,10 @@ NodeMergerInterface::NodeMergerInterface(const MoFEM::Core &core)
 MoFEMErrorCode NodeMergerInterface::getSubInterfaceOptions() {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
-  ierr = PetscOptionsBegin(m_field.get_comm(), "node_merge",
+  PetscOptionsBegin(m_field.get_comm(), "node_merge",
                            "Node merge options", "none");
-  CHKERRQ(ierr);
   
-  ierr = PetscOptionsEnd();
-  CHKERRQ(ierr);
+  PetscOptionsEnd();
 
   MoFEMFunctionReturn(0);
 }

@@ -157,7 +157,7 @@ MoFEMErrorCode LogManager::getOptions() {
   PetscBool log_no_colors = PETSC_FALSE;
   PetscBool log_time = PETSC_FALSE;
 
-  CHKERR PetscOptionsBegin(PETSC_COMM_WORLD, "log_",
+  PetscOptionsBegin(PETSC_COMM_WORLD, "log_",
                            "Logging interface options", "none");
 
   CHKERR PetscOptionsEList("-severity_level", "Severity level", "",
@@ -181,8 +181,7 @@ MoFEMErrorCode LogManager::getOptions() {
   CHKERR PetscOptionsBool("-time", "Log time", "",
                           log_time, &log_time, NULL);
 
-  ierr = PetscOptionsEnd();
-  CHKERRG(ierr);
+  PetscOptionsEnd();
 
   logging::core::get()->set_filter(MoFEM::LogKeywords::severity >= sev_level);
 

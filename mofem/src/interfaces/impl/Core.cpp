@@ -752,7 +752,7 @@ MoFEMErrorCode Core::getOptions(int verb) {
   if (verb == -1)
     verb = verbose;
 
-  CHKERR PetscOptionsBegin(mofemComm, optionsPrefix.c_str(), "Mesh cut options",
+  PetscOptionsBegin(mofemComm, optionsPrefix.c_str(), "Mesh cut options",
                            "See MoFEM documentation");
 
   CHKERR PetscOptionsBool(
@@ -766,8 +766,7 @@ MoFEMErrorCode Core::getOptions(int verb) {
   // TODO: Add read verbosity level
   // TODO: Add option to initalise problems ??? -  DO WE REALLY NEED THAT
 
-  ierr = PetscOptionsEnd();
-  CHKERRG(ierr);
+  PetscOptionsEnd();
 
   MoFEMFunctionReturn(0);
 }

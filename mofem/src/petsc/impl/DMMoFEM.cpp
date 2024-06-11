@@ -1261,7 +1261,10 @@ PetscErrorCode DMCreateMatrix_MoFEM(DM dm, SmartPetscObj<Mat> &M) {
   MoFEMFunctionReturn(0);
 }
 
-#if PETSC_VERSION_GE(3, 7, 0)
+#if PETSC_VERSION_GE(3, 16, 0)
+PetscErrorCode DMSetFromOptions_MoFEM(DM dm, 
+                                      PetscOptionItems *PetscOptionsObject) {
+#elif PETSC_VERSION_GE(3, 7, 0)
 PetscErrorCode DMSetFromOptions_MoFEM(PetscOptionItems *PetscOptionsObject,
                                       DM dm) {
 #elif PETSC_VERSION_GE(3, 5, 3)
@@ -1273,7 +1276,9 @@ PetscErrorCode DMSetFromOptions_MoFEM(DM dm) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
   DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
-#if PETSC_VERSION_GE(3, 5, 3)
+#if PETSC_VERSION_GE(3, 16, 0)
+  PetscOptionsHead(PetscOptionsObject, "DMMoFEM Options");
+#elif PETSC_VERSION_GE(3, 5, 3)
   ierr = PetscOptionsHead(PetscOptionsObject, "DMMoFEM Options");
   CHKERRG(ierr);
 #else
@@ -1288,6 +1293,7 @@ PetscErrorCode DMSetFromOptions_MoFEM(DM dm) {
   CHKERRG(ierr);
   MoFEMFunctionReturnHot(0);
 }
+
 
 PetscErrorCode DMSetUp_MoFEM(DM dm) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);

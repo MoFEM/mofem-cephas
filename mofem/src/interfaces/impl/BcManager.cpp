@@ -64,9 +64,8 @@ BcManager::BcManager(const Core &core) : cOre(const_cast<Core &>(core)) {
 
 MoFEMErrorCode BcManager::getOptions() {
   MoFEMFunctionBeginHot;
-  ierr = PetscOptionsBegin(PETSC_COMM_WORLD, "", "BcManager options", "none");
-  ierr = PetscOptionsEnd();
-  CHKERRG(ierr);
+  PetscOptionsBegin(PETSC_COMM_WORLD, "", "BcManager options", "none");
+  PetscOptionsEnd();
   MoFEMFunctionReturnHot(0);
 }
 

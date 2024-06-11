@@ -1374,7 +1374,7 @@ MoFEMErrorCode MeshsetsManager::setMeshsetFromFile() {
   PetscBool flg_file;
   char meshset_file_name[255] = "config_file.cfg";
   MoFEMFunctionBegin;
-  CHKERR PetscOptionsBegin(m_field.get_comm(), "", "Set meshsets form file",
+  PetscOptionsBegin(m_field.get_comm(), "", "Set meshsets form file",
                            "none");
   CHKERR PetscOptionsString("-meshsets_config", "meshsets config  file name",
                             "", "add_cubit_meshsets.in", meshset_file_name, 255,
@@ -1388,8 +1388,7 @@ MoFEMErrorCode MeshsetsManager::setMeshsetFromFile() {
     }
     CHKERR setMeshsetFromFile(string(meshset_file_name));
   }
-  ierr = PetscOptionsEnd();
-  CHKERRG(ierr);
+  PetscOptionsEnd();
   MoFEMFunctionReturn(0);
 }
 

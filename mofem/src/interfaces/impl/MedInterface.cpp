@@ -62,13 +62,11 @@ MoFEMErrorCode MedInterface::getFileNameFromCommandLine(int verb) {
   Interface &m_field = cOre;
   char mesh_file_name[255];
   MoFEMFunctionBeginHot;
-  ierr = PetscOptionsBegin(m_field.get_comm(), "", "MED Interface", "none");
-  CHKERRG(ierr);
+  PetscOptionsBegin(m_field.get_comm(), "", "MED Interface", "none");
   ierr = PetscOptionsString("-med_file", "med file name", "", "mesh.med",
                             mesh_file_name, 255, &flgFile);
   CHKERRG(ierr);
-  ierr = PetscOptionsEnd();
-  CHKERRG(ierr);
+  PetscOptionsEnd();
   if (flgFile == PETSC_TRUE) {
     medFileName = std::string(mesh_file_name);
   } else {

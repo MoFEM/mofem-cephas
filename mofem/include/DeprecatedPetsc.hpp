@@ -9,6 +9,17 @@
 
 namespace MoFEM {
 
+/**
+\deprecated Function is deprecated use function
+http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Sys/PetscOptionsGetInt.html>
+*/
+
+#if PETSC_VERSION_GE(3, 16, 0)
+#ifndef PETSC_NULL
+#define PETSC_NULL PETSC_NULLPTR 
+#endif
+#endif
+
 #if PETSC_VERSION_GE(3, 7, 0)
 
 /**
