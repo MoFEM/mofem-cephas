@@ -103,6 +103,7 @@ using FTensor::operator>>;
 #include <SnesCtx.hpp>
 #include <TsCtx.hpp>
 #include <DMMoFEM.hpp>
+#include <PCMGSetUpViaApproxOrders.hpp>
 
 // SRC/FINITE_ELEMENTS
 #include <EntitiesFieldData.hpp>
