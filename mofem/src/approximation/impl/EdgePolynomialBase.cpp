@@ -45,7 +45,7 @@ EdgePolynomialBase::getValue(MatrixDouble &pts,
 
     if (data.dataOnEntities[MBVERTEX][0].getN(base).size1() !=
         (unsigned int)nb_gauss_pts)
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Base functions or nodes has wrong number of integration points "
                "for base %s",
                ApproximationBaseNames[base]);
@@ -137,7 +137,7 @@ EdgePolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
 
   if (data.dataOnEntities[MBVERTEX][0].getN(NOBASE).size1() !=
       (unsigned int)nb_gauss_pts)
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "Base functions or nodes has wrong number of integration points "
              "for base %s",
              ApproximationBaseNames[NOBASE]);

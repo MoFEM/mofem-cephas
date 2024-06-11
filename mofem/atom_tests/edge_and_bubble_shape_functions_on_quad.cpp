@@ -31,10 +31,10 @@ int main(int argc, char *argv[]) {
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
 #if PETSC_VERSION_GE(3, 6, 4)
-    CHKERR PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name,
+    CHKERR PetscOptionsGetString(PETSC_NULLPTR, "", "-my_file", mesh_file_name,
                                  255, &flg);
 #else
-    CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-my_file",
+    CHKERR PetscOptionsGetString(PETSC_NULLPTR, PETSC_NULLPTR, "-my_file",
                                  mesh_file_name, 255, &flg);
 #endif
     if (flg != PETSC_TRUE) {
@@ -84,12 +84,12 @@ int main(int argc, char *argv[]) {
           verts.size(), Legendre_polynomials);
 
       if (std::abs(quad_bubbles_sum - sum_matrix(quad_bubbles)) > eps) {
-        SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+        SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                  "wrong result = %8.6e", sum_matrix(quad_bubbles));
       }
       if (std::abs(quad_diff_bubbles_sum - sum_matrix(quad_diff_bubbles)) >
           eps) {
-        SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+        SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                  "wrong result = %8.6e", sum_matrix(quad_diff_bubbles));
       }
     }
@@ -130,13 +130,13 @@ int main(int argc, char *argv[]) {
 
       for (int ee = 0; ee < 4; ++ee) {
         if (std::abs(quad_edges_sum[ee] - sum_matrix(quad_edges[ee])) > eps)
-          SETERRQ2(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+          SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                    "edge %d wrong result = %8.6e", ee,
                    sum_matrix(quad_edges[ee]));
 
         if (std::abs(quad_diff_edges_sum[ee] -
                      sum_matrix(quad_diff_edges[ee])) > eps)
-          SETERRQ2(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+          SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                    "edge %d wrong result = %8.6e", ee,
                    sum_matrix(quad_diff_edges[ee]));
       }

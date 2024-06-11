@@ -18,7 +18,7 @@ static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
 
-  MoFEM::Core::Initialize(&argc, &argv, PETSC_NULL, help);
+  MoFEM::Core::Initialize(&argc, &argv, PETSC_NULLPTR, help);
 
   try {
 
@@ -29,10 +29,10 @@ int main(int argc, char *argv[]) {
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
 #if PETSC_VERSION_GE(3, 6, 4)
-    CHKERR PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name,
+    CHKERR PetscOptionsGetString(PETSC_NULLPTR, "", "-my_file", mesh_file_name,
                                  255, &flg);
 #else
-    CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-my_file",
+    CHKERR PetscOptionsGetString(PETSC_NULLPTR, PETSC_NULLPTR, "-my_file",
                                  mesh_file_name, 255, &flg);
 #endif
     if (flg != PETSC_TRUE) {
@@ -40,9 +40,9 @@ int main(int argc, char *argv[]) {
     }
     PetscInt order;
 #if PETSC_VERSION_GE(3, 6, 4)
-    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-my_order", &order, &flg);
+    CHKERR PetscOptionsGetInt(PETSC_NULLPTR, "", "-my_order", &order, &flg);
 #else
-    CHKERR PetscOptionsGetInt(PETSC_NULL, PETSC_NULL, "-my_order", &order,
+    CHKERR PetscOptionsGetInt(PETSC_NULLPTR, PETSC_NULLPTR, "-my_order", &order,
                               &flg);
 #endif
     if (flg != PETSC_TRUE) {

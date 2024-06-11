@@ -33,11 +33,11 @@ int main(int argc, char *argv[]) {
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
 #if PETSC_VERSION_GE(3, 6, 4)
-    CHKERR PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name,
+    CHKERR PetscOptionsGetString(PETSC_NULLPTR, "", "-my_file", mesh_file_name,
                                  255, &flg);
 
 #else
-    CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-my_file",
+    CHKERR PetscOptionsGetString(PETSC_NULLPTR, PETSC_NULLPTR, "-my_file",
                                  mesh_file_name, 255, &flg);
 
 #endif
@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
     const char *list_bases[] = {"ainsworth", "demkowicz"};
 
     PetscInt choice_base_value = AINSWORTH;
-    CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list_bases,
+    CHKERR PetscOptionsGetEList(PETSC_NULLPTR, NULL, "-base", list_bases,
                                 LASBASETOP, &choice_base_value, &flg);
 
     if (flg != PETSC_TRUE) {
@@ -212,7 +212,7 @@ int main(int argc, char *argv[]) {
     Vec v;
     CHKERR m_field.getInterface<VecManager>()->vecCreateGhost("TEST_PROBLEM",
                                                               ROW, &v);
-    CHKERR VecSetRandom(v, PETSC_NULL);
+    CHKERR VecSetRandom(v, PETSC_NULLPTR);
 
     CHKERR m_field.getInterface<VecManager>()->setLocalGhostVector(
         "TEST_PROBLEM", ROW, v, INSERT_VALUES, SCATTER_REVERSE);
@@ -416,7 +416,7 @@ int main(int argc, char *argv[]) {
 
         const double eps = 1e-8;
         if (fabs(*tn_ptr) > eps) {
-          SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                    "HCurl continuity failed %6.4e", *tn_ptr);
         }
 
@@ -466,7 +466,7 @@ int main(int argc, char *argv[]) {
 
         const double eps = 1e-8;
         if (fabs(*tn_ptr) > eps) {
-          SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                    "HCurl continuity failed %6.4e", *tn_ptr);
         }
 
@@ -533,7 +533,7 @@ int main(int argc, char *argv[]) {
         double tn = 0;
         unsigned int nb_dofs = data.getN().size2() / 3;
         if (nb_dofs != data.getFieldData().size()) {
-          SETERRQ2(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+          SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
                    "Number of dofs on edge and number of base functions not "
                    "equla %d != %d",
                    nb_dofs, data.getFieldData().size());
@@ -558,7 +558,7 @@ int main(int argc, char *argv[]) {
 
         const double eps = 1e-8;
         if (fabs(*tn_ptr) > eps) {
-          SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                    "HCurl continuity failed %6.4e", *tn_ptr);
         }
 

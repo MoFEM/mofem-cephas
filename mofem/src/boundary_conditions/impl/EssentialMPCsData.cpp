@@ -458,8 +458,8 @@ MoFEMErrorCode EssentialPostProcLhs<MPCsType>::operator()() {
               MOFEM_LOG("WORLD", Sev::error) << "No support for AO yet";
             }
 
-            CHKERR MatZeroRowsIS(B, is_xyz_row_sum, 0, PETSC_NULL,
-                                 PETSC_NULL);
+            CHKERR MatZeroRowsIS(B, is_xyz_row_sum, 0, PETSC_NULLPTR,
+                                 PETSC_NULLPTR);
           // }
             auto set_mat_values = [&](auto row_is, auto col_is, double val, double perturb = 0) {
               MoFEMFunctionBeginHot;
@@ -703,8 +703,8 @@ MoFEMErrorCode EssentialPostProcRhs<MPCsType>::operator()() {
             // User is responsible for assembly if vLhs is provided
 
             // ISView(is_xyz_m, PETSC_VIEWER_STDOUT_WORLD);
-            // CHKERR MatZeroRowsColumnsIS(B, is_xyz_m, vDiag, PETSC_NULL,
-            //                             PETSC_NULL);
+            // CHKERR MatZeroRowsColumnsIS(B, is_xyz_m, vDiag, PETSC_NULLPTR,
+            //                             PETSC_NULLPTR);
           } 
         }
       }

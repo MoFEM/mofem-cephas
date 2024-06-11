@@ -45,14 +45,14 @@ typedef struct {
 
 #define CHKERRQPARMETIS(n, func)                                               \
   if (n == METIS_ERROR_INPUT)                                                  \
-    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_LIB,                                   \
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_LIB,                                   \
              "ParMETIS error due to wrong inputs and/or options for %s",       \
              func);                                                            \
   else if (n == METIS_ERROR_MEMORY)                                            \
-    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_LIB,                                   \
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_LIB,                                   \
              "ParMETIS error due to insufficient memory in %s", func);         \
   else if (n == METIS_ERROR)                                                   \
-    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_LIB, "ParMETIS general error in %s",   \
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_LIB, "ParMETIS general error in %s",   \
              func);
 
 #define PetscStackCallParmetis(func, args)                                     \
@@ -119,7 +119,7 @@ PetscErrorCode MatPartitioningApply_Parmetis_MoFEM(MatPartitioning part,
       for (i = 0; i < pmat->rmap->n; i++) {
         for (j = xadj[i]; j < xadj[i + 1]; j++) {
           if (adjncy[j] == i + rstart)
-            SETERRQ1(
+            SETERRQ(
                 PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
                 "Row %d has diagonal entry; Parmetis forbids diagonal entry",
                 i + rstart);

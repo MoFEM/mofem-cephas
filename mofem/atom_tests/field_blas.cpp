@@ -15,7 +15,7 @@ static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
 
-  MoFEM::Core::Initialize(&argc, &argv, PETSC_NULL, help);
+  MoFEM::Core::Initialize(&argc, &argv, PETSC_NULLPTR, help);
 
   try {
 
@@ -28,10 +28,10 @@ int main(int argc, char *argv[]) {
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
 #if PETSC_VERSION_GE(3, 6, 4)
-    CHKERR PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name,
+    CHKERR PetscOptionsGetString(PETSC_NULLPTR, "", "-my_file", mesh_file_name,
                                  255, &flg);
 #else
-    CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-my_file",
+    CHKERR PetscOptionsGetString(PETSC_NULLPTR, PETSC_NULLPTR, "-my_file",
                                  mesh_file_name, 255, &flg);
 #endif
     if (flg != PETSC_TRUE) {
@@ -39,10 +39,10 @@ int main(int argc, char *argv[]) {
     }
     int order = 1;
 #if PETSC_VERSION_GE(3, 6, 4)
-    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-my_order", &order, PETSC_NULL);
+    CHKERR PetscOptionsGetInt(PETSC_NULLPTR, "", "-my_order", &order, PETSC_NULLPTR);
 #else
-    CHKERR PetscOptionsGetInt(PETSC_NULL, PETSC_NULL, "-my_order", &order,
-                              PETSC_NULL);
+    CHKERR PetscOptionsGetInt(PETSC_NULLPTR, PETSC_NULLPTR, "-my_order", &order,
+                              PETSC_NULLPTR);
 #endif
 
     // Read mesh to MOAB
@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
             cout << name << " " << dit->getFieldData() << " " << expected
                  << endl;
             if (dit->getFieldData() != expected)
-              SETERRQ2(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+              SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                        "Wrong DOF value 0 != %4.3e for %s", dit->getFieldData(),
                        boost::lexical_cast<std::string>(*dit).c_str());
           }
@@ -153,7 +153,7 @@ int main(int argc, char *argv[]) {
             CHKERR moab.get_coords(&v, 1, &coords[0]);
             if (std::abs(entPtr->getEntFieldData()[0] - norm_2(coords)) >
                 std::numeric_limits<double>::epsilon())
-              SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+              SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                        "Wrong vals %3.4e != %3.4e",
                        entPtr->getEntFieldData()[0], norm_2(coords));
           }
@@ -237,7 +237,7 @@ int main(int argc, char *argv[]) {
             cout << name << " " << dit->getFieldData() << " " << expected
                  << endl;
             if (abs(dit->getFieldData() - expected) > eps)
-              SETERRQ3(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+              SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                        "Wrong DOF value %4.3e != %4.3e for %s",
                        dit->getFieldData(), expected,
                        boost::lexical_cast<std::string>(*dit).c_str());

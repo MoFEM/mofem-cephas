@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
                                 "bernstein"};
     PetscBool flg;
     PetscInt choice_base_value = AINSWORTH;
-    CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list_bases,
+    CHKERR PetscOptionsGetEList(PETSC_NULLPTR, NULL, "-base", list_bases,
                                 LASBASETOP, &choice_base_value, &flg);
 
     if (flg != PETSC_TRUE)
@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
     enum spaces { H1SPACE, L2SPACE, LASBASETSPACE };
     const char *list_spaces[] = {"h1", "l2"};
     PetscInt choice_space_value = H1SPACE;
-    CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-space", list_spaces,
+    CHKERR PetscOptionsGetEList(PETSC_NULLPTR, NULL, "-space", list_spaces,
                                 LASBASETSPACE, &choice_space_value, &flg);
     if (flg != PETSC_TRUE)
       SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "space not set");
@@ -307,7 +307,7 @@ MoFEMErrorCode QuadOpCheck::doWork(int side, EntityType type,
       std::cout << f - (*fieldVals)[gg] << std::endl;
 
       if (std::abs(f - (*fieldVals)[gg]) > eps)
-        SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                  "Wrong value %d : %6.4e != %6.4e", gg, f, (*fieldVals)[gg]);
 
       VectorDouble3 diff_f = ApproxFunction::diff_fun(t_coords(0), t_coords(1));
@@ -316,7 +316,7 @@ MoFEMErrorCode QuadOpCheck::doWork(int side, EntityType type,
       std::cout << std::endl;
       for (auto d : {0, 1})
         if (std::abs(diff_f[d] - (*diffFieldVals)(d, gg)) > eps)
-          SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                    "Wrong derivative value (%d) %6.4e != %6.4e", diff_f[d],
                    (*diffFieldVals)(d, gg));
 

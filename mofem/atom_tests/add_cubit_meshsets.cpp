@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
         std::vector<double> attributes;
         it->getAttributes(attributes);
         if (attributes.size() != 3) {
-          SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+          SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                    "should be 3 attributes but is %d", attributes.size());
         }
         if (attributes[0] != 0 || attributes[1] != 1 || attributes[2] != 2) {

@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
 
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
-    CHKERR PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name,
+    CHKERR PetscOptionsGetString(PETSC_NULLPTR, "", "-my_file", mesh_file_name,
                                  255, &flg);
     if (flg != PETSC_TRUE)
       SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "error -my_file (mesh file not given");
@@ -190,7 +190,7 @@ int main(int argc, char *argv[]) {
     enum spaces { MYH1, MYHDIV, MYLASTSPACEOP };
     const char *list_spaces[] = {"h1", "hdiv"};
     PetscInt choice_space_value = H1;
-    CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-space", list_spaces,
+    CHKERR PetscOptionsGetEList(PETSC_NULLPTR, NULL, "-space", list_spaces,
                                 MYLASTSPACEOP, &choice_space_value, &flg);
     bool is_hdiv = (choice_space_value == MYHDIV) ? true : false;
 

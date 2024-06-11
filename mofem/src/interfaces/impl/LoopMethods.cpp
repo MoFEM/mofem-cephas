@@ -25,8 +25,8 @@ PetscData::query_interface(boost::typeindex::type_index type_index,
 }
 
 PetscData::PetscData()
-    : data_ctx(PetscData::CtxSetNone), f(PETSC_NULL), A(PETSC_NULL),
-      B(PETSC_NULL), x(PETSC_NULL), x_t(PETSC_NULL), x_tt(PETSC_NULL) {}
+    : data_ctx(PetscData::CtxSetNone), f(PETSC_NULLPTR), A(PETSC_NULLPTR),
+      B(PETSC_NULLPTR), x(PETSC_NULLPTR), x_t(PETSC_NULLPTR), x_tt(PETSC_NULLPTR) {}
 
 MoFEMErrorCode PetscData::copyPetscData(const PetscData &petsc_data) {
   this->data_ctx = petsc_data.data_ctx;
@@ -49,7 +49,7 @@ KspMethod::query_interface(boost::typeindex::type_index type_index,
 };
 
 KspMethod::KspMethod()
-    : ksp_ctx(CTX_KSPNONE), ksp(PETSC_NULL), ksp_f(PetscData::f),
+    : ksp_ctx(CTX_KSPNONE), ksp(PETSC_NULLPTR), ksp_f(PetscData::f),
       ksp_A(PetscData::A), ksp_B(PetscData::B) {}
 
 MoFEMErrorCode KspMethod::copyKsp(const KspMethod &ksp) {

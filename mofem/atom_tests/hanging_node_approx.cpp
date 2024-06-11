@@ -311,7 +311,7 @@ template <> struct AtomTest::OpErrorSkel<1> : public BoundaryEleOp {
 
     constexpr double eps = 1e-8;
     if (sqrt(error2) > eps)
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                "Error on boundary = %6.4e", sqrt(error2));
 
     MoFEMFunctionReturn(0);
@@ -640,10 +640,10 @@ MoFEMErrorCode AtomTest::checkResults() {
 
   constexpr double eps = 1e-8;
   if (nrm2 > eps)
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
              "Not converged solution err = %6.4e", nrm2);
   if (std::sqrt(array[0]) > eps)
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
              "Error in approximation err = %6.4e", std::sqrt(array[0]));
 
   CHKERR VecRestoreArrayRead(common_data_ptr->L2Vec, &array);

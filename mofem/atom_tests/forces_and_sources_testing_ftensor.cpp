@@ -29,9 +29,9 @@ int main(int argc, char *argv[]) {
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
   #if PETSC_VERSION_GE(3,6,4)
-  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULLPTR,"","-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
   #else
-  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULLPTR,PETSC_NULLPTR,"-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
   #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"*** ERROR -my_file (MESH FILE NEEDED)");
@@ -217,7 +217,7 @@ int main(int argc, char *argv[]) {
 
           for(int dd = 0;dd<3;dd++) {
             if(diff_base(dd)!=data.getDiffN()(gg,3*bb+dd)) {
-              SETERRQ2(
+              SETERRQ(
                 PETSC_COMM_SELF,
                 MOFEM_DATA_INCONSISTENCY,
                 "Data inconsistency gg = %d bb = %d",

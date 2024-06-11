@@ -79,7 +79,7 @@ MoFEMErrorCode Core::Initialize(int *argc, char ***args, const char file[],
   PetscInitialized(&isInitialized);
   if (isInitialized == PETSC_FALSE) {
     PetscInitialize(argc, args, file, help);
-    PetscPushErrorHandler(mofem_error_handler, PETSC_NULL);
+    PetscPushErrorHandler(mofem_error_handler, PETSC_NULLPTR);
   }
 
   LogManager::createDefaultSinks(MPI_COMM_WORLD);
@@ -799,7 +799,7 @@ MoFEMErrorCode Core::get_problem(const std::string &problem_name,
   const ProblemsByName &problems = pRoblems.get<Problem_mi_tag>();
   ProblemsByName::iterator p_miit = problems.find(problem_name);
   if (p_miit == problems.end()) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
              "problem < %s > not found, (top tip: check spelling)",
              problem_name.c_str());
   }

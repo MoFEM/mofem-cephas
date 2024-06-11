@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
 
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
-    CHKERR PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name,
+    CHKERR PetscOptionsGetString(PETSC_NULLPTR, "", "-my_file", mesh_file_name,
                                  255, &flg);
     if (flg != PETSC_TRUE)
       SETERRQ(PETSC_COMM_SELF, 1, "*** ERROR -my_file (MESH FILE NEEDED)");
@@ -117,7 +117,7 @@ int main(int argc, char *argv[]) {
           VectorDouble field_data = (*it)->getEntFieldData();
           for (auto v : field_data)
             if (v != 1)
-              SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+              SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                        "Wrong value on field %4.3f", v);
         }
       }

@@ -99,7 +99,7 @@ MoFEMErrorCode Core::add_problem(const std::string &name, enum MoFEMTypes bh,
     CHKERR addProblem(id, name, verb);
     
   } else if (bh == MF_EXCL) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "problem is in database %s",
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "problem is in database %s",
              name.c_str());
   }
   MoFEMFunctionReturn(0);
@@ -109,7 +109,7 @@ MoFEMErrorCode Core::delete_problem(const std::string name) {
   MoFEMFunctionBegin;
   auto p_miit = pRoblems.get<Problem_mi_tag>().find(name);
   if (p_miit == pRoblems.get<Problem_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "no such problem like < %s >",
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "no such problem like < %s >",
              name.c_str());
   }
   const EntityHandle meshset = p_miit->meshset;
@@ -147,7 +147,7 @@ Core::modify_problem_add_finite_element(const std::string name_problem,
   ProblemsByName &set = pRoblems.get<Problem_mi_tag>();
   ProblemsByName::iterator miit = set.find(name_problem);
   if (miit == set.end()) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "this problem <%s> is not there",
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "this problem <%s> is not there",
              name_problem.c_str());
   }
   BitFEId f_id = getBitFEId(fe_name);
@@ -166,7 +166,7 @@ Core::modify_problem_unset_finite_element(const std::string name_problem,
   ProblemsByName &set = pRoblems.get<Problem_mi_tag>();
   ProblemsByName::iterator miit = set.find(name_problem);
   if (miit == set.end()) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "this problem <%s> is not there",
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "this problem <%s> is not there",
              name_problem.c_str());
   }
   BitFEId f_id = getBitFEId(fe_name);
@@ -187,7 +187,7 @@ Core::modify_problem_ref_level_add_bit(const std::string &name_problem,
   std::ostringstream ss;
   ss << name_problem;
   if (miit == set.end())
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "this problem <%s> is there",
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "this problem <%s> is there",
              ss.str().c_str());
   bool success = set.modify(miit, ProblemChangeRefLevelBitAdd(bit));
   if (!success)
@@ -205,7 +205,7 @@ Core::modify_problem_ref_level_set_bit(const std::string &name_problem,
   std::ostringstream ss;
   ss << name_problem;
   if (miit == set.end())
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "this problem <%s> is there",
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "this problem <%s> is there",
              ss.str().c_str());
   bool success = set.modify(miit, ProblemChangeRefLevelBitSet(bit));
   if (!success)
@@ -224,7 +224,7 @@ Core::modify_problem_mask_ref_level_add_bit(const std::string &name_problem,
   if (miit == set.end()) {
     std::ostringstream ss;
     ss << name_problem;
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "this problem <%s> is there",
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "this problem <%s> is there",
              ss.str().c_str());
   }
   bool success = set.modify(miit, ProblemChangeRefLevelBitDofMaskAdd(bit));
@@ -244,7 +244,7 @@ Core::modify_problem_mask_ref_level_set_bit(const std::string &name_problem,
   if (miit == set.end()) {
     std::ostringstream ss;
     ss << name_problem;
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "this problem <%s> is there",
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "this problem <%s> is there",
              ss.str().c_str());
   }
   bool success = set.modify(miit, ProblemChangeRefLevelBitDofMaskSet(bit));
@@ -274,7 +274,7 @@ MoFEMErrorCode Core::clear_problem(const std::string problem_name, int verb) {
   ProblemsByName &prob_by_name = pRoblems.get<Problem_mi_tag>();
   ProblemsByName::iterator p_miit = prob_by_name.find(problem_name);
   if (p_miit == prob_by_name.end()) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
              "problem < %s > not found, (top tip: check spelling)",
              problem_name.c_str());
   }
@@ -385,7 +385,7 @@ Core::problem_basic_method_preProcess(const std::string &problem_name,
   ProblemsByName &pRoblems_set = pRoblems.get<Problem_mi_tag>();
   ProblemsByName::iterator p_miit = pRoblems_set.find(problem_name);
   if (p_miit == pRoblems_set.end())
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "problem is not in database %s",
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "problem is not in database %s",
              problem_name.c_str());
   CHKERR problem_basic_method_preProcess(&*p_miit, method, verb);
   MoFEMFunctionReturn(0);
@@ -416,7 +416,7 @@ Core::problem_basic_method_postProcess(const std::string &problem_name,
   ProblemsByName &pRoblems_set = pRoblems.get<Problem_mi_tag>();
   ProblemsByName::iterator p_miit = pRoblems_set.find(problem_name);
   if (p_miit == pRoblems_set.end())
-    SETERRQ1(mofemComm, 1, "problem is not in database %s",
+    SETERRQ(mofemComm, 1, "problem is not in database %s",
              problem_name.c_str());
 
   CHKERR problem_basic_method_postProcess(&*p_miit, method, verb);
@@ -452,7 +452,7 @@ MoFEMErrorCode Core::loop_finite_elements(
 
   if (miit == hi_miit && (bh & MF_EXIST)) {
     if (!check_finite_element(fe_name)) {
-      SETERRQ1(mofemComm, MOFEM_NOT_FOUND, "finite element < %s > not found",
+      SETERRQ(mofemComm, MOFEM_NOT_FOUND, "finite element < %s > not found",
                fe_name.c_str());
     }
   }
@@ -519,7 +519,7 @@ MoFEMErrorCode Core::loop_finite_elements(
   auto &prb_by_name = pRoblems.get<Problem_mi_tag>();
   auto p_miit = prb_by_name.find(problem_name);
   if (p_miit == prb_by_name.end())
-    SETERRQ1(mofemComm, MOFEM_INVALID_DATA, "Problem <%s> is not in database",
+    SETERRQ(mofemComm, MOFEM_INVALID_DATA, "Problem <%s> is not in database",
              problem_name.c_str());
 
   CHKERR loop_finite_elements(&*p_miit, fe_name, method, lower_rank, upper_rank,
@@ -597,7 +597,7 @@ MoFEMErrorCode Core::loop_dofs(
   ProblemsByName &pRoblems_set = pRoblems.get<Problem_mi_tag>();
   ProblemsByName::iterator p_miit = pRoblems_set.find(problem_name);
   if (p_miit == pRoblems_set.end())
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "problem not in database %s",
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "problem not in database %s",
              problem_name.c_str());
   CHKERR loop_dofs(&*p_miit, field_name, rc, method, lower_rank, upper_rank,
                    verb);
@@ -726,7 +726,7 @@ MoFEMErrorCode Core::loop_entities(const std::string problem_name,
   auto &prb = pRoblems.get<Problem_mi_tag>();
   auto p_miit = prb.find(problem_name);
   if (p_miit == prb.end())
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "problem not in database %s",
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "problem not in database %s",
              problem_name.c_str());
   CHKERR loop_entities(&*p_miit, field_name, rc, method, lower_rank, upper_rank,
                        verb);
@@ -751,7 +751,7 @@ MoFEMErrorCode Core::loop_entities(const std::string field_name,
   if (field_it != fIelds.get<FieldName_mi_tag>().end()) {
     method.fieldPtr = *field_it;
   } else {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "Field not found %s",
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "Field not found %s",
              field_name.c_str());
   }
 
@@ -802,7 +802,7 @@ MoFEMErrorCode Core::cache_problem_entities(const std::string prb_name,
   if (auto cache_ptr = cache_weak_ptr.lock()) {
     auto p_miit = pRoblems.get<Problem_mi_tag>().find(prb_name);
     if (p_miit == pRoblems.get<Problem_mi_tag>().end())
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "problem not in database %s",
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "problem not in database %s",
                prb_name.c_str());
 
     const BitRefLevel &prb_bit = p_miit->getBitRefLevel();

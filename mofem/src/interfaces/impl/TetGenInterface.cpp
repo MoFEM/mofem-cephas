@@ -108,7 +108,7 @@ TetGenInterface::inData(Range &ents, tetgenio &in,
         double det;
         determinantTensor3by3(jac, det);
         if (det <= 0) {
-          SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                    "Negative volume det = %6.4e", det);
         }
       }
@@ -540,7 +540,7 @@ MoFEMErrorCode TetGenInterface::getTriangleMarkers(
     CHKERRQ_MOAB(rval);
     face = face.subset_by_type(MBTRI);
     if (face.size() != 1) {
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "data inconsistency between TetGen and MoAB, %u", face.size());
     }
     if (ents != NULL)

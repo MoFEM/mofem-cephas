@@ -9,16 +9,6 @@
 
 namespace MoFEM {
 
-/**
-\deprecated Function is deprecated use function
-http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Sys/PetscOptionsGetInt.html>
-*/
-
-#if PETSC_VERSION_GE(3, 16, 0)
-#ifndef PETSC_NULL
-#define PETSC_NULL PETSC_NULLPTR 
-#endif
-#endif
 
 #if PETSC_VERSION_GE(3, 7, 0)
 
@@ -30,7 +20,7 @@ inline PetscErrorCode PetscOptionsGetInt(const char pre[], const char name[],
                                          PetscInt *ivalue, PetscBool *set) {
   PetscErrorCode ierr;
   MoFEMFunctionBeginHot;
-  ierr = ::PetscOptionsGetInt(PETSC_NULL, pre, name, ivalue, set);
+  ierr = ::PetscOptionsGetInt(PETSC_NULLPTR, pre, name, ivalue, set);
   CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
@@ -43,7 +33,7 @@ inline PetscErrorCode PetscOptionsGetReal(const char pre[], const char name[],
                                           PetscReal *dval, PetscBool *set) {
   PetscErrorCode ierr;
   MoFEMFunctionBeginHot;
-  ierr = ::PetscOptionsGetReal(PETSC_NULL, pre, name, dval, set);
+  ierr = ::PetscOptionsGetReal(PETSC_NULLPTR, pre, name, dval, set);
   CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
@@ -56,7 +46,7 @@ inline PetscErrorCode PetscOptionsGetScalar(const char pre[], const char name[],
                                             PetscScalar *dval, PetscBool *set) {
   PetscErrorCode ierr;
   MoFEMFunctionBeginHot;
-  ierr = ::PetscOptionsGetScalar(PETSC_NULL, pre, name, dval, set);
+  ierr = ::PetscOptionsGetScalar(PETSC_NULLPTR, pre, name, dval, set);
   CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
@@ -69,7 +59,7 @@ inline PetscErrorCode PetscOptionsGetString(const char pre[], const char name[],
                                             char str[], size_t size,
                                             PetscBool *set) {
   MoFEMFunctionBeginHot;
-  ierr = ::PetscOptionsGetString(PETSC_NULL, pre, name, str, size, set);
+  ierr = ::PetscOptionsGetString(PETSC_NULLPTR, pre, name, str, size, set);
   CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
@@ -82,7 +72,7 @@ inline PetscErrorCode PetscOptionsGetBool(const char pre[], const char name[],
                                           PetscBool *bval, PetscBool *set) {
   PetscErrorCode ierr;
   MoFEMFunctionBeginHot;
-  ierr = ::PetscOptionsGetBool(PETSC_NULL, pre, name, bval, set);
+  ierr = ::PetscOptionsGetBool(PETSC_NULLPTR, pre, name, bval, set);
   CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
@@ -97,7 +87,7 @@ inline PetscErrorCode PetscOptionsGetRealArray(const char pre[],
                                                PetscBool *set) {
   PetscErrorCode ierr;
   MoFEMFunctionBeginHot;
-  ierr = ::PetscOptionsGetRealArray(PETSC_NULL, pre, name, dval, nmax, set);
+  ierr = ::PetscOptionsGetRealArray(PETSC_NULLPTR, pre, name, dval, nmax, set);
   CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
@@ -112,7 +102,7 @@ inline PetscErrorCode PetscOptionsGetEList(const char pre[], const char name[],
                                            PetscBool *set) {
   PetscErrorCode ierr;
   MoFEMFunctionBeginHot;
-  ierr = ::PetscOptionsGetEList(PETSC_NULL, pre, name, list, next, value, set);
+  ierr = ::PetscOptionsGetEList(PETSC_NULLPTR, pre, name, list, next, value, set);
   CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
@@ -127,7 +117,7 @@ inline PetscErrorCode PetscOptionsGetIntArray(const char pre[],
                                               PetscBool *set) {
   PetscErrorCode ierr;
   MoFEMFunctionBeginHot;
-  ierr = ::PetscOptionsGetIntArray(PETSC_NULL, pre, name, dvalue, nmax, set);
+  ierr = ::PetscOptionsGetIntArray(PETSC_NULLPTR, pre, name, dvalue, nmax, set);
   CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }
@@ -143,7 +133,7 @@ inline PetscErrorCode PetscOptionsGetScalarArray(const char pre[],
                                                  PetscBool *set) {
   PetscErrorCode ierr;
   MoFEMFunctionBeginHot;
-  ierr = ::PetscOptionsGetScalarArray(PETSC_NULL, pre, name, dvalue, nmax, set);
+  ierr = ::PetscOptionsGetScalarArray(PETSC_NULLPTR, pre, name, dvalue, nmax, set);
   CHKERRQ(ierr);
   MoFEMFunctionReturnHot(0);
 }

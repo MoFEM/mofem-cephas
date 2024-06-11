@@ -264,7 +264,7 @@ QuadPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
   if (data.spacesOnEntities[MBEDGE].test(HCURL)) {
 
     if (data.dataOnEntities[MBEDGE].size() != 4)
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "wrong number of edges on quad, should be 4 but is %d",
                data.dataOnEntities[MBEDGE].size());
 
@@ -449,7 +449,7 @@ QuadPolynomialBase::getValue(MatrixDouble &pts,
   const FieldApproximationBase base = cTx->bAse;
   EntitiesFieldData &data = cTx->dAta;
   if (cTx->copyNodeBase != NOBASE)
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "Shape base has to be on NOBASE", ApproximationBaseNames[base]);
 
   auto &base_shape = data.dataOnEntities[MBVERTEX][0].getN(cTx->copyNodeBase);
@@ -464,7 +464,7 @@ QuadPolynomialBase::getValue(MatrixDouble &pts,
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Number of shape functions should be four");
   if (diff_base.size1() != pts.size2())
-    SETERRQ2(
+    SETERRQ(
         PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
         "Number of diff base functions integration points not equal number of "
         "set integration point %d != %d",

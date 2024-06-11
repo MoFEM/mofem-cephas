@@ -59,7 +59,7 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCore::setIntegrationPts() {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong dimension");
       }
       if (QUAD_1D_TABLE[rule]->order < rule) {
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "wrong order %d != %d", QUAD_1D_TABLE[rule]->order, rule);
       }
       nb_gauss_pts = QUAD_1D_TABLE[rule]->npoints;
@@ -75,7 +75,7 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCore::setIntegrationPts() {
       cblas_dcopy(2 * nb_gauss_pts, QUAD_1D_TABLE[rule]->points, 1, shape_ptr,
                   1);
     } else {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "rule > quadrature order %d < %d", rule, QUAD_1D_TABLE_SIZE);
       nb_gauss_pts = 0;
     }

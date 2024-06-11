@@ -372,7 +372,7 @@ DEPRECATED void macro_is_deprecated_using_deprecated_function();
 #define CATCH_ERRORS                                                           \
   catch (MoFEMExceptionInitial const &ex) {                                    \
     return PetscError(PETSC_COMM_SELF, ex.lINE, PETSC_FUNCTION_NAME, __FILE__, \
-                      ex.errorCode, PETSC_ERROR_INITIAL, ex.what());           \
+                      ex.errorCode, PETSC_ERROR_INITIAL, "%s", ex.what());     \
   }                                                                            \
   catch (MoFEMExceptionRepeat const &ex) {                                     \
     return PetscError(PETSC_COMM_SELF, ex.lINE, PETSC_FUNCTION_NAME, __FILE__, \

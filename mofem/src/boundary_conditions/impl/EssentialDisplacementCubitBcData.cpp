@@ -400,7 +400,7 @@ MoFEMErrorCode EssentialPostProcLhs<DisplacementCubitBcData>::operator()() {
           CHKERR AOApplicationToPetscIS(vAO, is_sum);
         }
         // ISView(is_sum, PETSC_VIEWER_STDOUT_WORLD);
-        CHKERR MatZeroRowsColumnsIS(B, is_sum, vDiag, PETSC_NULL, PETSC_NULL);
+        CHKERR MatZeroRowsColumnsIS(B, is_sum, vDiag, PETSC_NULLPTR, PETSC_NULLPTR);
       }
     }
 
@@ -418,9 +418,9 @@ EssentialPreProcReaction<DisplacementCubitBcData>::EssentialPreProcReaction(
     : mField(m_field), fePtr(fe_ptr), vRhs(rhs), sevLevel(sev),
       printBlockName(PETSC_FALSE) {
 
-  CHK_THROW_MESSAGE(PetscOptionsGetBool(PETSC_NULL, PETSC_NULL,
+  CHK_THROW_MESSAGE(PetscOptionsGetBool(PETSC_NULLPTR, PETSC_NULLPTR,
                                         "-reaction_print_block_name",
-                                        &printBlockName, PETSC_NULL),
+                                        &printBlockName, PETSC_NULLPTR),
                     "can not get option");
 }
 

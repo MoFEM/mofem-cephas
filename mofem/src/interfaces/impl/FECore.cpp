@@ -72,7 +72,7 @@ MoFEMErrorCode Core::add_finite_element(const std::string &fe_name,
 
   if (bh == MF_EXCL) {
     if (it_fe != finite_element_name_set.end()) {
-      SETERRQ1(mofemComm, MOFEM_NOT_FOUND, "this < %s > is there",
+      SETERRQ(mofemComm, MOFEM_NOT_FOUND, "this < %s > is there",
                fe_name.c_str());
     }
 
@@ -168,7 +168,7 @@ Core::modify_finite_element_add_field_row(const std::string &fe_name,
   FiniteElements_by_name::iterator it_fe =
       finite_element_name_set.find(fe_name);
   if (it_fe == finite_element_name_set.end())
-    SETERRQ1(mofemComm, MOFEM_NOT_FOUND, "this < %s > is not there",
+    SETERRQ(mofemComm, MOFEM_NOT_FOUND, "this < %s > is not there",
              fe_name.c_str());
   bool success = finite_element_name_set.modify(
       it_fe, FiniteElement_row_change_bit_add(get_field_id(name_row)));
@@ -227,7 +227,7 @@ Core::modify_finite_element_off_field_row(const std::string &fe_name,
       finiteElements.get<FiniteElement_name_mi_tag>();
   auto it_fe = finite_element_name_set.find(fe_name);
   if (it_fe == finite_element_name_set.end())
-    SETERRQ1(mofemComm, MOFEM_NOT_FOUND, "this < %s > is not there",
+    SETERRQ(mofemComm, MOFEM_NOT_FOUND, "this < %s > is not there",
              fe_name.c_str());
   bool success = finite_element_name_set.modify(
       it_fe, FiniteElement_row_change_bit_off(get_field_id(name_row)));
@@ -720,7 +720,7 @@ MoFEMErrorCode Core::build_finite_elements(const string fe_name,
 
   auto fe_miit = finiteElements.get<FiniteElement_name_mi_tag>().find(fe_name);
   if (fe_miit == finiteElements.get<FiniteElement_name_mi_tag>().end())
-    SETERRQ1(mofemComm, MOFEM_NOT_FOUND, "Finite element <%s> not found",
+    SETERRQ(mofemComm, MOFEM_NOT_FOUND, "Finite element <%s> not found",
              fe_name.c_str());
 
   CHKERR buildFiniteElements(*fe_miit, ents_ptr, verb);
@@ -864,7 +864,7 @@ MoFEMErrorCode Core::check_number_of_ents_in_ents_finite_element(
   FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator it;
   it = finiteElements.get<FiniteElement_name_mi_tag>().find(name);
   if (it == finiteElements.get<FiniteElement_name_mi_tag>().end()) {
-    SETERRQ1(mofemComm, 1, "finite element not found < %s >", name.c_str());
+    SETERRQ(mofemComm, 1, "finite element not found < %s >", name.c_str());
   }
   EntityHandle meshset = (*it)->getMeshset();
 
@@ -877,7 +877,7 @@ MoFEMErrorCode Core::check_number_of_ents_in_ents_finite_element(
   };
 
   if (counts_fes() != static_cast<size_t>(num_entities)) {
-    SETERRQ1(mofemComm, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(mofemComm, MOFEM_DATA_INCONSISTENCY,
              "not equal number of entities in meshset and finite elements "
              "multiindex < %s >",
              (*it)->getName().c_str());
@@ -901,7 +901,7 @@ MoFEMErrorCode Core::check_number_of_ents_in_ents_finite_element() const {
     };
 
     if (counts_fes() != static_cast<size_t>(num_entities)) {
-      SETERRQ1(mofemComm, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(mofemComm, MOFEM_DATA_INCONSISTENCY,
                "not equal number of entities in meshset and finite elements "
                "multiindex < %s >",
                (*it)->getName().c_str());
@@ -918,7 +918,7 @@ Core::get_problem_finite_elements_entities(const std::string problem_name,
   auto &prb = pRoblems.get<Problem_mi_tag>();
   auto p_miit = prb.find(problem_name);
   if (p_miit == prb.end())
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "No such problem like < %s >", problem_name.c_str());
 
   auto fe_miit = finiteElements.get<FiniteElement_name_mi_tag>().find(fe_name);

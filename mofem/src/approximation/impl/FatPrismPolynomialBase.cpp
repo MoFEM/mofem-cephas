@@ -85,7 +85,7 @@ FatPrismPolynomialBase::getValue(MatrixDouble &pts,
                                                          false);
   if (data.dataOnEntities[MBVERTEX][0].getN(base).size1() !=
       (unsigned int)nb_gauss_pts)
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "Base functions or nodes has wrong number of integration points "
              "for base %s",
              ApproximationBaseNames[base]);
@@ -208,7 +208,7 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
     int order = thickness_ent.getOrder();
     int nb_dofs = NBEDGE_H1(order);
     if ((unsigned int)nb_dofs != thickness_ent.getN(base).size2())
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "nb_dofs != nb_dofs %d != %d", nb_dofs,
                thickness_ent.getN(base).size2());
     prism_ent.getN(base).resize(nb_gauss_pts, nb_dofs, false);

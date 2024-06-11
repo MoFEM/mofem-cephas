@@ -234,7 +234,7 @@ TetPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
 
   if (data.dataOnEntities[MBVERTEX][0].getN(NOBASE).size1() !=
       (unsigned int)nb_gauss_pts)
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "Base functions or nodes has wrong number of integration points "
              "for base %s",
              ApproximationBaseNames[NOBASE]);
@@ -564,7 +564,7 @@ TetPolynomialBase::getValueL2BernsteinBezierBase(MatrixDouble &pts) {
 
   if (data.dataOnEntities[MBVERTEX][0].getN(NOBASE).size1() !=
       (unsigned int)nb_gauss_pts)
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "Base functions or nodes has wrong number of integration points "
              "for base %s",
              ApproximationBaseNames[NOBASE]);
@@ -1077,7 +1077,7 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
   EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   if (base != DEMKOWICZ_JACOBI_BASE) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "This should be used only with DEMKOWICZ_JACOBI_BASE "
              "but base is %s",
              ApproximationBaseNames[base]);
@@ -1347,7 +1347,7 @@ TetPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
   EntitiesFieldData &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   if (base != DEMKOWICZ_JACOBI_BASE) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "This should be used only with DEMKOWICZ_JACOBI_BASE "
              "but base is %s",
              ApproximationBaseNames[base]);
@@ -1359,7 +1359,7 @@ TetPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
   if (data.spacesOnEntities[MBEDGE].test(HCURL)) {
     int sense[6], order[6];
     if (data.dataOnEntities[MBEDGE].size() != 6) {
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "wrong size of data structure, expected space for six edges "
                "but is %d",
                data.dataOnEntities[MBEDGE].size());
@@ -1403,7 +1403,7 @@ TetPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
     int order[4];
     // faces
     if (data.dataOnEntities[MBTRI].size() != 4) {
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "data structure for storing face h-curl base have wrong size "
                "should be four but is %d",
                data.dataOnEntities[MBTRI].size());
@@ -1522,7 +1522,7 @@ TetPolynomialBase::getValue(MatrixDouble &pts,
     }
     if (data.dataOnEntities[MBVERTEX][0].getN(base).size1() !=
         (unsigned int)nb_gauss_pts) {
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Base functions or nodes has wrong number of integration points "
                "for base %s",
                ApproximationBaseNames[base]);

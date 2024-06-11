@@ -583,7 +583,7 @@ MoFEMErrorCode ISManager::isCreateFromProblemFieldToOtherProblemField(
   std::vector<int> idx(0), idy(0);
   CHKERR isCreateFromProblemFieldToOtherProblemField(
       x_problem, x_field_name, x_rc, y_problem, y_field_name, y_rc, idx, idy);
-  if (ix != PETSC_NULL) {
+  if (ix != PETSC_NULLPTR) {
     CHKERR ISCreateGeneral(m_field.get_comm(), idx.size(), &idx[0],
                            PETSC_COPY_VALUES, ix);
   }

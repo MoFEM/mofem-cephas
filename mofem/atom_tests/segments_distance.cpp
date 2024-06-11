@@ -37,10 +37,10 @@ int main(int argc, char *argv[]) {
       if (result != expected_result)
         SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "Expected solution");
       if (fabs(t0 - expected_t0) > 1e-12)
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                  "Wrong value of t0 %3.4e != %3.4e", t0, expected_t0);
       if (fabs(t1 - expected_t1) > 1e-12)
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                  "Wrong value of t1 %3.4e != %3.4e", t1, expected_t1);
       MoFEMFunctionReturn(0);
     };

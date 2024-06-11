@@ -19,11 +19,11 @@ MoFEMErrorCode PostProcGenerateRefMeshBase::getOptions(std::string prefix) {
 
   std::string opt1 = prefix.size() ? "-" + prefix + "_max_post_proc_ref_level"
                                    : "-max_post_proc_ref_level";
-  CHKERR PetscOptionsGetInt(PETSC_NULL, opt1.c_str(), &defMaxLevel, PETSC_NULL);
+  CHKERR PetscOptionsGetInt(PETSC_NULLPTR, opt1.c_str(), &defMaxLevel, PETSC_NULLPTR);
 
   std::string opt2 = prefix.size() ? "-" + prefix + "_max_post_ho_nodes"
                                    : "-max_post_ho_nodes";
-  CHKERR PetscOptionsGetBool(PETSC_NULL, opt2.c_str(), &hoNodes, PETSC_NULL);
+  CHKERR PetscOptionsGetBool(PETSC_NULLPTR, opt2.c_str(), &hoNodes, PETSC_NULLPTR);
 
   if (defMaxLevel < 0)
     SETERRQ(PETSC_COMM_WORLD, MOFEM_INVALID_DATA,

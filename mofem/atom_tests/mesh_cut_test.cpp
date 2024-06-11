@@ -22,7 +22,7 @@ struct TestBitLevel {
     MOFEM_LOG("WORLD", Sev::inform)
         << "bit_level nb ents " << bit << " " << ents.size();
     if (expected_size != -1 && expected_size != static_cast<int>(ents.size())) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                "Wrong bit ref size %d!=%d", expected_size, ents.size());
     }
     MoFEMFunctionReturnHot(0);
@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
 
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
-    CHKERR PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name,
+    CHKERR PetscOptionsGetString(PETSC_NULLPTR, "", "-my_file", mesh_file_name,
                                  255, &flg);
 
     if (flg != PETSC_TRUE)
@@ -47,12 +47,12 @@ int main(int argc, char *argv[]) {
               "*** ERROR -my_file (MESH FILE NEEDED)");
 
     int side_set = 200;
-    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-side_set", &side_set,
-                              PETSC_NULL);
+    CHKERR PetscOptionsGetInt(PETSC_NULLPTR, "", "-side_set", &side_set,
+                              PETSC_NULLPTR);
 
     int restricted_side_set = 205;
-    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-restricted_side_set",
-                              &restricted_side_set, PETSC_NULL);
+    CHKERR PetscOptionsGetInt(PETSC_NULLPTR, "", "-restricted_side_set",
+                              &restricted_side_set, PETSC_NULLPTR);
 
     double shift[] = {0, 0, 0};
     int nmax = 3;
@@ -62,12 +62,12 @@ int main(int argc, char *argv[]) {
               "three values expected");
 
     int fixed_edges_blockset = 100;
-    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-fixed_edges_blockset",
-                              &fixed_edges_blockset, PETSC_NULL);
+    CHKERR PetscOptionsGetInt(PETSC_NULLPTR, "", "-fixed_edges_blockset",
+                              &fixed_edges_blockset, PETSC_NULLPTR);
 
     int corner_nodes_blockset = 1;
-    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-corner_nodes_blockset",
-                              &corner_nodes_blockset, PETSC_NULL);
+    CHKERR PetscOptionsGetInt(PETSC_NULLPTR, "", "-corner_nodes_blockset",
+                              &corner_nodes_blockset, PETSC_NULLPTR);
 
     double tol[] = {0, 0, 0};
     int nmax_tol = 3;
@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
 
     PetscBool test = PETSC_FALSE;
     CHKERR
-    PetscOptionsGetBool(PETSC_NULL, "", "-test", &test, PETSC_NULL);
+    PetscOptionsGetBool(PETSC_NULLPTR, "", "-test", &test, PETSC_NULLPTR);
 
     moab::Core mb_instance;
     moab::Interface &moab = mb_instance;
@@ -294,7 +294,7 @@ int main(int argc, char *argv[]) {
         CHKERR moab.add_entities(meshset, subtract(ents, ents_not_in_database));
         CHKERR moab.write_file("not_cleanded.vtk", "VTK", "", &meshset, 1);
         CHKERR moab.delete_entities(&meshset, 1);
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                  "Inconsistent number of ents %d!=%d",
                  no_of_ents_not_in_database, ents.size());
       }

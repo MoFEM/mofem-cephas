@@ -254,7 +254,7 @@ OperatorsTester::setPipelineX(boost::shared_ptr<FEMethod> pipeline,
     pipeline->x_t = x_t;
     pipeline->data_ctx |= PetscData::CTX_SET_X_T;
   } else {
-    pipeline->x_t = PETSC_NULL;
+    pipeline->x_t = PETSC_NULLPTR;
   }
 
   // Set acceleration dofs vector to finite element instance
@@ -270,7 +270,7 @@ OperatorsTester::setPipelineX(boost::shared_ptr<FEMethod> pipeline,
     pipeline->x_tt = x_tt;
     pipeline->data_ctx |= PetscData::CTX_SET_X_TT;
   } else {
-    pipeline->x_tt = PETSC_NULL;
+    pipeline->x_tt = PETSC_NULLPTR;
   }
 
   return std::make_pair(x_t, x_tt);

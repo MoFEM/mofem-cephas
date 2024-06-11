@@ -299,7 +299,7 @@ MoFEMErrorCode PostProcBrokenMeshInMoabBase<E>::setGaussPts(int order) {
   try {
     ref_ele = refElementsMap.at(type);
   } catch (const out_of_range &e) {
-    SETERRQ1(
+    SETERRQ(
         PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
         "Generation of reference elements for type <%s> is not implemented",
         moab::CN::EntityTypeName(type));

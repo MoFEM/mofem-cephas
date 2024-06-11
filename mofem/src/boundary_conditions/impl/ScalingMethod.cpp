@@ -39,7 +39,7 @@ MoFEMErrorCode TimeScale::timeData(std::string fileName,
   // Check to see if a filename has been provided
   if (fileName.empty()) {
     // If no filename, look for command line argument
-    CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, fileNameFlag.c_str(),
+    CHKERR PetscOptionsGetString(PETSC_NULLPTR, PETSC_NULLPTR, fileNameFlag.c_str(),
                                  time_file_name, 255, &arg_found);
     if (arg_found) {
       fileName = std::string(time_file_name);
@@ -50,7 +50,7 @@ MoFEMErrorCode TimeScale::timeData(std::string fileName,
     arg_found = PETSC_TRUE;
   }
   if (!arg_found && fileName.empty() && errorIfFileNotGiven) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "*** ERROR %s (time_data FILE NEEDED)", fileName.c_str());
   } else if (!arg_found && fileName.empty() && !errorIfFileNotGiven) {
     MOFEM_LOG_C("WORLD", Sev::warning,
@@ -62,7 +62,7 @@ MoFEMErrorCode TimeScale::timeData(std::string fileName,
 
   std::ifstream in_file_stream(fileName);
   if (!in_file_stream.is_open() && errorIfFileNotGiven) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "*** ERROR data file < %s > open unsuccessful", fileName.c_str());
   } else if (!in_file_stream.is_open() && !errorIfFileNotGiven) {
     MOFEM_LOG("WORLD", Sev::warning)
@@ -157,19 +157,19 @@ template <int SPACE_DIM> MoFEMErrorCode TimeScaleVector<SPACE_DIM>::timeData() {
   char time_file_name[255];
   PetscBool flg = PETSC_FALSE;
   if (!nAme.empty())
-    CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, nAme.c_str(),
+    CHKERR PetscOptionsGetString(PETSC_NULLPTR, PETSC_NULLPTR, nAme.c_str(),
                                  time_file_name, 255, &flg);
 
   if (!flg) {
     if (errorIfFileNotGiven)
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "*** ERROR %s (time_data FILE NEEDED)", nAme.c_str());
     MoFEMFunctionReturnHot(0);
   }
 
   FILE *time_data = fopen(time_file_name, "r");
   if (time_data == NULL) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "*** ERROR data file < %s > open unsuccessful", time_file_name);
   }
   double no1 = 0.0;
@@ -184,7 +184,7 @@ template <int SPACE_DIM> MoFEMErrorCode TimeScaleVector<SPACE_DIM>::timeData() {
       continue;
     }
     if (n != 4) {
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "*** ERROR read data file error (check input time data file) "
                "{ n = %d }",
                n);

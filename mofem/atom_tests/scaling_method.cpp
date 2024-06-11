@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
     for (int i = 1; i <= scalar_values.size(); i++) {
       if (std::fabs(time_scale->getScale(double(i)) - scalar_values[i - 1]) >
           std::numeric_limits<double>::epsilon()) {
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                  "Validation for data scaling from csv "
                  "failed for time: %f value: %f",
                  double(i), time_scale->getScale(i));
@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
     double actual_scale = time_scale->getScale(2.5);
     if (std::fabs(expected_scale - actual_scale) >
         std::numeric_limits<double>::epsilon()) {
-      SETERRQ2(
+      SETERRQ(
           PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
           "Validation for data scaling from csv failed for time: %f value: %f",
           2.5, time_scale->getScale(2.5));
@@ -48,14 +48,14 @@ int main(int argc, char *argv[]) {
     double time_out_of_range_2 = -1.0;
     if (std::fabs(time_scale->getScale(time_out_of_range_2)) >
         std::numeric_limits<double>::epsilon()) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                "Validation for data scaling from csv failed for time: %f "
                "value: %f",
                -1.0, time_scale->getScale(-1.0));
     }
     if (std::fabs(time_scale->getScale(time_out_of_range_1) - 15.3) >
         std::numeric_limits<double>::epsilon()) {
-      SETERRQ2(
+      SETERRQ(
           PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
           "Validation for data scaling from csv failed for time: %f value: %f",
           11.0, time_scale->getScale(11.0));
@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
     for (int i = 1; i <= scalar_values.size(); i++) {
       if (std::fabs(time_scale_linear_scaling->getScale(double(i)) -
                     double(i)) > std::numeric_limits<double>::epsilon()) {
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                  "Validation for linear scaling from csv failed for time: %f "
                  "value: %f",
                  double(i), time_scale->getScale(i));

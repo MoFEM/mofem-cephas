@@ -117,7 +117,7 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
   // multi-index.
 
   if (problem_ptr->getBitRefLevel().none()) {
-    SETERRQ1(PETSC_COMM_SELF, 1, "problem <%s> refinement level not set",
+    SETERRQ(PETSC_COMM_SELF, 1, "problem <%s> refinement level not set",
              problem_ptr->getName().c_str());
   }
   CHKERR m_field.clear_problem(problem_ptr->getName());
@@ -324,7 +324,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
   CHKERR getOptions();
 
   if (problem_ptr->getBitRefLevel().none())
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
              "problem <%s> refinement level not set",
              problem_ptr->getName().c_str());
 
@@ -550,7 +550,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
   }
 
   // if(sizeof(UId) != SIZEOFUID) {
-  //   SETERRQ2(
+  //   SETERRQ(
   //     PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
   //     "check size of UId, size of UId is %u != %u",
   //     sizeof(UId),SIZEOFUID
@@ -932,7 +932,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
 
           std::ostringstream zz;
           zz << **ddit << std::endl;
-          SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                    "data inconsistency, dofs is not shared, but received "
                    "from other proc\n"
                    "%s",
@@ -959,7 +959,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
 
   if (square_matrix) {
     if (numered_dofs_ptr[0]->size() != numered_dofs_ptr[1]->size()) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "data inconsistency for square_matrix %d!=%d",
                numered_dofs_ptr[0]->size(), numered_dofs_ptr[1]->size());
     }
@@ -1003,7 +1003,7 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
   // get iterators to out problem, i.e. build problem
   auto out_problem_it = problems_by_name.find(out_name);
   if (out_problem_it == problems_by_name.end()) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "subproblem with name < %s > not defined (top tip check spelling)",
              out_name.c_str());
   }
@@ -1011,7 +1011,7 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
   // problem
   auto main_problem_it = problems_by_name.find(main_problem);
   if (main_problem_it == problems_by_name.end()) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "problem of subproblem with name < %s > not defined (top tip "
              "check spelling)",
              main_problem.c_str());
@@ -1166,7 +1166,7 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
       // create map form main problem global indices to out problem global
       // indices
       AO ao;
-      CHKERR AOCreateMappingIS(is, PETSC_NULL, &ao);
+      CHKERR AOCreateMappingIS(is, PETSC_NULLPTR, &ao);
       if (ss == 0) {
         IS is_dup;
         CHKERR ISDuplicate(is, &is_dup);
@@ -1269,7 +1269,7 @@ MoFEMErrorCode ProblemsManager::buildComposedProblem(
   // Get iterators to out problem, i.e. build problem
   ProblemByName::iterator out_problem_it = problems_by_name.find(out_name);
   if (out_problem_it == problems_by_name.end()) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "problem with name < %s > not defined (top tip check spelling)",
              out_name.c_str());
   }
@@ -1311,7 +1311,7 @@ MoFEMErrorCode ProblemsManager::buildComposedProblem(
          vit != add_prb[ss]->end(); vit++) {
       ProblemByName::iterator prb_it = problems_by_name.find(*vit);
       if (prb_it == problems_by_name.end()) {
-        SETERRQ1(
+        SETERRQ(
             PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "problem with name < %s > not defined (top tip check spelling)",
             vit->c_str());
@@ -1486,7 +1486,7 @@ MoFEMErrorCode ProblemsManager::buildComposedProblem(
     }
 
     AO ao;
-    CHKERR AOCreateMappingIS(is, PETSC_NULL, &ao);
+    CHKERR AOCreateMappingIS(is, PETSC_NULLPTR, &ao);
     for (unsigned int pp = 0; pp != (*add_prb_is[ss]).size(); pp++)
       CHKERR AOApplicationToPetscIS(ao, (*add_prb_is[ss])[pp]);
 
@@ -1556,7 +1556,7 @@ MoFEMErrorCode ProblemsManager::partitionSimpleProblem(const std::string name,
       const_cast<ProblemByName &>(problems_ptr->get<Problem_mi_tag>());
   ProblemByName::iterator p_miit = problems_set.find(name);
   if (p_miit == problems_set.end()) {
-    SETERRQ1(PETSC_COMM_SELF, 1,
+    SETERRQ(PETSC_COMM_SELF, 1,
              "problem < %s > is not found (top tip: check spelling)",
              name.c_str());
   }
@@ -1613,7 +1613,7 @@ MoFEMErrorCode ProblemsManager::partitionSimpleProblem(const std::string name,
     hi_miit_row = dofs_row_by_idx.lower_bound(ranges_row[part + 1]);
     if (std::distance(miit_row, hi_miit_row) !=
         ranges_row[part + 1] - ranges_row[part]) {
-      SETERRQ4(
+      SETERRQ(
           PETSC_COMM_SELF, PETSC_ERR_ARG_SIZ,
           "data inconsistency, std::distance(miit_row,hi_miit_row) != rend - "
           "rstart (%d != %d - %d = %d) ",
@@ -1641,7 +1641,7 @@ MoFEMErrorCode ProblemsManager::partitionSimpleProblem(const std::string name,
       hi_miit_col = dofs_col_by_idx.lower_bound(ranges_col[part + 1]);
       if (std::distance(miit_col, hi_miit_col) !=
           ranges_col[part + 1] - ranges_col[part]) {
-        SETERRQ4(PETSC_COMM_SELF, PETSC_ERR_ARG_SIZ,
+        SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_SIZ,
                  "data inconsistency, std::distance(miit_col,hi_miit_col) != "
                  "rend - "
                  "rstart (%d != %d - %d = %d) ",
@@ -1696,7 +1696,7 @@ MoFEMErrorCode ProblemsManager::partitionProblem(const std::string name,
       const_cast<ProblemsByName &>(problems_ptr->get<Problem_mi_tag>());
   auto p_miit = problems_set.find(name);
   if (p_miit == problems_set.end()) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
              "problem with name %s not defined (top tip check spelling)",
              name.c_str());
   }
@@ -1745,12 +1745,12 @@ MoFEMErrorCode ProblemsManager::partitionProblem(const std::string name,
     int size_is_num, size_is_gather;
     CHKERR ISGetSize(is_gather, &size_is_gather);
     if (size_is_gather != (int)nb_dofs_row)
-      SETERRQ2(PETSC_COMM_SELF, PETSC_ERR_ARG_SIZ,
+      SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_SIZ,
                "data inconsistency %d != %d", size_is_gather, nb_dofs_row);
 
     CHKERR ISGetSize(is_num, &size_is_num);
     if (size_is_num != (int)nb_dofs_row)
-      SETERRQ2(PETSC_COMM_SELF, PETSC_ERR_ARG_SIZ,
+      SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_SIZ,
                "data inconsistency %d != %d", size_is_num, nb_dofs_row);
 
     bool square_matrix = false;
@@ -1909,7 +1909,7 @@ MoFEMErrorCode ProblemsManager::inheritPartition(
       const_cast<ProblemByName &>(problems_ptr->get<Problem_mi_tag>());
   ProblemByName::iterator p_miit = problems_by_name.find(name);
   if (p_miit == problems_by_name.end()) {
-    SETERRQ1(m_field.get_comm(), MOFEM_NOT_FOUND,
+    SETERRQ(m_field.get_comm(), MOFEM_NOT_FOUND,
              "problem with name < %s > not defined (top tip check spelling)",
              name.c_str());
   }
@@ -1921,7 +1921,7 @@ MoFEMErrorCode ProblemsManager::inheritPartition(
   // find p_miit_row
   ProblemByName::iterator p_miit_row = problems_by_name.find(problem_for_rows);
   if (p_miit_row == problems_by_name.end()) {
-    SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
              "problem with name < %s > not defined (top tip check spelling)",
              problem_for_rows.c_str());
   }
@@ -1931,7 +1931,7 @@ MoFEMErrorCode ProblemsManager::inheritPartition(
   // find p_mit_col
   ProblemByName::iterator p_miit_col = problems_by_name.find(problem_for_cols);
   if (p_miit_col == problems_by_name.end()) {
-    SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
              "problem with name < %s > not defined (top tip check spelling)",
              problem_for_cols.c_str());
   }
@@ -2117,7 +2117,7 @@ ProblemsManager::debugPartitionedProblem(const Problem *problem_ptr, int verb) {
           if ((*dit)->getPetscLocalDofIdx() < 0) {
             std::ostringstream zz;
             zz << "rank " << m_field.get_comm_rank() << " " << **dit;
-            SETERRQ2(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
+            SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
                      "local dof index for %d (0-row, 1-col) not set, i.e. has "
                      "negative value\n %s",
                      ss, zz.str().c_str());
@@ -2125,7 +2125,7 @@ ProblemsManager::debugPartitionedProblem(const Problem *problem_ptr, int verb) {
           if ((*dit)->getPetscLocalDofIdx() >= *local_nbdof_ptr[ss]) {
             std::ostringstream zz;
             zz << "rank " << m_field.get_comm_rank() << " " << **dit;
-            SETERRQ2(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
+            SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
                      "local dofs for %d (0-row, 1-col) out of range\n %s", ss,
                      zz.str().c_str());
           }
@@ -2143,7 +2143,7 @@ ProblemsManager::debugPartitionedProblem(const Problem *problem_ptr, int verb) {
             std::ostringstream zz;
             zz << "rank " << m_field.get_comm_rank() << " "
                << dit->get()->getBitRefLevel() << " " << **dit;
-            SETERRQ2(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
+            SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
                      "global dof index for %d (0-row, 1-col) row not set, i.e. "
                      "has negative value\n %s",
                      ss, zz.str().c_str());
@@ -2152,7 +2152,7 @@ ProblemsManager::debugPartitionedProblem(const Problem *problem_ptr, int verb) {
             std::ostringstream zz;
             zz << "rank " << m_field.get_comm_rank() << " nb_dofs "
                << *nbdof_ptr[ss] << " " << **dit;
-            SETERRQ2(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
+            SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
                      "global dofs for %d (0-row, 1-col) out of range\n %s", ss,
                      zz.str().c_str());
           }
@@ -2200,7 +2200,7 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
       const_cast<ProblemByName &>(problems_ptr->get<Problem_mi_tag>());
   ProblemByName::iterator p_miit = problems.find(name);
   if (p_miit == problems.end()) {
-    SETERRQ1(m_field.get_comm(), MOFEM_NOT_FOUND,
+    SETERRQ(m_field.get_comm(), MOFEM_NOT_FOUND,
              "problem < %s > not found (top tip: check spelling)",
              name.c_str());
   }
@@ -2351,7 +2351,7 @@ MoFEMErrorCode ProblemsManager::partitionGhostDofs(const std::string name,
   // get problem pointer
   auto p_miit = problems_ptr->get<Problem_mi_tag>().find(name);
   if (p_miit == problems_ptr->get<Problem_mi_tag>().end())
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "Problem %s not fond",
+    SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "Problem %s not fond",
              name.c_str());
 
   // get reference to number of ghost dofs
@@ -2696,7 +2696,7 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
         else if ((*dit)->getPetscLocalDofIdx() >= *(local_nbdof_ptr[s]))
           ++nb_ghost_dofs;
         else
-          SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                    "Impossible case. You could run problem on no distributed "
                    "mesh. That is not implemented. Dof local index is %d",
                    (*dit)->getPetscLocalDofIdx());
@@ -2769,10 +2769,10 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
         // remove)
         if (local_only)
           ao = createAOMapping(m_field.get_comm(), indices.size(),
-                               &*indices.begin(), PETSC_NULL);
+                               &*indices.begin(), PETSC_NULLPTR);
         else
           ao = createAOMapping(PETSC_COMM_SELF, indices.size(),
-                               &*indices.begin(), PETSC_NULL);
+                               &*indices.begin(), PETSC_NULLPTR);
 
         // Set mapping to sub dm data
         if (local_only) {
@@ -2784,7 +2784,7 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
             // to petsc sub indices.
             auto sub_ao = get_sub_ao(sub_data);
             CHKERR AOPetscToApplicationIS(sub_ao, sub_is);
-            sub_ao = createAOMappingIS(sub_is, PETSC_NULL);
+            sub_ao = createAOMappingIS(sub_is, PETSC_NULLPTR);
             // set new sub ao
             set_sub_is_and_ao(sub_data, sub_is, sub_ao);
             apply_symmetry(sub_data);
@@ -2992,7 +2992,7 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntitiesNotDistributed(
         MPI_Allreduce(&nb_local_dofs, nbdof_ptr[s], 1, MPI_INT, MPI_SUM,
                       m_field.get_comm());
         if (*(nbdof_ptr[s]) != nb_global_dof)
-          SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                    "Number of local DOFs do not add up %d != %d",
                    *(nbdof_ptr[s]), nb_global_dof);
       }
@@ -3061,7 +3061,7 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntitiesNotDistributed(
           // app, to petsc sub indices.
           auto sub_ao = get_sub_ao(sub_data);
           CHKERR AOPetscToApplicationIS(sub_ao, sub_is);
-          sub_ao = createAOMappingIS(sub_is, PETSC_NULL);
+          sub_ao = createAOMappingIS(sub_is, PETSC_NULLPTR);
           // set new sub ao
           set_sub_is_and_ao(sub_data, sub_is, sub_ao);
           apply_symmetry(sub_data);
@@ -3069,7 +3069,7 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntitiesNotDistributed(
           prb_ptr->getSubData() = boost::make_shared<Problem::SubProblemData>();
           auto sub_is = createISGeneral(m_field.get_comm(), indices.size(),
                                         &*indices.begin(), PETSC_COPY_VALUES);
-          auto sub_ao = createAOMappingIS(sub_is, PETSC_NULL);
+          auto sub_ao = createAOMappingIS(sub_is, PETSC_NULLPTR);
           // set sub is ao
           set_sub_is_and_ao(prb_ptr->getSubData(), sub_is, sub_ao);
           apply_symmetry(prb_ptr->getSubData());

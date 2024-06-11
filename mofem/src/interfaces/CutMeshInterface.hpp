@@ -42,16 +42,16 @@ struct CutMeshInterface : public UnknownInterface {
     CHKERR PetscOptionsInt("-linesearch_steps",
                            "number of bisection steps which line search do to "
                            "find optimal merged nodes position",
-                           "", lineSearchSteps, &lineSearchSteps, PETSC_NULL);
+                           "", lineSearchSteps, &lineSearchSteps, PETSC_NULLPTR);
 
     CHKERR PetscOptionsInt("-max_merging_cycles",
                            "number of maximal merging cycles", "",
-                           nbMaxMergingCycles, &nbMaxMergingCycles, PETSC_NULL);
+                           nbMaxMergingCycles, &nbMaxMergingCycles, PETSC_NULLPTR);
 
     CHKERR PetscOptionsScalar("-project_entities_quality_trashold",
                               "project entities quality trashold", "",
                               projectEntitiesQualityTrashold,
-                              &projectEntitiesQualityTrashold, PETSC_NULL);
+                              &projectEntitiesQualityTrashold, PETSC_NULLPTR);
 
     PetscOptionsEnd();
     MoFEMFunctionReturn(0);

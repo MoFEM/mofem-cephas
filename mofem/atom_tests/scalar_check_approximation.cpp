@@ -198,7 +198,7 @@ struct OpCheckValsDiffVals : public DomainEleOp {
       MOFEM_LOG("AT", Sev::noisy) << "Val op error " << err_val;
 
       if (err_val > eps)
-        SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                  "Wrong value from operator %4.3e", err_val);
 
       const double x = getCoordsAtGaussPts()(gg, 0);
@@ -211,7 +211,7 @@ struct OpCheckValsDiffVals : public DomainEleOp {
       err_val = std::fabs(delta_val * delta_val);
       MOFEM_LOG("AT", Sev::verbose) << err_val << " : " << t_vals;
       if (err_val > eps)
-        SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "Wrong value %4.3e",
+        SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "Wrong value %4.3e",
                  err_val);
 
       ++t_vals;
@@ -233,7 +233,7 @@ struct OpCheckValsDiffVals : public DomainEleOp {
         MOFEM_LOG("AT", Sev::noisy) << "Diff val op error " << err_diff_val;
 
         if (err_diff_val > eps)
-          SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                    "Wrong derivatives from operator %4.3e", err_diff_val);
 
         const double x = getCoordsAtGaussPts()(gg, 0);
@@ -268,7 +268,7 @@ struct OpCheckValsDiffVals : public DomainEleOp {
 
         MOFEM_LOG("AT", Sev::verbose) << "Diff val error " << err_diff_val;
         if (err_diff_val > eps)
-          SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                    "Wrong derivative of value %4.3e %4.3e", err_diff_val,
                    t_diff_anal.l2());
 
@@ -324,7 +324,7 @@ int main(int argc, char *argv[]) {
                                 "bernstein"};
     PetscBool flg;
     PetscInt choice_base_value = AINSWORTH;
-    CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list_bases,
+    CHKERR PetscOptionsGetEList(PETSC_NULLPTR, NULL, "-base", list_bases,
                                 LASBASETOP, &choice_base_value, &flg);
 
     if (flg != PETSC_TRUE)
@@ -342,7 +342,7 @@ int main(int argc, char *argv[]) {
     enum spaces { H1SPACE, L2SPACE, LASBASETSPACE };
     const char *list_spaces[] = {"h1", "l2"};
     PetscInt choice_space_value = H1SPACE;
-    CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-space", list_spaces,
+    CHKERR PetscOptionsGetEList(PETSC_NULLPTR, NULL, "-space", list_spaces,
                                 LASBASETSPACE, &choice_space_value, &flg);
     if (flg != PETSC_TRUE)
       SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "space not set");
@@ -352,8 +352,8 @@ int main(int argc, char *argv[]) {
     else if (choice_space_value == L2SPACE)
       space = L2;
 
-    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &approx_order,
-                              PETSC_NULL);
+    CHKERR PetscOptionsGetInt(PETSC_NULLPTR, "", "-order", &approx_order,
+                              PETSC_NULLPTR);
 
     CHKERR simple->addDomainField("FIELD1", space, base, 1);
     CHKERR simple->setFieldOrder("FIELD1", approx_order);

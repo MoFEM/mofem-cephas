@@ -30,10 +30,10 @@ int main(int argc, char *argv[]) {
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
 #if PETSC_VERSION_GE(3, 6, 4)
-    CHKERR PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name,
+    CHKERR PetscOptionsGetString(PETSC_NULLPTR, "", "-my_file", mesh_file_name,
                                  255, &flg);
 #else
-    CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-my_file",
+    CHKERR PetscOptionsGetString(PETSC_NULLPTR, PETSC_NULLPTR, "-my_file",
                                  mesh_file_name, 255, &flg);
 #endif
     if (flg != PETSC_TRUE) {
@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
 
     std::cout << tets << std::endl;
     if (tets.size() != 10) {
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                "diffrent number of tets than expected = %u", tets.size());
     }
   }

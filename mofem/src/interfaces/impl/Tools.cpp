@@ -132,7 +132,7 @@ MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceFourNodeTet(
   int IPIV[3];
   int info = lapack_dgesv(3, nb_nodes, &a(0, 0), 3, IPIV, local_coords, 3);
   if (info != 0)
-    SETERRQ1(PETSC_COMM_SELF, 1, "info == %d", info);
+    SETERRQ(PETSC_COMM_SELF, 1, "info == %d", info);
 
   MoFEMFunctionReturnHot(0);
 }
@@ -327,7 +327,7 @@ MoFEMErrorCode Tools::checkVectorForNotANumber(const Problem *prb_ptr,
             "Wrong argument, row_or_col should be row or column");
   }
   if (loc_size != prb_loc_size) {
-    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "Inconsistent size of vector and problem %d != %d", loc_size,
              prb_loc_size);
   }
@@ -614,18 +614,18 @@ MoFEMErrorCode Tools::outerProductOfEdgeIntegrationPtsForQuad(
   auto check_rule_edge = [](int rule) {
     MoFEMFunctionBeginHot;
     if (rule < 0) {
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Wrong integration rule: %d", rule);
     }
     if (rule > QUAD_1D_TABLE_SIZE) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "rule > quadrature order %d < %d", rule, QUAD_1D_TABLE_SIZE);
     }
     if (QUAD_1D_TABLE[rule]->dim != 1) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong dimension");
     }
     if (QUAD_1D_TABLE[rule]->order < rule) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "wrong order %d != %d", QUAD_1D_TABLE[rule]->order, rule);
     }
     MoFEMFunctionReturnHot(0);
@@ -664,18 +664,18 @@ MoFEMErrorCode Tools::outerProductOfEdgeIntegrationPtsForHex(
   auto check_rule_edge = [](int rule) {
     MoFEMFunctionBeginHot;
     if (rule < 0) {
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Wrong integration rule: %d", rule);
     }
     if (rule > QUAD_1D_TABLE_SIZE) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "rule > quadrature order %d < %d", rule, QUAD_1D_TABLE_SIZE);
     }
     if (QUAD_1D_TABLE[rule]->dim != 1) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong dimension");
     }
     if (QUAD_1D_TABLE[rule]->order < rule) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "wrong order %d != %d", QUAD_1D_TABLE[rule]->order, rule);
     }
     MoFEMFunctionReturnHot(0);

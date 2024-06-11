@@ -126,7 +126,7 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong dimension");
         }
         if (QUAD_2D_TABLE[rule]->order < rule) {
-          SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                    "wrong order %d != %d", QUAD_2D_TABLE[rule]->order, rule);
         }
         nb_gauss_pts_on_faces = QUAD_2D_TABLE[rule]->npoints;
@@ -154,7 +154,7 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
                         .data()
                         .begin());
       } else
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "rule > quadrature order %d < %d", rule, QUAD_2D_TABLE_SIZE);
 
     } else {
@@ -212,7 +212,7 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
                       "wrong dimension");
             }
             if (QUAD_1D_TABLE[rule]->order < rule) {
-              SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                        "wrong order %d != %d", QUAD_1D_TABLE[rule]->order,
                        rule);
             }
@@ -226,7 +226,7 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
                         QUAD_1D_TABLE[rule]->weights, 1,
                         &gaussPtsThroughThickness(1, 0), 1);
           } else {
-            SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                      "rule > quadrature order %d < %d", rule,
                      QUAD_1D_TABLE_SIZE);
             nb_gauss_pts_through_thickness = 0;

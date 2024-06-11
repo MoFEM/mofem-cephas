@@ -53,18 +53,18 @@ int main(int argc, char *argv[]) {
 
     PetscBool flg;
     PetscInt choice_value = AINSWORTH;
-    CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list, LASTOP,
+    CHKERR PetscOptionsGetEList(PETSC_NULLPTR, NULL, "-base", list, LASTOP,
                                 &choice_value, &flg);
     if (flg != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "base not set");
     }
 
     PetscBool ho_geometry = PETSC_FALSE;
-    CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-ho_geometry", &ho_geometry,
-                               PETSC_NULL);
+    CHKERR PetscOptionsGetBool(PETSC_NULLPTR, "", "-ho_geometry", &ho_geometry,
+                               PETSC_NULLPTR);
 
     PetscInt ho_choice_value = AINSWORTH;
-    CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-ho_base", list, LASTOP,
+    CHKERR PetscOptionsGetEList(PETSC_NULLPTR, NULL, "-ho_base", list, LASTOP,
                                 &ho_choice_value, &flg);
 
     DMType dm_name = "DMMOFEM";
@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
     constexpr double eps = 1e-8;
     const double error = divergence_skin - divergence_vol;
     if (fabs(error) > eps)
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                "invalid surface flux or divergence or both error = %3.4e",
                error);
   }

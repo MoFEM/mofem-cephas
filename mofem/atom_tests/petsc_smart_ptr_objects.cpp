@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
     auto check = [&](const int expected) {
       MoFEMFunctionBegin;
       if (m_ptr.use_count() != expected)
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "use count should be %d but is %d", expected,
                  m_ptr.use_count());
       MoFEMFunctionReturn(0);

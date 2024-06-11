@@ -99,7 +99,7 @@ TriPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
 
   if (data.dataOnEntities[MBVERTEX][0].getN(NOBASE).size1() !=
       (unsigned int)nb_gauss_pts)
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "Base functions or nodes has wrong number of integration points "
              "for base %s",
              ApproximationBaseNames[NOBASE]);
@@ -437,7 +437,7 @@ TriPolynomialBase::getValueL2BernsteinBezierBase(MatrixDouble &pts) {
 
     if (data.dataOnEntities[MBVERTEX][0].getN(NOBASE).size1() !=
         (unsigned int)nb_gauss_pts)
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Base functions or nodes has wrong number of integration points "
                "for base %s",
                ApproximationBaseNames[NOBASE]);
@@ -603,7 +603,7 @@ MoFEMErrorCode TriPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
   }
   const FieldApproximationBase base = cTx->bAse;
   if (base != DEMKOWICZ_JACOBI_BASE) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "This should be used only with DEMKOWICZ_JACOBI_BASE "
              "but base is %s",
              ApproximationBaseNames[base]);
@@ -741,7 +741,7 @@ TriPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
   if (data.spacesOnEntities[MBEDGE].test(HCURL)) {
 
     if (data.dataOnEntities[MBEDGE].size() != 3)
-      SETERRQ1(
+      SETERRQ(
           PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
           "wrong number of data structures on edges, should be three but is %d",
           data.dataOnEntities[MBEDGE].size());
@@ -878,7 +878,7 @@ TriPolynomialBase::getValue(MatrixDouble &pts,
     }
     if (data.dataOnEntities[MBVERTEX][0].getN(base).size1() !=
         (unsigned int)nb_gauss_pts) {
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Base functions or nodes has wrong number of integration points "
                "for base %s",
                ApproximationBaseNames[base]);

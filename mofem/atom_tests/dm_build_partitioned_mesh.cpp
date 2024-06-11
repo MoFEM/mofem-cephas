@@ -47,10 +47,10 @@ int main(int argc, char *argv[]) {
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
 #if PETSC_VERSION_GE(3, 6, 4)
-    CHKERR PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name,
+    CHKERR PetscOptionsGetString(PETSC_NULLPTR, "", "-my_file", mesh_file_name,
                                  255, &flg);
 #else
-    CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-my_file",
+    CHKERR PetscOptionsGetString(PETSC_NULLPTR, PETSC_NULLPTR, "-my_file",
                                  mesh_file_name, 255, &flg);
 #endif
     if (flg != PETSC_TRUE) {
@@ -93,10 +93,10 @@ int main(int argc, char *argv[]) {
     // define & build field
     int field_rank = 3;
 #if PETSC_VERSION_GE(3, 6, 4)
-    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-my_field_rank", &field_rank,
+    CHKERR PetscOptionsGetInt(PETSC_NULLPTR, "", "-my_field_rank", &field_rank,
                               &flg);
 #else
-    CHKERR PetscOptionsGetInt(PETSC_NULL, PETSC_NULL, "-my_field_rank",
+    CHKERR PetscOptionsGetInt(PETSC_NULLPTR, PETSC_NULLPTR, "-my_field_rank",
                               &field_rank, &flg);
 #endif
     CHKERR m_field.add_field("FIELD1", H1, AINSWORTH_LEGENDRE_BASE, field_rank);
@@ -177,10 +177,10 @@ int main(int argc, char *argv[]) {
 
     PetscBool save_file = PETSC_TRUE;
 #if PETSC_VERSION_GE(3, 6, 4)
-    CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-my_save_file", &save_file,
+    CHKERR PetscOptionsGetBool(PETSC_NULLPTR, "", "-my_save_file", &save_file,
                                &flg);
 #else
-    CHKERR PetscOptionsGetBool(PETSC_NULL, PETSC_NULL, "-my_save_file",
+    CHKERR PetscOptionsGetBool(PETSC_NULLPTR, PETSC_NULLPTR, "-my_save_file",
                                &save_file, &flg);
 #endif
     if (save_file) {
@@ -198,7 +198,7 @@ int main(int argc, char *argv[]) {
     CHKERR DMoFEMLoopFiniteElements(dm, "FE_ONLY_DATA",
                                     boost::make_shared<CountDown>(count));
     if (count)
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "Should be zero %d",
+      SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "Should be zero %d",
                count);
 
     auto check_consistency_of_uids = [&]() {

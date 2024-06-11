@@ -501,25 +501,25 @@ MoFEMErrorCode OpMassImpl<1, 1, GAUSS, OpBase>::iNtegrate(
 
   if (row_data.getN().size2() < OpBase::nbRows) {
     log_error();
-    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "Wrong number of base functions on rows %d < %d",
              row_data.getN().size2(), OpBase::nbRows);
   }
   if (col_data.getN().size2() < OpBase::nbCols) {
     log_error();
-    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "Wrong number of base functions on cols %d < %d",
              col_data.getN().size2(), OpBase::nbCols);
   }
   if (row_data.getN().size1() != OpBase::nbIntegrationPts) {
     log_error();
-    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "Wrong number of integration points on rows %d != %d",
              row_data.getN().size1(), OpBase::nbIntegrationPts);
   }
   if (col_data.getN().size1() != OpBase::nbIntegrationPts) {
     log_error();
-    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "Wrong number of integration points on cols %d != %d",
              col_data.getN().size1(), OpBase::nbIntegrationPts);
   }
@@ -877,29 +877,29 @@ OpGradGradSymTensorGradGradImpl<1, 1, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
 
 #ifndef NDEBUG
     if (row_hessian.size1() != OpBase::nbIntegrationPts) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Wrong number of integration pts (%d != %d)",
                row_hessian.size1(), OpBase::nbIntegrationPts);
     }
     if (row_hessian.size2() !=
         OpBase::nbRowBaseFunctions * SPACE_DIM * SPACE_DIM) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Wrong number of base functions (%d != %d)",
                row_hessian.size2() / (SPACE_DIM * SPACE_DIM),
                OpBase::nbRowBaseFunctions);
     }
     if (row_hessian.size2() < OpBase::nbRows * SPACE_DIM * SPACE_DIM) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Wrong number of base functions (%d < %d)", row_hessian.size2(),
                OpBase::nbRows * SPACE_DIM * SPACE_DIM);
     }
     if (col_hessian.size1() != OpBase::nbIntegrationPts) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Wrong number of integration pts (%d != %d)",
                col_hessian.size1(), OpBase::nbIntegrationPts);
     }
     if (col_hessian.size2() < OpBase::nbCols * SPACE_DIM * SPACE_DIM) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Wrong number of base functions (%d < %d)", col_hessian.size2(),
                OpBase::nbRows * SPACE_DIM * SPACE_DIM);
     }
@@ -1150,7 +1150,7 @@ OpMixScalarTimesDivImpl<SPACE_DIM, GAUSS, OpBase, COORDINATE_SYSTEM>::iNtegrate(
 
   // When we move to C++17 add if constexpr()
   if constexpr (COORDINATE_SYSTEM == POLAR || COORDINATE_SYSTEM == SPHERICAL)
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
              "%s coordiante not implemented",
              CoordinateTypesNames[COORDINATE_SYSTEM]);
 

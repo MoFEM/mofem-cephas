@@ -1351,7 +1351,7 @@ MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit,
       cut_verts.insert(vert);
       verticesOnCutEdges[vert] = m.second;
     } else {
-      SETERRQ1(
+      SETERRQ(
           PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
           "Vertex has wrong bit ref level %s",
           boost::lexical_cast<std::string>(ref_ent->getBitRefLevel()).c_str());

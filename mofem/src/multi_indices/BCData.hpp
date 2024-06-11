@@ -111,7 +111,7 @@ struct DisplacementCubitBcData : public GenericCubitBcData {
     MoFEMFunctionBeginHot;
     // Fill data
     if (bc_data.size() != sizeof(data))
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "data inconsistency %ld != %ld", bc_data.size(), sizeof(data));
     memcpy(&data, &bc_data[0], sizeof(data));
     MoFEMFunctionReturnHot(0);
@@ -337,7 +337,7 @@ struct TemperatureCubitBcData : public GenericCubitBcData {
     MoFEMFunctionBeginHot;
     // Fill data
     if (bc_data.size() > sizeof(data))
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Wrong number of parameters in Cubit %d != %d", bc_data.size(),
                sizeof(data));
 

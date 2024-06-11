@@ -60,7 +60,7 @@ template <typename OP> struct MyOp : public OP {
         double error = norm_2(coord_at_gauss_pt - eval_coord);
 
         if (error > 1e-12)
-          SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                    "Difference at %d error = %3.4e", pt_number, error);
       }
     }

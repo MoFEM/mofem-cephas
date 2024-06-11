@@ -1347,8 +1347,8 @@ inline MoFEMErrorCode computeMatrixInverse(MatrixDouble &mat) {
   const size_t N = mat.size2();
 
   if (M != N)
-    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-             "The input matrix for inverse computation is not square %d != %d",
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "The input matrix for inverse computation is not square %ld != %ld",
              M, N);
 
   int *ipv = new int[N];
@@ -1357,11 +1357,11 @@ inline MoFEMErrorCode computeMatrixInverse(MatrixDouble &mat) {
   int info;
   info = lapack_dgetrf(N, N, &*mat.data().begin(), N, ipv);
   if (info != 0)
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "lapack error info = %d", info);
   info = lapack_dgetri(N, &*mat.data().begin(), N, ipv, work, lwork);
   if (info != 0)
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "lapack error info = %d", info);
 
   delete[] ipv;
@@ -1383,8 +1383,8 @@ inline MoFEMErrorCode solveLinearSystem(MatrixDouble &mat, VectorDouble &f) {
   const size_t N = mat.size2();
 
   if (M == 0 || M != N)
-    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-             "The input matrix for inverse computation is not square %d != %d",
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "The input matrix for inverse computation is not square %ld != %ld",
              M, N);
   if (f.size() != M)
     f.resize(M, false);
@@ -1396,7 +1396,7 @@ inline MoFEMErrorCode solveLinearSystem(MatrixDouble &mat, VectorDouble &f) {
                       &*f.data().begin(), nrhs);
 
   if (info != 0) {
-    SETERRQ1(PETSC_COMM_SELF, 1, "error lapack solve dgesv info = %d", info);
+    SETERRQ(PETSC_COMM_SELF, 1, "error lapack solve dgesv info = %d", info);
   }
 
   delete[] ipiv;
@@ -1436,7 +1436,7 @@ inline MoFEMErrorCode computeEigenValuesSymmetric(const MatrixDouble &mat,
   const size_t N = mat.size2();
 
   if (M == 0 || M != N)
-    SETERRQ2(
+    SETERRQ(
         PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
         "The input matrix for eigen value computation is not square %d != %d",
         M, N);

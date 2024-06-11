@@ -301,7 +301,7 @@ MoFEMErrorCode HexPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
     bool sum_nb_dofs = false;
     for (int ff = 0; ff != 6; ff++) {
       if (data.dataOnEntities[MBQUAD][ff].getSense() == 0)
-        SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Sense pn quad <%d> not set", ff);
 
       order[ff] = data.dataOnEntities[MBQUAD][ff].getOrder();
@@ -482,7 +482,7 @@ HexPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
 
     for (int ee = 0; ee != 12; ++ee) {
       if (data.dataOnEntities[MBEDGE][ee].getSense() == 0)
-        SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Sense on edge <%d> on Hex not set", ee);
 
       sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
@@ -529,7 +529,7 @@ HexPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
     bool sum_nb_dofs = false;
     for (int ff = 0; ff != 6; ff++) {
       if (data.dataOnEntities[MBQUAD][ff].getSense() == 0)
-        SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Sense pn quad <%d> not set", ff);
 
       order[ff] = data.dataOnEntities[MBQUAD][ff].getOrder();

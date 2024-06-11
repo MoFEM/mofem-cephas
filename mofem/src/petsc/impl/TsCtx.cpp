@@ -274,7 +274,7 @@ PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
     fe.ts_u = u;
     fe.ts_t = t;
     fe.ts_step = step;
-    fe.ts_F = PETSC_NULL;
+    fe.ts_F = PETSC_NULLPTR;
     fe.ts_ctx = TSMethod::CTX_TSTSMONITORSET;
     fe.snes_ctx = SnesMethod::CTX_SNESNONE;
     fe.ksp_ctx = KspMethod::CTX_KSPNONE;
@@ -723,11 +723,11 @@ PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
 
 TSAdaptMoFEM::TSAdaptMoFEM()
     : alpha(0.75), gamma(0.5), desiredIt(6), offApat(PETSC_FALSE) {
-  CHKERR PetscOptionsGetScalar("", "-ts_mofem_adapt_alpha", &alpha, PETSC_NULL);
-  CHKERR PetscOptionsGetScalar("", "-ts_mofem_adapt_gamma", &gamma, PETSC_NULL);
+  CHKERR PetscOptionsGetScalar("", "-ts_mofem_adapt_alpha", &alpha, PETSC_NULLPTR);
+  CHKERR PetscOptionsGetScalar("", "-ts_mofem_adapt_gamma", &gamma, PETSC_NULLPTR);
   CHKERR PetscOptionsGetInt("", "-ts_mofem_adapt_desired_it", &desiredIt,
-                            PETSC_NULL);
-  CHKERR PetscOptionsGetBool("", "-ts_mofem_adapt_off", &offApat, PETSC_NULL);
+                            PETSC_NULLPTR);
+  CHKERR PetscOptionsGetBool("", "-ts_mofem_adapt_off", &offApat, PETSC_NULLPTR);
 
   MOFEM_LOG("TSWORLD", Sev::inform)
       << "TS adaptivity: alpha = " << alpha << ", gamma = " << gamma

@@ -27,10 +27,10 @@ int main(int argc, char *argv[]) {
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
 #if PETSC_VERSION_GE(3, 6, 4)
-    CHKERR PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name,
+    CHKERR PetscOptionsGetString(PETSC_NULLPTR, "", "-my_file", mesh_file_name,
                                  255, &flg);
 #else
-    CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-my_file",
+    CHKERR PetscOptionsGetString(PETSC_NULLPTR, PETSC_NULLPTR, "-my_file",
                                  mesh_file_name, 255, &flg);
 #endif
     if (flg != PETSC_TRUE) {
@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
       const char *list_bases[] = {"ainsworth", "demkowicz"};
       PetscBool flg;
       PetscInt choice_base_value = AINSWORTH;
-      CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list_bases,
+      CHKERR PetscOptionsGetEList(PETSC_NULLPTR, NULL, "-base", list_bases,
                                   LASTBASEOP, &choice_base_value, &flg);
       if (flg == PETSC_TRUE) {
         FieldApproximationBase base = AINSWORTH_LEGENDRE_BASE;
@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
       const char *list_spaces[] = {"h1", "hdiv", "hcurl"};
       PetscBool flg;
       PetscInt choice_space_value = HDIV;
-      CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-space", list_spaces,
+      CHKERR PetscOptionsGetEList(PETSC_NULLPTR, NULL, "-space", list_spaces,
                                   LASTSPACEOP, &choice_space_value, &flg);
       if (flg == PETSC_TRUE) {
         FieldSpace space = FieldSpace::HDIV;
@@ -344,7 +344,7 @@ int main(int argc, char *argv[]) {
                 const double error = std::abs(vol_dot_data(gg, bb) -
                                               elemData.dotNormalFace(gg, bb));
                 if (error > eps)
-                  SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                  SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                            "Inconsistency %3.4e != %3.4e", vol_dot_data(gg, bb),
                            elemData.dotNormalFace(gg, bb));
               }
@@ -367,7 +367,7 @@ int main(int argc, char *argv[]) {
                 const double error = std::abs(
                     vol_data(gg, bb) - elemData.shapeFunH1Values(gg, bb));
                 if (error > eps)
-                  SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                  SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                            "Inconsistency %3.4e != %3.4e", vol_data(gg, bb),
                            elemData.shapeFunH1Values(gg, bb));
               }
@@ -485,7 +485,7 @@ int main(int argc, char *argv[]) {
                 const double error = std::abs(vol_dot_data(gg, bb) -
                                               elemData.dotNormalFace(gg, bb));
                 if (error > eps)
-                  SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                  SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                            "Inconsistency %3.4e != %3.4e", vol_dot_data(gg, bb),
                            elemData.dotNormalFace(gg, bb));
               }
@@ -508,7 +508,7 @@ int main(int argc, char *argv[]) {
                 const double error = std::abs(
                     vol_data(gg, bb) - elemData.shapeFunH1Values(gg, bb));
                 if (error > eps)
-                  SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                  SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                            "Inconsistency %3.4e != %3.4e", vol_data(gg, bb),
                            elemData.shapeFunH1Values(gg, bb));
               }

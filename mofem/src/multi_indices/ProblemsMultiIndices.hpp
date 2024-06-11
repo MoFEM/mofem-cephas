@@ -745,7 +745,7 @@ inline MoFEMErrorCode
 ComposedProblemsData::getRowIs(IS *is, const unsigned int pp) const {
   MoFEMFunctionBeginHot;
   if (pp <= rowIs.size()) {
-    SETERRQ1(PETSC_COMM_WORLD, MOFEM_INVALID_DATA, "Exceed size of array pp<%d",
+    SETERRQ(PETSC_COMM_WORLD, MOFEM_INVALID_DATA, "Exceed size of array pp<%d",
              rowIs.size());
   }
   *is = rowIs[pp].get();
@@ -757,7 +757,7 @@ inline MoFEMErrorCode
 ComposedProblemsData::getColIs(IS *is, const unsigned int pp) const {
   MoFEMFunctionBeginHot;
   if (pp <= colIs.size()) {
-    SETERRQ1(PETSC_COMM_WORLD, MOFEM_INVALID_DATA, "Exceed size of array pp<%d",
+    SETERRQ(PETSC_COMM_WORLD, MOFEM_INVALID_DATA, "Exceed size of array pp<%d",
              colIs.size());
   }
   *is = colIs[pp].get();

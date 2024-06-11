@@ -119,7 +119,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::setIntegrationPts() {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong dimension");
       }
       if (QUAD_3D_TABLE[rule]->order < rule) {
-        SETERRQ2(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
                  "wrong order %d != %d", QUAD_3D_TABLE[rule]->order, rule);
       }
       size_t nb_gauss_pts = QUAD_3D_TABLE[rule]->npoints;
@@ -152,7 +152,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::setIntegrationPts() {
       }
 
     } else {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "rule > quadrature order %d < %d", rule, QUAD_3D_TABLE_SIZE);
     }
     MoFEMFunctionReturn(0);
@@ -168,7 +168,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::setIntegrationPts() {
       CHKERR calc_base_for_hex();
       break;
     default:
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                "Element type not implemented: %d", type);
     }
   } else {
@@ -184,7 +184,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::setIntegrationPts() {
         CHKERR calc_base_for_hex();
         break;
       default:
-        SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                  "Element type not implemented: %d", type);
       }
     }

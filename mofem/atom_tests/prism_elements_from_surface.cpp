@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
     // Read parameters from line command
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
-    CHKERR PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name,
+    CHKERR PetscOptionsGetString(PETSC_NULLPTR, "", "-my_file", mesh_file_name,
                                  255, &flg);
     if (flg != PETSC_TRUE)
       SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
@@ -416,7 +416,7 @@ MoFEMErrorCode PrismOp::doWork(int side, EntityType type,
 
   MatrixDouble trans_base = trans(data.getN());
   if (trans_base.size2() != nodeHandles.size())
-    SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "wrong size %d != %d",
+    SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "wrong size %d != %d",
              trans_base.size2(), nodeHandles.size());
   for (size_t rr = 0; rr != trans_base.size1(); ++rr) {
     auto tag_name = tag_name_base + "Base" + to_str(rr);
@@ -602,7 +602,7 @@ MoFEMErrorCode Op<OP>::doWork(int side, EntityType type,
       std::cerr << "Indices: " << data.getIndices() << std::endl;
       std::cerr << "Local indices: " << data.getLocalIndices() << std::endl;
       std::cerr << "Data: " << data.getFieldData() << std::endl;
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                "Indicices/data inconsistency %3.1f != %d",
                data.getFieldData()[dd], data.getIndices()[dd]);
     }
@@ -645,7 +645,7 @@ MoFEMErrorCode Op<OP>::doWork(int side, EntityType type,
   MatrixDouble trans_base = trans(data.getN());
   MatrixDouble prism_base(trans_base.size1(), trans_base.size2());
   if (trans_base.size2() != nodeHandles.size())
-    SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "wrong size %d != %d",
+    SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "wrong size %d != %d",
              trans_base.size2(), nodeHandles.size());
 
   for (size_t rr = 0; rr != trans_base.size1(); ++rr) {
@@ -697,7 +697,7 @@ MoFEMErrorCode Op<OP>::doWork(int side, EntityType type,
            << tag_name_base << " sum  " << sum << endl;
 
     if (std::abs(sum) > eps)
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                "Inconsistent base %s sum %6.4e", tag_prism_name_base.c_str(),
                sum);
   }

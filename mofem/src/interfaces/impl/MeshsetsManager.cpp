@@ -386,7 +386,7 @@ MoFEMErrorCode MeshsetsManager::addMeshset(const CubitBCType cubit_bc_type,
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
   if (checkMeshset(ms_id, cubit_bc_type)) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "such cubit meshset is already there", ms_id);
   }
 
@@ -422,7 +422,7 @@ MeshsetsManager::addEntitiesToMeshset(const CubitBCType cubit_bc_type,
           boost::make_tuple(ms_id, cubit_bc_type.to_ulong()));
   if (cit ==
       cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>().end()) {
-    SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
              "Cannot find Cubit meshset with id: %d", ms_id);
   }
   EntityHandle meshset = cit->getMeshset();
@@ -443,7 +443,7 @@ MeshsetsManager::addEntitiesToMeshset(const CubitBCType cubit_bc_type,
           boost::make_tuple(ms_id, cubit_bc_type.to_ulong()));
   if (cit ==
       cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>().end()) {
-    SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
              "Cannot find Cubit meshset with id: %d", ms_id);
   }
   EntityHandle meshset = cit->getMeshset();
@@ -464,7 +464,7 @@ MeshsetsManager::setAtributes(const CubitBCType cubit_bc_type, const int ms_id,
           boost::make_tuple(ms_id, cubit_bc_type.to_ulong()));
   if (cit ==
       cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>().end()) {
-    SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
              "Cannot find Cubit meshset with id: %d", ms_id);
   }
   if (name.size() > 0) {
@@ -504,7 +504,7 @@ MoFEMErrorCode MeshsetsManager::setAtributesByDataStructure(
           boost::make_tuple(ms_id, cubit_bc_type.to_ulong()));
   if (cit ==
       cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>().end()) {
-    SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
              "Cannot find Cubit meshset with id: %d", ms_id);
   }
   if (name.size() > 0) {
@@ -535,7 +535,7 @@ MoFEMErrorCode MeshsetsManager::setBcData(const CubitBCType cubit_bc_type,
           boost::make_tuple(ms_id, cubit_bc_type.to_ulong()));
   if (cit ==
       cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>().end()) {
-    SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
              "Cubit meshset with id is already there", ms_id);
   }
   bool success =
@@ -559,7 +559,7 @@ MoFEMErrorCode MeshsetsManager::deleteMeshset(const CubitBCType cubit_bc_type,
   if (miit ==
       cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>().end()) {
     if (bh & MF_EXIST) {
-      SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                "meshset not found", ms_id);
     } else {
       MoFEMFunctionReturnHot(0);
@@ -584,7 +584,7 @@ MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
       cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>().end()) {
     *cubit_meshset_ptr = &*miit;
   } else {
-    SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
              "msId = %d is not there", ms_id);
   }
   MoFEMFunctionReturn(0);
@@ -607,11 +607,11 @@ MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
   auto miit = cubitMeshsets.get<CubitMeshsets_name>().lower_bound(name);
   auto hi_miit = cubitMeshsets.get<CubitMeshsets_name>().upper_bound(name);
   if (std::distance(miit, hi_miit) == 0) {
-    SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
              "meshset name <%s> is not there", name.c_str());
   }
   if (std::distance(miit, hi_miit) > 1) {
-    SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
              "more that one meshser of that name <%s>", name.c_str());
   }
   *cubit_meshset_ptr = &*miit;
@@ -677,7 +677,7 @@ MoFEMErrorCode MeshsetsManager::getEntitiesByDimension(
     CHKERR miit->getMeshsetIdEntitiesByDimension(moab, dimension, entities,
                                                  recursive);
   } else {
-    SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
              "msId = %d is not there", msId);
   }
   MoFEMFunctionReturn(0);
@@ -696,7 +696,7 @@ MoFEMErrorCode MeshsetsManager::getEntitiesByDimension(
       cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>().end()) {
     CHKERR miit->getMeshsetIdEntitiesByDimension(moab, entities, recursive);
   } else {
-    SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
              "ms_id = %d is not there", ms_id);
   }
   MoFEMFunctionReturn(0);
@@ -714,7 +714,7 @@ MoFEMErrorCode MeshsetsManager::getMeshset(const int ms_id,
       cubitMeshsets.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>().end()) {
     meshset = miit->meshset;
   } else {
-    SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
              "ms_id = %d is not there", ms_id);
   }
   MoFEMFunctionReturn(0);
@@ -1179,12 +1179,12 @@ MoFEMErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name,
     else if (bc_type.to_ulong() == SIDESET)
       block_lists[it->getMeshsetId()].bcType = SIDESET;
     else {
-      SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                "Not yet implemented type %s\n",
                block_lists[it->getMeshsetId()].addType.c_str());
     }
     if (block_lists[it->getMeshsetId()].iD == -1) {
-      SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                "Unset iD number %d\n", block_lists[it->getMeshsetId()].iD);
     }
   }
@@ -1382,7 +1382,7 @@ MoFEMErrorCode MeshsetsManager::setMeshsetFromFile() {
   if (flg_file == PETSC_TRUE) {
     ifstream f(meshset_file_name);
     if (!f.good()) {
-      SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                "File configuring meshsets ( %s ) can not be open\n",
                meshset_file_name);
     }

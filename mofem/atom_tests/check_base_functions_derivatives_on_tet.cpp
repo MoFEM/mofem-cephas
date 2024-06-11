@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
 
     PetscBool flg;
     PetscInt choise_space_value = H1TET;
-    CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-space", list_spaces,
+    CHKERR PetscOptionsGetEList(PETSC_NULLPTR, NULL, "-space", list_spaces,
                                 LASTSPACEOP, &choise_space_value, &flg);
     
     if (flg != PETSC_TRUE) {
@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
     const char *list_bases[] = {"ainsworth", "demkowicz"};
 
     PetscInt choice_base_value = AINSWORTH;
-    CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list_bases,
+    CHKERR PetscOptionsGetEList(PETSC_NULLPTR, NULL, "-base", list_bases,
                                 LASBASETOP, &choice_base_value, &flg);
     
     if (flg != PETSC_TRUE) {
@@ -271,19 +271,19 @@ int main(int argc, char *argv[]) {
                     << dzeta(2) << " " << sqrt(dzeta(i) * dzeta(i)) << endl;
 
             if (sqrt(dksi(i) * dksi(i)) > eps_diff) {
-              SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+              SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                        "%s inconsistent dKsi derivative  for type %d",
                        FieldSpaceNames[data.getFieldDofs()[0]->getSpace()],
                        type);
             }
             if (sqrt(deta(i) * deta(i)) > eps_diff) {
-              SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+              SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                        "%s inconsistent dEta derivative for type %d",
                        FieldSpaceNames[data.getFieldDofs()[0]->getSpace()],
                        type);
             }
             if (sqrt(dzeta(i) * dzeta(i)) > eps_diff) {
-              SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+              SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                        "%s inconsistent dZeta derivative for type %d",
                        FieldSpaceNames[data.getFieldDofs()[0]->getSpace()],
                        type);

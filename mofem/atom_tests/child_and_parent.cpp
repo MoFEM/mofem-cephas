@@ -175,7 +175,7 @@ struct OpCheckGaussCoords : public ELE_OP {
       n += d * d;
 
     if (sqrt(n) > 1e-12)
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                "Parent and child global coords at integration points are "
                "diffrent norm = %3.2e",
                sqrt(n));
@@ -563,7 +563,7 @@ MoFEMErrorCode AtomTest::checkResults(
 
   constexpr double eps = 1e-8;
   if (nrm2 > eps)
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "Not converged solution err = %6.4e", nrm2);
   MoFEMFunctionReturn(0);
 }

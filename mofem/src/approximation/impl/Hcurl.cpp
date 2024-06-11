@@ -651,7 +651,7 @@ MoFEMErrorCode MoFEM::Hcurl_Ainsworth_BubbleFaceFunctions_MBTET(
       }
       const int nb_base_fun_on_face = NBFACETRI_AINSWORTH_FACE_HCURL(p[ff]);
       if (cc != nb_base_fun_on_face) {
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Wrong number of base functions %d != %d", cc,
                  nb_base_fun_on_face);
       }
@@ -763,7 +763,7 @@ MoFEMErrorCode MoFEM::Hcurl_Ainsworth_BubbleFaceFunctions_MBTET_ON_FACE(
 
     const int nb_base_fun_on_face = NBFACETRI_AINSWORTH_FACE_HCURL(p);
     if (cc != nb_base_fun_on_face) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Wrong number of base functions %d != %d", cc,
                nb_base_fun_on_face);
     }
@@ -897,7 +897,7 @@ MoFEMErrorCode MoFEM::Hcurl_Ainsworth_FaceInteriorFunctions_MBTET(
 
     const int nb_base_fun_on_face = NBVOLUMETET_AINSWORTH_FACE_HCURL(p);
     if (cc != nb_base_fun_on_face) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Wrong number of base functions %d != %d", cc,
                nb_base_fun_on_face);
     }
@@ -1041,7 +1041,7 @@ MoFEMErrorCode MoFEM::Hcurl_Ainsworth_VolumeInteriorFunctions_MBTET(
 
     const int nb_base_fun_on_face = NBVOLUMETET_AINSWORTH_TET_HCURL(p);
     if (cc != nb_base_fun_on_face) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Wrong number of base functions %d != %d", cc,
                nb_base_fun_on_face);
     }
@@ -1196,7 +1196,7 @@ MoFEMErrorCode MoFEM::Hcurl_Ainsworth_FaceFunctions_MBTET(
           // check consistency
           const int nb_base_fun_on_face = NBFACETRI_AINSWORTH_HCURL(p[ff]);
           if (cc != nb_base_fun_on_face) {
-            SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                      "Wrong number of base functions %d != %d", cc,
                      nb_base_fun_on_face);
           }
@@ -1226,7 +1226,7 @@ MoFEMErrorCode MoFEM::Hcurl_Ainsworth_FaceFunctions_MBTET(
           // check consistency
           const int nb_base_fun_on_face = NBFACETRI_AINSWORTH_HCURL(p[ff]);
           if (cc != nb_base_fun_on_face) {
-            SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                      "Wrong number of base functions %d != %d", cc,
                      nb_base_fun_on_face);
           }
@@ -1360,7 +1360,7 @@ MoFEMErrorCode MoFEM::Hcurl_Ainsworth_FaceFunctions_MBTET_ON_FACE(
       // check consistency
       const int nb_base_fun_on_face = NBFACETRI_AINSWORTH_HCURL(p);
       if (cc != nb_base_fun_on_face) {
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Wrong number of base functions %d != %d", cc,
                  nb_base_fun_on_face);
       }
@@ -1390,7 +1390,7 @@ MoFEMErrorCode MoFEM::Hcurl_Ainsworth_FaceFunctions_MBTET_ON_FACE(
       // check consistency
       const int nb_base_fun_on_face = NBFACETRI_AINSWORTH_HCURL(p);
       if (cc != nb_base_fun_on_face) {
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Wrong number of base functions %d != %d", cc,
                  nb_base_fun_on_face);
       }
@@ -1483,7 +1483,7 @@ MoFEMErrorCode MoFEM::Hcurl_Ainsworth_VolumeFunctions_MBTET(
       // check consistency
       const int nb_base_fun_on_face = NBVOLUMETET_AINSWORTH_HCURL(p);
       if (cc != nb_base_fun_on_face) {
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Wrong number of base functions %d != %d", cc,
                  nb_base_fun_on_face);
       }
@@ -1506,7 +1506,7 @@ MoFEMErrorCode MoFEM::Hcurl_Ainsworth_VolumeFunctions_MBTET(
       // check consistency
       const int nb_base_fun_on_face = NBVOLUMETET_AINSWORTH_HCURL(p);
       if (cc != nb_base_fun_on_face) {
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Wrong number of base functions %d != %d", cc,
                  nb_base_fun_on_face);
       }

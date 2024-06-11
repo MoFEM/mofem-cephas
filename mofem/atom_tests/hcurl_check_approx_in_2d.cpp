@@ -196,7 +196,7 @@ struct OpCheckValsDiffVals : public FaceEleOp {
         delta_val(i) = t_vals_from_op(i) - ApproxFunctions::fUn(x, y, 0)(i);
         double err_val = sqrt(delta_val(i) * delta_val(i));
         if (err_val > eps)
-          SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                    "Wrong value %4.3e", err_val);
 
         FTensor::Tensor2<double, 3, 2> delta_diff_val;
@@ -204,13 +204,13 @@ struct OpCheckValsDiffVals : public FaceEleOp {
             t_grad_from_op(i, j) - ApproxFunctions::diffFun(x, y)(i, j);
         double err_diff_val = sqrt(delta_diff_val(i, j) * delta_diff_val(i, j));
         if (err_diff_val > eps)
-          SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                    "Wrong derivative of value %4.3e", err_diff_val);
 
         double div = t_grad_from_op(0, 0) + t_grad_from_op(1, 1);
         double err_div = div - t_div_from_op;
         if (err_div > eps)
-          SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                    "Wrong divergence from operator %4.3e (%4.3e != %4.3e)",
                    err_div, div, t_div_from_op);
 
@@ -220,7 +220,7 @@ struct OpCheckValsDiffVals : public FaceEleOp {
         double hess_diff_error =
             sqrt(delta_diff2_val(i, j, k) * delta_diff2_val(i, j, k));
         if (hess_diff_error > eps)
-          SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                    "Wrong hessian from operator %4.3e", hess_diff_error);
 
         ++t_vals_from_op;
@@ -259,7 +259,7 @@ int main(int argc, char *argv[]) {
     const char *list_bases[] = {"ainsworth", "demkowicz"};
     PetscBool flg;
     PetscInt choice_base_value = AINSWORTH;
-    CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list_bases,
+    CHKERR PetscOptionsGetEList(PETSC_NULLPTR, NULL, "-base", list_bases,
                                 LASBASETOP, &choice_base_value, &flg);
 
     if (flg != PETSC_TRUE)

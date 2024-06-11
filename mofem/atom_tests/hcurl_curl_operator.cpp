@@ -54,15 +54,15 @@ int main(int argc, char *argv[]) {
 
     PetscBool flg;
     PetscInt choise_value = AINSWORTH;
-    CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list, LASTOP,
+    CHKERR PetscOptionsGetEList(PETSC_NULLPTR, NULL, "-base", list, LASTOP,
                                 &choise_value, &flg);
     if (flg != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "base not set");
     }
 
     PetscBool ho_geometry = PETSC_FALSE;
-    CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-ho_geometry", &ho_geometry,
-                               PETSC_NULL);
+    CHKERR PetscOptionsGetBool(PETSC_NULLPTR, "", "-ho_geometry", &ho_geometry,
+                               PETSC_NULLPTR);
 
     DMType dm_name = "DMMOFEM";
     CHKERR DMRegister_MoFEM(dm_name);

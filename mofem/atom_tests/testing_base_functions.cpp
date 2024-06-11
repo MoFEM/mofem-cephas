@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
 
     PetscBool flg;
     PetscInt choice_value = LEGENDREPOLYNOMIAL;
-    ierr = PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list, LASTOP,
+    ierr = PetscOptionsGetEList(PETSC_NULLPTR, NULL, "-base", list, LASTOP,
                                 &choice_value, &flg);
     CHKERRG(ierr);
     if (flg != PETSC_TRUE) {
@@ -816,7 +816,7 @@ int main(int argc, char *argv[]) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
 
       if (std::abs(diff_sum) > eps)
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "wrong result %3.4e != $3.4e", 0, diff_sum);
     }
 

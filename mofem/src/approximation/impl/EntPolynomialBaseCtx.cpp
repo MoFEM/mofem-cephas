@@ -48,7 +48,7 @@ MoFEMErrorCode EntPolynomialBaseCtx::setBase() {
       basePolynomialsType0 = Legendre_polynomials;
       break;
     default:
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                "Not implemented for this space", FieldSpaceNames[sPace]);
     }
     break;
@@ -64,7 +64,7 @@ MoFEMErrorCode EntPolynomialBaseCtx::setBase() {
       basePolynomialsType0 = LobattoKernel_polynomials;
       break;
     default:
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                "Not implemented for this space", FieldSpaceNames[sPace]);
     }
     break;
@@ -79,7 +79,7 @@ MoFEMErrorCode EntPolynomialBaseCtx::setBase() {
     case L2:
       break;
     default:
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                "Not implemented for this space", FieldSpaceNames[sPace]);
     }
     break;
@@ -95,7 +95,7 @@ MoFEMErrorCode EntPolynomialBaseCtx::setBase() {
       basePolynomialsType1 = Jacobi_polynomials;
       break;
     default:
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                "Not implemented for this space",
                FieldSpaceNames[sPace]);
     }
@@ -103,7 +103,7 @@ MoFEMErrorCode EntPolynomialBaseCtx::setBase() {
   case USER_BASE:
     break;
   default:
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
              "Not implemented for this base <%s>",
              ApproximationBaseNames[bAse]);
   }

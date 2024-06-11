@@ -133,7 +133,7 @@ MoFEMErrorCode ProjectionFieldOn10NodeTet::preProcess() {
     }
     field_it = fieldsPtr->get<FieldName_mi_tag>().find(fieldName);
     if (field_it == fieldsPtr->get<FieldName_mi_tag>().end()) {
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "field not found %s",
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "field not found %s",
                fieldName.c_str());
     }
     int field_rank = (*field_it)->getNbOfCoeffs();

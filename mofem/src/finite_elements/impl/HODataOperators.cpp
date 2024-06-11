@@ -38,7 +38,7 @@ OpCalculateHOJacForVolume::doWork(int side, EntityType type,
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "Inconsistent number of base functions");
     if (coords.size() != 3 * nb_base_functions)
-      SETERRQ2(
+      SETERRQ(
           PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
           "Number of vertex coordinates and base functions is inconsistent "
           "%d != %d",
@@ -168,7 +168,7 @@ MoFEMErrorCode OpSetHOWeightsOnFace::doWork(int side, EntityType type,
         ++t_normal;
       }
     } else {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
                "Number of rows in getNormalsAtGaussPts should be equal to "
                "number of integration points, but is not, i.e. %d != %d",
                getNormalsAtGaussPts().size1(), nb_int_pts);
@@ -193,7 +193,7 @@ MoFEMErrorCode OpSetHOWeightsOnEdge::doWork(int side, EntityType type,
         ++t_tangent;
       }
     } else {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE,
                "Number of rows in getTangentAtGaussPts should be equal to "
                "number of integration points, but is not, i.e. %d != %d",
                getTangentAtGaussPts().size1(), nb_int_pts);
@@ -256,7 +256,7 @@ OpSetHOContravariantPiolaTransform::doWork(int side, EntityType type,
 #ifndef NDEBUG
     if (nb_diff_base_functions) {
       if (nb_diff_base_functions != nb_base_functions)
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Wrong number base functions %d != %d", nb_diff_base_functions,
                  nb_base_functions);
       if (data.getDiffN(base).size1() != nb_gauss_pts)
@@ -618,7 +618,7 @@ MoFEMErrorCode OpHOSetContravariantPiolaTransformOnEdge3D::doWork(
 
   if (tangentAtGaussPts)
     if (tangentAtGaussPts->size1() != nb_gauss_pts)
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Wrong number of integration points %d!=%d",
                tangentAtGaussPts->size1(), nb_gauss_pts);
 
@@ -738,7 +738,7 @@ MoFEMErrorCode AddHOOps<2, 2, 2>::add(
       pipeline.push_back(new OpSetInvJacHcurlFace(inv_jac_ptr));
       break;
     default:
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                "Space %s not yet implemented", FieldSpaceNames[s]);
     }
   }
@@ -794,7 +794,7 @@ MoFEMErrorCode AddHOOps<2, 2, 3>::add(
           new OpSetInvJacL2ForFaceEmbeddedIn3DSpace(inv_jac_ptr));
       break;
     default:
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                "Space %s not yet implemented", FieldSpaceNames[s]);
     }
   }
@@ -826,7 +826,7 @@ MoFEMErrorCode AddHOOps<1, 2, 2>::add(
       pipeline.push_back(new OpSetContravariantPiolaTransformOnEdge2D());
       break;
     default:
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                "Space %s not yet implemented", FieldSpaceNames[s]);
     }
   }
@@ -853,7 +853,7 @@ MoFEMErrorCode AddHOOps<1, 3, 3>::add(
       pipeline.push_back(new OpHOSetContravariantPiolaTransformOnEdge3D(HCURL));
       break;
     default:
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                "Space %s not yet implemented", FieldSpaceNames[s]);
     }
   }
@@ -884,7 +884,7 @@ MoFEMErrorCode AddHOOps<2, 3, 3>::add(
       pipeline.push_back(new OpHOSetContravariantPiolaTransformOnFace3D(HDIV));
       break;
     default:
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                "Space %s not yet implemented", FieldSpaceNames[s]);
       break;
     }
@@ -941,7 +941,7 @@ MoFEMErrorCode AddHOOps<3, 3, 3>::add(
       pipeline.push_back(new OpSetHOInvJacToScalarBases<3>(L2, inv_jac));
       break;
     default:
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                "Space %s not yet implemented", FieldSpaceNames[s]);
       break;
     }

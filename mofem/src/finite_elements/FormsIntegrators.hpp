@@ -363,7 +363,7 @@ OpBaseImpl<A, EleOp>::getNbOfBaseFunctions(EntitiesFieldData::EntData &data) {
     case L2:
       break;
     default:
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                "Space %s not implemented", FieldSpaceNames[data.getSpace()]);
     }
   }

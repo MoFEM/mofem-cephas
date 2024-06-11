@@ -106,7 +106,7 @@ ContactPrismElementForcesAndSourcesCore::setDefaultGaussPts(const int rule) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong dimension");
     }
     if (QUAD_2D_TABLE[rule]->order < rule) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "wrong order %d != %d", QUAD_2D_TABLE[rule]->order, rule);
     }
     nbGaussPts = QUAD_2D_TABLE[rule]->npoints;
@@ -138,7 +138,7 @@ ContactPrismElementForcesAndSourcesCore::setDefaultGaussPts(const int rule) {
     cblas_dcopy(3 * nbGaussPts, QUAD_2D_TABLE[rule]->points, 1, shape_ptr_slave,
                 1);
   } else {
-    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "rule > quadrature order %d < %d", rule, QUAD_2D_TABLE_SIZE);
     nbGaussPts = 0;
   }
@@ -515,7 +515,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
       case L2:
         break;
       default:
-        SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                  "Not implemented for this space", oit->sPace);
       }
 
@@ -549,7 +549,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
         if ((oit->getNumeredEntFiniteElementPtr()->getBitFieldIdData() &
              data_id)
                 .none())
-          SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                    "no data field < %s > on finite element < %s >",
                    field_name.c_str(), getFEName().c_str());
 
@@ -567,7 +567,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
           case L2:
             break;
           default:
-            SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+            SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                      "Not implemented for this space", space);
           }
 
@@ -678,7 +678,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
               }
               break;
             default:
-              SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+              SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                        "Not implemented for this space", space);
             }
             last_eval_field_name[ss] = field_name;

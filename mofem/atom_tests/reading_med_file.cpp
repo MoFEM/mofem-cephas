@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
     }
 
     PetscBool check = PETSC_TRUE;
-    CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-check", &check, PETSC_NULL);
+    CHKERR PetscOptionsGetBool(PETSC_NULLPTR, "", "-check", &check, PETSC_NULLPTR);
 
     int ii = 0;
     const int check_list[] = {2163, 624, 65, 104};
@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
                          cit->getName().c_str(), nb_ents);
       CHKERRG(ierr);
       if (check && nb_ents != check_list[ii]) {
-        SETERRQ2(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+        SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                  "Wrong numbers of entities in meshset %d != %d", nb_ents,
                  check_list[ii]);
       }

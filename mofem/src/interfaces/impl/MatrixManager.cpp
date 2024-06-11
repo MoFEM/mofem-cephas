@@ -205,7 +205,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
       p_miit->numeredRowDofsPtr->get<TAG>();
   int nb_dofs_row = p_miit->getNbDofsRow();
   if (nb_dofs_row == 0) {
-    SETERRQ1(mofemComm, MOFEM_DATA_INCONSISTENCY, "problem <%s> has zero rows",
+    SETERRQ(mofemComm, MOFEM_DATA_INCONSISTENCY, "problem <%s> has zero rows",
              p_miit->getName().c_str());
   }
 
@@ -241,7 +241,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
     miit_row = dofs_row_by_idx.lower_bound(rstart);
     hi_miit_row = dofs_row_by_idx.lower_bound(rend);
     if (std::distance(miit_row, hi_miit_row) != rend - rstart) {
-      SETERRQ4(
+      SETERRQ(
           mofemComm, PETSC_ERR_ARG_SIZ,
           "data inconsistency, std::distance(miit_row,hi_miit_row) != rend - "
           "rstart (%d != %d - %d = %d) ",
@@ -396,7 +396,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
               row_idx);
           if (dit ==
               p_miit->numeredRowDofsPtr->get<PetscGlobalIdx_mi_tag>().end()) {
-            SETERRQ1(get_comm(), MOFEM_DATA_INCONSISTENCY,
+            SETERRQ(get_comm(), MOFEM_DATA_INCONSISTENCY,
                      "dof %d can not be found in problem", row_idx);
           }
         }
@@ -468,7 +468,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
         mit = adjacent_dofs_on_other_parts.find(row_last_evaluated_idx);
         if (mit == adjacent_dofs_on_other_parts.end()) {
           // NOTE: Dof can adjacent to other part but no elements are there
-          // which use that dof std::cerr << *miit_row << std::endl; SETERRQ1(
+          // which use that dof std::cerr << *miit_row << std::endl; SETERRQ(
           //   get_comm(),MOFEM_DATA_INCONSISTENCY,
           //   "data inconsistency row_last_evaluated_idx = %d",
           //   row_last_evaluated_idx
@@ -515,7 +515,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
     // Adjacency matrix used to partition problems, f.e. METIS
     if (i.size() - 1 != (unsigned int)nb_loc_row_from_iterators) {
-      SETERRQ2(
+      SETERRQ(
           get_comm(), PETSC_ERR_ARG_SIZ,
           "Number of rows from iterator is different than size of rows in "
           "compressed row "
@@ -528,7 +528,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
     // Compressed MPIADJ matrix
     if (i.size() - 1 != (unsigned int)nb_loc_row_from_iterators) {
-      SETERRQ2(
+      SETERRQ(
           get_comm(), PETSC_ERR_ARG_SIZ,
           "Number of rows from iterator is different than size of rows in "
           "compressed row "
@@ -538,7 +538,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
     }
     PetscInt nb_local_dofs_row = p_miit->getNbLocalDofsRow();
     if ((unsigned int)nb_local_dofs_row != i.size() - 1) {
-      SETERRQ2(
+      SETERRQ(
           get_comm(), PETSC_ERR_ARG_SIZ,
           "Number of rows is different than size of rows in compressed row "
           "matrix (unsigned int)nb_local_dofs_row != i.size() - 1, i.e. %d != "
@@ -550,7 +550,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
     // Sequential compressed ADJ matrix
     if (i.size() - 1 != (unsigned int)nb_loc_row_from_iterators) {
-      SETERRQ2(
+      SETERRQ(
           get_comm(), PETSC_ERR_ARG_SIZ,
           "Number of rows form iterator is different than size of rows in "
           "compressed row "
@@ -560,7 +560,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
     }
     PetscInt nb_local_dofs_row = p_miit->getNbLocalDofsRow();
     if ((unsigned int)nb_local_dofs_row != i.size() - 1) {
-      SETERRQ2(
+      SETERRQ(
           get_comm(), PETSC_ERR_ARG_SIZ,
           "Number of rows is different than size of rows in compressed row "
           "matrix (unsigned int)nb_local_dofs_row != i.size() - 1, i.e. %d != "
@@ -625,7 +625,7 @@ MoFEMErrorCode MatrixManager::createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(
   auto &prb = problems_ptr->get<Problem_mi_tag>();
   auto p_miit = prb.find(name);
   if (p_miit == prb.end()) {
-    SETERRQ1(m_field.get_comm(), MOFEM_NOT_FOUND,
+    SETERRQ(m_field.get_comm(), MOFEM_NOT_FOUND,
              "problem < %s > is not found (top tip: check spelling)",
              name.c_str());
   }
@@ -642,7 +642,7 @@ MoFEMErrorCode MatrixManager::createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(
 
   CHKERR ::MatCreateMPIAIJWithArrays(
       m_field.get_comm(), nb_local_dofs_row, nb_local_dofs_col, nb_row_dofs,
-      nb_col_dofs, &*i_vec.begin(), &*j_vec.begin(), PETSC_NULL, Aij);
+      nb_col_dofs, &*i_vec.begin(), &*j_vec.begin(), PETSC_NULLPTR, Aij);
 
   PetscLogEventEnd(MOFEM_EVENT_createMPIAIJWithArrays, 0, 0, 0, 0);
   MoFEMFunctionReturn(0);
@@ -663,7 +663,7 @@ MatrixManager::createMPIAIJCUSPARSEWithArrays<PetscGlobalIdx_mi_tag>(
   auto &prb = problems_ptr->get<Problem_mi_tag>();
   auto p_miit = prb.find(name);
   if (p_miit == prb.end()) {
-    SETERRQ1(m_field.get_comm(), MOFEM_NOT_FOUND,
+    SETERRQ(m_field.get_comm(), MOFEM_NOT_FOUND,
              "problem < %s > is not found (top tip: check spelling)",
              name.c_str());
   }
@@ -750,7 +750,7 @@ MatrixManager::createMPIAIJ<PetscGlobalIdx_mi_tag>(const std::string name,
   auto &prb = problems_ptr->get<Problem_mi_tag>();
   auto p_miit = prb.find(name);
   if (p_miit == prb.end()) {
-    SETERRQ1(m_field.get_comm(), MOFEM_NOT_FOUND,
+    SETERRQ(m_field.get_comm(), MOFEM_NOT_FOUND,
              "problem < %s > is not found (top tip: check spelling)",
              name.c_str());
   }
@@ -820,7 +820,7 @@ MatrixManager::createMPIAdjWithArrays<Idx_mi_tag>(const std::string name,
   auto &prb = problems_ptr->get<Problem_mi_tag>();
   auto p_miit = prb.find(name);
   if (p_miit == prb.end()) {
-    SETERRQ1(m_field.get_comm(), MOFEM_NOT_FOUND,
+    SETERRQ(m_field.get_comm(), MOFEM_NOT_FOUND,
              "problem < %s > is not found (top tip: check spelling)",
              name.c_str());
   }
@@ -837,7 +837,7 @@ MatrixManager::createMPIAdjWithArrays<Idx_mi_tag>(const std::string name,
 
   int nb_col_dofs = p_miit->getNbDofsCol();
   CHKERR MatCreateMPIAdj(m_field.get_comm(), i_vec.size() - 1, nb_col_dofs, _i,
-                         _j, PETSC_NULL, Adj);
+                         _j, PETSC_NULLPTR, Adj);
   CHKERR MatSetOption(*Adj, MAT_STRUCTURALLY_SYMMETRIC, PETSC_TRUE);
 
   PetscLogEventEnd(MOFEM_EVENT_createMPIAdjWithArrays, 0, 0, 0, 0);
@@ -857,7 +857,7 @@ MoFEMErrorCode MatrixManager::createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(
   auto &prb = problems_ptr->get<Problem_mi_tag>();
   auto p_miit = prb.find(name);
   if (p_miit == prb.end()) {
-    SETERRQ1(m_field.get_comm(), MOFEM_NOT_FOUND,
+    SETERRQ(m_field.get_comm(), MOFEM_NOT_FOUND,
              "problem < %s > is not found (top tip: check spelling)",
              name.c_str());
   }
@@ -1102,7 +1102,7 @@ MoFEMErrorCode MatrixManager::checkMatrixFillIn(const std::string problem_name,
   auto &prb_set = problems_ptr->get<Problem_mi_tag>();
   auto p_miit = prb_set.find(problem_name);
   if (p_miit == prb_set.end())
-    SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
              "problem < %s > not found (top tip: check spelling)",
              problem_name.c_str());
   MOFEM_LOG_C("WORLD", Sev::inform, "check problem < %s >",

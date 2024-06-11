@@ -229,7 +229,7 @@ MoFEMErrorCode NodeMergerInterface::mergeNodes(
       }
     }
     if (nb_mother_verts != 1) {
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Tet should have only one vertex but have %d", nb_mother_verts);
     }
 
@@ -365,7 +365,7 @@ NodeMergerInterface::minQuality(Range &check_tests, EntityHandle father,
         }
       }
       if (nb_mother_verts > 1) {
-        SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Tet should have no more than one mother vertex but have %d",
                  nb_mother_verts);
       }

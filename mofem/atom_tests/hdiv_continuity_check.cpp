@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
 
     PetscBool flg;
     PetscInt choise_value = HDIV_AINSWORTH;
-    CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list, LASTOP,
+    CHKERR PetscOptionsGetEList(PETSC_NULLPTR, NULL, "-base", list, LASTOP,
                                 &choise_value, &flg);
     if (flg != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "base not set");
@@ -43,10 +43,10 @@ int main(int argc, char *argv[]) {
 
     char mesh_file_name[255];
 #if PETSC_VERSION_GE(3, 6, 4)
-    CHKERR PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name,
+    CHKERR PetscOptionsGetString(PETSC_NULLPTR, "", "-my_file", mesh_file_name,
                                  255, &flg);
 #else
-    CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-my_file",
+    CHKERR PetscOptionsGetString(PETSC_NULLPTR, PETSC_NULLPTR, "-my_file",
                                  mesh_file_name, 255, &flg);
 #endif
     if (flg != PETSC_TRUE) {
@@ -174,7 +174,7 @@ int main(int argc, char *argv[]) {
     Vec v;
     CHKERR m_field.getInterface<VecManager>()->vecCreateGhost("TEST_PROBLEM",
                                                               ROW, &v);
-    CHKERR VecSetRandom(v, PETSC_NULL);
+    CHKERR VecSetRandom(v, PETSC_NULLPTR);
     CHKERR m_field.getInterface<VecManager>()->setLocalGhostVector(
         "TEST_PROBLEM", ROW, v, INSERT_VALUES, SCATTER_REVERSE);
     CHKERR VecDestroy(&v);
@@ -308,7 +308,7 @@ int main(int argc, char *argv[]) {
 
         const double eps = 1e-8;
         if (fabs(*tn_ptr) > eps) {
-          SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                    "HDiv continuity failed %6.4e", *tn_ptr);
         }
 
@@ -355,7 +355,7 @@ int main(int argc, char *argv[]) {
 
         const double eps = 1e-8;
         if (fabs(*tn_ptr) > eps) {
-          SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                    "HDiv continuity failed %6.4e", *tn_ptr);
         }
 

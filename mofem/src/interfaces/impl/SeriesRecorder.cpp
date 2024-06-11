@@ -101,7 +101,7 @@ SeriesRecorder::add_series_recorder(const std::string &series_name) {
   std::pair<Series_multiIndex::iterator, bool> p =
       sEries.insert(FieldSeries(moab, meshset));
   if (!p.second) {
-    SETERRQ1(PETSC_COMM_SELF, 1, "series recorder <%s> is already there",
+    SETERRQ(PETSC_COMM_SELF, 1, "series recorder <%s> is already there",
              series_name.c_str());
   }
   MoFEMFunctionReturn(0);
@@ -120,7 +120,7 @@ SeriesRecorder::delete_recorder_series(const std::string &series_name) {
   Series_multiIndex::index<SeriesName_mi_tag>::type::iterator sit;
   sit = sEries.get<SeriesName_mi_tag>().find(series_name);
   if (sit == sEries.get<SeriesName_mi_tag>().end()) {
-    SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
              "series recorder <%s> not exist and can be deleted",
              series_name.c_str());
   }
@@ -146,7 +146,7 @@ MoFEMErrorCode SeriesRecorder::record_problem(const std::string &serie_name,
   Series_multiIndex::index<SeriesName_mi_tag>::type::iterator sit =
       sEries.get<SeriesName_mi_tag>().find(serie_name);
   if (sit == sEries.get<SeriesName_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "series recorder <%s> not exist", serie_name.c_str());
   }
   switch (rc) {
@@ -188,7 +188,7 @@ MoFEMErrorCode SeriesRecorder::record_field(const std::string &serie_name,
   Series_multiIndex::index<SeriesName_mi_tag>::type::iterator sit =
       sEries.get<SeriesName_mi_tag>().find(serie_name);
   if (sit == sEries.get<SeriesName_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "serie recorder <%s> not exist",
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "serie recorder <%s> not exist",
              serie_name.c_str());
   }
 
@@ -197,7 +197,7 @@ MoFEMErrorCode SeriesRecorder::record_field(const std::string &serie_name,
   auto dit = dofs_ptr->get<Unique_mi_tag>().lower_bound(
       FieldEntity::getLoBitNumberUId(bit_number));
   if (dit == dofs_ptr->get<Unique_mi_tag>().end())
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "field <%s> not exist", field_name.c_str());
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "field <%s> not exist", field_name.c_str());
   auto hi_dit = dofs_ptr->get<Unique_mi_tag>().upper_bound(
       FieldEntity::getHiBitNumberUId(bit_number));
 
@@ -221,7 +221,7 @@ MoFEMErrorCode SeriesRecorder::record_begin(const std::string &serie_name) {
   Series_multiIndex::index<SeriesName_mi_tag>::type::iterator sit =
       sEries.get<SeriesName_mi_tag>().find(serie_name);
   if (sit == sEries.get<SeriesName_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF, 1, "serie recorder <%s> not exist",
+    SETERRQ(PETSC_COMM_SELF, 1, "serie recorder <%s> not exist",
              serie_name.c_str());
   }
   CHKERR const_cast<FieldSeries *>(&*sit)->begin();
@@ -235,7 +235,7 @@ MoFEMErrorCode SeriesRecorder::record_end(const std::string &serie_name,
   Series_multiIndex::index<SeriesName_mi_tag>::type::iterator sit =
       sEries.get<SeriesName_mi_tag>().find(serie_name);
   if (sit == sEries.get<SeriesName_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF, 1, "serie recorder <%s> not exist",
+    SETERRQ(PETSC_COMM_SELF, 1, "serie recorder <%s> not exist",
              serie_name.c_str());
   }
   CHKERR const_cast<FieldSeries *>(&*sit)->end(time);
@@ -251,7 +251,7 @@ SeriesRecorder::initialize_series_recorder(const std::string &serie_name) {
   Series_multiIndex::index<SeriesName_mi_tag>::type::iterator sit =
       sEries.get<SeriesName_mi_tag>().find(serie_name);
   if (sit == sEries.get<SeriesName_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF, 1, "serie recorder <%s> not exist",
+    SETERRQ(PETSC_COMM_SELF, 1, "serie recorder <%s> not exist",
              serie_name.c_str());
   }
   CHKERR const_cast<FieldSeries *>(&*sit)->read(moab);
@@ -269,7 +269,7 @@ SeriesRecorder::finalize_series_recorder(const std::string &serie_name) {
   Series_multiIndex::index<SeriesName_mi_tag>::type::iterator sit =
       sEries.get<SeriesName_mi_tag>().find(serie_name);
   if (sit == sEries.get<SeriesName_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF, 1, "serie recorder <%s> not exist",
+    SETERRQ(PETSC_COMM_SELF, 1, "serie recorder <%s> not exist",
              serie_name.c_str());
   }
   CHKERR sit->save(moab);
@@ -318,7 +318,7 @@ MoFEMErrorCode SeriesRecorder::load_series_data(const std::string &serie_name,
   sit = seriesSteps.get<Composite_SeriesName_And_Step_mi_tag>().find(
       boost::make_tuple(serie_name, step_number));
   if (sit == seriesSteps.get<Composite_SeriesName_And_Step_mi_tag>().end()) {
-    SETERRQ2(PETSC_COMM_SELF, 1, "series <%s> and step %d not found",
+    SETERRQ(PETSC_COMM_SELF, 1, "series <%s> and step %d not found",
              serie_name.c_str(), step_number);
   }
   CHKERR sit->get(moab, *(const_cast<DofEntity_multiIndex *>(dofs_ptr)));

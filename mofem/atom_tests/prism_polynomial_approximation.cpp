@@ -279,14 +279,14 @@ MoFEMErrorCode PrismOpCheck::doWork(int side, EntityType type,
       constexpr double eps = 1e-6;
       if (std::abs(f - (*fieldVals)[gg]) > eps ||
           !std::isnormal((*fieldVals)[gg]))
-        SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                  "Wrong value %6.4e != %6.4e (%6.4e)", f, (*fieldVals)[gg],
                  f - (*fieldVals)[gg]);
       
       for (auto d : {0, 1, 2})
         if (std::abs(diff_f[d] - (*diffFieldVals)(d, gg)) > eps ||
             !std::isnormal((*diffFieldVals)(d, gg)))
-          SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                    "Wrong diff value %6.4e != %6.4e (%6.4e)", diff_f[d],
                    (*diffFieldVals)(d, gg),
                    diff_f[d] - (*diffFieldVals)(d, gg));

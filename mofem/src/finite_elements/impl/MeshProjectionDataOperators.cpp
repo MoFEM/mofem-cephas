@@ -131,7 +131,7 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
       child_data.fieldEntities[0] = vertex_entity;
 #ifndef NDEBUG
       if (parent_data.dOfs.size() != nb_coeffs * num_nodes)
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Inconsistent number of DOFs and vertices %d != %d",
                  parent_data.dOfs.size(), nb_coeffs * num_nodes);
 #endif
@@ -142,7 +142,7 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
 
 #ifndef NDEBUG
         if (parent_data.dOfs.size() != parent_data.iNdices.size())
-          SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                    "Inconsistent size of DOFs %d != %d",
                    parent_data.dOfs.size(), parent_data.iNdices.size());
 #endif
@@ -245,7 +245,7 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
 
           const auto num_bases_per_node = parent_base->size2() / num_nodes;
           if (parent_base->size2() % num_nodes) {
-            SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                      "Inconsistent nb of base functions and nodes mod(%d, %d)",
                      parent_base->size2(), num_nodes);
           }
@@ -332,7 +332,7 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
     // #ifndef NDEBUG
     if (type == MBVERTEX &&
         nb_nodes != up_op_ptr->getNumberOfNodesOnElement()) {
-      SETERRQ2(
+      SETERRQ(
           PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
           "Inconsistency between bit ref levels and number of nodes %d != %d",
           nb_nodes, up_op_ptr->getNumberOfNodesOnElement());
@@ -392,7 +392,7 @@ MoFEMErrorCode OpAddParentEntData::opRhs(EntitiesFieldData &entities_field_data,
 
       if (type == MBVERTEX &&
           nb_ents != up_op_ptr->getNumberOfNodesOnElement()) {
-        SETERRQ2(
+        SETERRQ(
             PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Number of nodes is expected to much number of entities: %d != %d",
             nb_ents, up_op_ptr->getNumberOfNodesOnElement());

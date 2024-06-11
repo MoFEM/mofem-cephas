@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
       MOFEM_LOG("SELF", Sev::inform) << residual;
       for (auto v : residual.data())
         if (std::abs(v) > 1e-12)
-          SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                    "Should be zer, but is v = %3.4e", v);
 
       MoFEMFunctionReturn(0);
@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
       MOFEM_LOG("SELF", Sev::inform) << residual;
       for (auto v : residual.data())
         if (std::abs(v) > 1e-12)
-          SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                    "Should be zer, but is v = %3.4e", v);
 
       MoFEMFunctionReturn(0);
@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
       MOFEM_LOG("SELF", Sev::inform) << residual;
       for (auto v : residual.data())
         if (std::abs(v) > 1e-12)
-          SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                    "Should be zer, but is v = %3.4e", v);
 
       MoFEMFunctionReturn(0);

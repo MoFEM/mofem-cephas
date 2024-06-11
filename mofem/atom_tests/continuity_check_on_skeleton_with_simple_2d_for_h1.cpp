@@ -130,7 +130,7 @@ struct SkeletonFE : public EdgeEleOp {
             const double error =
                 std::abs(vol_dot_data(gg, bb) - elemData.dotEdge(gg, bb));
             if (error > eps)
-              SETERRQ4(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+              SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                        "Inconsistency (%d, %d) %3.4e != %3.4e", gg, bb,
                        vol_dot_data(gg, bb), elemData.dotEdge(gg, bb));
             else
@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
         const char *list_bases[] = {"ainsworth", "demkowicz"};
         PetscBool flg;
         PetscInt choice_base_value = AINSWORTH;
-        CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list_bases,
+        CHKERR PetscOptionsGetEList(PETSC_NULLPTR, NULL, "-base", list_bases,
                                     LASTBASEOP, &choice_base_value, &flg);
         if (flg == PETSC_TRUE) {
           FieldApproximationBase base = AINSWORTH_LEGENDRE_BASE;

@@ -1086,7 +1086,7 @@ ForcesAndSourcesCore::UserDataOperator::getTSCtx() const {
 
 Vec ForcesAndSourcesCore::UserDataOperator::getKSPf() const {
 #ifndef NDEBUG
-  if (getFEMethod()->ksp_f == PETSC_NULL)
+  if (getFEMethod()->ksp_f == PETSC_NULLPTR)
     THROW_MESSAGE("KSP not set F vector");
 #endif
   return getFEMethod()->ksp_f;
@@ -1094,7 +1094,7 @@ Vec ForcesAndSourcesCore::UserDataOperator::getKSPf() const {
 
 Mat ForcesAndSourcesCore::UserDataOperator::getKSPA() const {
 #ifndef NDEBUG
-  if (getFEMethod()->ksp_A == PETSC_NULL)
+  if (getFEMethod()->ksp_A == PETSC_NULLPTR)
     THROW_MESSAGE("KSP not set A vector");
 #endif
   return getFEMethod()->ksp_A;
@@ -1102,7 +1102,7 @@ Mat ForcesAndSourcesCore::UserDataOperator::getKSPA() const {
 
 Mat ForcesAndSourcesCore::UserDataOperator::getKSPB() const {
 #ifndef NDEBUG
-  if (getFEMethod()->ksp_B == PETSC_NULL)
+  if (getFEMethod()->ksp_B == PETSC_NULLPTR)
     THROW_MESSAGE("KSP not set B vector");
 #endif
   return getFEMethod()->ksp_B;
@@ -1110,7 +1110,7 @@ Mat ForcesAndSourcesCore::UserDataOperator::getKSPB() const {
 
 Vec ForcesAndSourcesCore::UserDataOperator::getSNESf() const {
 #ifndef NDEBUG
-  if (getFEMethod()->snes_f == PETSC_NULL)
+  if (getFEMethod()->snes_f == PETSC_NULLPTR)
     THROW_MESSAGE("SNES not set F vector");
 #endif
   return getFEMethod()->snes_f;
@@ -1118,7 +1118,7 @@ Vec ForcesAndSourcesCore::UserDataOperator::getSNESf() const {
 
 Vec ForcesAndSourcesCore::UserDataOperator::getSNESx() const {
 #ifndef NDEBUG
-  if (getFEMethod()->snes_x == PETSC_NULL)
+  if (getFEMethod()->snes_x == PETSC_NULLPTR)
     THROW_MESSAGE("SNESnot set X vector");
 #endif
   return getFEMethod()->snes_x;
@@ -1126,7 +1126,7 @@ Vec ForcesAndSourcesCore::UserDataOperator::getSNESx() const {
 
 Mat ForcesAndSourcesCore::UserDataOperator::getSNESA() const {
 #ifndef NDEBUG
-  if (getFEMethod()->snes_A == PETSC_NULL)
+  if (getFEMethod()->snes_A == PETSC_NULLPTR)
     THROW_MESSAGE("SNES not set A vector");
 #endif
   return getFEMethod()->snes_A;
@@ -1134,7 +1134,7 @@ Mat ForcesAndSourcesCore::UserDataOperator::getSNESA() const {
 
 Mat ForcesAndSourcesCore::UserDataOperator::getSNESB() const {
 #ifndef NDEBUG
-  if (getFEMethod()->snes_B == PETSC_NULL)
+  if (getFEMethod()->snes_B == PETSC_NULLPTR)
     THROW_MESSAGE("SNES not set A matrix");
 #endif
   return getFEMethod()->snes_B;
@@ -1142,7 +1142,7 @@ Mat ForcesAndSourcesCore::UserDataOperator::getSNESB() const {
 
 Vec ForcesAndSourcesCore::UserDataOperator::getTSu() const {
 #ifndef NDEBUG
-  if (getFEMethod()->ts_u == PETSC_NULL)
+  if (getFEMethod()->ts_u == PETSC_NULLPTR)
     THROW_MESSAGE("TS not set U vector");
 #endif
   return getFEMethod()->ts_u;
@@ -1150,7 +1150,7 @@ Vec ForcesAndSourcesCore::UserDataOperator::getTSu() const {
 
 Vec ForcesAndSourcesCore::UserDataOperator::getTSu_t() const {
 #ifndef NDEBUG
-  if (getFEMethod()->ts_u_t == PETSC_NULL)
+  if (getFEMethod()->ts_u_t == PETSC_NULLPTR)
     THROW_MESSAGE("TS not set U_t vector");
 #endif
   return getFEMethod()->ts_u_t;
@@ -1158,7 +1158,7 @@ Vec ForcesAndSourcesCore::UserDataOperator::getTSu_t() const {
 
 Vec ForcesAndSourcesCore::UserDataOperator::getTSu_tt() const {
 #ifndef NDEBUG
-  if (getFEMethod()->ts_u_tt == PETSC_NULL)
+  if (getFEMethod()->ts_u_tt == PETSC_NULLPTR)
     THROW_MESSAGE("TS not set U_tt vector");
 #endif
   return getFEMethod()->ts_u_tt;
@@ -1166,7 +1166,7 @@ Vec ForcesAndSourcesCore::UserDataOperator::getTSu_tt() const {
 
 Vec ForcesAndSourcesCore::UserDataOperator::getTSf() const {
 #ifndef NDEBUG
-  if (getFEMethod()->ts_F == PETSC_NULL)
+  if (getFEMethod()->ts_F == PETSC_NULLPTR)
     THROW_MESSAGE("TS not set F vector");
 #endif
   return getFEMethod()->ts_F;
@@ -1174,7 +1174,7 @@ Vec ForcesAndSourcesCore::UserDataOperator::getTSf() const {
 
 Mat ForcesAndSourcesCore::UserDataOperator::getTSA() const {
 #ifndef NDEBUG
-  if (getFEMethod()->ts_A == PETSC_NULL)
+  if (getFEMethod()->ts_A == PETSC_NULLPTR)
     THROW_MESSAGE("TS not set A matrix");
 #endif
   return getFEMethod()->ts_A;
@@ -1182,7 +1182,7 @@ Mat ForcesAndSourcesCore::UserDataOperator::getTSA() const {
 
 Mat ForcesAndSourcesCore::UserDataOperator::getTSB() const {
 #ifndef NDEBUG
-  if (getFEMethod()->ts_B == PETSC_NULL)
+  if (getFEMethod()->ts_B == PETSC_NULLPTR)
     THROW_MESSAGE("TS not set B matrix");
 #endif
   return getFEMethod()->ts_B;

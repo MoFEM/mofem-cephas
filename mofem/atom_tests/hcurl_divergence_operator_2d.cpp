@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
 
     PetscBool flg_file = PETSC_TRUE;
     char mesh_file_name[255];
-    CHKERR PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name,
+    CHKERR PetscOptionsGetString(PETSC_NULLPTR, "", "-my_file", mesh_file_name,
                                  255, &flg_file);
     if (flg_file != PETSC_TRUE)
       SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
     const char *list_bases[] = {"ainsworth", "demkowicz"};
     PetscBool flg;
     PetscInt choice_base_value = AINSWORTH;
-    CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list_bases,
+    CHKERR PetscOptionsGetEList(PETSC_NULLPTR, NULL, "-base", list_bases,
                                 LASBASETOP, &choice_base_value, &flg);
     if (flg != PETSC_TRUE)
       SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "base not set");
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
     else if (choice_base_value == DEMKOWICZ)
       base = DEMKOWICZ_JACOBI_BASE;
     int order = 5;
-    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order, PETSC_NULL);
+    CHKERR PetscOptionsGetInt(PETSC_NULLPTR, "", "-order", &order, PETSC_NULLPTR);
 
     CHKERR m_field.add_field("FIELD1", HCURL, base, 1);
     CHKERR m_field.add_finite_element("FACE_FE");
@@ -218,7 +218,7 @@ int main(int argc, char *argv[]) {
 
     constexpr double tol = 1e-8;
     if (std::abs(div - flux) > tol)
-      SETERRQ2(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+      SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                "Test failed (div != flux) %3.4e != %3.4e", div, flux);
   }
   CATCH_ERRORS;

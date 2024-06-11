@@ -80,7 +80,7 @@ MoFEMErrorCode MedInterface::medGetFieldNames(const string &file, int verb) {
   MoFEMFunctionBegin;
   med_idt fid = MEDfileOpen(file.c_str(), MED_ACC_RDONLY);
   if (fid < 0) {
-    SETERRQ1(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
+    SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
              "Unable to open file '%s'", file.c_str());
   }
   med_int num_fields = MEDnField(fid);
@@ -123,7 +123,7 @@ MoFEMErrorCode MedInterface::medGetFieldNames(const string &file, int verb) {
       MOFEM_LOG("MEDWORLD", Sev::inform) << fieldNames[name];
   }
   if (MEDfileClose(fid) < 0) {
-    SETERRQ1(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
+    SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
              "Unable to close file '%s'", file.c_str());
   }
   MoFEMFunctionReturn(0);
@@ -144,7 +144,7 @@ MoFEMErrorCode MedInterface::readMed(const string &file, int verb) {
 
   med_idt fid = MEDfileOpen(file.c_str(), MED_ACC_RDONLY);
   if (fid < 0) {
-    SETERRQ1(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
+    SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
              "Unable to open file '%s'", file.c_str());
   }
 
@@ -196,7 +196,7 @@ MoFEMErrorCode MedInterface::readMed(const string &file, int verb) {
   }
 
   if (MEDfileClose(fid) < 0) {
-    SETERRQ1(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
+    SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
              "Unable to close file '%s'", file.c_str());
   }
 
@@ -251,7 +251,7 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
 
   med_idt fid = MEDfileOpen(file.c_str(), MED_ACC_RDONLY);
   if (fid < 0) {
-    SETERRQ1(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
+    SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
              "Unable to open file '%s'", file.c_str());
   }
   med_int v[3], vf[3];
@@ -297,7 +297,7 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
             "Curvilinear coordinate system implemented");
   }
   if (space_dim < 2) {
-    SETERRQ1(m_field.get_comm(), MOFEM_NOT_IMPLEMENTED,
+    SETERRQ(m_field.get_comm(), MOFEM_NOT_IMPLEMENTED,
              "Not implemented for space dim %d", space_dim);
   }
 
@@ -504,7 +504,7 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
   }
 
   if (MEDfileClose(fid) < 0) {
-    SETERRQ1(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
+    SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
              "Unable to close file '%s'", file.c_str());
   }
 
@@ -521,7 +521,7 @@ MedInterface::readFamily(const string &file, const int index,
 
   med_idt fid = MEDfileOpen(file.c_str(), MED_ACC_RDONLY);
   if (fid < 0) {
-    SETERRQ1(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
+    SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
              "Unable to open file '%s'", file.c_str());
   }
   med_int v[3], vf[3];
@@ -568,13 +568,13 @@ MedInterface::readFamily(const string &file, const int index,
       if (MEDfamily23Info(fid, meshNames[index].c_str(), i + 1, family_name,
                           &attribId[0], &attrib_val[0], &attrib_des[0],
                           &family_num, &group_names[0]) < 0) {
-        SETERRQ1(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
+        SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
                  "Could not read info for MED2 family %d", i + 1);
       }
     } else {
       if (MEDfamilyInfo(fid, meshNames[index].c_str(), i + 1, family_name,
                         &family_num, &group_names[0]) < 0) {
-        SETERRQ1(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
+        SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
                  "Could not read info for MED3 family %d", i + 1);
       }
     }
@@ -599,7 +599,7 @@ MedInterface::readFamily(const string &file, const int index,
   }
 
   if (MEDfileClose(fid) < 0) {
-    SETERRQ1(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
+    SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
              "Unable to close file '%s'", file.c_str());
   }
 
@@ -668,7 +668,7 @@ MoFEMErrorCode MedInterface::readFields(const std::string &file_name,
   MoFEMFunctionBeginHot;
   med_idt fid = MEDfileOpen((char *)file_name.c_str(), MED_LECTURE);
   if (fid < 0) {
-    SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
              "Unable to open file '%s'", file_name.c_str());
   }
 
@@ -869,7 +869,7 @@ MoFEMErrorCode MedInterface::readFields(const std::string &file_name,
             }
           }
         }
-        // SETERRQ1(
+        // SETERRQ(
         //   m_field.get_comm(),
         //   MOFEM_NOT_IMPLEMENTED,
         //   "Not implemented for more gauss pts ngauss = %d",

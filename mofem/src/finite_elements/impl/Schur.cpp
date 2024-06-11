@@ -344,11 +344,11 @@ SchurElemMats::assembleStorage(const EntitiesFieldData::EntData &row_data,
 
 #ifndef NDEBUG
   if (mat.size1() != nb_rows) {
-    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "Wrong mat size %d != %d", mat.size1(), nb_rows);
   }
   if (mat.size2() != nb_cols) {
-    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "Wrong mat size %d != %d", mat.size2(), nb_cols);
   }
 #endif // NDEBUG
@@ -453,11 +453,11 @@ SchurElemMats::assembleStorage(const EntitiesFieldData::EntData &row_data,
 
 #ifndef NDEBUG
       if (sm.size1() != nb_rows) {
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Wrong mat or storage size %d != %d", sm.size1(), nb_rows);
       }
       if (sm.size2() != nb_cols) {
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Wrong mat or storage size %d != %d", sm.size2(), nb_cols);
       }
 #endif // NDEBUG
@@ -662,12 +662,12 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 
 #ifndef NDEBUG
         if (mat.size1() != offMatInvDiagOffMat.size1()) {
-          SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                    "Wrong size %d != %d", mat.size1(),
                    offMatInvDiagOffMat.size1());
         }
         if (mat.size2() != offMatInvDiagOffMat.size2()) {
-          SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                    "Wrong size %d != %d", mat.size2(),
                    offMatInvDiagOffMat.size2());
         }
@@ -730,7 +730,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
         for (auto c_lo : schur_col_ptr_view) {
 #ifndef NDEBUG
           if (c_lo->uidCol != row_it->uidRow)
-            SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                      "Wrong size %d != %d", c_lo->uidCol, row_it->uidRow);
 #endif // NDEBUG
 
@@ -746,7 +746,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
             MOFEM_LOG("SELF", Sev::error)
                 << "row_uid " << get_field_name(row_it->uidRow) << " row uid "
                 << get_field_name(uid_row);
-            SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                      "Wrong size %d != %d", invMat.size1(), cc_off_mat.size2());
           }
 #endif // NDEBUG
@@ -763,7 +763,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
           for (auto r_lo : schur_row_ptr_view) {
 #ifndef NDEBUG
             if (c_lo->uidCol != row_it->uidRow)
-              SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                        "Wrong size %d != %d", c_lo->uidCol, row_it->uidRow);
 #endif // NDEBUG
 
@@ -788,7 +788,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
                   << "uid_row " << get_field_name(row_it->uidRow)
                   << ": col uid " << get_field_name(uid_col) << " row uid "
                   << get_field_name(uid_row);
-              SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                        "Wrong size %d != %d", rr_off_mat.size1(),
                        invDiagOffMat.size2());
             }
@@ -1026,7 +1026,7 @@ struct SchurDSYSV {
         lapack_dsysv('L', nb, nb, &*m.data().begin(), nb, &*ipiv.begin(),
                      &*inv.data().begin(), nb, &*lapack_work.begin(), nb * nb);
     if (info != 0)
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                "Can not invert matrix info = %d", info);
     MoFEMFunctionReturnHot(0);
   };
@@ -1043,7 +1043,7 @@ struct SchurDGESV {
     const auto nb = m.size1();
 #ifndef NDEBUG
     if (nb != m.size2()) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "It should be square matrix %d != %d", nb, m.size2());
     }
 #endif
@@ -1063,7 +1063,7 @@ struct SchurDGESV {
     const auto info = lapack_dgesv(nb, nb, &*m.data().begin(), nb,
                                    &*ipiv.begin(), &*inv.data().begin(), nb);
     if (info != 0)
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                "Can not invert matrix info = %d", info);
     MoFEMFunctionReturnHot(0);
   };
@@ -1233,8 +1233,8 @@ boost::shared_ptr<BlockStructure> createBlockMatStructure(
 
   auto ghost_x = createDMVector(dm);
   auto ghost_y = createDMVector(dm);
-  CHKERR VecSetDM(ghost_x, PETSC_NULL);
-  CHKERR VecSetDM(ghost_y, PETSC_NULL);
+  CHKERR VecSetDM(ghost_x, PETSC_NULLPTR);
+  CHKERR VecSetDM(ghost_y, PETSC_NULLPTR);
 
   data_ptr->ghostX = ghost_x;
   data_ptr->ghostY = ghost_y;
@@ -1622,7 +1622,7 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
     if (inv_shift == -1)
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "inv_shift == -1");
     if (inv_shift + nb_rows * nb_cols > data_inv_blocks->size())
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "inv_shift out of range %d > %d", inv_shift + nb_rows * nb_cols,
                data_inv_blocks->size());
 #endif // NDEBUG
@@ -2021,10 +2021,10 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
   auto block_vec_x = createDMVector(block_dm);
   auto schur_vec_y = vectorDuplicate(schur_vec_x);
   auto block_vec_y = vectorDuplicate(block_vec_x);
-  CHKERR VecSetDM(schur_vec_x, PETSC_NULL);
-  CHKERR VecSetDM(block_vec_x, PETSC_NULL);
-  CHKERR VecSetDM(schur_vec_y, PETSC_NULL);
-  CHKERR VecSetDM(block_vec_y, PETSC_NULL);
+  CHKERR VecSetDM(schur_vec_x, PETSC_NULLPTR);
+  CHKERR VecSetDM(block_vec_x, PETSC_NULLPTR);
+  CHKERR VecSetDM(schur_vec_y, PETSC_NULLPTR);
+  CHKERR VecSetDM(block_vec_y, PETSC_NULLPTR);
 
   auto get_vec = [&](auto schur_data) {
     std::vector<int> vec_r, vec_c;

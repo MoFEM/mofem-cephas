@@ -838,7 +838,7 @@ MoFEMErrorCode PrismInterface::splitSides(
 
           size_t nb_elems = std::distance(new_rit.first, new_rit.second);
           if (nb_elems != 1)
-            SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+            SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                      "Can't find entity in database, size is %d", nb_elems);
           tet = *new_conn_tet.begin();
         }
@@ -1143,11 +1143,11 @@ MoFEMErrorCode PrismInterface::splitSides(
       CHKERR moab.get_adjacencies(&conn_parent[3], 3, 2, false,
                                   face_side4_parent);
       if (face_side3_parent.size() != 1)
-        SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                  "parent face3.size() = %u", face_side3_parent.size());
 
       if (face_side4_parent.size() != 1)
-        SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                  "parent face4.size() = %u", face_side4_parent.size());
 
       // new prism
@@ -1181,7 +1181,7 @@ MoFEMErrorCode PrismInterface::splitSides(
         CHKERR moab.tag_get_data(cOre.get_th_RefParentHandle(), &face[ff], 1,
                                  &parent_tri);
         if (parent_tri != parent_face[ff]) {
-          SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+          SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                    "Wrong parent %lu", parent_tri);
         }
       }

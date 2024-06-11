@@ -1075,7 +1075,7 @@ MoFEMErrorCode ForcesAndSourcesCore::calHierarchicalBaseFunctionsOnElement(
         }
       break;
     default:
-      SETERRQ1(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
                "Base <%s> not yet implemented",
                ApproximationBaseNames[static_cast<FieldApproximationBase>(b)]);
     }
@@ -1324,7 +1324,7 @@ MoFEMErrorCode ForcesAndSourcesCore::createDataOnElement(EntityType type) {
   catch (MoFEMExceptionInitial const &ex) {                                    \
     FUNCTION_NAME_WITH_OP_NAME(OP) << PETSC_FUNCTION_NAME;                     \
     return PetscError(PETSC_COMM_SELF, ex.lINE, ss.str().c_str(), __FILE__,    \
-                      ex.errorCode, PETSC_ERROR_INITIAL, ex.what());           \
+                      ex.errorCode, PETSC_ERROR_INITIAL, "%s",ex.what());           \
   }                                                                            \
   catch (MoFEMExceptionRepeat const &ex) {                                     \
     FUNCTION_NAME_WITH_OP_NAME(OP) << PETSC_FUNCTION_NAME;                     \
@@ -1415,7 +1415,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
       CATCH_OP_ERRORS(op);
       break;
     default:
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                "Not implemented for this space", op.sPace);
     }
 
@@ -1430,7 +1430,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
     if ((op.getNumeredEntFiniteElementPtr()->getBitFieldIdData() &
          mField.get_field_id(field_name[ss]))
             .none()) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "no data field < %s > on finite element < %s >",
                field_name[ss].c_str(), getFEName().c_str());
     }
@@ -1499,7 +1499,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
       // }
       break;
     default:
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                "not implemented for this space < %s >",
                FieldSpaceNames[space[ss]]);
     }
@@ -1565,7 +1565,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
 
 #ifndef NDEBUG
           if (field_name[ss].empty()) {
-            SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                      "Not set Field name in operator %d (0-row, 1-column) in "
                      "operator %s",
                      ss,

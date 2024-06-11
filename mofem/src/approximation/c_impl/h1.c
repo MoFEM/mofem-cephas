@@ -267,7 +267,7 @@ PetscErrorCode H1_FaceShapeFunctions_MBTRI(
       }
     }
     if (jj != P)
-      SETERRQ2(PETSC_COMM_SELF, 1, "wrong order %d != %d", jj, P);
+      SETERRQ(PETSC_COMM_SELF, 1, "wrong order %d != %d", jj, P);
   }
   MoFEMFunctionReturnHot(0);
 }
@@ -467,7 +467,7 @@ PetscErrorCode H1_FaceShapeFunctions_MBTET(
         }
       }
       if (jj != P[ff])
-        SETERRQ2(PETSC_COMM_SELF, 1, "wrong order %d != %d", jj, P[ff]);
+        SETERRQ(PETSC_COMM_SELF, 1, "wrong order %d != %d", jj, P[ff]);
     }
   }
   MoFEMFunctionReturnHot(0);
@@ -549,7 +549,7 @@ PetscErrorCode H1_VolumeShapeFunctions_MBTET(
       }
     }
     if (jj != P)
-      SETERRQ1(PETSC_COMM_SELF, 1, "wrong order %d", jj);
+      SETERRQ(PETSC_COMM_SELF, 1, "wrong order %d", jj);
   }
   MoFEMFunctionReturnHot(0);
 }
@@ -736,7 +736,7 @@ PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
             ++jj;
           }
           if (jj != P[ff])
-            SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                      "Inconsistent implementation (bug in the code) %d != %d",
                      jj, P);
         }
@@ -778,7 +778,7 @@ PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
             ++jj;
           }
           if (jj != P[ff])
-            SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                      "Inconsistent implementation (bug in the code) %d != %d",
                      jj, P);
         }
@@ -888,7 +888,7 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
         ++jj;
       }
       if (jj != P)
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Inconsistent implementation (bug in the code) %d != %d", jj,
                  P);
     }
@@ -948,7 +948,7 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
         ++jj;
       }
       if (jj != P)
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Inconsistent implementation (bug in the code) %d != %d", jj,
                  P);
     }
@@ -1040,7 +1040,7 @@ PetscErrorCode H1_QuadShapeFunctions_MBQUAD(
         ++jj;
       }
       if (jj != P)
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Inconsistent implementation (bug in the code) %d != %d", jj,
                  P);
     }
@@ -1080,7 +1080,7 @@ PetscErrorCode H1_QuadShapeFunctions_MBQUAD(
         ++jj;
       }
       if (jj != P)
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Inconsistent implementation (bug in the code) %d != %d", jj,
                  P);
     }

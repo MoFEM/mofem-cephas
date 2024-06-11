@@ -186,7 +186,7 @@ MoFEMErrorCode FieldSeries::save(moab::Interface &moab) const {
   contained.resize(0);
   CHKERR moab.get_contained_meshsets(meshset, contained);
   if (contained.size() != ia.size() - 1) {
-    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "data inconsistency nb_contained != ia.size()-1 %d!=%d",
              contained.size(), ia.size() - 1);
   }

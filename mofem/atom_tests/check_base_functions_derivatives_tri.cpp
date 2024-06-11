@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
 
     PetscBool flg;
     PetscInt choice_value = H1TRI;
-    CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-space", list_spaces, LASTOP,
+    CHKERR PetscOptionsGetEList(PETSC_NULLPTR, NULL, "-space", list_spaces, LASTOP,
                                 &choice_value, &flg);
 
     if (flg != PETSC_TRUE) {
@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
     const char *list_bases[] = {"ainsworth", "demkowicz"};
 
     PetscInt choice_base_value = AINSWORTH;
-    CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list_bases,
+    CHKERR PetscOptionsGetEList(PETSC_NULLPTR, NULL, "-base", list_bases,
                                 LASBASETOP, &choice_base_value, &flg);
 
     if (flg != PETSC_TRUE) {
@@ -250,7 +250,7 @@ int main(int argc, char *argv[]) {
             deta(i) -= diff_base(i, N1);
             if (sqrt(dksi(i) * dksi(i)) > eps_diff) {
               // mySplit << "KSI ERROR\n";
-              SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+              SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                        "%s inconsistent dKsi derivative  for type %d",
                        FieldSpaceNames[data.getFieldDofs()[0]->getSpace()],
                        type);
@@ -259,7 +259,7 @@ int main(int argc, char *argv[]) {
             }
             if (sqrt(deta(i) * deta(i)) > eps_diff) {
               // mySplit << "ETA ERROR\n";
-              SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+              SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                        "%s inconsistent dEta derivative for type %d",
                        FieldSpaceNames[data.getFieldDofs()[0]->getSpace()],
                        type);

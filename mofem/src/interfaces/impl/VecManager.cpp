@@ -227,14 +227,14 @@ MoFEMErrorCode VecManager::setLocalGhostVector(const Problem *problem_ptr,
   int size;
   CHKERR VecGetLocalSize(V, &size);
   if (size != nb_local_dofs) {
-    SETERRQ3(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "data inconsistency: check ghost vector, problem <%s> with nb. of "
              "local nodes %d != %d",
              problem_ptr->getName().c_str(), size, nb_local_dofs);
   }
   CHKERR VecGetLocalSize(Vlocal, &size);
   if (size != nb_local_dofs + nb_ghost_dofs) {
-    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "data inconsistency: check ghost vector, problem with nb. of "
              "ghost nodes %d != ",
              size, nb_local_dofs + nb_ghost_dofs);
@@ -436,7 +436,7 @@ MoFEMErrorCode VecManager::setOtherLocalGhostVector(
 
   auto cpy_fit = fields_ptr->get<FieldName_mi_tag>().find(cpy_field_name);
   if (cpy_fit == fields_ptr->get<FieldName_mi_tag>().end())
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
              "cpy field < %s > not found, (top tip: check spelling)",
              cpy_field_name.c_str());
   const auto cpy_bit_number = (*cpy_fit)->getBitNumber();
@@ -444,7 +444,7 @@ MoFEMErrorCode VecManager::setOtherLocalGhostVector(
   auto miit = dofs->lower_bound(
       FieldEntity::getLoBitNumberUId(m_field.get_field_bit_number(field_name)));
   if (miit == dofs->end()) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
              "cpy field < %s > not found, (top tip: check spelling)",
              field_name.c_str());
   }
@@ -452,7 +452,7 @@ MoFEMErrorCode VecManager::setOtherLocalGhostVector(
       FieldEntity::getHiBitNumberUId(m_field.get_field_bit_number(field_name)));
 
   if ((*miit)->getSpace() != (*cpy_fit)->getSpace()) {
-    SETERRQ4(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "fields have to have same space (%s) %s != (%s) %s",
              (*miit)->getName().c_str(), FieldSpaceNames[(*miit)->getSpace()],
              cpy_field_name.c_str(), FieldSpaceNames[(*cpy_fit)->getSpace()]);
@@ -567,7 +567,7 @@ MoFEMErrorCode VecManager::setOtherGlobalGhostVector(
   }
   auto cpy_fit = fields_ptr->get<FieldName_mi_tag>().find(cpy_field_name);
   if (cpy_fit == fields_ptr->get<FieldName_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
              "cpy field < %s > not found, (top tip: check spelling)",
              cpy_field_name.c_str());
   }
@@ -576,7 +576,7 @@ MoFEMErrorCode VecManager::setOtherGlobalGhostVector(
   auto miit = dofs->lower_bound(
       FieldEntity::getLoBitNumberUId(m_field.get_field_bit_number(field_name)));
   if (miit == dofs->end()) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
              "problem field < %s > not found, (top tip: check spelling)",
              field_name.c_str());
   }

@@ -256,7 +256,7 @@ struct ISManager : public UnknownInterface {
     \param y_field_name name of field in problem_y
     \param y_rc that is ROW or COL
 
-    \retval ix IS indexes in problem_x (can be PETSC_NULL)
+    \retval ix IS indexes in problem_x (can be PETSC_NULLPTR)
     \retval iy IS indexes in problem_y
 
     */

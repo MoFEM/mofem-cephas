@@ -609,7 +609,7 @@ MoFEMErrorCode OpBaseTimesScalarImpl<1, S, GAUSS, OpBase>::iNtegrate(
 
 #ifndef NDEBUG
   if (sourceVec->size() != OpBase::nbIntegrationPts) {
-    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "Wrong number of integration points %d != %d",
              OpBase::nbIntegrationPts, sourceVec->size());
   }

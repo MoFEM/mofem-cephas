@@ -302,7 +302,7 @@ BernsteinBezier::baseFunctions(const int N, const int gdim, const int n_alpha,
   constexpr int MAX_ALPHA = 12;
   int max_alpha = *std::max_element(alpha, &alpha[(D + 1) * n_alpha]);
   if(max_alpha > MAX_ALPHA)
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "Is assumed maximal order not to be bigger than %d", MAX_ALPHA);
   std::array<double, (D + 1) * (MAX_ALPHA + 1)> pow_alpha;
   std::array<double, (MAX_ALPHA + 1)> factorial_alpha;

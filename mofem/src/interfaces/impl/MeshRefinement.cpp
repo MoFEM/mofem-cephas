@@ -167,7 +167,7 @@ MoFEMErrorCode MeshRefinement::addVerticesInTheMiddleOfEdges(
        for (auto j : {0, 1, 2})
          vert_coords[j].emplace_back(t_2(j));
       } else {
-        SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "edge should have 2 or 3 nodes but have %d", num_nodes);
       }
     }

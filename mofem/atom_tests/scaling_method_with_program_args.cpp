@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
     for (int i = 1; i <= scalar_values.size(); i++) {
       if (std::fabs(time_scale->getScale(double(i)) - scalar_values[i - 1]) >
           std::numeric_limits<double>::epsilon()) {
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                  "Validation for data scaling from csv "
                  "failed for time: %d value: %d",
                  double(i), time_scale->getScale(i));
@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
     double actual_scale = time_scale->getScale(2.5);
     if (std::fabs(expected_scale - actual_scale) >
         std::numeric_limits<double>::epsilon()) {
-      SETERRQ2(
+      SETERRQ(
           PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
           "Validation for data scaling from csv failed for time: %f value: %f",
           2.5, time_scale->getScale(2.5));

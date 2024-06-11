@@ -270,7 +270,7 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_FaceBubbleShapeFunctions_ON_FACE(
       }
     }
     if (jj != NBFACETRI_AINSWORTH_FACE_HDIV(p)) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "wrong order %d != %d", jj, NBFACETRI_AINSWORTH_FACE_HDIV(p));
     }
   }
@@ -472,7 +472,7 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_FaceBasedVolumeShapeFunctions_MBTET(
         }
       }
       if (jj != NBVOLUMETET_AINSWORTH_FACE_HDIV(p)) {
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "wrong order %d != %d", jj,
                  NBVOLUMETET_AINSWORTH_FACE_HDIV(p));
       }
@@ -604,7 +604,7 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_VolumeBubbleShapeFunctions_MBTET(
     }
 
     if (3 * jj != NBVOLUMETET_AINSWORTH_VOLUME_HDIV(p)) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "wrong order %d != %d", jj,
                NBVOLUMETET_AINSWORTH_VOLUME_HDIV(p));
     }
@@ -748,7 +748,7 @@ MoFEM::Hdiv_Demkowicz_Face_MBTET_ON_FACE(int *faces_nodes, int p, double *N,
       }
     }
     if (jj != NBFACETRI_DEMKOWICZ_HDIV(p)) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "wrong number of base functions "
                "jj!=NBFACETRI_DEMKOWICZ_HDIV(p) "
                "%d!=%d",
@@ -882,7 +882,7 @@ MoFEMErrorCode MoFEM::Hdiv_Demkowicz_Interior_MBTET(
       }
     }
     if (jj != NBVOLUMETET_DEMKOWICZ_HDIV(p)) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "wrong number of base functions "
                "jj!=NBVOLUMETET_DEMKOWICZ_HDIV(p) "
                "%d!=%d",

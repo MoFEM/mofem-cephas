@@ -633,7 +633,7 @@ OpGetHONormalsOnFace<FIELD_DIM>::doWork(int side, EntityType type,
             break;
         }
         if (nn > FIELD_DIM * data.getN().size2()) {
-          SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                    "Data inconsistency for base %s",
                    ApproximationBaseNames[data.getBase()]);
         } else {

@@ -765,7 +765,7 @@ OpSetInvJacH1ForFlatPrism::doWork(int side, EntityType type,
 #ifndef NDEBUG
     if (type != MBVERTEX) {
       if (nb_dofs != data.getDiffN(base).size2() / 2) {
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "data inconsistency nb_dofs != data.diffN.size2()/2 ( %u != "
                  "%u/2 )",
                  nb_dofs, data.getDiffN(base).size2());

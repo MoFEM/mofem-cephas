@@ -121,11 +121,11 @@ CubitMeshSets::CubitMeshSets(moab::Interface &moab,
     PetscTraceBackErrorHandler(PETSC_COMM_WORLD, __LINE__, PETSC_FUNCTION_NAME,
                                __FILE__, MOFEM_DATA_INCONSISTENCY,
                                PETSC_ERROR_INITIAL, "Unknow meshset type",
-                               PETSC_NULL);
+                               PETSC_NULLPTR);
     PetscMPIAbortErrorHandler(PETSC_COMM_WORLD, __LINE__, PETSC_FUNCTION_NAME,
                               __FILE__, MOFEM_DATA_INCONSISTENCY,
                               PETSC_ERROR_INITIAL, "Unknown meshset type",
-                              PETSC_NULL);
+                              PETSC_NULLPTR);
   }
   }
 }

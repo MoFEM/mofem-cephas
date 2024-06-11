@@ -74,7 +74,7 @@ MoFEMErrorCode Problem::getRowDofsByPetscGlobalDofIdx(
     *dof_ptr = shared_dof_ptr.get();
   } else {
     if (bh == MF_EXIST)
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "row dof <%d> not found", idx);
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "row dof <%d> not found", idx);
     *dof_ptr = nullptr;
   }
   MoFEMFunctionReturnHot(0);
@@ -88,7 +88,7 @@ MoFEMErrorCode Problem::getColDofsByPetscGlobalDofIdx(
     *dof_ptr = shared_dof_ptr.get();
   } else {
     if (bh == MF_EXIST)
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "row dof <%d> not found", idx);
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "row dof <%d> not found", idx);
     *dof_ptr = nullptr;
   }
   MoFEMFunctionReturnHot(0);

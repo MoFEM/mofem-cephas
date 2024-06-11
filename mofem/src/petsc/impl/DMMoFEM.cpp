@@ -1038,7 +1038,7 @@ static PetscErrorCode DMMoFEMTSSetMonitor(DM dm, TS ts, S fe_name, T0 method,
         PairNameFEMethodPtr(fe_name, method));
   if (post_only)
     dm_field->tsCtx->getPostProcessMonitor().push_back(post_only);
-  CHKERR TSMonitorSet(ts, TsMonitorSet, dm_field->tsCtx.get(), PETSC_NULL);
+  CHKERR TSMonitorSet(ts, TsMonitorSet, dm_field->tsCtx.get(), PETSC_NULLPTR);
   MoFEMFunctionReturn(0);
 }
 
@@ -1276,8 +1276,8 @@ PetscErrorCode DMSetFromOptions_MoFEM(DM dm) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
   DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
-#if PETSC_VERSION_GE(3, 16, 0)
-  PetscOptionsHead(PetscOptionsObject, "DMMoFEM Options");
+#if PETSC_VERSION_GE(3, 18, 0)
+  PetscOptionsHeadBegin(PetscOptionsObject, "DMMoFEM Options");
 #elif PETSC_VERSION_GE(3, 5, 3)
   ierr = PetscOptionsHead(PetscOptionsObject, "DMMoFEM Options");
   CHKERRG(ierr);

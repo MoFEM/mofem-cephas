@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
 
     // set fields order, i.e. for most first cases order is sufficient.
     int order = 3;
-    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order, PETSC_NULL);
+    CHKERR PetscOptionsGetInt(PETSC_NULLPTR, "", "-order", &order, PETSC_NULLPTR);
     CHKERR simple->setFieldOrder("V", order);
     CHKERR simple->setFieldOrder("T", order);
     CHKERR simple->setFieldOrder("S", order - 1);
@@ -247,7 +247,7 @@ int main(int argc, char *argv[]) {
     pip_lhs.push_back(new OpMassBlockPreconditionerAssemble("T", "T"));
 
     auto schur_is = getDMSubData(schur_dm)->getSmartRowIs();
-    auto ao_up = createAOMappingIS(schur_is, PETSC_NULL);
+    auto ao_up = createAOMappingIS(schur_is, PETSC_NULLPTR);
 
     pip_lhs.push_back(createOpSchurAssembleEnd(
 
@@ -298,7 +298,7 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionBegin;
 
     double eps = 1e-10;
-    CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-eps", &eps, PETSC_NULL);
+    CHKERR PetscOptionsGetScalar(PETSC_NULLPTR, "", "-eps", &eps, PETSC_NULLPTR);
 
       PetscReal norm;
       CHKERR VecNorm(y, NORM_2, &norm);
@@ -316,11 +316,11 @@ int main(int argc, char *argv[]) {
         0, 1, 10, 20,
         500}; // not to remove dofs for TENSOR filed, inverse will not work
     CHKERR MatZeroRowsColumns(petsc_mat, zero_rows_and_cols.size(),
-                              &*zero_rows_and_cols.begin(), 1, PETSC_NULL,
-                              PETSC_NULL);
+                              &*zero_rows_and_cols.begin(), 1, PETSC_NULLPTR,
+                              PETSC_NULLPTR);
     CHKERR MatZeroRowsColumns(block_mat, zero_rows_and_cols.size(),
-                              &*zero_rows_and_cols.begin(), 1, PETSC_NULL,
-                              PETSC_NULL);
+                              &*zero_rows_and_cols.begin(), 1, PETSC_NULLPTR,
+                              PETSC_NULLPTR);
 
     {
       MOFEM_LOG_CHANNEL("Timeline");

@@ -165,7 +165,7 @@ struct Mat_Elastic : public GenericAttributeData {
   MoFEMErrorCode fill_data(const std::vector<double> &attributes) {
     MoFEMFunctionBeginHot;
     if (attributes.size() < minNumberOfAtributes) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Young modulus and/or Poisson ratio is not defined. (top tip: "
                "check number of ELASTIC block attributes) %d !< %d",
                attributes.size(), minNumberOfAtributes);

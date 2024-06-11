@@ -231,7 +231,7 @@ MoFEMErrorCode Core::addField(const std::string &name, const FieldSpace space,
   auto fit = fIelds.get<FieldName_mi_tag>().find(name);
   if (fit != fIelds.get<FieldName_mi_tag>().end()) {
     if (bh == MF_EXCL)
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                "field is <%s> in database", name.c_str());
 
   } else {
@@ -264,7 +264,7 @@ MoFEMErrorCode Core::addField(const std::string &name, const FieldSpace space,
     }
 
     if (!p.second)
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
                "field not inserted %s (top tip, it could be already "
                "there)",
                Field(moab, meshset).getName().c_str());
@@ -591,7 +591,7 @@ MoFEMErrorCode Core::setFieldOrderImpl(boost::shared_ptr<Field> field_ptr,
       const auto ent_type = get_moab().type_from_handle(first);
       
       if (!field_ptr->getFieldOrderTable()[ent_type])
-        SETERRQ3(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Number of degrees of freedom for entity %s for %s space on "
                  "base %s can "
                  "not be deduced",
@@ -807,7 +807,7 @@ MoFEMErrorCode Core::setFieldOrderImpl(boost::shared_ptr<Field> field_ptr,
         }
         if (!ents_array->empty())
           if ((*ents_array)[0].getFieldRawPtr() != field_ptr.get())
-            SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                      "Get field ent poiter and field pointer do not match for "
                      "field %s",
                      field_ptr->getName().c_str());
@@ -1024,7 +1024,7 @@ Core::buildFieldForNoFieldImpl(boost::shared_ptr<Field> field_ptr,
       );
 
       if ((*p.first)->getFieldRawPtr() != field_ptr.get())
-        SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Get field ent poiter and field pointer do not match for "
                  "field %s",
                  field_ptr->getName().c_str());
@@ -1163,7 +1163,7 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
         std::ostringstream ss;
         ss << "rank " << rAnk << " ";
         ss << **feit << std::endl;
-        SETERRQ3(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Expected number of DOFs on entity not equal to number added "
                  "to database (DD = %d != %d = "
                  "feit->get()->getNbDofsOnEnt())\n"
@@ -1184,12 +1184,12 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
     // Check data consistency
     if (PetscUnlikely(static_cast<int>(dofs_array.use_count()) !=
                       static_cast<int>(dofs_array->size() + 1))) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Wrong use count %d != %d", dofs_array.use_count(),
                dofs_array->size() + 1);
     }
     if (dofs_field_size0 + dofs_array->size() != dofsField.size()) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Wrong number of inserted DOFs %d != %d", dofs_array->size(),
                dofsField.size() - dofs_field_size0);
     }
@@ -1250,7 +1250,7 @@ MoFEMErrorCode Core::build_field(const std::string field_name, int verb) {
   FieldCoreFunctionBegin;
   auto field_it = fIelds.get<FieldName_mi_tag>().find(field_name);
   if (field_it == fIelds.get<FieldName_mi_tag>().end())
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "Field < %s > not found",
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "Field < %s > not found",
              field_name.c_str());
 
   CHKERR this->buildField(*field_it, verb);
@@ -1354,7 +1354,7 @@ Core::check_number_of_ents_in_ents_field(const std::string &name) const {
   MoFEMFunctionBeginHot;
   auto it = fIelds.get<FieldName_mi_tag>().find(name);
   if (it == fIelds.get<FieldName_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "field not found < %s >", name.c_str());
   }
   EntityHandle meshset = (*it)->getMeshset();
@@ -1371,7 +1371,7 @@ Core::check_number_of_ents_in_ents_field(const std::string &name) const {
   };
 
   if (count_field_ents() > (unsigned int)num_entities) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "not equal number of entities in meshset and field multiindex "
              "< %s >",
              name.c_str());
@@ -1398,7 +1398,7 @@ MoFEMErrorCode Core::check_number_of_ents_in_ents_field() const {
     };
 
     if (count_field_ents() > (unsigned int)num_entities) {
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "not equal number of entities in meshset and field "
                "multiindex < %s >",
                it->getName().c_str());

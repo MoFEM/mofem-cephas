@@ -68,7 +68,7 @@ template <class T, class A>
 MoFEMErrorCode OpCalculateScalarFieldValues_General<T, A>::doWork(
     int side, EntityType type, EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
-  SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented for T = %s",
+  SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented for T = %s",
            typeid(T).name() // boost::core::demangle(typeid(T).name()).c_str()
   );
   MoFEMFunctionReturn(0);
@@ -324,7 +324,7 @@ MoFEMErrorCode
 OpCalculateVectorFieldValues_General<Tensor_Dim, T, L, A>::doWork(
     int side, EntityType type, EntitiesFieldData::EntData &data) {
   MoFEMFunctionBeginHot;
-  SETERRQ2(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+  SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
            "Not implemented for T = %s and dim = %d",
            typeid(T).name(), // boost::core::demangle(typeid(T).name()),
            Tensor_Dim);
@@ -502,7 +502,7 @@ struct OpCalculateDivergenceVectorFieldValues
 
     // When we move to C++17 add if constexpr()
     if constexpr (COORDINATE_SYSTEM == POLAR || COORDINATE_SYSTEM == SPHERICAL)
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                "%s coordiante not implemented",
                CoordinateTypesNames[COORDINATE_SYSTEM]);
 
@@ -771,7 +771,7 @@ MoFEMErrorCode
 OpCalculateTensor2FieldValues_General<Tensor_Dim0, Tensor_Dim1, T, L, A>::
     doWork(int side, EntityType type, EntitiesFieldData::EntData &data) {
   MoFEMFunctionBeginHot;
-  SETERRQ3(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+  SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
            "Not implemented for T = %s, dim0 = %d and dim1 = %d",
            typeid(T).name(), // boost::core::demangle(typeid(T).name()),
            Tensor_Dim0, Tensor_Dim1);
@@ -1244,20 +1244,20 @@ MoFEMErrorCode OpCalculateScalarFieldGradient_General<
 
 #ifndef NDEBUG
       if (nb_dofs > nb_base_functions)
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Number of base functions inconsistent with number of DOFs "
                  "(%d > %d)",
                  nb_dofs, nb_base_functions);
 
       if (data.getDiffN().size2() != nb_base_functions * Tensor_Dim)
-        SETERRQ2(
+        SETERRQ(
             PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Number of base functions inconsistent with number of derivatives "
             "(%d != %d)",
             data.getDiffN().size2(), nb_base_functions);
 
       if (data.getDiffN().size1() != nb_gauss_pts)
-        SETERRQ2(
+        SETERRQ(
             PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Number of base functions inconsistent with number of integration "
             "pts (%d != %d)",
@@ -1344,18 +1344,18 @@ MoFEMErrorCode OpCalculateScalarFieldHessian<Tensor_Dim>::doWork(
       auto &hessian_base = data.getN(BaseDerivatives::SecondDerivative);
 #ifndef NDEBUG
       if (hessian_base.size1() != nb_gauss_pts) {
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Wrong number of integration pts (%d != %d)",
                  hessian_base.size1(), nb_gauss_pts);
       }
       if (hessian_base.size2() != nb_base_functions * Tensor_Dim * Tensor_Dim) {
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Wrong number of base functions (%d != %d)",
                  hessian_base.size2() / (Tensor_Dim * Tensor_Dim),
                  nb_base_functions);
       }
       if (hessian_base.size2() < nb_dofs * Tensor_Dim * Tensor_Dim) {
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Wrong number of base functions (%d < %d)",
                  hessian_base.size2(), nb_dofs * Tensor_Dim * Tensor_Dim);
       }
@@ -1807,19 +1807,19 @@ MoFEMErrorCode OpCalculateVectorFieldHessian<Tensor_Dim0, Tensor_Dim1>::doWork(
       auto &hessian_base = data.getN(BaseDerivatives::SecondDerivative);
 #ifndef NDEBUG
       if (hessian_base.size1() != nb_gauss_pts) {
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Wrong number of integration pts (%d != %d)",
                  hessian_base.size1(), nb_gauss_pts);
       }
       if (hessian_base.size2() !=
           nb_base_functions * Tensor_Dim1 * Tensor_Dim1) {
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Wrong number of base functions (%d != %d)",
                  hessian_base.size2() / (Tensor_Dim1 * Tensor_Dim1),
                  nb_base_functions);
       }
       if (hessian_base.size2() < nb_dofs * Tensor_Dim1 * Tensor_Dim1) {
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Wrong number of base functions (%d < %d)",
                  hessian_base.size2(), nb_dofs * Tensor_Dim1 * Tensor_Dim1);
       }
@@ -2362,19 +2362,19 @@ struct OpCalculateHVecVectorHessian
 #ifndef NDEBUG
     auto &hessian_base = data.getN(BaseDerivatives::SecondDerivative);
     if (hessian_base.size1() != nb_integration_points) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Wrong number of integration pts (%d != %d)",
                hessian_base.size1(), nb_integration_points);
     }
     if (hessian_base.size2() !=
         BASE_DIM * nb_base_functions * SPACE_DIM * SPACE_DIM) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Wrong number of base functions (%d != %d)",
                hessian_base.size2() / (BASE_DIM * SPACE_DIM * SPACE_DIM),
                nb_base_functions);
     }
     if (hessian_base.size2() < BASE_DIM * nb_dofs * SPACE_DIM * SPACE_DIM) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "Wrong number of base functions (%d < %d)", hessian_base.size2(),
                BASE_DIM * nb_dofs * SPACE_DIM * SPACE_DIM);
     }

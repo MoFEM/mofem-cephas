@@ -201,7 +201,7 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::setIntegrationPts() {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong dimension");
       }
       if (QUAD_2D_TABLE[rule]->order < rule) {
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "wrong order %d != %d", QUAD_2D_TABLE[rule]->order, rule);
       }
       const size_t nb_gauss_pts = QUAD_2D_TABLE[rule]->npoints;
@@ -223,7 +223,7 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::setIntegrationPts() {
           Tools::diffShapeFunMBTRI.begin(), Tools::diffShapeFunMBTRI.end(),
           dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin());
     } else {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "rule > quadrature order %d < %d", rule, QUAD_2D_TABLE_SIZE);
     }
     MoFEMFunctionReturn(0);
@@ -281,7 +281,7 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::setIntegrationPts() {
       CHKERR calc_base_for_quad();
       break;
     default:
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                "Element type not implemented: %d", type);
     }
 
@@ -298,7 +298,7 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::setIntegrationPts() {
         CHKERR calc_base_for_quad();
         break;
       default:
-        SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                  "Element type not implemented: %d", type);
       }
     }
@@ -450,12 +450,12 @@ MoFEMErrorCode OpCopyGeomDataToE<2>::doWork(int side, EntityType type,
 
 #ifndef NDEBUG
   if (toElePtr->gaussPts.size1() != getGaussPts().size1()) {
-    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "Inconsistent numer of weights %d != %d",
              toElePtr->gaussPts.size1(), getGaussPts().size1());
   }
   if (toElePtr->gaussPts.size2() != getGaussPts().size2()) {
-    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "Inconsistent numer of integtaion pts %d != %d",
              toElePtr->gaussPts.size2(), getGaussPts().size2());
   }

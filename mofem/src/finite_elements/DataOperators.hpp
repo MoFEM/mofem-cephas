@@ -316,7 +316,7 @@ template <int RANK, int DIM> struct OpGetDataAndGradient : public DataOperator {
       MoFEMFunctionReturnHot(0);
 
     if (nb_dofs % RANK != 0) {
-      SETERRQ4(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "data inconsistency, type %d, side %d, nb_dofs %d, rank %d",
                type, side, nb_dofs, RANK);
     }
@@ -324,7 +324,7 @@ template <int RANK, int DIM> struct OpGetDataAndGradient : public DataOperator {
       std::cerr << side << " " << type << " "
                 << ApproximationBaseNames[data.getBase()] << std::endl;
       std::cerr << data.getN() << std::endl;
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "data inconsistency nb_dofs >= data.N.size2(), i.e. %u >= %u",
                nb_dofs, data.getN().size2());
     }

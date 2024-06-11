@@ -162,10 +162,10 @@ MoFEMErrorCode LogManager::getOptions() {
 
   CHKERR PetscOptionsEList("-severity_level", "Severity level", "",
                            severityStrings.data(), SeverityLevel::error + 1,
-                           severityStrings[sev_level], &sev_level, PETSC_NULL);
+                           severityStrings[sev_level], &sev_level, PETSC_NULLPTR);
   CHKERR PetscOptionsEList("-sl", "Severity level", "",
                            severityStrings.data(), SeverityLevel::error + 1,
-                           severityStrings[sev_level], &sev_level, PETSC_NULL);
+                           severityStrings[sev_level], &sev_level, PETSC_NULLPTR);
 
   CHKERR PetscOptionsBool("-scope", "Log scope", "", log_scope, &log_scope,
                           NULL);

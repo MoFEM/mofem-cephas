@@ -33,11 +33,11 @@ int main(int argc, char *argv[]) {
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
 #if PETSC_VERSION_GE(3, 6, 4)
-    ierr = PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name,
+    ierr = PetscOptionsGetString(PETSC_NULLPTR, "", "-my_file", mesh_file_name,
                                  255, &flg);
     CHKERRG(ierr);
 #else
-    ierr = PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-my_file",
+    ierr = PetscOptionsGetString(PETSC_NULLPTR, PETSC_NULLPTR, "-my_file",
                                  mesh_file_name, 255, &flg);
     CHKERRG(ierr);
 #endif
@@ -204,7 +204,7 @@ int main(int argc, char *argv[]) {
     Vec v;
     CHKERR m_field.getInterface<VecManager>()->vecCreateGhost("TEST_PROBLEM",
                                                               ROW, &v);
-    CHKERR VecSetRandom(v, PETSC_NULL);
+    CHKERR VecSetRandom(v, PETSC_NULLPTR);
     
     CHKERR m_field.getInterface<VecManager>()->setLocalGhostVector(
         "TEST_PROBLEM", ROW, v, INSERT_VALUES, SCATTER_REVERSE);
@@ -386,7 +386,7 @@ int main(int argc, char *argv[]) {
 
         const double eps = 1e-8;
         if (fabs(*tn_ptr) > eps) {
-          SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                    "H1 continuity failed %6.4e", *tn_ptr);
         }
 
@@ -432,7 +432,7 @@ int main(int argc, char *argv[]) {
 
         const double eps = 1e-8;
         if (fabs(*tn_ptr) > eps) {
-          SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                    "H1 continuity failed %6.4e", *tn_ptr);
         }
 
@@ -512,7 +512,7 @@ int main(int argc, char *argv[]) {
 
         // const double eps = 1e-8;
         // if(fabs(*tn_ptr)>eps) {
-        //   SETERRQ1(
+        //   SETERRQ(
         //     PETSC_COMM_SELF,
         //     MOFEM_ATOM_TEST_INVALID,
         //     "H1 continuity failed %6.4e",

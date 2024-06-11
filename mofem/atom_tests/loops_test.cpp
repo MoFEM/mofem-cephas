@@ -19,11 +19,11 @@ int main(int argc, char *argv[]) {
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
 #if PETSC_VERSION_GE(3, 6, 4)
-    ierr = PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name,
+    ierr = PetscOptionsGetString(PETSC_NULLPTR, "", "-my_file", mesh_file_name,
                                  255, &flg);
     CHKERRG(ierr);
 #else
-    ierr = PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-my_file",
+    ierr = PetscOptionsGetString(PETSC_NULLPTR, PETSC_NULLPTR, "-my_file",
                                  mesh_file_name, 255, &flg);
     CHKERRG(ierr);
 #endif

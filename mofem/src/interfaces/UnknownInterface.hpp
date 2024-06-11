@@ -56,7 +56,7 @@ struct UnknownInterface {
     auto p =
         iFaceTypeMap.insert(UIdTypeMap(boost::typeindex::type_id<IFACE>()));
     if (error_if_registration_failed && (!p.second)) {
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                "Registration of interface typeid(IFACE).name() = %s failed",
                typeid(IFACE).name());
     }

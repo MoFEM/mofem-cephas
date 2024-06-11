@@ -594,7 +594,7 @@ MoFEMErrorCode Core::delete_finite_element(const std::string name, int verb) {
   auto &fe = finiteElements.get<FiniteElement_name_mi_tag>();
   auto mit = fe.find(name);
   if (mit == fe.end()) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
              "Finite element <%s> not found", name.c_str());
   }
   EntityHandle meshset = mit->get()->getMeshset();
@@ -611,7 +611,7 @@ MoFEMErrorCode Core::delete_field(const std::string name, int verb) {
   auto &f = fIelds.get<FieldName_mi_tag>();
   auto mit = f.find(name);
   if (mit == f.end()) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
              "Finite element <%s> not found", name.c_str());
   }
   EntityHandle meshset = mit->get()->getMeshset();

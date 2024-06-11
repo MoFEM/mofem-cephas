@@ -94,7 +94,7 @@ FaceElementForcesAndSourcesCoreOnSide::setGaussPts(int order) {
     CHKERR set_integration_pts_for_quad();
     break;
   default:
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
              "Element type not implemented: %d", type);
   }
 

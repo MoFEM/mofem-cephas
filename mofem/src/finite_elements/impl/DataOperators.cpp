@@ -433,7 +433,7 @@ OpGetCoordsAndNormalsOnPrism::doWork(int side, EntityType type,
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
     }
     if (nb_dofs > 3 * data.getN().size2()) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "data inconsistency, side %d type %d", side, type);
     }
     for (unsigned int gg = 0; gg < data.getN().size1(); ++gg) {

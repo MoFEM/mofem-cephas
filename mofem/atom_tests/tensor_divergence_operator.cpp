@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
     const char *list_bases[] = {"ainsworth", "demkowicz"};
     PetscBool flg;
     PetscInt choice_base_value = AINSWORTH;
-    CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list_bases,
+    CHKERR PetscOptionsGetEList(PETSC_NULLPTR, NULL, "-base", list_bases,
                                 LASBASETOP, &choice_base_value, &flg);
     if (flg != PETSC_TRUE)
       SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "base not set");
@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
     else if (choice_base_value == DEMKOWICZ)
       base = DEMKOWICZ_JACOBI_BASE;
     int order = 4;
-    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order, PETSC_NULL);
+    CHKERR PetscOptionsGetInt(PETSC_NULLPTR, "", "-order", &order, PETSC_NULLPTR);
 
     // Register DM Manager
     DMType dm_name = "DMMOFEM";

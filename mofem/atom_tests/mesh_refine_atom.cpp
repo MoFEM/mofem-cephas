@@ -14,7 +14,7 @@ int main(int argc, char *argv[]) {
 
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
-    ierr = PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name,
+    ierr = PetscOptionsGetString(PETSC_NULLPTR, "", "-my_file", mesh_file_name,
                                  255, &flg);
     CHKERRG(ierr);
     if (flg != PETSC_TRUE) {

@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
     MoFEM::Interface &m_field = core;
 
     int order = 4;
-    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order, PETSC_NULL);
+    CHKERR PetscOptionsGetInt(PETSC_NULLPTR, "", "-order", &order, PETSC_NULLPTR);
 
     DMType dm_name = "DMMOFEM";
     CHKERR DMRegister_MoFEM(dm_name);

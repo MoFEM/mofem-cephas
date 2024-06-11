@@ -44,10 +44,10 @@ PetscErrorCode ShapeInvJacVolume(double *jac) {
   __CLPK_integer info;
   info = lapack_dgetrf(3, 3, jac, 3, ipiv);
   if (info != 0)
-    SETERRQ1(PETSC_COMM_SELF, 1, "info = %d", info);
+    SETERRQ(PETSC_COMM_SELF, 1, "info = %d", info);
   info = lapack_dgetri(3, jac, 3, ipiv, work, lwork);
   if (info != 0)
-    SETERRQ1(PETSC_COMM_SELF, 1, "info = %d", info);
+    SETERRQ(PETSC_COMM_SELF, 1, "info = %d", info);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -373,7 +373,7 @@ PetscErrorCode ShapeMBTET_inverse(double *N, double *diffN,
   int info =
       lapack_dgesv(3, 1, &A[0], 3, (__CLPK_integer *)IPIV, loc_coords, 3);
   if (info != 0)
-    SETERRQ1(PETSC_COMM_SELF, 1, "info == %d", info);
+    SETERRQ(PETSC_COMM_SELF, 1, "info == %d", info);
   MoFEMFunctionReturnHot(0);
 }
 

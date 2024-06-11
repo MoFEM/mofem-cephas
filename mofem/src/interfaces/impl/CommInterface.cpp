@@ -360,7 +360,7 @@ MoFEMErrorCode CommInterface::resolveParentEntities(const Range &ents,
           auto it = std::find(sharing_procs_parent.begin(),
                               sharing_procs_parent.end(), sharing_procs[proc]);
           if (it == sharing_procs_parent.end()) {
-            SETERRQ1(
+            SETERRQ(
                 PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Sharing proc for parent entity can not be found proc = %u",
                 sharing_procs[proc]);
@@ -923,7 +923,7 @@ CommInterface::partitionMesh(const Range &ents, const int dim,
   Range proc_ents;
   proc_ents.insert(get_it(rstart), get_it(rend));
   if (proc_ents.size() != rend - rstart)
-    SETERRQ2(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
              "Wrong number of elements in range %d != %d", proc_ents.size(),
              rend - rstart);
 
@@ -1025,7 +1025,7 @@ CommInterface::partitionMesh(const Range &ents, const int dim,
     Mat Adj;
     // Adjacency matrix used to partition problems, f.e. METIS
     CHKERR MatCreateMPIAdj(m_field.get_comm(), rend - rstart, nb_elems, _i, _j,
-                           PETSC_NULL, &Adj);
+                           PETSC_NULLPTR, &Adj);
     CHKERR MatSetOption(Adj, MAT_STRUCTURALLY_SYMMETRIC, PETSC_TRUE);
 
     if (debug) {

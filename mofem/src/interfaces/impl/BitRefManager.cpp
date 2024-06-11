@@ -140,7 +140,7 @@ struct SetBitRefLevelTool {
       const_cast<RefEntity_multiIndex *>(refEntsPtr)
           ->insert(shared_ref_ents_vec.begin(), shared_ref_ents_vec.end());
       if ((refEntsPtr->size() - s0) != shared_ref_ents_vec.size()) {
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Data inconsistency %d != %d", refEntsPtr->size() - s0,
                  shared_ref_ents_vec.size());
       }
@@ -159,7 +159,7 @@ struct SetBitRefLevelTool {
     case 1:
       return addEntsToDatabaseImpl<1>(seed_ents_range);
     default:
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                "Core index can vary from -1 to %d", MAX_CORE_TMP);
     }
 
@@ -198,7 +198,7 @@ struct SetBitRefLevelTool {
       hi_rit = refEntsPtr->upper_bound(pit->second);
       if (static_cast<int>(std::distance(rit, hi_rit)) !=
           static_cast<int>(pit->second - pit->first + 1)) {
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "data inconsistency %d != %d", std::distance(rit, hi_rit),
                  pit->second - pit->first + 1);
       }
@@ -1160,7 +1160,7 @@ MoFEMErrorCode BitRefManager::updateRangeByChildren(const Range &parent_ents,
       auto hi_it = ref_ents.upper_bound(s);
       if (bh == MF_EXIST) {
         if (std::distance(it, hi_it) != (s - f) + 1) {
-          SETERRQ2(
+          SETERRQ(
               PETSC_COMM_SELF, MOFEM_NOT_FOUND,
               "Number of entities and entities parents is different %d != %d ",
               std::distance(it, hi_it), (s - f) + 1);
@@ -1203,7 +1203,7 @@ MoFEMErrorCode BitRefManager::updateRangeByParent(const Range &child_ents,
       auto hi_it = ref_ents.upper_bound(s);
       if (bh == MF_EXIST) {
         if (std::distance(it, hi_it) != (s - f) + 1) {
-          SETERRQ2(
+          SETERRQ(
               PETSC_COMM_SELF, MOFEM_NOT_FOUND,
               "Number of entities and entities parents is different %d != %d ",
               std::distance(it, hi_it), (s - f) + 1);

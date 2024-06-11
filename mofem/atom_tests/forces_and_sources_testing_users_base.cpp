@@ -185,10 +185,10 @@ int main(int argc, char *argv[]) {
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
 #if PETSC_VERSION_GE(3, 6, 4)
-    CHKERR PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name,
+    CHKERR PetscOptionsGetString(PETSC_NULLPTR, "", "-my_file", mesh_file_name,
                                  255, &flg);
 #else
-    CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-my_file",
+    CHKERR PetscOptionsGetString(PETSC_NULLPTR, PETSC_NULLPTR, "-my_file",
                                  mesh_file_name, 255, &flg);
 #endif
     if (flg != PETSC_TRUE) {
@@ -272,7 +272,7 @@ int main(int argc, char *argv[]) {
 
     // set app. order
     int order = 3;
-    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order, PETSC_NULL);
+    CHKERR PetscOptionsGetInt(PETSC_NULLPTR, "", "-order", &order, PETSC_NULLPTR);
     CHKERR m_field.set_field_order(root_set, MBTRI, "FILED_CGG", order);
     CHKERR m_field.set_field_order(root_set, MBTET, "FILED_CGG", order);
     CHKERR m_field.set_field_order(root_set, MBTRI, "FILED_RT", order);
@@ -367,7 +367,7 @@ int main(int argc, char *argv[]) {
     fe1.getUserPolynomialBase() =
         boost::shared_ptr<BaseFunction>(new SomeUserPolynomialBase());
 
-    CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-quiet", &quiet, PETSC_NULL);
+    CHKERR PetscOptionsGetBool(PETSC_NULLPTR, "", "-quiet", &quiet, PETSC_NULLPTR);
 
     // push user data operators
     fe1.getOpPtrVector().push_back(
@@ -377,8 +377,8 @@ int main(int argc, char *argv[]) {
         new MyOp1("FILED_CGG", "FILED_RT", my_split,
                   ForcesAndSourcesCore::UserDataOperator::OPROWCOL));
 
-    CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-base_cache", &base_cache,
-                               PETSC_NULL);
+    CHKERR PetscOptionsGetBool(PETSC_NULLPTR, "", "-base_cache", &base_cache,
+                               PETSC_NULLPTR);
 
     if (base_cache) {
       if (!TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(&fe1)) {

@@ -67,7 +67,7 @@ PetscErrorCode L2_Ainsworth_ShapeFunctions_MBTRI(
       }
     }
     if (jj != P)
-      SETERRQ1(PETSC_COMM_SELF, 1, "wrong order %d", jj);
+      SETERRQ(PETSC_COMM_SELF, 1, "wrong order %d", jj);
   }
   MoFEMFunctionReturnHot(0);
 }
@@ -141,7 +141,7 @@ PetscErrorCode L2_Ainsworth_ShapeFunctions_MBTET(
       }
     }
     if (jj != P)
-      SETERRQ2(PETSC_COMM_SELF, 1, "wrong order %d != %d", jj, P);
+      SETERRQ(PETSC_COMM_SELF, 1, "wrong order %d != %d", jj, P);
   }
   MoFEMFunctionReturnHot(0);
 }

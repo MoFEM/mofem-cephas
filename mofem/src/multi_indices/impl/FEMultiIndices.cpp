@@ -187,7 +187,7 @@ DefaultElementAdjacency::defaultPrism(moab::Interface &moab, const Field &field,
     boost::shared_ptr<SideNumber> side_ptr =
         fe.getRefElement()->getSideNumberPtr(edge);
     if (side_ptr->side_number != ee) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "data inconsistency for edge %d while in FE datastructure is "
                "numbered %d.",
                ee, side_ptr->side_number);
@@ -196,7 +196,7 @@ DefaultElementAdjacency::defaultPrism(moab::Interface &moab, const Field &field,
     side_ptr = fe.getRefElement()->getSideNumberPtr(edge);
     if (side_ptr->side_number != ee + 6) {
       if (side_ptr->side_number != ee) {
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "data inconsistency for edge %d while in FE datastructure "
                  "is numbered %d.",
                  ee, side_ptr->side_number);
@@ -225,7 +225,7 @@ DefaultElementAdjacency::defaultPrism(moab::Interface &moab, const Field &field,
     boost::shared_ptr<SideNumber> side_ptr =
         fe.getRefElement()->getSideNumberPtr(node);
     if (side_ptr->side_number != nn) {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "data inconsistency for node %d while in FE datastructure is "
                "numbered %d.",
                nn, side_ptr->side_number);
@@ -234,7 +234,7 @@ DefaultElementAdjacency::defaultPrism(moab::Interface &moab, const Field &field,
     side_ptr = fe.getRefElement()->getSideNumberPtr(node);
     if (side_ptr->side_number != nn + 3) {
       if (side_ptr->side_number != nn) {
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "data inconsistency for node %d while in FE datastructure is "
                  "numbered %d.",
                  nn, side_ptr->side_number);

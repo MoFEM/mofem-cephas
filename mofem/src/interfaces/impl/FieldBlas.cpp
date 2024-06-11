@@ -26,7 +26,7 @@ FieldBlas::fieldLambdaOnValues(FieldBlas::OneFieldFunctionOnValues lambda,
 
   auto x_fit = fields_ptr->get<FieldName_mi_tag>().find(field_name);
   if (x_fit == fields_ptr->get<FieldName_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "field < %s > not found, (top tip: check spelling)",
              field_name.c_str());
   }
@@ -57,7 +57,7 @@ FieldBlas::fieldLambdaOnEntities(FieldBlas::OneFieldFunctionOnEntities lambda,
 
   auto fit = fields_ptr->get<FieldName_mi_tag>().find(field_name);
   if (fit == fields_ptr->get<FieldName_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "field < %s > not found, (top tip: check spelling)",
              field_name.c_str());
   }
@@ -107,24 +107,24 @@ MoFEMErrorCode FieldBlas::fieldLambdaOnValues(
 
   auto x_fit = fields_ptr->get<FieldName_mi_tag>().find(field_name_x);
   if (x_fit == fields_ptr->get<FieldName_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "x field < %s > not found, (top tip: check spelling)",
              field_name_x.c_str());
   }
   auto y_fit = fields_ptr->get<FieldName_mi_tag>().find(field_name_y);
   if (y_fit == fields_ptr->get<FieldName_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "y field < %s > not found, (top tip: check spelling)",
              field_name_y.c_str());
   }
   if ((*x_fit)->getSpace() != (*y_fit)->getSpace()) {
-    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "space for field < %s > and field <%s> are not compatible for "
              "fieldblas",
              field_name_x.c_str(), field_name_y.c_str());
   }
   if ((*x_fit)->getNbOfCoeffs() != (*y_fit)->getNbOfCoeffs()) {
-    SETERRQ2(
+    SETERRQ(
         PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
         "rank for field < %s > and field <%s> are not compatible for fieldblas",
         field_name_x.c_str(), field_name_y.c_str());
@@ -166,13 +166,13 @@ FieldBlas::fieldLambdaOnEntities(FieldBlas::TwoFieldFunctionOnEntities lambda,
 
   auto x_fit = fields_ptr->get<FieldName_mi_tag>().find(field_name_x);
   if (x_fit == fields_ptr->get<FieldName_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "x field < %s > not found, (top tip: check spelling)",
              field_name_x.c_str());
   }
   auto y_fit = fields_ptr->get<FieldName_mi_tag>().find(field_name_y);
   if (y_fit == fields_ptr->get<FieldName_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "y field < %s > not found, (top tip: check spelling)",
              field_name_y.c_str());
   }
@@ -340,7 +340,7 @@ MoFEMErrorCode FieldBlas::setVertexDofs(FieldBlas::VertexCoordsFunction lambda,
     MoFEMErrorCode operator()() {
       MoFEMFunctionBegin;
       if (*vit != entPtr->getEnt())
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Inconsistent entity %ld != %ld", *vit, entPtr->getEnt());
       if (!count)
         CHKERR mField.get_moab().coords_iterate(vit, verts.end(), xCoord,
@@ -357,7 +357,7 @@ MoFEMErrorCode FieldBlas::setVertexDofs(FieldBlas::VertexCoordsFunction lambda,
     MoFEMErrorCode postProcess() {
       MoFEMFunctionBegin;
       if (total != verts.size())
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Inconsistent number of vertices in field meshset and in the "
                  "field %d != %d",
                  total, verts.size());
@@ -446,7 +446,7 @@ MoFEMErrorCode FieldBlas::setField(const double val,
   MoFEMFunctionBegin;
   auto fit = fields_ptr->get<FieldName_mi_tag>().find(field_name);
   if (fit == fields_ptr->get<FieldName_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              " field < %s > not found, (top tip: check spelling)",
              field_name.c_str());
   }
