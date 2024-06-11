@@ -857,6 +857,8 @@ int main(int argc, char *argv[]) {
     //! [Register MoFEM discrete manager in PETSc]
     DMType dm_name = "DMMOFEM";
     CHKERR DMRegister_MoFEM(dm_name);
+    DMType dm_name_mg = "DMMOFEM_MG";
+    CHKERR DMRegister_MGViaApproxOrders(dm_name_mg);
     //! [Register MoFEM discrete manager in PETSc
 
     //! [Create MoAB]
@@ -972,8 +974,8 @@ MoFEMErrorCode SetUpSchurImpl::createSubDM() {
   MoFEMFunctionBegin;
   auto simple = mField.getInterface<Simple>();
 
-  auto create_dm = [&](const char *name, auto &ents) {
-    auto dm = createDM(mField.get_comm(), "DMMOFEM");
+  auto create_dm = [&](const char *name, auto &ents, auto dm_type) {
+    auto dm = createDM(mField.get_comm(), dm_type);
     auto create_dm_imp = [&]() {
       MoFEMFunctionBegin;
       CHKERR DMMoFEMCreateSubDM(dm, simple->getDM(), name);
@@ -991,8 +993,8 @@ MoFEMErrorCode SetUpSchurImpl::createSubDM() {
     return dm;
   };
 
-  schurDM = create_dm("SCHUR", subEnts);
-  blockDM = create_dm("BLOCK", volEnts);
+  schurDM = create_dm("SCHUR", subEnts, "DMMOFEM_MG");
+  blockDM = create_dm("BLOCK", volEnts, "DMMOFEM");
 
   if constexpr (A == AssemblyType::BLOCK_SCHUR) {
 
@@ -1091,19 +1093,38 @@ MoFEMErrorCode SetUpSchurImpl::setPC(PC pc) {
 
 MoFEMErrorCode SetUpSchurImpl::setDiagonalPC(PC pc) {
   MoFEMFunctionBegin;
+
+  auto get_pc = [](auto ksp) {
+    PC pc_raw;
+    CHKERR KSPGetPC(ksp, &pc_raw);
+    return SmartPetscObj<PC>(pc_raw, true); // bump reference
+  };
+
   if constexpr (A == AssemblyType::BLOCK_SCHUR) {
     auto simple = mField.getInterface<Simple>();
     auto A = createDMBlockMat(simple->getDM());
     auto P = createDMNestSchurMat(simple->getDM());
     CHKERR PCSetOperators(pc, A, P);
+
     KSP *subksp;
     CHKERR PCFieldSplitSchurGetSubKSP(pc, PETSC_NULL, &subksp);
-    auto get_pc = [](auto ksp) {
-      PC pc_raw;
-      CHKERR KSPGetPC(ksp, &pc_raw);
-      return SmartPetscObj<PC>(pc_raw, true); // bump reference
-    };
     CHKERR setSchurMatSolvePC(get_pc(subksp[0]));
+
+    auto set_pc_p_mg = [](auto dm, auto pc, auto S) {
+      MoFEMFunctionBegin;
+      CHKERR PCSetDM(pc, dm);
+      PetscBool same = PETSC_FALSE;
+      PetscObjectTypeCompare((PetscObject)pc, PCMG, &same);
+      if (same) {
+        CHKERR PCMGSetUpViaApproxOrders(
+            pc, createPCMGSetUpViaApproxOrdersCtx(dm, S, true));
+        CHKERR PCSetFromOptions(pc);
+      }
+      MoFEMFunctionReturn(0);
+    };
+
+    CHKERR set_pc_p_mg(schurDM, get_pc(subksp[1]), S);
+
     CHKERR PetscFree(subksp);
   }
   MoFEMFunctionReturn(0);
