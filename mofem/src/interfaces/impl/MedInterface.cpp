@@ -716,25 +716,30 @@ MoFEMErrorCode MedInterface::getMeshsets(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode MedInterface::writeMed(int verb) {
+MoFEMErrorCode MedInterface::writeMed(boost::shared_ptr<Range> range_ptr, int verb) {
   MoFEMFunctionBegin;
   if (medFileName.empty()) {
     CHKERR getFileNameFromCommandLine(verb);
   }
 
+  // Get meshsets
   boost::shared_ptr<std::vector<const CubitMeshSets *>> meshsets_ptr;
   getMeshsets(meshsets_ptr);
 
-  CHKERR writeMed(medFileName, meshsets_ptr, verb);
+  CHKERR writeMed(medFileName, meshsets_ptr, range_ptr, verb);
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode MedInterface::writeMed(const string &file, boost::shared_ptr<std::vector< const CubitMeshSets * >> meshsets_ptr, int verb) {
+MoFEMErrorCode MedInterface::writeMed(
+    const string &file,
+    boost::shared_ptr<std::vector<const CubitMeshSets *>> meshsets_ptr,
+    boost::shared_ptr<Range> write_range_ptr, int verb) {
   Interface &m_field = cOre;
   // Get the MOAB instance from the field
   moab::Interface &moab = m_field.get_moab();
 
   MoFEMFunctionBeginHot;
+  std::cout << "Entities to write = " << *write_range_ptr << std::endl;
   // Open a med file with the specified version
   med_idt fid =
       MEDfileVersionOpen((char *)file.c_str(), MED_ACC_CREAT, MED_MAJOR_NUM,
@@ -796,11 +801,13 @@ MoFEMErrorCode MedInterface::writeMed(const string &file, boost::shared_ptr<std:
     std::map<med_int, med_int> group_map;
     std::map<med_int, Range> family_range_map;
     med_int family_id_1 = 0;
-    std::map<std::vector<int>, med_int> shared_meshsets_map;
+    std::map<std::vector<std::string>, std::tuple<med_int, std::vector<int>>> shared_meshsets_map;
     std::map<EntityHandle, med_int> entityHandle_family_map;
 
+
     // initialise zero family id
-    shared_meshsets_map[std::vector<int>()] = family_id_1;
+    shared_meshsets_map[std::vector<string>()] = std::make_tuple(family_id_1,std::vector<int>());
+    
 
     // loop over all meshsets to identify shared meshsets and assign family ids
     for (auto &iit : *meshsets_ptr) {
@@ -808,28 +815,89 @@ MoFEMErrorCode MedInterface::writeMed(const string &file, boost::shared_ptr<std:
 
         // Assume meshset is the meshset you want to check
         EntityHandle meshset = iit->getMeshset();
+        //std::cout << "Meshset: " << iit->getName()
+                  //<< " with Id: " << iit->getMeshsetId() << std::endl;
 
         // Get the entities in the meshset
+        Range entities_in_meshset;
         Range entities;
-        moab.get_entities_by_handle(meshset, entities);
-        // std::cout << "Entities = " << entities << std::endl;
+        if (write_range_ptr != nullptr) {
+          moab.get_entities_by_handle(meshset, entities_in_meshset);
+          // std::cout << "Entities before = " << entities << std::endl;
+          //entities = intersect(entities_in_meshset, *write_range_ptr);
+          // std::cout << "Entities after = " << entities << std::endl;
+          entities = *write_range_ptr;
+        } else {
+          moab.get_entities_by_handle(meshset, entities);
+        }
+
+        //std::cout << "Entities = " << entities << std::endl;
+        // print entities in meshset by type
+        for (EntityType ent_type = MBVERTEX; ent_type < MBMAXTYPE; ent_type++) { 
+          Range entities_by_type = entities.subset_by_type(ent_type);
+          if (entities_by_type.empty()) 
+            continue;
+
+          if (ent_type == MBENTITYSET){
+            std::cout << "Entities by type = " << entities_by_type << std::endl;
+          }
+        }
+
+
+        auto get_set_name = [&] {
+          if (iit->getBcTypeULong() & BLOCKSET) {
+            EntityHandle meshset = iit->getMeshset();
+
+            std::string name = iit->getName();
+            if (name == "NoNameSet") {
+              name = "BLOCKSET_NoNameSet_";
+              name += std::to_string(iit->getMeshsetId());
+            }
+            return name;
+          } else if (iit->getBcTypeULong() & SIDESET ||
+                     iit->getBcTypeULong() & NODESET) {
+            EntityHandle meshset = iit->getMeshset();
+
+            CubitBCType cubitBcType(iit->getBcTypeULong());
+            auto test = iit->getBcType();
+
+            // std::cout << iit->getBcTypeULong() << std::endl;
+
+            unsigned jj = 0;
+            string bc_type_name;
+            while (1 << jj != LASTSET_BC) {
+              const CubitBCType jj_bc_type = 1 << jj;
+              if ((iit->getBcType() & jj_bc_type).any()) {
+
+                bc_type_name += string(CubitBCNames[jj + 1]);
+                bc_type_name += "_";
+              }
+              ++jj;
+            }
+            bc_type_name += std::to_string(iit->getMeshsetId());
+            return bc_type_name;
+          }
+        };
 
         // loop all entities by handle in the meshset
         for (const auto &entity : entities) {
           // check if entity is shared with other meshsets
           std::vector<int> shared_meshsets;
+          std::vector<int> shared_nodesets;
+          std::vector<int> shared_sidesets;
+          std::vector<string> shared_names;
           // std::cout << " Checking Entity = " << entity << std::endl;
+
           for (auto &other_meshset : *meshsets_ptr) {
             if (iit == other_meshset)
               continue;
-            // std::cout << "Checking other meshset = " <<
-            // other_meshset->getMeshsetId() << std::endl; std::cout <<
-            // "Checking other meshset = " << other_meshset->getName() <<
-            // std::endl;
+            //std::cout << "Checking other meshset = " <<
+            //other_meshset->getMeshsetId() << std::endl; 
+            //std::cout << "Checking other meshset = " << other_meshset->getName() << std::endl;
             Range other_entities;
             EntityHandle other_set = other_meshset->getMeshset();
             moab.get_entities_by_handle(other_set, other_entities);
-            // std::cout << "other_entities = " << other_entities << std::endl;
+            //std::cout << "other_entities = " << other_entities << std::endl;
             //  get entity type
             EntityType ent_type = moab.type_from_handle(entity);
 
@@ -860,17 +928,28 @@ MoFEMErrorCode MedInterface::writeMed(const string &file, boost::shared_ptr<std:
                 // "
                 //           << other_meshset->getMeshsetId() << std::endl;
                 // }
-                shared_meshsets.push_back(other_meshset->getMeshsetId());
+                // check if name is already added to shared_names
+                if (std::find(shared_names.begin(), shared_names.end(),
+                              get_set_name()) != shared_names.end()) {
+                  }else{
+                  shared_meshsets.push_back(other_meshset->getMeshsetId());
+                  shared_names.push_back(get_set_name());
+                }
               } else {
                 // add shared meshset id to list
                 // std::cout << "Entity " << entity << " is in meshset "
                 //           << other_meshset->getMeshsetId() << std::endl;
-                shared_meshsets.push_back(other_meshset->getMeshsetId());
+                if (std::find(shared_names.begin(), shared_names.end(),
+                              get_set_name()) != shared_names.end()) {
+                  }else{
+                  shared_meshsets.push_back(other_meshset->getMeshsetId());
+                  shared_names.push_back(get_set_name());
+                }
               }
             }
           }
           // check if shared meshset is already in map
-          if (shared_meshsets_map.find(shared_meshsets) !=
+          if (shared_meshsets_map.find(shared_names) !=
               shared_meshsets_map.end()) {
             // assign family id to entity
             // std::cout << "Shared meshsets have family id = "
@@ -879,50 +958,19 @@ MoFEMErrorCode MedInterface::writeMed(const string &file, boost::shared_ptr<std:
           } else {
             // create new family id
             family_id_1++;
+            std::tuple<med_int, std::vector<int>> family_tuple;
+            family_tuple = std::make_tuple(family_id_1, shared_meshsets);
             // std::cout << "New shared meshsets found" << std::endl;
-            shared_meshsets_map[shared_meshsets] = family_id_1;
+            shared_meshsets_map[shared_names] = family_tuple;
             // std::cout << "Shared meshsets have family id = "
             //           << shared_meshsets_map[shared_meshsets] << std::endl;
           }
+          // assign family id to entity
           entityHandle_family_map[entity] =
-              shared_meshsets_map[shared_meshsets];
+              std::get<0>(shared_meshsets_map[shared_names]);
         }
       }
-        if (iit->getBcTypeULong() & BLOCKSET) {
-          EntityHandle meshset = iit->getMeshset();
-
-          std::string name = iit->getName();
-          if (name == "NoNameSet") {
-            name = "BLOCKSET_NoNameSet_";
-            name += std::to_string(iit->getMeshsetId());
-          }
-          meshset_map[iit->getMeshsetId()] = name;
-        } else if (iit->getBcTypeULong() & SIDESET ||
-                   iit->getBcTypeULong() & NODESET) {
-          EntityHandle meshset = iit->getMeshset();
-
-          CubitBCType cubitBcType(iit->getBcTypeULong());
-          auto test = iit->getBcType();
-
-          std::cout << iit->getBcTypeULong() << std::endl;
-
-          unsigned jj = 0;
-          string bc_type_name;
-          while (1 << jj != LASTSET_BC) {
-            const CubitBCType jj_bc_type = 1 << jj;
-            if ((iit->getBcType() & jj_bc_type).any()) {
-
-              bc_type_name += string(CubitBCNames[jj + 1]);
-              bc_type_name += "_";
-            }
-            ++jj;
-          }
-          bc_type_name += std::to_string(iit->getMeshsetId());
-          meshset_map[iit->getMeshsetId()] = bc_type_name;
-        } else {
-          meshset_map[iit->getMeshsetId()] = iit->getName();
-        }
-      }
+    }
     // display entityHandle_family_map
     // for (auto &it : entityHandle_family_map) {
     //   std::cout << "Entity = " << it.first << " Family id = " << it.second
@@ -933,22 +981,23 @@ MoFEMErrorCode MedInterface::writeMed(const string &file, boost::shared_ptr<std:
     for (auto &it : shared_meshsets_map) {
       // create family
       std::string family_name = "F_";
-      family_name += std::to_string(it.second);
-      std::vector<int> shared_meshset_ids = it.first;
+      std::tuple<med_int, std::vector<int>> family_tuple = it.second;
+      family_name += std::to_string(std::get<0>(family_tuple));
+      std::vector<std::string> shared_meshset_names = it.first;
       std::string group_name;
-      for (auto &id : shared_meshset_ids) {
+      for (auto &name : shared_meshset_names) {
         // get meshset name
-        std::string meshset_name = meshset_map[id];
+        std::string meshset_name = name;
         meshset_name.resize(MED_LNAME_SIZE, ' ');
         group_name += meshset_name;
       }
       // group_name.resize(shared_meshset_ids.size() * MED_LNAME_SIZE, ' ');
 
-      CHKERR MEDfamilyCr(fid, mesh_name.c_str(), family_name.c_str(), it.second,
-                         shared_meshset_ids.size(), group_name.c_str());
+      CHKERR MEDfamilyCr(fid, mesh_name.c_str(), family_name.c_str(),std::get<0>(family_tuple) ,
+                         shared_meshset_names.size(), group_name.c_str());
       MOFEM_LOG("MEDWORLD", Sev::inform)
-          << "Creating family " << family_name << " with id " << it.second
-          << " and " << shared_meshset_ids.size() << " groups with name "
+          << "Creating family " << family_name << " with id " << std::get<0>(family_tuple)
+          << " and " << shared_meshset_names.size() << " groups with name "
           << group_name << std::endl;
     }
 
@@ -976,14 +1025,20 @@ MoFEMErrorCode MedInterface::writeMed(const string &file, boost::shared_ptr<std:
                          &coord_med[0], MED_FALSE, "", MED_TRUE, &tags[0],
                          MED_TRUE, &fam[0]);
 
-    // loop to write elements to families from meshset 1
+    // loop to write elements to families
     for (EntityType ent_type = MBVERTEX; ent_type < MBMAXTYPE; ent_type++) {
       // get all entities of type ent_type
       std::cout << "Entity type = " << ent_type << std::endl;
       Range entities;
-      EntityHandle meshset = meshsets_ptr->at(0)->getMeshset();
-      moab.get_entities_by_type(meshset, ent_type, entities);
-      if (entities.empty())
+      moab.get_entities_by_type(0, ent_type, entities, true);
+      Range ents_to_write;
+      ents_to_write = intersect(entities, *write_range_ptr);
+
+      //EntityHandle meshset = meshsets_ptr->at(0)->getMeshset();
+      //std::cout << "writing entities from meshset = " << meshset << std::endl;
+      //std::cout << "Name of meshset = " << meshsets_ptr->at(0)->getName() << std::endl;
+      //moab.get_entities_by_type(meshset, ent_type, entities);
+      if (ents_to_write.empty())
         continue;
 
       // vectors to write
@@ -992,7 +1047,7 @@ MoFEMErrorCode MedInterface::writeMed(const string &file, boost::shared_ptr<std:
       std::vector<med_int> connectivity;
 
       // loop over all entities
-      for (auto &entity : entities) {
+      for (auto &entity : ents_to_write) {
         if (ent_type != MBVERTEX) {
           // get family id for entity
           family_number.push_back(entityHandle_family_map[entity]);
@@ -1036,6 +1091,9 @@ MoFEMErrorCode MedInterface::writeMed(const string &file, boost::shared_ptr<std:
         case MBEDGE:
           type = MED_SEG2;
           break;
+        case MBPRISM:
+          type = MED_PENTA6;
+          break;
         default:
           type = MED_POINT1;
           break;
@@ -1044,6 +1102,9 @@ MoFEMErrorCode MedInterface::writeMed(const string &file, boost::shared_ptr<std:
       };
 
       med_geometrie_element med_type = get_med_element_type(ent_type);
+      if (ent_type == MBENTITYSET) {
+        continue;
+      }
       CHKERR MEDmeshElementWr(fid, mesh_name.c_str(), MED_NO_DT, MED_NO_IT, 0.,
                               MED_CELL, med_type, MED_NODAL, MED_FULL_INTERLACE,
                               family_number.size(), &connectivity[0], MED_FALSE,
@@ -1444,7 +1505,7 @@ MoFEMErrorCode MedInterface::writeMed(const string &file, boost::shared_ptr<std:
     //}
     CHKERR MEDfermer(fid);
     MoFEMFunctionReturnHot(0);
-  }
+}
 
 MoFEMErrorCode MedInterface::readFields(const std::string &file_name,
                                         const std::string &field_name,

@@ -83,7 +83,7 @@ struct MedInterface : public UnknownInterface {
    * @param  verb verbosity level
    * @return      error code
    */
-  MoFEMErrorCode writeMed(int verb = 1);
+  MoFEMErrorCode writeMed(boost::shared_ptr<Range> range_ptr = nullptr, int verb = 1);
   
   /**
    * Retrieves the meshsets
@@ -99,7 +99,7 @@ struct MedInterface : public UnknownInterface {
    * @param  verb verbosity level
    * @return      error code
    */
-  MoFEMErrorCode writeMed(const string &file, boost::shared_ptr<std::vector< const CubitMeshSets * >> meshsets_ptr, int verb = 1);
+  MoFEMErrorCode writeMed(const string &file, boost::shared_ptr<std::vector< const CubitMeshSets * >> meshsets_ptr, boost::shared_ptr<Range> range_ptr = nullptr, int verb = 1);
 
   /**
    * Read fields
@@ -129,7 +129,7 @@ struct MedInterface : public UnknownInterface {
   std::vector<EntityHandle> meshMeshsets; ///< meshset for each mesh
   std::map<std::string, FieldData> fieldNames;
   std::string medFileName; ///< MED file name
-  std::vector<int> tessssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssasssssss1; //
+  std::vector<int> tesssssssssssssssssssssssssssssssssssssssssssassssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssasssssss1; //
 
 private:
   MoFEM::Core &cOre; ///< core database
