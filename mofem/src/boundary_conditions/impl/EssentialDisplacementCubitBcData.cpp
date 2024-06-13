@@ -414,14 +414,18 @@ MoFEMErrorCode EssentialPostProcLhs<DisplacementCubitBcData>::operator()() {
 
 EssentialPreProcReaction<DisplacementCubitBcData>::EssentialPreProcReaction(
     MoFEM::Interface &m_field, boost::shared_ptr<FEMethod> fe_ptr,
-    SmartPetscObj<Vec> rhs, LogManager::SeverityLevel sev)
+    SmartPetscObj<Vec> rhs, LogManager::SeverityLevel sev,
+    boost::shared_ptr<std::vector<double>> reaction_ptr)
     : mField(m_field), fePtr(fe_ptr), vRhs(rhs), sevLevel(sev),
-      printBlockName(PETSC_FALSE) {
+      printBlockName(PETSC_FALSE), reactionPtr(reaction_ptr),
+      reactionBlockName(""), vReaction(std::vector<double>(3, 0.0)) {
 
   CHK_THROW_MESSAGE(PetscOptionsGetBool(PETSC_NULL, PETSC_NULL,
                                         "-reaction_print_block_name",
                                         &printBlockName, PETSC_NULL),
                     "can not get option");
+  CHKERR PetscOptionsGetString(PETSC_NULL, "-reaction_block_name",
+                               reactionBlockName, 255, PETSC_NULL);
 }
 
 MoFEMErrorCode EssentialPreProcReaction<DisplacementCubitBcData>::operator()() {
@@ -597,6 +601,12 @@ MoFEMErrorCode EssentialPreProcReaction<DisplacementCubitBcData>::operator()() {
                                 "Block %s Moment: %6.4e %6.4e %6.4e",
                                 block_name.c_str(), mpi_reactions[MX],
                                 mpi_reactions[MY], mpi_reactions[MZ]);
+            if (reactionPtr && reactionBlockName == block_name.c_str()) {
+              vReaction[X] = mpi_reactions[X];
+              vReaction[Y] = mpi_reactions[Y];
+              vReaction[Z] = mpi_reactions[Z];
+              reactionPtr = boost::make_shared<std::vector<double>>(vReaction);
+            }
           } else {
             MOFEM_TAG_AND_LOG_C("WORLD", sevLevel, "Essential",
                                 "Offset: %6.4e %6.4e %6.4e", t_off(X), t_off(Y),

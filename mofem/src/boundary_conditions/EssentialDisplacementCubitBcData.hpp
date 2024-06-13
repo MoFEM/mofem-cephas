@@ -155,10 +155,11 @@ protected:
  * @tparam
  */
 template <> struct EssentialPreProcReaction<DisplacementCubitBcData> {
-  EssentialPreProcReaction(MoFEM::Interface &m_field,
-                           boost::shared_ptr<FEMethod> fe_ptr,
-                           SmartPetscObj<Vec> rhs = nullptr,
-                           LogManager::SeverityLevel sev = Sev::inform);
+  EssentialPreProcReaction(
+      MoFEM::Interface &m_field, boost::shared_ptr<FEMethod> fe_ptr,
+      SmartPetscObj<Vec> rhs = nullptr,
+      LogManager::SeverityLevel sev = Sev::inform,
+      boost::shared_ptr<std::vector<double>> reaction_ptr = nullptr);
 
   MoFEMErrorCode operator()();
 
@@ -168,6 +169,9 @@ protected:
   SmartPetscObj<Vec> vRhs;
   LogManager::SeverityLevel sevLevel;
   PetscBool printBlockName; //< print block name when printing reaction
+  boost::shared_ptr<std::vector<double>> reactionPtr;
+  std::vector<double> vReaction;
+  char reactionBlockName[255];
 };
 
 template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
