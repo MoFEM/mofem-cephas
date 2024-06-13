@@ -23,6 +23,31 @@ users. Solutions can be close, bespoke, tailored to problem.
 - Black box do not create dependencies. Enable future evolution and development.
 - Do not expose members of user data operators. Make members of the function private. 
 - Common data for series of operators are local. 
+
+```c++
+template <int DIM, AssemblyType A, IntegrationType I, typename BoundaryEleOp>
+MoFEMErrorCode opFactoryBoundaryRhs(
+    boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pip,
+    std::string sigma, std::string u, bool is_axisymmetric = false) {
+  MoFEMFunctionBegin;
+
+  using C = ContactIntegrators<BoundaryEleOp>;
+
+  auto common_data_ptr = boost::make_shared<ContactOps::CommonData>();
+
+  pip.push_back(new OpCalculateVectorFieldValues<DIM>(
+      u, common_data_ptr->contactDispPtr()));
+  pip.push_back(new OpCalculateHVecTensorTrace<DIM, BoundaryEleOp>(
+      sigma, common_data_ptr->contactTractionPtr()));
+  pip.push_back(
+      new typename C::template Assembly<A>::template OpConstrainBoundaryRhs<
+          DIM, GAUSS>(sigma, common_data_ptr, is_axisymmetric));
+
+  MoFEMFunctionReturn(0);
+}
+```
+
+- Prefect operator is dimension, and element type agnostic.
 - Push operators in factory function, or lambda function if ad hoc solution.
 - Push operator by operator defined in "cpp" file. Hide implementation.
 
