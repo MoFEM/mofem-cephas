@@ -418,7 +418,7 @@ EssentialPreProcReaction<DisplacementCubitBcData>::EssentialPreProcReaction(
     boost::shared_ptr<std::vector<double>> reaction_ptr)
     : mField(m_field), fePtr(fe_ptr), vRhs(rhs), sevLevel(sev),
       printBlockName(PETSC_FALSE), reactionPtr(reaction_ptr),
-      reactionBlockName(""), vReaction(std::vector<double>(3, 0.0)) {
+      reactionBlockName("") {
 
   CHK_THROW_MESSAGE(PetscOptionsGetBool(PETSC_NULL, PETSC_NULL,
                                         "-reaction_print_block_name",
@@ -601,11 +601,11 @@ MoFEMErrorCode EssentialPreProcReaction<DisplacementCubitBcData>::operator()() {
                                 "Block %s Moment: %6.4e %6.4e %6.4e",
                                 block_name.c_str(), mpi_reactions[MX],
                                 mpi_reactions[MY], mpi_reactions[MZ]);
-            if (reactionPtr && reactionBlockName == block_name.c_str()) {
-              vReaction[X] = mpi_reactions[X];
-              vReaction[Y] = mpi_reactions[Y];
-              vReaction[Z] = mpi_reactions[Z];
-              reactionPtr = boost::make_shared<std::vector<double>>(vReaction);
+            if ((reactionPtr != nullptr) &&
+                (block_name.compare(reactionBlockName) == 0)) {
+              (*reactionPtr)[X] = mpi_reactions[X];
+              (*reactionPtr)[Y] = mpi_reactions[Y];
+              (*reactionPtr)[Z] = mpi_reactions[Z];
             }
           } else {
             MOFEM_TAG_AND_LOG_C("WORLD", sevLevel, "Essential",

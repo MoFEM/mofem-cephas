@@ -170,7 +170,6 @@ protected:
   LogManager::SeverityLevel sevLevel;
   PetscBool printBlockName; //< print block name when printing reaction
   boost::shared_ptr<std::vector<double>> reactionPtr;
-  std::vector<double> vReaction;
   char reactionBlockName[255];
 };
 
