@@ -48,10 +48,13 @@ OpBlackBox* createOpBlackBox() { return new OpBalckBox(); }
 ## Testing
 
 - Test code not method.
+- Tests are fast.
 
 ## Avoid dependencies
 
 - Do not add software dependencies to core library.
 - If you have to add dependency, make it optional.
 - More libraries bigger likelihood that code will break at compilation.
+- Some decencies should be restricted to users modules
+- All dependencies are managed in Spack
 
