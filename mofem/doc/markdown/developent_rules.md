@@ -62,7 +62,7 @@ OpBlackBox* createOpBlackBox();
 cpp: file:
 ```c++
 namespace BlackBox  {
-struct OpBalckBox: private ForcesAndSourcesCore::UserDataOperator {
+struct OpBlackBox: private ForcesAndSourcesCore::UserDataOperator {
 	private:
 	// definition
 };
