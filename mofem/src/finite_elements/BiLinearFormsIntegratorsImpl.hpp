@@ -15,6 +15,9 @@
 
 namespace MoFEM {
 
+using CacheMatsTypeType =
+    std::map<std::pair<int, int>, boost::shared_ptr<MatrixDouble>>;
+
 template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM, IntegrationType I,
           typename OpBase>
 struct OpGradGradImpl {};
@@ -66,7 +69,8 @@ struct OpMassImpl<1, 1, GAUSS, OpBase> : public OpBase {
   OpMassImpl(
       const std::string row_field_name, const std::string col_field_name,
       ScalarFun beta = [](double, double, double) constexpr { return 1; },
-      boost::shared_ptr<Range> ents_ptr = nullptr)
+      boost::shared_ptr<Range> ents_ptr = nullptr,
+      boost::shared_ptr<MatrixDouble> cache_mat = nullptr)
       : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL, ents_ptr),
         betaCoeff(beta) {
     if (row_field_name == col_field_name)
@@ -74,9 +78,14 @@ struct OpMassImpl<1, 1, GAUSS, OpBase> : public OpBase {
   }
 
 protected:
-  ScalarFun betaCoeff;
-  MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
-                           EntitiesFieldData::EntData &col_data);
+  ScalarFun betaCoeff = [](double, double, double) constexpr { return 1; };
+  MoFEMErrorCode integrateImpl(EntitiesFieldData::EntData &row_data,
+                               EntitiesFieldData::EntData &col_data,
+                               double vol);
+  inline MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
+                                  EntitiesFieldData::EntData &col_data) {
+    return integrateImpl(row_data, col_data, OpBase::getMeasure());
+  }
 };
 
 template <int FIELD_DIM, typename OpBase>
@@ -86,8 +95,13 @@ struct OpMassImpl<1, FIELD_DIM, GAUSS, OpBase>
 
 protected:
   using OpMassImpl<1, 1, GAUSS, OpBase>::betaCoeff;
-  MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
-                           EntitiesFieldData::EntData &col_data);
+  MoFEMErrorCode integrateImpl(EntitiesFieldData::EntData &row_data,
+                               EntitiesFieldData::EntData &col_data,
+                               double vol);
+  inline MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
+                                  EntitiesFieldData::EntData &col_data) {
+    return integrateImpl(row_data, col_data, OpBase::getMeasure());
+  }
 };
 
 template <int FIELD_DIM, typename OpBase>
@@ -140,6 +154,28 @@ protected:
   ScalarFun betaCoeff;
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data);
+};
+
+template <int BASE_DIM, int FIELD_DIM, IntegrationType I, typename OpBase>
+struct OpMassCacheImpl;
+
+template <int FIELD_DIM, IntegrationType I, typename OpBase>
+struct OpMassCacheImpl<1, FIELD_DIM, I, OpBase>
+    : public OpMassImpl<1, FIELD_DIM, I, OpBase> {
+  OpMassCacheImpl(CacheMatsTypeType cache, const std::string row_field_name,
+                  const std::string col_field_name, const double beta,
+                  boost::shared_ptr<Range> ents_ptr = nullptr)
+      : OpMassImpl<1, FIELD_DIM, I, OpBase>(
+            row_field_name, col_field_name,
+            [](double, double, double) { return 1; }, ents_ptr),
+        cacheLocMats(cache), scalarBeta(beta) {}
+
+  MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
+                           EntitiesFieldData::EntData &col_data);
+
+protected:
+  double scalarBeta;
+  CacheMatsTypeType cacheLocMats;
 };
 
 template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM, int S, IntegrationType I,
@@ -486,9 +522,9 @@ OpGradGradImpl<1, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
 }
 
 template <typename OpBase>
-MoFEMErrorCode OpMassImpl<1, 1, GAUSS, OpBase>::iNtegrate(
+MoFEMErrorCode OpMassImpl<1, 1, GAUSS, OpBase>::integrateImpl(
     EntitiesFieldData::EntData &row_data,
-    EntitiesFieldData::EntData &col_data) {
+    EntitiesFieldData::EntData &col_data, double vol) {
   MoFEMFunctionBegin;
 
 #ifndef NDEBUG
@@ -525,8 +561,6 @@ MoFEMErrorCode OpMassImpl<1, 1, GAUSS, OpBase>::iNtegrate(
   }
 #endif
 
-  // get element volume
-  const double vol = OpBase::getMeasure();
   // get integration weights
   auto t_w = OpBase::getFTensor0IntegrationWeight();
   // get base function gradient on rows
@@ -535,7 +569,7 @@ MoFEMErrorCode OpMassImpl<1, 1, GAUSS, OpBase>::iNtegrate(
   auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
   // loop over integration points
   for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
-    const double beta = vol * betaCoeff(t_coords(0), t_coords(1), t_coords(2));
+    const double beta = betaCoeff(t_coords(0), t_coords(1), t_coords(2));
     // take into account Jacobian
     const double alpha = t_w * beta;
     // loop over rows base functions
@@ -558,58 +592,68 @@ MoFEMErrorCode OpMassImpl<1, 1, GAUSS, OpBase>::iNtegrate(
     ++t_coords;
     ++t_w; // move to another integration weight
   }
+
+  OpBase::locMat *= vol;
+
   MoFEMFunctionReturn(0);
 };
 
 template <int FIELD_DIM, typename OpBase>
-MoFEMErrorCode OpMassImpl<1, FIELD_DIM, GAUSS, OpBase>::iNtegrate(
-    EntitiesFieldData::EntData &row_data,
-    EntitiesFieldData::EntData &col_data) {
+MoFEMErrorCode OpMassImpl<1, FIELD_DIM, GAUSS, OpBase>::integrateImpl(
+    EntitiesFieldData::EntData &row_data, EntitiesFieldData::EntData &col_data,
+    double vol) {
   MoFEMFunctionBegin;
-  // get element volume
-  const double vol = OpBase::getMeasure();
-  // get integration weights
-  auto t_w = OpBase::getFTensor0IntegrationWeight();
-  // get base function gradient on rows
-  auto t_row_base = row_data.getFTensor0N();
-  // get coordinate at integration points
-  auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
 
-  FTensor::Index<'i', FIELD_DIM> i;
-  auto get_t_vec = [&](const int rr) {
-    std::array<double *, FIELD_DIM> ptrs;
-    for (auto i = 0; i != FIELD_DIM; ++i)
-      ptrs[i] = &OpBase::locMat(rr + i, i);
-    return FTensor::Tensor1<FTensor::PackPtr<double *, FIELD_DIM>, FIELD_DIM>(
-        ptrs);
+  auto integrate = [&](auto &mat) {
+    MoFEMFunctionBeginHot;
+    // get integration weights
+    auto t_w = OpBase::getFTensor0IntegrationWeight();
+    // get base function gradient on rows
+    auto t_row_base = row_data.getFTensor0N();
+    // get coordinate at integration points
+    auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
+
+    FTensor::Index<'i', FIELD_DIM> i;
+    auto get_t_vec = [&](const int rr) {
+      std::array<double *, FIELD_DIM> ptrs;
+      for (auto i = 0; i != FIELD_DIM; ++i)
+        ptrs[i] = &mat(rr + i, i);
+      return FTensor::Tensor1<FTensor::PackPtr<double *, FIELD_DIM>, FIELD_DIM>(
+          ptrs);
+    };
+
+    // loop over integration points
+    for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
+      const double beta = betaCoeff(t_coords(0), t_coords(1), t_coords(2));
+      // take into account Jacobian
+      const double alpha = t_w * beta;
+      // loop over rows base functions
+      int rr = 0;
+      for (; rr != OpBase::nbRows / FIELD_DIM; rr++) {
+        // get column base functions gradient at gauss point gg
+        auto t_col_base = col_data.getFTensor0N(gg, 0);
+        // get mat vec
+        auto t_vec = get_t_vec(FIELD_DIM * rr);
+        // loop over columns
+        for (int cc = 0; cc != OpBase::nbCols / FIELD_DIM; cc++) {
+          // calculate element of local matrix
+          t_vec(i) += alpha * (t_row_base * t_col_base);
+          ++t_col_base;
+          ++t_vec;
+        }
+        ++t_row_base;
+      }
+      for (; rr < OpBase::nbRowBaseFunctions; ++rr)
+        ++t_row_base;
+      ++t_coords;
+      ++t_w; // move to another integration weight
+    }
+    MoFEMFunctionReturnHot(0);
   };
 
-  // loop over integration points
-  for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
-    const double beta = vol * betaCoeff(t_coords(0), t_coords(1), t_coords(2));
-    // take into account Jacobian
-    const double alpha = t_w * beta;
-    // loop over rows base functions
-    int rr = 0;
-    for (; rr != OpBase::nbRows / FIELD_DIM; rr++) {
-      // get column base functions gradient at gauss point gg
-      auto t_col_base = col_data.getFTensor0N(gg, 0);
-      // get mat vec
-      auto t_vec = get_t_vec(FIELD_DIM * rr);
-      // loop over columns
-      for (int cc = 0; cc != OpBase::nbCols / FIELD_DIM; cc++) {
-        // calculate element of local matrix
-        t_vec(i) += alpha * (t_row_base * t_col_base);
-        ++t_col_base;
-        ++t_vec;
-      }
-      ++t_row_base;
-    }
-    for (; rr < OpBase::nbRowBaseFunctions; ++rr)
-      ++t_row_base;
-    ++t_coords;
-    ++t_w; // move to another integration weight
-  }
+  CHKERR integrate(OpBase::locMat);
+  OpBase::locMat *= vol;
+
   MoFEMFunctionReturn(0);
 };
 
@@ -752,6 +796,34 @@ MoFEMErrorCode OpMassImpl<3, 9, GAUSS, OpBase>::iNtegrate(
   }
   MoFEMFunctionReturn(0);
 };
+
+template <int FIELD_DIM, IntegrationType I, typename OpBase>
+MoFEMErrorCode OpMassCacheImpl<1, FIELD_DIM, I, OpBase>::iNtegrate(
+    EntitiesFieldData::EntData &row_data,
+    EntitiesFieldData::EntData &col_data) {
+  MoFEMFunctionBegin;
+  CHKERR this->integrateImpl(row_data, col_data, 1);
+
+  const auto vol = this->getMeasure();
+  const auto row_type = this->rowType;
+  const auto col_type = this->colType;
+  auto &loc_mat = this->locMat;
+
+  auto p = std::make_pair(row_type, col_type);
+
+  if (cacheLocMats[p]) {
+    if (cacheLocMats[p]->size1() != loc_mat.size1() &&
+        cacheLocMats[p]->size2() != loc_mat.size2()) {
+      cacheLocMats[p]->resize(loc_mat.size1(), loc_mat.size2());
+      *(cacheLocMats[p]) = loc_mat;
+    }
+    loc_mat = *(cacheLocMats[p]);
+    loc_mat *= scalarBeta * this->getMeasure();
+  } else {
+    loc_mat *= scalarBeta * this->getMeasure();
+  }
+  MoFEMFunctionReturn(0);
+}
 
 template <int SPACE_DIM, int S, typename OpBase>
 MoFEMErrorCode
