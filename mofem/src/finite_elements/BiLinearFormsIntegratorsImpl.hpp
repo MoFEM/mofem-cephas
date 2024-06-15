@@ -167,7 +167,7 @@ struct OpMassCacheImpl<1, FIELD_DIM, I, OpBase>
                   boost::shared_ptr<Range> ents_ptr = nullptr)
       : OpMassImpl<1, FIELD_DIM, I, OpBase>(
             row_field_name, col_field_name,
-            [](double, double, double) { return 1; }, ents_ptr),
+            [](double, double, double) constexpr { return 1; }, ents_ptr),
         cacheLocMats(cache), scalarBeta(beta) {}
 
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
