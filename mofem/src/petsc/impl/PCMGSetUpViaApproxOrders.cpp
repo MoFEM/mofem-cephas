@@ -526,8 +526,8 @@ MoFEMErrorCode PCMGSetUpViaApproxOrdersCtx::createIsAtLevel(int kk, IS *is) {
   int order_at_next_level = kk + coarseOrder;
   if (kk == nbLevels - 1) {
     int first = problem_ptr->getNumeredRowDofsPtr()
-                    ->get<PetscLocalIdx_mi_tag>()
-                    .find(0)
+                    ->get<PetscGlobalIdx_mi_tag>()
+                    .lower_bound(0)
                     ->get()
                     ->getPetscGlobalDofIdx();
     CHKERR ISCreateStride(PETSC_COMM_WORLD, problem_ptr->getNbLocalDofsRow(),
