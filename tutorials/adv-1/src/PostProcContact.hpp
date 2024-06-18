@@ -43,7 +43,7 @@ struct Monitor : public FEMethod {
           : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPSPACE),
             mPtr(m_ptr), scale(s) {}
       MoFEMErrorCode doWork(int, EntityType, EntitiesFieldData::EntData &) {
-        *mPtr *= 1. / scale;
+        *mPtr *= 1./scale;
         return 0;
       }
 
@@ -107,6 +107,8 @@ struct Monitor : public FEMethod {
       auto X_ptr = boost::make_shared<MatrixDouble>();
       pip.push_back(
           new OpCalculateVectorFieldValues<SPACE_DIM>("GEOMETRY", X_ptr));
+
+
 
       pip.push_back(
 
@@ -840,8 +842,8 @@ private:
     TRACTION_Y_NORM_L2,
     LAST_NORM
   };
-  // SmartPetscObj<Vec> norms_vec;
   SmartPetscObj<Vec> normsVec;
+
   moab::Core mbVertexPostproc;
   moab::Interface &moabVertex;
 
