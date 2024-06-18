@@ -373,7 +373,7 @@ hess_surface_distance_function(double delta_t, double t, int nb_gauss_pts,
     m_hess_sdf.resize(6, nb_gauss_pts, false);
     for (size_t gg = 0; gg < nb_gauss_pts; ++gg) {
       for (int idx = 0; idx < 6; ++idx)
-        m_hess_sdf(idx, gg) = 
+        m_hess_sdf(idx, gg) =
             *(hess_ptr + (6 * gg + idx));
     }
     return m_hess_sdf;
@@ -392,6 +392,7 @@ hess_surface_distance_function(double delta_t, double t, int nb_gauss_pts,
   }
   return m_hess_sdf;
 }
+
 
 template <int DIM, IntegrationType I, typename BoundaryEleOp>
 struct OpAssembleTotalContactTractionImpl;
