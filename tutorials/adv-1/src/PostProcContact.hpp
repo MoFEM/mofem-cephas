@@ -230,7 +230,7 @@ struct Monitor : public FEMethod {
       // We have to integrate on curved face geometry, thus integration weight
       // have to adjusted.
       integrate_traction->getOpPtrVector().push_back(
-          new OpSetHOWeightsOnSubDim<SPACE_DIM>()); // Ask Lukasz
+          new OpSetHOWeightsOnSubDim<SPACE_DIM>());
       integrate_traction->getRuleHook = [](int, int, int approx_order) {
         return 2 * approx_order + geom_order - 1;
       };
@@ -291,6 +291,7 @@ struct Monitor : public FEMethod {
     postProcDomainFe = get_post_proc_domain_fe();
     if constexpr (SPACE_DIM == 2)
       postProcBdyFe = get_post_proc_bdy_fe();
+
     integrateTraction = get_integrate_traction();
     integrateArea = get_integrate_area();
 
@@ -467,10 +468,10 @@ struct Monitor : public FEMethod {
       if (!m_field_ptr->get_comm_rank()) {
         const double *t_ptr;
         CHKERR VecGetArrayRead(CommonData::totalTraction, &t_ptr);
-        MOFEM_LOG_C("CONTACT", Sev::error,
+        MOFEM_LOG_C("CONTACT", Sev::inform,
                     "Contact force: time %6.4e Fx: %6.5e Fy: %6.5e Fz: %6.5e",
                     ts_t, t_ptr[0], t_ptr[1], t_ptr[2]);
-        MOFEM_LOG_C("CONTACT", Sev::error,
+        MOFEM_LOG_C("CONTACT", Sev::inform,
                     "Contact area: time %6.4e Active: %6.5e Potential: %6.5e",
                     ts_t, t_ptr[3], t_ptr[4]);
         CHKERR VecRestoreArrayRead(CommonData::totalTraction, &t_ptr);
@@ -586,8 +587,8 @@ struct Monitor : public FEMethod {
       auto traction_y_ptr = boost::make_shared<VectorDouble>();
       auto contact_range_ptr = boost::make_shared<Range>(contact_range);
 
-       post_proc_norm_fe->getOpPtrVector().push_back(
-           new OpGetTensor0fromFunc(analytical_pressure_ptr, fun));
+      post_proc_norm_fe->getOpPtrVector().push_back(
+          new OpGetTensor0fromFunc(analytical_pressure_ptr, fun));
 
       post_proc_norm_fe->getOpPtrVector().push_back(new OpCalcTractions(
           analytical_traction_ptr, analytical_pressure_ptr, mag_traction_ptr,
@@ -663,7 +664,6 @@ struct Monitor : public FEMethod {
 
     MoFEMFunctionReturn(0);
   }
-
 
   //! [Analytical function]
   MoFEM::ScalarFun analyticalWavy2DPressure = [](double x, double y, double z) {
@@ -812,14 +812,6 @@ struct Monitor : public FEMethod {
     MoFEMFunctionReturn(0);
   }
 
-MoFEMErrorCode getErrorNorm(int normType) {
-  const double *norm;
-  CHKERR VecGetArrayRead(norms_vec, &norm);
-  double norm_val = std::sqrt(norm[normType]);
-  CHKERR VecRestoreArrayRead(norms_vec, &norm);
-  return norm_val;
-}
-
   MoFEMErrorCode getErrorNorm(int normType) {
     const double *norm;
     CHKERR VecGetArrayRead(normsVec, &norm);
@@ -840,10 +832,16 @@ private:
   boost::shared_ptr<PostProcEleBdy> postProcBdyFe;
 
   boost::shared_ptr<BoundaryEle> integrateTraction;
+  boost::shared_ptr<BoundaryEle> integrateArea;
 
-  enum NORMS { TRACTION_NORM_L2 = 0, MAG_TRACTION_NORM_L2, TRACTION_Y_NORM_L2, LAST_NORM };
-  SmartPetscObj<Vec> norms_vec;
-
+  enum NORMS {
+    TRACTION_NORM_L2 = 0,
+    MAG_TRACTION_NORM_L2,
+    TRACTION_Y_NORM_L2,
+    LAST_NORM
+  };
+  // SmartPetscObj<Vec> norms_vec;
+  SmartPetscObj<Vec> normsVec;
   moab::Core mbVertexPostproc;
   moab::Interface &moabVertex;
 

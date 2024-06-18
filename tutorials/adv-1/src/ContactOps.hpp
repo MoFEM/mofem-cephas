@@ -50,7 +50,7 @@ struct CommonData : public boost::enable_shared_from_this<CommonData> {
                         "restore array");
       return t;
     } else {
-      return FTensor::Tensor1<double, 5>{0., 0., 0., 0., 0.}; // conf
+      return FTensor::Tensor1<double, 5>{0., 0., 0., 0., 0.};
     }
   }
 
@@ -373,7 +373,8 @@ hess_surface_distance_function(double delta_t, double t, int nb_gauss_pts,
     m_hess_sdf.resize(6, nb_gauss_pts, false);
     for (size_t gg = 0; gg < nb_gauss_pts; ++gg) {
       for (int idx = 0; idx < 6; ++idx)
-        m_hess_sdf(idx, gg) = *(hess_ptr + (6 * gg + idx));
+        m_hess_sdf(idx, gg) = 
+            *(hess_ptr + (6 * gg + idx));
     }
     return m_hess_sdf;
   }
@@ -675,7 +676,7 @@ OpAssembleTotalContactAreaImpl<DIM, GAUSS, BoundaryEleOp>::doWork(
     auto t_grad = getFTensor2FromMat<DIM, DIM>(commonDataPtr->contactDispGrad);
     auto t_normal_at_pts = BoundaryEleOp::getFTensor1NormalsAtGaussPts();
 
-    // copy code to get ftensors
+
     const auto nb_gauss_pts = BoundaryEleOp::getGaussPts().size2();
     auto m_spatial_coords = get_spatial_coords(
         BoundaryEleOp::getFTensor1CoordsAtGaussPts(),
@@ -702,24 +703,21 @@ OpAssembleTotalContactAreaImpl<DIM, GAUSS, BoundaryEleOp>::doWork(
       }
       auto tn = -t_traction(i) * t_grad_sdf(i);
       auto c = constrain(t_sdf, tn);
-      double alpha = t_w * jacobian; // * BoundaryEleOp::getMeasure();
+      double alpha = t_w * jacobian; // real area
 
       if (false) {
-        alpha *= sqrt(t_normal_at_pts(i) * t_normal_at_pts(i));
+        alpha *= sqrt(t_normal_at_pts(i) * t_normal_at_pts(i)); // Potential area
       } else {
 
         FTensor::Tensor2<double, DIM, DIM> F;
-        // FTensor::Tensor0<double> t_detF;
-
         F(i, J) = t_grad(i, J) + kronecker_delta(i, J);
-
+    
         double det;
         if (DIM == 3) {
           CHKERR determinantTensor3by3(F, det);
         } else {
           det = F(0, 0) * F(1, 1) - F(0, 1) * F(1, 0);
         }
-        // t_detF = det;
 
         FTensor::Tensor2<double, DIM, DIM> invF;
         if (DIM == 3) {
@@ -1403,8 +1401,6 @@ MoFEMErrorCode opFactoryCalculateArea(
 
   auto common_data_ptr = boost::make_shared<ContactOps::CommonData>();
 
-  // // auto u_ptr = boost::make_shared<MatrixDouble>();
-  // auto mGradPtr = boost::make_shared<MatrixDouble>();
   op_loop_side->getOpPtrVector().push_back(
       new OpCalculateVectorFieldGradient<SPACE_DIM, SPACE_DIM>(
           "U", common_data_ptr->contactDispGradPtr()));

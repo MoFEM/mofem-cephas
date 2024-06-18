@@ -844,7 +844,7 @@ MoFEMErrorCode Contact::checkResults() {
     double hertz_force;
     double fem_force;
     double norm = 1e-5;
-    double tol = 5e-3;
+    double tol = 1e-3;
     double tol_norm = 7.5; // change when analytical functions are updated
     switch (atom_test) {
     case 1: // plane stress
