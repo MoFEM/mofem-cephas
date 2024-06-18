@@ -739,7 +739,9 @@ MoFEMErrorCode MedInterface::writeMed(
   moab::Interface &moab = m_field.get_moab();
 
   MoFEMFunctionBeginHot;
-  MOFEM_LOG("MEDWORLD", Sev::warning) << "WRITE_MED IS EXPERIMENTAL, MAY CONTAIN BUGS, ALWAYS CHECK THE OUTPUT FILE";
+  MOFEM_LOG("MEDWORLD", Sev::warning)
+      << "WRITE_MED IS EXPERIMENTAL, MAY CONTAIN BUGS, ALWAYS CHECK THE OUTPUT "
+         "FILE";
   // Open a med file with the specified version
   med_idt fid =
       MEDfileVersionOpen((char *)file.c_str(), MED_ACC_CREAT, MED_MAJOR_NUM,
@@ -766,15 +768,15 @@ MoFEMErrorCode MedInterface::writeMed(
   char mesh_name_char[255];
   std::string mesh_name = "Mesh";
 
-  // Get mesh_name from command line 
+  // Get mesh_name from command line
   CHKERR PetscOptionsBegin(PETSC_COMM_WORLD, "", "MED mesh options", "");
   CHKERR PetscOptionsString("-med_mesh_name", "get med mesh name", "",
-                     mesh_name.c_str(), mesh_name_char, 255, PETSC_NULL);
+                            mesh_name.c_str(), mesh_name_char, 255, PETSC_NULL);
   ierr = PetscOptionsEnd();
   CHKERRG(ierr);
 
   mesh_name = mesh_name_char;
-  
+
   // check if mesh_name is a meshset
   for (auto &m : *meshsets_ptr) {
     if (m->getName() == mesh_name) {
@@ -793,257 +795,258 @@ MoFEMErrorCode MedInterface::writeMed(
   }
 
   // Create a mesh
-    CHKERR MEDmeshCr(fid, mesh_name.c_str(), 3, 3, MED_UNSTRUCTURED_MESH,
-                     "Mesh created", dtUnit, MED_SORT_DTIT, MED_CARTESIAN,
-                     axisName, axisUnit);
+  CHKERR MEDmeshCr(fid, mesh_name.c_str(), 3, 3, MED_UNSTRUCTURED_MESH,
+                   "Mesh created", dtUnit, MED_SORT_DTIT, MED_CARTESIAN,
+                   axisName, axisUnit);
 
-    // Create a map of meshset names to family ids and shared meshsets
-    med_int family_id = 0;
-    std::map<std::vector<std::string>, std::tuple<med_int, std::vector<int>>> shared_meshsets_map;
-    std::map<EntityHandle, med_int> entityHandle_family_map;
+  // Create a map of meshset names to family ids and shared meshsets
+  med_int family_id = 0;
+  std::map<std::vector<std::string>, std::tuple<med_int, std::vector<int>>>
+      shared_meshsets_map;
+  std::map<EntityHandle, med_int> entityHandle_family_map;
 
-    // initialise zero family id
-    shared_meshsets_map[std::vector<string>()] =
-        std::make_tuple(family_id, std::vector<int>());
+  // initialise zero family id
+  shared_meshsets_map[std::vector<string>()] =
+      std::make_tuple(family_id, std::vector<int>());
 
-    // function to get meshset names 
-    auto get_set_name = [&](const CubitMeshSets *iit) {
-      if (iit->getBcTypeULong() & BLOCKSET) {
-        EntityHandle meshset = iit->getMeshset();
+  // function to get meshset names
+  auto get_set_name = [&](const CubitMeshSets *iit) {
+    if (iit->getBcTypeULong() & BLOCKSET) {
+      EntityHandle meshset = iit->getMeshset();
 
-        std::string bc_type_name = iit->getName();
-        if (bc_type_name == "NoNameSet") {
-          bc_type_name = "BLOCKSET_NoNameSet_";
-          bc_type_name += std::to_string(iit->getMeshsetId());
-        }
-        return bc_type_name;
-      } else if (iit->getBcTypeULong() & SIDESET ||
-                 iit->getBcTypeULong() & NODESET) {
-        EntityHandle meshset = iit->getMeshset();
-
-        CubitBCType cubitBcType(iit->getBcTypeULong());
-        auto test = iit->getBcType();
-
-        unsigned jj = 0;
-        std::string bc_type_name;
-        while (1 << jj != LASTSET_BC) {
-          const CubitBCType jj_bc_type = 1 << jj;
-          if ((iit->getBcType() & jj_bc_type).any()) {
-
-            bc_type_name += string(CubitBCNames[jj + 1]);
-            bc_type_name += "_";
-          }
-          ++jj;
-        }
+      std::string bc_type_name = iit->getName();
+      if (bc_type_name == "NoNameSet") {
+        bc_type_name = "BLOCKSET_NoNameSet_";
         bc_type_name += std::to_string(iit->getMeshsetId());
-        return bc_type_name;
+      }
+      return bc_type_name;
+    } else if (iit->getBcTypeULong() & SIDESET ||
+               iit->getBcTypeULong() & NODESET) {
+      EntityHandle meshset = iit->getMeshset();
+
+      CubitBCType cubitBcType(iit->getBcTypeULong());
+      auto test = iit->getBcType();
+
+      unsigned jj = 0;
+      std::string bc_type_name;
+      while (1 << jj != LASTSET_BC) {
+        const CubitBCType jj_bc_type = 1 << jj;
+        if ((iit->getBcType() & jj_bc_type).any()) {
+
+          bc_type_name += string(CubitBCNames[jj + 1]);
+          bc_type_name += "_";
+        }
+        ++jj;
+      }
+      bc_type_name += std::to_string(iit->getMeshsetId());
+      return bc_type_name;
+    }
+  };
+
+  // loop over all entities in the write range
+  // FIXME: This is a very slow implementation
+  //        We should use a binary search tree
+  //        instead of looping each entity in
+  //        write_range_ptr to find shared meshsets
+  for (auto &entity : *write_range_ptr) {
+    // check if entity is shared with other meshsets
+    std::vector<int> shared_meshsets;
+    std::vector<string> shared_names;
+
+    // function to add shared meshsets to vectors
+    auto add_shared_meshset = [&](auto &other_meshset) {
+      std::string other_name = get_set_name(other_meshset);
+      if (std::find(shared_names.begin(), shared_names.end(), other_name) ==
+          shared_names.end()) {
+        shared_meshsets.push_back(other_meshset->getMeshsetId());
+        shared_names.push_back(other_name);
       }
     };
 
-    // loop over all entities in the write range
-    // FIXME: This is a very slow implementation
-    //        We should use a binary search tree
-    //        instead of looping each entity in
-    //        write_range_ptr to find shared meshsets
-    for (auto &entity : *write_range_ptr) {
-      // check if entity is shared with other meshsets
-      std::vector<int> shared_meshsets;
-      std::vector<string> shared_names;
-
-      // function to add shared meshsets to vectors
-      auto add_shared_meshset = [&](auto &other_meshset) {
-        std::string other_name = get_set_name(other_meshset);
-        if (std::find(shared_names.begin(), shared_names.end(), other_name) ==
-            shared_names.end()) {
-          shared_meshsets.push_back(other_meshset->getMeshsetId());
-          shared_names.push_back(other_name);
-        }
-      };
-
-      // loop over all meshsets provided
-      for (auto &other_meshset : *meshsets_ptr) {
-        // skip if meshset is the global meshset given by user
-        if (med_mesh_name_id == other_meshset->getMeshsetId())
-          continue;
-
-        Range other_entities;
-        EntityHandle other_set = other_meshset->getMeshset();
-        CHKERR moab.get_entities_by_handle(other_set, other_entities);
-
-        //   get entity type
-        EntityType ent_type = moab.type_from_handle(entity);
-
-        bool is_in_meshset = moab.contains_entities(other_set, &entity, 1);
-        if (is_in_meshset) {
-          if (ent_type == MBVERTEX) {
-            // add shared meshset id to list
-            // check if higher dimension entity is in meshset i.e not a nodeset
-            bool is_in_higher_dim = false;
-            Range entities_in_higher_dim;
-            for (int i = 1; i < 4; i++) {
-              CHKERR moab.get_entities_by_dimension(other_set, i,
-                                             entities_in_higher_dim);
-              if (!entities_in_higher_dim.empty()) {
-                is_in_higher_dim = true;
-                break;
-              }
-            }
-            if (is_in_higher_dim) {
-              continue;
-            }
-            // check if name is already added to shared_names
-            add_shared_meshset(other_meshset);
-          } else {
-            // add shared meshset id to list
-            add_shared_meshset(other_meshset);
-          }
-        }
-      }
-
-      // check if shared meshset is already in map
-      auto it = shared_meshsets_map.find(shared_names);
-      if (it == shared_meshsets_map.end()) {
-        // create new family id
-        family_id++;
-        // create and insert new tuple into the map
-        it = shared_meshsets_map
-                 .insert({shared_names,
-                          std::make_tuple(family_id, shared_meshsets)})
-                 .first;
-      }
-      // assign family id to entity
-      entityHandle_family_map[entity] = std::get<0>(it->second);
-    }
-
-    // loop to create families based on shared meshsets map
-    for (const auto &it : shared_meshsets_map) {
-      // create family
-      std::string family_name = "F_";
-      const auto &[family_id, shared_meshsets] = it.second;
-      family_name += std::to_string(family_id);
-
-      const auto &shared_meshset_names = it.first;
-      std::string group_name;
-      for (const auto &name : shared_meshset_names) {
-        // get meshset name
-        std::string meshset_name = name;
-        meshset_name.resize(MED_LNAME_SIZE, ' ');
-        group_name += meshset_name;
-      }
-
-      // create family
-      CHKERR MEDfamilyCr(fid, mesh_name.c_str(), family_name.c_str(), family_id,
-                         shared_meshset_names.size(), group_name.c_str());
-
-      MOFEM_LOG("MEDWORLD", Sev::inform)
-          << "Creating family " << family_name << " with id " << family_id
-          << " and " << shared_meshset_names.size() << " groups " << std::endl;
-    }
-
-    // write nodes
-    Range verts;
-    moab.get_entities_by_type(0, MBVERTEX, verts);
-    // Prepare arrays to hold the coordinates
-    std::vector<med_float> coord_med(3 * verts.size());
-    std::vector<med_int> fam;
-    std::vector<med_int> tags;
-
-    // For each vertex, get its coordinates
-    for (Range::iterator it = verts.begin(); it != verts.end(); ++it) {
-      double coords[3];
-      moab.get_coords(&(*it), 1, coords);
-      coord_med[3 * (it - verts.begin())] = coords[0];
-      coord_med[3 * (it - verts.begin()) + 1] = coords[1];
-      coord_med[3 * (it - verts.begin()) + 2] = coords[2];
-      fam.push_back(entityHandle_family_map[*it]);
-      tags.push_back(*it);
-    }
-    // Write the coordinates to the MED file
-    CHKERR MEDmeshNodeWr(fid, mesh_name.c_str(), MED_NO_DT, MED_NO_IT,
-                         MED_UNDEF_DT, MED_FULL_INTERLACE, verts.size(),
-                         &coord_med[0], MED_FALSE, "", MED_TRUE, &tags[0],
-                         MED_TRUE, &fam[0]);
-
-    // loop to write elements to families
-    for (EntityType ent_type = MBVERTEX; ent_type < MBMAXTYPE; ent_type++) {
-      // get all entities of type ent_type
-      Range entities;
-      moab.get_entities_by_type(0, ent_type, entities, true);
-      Range ents_to_write;
-      ents_to_write = intersect(entities, *write_range_ptr);
-
-      if (ents_to_write.empty())
+    // loop over all meshsets provided
+    for (auto &other_meshset : *meshsets_ptr) {
+      // skip if meshset is the global meshset given by user
+      if (med_mesh_name_id == other_meshset->getMeshsetId())
         continue;
 
-      // vectors to write
-      std::vector<med_int> tag_number;
-      std::vector<med_int> family_number;
-      std::vector<med_int> connectivity;
+      Range other_entities;
+      EntityHandle other_set = other_meshset->getMeshset();
+      CHKERR moab.get_entities_by_handle(other_set, other_entities);
 
-      // loop over all entities
-      for (auto &entity : ents_to_write) {
-        if (ent_type != MBVERTEX) {
-          // get family id for entity
-          family_number.push_back(entityHandle_family_map[entity]);
-          // get tag number for entity
-          tag_number.push_back(entity);
-          // get connectivity for entity
-          std::vector<EntityHandle> conn;
-          moab.get_connectivity(&entity, 1, conn);
-          for (auto &c : conn) {
-            connectivity.push_back(c);
+      //   get entity type
+      EntityType ent_type = moab.type_from_handle(entity);
+
+      bool is_in_meshset = moab.contains_entities(other_set, &entity, 1);
+      if (is_in_meshset) {
+        if (ent_type == MBVERTEX) {
+          // add shared meshset id to list
+          // check if higher dimension entity is in meshset i.e not a nodeset
+          bool is_in_higher_dim = false;
+          Range entities_in_higher_dim;
+          for (int i = 1; i < 4; i++) {
+            CHKERR moab.get_entities_by_dimension(other_set, i,
+                                                  entities_in_higher_dim);
+            if (!entities_in_higher_dim.empty()) {
+              is_in_higher_dim = true;
+              break;
+            }
           }
+          if (is_in_higher_dim) {
+            continue;
+          }
+          // check if name is already added to shared_names
+          add_shared_meshset(other_meshset);
         } else {
-          continue;
+          // add shared meshset id to list
+          add_shared_meshset(other_meshset);
         }
       }
-
-      auto get_med_element_type = [](EntityType ent_type) {
-        med_geometrie_element type;
-        switch (ent_type) {
-        case MBHEX:
-          type = MED_HEXA8;
-          break;
-        case MBTET:
-          type = MED_TETRA4;
-          break;
-        case MBQUAD:
-          type = MED_QUAD4;
-          break;
-        case MBTRI:
-          type = MED_TRIA3;
-          break;
-        case MBEDGE:
-          type = MED_SEG2;
-          break;
-        case MBPRISM:
-          type = MED_PENTA6;
-          break;
-        default:
-          type = MED_POINT1;
-          break;
-        }
-        return type;
-      };
-
-      med_geometrie_element med_type = get_med_element_type(ent_type);
-      if (ent_type == MBENTITYSET) {
-        continue;
-      }
-      CHKERR MEDmeshElementWr(fid, mesh_name.c_str(), MED_NO_DT, MED_NO_IT, 0.,
-                              MED_CELL, med_type, MED_NODAL, MED_FULL_INTERLACE,
-                              family_number.size(), &connectivity[0], MED_FALSE,
-                              nullptr, MED_TRUE, &tag_number[0], MED_TRUE,
-                              &family_number[0]);
-
-      MOFEM_LOG_C("MEDWORLD", Sev::inform,
-                  "Writing %i elements of type %i (%s) ", family_number.size(),
-                  med_type, moab::CN::EntityTypeName(ent_type));
     }
 
-    // Close the MED file
-    CHKERR MEDfermer(fid);
-    MoFEMFunctionReturnHot(0);
+    // check if shared meshset is already in map
+    auto it = shared_meshsets_map.find(shared_names);
+    if (it == shared_meshsets_map.end()) {
+      // create new family id
+      family_id++;
+      // create and insert new tuple into the map
+      it = shared_meshsets_map
+               .insert(
+                   {shared_names, std::make_tuple(family_id, shared_meshsets)})
+               .first;
+    }
+    // assign family id to entity
+    entityHandle_family_map[entity] = std::get<0>(it->second);
+  }
+
+  // loop to create families based on shared meshsets map
+  for (const auto &it : shared_meshsets_map) {
+    // create family
+    std::string family_name = "F_";
+    const auto &[family_id, shared_meshsets] = it.second;
+    family_name += std::to_string(family_id);
+
+    const auto &shared_meshset_names = it.first;
+    std::string group_name;
+    for (const auto &name : shared_meshset_names) {
+      // get meshset name
+      std::string meshset_name = name;
+      meshset_name.resize(MED_LNAME_SIZE, ' ');
+      group_name += meshset_name;
+    }
+
+    // create family
+    CHKERR MEDfamilyCr(fid, mesh_name.c_str(), family_name.c_str(), family_id,
+                       shared_meshset_names.size(), group_name.c_str());
+
+    MOFEM_LOG("MEDWORLD", Sev::inform)
+        << "Creating family " << family_name << " with id " << family_id
+        << " and " << shared_meshset_names.size() << " groups " << std::endl;
+  }
+
+  // write nodes
+  Range verts;
+  moab.get_entities_by_type(0, MBVERTEX, verts);
+  // Prepare arrays to hold the coordinates
+  std::vector<med_float> coord_med(3 * verts.size());
+  std::vector<med_int> fam;
+  std::vector<med_int> tags;
+
+  // For each vertex, get its coordinates
+  for (Range::iterator it = verts.begin(); it != verts.end(); ++it) {
+    double coords[3];
+    moab.get_coords(&(*it), 1, coords);
+    coord_med[3 * (it - verts.begin())] = coords[0];
+    coord_med[3 * (it - verts.begin()) + 1] = coords[1];
+    coord_med[3 * (it - verts.begin()) + 2] = coords[2];
+    fam.push_back(entityHandle_family_map[*it]);
+    tags.push_back(*it);
+  }
+  // Write the coordinates to the MED file
+  CHKERR MEDmeshNodeWr(fid, mesh_name.c_str(), MED_NO_DT, MED_NO_IT,
+                       MED_UNDEF_DT, MED_FULL_INTERLACE, verts.size(),
+                       &coord_med[0], MED_FALSE, "", MED_TRUE, &tags[0],
+                       MED_TRUE, &fam[0]);
+
+  // loop to write elements to families
+  for (EntityType ent_type = MBVERTEX; ent_type < MBMAXTYPE; ent_type++) {
+    // get all entities of type ent_type
+    Range entities;
+    moab.get_entities_by_type(0, ent_type, entities, true);
+    Range ents_to_write;
+    ents_to_write = intersect(entities, *write_range_ptr);
+
+    if (ents_to_write.empty())
+      continue;
+
+    // vectors to write
+    std::vector<med_int> tag_number;
+    std::vector<med_int> family_number;
+    std::vector<med_int> connectivity;
+
+    // loop over all entities
+    for (auto &entity : ents_to_write) {
+      if (ent_type != MBVERTEX) {
+        // get family id for entity
+        family_number.push_back(entityHandle_family_map[entity]);
+        // get tag number for entity
+        tag_number.push_back(entity);
+        // get connectivity for entity
+        std::vector<EntityHandle> conn;
+        moab.get_connectivity(&entity, 1, conn);
+        for (auto &c : conn) {
+          connectivity.push_back(c);
+        }
+      } else {
+        continue;
+      }
+    }
+
+    auto get_med_element_type = [](EntityType ent_type) {
+      med_geometrie_element type;
+      switch (ent_type) {
+      case MBHEX:
+        type = MED_HEXA8;
+        break;
+      case MBTET:
+        type = MED_TETRA4;
+        break;
+      case MBQUAD:
+        type = MED_QUAD4;
+        break;
+      case MBTRI:
+        type = MED_TRIA3;
+        break;
+      case MBEDGE:
+        type = MED_SEG2;
+        break;
+      case MBPRISM:
+        type = MED_PENTA6;
+        break;
+      default:
+        type = MED_POINT1;
+        break;
+      }
+      return type;
+    };
+
+    med_geometrie_element med_type = get_med_element_type(ent_type);
+    if (ent_type == MBENTITYSET) {
+      continue;
+    }
+    CHKERR MEDmeshElementWr(fid, mesh_name.c_str(), MED_NO_DT, MED_NO_IT, 0.,
+                            MED_CELL, med_type, MED_NODAL, MED_FULL_INTERLACE,
+                            family_number.size(), &connectivity[0], MED_FALSE,
+                            nullptr, MED_TRUE, &tag_number[0], MED_TRUE,
+                            &family_number[0]);
+
+    MOFEM_LOG_C("MEDWORLD", Sev::inform, "Writing %i elements of type %i (%s) ",
+                family_number.size(), med_type,
+                moab::CN::EntityTypeName(ent_type));
+  }
+
+  // Close the MED file
+  CHKERR MEDfermer(fid);
+  MoFEMFunctionReturnHot(0);
 }
 
 MoFEMErrorCode MedInterface::readFields(const std::string &file_name,
