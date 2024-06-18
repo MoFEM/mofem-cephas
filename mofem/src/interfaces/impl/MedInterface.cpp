@@ -739,7 +739,7 @@ MoFEMErrorCode MedInterface::writeMed(
   moab::Interface &moab = m_field.get_moab();
 
   MoFEMFunctionBeginHot;
-  MOFEM_LOG("MEDWORLD", Sev::warning) << "WRITE_MED IS EXPERIMENTAL";
+  MOFEM_LOG("MEDWORLD", Sev::warning) << "WRITE_MED IS EXPERIMENTAL, MAY CONTAIN BUGS, ALWAYS CHECK THE OUTPUT FILE";
   // Open a med file with the specified version
   med_idt fid =
       MEDfileVersionOpen((char *)file.c_str(), MED_ACC_CREAT, MED_MAJOR_NUM,
@@ -811,12 +811,12 @@ MoFEMErrorCode MedInterface::writeMed(
       if (iit->getBcTypeULong() & BLOCKSET) {
         EntityHandle meshset = iit->getMeshset();
 
-        std::string name = iit->getName();
-        if (name == "NoNameSet") {
-          name = "BLOCKSET_NoNameSet_";
-          name += std::to_string(iit->getMeshsetId());
+        std::string bc_type_name = iit->getName();
+        if (bc_type_name == "NoNameSet") {
+          bc_type_name = "BLOCKSET_NoNameSet_";
+          bc_type_name += std::to_string(iit->getMeshsetId());
         }
-        return name;
+        return bc_type_name;
       } else if (iit->getBcTypeULong() & SIDESET ||
                  iit->getBcTypeULong() & NODESET) {
         EntityHandle meshset = iit->getMeshset();
@@ -824,10 +824,8 @@ MoFEMErrorCode MedInterface::writeMed(
         CubitBCType cubitBcType(iit->getBcTypeULong());
         auto test = iit->getBcType();
 
-        // std::cout << iit->getBcTypeULong() << std::endl;
-
         unsigned jj = 0;
-        string bc_type_name;
+        std::string bc_type_name;
         while (1 << jj != LASTSET_BC) {
           const CubitBCType jj_bc_type = 1 << jj;
           if ((iit->getBcType() & jj_bc_type).any()) {
@@ -843,18 +841,34 @@ MoFEMErrorCode MedInterface::writeMed(
     };
 
     // loop over all entities in the write range
+    // FIXME: This is a very slow implementation
+    //        We should use a binary search tree
+    //        instead of looping each entity in
+    //        write_range_ptr to find shared meshsets
     for (auto &entity : *write_range_ptr) {
       // check if entity is shared with other meshsets
       std::vector<int> shared_meshsets;
       std::vector<string> shared_names;
 
+      // function to add shared meshsets to vectors
+      auto add_shared_meshset = [&](auto &other_meshset) {
+        std::string other_name = get_set_name(other_meshset);
+        if (std::find(shared_names.begin(), shared_names.end(), other_name) ==
+            shared_names.end()) {
+          shared_meshsets.push_back(other_meshset->getMeshsetId());
+          shared_names.push_back(other_name);
+        }
+      };
+
+      // loop over all meshsets provided
       for (auto &other_meshset : *meshsets_ptr) {
+        // skip if meshset is the global meshset given by user
         if (med_mesh_name_id == other_meshset->getMeshsetId())
           continue;
 
         Range other_entities;
         EntityHandle other_set = other_meshset->getMeshset();
-        moab.get_entities_by_handle(other_set, other_entities);
+        CHKERR moab.get_entities_by_handle(other_set, other_entities);
 
         //   get entity type
         EntityType ent_type = moab.type_from_handle(entity);
@@ -867,7 +881,7 @@ MoFEMErrorCode MedInterface::writeMed(
             bool is_in_higher_dim = false;
             Range entities_in_higher_dim;
             for (int i = 1; i < 4; i++) {
-              moab.get_entities_by_dimension(other_set, i,
+              CHKERR moab.get_entities_by_dimension(other_set, i,
                                              entities_in_higher_dim);
               if (!entities_in_higher_dim.empty()) {
                 is_in_higher_dim = true;
@@ -878,58 +892,52 @@ MoFEMErrorCode MedInterface::writeMed(
               continue;
             }
             // check if name is already added to shared_names
-            if (std::find(shared_names.begin(), shared_names.end(),
-                          get_set_name(other_meshset)) == shared_names.end()) {
-              shared_meshsets.push_back(other_meshset->getMeshsetId());
-              shared_names.push_back(get_set_name(other_meshset));
-            }
+            add_shared_meshset(other_meshset);
           } else {
             // add shared meshset id to list
-            if (std::find(shared_names.begin(), shared_names.end(),
-                          get_set_name(other_meshset)) == shared_names.end()) {
-              shared_meshsets.push_back(other_meshset->getMeshsetId());
-              shared_names.push_back(get_set_name(other_meshset));
-            }
+            add_shared_meshset(other_meshset);
           }
         }
       }
+
       // check if shared meshset is already in map
-      if (shared_meshsets_map.find(shared_names) != shared_meshsets_map.end()) {
-        // assign family id to entity
-      } else {
+      auto it = shared_meshsets_map.find(shared_names);
+      if (it == shared_meshsets_map.end()) {
         // create new family id
         family_id++;
-        std::tuple<med_int, std::vector<int>> family_tuple;
-        family_tuple = std::make_tuple(family_id, shared_meshsets);
-        shared_meshsets_map[shared_names] = family_tuple;
+        // create and insert new tuple into the map
+        it = shared_meshsets_map
+                 .insert({shared_names,
+                          std::make_tuple(family_id, shared_meshsets)})
+                 .first;
       }
       // assign family id to entity
-      entityHandle_family_map[entity] =
-          std::get<0>(shared_meshsets_map[shared_names]);
+      entityHandle_family_map[entity] = std::get<0>(it->second);
     }
 
     // loop to create families based on shared meshsets map
-    for (auto &it : shared_meshsets_map) {
+    for (const auto &it : shared_meshsets_map) {
       // create family
       std::string family_name = "F_";
-      std::tuple<med_int, std::vector<int>> family_tuple = it.second;
-      family_name += std::to_string(std::get<0>(family_tuple));
-      std::vector<std::string> shared_meshset_names = it.first;
+      const auto &[family_id, shared_meshsets] = it.second;
+      family_name += std::to_string(family_id);
+
+      const auto &shared_meshset_names = it.first;
       std::string group_name;
-      for (auto &name : shared_meshset_names) {
+      for (const auto &name : shared_meshset_names) {
         // get meshset name
         std::string meshset_name = name;
         meshset_name.resize(MED_LNAME_SIZE, ' ');
         group_name += meshset_name;
       }
+
       // create family
-      CHKERR MEDfamilyCr(fid, mesh_name.c_str(), family_name.c_str(),
-                         std::get<0>(family_tuple), shared_meshset_names.size(),
-                         group_name.c_str());
+      CHKERR MEDfamilyCr(fid, mesh_name.c_str(), family_name.c_str(), family_id,
+                         shared_meshset_names.size(), group_name.c_str());
+
       MOFEM_LOG("MEDWORLD", Sev::inform)
-          << "Creating family " << family_name << " with id "
-          << std::get<0>(family_tuple) << " and " << shared_meshset_names.size()
-          << " groups with name " << group_name << std::endl;
+          << "Creating family " << family_name << " with id " << family_id
+          << " and " << shared_meshset_names.size() << " groups " << std::endl;
     }
 
     // write nodes
