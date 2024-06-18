@@ -248,41 +248,6 @@ moab2med_element_type(const EntityType type) {
   return types;
 }
 
-// static EntityType
-// med2moab_element_type(std::vector<med_geometrie_element> med_type) {
-
-//   EntityType type;
-
-//   switch (med_type) {
-//   case MED_SEG2 || MED_SEG3:
-//     type = MBEDGE;
-//     break;
-//   case MED_TRIA3 || MED_TRIA6:
-//     type = MBTRI;
-//     break;
-//   case MED_QUAD4:
-//     type = MBQUAD;
-//     break;
-//   case MED_TETRA4 || MED_TETRA10:
-//     type = MBTET;
-//     break;
-//   case MED_HEXA8:
-//     type = MBHEX;
-//     break;
-//   case MED_PENTA6: 
-//     type = MBPRISM;
-//     break;
-//   case MED_PYRA5:
-//     type = MBPYRAMID;
-//     break;
-//   case MED_POINT1:
-//     type = MBVERTEX;
-//   default:
-//     break;
-//   }
-//   return type;
-// }
-
 MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
                                       std::map<int, Range> &family_elem_map,
                                       int verb) {
