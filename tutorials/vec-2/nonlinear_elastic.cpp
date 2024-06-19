@@ -46,7 +46,8 @@ template <> struct PostProcEleByDim<3> {
 
 using SideEle = PostProcEleByDim<SPACE_DIM>::SideEle;
 using PostProcEleBdy = PostProcEleByDim<SPACE_DIM>::PostProcEleBdy;
-using PostProcEdges = PostProcBrokenMeshInMoabBase<EdgeElementForcesAndSourcesCore>;
+using PostProcEdges =
+    PostProcBrokenMeshInMoabBase<EdgeElementForcesAndSourcesCore>;
 
 constexpr double young_modulus = 100;
 constexpr double poisson_ratio = 0.3;
@@ -93,11 +94,14 @@ MoFEMErrorCode Example::readMesh() {
   MoFEMFunctionBegin;
   auto simple = mField.getInterface<Simple>();
   CHKERR simple->getOptions();
-  char meshFileName[255];
-  CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-file_name",
-                               meshFileName, 255, PETSC_NULL);
-  CHKERR simple->loadFile("", meshFileName,
-                          EssentialPreProc<MPCsType>::loadFileWithMPCs);
+  CHKERR simple->getOptions();
+  CHKERR simple->loadFile();
+
+  // char meshFileName[255];
+  // CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-file_name",
+  //                              meshFileName, 255, PETSC_NULL);
+  // CHKERR simple->loadFile("", meshFileName,
+  //                         EssentialPreProc<MPCsType>::loadFileWithMPCs);
   MoFEMFunctionReturn(0);
 }
 //! [Read mesh]
