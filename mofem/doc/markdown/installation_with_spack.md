@@ -378,7 +378,7 @@ Buckethead you will find
 Load cluster modules:
 ~~~~~
 module load gcc/9.3.0
-module load mpi/openmpi/4.1.1/gcc-9.3.0
+module load mpi/openmpi/3.1.6/gcc-9.3.0
 module load gridengine
 ~~~~~
 
@@ -441,23 +441,23 @@ Open the file `$HOME/.spack/packages.yaml` and ensure that it has information on
 packages:
   openmpi:
     externals:
-    - spec: openmpi@4.1.1%gcc@=9.3.0~cuda~cxx~cxx_exceptions~java~memchecker+pmi~static~wrapper-rpath
+    - spec: openmpi@3.1.6%gcc@=9.3.0~cuda~cxx~cxx_exceptions~java~memchecker+pmi~static~wrapper-rpath
         schedulers=slurm
-      prefix: /software/mpi/openmpi/4.1.1/gcc-9.3.0
+      prefix: /software/mpi/openmpi/3.1.6/gcc-9.3.0
 ~~~~~      
 
 #### Installing dependencies 
 
 At this point, we can follow the standard installation procedure (with a few adjustments). To install dependencies run the following:
 ~~~~~
-spack install -j8 --only dependencies mofem-cephas%gcc@9.3.0 ^petsc+X ^openmpi@4.1.1%gcc@9.3.0 ^slepc~arpack ^boost+python+numpy
+spack install -j8 --only dependencies mofem-cephas%gcc@9.3.0 ^petsc+X ^openmpi@3.1.6%gcc@9.3.0 ^slepc~arpack ^boost+python+numpy
 ~~~~~
 
 Once completed, check the installed packages by running 
 ~~~~~
 spack find -p
 ~~~~~
-Note that the path for the `openmpi` library should differ from all other packages: `/software/mpi/openmpi/4.1.1/gcc-9.3.0`
+Note that the path for the `openmpi` library should differ from all other packages: `/software/mpi/openmpi/3.1.6/gcc-9.3.0`
 
 #### User installation
 
@@ -496,7 +496,7 @@ spack dev-build -j8 \
   --source-path $HOME/mofem_install/mofem-cephas \
   --keep-prefix \
   --test root \
-  mofem-cephas@develop~copy_user_modules build_type=RelWithDebInfo ^petsc+X ^openmpi@4.1.1%gcc@9.3.0 ^slepc~arpack ^boost+python+numpy
+  mofem-cephas@develop~copy_user_modules build_type=RelWithDebInfo ^petsc+X ^openmpi@3.1.6%gcc@9.3.0 ^slepc~arpack ^boost+python+numpy
 ~~~~~
 
 If installation is successful, by executing
@@ -520,7 +520,7 @@ export hash=$(spack find -v mofem-cephas@develop | grep mofem-cephas@develop)
 spack dev-build -j8 \
   --source-path $HOME/mofem_install/mofem-cephas/mofem/users_modules \
   mofem-users-modules@develop build_type=RelWithDebInfo \
-  ^$hash ^petsc+X ^openmpi@4.1.1%gcc@9.3.0 ^slepc~arpack ^boost+python+numpy
+  ^$hash ^petsc+X ^openmpi@3.1.6%gcc@9.3.0 ^slepc~arpack ^boost+python+numpy
 ~~~~~
 
 Once installation is successfully, you will find a new directory, e.g. 
@@ -569,7 +569,7 @@ cat $PE_HOSTFILE
 
 # Load compiler
 module load gcc/9.3.0
-module load mpi/openmpi/4.1.1/gcc-9.3.0
+module load mpi/openmpi/3.1.6/gcc-9.3.0
 
 # List of commands which do the actual work
 cd $HOME/um_view/elasticity
