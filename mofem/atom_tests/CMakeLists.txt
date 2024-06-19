@@ -1674,7 +1674,9 @@ add_test(schur_test_hdiv_contact
   -file_name wavy_2d_quad.cub
   -log_sl inform 
   -ksp_type fgmres 
-  -ksp_monitor -order 2
+  -ksp_monitor 
+  -order 1
+  -sigma_order 1
   -ksp_atol 1e-16 
   -ksp_rtol 1e-16 
   -ksp_gmres_modifiedgram schmidt  
