@@ -848,7 +848,6 @@ MoFEMErrorCode Contact::checkResults() {
     case 1: // plane stress
       hertz_force = 3.927;
       fem_force = t_ptr[1];
-      fem_area = t_ptr[4];
       break;
     case 2: // plane strain
       hertz_force = 4.675;
@@ -858,7 +857,6 @@ MoFEMErrorCode Contact::checkResults() {
     case 3: // 3D
       hertz_force = 3.968;
       fem_force = t_ptr[2];
-      fem_area = t_ptr[4];
     case 4: // axisymmetric
       tol = 5e3;
     case 5: // axisymmetric
