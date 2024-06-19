@@ -843,6 +843,8 @@ MoFEMErrorCode Contact::checkResults() {
     double norm = 1e-5;
     double tol = 1e-3;
     double tol_norm = 7.5; // change when analytical functions are updated
+    double potential_area;
+    double fem_active_area;
     switch (atom_test) {
     case 1: // plane stress
       hertz_force = 3.927;
@@ -866,6 +868,8 @@ MoFEMErrorCode Contact::checkResults() {
     case 6: // wavy 2d
       hertz_force = 0.374;
       fem_force = t_ptr[1];
+      fem_active_area = t_ptr[3];
+      potential_area = t_ptr[4];
       break;
     case 7: // wavy 3d
       hertz_force = 0.5289;
@@ -884,6 +888,11 @@ MoFEMErrorCode Contact::checkResults() {
       SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                "atom test %d diverged! %3.4e > %3.4e", atom_test, norm,
                tol_norm);
+    }
+    if (fem_active_area - potential_area > 1e-8) {
+      SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+               "atom test %d failed! %3.16e > %3.16e", atom_test, fem_active_area,
+               potential_area);
     }
     CHKERR VecRestoreArrayRead(ContactOps::CommonData::totalTraction, &t_ptr);
   }

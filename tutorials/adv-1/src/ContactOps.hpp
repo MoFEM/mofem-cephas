@@ -667,7 +667,7 @@ OpAssembleTotalContactAreaImpl<DIM, GAUSS, BoundaryEleOp>::doWork(
   const auto fe_ent = BoundaryEleOp::getFEEntityHandle();
   if (contactRange->find(fe_ent) != contactRange->end()) {
     FTensor::Index<'i', DIM> i;
-    FTensor::Index<'J', DIM> J;
+    FTensor::Index<'j', DIM> j;
     FTensor::Tensor1<double, 2> t_sum_a{0., 0.};
 
     auto t_w = BoundaryEleOp::getFTensor0IntegrationWeight();
@@ -704,34 +704,21 @@ OpAssembleTotalContactAreaImpl<DIM, GAUSS, BoundaryEleOp>::doWork(
       }
       auto tn = -t_traction(i) * t_grad_sdf(i);
       auto c = constrain(t_sdf, tn);
-      double alpha = t_w * jacobian; // real area
+      double alpha = t_w * jacobian;
 
       if (false) {
-        alpha *= sqrt(t_normal_at_pts(i) * t_normal_at_pts(i)); // Potential area
+        alpha *= sqrt(t_normal_at_pts(i) * t_normal_at_pts(i));
       } else {
 
         FTensor::Tensor2<double, DIM, DIM> F;
-        F(i, J) = t_grad(i, J) + kronecker_delta(i, J);
-    
-        double det;
-        if (DIM == 3) {
-          CHKERR determinantTensor3by3(F, det);
-        } else {
-          det = F(0, 0) * F(1, 1) - F(0, 1) * F(1, 0);
-        }
-
         FTensor::Tensor2<double, DIM, DIM> invF;
-        if (DIM == 3) {
-          CHKERR invertTensor3by3(F, det, invF);
-        } else {
-          invF(0, 0) = F(1, 1) / det;
-          invF(0, 1) = -F(0, 1) / det;
-          invF(1, 0) = -F(1, 0) / det;
-          invF(1, 1) = F(0, 0) / det;
-        }
         FTensor::Tensor1<double, DIM> t_normal_current;
-        t_normal_current(i) = det * (invF(J, i) * t_normal_at_pts(J));
 
+        F(i, j) = t_grad(i, j) + kronecker_delta(i, j);
+        auto det = determinantTensor(F);
+        CHKERR invertTensor(F, det, invF);
+        t_normal_current(i) = det * (invF(j, i) * t_normal_at_pts(j));
+        
         alpha *= sqrt(t_normal_current(i) * t_normal_current(i));
       }
 
