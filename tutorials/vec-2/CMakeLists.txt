@@ -65,12 +65,12 @@ add_test(
   -order 2 -ts_max_time 1.0 -ts_dt 0.05 
   -log_no_color -test 4 -pc_type lu)
 
-  # add_test(
-  #   test_nelastic_mpc_3_part
-  #   ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 3
-  #   ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elastic_2d -ts_max_steps 25
-  #   -file_name ${CMAKE_CURRENT_SOURCE_DIR}/meshes/LShape_Rot_MPC_link_3_part.h5m -order 2 -ts_max_time 1.0 -ts_dt 0.05 
-  #   -log_no_color -test 4 -pc_type lu)
+  add_test(
+    test_nelastic_mpc_3_part
+    ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 3
+    ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elastic_2d -ts_max_steps 25
+    -file_name ${CMAKE_CURRENT_SOURCE_DIR}/meshes/LShape_Rot_MPC_link_3_part.h5m -order 2 -ts_max_time 1.0 -ts_dt 0.05 
+    -log_no_color -test 4 -pc_type lu)
   
   add_test(
   test_nelastic_mpc_master

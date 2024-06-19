@@ -94,14 +94,11 @@ MoFEMErrorCode Example::readMesh() {
   MoFEMFunctionBegin;
   auto simple = mField.getInterface<Simple>();
   CHKERR simple->getOptions();
-  CHKERR simple->getOptions();
-  CHKERR simple->loadFile();
-
-  // char meshFileName[255];
-  // CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-file_name",
-  //                              meshFileName, 255, PETSC_NULL);
-  // CHKERR simple->loadFile("", meshFileName,
-  //                         EssentialPreProc<MPCsType>::loadFileWithMPCs);
+  char meshFileName[255];
+  CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-file_name",
+                               meshFileName, 255, PETSC_NULL);
+  CHKERR simple->loadFile("", meshFileName,
+                          EssentialPreProc<MPCsType>::loadFileWithMPCs);
   MoFEMFunctionReturn(0);
 }
 //! [Read mesh]
