@@ -319,7 +319,7 @@ if(IS_MFRONT_MOD)
     )
 
     add_test(
-      wavy_mfront_plane_2d
+      wavy_mfront_half_space_2d
       ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
       contact_2d
       -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/half_space_2d_4p.h5m
@@ -335,6 +335,7 @@ if(IS_MFRONT_MOD)
       -mi_param_10_1 0.4
       -atom_test 6
     )
+    
     add_test(
       hertz_mfront_3d_schur
       ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4

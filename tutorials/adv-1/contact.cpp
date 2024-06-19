@@ -282,14 +282,9 @@ MoFEMErrorCode Contact::setupProblem() {
 
   if (contact_order > order) {
     Range ho_ents;
-    CHKERR mField.get_moab().get_adjacencies(boundary_ents, SPACE_DIM, false,
-                                             ho_ents, moab::Interface::UNION);
-    Range low_dim_ents;
-    for (int dim = 1; dim < SPACE_DIM; dim++) {
-      CHKERR mField.get_moab().get_adjacencies(
-          ho_ents, dim, false, low_dim_ents, moab::Interface::UNION);
-    }
-    ho_ents.merge(low_dim_ents);
+
+    CHKERR mField.get_moab().get_adjacencies(boundary_ents, 1, false, ho_ents,
+                                             moab::Interface::UNION);
 
     CHKERR mField.getInterface<CommInterface>()->synchroniseEntities(ho_ents);
     CHKERR simple->setFieldOrder("U", contact_order, &ho_ents);
@@ -853,6 +848,7 @@ MoFEMErrorCode Contact::checkResults() {
     case 1: // plane stress
       hertz_force = 3.927;
       fem_force = t_ptr[1];
+      fem_area = t_ptr[4];
       break;
     case 2: // plane strain
       hertz_force = 4.675;
@@ -862,6 +858,7 @@ MoFEMErrorCode Contact::checkResults() {
     case 3: // 3D
       hertz_force = 3.968;
       fem_force = t_ptr[2];
+      fem_area = t_ptr[4];
     case 4: // axisymmetric
       tol = 5e3;
     case 5: // axisymmetric
