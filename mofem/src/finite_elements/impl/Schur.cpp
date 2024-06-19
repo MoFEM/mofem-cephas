@@ -1486,6 +1486,8 @@ SchurShellMatData createBlockMat(DM dm,
   return std::make_pair(SmartPetscObj<Mat>(mat_raw), data);
 }
 
+constexpr int max_gemv_size = 2;
+
 static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
                                              InsertMode iora) {
   MoFEMFunctionBegin;
@@ -1527,9 +1529,15 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
     auto x_ptr = &x_array[it->getLocCol()];
     auto y_ptr = &y_array[it->getLocRow()];
     auto ptr = &block_ptr[it->getMatShift()];
-    for (auto r = 0; r != nb_rows; ++r) {
-      for (auto c = 0; c != nb_cols; ++c) {
-        y_ptr[r] += ptr[r * nb_cols + c] * x_ptr[c];
+
+    if (std::min(nb_rows, nb_cols) > max_gemv_size) {
+      cblas_dgemv(CblasRowMajor, CblasNoTrans, nb_rows, nb_cols, 1.0, ptr,
+                  nb_cols, x_ptr, 1, 1.0, y_ptr, 1);
+    } else {
+      for (auto r = 0; r != nb_rows; ++r) {
+        for (auto c = 0; c != nb_cols; ++c) {
+          y_ptr[r] += ptr[r * nb_cols + c] * x_ptr[c];
+        }
       }
     }
     ++it;
@@ -1553,9 +1561,14 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
         auto x_ptr = &x_array[it->getLocCol()];
         auto y_ptr = &y_array[it->getLocRow()];
         auto ptr = &preconditioner_ptr[it->getInvShift()];
-        for (auto r = 0; r != nb_rows; ++r) {
-          for (auto c = 0; c != nb_cols; ++c) {
-            y_ptr[r] += ptr[r * nb_cols + c] * x_ptr[c];
+        if (std::min(nb_rows, nb_cols) > max_gemv_size) {
+          cblas_dgemv(CblasRowMajor, CblasNoTrans, nb_rows, nb_cols, 1.0, ptr,
+                      nb_cols, x_ptr, 1, 1.0, y_ptr, 1);
+        } else {
+          for (auto r = 0; r != nb_rows; ++r) {
+            for (auto c = 0; c != nb_cols; ++c) {
+              y_ptr[r] += ptr[r * nb_cols + c] * x_ptr[c];
+            }
           }
         }
       }
@@ -1689,10 +1702,16 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "off_shift == -1");
 #endif // NDEBUG
       auto ptr = &inv_block_ptr[off_shift];
-      for (auto r = 0; r != nb_rows; ++r) {
-        for (auto c = 0; c != off_nb_cols; ++c) {
-          y_add_array[row + r] -=
-              ptr[r * off_nb_cols + c] * y_inv_array[off_col + c];
+      if (std::min(nb_rows, off_nb_cols) > max_gemv_size) {
+        cblas_dgemv(CblasRowMajor, CblasNoTrans, nb_rows, off_nb_cols, -1.0,
+                    ptr, off_nb_cols, &y_inv_array[off_col], 1, 1.0,
+                    &y_add_array[row], 1);
+      } else {
+        for (auto r = 0; r != nb_rows; ++r) {
+          for (auto c = 0; c != off_nb_cols; ++c) {
+            y_add_array[row + r] -=
+                ptr[r * off_nb_cols + c] * y_inv_array[off_col + c];
+          }
         }
       }
     }
@@ -1707,9 +1726,14 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
 #endif // NDEBUG
 
     auto ptr = &inv_block_ptr[inv_shift];
-    for (auto r = 0; r != nb_rows; ++r) {
-      for (auto c = 0; c != nb_cols; ++c) {
-        y_inv_array[row + r] -= ptr[r * nb_cols + c] * y_add_array[col + c];
+    if (std::min(nb_rows, nb_cols) > max_gemv_size) {
+      cblas_dgemv(CblasRowMajor, CblasNoTrans, nb_rows, nb_cols, -1.0, ptr,
+                  nb_cols, &y_add_array[col], 1, 1.0, &y_inv_array[row], 1);
+    } else {
+      for (auto r = 0; r != nb_rows; ++r) {
+        for (auto c = 0; c != nb_cols; ++c) {
+          y_inv_array[row + r] -= ptr[r * nb_cols + c] * y_add_array[col + c];
+        }
       }
     }
   }
@@ -1744,9 +1768,14 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
 #endif // NDEBUG
       auto x_ptr = &x_array[off_col];
       auto ptr = &inv_block_ptr[off_shift];
-      for (auto r = 0; r != nb_rows; ++r) {
-        for (auto c = 0; c != off_nb_cols; ++c) {
-          f[r] -= ptr[r * off_nb_cols + c] * x_ptr[c];
+      if (std::min(nb_rows, nb_cols) > max_gemv_size) {
+        cblas_dgemv(CblasRowMajor, CblasNoTrans, nb_rows, off_nb_cols, -1.0, ptr,
+                    off_nb_cols, x_ptr, 1, 1.0, &f[0], 1);
+      } else {
+        for (auto r = 0; r != nb_rows; ++r) {
+          for (auto c = 0; c != off_nb_cols; ++c) {
+            f[r] -= ptr[r * off_nb_cols + c] * x_ptr[c];
+          }
         }
       }
     }
@@ -1761,9 +1790,14 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
 #endif // NDEBUG
 
     auto ptr = &inv_block_ptr[inv_shift];
-    for (auto r = 0; r != nb_rows; ++r) {
-      for (auto c = 0; c != nb_cols; ++c) {
-        x_array[row + r] -= ptr[r * nb_cols + c] * f[c];
+    if (std::min(nb_rows, nb_cols) > max_gemv_size) {
+      cblas_dgemv(CblasRowMajor, CblasNoTrans, nb_rows, nb_cols, -1.0, ptr,
+                  nb_cols, &f[0], 1, 1.0, &x_array[row], 1);
+    } else {
+      for (auto r = 0; r != nb_rows; ++r) {
+        for (auto c = 0; c != nb_cols; ++c) {
+          x_array[row + r] -= ptr[r * nb_cols + c] * f[c];
+        }
       }
     }
   }
