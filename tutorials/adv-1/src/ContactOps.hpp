@@ -686,7 +686,7 @@ OpAssembleTotalContactAreaImpl<DIM, GAUSS, BoundaryEleOp>::doWork(
         BoundaryEleOp::getFTensor1NormalsAtGaussPts(), nb_gauss_pts);
 
     auto t_normal = getFTensor1FromMat<3>(m_normals_at_pts);
-    auto ts_time = BoundaryEleOp::getTStime(); // beleop
+    auto ts_time = BoundaryEleOp::getTStime(); 
     auto ts_time_step = BoundaryEleOp::getTStimeStep();
     int block_id = 0;
     auto v_sdf =
@@ -705,11 +705,9 @@ OpAssembleTotalContactAreaImpl<DIM, GAUSS, BoundaryEleOp>::doWork(
       auto tn = -t_traction(i) * t_grad_sdf(i);
       auto c = constrain(t_sdf, tn);
       double alpha = t_w * jacobian;
-
-      if (false) {
-        alpha *= sqrt(t_normal_at_pts(i) * t_normal_at_pts(i));
-      } else {
-
+      // if (false) {
+      //   alpha *= sqrt(t_normal_at_pts(i) * t_normal_at_pts(i));
+      // } else {
         FTensor::Tensor2<double, DIM, DIM> F;
         FTensor::Tensor2<double, DIM, DIM> invF;
         FTensor::Tensor1<double, DIM> t_normal_current;
@@ -720,7 +718,7 @@ OpAssembleTotalContactAreaImpl<DIM, GAUSS, BoundaryEleOp>::doWork(
         t_normal_current(i) = det * (invF(j, i) * t_normal_at_pts(j));
         
         alpha *= sqrt(t_normal_current(i) * t_normal_current(i));
-      }
+     
 
       if (c > 1e-12) {
         t_sum_a(0) += alpha; // real area

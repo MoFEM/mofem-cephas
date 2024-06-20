@@ -849,10 +849,12 @@ MoFEMErrorCode Contact::checkResults() {
     case 1: // plane stress
       hertz_force = 3.927;
       fem_force = t_ptr[1];
+      fem_active_area = t_ptr[3];
       break;
     case 2: // plane strain
       hertz_force = 4.675;
       fem_force = t_ptr[1];
+      fem_active_area = t_ptr[3];
       norm = monitorPtr->getErrorNorm(1);
       break;
     case 3: // 3D
@@ -864,6 +866,7 @@ MoFEMErrorCode Contact::checkResults() {
       hertz_force = 15.873;
       fem_force = t_ptr[1];
       norm = monitorPtr->getErrorNorm(1);
+      fem_active_area = t_ptr[3];
       break;
     case 6: // wavy 2d
       hertz_force = 0.374;
@@ -874,6 +877,7 @@ MoFEMErrorCode Contact::checkResults() {
     case 7: // wavy 3d
       hertz_force = 0.5289;
       fem_force = t_ptr[2];
+      fem_active_area = t_ptr[3];
       break;
     default:
       SETERRQ1(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
@@ -889,10 +893,10 @@ MoFEMErrorCode Contact::checkResults() {
                "atom test %d diverged! %3.4e > %3.4e", atom_test, norm,
                tol_norm);
     }
-    if (fem_active_area - potential_area > 1e-8) {
-      SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-               "atom test %d failed! %3.16e > %3.16e", atom_test, fem_active_area,
-               potential_area);
+    if (fabs((fem_active_area-1))> 1e-1) {
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+               "atom test %d failed! %3.16e", atom_test, fem_active_area
+               );
     }
     CHKERR VecRestoreArrayRead(ContactOps::CommonData::totalTraction, &t_ptr);
   }
