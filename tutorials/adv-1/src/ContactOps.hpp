@@ -664,8 +664,13 @@ MoFEMErrorCode
 OpAssembleTotalContactAreaImpl<DIM, GAUSS, BoundaryEleOp>::doWork(
     int side, EntityType type, EntData &data) {
   MoFEMFunctionBegin;
+
   const auto fe_ent = BoundaryEleOp::getFEEntityHandle();
+
   if (contactRange->find(fe_ent) != contactRange->end()) {
+    // std::cout<< "type" << type << std::endl;
+
+    // type fe_type = getNumeredEntFiniteElementPtr()->getEntType(); 
     FTensor::Index<'i', DIM> i;
     FTensor::Index<'j', DIM> j;
     FTensor::Tensor1<double, 2> t_sum_a{0., 0.};
@@ -716,9 +721,12 @@ OpAssembleTotalContactAreaImpl<DIM, GAUSS, BoundaryEleOp>::doWork(
         auto det = determinantTensor(F);
         CHKERR invertTensor(F, det, invF);
         t_normal_current(i) = det * (invF(j, i) * t_normal_at_pts(j));
-        
+  
         alpha *= sqrt(t_normal_current(i) * t_normal_current(i));
-     
+
+      if (type == 11) {
+        alpha /= 2;
+      }
 
       if (c > 1e-12) {
         t_sum_a(0) += alpha; // real area
