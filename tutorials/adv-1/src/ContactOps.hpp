@@ -373,8 +373,7 @@ hess_surface_distance_function(double delta_t, double t, int nb_gauss_pts,
     m_hess_sdf.resize(6, nb_gauss_pts, false);
     for (size_t gg = 0; gg < nb_gauss_pts; ++gg) {
       for (int idx = 0; idx < 6; ++idx)
-        m_hess_sdf(idx, gg) =
-            *(hess_ptr + (6 * gg + idx));
+        m_hess_sdf(idx, gg) = *(hess_ptr + (6 * gg + idx));
     }
     return m_hess_sdf;
   }
@@ -392,7 +391,6 @@ hess_surface_distance_function(double delta_t, double t, int nb_gauss_pts,
   }
   return m_hess_sdf;
 }
-
 
 template <int DIM, IntegrationType I, typename BoundaryEleOp>
 struct OpAssembleTotalContactTractionImpl;
@@ -665,12 +663,11 @@ OpAssembleTotalContactAreaImpl<DIM, GAUSS, BoundaryEleOp>::doWork(
     int side, EntityType type, EntData &data) {
   MoFEMFunctionBegin;
 
+  auto fe_type = BoundaryEleOp::getFEType();
+
   const auto fe_ent = BoundaryEleOp::getFEEntityHandle();
 
   if (contactRange->find(fe_ent) != contactRange->end()) {
-    // std::cout<< "type" << type << std::endl;
-
-    // type fe_type = getNumeredEntFiniteElementPtr()->getEntType(); 
     FTensor::Index<'i', DIM> i;
     FTensor::Index<'j', DIM> j;
     FTensor::Tensor1<double, 2> t_sum_a{0., 0.};
@@ -682,7 +679,6 @@ OpAssembleTotalContactAreaImpl<DIM, GAUSS, BoundaryEleOp>::doWork(
     auto t_grad = getFTensor2FromMat<DIM, DIM>(commonDataPtr->contactDispGrad);
     auto t_normal_at_pts = BoundaryEleOp::getFTensor1NormalsAtGaussPts();
 
-
     const auto nb_gauss_pts = BoundaryEleOp::getGaussPts().size2();
     auto m_spatial_coords = get_spatial_coords(
         BoundaryEleOp::getFTensor1CoordsAtGaussPts(),
@@ -691,7 +687,7 @@ OpAssembleTotalContactAreaImpl<DIM, GAUSS, BoundaryEleOp>::doWork(
         BoundaryEleOp::getFTensor1NormalsAtGaussPts(), nb_gauss_pts);
 
     auto t_normal = getFTensor1FromMat<3>(m_normals_at_pts);
-    auto ts_time = BoundaryEleOp::getTStime(); 
+    auto ts_time = BoundaryEleOp::getTStime();
     auto ts_time_step = BoundaryEleOp::getTStimeStep();
     int block_id = 0;
     auto v_sdf =
@@ -713,18 +709,19 @@ OpAssembleTotalContactAreaImpl<DIM, GAUSS, BoundaryEleOp>::doWork(
       // if (false) {
       //   alpha *= sqrt(t_normal_at_pts(i) * t_normal_at_pts(i));
       // } else {
-        FTensor::Tensor2<double, DIM, DIM> F;
-        FTensor::Tensor2<double, DIM, DIM> invF;
-        FTensor::Tensor1<double, DIM> t_normal_current;
+      FTensor::Tensor2<double, DIM, DIM> F;
+      FTensor::Tensor2<double, DIM, DIM> invF;
+      FTensor::Tensor1<double, DIM> t_normal_current;
 
-        F(i, j) = t_grad(i, j) + kronecker_delta(i, j);
-        auto det = determinantTensor(F);
-        CHKERR invertTensor(F, det, invF);
-        t_normal_current(i) = det * (invF(j, i) * t_normal_at_pts(j));
-  
-        alpha *= sqrt(t_normal_current(i) * t_normal_current(i));
+      F(i, j) = t_grad(i, j) + kronecker_delta(i, j);
+      auto det = determinantTensor(F);
+      CHKERR invertTensor(F, det, invF);
+      t_normal_current(i) = det * (invF(j, i) * t_normal_at_pts(j));
 
-      if (type == 11) {
+      alpha *= sqrt(t_normal_current(i) * t_normal_current(i));
+
+      if (fe_type == MBTRI) {
+        std::cout << "Triangular element" << std::endl;
         alpha /= 2;
       }
 
