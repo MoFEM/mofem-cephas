@@ -1092,7 +1092,7 @@ protected:
   std::array<boost::shared_ptr<MatrixDouble>, MaxBernsteinBezierOrder>
       bbNByOrder; ///< BB base functions by order
   std::array<boost::shared_ptr<MatrixDouble>, MaxBernsteinBezierOrder>
-      bbDiffNByOrder; ///< BB base functions direvatives by order
+      bbDiffNByOrder; ///< BB base functions directives by order
   std::array<boost::shared_ptr<MatrixInt>, MaxBernsteinBezierOrder>
       bbAlphaIndicesByOrder; ///< BB alpha indices by order
 
