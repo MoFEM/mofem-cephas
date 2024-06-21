@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
       MOFEM_LOG("SELF", Sev::verbose) << "tri global_coords " << global_coords;
 
       MatrixDouble local_coords(init_local_coords.size1(), 2);
-      CHKERR Tools::getLocalCoordinatesOnReferenceTriNodeTri(
+      CHKERR Tools::getLocalCoordinatesOnReferenceThreeNodeTri(
           &elem_coords(0, 0), &global_coords(0, 0), init_local_coords.size1(),
           &local_coords(0, 0));
 

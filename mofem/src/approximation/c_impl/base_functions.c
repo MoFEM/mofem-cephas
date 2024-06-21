@@ -57,7 +57,7 @@ PetscErrorCode Legendre_polynomials(int p, double s, double *diff_s, double *L,
         diffL[d * (p + 1) + l + 1] =
             A * (diff_s[d] * L[l] + s * diffL[d * (p + 1) + l]) -
             B * diffL[d * (p + 1) + l - 1];
-      }      
+      }
     }
   }
 
@@ -75,6 +75,13 @@ PetscErrorCode Jacobi_polynomials(int p, double alpha, double x, double t,
     SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "dim > 3");
   if (p < 0)
     SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "p < 0");
+
+  if (diffL != NULL) {
+    if (diff_x == NULL) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "diff_s == NULL");
+    }
+  }
+
 #endif // NDEBUG
   L[0] = 1;
   if (diffL != NULL) {
@@ -90,20 +97,10 @@ PetscErrorCode Jacobi_polynomials(int p, double alpha, double x, double t,
     MoFEMFunctionReturnHot(0);
   L[1] = 2 * x - t + alpha * x;
   if (diffL != NULL) {
-#ifndef NDEBUG
-    if (diff_x == NULL) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "diff_s == NULL");
-    }
-#endif // NDEBUG
-    double d_t = (diff_t) ? diff_t[0] : 0;
-    diffL[0 * (p + 1) + 1] = (2 + alpha) * diff_x[0] - d_t;
-    if (dim >= 2) {
-      double d_t = (diff_t) ? diff_t[1] : 0;
-      diffL[1 * (p + 1) + 1] = (2 + alpha) * diff_x[1] - d_t;
-      if (dim == 3) {
-        double d_t = (diff_t) ? diff_t[2] : 0;
-        diffL[2 * (p + 1) + 1] = (2 + alpha) * diff_x[2] - d_t;
-      }
+    int d = 0;
+    for (; d < dim; ++d) {
+      double d_t = (diff_t) ? diff_t[d] : 0;
+      diffL[d * (p + 1) + 1] = (2 + alpha) * diff_x[d] - d_t;
     }
   }
   if (p == 1)
@@ -119,29 +116,15 @@ PetscErrorCode Jacobi_polynomials(int p, double alpha, double x, double t,
     double B = d * t * t / a;
     L[lp1] = A * L[l] - B * L[l - 1];
     if (diffL != NULL) {
-      double d_t = (diff_t) ? diff_t[0] : 0;
-      double diffA = b * (c * (2 * diff_x[0] - d_t) + alpha * alpha * d_t) / a;
-      double diffB = d * 2 * t * d_t / a;
-      diffL[0 * (p + 1) + lp1] = A * diffL[0 * (p + 1) + l] -
-                                 B * diffL[0 * (p + 1) + l - 1] + diffA * L[l] -
-                                 diffB * L[l - 1];
-      if (dim >= 2) {
-        double d_t = (diff_t) ? diff_t[1] : 0;
+      int z = 0;
+      for (; z < dim; ++z) {
+        double d_t = (diff_t) ? diff_t[z] : 0;
         double diffA =
-            b * (c * (2 * diff_x[1] - d_t) + alpha * alpha * d_t) / a;
+            b * (c * (2 * diff_x[z] - d_t) + alpha * alpha * d_t) / a;
         double diffB = d * 2 * t * d_t / a;
-        diffL[1 * (p + 1) + lp1] = A * diffL[1 * (p + 1) + l] -
-                                   B * diffL[1 * (p + 1) + l - 1] +
+        diffL[z * (p + 1) + lp1] = A * diffL[z * (p + 1) + l] -
+                                   B * diffL[z * (p + 1) + l - 1] +
                                    diffA * L[l] - diffB * L[l - 1];
-        if (dim == 3) {
-          double d_t = (diff_t) ? diff_t[2] : 0;
-          double diffA =
-              b * (c * (2 * diff_x[2] - d_t) + alpha * alpha * d_t) / a;
-          double diffB = d * 2 * t * d_t / a;
-          diffL[2 * (p + 1) + lp1] = A * diffL[2 * (p + 1) + l] -
-                                     B * diffL[2 * (p + 1) + l - 1] +
-                                     diffA * L[l] - diffB * L[l - 1];
-        }
       }
     }
   }
@@ -183,13 +166,13 @@ PetscErrorCode IntegratedJacobi_polynomials(int p, double alpha, double x,
     const double c = (i - 1) / ((2 * i + alpha - 2) * (2 * i + alpha - 1));
     L[l] = a * jacobi[i] + b * t * jacobi[i - 1] - c * t * t * jacobi[i - 2];
     if (diffL != NULL) {
-      int dd = 0;
-      for (; dd != dim; ++dd) {
-        diffL[dd * p + l] = a * diff_jacobi[dd * (p + 1) + i] +
-                            b * (t * diff_jacobi[dd * (p + 1) + i - 1] +
-                                 diff_t[dd] * jacobi[i - 1]) -
-                            c * (t * t * diff_jacobi[dd * (p + 1) + i - 2] +
-                                 2 * t * diff_t[dd] * jacobi[i - 2]);
+      int d = 0;
+      for (; d != dim; ++d) {
+        diffL[d * p + l] = a * diff_jacobi[d * (p + 1) + i] +
+                            b * (t * diff_jacobi[d * (p + 1) + i - 1] +
+                                 diff_t[d] * jacobi[i - 1]) -
+                            c * (t * t * diff_jacobi[d * (p + 1) + i - 2] +
+                                 2 * t * diff_t[d] * jacobi[i - 2]);
       }
     }
   }
@@ -356,6 +339,12 @@ PetscErrorCode LobattoKernel_polynomials(int p, double s, double *diff_s,
   if (p > 9)
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
             "Polynomial beyond order 9 is not implemented");
+  if (diffL != NULL) {
+    if (diff_s == NULL) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "diff_s == NULL");
+    }
+  }
+
 #endif // NDEBUG
   if (L) {
     int l = 0;
@@ -364,20 +353,12 @@ PetscErrorCode LobattoKernel_polynomials(int p, double s, double *diff_s,
     }
   }
   if (diffL != NULL) {
-#ifndef NDEBUG
-    if (diff_s == NULL) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "diff_s == NULL");
-    }
-#endif // NDEBUG
     int l = 0;
     for (; l != p + 1; l++) {
       double a = f_phix[l](s);
-      diffL[0 * (p + 1) + l] = diff_s[0] * a;
-      if (dim >= 2) {
-        diffL[1 * (p + 1) + l] = diff_s[1] * a;
-        if (dim == 3) {
-          diffL[2 * (p + 1) + l] = diff_s[2] * a;
-        }
+      int d = 0;
+      for (; d < dim; ++d) {
+        diffL[d * (p + 1) + l] = diff_s[d] * a;
       }
     }
   }

@@ -147,6 +147,22 @@ static auto get_sub_iface_options_imp(T *const ptr, long) -> MoFEMErrorCode {
   return 0;
 };
 
+template <class T>
+static auto get_event_options_imp(T *const ptr, int)
+    -> decltype(ptr->getEventOptions()) {
+  return ptr->getEventptions();
+};
+
+// Use SFINAE to decide which template should be run,
+// if getSubInterfaceOptions not exist run this one.
+// See SFINAE:
+// https://stackoverflow.com/questions/257288/is-it-possible-to-write-a-template-to-check-for-a-functions-existence
+// https://en.wikipedia.org/wiki/Substitution_failure_is_not_an_error
+template <class T>
+static auto get_event_options_imp(T *const ptr, long) -> MoFEMErrorCode {
+  return 0;
+};
+
 template <class IFACE> MoFEMErrorCode Core::regSubInterface() {
   MoFEMFunctionBegin;
   CHKERR registerInterface<IFACE>(true);
@@ -155,9 +171,6 @@ template <class IFACE> MoFEMErrorCode Core::regSubInterface() {
   // If sub interface has function getSubInterfaceOptions run
   // it after construction. getSubInterfaceOptions is used to
   // get parameters from command line.
-  // See SFINAE:
-  // https://stackoverflow.com/questions/257288/is-it-possible-to-write-a-template-to-check-for-a-functions-existence
-  // https://en.wikipedia.org/wiki/Substitution_failure_is_not_an_error
   auto get_sub_iface_options = [](auto *const ptr) {
     return get_sub_iface_options_imp(ptr, 0);
   };
@@ -165,6 +178,19 @@ template <class IFACE> MoFEMErrorCode Core::regSubInterface() {
 
   auto type_idx = boost::typeindex::type_id<IFACE>();
   iFaces.insert(type_idx, ptr);
+  MoFEMFunctionReturn(0);
+}
+
+template <class IFACE> MoFEMErrorCode Core::regEvents() {
+  MoFEMFunctionBegin;
+  auto ptr = boost::make_shared<IFACE>();
+  // See SFINAE:
+  // https://stackoverflow.com/questions/257288/is-it-possible-to-write-a-template-to-check-for-a-functions-existence
+  // https://en.wikipedia.org/wiki/Substitution_failure_is_not_an_error
+  auto get_event_options = [](auto *const ptr) {
+    return get_event_options_imp(ptr, 0);
+  };
+  CHKERR get_event_options(ptr.get());
   MoFEMFunctionReturn(0);
 }
 
@@ -467,6 +493,9 @@ MoFEMErrorCode Core::registerSubInterfaces() {
 #endif
   CHKERR regSubInterface<FieldEvaluatorInterface>();
   CHKERR regSubInterface<BcManager>();
+
+  // Register events
+  CHKERR regEvents<SchurEvents>();
 
   MoFEMFunctionReturn(0);
 };

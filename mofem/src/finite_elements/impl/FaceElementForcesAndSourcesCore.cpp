@@ -475,10 +475,9 @@ MoFEMErrorCode OpCopyGeomDataToE<2>::doWork(int side, EntityType type,
         &m(0, 0), &m(0, 1), &m(0, 2));
   };
 
-  // get local coordinates, i.e. local coordinates on child element using partent local
-  // cooridinates
+  // get local coordinates, i.e. local coordinates on child element using parent
+  // local coordinates
   auto get_local_coords_triangle = [&]() {
-    double ref_gauss_pts[2][3] = {{0, 1, 0}, {0, 0, 1}};
     std::array<double, 3> ksi0 = {0, 1, 0};
     std::array<double, 3> ksi1 = {0, 0, 1};
     std::array<double, 9> ref_shapes;
@@ -487,7 +486,7 @@ MoFEMErrorCode OpCopyGeomDataToE<2>::doWork(int side, EntityType type,
     auto &node_coords = getCoords();
     auto &glob_coords = toElePtr->coords;
     std::array<double, 6> local_coords;
-    CHKERR Tools::getLocalCoordinatesOnReferenceTriNodeTri(
+    CHKERR Tools::getLocalCoordinatesOnReferenceThreeNodeTri(
         &*node_coords.begin(), &*glob_coords.begin(), 3, local_coords.data());
     return local_coords;
   };
@@ -499,7 +498,7 @@ MoFEMErrorCode OpCopyGeomDataToE<2>::doWork(int side, EntityType type,
         diff_ptr, &diff_ptr[1]);
   };
 
-  // get jaconbian to map local coordinates of parent to child element
+  // get jacobian to map local coordinates of parent to child element
   auto get_jac = [&](auto &&local_coords, auto &&t_diff) {
     FTensor::Index<'I', 2> I;
     FTensor::Index<'J', 2> J;
@@ -521,7 +520,7 @@ MoFEMErrorCode OpCopyGeomDataToE<2>::doWork(int side, EntityType type,
   };
 
   // transform tangent vectors to child element tangents
-  auto transfrom = [&](auto &&t_mat_t, auto &&t_mat_out_t, auto &&t_inv_jac) {
+  auto transform = [&](auto &&t_mat_t, auto &&t_mat_out_t, auto &&t_inv_jac) {
     FTensor::Index<'I', 2> I;
     FTensor::Index<'J', 2> J;
     FTensor::Index<'i', 3> i;
@@ -551,7 +550,7 @@ MoFEMErrorCode OpCopyGeomDataToE<2>::doWork(int side, EntityType type,
     }
   };
 
-  transfrom(
+  transform(
 
       t_mat_tangent(getTangent1AtGaussPts(), getTangent2AtGaussPts()),
       t_mat_tangent(toElePtr->tangentOneAtGaussPts,

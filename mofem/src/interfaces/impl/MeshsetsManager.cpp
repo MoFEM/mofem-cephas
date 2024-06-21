@@ -102,7 +102,7 @@ MoFEMErrorCode MeshsetsManager::readMeshsets(int verb) {
     if ((block.cubitBcType & CubitBCType(NODESET | SIDESET | BLOCKSET)).any()) {
       auto p = cubitMeshsets.insert(block);
       if (!p.second) {
-        // blocsket/nodeset/sideste set exist, could be created on other
+        // blockset/nodeset/sideset set exist, could be created on other
         // processor.
         Range ents;
         CHKERR m_field.get_moab().get_entities_by_handle(m, ents, true);
@@ -148,7 +148,8 @@ MoFEMErrorCode MeshsetsManager::broadcastMeshsets(int verb) {
       int tag_size;
       CHKERR moab.tag_get_by_ptr(th, &meshset, 1, (const void **)data,
                                  &tag_size);
-      CHKERR moab.tag_set_by_ptr(th, &dummy_node, 1, data, &tag_size);
+      if (tag_size > 0)
+        CHKERR moab.tag_set_by_ptr(th, &dummy_node, 1, data, &tag_size);
     }
     MoFEMFunctionReturn(0);
   };
@@ -216,7 +217,8 @@ MoFEMErrorCode MeshsetsManager::broadcastMeshsets(int verb) {
               EntityHandle m;
               CHKERR moab.create_meshset(MESHSET_SET, m);
               CHKERR set_tags_dummy_node(m, dummy_node);
-              auto p = cubitMeshsets.insert(CubitMeshSets(moab, m));
+              auto hint = cubitMeshsets.end();
+              auto p = cubitMeshsets.emplace_hint(hint, moab, m);
             }
           } else {
             MOFEM_LOG("MeshsetMngSync", Sev::warning)

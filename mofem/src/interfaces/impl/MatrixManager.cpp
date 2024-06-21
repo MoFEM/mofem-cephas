@@ -596,19 +596,18 @@ MatrixManager::query_interface(boost::typeindex::type_index type_index,
 
 MatrixManager::MatrixManager(const MoFEM::Core &core)
     : cOre(const_cast<MoFEM::Core &>(core)) {
-  PetscLogEventRegister("MatrixManagerCreateMPIAIJ", 0,
-                        &MOFEM_EVENT_createMPIAIJ);
-  PetscLogEventRegister("MatrixManagerCreateMPIAIJWithArrays", 0,
+  PetscLogEventRegister("MatMngCrtMPIAIJ", 0, &MOFEM_EVENT_createMPIAIJ);
+  PetscLogEventRegister("MatMngCrtMPIAIJWthArr", 0,
                         &MOFEM_EVENT_createMPIAIJWithArrays);
-  PetscLogEventRegister("MatrixManagerCreateMPIAdjWithArrays", 0,
+  PetscLogEventRegister("MatMngCrtMPIAdjWithArr", 0,
                         &MOFEM_EVENT_createMPIAdjWithArrays);
-  PetscLogEventRegister("MatrixManagerCreateMPIAIJCUSPARSEWithArrays", 0,
+  PetscLogEventRegister("MatMngCrtMPIAIJCUSPARSEWthArr", 0,
                         &MOFEM_EVENT_createMPIAIJCUSPARSEWithArrays);
-  PetscLogEventRegister("MatrixManagerCreateSeqAIJCUSPARSEWithArrays", 0,
+  PetscLogEventRegister("MatMngCrtSeqAIJCUSPARSEWthArrs", 0,
                         &MOFEM_EVENT_createSeqAIJCUSPARSEWithArrays);
-  PetscLogEventRegister("MatrixManagerCreateSeqAIJWithArrays", 0,
+  PetscLogEventRegister("MatMngCrtSeqAIJWthArrs", 0,
                         &MOFEM_EVENT_createSeqAIJWithArrays);
-  PetscLogEventRegister("MatrixManagerCheckMPIAIJWithArraysMatrixFillIn", 0,
+  PetscLogEventRegister("MatMngCrtCheckMPIAIJWthArrFillIn", 0,
                         &MOFEM_EVENT_checkMatrixFillIn);
 }
 

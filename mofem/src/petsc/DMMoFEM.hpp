@@ -721,6 +721,9 @@ PetscErrorCode DMSubDMSetUp_MoFEM(DM subdm);
  */
 PetscErrorCode DMMoFEMAddSubFieldRow(DM dm, const char field_name[]);
 
+/** @copydoc DMMoFEMAddSubFieldRow(DM dm, const char field_name[]) */
+PetscErrorCode DMMoFEMAddSubFieldRow(DM dm, std::string field_name);
+
 /**
  * @brief Add field to sub dm problem on rows
  * \ingroup dm
@@ -733,11 +736,18 @@ PetscErrorCode DMMoFEMAddSubFieldRow(DM dm, const char field_name[]);
 PetscErrorCode DMMoFEMAddSubFieldRow(DM dm, const char field_name[],
                                      boost::shared_ptr<Range> r_ptr);
 
+/** @copydoc DMMoFEMAddSubFieldRow(DM dm, const char field_name[], boost::shared_ptr<Range> r_ptr) */
+PetscErrorCode DMMoFEMAddSubFieldRow(DM dm, std::string field_name,
+                                     boost::shared_ptr<Range> r_ptr);
+
 /**
  * Add field to sub dm problem on columns
  * \ingroup dm
  */
 PetscErrorCode DMMoFEMAddSubFieldCol(DM dm, const char field_name[]);
+
+/** @copydoc DMMoFEMAddSubFieldCol(DM dm, const char field_name[]) */
+PetscErrorCode DMMoFEMAddSubFieldCol(DM dm, std::string field_name);
 
 /**
  * @brief Add field to sub dm problem on columns
@@ -748,6 +758,11 @@ PetscErrorCode DMMoFEMAddSubFieldCol(DM dm, const char field_name[]);
  * @return PetscErrorCode
  */
 PetscErrorCode DMMoFEMAddSubFieldCol(DM dm, const char field_name[],
+                                     boost::shared_ptr<Range> r_ptr);
+
+
+/** @copydoc DMMoFEMAddSubFieldCol(DM dm, const char field_name[], boost::shared_ptr<Range> r_ptr); */
+PetscErrorCode DMMoFEMAddSubFieldCol(DM dm, std::string field_name,
                                      boost::shared_ptr<Range> r_ptr);
 
 /**
@@ -913,6 +928,55 @@ PetscErrorCode DMMoFEMGetFieldIS(DM dm, RowColData rc, const char field_name[],
  */
 PetscErrorCode DMMoFEMSetVerbosity(DM dm, const int verb);
 
+struct BlockStructure;
+
+/** @brief Set data for block mat
+ *
+ * \note You can reset data by setting nullptr
+ *
+ */
+MoFEMErrorCode DMMoFEMSetBlocMatData(DM dm,
+                                     boost::shared_ptr<BlockStructure>);
+
+/**
+ * @brief Get data for block mat
+ * 
+ * @param dm 
+ * @return MoFEMErrorCode 
+ */
+MoFEMErrorCode DMMoFEMGetBlocMatData(DM dm, boost::shared_ptr<BlockStructure> &);
+
+/**
+ * @brief Create block matrix
+  \ingroup dm
+ * 
+ * @param dm 
+ * @param mat 
+ * @return MoFEMErrorCode 
+ */
+MoFEMErrorCode DMMoFEMCreateBlockMat(DM dm, Mat *mat);
+
+/**
+ * @brief Set data for nest schur (see specialisation in Schur.hpp)
+ * 
+ * \note You can reset data by setting nullptr
+ * 
+ * @tparam T = NestSchurData
+ * @param dm 
+ * @return MoFEMErrorCode 
+ */
+template <typename T>
+MoFEMErrorCode DMMoFEMSetNestSchurData(DM dm, boost::shared_ptr<T>);
+
+/**
+ * @brief Create nest schur matrix
+ * 
+ * @param dm 
+ * @param mat 
+ * @return MoFEMErrorCode 
+ */
+MoFEMErrorCode DMMoFEMCreateNestSchurMat(DM dm, Mat *mat);
+
 /**
  * \brief PETSc  Discrete Manager data structure
  *
@@ -931,42 +995,27 @@ struct DMCtx : public UnknownInterface {
   MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
-  Interface *mField_ptr;    ///< MoFEM interface
-  PetscBool isProblemBuild; ///< True if problem is build
-  std::string problemName;  ///< Problem name
-
-  // Options
-  PetscBool isPartitioned;  ///< true if read mesh is on parts
-  PetscBool isSquareMatrix; ///< true if rows equals to cols
-
-  int rAnk, sIze;
-
-  // pointer to data structures
-  const Problem *problemPtr; ///< pinter to problem data structure
-
-  // sub problem
-  PetscBool isSubDM;
-  std::vector<std::string> rowFields;
-  std::vector<std::string> colFields;
-  const Problem *problemMainOfSubPtr; ///< pinter to main problem to sub-problem
-
-  PetscBool isCompDM;
-  std::vector<std::string> rowCompPrb;
-  std::vector<std::string> colCompPrb;
-  std::map<std::string, boost::shared_ptr<Range>> mapTypeRow;
-  std::map<std::string, boost::shared_ptr<Range>> mapTypeCol;
-
-  PetscBool destroyProblem; ///< If true destroy problem with DM
-
-  DMCtx();
   virtual ~DMCtx() = default;
-
-  int verbosity; ///< verbosity
-  int referenceNumber;
-
+  
   boost::shared_ptr<KspCtx> kspCtx;   ///< data structure KSP
   boost::shared_ptr<SnesCtx> snesCtx; ///< data structure SNES
   boost::shared_ptr<TsCtx> tsCtx;     ///< data structure for TS solver
+
+protected:
+  DMCtx() = default;
+};
+
+/**
+ * @brief Get the Interface Ptr object
+ * 
+ * @param dm 
+ * @return auto 
+ */
+inline auto getInterfacePtr(DM dm) {
+  MoFEM::Interface *m_field_ptr;
+  CHK_THROW_MESSAGE(DMoFEMGetInterfacePtr(dm, &m_field_ptr),
+                    "Can not get interface ptr from DM");
+  return m_field_ptr;
 };
 
 /**
@@ -991,6 +1040,21 @@ inline auto createDMMatrix(DM dm) {
   CHKERRABORT(getCommFromPetscObject(reinterpret_cast<PetscObject>(dm)), ierr);
   return a;
 };
+
+inline auto createDMBlockMat(DM dm) {
+  Mat raw_a;
+  ierr = DMMoFEMCreateBlockMat(dm, &raw_a);
+  CHKERRABORT(getCommFromPetscObject(reinterpret_cast<PetscObject>(dm)), ierr);
+  return SmartPetscObj<Mat>(raw_a);
+};
+
+inline auto createDMNestSchurMat(DM dm) {
+  Mat raw_a;
+  ierr = DMMoFEMCreateNestSchurMat(dm, &raw_a);
+  CHKERRABORT(getCommFromPetscObject(reinterpret_cast<PetscObject>(dm)), ierr);
+  return SmartPetscObj<Mat>(raw_a);
+};
+
 
 /** @deprecated use createDMMatrix */
 DEPRECATED inline auto smartCreateDMMatrix(DM dm) { return createDMMatrix(dm); }

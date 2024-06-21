@@ -285,12 +285,19 @@ std::ostream &operator<<(std::ostream &os, const EntitiesFieldData &e) {
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
 EntitiesFieldData::EntData::getFTensor1FieldData<3>() {
-  if (dOfs[0]->getNbOfCoeffs() != 3) {
-    std::stringstream s;
-    s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
-    s << " but you ask for tensor rank 1 dimension 3";
-    THROW_MESSAGE(s.str());
+#ifndef NDEBUG
+  for (auto &d : dOfs) {
+    if (d) {
+      if (d->getNbOfCoeffs() != 3) {
+        std::stringstream s;
+        s << "Wrong number of coefficients is " << d->getNbOfCoeffs();
+        s << " but you ask for tensor rank 1 dimension 3";
+        CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, s.str());
+      }
+      break;
+    }
   }
+#endif
   double *ptr = &*fieldData.data().begin();
   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
                                                             &ptr[2]);
@@ -299,12 +306,19 @@ EntitiesFieldData::EntData::getFTensor1FieldData<3>() {
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>
 EntitiesFieldData::EntData::getFTensor1FieldData<2>() {
-  if (dOfs[0]->getNbOfCoeffs() != 2) {
-    std::stringstream s;
-    s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
-    s << " but you ask for tensor rank 1 dimension 2";
-    THROW_MESSAGE(s.str());
+#ifndef NDEBUG
+  for (auto &d : dOfs) {
+    if (d) {
+      if (d->getNbOfCoeffs() != 2) {
+        std::stringstream s;
+        s << "Wrong number of coefficients is " << d->getNbOfCoeffs();
+        s << " but you ask for tensor rank 1 dimension 2";
+        CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, s.str());
+      }
+      break;
+    }
   }
+#endif
   double *ptr = &*fieldData.data().begin();
   return FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>(ptr, &ptr[1]);
 }
@@ -312,12 +326,19 @@ EntitiesFieldData::EntData::getFTensor1FieldData<2>() {
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 1>
 EntitiesFieldData::EntData::getFTensor1FieldData<1>() {
-  if (dOfs[0]->getNbOfCoeffs() != 1) {
-    std::stringstream s;
-    s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
-    s << " but you ask for tensor rank 1 dimension 1";
-    THROW_MESSAGE(s.str());
+#ifndef NDEBUG
+  for (auto &d : dOfs) {
+    if (d) {
+      if (d->getNbOfCoeffs() != 1) {
+        std::stringstream s;
+        s << "Wrong number of coefficients is " << d->getNbOfCoeffs();
+        s << " but you ask for tensor rank 1 dimension 1";
+        CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, s.str());
+      }
+      break;
+    }
   }
+#endif
   double *ptr = &*fieldData.data().begin();
   return FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 1>(ptr);
 }
@@ -325,13 +346,21 @@ EntitiesFieldData::EntData::getFTensor1FieldData<1>() {
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 1, 1>
 EntitiesFieldData::EntData::getFTensor2FieldData<1, 1>() {
-  if (dOfs[0]->getNbOfCoeffs() != 1) {
-    std::stringstream s;
-    s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
-    s << " but you ask for tensor rank 2 dimensions 1 by 1 so 1 coefficients "
-         "is expected";
-    THROW_MESSAGE(s.str());
+#ifndef NDEBUG
+  for (auto &d : dOfs) {
+    if (d) {
+      if (d->getNbOfCoeffs() != 1) {
+        std::stringstream s;
+        s << "Wrong number of coefficients is " << d->getNbOfCoeffs();
+        s << " but you ask for tensor rank 2 dimensions 1 by 1 so 1 "
+             "coefficients "
+             "is expected";
+        CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, s.str());
+      }
+      break;
+    }
   }
+#endif
   double *ptr = &*fieldData.data().begin();
   return FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 1, 1>(ptr);
 }
@@ -339,13 +368,21 @@ EntitiesFieldData::EntData::getFTensor2FieldData<1, 1>() {
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 2>, 1, 2>
 EntitiesFieldData::EntData::getFTensor2FieldData<1, 2>() {
-  if (dOfs[0]->getNbOfCoeffs() != 1) {
-    std::stringstream s;
-    s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
-    s << " but you ask for tensor rank 2 dimensions 1 by 2 so 2 coefficients "
-         "is expected";
-    THROW_MESSAGE(s.str());
+#ifndef NDEBUG
+  for (auto &d : dOfs) {
+    if (d) {
+      if (d->getNbOfCoeffs() != 2) {
+        std::stringstream s;
+        s << "Wrong number of coefficients is " << d->getNbOfCoeffs();
+        s << " but you ask for tensor rank 2 dimensions 1 by 2 so 2 "
+             "coefficients "
+             "is expected";
+        CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, s.str());
+      }
+      break;
+    }
   }
+#endif
   double *ptr = &*fieldData.data().begin();
   return FTensor::Tensor2<FTensor::PackPtr<double *, 2>, 1, 2>(ptr, &ptr[1]);
 }
@@ -353,13 +390,21 @@ EntitiesFieldData::EntData::getFTensor2FieldData<1, 2>() {
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 3>, 1, 3>
 EntitiesFieldData::EntData::getFTensor2FieldData<1, 3>() {
-  if (dOfs[0]->getNbOfCoeffs() != 1) {
-    std::stringstream s;
-    s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
-    s << " but you ask for tensor rank 2 dimensions 1 by 3 so 3 coefficients "
-         "is expected";
-    THROW_MESSAGE(s.str());
-  }
+#ifndef NDEBUG
+  for (auto &d : dOfs) {
+    if (d) {
+      if (d->getNbOfCoeffs() != 3) {
+        std::stringstream s;
+        s << "Wrong number of coefficients is " << d->getNbOfCoeffs();
+        s << " but you ask for tensor rank 2 dimensions 1 by 3 so 3 "
+             "coefficients "
+             "is expected";
+        CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, s.str());
+      }
+      break;
+    }
+  }  
+#endif
   double *ptr = &*fieldData.data().begin();
   return FTensor::Tensor2<FTensor::PackPtr<double *, 3>, 1, 3>(ptr, &ptr[1],
                                                                &ptr[2]);
@@ -368,13 +413,20 @@ EntitiesFieldData::EntData::getFTensor2FieldData<1, 3>() {
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 4>, 2, 2>
 EntitiesFieldData::EntData::getFTensor2FieldData<2, 2>() {
-  if (dOfs[0]->getNbOfCoeffs() != 4) {
-    std::stringstream s;
-    s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
-    s << " but you ask for tensor rank 2 dimensions 2 by 2 so 4 coefficients "
-         "is expected";
-    THROW_MESSAGE(s.str());
+#ifndef NDEBUG
+  for(auto &d : dOfs) {
+    if(d) {
+      if(d->getNbOfCoeffs() != 4) {
+        std::stringstream s;
+        s << "Wrong number of coefficients is " << d->getNbOfCoeffs();
+        s << " but you ask for tensor rank 2 dimensions 2 by 2 so 4 coefficients "
+             "is expected";
+        CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, s.str());
+      }
+      break;
+    }
   }
+#endif
   double *ptr = &*fieldData.data().begin();
   return FTensor::Tensor2<FTensor::PackPtr<double *, 4>, 2, 2>(
       ptr, &ptr[1], &ptr[2], &ptr[3]);
@@ -383,13 +435,21 @@ EntitiesFieldData::EntData::getFTensor2FieldData<2, 2>() {
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
 EntitiesFieldData::EntData::getFTensor2FieldData<3, 3>() {
-  if (dOfs[0]->getNbOfCoeffs() != 9) {
-    std::stringstream s;
-    s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
-    s << " but you ask for tensor rank 2 dimensions 3 by 3 so 9 coefficients "
-         "is expected";
-    THROW_MESSAGE(s.str());
+#ifndef NDEBUG
+  for (auto &d : dOfs) {
+    if (d) {
+      if (d->getNbOfCoeffs() != 9) {
+        std::stringstream s;
+        s << "Wrong number of coefficients is " << d->getNbOfCoeffs();
+        s << " but you ask for tensor rank 2 dimensions 3 by 3 so 9 "
+             "coefficients "
+             "is expected";
+        CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, s.str());
+      }
+      break;
+    }
   }
+#endif
   double *ptr = &*fieldData.data().begin();
   return FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>(
       ptr, &ptr[1], &ptr[2], &ptr[3], &ptr[4], &ptr[5], &ptr[6], &ptr[7],
@@ -399,14 +459,21 @@ EntitiesFieldData::EntData::getFTensor2FieldData<3, 3>() {
 template <>
 FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 6>, 3>
 EntitiesFieldData::EntData::getFTensor2SymmetricFieldData<3>() {
-  if (dOfs[0]->getNbOfCoeffs() != 6) {
-    std::stringstream s;
-    s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
-    s << " but you ask for symmetric tensor rank 2 dimensions 3 by 3 so 6 "
-         "coefficients "
-         "is expected";
-    THROW_MESSAGE(s.str());
+#ifndef NDEBUG
+  for (auto &d : dOfs) {
+    if (d) {
+      if (d->getNbOfCoeffs() != 6) {
+        std::stringstream s;
+        s << "Wrong number of coefficients is " << d->getNbOfCoeffs();
+        s << " but you ask for symmetric tensor rank 2 dimensions 3 by 3 so 6 "
+             "coefficients "
+             "is expected";
+        CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, s.str());
+      }
+      break;
+    }
   }
+#endif
   double *ptr = &*fieldData.data().begin();
   return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 6>, 3>(
       ptr, &ptr[1], &ptr[2], &ptr[3], &ptr[4], &ptr[5]);
@@ -415,14 +482,21 @@ EntitiesFieldData::EntData::getFTensor2SymmetricFieldData<3>() {
 template <>
 FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 3>, 2>
 EntitiesFieldData::EntData::getFTensor2SymmetricFieldData<2>() {
-  if (dOfs[0]->getNbOfCoeffs() != 3) {
-    std::stringstream s;
-    s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
-    s << " but you ask for symmetric tensor rank 2 dimensions 2 by 2 so 3 "
-         "coefficients "
-         "is expected";
-    THROW_MESSAGE(s.str());
+#ifndef NDEBUG
+  for (auto &d : dOfs) {
+    if (d) {
+      if (d->getNbOfCoeffs() != 3) {
+        std::stringstream s;
+        s << "Wrong number of coefficients is " << d->getNbOfCoeffs();
+        s << " but you ask for symmetric tensor rank 2 dimensions 2 by 2 so 3 "
+             "coefficients "
+             "is expected";
+        CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, s.str());
+      }
+      break;
+    }
   }
+#endif
   double *ptr = &*fieldData.data().begin();
   return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 3>, 2>(
       ptr, &ptr[1], &ptr[2]);
@@ -430,12 +504,19 @@ EntitiesFieldData::EntData::getFTensor2SymmetricFieldData<2>() {
 
 FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
 EntitiesFieldData::EntData::getFTensor0FieldData() {
-  if (dOfs[0]->getNbOfCoeffs() != 1) {
-    std::stringstream s;
-    s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
-    s << " but expected scalar field, tensor of rank 0";
-    THROW_MESSAGE(s.str());
+#ifndef NDEBUG
+  for (auto &d : dOfs) {
+    if (d) {
+      if (d->getNbOfCoeffs() != 1) {
+        std::stringstream s;
+        s << "Wrong number of coefficients is " << d->getNbOfCoeffs();
+        s << " but expected scalar field, tensor of rank 0";
+        CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, s.str());
+      }
+      break;
+    }
   }
+#endif
   return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(
       &*fieldData.data().begin());
 }

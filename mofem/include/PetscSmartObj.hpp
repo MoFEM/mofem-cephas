@@ -21,8 +21,10 @@ template <typename T> inline PetscObject getPetscObject(T obj) {
  * @param obj
  */
 template <typename OBJ> void intrusive_ptr_add_ref(OBJ obj) {
-  PetscErrorCode ierr = PetscObjectReference(MoFEM::getPetscObject(obj));
-  CHKERRABORT(PetscObjectComm(MoFEM::getPetscObject(obj)), ierr);
+  if (obj) {
+    PetscErrorCode ierr = PetscObjectReference(MoFEM::getPetscObject(obj));
+    CHKERRABORT(PetscObjectComm(MoFEM::getPetscObject(obj)), ierr);
+  }
 }
 
 /**
@@ -35,19 +37,21 @@ template <typename OBJ> void intrusive_ptr_add_ref(OBJ obj) {
  * @param obj
  */
 template <typename OBJ> void intrusive_ptr_release(OBJ obj) {
-  int cnt = 0;
-  PetscErrorCode ierr =
-      PetscObjectGetReference(MoFEM::getPetscObject(obj), &cnt);
-  if (!ierr) {
-    if (cnt) {
-      if (cnt > 1) {
-        ierr = PetscObjectDereference(MoFEM::getPetscObject(obj));
-      } else {
-        ierr = PetscObjectDestroy(reinterpret_cast<PetscObject *>(&obj));
+  if (obj) {
+    int cnt = 0;
+    PetscErrorCode ierr =
+        PetscObjectGetReference(MoFEM::getPetscObject(obj), &cnt);
+    if (!ierr) {
+      if (cnt) {
+        if (cnt > 1) {
+          ierr = PetscObjectDereference(MoFEM::getPetscObject(obj));
+        } else {
+          ierr = PetscObjectDestroy(reinterpret_cast<PetscObject *>(&obj));
+        }
       }
+      auto comm = PetscObjectComm(MoFEM::getPetscObject(obj));
+      CHKERRABORT(comm, ierr);
     }
-    auto comm = PetscObjectComm(MoFEM::getPetscObject(obj));
-    CHKERRABORT(comm, ierr);
   }
 }
 
@@ -288,6 +292,18 @@ inline auto createISGeneral(MPI_Comm comm, PetscInt n, const PetscInt idx[],
 }
 
 /**
+ * @brief IS All gather
+ * 
+ * @param is 
+ * @return auto 
+ */
+inline auto  isAllGather(IS is) {
+  IS isout;
+  CHK_THROW_MESSAGE(ISAllGather(is, &isout), "Failed to create ISAllGather");
+  return SmartPetscObj<IS>(isout);
+}
+
+/**
  * @brief Creates an application mapping using two index sets.
  *
  * <a
@@ -346,6 +362,29 @@ inline auto createVecScatter(Vec x, IS ix, Vec y, IS iy) {
   VecScatter s;
   CHK_THROW_MESSAGE(VecScatterCreate(x, ix, y, iy, &s), "create scatter");
   return SmartPetscObj<VecScatter>(s);
+}
+
+/**
+ * @brief Get ISDifference
+ *
+ * <a
+ * href=https://petsc.org/release/docs/manualpages/IS/ISDifference/>ISDifference</a>.
+ *
+ * @param is1 first index, to have items removed from it
+ * @param is2 index values to be removed
+ * @return is1 - is2
+ */
+inline auto isDifference(IS is1, IS is2) {
+  IS is_raw;
+  CHK_THROW_MESSAGE(ISDifference(is1, is2, &is_raw), "create difference");
+  return SmartPetscObj<IS>(is_raw);
+}
+
+inline auto createISLocalToGlobalMapping(IS is) {
+  ISLocalToGlobalMapping map_raw;
+  CHK_THROW_MESSAGE(ISLocalToGlobalMappingCreateIS(is, &map_raw),
+                    "create local to global mapping");
+  return SmartPetscObj<ISLocalToGlobalMapping>(map_raw);
 }
 
 } // namespace MoFEM

@@ -167,13 +167,13 @@ Simple::Simple(const Core &core)
       addBoundaryFE(false), addParentAdjacencies(false),
       bitAdjParent(BitRefLevel().set()), bitAdjParentMask(BitRefLevel().set()),
       bitAdjEnt(BitRefLevel().set()), bitAdjEntMask(BitRefLevel().set()) {
-  PetscLogEventRegister("SimpleSetUp", 0, &MOFEM_EVENT_SimpleSetUP);
-  PetscLogEventRegister("SimpleLoadMesh", 0, &MOFEM_EVENT_SimpleLoadMesh);
-  PetscLogEventRegister("SimpleBuildFields", 0, &MOFEM_EVENT_SimpleBuildFields);
-  PetscLogEventRegister("SimpleBuildFiniteElements", 0,
+  PetscLogEventRegister("SimpSetUp", 0, &MOFEM_EVENT_SimpleSetUP);
+  PetscLogEventRegister("SimpLoadMesh", 0, &MOFEM_EVENT_SimpleLoadMesh);
+  PetscLogEventRegister("SimpBuildFields", 0, &MOFEM_EVENT_SimpleBuildFields);
+  PetscLogEventRegister("SimpBuildFEs", 0,
                         &MOFEM_EVENT_SimpleBuildFiniteElements);
-  PetscLogEventRegister("SimpleSetUp", 0, &MOFEM_EVENT_SimpleBuildProblem);
-  PetscLogEventRegister("SimpleKSPSolve", 0, &MOFEM_EVENT_SimpleKSPSolve);
+  PetscLogEventRegister("SimpSetUp", 0, &MOFEM_EVENT_SimpleBuildProblem);
+  PetscLogEventRegister("SimpKSPSolve", 0, &MOFEM_EVENT_SimpleKSPSolve);
   strcpy(meshFileName, "mesh.h5m");
 }
 
@@ -801,7 +801,7 @@ MoFEMErrorCode Simple::exchangeGhostCells() {
 
   CHKERR pcomm->exchange_ghost_cells(getDim(), getDim() - 1, 1,
                                      3 /**get all adjacent ghosted entities */,
-                                     true, false, meshSet ? &meshSet : nullptr);
+                                     true, true, meshSet ? &meshSet : nullptr);
 
   Range shared;
   CHKERR m_field.get_moab().get_entities_by_dimension(0, dIm, shared);

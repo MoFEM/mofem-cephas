@@ -79,7 +79,7 @@ protected:
    *
    * This function apply transformation to base functions and its derivatives.
    * For example when base functions for H-div are present the
-   * Piola-Transformarion is applied to base functions and their derivatives.
+   * Piola-Transformation is applied to base functions and their derivatives.
    *
    * @return Error code
    */

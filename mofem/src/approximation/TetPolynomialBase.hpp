@@ -21,30 +21,36 @@ struct TetPolynomialBase : public BaseFunction {
   MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
-  TetPolynomialBase() = default;
-  ~TetPolynomialBase() = default;
+  TetPolynomialBase(const void *ptr = nullptr);
+  virtual ~TetPolynomialBase();
+
+  static bool swichCacheHDivBaseFaceDemkowicz(const void *ptr);
+  static bool swichCacheHdivBaseInteriorDemkowicz(const void *ptr);
+  static void swichCacheHDivBaseDemkowiczOn(std::vector<void *> v);
+  static void swichCacheHDivBaseDemkowiczOff(std::vector<void *> v);
 
   MoFEMErrorCode getValue(MatrixDouble &pts,
                           boost::shared_ptr<BaseFunctionCtx> ctx_ptr);
 
 private:
+  const void *vPtr;
   EntPolynomialBaseCtx *cTx;
 
   /**
    * @brief Get base functions for H1 space
    *
-   * @param pts matrix of intergation pts
+   * @param pts matrix of integration pts
    * @return MoFEMErrorCode
    *
-   * \note matrix of integration points on rows has local coordinates of finite
-   * element on columns are integration pts.
+   * \note matrix of integration points on rows has local coordinates of
+   * finite element on columns are integration pts.
    */
   MoFEMErrorCode getValueH1(MatrixDouble &pts);
 
   /**
    * @brief Get base functions for L2 space
    *
-   * @param pts matrix of intergation pts
+   * @param pts matrix of integration pts
    * @return MoFEMErrorCode
    *
    * \note matrix of integration points on rows has local coordinates of finite
@@ -55,7 +61,7 @@ private:
   /**
    * @brief Get base functions for Hdiv space
    *
-   * @param pts matrix of intergation pts
+   * @param pts matrix of integration pts
    * @return MoFEMErrorCode
    *
    * \note matrix of integration points on rows has local coordinates of finite
@@ -66,7 +72,7 @@ private:
   /**
    * @brief Get base functions for Hcurl space
    *
-   * @param pts matrix of intergation pts
+   * @param pts matrix of integration pts
    * @return MoFEMErrorCode
    *
    * \note matrix of integration points on rows has local coordinates of finite
@@ -100,6 +106,7 @@ private:
   MoFEMErrorCode getValueHcurlDemkowiczBase(MatrixDouble &pts);
 
   MatrixInt senseFaceAlpha;
+
 };
 
 } // namespace MoFEM

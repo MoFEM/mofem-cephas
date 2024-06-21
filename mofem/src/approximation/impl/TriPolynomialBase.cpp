@@ -542,48 +542,50 @@ MoFEMErrorCode TriPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
   N_face_edge.resize(1, 3, false);
   N_face_bubble.resize(1, false);
   int face_order = data.dataOnEntities[MBTRI][0].getOrder();
-  // three edges on face
-  for (int ee = 0; ee < 3; ee++) {
-    N_face_edge(0, ee).resize(
-        nb_gauss_pts, 3 * NBFACETRI_AINSWORTH_EDGE_HDIV(face_order), false);
-    PHI_f_e[ee] = &((N_face_edge(0, ee))(0, 0));
-  }
-  N_face_bubble[0].resize(nb_gauss_pts,
-                          3 * NBFACETRI_AINSWORTH_FACE_HDIV(face_order), false);
-  PHI_f = &*(N_face_bubble[0].data().begin());
-
-  int face_nodes[3] = {0, 1, 2};
-  CHKERR Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
-      face_nodes, face_order,
-      &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0), NULL, PHI_f_e, NULL,
-      nb_gauss_pts, 3, base_polynomials);
-  CHKERR Hdiv_Ainsworth_FaceBubbleShapeFunctions_ON_FACE(
-      face_nodes, face_order,
-      &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0), NULL, PHI_f, NULL,
-      nb_gauss_pts, 3, base_polynomials);
-
-  // set shape functions into data structure
-  if (data.dataOnEntities[MBTRI].size() != 1) {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
-  }
-  data.dataOnEntities[MBTRI][0].getN(base).resize(
-      nb_gauss_pts, 3 * NBFACETRI_AINSWORTH_HDIV(face_order), false);
-  int col = 0;
-  for (int oo = 0; oo < face_order; oo++) {
+  if (face_order > 0) {
+    // three edges on face
     for (int ee = 0; ee < 3; ee++) {
-      for (int dd = 3 * NBFACETRI_AINSWORTH_EDGE_HDIV(oo);
-           dd < 3 * NBFACETRI_AINSWORTH_EDGE_HDIV(oo + 1); dd++, col++) {
-        for (int gg = 0; gg < nb_gauss_pts; gg++) {
-          data.dataOnEntities[MBTRI][0].getN(base)(gg, col) =
-              N_face_edge(0, ee)(gg, dd);
+      N_face_edge(0, ee).resize(
+          nb_gauss_pts, 3 * NBFACETRI_AINSWORTH_EDGE_HDIV(face_order), false);
+      PHI_f_e[ee] = &((N_face_edge(0, ee))(0, 0));
+    }
+    N_face_bubble[0].resize(
+        nb_gauss_pts, 3 * NBFACETRI_AINSWORTH_FACE_HDIV(face_order), false);
+    PHI_f = &*(N_face_bubble[0].data().begin());
+
+    int face_nodes[3] = {0, 1, 2};
+    CHKERR Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
+        face_nodes, face_order,
+        &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0), NULL, PHI_f_e, NULL,
+        nb_gauss_pts, 3, base_polynomials);
+    CHKERR Hdiv_Ainsworth_FaceBubbleShapeFunctions_ON_FACE(
+        face_nodes, face_order,
+        &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0), NULL, PHI_f, NULL,
+        nb_gauss_pts, 3, base_polynomials);
+
+    // set shape functions into data structure
+    if (data.dataOnEntities[MBTRI].size() != 1) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
+    }
+    data.dataOnEntities[MBTRI][0].getN(base).resize(
+        nb_gauss_pts, 3 * NBFACETRI_AINSWORTH_HDIV(face_order), false);
+    int col = 0;
+    for (int oo = 0; oo < face_order; oo++) {
+      for (int ee = 0; ee < 3; ee++) {
+        for (int dd = 3 * NBFACETRI_AINSWORTH_EDGE_HDIV(oo);
+             dd < 3 * NBFACETRI_AINSWORTH_EDGE_HDIV(oo + 1); dd++, col++) {
+          for (int gg = 0; gg < nb_gauss_pts; gg++) {
+            data.dataOnEntities[MBTRI][0].getN(base)(gg, col) =
+                N_face_edge(0, ee)(gg, dd);
+          }
         }
       }
-    }
-    for (int dd = 3 * NBFACETRI_AINSWORTH_FACE_HDIV(oo);
-         dd < 3 * NBFACETRI_AINSWORTH_FACE_HDIV(oo + 1); dd++, col++) {
-      for (int gg = 0; gg < nb_gauss_pts; gg++) {
-        data.dataOnEntities[MBTRI][0].getN(base)(gg, col) =
-            N_face_bubble[0](gg, dd);
+      for (int dd = 3 * NBFACETRI_AINSWORTH_FACE_HDIV(oo);
+           dd < 3 * NBFACETRI_AINSWORTH_FACE_HDIV(oo + 1); dd++, col++) {
+        for (int gg = 0; gg < nb_gauss_pts; gg++) {
+          data.dataOnEntities[MBTRI][0].getN(base)(gg, col) =
+              N_face_bubble[0](gg, dd);
+        }
       }
     }
   }

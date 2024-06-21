@@ -17,7 +17,6 @@ enum class MPC { TIE, RIGID_BODY, COUPLING, EMBEDDED_REGION, EQUATION, LAST };
 
 // Base struct for all multipoint constraints data.
 struct MPCsType : public DisplacementCubitBcData {
-
   
   Range mpcMasterEnts;
   Range mpcSlaveEnts;
@@ -47,6 +46,8 @@ struct MPCsType : public DisplacementCubitBcData {
 template <> struct EssentialPreProc<MPCsType> {
   EssentialPreProc(MoFEM::Interface &m_field, boost::shared_ptr<FEMethod> fe_ptr,
               bool is_spatial_positions = false);
+
+  virtual ~EssentialPreProc() = default;
 
   MoFEMErrorCode operator()();
 
@@ -82,6 +83,8 @@ template <> struct EssentialPostProcRhs<MPCsType> {
                       boost::shared_ptr<FEMethod> fe_ptr,
                       double diag = 1, SmartPetscObj<Vec> rhs = nullptr);
 
+  virtual ~EssentialPostProcRhs() = default;
+
   MoFEMErrorCode operator()();
 
 protected:
@@ -102,6 +105,8 @@ template <> struct EssentialPostProcLhs<MPCsType> {
                       double diag = 1,
                       SmartPetscObj<Mat> lhs = nullptr,
                       SmartPetscObj<AO> ao = nullptr);
+
+  virtual ~EssentialPostProcLhs() = default;
 
   MoFEMErrorCode operator()();
 

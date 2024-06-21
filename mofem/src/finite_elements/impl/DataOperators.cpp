@@ -238,16 +238,15 @@ OpSetInvJacHdivAndHcurl::doWork(int side, EntityType type,
     diffHdivInvJac.resize(nb_gauss_pts, data.getDiffN(base).size2(), false);
 
     auto t_diff_n = data.getFTensor2DiffN<3, 3>(base);
-    double *t_inv_diff_n_ptr = &*diffHdivInvJac.data().begin();
+    double *inv_diff_n_ptr = &*diffHdivInvJac.data().begin();
     FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> t_inv_diff_n(
-        t_inv_diff_n_ptr, &t_inv_diff_n_ptr[HVEC0_1],
-        &t_inv_diff_n_ptr[HVEC0_2],
+        inv_diff_n_ptr, &inv_diff_n_ptr[HVEC0_1], &inv_diff_n_ptr[HVEC0_2],
 
-        &t_inv_diff_n_ptr[HVEC1_0], &t_inv_diff_n_ptr[HVEC1_1],
-        &t_inv_diff_n_ptr[HVEC1_2],
+        &inv_diff_n_ptr[HVEC1_0], &inv_diff_n_ptr[HVEC1_1],
+        &inv_diff_n_ptr[HVEC1_2],
 
-        &t_inv_diff_n_ptr[HVEC2_0], &t_inv_diff_n_ptr[HVEC2_1],
-        &t_inv_diff_n_ptr[HVEC2_2]);
+        &inv_diff_n_ptr[HVEC2_0], &inv_diff_n_ptr[HVEC2_1],
+        &inv_diff_n_ptr[HVEC2_2]);
 
     for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
       for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
@@ -363,13 +362,19 @@ OpSetCovariantPiolaTransform::doWork(int side, EntityType type,
     for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
       for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
         t_transformed_n(i) = tInvJac(k, i) * t_n(k);
-        t_transformed_diff_n(i, k) = tInvJac(j, i) * t_diff_n(j, k);
         ++t_n;
         ++t_transformed_n;
+      }
+    }
+
+    for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
+      for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
+        t_transformed_diff_n(i, k) = tInvJac(j, i) * t_diff_n(j, k);
         ++t_diff_n;
         ++t_transformed_diff_n;
       }
     }
+    
     data.getN(base).swap(piolaN);
     data.getDiffN(base).swap(piolaDiffN);
   }
