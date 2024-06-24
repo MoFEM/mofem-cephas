@@ -721,7 +721,6 @@ OpAssembleTotalContactAreaImpl<DIM, GAUSS, BoundaryEleOp>::doWork(
       alpha *= sqrt(t_normal_current(i) * t_normal_current(i));
 
       if (fe_type == MBTRI) {
-        std::cout << "Triangular element" << std::endl;
         alpha /= 2;
       }
 
