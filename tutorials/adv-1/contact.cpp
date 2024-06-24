@@ -858,7 +858,7 @@ MoFEMErrorCode Contact::checkResults() {
       hertz_force = 3.968;
       fem_force = t_ptr[2];
     case 4: // axisymmetric
-      tol = 5e3;
+      tol = 5e-3;
     case 5: // axisymmetric
       hertz_force = 15.873;
       fem_force = t_ptr[1];
