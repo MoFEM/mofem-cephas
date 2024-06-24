@@ -99,7 +99,9 @@ struct MedInterface : public UnknownInterface {
    * @param  verb verbosity level
    * @return      error code
    */
-  MoFEMErrorCode writeMed(const string &file, boost::shared_ptr<std::vector< const CubitMeshSets * >> meshsets_ptr, boost::shared_ptr<Range> range_ptr = nullptr, int verb = 1);
+  MoFEMErrorCode writeMed(const string &file,
+           boost::shared_ptr<std::vector<const CubitMeshSets *>> meshsets_ptr,
+           boost::shared_ptr<Range> range_ptr = nullptr, int verb = 1);
 
   /**
    * Read fields

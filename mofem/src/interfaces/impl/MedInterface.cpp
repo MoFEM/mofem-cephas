@@ -670,18 +670,19 @@ MoFEMErrorCode MedInterface::getMeshsets(
   for (auto &m : meshsets_idx) {
     meshsets.push_back(&m);
   }
-    // Sort meshsets based on meshsetId
+  // Sort meshsets based on meshsetId
   std::sort(meshsets.begin(), meshsets.end(),
-      [](const CubitMeshSets* a, const CubitMeshSets* b) {
-          return a->getMeshsetId() < b->getMeshsetId();
-      }
-  );
+            [](const CubitMeshSets *a, const CubitMeshSets *b) {
+              return a->getMeshsetId() < b->getMeshsetId();
+            });
 
-  meshsets_ptr = boost::make_shared<std::vector<const CubitMeshSets *>>(meshsets);
+  meshsets_ptr =
+      boost::make_shared<std::vector<const CubitMeshSets *>>(meshsets);
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode MedInterface::writeMed(boost::shared_ptr<Range> range_ptr, int verb) {
+MoFEMErrorCode MedInterface::writeMed(boost::shared_ptr<Range> range_ptr,
+                                      int verb) {
   MoFEMFunctionBegin;
   if (medFileName.empty()) {
     CHKERR getFileNameFromCommandLine(verb);
@@ -776,10 +777,10 @@ MoFEMErrorCode MedInterface::writeMed(
 
   // function to get meshset names
   auto get_set_name = [&](const CubitMeshSets *iit) {
+    std::string bc_type_name;
     if (iit->getBcTypeULong() & BLOCKSET) {
-      EntityHandle meshset = iit->getMeshset();
 
-      std::string bc_type_name = iit->getName();
+      bc_type_name = iit->getName();
       if (bc_type_name == "NoNameSet") {
         bc_type_name = "BLOCKSET_NoNameSet_";
         bc_type_name += std::to_string(iit->getMeshsetId());
@@ -787,13 +788,11 @@ MoFEMErrorCode MedInterface::writeMed(
       return bc_type_name;
     } else if (iit->getBcTypeULong() & SIDESET ||
                iit->getBcTypeULong() & NODESET) {
-      EntityHandle meshset = iit->getMeshset();
 
       CubitBCType cubitBcType(iit->getBcTypeULong());
       auto test = iit->getBcType();
 
       unsigned jj = 0;
-      std::string bc_type_name;
       while (1 << jj != LASTSET_BC) {
         const CubitBCType jj_bc_type = 1 << jj;
         if ((iit->getBcType() & jj_bc_type).any()) {
@@ -804,8 +803,10 @@ MoFEMErrorCode MedInterface::writeMed(
         ++jj;
       }
       bc_type_name += std::to_string(iit->getMeshsetId());
-      return bc_type_name;
+    } else {
+      bc_type_name = "UnknownSet";
     }
+    return bc_type_name;
   };
 
   // loop over all entities in the write range
