@@ -90,7 +90,7 @@ double scale = 1.;
 
 PetscBool is_axisymmetric = PETSC_FALSE; //< Axisymmetric model
 
-#define HENCKY_SMALL_STRAIN
+// #define HENCKY_SMALL_STRAIN
 
 int atom_test = 0;
 
@@ -857,6 +857,8 @@ MoFEMErrorCode Contact::checkResults() {
     case 3: // 3D
       hertz_force = 3.968;
       fem_force = t_ptr[2];
+      tol = 2e-3;
+      break;
     case 4: // axisymmetric
       tol = 5e-3;
     case 5: // axisymmetric
