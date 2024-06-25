@@ -842,7 +842,7 @@ MoFEMErrorCode Contact::checkResults() {
     double fem_force;
     double analytical_active_area = 1.0;
     double norm = 1e-5;
-    double tol = 1e-3;
+    double tol_force = 1e-3;
     double tol_norm = 7.5; // change when analytical functions are updated
     double tol_area =3e-2;
     double fem_active_area =0.0;
@@ -863,26 +863,29 @@ MoFEMErrorCode Contact::checkResults() {
 
     case 3: // Hertz 3D
       hertz_force = 3.968;
+      tol_force = 2e-3;
       fem_force = t_ptr[2];
+      analytical_active_area = M_PI/4;
       fem_active_area = t_ptr[3];
       tol_area = 0.2;
-      tol = 2e-3;
       break;
 
     case 4: // axisymmetric
-      tol = 5e-3; 
+      tol_force = 5e-3; 
       fem_active_area = t_ptr[3];
       tol_area = 0.2;
       analytical_active_area = M_PI;
       break;
+
     case 5: // axisymmetric
       hertz_force = 15.873; 
       fem_force = t_ptr[1];
       norm = monitorPtr->getErrorNorm(1);
       fem_active_area = t_ptr[3];
       analytical_active_area = M_PI; 
-      tol_area = 0.2;
+      tol_area = 0.15;
       break;
+
     case 6: // wavy 2d
       hertz_force = 0.374;
       fem_force = t_ptr[1];
@@ -894,12 +897,12 @@ MoFEMErrorCode Contact::checkResults() {
       fem_force = t_ptr[2];
       fem_active_area = t_ptr[3];
       break;
-      
+
     default:
       SETERRQ1(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
                "atom test %d does not exist", atom_test);
     }
-    if (fabs(fem_force - hertz_force) / hertz_force > tol) {
+    if (fabs(fem_force - hertz_force) / hertz_force > tol_force) {
       SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                "atom test %d diverged due to wrong FORCE output! %3.4e != %3.4e", atom_test, fem_force,
                hertz_force);
@@ -911,7 +914,7 @@ MoFEMErrorCode Contact::checkResults() {
     }
     if (fabs(fem_active_area - analytical_active_area) > tol_area) {
       SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-               "atom test %d failed! %3.4e > %3.4e", atom_test, fem_active_area, analytical_active_area
+               "atom test %d failed! Area found %3.4e but should be  %3.4e", atom_test, fem_active_area, analytical_active_area
                );
 
     }

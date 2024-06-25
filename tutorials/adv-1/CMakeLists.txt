@@ -212,20 +212,8 @@ add_test(
   -atom_test 7
 )
 
-add_test(
-  wavy_3d_htet
-  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
-  contact_3d
-  -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/wavy_3d_htet_4p.h5m
-  -base demkowicz
-  -pc_type lu
-  -ts_type beuler
-  -ts_max_time 1 -ts_dt 1
-  -sdf_file ./sdf_files/sdf_plane_3d.py
-  -young_modulus 1e3
-  -poisson_ratio 0.4
-  -atom_test 7
-)
+
+
 
 if(IS_MFRONT_MOD)
   if(TFEL_DIR)
@@ -364,6 +352,52 @@ if(IS_MFRONT_MOD)
       -mi_block_10 LinearElasticity
       -mi_param_10_0 1e3
       -mi_param_10_1 0.4
+      -atom_test 3
+    )
+
+    add_test(
+      wavy_3d_htet
+      ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
+      contact_3d
+      -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/wavy_3d_htet_4p.h5m
+      -pc_type lu
+      -ts_type beuler
+      -ts_max_time 1 -ts_dt 1
+      -sdf_file ./sdf_files/sdf_plane_3d.py
+      -young_modulus 1e3
+      -poisson_ratio 0.4
+      -atom_test 7
+    )
+
+    add_test(
+      wavy_3d_mfront_hex
+      ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
+      contact_3d
+      -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/wavy_3d_hex_4p.h5m
+      -base demkowicz
+      -pc_type lu
+      -ts_type beuler
+      -ts_max_time 1 -ts_dt 1
+      -sdf_file ./sdf_files/sdf_plane_3d.py
+      -use_mfront 1
+      -is_axisymmetric 0
+      -mi_lib_path_10 ${CMAKE_CURRENT_BINARY_DIR}/src/libBehaviour.${DEFAULT_LIB_EXTENSION}
+      -mi_block_10 LinearElasticity     
+      -mi_param_10_0 1e3
+      -mi_param_10_1 0.4
+      -atom_test 7
+    )
+    add_test(
+      hertz_3d_test
+      ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
+      contact_3d
+      -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/hertz_3d_test_4p.h5m
+      -pc_type lu
+      -ts_type beuler
+      -ts_max_time 1 -ts_dt 1
+      -sdf_file ./sdf_files/sdf_hertz_3d.py
+      -young_modulus 1e3
+      -poisson_ratio 0.4
       -atom_test 3
     )
 
