@@ -844,8 +844,8 @@ MoFEMErrorCode Contact::checkResults() {
     double norm = 1e-5;
     double tol_force = 1e-3;
     double tol_norm = 7.5; // change when analytical functions are updated
-    double tol_area =3e-2;
-    double fem_active_area =t_ptr[3];
+    double tol_area = 3e-2;
+    double fem_active_area = t_ptr[3];
 
     switch (atom_test) {
     case 1: // plane stress
@@ -863,7 +863,7 @@ MoFEMErrorCode Contact::checkResults() {
       hertz_force = 3.968;
       tol_force = 2e-3;
       fem_force = t_ptr[2];
-      analytical_active_area = M_PI/4;
+      analytical_active_area = M_PI / 4;
       tol_area = 0.2;
       break;
 
@@ -896,19 +896,18 @@ MoFEMErrorCode Contact::checkResults() {
     }
     if (fabs(fem_force - hertz_force) / hertz_force > tol_force) {
       SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-               "atom test %d failed: Wrong FORCE output: %3.4e != %3.4e", atom_test, fem_force,
-               hertz_force);
+               "atom test %d failed: Wrong FORCE output: %3.4e != %3.4e",
+               atom_test, fem_force, hertz_force);
     }
     if (norm > tol_norm) {
       SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-               "atom test %d failed: Wrong NORM output: %3.4e > %3.4e", atom_test, norm,
-               tol_norm);
+               "atom test %d failed: Wrong NORM output: %3.4e > %3.4e",
+               atom_test, norm, tol_norm);
     }
     if (fabs(fem_active_area - analytical_active_area) > tol_area) {
       SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-               "atom test %d failed: AREA computed %3.4e but should be %3.4e", atom_test, fem_active_area, analytical_active_area
-               );
-
+               "atom test %d failed: AREA computed %3.4e but should be %3.4e",
+               atom_test, fem_active_area, analytical_active_area);
     }
     CHKERR VecRestoreArrayRead(ContactOps::CommonData::totalTraction, &t_ptr);
   }
