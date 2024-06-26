@@ -790,7 +790,7 @@ MoFEMErrorCode Contact::tsSolve() {
   auto dm = simple->getDM();
   auto D = createDMVector(dm);
 
-  ContactOps::CommonData::createTotalTraction(mField); //
+  ContactOps::CommonData::createTotalTraction(mField);
 
   uXScatter = scatter_create(D, 0);
   uYScatter = scatter_create(D, 1);
@@ -845,20 +845,18 @@ MoFEMErrorCode Contact::checkResults() {
     double tol_force = 1e-3;
     double tol_norm = 7.5; // change when analytical functions are updated
     double tol_area =3e-2;
-    double fem_active_area =0.0;
+    double fem_active_area =t_ptr[3];
 
     switch (atom_test) {
     case 1: // plane stress
       hertz_force = 3.927;
       fem_force = t_ptr[1];
-      fem_active_area = t_ptr[3];
       break;
 
     case 2: // plane strain
       hertz_force = 4.675;
       fem_force = t_ptr[1];
       norm = monitorPtr->getErrorNorm(1);
-      fem_active_area = t_ptr[3];
       break;
 
     case 3: // Hertz 3D
@@ -866,36 +864,30 @@ MoFEMErrorCode Contact::checkResults() {
       tol_force = 2e-3;
       fem_force = t_ptr[2];
       analytical_active_area = M_PI/4;
-      fem_active_area = t_ptr[3];
       tol_area = 0.2;
       break;
 
     case 4: // axisymmetric
-      tol_force = 5e-3; 
-      fem_active_area = t_ptr[3];
+      tol_force = 5e-3;
       tol_area = 0.2;
-      analytical_active_area = M_PI;
-      break;
+      // analytical_active_area = M_PI;
 
     case 5: // axisymmetric
-      hertz_force = 15.873; 
+      hertz_force = 15.873;
+      tol_force = 5e-3;
       fem_force = t_ptr[1];
       norm = monitorPtr->getErrorNorm(1);
-      fem_active_area = t_ptr[3];
-      analytical_active_area = M_PI; 
-      tol_area = 0.15;
+      analytical_active_area = M_PI;
       break;
 
     case 6: // wavy 2d
       hertz_force = 0.374;
       fem_force = t_ptr[1];
-      fem_active_area = t_ptr[3];
       break;
 
     case 7: // wavy 3d
       hertz_force = 0.5289;
       fem_force = t_ptr[2];
-      fem_active_area = t_ptr[3];
       break;
 
     default:
@@ -904,17 +896,17 @@ MoFEMErrorCode Contact::checkResults() {
     }
     if (fabs(fem_force - hertz_force) / hertz_force > tol_force) {
       SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-               "atom test %d diverged due to wrong FORCE output! %3.4e != %3.4e", atom_test, fem_force,
+               "atom test %d failed: Wrong FORCE output: %3.4e != %3.4e", atom_test, fem_force,
                hertz_force);
     }
     if (norm > tol_norm) {
       SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-               "atom test %d diverged due to wrong NORM output ! %3.4e > %3.4e", atom_test, norm,
+               "atom test %d failed: Wrong NORM output: %3.4e > %3.4e", atom_test, norm,
                tol_norm);
     }
     if (fabs(fem_active_area - analytical_active_area) > tol_area) {
       SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-               "atom test %d failed! Area found %3.4e but should be  %3.4e", atom_test, fem_active_area, analytical_active_area
+               "atom test %d failed: AREA computed %3.4e but should be %3.4e", atom_test, fem_active_area, analytical_active_area
                );
 
     }

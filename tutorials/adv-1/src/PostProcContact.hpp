@@ -252,10 +252,9 @@ struct Monitor : public FEMethod {
           (AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
               integrate_area->getOpPtrVector(), {HDIV}, "GEOMETRY")),
           "Apply transform");
-      // We have to integrate on curved face geometry, thus integration weight
-      // have to adjusted.
+      // We have to integrate on curved face geometry, thus integration weight have to adjusted.
       integrate_area->getOpPtrVector().push_back(
-          new OpSetHOWeightsOnSubDim<SPACE_DIM>()); // Ask Lukasz
+          new OpSetHOWeightsOnSubDim<SPACE_DIM>());
       integrate_area->getRuleHook = [](int, int, int approx_order) {
         return 2 * approx_order + geom_order - 1;
       };

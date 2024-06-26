@@ -373,7 +373,8 @@ hess_surface_distance_function(double delta_t, double t, int nb_gauss_pts,
     m_hess_sdf.resize(6, nb_gauss_pts, false);
     for (size_t gg = 0; gg < nb_gauss_pts; ++gg) {
       for (int idx = 0; idx < 6; ++idx)
-        m_hess_sdf(idx, gg) = *(hess_ptr + (6 * gg + idx));
+        m_hess_sdf(idx, gg) =
+            *(hess_ptr + (6 * gg + idx));
     }
     return m_hess_sdf;
   }
@@ -548,12 +549,12 @@ private:
 
 template <typename BoundaryEleOp> struct ContactIntegrators {
   template <int DIM, IntegrationType I>
-  using OpAssembleTotalContactArea =
-      OpAssembleTotalContactAreaImpl<DIM, I, BoundaryEleOp>;
-
-  template <int DIM, IntegrationType I>
   using OpAssembleTotalContactTraction =
       OpAssembleTotalContactTractionImpl<DIM, I, BoundaryEleOp>;
+
+  template <int DIM, IntegrationType I>
+  using OpAssembleTotalContactArea =
+      OpAssembleTotalContactAreaImpl<DIM, I, BoundaryEleOp>;
 
   template <int DIM, IntegrationType I>
   using OpEvaluateSDF = OpEvaluateSDFImpl<DIM, I, BoundaryEleOp>;
@@ -706,9 +707,7 @@ OpAssembleTotalContactAreaImpl<DIM, GAUSS, BoundaryEleOp>::doWork(
       auto tn = -t_traction(i) * t_grad_sdf(i);
       auto c = constrain(t_sdf, tn);
       double alpha = t_w * jacobian;
-      // if (false) {
-      //   alpha *= sqrt(t_normal_at_pts(i) * t_normal_at_pts(i));
-      // } else {
+
       FTensor::Tensor2<double, DIM, DIM> F;
       FTensor::Tensor2<double, DIM, DIM> invF;
       FTensor::Tensor1<double, DIM> t_normal_current;
@@ -723,7 +722,6 @@ OpAssembleTotalContactAreaImpl<DIM, GAUSS, BoundaryEleOp>::doWork(
       if (fe_type == MBTRI) {
         alpha /= 2;
       }
-
       if (c > 1e-12) {
         t_sum_a(0) += alpha; // real area
       }
