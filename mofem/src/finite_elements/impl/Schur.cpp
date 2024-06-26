@@ -1250,12 +1250,15 @@ boost::shared_ptr<BlockStructure> createBlockMatStructure(
     return std::make_pair(lo, hi);
   };
 
+  // extract DOFs for rows/columns. DOFs are associated with fields entities
+  // for given problem. 
   auto row_extractor = [](auto &e) { return e->entityCacheRowDofs; };
   auto col_extractor = [](auto &e) { return e->entityCacheColDofs; };
 
   auto extract_data = [](auto &&its, auto extractor) {
     std::vector<std::tuple<int, int, int>> data;
     data.reserve(std::distance(its.first, its.second));
+    // iterate field dofs
     for (; its.first != its.second; ++its.first) {
       if (auto e = its.first->lock()) {
         if (auto cache = extractor(e).lock()) {
