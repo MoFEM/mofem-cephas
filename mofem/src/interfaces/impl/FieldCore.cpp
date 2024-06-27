@@ -313,6 +313,18 @@ MoFEMErrorCode Core::addEntsToFieldByDim(const Range &ents, const int dim,
   idm = get_field_meshset(name);
   FieldSpace space;
   CHKERR get_moab().tag_get_data(th_FieldSpace, &idm, 1, &space);
+  FieldContinuity continuity;
+  CHKERR get_moab().tag_get_data(th_FieldContinuity, &idm, 1, &continuity);
+
+  switch (continuity) {
+  case CONTINUOUS:
+  case DISCONTINUOUS:
+    break;
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "sorry, unknown continuity added to entity");
+  }
+
   std::vector<int> nb_ents_on_dim(3, 0);
   switch (space) {
   case L2:
@@ -320,6 +332,8 @@ MoFEMErrorCode Core::addEntsToFieldByDim(const Range &ents, const int dim,
     break;
   case H1:
     CHKERR get_moab().add_entities(idm, ents);
+    if (continuity == DISCONTINUOUS)
+      break;
     for (int dd = 0; dd != dim; ++dd) {
       Range adj_ents;
       CHKERR get_moab().get_adjacencies(ents, dd, false, adj_ents,
@@ -338,6 +352,8 @@ MoFEMErrorCode Core::addEntsToFieldByDim(const Range &ents, const int dim,
     break;
   case HCURL:
     CHKERR get_moab().add_entities(idm, ents);
+    if (continuity == DISCONTINUOUS)
+      break;
     for (int dd = 1; dd != dim; ++dd) {
       Range adj_ents;
       CHKERR get_moab().get_adjacencies(ents, dd, false, adj_ents,
@@ -348,6 +364,8 @@ MoFEMErrorCode Core::addEntsToFieldByDim(const Range &ents, const int dim,
     break;
   case HDIV:
     CHKERR get_moab().add_entities(idm, ents);
+    if (continuity == DISCONTINUOUS)
+      break;
     if (dim > 2) {
       Range adj_ents;
       CHKERR get_moab().get_adjacencies(ents, 2, false, adj_ents,
@@ -360,6 +378,7 @@ MoFEMErrorCode Core::addEntsToFieldByDim(const Range &ents, const int dim,
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "sorry, unknown space added to entity");
   }
+
   if (verb >= VERBOSE) {
     MOFEM_LOG("SYNC", Sev::noisy) << "add entities to field " << name;
     MOFEM_LOG("SYNC", Sev::noisy) << "\tnb. add ents " << ents.size();
