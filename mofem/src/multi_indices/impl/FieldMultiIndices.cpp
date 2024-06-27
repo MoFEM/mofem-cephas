@@ -2,7 +2,6 @@
  * \brief Multi-index containers for fields
  */
 
-
 namespace MoFEM {
 
 // Not partitioned
@@ -169,7 +168,7 @@ Field::Field(moab::Interface &moab, const EntityHandle meshset)
       forderTable[tt] = NULL;
   };
 
-  auto set_entity_order_table = [&]() {
+  auto set_continuos_entity_order_table = [&]() {
     switch (*tagBaseData) {
     case AINSWORTH_LEGENDRE_BASE:
     case AINSWORTH_LOBATTO_BASE:
@@ -344,8 +343,140 @@ Field::Field(moab::Interface &moab, const EntityHandle meshset)
     }
   };
 
+  auto set_discontinuous_entity_order_table = [&]() {
+    switch (*tagBaseData) {
+    case AINSWORTH_LEGENDRE_BASE:
+    case AINSWORTH_LOBATTO_BASE:
+      switch (*tagSpaceData) {
+      case HCURL:
+        forderTable[MBVERTEX] = [](int P) -> int {
+          (void)P;
+          return 0;
+        };
+        forderTable[MBEDGE] = [](int P) -> int {
+          return NBEDGE_AINSWORTH_HCURL(P);
+        };
+        forderTable[MBTRI] = [](int P) -> int {
+          return 3 * NBEDGE_AINSWORTH_HCURL(P) + NBFACETRI_AINSWORTH_HCURL(P);
+        };
+        forderTable[MBTET] = [](int P) -> int {
+          return 6 * NBEDGE_AINSWORTH_HCURL(P) +
+                 4 * NBFACETRI_AINSWORTH_HCURL(P) +
+                 NBVOLUMETET_AINSWORTH_HCURL(P);
+        };
+        break;
+      case HDIV:
+        forderTable[MBVERTEX] = [](int P) -> int {
+          (void)P;
+          return 0;
+        };
+        forderTable[MBEDGE] = [](int P) -> int {
+          (void)P;
+          return NBEDGE_HDIV(P);
+        };
+        forderTable[MBTRI] = [](int P) -> int {
+          return NBFACETRI_AINSWORTH_HDIV(P);
+        };
+        forderTable[MBTET] = [](int P) -> int {
+          return 4 * NBFACETRI_AINSWORTH_HDIV(P) +
+                 NBVOLUMETET_AINSWORTH_HDIV(P);
+        };
+        break;
+      default:
+        THROW_MESSAGE("unknown approximation space or not implemented");
+      }
+      break;
+    case AINSWORTH_BERNSTEIN_BEZIER_BASE:
+      THROW_MESSAGE("unknown approximation space or not yet implemented");
+      break;
+    case DEMKOWICZ_JACOBI_BASE:
+      switch (*tagSpaceData) {
+      case HCURL:
+        forderTable[MBVERTEX] = [](int P) -> int {
+          (void)P;
+          return 0;
+        };
+        forderTable[MBEDGE] = [](int P) -> int {
+          return NBEDGE_DEMKOWICZ_HCURL(P);
+        };
+        forderTable[MBTRI] = [](int P) -> int {
+          return 3 * NBEDGE_DEMKOWICZ_HCURL(P) + NBFACETRI_DEMKOWICZ_HCURL(P);
+        };
+        forderTable[MBQUAD] = [](int P) -> int {
+          return 4 * NBEDGE_DEMKOWICZ_HCURL(P) + NBFACEQUAD_DEMKOWICZ_HCURL(P);
+        };
+        forderTable[MBTET] = [](int P) -> int {
+          return 6 * NBEDGE_DEMKOWICZ_HCURL(P) +
+                 4 * NBFACETRI_DEMKOWICZ_HCURL(P) +
+                 NBVOLUMETET_DEMKOWICZ_HCURL(P);
+        };
+        forderTable[MBHEX] = [](int P) -> int {
+          return 12 * NBEDGE_DEMKOWICZ_HCURL(P) +
+                 6 * NBFACEQUAD_DEMKOWICZ_HCURL(P) +
+                 NBVOLUMEHEX_DEMKOWICZ_HCURL(P);
+        };
+        break;
+      case HDIV:
+        forderTable[MBVERTEX] = [](int P) -> int {
+          (void)P;
+          return 0;
+        };
+        forderTable[MBEDGE] = [](int P) -> int {
+          (void)P;
+          return 0;
+        };
+        forderTable[MBTRI] = [](int P) -> int {
+          return NBFACETRI_DEMKOWICZ_HDIV(P);
+        };
+        forderTable[MBQUAD] = [](int P) -> int {
+          return NBFACEQUAD_DEMKOWICZ_HDIV(P);
+        };
+        forderTable[MBTET] = [](int P) -> int {
+          return 4 * NBFACETRI_DEMKOWICZ_HDIV(P) +
+                 NBVOLUMETET_DEMKOWICZ_HDIV(P);
+        };
+        forderTable[MBHEX] = [](int P) -> int {
+          return 6 * NBFACEQUAD_DEMKOWICZ_HDIV(P) +
+                 NBVOLUMEHEX_DEMKOWICZ_HDIV(P);
+        };
+        break;
+      default:
+        THROW_MESSAGE("unknown approximation space or not yet implemented");
+      }
+      break;
+    case USER_BASE:
+      for (int ee = 0; ee < MBMAXTYPE; ee++) {
+        forderTable[ee] = [](int P) -> int {
+          (void)P;
+          return 0;
+        };
+      }
+      break;
+    default:
+      if (*tagSpaceData != NOFIELD) {
+        THROW_MESSAGE("unknown approximation base");
+      } else {
+        for (EntityType t = MBVERTEX; t < MBMAXTYPE; t++)
+          forderTable[t] = [](int P) -> int {
+            (void)P;
+            return 1;
+          };
+      }
+    }
+  };
+
   reset_entity_order_table();
-  set_entity_order_table();
+  switch (*tagFieldContinuityData) {
+  case CONTINUOUS:
+    set_continuos_entity_order_table();
+    break;
+  case DISCONTINUOUS:
+    set_discontinuous_entity_order_table();
+    break;
+  default:
+    THROW_MESSAGE("unknown field continuity");
+    break;
+  }
   ierr = rebuildDofsOrderMap();
   CHKERRABORT(PETSC_COMM_SELF, ierr);
 };
