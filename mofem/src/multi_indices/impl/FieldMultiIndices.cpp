@@ -389,8 +389,8 @@ MoFEMErrorCode Field::rebuildDofsOrderMap() {
 
 std::ostream &operator<<(std::ostream &os, const Field &e) {
   os << e.getNameRef() << " field_id " << e.getId().to_ulong() << " space "
-     << FieldSpaceNames[e.getSpace()] << " approximation base "
-     << ApproximationBaseNames[e.getApproxBase()] << " nb coefficients "
+     << e.getSpaceName() << " field continuity " << e.getContinuityName()
+     << " approximation base " << e.getApproxBaseName() << " nb coefficients "
      << e.getNbOfCoeffs() << " meshset " << e.meshSet;
   return os;
 }
