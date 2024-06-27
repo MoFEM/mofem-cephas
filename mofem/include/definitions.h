@@ -92,6 +92,19 @@ enum FieldSpace {
 const static char *const FieldSpaceNames[] = {
     "NOSPACE", "NOFIELD", "H1", "HCURL", "HDIV", "L2", "LASTSPACE"};
 
+/**
+ * @brief Field continuity
+ * 
+ */
+enum FieldContinuity {
+  CONTINUOUS = 0,
+  DISCONTINUOUS = 1,
+  LASTCONTINUITY
+};
+
+const static char *const FieldContinuityNames[] = {"CONTINUOUS",
+                                                   "DISCONTINUOUS"};
+
 /// \brief Those types control how functions respond on arguments, f.e. error
 /// handling
 enum MoFEMTypes {

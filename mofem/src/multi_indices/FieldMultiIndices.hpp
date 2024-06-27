@@ -78,9 +78,10 @@ struct Field {
   Tag th_AppOrder;       ///< Tag storing approximation order on entity
   Tag th_FieldRank;      /// Tag field rank
 
-  BitFieldId *tagId;                   ///< tag keeps field id
-  FieldSpace *tagSpaceData;            ///< tag keeps field space
-  FieldApproximationBase *tagBaseData; ///< tag keeps field base
+  BitFieldId *tagId;                       ///< tag keeps field id
+  FieldSpace *tagSpaceData;                ///< tag keeps field space
+  FieldContinuity *tagFieldContinuityData; ///< tag keeps field continuity
+  FieldApproximationBase *tagBaseData;     ///< tag keeps field base
 
   /// tag keeps field rank (dimension, f.e. Temperature field has rank 1,
   /// displacements field in 3d has rank 3)

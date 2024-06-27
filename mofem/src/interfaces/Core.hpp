@@ -258,7 +258,7 @@ protected:
   Tag th_RefParentHandle, th_RefBitLevel, th_RefBitLevel_Mask, th_RefBitEdge,
       th_RefFEMeshset;
   Tag th_FieldId, th_FieldName, th_FieldName_DataNamePrefix, th_FieldSpace,
-      th_FieldBase;
+      th_FieldContinuity, th_FieldBase;
   Tag th_FEId, th_FEName;
   Tag th_FEIdCol, th_FEIdRow, th_FEIdData;
   Tag th_ProblemId, th_ProblemName, th_ProblemFEId;
@@ -401,6 +401,42 @@ protected:
   * \brief Add filed
   * @param  name           Field name
   * @param  space          Space L2,H1,Hdiv,Hcurl
+  * @param  continuity     Field continuity (you can set broken space)
+  * @param  base           Approximation base AINSWORTH_LEGENDRE_BASE,
+  AINSWORTH_BERNSTEIN_BEZIER_BASE ...
+  * @param  nb_coefficients Number of field coefficients
+  * @param  tag_type       Tag type, MB_TAG_DENSE or MB_TAG_SPARSE (default)
+  * @param  bh             Control behavior, if MF_EXCL throws error if exist
+  * @param  verb           Verbosity level
+  * @return                Return error code
+
+  TODO: \todo MB_TAG_DENSE will not work properly in general case. It is need to
+  separate field tags for each entity separately. That will allow for HO orders
+  but homogenous approx. order on each entity. Need some discussion what is
+  optimal solution. MB_TAG_SPARSE gives flexibility, but it not memory
+  efficient. MB_TAG_DENSE uses memory more efficient and in principle allow for
+  better efficiency if properly utilized.
+
+
+  FIXME: \bug Need to resolve problem of dense tags at this stage of development
+  will make only problems
+
+  */
+  virtual MoFEMErrorCode
+  add_broken_field(const std::string &name, const FieldSpace space,
+                   const FieldApproximationBase base,
+                   const FieldCoefficientsNumber nb_coefficients,
+                   const TagType tag_type = MB_TAG_SPARSE,
+                   const enum MoFEMTypes bh = MF_EXCL,
+                   int verb = DEFAULT_VERBOSITY);
+
+  /**@{*/
+
+  /**
+  * \brief Add filed
+  * @param  name           Field name
+  * @param  space          Space L2,H1,Hdiv,Hcurl
+  * @param  continuity     Field continuity (you can set broken space)
   * @param  base           Approximation base AINSWORTH_LEGENDRE_BASE,
   AINSWORTH_BERNSTEIN_BEZIER_BASE ...
   * @param  nb_coefficients Number of field coefficients
@@ -444,6 +480,7 @@ protected:
    * @tparam CoreN
    * @param name
    * @param space
+   * @parma continuity
    * @param base
    * @param nb_coefficients
    * @param tag_type
@@ -452,6 +489,7 @@ protected:
    * @return MoFEMErrorCode
    */
   MoFEMErrorCode addField(const std::string &name, const FieldSpace space,
+                          const FieldContinuity continuity,
                           const FieldApproximationBase base,
                           const FieldCoefficientsNumber nb_coefficients,
                           const TagType tag_type, const enum MoFEMTypes bh,

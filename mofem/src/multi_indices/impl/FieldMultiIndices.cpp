@@ -15,7 +15,8 @@ const bool PetscLocalIdx_mi_tag::IamNotPartitioned = false;
 // fields
 Field::Field(moab::Interface &moab, const EntityHandle meshset)
     : moab(moab), meshSet(meshset), tagId(NULL), tagSpaceData(NULL),
-      tagNbCoeffData(NULL), tagName(NULL), tagNameSize(0) {
+      tagFieldContinuityData(NULL), tagNbCoeffData(NULL), tagName(NULL),
+      tagNameSize(0) {
 
   auto get_tag_data_ptr = [&](const auto name, auto &tag_data) {
     MoFEMFunctionBegin;
@@ -30,6 +31,9 @@ Field::Field(moab::Interface &moab, const EntityHandle meshset)
   CHKERRABORT(PETSC_COMM_SELF, ierr);
   // space
   ierr = get_tag_data_ptr("_FieldSpace", tagSpaceData);
+  CHKERRABORT(PETSC_COMM_SELF, ierr);
+  // continuity
+  ierr = get_tag_data_ptr("_FieldContinuity", tagFieldContinuityData);
   CHKERRABORT(PETSC_COMM_SELF, ierr);
 
   // approx. base

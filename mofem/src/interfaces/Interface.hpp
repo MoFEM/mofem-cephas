@@ -260,6 +260,33 @@ struct CoreInterface : public UnknownInterface {
    * @return                   error code
    */
   virtual MoFEMErrorCode
+  add_broken_field(const std::string &name, const FieldSpace space,
+                   const FieldApproximationBase base,
+                   const FieldCoefficientsNumber nb_of_coefficients,
+                   const TagType tag_type = MB_TAG_SPARSE,
+                   const enum MoFEMTypes bh = MF_EXCL,
+                   int verb = DEFAULT_VERBOSITY) = 0;
+
+  /**
+   * \brief Add field
+   *
+   * \note add_file is a collective, should be executed on all processors.
+   * Otherwise could lead to deadlock.
+   *
+   * @param  name              name of the filed
+   * @param  space             space (L2,H1,Hdiv,Hcurl)
+   * @param  continuity        continuity (CONTINUOUS, DISCONTINUOUS)
+   * @param  base              approximation base, see FieldApproximationBase
+   * @param  nb_of_coefficients number of field coefficients
+   * @param  tag_type          type of the tag MB_TAG_DENSE or MB_TAG_SPARSE
+   * (DENSE is faster and uses less memory, SPARSE is more flexible if you
+   * define field on subdomains)
+   * @param  bh                if MF_EXCL throws error if field exits, MF_ZERO
+   * no error if field exist
+   * @param  verb              verbosity level
+   * @return                   error code
+   */  
+  virtual MoFEMErrorCode
   add_field(const std::string &name, const FieldSpace space,
             const FieldApproximationBase base,
             const FieldCoefficientsNumber nb_of_coefficients,

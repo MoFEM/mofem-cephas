@@ -106,6 +106,7 @@ MoFEMErrorCode Core::get_field_entities_by_handle(const std::string name,
 }
 
 MoFEMErrorCode Core::addField(const std::string &name, const FieldSpace space,
+                              const FieldContinuity continuity,
                               const FieldApproximationBase base,
                               const FieldCoefficientsNumber nb_of_coefficients,
                               const TagType tag_type, const enum MoFEMTypes bh,
@@ -137,10 +138,12 @@ MoFEMErrorCode Core::addField(const std::string &name, const FieldSpace space,
 
   auto create_tags = [&](auto meshset, auto id) {
     MoFEMFunctionBegin;
-    CHKERR
-    get_moab().tag_set_data(th_FieldId, &meshset, 1, &id);
+    CHKERR get_moab().tag_set_data(th_FieldId, &meshset, 1, &id);
     // space
     CHKERR get_moab().tag_set_data(th_FieldSpace, &meshset, 1, &space);
+    // continuity
+    CHKERR get_moab().tag_set_data(th_FieldContinuity, &meshset, 1,
+                                   &continuity);
     // base
     CHKERR get_moab().tag_set_data(th_FieldBase, &meshset, 1, &base);
 
@@ -151,7 +154,7 @@ MoFEMErrorCode Core::addField(const std::string &name, const FieldSpace space,
     CHKERR get_moab().tag_set_by_ptr(th_FieldName, &meshset, 1, tag_data,
                                      tag_sizes);
     // rank
-		Tag th_rank;
+    Tag th_rank;
     int def_rank = 1;
     const std::string tag_rank_name = "_Field_Rank_" + name;
     CHKERR get_moab().tag_get_handle(tag_rank_name.c_str(), 1, MB_TYPE_INTEGER,
@@ -275,13 +278,23 @@ MoFEMErrorCode Core::addField(const std::string &name, const FieldSpace space,
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode
+Core::add_broken_field(const std::string &name, const FieldSpace space,
+                       const FieldApproximationBase base,
+                       const FieldCoefficientsNumber nb_of_coefficients,
+                       const TagType tag_type, const enum MoFEMTypes bh,
+                       int verb) {
+  return this->addField(name, space, DISCONTINUOUS, base, nb_of_coefficients,
+                        tag_type, bh, verb);
+}
+
 MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
                                const FieldApproximationBase base,
                                const FieldCoefficientsNumber nb_of_coefficients,
                                const TagType tag_type, const enum MoFEMTypes bh,
                                int verb) {
-  return this->addField(name, space, base, nb_of_coefficients, tag_type, bh,
-                        verb);
+  return this->addField(name, space, CONTINUOUS, base, nb_of_coefficients,
+                        tag_type, bh, verb);
 }
 
 MoFEMErrorCode Core::addEntsToFieldByDim(const Range &ents, const int dim,
