@@ -158,6 +158,19 @@ struct Field {
     return std::string(FieldSpaceNames[getSpace()]);
   }
 
+  /** \brief Get field space continuity */
+  inline FieldContinuity getContinuity() const {
+    return *tagFieldContinuityData;
+  }
+
+  /**
+   * @brief  Get field space continuity name
+   * 
+   */
+  inline auto getContinuityName() const {
+    return std::string(FieldContinuityNames[getContinuity()]);
+  }
+
   /**
    * \brief   Get approximation base
    * @return  Approximation base
@@ -337,6 +350,16 @@ struct interface_Field : public interface_FieldImpl<FIELD, REFENT> {
   /// @return get approximation base
   inline FieldApproximationBase getApproxBase() const {
     return getFieldRawPtr()->getApproxBase();
+  }
+
+  /// @return get space continuity
+  inline FieldContinuity getContinuity() const {
+    return getFieldRawPtr()->getContinuity();
+  }
+
+  /// @return get space continuity name
+  inline auto getContinuityName() const {
+    return getFieldRawPtr()->getContinuityName();
   }
 
   /// @return get number of coefficients for DOF
