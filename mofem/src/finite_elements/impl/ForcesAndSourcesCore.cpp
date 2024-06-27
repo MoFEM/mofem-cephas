@@ -1050,11 +1050,12 @@ MoFEMErrorCode ForcesAndSourcesCore::calHierarchicalBaseFunctionsOnElement(
         if (dataOnElement[H1]->sPace.test(space) &&
             dataOnElement[H1]->bAse.test(b) &&
             dataOnElement[H1]->basesOnSpaces[space].test(b)) {
-          CHKERR getElementPolynomialBase()->getValue(
-              gaussPts,
-              boost::make_shared<EntPolynomialBaseCtx>(
-                  *dataOnElement[space], static_cast<FieldSpace>(space),
-                  static_cast<FieldApproximationBase>(b), NOBASE));
+          CHKERR getElementPolynomialBase()
+              -> getValue(gaussPts,
+                          boost::make_shared<EntPolynomialBaseCtx>(
+                              *dataOnElement[space],
+                              static_cast<FieldSpace>(space), CONTINUOUS,
+                              static_cast<FieldApproximationBase>(b), NOBASE));
         }
       }
       break;
@@ -1067,11 +1068,12 @@ MoFEMErrorCode ForcesAndSourcesCore::calHierarchicalBaseFunctionsOnElement(
         if (dataOnElement[H1]->sPace.test(space) &&
             dataOnElement[H1]->bAse.test(b) &&
             dataOnElement[H1]->basesOnSpaces[space].test(b)) {
-          CHKERR getUserPolynomialBase()->getValue(
-              gaussPts,
-              boost::make_shared<EntPolynomialBaseCtx>(
-                  *dataOnElement[space], static_cast<FieldSpace>(space),
-                  static_cast<FieldApproximationBase>(b), NOBASE));
+          CHKERR getUserPolynomialBase()
+              -> getValue(gaussPts,
+                          boost::make_shared<EntPolynomialBaseCtx>(
+                              *dataOnElement[space],
+                              static_cast<FieldSpace>(space), CONTINUOUS,
+                              static_cast<FieldApproximationBase>(b), NOBASE));
         }
       break;
     default:
@@ -1290,7 +1292,7 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
             CHKERR getElementPolynomialBase()->getValue(
                 gaussPts, boost::make_shared<EntPolynomialBaseCtx>(
                               *dataOnElement[space], field_name,
-                              static_cast<FieldSpace>(space),
+                              static_cast<FieldSpace>(space), CONTINUOUS,
                               AINSWORTH_BERNSTEIN_BEZIER_BASE, NOBASE));
             fields_list.insert(field_name);
           }

@@ -16,19 +16,21 @@ EntPolynomialBaseCtx::query_interface(boost::typeindex::type_index type_index,
 
 EntPolynomialBaseCtx::EntPolynomialBaseCtx(
     EntitiesFieldData &data, const FieldSpace space,
-    const FieldApproximationBase base,
+    const FieldContinuity continuity, const FieldApproximationBase base,
     const FieldApproximationBase copy_node_base)
-    : dAta(data), sPace(space), bAse(base), copyNodeBase(copy_node_base) {
+    : dAta(data), sPace(space), spaceContinuity(continuity), bAse(base),
+      copyNodeBase(copy_node_base) {
   ierr = setBase();
   CHKERRABORT(PETSC_COMM_WORLD, ierr);
 }
 
 EntPolynomialBaseCtx::EntPolynomialBaseCtx(
     EntitiesFieldData &data, const std::string field_name,
-    const FieldSpace space, const FieldApproximationBase base,
+    const FieldSpace space, const FieldContinuity continuity,
+    const FieldApproximationBase base,
     const FieldApproximationBase copy_node_base)
-    : dAta(data), sPace(space), bAse(base), fieldName(field_name),
-      copyNodeBase(copy_node_base) {
+    : dAta(data), sPace(space), spaceContinuity(continuity), bAse(base),
+      fieldName(field_name), copyNodeBase(copy_node_base) {
   ierr = setBase();
   CHKERRABORT(PETSC_COMM_WORLD, ierr);
 }

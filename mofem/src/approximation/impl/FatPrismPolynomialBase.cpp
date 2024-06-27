@@ -17,15 +17,14 @@ MoFEMErrorCode FatPrismPolynomialBaseCtx::query_interface(
 }
 
 FatPrismPolynomialBaseCtx::FatPrismPolynomialBaseCtx(
-    EntitiesFieldData &data,
-    EntitiesFieldData &data_triangles_only,
+    EntitiesFieldData &data, EntitiesFieldData &data_triangles_only,
     EntitiesFieldData &data_trough_thickness,
     MatrixDouble &gauss_pts_triangles_only,
     MatrixDouble &gauss_pts_through_thickness, moab::Interface &moab,
     const NumeredEntFiniteElement *fe_ptr, const FieldSpace space,
     const FieldApproximationBase base,
     const FieldApproximationBase copy_node_base)
-    : EntPolynomialBaseCtx(data, space, base, copy_node_base),
+    : EntPolynomialBaseCtx(data, space, CONTINUOUS, base, copy_node_base),
       dataTrianglesOnly(data_triangles_only),
       dataTroughThickness(data_trough_thickness),
       gaussPtsTrianglesOnly(gauss_pts_triangles_only),

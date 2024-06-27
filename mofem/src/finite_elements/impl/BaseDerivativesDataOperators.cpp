@@ -46,7 +46,7 @@ MoFEMErrorCode OpBaseDerivativesBase::calculateBase(GetOrderFun get_order) {
 
   CHKERR fe_ptr->getElementPolynomialBase()->getValue(
       getGaussPts(), boost::make_shared<EntPolynomialBaseCtx>(
-                         *dataL2, static_cast<FieldSpace>(L2),
+                         *dataL2, static_cast<FieldSpace>(L2), CONTINUOUS,
                          static_cast<FieldApproximationBase>(base), NOBASE));
   MoFEMFunctionReturnHot(0);
 }

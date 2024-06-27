@@ -345,8 +345,9 @@ int main(int argc, char *argv[]) {
       CHKERRG(ierr);
 
       ierr = TetPolynomialBase().getValue(
-          pts_tet, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                       tet_data, H1, AINSWORTH_LEGENDRE_BASE, NOBASE)));
+          pts_tet,
+          boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+              tet_data, H1, CONTINUOUS, AINSWORTH_LEGENDRE_BASE, NOBASE)));
       CHKERRG(ierr);
       if (tet_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get() !=
           tet_data.dataOnEntities[MBVERTEX][0]
@@ -413,7 +414,7 @@ int main(int argc, char *argv[]) {
           &pts_tet(0, 0), &pts_tet(1, 0), &pts_tet(2, 0), nb_gauss_pts);
       CHKERR TetPolynomialBase().getValue(
           pts_tet, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                       tet_data, "TEST_FIELD", H1,
+                       tet_data, "TEST_FIELD", H1, CONTINUOUS,
                        AINSWORTH_BERNSTEIN_BEZIER_BASE, NOBASE)));
       if (tet_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get() ==
           tet_data.dataOnEntities[MBVERTEX][0]
@@ -474,7 +475,7 @@ int main(int argc, char *argv[]) {
     if (choice_value == HDIVTET_AINSWORTH) {
       ierr = TetPolynomialBase().getValue(
           pts_tet, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                       tet_data, HDIV, AINSWORTH_LEGENDRE_BASE)));
+                       tet_data, HDIV, CONTINUOUS, AINSWORTH_LEGENDRE_BASE)));
       CHKERRG(ierr);
       double sum = 0, diff_sum = 0;
       std::cout << "Faces\n";
@@ -514,7 +515,7 @@ int main(int argc, char *argv[]) {
     if (choice_value == HDIVTET_DEMKOWICZ) {
       ierr = TetPolynomialBase().getValue(
           pts_tet, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                       tet_data, HDIV, DEMKOWICZ_JACOBI_BASE)));
+                       tet_data, HDIV, CONTINUOUS, DEMKOWICZ_JACOBI_BASE)));
       CHKERRG(ierr);
       double sum = 0, diff_sum = 0;
       std::cout << "Faces\n";
@@ -556,7 +557,7 @@ int main(int argc, char *argv[]) {
     if (choice_value == HCURLTET_AINSWORTH) {
       ierr = TetPolynomialBase().getValue(
           pts_tet, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                       tet_data, HCURL, AINSWORTH_LEGENDRE_BASE)));
+                       tet_data, HCURL, CONTINUOUS, AINSWORTH_LEGENDRE_BASE)));
       CHKERRG(ierr);
       double sum = 0, diff_sum = 0;
       std::cout << "Edges\n";
@@ -609,7 +610,7 @@ int main(int argc, char *argv[]) {
     if (choice_value == HCURLTET_DEMKOWICZ) {
       CHKERR TetPolynomialBase().getValue(
           pts_tet, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                       tet_data, HCURL, DEMKOWICZ_JACOBI_BASE)));
+                       tet_data, HCURL, CONTINUOUS, DEMKOWICZ_JACOBI_BASE)));
       double sum = 0, diff_sum = 0;
       std::cout << "Edges\n";
       for (int ee = 0; ee < 6; ee++) {
@@ -660,7 +661,7 @@ int main(int argc, char *argv[]) {
     if (choice_value == L2TET) {
       ierr = TetPolynomialBase().getValue(
           pts_tet, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                       tet_data, L2, AINSWORTH_LEGENDRE_BASE)));
+                       tet_data, L2, CONTINUOUS, AINSWORTH_LEGENDRE_BASE)));
       CHKERRG(ierr);
       double sum = 0, diff_sum = 0;
       std::cout << "Tets\n";
@@ -728,7 +729,7 @@ int main(int argc, char *argv[]) {
     if (choice_value == H1TRI_AINSWORTH) {
       CHKERR TriPolynomialBase().getValue(
           pts_tri, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                       tri_data, H1, AINSWORTH_LEGENDRE_BASE, NOBASE)));
+                       tri_data, H1, CONTINUOUS, AINSWORTH_LEGENDRE_BASE, NOBASE)));
       if (tri_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get() !=
           tri_data.dataOnEntities[MBVERTEX][0]
               .getNSharedPtr(AINSWORTH_LEGENDRE_BASE)
@@ -773,7 +774,7 @@ int main(int argc, char *argv[]) {
     if (choice_value == H1TRI_BERNSTEIN_BEZIER) {
       CHKERR TriPolynomialBase().getValue(
           pts_tri, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                       tri_data, "TET_FIELD", H1,
+                       tri_data, "TET_FIELD", H1, CONTINUOUS,
                        AINSWORTH_BERNSTEIN_BEZIER_BASE, NOBASE)));
       if (tri_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get() ==
           tri_data.dataOnEntities[MBVERTEX][0]
@@ -823,7 +824,7 @@ int main(int argc, char *argv[]) {
     if (choice_value == HDIVTRI_AINSWORTH) {
       CHKERR TriPolynomialBase().getValue(
           pts_tri, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                       tri_data, HDIV, AINSWORTH_LEGENDRE_BASE, NOBASE)));
+                       tri_data, HDIV, CONTINUOUS, AINSWORTH_LEGENDRE_BASE, NOBASE)));
       if (tri_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get() !=
           tri_data.dataOnEntities[MBVERTEX][0]
               .getNSharedPtr(AINSWORTH_LEGENDRE_BASE)
@@ -846,7 +847,7 @@ int main(int argc, char *argv[]) {
     if (choice_value == HDIVTRI_DEMKOWICZ) {
       ierr = TriPolynomialBase().getValue(
           pts_tri, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                       tri_data, HDIV, DEMKOWICZ_JACOBI_BASE, NOBASE)));
+                       tri_data, HDIV, CONTINUOUS, DEMKOWICZ_JACOBI_BASE, NOBASE)));
       CHKERRG(ierr);
       if (tri_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get() !=
           tri_data.dataOnEntities[MBVERTEX][0]
@@ -871,7 +872,7 @@ int main(int argc, char *argv[]) {
     if (choice_value == HCURLTRI_AINSWORTH) {
       ierr = TriPolynomialBase().getValue(
           pts_tri, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                       tri_data, HCURL, AINSWORTH_LEGENDRE_BASE, NOBASE)));
+                       tri_data, HCURL, CONTINUOUS, AINSWORTH_LEGENDRE_BASE, NOBASE)));
       CHKERRG(ierr);
       if (tri_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get() !=
           tri_data.dataOnEntities[MBVERTEX][0]
@@ -904,7 +905,7 @@ int main(int argc, char *argv[]) {
     if (choice_value == HCURLTRI_DEMKOWICZ) {
       CHKERR TriPolynomialBase().getValue(
           pts_tri, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                       tri_data, HCURL, DEMKOWICZ_JACOBI_BASE, NOBASE)));
+                       tri_data, HCURL, CONTINUOUS, DEMKOWICZ_JACOBI_BASE, NOBASE)));
       if (tri_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get() !=
           tri_data.dataOnEntities[MBVERTEX][0]
               .getNSharedPtr(DEMKOWICZ_JACOBI_BASE)
@@ -935,7 +936,7 @@ int main(int argc, char *argv[]) {
     if (choice_value == L2TRI) {
       ierr = TriPolynomialBase().getValue(
           pts_tri, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                       tri_data, L2, AINSWORTH_LEGENDRE_BASE, NOBASE)));
+                       tri_data, L2, CONTINUOUS, AINSWORTH_LEGENDRE_BASE, NOBASE)));
       CHKERRG(ierr);
       if (tri_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get() !=
           tri_data.dataOnEntities[MBVERTEX][0]
@@ -991,7 +992,7 @@ int main(int argc, char *argv[]) {
     if (choice_value == H1EDGE_AINSWORTH) {
       CHKERR EdgePolynomialBase().getValue(
           pts_edge, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                        edge_data, H1, AINSWORTH_LEGENDRE_BASE, NOBASE)));
+                        edge_data, H1, CONTINUOUS, AINSWORTH_LEGENDRE_BASE, NOBASE)));
       if (edge_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get() !=
           edge_data.dataOnEntities[MBVERTEX][0]
               .getNSharedPtr(AINSWORTH_LEGENDRE_BASE)
@@ -1023,7 +1024,7 @@ int main(int argc, char *argv[]) {
     if (choice_value == H1EDGE_BERNSTEIN_BEZIER) {
       CHKERR EdgePolynomialBase().getValue(
           pts_edge, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                        edge_data, "TET_FIELD", H1,
+                        edge_data, "TET_FIELD", H1, CONTINUOUS,
                         AINSWORTH_BERNSTEIN_BEZIER_BASE, NOBASE)));
       if (edge_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get() ==
           edge_data.dataOnEntities[MBVERTEX][0]
@@ -1062,7 +1063,7 @@ int main(int argc, char *argv[]) {
     if (choice_value == HCURLEDGE_AINSWORTH) {
       ierr = EdgePolynomialBase().getValue(
           pts_edge, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                        edge_data, HCURL, AINSWORTH_LEGENDRE_BASE, NOBASE)));
+                        edge_data, HCURL, CONTINUOUS, AINSWORTH_LEGENDRE_BASE, NOBASE)));
       CHKERRG(ierr);
       if (edge_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get() !=
           edge_data.dataOnEntities[MBVERTEX][0]
@@ -1086,7 +1087,7 @@ int main(int argc, char *argv[]) {
     if (choice_value == HCURLEDGE_DEMKOWICZ) {
       CHKERR EdgePolynomialBase().getValue(
           pts_edge, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                        edge_data, HCURL, DEMKOWICZ_JACOBI_BASE, NOBASE)));
+                        edge_data, HCURL, CONTINUOUS, DEMKOWICZ_JACOBI_BASE, NOBASE)));
       if (edge_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get() !=
           edge_data.dataOnEntities[MBVERTEX][0]
               .getNSharedPtr(DEMKOWICZ_JACOBI_BASE)
@@ -1161,7 +1162,7 @@ int main(int argc, char *argv[]) {
     if (choice_value == H1QUAD) {
       CHKERR QuadPolynomialBase().getValue(
           pts_quad, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                        quad_data, H1, AINSWORTH_LEGENDRE_BASE, NOBASE)));
+                        quad_data, H1, CONTINUOUS, AINSWORTH_LEGENDRE_BASE, NOBASE)));
       if (quad_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get() !=
           quad_data.dataOnEntities[MBVERTEX][0]
               .getNSharedPtr(AINSWORTH_LEGENDRE_BASE)
