@@ -11,11 +11,54 @@ namespace MoFEM {
 
 constexpr bool debug_schur = false;
 
+struct OpSchurAssembleBaseImpl : public OpSchurAssembleBase {
+  OpSchurAssembleBaseImpl() = delete;
+
+protected:
+  using OpSchurAssembleBase::OpSchurAssembleBase;
+
+  /**
+   * @brief Assemble Schur complement
+   *
+   */
+  inline MoFEMErrorCode assembleSchurMat(
+
+      Mat S,
+
+      const UId &uid_row, VectorInt &row_ind,
+
+      const UId &uid_col, VectorInt &col_ind,
+
+      MatrixDouble &m, InsertMode iora
+
+  );
+};
+
+// Assemble specialisations
+MoFEMErrorCode OpSchurAssembleBaseImpl::assembleSchurMat(
+
+    Mat S,
+
+    const UId &uid_row, VectorInt &row_ind,
+
+    const UId &uid_col, VectorInt &col_ind,
+
+    MatrixDouble &m, InsertMode iora
+
+) {
+  return ::MatSetValues(
+
+      S, row_ind.size(), &*row_ind.begin(), col_ind.size(), &*col_ind.begin(),
+      &*m.data().begin(), iora
+
+  );
+}
+
 /**
  * @brief Clear Schur complement internal data
  *
  */
-struct OpSchurAssembleBegin : public OpSchurAssembleBase {
+struct OpSchurAssembleBegin : public OpSchurAssembleBaseImpl {
 
   OpSchurAssembleBegin();
 
@@ -27,7 +70,10 @@ struct OpSchurAssembleBegin : public OpSchurAssembleBase {
  * @brief Assemble Schur complement (Implementation)
  *
  */
-struct OpSchurAssembleEndImpl : public OpSchurAssembleBase {
+template <typename OP_SCHUR_ASSEMBLE_BASE>
+struct OpSchurAssembleEndImpl : public OP_SCHUR_ASSEMBLE_BASE {
+
+  using OP = OP_SCHUR_ASSEMBLE_BASE;
 
   /**
    * @brief Construct a new Op Schur Assemble End object
@@ -73,8 +119,11 @@ struct OpSchurAssembleEndImpl : public OpSchurAssembleBase {
 
 protected:
   template <typename I>
-  MoFEMErrorCode doWorkImpl(int side, EntityType type,
-                            EntitiesFieldData::EntData &data);
+  MoFEMErrorCode doWorkImpl(
+
+      int side, EntityType type, EntitiesFieldData::EntData &data
+
+  );
 
   std::vector<std::string> fieldsName;
   std::vector<boost::shared_ptr<Range>> fieldEnts;
@@ -102,15 +151,17 @@ struct SchurDGESV; ///< GE	general (i.e., nonsymmetric, in some cases
 template <typename I> struct OpSchurAssembleEnd;
 
 template <>
-struct OpSchurAssembleEnd<SchurDSYSV> : public OpSchurAssembleEndImpl {
-  using OpSchurAssembleEndImpl::OpSchurAssembleEndImpl;
+struct OpSchurAssembleEnd<SchurDSYSV>
+    : public OpSchurAssembleEndImpl<OpSchurAssembleBaseImpl> {
+  using OpSchurAssembleEndImpl<OpSchurAssembleBaseImpl>::OpSchurAssembleEndImpl;
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data);
 };
 
 template <>
-struct OpSchurAssembleEnd<SchurDGESV> : public OpSchurAssembleEndImpl {
-  using OpSchurAssembleEndImpl::OpSchurAssembleEndImpl;
+struct OpSchurAssembleEnd<SchurDGESV>
+    : public OpSchurAssembleEndImpl<OpSchurAssembleBaseImpl> {
+  using OpSchurAssembleEndImpl<OpSchurAssembleBaseImpl>::OpSchurAssembleEndImpl;
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data);
 };
@@ -143,8 +194,9 @@ protected:
                   const EntitiesFieldData::EntData &col_data,
                   const MatrixDouble &mat, InsertMode iora);
 
-  friend OpSchurAssembleBegin;
-  friend OpSchurAssembleEndImpl;
+  friend struct OpSchurAssembleBegin;
+  template <typename OP_SCHUR_ASSEMBLE_BASE>
+  friend struct OpSchurAssembleEndImpl;
 
   struct uid_mi_tag {};
   struct col_mi_tag {};
@@ -494,7 +546,7 @@ SchurElemMats::assembleStorage(const EntitiesFieldData::EntData &row_data,
 }
 
 OpSchurAssembleBegin::OpSchurAssembleBegin()
-    : OpSchurAssembleBase(NOSPACE, OPSPACE) {}
+    : OpSchurAssembleBaseImpl(NOSPACE, OPSPACE) {}
 
 MoFEMErrorCode OpSchurAssembleBegin::doWork(int side, EntityType type,
                                             EntitiesFieldData::EntData &data) {
@@ -509,19 +561,21 @@ MoFEMErrorCode OpSchurAssembleBegin::doWork(int side, EntityType type,
   MoFEMFunctionReturn(0);
 }
 
-OpSchurAssembleEndImpl::OpSchurAssembleEndImpl(
+template <typename OP_SCHUR_ASSEMBLE_BASE>
+OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::OpSchurAssembleEndImpl(
     std::vector<std::string> fields_name,
     std::vector<boost::shared_ptr<Range>> field_ents,
     std::vector<SmartPetscObj<AO>> sequence_of_aos,
     std::vector<SmartPetscObj<Mat>> sequence_of_mats,
     std::vector<bool> sym_schur, std::vector<double> diag_eps, bool symm_op,
     boost::shared_ptr<BlockStructure> diag_blocks)
-    : OpSchurAssembleBase(NOSPACE, OPSPACE, symm_op), fieldsName(fields_name),
+    : OP(NOSPACE, OP::OPSPACE, symm_op), fieldsName(fields_name),
       fieldEnts(field_ents), sequenceOfAOs(sequence_of_aos),
       sequenceOfMats(sequence_of_mats), symSchur(sym_schur), diagEps(diag_eps),
       diagBlocks(diag_blocks) {}
 
-OpSchurAssembleEndImpl::OpSchurAssembleEndImpl(
+template <typename OP_SCHUR_ASSEMBLE_BASE>
+OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::OpSchurAssembleEndImpl(
     std::vector<std::string> fields_name,
     std::vector<boost::shared_ptr<Range>> field_ents,
     std::vector<SmartPetscObj<AO>> sequence_of_aos,
@@ -532,10 +586,10 @@ OpSchurAssembleEndImpl::OpSchurAssembleEndImpl(
           fields_name, field_ents, sequence_of_aos, sequence_of_mats, sym_schur,
           std::vector<double>(fields_name.size(), 0), symm_op, diag_blocks) {}
 
+template <typename OP_SCHUR_ASSEMBLE_BASE>
 template <typename I>
-MoFEMErrorCode
-OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
-                                   EntitiesFieldData::EntData &data) {
+MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
+    int side, EntityType type, EntitiesFieldData::EntData &data) {
 
   MoFEMFunctionBegin;
 
@@ -550,46 +604,46 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 
 #ifndef NDEBUG
   auto get_field_name = [&](auto uid) {
-    return getPtrFE()->mField.get_field_name(field_bit_from_bit_number(
+    return OP::getPtrFE()->mField.get_field_name(field_bit_from_bit_number(
         FieldEntity::getFieldBitNumberFromUniqueId(uid)));
   };
 #endif
 
   // Assemble Schur complement
-  auto assemble_mat = [&](SmartPetscObj<Mat> M, MatSetValuesRaw mat_set_values,
-                          auto &storage) {
+  auto assemble_mat = [&](SmartPetscObj<Mat> M, auto &storage) {
     MoFEMFunctionBegin;
-    if (M) {
-      for (auto &s : storage) {
-        auto &m = s->getMat();
-        if (m.size1()) {
-          auto &row_ind = s->getRowInd();
-          auto &col_ind = s->getColInd();
+    for (auto &s : storage) {
+      auto &m = s->getMat();
+      if (m.size1()) {
+        auto &row_ind = s->getRowInd();
+        auto &col_ind = s->getColInd();
 
-          if (auto ierr = mat_set_values(M, row_ind.size(), &*row_ind.begin(),
-                                         col_ind.size(), &*col_ind.begin(),
-                                         &*m.data().begin(), ADD_VALUES)) {
+        if (auto ierr = this->assembleSchurMat(
+
+                M, s->uidRow, row_ind, s->uidCol, col_ind, m, ADD_VALUES
+
+                )) {
 #ifndef NDEBUG
-            auto field_ents = getPtrFE()->mField.get_field_ents();
-            auto row_ent_it = field_ents->find(s->uidRow);
-            auto col_ent_it = field_ents->find(s->uidCol);
-            MOFEM_LOG_CHANNEL("SELF");
-            if (row_ent_it != field_ents->end())
-              MOFEM_LOG("SELF", Sev::error)
-                  << "Assemble row entity: " << (*row_ent_it)->getName() << " "
-                  << (*col_ent_it)->getEntTypeName() << " side "
-                  << (*row_ent_it)->getSideNumber();
-            if (col_ent_it != field_ents->end())
-              MOFEM_LOG("SELF", Sev::error)
-                  << "Assemble col entity: " << (*col_ent_it)->getName() << " "
-                  << (*col_ent_it)->getEntTypeName() << " side "
-                  << (*col_ent_it)->getSideNumber();
+          auto field_ents = OP::getPtrFE()->mField.get_field_ents();
+          auto row_ent_it = field_ents->find(s->uidRow);
+          auto col_ent_it = field_ents->find(s->uidCol);
+          MOFEM_LOG_CHANNEL("SELF");
+          if (row_ent_it != field_ents->end())
+            MOFEM_LOG("SELF", Sev::error)
+                << "Assemble row entity: " << (*row_ent_it)->getName() << " "
+                << (*col_ent_it)->getEntTypeName() << " side "
+                << (*row_ent_it)->getSideNumber();
+          if (col_ent_it != field_ents->end())
+            MOFEM_LOG("SELF", Sev::error)
+                << "Assemble col entity: " << (*col_ent_it)->getName() << " "
+                << (*col_ent_it)->getEntTypeName() << " side "
+                << (*col_ent_it)->getSideNumber();
 #endif // NDEBUG
-            CHK_THROW_MESSAGE(ierr, "MatSetValues");
-          }
+          CHK_THROW_MESSAGE(ierr, "MatSetValues");
         }
       }
     }
+
     MoFEMFunctionReturn(0);
   };
 
@@ -864,7 +918,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 
     // assemble matrix
     if (mat) {
-      CHKERR assemble_mat(mat, matSetValuesSchurRaw, storage);
+      CHKERR assemble_mat(mat, storage);
     }
 
     MoFEMFunctionReturn(0);
@@ -979,7 +1033,7 @@ OpSchurAssembleEndImpl::doWorkImpl(int side, EntityType type,
 
   auto get_a00_uids = [&]() {
     auto get_field_bit = [&](auto &name) {
-      return getPtrFE()->mField.get_field_bit_number(name);
+      return OP::getPtrFE()->mField.get_field_bit_number(name);
     };
 
     std::vector<std::pair<UId, UId>> a00_uids;
@@ -1196,12 +1250,15 @@ boost::shared_ptr<BlockStructure> createBlockMatStructure(
     return std::make_pair(lo, hi);
   };
 
+  // extract DOFs for rows/columns. DOFs are associated with fields entities
+  // for given problem. 
   auto row_extractor = [](auto &e) { return e->entityCacheRowDofs; };
   auto col_extractor = [](auto &e) { return e->entityCacheColDofs; };
 
   auto extract_data = [](auto &&its, auto extractor) {
     std::vector<std::tuple<int, int, int>> data;
     data.reserve(std::distance(its.first, its.second));
+    // iterate field dofs
     for (; its.first != its.second; ++its.first) {
       if (auto e = its.first->lock()) {
         if (auto cache = extractor(e).lock()) {
@@ -1769,8 +1826,8 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
       auto x_ptr = &x_array[off_col];
       auto ptr = &inv_block_ptr[off_shift];
       if (std::min(nb_rows, nb_cols) > max_gemv_size) {
-        cblas_dgemv(CblasRowMajor, CblasNoTrans, nb_rows, off_nb_cols, -1.0, ptr,
-                    off_nb_cols, x_ptr, 1, 1.0, &f[0], 1);
+        cblas_dgemv(CblasRowMajor, CblasNoTrans, nb_rows, off_nb_cols, -1.0,
+                    ptr, off_nb_cols, x_ptr, 1, 1.0, &f[0], 1);
       } else {
         for (auto r = 0; r != nb_rows; ++r) {
           for (auto c = 0; c != off_nb_cols; ++c) {
@@ -2716,7 +2773,7 @@ createOpSchurAssembleEnd(std::vector<std::string> fields_name,
         diag_eps, symm_op, diag_blocks);
 }
 
-MoFEMErrorCode setSchurMatSolvePC(SmartPetscObj<PC> pc) {
+MoFEMErrorCode setSchurA00MatSolvePC(SmartPetscObj<PC> pc) {
   MoFEMFunctionBegin;
 
   auto apply = [](PC pc, Vec f, Vec x) {
@@ -2734,11 +2791,9 @@ MoFEMErrorCode setSchurMatSolvePC(SmartPetscObj<PC> pc) {
   MoFEMFunctionReturn(0);
 }
 
-// Assemble specialisations
-
-// This is used to assemble Schur complement "S"
-OpSchurAssembleBase::MatSetValuesRaw OpSchurAssembleBase::matSetValuesSchurRaw =
-    ::MatSetValues;
+MoFEMErrorCode setSchurMatSolvePC(SmartPetscObj<PC> pc) {
+  return setSchurA00MatSolvePC(pc);
+}
 
 // This is used to assemble local element matrices for Schur complement
 // and matrix for KSP

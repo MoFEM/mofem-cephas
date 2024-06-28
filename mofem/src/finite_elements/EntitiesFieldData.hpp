@@ -74,7 +74,7 @@ struct EntitiesFieldData {
    * Bernstein-Bezier (BB) base is not hierarchical, and is calculated for
    * particular field, since it all shape functions change with the order. BB
    * base is precalculated for every field, and when user push operator with
-   * paricular field using BB base, pointers to shape funtions and
+   * particular field using BB base, pointers to shape fuctions and
    * BaseDerivatives of shape functions are set to particular location, once
    * operator is executed, pointers are switch back to its oroginal position.
    *
@@ -1092,7 +1092,7 @@ protected:
   std::array<boost::shared_ptr<MatrixDouble>, MaxBernsteinBezierOrder>
       bbNByOrder; ///< BB base functions by order
   std::array<boost::shared_ptr<MatrixDouble>, MaxBernsteinBezierOrder>
-      bbDiffNByOrder; ///< BB base functions direvatives by order
+      bbDiffNByOrder; ///< BB base functions directives by order
   std::array<boost::shared_ptr<MatrixInt>, MaxBernsteinBezierOrder>
       bbAlphaIndicesByOrder; ///< BB alpha indices by order
 

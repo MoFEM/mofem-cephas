@@ -400,7 +400,7 @@ int main(int argc, char *argv[]) {
       CHKERR KSPGetPC(ksp, &pc_raw);
       return SmartPetscObj<PC>(pc_raw, true); // bump reference
     };
-    CHKERR setSchurMatSolvePC(get_pc(ksp));
+    CHKERR setSchurA00MatSolvePC(get_pc(ksp));
     CHKERR KSPSetUp(ksp);
 
     CHKERR VecZeroEntries(block_solved_x);
