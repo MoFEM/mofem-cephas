@@ -97,8 +97,8 @@ const static char *const FieldSpaceNames[] = {
  * 
  */
 enum FieldContinuity {
-  CONTINUOUS = 0,
-  DISCONTINUOUS = 1,
+  CONTINUOUS = 0,    ///< Regular field
+  DISCONTINUOUS = 1, ///< Broken continuity (No effect on L2 space)
   LASTCONTINUITY
 };
 
