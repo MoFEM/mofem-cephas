@@ -285,83 +285,35 @@ VolumeElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
 
   CHKERR getSpacesAndBaseOnEntities(dataH1);
   CHKERR getFaceNodes(dataH1);
-  // H1
-  if ((dataH1.spacesOnEntities[MBEDGE]).test(H1)) {
-    CHKERR getEntitySense<MBEDGE>(dataH1);
-    CHKERR getEntityDataOrder<MBEDGE>(dataH1, H1);
-  }
-  if ((dataH1.spacesOnEntities[MBTRI]).test(H1)) {
-    CHKERR getEntitySense<MBTRI>(dataH1);
-    CHKERR getEntityDataOrder<MBTRI>(dataH1, H1);
-  }
-  if ((dataH1.spacesOnEntities[MBTET]).test(H1)) {
-    CHKERR getEntityDataOrder<MBTET>(dataH1, H1);
-  }
-  if ((dataH1.spacesOnEntities[MBQUAD]).test(H1)) {
-    CHKERR getEntitySense<MBQUAD>(dataH1);
-    CHKERR getEntityDataOrder<MBQUAD>(dataH1, H1);
-  }
-  if ((dataH1.spacesOnEntities[MBHEX]).test(H1)) {
-    CHKERR getEntityDataOrder<MBHEX>(dataH1, H1);
-  }
-  // Hcurl
-  if ((dataH1.spacesOnEntities[MBEDGE]).test(HCURL)) {
-    CHKERR getEntitySense<MBEDGE>(dataHcurl);
-    CHKERR getEntityDataOrder<MBEDGE>(dataHcurl, HCURL);
-    dataHcurl.spacesOnEntities[MBEDGE].set(HCURL);
-  }
-  if ((dataH1.spacesOnEntities[MBTRI]).test(HCURL)) {
-    dataHcurl.facesNodes = dataH1.facesNodes;
-    CHKERR getEntitySense<MBTRI>(dataHcurl);
-    CHKERR getEntityDataOrder<MBTRI>(dataHcurl, HCURL);
-    dataHcurl.spacesOnEntities[MBTRI].set(HCURL);
-  }
-  if ((dataH1.spacesOnEntities[MBTET]).test(HCURL)) {
-    CHKERR getEntityDataOrder<MBTET>(dataHcurl, HCURL);
-    dataHcurl.spacesOnEntities[MBTET].set(HCURL);
-  }
-  if ((dataH1.spacesOnEntities[MBQUAD]).test(HCURL)) {
-    dataHcurl.facesNodes = dataH1.facesNodes;
-    dataHcurl.facesNodesOrder = dataH1.facesNodesOrder;
-    CHKERR getEntitySense<MBQUAD>(dataHcurl);
-    CHKERR getEntityDataOrder<MBQUAD>(dataHcurl, HCURL);
-    dataHcurl.spacesOnEntities[MBQUAD].set(HCURL);
-  }
-  if ((dataH1.spacesOnEntities[MBHEX]).test(HCURL)) {
-    CHKERR getEntityDataOrder<MBHEX>(dataHcurl, HCURL);
-    dataHcurl.spacesOnEntities[MBHEX].set(HCURL);
-  }
-  // Hdiv
-  if ((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
-    dataHdiv.facesNodes = dataH1.facesNodes;
-    CHKERR getEntitySense<MBTRI>(dataHdiv);
-    CHKERR getEntityDataOrder<MBTRI>(dataHdiv, HDIV);
-    dataHdiv.spacesOnEntities[MBTRI].set(HDIV);
-  }
-  if ((dataH1.spacesOnEntities[MBTET]).test(HDIV)) {
-    CHKERR getEntityDataOrder<MBTET>(dataHdiv, HDIV);
-    dataHdiv.spacesOnEntities[MBTET].set(HDIV);
-  }
-  if ((dataH1.spacesOnEntities[MBQUAD]).test(HDIV)) {
-    dataHdiv.facesNodes = dataH1.facesNodes;
-    dataHdiv.facesNodesOrder = dataH1.facesNodesOrder;
-    CHKERR getEntitySense<MBQUAD>(dataHdiv);
-    CHKERR getEntityDataOrder<MBQUAD>(dataHdiv, HDIV);
-    dataHdiv.spacesOnEntities[MBQUAD].set(HDIV);
-  }
-  if ((dataH1.spacesOnEntities[MBHEX]).test(HDIV)) {
-    CHKERR getEntityDataOrder<MBHEX>(dataHdiv, HDIV);
-    dataHdiv.spacesOnEntities[MBHEX].set(HDIV);
-  }
-  // L2
-  if ((dataH1.spacesOnEntities[MBTET]).test(L2)) {
-    CHKERR getEntityDataOrder<MBTET>(dataL2, L2);
-    dataL2.spacesOnEntities[MBTET].set(L2);
-  }
-  if ((dataH1.spacesOnEntities[MBHEX]).test(L2)) {
-    CHKERR getEntityDataOrder<MBHEX>(dataL2, L2);
-    dataL2.spacesOnEntities[MBHEX].set(L2);
-  }
+
+  auto type = numeredEntFiniteElementPtr->getEntType();
+  auto dim_type = CN::Dimension(type);
+
+  auto get_data_on_ents = [&](auto lower_dim, auto space) {
+    MoFEMFunctionBeginHot;
+    auto data = dataOnElement[space];
+    data->facesNodes = dataH1.facesNodes;
+    data->facesNodesOrder = dataH1.facesNodesOrder;
+    for (auto dd = dim_type; dd >= lower_dim; --dd) {
+      int nb_ents = moab::CN::NumSubEntities(type, dd);
+      for (int ii = 0; ii != nb_ents; ++ii) {
+        auto sub_ent_type = moab::CN::SubEntityType(type, dd, ii);
+        if ((dataH1.spacesOnEntities[sub_ent_type]).test(space)) {
+          auto &data_on_ent = data->dataOnEntities[sub_ent_type];
+          CHKERR getEntitySense(sub_ent_type, data_on_ent);
+          CHKERR getEntityDataOrder(sub_ent_type, space, data_on_ent);
+          data->spacesOnEntities[sub_ent_type].set(space);
+        }
+      }
+    }
+    MoFEMFunctionReturnHot(0);
+  };
+
+  CHKERR get_data_on_ents(1, H1);    // H1
+  CHKERR get_data_on_ents(1, HCURL); // Hcurl
+  CHKERR get_data_on_ents(2, HDIV);  // Hdiv
+  CHKERR get_data_on_ents(3, L2);    // L2
+
   MoFEMFunctionReturn(0);
 }
 
