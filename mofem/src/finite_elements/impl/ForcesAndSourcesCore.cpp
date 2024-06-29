@@ -993,13 +993,16 @@ MoFEMErrorCode ForcesAndSourcesCore::getSpacesAndBaseOnEntities(
 
   if (nInTheLoop == 0) {
     data.sPace.reset();
+    data.brokenSpace.reset();
     data.bAse.reset();
     for (EntityType t = MBVERTEX; t != MBMAXTYPE; ++t) {
       data.spacesOnEntities[t].reset();
+      data.brokenSpacesOnEntities[t].reset();
       data.basesOnEntities[t].reset();
     }
     for (int s = 0; s != LASTSPACE; ++s) {
       data.basesOnSpaces[s].reset();
+      data.brokenBasesOnSpaces[s].reset();
     }
   }
 
@@ -1012,13 +1015,26 @@ MoFEMErrorCode ForcesAndSourcesCore::getSpacesAndBaseOnEntities(
         const EntityType type = ptr->getEntType();
         if (DefaultElementAdjacency::getDefTypeMap(fe_type, type)) {
           const FieldSpace space = ptr->getSpace();
+          const FieldContinuity continuity = ptr->getContinuity();
           const FieldApproximationBase approx = ptr->getApproxBase();
           // set data
-          data.sPace.set(space);
+          switch (continuity) {
+            case CONTINUOUS:
+              data.sPace.set(space);
+              data.spacesOnEntities[type].set(space);
+              data.basesOnSpaces[space].set(approx);
+              break;
+            case DISCONTINUOUS:
+              data.brokenSpace.set(space);
+              data.brokenSpacesOnEntities[type].set(space);
+              data.brokenBasesOnSpaces[space].set(approx);
+              break;
+            default:
+              SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                      "Continuity not defined");
+          }
           data.bAse.set(approx);
-          data.spacesOnEntities[type].set(space);
           data.basesOnEntities[type].set(approx);
-          data.basesOnSpaces[space].set(approx);
         }
       }
     }

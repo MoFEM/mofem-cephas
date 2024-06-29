@@ -57,6 +57,12 @@ struct EntitiesFieldData {
                       ///< function, dofs
                       ///< values, etc.
 
+  std::bitset<LASTSPACE> brokenSpace; ///< broken spaces on element
+  std::array<std::bitset<LASTSPACE>, MBMAXTYPE>
+      brokenSpacesOnEntities; ///< broken spaces on entity types
+  std::array<std::bitset<LASTBASE>, LASTSPACE>
+      brokenBasesOnSpaces; ///< base on spaces
+
   EntitiesFieldData(const EntityType type);
   virtual ~EntitiesFieldData() = default;
 
