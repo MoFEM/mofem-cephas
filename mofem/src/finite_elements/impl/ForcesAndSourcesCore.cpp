@@ -993,11 +993,9 @@ MoFEMErrorCode ForcesAndSourcesCore::getSpacesAndBaseOnEntities(
 
   if (nInTheLoop == 0) {
     data.sPace.reset();
-    data.brokenSpace.reset();
     data.bAse.reset();
     for (EntityType t = MBVERTEX; t != MBMAXTYPE; ++t) {
       data.spacesOnEntities[t].reset();
-      data.brokenSpacesOnEntities[t].reset();
       data.basesOnEntities[t].reset();
     }
     for (int s = 0; s != LASTSPACE; ++s) {
@@ -1017,23 +1015,23 @@ MoFEMErrorCode ForcesAndSourcesCore::getSpacesAndBaseOnEntities(
           const FieldSpace space = ptr->getSpace();
           const FieldContinuity continuity = ptr->getContinuity();
           const FieldApproximationBase approx = ptr->getApproxBase();
+
           // set data
           switch (continuity) {
-            case CONTINUOUS:
-              data.sPace.set(space);
-              data.spacesOnEntities[type].set(space);
-              data.basesOnSpaces[space].set(approx);
-              break;
-            case DISCONTINUOUS:
-              data.brokenSpace.set(space);
-              data.brokenSpacesOnEntities[type].set(space);
-              data.brokenBasesOnSpaces[space].set(approx);
-              break;
-            default:
-              SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                      "Continuity not defined");
+          case CONTINUOUS:
+            data.basesOnSpaces[space].set(approx);
+            break;
+          case DISCONTINUOUS:
+            data.brokenBasesOnSpaces[space].set(approx);
+            break;
+          default:
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                    "Continuity not defined");
           }
+
+          data.sPace.set(space);
           data.bAse.set(approx);
+          data.spacesOnEntities[type].set(space);
           data.basesOnEntities[type].set(approx);
         }
       }
@@ -1041,6 +1039,11 @@ MoFEMErrorCode ForcesAndSourcesCore::getSpacesAndBaseOnEntities(
   else
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "data fields ents not allocated on element");
+
+  for (auto space = 0; space != LASTSPACE; ++space)
+    if ((data.brokenBasesOnSpaces[space] & data.basesOnSpaces[space]).any())
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Discontinuous and continuous bases on the same space");
 
   MoFEMFunctionReturnHot(0);
 }
@@ -1060,18 +1063,20 @@ MoFEMErrorCode ForcesAndSourcesCore::calHierarchicalBaseFunctionsOnElement(
     case DEMKOWICZ_JACOBI_BASE:
       if (!getElementPolynomialBase())
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "Functions genrating approximation base not defined");
+                "Functions generating approximation base not defined");
 
       for (int space = H1; space != LASTSPACE; ++space) {
-        if (dataOnElement[H1]->sPace.test(space) &&
-            dataOnElement[H1]->bAse.test(b) &&
-            dataOnElement[H1]->basesOnSpaces[space].test(b)) {
-          CHKERR getElementPolynomialBase()
-              -> getValue(gaussPts,
-                          boost::make_shared<EntPolynomialBaseCtx>(
-                              *dataOnElement[space],
-                              static_cast<FieldSpace>(space), CONTINUOUS,
-                              static_cast<FieldApproximationBase>(b), NOBASE));
+        if (dataOnElement[H1]->bAse.test(b) &&
+            dataOnElement[H1]->sPace.test(space)) {
+          if (dataOnElement[H1]->basesOnSpaces[space].test(b)) {
+            CHKERR getElementPolynomialBase()
+                -> getValue(gaussPts,
+                            boost::make_shared<EntPolynomialBaseCtx>(
+                                *dataOnElement[space],
+                                static_cast<FieldSpace>(space), CONTINUOUS,
+                                static_cast<FieldApproximationBase>(b),
+                                NOBASE));
+          }
         }
       }
       break;
@@ -1081,15 +1086,17 @@ MoFEMErrorCode ForcesAndSourcesCore::calHierarchicalBaseFunctionsOnElement(
                 "Functions generating user approximation base not defined");
 
       for (int space = H1; space != LASTSPACE; ++space)
-        if (dataOnElement[H1]->sPace.test(space) &&
-            dataOnElement[H1]->bAse.test(b) &&
-            dataOnElement[H1]->basesOnSpaces[space].test(b)) {
-          CHKERR getUserPolynomialBase()
-              -> getValue(gaussPts,
-                          boost::make_shared<EntPolynomialBaseCtx>(
-                              *dataOnElement[space],
-                              static_cast<FieldSpace>(space), CONTINUOUS,
-                              static_cast<FieldApproximationBase>(b), NOBASE));
+        if (dataOnElement[H1]->bAse.test(b) &&
+            dataOnElement[H1]->sPace.test(space)) {
+          if (dataOnElement[H1]->basesOnSpaces[space].test(b)) {
+            CHKERR getUserPolynomialBase()
+                -> getValue(gaussPts,
+                            boost::make_shared<EntPolynomialBaseCtx>(
+                                *dataOnElement[space],
+                                static_cast<FieldSpace>(space), CONTINUOUS,
+                                static_cast<FieldApproximationBase>(b),
+                                NOBASE));
+          }
         }
       break;
     default:
@@ -1305,6 +1312,11 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
           CHKERR get_entity_base_data(*dataOnElement[space], field_ptr, MBEDGE,
                                       ele_type);
           if (check_space(space)) {
+#ifndef NDEBUG
+            if (ent_data_ptr->getContinuity() != CONTINUOUS)
+              SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                      "Broken space not implemented");
+#endif // NDEBUG
             CHKERR getElementPolynomialBase()->getValue(
                 gaussPts, boost::make_shared<EntPolynomialBaseCtx>(
                               *dataOnElement[space], field_name,

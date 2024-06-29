@@ -52,16 +52,12 @@ struct EntitiesFieldData {
       basesOnEntities; ///< bases on entity types
   std::array<std::bitset<LASTBASE>, LASTSPACE>
       basesOnSpaces; ///< base on spaces
+  std::array<std::bitset<LASTBASE>, LASTSPACE>
+      brokenBasesOnSpaces; ///< base on spaces
   std::array<boost::ptr_vector<EntData>, MBMAXTYPE>
       dataOnEntities; ///< data on nodes, base
                       ///< function, dofs
                       ///< values, etc.
-
-  std::bitset<LASTSPACE> brokenSpace; ///< broken spaces on element
-  std::array<std::bitset<LASTSPACE>, MBMAXTYPE>
-      brokenSpacesOnEntities; ///< broken spaces on entity types
-  std::array<std::bitset<LASTBASE>, LASTSPACE>
-      brokenBasesOnSpaces; ///< base on spaces
 
   EntitiesFieldData(const EntityType type);
   virtual ~EntitiesFieldData() = default;
