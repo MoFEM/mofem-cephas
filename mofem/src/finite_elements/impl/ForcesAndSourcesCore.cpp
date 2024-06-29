@@ -992,7 +992,6 @@ MoFEMErrorCode ForcesAndSourcesCore::getSpacesAndBaseOnEntities(
   MoFEMFunctionBeginHot;
 
   if (nInTheLoop == 0) {
-    data.sPace.reset();
     data.bAse.reset();
     for (EntityType t = MBVERTEX; t != MBMAXTYPE; ++t) {
       data.spacesOnEntities[t].reset();
@@ -1029,7 +1028,6 @@ MoFEMErrorCode ForcesAndSourcesCore::getSpacesAndBaseOnEntities(
                     "Continuity not defined");
           }
 
-          data.sPace.set(space);
           data.bAse.set(approx);
           data.spacesOnEntities[type].set(space);
           data.basesOnEntities[type].set(approx);

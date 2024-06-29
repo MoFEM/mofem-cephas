@@ -3,8 +3,6 @@
 
 */
 
-
-
 using namespace MoFEM;
 
 MoFEMErrorCode
@@ -101,8 +99,7 @@ MoFEMErrorCode QuadPolynomialBase::getValueH1AinsworthBase(MatrixDouble &pts) {
     ent_dat.getDiffN(base).resize(nb_gauss_pts, 2 * nb_dofs, false);
     int face_nodes[] = {0, 1, 2, 3};
     CHKERR H1_QuadShapeFunctions_MBQUAD(
-        face_nodes, ent_dat.getOrder(),
-        &*vert_dat.getN(base).data().begin(),
+        face_nodes, ent_dat.getOrder(), &*vert_dat.getN(base).data().begin(),
         &*vert_dat.getDiffN(base).data().begin(),
         &*ent_dat.getN(base).data().begin(),
         &*ent_dat.getDiffN(base).data().begin(), nb_gauss_pts,
@@ -280,8 +277,8 @@ QuadPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
 
       sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
       order[ee] = data.dataOnEntities[MBEDGE][ee].getOrder();
-      int nb_dofs = NBEDGE_DEMKOWICZ_HCURL(
-          data.dataOnEntities[MBEDGE][ee].getOrder());
+      int nb_dofs =
+          NBEDGE_DEMKOWICZ_HCURL(data.dataOnEntities[MBEDGE][ee].getOrder());
 
       data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,
                                                         3 * nb_dofs, false);
@@ -423,7 +420,6 @@ QuadPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
           face_nodes.data(), order.data(), &*copy_base_fun.data().begin(),
           &*copy_diff_base_fun.data().begin(), &*face_n.data().begin(),
           &*diff_face_n.data().begin(), nb_gauss_pts);
-
     }
   }
 
@@ -473,21 +469,29 @@ QuadPolynomialBase::getValue(MatrixDouble &pts,
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Number of shape functions should be four");
 
-  switch (cTx->sPace) {
-  case H1:
-    CHKERR getValueH1(pts);
+  switch (cTx->spaceContinuity) {
+  case CONTINUOUS:
+    switch (cTx->sPace) {
+    case H1:
+      CHKERR getValueH1(pts);
+      break;
+    case L2:
+      CHKERR getValueL2(pts);
+      break;
+    case HCURL:
+      CHKERR getValueHcurl(pts);
+      break;
+    case HDIV:
+      CHKERR getValueHdiv(pts);
+      break;
+    default:
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not yet implemented");
+    }
+
     break;
-  case L2:
-    CHKERR getValueL2(pts);
-    break;
-  case HCURL:
-    CHKERR getValueHcurl(pts);
-    break;
-  case HDIV:
-    CHKERR getValueHdiv(pts);
-    break;
+
   default:
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not yet implemented");
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Unknown continuity");
   }
 
   MoFEMFunctionReturn(0);

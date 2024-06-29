@@ -5,8 +5,6 @@ A l2, h1, h-div and h-curl spaces are implemented.
 
 */
 
-
-
 using namespace MoFEM;
 
 MoFEMErrorCode
@@ -723,22 +721,30 @@ HexPolynomialBase::getValue(MatrixDouble &pts,
         PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
         "Wrong dimension of pts, should be at least 3 rows with coordinates");
 
-  switch (cTx->sPace) {
-  case H1:
-    CHKERR getValueH1(pts);
+  switch (cTx->spaceContinuity) {
+  case CONTINUOUS:
+
+    switch (cTx->sPace) {
+    case H1:
+      CHKERR getValueH1(pts);
+      break;
+    case HDIV:
+      CHKERR getValueHdiv(pts);
+      break;
+    case HCURL:
+      CHKERR getValueHcurl(pts);
+      break;
+    case L2:
+      CHKERR getValueL2(pts);
+      break;
+    default:
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Unknown space");
+    }
     break;
-  case HDIV:
-    CHKERR getValueHdiv(pts);
-    break;
-  case HCURL:
-    CHKERR getValueHcurl(pts);
-    break;
-  case L2:
-    CHKERR getValueL2(pts);
-    break;
+
   default:
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Unknown space");
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Unknown continuity");
   }
 
-  MoFEMFunctionReturn(0);
+    MoFEMFunctionReturn(0);
 }

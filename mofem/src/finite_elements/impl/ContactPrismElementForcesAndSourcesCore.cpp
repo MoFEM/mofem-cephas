@@ -247,7 +247,6 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
 
   auto clean_data = [](EntitiesFieldData &data) {
     MoFEMFunctionBegin;
-    data.sPace.reset();
     data.bAse.reset();
     for (EntityType t = MBVERTEX; t != MBMAXTYPE; ++t) {
       data.spacesOnEntities[t].reset();
@@ -268,12 +267,12 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
               "Wrong shift for contact prism element");
     }
 
-    data.sPace = copy_data.sPace;
     data.bAse = copy_data.bAse;
     for (auto t : {MBVERTEX, MBEDGE, MBTRI}) {
       data.spacesOnEntities[t] = copy_data.spacesOnEntities[t];
       data.basesOnEntities[t] = copy_data.basesOnEntities[t];
       data.basesOnSpaces[t] = copy_data.basesOnSpaces[t];
+      data.brokenBasesOnSpaces[t] = copy_data.brokenBasesOnSpaces[t];
     }
 
     for (int ii = 0; ii != 3; ++ii) {
@@ -307,7 +306,6 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
               "Wrong shift for contact prism element");
     }
 
-    data.sPace = copy_data.sPace;
     data.bAse = copy_data.bAse;
 
     for (auto t : {MBVERTEX, MBTRI}) {

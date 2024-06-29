@@ -1532,21 +1532,29 @@ TetPolynomialBase::getValue(MatrixDouble &pts,
               data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin());
   }
 
-  switch (cTx->sPace) {
-  case H1:
-    CHKERR getValueH1(pts);
+  switch (cTx->spaceContinuity) {
+  case CONTINUOUS:
+
+    switch (cTx->sPace) {
+    case H1:
+      CHKERR getValueH1(pts);
+      break;
+    case HDIV:
+      CHKERR getValueHdiv(pts);
+      break;
+    case HCURL:
+      CHKERR getValueHcurl(pts);
+      break;
+    case L2:
+      CHKERR getValueL2(pts);
+      break;
+    default:
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Unknown space");
+    }
     break;
-  case HDIV:
-    CHKERR getValueHdiv(pts);
-    break;
-  case HCURL:
-    CHKERR getValueHcurl(pts);
-    break;
-  case L2:
-    CHKERR getValueL2(pts);
-    break;
+
   default:
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Unknown space");
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Unknown continuity");
   }
 
   MoFEMFunctionReturn(0);
