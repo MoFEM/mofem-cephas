@@ -1731,55 +1731,38 @@ TetPolynomialBase::getValue(MatrixDouble &pts,
   MoFEMFunctionReturn(0);
 }
 
-bool TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(const void *ptr) {
-  auto it = TetBaseCache::hDivBaseFaceDemkowicz.find(ptr);
-  if (it != TetBaseCache::hDivBaseFaceDemkowicz.end()) {
+template <typename T>
+auto tetCacheSwitch(const void *ptr, T &cache, std::string cache_name) {
+  auto it = cache.find(ptr);
+  if (it != cache.end()) {
     MOFEM_LOG_CHANNEL("WORLD");
     MOFEM_TAG_AND_LOG("WORLD", Sev::noisy, "TetPolynomialBase")
-        << "Cache off hDivBaseFaceDemkowicz: " << it->second.size();
-    TetBaseCache::hDivBaseFaceDemkowicz.erase(it);
+        << "Cache off " << cache_name << ": " << it->second.size();
+    cache.erase(it);
     return false;
   } else {
     MOFEM_LOG_CHANNEL("WORLD");
     MOFEM_TAG_AND_LOG("WORLD", Sev::noisy, "TetPolynomialBase")
-        << "Cache on hDivBaseFaceDemkowicz";
-    TetBaseCache::hDivBaseFaceDemkowicz[ptr];
+        << "Cache on " << cache_name;
+    cache[ptr];
     return true;
   }
+}
+
+bool TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(const void *ptr) {
+  return tetCacheSwitch(ptr, TetBaseCache::hDivBaseFaceDemkowicz,
+                        "hDivBaseFaceDemkowicz");
 }
 
 bool TetPolynomialBase::swichCacheHdivBaseInteriorDemkowicz(const void *ptr) {
-  auto it = TetBaseCache::hdivBaseInteriorDemkowicz.find(ptr);
-  if (it != TetBaseCache::hdivBaseInteriorDemkowicz.end()) {
-    MOFEM_LOG_CHANNEL("WORLD");
-    MOFEM_TAG_AND_LOG("WORLD", Sev::noisy, "TetPolynomialBase")
-        << "Cache off hdivBaseInteriorDemkowicz: " << it->second.size();
-    TetBaseCache::hdivBaseInteriorDemkowicz.erase(it);
-    return false;
-  } else {
-    MOFEM_LOG_CHANNEL("WORLD");
-    MOFEM_TAG_AND_LOG("WORLD", Sev::noisy, "TetPolynomialBase")
-        << "Cache on hdivBaseInteriorDemkowicz";
-    TetBaseCache::hdivBaseInteriorDemkowicz[ptr];
-    return true;
-  }
+  return tetCacheSwitch(ptr, TetBaseCache::hdivBaseInteriorDemkowicz,
+                        "hdivBaseInteriorDemkowicz");
 }
 
-bool TetPolynomialBase::swichCacheHdivBrokenBaseInteriorDemkowicz(const void *ptr) {
-  auto it = TetBaseCache::hdivBrokenBaseInteriorDemkowicz.find(ptr);
-  if (it != TetBaseCache::hdivBrokenBaseInteriorDemkowicz.end()) {
-    MOFEM_LOG_CHANNEL("WORLD");
-    MOFEM_TAG_AND_LOG("WORLD", Sev::noisy, "TetPolynomialBase")
-        << "Cache off hdivBrokenBaseInteriorDemkowicz: " << it->second.size();
-    TetBaseCache::hdivBrokenBaseInteriorDemkowicz.erase(it);
-    return false;
-  } else {
-    MOFEM_LOG_CHANNEL("WORLD");
-    MOFEM_TAG_AND_LOG("WORLD", Sev::noisy, "TetPolynomialBase")
-        << "Cache on hdivBrokenBaseInteriorDemkowicz";
-    TetBaseCache::hdivBrokenBaseInteriorDemkowicz[ptr];
-    return true;
-  }
+bool TetPolynomialBase::swichCacheHdivBrokenBaseInteriorDemkowicz(
+    const void *ptr) {
+  return tetCacheSwitch(ptr, TetBaseCache::hdivBrokenBaseInteriorDemkowicz,
+                        "hdivBrokenBaseInteriorDemkowicz");
 }
 
 void TetPolynomialBase::swichCacheHDivBaseDemkowiczOn(std::vector<void *> v) {
@@ -1799,10 +1782,21 @@ void TetPolynomialBase::swichCacheHDivBaseDemkowiczOn(std::vector<void *> v) {
 void TetPolynomialBase::swichCacheHDivBaseDemkowiczOff(std::vector<void *> v) {
   for (auto fe_ptr : v) {
     if (TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(fe_ptr)) {
+      TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(fe_ptr);
     }
     if (TetPolynomialBase::swichCacheHdivBaseInteriorDemkowicz(fe_ptr)) {
+      TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(fe_ptr);
     }
     if (TetPolynomialBase::swichCacheHdivBrokenBaseInteriorDemkowicz(fe_ptr)) {
+      TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(fe_ptr);
     }
   }
+}
+
+void TetPolynomialBase::swichCacheHDivBaseOn(std::vector<void *> v) {
+  swichCacheHDivBaseDemkowiczOn(v);
+}
+
+void TetPolynomialBase::swichCacheHDivBaseOff(std::vector<void *> v) {
+  swichCacheHDivBaseDemkowiczOff(v);
 }
