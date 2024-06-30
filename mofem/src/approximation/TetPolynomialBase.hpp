@@ -103,6 +103,7 @@ private:
   MoFEMErrorCode getValueHcurlAinsworthBase(MatrixDouble &pts);
 
   MoFEMErrorCode getValueHdivDemkowiczBase(MatrixDouble &pts);
+  MoFEMErrorCode getValueHdivDemkowiczBrokenBase(MatrixDouble &pts);
   MoFEMErrorCode getValueHcurlDemkowiczBase(MatrixDouble &pts);
 
   MatrixInt senseFaceAlpha;
