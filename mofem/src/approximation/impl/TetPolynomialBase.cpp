@@ -1552,6 +1552,8 @@ MoFEMErrorCode TetPolynomialBase::getValueHdiv(MatrixDouble &pts) {
     break;
   case DISCONTINUOUS:
     switch (cTx->bAse) {
+    case AINSWORTH_LEGENDRE_BASE:
+      return getValueHdivAinsworthBrokenBase(pts);
     case DEMKOWICZ_JACOBI_BASE:
       return getValueHdivDemkowiczBrokenBase(pts);
     default:
