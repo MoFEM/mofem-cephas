@@ -734,7 +734,8 @@ TetPolynomialBase::getValueL2BernsteinBezierBase(MatrixDouble &pts) {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
+MoFEMErrorCode
+TetPolynomialBase::getValueHdivAinsworthBaseImpl(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
   EntitiesFieldData &data = cTx->dAta;
@@ -848,6 +849,14 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
       &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0, 0), phi_v, diff_phi_v,
       nb_gauss_pts, base_polynomials);
 
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
+  MoFEMFunctionBegin;
+
+  CHKERR getValueHdivAinsworthBaseImpl(pts);
+
   // Set shape functions into data structure Shape functions hast to be put
   // in arrays in order which guarantee hierarchical series of degrees of
   // freedom, i.e. in other words dofs form sub-entities has to be group
@@ -856,16 +865,21 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
   FTensor::Index<'i', 3> i;
   FTensor::Index<'j', 3> j;
 
+  EntitiesFieldData &data = cTx->dAta;
+  const FieldApproximationBase base = cTx->bAse;
+  int nb_gauss_pts = pts.size2();
+
   // faces
   if (data.dataOnEntities[MBTRI].size() != 4) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
   }
   for (int ff = 0; ff != 4; ff++) {
+    int face_order = data.dataOnEntities[MBTRI][ff].getOrder();
     data.dataOnEntities[MBTRI][ff].getN(base).resize(
-        nb_gauss_pts, 3 * NBFACETRI_AINSWORTH_HDIV(faces_order[ff]), false);
+        nb_gauss_pts, 3 * NBFACETRI_AINSWORTH_HDIV(face_order), false);
     data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(
-        nb_gauss_pts, 9 * NBFACETRI_AINSWORTH_HDIV(faces_order[ff]), false);
-    if (NBFACETRI_AINSWORTH_HDIV(faces_order[ff]) == 0)
+        nb_gauss_pts, 9 * NBFACETRI_AINSWORTH_HDIV(face_order), false);
+    if (NBFACETRI_AINSWORTH_HDIV(face_order) == 0)
       continue;
     // face
     double *base_ptr =
@@ -883,12 +897,12 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
     // face-face
     boost::shared_ptr<FTensor::Tensor1<double *, 3>> t_base_f;
     boost::shared_ptr<FTensor::Tensor2<double *, 3, 3>> t_diff_base_f;
-    if (NBFACETRI_AINSWORTH_FACE_HDIV(faces_order[ff]) > 0) {
-      base_ptr = phi_f[ff];
+    if (NBFACETRI_AINSWORTH_FACE_HDIV(face_order) > 0) {
+      base_ptr = &*(N_face_bubble[ff].data().begin());
       t_base_f = boost::shared_ptr<FTensor::Tensor1<double *, 3>>(
           new FTensor::Tensor1<double *, 3>(base_ptr, &base_ptr[HVEC1],
                                             &base_ptr[HVEC2], 3));
-      diff_base_ptr = diff_phi_f[ff];
+      diff_base_ptr = &*(diffN_face_bubble[ff].data().begin());
       t_diff_base_f = boost::shared_ptr<FTensor::Tensor2<double *, 3, 3>>(
           new FTensor::Tensor2<double *, 3, 3>(
               &diff_base_ptr[HVEC0_0], &diff_base_ptr[HVEC0_1],
@@ -898,30 +912,30 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
               &diff_base_ptr[HVEC2_2], 9));
     }
     // edge-face
-    base_ptr = phi_f_e[ff][0];
+    base_ptr = &*N_face_edge(ff, 0).data().begin();
     FTensor::Tensor1<double *, 3> t_base_f_e0(base_ptr, &base_ptr[HVEC1],
                                               &base_ptr[HVEC2], 3);
-    diff_base_ptr = diff_phi_f_e[ff][0];
+    diff_base_ptr = &*diffN_face_edge(ff, 0).data().begin();
     FTensor::Tensor2<double *, 3, 3> t_diff_base_f_e0(
         &diff_base_ptr[HVEC0_0], &diff_base_ptr[HVEC0_1],
         &diff_base_ptr[HVEC0_2], &diff_base_ptr[HVEC1_0],
         &diff_base_ptr[HVEC1_1], &diff_base_ptr[HVEC1_2],
         &diff_base_ptr[HVEC2_0], &diff_base_ptr[HVEC2_1],
         &diff_base_ptr[HVEC2_2], 9);
-    base_ptr = phi_f_e[ff][1];
+    base_ptr = &*N_face_edge(ff, 1).data().begin();
     FTensor::Tensor1<double *, 3> t_base_f_e1(base_ptr, &base_ptr[HVEC1],
                                               &base_ptr[HVEC2], 3);
-    diff_base_ptr = diff_phi_f_e[ff][1];
+    diff_base_ptr = &*diffN_face_edge(ff, 1).data().begin();
     FTensor::Tensor2<double *, 3, 3> t_diff_base_f_e1(
         &diff_base_ptr[HVEC0_0], &diff_base_ptr[HVEC0_1],
         &diff_base_ptr[HVEC0_2], &diff_base_ptr[HVEC1_0],
         &diff_base_ptr[HVEC1_1], &diff_base_ptr[HVEC1_2],
         &diff_base_ptr[HVEC2_0], &diff_base_ptr[HVEC2_1],
         &diff_base_ptr[HVEC2_2], 9);
-    base_ptr = phi_f_e[ff][2];
+    base_ptr = &*N_face_edge(ff, 2).data().begin();
     FTensor::Tensor1<double *, 3> t_base_f_e2(base_ptr, &base_ptr[HVEC1],
                                               &base_ptr[HVEC2], 3);
-    diff_base_ptr = diff_phi_f_e[ff][2];
+    diff_base_ptr = &*diffN_face_edge(ff, 2).data().begin();
     FTensor::Tensor2<double *, 3, 3> t_diff_base_f_e2(
         &diff_base_ptr[HVEC0_0], &diff_base_ptr[HVEC0_1],
         &diff_base_ptr[HVEC0_2], &diff_base_ptr[HVEC1_0],
@@ -929,7 +943,7 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
         &diff_base_ptr[HVEC2_0], &diff_base_ptr[HVEC2_1],
         &diff_base_ptr[HVEC2_2], 9);
     for (int gg = 0; gg != nb_gauss_pts; gg++) {
-      for (int oo = 0; oo != faces_order[ff]; oo++) {
+      for (int oo = 0; oo != face_order; oo++) {
         for (int dd = NBFACETRI_AINSWORTH_EDGE_HDIV(oo);
              dd != NBFACETRI_AINSWORTH_EDGE_HDIV(oo + 1); dd++) {
           t_base(i) = t_base_f_e0(i);
@@ -965,6 +979,7 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
   }
 
   // volume
+  int volume_order = data.dataOnEntities[MBTET][0].getOrder();
   data.dataOnEntities[MBTET][0].getN(base).resize(
       nb_gauss_pts, 3 * NBVOLUMETET_AINSWORTH_HDIV(volume_order), false);
   data.dataOnEntities[MBTET][0].getDiffN(base).resize(
@@ -988,8 +1003,8 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
     std::vector<FTensor::Tensor2<double *, 3, 3>> t_diff_base_v_e;
     t_diff_base_v_e.reserve(6);
     for (int ee = 0; ee != 6; ee++) {
-      base_ptr = phi_v_e[ee];
-      diff_base_ptr = diff_phi_v_e[ee];
+      base_ptr = &*(N_volume_edge[ee].data().begin());
+      diff_base_ptr = &*(diffN_volume_edge[ee].data().begin());
       t_base_v_e.push_back(FTensor::Tensor1<double *, 3>(
           base_ptr, &base_ptr[HVEC1], &base_ptr[HVEC2], 3));
       t_diff_base_v_e.push_back(FTensor::Tensor2<double *, 3, 3>(
@@ -1006,8 +1021,8 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
     t_diff_base_v_f.reserve(4);
     if (NBVOLUMETET_AINSWORTH_FACE_HDIV(volume_order) > 0) {
       for (int ff = 0; ff != 4; ff++) {
-        base_ptr = phi_v_f[ff];
-        diff_base_ptr = diff_phi_v_f[ff];
+        base_ptr =  &*(N_volume_face[ff].data().begin());
+        diff_base_ptr = &*(diffN_volume_face[ff].data().begin());
         t_base_v_f.push_back(FTensor::Tensor1<double *, 3>(
             base_ptr, &base_ptr[HVEC1], &base_ptr[HVEC2], 3));
         t_diff_base_v_f.push_back(FTensor::Tensor2<double *, 3, 3>(
@@ -1021,11 +1036,11 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
     boost::shared_ptr<FTensor::Tensor1<double *, 3>> t_base_v;
     boost::shared_ptr<FTensor::Tensor2<double *, 3, 3>> t_diff_base_v;
     if (NBVOLUMETET_AINSWORTH_VOLUME_HDIV(volume_order) > 0) {
-      base_ptr = phi_v;
+      base_ptr = &*(N_volume_bubble.data().begin());
       t_base_v = boost::shared_ptr<FTensor::Tensor1<double *, 3>>(
           new FTensor::Tensor1<double *, 3>(base_ptr, &base_ptr[HVEC1],
                                             &base_ptr[HVEC2], 3));
-      diff_base_ptr = diff_phi_v;
+      diff_base_ptr = &*(diffN_volume_bubble.data().begin());
       t_diff_base_v = boost::shared_ptr<FTensor::Tensor2<double *, 3, 3>>(
           new FTensor::Tensor2<double *, 3, 3>(
               &diff_base_ptr[HVEC0_0], &diff_base_ptr[HVEC0_1],

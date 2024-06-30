@@ -80,6 +80,23 @@ private:
    */
   MoFEMErrorCode getValueHcurl(MatrixDouble &pts);
 
+private:
+  MoFEMErrorCode getValueH1AinsworthBase(MatrixDouble &pts);
+  MoFEMErrorCode getValueH1BernsteinBezierBase(MatrixDouble &pts);
+
+  MoFEMErrorCode getValueL2AinsworthBase(MatrixDouble &pts);
+  MoFEMErrorCode getValueL2BernsteinBezierBase(MatrixDouble &pts);
+
+  MoFEMErrorCode getValueHdivAinsworthBaseImpl(MatrixDouble &pts);
+  MoFEMErrorCode getValueHdivAinsworthBase(MatrixDouble &pts);
+  MoFEMErrorCode getValueHcurlAinsworthBase(MatrixDouble &pts);
+
+  MoFEMErrorCode getValueHdivDemkowiczBase(MatrixDouble &pts);
+  MoFEMErrorCode getValueHdivDemkowiczBrokenBase(MatrixDouble &pts);
+  MoFEMErrorCode getValueHcurlDemkowiczBase(MatrixDouble &pts);
+
+  MatrixInt senseFaceAlpha;
+
   ublas::matrix<MatrixDouble> N_face_edge;
   ublas::vector<MatrixDouble> N_face_bubble;
   ublas::vector<MatrixDouble> N_volume_edge;
@@ -91,22 +108,6 @@ private:
   ublas::vector<MatrixDouble> diffN_volume_edge;
   ublas::vector<MatrixDouble> diffN_volume_face;
   MatrixDouble diffN_volume_bubble;
-
-private:
-  MoFEMErrorCode getValueH1AinsworthBase(MatrixDouble &pts);
-  MoFEMErrorCode getValueH1BernsteinBezierBase(MatrixDouble &pts);
-
-  MoFEMErrorCode getValueL2AinsworthBase(MatrixDouble &pts);
-  MoFEMErrorCode getValueL2BernsteinBezierBase(MatrixDouble &pts);
-
-  MoFEMErrorCode getValueHdivAinsworthBase(MatrixDouble &pts);
-  MoFEMErrorCode getValueHcurlAinsworthBase(MatrixDouble &pts);
-
-  MoFEMErrorCode getValueHdivDemkowiczBase(MatrixDouble &pts);
-  MoFEMErrorCode getValueHdivDemkowiczBrokenBase(MatrixDouble &pts);
-  MoFEMErrorCode getValueHcurlDemkowiczBase(MatrixDouble &pts);
-
-  MatrixInt senseFaceAlpha;
 
 };
 
