@@ -95,7 +95,10 @@ private:
 
       MatrixDouble &pts,
 
-      std::array<int, 4> &faces_order
+      MatrixDouble &shape_functions, MatrixDouble &diff_shape_functions,
+
+      int volume_order, std::array<int, 4> &faces_order,
+      std::array<int, 3 * 4> &faces_nodes
 
   );
   MoFEMErrorCode getValueHdivAinsworthBase(MatrixDouble &pts);

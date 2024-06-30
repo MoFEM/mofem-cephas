@@ -67,6 +67,8 @@ struct TetBaseCache {
   static std::map<const void *, BaseCacheMI> hdivBaseInteriorDemkowicz;
   static std::map<const void *, BaseCacheMI> hdivBrokenBaseInteriorDemkowicz;
   static std::map<const void *, HDivBaseFaceCacheMI> hDivBaseFaceDemkowicz;
+
+  static std::map<const void *, BaseCacheMI> hdivBrokenBaseInteriorAinsworth;
 };
 
 std::map<const void *, TetBaseCache::BaseCacheMI>
@@ -75,6 +77,8 @@ std::map<const void *, TetBaseCache::BaseCacheMI>
     TetBaseCache::hdivBrokenBaseInteriorDemkowicz;
 std::map<const void *, TetBaseCache::HDivBaseFaceCacheMI>
     TetBaseCache::hDivBaseFaceDemkowicz;
+
+std::map<const void *, TetBaseCache::BaseCacheMI> hdivBrokenBaseInteriorAinsworth;
 
 MoFEMErrorCode
 TetPolynomialBase::query_interface(boost::typeindex::type_index type_index,
@@ -738,13 +742,14 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBaseImpl(
 
     MatrixDouble &pts,
 
-    std::array<int, 4> &faces_order
+    MatrixDouble &shape_functions, MatrixDouble &diff_shape_functions,
+
+    int volume_order, std::array<int, 4> &faces_order,
+    std::array<int, 3 * 4> &faces_nodes
 
 ) {
   MoFEMFunctionBegin;
 
-  EntitiesFieldData &data = cTx->dAta;
-  const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
                                      double *diffL, const int dim) =
       cTx->basePolynomialsType0;
@@ -786,16 +791,14 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBaseImpl(
   }
 
   CHKERR Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET(
-      &data.facesNodes(0, 0), faces_order.data(),
-      &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
-      &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(), phi_f_e,
-      diff_phi_f_e, nb_gauss_pts, base_polynomials);
+      faces_nodes.data(), faces_order.data(), &*shape_functions.data().begin(),
+      &*diff_shape_functions.data().begin(), phi_f_e, diff_phi_f_e,
+      nb_gauss_pts, base_polynomials);
 
   CHKERR Hdiv_Ainsworth_FaceBubbleShapeFunctions(
-      &data.facesNodes(0, 0), faces_order.data(),
-      &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
-      &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(), phi_f,
-      diff_phi_f, nb_gauss_pts, base_polynomials);
+      faces_nodes.data(), faces_order.data(), &*shape_functions.data().begin(),
+      &*diff_shape_functions.data().begin(), phi_f, diff_phi_f, nb_gauss_pts,
+      base_polynomials);
 
   // volume shape functions
 
@@ -805,8 +808,6 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBaseImpl(
   double *diff_phi_v_e[6];
   double *diff_phi_v_f[4];
   double *diff_phi_v;
-
-  int volume_order = data.dataOnEntities[MBTET][0].getOrder();
 
   N_volume_edge.resize(6, false);
   diffN_volume_edge.resize(6, false);
@@ -819,9 +820,9 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBaseImpl(
     diff_phi_v_e[ee] = &*(diffN_volume_edge[ee].data().begin());
   }
   CHKERR Hdiv_Ainsworth_EdgeBasedVolumeShapeFunctions_MBTET(
-      volume_order, &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0),
-      &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0, 0), phi_v_e,
-      diff_phi_v_e, nb_gauss_pts, base_polynomials);
+      volume_order, &*shape_functions.data().begin(),
+      &*diff_shape_functions.data().begin(), phi_v_e, diff_phi_v_e,
+      nb_gauss_pts, base_polynomials);
 
   N_volume_face.resize(4, false);
   diffN_volume_face.resize(4, false);
@@ -834,9 +835,9 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBaseImpl(
     diff_phi_v_f[ff] = &*(diffN_volume_face[ff].data().begin());
   }
   CHKERR Hdiv_Ainsworth_FaceBasedVolumeShapeFunctions_MBTET(
-      volume_order, &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0),
-      &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0, 0), phi_v_f,
-      diff_phi_v_f, nb_gauss_pts, base_polynomials);
+      volume_order, &*shape_functions.data().begin(),
+      &*diff_shape_functions.data().begin(), phi_v_f, diff_phi_v_f,
+      nb_gauss_pts, base_polynomials);
 
   N_volume_bubble.resize(
       nb_gauss_pts, 3 * NBVOLUMETET_AINSWORTH_VOLUME_HDIV(volume_order), false);
@@ -845,9 +846,9 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBaseImpl(
   phi_v = &*(N_volume_bubble.data().begin());
   diff_phi_v = &*(diffN_volume_bubble.data().begin());
   CHKERR Hdiv_Ainsworth_VolumeBubbleShapeFunctions_MBTET(
-      volume_order, &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0),
-      &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0, 0), phi_v, diff_phi_v,
-      nb_gauss_pts, base_polynomials);
+      volume_order, &*shape_functions.data().begin(),
+      &*diff_shape_functions.data().begin(), phi_v, diff_phi_v, nb_gauss_pts,
+      base_polynomials);
 
   MoFEMFunctionReturn(0);
 }
@@ -856,12 +857,22 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
   std::array<int, 4> faces_order;
+  std::array<int, 4 * 3> faces_nodes;
 
+  FieldApproximationBase base = cTx->bAse;
+  EntitiesFieldData &data = cTx->dAta;
+
+  int volume_order = data.dataOnEntities[MBTET][0].getOrder();
+  std::copy(data.facesNodes.data().begin(), data.facesNodes.data().end(),
+            faces_nodes.begin());
   for (int ff = 0; ff != 4; ff++) {
     faces_order[ff] = cTx->dAta.dataOnEntities[MBTRI][ff].getOrder();
   }
 
-  CHKERR getValueHdivAinsworthBaseImpl(pts, faces_order);
+  CHKERR getValueHdivAinsworthBaseImpl(
+      pts, data.dataOnEntities[MBVERTEX][0].getN(base),
+      data.dataOnEntities[MBVERTEX][0].getDiffN(base),
+      volume_order, faces_order, faces_nodes);
 
   // Set shape functions into data structure Shape functions hast to be put
   // in arrays in order which guarantee hierarchical series of degrees of
@@ -871,8 +882,6 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
   FTensor::Index<'i', 3> i;
   FTensor::Index<'j', 3> j;
 
-  EntitiesFieldData &data = cTx->dAta;
-  const FieldApproximationBase base = cTx->bAse;
   int nb_gauss_pts = pts.size2();
 
   // faces
@@ -984,7 +993,6 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
   }
 
   // volume
-  int volume_order = data.dataOnEntities[MBTET][0].getOrder();
   data.dataOnEntities[MBTET][0].getN(base).resize(
       nb_gauss_pts, 3 * NBVOLUMETET_AINSWORTH_HDIV(volume_order), false);
   data.dataOnEntities[MBTET][0].getDiffN(base).resize(
