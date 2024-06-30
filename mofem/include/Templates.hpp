@@ -768,8 +768,8 @@ template <int DIM, int S, typename T> struct GetFTensor1FromPtrImpl;
 template <int S, typename T> struct GetFTensor1FromPtrImpl<2, S, T> {
   GetFTensor1FromPtrImpl() = delete;
   inline static auto get(T *ptr) {
-    return FTensor::Tensor1<FTensor::PackPtr<T *, S>, 2>(&ptr[HVEC0],
-                                                         &ptr[HVEC1]);
+    return FTensor::Tensor1<FTensor::PackPtr<T *, S>, 2>(ptr + HVEC0,
+                                                         ptr + HVEC1);
   }
 };
 
@@ -777,15 +777,15 @@ template <int S, typename T> struct GetFTensor1FromPtrImpl<3, S, T> {
   GetFTensor1FromPtrImpl() = delete;
   inline static auto get(T *ptr) {
     return FTensor::Tensor1<FTensor::PackPtr<T *, S>, 3>(
-        &ptr[HVEC0], &ptr[HVEC1], &ptr[HVEC2]);
+        ptr + HVEC0, ptr + HVEC1, ptr + HVEC2);
   }
 };
 
 template <int S, typename T> struct GetFTensor1FromPtrImpl<4, S, T> {
   GetFTensor1FromPtrImpl() = delete;
   inline static auto get(T *ptr) {
-    return FTensor::Tensor1<FTensor::PackPtr<T *, S>, 4>(&ptr[0], &ptr[1],
-                                                         &ptr[2], &ptr[3]);
+    return FTensor::Tensor1<FTensor::PackPtr<T *, S>, 4>(ptr + 0, ptr + 1,
+                                                         ptr + 2, ptr + 3);
   }
 };
 
@@ -793,7 +793,7 @@ template <int S, typename T> struct GetFTensor1FromPtrImpl<6, S, T> {
   GetFTensor1FromPtrImpl() = delete;
   inline static auto get(T *ptr) {
     return FTensor::Tensor1<FTensor::PackPtr<T *, S>, 6>(
-        &ptr[0], &ptr[1], &ptr[2], &ptr[3], &ptr[4], &ptr[5]);
+        ptr + 0, ptr + 1, ptr + 2, ptr + 3, ptr + 4, ptr + 5);
   }
 };
 
@@ -830,7 +830,7 @@ template <int S, typename T> struct GetFTensor2FromPtr<3, 2, S, T> {
   GetFTensor2FromPtr() = delete;
   inline static auto get(T *ptr) {
     return FTensor::Tensor2<FTensor::PackPtr<T *, S>, 3, 2>(
-        &ptr[0], &ptr[1], &ptr[2], &ptr[3], &ptr[4], &ptr[5]);
+        ptr + 0, ptr + 1, ptr + 2, ptr + 3, ptr + 4, ptr + 5);
   }
 };
 
@@ -838,11 +838,11 @@ template <int S, typename T> struct GetFTensor2FromPtr<6, 6, S, T> {
   GetFTensor2FromPtr() = delete;
   inline static auto get(T *ptr) {
     return FTensor::Tensor2<FTensor::PackPtr<T *, S>, 6, 6>(
-        &ptr[0], &ptr[1], &ptr[2], &ptr[3], &ptr[4], &ptr[5], &ptr[6], &ptr[7],
-        &ptr[8], &ptr[9], &ptr[10], &ptr[11], &ptr[12], &ptr[13], &ptr[14],
-        &ptr[15], &ptr[16], &ptr[17], &ptr[18], &ptr[19], &ptr[20], &ptr[21],
-        &ptr[22], &ptr[23], &ptr[24], &ptr[25], &ptr[26], &ptr[27], &ptr[28],
-        &ptr[29], &ptr[30], &ptr[31], &ptr[32], &ptr[33], &ptr[34], &ptr[35]);
+        ptr + 0, ptr + 1, ptr + 2, ptr + 3, ptr + 4, ptr + 5, ptr + 6, ptr + 7,
+        ptr + 8, ptr + 9, ptr + 10, ptr + 11, ptr + 12, ptr + 13, ptr + 14,
+        ptr + 15, ptr + 16, ptr + 17, ptr + 18, ptr + 19, ptr + 20, ptr + 21,
+        ptr + 22, ptr + 23, ptr + 24, ptr + 25, ptr + 26, ptr + 27, ptr + 28,
+        ptr + 29, ptr + 30, ptr + 31, ptr + 32, ptr + 33, ptr + 34, ptr + 35);
   }
 };
 
@@ -850,8 +850,8 @@ template <int S, typename T> struct GetFTensor2FromPtr<3, 3, S, T> {
   GetFTensor2FromPtr() = delete;
   inline static auto get(T *ptr) {
     return FTensor::Tensor2<FTensor::PackPtr<T *, S>, 3, 3>(
-        &ptr[0], &ptr[1], &ptr[2], &ptr[3], &ptr[4], &ptr[5], &ptr[6], &ptr[7],
-        &ptr[8]);
+        ptr + 0, ptr + 1, ptr + 2, ptr + 3, ptr + 4, ptr + 5, ptr + 6, ptr + 7,
+        ptr + 8);
   }
 };
 
@@ -927,22 +927,22 @@ template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3,
                  2> inline getFTensor2HVecFromPtr<3, 2>(double *ptr) {
   return FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>(
-      &ptr[HVEC0_0], &ptr[HVEC0_1],
+      ptr + HVEC0_0, ptr + HVEC0_1,
 
-      &ptr[HVEC1_0], &ptr[HVEC1_1],
+      ptr + HVEC1_0, ptr + HVEC1_1,
 
-      &ptr[HVEC2_0], &ptr[HVEC2_1]);
+      ptr + HVEC2_0, ptr + HVEC2_1);
 };
 
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3,
                  3> inline getFTensor2HVecFromPtr<3, 3>(double *ptr) {
   return FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>(
-      &ptr[HVEC0_0], &ptr[HVEC0_1], &ptr[HVEC0_2],
+      ptr + HVEC0_0, ptr + HVEC0_1, ptr + HVEC0_2,
 
-      &ptr[HVEC1_0], &ptr[HVEC1_1], &ptr[HVEC1_2],
+      ptr + HVEC1_0, ptr + HVEC1_1, ptr + HVEC1_2,
 
-      &ptr[HVEC2_0], &ptr[HVEC2_1], &ptr[HVEC2_2]);
+      ptr + HVEC2_0, ptr + HVEC2_1, ptr + HVEC2_2);
 };
 
 /*
@@ -965,25 +965,18 @@ template <>
 inline FTensor::Tensor3<FTensor::PackPtr<double *, 12>, 3, 2, 2>
 getFTensor3FromPtr<3, 2, 2>(double *ptr) {
   return FTensor::Tensor3<FTensor::PackPtr<double *, 12>, 3, 2, 2>(
-      &ptr[0], &ptr[1], &ptr[2],
-
-      &ptr[3], &ptr[4], &ptr[5],
-
-      &ptr[6], &ptr[7], &ptr[8],
-
-      &ptr[9], &ptr[10], &ptr[11]
-
-  );
+      ptr + 0, ptr + 1, ptr + 2, ptr + 3, ptr + 4, ptr + 5, ptr + 6, ptr + 7,
+      ptr + 8, ptr + 9, ptr + 10, ptr + 11);
 };
 
 template <>
 inline FTensor::Tensor3<FTensor::PackPtr<double *, 27>, 3, 3, 3>
 getFTensor3FromPtr<3, 3, 3>(double *ptr) {
   return FTensor::Tensor3<FTensor::PackPtr<double *, 27>, 3, 3, 3>(
-      &ptr[0], &ptr[1], &ptr[2], &ptr[3], &ptr[4], &ptr[5], &ptr[6], &ptr[7],
-      &ptr[8], &ptr[9], &ptr[10], &ptr[11], &ptr[12], &ptr[13], &ptr[14],
-      &ptr[15], &ptr[16], &ptr[17], &ptr[18], &ptr[19], &ptr[20], &ptr[21],
-      &ptr[22], &ptr[23], &ptr[24], &ptr[25], &ptr[26]);
+      ptr + 0, ptr + 1, ptr + 2, ptr + 3, ptr + 4, ptr + 5, ptr + 6, ptr + 7,
+      ptr + 8, ptr + 9, ptr + 10, ptr + 11, ptr + 12, ptr + 13, ptr + 14,
+      ptr + 15, ptr + 16, ptr + 17, ptr + 18, ptr + 19, ptr + 20, ptr + 21,
+      ptr + 22, ptr + 23, ptr + 24, ptr + 25, ptr + 26);
 };
 
 /**
@@ -1004,11 +997,11 @@ template <>
 inline FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 6>, 3>
 getFTensor2SymmetricFromPtr<3>(double *ptr) {
   return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 6>, 3>(
-      &ptr[0], &ptr[1], &ptr[2],
+      ptr + 0, ptr + 1, ptr + 2,
 
-      &ptr[3], &ptr[4],
+      ptr + 3, ptr + 4,
 
-      &ptr[5]);
+      ptr + 5);
 };
 
 template <>
@@ -1038,18 +1031,18 @@ template <>
 inline FTensor::Tensor2_symmetric<FTensor::PackPtr<adouble *, 6>, 3>
 getFTensor2SymmetricFromPtr<3>(adouble *ptr) {
   return FTensor::Tensor2_symmetric<FTensor::PackPtr<adouble *, 6>, 3>(
-      &ptr[0], &ptr[1], &ptr[2],
+      ptr + 0, ptr + 1, ptr + 2,
 
-      &ptr[3], &ptr[4],
+      ptr + 3, ptr + 4,
 
-      &ptr[5]);
+      ptr + 5);
 };
 
 template <>
 inline FTensor::Tensor2_symmetric<FTensor::PackPtr<adouble *, 3>, 2>
 getFTensor2SymmetricFromPtr<2>(adouble *ptr) {
   return FTensor::Tensor2_symmetric<FTensor::PackPtr<adouble *, 3>, 2>(
-      &ptr[0], &ptr[1], &ptr[2]);
+      ptr + 0, ptr + 1, ptr + 2);
 };
 
 #endif
@@ -1072,18 +1065,18 @@ template <>
 inline FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 9>, 3>
 getFTensor2SymmetricLowerFromPtr<3>(double *ptr) {
   return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 9>, 3>(
-      &ptr[HVEC0_0], &ptr[HVEC0_1], &ptr[HVEC0_2],
+      ptr + HVEC0_0, ptr + HVEC0_1, ptr + HVEC0_2,
 
-      &ptr[HVEC1_0], &ptr[HVEC1_1],
+      ptr + HVEC1_0, ptr + HVEC1_1,
 
-      &ptr[HVEC2_2]);
+      ptr + HVEC2_2);
 };
 
 template <>
 inline FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 4>, 2>
 getFTensor2SymmetricLowerFromPtr<2>(double *ptr) {
   return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 4>, 2>(
-      &ptr[0], &ptr[1], &ptr[3]);
+      ptr + 0, ptr + 1, ptr + 3);
 };
 
 template <int DIM, int S> struct GetFTensor1FromArray;

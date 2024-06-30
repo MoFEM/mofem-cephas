@@ -78,7 +78,8 @@ std::map<const void *, TetBaseCache::BaseCacheMI>
 std::map<const void *, TetBaseCache::HDivBaseFaceCacheMI>
     TetBaseCache::hDivBaseFaceDemkowicz;
 
-std::map<const void *, TetBaseCache::BaseCacheMI> hdivBrokenBaseInteriorAinsworth;
+std::map<const void *, TetBaseCache::BaseCacheMI>
+    TetBaseCache::hdivBrokenBaseInteriorAinsworth;
 
 MoFEMErrorCode
 TetPolynomialBase::query_interface(boost::typeindex::type_index type_index,
@@ -871,8 +872,8 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
 
   CHKERR getValueHdivAinsworthBaseImpl(
       pts, data.dataOnEntities[MBVERTEX][0].getN(base),
-      data.dataOnEntities[MBVERTEX][0].getDiffN(base),
-      volume_order, faces_order, faces_nodes);
+      data.dataOnEntities[MBVERTEX][0].getDiffN(base), volume_order,
+      faces_order, faces_nodes);
 
   // Set shape functions into data structure Shape functions hast to be put
   // in arrays in order which guarantee hierarchical series of degrees of
@@ -888,6 +889,46 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
   if (data.dataOnEntities[MBTRI].size() != 4) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
   }
+
+  // face-face
+  FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_base_f_f[] = {
+      getFTensor1FromPtr<3>(&*(N_face_bubble[0].data().begin())),
+      getFTensor1FromPtr<3>(&*(N_face_bubble[1].data().begin())),
+      getFTensor1FromPtr<3>(&*(N_face_bubble[2].data().begin())),
+      getFTensor1FromPtr<3>(&*(N_face_bubble[3].data().begin()))};
+  FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> t_diff_base_f_f[] = {
+      getFTensor2HVecFromPtr<3, 3>(&*(diffN_face_bubble[0].data().begin())),
+      getFTensor2HVecFromPtr<3, 3>(&*(diffN_face_bubble[1].data().begin())),
+      getFTensor2HVecFromPtr<3, 3>(&*(diffN_face_bubble[2].data().begin())),
+      getFTensor2HVecFromPtr<3, 3>(&*(diffN_face_bubble[3].data().begin()))};
+  // face-edge
+  FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_base_f_e[] = {
+      getFTensor1FromPtr<3>(&*(N_face_edge(0, 0).data().begin())),
+      getFTensor1FromPtr<3>(&*(N_face_edge(0, 1).data().begin())),
+      getFTensor1FromPtr<3>(&*(N_face_edge(0, 2).data().begin())),
+      getFTensor1FromPtr<3>(&*(N_face_edge(1, 0).data().begin())),
+      getFTensor1FromPtr<3>(&*(N_face_edge(1, 1).data().begin())),
+      getFTensor1FromPtr<3>(&*(N_face_edge(1, 2).data().begin())),
+      getFTensor1FromPtr<3>(&*(N_face_edge(2, 0).data().begin())),
+      getFTensor1FromPtr<3>(&*(N_face_edge(2, 1).data().begin())),
+      getFTensor1FromPtr<3>(&*(N_face_edge(2, 2).data().begin())),
+      getFTensor1FromPtr<3>(&*(N_face_edge(3, 0).data().begin())),
+      getFTensor1FromPtr<3>(&*(N_face_edge(3, 1).data().begin())),
+      getFTensor1FromPtr<3>(&*(N_face_edge(3, 2).data().begin()))};
+  FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> t_diff_base_f_e[] = {
+      getFTensor2HVecFromPtr<3, 3>(&*(diffN_face_edge(0, 0).data().begin())),
+      getFTensor2HVecFromPtr<3, 3>(&*(diffN_face_edge(0, 1).data().begin())),
+      getFTensor2HVecFromPtr<3, 3>(&*(diffN_face_edge(0, 2).data().begin())),
+      getFTensor2HVecFromPtr<3, 3>(&*(diffN_face_edge(1, 0).data().begin())),
+      getFTensor2HVecFromPtr<3, 3>(&*(diffN_face_edge(1, 1).data().begin())),
+      getFTensor2HVecFromPtr<3, 3>(&*(diffN_face_edge(1, 2).data().begin())),
+      getFTensor2HVecFromPtr<3, 3>(&*(diffN_face_edge(2, 0).data().begin())),
+      getFTensor2HVecFromPtr<3, 3>(&*(diffN_face_edge(2, 1).data().begin())),
+      getFTensor2HVecFromPtr<3, 3>(&*(diffN_face_edge(2, 2).data().begin())),
+      getFTensor2HVecFromPtr<3, 3>(&*(diffN_face_edge(3, 0).data().begin())),
+      getFTensor2HVecFromPtr<3, 3>(&*(diffN_face_edge(3, 1).data().begin())),
+      getFTensor2HVecFromPtr<3, 3>(&*(diffN_face_edge(3, 2).data().begin()))};
+
   for (int ff = 0; ff != 4; ff++) {
     data.dataOnEntities[MBTRI][ff].getN(base).resize(
         nb_gauss_pts, 3 * NBFACETRI_AINSWORTH_HDIV(faces_order[ff]), false);
@@ -895,98 +936,40 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
         nb_gauss_pts, 9 * NBFACETRI_AINSWORTH_HDIV(faces_order[ff]), false);
     if (NBFACETRI_AINSWORTH_HDIV(faces_order[ff]) == 0)
       continue;
-    // face
     double *base_ptr =
         &*data.dataOnEntities[MBTRI][ff].getN(base).data().begin();
-    FTensor::Tensor1<double *, 3> t_base(base_ptr, &base_ptr[HVEC1],
-                                         &base_ptr[HVEC2], 3);
     double *diff_base_ptr =
         &*data.dataOnEntities[MBTRI][ff].getDiffN(base).data().begin();
-    FTensor::Tensor2<double *, 3, 3> t_diff_base(
-        &diff_base_ptr[HVEC0_0], &diff_base_ptr[HVEC0_1],
-        &diff_base_ptr[HVEC0_2], &diff_base_ptr[HVEC1_0],
-        &diff_base_ptr[HVEC1_1], &diff_base_ptr[HVEC1_2],
-        &diff_base_ptr[HVEC2_0], &diff_base_ptr[HVEC2_1],
-        &diff_base_ptr[HVEC2_2], 9);
-    // face-face
-    boost::shared_ptr<FTensor::Tensor1<double *, 3>> t_base_f;
-    boost::shared_ptr<FTensor::Tensor2<double *, 3, 3>> t_diff_base_f;
-    if (NBFACETRI_AINSWORTH_FACE_HDIV(faces_order[ff]) > 0) {
-      base_ptr = &*(N_face_bubble[ff].data().begin());
-      t_base_f = boost::shared_ptr<FTensor::Tensor1<double *, 3>>(
-          new FTensor::Tensor1<double *, 3>(base_ptr, &base_ptr[HVEC1],
-                                            &base_ptr[HVEC2], 3));
-      diff_base_ptr = &*(diffN_face_bubble[ff].data().begin());
-      t_diff_base_f = boost::shared_ptr<FTensor::Tensor2<double *, 3, 3>>(
-          new FTensor::Tensor2<double *, 3, 3>(
-              &diff_base_ptr[HVEC0_0], &diff_base_ptr[HVEC0_1],
-              &diff_base_ptr[HVEC0_2], &diff_base_ptr[HVEC1_0],
-              &diff_base_ptr[HVEC1_1], &diff_base_ptr[HVEC1_2],
-              &diff_base_ptr[HVEC2_0], &diff_base_ptr[HVEC2_1],
-              &diff_base_ptr[HVEC2_2], 9));
-    }
-    // edge-face
-    base_ptr = &*N_face_edge(ff, 0).data().begin();
-    FTensor::Tensor1<double *, 3> t_base_f_e0(base_ptr, &base_ptr[HVEC1],
-                                              &base_ptr[HVEC2], 3);
-    diff_base_ptr = &*diffN_face_edge(ff, 0).data().begin();
-    FTensor::Tensor2<double *, 3, 3> t_diff_base_f_e0(
-        &diff_base_ptr[HVEC0_0], &diff_base_ptr[HVEC0_1],
-        &diff_base_ptr[HVEC0_2], &diff_base_ptr[HVEC1_0],
-        &diff_base_ptr[HVEC1_1], &diff_base_ptr[HVEC1_2],
-        &diff_base_ptr[HVEC2_0], &diff_base_ptr[HVEC2_1],
-        &diff_base_ptr[HVEC2_2], 9);
-    base_ptr = &*N_face_edge(ff, 1).data().begin();
-    FTensor::Tensor1<double *, 3> t_base_f_e1(base_ptr, &base_ptr[HVEC1],
-                                              &base_ptr[HVEC2], 3);
-    diff_base_ptr = &*diffN_face_edge(ff, 1).data().begin();
-    FTensor::Tensor2<double *, 3, 3> t_diff_base_f_e1(
-        &diff_base_ptr[HVEC0_0], &diff_base_ptr[HVEC0_1],
-        &diff_base_ptr[HVEC0_2], &diff_base_ptr[HVEC1_0],
-        &diff_base_ptr[HVEC1_1], &diff_base_ptr[HVEC1_2],
-        &diff_base_ptr[HVEC2_0], &diff_base_ptr[HVEC2_1],
-        &diff_base_ptr[HVEC2_2], 9);
-    base_ptr = &*N_face_edge(ff, 2).data().begin();
-    FTensor::Tensor1<double *, 3> t_base_f_e2(base_ptr, &base_ptr[HVEC1],
-                                              &base_ptr[HVEC2], 3);
-    diff_base_ptr = &*diffN_face_edge(ff, 2).data().begin();
-    FTensor::Tensor2<double *, 3, 3> t_diff_base_f_e2(
-        &diff_base_ptr[HVEC0_0], &diff_base_ptr[HVEC0_1],
-        &diff_base_ptr[HVEC0_2], &diff_base_ptr[HVEC1_0],
-        &diff_base_ptr[HVEC1_1], &diff_base_ptr[HVEC1_2],
-        &diff_base_ptr[HVEC2_0], &diff_base_ptr[HVEC2_1],
-        &diff_base_ptr[HVEC2_2], 9);
+    auto t_base = getFTensor1FromPtr<3>(base_ptr);
+    auto t_diff_base = getFTensor2HVecFromPtr<3, 3>(diff_base_ptr);
+
     for (int gg = 0; gg != nb_gauss_pts; gg++) {
       for (int oo = 0; oo != faces_order[ff]; oo++) {
+
+        // face-edge
         for (int dd = NBFACETRI_AINSWORTH_EDGE_HDIV(oo);
              dd != NBFACETRI_AINSWORTH_EDGE_HDIV(oo + 1); dd++) {
-          t_base(i) = t_base_f_e0(i);
-          ++t_base;
-          ++t_base_f_e0;
-          t_diff_base(i, j) = t_diff_base_f_e0(i, j);
-          ++t_diff_base;
-          ++t_diff_base_f_e0;
-          t_base(i) = t_base_f_e1(i);
-          ++t_base;
-          ++t_base_f_e1;
-          t_diff_base(i, j) = t_diff_base_f_e1(i, j);
-          ++t_diff_base;
-          ++t_diff_base_f_e1;
-          t_base(i) = t_base_f_e2(i);
-          ++t_base;
-          ++t_base_f_e2;
-          t_diff_base(i, j) = t_diff_base_f_e2(i, j);
-          ++t_diff_base;
-          ++t_diff_base_f_e2;
+          for (int ee = 0; ee != 3; ++ee) {
+            t_base(i) = t_base_f_e[ff * 3 + ee](i);
+            ++t_base;
+            ++t_base_f_e[ff * 3 + ee];
+          }
+          for (int ee = 0; ee != 3; ++ee) {
+            t_diff_base(i, j) = t_diff_base_f_e[ff * 3 + ee](i, j);
+            ++t_diff_base;
+            ++t_diff_base_f_e[ff * 3 + ee];
+          }
         }
+
+        // face-face
         for (int dd = NBFACETRI_AINSWORTH_FACE_HDIV(oo);
              dd != NBFACETRI_AINSWORTH_FACE_HDIV(oo + 1); dd++) {
-          t_base(i) = (*t_base_f)(i);
+          t_base(i) = t_base_f_f[ff](i);
           ++t_base;
-          ++(*t_base_f);
-          t_diff_base(i, j) = (*t_diff_base_f)(i, j);
+          ++t_base_f_f[ff];
+          t_diff_base(i, j) = t_diff_base_f_f[ff](i, j);
           ++t_diff_base;
-          ++(*t_diff_base_f);
+          ++t_diff_base_f_f[ff];
         }
       }
     }
@@ -1000,70 +983,47 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
   if (NBVOLUMETET_AINSWORTH_HDIV(volume_order) > 0) {
     double *base_ptr =
         &*data.dataOnEntities[MBTET][0].getN(base).data().begin();
-    FTensor::Tensor1<double *, 3> t_base(base_ptr, &base_ptr[HVEC1],
-                                         &base_ptr[HVEC2], 3);
     double *diff_base_ptr =
         &*data.dataOnEntities[MBTET][0].getDiffN(base).data().begin();
-    FTensor::Tensor2<double *, 3, 3> t_diff_base(
-        &diff_base_ptr[HVEC0_0], &diff_base_ptr[HVEC0_1],
-        &diff_base_ptr[HVEC0_2], &diff_base_ptr[HVEC1_0],
-        &diff_base_ptr[HVEC1_1], &diff_base_ptr[HVEC1_2],
-        &diff_base_ptr[HVEC2_0], &diff_base_ptr[HVEC2_1],
-        &diff_base_ptr[HVEC2_2], 9);
-    // edges
-    std::vector<FTensor::Tensor1<double *, 3>> t_base_v_e;
-    t_base_v_e.reserve(6);
-    std::vector<FTensor::Tensor2<double *, 3, 3>> t_diff_base_v_e;
-    t_diff_base_v_e.reserve(6);
-    for (int ee = 0; ee != 6; ee++) {
-      base_ptr = &*(N_volume_edge[ee].data().begin());
-      diff_base_ptr = &*(diffN_volume_edge[ee].data().begin());
-      t_base_v_e.push_back(FTensor::Tensor1<double *, 3>(
-          base_ptr, &base_ptr[HVEC1], &base_ptr[HVEC2], 3));
-      t_diff_base_v_e.push_back(FTensor::Tensor2<double *, 3, 3>(
-          &diff_base_ptr[HVEC0_0], &diff_base_ptr[HVEC0_1],
-          &diff_base_ptr[HVEC0_2], &diff_base_ptr[HVEC1_0],
-          &diff_base_ptr[HVEC1_1], &diff_base_ptr[HVEC1_2],
-          &diff_base_ptr[HVEC2_0], &diff_base_ptr[HVEC2_1],
-          &diff_base_ptr[HVEC2_2], 9));
-    }
-    // faces
-    std::vector<FTensor::Tensor1<double *, 3>> t_base_v_f;
-    t_base_v_f.reserve(4);
-    std::vector<FTensor::Tensor2<double *, 3, 3>> t_diff_base_v_f;
-    t_diff_base_v_f.reserve(4);
-    if (NBVOLUMETET_AINSWORTH_FACE_HDIV(volume_order) > 0) {
-      for (int ff = 0; ff != 4; ff++) {
-        base_ptr =  &*(N_volume_face[ff].data().begin());
-        diff_base_ptr = &*(diffN_volume_face[ff].data().begin());
-        t_base_v_f.push_back(FTensor::Tensor1<double *, 3>(
-            base_ptr, &base_ptr[HVEC1], &base_ptr[HVEC2], 3));
-        t_diff_base_v_f.push_back(FTensor::Tensor2<double *, 3, 3>(
-            &diff_base_ptr[HVEC0_0], &diff_base_ptr[HVEC0_1],
-            &diff_base_ptr[HVEC0_2], &diff_base_ptr[HVEC1_0],
-            &diff_base_ptr[HVEC1_1], &diff_base_ptr[HVEC1_2],
-            &diff_base_ptr[HVEC2_0], &diff_base_ptr[HVEC2_1],
-            &diff_base_ptr[HVEC2_2], 9));
-      }
-    }
-    boost::shared_ptr<FTensor::Tensor1<double *, 3>> t_base_v;
-    boost::shared_ptr<FTensor::Tensor2<double *, 3, 3>> t_diff_base_v;
-    if (NBVOLUMETET_AINSWORTH_VOLUME_HDIV(volume_order) > 0) {
-      base_ptr = &*(N_volume_bubble.data().begin());
-      t_base_v = boost::shared_ptr<FTensor::Tensor1<double *, 3>>(
-          new FTensor::Tensor1<double *, 3>(base_ptr, &base_ptr[HVEC1],
-                                            &base_ptr[HVEC2], 3));
-      diff_base_ptr = &*(diffN_volume_bubble.data().begin());
-      t_diff_base_v = boost::shared_ptr<FTensor::Tensor2<double *, 3, 3>>(
-          new FTensor::Tensor2<double *, 3, 3>(
-              &diff_base_ptr[HVEC0_0], &diff_base_ptr[HVEC0_1],
-              &diff_base_ptr[HVEC0_2], &diff_base_ptr[HVEC1_0],
-              &diff_base_ptr[HVEC1_1], &diff_base_ptr[HVEC1_2],
-              &diff_base_ptr[HVEC2_0], &diff_base_ptr[HVEC2_1],
-              &diff_base_ptr[HVEC2_2], 9));
-    }
+    auto t_base = getFTensor1FromPtr<3>(base_ptr);
+    auto t_diff_base = getFTensor2HVecFromPtr<3, 3>(diff_base_ptr);
+
+    // volume-edge
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_base_v_e[] = {
+        getFTensor1FromPtr<3>(&*N_volume_edge[0].data().begin()),
+        getFTensor1FromPtr<3>(&*N_volume_edge[1].data().begin()),
+        getFTensor1FromPtr<3>(&*N_volume_edge[2].data().begin()),
+        getFTensor1FromPtr<3>(&*N_volume_edge[3].data().begin()),
+        getFTensor1FromPtr<3>(&*N_volume_edge[4].data().begin()),
+        getFTensor1FromPtr<3>(&*N_volume_edge[5].data().begin())};
+    FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> t_diff_base_v_e[] = {
+        getFTensor2HVecFromPtr<3, 3>(&*diffN_volume_edge[0].data().begin()),
+        getFTensor2HVecFromPtr<3, 3>(&*diffN_volume_edge[1].data().begin()),
+        getFTensor2HVecFromPtr<3, 3>(&*diffN_volume_edge[2].data().begin()),
+        getFTensor2HVecFromPtr<3, 3>(&*diffN_volume_edge[3].data().begin()),
+        getFTensor2HVecFromPtr<3, 3>(&*diffN_volume_edge[4].data().begin()),
+        getFTensor2HVecFromPtr<3, 3>(&*diffN_volume_edge[5].data().begin())};
+
+    // volume-faces
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_base_v_f[] = {
+        getFTensor1FromPtr<3>(&*N_volume_face[0].data().begin()),
+        getFTensor1FromPtr<3>(&*N_volume_face[1].data().begin()),
+        getFTensor1FromPtr<3>(&*N_volume_face[2].data().begin()),
+        getFTensor1FromPtr<3>(&*N_volume_face[3].data().begin())};
+    FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> t_diff_base_v_f[] = {
+        getFTensor2HVecFromPtr<3, 3>(&*diffN_volume_face[0].data().begin()),
+        getFTensor2HVecFromPtr<3, 3>(&*diffN_volume_face[1].data().begin()),
+        getFTensor2HVecFromPtr<3, 3>(&*diffN_volume_face[2].data().begin()),
+        getFTensor2HVecFromPtr<3, 3>(&*diffN_volume_face[3].data().begin())};
+
+    base_ptr = &*(N_volume_bubble.data().begin());
+    diff_base_ptr = &*(diffN_volume_bubble.data().begin());
+    auto t_base_v = getFTensor1FromPtr<3>(base_ptr);
+    auto t_diff_base_v = getFTensor2HVecFromPtr<3, 3>(diff_base_ptr);
     for (int gg = 0; gg != nb_gauss_pts; gg++) {
       for (int oo = 0; oo < volume_order; oo++) {
+
+        // volume-edge
         for (int dd = NBVOLUMETET_AINSWORTH_EDGE_HDIV(oo);
              dd < NBVOLUMETET_AINSWORTH_EDGE_HDIV(oo + 1); dd++) {
           for (int ee = 0; ee < 6; ee++) {
@@ -1075,6 +1035,8 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
             ++t_diff_base_v_e[ee];
           }
         }
+
+        // volume-face
         for (int dd = NBVOLUMETET_AINSWORTH_FACE_HDIV(oo);
              dd < NBVOLUMETET_AINSWORTH_FACE_HDIV(oo + 1); dd++) {
           for (int ff = 0; ff < 4; ff++) {
@@ -1086,17 +1048,238 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
             ++t_diff_base_v_f[ff];
           }
         }
+
+        // volume-bubble
         for (int dd = NBVOLUMETET_AINSWORTH_VOLUME_HDIV(oo);
              dd < NBVOLUMETET_AINSWORTH_VOLUME_HDIV(oo + 1); dd++) {
-          t_base(i) = (*t_base_v)(i);
+          t_base(i) = t_base_v(i);
           ++t_base;
-          ++(*t_base_v);
-          t_diff_base(i, j) = (*t_diff_base_v)(i, j);
+          ++t_base_v;
+          t_diff_base(i, j) = t_diff_base_v(i, j);
           ++t_diff_base;
-          ++(*t_diff_base_v);
+          ++t_diff_base_v;
         }
       }
     }
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+TetPolynomialBase::getValueHdivAinsworthBrokenBase(MatrixDouble &pts) {
+  MoFEMFunctionBegin;
+
+  std::array<int, 4> faces_order;
+  std::array<int, 4 * 3> faces_nodes = {0, 1, 3, 1, 2, 3, 0, 2, 3, 0, 1, 2};
+
+  FieldApproximationBase base = cTx->bAse;
+  EntitiesFieldData &data = cTx->dAta;
+  int volume_order = data.dataOnEntities[MBTET][0].getOrder();
+
+  CHKERR getValueHdivAinsworthBaseImpl(
+      pts, data.dataOnEntities[MBVERTEX][0].getN(base),
+      data.dataOnEntities[MBVERTEX][0].getDiffN(base), volume_order,
+      faces_order, faces_nodes);
+
+  // Set shape functions into data structure Shape functions hast to be put
+  // in arrays in order which guarantee hierarchical series of degrees of
+  // freedom, i.e. in other words dofs form sub-entities has to be group
+  // by order.
+
+  FTensor::Index<'i', 3> i;
+  FTensor::Index<'j', 3> j;
+
+  int nb_gauss_pts = pts.size2();
+  int nb_dofs_face = NBFACETRI_AINSWORTH_HDIV(volume_order);
+  int nb_dofs_vol = NBVOLUMETET_AINSWORTH_HDIV(volume_order);
+  int nb_dofs = 4 * nb_dofs_face + nb_dofs_vol;
+  data.dataOnEntities[MBTET][0].getN(base).resize(nb_gauss_pts, 3 * nb_dofs,
+                                                  false);
+  data.dataOnEntities[MBTET][0].getDiffN(base).resize(nb_gauss_pts, 9 * nb_dofs,
+                                                      false);
+  if (nb_dofs == 0)
+    MoFEMFunctionReturnHot(0);
+
+ auto get_interior_cache = [this]() -> TetBaseCache::BaseCacheMI * {
+    if (vPtr) {
+      auto it = TetBaseCache::hdivBrokenBaseInteriorAinsworth.find(vPtr);
+      if (it != TetBaseCache::hdivBrokenBaseInteriorAinsworth.end()) {
+        return &it->second;
+      }
+    }
+    return nullptr;
+  };
+
+  auto interior_cache_ptr = get_interior_cache();
+
+  if (interior_cache_ptr) {
+    auto it =
+        interior_cache_ptr->find(boost::make_tuple(volume_order, nb_gauss_pts));
+    if (it != interior_cache_ptr->end()) {
+      noalias(data.dataOnEntities[MBTET][0].getN(base)) = it->N;
+      noalias(data.dataOnEntities[MBTET][0].getDiffN(base)) = it->diffN;
+      MoFEMFunctionBeginHot(0);
+    }
+  }
+
+
+  auto *base_vol_ptr =
+      &*data.dataOnEntities[MBTET][0].getN(base).data().begin();
+  auto *diff_base_vol_ptr =
+      &*data.dataOnEntities[MBTET][0].getDiffN(base).data().begin();
+
+  // pointing to base functions
+  auto t_base = getFTensor1FromPtr<3>(base_vol_ptr);
+  auto t_diff_base = getFTensor2HVecFromPtr<3, 3>(diff_base_vol_ptr);
+
+  // face-face
+  FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_base_f_f[] = {
+      getFTensor1FromPtr<3>(&*(N_face_bubble[0].data().begin())),
+      getFTensor1FromPtr<3>(&*(N_face_bubble[1].data().begin())),
+      getFTensor1FromPtr<3>(&*(N_face_bubble[2].data().begin())),
+      getFTensor1FromPtr<3>(&*(N_face_bubble[3].data().begin()))};
+  FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> t_diff_base_f_f[] = {
+      getFTensor2HVecFromPtr<3, 3>(&*(diffN_face_bubble[0].data().begin())),
+      getFTensor2HVecFromPtr<3, 3>(&*(diffN_face_bubble[1].data().begin())),
+      getFTensor2HVecFromPtr<3, 3>(&*(diffN_face_bubble[2].data().begin())),
+      getFTensor2HVecFromPtr<3, 3>(&*(diffN_face_bubble[3].data().begin()))};
+
+  // face-edge
+  FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_base_f_e[] = {
+      getFTensor1FromPtr<3>(&*(N_face_edge(0, 0).data().begin())),
+      getFTensor1FromPtr<3>(&*(N_face_edge(0, 1).data().begin())),
+      getFTensor1FromPtr<3>(&*(N_face_edge(0, 2).data().begin())),
+      getFTensor1FromPtr<3>(&*(N_face_edge(1, 0).data().begin())),
+      getFTensor1FromPtr<3>(&*(N_face_edge(1, 1).data().begin())),
+      getFTensor1FromPtr<3>(&*(N_face_edge(1, 2).data().begin())),
+      getFTensor1FromPtr<3>(&*(N_face_edge(2, 0).data().begin())),
+      getFTensor1FromPtr<3>(&*(N_face_edge(2, 1).data().begin())),
+      getFTensor1FromPtr<3>(&*(N_face_edge(2, 2).data().begin())),
+      getFTensor1FromPtr<3>(&*(N_face_edge(3, 0).data().begin())),
+      getFTensor1FromPtr<3>(&*(N_face_edge(3, 1).data().begin())),
+      getFTensor1FromPtr<3>(&*(N_face_edge(3, 2).data().begin()))};
+  FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> t_diff_base_f_e[] = {
+      getFTensor2HVecFromPtr<3, 3>(&*(diffN_face_edge(0, 0).data().begin())),
+      getFTensor2HVecFromPtr<3, 3>(&*(diffN_face_edge(0, 1).data().begin())),
+      getFTensor2HVecFromPtr<3, 3>(&*(diffN_face_edge(0, 2).data().begin())),
+      getFTensor2HVecFromPtr<3, 3>(&*(diffN_face_edge(1, 0).data().begin())),
+      getFTensor2HVecFromPtr<3, 3>(&*(diffN_face_edge(1, 1).data().begin())),
+      getFTensor2HVecFromPtr<3, 3>(&*(diffN_face_edge(1, 2).data().begin())),
+      getFTensor2HVecFromPtr<3, 3>(&*(diffN_face_edge(2, 0).data().begin())),
+      getFTensor2HVecFromPtr<3, 3>(&*(diffN_face_edge(2, 1).data().begin())),
+      getFTensor2HVecFromPtr<3, 3>(&*(diffN_face_edge(2, 2).data().begin())),
+      getFTensor2HVecFromPtr<3, 3>(&*(diffN_face_edge(3, 0).data().begin())),
+      getFTensor2HVecFromPtr<3, 3>(&*(diffN_face_edge(3, 1).data().begin())),
+      getFTensor2HVecFromPtr<3, 3>(&*(diffN_face_edge(3, 2).data().begin()))};
+
+  // volume-edge
+  FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_base_v_e[] = {
+      getFTensor1FromPtr<3>(&*N_volume_edge[0].data().begin()),
+      getFTensor1FromPtr<3>(&*N_volume_edge[1].data().begin()),
+      getFTensor1FromPtr<3>(&*N_volume_edge[2].data().begin()),
+      getFTensor1FromPtr<3>(&*N_volume_edge[3].data().begin()),
+      getFTensor1FromPtr<3>(&*N_volume_edge[4].data().begin()),
+      getFTensor1FromPtr<3>(&*N_volume_edge[5].data().begin())};
+  FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> t_diff_base_v_e[] = {
+      getFTensor2HVecFromPtr<3, 3>(&*diffN_volume_edge[0].data().begin()),
+      getFTensor2HVecFromPtr<3, 3>(&*diffN_volume_edge[1].data().begin()),
+      getFTensor2HVecFromPtr<3, 3>(&*diffN_volume_edge[2].data().begin()),
+      getFTensor2HVecFromPtr<3, 3>(&*diffN_volume_edge[3].data().begin()),
+      getFTensor2HVecFromPtr<3, 3>(&*diffN_volume_edge[4].data().begin()),
+      getFTensor2HVecFromPtr<3, 3>(&*diffN_volume_edge[5].data().begin())};
+
+  // volume-faces
+  FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_base_v_f[] = {
+      getFTensor1FromPtr<3>(&*N_volume_face[0].data().begin()),
+      getFTensor1FromPtr<3>(&*N_volume_face[1].data().begin()),
+      getFTensor1FromPtr<3>(&*N_volume_face[2].data().begin()),
+      getFTensor1FromPtr<3>(&*N_volume_face[3].data().begin())};
+  FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> t_diff_base_v_f[] = {
+      getFTensor2HVecFromPtr<3, 3>(&*diffN_volume_face[0].data().begin()),
+      getFTensor2HVecFromPtr<3, 3>(&*diffN_volume_face[1].data().begin()),
+      getFTensor2HVecFromPtr<3, 3>(&*diffN_volume_face[2].data().begin()),
+      getFTensor2HVecFromPtr<3, 3>(&*diffN_volume_face[3].data().begin())};
+
+  // volume-volume
+  auto t_base_v = getFTensor1FromPtr<3>(&*(N_volume_bubble.data().begin()));
+  auto t_diff_base_v =
+      getFTensor2HVecFromPtr<3, 3>(&*(diffN_volume_bubble.data().begin()));
+
+  for (int gg = 0; gg != nb_gauss_pts; gg++) {
+    for (int oo = 0; oo < volume_order; oo++) {
+
+      for (auto ff = 0; ff != 4; ++ff) {
+        // faces-edge
+        for (int dd = NBFACETRI_AINSWORTH_EDGE_HDIV(oo);
+             dd != NBFACETRI_AINSWORTH_EDGE_HDIV(oo + 1); dd++) {
+          for (int ee = 0; ee != 3; ++ee) {
+            t_base(i) = t_base_f_e[ff * 3 + ee](i);
+            ++t_base;
+            ++t_base_f_e[ff * 3 + ee];
+          }
+          for (int ee = 0; ee != 3; ++ee) {
+            t_diff_base(i, j) = t_diff_base_f_e[ff * 3 + ee](i, j);
+            ++t_diff_base;
+            ++t_diff_base_f_e[ff * 3 + ee];
+          }
+        }
+        // face-face
+        for (int dd = NBFACETRI_AINSWORTH_FACE_HDIV(oo);
+             dd != NBFACETRI_AINSWORTH_FACE_HDIV(oo + 1); dd++) {
+          t_base(i) = t_base_f_f[ff](i);
+          ++t_base;
+          ++t_base_f_f[ff];
+          t_diff_base(i, j) = t_diff_base_f_f[ff](i, j);
+          ++t_diff_base;
+          ++t_diff_base_f_f[ff];
+        }
+      }
+
+      // volume-edge
+      for (int dd = NBVOLUMETET_AINSWORTH_EDGE_HDIV(oo);
+           dd < NBVOLUMETET_AINSWORTH_EDGE_HDIV(oo + 1); dd++) {
+        for (int ee = 0; ee < 6; ee++) {
+          t_base(i) = t_base_v_e[ee](i);
+          ++t_base;
+          ++t_base_v_e[ee];
+          t_diff_base(i, j) = t_diff_base_v_e[ee](i, j);
+          ++t_diff_base;
+          ++t_diff_base_v_e[ee];
+        }
+      }
+
+      // volume-faces
+      for (int dd = NBVOLUMETET_AINSWORTH_FACE_HDIV(oo);
+           dd < NBVOLUMETET_AINSWORTH_FACE_HDIV(oo + 1); dd++) {
+        for (int ff = 0; ff < 4; ff++) {
+          t_base(i) = t_base_v_f[ff](i);
+          ++t_base;
+          ++t_base_v_f[ff];
+          t_diff_base(i, j) = t_diff_base_v_f[ff](i, j);
+          ++t_diff_base;
+          ++t_diff_base_v_f[ff];
+        }
+      }
+
+      // volume-bubble
+      for (int dd = NBVOLUMETET_AINSWORTH_VOLUME_HDIV(oo);
+           dd < NBVOLUMETET_AINSWORTH_VOLUME_HDIV(oo + 1); dd++) {
+        t_base(i) = t_base_v(i);
+        ++t_base;
+        ++t_base_v;
+        t_diff_base(i, j) = t_diff_base_v(i, j);
+        ++t_diff_base;
+        ++t_diff_base_v;
+      }
+    }
+  }
+
+  if (interior_cache_ptr) {
+    auto p = interior_cache_ptr->emplace(
+        TetBaseCache::BaseCacheItem{volume_order, nb_gauss_pts});
+    p.first->N = data.dataOnEntities[MBTET][0].getN(base);
+    p.first->diffN = data.dataOnEntities[MBTET][0].getDiffN(base);
   }
 
   MoFEMFunctionReturn(0);
@@ -1252,8 +1435,9 @@ TetPolynomialBase::getValueHdivDemkowiczBrokenBase(MatrixDouble &pts) {
   int nb_gauss_pts = pts.size2();
 
   int volume_order = data.dataOnEntities[MBTET][0].getOrder();
-  int nb_dofs = 4 * NBFACETRI_DEMKOWICZ_HDIV(volume_order) +
-                NBVOLUMETET_DEMKOWICZ_HDIV(volume_order);
+  int nb_dofs_face = NBFACETRI_DEMKOWICZ_HDIV(volume_order);
+  int nb_dofs_vol = NBVOLUMETET_DEMKOWICZ_HDIV(volume_order);
+  int nb_dofs = 4 * nb_dofs_face + nb_dofs_vol;
   data.dataOnEntities[MBTET][0].getN(base).resize(nb_gauss_pts, 3 * nb_dofs,
                                                   false);
   data.dataOnEntities[MBTET][0].getDiffN(base).resize(nb_gauss_pts, 9 * nb_dofs,
@@ -1289,16 +1473,14 @@ TetPolynomialBase::getValueHdivDemkowiczBrokenBase(MatrixDouble &pts) {
 
   MatrixDouble base_fun;
   MatrixDouble diff_base;
-  
+
   int face_node[4][3] = {{0, 1, 3}, {1, 2, 3}, {0, 2, 3}, {0, 1, 2}};
 
   // Calculate base function on tet faces
   for (int ff = 0; ff != 4; ff++) {
     p_f[ff] = volume_order;
-    base_fun.resize(nb_gauss_pts, 3 * NBFACETRI_DEMKOWICZ_HDIV(volume_order),
-                    false);
-    diff_base.resize(nb_gauss_pts, 9 * NBFACETRI_DEMKOWICZ_HDIV(volume_order),
-                     false);
+    base_fun.resize(nb_gauss_pts, 3 * nb_dofs_face, false);
+    diff_base.resize(nb_gauss_pts, 9 * nb_dofs_vol, false);
     phi_f[ff] = &*base_fun.data().begin();
     diff_phi_f[ff] = &*diff_base.data().begin();
     CHKERR Hdiv_Demkowicz_Face_MBTET_ON_FACE(
@@ -1309,14 +1491,12 @@ TetPolynomialBase::getValueHdivDemkowiczBrokenBase(MatrixDouble &pts) {
 
     for (auto gg = 0; gg != base_fun.size1(); ++gg) {
       for (auto dd = 0; dd != base_fun.size2(); ++dd) {
-        data.dataOnEntities[MBTET][0].getN(base)(
-            gg, ff * 3 * NBFACETRI_DEMKOWICZ_HDIV(volume_order) + dd) =
-            base_fun(gg, dd);
+        data.dataOnEntities[MBTET][0].getN(base)(gg, ff * 3 * nb_dofs_face +
+                                                         dd) = base_fun(gg, dd);
       }
       for (auto dd = 0; dd != diff_base.size2(); ++dd) {
         data.dataOnEntities[MBTET][0].getDiffN(base)(
-            gg, ff * 9 * NBFACETRI_DEMKOWICZ_HDIV(volume_order) + dd) =
-            diff_base(gg, dd);
+            gg, ff * 9 * nb_dofs_face + dd) = diff_base(gg, dd);
       }
     }
   }
@@ -1324,10 +1504,8 @@ TetPolynomialBase::getValueHdivDemkowiczBrokenBase(MatrixDouble &pts) {
   // Calculate base functions in tet interior
   if (NBVOLUMETET_DEMKOWICZ_HDIV(volume_order) > 0) {
     for (int v = 0; v != 1; ++v) {
-      base_fun.resize(nb_gauss_pts, 3 * NBVOLUMETET_DEMKOWICZ_HDIV(volume_order),
-                  false);
-      diff_base.resize(nb_gauss_pts,
-                       9 * NBVOLUMETET_DEMKOWICZ_HDIV(volume_order), false);
+      base_fun.resize(nb_gauss_pts, 3 * nb_dofs_vol, false);
+      diff_base.resize(nb_gauss_pts, 9 * nb_dofs_vol, false);
       double *phi_v = &*base_fun.data().begin();
       double *diff_phi_v = &*diff_base.data().begin();
       CHKERR Hdiv_Demkowicz_Interior_MBTET(
@@ -1337,13 +1515,11 @@ TetPolynomialBase::getValueHdivDemkowiczBrokenBase(MatrixDouble &pts) {
       for (auto gg = 0; gg != base_fun.size1(); ++gg) {
         for (auto dd = 0; dd != base_fun.size2(); ++dd) {
           data.dataOnEntities[MBTET][0].getN(base)(
-              gg, 4 * 3 * NBFACETRI_DEMKOWICZ_HDIV(volume_order) + dd) =
-              base_fun(gg, dd);
+              gg, 4 * 3 * nb_dofs_vol + dd) = base_fun(gg, dd);
         }
         for (auto dd = 0; dd != diff_base.size2(); ++dd) {
           data.dataOnEntities[MBTET][0].getDiffN(base)(
-              gg, 4 * 9 * NBFACETRI_DEMKOWICZ_HDIV(volume_order) + dd) =
-              diff_base(gg, dd);
+              gg, 4 * 9 * nb_dofs_vol + dd) = diff_base(gg, dd);
         }
       }
     }
@@ -1793,18 +1969,42 @@ void TetPolynomialBase::swichCacheHDivBaseDemkowiczOff(std::vector<void *> v) {
       TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(fe_ptr);
     }
     if (TetPolynomialBase::swichCacheHdivBaseInteriorDemkowicz(fe_ptr)) {
-      TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(fe_ptr);
+      TetPolynomialBase::swichCacheHdivBaseInteriorDemkowicz(fe_ptr);
     }
     if (TetPolynomialBase::swichCacheHdivBrokenBaseInteriorDemkowicz(fe_ptr)) {
-      TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(fe_ptr);
+      TetPolynomialBase::swichCacheHdivBrokenBaseInteriorDemkowicz(fe_ptr);
+    }
+  }
+}
+
+bool TetPolynomialBase::swichCacheHdivBrokenBaseInteriorAinsworth(
+    const void *ptr) {
+  return tetCacheSwitch(ptr, TetBaseCache::hdivBrokenBaseInteriorAinsworth,
+                        "hdivBrokenBaseInteriorAinsworth");
+}
+
+void TetPolynomialBase::swichCacheHDivBaseAinsworthOn(std::vector<void *> v) {
+  for (auto fe_ptr : v) {
+    if (!TetPolynomialBase::swichCacheHdivBrokenBaseInteriorAinsworth(fe_ptr)) {
+      TetPolynomialBase::swichCacheHdivBrokenBaseInteriorAinsworth(fe_ptr);
+    }
+  }
+}
+
+void TetPolynomialBase::swichCacheHDivBaseAinsworthOff(std::vector<void *> v) {
+  for (auto fe_ptr : v) {
+    if (TetPolynomialBase::swichCacheHdivBrokenBaseInteriorAinsworth(fe_ptr)) {
+      TetPolynomialBase::swichCacheHdivBrokenBaseInteriorAinsworth(fe_ptr);
     }
   }
 }
 
 void TetPolynomialBase::swichCacheHDivBaseOn(std::vector<void *> v) {
   swichCacheHDivBaseDemkowiczOn(v);
+  swichCacheHDivBaseAinsworthOn(v);
 }
 
 void TetPolynomialBase::swichCacheHDivBaseOff(std::vector<void *> v) {
   swichCacheHDivBaseDemkowiczOff(v);
+  swichCacheHDivBaseAinsworthOff(v);
 }
