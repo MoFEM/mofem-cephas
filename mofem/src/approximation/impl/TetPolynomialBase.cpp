@@ -734,8 +734,13 @@ TetPolynomialBase::getValueL2BernsteinBezierBase(MatrixDouble &pts) {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode
-TetPolynomialBase::getValueHdivAinsworthBaseImpl(MatrixDouble &pts) {
+MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBaseImpl(
+
+    MatrixDouble &pts,
+
+    std::array<int, 4> &faces_order
+
+) {
   MoFEMFunctionBegin;
 
   EntitiesFieldData &data = cTx->dAta;
@@ -758,12 +763,7 @@ TetPolynomialBase::getValueHdivAinsworthBaseImpl(MatrixDouble &pts) {
   diffN_face_edge.resize(4, 3, false);
   diffN_face_bubble.resize(4, false);
 
-  int faces_order[4];
   for (int ff = 0; ff != 4; ++ff) {
-    if (data.dataOnEntities[MBTRI][ff].getSense() == 0) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
-    }
-    faces_order[ff] = data.dataOnEntities[MBTRI][ff].getOrder();
     // three edges on face
     for (int ee = 0; ee < 3; ee++) {
       N_face_edge(ff, ee).resize(
@@ -786,13 +786,13 @@ TetPolynomialBase::getValueHdivAinsworthBaseImpl(MatrixDouble &pts) {
   }
 
   CHKERR Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET(
-      &data.facesNodes(0, 0), faces_order,
+      &data.facesNodes(0, 0), faces_order.data(),
       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
       &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(), phi_f_e,
       diff_phi_f_e, nb_gauss_pts, base_polynomials);
 
   CHKERR Hdiv_Ainsworth_FaceBubbleShapeFunctions(
-      &data.facesNodes(0, 0), faces_order,
+      &data.facesNodes(0, 0), faces_order.data(),
       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
       &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(), phi_f,
       diff_phi_f, nb_gauss_pts, base_polynomials);
@@ -855,7 +855,13 @@ TetPolynomialBase::getValueHdivAinsworthBaseImpl(MatrixDouble &pts) {
 MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  CHKERR getValueHdivAinsworthBaseImpl(pts);
+  std::array<int, 4> faces_order;
+
+  for (int ff = 0; ff != 4; ff++) {
+    faces_order[ff] = cTx->dAta.dataOnEntities[MBTRI][ff].getOrder();
+  }
+
+  CHKERR getValueHdivAinsworthBaseImpl(pts, faces_order);
 
   // Set shape functions into data structure Shape functions hast to be put
   // in arrays in order which guarantee hierarchical series of degrees of
@@ -874,12 +880,11 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
   }
   for (int ff = 0; ff != 4; ff++) {
-    int face_order = data.dataOnEntities[MBTRI][ff].getOrder();
     data.dataOnEntities[MBTRI][ff].getN(base).resize(
-        nb_gauss_pts, 3 * NBFACETRI_AINSWORTH_HDIV(face_order), false);
+        nb_gauss_pts, 3 * NBFACETRI_AINSWORTH_HDIV(faces_order[ff]), false);
     data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(
-        nb_gauss_pts, 9 * NBFACETRI_AINSWORTH_HDIV(face_order), false);
-    if (NBFACETRI_AINSWORTH_HDIV(face_order) == 0)
+        nb_gauss_pts, 9 * NBFACETRI_AINSWORTH_HDIV(faces_order[ff]), false);
+    if (NBFACETRI_AINSWORTH_HDIV(faces_order[ff]) == 0)
       continue;
     // face
     double *base_ptr =
@@ -897,7 +902,7 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
     // face-face
     boost::shared_ptr<FTensor::Tensor1<double *, 3>> t_base_f;
     boost::shared_ptr<FTensor::Tensor2<double *, 3, 3>> t_diff_base_f;
-    if (NBFACETRI_AINSWORTH_FACE_HDIV(face_order) > 0) {
+    if (NBFACETRI_AINSWORTH_FACE_HDIV(faces_order[ff]) > 0) {
       base_ptr = &*(N_face_bubble[ff].data().begin());
       t_base_f = boost::shared_ptr<FTensor::Tensor1<double *, 3>>(
           new FTensor::Tensor1<double *, 3>(base_ptr, &base_ptr[HVEC1],
@@ -943,7 +948,7 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
         &diff_base_ptr[HVEC2_0], &diff_base_ptr[HVEC2_1],
         &diff_base_ptr[HVEC2_2], 9);
     for (int gg = 0; gg != nb_gauss_pts; gg++) {
-      for (int oo = 0; oo != face_order; oo++) {
+      for (int oo = 0; oo != faces_order[ff]; oo++) {
         for (int dd = NBFACETRI_AINSWORTH_EDGE_HDIV(oo);
              dd != NBFACETRI_AINSWORTH_EDGE_HDIV(oo + 1); dd++) {
           t_base(i) = t_base_f_e0(i);
@@ -1760,6 +1765,23 @@ bool TetPolynomialBase::swichCacheHdivBaseInteriorDemkowicz(const void *ptr) {
   }
 }
 
+bool TetPolynomialBase::swichCacheHdivBrokenBaseInteriorDemkowicz(const void *ptr) {
+  auto it = TetBaseCache::hdivBrokenBaseInteriorDemkowicz.find(ptr);
+  if (it != TetBaseCache::hdivBrokenBaseInteriorDemkowicz.end()) {
+    MOFEM_LOG_CHANNEL("WORLD");
+    MOFEM_TAG_AND_LOG("WORLD", Sev::noisy, "TetPolynomialBase")
+        << "Cache off hdivBrokenBaseInteriorDemkowicz: " << it->second.size();
+    TetBaseCache::hdivBrokenBaseInteriorDemkowicz.erase(it);
+    return false;
+  } else {
+    MOFEM_LOG_CHANNEL("WORLD");
+    MOFEM_TAG_AND_LOG("WORLD", Sev::noisy, "TetPolynomialBase")
+        << "Cache on hdivBrokenBaseInteriorDemkowicz";
+    TetBaseCache::hdivBrokenBaseInteriorDemkowicz[ptr];
+    return true;
+  }
+}
+
 void TetPolynomialBase::swichCacheHDivBaseDemkowiczOn(std::vector<void *> v) {
   for (auto fe_ptr : v) {
     if (!TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(fe_ptr)) {
@@ -1767,6 +1789,9 @@ void TetPolynomialBase::swichCacheHDivBaseDemkowiczOn(std::vector<void *> v) {
     }
     if (!TetPolynomialBase::swichCacheHdivBaseInteriorDemkowicz(fe_ptr)) {
       TetPolynomialBase::swichCacheHdivBaseInteriorDemkowicz(fe_ptr);
+    }
+    if (!TetPolynomialBase::swichCacheHdivBrokenBaseInteriorDemkowicz(fe_ptr)) {
+      TetPolynomialBase::swichCacheHdivBrokenBaseInteriorDemkowicz(fe_ptr);
     }
   }
 }
@@ -1776,6 +1801,8 @@ void TetPolynomialBase::swichCacheHDivBaseDemkowiczOff(std::vector<void *> v) {
     if (TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(fe_ptr)) {
     }
     if (TetPolynomialBase::swichCacheHdivBaseInteriorDemkowicz(fe_ptr)) {
+    }
+    if (TetPolynomialBase::swichCacheHdivBrokenBaseInteriorDemkowicz(fe_ptr)) {
     }
   }
 }

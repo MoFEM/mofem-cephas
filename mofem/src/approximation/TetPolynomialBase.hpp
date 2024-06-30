@@ -26,6 +26,7 @@ struct TetPolynomialBase : public BaseFunction {
 
   static bool swichCacheHDivBaseFaceDemkowicz(const void *ptr);
   static bool swichCacheHdivBaseInteriorDemkowicz(const void *ptr);
+  static bool swichCacheHdivBrokenBaseInteriorDemkowicz(const void *ptr);
   static void swichCacheHDivBaseDemkowiczOn(std::vector<void *> v);
   static void swichCacheHDivBaseDemkowiczOff(std::vector<void *> v);
 
@@ -87,7 +88,13 @@ private:
   MoFEMErrorCode getValueL2AinsworthBase(MatrixDouble &pts);
   MoFEMErrorCode getValueL2BernsteinBezierBase(MatrixDouble &pts);
 
-  MoFEMErrorCode getValueHdivAinsworthBaseImpl(MatrixDouble &pts);
+  MoFEMErrorCode getValueHdivAinsworthBaseImpl(
+
+      MatrixDouble &pts,
+
+      std::array<int, 4> &faces_order
+
+  );
   MoFEMErrorCode getValueHdivAinsworthBase(MatrixDouble &pts);
   MoFEMErrorCode getValueHcurlAinsworthBase(MatrixDouble &pts);
 
