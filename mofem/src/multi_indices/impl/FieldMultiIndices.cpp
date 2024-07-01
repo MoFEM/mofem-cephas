@@ -354,15 +354,15 @@ Field::Field(moab::Interface &moab, const EntityHandle meshset)
           return 0;
         };
         forderTable[MBEDGE] = [](int P) -> int {
-          return NBEDGE_AINSWORTH_HCURL(P);
+          (void)P;
+          return 0;
         };
         forderTable[MBTRI] = [](int P) -> int {
-          return 3 * NBEDGE_AINSWORTH_HCURL(P) + NBFACETRI_AINSWORTH_HCURL(P);
+          return 3 * NBEDGE_AINSWORTH_HCURL(P);
         };
         forderTable[MBTET] = [](int P) -> int {
           return 6 * NBEDGE_AINSWORTH_HCURL(P) +
-                 4 * NBFACETRI_AINSWORTH_HCURL(P) +
-                 NBVOLUMETET_AINSWORTH_HCURL(P);
+                 4 * NBFACETRI_AINSWORTH_HCURL(P);
         };
         break;
       case HDIV:
@@ -372,14 +372,14 @@ Field::Field(moab::Interface &moab, const EntityHandle meshset)
         };
         forderTable[MBEDGE] = [](int P) -> int {
           (void)P;
-          return NBEDGE_HDIV(P);
+          return 0;
         };
         forderTable[MBTRI] = [](int P) -> int {
-          return NBFACETRI_AINSWORTH_HDIV(P);
+          (void)P;
+          return 0;
         };
         forderTable[MBTET] = [](int P) -> int {
-          return 4 * NBFACETRI_AINSWORTH_HDIV(P) +
-                 NBVOLUMETET_AINSWORTH_HDIV(P);
+          return 4 * NBFACETRI_AINSWORTH_HDIV(P);
         };
         break;
       default:
@@ -397,23 +397,22 @@ Field::Field(moab::Interface &moab, const EntityHandle meshset)
           return 0;
         };
         forderTable[MBEDGE] = [](int P) -> int {
-          return NBEDGE_DEMKOWICZ_HCURL(P);
+          (void)P;
+          return 0;
         };
         forderTable[MBTRI] = [](int P) -> int {
-          return 3 * NBEDGE_DEMKOWICZ_HCURL(P) + NBFACETRI_DEMKOWICZ_HCURL(P);
+          return 3 * NBEDGE_DEMKOWICZ_HCURL(P);
         };
         forderTable[MBQUAD] = [](int P) -> int {
-          return 4 * NBEDGE_DEMKOWICZ_HCURL(P) + NBFACEQUAD_DEMKOWICZ_HCURL(P);
+          return 4 * NBEDGE_DEMKOWICZ_HCURL(P);
         };
         forderTable[MBTET] = [](int P) -> int {
           return 6 * NBEDGE_DEMKOWICZ_HCURL(P) +
-                 4 * NBFACETRI_DEMKOWICZ_HCURL(P) +
-                 NBVOLUMETET_DEMKOWICZ_HCURL(P);
+                 4 * NBFACETRI_DEMKOWICZ_HCURL(P);
         };
         forderTable[MBHEX] = [](int P) -> int {
           return 12 * NBEDGE_DEMKOWICZ_HCURL(P) +
-                 6 * NBFACEQUAD_DEMKOWICZ_HCURL(P) +
-                 NBVOLUMEHEX_DEMKOWICZ_HCURL(P);
+                 6 * NBFACEQUAD_DEMKOWICZ_HCURL(P);
         };
         break;
       case HDIV:
@@ -426,18 +425,18 @@ Field::Field(moab::Interface &moab, const EntityHandle meshset)
           return 0;
         };
         forderTable[MBTRI] = [](int P) -> int {
-          return NBFACETRI_DEMKOWICZ_HDIV(P);
+          (void)P;
+          return 0;
         };
         forderTable[MBQUAD] = [](int P) -> int {
-          return NBFACEQUAD_DEMKOWICZ_HDIV(P);
+          (void)P;
+          return 0;
         };
         forderTable[MBTET] = [](int P) -> int {
-          return 4 * NBFACETRI_DEMKOWICZ_HDIV(P) +
-                 NBVOLUMETET_DEMKOWICZ_HDIV(P);
+          return 4 * NBFACETRI_DEMKOWICZ_HDIV(P);
         };
         forderTable[MBHEX] = [](int P) -> int {
-          return 6 * NBFACEQUAD_DEMKOWICZ_HDIV(P) +
-                 NBVOLUMEHEX_DEMKOWICZ_HDIV(P);
+          return 6 * NBFACEQUAD_DEMKOWICZ_HDIV(P);
         };
         break;
       default:
