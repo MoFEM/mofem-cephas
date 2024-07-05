@@ -931,7 +931,7 @@ TriPolynomialBase::getValueHcurlDemkowiczBrokenBase(MatrixDouble &pts) {
 
   if (data.spacesOnEntities[MBTRI].test(HCURL)) {
 
-    int face_nodes[] = {0, 1, 2};
+    // int face_nodes[] = {0, 1, 2};
 
     // face
     if (data.dataOnEntities[MBTRI].size() != 1)
@@ -940,9 +940,8 @@ TriPolynomialBase::getValueHcurlDemkowiczBrokenBase(MatrixDouble &pts) {
 
     int order = data.dataOnEntities[MBTRI][0].getOrder();
     int nb_edge_dofs = NBEDGE_DEMKOWICZ_HCURL(order);
-    int nb_face_dofs = NBFACETRI_DEMKOWICZ_HCURL(order);
 
-    int nb_dofs = 3 * nb_edge_dofs + nb_face_dofs;
+    int nb_dofs = 3 * nb_edge_dofs;
     data.dataOnEntities[MBTRI][0].getN(base).resize(nb_gauss_pts, 3 * nb_dofs,
                                                     false);
     data.dataOnEntities[MBTRI][0].getDiffN(base).resize(nb_gauss_pts,
