@@ -420,15 +420,15 @@ MoFEMErrorCode OpCalculateVectorFieldValues_General<
         auto field_data = data.getFTensor1FieldData<Tensor_Dim>();
 
 #ifndef NDEBUG
-          if (field_data.l2() != field_data.l2()) {
-            MOFEM_LOG("SELF", Sev::error) << "field data: " << field_data;
-            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                    "Wrong number in coefficients");
-          }
+        if (field_data.l2() != field_data.l2()) {
+          MOFEM_LOG("SELF", Sev::error) << "field data: " << field_data;
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "Wrong number in coefficients");
+        }
 #endif
 
-          size_t bb = 0;
-          for (; bb != size; ++bb) {
+        size_t bb = 0;
+        for (; bb != size; ++bb) {
 
 #ifndef NDEBUG
           if (base_function != base_function) {
@@ -963,8 +963,7 @@ struct OpCalculateTensor2FieldValuesDot
 protected:
   boost::shared_ptr<MatrixDouble> dataPtr; ///< Data computed into this matrix
   EntityType zeroAtType;  ///< Zero values at Gauss point at this type
-  VectorDouble dotVector; ///< Keeps temoorary values of time directives
-
+  VectorDouble dotVector; ///< Keeps temporary values of time directives
 };
 
 /**
@@ -1488,11 +1487,11 @@ MoFEMErrorCode OpCalculateVectorFieldGradient_General<
         auto field_data = data.getFTensor1FieldData<Tensor_Dim0>();
 
 #ifndef NDEBUG
-          if (field_data.l2() != field_data.l2()) {
-            MOFEM_LOG("SELF", Sev::error) << "field data " << field_data;
-            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                    "Wrong number in coefficients");
-          }
+        if (field_data.l2() != field_data.l2()) {
+          MOFEM_LOG("SELF", Sev::error) << "field data " << field_data;
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "Wrong number in coefficients");
+        }
 #endif
 
         int bb = 0;
@@ -1618,8 +1617,7 @@ struct OpCalculateVectorFieldGradientDot
 private:
   boost::shared_ptr<MatrixDouble> dataPtr; ///< Data computed into this matrix
   EntityType zeroAtType;  ///< Zero values at Gauss point at this type
-  VectorDouble dotVector; ///< Keeps temoorary values of time directives
-
+  VectorDouble dotVector; ///< Keeps temporary values of time directives
 };
 
 /**
@@ -1889,12 +1887,13 @@ struct OpTensorTimesSymmetricTensor
   using UserOp = ForcesAndSourcesCore::UserDataOperator;
 
   /**
-   * @deprecated Do not use this constriuctor
-  */
-  DEPRECATED OpTensorTimesSymmetricTensor(const std::string field_name,
-                                          boost::shared_ptr<MatrixDouble> in_mat,
-                                          boost::shared_ptr<MatrixDouble> out_mat,
-                                          boost::shared_ptr<MatrixDouble> d_mat)
+   * @deprecated Do not use this constrictor
+   */
+  DEPRECATED
+  OpTensorTimesSymmetricTensor(const std::string field_name,
+                               boost::shared_ptr<MatrixDouble> in_mat,
+                               boost::shared_ptr<MatrixDouble> out_mat,
+                               boost::shared_ptr<MatrixDouble> d_mat)
       : UserOp(field_name, OPROW), inMat(in_mat), outMat(out_mat), dMat(d_mat) {
     // Only is run for vertices
     std::fill(&doEntities[MBEDGE], &doEntities[MBMAXTYPE], false);
@@ -2120,8 +2119,6 @@ struct OpCalculateHVecVectorField
       Base_Dim, Field_Dim, double, ublas::row_major,
       DoubleAllocator>::OpCalculateHVecVectorField_General;
 };
-
-
 
 /** \brief Get vector field for H-div approximation
  * \ingroup mofem_forces_and_sources_user_data_operators
@@ -2488,8 +2485,7 @@ private:
  * @tparam Space_Dim dimension of space
  * @tparam Hcurl field dimension
  */
-template <int Base_Dim, int Space_Dim>
-struct OpCalculateHcurlVectorCurl;
+template <int Base_Dim, int Space_Dim> struct OpCalculateHcurlVectorCurl;
 
 /**
  * @brief Calculate curl of vector field
@@ -2997,12 +2993,12 @@ struct OpMakeHdivFromHcurl
 };
 
 /** \brief Transform Hcurl base fluxes from reference element to physical
- * triangle 
+ * triangle
  */
 template <int DIM> struct OpSetCovariantPiolaTransformOnFace2DImpl;
 
 /** \brief Apply contravariant (Piola) transfer to Hdiv space on face
- * 
+ *
  * Covariant Piola transformation
  \f[
  \psi_i|_t = J^{-1}_{ij}\hat{\psi}_j\\
@@ -3095,7 +3091,6 @@ struct OpSetContravariantPiolaTransformOnEdge2D
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data);
-
 };
 
 /**
@@ -3261,12 +3256,11 @@ struct OpInvertMatrix : public ForcesAndSourcesCore::UserDataOperator {
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data);
-                        
+
 private:
   boost::shared_ptr<MatrixDouble> inPtr;
   boost::shared_ptr<MatrixDouble> outPtr;
   boost::shared_ptr<VectorDouble> detPtr;
-
 };
 
 template <int DIM>
@@ -3325,24 +3319,23 @@ template <int DIM>
 struct OpCalculateTraceFromMat : public ForcesAndSourcesCore::UserDataOperator {
 
   OpCalculateTraceFromMat(boost::shared_ptr<MatrixDouble> in_ptr,
-                 boost::shared_ptr<VectorDouble> out_ptr)
+                          boost::shared_ptr<VectorDouble> out_ptr)
       : ForcesAndSourcesCore::UserDataOperator(NOSPACE), inPtr(in_ptr),
         outPtr(out_ptr) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
 private:
   FTensor::Index<'i', DIM> i;
   boost::shared_ptr<MatrixDouble> inPtr;
   boost::shared_ptr<VectorDouble> outPtr;
-
 };
 
 template <int DIM>
 MoFEMErrorCode
 OpCalculateTraceFromMat<DIM>::doWork(int side, EntityType type,
-                                DataForcesAndSourcesCore::EntData &data) {
+                                     EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   if (!inPtr)
@@ -3366,7 +3359,6 @@ OpCalculateTraceFromMat<DIM>::doWork(int side, EntityType type,
   MoFEMFunctionReturn(0);
 }
 
-
 /**@}*/
 
 /** \brief Calculates the trace of an input matrix
@@ -3376,27 +3368,27 @@ OpCalculateTraceFromMat<DIM>::doWork(int side, EntityType type,
 */
 
 template <int DIM>
-struct OpCalculateTraceFromSymmMat : public ForcesAndSourcesCore::UserDataOperator {
+struct OpCalculateTraceFromSymmMat
+    : public ForcesAndSourcesCore::UserDataOperator {
 
   OpCalculateTraceFromSymmMat(boost::shared_ptr<MatrixDouble> in_ptr,
-                 boost::shared_ptr<VectorDouble> out_ptr)
+                              boost::shared_ptr<VectorDouble> out_ptr)
       : ForcesAndSourcesCore::UserDataOperator(NOSPACE), inPtr(in_ptr),
         outPtr(out_ptr) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+                        EntitiesFieldData::EntData &data);
 
 private:
   FTensor::Index<'i', DIM> i;
   boost::shared_ptr<MatrixDouble> inPtr;
   boost::shared_ptr<VectorDouble> outPtr;
-
 };
 
 template <int DIM>
 MoFEMErrorCode
 OpCalculateTraceFromSymmMat<DIM>::doWork(int side, EntityType type,
-                                DataForcesAndSourcesCore::EntData &data) {
+                                         EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   if (!inPtr)
@@ -3419,7 +3411,6 @@ OpCalculateTraceFromSymmMat<DIM>::doWork(int side, EntityType type,
 
   MoFEMFunctionReturn(0);
 }
-
 
 } // namespace MoFEM
 
