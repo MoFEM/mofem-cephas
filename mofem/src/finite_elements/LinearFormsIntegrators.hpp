@@ -7,7 +7,10 @@
 #ifndef __LINEAR_FORMS_INTEGRATORS_HPP__
 #define __LINEAR_FORMS_INTEGRATORS_HPP__
 
+#define LINER_FORMS_INTEGRATORS_HPP
 #include <LinearFormsIntegratorsImpl.hpp>
+#include <FormsBrokenSpaceConstraintImpl.hpp>
+#undef LINER_FORMS_INTEGRATORS_HPP
 
 namespace MoFEM {
 
