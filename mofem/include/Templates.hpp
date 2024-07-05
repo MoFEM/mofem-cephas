@@ -1973,6 +1973,8 @@ template <int DIM> using l_FTIndex = FTensor::Index<'l', DIM>;
 template <int DIM> using m_FTIndex = FTensor::Index<'m', DIM>;
 template <int DIM> using n_FTIndex = FTensor::Index<'n', DIM>;
 
+#define FTENSOR_INDEX(DIM, I) I##_FTIndex<DIM> I;
+
 } // namespace MoFEM
 
 #endif //__TEMPLATES_HPP__
