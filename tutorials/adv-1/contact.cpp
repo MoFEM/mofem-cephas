@@ -1212,7 +1212,7 @@ MoFEMErrorCode SetUpSchurImpl::setDiagonalPC(PC pc) {
     CHKERR KSPGetPC(ksp, &pc_raw);
     return SmartPetscObj<PC>(pc_raw, true); // bump reference
   };
-  CHKERR setSchurMatSolvePC(get_pc(subksp[0]));
+  CHKERR setSchurA00MatSolvePC(get_pc(subksp[0]));
 
   auto set_pc_p_mg = [](auto dm, auto pc, auto S) {
     MoFEMFunctionBegin;

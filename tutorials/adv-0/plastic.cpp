@@ -1470,7 +1470,7 @@ MoFEMErrorCode SetUpSchurImpl::setUp(TS solver) {
         CHKERR KSPGetPC(ksp, &pc_raw);
         return SmartPetscObj<PC>(pc_raw, true); // bump reference
       };
-      CHKERR setSchurMatSolvePC(get_pc(subksp[0]));
+      CHKERR setSchurA00MatSolvePC(get_pc(subksp[0]));
       CHKERR PetscFree(subksp);
       MoFEMFunctionReturn(0);
     };
