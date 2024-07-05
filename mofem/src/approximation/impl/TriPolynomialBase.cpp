@@ -814,7 +814,6 @@ TriPolynomialBase::getValueHcurlAinsworthBrokenBase(MatrixDouble &pts) {
             ++t_edge_diff_base[ee];
           }
         }
-
       }
     }
 
@@ -1002,7 +1001,6 @@ TriPolynomialBase::getValueHcurlDemkowiczBrokenBase(MatrixDouble &pts) {
             ++t_edge_diff_base[ee];
           }
         }
-
       }
     }
 
@@ -1033,6 +1031,8 @@ MoFEMErrorCode TriPolynomialBase::getValueHcurl(MatrixDouble &pts) {
     default:
       SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
     }
+
+    break;
 
   case DISCONTINUOUS:
     switch (cTx->bAse) {
