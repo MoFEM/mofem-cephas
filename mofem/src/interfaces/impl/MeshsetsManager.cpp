@@ -182,6 +182,9 @@ MoFEMErrorCode MeshsetsManager::broadcastMeshsets(int verb) {
       MOFEM_LOG("MeshsetMngSync", Sev::verbose)
           << "broadcast BLOCKSET " << vec_meshsets.size();
       break;
+    default:
+      MOFEM_LOG("MeshsetMngSync", Sev::verbose)
+          << "broadcast Unknown " << vec_meshsets.size();
     }
 
     for (int from_proc = 0; from_proc < pcomm->size(); ++from_proc) {
