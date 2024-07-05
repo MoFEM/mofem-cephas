@@ -1661,3 +1661,27 @@ add_test(schur_test_diag_mat
   -ksp_gmres_modifiedgram schmidt  
   -log_no_color
 )
+
+build_test(
+  test_broken_space_2d
+  test_broken_space.cpp
+)
+set_target_properties(
+  test_broken_space_2d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=2")
+
+add_test(test_broken_space
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/test_broken_space_2d
+  -file_name rectangle_tri.h5m
+  -log_sl inform 
+  -ksp_type fgmres 
+  -pc_type lu
+  -ksp_monitor 
+
+  -ksp_atol 1e-16 
+  -ksp_rtol 1e-16 
+  -base ainsworth
+  -space hcurl
+  -order 2
+  -log_no_color
+)
