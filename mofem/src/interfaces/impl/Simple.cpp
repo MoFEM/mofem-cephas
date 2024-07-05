@@ -279,6 +279,24 @@ Simple::addDomainField(const std::string &name, const FieldSpace space,
 }
 
 MoFEMErrorCode
+Simple::addDomainBrokenField(const std::string &name, const FieldSpace space,
+                             const FieldApproximationBase base,
+                             const FieldCoefficientsNumber nb_of_cooficients,
+                             const TagType tag_type, const enum MoFEMTypes bh,
+                             int verb) {
+
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+  CHKERR m_field.add_broken_field(name, space, base, nb_of_cooficients,
+                                  tag_type, bh, verb);
+  if (space == NOFIELD)
+    noFieldFields.push_back(name);
+  else
+    domainFields.push_back(name);
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
 Simple::addBoundaryField(const std::string &name, const FieldSpace space,
                          const FieldApproximationBase base,
                          const FieldCoefficientsNumber nb_of_cooficients,
