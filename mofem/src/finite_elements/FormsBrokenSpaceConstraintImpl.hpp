@@ -32,6 +32,16 @@ struct OpBrokenSpaceConstrainImpl<FIELD_DIM, GAUSS, OpBase> : public OpBase {
     this->onlyTranspose = only_transpose;
   }
 
+  OpBrokenSpaceConstrainImpl(const std::string row_field,
+                             const std::string col_field, const double beta,
+                             const bool assmb_transpose,
+                             const bool only_transpose)
+      : OpBase(row_field, col_field, OpBase::OPROWCOL),
+        brokenBaseSideData(nullptr), scalarBeta(beta) {
+    this->assembleTranspose = assmb_transpose;
+    this->onlyTranspose = only_transpose;
+  }
+
   MoFEMErrorCode doWork(int row_side, EntityType row_type,
                         EntitiesFieldData::EntData &row_data);
 
@@ -223,6 +233,12 @@ struct OpBrokenSpaceConstrainDFluxImpl<FIELD_DIM, GAUSS, OpBase>
       : OpBase(NOSPACE, OpBase::OPSPACE), scalarBeta(beta),
         brokenBaseSideData(broken_base_side_data), lagrangePtr(lagrange_ptr) {}
 
+  OpBrokenSpaceConstrainDFluxImpl(std::string row_field,
+                                  boost::shared_ptr<MatrixDouble> lagrange_ptr,
+                                  const double beta)
+      : OpBase(row_field, OpBase::OPROW), scalarBeta(beta),
+        brokenBaseSideData(nullptr), lagrangePtr(lagrange_ptr) {}
+
   MoFEMErrorCode doWork(int row_side, EntityType row_type,
                         EntitiesFieldData::EntData &row_data);
 
@@ -245,28 +261,38 @@ OpBrokenSpaceConstrainDFluxImpl<FIELD_DIM, GAUSS, OpBase>::doWork(
       MoFEMFunctionReturnHot(0);
   }
 
-  auto row_side = brokenBaseSideData->getSide();
-  auto row_type = brokenBaseSideData->getType();
-  auto row_data = brokenBaseSideData->getData();
+  EntitiesFieldData::EntData *raw_data_ptr = nullptr;
+  switch (OP::opType) {
+  case OpBaseDerivativesBase::OPROW:
+    OP::rowSide = side;
+    OP::rowType = type;
+    raw_data_ptr = &data;
+    break;
+  case OpBaseDerivativesBase::OPSPACE:
+    OP::rowSide = brokenBaseSideData->getSide();
+    OP::rowType = brokenBaseSideData->getType();
+    raw_data_ptr = &brokenBaseSideData->getData();
+  default:
+    CHK_MOAB_THROW(MOFEM_IMPOSSIBLE_CASE, "wrong op type");
+  }
 
   // get number of dofs on row
-  OP::nbRows = row_data.getIndices().size();
-  OP::rowSide = row_side;
-  OP::rowType = row_type;
+  OP::nbRows = raw_data_ptr->getIndices().size();
 
   if (!OP::nbRows)
     MoFEMFunctionReturnHot(0);
   // get number of integration points
   OP::nbIntegrationPts = OP::getGaussPts().size2();
   // get row base functions
-  OP::nbRowBaseFunctions = OP::getNbOfBaseFunctions(row_data);
+  OP::nbRowBaseFunctions = OP::getNbOfBaseFunctions(*raw_data_ptr);
   // resize and clear the right hand side vector
   OP::locF.resize(OP::nbRows);
   OP::locF.clear();
   // integrate local vector
-  CHKERR this->iNtegrate(row_data);
+  CHKERR this->iNtegrate(*raw_data_ptr);
   // assemble local vector
-  CHKERR this->aSsemble(row_data);
+  CHKERR this->aSsemble(*raw_data_ptr);
+
   MoFEMFunctionReturn(0);
 }
 
