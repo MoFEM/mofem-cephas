@@ -1296,6 +1296,8 @@ struct OpLoopSide : public ForcesAndSourcesCore::UserDataOperator {
    * @param m_field 
    * @param fe_name name of side (domain element)
    * @param side_dim dimension
+   * @param sev severity level
+   * @param adj_cache if set to null cache of the element is used
    */
   OpLoopSide(MoFEM::Interface &m_field, const std::string fe_name,
              const int side_dim,

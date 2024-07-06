@@ -101,7 +101,7 @@ MoFEMErrorCode OpBrokenSpaceConstrainImpl<FIELD_DIM, GAUSS, OpBase>::doWork(
   // assemble local matrix
   auto check_if_assemble_transpose = [&] {
     if (this->sYmm) {
-      if (OP::row_side != OP::col_side || OP::row_type != OP::col_type)
+      if (OP::rowSide != OP::colSide || OP::rowType != OP::colType)
         return true;
       else
         return false;
@@ -111,7 +111,7 @@ MoFEMErrorCode OpBrokenSpaceConstrainImpl<FIELD_DIM, GAUSS, OpBase>::doWork(
 
     return false;
   };
-  CHKERR aSsemble(row_data, col_data, check_if_assemble_transpose());
+  CHKERR this->aSsemble(row_data, col_data, check_if_assemble_transpose());
 
   MoFEMFunctionReturn(0);
 }
@@ -187,7 +187,7 @@ struct BrokenBaseSideData {
 
 private:
   int eleSide = 1;
-  int eleType = MBENTITYSET;
+  EntityType eleType = MBENTITYSET;
   EntitiesFieldData::EntData entData;
 };
 
