@@ -146,6 +146,15 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
    */
   template <int SPACE_DIM>
   using OpMixTensorTimesGrad = OpMixTensorTimesGradImpl<SPACE_DIM, I, OpBase>;
+
+  /**
+   * @brief Assemble constraint matrix while hybridization
+   * 
+   * @tparam FIELD_DIM 
+   */
+  template <int FIELD_DIM>
+  using OpBrokenSpaceConstrainDHybrid =
+      OpBrokenSpaceConstrainDHybridImpl<FIELD_DIM, I, OpBase>;
 };
 
 } // namespace MoFEM
