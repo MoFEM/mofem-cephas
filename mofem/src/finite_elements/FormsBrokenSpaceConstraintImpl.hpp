@@ -68,8 +68,8 @@ MoFEMErrorCode OpBrokenSpaceConstrainImpl<FIELD_DIM, GAUSS, OpBase>::doWork(
   if (!brokenBaseSideData) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "space not set");
   }
-  if (brokenBaseSideData->getData().sPace != HDIV &&
-      brokenBaseSideData->getData().sPace == HCURL) {
+  if (brokenBaseSideData->getData().getSpace() != HDIV &&
+      brokenBaseSideData->getData().getSpace() == HCURL) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Expect Hdiv or Hcurl space");
   }
@@ -138,9 +138,9 @@ MoFEMErrorCode OpBrokenSpaceConstrainImpl<FIELD_DIM, GAUSS, OpBase>::iNtegrate(
     MoFEMFunctionReturnHot(0);
 
 #ifndef NDEBUG
-  if (brokenBaseSideData->getData().sPace != HDIV &&
-      brokenBaseSideData->getData().sPace == HCURL) {
-    SETERRQ(PETSC_COMM_SLEF, MOFEM_DATA_INCONSISTENCY,
+  if (brokenBaseSideData->getData().getSpace() != HDIV &&
+      brokenBaseSideData->getData().getSpace() == HCURL) {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Expect Hdiv or Hcurl space");
   }
 #endif

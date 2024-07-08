@@ -94,6 +94,7 @@ MoFEMErrorCode EntPolynomialBaseCtx::setBase() {
     case HCURL:
     case HDIV:
     case L2:
+      basePolynomialsType0 = Legendre_polynomials;
       basePolynomialsType1 = Jacobi_polynomials;
       break;
     default:

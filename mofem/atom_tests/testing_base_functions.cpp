@@ -979,9 +979,12 @@ int main(int argc, char *argv[]) {
     MatrixDouble pts_edge;
     int edge_rule = 6;
     nb_gauss_pts = QUAD_1D_TABLE[edge_rule]->npoints;
-    pts_edge.resize(1, nb_gauss_pts, false);
+    pts_edge.resize(2, nb_gauss_pts, false);
     cblas_dcopy(nb_gauss_pts, &QUAD_1D_TABLE[edge_rule]->points[1], 2,
                 &pts_edge(0, 0), 1);
+    cblas_dcopy(nb_gauss_pts, QUAD_1D_TABLE[edge_rule]->weights, 1,
+                &pts_edge(1, 0), 1);
+
     edge_data.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 2,
                                                               false);
     {
@@ -1077,11 +1080,12 @@ int main(int argc, char *argv[]) {
       std::cout << edge_data.dataOnEntities[MBEDGE][0].getN(
                        AINSWORTH_LEGENDRE_BASE)
                 << std::endl;
-      int sum = 0;
+      double sum = 0;
       sum += sum_matrix(
           edge_data.dataOnEntities[MBEDGE][0].getN(AINSWORTH_LEGENDRE_BASE));
+      std::cout.precision(std::numeric_limits<double>::max_digits10 - 1);
       std::cout << "sum  " << sum << std::endl;
-      if (fabs(-4 - sum) > eps) {
+      if (fabs(-4.174149659863944 - sum) > eps) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
       }
     }
@@ -1102,8 +1106,9 @@ int main(int argc, char *argv[]) {
                 << std::endl;
       double sum = sum_matrix(
           edge_data.dataOnEntities[MBEDGE][0].getN(DEMKOWICZ_JACOBI_BASE));
+      std::cout.precision(std::numeric_limits<double>::max_digits10 - 1);
       std::cout << "sum  " << sum << std::endl;
-      if (std::fabs(4 - sum) > eps) {
+      if (std::fabs(4.571428571428571 - sum) > eps) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
       }
     }
@@ -1132,15 +1137,55 @@ int main(int argc, char *argv[]) {
             PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Difference between ainsworth and demkowicz base should be zero");
       }
-      MatrixDouble diff_diff_n =
-          edge_data.dataOnEntities[MBEDGE][0].getDiffN(DEMKOWICZ_JACOBI_BASE) -
-          edge_data.dataOnEntities[MBEDGE][0].getN(AINSWORTH_LOBATTO_BASE);
-      double diff_sum = sum_matrix(diff_diff_n);
-      if (std::fabs(diff_sum) > eps) {
+
+      auto order = edge_data.dataOnEntities[MBEDGE][0].getOrder();
+      auto &base =
+          edge_data.dataOnEntities[MBEDGE][0].getN(AINSWORTH_LEGENDRE_BASE);
+
+      if (base.size1() != pts_edge.size2())
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "Difference between directive of demkowicz and lobatto base "
-                "should be zero");
+                "wrong number of integration points");
+      if (base.size2() != NBEDGE_L2(order))
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "wrong number of base functions");
+
+      double ort_sum = 0;
+      for (auto gg = 0; gg != pts_edge.size2(); ++gg) {
+        double w = pts_edge(1, gg);
+        for (int i = 0; i != NBEDGE_L2(order); ++i) {
+          for (int j = 0; j != NBEDGE_L2(order); ++j) {
+            if (i != j) {
+              ort_sum += base(gg, i) * base(gg, j) * w;
+            }
+          }
+        }
       }
+      std::cout << "ort sum  " << ort_sum << std::endl;
+      if (std::fabs(ort_sum) > eps) {
+        SETERRQ(
+            PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "check orthogonality of base");
+      }
+
+      auto &diff_base =
+          edge_data.dataOnEntities[MBEDGE][0].getDiffN(AINSWORTH_LOBATTO_BASE);
+      double ort_diff_sum = 0;
+      for (auto gg = 0; gg != pts_edge.size2(); ++gg) {
+        double w = pts_edge(1, gg);
+        for (int i = 2; i != NBEDGE_L2(order); ++i) {
+          for (int j = 2; j != NBEDGE_L2(order); ++j) {
+            if (i != j) {
+              ort_diff_sum += diff_base(gg, i) * diff_base(gg, j) * w;
+            }
+          }
+        }
+      }
+      std::cout << "ort diff sum  " << ort_diff_sum << std::endl;
+      if (std::fabs(ort_diff_sum) > eps) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "check orthogonality of diff lobatto base");
+      }
+
     }
 
     EntitiesFieldData quad_data(MBQUAD);
