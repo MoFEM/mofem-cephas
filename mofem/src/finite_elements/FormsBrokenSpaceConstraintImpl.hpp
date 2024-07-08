@@ -9,12 +9,9 @@
 
 namespace MoFEM {
 
-
-
 #ifdef BILINEAR_FORMS_INTEGRATORS_HPP
 
-
-template <int FIELD_DIM, IntegrationType I, typename OpBase> 
+template <int FIELD_DIM, IntegrationType I, typename OpBase>
 struct OpBrokenSpaceConstrainImpl;
 
 template <int FIELD_DIM, typename OpBase>
@@ -69,12 +66,13 @@ MoFEMErrorCode OpBrokenSpaceConstrainImpl<FIELD_DIM, GAUSS, OpBase>::doWork(
     SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "space not set");
   }
   if (brokenBaseSideData->getData().getSpace() != HDIV &&
-      brokenBaseSideData->getData().getSpace() == HCURL) {
+      brokenBaseSideData->getData().getSpace() != HCURL) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "Expect Hdiv or Hcurl space");
+            (std::string("Expect Hdiv or Hcurl space but received ") +
+             FieldSpaceNames[brokenBaseSideData->getData().getSpace()])
+                .c_str());
   }
 #endif // NDEBUG
-
 
   OP::nbRows = row_data.getIndices().size();
 
@@ -82,7 +80,7 @@ MoFEMErrorCode OpBrokenSpaceConstrainImpl<FIELD_DIM, GAUSS, OpBase>::doWork(
 
   if (!OP::nbRows)
     MoFEMFunctionReturnHot(0);
-    
+
   OP::rowSide = row_side;
   OP::rowType = row_type;
 
@@ -236,7 +234,7 @@ struct OpBrokenSpaceConstrainDFluxImpl<FIELD_DIM, GAUSS, OpBase>
   OpBrokenSpaceConstrainDFluxImpl(std::string row_field,
                                   boost::shared_ptr<MatrixDouble> lagrange_ptr,
                                   const double beta)
-      : OpBase(row_field, OpBase::OPROW), scalarBeta(beta),
+      : OpBase(row_field, row_field, OpBase::OPROW), scalarBeta(beta),
         brokenBaseSideData(nullptr), lagrangePtr(lagrange_ptr) {}
 
   MoFEMErrorCode doWork(int row_side, EntityType row_type,
@@ -272,8 +270,12 @@ OpBrokenSpaceConstrainDFluxImpl<FIELD_DIM, GAUSS, OpBase>::doWork(
     OP::rowSide = brokenBaseSideData->getSide();
     OP::rowType = brokenBaseSideData->getType();
     raw_data_ptr = &brokenBaseSideData->getData();
+    break;
   default:
-    CHK_MOAB_THROW(MOFEM_IMPOSSIBLE_CASE, "wrong op type");
+    CHK_MOAB_THROW(MOFEM_IMPOSSIBLE_CASE,
+                   (std::string("wrong op type ") +
+                    OpBaseDerivativesBase::OpTypeNames[OP::opType])
+                       .c_str());
   }
 
   // get number of dofs on row
@@ -307,18 +309,19 @@ OpBrokenSpaceConstrainDFluxImpl<FIELD_DIM, GAUSS, OpBase>::iNtegrate(
 
   auto t_w = this->getFTensor0IntegrationWeight();
   auto t_normal = OpBase::getFTensor1NormalsAtGaussPts();
+  auto t_lagrange = getFTensor1FromMat<FIELD_DIM>(*lagrangePtr);
 
-  OP::locVec.resize(row_data.getIndices().size(), false);
-  OP::locVec.clear();
+  OP::locF.resize(row_data.getIndices().size(), false);
+  OP::locF.clear();
 
   auto t_row_base = row_data.getFTensor1N<3>();
   auto nb_base_functions = row_data.getN().size2() / 3;
 
   for (size_t gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
-    auto t_vec = getFTensor1FromPtr<FIELD_DIM>(&*OP::locVec.data().begin());
+    auto t_vec = getFTensor1FromPtr<FIELD_DIM>(&*OP::locF.data().begin());
     size_t rr = 0;
     for (; rr != row_data.getIndices().size() / FIELD_DIM; ++rr) {
-      t_vec(i) += t_w * t_row_base(j) * t_normal(j) * t_row_base(j);
+      t_vec(i) += t_w * t_row_base(j) * t_normal(j) * t_lagrange(i);
       ++t_row_base;
       ++t_vec;
     }
@@ -326,9 +329,10 @@ OpBrokenSpaceConstrainDFluxImpl<FIELD_DIM, GAUSS, OpBase>::iNtegrate(
       ++t_row_base;
     ++t_w;
     ++t_normal;
+    ++t_lagrange;
   }
 
-  OP::locVec *= scalarBeta;
+  OP::locF *= scalarBeta;
 
   MoFEMFunctionReturn(0);
 }
@@ -342,7 +346,8 @@ struct OpBrokenSpaceConstrainDHybridImpl<FIELD_DIM, GAUSS, OpBase>
   OpBrokenSpaceConstrainDHybridImpl(const std::string row_field,
                                     boost::shared_ptr<MatrixDouble> flux_ptr,
                                     const double beta)
-      : OpBase(row_field, OpBase::OPROW), scalarBeta(beta), fluxPtr(flux_ptr) {}
+      : OpBase(row_field, row_field, OpBase::OPROW), fluxPtr(flux_ptr),
+        scalarBeta(beta) {}
 
 private:
   double scalarBeta;
@@ -362,15 +367,15 @@ OpBrokenSpaceConstrainDHybridImpl<FIELD_DIM, GAUSS, OpBase>::iNtegrate(
   auto t_w = this->getFTensor0IntegrationWeight();
   auto t_normal = OpBase::getFTensor1NormalsAtGaussPts();
 
-  OP::locVec.resize(row_data.getIndices().size(), false);
-  OP::locVec.clear();
+  OP::locF.resize(row_data.getIndices().size(), false);
+  OP::locF.clear();
 
   auto t_row_base = row_data.getFTensor0N();
-  auto t_flux = getFTensor1FromMat<FIELD_DIM>(&fluxPtr);
+  auto t_flux = getFTensor1FromMat<FIELD_DIM>(*fluxPtr);
   auto nb_base_functions = row_data.getN().size2() / 3;
 
   for (size_t gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
-    auto t_vec = getFTensor1FromPtr<FIELD_DIM>(&*OP::locVec.data().begin());
+    auto t_vec = getFTensor1FromPtr<FIELD_DIM>(&*OP::locF.data().begin());
     size_t rr = 0;
     for (; rr != row_data.getIndices().size() / FIELD_DIM; ++rr) {
       t_flux(i) += t_w * t_row_base * t_normal(j) * t_flux(j);
@@ -384,11 +389,11 @@ OpBrokenSpaceConstrainDHybridImpl<FIELD_DIM, GAUSS, OpBase>::iNtegrate(
     ++t_flux;
   }
 
-  OP::locVec *= scalarBeta;
+  OP::locF *= scalarBeta;
 
   MoFEMFunctionReturn(0);
 }
 
 #endif // LINER_FORMS_INTEGRATORS_HPP
 
-}
+} // namespace MoFEM
