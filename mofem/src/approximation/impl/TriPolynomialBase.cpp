@@ -803,8 +803,8 @@ TriPolynomialBase::getValueHcurlAinsworthBrokenBase(MatrixDouble &pts) {
     for (int gg = 0; gg != nb_gauss_pts; gg++) {
       for (int oo = 0; oo < order; oo++) {
 
-        for (int dd = NBEDGE_DEMKOWICZ_HCURL(oo);
-             dd != NBEDGE_DEMKOWICZ_HCURL(oo + 1); ++dd) {
+        for (int dd = NBEDGE_AINSWORTH_HCURL(oo);
+             dd != NBEDGE_AINSWORTH_HCURL(oo + 1); ++dd) {
           for (int ee = 0; ee != 3; ++ee) {
             t_base(i) = t_edge_base[ee](i);
             ++t_base;
