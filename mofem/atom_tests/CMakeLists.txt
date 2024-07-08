@@ -1253,6 +1253,7 @@ list(INSERT testing_base_list
   h1edge_bernstein_bezier
   hcurledge_ainsworth
   hcurledge_demkowicz
+  l2edge
 )
 foreach(test_base ${testing_base_list})
   add_test(testing_base_functions_${test_base}
@@ -1669,7 +1670,14 @@ build_test(
 set_target_properties(
   test_broken_space_2d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=2")
 
-add_test(test_broken_space
+# build_test(
+#   test_broken_space_3d
+#   test_broken_space.cpp
+# )
+# set_target_properties(
+#   test_broken_space_3d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=3")
+
+add_test(test_broken_space_2d
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/test_broken_space_2d
   -file_name rectangle_tri.h5m
@@ -1677,11 +1685,24 @@ add_test(test_broken_space
   -ksp_type fgmres 
   -pc_type lu
   -ksp_monitor 
-
   -ksp_atol 1e-16 
   -ksp_rtol 1e-16 
   -base ainsworth
   -space hcurl
   -order 2
-  -log_no_color
-)
+  -log_no_color)
+
+# add_test(test_broken_space_3d
+#   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+#   ${CMAKE_CURRENT_BINARY_DIR}/test_broken_space_3d
+#   -file_name sphere.h5m
+#   -log_sl inform 
+#   -ksp_type fgmres 
+#   -pc_type lu
+#   -ksp_monitor 
+#   -ksp_atol 1e-16 
+#   -ksp_rtol 1e-16 
+#   -base ainsworth
+#   -space hcurl
+#   -order 2
+#   -log_no_color)

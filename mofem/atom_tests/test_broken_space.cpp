@@ -22,7 +22,7 @@ using EleOnSide = PipelineManager::ElementsAndOpsByDim<SPACE_DIM>::FaceSideEle;
 using EntData = EntitiesFieldData::EntData;
 using DomainEleOp = DomainEle::UserDataOperator;
 using BdyEleOp = BoundaryEle::UserDataOperator;
-using SideEleOp =EleOnSide::UserDataOperator;
+using SideEleOp = EleOnSide::UserDataOperator;
 
 int main(int argc, char *argv[]) {
 
@@ -106,17 +106,21 @@ int main(int argc, char *argv[]) {
 
     CHKERR simple->setUp();
 
-    auto assemble_domain = [&](auto &pip) {
+    auto assemble_domain_lhs = [&](auto &pip) {
       MoFEMFunctionBegin;
-
-      using OpSource = FormsIntegrators<DomainEleOp>::Assembly<
-          PETSC>::LinearForm<GAUSS>::OpSource<3, 3>;
       using OpMass = FormsIntegrators<DomainEleOp>::Assembly<
           SCHUR>::BiLinearForm<GAUSS>::OpMass<3, 3>;
-
       CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(pip, {HDIV});
       pip.push_back(new OpMass("BROKEN", "BROKEN",
                                [](double, double, double) { return 1.; }));
+      MoFEMFunctionReturn(0);
+    };
+
+    auto assemble_domain_rhs = [&](auto &pip) {
+      MoFEMFunctionBegin;
+      using OpSource = FormsIntegrators<DomainEleOp>::Assembly<
+          PETSC>::LinearForm<GAUSS>::OpSource<3, 3>;
+      CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(pip, {HDIV});
       pip.push_back(new OpSource("BROKEN", [](double, double, double) {
         return FTensor::Tensor1<double, 3>{1., 0., 0.};
       }));
@@ -145,7 +149,7 @@ int main(int argc, char *argv[]) {
       auto [op_loop_side, broken_data_ptr, flux_mat_ptr] = broken_data_tuple;
       pip.push_back(op_loop_side);
       CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
-          op_loop_side->getOpPtrVector(), {L2});
+          op_loop_side->getOpPtrVector(), {});
       pip.push_back(new OpC("HYBRID", broken_data_ptr, 1., true, false));
       MoFEMFunctionReturn(0);
     };
@@ -159,7 +163,7 @@ int main(int argc, char *argv[]) {
       auto [op_loop_side, broken_data_ptr, flux_mat_ptr] = broken_data_tuple;
       pip.push_back(op_loop_side);
       CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
-          op_loop_side->getOpPtrVector(), {L2});
+          op_loop_side->getOpPtrVector(), {});
       auto hybrid_ptr = boost::make_shared<MatrixDouble>();
       pip.push_back(
           new OpCalculateVectorFieldValues<SPACE_DIM>("HYBRID", hybrid_ptr));
@@ -170,7 +174,8 @@ int main(int argc, char *argv[]) {
 
     auto *pip_mng = m_field.getInterface<PipelineManager>();
 
-    CHKERR assemble_domain(pip_mng->getOpDomainRhsPipeline());
+    CHKERR assemble_domain_lhs(pip_mng->getOpDomainLhsPipeline());
+    CHKERR assemble_domain_rhs(pip_mng->getOpDomainLhsPipeline());
     CHKERR assemble_skeleton_lhs(pip_mng->getOpSkeletonLhsPipeline(),
                                  get_broken_ptr());
     CHKERR assemble_skeleton_rhs(pip_mng->getOpSkeletonRhsPipeline(),
@@ -182,6 +187,54 @@ int main(int argc, char *argv[]) {
     CHKERR pip_mng->setSkeletonLhsIntegrationRule(integration_rule);
     CHKERR pip_mng->setSkeletonRhsIntegrationRule(integration_rule);
 
+    auto ksp = pip_mng->createKSP();
+
+    CHKERR KSPSetFromOptions(ksp);
+    CHKERR KSPSetUp(ksp);
+
+    auto x = createDMVector(simple->getDM());
+    auto f = vectorDuplicate(x);
+
+    CHKERR KSPSolve(ksp, x, f);
+    CHKERR VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
+    CHKERR VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
+    CHKERR DMoFEMMeshToLocalVector(simple->getDM(), x, INSERT_VALUES,
+                                   SCATTER_REVERSE);
+
+    auto get_post_proc_fe = [&]() {
+      using PostProcEle = PostProcBrokenMeshInMoab<DomainEle>;
+      using OpPPMap = OpPostProcMapInMoab<3, SPACE_DIM>;
+      auto post_proc_fe = boost::make_shared<PostProcEle>(m_field);
+
+      CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+          post_proc_fe->getOpPtrVector(), {HDIV});
+      auto flux_mat_ptr = boost::make_shared<MatrixDouble>();
+      post_proc_fe->getOpPtrVector().push_back(
+          new OpCalculateHVecVectorField<3>("BROKEN", flux_mat_ptr));
+
+      post_proc_fe->getOpPtrVector().push_back(
+
+          new OpPPMap(
+
+              post_proc_fe->getPostProcMesh(),
+
+              post_proc_fe->getMapGaussPts(),
+
+              {},
+
+              {{"BROKEN", flux_mat_ptr}},
+
+              {}, {})
+
+      );
+
+      return post_proc_fe;
+    };
+
+    auto post_proc_fe = get_post_proc_fe();
+    CHKERR DMoFEMLoopFiniteElements(simple->getDM(), simple->getDomainFEName(),
+                                    post_proc_fe);
+    CHKERR post_proc_fe->writeFile("out_result.h5m");
   }
   CATCH_ERRORS;
 
