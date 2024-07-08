@@ -41,18 +41,18 @@ RUN pip3 install \
   imageio
 
 
-RUN pip3 install \
-  jupyter_contrib_nbextensions && \
-  jupyter contrib nbextension install --sys-prefix && \
-  jupyter nbextension install https://raw.githubusercontent.com/mwouts/jupytext_nbextension/master/jupytext.js --sys-prefix && \
-  jupyter nbextension enable jupytext --sys-prefix && \
-  jupyter nbextension enable equation-numbering/main --sys-prefix && \
-  jupyter nbextension enable splitcell/splitcell --sys-prefix && \
-  jupyter nbextension enable spellchecker/main --sys-prefix && \
-  jupyter nbextension enable collapsible_headings/main --sys-prefix && \
-  jupyter nbextension enable codefolding/main --sys-prefix && \
-  jupyter nbextension enable codefolding/edit --sys-prefix && \
-  jupyter nbextension enable execute_time/ExecuteTime --sys-prefix 
+# RUN pip3 install \
+#   jupyter_contrib_nbextensions && \
+#   jupyter contrib nbextension install --sys-prefix && \
+#   jupyter nbextension install https://raw.githubusercontent.com/mwouts/jupytext_nbextension/master/jupytext.js --sys-prefix && \
+#   jupyter nbextension enable jupytext --sys-prefix && \
+#   jupyter nbextension enable equation-numbering/main --sys-prefix && \
+#   jupyter nbextension enable splitcell/splitcell --sys-prefix && \
+#   jupyter nbextension enable spellchecker/main --sys-prefix && \
+#   jupyter nbextension enable collapsible_headings/main --sys-prefix && \
+#   jupyter nbextension enable codefolding/main --sys-prefix && \
+#   jupyter nbextension enable codefolding/edit --sys-prefix && \
+#   jupyter nbextension enable execute_time/ExecuteTime --sys-prefix 
 
 # allow jupyterlab for ipyvtk
 ENV DISPLAY=:99.0
