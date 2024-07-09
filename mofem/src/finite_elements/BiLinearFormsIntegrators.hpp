@@ -13,11 +13,6 @@
 #ifndef __BILINEAR_FORMS_INTEGRATORS_HPP__
 #define __BILINEAR_FORMS_INTEGRATORS_HPP__
 
-#define BILINEAR_FORMS_INTEGRATORS_HPP
-#include "BiLinearFormsIntegratorsImpl.hpp"
-#include "FormsBrokenSpaceConstraintImpl.hpp"
-#undef BILINEAR_FORMS_INTEGRATORS_HPP
-
 namespace MoFEM {
 
 /**
