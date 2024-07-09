@@ -765,6 +765,13 @@ static inline auto getFTensor3FromMat(MatrixDouble &data) {
 
 template <int DIM, int S, typename T> struct GetFTensor1FromPtrImpl;
 
+template <int S, typename T> struct GetFTensor1FromPtrImpl<1, S, T> {
+  GetFTensor1FromPtrImpl() = delete;
+  inline static auto get(T *ptr) {
+    return FTensor::Tensor1<FTensor::PackPtr<T *, S>, 1>(ptr);
+  }
+};
+
 template <int S, typename T> struct GetFTensor1FromPtrImpl<2, S, T> {
   GetFTensor1FromPtrImpl() = delete;
   inline static auto get(T *ptr) {
@@ -1972,6 +1979,8 @@ template <int DIM> using k_FTIndex = FTensor::Index<'k', DIM>;
 template <int DIM> using l_FTIndex = FTensor::Index<'l', DIM>;
 template <int DIM> using m_FTIndex = FTensor::Index<'m', DIM>;
 template <int DIM> using n_FTIndex = FTensor::Index<'n', DIM>;
+template <int DIM> using I_FTIndex = FTensor::Index<'I', DIM>;
+template <int DIM> using J_FTIndex = FTensor::Index<'J', DIM>;
 
 #define FTENSOR_INDEX(DIM, I) I##_FTIndex<DIM> I;
 
