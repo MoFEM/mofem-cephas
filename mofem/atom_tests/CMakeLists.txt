@@ -1685,6 +1685,7 @@ add_test(test_broken_space_2d
   -ksp_type fgmres 
   -pc_type lu
   -ksp_monitor 
+  -ksp_converged_reason
   -ksp_atol 1e-16 
   -ksp_rtol 1e-16 
   -base ainsworth
