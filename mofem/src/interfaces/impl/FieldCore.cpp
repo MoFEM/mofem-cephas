@@ -262,8 +262,8 @@ MoFEMErrorCode Core::addField(const std::string &name, const FieldSpace space,
       MOFEM_LOG("WORLD", Sev::inform) << "Add field " << **p.first;
       MOFEM_LOG("WORLD", Sev::noisy)
           << "Field " << (*p.first)->getName() << " core value < "
-          << this->getValue() << " > field value ) "
-          << (*p.first)->getBitNumber() << " )";
+          << this->getValue() << " > field value ( "
+          << static_cast<int>((*p.first)->getBitNumber()) << " )";
     }
 
     if (!p.second)
