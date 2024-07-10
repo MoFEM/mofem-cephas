@@ -181,7 +181,6 @@ MoFEMErrorCode OpBrokenSpaceConstrainImpl<FIELD_DIM, GAUSS, OpBase>::doWork(
     OP::locMat.clear();
     CHKERR this->iNtegrate(row_data, col_data);
     OP::locMat *= sense;
-    cerr << "assemble" << endl;
     CHKERR this->aSsemble(row_data, col_data, check_if_assemble_transpose());
     MoFEMFunctionReturn(0);
   };
