@@ -7,9 +7,88 @@
  *
  */
 
+#ifndef __FORMSBROKENSPACECONSTRAINTIMPL_HPP__
+#define __FORMSBROKENSPACECONSTRAINTIMPL_HPP__
+
 namespace MoFEM {
 
-#ifdef BILINEAR_FORMS_INTEGRATORS_HPP
+struct BrokenBaseSideData {
+  BrokenBaseSideData() : entData(false) {}
+  inline auto &getSense() { return eleSense; }
+  inline auto &getSide() { return eleSide; }
+  inline auto &getType() { return eleType; }
+  inline auto &getData() { return entData; }
+
+private:
+  int eleSense = 0;
+  int eleSide = 1;
+  EntityType eleType = MBENTITYSET;
+  EntitiesFieldData::EntData entData;
+};
+
+template <typename OpBase> struct OpGetBrokenBaseSideData : public OpBase {
+
+  using OP = OpBase;
+
+  OpGetBrokenBaseSideData(
+      const std::string field_name,
+      boost::shared_ptr<std::vector<BrokenBaseSideData>> broken_base_side_data);
+
+  MoFEMErrorCode doWork(int row_side, EntityType row_type,
+                        EntitiesFieldData::EntData &row_data);
+
+private:
+  boost::shared_ptr<std::vector<BrokenBaseSideData>> brokenBaseSideData;
+};
+
+template <typename OpBase>
+OpGetBrokenBaseSideData<OpBase>::OpGetBrokenBaseSideData(
+    const std::string field_name,
+    boost::shared_ptr<std::vector<BrokenBaseSideData>> broken_base_side_data)
+    : OP(field_name, field_name, OP::OPROW),
+      brokenBaseSideData(broken_base_side_data) {}
+
+template <typename OpBase>
+MoFEMErrorCode
+OpGetBrokenBaseSideData<OpBase>::doWork(int row_side, EntityType row_type,
+                                        EntitiesFieldData::EntData &row_data) {
+  MoFEMFunctionBegin;
+
+  if (row_data.getIndices().size() == 0)
+    MoFEMFunctionReturnHot(0);
+
+  brokenBaseSideData->resize(OP::getLoopSize());
+
+  const auto n_in_the_loop = OP::getNinTheLoop();
+  const auto face_sense = OP::getSkeletonSense();
+
+  (*brokenBaseSideData)[n_in_the_loop].getSide() = row_side;
+  (*brokenBaseSideData)[n_in_the_loop].getType() = row_type;
+  (*brokenBaseSideData)[n_in_the_loop].getSense() = face_sense;
+
+  (*brokenBaseSideData)[n_in_the_loop].getData().sEnse = row_data.sEnse;
+  (*brokenBaseSideData)[n_in_the_loop].getData().sPace = row_data.sPace;
+  (*brokenBaseSideData)[n_in_the_loop].getData().bAse = row_data.bAse;
+  (*brokenBaseSideData)[n_in_the_loop].getData().iNdices = row_data.iNdices;
+  (*brokenBaseSideData)[n_in_the_loop].getData().localIndices =
+      row_data.localIndices;
+  (*brokenBaseSideData)[n_in_the_loop].getData().dOfs = row_data.dOfs;
+  (*brokenBaseSideData)[n_in_the_loop].getData().fieldEntities =
+      row_data.fieldEntities;
+  (*brokenBaseSideData)[n_in_the_loop].getData().fieldData = row_data.fieldData;
+
+  auto base = (*brokenBaseSideData)[n_in_the_loop].getData().getBase();
+  for (auto dd = 0; dd != BaseDerivatives::LastDerivative; ++dd) {
+    if (auto base_ptr = row_data.baseFunctionsAndBaseDerivatives[dd][base]) {
+      (*brokenBaseSideData)[n_in_the_loop]
+          .getData()
+          .baseFunctionsAndBaseDerivatives[dd][base] =
+          boost::make_shared<MatrixDouble>(*base_ptr);
+    }
+  }
+
+  MoFEMFunctionReturn(0);
+}
 
 template <int FIELD_DIM, IntegrationType I, typename OpBase>
 struct OpBrokenSpaceConstrainImpl;
@@ -21,12 +100,13 @@ struct OpBrokenSpaceConstrainImpl<FIELD_DIM, GAUSS, OpBase> : public OpBase {
 
   OpBrokenSpaceConstrainImpl(
       const std::string row_field,
-      boost::shared_ptr<BrokenBaseSideData> broken_base_side_data,
+      boost::shared_ptr<std::vector<BrokenBaseSideData>> broken_base_side_data,
       const double beta, const bool assmb_transpose, const bool only_transpose)
       : OpBase(row_field, row_field, OpBase::OPROW),
         brokenBaseSideData(broken_base_side_data), scalarBeta(beta) {
     this->assembleTranspose = assmb_transpose;
     this->onlyTranspose = only_transpose;
+    this->sYmm = false;
   }
 
   OpBrokenSpaceConstrainImpl(const std::string row_field,
@@ -37,6 +117,7 @@ struct OpBrokenSpaceConstrainImpl<FIELD_DIM, GAUSS, OpBase> : public OpBase {
         brokenBaseSideData(nullptr), scalarBeta(beta) {
     this->assembleTranspose = assmb_transpose;
     this->onlyTranspose = only_transpose;
+    this->sYmm = false;
   }
 
   MoFEMErrorCode doWork(int row_side, EntityType row_type,
@@ -44,7 +125,8 @@ struct OpBrokenSpaceConstrainImpl<FIELD_DIM, GAUSS, OpBase> : public OpBase {
 
 protected:
   double scalarBeta;
-  boost::shared_ptr<BrokenBaseSideData> brokenBaseSideData;
+  boost::shared_ptr<std::vector<BrokenBaseSideData>> brokenBaseSideData;
+
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data);
 
@@ -65,48 +147,14 @@ MoFEMErrorCode OpBrokenSpaceConstrainImpl<FIELD_DIM, GAUSS, OpBase>::doWork(
   if (!brokenBaseSideData) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "space not set");
   }
-  if (brokenBaseSideData->getData().getSpace() != HDIV &&
-      brokenBaseSideData->getData().getSpace() != HCURL) {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            (std::string("Expect Hdiv or Hcurl space but received ") +
-             FieldSpaceNames[brokenBaseSideData->getData().getSpace()])
-                .c_str());
-  }
 #endif // NDEBUG
 
+  // get number of integration points
   OP::nbRows = row_data.getIndices().size();
-
-  // if no dofs on row, exit that work, nothing to do here
-
   if (!OP::nbRows)
     MoFEMFunctionReturnHot(0);
-
-  OP::rowSide = row_side;
-  OP::rowType = row_type;
-
-  // get number of dofs on column
-  auto &col_data = brokenBaseSideData->getData();
-  OP::nbCols = col_data.getIndices().size();
-  // if no dofs on column, exit nothing to do here
-  if (!OP::nbCols)
-    MoFEMFunctionReturnHot(0);
-
-  OP::colSide = brokenBaseSideData->getSide();
-  OP::colType = brokenBaseSideData->getType();
-
-  // get number of integration points
   OP::nbIntegrationPts = OP::getGaussPts().size2();
-  // get row base functions
-  OP::nbRowBaseFunctions = OP::getNbOfBaseFunctions(row_data);
 
-  // set size of local entity bock
-  OP::locMat.resize(OP::nbRows, OP::nbCols, false);
-  // clear matrix
-  OP::locMat.clear();
-  // integrate local matrix for entity block
-  CHKERR this->iNtegrate(row_data, col_data);
-
-  // assemble local matrix
   auto check_if_assemble_transpose = [&] {
     if (this->sYmm) {
       if (OP::rowSide != OP::colSide || OP::rowType != OP::colType)
@@ -116,10 +164,61 @@ MoFEMErrorCode OpBrokenSpaceConstrainImpl<FIELD_DIM, GAUSS, OpBase>::doWork(
     } else if (OP::assembleTranspose) {
       return true;
     }
-
     return false;
   };
-  CHKERR this->aSsemble(row_data, col_data, check_if_assemble_transpose());
+
+  auto do_work = [&](int row_side, int col_side, EntityType row_type,
+                     EntityType col_type, EntitiesFieldData::EntData &row_data,
+                     EntitiesFieldData::EntData &col_data, int sense) {
+    MoFEMFunctionBegin;
+    OP::rowSide = row_side;
+    OP::rowType = row_type;
+    OP::colSide = col_side;
+    OP::colType = col_type;
+    OP::nbRowBaseFunctions = OP::getNbOfBaseFunctions(row_data);
+    OP::nbCols = col_data.getIndices().size();
+    OP::locMat.resize(OP::nbRows, OP::nbCols, false);
+    OP::locMat.clear();
+    CHKERR this->iNtegrate(row_data, col_data);
+    OP::locMat *= sense;
+    cerr << "assemble" << endl;
+    CHKERR this->aSsemble(row_data, col_data, check_if_assemble_transpose());
+    MoFEMFunctionReturn(0);
+  };
+
+  for (auto &bd : *brokenBaseSideData) {
+
+#ifndef NDEBUG
+    if (bd.getData().getSpace() != HDIV && bd.getData().getSpace() != HCURL) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              (std::string("Expect Hdiv or Hcurl space but received ") +
+               FieldSpaceNames[bd.getData().getSpace()])
+                  .c_str());
+    }
+    if (!bd.getData().getNSharedPtr(bd.getData().getBase())) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "base functions not set");
+    }
+#endif
+
+    CHKERR do_work(
+
+        // side
+        row_side, bd.getSide(),
+
+        // type
+        row_type, bd.getType(),
+
+        // row_data
+        row_data, bd.getData(),
+
+        // sense
+        bd.getSense()
+
+    );
+  }
+
+  brokenBaseSideData->clear();
 
   MoFEMFunctionReturn(0);
 }
@@ -135,24 +234,16 @@ MoFEMErrorCode OpBrokenSpaceConstrainImpl<FIELD_DIM, GAUSS, OpBase>::iNtegrate(
   if (!nb_row_dofs || !nb_col_dofs)
     MoFEMFunctionReturnHot(0);
 
-#ifndef NDEBUG
-  if (brokenBaseSideData->getData().getSpace() != HDIV &&
-      brokenBaseSideData->getData().getSpace() == HCURL) {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "Expect Hdiv or Hcurl space");
-  }
-#endif
-
   FTENSOR_INDEX(FIELD_DIM, i);
-  FTENSOR_INDEX(FIELD_DIM, j);
+  FTENSOR_INDEX(3, J);
 
   auto t_w = this->getFTensor0IntegrationWeight();
   auto t_normal = OpBase::getFTensor1NormalsAtGaussPts();
   size_t nb_base_functions = col_data.getN().size2() / 3;
 
   auto t_col_base = col_data.getFTensor1N<3>();
-
-  OP::locMat.resize(nb_row_dofs, nb_col_dofs, false);
+  transposedC.resize(nb_col_dofs, nb_row_dofs, false);
+  transposedC.clear();
 
   for (size_t gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
 
@@ -162,7 +253,7 @@ MoFEMErrorCode OpBrokenSpaceConstrainImpl<FIELD_DIM, GAUSS, OpBase>::iNtegrate(
     for (; cc != nb_col_dofs / FIELD_DIM; cc++) {
       auto t_row_base = row_data.getFTensor0N(gg, 0);
       for (auto rr = 0; rr != nb_row_dofs / FIELD_DIM; ++rr) {
-        t_m(i) += t_w * t_row_base * t_normal(j) * t_col_base(j);
+        t_m(i) += t_w * t_row_base * t_normal(J) * t_col_base(J);
         ++t_row_base;
         ++t_m;
       }
@@ -178,40 +269,11 @@ MoFEMErrorCode OpBrokenSpaceConstrainImpl<FIELD_DIM, GAUSS, OpBase>::iNtegrate(
   }
 
   transposedC *= scalarBeta;
+  OP::locMat.resize(nb_row_dofs, nb_col_dofs, false);
   noalias(OP::locMat) = trans(transposedC);
 
   MoFEMFunctionReturn(0);
 }
-
-#endif // BILINEAR_FORMS_INTEGRATORS_HPP
-
-#ifdef LINER_FORMS_INTEGRATORS_HPP
-
-struct BrokenBaseSideData {
-  BrokenBaseSideData() {}
-  inline auto &getSide() { return eleSide; }
-  inline auto &getType() { return eleType; }
-  inline auto &getData() { return entData; }
-
-private:
-  int eleSide = 1;
-  EntityType eleType = MBENTITYSET;
-  EntitiesFieldData::EntData entData;
-};
-
-struct OpGetBrokenBaseSideData : public ForcesAndSourcesCore::UserDataOperator {
-
-  using OP = ForcesAndSourcesCore::UserDataOperator;
-
-  OpGetBrokenBaseSideData(
-      const std::string field_name,
-      boost::shared_ptr<BrokenBaseSideData> broken_base_side_data);
-  MoFEMErrorCode doWork(int row_side, EntityType row_type,
-                        EntitiesFieldData::EntData &row_data);
-
-private:
-  boost::shared_ptr<BrokenBaseSideData> brokenBaseSideData;
-};
 
 template <int FIELD_DIM, IntegrationType I, typename OpBase>
 struct OpBrokenSpaceConstrainDHybridImpl;
@@ -226,7 +288,7 @@ struct OpBrokenSpaceConstrainDFluxImpl<FIELD_DIM, GAUSS, OpBase>
   using OP = OpBase;
 
   OpBrokenSpaceConstrainDFluxImpl(
-      boost::shared_ptr<BrokenBaseSideData> broken_base_side_data,
+      boost::shared_ptr<std::vector<BrokenBaseSideData>> broken_base_side_data,
       boost::shared_ptr<MatrixDouble> lagrange_ptr, const double beta)
       : OpBase(NOSPACE, OpBase::OPSPACE), scalarBeta(beta),
         brokenBaseSideData(broken_base_side_data), lagrangePtr(lagrange_ptr) {}
@@ -244,7 +306,7 @@ private:
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data);
 
   double scalarBeta;
-  boost::shared_ptr<BrokenBaseSideData> brokenBaseSideData;
+  boost::shared_ptr<std::vector<BrokenBaseSideData>> brokenBaseSideData;
   boost::shared_ptr<MatrixDouble> lagrangePtr;
 };
 
@@ -259,17 +321,37 @@ OpBrokenSpaceConstrainDFluxImpl<FIELD_DIM, GAUSS, OpBase>::doWork(
       MoFEMFunctionReturnHot(0);
   }
 
+  auto do_work = [&](int row_side, EntityType row_type,
+                     EntitiesFieldData::EntData &row_data, int sense) {
+    MoFEMFunctionBegin;
+    // get number of dofs on row
+    OP::nbRows = row_data.getIndices().size();
+    if (!OP::nbRows)
+      MoFEMFunctionReturnHot(0);
+    // get number of integration points
+    OP::nbIntegrationPts = OP::getGaussPts().size2();
+    // get row base functions
+    OP::nbRowBaseFunctions = OP::getNbOfBaseFunctions(row_data);
+    // resize and clear the right hand side vector
+    OP::locF.resize(OP::nbRows);
+    OP::locF.clear();
+    // integrate local vector
+    CHKERR this->iNtegrate(row_data);
+    // assemble local vector
+    OP::locF *= sense;
+    CHKERR this->aSsemble(row_data);
+    MoFEMFunctionReturn(0);
+  };
+
   EntitiesFieldData::EntData *raw_data_ptr = nullptr;
   switch (OP::opType) {
   case OpBaseDerivativesBase::OPROW:
-    OP::rowSide = side;
-    OP::rowType = type;
-    raw_data_ptr = &data;
+    return do_work(side, type, data, 1);
     break;
   case OpBaseDerivativesBase::OPSPACE:
-    OP::rowSide = brokenBaseSideData->getSide();
-    OP::rowType = brokenBaseSideData->getType();
-    raw_data_ptr = &brokenBaseSideData->getData();
+    for (auto &bd : *brokenBaseSideData) {
+      CHKERR do_work(bd.getSide(), bd.getType(), bd.getData(), bd.getSense());
+    }
     break;
   default:
     CHK_MOAB_THROW(MOFEM_IMPOSSIBLE_CASE,
@@ -277,23 +359,6 @@ OpBrokenSpaceConstrainDFluxImpl<FIELD_DIM, GAUSS, OpBase>::doWork(
                     OpBaseDerivativesBase::OpTypeNames[OP::opType])
                        .c_str());
   }
-
-  // get number of dofs on row
-  OP::nbRows = raw_data_ptr->getIndices().size();
-
-  if (!OP::nbRows)
-    MoFEMFunctionReturnHot(0);
-  // get number of integration points
-  OP::nbIntegrationPts = OP::getGaussPts().size2();
-  // get row base functions
-  OP::nbRowBaseFunctions = OP::getNbOfBaseFunctions(*raw_data_ptr);
-  // resize and clear the right hand side vector
-  OP::locF.resize(OP::nbRows);
-  OP::locF.clear();
-  // integrate local vector
-  CHKERR this->iNtegrate(*raw_data_ptr);
-  // assemble local vector
-  CHKERR this->aSsemble(*raw_data_ptr);
 
   MoFEMFunctionReturn(0);
 }
@@ -394,6 +459,6 @@ OpBrokenSpaceConstrainDHybridImpl<FIELD_DIM, GAUSS, OpBase>::iNtegrate(
   MoFEMFunctionReturn(0);
 }
 
-#endif // LINER_FORMS_INTEGRATORS_HPP
-
 } // namespace MoFEM
+
+#endif // __FORMSBROKENSPACECONSTRAINTIMPL_HPP__

@@ -1113,8 +1113,8 @@ protected:
   boost::shared_ptr<MatrixDouble> swapBaseDiffNPtr;
 
   friend struct OpAddParentEntData;
-  
-  friend struct OpGetBrokenBaseSideData;
+
+  template <typename OpBase> friend struct OpGetBrokenBaseSideData;
 };
 
 using BaseDerivatives = EntitiesFieldData::EntData::BaseDerivatives;

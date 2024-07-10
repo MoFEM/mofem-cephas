@@ -633,8 +633,12 @@ MoFEMErrorCode Simple::setUp(const PetscBool is_partitioned) {
 
   CHKERR defineFiniteElements();
 
-  if (addSkeletonFE || !skeletonFields.empty())
-    CHKERR setSkeletonAdjacency();
+  if (addSkeletonFE || !skeletonFields.empty()) {
+    CHKERR setSkeletonAdjacency(-1, skeletonFE);
+    if (addBoundaryFE || !boundaryFields.empty()) {
+      CHKERR setSkeletonAdjacency(-1, boundaryFE);
+    }
+  }
 
   if (addParentAdjacencies)
     CHKERR setParentAdjacency();
@@ -656,8 +660,12 @@ MoFEMErrorCode Simple::reSetUp(bool only_dm) {
   if (!only_dm) {
     CHKERR defineFiniteElements();
     CHKERR buildFields();
-    if (addSkeletonFE || !skeletonFields.empty())
-      CHKERR setSkeletonAdjacency();
+    if (addSkeletonFE || !skeletonFields.empty()) {
+      CHKERR setSkeletonAdjacency(-1, skeletonFE);
+      if (addBoundaryFE || !boundaryFields.empty()) {
+        CHKERR setSkeletonAdjacency(-1, boundaryFE);
+      }
+    }
     if (addParentAdjacencies)
       CHKERR setParentAdjacency();
     CHKERR buildFiniteElements();

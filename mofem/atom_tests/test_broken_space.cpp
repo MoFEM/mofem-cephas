@@ -6,6 +6,7 @@
  */
 
 #include <MoFEM.hpp>
+#include <FormsBrokenSpaceConstraintImpl.hpp>
 
 using namespace MoFEM;
 
@@ -50,6 +51,7 @@ int main(int argc, char *argv[]) {
     auto *simple = m_field.getInterface<Simple>();
     CHKERR simple->getOptions();
 
+    simple->getAddSkeletonFE() = true;
     simple->getAddBoundaryFE() = true;
 
     CHKERR simple->loadFile("", "");
@@ -85,7 +87,7 @@ int main(int argc, char *argv[]) {
     const char *list_spaces[] = {"hdiv", "hcurl"};
     PetscInt choice_space_value = hdiv;
     CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-space", list_spaces,
-                                last_space, &choice_space_value, &flg);
+                              last_space, &choice_space_value, &flg);
     if (flg != PETSC_TRUE)
       SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "space not set");
     FieldSpace space = HDIV;
@@ -99,8 +101,8 @@ int main(int argc, char *argv[]) {
                               PETSC_NULL);
 
     CHKERR simple->addDomainBrokenField("BROKEN", space, base, 1);
-    CHKERR simple->addSkeletonField("HYBRID", L2, base, SPACE_DIM);
-    CHKERR simple->addBoundaryField("HYBRID", L2, base, SPACE_DIM);
+    CHKERR simple->addSkeletonField("HYBRID", L2, base, 1);
+    CHKERR simple->addBoundaryField("HYBRID", L2, base, 1);
     CHKERR simple->setFieldOrder("BROKEN", approx_order);
     CHKERR simple->setFieldOrder("HYBRID", approx_order);
 
@@ -129,23 +131,24 @@ int main(int argc, char *argv[]) {
     };
 
     auto get_broken_ptr = [&]() {
-      auto broken_data_ptr = boost::make_shared<BrokenBaseSideData>();
+      auto broken_data_ptr =
+          boost::make_shared<std::vector<BrokenBaseSideData>>();
       auto flux_mat_ptr = boost::make_shared<MatrixDouble>();
       auto op_loop_side = new OpLoopSide<EleOnSide>(
           m_field, simple->getDomainFEName(), SPACE_DIM, Sev::noisy);
       CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
           op_loop_side->getOpPtrVector(), {HDIV});
       op_loop_side->getOpPtrVector().push_back(
-          new OpGetBrokenBaseSideData("BROKEN", broken_data_ptr));
+          new OpGetBrokenBaseSideData<SideEleOp>("BROKEN", broken_data_ptr));
       op_loop_side->getOpPtrVector().push_back(
-          new OpCalculateHVecVectorField<3>("BROKEN", flux_mat_ptr));
+          new OpCalculateHVecVectorField<3, SPACE_DIM>("BROKEN", flux_mat_ptr));
       return std::make_tuple(op_loop_side, broken_data_ptr, flux_mat_ptr);
     };
 
     auto assemble_skeleton_lhs = [&](auto &pip, auto &&broken_data_tuple) {
       MoFEMFunctionBegin;
       using OpC = FormsIntegrators<BdyEleOp>::Assembly<PETSC>::BiLinearForm<
-          GAUSS>::OpBrokenSpaceConstrain<SPACE_DIM>;
+          GAUSS>::OpBrokenSpaceConstrain<1>;
       auto [op_loop_side, broken_data_ptr, flux_mat_ptr] = broken_data_tuple;
       pip.push_back(op_loop_side);
       CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
@@ -157,16 +160,16 @@ int main(int argc, char *argv[]) {
     auto assemble_skeleton_rhs = [&](auto &pip, auto &&broken_data_tuple) {
       MoFEMFunctionBegin;
       using OpC_dHybrid = FormsIntegrators<BdyEleOp>::Assembly<
-          PETSC>::LinearForm<GAUSS>::OpBrokenSpaceConstrainDHybrid<SPACE_DIM>;
+          PETSC>::LinearForm<GAUSS>::OpBrokenSpaceConstrainDHybrid<1>;
       using OpC_dBroken = FormsIntegrators<BdyEleOp>::Assembly<
-          PETSC>::LinearForm<GAUSS>::OpBrokenSpaceConstrainDFlux<SPACE_DIM>;
-      auto [op_loop_side, broken_data_ptr, flux_mat_ptr] = broken_data_tuple;
-      pip.push_back(op_loop_side);
-      CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
-          op_loop_side->getOpPtrVector(), {});
-      auto hybrid_ptr = boost::make_shared<MatrixDouble>();
-      pip.push_back(
-          new OpCalculateVectorFieldValues<SPACE_DIM>("HYBRID", hybrid_ptr));
+          PETSC>::LinearForm<GAUSS>::OpBrokenSpaceConstrainDFlux<1>;
+      // auto [op_loop_side, broken_data_ptr, flux_mat_ptr] = broken_data_tuple;
+      // pip.push_back(op_loop_side);
+      // CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
+      //     op_loop_side->getOpPtrVector(), {});
+      // auto hybrid_ptr = boost::make_shared<MatrixDouble>();
+      // pip.push_back(
+      //     new OpCalculateVectorFieldValues<SPACE_DIM>("HYBRID", hybrid_ptr));
       // pip.push_back(new OpC_dHybrid("HYBRID", flux_mat_ptr, 1.));
       // pip.push_back(new OpC_dBroken(broken_data_ptr, hybrid_ptr, 1.));
       MoFEMFunctionReturn(0);
@@ -175,13 +178,17 @@ int main(int argc, char *argv[]) {
     auto *pip_mng = m_field.getInterface<PipelineManager>();
 
     CHKERR assemble_domain_lhs(pip_mng->getOpDomainLhsPipeline());
-    CHKERR assemble_domain_rhs(pip_mng->getOpDomainLhsPipeline());
+    CHKERR assemble_domain_rhs(pip_mng->getOpDomainRhsPipeline());
     CHKERR assemble_skeleton_lhs(pip_mng->getOpSkeletonLhsPipeline(),
                                  get_broken_ptr());
     CHKERR assemble_skeleton_rhs(pip_mng->getOpSkeletonRhsPipeline(),
                                  get_broken_ptr());
+    CHKERR assemble_skeleton_lhs(pip_mng->getOpBoundaryLhsPipeline(),
+                                 get_broken_ptr());
+    CHKERR assemble_skeleton_rhs(pip_mng->getOpBoundaryRhsPipeline(),
+                                 get_broken_ptr());
 
-    auto integration_rule = [](int, int, int p_data) { return 2 * p_data + 1; };
+    auto integration_rule = [](int, int, int p) { return 2 * p + 1; };
     CHKERR pip_mng->setDomainRhsIntegrationRule(integration_rule);
     CHKERR pip_mng->setDomainLhsIntegrationRule(integration_rule);
     CHKERR pip_mng->setSkeletonLhsIntegrationRule(integration_rule);
@@ -195,7 +202,7 @@ int main(int argc, char *argv[]) {
     auto x = createDMVector(simple->getDM());
     auto f = vectorDuplicate(x);
 
-    CHKERR KSPSolve(ksp, x, f);
+    CHKERR KSPSolve(ksp, f, x);
     CHKERR VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
     CHKERR VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
     CHKERR DMoFEMMeshToLocalVector(simple->getDM(), x, INSERT_VALUES,
