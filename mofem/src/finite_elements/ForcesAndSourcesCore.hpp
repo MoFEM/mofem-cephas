@@ -159,7 +159,7 @@ public:
    * @brief Get derived data on entities and space
    *
    * Entities data are stored by space, by entity type, and entity side. Derived
-   * data is used to store data on columns, so it shares infromatin about shape
+   * data is used to store data on columns, so it shares information about shape
    * functions wih rows.
    *
    * @return std::array<boost::shared_ptr<EntitiesFieldData>, LASTSPACE>
