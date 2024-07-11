@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
     CHKERR simple->addBoundaryField("HYBRID", L2, base, 1);
 
     CHKERR simple->setFieldOrder("BROKEN", approx_order);
-    CHKERR simple->setFieldOrder("HYBRID", approx_order);
+    CHKERR simple->setFieldOrder("HYBRID", approx_order - 1);
 
     CHKERR simple->setUp();
 
@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
     CHKERR assemble_skeleton_rhs(pip_mng->getOpBoundaryRhsPipeline(),
                                  get_broken_ptr());
 
-    auto integration_rule = [](int, int, int p) { return 2 * p + 1; };
+    auto integration_rule = [](int, int, int p) { return 3 * p + 1; };
     CHKERR pip_mng->setDomainRhsIntegrationRule(integration_rule);
     CHKERR pip_mng->setDomainLhsIntegrationRule(integration_rule);
     CHKERR pip_mng->setSkeletonLhsIntegrationRule(integration_rule);

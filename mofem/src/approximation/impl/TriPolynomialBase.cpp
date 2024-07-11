@@ -958,8 +958,6 @@ TriPolynomialBase::getValueHcurlDemkowiczBrokenBase(MatrixDouble &pts) {
 
   if (data.spacesOnEntities[MBTRI].test(HCURL)) {
 
-    // int face_nodes[] = {0, 1, 2};
-
     // face
     if (data.dataOnEntities[MBTRI].size() != 1)
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -991,7 +989,6 @@ TriPolynomialBase::getValueHcurlDemkowiczBrokenBase(MatrixDouble &pts) {
     std::array<double *, 3> diff_phi{&*diff_edge_bases[0].data().begin(),
                                      &*diff_edge_bases[1].data().begin(),
                                      &*diff_edge_bases[2].data().begin()};
-
     CHKERR Hcurl_Demkowicz_EdgeBaseFunctions_MBTRI(
         edge_sense.data(), edge_order.data(),
         &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
@@ -1090,6 +1087,7 @@ MoFEMErrorCode TriPolynomialBase::getValueHcurl(MatrixDouble &pts) {
   case DISCONTINUOUS:
     switch (cTx->bAse) {
     case AINSWORTH_LEGENDRE_BASE:
+    case AINSWORTH_LOBATTO_BASE:
       return getValueHcurlAinsworthBrokenBase(pts);
     case DEMKOWICZ_JACOBI_BASE:
       return getValueHcurlDemkowiczBrokenBase(pts);

@@ -403,10 +403,10 @@ Field::Field(moab::Interface &moab, const EntityHandle meshset)
           return 0;
         };
         forderTable[MBTRI] = [](int P) -> int {
-          return 3 * NBEDGE_DEMKOWICZ_HCURL(P);
+          return 3 * NBEDGE_DEMKOWICZ_HCURL(P) + NBFACETRI_DEMKOWICZ_HCURL(P);
         };
         forderTable[MBQUAD] = [](int P) -> int {
-          return 4 * NBEDGE_DEMKOWICZ_HCURL(P);
+          return 4 * NBEDGE_DEMKOWICZ_HCURL(P) + NBFACEQUAD_DEMKOWICZ_HCURL(P);
         };
         forderTable[MBTET] = [](int P) -> int {
           return 6 * NBEDGE_DEMKOWICZ_HCURL(P) +
