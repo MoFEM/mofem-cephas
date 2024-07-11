@@ -2,7 +2,7 @@
   * \brief Bilinear forms integrators (implementation)
   * \ingroup mofem_form
 
-  \todo SSome operators could be optimised. To do that, we need to write tests
+  \todo Some operators could be optimised. To do that, we need to write tests
   and use Valgrind to profile code, shaking cache misses. For example, some
   operators should have iteration first over columns, then rows. ome operators.
   Since those operators are used in many problems, an implementation must be
