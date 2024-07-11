@@ -1019,10 +1019,12 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
         getFTensor2HVecFromPtr<3, 3>(&*diffN_volume_face[2].data().begin()),
         getFTensor2HVecFromPtr<3, 3>(&*diffN_volume_face[3].data().begin())};
 
+    // volume-bubble
     base_ptr = &*(N_volume_bubble.data().begin());
     diff_base_ptr = &*(diffN_volume_bubble.data().begin());
     auto t_base_v = getFTensor1FromPtr<3>(base_ptr);
     auto t_diff_base_v = getFTensor2HVecFromPtr<3, 3>(diff_base_ptr);
+
     for (int gg = 0; gg != nb_gauss_pts; gg++) {
       for (int oo = 0; oo < volume_order; oo++) {
 
@@ -1084,8 +1086,8 @@ TetPolynomialBase::getValueHdivAinsworthBrokenBase(MatrixDouble &pts) {
 
   CHKERR getValueHdivAinsworthBaseImpl(
       pts, data.dataOnEntities[MBVERTEX][0].getN(base),
-      data.dataOnEntities[MBVERTEX][0].getDiffN(base), 0, faces_order,
-      faces_nodes);
+      data.dataOnEntities[MBVERTEX][0].getDiffN(base), volume_order,
+      faces_order, faces_nodes);
 
   // Set shape functions into data structure Shape functions hast to be put
   // in arrays in order which guarantee hierarchical series of degrees of
@@ -1097,7 +1099,8 @@ TetPolynomialBase::getValueHdivAinsworthBrokenBase(MatrixDouble &pts) {
 
   int nb_gauss_pts = pts.size2();
   int nb_dofs_face = NBFACETRI_AINSWORTH_HDIV(volume_order);
-  int nb_dofs = 4 * nb_dofs_face;
+  int nb_dofs_volume = NBVOLUMETET_AINSWORTH_HDIV(volume_order);
+  int nb_dofs = 4 * nb_dofs_face + nb_dofs_volume;
   data.dataOnEntities[MBTET][0].getN(base).resize(nb_gauss_pts, 3 * nb_dofs,
                                                   false);
   data.dataOnEntities[MBTET][0].getDiffN(base).resize(nb_gauss_pts, 9 * nb_dofs,
@@ -1176,6 +1179,40 @@ TetPolynomialBase::getValueHdivAinsworthBrokenBase(MatrixDouble &pts) {
       getFTensor2HVecFromPtr<3, 3>(&*(diffN_face_edge(3, 1).data().begin())),
       getFTensor2HVecFromPtr<3, 3>(&*(diffN_face_edge(3, 2).data().begin()))};
 
+  // volume-edge
+  FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_base_v_e[] = {
+      getFTensor1FromPtr<3>(&*N_volume_edge[0].data().begin()),
+      getFTensor1FromPtr<3>(&*N_volume_edge[1].data().begin()),
+      getFTensor1FromPtr<3>(&*N_volume_edge[2].data().begin()),
+      getFTensor1FromPtr<3>(&*N_volume_edge[3].data().begin()),
+      getFTensor1FromPtr<3>(&*N_volume_edge[4].data().begin()),
+      getFTensor1FromPtr<3>(&*N_volume_edge[5].data().begin())};
+  FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> t_diff_base_v_e[] = {
+      getFTensor2HVecFromPtr<3, 3>(&*diffN_volume_edge[0].data().begin()),
+      getFTensor2HVecFromPtr<3, 3>(&*diffN_volume_edge[1].data().begin()),
+      getFTensor2HVecFromPtr<3, 3>(&*diffN_volume_edge[2].data().begin()),
+      getFTensor2HVecFromPtr<3, 3>(&*diffN_volume_edge[3].data().begin()),
+      getFTensor2HVecFromPtr<3, 3>(&*diffN_volume_edge[4].data().begin()),
+      getFTensor2HVecFromPtr<3, 3>(&*diffN_volume_edge[5].data().begin())};
+
+  // volume-faces
+  FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_base_v_f[] = {
+      getFTensor1FromPtr<3>(&*N_volume_face[0].data().begin()),
+      getFTensor1FromPtr<3>(&*N_volume_face[1].data().begin()),
+      getFTensor1FromPtr<3>(&*N_volume_face[2].data().begin()),
+      getFTensor1FromPtr<3>(&*N_volume_face[3].data().begin())};
+  FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> t_diff_base_v_f[] = {
+      getFTensor2HVecFromPtr<3, 3>(&*diffN_volume_face[0].data().begin()),
+      getFTensor2HVecFromPtr<3, 3>(&*diffN_volume_face[1].data().begin()),
+      getFTensor2HVecFromPtr<3, 3>(&*diffN_volume_face[2].data().begin()),
+      getFTensor2HVecFromPtr<3, 3>(&*diffN_volume_face[3].data().begin())};
+
+  // volume-bubble
+  auto *base_ptr = &*(N_volume_bubble.data().begin());
+  auto *diff_base_ptr = &*(diffN_volume_bubble.data().begin());
+  auto t_base_v = getFTensor1FromPtr<3>(base_ptr);
+  auto t_diff_base_v = getFTensor2HVecFromPtr<3, 3>(diff_base_ptr);
+
   for (int gg = 0; gg != nb_gauss_pts; gg++) {
     for (int oo = 0; oo < volume_order; oo++) {
 
@@ -1203,6 +1240,42 @@ TetPolynomialBase::getValueHdivAinsworthBrokenBase(MatrixDouble &pts) {
           t_diff_base(i, j) = t_diff_base_f_f[ff](i, j);
           ++t_diff_base;
           ++t_diff_base_f_f[ff];
+        }
+        // volume-edge
+        for (int dd = NBVOLUMETET_AINSWORTH_EDGE_HDIV(oo);
+             dd != NBVOLUMETET_AINSWORTH_EDGE_HDIV(oo + 1); dd++) {
+          for (int ee = 0; ee != 6; ++ee) {
+            t_base(i) = t_base_v_e[ee](i);
+            ++t_base;
+            ++t_base_v_e[ee];
+          }
+          for (int ee = 0; ee != 6; ++ee) {
+            t_diff_base(i, j) = t_diff_base_v_e[ee](i, j);
+            ++t_diff_base;
+            ++t_diff_base_v_e[ee];
+          }
+        }
+        // volume-face
+        for (int dd = NBVOLUMETET_AINSWORTH_FACE_HDIV(oo);
+             dd < NBVOLUMETET_AINSWORTH_FACE_HDIV(oo + 1); dd++) {
+          for (int ff = 0; ff < 4; ff++) {
+            t_base(i) = t_base_v_f[ff](i);
+            ++t_base;
+            ++t_base_v_f[ff];
+            t_diff_base(i, j) = t_diff_base_v_f[ff](i, j);
+            ++t_diff_base;
+            ++t_diff_base_v_f[ff];
+          }
+        }
+        // volume-bubble
+        for (int dd = NBVOLUMETET_AINSWORTH_VOLUME_HDIV(oo);
+             dd < NBVOLUMETET_AINSWORTH_VOLUME_HDIV(oo + 1); dd++) {
+          t_base(i) = t_base_v(i);
+          ++t_base;
+          ++t_base_v;
+          t_diff_base(i, j) = t_diff_base_v(i, j);
+          ++t_diff_base;
+          ++t_diff_base_v;
         }
       }
     }
@@ -1369,7 +1442,8 @@ TetPolynomialBase::getValueHdivDemkowiczBrokenBase(MatrixDouble &pts) {
 
   int volume_order = data.dataOnEntities[MBTET][0].getOrder();
   int nb_dofs_face = NBFACETRI_DEMKOWICZ_HDIV(volume_order);
-  int nb_dofs = 4 * nb_dofs_face;
+  int nb_dofs_volume = NBVOLUMETET_DEMKOWICZ_HDIV(volume_order);
+  int nb_dofs = 4 * nb_dofs_face + nb_dofs_volume;
   data.dataOnEntities[MBTET][0].getN(base).resize(nb_gauss_pts, 3 * nb_dofs,
                                                   false);
   data.dataOnEntities[MBTET][0].getDiffN(base).resize(nb_gauss_pts, 9 * nb_dofs,
@@ -1430,6 +1504,16 @@ TetPolynomialBase::getValueHdivDemkowiczBrokenBase(MatrixDouble &pts) {
         phi_f[ff], diff_phi_f[ff], nb_gauss_pts, 4);
   }
 
+  MatrixDouble vol_bases(nb_gauss_pts, 3 * nb_dofs_volume);
+  MatrixDouble vol_diff_bases(nb_gauss_pts, 9 * nb_dofs_volume);
+  auto *phi_v = &*vol_bases.data().begin();
+  auto *diff_phi_v = &*vol_diff_bases.data().begin();
+  CHKERR Hdiv_Demkowicz_Interior_MBTET(
+      volume_order, &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0),
+      &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0, 0), p_f.data(),
+      phi_f.data(), diff_phi_f.data(), phi_v, diff_phi_v, nb_gauss_pts);
+
+  // faces
   FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_base_v_f[] = {
       getFTensor1FromPtr<3>(phi_f[0]), getFTensor1FromPtr<3>(phi_f[1]),
       getFTensor1FromPtr<3>(phi_f[2]), getFTensor1FromPtr<3>(phi_f[3])};
@@ -1438,6 +1522,12 @@ TetPolynomialBase::getValueHdivDemkowiczBrokenBase(MatrixDouble &pts) {
       getFTensor2HVecFromPtr<3, 3>(diff_phi_f[1]),
       getFTensor2HVecFromPtr<3, 3>(diff_phi_f[2]),
       getFTensor2HVecFromPtr<3, 3>(diff_phi_f[3])};
+  
+  // volumes
+  FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_base_v =
+      getFTensor1FromPtr<3>(&*vol_bases.data().begin());
+  FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> t_diff_base_v =
+      getFTensor2HVecFromPtr<3, 3>(&*vol_diff_bases.data().begin());
 
   auto t_base = getFTensor1FromPtr<3>(
       &*data.dataOnEntities[MBTET][0].getN(base).data().begin());
@@ -1460,6 +1550,15 @@ TetPolynomialBase::getValueHdivDemkowiczBrokenBase(MatrixDouble &pts) {
           ++t_diff_base;
           ++t_diff_base_v_f[ff];
         }
+      }
+      // volume
+      for (auto dd = NBVOLUMETET_DEMKOWICZ_HDIV(oo);
+           dd != NBVOLUMETET_DEMKOWICZ_HDIV(oo + 1); ++dd) {
+        t_base(i) = t_base_v(i);
+        ++t_base;
+        ++t_base_v;
+        t_diff_base(i, j) = t_diff_base_v(i, j);
+        ++t_diff_base;
       }
     }
   }

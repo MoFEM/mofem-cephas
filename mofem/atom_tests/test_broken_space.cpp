@@ -103,6 +103,7 @@ int main(int argc, char *argv[]) {
     CHKERR simple->addDomainBrokenField("BROKEN", space, base, 1);
     CHKERR simple->addSkeletonField("HYBRID", L2, base, 1);
     CHKERR simple->addBoundaryField("HYBRID", L2, base, 1);
+
     CHKERR simple->setFieldOrder("BROKEN", approx_order);
     CHKERR simple->setFieldOrder("HYBRID", approx_order);
 

@@ -752,7 +752,10 @@ TriPolynomialBase::getValueHcurlAinsworthBrokenBase(MatrixDouble &pts) {
 
     int order = data.dataOnEntities[MBTRI][0].getOrder();
     auto nb_edge_dofs = NBEDGE_AINSWORTH_HCURL(order);
-    int nb_dofs = 3 * nb_edge_dofs;
+    int nb_dofs_face = NBFACETRI_AINSWORTH_HCURL(order);
+    
+    // three faces on triangle
+    int nb_dofs = 3 * nb_edge_dofs + nb_dofs_face;
     data.dataOnEntities[MBTRI][0].getN(base).resize(nb_gauss_pts, 3 * nb_dofs,
                                                     false);
     data.dataOnEntities[MBTRI][0].getDiffN(base).resize(nb_gauss_pts,
@@ -776,13 +779,23 @@ TriPolynomialBase::getValueHcurlAinsworthBrokenBase(MatrixDouble &pts) {
 
     std::array<int, 3> edge_order{order, order, order};
     std::array<int, 3> edge_sense{1, 1, 1};
-
     CHKERR Hcurl_Ainsworth_EdgeBaseFunctions_MBTET_ON_FACE(
         edge_sense.data(), edge_order.data(),
         &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
         &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
         phi.data(), diff_phi.data(), nb_gauss_pts, base_polynomials);
 
+    MatrixDouble face_bases(nb_gauss_pts, 3 * nb_dofs_face, false);
+    MatrixDouble diff_face_bases(nb_gauss_pts, 3 * 2 * nb_dofs_face, false);
+    int face_nodes[] = {0, 1, 2};
+    CHKERR Hcurl_Ainsworth_FaceFunctions_MBTET_ON_FACE(
+        face_nodes, order,
+        &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+        &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
+        &*face_bases.data().begin(), &*diff_face_bases.data().begin(),
+        nb_gauss_pts, base_polynomials);
+
+    // edges
     FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_edge_base[] = {
         getFTensor1FromPtr<3>(&*edge_bases[0].data().begin()),
         getFTensor1FromPtr<3>(&*edge_bases[1].data().begin()),
@@ -791,6 +804,11 @@ TriPolynomialBase::getValueHcurlAinsworthBrokenBase(MatrixDouble &pts) {
         getFTensor2HVecFromPtr<3, 2>(&*diff_edge_bases[0].data().begin()),
         getFTensor2HVecFromPtr<3, 2>(&*diff_edge_bases[1].data().begin()),
         getFTensor2HVecFromPtr<3, 2>(&*diff_edge_bases[2].data().begin())};
+
+    // face
+    auto t_vol_base = getFTensor1FromPtr<3>(&*face_bases.data().begin());
+    auto t_vol_diff_base =
+        getFTensor2HVecFromPtr<3, 2>(&*diff_face_bases.data().begin());
 
     auto t_base = getFTensor1FromPtr<3>(
         &*data.dataOnEntities[MBTRI][0].getN(base).data().begin());
@@ -802,7 +820,7 @@ TriPolynomialBase::getValueHcurlAinsworthBrokenBase(MatrixDouble &pts) {
 
     for (int gg = 0; gg != nb_gauss_pts; gg++) {
       for (int oo = 0; oo < order; oo++) {
-
+        // edges
         for (int dd = NBEDGE_AINSWORTH_HCURL(oo);
              dd != NBEDGE_AINSWORTH_HCURL(oo + 1); ++dd) {
           for (int ee = 0; ee != 3; ++ee) {
@@ -813,6 +831,16 @@ TriPolynomialBase::getValueHcurlAinsworthBrokenBase(MatrixDouble &pts) {
             ++t_diff_base;
             ++t_edge_diff_base[ee];
           }
+        }
+        // face
+        for (int dd = NBFACETRI_AINSWORTH_HCURL(oo);
+             dd != NBFACETRI_AINSWORTH_HCURL(oo + 1); ++dd) {
+          t_base(i) = t_vol_base(i);
+          ++t_base;
+          ++t_vol_base;
+          t_diff_base(i, j) = t_vol_diff_base(i, j);
+          ++t_diff_base;
+          ++t_vol_diff_base;
         }
       }
     }
@@ -939,8 +967,8 @@ TriPolynomialBase::getValueHcurlDemkowiczBrokenBase(MatrixDouble &pts) {
 
     int order = data.dataOnEntities[MBTRI][0].getOrder();
     int nb_edge_dofs = NBEDGE_DEMKOWICZ_HCURL(order);
-
-    int nb_dofs = 3 * nb_edge_dofs;
+    int nb_volume_dofs = NBFACETRI_DEMKOWICZ_HCURL(order);
+    int nb_dofs = 3 * nb_edge_dofs + nb_volume_dofs;
     data.dataOnEntities[MBTRI][0].getN(base).resize(nb_gauss_pts, 3 * nb_dofs,
                                                     false);
     data.dataOnEntities[MBTRI][0].getDiffN(base).resize(nb_gauss_pts,
@@ -970,6 +998,17 @@ TriPolynomialBase::getValueHcurlDemkowiczBrokenBase(MatrixDouble &pts) {
         &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
         phi.data(), diff_phi.data(), nb_gauss_pts);
 
+    MatrixDouble face_bases(nb_gauss_pts, 3 * nb_volume_dofs, false);
+    MatrixDouble diff_face_bases(nb_gauss_pts, 3 * 2 * nb_volume_dofs, false);
+    int face_nodes[] = {0, 1, 2};
+    CHKERR Hcurl_Demkowicz_FaceBaseFunctions_MBTRI(
+        face_nodes, order,
+        &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+        &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
+        &*face_bases.data().begin(), &*diff_face_bases.data().begin(),
+        nb_gauss_pts);
+
+    // edges
     FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_edge_base[] = {
         getFTensor1FromPtr<3>(&*edge_bases[0].data().begin()),
         getFTensor1FromPtr<3>(&*edge_bases[1].data().begin()),
@@ -978,6 +1017,10 @@ TriPolynomialBase::getValueHcurlDemkowiczBrokenBase(MatrixDouble &pts) {
         getFTensor2HVecFromPtr<3, 2>(&*diff_edge_bases[0].data().begin()),
         getFTensor2HVecFromPtr<3, 2>(&*diff_edge_bases[1].data().begin()),
         getFTensor2HVecFromPtr<3, 2>(&*diff_edge_bases[2].data().begin())};
+    // face
+    auto t_vol_base = getFTensor1FromPtr<3>(&*face_bases.data().begin());
+    auto t_vol_diff_base =
+        getFTensor2HVecFromPtr<3, 2>(&*diff_face_bases.data().begin());
 
     auto t_base = getFTensor1FromPtr<3>(
         &*data.dataOnEntities[MBTRI][0].getN(base).data().begin());
@@ -989,7 +1032,7 @@ TriPolynomialBase::getValueHcurlDemkowiczBrokenBase(MatrixDouble &pts) {
 
     for (int gg = 0; gg != nb_gauss_pts; gg++) {
       for (int oo = 0; oo < order; oo++) {
-
+        // edges
         for (int dd = NBEDGE_DEMKOWICZ_HCURL(oo);
              dd != NBEDGE_DEMKOWICZ_HCURL(oo + 1); ++dd) {
           for (int ee = 0; ee != 3; ++ee) {
@@ -1000,6 +1043,16 @@ TriPolynomialBase::getValueHcurlDemkowiczBrokenBase(MatrixDouble &pts) {
             ++t_diff_base;
             ++t_edge_diff_base[ee];
           }
+        }
+        // faces
+        for (int dd = NBFACETRI_DEMKOWICZ_HCURL(oo);
+             dd != NBFACETRI_DEMKOWICZ_HCURL(oo + 1); ++dd) {
+          t_base(i) = t_vol_base(i);
+          ++t_base;
+          ++t_vol_base;
+          t_diff_base(i, j) = t_vol_diff_base(i, j);
+          ++t_diff_base;
+          ++t_vol_diff_base;
         }
       }
     }
