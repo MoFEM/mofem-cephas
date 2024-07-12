@@ -414,7 +414,7 @@ MoFEMErrorCode OpCalculateVectorFieldValues_General<
       const size_t size = nb_dofs / Tensor_Dim;
       if (nb_dofs % Tensor_Dim) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "Data inconsistency");
+                "Nb. of DOFs is inconsistent with Tensor_Dim");
       }
       for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
         auto field_data = data.getFTensor1FieldData<Tensor_Dim>();
