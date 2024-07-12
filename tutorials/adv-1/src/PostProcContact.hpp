@@ -225,7 +225,6 @@ struct Monitor : public FEMethod {
 
     auto get_integrate_traction = [&]() {
       auto integrate_traction = boost::make_shared<BoundaryEle>(*m_field_ptr);
-      auto common_data_ptr = boost::make_shared<ContactOps::CommonData>();
       CHK_THROW_MESSAGE(
           (AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
               integrate_traction->getOpPtrVector(), {HDIV}, "GEOMETRY")),
@@ -246,10 +245,56 @@ struct Monitor : public FEMethod {
       return integrate_traction;
     };
 
+    auto get_integrate_area = [&]() {
+      auto integrate_area = boost::make_shared<BoundaryEle>(*m_field_ptr);
+
+      CHK_THROW_MESSAGE(
+          (AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
+              integrate_area->getOpPtrVector(), {HDIV}, "GEOMETRY")),
+          "Apply transform");
+      // We have to integrate on curved face geometry, thus integration weight have to adjusted.
+      integrate_area->getOpPtrVector().push_back(
+          new OpSetHOWeightsOnSubDim<SPACE_DIM>());
+      integrate_area->getRuleHook = [](int, int, int approx_order) {
+        return 2 * approx_order + geom_order - 1;
+      };
+      Range contact_range;
+      for (auto m :
+           m_field_ptr->getInterface<MeshsetsManager>()->getCubitMeshsetPtr(
+               std::regex((boost::format("%s(.*)") % "CONTACT").str()))) {
+        auto meshset = m->getMeshset();
+        Range contact_meshset_range;
+        CHKERR m_field_ptr->get_moab().get_entities_by_dimension(
+            meshset, SPACE_DIM - 1, contact_meshset_range, true);
+
+        CHKERR m_field_ptr->getInterface<CommInterface>()->synchroniseEntities(
+            contact_meshset_range);
+        contact_range.merge(contact_meshset_range);
+      }
+
+      auto contact_range_ptr = boost::make_shared<Range>(contact_range);
+
+      auto op_loop_side = new OpLoopSide<SideEle>(
+          *m_field_ptr, m_field_ptr->getInterface<Simple>()->getDomainFEName(),
+          SPACE_DIM);
+      CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+          op_loop_side->getOpPtrVector(), {H1}, "GEOMETRY");
+
+      CHK_THROW_MESSAGE(
+          (opFactoryCalculateArea<SPACE_DIM, GAUSS, BoundaryEleOp>(
+              integrate_area->getOpPtrVector(), op_loop_side, "SIGMA", "U",
+              is_axisymmetric, contact_range_ptr)),
+          "push operators to calculate area");
+
+      return integrate_area;
+    };
+
     postProcDomainFe = get_post_proc_domain_fe();
     if constexpr (SPACE_DIM == 2)
       postProcBdyFe = get_post_proc_bdy_fe();
+
     integrateTraction = get_integrate_traction();
+    integrateArea = get_integrate_area();
 
     normsVec = createVectorMPI(
         m_field_ptr->get_comm(),
@@ -300,10 +345,19 @@ struct Monitor : public FEMethod {
       MoFEMFunctionReturn(0);
     };
 
-    auto calculate_traction = [&] {
+    auto calculate_force = [&] {
       MoFEMFunctionBegin;
       CHKERR VecZeroEntries(CommonData::totalTraction);
       CHKERR DMoFEMLoopFiniteElements(dM, "bFE", integrateTraction);
+      CHKERR VecAssemblyBegin(CommonData::totalTraction);
+      CHKERR VecAssemblyEnd(CommonData::totalTraction);
+      MoFEMFunctionReturn(0);
+    };
+
+    auto calculate_area = [&] {
+      MoFEMFunctionBegin;
+      integrateArea->copyTs(*this);
+      CHKERR DMoFEMLoopFiniteElements(dM, "bFE", integrateArea);
       CHKERR VecAssemblyBegin(CommonData::totalTraction);
       CHKERR VecAssemblyEnd(CommonData::totalTraction);
       MoFEMFunctionReturn(0);
@@ -408,7 +462,7 @@ struct Monitor : public FEMethod {
       MoFEMFunctionReturn(0);
     };
 
-    auto print_traction = [&](const std::string msg) {
+    auto print_force_and_area = [&]() {
       MoFEMFunctionBegin;
       MoFEM::Interface *m_field_ptr;
       CHKERR DMoFEMGetInterfacePtr(dM, &m_field_ptr);
@@ -416,8 +470,11 @@ struct Monitor : public FEMethod {
         const double *t_ptr;
         CHKERR VecGetArrayRead(CommonData::totalTraction, &t_ptr);
         MOFEM_LOG_C("CONTACT", Sev::inform,
-                    "%s time %6.4e %6.16e %6.16e %6.16e", msg.c_str(), ts_t,
-                    t_ptr[0], t_ptr[1], t_ptr[2]);
+                    "Contact force: time %6.3e Fx: %6.6e Fy: %6.6e Fz: %6.6e",
+                    ts_t, t_ptr[0], t_ptr[1], t_ptr[2]);
+        MOFEM_LOG_C("CONTACT", Sev::inform,
+                    "Contact area: time %6.3e Active: %6.6e Potential: %6.6e",
+                    ts_t, t_ptr[3], t_ptr[4]);
         CHKERR VecRestoreArrayRead(CommonData::totalTraction, &t_ptr);
       }
       MoFEMFunctionReturn(0);
@@ -525,9 +582,6 @@ struct Monitor : public FEMethod {
           new typename C::template OpEvaluateSDF<SPACE_DIM, GAUSS>(
               common_data_ptr));
 
-      // post_proc_norm_fe->getOpPtrVector().push_back(
-      //     new OpScale(common_data_ptr->contactTractionPtr(), scale));
-
       auto analytical_traction_ptr = boost::make_shared<MatrixDouble>();
       auto analytical_pressure_ptr = boost::make_shared<VectorDouble>();
       auto mag_traction_ptr = boost::make_shared<VectorDouble>();
@@ -589,7 +643,9 @@ struct Monitor : public FEMethod {
           << "Write file at time " << ts_t << " write step " << sTEP;
       CHKERR post_proc();
     }
-    CHKERR calculate_traction();
+    CHKERR calculate_force();
+    CHKERR calculate_area();
+
     CHKERR calculate_reactions();
 
     if (atom_test && sTEP) {
@@ -615,8 +671,7 @@ struct Monitor : public FEMethod {
     CHKERR print_max_min(uYScatter, "Uy");
     if (SPACE_DIM == 3)
       CHKERR print_max_min(uZScatter, "Uz");
-    CHKERR print_traction("Contact force");
-
+    CHKERR print_force_and_area();
     ++sTEP;
 
     MoFEMFunctionReturn(0);
@@ -789,6 +844,7 @@ private:
   boost::shared_ptr<PostProcEleBdy> postProcBdyFe;
 
   boost::shared_ptr<BoundaryEle> integrateTraction;
+  boost::shared_ptr<BoundaryEle> integrateArea;
 
   enum NORMS {
     TRACTION_NORM_L2 = 0,

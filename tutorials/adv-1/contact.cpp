@@ -61,7 +61,7 @@ using DomainEle = ElementsAndOps<SPACE_DIM>::DomainEle;
 using DomainEleOp = DomainEle::UserDataOperator;
 using BoundaryEle = ElementsAndOps<SPACE_DIM>::BoundaryEle;
 using BoundaryEleOp = BoundaryEle::UserDataOperator;
-
+using SideEle = ElementsAndOps<SPACE_DIM>::FaceSideEle;
 //! [Specialisation for assembly]
 
 constexpr FieldSpace CONTACT_SPACE = ElementsAndOps<SPACE_DIM>::CONTACT_SPACE;
@@ -841,52 +841,74 @@ MoFEMErrorCode Contact::checkResults() {
     CHKERR VecGetArrayRead(ContactOps::CommonData::totalTraction, &t_ptr);
     double hertz_force;
     double fem_force;
+    double analytical_active_area = 1.0;
     double norm = 1e-5;
-    double tol = 1e-3;
+    double tol_force = 1e-3;
     double tol_norm = 7.5; // change when analytical functions are updated
+    double tol_area = 3e-2;
+    double fem_active_area = t_ptr[3];
+
     switch (atom_test) {
     case 1: // plane stress
       hertz_force = 3.927;
       fem_force = t_ptr[1];
       break;
+
     case 2: // plane strain
       hertz_force = 4.675;
       fem_force = t_ptr[1];
       norm = monitorPtr->getErrorNorm(1);
       break;
-    case 3: // 3D
+
+    case 3: // Hertz 3D
       hertz_force = 3.968;
+      tol_force = 2e-3;
       fem_force = t_ptr[2];
-      tol = 2e-3;
+      analytical_active_area = M_PI / 4;
+      tol_area = 0.2;
       break;
+
     case 4: // axisymmetric
-      tol = 5e-3;
+      tol_force = 5e-3;
+      tol_area = 0.2;
+      // analytical_active_area = M_PI;
+
     case 5: // axisymmetric
       hertz_force = 15.873;
+      tol_force = 5e-3;
       fem_force = t_ptr[1];
       norm = monitorPtr->getErrorNorm(1);
+      analytical_active_area = M_PI;
       break;
+
     case 6: // wavy 2d
       hertz_force = 0.374;
       fem_force = t_ptr[1];
       break;
+
     case 7: // wavy 3d
       hertz_force = 0.5289;
       fem_force = t_ptr[2];
       break;
+
     default:
       SETERRQ1(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
                "atom test %d does not exist", atom_test);
     }
-    if (fabs(fem_force - hertz_force) / hertz_force > tol) {
+    if (fabs(fem_force - hertz_force) / hertz_force > tol_force) {
       SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-               "atom test %d diverged! %3.4e != %3.4e", atom_test, fem_force,
-               hertz_force);
+               "atom test %d failed: Wrong FORCE output: %3.4e != %3.4e",
+               atom_test, fem_force, hertz_force);
     }
     if (norm > tol_norm) {
       SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-               "atom test %d diverged! %3.4e > %3.4e", atom_test, norm,
-               tol_norm);
+               "atom test %d failed: Wrong NORM output: %3.4e > %3.4e",
+               atom_test, norm, tol_norm);
+    }
+    if (fabs(fem_active_area - analytical_active_area) > tol_area) {
+      SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+               "atom test %d failed: AREA computed %3.4e but should be %3.4e",
+               atom_test, fem_active_area, analytical_active_area);
     }
     CHKERR VecRestoreArrayRead(ContactOps::CommonData::totalTraction, &t_ptr);
   }

@@ -15,6 +15,7 @@ struct CommonData : public boost::enable_shared_from_this<CommonData> {
   // MatrixDouble contactStress;
   MatrixDouble contactTraction;
   MatrixDouble contactDisp;
+  MatrixDouble contactDispGrad;
 
   VectorDouble sdfVals;  ///< size is equal to number of gauss points on element
   MatrixDouble gradsSdf; ///< nb of rows is equals to dimension, and nb of cols
@@ -28,13 +29,13 @@ struct CommonData : public boost::enable_shared_from_this<CommonData> {
       totalTraction; // User have to release and create vector when appropiate.
 
   static auto createTotalTraction(MoFEM::Interface &m_field) {
-    constexpr int ghosts[] = {0, 1, 2};
+    constexpr int ghosts[] = {0, 1, 2, 3, 4};
     totalTraction =
         createGhostVector(m_field.get_comm(),
 
-                          (m_field.get_comm_rank() == 0) ? 3 : 0, 3,
+                          (m_field.get_comm_rank() == 0) ? 5 : 0, 5,
 
-                          (m_field.get_comm_rank() == 0) ? 0 : 3, ghosts);
+                          (m_field.get_comm_rank() == 0) ? 0 : 5, ghosts);
     return totalTraction;
   }
 
@@ -43,12 +44,13 @@ struct CommonData : public boost::enable_shared_from_this<CommonData> {
       const double *t_ptr;
       CHK_THROW_MESSAGE(VecGetArrayRead(CommonData::totalTraction, &t_ptr),
                         "get array");
-      FTensor::Tensor1<double, 3> t{t_ptr[0], t_ptr[1], t_ptr[2]};
+      FTensor::Tensor1<double, 5> t{t_ptr[0], t_ptr[1], t_ptr[2], t_ptr[3],
+                                    t_ptr[4]};
       CHK_THROW_MESSAGE(VecRestoreArrayRead(CommonData::totalTraction, &t_ptr),
                         "restore array");
       return t;
     } else {
-      return FTensor::Tensor1<double, 3>{0., 0., 0.};
+      return FTensor::Tensor1<double, 5>{0., 0., 0., 0., 0.};
     }
   }
 
@@ -59,6 +61,11 @@ struct CommonData : public boost::enable_shared_from_this<CommonData> {
 
   inline auto contactDispPtr() {
     return boost::shared_ptr<MatrixDouble>(shared_from_this(), &contactDisp);
+  }
+
+  inline auto contactDispGradPtr() {
+    return boost::shared_ptr<MatrixDouble>(shared_from_this(),
+                                           &contactDispGrad);
   }
 
   inline auto sdfPtr() {
@@ -385,10 +392,11 @@ hess_surface_distance_function(double delta_t, double t, int nb_gauss_pts,
   return m_hess_sdf;
 }
 
-
-
 template <int DIM, IntegrationType I, typename BoundaryEleOp>
 struct OpAssembleTotalContactTractionImpl;
+
+template <int DIM, IntegrationType I, typename BoundaryEleOp>
+struct OpAssembleTotalContactAreaImpl;
 
 template <int DIM, IntegrationType I, typename BoundaryEleOp>
 struct OpEvaluateSDFImpl;
@@ -446,6 +454,25 @@ private:
   boost::shared_ptr<CommonData> commonDataPtr;
   const double scaleTraction;
   bool isAxisymmetric;
+};
+
+template <int DIM, typename BoundaryEleOp>
+struct OpAssembleTotalContactAreaImpl<DIM, GAUSS, BoundaryEleOp>
+    : public BoundaryEleOp {
+  OpAssembleTotalContactAreaImpl(
+      boost::shared_ptr<CommonData> common_data_ptr,
+      bool is_axisymmetric = false,
+      boost::shared_ptr<Range> contact_range_ptr = nullptr);
+  MoFEMErrorCode doWork(int side, EntityType type, EntData &data);
+
+  SurfaceDistanceFunction surfaceDistanceFunction = surface_distance_function;
+  GradSurfaceDistanceFunction gradSurfaceDistanceFunction =
+      grad_surface_distance_function;
+
+private:
+  boost::shared_ptr<CommonData> commonDataPtr;
+  bool isAxisymmetric;
+  boost::shared_ptr<Range> contactRange;
 };
 
 template <int DIM, typename BoundaryEleOp>
@@ -520,10 +547,13 @@ private:
 };
 
 template <typename BoundaryEleOp> struct ContactIntegrators {
-
   template <int DIM, IntegrationType I>
   using OpAssembleTotalContactTraction =
       OpAssembleTotalContactTractionImpl<DIM, I, BoundaryEleOp>;
+
+  template <int DIM, IntegrationType I>
+  using OpAssembleTotalContactArea =
+      OpAssembleTotalContactAreaImpl<DIM, I, BoundaryEleOp>;
 
   template <int DIM, IntegrationType I>
   using OpEvaluateSDF = OpEvaluateSDFImpl<DIM, I, BoundaryEleOp>;
@@ -616,6 +646,98 @@ OpAssembleTotalContactTractionImpl<DIM, GAUSS, BoundaryEleOp>::doWork(
   CHKERR VecSetValues(commonDataPtr->totalTraction, 3, ind, &t_sum_t(0),
                       ADD_VALUES);
 
+  MoFEMFunctionReturn(0);
+}
+template <int DIM, typename BoundaryEleOp>
+OpAssembleTotalContactAreaImpl<DIM, GAUSS, BoundaryEleOp>::
+    OpAssembleTotalContactAreaImpl(
+        boost::shared_ptr<CommonData> common_data_ptr, bool is_axisymmetric,
+        boost::shared_ptr<Range> contact_range_ptr)
+    : BoundaryEleOp(NOSPACE, BoundaryEleOp::OPSPACE),
+      commonDataPtr(common_data_ptr), isAxisymmetric(is_axisymmetric),
+      contactRange(contact_range_ptr) {}
+
+template <int DIM, typename BoundaryEleOp>
+MoFEMErrorCode
+OpAssembleTotalContactAreaImpl<DIM, GAUSS, BoundaryEleOp>::doWork(
+    int side, EntityType type, EntData &data) {
+  MoFEMFunctionBegin;
+
+  auto fe_type = BoundaryEleOp::getFEType();
+
+  const auto fe_ent = BoundaryEleOp::getFEEntityHandle();
+
+  if (contactRange->find(fe_ent) != contactRange->end()) {
+    FTensor::Index<'i', DIM> i;
+    FTensor::Index<'j', DIM> j;
+    FTensor::Tensor1<double, 2> t_sum_a{0., 0.};
+
+    auto t_w = BoundaryEleOp::getFTensor0IntegrationWeight();
+    auto t_traction = getFTensor1FromMat<DIM>(commonDataPtr->contactTraction);
+    auto t_coords = BoundaryEleOp::getFTensor1CoordsAtGaussPts();
+
+    auto t_grad = getFTensor2FromMat<DIM, DIM>(commonDataPtr->contactDispGrad);
+    auto t_normal_at_pts = BoundaryEleOp::getFTensor1NormalsAtGaussPts();
+
+    const auto nb_gauss_pts = BoundaryEleOp::getGaussPts().size2();
+    auto m_spatial_coords = get_spatial_coords(
+        BoundaryEleOp::getFTensor1CoordsAtGaussPts(),
+        getFTensor1FromMat<DIM>(commonDataPtr->contactDisp), nb_gauss_pts);
+    auto m_normals_at_pts = get_normalize_normals(
+        BoundaryEleOp::getFTensor1NormalsAtGaussPts(), nb_gauss_pts);
+
+    auto t_normal = getFTensor1FromMat<3>(m_normals_at_pts);
+    auto ts_time = BoundaryEleOp::getTStime();
+    auto ts_time_step = BoundaryEleOp::getTStimeStep();
+    int block_id = 0;
+    auto v_sdf =
+        surfaceDistanceFunction(ts_time_step, ts_time, nb_gauss_pts,
+                                m_spatial_coords, m_normals_at_pts, block_id);
+    auto m_grad_sdf = gradSurfaceDistanceFunction(
+        ts_time_step, ts_time, nb_gauss_pts, m_spatial_coords, m_normals_at_pts,
+        block_id);
+    auto t_sdf = getFTensor0FromVec(v_sdf);
+    auto t_grad_sdf = getFTensor1FromMat<3>(m_grad_sdf);
+    for (auto gg = 0; gg != nb_gauss_pts; ++gg) {
+      double jacobian = 1.;
+      if (isAxisymmetric) {
+        jacobian = 2. * M_PI * t_coords(0); // Axisymmetric Jacobian
+      }
+      auto tn = -t_traction(i) * t_grad_sdf(i);
+      auto c = constrain(t_sdf, tn);
+      double alpha = t_w * jacobian;
+
+      FTensor::Tensor2<double, DIM, DIM> F;
+      FTensor::Tensor2<double, DIM, DIM> invF;
+      FTensor::Tensor1<double, DIM> t_normal_current;
+
+      F(i, j) = t_grad(i, j) + kronecker_delta(i, j);
+      auto det = determinantTensor(F);
+      CHKERR invertTensor(F, det, invF);
+      t_normal_current(i) = det * (invF(j, i) * t_normal_at_pts(j));
+
+      alpha *= sqrt(t_normal_current(i) * t_normal_current(i));
+
+      if (fe_type == MBTRI) {
+        alpha /= 2;
+      }
+      if (c > 1e-12) {
+        t_sum_a(0) += alpha; // real area
+      }
+      t_sum_a(1) += alpha; // Potential area
+      ++t_w;
+      ++t_traction;
+      ++t_coords;
+      ++t_sdf;
+      ++t_grad_sdf;
+
+      ++t_grad;
+      ++t_normal_at_pts;
+    }
+    constexpr int ind[] = {3, 4};
+    CHKERR VecSetValues(commonDataPtr->totalTraction, 2, ind, &t_sum_a(0),
+                        ADD_VALUES);
+  }
   MoFEMFunctionReturn(0);
 }
 
@@ -1252,6 +1374,33 @@ MoFEMErrorCode opFactoryCalculateTraction(
   pip.push_back(new typename C::template OpAssembleTotalContactTraction<DIM, I>(
       common_data_ptr, 1. / scale, is_axisymmetric));
 
+  MoFEMFunctionReturn(0);
+}
+
+template <int DIM, IntegrationType I, typename BoundaryEleOp>
+MoFEMErrorCode opFactoryCalculateArea(
+    boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pip,
+    OpLoopSide<SideEle> *op_loop_side, std::string sigma, std::string u,
+    bool is_axisymmetric = false,
+    boost::shared_ptr<Range> contact_range_ptr = nullptr) {
+  MoFEMFunctionBegin;
+  using C = ContactIntegrators<BoundaryEleOp>;
+
+  auto common_data_ptr = boost::make_shared<ContactOps::CommonData>();
+
+  op_loop_side->getOpPtrVector().push_back(
+      new OpCalculateVectorFieldGradient<SPACE_DIM, SPACE_DIM>(
+          "U", common_data_ptr->contactDispGradPtr()));
+
+  if (contact_range_ptr) {
+    pip.push_back(new OpCalculateVectorFieldValues<DIM>(
+        u, common_data_ptr->contactDispPtr()));
+    pip.push_back(new OpCalculateHVecTensorTrace<DIM, BoundaryEleOp>(
+        sigma, common_data_ptr->contactTractionPtr()));
+    pip.push_back(op_loop_side);
+    pip.push_back(new typename C::template OpAssembleTotalContactArea<DIM, I>(
+        common_data_ptr, is_axisymmetric, contact_range_ptr));
+  }
   MoFEMFunctionReturn(0);
 }
 
