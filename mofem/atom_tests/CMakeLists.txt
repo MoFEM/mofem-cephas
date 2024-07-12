@@ -1677,7 +1677,13 @@ set_target_properties(
 # set_target_properties(
 #   test_broken_space_3d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=3")
 
-add_test(test_broken_space_2d
+list(INSERT test_borken_base_list
+  0
+  ainsworth 
+  demkowicz
+)
+foreach(test_base ${test_borken_base_list})
+add_test(test_broken_space_2d_${test_base}
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/test_broken_space_2d
   -file_name rectangle_tri.h5m
@@ -1688,10 +1694,11 @@ add_test(test_broken_space_2d
   -ksp_converged_reason
   -ksp_atol 1e-16 
   -ksp_rtol 1e-16 
-  -base ainsworth
+  -base ${test_base}
   -space hcurl
   -order 2
   -log_no_color)
+endforeach(test_base IN test_borken_base_list)
 
 # add_test(test_broken_space_3d
 #   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
