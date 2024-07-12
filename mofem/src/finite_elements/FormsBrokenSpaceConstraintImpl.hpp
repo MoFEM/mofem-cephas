@@ -18,12 +18,14 @@ struct BrokenBaseSideData {
   inline auto &getSide() { return eleSide; }
   inline auto &getType() { return eleType; }
   inline auto &getData() { return entData; }
+  inline auto &getFlux() { return fluxMat; }
 
 private:
   int eleSense = 0;
   int eleSide = 1;
   EntityType eleType = MBENTITYSET;
   EntitiesFieldData::EntData entData;
+  MatrixDouble fluxMat;
 };
 
 template <typename OpBase> struct OpGetBrokenBaseSideData : public OpBase {
@@ -62,31 +64,65 @@ OpGetBrokenBaseSideData<OpBase>::doWork(int row_side, EntityType row_type,
   const auto n_in_the_loop = OP::getNinTheLoop();
   const auto face_sense = OP::getSkeletonSense();
 
-  (*brokenBaseSideData)[n_in_the_loop].getSide() = row_side;
-  (*brokenBaseSideData)[n_in_the_loop].getType() = row_type;
-  (*brokenBaseSideData)[n_in_the_loop].getSense() = face_sense;
+  auto set_data = [&](auto &side_data) {
+    side_data.getSide() = row_side;
+    side_data.getType() = row_type;
+    side_data.getSense() = face_sense;
+    side_data.getData().sEnse = row_data.sEnse;
+    side_data.getData().sPace = row_data.sPace;
+    side_data.getData().bAse = row_data.bAse;
+    side_data.getData().iNdices = row_data.iNdices;
+    side_data.getData().localIndices = row_data.localIndices;
+    side_data.getData().dOfs = row_data.dOfs;
+    side_data.getData().fieldEntities = row_data.fieldEntities;
+    side_data.getData().fieldData = row_data.fieldData;
+  };
 
-  (*brokenBaseSideData)[n_in_the_loop].getData().sEnse = row_data.sEnse;
-  (*brokenBaseSideData)[n_in_the_loop].getData().sPace = row_data.sPace;
-  (*brokenBaseSideData)[n_in_the_loop].getData().bAse = row_data.bAse;
-  (*brokenBaseSideData)[n_in_the_loop].getData().iNdices = row_data.iNdices;
-  (*brokenBaseSideData)[n_in_the_loop].getData().localIndices =
-      row_data.localIndices;
-  (*brokenBaseSideData)[n_in_the_loop].getData().dOfs = row_data.dOfs;
-  (*brokenBaseSideData)[n_in_the_loop].getData().fieldEntities =
-      row_data.fieldEntities;
-  (*brokenBaseSideData)[n_in_the_loop].getData().fieldData = row_data.fieldData;
-
-  auto base = (*brokenBaseSideData)[n_in_the_loop].getData().getBase();
-  for (auto dd = 0; dd != BaseDerivatives::LastDerivative; ++dd) {
-    if (auto base_ptr = row_data.baseFunctionsAndBaseDerivatives[dd][base]) {
-      (*brokenBaseSideData)[n_in_the_loop]
-          .getData()
-          .baseFunctionsAndBaseDerivatives[dd][base] =
-          boost::make_shared<MatrixDouble>(*base_ptr);
+  auto set_base = [&](auto &side_data) {
+    auto base = side_data.getData().getBase();
+    for (auto dd = 0; dd != BaseDerivatives::LastDerivative; ++dd) {
+      if (auto base_ptr = row_data.baseFunctionsAndBaseDerivatives[dd][base]) {
+        side_data.getData().baseFunctionsAndBaseDerivatives[dd][base] =
+            boost::make_shared<MatrixDouble>(*base_ptr);
+      }
     }
-  }
+  };
 
+  set_data((*brokenBaseSideData)[n_in_the_loop]);
+  set_base((*brokenBaseSideData)[n_in_the_loop]);
+
+  MoFEMFunctionReturn(0);
+}
+
+template <typename OpBase> struct OpSetFlux : public OpBase {
+
+  using OP = OpBase;
+
+  OpSetFlux(
+      boost::shared_ptr<std::vector<BrokenBaseSideData>> broken_base_side_data,
+      boost::shared_ptr<MatrixDouble> flux_ptr);
+
+  MoFEMErrorCode doWork(int row_side, EntityType row_type,
+                        EntitiesFieldData::EntData &row_data);
+
+private:
+  boost::shared_ptr<std::vector<BrokenBaseSideData>> brokenBaseSideData;
+  boost::shared_ptr<MatrixDouble> fluxPtr;
+};
+
+template <typename OpBase>
+OpSetFlux<OpBase>::OpSetFlux(
+    boost::shared_ptr<std::vector<BrokenBaseSideData>> broken_base_side_data,
+    boost::shared_ptr<MatrixDouble> flux_ptr)
+    : OP(NOSPACE, OP::OPSPACE), brokenBaseSideData(broken_base_side_data),
+      fluxPtr(flux_ptr) {}
+
+template <typename OpBase>
+MoFEMErrorCode OpSetFlux<OpBase>::doWork(int side, EntityType type,
+                                         EntitiesFieldData::EntData &data) {
+  MoFEMFunctionBegin;
+  auto swap_flux = [&](auto &side_data) { side_data.getFlux().swap(*fluxPtr); };
+  swap_flux((*brokenBaseSideData)[OP::getNinTheLoop()]);
   MoFEMFunctionReturn(0);
 }
 
@@ -342,7 +378,6 @@ OpBrokenSpaceConstrainDFluxImpl<FIELD_DIM, GAUSS, OpBase>::doWork(
     MoFEMFunctionReturn(0);
   };
 
-  EntitiesFieldData::EntData *raw_data_ptr = nullptr;
   switch (OP::opType) {
   case OpBaseDerivativesBase::OPROW:
     return do_work(side, type, data, 1);
@@ -407,15 +442,16 @@ struct OpBrokenSpaceConstrainDHybridImpl<FIELD_DIM, GAUSS, OpBase>
 
   using OP = OpBase;
 
-  OpBrokenSpaceConstrainDHybridImpl(const std::string row_field,
-                                    boost::shared_ptr<MatrixDouble> flux_ptr,
-                                    const double beta)
-      : OpBase(row_field, row_field, OpBase::OPROW), fluxPtr(flux_ptr),
-        scalarBeta(beta) {}
+  OpBrokenSpaceConstrainDHybridImpl(
+      const std::string row_field,
+      boost::shared_ptr<std::vector<BrokenBaseSideData>> broken_side_data_ptr,
+      const double beta)
+      : OpBase(row_field, row_field, OpBase::OPROW),
+        brokenSideDataPtr(broken_side_data_ptr), scalarBeta(beta) {}
 
 private:
   double scalarBeta;
-  boost::shared_ptr<MatrixDouble> fluxPtr;
+  boost::shared_ptr<std::vector<BrokenBaseSideData>> brokenSideDataPtr;
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data);
 };
 
@@ -425,32 +461,34 @@ OpBrokenSpaceConstrainDHybridImpl<FIELD_DIM, GAUSS, OpBase>::iNtegrate(
     EntitiesFieldData::EntData &row_data) {
   MoFEMFunctionBegin;
 
-  FTENSOR_INDEX(FIELD_DIM, i);
-  FTENSOR_INDEX(FIELD_DIM, j);
+  FTENSOR_INDEX(1, i);
+  FTENSOR_INDEX(3, J);
 
-  auto t_w = this->getFTensor0IntegrationWeight();
-  auto t_normal = OpBase::getFTensor1NormalsAtGaussPts();
 
   OP::locF.resize(row_data.getIndices().size(), false);
   OP::locF.clear();
 
-  auto t_row_base = row_data.getFTensor0N();
-  auto t_flux = getFTensor1FromMat<FIELD_DIM>(*fluxPtr);
-  auto nb_base_functions = row_data.getN().size2() / 3;
-
-  for (size_t gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
-    auto t_vec = getFTensor1FromPtr<FIELD_DIM>(&*OP::locF.data().begin());
-    size_t rr = 0;
-    for (; rr != row_data.getIndices().size() / FIELD_DIM; ++rr) {
-      t_flux(i) += t_w * t_row_base * t_normal(j) * t_flux(j);
-      ++t_row_base;
-      ++t_vec;
+  for (auto &bd : *brokenSideDataPtr) {
+    auto t_w = this->getFTensor0IntegrationWeight();
+    auto t_normal = OpBase::getFTensor1NormalsAtGaussPts();
+    auto t_row_base = row_data.getFTensor0N();
+    auto t_flux = getFTensor2FromMat<1, 3>(bd.getFlux());
+    auto nb_base_functions = row_data.getN().size2() / 3;
+    auto sense = bd.getSense();
+    for (size_t gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
+      auto t_vec = getFTensor1FromPtr<1>(&*OP::locF.data().begin());
+      size_t rr = 0;
+      for (; rr != row_data.getIndices().size() / FIELD_DIM; ++rr) {
+        t_vec(i) += (sense * t_w) * t_row_base * t_normal(J) * t_flux(i, J);
+        ++t_row_base;
+        ++t_vec;
+      }
+      for (; rr < nb_base_functions; ++rr)
+        ++t_row_base;
+      ++t_w;
+      ++t_normal;
+      ++t_flux;
     }
-    for (; rr < nb_base_functions; ++rr)
-      ++t_row_base;
-    ++t_w;
-    ++t_normal;
-    ++t_flux;
   }
 
   OP::locF *= scalarBeta;

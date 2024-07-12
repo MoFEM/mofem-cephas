@@ -142,15 +142,17 @@ int main(int argc, char *argv[]) {
       op_loop_side->getOpPtrVector().push_back(
           new OpGetBrokenBaseSideData<SideEleOp>("BROKEN", broken_data_ptr));
       op_loop_side->getOpPtrVector().push_back(
-          new OpCalculateHVecVectorField<3, SPACE_DIM>("BROKEN", flux_mat_ptr));
-      return std::make_tuple(op_loop_side, broken_data_ptr, flux_mat_ptr);
+          new OpCalculateHVecTensorField<1, 3>("BROKEN", flux_mat_ptr));
+      op_loop_side->getOpPtrVector().push_back(
+          new OpSetFlux<SideEleOp>(broken_data_ptr, flux_mat_ptr));
+      return std::make_tuple(op_loop_side, broken_data_ptr);
     };
 
     auto assemble_skeleton_lhs = [&](auto &pip, auto &&broken_data_tuple) {
       MoFEMFunctionBegin;
       using OpC = FormsIntegrators<BdyEleOp>::Assembly<PETSC>::BiLinearForm<
           GAUSS>::OpBrokenSpaceConstrain<1>;
-      auto [op_loop_side, broken_data_ptr, flux_mat_ptr] = broken_data_tuple;
+      auto [op_loop_side, broken_data_ptr] = broken_data_tuple;
       pip.push_back(op_loop_side);
       CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
           op_loop_side->getOpPtrVector(), {});
@@ -161,18 +163,17 @@ int main(int argc, char *argv[]) {
     auto assemble_skeleton_rhs = [&](auto &pip, auto &&broken_data_tuple) {
       MoFEMFunctionBegin;
       using OpC_dHybrid = FormsIntegrators<BdyEleOp>::Assembly<
-          PETSC>::LinearForm<GAUSS>::OpBrokenSpaceConstrainDHybrid<1>;
+          PETSC>::LinearForm<GAUSS>::OpBrokenSpaceConstrainDHybrid<SPACE_DIM>;
       using OpC_dBroken = FormsIntegrators<BdyEleOp>::Assembly<
           PETSC>::LinearForm<GAUSS>::OpBrokenSpaceConstrainDFlux<1>;
-      // auto [op_loop_side, broken_data_ptr, flux_mat_ptr] = broken_data_tuple;
-      // pip.push_back(op_loop_side);
-      // CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
-      //     op_loop_side->getOpPtrVector(), {});
-      // auto hybrid_ptr = boost::make_shared<MatrixDouble>();
-      // pip.push_back(
-      //     new OpCalculateVectorFieldValues<SPACE_DIM>("HYBRID", hybrid_ptr));
-      // pip.push_back(new OpC_dHybrid("HYBRID", flux_mat_ptr, 1.));
-      // pip.push_back(new OpC_dBroken(broken_data_ptr, hybrid_ptr, 1.));
+      auto [op_loop_side, broken_data_ptr] = broken_data_tuple;
+      pip.push_back(op_loop_side);
+      CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
+          op_loop_side->getOpPtrVector(), {});
+      auto hybrid_ptr = boost::make_shared<MatrixDouble>();
+      pip.push_back(new OpCalculateVectorFieldValues<1>("HYBRID", hybrid_ptr));
+      pip.push_back(new OpC_dHybrid("HYBRID", broken_data_ptr, 1.));
+      pip.push_back(new OpC_dBroken(broken_data_ptr, hybrid_ptr, 1.));
       MoFEMFunctionReturn(0);
     };
 
