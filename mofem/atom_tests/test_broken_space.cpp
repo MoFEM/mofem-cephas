@@ -210,6 +210,51 @@ int main(int argc, char *argv[]) {
     CHKERR DMoFEMMeshToLocalVector(simple->getDM(), x, INSERT_VALUES,
                                    SCATTER_REVERSE);
 
+    auto check_residual = [&](auto x, auto f) {
+      MoFEMFunctionBegin;
+      auto *simple = m_field.getInterface<Simple>();
+      auto *pip_mng = m_field.getInterface<PipelineManager>();
+
+      pip_mng->getDomainLhsFE().reset();
+      pip_mng->getBoundaryLhsFE().reset();
+      pip_mng->getSkeletonLhsFE().reset();
+
+      pip_mng->getDomainRhsFE()->f = f;
+      pip_mng->getSkeletonRhsFE()->f = f;
+      pip_mng->getBoundaryRhsFE()->f = f;
+      pip_mng->getDomainRhsFE()->x = x;
+      pip_mng->getSkeletonRhsFE()->x = x;
+      pip_mng->getBoundaryRhsFE()->x = x;
+
+      CHKERR VecZeroEntries(f);
+
+      CHKERR DMoFEMLoopFiniteElements(simple->getDM(),
+                                      simple->getDomainFEName(),
+                                      pip_mng->getDomainRhsFE());
+      CHKERR DMoFEMLoopFiniteElements(simple->getDM(),
+                                      simple->getSkeletonFEName(),
+                                      pip_mng->getSkeletonRhsFE());
+      CHKERR DMoFEMLoopFiniteElements(simple->getDM(),
+                                      simple->getBoundaryFEName(),
+                                      pip_mng->getBoundaryRhsFE());
+
+      CHKERR VecGhostUpdateBegin(f, ADD_VALUES, SCATTER_REVERSE);
+      CHKERR VecGhostUpdateEnd(f, ADD_VALUES, SCATTER_REVERSE);
+      CHKERR VecAssemblyBegin(f);
+      CHKERR VecAssemblyEnd(f);
+
+      double fnrm;
+      CHKERR VecNorm(f, NORM_2, &fnrm);
+      MOFEM_LOG_C("AT", Sev::inform, "TestOpGradGrad %3.4e", fnrm);
+
+      constexpr double eps = 1e-8;
+      if(fnrm < eps)
+        SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                "Residual norm larger than accepted");
+
+      MoFEMFunctionReturn(0);
+    };
+
     auto get_post_proc_fe = [&]() {
       using PostProcEle = PostProcBrokenMeshInMoab<DomainEle>;
       using OpPPMap = OpPostProcMapInMoab<3, SPACE_DIM>;
@@ -244,6 +289,8 @@ int main(int argc, char *argv[]) {
     CHKERR DMoFEMLoopFiniteElements(simple->getDM(), simple->getDomainFEName(),
                                     post_proc_fe);
     CHKERR post_proc_fe->writeFile("out_result.h5m");
+
+    CHKERR check_residual(x, f);
   }
   CATCH_ERRORS;
 
