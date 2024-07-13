@@ -105,7 +105,18 @@ int main(int argc, char *argv[]) {
     CHKERR simple->addBoundaryField("HYBRID", L2, base, 1);
 
     CHKERR simple->setFieldOrder("BROKEN", approx_order);
-    CHKERR simple->setFieldOrder("HYBRID", approx_order);
+
+    switch (base) {
+      case AINSWORTH_LEGENDRE_BASE:
+      case AINSWORTH_LOBATTO_BASE:
+        CHKERR simple->setFieldOrder("HYBRID", approx_order);
+        break;
+      case DEMKOWICZ_JACOBI_BASE:
+        CHKERR simple->setFieldOrder("HYBRID", approx_order - 1);
+        break;
+      default:
+        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "base not implemented");
+    };
 
     CHKERR simple->setUp();
 
