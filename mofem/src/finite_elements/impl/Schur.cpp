@@ -788,11 +788,6 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
 
         // iterate column entities
         for (auto c_lo : schur_col_ptr_view) {
-#ifndef NDEBUG
-          if (c_lo->uidCol != row_it->uidRow)
-            SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                     "Wrong size %d != %d", c_lo->uidCol, row_it->uidRow);
-#endif // NDEBUG
 
           auto &uid_row = c_lo->uidRow;
           if (uid_row == row_it->uidRow) {
@@ -821,11 +816,6 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
 
           // iterate row entities
           for (auto r_lo : schur_row_ptr_view) {
-#ifndef NDEBUG
-            if (c_lo->uidCol != row_it->uidRow)
-              SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                       "Wrong size %d != %d", c_lo->uidCol, row_it->uidRow);
-#endif // NDEBUG
 
             auto &uid_col = r_lo->uidCol;
 
