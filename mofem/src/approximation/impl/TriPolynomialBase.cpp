@@ -324,6 +324,7 @@ MoFEMErrorCode TriPolynomialBase::getValueL2(MatrixDouble &pts) {
   switch (cTx->bAse) {
   case AINSWORTH_LEGENDRE_BASE:
   case AINSWORTH_LOBATTO_BASE:
+  case DEMKOWICZ_JACOBI_BASE:
     CHKERR getValueL2AinsworthBase(pts);
     break;
   case AINSWORTH_BERNSTEIN_BEZIER_BASE:
