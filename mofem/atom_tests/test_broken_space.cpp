@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
     CHKERR simple->addBoundaryField("HYBRID", L2, base, 1);
 
     CHKERR simple->setFieldOrder("BROKEN", approx_order);
-    CHKERR simple->setFieldOrder("HYBRID", approx_order - 1);
+    CHKERR simple->setFieldOrder("HYBRID", approx_order);
 
     CHKERR simple->setUp();
 
@@ -119,13 +119,20 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionReturn(0);
     };
 
-    auto assemble_domain_rhs = [&](auto &pip) {
+    auto assemble_domain_rhs = [&](auto &pip, double alpha) {
       MoFEMFunctionBegin;
+      pip.clear();
+      using OpInternal = FormsIntegrators<DomainEleOp>::Assembly<
+          PETSC>::LinearForm<GAUSS>::OpBaseTimesVector<3, 3, 1>;
       using OpSource = FormsIntegrators<DomainEleOp>::Assembly<
           PETSC>::LinearForm<GAUSS>::OpSource<3, 3>;
       CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(pip, {HDIV});
-      pip.push_back(new OpSource("BROKEN", [](double, double, double) {
-        return FTensor::Tensor1<double, 3>{1., 0., 0.};
+      auto t_flux_ptr = boost::make_shared<MatrixDouble>();
+      pip.push_back(new OpCalculateHVecVectorField<3>("BROKEN", t_flux_ptr));
+      pip.push_back(new OpInternal("BROKEN", t_flux_ptr,
+                                   [](double, double, double) { return 1.; }));
+      pip.push_back(new OpSource("BROKEN", [alpha](double, double, double) {
+        return FTensor::Tensor1<double, 3>{alpha, 0., 0.};
       }));
 
       MoFEMFunctionReturn(0);
@@ -180,7 +187,7 @@ int main(int argc, char *argv[]) {
     auto *pip_mng = m_field.getInterface<PipelineManager>();
 
     CHKERR assemble_domain_lhs(pip_mng->getOpDomainLhsPipeline());
-    CHKERR assemble_domain_rhs(pip_mng->getOpDomainRhsPipeline());
+    CHKERR assemble_domain_rhs(pip_mng->getOpDomainRhsPipeline(), 1);
     CHKERR assemble_skeleton_lhs(pip_mng->getOpSkeletonLhsPipeline(),
                                  get_broken_ptr());
     CHKERR assemble_skeleton_rhs(pip_mng->getOpSkeletonRhsPipeline(),
@@ -190,7 +197,7 @@ int main(int argc, char *argv[]) {
     CHKERR assemble_skeleton_rhs(pip_mng->getOpBoundaryRhsPipeline(),
                                  get_broken_ptr());
 
-    auto integration_rule = [](int, int, int p) { return 3 * p + 1; };
+    auto integration_rule = [](int, int, int p) { return 2 * p + 1; };
     CHKERR pip_mng->setDomainRhsIntegrationRule(integration_rule);
     CHKERR pip_mng->setDomainLhsIntegrationRule(integration_rule);
     CHKERR pip_mng->setSkeletonLhsIntegrationRule(integration_rule);
@@ -215,10 +222,6 @@ int main(int argc, char *argv[]) {
       auto *simple = m_field.getInterface<Simple>();
       auto *pip_mng = m_field.getInterface<PipelineManager>();
 
-      pip_mng->getDomainLhsFE().reset();
-      pip_mng->getBoundaryLhsFE().reset();
-      pip_mng->getSkeletonLhsFE().reset();
-
       pip_mng->getDomainRhsFE()->f = f;
       pip_mng->getSkeletonRhsFE()->f = f;
       pip_mng->getBoundaryRhsFE()->f = f;
@@ -226,7 +229,11 @@ int main(int argc, char *argv[]) {
       pip_mng->getSkeletonRhsFE()->x = x;
       pip_mng->getBoundaryRhsFE()->x = x;
 
+      CHKERR assemble_domain_rhs(pip_mng->getOpDomainRhsPipeline(), -1);
+
       CHKERR VecZeroEntries(f);
+      CHKERR VecGhostUpdateBegin(f, INSERT_VALUES, SCATTER_FORWARD);
+      CHKERR VecGhostUpdateEnd(f, INSERT_VALUES, SCATTER_FORWARD);
 
       CHKERR DMoFEMLoopFiniteElements(simple->getDM(),
                                       simple->getDomainFEName(),
@@ -245,10 +252,10 @@ int main(int argc, char *argv[]) {
 
       double fnrm;
       CHKERR VecNorm(f, NORM_2, &fnrm);
-      MOFEM_LOG_C("AT", Sev::inform, "TestOpGradGrad %3.4e", fnrm);
+      MOFEM_LOG_C("AT", Sev::inform, "Residual %3.4e", fnrm);
 
       constexpr double eps = 1e-8;
-      if(fnrm < eps)
+      if (fnrm > eps)
         SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                 "Residual norm larger than accepted");
 

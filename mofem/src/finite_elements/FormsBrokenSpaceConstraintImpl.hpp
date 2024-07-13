@@ -288,7 +288,7 @@ MoFEMErrorCode OpBrokenSpaceConstrainImpl<FIELD_DIM, GAUSS, OpBase>::iNtegrate(
     for (; cc != nb_col_dofs / FIELD_DIM; cc++) {
       auto t_row_base = row_data.getFTensor0N(gg, 0);
       for (auto rr = 0; rr != nb_row_dofs / FIELD_DIM; ++rr) {
-        t_m(i) += t_w * t_row_base * t_normal(J) * t_col_base(J);
+        t_m(i) += (t_w * t_row_base) * (t_normal(J) * t_col_base(J));
         ++t_row_base;
         ++t_m;
       }
@@ -368,7 +368,7 @@ OpBrokenSpaceConstrainDFluxImpl<FIELD_DIM, GAUSS, OpBase>::doWork(
     // get row base functions
     OP::nbRowBaseFunctions = OP::getNbOfBaseFunctions(row_data);
     // resize and clear the right hand side vector
-    OP::locF.resize(OP::nbRows);
+    OP::locF.resize(OP::nbRows, false);
     OP::locF.clear();
     // integrate local vector
     CHKERR this->iNtegrate(row_data);
@@ -404,14 +404,11 @@ OpBrokenSpaceConstrainDFluxImpl<FIELD_DIM, GAUSS, OpBase>::iNtegrate(
   MoFEMFunctionBegin;
 
   FTENSOR_INDEX(FIELD_DIM, i);
-  FTENSOR_INDEX(FIELD_DIM, j);
+  FTENSOR_INDEX(3, J);
 
   auto t_w = this->getFTensor0IntegrationWeight();
   auto t_normal = OpBase::getFTensor1NormalsAtGaussPts();
   auto t_lagrange = getFTensor1FromMat<FIELD_DIM>(*lagrangePtr);
-
-  OP::locF.resize(row_data.getIndices().size(), false);
-  OP::locF.clear();
 
   auto t_row_base = row_data.getFTensor1N<3>();
   auto nb_base_functions = row_data.getN().size2() / 3;
@@ -420,7 +417,7 @@ OpBrokenSpaceConstrainDFluxImpl<FIELD_DIM, GAUSS, OpBase>::iNtegrate(
     auto t_vec = getFTensor1FromPtr<FIELD_DIM>(&*OP::locF.data().begin());
     size_t rr = 0;
     for (; rr != row_data.getIndices().size() / FIELD_DIM; ++rr) {
-      t_vec(i) += t_w * t_row_base(j) * t_normal(j) * t_lagrange(i);
+      t_vec(i) += (t_w * (t_row_base(J) * t_normal(J))) * t_lagrange(i);
       ++t_row_base;
       ++t_vec;
     }
