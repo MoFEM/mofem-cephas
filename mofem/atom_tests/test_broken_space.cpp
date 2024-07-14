@@ -225,11 +225,10 @@ int main(int argc, char *argv[]) {
       auto hybrid_ptr = boost::make_shared<MatrixDouble>();
       skeleton_rhs.push_back(
           new OpCalculateVectorFieldValues<1>("HYBRID", hybrid_ptr));
+      skeleton_rhs.push_back(new OpC_dBroken(broken_data_ptr, hybrid_ptr, 1.));
 
       CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(domain_rhs, {HDIV});
-      auto flux_ptr = boost::make_shared<MatrixDouble>();
-      domain_rhs.push_back(
-          new OpCalculateHVecVectorField<3>("BROKEN", flux_ptr));
+
       auto div_flux_ptr = boost::make_shared<VectorDouble>();
       domain_rhs.push_back(new OpCalculateHdivVectorDivergence<3, SPACE_DIM>(
           "BROKEN", div_flux_ptr));
@@ -245,11 +244,16 @@ int main(int argc, char *argv[]) {
 
       using OpHDivH = FormsIntegrators<DomainEleOp>::Assembly<
           PETSC>::LinearForm<GAUSS>::OpMixDivTimesU<3, 1, SPACE_DIM>;
-      domain_rhs.push_back(new OpHdivHdiv("BROKEN", "BROKEN", beta));
-      
-
-      auto u_ptr = boost::make_shared<VectorDouble>();
+      using OpHdivFlux = FormsIntegrators<DomainEleOp>::Assembly<
+          PETSC>::LinearForm<GAUSS>::OpBaseTimesVector<3, 3, 1>;
+      auto flux_ptr = boost::make_shared<MatrixDouble>();
+      domain_rhs.push_back(
+          new OpCalculateHVecVectorField<3>("BROKEN", flux_ptr));
+      boost::shared_ptr<VectorDouble> u_ptr = boost::make_shared<VectorDouble>();
       domain_rhs.push_back(new OpCalculateScalarFieldValues("U", u_ptr));
+      // auto minus = [](double, double, double) constexpr { return -1; };
+      domain_rhs.push_back(new OpHDivH("BROKEN", u_ptr, beta));
+      domain_rhs.push_back(new OpHdivFlux("BROKEN", flux_ptr, beta));
 
       CHKERR VecZeroEntries(f);
       CHKERR VecGhostUpdateBegin(f, INSERT_VALUES, SCATTER_FORWARD);
