@@ -51,7 +51,7 @@ add_test(
   ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 2
   ${CMAKE_CURRENT_BINARY_DIR}/elastic_2d
   -file_name part.h5m -order 4
-  -ksp_rtol 1e-12 -ksp_atol 1e-9 -test -log_no_color)
+  -ksp_rtol 1e-12 -ksp_atol 1e-12 -ksp_type fgmres -test -log_no_color)
 
 add_test(
   elastic_mpc_XYZ
