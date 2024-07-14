@@ -355,7 +355,7 @@ MoFEMErrorCode Seepage::addMatBlockOps(
                      std::vector<const CubitMeshSets *> meshset_vec_ptr)
         : DomainEleOp(NOSPACE, DomainEleOp::OPSPACE),
           conductivityPtr(conductivity_ptr) {
-      CHK_THROW_MESSAGE(extractThermallockData(m_field, meshset_vec_ptr, sev),
+      CHK_THROW_MESSAGE(extractThermalBlockData(m_field, meshset_vec_ptr, sev),
                         "Can not get data from block");
     }
 
@@ -385,7 +385,7 @@ MoFEMErrorCode Seepage::addMatBlockOps(
     std::vector<BlockData> blockData;
 
     MoFEMErrorCode
-    extractThermallockData(MoFEM::Interface &m_field,
+    extractThermalBlockData(MoFEM::Interface &m_field,
                            std::vector<const CubitMeshSets *> meshset_vec_ptr,
                            Sev sev) {
       MoFEMFunctionBegin;
