@@ -19,7 +19,7 @@ RUN ln -s `which pip3.8` /usr/bin/pip3.8
 
 RUN pip3 -q install pip --upgrade && \
   pip3 install \
-  notebook==6.4.12 \
+  notebook==6.5.7 \
   jupyterhub==3.1.1 \
   jupyterhub-firstuseauthenticator && \
   npm install -g configurable-http-proxy

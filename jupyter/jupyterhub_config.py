@@ -738,7 +738,7 @@ c.JupyterHub.template_paths = ['/mofem_install/jupyter/templates']
 #  environment variables here. Most, including the default, do not. Consult the
 #  documentation for your spawner to verify!
 #  Default: []
-# c.Spawner.args = []
+c.Spawner.args = ['--NotebookApp.show_banner=False']
 
 ## An optional hook function that you can implement to pass `auth_state` to the
 #  spawner after it has been initialized but before it starts. The `auth_state`
