@@ -1668,14 +1668,16 @@ build_test(
   test_broken_space.cpp
 )
 set_target_properties(
-  test_broken_space_2d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=2")
+  test_broken_space_2d PROPERTIES COMPILE_FLAGS 
+  "-DEXECUTABLE_DIMENSION=2 -DSCHUR_ASSEMBLE=0")
 
 build_test(
   test_broken_space_3d
   test_broken_space.cpp
 )
 set_target_properties(
-  test_broken_space_3d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=3")
+  test_broken_space_3d PROPERTIES COMPILE_FLAGS 
+  "-DEXECUTABLE_DIMENSION=3 -DSCHUR_ASSEMBLE=0")
 
 list(INSERT test_borken_base_list_2d
   0

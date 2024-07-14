@@ -12,6 +12,10 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
+constexpr AssemblyType AT =
+    (SCHUR_ASSEMBLE) ? AssemblyType::BLOCK_SCHUR
+                     : AssemblyType::PETSC; //< selected assembly type
+
 constexpr int SPACE_DIM =
     EXECUTABLE_DIMENSION; //< Space dimension of problem, mesh
 
@@ -115,12 +119,11 @@ int main(int argc, char *argv[]) {
       CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(pip, {HDIV});
 
       using OpHdivHdiv = FormsIntegrators<DomainEleOp>::Assembly<
-          PETSC>::BiLinearForm<GAUSS>::OpMass<3, SPACE_DIM>;
+          AT>::BiLinearForm<GAUSS>::OpMass<3, SPACE_DIM>;
       using OpHdivU = FormsIntegrators<DomainEleOp>::Assembly<
-          PETSC>::BiLinearForm<GAUSS>::OpMixDivTimesScalar<SPACE_DIM>;
-
+          AT>::BiLinearForm<GAUSS>::OpMixDivTimesScalar<SPACE_DIM>;
       using OpMass = FormsIntegrators<DomainEleOp>::Assembly<
-          PETSC>::BiLinearForm<GAUSS>::OpMass<1, 1>;
+          AT>::BiLinearForm<GAUSS>::OpMass<1, 1>;
 
       auto beta = [](const double, const double, const double) constexpr {
         return 1;
@@ -137,7 +140,7 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionBegin;
       CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(pip, {HDIV});
       using OpDomainSource = FormsIntegrators<DomainEleOp>::Assembly<
-          PETSC>::LinearForm<GAUSS>::OpSource<1, 1>;
+          AT>::LinearForm<GAUSS>::OpSource<1, 1>;
       auto source = [&](const double x, const double y,
                         const double z) constexpr { return -1; };
       pip.push_back(new OpDomainSource("U", source));
@@ -163,7 +166,7 @@ int main(int argc, char *argv[]) {
 
     auto assemble_skeleton_lhs = [&](auto &pip, auto &&broken_data_tuple) {
       MoFEMFunctionBegin;
-      using OpC = FormsIntegrators<BdyEleOp>::Assembly<PETSC>::BiLinearForm<
+      using OpC = FormsIntegrators<BdyEleOp>::Assembly<AT>::BiLinearForm<
           GAUSS>::OpBrokenSpaceConstrain<1>;
       auto [op_loop_side, broken_data_ptr] = broken_data_tuple;
       pip.push_back(op_loop_side);
@@ -212,10 +215,10 @@ int main(int argc, char *argv[]) {
 
       CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(skeleton_rhs,
                                                                 {});
-      using OpC_dHybrid = FormsIntegrators<BdyEleOp>::Assembly<
-          PETSC>::LinearForm<GAUSS>::OpBrokenSpaceConstrainDHybrid<1>;
-      using OpC_dBroken = FormsIntegrators<BdyEleOp>::Assembly<
-          PETSC>::LinearForm<GAUSS>::OpBrokenSpaceConstrainDFlux<1>;
+      using OpC_dHybrid = FormsIntegrators<BdyEleOp>::Assembly<AT>::LinearForm<
+          GAUSS>::OpBrokenSpaceConstrainDHybrid<1>;
+      using OpC_dBroken = FormsIntegrators<BdyEleOp>::Assembly<AT>::LinearForm<
+          GAUSS>::OpBrokenSpaceConstrainDFlux<1>;
       auto broken_data_tuple = get_broken_ptr();
       auto [op_loop_side, broken_data_ptr] = broken_data_tuple;
       skeleton_rhs.push_back(op_loop_side);
@@ -233,19 +236,19 @@ int main(int argc, char *argv[]) {
       domain_rhs.push_back(new OpCalculateHdivVectorDivergence<3, SPACE_DIM>(
           "BROKEN", div_flux_ptr));
       using OpUDivFlux = FormsIntegrators<DomainEleOp>::Assembly<
-          PETSC>::LinearForm<GAUSS>::OpBaseTimesScalarField<1>;
+          AT>::LinearForm<GAUSS>::OpBaseTimesScalarField<1>;
       auto beta = [](double, double, double) constexpr { return 1; };
       domain_rhs.push_back(new OpUDivFlux("U", div_flux_ptr, beta));
       auto source = [&](const double x, const double y,
                         const double z) constexpr { return 1; };
       using OpDomainSource = FormsIntegrators<DomainEleOp>::Assembly<
-          PETSC>::LinearForm<GAUSS>::OpSource<1, 1>;
+          AT>::LinearForm<GAUSS>::OpSource<1, 1>;
       domain_rhs.push_back(new OpDomainSource("U", source));
 
       using OpHDivH = FormsIntegrators<DomainEleOp>::Assembly<
-          PETSC>::LinearForm<GAUSS>::OpMixDivTimesU<3, 1, SPACE_DIM>;
+          AT>::LinearForm<GAUSS>::OpMixDivTimesU<3, 1, SPACE_DIM>;
       using OpHdivFlux = FormsIntegrators<DomainEleOp>::Assembly<
-          PETSC>::LinearForm<GAUSS>::OpBaseTimesVector<3, 3, 1>;
+          AT>::LinearForm<GAUSS>::OpBaseTimesVector<3, 3, 1>;
       auto flux_ptr = boost::make_shared<MatrixDouble>();
       domain_rhs.push_back(
           new OpCalculateHVecVectorField<3>("BROKEN", flux_ptr));
