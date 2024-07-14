@@ -19,6 +19,9 @@ constexpr AssemblyType AT =
     (SCHUR_ASSEMBLE) ? AssemblyType::BLOCK_SCHUR
                      : AssemblyType::PETSC; //< selected assembly type
 
+constexpr IntegrationType IT =
+    IntegrationType::GAUSS; //< selected integration type
+
 constexpr int SPACE_DIM =
     EXECUTABLE_DIMENSION; //< Space dimension of problem, mesh
 
@@ -32,14 +35,28 @@ using DomainEleOp = DomainEle::UserDataOperator;
 using BdyEleOp = BoundaryEle::UserDataOperator;
 using SideEleOp = EleOnSide::UserDataOperator;
 
+struct SetUpSchur {
+  static boost::shared_ptr<SetUpSchur>
+  createSetUpSchur(MoFEM::Interface &m_field);
+  virtual MoFEMErrorCode setUp(SmartPetscObj<KSP>) = 0;
+
+protected:
+  SetUpSchur() = default;
+  virtual ~SetUpSchur() = default;
+};
+
 int main(int argc, char *argv[]) {
 
   MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
 
   try {
 
+    //! [Register MoFEM discrete manager in PETSc]
     DMType dm_name = "DMMOFEM";
     CHKERR DMRegister_MoFEM(dm_name);
+    DMType dm_name_mg = "DMMOFEM_MG";
+    CHKERR DMRegister_MGViaApproxOrders(dm_name_mg);
+    //! [Register MoFEM discrete manager in PETSc
 
     moab::Core mb_instance;
     moab::Interface &moab = mb_instance;
@@ -48,8 +65,12 @@ int main(int argc, char *argv[]) {
     auto core_log = logging::core::get();
     core_log->add_sink(
         LogManager::createSink(LogManager::getStrmWorld(), "AT"));
+    core_log->add_sink(
+        LogManager::createSink(LogManager::getStrmWorld(), "TIMER"));
     LogManager::setLog("AT");
+    LogManager::setLog("TIMER");
     MOFEM_LOG_TAG("AT", "atom_test");
+    MOFEM_LOG_TAG("TIMER", "timer");
 
     // Create MoFEM instance
     MoFEM::Core core(moab);
@@ -122,11 +143,11 @@ int main(int argc, char *argv[]) {
       CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(pip, {HDIV});
 
       using OpHdivHdiv = FormsIntegrators<DomainEleOp>::Assembly<
-          AT>::BiLinearForm<GAUSS>::OpMass<3, SPACE_DIM>;
-      using OpHdivU = FormsIntegrators<DomainEleOp>::Assembly<
-          AT>::BiLinearForm<GAUSS>::OpMixDivTimesScalar<SPACE_DIM>;
-      using OpMass = FormsIntegrators<DomainEleOp>::Assembly<
-          AT>::BiLinearForm<GAUSS>::OpMass<1, 1>;
+          AT>::BiLinearForm<IT>::OpMass<3, SPACE_DIM>;
+      using OpHdivU = FormsIntegrators<DomainEleOp>::Assembly<AT>::BiLinearForm<
+          IT>::OpMixDivTimesScalar<SPACE_DIM>;
+      using OpMass = FormsIntegrators<DomainEleOp>::Assembly<AT>::BiLinearForm<
+          IT>::OpMass<1, 1>;
 
       auto beta = [](const double, const double, const double) constexpr {
         return 1;
@@ -143,7 +164,7 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionBegin;
       CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(pip, {HDIV});
       using OpDomainSource = FormsIntegrators<DomainEleOp>::Assembly<
-          AT>::LinearForm<GAUSS>::OpSource<1, 1>;
+          AT>::LinearForm<IT>::OpSource<1, 1>;
       auto source = [&](const double x, const double y,
                         const double z) constexpr { return -1; };
       pip.push_back(new OpDomainSource("U", source));
@@ -170,7 +191,7 @@ int main(int argc, char *argv[]) {
     auto assemble_skeleton_lhs = [&](auto &pip, auto &&broken_data_tuple) {
       MoFEMFunctionBegin;
       using OpC = FormsIntegrators<BdyEleOp>::Assembly<AT>::BiLinearForm<
-          GAUSS>::OpBrokenSpaceConstrain<1>;
+          IT>::OpBrokenSpaceConstrain<1>;
       auto [op_loop_side, broken_data_ptr] = broken_data_tuple;
       pip.push_back(op_loop_side);
       CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
@@ -192,19 +213,47 @@ int main(int argc, char *argv[]) {
     CHKERR pip_mng->setSkeletonLhsIntegrationRule(integration_rule);
     CHKERR pip_mng->setSkeletonRhsIntegrationRule(integration_rule);
 
-    auto ksp = pip_mng->createKSP();
-
-    CHKERR KSPSetFromOptions(ksp);
-    CHKERR KSPSetUp(ksp);
-
     auto x = createDMVector(simple->getDM());
     auto f = vectorDuplicate(x);
 
-    CHKERR KSPSolve(ksp, f, x);
-    CHKERR VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
-    CHKERR VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
-    CHKERR DMoFEMMeshToLocalVector(simple->getDM(), x, INSERT_VALUES,
-                                   SCATTER_REVERSE);
+
+    if (AT == PETSC) {
+      auto ksp = pip_mng->createKSP();
+
+      CHKERR KSPSetFromOptions(ksp);
+      BOOST_LOG_SCOPED_THREAD_ATTR("Timeline", attrs::timer());
+      MOFEM_LOG("TIMER", Sev::inform) << "KSPSetUp";
+      CHKERR KSPSetUp(ksp);
+      MOFEM_LOG("TIMER", Sev::inform) << "KSPSetUp <= Done";
+      
+      MOFEM_LOG("TIMER", Sev::inform) << "KSPSolve";
+      CHKERR KSPSolve(ksp, f, x);
+      MOFEM_LOG("TIMER", Sev::inform) << "KSPSolve <= Done";
+
+      CHKERR VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
+      CHKERR VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
+      CHKERR DMoFEMMeshToLocalVector(simple->getDM(), x, INSERT_VALUES,
+                                     SCATTER_REVERSE);
+    } else {
+      auto x = createDMVector(simple->getDM());
+      auto f = vectorDuplicate(x);
+
+      auto ksp = pip_mng->createKSP();
+      auto schur_ptr = SetUpSchur::createSetUpSchur(m_field);
+      BOOST_LOG_SCOPED_THREAD_ATTR("Timeline", attrs::timer());
+      MOFEM_LOG("TIMER", Sev::inform) << "KSPSetUp";
+      CHKERR schur_ptr->setUp(ksp);
+      MOFEM_LOG("TIMER", Sev::inform) << "KSPSetUp <= Done";
+
+      MOFEM_LOG("TIMER", Sev::inform) << "KSPSolve";
+      CHKERR KSPSolve(ksp, f, x);
+      MOFEM_LOG("TIMER", Sev::inform) << "KSPSolve <= Done";
+
+      CHKERR VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
+      CHKERR VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
+      CHKERR DMoFEMMeshToLocalVector(simple->getDM(), x, INSERT_VALUES,
+                                     SCATTER_REVERSE);
+    }
 
     auto check_residual = [&](auto x, auto f) {
       MoFEMFunctionBegin;
@@ -219,9 +268,9 @@ int main(int argc, char *argv[]) {
       CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(skeleton_rhs,
                                                                 {});
       using OpC_dHybrid = FormsIntegrators<BdyEleOp>::Assembly<AT>::LinearForm<
-          GAUSS>::OpBrokenSpaceConstrainDHybrid<1>;
+          IT>::OpBrokenSpaceConstrainDHybrid<1>;
       using OpC_dBroken = FormsIntegrators<BdyEleOp>::Assembly<AT>::LinearForm<
-          GAUSS>::OpBrokenSpaceConstrainDFlux<1>;
+          IT>::OpBrokenSpaceConstrainDFlux<1>;
       auto broken_data_tuple = get_broken_ptr();
       auto [op_loop_side, broken_data_ptr] = broken_data_tuple;
       skeleton_rhs.push_back(op_loop_side);
@@ -239,23 +288,24 @@ int main(int argc, char *argv[]) {
       domain_rhs.push_back(new OpCalculateHdivVectorDivergence<3, SPACE_DIM>(
           "BROKEN", div_flux_ptr));
       using OpUDivFlux = FormsIntegrators<DomainEleOp>::Assembly<
-          AT>::LinearForm<GAUSS>::OpBaseTimesScalarField<1>;
+          AT>::LinearForm<IT>::OpBaseTimesScalarField<1>;
       auto beta = [](double, double, double) constexpr { return 1; };
       domain_rhs.push_back(new OpUDivFlux("U", div_flux_ptr, beta));
       auto source = [&](const double x, const double y,
                         const double z) constexpr { return 1; };
       using OpDomainSource = FormsIntegrators<DomainEleOp>::Assembly<
-          AT>::LinearForm<GAUSS>::OpSource<1, 1>;
+          AT>::LinearForm<IT>::OpSource<1, 1>;
       domain_rhs.push_back(new OpDomainSource("U", source));
 
-      using OpHDivH = FormsIntegrators<DomainEleOp>::Assembly<
-          AT>::LinearForm<GAUSS>::OpMixDivTimesU<3, 1, SPACE_DIM>;
+      using OpHDivH = FormsIntegrators<DomainEleOp>::Assembly<AT>::LinearForm<
+          IT>::OpMixDivTimesU<3, 1, SPACE_DIM>;
       using OpHdivFlux = FormsIntegrators<DomainEleOp>::Assembly<
-          AT>::LinearForm<GAUSS>::OpBaseTimesVector<3, 3, 1>;
+          AT>::LinearForm<IT>::OpBaseTimesVector<3, 3, 1>;
       auto flux_ptr = boost::make_shared<MatrixDouble>();
       domain_rhs.push_back(
           new OpCalculateHVecVectorField<3>("BROKEN", flux_ptr));
-      boost::shared_ptr<VectorDouble> u_ptr = boost::make_shared<VectorDouble>();
+      boost::shared_ptr<VectorDouble> u_ptr =
+          boost::make_shared<VectorDouble>();
       domain_rhs.push_back(new OpCalculateScalarFieldValues("U", u_ptr));
       // auto minus = [](double, double, double) constexpr { return -1; };
       domain_rhs.push_back(new OpHDivH("BROKEN", u_ptr, beta));
@@ -337,4 +387,219 @@ int main(int argc, char *argv[]) {
   CATCH_ERRORS;
 
   CHKERR MoFEM::Core::Finalize();
+}
+
+
+struct SetUpSchurImpl : public SetUpSchur {
+
+  SetUpSchurImpl(MoFEM::Interface &m_field) : SetUpSchur(), mField(m_field) {}
+
+  virtual ~SetUpSchurImpl() = default;
+
+  MoFEMErrorCode setUp(SmartPetscObj<KSP>);
+
+private:
+  MoFEM::Interface &mField;
+  SmartPetscObj<Mat> S;
+
+};
+
+MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
+  MoFEMFunctionBegin;
+  auto simple = mField.getInterface<Simple>();
+  auto pip_mng = mField.getInterface<PipelineManager>();
+
+  CHKERR KSPSetFromOptions(ksp);
+  PC pc;
+  CHKERR KSPGetPC(ksp, &pc);
+
+  PetscBool is_pcfs = PETSC_FALSE;
+  PetscObjectTypeCompare((PetscObject)pc, PCFIELDSPLIT, &is_pcfs);
+  if (is_pcfs) {
+
+    MOFEM_LOG("AT", Sev::inform) << "Setup Schur pc";
+
+    auto create_schur_dm = [&]() {
+      auto simple = mField.getInterface<Simple>();
+
+      auto create_dm = [&](
+
+                           std::string problem_name,
+                           std::vector<std::string> fe_names,
+                           std::vector<std::string> fields,
+
+                           auto dm_type
+
+                       ) {
+        auto dm = createDM(mField.get_comm(), dm_type);
+        auto create_dm_imp = [&]() {
+          MoFEMFunctionBegin;
+          CHKERR DMMoFEMCreateSubDM(dm, simple->getDM(), problem_name.c_str());
+          CHKERR DMMoFEMSetSquareProblem(dm, PETSC_TRUE);
+          for (auto fe : fe_names) {
+            CHKERR DMMoFEMAddElement(dm, fe);
+          }
+          CHKERR DMMoFEMAddElement(dm, simple->getSkeletonFEName());
+          for (auto field : fields) {
+            CHKERR DMMoFEMAddSubFieldRow(dm, field);
+            CHKERR DMMoFEMAddSubFieldCol(dm, field);
+          }
+          CHKERR DMSetUp(dm);
+          MoFEMFunctionReturn(0);
+        };
+        CHK_THROW_MESSAGE(
+            create_dm_imp(),
+            "Error in creating schurDM. It is possible that schurDM is "
+            "already created");
+        return dm;
+      };
+
+      auto schur_dm = create_dm(
+
+          "SCHUR",
+
+          {simple->getDomainFEName(), simple->getSkeletonFEName()},
+
+          {"HYBRID"},
+
+          "DMMOFEM_MG");
+
+      auto block_dm = create_dm(
+
+          "BLOCK",
+
+          {simple->getDomainFEName(), simple->getSkeletonFEName()},
+
+          {"BROKEN", "U"},
+
+          "DMMOFEM");
+
+      return std::make_tuple(schur_dm, block_dm);
+    };
+
+    auto get_nested_mat_data = [&](auto schur_dm, auto block_dm) {
+      auto block_mat_data =
+          createBlockMatStructure(simple->getDM(),
+
+                                  {{
+
+                                      simple->getDomainFEName(),
+
+                                      {
+
+                                          {"BROKEN", "BROKEN"},
+                                          {"BROKEN", "U"},
+                                          {"U", "BROKEN"},
+                                          {"BROKEN", "HYBRID"},
+                                          {"HYBRID", "BROKEN"}
+
+                                      }}}
+
+          );
+
+      return getNestSchurData(
+
+          {schur_dm, block_dm}, block_mat_data,
+
+          {"SIGMA"}, {nullptr}, true
+
+      );
+    };
+
+    auto set_ops = [&](auto schur_dm) {
+      MoFEMFunctionBegin;
+      auto dm_is = getDMSubData(schur_dm)->getSmartRowIs();
+      auto ao_up = createAOMappingIS(dm_is, PETSC_NULL);
+
+      boost::shared_ptr<BlockStructure> block_data;
+      CHKERR DMMoFEMGetBlocMatData(simple->getDM(), block_data);
+      
+      pip_mng->getOpDomainLhsPipeline().push_front(
+          createOpSchurAssembleBegin());
+      pip_mng->getOpDomainLhsPipeline().push_back(
+
+          createOpSchurAssembleEnd({"BROKEN", "U"}, {nullptr}, {ao_up}, {S},
+                                   {false}, false, block_data)
+
+      );
+
+      auto pre_proc_schur_lhs_ptr = boost::make_shared<FEMethod>();
+      auto post_proc_schur_lhs_ptr = boost::make_shared<FEMethod>();
+
+      pre_proc_schur_lhs_ptr->preProcessHook = [this]() {
+        MoFEMFunctionBegin;
+        CHKERR MatZeroEntries(S);
+        MOFEM_LOG("AT", Sev::verbose) << "Lhs Assemble Begin";
+        MoFEMFunctionReturn(0);
+      };
+
+      post_proc_schur_lhs_ptr->postProcessHook = [this, ao_up,
+                                                  post_proc_schur_lhs_ptr]() {
+        MoFEMFunctionBegin;
+        MOFEM_LOG("AT", Sev::verbose) << "Lhs Assemble End";
+        CHKERR MatAssemblyBegin(S, MAT_FINAL_ASSEMBLY);
+        CHKERR MatAssemblyEnd(S, MAT_FINAL_ASSEMBLY);
+        MOFEM_LOG("AT", Sev::verbose) << "Lhs Assemble Finish";
+        MoFEMFunctionReturn(0);
+      };
+      MoFEMFunctionReturn(0);
+    };
+
+    auto set_pc = [&](auto pc, auto block_dm) {
+      MoFEMFunctionBegin; 
+      auto block_is = getDMSubData(block_dm)->getSmartRowIs();
+      CHKERR PCFieldSplitSetIS(pc, NULL, block_is);
+      CHKERR PCFieldSplitSetSchurPre(pc, PC_FIELDSPLIT_SCHUR_PRE_USER, S);
+      MoFEMFunctionReturn(0);
+    };
+
+    auto set_diagonal_pc = [&](auto pc, auto schur_dm) {
+      MoFEMFunctionBegin;
+      KSP *subksp;
+      CHKERR PCFieldSplitSchurGetSubKSP(pc, PETSC_NULL, &subksp);
+      auto get_pc = [](auto ksp) {
+        PC pc_raw;
+        CHKERR KSPGetPC(ksp, &pc_raw);
+        return SmartPetscObj<PC>(pc_raw, true); // bump reference
+      };
+      CHKERR setSchurA00MatSolvePC(get_pc(subksp[0]));
+
+      auto set_pc_p_mg = [&](auto dm, auto pc) {
+        MoFEMFunctionBegin;
+        CHKERR PCSetDM(pc, dm);
+        PetscBool same = PETSC_FALSE;
+        PetscObjectTypeCompare((PetscObject)pc, PCMG, &same);
+        if (same) {
+          CHKERR PCMGSetUpViaApproxOrders(
+              pc, createPCMGSetUpViaApproxOrdersCtx(dm, S, true));
+          CHKERR PCSetFromOptions(pc);
+        }
+        MoFEMFunctionReturn(0);
+      };
+
+      CHKERR set_pc_p_mg(schur_dm, get_pc(subksp[1]));
+
+      CHKERR PetscFree(subksp);
+      MoFEMFunctionReturn(0);
+    };
+
+    auto [schur_dm, block_dm] = create_schur_dm();
+    auto nested_mat_data = get_nested_mat_data(schur_dm, block_dm);
+    CHKERR DMMoFEMSetNestSchurData(simple->getDM(), nested_mat_data);
+    auto S = createDMMatrix(schur_dm);
+    CHKERR set_ops(schur_dm);
+    CHKERR set_pc(pc, block_dm);
+    CHKERR KSPSetUp(ksp);
+    CHKERR set_diagonal_pc(pc, schur_dm);
+
+  } else {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+            "PC is not set to PCFIELDSPLIT");
+  }
+  MoFEMFunctionReturn(0);
+}
+
+boost::shared_ptr<SetUpSchur>
+SetUpSchur::createSetUpSchur(MoFEM::Interface &m_field) {
+  return boost::shared_ptr<SetUpSchur>(new SetUpSchurImpl(m_field));
 }
