@@ -206,7 +206,9 @@ int main(int argc, char *argv[]) {
       auto *pip_mng = m_field.getInterface<PipelineManager>();
 
       auto &skeleton_rhs = pip_mng->getOpSkeletonRhsPipeline();
+      auto &domain_rhs = pip_mng->getOpDomainRhsPipeline();
       skeleton_rhs.clear();
+      domain_rhs.clear();
 
       CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(skeleton_rhs,
                                                                 {});
@@ -220,11 +222,34 @@ int main(int argc, char *argv[]) {
       CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
           op_loop_side->getOpPtrVector(), {});
       skeleton_rhs.push_back(new OpC_dHybrid("HYBRID", broken_data_ptr, 1.));
-      // auto hybrid_ptr = boost::make_shared<MatrixDouble>();
-      // skeleton_rhs.push_back(
-      //     new OpCalculateVectorFieldValues<1>("HYBRID", hybrid_ptr));
-      // skeleton_rhs.push_back(new OpC_dBroken(broken_data_ptr, hybrid_ptr, 1.));
- 
+      auto hybrid_ptr = boost::make_shared<MatrixDouble>();
+      skeleton_rhs.push_back(
+          new OpCalculateVectorFieldValues<1>("HYBRID", hybrid_ptr));
+
+      CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(domain_rhs, {HDIV});
+      auto flux_ptr = boost::make_shared<MatrixDouble>();
+      domain_rhs.push_back(
+          new OpCalculateHVecVectorField<3>("BROKEN", flux_ptr));
+      auto div_flux_ptr = boost::make_shared<VectorDouble>();
+      domain_rhs.push_back(new OpCalculateHdivVectorDivergence<3, SPACE_DIM>(
+          "BROKEN", div_flux_ptr));
+      using OpUDivFlux = FormsIntegrators<DomainEleOp>::Assembly<
+          PETSC>::LinearForm<GAUSS>::OpBaseTimesScalarField<1>;
+      auto beta = [](double, double, double) constexpr { return 1; };
+      domain_rhs.push_back(new OpUDivFlux("U", div_flux_ptr, beta));
+      auto source = [&](const double x, const double y,
+                        const double z) constexpr { return 1; };
+      using OpDomainSource = FormsIntegrators<DomainEleOp>::Assembly<
+          PETSC>::LinearForm<GAUSS>::OpSource<1, 1>;
+      domain_rhs.push_back(new OpDomainSource("U", source));
+
+      using OpHDivH = FormsIntegrators<DomainEleOp>::Assembly<
+          PETSC>::LinearForm<GAUSS>::OpMixDivTimesU<3, 1, SPACE_DIM>;
+      domain_rhs.push_back(new OpHdivHdiv("BROKEN", "BROKEN", resistance));
+
+      auto u_ptr = boost::make_shared<VectorDouble>();
+      domain_rhs.push_back(new OpCalculateScalarFieldValues("U", u_ptr));
+
       CHKERR VecZeroEntries(f);
       CHKERR VecGhostUpdateBegin(f, INSERT_VALUES, SCATTER_FORWARD);
       CHKERR VecGhostUpdateEnd(f, INSERT_VALUES, SCATTER_FORWARD);
@@ -234,9 +259,9 @@ int main(int argc, char *argv[]) {
       pip_mng->getDomainRhsFE()->x = x;
       pip_mng->getSkeletonRhsFE()->x = x;
 
-      // CHKERR DMoFEMLoopFiniteElements(simple->getDM(),
-      //                                 simple->getDomainFEName(),
-      //                                 pip_mng->getDomainRhsFE());
+      CHKERR DMoFEMLoopFiniteElements(simple->getDM(),
+                                      simple->getDomainFEName(),
+                                      pip_mng->getDomainRhsFE());
       CHKERR DMoFEMLoopFiniteElements(simple->getDM(),
                                       simple->getSkeletonFEName(),
                                       pip_mng->getSkeletonRhsFE());
