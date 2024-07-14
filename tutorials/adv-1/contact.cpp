@@ -1095,7 +1095,7 @@ MoFEMErrorCode SetUpSchurImpl::createSubDM() {
 
       return getNestSchurData(
 
-          {schurDM, blockDM}, block_mat_data,
+          {schur_dm, block_dm}, block_mat_data,
 
           {"SIGMA"}, {nullptr}, true
 
