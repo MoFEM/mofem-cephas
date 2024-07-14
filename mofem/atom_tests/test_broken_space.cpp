@@ -1,7 +1,10 @@
 /**
  * \example test_broken_space.cpp
  *
- * Testing broken spaces
+ * Testing broken spaces. Implementations works for 2d and 3d meshes, is aiming
+ * to test H-div broken base functions, and L2 base on skeleton.
+ *
+ * Also, it test block matrix with Schur complement.
  *
  */
 
