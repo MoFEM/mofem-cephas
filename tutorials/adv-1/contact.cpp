@@ -1131,10 +1131,10 @@ MoFEMErrorCode SetUpSchurImpl::setOperator() {
   boost::shared_ptr<BlockStructure> block_data;
   CHKERR DMMoFEMGetBlocMatData(simple->getDM(), block_data);
 
-  // Boundary
   auto dm_is = getDMSubData(schurDM)->getSmartRowIs();
   auto ao_up = createAOMappingIS(dm_is, PETSC_NULL);
 
+  // Boundary
   pip->getOpBoundaryLhsPipeline().push_front(createOpSchurAssembleBegin());
   pip->getOpBoundaryLhsPipeline().push_back(
       new OpMassStab("SIGMA", "SIGMA",
