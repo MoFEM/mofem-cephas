@@ -96,7 +96,7 @@ using OpHdivQ = FormsIntegrators<DomainEleOp>::Assembly<PETSC>::BiLinearForm<
     GAUSS>::OpMixDivTimesScalar<SPACE_DIM>;
 
 /**
- * @brief Integrate Lhs base of temerature times (heat capacity) times base of
+ * @brief Integrate Lhs base of temperature times (heat capacity) times base of
  * temperature (T x T)
  *
  */
@@ -117,7 +117,7 @@ using OpHDivH = FormsIntegrators<DomainEleOp>::Assembly<PETSC>::LinearForm<
     GAUSS>::OpMixDivTimesU<3, 1, 2>;
 
 /**
- * @brief Integrate Rhs base of temerature time heat capacity times heat rate
+ * @brief Integrate Rhs base of temperature time heat capacity times heat rate
  * (T)
  *
  */
@@ -125,7 +125,7 @@ using OpBaseDotH = FormsIntegrators<DomainEleOp>::Assembly<PETSC>::LinearForm<
     GAUSS>::OpBaseTimesScalarField<1>;
 
 /**
- * @brief Integrate Rhs base of temerature times divergenc of flux (T)
+ * @brief Integrate Rhs base of temperature times divergent of flux (T)
  *
  */
 using OpBaseDivFlux = OpBaseDotH;
