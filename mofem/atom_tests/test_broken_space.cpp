@@ -245,7 +245,8 @@ int main(int argc, char *argv[]) {
 
       using OpHDivH = FormsIntegrators<DomainEleOp>::Assembly<
           PETSC>::LinearForm<GAUSS>::OpMixDivTimesU<3, 1, SPACE_DIM>;
-      domain_rhs.push_back(new OpHdivHdiv("BROKEN", "BROKEN", resistance));
+      domain_rhs.push_back(new OpHdivHdiv("BROKEN", "BROKEN", beta));
+      
 
       auto u_ptr = boost::make_shared<VectorDouble>();
       domain_rhs.push_back(new OpCalculateScalarFieldValues("U", u_ptr));
