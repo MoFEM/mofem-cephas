@@ -1809,6 +1809,7 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopThis(
   CHKERR this_fe->preProcess();
 
   this_fe->nInTheLoop = getNinTheLoop();
+  this_fe->loopSize = getLoopSize();
   this_fe->numeredEntFiniteElementPtr = getNumeredEntFiniteElementPtr();
 
   CHKERR (*this_fe)();

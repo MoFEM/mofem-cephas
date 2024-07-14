@@ -1724,3 +1724,24 @@ foreach(test_base ${test_borken_base_list_3d})
     -log_no_color)
 endforeach(test_base IN test_borken_base_list)
 
+# add_test(
+#   test_broken_space_2d_demkowicz_schur
+#   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+#   ${CMAKE_CURRENT_BINARY_DIR}/test_broken_space_2d
+#   -file_name rectangle_tri.h5m
+#   -log_sl inform 
+#   -ksp_type fgmres 
+#   -ksp_monitor 
+#   -ksp_converged_reason
+#   -ksp_atol 1e-12 
+#   -ksp_rtol 1e-12 
+#   -base ${test_base}
+#   -space hcurl
+#   -order 4
+#   -pc_type fieldsplit
+#   -pc_fieldsplit_type schur
+#   -fieldsplit_0_ksp_type preonly
+#   -fieldsplit_1_ksp_type preonly
+#   -fieldsplit_1_pc_type lu
+#   -log_no_color)
+

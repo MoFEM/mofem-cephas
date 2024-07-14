@@ -12,6 +12,43 @@
 
 namespace MoFEM {
 
+template <typename E> struct OpBrokenLoopSide : public OpLoopSide<E> {
+
+  using OP = OpLoopSide<E>;
+  using OpLoopSide<E>::OpLoopSide;
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        EntitiesFieldData::EntData &data) {
+    MoFEMFunctionBegin;
+
+    auto prev_side_fe_ptr = OP::getSidePtrFE();
+    if (OP::sideFEName == prev_side_fe_ptr->getFEName()) {
+      auto prev_fe_uid =
+          prev_side_fe_ptr->numeredEntFiniteElementPtr->getFEUId();
+      OP::sideFEPtr->feName = OP::sideFEName;
+      CHKERR OP::sideFEPtr->setSideFEPtr(OP::getPtrFE());
+      CHKERR OP::sideFEPtr->copyBasicMethod(*OP::getFEMethod());
+      CHKERR OP::sideFEPtr->copyPetscData(*OP::getFEMethod());
+      CHKERR OP::sideFEPtr->copyKsp(*OP::getFEMethod());
+      CHKERR OP::sideFEPtr->copySnes(*OP::getFEMethod());
+      CHKERR OP::sideFEPtr->copyTs(*OP::getFEMethod());
+      OP::sideFEPtr->cacheWeakPtr = prev_side_fe_ptr->cacheWeakPtr;
+      OP::sideFEPtr->loopSize = 1;
+      CHKERR OP::sideFEPtr->preProcess();
+      OP::sideFEPtr->nInTheLoop = 0;
+      OP::sideFEPtr->numeredEntFiniteElementPtr =
+          prev_side_fe_ptr->numeredEntFiniteElementPtr;
+      CHKERR (*OP::sideFEPtr)();
+      CHKERR OP::sideFEPtr->postProcess();
+    } else {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "sideFEName is different");
+    }
+
+    MoFEMFunctionReturn(0);
+  };
+};
+
 struct BrokenBaseSideData {
   BrokenBaseSideData() : entData(false) {}
   inline auto &getSense() { return eleSense; }
@@ -460,7 +497,6 @@ OpBrokenSpaceConstrainDHybridImpl<FIELD_DIM, GAUSS, OpBase>::iNtegrate(
 
   FTENSOR_INDEX(1, i);
   FTENSOR_INDEX(3, J);
-
 
   OP::locF.resize(row_data.getIndices().size(), false);
   OP::locF.clear();

@@ -538,7 +538,7 @@ private:
   friend class VolumeElementForcesAndSourcesCoreOnContactPrismSide;
 
   template <int DIM> friend struct OpCopyGeomDataToE;
-                                   
+  template <typename E> friend struct OpBrokenLoopSide; 
 
 protected:
   MatrixDouble coordsAtGaussPts; ///< coordinated at gauss points
@@ -915,6 +915,7 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
    * be accessed
    * @param verb
    * @param sev
+   * @param adj_cache
    * @return MoFEMErrorCode
    */
   MoFEMErrorCode loopSide(const string &fe_name, ForcesAndSourcesCore *side_fe,
@@ -1304,13 +1305,13 @@ struct OpLoopSide : public ForcesAndSourcesCore::UserDataOperator {
              const LogManager::SeverityLevel sev = Sev::noisy,
              boost::shared_ptr<AdjCache> adj_cache = nullptr)
       : UserDataOperator(NOSPACE, OPSPACE), sideFEPtr(new E(m_field)),
-        fieldName(fe_name), sideDim(side_dim), sevLevel(sev),
+        sideFEName(fe_name), sideDim(side_dim), sevLevel(sev),
         adjCache(adj_cache) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
-    CHKERR loopSide(fieldName, sideFEPtr.get(), sideDim, 0, VERBOSE, sevLevel,
+    CHKERR loopSide(sideFEName, sideFEPtr.get(), sideDim, 0, VERBOSE, sevLevel,
                     adjCache.get());
     MoFEMFunctionReturn(0);
   };
@@ -1322,7 +1323,7 @@ struct OpLoopSide : public ForcesAndSourcesCore::UserDataOperator {
   boost::shared_ptr<E> &getSideFEPtr() { return sideFEPtr; }
 
 protected:
-  const std::string fieldName;
+  const std::string sideFEName;
   const int sideDim;
   boost::shared_ptr<E> sideFEPtr;
   const LogManager::SeverityLevel sevLevel;

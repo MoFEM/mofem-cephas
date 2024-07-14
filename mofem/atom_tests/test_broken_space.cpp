@@ -138,6 +138,8 @@ int main(int argc, char *argv[]) {
 
     CHKERR simple->setUp();
 
+    auto integration_rule = [](int, int, int p) { return 2 * p + 1; };
+
     auto assemble_domain_lhs = [&](auto &pip) {
       MoFEMFunctionBegin;
       CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(pip, {HDIV});
@@ -157,6 +159,34 @@ int main(int argc, char *argv[]) {
       auto unity = []() constexpr { return 1; };
       pip.push_back(new OpHdivU("BROKEN", "U", unity, true));
 
+      // First: Iterate over skeleton FEs adjacent to Domain FEs
+      // Note:  BoundaryEle, i.e. uses skeleton interation rule
+      auto op_loop_skeleton_side = new OpLoopSide<BoundaryEle>(
+          m_field, simple->getSkeletonFEName(), SPACE_DIM - 1, Sev::noisy);
+      op_loop_skeleton_side->getSideFEPtr()->getRuleHook = integration_rule;
+      CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
+          op_loop_skeleton_side->getOpPtrVector(), {});
+
+
+      // Second: Iterate over domain FEs adjacent to skelton, particularly one
+      // domain element.
+      auto broken_data_ptr =
+          boost::make_shared<std::vector<BrokenBaseSideData>>();
+      // Note: EleOnSide, i.e. uses on domain projected skeleton rule
+      auto op_loop_domain_side = new OpBrokenLoopSide<EleOnSide>(
+          m_field, simple->getDomainFEName(), SPACE_DIM, Sev::noisy);
+      CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+          op_loop_domain_side->getOpPtrVector(), {HDIV});
+      op_loop_domain_side->getOpPtrVector().push_back(
+          new OpGetBrokenBaseSideData<SideEleOp>("BROKEN", broken_data_ptr));
+
+      op_loop_skeleton_side->getOpPtrVector().push_back(op_loop_domain_side);
+      using OpC = FormsIntegrators<BdyEleOp>::Assembly<AT>::BiLinearForm<
+          IT>::OpBrokenSpaceConstrain<1>;
+      op_loop_skeleton_side->getOpPtrVector().push_back(
+          new OpC("HYBRID", broken_data_ptr, 1., true, false));
+      pip.push_back(op_loop_skeleton_side);
+
       MoFEMFunctionReturn(0);
     };
 
@@ -171,43 +201,11 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionReturn(0);
     };
 
-    auto get_broken_ptr = [&]() {
-      auto broken_data_ptr =
-          boost::make_shared<std::vector<BrokenBaseSideData>>();
-      auto flux_mat_ptr = boost::make_shared<MatrixDouble>();
-      auto op_loop_side = new OpLoopSide<EleOnSide>(
-          m_field, simple->getDomainFEName(), SPACE_DIM, Sev::noisy);
-      CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
-          op_loop_side->getOpPtrVector(), {HDIV});
-      op_loop_side->getOpPtrVector().push_back(
-          new OpGetBrokenBaseSideData<SideEleOp>("BROKEN", broken_data_ptr));
-      op_loop_side->getOpPtrVector().push_back(
-          new OpCalculateHVecTensorField<1, 3>("BROKEN", flux_mat_ptr));
-      op_loop_side->getOpPtrVector().push_back(
-          new OpSetFlux<SideEleOp>(broken_data_ptr, flux_mat_ptr));
-      return std::make_tuple(op_loop_side, broken_data_ptr);
-    };
-
-    auto assemble_skeleton_lhs = [&](auto &pip, auto &&broken_data_tuple) {
-      MoFEMFunctionBegin;
-      using OpC = FormsIntegrators<BdyEleOp>::Assembly<AT>::BiLinearForm<
-          IT>::OpBrokenSpaceConstrain<1>;
-      auto [op_loop_side, broken_data_ptr] = broken_data_tuple;
-      pip.push_back(op_loop_side);
-      CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
-          op_loop_side->getOpPtrVector(), {});
-      pip.push_back(new OpC("HYBRID", broken_data_ptr, 1., true, false));
-      MoFEMFunctionReturn(0);
-    };
-
     auto *pip_mng = m_field.getInterface<PipelineManager>();
 
     CHKERR assemble_domain_lhs(pip_mng->getOpDomainLhsPipeline());
-    CHKERR assemble_skeleton_lhs(pip_mng->getOpSkeletonLhsPipeline(),
-                                 get_broken_ptr());
     CHKERR assemble_domain_rhs(pip_mng->getOpDomainRhsPipeline(), 1);
-
-    auto integration_rule = [](int, int, int p) { return 2 * p + 1; };
+  
     CHKERR pip_mng->setDomainLhsIntegrationRule(integration_rule);
     CHKERR pip_mng->setDomainRhsIntegrationRule(integration_rule);
     CHKERR pip_mng->setSkeletonLhsIntegrationRule(integration_rule);
@@ -215,7 +213,6 @@ int main(int argc, char *argv[]) {
 
     auto x = createDMVector(simple->getDM());
     auto f = vectorDuplicate(x);
-
 
     if (AT == PETSC) {
       auto ksp = pip_mng->createKSP();
@@ -225,7 +222,7 @@ int main(int argc, char *argv[]) {
       MOFEM_LOG("TIMER", Sev::inform) << "KSPSetUp";
       CHKERR KSPSetUp(ksp);
       MOFEM_LOG("TIMER", Sev::inform) << "KSPSetUp <= Done";
-      
+
       MOFEM_LOG("TIMER", Sev::inform) << "KSPSolve";
       CHKERR KSPSolve(ksp, f, x);
       MOFEM_LOG("TIMER", Sev::inform) << "KSPSolve <= Done";
@@ -235,9 +232,6 @@ int main(int argc, char *argv[]) {
       CHKERR DMoFEMMeshToLocalVector(simple->getDM(), x, INSERT_VALUES,
                                      SCATTER_REVERSE);
     } else {
-      auto x = createDMVector(simple->getDM());
-      auto f = vectorDuplicate(x);
-
       auto ksp = pip_mng->createKSP();
       auto schur_ptr = SetUpSchur::createSetUpSchur(m_field);
       BOOST_LOG_SCOPED_THREAD_ATTR("Timeline", attrs::timer());
@@ -264,6 +258,23 @@ int main(int argc, char *argv[]) {
       auto &domain_rhs = pip_mng->getOpDomainRhsPipeline();
       skeleton_rhs.clear();
       domain_rhs.clear();
+
+      auto get_broken_ptr = [&]() {
+        auto broken_data_ptr =
+            boost::make_shared<std::vector<BrokenBaseSideData>>();
+        auto flux_mat_ptr = boost::make_shared<MatrixDouble>();
+        auto op_loop_side = new OpLoopSide<EleOnSide>(
+            m_field, simple->getDomainFEName(), SPACE_DIM, Sev::noisy);
+        CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+            op_loop_side->getOpPtrVector(), {HDIV});
+        op_loop_side->getOpPtrVector().push_back(
+            new OpGetBrokenBaseSideData<SideEleOp>("BROKEN", broken_data_ptr));
+        op_loop_side->getOpPtrVector().push_back(
+            new OpCalculateHVecTensorField<1, 3>("BROKEN", flux_mat_ptr));
+        op_loop_side->getOpPtrVector().push_back(
+            new OpSetFlux<SideEleOp>(broken_data_ptr, flux_mat_ptr));
+        return std::make_tuple(op_loop_side, broken_data_ptr);
+      };
 
       CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(skeleton_rhs,
                                                                 {});
@@ -389,7 +400,6 @@ int main(int argc, char *argv[]) {
   CHKERR MoFEM::Core::Finalize();
 }
 
-
 struct SetUpSchurImpl : public SetUpSchur {
 
   SetUpSchurImpl(MoFEM::Interface &m_field) : SetUpSchur(), mField(m_field) {}
@@ -401,7 +411,6 @@ struct SetUpSchurImpl : public SetUpSchur {
 private:
   MoFEM::Interface &mField;
   SmartPetscObj<Mat> S;
-
 };
 
 MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
@@ -478,24 +487,42 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
     };
 
     auto get_nested_mat_data = [&](auto schur_dm, auto block_dm) {
-      auto block_mat_data =
-          createBlockMatStructure(simple->getDM(),
+      auto block_mat_data = createBlockMatStructure(
+          simple->getDM(),
 
-                                  {{
+          {
 
-                                      simple->getDomainFEName(),
+              {
 
-                                      {
+                  simple->getDomainFEName(),
 
-                                          {"BROKEN", "BROKEN"},
-                                          {"BROKEN", "U"},
-                                          {"U", "BROKEN"},
-                                          {"BROKEN", "HYBRID"},
-                                          {"HYBRID", "BROKEN"}
+                  {
 
-                                      }}}
+                      {"BROKEN", "BROKEN"},
+                      {"BROKEN", "U"},
+                      {"U", "BROKEN"},
+                      {"BROKEN", "HYBRID"},
+                      {"HYBRID", "BROKEN"}
 
-          );
+                  }
+
+              },
+
+              {
+
+                  simple->getSkeletonFEName(),
+
+                  {
+
+                      {"BROKEN", "HYBRID"}, {"HYBRID", "BROKEN"}
+
+                  }
+
+              }
+
+          }
+
+      );
 
       return getNestSchurData(
 
@@ -513,7 +540,7 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
 
       boost::shared_ptr<BlockStructure> block_data;
       CHKERR DMMoFEMGetBlocMatData(simple->getDM(), block_data);
-      
+
       pip_mng->getOpDomainLhsPipeline().push_front(
           createOpSchurAssembleBegin());
       pip_mng->getOpDomainLhsPipeline().push_back(
@@ -546,7 +573,7 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
     };
 
     auto set_pc = [&](auto pc, auto block_dm) {
-      MoFEMFunctionBegin; 
+      MoFEMFunctionBegin;
       auto block_is = getDMSubData(block_dm)->getSmartRowIs();
       CHKERR PCFieldSplitSetIS(pc, NULL, block_is);
       CHKERR PCFieldSplitSetSchurPre(pc, PC_FIELDSPLIT_SCHUR_PRE_USER, S);
