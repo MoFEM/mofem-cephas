@@ -1670,19 +1670,20 @@ build_test(
 set_target_properties(
   test_broken_space_2d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=2")
 
-# build_test(
-#   test_broken_space_3d
-#   test_broken_space.cpp
-# )
-# set_target_properties(
-#   test_broken_space_3d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=3")
+build_test(
+  test_broken_space_3d
+  test_broken_space.cpp
+)
+set_target_properties(
+  test_broken_space_3d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=3")
 
-list(INSERT test_borken_base_list
+list(INSERT test_borken_base_list_2d
   0
   ainsworth 
+  ainsworth_labatto
   demkowicz
 )
-foreach(test_base ${test_borken_base_list})
+foreach(test_base ${test_borken_base_list_2d})
   add_test(test_broken_space_2d_${test_base}
     ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
     ${CMAKE_CURRENT_BINARY_DIR}/test_broken_space_2d
@@ -1692,28 +1693,32 @@ foreach(test_base ${test_borken_base_list})
     -pc_type lu
     -ksp_monitor 
     -ksp_converged_reason
-    -ksp_atol 1e-16 
-    -ksp_rtol 1e-16 
+    -ksp_atol 1e-12 
+    -ksp_rtol 1e-12 
     -base ${test_base}
     -space hcurl
-    -order 2
+    -order 4
     -log_no_color)
 endforeach(test_base IN test_borken_base_list)
 
-# foreach(test_base ${test_borken_base_list})
-#   add_test(test_broken_space_3d_${test_base}
-#     ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
-#     ${CMAKE_CURRENT_BINARY_DIR}/test_broken_space_3d
-#     -file_name sphere.h5m
-#     -log_sl inform 
-#     -ksp_type fgmres 
-#     -pc_type lu
-#     -ksp_monitor 
-#     -ksp_atol 1e-16 
-#     -ksp_rtol 1e-16 
-#     -base ainsworth
-#     -space hcurl
-#     -order 2
-#     -log_no_color)
-# endforeach(test_base IN test_borken_base_list)
+list(INSERT test_borken_base_list_3d
+  0
+  demkowicz
+)
+foreach(test_base ${test_borken_base_list_3d})
+  add_test(test_broken_space_3d_${test_base}
+    ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+    ${CMAKE_CURRENT_BINARY_DIR}/test_broken_space_3d
+    -file_name disp01_1parts.h5m
+    -log_sl inform 
+    -ksp_type gmres 
+    -pc_type lu
+    -ksp_monitor 
+    -ksp_atol 1e-12 
+    -ksp_rtol 1e-12 
+    -base ${test_base}
+    -space hdiv
+    -order 4
+    -log_no_color)
+endforeach(test_base IN test_borken_base_list)
 
