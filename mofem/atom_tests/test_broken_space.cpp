@@ -218,7 +218,7 @@ int main(int argc, char *argv[]) {
       auto ksp = pip_mng->createKSP();
 
       CHKERR KSPSetFromOptions(ksp);
-      // BOOST_LOG_SCOPED_THREAD_ATTR("Timeline", attrs::timer());
+      BOOST_LOG_SCOPED_THREAD_ATTR("Timeline", attrs::timer());
       MOFEM_LOG("TIMER", Sev::inform) << "KSPSetUp";
       CHKERR KSPSetUp(ksp);
       MOFEM_LOG("TIMER", Sev::inform) << "KSPSetUp <= Done";
@@ -234,7 +234,7 @@ int main(int argc, char *argv[]) {
     } else {
       auto ksp = pip_mng->createKSP();
       auto schur_ptr = SetUpSchur::createSetUpSchur(m_field);
-      // BOOST_LOG_SCOPED_THREAD_ATTR("Timeline", attrs::timer());
+      BOOST_LOG_SCOPED_THREAD_ATTR("Timeline", attrs::timer());
       MOFEM_LOG("TIMER", Sev::inform) << "KSPSetUp";
       CHKERR schur_ptr->setUp(ksp);
       MOFEM_LOG("TIMER", Sev::inform) << "KSPSetUp <= Done";
