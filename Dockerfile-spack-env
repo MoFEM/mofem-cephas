@@ -54,6 +54,7 @@ libxi-dev \
 libssl-dev \
 gawk \
 libopenmpi-dev \
+vim \
 && rm -rf /var/lib/apt/lists/*
 
 ENV MOFEM_INSTALL_DIR=/mofem_install
@@ -69,7 +70,7 @@ RUN mkdir -p $SPACK_ROOT_DIR
 RUN git clone -b master  https://bitbucket.org/mofem/mofem-spack.git  $SPACK_ROOT_DIR
 
 RUN . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
-    echo ". $SPACK_ROOT_DIR/share/spack/setup-env.sh" >> ~/.bashrc && \
+    echo ". $SPACK_ROOT_DIR/share/spack/setup-env.sh" >> /etc/bash.bashrc && \
     spack external find && \
     spack install --only dependencies mofem-cephas@lukasz+mgis \
     target=$TARGET build_type=Release ^petsc+X ^boost+python+numpy

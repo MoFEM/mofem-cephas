@@ -2,7 +2,7 @@
 
 mkdir -p empty
 
-export VERSION=Nanoindentation2024
+export VERSION=Nanoindentation2024v1
 
 # Create environment
 docker build -t likask/mofem-spack-env -f Dockerfile-spack-env empty/

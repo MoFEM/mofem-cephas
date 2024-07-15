@@ -28,18 +28,18 @@ RUN . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
 
 RUN . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
   export TFEL_LIB=$(spack find -p tfel | grep tfel | awk '{print $2 "/lib"}') && \
-  echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$TFEL_LIB" >> $MOFEM_ENV_FILE 
+  echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$TFEL_LIB" >> $MOFEM_ENV_FILE && \
+  echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$TFEL_LIB" >> /etc/bash.bashrc
 
-  # Add MGIS to the ENV
 RUN . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
-    echo "#Load MGIS ENV" >> etc/bash.bashrc \
-    spack load -sh mgis >> etc/bash.bashrc
+    echo "spack load mgis tfel python py-numpy" >> /etc/bash.bashrc
 
-# Install users mdoules
+# Install users modules
 RUN . $MOFEM_ENV_FILE && \
   spack load tfel mgis && \
   spack dev-build -j6 \
   --source-path $MOFEM_UM_SRC_DIR \
+  --test root \
   mofem-users-modules@lukasz+docker build_type=Release \
   ^mofem-cephas@lukasz+adol-c~copy_user_modules+docker~ipo+med~shared+slepc+tetgen build_system=cmake build_type=Release dev_path=/mofem_install/mofem-cephas install_id=0 \
   ^petsc+X ^boost+python+numpy && \
@@ -50,8 +50,6 @@ RUN . $MOFEM_ENV_FILE && \
   echo "export PATH=$MOFEM_INSTALL_DIR/um_view/bin:$PATH" >> $MOFEM_ENV_FILE && \
   chmod -R aug+rX `spack find -p mofem-users-modules | grep mofem-users-modules@lukasz | awk '{print $2}'`
   
-
-
 WORKDIR $MOFEM_INSTALL_DIR
 
 # image run hook: the -l will make sure /etc/profile environments are loaded
