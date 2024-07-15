@@ -1709,9 +1709,9 @@ list(INSERT test_borken_base_list_3d
 )
 foreach(test_base ${test_borken_base_list_3d})
   add_test(test_broken_space_3d_${test_base}
-    ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+    ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 2
     ${CMAKE_CURRENT_BINARY_DIR}/test_broken_space_3d
-    -file_name disp01_1parts.h5m
+    -file_name disp01_2parts.h5m
     -log_sl inform 
     -ksp_type gmres 
     -pc_type lu
@@ -1750,7 +1750,7 @@ add_test(
   -pc_fieldsplit_type schur
   -fieldsplit_0_ksp_type preonly
   -fieldsplit_1_ksp_type preonly
-  -fieldsplit_1_pc_type lu
+  -fieldsplit_1_pc_type mg
   -fieldsplit_0_ksp_monitor
   -fieldsplit_1_ksp_monitor
   -log_no_color)
@@ -1777,7 +1777,7 @@ add_test(test_broken_space_3d_demkowicz_schur
   -pc_fieldsplit_type schur
   -fieldsplit_0_ksp_type preonly
   -fieldsplit_1_ksp_type preonly
-  -fieldsplit_1_pc_type lu
+  -fieldsplit_1_pc_type mg
   -fieldsplit_0_ksp_monitor
   -fieldsplit_1_ksp_monitor
   -order 4

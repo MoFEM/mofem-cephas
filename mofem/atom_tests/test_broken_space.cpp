@@ -15,6 +15,8 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
+constexpr bool debug = false;
+
 constexpr AssemblyType AT =
     (SCHUR_ASSEMBLE) ? AssemblyType::BLOCK_SCHUR
                      : AssemblyType::PETSC; //< selected assembly type
@@ -78,11 +80,24 @@ int main(int argc, char *argv[]) {
 
     auto *simple = m_field.getInterface<Simple>();
     CHKERR simple->getOptions();
+    CHKERR simple->loadFile();
 
-    simple->getAddSkeletonFE() = true;
-    simple->getAddBoundaryFE() = true;
+    auto add_shared_entities_on_skeleton = [&]() {
+      MoFEMFunctionBegin;
+      auto boundary_meshset = simple->getBoundaryMeshSet();
+      auto skeleton_meshset = simple->getSkeletonMeshSet();
+      Range bdy_ents;
+      CHKERR m_field.get_moab().get_entities_by_handle(boundary_meshset,
+                                                       bdy_ents, true);
+      Range skeleton_ents;
+      CHKERR m_field.get_moab().get_entities_by_dimension(
+          0, simple->getDim() - 1, skeleton_ents, true);
+      skeleton_ents = subtract(skeleton_ents, bdy_ents);
+      CHKERR m_field.get_moab().add_entities(skeleton_meshset, skeleton_ents);
+      MoFEMFunctionReturn(0);
+    };
 
-    CHKERR simple->loadFile("", "");
+    CHKERR add_shared_entities_on_skeleton();
 
     // Declare elements
     enum bases {
@@ -185,6 +200,29 @@ int main(int argc, char *argv[]) {
           IT>::OpBrokenSpaceConstrain<1>;
       op_loop_skeleton_side->getOpPtrVector().push_back(
           new OpC("HYBRID", broken_data_ptr, 1., true, false));
+
+      if (debug) {
+        // print skeleton elements on partition
+        constexpr int partition = 1;
+        auto op_print = new BdyEleOp(NOSPACE, BdyEleOp::OPSPACE);
+        op_print->doWorkRhsHook = [&](DataOperator *base_op_ptr, int side,
+                                      EntityType type,
+                                      EntitiesFieldData::EntData &data) {
+          MoFEMFunctionBegin;
+          if (auto op_ptr = dynamic_cast<BdyEleOp *>(base_op_ptr)) {
+            auto fe_method = op_ptr->getFEMethod();
+            auto num_fe = fe_method->numeredEntFiniteElementPtr;
+
+            if (m_field.get_comm_rank() == partition) {
+              if (num_fe->getPStatus() & PSTATUS_SHARED)
+                MOFEM_LOG("SELF", Sev::inform) << "Num FE: " << *num_fe;
+            }
+          }
+          MoFEMFunctionReturn(0);
+        };
+        op_loop_skeleton_side->getOpPtrVector().push_back(op_print);
+      };
+
       pip.push_back(op_loop_skeleton_side);
 
       MoFEMFunctionReturn(0);
@@ -254,44 +292,10 @@ int main(int argc, char *argv[]) {
       auto *simple = m_field.getInterface<Simple>();
       auto *pip_mng = m_field.getInterface<PipelineManager>();
 
-      auto &skeleton_rhs = pip_mng->getOpSkeletonRhsPipeline();
+      // auto &skeleton_rhs = pip_mng->getOpSkeletonRhsPipeline();
       auto &domain_rhs = pip_mng->getOpDomainRhsPipeline();
-      skeleton_rhs.clear();
+      // skeleton_rhs.clear();
       domain_rhs.clear();
-
-      auto get_broken_ptr = [&]() {
-        auto broken_data_ptr =
-            boost::make_shared<std::vector<BrokenBaseSideData>>();
-        auto flux_mat_ptr = boost::make_shared<MatrixDouble>();
-        auto op_loop_side = new OpLoopSide<EleOnSide>(
-            m_field, simple->getDomainFEName(), SPACE_DIM, Sev::noisy);
-        CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
-            op_loop_side->getOpPtrVector(), {HDIV});
-        op_loop_side->getOpPtrVector().push_back(
-            new OpGetBrokenBaseSideData<SideEleOp>("BROKEN", broken_data_ptr));
-        op_loop_side->getOpPtrVector().push_back(
-            new OpCalculateHVecTensorField<1, 3>("BROKEN", flux_mat_ptr));
-        op_loop_side->getOpPtrVector().push_back(
-            new OpSetFlux<SideEleOp>(broken_data_ptr, flux_mat_ptr));
-        return std::make_tuple(op_loop_side, broken_data_ptr);
-      };
-
-      CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(skeleton_rhs,
-                                                                {});
-      using OpC_dHybrid = FormsIntegrators<BdyEleOp>::Assembly<AT>::LinearForm<
-          IT>::OpBrokenSpaceConstrainDHybrid<1>;
-      using OpC_dBroken = FormsIntegrators<BdyEleOp>::Assembly<AT>::LinearForm<
-          IT>::OpBrokenSpaceConstrainDFlux<1>;
-      auto broken_data_tuple = get_broken_ptr();
-      auto [op_loop_side, broken_data_ptr] = broken_data_tuple;
-      skeleton_rhs.push_back(op_loop_side);
-      CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
-          op_loop_side->getOpPtrVector(), {});
-      skeleton_rhs.push_back(new OpC_dHybrid("HYBRID", broken_data_ptr, 1.));
-      auto hybrid_ptr = boost::make_shared<MatrixDouble>();
-      skeleton_rhs.push_back(
-          new OpCalculateVectorFieldValues<1>("HYBRID", hybrid_ptr));
-      skeleton_rhs.push_back(new OpC_dBroken(broken_data_ptr, hybrid_ptr, 1.));
 
       CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(domain_rhs, {HDIV});
 
@@ -318,9 +322,51 @@ int main(int argc, char *argv[]) {
       boost::shared_ptr<VectorDouble> u_ptr =
           boost::make_shared<VectorDouble>();
       domain_rhs.push_back(new OpCalculateScalarFieldValues("U", u_ptr));
-      // auto minus = [](double, double, double) constexpr { return -1; };
+      auto minus = [](double, double, double) constexpr { return -1; };
       domain_rhs.push_back(new OpHDivH("BROKEN", u_ptr, beta));
       domain_rhs.push_back(new OpHdivFlux("BROKEN", flux_ptr, beta));
+
+      // First: Iterate over skeleton FEs adjacent to Domain FEs
+      // Note:  BoundaryEle, i.e. uses skeleton interation rule
+      auto op_loop_skeleton_side = new OpLoopSide<BoundaryEle>(
+          m_field, simple->getSkeletonFEName(), SPACE_DIM - 1, Sev::noisy);
+      op_loop_skeleton_side->getSideFEPtr()->getRuleHook = integration_rule;
+      CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
+          op_loop_skeleton_side->getOpPtrVector(), {});
+
+      // Second: Iterate over domain FEs adjacent to skelton, particularly one
+      // domain element.
+      auto broken_data_ptr =
+          boost::make_shared<std::vector<BrokenBaseSideData>>();
+      // Note: EleOnSide, i.e. uses on domain projected skeleton rule
+      auto op_loop_domain_side = new OpBrokenLoopSide<EleOnSide>(
+          m_field, simple->getDomainFEName(), SPACE_DIM, Sev::noisy);
+      CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+          op_loop_domain_side->getOpPtrVector(), {HDIV});
+      op_loop_domain_side->getOpPtrVector().push_back(
+          new OpGetBrokenBaseSideData<SideEleOp>("BROKEN", broken_data_ptr));
+      auto flux_mat_ptr = boost::make_shared<MatrixDouble>();
+      op_loop_domain_side->getOpPtrVector().push_back(
+          new OpCalculateHVecTensorField<1, 3>("BROKEN", flux_mat_ptr));
+      op_loop_domain_side->getOpPtrVector().push_back(
+          new OpSetFlux<SideEleOp>(broken_data_ptr, flux_mat_ptr));
+
+      // Assemble on skeleton
+      op_loop_skeleton_side->getOpPtrVector().push_back(op_loop_domain_side);
+      using OpC_dHybrid = FormsIntegrators<BdyEleOp>::Assembly<AT>::LinearForm<
+          IT>::OpBrokenSpaceConstrainDHybrid<1>;
+      using OpC_dBroken = FormsIntegrators<BdyEleOp>::Assembly<AT>::LinearForm<
+          IT>::OpBrokenSpaceConstrainDFlux<1>;
+      op_loop_skeleton_side->getOpPtrVector().push_back(
+          new OpC_dHybrid("HYBRID", broken_data_ptr, 1.));
+      auto hybrid_ptr = boost::make_shared<MatrixDouble>();
+      op_loop_skeleton_side->getOpPtrVector().push_back(
+          new OpCalculateVectorFieldValues<1>("HYBRID", hybrid_ptr));
+      op_loop_skeleton_side->getOpPtrVector().push_back(
+          new OpC_dBroken(broken_data_ptr, hybrid_ptr, 1.));
+
+      // Add skeleton to domain pipeline
+      domain_rhs.push_back(op_loop_skeleton_side);
 
       CHKERR VecZeroEntries(f);
       CHKERR VecGhostUpdateBegin(f, INSERT_VALUES, SCATTER_FORWARD);
@@ -334,9 +380,6 @@ int main(int argc, char *argv[]) {
       CHKERR DMoFEMLoopFiniteElements(simple->getDM(),
                                       simple->getDomainFEName(),
                                       pip_mng->getDomainRhsFE());
-      CHKERR DMoFEMLoopFiniteElements(simple->getDM(),
-                                      simple->getSkeletonFEName(),
-                                      pip_mng->getSkeletonRhsFE());
 
       CHKERR VecGhostUpdateBegin(f, ADD_VALUES, SCATTER_REVERSE);
       CHKERR VecGhostUpdateEnd(f, ADD_VALUES, SCATTER_REVERSE);
