@@ -626,8 +626,7 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
     auto [schur_dm, block_dm] = create_sub_dm();
     auto nested_mat_data = get_nested_mat_data(schur_dm, block_dm);
     CHKERR DMMoFEMSetNestSchurData(simple->getDM(), nested_mat_data);
-    S = createDMMatrix(schur_dm);
-    CHKERR MatSetOption(S, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
+    S = createDMHybridisedL2Matrix(schur_dm);
     CHKERR MatSetDM(S, PETSC_NULL);
     CHKERR set_ops(schur_dm);
     CHKERR set_pc(pc, block_dm);

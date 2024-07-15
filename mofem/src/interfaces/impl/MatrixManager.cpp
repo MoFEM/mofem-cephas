@@ -1161,4 +1161,150 @@ MoFEMErrorCode MatrixManager::checkMPIAIJMatrixFillIn<PetscGlobalIdx_mi_tag>(
   MoFEMFunctionReturn(0);
 }
 
+template <>
+MoFEMErrorCode MatrixManager::createHybridL2MPIAIJ<PetscGlobalIdx_mi_tag>(
+    const std::string problem_name, SmartPetscObj<Mat> &aij_ptr, int verb) {
+  MoFEM::CoreInterface &m_field = cOre;
+  MatrixManagerFunctionBegin;
+
+  auto prb_ptr = m_field.get_problems();
+  auto p_miit = prb_ptr->get<Problem_mi_tag>().find(problem_name);
+  if (p_miit == prb_ptr->get<Problem_mi_tag>().end()) {
+    SETERRQ1(m_field.get_comm(), MOFEM_NOT_FOUND,
+             "problem < %s > is not found (top tip: check spelling)",
+             problem_name.c_str());
+  }
+
+  auto fields = m_field.get_fields();
+
+  auto nb_rows = p_miit->getNbDofsRow();
+  auto nb_cols = p_miit->getNbDofsCol();
+  auto nb_loc_rows = p_miit->getNbLocalDofsRow();
+  auto nb_loc_cols = p_miit->getNbLocalDofsCol();
+
+  auto row_ptr = p_miit->getNumeredRowDofsPtr();
+  auto col_ptr = p_miit->getNumeredColDofsPtr();
+
+  auto get_layout = [&](int nb_local_dofs) {
+    int start_ranges, end_ranges;
+    PetscLayout layout;
+    CHKERR PetscLayoutCreate(m_field.get_comm(), &layout);
+    CHKERR PetscLayoutSetBlockSize(layout, 1);
+    CHKERR PetscLayoutSetLocalSize(layout, nb_local_dofs);
+    CHKERR PetscLayoutSetUp(layout);
+    CHKERR PetscLayoutGetRange(layout, &start_ranges, &end_ranges);
+    CHKERR PetscLayoutDestroy(&layout);
+    return std::make_pair(start_ranges, end_ranges);
+  };
+
+  MeshTopoUtil mtu(&m_field.get_moab());
+
+  auto [rstart, rend] = get_layout(nb_loc_rows);
+  auto [rstart_col, rend_col] = get_layout(nb_loc_cols);
+
+  Range adj;
+  EntityHandle prev_ent = 0;
+  int prev_dim = -1;
+
+  auto get_adj = [&](auto ent, auto dim) {
+    if (prev_ent == ent && prev_dim == dim) {
+      return adj;
+    } else {
+      adj.clear();
+      CHKERR mtu.get_bridge_adjacencies(ent, dim + 1, dim, adj);
+      adj.insert(ent);
+      prev_ent = ent;
+      prev_dim = dim;
+      return adj;
+    }
+  };
+
+  int prev_bit_number = -1;
+  EntityHandle prev_first_ent = 0;
+  EntityHandle prev_second_ent = 0;
+  using IT = boost::multi_index::index<NumeredDofEntity_multiIndex,
+                                       Unique_mi_tag>::type::iterator;
+  std::pair<IT, IT> pair_lo_hi;
+  auto get_col_it = [&](auto bit_number, auto first_ent, auto second_ent) {
+    if (bit_number == prev_bit_number && first_ent == prev_first_ent &&
+        second_ent == prev_second_ent) {
+      return pair_lo_hi;
+    } else {
+      auto lo_it = col_ptr->get<Unique_mi_tag>().lower_bound(
+          DofEntity::getLoFieldEntityUId(bit_number, first_ent));
+      auto hi_it = col_ptr->get<Unique_mi_tag>().upper_bound(
+          DofEntity::getHiFieldEntityUId(bit_number, second_ent));
+      pair_lo_hi = std::make_pair(lo_it, hi_it);
+      prev_bit_number = bit_number;
+      prev_first_ent = first_ent;
+      prev_second_ent = second_ent;
+      return pair_lo_hi;
+    }
+  };
+
+  int d_nz = 0;
+  int o_nz = 0;
+  std::vector<int> d_nnz(nb_loc_rows, 0), o_nnz(nb_loc_rows, 0);
+
+  for (auto r = row_ptr->begin(); r != row_ptr->end(); ++r) {
+
+    auto row_loc_idx = (*r)->getPetscLocalDofIdx();
+    if (row_loc_idx >= rstart && row_loc_idx <= rend) {
+
+      auto ent = (*r)->getEnt();
+      auto dim = dimension_from_handle(ent);
+      auto adj = get_adj(ent, dim);
+
+      for (auto p = adj.pair_begin(); p != adj.pair_end(); ++p) {
+        auto first_ent = p->first;
+        auto second_ent = p->second;
+
+        for (auto &f : *fields) {
+
+          auto bit_number = f->getBitNumber();
+          auto [lo_it, hi_it] = get_col_it(bit_number, first_ent, second_ent);
+
+          for (; lo_it != hi_it; ++lo_it) {
+            auto col_loc_idx = (*lo_it)->getPetscLocalDofIdx();
+            if (col_loc_idx >= rstart_col && col_loc_idx <= rend_col) {
+              ++d_nnz[row_loc_idx];
+              ++d_nz;
+            } else {
+              ++o_nnz[row_loc_idx];
+              ++o_nz;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (verb >= QUIET) {
+    MOFEM_LOG("SYNC", Sev::verbose)
+        << "Hybrid L2 matrix d_nz: " << d_nz << " o_nz: " << o_nz;
+    MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::verbose);
+  }
+
+  if (verb >= VERBOSE) {
+    MOFEM_LOG("SYNC", Sev::noisy) << "Hybrid L2 matrix";
+    int idx = 0;
+    for (auto &d : d_nnz) {
+      MOFEM_LOG("SYNC", Sev::noisy) << idx << ": " << d;
+      ++idx;
+    }
+    MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::noisy);
+  }
+
+  Mat a_raw;
+  CHKERR MatCreateAIJ(m_field.get_comm(), nb_loc_rows, nb_loc_cols, nb_rows,
+                      nb_cols, 0, &*d_nnz.begin(), 0, &*o_nnz.begin(), &a_raw);
+  CHKERR MatSetOption(a_raw, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE);
+  aij_ptr = SmartPetscObj<Mat>(a_raw);
+
+  MOFEM_LOG_CHANNEL("WORLD");
+  MOFEM_LOG_CHANNEL("SYNC");      
+
+  MoFEMFunctionReturn(0);
+}
+
 } // namespace MoFEM
