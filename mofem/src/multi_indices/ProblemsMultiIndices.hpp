@@ -429,6 +429,10 @@ struct Problem {
   boost::weak_ptr<NumeredDofEntity>
   getColDofsByPetscGlobalDofIdx(DofIdx idx) const;
 
+  /**
+   * @brief Get the BitFEIDs in problem  
+   * @return BitFEId 
+   */
   BitFEId getBitFEId() const;
 
   friend std::ostream &operator<<(std::ostream &os, const Problem &e);

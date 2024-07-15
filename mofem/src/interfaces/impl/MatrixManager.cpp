@@ -1175,8 +1175,6 @@ MoFEMErrorCode MatrixManager::createHybridL2MPIAIJ<PetscGlobalIdx_mi_tag>(
              problem_name.c_str());
   }
 
-  auto fields = m_field.get_fields();
-
   auto nb_rows = p_miit->getNbDofsRow();
   auto nb_cols = p_miit->getNbDofsCol();
   auto nb_loc_rows = p_miit->getNbLocalDofsRow();
@@ -1184,6 +1182,18 @@ MoFEMErrorCode MatrixManager::createHybridL2MPIAIJ<PetscGlobalIdx_mi_tag>(
 
   auto row_ptr = p_miit->getNumeredRowDofsPtr();
   auto col_ptr = p_miit->getNumeredColDofsPtr();
+
+  BitFieldId fields_ids;
+  for(auto &c : *col_ptr) {
+    fields_ids |= c->getId();
+  }
+  auto fields = m_field.get_fields();
+  std::vector<int> fields_bit_numbers;
+  for(auto &f : *fields) {
+    if ((fields_ids & f->getId()).any()) {
+      fields_bit_numbers.push_back(f->getBitNumber());
+    }
+  }
 
   auto get_layout = [&](int nb_local_dofs) {
     int start_ranges, end_ranges;
@@ -1261,9 +1271,8 @@ MoFEMErrorCode MatrixManager::createHybridL2MPIAIJ<PetscGlobalIdx_mi_tag>(
         auto first_ent = p->first;
         auto second_ent = p->second;
 
-        for (auto &f : *fields) {
+        for (auto bit_number : fields_bit_numbers) {
 
-          auto bit_number = f->getBitNumber();
           auto [lo_it, hi_it] = get_col_it(bit_number, first_ent, second_ent);
 
           for (; lo_it != hi_it; ++lo_it) {
