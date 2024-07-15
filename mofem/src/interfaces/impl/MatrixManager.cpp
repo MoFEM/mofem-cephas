@@ -26,13 +26,13 @@ namespace MoFEM {
 
   \todo Creation of the block matrices
 
-  \todo Some efficiency improvemnt are possible
+  \todo Some efficiency improvement are possible
 
 
   */
-struct CreateRowComressedADJMatrix : public Core {
+struct CreateRowCompressedADJMatrix : public Core {
 
-  CreateRowComressedADJMatrix(moab::Interface &moab,
+  CreateRowCompressedADJMatrix(moab::Interface &moab,
                               MPI_Comm comm = PETSC_COMM_WORLD, int verbose = 1)
       : Core(moab, comm, verbose) {}
 
@@ -60,7 +60,7 @@ struct CreateRowComressedADJMatrix : public Core {
   /** \brief Get element adjacencies
    */
   template <typename TAG>
-  MoFEMErrorCode getEntityAdjacenies(
+  MoFEMErrorCode getEntityAdjacencies(
       ProblemsByName::iterator p_miit,
       typename boost::multi_index::index<NumeredDofEntity_multiIndex,
                                          TAG>::type::iterator mit_row,
@@ -68,8 +68,13 @@ struct CreateRowComressedADJMatrix : public Core {
       std::vector<int> &dofs_col_view, int verb) const;
 };
 
+/**
+ * @deprecated do not use, instead use CreateRowCompressedADJMatrix
+ */
+using CreateRowComressedADJMatrix = CreateRowCompressedADJMatrix;
+
 template <typename TAG>
-MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
+MoFEMErrorCode CreateRowCompressedADJMatrix::getEntityAdjacencies(
     ProblemsByName::iterator p_miit,
     typename boost::multi_index::index<NumeredDofEntity_multiIndex,
                                        TAG>::type::iterator mit_row,
@@ -148,7 +153,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
 }
 
 template <typename TAG>
-MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
+MoFEMErrorCode CreateRowCompressedADJMatrix::createMatArrays(
     ProblemsByName::iterator p_miit, const MatType type,
     std::vector<PetscInt> &i, std::vector<PetscInt> &j, const bool no_diagonals,
     int verb) const {
@@ -268,7 +273,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
     hi_mit_row = dofs_row_by_idx.end();
     for (; mit_row != hi_mit_row; mit_row++) {
 
-      // Shared or multishared row and not owned. Those data should be send to
+      // Shared or multi-shared row and not owned. Those data should be send to
       // other side.
 
       // Get entity adjacencies, no need to repeat that operation for dofs when
@@ -289,7 +294,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
         if (get_adj_col) {
           // Get entity adjacencies
           mofem_ent_ptr = (*mit_row)->getFieldEntityPtr();
-          CHKERR getEntityAdjacenies<TAG>(p_miit, mit_row, mofem_ent_ptr,
+          CHKERR getEntityAdjacencies<TAG>(p_miit, mit_row, mofem_ent_ptr,
                                           dofs_col_view, verb);
           // Sort, unique and resize dofs_col_view
           {
@@ -453,7 +458,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
       // get entity adjacencies
       mofem_ent_ptr = (*miit_row)->getFieldEntityPtr();
-      CHKERR getEntityAdjacenies<TAG>(p_miit, miit_row, mofem_ent_ptr,
+      CHKERR getEntityAdjacencies<TAG>(p_miit, miit_row, mofem_ent_ptr,
                                       dofs_col_view, verb);
       row_last_evaluated_idx = TAG::get_index(miit_row);
 
@@ -617,8 +622,8 @@ MoFEMErrorCode MatrixManager::createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(
   MoFEMFunctionBegin;
 
   MoFEM::CoreInterface &m_field = cOre;
-  CreateRowComressedADJMatrix *core_ptr =
-      static_cast<CreateRowComressedADJMatrix *>(&cOre);
+  CreateRowCompressedADJMatrix *core_ptr =
+      static_cast<CreateRowCompressedADJMatrix *>(&cOre);
   PetscLogEventBegin(MOFEM_EVENT_createMPIAIJWithArrays, 0, 0, 0, 0);
 
   auto problems_ptr = m_field.get_problems();
@@ -655,8 +660,8 @@ MatrixManager::createMPIAIJCUSPARSEWithArrays<PetscGlobalIdx_mi_tag>(
   MoFEMFunctionBegin;
 
   MoFEM::CoreInterface &m_field = cOre;
-  CreateRowComressedADJMatrix *core_ptr =
-      static_cast<CreateRowComressedADJMatrix *>(&cOre);
+  CreateRowCompressedADJMatrix *core_ptr =
+      static_cast<CreateRowCompressedADJMatrix *>(&cOre);
   PetscLogEventBegin(MOFEM_EVENT_createMPIAIJCUSPARSEWithArrays, 0, 0, 0, 0);
 
   auto problems_ptr = m_field.get_problems();
@@ -741,8 +746,8 @@ MoFEMErrorCode
 MatrixManager::createMPIAIJ<PetscGlobalIdx_mi_tag>(const std::string name,
                                                    Mat *Aij, int verb) {
   MoFEM::CoreInterface &m_field = cOre;
-  CreateRowComressedADJMatrix *core_ptr =
-      static_cast<CreateRowComressedADJMatrix *>(&cOre);
+  CreateRowCompressedADJMatrix *core_ptr =
+      static_cast<CreateRowCompressedADJMatrix *>(&cOre);
   MoFEMFunctionBegin;
   PetscLogEventBegin(MOFEM_EVENT_createMPIAIJ, 0, 0, 0, 0);
 
@@ -811,8 +816,8 @@ MoFEMErrorCode
 MatrixManager::createMPIAdjWithArrays<Idx_mi_tag>(const std::string name,
                                                   Mat *Adj, int verb) {
   MoFEM::CoreInterface &m_field = cOre;
-  CreateRowComressedADJMatrix *core_ptr =
-      static_cast<CreateRowComressedADJMatrix *>(&cOre);
+  CreateRowCompressedADJMatrix *core_ptr =
+      static_cast<CreateRowCompressedADJMatrix *>(&cOre);
   MoFEMFunctionBegin;
   PetscLogEventBegin(MOFEM_EVENT_createMPIAdjWithArrays, 0, 0, 0, 0);
 
@@ -848,8 +853,8 @@ template <>
 MoFEMErrorCode MatrixManager::createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(
     const std::string name, Mat *Aij, int verb) {
   MoFEM::CoreInterface &m_field = cOre;
-  CreateRowComressedADJMatrix *core_ptr =
-      static_cast<CreateRowComressedADJMatrix *>(&cOre);
+  CreateRowCompressedADJMatrix *core_ptr =
+      static_cast<CreateRowCompressedADJMatrix *>(&cOre);
   MoFEMFunctionBegin;
   PetscLogEventBegin(MOFEM_EVENT_createMPIAIJWithArrays, 0, 0, 0, 0);
 
