@@ -2225,6 +2225,10 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
     CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Block data not set");
   }
 
+  if(fields_names.size() != field_ents.size())
+    CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY,
+                      "fields_names.size() != field_ents.size()");
+
   auto [schur_dm, block_dm] = dms;
   auto schur_prb = getProblemPtr(schur_dm);
   auto block_prb = getProblemPtr(block_dm);

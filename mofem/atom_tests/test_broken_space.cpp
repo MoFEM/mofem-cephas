@@ -218,7 +218,7 @@ int main(int argc, char *argv[]) {
       auto ksp = pip_mng->createKSP();
 
       CHKERR KSPSetFromOptions(ksp);
-      BOOST_LOG_SCOPED_THREAD_ATTR("Timeline", attrs::timer());
+      // BOOST_LOG_SCOPED_THREAD_ATTR("Timeline", attrs::timer());
       MOFEM_LOG("TIMER", Sev::inform) << "KSPSetUp";
       CHKERR KSPSetUp(ksp);
       MOFEM_LOG("TIMER", Sev::inform) << "KSPSetUp <= Done";
@@ -234,7 +234,7 @@ int main(int argc, char *argv[]) {
     } else {
       auto ksp = pip_mng->createKSP();
       auto schur_ptr = SetUpSchur::createSetUpSchur(m_field);
-      BOOST_LOG_SCOPED_THREAD_ATTR("Timeline", attrs::timer());
+      // BOOST_LOG_SCOPED_THREAD_ATTR("Timeline", attrs::timer());
       MOFEM_LOG("TIMER", Sev::inform) << "KSPSetUp";
       CHKERR schur_ptr->setUp(ksp);
       MOFEM_LOG("TIMER", Sev::inform) << "KSPSetUp <= Done";
@@ -428,7 +428,7 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
 
     MOFEM_LOG("AT", Sev::inform) << "Setup Schur pc";
 
-    auto create_schur_dm = [&]() {
+    auto create_sub_dm = [&]() {
       auto simple = mField.getInterface<Simple>();
 
       auto create_dm = [&](
@@ -499,6 +499,7 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
                   {
 
                       {"BROKEN", "BROKEN"},
+                      {"U", "U"},
                       {"BROKEN", "U"},
                       {"U", "BROKEN"},
                       {"BROKEN", "HYBRID"},
@@ -528,7 +529,7 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
 
           {schur_dm, block_dm}, block_mat_data,
 
-          {"SIGMA"}, {nullptr}, true
+          {"BROKEN", "U"}, {nullptr, nullptr}, true
 
       );
     };
@@ -545,8 +546,9 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
           createOpSchurAssembleBegin());
       pip_mng->getOpDomainLhsPipeline().push_back(
 
-          createOpSchurAssembleEnd({"BROKEN", "U"}, {nullptr}, {ao_up}, {S},
-                                   {false}, false, block_data)
+          createOpSchurAssembleEnd(
+              {"BROKEN", "U"}, {nullptr, nullptr}, {SmartPetscObj<AO>(), ao_up},
+              {SmartPetscObj<Mat>(), S}, {false, false}, false, block_data)
 
       );
 
@@ -569,6 +571,11 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
         MOFEM_LOG("AT", Sev::verbose) << "Lhs Assemble Finish";
         MoFEMFunctionReturn(0);
       };
+
+      auto ksp_ctx_ptr = getDMKspCtx(simple->getDM());
+      ksp_ctx_ptr->getPreProcSetOperators().push_front(pre_proc_schur_lhs_ptr);
+      ksp_ctx_ptr->getPostProcSetOperators().push_back(post_proc_schur_lhs_ptr);
+
       MoFEMFunctionReturn(0);
     };
 
@@ -582,6 +589,11 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
 
     auto set_diagonal_pc = [&](auto pc, auto schur_dm) {
       MoFEMFunctionBegin;
+
+      auto A = createDMBlockMat(simple->getDM());
+      auto P = createDMNestSchurMat(simple->getDM());
+      CHKERR PCSetOperators(pc, A, P);
+
       KSP *subksp;
       CHKERR PCFieldSplitSchurGetSubKSP(pc, PETSC_NULL, &subksp);
       auto get_pc = [](auto ksp) {
@@ -593,6 +605,7 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
 
       auto set_pc_p_mg = [&](auto dm, auto pc) {
         MoFEMFunctionBegin;
+
         CHKERR PCSetDM(pc, dm);
         PetscBool same = PETSC_FALSE;
         PetscObjectTypeCompare((PetscObject)pc, PCMG, &same);
@@ -610,12 +623,18 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
       MoFEMFunctionReturn(0);
     };
 
-    auto [schur_dm, block_dm] = create_schur_dm();
+    auto [schur_dm, block_dm] = create_sub_dm();
     auto nested_mat_data = get_nested_mat_data(schur_dm, block_dm);
     CHKERR DMMoFEMSetNestSchurData(simple->getDM(), nested_mat_data);
-    auto S = createDMMatrix(schur_dm);
+    S = createDMMatrix(schur_dm);
+    CHKERR MatSetOption(S, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
+    CHKERR MatSetDM(S, PETSC_NULL);
     CHKERR set_ops(schur_dm);
     CHKERR set_pc(pc, block_dm);
+    DM solver_dm;
+    CHKERR KSPGetDM(ksp, &solver_dm);
+    CHKERR DMSetMatType(solver_dm, MATSHELL);
+
     CHKERR KSPSetUp(ksp);
     CHKERR set_diagonal_pc(pc, schur_dm);
 
