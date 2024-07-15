@@ -1251,7 +1251,7 @@ MoFEMErrorCode MatrixManager::createHybridL2MPIAIJ<PetscGlobalIdx_mi_tag>(
   for (auto r = row_ptr->begin(); r != row_ptr->end(); ++r) {
 
     auto row_loc_idx = (*r)->getPetscLocalDofIdx();
-    if (row_loc_idx >= rstart && row_loc_idx <= rend) {
+    if (row_loc_idx >= rstart && row_loc_idx < rend) {
 
       auto ent = (*r)->getEnt();
       auto dim = dimension_from_handle(ent);
@@ -1268,7 +1268,7 @@ MoFEMErrorCode MatrixManager::createHybridL2MPIAIJ<PetscGlobalIdx_mi_tag>(
 
           for (; lo_it != hi_it; ++lo_it) {
             auto col_loc_idx = (*lo_it)->getPetscLocalDofIdx();
-            if (col_loc_idx >= rstart_col && col_loc_idx <= rend_col) {
+            if (col_loc_idx >= rstart_col && col_loc_idx < rend_col) {
               ++d_nnz[row_loc_idx];
               ++d_nz;
             } else {
