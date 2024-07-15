@@ -1755,3 +1755,30 @@ add_test(
   -fieldsplit_1_ksp_monitor
   -log_no_color)
 
+build_test(
+  test_broken_space_3d_schur
+  test_broken_space.cpp)
+set_target_properties(
+  test_broken_space_3d_schur PROPERTIES COMPILE_FLAGS 
+  "-DEXECUTABLE_DIMENSION=3 -DSCHUR_ASSEMBLE=1")  
+
+add_test(test_broken_space_3d_demkowicz_schur
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/test_broken_space_3d_schur
+  -file_name disp01_1parts.h5m
+  -log_sl inform 
+  -ksp_type gmres 
+  -ksp_monitor 
+  -ksp_atol 1e-12 
+  -ksp_rtol 1e-12 
+  -base demkowicz
+  -space hdiv
+  -pc_type fieldsplit
+  -pc_fieldsplit_type schur
+  -fieldsplit_0_ksp_type preonly
+  -fieldsplit_1_ksp_type preonly
+  -fieldsplit_1_pc_type lu
+  -fieldsplit_0_ksp_monitor
+  -fieldsplit_1_ksp_monitor
+  -order 4
+  -log_no_color)

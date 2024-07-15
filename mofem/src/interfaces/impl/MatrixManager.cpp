@@ -1197,7 +1197,6 @@ MoFEMErrorCode MatrixManager::createHybridL2MPIAIJ<PetscGlobalIdx_mi_tag>(
     return std::make_pair(start_ranges, end_ranges);
   };
 
-  MeshTopoUtil mtu(&m_field.get_moab());
 
   auto [rstart, rend] = get_layout(nb_loc_rows);
   auto [rstart_col, rend_col] = get_layout(nb_loc_cols);
@@ -1211,8 +1210,11 @@ MoFEMErrorCode MatrixManager::createHybridL2MPIAIJ<PetscGlobalIdx_mi_tag>(
       return adj;
     } else {
       adj.clear();
-      CHKERR mtu.get_bridge_adjacencies(ent, dim + 1, dim, adj);
-      adj.insert(ent);
+      Range bridge;
+      CHKERR m_field.get_moab().get_adjacencies(&ent, 1, dim + 1, false,
+                                               bridge);
+      CHKERR m_field.get_moab().get_adjacencies(bridge, dim, false, adj,
+                                                moab::Interface::UNION);
       prev_ent = ent;
       prev_dim = dim;
       return adj;
