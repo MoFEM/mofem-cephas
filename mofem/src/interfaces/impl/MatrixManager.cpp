@@ -33,14 +33,11 @@ namespace MoFEM {
 struct CreateRowCompressedADJMatrix : public Core {
 
   CreateRowCompressedADJMatrix(moab::Interface &moab,
-                              MPI_Comm comm = PETSC_COMM_WORLD, int verbose = 1)
+                               MPI_Comm comm = PETSC_COMM_WORLD,
+                               int verbose = 1)
       : Core(moab, comm, verbose) {}
 
-  typedef FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
-      Unique_mi_tag>::type AdjByEnt;
-  typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
-  typedef NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type
-      DofByGlobalPetscIndex;
+  using ProblemsByName = Problem_multiIndex::index<Problem_mi_tag>::type;
 
   /** \brief Create matrix adjacencies
 
@@ -56,6 +53,13 @@ struct CreateRowCompressedADJMatrix : public Core {
   createMatArrays(ProblemsByName::iterator p_miit, const MatType type,
                   std::vector<PetscInt> &i, std::vector<PetscInt> &j,
                   const bool no_diagonals = true, int verb = QUIET) const;
+
+private:
+  using AdjByEnt = FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
+      Unique_mi_tag>::type;
+
+  using DofByGlobalPetscIndex =
+      NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type;
 
   /** \brief Get element adjacencies
    */
@@ -104,8 +108,8 @@ MoFEMErrorCode CreateRowCompressedADJMatrix::getEntityAdjacencies(
       if ((fe_bit & prb_bit).any() && (fe_bit & prb_mask) == fe_bit) {
 
         auto check_block = [&empty_field_blocks](auto &r_if, auto &col_id) {
-          for(auto &b : empty_field_blocks) {
-            if((b.first & r_if).any() && (b.second & col_id).any()) {
+          for (auto &b : empty_field_blocks) {
+            if ((b.first & r_if).any() && (b.second & col_id).any()) {
               return false;
             }
           }
@@ -295,7 +299,7 @@ MoFEMErrorCode CreateRowCompressedADJMatrix::createMatArrays(
           // Get entity adjacencies
           mofem_ent_ptr = (*mit_row)->getFieldEntityPtr();
           CHKERR getEntityAdjacencies<TAG>(p_miit, mit_row, mofem_ent_ptr,
-                                          dofs_col_view, verb);
+                                           dofs_col_view, verb);
           // Sort, unique and resize dofs_col_view
           {
             std::sort(dofs_col_view.begin(), dofs_col_view.end());
@@ -459,7 +463,7 @@ MoFEMErrorCode CreateRowCompressedADJMatrix::createMatArrays(
       // get entity adjacencies
       mofem_ent_ptr = (*miit_row)->getFieldEntityPtr();
       CHKERR getEntityAdjacencies<TAG>(p_miit, miit_row, mofem_ent_ptr,
-                                      dofs_col_view, verb);
+                                       dofs_col_view, verb);
       row_last_evaluated_idx = TAG::get_index(miit_row);
 
       dofs_vec.resize(0);
@@ -721,7 +725,7 @@ MatrixManager::createMPIAIJCUSPARSEWithArrays<PetscGlobalIdx_mi_tag>(
 #endif
 
   PetscLogEventEnd(MOFEM_EVENT_createMPIAIJCUSPARSEWithArrays, 0, 0, 0, 0);
-  
+
   MoFEMFunctionReturn(0);
 }
 
@@ -733,7 +737,8 @@ MatrixManager::createSeqAIJCUSPARSEWithArrays<PetscLocalIdx_mi_tag>(
 
 #ifdef PETSC_HAVE_CUDA
   // CHKERR ::MatCreateSeqAIJCUSPARSE(MPI_Comm comm, PetscInt m, PetscInt n,
-  //                                  PetscInt nz, const PetscInt nnz[], Mat *A);
+  //                                  PetscInt nz, const PetscInt nnz[], Mat
+  //                                  *A);
   SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
           "Not implemented type of matrix yet, try MPI version (aijcusparse)");
 #endif
@@ -1063,7 +1068,7 @@ MoFEMErrorCode MatrixManager::checkMatrixFillIn(const std::string problem_name,
             /* It could be that you have removed DOFs from problem, and for
              * example if this was vector filed with components {Ux,Uy,Uz}, you
              * removed on Uz element. */
-            
+
             MOFEM_LOG("SELF", Sev::warning)
                 << "Warning: Number of Dofs in Row different than number "
                    "of dofs for given entity order "
