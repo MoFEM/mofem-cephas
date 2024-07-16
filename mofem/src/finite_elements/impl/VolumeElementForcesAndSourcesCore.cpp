@@ -354,36 +354,42 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::transformBaseFunctions() {
 
   if (dataH1.spacesOnEntities[MBVERTEX].test(H1))
     CHKERR opSetInvJacH1.opRhs(dataH1);
-  if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
+
+  std::array<std::bitset<LASTSPACE>, 3> spaces_by_dim;
+  for (auto type = MBEDGE; type != MBENTITYSET; ++type) {
+    spaces_by_dim[CN::Dimension(type)] |= dataH1.spacesOnEntities[type];
+  }
+
+  if (
+
+      spaces_by_dim[1].test(HCURL) || //
+      spaces_by_dim[2].test(HCURL) || //
+      spaces_by_dim[3].test(HCURL)
+
+  ) {
     CHKERR opCovariantPiolaTransform.opRhs(dataHcurl);
     CHKERR opSetInvJacHdivAndHcurl.opRhs(dataHcurl);
   }
-  for (EntityType t = CN::TypeDimensionMap[2].first;
-       t <= CN::TypeDimensionMap[2].second; ++t) {
-    if (dataH1.spacesOnEntities[t].test(HDIV)) {
-      CHKERR opContravariantPiolaTransform.opRhs(dataHdiv);
-      // Fix for tetrahedrons
-      if (numeredEntFiniteElementPtr->getEntType() == MBTET) {
-        for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
-          FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
-          for (auto t : {MBTRI, MBTET}) {
-            for (auto &d : dataHdiv.dataOnEntities[t]) {
-              d.getN(base) /= 6;
-              d.getDiffN(base) /= 6;
-            }
+
+  if (spaces_by_dim[2].test(HDIV) || spaces_by_dim[3].test(HDIV)) {
+    CHKERR opContravariantPiolaTransform.opRhs(dataHdiv);
+    // Fix for tetrahedrons
+    if (numeredEntFiniteElementPtr->getEntType() == MBTET) {
+      for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
+        FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
+        for (auto t : {MBTRI, MBTET}) {
+          for (auto &d : dataHdiv.dataOnEntities[t]) {
+            d.getN(base) /= 6;
+            d.getDiffN(base) /= 6;
           }
         }
       }
-      CHKERR opSetInvJacHdivAndHcurl.opRhs(dataHdiv);
-      break;
     }
+    CHKERR opSetInvJacHdivAndHcurl.opRhs(dataHdiv);
   }
-  for (EntityType t = CN::TypeDimensionMap[3].first;
-       t <= CN::TypeDimensionMap[3].second; ++t) {
-    if (dataH1.spacesOnEntities[t].test(L2)) {
-      CHKERR opSetInvJacH1.opRhs(dataL2);
-      break;
-    }
+
+  if (spaces_by_dim[3].test(L2)) {
+    CHKERR opSetInvJacH1.opRhs(dataL2);
   }
 
   MoFEMFunctionReturn(0);
