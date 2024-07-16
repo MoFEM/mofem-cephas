@@ -1581,6 +1581,7 @@ TetPolynomialBase::getValueHdivDemkowiczBrokenBase(MatrixDouble &pts) {
         ++t_base_v;
         t_diff_base(i, j) = t_diff_base_v(i, j);
         ++t_diff_base;
+        ++t_diff_base_v;
       }
     }
   }
