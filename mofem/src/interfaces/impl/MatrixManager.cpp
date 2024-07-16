@@ -1184,12 +1184,12 @@ MoFEMErrorCode MatrixManager::createHybridL2MPIAIJ<PetscGlobalIdx_mi_tag>(
   auto col_ptr = p_miit->getNumeredColDofsPtr();
 
   BitFieldId fields_ids;
-  for(auto &c : *col_ptr) {
+  for (auto &c : *col_ptr) {
     fields_ids |= c->getId();
   }
   auto fields = m_field.get_fields();
   std::vector<int> fields_bit_numbers;
-  for(auto &f : *fields) {
+  for (auto &f : *fields) {
     if ((fields_ids & f->getId()).any()) {
       fields_bit_numbers.push_back(f->getBitNumber());
     }
@@ -1207,7 +1207,6 @@ MoFEMErrorCode MatrixManager::createHybridL2MPIAIJ<PetscGlobalIdx_mi_tag>(
     return std::make_pair(start_ranges, end_ranges);
   };
 
-
   auto [rstart, rend] = get_layout(nb_loc_rows);
   auto [rstart_col, rend_col] = get_layout(nb_loc_cols);
 
@@ -1222,7 +1221,7 @@ MoFEMErrorCode MatrixManager::createHybridL2MPIAIJ<PetscGlobalIdx_mi_tag>(
       adj.clear();
       Range bridge;
       CHKERR m_field.get_moab().get_adjacencies(&ent, 1, dim + 1, false,
-                                               bridge);
+                                                bridge);
       CHKERR m_field.get_moab().get_adjacencies(bridge, dim, false, adj,
                                                 moab::Interface::UNION);
       prev_ent = ent;
@@ -1254,41 +1253,82 @@ MoFEMErrorCode MatrixManager::createHybridL2MPIAIJ<PetscGlobalIdx_mi_tag>(
     }
   };
 
-  int d_nz = 0;
-  int o_nz = 0;
-  std::vector<int> d_nnz(nb_loc_rows, 0), o_nnz(nb_loc_rows, 0);
+  SmartPetscObj<Vec> v_o_nnz;
+  CHKERR m_field.getInterface<VecManager>()->vecCreateGhost(problem_name, ROW,
+                                                            v_o_nnz);
+  CHKERR VecZeroEntries(v_o_nnz);
 
+  double *o_nnz_real;
+  CHKERR VecGetArray(v_o_nnz, &o_nnz_real);
+
+  int d_nz = 0;
+  std::vector<int> d_nnz(nb_loc_rows, 0);
   for (auto r = row_ptr->begin(); r != row_ptr->end(); ++r) {
 
     auto row_loc_idx = (*r)->getPetscLocalDofIdx();
-    if (row_loc_idx >= rstart && row_loc_idx < rend) {
+    if (row_loc_idx < 0)
+      continue;
 
-      auto ent = (*r)->getEnt();
-      auto dim = dimension_from_handle(ent);
-      auto adj = get_adj(ent, dim);
+    auto row_glob_idx = (*r)->getPetscGlobalDofIdx();
+    auto ent = (*r)->getEnt();
+    auto dim = dimension_from_handle(ent);
+    auto adj = get_adj(ent, dim);
 
-      for (auto p = adj.pair_begin(); p != adj.pair_end(); ++p) {
-        auto first_ent = p->first;
-        auto second_ent = p->second;
+    for (auto p = adj.pair_begin(); p != adj.pair_end(); ++p) {
+      auto first_ent = p->first;
+      auto second_ent = p->second;
 
-        for (auto bit_number : fields_bit_numbers) {
+      for (auto bit_number : fields_bit_numbers) {
 
-          auto [lo_it, hi_it] = get_col_it(bit_number, first_ent, second_ent);
+        auto [lo_it, hi_it] = get_col_it(bit_number, first_ent, second_ent);
 
-          for (; lo_it != hi_it; ++lo_it) {
-            auto col_loc_idx = (*lo_it)->getPetscLocalDofIdx();
-            if (col_loc_idx >= rstart_col && col_loc_idx < rend_col) {
-              ++d_nnz[row_loc_idx];
-              ++d_nz;
-            } else {
-              ++o_nnz[row_loc_idx];
-              ++o_nz;
-            }
+        for (; lo_it != hi_it; ++lo_it) {
+          auto col_glob_idx = (*lo_it)->getPetscGlobalDofIdx();
+          if (col_glob_idx < 0)
+            continue;
+
+          if (
+
+              col_glob_idx >= rstart_col && col_glob_idx < rend_col &&
+              row_glob_idx >= rstart && row_glob_idx < rend
+
+          ) {
+            ++d_nnz[row_loc_idx];
+            ++d_nz;
+          } else {
+            o_nnz_real[row_loc_idx] += 1;
           }
         }
       }
     }
   }
+
+  CHKERR VecRestoreArray(v_o_nnz, &o_nnz_real);
+  CHKERR VecGhostUpdateBegin(v_o_nnz, ADD_VALUES, SCATTER_REVERSE);
+  CHKERR VecGhostUpdateEnd(v_o_nnz, ADD_VALUES, SCATTER_REVERSE);
+  CHKERR VecAssemblyBegin(v_o_nnz);
+  CHKERR VecAssemblyEnd(v_o_nnz);
+
+  int o_nz = 0;
+
+  CHKERR VecGetArray(v_o_nnz, &o_nnz_real);
+  std::vector<int> o_nnz(nb_loc_rows, 0);
+  for (auto r = row_ptr->begin(); r != row_ptr->end(); ++r) {
+
+    auto row_glob_idx = (*r)->getPetscGlobalDofIdx();
+
+    if (
+
+        row_glob_idx >= rstart && row_glob_idx < rend
+
+    ) {
+      auto row_loc_idx = (*r)->getPetscLocalDofIdx();
+      o_nz += o_nnz_real[row_loc_idx];
+      o_nnz[row_loc_idx] = o_nnz_real[row_loc_idx];
+    }
+  }
+
+  CHKERR VecRestoreArray(v_o_nnz, &o_nnz_real);
 
   if (verb >= QUIET) {
     MOFEM_LOG("SYNC", Sev::verbose)
@@ -1313,7 +1353,7 @@ MoFEMErrorCode MatrixManager::createHybridL2MPIAIJ<PetscGlobalIdx_mi_tag>(
   aij_ptr = SmartPetscObj<Mat>(a_raw);
 
   MOFEM_LOG_CHANNEL("WORLD");
-  MOFEM_LOG_CHANNEL("SYNC");      
+  MOFEM_LOG_CHANNEL("SYNC");
 
   MoFEMFunctionReturn(0);
 }
