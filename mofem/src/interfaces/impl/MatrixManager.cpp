@@ -1195,21 +1195,6 @@ MoFEMErrorCode MatrixManager::createHybridL2MPIAIJ<PetscGlobalIdx_mi_tag>(
     }
   }
 
-  auto get_layout = [&](int nb_local_dofs) {
-    int start_ranges, end_ranges;
-    PetscLayout layout;
-    CHKERR PetscLayoutCreate(m_field.get_comm(), &layout);
-    CHKERR PetscLayoutSetBlockSize(layout, 1);
-    CHKERR PetscLayoutSetLocalSize(layout, nb_local_dofs);
-    CHKERR PetscLayoutSetUp(layout);
-    CHKERR PetscLayoutGetRange(layout, &start_ranges, &end_ranges);
-    CHKERR PetscLayoutDestroy(&layout);
-    return std::make_pair(start_ranges, end_ranges);
-  };
-
-  auto [rstart, rend] = get_layout(nb_loc_rows);
-  auto [rstart_col, rend_col] = get_layout(nb_loc_cols);
-
   Range adj;
   EntityHandle prev_ent = 0;
   int prev_dim = -1;
@@ -1253,23 +1238,31 @@ MoFEMErrorCode MatrixManager::createHybridL2MPIAIJ<PetscGlobalIdx_mi_tag>(
     }
   };
 
-  SmartPetscObj<Vec> v_o_nnz;
-  CHKERR m_field.getInterface<VecManager>()->vecCreateGhost(problem_name, ROW,
-                                                            v_o_nnz);
-  CHKERR VecZeroEntries(v_o_nnz);
+  auto create_ghost_vec = [&]() {
+    SmartPetscObj<Vec> v;
+    CHKERR m_field.getInterface<VecManager>()->vecCreateGhost(problem_name, ROW,
+                                                              v);
+    CHKERR VecZeroEntries(v);
+    CHKERR VecGhostUpdateBegin(v, INSERT_VALUES, SCATTER_FORWARD);
+    CHKERR VecGhostUpdateEnd(v, INSERT_VALUES, SCATTER_FORWARD);
+    return v;
+  };
+
+  auto v_o_nnz = create_ghost_vec();
+  auto v_d_nnz = create_ghost_vec();
+ 
 
   double *o_nnz_real;
   CHKERR VecGetArray(v_o_nnz, &o_nnz_real);
+  double *d_nnz_real;
+  CHKERR VecGetArray(v_d_nnz, &d_nnz_real);
 
-  int d_nz = 0;
-  std::vector<int> d_nnz(nb_loc_rows, 0);
   for (auto r = row_ptr->begin(); r != row_ptr->end(); ++r) {
 
     auto row_loc_idx = (*r)->getPetscLocalDofIdx();
     if (row_loc_idx < 0)
       continue;
 
-    auto row_glob_idx = (*r)->getPetscGlobalDofIdx();
     auto ent = (*r)->getEnt();
     auto dim = dimension_from_handle(ent);
     auto adj = get_adj(ent, dim);
@@ -1283,18 +1276,16 @@ MoFEMErrorCode MatrixManager::createHybridL2MPIAIJ<PetscGlobalIdx_mi_tag>(
         auto [lo_it, hi_it] = get_col_it(bit_number, first_ent, second_ent);
 
         for (; lo_it != hi_it; ++lo_it) {
-          auto col_glob_idx = (*lo_it)->getPetscGlobalDofIdx();
-          if (col_glob_idx < 0)
+          auto col_loc_idx = (*lo_it)->getPetscLocalDofIdx();
+          if (col_loc_idx < 0)
             continue;
 
           if (
 
-              col_glob_idx >= rstart_col && col_glob_idx < rend_col &&
-              row_glob_idx >= rstart && row_glob_idx < rend
+              (*lo_it)->getOwnerProc() == (*r)->getOwnerProc()
 
           ) {
-            ++d_nnz[row_loc_idx];
-            ++d_nz;
+            d_nnz_real[row_loc_idx] += 1;
           } else {
             o_nnz_real[row_loc_idx] += 1;
           }
@@ -1304,31 +1295,48 @@ MoFEMErrorCode MatrixManager::createHybridL2MPIAIJ<PetscGlobalIdx_mi_tag>(
   }
 
   CHKERR VecRestoreArray(v_o_nnz, &o_nnz_real);
-  CHKERR VecGhostUpdateBegin(v_o_nnz, ADD_VALUES, SCATTER_REVERSE);
-  CHKERR VecGhostUpdateEnd(v_o_nnz, ADD_VALUES, SCATTER_REVERSE);
-  CHKERR VecAssemblyBegin(v_o_nnz);
-  CHKERR VecAssemblyEnd(v_o_nnz);
+  CHKERR VecRestoreArray(v_d_nnz, &d_nnz_real);
+
+  auto update_vec = [&](auto v) {
+    MoFEMFunctionBegin;
+    CHKERR VecGhostUpdateBegin(v, ADD_VALUES, SCATTER_REVERSE);
+    CHKERR VecGhostUpdateEnd(v, ADD_VALUES, SCATTER_REVERSE);
+    CHKERR VecAssemblyBegin(v);
+    CHKERR VecAssemblyEnd(v);
+    MoFEMFunctionReturn(0);
+  };
+
+  CHKERR update_vec(v_o_nnz);
+  CHKERR update_vec(v_d_nnz);
 
   int o_nz = 0;
+  int d_nz = 0;
 
+  CHKERR VecGetArray(v_d_nnz, &d_nnz_real);
   CHKERR VecGetArray(v_o_nnz, &o_nnz_real);
+
+  std::vector<int> d_nnz(nb_loc_rows, 0);
   std::vector<int> o_nnz(nb_loc_rows, 0);
   for (auto r = row_ptr->begin(); r != row_ptr->end(); ++r) {
 
-    auto row_glob_idx = (*r)->getPetscGlobalDofIdx();
+    auto row_loc_idx = (*r)->getPetscLocalDofIdx();
 
     if (
 
-        row_glob_idx >= rstart && row_glob_idx < rend
+        row_loc_idx >= 0 && row_loc_idx < nb_loc_rows
 
     ) {
       auto row_loc_idx = (*r)->getPetscLocalDofIdx();
+      d_nz += o_nnz_real[row_loc_idx];
+      d_nnz[row_loc_idx] = d_nnz_real[row_loc_idx];
       o_nz += o_nnz_real[row_loc_idx];
       o_nnz[row_loc_idx] = o_nnz_real[row_loc_idx];
-    }
+    } 
+
   }
 
   CHKERR VecRestoreArray(v_o_nnz, &o_nnz_real);
+  CHKERR VecRestoreArray(v_d_nnz, &d_nnz_real);
 
   if (verb >= QUIET) {
     MOFEM_LOG("SYNC", Sev::verbose)

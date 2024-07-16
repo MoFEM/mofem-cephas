@@ -1772,9 +1772,9 @@ set_target_properties(
   "-DEXECUTABLE_DIMENSION=3 -DSCHUR_ASSEMBLE=1")  
 
 add_test(test_broken_space_3d_demkowicz_schur
-  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 3
   ${CMAKE_CURRENT_BINARY_DIR}/test_broken_space_3d_schur
-  -file_name disp01_1parts.h5m
+  -file_name disp01_3parts.h5m
   -log_sl inform 
   -ksp_type gmres 
   -ksp_monitor 
