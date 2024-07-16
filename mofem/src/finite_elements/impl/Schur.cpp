@@ -1971,8 +1971,8 @@ inline MoFEMErrorCode shell_block_mat_asmb_wrap_impl(
     if (it == ctx->blockIndex.get<1>().end()) {
       MOFEM_LOG_CHANNEL("SELF");
       MOFEM_TAG_AND_LOG("SELF", Sev::error, "BlockMat")
-          << "missing block: " << row_data.getFieldDofs()[0]->getName() << " : "
-          << col_data.getFieldDofs()[0]->getName();
+          << "missing block: row " << row_data.getFieldDofs()[0]->getName()
+          << " col " << col_data.getFieldDofs()[0]->getName();
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Block not allocated");
     }
 
