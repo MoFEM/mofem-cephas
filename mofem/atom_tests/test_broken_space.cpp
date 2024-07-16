@@ -543,9 +543,7 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
                       {"BROKEN", "BROKEN"},
                       {"U", "U"},
                       {"BROKEN", "U"},
-                      {"U", "BROKEN"},
-                      {"BROKEN", "HYBRID"},
-                      {"HYBRID", "BROKEN"}
+                      {"U", "BROKEN"}
 
                   }
 

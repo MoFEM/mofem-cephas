@@ -1329,7 +1329,8 @@ boost::shared_ptr<BlockStructure> createBlockMatStructure(
       MoFEMFunctionReturn(0);
     };
 
-    CHKERR DMoFEMLoopFiniteElements(dm, d.first, fe_method);
+    CHKERR DMoFEMLoopFiniteElementsUpAndLowRank(dm, d.first, fe_method, 0,
+                                                m_field_ptr->get_comm_size());
   };
 
   // order by column (that is for matrix multiplication)
