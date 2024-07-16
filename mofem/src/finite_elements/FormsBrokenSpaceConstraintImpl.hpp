@@ -101,6 +101,11 @@ OpGetBrokenBaseSideData<OpBase>::doWork(int row_side, EntityType row_type,
   const auto n_in_the_loop = OP::getNinTheLoop();
   const auto face_sense = OP::getSkeletonSense();
 
+#ifndef NDEBUG
+  if (face_sense != -1 && face_sense != 1)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "face sense not set");
+#endif // NDEBUG
+
   auto set_data = [&](auto &side_data) {
     side_data.getSide() = row_side;
     side_data.getType() = row_type;
