@@ -1671,14 +1671,6 @@ set_target_properties(
   test_broken_space_2d PROPERTIES COMPILE_FLAGS 
   "-DEXECUTABLE_DIMENSION=2 -DSCHUR_ASSEMBLE=0")
 
-build_test(
-  test_broken_space_3d
-  test_broken_space.cpp
-)
-set_target_properties(
-  test_broken_space_3d PROPERTIES COMPILE_FLAGS 
-  "-DEXECUTABLE_DIMENSION=3 -DSCHUR_ASSEMBLE=0")
-
 list(INSERT test_borken_base_list_2d
   0
   ainsworth 
@@ -1703,6 +1695,14 @@ foreach(test_base ${test_borken_base_list_2d})
     -log_no_color)
 endforeach(test_base IN test_borken_base_list)
 
+build_test(
+  test_broken_space_3d
+  test_broken_space.cpp
+)
+set_target_properties(
+  test_broken_space_3d PROPERTIES COMPILE_FLAGS 
+  "-DEXECUTABLE_DIMENSION=3 -DSCHUR_ASSEMBLE=0")
+
 list(INSERT test_borken_base_list_3d
   0
   demkowicz
@@ -1721,6 +1721,7 @@ foreach(test_base ${test_borken_base_list_3d})
     -base ${test_base}
     -space hdiv
     -order 4
+    -max_post_proc_ref_level 4
     -log_no_color)
 endforeach(test_base IN test_borken_base_list)
 
@@ -1746,13 +1747,21 @@ add_test(
   -base ${test_base}
   -space hcurl
   -order 4
+  -max_post_proc_ref_level 4
   -pc_type fieldsplit
   -pc_fieldsplit_type schur
   -fieldsplit_0_ksp_type preonly
-  -fieldsplit_1_ksp_type preonly
+  -fieldsplit_1_ksp_type gmres
   -fieldsplit_1_pc_type mg
-  -fieldsplit_0_ksp_monitor
+  -fieldsplit_1_mg_levels_ksp_max_it 6
+  -fieldsplit_1_pc_mg_type multiplicative
+  -fieldsplit_1_mg_coarse_ksp_type preonly 
+  -fieldsplit_1_mg_coarse_pc_type lu
+  -fieldsplit_1_mg_coarse_pc_factor_mat_solver_type mumps
   -fieldsplit_1_ksp_monitor
+  -mofem_mg_coarse_order 0
+  -mofem_mg_levels 4
+  -mg_levels_ksp_max_it 6
   -log_no_color)
 
 build_test(
@@ -1776,9 +1785,16 @@ add_test(test_broken_space_3d_demkowicz_schur
   -pc_type fieldsplit
   -pc_fieldsplit_type schur
   -fieldsplit_0_ksp_type preonly
-  -fieldsplit_1_ksp_type preonly
+  -fieldsplit_1_ksp_type gmres
   -fieldsplit_1_pc_type mg
-  -fieldsplit_0_ksp_monitor
+  -fieldsplit_1_mg_levels_ksp_max_it 6
+  -fieldsplit_1_pc_mg_type multiplicative
+  -fieldsplit_1_mg_coarse_ksp_type preonly 
+  -fieldsplit_1_mg_coarse_pc_type lu
+  -fieldsplit_1_mg_coarse_pc_factor_mat_solver_type mumps
   -fieldsplit_1_ksp_monitor
+  -mofem_mg_coarse_order 0
+  -mofem_mg_levels 4
   -order 4
+  -max_post_proc_ref_level 4
   -log_no_color)

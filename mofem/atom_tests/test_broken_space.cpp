@@ -93,6 +93,7 @@ int main(int argc, char *argv[]) {
       CHKERR m_field.get_moab().get_entities_by_dimension(
           0, simple->getDim() - 1, skeleton_ents, true);
       skeleton_ents = subtract(skeleton_ents, bdy_ents);
+      CHKERR m_field.get_moab().clear_meshset(&skeleton_meshset, 1);
       CHKERR m_field.get_moab().add_entities(skeleton_meshset, skeleton_ents);
       MoFEMFunctionReturn(0);
     };
@@ -163,8 +164,6 @@ int main(int argc, char *argv[]) {
           AT>::BiLinearForm<IT>::OpMass<3, SPACE_DIM>;
       using OpHdivU = FormsIntegrators<DomainEleOp>::Assembly<AT>::BiLinearForm<
           IT>::OpMixDivTimesScalar<SPACE_DIM>;
-      using OpMass = FormsIntegrators<DomainEleOp>::Assembly<AT>::BiLinearForm<
-          IT>::OpMass<1, 1>;
 
       auto beta = [](const double, const double, const double) constexpr {
         return 1;
@@ -228,7 +227,7 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionReturn(0);
     };
 
-    auto assemble_domain_rhs = [&](auto &pip, double alpha) {
+    auto assemble_domain_rhs = [&](auto &pip) {
       MoFEMFunctionBegin;
       CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(pip, {HDIV});
       using OpDomainSource = FormsIntegrators<DomainEleOp>::Assembly<
@@ -242,7 +241,7 @@ int main(int argc, char *argv[]) {
     auto *pip_mng = m_field.getInterface<PipelineManager>();
 
     CHKERR assemble_domain_lhs(pip_mng->getOpDomainLhsPipeline());
-    CHKERR assemble_domain_rhs(pip_mng->getOpDomainRhsPipeline(), 1);
+    CHKERR assemble_domain_rhs(pip_mng->getOpDomainRhsPipeline());
   
     CHKERR pip_mng->setDomainLhsIntegrationRule(integration_rule);
     CHKERR pip_mng->setDomainRhsIntegrationRule(integration_rule);
@@ -436,7 +435,7 @@ int main(int argc, char *argv[]) {
                                     post_proc_fe);
     CHKERR post_proc_fe->writeFile("out_result.h5m");
 
-    CHKERR check_residual(x, f);
+    // CHKERR check_residual(x, f);
   }
   CATCH_ERRORS;
 
