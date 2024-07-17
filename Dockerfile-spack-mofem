@@ -39,11 +39,12 @@ RUN . $MOFEM_ENV_FILE && \
   spack load mgis tfel python py-numpy py-scipy && \
   spack dev-build -j6 \
   --source-path $MOFEM_UM_SRC_DIR \
+  # --test root \
   mofem-users-modules@lukasz+docker build_type=Release \
   ^mofem-cephas@lukasz+adol-c~copy_user_modules+docker~ipo+med~shared+slepc+tetgen build_system=cmake build_type=Release dev_path=/mofem_install/mofem-cephas install_id=0 \
   ^petsc+X ^boost+python+numpy && \
   export MOFEM_UM_HASH=`spack find -lv mofem-users-modules | awk '/mofem-users-modules/ {print $1}' | head -n 1` && \
-  cd $MOFEM_INSTALL_DIR/um-build-Release-$MOFEM_UM_HASH && \
+  cd $MOFEM_INSTALL_DIR/um-build-Release-$MOFEM_UM_HASH && make clean && \
   spack view symlink -i $MOFEM_INSTALL_DIR/um_view /$MOFEM_UM_HASH && \
   echo "export MOFEM_UM_HASH=$MOFEM_UM_HASH" >> $MOFEM_ENV_FILE && \
   echo "export PATH=$MOFEM_INSTALL_DIR/um_view/bin:$PATH" >> $MOFEM_ENV_FILE && \
