@@ -245,11 +245,14 @@ int main(int argc, char *argv[]) {
 
     CHKERR assemble_domain_lhs(pip_mng->getOpDomainLhsPipeline());
     CHKERR assemble_domain_rhs(pip_mng->getOpDomainRhsPipeline());
-  
+
     CHKERR pip_mng->setDomainLhsIntegrationRule(integration_rule);
     CHKERR pip_mng->setDomainRhsIntegrationRule(integration_rule);
     CHKERR pip_mng->setSkeletonLhsIntegrationRule(integration_rule);
     CHKERR pip_mng->setSkeletonRhsIntegrationRule(integration_rule);
+
+    TetPolynomialBase::swichCacheHDivBaseOn(
+        {pip_mng->getDomainLhsFE().get(), pip_mng->getDomainRhsFE().get()});
 
     auto x = createDMVector(simple->getDM());
     auto f = vectorDuplicate(x);
