@@ -1544,8 +1544,14 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
 
   PetscLogEventBegin(SchurEvents::MOFEM_EVENT_BlockStructureMult, 0, 0, 0, 0);
 
+  int x_loc_size;
+  CHKERR VecGetLocalSize(x, &x_loc_size);
+  int y_loc_size;
+  CHKERR VecGetLocalSize(y, &y_loc_size);
+
   Vec ghost_x = ctx->ghostX;
   Vec ghost_y = ctx->ghostY;
+
 
   CHKERR VecCopy(x, ghost_x);
 
@@ -1566,63 +1572,68 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
   for (auto i = 0; i != nb_y; ++i)
     y_array[i] = 0.;
 
-  double *block_ptr = &*ctx->dataBlocksPtr->begin();
-
-  auto it = ctx->blockIndex.get<0>().lower_bound(0);
-  auto hi = ctx->blockIndex.get<0>().end();
-
-  while (it != hi) {
-    auto nb_rows = it->getNbRows();
-    auto nb_cols = it->getNbCols();
-    auto x_ptr = &x_array[it->getLocCol()];
-    auto y_ptr = &y_array[it->getLocRow()];
-    auto ptr = &block_ptr[it->getMatShift()];
-
-    if (std::min(nb_rows, nb_cols) > max_gemv_size) {
-      cblas_dgemv(CblasRowMajor, CblasNoTrans, nb_rows, nb_cols, 1.0, ptr,
-                  nb_cols, x_ptr, 1, 1.0, y_ptr, 1);
-    } else {
-      for (auto r = 0; r != nb_rows; ++r) {
-        for (auto c = 0; c != nb_cols; ++c) {
-          y_ptr[r] += ptr[r * nb_cols + c] * x_ptr[c];
-        }
-      }
-    }
-    ++it;
-  }
-
-  if (ctx->multiplyByPreconditioner) {
-
-    if (!ctx->preconditionerBlocksPtr)
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-              "No parentBlockStructurePtr");
-
-    auto preconditioner_ptr = &*ctx->preconditionerBlocksPtr->begin();
-
+  auto mult = [&](int low_row, int hi_row, int low_col, int hi_col) {
+    MoFEMFunctionBegin;
+    double *block_ptr = &*ctx->dataBlocksPtr->begin();
     auto it = ctx->blockIndex.get<0>().lower_bound(0);
     auto hi = ctx->blockIndex.get<0>().end();
 
     while (it != hi) {
-      if (it->getInvShift() != -1) {
-        auto nb_rows = it->getNbRows();
-        auto nb_cols = it->getNbCols();
-        auto x_ptr = &x_array[it->getLocCol()];
-        auto y_ptr = &y_array[it->getLocRow()];
-        auto ptr = &preconditioner_ptr[it->getInvShift()];
-        if (std::min(nb_rows, nb_cols) > max_gemv_size) {
-          cblas_dgemv(CblasRowMajor, CblasNoTrans, nb_rows, nb_cols, 1.0, ptr,
-                      nb_cols, x_ptr, 1, 1.0, y_ptr, 1);
-        } else {
-          for (auto r = 0; r != nb_rows; ++r) {
-            for (auto c = 0; c != nb_cols; ++c) {
-              y_ptr[r] += ptr[r * nb_cols + c] * x_ptr[c];
-            }
+      auto nb_rows = it->getNbRows();
+      auto nb_cols = it->getNbCols();
+      auto x_ptr = &x_array[it->getLocCol()];
+      auto y_ptr = &y_array[it->getLocRow()];
+      auto ptr = &block_ptr[it->getMatShift()];
+
+      if (std::min(nb_rows, nb_cols) > max_gemv_size) {
+        cblas_dgemv(CblasRowMajor, CblasNoTrans, nb_rows, nb_cols, 1.0, ptr,
+                    nb_cols, x_ptr, 1, 1.0, y_ptr, 1);
+      } else {
+        for (auto r = 0; r != nb_rows; ++r) {
+          for (auto c = 0; c != nb_cols; ++c) {
+            y_ptr[r] += ptr[r * nb_cols + c] * x_ptr[c];
           }
         }
       }
       ++it;
     }
-  }
+
+    if (ctx->multiplyByPreconditioner) {
+
+      if (!ctx->preconditionerBlocksPtr)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "No parentBlockStructurePtr");
+
+      auto preconditioner_ptr = &*ctx->preconditionerBlocksPtr->begin();
+
+      auto it = ctx->blockIndex.get<0>().lower_bound(0);
+      auto hi = ctx->blockIndex.get<0>().end();
+
+      while (it != hi) {
+        if (it->getInvShift() != -1) {
+          auto nb_rows = it->getNbRows();
+          auto nb_cols = it->getNbCols();
+          auto x_ptr = &x_array[it->getLocCol()];
+          auto y_ptr = &y_array[it->getLocRow()];
+          auto ptr = &preconditioner_ptr[it->getInvShift()];
+          if (std::min(nb_rows, nb_cols) > max_gemv_size) {
+            cblas_dgemv(CblasRowMajor, CblasNoTrans, nb_rows, nb_cols, 1.0, ptr,
+                        nb_cols, x_ptr, 1, 1.0, y_ptr, 1);
+          } else {
+            for (auto r = 0; r != nb_rows; ++r) {
+              for (auto c = 0; c != nb_cols; ++c) {
+                y_ptr[r] += ptr[r * nb_cols + c] * x_ptr[c];
+              }
+            }
+          }
+        }
+        ++it;
+      }
+    }
+    MoFEMFunctionReturn(0);
+  };
+
+  CHKERR mult(0, 0, 0, 0);
 
   CHKERR VecRestoreArray(loc_ghost_x, &x_array);
   CHKERR VecRestoreArray(loc_ghost_y, &y_array);
