@@ -80,6 +80,7 @@ int main(int argc, char *argv[]) {
 
     auto *simple = m_field.getInterface<Simple>();
     CHKERR simple->getOptions();
+    simple->getAddBoundaryFE() = true;
     CHKERR simple->loadFile();
 
     auto add_shared_entities_on_skeleton = [&]() {
@@ -154,7 +155,7 @@ int main(int argc, char *argv[]) {
 
     CHKERR simple->setUp();
 
-    auto integration_rule = [](int, int, int p) { return 2 * p + 1; };
+    auto integration_rule = [](int, int, int p) { return 2 * p; };
 
     auto assemble_domain_lhs = [&](auto &pip) {
       MoFEMFunctionBegin;
@@ -233,7 +234,9 @@ int main(int argc, char *argv[]) {
       using OpDomainSource = FormsIntegrators<DomainEleOp>::Assembly<
           AT>::LinearForm<IT>::OpSource<1, 1>;
       auto source = [&](const double x, const double y,
-                        const double z) constexpr { return -1; };
+                        const double z) constexpr {
+        return -1;//sin(100 * (x / 10.) * M_PI_2);
+      };
       pip.push_back(new OpDomainSource("U", source));
       MoFEMFunctionReturn(0);
     };
@@ -398,20 +401,26 @@ int main(int argc, char *argv[]) {
     };
 
     auto get_post_proc_fe = [&]() {
-      using PostProcEle = PostProcBrokenMeshInMoab<DomainEle>;
+      using PostProcEle = PostProcBrokenMeshInMoab<BoundaryEle>;
       using OpPPMap = OpPostProcMapInMoab<3, SPACE_DIM>;
       auto post_proc_fe = boost::make_shared<PostProcEle>(m_field);
 
+      auto op_loop_side = new OpLoopSide<EleOnSide>(
+          m_field, simple->getDomainFEName(), SPACE_DIM, Sev::noisy,
+          boost::make_shared<
+              ForcesAndSourcesCore::UserDataOperator::AdjCache>());
+      post_proc_fe->getOpPtrVector().push_back(op_loop_side);
+
       CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
-          post_proc_fe->getOpPtrVector(), {HDIV});
+          op_loop_side->getOpPtrVector(), {HDIV});
       auto u_vec_ptr = boost::make_shared<VectorDouble>();
       auto flux_mat_ptr = boost::make_shared<MatrixDouble>();
-      post_proc_fe->getOpPtrVector().push_back(
+      op_loop_side->getOpPtrVector().push_back(
           new OpCalculateScalarFieldValues("U", u_vec_ptr));
-      post_proc_fe->getOpPtrVector().push_back(
+      op_loop_side->getOpPtrVector().push_back(
           new OpCalculateHVecVectorField<3>("BROKEN", flux_mat_ptr));
 
-      post_proc_fe->getOpPtrVector().push_back(
+      op_loop_side->getOpPtrVector().push_back(
 
           new OpPPMap(
 
@@ -431,11 +440,11 @@ int main(int argc, char *argv[]) {
     };
 
     auto post_proc_fe = get_post_proc_fe();
-    CHKERR DMoFEMLoopFiniteElements(simple->getDM(), simple->getDomainFEName(),
-                                    post_proc_fe);
+    CHKERR DMoFEMLoopFiniteElements(simple->getDM(),
+                                    simple->getBoundaryFEName(), post_proc_fe);
     CHKERR post_proc_fe->writeFile("out_result.h5m");
 
-    // CHKERR check_residual(x, f);
+    CHKERR check_residual(x, f);
   }
   CATCH_ERRORS;
 
