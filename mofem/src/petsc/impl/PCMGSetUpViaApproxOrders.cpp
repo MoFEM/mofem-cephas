@@ -168,6 +168,9 @@ MoFEMErrorCode sub_mat_mult_add(Mat a, Vec x, Vec f) {
 MoFEMErrorCode sub_mat_sor(Mat mat, Vec b, PetscReal omega, MatSORType flag,
                            PetscReal shift, PetscInt its, PetscInt lits,
                            Vec x) {
+
+  //FIXME: that is crap implementation of SOR
+
   void *void_ctx;
   MoFEMFunctionBegin;
   CHKERR MatShellGetContext(mat, &void_ctx);
