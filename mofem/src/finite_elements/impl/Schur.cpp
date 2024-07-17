@@ -1552,16 +1552,7 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
   Vec ghost_x = ctx->ghostX;
   Vec ghost_y = ctx->ghostY;
 
-
   CHKERR VecCopy(x, ghost_x);
-
-  CHKERR VecGhostUpdateBegin(ghost_x, INSERT_VALUES, SCATTER_FORWARD);
-  CHKERR VecGhostUpdateEnd(ghost_x, INSERT_VALUES, SCATTER_FORWARD);
-
-  double *x_array;
-  Vec loc_ghost_x;
-  CHKERR VecGhostGetLocalForm(ghost_x, &loc_ghost_x);
-  CHKERR VecGetArray(loc_ghost_x, &x_array);
 
   double *y_array;
   Vec loc_ghost_y;
@@ -1571,14 +1562,35 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
   CHKERR VecGetArray(loc_ghost_y, &y_array);
   for (auto i = 0; i != nb_y; ++i)
     y_array[i] = 0.;
+  CHKERR VecRestoreArray(loc_ghost_y, &y_array);
+  CHKERR VecGhostRestoreLocalForm(ghost_y, &loc_ghost_y);
 
-  auto mult = [&](int low_row, int hi_row, int low_col, int hi_col) {
+  auto mult = [&](int low_x, int hi_x, int low_y, int hi_y) {
     MoFEMFunctionBegin;
+
+    double *x_array;
+    Vec loc_ghost_x;
+    CHKERR VecGhostGetLocalForm(ghost_x, &loc_ghost_x);
+    CHKERR VecGetArray(loc_ghost_x, &x_array);
+
+    double *y_array;
+    Vec loc_ghost_y;
+    CHKERR VecGhostGetLocalForm(ghost_y, &loc_ghost_y);
+    int nb_y;
+    CHKERR VecGetLocalSize(loc_ghost_y, &nb_y);
+    CHKERR VecGetArray(loc_ghost_y, &y_array);
+
     double *block_ptr = &*ctx->dataBlocksPtr->begin();
     auto it = ctx->blockIndex.get<0>().lower_bound(0);
     auto hi = ctx->blockIndex.get<0>().end();
 
     while (it != hi) {
+      if (it->getLocRow() < low_y || it->getLocRow() >= hi_y ||
+          it->getLocCol() < low_x || it->getLocCol() >= hi_x) {
+        ++it;
+        continue;
+      }
+
       auto nb_rows = it->getNbRows();
       auto nb_cols = it->getNbCols();
       auto x_ptr = &x_array[it->getLocCol()];
@@ -1610,6 +1622,12 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
       auto hi = ctx->blockIndex.get<0>().end();
 
       while (it != hi) {
+        if (it->getLocRow() < low_y || it->getLocRow() >= hi_y ||
+            it->getLocCol() < low_x || it->getLocCol() >= hi_x) {
+          ++it;
+          continue;
+        }
+
         if (it->getInvShift() != -1) {
           auto nb_rows = it->getNbRows();
           auto nb_cols = it->getNbCols();
@@ -1627,18 +1645,23 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
             }
           }
         }
+
         ++it;
       }
     }
+
+    CHKERR VecRestoreArray(loc_ghost_x, &x_array);
+    CHKERR VecRestoreArray(loc_ghost_y, &y_array);
+    CHKERR VecGhostRestoreLocalForm(ghost_x, &loc_ghost_x);
+    CHKERR VecGhostRestoreLocalForm(ghost_y, &loc_ghost_y);
     MoFEMFunctionReturn(0);
   };
 
-  CHKERR mult(0, 0, 0, 0);
-
-  CHKERR VecRestoreArray(loc_ghost_x, &x_array);
-  CHKERR VecRestoreArray(loc_ghost_y, &y_array);
-  CHKERR VecGhostRestoreLocalForm(ghost_x, &loc_ghost_x);
-  CHKERR VecGhostRestoreLocalForm(ghost_y, &loc_ghost_y);
+  constexpr auto max_int = std::numeric_limits<int>::max();
+  CHKERR VecGhostUpdateBegin(ghost_x, INSERT_VALUES, SCATTER_FORWARD);
+  CHKERR mult(0, x_loc_size, 0, max_int);
+  CHKERR VecGhostUpdateEnd(ghost_x, INSERT_VALUES, SCATTER_FORWARD);
+  CHKERR mult(x_loc_size, max_int, 0, max_int);
 
   CHKERR VecGhostUpdateBegin(ghost_y, ADD_VALUES, SCATTER_REVERSE);
   CHKERR VecGhostUpdateEnd(ghost_y, ADD_VALUES, SCATTER_REVERSE);
@@ -1705,8 +1728,8 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
   CHKERR VecCopy(y, ghost_y);
   CHKERR VecZeroEntries(ghost_x);
 
-  CHKERR VecGhostUpdateBegin(ghost_y, INSERT_VALUES, SCATTER_FORWARD);
-  CHKERR VecGhostUpdateEnd(ghost_y, INSERT_VALUES, SCATTER_FORWARD);
+  // CHKERR VecGhostUpdateBegin(ghost_y, INSERT_VALUES, SCATTER_FORWARD);
+  // CHKERR VecGhostUpdateEnd(ghost_y, INSERT_VALUES, SCATTER_FORWARD);
 
   double *x_array;
   Vec loc_ghost_x;
@@ -1868,8 +1891,8 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
   CHKERR VecGhostRestoreLocalForm(ghost_x, &loc_ghost_x);
   CHKERR VecGhostRestoreLocalForm(ghost_y, &loc_ghost_y);
 
-  CHKERR VecGhostUpdateBegin(ghost_y, ADD_VALUES, SCATTER_REVERSE);
-  CHKERR VecGhostUpdateEnd(ghost_y, ADD_VALUES, SCATTER_REVERSE);
+  // CHKERR VecGhostUpdateBegin(ghost_y, ADD_VALUES, SCATTER_REVERSE);
+  // CHKERR VecGhostUpdateEnd(ghost_y, ADD_VALUES, SCATTER_REVERSE);
 
   switch (iora) {
   case INSERT_VALUES:
