@@ -79,6 +79,7 @@ struct DMMGViaApproxOrdersCtx : public MoFEM::DMCtxImpl {
 
   MoFEMErrorCode destroyCoarseningIS();
 
+  SmartPetscObj<DM> coarsenDM;
   SmartPetscObj<AO> aO;
   std::vector<SmartPetscObj<IS>> coarseningIS;  ///< Coarsening IS
   std::vector<SmartPetscObj<Mat>> kspOperators; ///< Get KSP operators
@@ -191,6 +192,8 @@ DMMGViaApproxOrdersCtx::~DMMGViaApproxOrdersCtx() {
 
 MoFEMErrorCode DMMGViaApproxOrdersCtx::destroyCoarseningIS() {
   MoFEMFunctionBegin;
+  coarsenDM.reset();
+  aO.reset();
   coarseningIS.clear();
   kspOperators.clear();
   shellMatrixCtxPtr.clear();
@@ -318,11 +321,21 @@ MoFEMErrorCode DMCreate_MGViaApproxOrders(DM dm) {
   dm->ops->createglobalvector = DMCreateGlobalVector_MGViaApproxOrders;
   dm->ops->coarsen = DMCoarsen_MGViaApproxOrders;
   dm->ops->createinterpolation = DMCreateInterpolation_MGViaApproxOrders;
+  dm->ops->destroy = DMDestroy_MGViaApproxOrders;
 
   CHKERR DMKSPSetComputeOperators(dm, ksp_set_operators, NULL);
   PetscInfo1(dm, "Create DMMGViaApproxOrders reference = %d\n",
              ((DMCtxImpl *)(dm->data))->useCount());
   MoFEMFunctionReturn(0);
+}
+
+PetscErrorCode DMDestroy_MGViaApproxOrders(DM dm) {
+  PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
+  GET_DM_FIELD(dm);
+  MoFEMFunctionBeginHot;
+  CHKERR dm_field->destroyCoarseningIS();
+  CHKERR DMDestroy_MoFEM(dm);
+  MoFEMFunctionReturnHot(0);
 }
 
 MoFEMErrorCode DMCreateMatrix_MGViaApproxOrders(DM dm, Mat *M) {
@@ -367,7 +380,7 @@ MoFEMErrorCode DMCoarsen_MGViaApproxOrders(DM dm, MPI_Comm comm, DM *dmc) {
   DMType type;
   CHKERR DMGetType(dm, &type);
   CHKERR DMSetType(*dmc, type);
-  CHKERR PetscObjectReference((PetscObject)(*dmc));
+  dm_field->coarsenDM = SmartPetscObj<DM>(*dmc, false);
   PetscInfo1(dm, "Coarsen DMMGViaApproxOrders leveldown = %d\n", dm->leveldown);
   MoFEMFunctionReturn(0);
 }
