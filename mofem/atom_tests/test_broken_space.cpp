@@ -602,7 +602,7 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
 
           createOpSchurAssembleEnd(
               {"BROKEN", "U"}, {nullptr, nullptr}, {SmartPetscObj<AO>(), ao_up},
-              {SmartPetscObj<Mat>(), S}, {false, false}, false, block_data)
+              {SmartPetscObj<Mat>(), S}, {true, true}, true, block_data)
 
       );
 
