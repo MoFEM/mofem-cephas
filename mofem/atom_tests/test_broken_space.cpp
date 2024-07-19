@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
 
     CHKERR simple->setUp();
 
-    auto integration_rule = [](int, int, int p) { return 2 * p - 1; };
+    auto integration_rule = [](int, int, int p) { return 2 * p; };
 
     auto assemble_domain_lhs = [&](auto &pip) {
       MoFEMFunctionBegin;
