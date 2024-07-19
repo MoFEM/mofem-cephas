@@ -653,9 +653,9 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
       auto get_pc = [](auto ksp) {
         PC pc_raw;
         CHKERR KSPGetPC(ksp, &pc_raw);
-        return SmartPetscObj<PC>(pc_raw, true); // bump reference
+        return pc_raw;
       };
-      CHKERR setSchurA00MatSolvePC(get_pc(subksp[0]));
+      CHKERR setSchurA00MatSolvePC(SmartPetscObj<PC>(get_pc(subksp[0]), true));
 
       auto set_pc_p_mg = [&](auto dm, auto pc) {
         MoFEMFunctionBegin;
@@ -664,8 +664,9 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
         PetscBool same = PETSC_FALSE;
         PetscObjectTypeCompare((PetscObject)pc, PCMG, &same);
         if (same) {
+          // By default do not use shell mg mat. Implementation of SOR is slow.
           CHKERR PCMGSetUpViaApproxOrders(
-              pc, createPCMGSetUpViaApproxOrdersCtx(dm, S, true));
+              pc, createPCMGSetUpViaApproxOrdersCtx(dm, S, false));
           CHKERR PCSetFromOptions(pc);
         }
         MoFEMFunctionReturn(0);
