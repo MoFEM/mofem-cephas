@@ -143,7 +143,6 @@ int main(int argc, char *argv[]) {
     else if (choice_space_value == hcurl)
       space = HCURL;
 
-
     CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &approx_order,
                               PETSC_NULL);
 
@@ -183,7 +182,6 @@ int main(int argc, char *argv[]) {
       op_loop_skeleton_side->getSideFEPtr()->getRuleHook = integration_rule;
       CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
           op_loop_skeleton_side->getOpPtrVector(), {});
-
 
       // Second: Iterate over domain FEs adjacent to skelton, particularly one
       // domain element.
@@ -405,6 +403,60 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionReturn(0);
     };
 
+    auto calculate_error = [&]() {
+      MoFEMFunctionBegin;
+
+      // auto &skeleton_rhs = pip_mng->getOpSkeletonRhsPipeline();
+      auto &domain_rhs = pip_mng->getOpDomainRhsPipeline();
+      // skeleton_rhs.clear();
+      domain_rhs.clear();
+
+      CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(domain_rhs, {HDIV});
+
+      auto u_grad_ptr = boost::make_shared<MatrixDouble>();
+      auto flux_val_ptr = boost::make_shared<MatrixDouble>();
+      auto div_val_ptr = boost::make_shared<VectorDouble>();
+      auto source_ptr = boost::make_shared<VectorDouble>();
+
+      domain_rhs.push_back(
+          new OpCalculateScalarFieldGradient<SPACE_DIM>("U", u_grad_ptr));
+      domain_rhs.push_back(
+          new OpCalculateHVecVectorField<3, SPACE_DIM>("BROKEN", flux_val_ptr));
+      domain_rhs.push_back(new OpCalculateHdivVectorDivergence<3, SPACE_DIM>(
+          "BROKEN", div_val_ptr));
+      auto source = [&](const double x, const double y,
+                        const double z) constexpr { return -1; };
+      domain_rhs.push_back(new OpGetTensor0fromFunc(source_ptr, source));
+
+      enum { DIV, GRAD, LAST};
+      auto mpi_vec = createVectorMPI(
+          m_field.get_comm(), (!m_field.get_comm_rank()) ? LAST : 0, LAST);
+      domain_rhs.push_back(
+          new OpCalcNormL2Tensor0(div_val_ptr, mpi_vec, DIV, source_ptr));
+      domain_rhs.push_back(new OpCalcNormL2Tensor1<SPACE_DIM>(
+          u_grad_ptr, mpi_vec, GRAD, flux_val_ptr));
+
+      CHKERR DMoFEMLoopFiniteElements(simple->getDM(),
+                                      simple->getDomainFEName(),
+                                      pip_mng->getDomainRhsFE());
+      CHKERR VecAssemblyBegin(mpi_vec);
+      CHKERR VecAssemblyEnd(mpi_vec);
+
+      if (!m_field.get_comm_rank()) {
+        const double *error_ind;
+        CHKERR VecGetArrayRead(mpi_vec, &error_ind);
+        MOFEM_LOG("AT", Sev::inform)
+            << "Approximation error ||div flux - source||: "
+            << std::sqrt(error_ind[DIV]);
+        MOFEM_LOG("AT", Sev::inform)
+            << "Approximation error ||grad-flux||: "
+            << std::sqrt(error_ind[GRAD]);
+        CHKERR VecRestoreArrayRead(mpi_vec, &error_ind);
+      }
+
+      MoFEMFunctionReturn(0);
+    };
+
     auto get_post_proc_fe = [&]() {
       using PostProcEle = PostProcBrokenMeshInMoab<BoundaryEle>;
       using OpPPMap = OpPostProcMapInMoab<3, SPACE_DIM>;
@@ -449,6 +501,7 @@ int main(int argc, char *argv[]) {
                                     simple->getBoundaryFEName(), post_proc_fe);
     CHKERR post_proc_fe->writeFile("out_result.h5m");
 
+    CHKERR calculate_error();
     CHKERR check_residual(x, f);
   }
   CATCH_ERRORS;
@@ -685,7 +738,7 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
     CHKERR MatSetDM(S, PETSC_NULL);
     int bs = (SPACE_DIM == 2) ? NBEDGE_L2(approx_order - 1)
                               : NBFACETRI_L2(approx_order - 1);
-    CHKERR MatSetBlockSize(S,bs);
+    CHKERR MatSetBlockSize(S, bs);
 
     CHKERR set_ops(schur_dm);
     CHKERR set_pc(pc, block_dm);
