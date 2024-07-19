@@ -683,6 +683,10 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
     CHKERR DMMoFEMSetNestSchurData(simple->getDM(), nested_mat_data);
     S = createDMHybridisedL2Matrix(schur_dm);
     CHKERR MatSetDM(S, PETSC_NULL);
+    int bs = (SPACE_DIM == 2) ? NBEDGE_L2(approx_order - 1)
+                              : NBFACETRI_L2(approx_order - 1);
+    CHKERR MatSetBlockSize(S,bs);
+
     CHKERR set_ops(schur_dm);
     CHKERR set_pc(pc, block_dm);
     DM solver_dm;
