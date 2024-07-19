@@ -47,6 +47,8 @@ protected:
   virtual ~SetUpSchur() = default;
 };
 
+int approx_order = 1;
+
 int main(int argc, char *argv[]) {
 
   MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
@@ -141,7 +143,7 @@ int main(int argc, char *argv[]) {
     else if (choice_space_value == hcurl)
       space = HCURL;
 
-    int approx_order = 1;
+
     CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &approx_order,
                               PETSC_NULL);
 
