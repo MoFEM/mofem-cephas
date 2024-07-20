@@ -37,8 +37,10 @@ struct Simple : public UnknownInterface {
    * @return error code
    */
   MoFEMErrorCode getOptions();
-  
-  typedef boost::function<MoFEMErrorCode(Interface &, const char *, const char *)> LoadFileFunc;
+
+  typedef boost::function<MoFEMErrorCode(Interface &, const char *,
+                                         const char *)>
+      LoadFileFunc;
   /**
    * \brief Set function for loading mesh file
    * @param  m_field interface
@@ -46,7 +48,9 @@ struct Simple : public UnknownInterface {
    * @param  options loader options
    * @return      error code
    */
-  static MoFEMErrorCode defaultLoadFileFunc(Interface &m_field, const char *file_name, const char *options) {
+  static MoFEMErrorCode defaultLoadFileFunc(Interface &m_field,
+                                            const char *file_name,
+                                            const char *options) {
     // Default behavior using the member moab.load_file
     return m_field.get_moab().load_file(file_name, 0, options);
   }
@@ -66,7 +70,8 @@ struct Simple : public UnknownInterface {
    * @return            error code
    */
   MoFEMErrorCode loadFile(const std::string options,
-                          const std::string mesh_file_name, LoadFileFunc loadFunc = defaultLoadFileFunc);
+                          const std::string mesh_file_name,
+                          LoadFileFunc loadFunc = defaultLoadFileFunc);
   /**
    * \brief Load mesh file with parallel options if number of cores > 1
    * @param  mesh_file_name file name if not set default or set by command line
@@ -464,7 +469,7 @@ struct Simple : public UnknownInterface {
    *
    * @return auto&
    */
-  auto &getBitAdjEnt() { return bitAdjEnt; } 
+  auto &getBitAdjEnt() { return bitAdjEnt; }
 
   /**
    * @brief bit ref level for parent parent
@@ -486,7 +491,6 @@ struct Simple : public UnknownInterface {
    */
   MoFEMErrorCode addFieldToEmptyFieldBlocks(const std::string row_field,
                                             const std::string col_field) const;
-
 
 private:
   MoFEM::Core &cOre;

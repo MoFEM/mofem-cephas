@@ -188,7 +188,7 @@ DefaultElementAdjacency::defaultPrism(moab::Interface &moab, const Field &field,
         fe.getRefElement()->getSideNumberPtr(edge);
     if (side_ptr->side_number != ee) {
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-               "data inconsistency for edge %d while in FE datastructure is "
+               "data inconsistency for edge %d while in FE data structure is "
                "numbered %d.",
                ee, side_ptr->side_number);
     }
@@ -197,7 +197,7 @@ DefaultElementAdjacency::defaultPrism(moab::Interface &moab, const Field &field,
     if (side_ptr->side_number != ee + 6) {
       if (side_ptr->side_number != ee) {
         SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                 "data inconsistency for edge %d while in FE datastructure "
+                 "data inconsistency for edge %d while in FE data structure "
                  "is numbered %d.",
                  ee, side_ptr->side_number);
       } else {
