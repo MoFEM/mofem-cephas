@@ -957,6 +957,16 @@ MoFEMErrorCode DMMoFEMGetBlocMatData(DM dm, boost::shared_ptr<BlockStructure> &)
 MoFEMErrorCode DMMoFEMCreateBlockMat(DM dm, Mat *mat);
 
 /**
+ * @brief Create block matrix
+  \ingroup dm
+ *
+ * @param dm
+ * @param mat smart pointer
+ * @return MoFEMErrorCode
+ */
+MoFEMErrorCode DMMoFEMCreateBlockMat(DM dm, SmartPetscObj<Mat> &mat);
+
+/**
  * @brief Set data for nest schur (see specialisation in Schur.hpp)
  * 
  * \note You can reset data by setting nullptr

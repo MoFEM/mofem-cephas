@@ -55,6 +55,10 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
   template <int BASE_DIM, int FIELD_DIM>
   using OpMass = OpMassImpl<BASE_DIM, FIELD_DIM, I, OpBase>;
 
+  /** @copydoc OpMass */
+  template <int BASE_DIM, int FIELD_DIM>
+  using OpMassCache = OpMassCacheImpl<BASE_DIM, FIELD_DIM, I, OpBase>;
+
   /**
    * @brief Integrate \f$(v_k,D_{ijkl} u_{,l})_\Omega\f$
    *

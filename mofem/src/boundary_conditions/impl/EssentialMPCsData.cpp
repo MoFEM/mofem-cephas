@@ -37,11 +37,11 @@ MoFEMErrorCode EssentialPreProc<MPCsType>::loadFileWithMPCs(
 
   constexpr bool is_debug = false;
 
-  Range all_ents;
-  CHKERR moab.get_entities_by_handle(0, all_ents, false);
-
   if (m_field.get_comm_size() == 1)
     MoFEMFunctionReturnHot(0);
+
+  Range all_ents;
+  CHKERR moab.get_entities_by_handle(0, all_ents, false);
 
   auto print_range_on_procs = [&](const Range &range, std::string name) {
     if(!is_debug) return;
@@ -82,9 +82,9 @@ MoFEMErrorCode EssentialPreProc<MPCsType>::loadFileWithMPCs(
     }
   }
 
-  if(mpc_ents.empty()) {
-    MoFEMFunctionReturnHot(0);
-  }
+  // if(mpc_ents.empty()) {
+  //   MoFEMFunctionReturnHot(0);
+  // }
   
   save_range_to_file(all_ents, "all_ents");
   print_range_on_procs(mpc_ents, "mpc_ents");
