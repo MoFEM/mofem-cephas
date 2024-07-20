@@ -802,7 +802,6 @@ MoFEMErrorCode OpMassCacheImpl<1, FIELD_DIM, I, OpBase>::iNtegrate(
     EntitiesFieldData::EntData &row_data,
     EntitiesFieldData::EntData &col_data) {
   MoFEMFunctionBegin;
-  CHKERR this->integrateImpl(row_data, col_data, 1);
 
   const auto vol = this->getMeasure();
   const auto row_type = this->rowType;
@@ -815,12 +814,15 @@ MoFEMErrorCode OpMassCacheImpl<1, FIELD_DIM, I, OpBase>::iNtegrate(
     if (cacheLocMats[p]->size1() != loc_mat.size1() &&
         cacheLocMats[p]->size2() != loc_mat.size2()) {
       cacheLocMats[p]->resize(loc_mat.size1(), loc_mat.size2());
+      CHKERR this->integrateImpl(row_data, col_data, 1);
       *(cacheLocMats[p]) = loc_mat;
+    } else {
+      loc_mat = *(cacheLocMats[p]);
     }
-    loc_mat = *(cacheLocMats[p]);
     loc_mat *= scalarBeta * this->getMeasure();
   } else {
-    loc_mat *= scalarBeta * this->getMeasure();
+    CHKERR this->integrateImpl(row_data, col_data,
+                               scalarBeta * this->getMeasure());
   }
   MoFEMFunctionReturn(0);
 }
