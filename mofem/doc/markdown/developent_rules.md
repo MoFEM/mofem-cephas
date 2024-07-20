@@ -1,28 +1,29 @@
 # Development rules
 
-- MoFEM core is to be modular, and extendable, remain small as possible. That will enable its evolution in future.
+- MoFEM core is to be modular, extendable, and to remain as small as possible to enable its future evolution.
 - MoFEM core is free from implementation of specific physics. 	
-- MoFEM Users modules should present good development practices. 
-- MoFEM Users modules are examples of implementation for particular physical problems.
-- User module is specific code, with bespoke solutions, to be used by external 
-users. Solutions can be close, bespoke, tailored to problem.
+- MoFEM User modules should present good development practices. 
+- MoFEM User modules are examples of implementation for particular physical problems.
+- User modules is specific code, with bespoke solutions, to be used by external 
+users. Solutions can be closed, bespoke, and/or tailored.
 - Code always works in parallel.
 
 ## General rules
 
-- If code part do not have be fast, make it generic.
+- If a section of the code does not have to be fast, make it generic.
 - Make generic code as simple as possible.
 - Do not duplicate code with similar functionality.
-- Make code fast. To check what need to be fast profile code.
+- Make code fast. Profile the code to check what needs to be made fast.
+
 
 ## Hide complexities.
 
 - Isolate complexities. You can focus only on one thing. 
-- Avoid bool flags and code branching. That makes code difficult to test, debug and understand.
-- Perfect operator is a black box. 
-- Black box do not create dependencies. Enable future evolution and development.
+- Avoid bool flags and code branching. This makes code difficult to test, debug, and understand.
+- A perfect operator is a black box.
+- Black boxes do not create dependencies, enabling future evolution and development
 - Do not expose members of user data operators. Make members of the function private. 
-- Common data for series of operators are local. 
+- Common data for a series of operators are local. 
 
 ```c++
 template <int DIM, AssemblyType A, IntegrationType I, typename BoundaryEleOp>
@@ -47,8 +48,8 @@ MoFEMErrorCode opFactoryBoundaryRhs(
 }
 ```
 
-- Prefect operator is dimension, and element type agnostic.
-- Push operators in factory function, or lambda function if ad hoc solution.
+- The perfect operator is dimension and element type agnostic.
+- Push operators in a factory function or a lambda function if an ad hoc solution
 - Push operator by operator defined in "cpp" file. Hide implementation.
 
 hpp file:
@@ -72,14 +73,14 @@ OpBlackBox* createOpBlackBox() { return new OpBalckBox(); }
 
 ## Testing
 
-- Test code not method.
+- Test the code, not the method.
 - Tests are fast.
 
 ## Avoid dependencies
 
 - Do not add software dependencies to core library.
-- If you have to add dependency, make it optional.
-- More libraries bigger likelihood that code will break at compilation.
+- If you have to add a dependency, make it optional.
+- With more libraries, there is a larger likelihood of the code breaking at compilation.
 - Some decencies should be restricted to users modules
-- All dependencies are managed in Spack
+- All dependencies are managed managed Spack
 
