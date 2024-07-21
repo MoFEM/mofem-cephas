@@ -160,6 +160,25 @@ void TetPolynomialBase::swichCacheBaseOn<HDIV>(std::vector<void *> v);
 template <>
 void TetPolynomialBase::swichCacheBaseOff<HDIV>(std::vector<void *> v);
 
+template <>
+bool TetPolynomialBase::swichCacheBaseInterior<L2>(FieldApproximationBase base,
+                                                   void *ptr);
+
+template <>
+void TetPolynomialBase::swichCacheBaseOn<L2>(FieldApproximationBase base,
+                                               std::vector<void *> v);
+
+template <>
+void TetPolynomialBase::swichCacheBaseOff<L2>(FieldApproximationBase base,
+                                              std::vector<void *> v);
+
+template <>
+void TetPolynomialBase::swichCacheBaseOn<L2>(std::vector<void *> v);
+
+template <>
+void TetPolynomialBase::swichCacheBaseOff<L2>(std::vector<void *> v);
+
+
 } // namespace MoFEM
 
 #endif //__TETPOLYNOMIALBASE_HPP__

@@ -251,8 +251,10 @@ int main(int argc, char *argv[]) {
     CHKERR pip_mng->setSkeletonLhsIntegrationRule(integration_rule);
     CHKERR pip_mng->setSkeletonRhsIntegrationRule(integration_rule);
 
-    // TetPolynomialBase::swichCacheBaseOn<HDIV>(
-    //     {pip_mng->getDomainLhsFE().get(), pip_mng->getDomainRhsFE().get()});
+    TetPolynomialBase::swichCacheBaseOn<HDIV>(
+        {pip_mng->getDomainLhsFE().get(), pip_mng->getDomainRhsFE().get()});
+    TetPolynomialBase::swichCacheBaseOn<L2>(
+        {pip_mng->getDomainLhsFE().get(), pip_mng->getDomainRhsFE().get()});
 
     auto x = createDMVector(simple->getDM());
     auto f = vectorDuplicate(x);
@@ -327,7 +329,6 @@ int main(int argc, char *argv[]) {
       boost::shared_ptr<VectorDouble> u_ptr =
           boost::make_shared<VectorDouble>();
       domain_rhs.push_back(new OpCalculateScalarFieldValues("U", u_ptr));
-      auto minus = [](double, double, double) constexpr { return -1; };
       domain_rhs.push_back(new OpHDivH("BROKEN", u_ptr, beta));
       domain_rhs.push_back(new OpHdivFlux("BROKEN", flux_ptr, beta));
 

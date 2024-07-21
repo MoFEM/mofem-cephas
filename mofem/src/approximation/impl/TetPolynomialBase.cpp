@@ -70,6 +70,8 @@ struct TetBaseCache {
       hdivBrokenBaseInterior;
   static std::array<std::map<const void *, HDivBaseFaceCacheMI>, LASTBASE>
       hDivBaseFace;
+  static std::array<std::map<const void *, BaseCacheMI>, LASTBASE>
+      l2BaseInterior;
 };
 
 std::array<std::map<const void *, TetBaseCache::BaseCacheMI>, LASTBASE>
@@ -78,6 +80,8 @@ std::array<std::map<const void *, TetBaseCache::BaseCacheMI>, LASTBASE>
     TetBaseCache::hdivBrokenBaseInterior;
 std::array<std::map<const void *, TetBaseCache::HDivBaseFaceCacheMI>, LASTBASE>
     TetBaseCache::hDivBaseFace;
+std::array<std::map<const void *, TetBaseCache::BaseCacheMI>, LASTBASE>
+    TetBaseCache::l2BaseInterior;
 
 MoFEMErrorCode
 TetPolynomialBase::query_interface(boost::typeindex::type_index type_index,
@@ -547,13 +551,37 @@ MoFEMErrorCode TetPolynomialBase::getValueL2AinsworthBase(MatrixDouble &pts) {
       cTx->basePolynomialsType0;
 
   int nb_gauss_pts = pts.size2();
+  int volume_order = data.dataOnEntities[MBTET][0].getOrder();
+  int nb_dofs = NBVOLUMETET_L2(volume_order);
 
-  data.dataOnEntities[MBTET][0].getN(base).resize(
-      nb_gauss_pts, NBVOLUMETET_L2(data.dataOnEntities[MBTET][0].getOrder()),
-      false);
-  data.dataOnEntities[MBTET][0].getDiffN(base).resize(
-      nb_gauss_pts,
-      3 * NBVOLUMETET_L2(data.dataOnEntities[MBTET][0].getOrder()), false);
+  data.dataOnEntities[MBTET][0].getN(base).resize(nb_gauss_pts, nb_dofs, false);
+  data.dataOnEntities[MBTET][0].getDiffN(base).resize(nb_gauss_pts, 3 * nb_dofs,
+                                                      false);
+
+  if(!nb_dofs)
+    MoFEMFunctionReturnHot(0);
+
+  auto get_interior_cache = [this](auto base) -> TetBaseCache::BaseCacheMI * {
+    if (vPtr) {
+      auto it = TetBaseCache::l2BaseInterior[base].find(vPtr);
+      if (it != TetBaseCache::l2BaseInterior[base].end()) {
+        return &it->second;
+      }
+    }
+    return nullptr;
+  };
+
+  auto interior_cache_ptr = get_interior_cache(base);
+
+  if (interior_cache_ptr) {
+    auto it =
+        interior_cache_ptr->find(boost::make_tuple(volume_order, nb_gauss_pts));
+    if (it != interior_cache_ptr->end()) {
+      noalias(data.dataOnEntities[MBTET][0].getN(base)) = it->N;
+      noalias(data.dataOnEntities[MBTET][0].getDiffN(base)) = it->diffN;
+      MoFEMFunctionBeginHot(0);
+    }
+  }
 
   CHKERR L2_Ainsworth_ShapeFunctions_MBTET(
       data.dataOnEntities[MBTET][0].getOrder(),
@@ -562,6 +590,13 @@ MoFEMErrorCode TetPolynomialBase::getValueL2AinsworthBase(MatrixDouble &pts) {
       &*data.dataOnEntities[MBTET][0].getN(base).data().begin(),
       &*data.dataOnEntities[MBTET][0].getDiffN(base).data().begin(),
       nb_gauss_pts, base_polynomials);
+
+  if (interior_cache_ptr) {
+    auto p = interior_cache_ptr->emplace(
+        TetBaseCache::BaseCacheItem{volume_order, nb_gauss_pts});
+    p.first->N = data.dataOnEntities[MBTET][0].getN(base);
+    p.first->diffN = data.dataOnEntities[MBTET][0].getDiffN(base);
+  }
 
   MoFEMFunctionReturn(0);
 }
@@ -2073,5 +2108,47 @@ template <>
 void TetPolynomialBase::swichCacheBaseOff<HDIV>(std::vector<void *> v) {
   for (auto b = 0; b != LASTBASE; ++b) {
     swichCacheBaseOff<HDIV>(static_cast<FieldApproximationBase>(b), v);
+  }
+}
+
+template <>
+bool TetPolynomialBase::swichCacheBaseInterior<L2>(
+    FieldApproximationBase base, void *ptr) {
+  return tetCacheSwitch(ptr, TetBaseCache::l2BaseInterior[base],
+                        std::string("hdivBaseInterior") +
+                            ApproximationBaseNames[base]);
+}
+
+template <>
+void TetPolynomialBase::swichCacheBaseOn<L2>(FieldApproximationBase base,
+                                               std::vector<void *> v) {
+  for (auto fe_ptr : v) {
+    if (!TetPolynomialBase::swichCacheBaseInterior<L2>(base, fe_ptr)) {
+      TetPolynomialBase::swichCacheBaseInterior<L2>(base, fe_ptr);
+    }
+  }
+}
+
+template <>
+void TetPolynomialBase::swichCacheBaseOff<L2>(FieldApproximationBase base,
+                                                std::vector<void *> v) {
+  for (auto fe_ptr : v) {
+    if (TetPolynomialBase::swichCacheBaseInterior<L2>(base, fe_ptr)) {
+      TetPolynomialBase::swichCacheBaseInterior<L2>(base, fe_ptr);
+    }
+  }
+}
+
+template <>
+void TetPolynomialBase::swichCacheBaseOn<L2>(std::vector<void *> v) {
+  for(auto b = 0; b!=LASTBASE; ++b) {
+    swichCacheBaseOn<L2>(static_cast<FieldApproximationBase>(b), v);
+  }
+}
+
+template <>
+void TetPolynomialBase::swichCacheBaseOff<L2>(std::vector<void *> v) {
+  for (auto b = 0; b != LASTBASE; ++b) {
+    swichCacheBaseOff<L2>(static_cast<FieldApproximationBase>(b), v);
   }
 }
