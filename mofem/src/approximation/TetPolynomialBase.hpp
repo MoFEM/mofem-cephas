@@ -4,8 +4,6 @@ Hdiv and L2 base on tetrahedral
 
 */
 
-
-
 #ifndef __TETPOLYNOMIALBASE_HPP__
 #define __TETPOLYNOMIALBASE_HPP__
 
@@ -24,18 +22,27 @@ struct TetPolynomialBase : public BaseFunction {
   TetPolynomialBase(const void *ptr = nullptr);
   virtual ~TetPolynomialBase();
 
-  static bool switchCacheHDivBaseFaceDemkowicz(const void *ptr);
-  static bool switchCacheHdivBaseInteriorDemkowicz(const void *ptr);
-  static bool switchCacheHdivBrokenBaseInteriorDemkowicz(const void *ptr);
-  static void switchCacheHDivBaseDemkowiczOn(std::vector<void *> v);
-  static void switchCacheHDivBaseDemkowiczOff(std::vector<void *> v);
+  template <int SPACE>
+  static bool swichCacheBaseFace(FieldApproximationBase base, void *ptr);
 
-  static bool switchCacheHdivBrokenBaseInteriorAinsworth(const void *ptr);
-  static void switchCacheHDivBaseAinsworthOn(std::vector<void *> v);
-  static void switchCacheHDivBaseAinsworthOff(std::vector<void *> v);
+  template <int SPACE>
+  static bool swichCacheBaseInterior(FieldApproximationBase base, void *ptr);
 
-  static void switchCacheHDivBaseOn(std::vector<void *> v);
-  static void switchCacheHDivBaseOff(std::vector<void *> v);
+  template <int SPACE>
+  static bool swichCacheBrokenBaseInterior(FieldApproximationBase base,
+                                           void *ptr);
+
+  template <int SPACE>
+  static void swichCacheBaseOn(FieldApproximationBase base,
+                               std::vector<void *> v);
+
+  template <int SPACE>
+  static void swichCacheBaseOff(FieldApproximationBase base,
+                                std::vector<void *> v);
+
+  template <int SPACE> static void swichCacheBaseOn(std::vector<void *> v);
+
+  template <int SPACE> static void swichCacheBaseOff(std::vector<void *> v);
 
   MoFEMErrorCode getValue(MatrixDouble &pts,
                           boost::shared_ptr<BaseFunctionCtx> ctx_ptr);
@@ -126,8 +133,32 @@ private:
   ublas::vector<MatrixDouble> diffN_volume_edge;
   ublas::vector<MatrixDouble> diffN_volume_face;
   MatrixDouble diffN_volume_bubble;
-
 };
+
+template <>
+bool TetPolynomialBase::swichCacheBaseFace<HDIV>(FieldApproximationBase base,
+                                                 void *ptr);
+template <>
+bool TetPolynomialBase::swichCacheBaseInterior<HDIV>(
+    FieldApproximationBase base, void *ptr);
+
+template <>
+bool TetPolynomialBase::swichCacheBrokenBaseInterior<HDIV>(
+    FieldApproximationBase base, void *ptr);
+
+template <>
+void TetPolynomialBase::swichCacheBaseOn<HDIV>(FieldApproximationBase base,
+                                               std::vector<void *> v);
+
+template <>
+void TetPolynomialBase::swichCacheBaseOff<HDIV>(FieldApproximationBase base,
+                                                std::vector<void *> v);
+
+template <>
+void TetPolynomialBase::swichCacheBaseOn<HDIV>(std::vector<void *> v);
+
+template <>
+void TetPolynomialBase::swichCacheBaseOff<HDIV>(std::vector<void *> v);
 
 } // namespace MoFEM
 

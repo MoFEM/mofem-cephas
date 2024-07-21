@@ -64,22 +64,20 @@ struct TetBaseCache {
 
       >;
 
-  static std::map<const void *, BaseCacheMI> hdivBaseInteriorDemkowicz;
-  static std::map<const void *, BaseCacheMI> hdivBrokenBaseInteriorDemkowicz;
-  static std::map<const void *, HDivBaseFaceCacheMI> hDivBaseFaceDemkowicz;
-
-  static std::map<const void *, BaseCacheMI> hdivBrokenBaseInteriorAinsworth;
+  static std::array<std::map<const void *, BaseCacheMI>, LASTBASE>
+      hdivBaseInterior;
+  static std::array<std::map<const void *, BaseCacheMI>, LASTBASE>
+      hdivBrokenBaseInterior;
+  static std::array<std::map<const void *, HDivBaseFaceCacheMI>, LASTBASE>
+      hDivBaseFace;
 };
 
-std::map<const void *, TetBaseCache::BaseCacheMI>
-    TetBaseCache::hdivBaseInteriorDemkowicz;
-std::map<const void *, TetBaseCache::BaseCacheMI>
-    TetBaseCache::hdivBrokenBaseInteriorDemkowicz;
-std::map<const void *, TetBaseCache::HDivBaseFaceCacheMI>
-    TetBaseCache::hDivBaseFaceDemkowicz;
-
-std::map<const void *, TetBaseCache::BaseCacheMI>
-    TetBaseCache::hdivBrokenBaseInteriorAinsworth;
+std::array<std::map<const void *, TetBaseCache::BaseCacheMI>, LASTBASE>
+    TetBaseCache::hdivBaseInterior;
+std::array<std::map<const void *, TetBaseCache::BaseCacheMI>, LASTBASE>
+    TetBaseCache::hdivBrokenBaseInterior;
+std::array<std::map<const void *, TetBaseCache::HDivBaseFaceCacheMI>, LASTBASE>
+    TetBaseCache::hDivBaseFace;
 
 MoFEMErrorCode
 TetPolynomialBase::query_interface(boost::typeindex::type_index type_index,
@@ -94,12 +92,17 @@ TetPolynomialBase::TetPolynomialBase(const void *ptr) : vPtr(ptr) {}
 
 TetPolynomialBase::~TetPolynomialBase() {
   if (vPtr) {
-    if (TetBaseCache::hdivBaseInteriorDemkowicz.find(vPtr) !=
-        TetBaseCache::hdivBaseInteriorDemkowicz.end())
-      TetBaseCache::hdivBaseInteriorDemkowicz.erase(vPtr);
-    if (TetBaseCache::hDivBaseFaceDemkowicz.find(vPtr) !=
-        TetBaseCache::hDivBaseFaceDemkowicz.end())
-      TetBaseCache::hDivBaseFaceDemkowicz.erase(vPtr);
+
+    auto erase = [&](auto cache) {
+      if (cache.find(vPtr) != cache.end())
+        cache.erase(vPtr);
+    };
+
+    for (auto b = 0; b != LASTBASE; ++b) {
+      erase(TetBaseCache::hdivBaseInterior[b]);
+      erase(TetBaseCache::hdivBrokenBaseInterior[b]);
+      erase(TetBaseCache::hDivBaseFace[b]);
+    }
   }
 }
 
@@ -1100,17 +1103,17 @@ TetPolynomialBase::getValueHdivAinsworthBrokenBase(MatrixDouble &pts) {
     MoFEMFunctionReturnHot(0);
 
 
-  auto get_interior_cache = [this]() -> TetBaseCache::BaseCacheMI * {
+  auto get_interior_cache = [this](auto base) -> TetBaseCache::BaseCacheMI * {
     if (vPtr) {
-      auto it = TetBaseCache::hdivBrokenBaseInteriorAinsworth.find(vPtr);
-      if (it != TetBaseCache::hdivBrokenBaseInteriorAinsworth.end()) {
+      auto it = TetBaseCache::hdivBrokenBaseInterior[base].find(vPtr);
+      if (it != TetBaseCache::hdivBrokenBaseInterior[base].end()) {
         return &it->second;
       }
     }
     return nullptr;
   };
 
-  auto interior_cache_ptr = get_interior_cache();
+  auto interior_cache_ptr = get_interior_cache(base);
 
   if (interior_cache_ptr) {
     auto it =
@@ -1219,7 +1222,7 @@ TetPolynomialBase::getValueHdivAinsworthBrokenBase(MatrixDouble &pts) {
   auto t_base_v = getFTensor1FromPtr<3>(base_vol_ptr);
   auto t_diff_base_v = getFTensor2HVecFromPtr<3, 3>(diff_base_vol_ptr);
 
-  // int count_dofs = 0;
+  int count_dofs = 0;
 
   for (int gg = 0; gg != nb_gauss_pts; gg++) {
     for (int oo = 0; oo < volume_order; oo++) {
@@ -1232,7 +1235,7 @@ TetPolynomialBase::getValueHdivAinsworthBrokenBase(MatrixDouble &pts) {
             t_base(i) = t_base_f_e[ff * 3 + ee](i);
             ++t_base;
             ++t_base_f_e[ff * 3 + ee];
-            // ++count_dofs;
+            ++count_dofs;
           }
           for (int ee = 0; ee != 3; ++ee) {
             t_diff_base(i, j) = t_diff_base_f_e[ff * 3 + ee](i, j);
@@ -1252,7 +1255,7 @@ TetPolynomialBase::getValueHdivAinsworthBrokenBase(MatrixDouble &pts) {
           t_diff_base(i, j) = t_diff_base_f_f[ff](i, j);
           ++t_diff_base;
           ++t_diff_base_f_f[ff];
-          // ++count_dofs;
+          ++count_dofs;
         }
       }
 
@@ -1266,7 +1269,7 @@ TetPolynomialBase::getValueHdivAinsworthBrokenBase(MatrixDouble &pts) {
           t_diff_base(i, j) = t_diff_base_v_e[ee](i, j);
           ++t_diff_base;
           ++t_diff_base_v_e[ee];
-          // ++count_dofs;
+          ++count_dofs;
         }
       }
       // volume-face (P - 1) * (P - 2)
@@ -1279,7 +1282,7 @@ TetPolynomialBase::getValueHdivAinsworthBrokenBase(MatrixDouble &pts) {
           t_diff_base(i, j) = t_diff_base_v_f[ff](i, j);
           ++t_diff_base;
           ++t_diff_base_v_f[ff];
-          // ++count_dofs;
+          ++count_dofs;
         }
       }
       // volume-bubble (P - 3) * (P - 2) * (P - 1) / 2
@@ -1291,17 +1294,17 @@ TetPolynomialBase::getValueHdivAinsworthBrokenBase(MatrixDouble &pts) {
         t_diff_base(i, j) = t_diff_base_v(i, j);
         ++t_diff_base;
         ++t_diff_base_v;
-        // ++count_dofs;
+        ++count_dofs;
       }
     }
   }
 
-// #ifdef NDEBUG
-//   if (nb_dofs != count_dofs / nb_gauss_pts)
-//     SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-//              "Number of dofs %d is different than expected %d", count_dofs,
-//              nb_dofs);
-// #endif // NDEBUG
+#ifdef NDEBUG
+  if (nb_dofs != count_dofs / nb_gauss_pts)
+    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "Number of dofs %d is different than expected %d", count_dofs,
+             nb_dofs);
+#endif // NDEBUG
 
   if (interior_cache_ptr) {
     auto p = interior_cache_ptr->emplace(
@@ -1334,8 +1337,8 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
 
   auto get_face_cache_ptr = [this]() -> TetBaseCache::HDivBaseFaceCacheMI * {
     if (vPtr) {
-      auto it = TetBaseCache::hDivBaseFaceDemkowicz.find(vPtr);
-      if (it != TetBaseCache::hDivBaseFaceDemkowicz.end()) {
+      auto it = TetBaseCache::hDivBaseFace[DEMKOWICZ_JACOBI_BASE].find(vPtr);
+      if (it != TetBaseCache::hDivBaseFace[DEMKOWICZ_JACOBI_BASE].end()) {
         return &it->second;
       }
     }
@@ -1391,8 +1394,9 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
 
   auto get_interior_cache = [this]() -> TetBaseCache::BaseCacheMI * {
     if (vPtr) {
-      auto it = TetBaseCache::hdivBaseInteriorDemkowicz.find(vPtr);
-      if (it != TetBaseCache::hdivBaseInteriorDemkowicz.end()) {
+      auto it =
+          TetBaseCache::hdivBaseInterior[DEMKOWICZ_JACOBI_BASE].find(vPtr);
+      if (it != TetBaseCache::hdivBaseInterior[DEMKOWICZ_JACOBI_BASE].end()) {
         return &it->second;
       }
     }
@@ -1475,8 +1479,11 @@ TetPolynomialBase::getValueHdivDemkowiczBrokenBase(MatrixDouble &pts) {
 
   auto get_interior_cache = [this]() -> TetBaseCache::BaseCacheMI * {
     if (vPtr) {
-      auto it = TetBaseCache::hdivBrokenBaseInteriorDemkowicz.find(vPtr);
-      if (it != TetBaseCache::hdivBrokenBaseInteriorDemkowicz.end()) {
+      auto it =
+          TetBaseCache::hdivBrokenBaseInterior[DEMKOWICZ_JACOBI_BASE].find(
+              vPtr);
+      if (it !=
+          TetBaseCache::hdivBrokenBaseInterior[DEMKOWICZ_JACOBI_BASE].end()) {
         return &it->second;
       }
     }
@@ -1999,78 +2006,72 @@ auto tetCacheSwitch(const void *ptr, T &cache, std::string cache_name) {
   }
 }
 
-bool TetPolynomialBase::switchCacheHDivBaseFaceDemkowicz(const void *ptr) {
-  return tetCacheSwitch(ptr, TetBaseCache::hDivBaseFaceDemkowicz,
-                        "hDivBaseFaceDemkowicz");
+template <>
+bool TetPolynomialBase::swichCacheBaseFace<HDIV>(FieldApproximationBase base,
+                                                 void *ptr) {
+  return tetCacheSwitch(ptr, TetBaseCache::hDivBaseFace[base],
+                        std::string("hDivBaseFace") +
+                            ApproximationBaseNames[base]);
 }
 
-bool TetPolynomialBase::switchCacheHdivBaseInteriorDemkowicz(const void *ptr) {
-  return tetCacheSwitch(ptr, TetBaseCache::hdivBaseInteriorDemkowicz,
-                        "hdivBaseInteriorDemkowicz");
+template <>
+bool TetPolynomialBase::swichCacheBaseInterior<HDIV>(
+    FieldApproximationBase base, void *ptr) {
+  return tetCacheSwitch(ptr, TetBaseCache::hdivBaseInterior[base],
+                        std::string("hdivBaseInterior") +
+                            ApproximationBaseNames[base]);
 }
 
-bool TetPolynomialBase::switchCacheHdivBrokenBaseInteriorDemkowicz(
-    const void *ptr) {
-  return tetCacheSwitch(ptr, TetBaseCache::hdivBrokenBaseInteriorDemkowicz,
-                        "hdivBrokenBaseInteriorDemkowicz");
+template <>
+bool TetPolynomialBase::swichCacheBrokenBaseInterior<HDIV>(
+    FieldApproximationBase base, void *ptr) {
+  return tetCacheSwitch(ptr, TetBaseCache::hdivBrokenBaseInterior[base],
+                        std::string("hdivBrokenBaseInterior") +
+                            ApproximationBaseNames[base]);
 }
 
-void TetPolynomialBase::switchCacheHDivBaseDemkowiczOn(std::vector<void *> v) {
+template <>
+void TetPolynomialBase::swichCacheBaseOn<HDIV>(FieldApproximationBase base,
+                                               std::vector<void *> v) {
   for (auto fe_ptr : v) {
-    if (!TetPolynomialBase::switchCacheHDivBaseFaceDemkowicz(fe_ptr)) {
-      TetPolynomialBase::switchCacheHDivBaseFaceDemkowicz(fe_ptr);
+    if (!TetPolynomialBase::swichCacheBaseFace<HDIV>(base, fe_ptr)) {
+      TetPolynomialBase::swichCacheBaseFace<HDIV>(base, fe_ptr);
     }
-    if (!TetPolynomialBase::switchCacheHdivBaseInteriorDemkowicz(fe_ptr)) {
-      TetPolynomialBase::switchCacheHdivBaseInteriorDemkowicz(fe_ptr);
+    if (!TetPolynomialBase::swichCacheBaseInterior<HDIV>(base, fe_ptr)) {
+      TetPolynomialBase::swichCacheBaseInterior<HDIV>(base, fe_ptr);
     }
-    if (!TetPolynomialBase::switchCacheHdivBrokenBaseInteriorDemkowicz(fe_ptr)) {
-      TetPolynomialBase::switchCacheHdivBrokenBaseInteriorDemkowicz(fe_ptr);
+    if (!TetPolynomialBase::swichCacheBrokenBaseInterior<HDIV>(base, fe_ptr)) {
+      TetPolynomialBase::swichCacheBrokenBaseInterior<HDIV>(base, fe_ptr);
     }
   }
 }
 
-void TetPolynomialBase::switchCacheHDivBaseDemkowiczOff(std::vector<void *> v) {
+template <>
+void TetPolynomialBase::swichCacheBaseOff<HDIV>(FieldApproximationBase base,
+                                                std::vector<void *> v) {
   for (auto fe_ptr : v) {
-    if (TetPolynomialBase::switchCacheHDivBaseFaceDemkowicz(fe_ptr)) {
-      TetPolynomialBase::switchCacheHDivBaseFaceDemkowicz(fe_ptr);
+    if (TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(fe_ptr)) {
+      TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(fe_ptr);
     }
-    if (TetPolynomialBase::switchCacheHdivBaseInteriorDemkowicz(fe_ptr)) {
-      TetPolynomialBase::switchCacheHdivBaseInteriorDemkowicz(fe_ptr);
+    if (TetPolynomialBase::swichCacheHdivBaseInteriorDemkowicz(fe_ptr)) {
+      TetPolynomialBase::swichCacheHdivBaseInteriorDemkowicz(fe_ptr);
     }
-    if (TetPolynomialBase::switchCacheHdivBrokenBaseInteriorDemkowicz(fe_ptr)) {
-      TetPolynomialBase::switchCacheHdivBrokenBaseInteriorDemkowicz(fe_ptr);
+    if (TetPolynomialBase::swichCacheHdivBrokenBaseInteriorDemkowicz(fe_ptr)) {
+      TetPolynomialBase::swichCacheHdivBrokenBaseInteriorDemkowicz(fe_ptr);
     }
   }
 }
 
-bool TetPolynomialBase::switchCacheHdivBrokenBaseInteriorAinsworth(
-    const void *ptr) {
-  return tetCacheSwitch(ptr, TetBaseCache::hdivBrokenBaseInteriorAinsworth,
-                        "hdivBrokenBaseInteriorAinsworth");
-}
-
-void TetPolynomialBase::switchCacheHDivBaseAinsworthOn(std::vector<void *> v) {
-  for (auto fe_ptr : v) {
-    if (!TetPolynomialBase::switchCacheHdivBrokenBaseInteriorAinsworth(fe_ptr)) {
-      TetPolynomialBase::switchCacheHdivBrokenBaseInteriorAinsworth(fe_ptr);
-    }
+template <>
+void TetPolynomialBase::swichCacheBaseOn<HDIV>(std::vector<void *> v) {
+  for(auto b = 0; b!=LASTBASE; ++b) {
+    swichCacheBaseOn<HDIV>(static_cast<FieldApproximationBase>(b), v);
   }
 }
 
-void TetPolynomialBase::switchCacheHDivBaseAinsworthOff(std::vector<void *> v) {
-  for (auto fe_ptr : v) {
-    if (TetPolynomialBase::switchCacheHdivBrokenBaseInteriorAinsworth(fe_ptr)) {
-      TetPolynomialBase::switchCacheHdivBrokenBaseInteriorAinsworth(fe_ptr);
-    }
+template <>
+void TetPolynomialBase::swichCacheBaseOff<HDIV>(std::vector<void *> v) {
+  for (auto b = 0; b != LASTBASE; ++b) {
+    swichCacheBaseOff<HDIV>(static_cast<FieldApproximationBase>(b), v);
   }
-}
-
-void TetPolynomialBase::switchCacheHDivBaseOn(std::vector<void *> v) {
-  switchCacheHDivBaseDemkowiczOn(v);
-  switchCacheHDivBaseAinsworthOn(v);
-}
-
-void TetPolynomialBase::switchCacheHDivBaseOff(std::vector<void *> v) {
-  switchCacheHDivBaseDemkowiczOff(v);
-  switchCacheHDivBaseAinsworthOff(v);
 }
