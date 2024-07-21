@@ -1790,8 +1790,7 @@ add_test(test_broken_space_3d_demkowicz_schur
   -fieldsplit_1_mg_levels_ksp_max_it 6
   -fieldsplit_1_pc_mg_type multiplicative
   -fieldsplit_1_mg_coarse_ksp_type preonly 
-  -fieldsplit_1_mg_coarse_pc_type lu
-  -fieldsplit_1_mg_coarse_pc_factor_mat_solver_type mumps
+  -fieldsplit_1_mg_coarse_pc_type hypre
   -fieldsplit_1_ksp_monitor
   -mofem_mg_coarse_order 0
   -mofem_mg_levels 4
