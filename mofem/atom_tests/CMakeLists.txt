@@ -1715,6 +1715,8 @@ foreach(test_base ${test_broken_base_list_3d})
     -log_sl inform 
     -ksp_type gmres 
     -pc_type lu
+    -mat_mumps_icntl_20 0
+    -mat_mumps_icntl_14 800
     -ksp_monitor 
     -ksp_atol 1e-12 
     -ksp_rtol 1e-12 
