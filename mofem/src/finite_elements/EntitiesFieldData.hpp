@@ -999,7 +999,7 @@ struct EntitiesFieldData::EntData {
   virtual std::map<std::string, boost::shared_ptr<MatrixDouble>> &getBBNMap();
 
   /**
-   * @brief get hash map of direvarives base function for BB base, key is a
+   * @brief get hash map of directives base function for BB base, key is a
    * field name
    *
    * @return std::map<std::string, boost::shared_ptr<MatrixDouble>>&
@@ -1048,7 +1048,7 @@ struct EntitiesFieldData::EntData {
   /**
    * @brief Swap bases functions
    *
-   * Some base are not hierarchical and depene on approximation order. Such case
+   * Some base are not hierarchical and depend on approximation order. Such case
    * demand special handling, that appropiate base order is set depending on
    * field, such that is accessible in operator.
    *
@@ -1063,6 +1063,26 @@ struct EntitiesFieldData::EntData {
 
   /**@}*/
 
+  /** \name Broken spaces functions */
+
+  /**@{*/
+
+  /**
+   * @brief Get the Broken Side Vec object
+   * 
+   * @return std::vector<int>& 
+   */
+  virtual std::vector<int> &getBrokenSideVec();
+
+  /**
+   * @brief Get the Broken Type Side Vec object
+   * 
+   * @return std::vector<EntityType>& 
+   */
+  virtual std::vector<EntityType> &getBrokenTypeSideVec();
+
+  /**@}*/
+
 protected:
   int sEnse;                         ///< Entity sense (orientation)
   ApproximationOrder oRder;          ///< Entity order
@@ -1074,6 +1094,10 @@ protected:
   VectorFieldEntities fieldEntities; ///< Field entities
   VectorDouble fieldData;            ///< Field data on entity
   std::vector<BitRefLevel> entDataBitRefLevel; ///< Bit ref level in entity
+
+  std::vector<int> dofBrokenSideVec; ///< Map side to dofs number
+  std::vector<EntityType>
+      dofBrokenTypeVec; ///< Map type of entity to dof number
 
   std::array<std::array<boost::shared_ptr<MatrixDouble>, LASTBASE>,
              LastDerivative>
@@ -1192,6 +1216,26 @@ struct DerivedEntitiesFieldData::DerivedEntData
    */
   MoFEMErrorCode baseSwap(const std::string &field_name,
                           const FieldApproximationBase base);
+
+  /** \name Broken spaces functions */
+
+  /**@{*/
+
+  /**
+   * @brief Get the Broken Side Vec object
+   *
+   * @return std::vector<int>&
+   */
+  virtual std::vector<int> &getBrokenSideVec();
+
+  /**
+   * @brief Get the Broken Type Side Vec object
+   *
+   * @return std::vector<EntityType>&
+   */
+  virtual std::vector<EntityType> &getBrokenTypeSideVec();
+
+  /**@}*/
 
 protected:
   const boost::shared_ptr<EntitiesFieldData::EntData> entDataPtr;
@@ -1693,7 +1737,7 @@ EntitiesFieldData::EntData::getFTensor2N<3, 3>(FieldApproximationBase base);
 
 /**@}*/
 
-/** \name Specializations for direcatives of base functions */
+/** \name Specializations for directives of base functions */
 
 /**@{*/
 

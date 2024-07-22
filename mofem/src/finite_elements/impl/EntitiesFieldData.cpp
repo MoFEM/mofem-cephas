@@ -950,4 +950,27 @@ DerivedEntitiesFieldData::DerivedEntData::getEntDataBitRefLevel() {
   return entDataPtr->getEntDataBitRefLevel();
 }
 
+/** \name Broken spaces functions */
+
+/**@{*/
+
+std::vector<int> &EntitiesFieldData::EntData::getBrokenSideVec() {
+  return dofBrokenSideVec;
+}
+
+std::vector<EntityType> &EntitiesFieldData::EntData::getBrokenTypeSideVec() {
+  return dofBrokenTypeVec;
+}
+
+std::vector<int> &DerivedEntitiesFieldData::DerivedEntData::getBrokenSideVec() {
+  return entDataPtr->getBrokenSideVec();
+}
+
+std::vector<EntityType> &
+DerivedEntitiesFieldData::DerivedEntData::getBrokenTypeSideVec() {
+  return entDataPtr->getBrokenTypeSideVec();
+}
+
+/**@}*/
+
 } // namespace MoFEM
