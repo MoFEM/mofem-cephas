@@ -1973,6 +1973,13 @@ constexpr auto make_array(Arg &&...arg) {
     return std::array<Dest, sizeof...(Arg)>{{std::forward<Arg>(arg)...}};
 }
 
+template <int DIM> using i_FTIndex = FTensor::Index<'i', DIM>;
+template <int DIM> using j_FTIndex = FTensor::Index<'j', DIM>;
+template <int DIM> using k_FTIndex = FTensor::Index<'k', DIM>;
+template <int DIM> using l_FTIndex = FTensor::Index<'l', DIM>;
+template <int DIM> using m_FTIndex = FTensor::Index<'m', DIM>;
+template <int DIM> using n_FTIndex = FTensor::Index<'n', DIM>;
+
 } // namespace MoFEM
 
 #endif //__TEMPLATES_HPP__

@@ -230,7 +230,7 @@ struct Field {
    * destroyed. All MoFEM::MoFEMEntities have aliased shared_ptr which points to
    the vector.
 
-   * Not all DOFs are starred in this way, currently such cases are considered;
+   * Not all DOFs are stored in this way, currently such cases are considered;
    * - DOFs on vertices. That is exploited that for H1 space, there is some
    * fixed number of DOFs on each vertex
 

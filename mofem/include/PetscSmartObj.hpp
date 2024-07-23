@@ -387,6 +387,18 @@ inline auto createISLocalToGlobalMapping(IS is) {
   return SmartPetscObj<ISLocalToGlobalMapping>(map_raw);
 }
 
+inline auto matCreateVecs(Mat mat) {
+  Vec x, y;
+  CHK_THROW_MESSAGE(MatCreateVecs(mat, &x, &y), "create vecs");
+  return std::make_pair(SmartPetscObj<Vec>(x), SmartPetscObj<Vec>(y));
+}
+
+inline auto isDuplicate(IS is) {
+  IS is_raw;
+  CHK_THROW_MESSAGE(ISDuplicate(is, &is_raw), "duplicate IS");
+  return SmartPetscObj<IS>(is_raw);
+}
+
 } // namespace MoFEM
 
 #endif

@@ -41,11 +41,6 @@ struct OpSchurAssembleBase : public ForcesAndSourcesCore::UserDataOperator {
 
   OpSchurAssembleBase() = delete;
 
-  using MatSetValuesRaw = boost::function<MoFEMErrorCode(
-      Mat mat, PetscInt m, const PetscInt idxm[], PetscInt n,
-      const PetscInt idxn[], const PetscScalar v[], InsertMode addv)>;
-  static MatSetValuesRaw matSetValuesSchurRaw;
-
 private:
   using UserDataOperator::UserDataOperator;
 };
@@ -202,12 +197,14 @@ template <>
 MoFEMErrorCode DMMoFEMSetNestSchurData(DM dm, boost::shared_ptr<NestSchurData>);
 
 /**
- * @brief Set PC for Schur block
+ * @brief Set PC for A00 block
  *
  * @param pc
  * @return MoFEMErrorCode
  */
-MoFEMErrorCode setSchurMatSolvePC(SmartPetscObj<PC> pc);
+MoFEMErrorCode setSchurA00MatSolvePC(SmartPetscObj<PC> pc);
+
+DEPRECATED MoFEMErrorCode setSchurMatSolvePC(SmartPetscObj<PC> pc);
 
 struct SchurBackendMatSetValuesPtr {
   SchurBackendMatSetValuesPtr() = delete;
