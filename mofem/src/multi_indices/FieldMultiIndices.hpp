@@ -300,7 +300,7 @@ struct Field {
 private:
   mutable SequenceDofContainer sequenceDofContainer;
   mutable DofsOrderMap dofOrderMap;
-  mutable BaseFunction::DofsSideMap dofSideMap;
+  mutable stdL::array<BaseFunction::DofsSideMap, MBMAXTYPE> dofSideMap;
 };
 
 /**
