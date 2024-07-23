@@ -39,6 +39,33 @@ struct BaseFunctionCtx : public BaseFunctionUnknownInterface {
  */
 struct BaseFunction : public BaseFunctionUnknownInterface {
 
+  struct DofsSideMapData {
+    EntityType type;
+    int side;
+    int dof;
+  };
+
+  /**
+   * @brief Map entity stype and side to element/entity dof index
+   *
+   * Such map is used to establish connection between dofs in the interior for
+   * broken specs. Is assume that trace of interior on given side is not zero.
+   *
+   */
+  using DofsSideMap = multi_index_container<
+
+      DofsSideMapData,
+
+      indexed_by<ordered_unique<
+          tag<type_side_mi_tag>,
+          composite_key<
+
+              DofsSideMapData,
+              member<DofsSideMapData, EntityType, &DofsSideMapData::type>,
+              member<DofsSideMapData, int, &DofsSideMapData::side>>>
+
+                 >>;
+
   MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  MoFEM::UnknownInterface **iface) const;
 
@@ -49,6 +76,19 @@ struct BaseFunction : public BaseFunctionUnknownInterface {
 
   virtual MoFEMErrorCode getValue(MatrixDouble &pts_x, MatrixDouble &pts_t,
                                   boost::shared_ptr<BaseFunctionCtx> ctx_ptr);
+
+  /**
+   * @brief Set the Dofs Side Map object
+   *
+   * That is used for broken space to establish connection between dofs in the
+   * interior of element/entity and side of element/entity to which that dof is
+   * associated. That depends on implementation of the base for given space, and
+   * has to be implemented while implementing base function for given space.
+   *
+   * @return MoFEMErrorCode
+   */
+  virtual MoFEMErrorCode
+  setDofsSideMap(DofsSideMap &, boost::shared_ptr<BaseFunctionCtx> ctx_ptr);
 };
 
 } // namespace MoFEM

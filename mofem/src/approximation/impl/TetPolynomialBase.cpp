@@ -558,7 +558,7 @@ MoFEMErrorCode TetPolynomialBase::getValueL2AinsworthBase(MatrixDouble &pts) {
   data.dataOnEntities[MBTET][0].getDiffN(base).resize(nb_gauss_pts, 3 * nb_dofs,
                                                       false);
 
-  if(!nb_dofs)
+  if (!nb_dofs)
     MoFEMFunctionReturnHot(0);
 
   auto get_interior_cache = [this](auto base) -> TetBaseCache::BaseCacheMI * {
@@ -1137,7 +1137,6 @@ TetPolynomialBase::getValueHdivAinsworthBrokenBase(MatrixDouble &pts) {
   if (nb_dofs == 0)
     MoFEMFunctionReturnHot(0);
 
-
   auto get_interior_cache = [this](auto base) -> TetBaseCache::BaseCacheMI * {
     if (vPtr) {
       auto it = TetBaseCache::hdivBrokenBaseInterior[base].find(vPtr);
@@ -1157,7 +1156,7 @@ TetPolynomialBase::getValueHdivAinsworthBrokenBase(MatrixDouble &pts) {
       noalias(data.dataOnEntities[MBTET][0].getN(base)) = it->N;
       noalias(data.dataOnEntities[MBTET][0].getDiffN(base)) = it->diffN;
       MoFEMFunctionBeginHot(0);
-    } 
+    }
   }
 
   std::array<int, 4 * 3> faces_nodes{
@@ -2023,6 +2022,149 @@ TetPolynomialBase::getValue(MatrixDouble &pts,
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode
+TetPolynomialBase::setDofsSideMap(DofsSideMap &dofs_side_map,
+                                  boost::shared_ptr<BaseFunctionCtx> ctx_ptr) {
+  MoFEMFunctionBegin;
+
+  cTx = ctx_ptr->getInterface<EntPolynomialBaseCtx>();
+
+  switch (cTx->spaceContinuity) {
+  case DISCONTINUOUS:
+
+    switch (cTx->sPace) {
+    case HDIV:
+      CHKERR setDofsSideMapHdiv(dofs_side_map);
+      break;
+    default:
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Unknown space %s",
+               FieldSpaceNames[cTx->sPace]);
+    }
+    break;
+
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+            "Unknown (or not implemented) continuity");
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+TetPolynomialBase::setDofsSideMapHdiv(DofsSideMap &dofs_side_map) {
+  MoFEMFunctionBegin;
+
+  // That has to be consistent with implementation of getValueHdiv for
+  // particular base functions.
+
+  auto set_ainsworth = [&dofs_side_map]() {
+    MoFEMFunctionBegin;
+
+    dofs_side_map.clear();
+
+    int dof;
+    for (int oo = 0; oo < MAX_DOFS_ON_ENTITY; oo++) {
+
+      if (dof > MAX_DOFS_ON_ENTITY)
+        break;
+
+      // faces-edge (((P) > 0) ? (P) : 0)
+      for (int dd = NBFACETRI_AINSWORTH_EDGE_HDIV(oo);
+           dd != NBFACETRI_AINSWORTH_EDGE_HDIV(oo + 1); dd++) {
+        for (auto ff = 0; ff != 4; ++ff) {
+          for (int ee = 0; ee != 3; ++ee) {
+            dofs_side_map.insert(DofsSideMapData{MBTRI, ff, dof});
+            ++dof;
+          }
+        }
+      }
+
+      // face-face (P - 1) * (P - 2) / 2
+      for (int dd = NBFACETRI_AINSWORTH_FACE_HDIV(oo);
+           dd != NBFACETRI_AINSWORTH_FACE_HDIV(oo + 1); dd++) {
+        for (auto ff = 0; ff != 4; ++ff) {
+          dofs_side_map.insert(DofsSideMapData{MBTRI, ff, dof});
+          ++dof;
+        }
+      }
+
+      // volume-edge (P - 1)
+      for (int dd = NBVOLUMETET_AINSWORTH_EDGE_HDIV(oo);
+           dd != NBVOLUMETET_AINSWORTH_EDGE_HDIV(oo + 1); dd++) {
+        for (int ee = 0; ee < 6; ee++) {
+          dofs_side_map.insert(DofsSideMapData{MBTET, 0, dof});
+          ++dof;
+        }
+      }
+      // volume-face (P - 1) * (P - 2)
+      for (int dd = NBVOLUMETET_AINSWORTH_FACE_HDIV(oo);
+           dd < NBVOLUMETET_AINSWORTH_FACE_HDIV(oo + 1); dd++) {
+        for (int ff = 0; ff < 4; ff++) {
+          dofs_side_map.insert(DofsSideMapData{MBTET, 0, dof});
+          ++dof;
+        }
+      }
+      // volume-bubble (P - 3) * (P - 2) * (P - 1) / 2
+      for (int dd = NBVOLUMETET_AINSWORTH_VOLUME_HDIV(oo);
+           dd < NBVOLUMETET_AINSWORTH_VOLUME_HDIV(oo + 1); dd++) {
+        dofs_side_map.insert(DofsSideMapData{MBTET, 0, dof});
+        ++dof;
+      }
+    }
+
+    MoFEMFunctionReturn(0);
+  };
+
+  auto set_demkowicz = [&dofs_side_map]() {
+    MoFEMFunctionBegin;
+
+    dofs_side_map.clear();
+
+    int dof = 0;
+    for (int oo = 0; oo < MAX_DOFS_ON_ENTITY; oo++) {
+
+      if (dof > MAX_DOFS_ON_ENTITY)
+        break;
+
+      // face
+      for (auto dd = NBFACETRI_DEMKOWICZ_HDIV(oo);
+           dd != NBFACETRI_DEMKOWICZ_HDIV(oo + 1); ++dd) {
+        for (auto ff = 0; ff != 4; ++ff) {
+          dofs_side_map.insert(DofsSideMapData{MBTRI, ff, dof});
+          ++dof;
+        }
+      }
+      for (auto dd = NBVOLUMETET_DEMKOWICZ_HDIV(oo);
+           dd != NBVOLUMETET_DEMKOWICZ_HDIV(oo + 1); ++dd) {
+        dofs_side_map.insert(DofsSideMapData{MBTET, 0, dof});
+        ++dof;
+      }
+    }
+
+    MoFEMFunctionReturn(0);
+  };
+
+  switch (cTx->spaceContinuity) {
+  case DISCONTINUOUS:
+    switch (cTx->bAse) {
+    case AINSWORTH_LEGENDRE_BASE:
+    case AINSWORTH_LOBATTO_BASE:
+      return set_ainsworth();
+    case DEMKOWICZ_JACOBI_BASE:
+      return set_demkowicz();
+    default:
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
+    }
+    break;
+
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+            "Unknown (or not implemented) continuity");
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
 template <typename T>
 auto tetCacheSwitch(const void *ptr, T &cache, std::string cache_name) {
   auto it = cache.find(ptr);
@@ -2099,7 +2241,7 @@ void TetPolynomialBase::swichCacheBaseOff<HDIV>(FieldApproximationBase base,
 
 template <>
 void TetPolynomialBase::swichCacheBaseOn<HDIV>(std::vector<void *> v) {
-  for(auto b = 0; b!=LASTBASE; ++b) {
+  for (auto b = 0; b != LASTBASE; ++b) {
     swichCacheBaseOn<HDIV>(static_cast<FieldApproximationBase>(b), v);
   }
 }
@@ -2112,8 +2254,8 @@ void TetPolynomialBase::swichCacheBaseOff<HDIV>(std::vector<void *> v) {
 }
 
 template <>
-bool TetPolynomialBase::swichCacheBaseInterior<L2>(
-    FieldApproximationBase base, void *ptr) {
+bool TetPolynomialBase::swichCacheBaseInterior<L2>(FieldApproximationBase base,
+                                                   void *ptr) {
   return tetCacheSwitch(ptr, TetBaseCache::l2BaseInterior[base],
                         std::string("hdivBaseInterior") +
                             ApproximationBaseNames[base]);
@@ -2121,7 +2263,7 @@ bool TetPolynomialBase::swichCacheBaseInterior<L2>(
 
 template <>
 void TetPolynomialBase::swichCacheBaseOn<L2>(FieldApproximationBase base,
-                                               std::vector<void *> v) {
+                                             std::vector<void *> v) {
   for (auto fe_ptr : v) {
     if (!TetPolynomialBase::swichCacheBaseInterior<L2>(base, fe_ptr)) {
       TetPolynomialBase::swichCacheBaseInterior<L2>(base, fe_ptr);
@@ -2131,7 +2273,7 @@ void TetPolynomialBase::swichCacheBaseOn<L2>(FieldApproximationBase base,
 
 template <>
 void TetPolynomialBase::swichCacheBaseOff<L2>(FieldApproximationBase base,
-                                                std::vector<void *> v) {
+                                              std::vector<void *> v) {
   for (auto fe_ptr : v) {
     if (TetPolynomialBase::swichCacheBaseInterior<L2>(base, fe_ptr)) {
       TetPolynomialBase::swichCacheBaseInterior<L2>(base, fe_ptr);
@@ -2141,7 +2283,7 @@ void TetPolynomialBase::swichCacheBaseOff<L2>(FieldApproximationBase base,
 
 template <>
 void TetPolynomialBase::swichCacheBaseOn<L2>(std::vector<void *> v) {
-  for(auto b = 0; b!=LASTBASE; ++b) {
+  for (auto b = 0; b != LASTBASE; ++b) {
     swichCacheBaseOn<L2>(static_cast<FieldApproximationBase>(b), v);
   }
 }

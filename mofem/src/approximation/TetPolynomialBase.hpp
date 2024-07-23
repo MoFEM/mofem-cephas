@@ -47,6 +47,9 @@ struct TetPolynomialBase : public BaseFunction {
   MoFEMErrorCode getValue(MatrixDouble &pts,
                           boost::shared_ptr<BaseFunctionCtx> ctx_ptr);
 
+  MoFEMErrorCode setDofsSideMap(DofsSideMap &,
+                                boost::shared_ptr<BaseFunctionCtx> ctx_ptr);
+
 private:
   const void *vPtr;
   EntPolynomialBaseCtx *cTx;
@@ -94,6 +97,14 @@ private:
    * element on columns are integration pts.
    */
   MoFEMErrorCode getValueHcurl(MatrixDouble &pts);
+
+  /**
+   * @brief Set the Dofs Side Map Hdiv object
+   * 
+   * @param dofs_side_map 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode setDofsSideMapHdiv(DofsSideMap &dofs_side_map);
 
 private:
   MoFEMErrorCode getValueH1AinsworthBase(MatrixDouble &pts);
