@@ -24,6 +24,9 @@ struct TriPolynomialBase : public BaseFunction {
   MoFEMErrorCode getValue(MatrixDouble &pts,
                           boost::shared_ptr<BaseFunctionCtx> ctx_ptr);
 
+  MoFEMErrorCode setDofsSideMap(DofsSideMap &,
+                                boost::shared_ptr<BaseFunctionCtx> ctx_ptr);
+
 private:
   EntPolynomialBaseCtx *cTx;
 
@@ -52,6 +55,8 @@ private:
 
   MoFEMErrorCode getValueHcurlAinsworthBrokenBase(MatrixDouble &pts);
   MoFEMErrorCode getValueHcurlDemkowiczBrokenBase(MatrixDouble &pts);
+
+  MoFEMErrorCode setDofsSideMapHcurl(DofsSideMap &dofs_side_map);
 };
 
 } // namespace MoFEM
