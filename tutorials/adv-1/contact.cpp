@@ -61,7 +61,7 @@ using DomainEle = ElementsAndOps<SPACE_DIM>::DomainEle;
 using DomainEleOp = DomainEle::UserDataOperator;
 using BoundaryEle = ElementsAndOps<SPACE_DIM>::BoundaryEle;
 using BoundaryEleOp = BoundaryEle::UserDataOperator;
-
+using SideEle = ElementsAndOps<SPACE_DIM>::FaceSideEle;
 //! [Specialisation for assembly]
 
 constexpr FieldSpace CONTACT_SPACE = ElementsAndOps<SPACE_DIM>::CONTACT_SPACE;
@@ -75,8 +75,9 @@ using OpSpringRhs = FormsIntegrators<BoundaryEleOp>::Assembly<AT>::LinearForm<
 
 PetscBool is_quasi_static = PETSC_TRUE;
 
-int order = 2;
-int contact_order = 2;
+int order = 2;         //< Order of displacements in the domain
+int contact_order = 2; //< Order of displacements in boundary and side elements 
+int sigma_order = 1;   //< Order of Lagrange multiplier in side elements
 int geom_order = 1;
 double young_modulus = 100;
 double poisson_ratio = 0.25;
@@ -89,7 +90,7 @@ double scale = 1.;
 
 PetscBool is_axisymmetric = PETSC_FALSE; //< Axisymmetric model
 
-// ##define HENCKY_SMALL_STRAIN
+// #define HENCKY_SMALL_STRAIN
 
 int atom_test = 0;
 
@@ -175,12 +176,15 @@ MoFEMErrorCode Contact::setupProblem() {
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order, PETSC_NULL);
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-contact_order", &contact_order,
                             PETSC_NULL);
+  sigma_order = std::max(order, contact_order) - 1;
+  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-sigma_order", &sigma_order,
+                            PETSC_NULL);
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-geom_order", &geom_order,
                             PETSC_NULL);
 
   MOFEM_LOG("CONTACT", Sev::inform) << "Order " << order;
-  if (contact_order != order)
-    MOFEM_LOG("CONTACT", Sev::inform) << "Contact order " << contact_order;
+  MOFEM_LOG("CONTACT", Sev::inform) << "Contact order " << contact_order;
+  MOFEM_LOG("CONTACT", Sev::inform) << "Sigma order " << sigma_order;
   MOFEM_LOG("CONTACT", Sev::inform) << "Geom order " << geom_order;
 
   // Select base
@@ -274,17 +278,14 @@ MoFEMErrorCode Contact::setupProblem() {
 
   auto boundary_ents = filter_true_skin(filter_blocks(get_skin()));
   CHKERR simple->setFieldOrder("SIGMA", 0);
-  int sigma_order = std::max(order, contact_order) - 1;
   CHKERR simple->setFieldOrder("SIGMA", sigma_order, &boundary_ents);
 
   if (contact_order > order) {
     Range ho_ents;
-    if constexpr (SPACE_DIM == 3) {
-      CHKERR mField.get_moab().get_adjacencies(boundary_ents, 1, false, ho_ents,
-                                               moab::Interface::UNION);
-    } else {
-      ho_ents = boundary_ents;
-    }
+
+    CHKERR mField.get_moab().get_adjacencies(boundary_ents, 1, false, ho_ents,
+                                             moab::Interface::UNION);
+
     CHKERR mField.getInterface<CommInterface>()->synchroniseEntities(ho_ents);
     CHKERR simple->setFieldOrder("U", contact_order, &ho_ents);
     CHKERR mField.getInterface<CommInterface>()->synchroniseFieldEntities("U");
@@ -840,41 +841,74 @@ MoFEMErrorCode Contact::checkResults() {
     CHKERR VecGetArrayRead(ContactOps::CommonData::totalTraction, &t_ptr);
     double hertz_force;
     double fem_force;
-    double tol = 1e-3;
+    double analytical_active_area = 1.0;
+    double norm = 1e-5;
+    double tol_force = 1e-3;
+    double tol_norm = 7.5; // change when analytical functions are updated
+    double tol_area = 3e-2;
+    double fem_active_area = t_ptr[3];
+
     switch (atom_test) {
     case 1: // plane stress
       hertz_force = 3.927;
       fem_force = t_ptr[1];
       break;
+
     case 2: // plane strain
       hertz_force = 4.675;
       fem_force = t_ptr[1];
+      norm = monitorPtr->getErrorNorm(1);
       break;
-    case 3: // 3D
+
+    case 3: // Hertz 3D
       hertz_force = 3.968;
+      tol_force = 2e-3;
       fem_force = t_ptr[2];
+      analytical_active_area = M_PI / 4;
+      tol_area = 0.2;
+      break;
+
     case 4: // axisymmetric
-      tol = 5e3;
+      tol_force = 5e-3;
+      tol_area = 0.2;
+      // analytical_active_area = M_PI;
+
     case 5: // axisymmetric
       hertz_force = 15.873;
+      tol_force = 5e-3;
       fem_force = t_ptr[1];
+      norm = monitorPtr->getErrorNorm(1);
+      analytical_active_area = M_PI;
       break;
+
     case 6: // wavy 2d
       hertz_force = 0.374;
       fem_force = t_ptr[1];
       break;
+
     case 7: // wavy 3d
       hertz_force = 0.5289;
       fem_force = t_ptr[2];
       break;
+
     default:
       SETERRQ1(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
                "atom test %d does not exist", atom_test);
     }
-    if (fabs(fem_force - hertz_force) / hertz_force > tol) {
+    if (fabs(fem_force - hertz_force) / hertz_force > tol_force) {
       SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-               "atom test %d diverged! %3.4e != %3.4e", atom_test, fem_force,
-               hertz_force);
+               "atom test %d failed: Wrong FORCE output: %3.4e != %3.4e",
+               atom_test, fem_force, hertz_force);
+    }
+    if (norm > tol_norm) {
+      SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+               "atom test %d failed: Wrong NORM output: %3.4e > %3.4e",
+               atom_test, norm, tol_norm);
+    }
+    if (fabs(fem_active_area - analytical_active_area) > tol_area) {
+      SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+               "atom test %d failed: AREA computed %3.4e but should be %3.4e",
+               atom_test, fem_active_area, analytical_active_area);
     }
     CHKERR VecRestoreArrayRead(ContactOps::CommonData::totalTraction, &t_ptr);
   }
