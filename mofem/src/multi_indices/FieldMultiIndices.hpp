@@ -287,7 +287,8 @@ struct Field {
    *
    * @return const BaseFunction::DofsSideMap&
    */
-  inline const BaseFunction::DofsSideMap &getDofSideMap() const {
+  inline const std::array<BaseFunction::DofsSideMap, MBMAXTYPE> &
+  getDofSideMap() const {
     return dofSideMap;
   }
 
@@ -300,7 +301,7 @@ struct Field {
 private:
   mutable SequenceDofContainer sequenceDofContainer;
   mutable DofsOrderMap dofOrderMap;
-  mutable stdL::array<BaseFunction::DofsSideMap, MBMAXTYPE> dofSideMap;
+  mutable std::array<BaseFunction::DofsSideMap, MBMAXTYPE> dofSideMap;
 };
 
 /**
