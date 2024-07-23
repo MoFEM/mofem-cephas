@@ -1065,24 +1065,6 @@ struct EntitiesFieldData::EntData {
 
   /** \name Broken spaces functions */
 
-  /**@{*/
-
-  /**
-   * @brief Get the Broken Side Vec object
-   * 
-   * @return std::vector<int>& 
-   */
-  virtual std::vector<int> &getBrokenSideVec();
-
-  /**
-   * @brief Get the Broken Type Side Vec object
-   * 
-   * @return std::vector<EntityType>& 
-   */
-  virtual std::vector<EntityType> &getBrokenTypeSideVec();
-
-  /**@}*/
-
 protected:
   int sEnse;                         ///< Entity sense (orientation)
   ApproximationOrder oRder;          ///< Entity order
@@ -1220,22 +1202,6 @@ struct DerivedEntitiesFieldData::DerivedEntData
   /** \name Broken spaces functions */
 
   /**@{*/
-
-  /**
-   * @brief Get the Broken Side Vec object
-   *
-   * @return std::vector<int>&
-   */
-  virtual std::vector<int> &getBrokenSideVec();
-
-  /**
-   * @brief Get the Broken Type Side Vec object
-   *
-   * @return std::vector<EntityType>&
-   */
-  virtual std::vector<EntityType> &getBrokenTypeSideVec();
-
-  /**@}*/
 
 protected:
   const boost::shared_ptr<EntitiesFieldData::EntData> entDataPtr;
