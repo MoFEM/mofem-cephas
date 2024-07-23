@@ -65,8 +65,8 @@ struct Field {
 
       indexed_by<sequenced<>>>;
 
-  typedef std::array<std::array<int, MAX_DOFS_ON_ENTITY>, MBMAXTYPE>
-      DofsOrderMap;
+  using DofsOrderMap =
+      std::array<std::array<int, MAX_DOFS_ON_ENTITY>, MBMAXTYPE>;
 
   moab::Interface &moab;
 
@@ -279,6 +279,18 @@ struct Field {
    */
   inline const DofsOrderMap &getDofOrderMap() const { return dofOrderMap; }
 
+  /**
+   * @brief Get the dofs side map
+   *
+   * This establish connection between dofs in the interior of broken specs and
+   * entity on which trace of the dof is nonzero.
+   *
+   * @return const BaseFunction::DofsSideMap&
+   */
+  inline const BaseFunction::DofsSideMap &getDofSideMap() const {
+    return dofSideMap;
+  }
+
   MoFEMErrorCode rebuildDofsOrderMap();
 
   friend std::ostream &operator<<(std::ostream &os, const Field &e);
@@ -288,6 +300,7 @@ struct Field {
 private:
   mutable SequenceDofContainer sequenceDofContainer;
   mutable DofsOrderMap dofOrderMap;
+  mutable BaseFunction::DofsSideMap dofSideMap;
 };
 
 /**
@@ -392,6 +405,10 @@ struct interface_Field : public interface_FieldImpl<FIELD, REFENT> {
   inline FieldOrderTable &getFieldOrderTable() {
     return sFieldPtr->getFieldOrderTable();
   };
+
+  inline const BaseFunction::DofsSideMap &getDofSideMap() {
+    return sFieldPtr->getDofSideMap();
+  }
 
 private:
   mutable boost::shared_ptr<FIELD> sFieldPtr;
