@@ -423,13 +423,12 @@ protected:
 
   */
   virtual MoFEMErrorCode
-  add_broken_field(const std::string &name, const FieldSpace space,
+  add_broken_field(const std::string name, const FieldSpace space,
                    const FieldApproximationBase base,
                    const FieldCoefficientsNumber nb_coefficients,
                    const TagType tag_type = MB_TAG_SPARSE,
                    const enum MoFEMTypes bh = MF_EXCL,
                    int verb = DEFAULT_VERBOSITY);
-
   /**@{*/
 
   /**
