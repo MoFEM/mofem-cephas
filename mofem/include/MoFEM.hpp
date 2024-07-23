@@ -30,6 +30,7 @@ using FTensor::operator>>;
 #include <Common.hpp>
 #include <UnknownInterface.hpp>
 #include <DeprecatedPetsc.hpp>
+#include <TagMultiIndices.hpp>
 
 // SRC/APPROXIMATION
 #include <base_functions.h>
@@ -55,7 +56,6 @@ using FTensor::operator>>;
 // SRC/MULTI-INDICES
 #include <MaterialBlocks.hpp>
 #include <BCData.hpp>
-#include <TagMultiIndices.hpp>
 #include <RefEntsMultiIndices.hpp>
 #include <FieldMultiIndices.hpp>
 #include <FieldEntsMultiIndices.hpp>
