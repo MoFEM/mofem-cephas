@@ -457,7 +457,7 @@ protected:
 
   */
   virtual MoFEMErrorCode
-  add_field(const std::string &name, const FieldSpace space,
+  add_field(const std::string name, const FieldSpace space,
             const FieldApproximationBase base,
             const FieldCoefficientsNumber nb_coefficients,
             const TagType tag_type = MB_TAG_SPARSE,

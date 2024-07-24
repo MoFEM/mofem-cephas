@@ -285,9 +285,9 @@ struct CoreInterface : public UnknownInterface {
    * no error if field exist
    * @param  verb              verbosity level
    * @return                   error code
-   */  
+   */
   virtual MoFEMErrorCode
-  add_field(const std::string &name, const FieldSpace space,
+  add_field(const std::string name, const FieldSpace space,
             const FieldApproximationBase base,
             const FieldCoefficientsNumber nb_of_coefficients,
             const TagType tag_type = MB_TAG_SPARSE,

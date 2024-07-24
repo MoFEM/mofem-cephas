@@ -288,7 +288,7 @@ Core::add_broken_field(const std::string name, const FieldSpace space,
                         tag_type, bh, verb);
 }
 
-MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
+MoFEMErrorCode Core::add_field(const std::string name, const FieldSpace space,
                                const FieldApproximationBase base,
                                const FieldCoefficientsNumber nb_of_coefficients,
                                const TagType tag_type, const enum MoFEMTypes bh,
