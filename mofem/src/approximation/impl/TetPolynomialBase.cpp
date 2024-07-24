@@ -2022,23 +2022,24 @@ TetPolynomialBase::getValue(MatrixDouble &pts,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode
-TetPolynomialBase::setDofsSideMap(DofsSideMap &dofs_side_map,
-                                  boost::shared_ptr<BaseFunctionCtx> ctx_ptr) {
+MoFEMErrorCode TetPolynomialBase::setDofsSideMap(
+
+    const FieldSpace space, const FieldContinuity continuity,
+    const FieldApproximationBase base, DofsSideMap &dofs_side_map
+
+) {
   MoFEMFunctionBegin;
 
-  cTx = ctx_ptr->getInterface<EntPolynomialBaseCtx>();
-
-  switch (cTx->spaceContinuity) {
+  switch (continuity) {
   case DISCONTINUOUS:
 
-    switch (cTx->sPace) {
+    switch (space) {
     case HDIV:
-      CHKERR setDofsSideMapHdiv(dofs_side_map);
+      CHKERR setDofsSideMapHdiv(continuity, base, dofs_side_map);
       break;
     default:
       SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Unknown space %s",
-               FieldSpaceNames[cTx->sPace]);
+               FieldSpaceNames[space]);
     }
     break;
 
@@ -2051,7 +2052,9 @@ TetPolynomialBase::setDofsSideMap(DofsSideMap &dofs_side_map,
 }
 
 MoFEMErrorCode
-TetPolynomialBase::setDofsSideMapHdiv(DofsSideMap &dofs_side_map) {
+TetPolynomialBase::setDofsSideMapHdiv(const FieldContinuity continuity,
+                                      const FieldApproximationBase base,
+                                      DofsSideMap &dofs_side_map) {
   MoFEMFunctionBegin;
 
   // That has to be consistent with implementation of getValueHdiv for
@@ -2144,9 +2147,9 @@ TetPolynomialBase::setDofsSideMapHdiv(DofsSideMap &dofs_side_map) {
     MoFEMFunctionReturn(0);
   };
 
-  switch (cTx->spaceContinuity) {
+  switch (continuity) {
   case DISCONTINUOUS:
-    switch (cTx->bAse) {
+    switch (base) {
     case AINSWORTH_LEGENDRE_BASE:
     case AINSWORTH_LOBATTO_BASE:
       return set_ainsworth();

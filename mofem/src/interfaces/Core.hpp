@@ -405,6 +405,7 @@ protected:
   * @param  base           Approximation base AINSWORTH_LEGENDRE_BASE,
   AINSWORTH_BERNSTEIN_BEZIER_BASE ...
   * @param  nb_coefficients Number of field coefficients
+  @ @param  type_dof_side_map  Map of entity type to function returning DofsSideMap
   * @param  tag_type       Tag type, MB_TAG_DENSE or MB_TAG_SPARSE (default)
   * @param  bh             Control behavior, if MF_EXCL throws error if exist
   * @param  verb           Verbosity level
@@ -422,13 +423,21 @@ protected:
   will make only problems
 
   */
-  virtual MoFEMErrorCode
-  add_broken_field(const std::string name, const FieldSpace space,
-                   const FieldApproximationBase base,
-                   const FieldCoefficientsNumber nb_coefficients,
-                   const TagType tag_type = MB_TAG_SPARSE,
-                   const enum MoFEMTypes bh = MF_EXCL,
-                   int verb = DEFAULT_VERBOSITY);
+  virtual MoFEMErrorCode add_broken_field(
+      const std::string name, const FieldSpace space,
+      const FieldApproximationBase base,
+      const FieldCoefficientsNumber nb_coefficients,
+
+      std::vector<
+
+          std::pair<EntityType,
+                    std::function<MoFEMErrorCode(BaseFunction::DofsSideMap &)>
+
+                    >>
+          list_dof_side_map,
+
+      const TagType tag_type = MB_TAG_SPARSE,
+      const enum MoFEMTypes bh = MF_EXCL, int verb = DEFAULT_VERBOSITY);
   /**@{*/
 
   /**

@@ -259,13 +259,21 @@ struct CoreInterface : public UnknownInterface {
    * @param  verb              verbosity level
    * @return                   error code
    */
-  virtual MoFEMErrorCode
-  add_broken_field(const std::string name, const FieldSpace space,
-                   const FieldApproximationBase base,
-                   const FieldCoefficientsNumber nb_of_coefficients,
-                   const TagType tag_type = MB_TAG_SPARSE,
-                   const enum MoFEMTypes bh = MF_EXCL,
-                   int verb = DEFAULT_VERBOSITY) = 0;
+  virtual MoFEMErrorCode add_broken_field(
+      const std::string name, const FieldSpace space,
+      const FieldApproximationBase base,
+      const FieldCoefficientsNumber nb_of_coefficients,
+
+      const std::vector<
+
+          std::pair<EntityType,
+                    std::function<MoFEMErrorCode(BaseFunction::DofsSideMap &)>>
+
+          >
+          list_dof_side_map,
+
+      const TagType tag_type = MB_TAG_SPARSE,
+      const enum MoFEMTypes bh = MF_EXCL, int verb = DEFAULT_VERBOSITY) = 0;
 
   /**
    * \brief Add field

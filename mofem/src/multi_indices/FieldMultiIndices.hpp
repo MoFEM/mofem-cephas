@@ -287,7 +287,7 @@ struct Field {
    *
    * @return const BaseFunction::DofsSideMap&
    */
-  inline const std::array<BaseFunction::DofsSideMap, MBMAXTYPE> &
+  inline std::array<BaseFunction::DofsSideMap, MBMAXTYPE> &
   getDofSideMap() const {
     return dofSideMap;
   }
@@ -407,9 +407,7 @@ struct interface_Field : public interface_FieldImpl<FIELD, REFENT> {
     return sFieldPtr->getFieldOrderTable();
   };
 
-  inline const BaseFunction::DofsSideMap &getDofSideMap() {
-    return sFieldPtr->getDofSideMap();
-  }
+  inline auto &getDofSideMap() { return sFieldPtr->getDofSideMap(); }
 
 private:
   mutable boost::shared_ptr<FIELD> sFieldPtr;

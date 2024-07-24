@@ -38,13 +38,4 @@ BaseFunction::getValue(MatrixDouble &pts_x, MatrixDouble &pts_t,
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode
-BaseFunction::setDofsSideMap(DofsSideMap &,
-                             boost::shared_ptr<BaseFunctionCtx> ctx_ptr) {
-  MoFEMFunctionBeginHot;
-  SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-          "BaseFunction has not valid implementation of any shape function");
-  MoFEMFunctionReturnHot(0);
-}
-
 } // namespace MoFEM

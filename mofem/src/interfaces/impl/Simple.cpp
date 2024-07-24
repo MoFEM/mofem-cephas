@@ -287,8 +287,62 @@ Simple::addDomainBrokenField(const std::string &name, const FieldSpace space,
 
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
+
+  auto get_side_map_hcurl = [&]() {
+    return std::vector<
+
+        std::pair<EntityType,
+                  std::function<MoFEMErrorCode(BaseFunction::DofsSideMap &)>
+
+                  >>{
+
+        {MBTRI,
+         [&](BaseFunction::DofsSideMap &dofs_side_map) -> MoFEMErrorCode {
+           return TriPolynomialBase::setDofsSideMap(space, DISCONTINUOUS, base,
+                                                    dofs_side_map);
+         }}
+
+    };
+  };
+
+  auto get_side_map_hdiv = [&]() {
+    return std::vector<
+
+        std::pair<EntityType,
+                  std::function<MoFEMErrorCode(BaseFunction::DofsSideMap &)>
+
+                  >>{
+
+        {MBTET,
+         [&](BaseFunction::DofsSideMap &dofs_side_map) -> MoFEMErrorCode {
+           return TetPolynomialBase::setDofsSideMap(space, DISCONTINUOUS, base,
+                                                    dofs_side_map);
+         }}
+
+    };
+  };
+
+  auto get_side_map = [&](auto space) {
+    switch (space) {
+    case HCURL:
+      return get_side_map_hcurl();
+    case HDIV:
+      return get_side_map_hdiv();
+    default:
+      MOFEM_LOG_CHANNEL("WORLD");
+      MOFEM_LOG("WORLD", Sev::warning)
+          << "Side dof map for broken space <" << space << "> not implemented";
+    }
+    return std::vector<
+
+        std::pair<EntityType,
+                  std::function<MoFEMErrorCode(BaseFunction::DofsSideMap &)>
+
+                  >>{};
+  };
+
   CHKERR m_field.add_broken_field(name, space, base, nb_of_coefficients,
-                                  tag_type, bh, verb);
+                                  get_side_map(space), tag_type, bh, verb);
   if (space == NOFIELD)
     noFieldFields.push_back(name);
   else

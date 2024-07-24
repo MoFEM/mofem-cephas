@@ -47,8 +47,24 @@ struct TetPolynomialBase : public BaseFunction {
   MoFEMErrorCode getValue(MatrixDouble &pts,
                           boost::shared_ptr<BaseFunctionCtx> ctx_ptr);
 
-  MoFEMErrorCode setDofsSideMap(DofsSideMap &,
-                                boost::shared_ptr<BaseFunctionCtx> ctx_ptr);
+  /**
+   * @brief Set map of dof to side number
+   *
+   * That is used for broken space to establish connection between dofs in the
+   * interior of element/entity and side of element/entity to which that dof is
+   * associated. That depends on implementation of the base for given space, and
+   * has to be implemented while implementing base function for given space.
+   *
+   * @param space
+   * @param continuity
+   * @param base
+   * @param DofsSideMap
+   * @return MoFEMErrorCode
+   */
+  static MoFEMErrorCode
+  setDofsSideMap(const FieldSpace space, const FieldContinuity continuity,
+                 const FieldApproximationBase base,
+                 DofsSideMap &);
 
 private:
   const void *vPtr;
@@ -100,11 +116,16 @@ private:
 
   /**
    * @brief Set the Dofs Side Map Hdiv object
-   * 
-   * @param dofs_side_map 
-   * @return MoFEMErrorCode 
+   *
+   * @param space
+   * @param continuity
+   * @param base
+   * @param dofs_side_map
+   * @return MoFEMErrorCode
    */
-  MoFEMErrorCode setDofsSideMapHdiv(DofsSideMap &dofs_side_map);
+  static MoFEMErrorCode setDofsSideMapHdiv(const FieldContinuity continuity,
+                                           const FieldApproximationBase base,
+                                           DofsSideMap &dofs_side_map);
 
 private:
   MoFEMErrorCode getValueH1AinsworthBase(MatrixDouble &pts);
