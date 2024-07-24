@@ -790,7 +790,6 @@ MoFEMErrorCode MedInterface::writeMed(
                iit->getBcTypeULong() & NODESET) {
 
       CubitBCType cubitBcType(iit->getBcTypeULong());
-      auto test = iit->getBcType();
 
       unsigned jj = 0;
       while (1 << jj != LASTSET_BC) {
