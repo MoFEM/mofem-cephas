@@ -2632,12 +2632,11 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
   for (int s = 0; s != 2; ++s)
     if (numered_dofs[s]) {
 
-      typedef multi_index_container<
+      using NumeredDofEntity_it_view_multiIndex = multi_index_container<
 
           NumeredDofEntity_multiIndex::iterator, indexed_by<sequenced<>>
 
-          >
-          NumeredDofEntity_it_view_multiIndex;
+          >;
 
       const auto bit_number = m_field.get_field_bit_number(field_name);
       NumeredDofEntity_it_view_multiIndex dofs_it_view;
