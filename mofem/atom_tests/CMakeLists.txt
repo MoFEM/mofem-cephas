@@ -534,7 +534,7 @@ add_test(h1_check_approx_2d_ainsworth_lobatto_tri
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
   -file_name rectangle_tri.h5m
-  -base ainsworth_labatto -space h1 
+  -base ainsworth_lobatto -space h1 
   -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
   -log_no_color
 )
@@ -627,7 +627,7 @@ add_test(h1_check_approx_3d_ainsworth_lobatto_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_3d
   -file_name sphere.h5m
-  -base ainsworth_labatto -space h1 
+  -base ainsworth_lobatto -space h1 
   -pc_type lu -pc_factor_mat_solver_type mumps
   -log_no_color
 )
@@ -1507,7 +1507,7 @@ add_test(
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/quad_polynomial_approximation 
   -pc_type lu
-  -base ainsworth_labatto
+  -base ainsworth_lobatto
   -space h1
   -log_no_color)
 
@@ -1674,7 +1674,7 @@ set_target_properties(
 list(INSERT test_broken_base_list_2d
   0
   ainsworth 
-  ainsworth_labatto
+  ainsworth_lobatto
   demkowicz
 )
 foreach(test_base ${test_broken_base_list_2d})

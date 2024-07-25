@@ -320,7 +320,7 @@ int main(int argc, char *argv[]) {
       BERNSTEIN,
       LASBASETOP
     };
-    const char *list_bases[] = {"ainsworth", "ainsworth_labatto", "demkowicz",
+    const char *list_bases[] = {"ainsworth", "ainsworth_lobatto", "demkowicz",
                                 "bernstein"};
     PetscBool flg;
     PetscInt choice_base_value = AINSWORTH;
