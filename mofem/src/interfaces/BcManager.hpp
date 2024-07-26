@@ -39,6 +39,9 @@ struct BcManager : public UnknownInterface {
     std::vector<double> bcAttributes;
     std::vector<unsigned char> bcMarkers;
 
+    using DofsView = std::vector<boost::weak_ptr<NumeredDofEntity>>;
+    boost::shared_ptr<DofsView> dofsViewPtr;
+
     boost::shared_ptr<DisplacementCubitBcData> dispBcPtr;
     boost::shared_ptr<TemperatureCubitBcData> tempBcPtr;
     boost::shared_ptr<HeatFluxCubitBcData> heatFluxBcPtr;
@@ -65,12 +68,45 @@ struct BcManager : public UnknownInterface {
    * @return error code
    */
   MoFEMErrorCode getOptions();
+
   // FIXME: add functions to couple the dofs
   MoFEMErrorCode addBlockDOFsToMPCs(const std::string problem_name,
                                     const std::string field_name,
                                     bool get_low_dim_ents = false,
                                     bool block_name_field_prefix = false,
                                     bool is_distributed_mesh = false);
+
+  /**
+   * @brief Mark side DOFs 
+   * 
+   * @param problem_name 
+   * @param block_name 
+   * @param field_name 
+   * @param lo 
+   * @param hi 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode pushMarkSideDofs(const std::string problem_name,
+                                  const std::string block_name,
+                                  const std::string field_name, int bridge_dim,
+                                  int lo, int hi);
+
+  /**
+   * @brief Remove side DOFs
+   * 
+   * @param problem_name 
+   * @param block_name 
+   * @param field_name 
+   * @param lo 
+   * @param hi 
+   * @param is_distributed_mesh 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode removeSideDOFs(const std::string problem_name,
+                                const std::string block_name,
+                                const std::string field_name, int bridge_dim,
+                                int lo, int hi,
+                                bool is_distributed_mesh = true);
 
   /**
    * @brief Remove DOFs from problem

@@ -1570,7 +1570,8 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcForceMeshsetType<BLOCKSET>>(
       }
 
       bc->forceBcPtr = boost::make_shared<ForceCubitBcData>();
-      // For details look at ForceCubitBcData in mofem/src/multi_indices/BCData.hpp
+      // For details look at ForceCubitBcData in
+      // mofem/src/multi_indices/BCData.hpp
       bc->forceBcPtr->data.value1 = 1;
       bc->forceBcPtr->data.value3 = bc->bcAttributes[0];
       bc->forceBcPtr->data.value4 = bc->bcAttributes[1];
@@ -1786,5 +1787,101 @@ MoFEMErrorCode BcManager::removeBlockDOFsOnEntities<ForceCubitBcData>(
 
   MoFEMFunctionReturn(0);
 };
+
+MoFEMErrorCode BcManager::pushMarkSideDofs(
+
+    const std::string problem_name, const std::string block_name,
+    const std::string field_name, int bridge_dim, int lo, int hi
+
+) {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+
+  if (problem_name.size())
+    MoFEMFunctionReturnHot(0);
+
+  auto iterate_meshsets = [&](auto &&meshset_vec_ptr) {
+    auto prb_mng = m_field.getInterface<ProblemsManager>();
+    MoFEMFunctionBegin;
+    for (auto m : meshset_vec_ptr) {
+      auto bc = boost::make_shared<BCs>();
+      CHKERR m_field.get_moab().get_entities_by_handle(m->getMeshset(),
+                                                       bc->bcEnts, true);
+      CHKERR m->getAttributes(bc->bcAttributes);
+
+      bc->dofsViewPtr = boost::make_shared<BCs::DofsView>();
+
+      CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(
+          bc->bcEnts);
+      CHKERR prb_mng->getSideDofsOnBrokenSpaceEntities(
+          *(bc->dofsViewPtr), problem_name, ROW, field_name, bc->bcEnts,
+          bridge_dim, lo, hi);
+      CHKERR prb_mng->markDofs(problem_name, ROW, *(bc->dofsViewPtr),
+                               ProblemsManager::AND, bc->bcMarkers);
+
+      MOFEM_LOG("BcMngWorld", Sev::verbose)
+          << "Found block " << m->getName() << " number of attributes "
+          << bc->bcAttributes.size();
+
+      const std::string bc_id =
+          problem_name + "_" + field_name + "_" + m->getName();
+      bcMapByBlockName[bc_id] = bc;
+    }
+    MoFEMFunctionReturn(0);
+  };
+
+  CHKERR iterate_meshsets(
+
+      m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(std::regex(
+
+          (boost::format("%s(.*)") % block_name).str()
+
+              ))
+
+  );
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode BcManager::removeSideDOFs(const std::string problem_name,
+                                         const std::string block_name,
+                                         const std::string field_name,
+                                         int bridge_dim, int lo, int hi,
+                                         bool is_distributed_mesh) {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+
+  CHKERR pushMarkSideDofs(problem_name, block_name, field_name, bridge_dim, lo,
+                          hi);
+
+  auto iterate_meshsets = [&](auto &&meshset_vec_ptr) {
+    MoFEMFunctionBegin;
+    auto prb_mng = m_field.getInterface<ProblemsManager>();
+    for (auto m : meshset_vec_ptr) {
+      const std::string bc_id =
+          problem_name + "_" + field_name + "_" + m->getName();
+      auto &bc = bcMapByBlockName.at(bc_id);
+      CHKERR prb_mng->removeDofs(problem_name, ROW, *(bc->dofsViewPtr), lo, hi);
+    }
+    MoFEMFunctionReturn(0);
+  };
+
+  if (is_distributed_mesh) {
+
+    CHKERR iterate_meshsets(
+
+        m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(std::regex(
+
+            (boost::format("%s(.*)") % block_name).str()
+
+                ))
+
+    );
+  } else {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Not implemented");
+  }
+
+  MoFEMFunctionReturn(0);
+}
 
 } // namespace MoFEM
