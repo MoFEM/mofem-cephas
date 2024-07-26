@@ -362,6 +362,57 @@ struct ProblemsManager : public UnknownInterface {
       const int hi_coeff = MAX_DOFS_ON_ENTITY, const int lo_order = 0,
       const int hi_order = 100, int verb = VERBOSE, const bool debug = false);
 
+
+  /**
+   * @brief Remove DOFs from problem on broken space
+   * 
+   * @param problem_name 
+   * @param field_name 
+   * @param ents 
+   * @param lo_coeff 
+   * @param hi_coeff 
+   * @param lo_order 
+   * @param hi_order 
+   * @param verb 
+   * @param debug 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode
+  removeDofs(const std::string problem_name, RowColData rc,
+             std::vector<boost::weak_ptr<NumeredDofEntity>> &vec_dof_view,
+             int verb = VERBOSE, const bool debug = false);
+
+  /**
+   * @brief Get DOFs on side entities for broke space
+   *
+   * @param dof_view
+   * @param problem_name
+   * @param rc row or column
+   * @param field_name
+   * @param ents side entities
+   * @param bridge_dim dimension of bridge entity (dofs are on iterator by have
+   * associated side entity)
+   * @param lo_coeff
+   * @param hi_coeff
+   * @param lo_order
+   * @param hi_order
+   * @param verb
+   * @param debug
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode getSideDofsOnBrokenSpaceEntities(
+
+      std::vector<boost::weak_ptr<NumeredDofEntity>> &vec_dof_view,
+
+      const std::string problem_name, RowColData rc,
+      const std::string field_name, const Range ents, int bridge_dim,
+      const int lo_coeff = 0, const int hi_coeff = MAX_DOFS_ON_ENTITY,
+      const int lo_order = 0, const int hi_order = 100, int verb = VERBOSE,
+      const bool debug = false
+
+  ) const;
+  
+
   enum MarkOP { OR, AND };
 
   /**
@@ -408,11 +459,28 @@ struct ProblemsManager : public UnknownInterface {
                                 std::vector<unsigned char> &marker) const;
 
   /**
+   * @brief Create vector with marked indices 
+   * 
+   * Vector with local DOFs marked by entities 
+   * 
+   * 
+   * @param problem_name 
+   * @param row 
+   * @param ents 
+   * @param marker 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode
+  markDofs(const std::string problem_name, RowColData rc,
+           std::vector<boost::weak_ptr<NumeredDofEntity>> &vec_dof_view,
+           const enum MarkOP op, std::vector<unsigned char> &marker) const;
+
+  /**
    * @brief add empty block to problem
    *
    * MatrixManager assumes that all blocks, i.e. all fields combinations are non
    * zero. This is not always the case, to optimise code and reduce memory usage
-   * user can specifi which blocks are empty.
+   * user can specify which blocks are empty.
    *
    * @param problem_name problem name
    * @param row_field row filed name
