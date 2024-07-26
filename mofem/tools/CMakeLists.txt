@@ -40,6 +40,18 @@ if(MED_LIBRARY)
     ${MoFEM_PROJECT_LIBS}
   )
   install(TARGETS read_med DESTINATION bin)
+  
+  add_executable(write_med ${CMAKE_CURRENT_SOURCE_DIR}/write_med.cpp)
+  target_link_libraries(write_med
+    mofem_interfaces  
+    mofem_finite_elements
+    mofem_multi_indices
+    mofem_petsc
+    mofem_approx
+    mofem_third_party
+    ${MoFEM_PROJECT_LIBS}
+  )
+  install(TARGETS read_med DESTINATION bin)
 endif(MED_LIBRARY)
 
 add_executable(add_meshsets ${CMAKE_CURRENT_SOURCE_DIR}/add_meshsets.cpp)
