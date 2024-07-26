@@ -94,7 +94,7 @@ struct Composite_SeriesID_And_Step_mi_tag {};
 struct Composite_SeriesName_And_Step_mi_tag {};
 struct Composite_SeriesName_And_Time_mi_tag {};
 
-struct type_side_mi_tag {};
+struct TypeSide_mi_tag {};
 
 } // namespace MoFEM
 

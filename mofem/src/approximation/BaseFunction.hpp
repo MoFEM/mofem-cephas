@@ -56,15 +56,19 @@ struct BaseFunction : public BaseFunctionUnknownInterface {
 
       DofsSideMapData,
 
-      indexed_by<ordered_unique<
-          tag<type_side_mi_tag>,
-          composite_key<
+      indexed_by<
+          ordered_unique<
+              tag<TypeSide_mi_tag>,
+              composite_key<
 
-              DofsSideMapData,
-              member<DofsSideMapData, EntityType, &DofsSideMapData::type>,
-              member<DofsSideMapData, int, &DofsSideMapData::side>>>
+                  DofsSideMapData,
+                  member<DofsSideMapData, EntityType, &DofsSideMapData::type>,
+                  member<DofsSideMapData, int, &DofsSideMapData::side>>>,
 
-                 >>;
+          ordered_unique<tag<EntDofIdx_mi_tag>,
+                         member<DofsSideMapData, int, &DofsSideMapData::dof>>
+
+          >>;
 
   MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  MoFEM::UnknownInterface **iface) const;
