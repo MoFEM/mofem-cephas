@@ -6,7 +6,7 @@ ENV MOFEM_BRANCH=develop
 
 RUN cd $MOFEM_INSTALL_DIR/ && \
   git clone -b lukasz/nested_schur https://bitbucket.org/mofem/mofem-cephas.git && \
-  git clone -b lukasz/nested_schur https://bitbucket.org/mofem/users-modules-cephas.git mofem-cephas/mofem/users_modules && \
+  git clone -b andrei/cantilever https://bitbucket.org/mofem/users-modules-cephas.git mofem-cephas/mofem/users_modules && \
   git clone -b lukasz/nested_schur https://bitbucket.org/mofem/um_eshelbian_plasticity.git mofem-cephas/mofem/users_modules/eshelbian_plasticity && \
   git clone -b develop https://bitbucket.org/mofem/mfront_interface.git mofem-cephas/mofem/users_modules/mfront_interface
 

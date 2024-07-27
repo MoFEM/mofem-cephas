@@ -1,21 +1,26 @@
 import math
 import numpy as np
 
-R = 27.5  # radius of the indenter
-d = 3.0
+# ### SDF Indenter
+
+R = {indenter_radius}  # radius of the indenter
+d = {max_indentation} # indentation depth
+T = {final_time} # final time
+
 xc = 0
 yc = R
 zc = 0
 
+
 # +
 def sdf(delta_t, t, x, y, z, tx, ty, tz, block_id):
-    return Sphere.sDF(R, xc, yc - d, zc, x, y, z)
+    return Sphere.sDF(R, xc, yc - d * t/T, zc, x, y, z)
 
 def grad_sdf(delta_t, t, x, y, z, tx, ty, tz, block_id):
-    return Sphere.gradSdf(xc, yc - d, zc, x, y, z)
+    return Sphere.gradSdf(xc, yc - d * t/T, zc, x, y, z)
 
 def hess_sdf(delta_t, t, x, y, z, tx, ty, tz, block_id):
-    return Sphere.hessSdf(xc, yc - d, zc, x, y, z)
+    return Sphere.hessSdf(xc, yc - d * t/T, zc, x, y, z)
 
 
 # -
