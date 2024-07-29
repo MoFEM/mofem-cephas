@@ -1797,7 +1797,7 @@ MoFEMErrorCode BcManager::pushMarkSideDofs(
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
 
-  if (problem_name.size())
+  if (problem_name.empty())
     MoFEMFunctionReturnHot(0);
 
   auto iterate_meshsets = [&](auto &&meshset_vec_ptr) {
@@ -1817,11 +1817,14 @@ MoFEMErrorCode BcManager::pushMarkSideDofs(
           *(bc->dofsViewPtr), problem_name, ROW, field_name, bc->bcEnts,
           bridge_dim, lo, hi);
       CHKERR prb_mng->markDofs(problem_name, ROW, *(bc->dofsViewPtr),
-                               ProblemsManager::AND, bc->bcMarkers);
+                               ProblemsManager::OR, bc->bcMarkers);
 
-      MOFEM_LOG("BcMngWorld", Sev::verbose)
+      MOFEM_LOG("BcMngWorld", Sev::warning)
           << "Found block " << m->getName() << " number of attributes "
-          << bc->bcAttributes.size();
+          << bc->bcAttributes.size() << " number of entities "
+          << bc->bcEnts.size();
+
+      cerr << bc->bcEnts << endl;
 
       const std::string bc_id =
           problem_name + "_" + field_name + "_" + m->getName();
@@ -1862,6 +1865,7 @@ MoFEMErrorCode BcManager::removeSideDOFs(const std::string problem_name,
           problem_name + "_" + field_name + "_" + m->getName();
       auto &bc = bcMapByBlockName.at(bc_id);
       CHKERR prb_mng->removeDofs(problem_name, ROW, *(bc->dofsViewPtr), lo, hi);
+      CHKERR prb_mng->removeDofs(problem_name, COL, *(bc->dofsViewPtr), lo, hi);
     }
     MoFEMFunctionReturn(0);
   };

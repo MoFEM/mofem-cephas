@@ -1547,7 +1547,13 @@ TetPolynomialBase::getValueHdivDemkowiczBrokenBase(MatrixDouble &pts) {
       MatrixDouble(nb_gauss_pts, 9 * nb_dofs_face),
       MatrixDouble(nb_gauss_pts, 9 * nb_dofs_face)};
 
-  int face_node[4][3] = {{0, 1, 3}, {1, 2, 3}, {0, 2, 3}, {0, 1, 2}};
+  int faces_nodes[4][3] = {{0, 1, 3}, {1, 2, 3}, {0, 2, 3}, {0, 1, 2}};
+  for (auto ff = 0; ff != 4; ++ff) {
+    EntityType sub_entity_topo;
+    int num_sub_entity_nodes;
+    moab::CN::SubEntityNodeIndices(MBTET, 4, 2, ff, sub_entity_topo,
+                                   num_sub_entity_nodes, faces_nodes[ff]);
+  }
 
   std::array<int, 4> p_f{volume_order, volume_order, volume_order,
                          volume_order};
@@ -1561,7 +1567,8 @@ TetPolynomialBase::getValueHdivDemkowiczBrokenBase(MatrixDouble &pts) {
   // Calculate base function on tet faces
   for (int ff = 0; ff != 4; ff++) {
     CHKERR Hdiv_Demkowicz_Face_MBTET_ON_FACE(
-        face_node[ff], p_f[ff],
+        // &data.facesNodes(ff, 0)
+        faces_nodes[ff], p_f[ff],
         &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
         &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
         phi_f[ff], diff_phi_f[ff], nb_gauss_pts, 4);

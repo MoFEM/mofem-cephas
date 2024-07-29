@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
       BERNSTEIN,
       LASBASETOP
     };
-    const char *list_bases[] = {"ainsworth", "ainsworth_labatto", "demkowicz",
+    const char *list_bases[] = {"ainsworth", "ainsworth_lobatto", "demkowicz",
                                 "bernstein"};
     PetscBool flg;
     PetscInt choice_base_value = AINSWORTH;
@@ -155,6 +155,10 @@ int main(int argc, char *argv[]) {
     CHKERR simple->setFieldOrder("HYBRID", approx_order - 1);
 
     CHKERR simple->setUp();
+
+    auto bc_mng = m_field.getInterface<BcManager>();
+    CHKERR bc_mng->removeSideDOFs(simple->getProblemName(), "ZERO_FLUX",
+                                  "BROKEN", SPACE_DIM, 0, 1, true);
 
     auto integration_rule = [](int, int, int p) { return 2 * p; };
 
@@ -235,7 +239,7 @@ int main(int argc, char *argv[]) {
           AT>::LinearForm<IT>::OpSource<1, 1>;
       auto source = [&](const double x, const double y,
                         const double z) constexpr {
-        return -1;//sin(100 * (x / 10.) * M_PI_2);
+        return -1; // sin(100 * (x / 10.) * M_PI_2);
       };
       pip.push_back(new OpDomainSource("U", source));
       MoFEMFunctionReturn(0);
@@ -251,10 +255,10 @@ int main(int argc, char *argv[]) {
     CHKERR pip_mng->setSkeletonLhsIntegrationRule(integration_rule);
     CHKERR pip_mng->setSkeletonRhsIntegrationRule(integration_rule);
 
-    TetPolynomialBase::swichCacheBaseOn<HDIV>(
-        {pip_mng->getDomainLhsFE().get(), pip_mng->getDomainRhsFE().get()});
-    TetPolynomialBase::swichCacheBaseOn<L2>(
-        {pip_mng->getDomainLhsFE().get(), pip_mng->getDomainRhsFE().get()});
+    // TetPolynomialBase::swichCacheBaseOn<HDIV>(
+    //     {pip_mng->getDomainLhsFE().get(), pip_mng->getDomainRhsFE().get()});
+    // TetPolynomialBase::swichCacheBaseOn<L2>(
+    //     {pip_mng->getDomainLhsFE().get(), pip_mng->getDomainRhsFE().get()});
 
     auto x = createDMVector(simple->getDM());
     auto f = vectorDuplicate(x);
@@ -429,7 +433,7 @@ int main(int argc, char *argv[]) {
                         const double z) constexpr { return -1; };
       domain_rhs.push_back(new OpGetTensor0fromFunc(source_ptr, source));
 
-      enum { DIV, GRAD, LAST};
+      enum { DIV, GRAD, LAST };
       auto mpi_vec = createVectorMPI(
           m_field.get_comm(), (!m_field.get_comm_rank()) ? LAST : 0, LAST);
       domain_rhs.push_back(
@@ -449,9 +453,8 @@ int main(int argc, char *argv[]) {
         MOFEM_LOG("AT", Sev::inform)
             << "Approximation error ||div flux - source||: "
             << std::sqrt(error_ind[DIV]);
-        MOFEM_LOG("AT", Sev::inform)
-            << "Approximation error ||grad-flux||: "
-            << std::sqrt(error_ind[GRAD]);
+        MOFEM_LOG("AT", Sev::inform) << "Approximation error ||grad-flux||: "
+                                     << std::sqrt(error_ind[GRAD]);
         CHKERR VecRestoreArrayRead(mpi_vec, &error_ind);
       }
 
@@ -477,7 +480,6 @@ int main(int argc, char *argv[]) {
           new OpCalculateScalarFieldValues("U", u_vec_ptr));
       op_loop_side->getOpPtrVector().push_back(
           new OpCalculateHVecVectorField<3>("BROKEN", flux_mat_ptr));
-
       op_loop_side->getOpPtrVector().push_back(
 
           new OpPPMap(
