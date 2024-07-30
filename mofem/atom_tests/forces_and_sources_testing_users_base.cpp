@@ -381,11 +381,11 @@ int main(int argc, char *argv[]) {
                                PETSC_NULL);
 
     if (base_cache) {
-      if (!TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(&fe1)) {
-        TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(&fe1);
+      if (!TetPolynomialBase::switchCacheHDivBaseFaceDemkowicz(&fe1)) {
+        TetPolynomialBase::switchCacheHDivBaseFaceDemkowicz(&fe1);
       }
-      if (!TetPolynomialBase::swichCacheHdivBaseInteriorDemkowicz(&fe1)) {
-        TetPolynomialBase::swichCacheHdivBaseInteriorDemkowicz(&fe1);
+      if (!TetPolynomialBase::switchCacheHdivBaseInteriorDemkowicz(&fe1)) {
+        TetPolynomialBase::switchCacheHdivBaseInteriorDemkowicz(&fe1);
       }
     }
 
@@ -394,8 +394,8 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.loop_finite_elements("PROBLEM", "FE", fe1);
 
     if(base_cache) {
-      if(TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(&fe1)) {}
-      if(TetPolynomialBase::swichCacheHdivBaseInteriorDemkowicz(&fe1)) {};
+      if(TetPolynomialBase::switchCacheHDivBaseFaceDemkowicz(&fe1)) {}
+      if(TetPolynomialBase::switchCacheHdivBaseInteriorDemkowicz(&fe1)) {};
     }
 
   }

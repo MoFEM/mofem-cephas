@@ -24,18 +24,18 @@ struct TetPolynomialBase : public BaseFunction {
   TetPolynomialBase(const void *ptr = nullptr);
   virtual ~TetPolynomialBase();
 
-  static bool swichCacheHDivBaseFaceDemkowicz(const void *ptr);
-  static bool swichCacheHdivBaseInteriorDemkowicz(const void *ptr);
-  static bool swichCacheHdivBrokenBaseInteriorDemkowicz(const void *ptr);
-  static void swichCacheHDivBaseDemkowiczOn(std::vector<void *> v);
-  static void swichCacheHDivBaseDemkowiczOff(std::vector<void *> v);
+  static bool switchCacheHDivBaseFaceDemkowicz(const void *ptr);
+  static bool switchCacheHdivBaseInteriorDemkowicz(const void *ptr);
+  static bool switchCacheHdivBrokenBaseInteriorDemkowicz(const void *ptr);
+  static void switchCacheHDivBaseDemkowiczOn(std::vector<void *> v);
+  static void switchCacheHDivBaseDemkowiczOff(std::vector<void *> v);
 
-  static bool swichCacheHdivBrokenBaseInteriorAinsworth(const void *ptr);
-  static void swichCacheHDivBaseAinsworthOn(std::vector<void *> v);
-  static void swichCacheHDivBaseAinsworthOff(std::vector<void *> v);
+  static bool switchCacheHdivBrokenBaseInteriorAinsworth(const void *ptr);
+  static void switchCacheHDivBaseAinsworthOn(std::vector<void *> v);
+  static void switchCacheHDivBaseAinsworthOff(std::vector<void *> v);
 
-  static void swichCacheHDivBaseOn(std::vector<void *> v);
-  static void swichCacheHDivBaseOff(std::vector<void *> v);
+  static void switchCacheHDivBaseOn(std::vector<void *> v);
+  static void switchCacheHDivBaseOff(std::vector<void *> v);
 
   MoFEMErrorCode getValue(MatrixDouble &pts,
                           boost::shared_ptr<BaseFunctionCtx> ctx_ptr);

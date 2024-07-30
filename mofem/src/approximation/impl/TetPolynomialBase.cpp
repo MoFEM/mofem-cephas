@@ -1999,78 +1999,78 @@ auto tetCacheSwitch(const void *ptr, T &cache, std::string cache_name) {
   }
 }
 
-bool TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(const void *ptr) {
+bool TetPolynomialBase::switchCacheHDivBaseFaceDemkowicz(const void *ptr) {
   return tetCacheSwitch(ptr, TetBaseCache::hDivBaseFaceDemkowicz,
                         "hDivBaseFaceDemkowicz");
 }
 
-bool TetPolynomialBase::swichCacheHdivBaseInteriorDemkowicz(const void *ptr) {
+bool TetPolynomialBase::switchCacheHdivBaseInteriorDemkowicz(const void *ptr) {
   return tetCacheSwitch(ptr, TetBaseCache::hdivBaseInteriorDemkowicz,
                         "hdivBaseInteriorDemkowicz");
 }
 
-bool TetPolynomialBase::swichCacheHdivBrokenBaseInteriorDemkowicz(
+bool TetPolynomialBase::switchCacheHdivBrokenBaseInteriorDemkowicz(
     const void *ptr) {
   return tetCacheSwitch(ptr, TetBaseCache::hdivBrokenBaseInteriorDemkowicz,
                         "hdivBrokenBaseInteriorDemkowicz");
 }
 
-void TetPolynomialBase::swichCacheHDivBaseDemkowiczOn(std::vector<void *> v) {
+void TetPolynomialBase::switchCacheHDivBaseDemkowiczOn(std::vector<void *> v) {
   for (auto fe_ptr : v) {
-    if (!TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(fe_ptr)) {
-      TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(fe_ptr);
+    if (!TetPolynomialBase::switchCacheHDivBaseFaceDemkowicz(fe_ptr)) {
+      TetPolynomialBase::switchCacheHDivBaseFaceDemkowicz(fe_ptr);
     }
-    if (!TetPolynomialBase::swichCacheHdivBaseInteriorDemkowicz(fe_ptr)) {
-      TetPolynomialBase::swichCacheHdivBaseInteriorDemkowicz(fe_ptr);
+    if (!TetPolynomialBase::switchCacheHdivBaseInteriorDemkowicz(fe_ptr)) {
+      TetPolynomialBase::switchCacheHdivBaseInteriorDemkowicz(fe_ptr);
     }
-    if (!TetPolynomialBase::swichCacheHdivBrokenBaseInteriorDemkowicz(fe_ptr)) {
-      TetPolynomialBase::swichCacheHdivBrokenBaseInteriorDemkowicz(fe_ptr);
+    if (!TetPolynomialBase::switchCacheHdivBrokenBaseInteriorDemkowicz(fe_ptr)) {
+      TetPolynomialBase::switchCacheHdivBrokenBaseInteriorDemkowicz(fe_ptr);
     }
   }
 }
 
-void TetPolynomialBase::swichCacheHDivBaseDemkowiczOff(std::vector<void *> v) {
+void TetPolynomialBase::switchCacheHDivBaseDemkowiczOff(std::vector<void *> v) {
   for (auto fe_ptr : v) {
-    if (TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(fe_ptr)) {
-      TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(fe_ptr);
+    if (TetPolynomialBase::switchCacheHDivBaseFaceDemkowicz(fe_ptr)) {
+      TetPolynomialBase::switchCacheHDivBaseFaceDemkowicz(fe_ptr);
     }
-    if (TetPolynomialBase::swichCacheHdivBaseInteriorDemkowicz(fe_ptr)) {
-      TetPolynomialBase::swichCacheHdivBaseInteriorDemkowicz(fe_ptr);
+    if (TetPolynomialBase::switchCacheHdivBaseInteriorDemkowicz(fe_ptr)) {
+      TetPolynomialBase::switchCacheHdivBaseInteriorDemkowicz(fe_ptr);
     }
-    if (TetPolynomialBase::swichCacheHdivBrokenBaseInteriorDemkowicz(fe_ptr)) {
-      TetPolynomialBase::swichCacheHdivBrokenBaseInteriorDemkowicz(fe_ptr);
+    if (TetPolynomialBase::switchCacheHdivBrokenBaseInteriorDemkowicz(fe_ptr)) {
+      TetPolynomialBase::switchCacheHdivBrokenBaseInteriorDemkowicz(fe_ptr);
     }
   }
 }
 
-bool TetPolynomialBase::swichCacheHdivBrokenBaseInteriorAinsworth(
+bool TetPolynomialBase::switchCacheHdivBrokenBaseInteriorAinsworth(
     const void *ptr) {
   return tetCacheSwitch(ptr, TetBaseCache::hdivBrokenBaseInteriorAinsworth,
                         "hdivBrokenBaseInteriorAinsworth");
 }
 
-void TetPolynomialBase::swichCacheHDivBaseAinsworthOn(std::vector<void *> v) {
+void TetPolynomialBase::switchCacheHDivBaseAinsworthOn(std::vector<void *> v) {
   for (auto fe_ptr : v) {
-    if (!TetPolynomialBase::swichCacheHdivBrokenBaseInteriorAinsworth(fe_ptr)) {
-      TetPolynomialBase::swichCacheHdivBrokenBaseInteriorAinsworth(fe_ptr);
+    if (!TetPolynomialBase::switchCacheHdivBrokenBaseInteriorAinsworth(fe_ptr)) {
+      TetPolynomialBase::switchCacheHdivBrokenBaseInteriorAinsworth(fe_ptr);
     }
   }
 }
 
-void TetPolynomialBase::swichCacheHDivBaseAinsworthOff(std::vector<void *> v) {
+void TetPolynomialBase::switchCacheHDivBaseAinsworthOff(std::vector<void *> v) {
   for (auto fe_ptr : v) {
-    if (TetPolynomialBase::swichCacheHdivBrokenBaseInteriorAinsworth(fe_ptr)) {
-      TetPolynomialBase::swichCacheHdivBrokenBaseInteriorAinsworth(fe_ptr);
+    if (TetPolynomialBase::switchCacheHdivBrokenBaseInteriorAinsworth(fe_ptr)) {
+      TetPolynomialBase::switchCacheHdivBrokenBaseInteriorAinsworth(fe_ptr);
     }
   }
 }
 
-void TetPolynomialBase::swichCacheHDivBaseOn(std::vector<void *> v) {
-  swichCacheHDivBaseDemkowiczOn(v);
-  swichCacheHDivBaseAinsworthOn(v);
+void TetPolynomialBase::switchCacheHDivBaseOn(std::vector<void *> v) {
+  switchCacheHDivBaseDemkowiczOn(v);
+  switchCacheHDivBaseAinsworthOn(v);
 }
 
-void TetPolynomialBase::swichCacheHDivBaseOff(std::vector<void *> v) {
-  swichCacheHDivBaseDemkowiczOff(v);
-  swichCacheHDivBaseAinsworthOff(v);
+void TetPolynomialBase::switchCacheHDivBaseOff(std::vector<void *> v) {
+  switchCacheHDivBaseDemkowiczOff(v);
+  switchCacheHDivBaseAinsworthOff(v);
 }

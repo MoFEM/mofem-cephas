@@ -251,7 +251,7 @@ int main(int argc, char *argv[]) {
     CHKERR pip_mng->setSkeletonLhsIntegrationRule(integration_rule);
     CHKERR pip_mng->setSkeletonRhsIntegrationRule(integration_rule);
 
-    TetPolynomialBase::swichCacheHDivBaseOn(
+    TetPolynomialBase::switchCacheHDivBaseOn(
         {pip_mng->getDomainLhsFE().get(), pip_mng->getDomainRhsFE().get()});
 
     auto x = createDMVector(simple->getDM());
