@@ -82,7 +82,7 @@ struct Simple : public UnknownInterface {
 
   /**
    * \brief Add field on domain
-   * @param  name              name of the filed
+   * @param  name              name of the field
    * @param  space             space (L2,H1,Hdiv,Hcurl)
    * @param  base              approximation base, see FieldApproximationBase
    * @param  nb_of_coefficients number of field coefficients
@@ -103,7 +103,7 @@ struct Simple : public UnknownInterface {
 
   /**
    * \brief Add broken field on domain
-   * @param  name              name of the filed
+   * @param  name              name of the field
    * @param  space             space (L2,H1,Hdiv,Hcurl)
    * @param  base              approximation base, see FieldApproximationBase
    * @param  nb_of_coefficients number of field coefficients
@@ -124,7 +124,7 @@ struct Simple : public UnknownInterface {
 
   /**
    * \brief Add field on boundary
-   * @param  name              name of the filed
+   * @param  name              name of the field
    * @param  space             space (L2,H1,Hdiv,Hcurl)
    * @param  base              approximation base, see FieldApproximationBase
    * @param  nb_of_coefficients number of field coefficients
@@ -145,7 +145,7 @@ struct Simple : public UnknownInterface {
 
   /**
    * \brief Add field on skeleton
-   * @param  name              name of the filed
+   * @param  name              name of the field
    * @param  space             space (L2,H1,Hdiv,Hcurl)
    * @param  base              approximation base, see FieldApproximationBase
    * @param  nb_of_coefficients number of field coefficients
@@ -166,7 +166,7 @@ struct Simple : public UnknownInterface {
 
   /**
    * \brief Add field on domain
-   * @param  name              name of the filed
+   * @param  name              name of the field
    * @param  space             space (L2,H1,Hdiv,Hcurl)
    * @param  base              approximation base, see FieldApproximationBase
    * @param  nb_of_coefficients number of field coefficients
@@ -507,7 +507,7 @@ struct Simple : public UnknownInterface {
    * zero. This is not always the case, to optimise code and reduce memory usage
    * user can specifi which blocks are empty.
    *
-   * @param row_field row filed name
+   * @param row_field row field name
    * @param col_field col field name
    * @return MoFEMErrorCode
    */
