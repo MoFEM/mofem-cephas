@@ -480,7 +480,7 @@ protected:
    * @tparam CoreN
    * @param name
    * @param space
-   * @parma continuity
+   * @param continuity
    * @param base
    * @param nb_coefficients
    * @param tag_type
