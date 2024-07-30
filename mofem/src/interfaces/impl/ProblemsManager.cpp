@@ -2669,12 +2669,16 @@ MoFEMErrorCode ProblemsManager::getSideDofsOnBrokenSpaceEntities(
         if (side_it != side_dof_map[bride_type].get<EntDofIdx_mi_tag>().end()) {
           auto bridge_ent = (*lo)->getEnt();
           auto type = side_it->type;
+          auto side = side_it->side;
           auto dim = CN::Dimension(type);
           EntityHandle side_ent = 0;
-          CHKERR moab.side_element(bridge_ent, dim, side_it->side, side_ent);
+          CHKERR moab.side_element(bridge_ent, dim, side, side_ent);
           if (ents.find(side_ent) != ents.end()) {
             dofs_it_view.emplace_back(numered_dofs[rc]->project<0>(lo));
           }
+        } else {
+          SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                  "side not found");
         }
       }
     }

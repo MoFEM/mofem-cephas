@@ -57,7 +57,7 @@ struct BaseFunction : public BaseFunctionUnknownInterface {
       DofsSideMapData,
 
       indexed_by<
-          ordered_unique<
+          ordered_non_unique<
               tag<TypeSide_mi_tag>,
               composite_key<
 
@@ -65,7 +65,9 @@ struct BaseFunction : public BaseFunctionUnknownInterface {
                   member<DofsSideMapData, EntityType, &DofsSideMapData::type>,
                   member<DofsSideMapData, int, &DofsSideMapData::side>>>,
 
-          ordered_unique<tag<EntDofIdx_mi_tag>,
+          ordered_unique<tag<EntDofIdx_mi_tag>, // This is number of base
+                                                // function, i.e.
+                                                // std::floor(dof/nb_coeffs)
                          member<DofsSideMapData, int, &DofsSideMapData::dof>>
 
           >>;
