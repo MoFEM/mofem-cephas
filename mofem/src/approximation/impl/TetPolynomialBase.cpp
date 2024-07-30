@@ -1556,8 +1556,8 @@ TetPolynomialBase::getValueHdivDemkowiczBrokenBase(MatrixDouble &pts) {
   auto t_diff_base = getFTensor2HVecFromPtr<3, 3>(
       &*data.dataOnEntities[MBTET][0].getDiffN(base).data().begin());
 
-  i_FTIndex<3> i;
-  j_FTIndex<3> j;
+  FTENSOR_INDEX(3, i);
+  FTENSOR_INDEX(3, j);
 
   for (auto gg = 0; gg != nb_gauss_pts; ++gg) {
     for (int oo = 0; oo < volume_order; oo++) {

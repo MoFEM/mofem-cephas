@@ -816,8 +816,8 @@ TriPolynomialBase::getValueHcurlAinsworthBrokenBase(MatrixDouble &pts) {
     auto t_diff_base = getFTensor2HVecFromPtr<3, 2>(
         &*data.dataOnEntities[MBTRI][0].getDiffN(base).data().begin());
 
-    i_FTIndex<3> i;
-    j_FTIndex<2> j;
+    FTENSOR_INDEX(3, i);
+    FTENSOR_INDEX(2, j);
 
     for (int gg = 0; gg != nb_gauss_pts; gg++) {
       for (int oo = 0; oo < order; oo++) {
@@ -1024,9 +1024,10 @@ TriPolynomialBase::getValueHcurlDemkowiczBrokenBase(MatrixDouble &pts) {
         &*data.dataOnEntities[MBTRI][0].getN(base).data().begin());
     auto t_diff_base = getFTensor2HVecFromPtr<3, 2>(
         &*data.dataOnEntities[MBTRI][0].getDiffN(base).data().begin());
+    
+    FTENSOR_INDEX(3, i);
+    FTENSOR_INDEX(2, j);
 
-    i_FTIndex<3> i;
-    j_FTIndex<2> j;
 
     for (int gg = 0; gg != nb_gauss_pts; gg++) {
       for (int oo = 0; oo < order; oo++) {
