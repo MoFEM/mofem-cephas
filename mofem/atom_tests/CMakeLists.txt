@@ -1671,13 +1671,13 @@ set_target_properties(
   test_broken_space_2d PROPERTIES COMPILE_FLAGS 
   "-DEXECUTABLE_DIMENSION=2 -DSCHUR_ASSEMBLE=0")
 
-list(INSERT test_borken_base_list_2d
+list(INSERT test_broken_base_list_2d
   0
   ainsworth 
   ainsworth_labatto
   demkowicz
 )
-foreach(test_base ${test_borken_base_list_2d})
+foreach(test_base ${test_broken_base_list_2d})
   add_test(test_broken_space_2d_${test_base}
     ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
     ${CMAKE_CURRENT_BINARY_DIR}/test_broken_space_2d
@@ -1693,7 +1693,7 @@ foreach(test_base ${test_borken_base_list_2d})
     -space hcurl
     -order 4
     -log_no_color)
-endforeach(test_base IN test_borken_base_list)
+endforeach(test_base IN test_broken_base_list)
 
 build_test(
   test_broken_space_3d
@@ -1703,11 +1703,11 @@ set_target_properties(
   test_broken_space_3d PROPERTIES COMPILE_FLAGS 
   "-DEXECUTABLE_DIMENSION=3 -DSCHUR_ASSEMBLE=0")
 
-list(INSERT test_borken_base_list_3d
+list(INSERT test_broken_base_list_3d
   0
   demkowicz
 )
-foreach(test_base ${test_borken_base_list_3d})
+foreach(test_base ${test_broken_base_list_3d})
   add_test(test_broken_space_3d_${test_base}
     ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 2
     ${CMAKE_CURRENT_BINARY_DIR}/test_broken_space_3d
@@ -1723,7 +1723,7 @@ foreach(test_base ${test_borken_base_list_3d})
     -order 4
     -max_post_proc_ref_level 4
     -log_no_color)
-endforeach(test_base IN test_borken_base_list)
+endforeach(test_base IN test_broken_base_list)
 
 build_test(
   test_broken_space_2d_schur
