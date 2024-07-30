@@ -963,7 +963,7 @@ struct OpCalculateTensor2FieldValuesDot
 protected:
   boost::shared_ptr<MatrixDouble> dataPtr; ///< Data computed into this matrix
   EntityType zeroAtType;  ///< Zero values at Gauss point at this type
-  VectorDouble dotVector; ///< Keeps temporary values of time directives
+  VectorDouble dotVector; ///< Keeps temporary values of time derivatives
 };
 
 /**
@@ -1617,7 +1617,7 @@ struct OpCalculateVectorFieldGradientDot
 private:
   boost::shared_ptr<MatrixDouble> dataPtr; ///< Data computed into this matrix
   EntityType zeroAtType;  ///< Zero values at Gauss point at this type
-  VectorDouble dotVector; ///< Keeps temporary values of time directives
+  VectorDouble dotVector; ///< Keeps temporary values of time derivatives
 };
 
 /**
@@ -1887,7 +1887,7 @@ struct OpTensorTimesSymmetricTensor
   using UserOp = ForcesAndSourcesCore::UserDataOperator;
 
   /**
-   * @deprecated Do not use this constrictor
+   * @deprecated Do not use this constructor
    */
   DEPRECATED
   OpTensorTimesSymmetricTensor(const std::string field_name,

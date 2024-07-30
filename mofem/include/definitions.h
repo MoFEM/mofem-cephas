@@ -1,5 +1,5 @@
 /** \file definitions.h
- * \brief useful compiler directives and definitions
+ * \brief useful compiler derivatives and definitions
  */
 
 

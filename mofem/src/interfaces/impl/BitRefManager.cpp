@@ -47,7 +47,7 @@ struct SetBitRefLevelTool {
 
   boost::shared_ptr<BasicEntityData> &baseEntData; ///< base entity data
 
-  /// constrictor
+  /// constructor
   SetBitRefLevelTool(MoFEM::Interface &m_field, const BitRefLevel &bit,
                      const RefEntity_multiIndex *ref_ents_ptr,
                      const RefElement_multiIndex *ref_element_ptr)
