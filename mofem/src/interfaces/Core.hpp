@@ -398,7 +398,7 @@ protected:
   /**@{*/
 
   /**
-  * \brief Add filed
+  * \brief Add field
   * @param  name           Field name
   * @param  space          Space L2,H1,Hdiv,Hcurl
   * @param  continuity     Field continuity (you can set broken space)
@@ -433,7 +433,7 @@ protected:
   /**@{*/
 
   /**
-  * \brief Add filed
+  * \brief Add field
   * @param  name           Field name
   * @param  space          Space L2,H1,Hdiv,Hcurl
   * @param  continuity     Field continuity (you can set broken space)
