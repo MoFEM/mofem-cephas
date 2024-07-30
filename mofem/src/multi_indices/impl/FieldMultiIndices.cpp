@@ -168,7 +168,7 @@ Field::Field(moab::Interface &moab, const EntityHandle meshset)
       forderTable[tt] = NULL;
   };
 
-  auto set_continuos_entity_order_table = [&]() {
+  auto set_continuous_entity_order_table = [&]() {
     switch (*tagBaseData) {
     case AINSWORTH_LEGENDRE_BASE:
     case AINSWORTH_LOBATTO_BASE:
@@ -473,7 +473,7 @@ Field::Field(moab::Interface &moab, const EntityHandle meshset)
   reset_entity_order_table();
   switch (*tagFieldContinuityData) {
   case CONTINUOUS:
-    set_continuos_entity_order_table();
+    set_continuous_entity_order_table();
     break;
   case DISCONTINUOUS:
     set_discontinuous_entity_order_table();
