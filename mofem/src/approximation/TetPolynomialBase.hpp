@@ -23,26 +23,26 @@ struct TetPolynomialBase : public BaseFunction {
   virtual ~TetPolynomialBase();
 
   template <int SPACE>
-  static bool swichCacheBaseFace(FieldApproximationBase base, void *ptr);
+  static bool switchCacheBaseFace(FieldApproximationBase base, void *ptr);
 
   template <int SPACE>
-  static bool swichCacheBaseInterior(FieldApproximationBase base, void *ptr);
+  static bool switchCacheBaseInterior(FieldApproximationBase base, void *ptr);
 
   template <int SPACE>
-  static bool swichCacheBrokenBaseInterior(FieldApproximationBase base,
+  static bool switchCacheBrokenBaseInterior(FieldApproximationBase base,
                                            void *ptr);
 
   template <int SPACE>
-  static void swichCacheBaseOn(FieldApproximationBase base,
+  static void switchCacheBaseOn(FieldApproximationBase base,
                                std::vector<void *> v);
 
   template <int SPACE>
-  static void swichCacheBaseOff(FieldApproximationBase base,
+  static void switchCacheBaseOff(FieldApproximationBase base,
                                 std::vector<void *> v);
 
-  template <int SPACE> static void swichCacheBaseOn(std::vector<void *> v);
+  template <int SPACE> static void switchCacheBaseOn(std::vector<void *> v);
 
-  template <int SPACE> static void swichCacheBaseOff(std::vector<void *> v);
+  template <int SPACE> static void switchCacheBaseOff(std::vector<void *> v);
 
   MoFEMErrorCode getValue(MatrixDouble &pts,
                           boost::shared_ptr<BaseFunctionCtx> ctx_ptr);
@@ -168,47 +168,47 @@ private:
 };
 
 template <>
-bool TetPolynomialBase::swichCacheBaseFace<HDIV>(FieldApproximationBase base,
+bool TetPolynomialBase::switchCacheBaseFace<HDIV>(FieldApproximationBase base,
                                                  void *ptr);
 template <>
-bool TetPolynomialBase::swichCacheBaseInterior<HDIV>(
+bool TetPolynomialBase::switchCacheBaseInterior<HDIV>(
     FieldApproximationBase base, void *ptr);
 
 template <>
-bool TetPolynomialBase::swichCacheBrokenBaseInterior<HDIV>(
+bool TetPolynomialBase::switchCacheBrokenBaseInterior<HDIV>(
     FieldApproximationBase base, void *ptr);
 
 template <>
-void TetPolynomialBase::swichCacheBaseOn<HDIV>(FieldApproximationBase base,
+void TetPolynomialBase::switchCacheBaseOn<HDIV>(FieldApproximationBase base,
                                                std::vector<void *> v);
 
 template <>
-void TetPolynomialBase::swichCacheBaseOff<HDIV>(FieldApproximationBase base,
+void TetPolynomialBase::switchCacheBaseOff<HDIV>(FieldApproximationBase base,
                                                 std::vector<void *> v);
 
 template <>
-void TetPolynomialBase::swichCacheBaseOn<HDIV>(std::vector<void *> v);
+void TetPolynomialBase::switchCacheBaseOn<HDIV>(std::vector<void *> v);
 
 template <>
-void TetPolynomialBase::swichCacheBaseOff<HDIV>(std::vector<void *> v);
+void TetPolynomialBase::switchCacheBaseOff<HDIV>(std::vector<void *> v);
 
 template <>
-bool TetPolynomialBase::swichCacheBaseInterior<L2>(FieldApproximationBase base,
+bool TetPolynomialBase::switchCacheBaseInterior<L2>(FieldApproximationBase base,
                                                    void *ptr);
 
 template <>
-void TetPolynomialBase::swichCacheBaseOn<L2>(FieldApproximationBase base,
+void TetPolynomialBase::switchCacheBaseOn<L2>(FieldApproximationBase base,
                                                std::vector<void *> v);
 
 template <>
-void TetPolynomialBase::swichCacheBaseOff<L2>(FieldApproximationBase base,
+void TetPolynomialBase::switchCacheBaseOff<L2>(FieldApproximationBase base,
                                               std::vector<void *> v);
 
 template <>
-void TetPolynomialBase::swichCacheBaseOn<L2>(std::vector<void *> v);
+void TetPolynomialBase::switchCacheBaseOn<L2>(std::vector<void *> v);
 
 template <>
-void TetPolynomialBase::swichCacheBaseOff<L2>(std::vector<void *> v);
+void TetPolynomialBase::switchCacheBaseOff<L2>(std::vector<void *> v);
 
 
 } // namespace MoFEM

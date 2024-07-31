@@ -2194,7 +2194,7 @@ auto tetCacheSwitch(const void *ptr, T &cache, std::string cache_name) {
 }
 
 template <>
-bool TetPolynomialBase::swichCacheBaseFace<HDIV>(FieldApproximationBase base,
+bool TetPolynomialBase::switchCacheBaseFace<HDIV>(FieldApproximationBase base,
                                                  void *ptr) {
   return tetCacheSwitch(ptr, TetBaseCache::hDivBaseFace[base],
                         std::string("hDivBaseFace") +
@@ -2202,7 +2202,7 @@ bool TetPolynomialBase::swichCacheBaseFace<HDIV>(FieldApproximationBase base,
 }
 
 template <>
-bool TetPolynomialBase::swichCacheBaseInterior<HDIV>(
+bool TetPolynomialBase::switchCacheBaseInterior<HDIV>(
     FieldApproximationBase base, void *ptr) {
   return tetCacheSwitch(ptr, TetBaseCache::hdivBaseInterior[base],
                         std::string("hdivBaseInterior") +
@@ -2210,7 +2210,7 @@ bool TetPolynomialBase::swichCacheBaseInterior<HDIV>(
 }
 
 template <>
-bool TetPolynomialBase::swichCacheBrokenBaseInterior<HDIV>(
+bool TetPolynomialBase::switchCacheBrokenBaseInterior<HDIV>(
     FieldApproximationBase base, void *ptr) {
   return tetCacheSwitch(ptr, TetBaseCache::hdivBrokenBaseInterior[base],
                         std::string("hdivBrokenBaseInterior") +
@@ -2218,53 +2218,53 @@ bool TetPolynomialBase::swichCacheBrokenBaseInterior<HDIV>(
 }
 
 template <>
-void TetPolynomialBase::swichCacheBaseOn<HDIV>(FieldApproximationBase base,
+void TetPolynomialBase::switchCacheBaseOn<HDIV>(FieldApproximationBase base,
                                                std::vector<void *> v) {
   for (auto fe_ptr : v) {
-    if (!TetPolynomialBase::swichCacheBaseFace<HDIV>(base, fe_ptr)) {
-      TetPolynomialBase::swichCacheBaseFace<HDIV>(base, fe_ptr);
+    if (!TetPolynomialBase::switchCacheBaseFace<HDIV>(base, fe_ptr)) {
+      TetPolynomialBase::switchCacheBaseFace<HDIV>(base, fe_ptr);
     }
-    if (!TetPolynomialBase::swichCacheBaseInterior<HDIV>(base, fe_ptr)) {
-      TetPolynomialBase::swichCacheBaseInterior<HDIV>(base, fe_ptr);
+    if (!TetPolynomialBase::switchCacheBaseInterior<HDIV>(base, fe_ptr)) {
+      TetPolynomialBase::switchCacheBaseInterior<HDIV>(base, fe_ptr);
     }
-    if (!TetPolynomialBase::swichCacheBrokenBaseInterior<HDIV>(base, fe_ptr)) {
-      TetPolynomialBase::swichCacheBrokenBaseInterior<HDIV>(base, fe_ptr);
+    if (!TetPolynomialBase::switchCacheBrokenBaseInterior<HDIV>(base, fe_ptr)) {
+      TetPolynomialBase::switchCacheBrokenBaseInterior<HDIV>(base, fe_ptr);
     }
   }
 }
 
 template <>
-void TetPolynomialBase::swichCacheBaseOff<HDIV>(FieldApproximationBase base,
+void TetPolynomialBase::switchCacheBaseOff<HDIV>(FieldApproximationBase base,
                                                 std::vector<void *> v) {
   for (auto fe_ptr : v) {
-    if (TetPolynomialBase::swichCacheBaseFace<HDIV>(base, fe_ptr)) {
-      TetPolynomialBase::swichCacheBaseFace<HDIV>(base, fe_ptr);
+    if (TetPolynomialBase::switchCacheBaseFace<HDIV>(base, fe_ptr)) {
+      TetPolynomialBase::switchCacheBaseFace<HDIV>(base, fe_ptr);
     }
-    if (TetPolynomialBase::swichCacheBaseInterior<HDIV>(base, fe_ptr)) {
-      TetPolynomialBase::swichCacheBaseInterior<HDIV>(base, fe_ptr);
+    if (TetPolynomialBase::switchCacheBaseInterior<HDIV>(base, fe_ptr)) {
+      TetPolynomialBase::switchCacheBaseInterior<HDIV>(base, fe_ptr);
     }
-    if (TetPolynomialBase::swichCacheBrokenBaseInterior<HDIV>(base, fe_ptr)) {
-      TetPolynomialBase::swichCacheBrokenBaseInterior<HDIV>(base, fe_ptr);
+    if (TetPolynomialBase::switchCacheBrokenBaseInterior<HDIV>(base, fe_ptr)) {
+      TetPolynomialBase::switchCacheBrokenBaseInterior<HDIV>(base, fe_ptr);
     }
   }
 }
 
 template <>
-void TetPolynomialBase::swichCacheBaseOn<HDIV>(std::vector<void *> v) {
+void TetPolynomialBase::switchCacheBaseOn<HDIV>(std::vector<void *> v) {
   for (auto b = 0; b != LASTBASE; ++b) {
-    swichCacheBaseOn<HDIV>(static_cast<FieldApproximationBase>(b), v);
+    switchCacheBaseOn<HDIV>(static_cast<FieldApproximationBase>(b), v);
   }
 }
 
 template <>
-void TetPolynomialBase::swichCacheBaseOff<HDIV>(std::vector<void *> v) {
+void TetPolynomialBase::switchCacheBaseOff<HDIV>(std::vector<void *> v) {
   for (auto b = 0; b != LASTBASE; ++b) {
-    swichCacheBaseOff<HDIV>(static_cast<FieldApproximationBase>(b), v);
+    switchCacheBaseOff<HDIV>(static_cast<FieldApproximationBase>(b), v);
   }
 }
 
 template <>
-bool TetPolynomialBase::swichCacheBaseInterior<L2>(FieldApproximationBase base,
+bool TetPolynomialBase::switchCacheBaseInterior<L2>(FieldApproximationBase base,
                                                    void *ptr) {
   return tetCacheSwitch(ptr, TetBaseCache::l2BaseInterior[base],
                         std::string("hdivBaseInterior") +
@@ -2272,35 +2272,35 @@ bool TetPolynomialBase::swichCacheBaseInterior<L2>(FieldApproximationBase base,
 }
 
 template <>
-void TetPolynomialBase::swichCacheBaseOn<L2>(FieldApproximationBase base,
+void TetPolynomialBase::switchCacheBaseOn<L2>(FieldApproximationBase base,
                                              std::vector<void *> v) {
   for (auto fe_ptr : v) {
-    if (!TetPolynomialBase::swichCacheBaseInterior<L2>(base, fe_ptr)) {
-      TetPolynomialBase::swichCacheBaseInterior<L2>(base, fe_ptr);
+    if (!TetPolynomialBase::switchCacheBaseInterior<L2>(base, fe_ptr)) {
+      TetPolynomialBase::switchCacheBaseInterior<L2>(base, fe_ptr);
     }
   }
 }
 
 template <>
-void TetPolynomialBase::swichCacheBaseOff<L2>(FieldApproximationBase base,
+void TetPolynomialBase::switchCacheBaseOff<L2>(FieldApproximationBase base,
                                               std::vector<void *> v) {
   for (auto fe_ptr : v) {
-    if (TetPolynomialBase::swichCacheBaseInterior<L2>(base, fe_ptr)) {
-      TetPolynomialBase::swichCacheBaseInterior<L2>(base, fe_ptr);
+    if (TetPolynomialBase::switchCacheBaseInterior<L2>(base, fe_ptr)) {
+      TetPolynomialBase::switchCacheBaseInterior<L2>(base, fe_ptr);
     }
   }
 }
 
 template <>
-void TetPolynomialBase::swichCacheBaseOn<L2>(std::vector<void *> v) {
+void TetPolynomialBase::switchCacheBaseOn<L2>(std::vector<void *> v) {
   for (auto b = 0; b != LASTBASE; ++b) {
-    swichCacheBaseOn<L2>(static_cast<FieldApproximationBase>(b), v);
+    switchCacheBaseOn<L2>(static_cast<FieldApproximationBase>(b), v);
   }
 }
 
 template <>
-void TetPolynomialBase::swichCacheBaseOff<L2>(std::vector<void *> v) {
+void TetPolynomialBase::switchCacheBaseOff<L2>(std::vector<void *> v) {
   for (auto b = 0; b != LASTBASE; ++b) {
-    swichCacheBaseOff<L2>(static_cast<FieldApproximationBase>(b), v);
+    switchCacheBaseOff<L2>(static_cast<FieldApproximationBase>(b), v);
   }
 }
