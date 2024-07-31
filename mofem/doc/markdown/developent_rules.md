@@ -81,6 +81,6 @@ OpBlackBox* createOpBlackBox() { return new OpBalckBox(); }
 - Do not add software dependencies to core library.
 - If you have to add a dependency, make it optional.
 - With more libraries, there is a larger likelihood of the code breaking at compilation.
-- Some decencies should be restricted to users modules
+- Some dependencies should be restricted to users modules
 - All dependencies are managed managed Spack
 
