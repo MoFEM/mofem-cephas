@@ -2237,14 +2237,14 @@ template <>
 void TetPolynomialBase::swichCacheBaseOff<HDIV>(FieldApproximationBase base,
                                                 std::vector<void *> v) {
   for (auto fe_ptr : v) {
-    if (TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(fe_ptr)) {
-      TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(fe_ptr);
+    if (TetPolynomialBase::swichCacheBaseFace<HDIV>(base, fe_ptr)) {
+      TetPolynomialBase::swichCacheBaseFace<HDIV>(base, fe_ptr);
     }
-    if (TetPolynomialBase::swichCacheHdivBaseInteriorDemkowicz(fe_ptr)) {
-      TetPolynomialBase::swichCacheHdivBaseInteriorDemkowicz(fe_ptr);
+    if (TetPolynomialBase::swichCacheBaseInterior<HDIV>(base, fe_ptr)) {
+      TetPolynomialBase::swichCacheBaseInterior<HDIV>(base, fe_ptr);
     }
-    if (TetPolynomialBase::swichCacheHdivBrokenBaseInteriorDemkowicz(fe_ptr)) {
-      TetPolynomialBase::swichCacheHdivBrokenBaseInteriorDemkowicz(fe_ptr);
+    if (TetPolynomialBase::swichCacheBrokenBaseInterior<HDIV>(base, fe_ptr)) {
+      TetPolynomialBase::swichCacheBrokenBaseInterior<HDIV>(base, fe_ptr);
     }
   }
 }

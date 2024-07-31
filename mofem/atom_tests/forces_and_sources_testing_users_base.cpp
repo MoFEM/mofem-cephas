@@ -397,9 +397,13 @@ int main(int argc, char *argv[]) {
     // of them
     CHKERR m_field.loop_finite_elements("PROBLEM", "FE", fe1);
 
-    if(base_cache) {
-      if(TetPolynomialBase::swichCacheHDivBaseFaceDemkowicz(&fe1)) {}
-      if(TetPolynomialBase::swichCacheHdivBaseInteriorDemkowicz(&fe1)) {};
+    if (base_cache) {
+      if (TetPolynomialBase::swichCacheBaseFace<HDIV>(DEMKOWICZ_JACOBI_BASE,
+                                                    &fe1)) {
+      }
+      if (TetPolynomialBase::swichCacheBaseInterior<HDIV>(DEMKOWICZ_JACOBI_BASE,
+                                                          &fe1)) {
+      };
     }
   }
   CATCH_ERRORS;
