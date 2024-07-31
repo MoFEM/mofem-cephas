@@ -68,19 +68,40 @@ struct MedInterface : public UnknownInterface {
    * \brief read MED file
    *
    * File name is form command line
+   * ////
    *
    * @param  verb verbosity level
    * @return      error code
    */
   MoFEMErrorCode readMed(int verb = 1);
 
-  /**
+    /**
    * \brief write MED file
-   * @param  file file name
+   * 
+   * File name is form command line
+   * 
    * @param  verb verbosity level
    * @return      error code
    */
-  MoFEMErrorCode writeMed(const string &file, int verb = 1);
+  MoFEMErrorCode writeMed(boost::shared_ptr<Range> range_ptr = nullptr, int verb = 1);
+  
+  /**
+   * Retrieves the meshsets
+   *
+   * @param meshsets_ptr A pointer to a vector of const CubitMeshSets objects. If provided, the retrieved meshsets will be stored in this vector.
+   * @return A MoFEMErrorCode indicating the success or failure of the operation.
+   */
+  MoFEMErrorCode getMeshsets(boost::shared_ptr<std::vector< const CubitMeshSets * >> &meshsets_ptr);
+  /**
+   * \brief write MED file
+   * @param  file file name
+   * @param  meshsets_ptr meshsets
+   * @param  verb verbosity level
+   * @return      error code
+   */
+  MoFEMErrorCode writeMed(const string &file,
+           boost::shared_ptr<std::vector<const CubitMeshSets *>> meshsets_ptr,
+           boost::shared_ptr<Range> range_ptr = nullptr, int verb = 1);
 
   /**
    * Read fields
@@ -115,6 +136,8 @@ private:
   MoFEM::Core &cOre; ///< core database
   // std::vector<std::string> fieldNames;  ///< list of fields in MED file
   PetscBool flgFile; ///< true if file name given in command line
+  // cubit
+  CubitMeshSet_multiIndex cubitMeshsets; ///< cubit meshsets
 
   /**
    * \brief read mesh from MED file
