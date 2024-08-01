@@ -2621,15 +2621,14 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
           auto diag_index_ptr = view[lo];
           auto row_uid = diag_index_ptr->getRowUId();
           auto col_uid = diag_index_ptr->getColUId();
-
-          auto nb_rows = diag_index_ptr->getNbRows();
-          auto nb_cols = diag_index_ptr->getNbCols();
           auto it = block_mat_data_ptr->blockIndex.get<0>().find(
               boost::make_tuple(row_uid, col_uid));
           if (it == block_mat_data_ptr->blockIndex.get<0>().end()) {
-            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                    "Block not found");
+            CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Block not found");
           }
+          auto nb_rows = diag_index_ptr->getNbRows();
+          auto nb_cols = diag_index_ptr->getNbCols();
+
           if (it->getInvShift() == -1) {
             it->getInvShift() = inv_mem_size;
             inv_mem_size += nb_rows * nb_cols;
