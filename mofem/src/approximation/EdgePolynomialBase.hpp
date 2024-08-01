@@ -42,6 +42,8 @@ private:
 
   MoFEMErrorCode getValueL2(MatrixDouble &pts);
 
+  MoFEMErrorCode getValueL2AinsworthBase(MatrixDouble &pts);
+
   MoFEMErrorCode getValueL2DemkowiczBase(MatrixDouble &pts);
 
   MoFEMErrorCode getValueHdiv(MatrixDouble &pts);

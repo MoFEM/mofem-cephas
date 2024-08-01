@@ -61,8 +61,8 @@ DefaultElementAdjacency::defaultEdge(moab::Interface &moab, const Field &field,
   switch (field.getSpace()) {
   case H1:
     CHKERR moab.get_connectivity(&fe_ent, 1, adjacency, true);
-  case L2:
-  case HCURL:
+   case HCURL:
+   case L2:
     adjacency.push_back(fe_ent);
     // build side table
     for (auto e : adjacency)

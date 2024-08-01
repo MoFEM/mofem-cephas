@@ -788,11 +788,6 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
 
         // iterate column entities
         for (auto c_lo : schur_col_ptr_view) {
-#ifndef NDEBUG
-          if (c_lo->uidCol != row_it->uidRow)
-            SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                     "Wrong size %d != %d", c_lo->uidCol, row_it->uidRow);
-#endif // NDEBUG
 
           auto &uid_row = c_lo->uidRow;
           if (uid_row == row_it->uidRow) {
@@ -821,11 +816,6 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
 
           // iterate row entities
           for (auto r_lo : schur_row_ptr_view) {
-#ifndef NDEBUG
-            if (c_lo->uidCol != row_it->uidRow)
-              SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                       "Wrong size %d != %d", c_lo->uidCol, row_it->uidRow);
-#endif // NDEBUG
 
             auto &uid_col = r_lo->uidCol;
 
@@ -1339,7 +1329,8 @@ boost::shared_ptr<BlockStructure> createBlockMatStructure(
       MoFEMFunctionReturn(0);
     };
 
-    CHKERR DMoFEMLoopFiniteElements(dm, d.first, fe_method);
+    CHKERR DMoFEMLoopFiniteElementsUpAndLowRank(dm, d.first, fe_method, 0,
+                                                m_field_ptr->get_comm_size());
   };
 
   // order by column (that is for matrix multiplication)
@@ -1553,18 +1544,15 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
 
   PetscLogEventBegin(SchurEvents::MOFEM_EVENT_BlockStructureMult, 0, 0, 0, 0);
 
+  int x_loc_size;
+  CHKERR VecGetLocalSize(x, &x_loc_size);
+  int y_loc_size;
+  CHKERR VecGetLocalSize(y, &y_loc_size);
+
   Vec ghost_x = ctx->ghostX;
   Vec ghost_y = ctx->ghostY;
 
   CHKERR VecCopy(x, ghost_x);
-
-  CHKERR VecGhostUpdateBegin(ghost_x, INSERT_VALUES, SCATTER_FORWARD);
-  CHKERR VecGhostUpdateEnd(ghost_x, INSERT_VALUES, SCATTER_FORWARD);
-
-  double *x_array;
-  Vec loc_ghost_x;
-  CHKERR VecGhostGetLocalForm(ghost_x, &loc_ghost_x);
-  CHKERR VecGetArray(loc_ghost_x, &x_array);
 
   double *y_array;
   Vec loc_ghost_y;
@@ -1574,69 +1562,106 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
   CHKERR VecGetArray(loc_ghost_y, &y_array);
   for (auto i = 0; i != nb_y; ++i)
     y_array[i] = 0.;
+  CHKERR VecRestoreArray(loc_ghost_y, &y_array);
+  CHKERR VecGhostRestoreLocalForm(ghost_y, &loc_ghost_y);
 
-  double *block_ptr = &*ctx->dataBlocksPtr->begin();
+  auto mult = [&](int low_x, int hi_x, int low_y, int hi_y) {
+    MoFEMFunctionBegin;
 
-  auto it = ctx->blockIndex.get<0>().lower_bound(0);
-  auto hi = ctx->blockIndex.get<0>().end();
+    double *x_array;
+    Vec loc_ghost_x;
+    CHKERR VecGhostGetLocalForm(ghost_x, &loc_ghost_x);
+    CHKERR VecGetArray(loc_ghost_x, &x_array);
 
-  while (it != hi) {
-    auto nb_rows = it->getNbRows();
-    auto nb_cols = it->getNbCols();
-    auto x_ptr = &x_array[it->getLocCol()];
-    auto y_ptr = &y_array[it->getLocRow()];
-    auto ptr = &block_ptr[it->getMatShift()];
+    double *y_array;
+    Vec loc_ghost_y;
+    CHKERR VecGhostGetLocalForm(ghost_y, &loc_ghost_y);
+    int nb_y;
+    CHKERR VecGetLocalSize(loc_ghost_y, &nb_y);
+    CHKERR VecGetArray(loc_ghost_y, &y_array);
 
-    if (std::min(nb_rows, nb_cols) > max_gemv_size) {
-      cblas_dgemv(CblasRowMajor, CblasNoTrans, nb_rows, nb_cols, 1.0, ptr,
-                  nb_cols, x_ptr, 1, 1.0, y_ptr, 1);
-    } else {
-      for (auto r = 0; r != nb_rows; ++r) {
-        for (auto c = 0; c != nb_cols; ++c) {
-          y_ptr[r] += ptr[r * nb_cols + c] * x_ptr[c];
-        }
-      }
-    }
-    ++it;
-  }
-
-  if (ctx->multiplyByPreconditioner) {
-
-    if (!ctx->preconditionerBlocksPtr)
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-              "No parentBlockStructurePtr");
-
-    auto preconditioner_ptr = &*ctx->preconditionerBlocksPtr->begin();
-
+    double *block_ptr = &*ctx->dataBlocksPtr->begin();
     auto it = ctx->blockIndex.get<0>().lower_bound(0);
     auto hi = ctx->blockIndex.get<0>().end();
 
     while (it != hi) {
-      if (it->getInvShift() != -1) {
-        auto nb_rows = it->getNbRows();
-        auto nb_cols = it->getNbCols();
-        auto x_ptr = &x_array[it->getLocCol()];
-        auto y_ptr = &y_array[it->getLocRow()];
-        auto ptr = &preconditioner_ptr[it->getInvShift()];
-        if (std::min(nb_rows, nb_cols) > max_gemv_size) {
-          cblas_dgemv(CblasRowMajor, CblasNoTrans, nb_rows, nb_cols, 1.0, ptr,
-                      nb_cols, x_ptr, 1, 1.0, y_ptr, 1);
-        } else {
-          for (auto r = 0; r != nb_rows; ++r) {
-            for (auto c = 0; c != nb_cols; ++c) {
-              y_ptr[r] += ptr[r * nb_cols + c] * x_ptr[c];
-            }
+      if (it->getLocRow() < low_y || it->getLocRow() >= hi_y ||
+          it->getLocCol() < low_x || it->getLocCol() >= hi_x) {
+        ++it;
+        continue;
+      }
+
+      auto nb_rows = it->getNbRows();
+      auto nb_cols = it->getNbCols();
+      auto x_ptr = &x_array[it->getLocCol()];
+      auto y_ptr = &y_array[it->getLocRow()];
+      auto ptr = &block_ptr[it->getMatShift()];
+
+      if (std::min(nb_rows, nb_cols) > max_gemv_size) {
+        cblas_dgemv(CblasRowMajor, CblasNoTrans, nb_rows, nb_cols, 1.0, ptr,
+                    nb_cols, x_ptr, 1, 1.0, y_ptr, 1);
+      } else {
+        for (auto r = 0; r != nb_rows; ++r) {
+          for (auto c = 0; c != nb_cols; ++c) {
+            y_ptr[r] += ptr[r * nb_cols + c] * x_ptr[c];
           }
         }
       }
       ++it;
     }
-  }
 
-  CHKERR VecRestoreArray(loc_ghost_x, &x_array);
-  CHKERR VecRestoreArray(loc_ghost_y, &y_array);
-  CHKERR VecGhostRestoreLocalForm(ghost_x, &loc_ghost_x);
-  CHKERR VecGhostRestoreLocalForm(ghost_y, &loc_ghost_y);
+    if (ctx->multiplyByPreconditioner) {
+
+      if (!ctx->preconditionerBlocksPtr)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "No parentBlockStructurePtr");
+
+      auto preconditioner_ptr = &*ctx->preconditionerBlocksPtr->begin();
+
+      auto it = ctx->blockIndex.get<0>().lower_bound(0);
+      auto hi = ctx->blockIndex.get<0>().end();
+
+      while (it != hi) {
+        if (it->getLocRow() < low_y || it->getLocRow() >= hi_y ||
+            it->getLocCol() < low_x || it->getLocCol() >= hi_x) {
+          ++it;
+          continue;
+        }
+
+        if (it->getInvShift() != -1) {
+          auto nb_rows = it->getNbRows();
+          auto nb_cols = it->getNbCols();
+          auto x_ptr = &x_array[it->getLocCol()];
+          auto y_ptr = &y_array[it->getLocRow()];
+          auto ptr = &preconditioner_ptr[it->getInvShift()];
+          if (std::min(nb_rows, nb_cols) > max_gemv_size) {
+            cblas_dgemv(CblasRowMajor, CblasNoTrans, nb_rows, nb_cols, 1.0, ptr,
+                        nb_cols, x_ptr, 1, 1.0, y_ptr, 1);
+          } else {
+            for (auto r = 0; r != nb_rows; ++r) {
+              for (auto c = 0; c != nb_cols; ++c) {
+                y_ptr[r] += ptr[r * nb_cols + c] * x_ptr[c];
+              }
+            }
+          }
+        }
+
+        ++it;
+      }
+    }
+
+    CHKERR VecRestoreArray(loc_ghost_x, &x_array);
+    CHKERR VecRestoreArray(loc_ghost_y, &y_array);
+    CHKERR VecGhostRestoreLocalForm(ghost_x, &loc_ghost_x);
+    CHKERR VecGhostRestoreLocalForm(ghost_y, &loc_ghost_y);
+    MoFEMFunctionReturn(0);
+  };
+
+  constexpr auto max_int = std::numeric_limits<int>::max();
+  CHKERR VecGhostUpdateBegin(ghost_x, INSERT_VALUES, SCATTER_FORWARD);
+  CHKERR mult(0, x_loc_size, 0, max_int);
+  CHKERR VecGhostUpdateEnd(ghost_x, INSERT_VALUES, SCATTER_FORWARD);
+  CHKERR mult(x_loc_size, max_int, 0, max_int);
 
   CHKERR VecGhostUpdateBegin(ghost_y, ADD_VALUES, SCATTER_REVERSE);
   CHKERR VecGhostUpdateEnd(ghost_y, ADD_VALUES, SCATTER_REVERSE);
@@ -1703,8 +1728,8 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
   CHKERR VecCopy(y, ghost_y);
   CHKERR VecZeroEntries(ghost_x);
 
-  CHKERR VecGhostUpdateBegin(ghost_y, INSERT_VALUES, SCATTER_FORWARD);
-  CHKERR VecGhostUpdateEnd(ghost_y, INSERT_VALUES, SCATTER_FORWARD);
+  // CHKERR VecGhostUpdateBegin(ghost_y, INSERT_VALUES, SCATTER_FORWARD);
+  // CHKERR VecGhostUpdateEnd(ghost_y, INSERT_VALUES, SCATTER_FORWARD);
 
   double *x_array;
   Vec loc_ghost_x;
@@ -1866,8 +1891,8 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
   CHKERR VecGhostRestoreLocalForm(ghost_x, &loc_ghost_x);
   CHKERR VecGhostRestoreLocalForm(ghost_y, &loc_ghost_y);
 
-  CHKERR VecGhostUpdateBegin(ghost_y, ADD_VALUES, SCATTER_REVERSE);
-  CHKERR VecGhostUpdateEnd(ghost_y, ADD_VALUES, SCATTER_REVERSE);
+  // CHKERR VecGhostUpdateBegin(ghost_y, ADD_VALUES, SCATTER_REVERSE);
+  // CHKERR VecGhostUpdateEnd(ghost_y, ADD_VALUES, SCATTER_REVERSE);
 
   switch (iora) {
   case INSERT_VALUES:
@@ -1981,8 +2006,8 @@ inline MoFEMErrorCode shell_block_mat_asmb_wrap_impl(
     if (it == ctx->blockIndex.get<1>().end()) {
       MOFEM_LOG_CHANNEL("SELF");
       MOFEM_TAG_AND_LOG("SELF", Sev::error, "BlockMat")
-          << "missing block: " << row_data.getFieldDofs()[0]->getName() << " : "
-          << col_data.getFieldDofs()[0]->getName();
+          << "missing block: row " << row_data.getFieldDofs()[0]->getName()
+          << " col " << col_data.getFieldDofs()[0]->getName();
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Block not allocated");
     }
 
@@ -2234,6 +2259,10 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
   if (!block_mat_data_ptr) {
     CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Block data not set");
   }
+
+  if(fields_names.size() != field_ents.size())
+    CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY,
+                      "fields_names.size() != field_ents.size()");
 
   auto [schur_dm, block_dm] = dms;
   auto schur_prb = getProblemPtr(schur_dm);

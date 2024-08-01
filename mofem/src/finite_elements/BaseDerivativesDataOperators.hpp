@@ -67,7 +67,7 @@ template <int BASE_DIM>
 struct OpBaseDerivativesNext;
 
 /**
- * @brief Specialisation for calculate directives for scalar base functions
+ * @brief Specialisation for calculate derivatives for scalar base functions
  * 
  * @tparam  
  */
@@ -96,7 +96,7 @@ protected:
 };
 
 /**
- * @brief Specialisation for calculate directives for scalar base functions
+ * @brief Specialisation for calculate derivatives for scalar base functions
  * 
  * @tparam  
  */

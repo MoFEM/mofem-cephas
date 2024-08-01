@@ -1579,4 +1579,14 @@ MoFEMErrorCode DMMoFEMCreateNestSchurMat(DM dm, Mat *mat) {
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode DMMoFEMCreateHybridL2Mat(DM dm, SmartPetscObj<Mat> &mat) {
+  PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
+  MoFEMFunctionBegin;
+  DMCtxImpl *dm_field = static_cast<DMCtxImpl *>(dm->data);
+  auto matrix_mng = dm_field->mField_ptr->getInterface<MatrixManager>();
+  CHKERR matrix_mng->createHybridL2MPIAIJ<PetscGlobalIdx_mi_tag>(
+      dm_field->problemName, mat);
+  MoFEMFunctionReturn(0);
+}
+
 } // namespace MoFEM

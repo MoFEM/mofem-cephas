@@ -261,7 +261,7 @@ MoFEMErrorCode TriPolynomialBase::getValueH1AinsworthBase(MatrixDouble &pts) {
 
   int nb_gauss_pts = pts.size2();
 
-  if (data.spacesOnEntities[MBEDGE].test(H1)) {  
+  if (data.spacesOnEntities[MBEDGE].test(H1)) {
     // edges
     if (data.dataOnEntities[MBEDGE].size() != 3)
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -324,6 +324,7 @@ MoFEMErrorCode TriPolynomialBase::getValueL2(MatrixDouble &pts) {
   switch (cTx->bAse) {
   case AINSWORTH_LEGENDRE_BASE:
   case AINSWORTH_LOBATTO_BASE:
+  case DEMKOWICZ_JACOBI_BASE:
     CHKERR getValueL2AinsworthBase(pts);
     break;
   case AINSWORTH_BERNSTEIN_BEZIER_BASE:
@@ -354,8 +355,8 @@ MoFEMErrorCode TriPolynomialBase::getValueL2AinsworthBase(MatrixDouble &pts) {
       nb_gauss_pts, NBFACETRI_L2(data.dataOnEntities[MBTRI][0].getOrder()),
       false);
   data.dataOnEntities[MBTRI][0].getDiffN(base).resize(
-      nb_gauss_pts,
-      2 * NBFACETRI_L2(data.dataOnEntities[MBTRI][0].getOrder()), false);
+      nb_gauss_pts, 2 * NBFACETRI_L2(data.dataOnEntities[MBTRI][0].getOrder()),
+      false);
 
   CHKERR L2_Ainsworth_ShapeFunctions_MBTRI(
       data.dataOnEntities[MBTRI][0].getOrder(),
@@ -536,8 +537,8 @@ MoFEMErrorCode TriPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
 
   int nb_gauss_pts = pts.size2();
 
-  double *PHI_f_e[3];
-  double *PHI_f;
+  double *phi_f_e[3];
+  double *phi_f;
 
   N_face_edge.resize(1, 3, false);
   N_face_bubble.resize(1, false);
@@ -547,20 +548,20 @@ MoFEMErrorCode TriPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
     for (int ee = 0; ee < 3; ee++) {
       N_face_edge(0, ee).resize(
           nb_gauss_pts, 3 * NBFACETRI_AINSWORTH_EDGE_HDIV(face_order), false);
-      PHI_f_e[ee] = &((N_face_edge(0, ee))(0, 0));
+      phi_f_e[ee] = &((N_face_edge(0, ee))(0, 0));
     }
     N_face_bubble[0].resize(
         nb_gauss_pts, 3 * NBFACETRI_AINSWORTH_FACE_HDIV(face_order), false);
-    PHI_f = &*(N_face_bubble[0].data().begin());
+    phi_f = &*(N_face_bubble[0].data().begin());
 
     int face_nodes[3] = {0, 1, 2};
     CHKERR Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
         face_nodes, face_order,
-        &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0), NULL, PHI_f_e, NULL,
+        &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0), NULL, phi_f_e, NULL,
         nb_gauss_pts, 3, base_polynomials);
     CHKERR Hdiv_Ainsworth_FaceBubbleShapeFunctions_ON_FACE(
         face_nodes, face_order,
-        &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0), NULL, PHI_f, NULL,
+        &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0), NULL, phi_f, NULL,
         nb_gauss_pts, 3, base_polynomials);
 
     // set shape functions into data structure
@@ -615,7 +616,7 @@ MoFEMErrorCode TriPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
   double *phi_f = &*data.dataOnEntities[MBTRI][0].getN(base).data().begin();
   if (NBFACETRI_DEMKOWICZ_HDIV(order) == 0)
     MoFEMFunctionReturnHot(0);
-  int face_nodes[3] = {0, 1, 2};  
+  int face_nodes[3] = {0, 1, 2};
   CHKERR Hdiv_Demkowicz_Face_MBTET_ON_FACE(
       face_nodes, order,
       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
@@ -671,8 +672,8 @@ TriPolynomialBase::getValueHcurlAinsworthBase(MatrixDouble &pts) {
       }
       sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
       order[ee] = data.dataOnEntities[MBEDGE][ee].getOrder();
-      int nb_dofs = NBEDGE_AINSWORTH_HCURL(
-          data.dataOnEntities[MBEDGE][ee].getOrder());
+      int nb_dofs =
+          NBEDGE_AINSWORTH_HCURL(data.dataOnEntities[MBEDGE][ee].getOrder());
       data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,
                                                         3 * nb_dofs, false);
       data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(
@@ -729,6 +730,131 @@ TriPolynomialBase::getValueHcurlAinsworthBase(MatrixDouble &pts) {
 }
 
 MoFEMErrorCode
+TriPolynomialBase::getValueHcurlAinsworthBrokenBase(MatrixDouble &pts) {
+  MoFEMFunctionBegin;
+
+  EntitiesFieldData &data = cTx->dAta;
+  const FieldApproximationBase base = cTx->bAse;
+  if (data.dataOnEntities[MBTRI].size() != 1)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
+
+  PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
+                                     double *diffL, const int dim) =
+      cTx->basePolynomialsType0;
+
+  int nb_gauss_pts = pts.size2();
+
+  if (data.spacesOnEntities[MBTRI].test(HCURL)) {
+
+    // face
+    if (data.dataOnEntities[MBTRI].size() != 1) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
+    }
+
+    int order = data.dataOnEntities[MBTRI][0].getOrder();
+    auto nb_edge_dofs = NBEDGE_AINSWORTH_HCURL(order);
+    int nb_dofs_face = NBFACETRI_AINSWORTH_HCURL(order);
+    
+    // three faces on triangle
+    int nb_dofs = 3 * nb_edge_dofs + nb_dofs_face;
+    data.dataOnEntities[MBTRI][0].getN(base).resize(nb_gauss_pts, 3 * nb_dofs,
+                                                    false);
+    data.dataOnEntities[MBTRI][0].getDiffN(base).resize(nb_gauss_pts,
+                                                        3 * 2 * nb_dofs, false);
+
+    MatrixDouble edge_bases[] = {
+        MatrixDouble(nb_gauss_pts, 3 * nb_edge_dofs, false),
+        MatrixDouble(nb_gauss_pts, 3 * nb_edge_dofs, false),
+        MatrixDouble(nb_gauss_pts, 3 * nb_edge_dofs, false)};
+    MatrixDouble diff_edge_bases[] = {
+        MatrixDouble(nb_gauss_pts, 3 * 2 * nb_edge_dofs, false),
+        MatrixDouble(nb_gauss_pts, 3 * 2 * nb_edge_dofs, false),
+        MatrixDouble(nb_gauss_pts, 3 * 2 * nb_edge_dofs, false)};
+
+    std::array<double *, 3> phi{&*edge_bases[0].data().begin(),
+                                &*edge_bases[1].data().begin(),
+                                &*edge_bases[2].data().begin()};
+    std::array<double *, 3> diff_phi{&*diff_edge_bases[0].data().begin(),
+                                     &*diff_edge_bases[1].data().begin(),
+                                     &*diff_edge_bases[2].data().begin()};
+
+    std::array<int, 3> edge_order{order, order, order};
+    std::array<int, 3> edge_sense{1, 1, 1};
+    CHKERR Hcurl_Ainsworth_EdgeBaseFunctions_MBTET_ON_FACE(
+        edge_sense.data(), edge_order.data(),
+        &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+        &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
+        phi.data(), diff_phi.data(), nb_gauss_pts, base_polynomials);
+
+    MatrixDouble face_bases(nb_gauss_pts, 3 * nb_dofs_face, false);
+    MatrixDouble diff_face_bases(nb_gauss_pts, 3 * 2 * nb_dofs_face, false);
+    int face_nodes[] = {0, 1, 2};
+    CHKERR Hcurl_Ainsworth_FaceFunctions_MBTET_ON_FACE(
+        face_nodes, order,
+        &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+        &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
+        &*face_bases.data().begin(), &*diff_face_bases.data().begin(),
+        nb_gauss_pts, base_polynomials);
+
+    // edges
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_edge_base[] = {
+        getFTensor1FromPtr<3>(&*edge_bases[0].data().begin()),
+        getFTensor1FromPtr<3>(&*edge_bases[1].data().begin()),
+        getFTensor1FromPtr<3>(&*edge_bases[2].data().begin())};
+    FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2> t_edge_diff_base[] = {
+        getFTensor2HVecFromPtr<3, 2>(&*diff_edge_bases[0].data().begin()),
+        getFTensor2HVecFromPtr<3, 2>(&*diff_edge_bases[1].data().begin()),
+        getFTensor2HVecFromPtr<3, 2>(&*diff_edge_bases[2].data().begin())};
+
+    // face
+    auto t_vol_base = getFTensor1FromPtr<3>(&*face_bases.data().begin());
+    auto t_vol_diff_base =
+        getFTensor2HVecFromPtr<3, 2>(&*diff_face_bases.data().begin());
+
+    auto t_base = getFTensor1FromPtr<3>(
+        &*data.dataOnEntities[MBTRI][0].getN(base).data().begin());
+    auto t_diff_base = getFTensor2HVecFromPtr<3, 2>(
+        &*data.dataOnEntities[MBTRI][0].getDiffN(base).data().begin());
+
+    FTENSOR_INDEX(3, i);
+    FTENSOR_INDEX(2, j);
+
+    for (int gg = 0; gg != nb_gauss_pts; gg++) {
+      for (int oo = 0; oo < order; oo++) {
+        // edges
+        for (int dd = NBEDGE_AINSWORTH_HCURL(oo);
+             dd != NBEDGE_AINSWORTH_HCURL(oo + 1); ++dd) {
+          for (int ee = 0; ee != 3; ++ee) {
+            t_base(i) = t_edge_base[ee](i);
+            ++t_base;
+            ++t_edge_base[ee];
+            t_diff_base(i, j) = t_edge_diff_base[ee](i, j);
+            ++t_diff_base;
+            ++t_edge_diff_base[ee];
+          }
+        }
+        // face
+        for (int dd = NBFACETRI_AINSWORTH_HCURL(oo);
+             dd != NBFACETRI_AINSWORTH_HCURL(oo + 1); ++dd) {
+          t_base(i) = t_vol_base(i);
+          ++t_base;
+          ++t_vol_base;
+          t_diff_base(i, j) = t_vol_diff_base(i, j);
+          ++t_diff_base;
+          ++t_vol_diff_base;
+        }
+      }
+    }
+
+  } else {
+    data.dataOnEntities[MBTRI][0].getN(base).resize(nb_gauss_pts, 0, false);
+    data.dataOnEntities[MBTRI][0].getDiffN(base).resize(nb_gauss_pts, 0, false);
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
 TriPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
@@ -758,8 +884,8 @@ TriPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
 
       sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
       order[ee] = data.dataOnEntities[MBEDGE][ee].getOrder();
-      int nb_dofs = NBEDGE_DEMKOWICZ_HCURL(
-          data.dataOnEntities[MBEDGE][ee].getOrder());
+      int nb_dofs =
+          NBEDGE_DEMKOWICZ_HCURL(data.dataOnEntities[MBEDGE][ee].getOrder());
       data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,
                                                         3 * nb_dofs, false);
       data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(
@@ -822,19 +948,158 @@ TriPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode TriPolynomialBase::getValueHcurl(MatrixDouble &pts) {
+MoFEMErrorCode
+TriPolynomialBase::getValueHcurlDemkowiczBrokenBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  switch (cTx->bAse) {
-  case AINSWORTH_LEGENDRE_BASE:
-  case AINSWORTH_LOBATTO_BASE:
-    CHKERR getValueHcurlAinsworthBase(pts);
+  EntitiesFieldData &data = cTx->dAta;
+  const FieldApproximationBase base = cTx->bAse;
+
+  int nb_gauss_pts = pts.size2();
+
+  if (data.spacesOnEntities[MBTRI].test(HCURL)) {
+
+    // face
+    if (data.dataOnEntities[MBTRI].size() != 1)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "No data struture to keep base functions on face");
+
+    int order = data.dataOnEntities[MBTRI][0].getOrder();
+    int nb_edge_dofs = NBEDGE_DEMKOWICZ_HCURL(order);
+    int nb_volume_dofs = NBFACETRI_DEMKOWICZ_HCURL(order);
+    int nb_dofs = 3 * nb_edge_dofs + nb_volume_dofs;
+    data.dataOnEntities[MBTRI][0].getN(base).resize(nb_gauss_pts, 3 * nb_dofs,
+                                                    false);
+    data.dataOnEntities[MBTRI][0].getDiffN(base).resize(nb_gauss_pts,
+                                                        3 * 2 * nb_dofs, false);
+
+    MatrixDouble edge_bases[] = {
+        MatrixDouble(nb_gauss_pts, 3 * nb_edge_dofs, false),
+        MatrixDouble(nb_gauss_pts, 3 * nb_edge_dofs, false),
+        MatrixDouble(nb_gauss_pts, 3 * nb_edge_dofs, false)};
+    MatrixDouble diff_edge_bases[] = {
+        MatrixDouble(nb_gauss_pts, 3 * 2 * nb_edge_dofs, false),
+        MatrixDouble(nb_gauss_pts, 3 * 2 * nb_edge_dofs, false),
+        MatrixDouble(nb_gauss_pts, 3 * 2 * nb_edge_dofs, false)};
+
+    std::array<int, 3> edge_order{order, order, order};
+    std::array<int, 3> edge_sense{1, 1, 1};
+    std::array<double *, 3> phi{&*edge_bases[0].data().begin(),
+                                &*edge_bases[1].data().begin(),
+                                &*edge_bases[2].data().begin()};
+    std::array<double *, 3> diff_phi{&*diff_edge_bases[0].data().begin(),
+                                     &*diff_edge_bases[1].data().begin(),
+                                     &*diff_edge_bases[2].data().begin()};
+    CHKERR Hcurl_Demkowicz_EdgeBaseFunctions_MBTRI(
+        edge_sense.data(), edge_order.data(),
+        &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+        &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
+        phi.data(), diff_phi.data(), nb_gauss_pts);
+
+    MatrixDouble face_bases(nb_gauss_pts, 3 * nb_volume_dofs, false);
+    MatrixDouble diff_face_bases(nb_gauss_pts, 3 * 2 * nb_volume_dofs, false);
+    int face_nodes[] = {0, 1, 2};
+    CHKERR Hcurl_Demkowicz_FaceBaseFunctions_MBTRI(
+        face_nodes, order,
+        &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+        &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
+        &*face_bases.data().begin(), &*diff_face_bases.data().begin(),
+        nb_gauss_pts);
+
+    // edges
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_edge_base[] = {
+        getFTensor1FromPtr<3>(&*edge_bases[0].data().begin()),
+        getFTensor1FromPtr<3>(&*edge_bases[1].data().begin()),
+        getFTensor1FromPtr<3>(&*edge_bases[2].data().begin())};
+    FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2> t_edge_diff_base[] = {
+        getFTensor2HVecFromPtr<3, 2>(&*diff_edge_bases[0].data().begin()),
+        getFTensor2HVecFromPtr<3, 2>(&*diff_edge_bases[1].data().begin()),
+        getFTensor2HVecFromPtr<3, 2>(&*diff_edge_bases[2].data().begin())};
+    // face
+    auto t_vol_base = getFTensor1FromPtr<3>(&*face_bases.data().begin());
+    auto t_vol_diff_base =
+        getFTensor2HVecFromPtr<3, 2>(&*diff_face_bases.data().begin());
+
+    auto t_base = getFTensor1FromPtr<3>(
+        &*data.dataOnEntities[MBTRI][0].getN(base).data().begin());
+    auto t_diff_base = getFTensor2HVecFromPtr<3, 2>(
+        &*data.dataOnEntities[MBTRI][0].getDiffN(base).data().begin());
+    
+    FTENSOR_INDEX(3, i);
+    FTENSOR_INDEX(2, j);
+
+
+    for (int gg = 0; gg != nb_gauss_pts; gg++) {
+      for (int oo = 0; oo < order; oo++) {
+        // edges
+        for (int dd = NBEDGE_DEMKOWICZ_HCURL(oo);
+             dd != NBEDGE_DEMKOWICZ_HCURL(oo + 1); ++dd) {
+          for (int ee = 0; ee != 3; ++ee) {
+            t_base(i) = t_edge_base[ee](i);
+            ++t_base;
+            ++t_edge_base[ee];
+            t_diff_base(i, j) = t_edge_diff_base[ee](i, j);
+            ++t_diff_base;
+            ++t_edge_diff_base[ee];
+          }
+        }
+        // faces
+        for (int dd = NBFACETRI_DEMKOWICZ_HCURL(oo);
+             dd != NBFACETRI_DEMKOWICZ_HCURL(oo + 1); ++dd) {
+          t_base(i) = t_vol_base(i);
+          ++t_base;
+          ++t_vol_base;
+          t_diff_base(i, j) = t_vol_diff_base(i, j);
+          ++t_diff_base;
+          ++t_vol_diff_base;
+        }
+      }
+    }
+
+  } else {
+
+    // No DOFs on faces, resize base function matrices, indicating that no
+    // dofs on them.
+    data.dataOnEntities[MBTRI][0].getN(base).resize(nb_gauss_pts, 0, false);
+    data.dataOnEntities[MBTRI][0].getDiffN(base).resize(nb_gauss_pts, 0, false);
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode TriPolynomialBase::getValueHcurl(MatrixDouble &pts) {
+  MoFEMFunctionBegin;
+  switch (cTx->spaceContinuity) {
+  case CONTINUOUS:
+
+    switch (cTx->bAse) {
+    case AINSWORTH_LEGENDRE_BASE:
+    case AINSWORTH_LOBATTO_BASE:
+      CHKERR getValueHcurlAinsworthBase(pts);
+      break;
+    case DEMKOWICZ_JACOBI_BASE:
+      CHKERR getValueHcurlDemkowiczBase(pts);
+      break;
+    default:
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
+    }
+
     break;
-  case DEMKOWICZ_JACOBI_BASE:
-    CHKERR getValueHcurlDemkowiczBase(pts);
+
+  case DISCONTINUOUS:
+    switch (cTx->bAse) {
+    case AINSWORTH_LEGENDRE_BASE:
+    case AINSWORTH_LOBATTO_BASE:
+      return getValueHcurlAinsworthBrokenBase(pts);
+    case DEMKOWICZ_JACOBI_BASE:
+      return getValueHcurlDemkowiczBrokenBase(pts);
+    default:
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
+    }
     break;
+
   default:
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Unknown continuity");
   }
 
   MoFEMFunctionReturn(0);
@@ -900,21 +1165,40 @@ TriPolynomialBase::getValue(MatrixDouble &pts,
 
   CHKERR set_node_derivative_for_all_gauss_pts();
 
-  switch (cTx->sPace) {
-  case H1:
-    CHKERR getValueH1(pts);
+  switch (cTx->spaceContinuity) {
+  case CONTINUOUS:
+
+    switch (cTx->sPace) {
+    case H1:
+      CHKERR getValueH1(pts);
+      break;
+    case HDIV:
+      CHKERR getValueHdiv(pts);
+      break;
+    case HCURL:
+      CHKERR getValueHcurl(pts);
+      break;
+    case L2:
+      CHKERR getValueL2(pts);
+      break;
+    default:
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not yet implemented");
+    }
+
     break;
-  case HDIV:
-    CHKERR getValueHdiv(pts);
+
+  case DISCONTINUOUS:
+    switch (cTx->sPace) {
+    case HCURL:
+      CHKERR getValueHcurl(pts);
+      break;
+    default:
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not yet implemented");
+    }
     break;
-  case HCURL:
-    CHKERR getValueHcurl(pts);
-    break;
-  case L2:
-    CHKERR getValueL2(pts);
-    break;
+
   default:
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not yet implemented");
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Unknown continuity");
   }
 
   MoFEMFunctionReturn(0);

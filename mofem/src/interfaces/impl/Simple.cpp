@@ -263,14 +263,32 @@ MoFEMErrorCode Simple::loadFile(const std::string mesh_file_name) {
 MoFEMErrorCode
 Simple::addDomainField(const std::string &name, const FieldSpace space,
                        const FieldApproximationBase base,
-                       const FieldCoefficientsNumber nb_of_cooficients,
+                       const FieldCoefficientsNumber nb_of_coefficients,
                        const TagType tag_type, const enum MoFEMTypes bh,
                        int verb) {
 
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
-  CHKERR m_field.add_field(name, space, base, nb_of_cooficients, tag_type, bh,
+  CHKERR m_field.add_field(name, space, base, nb_of_coefficients, tag_type, bh,
                            verb);
+  if (space == NOFIELD)
+    noFieldFields.push_back(name);
+  else
+    domainFields.push_back(name);
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+Simple::addDomainBrokenField(const std::string &name, const FieldSpace space,
+                             const FieldApproximationBase base,
+                             const FieldCoefficientsNumber nb_of_coefficients,
+                             const TagType tag_type, const enum MoFEMTypes bh,
+                             int verb) {
+
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+  CHKERR m_field.add_broken_field(name, space, base, nb_of_coefficients,
+                                  tag_type, bh, verb);
   if (space == NOFIELD)
     noFieldFields.push_back(name);
   else
@@ -281,12 +299,12 @@ Simple::addDomainField(const std::string &name, const FieldSpace space,
 MoFEMErrorCode
 Simple::addBoundaryField(const std::string &name, const FieldSpace space,
                          const FieldApproximationBase base,
-                         const FieldCoefficientsNumber nb_of_cooficients,
+                         const FieldCoefficientsNumber nb_of_coefficients,
                          const TagType tag_type, const enum MoFEMTypes bh,
                          int verb) {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
-  CHKERR m_field.add_field(name, space, base, nb_of_cooficients, tag_type, bh,
+  CHKERR m_field.add_field(name, space, base, nb_of_coefficients, tag_type, bh,
                            verb);
   boundaryFields.push_back(name);
   if (space == NOFIELD)
@@ -299,13 +317,13 @@ Simple::addBoundaryField(const std::string &name, const FieldSpace space,
 MoFEMErrorCode
 Simple::addSkeletonField(const std::string &name, const FieldSpace space,
                          const FieldApproximationBase base,
-                         const FieldCoefficientsNumber nb_of_cooficients,
+                         const FieldCoefficientsNumber nb_of_coefficients,
                          const TagType tag_type, const enum MoFEMTypes bh,
                          int verb) {
 
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
-  CHKERR m_field.add_field(name, space, base, nb_of_cooficients, tag_type, bh,
+  CHKERR m_field.add_field(name, space, base, nb_of_coefficients, tag_type, bh,
                            verb);
   skeletonFields.push_back(name);
   if (space == NOFIELD)
@@ -319,13 +337,13 @@ Simple::addSkeletonField(const std::string &name, const FieldSpace space,
 MoFEMErrorCode
 Simple::addDataField(const std::string &name, const FieldSpace space,
                      const FieldApproximationBase base,
-                     const FieldCoefficientsNumber nb_of_cooficients,
+                     const FieldCoefficientsNumber nb_of_coefficients,
                      const TagType tag_type, const enum MoFEMTypes bh,
                      int verb) {
 
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
-  CHKERR m_field.add_field(name, space, base, nb_of_cooficients, tag_type, bh,
+  CHKERR m_field.add_field(name, space, base, nb_of_coefficients, tag_type, bh,
                            verb);
   if (space == NOFIELD)
     noFieldDataFields.push_back(name);
@@ -615,8 +633,12 @@ MoFEMErrorCode Simple::setUp(const PetscBool is_partitioned) {
 
   CHKERR defineFiniteElements();
 
-  if (addSkeletonFE || !skeletonFields.empty())
-    CHKERR setSkeletonAdjacency();
+  if (addSkeletonFE || !skeletonFields.empty()) {
+    CHKERR setSkeletonAdjacency(-1, skeletonFE);
+    if (addBoundaryFE || !boundaryFields.empty()) {
+      CHKERR setSkeletonAdjacency(-1, boundaryFE);
+    }
+  }
 
   if (addParentAdjacencies)
     CHKERR setParentAdjacency();
@@ -638,8 +660,12 @@ MoFEMErrorCode Simple::reSetUp(bool only_dm) {
   if (!only_dm) {
     CHKERR defineFiniteElements();
     CHKERR buildFields();
-    if (addSkeletonFE || !skeletonFields.empty())
-      CHKERR setSkeletonAdjacency();
+    if (addSkeletonFE || !skeletonFields.empty()) {
+      CHKERR setSkeletonAdjacency(-1, skeletonFE);
+      if (addBoundaryFE || !boundaryFields.empty()) {
+        CHKERR setSkeletonAdjacency(-1, boundaryFE);
+      }
+    }
     if (addParentAdjacencies)
       CHKERR setParentAdjacency();
     CHKERR buildFiniteElements();

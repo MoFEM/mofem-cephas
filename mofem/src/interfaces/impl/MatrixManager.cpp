@@ -26,21 +26,18 @@ namespace MoFEM {
 
   \todo Creation of the block matrices
 
-  \todo Some efficiency improvemnt are possible
+  \todo Some efficiency improvement are possible
 
 
   */
-struct CreateRowComressedADJMatrix : public Core {
+struct CreateRowCompressedADJMatrix : public Core {
 
-  CreateRowComressedADJMatrix(moab::Interface &moab,
-                              MPI_Comm comm = PETSC_COMM_WORLD, int verbose = 1)
+  CreateRowCompressedADJMatrix(moab::Interface &moab,
+                               MPI_Comm comm = PETSC_COMM_WORLD,
+                               int verbose = 1)
       : Core(moab, comm, verbose) {}
 
-  typedef FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
-      Unique_mi_tag>::type AdjByEnt;
-  typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
-  typedef NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type
-      DofByGlobalPetscIndex;
+  using ProblemsByName = Problem_multiIndex::index<Problem_mi_tag>::type;
 
   /** \brief Create matrix adjacencies
 
@@ -57,10 +54,17 @@ struct CreateRowComressedADJMatrix : public Core {
                   std::vector<PetscInt> &i, std::vector<PetscInt> &j,
                   const bool no_diagonals = true, int verb = QUIET) const;
 
+private:
+  using AdjByEnt = FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
+      Unique_mi_tag>::type;
+
+  using DofByGlobalPetscIndex =
+      NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type;
+
   /** \brief Get element adjacencies
    */
   template <typename TAG>
-  MoFEMErrorCode getEntityAdjacenies(
+  MoFEMErrorCode getEntityAdjacencies(
       ProblemsByName::iterator p_miit,
       typename boost::multi_index::index<NumeredDofEntity_multiIndex,
                                          TAG>::type::iterator mit_row,
@@ -68,8 +72,13 @@ struct CreateRowComressedADJMatrix : public Core {
       std::vector<int> &dofs_col_view, int verb) const;
 };
 
+/**
+ * @deprecated do not use, instead use CreateRowCompressedADJMatrix
+ */
+using CreateRowComressedADJMatrix = CreateRowCompressedADJMatrix;
+
 template <typename TAG>
-MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
+MoFEMErrorCode CreateRowCompressedADJMatrix::getEntityAdjacencies(
     ProblemsByName::iterator p_miit,
     typename boost::multi_index::index<NumeredDofEntity_multiIndex,
                                        TAG>::type::iterator mit_row,
@@ -99,8 +108,8 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
       if ((fe_bit & prb_bit).any() && (fe_bit & prb_mask) == fe_bit) {
 
         auto check_block = [&empty_field_blocks](auto &r_if, auto &col_id) {
-          for(auto &b : empty_field_blocks) {
-            if((b.first & r_if).any() && (b.second & col_id).any()) {
+          for (auto &b : empty_field_blocks) {
+            if ((b.first & r_if).any() && (b.second & col_id).any()) {
               return false;
             }
           }
@@ -148,7 +157,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
 }
 
 template <typename TAG>
-MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
+MoFEMErrorCode CreateRowCompressedADJMatrix::createMatArrays(
     ProblemsByName::iterator p_miit, const MatType type,
     std::vector<PetscInt> &i, std::vector<PetscInt> &j, const bool no_diagonals,
     int verb) const {
@@ -268,7 +277,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
     hi_mit_row = dofs_row_by_idx.end();
     for (; mit_row != hi_mit_row; mit_row++) {
 
-      // Shared or multishared row and not owned. Those data should be send to
+      // Shared or multi-shared row and not owned. Those data should be send to
       // other side.
 
       // Get entity adjacencies, no need to repeat that operation for dofs when
@@ -289,8 +298,8 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
         if (get_adj_col) {
           // Get entity adjacencies
           mofem_ent_ptr = (*mit_row)->getFieldEntityPtr();
-          CHKERR getEntityAdjacenies<TAG>(p_miit, mit_row, mofem_ent_ptr,
-                                          dofs_col_view, verb);
+          CHKERR getEntityAdjacencies<TAG>(p_miit, mit_row, mofem_ent_ptr,
+                                           dofs_col_view, verb);
           // Sort, unique and resize dofs_col_view
           {
             std::sort(dofs_col_view.begin(), dofs_col_view.end());
@@ -453,8 +462,8 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
       // get entity adjacencies
       mofem_ent_ptr = (*miit_row)->getFieldEntityPtr();
-      CHKERR getEntityAdjacenies<TAG>(p_miit, miit_row, mofem_ent_ptr,
-                                      dofs_col_view, verb);
+      CHKERR getEntityAdjacencies<TAG>(p_miit, miit_row, mofem_ent_ptr,
+                                       dofs_col_view, verb);
       row_last_evaluated_idx = TAG::get_index(miit_row);
 
       dofs_vec.resize(0);
@@ -617,8 +626,8 @@ MoFEMErrorCode MatrixManager::createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(
   MoFEMFunctionBegin;
 
   MoFEM::CoreInterface &m_field = cOre;
-  CreateRowComressedADJMatrix *core_ptr =
-      static_cast<CreateRowComressedADJMatrix *>(&cOre);
+  CreateRowCompressedADJMatrix *core_ptr =
+      static_cast<CreateRowCompressedADJMatrix *>(&cOre);
   PetscLogEventBegin(MOFEM_EVENT_createMPIAIJWithArrays, 0, 0, 0, 0);
 
   auto problems_ptr = m_field.get_problems();
@@ -655,8 +664,8 @@ MatrixManager::createMPIAIJCUSPARSEWithArrays<PetscGlobalIdx_mi_tag>(
   MoFEMFunctionBegin;
 
   MoFEM::CoreInterface &m_field = cOre;
-  CreateRowComressedADJMatrix *core_ptr =
-      static_cast<CreateRowComressedADJMatrix *>(&cOre);
+  CreateRowCompressedADJMatrix *core_ptr =
+      static_cast<CreateRowCompressedADJMatrix *>(&cOre);
   PetscLogEventBegin(MOFEM_EVENT_createMPIAIJCUSPARSEWithArrays, 0, 0, 0, 0);
 
   auto problems_ptr = m_field.get_problems();
@@ -716,7 +725,7 @@ MatrixManager::createMPIAIJCUSPARSEWithArrays<PetscGlobalIdx_mi_tag>(
 #endif
 
   PetscLogEventEnd(MOFEM_EVENT_createMPIAIJCUSPARSEWithArrays, 0, 0, 0, 0);
-  
+
   MoFEMFunctionReturn(0);
 }
 
@@ -728,7 +737,8 @@ MatrixManager::createSeqAIJCUSPARSEWithArrays<PetscLocalIdx_mi_tag>(
 
 #ifdef PETSC_HAVE_CUDA
   // CHKERR ::MatCreateSeqAIJCUSPARSE(MPI_Comm comm, PetscInt m, PetscInt n,
-  //                                  PetscInt nz, const PetscInt nnz[], Mat *A);
+  //                                  PetscInt nz, const PetscInt nnz[], Mat
+  //                                  *A);
   SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
           "Not implemented type of matrix yet, try MPI version (aijcusparse)");
 #endif
@@ -741,8 +751,8 @@ MoFEMErrorCode
 MatrixManager::createMPIAIJ<PetscGlobalIdx_mi_tag>(const std::string name,
                                                    Mat *Aij, int verb) {
   MoFEM::CoreInterface &m_field = cOre;
-  CreateRowComressedADJMatrix *core_ptr =
-      static_cast<CreateRowComressedADJMatrix *>(&cOre);
+  CreateRowCompressedADJMatrix *core_ptr =
+      static_cast<CreateRowCompressedADJMatrix *>(&cOre);
   MoFEMFunctionBegin;
   PetscLogEventBegin(MOFEM_EVENT_createMPIAIJ, 0, 0, 0, 0);
 
@@ -811,8 +821,8 @@ MoFEMErrorCode
 MatrixManager::createMPIAdjWithArrays<Idx_mi_tag>(const std::string name,
                                                   Mat *Adj, int verb) {
   MoFEM::CoreInterface &m_field = cOre;
-  CreateRowComressedADJMatrix *core_ptr =
-      static_cast<CreateRowComressedADJMatrix *>(&cOre);
+  CreateRowCompressedADJMatrix *core_ptr =
+      static_cast<CreateRowCompressedADJMatrix *>(&cOre);
   MoFEMFunctionBegin;
   PetscLogEventBegin(MOFEM_EVENT_createMPIAdjWithArrays, 0, 0, 0, 0);
 
@@ -848,8 +858,8 @@ template <>
 MoFEMErrorCode MatrixManager::createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(
     const std::string name, Mat *Aij, int verb) {
   MoFEM::CoreInterface &m_field = cOre;
-  CreateRowComressedADJMatrix *core_ptr =
-      static_cast<CreateRowComressedADJMatrix *>(&cOre);
+  CreateRowCompressedADJMatrix *core_ptr =
+      static_cast<CreateRowCompressedADJMatrix *>(&cOre);
   MoFEMFunctionBegin;
   PetscLogEventBegin(MOFEM_EVENT_createMPIAIJWithArrays, 0, 0, 0, 0);
 
@@ -1058,7 +1068,7 @@ MoFEMErrorCode MatrixManager::checkMatrixFillIn(const std::string problem_name,
             /* It could be that you have removed DOFs from problem, and for
              * example if this was vector filed with components {Ux,Uy,Uz}, you
              * removed on Uz element. */
-            
+
             MOFEM_LOG("SELF", Sev::warning)
                 << "Warning: Number of Dofs in Row different than number "
                    "of dofs for given entity order "
@@ -1148,6 +1158,211 @@ MoFEMErrorCode MatrixManager::checkMPIAIJMatrixFillIn<PetscGlobalIdx_mi_tag>(
   CHKERR createMPIAIJ<PetscGlobalIdx_mi_tag>(problem_name, A, verb);
   CHKERR MatSetOption(A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE);
   CHKERR checkMatrixFillIn(problem_name, row_print, col_print, A, verb);
+  MoFEMFunctionReturn(0);
+}
+
+template <>
+MoFEMErrorCode MatrixManager::createHybridL2MPIAIJ<PetscGlobalIdx_mi_tag>(
+    const std::string problem_name, SmartPetscObj<Mat> &aij_ptr, int verb) {
+  MoFEM::CoreInterface &m_field = cOre;
+  MatrixManagerFunctionBegin;
+
+  auto prb_ptr = m_field.get_problems();
+  auto p_miit = prb_ptr->get<Problem_mi_tag>().find(problem_name);
+  if (p_miit == prb_ptr->get<Problem_mi_tag>().end()) {
+    SETERRQ1(m_field.get_comm(), MOFEM_NOT_FOUND,
+             "problem < %s > is not found (top tip: check spelling)",
+             problem_name.c_str());
+  }
+
+  auto nb_rows = p_miit->getNbDofsRow();
+  auto nb_cols = p_miit->getNbDofsCol();
+  auto nb_loc_rows = p_miit->getNbLocalDofsRow();
+  auto nb_loc_cols = p_miit->getNbLocalDofsCol();
+
+  auto row_ptr = p_miit->getNumeredRowDofsPtr();
+  auto col_ptr = p_miit->getNumeredColDofsPtr();
+
+  BitFieldId fields_ids;
+  for (auto &c : *col_ptr) {
+    fields_ids |= c->getId();
+  }
+  auto fields = m_field.get_fields();
+  std::vector<int> fields_bit_numbers;
+  for (auto &f : *fields) {
+    if ((fields_ids & f->getId()).any()) {
+      fields_bit_numbers.push_back(f->getBitNumber());
+    }
+  }
+
+  Range adj;
+  EntityHandle prev_ent = 0;
+  int prev_dim = -1;
+
+  auto get_adj = [&](auto ent, auto dim) {
+    if (prev_ent == ent && prev_dim == dim) {
+      return adj;
+    } else {
+      adj.clear();
+      Range bridge;
+      CHKERR m_field.get_moab().get_adjacencies(&ent, 1, dim + 1, false,
+                                                bridge);
+      CHKERR m_field.get_moab().get_adjacencies(bridge, dim, false, adj,
+                                                moab::Interface::UNION);
+      prev_ent = ent;
+      prev_dim = dim;
+      return adj;
+    }
+  };
+
+  int prev_bit_number = -1;
+  EntityHandle prev_first_ent = 0;
+  EntityHandle prev_second_ent = 0;
+  using IT = boost::multi_index::index<NumeredDofEntity_multiIndex,
+                                       Unique_mi_tag>::type::iterator;
+  std::pair<IT, IT> pair_lo_hi;
+  auto get_col_it = [&](auto bit_number, auto first_ent, auto second_ent) {
+    if (bit_number == prev_bit_number && first_ent == prev_first_ent &&
+        second_ent == prev_second_ent) {
+      return pair_lo_hi;
+    } else {
+      auto lo_it = col_ptr->get<Unique_mi_tag>().lower_bound(
+          DofEntity::getLoFieldEntityUId(bit_number, first_ent));
+      auto hi_it = col_ptr->get<Unique_mi_tag>().upper_bound(
+          DofEntity::getHiFieldEntityUId(bit_number, second_ent));
+      pair_lo_hi = std::make_pair(lo_it, hi_it);
+      prev_bit_number = bit_number;
+      prev_first_ent = first_ent;
+      prev_second_ent = second_ent;
+      return pair_lo_hi;
+    }
+  };
+
+  auto create_ghost_vec = [&]() {
+    SmartPetscObj<Vec> v;
+    CHKERR m_field.getInterface<VecManager>()->vecCreateGhost(problem_name, ROW,
+                                                              v);
+    CHKERR VecZeroEntries(v);
+    CHKERR VecGhostUpdateBegin(v, INSERT_VALUES, SCATTER_FORWARD);
+    CHKERR VecGhostUpdateEnd(v, INSERT_VALUES, SCATTER_FORWARD);
+    return v;
+  };
+
+  auto v_o_nnz = create_ghost_vec();
+  auto v_d_nnz = create_ghost_vec();
+ 
+
+  double *o_nnz_real;
+  CHKERR VecGetArray(v_o_nnz, &o_nnz_real);
+  double *d_nnz_real;
+  CHKERR VecGetArray(v_d_nnz, &d_nnz_real);
+
+  for (auto r = row_ptr->begin(); r != row_ptr->end(); ++r) {
+
+    auto row_loc_idx = (*r)->getPetscLocalDofIdx();
+    if (row_loc_idx < 0)
+      continue;
+
+    auto ent = (*r)->getEnt();
+    auto dim = dimension_from_handle(ent);
+    auto adj = get_adj(ent, dim);
+
+    for (auto p = adj.pair_begin(); p != adj.pair_end(); ++p) {
+      auto first_ent = p->first;
+      auto second_ent = p->second;
+
+      for (auto bit_number : fields_bit_numbers) {
+
+        auto [lo_it, hi_it] = get_col_it(bit_number, first_ent, second_ent);
+
+        for (; lo_it != hi_it; ++lo_it) {
+          auto col_loc_idx = (*lo_it)->getPetscLocalDofIdx();
+          if (col_loc_idx < 0)
+            continue;
+
+          if (
+
+              (*lo_it)->getOwnerProc() == (*r)->getOwnerProc()
+
+          ) {
+            d_nnz_real[row_loc_idx] += 1;
+          } else {
+            o_nnz_real[row_loc_idx] += 1;
+          }
+        }
+      }
+    }
+  }
+
+  CHKERR VecRestoreArray(v_o_nnz, &o_nnz_real);
+  CHKERR VecRestoreArray(v_d_nnz, &d_nnz_real);
+
+  auto update_vec = [&](auto v) {
+    MoFEMFunctionBegin;
+    CHKERR VecGhostUpdateBegin(v, ADD_VALUES, SCATTER_REVERSE);
+    CHKERR VecGhostUpdateEnd(v, ADD_VALUES, SCATTER_REVERSE);
+    CHKERR VecAssemblyBegin(v);
+    CHKERR VecAssemblyEnd(v);
+    MoFEMFunctionReturn(0);
+  };
+
+  CHKERR update_vec(v_o_nnz);
+  CHKERR update_vec(v_d_nnz);
+
+  int o_nz = 0;
+  int d_nz = 0;
+
+  CHKERR VecGetArray(v_d_nnz, &d_nnz_real);
+  CHKERR VecGetArray(v_o_nnz, &o_nnz_real);
+
+  std::vector<int> d_nnz(nb_loc_rows, 0);
+  std::vector<int> o_nnz(nb_loc_rows, 0);
+  for (auto r = row_ptr->begin(); r != row_ptr->end(); ++r) {
+
+    auto row_loc_idx = (*r)->getPetscLocalDofIdx();
+
+    if (
+
+        row_loc_idx >= 0 && row_loc_idx < nb_loc_rows
+
+    ) {
+      auto row_loc_idx = (*r)->getPetscLocalDofIdx();
+      d_nz += o_nnz_real[row_loc_idx];
+      d_nnz[row_loc_idx] = d_nnz_real[row_loc_idx];
+      o_nz += o_nnz_real[row_loc_idx];
+      o_nnz[row_loc_idx] = o_nnz_real[row_loc_idx];
+    } 
+
+  }
+
+  CHKERR VecRestoreArray(v_o_nnz, &o_nnz_real);
+  CHKERR VecRestoreArray(v_d_nnz, &d_nnz_real);
+
+  if (verb >= QUIET) {
+    MOFEM_LOG("SYNC", Sev::verbose)
+        << "Hybrid L2 matrix d_nz: " << d_nz << " o_nz: " << o_nz;
+    MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::verbose);
+  }
+
+  if (verb >= VERBOSE) {
+    MOFEM_LOG("SYNC", Sev::noisy) << "Hybrid L2 matrix";
+    int idx = 0;
+    for (auto &d : d_nnz) {
+      MOFEM_LOG("SYNC", Sev::noisy) << idx << ": " << d;
+      ++idx;
+    }
+    MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::noisy);
+  }
+
+  Mat a_raw;
+  CHKERR MatCreateAIJ(m_field.get_comm(), nb_loc_rows, nb_loc_cols, nb_rows,
+                      nb_cols, 0, &*d_nnz.begin(), 0, &*o_nnz.begin(), &a_raw);
+  CHKERR MatSetOption(a_raw, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE);
+  aij_ptr = SmartPetscObj<Mat>(a_raw);
+
+  MOFEM_LOG_CHANNEL("WORLD");
+  MOFEM_LOG_CHANNEL("SYNC");
+
   MoFEMFunctionReturn(0);
 }
 

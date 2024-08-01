@@ -632,6 +632,11 @@ MoFEMErrorCode Core::getTags(int verb) {
     CHKERR get_moab().tag_get_handle(
         "_FieldSpace", sizeof(FieldSpace), MB_TYPE_OPAQUE, th_FieldSpace,
         MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE, &def_space);
+    FieldContinuity def_continuity = LASTCONTINUITY;
+    CHKERR get_moab().tag_get_handle(
+        "_FieldContinuity", sizeof(FieldContinuity), MB_TYPE_OPAQUE,
+        th_FieldContinuity, MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE,
+        &def_continuity);
     FieldApproximationBase def_base = LASTBASE;
     CHKERR get_moab().tag_get_handle(
         "_FieldBase", sizeof(FieldApproximationBase), MB_TYPE_OPAQUE,

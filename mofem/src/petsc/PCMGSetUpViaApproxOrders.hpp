@@ -74,6 +74,14 @@ MoFEMErrorCode DMRegister_MGViaApproxOrders(const char sname[]);
 MoFEMErrorCode DMCreate_MGViaApproxOrders(DM dm);
 
 /**
+ * @brief  Destroy DM
+ * 
+ * @param dm 
+ * @return * PetscErrorCode 
+ */
+PetscErrorCode DMDestroy_MGViaApproxOrders(DM dm);
+
+/**
  * \brief Create matrix for Multi-Grid via approximation orders
  *
  * Not used directly by user

@@ -269,11 +269,11 @@ int main(int argc, char *argv[]) {
         CHKERR TetPolynomialBase().getValue(
             gauss_pts,
             boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                data_row, H1, AINSWORTH_LEGENDRE_BASE)));
+                data_row, H1, CONTINUOUS, AINSWORTH_LEGENDRE_BASE)));
         CHKERR TetPolynomialBase().getValue(
             gauss_pts,
             boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                data_col, H1, AINSWORTH_LEGENDRE_BASE)));
+                data_col, H1, CONTINUOUS, AINSWORTH_LEGENDRE_BASE)));
 
         CHKERR op.opLhs(data_row, data_col);
 

@@ -35,16 +35,18 @@ struct EntPolynomialBaseCtx : public BaseFunctionCtx {
 
   EntitiesFieldData &dAta;
   const FieldSpace sPace;
+  const FieldContinuity spaceContinuity;
   const FieldApproximationBase bAse;
   const std::string fieldName;
   const FieldApproximationBase copyNodeBase;
 
   EntPolynomialBaseCtx(EntitiesFieldData &data, const FieldSpace space,
+                       const FieldContinuity continuity,
                        const FieldApproximationBase base,
                        const FieldApproximationBase copy_node_base = LASTBASE);
 
-  EntPolynomialBaseCtx(EntitiesFieldData &data,
-                       const std::string field_name, const FieldSpace space,
+  EntPolynomialBaseCtx(EntitiesFieldData &data, const std::string field_name,
+                       const FieldSpace space, const FieldContinuity continuity,
                        const FieldApproximationBase base,
                        const FieldApproximationBase copy_node_base = LASTBASE);
 

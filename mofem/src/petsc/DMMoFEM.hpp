@@ -988,6 +988,15 @@ MoFEMErrorCode DMMoFEMSetNestSchurData(DM dm, boost::shared_ptr<T>);
 MoFEMErrorCode DMMoFEMCreateNestSchurMat(DM dm, Mat *mat);
 
 /**
+ * @brief Create matrix for hybridised system
+ * 
+ * @param dm 
+ * @param mat 
+ * @return MoFEMErrorCode 
+ */
+MoFEMErrorCode DMMoFEMCreateHybridL2Mat(DM dm, SmartPetscObj<Mat> &mat);
+
+/**
  * \brief PETSc  Discrete Manager data structure
  *
  * This structure should not be accessed or modified by user. Is not
@@ -1047,6 +1056,19 @@ inline auto getProblemPtr(DM dm) {
 inline auto createDMMatrix(DM dm) {
   SmartPetscObj<Mat> a;
   ierr = DMCreateMatrix_MoFEM(dm, a);
+  CHKERRABORT(getCommFromPetscObject(reinterpret_cast<PetscObject>(dm)), ierr);
+  return a;
+};
+
+/**
+ * @brief Get smart hybridised L2 matrix from DM
+ *
+ * @param dm
+ * @return auto
+ */
+inline auto createDMHybridisedL2Matrix(DM dm) {
+  SmartPetscObj<Mat> a;
+  ierr = DMMoFEMCreateHybridL2Mat(dm, a);
   CHKERRABORT(getCommFromPetscObject(reinterpret_cast<PetscObject>(dm)), ierr);
   return a;
 };

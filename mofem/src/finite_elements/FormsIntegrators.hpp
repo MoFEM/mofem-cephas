@@ -220,6 +220,8 @@ template <AssemblyType A, typename EleOp> struct OpBaseImpl : public EleOp {
   static MatSetValuesHook matSetValuesHook;
 
 protected:
+  using EleOp::EleOp;
+
   template <int DIM>
   inline FTensor::Tensor1<FTensor::PackPtr<double *, DIM>, DIM> getNf() {
     return getFTensor1FromArray<DIM, DIM>(locF);

@@ -98,7 +98,7 @@ endif(SYMM_RESTRICT)
 add_definitions(${DEFINE_RESTRICT})
 add_definitions("-D_LIBCPP_DISABLE_DEPRECATION_WARNINGS")
 
-# Installing extermal packages It is used to install prerequisites, ADOL-C,
+# Installing external packages It is used to install prerequisites, ADOL-C,
 # TetGen, MED can be installed like that
 include(ExternalProject)
 execute_process(
@@ -139,7 +139,7 @@ message(STATUS "SLEPc include " ${SLEPC_INCLUDE_DIRS})
 
 if(SLEPC_FOUND)
 
-  # For some unknown reason pkg-confifig reeturning empty SLEPC_LINK_LIBRARIES,
+  # For some unknown reason pkg-config returning empty SLEPC_LINK_LIBRARIES,
   # following config force to find SLEPc lib 
   if(NOT SLEPC_LINK_LIBRARIES)
     find_library(
@@ -295,7 +295,7 @@ set(PROJECT_LIBS
   ${OPTIONAL_PROJECT_LIBS} ${SYSTEM_PROJECT_LIBS} ${PETSCVAR_BLASLAPACK_LIB})
 message(STATUS ${PROJECT_LIBS})
 
-# Add executable library form subdirectory
+# Add executable library from a subdirectory
 if(MOFEM_BUILD_TESTS)
   enable_testing()
   include(CTest)

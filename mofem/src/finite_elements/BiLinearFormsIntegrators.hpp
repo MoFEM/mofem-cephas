@@ -13,8 +13,6 @@
 #ifndef __BILINEAR_FORMS_INTEGRATORS_HPP__
 #define __BILINEAR_FORMS_INTEGRATORS_HPP__
 
-#include <BiLinearFormsIntegratorsImpl.hpp>
-
 namespace MoFEM {
 
 /**
@@ -143,6 +141,15 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
    */
   template <int SPACE_DIM>
   using OpMixTensorTimesGrad = OpMixTensorTimesGradImpl<SPACE_DIM, I, OpBase>;
+
+  /**
+   * @brief Assemble constraint matrix while hybridization
+   * 
+   * @tparam FIELD_DIM 
+   */
+  template <int FIELD_DIM>
+  using OpBrokenSpaceConstrain =
+      OpBrokenSpaceConstrainImpl<FIELD_DIM, I, OpBase>;
 };
 
 } // namespace MoFEM

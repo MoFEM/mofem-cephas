@@ -4,8 +4,6 @@
 
 */
 
-
-
 namespace MoFEM {
 
 ContactPrismElementForcesAndSourcesCore::
@@ -34,26 +32,20 @@ ContactPrismElementForcesAndSourcesCore::
       derivedDataOnMaster{
 
           nullptr,
-          boost::make_shared<DerivedEntitiesFieldData>(
-              dataOnMaster[NOFIELD]),
+          boost::make_shared<DerivedEntitiesFieldData>(dataOnMaster[NOFIELD]),
           boost::make_shared<DerivedEntitiesFieldData>(dataOnMaster[H1]),
-          boost::make_shared<DerivedEntitiesFieldData>(
-              dataOnMaster[HCURL]),
-          boost::make_shared<DerivedEntitiesFieldData>(
-              dataOnMaster[HDIV]),
+          boost::make_shared<DerivedEntitiesFieldData>(dataOnMaster[HCURL]),
+          boost::make_shared<DerivedEntitiesFieldData>(dataOnMaster[HDIV]),
           boost::make_shared<DerivedEntitiesFieldData>(dataOnMaster[L2])
 
       },
       derivedDataOnSlave{
 
           nullptr,
-          boost::make_shared<DerivedEntitiesFieldData>(
-              dataOnSlave[NOFIELD]),
+          boost::make_shared<DerivedEntitiesFieldData>(dataOnSlave[NOFIELD]),
           boost::make_shared<DerivedEntitiesFieldData>(dataOnSlave[H1]),
-          boost::make_shared<DerivedEntitiesFieldData>(
-              dataOnSlave[HCURL]),
-          boost::make_shared<DerivedEntitiesFieldData>(
-              dataOnSlave[HDIV]),
+          boost::make_shared<DerivedEntitiesFieldData>(dataOnSlave[HCURL]),
+          boost::make_shared<DerivedEntitiesFieldData>(dataOnSlave[HDIV]),
           boost::make_shared<DerivedEntitiesFieldData>(dataOnSlave[L2])
 
       },
@@ -93,8 +85,7 @@ ContactPrismElementForcesAndSourcesCore::
       new EntitiesFieldData::EntData());
 
   CHK_THROW_MESSAGE(createDataOnElement(MBPRISM),
-                 "Problem with creation data on element");
-
+                    "Problem with creation data on element");
 }
 
 MoFEMErrorCode
@@ -256,7 +247,6 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
 
   auto clean_data = [](EntitiesFieldData &data) {
     MoFEMFunctionBegin;
-    data.sPace.reset();
     data.bAse.reset();
     for (EntityType t = MBVERTEX; t != MBMAXTYPE; ++t) {
       data.spacesOnEntities[t].reset();
@@ -268,8 +258,8 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
     MoFEMFunctionReturn(0);
   };
 
-  auto copy_data = [](EntitiesFieldData &data,
-                      EntitiesFieldData &copy_data, const int shift) {
+  auto copy_data = [](EntitiesFieldData &data, EntitiesFieldData &copy_data,
+                      const int shift) {
     MoFEMFunctionBegin;
 
     if (shift != 0 && shift != 6) {
@@ -277,12 +267,12 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
               "Wrong shift for contact prism element");
     }
 
-    data.sPace = copy_data.sPace;
     data.bAse = copy_data.bAse;
     for (auto t : {MBVERTEX, MBEDGE, MBTRI}) {
       data.spacesOnEntities[t] = copy_data.spacesOnEntities[t];
       data.basesOnEntities[t] = copy_data.basesOnEntities[t];
       data.basesOnSpaces[t] = copy_data.basesOnSpaces[t];
+      data.brokenBasesOnSpaces[t] = copy_data.brokenBasesOnSpaces[t];
     }
 
     for (int ii = 0; ii != 3; ++ii) {
@@ -308,8 +298,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
   };
 
   auto copy_data_hdiv = [](EntitiesFieldData &data,
-                           EntitiesFieldData &copy_data,
-                           const int shift) {
+                           EntitiesFieldData &copy_data, const int shift) {
     MoFEMFunctionBegin;
 
     if (shift != 3 && shift != 4) {
@@ -317,7 +306,6 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
               "Wrong shift for contact prism element");
     }
 
-    data.sPace = copy_data.sPace;
     data.bAse = copy_data.bAse;
 
     for (auto t : {MBVERTEX, MBTRI}) {
@@ -431,39 +419,42 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
       case AINSWORTH_LEGENDRE_BASE:
       case AINSWORTH_LOBATTO_BASE:
         if (dataH1.spacesOnEntities[MBVERTEX].test(H1)) {
-          CHKERR getUserPolynomialBase()->getValue(
-              gaussPtsMaster,
-              boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                  dataH1Master, H1, static_cast<FieldApproximationBase>(b),
-                  NOBASE)));
+          CHKERR getUserPolynomialBase()
+              -> getValue(
+                  gaussPtsMaster,
+                  boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+                      dataH1Master, H1, CONTINUOUS,
+                      static_cast<FieldApproximationBase>(b), NOBASE)));
 
-          CHKERR getUserPolynomialBase()->getValue(
-              gaussPtsSlave,
-              boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                  dataH1Slave, H1, static_cast<FieldApproximationBase>(b),
-                  NOBASE)));
+          CHKERR getUserPolynomialBase()
+              -> getValue(
+                  gaussPtsSlave,
+                  boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+                      dataH1Slave, H1, CONTINUOUS,
+                      static_cast<FieldApproximationBase>(b), NOBASE)));
         }
-      break;
+        break;
       case DEMKOWICZ_JACOBI_BASE:
         if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
 
-          CHKERR getUserPolynomialBase()->getValue(
-              gaussPtsMaster,
-              boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                  dataHdivMaster, HDIV, static_cast<FieldApproximationBase>(b),
-                  NOBASE)));
-          CHKERR getUserPolynomialBase()->getValue(
-              gaussPtsSlave,
-              boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                  dataHdivSlave, HDIV, static_cast<FieldApproximationBase>(b),
-                  NOBASE)));
+          CHKERR getUserPolynomialBase()
+              -> getValue(
+                  gaussPtsMaster,
+                  boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+                      dataHdivMaster, HDIV, CONTINUOUS,
+                      static_cast<FieldApproximationBase>(b), NOBASE)));
+          CHKERR getUserPolynomialBase()
+              -> getValue(
+                  gaussPtsSlave,
+                  boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+                      dataHdivSlave, HDIV, CONTINUOUS,
+                      static_cast<FieldApproximationBase>(b), NOBASE)));
 
           opContravariantTransform.normalRawPtr = &normal;
-          opContravariantTransform.normalShift = 0;      
+          opContravariantTransform.normalShift = 0;
           CHKERR opContravariantTransform.opRhs(dataHdivMaster);
           opContravariantTransform.normalShift = 3;
           CHKERR opContravariantTransform.opRhs(dataHdivSlave);
-          
         }
 
         if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
@@ -889,12 +880,13 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityFieldData(
 MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesFieldData(
     const std::string field_name, VectorDouble &master_nodes_data,
     VectorDouble &slave_nodes_data, VectorDofs &master_nodes_dofs,
-    VectorDofs &slave_nodes_dofs, 
-    
-    VectorFieldEntities &master_field_entities, VectorFieldEntities &slave_field_entities, 
-    
-    FieldSpace &master_space,
-    FieldSpace &slave_space, FieldApproximationBase &master_base,
+    VectorDofs &slave_nodes_dofs,
+
+    VectorFieldEntities &master_field_entities,
+    VectorFieldEntities &slave_field_entities,
+
+    FieldSpace &master_space, FieldSpace &slave_space,
+    FieldApproximationBase &master_base,
     FieldApproximationBase &slave_base) const {
   MoFEMFunctionBegin;
 

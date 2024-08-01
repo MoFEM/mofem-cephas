@@ -128,6 +128,9 @@ using FTensor::operator>>;
 #include <BaseDerivativesDataOperators.hpp> // Operators to calculate HO direcarives
 #include <DGProjection.hpp> // Operators to calculate DG projection
 #include <FormsIntegrators.hpp>
+#include <BiLinearFormsIntegratorsImpl.hpp>
+#include <LinearFormsIntegratorsImpl.hpp>
+#include <FormsBrokenSpaceConstraintImpl.hpp>
 #include <LinearFormsIntegrators.hpp>
 #include <BiLinearFormsIntegrators.hpp>
 #include <TriLinearFormsIntegrators.hpp>

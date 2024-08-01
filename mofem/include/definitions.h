@@ -1,5 +1,5 @@
 /** \file definitions.h
- * \brief useful compiler directives and definitions
+ * \brief useful compiler derivatives and definitions
  */
 
 
@@ -91,6 +91,19 @@ enum FieldSpace {
 
 const static char *const FieldSpaceNames[] = {
     "NOSPACE", "NOFIELD", "H1", "HCURL", "HDIV", "L2", "LASTSPACE"};
+
+/**
+ * @brief Field continuity
+ * 
+ */
+enum FieldContinuity {
+  CONTINUOUS = 0,    ///< Regular field
+  DISCONTINUOUS = 1, ///< Broken continuity (No effect on L2 space)
+  LASTCONTINUITY
+};
+
+const static char *const FieldContinuityNames[] = {"CONTINUOUS",
+                                                   "DISCONTINUOUS"};
 
 /// \brief Those types control how functions respond on arguments, f.e. error
 /// handling

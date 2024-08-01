@@ -290,6 +290,25 @@ struct MatrixManager : public UnknownInterface {
     return 0;
   }
 
+  /**
+   * @brief Create a Hybrid MPIAij object
+   *
+   * It assumes that L2 field is on skeleton, and dim+1 is bridge adjacency.
+   *
+   * @tparam Tag
+   * @param problem_name
+   * @param aij_ptr
+   * @param verb
+   * @return MoFEMErrorCode
+   */
+  template <class Tag>
+  MoFEMErrorCode createHybridL2MPIAIJ(const std::string problem_name,
+                                    SmartPetscObj<Mat> &aij_ptr,
+                                    int verb = QUIET) {
+    static_assert(!std::is_same<Tag, Tag>::value, "not implemented");
+    return 0;
+  }
+
 private:
   PetscLogEvent MOFEM_EVENT_createMPIAIJ;
   PetscLogEvent MOFEM_EVENT_createMPIAIJWithArrays;
@@ -336,6 +355,10 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
 template <>
 MoFEMErrorCode MatrixManager::checkMPIAIJMatrixFillIn<PetscGlobalIdx_mi_tag>(
     const std::string problem_name, int row_print, int col_print, int verb);
+
+template <>
+MoFEMErrorCode MatrixManager::createHybridL2MPIAIJ<PetscGlobalIdx_mi_tag>(
+    const std::string problem_name, SmartPetscObj<Mat> &aij_ptr, int verb);
 
 } // namespace MoFEM
 
