@@ -2281,27 +2281,32 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
   CHKERR VecSetDM(schur_vec_y, PETSC_NULL);
   CHKERR VecSetDM(block_vec_y, PETSC_NULL);
 
-  auto get_vec = [&](auto schur_data) {
-    std::vector<int> vec_r, vec_c;
-    vec_r.reserve(schur_data->blockIndex.size());
-    vec_c.reserve(schur_data->blockIndex.size());
-    for (auto &d : schur_data->blockIndex.template get<0>()) {
-      vec_r.push_back(d.getRow());
-      vec_c.push_back(d.getCol());
-    }
-    return std::make_pair(vec_r, vec_c);
-  };
+  auto find_field_ent = [&](auto uid, auto prb, auto rc) {
+    
+    boost::shared_ptr<NumeredDofEntity_multiIndex> dofs;
 
-  auto [vec_r_schur, vec_c_schur] = get_vec(block_mat_data_ptr);
-  CHKERR AOApplicationToPetsc(ao_schur_row, vec_r_schur.size(),
-                              &*vec_r_schur.begin());
-  CHKERR AOApplicationToPetsc(ao_schur_col, vec_c_schur.size(),
-                              &*vec_c_schur.begin());
-  auto [vec_r_block, vec_c_block] = get_vec(block_mat_data_ptr);
-  CHKERR AOApplicationToPetsc(ao_block_row, vec_r_block.size(),
-                              &*vec_r_block.begin());
-  CHKERR AOApplicationToPetsc(ao_block_col, vec_c_block.size(),
-                              &*vec_c_block.begin());
+    switch (rc) {
+    case ROW:
+      dofs = prb->getNumeredRowDofsPtr();
+      break;
+    case COL:
+      dofs = prb->getNumeredColDofsPtr();
+      break;
+    default:
+      CHK_MOAB_THROW(MOFEM_NOT_IMPLEMENTED, "Wrong RowCol");
+      break;
+    }
+
+    auto lo = dofs->get<Unique_mi_tag>().lower_bound(uid);
+    if (lo == dofs->get<Unique_mi_tag>().end())
+      return boost::shared_ptr<NumeredDofEntity>();
+    auto hi = dofs->get<Unique_mi_tag>().upper_bound(
+        DofEntity::getUniqueIdCalculate(MAX_DOFS_ON_ENTITY - 1, uid));
+    if (lo != hi)
+      return *lo;
+
+    return boost::shared_ptr<NumeredDofEntity>();
+  };
 
   std::array<boost::shared_ptr<BlockStructure>, 4> data_ptrs;
 
@@ -2341,60 +2346,42 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
       );
     };
 
-    if (vec_r_schur[idx] != -1 && vec_c_schur[idx] != -1) {
-      auto schur_dof_r =
-          schur_dofs_row->get<PetscGlobalIdx_mi_tag>().find(vec_r_schur[idx]);
-      auto schur_dof_c =
-          schur_dofs_col->get<PetscGlobalIdx_mi_tag>().find(vec_c_schur[idx]);
-#ifndef NDEBUG
-      if (schur_dof_r == schur_dofs_row->get<PetscGlobalIdx_mi_tag>().end()) {
-        CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Block <Schur> not found");
-      }
-      if (schur_dof_c == schur_dofs_col->get<PetscGlobalIdx_mi_tag>().end()) {
-        CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Block <Schur> not found");
-      }
-#endif // NDEBUG
-      insert(data_ptrs[0]->blockIndex, *schur_dof_r, *schur_dof_c, d);
+    auto insert_block = [&](auto &m, auto &dof_r, auto &dof_c, auto &d) {
+      m.insert(
+
+          BlockStructure::Indexes{
+              d.getRowUId(), d.getColUId(),
+
+              dof_r->getPetscGlobalDofIdx(), dof_c->getPetscGlobalDofIdx(),
+
+              d.getNbRows(), d.getNbCols(),
+
+              dof_r->getPetscLocalDofIdx(), dof_c->getPetscLocalDofIdx(),
+
+              d.getMatShift(), d.getInvShift()}
+
+      );
+    };
+
+    auto dof_schur_row = find_field_ent(d.getRowUId(), schur_prb, ROW);
+    auto dof_schur_col = find_field_ent(d.getColUId(), schur_prb, COL);
+    auto dof_block_row = find_field_ent(d.getRowUId(), block_prb, ROW);
+    auto dof_block_col = find_field_ent(d.getColUId(), block_prb, COL);
+
+    if (dof_schur_row && dof_schur_col) {
+      insert_block(data_ptrs[0]->blockIndex, dof_schur_row, dof_schur_col, d);
     }
 
-    if (vec_r_schur[idx] != -1 && vec_c_block[idx] != -1) {
-      auto schur_dof_r =
-          schur_dofs_row->get<PetscGlobalIdx_mi_tag>().find(vec_r_schur[idx]);
-      auto block_dof_c =
-          block_dofs_col->get<PetscGlobalIdx_mi_tag>().find(vec_c_block[idx]);
-#ifndef NDEBUG
-      if (schur_dof_r == schur_dofs_row->get<PetscGlobalIdx_mi_tag>().end()) {
-        CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Block <Schur> not found");
-      }
-      if (block_dof_c == block_dofs_col->get<PetscGlobalIdx_mi_tag>().end()) {
-        CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Block <Block> not found");
-      }
-#endif
-      insert(data_ptrs[1]->blockIndex, *schur_dof_r, *block_dof_c, d);
+    if (dof_schur_row && dof_block_col) {
+      insert_block(data_ptrs[1]->blockIndex, dof_schur_row, dof_block_col, d);
     }
 
-    if (vec_r_block[idx] != -1 && vec_c_schur[idx] != -1) {
-      auto block_dof_r =
-          block_dofs_row->get<PetscGlobalIdx_mi_tag>().find(vec_r_block[idx]);
-      auto schur_dof_c =
-          schur_dofs_col->get<PetscGlobalIdx_mi_tag>().find(vec_c_schur[idx]);
-#ifndef NDEBUG
-      if (block_dof_r == block_dofs_row->get<PetscGlobalIdx_mi_tag>().end()) {
-        CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Block <Block> not found");
-      }
-      if (schur_dof_c == schur_dofs_col->get<PetscGlobalIdx_mi_tag>().end()) {
-        CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Block <Schur> not found");
-      }
-#endif // NDEBUG
-      insert(data_ptrs[2]->blockIndex, *block_dof_r, *schur_dof_c, d);
+    if (dof_block_row && dof_schur_col) {
+      insert_block(data_ptrs[2]->blockIndex, dof_block_row, dof_schur_col, d);
     }
 
-    if (vec_r_block[idx] != -1 && vec_c_block[idx] != -1) {
-      auto block_dof_r =
-          block_dofs_row->get<PetscGlobalIdx_mi_tag>().find(vec_r_block[idx]);
-      auto block_dof_c =
-          block_dofs_col->get<PetscGlobalIdx_mi_tag>().find(vec_c_block[idx]);
-      insert(data_ptrs[3]->blockIndex, *block_dof_r, *block_dof_c, d);
+    if (dof_block_row && dof_block_col) {
+      insert_block(data_ptrs[3]->blockIndex, dof_block_row, dof_block_col, d);
     }
 
     ++idx;
