@@ -239,12 +239,14 @@ struct DiagBlockIndex {
    */
   struct Indexes {
 
-    Indexes(int row, int col, int nb_rows, int nb_cols, int loc_row,
-            int loc_col, int mat_shift, int inv_shift)
-        : row(row), col(col), nb_rows(nb_rows), nb_cols(nb_cols),
-          loc_row(loc_row), loc_col(loc_col), mat_shift(mat_shift),
-          inv_shift(inv_shift) {}
+    Indexes(UId uid_row, UId uid_col, int row, int col, int nb_rows,
+            int nb_cols, int loc_row, int loc_col, int mat_shift, int inv_shift)
+        : uid_row(uid_row), uid_col(uid_col), row(row), col(col),
+          nb_rows(nb_rows), nb_cols(nb_cols), loc_row(loc_row),
+          loc_col(loc_col), mat_shift(mat_shift), inv_shift(inv_shift) {}
 
+    inline UId getRowUId() const { return uid_row; }
+    inline UId getColUId() const { return uid_col; }
     inline int getRow() const { return row; }
     inline int getCol() const { return col; }
     inline int getNbRows() const { return nb_rows; }
@@ -263,6 +265,8 @@ struct DiagBlockIndex {
     } // shift such that lower bound is included
 
   private:
+    UId uid_row;
+    UId uid_col;
     int row;
     int col;
     int nb_rows;
@@ -279,25 +283,12 @@ struct DiagBlockIndex {
 
       indexed_by<
 
-          ordered_non_unique<
-
-              composite_key<Indexes,
-
-                            const_mem_fun<Indexes, int, &Indexes::getLocRow>,
-                            const_mem_fun<Indexes, int, &Indexes::getLocCol>,
-                            const_mem_fun<Indexes, int, &Indexes::getNbRows>,
-                            const_mem_fun<Indexes, int, &Indexes::getNbCols>>
-
-              >,
-
           ordered_unique<
 
               composite_key<Indexes,
 
-                            const_mem_fun<Indexes, int, &Indexes::getRow>,
-                            const_mem_fun<Indexes, int, &Indexes::getCol>,
-                            const_mem_fun<Indexes, int, &Indexes::getNbRows>,
-                            const_mem_fun<Indexes, int, &Indexes::getNbCols>>
+                            const_mem_fun<Indexes, UId, &Indexes::getRowUId>,
+                            const_mem_fun<Indexes, UId, &Indexes::getColUId>>
 
               >,
 
@@ -924,13 +915,11 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
     for (auto lo : list) {
       auto &m = lo->getMat();
       if (m.size1() && m.size2()) {
-        auto row_ind = lo->getRowInd()[0];
-        auto col_ind = lo->getColInd()[0];
-        auto nb_rows = m.size1();
-        auto nb_cols = m.size2();
-        auto it = diagBlocks->blockIndex.get<1>().find(
-            boost::make_tuple(row_ind, col_ind, nb_rows, nb_cols));
-        if (it != diagBlocks->blockIndex.get<1>().end()) {
+        auto row_uid = lo->uidRow;
+        auto col_uid = lo->uidCol;
+        auto it = diagBlocks->blockIndex.get<0>().find(
+            boost::make_tuple(row_uid, col_uid));
+        if (it != diagBlocks->blockIndex.get<0>().end()) {
           auto inv_shift = it->getInvShift();
           if (inv_shift != -1) {
             auto *ptr = &((*diagBlocks->dataInvBlocksPtr)[inv_shift]);
@@ -953,13 +942,11 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
 
     for (auto lo : list) {
       if (invMat.size1() && invMat.size2()) {
-        auto row_ind = lo->getRowInd()[0];
-        auto col_ind = lo->getColInd()[0];
-        auto nb_rows = invMat.size1();
-        auto nb_cols = invMat.size2();
-        auto it = diagBlocks->blockIndex.get<1>().find(
-            boost::make_tuple(row_ind, col_ind, nb_rows, nb_cols));
-        if (it != diagBlocks->blockIndex.get<1>().end()) {
+        auto row_uid = lo->uidRow;
+        auto col_uid = lo->uidCol;
+        auto it = diagBlocks->blockIndex.get<0>().find(
+            boost::make_tuple(row_uid, col_uid));
+        if (it != diagBlocks->blockIndex.get<0>().end()) {
           auto inv_shift = it->getInvShift();
 #ifndef NDEBUG
           if (inv_shift == -1)
@@ -1246,7 +1233,7 @@ boost::shared_ptr<BlockStructure> createBlockMatStructure(
   auto col_extractor = [](auto &e) { return e->entityCacheColDofs; };
 
   auto extract_data = [](auto &&its, auto extractor) {
-    std::vector<std::tuple<int, int, int>> data;
+    std::vector<std::tuple<UId, int, int, int>> data;
     data.reserve(std::distance(its.first, its.second));
     // iterate field dofs
     for (; its.first != its.second; ++its.first) {
@@ -1254,9 +1241,10 @@ boost::shared_ptr<BlockStructure> createBlockMatStructure(
         if (auto cache = extractor(e).lock()) {
           auto nb_dofs = std::distance(cache->loHi[0], cache->loHi[1]);
           if (nb_dofs) {
+            auto uid = e->getLocalUniqueId();
             auto glob = (*cache->loHi[0])->getPetscGlobalDofIdx();
             auto loc = (*cache->loHi[0])->getPetscLocalDofIdx();
-            data.emplace_back(glob, nb_dofs, loc);
+            data.emplace_back(uid, glob, nb_dofs, loc);
 
 #ifndef NDEBUG
 
@@ -1315,12 +1303,13 @@ boost::shared_ptr<BlockStructure> createBlockMatStructure(
                          col_extractor);
 
         for (auto &r : row_data) {
-          auto [r_glob, r_nb_dofs, r_loc] = r;
+          auto [r_uid, r_glob, r_nb_dofs, r_loc] = r;
           for (auto &c : col_data) {
-            auto [c_glob, c_nb_dofs, c_loc] = c;
+            auto [c_uid, c_glob, c_nb_dofs, c_loc] = c;
             if (r_glob != -1 && c_glob != -1) {
               data_ptr->blockIndex.insert(BlockStructure::Indexes{
-                  r_glob, c_glob, r_nb_dofs, c_nb_dofs, r_loc, c_loc, -1, -1});
+                  r_uid, c_uid, r_glob, c_glob, r_nb_dofs, c_nb_dofs, r_loc,
+                  c_loc, -1, -1});
             }
           }
         }
@@ -1414,8 +1403,8 @@ static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
 
   for (auto n = 0; n != is_nb_rows; ++n) {
     auto row = ptr[n];
-    auto rlo = ctx->blockIndex.get<2>().lower_bound(row);
-    auto rhi = ctx->blockIndex.get<2>().end();
+    auto rlo = ctx->blockIndex.get<1>().lower_bound(row);
+    auto rhi = ctx->blockIndex.get<1>().end();
     for (; rlo != rhi; ++rlo) {
       auto r_shift = row - rlo->getRow();
       if (r_shift >= 0 && r_shift < rlo->getNbRows()) {
@@ -1431,8 +1420,8 @@ static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
 
   for (auto n = 0; n != is_nb_rows; ++n) {
     auto col = ptr[n];
-    auto clo = ctx->blockIndex.get<3>().lower_bound(col);
-    auto chi = ctx->blockIndex.get<3>().end();
+    auto clo = ctx->blockIndex.get<2>().lower_bound(col);
+    auto chi = ctx->blockIndex.get<2>().end();
     for (; clo != chi; ++clo) {
       auto c_shift = col - clo->getCol();
       if (c_shift >= 0 && c_shift < clo->getNbCols()) {
@@ -1581,7 +1570,7 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
     CHKERR VecGetArray(loc_ghost_y, &y_array);
 
     double *block_ptr = &*ctx->dataBlocksPtr->begin();
-    auto it = ctx->blockIndex.get<0>().lower_bound(0);
+    auto it = ctx->blockIndex.get<0>().begin();
     auto hi = ctx->blockIndex.get<0>().end();
 
     while (it != hi) {
@@ -1618,7 +1607,7 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
 
       auto preconditioner_ptr = &*ctx->preconditionerBlocksPtr->begin();
 
-      auto it = ctx->blockIndex.get<0>().lower_bound(0);
+      auto it = ctx->blockIndex.get<0>().begin();
       auto hi = ctx->blockIndex.get<0>().end();
 
       while (it != hi) {
@@ -1993,17 +1982,18 @@ inline MoFEMErrorCode shell_block_mat_asmb_wrap_impl(
 
   ) {
 
-    auto it = ctx->blockIndex.get<1>().find(
+    auto &row_uid = row_data.getFieldEntities()[0]->getLocalUniqueId();
+    auto &col_uid = col_data.getFieldEntities()[0]->getLocalUniqueId();
 
-        boost::make_tuple(row_indices.second[0], col_data.getIndices()[0],
-                          row_indices.second.size(),
-                          col_data.getIndices().size())
+    auto it = ctx->blockIndex.get<0>().find(
+
+        boost::make_tuple(row_uid, col_uid)
 
     );
 
 #ifndef NDEBUG
 
-    if (it == ctx->blockIndex.get<1>().end()) {
+    if (it == ctx->blockIndex.get<0>().end()) {
       MOFEM_LOG_CHANNEL("SELF");
       MOFEM_TAG_AND_LOG("SELF", Sev::error, "BlockMat")
           << "missing block: row " << row_data.getFieldDofs()[0]->getName()
@@ -2059,18 +2049,21 @@ inline MoFEMErrorCode shell_block_mat_asmb_wrap_impl(
     for (auto &rent : row_data.getFieldEntities()) {
       if (auto r_cache = rent->entityCacheRowDofs.lock()) {
 
+        auto &row_uid = rent->getLocalUniqueId();
+
         auto rlo = r_cache->loHi[0];
         auto rhi = r_cache->loHi[1];
         if (rlo == rhi)
           continue;
 
         get_ent_idx(rlo, rhi, row_ent_idx);
-        auto gr = (*rlo)->getPetscGlobalDofIdx();
         auto nbr = std::distance(rlo, rhi);
         auto col = 0;
 
         for (auto &cent : col_data.getFieldEntities()) {
           if (auto c_cache = cent->entityCacheColDofs.lock()) {
+
+            auto &col_uid = cent->getLocalUniqueId();
 
             auto clo = c_cache->loHi[0];
             auto chi = c_cache->loHi[1];
@@ -2078,15 +2071,15 @@ inline MoFEMErrorCode shell_block_mat_asmb_wrap_impl(
               continue;
 
             auto nbc = std::distance(clo, chi);
-            auto it = ctx->blockIndex.get<1>().find(
+            auto it = ctx->blockIndex.get<0>().find(
 
-                boost::make_tuple(gr, (*clo)->getPetscGlobalDofIdx(), nbr, nbc)
+                boost::make_tuple(row_uid, col_uid)
 
             );
 
 #ifndef NDEBUG
 
-            if (it == ctx->blockIndex.get<1>().end()) {
+            if (it == ctx->blockIndex.get<0>().end()) {
               MOFEM_LOG_CHANNEL("SELF");
               MOFEM_TAG_AND_LOG("SELF", Sev::error, "BlockMat")
                   << "missing block: " << row_data.getFieldDofs()[0]->getName()
@@ -2292,7 +2285,7 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
     std::vector<int> vec_r, vec_c;
     vec_r.reserve(schur_data->blockIndex.size());
     vec_c.reserve(schur_data->blockIndex.size());
-    for (auto &d : schur_data->blockIndex.template get<1>()) {
+    for (auto &d : schur_data->blockIndex.template get<0>()) {
       vec_r.push_back(d.getRow());
       vec_c.push_back(d.getCol());
     }
@@ -2329,12 +2322,14 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
   data_ptrs[3]->ghostY = block_vec_y;
 
   int idx = 0;
-  for (auto &d : block_mat_data_ptr->blockIndex.get<1>()) {
+  for (auto &d : block_mat_data_ptr->blockIndex.get<0>()) {
 
     auto insert = [&](auto &m, auto &dof_r, auto &dof_c, auto &d) {
       m.insert(
 
           BlockStructure::Indexes{
+              dof_r->getLocalUniqueId(), dof_c->getLocalUniqueId(),
+
               dof_r->getPetscGlobalDofIdx(), dof_c->getPetscGlobalDofIdx(),
 
               d.getNbRows(), d.getNbCols(),
@@ -2510,8 +2505,8 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
             >>;
 
     BlockIndexView block_index_view;
-    for (auto it = inv_block_data->blockIndex.template get<1>().begin();
-         it != inv_block_data->blockIndex.template get<1>().end(); ++it) {
+    for (auto it = inv_block_data->blockIndex.template get<0>().begin();
+         it != inv_block_data->blockIndex.template get<0>().end(); ++it) {
       block_index_view.insert(&*it);
     }
 
@@ -2624,13 +2619,14 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
         auto hi = range[s1 + 1];
         for (; lo != hi; ++lo) {
           auto diag_index_ptr = view[lo];
-          auto row = vec_row[lo];
-          auto col = vec_col[lo];
+          auto row_uid = diag_index_ptr->getRowUId();
+          auto col_uid = diag_index_ptr->getColUId();
+
           auto nb_rows = diag_index_ptr->getNbRows();
           auto nb_cols = diag_index_ptr->getNbCols();
-          auto it = block_mat_data_ptr->blockIndex.get<1>().find(
-              boost::make_tuple(row, col, nb_rows, nb_cols));
-          if (it == block_mat_data_ptr->blockIndex.get<1>().end()) {
+          auto it = block_mat_data_ptr->blockIndex.get<0>().find(
+              boost::make_tuple(row_uid, col_uid));
+          if (it == block_mat_data_ptr->blockIndex.get<0>().end()) {
             SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                     "Block not found");
           }
@@ -2853,9 +2849,9 @@ SchurElemMats::MatSetValues(Mat M, const EntitiesFieldData::EntData &row_data,
                             const EntitiesFieldData::EntData &col_data,
                             const MatrixDouble &mat, InsertMode iora) {
   MoFEMFunctionBegin;
+  CHKERR assembleStorage(row_data, col_data, mat, iora);
   CHKERR SchurBackendMatSetValuesPtr::matSetValuesPtr(M, row_data, col_data,
                                                       mat, iora);
-  CHKERR assembleStorage(row_data, col_data, mat, iora);
   MoFEMFunctionReturn(0);
 }
 
@@ -2896,9 +2892,9 @@ SchurElemMatsBlock::MatSetValues(Mat M,
                                  const EntitiesFieldData::EntData &col_data,
                                  const MatrixDouble &mat, InsertMode iora) {
   MoFEMFunctionBegin;
+  CHKERR assembleStorage(row_data, col_data, mat, iora);
   CHKERR SchurBackendMatSetValuesPtr::matSetValuesBlockPtr(M, row_data,
                                                            col_data, mat, iora);
-  CHKERR assembleStorage(row_data, col_data, mat, iora);
   MoFEMFunctionReturn(0);
 }
 
@@ -2928,9 +2924,9 @@ MoFEMErrorCode SchurElemMatsPreconditionedBlock::MatSetValues(
     const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
     InsertMode iora) {
   MoFEMFunctionBegin;
+  CHKERR assembleStorage(row_data, col_data, mat, iora);
   CHKERR SchurBackendMatSetValuesPtr::matSetValuesPreconditionedBlockPtr(
       M, row_data, col_data, mat, iora);
-  CHKERR assembleStorage(row_data, col_data, mat, iora);
   MoFEMFunctionReturn(0);
 }
 
