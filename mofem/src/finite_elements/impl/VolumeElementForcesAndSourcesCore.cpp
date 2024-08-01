@@ -355,7 +355,14 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::transformBaseFunctions() {
   if (dataH1.spacesOnEntities[MBVERTEX].test(H1))
     CHKERR opSetInvJacH1.opRhs(dataH1);
 
-  std::array<std::bitset<LASTSPACE>, 3> spaces_by_dim;
+  std::array<std::bitset<LASTSPACE>, 4> spaces_by_dim{
+
+      std::bitset<LASTSPACE>(0), //
+      std::bitset<LASTSPACE>(0), //
+      std::bitset<LASTSPACE>(0), //
+      std::bitset<LASTSPACE>(0)
+
+  };
   for (auto type = MBEDGE; type != MBENTITYSET; ++type) {
     spaces_by_dim[CN::Dimension(type)] |= dataH1.spacesOnEntities[type];
   }
