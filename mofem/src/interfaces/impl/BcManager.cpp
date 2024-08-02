@@ -188,7 +188,6 @@ MoFEMErrorCode BcManager::addBlockDOFsToMPCs(const std::string problem_name,
                                              bool block_name_field_prefix,
                                              bool is_distributed_mesh) {
   Interface &m_field = cOre;
-  auto prb_mng = m_field.getInterface<ProblemsManager>();
   MoFEMFunctionBegin;
 
   if (block_name_field_prefix)
@@ -1819,12 +1818,10 @@ MoFEMErrorCode BcManager::pushMarkSideDofs(
       CHKERR prb_mng->markDofs(problem_name, ROW, *(bc->dofsViewPtr),
                                ProblemsManager::OR, bc->bcMarkers);
 
-      MOFEM_LOG("BcMngWorld", Sev::warning)
+      MOFEM_LOG("BcMngWorld", Sev::inform)
           << "Found block " << m->getName() << " number of attributes "
           << bc->bcAttributes.size() << " number of entities "
           << bc->bcEnts.size();
-
-      cerr << bc->bcEnts << endl;
 
       const std::string bc_id =
           problem_name + "_" + field_name + "_" + m->getName();
