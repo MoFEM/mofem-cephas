@@ -132,6 +132,12 @@ int main(int argc, char *argv[]) {
     // setup problem
     CHKERR simple->setUp();
 
+    // If block "VOL" exist, first index is removed from "T" field. That test
+    // blocks handling when some DOFs are removed.
+    auto bc_mng = m_field.getInterface<BcManager>();
+    CHKERR bc_mng->removeBlockDOFsOnEntities(simple->getProblemName(), "VOL",
+                                             "T", 0, 1);
+
     auto schur_dm = createDM(m_field.get_comm(), "DMMOFEM");
     CHKERR DMMoFEMCreateSubDM(schur_dm, simple->getDM(), "SCHUR");
     CHKERR DMMoFEMSetSquareProblem(schur_dm, PETSC_TRUE);
