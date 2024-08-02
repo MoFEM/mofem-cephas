@@ -700,9 +700,11 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
     auto set_diagonal_pc = [&](auto pc, auto schur_dm) {
       MoFEMFunctionBegin;
 
-      auto A = createDMBlockMat(simple->getDM());
-      auto P = createDMNestSchurMat(simple->getDM());
-      CHKERR PCSetOperators(pc, A, P);
+      if (AT == BLOCK_SCHUR) {
+        auto A = createDMBlockMat(simple->getDM());
+        auto P = createDMNestSchurMat(simple->getDM());
+        CHKERR PCSetOperators(pc, A, P);
+      } 
 
       KSP *subksp;
       CHKERR PCFieldSplitSchurGetSubKSP(pc, PETSC_NULL, &subksp);
@@ -735,8 +737,10 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
     };
 
     auto [schur_dm, block_dm] = create_sub_dm();
-    auto nested_mat_data = get_nested_mat_data(schur_dm, block_dm);
-    CHKERR DMMoFEMSetNestSchurData(simple->getDM(), nested_mat_data);
+    if (AT == BLOCK_SCHUR) {
+      auto nested_mat_data = get_nested_mat_data(schur_dm, block_dm);
+      CHKERR DMMoFEMSetNestSchurData(simple->getDM(), nested_mat_data);
+    }
     S = createDMHybridisedL2Matrix(schur_dm);
     CHKERR MatSetDM(S, PETSC_NULL);
     int bs = (SPACE_DIM == 2) ? NBEDGE_L2(approx_order - 1)
@@ -747,10 +751,12 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
     CHKERR set_pc(pc, block_dm);
     DM solver_dm;
     CHKERR KSPGetDM(ksp, &solver_dm);
-    CHKERR DMSetMatType(solver_dm, MATSHELL);
+    if (AT == BLOCK_SCHUR)
+      CHKERR DMSetMatType(solver_dm, MATSHELL);
 
     CHKERR KSPSetUp(ksp);
-    CHKERR set_diagonal_pc(pc, schur_dm);
+    if (AT == BLOCK_SCHUR)
+      CHKERR set_diagonal_pc(pc, schur_dm);
 
   } else {
     SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
