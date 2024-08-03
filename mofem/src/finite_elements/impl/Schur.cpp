@@ -2100,31 +2100,30 @@ inline MoFEMErrorCode shell_block_mat_asmb_wrap_impl(
 
             int row = 0;
             for (auto re : ent_row_indices) {
-              ++row;
               ri = std::find(ri, rie, re);
-              if (ri == rie && *ri != -1)
-                continue;
+              if (!(ri == rie && *ri != -1)) {
 
-              auto ci = col_ind.begin();
-              auto cie = col_ind.end();
-              auto ce = c_cache->loHi[0];
+                auto ci = col_ind.begin();
+                auto cie = col_ind.end();
+                auto ce = c_cache->loHi[0];
 
-              int col = 0;
-              for (auto ce : ent_col_indices) {
-                ++col;
-                ci = std::find(ci, cie, ce);
-                if (ci == cie && *ci != -1)
-                  continue;
-
-                auto &m = s_mat[(row - 1) * ent_col_indices.size() + (col - 1)];
-                if (iora == ADD_VALUES) {
-                  m += mat(std::distance(row_ind.begin(), ri),
-                           std::distance(col_ind.begin(), ci));
-                } else {
-                  m = mat(std::distance(row_ind.begin(), ri),
-                          std::distance(col_ind.begin(), ci));
-                }
-              } // cols
+                int col = 0;
+                for (auto ce : ent_col_indices) {
+                  ci = std::find(ci, cie, ce);
+                  if (!(ci == cie && *ci != -1)) {
+                    auto &m = s_mat[row * ent_col_indices.size() + col];
+                    if (iora == ADD_VALUES) {
+                      m += mat(std::distance(row_ind.begin(), ri),
+                               std::distance(col_ind.begin(), ci));
+                    } else {
+                      m = mat(std::distance(row_ind.begin(), ri),
+                              std::distance(col_ind.begin(), ci));
+                    }
+                  }
+                  ++col;
+                } // cols
+              }
+              ++row;
             } // rows
           }
 
