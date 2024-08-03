@@ -24,10 +24,18 @@ struct TetPolynomialBase : public BaseFunction {
   TetPolynomialBase(const void *ptr = nullptr);
   virtual ~TetPolynomialBase();
 
-  static bool swichCacheHDivBaseFaceDemkowicz(const void *ptr);
-  static bool swichCacheHdivBaseInteriorDemkowicz(const void *ptr);
-  static void swichCacheHDivBaseDemkowiczOn(std::vector<void *> v);
-  static void swichCacheHDivBaseDemkowiczOff(std::vector<void *> v);
+  static bool switchCacheHDivBaseFaceDemkowicz(const void *ptr);
+  static bool switchCacheHdivBaseInteriorDemkowicz(const void *ptr);
+  static bool switchCacheHdivBrokenBaseInteriorDemkowicz(const void *ptr);
+  static void switchCacheHDivBaseDemkowiczOn(std::vector<void *> v);
+  static void switchCacheHDivBaseDemkowiczOff(std::vector<void *> v);
+
+  static bool switchCacheHdivBrokenBaseInteriorAinsworth(const void *ptr);
+  static void switchCacheHDivBaseAinsworthOn(std::vector<void *> v);
+  static void switchCacheHDivBaseAinsworthOff(std::vector<void *> v);
+
+  static void switchCacheHDivBaseOn(std::vector<void *> v);
+  static void switchCacheHDivBaseOff(std::vector<void *> v);
 
   MoFEMErrorCode getValue(MatrixDouble &pts,
                           boost::shared_ptr<BaseFunctionCtx> ctx_ptr);
@@ -80,6 +88,33 @@ private:
    */
   MoFEMErrorCode getValueHcurl(MatrixDouble &pts);
 
+private:
+  MoFEMErrorCode getValueH1AinsworthBase(MatrixDouble &pts);
+  MoFEMErrorCode getValueH1BernsteinBezierBase(MatrixDouble &pts);
+
+  MoFEMErrorCode getValueL2AinsworthBase(MatrixDouble &pts);
+  MoFEMErrorCode getValueL2BernsteinBezierBase(MatrixDouble &pts);
+
+  MoFEMErrorCode getValueHdivAinsworthBaseImpl(
+
+      MatrixDouble &pts,
+
+      MatrixDouble &shape_functions, MatrixDouble &diff_shape_functions,
+
+      int volume_order, std::array<int, 4> &faces_order,
+      std::array<int, 3 * 4> &faces_nodes
+
+  );
+  MoFEMErrorCode getValueHdivAinsworthBase(MatrixDouble &pts);
+  MoFEMErrorCode getValueHdivAinsworthBrokenBase(MatrixDouble &pts);
+  MoFEMErrorCode getValueHcurlAinsworthBase(MatrixDouble &pts);
+
+  MoFEMErrorCode getValueHdivDemkowiczBase(MatrixDouble &pts);
+  MoFEMErrorCode getValueHdivDemkowiczBrokenBase(MatrixDouble &pts);
+  MoFEMErrorCode getValueHcurlDemkowiczBase(MatrixDouble &pts);
+
+  MatrixInt senseFaceAlpha;
+
   ublas::matrix<MatrixDouble> N_face_edge;
   ublas::vector<MatrixDouble> N_face_bubble;
   ublas::vector<MatrixDouble> N_volume_edge;
@@ -91,21 +126,6 @@ private:
   ublas::vector<MatrixDouble> diffN_volume_edge;
   ublas::vector<MatrixDouble> diffN_volume_face;
   MatrixDouble diffN_volume_bubble;
-
-private:
-  MoFEMErrorCode getValueH1AinsworthBase(MatrixDouble &pts);
-  MoFEMErrorCode getValueH1BernsteinBezierBase(MatrixDouble &pts);
-
-  MoFEMErrorCode getValueL2AinsworthBase(MatrixDouble &pts);
-  MoFEMErrorCode getValueL2BernsteinBezierBase(MatrixDouble &pts);
-
-  MoFEMErrorCode getValueHdivAinsworthBase(MatrixDouble &pts);
-  MoFEMErrorCode getValueHcurlAinsworthBase(MatrixDouble &pts);
-
-  MoFEMErrorCode getValueHdivDemkowiczBase(MatrixDouble &pts);
-  MoFEMErrorCode getValueHcurlDemkowiczBase(MatrixDouble &pts);
-
-  MatrixInt senseFaceAlpha;
 
 };
 

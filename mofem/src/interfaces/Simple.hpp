@@ -79,9 +79,10 @@ struct Simple : public UnknownInterface {
    * @return            error code
    */
   MoFEMErrorCode loadFile(const std::string mesh_file_name = "");
+
   /**
    * \brief Add field on domain
-   * @param  name              name of the filed
+   * @param  name              name of the field
    * @param  space             space (L2,H1,Hdiv,Hcurl)
    * @param  base              approximation base, see FieldApproximationBase
    * @param  nb_of_coefficients number of field coefficients
@@ -101,8 +102,29 @@ struct Simple : public UnknownInterface {
                  const enum MoFEMTypes bh = MF_ZERO, int verb = -1);
 
   /**
+   * \brief Add broken field on domain
+   * @param  name              name of the field
+   * @param  space             space (L2,H1,Hdiv,Hcurl)
+   * @param  base              approximation base, see FieldApproximationBase
+   * @param  nb_of_coefficients number of field coefficients
+   * @param  tag_type          type of the tag MB_TAG_DENSE or MB_TAG_SPARSE
+   * (DENSE is faster and uses less memory, SPARSE is more flexible if you
+   * define field on subdomains)
+   * @param  bh                if MF_EXCL throws error if field exits, MF_ZERO
+   * no error if field exist
+   * @param  verb              verbosity level
+   * @return                   error code
+   */
+  MoFEMErrorCode
+  addDomainBrokenField(const std::string &name, const FieldSpace space,
+                       const FieldApproximationBase base,
+                       const FieldCoefficientsNumber nb_of_coefficients,
+                       const TagType tag_type = MB_TAG_SPARSE,
+                       const enum MoFEMTypes bh = MF_ZERO, int verb = -1);
+
+  /**
    * \brief Add field on boundary
-   * @param  name              name of the filed
+   * @param  name              name of the field
    * @param  space             space (L2,H1,Hdiv,Hcurl)
    * @param  base              approximation base, see FieldApproximationBase
    * @param  nb_of_coefficients number of field coefficients
@@ -123,7 +145,7 @@ struct Simple : public UnknownInterface {
 
   /**
    * \brief Add field on skeleton
-   * @param  name              name of the filed
+   * @param  name              name of the field
    * @param  space             space (L2,H1,Hdiv,Hcurl)
    * @param  base              approximation base, see FieldApproximationBase
    * @param  nb_of_coefficients number of field coefficients
@@ -144,7 +166,7 @@ struct Simple : public UnknownInterface {
 
   /**
    * \brief Add field on domain
-   * @param  name              name of the filed
+   * @param  name              name of the field
    * @param  space             space (L2,H1,Hdiv,Hcurl)
    * @param  base              approximation base, see FieldApproximationBase
    * @param  nb_of_coefficients number of field coefficients
@@ -485,7 +507,7 @@ struct Simple : public UnknownInterface {
    * zero. This is not always the case, to optimise code and reduce memory usage
    * user can specifi which blocks are empty.
    *
-   * @param row_field row filed name
+   * @param row_field row field name
    * @param col_field col field name
    * @return MoFEMErrorCode
    */

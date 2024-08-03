@@ -7,7 +7,7 @@
 #ifndef __LINEAR_FORMS_INTEGRATORS_HPP__
 #define __LINEAR_FORMS_INTEGRATORS_HPP__
 
-#include <LinearFormsIntegratorsImpl.hpp>
+
 
 namespace MoFEM {
 
@@ -167,6 +167,24 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
   template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM>
   using OpConvectiveTermRhs =
       OpConvectiveTermRhsImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, I, OpBase>;
+
+  /**
+   * @brief Assemble Rhs for constraint matrix C while hybridisation.
+   *
+   * @tparam FIELD_DIM dimension of the field
+   */
+  template <int FIELD_DIM>
+  using OpBrokenSpaceConstrainDHybrid =
+      OpBrokenSpaceConstrainDHybridImpl<FIELD_DIM, I, OpBase>;
+
+  /**
+   * @brief Assemble Rhs for contraint matrix C^T whole hybridisation
+   * 
+   * @tparam FIELD_DIM 
+   */
+  template <int FIELD_DIM>
+  using OpBrokenSpaceConstrainDFlux =
+      OpBrokenSpaceConstrainDFluxImpl<FIELD_DIM, I, OpBase>;
 };
 
 } // namespace MoFEM

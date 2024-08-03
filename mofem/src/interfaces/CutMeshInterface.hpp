@@ -200,7 +200,7 @@ struct CutMeshInterface : public UnknownInterface {
    * @param fixed_edges edges on which nodes can not be moved
    * @param corner_nodes nodes which can not be moved
    * @param update_meshsets update meshsets by parents
-   * @param debug swich on debugging
+   * @param debug switch on debugging
    * @return MoFEMErrorCode
    */
   MoFEMErrorCode cutTrimAndMerge(int &first_bit, const int fraction_level,

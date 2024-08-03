@@ -42,7 +42,7 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
                                        const int dim)) {
 
   const int face_edges_nodes[3][2] = {{0, 1}, {1, 2}, {2, 0}};
-  const int face_oposite_edges_node[] = {2, 0, 1};
+  const int face_opposite_edges_node[] = {2, 0, 1};
   FTensor::Index<'i', 3> i;
   FTensor::Index<'j', 3> j;
 
@@ -87,7 +87,7 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
   for (int ee = 0; ee != 3; ee++) {
     const int i0 = faces_nodes[face_edges_nodes[ee][0]];
     const int i1 = faces_nodes[face_edges_nodes[ee][1]];
-    const int iO = faces_nodes[face_oposite_edges_node[ee]];
+    const int iO = faces_nodes[face_opposite_edges_node[ee]];
     FTensor::Tensor1<double *, 3> t_psi_f_e(&phi_f_e[ee][0], &phi_f_e[ee][1],
                                             &phi_f_e[ee][2], 3);
     if (diff_phi_f_e) {
@@ -618,7 +618,7 @@ MoFEM::Hdiv_Demkowicz_Face_MBTET_ON_FACE(int *faces_nodes, int p, double *N,
                                          double *diffN, double *phi_f,
                                          double *diff_phi_f, int gdim, int nb) {
   const int face_edges_nodes[3][2] = {{0, 1}, {1, 2}, {2, 0}};
-  const int face_oposite_edges_node[] = {2, 0, 1};
+  const int face_opposite_edges_node[] = {2, 0, 1};
 
   MoFEMFunctionBeginHot;
 
@@ -633,9 +633,9 @@ MoFEM::Hdiv_Demkowicz_Face_MBTET_ON_FACE(int *faces_nodes, int p, double *N,
   const int i0 = faces_nodes[0];
   const int i1 = faces_nodes[1];
   const int i2 = faces_nodes[2];
-  const int o[] = {faces_nodes[face_oposite_edges_node[0]],
-                   faces_nodes[face_oposite_edges_node[1]],
-                   faces_nodes[face_oposite_edges_node[2]]};
+  const int o[] = {faces_nodes[face_opposite_edges_node[0]],
+                   faces_nodes[face_opposite_edges_node[1]],
+                   faces_nodes[face_opposite_edges_node[2]]};
 
   FTensor::Tensor1<double, 3> t_diff_n0_p_n1;
   FTensor::Tensor1<double, 3> t_diff_n0_p_n1_p_n2;

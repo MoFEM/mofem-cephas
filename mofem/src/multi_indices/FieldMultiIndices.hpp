@@ -78,9 +78,10 @@ struct Field {
   Tag th_AppOrder;       ///< Tag storing approximation order on entity
   Tag th_FieldRank;      /// Tag field rank
 
-  BitFieldId *tagId;                   ///< tag keeps field id
-  FieldSpace *tagSpaceData;            ///< tag keeps field space
-  FieldApproximationBase *tagBaseData; ///< tag keeps field base
+  BitFieldId *tagId;                       ///< tag keeps field id
+  FieldSpace *tagSpaceData;                ///< tag keeps field space
+  FieldContinuity *tagFieldContinuityData; ///< tag keeps field continuity
+  FieldApproximationBase *tagBaseData;     ///< tag keeps field base
 
   /// tag keeps field rank (dimension, f.e. Temperature field has rank 1,
   /// displacements field in 3d has rank 3)
@@ -155,6 +156,19 @@ struct Field {
    */
   inline auto getSpaceName() const {
     return std::string(FieldSpaceNames[getSpace()]);
+  }
+
+  /** \brief Get field space continuity */
+  inline FieldContinuity getContinuity() const {
+    return *tagFieldContinuityData;
+  }
+
+  /**
+   * @brief  Get field space continuity name
+   * 
+   */
+  inline auto getContinuityName() const {
+    return std::string(FieldContinuityNames[getContinuity()]);
   }
 
   /**
@@ -336,6 +350,16 @@ struct interface_Field : public interface_FieldImpl<FIELD, REFENT> {
   /// @return get approximation base
   inline FieldApproximationBase getApproxBase() const {
     return getFieldRawPtr()->getApproxBase();
+  }
+
+  /// @return get space continuity
+  inline FieldContinuity getContinuity() const {
+    return getFieldRawPtr()->getContinuity();
+  }
+
+  /// @return get space continuity name
+  inline auto getContinuityName() const {
+    return getFieldRawPtr()->getContinuityName();
   }
 
   /// @return get number of coefficients for DOF

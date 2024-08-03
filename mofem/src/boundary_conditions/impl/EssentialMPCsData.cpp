@@ -443,9 +443,10 @@ MoFEMErrorCode EssentialPostProcLhs<MPCsType>::operator()() {
             MatType typem;
             CHKERR MatGetType(B, &typem);
             CHKERR MatSetOption(B, MAT_NEW_NONZERO_LOCATIONS, PETSC_TRUE);
-            if (typem == MATMPIBAIJ)
+            PetscBool is_mat_baij = PETSC_FALSE;
+            PetscObjectTypeCompare((PetscObject)B, MATMPIBAIJ, &is_mat_baij);
+            if (is_mat_baij)
               CHKERR MatSetOption(B, MAT_USE_HASH_TABLE, PETSC_TRUE);
-
             if ((*fe_ptr->matAssembleSwitch) && !vLhs) {
               if (*fe_ptr->matAssembleSwitch) {
                 CHKERR MatAssemblyBegin(B, MAT_FLUSH_ASSEMBLY);
@@ -589,12 +590,6 @@ MoFEMErrorCode EssentialPostProcRhs<MPCsType>::operator()() {
           auto prb_name = fe_method_ptr->problemPtr->getName();
 
           auto get_flag = [&](int idx) { return (&mpc_bc->data.flag1)[idx]; };
-
-          auto add_is = [](auto is1, auto is2) {
-            IS is;
-            CHK_THROW_MESSAGE(ISExpand(is1, is2, &is), "is sum");
-            return SmartPetscObj<IS>(is);
-          };
 
           SmartPetscObj<IS> is_m[max_nb_dofs_per_node];
           SmartPetscObj<IS> is_s[max_nb_dofs_per_node];

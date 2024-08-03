@@ -183,12 +183,9 @@ Core::modify_finite_element_add_field_col(const std::string &fe_name,
                                           const std::string name_col) {
   MoFEMFunctionBegin;
   *buildMoFEM &= 1 << 0;
-  typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type
-      FiniteElements_by_name;
-  FiniteElements_by_name &finite_element_name_set =
+  auto &finite_element_name_set =
       finiteElements.get<FiniteElement_name_mi_tag>();
-  FiniteElements_by_name::iterator it_fe =
-      finite_element_name_set.find(fe_name);
+  auto it_fe = finite_element_name_set.find(fe_name);
   if (it_fe == finite_element_name_set.end())
     SETERRQ(mofemComm, MOFEM_OPERATION_UNSUCCESSFUL,
             "this FiniteElement is there");

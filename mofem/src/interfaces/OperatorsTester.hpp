@@ -1,6 +1,6 @@
 /**
  * @file OperatorsTester.hpp
- * @brief Used to calculate directives and testing tangent matrix, i.e. hessian.
+ * @brief Used to calculate derivatives and testing tangent matrix, i.e. hessian.
  * @version 0.13.2
  * @date 2022-12-04
  *

@@ -49,6 +49,9 @@ private:
 
   MoFEMErrorCode getValueHdivDemkowiczBase(MatrixDouble &pts);
   MoFEMErrorCode getValueHcurlDemkowiczBase(MatrixDouble &pts);
+
+  MoFEMErrorCode getValueHcurlAinsworthBrokenBase(MatrixDouble &pts);
+  MoFEMErrorCode getValueHcurlDemkowiczBrokenBase(MatrixDouble &pts);
 };
 
 } // namespace MoFEM

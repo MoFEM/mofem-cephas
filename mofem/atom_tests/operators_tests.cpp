@@ -224,7 +224,7 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionReturn(0);
     };
 
-    // test operator for convection (part of material time directives)
+    // test operator for convection (part of material time derivatives)
     auto TestOpConvection = [&]() {
       MoFEMFunctionBegin;
       MOFEM_LOG("OpTester", Sev::verbose) << "TestOpConvection";

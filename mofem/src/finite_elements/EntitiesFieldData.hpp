@@ -41,7 +41,6 @@ struct EntitiesFieldData {
 
   struct EntData;
 
-  std::bitset<LASTSPACE> sPace; ///< spaces on element
   std::bitset<LASTBASE> bAse;   ///< bases on element
   MatrixInt facesNodes;         ///< nodes on finite element faces
   MatrixInt facesNodesOrder;    ///< order of face nodes on element
@@ -52,6 +51,8 @@ struct EntitiesFieldData {
       basesOnEntities; ///< bases on entity types
   std::array<std::bitset<LASTBASE>, LASTSPACE>
       basesOnSpaces; ///< base on spaces
+  std::array<std::bitset<LASTBASE>, LASTSPACE>
+      brokenBasesOnSpaces; ///< base on spaces
   std::array<boost::ptr_vector<EntData>, MBMAXTYPE>
       dataOnEntities; ///< data on nodes, base
                       ///< function, dofs
@@ -1112,6 +1113,8 @@ protected:
   boost::shared_ptr<MatrixDouble> swapBaseDiffNPtr;
 
   friend struct OpAddParentEntData;
+
+  template <typename OpBase> friend struct OpGetBrokenBaseSideData;
 };
 
 using BaseDerivatives = EntitiesFieldData::EntData::BaseDerivatives;

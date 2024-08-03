@@ -159,7 +159,7 @@ public:
    * @brief Get derived data on entities and space
    *
    * Entities data are stored by space, by entity type, and entity side. Derived
-   * data is used to store data on columns, so it shares infromatin about shape
+   * data is used to store data on columns, so it shares information about shape
    * functions wih rows.
    *
    * @return std::array<boost::shared_ptr<EntitiesFieldData>, LASTSPACE>
@@ -538,7 +538,7 @@ private:
   friend class VolumeElementForcesAndSourcesCoreOnContactPrismSide;
 
   template <int DIM> friend struct OpCopyGeomDataToE;
-                                   
+  template <typename E> friend struct OpBrokenLoopSide; 
 
 protected:
   MatrixDouble coordsAtGaussPts; ///< coordinated at gauss points
@@ -915,6 +915,7 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
    * be accessed
    * @param verb
    * @param sev
+   * @param adj_cache
    * @return MoFEMErrorCode
    */
   MoFEMErrorCode loopSide(const string &fe_name, ForcesAndSourcesCore *side_fe,
@@ -1296,19 +1297,21 @@ struct OpLoopSide : public ForcesAndSourcesCore::UserDataOperator {
    * @param m_field 
    * @param fe_name name of side (domain element)
    * @param side_dim dimension
+   * @param sev severity level
+   * @param adj_cache if set to null cache of the element is used
    */
   OpLoopSide(MoFEM::Interface &m_field, const std::string fe_name,
              const int side_dim,
              const LogManager::SeverityLevel sev = Sev::noisy,
              boost::shared_ptr<AdjCache> adj_cache = nullptr)
       : UserDataOperator(NOSPACE, OPSPACE), sideFEPtr(new E(m_field)),
-        fieldName(fe_name), sideDim(side_dim), sevLevel(sev),
+        sideFEName(fe_name), sideDim(side_dim), sevLevel(sev),
         adjCache(adj_cache) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
-    CHKERR loopSide(fieldName, sideFEPtr.get(), sideDim, 0, VERBOSE, sevLevel,
+    CHKERR loopSide(sideFEName, sideFEPtr.get(), sideDim, 0, VERBOSE, sevLevel,
                     adjCache.get());
     MoFEMFunctionReturn(0);
   };
@@ -1320,7 +1323,7 @@ struct OpLoopSide : public ForcesAndSourcesCore::UserDataOperator {
   boost::shared_ptr<E> &getSideFEPtr() { return sideFEPtr; }
 
 protected:
-  const std::string fieldName;
+  const std::string sideFEName;
   const int sideDim;
   boost::shared_ptr<E> sideFEPtr;
   const LogManager::SeverityLevel sevLevel;

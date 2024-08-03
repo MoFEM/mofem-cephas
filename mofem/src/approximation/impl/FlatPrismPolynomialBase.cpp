@@ -17,8 +17,8 @@ FlatPrismPolynomialBaseCtx::FlatPrismPolynomialBaseCtx(
     const NumeredEntFiniteElement *fe_ptr, const FieldSpace space,
     const FieldApproximationBase base,
     const FieldApproximationBase copy_node_base)
-    : EntPolynomialBaseCtx(data, space, base, copy_node_base), mOab(moab),
-      fePtr(fe_ptr) {
+    : EntPolynomialBaseCtx(data, space, CONTINUOUS, base, copy_node_base),
+      mOab(moab), fePtr(fe_ptr) {
   CHKERR setBase();
   CHKERRABORT(PETSC_COMM_WORLD, ierr);
 }

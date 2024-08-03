@@ -247,7 +247,7 @@ struct CoreInterface : public UnknownInterface {
    * \note add_file is a collective, should be executed on all processors.
    * Otherwise could lead to deadlock.
    *
-   * @param  name              name of the filed
+   * @param  name              name of the field
    * @param  space             space (L2,H1,Hdiv,Hcurl)
    * @param  base              approximation base, see FieldApproximationBase
    * @param  nb_of_coefficients number of field coefficients
@@ -259,6 +259,33 @@ struct CoreInterface : public UnknownInterface {
    * @param  verb              verbosity level
    * @return                   error code
    */
+  virtual MoFEMErrorCode
+  add_broken_field(const std::string &name, const FieldSpace space,
+                   const FieldApproximationBase base,
+                   const FieldCoefficientsNumber nb_of_coefficients,
+                   const TagType tag_type = MB_TAG_SPARSE,
+                   const enum MoFEMTypes bh = MF_EXCL,
+                   int verb = DEFAULT_VERBOSITY) = 0;
+
+  /**
+   * \brief Add field
+   *
+   * \note add_file is a collective, should be executed on all processors.
+   * Otherwise could lead to deadlock.
+   *
+   * @param  name              name of the field
+   * @param  space             space (L2,H1,Hdiv,Hcurl)
+   * @param  continuity        continuity (CONTINUOUS, DISCONTINUOUS)
+   * @param  base              approximation base, see FieldApproximationBase
+   * @param  nb_of_coefficients number of field coefficients
+   * @param  tag_type          type of the tag MB_TAG_DENSE or MB_TAG_SPARSE
+   * (DENSE is faster and uses less memory, SPARSE is more flexible if you
+   * define field on subdomains)
+   * @param  bh                if MF_EXCL throws error if field exits, MF_ZERO
+   * no error if field exist
+   * @param  verb              verbosity level
+   * @return                   error code
+   */  
   virtual MoFEMErrorCode
   add_field(const std::string &name, const FieldSpace space,
             const FieldApproximationBase base,
@@ -360,7 +387,7 @@ struct CoreInterface : public UnknownInterface {
    * @brief Create a vertices and add to field object
    *
    * Create vertices and add them to field. Those vertices would be carring
-   * DOFs of the filed.
+   * DOFs of the field.
    *
    * \note This function is typically used when NOFIELD is created, for example
    * load factor in arc-length control.
@@ -657,7 +684,7 @@ struct CoreInterface : public UnknownInterface {
    */
   virtual MoFEMErrorCode
   modify_finite_element_add_field_data(const std::string &fe_name,
-                                       const std::string name_filed) = 0;
+                                       const std::string name_field) = 0;
 
   /** \brief unset finite element field data
    * \ingroup mofem_fe
@@ -672,7 +699,7 @@ struct CoreInterface : public UnknownInterface {
    */
   virtual MoFEMErrorCode
   modify_finite_element_off_field_data(const std::string &fe_name,
-                                       const std::string name_filed) = 0;
+                                       const std::string name_field) = 0;
 
   /** \brief set field row which finite element use
    * \ingroup mofem_fe
@@ -1773,7 +1800,7 @@ struct CoreInterface : public UnknownInterface {
   get_dofs(const DofEntity_multiIndex **dofs_ptr) const = 0;
 
   /**
-   * \brief get begin iterator of filed ents of given name (instead you can
+   * \brief get begin iterator of field ents of given name (instead you can
    * use _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
    *
    * \ingroup mofem_field
@@ -1788,7 +1815,7 @@ struct CoreInterface : public UnknownInterface {
   get_ent_field_by_name_begin(const std::string &field_name) const = 0;
 
   /**
-   * \brief get begin iterator of filed dofs of given name (instead you can
+   * \brief get begin iterator of field dofs of given name (instead you can
    * use _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
    * \ingroup mofem_field
    *
@@ -1810,7 +1837,7 @@ struct CoreInterface : public UnknownInterface {
   IT++
 
   /**
-   * \brief get begin iterator of filed dofs of given name (instead you can
+   * \brief get begin iterator of field dofs of given name (instead you can
    * use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
    * \ingroup mofem_field
    *
@@ -1824,7 +1851,7 @@ struct CoreInterface : public UnknownInterface {
   get_dofs_by_name_begin(const std::string &field_name) const = 0;
 
   /**
-   * \brief get begin iterator of filed dofs of given name (instead you can
+   * \brief get begin iterator of field dofs of given name (instead you can
    * use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
    * \ingroup mofem_field
    *
@@ -1846,7 +1873,7 @@ struct CoreInterface : public UnknownInterface {
   IT++
 
   /**
-   * \brief get begin iterator of filed dofs of given name and ent(instead you
+   * \brief get begin iterator of field dofs of given name and ent(instead you
    * can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,ENT,IT)
    *
    * \ingroup mofem_field
@@ -1862,7 +1889,7 @@ struct CoreInterface : public UnknownInterface {
                                  const EntityHandle ent) const = 0;
 
   /**
-   * \brief get begin iterator of filed dofs of given name and ent (instead
+   * \brief get begin iterator of field dofs of given name and ent (instead
    * you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,ENT,IT)
    * \ingroup mofem_field
    *
@@ -1886,7 +1913,7 @@ struct CoreInterface : public UnknownInterface {
   IT++
 
   /**
-   * \brief get begin iterator of filed dofs of given name and ent type
+   * \brief get begin iterator of field dofs of given name and ent type
    * (instead you can use
    * _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,TYPE,IT)
    *
@@ -1903,7 +1930,7 @@ struct CoreInterface : public UnknownInterface {
                                   const EntityType type) const = 0;
 
   /**
-   * \brief get begin iterator of filed dofs of given name end ent
+   * \brief get begin iterator of field dofs of given name end ent
    * type(instead you can use
    * _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,TYPE,IT)
    *

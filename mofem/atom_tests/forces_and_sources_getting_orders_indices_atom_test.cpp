@@ -168,8 +168,8 @@ int main(int argc, char *argv[]) {
         }
         CHKERR TetPolynomialBase().getValue(
             gauss_pts,
-            boost::shared_ptr<BaseFunctionCtx>(
-                new EntPolynomialBaseCtx(data, H1, AINSWORTH_LEGENDRE_BASE)));
+            boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+                data, H1, CONTINUOUS, AINSWORTH_LEGENDRE_BASE)));
 
         const auto bn1 = mField.get_field_bit_number("FIELD1");
         CHKERR getRowNodesIndices(data, bn1);

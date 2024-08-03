@@ -195,8 +195,8 @@ int main(int argc, char *argv[]) {
         }
         CHKERR TetPolynomialBase().getValue(
             gauss_pts,
-            boost::shared_ptr<BaseFunctionCtx>(
-                new EntPolynomialBaseCtx(data, H1, AINSWORTH_LEGENDRE_BASE)));
+            boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+                data, H1, CONTINUOUS, AINSWORTH_LEGENDRE_BASE)));
 
         EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
         int num_nodes;

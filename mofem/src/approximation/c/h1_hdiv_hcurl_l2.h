@@ -42,10 +42,10 @@ extern "C" {
 #define NBFACETRI_L2(P) ((P + 1) * (P + 2) / 2)
 
 /**
- * @brief Number of base functions on edge fro L2 space
+ * @brief Number of base functions on edge from L2 space
  *
  */
-#define NBEDGE_L2(P) (P + 1)
+#define NBEDGE_L2(P) ((P) + 1)
 
 // H1
 
