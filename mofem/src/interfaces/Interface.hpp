@@ -769,7 +769,7 @@ struct CoreInterface : public UnknownInterface {
    *
    * @param  entities   meshset or range form were entities taken
    * @param  type      type of entity
-   * @param  name      name of field
+   * @param  name      finite element name
    * @param  recursive take entities from meshsets in meshset
    * @return           error code
    */
@@ -785,7 +785,7 @@ struct CoreInterface : public UnknownInterface {
    *
    * @param  entities  meshset or range form were entities taken
    * @param  dim       dimension
-   * @param  name      name of field
+   * @param  name      finite element name
    * @param  recursive take entities from meshsets in meshset
    * @return           error code
    */
