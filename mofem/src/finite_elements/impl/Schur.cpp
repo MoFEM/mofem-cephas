@@ -1291,7 +1291,7 @@ boost::shared_ptr<BlockStructure> createBlockMatStructure(
             if ((*dof)->getPetscGlobalDofIdx() != -1)
               ++nb_dofs;
           }
-          if (nb_dofs) {
+          // if (nb_dofs) {
             auto uid = e->getLocalUniqueId();
             auto glob = (*cache->loHi[0])->getPetscGlobalDofIdx();
             auto loc = (*cache->loHi[0])->getPetscLocalDofIdx();
@@ -1315,7 +1315,7 @@ boost::shared_ptr<BlockStructure> createBlockMatStructure(
 
 #endif
             }
-          }
+          // }
         }
       }
     }
