@@ -1291,8 +1291,9 @@ boost::shared_ptr<BlockStructure> createBlockMatStructure(
             if ((*dof)->getPetscGlobalDofIdx() != -1)
               ++nb_dofs;
           }
-          // if (nb_dofs) {
-            auto uid = e->getLocalUniqueId();
+          auto uid = e->getLocalUniqueId();
+          if (nb_dofs) {
+
             auto glob = (*cache->loHi[0])->getPetscGlobalDofIdx();
             auto loc = (*cache->loHi[0])->getPetscLocalDofIdx();
             while (glob == -1 && cache->loHi[0] != cache->loHi[1]) {
@@ -1300,22 +1301,22 @@ boost::shared_ptr<BlockStructure> createBlockMatStructure(
               glob = (*cache->loHi[0])->getPetscGlobalDofIdx();
               loc = (*cache->loHi[0])->getPetscLocalDofIdx();
             }
-            if (glob != -1) {
-              data.emplace_back(uid, glob, nb_dofs, loc);
+            data.emplace_back(uid, glob, nb_dofs, loc);
 
 #ifndef NDEBUG
 
-              for (auto lo = cache->loHi[0]; lo != cache->loHi[1]; ++lo) {
-                auto glob = (*lo)->getPetscGlobalDofIdx();
-                if (glob == -1) {
-                  CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY,
-                                    "Wrong global index");
-                }
+            for (auto lo = cache->loHi[0]; lo != cache->loHi[1]; ++lo) {
+              auto glob = (*lo)->getPetscGlobalDofIdx();
+              if (glob == -1) {
+                CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY,
+                                  "Wrong global index");
               }
+            }
 
 #endif
-            }
-          // }
+          } else {
+            data.emplace_back(uid, -1, 0, -1);
+          }
         }
       }
     }
