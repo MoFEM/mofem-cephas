@@ -207,8 +207,6 @@ protected:
 
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data);
-
-  MatrixDouble transposedC;
 };
 
 template <int FIELD_DIM, typename OpBase>
@@ -318,21 +316,29 @@ MoFEMErrorCode OpBrokenSpaceConstrainImpl<FIELD_DIM, GAUSS, OpBase>::iNtegrate(
   auto t_normal = OpBase::getFTensor1NormalsAtGaussPts();
   size_t nb_base_functions = col_data.getN().size2() / 3;
 
+#ifndef NDEBUG
+  if (nb_row_dofs % FIELD_DIM != 0 || nb_col_dofs % FIELD_DIM != 0) {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "number of dofs not divisible by field dimension");
+  }
+  if (nb_row_dofs > row_data.getN().size2() * FIELD_DIM ||
+      nb_col_dofs > col_data.getN().size2() * FIELD_DIM) {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "number of dofs exceeds number of base functions");
+  }
+#endif // NDEBUG
+
   auto t_col_base = col_data.getFTensor1N<3>();
-  transposedC.resize(nb_col_dofs, nb_row_dofs, false);
-  transposedC.clear();
 
   for (size_t gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
-
-    auto t_m = getFTensor1FromPtr<FIELD_DIM>(&*transposedC.data().begin());
 
     int cc = 0;
     for (; cc != nb_col_dofs / FIELD_DIM; cc++) {
       auto t_row_base = row_data.getFTensor0N(gg, 0);
       for (auto rr = 0; rr != nb_row_dofs / FIELD_DIM; ++rr) {
-        t_m(i) += (t_w * t_row_base) * (t_normal(J) * t_col_base(J));
+        OP::locMat(FIELD_DIM * rr, FIELD_DIM * cc) +=
+            (t_w * t_row_base) * (t_normal(J) * t_col_base(J));
         ++t_row_base;
-        ++t_m;
       }
 
       ++t_col_base;
@@ -345,9 +351,16 @@ MoFEMErrorCode OpBrokenSpaceConstrainImpl<FIELD_DIM, GAUSS, OpBase>::iNtegrate(
     ++t_normal;
   }
 
-  transposedC *= scalarBeta;
-  OP::locMat.resize(nb_row_dofs, nb_col_dofs, false);
-  noalias(OP::locMat) = trans(transposedC);
+  for (auto rr = 0; rr != nb_row_dofs / FIELD_DIM; ++rr) {
+    for (auto cc = 0; cc != nb_col_dofs / FIELD_DIM; ++cc) {
+      for (auto dd = 1; dd < FIELD_DIM; ++dd) {
+        OP::locMat(FIELD_DIM * rr + dd, FIELD_DIM * cc + dd) =
+            OP::locMat(FIELD_DIM * rr, FIELD_DIM * cc);
+      }
+    }
+  }
+
+  OP::locMat *= scalarBeta;
 
   MoFEMFunctionReturn(0);
 }
@@ -500,7 +513,7 @@ OpBrokenSpaceConstrainDHybridImpl<FIELD_DIM, GAUSS, OpBase>::iNtegrate(
     EntitiesFieldData::EntData &row_data) {
   MoFEMFunctionBegin;
 
-  FTENSOR_INDEX(1, i);
+  FTENSOR_INDEX(FIELD_DIM, i);
   FTENSOR_INDEX(3, J);
 
   OP::locF.resize(row_data.getIndices().size(), false);
@@ -510,11 +523,11 @@ OpBrokenSpaceConstrainDHybridImpl<FIELD_DIM, GAUSS, OpBase>::iNtegrate(
     auto t_w = this->getFTensor0IntegrationWeight();
     auto t_normal = OpBase::getFTensor1NormalsAtGaussPts();
     auto t_row_base = row_data.getFTensor0N();
-    auto t_flux = getFTensor2FromMat<1, 3>(bd.getFlux());
+    auto t_flux = getFTensor2FromMat<FIELD_DIM, 3>(bd.getFlux());
     auto nb_base_functions = row_data.getN().size2() / 3;
     auto sense = bd.getSense();
     for (size_t gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
-      auto t_vec = getFTensor1FromPtr<1>(&*OP::locF.data().begin());
+      auto t_vec = getFTensor1FromPtr<FIELD_DIM>(&*OP::locF.data().begin());
       size_t rr = 0;
       for (; rr != row_data.getIndices().size() / FIELD_DIM; ++rr) {
         t_vec(i) += (sense * t_w) * t_row_base * t_normal(J) * t_flux(i, J);
