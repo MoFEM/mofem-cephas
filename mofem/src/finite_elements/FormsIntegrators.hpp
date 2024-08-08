@@ -292,6 +292,11 @@ typename OpBaseImpl<A, EleOp>::MatSetValuesHook
               op_ptr->getKSPB(), row_data, col_data, m, ADD_VALUES);
         };
 
+template <typename OpBase>
+struct OpBrokenBaseImpl; //< This is base operator for broken spaces.
+                         //Implementation is in
+                         //FormsBrokenSpaceConstraintImpl.hpp
+
 /**
  * @brief Integrator forms
  * @ingroup mofem_forms
@@ -312,6 +317,7 @@ template <typename EleOp> struct FormsIntegrators {
   template <AssemblyType A> struct Assembly {
 
     using OpBase = OpBaseImpl<A, EleOp>;
+    using OpBrokenBase = OpBrokenBaseImpl<OpBase>;
 
     /**
      * @brief Linear form
