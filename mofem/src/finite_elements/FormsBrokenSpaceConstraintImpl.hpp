@@ -330,14 +330,14 @@ OpBrokenBaseImpl<OpBase>::doWork(int row_side, EntityType row_type,
   MoFEMFunctionReturn(0);
 }
 
-template <int FIELD_DIM, IntegrationType I, typename OpBase>
+template <int FIELD_DIM, IntegrationType I, typename OpBrokenBase>
 struct OpBrokenSpaceConstrainImpl;
 
-template <int FIELD_DIM, typename OpBase>
-struct OpBrokenSpaceConstrainImpl<FIELD_DIM, GAUSS, OpBase>
-    : public OpBrokenBaseImpl<OpBase> {
+template <int FIELD_DIM, typename OpBrokenBase>
+struct OpBrokenSpaceConstrainImpl<FIELD_DIM, GAUSS, OpBrokenBase>
+    : public OpBrokenBase {
 
-  using OP = OpBrokenBaseImpl<OpBase>;
+  using OP = OpBrokenBase;
 
   OpBrokenSpaceConstrainImpl(
       const std::string row_field,
@@ -425,11 +425,11 @@ struct OpBrokenSpaceConstrainDHybridImpl;
 template <int FIELD_DIM, IntegrationType I, typename OpBase>
 struct OpBrokenSpaceConstrainDFluxImpl;
 
-template <int FIELD_DIM, typename OpBase>
-struct OpBrokenSpaceConstrainDFluxImpl<FIELD_DIM, GAUSS, OpBase>
-    : public OpBrokenBaseImpl<OpBase> {
+template <int FIELD_DIM, typename OpBrokenBase>
+struct OpBrokenSpaceConstrainDFluxImpl<FIELD_DIM, GAUSS, OpBrokenBase>
+    : public OpBrokenBase {
 
-  using OP = OpBrokenBaseImpl<OpBase>;
+  using OP = OpBrokenBase;
 
   OpBrokenSpaceConstrainDFluxImpl(
       boost::shared_ptr<std::vector<BrokenBaseSideData>> broken_base_side_data,
