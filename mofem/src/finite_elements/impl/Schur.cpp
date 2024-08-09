@@ -799,7 +799,7 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
 #endif // NDEBUG
 
         // note invMat is multiplied by -1
-        CHKERR I::invertMat(row_it, invMat, eps);
+        CHKERR I::invertMat(OP::getPtrFE()->mField, row_it, invMat, eps);
 
         // iterate column entities
         for (auto c_lo : schur_col_ptr_view) {
@@ -1145,8 +1145,8 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
 }
 
 struct SchurDSYSV {
-  static auto invertMat(const SchurElemMats *row_ptr, MatrixDouble &inv,
-                        double eps) {
+  static auto invertMat(MoFEM::Interface &m_field, const SchurElemMats *row_ptr,
+                        MatrixDouble &inv, double eps) {
     MoFEMFunctionBeginHot;
 
     auto &m = row_ptr->getMat();
@@ -1171,16 +1171,25 @@ struct SchurDSYSV {
     const auto info =
         lapack_dsysv('L', nb, nb, &*m.data().begin(), nb, &*ipiv.begin(),
                      &*inv.data().begin(), nb, &*lapack_work.begin(), nb * nb);
-    if (info != 0)
+    if (info != 0) {
+      auto get_field_name = [&](auto uid) {
+        return m_field.get_field_name(field_bit_from_bit_number(
+            FieldEntity::getFieldBitNumberFromUniqueId(uid)));
+      };
+      MOFEM_LOG("SELF", Sev::error)
+          << "invert: uid_row " << get_field_name(row_ptr->uidRow)
+          << " row uid " << get_field_name(row_ptr->uidCol) << " : "
+          << row_ptr->getMat().size1() << " " << row_ptr->getMat().size2();
       SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                "Can not invert matrix info = %d", info);
+    }
     MoFEMFunctionReturnHot(0);
   };
 };
 
 struct SchurDGESV {
-  static auto invertMat(const SchurElemMats *row_ptr, MatrixDouble &inv,
-                        double eps) {
+  static auto invertMat(MoFEM::Interface &m_field, const SchurElemMats *row_ptr,
+                        MatrixDouble &inv, double eps) {
     MoFEMFunctionBeginHot;
 
     auto &m = row_ptr->getMat();
@@ -1208,9 +1217,21 @@ struct SchurDGESV {
     ipiv.resize(nb, false);
     const auto info = lapack_dgesv(nb, nb, &*m.data().begin(), nb,
                                    &*ipiv.begin(), &*inv.data().begin(), nb);
-    if (info != 0)
+
+    if (info != 0) {
+      auto get_field_name = [&](auto uid) {
+        return m_field.get_field_name(field_bit_from_bit_number(
+            FieldEntity::getFieldBitNumberFromUniqueId(uid)));
+      };
+      MOFEM_LOG("SELF", Sev::error)
+          << "invert: uid_row " << get_field_name(row_ptr->uidRow)
+          << " row uid " << get_field_name(row_ptr->uidCol) << " : "
+          << row_ptr->getMat().size1() << " " << row_ptr->getMat().size2();
+      MOFEM_LOG("SELF", Sev::error) << row_ptr->getMat() << endl;
+
       SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                "Can not invert matrix info = %d", info);
+    }
     MoFEMFunctionReturnHot(0);
   };
 };
