@@ -1227,8 +1227,9 @@ struct SchurDGESV {
           << "invert: uid_row " << get_field_name(row_ptr->uidRow)
           << " row uid " << get_field_name(row_ptr->uidCol) << " : "
           << row_ptr->getMat().size1() << " " << row_ptr->getMat().size2();
-      MOFEM_LOG("SELF", Sev::error) << row_ptr->getMat() << endl;
-
+      MOFEM_LOG("SELF", Sev::error) << endl;
+      MOFEM_LOG("SELF", Sev::error) << row_ptr->getMat();
+      MOFEM_LOG("SELF", Sev::error) << endl;
       SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                "Can not invert matrix info = %d", info);
     }
