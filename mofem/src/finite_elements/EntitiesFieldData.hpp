@@ -999,7 +999,7 @@ struct EntitiesFieldData::EntData {
   virtual std::map<std::string, boost::shared_ptr<MatrixDouble>> &getBBNMap();
 
   /**
-   * @brief get hash map of directives base function for BB base, key is a
+   * @brief get hash map of derivatives base function for BB base, key is a
    * field name
    *
    * @return std::map<std::string, boost::shared_ptr<MatrixDouble>>&
@@ -1703,7 +1703,7 @@ EntitiesFieldData::EntData::getFTensor2N<3, 3>(FieldApproximationBase base);
 
 /**@}*/
 
-/** \name Specializations for directives of base functions */
+/** \name Specializations for derivatives of base functions */
 
 /**@{*/
 
