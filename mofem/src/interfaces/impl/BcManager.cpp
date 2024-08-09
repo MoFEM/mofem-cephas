@@ -207,13 +207,6 @@ MoFEMErrorCode BcManager::addBlockDOFsToMPCs(const std::string problem_name,
     return 0;
   };
 
-  // auto mark_fix_dofs = [&](std::vector<unsigned char> &marked_field_dofs,
-  //                          const auto lo, const auto hi) {
-  //   return prb_mng->modifyMarkDofs(problem_name, ROW, field_name, lo, hi,
-  //                                  ProblemsManager::MarkOP::OR, 1,
-  //                                  marked_field_dofs);
-  // };
-
   auto iterate_mpc_meshsets = [&]() {
     MoFEMFunctionBegin;
 
@@ -245,19 +238,15 @@ MoFEMErrorCode BcManager::addBlockDOFsToMPCs(const std::string problem_name,
               corresponding_master_ms, &l);
           bc->mpcPtr->isReprocitical = false;
 
-          // std::cout << "master meshset is: " << master_nodes << "\n";
           CHKERR m_field.get_moab().get_entities_by_handle(l->getMeshset(),
                                                            master_nodes, true);
-          // std::cout << "master meshset is: " << master_nodes << "\n";
           // if (master_nodes.subset_by_dimension(0).size() <
           // links_ents.subset_by_dimension(1))
           {
             auto low_dim_ents = BcManagerImplTools::get_adj_ents(
                 m_field.get_moab(), master_nodes);
-            // std::cout << "lower_dim meshset is: " << low_dim_ents << "\n";
             low_dim_ents = low_dim_ents.subset_by_dimension(0);
             master_nodes.swap(low_dim_ents);
-            // std::cout << "master meshset 2 is: " << master_nodes << "\n";
           }
 
           MOFEM_LOG("BcMngWorld", Sev::verbose)
