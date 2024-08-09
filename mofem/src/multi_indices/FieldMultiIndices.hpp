@@ -279,6 +279,8 @@ struct Field {
    */
   inline const DofsOrderMap &getDofOrderMap() const { return dofOrderMap; }
 
+  static constexpr int maxBrokenDofsOrder = 10; ///< max number of broken dofs
+
   /**
    * @brief Get the dofs side map
    *

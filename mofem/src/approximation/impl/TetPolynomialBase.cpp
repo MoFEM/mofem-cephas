@@ -2073,10 +2073,8 @@ TetPolynomialBase::setDofsSideMapHdiv(const FieldContinuity continuity,
     dofs_side_map.clear();
 
     int dof;
-    for (int oo = 0; oo < MAX_DOFS_ON_ENTITY; oo++) {
+    for (int oo = 0; oo < Field::maxBrokenDofsOrder; oo++) {
 
-      if (dof > MAX_DOFS_ON_ENTITY)
-        break;
 
       // faces-edge (((P) > 0) ? (P) : 0)
       for (int dd = NBFACETRI_AINSWORTH_EDGE_HDIV(oo);
@@ -2131,10 +2129,7 @@ TetPolynomialBase::setDofsSideMapHdiv(const FieldContinuity continuity,
     dofs_side_map.clear();
 
     int dof = 0;
-    for (int oo = 0; oo < MAX_DOFS_ON_ENTITY; oo++) {
-
-      if (dof > MAX_DOFS_ON_ENTITY)
-        break;
+    for (int oo = 0; oo < Field::maxBrokenDofsOrder; oo++) {
 
       // face
       for (auto dd = NBFACETRI_DEMKOWICZ_HDIV(oo);
