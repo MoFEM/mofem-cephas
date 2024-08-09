@@ -2664,9 +2664,12 @@ MoFEMErrorCode ProblemsManager::getSideDofsOnBrokenSpaceEntities(
           (*lo)->getDofOrder() >= lo_order &&
           (*lo)->getDofOrder() <= hi_order) {
         auto ent_dof_index = (*lo)->getEntDofIdx();
-        auto side_it = side_dof_map[bride_type].get<EntDofIdx_mi_tag>().find(
-            std::floor(static_cast<double>(ent_dof_index) / nb_coeffs));
-        if (side_it != side_dof_map[bride_type].get<EntDofIdx_mi_tag>().end()) {
+        auto side_it = side_dof_map.at(bride_type)
+                           .get<EntDofIdx_mi_tag>()
+                           .find(std::floor(static_cast<double>(ent_dof_index) /
+                                            nb_coeffs));
+        if (side_it !=
+            side_dof_map.at(bride_type).get<EntDofIdx_mi_tag>().end()) {
           auto bridge_ent = (*lo)->getEnt();
           auto type = side_it->type;
           auto side = side_it->side;
