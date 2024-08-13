@@ -562,10 +562,7 @@ MoFEMErrorCode ThermoElasticProblem::bC() {
   auto simple = mField.getInterface<Simple>();
   auto bc_mng = mField.getInterface<BcManager>();
 
-  CHKERR bc_mng->removeBlockDOFsOnEntities<DisplacementCubitBcData>(
-      simple->getProblemName(), "U");
-  CHKERR bc_mng->pushMarkDOFsOnEntities<HeatFluxCubitBcData>(
-      simple->getProblemName(), "FLUX", false);
+
 
   auto get_skin = [&]() {
     Range body_ents;
@@ -656,6 +653,11 @@ MoFEMErrorCode ThermoElasticProblem::bC() {
   };
   CHKERR mField.getInterface<FieldBlas>()->fieldLambdaOnEntities(set_init_temp,
                                                                  "T");
+
+  CHKERR bc_mng->removeBlockDOFsOnEntities<DisplacementCubitBcData>(
+      simple->getProblemName(), "U");
+  CHKERR bc_mng->pushMarkDOFsOnEntities<HeatFluxCubitBcData>(
+      simple->getProblemName(), "FLUX", false);
 
   MoFEMFunctionReturn(0);
 }
