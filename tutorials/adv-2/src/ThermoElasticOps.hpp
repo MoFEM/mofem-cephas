@@ -31,11 +31,11 @@ struct OpStressThermal : public DomainEleOp {
                              boost::shared_ptr<double> coeff_expansion_ptr,
                              boost::shared_ptr<MatrixDouble> stress_ptr);
 
-  DEPRECATED OpStressThermal(boost::shared_ptr<MatrixDouble> strain_ptr,
-                             boost::shared_ptr<VectorDouble> temp_ptr,
-                             boost::shared_ptr<MatrixDouble> m_D_ptr,
-                             boost::shared_ptr<double> coeff_expansion_ptr,
-                             boost::shared_ptr<MatrixDouble> stress_ptr);
+  OpStressThermal(boost::shared_ptr<MatrixDouble> strain_ptr,
+                  boost::shared_ptr<VectorDouble> temp_ptr,
+                  boost::shared_ptr<MatrixDouble> m_D_ptr,
+                  boost::shared_ptr<double> coeff_expansion_ptr,
+                  boost::shared_ptr<MatrixDouble> stress_ptr);
 
   MoFEMErrorCode doWork(int side, EntityType type, EntData &data);
 
