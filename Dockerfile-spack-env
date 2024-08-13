@@ -1,6 +1,6 @@
 FROM       ubuntu:focal
 
-LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk"
+LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk,Andrei.Shvarts@glasgow.ac.uk"
 
 # general environment for docker
 ENV        DEBIAN_FRONTEND=noninteractive \

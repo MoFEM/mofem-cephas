@@ -1,6 +1,6 @@
 FROM likask/mofem-intermidiate
 
-LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk"
+LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk,Andrei.Shvarts@glasgow.ac.uk"
 
 RUN apt-get update && \
   apt-get install -y \

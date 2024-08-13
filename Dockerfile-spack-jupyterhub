@@ -1,6 +1,6 @@
 FROM likask/mofem-intermidiate
 
-LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk"
+LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk,Andrei.Shvarts@glasgow.ac.uk"
 
 ENV MOFEM_JUPYTER_HOME_DIR=/mofem_install/jupyter
 
