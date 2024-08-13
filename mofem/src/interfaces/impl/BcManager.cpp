@@ -969,9 +969,9 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcMeshsetType<HEATFLUXSET>>(
             problem_name, ROW, field_name, 0, MAX_DOFS_ON_ENTITY,
             ProblemsManager::MarkOP::OR, 1, bc->bcMarkers);
 
-        MOFEM_LOG("BcMngWorld", Sev::verbose)
+        MOFEM_LOG("BcMngWorld", Sev::inform)
             << "Found block HEATFLUX id = " << m->getMeshsetId();
-        MOFEM_LOG("BcMngWorld", Sev::verbose) << *bc->heatFluxBcPtr;
+        MOFEM_LOG("BcMngWorld", Sev::inform) << *bc->heatFluxBcPtr;
 
         if (get_low_dim_ents) {
           auto low_dim_ents =
