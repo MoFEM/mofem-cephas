@@ -325,7 +325,6 @@ struct BlockStructure : public DiagBlockIndex {
   bool multiplyByPreconditioner = false;
 };
 
-
 PetscLogEvent SchurEvents::MOFEM_EVENT_schurMatSetValues;
 PetscLogEvent SchurEvents::MOFEM_EVENT_opSchurAssembleEnd;
 PetscLogEvent SchurEvents::MOFEM_EVENT_BlockStructureSetValues;
@@ -613,7 +612,7 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
         FieldEntity::getFieldBitNumberFromUniqueId(uid)));
   };
 #endif
-  
+
   auto get_a00_uids = [&]() {
     auto get_field_bit = [&](auto &name) {
       return OP::getPtrFE()->mField.get_field_bit_number(name);
@@ -808,7 +807,7 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
     auto [block_list, block_indexing, block_mat_size] =
         get_block_indexing(a00_uids);
 
-    if(block_mat_size == 0) {
+    if (block_mat_size == 0) {
       MoFEMFunctionReturnHot(0);
     }
 
@@ -991,36 +990,6 @@ struct SchurDSYSV {
   static auto invertMat(MatrixDouble &m, MatrixDouble &inv) {
     MoFEMFunctionBegin;
 
-    VectorInt ipiv;
-    VectorDouble lapack_work;
-    const int nb = m.size1();
-
-    inv.resize(nb, nb, false);
-    inv.clear();
-    auto ptr = &*inv.data().begin();
-    for (int c = 0; c != nb; ++c, ptr += nb + 1)
-      *ptr = 1;
-    ipiv.resize(nb, false);
-    lapack_work.resize(nb * nb, false);
-    const auto info =
-        lapack_dsysv('L', nb, nb, &*m.data().begin(), nb, &*ipiv.begin(),
-                     &*inv.data().begin(), nb, &*lapack_work.begin(), nb * nb);
-    if (info != 0) {
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-               "Can not invert matrix info = %d", info);
-    }
-
-    MoFEMFunctionReturn(0);
-  }
-
-};
-
-struct SchurDGESV {
-
-  static auto invertMat(MatrixDouble &m, MatrixDouble &inv) {
-    MoFEMFunctionBeginHot;
-
-    VectorInt ipiv;
     const auto nb = m.size1();
 #ifndef NDEBUG
     if (nb != m.size2()) {
@@ -1030,21 +999,58 @@ struct SchurDGESV {
 #endif
 
     inv.resize(nb, nb, false);
-    inv.clear();
-    auto ptr = &*inv.data().begin();
-    for (int c = 0; c != nb; ++c, ptr += nb + 1)
-      *ptr = 1;
-    ipiv.resize(nb, false);
-    const auto info = lapack_dgesv(nb, nb, &*m.data().begin(), nb,
-                                   &*ipiv.begin(), &*inv.data().begin(), nb);
+    inv.swap(m);
 
-    if (info != 0) {
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-               "Can not invert matrix info = %d", info);
+    VectorInt ipiv(nb);
+    int info;
+
+    // FIXME: add lapack_dsytrf and lapack_dsytri
+
+    info = lapack_dgetrf(nb, nb, &*inv.data().begin(), nb, &*ipiv.begin());
+    if (info)
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "lapack error info = %d", info);
+    info = lapack_dgetri(nb, &*inv.data().begin(), nb, &*ipiv.begin(),
+                         &*m.data().begin(), m.data().size());
+    if (info)
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "lapack error info = %d", info);
+
+    MoFEMFunctionReturn(0);
+  }
+};
+
+struct SchurDGESV {
+
+  static auto invertMat(MatrixDouble &m, MatrixDouble &inv) {
+    MoFEMFunctionBeginHot;
+
+    const auto nb = m.size1();
+#ifndef NDEBUG
+    if (nb != m.size2()) {
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "It should be square matrix %d != %d", nb, m.size2());
     }
+#endif
+
+    inv.resize(nb, nb, false);
+    inv.swap(m);
+
+    VectorInt ipiv(nb);
+    int info;
+
+    info = lapack_dgetrf(nb, nb, &*inv.data().begin(), nb, &*ipiv.begin());
+    if (info)
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "lapack error info = %d", info);
+    info = lapack_dgetri(nb, &*inv.data().begin(), nb, &*ipiv.begin(),
+                         &*m.data().begin(), m.data().size());
+    if (info)
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "lapack error info = %d", info);
+
     MoFEMFunctionReturnHot(0);
   }
-
 };
 
 MoFEMErrorCode
@@ -1963,7 +1969,7 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
           boost::make_tuple(s.getRowUId(), s.getColUId())
 
       );
-      if(it == block_mat_data_ptr->blockIndex.end())
+      if (it == block_mat_data_ptr->blockIndex.end())
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Missing block");
       it->getInvShift() = s.getInvShift();
     }
