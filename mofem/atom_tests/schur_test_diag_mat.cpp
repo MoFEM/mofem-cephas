@@ -382,7 +382,7 @@ int main(int argc, char *argv[]) {
     CHKERR MatMult(diag_mat, diag_block_x, diag_block_f);
     // That is if one like to use MatSolve directly, not though PC, as it is
     // below 
-    //CHKERR MatSolve(diag_mat, diag_block_f, block_solved_x);
+    // CHKERR MatSolve(diag_mat, diag_block_f, block_solved_x);
 
     // set matrix type to shell, set data
     CHKERR DMSetMatType(block_dm, MATSHELL);
