@@ -81,17 +81,15 @@ struct OpSchurAssembleEndImpl : public OP_SCHUR_ASSEMBLE_BASE {
    * @param fields_name list of fields
    * @param field_ents list of entities on which schur complement is applied
    * (can be empty)
-   * @param sequence_of_aos list of maps from base problem to Schur complement
-   * matrix
-   * @param sequence_of_mats list of Schur complement matrices
+   * @param schur_ao map indices to schur matrix indices
+   * @param schur_mat schur matrix
    * @param sym_schur true if Schur complement is symmetric
    * @param symm_op true if block diagonal is symmetric
    */
   OpSchurAssembleEndImpl(
       std::vector<std::string> fields_name,
       std::vector<boost::shared_ptr<Range>> field_ents,
-      std::vector<SmartPetscObj<AO>> sequence_of_aos,
-      std::vector<SmartPetscObj<Mat>> sequence_of_mats,
+      SmartPetscObj<AO> schur_ao, SmartPetscObj<Mat> schur_mat,
       std::vector<bool> sym_schur, bool symm_op = true,
       boost::shared_ptr<BlockStructure> diag_blocks = nullptr);
 
@@ -101,9 +99,8 @@ struct OpSchurAssembleEndImpl : public OP_SCHUR_ASSEMBLE_BASE {
    * @param fields_name list of fields
    * @param field_ents list of entities on which schur complement is applied
    * (can be empty)
-   * @param sequence_of_aos list of maps from base problem to Schur complement
-   * matrix
-   * @param sequence_of_mats list of Schur complement matrices
+   * @param schur_ao map indices to schur matrix indices
+   * @param schur_mat schur matrix
    * @param sym_schur true if Schur complement is symmetric
    * @param diag_eps add epsilon on diagonal of inverted matrix
    * @param symm_op true if block diagonal is symmetric
@@ -111,8 +108,7 @@ struct OpSchurAssembleEndImpl : public OP_SCHUR_ASSEMBLE_BASE {
   OpSchurAssembleEndImpl(
       std::vector<std::string> fields_name,
       std::vector<boost::shared_ptr<Range>> field_ents,
-      std::vector<SmartPetscObj<AO>> sequence_of_aos,
-      std::vector<SmartPetscObj<Mat>> sequence_of_mats,
+      SmartPetscObj<AO> schur_ao, SmartPetscObj<Mat> schur_mat,
       std::vector<bool> sym_schur, std::vector<double> diag_eps,
       bool symm_op = true,
       boost::shared_ptr<BlockStructure> diag_blocks = nullptr);
@@ -127,8 +123,8 @@ protected:
 
   std::vector<std::string> fieldsName;
   std::vector<boost::shared_ptr<Range>> fieldEnts;
-  std::vector<SmartPetscObj<AO>> sequenceOfAOs;
-  std::vector<SmartPetscObj<Mat>> sequenceOfMats;
+  SmartPetscObj<AO> schurAO;
+  SmartPetscObj<Mat> schurMat;
   std::vector<bool> symSchur;
   std::vector<double> diagEps;
 
@@ -569,25 +565,22 @@ template <typename OP_SCHUR_ASSEMBLE_BASE>
 OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::OpSchurAssembleEndImpl(
     std::vector<std::string> fields_name,
     std::vector<boost::shared_ptr<Range>> field_ents,
-    std::vector<SmartPetscObj<AO>> sequence_of_aos,
-    std::vector<SmartPetscObj<Mat>> sequence_of_mats,
+    SmartPetscObj<AO> schur_ao, SmartPetscObj<Mat> schur_mat,
     std::vector<bool> sym_schur, std::vector<double> diag_eps, bool symm_op,
     boost::shared_ptr<BlockStructure> diag_blocks)
     : OP(NOSPACE, OP::OPSPACE, symm_op), fieldsName(fields_name),
-      fieldEnts(field_ents), sequenceOfAOs(sequence_of_aos),
-      sequenceOfMats(sequence_of_mats), symSchur(sym_schur), diagEps(diag_eps),
-      diagBlocks(diag_blocks) {}
+      fieldEnts(field_ents), schurAO(schur_ao), schurMat(schur_mat),
+      symSchur(sym_schur), diagEps(diag_eps), diagBlocks(diag_blocks) {}
 
 template <typename OP_SCHUR_ASSEMBLE_BASE>
 OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::OpSchurAssembleEndImpl(
     std::vector<std::string> fields_name,
     std::vector<boost::shared_ptr<Range>> field_ents,
-    std::vector<SmartPetscObj<AO>> sequence_of_aos,
-    std::vector<SmartPetscObj<Mat>> sequence_of_mats,
+    SmartPetscObj<AO> schur_ao, SmartPetscObj<Mat> schur_mat,
     std::vector<bool> sym_schur, bool symm_op,
     boost::shared_ptr<BlockStructure> diag_blocks)
     : OpSchurAssembleEndImpl(
-          fields_name, field_ents, sequence_of_aos, sequence_of_mats, sym_schur,
+          fields_name, field_ents, schur_ao, schur_mat, sym_schur,
           std::vector<double>(fields_name.size(), 0), symm_op, diag_blocks) {}
 
 template <typename OP_SCHUR_ASSEMBLE_BASE>
@@ -667,39 +660,38 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
                                  auto *row_ind_ptr, auto *col_ind_ptr) {
       MoFEMFunctionBegin;
 
-      auto ao = sequenceOfAOs.back();
-      if (ao) {
-        CHKERR AOApplicationToPetsc(ao, row_ind_ptr->size(),
+      if (schurAO) {
+        CHKERR AOApplicationToPetsc(schurAO, row_ind_ptr->size(),
                                     &*row_ind_ptr->begin());
-        CHKERR AOApplicationToPetsc(ao, col_ind_ptr->size(),
+        CHKERR AOApplicationToPetsc(schurAO, col_ind_ptr->size(),
                                     &*col_ind_ptr->begin());
-        auto mat = sequenceOfMats.back();
-        if (mat) {
+      }
 
-          if (auto ierr = this->assembleSchurMat(
+      if (schurMat) {
 
-                  mat, uid_row, *row_ind_ptr, uid_col, *col_ind_ptr, m,
-                  ADD_VALUES
+        if (auto ierr = this->assembleSchurMat(
 
-                  )) {
+                schurMat, uid_row, *row_ind_ptr, uid_col, *col_ind_ptr, m,
+                ADD_VALUES
+
+                )) {
 #ifndef NDEBUG
-            auto field_ents = OP::getPtrFE()->mField.get_field_ents();
-            auto row_ent_it = field_ents->find(uid_row);
-            auto col_ent_it = field_ents->find(uid_col);
-            MOFEM_LOG_CHANNEL("SELF");
-            if (row_ent_it != field_ents->end())
-              MOFEM_LOG("SELF", Sev::error)
-                  << "Assemble row entity: " << (*row_ent_it)->getName() << " "
-                  << (*col_ent_it)->getEntTypeName() << " side "
-                  << (*row_ent_it)->getSideNumber();
-            if (col_ent_it != field_ents->end())
-              MOFEM_LOG("SELF", Sev::error)
-                  << "Assemble col entity: " << (*col_ent_it)->getName() << " "
-                  << (*col_ent_it)->getEntTypeName() << " side "
-                  << (*col_ent_it)->getSideNumber();
+          auto field_ents = OP::getPtrFE()->mField.get_field_ents();
+          auto row_ent_it = field_ents->find(uid_row);
+          auto col_ent_it = field_ents->find(uid_col);
+          MOFEM_LOG_CHANNEL("SELF");
+          if (row_ent_it != field_ents->end())
+            MOFEM_LOG("SELF", Sev::error)
+                << "Assemble row entity: " << (*row_ent_it)->getName() << " "
+                << (*col_ent_it)->getEntTypeName() << " side "
+                << (*row_ent_it)->getSideNumber();
+          if (col_ent_it != field_ents->end())
+            MOFEM_LOG("SELF", Sev::error)
+                << "Assemble col entity: " << (*col_ent_it)->getName() << " "
+                << (*col_ent_it)->getEntTypeName() << " side "
+                << (*col_ent_it)->getSideNumber();
 #endif // NDEBUG
-            CHK_THROW_MESSAGE(ierr, "MatSetValues");
-          }
+          CHK_THROW_MESSAGE(ierr, "MatSetValues");
         }
       }
 
@@ -2351,13 +2343,13 @@ createOpSchurAssembleEnd(std::vector<std::string> fields_name,
                          std::vector<bool> sym_schur, bool symm_op,
                          boost::shared_ptr<BlockStructure> diag_blocks) {
   if (symm_op)
-    return new OpSchurAssembleEnd<SchurDSYSV>(fields_name, field_ents,
-                                              sequence_of_aos, sequence_of_mats,
-                                              sym_schur, symm_op, diag_blocks);
+    return new OpSchurAssembleEnd<SchurDSYSV>(
+        fields_name, field_ents, sequence_of_aos.back(),
+        sequence_of_mats.back(), sym_schur, symm_op, diag_blocks);
   else
-    return new OpSchurAssembleEnd<SchurDGESV>(fields_name, field_ents,
-                                              sequence_of_aos, sequence_of_mats,
-                                              sym_schur, symm_op, diag_blocks);
+    return new OpSchurAssembleEnd<SchurDGESV>(
+        fields_name, field_ents, sequence_of_aos.back(),
+        sequence_of_mats.back(), sym_schur, symm_op, diag_blocks);
 }
 
 OpSchurAssembleBase *
@@ -2370,12 +2362,12 @@ createOpSchurAssembleEnd(std::vector<std::string> fields_name,
                          boost::shared_ptr<BlockStructure> diag_blocks) {
   if (symm_op)
     return new OpSchurAssembleEnd<SchurDSYSV>(
-        fields_name, field_ents, sequence_of_aos, sequence_of_mats, sym_schur,
-        diag_eps, symm_op, diag_blocks);
+        fields_name, field_ents, sequence_of_aos.back(),
+        sequence_of_mats.back(), sym_schur, diag_eps, symm_op, diag_blocks);
   else
     return new OpSchurAssembleEnd<SchurDGESV>(
-        fields_name, field_ents, sequence_of_aos, sequence_of_mats, sym_schur,
-        diag_eps, symm_op, diag_blocks);
+        fields_name, field_ents, sequence_of_aos.back(),
+        sequence_of_mats.back(), sym_schur, diag_eps, symm_op, diag_blocks);
 }
 
 MoFEMErrorCode setSchurA00MatSolvePC(SmartPetscObj<PC> pc) {
