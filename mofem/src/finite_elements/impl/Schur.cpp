@@ -132,7 +132,10 @@ protected:
   std::vector<bool> symSchur;
   std::vector<double> diagEps;
 
+  MatrixDouble blockMat;
   MatrixDouble invMat;
+  MatrixDouble bM, abM, abcM;
+
   MatrixDouble invDiagOffMat;
   MatrixDouble offMatInvDiagOffMat;
   MatrixDouble transOffMatInvDiagOffMat;
@@ -322,19 +325,19 @@ struct BlockStructure : public DiagBlockIndex {
   bool multiplyByPreconditioner = false;
 };
 
-struct DiagBlockInvStruture : public BlockStructure {
+// struct DiagBlockInvStruture : public BlockStructure {
 
-  // first value is value of off diagonal block index data, second is shift on
-  // the diagonal
-  struct A00SolverView {
-    std::vector<const Indexes *> lowView;
-    std::vector<int> diagLoRange;
-    std::vector<const Indexes *> upView;
-    std::vector<int> diagUpRange;
-  };
+//   // first value is value of off diagonal block index data, second is shift on
+//   // the diagonal
+//   struct A00SolverView {
+//     std::vector<const Indexes *> lowView;
+//     std::vector<int> diagLoRange;
+//     std::vector<const Indexes *> upView;
+//     std::vector<int> diagUpRange;
+//   };
 
-  A00SolverView indexView;
-};
+//   A00SolverView indexView;
+// };
 
 PetscLogEvent SchurEvents::MOFEM_EVENT_schurMatSetValues;
 PetscLogEvent SchurEvents::MOFEM_EVENT_opSchurAssembleEnd;
@@ -1008,7 +1011,7 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
     MoFEMFunctionReturn(0);
   };
 
-  auto gey_a00_diag_list = [&](auto &storage, auto lo_uid, auto hi_uid) {
+  auto get_a00_diag_list = [&](auto &storage, auto lo_uid, auto hi_uid) {
     std::vector<const SchurElemMats *> list;
     auto lo = storage.template get<SchurElemMats::uid_mi_tag>().lower_bound(
         boost::make_tuple(lo_uid, 0));
@@ -1120,7 +1123,7 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
         CHKERR assemble_mat_a00_solver(
             get_a00_col_list(storage, lo_uid, hi_uid));
         CHKERR assemble_inv_diag_a00_solver(
-            gey_a00_diag_list(storage, lo_uid, hi_uid));
+            get_a00_diag_list(storage, lo_uid, hi_uid));
       }
       CHKERR erase_factored(storage, lo_uid, hi_uid);
       CHKERR assemble_S(storage, sequenceOfAOs[ss], sequenceOfMats[ss]);
@@ -1129,8 +1132,319 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
     MoFEMFunctionReturn(0);
   };
 
+  auto assemble_dense_blocks = [&]() {
+    using matrix_range = ublas::matrix_range<MatrixDouble>;
+    using range = ublas::range;
+    MoFEMFunctionBegin;
+    auto &storage = SchurElemMats::schurL2Storage;
+
+    auto assemble_schur = [this](auto &m, auto &uid_row, auto &uid_col,
+                                 auto *row_ind_ptr, auto *col_ind_ptr) {
+      MoFEMFunctionBegin;
+
+      auto ao = sequenceOfAOs.back();
+      if (ao) {
+        CHKERR AOApplicationToPetsc(ao, row_ind_ptr->size(),
+                                    &*row_ind_ptr->begin());
+        CHKERR AOApplicationToPetsc(ao, col_ind_ptr->size(),
+                                    &*col_ind_ptr->begin());
+        auto mat = sequenceOfMats.back();
+        if (mat) {
+
+          if (auto ierr = this->assembleSchurMat(
+
+                  mat, uid_row, *row_ind_ptr, uid_col, *col_ind_ptr, m,
+                  ADD_VALUES
+
+                  )) {
+#ifndef NDEBUG
+            auto field_ents = OP::getPtrFE()->mField.get_field_ents();
+            auto row_ent_it = field_ents->find(uid_row);
+            auto col_ent_it = field_ents->find(uid_col);
+            MOFEM_LOG_CHANNEL("SELF");
+            if (row_ent_it != field_ents->end())
+              MOFEM_LOG("SELF", Sev::error)
+                  << "Assemble row entity: " << (*row_ent_it)->getName() << " "
+                  << (*col_ent_it)->getEntTypeName() << " side "
+                  << (*row_ent_it)->getSideNumber();
+            if (col_ent_it != field_ents->end())
+              MOFEM_LOG("SELF", Sev::error)
+                  << "Assemble col entity: " << (*col_ent_it)->getName() << " "
+                  << (*col_ent_it)->getEntTypeName() << " side "
+                  << (*col_ent_it)->getSideNumber();
+#endif // NDEBUG
+            CHK_THROW_MESSAGE(ierr, "MatSetValues");
+          }
+        }
+      }
+
+      MoFEMFunctionReturn(0);
+    };
+
+    auto assemble_a00 = [this](auto &m, auto &row_uid, auto &col_uid,
+                               auto *row_ind_ptr, auto *col_ind_ptr) {
+      MoFEMFunctionBegin;
+
+#ifndef NDEBUG
+      if (!diagBlocks->dataInvBlocksPtr)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "No dataInvBlocksPtr");
+#endif // NDEBUG
+
+      if (m.size1() && m.size2()) {
+        auto it = diagBlocks->blockIndex.get<0>().find(
+            boost::make_tuple(row_uid, col_uid));
+        if (it != diagBlocks->blockIndex.get<0>().end()) {
+          auto inv_shift = it->getInvShift();
+          if (inv_shift != -1) {
+            auto *ptr = &((*diagBlocks->dataInvBlocksPtr)[inv_shift]);
+            if (m.size1() != it->getNbRows() || m.size2() != it->getNbCols()) {
+              for (auto i = 0; i < m.size1(); ++i) {
+                for (auto j = 0; j < m.size2(); ++j) {
+                  if ((*row_ind_ptr)[i] != -1 && (*col_ind_ptr)[j] != -1) {
+                    *ptr = m(i, j);
+                    ++ptr;
+                  }
+                }
+              }
+            } else {
+              // assemble of diag terms, witch might be changed by Schur
+              // complement
+              std::copy(m.data().begin(), m.data().end(), ptr);
+            }
+          } else {
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "No inv_shift");
+          }
+        } else {
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "No blockIndex");
+        }
+      }
+
+      MoFEMFunctionReturn(0);
+    };
+
+    auto a00_uids = get_a00_uids();
+
+    auto get_block_indexing = [&](auto &a00_uids) {
+      // iterate over a00 uids and find blocks
+      std::vector<const SchurElemMats *> block_list;
+      block_list.reserve(storage.size());
+      for (auto &rp_uid : a00_uids) {
+        auto [rlo_uid, rhi_uid] = rp_uid;
+        for (auto &cp_uid : a00_uids) {
+          auto [clo_uid, chi_uid] = cp_uid;
+
+          auto it =
+              storage.template get<SchurElemMats::uid_mi_tag>().lower_bound(
+                  boost::make_tuple(rlo_uid, clo_uid));
+          auto hi_it =
+              storage.template get<SchurElemMats::uid_mi_tag>().upper_bound(
+                  boost::make_tuple(rhi_uid, chi_uid));
+
+          for (; it != hi_it; ++it) {
+            if ((*it)->uidRow >= rlo_uid && (*it)->uidRow < rhi_uid &&
+                (*it)->uidCol >= clo_uid && (*it)->uidCol < chi_uid) {
+              block_list.push_back(*it);
+            }
+          }
+        }
+      }
+
+      // create block indexes map for blockMat
+      std::map<UId, std::pair<size_t, const VectorInt *>>
+          block_indexing; // uid block map
+      for (auto d : block_list) {
+        if (block_indexing.find(d->uidRow) == block_indexing.end()) {
+          block_indexing[d->uidRow] =
+              std::make_pair(d->getRowInd().size(), &(d->getRowInd()));
+        }
+        if (block_indexing.find(d->uidCol) == block_indexing.end()) {
+          block_indexing[d->uidCol] =
+              std::make_pair(d->getColInd().size(), &(d->getColInd()));
+        }
+      }
+
+      // set indexes to block
+      int mat_block_size = 0; // size of block matrix
+      for (auto &p_uid : a00_uids) {
+        auto [lo_uid, hi_uid] = p_uid;
+        auto lo = block_indexing.lower_bound(lo_uid);
+        auto up = block_indexing.upper_bound(hi_uid);
+        for (; lo != up; ++lo) {
+          lo->second.first = mat_block_size;
+          mat_block_size += lo->second.second->size();
+        }
+      }
+
+      return std::make_tuple(block_list, block_indexing, mat_block_size);
+    };
+
+    auto [block_list, block_indexing, block_mat_size] =
+        get_block_indexing(a00_uids);
+
+    blockMat.resize(block_mat_size, block_mat_size, false);
+    blockMat.clear();
+
+    auto get_range = [](auto &bi) {
+      return range(bi.first, bi.first + bi.second->size());
+    };
+
+    for (auto &s : block_list) {
+      auto &m = s->getMat();
+#ifndef NDEBUG
+      if (block_indexing.find(s->uidRow) == block_indexing.end())
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong rlo_uid");
+      if (block_indexing.find(s->uidCol) == block_indexing.end())
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong clo_uid");
+#endif // NDEBUG
+
+      auto &rbi = block_indexing.at(s->uidRow);
+      auto &cbi = block_indexing.at(s->uidCol);
+
+      auto sub_mat = matrix_range(blockMat, get_range(rbi), get_range(cbi));
+      sub_mat = m;
+    }
+
+    CHKERR I::invertMat(blockMat, invMat);
+
+    blockMat.clear();
+    for (auto &s : block_list) {
+      auto &m = s->getMat();
+#ifndef NDEBUG
+      if (block_indexing.find(s->uidRow) == block_indexing.end())
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong rlo_uid");
+      if (block_indexing.find(s->uidCol) == block_indexing.end())
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong clo_uid");
+#endif // NDEBUG
+
+      auto &rbi = block_indexing.at(s->uidRow);
+      auto &cbi = block_indexing.at(s->uidCol);
+
+      auto sub_mat = matrix_range(blockMat, get_range(rbi), get_range(cbi));
+      sub_mat = m;
+    }
+
+    // clear storage and block list from a00 blocks, no more needed
+    for (auto &s : block_list) {
+      auto it = storage.template get<SchurElemMats::uid_mi_tag>().find(
+          boost::make_tuple(s->uidRow, s->uidCol));
+      storage.template get<SchurElemMats::uid_mi_tag>().erase(it);
+    }
+    block_list.clear();
+
+    std::vector<const SchurElemMats *> schur_block_list;
+
+    for (auto &rp_uid : a00_uids) {
+      auto [rlo_uid, rhi_uid] = rp_uid;
+      for (auto rm = block_indexing.lower_bound(rlo_uid);
+           rm != block_indexing.upper_bound(rhi_uid); ++rm) {
+        auto &rbi = rm->second;
+
+        auto a_lo_tmp =
+            storage.template get<SchurElemMats::col_mi_tag>().lower_bound(
+                rm->first);
+        auto a_hi =
+            storage.template get<SchurElemMats::col_mi_tag>().upper_bound(
+                rm->first);
+
+        for (auto &cp_uid : a00_uids) {
+          auto [clo_uid, chi_uid] = cp_uid;
+          for (auto cm = block_indexing.lower_bound(clo_uid);
+               cm != block_indexing.upper_bound(chi_uid); ++cm) {
+            auto &cbi = cm->second;
+
+            auto c_lo_tmp =
+                storage.template get<SchurElemMats::uid_mi_tag>().lower_bound(
+                    boost::make_tuple(cm->first, 0));
+            auto c_hi =
+                storage.template get<SchurElemMats::uid_mi_tag>().upper_bound(
+                    boost::make_tuple(cm->first, FieldEntity::getHiBitNumberUId(
+                                                     BITFIELDID_SIZE - 1)));
+
+            auto sub_inv_mat =
+                matrix_range(invMat, get_range(rbi), get_range(cbi));
+            bM.resize(sub_inv_mat.size1(), sub_inv_mat.size2());
+            noalias(bM) = sub_inv_mat;
+
+            if (diagBlocks) {
+              CHKERR assemble_a00(
+
+                  bM, rm->first, cm->first, rbi.second, cbi.second
+
+              );
+            }
+
+            for (auto a_lo = a_lo_tmp; a_lo != a_hi; ++a_lo) {
+#ifndef NDEBUG
+              if (block_indexing.find((*a_lo)->uidRow) != block_indexing.end())
+                SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                        "Wrong a_lo->uidRow");
+#endif
+
+              auto &a = (*a_lo)->getMat();
+              abM.resize(a.size1(), bM.size2(), false);
+              abM.clear();
+              cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+
+                          a.size1(), bM.size2(), a.size2(), 1.,
+
+                          &*a.data().begin(), a.size2(),
+
+                          &*bM.data().begin(), bM.size2(), 0.,
+
+                          &*abM.data().begin(), abM.size2());
+
+              for (auto c_lo = c_lo_tmp; c_lo != c_hi; ++c_lo) {
+#ifndef NDEBUG
+                if (block_indexing.find((*c_lo)->uidCol) !=
+                    block_indexing.end())
+                  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                          "Wrong a_lo->uidRow");
+#endif
+
+                auto &c = (*c_lo)->getMat();
+
+                abcM.resize(abM.size1(), c.size2(), false);
+                abcM.clear();
+
+                auto schur_it =
+                    storage.template get<SchurElemMats::uid_mi_tag>().find(
+                        boost::make_tuple((*a_lo)->uidRow, (*c_lo)->uidCol));
+                if (schur_it !=
+                    storage.template get<SchurElemMats::uid_mi_tag>().end()) {
+                  noalias(abcM) = (*schur_it)->getMat();
+                }
+
+                cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+                            abM.size1(), c.size2(), abM.size2(), -1.,
+
+                            &*abM.data().begin(), abM.size2(),
+
+                            &*c.data().begin(), c.size2(), 1.,
+
+                            &*abcM.data().begin(), abcM.size2());
+
+                VectorInt row_ind, col_ind;
+                row_ind = (*a_lo)->getRowInd();
+                col_ind = (*c_lo)->getColInd();
+                CHKERR assemble_schur(abcM, (*a_lo)->uidRow, (*c_lo)->uidCol,
+                                      &(row_ind), &(col_ind));
+              }
+            }
+          }
+        }
+      }
+    }
+
+    storage.clear();
+
+    MoFEMFunctionReturn(0);
+  };
+
   // Assemble Schur complements
-  CHKERR assemble(get_a00_uids());
+  // CHKERR assemble(get_a00_uids());
+
+  CHKERR assemble_dense_blocks();
 
 #ifndef NDEBUG
   if constexpr (debug_schur)
@@ -1145,6 +1459,32 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
 }
 
 struct SchurDSYSV {
+
+  static auto invertMat(MatrixDouble &m, MatrixDouble &inv) {
+    MoFEMFunctionBegin;
+
+    VectorInt ipiv;
+    VectorDouble lapack_work;
+    const int nb = m.size1();
+
+    inv.resize(nb, nb, false);
+    inv.clear();
+    auto ptr = &*inv.data().begin();
+    for (int c = 0; c != nb; ++c, ptr += nb + 1)
+      *ptr = 1;
+    ipiv.resize(nb, false);
+    lapack_work.resize(nb * nb, false);
+    const auto info =
+        lapack_dsysv('L', nb, nb, &*m.data().begin(), nb, &*ipiv.begin(),
+                     &*inv.data().begin(), nb, &*lapack_work.begin(), nb * nb);
+    if (info != 0) {
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+               "Can not invert matrix info = %d", info);
+    }
+
+    MoFEMFunctionReturn(0);
+  }
+
   static auto invertMat(MoFEM::Interface &m_field, const SchurElemMats *row_ptr,
                         MatrixDouble &inv, double eps) {
     MoFEMFunctionBeginHot;
@@ -1188,6 +1528,35 @@ struct SchurDSYSV {
 };
 
 struct SchurDGESV {
+
+  static auto invertMat(MatrixDouble &m, MatrixDouble &inv) {
+    MoFEMFunctionBeginHot;
+
+    VectorInt ipiv;
+    const auto nb = m.size1();
+#ifndef NDEBUG
+    if (nb != m.size2()) {
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "It should be square matrix %d != %d", nb, m.size2());
+    }
+#endif
+
+    inv.resize(nb, nb, false);
+    inv.clear();
+    auto ptr = &*inv.data().begin();
+    for (int c = 0; c != nb; ++c, ptr += nb + 1)
+      *ptr = 1;
+    ipiv.resize(nb, false);
+    const auto info = lapack_dgesv(nb, nb, &*m.data().begin(), nb,
+                                   &*ipiv.begin(), &*inv.data().begin(), nb);
+
+    if (info != 0) {
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+               "Can not invert matrix info = %d", info);
+    }
+    MoFEMFunctionReturnHot(0);
+  }
+
   static auto invertMat(MoFEM::Interface &m_field, const SchurElemMats *row_ptr,
                         MatrixDouble &inv, double eps) {
     MoFEMFunctionBeginHot;
@@ -1789,219 +2158,237 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
 
   PetscLogEventBegin(SchurEvents::MOFEM_EVENT_BlockStructureSolve, 0, 0, 0, 0);
 
-  // Note that for solver those two are swapped
-  Vec ghost_x = ctx->ghostY;
-  Vec ghost_y = ctx->ghostX;
+  if (!ctx->dataInvBlocksPtr)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "No dataInvBlocksPtr");
 
-  CHKERR VecCopy(y, ghost_y);
-  CHKERR VecZeroEntries(ghost_x);
+  const auto mult_pre_proc = ctx->multiplyByPreconditioner;
+  ctx->multiplyByPreconditioner = false;
+  ctx->dataInvBlocksPtr.swap(ctx->dataBlocksPtr);
+  CHKERR mult_schur_block_shell(mat, y, x, INSERT_VALUES);
+  ctx->dataBlocksPtr.swap(ctx->dataInvBlocksPtr);
+  ctx->multiplyByPreconditioner = mult_pre_proc;
 
-  // CHKERR VecGhostUpdateBegin(ghost_y, INSERT_VALUES, SCATTER_FORWARD);
-  // CHKERR VecGhostUpdateEnd(ghost_y, INSERT_VALUES, SCATTER_FORWARD);
+  //   // Note that for solver those two are swapped
+  //   Vec ghost_x = ctx->ghostY;
+  //   Vec ghost_y = ctx->ghostX;
 
-  double *x_array;
-  Vec loc_ghost_x;
-  CHKERR VecGhostGetLocalForm(ghost_x, &loc_ghost_x);
-  CHKERR VecGetArray(loc_ghost_x, &x_array);
+  //   CHKERR VecCopy(y, ghost_y);
+  //   CHKERR VecZeroEntries(ghost_x);
 
-  Vec loc_ghost_y;
-  CHKERR VecGhostGetLocalForm(ghost_y, &loc_ghost_y);
-  auto inv_y = vectorDuplicate(loc_ghost_y);
-  auto add_y = vectorDuplicate(loc_ghost_y);
-  CHKERR VecZeroEntries(inv_y);
-  CHKERR VecCopy(loc_ghost_y, add_y);
-  double *y_inv_array;
-  CHKERR VecGetArray(inv_y, &y_inv_array);
-  double *y_add_array;
-  CHKERR VecGetArray(add_y, &y_add_array);
-  double *y_array;
-  CHKERR VecGetArray(loc_ghost_y, &y_array);
+  //   // CHKERR VecGhostUpdateBegin(ghost_y, INSERT_VALUES, SCATTER_FORWARD);
+  //   // CHKERR VecGhostUpdateEnd(ghost_y, INSERT_VALUES, SCATTER_FORWARD);
 
-  auto data_inv_blocks = ctx->dataInvBlocksPtr;
-  auto inv_block_ptr = &*data_inv_blocks->begin();
-  auto data_blocks = ctx->dataBlocksPtr;
+  //   double *x_array;
+  //   Vec loc_ghost_x;
+  //   CHKERR VecGhostGetLocalForm(ghost_x, &loc_ghost_x);
+  //   CHKERR VecGetArray(loc_ghost_x, &x_array);
 
-  auto *data_inv = dynamic_cast<DiagBlockInvStruture *>(ctx);
-  auto index_view = &data_inv->indexView;
+  //   Vec loc_ghost_y;
+  //   CHKERR VecGhostGetLocalForm(ghost_y, &loc_ghost_y);
+  //   auto inv_y = vectorDuplicate(loc_ghost_y);
+  //   auto add_y = vectorDuplicate(loc_ghost_y);
+  //   CHKERR VecZeroEntries(inv_y);
+  //   CHKERR VecCopy(loc_ghost_y, add_y);
+  //   double *y_inv_array;
+  //   CHKERR VecGetArray(inv_y, &y_inv_array);
+  //   double *y_add_array;
+  //   CHKERR VecGetArray(add_y, &y_add_array);
+  //   double *y_array;
+  //   CHKERR VecGetArray(loc_ghost_y, &y_array);
 
-  std::vector<double> f;
+  //   auto data_inv_blocks = ctx->dataInvBlocksPtr;
+  //   auto inv_block_ptr = &*data_inv_blocks->begin();
+  //   auto data_blocks = ctx->dataBlocksPtr;
 
-  // That make a pass over block, applying lower diagonal
-  for (auto s1 = 0; s1 != index_view->diagUpRange.size() - 1; ++s1) {
-    auto lo = index_view->diagUpRange[s1];
-    auto hi = index_view->diagUpRange[s1 + 1];
+  //   auto *data_inv = dynamic_cast<DiagBlockInvStruture *>(ctx);
+  //   auto index_view = &data_inv->indexView;
 
-    // first index is off diag
-    auto diag_index_ptr =
-        index_view->upView[lo]; // First index is inverted diagonal
-    ++lo;
+  //   std::vector<double> f;
 
-    auto row = diag_index_ptr->getLocRow();
-    auto col = diag_index_ptr->getLocCol();
-    auto nb_rows = diag_index_ptr->getNbRows();
-    auto nb_cols = diag_index_ptr->getNbCols();
-    auto inv_shift = diag_index_ptr->getInvShift();
+  //   // That make a pass over block, applying lower diagonal
+  //   for (auto s1 = 0; s1 != index_view->diagUpRange.size() - 1; ++s1) {
+  //     auto lo = index_view->diagUpRange[s1];
+  //     auto hi = index_view->diagUpRange[s1 + 1];
 
-    for (; lo != hi; ++lo) {
-      auto off_index_ptr = index_view->upView[lo];
-      auto off_col = off_index_ptr->getLocCol();
-      auto off_nb_cols = off_index_ptr->getNbCols();
-      auto off_shift = off_index_ptr->getInvShift();
-#ifndef NDEBUG
-      if (off_shift == -1)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "off_shift == -1");
-#endif // NDEBUG
-      auto ptr = &inv_block_ptr[off_shift];
-      if (std::min(nb_rows, off_nb_cols) > max_gemv_size) {
-        cblas_dgemv(CblasRowMajor, CblasNoTrans, nb_rows, off_nb_cols, -1.0,
-                    ptr, off_nb_cols, &y_inv_array[off_col], 1, 1.0,
-                    &y_add_array[row], 1);
-      } else {
-        for (auto r = 0; r != nb_rows; ++r) {
-          for (auto c = 0; c != off_nb_cols; ++c) {
-            y_add_array[row + r] -=
-                ptr[r * off_nb_cols + c] * y_inv_array[off_col + c];
-          }
-        }
-      }
-    }
+  //     // first index is off diag
+  //     auto diag_index_ptr =
+  //         index_view->upView[lo]; // First index is inverted diagonal
+  //     ++lo;
 
-#ifndef NDEBUG
-    if (inv_shift == -1)
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "inv_shift == -1");
-    if (inv_shift + nb_rows * nb_cols > data_inv_blocks->size())
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-               "inv_shift out of range %d > %d", inv_shift + nb_rows * nb_cols,
-               data_inv_blocks->size());
-#endif // NDEBUG
+  //     auto row = diag_index_ptr->getLocRow();
+  //     auto col = diag_index_ptr->getLocCol();
+  //     auto nb_rows = diag_index_ptr->getNbRows();
+  //     auto nb_cols = diag_index_ptr->getNbCols();
+  //     auto inv_shift = diag_index_ptr->getInvShift();
 
-    auto ptr = &inv_block_ptr[inv_shift];
-    if (std::min(nb_rows, nb_cols) > max_gemv_size) {
-      cblas_dgemv(CblasRowMajor, CblasNoTrans, nb_rows, nb_cols, -1.0, ptr,
-                  nb_cols, &y_add_array[col], 1, 1.0, &y_inv_array[row], 1);
-    } else {
-      for (auto r = 0; r != nb_rows; ++r) {
-        for (auto c = 0; c != nb_cols; ++c) {
-          y_inv_array[row + r] -= ptr[r * nb_cols + c] * y_add_array[col + c];
-        }
-      }
-    }
-  }
+  //     for (; lo != hi; ++lo) {
+  //       auto off_index_ptr = index_view->upView[lo];
+  //       auto off_col = off_index_ptr->getLocCol();
+  //       auto off_nb_cols = off_index_ptr->getNbCols();
+  //       auto off_shift = off_index_ptr->getInvShift();
+  // #ifndef NDEBUG
+  //       if (off_shift == -1)
+  //         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "off_shift ==
+  //         -1");
+  // #endif // NDEBUG
+  //       auto ptr = &inv_block_ptr[off_shift];
+  //       if (std::min(nb_rows, off_nb_cols) > max_gemv_size) {
+  //         cblas_dgemv(CblasRowMajor, CblasNoTrans, nb_rows, off_nb_cols,
+  //         -1.0,
+  //                     ptr, off_nb_cols, &y_inv_array[off_col], 1, 1.0,
+  //                     &y_add_array[row], 1);
+  //       } else {
+  //         for (auto r = 0; r != nb_rows; ++r) {
+  //           for (auto c = 0; c != off_nb_cols; ++c) {
+  //             y_add_array[row + r] -=
+  //                 ptr[r * off_nb_cols + c] * y_inv_array[off_col + c];
+  //           }
+  //         }
+  //       }
+  //     }
 
-  // That make a pass over block, applying lower diagonal
-  for (auto s1 = 0; s1 != index_view->diagLoRange.size() - 1; ++s1) {
-    auto lo = index_view->diagLoRange[s1];
-    auto hi = index_view->diagLoRange[s1 + 1];
+  // #ifndef NDEBUG
+  //     if (inv_shift == -1)
+  //       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "inv_shift ==
+  //       -1");
+  //     if (inv_shift + nb_rows * nb_cols > data_inv_blocks->size())
+  //       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+  //                "inv_shift out of range %d > %d", inv_shift + nb_rows *
+  //                nb_cols, data_inv_blocks->size());
+  // #endif // NDEBUG
 
-    // first index is off diag
-    auto diag_index_ptr =
-        index_view->lowView[lo]; // First index is inverted diagonal
-    ++lo;
+  //     auto ptr = &inv_block_ptr[inv_shift];
+  //     if (std::min(nb_rows, nb_cols) > max_gemv_size) {
+  //       cblas_dgemv(CblasRowMajor, CblasNoTrans, nb_rows, nb_cols, -1.0, ptr,
+  //                   nb_cols, &y_add_array[col], 1, 1.0, &y_inv_array[row],
+  //                   1);
+  //     } else {
+  //       for (auto r = 0; r != nb_rows; ++r) {
+  //         for (auto c = 0; c != nb_cols; ++c) {
+  //           y_inv_array[row + r] -= ptr[r * nb_cols + c] * y_add_array[col +
+  //           c];
+  //         }
+  //       }
+  //     }
+  //   }
 
-    auto row = diag_index_ptr->getLocRow();
-    auto col = diag_index_ptr->getLocCol();
-    auto nb_rows = diag_index_ptr->getNbRows();
-    auto nb_cols = diag_index_ptr->getNbCols();
-    auto inv_shift = diag_index_ptr->getInvShift();
+  //   // That make a pass over block, applying lower diagonal
+  //   for (auto s1 = 0; s1 != index_view->diagLoRange.size() - 1; ++s1) {
+  //     auto lo = index_view->diagLoRange[s1];
+  //     auto hi = index_view->diagLoRange[s1 + 1];
 
-    f.resize(nb_cols);
-    std::copy(&y_add_array[col], &y_add_array[col + nb_cols], f.begin());
+  //     // first index is off diag
+  //     auto diag_index_ptr =
+  //         index_view->lowView[lo]; // First index is inverted diagonal
+  //     ++lo;
 
-    for (; lo != hi; ++lo) {
-      auto off_index_ptr = index_view->lowView[lo];
-      auto off_col = off_index_ptr->getLocCol();
-      auto off_nb_cols = off_index_ptr->getNbCols();
-      auto off_shift = off_index_ptr->getInvShift();
-#ifndef NDEBUG
-      if (off_shift == -1)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "off_shift == -1");
-#endif // NDEBUG
-      auto x_ptr = &x_array[off_col];
-      auto ptr = &inv_block_ptr[off_shift];
-      if (std::min(nb_rows, nb_cols) > max_gemv_size) {
-        cblas_dgemv(CblasRowMajor, CblasNoTrans, nb_rows, off_nb_cols, -1.0,
-                    ptr, off_nb_cols, x_ptr, 1, 1.0, &f[0], 1);
-      } else {
-        for (auto r = 0; r != nb_rows; ++r) {
-          for (auto c = 0; c != off_nb_cols; ++c) {
-            f[r] -= ptr[r * off_nb_cols + c] * x_ptr[c];
-          }
-        }
-      }
-    }
+  //     auto row = diag_index_ptr->getLocRow();
+  //     auto col = diag_index_ptr->getLocCol();
+  //     auto nb_rows = diag_index_ptr->getNbRows();
+  //     auto nb_cols = diag_index_ptr->getNbCols();
+  //     auto inv_shift = diag_index_ptr->getInvShift();
 
-#ifndef NDEBUG
-    if (inv_shift == -1)
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "inv_shift == -1");
-    if (inv_shift + nb_rows * nb_cols > data_inv_blocks->size())
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-               "inv_shift out of range %d > %d", inv_shift + nb_rows * nb_cols,
-               data_inv_blocks->size());
-#endif // NDEBUG
+  //     f.resize(nb_cols);
+  //     std::copy(&y_add_array[col], &y_add_array[col + nb_cols], f.begin());
 
-    auto ptr = &inv_block_ptr[inv_shift];
-    if (std::min(nb_rows, nb_cols) > max_gemv_size) {
-      cblas_dgemv(CblasRowMajor, CblasNoTrans, nb_rows, nb_cols, -1.0, ptr,
-                  nb_cols, &f[0], 1, 1.0, &x_array[row], 1);
-    } else {
-      for (auto r = 0; r != nb_rows; ++r) {
-        for (auto c = 0; c != nb_cols; ++c) {
-          x_array[row + r] -= ptr[r * nb_cols + c] * f[c];
-        }
-      }
-    }
-  }
+  //     for (; lo != hi; ++lo) {
+  //       auto off_index_ptr = index_view->lowView[lo];
+  //       auto off_col = off_index_ptr->getLocCol();
+  //       auto off_nb_cols = off_index_ptr->getNbCols();
+  //       auto off_shift = off_index_ptr->getInvShift();
+  // #ifndef NDEBUG
+  //       if (off_shift == -1)
+  //         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "off_shift ==
+  //         -1");
+  // #endif // NDEBUG
+  //       auto x_ptr = &x_array[off_col];
+  //       auto ptr = &inv_block_ptr[off_shift];
+  //       if (std::min(nb_rows, nb_cols) > max_gemv_size) {
+  //         cblas_dgemv(CblasRowMajor, CblasNoTrans, nb_rows, off_nb_cols,
+  //         -1.0,
+  //                     ptr, off_nb_cols, x_ptr, 1, 1.0, &f[0], 1);
+  //       } else {
+  //         for (auto r = 0; r != nb_rows; ++r) {
+  //           for (auto c = 0; c != off_nb_cols; ++c) {
+  //             f[r] -= ptr[r * off_nb_cols + c] * x_ptr[c];
+  //           }
+  //         }
+  //       }
+  //     }
 
-  CHKERR VecRestoreArray(loc_ghost_x, &x_array);
-  CHKERR VecRestoreArray(inv_y, &y_inv_array);
-  CHKERR VecRestoreArray(add_y, &y_add_array);
-  CHKERR VecRestoreArray(loc_ghost_y, &y_array);
-  CHKERR VecGhostRestoreLocalForm(ghost_x, &loc_ghost_x);
-  CHKERR VecGhostRestoreLocalForm(ghost_y, &loc_ghost_y);
+  // #ifndef NDEBUG
+  //     if (inv_shift == -1)
+  //       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "inv_shift ==
+  //       -1");
+  //     if (inv_shift + nb_rows * nb_cols > data_inv_blocks->size())
+  //       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+  //                "inv_shift out of range %d > %d", inv_shift + nb_rows *
+  //                nb_cols, data_inv_blocks->size());
+  // #endif // NDEBUG
 
-  // CHKERR VecGhostUpdateBegin(ghost_y, ADD_VALUES, SCATTER_REVERSE);
-  // CHKERR VecGhostUpdateEnd(ghost_y, ADD_VALUES, SCATTER_REVERSE);
+  //     auto ptr = &inv_block_ptr[inv_shift];
+  //     if (std::min(nb_rows, nb_cols) > max_gemv_size) {
+  //       cblas_dgemv(CblasRowMajor, CblasNoTrans, nb_rows, nb_cols, -1.0, ptr,
+  //                   nb_cols, &f[0], 1, 1.0, &x_array[row], 1);
+  //     } else {
+  //       for (auto r = 0; r != nb_rows; ++r) {
+  //         for (auto c = 0; c != nb_cols; ++c) {
+  //           x_array[row + r] -= ptr[r * nb_cols + c] * f[c];
+  //         }
+  //       }
+  //     }
+  //   }
 
-  switch (iora) {
-  case INSERT_VALUES:
-    CHKERR VecCopy(ghost_x, x);
-    break;
-  case ADD_VALUES:
-    CHKERR VecAXPY(x, 1., ghost_x);
-    break;
-  default:
-    CHK_MOAB_THROW(MOFEM_NOT_IMPLEMENTED, "Wrong InsertMode");
-  }
+  //   CHKERR VecRestoreArray(loc_ghost_x, &x_array);
+  //   CHKERR VecRestoreArray(inv_y, &y_inv_array);
+  //   CHKERR VecRestoreArray(add_y, &y_add_array);
+  //   CHKERR VecRestoreArray(loc_ghost_y, &y_array);
+  //   CHKERR VecGhostRestoreLocalForm(ghost_x, &loc_ghost_x);
+  //   CHKERR VecGhostRestoreLocalForm(ghost_y, &loc_ghost_y);
 
-#ifndef NDEBUG
+  //   // CHKERR VecGhostUpdateBegin(ghost_y, ADD_VALUES, SCATTER_REVERSE);
+  //   // CHKERR VecGhostUpdateEnd(ghost_y, ADD_VALUES, SCATTER_REVERSE);
 
-  auto print_norm = [&](auto msg, auto y) {
-    MoFEMFunctionBegin;
-    PetscReal norm;
-    CHKERR VecNorm(y, NORM_2, &norm);
-    int nb_loc_y;
-    CHKERR VecGetLocalSize(y, &nb_loc_y);
-    int nb_y;
-    CHKERR VecGetSize(y, &nb_y);
-    MOFEM_LOG("WORLD", Sev::noisy)
-        << msg << " " << nb_y << " " << nb_loc_y << " norm " << norm;
-    MoFEMFunctionReturn(0);
-  };
+  //   switch (iora) {
+  //   case INSERT_VALUES:
+  //     CHKERR VecCopy(ghost_x, x);
+  //     break;
+  //   case ADD_VALUES:
+  //     CHKERR VecAXPY(x, 1., ghost_x);
+  //     break;
+  //   default:
+  //     CHK_MOAB_THROW(MOFEM_NOT_IMPLEMENTED, "Wrong InsertMode");
+  //   }
 
-  switch (iora) {
-  case INSERT_VALUES:
-    print_norm("solve_schur_block_shell insert x", x);
-    print_norm("solve_schur_block_shell insert y", y);
-    break;
-  case ADD_VALUES:
-    print_norm("solve_schur_block_shell add x", x);
-    print_norm("solve_schur_block_shell add y", y);
-    break;
-  default:
-    CHK_MOAB_THROW(MOFEM_NOT_IMPLEMENTED, "Wrong InsertMode");
-  }
+  // #ifndef NDEBUG
 
-#endif // NDEBUG
+  //   auto print_norm = [&](auto msg, auto y) {
+  //     MoFEMFunctionBegin;
+  //     PetscReal norm;
+  //     CHKERR VecNorm(y, NORM_2, &norm);
+  //     int nb_loc_y;
+  //     CHKERR VecGetLocalSize(y, &nb_loc_y);
+  //     int nb_y;
+  //     CHKERR VecGetSize(y, &nb_y);
+  //     MOFEM_LOG("WORLD", Sev::noisy)
+  //         << msg << " " << nb_y << " " << nb_loc_y << " norm " << norm;
+  //     MoFEMFunctionReturn(0);
+  //   };
+
+  //   switch (iora) {
+  //   case INSERT_VALUES:
+  //     print_norm("solve_schur_block_shell insert x", x);
+  //     print_norm("solve_schur_block_shell insert y", y);
+  //     break;
+  //   case ADD_VALUES:
+  //     print_norm("solve_schur_block_shell add x", x);
+  //     print_norm("solve_schur_block_shell add y", y);
+  //     break;
+  //   default:
+  //     CHK_MOAB_THROW(MOFEM_NOT_IMPLEMENTED, "Wrong InsertMode");
+  //   }
+
+  // #endif // NDEBUG
 
   // PetscLogFlops(xxx)
   PetscLogEventEnd(SchurEvents::MOFEM_EVENT_BlockStructureSolve, 0, 0, 0, 0);
@@ -2229,7 +2616,7 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
   auto [schur_dm, block_dm] = dms;
   auto schur_prb = getProblemPtr(schur_dm);
   auto block_prb = getProblemPtr(block_dm);
-  auto m_field_ptr = getInterfacePtr(block_dm);
+  // auto m_field_ptr = getInterfacePtr(block_dm);
 
   auto schur_dofs_row = schur_prb->getNumeredRowDofsPtr();
   auto schur_dofs_col = schur_prb->getNumeredColDofsPtr();
@@ -2282,7 +2669,7 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
     data_ptrs[r] = boost::make_shared<BlockStructure>();
     data_ptrs[r]->dataBlocksPtr = block_mat_data_ptr->dataBlocksPtr;
   }
-  data_ptrs[3] = boost::make_shared<DiagBlockInvStruture>();
+  data_ptrs[3] = boost::make_shared<BlockStructure>();
   data_ptrs[3]->dataBlocksPtr = block_mat_data_ptr->dataBlocksPtr;
 
   data_ptrs[0]->ghostX = schur_vec_x;
@@ -2342,266 +2729,297 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
   auto set_up_a00_data = [&](auto inv_block_data) {
     MoFEMFunctionBegin;
 
-    auto get_forward_list = [&]() {
-      std::vector<int> list;
-      list.reserve(fields_names.size());
-      for (auto s = 0; s != fields_names.size(); ++s) {
-        list.push_back(s);
-      }
-      return list;
-    };
+    auto size = inv_block_data->dataBlocksPtr->size();
+    inv_block_data->dataInvBlocksPtr =
+        boost::make_shared<std::vector<double>>(size, 0.0);
+    block_mat_data_ptr->dataInvBlocksPtr = inv_block_data->dataInvBlocksPtr;
 
-    auto get_reverse_list = [&]() {
-      std::vector<int> list;
-      list.reserve(fields_names.size());
-      for (auto s = 0; s != fields_names.size(); ++s) {
-        list.push_back(fields_names.size() - s - 1);
-      }
-      return list;
-    };
-
-    // get uids on the diagonal of a00 block
-    auto get_a00_uids = [&](auto &&list) {
-      auto get_field_bit = [&](auto field_name) {
-        return m_field_ptr->get_field_bit_number(field_name);
-      };
-
-      std::vector<std::pair<UId, UId>> a00_uids;
-      a00_uids.reserve(fields_names.size());
-      for (auto ss : list) {
-        auto field_bit = get_field_bit(fields_names[ss]);
-        auto row_ents = field_ents[ss];
-        if (row_ents) {
-          for (auto p = row_ents->pair_begin(); p != row_ents->pair_end();
-               ++p) {
-            auto lo_uid =
-                FieldEntity::getLoLocalEntityBitNumber(field_bit, p->first);
-            auto hi_uid =
-                FieldEntity::getHiLocalEntityBitNumber(field_bit, p->second);
-            a00_uids.push_back(std::make_pair(lo_uid, hi_uid));
-          }
-        } else {
-          auto lo_uid = FieldEntity::getLoLocalEntityBitNumber(
-              field_bit, get_id_for_min_type<MBVERTEX>());
-          auto hi_uid = FieldEntity::getHiLocalEntityBitNumber(
-              field_bit, get_id_for_max_type<MBENTITYSET>());
-          a00_uids.push_back(std::make_pair(lo_uid, hi_uid));
-        }
-      }
-      return a00_uids;
-    };
-
-    // get global indexes for a00 block
-    auto get_glob_idex_pairs = [&](auto &&uid_pairs) {
-      std::vector<std::pair<int, int>> glob_idex_pairs;
-      glob_idex_pairs.reserve(uid_pairs.size());
-      auto dofs = block_prb->getNumeredRowDofsPtr();
-
-      auto it = uid_pairs.rbegin();
-      auto hi = uid_pairs.rend();
-
-      for (; it != hi; ++it) {
-        auto [lo_uid, hi_uid] = *it;
-        auto lo_it = dofs->lower_bound(lo_uid);
-        auto hi_it = dofs->upper_bound(hi_uid);
-        if (lo_it != hi_it) {
-          auto lo_idx = (*lo_it)->getPetscGlobalDofIdx();
-          glob_idex_pairs.emplace_back(lo_idx, std::distance(lo_it, hi_it));
-        }
-      }
-      // pair of local index and number of dofs
-      return glob_idex_pairs;
-    };
-
-    auto &index_view =
-        boost::dynamic_pointer_cast<DiagBlockInvStruture>(inv_block_data)
-            ->indexView;
-
-    // set struture to keep indices to mat solve of a00
-    index_view.lowView.resize(0);
-    index_view.lowView.reserve(inv_block_data->blockIndex.size());
-    index_view.diagLoRange.resize(0);
-    index_view.diagLoRange.reserve(inv_block_data->blockIndex.size() + 1);
-    index_view.diagLoRange.push_back(0);
-
-    index_view.upView.resize(0);
-    index_view.upView.reserve(inv_block_data->blockIndex.size());
-    index_view.diagUpRange.resize(0);
-    index_view.diagUpRange.reserve(inv_block_data->blockIndex.size() + 1);
-    index_view.diagUpRange.push_back(0);
-
-    // this enable search by varying ranges
-    using BlockIndexView = multi_index_container<
-
-        const DiagBlockIndex::Indexes *,
-
-        indexed_by<
-
-            ordered_non_unique<const_mem_fun<DiagBlockIndex::Indexes, int,
-                                             &DiagBlockIndex::Indexes::getRow>>
-
-            >>;
-
-    BlockIndexView block_index_view;
-    for (auto it = inv_block_data->blockIndex.template get<0>().begin();
-         it != inv_block_data->blockIndex.template get<0>().end(); ++it) {
-      block_index_view.insert(&*it);
+    for (auto &s : inv_block_data->blockIndex) {
+      s.getInvShift() = s.getMatShift();
     }
 
-    auto set_index_view_data = [&](
+    for (auto &s : inv_block_data->blockIndex) {
+      auto it = block_mat_data_ptr->blockIndex.find(
 
-                                   int start,
+          boost::make_tuple(s.getRowUId(), s.getColUId())
 
-                                   auto &&glob_idx_pairs,
-
-                                   auto &view, auto &range
-
-                               ) {
-      // iterate field & entities pairs
-      for (auto s1 = start; s1 < glob_idx_pairs.size(); ++s1) {
-
-        // iterate matrix indexes
-        // index, and numer of dofs
-        auto [lo_idx, nb] = glob_idx_pairs[s1];
-        auto it = block_index_view.lower_bound(lo_idx);
-        auto hi = block_index_view.end();
-
-        // iterate rows
-        while (it != hi &&
-               ((*it)->getRow() + (*it)->getNbRows()) <= lo_idx + nb) {
-
-          auto row = (*it)->getRow();
-
-          auto get_diag_index =
-              [&](auto it) -> const MoFEM::DiagBlockIndex::Indexes * {
-            while (it != hi && (*it)->getRow() == row) {
-              if ((*it)->getCol() == row &&
-                  (*it)->getNbCols() == (*it)->getNbRows()) {
-                auto ptr = *it;
-                return ptr;
-              }
-              ++it;
-            }
-            CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Diagonal not found");
-            return nullptr;
-          };
-
-          auto push_off_diag = [&](auto it, auto s1) {
-            while (it != hi && (*it)->getRow() == row) {
-              for (int s2 = 0; s2 < s1; ++s2) {
-                auto [col_lo_idx, col_nb] = glob_idx_pairs[s2];
-                if ((*it)->getCol() >= col_lo_idx &&
-                    (*it)->getCol() + (*it)->getNbCols() <=
-                        col_lo_idx + col_nb) {
-                  view.push_back(*it);
-                }
-              }
-              ++it;
-            }
-          };
-
-          view.push_back(get_diag_index(it));
-          push_off_diag(it, s1);
-          range.push_back(view.size());
-
-          while (it != hi && (*it)->getRow() == row) {
-            ++it;
-          }
-        }
-      }
-    };
-
-    set_index_view_data(
-
-        0,
-
-        get_glob_idex_pairs(get_a00_uids(get_forward_list())),
-
-        index_view.lowView, index_view.diagLoRange
-
-    );
-
-    set_index_view_data(
-
-        0,
-
-        get_glob_idex_pairs(get_a00_uids(get_reverse_list())),
-
-        index_view.upView, index_view.diagUpRange
-
-    );
-
-    // calculate size of invert matrix vector, and set internal data
-    auto set_inv_mat = [&](auto inv_mem_size, auto &view, auto &range) {
-      auto get_vec = [&](auto &view) {
-        std::vector<int> vec_r, vec_c;
-        vec_r.reserve(view.size());
-        vec_c.reserve(view.size());
-        for (auto &i : view) {
-          vec_r.push_back(i->getRow());
-          vec_c.push_back(i->getCol());
-        }
-        return std::make_pair(vec_r, vec_c);
-      };
-
-      auto [vec_row, vec_col] = get_vec(view);
-      CHK_THROW_MESSAGE(
-          AOPetscToApplication(ao_block_row, vec_row.size(), &*vec_row.begin()),
-          "apply ao");
-      CHK_THROW_MESSAGE(
-          AOPetscToApplication(ao_block_col, vec_col.size(), &*vec_col.begin()),
-          "apply ao");
-
-      for (auto s1 = 0; s1 != range.size() - 1; ++s1) {
-        auto lo = range[s1];
-        auto hi = range[s1 + 1];
-        for (; lo != hi; ++lo) {
-          auto diag_index_ptr = view[lo];
-          auto row_uid = diag_index_ptr->getRowUId();
-          auto col_uid = diag_index_ptr->getColUId();
-          auto it = block_mat_data_ptr->blockIndex.get<0>().find(
-              boost::make_tuple(row_uid, col_uid));
-          if (it == block_mat_data_ptr->blockIndex.get<0>().end()) {
-            CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Block not found");
-          }
-          auto nb_rows = diag_index_ptr->getNbRows();
-          auto nb_cols = diag_index_ptr->getNbCols();
-
-          if (it->getInvShift() == -1) {
-            it->getInvShift() = inv_mem_size;
-            inv_mem_size += nb_rows * nb_cols;
-          }
-          diag_index_ptr->getInvShift() = it->getInvShift();
-        }
-      }
-
-      return inv_mem_size;
-    };
-
-    // allocate memory for invert matrix solver
-    auto allocate_inv_block = [&](auto inv_mem_size) {
-      auto inv_data_ptr =
-          boost::make_shared<std::vector<double>>(inv_mem_size, 0);
-      data_ptrs[3]->dataInvBlocksPtr = inv_data_ptr;
-      block_mat_data_ptr->dataInvBlocksPtr = data_ptrs[3]->dataInvBlocksPtr;
-    };
-
-    int inv_mem_size = 0;
-    inv_mem_size =
-        set_inv_mat(inv_mem_size, index_view.lowView, index_view.diagLoRange);
-    inv_mem_size =
-        set_inv_mat(inv_mem_size, index_view.upView, index_view.diagUpRange);
-    allocate_inv_block(inv_mem_size);
+      );
+      if(it == block_mat_data_ptr->blockIndex.end())
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Missing block");
+      it->getInvShift() = s.getInvShift();
+    }
 
     if (add_preconditioner_block) {
       auto preconditioned_block = boost::make_shared<std::vector<double>>(
-          data_ptrs[3]->dataInvBlocksPtr->size(), 0);
-      data_ptrs[3]->preconditionerBlocksPtr = preconditioned_block;
-      data_ptrs[3]->multiplyByPreconditioner = true;
+          inv_block_data->dataInvBlocksPtr->size(), 0);
+      inv_block_data->preconditionerBlocksPtr = preconditioned_block;
+      inv_block_data->multiplyByPreconditioner = true;
       block_mat_data_ptr->preconditionerBlocksPtr =
-          data_ptrs[3]->preconditionerBlocksPtr;
+          inv_block_data->preconditionerBlocksPtr;
       block_mat_data_ptr->multiplyByPreconditioner = false;
     }
+
+    // auto get_forward_list = [&]() {
+    //   std::vector<int> list;
+    //   list.reserve(fields_names.size());
+    //   for (auto s = 0; s != fields_names.size(); ++s) {
+    //     list.push_back(s);
+    //   }
+    //   return list;
+    // };
+
+    // auto get_reverse_list = [&]() {
+    //   std::vector<int> list;
+    //   list.reserve(fields_names.size());
+    //   for (auto s = 0; s != fields_names.size(); ++s) {
+    //     list.push_back(fields_names.size() - s - 1);
+    //   }
+    //   return list;
+    // };
+
+    // // get uids on the diagonal of a00 block
+    // auto get_a00_uids = [&](auto &&list) {
+    //   auto get_field_bit = [&](auto field_name) {
+    //     return m_field_ptr->get_field_bit_number(field_name);
+    //   };
+
+    //   std::vector<std::pair<UId, UId>> a00_uids;
+    //   a00_uids.reserve(fields_names.size());
+    //   for (auto ss : list) {
+    //     auto field_bit = get_field_bit(fields_names[ss]);
+    //     auto row_ents = field_ents[ss];
+    //     if (row_ents) {
+    //       for (auto p = row_ents->pair_begin(); p != row_ents->pair_end();
+    //            ++p) {
+    //         auto lo_uid =
+    //             FieldEntity::getLoLocalEntityBitNumber(field_bit, p->first);
+    //         auto hi_uid =
+    //             FieldEntity::getHiLocalEntityBitNumber(field_bit, p->second);
+    //         a00_uids.push_back(std::make_pair(lo_uid, hi_uid));
+    //       }
+    //     } else {
+    //       auto lo_uid = FieldEntity::getLoLocalEntityBitNumber(
+    //           field_bit, get_id_for_min_type<MBVERTEX>());
+    //       auto hi_uid = FieldEntity::getHiLocalEntityBitNumber(
+    //           field_bit, get_id_for_max_type<MBENTITYSET>());
+    //       a00_uids.push_back(std::make_pair(lo_uid, hi_uid));
+    //     }
+    //   }
+    //   return a00_uids;
+    // };
+
+    // // get global indexes for a00 block
+    // auto get_glob_idex_pairs = [&](auto &&uid_pairs) {
+    //   std::vector<std::pair<int, int>> glob_idex_pairs;
+    //   glob_idex_pairs.reserve(uid_pairs.size());
+    //   auto dofs = block_prb->getNumeredRowDofsPtr();
+
+    //   auto it = uid_pairs.rbegin();
+    //   auto hi = uid_pairs.rend();
+
+    //   for (; it != hi; ++it) {
+    //     auto [lo_uid, hi_uid] = *it;
+    //     auto lo_it = dofs->lower_bound(lo_uid);
+    //     auto hi_it = dofs->upper_bound(hi_uid);
+    //     if (lo_it != hi_it) {
+    //       auto lo_idx = (*lo_it)->getPetscGlobalDofIdx();
+    //       glob_idex_pairs.emplace_back(lo_idx, std::distance(lo_it, hi_it));
+    //     }
+    //   }
+    //   // pair of local index and number of dofs
+    //   return glob_idex_pairs;
+    // };
+
+    // auto &index_view =
+    //     boost::dynamic_pointer_cast<DiagBlockInvStruture>(inv_block_data)
+    //         ->indexView;
+
+    // // set struture to keep indices to mat solve of a00
+    // index_view.lowView.resize(0);
+    // index_view.lowView.reserve(inv_block_data->blockIndex.size());
+    // index_view.diagLoRange.resize(0);
+    // index_view.diagLoRange.reserve(inv_block_data->blockIndex.size() + 1);
+    // index_view.diagLoRange.push_back(0);
+
+    // index_view.upView.resize(0);
+    // index_view.upView.reserve(inv_block_data->blockIndex.size());
+    // index_view.diagUpRange.resize(0);
+    // index_view.diagUpRange.reserve(inv_block_data->blockIndex.size() + 1);
+    // index_view.diagUpRange.push_back(0);
+
+    // // this enable search by varying ranges
+    // using BlockIndexView = multi_index_container<
+
+    //     const DiagBlockIndex::Indexes *,
+
+    //     indexed_by<
+
+    //         ordered_non_unique<const_mem_fun<DiagBlockIndex::Indexes, int,
+    //                                          &DiagBlockIndex::Indexes::getRow>>
+
+    //         >>;
+
+    // BlockIndexView block_index_view;
+    // for (auto it = inv_block_data->blockIndex.template get<0>().begin();
+    //      it != inv_block_data->blockIndex.template get<0>().end(); ++it) {
+    //   block_index_view.insert(&*it);
+    // }
+
+    // auto set_index_view_data = [&](
+
+    //                                int start,
+
+    //                                auto &&glob_idx_pairs,
+
+    //                                auto &view, auto &range
+
+    //                            ) {
+    //   // iterate field & entities pairs
+    //   for (auto s1 = start; s1 < glob_idx_pairs.size(); ++s1) {
+
+    //     // iterate matrix indexes
+    //     // index, and numer of dofs
+    //     auto [lo_idx, nb] = glob_idx_pairs[s1];
+    //     auto it = block_index_view.lower_bound(lo_idx);
+    //     auto hi = block_index_view.end();
+
+    //     // iterate rows
+    //     while (it != hi &&
+    //            ((*it)->getRow() + (*it)->getNbRows()) <= lo_idx + nb) {
+
+    //       auto row = (*it)->getRow();
+
+    //       auto get_diag_index =
+    //           [&](auto it) -> const MoFEM::DiagBlockIndex::Indexes * {
+    //         while (it != hi && (*it)->getRow() == row) {
+    //           if ((*it)->getCol() == row &&
+    //               (*it)->getNbCols() == (*it)->getNbRows()) {
+    //             auto ptr = *it;
+    //             return ptr;
+    //           }
+    //           ++it;
+    //         }
+    //         CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Diagonal not
+    //         found"); return nullptr;
+    //       };
+
+    //       auto push_off_diag = [&](auto it, auto s1) {
+    //         while (it != hi && (*it)->getRow() == row) {
+    //           for (int s2 = 0; s2 < s1; ++s2) {
+    //             auto [col_lo_idx, col_nb] = glob_idx_pairs[s2];
+    //             if ((*it)->getCol() >= col_lo_idx &&
+    //                 (*it)->getCol() + (*it)->getNbCols() <=
+    //                     col_lo_idx + col_nb) {
+    //               view.push_back(*it);
+    //             }
+    //           }
+    //           ++it;
+    //         }
+    //       };
+
+    //       view.push_back(get_diag_index(it));
+    //       push_off_diag(it, s1);
+    //       range.push_back(view.size());
+
+    //       while (it != hi && (*it)->getRow() == row) {
+    //         ++it;
+    //       }
+    //     }
+    //   }
+    // };
+
+    // set_index_view_data(
+
+    //     0,
+
+    //     get_glob_idex_pairs(get_a00_uids(get_forward_list())),
+
+    //     index_view.lowView, index_view.diagLoRange
+
+    // );
+
+    // set_index_view_data(
+
+    //     0,
+
+    //     get_glob_idex_pairs(get_a00_uids(get_reverse_list())),
+
+    //     index_view.upView, index_view.diagUpRange
+
+    // );
+
+    // // calculate size of invert matrix vector, and set internal data
+    // auto set_inv_mat = [&](auto inv_mem_size, auto &view, auto &range) {
+    //   auto get_vec = [&](auto &view) {
+    //     std::vector<int> vec_r, vec_c;
+    //     vec_r.reserve(view.size());
+    //     vec_c.reserve(view.size());
+    //     for (auto &i : view) {
+    //       vec_r.push_back(i->getRow());
+    //       vec_c.push_back(i->getCol());
+    //     }
+    //     return std::make_pair(vec_r, vec_c);
+    //   };
+
+    //   auto [vec_row, vec_col] = get_vec(view);
+    //   CHK_THROW_MESSAGE(
+    //       AOPetscToApplication(ao_block_row, vec_row.size(),
+    //       &*vec_row.begin()), "apply ao");
+    //   CHK_THROW_MESSAGE(
+    //       AOPetscToApplication(ao_block_col, vec_col.size(),
+    //       &*vec_col.begin()), "apply ao");
+
+    //   for (auto s1 = 0; s1 != range.size() - 1; ++s1) {
+    //     auto lo = range[s1];
+    //     auto hi = range[s1 + 1];
+    //     for (; lo != hi; ++lo) {
+    //       auto diag_index_ptr = view[lo];
+    //       auto row_uid = diag_index_ptr->getRowUId();
+    //       auto col_uid = diag_index_ptr->getColUId();
+    //       auto it = block_mat_data_ptr->blockIndex.get<0>().find(
+    //           boost::make_tuple(row_uid, col_uid));
+    //       if (it == block_mat_data_ptr->blockIndex.get<0>().end()) {
+    //         CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Block not found");
+    //       }
+    //       auto nb_rows = diag_index_ptr->getNbRows();
+    //       auto nb_cols = diag_index_ptr->getNbCols();
+
+    //       if (it->getInvShift() == -1) {
+    //         it->getInvShift() = inv_mem_size;
+    //         inv_mem_size += nb_rows * nb_cols;
+    //       }
+    //       diag_index_ptr->getInvShift() = it->getInvShift();
+    //     }
+    //   }
+
+    //   return inv_mem_size;
+    // };
+
+    // // allocate memory for invert matrix solver
+    // auto allocate_inv_block = [&](auto inv_mem_size) {
+    //   auto inv_data_ptr =
+    //       boost::make_shared<std::vector<double>>(inv_mem_size, 0);
+    //   data_ptrs[3]->dataInvBlocksPtr = inv_data_ptr;
+    //   block_mat_data_ptr->dataInvBlocksPtr = data_ptrs[3]->dataInvBlocksPtr;
+    // };
+
+    // int inv_mem_size = 0;
+    // inv_mem_size =
+    //     set_inv_mat(inv_mem_size, index_view.lowView,
+    //     index_view.diagLoRange);
+    // inv_mem_size =
+    //     set_inv_mat(inv_mem_size, index_view.upView, index_view.diagUpRange);
+    // allocate_inv_block(inv_mem_size);
+
+    // if (add_preconditioner_block) {
+    //   auto preconditioned_block = boost::make_shared<std::vector<double>>(
+    //       data_ptrs[3]->dataInvBlocksPtr->size(), 0);
+    //   data_ptrs[3]->preconditionerBlocksPtr = preconditioned_block;
+    //   data_ptrs[3]->multiplyByPreconditioner = true;
+    //   block_mat_data_ptr->preconditionerBlocksPtr =
+    //       data_ptrs[3]->preconditionerBlocksPtr;
+    //   block_mat_data_ptr->multiplyByPreconditioner = false;
+    // }
 
     MoFEMFunctionReturn(0);
   };
