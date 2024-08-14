@@ -13,8 +13,8 @@
 
 namespace MoFEM {
 
-template <AssemblyType A, IntegrationType I, typename OpBase>
-struct OpEssentialRhsImpl<HeatFluxCubitBcData, 3, 3, A, I, OpBase>
+template <AssemblyType A, typename OpBase>
+struct OpEssentialRhsImpl<HeatFluxCubitBcData, 3, 3, A, GAUSS, OpBase>
     : FormsIntegrators<OpBase>::template Assembly<A>::OpBase {
 
   using OP = typename FormsIntegrators<OpBase>::template Assembly<A>::OpBase;
@@ -32,19 +32,19 @@ private:
   VecOfTimeScalingMethods vecOfTimeScalingMethods;
 };
 
-template <AssemblyType A, IntegrationType I, typename OpBase>
-struct OpEssentialRhsImpl<HeatFluxCubitBcData, 3, 2, A, I, OpBase>
-    : OpEssentialRhsImpl<HeatFluxCubitBcData, 3, 3, A, I, OpBase> {
-  using OpEssentialRhsImpl<HeatFluxCubitBcData, 3, 3, A, I,
+template <AssemblyType A, typename OpBase>
+struct OpEssentialRhsImpl<HeatFluxCubitBcData, 3, 2, A, GAUSS, OpBase>
+    : OpEssentialRhsImpl<HeatFluxCubitBcData, 3, 3, A, GAUSS, OpBase> {
+  using OpEssentialRhsImpl<HeatFluxCubitBcData, 3, 3, A, GAUSS,
                            OpBase>::OpEssentialRhsImpl;
 };
 
-template <AssemblyType A, IntegrationType I, typename OpBase>
-OpEssentialRhsImpl<HeatFluxCubitBcData, 3, 3, A, I, OpBase>::OpEssentialRhsImpl(
-    const std::string field_name,
-    boost::shared_ptr<HeatFluxCubitBcData> bc_data,
-    boost::shared_ptr<Range> ents_ptr,
-    std::vector<boost::shared_ptr<ScalingMethod>> smv)
+template <AssemblyType A, typename OpBase>
+OpEssentialRhsImpl<HeatFluxCubitBcData, 3, 3, A, GAUSS, OpBase>::
+    OpEssentialRhsImpl(const std::string field_name,
+                       boost::shared_ptr<HeatFluxCubitBcData> bc_data,
+                       boost::shared_ptr<Range> ents_ptr,
+                       std::vector<boost::shared_ptr<ScalingMethod>> smv)
     : OP(field_name, field_name, OpBase::OPROW, ents_ptr),
       vecOfTimeScalingMethods(smv) {
   heatFlux = -bc_data->data.value1;
@@ -57,9 +57,9 @@ OpEssentialRhsImpl<HeatFluxCubitBcData, 3, 3, A, I, OpBase>::OpEssentialRhsImpl(
   };
 }
 
-template <AssemblyType A, IntegrationType I, typename OpBase>
+template <AssemblyType A, typename OpBase>
 MoFEMErrorCode
-OpEssentialRhsImpl<HeatFluxCubitBcData, 3, 3, A, I, OpBase>::iNtegrate(
+OpEssentialRhsImpl<HeatFluxCubitBcData, 3, 3, A, GAUSS, OpBase>::iNtegrate(
     EntitiesFieldData::EntData &row_data) {
   MoFEMFunctionBegin;
 
