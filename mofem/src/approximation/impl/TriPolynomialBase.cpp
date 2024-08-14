@@ -1246,11 +1246,8 @@ MoFEMErrorCode TriPolynomialBase::setDofsSideMapHcurl(
 
     dofs_side_map.clear();
 
-    int dof;
-    for (int oo = 0; oo < MAX_DOFS_ON_ENTITY; oo++) {
-
-      if (dof > MAX_DOFS_ON_ENTITY)
-        break;
+    int dof = 0;
+    for (int oo = 0; oo < Field::maxBrokenDofsOrder; oo++) {
 
       // edges
       for (int dd = NBEDGE_AINSWORTH_HCURL(oo);
@@ -1277,10 +1274,7 @@ MoFEMErrorCode TriPolynomialBase::setDofsSideMapHcurl(
     dofs_side_map.clear();
 
     int dof = 0;
-    for (int oo = 0; oo < MAX_DOFS_ON_ENTITY; oo++) {
-
-      if (dof > MAX_DOFS_ON_ENTITY)
-        break;
+    for (int oo = 0; oo < Field::maxBrokenDofsOrder; oo++) {
 
       // edges
       for (int dd = NBEDGE_DEMKOWICZ_HCURL(oo);
@@ -1296,7 +1290,6 @@ MoFEMErrorCode TriPolynomialBase::setDofsSideMapHcurl(
         dofs_side_map.insert(DofsSideMapData{MBTRI, 0, dof});
         ++dof;
       }
-
     }
 
     MoFEMFunctionReturn(0);
