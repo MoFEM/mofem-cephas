@@ -257,13 +257,8 @@ int main(int argc, char *argv[]) {
 
     pip_lhs.push_back(createOpSchurAssembleEnd(
 
-        fields,
-
-        {nullptr, nullptr, nullptr},
-
-        {nullptr, nullptr, ao_up}, {nullptr, nullptr, S},
-
-        {true, true, true}, true, block_data_ptr)
+        fields, {nullptr, nullptr, nullptr}, ao_up, S, true, true,
+        block_data_ptr)
 
     );
 

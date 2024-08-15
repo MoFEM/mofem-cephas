@@ -656,9 +656,8 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
           createOpSchurAssembleBegin());
       pip_mng->getOpDomainLhsPipeline().push_back(
 
-          createOpSchurAssembleEnd(
-              {"BROKEN", "U"}, {nullptr, nullptr}, {SmartPetscObj<AO>(), ao_up},
-              {SmartPetscObj<Mat>(), S}, {true, true}, true, block_data)
+          createOpSchurAssembleEnd({"BROKEN", "U"}, {nullptr, nullptr}, ao_up,
+                                   S, true, true, block_data)
 
       );
 
