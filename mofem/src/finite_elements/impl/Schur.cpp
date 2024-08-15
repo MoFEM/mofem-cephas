@@ -93,26 +93,6 @@ struct OpSchurAssembleEndImpl : public OP_SCHUR_ASSEMBLE_BASE {
       std::vector<bool> sym_schur, bool symm_op = true,
       boost::shared_ptr<BlockStructure> diag_blocks = nullptr);
 
-  /**
-   * @brief Construct a new Op Schur Assemble End object
-   *
-   * @param fields_name list of fields
-   * @param field_ents list of entities on which schur complement is applied
-   * (can be empty)
-   * @param schur_ao map indices to schur matrix indices
-   * @param schur_mat schur matrix
-   * @param sym_schur true if Schur complement is symmetric
-   * @param diag_eps add epsilon on diagonal of inverted matrix
-   * @param symm_op true if block diagonal is symmetric
-   */
-  OpSchurAssembleEndImpl(
-      std::vector<std::string> fields_name,
-      std::vector<boost::shared_ptr<Range>> field_ents,
-      SmartPetscObj<AO> schur_ao, SmartPetscObj<Mat> schur_mat,
-      std::vector<bool> sym_schur, std::vector<double> diag_eps,
-      bool symm_op = true,
-      boost::shared_ptr<BlockStructure> diag_blocks = nullptr);
-
 protected:
   template <typename I>
   MoFEMErrorCode doWorkImpl(
@@ -126,15 +106,10 @@ protected:
   SmartPetscObj<AO> schurAO;
   SmartPetscObj<Mat> schurMat;
   std::vector<bool> symSchur;
-  std::vector<double> diagEps;
 
   MatrixDouble blockMat;
   MatrixDouble invMat;
   MatrixDouble bM, abM, abcM;
-
-  MatrixDouble invDiagOffMat;
-  MatrixDouble offMatInvDiagOffMat;
-  MatrixDouble transOffMatInvDiagOffMat;
 
   boost::shared_ptr<BlockStructure> diagBlocks;
 };
@@ -566,22 +541,11 @@ OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::OpSchurAssembleEndImpl(
     std::vector<std::string> fields_name,
     std::vector<boost::shared_ptr<Range>> field_ents,
     SmartPetscObj<AO> schur_ao, SmartPetscObj<Mat> schur_mat,
-    std::vector<bool> sym_schur, std::vector<double> diag_eps, bool symm_op,
+    std::vector<bool> sym_schur, bool symm_op,
     boost::shared_ptr<BlockStructure> diag_blocks)
     : OP(NOSPACE, OP::OPSPACE, symm_op), fieldsName(fields_name),
       fieldEnts(field_ents), schurAO(schur_ao), schurMat(schur_mat),
-      symSchur(sym_schur), diagEps(diag_eps), diagBlocks(diag_blocks) {}
-
-template <typename OP_SCHUR_ASSEMBLE_BASE>
-OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::OpSchurAssembleEndImpl(
-    std::vector<std::string> fields_name,
-    std::vector<boost::shared_ptr<Range>> field_ents,
-    SmartPetscObj<AO> schur_ao, SmartPetscObj<Mat> schur_mat,
-    std::vector<bool> sym_schur, bool symm_op,
-    boost::shared_ptr<BlockStructure> diag_blocks)
-    : OpSchurAssembleEndImpl(
-          fields_name, field_ents, schur_ao, schur_mat, sym_schur,
-          std::vector<double>(fields_name.size(), 0), symm_op, diag_blocks) {}
+      symSchur(sym_schur), diagBlocks(diag_blocks) {}
 
 template <typename OP_SCHUR_ASSEMBLE_BASE>
 template <typename I>
@@ -2101,11 +2065,11 @@ createOpSchurAssembleEnd(std::vector<std::string> fields_name,
   if (symm_op)
     return new OpSchurAssembleEnd<SchurDSYSV>(
         fields_name, field_ents, sequence_of_aos.back(),
-        sequence_of_mats.back(), sym_schur, diag_eps, symm_op, diag_blocks);
+        sequence_of_mats.back(), sym_schur, symm_op, diag_blocks);
   else
     return new OpSchurAssembleEnd<SchurDGESV>(
         fields_name, field_ents, sequence_of_aos.back(),
-        sequence_of_mats.back(), sym_schur, diag_eps, symm_op, diag_blocks);
+        sequence_of_mats.back(), sym_schur, symm_op, diag_blocks);
 }
 
 MoFEMErrorCode setSchurA00MatSolvePC(SmartPetscObj<PC> pc) {
