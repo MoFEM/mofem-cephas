@@ -766,6 +766,13 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
         get_block_indexing(a00_uids);
 
     if (block_mat_size == 0) {
+      for (auto &s : storage) {
+        auto &m = s->getMat();
+        VectorInt row_ind, col_ind;
+        row_ind = s->getRowInd();
+        col_ind = s->getColInd();
+        CHKERR assemble_schur(m, s->uidRow, s->uidCol, &(row_ind), &(col_ind));
+      }
       MoFEMFunctionReturnHot(0);
     }
 
@@ -935,8 +942,8 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
             }
 
             if (diagBlocks) {
-              bM = trans(bM);
               if (symSchur && rp_uid_it != cp_uid_it) {
+                bM = trans(bM);
                 CHKERR assemble_a00(
 
                     bM, cm->first, rm->first, cbi.second, rbi.second
@@ -944,13 +951,10 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
                 );
               }
             }
-
           }
         }
       }
     }
-
-    storage.clear();
 
     MoFEMFunctionReturn(0);
   };
