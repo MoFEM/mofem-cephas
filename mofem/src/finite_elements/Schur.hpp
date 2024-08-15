@@ -53,39 +53,18 @@ OpSchurAssembleBase *createOpSchurAssembleBegin();
  * @param fields_name list of fields
  * @param field_ents list of entities on which schur complement is applied
  * (can be empty)
- * @param sequence_of_aos list of maps from base problem to Schur complement
+ * @param schur_aos maps from base problem to Schur complement
  * matrix
- * @param sequence_of_mats list of Schur complement matrices
+ * @param schur_mat schur complement matrices
  * @param sym_schur true if Schur complement is symmetric
  * @param symm_op true if block diagonal is symmetric
  */
 OpSchurAssembleBase *createOpSchurAssembleEnd(
     std::vector<std::string> fields_name,
     std::vector<boost::shared_ptr<Range>> field_ents,
-    std::vector<SmartPetscObj<AO>> sequence_of_aos,
-    std::vector<SmartPetscObj<Mat>> sequence_of_mats,
-    std::vector<bool> sym_schur, bool symm_op,
-    boost::shared_ptr<BlockStructure> diag_blocks = nullptr);
-
-/**
- * @brief Construct a new Op Schur Assemble End object
- *
- * @param fields_name list of fields
- * @param field_ents list of entities on which schur complement is applied
- * (can be empty)
- * @param sequence_of_aos list of maps from base problem to Schur complement
- * matrix
- * @param sequence_of_mats list of Schur complement matrices
- * @param sym_schur true if Schur complement is symmetric
- * @param diag_eps add epsilon on diagonal of inverted matrix
- * @param symm_op true if block diagonal is symmetric
- */
-OpSchurAssembleBase *createOpSchurAssembleEnd(
-    std::vector<std::string> fields_name,
-    std::vector<boost::shared_ptr<Range>> field_ents,
-    std::vector<SmartPetscObj<AO>> sequence_of_aos,
-    std::vector<SmartPetscObj<Mat>> sequence_of_mats,
-    std::vector<bool> sym_schur, std::vector<double> diag_eps, bool symm_op,
+    SmartPetscObj<AO> ao = SmartPetscObj<AO>(),
+    SmartPetscObj<Mat> schur = SmartPetscObj<Mat>(), bool sym_schur = false,
+    bool symm_op = false,
     boost::shared_ptr<BlockStructure> diag_blocks = nullptr);
 
 using SchurFieldPair = std::pair<std::string, std::string>;
@@ -351,6 +330,49 @@ VecSetValues<AssemblyTypeSelector<BLOCK_PRECONDITIONER_SCHUR>>(
   return ::VecSetValues(V, data.getIndices().size(),
                         &*data.getIndices().begin(), &*nf.begin(), iora);
 }
+
+/**
+ * @deprecated do not use
+ * @brief Construct a new Op Schur Assemble End object
+ *
+ * @param fields_name list of fields
+ * @param field_ents list of entities on which schur complement is applied
+ * (can be empty)
+ * @param sequence_of_aos list of maps from base problem to Schur complement
+ * matrix
+ * @param sequence_of_mats list of Schur complement matrices
+ * @param sym_schur true if Schur complement is symmetric
+ * @param symm_op true if block diagonal is symmetric
+ */
+DEPRECATED OpSchurAssembleBase *createOpSchurAssembleEnd(
+    std::vector<std::string> fields_name,
+    std::vector<boost::shared_ptr<Range>> field_ents,
+    std::vector<SmartPetscObj<AO>> sequence_of_aos,
+    std::vector<SmartPetscObj<Mat>> sequence_of_mats,
+    std::vector<bool> sym_schur, bool symm_op,
+    boost::shared_ptr<BlockStructure> diag_blocks = nullptr);
+
+/**
+ * @deprecated do not use
+ * @brief Construct a new Op Schur Assemble End object
+ *
+ * @param fields_name list of fields
+ * @param field_ents list of entities on which schur complement is applied
+ * (can be empty)
+ * @param sequence_of_aos list of maps from base problem to Schur complement
+ * matrix
+ * @param sequence_of_mats list of Schur complement matrices
+ * @param sym_schur true if Schur complement is symmetric
+ * @param diag_eps add epsilon on diagonal of inverted matrix
+ * @param symm_op true if block diagonal is symmetric
+ */
+DEPRECATED OpSchurAssembleBase *createOpSchurAssembleEnd(
+    std::vector<std::string> fields_name,
+    std::vector<boost::shared_ptr<Range>> field_ents,
+    std::vector<SmartPetscObj<AO>> sequence_of_aos,
+    std::vector<SmartPetscObj<Mat>> sequence_of_mats,
+    std::vector<bool> sym_schur, std::vector<double> diag_eps, bool symm_op,
+    boost::shared_ptr<BlockStructure> diag_blocks = nullptr);
 
 } // namespace MoFEM
 

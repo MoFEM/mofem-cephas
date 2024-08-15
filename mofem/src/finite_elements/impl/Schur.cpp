@@ -2069,18 +2069,27 @@ OpSchurAssembleBase *createOpSchurAssembleBegin() {
 OpSchurAssembleBase *
 createOpSchurAssembleEnd(std::vector<std::string> fields_name,
                          std::vector<boost::shared_ptr<Range>> field_ents,
+                         SmartPetscObj<AO> ao, SmartPetscObj<Mat> schur,
+                         bool sym_schur, bool symm_op,
+                         boost::shared_ptr<BlockStructure> diag_blocks) {
+  if (symm_op)
+    return new OpSchurAssembleEnd<SchurDSYSV>(
+        fields_name, field_ents, ao, schur, sym_schur, symm_op, diag_blocks);
+  else
+    return new OpSchurAssembleEnd<SchurDGESV>(
+        fields_name, field_ents, ao, schur, sym_schur, symm_op, diag_blocks);
+}
+
+OpSchurAssembleBase *
+createOpSchurAssembleEnd(std::vector<std::string> fields_name,
+                         std::vector<boost::shared_ptr<Range>> field_ents,
                          std::vector<SmartPetscObj<AO>> sequence_of_aos,
                          std::vector<SmartPetscObj<Mat>> sequence_of_mats,
                          std::vector<bool> sym_schur, bool symm_op,
                          boost::shared_ptr<BlockStructure> diag_blocks) {
-  if (symm_op)
-    return new OpSchurAssembleEnd<SchurDSYSV>(
-        fields_name, field_ents, sequence_of_aos.back(),
-        sequence_of_mats.back(), sym_schur.back(), symm_op, diag_blocks);
-  else
-    return new OpSchurAssembleEnd<SchurDGESV>(
-        fields_name, field_ents, sequence_of_aos.back(),
-        sequence_of_mats.back(), sym_schur.back(), symm_op, diag_blocks);
+  return createOpSchurAssembleEnd(
+      fields_name, field_ents, sequence_of_aos.back(), sequence_of_mats.back(),
+      sym_schur.back(), symm_op, diag_blocks);
 }
 
 OpSchurAssembleBase *
@@ -2091,14 +2100,9 @@ createOpSchurAssembleEnd(std::vector<std::string> fields_name,
                          std::vector<bool> sym_schur,
                          std::vector<double> diag_eps, bool symm_op,
                          boost::shared_ptr<BlockStructure> diag_blocks) {
-  if (symm_op)
-    return new OpSchurAssembleEnd<SchurDSYSV>(
-        fields_name, field_ents, sequence_of_aos.back(),
-        sequence_of_mats.back(), sym_schur.back(), symm_op, diag_blocks);
-  else
-    return new OpSchurAssembleEnd<SchurDGESV>(
-        fields_name, field_ents, sequence_of_aos.back(),
-        sequence_of_mats.back(), sym_schur.back(), symm_op, diag_blocks);
+  return createOpSchurAssembleEnd(
+      fields_name, field_ents, sequence_of_aos.back(), sequence_of_mats.back(),
+      sym_schur.back(), symm_op, diag_blocks);
 }
 
 MoFEMErrorCode setSchurA00MatSolvePC(SmartPetscObj<PC> pc) {
