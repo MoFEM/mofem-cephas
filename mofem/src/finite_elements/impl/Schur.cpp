@@ -819,8 +819,13 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
 
     std::vector<const SchurElemMats *> schur_block_list;
 
-    for (auto &rp_uid : a00_uids) {
-      auto [rlo_uid, rhi_uid] = rp_uid;
+    for (
+
+        auto rp_uid_it = a00_uids.begin(); rp_uid_it != a00_uids.end();
+        ++rp_uid_it
+
+    ) {
+      auto [rlo_uid, rhi_uid] = *rp_uid_it;
       for (auto rm = block_indexing.lower_bound(rlo_uid);
            rm != block_indexing.upper_bound(rhi_uid); ++rm) {
         auto &rbi = rm->second;
@@ -832,8 +837,13 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
             storage.template get<SchurElemMats::col_mi_tag>().upper_bound(
                 rm->first);
 
-        for (auto &cp_uid : a00_uids) {
-          auto [clo_uid, chi_uid] = cp_uid;
+        for (
+
+            auto cp_uid_it = (OP::sYmm) ? rp_uid_it : a00_uids.begin();
+            cp_uid_it != a00_uids.end(); ++cp_uid_it
+
+        ) {
+          auto [clo_uid, chi_uid] = *cp_uid_it;
           for (auto cm = block_indexing.lower_bound(clo_uid);
                cm != block_indexing.upper_bound(chi_uid); ++cm) {
             auto &cbi = cm->second;
@@ -914,8 +924,25 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
                 col_ind = (*c_lo)->getColInd();
                 CHKERR assemble_schur(abcM, (*a_lo)->uidRow, (*c_lo)->uidCol,
                                       &(row_ind), &(col_ind));
+                if (OP::sYmm && rp_uid_it != cp_uid_it) {
+                  abcM = trans(abcM);
+                  CHKERR assemble_schur(abcM, (*c_lo)->uidCol, (*a_lo)->uidRow,
+                                        &(col_ind), &(row_ind));
+                }
               }
             }
+
+            if (diagBlocks) {
+              bM = trans(bM);
+              if (OP::sYmm && rp_uid_it != cp_uid_it) {
+                CHKERR assemble_a00(
+
+                    bM, cm->first, rm->first, cbi.second, rbi.second
+
+                );
+              }
+            }
+
           }
         }
       }
