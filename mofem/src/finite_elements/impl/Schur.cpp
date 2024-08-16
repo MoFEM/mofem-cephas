@@ -565,12 +565,10 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
     MOFEM_LOG("SELF", Sev::noisy) << "Schur assemble begin -> end";
 #endif
 
-#ifndef NDEBUG
   auto get_field_name = [&](auto uid) {
     return OP::getPtrFE()->mField.get_field_name(field_bit_from_bit_number(
         FieldEntity::getFieldBitNumberFromUniqueId(uid)));
   };
-#endif
 
   auto get_a00_uids = [&]() {
     auto get_field_bit = [&](auto &name) {
@@ -664,8 +662,8 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
       MoFEMFunctionReturn(0);
     };
 
-    auto assemble_a00 = [this](auto &m, auto &row_uid, auto &col_uid,
-                               auto *row_ind_ptr, auto *col_ind_ptr) {
+    auto assemble_a00 = [&](auto &m, auto &row_uid, auto &col_uid,
+                            auto *row_ind_ptr, auto *col_ind_ptr) {
       MoFEMFunctionBegin;
 
 #ifndef NDEBUG
@@ -696,9 +694,15 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
               std::copy(m.data().begin(), m.data().end(), ptr);
             }
           } else {
+            MOFEM_LOG("SELF", Sev::error)
+                << "No blockIndex for " << get_field_name(row_uid) << " "
+                << get_field_name(col_uid);
             SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "No inv_shift");
           }
         } else {
+          MOFEM_LOG("SELF", Sev::error)
+              << "No blockIndex for " << get_field_name(row_uid) << " "
+              << get_field_name(col_uid);
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "No blockIndex");
         }
       }
