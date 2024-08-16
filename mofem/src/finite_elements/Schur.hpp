@@ -50,13 +50,11 @@ OpSchurAssembleBase *createOpSchurAssembleBegin();
 /**
  * @brief Construct a new Op Schur Assemble End object
  *
- * @param fields_name list of fields
+ * @param fields_name list of fields (can be empty)
  * @param field_ents list of entities on which schur complement is applied
- * (can be empty)
- * @param schur_aos maps from base problem to Schur complement
- * matrix
- * @param schur_mat schur complement matrices
- * @param sym_schur true if Schur complement is symmetric
+ * @param schur_aos maps dofs indices from main problem to schur complement
+ * @param schur_mat schur matrix
+ * @param sym_schur true if schur (matrix) complement is symmetric
  * @param symm_op true if block diagonal is symmetric
  */
 OpSchurAssembleBase *createOpSchurAssembleEnd(
