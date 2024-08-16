@@ -765,15 +765,16 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
     auto [block_list, block_indexing, block_mat_size] =
         get_block_indexing(a00_uids);
 
+    for (auto &s : storage) {
+      auto &m = s->getMat();
+      VectorInt row_ind, col_ind;
+      row_ind = s->getRowInd();
+      col_ind = s->getColInd();
+      CHKERR assemble_schur(m, s->uidRow, s->uidCol, &(row_ind), &(col_ind));
+    }
+
     if (block_mat_size == 0) {
-      for (auto &s : storage) {
-        auto &m = s->getMat();
-        VectorInt row_ind, col_ind;
-        row_ind = s->getRowInd();
-        col_ind = s->getColInd();
-        CHKERR assemble_schur(m, s->uidRow, s->uidCol, &(row_ind), &(col_ind));
-      }
-      MoFEMFunctionReturnHot(0);
+     MoFEMFunctionReturnHot(0);
     }
 
     blockMat.resize(block_mat_size, block_mat_size, false);
@@ -911,20 +912,12 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
                 abcM.resize(abM.size1(), c.size2(), false);
                 abcM.clear();
 
-                auto schur_it =
-                    storage.template get<SchurElemMats::uid_mi_tag>().find(
-                        boost::make_tuple((*a_lo)->uidRow, (*c_lo)->uidCol));
-                if (schur_it !=
-                    storage.template get<SchurElemMats::uid_mi_tag>().end()) {
-                  noalias(abcM) = (*schur_it)->getMat();
-                }
-
                 cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
                             abM.size1(), c.size2(), abM.size2(), -1.,
 
                             &*abM.data().begin(), abM.size2(),
 
-                            &*c.data().begin(), c.size2(), 1.,
+                            &*c.data().begin(), c.size2(), 0.,
 
                             &*abcM.data().begin(), abcM.size2());
 
