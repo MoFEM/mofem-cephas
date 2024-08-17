@@ -124,8 +124,6 @@
 -elastic_mat_mumps_icntl_14 1600
 -elastic_mat_mumps_icntl_13 1
 
--preconditioner_eps_omega 1e-6
-
 -prjspatial_ksp_type gmres
 -prjspatial_ksp_monitor
 -prjspatial_pc_type lu
