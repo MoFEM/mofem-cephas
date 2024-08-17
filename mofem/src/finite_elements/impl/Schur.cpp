@@ -1280,6 +1280,34 @@ static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
 
   PetscLogEventBegin(SchurEvents::MOFEM_EVENT_zeroRowsAndCols, 0, 0, 0, 0);
 
+  using BlockIndexView = multi_index_container<
+
+      const DiagBlockIndex::Indexes *,
+
+      indexed_by<
+
+          ordered_non_unique<
+
+              const_mem_fun<DiagBlockIndex::Indexes, int,
+                            &DiagBlockIndex::Indexes::rowShift>
+
+              >,
+
+          ordered_non_unique<
+
+              const_mem_fun<DiagBlockIndex::Indexes, int,
+                            &DiagBlockIndex::Indexes::colShift>
+
+              >
+
+          >>;
+
+  BlockIndexView view;
+  auto hint = view.get<0>().end();
+  for(auto &v : ctx->blockIndex) {
+    hint = view.insert(hint, &v);
+  }
+
   const int *ptr = &rows[0];
   int is_nb_rows = N;
   SmartPetscObj<IS> is_local;
@@ -1307,16 +1335,16 @@ static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
 
   for (auto n = 0; n != is_nb_rows; ++n) {
     auto row = ptr[n];
-    auto rlo = ctx->blockIndex.get<1>().lower_bound(row);
-    auto rhi = ctx->blockIndex.get<1>().end();
+    auto rlo = view.get<0>().lower_bound(row);
+    auto rhi = view.get<0>().end();
     for (; rlo != rhi; ++rlo) {
-      auto r_shift = row - rlo->getRow();
-      if (r_shift >= 0 && r_shift < rlo->getNbRows()) {
-        auto *ptr = &(*ctx->dataBlocksPtr)[rlo->getMatShift()];
-        for (auto i = 0; i != rlo->getNbCols(); ++i) {
-          ptr[i + r_shift * rlo->getNbCols()] = 0;
+      auto r_shift = row - (*rlo)->getRow();
+      if (r_shift >= 0 && r_shift < (*rlo)->getNbRows()) {
+        auto *ptr = &(*ctx->dataBlocksPtr)[(*rlo)->getMatShift()];
+        for (auto i = 0; i != (*rlo)->getNbCols(); ++i) {
+          ptr[i + r_shift * (*rlo)->getNbCols()] = 0;
         }
-      } else if (rlo->getRow() + rlo->getNbRows() > row) {
+      } else if ((*rlo)->getRow() + (*rlo)->getNbRows() > row) {
         break;
       }
     }
@@ -1324,30 +1352,30 @@ static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
 
   for (auto n = 0; n != is_nb_rows; ++n) {
     auto col = ptr[n];
-    auto clo = ctx->blockIndex.get<2>().lower_bound(col);
-    auto chi = ctx->blockIndex.get<2>().end();
+    auto clo = view.get<1>().lower_bound(col);
+    auto chi = view.get<1>().end();
     for (; clo != chi; ++clo) {
-      auto c_shift = col - clo->getCol();
-      if (c_shift >= 0 && c_shift < clo->getNbCols()) {
+      auto c_shift = col - (*clo)->getCol();
+      if (c_shift >= 0 && c_shift < (*clo)->getNbCols()) {
 
-        auto *ptr = &(*ctx->dataBlocksPtr)[clo->getMatShift()];
-        for (auto i = 0; i != clo->getNbRows(); ++i) {
-          ptr[c_shift + i * clo->getNbCols()] = 0;
+        auto *ptr = &(*ctx->dataBlocksPtr)[(*clo)->getMatShift()];
+        for (auto i = 0; i != (*clo)->getNbRows(); ++i) {
+          ptr[c_shift + i * (*clo)->getNbCols()] = 0;
         }
 
         // diagonal
         if (
 
-            clo->getRow() == clo->getCol() && clo->getLocRow() < loc_m &&
-            clo->getLocCol() < loc_n
+            (*clo)->getRow() == (*clo)->getCol() &&
+            (*clo)->getLocRow() < loc_m && (*clo)->getLocCol() < loc_n
 
         ) {
-          auto r_shift = col - clo->getCol();
-          if (r_shift >= 0 && r_shift < clo->getNbRows()) {
-            ptr[c_shift + r_shift * clo->getNbCols()] = diag;
+          auto r_shift = col - (*clo)->getCol();
+          if (r_shift >= 0 && r_shift < (*clo)->getNbRows()) {
+            ptr[c_shift + r_shift * (*clo)->getNbCols()] = diag;
           }
         }
-      } else if (clo->getCol() + clo->getNbCols() > col) {
+      } else if ((*clo)->getCol() + (*clo)->getNbCols() > col) {
         break;
       }
     }
