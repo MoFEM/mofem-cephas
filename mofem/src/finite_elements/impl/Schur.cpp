@@ -351,27 +351,6 @@ SchurElemMats::assembleStorage(const EntitiesFieldData::EntData &row_data,
   const auto &row_ind = get_row_indices();
   const auto &col_ind = col_data.getIndices();
 
-  auto zero_rows_and_cols = [&](auto &mat, auto &row_ind, auto &col_ind) {
-    MoFEMFunctionBeginHot;
-    for (auto i = 0; i < row_ind.size(); ++i) {
-      for (auto j = 0; j < col_ind.size(); ++j) {
-        if (row_ind[i] < 0 || col_ind[j] < 0)
-          mat(i, j) = 0;
-      }
-    }
-    if (row_data.getFieldEntities()[0]->getLocalUniqueId() ==
-        col_data.getFieldEntities()[0]->getLocalUniqueId()) {
-      for (auto i = 0; i < row_ind.size(); ++i) {
-        for (auto j = 0; j < col_ind.size(); ++j) {
-          if (i == j && row_ind[i] < 0 && col_ind[j] < 0) {
-            mat(i, j) = 1;
-          }
-        }
-      }
-    }
-    MoFEMFunctionReturnHot(0);
-  };
-
   const auto nb_rows = row_ind.size();
   const auto nb_cols = col_ind.size();
 
@@ -469,7 +448,6 @@ SchurElemMats::assembleStorage(const EntitiesFieldData::EntData &row_data,
     };
 
     asmb((*p.first)->getMat());
-    zero_rows_and_cols((*p.first)->getMat(), row_ind, col_ind);
 
     auto add_indices = [](auto &storage, auto &ind) {
       storage.resize(ind.size(), false);
@@ -511,7 +489,6 @@ SchurElemMats::assembleStorage(const EntitiesFieldData::EntData &row_data,
     };
 
     CHKERR asmb((*it)->getMat());
-    CHKERR zero_rows_and_cols((*it)->getMat(), row_ind, col_ind);
 
     // no need to set indices
   }
@@ -778,7 +755,7 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
     }
 
     if (block_mat_size == 0) {
-     MoFEMFunctionReturnHot(0);
+      MoFEMFunctionReturnHot(0);
     }
 
     blockMat.resize(block_mat_size, block_mat_size, false);
@@ -804,24 +781,46 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
       sub_mat = m;
     }
 
-    CHKERR I::invertMat(blockMat, invMat);
+    auto get_zeroed_indices = [&](auto extractor_uid, auto extractor_ind) {
+      std::vector<int> zeroed_indices;
+      zeroed_indices.reserve(block_mat_size);
+      for (auto &s : block_list) {
+        auto &bi = block_indexing.at(extractor_uid(s));
+        auto &ind = extractor_ind(s);
+        for (auto it = ind.begin(); it != ind.end(); ++it) {
+          if (*it < 0) {
+            auto idx = bi.first + std::distance(ind.begin(), it);
+            zeroed_indices.push_back(idx);
+          }
+        }
+      }
+      std::sort(zeroed_indices.begin(), zeroed_indices.end());
+      auto it = std::unique(zeroed_indices.begin(), zeroed_indices.end());
+      zeroed_indices.resize(std::distance(zeroed_indices.begin(), it));
+      return zeroed_indices;
+    };
+    auto zero_rows = get_zeroed_indices(
+        [](auto &s) { return s->uidRow; },
+        [](auto &s) -> VectorInt & { return s->getRowInd(); });
+    auto zero_cols = get_zeroed_indices(
+        [](auto &s) { return s->uidCol; },
+        [](auto &s) -> VectorInt & { return s->getColInd(); });
 
-    blockMat.clear();
-    for (auto &s : block_list) {
-      auto &m = s->getMat();
-#ifndef NDEBUG
-      if (block_indexing.find(s->uidRow) == block_indexing.end())
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong rlo_uid");
-      if (block_indexing.find(s->uidCol) == block_indexing.end())
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong clo_uid");
-#endif // NDEBUG
-
-      auto &rbi = block_indexing.at(s->uidRow);
-      auto &cbi = block_indexing.at(s->uidCol);
-
-      auto sub_mat = matrix_range(blockMat, get_range(rbi), get_range(cbi));
-      sub_mat = m;
+    for (auto i : zero_rows) {
+      for (auto j = 0; j != blockMat.size2(); ++j) {
+        blockMat(i, j) = 0;
+      }
     }
+    for (auto j : zero_cols) {
+      for (auto i = 0; i != blockMat.size1(); ++i) {
+        blockMat(i, j) = 0;
+      }
+    }
+    for (auto i : zero_rows) {
+      blockMat(i, i) = 1;
+    }
+
+    CHKERR I::invertMat(blockMat, invMat);
 
     // clear storage and block list from a00 blocks, no more needed
     for (auto &s : block_list) {
@@ -986,6 +985,7 @@ struct SchurDSYSV {
 
     inv.resize(nb, nb, false);
     inv.swap(m);
+    m.resize(2 * nb, 2 * nb, false);
 
     VectorInt ipiv(nb);
     int info;
