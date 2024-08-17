@@ -1837,7 +1837,7 @@ MoFEMErrorCode shell_block_preconditioner_mat_asmb_wrap(
   MoFEMFunctionReturn(0);
 }
 
-boost::shared_ptr<NestSchurData> getNestSchurData(
+boost::shared_ptr<NestSchurData> createSchurNestedMatrixStruture(
 
     std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
     boost::shared_ptr<BlockStructure> block_mat_data_ptr,

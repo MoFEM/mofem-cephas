@@ -635,7 +635,7 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
 
       );
 
-      return getNestSchurData(
+      return createSchurNestedMatrixStruture(
 
           {schur_dm, block_dm}, block_mat_data,
 

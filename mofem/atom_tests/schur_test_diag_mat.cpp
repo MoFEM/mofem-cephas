@@ -194,7 +194,7 @@ int main(int argc, char *argv[]) {
 
     auto [nested_mat, nested_data_ptr] = createSchurNestedMatrix(
 
-        getNestSchurData(
+        createSchurNestedMatrixStruture(
 
             {schur_dm, block_dm}, block_data_ptr,
 
