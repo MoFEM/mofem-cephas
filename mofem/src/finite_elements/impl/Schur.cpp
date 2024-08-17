@@ -1228,10 +1228,13 @@ boost::shared_ptr<BlockStructure> createBlockMatStructure(
   return data_ptr;
 }
 
-static MoFEMErrorCode
-mult_schur_block_shell(Mat mat, Vec x, Vec y, InsertMode iora,
-                       boost::shared_ptr<std::vector<double>> data_blocks_ptr,
-                       bool multiply_by_preconditioner);
+static MoFEMErrorCode mult_schur_block_shell(
+    Mat mat, Vec x, Vec y, InsertMode iora,
+    boost::function<
+        int(DiagBlockIndex::BlockIndex::nth_index<0>::type::iterator)>
+        shift_extractor,
+    boost::shared_ptr<std::vector<double>> data_blocks_ptr,
+    bool multiply_by_preconditioner);
 
 static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec x, Vec y,
                                               InsertMode iora);
@@ -1239,14 +1242,26 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec x, Vec y,
 static PetscErrorCode mult(Mat mat, Vec x, Vec y) {
   BlockStructure *ctx;
   CHKERR MatShellGetContext(mat, (void **)&ctx);
-  return mult_schur_block_shell(mat, x, y, INSERT_VALUES, ctx->dataBlocksPtr,
-                                true);
+  return mult_schur_block_shell(
+      mat, x, y, INSERT_VALUES,
+
+      [](DiagBlockIndex::BlockIndex::nth_index<0>::type::iterator it) {
+        return it->getMatShift();
+      },
+
+      ctx->dataBlocksPtr, true);
 }
 static PetscErrorCode mult_add(Mat mat, Vec x, Vec y) {
   BlockStructure *ctx;
   CHKERR MatShellGetContext(mat, (void **)&ctx);
-  return mult_schur_block_shell(mat, x, y, ADD_VALUES, ctx->dataBlocksPtr,
-                                true);
+  return mult_schur_block_shell(
+      mat, x, y, ADD_VALUES,
+
+      [](DiagBlockIndex::BlockIndex::nth_index<0>::type::iterator it) {
+        return it->getMatShift();
+      },
+
+      ctx->dataBlocksPtr, true);
 }
 static PetscErrorCode solve(Mat mat, Vec x, Vec y) {
   return solve_schur_block_shell(mat, x, y, INSERT_VALUES);
@@ -1414,10 +1429,15 @@ SchurShellMatData createBlockMat(DM dm,
 
 constexpr int max_gemv_size = 2;
 
-static MoFEMErrorCode
-mult_schur_block_shell(Mat mat, Vec x, Vec y, InsertMode iora,
-                       boost::shared_ptr<std::vector<double>> data_blocks_ptr,
-                       bool multiply_by_preconditioner) {
+static MoFEMErrorCode mult_schur_block_shell(
+    Mat mat, Vec x, Vec y, InsertMode iora,
+
+    boost::function<
+        int(DiagBlockIndex::BlockIndex::nth_index<0>::type::iterator)>
+        shift_extractor,
+
+    boost::shared_ptr<std::vector<double>> data_blocks_ptr,
+    bool multiply_by_preconditioner) {
   MoFEMFunctionBegin;
   BlockStructure *ctx;
   CHKERR MatShellGetContext(mat, (void **)&ctx);
@@ -1475,7 +1495,7 @@ mult_schur_block_shell(Mat mat, Vec x, Vec y, InsertMode iora,
       auto nb_cols = it->getNbCols();
       auto x_ptr = &x_array[it->getLocCol()];
       auto y_ptr = &y_array[it->getLocRow()];
-      auto ptr = &block_ptr[it->getMatShift()];
+      auto ptr = &block_ptr[shift_extractor(it)];
 
       if (std::min(nb_rows, nb_cols) > max_gemv_size) {
         cblas_dgemv(CblasRowMajor, CblasNoTrans, nb_rows, nb_cols, 1.0, ptr,
@@ -1603,8 +1623,14 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
 
   if (!ctx->dataInvBlocksPtr)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "No dataInvBlocksPtr");
-  CHKERR mult_schur_block_shell(mat, y, x, INSERT_VALUES, ctx->dataInvBlocksPtr,
-                                false);
+  CHKERR mult_schur_block_shell(
+      mat, y, x, iora,
+
+      [](DiagBlockIndex::BlockIndex::nth_index<0>::type::iterator it) {
+        return it->getInvShift();
+      },
+
+      ctx->dataInvBlocksPtr, false);
 
   // PetscLogFlops(xxx)
   PetscLogEventEnd(SchurEvents::MOFEM_EVENT_BlockStructureSolve, 0, 0, 0, 0);
