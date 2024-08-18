@@ -866,7 +866,6 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
                 }
               }
             }
-
           }
         }
       }
@@ -1158,8 +1157,8 @@ static MoFEMErrorCode mult_schur_block_shell(
     boost::shared_ptr<std::vector<double>> data_blocks_ptr,
     bool multiply_by_preconditioner);
 
-static MoFEMErrorCode
-solve_schur_block_shell(Mat mat, Vec y, Vec x, InsertMode iora);
+static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
+                                              InsertMode iora);
 
 static PetscErrorCode mult(Mat mat, Vec x, Vec y) {
   BlockStructure *ctx;
@@ -1226,7 +1225,7 @@ static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
 
   BlockIndexView view;
   auto hint = view.get<0>().end();
-  for(auto &v : ctx->blockIndex) {
+  for (auto &v : ctx->blockIndex) {
     hint = view.insert(hint, &v);
   }
 
@@ -1561,8 +1560,8 @@ static MoFEMErrorCode mult_schur_block_shell(
   MoFEMFunctionReturn(0);
 }
 
-static MoFEMErrorCode
-solve_schur_block_shell(Mat mat, Vec y, Vec x, InsertMode iora) {
+static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
+                                              InsertMode iora) {
   using matrix_range = ublas::matrix_range<MatrixDouble>;
   using range = ublas::range;
   MoFEMFunctionBegin;
@@ -1577,10 +1576,10 @@ solve_schur_block_shell(Mat mat, Vec y, Vec x, InsertMode iora) {
               "No preconditionerBlocksPtr");
   }
 
- if (iora == INSERT_VALUES) {
-   CHKERR VecZeroEntries(x);
+  if (iora == INSERT_VALUES) {
+    CHKERR VecZeroEntries(x);
   }
-  
+
   double *x_array;
   CHKERR VecGetArray(x, &x_array);
   double *y_array;
@@ -1662,7 +1661,6 @@ solve_schur_block_shell(Mat mat, Vec y, Vec x, InsertMode iora) {
       auto ptr = &y_array[loc];
       cblas_dcopy(size, ptr, 1, &block_y[index], 1);
     }
-
 
     // note: this not exploits symmetry, requires more implementation
     constexpr int nrhs = 1;
@@ -2137,11 +2135,11 @@ createOpSchurAssembleEnd(std::vector<std::string> fields_name,
                          SmartPetscObj<AO> ao, SmartPetscObj<Mat> schur,
                          bool sym_schur, bool symm_op) {
   if (symm_op)
-    return new OpSchurAssembleEnd<SchurDSYSV>(
-        fields_name, field_ents, ao, schur, sym_schur, symm_op);
+    return new OpSchurAssembleEnd<SchurDSYSV>(fields_name, field_ents, ao,
+                                              schur, sym_schur, symm_op);
   else
-    return new OpSchurAssembleEnd<SchurDGESV>(
-        fields_name, field_ents, ao, schur, sym_schur, symm_op);
+    return new OpSchurAssembleEnd<SchurDGESV>(fields_name, field_ents, ao,
+                                              schur, sym_schur, symm_op);
 }
 
 OpSchurAssembleBase *
