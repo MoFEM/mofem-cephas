@@ -1698,6 +1698,7 @@ solve_schur_block_shell_free_inverse(Mat mat, Vec y, Vec x, InsertMode iora) {
   auto &block_index = ctx->blockIndex.get<1>();
   for (auto it = block_index.begin(); it != block_index.end();) {
 
+    // get blocks on finit element
     blocks.clear();
     auto last_uid = it->getFEUId();
     while (it != block_index.end() && it->getFEUId() == last_uid) {
@@ -1705,6 +1706,7 @@ solve_schur_block_shell_free_inverse(Mat mat, Vec y, Vec x, InsertMode iora) {
       ++it;
     }
 
+    // set local indices
     std::map<UId, std::tuple<int, int, int>> block_indexing; // uid block map
     for (auto b : blocks) {
       if (block_indexing.find(b->getRowUId()) == block_indexing.end()) {
@@ -1734,12 +1736,13 @@ solve_schur_block_shell_free_inverse(Mat mat, Vec y, Vec x, InsertMode iora) {
       auto &rbi = block_indexing.at(ruid);
       auto &cbi = block_indexing.at(cuid);
 
-      auto sub_mat = matrix_range(block_mat, get_range(rbi), get_range(cbi));
+      // lapack solve or col major, need to assemble to transposed matrix
+      auto sub_mat = matrix_range(block_mat, get_range(cbi), get_range(rbi));
 
       auto set_sub_mat = [&](auto *ptr) {
         for (auto i = 0; i != s->getNbRows(); ++i) {
           for (auto j = 0; j != s->getNbCols(); ++j, ++ptr) {
-            sub_mat(i, j) += *ptr;
+            sub_mat(j, i) += *ptr;
           }
         }
       };
@@ -1764,9 +1767,10 @@ solve_schur_block_shell_free_inverse(Mat mat, Vec y, Vec x, InsertMode iora) {
       cblas_dcopy(size, ptr, 1, &block_y[index], 1);
     }
 
+
+    // note: this not exploits symmetry, requires more implementation
     constexpr int nrhs = 1;
     ipiv.resize(mat_block_size, false);
-    block_mat = trans(block_mat);
     auto info = lapack_dgesv(mat_block_size, nrhs, &*block_mat.data().begin(),
                              mat_block_size, &*ipiv.data().begin(),
                              &*block_y.data().begin(), mat_block_size);
