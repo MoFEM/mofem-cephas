@@ -217,10 +217,10 @@ struct DiagBlockIndex {
   struct Indexes {
 
     Indexes(UId uid_row, UId uid_col, UId uid_fe, int row, int col, int nb_rows,
-            int nb_cols, int loc_row, int loc_col, int mat_shift, int inv_shift)
+            int nb_cols, int loc_row, int loc_col, int mat_shift)
         : uid_row(uid_row), uid_col(uid_col), uid_fe(uid_fe), row(row),
           col(col), nb_rows(nb_rows), nb_cols(nb_cols), loc_row(loc_row),
-          loc_col(loc_col), mat_shift(mat_shift), inv_shift(inv_shift) {}
+          loc_col(loc_col), mat_shift(mat_shift) {}
 
     inline UId getRowUId() const { return uid_row; }
     inline UId getColUId() const { return uid_col; }
@@ -232,7 +232,6 @@ struct DiagBlockIndex {
     inline int getLocRow() const { return loc_row; }
     inline int getLocCol() const { return loc_col; }
     inline int &getMatShift() const { return mat_shift; }
-    inline int &getInvShift() const { return inv_shift; }
 
     inline int rowShift() const {
       return getRow() + getNbRows();
@@ -253,7 +252,6 @@ struct DiagBlockIndex {
     int loc_row;
     int loc_col;
     mutable int mat_shift;
-    mutable int inv_shift;
   };
 
   using BlockIndex = multi_index_container<
@@ -288,7 +286,6 @@ struct BlockStructure : public DiagBlockIndex {
   SmartPetscObj<Vec> ghostY;
 
   boost::shared_ptr<std::vector<double>> dataBlocksPtr;
-  boost::shared_ptr<std::vector<double>> dataInvBlocksPtr;
   boost::shared_ptr<std::vector<double>> preconditionerBlocksPtr;
   boost::shared_ptr<std::vector<double>> parentBlockStructurePtr;
 
@@ -1119,7 +1116,7 @@ boost::shared_ptr<BlockStructure> createBlockMatStructure(
             auto [c_uid, c_glob, c_nb_dofs, c_loc] = c;
             data_ptr->blockIndex.insert(BlockStructure::Indexes{
                 r_uid, c_uid, fe_uid, r_glob, c_glob, r_nb_dofs, c_nb_dofs,
-                r_loc, c_loc, -1, -1});
+                r_loc, c_loc, -1});
           }
         }
       }
@@ -1324,8 +1321,6 @@ static PetscErrorCode mat_zero(Mat m) {
   CHKERR MatShellGetContext(m, (void **)&ctx);
   if (ctx->dataBlocksPtr)
     std::fill(ctx->dataBlocksPtr->begin(), ctx->dataBlocksPtr->end(), 0.);
-  if (ctx->dataInvBlocksPtr)
-    std::fill(ctx->dataInvBlocksPtr->begin(), ctx->dataInvBlocksPtr->end(), 0.);
   if (ctx->preconditionerBlocksPtr)
     std::fill(ctx->preconditionerBlocksPtr->begin(),
               ctx->preconditionerBlocksPtr->end(), 0.);
@@ -1484,12 +1479,12 @@ static MoFEMErrorCode mult_schur_block_shell(
           continue;
         }
 
-        if (it->getInvShift() != -1) {
+        if (it->getMatShift() != -1) {
           auto nb_rows = it->getNbRows();
           auto nb_cols = it->getNbCols();
           auto x_ptr = &x_array[it->getLocCol()];
           auto y_ptr = &y_array[it->getLocRow()];
-          auto ptr = &preconditioner_ptr[it->getInvShift()];
+          auto ptr = &preconditioner_ptr[it->getMatShift()];
           if (std::min(nb_rows, nb_cols) > max_gemv_size) {
             cblas_dgemv(CblasRowMajor, CblasNoTrans, nb_rows, nb_cols, 1.0, ptr,
                         nb_cols, x_ptr, 1, 1.0, y_ptr, 1);
@@ -1656,7 +1651,7 @@ solve_schur_block_shell(Mat mat, Vec y, Vec x, InsertMode iora) {
         set_sub_mat(ptr + shift);
       }
       if (ctx->multiplyByPreconditioner) {
-        if (auto shift = s->getInvShift(); shift != -1) {
+        if (auto shift = s->getMatShift(); shift != -1) {
           set_sub_mat(&(*ctx->preconditionerBlocksPtr)[shift]);
         }
       }
@@ -1889,7 +1884,7 @@ MoFEMErrorCode shell_block_preconditioner_mat_asmb_wrap(
               "No preconditionerBlocksPtr");
     CHKERR shell_block_mat_asmb_wrap_impl(
         ctx, row_data, col_data, mat, iora,
-        [](const DiagBlockIndex::Indexes *idx) { return idx->getInvShift(); },
+        [](const DiagBlockIndex::Indexes *idx) { return idx->getMatShift(); },
         ctx->preconditionerBlocksPtr);
   } else {
     CHKERR MatSetValues<AssemblyTypeSelector<PETSC>>(M, row_data, col_data, mat,
@@ -1999,7 +1994,7 @@ boost::shared_ptr<NestSchurData> createSchurNestedMatrixStruture(
 
               dof_r->getPetscLocalDofIdx(), dof_c->getPetscLocalDofIdx(),
 
-              d.getMatShift(), d.getInvShift()}
+              d.getMatShift()}
 
       );
     };
@@ -2032,29 +2027,9 @@ boost::shared_ptr<NestSchurData> createSchurNestedMatrixStruture(
   auto set_up_a00_data = [&](auto inv_block_data) {
     MoFEMFunctionBegin;
 
-    auto size = inv_block_data->dataBlocksPtr->size();
-    inv_block_data->dataInvBlocksPtr =
-        boost::make_shared<std::vector<double>>(size, 0.0);
-    block_mat_data_ptr->dataInvBlocksPtr = inv_block_data->dataInvBlocksPtr;
-
-    for (auto &s : inv_block_data->blockIndex) {
-      s.getInvShift() = s.getMatShift();
-    }
-
-    for (auto &s : inv_block_data->blockIndex) {
-      auto it = block_mat_data_ptr->blockIndex.find(
-
-          boost::make_tuple(s.getRowUId(), s.getColUId())
-
-      );
-      if (it == block_mat_data_ptr->blockIndex.end())
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Missing block");
-      it->getInvShift() = s.getInvShift();
-    }
-
     if (add_preconditioner_block) {
       auto preconditioned_block = boost::make_shared<std::vector<double>>(
-          inv_block_data->dataInvBlocksPtr->size(), 0);
+          inv_block_data->dataBlocksPtr->size(), 0);
       inv_block_data->preconditionerBlocksPtr = preconditioned_block;
       inv_block_data->multiplyByPreconditioner = true;
       block_mat_data_ptr->preconditionerBlocksPtr =
