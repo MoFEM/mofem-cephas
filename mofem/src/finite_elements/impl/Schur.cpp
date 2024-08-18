@@ -93,9 +93,7 @@ struct OpSchurAssembleEndImpl : public OP_SCHUR_ASSEMBLE_BASE {
 
       SmartPetscObj<AO> schur_ao, SmartPetscObj<Mat> schur_mat,
 
-      bool sym_schur, bool symm_op,
-
-      boost::shared_ptr<BlockStructure> diag_blocks);
+      bool sym_schur, bool symm_op);
 
 protected:
   template <typename I>
@@ -110,7 +108,6 @@ protected:
   SmartPetscObj<AO> schurAO;
   SmartPetscObj<Mat> schurMat;
   bool symSchur;
-  boost::shared_ptr<BlockStructure> diagBlocks;
 
   MatrixDouble blockMat;
   MatrixDouble invMat;
@@ -514,10 +511,10 @@ OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::OpSchurAssembleEndImpl(
     std::vector<std::string> fields_name,
     std::vector<boost::shared_ptr<Range>> field_ents,
     SmartPetscObj<AO> schur_ao, SmartPetscObj<Mat> schur_mat, bool sym_schur,
-    bool symm_op, boost::shared_ptr<BlockStructure> diag_blocks)
+    bool symm_op)
     : OP(NOSPACE, OP::OPSPACE, symm_op), fieldsName(fields_name),
       fieldEnts(field_ents), schurAO(schur_ao), schurMat(schur_mat),
-      symSchur(sym_schur), diagBlocks(diag_blocks) {}
+      symSchur(sym_schur) {}
 
 template <typename OP_SCHUR_ASSEMBLE_BASE>
 template <typename I>
@@ -2138,14 +2135,13 @@ OpSchurAssembleBase *
 createOpSchurAssembleEnd(std::vector<std::string> fields_name,
                          std::vector<boost::shared_ptr<Range>> field_ents,
                          SmartPetscObj<AO> ao, SmartPetscObj<Mat> schur,
-                         bool sym_schur, bool symm_op,
-                         boost::shared_ptr<BlockStructure> diag_blocks) {
+                         bool sym_schur, bool symm_op) {
   if (symm_op)
     return new OpSchurAssembleEnd<SchurDSYSV>(
-        fields_name, field_ents, ao, schur, sym_schur, symm_op, diag_blocks);
+        fields_name, field_ents, ao, schur, sym_schur, symm_op);
   else
     return new OpSchurAssembleEnd<SchurDGESV>(
-        fields_name, field_ents, ao, schur, sym_schur, symm_op, diag_blocks);
+        fields_name, field_ents, ao, schur, sym_schur, symm_op);
 }
 
 OpSchurAssembleBase *
@@ -2157,7 +2153,7 @@ createOpSchurAssembleEnd(std::vector<std::string> fields_name,
                          boost::shared_ptr<BlockStructure> diag_blocks) {
   return createOpSchurAssembleEnd(
       fields_name, field_ents, sequence_of_aos.back(), sequence_of_mats.back(),
-      sym_schur.back(), symm_op, diag_blocks);
+      sym_schur.back(), symm_op);
 }
 
 OpSchurAssembleBase *
@@ -2170,7 +2166,7 @@ createOpSchurAssembleEnd(std::vector<std::string> fields_name,
                          boost::shared_ptr<BlockStructure> diag_blocks) {
   return createOpSchurAssembleEnd(
       fields_name, field_ents, sequence_of_aos.back(), sequence_of_mats.back(),
-      sym_schur.back(), symm_op, diag_blocks);
+      sym_schur.back(), symm_op);
 }
 
 MoFEMErrorCode setSchurA00MatSolvePC(SmartPetscObj<PC> pc) {

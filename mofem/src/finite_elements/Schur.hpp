@@ -57,13 +57,12 @@ OpSchurAssembleBase *createOpSchurAssembleBegin();
  * @param sym_schur true if schur (matrix) complement is symmetric
  * @param symm_op true if block diagonal is symmetric
  */
-OpSchurAssembleBase *createOpSchurAssembleEnd(
-    std::vector<std::string> fields_name,
-    std::vector<boost::shared_ptr<Range>> field_ents,
-    SmartPetscObj<AO> ao = SmartPetscObj<AO>(),
-    SmartPetscObj<Mat> schur = SmartPetscObj<Mat>(), bool sym_schur = false,
-    bool symm_op = false,
-    boost::shared_ptr<BlockStructure> diag_blocks = nullptr);
+OpSchurAssembleBase *
+createOpSchurAssembleEnd(std::vector<std::string> fields_name,
+                         std::vector<boost::shared_ptr<Range>> field_ents,
+                         SmartPetscObj<AO> ao = SmartPetscObj<AO>(),
+                         SmartPetscObj<Mat> schur = SmartPetscObj<Mat>(),
+                         bool sym_schur = false, bool symm_op = false);
 
 using SchurFieldPair = std::pair<std::string, std::string>;
 
