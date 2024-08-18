@@ -635,54 +635,6 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
       MoFEMFunctionReturn(0);
     };
 
-    auto assemble_a00 = [&](auto &m, auto &row_uid, auto &col_uid,
-                            auto *row_ind_ptr, auto *col_ind_ptr) {
-      MoFEMFunctionBegin;
-
-#ifndef NDEBUG
-      if (!diagBlocks->dataInvBlocksPtr)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "No dataInvBlocksPtr");
-#endif // NDEBUG
-
-      if (m.size1() && m.size2()) {
-        auto it = diagBlocks->blockIndex.get<0>().find(
-            boost::make_tuple(row_uid, col_uid));
-        if (it != diagBlocks->blockIndex.get<0>().end()) {
-          auto inv_shift = it->getInvShift();
-          if (inv_shift != -1) {
-            auto *ptr = &((*diagBlocks->dataInvBlocksPtr)[inv_shift]);
-            if (m.size1() != it->getNbRows() || m.size2() != it->getNbCols()) {
-              for (auto i = 0; i < m.size1(); ++i) {
-                for (auto j = 0; j < m.size2(); ++j) {
-                  if ((*row_ind_ptr)[i] != -1 && (*col_ind_ptr)[j] != -1) {
-                    *ptr = m(i, j);
-                    ++ptr;
-                  }
-                }
-              }
-            } else {
-              // assemble of diag terms, witch might be changed by Schur
-              // complement
-              std::copy(m.data().begin(), m.data().end(), ptr);
-            }
-          } else {
-            MOFEM_LOG("SELF", Sev::error)
-                << "No blockIndex for " << get_field_name(row_uid) << " "
-                << get_field_name(col_uid);
-            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "No inv_shift");
-          }
-        } else {
-          MOFEM_LOG("SELF", Sev::error)
-              << "No blockIndex for " << get_field_name(row_uid) << " "
-              << get_field_name(col_uid);
-          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "No blockIndex");
-        }
-      }
-
-      MoFEMFunctionReturn(0);
-    };
-
     auto a00_uids = get_a00_uids();
 
     auto get_block_indexing = [&](auto &a00_uids) {
@@ -866,14 +818,6 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
             bM.resize(sub_inv_mat.size1(), sub_inv_mat.size2());
             noalias(bM) = sub_inv_mat;
 
-            if (diagBlocks) {
-              CHKERR assemble_a00(
-
-                  bM, rm->first, cm->first, rbi.second, cbi.second
-
-              );
-            }
-
             for (auto a_lo = a_lo_tmp; a_lo != a_hi; ++a_lo) {
 #ifndef NDEBUG
               if (block_indexing.find((*a_lo)->uidRow) != block_indexing.end())
@@ -929,16 +873,6 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
               }
             }
 
-            if (diagBlocks) {
-              if (symSchur && rp_uid_it != cp_uid_it) {
-                bM = trans(bM);
-                CHKERR assemble_a00(
-
-                    bM, cm->first, rm->first, cbi.second, rbi.second
-
-                );
-              }
-            }
           }
         }
       }
