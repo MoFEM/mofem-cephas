@@ -216,14 +216,15 @@ struct DiagBlockIndex {
    */
   struct Indexes {
 
-    Indexes(UId uid_row, UId uid_col, int row, int col, int nb_rows,
+    Indexes(UId uid_row, UId uid_col, UId uid_fe, int row, int col, int nb_rows,
             int nb_cols, int loc_row, int loc_col, int mat_shift, int inv_shift)
-        : uid_row(uid_row), uid_col(uid_col), row(row), col(col),
-          nb_rows(nb_rows), nb_cols(nb_cols), loc_row(loc_row),
+        : uid_row(uid_row), uid_col(uid_col), uid_fe(uid_fe), row(row),
+          col(col), nb_rows(nb_rows), nb_cols(nb_cols), loc_row(loc_row),
           loc_col(loc_col), mat_shift(mat_shift), inv_shift(inv_shift) {}
 
     inline UId getRowUId() const { return uid_row; }
     inline UId getColUId() const { return uid_col; }
+    inline UId getFEUId() const { return uid_fe; }
     inline int getRow() const { return row; }
     inline int getCol() const { return col; }
     inline int getNbRows() const { return nb_rows; }
@@ -244,6 +245,7 @@ struct DiagBlockIndex {
   private:
     UId uid_row;
     UId uid_col;
+    UId uid_fe;
     int row;
     int col;
     int nb_rows;
@@ -271,13 +273,7 @@ struct DiagBlockIndex {
 
           ordered_non_unique<
 
-              const_mem_fun<Indexes, int, &Indexes::rowShift>
-
-              >,
-
-          ordered_non_unique<
-
-              const_mem_fun<Indexes, int, &Indexes::colShift>
+              const_mem_fun<Indexes, UId, &Indexes::getFEUId>
 
               >
 
@@ -721,10 +717,6 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
         if (block_indexing.find(d->uidRow) == block_indexing.end()) {
           block_indexing[d->uidRow] =
               std::make_pair(d->getRowInd().size(), &(d->getRowInd()));
-        }
-        if (block_indexing.find(d->uidCol) == block_indexing.end()) {
-          block_indexing[d->uidCol] =
-              std::make_pair(d->getColInd().size(), &(d->getColInd()));
         }
       }
 
@@ -1174,6 +1166,8 @@ boost::shared_ptr<BlockStructure> createBlockMatStructure(
     fe_method->operatorHook = [&]() {
       MoFEMFunctionBegin;
 
+      auto fe_uid = fe_method->numeredEntFiniteElementPtr->getLocalUniqueId();
+
       for (auto f = 0; f != row_bit_numbers.size(); ++f) {
 
         auto row_data =
@@ -1189,9 +1183,9 @@ boost::shared_ptr<BlockStructure> createBlockMatStructure(
           auto [r_uid, r_glob, r_nb_dofs, r_loc] = r;
           for (auto &c : col_data) {
             auto [c_uid, c_glob, c_nb_dofs, c_loc] = c;
-            data_ptr->blockIndex.insert(
-                BlockStructure::Indexes{r_uid, c_uid, r_glob, c_glob, r_nb_dofs,
-                                        c_nb_dofs, r_loc, c_loc, -1, -1});
+            data_ptr->blockIndex.insert(BlockStructure::Indexes{
+                r_uid, c_uid, fe_uid, r_glob, c_glob, r_nb_dofs, c_nb_dofs,
+                r_loc, c_loc, -1, -1});
           }
         }
       }
@@ -1239,6 +1233,9 @@ static MoFEMErrorCode mult_schur_block_shell(
 static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec x, Vec y,
                                               InsertMode iora);
 
+static MoFEMErrorCode
+solve_schur_block_shell_free_inverse(Mat mat, Vec y, Vec x, InsertMode iora);
+
 static PetscErrorCode mult(Mat mat, Vec x, Vec y) {
   BlockStructure *ctx;
   CHKERR MatShellGetContext(mat, (void **)&ctx);
@@ -1264,10 +1261,12 @@ static PetscErrorCode mult_add(Mat mat, Vec x, Vec y) {
       ctx->dataBlocksPtr, true);
 }
 static PetscErrorCode solve(Mat mat, Vec x, Vec y) {
-  return solve_schur_block_shell(mat, x, y, INSERT_VALUES);
+  // return solve_schur_block_shell(mat, x, y, INSERT_VALUES);
+  return solve_schur_block_shell_free_inverse(mat, x, y, INSERT_VALUES);
 }
 static PetscErrorCode solve_add(Mat mat, Vec x, Vec y) {
-  return solve_schur_block_shell(mat, x, y, ADD_VALUES);
+  // return solve_schur_block_shell(mat, x, y, ADD_VALUES);
+  return solve_schur_block_shell_free_inverse(mat, x, y, ADD_VALUES);
 }
 
 static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
@@ -1666,6 +1665,132 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
   MoFEMFunctionReturn(0);
 }
 
+static MoFEMErrorCode
+solve_schur_block_shell_free_inverse(Mat mat, Vec y, Vec x, InsertMode iora) {
+  using matrix_range = ublas::matrix_range<MatrixDouble>;
+  using range = ublas::range;
+  MoFEMFunctionBegin;
+  BlockStructure *ctx;
+  CHKERR MatShellGetContext(mat, (void **)&ctx);
+
+  PetscLogEventBegin(SchurEvents::MOFEM_EVENT_BlockStructureSolve, 0, 0, 0, 0);
+
+  if (ctx->multiplyByPreconditioner) {
+    if (!ctx->preconditionerBlocksPtr)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "No preconditionerBlocksPtr");
+  }
+
+ if (iora == INSERT_VALUES) {
+   CHKERR VecZeroEntries(x);
+  }
+  
+  double *x_array;
+  CHKERR VecGetArray(x, &x_array);
+  double *y_array;
+  CHKERR VecGetArray(y, &y_array);
+
+  std::vector<const DiagBlockIndex::Indexes *> blocks;
+  MatrixDouble block_mat;
+  VectorDouble block_y;
+  VectorInt ipiv;
+
+  auto &block_index = ctx->blockIndex.get<1>();
+  for (auto it = block_index.begin(); it != block_index.end();) {
+
+    blocks.clear();
+    auto last_uid = it->getFEUId();
+    while (it != block_index.end() && it->getFEUId() == last_uid) {
+      blocks.push_back(&*it);
+      ++it;
+    }
+
+    std::map<UId, std::tuple<int, int, int>> block_indexing; // uid block map
+    for (auto b : blocks) {
+      if (block_indexing.find(b->getRowUId()) == block_indexing.end()) {
+        block_indexing[b->getRowUId()] =
+            std::make_tuple(b->getNbRows(), b->getNbRows(), b->getLocRow());
+      }
+    }
+
+    // set indexes to block
+    int mat_block_size = 0; // size of block matrix
+    for (auto &b : block_indexing) {
+      auto &[index, size, loc] = b.second;
+      index = mat_block_size;
+      mat_block_size += size;
+    }
+
+    auto get_range = [](auto &b) {
+      auto [index, size, loc] = b;
+      return range(index, index + size);
+    };
+
+    block_mat.resize(mat_block_size, mat_block_size, false);
+    block_mat.clear();
+    for (auto s : blocks) {
+      auto ruid = s->getRowUId();
+      auto cuid = s->getColUId();
+      auto &rbi = block_indexing.at(ruid);
+      auto &cbi = block_indexing.at(cuid);
+
+      auto sub_mat = matrix_range(block_mat, get_range(rbi), get_range(cbi));
+
+      auto set_sub_mat = [&](auto *ptr) {
+        for (auto i = 0; i != s->getNbRows(); ++i) {
+          for (auto j = 0; j != s->getNbCols(); ++j, ++ptr) {
+            sub_mat(i, j) += *ptr;
+          }
+        }
+      };
+
+      auto ptr = &*(ctx->dataBlocksPtr->begin());
+      if (auto shift = s->getMatShift(); shift != -1) {
+        set_sub_mat(ptr + shift);
+      }
+      if (ctx->multiplyByPreconditioner) {
+        if (auto shift = s->getInvShift(); shift != -1) {
+          set_sub_mat(&(*ctx->preconditionerBlocksPtr)[shift]);
+        }
+      }
+    }
+
+    block_y.resize(mat_block_size, false);
+    block_y.clear();
+
+    for (auto &b : block_indexing) {
+      auto [index, size, loc] = b.second;
+      auto ptr = &y_array[loc];
+      cblas_dcopy(size, ptr, 1, &block_y[index], 1);
+    }
+
+    constexpr int nrhs = 1;
+    ipiv.resize(mat_block_size, false);
+    block_mat = trans(block_mat);
+    auto info = lapack_dgesv(mat_block_size, nrhs, &*block_mat.data().begin(),
+                             mat_block_size, &*ipiv.data().begin(),
+                             &*block_y.data().begin(), mat_block_size);
+    if (info != 0) {
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+               "error lapack solve dgesv info = %d", info);
+    }
+
+    for (auto &b : block_indexing) {
+      auto [index, size, loc] = b.second;
+      auto ptr = &x_array[loc];
+      cblas_daxpy(size, 1.0, &block_y[index], 1, ptr, 1);
+    }
+  }
+
+  CHKERR VecRestoreArray(x, &x_array);
+  CHKERR VecRestoreArray(y, &y_array);
+
+  // PetscLogFlops(xxx)
+  PetscLogEventEnd(SchurEvents::MOFEM_EVENT_BlockStructureSolve, 0, 0, 0, 0);
+
+  MoFEMFunctionReturn(0);
+}
+
 inline MoFEMErrorCode shell_block_mat_asmb_wrap_impl(
     BlockStructure *ctx, const EntitiesFieldData::EntData &row_data,
     const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
@@ -1958,7 +2083,7 @@ boost::shared_ptr<NestSchurData> createSchurNestedMatrixStruture(
       m.insert(
 
           BlockStructure::Indexes{
-              d.getRowUId(), d.getColUId(),
+              d.getRowUId(), d.getColUId(), d.getFEUId(),
 
               dof_r->getPetscGlobalDofIdx(), dof_c->getPetscGlobalDofIdx(),
 
