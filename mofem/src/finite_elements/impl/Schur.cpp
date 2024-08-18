@@ -1230,11 +1230,8 @@ static MoFEMErrorCode mult_schur_block_shell(
     boost::shared_ptr<std::vector<double>> data_blocks_ptr,
     bool multiply_by_preconditioner);
 
-static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec x, Vec y,
-                                              InsertMode iora);
-
 static MoFEMErrorCode
-solve_schur_block_shell_free_inverse(Mat mat, Vec y, Vec x, InsertMode iora);
+solve_schur_block_shell(Mat mat, Vec y, Vec x, InsertMode iora);
 
 static PetscErrorCode mult(Mat mat, Vec x, Vec y) {
   BlockStructure *ctx;
@@ -1261,12 +1258,10 @@ static PetscErrorCode mult_add(Mat mat, Vec x, Vec y) {
       ctx->dataBlocksPtr, true);
 }
 static PetscErrorCode solve(Mat mat, Vec x, Vec y) {
-  // return solve_schur_block_shell(mat, x, y, INSERT_VALUES);
-  return solve_schur_block_shell_free_inverse(mat, x, y, INSERT_VALUES);
+  return solve_schur_block_shell(mat, x, y, INSERT_VALUES);
 }
 static PetscErrorCode solve_add(Mat mat, Vec x, Vec y) {
-  // return solve_schur_block_shell(mat, x, y, ADD_VALUES);
-  return solve_schur_block_shell_free_inverse(mat, x, y, ADD_VALUES);
+  return solve_schur_block_shell(mat, x, y, ADD_VALUES);
 }
 
 static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
@@ -1640,33 +1635,8 @@ static MoFEMErrorCode mult_schur_block_shell(
   MoFEMFunctionReturn(0);
 }
 
-static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
-                                              InsertMode iora) {
-  MoFEMFunctionBegin;
-  BlockStructure *ctx;
-  CHKERR MatShellGetContext(mat, (void **)&ctx);
-
-  PetscLogEventBegin(SchurEvents::MOFEM_EVENT_BlockStructureSolve, 0, 0, 0, 0);
-
-  if (!ctx->dataInvBlocksPtr)
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "No dataInvBlocksPtr");
-  CHKERR mult_schur_block_shell(
-      mat, y, x, iora,
-
-      [](DiagBlockIndex::BlockIndex::nth_index<0>::type::iterator it) {
-        return it->getInvShift();
-      },
-
-      ctx->dataInvBlocksPtr, false);
-
-  // PetscLogFlops(xxx)
-  PetscLogEventEnd(SchurEvents::MOFEM_EVENT_BlockStructureSolve, 0, 0, 0, 0);
-
-  MoFEMFunctionReturn(0);
-}
-
 static MoFEMErrorCode
-solve_schur_block_shell_free_inverse(Mat mat, Vec y, Vec x, InsertMode iora) {
+solve_schur_block_shell(Mat mat, Vec y, Vec x, InsertMode iora) {
   using matrix_range = ublas::matrix_range<MatrixDouble>;
   using range = ublas::range;
   MoFEMFunctionBegin;
