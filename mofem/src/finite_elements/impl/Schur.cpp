@@ -591,13 +591,6 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
                                  auto *row_ind_ptr, auto *col_ind_ptr) {
       MoFEMFunctionBegin;
 
-      if (schurAO) {
-        CHKERR AOApplicationToPetsc(schurAO, row_ind_ptr->size(),
-                                    &*row_ind_ptr->begin());
-        CHKERR AOApplicationToPetsc(schurAO, col_ind_ptr->size(),
-                                    &*col_ind_ptr->begin());
-      }
-
       if (schurMat) {
 
         if (auto ierr = this->assembleSchurMat(
@@ -684,14 +677,6 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
     auto [block_list, block_indexing, block_mat_size] =
         get_block_indexing(a00_uids);
 
-    for (auto &s : storage) {
-      auto &m = s->getMat();
-      VectorInt row_ind, col_ind;
-      row_ind = s->getRowInd();
-      col_ind = s->getColInd();
-      CHKERR assemble_schur(m, s->uidRow, s->uidCol, &(row_ind), &(col_ind));
-    }
-
     if (block_mat_size == 0) {
       MoFEMFunctionReturnHot(0);
     }
@@ -767,6 +752,15 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
       storage.template get<SchurElemMats::uid_mi_tag>().erase(it);
     }
     block_list.clear();
+
+    if (schurAO) {
+      for (auto &s : storage) {
+        CHKERR AOApplicationToPetsc(schurAO, s->getRowInd().size(),
+                                    &*s->getRowInd().begin());
+        CHKERR AOApplicationToPetsc(schurAO, s->getColInd().size(),
+                                    &*s->getColInd().begin());
+      }
+    }
 
     std::vector<const SchurElemMats *> schur_block_list;
 
@@ -854,15 +848,15 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
 
                             &*abcM.data().begin(), abcM.size2());
 
-                VectorInt row_ind, col_ind;
-                row_ind = (*a_lo)->getRowInd();
-                col_ind = (*c_lo)->getColInd();
-                CHKERR assemble_schur(abcM, (*a_lo)->uidRow, (*c_lo)->uidCol,
-                                      &(row_ind), &(col_ind));
+                CHKERR assemble_schur(abcM, (*c_lo)->uidCol, (*a_lo)->uidRow,
+                                      &((*a_lo)->getRowInd()),
+                                      &((*c_lo)->getColInd()));
+
                 if (symSchur && rp_uid_it != cp_uid_it) {
                   abcM = trans(abcM);
                   CHKERR assemble_schur(abcM, (*c_lo)->uidCol, (*a_lo)->uidRow,
-                                        &(col_ind), &(row_ind));
+                                        &((*c_lo)->getColInd()),
+                                        &((*a_lo)->getRowInd()));
                 }
               }
             }
