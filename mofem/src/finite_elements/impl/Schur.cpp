@@ -1603,6 +1603,12 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
             std::make_tuple(b->getNbRows(), b->getNbRows(), b->getLocRow());
       }
     }
+    std::sort(blocks.begin(), blocks.end(), [](auto a, auto b) {
+      if (a->getRowUId() == b->getRowUId())
+        return a->getColUId() < b->getColUId();
+      else
+        return a->getRowUId() < b->getRowUId();
+    });
 
     // set indexes to block
     int mat_block_size = 0; // size of block matrix
@@ -1617,35 +1623,46 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
       return range(index, index + size);
     };
 
-    block_mat.resize(mat_block_size, mat_block_size, false);
-    block_mat.clear();
+    std::vector<std::tuple<int, int, int, int, int>> block_data;
+    block_data.reserve(blocks.size());
     for (auto s : blocks) {
       auto ruid = s->getRowUId();
       auto cuid = s->getColUId();
       auto &rbi = block_indexing.at(ruid);
       auto &cbi = block_indexing.at(cuid);
-
-      // lapack solve or col major, need to assemble to transposed matrix
-      auto sub_mat = matrix_range(block_mat, get_range(cbi), get_range(rbi));
-
-      auto set_sub_mat = [&](auto *ptr) {
-        for (auto i = 0; i != s->getNbRows(); ++i) {
-          for (auto j = 0; j != s->getNbCols(); ++j, ++ptr) {
-            sub_mat(j, i) += *ptr;
-          }
-        }
-      };
-
-      auto ptr = &*(ctx->dataBlocksPtr->begin());
       if (auto shift = s->getMatShift(); shift != -1) {
-        set_sub_mat(ptr + shift);
+        block_data.push_back(std::make_tuple(
+
+            shift,
+
+            s->getNbRows(), s->getNbCols(),
+
+            get<0>(rbi), get<0>(cbi))
+
+        );
       }
-      if (ctx->multiplyByPreconditioner) {
-        if (auto shift = s->getMatShift(); shift != -1) {
-          set_sub_mat(&(*ctx->preconditionerBlocksPtr)[shift]);
+    }
+    block_mat.resize(mat_block_size, mat_block_size, false);
+    block_mat.clear();
+    for (auto &bd : block_data) {
+      auto &[shift, nb_rows, nb_cols, ridx, cidx] = bd;
+      auto ptr = &(*(ctx->dataBlocksPtr))[shift];
+      for (auto i = 0; i != nb_rows; ++i, ptr += nb_cols) {
+        auto sub_ptr = &block_mat(ridx + i, cidx);
+        cblas_dcopy(nb_cols, ptr, 1, sub_ptr, 1);
+      }
+    }
+    if (ctx->multiplyByPreconditioner) {
+      for (auto &bd : block_data) {
+        auto &[shift, nb_rows, nb_cols, ridx, cidx] = bd;
+        auto ptr = &(*(ctx->preconditionerBlocksPtr))[shift];
+        for (auto i = 0; i != nb_rows; ++i, ptr += nb_cols) {
+          auto sub_ptr = &block_mat(ridx + i, cidx);
+          cblas_daxpy(nb_cols, 1., ptr, 1, sub_ptr, 1);
         }
       }
     }
+    block_mat = trans(block_mat);
 
     block_y.resize(mat_block_size, false);
     block_y.clear();
