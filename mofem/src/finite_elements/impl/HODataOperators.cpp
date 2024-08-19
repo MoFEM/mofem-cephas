@@ -281,7 +281,7 @@ OpSetHOContravariantPiolaTransform::doWork(int side, EntityType type,
       for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
         for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
           const double a = 1. / t_det;
-          t_transformed_n(i) = a * t_jac(i, k) * t_n(k);
+          t_transformed_n(i) = a * (t_jac(i, k) * t_n(k));
           ++t_n;
           ++t_transformed_n;
         }
@@ -315,7 +315,7 @@ OpSetHOContravariantPiolaTransform::doWork(int side, EntityType type,
       for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
         for (unsigned int bb = 0; bb != nb_diff_base_functions; ++bb) {
           const double a = 1. / t_det;
-          t_transformed_diff_n(i, k) = a * t_jac(i, j) * t_diff_n(j, k);
+          t_transformed_diff_n(i, k) = a * (t_jac(i, j) * t_diff_n(j, k));
           ++t_diff_n;
           ++t_transformed_diff_n;
         }
