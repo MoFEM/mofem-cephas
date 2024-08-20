@@ -405,6 +405,7 @@ struct GetFTensor4DdgFromMatImpl<3, 3, S, T, ublas::row_major, A> {
  *
  * @tparam Tensor_Dim01 dimension of first two indicies
  * @tparam Tensor_Dim23 dimension of second two indicies
+ * @tparam Memory shift
  * @tparam T the type of object stored
  * @tparam L the storage organization
  * @tparam A 	the type of Storage array
