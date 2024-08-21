@@ -188,7 +188,7 @@ namespace FTensor
     {}
     typename promote<T, U>::V operator()(const int N1) const
     {
-      return eval(N1, Number<Dim>(), Number<Dim2>());
+      return eval(N1, Number<Dim>(), Number<Dim>());
     }
   };
 
