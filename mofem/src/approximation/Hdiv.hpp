@@ -13,6 +13,22 @@
 
 namespace MoFEM {
 
+/** \brief Broken base Ainsworth subentries order change hooks.
+ *
+ * Hooks enabling change of DOFs numbers/polynomial order on subentries, when
+ * base on element is constructed.
+ *
+ * Note that this functionality is global, that all functions are static.
+ *
+ **/
+struct AinsworthOrderHooks {
+  static boost::function<int(int)> broken_nbfacetri_edge_hdiv;
+  static boost::function<int(int)> broken_nbfacetri_face_hdiv;
+  static boost::function<int(int)> broken_nbvolumetet_edge_hdiv;
+  static boost::function<int(int)> broken_nbvolumetet_face_hdiv;
+  static boost::function<int(int)> broken_nbvolumetet_volume_hdiv;
+};
+
 /**
  * \brief Hdiv base functions, Edge-based face functions by Ainsworth \cite
  * NME:NME847

@@ -2680,8 +2680,19 @@ MoFEMErrorCode ProblemsManager::getSideDofsOnBrokenSpaceEntities(
             dofs_it_view.emplace_back(numered_dofs[rc]->project<0>(lo));
           }
         } else {
+#ifndef NDEBUG
+          MOFEM_LOG("SELF", Sev::error)
+              << *m_field.get_field_structure(field_name);
+          MOFEM_LOG("SELF", Sev::error)
+              << "side not found for entity " << CN::EntityTypeName(bride_type);
+          MOFEM_LOG("SELF", Sev::error)
+              << "ent_dof_index / nb_coeffs "
+              << std::floor(static_cast<double>(ent_dof_index) / nb_coeffs);
+          MOFEM_LOG("SELF", Sev::error)
+              << "side_dof_map.size() " << side_dof_map.size();
+#endif // NDEBUG
           SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                  "side not found");
+                  "side not found - you will get more information in debug");
         }
       }
     }

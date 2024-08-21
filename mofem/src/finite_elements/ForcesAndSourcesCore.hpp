@@ -1310,10 +1310,8 @@ struct OpLoopSide : public ForcesAndSourcesCore::UserDataOperator {
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data) {
-    MoFEMFunctionBegin;
-    CHKERR loopSide(sideFEName, sideFEPtr.get(), sideDim, 0, VERBOSE, sevLevel,
+    return loopSide(sideFEName, sideFEPtr.get(), sideDim, 0, VERBOSE, sevLevel,
                     adjCache.get());
-    MoFEMFunctionReturn(0);
   };
 
   boost::ptr_deque<UserDataOperator> &getOpPtrVector() {
