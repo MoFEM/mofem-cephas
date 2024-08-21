@@ -13,34 +13,39 @@
 
 namespace MoFEM {
 
-template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
-struct OpEssentialRhsImpl<HeatFluxCubitBcData, 3, FIELD_DIM, A, I, OpBase>
-    : FormsIntegrators<OpBase>::template Assembly<A>::template LinearForm<I>::
-          template OpSource<3, FIELD_DIM, SourceBoundaryNormalSpecialization> {
+template <AssemblyType A, typename OpBase>
+struct OpEssentialRhsImpl<HeatFluxCubitBcData, 3, 3, A, GAUSS, OpBase>
+    : FormsIntegrators<OpBase>::template Assembly<A>::OpBase {
 
-  using OpSource = typename FormsIntegrators<OpBase>::template Assembly<A>::
-      template LinearForm<I>::template OpSource<
-          3, FIELD_DIM, SourceBoundaryNormalSpecialization>;
+  using OP = typename FormsIntegrators<OpBase>::template Assembly<A>::OpBase;
 
   OpEssentialRhsImpl(const std::string field_name,
                      boost::shared_ptr<HeatFluxCubitBcData> bc_data,
                      boost::shared_ptr<Range> ents_ptr,
                      std::vector<boost::shared_ptr<ScalingMethod>> smv);
 
+protected:
+  MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data);
+
 private:
   double heatFlux;
   VecOfTimeScalingMethods vecOfTimeScalingMethods;
 };
 
-template <int FIELD_DIM, AssemblyType A, IntegrationType I, typename OpBase>
-OpEssentialRhsImpl<HeatFluxCubitBcData, 3, FIELD_DIM, A, I, OpBase>::
+template <AssemblyType A, typename OpBase>
+struct OpEssentialRhsImpl<HeatFluxCubitBcData, 3, 2, A, GAUSS, OpBase>
+    : OpEssentialRhsImpl<HeatFluxCubitBcData, 3, 3, A, GAUSS, OpBase> {
+  using OpEssentialRhsImpl<HeatFluxCubitBcData, 3, 3, A, GAUSS,
+                           OpBase>::OpEssentialRhsImpl;
+};
+
+template <AssemblyType A, typename OpBase>
+OpEssentialRhsImpl<HeatFluxCubitBcData, 3, 3, A, GAUSS, OpBase>::
     OpEssentialRhsImpl(const std::string field_name,
                        boost::shared_ptr<HeatFluxCubitBcData> bc_data,
                        boost::shared_ptr<Range> ents_ptr,
                        std::vector<boost::shared_ptr<ScalingMethod>> smv)
-    : OpSource(
-          field_name, [this](double, double, double) { return heatFlux; },
-          ents_ptr),
+    : OP(field_name, field_name, OpBase::OPROW, ents_ptr),
       vecOfTimeScalingMethods(smv) {
   heatFlux = -bc_data->data.value1;
   this->timeScalingFun = [this](const double t) {
@@ -50,6 +55,48 @@ OpEssentialRhsImpl<HeatFluxCubitBcData, 3, FIELD_DIM, A, I, OpBase>::
     }
     return s;
   };
+}
+
+template <AssemblyType A, typename OpBase>
+MoFEMErrorCode
+OpEssentialRhsImpl<HeatFluxCubitBcData, 3, 3, A, GAUSS, OpBase>::iNtegrate(
+    EntitiesFieldData::EntData &row_data) {
+  MoFEMFunctionBegin;
+
+  FTENSOR_INDEX(3, i);
+
+  // get element volume
+  const double vol = OP::getMeasure();
+  // get integration weights
+  auto t_w = OP::getFTensor0IntegrationWeight();
+  // get base function gradient on rows
+  auto t_row_base = row_data.getFTensor1N<3>();
+  // get normal
+  auto t_normal = OP::getFTensor1NormalsAtGaussPts();
+
+  // loop over integration points
+  for (int gg = 0; gg != OP::nbIntegrationPts; gg++) {
+    // take into account Jacobian
+    const double alpha = t_w;
+
+    FTensor::Tensor1<double, 3> t_unit_normal;
+    t_unit_normal(i) = t_normal(i) / t_normal.l2();
+
+    // loop over rows base functions
+    int rr = 0;
+    for (; rr != OP::nbRows; ++rr) {
+      OP::locF[rr] += alpha * (t_row_base(i) * t_unit_normal(i));
+      ++t_row_base;
+    }
+    for (; rr < OP::nbRowBaseFunctions; ++rr)
+      ++t_row_base;
+    ++t_w; // move to another integration weight
+    ++t_normal;
+  }
+
+  OP::locF *= vol * heatFlux;
+
+  MoFEMFunctionReturn(0);
 }
 
 template <int BASE_DIM, int FIELD_DIM, AssemblyType A, IntegrationType I,
