@@ -674,6 +674,18 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
       return std::make_tuple(block_list, block_indexing, mat_block_size);
     };
 
+    auto get_schur_block_list = [&](auto &block_indexing) {
+      std::vector<const SchurElemMats *> block_list;
+      block_list.reserve(storage.size());
+      for (auto &s : storage) {
+        if (block_indexing.find(s->uidRow) == block_indexing.end() &&
+            block_indexing.find(s->uidCol) == block_indexing.end()) {
+          block_list.push_back(s);
+        }
+      }
+      return block_list;
+    };
+
     auto [block_list, block_indexing, block_mat_size] =
         get_block_indexing(a00_uids);
 
@@ -762,7 +774,20 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
       }
     }
 
-    std::vector<const SchurElemMats *> schur_block_list;
+    auto schur_block_list = get_schur_block_list(block_indexing);
+    for(auto &s : schur_block_list) {
+      auto &m = s->getMat();
+      VectorInt row_ind, col_ind;
+      row_ind = s->getRowInd();
+      col_ind = s->getColInd();
+      CHKERR assemble_schur(m, s->uidRow, s->uidCol, &(row_ind), &(col_ind));
+    }
+    for (auto &s : schur_block_list) {
+      auto it = storage.template get<SchurElemMats::uid_mi_tag>().find(
+          boost::make_tuple(s->uidRow, s->uidCol));
+      storage.template get<SchurElemMats::uid_mi_tag>().erase(it);
+    }
+    schur_block_list.clear();
 
     for (
 
