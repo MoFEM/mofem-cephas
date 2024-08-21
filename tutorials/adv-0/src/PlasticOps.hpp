@@ -476,10 +476,10 @@ auto createCommonPlasticOps(
         new typename H::template OpCalculateLogC<DIM, I>(u, common_henky_ptr));
     pip.push_back(new typename H::template OpCalculateLogC_dC<DIM, I>(
         u, common_henky_ptr));
-    pip.push_back(new
-                  typename H::template OpCalculateHenckyPlasticStress<DIM, I, 0>(
-                      u, common_henky_ptr, m_D_ptr));
-    pip.push_back(new typename H::template OpCalculatePiolaStress<DIM, I, 0>(
+    pip.push_back(
+        new typename H::template OpCalculateHenckyPlasticStress<DIM, I, 1>(
+            u, common_henky_ptr, m_D_ptr));
+    pip.push_back(new typename H::template OpCalculatePiolaStress<DIM, I, 1>(
         u, common_henky_ptr));
   } else {
 
@@ -572,7 +572,7 @@ opFactoryDomainLhs(MoFEM::Interface &m_field, std::string block_name, Pip &pip,
 
   if (common_henky_ptr) {
     using H = HenckyOps::HenkyIntegrators<DomainEleOp>;
-    pip.push_back(new typename H::template OpHenckyTangent<DIM, I, 0>(
+    pip.push_back(new typename H::template OpHenckyTangent<DIM, I, 1>(
         u, common_henky_ptr, m_D_ptr));
     pip.push_back(new OpKPiola(u, u, common_henky_ptr->getMatTangent()));
     pip.push_back(

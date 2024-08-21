@@ -765,6 +765,7 @@ auto commonDataFactory(
       new typename H::template OpCalculateLogC<DIM, I>(field_name, common_ptr));
   pip.push_back(new typename H::template OpCalculateLogC_dC<DIM, I>(
       field_name, common_ptr));
+  // Assumes constant D matrix per entity
   pip.push_back(new typename H::template OpCalculateHenckyStress<DIM, I, 0>(
       field_name, common_ptr));
   pip.push_back(new typename H::template OpCalculatePiolaStress<DIM, I, 0>(
@@ -819,6 +820,7 @@ MoFEMErrorCode opFactoryDomainLhs(
   using OpKPiola = typename B::template OpGradTensorGrad<1, DIM, DIM, 1>;
 
   using H = HenkyIntegrators<DomainEleOp>;
+  // Assumes constant D matrix per entity
   pip.push_back(
       new typename H::template OpHenckyTangent<DIM, I, 0>(field_name, common_ptr));
   pip.push_back(
