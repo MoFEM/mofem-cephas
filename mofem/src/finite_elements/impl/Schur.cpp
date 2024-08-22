@@ -690,6 +690,21 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
         get_block_indexing(a00_uids);
 
     if (block_mat_size == 0) {
+
+      if (schurAO) {
+        for (auto &s : storage) {
+          CHKERR AOApplicationToPetsc(schurAO, s->getRowInd().size(),
+                                      &*s->getRowInd().begin());
+          CHKERR AOApplicationToPetsc(schurAO, s->getColInd().size(),
+                                      &*s->getColInd().begin());
+        }
+      }
+
+      for (auto &s : storage) {
+        auto &m = s->getMat();
+        CHKERR assemble_schur(m, s->uidRow, s->uidCol, &(s->getRowInd()),
+                              &(s->getColInd()));
+      }
       MoFEMFunctionReturnHot(0);
     }
 
@@ -767,20 +782,22 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
 
     if (schurAO) {
       for (auto &s : storage) {
-        CHKERR AOApplicationToPetsc(schurAO, s->getRowInd().size(),
-                                    &*s->getRowInd().begin());
-        CHKERR AOApplicationToPetsc(schurAO, s->getColInd().size(),
-                                    &*s->getColInd().begin());
+        if (block_indexing.find(s->uidRow) == block_indexing.end()) {
+          CHKERR AOApplicationToPetsc(schurAO, s->getRowInd().size(),
+                                      &*s->getRowInd().begin());
+        }
+        if (block_indexing.find(s->uidCol) == block_indexing.end()) {
+          CHKERR AOApplicationToPetsc(schurAO, s->getColInd().size(),
+                                      &*s->getColInd().begin());
+        }
       }
     }
 
     auto schur_block_list = get_schur_block_list(block_indexing);
     for(auto &s : schur_block_list) {
       auto &m = s->getMat();
-      VectorInt row_ind, col_ind;
-      row_ind = s->getRowInd();
-      col_ind = s->getColInd();
-      CHKERR assemble_schur(m, s->uidRow, s->uidCol, &(row_ind), &(col_ind));
+      CHKERR assemble_schur(m, s->uidRow, s->uidCol, &(s->getRowInd()),
+                            &(s->getColInd()));
     }
     for (auto &s : schur_block_list) {
       auto it = storage.template get<SchurElemMats::uid_mi_tag>().find(
@@ -873,7 +890,7 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
 
                             &*abcM.data().begin(), abcM.size2());
 
-                CHKERR assemble_schur(abcM, (*c_lo)->uidCol, (*a_lo)->uidRow,
+                CHKERR assemble_schur(abcM, (*a_lo)->uidRow, (*c_lo)->uidCol,
                                       &((*a_lo)->getRowInd()),
                                       &((*c_lo)->getColInd()));
 
