@@ -1,0 +1,1133 @@
+/*! \page basic_tutorials_poisson_homogeneous SCL-1: Poisson's equation (homogeneous BC)
+
+\note Prerequisites of this tutorial include \ref basic_tutorials_mesh_generation_2d
+and \ref basic_tutorials_mesh_generation_3d (for the 3D extension
+implementation) 
+
+<br>
+
+\note Intended learning outcome:
+- general structure of a program developed using MoFEM
+- idea of [Simple Interface](http://mofem.eng.gla.ac.uk/mofem/html/struct_mo_f_e_m_1_1_simple.html) in MoFEM and how to use it
+- idea of Domain element in MoFEM and how to use it
+- process of implementing User Data Operators (UDOs) to calculate and assemble
+  stiffness matrix and force vector
+- how to **push** the developed UDOs to the *Pipeline*
+- a way to handle homogeneous boundary condition in MoFEM
+- utilisation of tools to convert outputs (MOAB) and visualise them (Paraview)
+
+<br>
+
+\note After finishing this tutorial, if you would like to replicate the program
+and practice yourself in an existing module or in your own module, you may wish
+to have a look at \ref how_to_add_new_module_and_program and \ref
+how_to_compile_program.
+
+\tableofcontents
+
+\section basic_tutorials_poisson_homogeneous_introduction Introduction
+
+\subsection basic_tutorials_poisson_homogeneous_problem The problem
+
+In this tutorial we
+will solve a simple Poisson's equation with homogeneous (uniform in space) boundary condition using MoFEM. The physical example of this equation is that you
+have a membrane that is fixed at its boundary and it experiences a uniformly
+distributed force on its surface, then you are asked to estimate the
+displacement of the membrane. The strong form of the problem as follows 
+
+\f[
+  \begin{align}
+-\nabla \cdot \nabla u(\mathbf{x}) &= f \quad {\rm in} \quad {
+\Omega}, \\ 
+{ u}(\mathbf{x}) &= 0 \quad {\rm on} \quad \partial { \Omega},
+  \end{align}
+\f]
+where \f$ { \Omega} \f$ denotes the domain occupied by the body and
+\f$ \partial { \Omega} \f$ is the boundary of the domain.
+Additionally, \f$ f \f$ is the source function and \f$ {\bf x} \f$ is the position in 2D or 3D space of a point in the domain.
+
+Let consdier a Poisson problem on a rectangle domain with homogenous boundary conditions and source
+function \f$ f \f$, the analytical solution can be found. However, as the first practice with MoFEM, we are solving it numerically using
+a finite element approach. This is done by subdividing the domain into multiple
+elements, building piece-wise approximations, and solving a discrete problem.
+
+As you may have already learned from the basic finite element method, in order
+to approximate a field \f$ u \f$ of the problem equation. We need to 
+derive the weak form it. The procedure to achieve it is as follows
+
+- First, multiplying both sides of the equation by a *test* function \f$ \delta u \f$
+  and then integrate over the domain \f$ \Omega \f$
+\f[
+  \begin{equation}
+-\int_\Omega \delta u(\nabla \cdot \nabla u ) ~d\Omega= \int_\Omega \delta u f ~d\Omega.
+  \end{equation}
+\f]
+
+- Second, apply the integration by parts on the left-hand side of the equation,
+  we have
+\f[
+  \begin{equation}
+  \int_\Omega \nabla \delta u \cdot \nabla u ~d\Omega - \int_{\partial \Omega} \delta u {\bf n} \cdot
+  \nabla u ~d\partial \Omega = \int_\Omega \delta u f ~d\Omega.
+  \end{equation}
+\f]
+It is noted that the test function \f$ \delta u \f$ has to satisfy the homogeneous
+  boundary condition, i.e. \f$ \delta u=0 \f$ on \f$ \partial \Omega \f$. Substituting
+  it to the above equation, we finally obtain the weak form of the problem
+\f[
+  \begin{equation}
+\int_\Omega \nabla \delta u \cdot \nabla u ~d\Omega = \int_\Omega \delta u f ~d\Omega, \quad \forall \delta u \in H_{0}^{1}(\Omega),
+  \end{equation}
+\f]
+  where the space for test function \f$ \delta u \f$ is \f$
+  H_{0}^{1}(\Omega):=\left\{v \in H^{1}(\Omega) \mid v=0 \text { on } \partial \Omega\right\} \f$.
+
+We are now solving this equation of the weak form instead of the original
+equation. This equation is asking for the solution of \f$ u \f$ that is true for
+all test function \f$ \delta u \f$. In order to achieve it, we will approximate \f$ u
+\f$ following a process in finite element called *discretisation* which will be
+presented in the next part.
+
+\subsection basic_tutorials_poisson_homogeneous_discretisation Discretisation
+
+As mentioned above, instead of trying to solve the problem analytically, we will
+approximate \f$ u \f$ assuming its solution has the form
+\f[
+  \begin{equation}
+u \approx u^h = \sum_{j=0}^{N-1} \phi_j \bar{u}_j.
+  \end{equation}
+\f]
+This expression can be interpreted as follows. Find the approximate solution \f$
+u^h \f$ of \f$ u \f$ where \f$ u^h \f$ is calculated by summing the contribution
+of base function \f$ \phi_j \f$ with the *coefficient* of the contribution is
+\f$ \bar{u}_j \f$.
+
+Sometimes, \f$ \phi_j \f$ is also called shape functions and \f$ \bar{u}_j \f$
+called *degrees of freedom (DOFs)* of the problem. In the implementation
+process, which will be discussed later in this tutorial, MoFEM gives you values
+of \f$ \phi_j \f$ by default (provided that you give it some hints) and you will
+find the solution of \f$ u^h \f$, of course, with the help of MoFEM.
+
+Keep in mind that, in the weak form, we have another term that also needs to be
+taken care of, that is the test function \f$ \delta u \f$. As we were saying, the weak
+form has to be satisfied with all test function \f$ \delta u \f$ meaning it has to be
+true with the arbitrary choice of \f$ \delta u_i=\phi_i \f$.
+
+Substituting \f$ u \f$ and \f$ \delta u \f$ into the weak form, we have the discrete
+form of the problem given by 
+\f[
+  \begin{equation}
+\int_{\Omega^e} \nabla \phi_i \cdot \nabla \left( \sum_j \bar{u}_j \phi_j
+\right) ~d{\Omega^e}= \int_{\Omega^e} \phi_i f ~d{\Omega^e}.
+  \end{equation}
+\f]
+Moving \f$ \bar{u}_j \f$ outside of the parentheses and rearranging the equation, we
+have 
+\f[
+  \begin{equation}
+\sum_j \left( \int_{\Omega^e} \nabla \phi_i \cdot \nabla \phi_j ~d{\Omega^e}
+\right) \bar{u}_j   = \int_{\Omega^e} \phi_i f ~d{\Omega^e}.
+  \end{equation}
+\f]
+
+Now, the problem becomes: finding the vector of coefficients (or DOFs) \f$ {\bf U} \f$
+such that 
+\f[
+{\bf K u} = {\bf F},
+\f]
+where \f$ {\bf K} \f$ and \f$ {\bf F} \f$ are the global stiffness matrix (left
+hand side) and global force vector (right hand side) calculated over the whole
+domain, respectively. \f$ {\bf K} \f$ and \f$ {\bf F} \f$ are obtained by
+assembling all elements (entity) in the domain, and the components
+of element stiffness matrix and element force vector are calculated as
+\f[
+  \begin{align}
+    K_{ij}^e &= \int_{\Omega^e} \nabla \phi_i \cdot \nabla  \phi_j ~d{\Omega^e}, \\
+    F_i^e &= \int_{\Omega^e} \phi_i f ~d{\Omega^e}.
+  \end{align}
+\f]
+One thing we can notice here is that the matrix \f$ {\bf K} \f$ is symmetric which means there will be opportunity to save time later in the implementation.
+
+We are almost at the place where we can start the implementation, but still, you
+may ask how computers can handle the integral terms. Of course, we will not ask
+computers to calculate the integrals directly in an infinite sense, instead it
+is done using *quadrature* which is in a finite sense and commonly used in
+finite element method. In other word, the integrals are approximated by the sum
+of a set of points on each element along with their weights as follows
+\f[
+  \begin{align}
+K_{ij}^e &= \int_{\Omega^e} \nabla \phi_i \cdot \nabla \phi_j \approx \sum_q
+\nabla \phi_i \left( {\bf x}_q \right) \cdot \nabla \phi_j \left( {\bf x}_q
+\right) W_q \left\|\mathbf{J}_{g}^{e}\right\| \label{eqn_stiffness}, \\ 
+F_i^e &= \int_{\Omega^e} \phi_i f \approx \sum_q \phi_i \left( {\bf x}_q \right)
+f \left( {\bf x}_q \right) W_q \left\|\mathbf{J}_{g}^{e}\right\|,
+  \end{align}
+\f]
+where \f$ {\bf x}_q \f$ and \f$ W_q \f$ are the location and weight of the
+quadrature point, respectively. Meanwhile, \f$ \left\|\mathbf{J}_{g}^{e}\right\|
+\f$ is the determinant of the Jacobian of the transformation of the element \f$
+e \f$ from physical coordinates to parent coordinates. For triangular elements,
+this determinant equals to the area of the element. These equations can be
+interpreted as follows 
+
+The approximated value of the component at row \f$ i \f$ and column \f$ j \f$ of
+the element stiffness matrix \f$ K \f$ of element \f$ e \f$ is calculated by
+taking the summation over all quadrature points of the multiplication of 
+- the first derivative of the \f$ i^{\rm th} \f$ approximation function \f$ \phi
+  \f$ evaluated at quadrature point \f$ q \f$, 
+- the first derivative of the \f$ j^{\rm th} \f$ approximation function \f$ \phi
+  \f$ evaluated at the same quadrature point \f$ q \f$, and 
+- the multiplication of the weight of that quadrature point \f$ q \f$ and the
+  determinant of the Jacobian.
+
+Likewise, the approximated value of the component at row \f$ i \f$ of the
+element force vector \f$ F \f$ of element \f$ e \f$ is calculated by taking the
+summation over all quadrature points of the multiplication of
+- the \f$ i^{\rm th} \f$ approximation function \f$ \phi \f$ evaluated at
+  quadrature point \f$ q \f$,
+- the body force evaluated at the same quadrature point \f$ q \f$, and
+- the multiplication of the weight of that quadrature point \f$ q \f$ and the
+  determinant of the Jacobian.
+
+More details on the numerical integration can be found at the tutorial \ref
+integration. 
+
+To this end, we have established a linear system of the primary variable \f$
+{\bf U} \f$ through \f$ {\bf K} \f$ and \f$ {\bf F} \f$. In MoFEM, we will use
+an iterative solver
+([KSP](https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/KSP/index.html))
+to solve for \f$ {\bf U} \f$ and apply steps to postprocess the solution and
+visualise it.
+
+\section basic_tutorials_poisson_homogeneous_implementation Implementation 
+
+An immediate question you may have regarding the implementation is how to
+implement the matrix \f$ {\bf K} \f$ and vector \f$ {\bf F} \f$. This is
+done through the implementation of the so-called **User Data Operators**. UDOs
+are the essential part of MoFEM and they are present in all finite element
+problems implemented in MoFEM. UDO is normally called Operator (for short) by
+MoFEM developers. Once UDOs are implemented, they will be *pushed* to the working **pipeline**.
+
+Here we have introduced _two important concepts_ in MoFEM
+- **UDOs** are responsible for calculation of certain things, e.g. stiffness
+  matrix, force vector, inverse of Jacobian, field values, field gradients, etc., and 
+- **Pipeline** is where you *push* UDOs to in a certain order, e.g. UDOs for
+  calculating field values and field gradients (nonlinear problem) are pushed
+  before UDOs calculating stiffness matrix and force vector. After being pushed
+  to the Pipeline, those UDOs will be executed sequentially.
+
+As a common practice, typically all the implementation of UDOs for a specific
+problem is put in a `*.hpp` file. This file will be included in the main `*.cpp`
+file which contains all the necessary classes and functions. Detailed
+explanation of the implementation of UDOs, how you pushed UDOs to Pipeline as
+well as development of classes/functions are presented below
+
+\subsection basic_tutorials_poisson_homogeneous_udo User Data Operators 
+
+As described previously, solving the Poisson problem with homogeneous would
+require the computation and assembling of the matrix \f$ {\bf K} \f$ and
+vector \f$ {\bf F} \f$. These essential processes of computation and assembling
+will be handled by two different UDOs which separately deal with the matrix and
+vector. They are:
+
+1. Poisson2DHomogeneousOperators::OpDomainLhsMatrixK is responsible for 
+   calculating and assembly of the left-hand-side matrix \f$ {\bf K} \f$
+   
+2. Poisson2DHomogeneousOperators::OpDomainRhsVectorF is responsible to
+   calculation and assembly of the right-hand-side vector \f$ {\bf F} \f$
+
+Before going into details of the implementation of the two UDOs in
+poisson_2d_homogeneous.hpp, let's have a look at the first few lines of code file that includes some libraries for finite element implementation. The code is based on C++ libraries with advanced
+aliases, and declaration/initialisation. Apart from that, the dimension(2D/3D) of the problem can easily be assihned from the EXECUTABLE_DIMENSION which will discuss later.
+
+\code 
+// Define name if it has not been defined yet
+#ifndef __POISSON2DHOMOGENEOUS_HPP__
+#define __POISSON2DHOMOGENEOUS_HPP__
+
+// Include standard library and Header file for basic finite elements
+// implementation
+using EntData = EntitiesFieldData::EntData;
+
+template <int DIM>
+using ElementsAndOps = PipelineManager::ElementsAndOpsByDim<SPACE_DIM>;
+using DomainEle = ElementsAndOps<SPACE_DIM>::DomainEle;
+using DomainEleOp = DomainEle::UserDataOperator;
+
+using AssemblyDomainEleOp =
+    FormsIntegrators<DomainEleOp>::Assembly<PETSC>::OpBase;
+
+// Namespace that contains necessary UDOs, will be included in the main program
+namespace Poisson2DHomogeneousOperators {
+
+// Declare FTensor index for a problem
+FTensor::Index<'i', SPACE_DIM> i;
+
+// For simplicity, body source term f has been consider to be constant throughout the domain
+const double body_source = 5.;
+
+
+//.. ..Implementation of the UDOs below this point.. ..
+
+}
+
+\endcode
+
+
+Next, Users can also learn a general structure  of any UDOs implemented in MoFEM to many extend. So, we will look in details how the following two main User Defined Operator(UDO)s of the problem can be implemented.
+
+1. **OpDomainLhsMatrixK** and
+2. **OpDomainRhsVectorF**
+
+\subsubsection OpDomainLhsMatrixK
+This UDO is responsible for the calculation and assembly of the left-hand-side matrix \f$ {\bf K} \f$
+
+First, let's look at the structure of this UDO to calculate matrix \f$
+{\bf K} \f$. 
+
+\code 
+struct OpDomainLhsMatrixK : public AssemblyDomainEleOp {
+public:
+  OpDomainLhsMatrixK(std::string row_field_name, std::string col_field_name)
+      : AssemblyDomainEleOp(row_field_name, col_field_name,
+                            DomainEleOp::OPROWCOL) {}
+
+  MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
+                           EntitiesFieldData::EntData &col_data) {
+  
+  //.. ..Implementation of iNtegrate() below this point .. ..
+
+  }
+};
+\endcode
+
+We have the class `OpDomainLhsMatrixK` that is inherited from `AssemblyDomainEleOp` which is the alias of the base chain of specialized template FormsIntegrators<DomainEleOp>::Assembly<PETSC>::OpBase. This operator also accelerate the process of assembling local matrix to global matrix.
+Here, the forms integrators using the DomainEleOp type is a templated parameter to assembly using the PETSc library.
+Here, the newly created class has two public objects `OpDomainLhsMatrixK()` and
+`iNtegrate` which can be accessed from outside of the class. This follows the concept of [data
+encapsulation](https://en.wikipedia.org/wiki/Encapsulation_(computer_programming))
+to hide values and objects inside the class as much as possible. We will discuss
+a little more details of those four objects of the class in the followings
+
+- `OpDomainLhsMatrixK()`
+\code 
+  OpDomainLhsMatrixK(std::string row_field_name, std::string col_field_name)
+      : AssemblyDomainEleOp(row_field_name, col_field_name,
+                            DomainEleOp::OPROWCOL) {}
+\endcode
+  This public member function has two input arguments which are the
+  row_field_name and col_field_name carrying the names of the field for row and
+  column, respectively. In general, these two field names can be different.But in
+  this particular case of Poisson's problem with homogeneous boundary condition,
+  we have considered the same field named as "U" for both row and
+  column.In this way, OpFaceEle::OPROWCOL because we assemble stiffness matrix that has data
+  on both row and column. In this case, our matrix
+  \f$ K \f$ is symmetric but if we want we could code sYmm = true inside the closing bracket{} to assemble and store data of half of the matrix. However, here we are considering the full matrix.
+
+- `iNtegrate`
+\code
+  MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
+                           EntitiesFieldData::EntData &col_data) {
+  
+  // Implementation of iNtegrate() below this point
+
+  }
+\endcode
+  This public member function is the core part of the UDO implementation. It
+  decides how to calculate the local matrix components and how to assemble them
+  to the global matrix. All mathematical derivations that we did in the
+  previous section of this tutorial will be implemented in this function. More
+  discussion on other essential function of it is stating below:
+
+- `locMat` <br>
+  This private member object of type MatrixDouble is used to
+  store the results of the calculation of components of element stiffness
+  matrix. This object is made private because only member of the class know how to use it, members from other classes have no access to this private object avoiding unpredictable consequences, i.e. errors. 
+
+Now we take a closer look on the details of the implementation of the member
+function `iNtegrate()`.
+Full code for this function as follows
+\code 
+MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
+                           EntitiesFieldData::EntData &col_data) {
+    MoFEMFunctionBegin;
+
+    const int nb_row_dofs = row_data.getIndices().size();
+    const int nb_col_dofs = col_data.getIndices().size();
+
+    this->locMat.resize(nb_row_dofs, nb_col_dofs, false);
+    this->locMat.clear();
+
+    // get element area
+    const double area = getMeasure();
+
+    // get number of integration points
+    const int nb_integration_points = getGaussPts().size2();
+    // get integration weights
+    auto t_w = getFTensor0IntegrationWeight();
+
+    // get derivatives of base functions on row
+    auto t_row_diff_base = row_data.getFTensor1DiffN<SPACE_DIM>();
+
+    // START THE LOOP OVER INTEGRATION POINTS TO CALCULATE LOCAL MATRIX
+    for (int gg = 0; gg != nb_integration_points; gg++) {
+      const double a = t_w * area;
+
+      for (int rr = 0; rr != nb_row_dofs; ++rr) {
+        // get derivatives of base functions on column
+        auto t_col_diff_base = col_data.getFTensor1DiffN<SPACE_DIM>(gg, 0);
+
+        for (int cc = 0; cc != nb_col_dofs; cc++) {
+          this->locMat(rr, cc) += t_row_diff_base(i) * t_col_diff_base(i) * a;
+
+          // move to the derivatives of the next base functions on column
+          ++t_col_diff_base;
+        }
+
+        // move to the derivatives of the next base functions on row
+        ++t_row_diff_base;
+      }
+
+      // move to the weight of the next integration point
+      ++t_w;
+    }
+
+    MoFEMFunctionReturn(0);
+  }
+ };
+\endcode
+
+First, let's discuss the structure of this function
+
+For specific tasks, the data structure is adapted based on the problem's dimension. Such as solving a 2D or 3D Poisson problem, the code can utilize different entities types  e.g. edges, faces, volumes. For example, the entities or elements are provided accordingly using PipelineManager::ElementsAndOpsByDim<SPACE_DIM> which is aliased as ElementsAndOps.The DomainEle::UserDataOperator is used to assemble using the forms integrator AssemblyDomainEleOp. This can be seen in the code, particularly in the struct OpDomainLhsMatrixK.
+ The function's parameters of iNtegrate are row_data and col_data are referencing to objects of type EntitiesFieldData::EntData. These parameters make ready the data related to degrees of freedom, basis function values, and field values for the rows and columns of the operation. 
+
+In MoFEM, functions are written with check and error handling using keywords like MoFEMErrorCode, MoFEMFunctionBegin, and MoFEMFunctionReturn(0). These indicate the execution of functions and the success or failure of the operation. These arguments are used to handle errors like try() or catch() in basic c++ systematically.
+
+Now, moving into the main implementation of `iNtegrate()` function, we will see
+information about the number of DOFs on row and column are extracted from the
+database
+\code
+const int nb_row_dofs = row_data.getIndices().size();
+const int nb_col_dofs = col_data.getIndices().size();
+\endcode
+
+Once the program is confident that the data for row and column are all valid,
+it starts to initialise the local stiffness matrix whose components will
+be calculated and assembled to the global matrix.
+\code
+locMat.resize(nb_row_dofs, nb_col_dofs, false);
+locMat.clear();
+\endcode
+
+Then you will get the area for 2D or volume for 3D which is needed later when you integrate the function
+to calculate the stiffness matrix.
+\code
+// get element area
+const double area = getMeasure();
+\endcode
+It is worth noting that `getMeasure()` is a generic function and the value you
+get depends on which entity type you are working with. For example, in this UDO,
+you are working with face entities (triangles), `getMeasure()` gives you face
+area. If you are dealing with edge (for boundary element) or volume entities
+(for volume domain), you would get edge length or element volume, respectively.
+
+Next, as required for the calculation of stiffness matrix in Eq. (3), we need
+the number of integration points (\f$ q \f$) and their weights (\f$ W_q \f$)
+which can be done as follows
+\code
+// get number of integration points
+const int nb_integration_points = getGaussPts().size2();
+// get integration weights
+auto t_w = getFTensor0IntegrationWeight();
+\endcode
+Here `getFTensor0IntegrationWeight()` is a function of
+MoFEM::ForcesAndSourcesCore::UserDataOperator and it returns a zeroth-order
+FTensor object ([Tensor template
+library](http://mofem.eng.gla.ac.uk/mofem/html/group__ftensor.html)) that stores
+value of integration weight. We prefer to use FTensor anywhere we can because it
+is compact and highly efficient. In MoFEM implementation, FTensor object is
+normally named with the prefix `t_`.
+
+Once the number of Gauss points and their weights are determined, the remaining
+component to calculate stiffness matrix would include the gradients of the basis
+function evaluated at the integration (Gauss) point, \f$ \nabla \phi_i, \nabla
+\phi_j \f$ ,for row and column, respectively, and the loop over all the Gauss
+points. They are done in the following part of the code
+\code
+      // get derivatives of base functions on row
+      auto t_row_diff_base = row_data.getFTensor1DiffN<2>();
+
+      // START THE LOOP OVER INTEGRATION POINTS TO CALCULATE LOCAL MATRIX
+      for (int gg = 0; gg != nb_integration_points; gg++) {
+        const double a = t_w * area;
+
+        for (int rr = 0; rr != nb_row_dofs; ++rr) {
+          // get derivatives of base functions on column
+          auto t_col_diff_base = col_data.getFTensor1DiffN<2>(gg, 0);
+
+          for (int cc = 0; cc != nb_col_dofs; cc++) {
+            locMat(rr, cc) += t_row_diff_base(i) * t_col_diff_base(i) * a;
+
+            // move to the derivatives of the next base functions on column
+            ++t_col_diff_base;
+          }
+
+          // move to the derivatives of the next base functions on row
+          ++t_row_diff_base;
+        }
+
+        // move to the weight of the next integration point
+        ++t_w;
+      }
+\endcode
+Here you can see inside the loop over the integration points, we have two other
+nested loops that loop over the row (\f$i\f$) and column (\f$j\f$) DOFs of the matrix which is ultimately calculated similarly to the way
+they are presented in Eq. (11)
+\code
+locMat(rr, cc) += t_row_diff_base(i) * t_col_diff_base(i) * a;
+\endcode
+where `a` is the intermediate variable of type `double` and calculated earlier as
+\code
+const double a = t_w * area;
+\endcode
+where `area` can be considered as the determinant of the Jacobian of the
+transformation from the physical (global) coordinate system to the reference
+(local) coordinate system. See more about the integration and Jacobian at \ref
+integration.
+
+It should be noticed that at the end of each loop over the row and column
+DOFs, `t_row_diff_base` and `t_col_diff_base` which have the values of the
+gradients of the basis function are moved/shifted to the next chunk of the
+memory which stores values of another set of gradients of basis function
+associated with DOFs. The same technique is applied to move `t_w` to the weight
+of the next Gauss point in the memory.
+
+\b Note: You might have also recognised that in the traditional finite element
+implementation, you will probably have, at the same place of the code, the
+structure of the main nested loop like this
+
+- Loop over all elements
+  - Loop over all integration points
+    - Calculation of the local stiffness matrix components and fill them to the
+      global matrix
+
+In MoFEM's finite element implementation, there are some differences worth noting. While nested loops are still used, the implementation of the User Data Operator (UDO) involves a single loop over integration points. Within this loop, local stiffness matrix components are computed and then assembled into the global matrix. The loop over elements referred to as entities in the context of [Hierarchical basis
+functions](http://mofem.eng.gla.ac.uk/mofem/html/hierarchical_approximation_1.html) Details of how this loop is triggered is presented in \ref
+basic_tutorials_poisson_homogeneous_solve.
+
+That concludes the description of the code segment responsible for calculating the components of the element stiffness matrix.
+
+\anchor figure_symmetric_matrix_assembling
+\image html symmetric_matrix_assembling.png "Figure 1: Symmetric matrix assembling (for a general 3D case)." width = 350px
+
+\subsubsection OpDomainRhsVectorF
+In this part, we will talk about the implementation of the second UDO
+Poisson2DHomogeneousOperators::OpDomainRhsVectorF which is responsible for the
+calculation and assemble of the right-hand-side force vector \f$ {\bf F} \f$
+
+Similar to what implemented for the \f$ {\bf K} \f$ matrix we discussed above,
+the implementation of the UDO for the \f$ {\bf F} \f$ vector has very similar
+structure with slightly different functions
+\code
+struct OpDomainRhsVectorF : public AssemblyDomainEleOp {
+public:
+  OpDomainRhsVectorF(std::string field_name)
+      : AssemblyDomainEleOp(field_name, field_name, DomainEleOp::OPROW) {}
+
+  MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &data) {
+
+  // .. ..Implementation of iNtegrate() below this point.. ..
+
+  }
+
+};
+\endcode
+We have the public objects of `OpDomainRhsVectorF()` and `iNtegrate()` and private object of `locF`. Here the name of the main function is changed to
+`OpDomainRhsVectorF` to reflect what it does. Additionally, as we are
+calculating and assembling vector instead of matrix, we need only one input of
+`field_name` and we tell MoFEM that we are doing the operation of row for the
+vector by specifying `DomainEleOp::OPROW`. Similarly for function `iNtegrate()`, it requires all three groups of the input but only one for each group instead of two as we had for the stiffness matrix.
+
+The implementation of this essential function of `iNtegrate()` for force vector
+calculation and assembling also has very similar structure to its matrix UDO
+counterpart. The code for this function is as follows
+\code
+
+  MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &data) {
+    MoFEMFunctionBegin;
+    const int nb_dofs = data.getIndices().size();
+
+    this->locF.resize(nb_dofs, false);
+    this->locF.clear();
+
+    // get element area
+    const double area = getMeasure();
+
+    // get number of integration points
+    const int nb_integration_points = getGaussPts().size2();
+    // get integration weights
+    auto t_w = getFTensor0IntegrationWeight();
+
+    // get base function
+    auto t_base = data.getFTensor0N();
+
+    // START THE LOOP OVER INTEGRATION POINTS TO CALCULATE LOCAL VECTOR
+    for (int gg = 0; gg != nb_integration_points; gg++) {
+      const double a = t_w * area;
+
+      for (int rr = 0; rr != nb_dofs; rr++) {
+        this->locF[rr] += t_base * body_source * a;
+
+        // move to the next base function
+        ++t_base;
+      }
+
+      // move to the weight of the next integration point
+      ++t_w;
+    }
+
+    MoFEMFunctionReturn(0);
+  }
+}; 
+\endcode
+A part from the input arguments of this function is slightly different from the UDO for stiffness matrix. In this UDO for force vector, we use the base function
+value to calculate the components of local vector reflecting what is presented
+in Eq. (4) and only need to loop over row DOFs as follows
+\code
+    // get base function
+    auto t_base = data.getFTensor0N();
+\endcode
+and later using the constant body source (force) that is predefined at the
+beginning of the `*.hpp` to calculate the local vector
+\code
+        for (int rr = 0; rr != nb_dofs; rr++) {
+         this->locF[rr] += t_base * body_source * a;
+
+          // move to the next base function
+          ++t_base;
+        }
+\endcode
+
+That is all for the implementation of UDOs that are responsible for the
+calculation and assembling of the LHS matrix \f$ {\bf K} \f$ and RHS vector \f$
+{\bf F} \f$. Having the essential components implemented, you now may ask how
+those UDOs are called in the main program. This is done through the process
+called *push operator* to the **Pipeline** and you will find out in more details later in this tutorial,
+\ref basic_tutorials_poisson_homogeneous_assemble.
+
+Next, we will look in detail how the main program, including class and
+functions, is implemented.
+
+
+
+\subsection basic_tutorials_poisson_homogeneous_class The Poisson2DHomogeneous class
+
+This main class Poisson2DHomogeneous contains functions and each of which is
+responsible for a certain task of a finite element program. Intially, the field name has named as "U" string to recognsie it well. Next the EXECUTABLE_DIMENSION is the considered for the dimension of the mesh. To generalize, the value is assined to the Space dimension of problem.
+\code
+constexpr auto field_name = "U";
+constexpr int SPACE_DIM = EXECUTABLE_DIMENSION; 
+\endcode
+
+The public part of the class includes a constructor and function \ref
+basic_tutorials_poisson_homogeneous_run_analysis that calls other functions to
+perform finite element analysis.
+\code
+public:
+  Poisson2DHomogeneous(MoFEM::Interface &m_field);
+  // Declaration of the main function to run analysis
+  MoFEMErrorCode runProgram();
+\endcode
+Then there are private functions doing certain tasks and can be recognised by
+their names
+\code
+private:
+  // Declaration of other main functions called in runProgram()
+  MoFEMErrorCode readMesh();
+  MoFEMErrorCode setupProblem();
+  MoFEMErrorCode boundaryCondition();
+  MoFEMErrorCode assembleSystem();
+  MoFEMErrorCode setIntegrationRules();
+  MoFEMErrorCode solveSystem();
+  MoFEMErrorCode outputResults();
+\endcode
+It is followed by the declaration of member variables that will be used in one
+or some of the member functions declared above
+\code
+  // MoFEM interfaces
+  MoFEM::Interface &mField;
+  Simple *simpleInterface;
+
+  // approximation order
+  int oRder;
+\endcode
+
+\note For writhing program in MoFEM, we follow some coding practices for code
+style and naming convention described at \ref coding_practice
+
+\subsubsection basic_tutorials_poisson_homogeneous_constructor Poisson2DHomogeneous()
+
+Now is the constructor
+\code
+Poisson2DHomogeneous::Poisson2DHomogeneous(MoFEM::Interface &m_field)
+    :  mField(m_field) {}
+\endcode
+The constructor specifies
+- `mField(m_field)`: The MoFEM instance that is the backbone of the program
+
+
+\subsubsection basic_tutorials_poisson_homogeneous_readmesh readMesh()
+
+Now the first function that actually does some finite element task is the
+function responsible for reading input mesh
+
+\snippet users_modules/tutorials/scl-1/poisson_2d_homogeneous.cpp Read mesh
+
+Apart from the codes for error handling, the main three lines of code
+is a standard way to read an input mesh using Simple interface. Interface in
+MoFEM is a set of rules through which program developers use to setup a problem.
+Simple interface provides simplest but also less flexible way to setup a
+problem. More on the interfaces can be found at \ref
+basic_lessons1_interfaces. Implementation of more advanced interfaces will be
+presented in later tutorials.
+
+\subsubsection basic_tutorials_poisson_homogeneous_setupproblem setupProblem()
+Next is the function that is responsible for setting up the finite element
+problem 
+
+\snippet users_modules/tutorials/scl-1/poisson_2d_homogeneous.cpp Setup problem
+
+This function has
+- `simpleInterface->addDomainField`: It is important to understand that we need to add the domain field through the `simpleInterface` only as the field at
+  the boundary is zero (homogeneous) for this particular example hence no need
+  to add the boundary field. The addition of the domain field requires the
+  followings 
+  - Field name ("U"), 
+  - Approximation space (`H1` - scalar space) - function space can also be
+    `H(curl)`, `H(div)`, `L2` depending on physical properties of the field you
+    are approximating, see more at
+    [FieldSpace](http://mofem.eng.gla.ac.uk/mofem/html/definitions_8h.html#a5ed4cb303bab8cd0673ae12e5bc73c12)
+    
+  - Approximation bases (`AINSWORTH_BERNSTEIN_BEZIER_BASE`) - base can also be
+    `AINSWORTH_LEGENDRE_BASE`, `AINSWORTH_LOBATTO_BASE`, `DEMKOWICZ_JACOBI_BASE
+    `, see more at
+    [FieldApproximationBase](http://mofem.eng.gla.ac.uk/mofem/html/definitions_8h.html#a2ed4ed94b56d2843840bb7c55adcf0c5),
+    and
+  - Number of DOFs per shape function (`1`) as the current problem is a
+    scalar-field problem. This will be `3` for vector-field problem.
+- `simpleInterface->setFieldOrder`: Set the polynomial order of the approximation of the field
+- `simpleInterface->setUp()`: Finally, do the setup of the problem.
+
+
+\subsubsection basic_tutorials_poisson_homogeneous_bc boundaryCondition() 
+
+This function deals the boundary condition and its
+implementation for the current problem is as follows
+
+\snippet users_modules/tutorials/scl-1/poisson_2d_homogeneous.cpp Boundary condition
+
+To ensure the code reads the boundary conditions, it's essential to generate the mesh that includes the required attributes or values. Specifically, blocks in the mesh must be labelled with the name "BOUNDARY_CONDITION". In other cases where multiple boundary conditions are involved, you should assign distinct names using numbers, such as "BOUNDARY_CONDITION_1", "BOUNDARY_CONDITION_2", "BOUNDARY_CONDITION_3", and so on. This naming scheme helps in distinguishing and applying different boundary conditions to their respective blocks within the mesh.
+
+Though the application procedure is pretty straightforward but the underlying process of applying these boundary conditions is not immediately obvious. Users can jump to the next section without understanding the underlying process of it.
+
+If we consider \f$ {\bf u} \f$ as the solution vector such that \f$ {u} = [u_1, u_2, u_3, u_4, \ldots, u_n] \f$, we will essentially eliminate the DoFs associated with entities that are part of the "BOUNDARY_CONDITION" blocksets. In this context, let's say the \f$ \bf{u_0} \f$ represents the vector after removing the DOF from BC. For example,  \f$ {u_0} = [u_1, u_2, u_3,.. .. u_\text{n-m}, 0 ,0\ldots, 0] \f$. However, we need to reintroduce these removed DoFs later on to make the solution admissible for the boundary values as well. To accomplish this, we will incorporate an additional vector \f$ {\bf u^e} \f$ with the current \f$ {\bf u_0} \f$, as in (14).
+\f[
+  \begin{equation}
+    \bf {Ku}= f 
+  \end{equation}
+\f]
+\f[
+  \begin{equation}
+    \bf {K(u_0 + u_e)}= f
+  \end{equation}
+\f]
+Here, \f$ u_e \f$ is the vector where we will impose those removed degrees of freedom in it. For example, 
+ \f[
+\begin{equation}
+{\mathbf { u}_e} = \left[ 
+ \begin{array}{cccc}
+{0} &
+{0} &
+{0} &
+\ldots &
+{u_\text{n-m+1} } &
+{u_\text{n} } &
+\end{array} \right]
+\label{eq:u_e}
+\end{equation}
+\f]
+Here, \f$ u_\text{n-m+1} \f$ and \f$u_\text{n} \f$ denotes  DOFs the of BOUNDARY_CONDITION Blockset.
+
+This approach will allow us to streamline the procedure and ensure that the removed degrees of freedom are properly reintegrated into the calculations. However, to simplify this cumulative process, we will address rest of the part during the assembling phase in the upcoming sub-section.
+
+
+\subsubsection basic_tutorials_poisson_homogeneous_assemble assembleSystem() 
+
+This part is about the function that is responsible for the assembling of the
+system of equations. In between, we will also go through the code for setting the DOFs to the BC.
+
+
+At the beginning of the section \ref basic_tutorials_poisson_homogeneous_assemble, recall the *two important concepts* in MoFEM, namely **UDO** and **Pipeline**.
+While how the implementation of UDOs has been shown in \ref
+basic_tutorials_poisson_homogeneous_udo, here you will see how the implemented
+UDOs are *pushed* to the **Pipeline**.
+
+Apart from pushing UDOs to the main program,  \ref basic_tutorials_poisson_homogeneous_assemble ()function is mainly responsible for setting operators implementing to the pipelines for KSP solver (iterative linear solver provided by PETSc). The full source code for the function is as follows:
+
+\snippet users_modules/tutorials/scl-1/poisson_2d_homogeneous.cpp Assemble system
+
+- First, the pipeline manager (`pipeline_mng`) that manages two main pipelines which are:
+  - `getOpDomainLhsPipeline`: responsible for calculations of the left hand side matrix
+  - `getOpDomainRhsPipeline`: responsible for calculations of the right hand side vector
+\code
+  auto pipeline_mng = mField.getInterface<PipelineManager>();
+\endcode
+
+- Second, pushing the operators to the Pipeline that is responsible for the
+calculation of the LHS matrix. This should be done in two steps. Initially, the
+operators to calculate the *inverse of the Jacobian* of the mapping from
+reference (parent) space to the physical space is pushed first and then
+the implemented UDO for stiffness matrix `OpDomainLhsMatrixK` is pushed to the 
+LhsPipeline.
+\code
+  { // Push operators to the Pipeline that is responsible for calculating LHS
+    CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+        pipeline_mng->getOpDomainLhsPipeline(), {H1});
+    pipeline_mng->getOpDomainLhsPipeline().push_back(
+        new OpDomainLhsMatrixK(field_name, field_name));
+  }
+\endcode
+It is to be noted that the procedure to calculate the inverse of
+Jacobian with the presence of the gradient of approximation function is needed
+but it is done automatically and user does not have to manually add codes to push any operators calculating the inverse of Jacobian.
+
+- Third, previously in in `boundaryCondition()`, we modified \f$ \bf{u} \f$  and we were waiting to impose the removed DoFs to get the admissible solution. Here, this operation is done by the lamda function 'set_values_to_bc_dofs'. 
+
+
+We enforce the following code snippet to set dofs. First we get the reference \f$ \bf{u}\f$ for BC. Then using 'get_bc_hook' as preprocessing of object 'fe' we set the boundary condition values to \f$ \bf{u_e} \f$.
+\code
+   auto set_values_to_bc_dofs = [&](auto &fe) {
+      auto get_bc_hook = [&]() {
+        EssentialPreProc<TemperatureCubitBcData> hook(mField, fe, {});
+        return hook;
+      };
+      fe->preProcessHook = get_bc_hook();
+    };
+\endcode
+
+<BLOCKQUOTE>
+Note:For the current homogenous problem, if we consider zero boundary condition, that endsup with all the values of \f$ \bf {u_e} \f$ as zero. So then the remainings from the equation (15) is \f$ \bf {K u_0} = \bf {f}\f$. However, in case of non-zero BCs we have to consider \f$\bf {K  u_e}\f$ in the next part.
+</BLOCKQUOTE>
+
+  So the rest of the code should be organised as follows:
+ \code
+// you can skip that if boundary condition is prescribing zero
+    auto calculate_residual_from_set_values_on_bc = [&](auto &pipeline) {
+      using DomainEle =
+          PipelineManager::ElementsAndOpsByDim<SPACE_DIM>::DomainEle;
+      using DomainEleOp = DomainEle::UserDataOperator;
+      using OpInternal = FormsIntegrators<DomainEleOp>::Assembly<
+          PETSC>::LinearForm<GAUSS>::OpGradTimesTensor<1, 1, SPACE_DIM>;
+
+      auto grad_u_vals_ptr = boost::make_shared<MatrixDouble>();
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
+          new OpCalculateScalarFieldGradient<SPACE_DIM>(field_name,
+                                                        grad_u_vals_ptr));
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
+          new OpInternal(field_name, grad_u_vals_ptr,
+                         [](double, double, double) constexpr { return -1; }));
+    };
+
+    CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+        pipeline_mng->getOpDomainRhsPipeline(), {H1});
+    set_values_to_bc_dofs(pipeline_mng->getDomainRhsFE());
+    calculate_residual_from_set_values_on_bc(
+        pipeline_mng->getOpDomainRhsPipeline());
+    pipeline_mng->getOpDomainRhsPipeline().push_back(
+        new OpDomainRhsVectorF(field_name));
+  }
+    MoFEMFunctionReturn(0);
+}
+\endcode
+Here, the lamda function `calculate_residual_from_set_values_on_bc` is to get the \f$\bf {K{u_e}}\f$.  Inside of it, the `OpInternal` integrator serves a dual purpose: it  undertakes system of equations and assembles the matrices, effectively performing a linear multiplication. 
+Upon pushing OpInternal to the pipeline manager, -1 is passed as it is alongside \f$ \bf K {u_e} \f$  as in equation (17). 
+
+\f[
+  \begin{equation}
+    \bf {K  u_0} = f - \bf {K u_e}
+  \end{equation}
+\f]
+
+  
+We do not need derivative of the approximation function to calculate force vector in UDO `OpDomainRhsVectorF`. Consequently, the operators for recalculating inverse of Jacobian is not needed as well as it is integrated with MoFEM.
+
+\subsubsection basic_tutorials_poisson_homogeneous_intergration setIntegrationRules() 
+
+This function is responsible for setting the Gauss integration rules and it
+looks like this
+
+\snippet users_modules/tutorials/scl-1/poisson_2d_homogeneous.cpp Set integration rules
+
+Here \f$ p \f$ is the polynomial order of the approximation function. For
+the LHS matrix, we are calculating the integral of function \f$\nabla \phi_i
+\cdot \nabla \phi_j\f$ so the polynomial order of the integral is \f$ p - 1 \f$ 
+plus \f$ p - 1 \f$ resulting \f$ 2 * (p - 1)\f$  as we see in the 
+implementation of the integration rules for the LHS. Similarly, as we calculate 
+the integral of \f$ \phi_i\f$ for the RHS, we use \f$ p \f$ as the integration 
+rule of the RHS. Having the integration rules, MoFEM will automatically 
+determine the number of integration (Gauss) points that need to be used for 
+each entity (element). Here you can see MoFEM allows you to choose different
+integration rules for different operators.
+
+\subsubsection basic_tutorials_poisson_homogeneous_solve solveSystem()
+Having the computation of LHS and RHS is defined in the previous function. We
+now can actually solve the system of equations using iterative KSP solver from
+[PETSc](https://www.mcs.anl.gov/petsc/).
+
+The codes for the function that is responsible for solving the systems of
+equations look like this
+
+\snippet users_modules/tutorials/scl-1/poisson_2d_homogeneous.cpp Solve system
+
+It starts first with getting the pipeline manager
+\code
+  auto pipeline_mng = mField.getInterface<PipelineManager>();
+\endcode 
+
+Then create the KSP solver using wrapped function in MoFEM
+(`pipeline_mng->createKSP()`) and setup the solver using PETSc functions
+\code
+  auto ksp_solver = pipeline_mng->createKSP();
+  CHKERR KSPSetFromOptions(ksp_solver);
+  CHKERR KSPSetUp(ksp_solver);
+\endcode
+
+Next is getting the Discrete Manager (`dm`) which is a common object allowing
+things implemented in MoFEM talk to things implemented in PETSc before
+initilising the RHS and solution vectors
+\code
+  // Create RHS and solution vectors
+  auto dm = simpleInterface->getDM();
+  auto F = createDMVector(dm);
+  auto D = vectorDuplicate(F);
+\endcode
+
+At this particular point, Discrete Manager allows the two pipelines (responsible
+for LHS and RHS) implemented in MoFEM to be used as the input for KSP solver
+implemented in PETSc. From that, the solution vector \f$ {\bf U} \f$ of the
+system of equations \f${\bf KU=F} \f$ will be obtained when the KSP solver is
+triggered by this
+\code
+  // Solve the system
+  CHKERR KSPSolve(ksp_solver, F, D);
+\endcode
+It is important to note that all the implementation of the UDOs presented in the
+previous sections was just the definition. All the calculations (all the loops
+to calculate matrix and vector entries implemented in UDOs) are only triggered
+when the line of code above calling `KSPSolve()` function is executed.
+
+Lastly, the results are scattered through DM and ready to be fed to the output
+mesh in the next step
+\code
+  // Scatter result data on the mesh
+  CHKERR VecGhostUpdateBegin(D, INSERT_VALUES, SCATTER_FORWARD);
+  CHKERR VecGhostUpdateEnd(D, INSERT_VALUES, SCATTER_FORWARD);
+  CHKERR DMoFEMMeshToLocalVector(dm, D, INSERT_VALUES, SCATTER_REVERSE);
+\endcode
+
+
+\subsubsection basic_tutorials_poisson_homogeneous_output outputResults() 
+
+This function is solely responsible for the postprocessing of the results
+writing the calculated field values to the output mesh.
+
+\snippet users_modules/tutorials/scl-1/poisson_2d_homogeneous.cpp Output results
+
+\subsubsection basic_tutorials_poisson_homogeneous_run_analysis runProgram() 
+
+Finally, having all the necessary tasks implemented in the corresponding
+functions, we can now put them together in the last function of the main class.
+This function is responsible for the calling sequence which is similar to most
+of other finite element programs
+
+\snippet users_modules/tutorials/scl-1/poisson_2d_homogeneous.cpp Run program
+
+\subsection basic_tutorials_poisson_homogeneous_main_function The main() function
+
+This `main()` function does not do much job apart from creating the top-level
+class and call the function to trigger the analysis 
+
+\snippet users_modules/tutorials/scl-1/poisson_2d_homogeneous.cpp Main
+
+So you can see, at the beginning, it creates the Discrete Managers that enable
+information flows between MoFEM (finite element implementation), MOAB (element
+topology management), and PETSc (algebraic solvers). After that, it creates
+variable `poisson_problem` of type/class `Poisson2DHomogeneous` which is
+previously defined and then run the analysis by triggering the public function runProgram().
+\code
+    // Run the main analysis
+    Poisson2DHomogeneous poisson_problem(m_field);
+    CHKERR poisson_problem.runProgram();
+\endcode
+
+
+\section basic_tutorials_poisson_homogeneous_result Results
+
+\subsection basic_tutorials_poisson_homogeneous_run_program Run the program
+
+In order to run the program that we have been discussing in this tutorial, you
+will do the following steps
+- First, go to the directory where the binary file `poisson_2d_homogeneous` is
+  located. Depending on how you install MoFEM shown in this page \ref
+  installation, going to the directory would be something similar to this 
+  - For user version installation
+    \code
+    cd mofem_install/um_view/tutorials/scl-1/
+    \endcode
+  - For developer version installation
+    \code
+    cd mofem_install/mofem-cephas/mofem/users_modules/um-build-RelWithDebInfo-abcd1234/tutorials/scl-1
+    \endcode
+
+- Second, check the parameters in the param_file.petsc. These are PETSc
+  parameters and you should only use parameters that are needed for a particular
+  solver, in this case KSP solver. Only the following parameters should be
+  uncommented
+  \code
+  ## Linear solver
+  -ksp_type fgmres 
+  -pc_type lu 
+  -pc_factor_mat_solver_type mumps
+  -ksp_monitor
+  \endcode
+- Third, in the terminal, run commands to partition the input mesh and start
+  the analysis
+  \code
+  mofem_part -my_file square.h5m -output_file square_2parts.h5m -my_nparts 2 -dim 2 -adj_dim 1
+  mpirun -np 2 ./poisson_2d_homogeneous -file_name square_2parts.h5m -order 4
+  \endcode
+  where the mesh of a square plate is partitioned into two parts and then the
+  program is run using two processors (the same number of partitions) with
+  fourth order polynomial of approximation.
+
+\subsection basic_tutorials_poisson_homogeneous_op Output
+
+Once the analaysis is complete, you see all output messages printed to the
+terminal
+- Version of MoFEM used to run the analysis
+\code
+MoFEM version 0.11.0 (MOAB 5.2.1 Petsc Release Version 3.11.4, Sep, 28, 2019 )
+git commit id 0ac8895b15c4ad41ea5e7077c4d011f7efb50f13
+\endcode
+- Meshset and entity blocks defined in the input mesh
+\code
+read cubit meshset 12682136550675316738 type BLOCKSET UNKNOWNNAME msId 1 name square
+read cubit meshset 12682136550675316739 type BLOCKSET UNKNOWNNAME msId 2 name boundary                       
+read cubit meshset 12682136550675316740 type BLOCKSET UNKNOWNNAME msId 3 name surface                        
+read cubit meshset 12682136550675316741 type BLOCKSET MAT_ELASTICSET msId 100 name MAT_ELASTIC
+read cubit meshset 12682136550675316742 type BLOCKSET UNKNOWNNAME msId 110 name BOUNDARY_CONDITION
+\endcode
+- Domain field name, approximation space and bases, as well as rank (1 for
+  scalar problem) as implemented in \ref   basic_tutorials_poisson_homogeneous_setupproblem
+\code
+Add field U field_id 1 space H1 approximation base AINSWORTH_BERNSTEIN_BEZIER_BASE rank 1 meshset 12682136550675316745
+Add finite element dFE
+\endcode
+- General information about the problem including removing DOFs associated with
+  the boundary
+\code
+Add problem SimpleProblem
+Number of dofs 1687
+Number of dofs 1659
+Finite element dFE added. Nb. of elements added 205
+Finite element dFE added. Nb. of elements added 201
+Number of adjacencies 1435
+SimpleProblem Nb. local dof 1687 by 1687 nb global dofs 3289 by 3289
+SimpleProblem Nb. local dof 1602 by 1602 nb global dofs 3289 by 3289
+ FEs ghost dofs on problem SimpleProblem Nb. ghost dof 0 by 0 Nb. local dof 1687 by 1687
+ FEs ghost dofs on problem SimpleProblem Nb. ghost dof 57 by 57 Nb. local dof 1602 by 1602
+removed ents on rank 0 from problem SimpleProblem dofs [ 1650 / 1650  (before 3289 / 3289) local, 0 / 0 (before 0 / 0) ghost, 3209 / 3209 (before 1687 / 1687) global]
+removed ents on rank 1 from problem SimpleProblem dofs [ 1559 / 1559  (before 3289 / 3289) local, 55 / 55 (before 57 / 57) ghost, 3209 / 3209 (before 1602 / 1602) global]
+
+\endcode
+- Convergence of the KSP iterative solver from PETSC. As shown, it is converged
+  is one step which is expected for this simple linear problem.
+\code
+  0 KSP Residual norm 1.057541430518e-01 
+  1 KSP Residual norm 2.720205258196e-15 
+\endcode
+
+
+Then, you also see in the directory where you run the analysis, it now has
+the newly created output file, namely `out_result.h5m`. The output can be
+visualised in a visualisation software. If you would like to open the output in
+the free software of [Paraview](https://www.paraview.org), you would need to
+convert the input file to `*.vtk` format by running the following command line
+in your terminal
+\code
+mbconvert out_result.h5m out_result.vtk
+\endcode
+Then open it in Paraview and use the filter `WarpByScalar`, you will be able to
+see the deformation as below
+
+\anchor figure_poisson_homogeneous
+\image html poisson_homogeneous.png "Figure 2: Poisson homogeneous visualisation." width = 900px
+
+
+\subsection basic_tutorials_poisson_homogeneous_discussion Discussion
+
+As mentioned at the beginning of this tutorial, this Poisson
+equation with homogeneous boundary condition helps to predict the deformation
+of a membrane that is fixed at the boundary bearing an uniformly distributed
+force on its surface. In this case, the force \f$ f=5.0\f$ is hardcoded in the
+code.
+
+You can test yourself how the increase/decrease in approximation order affects
+the number of DOFs and the analysis time. Also, you can do the same
+investigation but by changing the mesh density.
+
+Regarding the implementation in MoFEM, it is important that you get the concept
+of developing/using **UDOs** to evaluate the matrices and vectors and then push
+them, in a certain order, to the **Pipelines** where calculations are done
+sequentially. These concepts will apply to all of the programs implemented in
+MoFEM. 
+
+
+You can find the complete code to solve 3D version of the Poisson problem with
+homogeneous boundary condition, using the same source code by setting variable 
+EXECUTABLE_DIMENSION=3, see CMakeList.txt file in `mofem_install/um_view/tutorials/scl-1/`
+\code
+tutorials_build_and_install(
+  poisson_3d_homogeneous ${CMAKE_CURRENT_SOURCE_DIR}/poisson_2d_homogeneous.cpp)
+set_target_properties(
+  poisson_3d_homogeneous PROPERTIES COMPILE_FLAGS 
+  "-DEXECUTABLE_DIMENSION=3")
+\endcode
+
+To run the analysis, you will follow very similar procedure as for the 2D case
+using the same `param_file.petsc` file with slight changes in the command lines
+\code
+  mofem_part -my_file cube.h5m -output_file cube_2parts.h5m -my_nparts 2 -dim 3 -adj_dim 1
+  mpirun -np 2 ./poisson_3d_homogeneous -file_name cube_2parts.h5m -order 4 -log_quiet
+\endcode
+
+\section basic_tutorials_poisson_homogeneous_plain_program Plain program 
+
+
+The plain program for both the implementation of the UDOs (\c *.hpp) and the
+main program (\c *.cpp) are as follows
+
+\subsection basic_tutorials_poisson_homogeneous_impl_udo Implementation of User Data Operators (*.hpp)
+
+\include poisson_2d_homogeneous.hpp
+
+\subsection basic_tutorials_poisson_homogeneous_impl_main Implementation of the main program (*.cpp) 
+
+\include poisson_2d_homogeneous.cpp
+
+
+
+
+*/
+

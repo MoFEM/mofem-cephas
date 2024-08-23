@@ -1,0 +1,22 @@
+reset
+
+create surface rectangle width 2 height 1 zplane 
+split curve 1  fraction 0.25
+split curve 6  fraction 0.6666
+
+block 1 add volume all
+block 1 name "BODY_FORCE"
+block 1 attribute count 2
+block 1 attribute index 1 0
+block 1 attribute index 2 1
+
+create displacement  on curve 3  dof 1 dof 2 dof 3 fix 0 
+#create displacement  on curve 7  dof 2 fix 1 
+#create pressure  on curve 4  magnitude -1 
+#create force  on curve 2  force value 1 direction X 
+
+surface all size auto factor 6
+surface all scheme trimesh
+mesh surface all
+
+€refine vertex 5 6 numsplit 4 bias 1.0 depth 1 smooth
