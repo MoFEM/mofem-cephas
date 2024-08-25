@@ -7,4 +7,6 @@ AlignOperands:   true
 AllowAllParametersOfDeclarationOnNextLine: true
 
 SortIncludes: false
+
+IndentPPDirectives: BeforeHash
 ...

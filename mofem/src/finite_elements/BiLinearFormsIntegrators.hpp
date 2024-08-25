@@ -149,7 +149,7 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
    */
   template <int FIELD_DIM>
   using OpBrokenSpaceConstrain =
-      OpBrokenSpaceConstrainImpl<FIELD_DIM, I, OpBase>;
+      OpBrokenSpaceConstrainImpl<FIELD_DIM, I, OpBrokenBase>;
 };
 
 } // namespace MoFEM

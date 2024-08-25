@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
       BERNSTEIN,
       LASBASETOP
     };
-    const char *list_bases[] = {"ainsworth", "ainsworth_labatto", "demkowicz",
+    const char *list_bases[] = {"ainsworth", "ainsworth_lobatto", "demkowicz",
                                 "bernstein"};
     PetscBool flg;
     PetscInt choice_base_value = AINSWORTH;
@@ -155,6 +155,10 @@ int main(int argc, char *argv[]) {
     CHKERR simple->setFieldOrder("HYBRID", approx_order - 1);
 
     CHKERR simple->setUp();
+
+    auto bc_mng = m_field.getInterface<BcManager>();
+    CHKERR bc_mng->removeSideDOFs(simple->getProblemName(), "ZERO_FLUX",
+                                  "BROKEN", SPACE_DIM, 0, 1, true);
 
     auto integration_rule = [](int, int, int p) { return 2 * p; };
 
@@ -235,7 +239,7 @@ int main(int argc, char *argv[]) {
           AT>::LinearForm<IT>::OpSource<1, 1>;
       auto source = [&](const double x, const double y,
                         const double z) constexpr {
-        return -1;//sin(100 * (x / 10.) * M_PI_2);
+        return -1; // sin(100 * (x / 10.) * M_PI_2);
       };
       pip.push_back(new OpDomainSource("U", source));
       MoFEMFunctionReturn(0);
@@ -251,7 +255,9 @@ int main(int argc, char *argv[]) {
     CHKERR pip_mng->setSkeletonLhsIntegrationRule(integration_rule);
     CHKERR pip_mng->setSkeletonRhsIntegrationRule(integration_rule);
 
-    TetPolynomialBase::switchCacheHDivBaseOn(
+    TetPolynomialBase::switchCacheBaseOn<HDIV>(
+        {pip_mng->getDomainLhsFE().get(), pip_mng->getDomainRhsFE().get()});
+    TetPolynomialBase::switchCacheBaseOn<L2>(
         {pip_mng->getDomainLhsFE().get(), pip_mng->getDomainRhsFE().get()});
 
     auto x = createDMVector(simple->getDM());
@@ -327,7 +333,6 @@ int main(int argc, char *argv[]) {
       boost::shared_ptr<VectorDouble> u_ptr =
           boost::make_shared<VectorDouble>();
       domain_rhs.push_back(new OpCalculateScalarFieldValues("U", u_ptr));
-      auto minus = [](double, double, double) constexpr { return -1; };
       domain_rhs.push_back(new OpHDivH("BROKEN", u_ptr, beta));
       domain_rhs.push_back(new OpHdivFlux("BROKEN", flux_ptr, beta));
 
@@ -428,7 +433,7 @@ int main(int argc, char *argv[]) {
                         const double z) constexpr { return -1; };
       domain_rhs.push_back(new OpGetTensor0fromFunc(source_ptr, source));
 
-      enum { DIV, GRAD, LAST};
+      enum { DIV, GRAD, LAST };
       auto mpi_vec = createVectorMPI(
           m_field.get_comm(), (!m_field.get_comm_rank()) ? LAST : 0, LAST);
       domain_rhs.push_back(
@@ -448,9 +453,8 @@ int main(int argc, char *argv[]) {
         MOFEM_LOG("AT", Sev::inform)
             << "Approximation error ||div flux - source||: "
             << std::sqrt(error_ind[DIV]);
-        MOFEM_LOG("AT", Sev::inform)
-            << "Approximation error ||grad-flux||: "
-            << std::sqrt(error_ind[GRAD]);
+        MOFEM_LOG("AT", Sev::inform) << "Approximation error ||grad-flux||: "
+                                     << std::sqrt(error_ind[GRAD]);
         CHKERR VecRestoreArrayRead(mpi_vec, &error_ind);
       }
 
@@ -476,7 +480,6 @@ int main(int argc, char *argv[]) {
           new OpCalculateScalarFieldValues("U", u_vec_ptr));
       op_loop_side->getOpPtrVector().push_back(
           new OpCalculateHVecVectorField<3>("BROKEN", flux_mat_ptr));
-
       op_loop_side->getOpPtrVector().push_back(
 
           new OpPPMap(
@@ -632,7 +635,7 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
 
       );
 
-      return getNestSchurData(
+      return createSchurNestedMatrixStruture(
 
           {schur_dm, block_dm}, block_mat_data,
 
@@ -653,9 +656,8 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
           createOpSchurAssembleBegin());
       pip_mng->getOpDomainLhsPipeline().push_back(
 
-          createOpSchurAssembleEnd(
-              {"BROKEN", "U"}, {nullptr, nullptr}, {SmartPetscObj<AO>(), ao_up},
-              {SmartPetscObj<Mat>(), S}, {true, true}, true, block_data)
+          createOpSchurAssembleEnd({"BROKEN", "U"}, {nullptr, nullptr}, ao_up,
+                                   S, true, true)
 
       );
 
@@ -697,9 +699,11 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
     auto set_diagonal_pc = [&](auto pc, auto schur_dm) {
       MoFEMFunctionBegin;
 
-      auto A = createDMBlockMat(simple->getDM());
-      auto P = createDMNestSchurMat(simple->getDM());
-      CHKERR PCSetOperators(pc, A, P);
+      if (AT == BLOCK_SCHUR) {
+        auto A = createDMBlockMat(simple->getDM());
+        auto P = createDMNestSchurMat(simple->getDM());
+        CHKERR PCSetOperators(pc, A, P);
+      } 
 
       KSP *subksp;
       CHKERR PCFieldSplitSchurGetSubKSP(pc, PETSC_NULL, &subksp);
@@ -732,8 +736,10 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
     };
 
     auto [schur_dm, block_dm] = create_sub_dm();
-    auto nested_mat_data = get_nested_mat_data(schur_dm, block_dm);
-    CHKERR DMMoFEMSetNestSchurData(simple->getDM(), nested_mat_data);
+    if (AT == BLOCK_SCHUR) {
+      auto nested_mat_data = get_nested_mat_data(schur_dm, block_dm);
+      CHKERR DMMoFEMSetNestSchurData(simple->getDM(), nested_mat_data);
+    }
     S = createDMHybridisedL2Matrix(schur_dm);
     CHKERR MatSetDM(S, PETSC_NULL);
     int bs = (SPACE_DIM == 2) ? NBEDGE_L2(approx_order - 1)
@@ -744,10 +750,12 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
     CHKERR set_pc(pc, block_dm);
     DM solver_dm;
     CHKERR KSPGetDM(ksp, &solver_dm);
-    CHKERR DMSetMatType(solver_dm, MATSHELL);
+    if (AT == BLOCK_SCHUR)
+      CHKERR DMSetMatType(solver_dm, MATSHELL);
 
     CHKERR KSPSetUp(ksp);
-    CHKERR set_diagonal_pc(pc, schur_dm);
+    if (AT == BLOCK_SCHUR)
+      CHKERR set_diagonal_pc(pc, schur_dm);
 
   } else {
     SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,

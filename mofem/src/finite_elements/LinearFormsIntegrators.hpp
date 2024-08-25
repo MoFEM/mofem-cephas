@@ -184,7 +184,7 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
    */
   template <int FIELD_DIM>
   using OpBrokenSpaceConstrainDFlux =
-      OpBrokenSpaceConstrainDFluxImpl<FIELD_DIM, I, OpBase>;
+      OpBrokenSpaceConstrainDFluxImpl<FIELD_DIM, I, OpBrokenBase>;
 };
 
 } // namespace MoFEM

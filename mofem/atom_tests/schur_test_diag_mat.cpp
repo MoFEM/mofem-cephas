@@ -132,6 +132,12 @@ int main(int argc, char *argv[]) {
     // setup problem
     CHKERR simple->setUp();
 
+    // If block "VOL" exist, first index is removed from "T" field. That test
+    // blocks handling when some DOFs are removed.
+    auto bc_mng = m_field.getInterface<BcManager>();
+    CHKERR bc_mng->removeBlockDOFsOnEntities(simple->getProblemName(), "VOL",
+                                             "T", 0, 1);
+
     auto schur_dm = createDM(m_field.get_comm(), "DMMOFEM");
     CHKERR DMMoFEMCreateSubDM(schur_dm, simple->getDM(), "SCHUR");
     CHKERR DMMoFEMSetSquareProblem(schur_dm, PETSC_TRUE);
@@ -188,7 +194,7 @@ int main(int argc, char *argv[]) {
 
     auto [nested_mat, nested_data_ptr] = createSchurNestedMatrix(
 
-        getNestSchurData(
+        createSchurNestedMatrixStruture(
 
             {schur_dm, block_dm}, block_data_ptr,
 
@@ -251,13 +257,7 @@ int main(int argc, char *argv[]) {
 
     pip_lhs.push_back(createOpSchurAssembleEnd(
 
-        fields,
-
-        {nullptr, nullptr, nullptr},
-
-        {nullptr, nullptr, ao_up}, {nullptr, nullptr, S},
-
-        {true, true, true}, true, block_data_ptr)
+        fields, {nullptr, nullptr, nullptr}, ao_up, S, true, true)
 
     );
 
@@ -376,7 +376,7 @@ int main(int argc, char *argv[]) {
     CHKERR MatMult(diag_mat, diag_block_x, diag_block_f);
     // That is if one like to use MatSolve directly, not though PC, as it is
     // below 
-    //CHKERR MatSolve(diag_mat, diag_block_f, block_solved_x);
+    // CHKERR MatSolve(diag_mat, diag_block_f, block_solved_x);
 
     // set matrix type to shell, set data
     CHKERR DMSetMatType(block_dm, MATSHELL);

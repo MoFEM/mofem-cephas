@@ -1203,3 +1203,115 @@ TriPolynomialBase::getValue(MatrixDouble &pts,
 
   MoFEMFunctionReturn(0);
 }
+
+MoFEMErrorCode TriPolynomialBase::setDofsSideMap(
+
+    const FieldSpace space, const FieldContinuity continuity,
+    const FieldApproximationBase base, DofsSideMap &dofs_side_map
+
+) {
+  MoFEMFunctionBegin;
+
+  switch (continuity) {
+  case DISCONTINUOUS:
+
+    switch (space) {
+    case HCURL:
+      CHKERR setDofsSideMapHcurl(space, continuity, base, dofs_side_map);
+      break;
+    default:
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Unknown space %s",
+               FieldSpaceNames[space]);
+    }
+    break;
+
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+            "Unknown (or not implemented) continuity");
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode TriPolynomialBase::setDofsSideMapHcurl(
+    const FieldSpace space, const FieldContinuity continuity,
+    const FieldApproximationBase base, DofsSideMap &dofs_side_map) {
+  MoFEMFunctionBegin;
+
+  // That has to be consistent with implementation of getValueHdiv for
+  // particular base functions.
+
+  auto set_ainsworth = [&dofs_side_map]() {
+    MoFEMFunctionBegin;
+
+    dofs_side_map.clear();
+
+    int dof = 0;
+    for (int oo = 0; oo < Field::maxBrokenDofsOrder; oo++) {
+
+      // edges
+      for (int dd = NBEDGE_AINSWORTH_HCURL(oo);
+           dd != NBEDGE_AINSWORTH_HCURL(oo + 1); ++dd) {
+        for (int ee = 0; ee != 3; ++ee) {
+          dofs_side_map.insert(DofsSideMapData{MBEDGE, ee, dof});
+          ++dof;
+        }
+      }
+      // face
+      for (int dd = NBFACETRI_AINSWORTH_HCURL(oo);
+           dd != NBFACETRI_AINSWORTH_HCURL(oo + 1); ++dd) {
+        dofs_side_map.insert(DofsSideMapData{MBTRI, 0, dof});
+        ++dof;
+      }
+    }
+
+    MoFEMFunctionReturn(0);
+  };
+
+  auto set_demkowicz = [&dofs_side_map]() {
+    MoFEMFunctionBegin;
+
+    dofs_side_map.clear();
+
+    int dof = 0;
+    for (int oo = 0; oo < Field::maxBrokenDofsOrder; oo++) {
+
+      // edges
+      for (int dd = NBEDGE_DEMKOWICZ_HCURL(oo);
+           dd != NBEDGE_DEMKOWICZ_HCURL(oo + 1); ++dd) {
+        for (int ee = 0; ee != 3; ++ee) {
+          dofs_side_map.insert(DofsSideMapData{MBEDGE, ee, dof});
+          ++dof;
+        }
+      }
+      // faces
+      for (int dd = NBFACETRI_DEMKOWICZ_HCURL(oo);
+           dd != NBFACETRI_DEMKOWICZ_HCURL(oo + 1); ++dd) {
+        dofs_side_map.insert(DofsSideMapData{MBTRI, 0, dof});
+        ++dof;
+      }
+    }
+
+    MoFEMFunctionReturn(0);
+  };
+
+  switch (continuity) {
+  case DISCONTINUOUS:
+    switch (base) {
+    case AINSWORTH_LEGENDRE_BASE:
+    case AINSWORTH_LOBATTO_BASE:
+      return set_ainsworth();
+    case DEMKOWICZ_JACOBI_BASE:
+      return set_demkowicz();
+    default:
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
+    }
+    break;
+
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+            "Unknown (or not implemented) continuity");
+  }
+
+  MoFEMFunctionReturn(0);
+}

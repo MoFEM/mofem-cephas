@@ -188,7 +188,6 @@ MoFEMErrorCode BcManager::addBlockDOFsToMPCs(const std::string problem_name,
                                              bool block_name_field_prefix,
                                              bool is_distributed_mesh) {
   Interface &m_field = cOre;
-  auto prb_mng = m_field.getInterface<ProblemsManager>();
   MoFEMFunctionBegin;
 
   if (block_name_field_prefix)
@@ -206,13 +205,6 @@ MoFEMErrorCode BcManager::addBlockDOFsToMPCs(const std::string problem_name,
       if (ents.num_of_dimension(d))
         return d;
     return 0;
-  };
-
-  auto mark_fix_dofs = [&](std::vector<unsigned char> &marked_field_dofs,
-                           const auto lo, const auto hi) {
-    return prb_mng->modifyMarkDofs(problem_name, ROW, field_name, lo, hi,
-                                   ProblemsManager::MarkOP::OR, 1,
-                                   marked_field_dofs);
   };
 
   auto iterate_mpc_meshsets = [&]() {
@@ -246,18 +238,15 @@ MoFEMErrorCode BcManager::addBlockDOFsToMPCs(const std::string problem_name,
               corresponding_master_ms, &l);
           bc->mpcPtr->isReprocitical = false;
 
-          // std::cout << "master meshset is: " << master_nodes << "\n";
-            CHKERR m_field.get_moab().get_entities_by_handle(
-                l->getMeshset(), master_nodes, true);
-            // std::cout << "master meshset is: " << master_nodes << "\n";
-          // if (master_nodes.subset_by_dimension(0).size() <  links_ents.subset_by_dimension(1))
+          CHKERR m_field.get_moab().get_entities_by_handle(l->getMeshset(),
+                                                           master_nodes, true);
+          // if (master_nodes.subset_by_dimension(0).size() <
+          // links_ents.subset_by_dimension(1))
           {
             auto low_dim_ents = BcManagerImplTools::get_adj_ents(
                 m_field.get_moab(), master_nodes);
-            // std::cout << "lower_dim meshset is: " << low_dim_ents << "\n"; 
             low_dim_ents = low_dim_ents.subset_by_dimension(0);
             master_nodes.swap(low_dim_ents);
-            // std::cout << "master meshset 2 is: " << master_nodes << "\n";
           }
 
           MOFEM_LOG("BcMngWorld", Sev::verbose)
@@ -289,7 +278,8 @@ MoFEMErrorCode BcManager::addBlockDOFsToMPCs(const std::string problem_name,
               if (master_nodes.find(m_node) != master_nodes.end()) {
                 // std::cout << "found ent: " << m_node << "\n";
                 bc->mpcPtr->mpcMasterEnts.insert(m_node);
-                bc->mpcPtr->mpcSlaveEnts.merge(subtract(verts, Range(m_node, m_node)));
+                bc->mpcPtr->mpcSlaveEnts.merge(
+                    subtract(verts, Range(m_node, m_node)));
                 break;
               }
           }
@@ -298,51 +288,53 @@ MoFEMErrorCode BcManager::addBlockDOFsToMPCs(const std::string problem_name,
         MOFEM_LOG("BcMngWorld", Sev::verbose)
             << "Found block MPC LINKS block: " << m->getName()
             << " Entities size (edges): " << links_ents.size()
-            << " Entities size (nodes): " << bc->mpcPtr->mpcMasterEnts.size() + bc->mpcPtr->mpcSlaveEnts.size()
-            << " (" << bc->mpcPtr->mpcMasterEnts.size() << " " << bc->mpcPtr->mpcSlaveEnts.size() << ")";
-            
-            MOFEM_LOG("BcMngSync", Sev::noisy) << *bc->mpcPtr;
-            MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::noisy);
+            << " Entities size (nodes): "
+            << bc->mpcPtr->mpcMasterEnts.size() +
+                   bc->mpcPtr->mpcSlaveEnts.size()
+            << " (" << bc->mpcPtr->mpcMasterEnts.size() << " "
+            << bc->mpcPtr->mpcSlaveEnts.size() << ")";
 
-            // CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(
-            //     bc->mpcPtr->mpcMasterEnts);
-            // CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(
-            //     bc->mpcPtr->mpcSlaveEnts);
-            vector<double> mAttributes;
-            CHKERR m->getAttributes(mAttributes);
+        MOFEM_LOG("BcMngSync", Sev::noisy) << *bc->mpcPtr;
+        MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::noisy);
 
-            auto setFlags = [&](const auto &flags) {
-              auto &d = bc->mpcPtr->data;
-              if (flags.empty()) {
-                d.flag1 = d.flag2 = d.flag3 = d.flag4 = d.flag5 = d.flag6 =
-                    true;
-                return;
-              }
-              for (size_t i = 0; i < std::min(flags.size(), size_t(6)); ++i)
-                (&d.flag1)[i] = flags[i] > 0.0;
-            };
+        // CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(
+        //     bc->mpcPtr->mpcMasterEnts);
+        // CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(
+        //     bc->mpcPtr->mpcSlaveEnts);
+        vector<double> mAttributes;
+        CHKERR m->getAttributes(mAttributes);
 
-            setFlags(mAttributes);
+        auto setFlags = [&](const auto &flags) {
+          auto &d = bc->mpcPtr->data;
+          if (flags.empty()) {
+            d.flag1 = d.flag2 = d.flag3 = d.flag4 = d.flag5 = d.flag6 = true;
+            return;
+          }
+          for (size_t i = 0; i < std::min(flags.size(), size_t(6)); ++i)
+            (&d.flag1)[i] = flags[i] > 0.0;
+        };
 
-            MOFEM_LOG("BcMngWorld", Sev::verbose)
-                << "Found block " << m->getName() << " number of entities "
-                << bc->mpcPtr->mpcMasterEnts.size() << " number of attributes "
-                << mAttributes.size() << " highest dim of entities "
-                << get_dim(bc->mpcPtr->mpcMasterEnts);
+        setFlags(mAttributes);
 
-            // NOTE: we are not using markers at the moment
-            // for (int i = 0; i != mAttributes.size(); ++i) {
-            //   if (mAttributes[i] > 0.0)
-            //     CHKERR mark_fix_dofs(bc->mpcPtr->bcMasterMarkers, i, i);
-            // }
+        MOFEM_LOG("BcMngWorld", Sev::verbose)
+            << "Found block " << m->getName() << " number of entities "
+            << bc->mpcPtr->mpcMasterEnts.size() << " number of attributes "
+            << mAttributes.size() << " highest dim of entities "
+            << get_dim(bc->mpcPtr->mpcMasterEnts);
 
-            // if (mAttributes.empty())
-            //   CHKERR mark_fix_dofs(bc->mpcPtr->bcMasterMarkers, 0,
-            //                        MAX_DOFS_ON_ENTITY);
+        // NOTE: we are not using markers at the moment
+        // for (int i = 0; i != mAttributes.size(); ++i) {
+        //   if (mAttributes[i] > 0.0)
+        //     CHKERR mark_fix_dofs(bc->mpcPtr->bcMasterMarkers, i, i);
+        // }
 
-            const std::string bc_id =
-                problem_name + "_" + field_name + "_" + m->getName();
-            bcMapByBlockName[bc_id] = bc;
+        // if (mAttributes.empty())
+        //   CHKERR mark_fix_dofs(bc->mpcPtr->bcMasterMarkers, 0,
+        //                        MAX_DOFS_ON_ENTITY);
+
+        const std::string bc_id =
+            problem_name + "_" + field_name + "_" + m->getName();
+        bcMapByBlockName[bc_id] = bc;
       }
     }
     MoFEMFunctionReturn(0);
@@ -1566,7 +1558,8 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities<BcForceMeshsetType<BLOCKSET>>(
       }
 
       bc->forceBcPtr = boost::make_shared<ForceCubitBcData>();
-      // For details look at ForceCubitBcData in mofem/src/multi_indices/BCData.hpp
+      // For details look at ForceCubitBcData in
+      // mofem/src/multi_indices/BCData.hpp
       bc->forceBcPtr->data.value1 = 1;
       bc->forceBcPtr->data.value3 = bc->bcAttributes[0];
       bc->forceBcPtr->data.value4 = bc->bcAttributes[1];
@@ -1782,5 +1775,103 @@ MoFEMErrorCode BcManager::removeBlockDOFsOnEntities<ForceCubitBcData>(
 
   MoFEMFunctionReturn(0);
 };
+
+MoFEMErrorCode BcManager::pushMarkSideDofs(
+
+    const std::string problem_name, const std::string block_name,
+    const std::string field_name, int bridge_dim, int lo, int hi
+
+) {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+
+  if (problem_name.empty())
+    MoFEMFunctionReturnHot(0);
+
+  auto iterate_meshsets = [&](auto &&meshset_vec_ptr) {
+    auto prb_mng = m_field.getInterface<ProblemsManager>();
+    MoFEMFunctionBegin;
+    for (auto m : meshset_vec_ptr) {
+      auto bc = boost::make_shared<BCs>();
+      CHKERR m_field.get_moab().get_entities_by_handle(m->getMeshset(),
+                                                       bc->bcEnts, true);
+      CHKERR m->getAttributes(bc->bcAttributes);
+
+      bc->dofsViewPtr = boost::make_shared<BCs::DofsView>();
+
+      CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(
+          bc->bcEnts);
+      CHKERR prb_mng->getSideDofsOnBrokenSpaceEntities(
+          *(bc->dofsViewPtr), problem_name, ROW, field_name, bc->bcEnts,
+          bridge_dim, lo, hi);
+      CHKERR prb_mng->markDofs(problem_name, ROW, *(bc->dofsViewPtr),
+                               ProblemsManager::OR, bc->bcMarkers);
+
+      MOFEM_LOG("BcMngWorld", Sev::inform)
+          << "Found block " << m->getName() << " number of attributes "
+          << bc->bcAttributes.size() << " number of entities "
+          << bc->bcEnts.size();
+
+      const std::string bc_id =
+          problem_name + "_" + field_name + "_" + m->getName();
+      bcMapByBlockName[bc_id] = bc;
+    }
+    MoFEMFunctionReturn(0);
+  };
+
+  CHKERR iterate_meshsets(
+
+      m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(std::regex(
+
+          (boost::format("%s(.*)") % block_name).str()
+
+              ))
+
+  );
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode BcManager::removeSideDOFs(const std::string problem_name,
+                                         const std::string block_name,
+                                         const std::string field_name,
+                                         int bridge_dim, int lo, int hi,
+                                         bool is_distributed_mesh) {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+
+  CHKERR pushMarkSideDofs(problem_name, block_name, field_name, bridge_dim, lo,
+                          hi);
+
+  auto iterate_meshsets = [&](auto &&meshset_vec_ptr) {
+    MoFEMFunctionBegin;
+    auto prb_mng = m_field.getInterface<ProblemsManager>();
+    for (auto m : meshset_vec_ptr) {
+      const std::string bc_id =
+          problem_name + "_" + field_name + "_" + m->getName();
+      auto &bc = bcMapByBlockName.at(bc_id);
+      CHKERR prb_mng->removeDofs(problem_name, ROW, *(bc->dofsViewPtr), lo, hi);
+      CHKERR prb_mng->removeDofs(problem_name, COL, *(bc->dofsViewPtr), lo, hi);
+    }
+    MoFEMFunctionReturn(0);
+  };
+
+  if (is_distributed_mesh) {
+
+    CHKERR iterate_meshsets(
+
+        m_field.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(std::regex(
+
+            (boost::format("%s(.*)") % block_name).str()
+
+                ))
+
+    );
+  } else {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Not implemented");
+  }
+
+  MoFEMFunctionReturn(0);
+}
 
 } // namespace MoFEM

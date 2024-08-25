@@ -24,6 +24,25 @@ struct TriPolynomialBase : public BaseFunction {
   MoFEMErrorCode getValue(MatrixDouble &pts,
                           boost::shared_ptr<BaseFunctionCtx> ctx_ptr);
 
+  /**
+   * @brief Set map of dof to side number
+   *
+   * That is used for broken space to establish connection between dofs in the
+   * interior of element/entity and side of element/entity to which that dof is
+   * associated. That depends on implementation of the base for given space, and
+   * has to be implemented while implementing base function for given space.
+   *
+   * @param space
+   * @param continuity
+   * @param base
+   * @param DofsSideMap
+   * @return MoFEMErrorCode
+   */
+  static MoFEMErrorCode setDofsSideMap(const FieldSpace space,
+                                       const FieldContinuity continuity,
+                                       const FieldApproximationBase base,
+                                       DofsSideMap &);
+
 private:
   EntPolynomialBaseCtx *cTx;
 
@@ -52,6 +71,11 @@ private:
 
   MoFEMErrorCode getValueHcurlAinsworthBrokenBase(MatrixDouble &pts);
   MoFEMErrorCode getValueHcurlDemkowiczBrokenBase(MatrixDouble &pts);
+
+  static MoFEMErrorCode setDofsSideMapHcurl(const FieldSpace space,
+                                            const FieldContinuity continuity,
+                                            const FieldApproximationBase base,
+                                            DofsSideMap &dofs_side_map);
 };
 
 } // namespace MoFEM

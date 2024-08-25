@@ -278,17 +278,38 @@ MoFEMErrorCode Core::addField(const std::string &name, const FieldSpace space,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode
-Core::add_broken_field(const std::string &name, const FieldSpace space,
-                       const FieldApproximationBase base,
-                       const FieldCoefficientsNumber nb_of_coefficients,
-                       const TagType tag_type, const enum MoFEMTypes bh,
-                       int verb) {
-  return this->addField(name, space, DISCONTINUOUS, base, nb_of_coefficients,
+MoFEMErrorCode Core::add_broken_field(
+    const std::string name, const FieldSpace space,
+    const FieldApproximationBase base,
+    const FieldCoefficientsNumber nb_of_coefficients,
+
+    std::vector<
+
+        std::pair<EntityType,
+                  std::function<MoFEMErrorCode(BaseFunction::DofsSideMap &)>
+
+                  >>
+        list_dof_side_map,
+
+    const TagType tag_type, const enum MoFEMTypes bh, int verb) {
+  MoFEMFunctionBegin;
+  CHKERR this->addField(name, space, DISCONTINUOUS, base, nb_of_coefficients,
                         tag_type, bh, verb);
+
+  auto fit = fIelds.get<FieldName_mi_tag>().find(name);
+  if (fit == fIelds.get<FieldName_mi_tag>().end())
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "field <%s> not in database", name.c_str());
+
+  for(auto &p : list_dof_side_map) {
+    auto &data_side_map = (*fit)->getDofSideMap()[p.first];
+    CHKERR p.second(data_side_map);
+  }
+
+  MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
+MoFEMErrorCode Core::add_field(const std::string name, const FieldSpace space,
                                const FieldApproximationBase base,
                                const FieldCoefficientsNumber nb_of_coefficients,
                                const TagType tag_type, const enum MoFEMTypes bh,

@@ -4,6 +4,8 @@
 
 namespace MoFEM {
 
+constexpr int Field::maxBrokenDofsOrder;
+
 // Not partitioned
 const bool Idx_mi_tag::IamNotPartitioned = true;
 

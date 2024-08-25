@@ -320,7 +320,7 @@ int main(int argc, char *argv[]) {
       BERNSTEIN,
       LASBASETOP
     };
-    const char *list_bases[] = {"ainsworth", "ainsworth_labatto", "demkowicz",
+    const char *list_bases[] = {"ainsworth", "ainsworth_lobatto", "demkowicz",
                                 "bernstein"};
     PetscBool flg;
     PetscInt choice_base_value = AINSWORTH;
@@ -469,7 +469,7 @@ int main(int argc, char *argv[]) {
       pipeline_mng->getOpDomainLhsPipeline().push_back(new OpMass(
           "FIELD1", "FIELD1", [](double, double, double) { return 1.; }));
       pipeline_mng->getOpDomainLhsPipeline().push_back(
-          createOpSchurAssembleEnd({}, {}, {}, {}, {}, true));
+          createOpSchurAssembleEnd({}, {}));
 
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpSource("FIELD1", ApproxFunctions::fUn));

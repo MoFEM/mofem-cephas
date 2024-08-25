@@ -4,8 +4,6 @@ Hdiv and L2 base on tetrahedral
 
 */
 
-
-
 #ifndef __TETPOLYNOMIALBASE_HPP__
 #define __TETPOLYNOMIALBASE_HPP__
 
@@ -24,21 +22,49 @@ struct TetPolynomialBase : public BaseFunction {
   TetPolynomialBase(const void *ptr = nullptr);
   virtual ~TetPolynomialBase();
 
-  static bool switchCacheHDivBaseFaceDemkowicz(const void *ptr);
-  static bool switchCacheHdivBaseInteriorDemkowicz(const void *ptr);
-  static bool switchCacheHdivBrokenBaseInteriorDemkowicz(const void *ptr);
-  static void switchCacheHDivBaseDemkowiczOn(std::vector<void *> v);
-  static void switchCacheHDivBaseDemkowiczOff(std::vector<void *> v);
+  template <int SPACE>
+  static bool switchCacheBaseFace(FieldApproximationBase base, void *ptr);
 
-  static bool switchCacheHdivBrokenBaseInteriorAinsworth(const void *ptr);
-  static void switchCacheHDivBaseAinsworthOn(std::vector<void *> v);
-  static void switchCacheHDivBaseAinsworthOff(std::vector<void *> v);
+  template <int SPACE>
+  static bool switchCacheBaseInterior(FieldApproximationBase base, void *ptr);
 
-  static void switchCacheHDivBaseOn(std::vector<void *> v);
-  static void switchCacheHDivBaseOff(std::vector<void *> v);
+  template <int SPACE>
+  static bool switchCacheBrokenBaseInterior(FieldApproximationBase base,
+                                           void *ptr);
+
+  template <int SPACE>
+  static void switchCacheBaseOn(FieldApproximationBase base,
+                               std::vector<void *> v);
+
+  template <int SPACE>
+  static void switchCacheBaseOff(FieldApproximationBase base,
+                                std::vector<void *> v);
+
+  template <int SPACE> static void switchCacheBaseOn(std::vector<void *> v);
+
+  template <int SPACE> static void switchCacheBaseOff(std::vector<void *> v);
 
   MoFEMErrorCode getValue(MatrixDouble &pts,
                           boost::shared_ptr<BaseFunctionCtx> ctx_ptr);
+
+  /**
+   * @brief Set map of dof to side number
+   *
+   * That is used for broken space to establish connection between dofs in the
+   * interior of element/entity and side of element/entity to which that dof is
+   * associated. That depends on implementation of the base for given space, and
+   * has to be implemented while implementing base function for given space.
+   *
+   * @param space
+   * @param continuity
+   * @param base
+   * @param DofsSideMap
+   * @return MoFEMErrorCode
+   */
+  static MoFEMErrorCode
+  setDofsSideMap(const FieldSpace space, const FieldContinuity continuity,
+                 const FieldApproximationBase base,
+                 DofsSideMap &);
 
 private:
   const void *vPtr;
@@ -88,6 +114,19 @@ private:
    */
   MoFEMErrorCode getValueHcurl(MatrixDouble &pts);
 
+  /**
+   * @brief Set the Dofs Side Map Hdiv object
+   *
+   * @param space
+   * @param continuity
+   * @param base
+   * @param dofs_side_map
+   * @return MoFEMErrorCode
+   */
+  static MoFEMErrorCode setDofsSideMapHdiv(const FieldContinuity continuity,
+                                           const FieldApproximationBase base,
+                                           DofsSideMap &dofs_side_map);
+
 private:
   MoFEMErrorCode getValueH1AinsworthBase(MatrixDouble &pts);
   MoFEMErrorCode getValueH1BernsteinBezierBase(MatrixDouble &pts);
@@ -126,8 +165,51 @@ private:
   ublas::vector<MatrixDouble> diffN_volume_edge;
   ublas::vector<MatrixDouble> diffN_volume_face;
   MatrixDouble diffN_volume_bubble;
-
 };
+
+template <>
+bool TetPolynomialBase::switchCacheBaseFace<HDIV>(FieldApproximationBase base,
+                                                 void *ptr);
+template <>
+bool TetPolynomialBase::switchCacheBaseInterior<HDIV>(
+    FieldApproximationBase base, void *ptr);
+
+template <>
+bool TetPolynomialBase::switchCacheBrokenBaseInterior<HDIV>(
+    FieldApproximationBase base, void *ptr);
+
+template <>
+void TetPolynomialBase::switchCacheBaseOn<HDIV>(FieldApproximationBase base,
+                                               std::vector<void *> v);
+
+template <>
+void TetPolynomialBase::switchCacheBaseOff<HDIV>(FieldApproximationBase base,
+                                                std::vector<void *> v);
+
+template <>
+void TetPolynomialBase::switchCacheBaseOn<HDIV>(std::vector<void *> v);
+
+template <>
+void TetPolynomialBase::switchCacheBaseOff<HDIV>(std::vector<void *> v);
+
+template <>
+bool TetPolynomialBase::switchCacheBaseInterior<L2>(FieldApproximationBase base,
+                                                   void *ptr);
+
+template <>
+void TetPolynomialBase::switchCacheBaseOn<L2>(FieldApproximationBase base,
+                                               std::vector<void *> v);
+
+template <>
+void TetPolynomialBase::switchCacheBaseOff<L2>(FieldApproximationBase base,
+                                              std::vector<void *> v);
+
+template <>
+void TetPolynomialBase::switchCacheBaseOn<L2>(std::vector<void *> v);
+
+template <>
+void TetPolynomialBase::switchCacheBaseOff<L2>(std::vector<void *> v);
+
 
 } // namespace MoFEM
 

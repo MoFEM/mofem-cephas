@@ -64,22 +64,24 @@ struct TetBaseCache {
 
       >;
 
-  static std::map<const void *, BaseCacheMI> hdivBaseInteriorDemkowicz;
-  static std::map<const void *, BaseCacheMI> hdivBrokenBaseInteriorDemkowicz;
-  static std::map<const void *, HDivBaseFaceCacheMI> hDivBaseFaceDemkowicz;
-
-  static std::map<const void *, BaseCacheMI> hdivBrokenBaseInteriorAinsworth;
+  static std::array<std::map<const void *, BaseCacheMI>, LASTBASE>
+      hdivBaseInterior;
+  static std::array<std::map<const void *, BaseCacheMI>, LASTBASE>
+      hdivBrokenBaseInterior;
+  static std::array<std::map<const void *, HDivBaseFaceCacheMI>, LASTBASE>
+      hDivBaseFace;
+  static std::array<std::map<const void *, BaseCacheMI>, LASTBASE>
+      l2BaseInterior;
 };
 
-std::map<const void *, TetBaseCache::BaseCacheMI>
-    TetBaseCache::hdivBaseInteriorDemkowicz;
-std::map<const void *, TetBaseCache::BaseCacheMI>
-    TetBaseCache::hdivBrokenBaseInteriorDemkowicz;
-std::map<const void *, TetBaseCache::HDivBaseFaceCacheMI>
-    TetBaseCache::hDivBaseFaceDemkowicz;
-
-std::map<const void *, TetBaseCache::BaseCacheMI>
-    TetBaseCache::hdivBrokenBaseInteriorAinsworth;
+std::array<std::map<const void *, TetBaseCache::BaseCacheMI>, LASTBASE>
+    TetBaseCache::hdivBaseInterior;
+std::array<std::map<const void *, TetBaseCache::BaseCacheMI>, LASTBASE>
+    TetBaseCache::hdivBrokenBaseInterior;
+std::array<std::map<const void *, TetBaseCache::HDivBaseFaceCacheMI>, LASTBASE>
+    TetBaseCache::hDivBaseFace;
+std::array<std::map<const void *, TetBaseCache::BaseCacheMI>, LASTBASE>
+    TetBaseCache::l2BaseInterior;
 
 MoFEMErrorCode
 TetPolynomialBase::query_interface(boost::typeindex::type_index type_index,
@@ -94,12 +96,17 @@ TetPolynomialBase::TetPolynomialBase(const void *ptr) : vPtr(ptr) {}
 
 TetPolynomialBase::~TetPolynomialBase() {
   if (vPtr) {
-    if (TetBaseCache::hdivBaseInteriorDemkowicz.find(vPtr) !=
-        TetBaseCache::hdivBaseInteriorDemkowicz.end())
-      TetBaseCache::hdivBaseInteriorDemkowicz.erase(vPtr);
-    if (TetBaseCache::hDivBaseFaceDemkowicz.find(vPtr) !=
-        TetBaseCache::hDivBaseFaceDemkowicz.end())
-      TetBaseCache::hDivBaseFaceDemkowicz.erase(vPtr);
+
+    auto erase = [&](auto cache) {
+      if (cache.find(vPtr) != cache.end())
+        cache.erase(vPtr);
+    };
+
+    for (auto b = 0; b != LASTBASE; ++b) {
+      erase(TetBaseCache::hdivBaseInterior[b]);
+      erase(TetBaseCache::hdivBrokenBaseInterior[b]);
+      erase(TetBaseCache::hDivBaseFace[b]);
+    }
   }
 }
 
@@ -544,13 +551,37 @@ MoFEMErrorCode TetPolynomialBase::getValueL2AinsworthBase(MatrixDouble &pts) {
       cTx->basePolynomialsType0;
 
   int nb_gauss_pts = pts.size2();
+  int volume_order = data.dataOnEntities[MBTET][0].getOrder();
+  int nb_dofs = NBVOLUMETET_L2(volume_order);
 
-  data.dataOnEntities[MBTET][0].getN(base).resize(
-      nb_gauss_pts, NBVOLUMETET_L2(data.dataOnEntities[MBTET][0].getOrder()),
-      false);
-  data.dataOnEntities[MBTET][0].getDiffN(base).resize(
-      nb_gauss_pts,
-      3 * NBVOLUMETET_L2(data.dataOnEntities[MBTET][0].getOrder()), false);
+  data.dataOnEntities[MBTET][0].getN(base).resize(nb_gauss_pts, nb_dofs, false);
+  data.dataOnEntities[MBTET][0].getDiffN(base).resize(nb_gauss_pts, 3 * nb_dofs,
+                                                      false);
+
+  if (!nb_dofs)
+    MoFEMFunctionReturnHot(0);
+
+  auto get_interior_cache = [this](auto base) -> TetBaseCache::BaseCacheMI * {
+    if (vPtr) {
+      auto it = TetBaseCache::l2BaseInterior[base].find(vPtr);
+      if (it != TetBaseCache::l2BaseInterior[base].end()) {
+        return &it->second;
+      }
+    }
+    return nullptr;
+  };
+
+  auto interior_cache_ptr = get_interior_cache(base);
+
+  if (interior_cache_ptr) {
+    auto it =
+        interior_cache_ptr->find(boost::make_tuple(volume_order, nb_gauss_pts));
+    if (it != interior_cache_ptr->end()) {
+      noalias(data.dataOnEntities[MBTET][0].getN(base)) = it->N;
+      noalias(data.dataOnEntities[MBTET][0].getDiffN(base)) = it->diffN;
+      MoFEMFunctionBeginHot(0);
+    }
+  }
 
   CHKERR L2_Ainsworth_ShapeFunctions_MBTET(
       data.dataOnEntities[MBTET][0].getOrder(),
@@ -559,6 +590,13 @@ MoFEMErrorCode TetPolynomialBase::getValueL2AinsworthBase(MatrixDouble &pts) {
       &*data.dataOnEntities[MBTET][0].getN(base).data().begin(),
       &*data.dataOnEntities[MBTET][0].getDiffN(base).data().begin(),
       nb_gauss_pts, base_polynomials);
+
+  if (interior_cache_ptr) {
+    auto p = interior_cache_ptr->emplace(
+        TetBaseCache::BaseCacheItem{volume_order, nb_gauss_pts});
+    p.first->N = data.dataOnEntities[MBTET][0].getN(base);
+    p.first->diffN = data.dataOnEntities[MBTET][0].getDiffN(base);
+  }
 
   MoFEMFunctionReturn(0);
 }
@@ -1099,18 +1137,17 @@ TetPolynomialBase::getValueHdivAinsworthBrokenBase(MatrixDouble &pts) {
   if (nb_dofs == 0)
     MoFEMFunctionReturnHot(0);
 
-
-  auto get_interior_cache = [this]() -> TetBaseCache::BaseCacheMI * {
+  auto get_interior_cache = [this](auto base) -> TetBaseCache::BaseCacheMI * {
     if (vPtr) {
-      auto it = TetBaseCache::hdivBrokenBaseInteriorAinsworth.find(vPtr);
-      if (it != TetBaseCache::hdivBrokenBaseInteriorAinsworth.end()) {
+      auto it = TetBaseCache::hdivBrokenBaseInterior[base].find(vPtr);
+      if (it != TetBaseCache::hdivBrokenBaseInterior[base].end()) {
         return &it->second;
       }
     }
     return nullptr;
   };
 
-  auto interior_cache_ptr = get_interior_cache();
+  auto interior_cache_ptr = get_interior_cache(base);
 
   if (interior_cache_ptr) {
     auto it =
@@ -1119,7 +1156,7 @@ TetPolynomialBase::getValueHdivAinsworthBrokenBase(MatrixDouble &pts) {
       noalias(data.dataOnEntities[MBTET][0].getN(base)) = it->N;
       noalias(data.dataOnEntities[MBTET][0].getDiffN(base)) = it->diffN;
       MoFEMFunctionBeginHot(0);
-    } 
+    }
   }
 
   std::array<int, 4 * 3> faces_nodes{
@@ -1219,7 +1256,7 @@ TetPolynomialBase::getValueHdivAinsworthBrokenBase(MatrixDouble &pts) {
   auto t_base_v = getFTensor1FromPtr<3>(base_vol_ptr);
   auto t_diff_base_v = getFTensor2HVecFromPtr<3, 3>(diff_base_vol_ptr);
 
-  // int count_dofs = 0;
+  int count_dofs = 0;
 
   for (int gg = 0; gg != nb_gauss_pts; gg++) {
     for (int oo = 0; oo < volume_order; oo++) {
@@ -1232,7 +1269,7 @@ TetPolynomialBase::getValueHdivAinsworthBrokenBase(MatrixDouble &pts) {
             t_base(i) = t_base_f_e[ff * 3 + ee](i);
             ++t_base;
             ++t_base_f_e[ff * 3 + ee];
-            // ++count_dofs;
+            ++count_dofs;
           }
           for (int ee = 0; ee != 3; ++ee) {
             t_diff_base(i, j) = t_diff_base_f_e[ff * 3 + ee](i, j);
@@ -1252,7 +1289,7 @@ TetPolynomialBase::getValueHdivAinsworthBrokenBase(MatrixDouble &pts) {
           t_diff_base(i, j) = t_diff_base_f_f[ff](i, j);
           ++t_diff_base;
           ++t_diff_base_f_f[ff];
-          // ++count_dofs;
+          ++count_dofs;
         }
       }
 
@@ -1266,7 +1303,7 @@ TetPolynomialBase::getValueHdivAinsworthBrokenBase(MatrixDouble &pts) {
           t_diff_base(i, j) = t_diff_base_v_e[ee](i, j);
           ++t_diff_base;
           ++t_diff_base_v_e[ee];
-          // ++count_dofs;
+          ++count_dofs;
         }
       }
       // volume-face (P - 1) * (P - 2)
@@ -1279,7 +1316,7 @@ TetPolynomialBase::getValueHdivAinsworthBrokenBase(MatrixDouble &pts) {
           t_diff_base(i, j) = t_diff_base_v_f[ff](i, j);
           ++t_diff_base;
           ++t_diff_base_v_f[ff];
-          // ++count_dofs;
+          ++count_dofs;
         }
       }
       // volume-bubble (P - 3) * (P - 2) * (P - 1) / 2
@@ -1291,17 +1328,17 @@ TetPolynomialBase::getValueHdivAinsworthBrokenBase(MatrixDouble &pts) {
         t_diff_base(i, j) = t_diff_base_v(i, j);
         ++t_diff_base;
         ++t_diff_base_v;
-        // ++count_dofs;
+        ++count_dofs;
       }
     }
   }
 
-// #ifdef NDEBUG
-//   if (nb_dofs != count_dofs / nb_gauss_pts)
-//     SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-//              "Number of dofs %d is different than expected %d", count_dofs,
-//              nb_dofs);
-// #endif // NDEBUG
+#ifdef NDEBUG
+  if (nb_dofs != count_dofs / nb_gauss_pts)
+    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "Number of dofs %d is different than expected %d", count_dofs,
+             nb_dofs);
+#endif // NDEBUG
 
   if (interior_cache_ptr) {
     auto p = interior_cache_ptr->emplace(
@@ -1334,8 +1371,8 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
 
   auto get_face_cache_ptr = [this]() -> TetBaseCache::HDivBaseFaceCacheMI * {
     if (vPtr) {
-      auto it = TetBaseCache::hDivBaseFaceDemkowicz.find(vPtr);
-      if (it != TetBaseCache::hDivBaseFaceDemkowicz.end()) {
+      auto it = TetBaseCache::hDivBaseFace[DEMKOWICZ_JACOBI_BASE].find(vPtr);
+      if (it != TetBaseCache::hDivBaseFace[DEMKOWICZ_JACOBI_BASE].end()) {
         return &it->second;
       }
     }
@@ -1391,8 +1428,9 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
 
   auto get_interior_cache = [this]() -> TetBaseCache::BaseCacheMI * {
     if (vPtr) {
-      auto it = TetBaseCache::hdivBaseInteriorDemkowicz.find(vPtr);
-      if (it != TetBaseCache::hdivBaseInteriorDemkowicz.end()) {
+      auto it =
+          TetBaseCache::hdivBaseInterior[DEMKOWICZ_JACOBI_BASE].find(vPtr);
+      if (it != TetBaseCache::hdivBaseInterior[DEMKOWICZ_JACOBI_BASE].end()) {
         return &it->second;
       }
     }
@@ -1475,8 +1513,11 @@ TetPolynomialBase::getValueHdivDemkowiczBrokenBase(MatrixDouble &pts) {
 
   auto get_interior_cache = [this]() -> TetBaseCache::BaseCacheMI * {
     if (vPtr) {
-      auto it = TetBaseCache::hdivBrokenBaseInteriorDemkowicz.find(vPtr);
-      if (it != TetBaseCache::hdivBrokenBaseInteriorDemkowicz.end()) {
+      auto it =
+          TetBaseCache::hdivBrokenBaseInterior[DEMKOWICZ_JACOBI_BASE].find(
+              vPtr);
+      if (it !=
+          TetBaseCache::hdivBrokenBaseInterior[DEMKOWICZ_JACOBI_BASE].end()) {
         return &it->second;
       }
     }
@@ -1506,7 +1547,13 @@ TetPolynomialBase::getValueHdivDemkowiczBrokenBase(MatrixDouble &pts) {
       MatrixDouble(nb_gauss_pts, 9 * nb_dofs_face),
       MatrixDouble(nb_gauss_pts, 9 * nb_dofs_face)};
 
-  int face_node[4][3] = {{0, 1, 3}, {1, 2, 3}, {0, 2, 3}, {0, 1, 2}};
+  int faces_nodes[4][3] = {{0, 1, 3}, {1, 2, 3}, {0, 2, 3}, {0, 1, 2}};
+  for (auto ff = 0; ff != 4; ++ff) {
+    EntityType sub_entity_topo;
+    int num_sub_entity_nodes;
+    moab::CN::SubEntityNodeIndices(MBTET, 4, 2, ff, sub_entity_topo,
+                                   num_sub_entity_nodes, faces_nodes[ff]);
+  }
 
   std::array<int, 4> p_f{volume_order, volume_order, volume_order,
                          volume_order};
@@ -1520,7 +1567,8 @@ TetPolynomialBase::getValueHdivDemkowiczBrokenBase(MatrixDouble &pts) {
   // Calculate base function on tet faces
   for (int ff = 0; ff != 4; ff++) {
     CHKERR Hdiv_Demkowicz_Face_MBTET_ON_FACE(
-        face_node[ff], p_f[ff],
+        // &data.facesNodes(ff, 0)
+        faces_nodes[ff], p_f[ff],
         &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
         &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
         phi_f[ff], diff_phi_f[ff], nb_gauss_pts, 4);
@@ -1981,6 +2029,147 @@ TetPolynomialBase::getValue(MatrixDouble &pts,
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode TetPolynomialBase::setDofsSideMap(
+
+    const FieldSpace space, const FieldContinuity continuity,
+    const FieldApproximationBase base, DofsSideMap &dofs_side_map
+
+) {
+  MoFEMFunctionBegin;
+
+  switch (continuity) {
+  case DISCONTINUOUS:
+
+    switch (space) {
+    case HDIV:
+      CHKERR setDofsSideMapHdiv(continuity, base, dofs_side_map);
+      break;
+    default:
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Unknown space %s",
+               FieldSpaceNames[space]);
+    }
+    break;
+
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+            "Unknown (or not implemented) continuity");
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+TetPolynomialBase::setDofsSideMapHdiv(const FieldContinuity continuity,
+                                      const FieldApproximationBase base,
+                                      DofsSideMap &dofs_side_map) {
+  MoFEMFunctionBegin;
+
+  // That has to be consistent with implementation of getValueHdiv for
+  // particular base functions.
+
+  auto set_ainsworth = [&dofs_side_map]() {
+    MoFEMFunctionBegin;
+
+    dofs_side_map.clear();
+
+    int dof;
+    for (int oo = 0; oo < Field::maxBrokenDofsOrder; oo++) {
+
+
+      // faces-edge (((P) > 0) ? (P) : 0)
+      for (int dd = NBFACETRI_AINSWORTH_EDGE_HDIV(oo);
+           dd != NBFACETRI_AINSWORTH_EDGE_HDIV(oo + 1); dd++) {
+        for (auto ff = 0; ff != 4; ++ff) {
+          for (int ee = 0; ee != 3; ++ee) {
+            dofs_side_map.insert(DofsSideMapData{MBTRI, ff, dof});
+            ++dof;
+          }
+        }
+      }
+
+      // face-face (P - 1) * (P - 2) / 2
+      for (int dd = NBFACETRI_AINSWORTH_FACE_HDIV(oo);
+           dd != NBFACETRI_AINSWORTH_FACE_HDIV(oo + 1); dd++) {
+        for (auto ff = 0; ff != 4; ++ff) {
+          dofs_side_map.insert(DofsSideMapData{MBTRI, ff, dof});
+          ++dof;
+        }
+      }
+
+      // volume-edge (P - 1)
+      for (int dd = NBVOLUMETET_AINSWORTH_EDGE_HDIV(oo);
+           dd != NBVOLUMETET_AINSWORTH_EDGE_HDIV(oo + 1); dd++) {
+        for (int ee = 0; ee < 6; ee++) {
+          dofs_side_map.insert(DofsSideMapData{MBTET, 0, dof});
+          ++dof;
+        }
+      }
+      // volume-face (P - 1) * (P - 2)
+      for (int dd = NBVOLUMETET_AINSWORTH_FACE_HDIV(oo);
+           dd < NBVOLUMETET_AINSWORTH_FACE_HDIV(oo + 1); dd++) {
+        for (int ff = 0; ff < 4; ff++) {
+          dofs_side_map.insert(DofsSideMapData{MBTET, 0, dof});
+          ++dof;
+        }
+      }
+      // volume-bubble (P - 3) * (P - 2) * (P - 1) / 2
+      for (int dd = NBVOLUMETET_AINSWORTH_VOLUME_HDIV(oo);
+           dd < NBVOLUMETET_AINSWORTH_VOLUME_HDIV(oo + 1); dd++) {
+        dofs_side_map.insert(DofsSideMapData{MBTET, 0, dof});
+        ++dof;
+      }
+    }
+
+    MoFEMFunctionReturn(0);
+  };
+
+  auto set_demkowicz = [&dofs_side_map]() {
+    MoFEMFunctionBegin;
+
+    dofs_side_map.clear();
+
+    int dof = 0;
+    for (int oo = 0; oo < Field::maxBrokenDofsOrder; oo++) {
+
+      // face
+      for (auto dd = NBFACETRI_DEMKOWICZ_HDIV(oo);
+           dd != NBFACETRI_DEMKOWICZ_HDIV(oo + 1); ++dd) {
+        for (auto ff = 0; ff != 4; ++ff) {
+          dofs_side_map.insert(DofsSideMapData{MBTRI, ff, dof});
+          ++dof;
+        }
+      }
+      for (auto dd = NBVOLUMETET_DEMKOWICZ_HDIV(oo);
+           dd != NBVOLUMETET_DEMKOWICZ_HDIV(oo + 1); ++dd) {
+        dofs_side_map.insert(DofsSideMapData{MBTET, 0, dof});
+        ++dof;
+      }
+    }
+
+    MoFEMFunctionReturn(0);
+  };
+
+  switch (continuity) {
+  case DISCONTINUOUS:
+    switch (base) {
+    case AINSWORTH_LEGENDRE_BASE:
+    case AINSWORTH_LOBATTO_BASE:
+      return set_ainsworth();
+    case DEMKOWICZ_JACOBI_BASE:
+      return set_demkowicz();
+    default:
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
+    }
+    break;
+
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+            "Unknown (or not implemented) continuity");
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
 template <typename T>
 auto tetCacheSwitch(const void *ptr, T &cache, std::string cache_name) {
   auto it = cache.find(ptr);
@@ -1999,78 +2188,114 @@ auto tetCacheSwitch(const void *ptr, T &cache, std::string cache_name) {
   }
 }
 
-bool TetPolynomialBase::switchCacheHDivBaseFaceDemkowicz(const void *ptr) {
-  return tetCacheSwitch(ptr, TetBaseCache::hDivBaseFaceDemkowicz,
-                        "hDivBaseFaceDemkowicz");
+template <>
+bool TetPolynomialBase::switchCacheBaseFace<HDIV>(FieldApproximationBase base,
+                                                 void *ptr) {
+  return tetCacheSwitch(ptr, TetBaseCache::hDivBaseFace[base],
+                        std::string("hDivBaseFace") +
+                            ApproximationBaseNames[base]);
 }
 
-bool TetPolynomialBase::switchCacheHdivBaseInteriorDemkowicz(const void *ptr) {
-  return tetCacheSwitch(ptr, TetBaseCache::hdivBaseInteriorDemkowicz,
-                        "hdivBaseInteriorDemkowicz");
+template <>
+bool TetPolynomialBase::switchCacheBaseInterior<HDIV>(
+    FieldApproximationBase base, void *ptr) {
+  return tetCacheSwitch(ptr, TetBaseCache::hdivBaseInterior[base],
+                        std::string("hdivBaseInterior") +
+                            ApproximationBaseNames[base]);
 }
 
-bool TetPolynomialBase::switchCacheHdivBrokenBaseInteriorDemkowicz(
-    const void *ptr) {
-  return tetCacheSwitch(ptr, TetBaseCache::hdivBrokenBaseInteriorDemkowicz,
-                        "hdivBrokenBaseInteriorDemkowicz");
+template <>
+bool TetPolynomialBase::switchCacheBrokenBaseInterior<HDIV>(
+    FieldApproximationBase base, void *ptr) {
+  return tetCacheSwitch(ptr, TetBaseCache::hdivBrokenBaseInterior[base],
+                        std::string("hdivBrokenBaseInterior") +
+                            ApproximationBaseNames[base]);
 }
 
-void TetPolynomialBase::switchCacheHDivBaseDemkowiczOn(std::vector<void *> v) {
+template <>
+void TetPolynomialBase::switchCacheBaseOn<HDIV>(FieldApproximationBase base,
+                                               std::vector<void *> v) {
   for (auto fe_ptr : v) {
-    if (!TetPolynomialBase::switchCacheHDivBaseFaceDemkowicz(fe_ptr)) {
-      TetPolynomialBase::switchCacheHDivBaseFaceDemkowicz(fe_ptr);
+    if (!TetPolynomialBase::switchCacheBaseFace<HDIV>(base, fe_ptr)) {
+      TetPolynomialBase::switchCacheBaseFace<HDIV>(base, fe_ptr);
     }
-    if (!TetPolynomialBase::switchCacheHdivBaseInteriorDemkowicz(fe_ptr)) {
-      TetPolynomialBase::switchCacheHdivBaseInteriorDemkowicz(fe_ptr);
+    if (!TetPolynomialBase::switchCacheBaseInterior<HDIV>(base, fe_ptr)) {
+      TetPolynomialBase::switchCacheBaseInterior<HDIV>(base, fe_ptr);
     }
-    if (!TetPolynomialBase::switchCacheHdivBrokenBaseInteriorDemkowicz(fe_ptr)) {
-      TetPolynomialBase::switchCacheHdivBrokenBaseInteriorDemkowicz(fe_ptr);
+    if (!TetPolynomialBase::switchCacheBrokenBaseInterior<HDIV>(base, fe_ptr)) {
+      TetPolynomialBase::switchCacheBrokenBaseInterior<HDIV>(base, fe_ptr);
     }
   }
 }
 
-void TetPolynomialBase::switchCacheHDivBaseDemkowiczOff(std::vector<void *> v) {
+template <>
+void TetPolynomialBase::switchCacheBaseOff<HDIV>(FieldApproximationBase base,
+                                                std::vector<void *> v) {
   for (auto fe_ptr : v) {
-    if (TetPolynomialBase::switchCacheHDivBaseFaceDemkowicz(fe_ptr)) {
-      TetPolynomialBase::switchCacheHDivBaseFaceDemkowicz(fe_ptr);
+    if (TetPolynomialBase::switchCacheBaseFace<HDIV>(base, fe_ptr)) {
+      TetPolynomialBase::switchCacheBaseFace<HDIV>(base, fe_ptr);
     }
-    if (TetPolynomialBase::switchCacheHdivBaseInteriorDemkowicz(fe_ptr)) {
-      TetPolynomialBase::switchCacheHdivBaseInteriorDemkowicz(fe_ptr);
+    if (TetPolynomialBase::switchCacheBaseInterior<HDIV>(base, fe_ptr)) {
+      TetPolynomialBase::switchCacheBaseInterior<HDIV>(base, fe_ptr);
     }
-    if (TetPolynomialBase::switchCacheHdivBrokenBaseInteriorDemkowicz(fe_ptr)) {
-      TetPolynomialBase::switchCacheHdivBrokenBaseInteriorDemkowicz(fe_ptr);
+    if (TetPolynomialBase::switchCacheBrokenBaseInterior<HDIV>(base, fe_ptr)) {
+      TetPolynomialBase::switchCacheBrokenBaseInterior<HDIV>(base, fe_ptr);
     }
   }
 }
 
-bool TetPolynomialBase::switchCacheHdivBrokenBaseInteriorAinsworth(
-    const void *ptr) {
-  return tetCacheSwitch(ptr, TetBaseCache::hdivBrokenBaseInteriorAinsworth,
-                        "hdivBrokenBaseInteriorAinsworth");
+template <>
+void TetPolynomialBase::switchCacheBaseOn<HDIV>(std::vector<void *> v) {
+  for (auto b = 0; b != LASTBASE; ++b) {
+    switchCacheBaseOn<HDIV>(static_cast<FieldApproximationBase>(b), v);
+  }
 }
 
-void TetPolynomialBase::switchCacheHDivBaseAinsworthOn(std::vector<void *> v) {
+template <>
+void TetPolynomialBase::switchCacheBaseOff<HDIV>(std::vector<void *> v) {
+  for (auto b = 0; b != LASTBASE; ++b) {
+    switchCacheBaseOff<HDIV>(static_cast<FieldApproximationBase>(b), v);
+  }
+}
+
+template <>
+bool TetPolynomialBase::switchCacheBaseInterior<L2>(FieldApproximationBase base,
+                                                   void *ptr) {
+  return tetCacheSwitch(ptr, TetBaseCache::l2BaseInterior[base],
+                        std::string("hdivBaseInterior") +
+                            ApproximationBaseNames[base]);
+}
+
+template <>
+void TetPolynomialBase::switchCacheBaseOn<L2>(FieldApproximationBase base,
+                                             std::vector<void *> v) {
   for (auto fe_ptr : v) {
-    if (!TetPolynomialBase::switchCacheHdivBrokenBaseInteriorAinsworth(fe_ptr)) {
-      TetPolynomialBase::switchCacheHdivBrokenBaseInteriorAinsworth(fe_ptr);
+    if (!TetPolynomialBase::switchCacheBaseInterior<L2>(base, fe_ptr)) {
+      TetPolynomialBase::switchCacheBaseInterior<L2>(base, fe_ptr);
     }
   }
 }
 
-void TetPolynomialBase::switchCacheHDivBaseAinsworthOff(std::vector<void *> v) {
+template <>
+void TetPolynomialBase::switchCacheBaseOff<L2>(FieldApproximationBase base,
+                                              std::vector<void *> v) {
   for (auto fe_ptr : v) {
-    if (TetPolynomialBase::switchCacheHdivBrokenBaseInteriorAinsworth(fe_ptr)) {
-      TetPolynomialBase::switchCacheHdivBrokenBaseInteriorAinsworth(fe_ptr);
+    if (TetPolynomialBase::switchCacheBaseInterior<L2>(base, fe_ptr)) {
+      TetPolynomialBase::switchCacheBaseInterior<L2>(base, fe_ptr);
     }
   }
 }
 
-void TetPolynomialBase::switchCacheHDivBaseOn(std::vector<void *> v) {
-  switchCacheHDivBaseDemkowiczOn(v);
-  switchCacheHDivBaseAinsworthOn(v);
+template <>
+void TetPolynomialBase::switchCacheBaseOn<L2>(std::vector<void *> v) {
+  for (auto b = 0; b != LASTBASE; ++b) {
+    switchCacheBaseOn<L2>(static_cast<FieldApproximationBase>(b), v);
+  }
 }
 
-void TetPolynomialBase::switchCacheHDivBaseOff(std::vector<void *> v) {
-  switchCacheHDivBaseDemkowiczOff(v);
-  switchCacheHDivBaseAinsworthOff(v);
+template <>
+void TetPolynomialBase::switchCacheBaseOff<L2>(std::vector<void *> v) {
+  for (auto b = 0; b != LASTBASE; ++b) {
+    switchCacheBaseOff<L2>(static_cast<FieldApproximationBase>(b), v);
+  }
 }

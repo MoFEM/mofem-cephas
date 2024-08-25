@@ -81,41 +81,19 @@ struct OpSchurAssembleEndImpl : public OP_SCHUR_ASSEMBLE_BASE {
    * @param fields_name list of fields
    * @param field_ents list of entities on which schur complement is applied
    * (can be empty)
-   * @param sequence_of_aos list of maps from base problem to Schur complement
-   * matrix
-   * @param sequence_of_mats list of Schur complement matrices
-   * @param sym_schur true if Schur complement is symmetric
+   * @param schur_ao map indices to schur matrix indices
+   * @param schur_mat schur matrix
+   * @param sym_schur true if schur is symmetric
    * @param symm_op true if block diagonal is symmetric
    */
   OpSchurAssembleEndImpl(
-      std::vector<std::string> fields_name,
-      std::vector<boost::shared_ptr<Range>> field_ents,
-      std::vector<SmartPetscObj<AO>> sequence_of_aos,
-      std::vector<SmartPetscObj<Mat>> sequence_of_mats,
-      std::vector<bool> sym_schur, bool symm_op = true,
-      boost::shared_ptr<BlockStructure> diag_blocks = nullptr);
 
-  /**
-   * @brief Construct a new Op Schur Assemble End object
-   *
-   * @param fields_name list of fields
-   * @param field_ents list of entities on which schur complement is applied
-   * (can be empty)
-   * @param sequence_of_aos list of maps from base problem to Schur complement
-   * matrix
-   * @param sequence_of_mats list of Schur complement matrices
-   * @param sym_schur true if Schur complement is symmetric
-   * @param diag_eps add epsilon on diagonal of inverted matrix
-   * @param symm_op true if block diagonal is symmetric
-   */
-  OpSchurAssembleEndImpl(
       std::vector<std::string> fields_name,
       std::vector<boost::shared_ptr<Range>> field_ents,
-      std::vector<SmartPetscObj<AO>> sequence_of_aos,
-      std::vector<SmartPetscObj<Mat>> sequence_of_mats,
-      std::vector<bool> sym_schur, std::vector<double> diag_eps,
-      bool symm_op = true,
-      boost::shared_ptr<BlockStructure> diag_blocks = nullptr);
+
+      SmartPetscObj<AO> schur_ao, SmartPetscObj<Mat> schur_mat,
+
+      bool sym_schur, bool symm_op);
 
 protected:
   template <typename I>
@@ -127,17 +105,13 @@ protected:
 
   std::vector<std::string> fieldsName;
   std::vector<boost::shared_ptr<Range>> fieldEnts;
-  std::vector<SmartPetscObj<AO>> sequenceOfAOs;
-  std::vector<SmartPetscObj<Mat>> sequenceOfMats;
-  std::vector<bool> symSchur;
-  std::vector<double> diagEps;
+  SmartPetscObj<AO> schurAO;
+  SmartPetscObj<Mat> schurMat;
+  bool symSchur;
 
+  MatrixDouble blockMat;
   MatrixDouble invMat;
-  MatrixDouble invDiagOffMat;
-  MatrixDouble offMatInvDiagOffMat;
-  MatrixDouble transOffMatInvDiagOffMat;
-
-  boost::shared_ptr<BlockStructure> diagBlocks;
+  MatrixDouble bM, abM, abcM;
 };
 
 struct SchurDSYSV; ///< SY	symmetric
@@ -239,12 +213,15 @@ struct DiagBlockIndex {
    */
   struct Indexes {
 
-    Indexes(int row, int col, int nb_rows, int nb_cols, int loc_row,
-            int loc_col, int mat_shift, int inv_shift)
-        : row(row), col(col), nb_rows(nb_rows), nb_cols(nb_cols),
-          loc_row(loc_row), loc_col(loc_col), mat_shift(mat_shift),
-          inv_shift(inv_shift) {}
+    Indexes(UId uid_row, UId uid_col, UId uid_fe, int row, int col, int nb_rows,
+            int nb_cols, int loc_row, int loc_col, int mat_shift)
+        : uid_row(uid_row), uid_col(uid_col), uid_fe(uid_fe), row(row),
+          col(col), nb_rows(nb_rows), nb_cols(nb_cols), loc_row(loc_row),
+          loc_col(loc_col), mat_shift(mat_shift) {}
 
+    inline UId getRowUId() const { return uid_row; }
+    inline UId getColUId() const { return uid_col; }
+    inline UId getFEUId() const { return uid_fe; }
     inline int getRow() const { return row; }
     inline int getCol() const { return col; }
     inline int getNbRows() const { return nb_rows; }
@@ -252,7 +229,6 @@ struct DiagBlockIndex {
     inline int getLocRow() const { return loc_row; }
     inline int getLocCol() const { return loc_col; }
     inline int &getMatShift() const { return mat_shift; }
-    inline int &getInvShift() const { return inv_shift; }
 
     inline int rowShift() const {
       return getRow() + getNbRows();
@@ -263,6 +239,9 @@ struct DiagBlockIndex {
     } // shift such that lower bound is included
 
   private:
+    UId uid_row;
+    UId uid_col;
+    UId uid_fe;
     int row;
     int col;
     int nb_rows;
@@ -270,7 +249,6 @@ struct DiagBlockIndex {
     int loc_row;
     int loc_col;
     mutable int mat_shift;
-    mutable int inv_shift;
   };
 
   using BlockIndex = multi_index_container<
@@ -279,37 +257,18 @@ struct DiagBlockIndex {
 
       indexed_by<
 
-          ordered_non_unique<
-
-              composite_key<Indexes,
-
-                            const_mem_fun<Indexes, int, &Indexes::getLocRow>,
-                            const_mem_fun<Indexes, int, &Indexes::getLocCol>,
-                            const_mem_fun<Indexes, int, &Indexes::getNbRows>,
-                            const_mem_fun<Indexes, int, &Indexes::getNbCols>>
-
-              >,
-
           ordered_unique<
 
               composite_key<Indexes,
 
-                            const_mem_fun<Indexes, int, &Indexes::getRow>,
-                            const_mem_fun<Indexes, int, &Indexes::getCol>,
-                            const_mem_fun<Indexes, int, &Indexes::getNbRows>,
-                            const_mem_fun<Indexes, int, &Indexes::getNbCols>>
+                            const_mem_fun<Indexes, UId, &Indexes::getRowUId>,
+                            const_mem_fun<Indexes, UId, &Indexes::getColUId>>
 
               >,
 
           ordered_non_unique<
 
-              const_mem_fun<Indexes, int, &Indexes::rowShift>
-
-              >,
-
-          ordered_non_unique<
-
-              const_mem_fun<Indexes, int, &Indexes::colShift>
+              const_mem_fun<Indexes, UId, &Indexes::getFEUId>
 
               >
 
@@ -324,25 +283,10 @@ struct BlockStructure : public DiagBlockIndex {
   SmartPetscObj<Vec> ghostY;
 
   boost::shared_ptr<std::vector<double>> dataBlocksPtr;
-  boost::shared_ptr<std::vector<double>> dataInvBlocksPtr;
   boost::shared_ptr<std::vector<double>> preconditionerBlocksPtr;
   boost::shared_ptr<std::vector<double>> parentBlockStructurePtr;
 
   bool multiplyByPreconditioner = false;
-};
-
-struct DiagBlockInvStruture : public BlockStructure {
-
-  // first value is value of off diagonal block index data, second is shift on
-  // the diagonal
-  struct A00SolverView {
-    std::vector<const Indexes *> lowView;
-    std::vector<int> diagLoRange;
-    std::vector<const Indexes *> upView;
-    std::vector<int> diagUpRange;
-  };
-
-  A00SolverView indexView;
 };
 
 PetscLogEvent SchurEvents::MOFEM_EVENT_schurMatSetValues;
@@ -535,6 +479,7 @@ SchurElemMats::assembleStorage(const EntitiesFieldData::EntData &row_data,
     };
 
     CHKERR asmb((*it)->getMat());
+
     // no need to set indices
   }
 
@@ -565,26 +510,11 @@ template <typename OP_SCHUR_ASSEMBLE_BASE>
 OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::OpSchurAssembleEndImpl(
     std::vector<std::string> fields_name,
     std::vector<boost::shared_ptr<Range>> field_ents,
-    std::vector<SmartPetscObj<AO>> sequence_of_aos,
-    std::vector<SmartPetscObj<Mat>> sequence_of_mats,
-    std::vector<bool> sym_schur, std::vector<double> diag_eps, bool symm_op,
-    boost::shared_ptr<BlockStructure> diag_blocks)
+    SmartPetscObj<AO> schur_ao, SmartPetscObj<Mat> schur_mat, bool sym_schur,
+    bool symm_op)
     : OP(NOSPACE, OP::OPSPACE, symm_op), fieldsName(fields_name),
-      fieldEnts(field_ents), sequenceOfAOs(sequence_of_aos),
-      sequenceOfMats(sequence_of_mats), symSchur(sym_schur), diagEps(diag_eps),
-      diagBlocks(diag_blocks) {}
-
-template <typename OP_SCHUR_ASSEMBLE_BASE>
-OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::OpSchurAssembleEndImpl(
-    std::vector<std::string> fields_name,
-    std::vector<boost::shared_ptr<Range>> field_ents,
-    std::vector<SmartPetscObj<AO>> sequence_of_aos,
-    std::vector<SmartPetscObj<Mat>> sequence_of_mats,
-    std::vector<bool> sym_schur, bool symm_op,
-    boost::shared_ptr<BlockStructure> diag_blocks)
-    : OpSchurAssembleEndImpl(
-          fields_name, field_ents, sequence_of_aos, sequence_of_mats, sym_schur,
-          std::vector<double>(fields_name.size(), 0), symm_op, diag_blocks) {}
+      fieldEnts(field_ents), schurAO(schur_ao), schurMat(schur_mat),
+      symSchur(sym_schur) {}
 
 template <typename OP_SCHUR_ASSEMBLE_BASE>
 template <typename I>
@@ -602,423 +532,9 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
     MOFEM_LOG("SELF", Sev::noisy) << "Schur assemble begin -> end";
 #endif
 
-#ifndef NDEBUG
   auto get_field_name = [&](auto uid) {
     return OP::getPtrFE()->mField.get_field_name(field_bit_from_bit_number(
         FieldEntity::getFieldBitNumberFromUniqueId(uid)));
-  };
-#endif
-
-  // Assemble Schur complement
-  auto assemble_mat = [&](SmartPetscObj<Mat> M, auto &storage) {
-    MoFEMFunctionBegin;
-    for (auto &s : storage) {
-      auto &m = s->getMat();
-      if (m.size1()) {
-        auto &row_ind = s->getRowInd();
-        auto &col_ind = s->getColInd();
-
-        if (auto ierr = this->assembleSchurMat(
-
-                M, s->uidRow, row_ind, s->uidCol, col_ind, m, ADD_VALUES
-
-                )) {
-#ifndef NDEBUG
-          auto field_ents = OP::getPtrFE()->mField.get_field_ents();
-          auto row_ent_it = field_ents->find(s->uidRow);
-          auto col_ent_it = field_ents->find(s->uidCol);
-          MOFEM_LOG_CHANNEL("SELF");
-          if (row_ent_it != field_ents->end())
-            MOFEM_LOG("SELF", Sev::error)
-                << "Assemble row entity: " << (*row_ent_it)->getName() << " "
-                << (*col_ent_it)->getEntTypeName() << " side "
-                << (*row_ent_it)->getSideNumber();
-          if (col_ent_it != field_ents->end())
-            MOFEM_LOG("SELF", Sev::error)
-                << "Assemble col entity: " << (*col_ent_it)->getName() << " "
-                << (*col_ent_it)->getEntTypeName() << " side "
-                << (*col_ent_it)->getSideNumber();
-#endif // NDEBUG
-          CHK_THROW_MESSAGE(ierr, "MatSetValues");
-        }
-      }
-    }
-
-    MoFEMFunctionReturn(0);
-  };
-
-  auto apply_schur = [&](auto &storage,
-
-                         auto lo_uid, auto hi_uid,
-
-                         double eps, bool symm) {
-    MoFEMFunctionBegin;
-
-    // add off diagonal matrix, i.e. schur complement
-    auto add_off_mat = [&](auto uid_row, auto uid_col, auto &row_ind,
-                           auto &col_ind, auto &offMatInvDiagOffMat) {
-      MoFEMFunctionBegin;
-
-      auto it = storage.template get<SchurElemMats::uid_mi_tag>().find(
-          boost::make_tuple(uid_row, uid_col));
-
-      if (it == storage.template get<SchurElemMats::uid_mi_tag>().end()) {
-
-        const auto size = SchurElemMats::locMats.size();
-
-        if (SchurElemMats::maxIndexCounter == size) {
-          SchurElemMats::locMats.push_back(new MatrixDouble());
-          SchurElemMats::rowIndices.push_back(new VectorInt());
-          SchurElemMats::colIndices.push_back(new VectorInt());
-          SchurElemMats::schurElemMats.push_back(new SchurElemMats(
-              SchurElemMats::maxIndexCounter, uid_row, uid_col));
-        } else {
-          SchurElemMats::schurElemMats[SchurElemMats::maxIndexCounter].uidRow =
-              uid_row;
-          SchurElemMats::schurElemMats[SchurElemMats::maxIndexCounter].uidCol =
-              uid_col;
-        }
-
-        auto p = SchurElemMats::schurL2Storage.emplace(
-            &SchurElemMats::schurElemMats[SchurElemMats::maxIndexCounter++]);
-#ifndef NDEBUG
-        if (!p.second) {
-          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                  "Failed to insert");
-        }
-#endif // NDEBUG
-
-        auto &mat = (*p.first)->getMat();
-        auto &set_row_ind = (*p.first)->getRowInd();
-        auto &set_col_ind = (*p.first)->getColInd();
-
-        set_row_ind.resize(row_ind.size(), false);
-        noalias(set_row_ind) = row_ind;
-        set_col_ind.resize(col_ind.size(), false);
-        noalias(set_col_ind) = col_ind;
-
-        mat.resize(offMatInvDiagOffMat.size1(), offMatInvDiagOffMat.size2(),
-                   false);
-        noalias(mat) = offMatInvDiagOffMat;
-
-#ifndef NDEBUG
-        if constexpr (debug_schur) {
-          MOFEM_LOG("SELF", Sev::noisy) << "insert: " << get_field_name(uid_row)
-                                        << " " << get_field_name(uid_col) << " "
-                                        << mat.size1() << " " << mat.size2();
-        }
-#endif // NDEBUG
-
-      } else {
-
-        auto &mat = (*it)->getMat();
-#ifndef NDEBUG
-        if constexpr (debug_schur) {
-          MOFEM_LOG("SELF", Sev::noisy) << "add: " << get_field_name(uid_row)
-                                        << " " << get_field_name(uid_col) << " "
-                                        << mat.size1() << " " << mat.size2();
-        }
-#endif // NDEBUG
-
-#ifndef NDEBUG
-        if (mat.size1() != offMatInvDiagOffMat.size1()) {
-          SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                   "Wrong size %d != %d", mat.size1(),
-                   offMatInvDiagOffMat.size1());
-        }
-        if (mat.size2() != offMatInvDiagOffMat.size2()) {
-          SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                   "Wrong size %d != %d", mat.size2(),
-                   offMatInvDiagOffMat.size2());
-        }
-#endif // NDEBUG
-        mat += offMatInvDiagOffMat;
-      }
-      MoFEMFunctionReturn(0);
-    };
-
-    auto get_row_view = [&]() {
-      auto row_it =
-          storage.template get<SchurElemMats::uid_mi_tag>().lower_bound(
-              boost::make_tuple(lo_uid, 0));
-      auto hi_row_it =
-          storage.template get<SchurElemMats::uid_mi_tag>().upper_bound(
-              boost::make_tuple(
-                  hi_uid, FieldEntity::getHiBitNumberUId(BITFIELDID_SIZE - 1)));
-      std::vector<const SchurElemMats *> schur_row_ptr_view;
-      schur_row_ptr_view.reserve(std::distance(row_it, hi_row_it));
-      for (; row_it != hi_row_it; ++row_it) {
-        schur_row_ptr_view.push_back(*row_it);
-      }
-      return schur_row_ptr_view;
-    };
-
-    auto get_col_view = [&]() {
-      auto col_it =
-          storage.template get<SchurElemMats::col_mi_tag>().lower_bound(lo_uid);
-      auto hi_col_it =
-          storage.template get<SchurElemMats::col_mi_tag>().upper_bound(hi_uid);
-      std::vector<const SchurElemMats *> schur_col_ptr_view;
-      schur_col_ptr_view.reserve(std::distance(col_it, hi_col_it));
-      for (; col_it != hi_col_it; ++col_it) {
-        schur_col_ptr_view.push_back(*col_it);
-      }
-      return schur_col_ptr_view;
-    };
-
-    auto schur_row_ptr_view = get_row_view();
-    auto schur_col_ptr_view = get_col_view();
-
-    // iterate row entities
-    for (auto row_it : schur_row_ptr_view) {
-      // only diagonals to get inverted diagonal
-      if (row_it->uidRow == row_it->uidCol) {
-#ifndef NDEBUG
-        if constexpr (debug_schur) {
-          MOFEM_LOG("SELF", Sev::noisy)
-              << "invert: uid_row " << get_field_name(row_it->uidRow)
-              << " row uid " << get_field_name(row_it->uidCol) << " : "
-              << (*row_it)->getMat().size1() << " "
-              << (*row_it)->getMat().size2();
-        }
-#endif // NDEBUG
-
-        // note invMat is multiplied by -1
-        CHKERR I::invertMat(row_it, invMat, eps);
-
-        // iterate column entities
-        for (auto c_lo : schur_col_ptr_view) {
-
-          auto &uid_row = c_lo->uidRow;
-          if (uid_row == row_it->uidRow) {
-            continue;
-          }
-
-          auto &cc_off_mat = c_lo->getMat();
-          invDiagOffMat.resize(cc_off_mat.size1(), invMat.size2(), false);
-#ifndef NDEBUG
-          if (invMat.size1() != cc_off_mat.size2()) {
-            MOFEM_LOG("SELF", Sev::error)
-                << "row_uid " << get_field_name(row_it->uidRow) << " row uid "
-                << get_field_name(uid_row);
-            SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                     "Wrong size %d != %d", invMat.size1(), cc_off_mat.size2());
-          }
-#endif // NDEBUG
-
-          // noalias(invDiagOffMat) = prod(cc_off_mat, invMat);
-          // A10*inv(A00)
-          cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-                      cc_off_mat.size1(), invMat.size2(), cc_off_mat.size2(),
-                      1., &*cc_off_mat.data().begin(), cc_off_mat.size2(),
-                      &*invMat.data().begin(), invMat.size2(), 0.,
-                      &*invDiagOffMat.data().begin(), invDiagOffMat.size2());
-
-          // iterate row entities
-          for (auto r_lo : schur_row_ptr_view) {
-
-            auto &uid_col = r_lo->uidCol;
-
-            // Skip diagonal
-            if (uid_col == row_it->uidRow) {
-              continue;
-            }
-
-            // If symmetry only run upper off diagonal terms
-            if (symm && uid_row > uid_col) {
-              continue;
-            }
-
-            auto &rr_off_mat = r_lo->getMat();
-            offMatInvDiagOffMat.resize(invDiagOffMat.size1(),
-                                       rr_off_mat.size2(), false);
-#ifndef NDEBUG
-            if (rr_off_mat.size1() != invDiagOffMat.size2()) {
-              MOFEM_LOG("SELF", Sev::error)
-                  << "uid_row " << get_field_name(row_it->uidRow)
-                  << ": col uid " << get_field_name(uid_col) << " row uid "
-                  << get_field_name(uid_row);
-              SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                       "Wrong size %d != %d", rr_off_mat.size1(),
-                       invDiagOffMat.size2());
-            }
-#endif // NDEBUG
-
-            // noalias(offMatInvDiagOffMat) = prod(invDiagOffMat, rr_off_mat);
-            // A10*inv(A00)*A01
-            cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-                        invDiagOffMat.size1(), rr_off_mat.size2(),
-                        invDiagOffMat.size2(), 1.,
-                        &*invDiagOffMat.data().begin(), invDiagOffMat.size2(),
-                        &*rr_off_mat.data().begin(), rr_off_mat.size2(), 0.,
-                        &*offMatInvDiagOffMat.data().begin(),
-                        offMatInvDiagOffMat.size2());
-
-            // Make on diagonal A11 have Schur complement S
-            CHKERR add_off_mat(uid_row, uid_col, c_lo->getRowInd(),
-                               r_lo->getColInd(), offMatInvDiagOffMat);
-
-            if (symm && uid_row != uid_col) {
-              transOffMatInvDiagOffMat.resize(offMatInvDiagOffMat.size2(),
-                                              offMatInvDiagOffMat.size1(),
-                                              false);
-              noalias(transOffMatInvDiagOffMat) = trans(offMatInvDiagOffMat);
-              CHKERR add_off_mat(uid_col, uid_row, r_lo->getColInd(),
-                                 c_lo->getRowInd(), transOffMatInvDiagOffMat);
-            }
-          }
-        }
-      }
-    }
-
-    MoFEMFunctionReturn(0);
-  };
-
-  auto erase_factored = [&](auto &storage, auto lo_uid, auto hi_uid) {
-    MoFEMFunctionBegin;
-
-    auto r_lo = storage.template get<SchurElemMats::uid_mi_tag>().lower_bound(
-        boost::make_tuple(lo_uid, 0));
-    auto r_hi = storage.template get<SchurElemMats::uid_mi_tag>().upper_bound(
-        boost::make_tuple(hi_uid,
-                          FieldEntity::getHiBitNumberUId(BITFIELDID_SIZE - 1)));
-    storage.template get<SchurElemMats::uid_mi_tag>().erase(r_lo, r_hi);
-
-    auto c_lo =
-        storage.template get<SchurElemMats::col_mi_tag>().lower_bound(lo_uid);
-    auto c_hi =
-        storage.template get<SchurElemMats::col_mi_tag>().upper_bound(hi_uid);
-    storage.template get<SchurElemMats::col_mi_tag>().erase(c_lo, c_hi);
-
-    MoFEMFunctionReturn(0);
-  };
-
-  auto assemble_S = [&](auto &storage, auto ao, auto mat) {
-    MoFEMFunctionBegin;
-
-    // apply AO
-    if (ao) {
-      for (auto &m : storage) {
-        auto &ind_row = m->getRowInd();
-        CHKERR AOApplicationToPetsc(ao, ind_row.size(), &*ind_row.begin());
-        auto &ind_col = m->getColInd();
-        CHKERR AOApplicationToPetsc(ao, ind_col.size(), &*ind_col.begin());
-      }
-    }
-
-    // assemble matrix
-    if (mat) {
-      CHKERR assemble_mat(mat, storage);
-    }
-
-    MoFEMFunctionReturn(0);
-  };
-
-  auto assemble_mat_a00_solver = [&](auto &&list) {
-    MoFEMFunctionBegin;
-#ifndef NDEBUG
-    if (!diagBlocks->dataInvBlocksPtr)
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "No dataInvBlocksPtr");
-#endif // NDEBUG
-
-    for (auto lo : list) {
-      auto &m = lo->getMat();
-      if (m.size1() && m.size2()) {
-        auto row_ind = lo->getRowInd()[0];
-        auto col_ind = lo->getColInd()[0];
-        auto nb_rows = m.size1();
-        auto nb_cols = m.size2();
-        auto it = diagBlocks->blockIndex.get<1>().find(
-            boost::make_tuple(row_ind, col_ind, nb_rows, nb_cols));
-        if (it != diagBlocks->blockIndex.get<1>().end()) {
-          auto inv_shift = it->getInvShift();
-          if (inv_shift != -1) {
-            auto *ptr = &((*diagBlocks->dataInvBlocksPtr)[inv_shift]);
-            // assemble of diag terms, witch might be changed by Schur
-            // complement
-            std::copy(m.data().begin(), m.data().end(), ptr);
-          }
-        }
-      }
-    }
-    MoFEMFunctionReturn(0);
-  };
-
-  auto assemble_inv_diag_a00_solver = [&](auto &&list) {
-    MoFEMFunctionBegin;
-#ifndef NDEBUG
-    if (!diagBlocks->dataInvBlocksPtr)
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "No dataInvBlocksPtr");
-#endif // NDEBUG
-
-    for (auto lo : list) {
-      if (invMat.size1() && invMat.size2()) {
-        auto row_ind = lo->getRowInd()[0];
-        auto col_ind = lo->getColInd()[0];
-        auto nb_rows = invMat.size1();
-        auto nb_cols = invMat.size2();
-        auto it = diagBlocks->blockIndex.get<1>().find(
-            boost::make_tuple(row_ind, col_ind, nb_rows, nb_cols));
-        if (it != diagBlocks->blockIndex.get<1>().end()) {
-          auto inv_shift = it->getInvShift();
-#ifndef NDEBUG
-          if (inv_shift == -1)
-            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "No inv_shift");
-#endif // NDEBUG
-          auto *ptr = &((*diagBlocks->dataInvBlocksPtr)[inv_shift]);
-          // assemble inverted diag
-          std::copy(invMat.data().begin(), invMat.data().end(), ptr);
-        }
-      }
-    }
-    MoFEMFunctionReturn(0);
-  };
-
-  auto gey_a00_diag_list = [&](auto &storage, auto lo_uid, auto hi_uid) {
-    std::vector<const SchurElemMats *> list;
-    auto lo = storage.template get<SchurElemMats::uid_mi_tag>().lower_bound(
-        boost::make_tuple(lo_uid, 0));
-    auto hi = storage.template get<SchurElemMats::uid_mi_tag>().upper_bound(
-        boost::make_tuple(hi_uid,
-                          FieldEntity::getHiBitNumberUId(BITFIELDID_SIZE - 1)));
-    list.reserve(std::distance(lo, hi));
-    for (auto it = lo; it != hi; ++it) {
-      if ((*it)->getRowInd()[0] == (*it)->getColInd()[0]) {
-        list.push_back(*it);
-      }
-    }
-    return list;
-  };
-
-  auto get_a00_row_list = [&](auto &storage, auto lo_uid, auto hi_uid) {
-    std::vector<const SchurElemMats *> list;
-    auto lo = storage.template get<SchurElemMats::uid_mi_tag>().lower_bound(
-        boost::make_tuple(lo_uid, 0));
-    auto hi = storage.template get<SchurElemMats::uid_mi_tag>().upper_bound(
-        boost::make_tuple(hi_uid,
-                          FieldEntity::getHiBitNumberUId(BITFIELDID_SIZE - 1)));
-    list.reserve(std::distance(lo, hi));
-    for (auto it = lo; it != hi; ++it) {
-      if ((*it)->getRowInd()[0] != (*it)->getColInd()[0]) {
-        list.push_back(*it);
-      }
-    }
-    return list;
-  };
-
-  auto get_a00_col_list = [&](auto &storage, auto lo_uid, auto hi_uid) {
-    std::vector<const SchurElemMats *> list;
-    auto lo =
-        storage.template get<SchurElemMats::col_mi_tag>().lower_bound(lo_uid);
-    auto hi =
-        storage.template get<SchurElemMats::col_mi_tag>().upper_bound(hi_uid);
-    list.reserve(std::distance(lo, hi));
-    for (auto it = lo; it != hi; ++it) {
-      if ((*it)->getRowInd()[0] != (*it)->getColInd()[0]) {
-        list.push_back(*it);
-      }
-    }
-    return list;
   };
 
   auto get_a00_uids = [&]() {
@@ -1065,38 +581,337 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
   };
 #endif // NDEBUG
 
-  auto assemble = [&](auto &&a00_uids) {
+  auto assemble_dense_blocks = [&]() {
+    using matrix_range = ublas::matrix_range<MatrixDouble>;
+    using range = ublas::range;
     MoFEMFunctionBegin;
     auto &storage = SchurElemMats::schurL2Storage;
-    int ss = 0;
-    for (auto &p : a00_uids) {
-      auto [lo_uid, hi_uid] = p;
+
+    auto assemble_schur = [this](auto &m, auto &uid_row, auto &uid_col,
+                                 auto *row_ind_ptr, auto *col_ind_ptr) {
+      MoFEMFunctionBegin;
+
+      if (schurMat) {
+
+        if (auto ierr = this->assembleSchurMat(
+
+                schurMat, uid_row, *row_ind_ptr, uid_col, *col_ind_ptr, m,
+                ADD_VALUES
+
+                )) {
 #ifndef NDEBUG
-      if constexpr (debug_schur) {
-        list_storage(storage);
-        MOFEM_LOG("SELF", Sev::noisy)
-            << "Schur assemble: " << get_field_name(lo_uid) << " - "
-            << get_field_name(hi_uid);
+          auto field_ents = OP::getPtrFE()->mField.get_field_ents();
+          auto row_ent_it = field_ents->find(uid_row);
+          auto col_ent_it = field_ents->find(uid_col);
+          MOFEM_LOG_CHANNEL("SELF");
+          if (row_ent_it != field_ents->end())
+            MOFEM_LOG("SELF", Sev::error)
+                << "Assemble row entity: " << (*row_ent_it)->getName() << " "
+                << (*col_ent_it)->getEntTypeName() << " side "
+                << (*row_ent_it)->getSideNumber();
+          if (col_ent_it != field_ents->end())
+            MOFEM_LOG("SELF", Sev::error)
+                << "Assemble col entity: " << (*col_ent_it)->getName() << " "
+                << (*col_ent_it)->getEntTypeName() << " side "
+                << (*col_ent_it)->getSideNumber();
+#endif // NDEBUG
+          CHK_THROW_MESSAGE(ierr, "MatSetValues");
+        }
       }
-#endif
-      CHKERR apply_schur(storage, lo_uid, hi_uid, diagEps[ss], symSchur[ss]);
-      if (diagBlocks) {
-        CHKERR assemble_mat_a00_solver(
-            get_a00_row_list(storage, lo_uid, hi_uid));
-        CHKERR assemble_mat_a00_solver(
-            get_a00_col_list(storage, lo_uid, hi_uid));
-        CHKERR assemble_inv_diag_a00_solver(
-            gey_a00_diag_list(storage, lo_uid, hi_uid));
+
+      MoFEMFunctionReturn(0);
+    };
+
+    auto a00_uids = get_a00_uids();
+
+    auto get_block_indexing = [&](auto &a00_uids) {
+      // iterate over a00 uids and find blocks
+      std::vector<const SchurElemMats *> block_list;
+      block_list.reserve(storage.size());
+      for (auto &rp_uid : a00_uids) {
+        auto [rlo_uid, rhi_uid] = rp_uid;
+        for (auto &cp_uid : a00_uids) {
+          auto [clo_uid, chi_uid] = cp_uid;
+
+          auto it =
+              storage.template get<SchurElemMats::uid_mi_tag>().lower_bound(
+                  boost::make_tuple(rlo_uid, clo_uid));
+          auto hi_it =
+              storage.template get<SchurElemMats::uid_mi_tag>().upper_bound(
+                  boost::make_tuple(rhi_uid, chi_uid));
+
+          for (; it != hi_it; ++it) {
+            if ((*it)->uidRow >= rlo_uid && (*it)->uidRow < rhi_uid &&
+                (*it)->uidCol >= clo_uid && (*it)->uidCol < chi_uid) {
+              block_list.push_back(*it);
+            }
+          }
+        }
       }
-      CHKERR erase_factored(storage, lo_uid, hi_uid);
-      CHKERR assemble_S(storage, sequenceOfAOs[ss], sequenceOfMats[ss]);
-      ++ss;
+
+      // create block indexes map for blockMat
+      std::map<UId, std::pair<size_t, const VectorInt *>>
+          block_indexing; // uid block map
+      for (auto d : block_list) {
+        if (block_indexing.find(d->uidRow) == block_indexing.end()) {
+          block_indexing[d->uidRow] =
+              std::make_pair(d->getRowInd().size(), &(d->getRowInd()));
+        }
+      }
+
+      // set indexes to block
+      int mat_block_size = 0; // size of block matrix
+      for (auto &p_uid : a00_uids) {
+        auto [lo_uid, hi_uid] = p_uid;
+        auto lo = block_indexing.lower_bound(lo_uid);
+        auto up = block_indexing.upper_bound(hi_uid);
+        for (; lo != up; ++lo) {
+          lo->second.first = mat_block_size;
+          mat_block_size += lo->second.second->size();
+        }
+      }
+
+      return std::make_tuple(block_list, block_indexing, mat_block_size);
+    };
+
+    auto get_schur_block_list = [&](auto &block_indexing) {
+      std::vector<const SchurElemMats *> block_list;
+      block_list.reserve(storage.size());
+      for (auto &s : storage) {
+        if (block_indexing.find(s->uidRow) == block_indexing.end() &&
+            block_indexing.find(s->uidCol) == block_indexing.end()) {
+          block_list.push_back(s);
+        }
+      }
+      return block_list;
+    };
+
+    auto [block_list, block_indexing, block_mat_size] =
+        get_block_indexing(a00_uids);
+
+    if (block_mat_size == 0) {
+
+      if (schurAO) {
+        for (auto &s : storage) {
+          CHKERR AOApplicationToPetsc(schurAO, s->getRowInd().size(),
+                                      &*s->getRowInd().begin());
+          CHKERR AOApplicationToPetsc(schurAO, s->getColInd().size(),
+                                      &*s->getColInd().begin());
+        }
+      }
+
+      for (auto &s : storage) {
+        auto &m = s->getMat();
+        CHKERR assemble_schur(m, s->uidRow, s->uidCol, &(s->getRowInd()),
+                              &(s->getColInd()));
+      }
+      MoFEMFunctionReturnHot(0);
     }
+
+    blockMat.resize(block_mat_size, block_mat_size, false);
+    blockMat.clear();
+
+    auto get_range = [](auto &bi) {
+      return range(bi.first, bi.first + bi.second->size());
+    };
+
+    for (auto &s : block_list) {
+      auto &m = s->getMat();
+#ifndef NDEBUG
+      if (block_indexing.find(s->uidRow) == block_indexing.end())
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong rlo_uid");
+      if (block_indexing.find(s->uidCol) == block_indexing.end())
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong clo_uid");
+#endif // NDEBUG
+
+      auto &rbi = block_indexing.at(s->uidRow);
+      auto &cbi = block_indexing.at(s->uidCol);
+
+      auto sub_mat = matrix_range(blockMat, get_range(rbi), get_range(cbi));
+      sub_mat = m;
+    }
+
+    auto get_zeroed_indices = [&](auto extractor_uid, auto extractor_ind) {
+      std::vector<int> zeroed_indices;
+      zeroed_indices.reserve(block_mat_size);
+      for (auto &s : block_list) {
+        auto &bi = block_indexing.at(extractor_uid(s));
+        auto &ind = extractor_ind(s);
+        for (auto it = ind.begin(); it != ind.end(); ++it) {
+          if (*it < 0) {
+            auto idx = bi.first + std::distance(ind.begin(), it);
+            zeroed_indices.push_back(idx);
+          }
+        }
+      }
+      std::sort(zeroed_indices.begin(), zeroed_indices.end());
+      auto it = std::unique(zeroed_indices.begin(), zeroed_indices.end());
+      zeroed_indices.resize(std::distance(zeroed_indices.begin(), it));
+      return zeroed_indices;
+    };
+    auto zero_rows = get_zeroed_indices(
+        [](auto &s) { return s->uidRow; },
+        [](auto &s) -> VectorInt & { return s->getRowInd(); });
+    auto zero_cols = get_zeroed_indices(
+        [](auto &s) { return s->uidCol; },
+        [](auto &s) -> VectorInt & { return s->getColInd(); });
+
+    for (auto i : zero_rows) {
+      for (auto j = 0; j != blockMat.size2(); ++j) {
+        blockMat(i, j) = 0;
+      }
+    }
+    for (auto j : zero_cols) {
+      for (auto i = 0; i != blockMat.size1(); ++i) {
+        blockMat(i, j) = 0;
+      }
+    }
+    for (auto i : zero_rows) {
+      blockMat(i, i) = 1;
+    }
+
+    CHKERR I::invertMat(blockMat, invMat);
+
+    // clear storage and block list from a00 blocks, no more needed
+    for (auto &s : block_list) {
+      auto it = storage.template get<SchurElemMats::uid_mi_tag>().find(
+          boost::make_tuple(s->uidRow, s->uidCol));
+      storage.template get<SchurElemMats::uid_mi_tag>().erase(it);
+    }
+    block_list.clear();
+
+    if (schurAO) {
+      for (auto &s : storage) {
+        if (block_indexing.find(s->uidRow) == block_indexing.end()) {
+          CHKERR AOApplicationToPetsc(schurAO, s->getRowInd().size(),
+                                      &*s->getRowInd().begin());
+        }
+        if (block_indexing.find(s->uidCol) == block_indexing.end()) {
+          CHKERR AOApplicationToPetsc(schurAO, s->getColInd().size(),
+                                      &*s->getColInd().begin());
+        }
+      }
+    }
+
+    auto schur_block_list = get_schur_block_list(block_indexing);
+    for(auto &s : schur_block_list) {
+      auto &m = s->getMat();
+      CHKERR assemble_schur(m, s->uidRow, s->uidCol, &(s->getRowInd()),
+                            &(s->getColInd()));
+    }
+    for (auto &s : schur_block_list) {
+      auto it = storage.template get<SchurElemMats::uid_mi_tag>().find(
+          boost::make_tuple(s->uidRow, s->uidCol));
+      storage.template get<SchurElemMats::uid_mi_tag>().erase(it);
+    }
+    schur_block_list.clear();
+
+    for (
+
+        auto rp_uid_it = a00_uids.begin(); rp_uid_it != a00_uids.end();
+        ++rp_uid_it
+
+    ) {
+      auto [rlo_uid, rhi_uid] = *rp_uid_it;
+      for (auto rm = block_indexing.lower_bound(rlo_uid);
+           rm != block_indexing.upper_bound(rhi_uid); ++rm) {
+        auto &rbi = rm->second;
+
+        auto a_lo_tmp =
+            storage.template get<SchurElemMats::col_mi_tag>().lower_bound(
+                rm->first);
+        auto a_hi =
+            storage.template get<SchurElemMats::col_mi_tag>().upper_bound(
+                rm->first);
+
+        for (
+
+            auto cp_uid_it = (symSchur) ? rp_uid_it : a00_uids.begin();
+            cp_uid_it != a00_uids.end(); ++cp_uid_it
+
+        ) {
+          auto [clo_uid, chi_uid] = *cp_uid_it;
+          for (auto cm = block_indexing.lower_bound(clo_uid);
+               cm != block_indexing.upper_bound(chi_uid); ++cm) {
+            auto &cbi = cm->second;
+
+            auto c_lo_tmp =
+                storage.template get<SchurElemMats::uid_mi_tag>().lower_bound(
+                    boost::make_tuple(cm->first, 0));
+            auto c_hi =
+                storage.template get<SchurElemMats::uid_mi_tag>().upper_bound(
+                    boost::make_tuple(cm->first, FieldEntity::getHiBitNumberUId(
+                                                     BITFIELDID_SIZE - 1)));
+
+            auto sub_inv_mat =
+                matrix_range(invMat, get_range(rbi), get_range(cbi));
+            bM.resize(sub_inv_mat.size1(), sub_inv_mat.size2());
+            noalias(bM) = sub_inv_mat;
+
+            for (auto a_lo = a_lo_tmp; a_lo != a_hi; ++a_lo) {
+#ifndef NDEBUG
+              if (block_indexing.find((*a_lo)->uidRow) != block_indexing.end())
+                SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                        "Wrong a_lo->uidRow");
+#endif
+
+              auto &a = (*a_lo)->getMat();
+              abM.resize(a.size1(), bM.size2(), false);
+              abM.clear();
+              cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+
+                          a.size1(), bM.size2(), a.size2(), 1.,
+
+                          &*a.data().begin(), a.size2(),
+
+                          &*bM.data().begin(), bM.size2(), 0.,
+
+                          &*abM.data().begin(), abM.size2());
+
+              for (auto c_lo = c_lo_tmp; c_lo != c_hi; ++c_lo) {
+#ifndef NDEBUG
+                if (block_indexing.find((*c_lo)->uidCol) !=
+                    block_indexing.end())
+                  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                          "Wrong a_lo->uidRow");
+#endif
+
+                auto &c = (*c_lo)->getMat();
+
+                abcM.resize(abM.size1(), c.size2(), false);
+                abcM.clear();
+
+                cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+                            abM.size1(), c.size2(), abM.size2(), -1.,
+
+                            &*abM.data().begin(), abM.size2(),
+
+                            &*c.data().begin(), c.size2(), 0.,
+
+                            &*abcM.data().begin(), abcM.size2());
+
+                CHKERR assemble_schur(abcM, (*a_lo)->uidRow, (*c_lo)->uidCol,
+                                      &((*a_lo)->getRowInd()),
+                                      &((*c_lo)->getColInd()));
+
+                if (symSchur && rp_uid_it != cp_uid_it) {
+                  abcM = trans(abcM);
+                  CHKERR assemble_schur(abcM, (*c_lo)->uidCol, (*a_lo)->uidRow,
+                                        &((*c_lo)->getColInd()),
+                                        &((*a_lo)->getRowInd()));
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
     MoFEMFunctionReturn(0);
   };
 
   // Assemble Schur complements
-  CHKERR assemble(get_a00_uids());
+  CHKERR assemble_dense_blocks();
 
 #ifndef NDEBUG
   if constexpr (debug_schur)
@@ -1111,47 +926,10 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
 }
 
 struct SchurDSYSV {
-  static auto invertMat(const SchurElemMats *row_ptr, MatrixDouble &inv,
-                        double eps) {
-    MoFEMFunctionBeginHot;
 
-    auto &m = row_ptr->getMat();
+  static auto invertMat(MatrixDouble &m, MatrixDouble &inv) {
+    MoFEMFunctionBegin;
 
-    VectorInt ipiv;
-    VectorDouble lapack_work;
-    const int nb = m.size1();
-
-    if (eps) {
-      for (int cc = 0; cc != nb; ++cc) {
-        m(cc, cc) += eps;
-      }
-    }
-
-    inv.resize(nb, nb, false);
-    inv.clear();
-    auto ptr = &*inv.data().begin();
-    for (int c = 0; c != nb; ++c, ptr += nb + 1)
-      *ptr = -1;
-    ipiv.resize(nb, false);
-    lapack_work.resize(nb * nb, false);
-    const auto info =
-        lapack_dsysv('L', nb, nb, &*m.data().begin(), nb, &*ipiv.begin(),
-                     &*inv.data().begin(), nb, &*lapack_work.begin(), nb * nb);
-    if (info != 0)
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-               "Can not invert matrix info = %d", info);
-    MoFEMFunctionReturnHot(0);
-  };
-};
-
-struct SchurDGESV {
-  static auto invertMat(const SchurElemMats *row_ptr, MatrixDouble &inv,
-                        double eps) {
-    MoFEMFunctionBeginHot;
-
-    auto &m = row_ptr->getMat();
-
-    VectorInt ipiv;
     const auto nb = m.size1();
 #ifndef NDEBUG
     if (nb != m.size2()) {
@@ -1160,25 +938,60 @@ struct SchurDGESV {
     }
 #endif
 
-    if (eps) {
-      for (int cc = 0; cc != nb; ++cc) {
-        m(cc, cc) += eps;
-      }
+    inv.resize(nb, nb, false);
+    inv.swap(m);
+    m.resize(2 * nb, 2 * nb, false);
+
+    VectorInt ipiv(nb);
+    int info;
+
+    // FIXME: add lapack_dsytrf and lapack_dsytri
+
+    info = lapack_dgetrf(nb, nb, &*inv.data().begin(), nb, &*ipiv.begin());
+    if (info)
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "lapack error info = %d", info);
+    info = lapack_dgetri(nb, &*inv.data().begin(), nb, &*ipiv.begin(),
+                         &*m.data().begin(), m.data().size());
+    if (info)
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "lapack error info = %d", info);
+
+    MoFEMFunctionReturn(0);
+  }
+};
+
+struct SchurDGESV {
+
+  static auto invertMat(MatrixDouble &m, MatrixDouble &inv) {
+    MoFEMFunctionBeginHot;
+
+    const auto nb = m.size1();
+#ifndef NDEBUG
+    if (nb != m.size2()) {
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "It should be square matrix %d != %d", nb, m.size2());
     }
+#endif
 
     inv.resize(nb, nb, false);
-    inv.clear();
-    auto ptr = &*inv.data().begin();
-    for (int c = 0; c != nb; ++c, ptr += nb + 1)
-      *ptr = -1;
-    ipiv.resize(nb, false);
-    const auto info = lapack_dgesv(nb, nb, &*m.data().begin(), nb,
-                                   &*ipiv.begin(), &*inv.data().begin(), nb);
-    if (info != 0)
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-               "Can not invert matrix info = %d", info);
+    inv.swap(m);
+
+    VectorInt ipiv(nb);
+    int info;
+
+    info = lapack_dgetrf(nb, nb, &*inv.data().begin(), nb, &*ipiv.begin());
+    if (info)
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "lapack error info = %d", info);
+    info = lapack_dgetri(nb, &*inv.data().begin(), nb, &*ipiv.begin(),
+                         &*m.data().begin(), m.data().size());
+    if (info)
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "lapack error info = %d", info);
+
     MoFEMFunctionReturnHot(0);
-  };
+  }
 };
 
 MoFEMErrorCode
@@ -1241,22 +1054,33 @@ boost::shared_ptr<BlockStructure> createBlockMatStructure(
   };
 
   // extract DOFs for rows/columns. DOFs are associated with fields entities
-  // for given problem. 
+  // for given problem.
   auto row_extractor = [](auto &e) { return e->entityCacheRowDofs; };
   auto col_extractor = [](auto &e) { return e->entityCacheColDofs; };
 
   auto extract_data = [](auto &&its, auto extractor) {
-    std::vector<std::tuple<int, int, int>> data;
+    std::vector<std::tuple<UId, int, int, int>> data;
     data.reserve(std::distance(its.first, its.second));
     // iterate field dofs
     for (; its.first != its.second; ++its.first) {
       if (auto e = its.first->lock()) {
         if (auto cache = extractor(e).lock()) {
-          auto nb_dofs = std::distance(cache->loHi[0], cache->loHi[1]);
+          int nb_dofs = 0;
+          for (auto dof = cache->loHi[0]; dof != cache->loHi[1]; ++dof) {
+            if ((*dof)->getPetscGlobalDofIdx() != -1)
+              ++nb_dofs;
+          }
+          auto uid = e->getLocalUniqueId();
           if (nb_dofs) {
+
             auto glob = (*cache->loHi[0])->getPetscGlobalDofIdx();
             auto loc = (*cache->loHi[0])->getPetscLocalDofIdx();
-            data.emplace_back(glob, nb_dofs, loc);
+            while (glob == -1 && cache->loHi[0] != cache->loHi[1]) {
+              ++cache->loHi[0];
+              glob = (*cache->loHi[0])->getPetscGlobalDofIdx();
+              loc = (*cache->loHi[0])->getPetscLocalDofIdx();
+            }
+            data.emplace_back(uid, glob, nb_dofs, loc);
 
 #ifndef NDEBUG
 
@@ -1269,6 +1093,8 @@ boost::shared_ptr<BlockStructure> createBlockMatStructure(
             }
 
 #endif
+          } else {
+            data.emplace_back(uid, -1, 0, -1);
           }
         }
       }
@@ -1303,6 +1129,8 @@ boost::shared_ptr<BlockStructure> createBlockMatStructure(
     fe_method->operatorHook = [&]() {
       MoFEMFunctionBegin;
 
+      auto fe_uid = fe_method->numeredEntFiniteElementPtr->getLocalUniqueId();
+
       for (auto f = 0; f != row_bit_numbers.size(); ++f) {
 
         auto row_data =
@@ -1315,13 +1143,12 @@ boost::shared_ptr<BlockStructure> createBlockMatStructure(
                          col_extractor);
 
         for (auto &r : row_data) {
-          auto [r_glob, r_nb_dofs, r_loc] = r;
+          auto [r_uid, r_glob, r_nb_dofs, r_loc] = r;
           for (auto &c : col_data) {
-            auto [c_glob, c_nb_dofs, c_loc] = c;
-            if (r_glob != -1 && c_glob != -1) {
-              data_ptr->blockIndex.insert(BlockStructure::Indexes{
-                  r_glob, c_glob, r_nb_dofs, c_nb_dofs, r_loc, c_loc, -1, -1});
-            }
+            auto [c_uid, c_glob, c_nb_dofs, c_loc] = c;
+            data_ptr->blockIndex.insert(BlockStructure::Indexes{
+                r_uid, c_uid, fe_uid, r_glob, c_glob, r_nb_dofs, c_nb_dofs,
+                r_loc, c_loc, -1});
           }
         }
       }
@@ -1358,17 +1185,40 @@ boost::shared_ptr<BlockStructure> createBlockMatStructure(
   return data_ptr;
 }
 
-static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
-                                             InsertMode iora);
+static MoFEMErrorCode mult_schur_block_shell(
+    Mat mat, Vec x, Vec y, InsertMode iora,
+    boost::function<
+        int(DiagBlockIndex::BlockIndex::nth_index<0>::type::iterator)>
+        shift_extractor,
+    boost::shared_ptr<std::vector<double>> data_blocks_ptr,
+    bool multiply_by_preconditioner);
 
-static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec x, Vec y,
+static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
                                               InsertMode iora);
 
 static PetscErrorCode mult(Mat mat, Vec x, Vec y) {
-  return mult_schur_block_shell(mat, x, y, INSERT_VALUES);
+  BlockStructure *ctx;
+  CHKERR MatShellGetContext(mat, (void **)&ctx);
+  return mult_schur_block_shell(
+      mat, x, y, INSERT_VALUES,
+
+      [](DiagBlockIndex::BlockIndex::nth_index<0>::type::iterator it) {
+        return it->getMatShift();
+      },
+
+      ctx->dataBlocksPtr, true);
 }
 static PetscErrorCode mult_add(Mat mat, Vec x, Vec y) {
-  return mult_schur_block_shell(mat, x, y, ADD_VALUES);
+  BlockStructure *ctx;
+  CHKERR MatShellGetContext(mat, (void **)&ctx);
+  return mult_schur_block_shell(
+      mat, x, y, ADD_VALUES,
+
+      [](DiagBlockIndex::BlockIndex::nth_index<0>::type::iterator it) {
+        return it->getMatShift();
+      },
+
+      ctx->dataBlocksPtr, true);
 }
 static PetscErrorCode solve(Mat mat, Vec x, Vec y) {
   return solve_schur_block_shell(mat, x, y, INSERT_VALUES);
@@ -1386,6 +1236,34 @@ static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
   CHKERR MatShellGetContext(A, (void **)&ctx);
 
   PetscLogEventBegin(SchurEvents::MOFEM_EVENT_zeroRowsAndCols, 0, 0, 0, 0);
+
+  using BlockIndexView = multi_index_container<
+
+      const DiagBlockIndex::Indexes *,
+
+      indexed_by<
+
+          ordered_non_unique<
+
+              const_mem_fun<DiagBlockIndex::Indexes, int,
+                            &DiagBlockIndex::Indexes::rowShift>
+
+              >,
+
+          ordered_non_unique<
+
+              const_mem_fun<DiagBlockIndex::Indexes, int,
+                            &DiagBlockIndex::Indexes::colShift>
+
+              >
+
+          >>;
+
+  BlockIndexView view;
+  auto hint = view.get<0>().end();
+  for (auto &v : ctx->blockIndex) {
+    hint = view.insert(hint, &v);
+  }
 
   const int *ptr = &rows[0];
   int is_nb_rows = N;
@@ -1414,16 +1292,16 @@ static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
 
   for (auto n = 0; n != is_nb_rows; ++n) {
     auto row = ptr[n];
-    auto rlo = ctx->blockIndex.get<2>().lower_bound(row);
-    auto rhi = ctx->blockIndex.get<2>().end();
+    auto rlo = view.get<0>().lower_bound(row);
+    auto rhi = view.get<0>().end();
     for (; rlo != rhi; ++rlo) {
-      auto r_shift = row - rlo->getRow();
-      if (r_shift >= 0 && r_shift < rlo->getNbRows()) {
-        auto *ptr = &(*ctx->dataBlocksPtr)[rlo->getMatShift()];
-        for (auto i = 0; i != rlo->getNbCols(); ++i) {
-          ptr[i + r_shift * rlo->getNbCols()] = 0;
+      auto r_shift = row - (*rlo)->getRow();
+      if (r_shift >= 0 && r_shift < (*rlo)->getNbRows()) {
+        auto *ptr = &(*ctx->dataBlocksPtr)[(*rlo)->getMatShift()];
+        for (auto i = 0; i != (*rlo)->getNbCols(); ++i) {
+          ptr[i + r_shift * (*rlo)->getNbCols()] = 0;
         }
-      } else if (rlo->getRow() + rlo->getNbRows() > row) {
+      } else if ((*rlo)->getRow() + (*rlo)->getNbRows() > row) {
         break;
       }
     }
@@ -1431,30 +1309,30 @@ static PetscErrorCode zero_rows_columns(Mat A, PetscInt N,
 
   for (auto n = 0; n != is_nb_rows; ++n) {
     auto col = ptr[n];
-    auto clo = ctx->blockIndex.get<3>().lower_bound(col);
-    auto chi = ctx->blockIndex.get<3>().end();
+    auto clo = view.get<1>().lower_bound(col);
+    auto chi = view.get<1>().end();
     for (; clo != chi; ++clo) {
-      auto c_shift = col - clo->getCol();
-      if (c_shift >= 0 && c_shift < clo->getNbCols()) {
+      auto c_shift = col - (*clo)->getCol();
+      if (c_shift >= 0 && c_shift < (*clo)->getNbCols()) {
 
-        auto *ptr = &(*ctx->dataBlocksPtr)[clo->getMatShift()];
-        for (auto i = 0; i != clo->getNbRows(); ++i) {
-          ptr[c_shift + i * clo->getNbCols()] = 0;
+        auto *ptr = &(*ctx->dataBlocksPtr)[(*clo)->getMatShift()];
+        for (auto i = 0; i != (*clo)->getNbRows(); ++i) {
+          ptr[c_shift + i * (*clo)->getNbCols()] = 0;
         }
 
         // diagonal
         if (
 
-            clo->getRow() == clo->getCol() && clo->getLocRow() < loc_m &&
-            clo->getLocCol() < loc_n
+            (*clo)->getRow() == (*clo)->getCol() &&
+            (*clo)->getLocRow() < loc_m && (*clo)->getLocCol() < loc_n
 
         ) {
-          auto r_shift = col - clo->getCol();
-          if (r_shift >= 0 && r_shift < clo->getNbRows()) {
-            ptr[c_shift + r_shift * clo->getNbCols()] = diag;
+          auto r_shift = col - (*clo)->getCol();
+          if (r_shift >= 0 && r_shift < (*clo)->getNbRows()) {
+            ptr[c_shift + r_shift * (*clo)->getNbCols()] = diag;
           }
         }
-      } else if (clo->getCol() + clo->getNbCols() > col) {
+      } else if ((*clo)->getCol() + (*clo)->getNbCols() > col) {
         break;
       }
     }
@@ -1475,8 +1353,6 @@ static PetscErrorCode mat_zero(Mat m) {
   CHKERR MatShellGetContext(m, (void **)&ctx);
   if (ctx->dataBlocksPtr)
     std::fill(ctx->dataBlocksPtr->begin(), ctx->dataBlocksPtr->end(), 0.);
-  if (ctx->dataInvBlocksPtr)
-    std::fill(ctx->dataInvBlocksPtr->begin(), ctx->dataInvBlocksPtr->end(), 0.);
   if (ctx->preconditionerBlocksPtr)
     std::fill(ctx->preconditionerBlocksPtr->begin(),
               ctx->preconditionerBlocksPtr->end(), 0.);
@@ -1536,8 +1412,15 @@ SchurShellMatData createBlockMat(DM dm,
 
 constexpr int max_gemv_size = 2;
 
-static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
-                                             InsertMode iora) {
+static MoFEMErrorCode mult_schur_block_shell(
+    Mat mat, Vec x, Vec y, InsertMode iora,
+
+    boost::function<
+        int(DiagBlockIndex::BlockIndex::nth_index<0>::type::iterator)>
+        shift_extractor,
+
+    boost::shared_ptr<std::vector<double>> data_blocks_ptr,
+    bool multiply_by_preconditioner) {
   MoFEMFunctionBegin;
   BlockStructure *ctx;
   CHKERR MatShellGetContext(mat, (void **)&ctx);
@@ -1580,8 +1463,8 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
     CHKERR VecGetLocalSize(loc_ghost_y, &nb_y);
     CHKERR VecGetArray(loc_ghost_y, &y_array);
 
-    double *block_ptr = &*ctx->dataBlocksPtr->begin();
-    auto it = ctx->blockIndex.get<0>().lower_bound(0);
+    double *block_ptr = &*data_blocks_ptr->begin();
+    auto it = ctx->blockIndex.get<0>().begin();
     auto hi = ctx->blockIndex.get<0>().end();
 
     while (it != hi) {
@@ -1595,7 +1478,7 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
       auto nb_cols = it->getNbCols();
       auto x_ptr = &x_array[it->getLocCol()];
       auto y_ptr = &y_array[it->getLocRow()];
-      auto ptr = &block_ptr[it->getMatShift()];
+      auto ptr = &block_ptr[shift_extractor(it)];
 
       if (std::min(nb_rows, nb_cols) > max_gemv_size) {
         cblas_dgemv(CblasRowMajor, CblasNoTrans, nb_rows, nb_cols, 1.0, ptr,
@@ -1610,7 +1493,7 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
       ++it;
     }
 
-    if (ctx->multiplyByPreconditioner) {
+    if (multiply_by_preconditioner && ctx->multiplyByPreconditioner) {
 
       if (!ctx->preconditionerBlocksPtr)
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -1618,7 +1501,7 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
 
       auto preconditioner_ptr = &*ctx->preconditionerBlocksPtr->begin();
 
-      auto it = ctx->blockIndex.get<0>().lower_bound(0);
+      auto it = ctx->blockIndex.get<0>().begin();
       auto hi = ctx->blockIndex.get<0>().end();
 
       while (it != hi) {
@@ -1628,12 +1511,12 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
           continue;
         }
 
-        if (it->getInvShift() != -1) {
+        if (it->getMatShift() != -1) {
           auto nb_rows = it->getNbRows();
           auto nb_cols = it->getNbCols();
           auto x_ptr = &x_array[it->getLocCol()];
           auto y_ptr = &y_array[it->getLocRow()];
-          auto ptr = &preconditioner_ptr[it->getInvShift()];
+          auto ptr = &preconditioner_ptr[it->getMatShift()];
           if (std::min(nb_rows, nb_cols) > max_gemv_size) {
             cblas_dgemv(CblasRowMajor, CblasNoTrans, nb_rows, nb_cols, 1.0, ptr,
                         nb_cols, x_ptr, 1, 1.0, y_ptr, 1);
@@ -1715,225 +1598,143 @@ static MoFEMErrorCode mult_schur_block_shell(Mat mat, Vec x, Vec y,
 
 static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
                                               InsertMode iora) {
+  using matrix_range = ublas::matrix_range<MatrixDouble>;
+  using range = ublas::range;
   MoFEMFunctionBegin;
   BlockStructure *ctx;
   CHKERR MatShellGetContext(mat, (void **)&ctx);
 
   PetscLogEventBegin(SchurEvents::MOFEM_EVENT_BlockStructureSolve, 0, 0, 0, 0);
 
-  // Note that for solver those two are swapped
-  Vec ghost_x = ctx->ghostY;
-  Vec ghost_y = ctx->ghostX;
+  if (ctx->multiplyByPreconditioner) {
+    if (!ctx->preconditionerBlocksPtr)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "No preconditionerBlocksPtr");
+  }
 
-  CHKERR VecCopy(y, ghost_y);
-  CHKERR VecZeroEntries(ghost_x);
-
-  // CHKERR VecGhostUpdateBegin(ghost_y, INSERT_VALUES, SCATTER_FORWARD);
-  // CHKERR VecGhostUpdateEnd(ghost_y, INSERT_VALUES, SCATTER_FORWARD);
+  if (iora == INSERT_VALUES) {
+    CHKERR VecZeroEntries(x);
+  }
 
   double *x_array;
-  Vec loc_ghost_x;
-  CHKERR VecGhostGetLocalForm(ghost_x, &loc_ghost_x);
-  CHKERR VecGetArray(loc_ghost_x, &x_array);
-
-  Vec loc_ghost_y;
-  CHKERR VecGhostGetLocalForm(ghost_y, &loc_ghost_y);
-  auto inv_y = vectorDuplicate(loc_ghost_y);
-  auto add_y = vectorDuplicate(loc_ghost_y);
-  CHKERR VecZeroEntries(inv_y);
-  CHKERR VecCopy(loc_ghost_y, add_y);
-  double *y_inv_array;
-  CHKERR VecGetArray(inv_y, &y_inv_array);
-  double *y_add_array;
-  CHKERR VecGetArray(add_y, &y_add_array);
+  CHKERR VecGetArray(x, &x_array);
   double *y_array;
-  CHKERR VecGetArray(loc_ghost_y, &y_array);
+  CHKERR VecGetArray(y, &y_array);
 
-  auto data_inv_blocks = ctx->dataInvBlocksPtr;
-  auto inv_block_ptr = &*data_inv_blocks->begin();
-  auto data_blocks = ctx->dataBlocksPtr;
+  std::vector<const DiagBlockIndex::Indexes *> blocks;
+  MatrixDouble block_mat;
+  VectorDouble block_y;
+  VectorInt ipiv;
 
-  auto *data_inv = dynamic_cast<DiagBlockInvStruture *>(ctx);
-  auto index_view = &data_inv->indexView;
+  auto &block_index = ctx->blockIndex.get<1>();
+  for (auto it = block_index.begin(); it != block_index.end();) {
 
-  std::vector<double> f;
+    // get blocks on finit element
+    blocks.clear();
+    auto last_uid = it->getFEUId();
+    while (it != block_index.end() && it->getFEUId() == last_uid) {
+      blocks.push_back(&*it);
+      ++it;
+    }
 
-  // That make a pass over block, applying lower diagonal
-  for (auto s1 = 0; s1 != index_view->diagUpRange.size() - 1; ++s1) {
-    auto lo = index_view->diagUpRange[s1];
-    auto hi = index_view->diagUpRange[s1 + 1];
+    // set local indices
+    std::map<UId, std::tuple<int, int, int>> block_indexing; // uid block map
+    for (auto b : blocks) {
+      if (block_indexing.find(b->getRowUId()) == block_indexing.end()) {
+        block_indexing[b->getRowUId()] =
+            std::make_tuple(b->getNbRows(), b->getNbRows(), b->getLocRow());
+      }
+    }
+    std::sort(blocks.begin(), blocks.end(), [](auto a, auto b) {
+      if (a->getRowUId() == b->getRowUId())
+        return a->getColUId() < b->getColUId();
+      else
+        return a->getRowUId() < b->getRowUId();
+    });
 
-    // first index is off diag
-    auto diag_index_ptr =
-        index_view->upView[lo]; // First index is inverted diagonal
-    ++lo;
+    // set indexes to block
+    int mat_block_size = 0; // size of block matrix
+    for (auto &b : block_indexing) {
+      auto &[index, size, loc] = b.second;
+      index = mat_block_size;
+      mat_block_size += size;
+    }
 
-    auto row = diag_index_ptr->getLocRow();
-    auto col = diag_index_ptr->getLocCol();
-    auto nb_rows = diag_index_ptr->getNbRows();
-    auto nb_cols = diag_index_ptr->getNbCols();
-    auto inv_shift = diag_index_ptr->getInvShift();
+    auto get_range = [](auto &b) {
+      auto [index, size, loc] = b;
+      return range(index, index + size);
+    };
 
-    for (; lo != hi; ++lo) {
-      auto off_index_ptr = index_view->upView[lo];
-      auto off_col = off_index_ptr->getLocCol();
-      auto off_nb_cols = off_index_ptr->getNbCols();
-      auto off_shift = off_index_ptr->getInvShift();
-#ifndef NDEBUG
-      if (off_shift == -1)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "off_shift == -1");
-#endif // NDEBUG
-      auto ptr = &inv_block_ptr[off_shift];
-      if (std::min(nb_rows, off_nb_cols) > max_gemv_size) {
-        cblas_dgemv(CblasRowMajor, CblasNoTrans, nb_rows, off_nb_cols, -1.0,
-                    ptr, off_nb_cols, &y_inv_array[off_col], 1, 1.0,
-                    &y_add_array[row], 1);
-      } else {
-        for (auto r = 0; r != nb_rows; ++r) {
-          for (auto c = 0; c != off_nb_cols; ++c) {
-            y_add_array[row + r] -=
-                ptr[r * off_nb_cols + c] * y_inv_array[off_col + c];
-          }
+    std::vector<std::tuple<int, int, int, int, int>> block_data;
+    block_data.reserve(blocks.size());
+    for (auto s : blocks) {
+      auto ruid = s->getRowUId();
+      auto cuid = s->getColUId();
+      auto &rbi = block_indexing.at(ruid);
+      auto &cbi = block_indexing.at(cuid);
+      if (auto shift = s->getMatShift(); shift != -1) {
+        block_data.push_back(std::make_tuple(
+
+            shift,
+
+            s->getNbRows(), s->getNbCols(),
+
+            get<0>(rbi), get<0>(cbi))
+
+        );
+      }
+    }
+    block_mat.resize(mat_block_size, mat_block_size, false);
+    block_mat.clear();
+    for (auto &bd : block_data) {
+      auto &[shift, nb_rows, nb_cols, ridx, cidx] = bd;
+      auto ptr = &(*(ctx->dataBlocksPtr))[shift];
+      for (auto i = 0; i != nb_rows; ++i, ptr += nb_cols) {
+        auto sub_ptr = &block_mat(ridx + i, cidx);
+        cblas_dcopy(nb_cols, ptr, 1, sub_ptr, 1);
+      }
+    }
+    if (ctx->multiplyByPreconditioner) {
+      for (auto &bd : block_data) {
+        auto &[shift, nb_rows, nb_cols, ridx, cidx] = bd;
+        auto ptr = &(*(ctx->preconditionerBlocksPtr))[shift];
+        for (auto i = 0; i != nb_rows; ++i, ptr += nb_cols) {
+          auto sub_ptr = &block_mat(ridx + i, cidx);
+          cblas_daxpy(nb_cols, 1., ptr, 1, sub_ptr, 1);
         }
       }
     }
+    block_mat = trans(block_mat);
 
-#ifndef NDEBUG
-    if (inv_shift == -1)
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "inv_shift == -1");
-    if (inv_shift + nb_rows * nb_cols > data_inv_blocks->size())
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-               "inv_shift out of range %d > %d", inv_shift + nb_rows * nb_cols,
-               data_inv_blocks->size());
-#endif // NDEBUG
+    block_y.resize(mat_block_size, false);
+    block_y.clear();
 
-    auto ptr = &inv_block_ptr[inv_shift];
-    if (std::min(nb_rows, nb_cols) > max_gemv_size) {
-      cblas_dgemv(CblasRowMajor, CblasNoTrans, nb_rows, nb_cols, -1.0, ptr,
-                  nb_cols, &y_add_array[col], 1, 1.0, &y_inv_array[row], 1);
-    } else {
-      for (auto r = 0; r != nb_rows; ++r) {
-        for (auto c = 0; c != nb_cols; ++c) {
-          y_inv_array[row + r] -= ptr[r * nb_cols + c] * y_add_array[col + c];
-        }
-      }
+    for (auto &b : block_indexing) {
+      auto [index, size, loc] = b.second;
+      auto ptr = &y_array[loc];
+      cblas_dcopy(size, ptr, 1, &block_y[index], 1);
+    }
+
+    // note: this not exploits symmetry, requires more implementation
+    constexpr int nrhs = 1;
+    ipiv.resize(mat_block_size, false);
+    auto info = lapack_dgesv(mat_block_size, nrhs, &*block_mat.data().begin(),
+                             mat_block_size, &*ipiv.data().begin(),
+                             &*block_y.data().begin(), mat_block_size);
+    if (info != 0) {
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+               "error lapack solve dgesv info = %d", info);
+    }
+
+    for (auto &b : block_indexing) {
+      auto [index, size, loc] = b.second;
+      auto ptr = &x_array[loc];
+      cblas_daxpy(size, 1.0, &block_y[index], 1, ptr, 1);
     }
   }
 
-  // That make a pass over block, applying lower diagonal
-  for (auto s1 = 0; s1 != index_view->diagLoRange.size() - 1; ++s1) {
-    auto lo = index_view->diagLoRange[s1];
-    auto hi = index_view->diagLoRange[s1 + 1];
-
-    // first index is off diag
-    auto diag_index_ptr =
-        index_view->lowView[lo]; // First index is inverted diagonal
-    ++lo;
-
-    auto row = diag_index_ptr->getLocRow();
-    auto col = diag_index_ptr->getLocCol();
-    auto nb_rows = diag_index_ptr->getNbRows();
-    auto nb_cols = diag_index_ptr->getNbCols();
-    auto inv_shift = diag_index_ptr->getInvShift();
-
-    f.resize(nb_cols);
-    std::copy(&y_add_array[col], &y_add_array[col + nb_cols], f.begin());
-
-    for (; lo != hi; ++lo) {
-      auto off_index_ptr = index_view->lowView[lo];
-      auto off_col = off_index_ptr->getLocCol();
-      auto off_nb_cols = off_index_ptr->getNbCols();
-      auto off_shift = off_index_ptr->getInvShift();
-#ifndef NDEBUG
-      if (off_shift == -1)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "off_shift == -1");
-#endif // NDEBUG
-      auto x_ptr = &x_array[off_col];
-      auto ptr = &inv_block_ptr[off_shift];
-      if (std::min(nb_rows, nb_cols) > max_gemv_size) {
-        cblas_dgemv(CblasRowMajor, CblasNoTrans, nb_rows, off_nb_cols, -1.0,
-                    ptr, off_nb_cols, x_ptr, 1, 1.0, &f[0], 1);
-      } else {
-        for (auto r = 0; r != nb_rows; ++r) {
-          for (auto c = 0; c != off_nb_cols; ++c) {
-            f[r] -= ptr[r * off_nb_cols + c] * x_ptr[c];
-          }
-        }
-      }
-    }
-
-#ifndef NDEBUG
-    if (inv_shift == -1)
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "inv_shift == -1");
-    if (inv_shift + nb_rows * nb_cols > data_inv_blocks->size())
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-               "inv_shift out of range %d > %d", inv_shift + nb_rows * nb_cols,
-               data_inv_blocks->size());
-#endif // NDEBUG
-
-    auto ptr = &inv_block_ptr[inv_shift];
-    if (std::min(nb_rows, nb_cols) > max_gemv_size) {
-      cblas_dgemv(CblasRowMajor, CblasNoTrans, nb_rows, nb_cols, -1.0, ptr,
-                  nb_cols, &f[0], 1, 1.0, &x_array[row], 1);
-    } else {
-      for (auto r = 0; r != nb_rows; ++r) {
-        for (auto c = 0; c != nb_cols; ++c) {
-          x_array[row + r] -= ptr[r * nb_cols + c] * f[c];
-        }
-      }
-    }
-  }
-
-  CHKERR VecRestoreArray(loc_ghost_x, &x_array);
-  CHKERR VecRestoreArray(inv_y, &y_inv_array);
-  CHKERR VecRestoreArray(add_y, &y_add_array);
-  CHKERR VecRestoreArray(loc_ghost_y, &y_array);
-  CHKERR VecGhostRestoreLocalForm(ghost_x, &loc_ghost_x);
-  CHKERR VecGhostRestoreLocalForm(ghost_y, &loc_ghost_y);
-
-  // CHKERR VecGhostUpdateBegin(ghost_y, ADD_VALUES, SCATTER_REVERSE);
-  // CHKERR VecGhostUpdateEnd(ghost_y, ADD_VALUES, SCATTER_REVERSE);
-
-  switch (iora) {
-  case INSERT_VALUES:
-    CHKERR VecCopy(ghost_x, x);
-    break;
-  case ADD_VALUES:
-    CHKERR VecAXPY(x, 1., ghost_x);
-    break;
-  default:
-    CHK_MOAB_THROW(MOFEM_NOT_IMPLEMENTED, "Wrong InsertMode");
-  }
-
-#ifndef NDEBUG
-
-  auto print_norm = [&](auto msg, auto y) {
-    MoFEMFunctionBegin;
-    PetscReal norm;
-    CHKERR VecNorm(y, NORM_2, &norm);
-    int nb_loc_y;
-    CHKERR VecGetLocalSize(y, &nb_loc_y);
-    int nb_y;
-    CHKERR VecGetSize(y, &nb_y);
-    MOFEM_LOG("WORLD", Sev::noisy)
-        << msg << " " << nb_y << " " << nb_loc_y << " norm " << norm;
-    MoFEMFunctionReturn(0);
-  };
-
-  switch (iora) {
-  case INSERT_VALUES:
-    print_norm("solve_schur_block_shell insert x", x);
-    print_norm("solve_schur_block_shell insert y", y);
-    break;
-  case ADD_VALUES:
-    print_norm("solve_schur_block_shell add x", x);
-    print_norm("solve_schur_block_shell add y", y);
-    break;
-  default:
-    CHK_MOAB_THROW(MOFEM_NOT_IMPLEMENTED, "Wrong InsertMode");
-  }
-
-#endif // NDEBUG
+  CHKERR VecRestoreArray(x, &x_array);
+  CHKERR VecRestoreArray(y, &y_array);
 
   // PetscLogFlops(xxx)
   PetscLogEventEnd(SchurEvents::MOFEM_EVENT_BlockStructureSolve, 0, 0, 0, 0);
@@ -1962,10 +1763,19 @@ inline MoFEMErrorCode shell_block_mat_asmb_wrap_impl(
 
 #endif // NDEBUG
 
+  switch (iora) {
+  case ADD_VALUES:
+  case INSERT_VALUES:
+    break;
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Wrong InsertMode");
+  }
+
   auto get_row_data = [&]() -> std::pair<bool, VectorInt> {
     if (auto e_ptr = row_data.getFieldEntities()[0]) {
       if (auto stored_data_ptr =
               e_ptr->getSharedStoragePtr<EssentialBcStorage>()) {
+        MOFEM_LOG("SELF", Sev::warning) << "Can lead to unhandled behaviour";
         return std::make_pair(true, stored_data_ptr->entityIndices);
       }
     }
@@ -1973,223 +1783,108 @@ inline MoFEMErrorCode shell_block_mat_asmb_wrap_impl(
   };
 
   auto row_indices = get_row_data();
-  auto it_r = std::find(row_indices.second.begin(), row_indices.second.end(),
-                        -1) == row_indices.second.end();
-  auto it_c =
-      std::find(col_data.getIndices().begin(), col_data.getIndices().end(),
-                -1) == col_data.getIndices().end();
 
-  if (
+  std::vector<int> ent_row_indices;
+  std::vector<int> ent_col_indices;
 
-      !row_indices.first
+  for (auto &rent : row_data.getFieldEntities()) {
+    if (auto r_cache = rent->entityCacheRowDofs.lock()) {
 
-      && row_data.getFieldEntities()[0]->getNbDofsOnEnt() ==
-             row_indices.second.size()
+      auto &row_uid = rent->getLocalUniqueId();
+      auto &row_ind = row_indices.second;
 
-      && col_data.getFieldEntities()[0]->getNbDofsOnEnt() ==
-             col_data.getIndices().size()
+      for (auto &cent : col_data.getFieldEntities()) {
+        if (auto c_cache = cent->entityCacheColDofs.lock()) {
 
-      && it_r && it_c
+          auto &col_uid = cent->getLocalUniqueId();
+          auto &col_ind = col_data.getIndices();
 
-  ) {
+          auto it = ctx->blockIndex.get<0>().find(
 
-    auto it = ctx->blockIndex.get<1>().find(
+              boost::make_tuple(row_uid, col_uid)
 
-        boost::make_tuple(row_indices.second[0], col_data.getIndices()[0],
-                          row_indices.second.size(),
-                          col_data.getIndices().size())
-
-    );
+          );
 
 #ifndef NDEBUG
 
-    if (it == ctx->blockIndex.get<1>().end()) {
-      MOFEM_LOG_CHANNEL("SELF");
-      MOFEM_TAG_AND_LOG("SELF", Sev::error, "BlockMat")
-          << "missing block: row " << row_data.getFieldDofs()[0]->getName()
-          << " col " << col_data.getFieldDofs()[0]->getName();
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Block not allocated");
-    }
+          if (it == ctx->blockIndex.get<0>().end()) {
+            MOFEM_LOG_CHANNEL("SELF");
+            MOFEM_TAG_AND_LOG("SELF", Sev::error, "BlockMat")
+                << "missing block: row "
+                << row_data.getFieldDofs()[0]->getName() << " col "
+                << col_data.getFieldDofs()[0]->getName();
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                    "Block not allocated");
+          }
 
 #endif
 
-    auto shift = shift_extractor(&*it);
-    if (shift != -1) {
+          auto ri = row_ind.begin();
+          auto rie = row_ind.end();
 
-      auto nbr = row_indices.second.size();
-      auto nbc = col_data.getIndices().size();
-      auto mat_row_ptr = &mat(0, 0);
-      auto s_mat = &(*data_blocks_ptr)[shift];
-      if (iora == ADD_VALUES) {
-        for (int r = 0; r != nbr; ++r) {
-          for (int c = 0; c != nbc; ++c) {
-            *s_mat += *mat_row_ptr;
-            ++mat_row_ptr;
-            ++s_mat;
-          }
-        }
-      } else {
-        for (int r = 0; r != nbr; ++r) {
-          for (int c = 0; c != nbc; ++c) {
-            *s_mat = *mat_row_ptr;
-            ++mat_row_ptr;
-            ++s_mat;
-          }
-        }
-      }
-    }
+          auto shift = shift_extractor(&*it);
+          auto s_mat = &(*data_blocks_ptr)[shift];
 
-  } else {
+          auto get_ent_indices = [](auto &cache, auto &ind) {
+            ind.clear();
+            ind.reserve(std::distance(cache->loHi[0], cache->loHi[1]));
+            for (auto e = cache->loHi[0]; e != cache->loHi[1]; ++e) {
+              auto glob = (*e)->getPetscGlobalDofIdx();
+              if (glob != -1)
+                ind.push_back(glob);
+            }
+          };
 
-    // This is to manage all complexities with negative indices, etc., nodes
-    // etc. It is much slower than the above, but it is more general
+          get_ent_indices(r_cache, ent_row_indices);
+          if (ent_row_indices.empty())
+            continue;
+          get_ent_indices(c_cache, ent_col_indices);
+          if (ent_col_indices.empty())
+            continue;
 
-    std::vector<int> row_ent_idx;
-    std::vector<int> col_ent_idx;
+          if (mat.size1() == ent_row_indices.size() &&
+              mat.size2() == ent_col_indices.size()) {
 
-    auto get_ent_idx = [&](auto lo, auto hi, auto &idx) {
-      idx.clear();
-      idx.reserve(std::distance(lo, hi));
-      for (; lo != hi; ++lo) {
-        idx.emplace_back((*lo)->getEntDofIdx());
-      }
-    };
-
-    auto row = 0;
-    for (auto &rent : row_data.getFieldEntities()) {
-      if (auto r_cache = rent->entityCacheRowDofs.lock()) {
-
-        auto rlo = r_cache->loHi[0];
-        auto rhi = r_cache->loHi[1];
-        if (rlo == rhi)
-          continue;
-
-        get_ent_idx(rlo, rhi, row_ent_idx);
-        auto gr = (*rlo)->getPetscGlobalDofIdx();
-        auto nbr = std::distance(rlo, rhi);
-        auto col = 0;
-
-        for (auto &cent : col_data.getFieldEntities()) {
-          if (auto c_cache = cent->entityCacheColDofs.lock()) {
-
-            auto clo = c_cache->loHi[0];
-            auto chi = c_cache->loHi[1];
-            if (clo == chi)
-              continue;
-
-            auto nbc = std::distance(clo, chi);
-            auto it = ctx->blockIndex.get<1>().find(
-
-                boost::make_tuple(gr, (*clo)->getPetscGlobalDofIdx(), nbr, nbc)
-
-            );
-
-#ifndef NDEBUG
-
-            if (it == ctx->blockIndex.get<1>().end()) {
-              MOFEM_LOG_CHANNEL("SELF");
-              MOFEM_TAG_AND_LOG("SELF", Sev::error, "BlockMat")
-                  << "missing block: " << row_data.getFieldDofs()[0]->getName()
-                  << " : " << col_data.getFieldDofs()[0]->getName();
-              SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                      "Block not allocated");
+            if (iora == ADD_VALUES) {
+              cblas_daxpy(mat.data().size(), 1.0, mat.data().data(), 1, s_mat,
+                          1);
+            } else {
+              cblas_dcopy(mat.data().size(), mat.data().data(), 1, s_mat, 1);
             }
 
-#endif
+          } else {
 
-            auto shift = shift_extractor(&*it);
-            if (shift != -1) {
+            int row = 0;
+            for (auto re : ent_row_indices) {
+              ri = std::find(ri, rie, re);
+              if (!(ri == rie && *ri != -1)) {
 
-              auto mat_row_ptr0 = &mat(row, col);
-              auto s_mat = &(*data_blocks_ptr)[shift];
+                auto ci = col_ind.begin();
+                auto cie = col_ind.end();
+                auto ce = c_cache->loHi[0];
 
-              if (
-
-                  nbr == rent->getNbDofsOnEnt() && nbc == cent->getNbDofsOnEnt()
-
-                  && it_r && it_c
-
-              ) {
-
-                if (iora == ADD_VALUES) {
-                  for (int r = 0; r != nbr; ++r) {
-                    auto mat_row_ptr = mat_row_ptr0 + r * mat.size2();
-                    for (int c = 0; c != nbc; ++c) {
-                      *s_mat += *mat_row_ptr;
-                      ++mat_row_ptr;
-                      ++s_mat;
+                int col = 0;
+                for (auto ce : ent_col_indices) {
+                  ci = std::find(ci, cie, ce);
+                  if (!(ci == cie && *ci != -1)) {
+                    auto &m = s_mat[row * ent_col_indices.size() + col];
+                    if (iora == ADD_VALUES) {
+                      m += mat(std::distance(row_ind.begin(), ri),
+                               std::distance(col_ind.begin(), ci));
+                    } else {
+                      m = mat(std::distance(row_ind.begin(), ri),
+                              std::distance(col_ind.begin(), ci));
                     }
                   }
-                } else {
-                  for (int r = 0; r != nbr; ++r) {
-                    auto mat_row_ptr = mat_row_ptr0 + r * mat.size2();
-                    for (int c = 0; c != nbc; ++c) {
-                      *s_mat = *mat_row_ptr;
-                      ++mat_row_ptr;
-                      ++s_mat;
-                    }
-                  }
-                }
-
-              } else if (
-
-                  nbc == cent->getNbDofsOnEnt()
-
-                  && it_r && it_c
-
-              ) {
-
-                if (iora == ADD_VALUES) {
-                  for (auto r : row_ent_idx) {
-                    auto mat_row_ptr = mat_row_ptr0 + r * mat.size2();
-                    for (int c = 0; c != nbc; ++c) {
-                      *s_mat += *mat_row_ptr;
-                      ++mat_row_ptr;
-                      ++s_mat;
-                    }
-                  }
-                } else {
-                  for (auto r : row_ent_idx) {
-                    auto mat_row_ptr = mat_row_ptr0 + r * mat.size2();
-                    for (int c = 0; c != nbc; ++c) {
-                      *s_mat = *mat_row_ptr;
-                      ++mat_row_ptr;
-                      ++s_mat;
-                    }
-                  }
-                }
-
-              } else {
-
-                get_ent_idx(clo, chi, col_ent_idx);
-                auto row_idx = &row_indices.second[row];
-                auto col_idx = &col_data.getIndices()[col];
-                if (iora == ADD_VALUES) {
-                  for (auto r : row_ent_idx) {
-                    auto mat_row_ptr = mat_row_ptr0 + r * mat.size2();
-                    for (auto c : col_ent_idx) {
-                      if (row_idx[r] != -1 && col_idx[c] != -1)
-                        *s_mat += mat_row_ptr[c];
-                      ++s_mat;
-                    }
-                  }
-                } else {
-                  for (auto r : row_ent_idx) {
-                    auto mat_row_ptr = mat_row_ptr0 + r * mat.size2();
-                    for (auto c : col_ent_idx) {
-                      if (row_idx[r] != -1 && col_idx[c] != -1)
-                        *s_mat = mat_row_ptr[c];
-                      ++s_mat;
-                    }
-                  }
-                }
+                  ++col;
+                } // cols
               }
-            }
+              ++row;
+            } // rows
           }
-          col += cent->getNbDofsOnEnt();
-        }
+
+        } // iterate entities
       }
-      row += rent->getNbDofsOnEnt();
     }
   }
 
@@ -2237,7 +1932,7 @@ MoFEMErrorCode shell_block_preconditioner_mat_asmb_wrap(
               "No preconditionerBlocksPtr");
     CHKERR shell_block_mat_asmb_wrap_impl(
         ctx, row_data, col_data, mat, iora,
-        [](const DiagBlockIndex::Indexes *idx) { return idx->getInvShift(); },
+        [](const DiagBlockIndex::Indexes *idx) { return idx->getMatShift(); },
         ctx->preconditionerBlocksPtr);
   } else {
     CHKERR MatSetValues<AssemblyTypeSelector<PETSC>>(M, row_data, col_data, mat,
@@ -2246,7 +1941,7 @@ MoFEMErrorCode shell_block_preconditioner_mat_asmb_wrap(
   MoFEMFunctionReturn(0);
 }
 
-boost::shared_ptr<NestSchurData> getNestSchurData(
+boost::shared_ptr<NestSchurData> createSchurNestedMatrixStruture(
 
     std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
     boost::shared_ptr<BlockStructure> block_mat_data_ptr,
@@ -2260,14 +1955,14 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
     CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Block data not set");
   }
 
-  if(fields_names.size() != field_ents.size())
+  if (fields_names.size() != field_ents.size())
     CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY,
                       "fields_names.size() != field_ents.size()");
 
   auto [schur_dm, block_dm] = dms;
   auto schur_prb = getProblemPtr(schur_dm);
   auto block_prb = getProblemPtr(block_dm);
-  auto m_field_ptr = getInterfacePtr(block_dm);
+  // auto m_field_ptr = getInterfacePtr(block_dm);
 
   auto schur_dofs_row = schur_prb->getNumeredRowDofsPtr();
   auto schur_dofs_col = schur_prb->getNumeredColDofsPtr();
@@ -2288,27 +1983,31 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
   CHKERR VecSetDM(schur_vec_y, PETSC_NULL);
   CHKERR VecSetDM(block_vec_y, PETSC_NULL);
 
-  auto get_vec = [&](auto schur_data) {
-    std::vector<int> vec_r, vec_c;
-    vec_r.reserve(schur_data->blockIndex.size());
-    vec_c.reserve(schur_data->blockIndex.size());
-    for (auto &d : schur_data->blockIndex.template get<1>()) {
-      vec_r.push_back(d.getRow());
-      vec_c.push_back(d.getCol());
-    }
-    return std::make_pair(vec_r, vec_c);
-  };
+  auto find_field_ent = [&](auto uid, auto prb, auto rc) {
+    boost::shared_ptr<NumeredDofEntity_multiIndex> dofs;
 
-  auto [vec_r_schur, vec_c_schur] = get_vec(block_mat_data_ptr);
-  CHKERR AOApplicationToPetsc(ao_schur_row, vec_r_schur.size(),
-                              &*vec_r_schur.begin());
-  CHKERR AOApplicationToPetsc(ao_schur_col, vec_c_schur.size(),
-                              &*vec_c_schur.begin());
-  auto [vec_r_block, vec_c_block] = get_vec(block_mat_data_ptr);
-  CHKERR AOApplicationToPetsc(ao_block_row, vec_r_block.size(),
-                              &*vec_r_block.begin());
-  CHKERR AOApplicationToPetsc(ao_block_col, vec_c_block.size(),
-                              &*vec_c_block.begin());
+    switch (rc) {
+    case ROW:
+      dofs = prb->getNumeredRowDofsPtr();
+      break;
+    case COL:
+      dofs = prb->getNumeredColDofsPtr();
+      break;
+    default:
+      CHK_MOAB_THROW(MOFEM_NOT_IMPLEMENTED, "Wrong RowCol");
+      break;
+    }
+
+    auto lo = dofs->get<Unique_mi_tag>().lower_bound(uid);
+    if (lo == dofs->get<Unique_mi_tag>().end())
+      return boost::shared_ptr<NumeredDofEntity>();
+    auto hi = dofs->get<Unique_mi_tag>().upper_bound(
+        DofEntity::getUniqueIdCalculate(MAX_DOFS_ON_ENTITY - 1, uid));
+    if (lo != hi)
+      return *lo;
+
+    return boost::shared_ptr<NumeredDofEntity>();
+  };
 
   std::array<boost::shared_ptr<BlockStructure>, 4> data_ptrs;
 
@@ -2316,7 +2015,7 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
     data_ptrs[r] = boost::make_shared<BlockStructure>();
     data_ptrs[r]->dataBlocksPtr = block_mat_data_ptr->dataBlocksPtr;
   }
-  data_ptrs[3] = boost::make_shared<DiagBlockInvStruture>();
+  data_ptrs[3] = boost::make_shared<BlockStructure>();
   data_ptrs[3]->dataBlocksPtr = block_mat_data_ptr->dataBlocksPtr;
 
   data_ptrs[0]->ghostX = schur_vec_x;
@@ -2329,77 +2028,44 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
   data_ptrs[3]->ghostY = block_vec_y;
 
   int idx = 0;
-  for (auto &d : block_mat_data_ptr->blockIndex.get<1>()) {
+  for (auto &d : block_mat_data_ptr->blockIndex.get<0>()) {
 
     auto insert = [&](auto &m, auto &dof_r, auto &dof_c, auto &d) {
       m.insert(
 
           BlockStructure::Indexes{
+              d.getRowUId(), d.getColUId(), d.getFEUId(),
+
               dof_r->getPetscGlobalDofIdx(), dof_c->getPetscGlobalDofIdx(),
 
               d.getNbRows(), d.getNbCols(),
 
               dof_r->getPetscLocalDofIdx(), dof_c->getPetscLocalDofIdx(),
 
-              d.getMatShift(), d.getInvShift()}
+              d.getMatShift()}
 
       );
     };
 
-    if (vec_r_schur[idx] != -1 && vec_c_schur[idx] != -1) {
-      auto schur_dof_r =
-          schur_dofs_row->get<PetscGlobalIdx_mi_tag>().find(vec_r_schur[idx]);
-      auto schur_dof_c =
-          schur_dofs_col->get<PetscGlobalIdx_mi_tag>().find(vec_c_schur[idx]);
-#ifndef NDEBUG
-      if (schur_dof_r == schur_dofs_row->get<PetscGlobalIdx_mi_tag>().end()) {
-        CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Block <Schur> not found");
-      }
-      if (schur_dof_c == schur_dofs_col->get<PetscGlobalIdx_mi_tag>().end()) {
-        CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Block <Schur> not found");
-      }
-#endif // NDEBUG
-      insert(data_ptrs[0]->blockIndex, *schur_dof_r, *schur_dof_c, d);
+    auto dof_schur_row = find_field_ent(d.getRowUId(), schur_prb, ROW);
+    auto dof_schur_col = find_field_ent(d.getColUId(), schur_prb, COL);
+    auto dof_block_row = find_field_ent(d.getRowUId(), block_prb, ROW);
+    auto dof_block_col = find_field_ent(d.getColUId(), block_prb, COL);
+
+    if (dof_schur_row && dof_schur_col) {
+      insert(data_ptrs[0]->blockIndex, dof_schur_row, dof_schur_col, d);
     }
 
-    if (vec_r_schur[idx] != -1 && vec_c_block[idx] != -1) {
-      auto schur_dof_r =
-          schur_dofs_row->get<PetscGlobalIdx_mi_tag>().find(vec_r_schur[idx]);
-      auto block_dof_c =
-          block_dofs_col->get<PetscGlobalIdx_mi_tag>().find(vec_c_block[idx]);
-#ifndef NDEBUG
-      if (schur_dof_r == schur_dofs_row->get<PetscGlobalIdx_mi_tag>().end()) {
-        CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Block <Schur> not found");
-      }
-      if (block_dof_c == block_dofs_col->get<PetscGlobalIdx_mi_tag>().end()) {
-        CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Block <Block> not found");
-      }
-#endif
-      insert(data_ptrs[1]->blockIndex, *schur_dof_r, *block_dof_c, d);
+    if (dof_schur_row && dof_block_col) {
+      insert(data_ptrs[1]->blockIndex, dof_schur_row, dof_block_col, d);
     }
 
-    if (vec_r_block[idx] != -1 && vec_c_schur[idx] != -1) {
-      auto block_dof_r =
-          block_dofs_row->get<PetscGlobalIdx_mi_tag>().find(vec_r_block[idx]);
-      auto schur_dof_c =
-          schur_dofs_col->get<PetscGlobalIdx_mi_tag>().find(vec_c_schur[idx]);
-#ifndef NDEBUG
-      if (block_dof_r == block_dofs_row->get<PetscGlobalIdx_mi_tag>().end()) {
-        CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Block <Block> not found");
-      }
-      if (schur_dof_c == schur_dofs_col->get<PetscGlobalIdx_mi_tag>().end()) {
-        CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Block <Schur> not found");
-      }
-#endif // NDEBUG
-      insert(data_ptrs[2]->blockIndex, *block_dof_r, *schur_dof_c, d);
+    if (dof_block_row && dof_schur_col) {
+      insert(data_ptrs[2]->blockIndex, dof_block_row, dof_schur_col, d);
     }
 
-    if (vec_r_block[idx] != -1 && vec_c_block[idx] != -1) {
-      auto block_dof_r =
-          block_dofs_row->get<PetscGlobalIdx_mi_tag>().find(vec_r_block[idx]);
-      auto block_dof_c =
-          block_dofs_col->get<PetscGlobalIdx_mi_tag>().find(vec_c_block[idx]);
-      insert(data_ptrs[3]->blockIndex, *block_dof_r, *block_dof_c, d);
+    if (dof_block_row && dof_block_col) {
+      insert(data_ptrs[3]->blockIndex, dof_block_row, dof_block_col, d);
     }
 
     ++idx;
@@ -2409,264 +2075,13 @@ boost::shared_ptr<NestSchurData> getNestSchurData(
   auto set_up_a00_data = [&](auto inv_block_data) {
     MoFEMFunctionBegin;
 
-    auto get_forward_list = [&]() {
-      std::vector<int> list;
-      list.reserve(fields_names.size());
-      for (auto s = 0; s != fields_names.size(); ++s) {
-        list.push_back(s);
-      }
-      return list;
-    };
-
-    auto get_reverse_list = [&]() {
-      std::vector<int> list;
-      list.reserve(fields_names.size());
-      for (auto s = 0; s != fields_names.size(); ++s) {
-        list.push_back(fields_names.size() - s - 1);
-      }
-      return list;
-    };
-
-    // get uids on the diagonal of a00 block
-    auto get_a00_uids = [&](auto &&list) {
-      auto get_field_bit = [&](auto field_name) {
-        return m_field_ptr->get_field_bit_number(field_name);
-      };
-
-      std::vector<std::pair<UId, UId>> a00_uids;
-      a00_uids.reserve(fields_names.size());
-      for (auto ss : list) {
-        auto field_bit = get_field_bit(fields_names[ss]);
-        auto row_ents = field_ents[ss];
-        if (row_ents) {
-          for (auto p = row_ents->pair_begin(); p != row_ents->pair_end();
-               ++p) {
-            auto lo_uid =
-                FieldEntity::getLoLocalEntityBitNumber(field_bit, p->first);
-            auto hi_uid =
-                FieldEntity::getHiLocalEntityBitNumber(field_bit, p->second);
-            a00_uids.push_back(std::make_pair(lo_uid, hi_uid));
-          }
-        } else {
-          auto lo_uid = FieldEntity::getLoLocalEntityBitNumber(
-              field_bit, get_id_for_min_type<MBVERTEX>());
-          auto hi_uid = FieldEntity::getHiLocalEntityBitNumber(
-              field_bit, get_id_for_max_type<MBENTITYSET>());
-          a00_uids.push_back(std::make_pair(lo_uid, hi_uid));
-        }
-      }
-      return a00_uids;
-    };
-
-    // get global indexes for a00 block
-    auto get_glob_idex_pairs = [&](auto &&uid_pairs) {
-      std::vector<std::pair<int, int>> glob_idex_pairs;
-      glob_idex_pairs.reserve(uid_pairs.size());
-      auto dofs = block_prb->getNumeredRowDofsPtr();
-
-      auto it = uid_pairs.rbegin();
-      auto hi = uid_pairs.rend();
-
-      for (; it != hi; ++it) {
-        auto [lo_uid, hi_uid] = *it;
-        auto lo_it = dofs->lower_bound(lo_uid);
-        auto hi_it = dofs->upper_bound(hi_uid);
-        if (lo_it != hi_it) {
-          auto lo_idx = (*lo_it)->getPetscGlobalDofIdx();
-          glob_idex_pairs.emplace_back(lo_idx, std::distance(lo_it, hi_it));
-        }
-      }
-      // pair of local index and number of dofs
-      return glob_idex_pairs;
-    };
-
-    auto &index_view =
-        boost::dynamic_pointer_cast<DiagBlockInvStruture>(inv_block_data)
-            ->indexView;
-
-    // set struture to keep indices to mat solve of a00
-    index_view.lowView.resize(0);
-    index_view.lowView.reserve(inv_block_data->blockIndex.size());
-    index_view.diagLoRange.resize(0);
-    index_view.diagLoRange.reserve(inv_block_data->blockIndex.size() + 1);
-    index_view.diagLoRange.push_back(0);
-
-    index_view.upView.resize(0);
-    index_view.upView.reserve(inv_block_data->blockIndex.size());
-    index_view.diagUpRange.resize(0);
-    index_view.diagUpRange.reserve(inv_block_data->blockIndex.size() + 1);
-    index_view.diagUpRange.push_back(0);
-
-    // this enable search by varying ranges
-    using BlockIndexView = multi_index_container<
-
-        const DiagBlockIndex::Indexes *,
-
-        indexed_by<
-
-            ordered_non_unique<const_mem_fun<DiagBlockIndex::Indexes, int,
-                                             &DiagBlockIndex::Indexes::getRow>>
-
-            >>;
-
-    BlockIndexView block_index_view;
-    for (auto it = inv_block_data->blockIndex.template get<1>().begin();
-         it != inv_block_data->blockIndex.template get<1>().end(); ++it) {
-      block_index_view.insert(&*it);
-    }
-
-    auto set_index_view_data = [&](
-
-                                   int start,
-
-                                   auto &&glob_idx_pairs,
-
-                                   auto &view, auto &range
-
-                               ) {
-      // iterate field & entities pairs
-      for (auto s1 = start; s1 < glob_idx_pairs.size(); ++s1) {
-
-        // iterate matrix indexes
-        // index, and numer of dofs
-        auto [lo_idx, nb] = glob_idx_pairs[s1];
-        auto it = block_index_view.lower_bound(lo_idx);
-        auto hi = block_index_view.end();
-
-        // iterate rows
-        while (it != hi &&
-               ((*it)->getRow() + (*it)->getNbRows()) <= lo_idx + nb) {
-
-          auto row = (*it)->getRow();
-
-          auto get_diag_index =
-              [&](auto it) -> const MoFEM::DiagBlockIndex::Indexes * {
-            while (it != hi && (*it)->getRow() == row) {
-              if ((*it)->getCol() == row &&
-                  (*it)->getNbCols() == (*it)->getNbRows()) {
-                auto ptr = *it;
-                return ptr;
-              }
-              ++it;
-            }
-            CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Diagonal not found");
-            return nullptr;
-          };
-
-          auto push_off_diag = [&](auto it, auto s1) {
-            while (it != hi && (*it)->getRow() == row) {
-              for (int s2 = 0; s2 < s1; ++s2) {
-                auto [col_lo_idx, col_nb] = glob_idx_pairs[s2];
-                if ((*it)->getCol() >= col_lo_idx &&
-                    (*it)->getCol() + (*it)->getNbCols() <=
-                        col_lo_idx + col_nb) {
-                  view.push_back(*it);
-                }
-              }
-              ++it;
-            }
-          };
-
-          view.push_back(get_diag_index(it));
-          push_off_diag(it, s1);
-          range.push_back(view.size());
-
-          while (it != hi && (*it)->getRow() == row) {
-            ++it;
-          }
-        }
-      }
-    };
-
-    set_index_view_data(
-
-        0,
-
-        get_glob_idex_pairs(get_a00_uids(get_forward_list())),
-
-        index_view.lowView, index_view.diagLoRange
-
-    );
-
-    set_index_view_data(
-
-        0,
-
-        get_glob_idex_pairs(get_a00_uids(get_reverse_list())),
-
-        index_view.upView, index_view.diagUpRange
-
-    );
-
-    // calculate size of invert matrix vector, and set internal data
-    auto set_inv_mat = [&](auto inv_mem_size, auto &view, auto &range) {
-      auto get_vec = [&](auto &view) {
-        std::vector<int> vec_r, vec_c;
-        vec_r.reserve(view.size());
-        vec_c.reserve(view.size());
-        for (auto &i : view) {
-          vec_r.push_back(i->getRow());
-          vec_c.push_back(i->getCol());
-        }
-        return std::make_pair(vec_r, vec_c);
-      };
-
-      auto [vec_row, vec_col] = get_vec(view);
-      CHK_THROW_MESSAGE(
-          AOPetscToApplication(ao_block_row, vec_row.size(), &*vec_row.begin()),
-          "apply ao");
-      CHK_THROW_MESSAGE(
-          AOPetscToApplication(ao_block_col, vec_col.size(), &*vec_col.begin()),
-          "apply ao");
-
-      for (auto s1 = 0; s1 != range.size() - 1; ++s1) {
-        auto lo = range[s1];
-        auto hi = range[s1 + 1];
-        for (; lo != hi; ++lo) {
-          auto diag_index_ptr = view[lo];
-          auto row = vec_row[lo];
-          auto col = vec_col[lo];
-          auto nb_rows = diag_index_ptr->getNbRows();
-          auto nb_cols = diag_index_ptr->getNbCols();
-          auto it = block_mat_data_ptr->blockIndex.get<1>().find(
-              boost::make_tuple(row, col, nb_rows, nb_cols));
-          if (it == block_mat_data_ptr->blockIndex.get<1>().end()) {
-            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                    "Block not found");
-          }
-          if (it->getInvShift() == -1) {
-            it->getInvShift() = inv_mem_size;
-            inv_mem_size += nb_rows * nb_cols;
-          }
-          diag_index_ptr->getInvShift() = it->getInvShift();
-        }
-      }
-
-      return inv_mem_size;
-    };
-
-    // allocate memory for invert matrix solver
-    auto allocate_inv_block = [&](auto inv_mem_size) {
-      auto inv_data_ptr =
-          boost::make_shared<std::vector<double>>(inv_mem_size, 0);
-      data_ptrs[3]->dataInvBlocksPtr = inv_data_ptr;
-      block_mat_data_ptr->dataInvBlocksPtr = data_ptrs[3]->dataInvBlocksPtr;
-    };
-
-    int inv_mem_size = 0;
-    inv_mem_size =
-        set_inv_mat(inv_mem_size, index_view.lowView, index_view.diagLoRange);
-    inv_mem_size =
-        set_inv_mat(inv_mem_size, index_view.upView, index_view.diagUpRange);
-    allocate_inv_block(inv_mem_size);
-
     if (add_preconditioner_block) {
       auto preconditioned_block = boost::make_shared<std::vector<double>>(
-          data_ptrs[3]->dataInvBlocksPtr->size(), 0);
-      data_ptrs[3]->preconditionerBlocksPtr = preconditioned_block;
-      data_ptrs[3]->multiplyByPreconditioner = true;
+          inv_block_data->dataBlocksPtr->size(), 0);
+      inv_block_data->preconditionerBlocksPtr = preconditioned_block;
+      inv_block_data->multiplyByPreconditioner = true;
       block_mat_data_ptr->preconditionerBlocksPtr =
-          data_ptrs[3]->preconditionerBlocksPtr;
+          inv_block_data->preconditionerBlocksPtr;
       block_mat_data_ptr->multiplyByPreconditioner = false;
     }
 
@@ -2770,18 +2185,26 @@ OpSchurAssembleBase *createOpSchurAssembleBegin() {
 OpSchurAssembleBase *
 createOpSchurAssembleEnd(std::vector<std::string> fields_name,
                          std::vector<boost::shared_ptr<Range>> field_ents,
+                         SmartPetscObj<AO> ao, SmartPetscObj<Mat> schur,
+                         bool sym_schur, bool symm_op) {
+  if (symm_op)
+    return new OpSchurAssembleEnd<SchurDSYSV>(fields_name, field_ents, ao,
+                                              schur, sym_schur, symm_op);
+  else
+    return new OpSchurAssembleEnd<SchurDGESV>(fields_name, field_ents, ao,
+                                              schur, sym_schur, symm_op);
+}
+
+OpSchurAssembleBase *
+createOpSchurAssembleEnd(std::vector<std::string> fields_name,
+                         std::vector<boost::shared_ptr<Range>> field_ents,
                          std::vector<SmartPetscObj<AO>> sequence_of_aos,
                          std::vector<SmartPetscObj<Mat>> sequence_of_mats,
                          std::vector<bool> sym_schur, bool symm_op,
                          boost::shared_ptr<BlockStructure> diag_blocks) {
-  if (symm_op)
-    return new OpSchurAssembleEnd<SchurDSYSV>(fields_name, field_ents,
-                                              sequence_of_aos, sequence_of_mats,
-                                              sym_schur, symm_op, diag_blocks);
-  else
-    return new OpSchurAssembleEnd<SchurDGESV>(fields_name, field_ents,
-                                              sequence_of_aos, sequence_of_mats,
-                                              sym_schur, symm_op, diag_blocks);
+  return createOpSchurAssembleEnd(
+      fields_name, field_ents, sequence_of_aos.back(), sequence_of_mats.back(),
+      sym_schur.back(), symm_op);
 }
 
 OpSchurAssembleBase *
@@ -2792,14 +2215,9 @@ createOpSchurAssembleEnd(std::vector<std::string> fields_name,
                          std::vector<bool> sym_schur,
                          std::vector<double> diag_eps, bool symm_op,
                          boost::shared_ptr<BlockStructure> diag_blocks) {
-  if (symm_op)
-    return new OpSchurAssembleEnd<SchurDSYSV>(
-        fields_name, field_ents, sequence_of_aos, sequence_of_mats, sym_schur,
-        diag_eps, symm_op, diag_blocks);
-  else
-    return new OpSchurAssembleEnd<SchurDGESV>(
-        fields_name, field_ents, sequence_of_aos, sequence_of_mats, sym_schur,
-        diag_eps, symm_op, diag_blocks);
+  return createOpSchurAssembleEnd(
+      fields_name, field_ents, sequence_of_aos.back(), sequence_of_mats.back(),
+      sym_schur.back(), symm_op);
 }
 
 MoFEMErrorCode setSchurA00MatSolvePC(SmartPetscObj<PC> pc) {
@@ -2853,9 +2271,9 @@ SchurElemMats::MatSetValues(Mat M, const EntitiesFieldData::EntData &row_data,
                             const EntitiesFieldData::EntData &col_data,
                             const MatrixDouble &mat, InsertMode iora) {
   MoFEMFunctionBegin;
+  CHKERR assembleStorage(row_data, col_data, mat, iora);
   CHKERR SchurBackendMatSetValuesPtr::matSetValuesPtr(M, row_data, col_data,
                                                       mat, iora);
-  CHKERR assembleStorage(row_data, col_data, mat, iora);
   MoFEMFunctionReturn(0);
 }
 
@@ -2896,9 +2314,9 @@ SchurElemMatsBlock::MatSetValues(Mat M,
                                  const EntitiesFieldData::EntData &col_data,
                                  const MatrixDouble &mat, InsertMode iora) {
   MoFEMFunctionBegin;
+  CHKERR assembleStorage(row_data, col_data, mat, iora);
   CHKERR SchurBackendMatSetValuesPtr::matSetValuesBlockPtr(M, row_data,
                                                            col_data, mat, iora);
-  CHKERR assembleStorage(row_data, col_data, mat, iora);
   MoFEMFunctionReturn(0);
 }
 
@@ -2928,9 +2346,9 @@ MoFEMErrorCode SchurElemMatsPreconditionedBlock::MatSetValues(
     const EntitiesFieldData::EntData &col_data, const MatrixDouble &mat,
     InsertMode iora) {
   MoFEMFunctionBegin;
+  CHKERR assembleStorage(row_data, col_data, mat, iora);
   CHKERR SchurBackendMatSetValuesPtr::matSetValuesPreconditionedBlockPtr(
       M, row_data, col_data, mat, iora);
-  CHKERR assembleStorage(row_data, col_data, mat, iora);
   MoFEMFunctionReturn(0);
 }
 

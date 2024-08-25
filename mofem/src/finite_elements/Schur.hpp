@@ -50,43 +50,19 @@ OpSchurAssembleBase *createOpSchurAssembleBegin();
 /**
  * @brief Construct a new Op Schur Assemble End object
  *
- * @param fields_name list of fields
+ * @param fields_name list of fields (can be empty)
  * @param field_ents list of entities on which schur complement is applied
- * (can be empty)
- * @param sequence_of_aos list of maps from base problem to Schur complement
- * matrix
- * @param sequence_of_mats list of Schur complement matrices
- * @param sym_schur true if Schur complement is symmetric
+ * @param schur_aos maps dofs indices from main problem to schur complement
+ * @param schur_mat schur matrix
+ * @param sym_schur true if schur (matrix) complement is symmetric
  * @param symm_op true if block diagonal is symmetric
  */
-OpSchurAssembleBase *createOpSchurAssembleEnd(
-    std::vector<std::string> fields_name,
-    std::vector<boost::shared_ptr<Range>> field_ents,
-    std::vector<SmartPetscObj<AO>> sequence_of_aos,
-    std::vector<SmartPetscObj<Mat>> sequence_of_mats,
-    std::vector<bool> sym_schur, bool symm_op,
-    boost::shared_ptr<BlockStructure> diag_blocks = nullptr);
-
-/**
- * @brief Construct a new Op Schur Assemble End object
- *
- * @param fields_name list of fields
- * @param field_ents list of entities on which schur complement is applied
- * (can be empty)
- * @param sequence_of_aos list of maps from base problem to Schur complement
- * matrix
- * @param sequence_of_mats list of Schur complement matrices
- * @param sym_schur true if Schur complement is symmetric
- * @param diag_eps add epsilon on diagonal of inverted matrix
- * @param symm_op true if block diagonal is symmetric
- */
-OpSchurAssembleBase *createOpSchurAssembleEnd(
-    std::vector<std::string> fields_name,
-    std::vector<boost::shared_ptr<Range>> field_ents,
-    std::vector<SmartPetscObj<AO>> sequence_of_aos,
-    std::vector<SmartPetscObj<Mat>> sequence_of_mats,
-    std::vector<bool> sym_schur, std::vector<double> diag_eps, bool symm_op,
-    boost::shared_ptr<BlockStructure> diag_blocks = nullptr);
+OpSchurAssembleBase *
+createOpSchurAssembleEnd(std::vector<std::string> fields_name,
+                         std::vector<boost::shared_ptr<Range>> field_ents,
+                         SmartPetscObj<AO> ao = SmartPetscObj<AO>(),
+                         SmartPetscObj<Mat> schur = SmartPetscObj<Mat>(),
+                         bool sym_schur = false, bool symm_op = false);
 
 using SchurFieldPair = std::pair<std::string, std::string>;
 
@@ -139,13 +115,13 @@ using NestSchurData = std::tuple<
  * @param add_preconditioner_block add block for preconditioner
  * @return boost::shared_ptr<NestSchurData>
  */
-boost::shared_ptr<NestSchurData>
-getNestSchurData(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
-                 boost::shared_ptr<BlockStructure> block_mat_data,
+boost::shared_ptr<NestSchurData> createSchurNestedMatrixStruture(
+    std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
+    boost::shared_ptr<BlockStructure> block_mat_data,
 
-                 std::vector<std::string> fields_name, //< a00 fields
-                 std::vector<boost::shared_ptr<Range>> field_ents, //< a00 ents
-                 bool add_preconditioner_block = false
+    std::vector<std::string> fields_name,             //< a00 fields
+    std::vector<boost::shared_ptr<Range>> field_ents, //< a00 ents
+    bool add_preconditioner_block = false
 
 );
 
@@ -176,7 +152,7 @@ schurSaveBlockMesh(boost::shared_ptr<BlockStructure> block_mat_data,
  *
  * auto [nested_mat, nested_data_ptr] = createSchurNestedMatrix(
  *
- *       getNestSchurData(
+ *       createSchurNestedMatrixStruture(
  *
  *           {schur_dm, block_dm}, shell_data,
  *
@@ -350,6 +326,42 @@ VecSetValues<AssemblyTypeSelector<BLOCK_PRECONDITIONER_SCHUR>>(
     InsertMode iora) {
   return ::VecSetValues(V, data.getIndices().size(),
                         &*data.getIndices().begin(), &*nf.begin(), iora);
+}
+
+/**
+ * @deprecated do not use
+ */
+DEPRECATED OpSchurAssembleBase *createOpSchurAssembleEnd(
+    std::vector<std::string> fields_name,
+    std::vector<boost::shared_ptr<Range>> field_ents,
+    std::vector<SmartPetscObj<AO>> sequence_of_aos,
+    std::vector<SmartPetscObj<Mat>> sequence_of_mats,
+    std::vector<bool> sym_schur, bool symm_op,
+    boost::shared_ptr<BlockStructure> diag_blocks = nullptr);
+
+/**
+ * @deprecated do not use
+ */
+DEPRECATED OpSchurAssembleBase *createOpSchurAssembleEnd(
+    std::vector<std::string> fields_name,
+    std::vector<boost::shared_ptr<Range>> field_ents,
+    std::vector<SmartPetscObj<AO>> sequence_of_aos,
+    std::vector<SmartPetscObj<Mat>> sequence_of_mats,
+    std::vector<bool> sym_schur, std::vector<double> diag_eps, bool symm_op,
+    boost::shared_ptr<BlockStructure> diag_blocks = nullptr);
+
+/** @deprecated do not use, use createSchurNestedMatrixStruture instead */
+DEPRECATED inline boost::shared_ptr<NestSchurData>
+getNestSchurData(std::pair<SmartPetscObj<DM>, SmartPetscObj<DM>> dms,
+                 boost::shared_ptr<BlockStructure> block_mat_data,
+
+                 std::vector<std::string> fields_name, //< a00 fields
+                 std::vector<boost::shared_ptr<Range>> field_ents, //< a00 ents
+                 bool add_preconditioner_block = false
+
+) {
+  return createSchurNestedMatrixStruture(dms, block_mat_data, fields_name,
+                                         field_ents, add_preconditioner_block);
 }
 
 } // namespace MoFEM

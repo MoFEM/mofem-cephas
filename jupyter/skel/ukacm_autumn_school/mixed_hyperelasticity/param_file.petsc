@@ -10,7 +10,6 @@
 -elastic_ts_max_steps 1  
 -space_order 2  
 -elastic_ts_dt 0.1 
--preconditioner_eps 1e-4 
 -material hencky 
 
 # nonlinear_elastic general
@@ -63,7 +62,6 @@
 -viscosity_alpha_u 0
 -viscosity_alpha_w 0
 -density_alpha_rho 0
--preconditioner_eps 1e-2
 
 -elastic_ts_max_time 300e-2
 #-elastic_ts_dt 20e-2
@@ -125,9 +123,6 @@
 -elastic_pc_factor_mat_solver_package mumps
 -elastic_mat_mumps_icntl_14 1600
 -elastic_mat_mumps_icntl_13 1
-
--preconditioner_eps_w 1e-2
--preconditioner_eps_omega 1e-6
 
 -prjspatial_ksp_type gmres
 -prjspatial_ksp_monitor

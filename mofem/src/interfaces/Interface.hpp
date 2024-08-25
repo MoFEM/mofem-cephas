@@ -259,13 +259,21 @@ struct CoreInterface : public UnknownInterface {
    * @param  verb              verbosity level
    * @return                   error code
    */
-  virtual MoFEMErrorCode
-  add_broken_field(const std::string &name, const FieldSpace space,
-                   const FieldApproximationBase base,
-                   const FieldCoefficientsNumber nb_of_coefficients,
-                   const TagType tag_type = MB_TAG_SPARSE,
-                   const enum MoFEMTypes bh = MF_EXCL,
-                   int verb = DEFAULT_VERBOSITY) = 0;
+  virtual MoFEMErrorCode add_broken_field(
+      const std::string name, const FieldSpace space,
+      const FieldApproximationBase base,
+      const FieldCoefficientsNumber nb_of_coefficients,
+
+      const std::vector<
+
+          std::pair<EntityType,
+                    std::function<MoFEMErrorCode(BaseFunction::DofsSideMap &)>>
+
+          >
+          list_dof_side_map,
+
+      const TagType tag_type = MB_TAG_SPARSE,
+      const enum MoFEMTypes bh = MF_EXCL, int verb = DEFAULT_VERBOSITY) = 0;
 
   /**
    * \brief Add field
@@ -285,9 +293,9 @@ struct CoreInterface : public UnknownInterface {
    * no error if field exist
    * @param  verb              verbosity level
    * @return                   error code
-   */  
+   */
   virtual MoFEMErrorCode
-  add_field(const std::string &name, const FieldSpace space,
+  add_field(const std::string name, const FieldSpace space,
             const FieldApproximationBase base,
             const FieldCoefficientsNumber nb_of_coefficients,
             const TagType tag_type = MB_TAG_SPARSE,
@@ -761,7 +769,7 @@ struct CoreInterface : public UnknownInterface {
    *
    * @param  entities   meshset or range form were entities taken
    * @param  type      type of entity
-   * @param  name      name of field
+   * @param  name      finite element name
    * @param  recursive take entities from meshsets in meshset
    * @return           error code
    */
@@ -777,7 +785,7 @@ struct CoreInterface : public UnknownInterface {
    *
    * @param  entities  meshset or range form were entities taken
    * @param  dim       dimension
-   * @param  name      name of field
+   * @param  name      finite element name
    * @param  recursive take entities from meshsets in meshset
    * @return           error code
    */
