@@ -171,6 +171,19 @@ MoFEMErrorCode Example::setupProblem() {
   else if (choice_base_value == BERNSTEIN)
     base = AINSWORTH_BERNSTEIN_BEZIER_BASE;
 
+  const char *list_continuity[] = {"continuous", "discontinuous"};
+  PetscInt choice_continuity_value = CONTINUOUS;
+  CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-continuity", list_continuity,
+                              LASTCONTINUITY, &choice_continuity_value, &flg);
+
+  FieldContinuity continuity;
+  if (choice_continuity_value == CONTINUOUS)
+    continuity = CONTINUOUS;
+  else if (choice_continuity_value == DISCONTINUOUS)
+    continuity = DISCONTINUOUS;
+  else
+    SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "continuity not set");
+
   enum spaces { H1SPACE, L2SPACE, HCURLSPACE, HDIVSPACE, LASBASETSPACE };
   const char *list_spaces[] = {"h1", "l2", "hcurl", "hdiv"};
   PetscInt choice_space_value = H1SPACE;
@@ -188,12 +201,19 @@ MoFEMErrorCode Example::setupProblem() {
   else if (choice_space_value == HDIVSPACE)
     space = HDIV;
 
-  CHKERR simpleInterface->addDomainField("U", space, base, 1);
+  if(continuity == CONTINUOUS)
+    CHKERR simpleInterface->addDomainField("U", space, base, 1);
+  else
+    CHKERR simpleInterface->addDomainBrokenField("U", space, base, 1);
 
   int order = 3;
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order, PETSC_NULL);
   CHKERR simpleInterface->setFieldOrder("U", order);
   CHKERR simpleInterface->setUp();
+
+  auto bc_mng = mField.getInterface<BcManager>();
+  CHKERR bc_mng->removeSideDOFs(simpleInterface->getProblemName(), "ZERO_FLUX",
+                                "U", SPACE_DIM, 0, 1, true);
 
   MoFEMFunctionReturn(0);
 }
@@ -278,6 +298,8 @@ MoFEMErrorCode Example::outputResults() {
   {
     using OpPPMap = OpPostProcMapInMoab<3, 3>;
 
+    CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+        post_proc_fe->getOpPtrVector(), {space});
     auto u_ptr = boost::make_shared<MatrixDouble>();
     post_proc_fe->getOpPtrVector().push_back(
         new OpCalculateHVecVectorField<3>("U", u_ptr));
@@ -329,8 +351,10 @@ MoFEMErrorCode Example::outputResults() {
     MoFEMFunctionReturn(0);
   };
 
+  auto prb_ptr = mField.get_problem(simpleInterface->getProblemName());
+
   size_t nb = 0;
-  auto dofs_ptr = mField.get_dofs();
+  auto dofs_ptr = prb_ptr->getNumeredRowDofsPtr();
 
   for (auto dof_ptr : (*dofs_ptr)) {
     MOFEM_LOG("PLOTBASE", Sev::verbose) << *dof_ptr;

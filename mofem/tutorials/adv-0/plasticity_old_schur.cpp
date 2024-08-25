@@ -1376,10 +1376,8 @@ MoFEMErrorCode SetUpSchurImpl::setUp(TS solver) {
           }));
       pip_mng->getOpBoundaryLhsPipeline().push_back(createOpSchurAssembleEnd(
 
-          {"SIGMA", "EP", "TAU"}, {nullptr, nullptr, nullptr},
-          {SmartPetscObj<AO>(), SmartPetscObj<AO>(), aoUp},
-          {SmartPetscObj<Mat>(), SmartPetscObj<Mat>(), S},
-          {false, false, false}, false
+          {"SIGMA", "EP", "TAU"}, {nullptr, nullptr, nullptr}, aoUp, S, false,
+          false
 
           ));
       // Domain
@@ -1387,10 +1385,8 @@ MoFEMErrorCode SetUpSchurImpl::setUp(TS solver) {
           createOpSchurAssembleBegin());
       pip_mng->getOpDomainLhsPipeline().push_back(createOpSchurAssembleEnd(
 
-          {"SIGMA", "EP", "TAU"}, {nullptr, nullptr, nullptr},
-          {SmartPetscObj<AO>(), SmartPetscObj<AO>(), aoUp},
-          {SmartPetscObj<Mat>(), SmartPetscObj<Mat>(), S},
-          {false, false, false}, false
+          {"SIGMA", "EP", "TAU"}, {nullptr, nullptr, nullptr}, aoUp, S, false,
+          false
 
           ));
 #endif // ADD_CONTACT
@@ -1459,10 +1455,10 @@ MoFEMErrorCode SetUpSchurImpl::setUp(TS solver) {
     pip_mng->getOpBoundaryLhsPipeline().push_front(
         createOpSchurAssembleBegin());
     pip_mng->getOpBoundaryLhsPipeline().push_back(
-        createOpSchurAssembleEnd({}, {}, {}, {}, {}, false));
+        createOpSchurAssembleEnd({}, {}));
     pip_mng->getOpDomainLhsPipeline().push_front(createOpSchurAssembleBegin());
     pip_mng->getOpDomainLhsPipeline().push_back(
-        createOpSchurAssembleEnd({}, {}, {}, {}, {}, false));
+        createOpSchurAssembleEnd({}, {}));
   }
 
   // we do not those anymore

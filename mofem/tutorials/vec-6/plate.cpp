@@ -275,7 +275,7 @@ MoFEMErrorCode Plate::assembleSystem() {
         new OpInvertMatrix<SPACE_DIM>(jac_ptr, det_ptr, inv_jac_ptr));
     // push first base derivatives tp physical element shape
     pipeline.push_back(new OpSetInvJacH1ForFace<1>(inv_jac_ptr));
-    // push second base directives tp physical element shape
+    // push second base derivatives tp physical element shape
     pipeline.push_back(new OpSetInvJacH1ForFace<2>(inv_jac_ptr));
   };
 

@@ -950,11 +950,9 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> solver) {
 
   } else {
     pip->getOpBoundaryLhsPipeline().push_front(createOpSchurAssembleBegin());
-    pip->getOpBoundaryLhsPipeline().push_back(
-        createOpSchurAssembleEnd({}, {}, {}, {}, {}, true));
+    pip->getOpBoundaryLhsPipeline().push_back(createOpSchurAssembleEnd({}, {}));
     pip->getOpDomainLhsPipeline().push_front(createOpSchurAssembleBegin());
-    pip->getOpDomainLhsPipeline().push_back(
-        createOpSchurAssembleEnd({}, {}, {}, {}, {}, true));
+    pip->getOpDomainLhsPipeline().push_back(createOpSchurAssembleEnd({}, {}));
   }
   MoFEMFunctionReturn(0);
 }
@@ -1012,7 +1010,7 @@ MoFEMErrorCode SetUpSchurImpl::createSubDM() {
 
           );
 
-      return getNestSchurData(
+      return createSchurNestedMatrixStruture(
 
           {schurDM, blockDM}, block_mat_data,
 
@@ -1034,21 +1032,16 @@ MoFEMErrorCode SetUpSchurImpl::setOperator() {
   auto simple = mField.getInterface<Simple>();
   auto pip = mField.getInterface<PipelineManager>();
 
-  boost::shared_ptr<BlockStructure> block_data;
-  CHKERR DMMoFEMGetBlocMatData(simple->getDM(), block_data);
-
   // Boundary
   auto dm_is = getDMSubData(schurDM)->getSmartRowIs();
   auto ao_up = createAOMappingIS(dm_is, PETSC_NULL);
   pip->getOpBoundaryLhsPipeline().push_front(createOpSchurAssembleBegin());
-  pip->getOpBoundaryLhsPipeline().push_back(
-      createOpSchurAssembleEnd({"U"}, {boost::make_shared<Range>(volEnts)},
-                               {ao_up}, {S}, {true}, true, block_data));
+  pip->getOpBoundaryLhsPipeline().push_back(createOpSchurAssembleEnd(
+      {"U"}, {boost::make_shared<Range>(volEnts)}, ao_up, S, true, true));
   // Domain
   pip->getOpDomainLhsPipeline().push_front(createOpSchurAssembleBegin());
-  pip->getOpDomainLhsPipeline().push_back(
-      createOpSchurAssembleEnd({"U"}, {boost::make_shared<Range>(volEnts)},
-                               {ao_up}, {S}, {true}, true, block_data));
+  pip->getOpDomainLhsPipeline().push_back(createOpSchurAssembleEnd(
+      {"U"}, {boost::make_shared<Range>(volEnts)}, ao_up, S, true, true));
 
   auto pre_proc_schur_lhs_ptr = boost::make_shared<FEMethod>();
   auto post_proc_schur_lhs_ptr = boost::make_shared<FEMethod>();

@@ -994,7 +994,7 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<TS> solver) {
   // Domain
   pip->getOpDomainLhsPipeline().push_front(createOpSchurAssembleBegin());
   pip->getOpDomainLhsPipeline().push_back(
-      createOpSchurAssembleEnd({"P"}, {nullptr}, {ao_up}, {S}, {false}, false));
+      createOpSchurAssembleEnd({"P"}, {nullptr}, ao_up, S, false, false));
 
   auto pre_proc_schur_lhs_ptr = boost::make_shared<FEMethod>();
   auto post_proc_schur_lhs_ptr = boost::make_shared<FEMethod>();

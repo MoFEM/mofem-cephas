@@ -1073,11 +1073,9 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<TS> solver) {
   } else {
     MOFEM_LOG("CONTACT", Sev::inform) << "No Schur PC";
     pip->getOpBoundaryLhsPipeline().push_front(createOpSchurAssembleBegin());
-    pip->getOpBoundaryLhsPipeline().push_back(
-        createOpSchurAssembleEnd({}, {}, {}, {}, {}, false));
+    pip->getOpBoundaryLhsPipeline().push_back(createOpSchurAssembleEnd({}, {}));
     pip->getOpDomainLhsPipeline().push_front(createOpSchurAssembleBegin());
-    pip->getOpDomainLhsPipeline().push_back(
-        createOpSchurAssembleEnd({}, {}, {}, {}, {}, false));
+    pip->getOpDomainLhsPipeline().push_back(createOpSchurAssembleEnd({}, {}));
   }
   MoFEMFunctionReturn(0);
 }
@@ -1129,7 +1127,7 @@ MoFEMErrorCode SetUpSchurImpl::createSubDM() {
 
       );
 
-      return getNestSchurData(
+      return createSchurNestedMatrixStruture(
 
           {schur_dm, block_dm}, block_mat_data,
 
@@ -1163,10 +1161,6 @@ MoFEMErrorCode SetUpSchurImpl::setOperator() {
   auto simple = mField.getInterface<Simple>();
   auto pip = mField.getInterface<PipelineManager>();
 
-  // block data structure
-  boost::shared_ptr<BlockStructure> block_data;
-  CHKERR DMMoFEMGetBlocMatData(simple->getDM(), block_data);
-
   auto dm_is = getDMSubData(schurDM)->getSmartRowIs();
   auto ao_up = createAOMappingIS(dm_is, PETSC_NULL);
 
@@ -1177,8 +1171,7 @@ MoFEMErrorCode SetUpSchurImpl::setOperator() {
                      [eps_stab](double, double, double) { return eps_stab; }));
   pip->getOpBoundaryLhsPipeline().push_back(
 
-      createOpSchurAssembleEnd({"SIGMA"}, {nullptr}, {ao_up}, {S}, {false},
-                               false, block_data)
+      createOpSchurAssembleEnd({"SIGMA"}, {nullptr}, ao_up, S, false, false)
 
   );
 
@@ -1186,8 +1179,8 @@ MoFEMErrorCode SetUpSchurImpl::setOperator() {
   pip->getOpDomainLhsPipeline().push_front(createOpSchurAssembleBegin());
   pip->getOpDomainLhsPipeline().push_back(
 
-      createOpSchurAssembleEnd({"SIGMA"}, {nullptr}, {ao_up}, {S}, {false},
-                               false, block_data)
+      createOpSchurAssembleEnd({"SIGMA"}, {nullptr}, ao_up, S, false,
+                               false)
 
   );
 

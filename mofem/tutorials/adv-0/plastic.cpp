@@ -10,7 +10,7 @@
 "EXECUTABLE_DIMENSION" has been defined. If it has not been defined, it replaces
 the " */
 #ifndef EXECUTABLE_DIMENSION
-#define EXECUTABLE_DIMENSION 3
+  #define EXECUTABLE_DIMENSION 3
 #endif
 
 // #undef ADD_CONTACT
@@ -145,13 +145,13 @@ double alpha_damping = 0;
 #include <PlasticNaturalBCs.hpp>
 
 #ifdef ADD_CONTACT
-#ifdef PYTHON_SDF
-#include <boost/python.hpp>
-#include <boost/python/def.hpp>
-#include <boost/python/numpy.hpp>
+  #ifdef PYTHON_SDF
+    #include <boost/python.hpp>
+    #include <boost/python/def.hpp>
+    #include <boost/python/numpy.hpp>
 namespace bp = boost::python;
 namespace np = boost::python::numpy;
-#endif
+  #endif
 
 namespace ContactOps {
 
@@ -159,7 +159,7 @@ double cn_contact = 0.1;
 
 }; // namespace ContactOps
 
-#include <ContactOps.hpp>
+  #include <ContactOps.hpp>
 #endif // ADD_CONTACT
 
 using DomainRhsBCs = NaturalBC<DomainEleOp>::Assembly<AT>::LinearForm<IT>;
@@ -203,9 +203,9 @@ private:
   };
 
 #ifdef ADD_CONTACT
-#ifdef PYTHON_SDF
+  #ifdef PYTHON_SDF
   boost::shared_ptr<ContactOps::SDFPython> sdfPythonPtr;
-#endif
+  #endif
 #endif // ADD_CONTACT
 };
 
@@ -489,11 +489,11 @@ MoFEMErrorCode Example::createCommonData() {
   CHKERR get_command_line_parameters();
 
 #ifdef ADD_CONTACT
-#ifdef PYTHON_SDF
+  #ifdef PYTHON_SDF
   sdfPythonPtr = boost::make_shared<ContactOps::SDFPython>();
   CHKERR sdfPythonPtr->sdfInit("sdf.py");
   ContactOps::sdfPythonWeakPtr = sdfPythonPtr;
-#endif
+  #endif
 #endif // ADD_CONTACT
 
   MoFEMFunctionReturn(0);
@@ -990,7 +990,7 @@ MoFEMErrorCode Example::tsSolve() {
 
         );
 
-        return getNestSchurData(
+        return createSchurNestedMatrixStruture(
 
             {dm_schur, dm_block}, block_mat_data,
 
@@ -1020,7 +1020,7 @@ MoFEMErrorCode Example::tsSolve() {
 
             );
 
-        return getNestSchurData(
+        return createSchurNestedMatrixStruture(
 
             {dm_schur, dm_block}, block_mat_data,
 
@@ -1211,10 +1211,10 @@ static char help[] = "...\n\n";
 int main(int argc, char *argv[]) {
 
 #ifdef ADD_CONTACT
-#ifdef PYTHON_SDF
+  #ifdef PYTHON_SDF
   Py_Initialize();
   np::initialize();
-#endif
+  #endif
 #endif // ADD_CONTACT
 
   // Initialisation of MoFEM/PETSc and MOAB data structures
@@ -1270,11 +1270,11 @@ int main(int argc, char *argv[]) {
   CHKERR MoFEM::Core::Finalize();
 
 #ifdef ADD_CONTACT
-#ifdef PYTHON_SDF
+  #ifdef PYTHON_SDF
   if (Py_FinalizeEx() < 0) {
     exit(120);
   }
-#endif
+  #endif
 #endif // ADD_CONTACT
 
   return 0;
@@ -1363,17 +1363,13 @@ MoFEMErrorCode SetUpSchurImpl::setUp(TS solver) {
       MoFEMFunctionBegin;
       auto pip_mng = mField.getInterface<PipelineManager>();
 
-      boost::shared_ptr<BlockStructure> block_data;
-      CHKERR DMMoFEMGetBlocMatData(simple->getDM(), block_data);
-
 #ifndef ADD_CONTACT
       // Boundary
       pip_mng->getOpBoundaryLhsPipeline().push_front(
           createOpSchurAssembleBegin());
       pip_mng->getOpBoundaryLhsPipeline().push_back(createOpSchurAssembleEnd(
 
-          {"EP", "TAU"}, {nullptr, nullptr}, {SmartPetscObj<AO>(), aoSchur},
-          {SmartPetscObj<Mat>(), S}, {false, false}, false, block_data
+          {"EP", "TAU"}, {nullptr, nullptr}, aoSchur, S, false, false
 
           ));
       // Domain
@@ -1381,8 +1377,7 @@ MoFEMErrorCode SetUpSchurImpl::setUp(TS solver) {
           createOpSchurAssembleBegin());
       pip_mng->getOpDomainLhsPipeline().push_back(createOpSchurAssembleEnd(
 
-          {"EP", "TAU"}, {nullptr, nullptr}, {SmartPetscObj<AO>(), aoSchur},
-          {SmartPetscObj<Mat>(), S}, {false, false}, false, block_data
+          {"EP", "TAU"}, {nullptr, nullptr}, aoSchur, S, false, false
 
           ));
 #else
@@ -1404,10 +1399,8 @@ MoFEMErrorCode SetUpSchurImpl::setUp(TS solver) {
           }));
       pip_mng->getOpBoundaryLhsPipeline().push_back(createOpSchurAssembleEnd(
 
-          {"SIGMA", "EP", "TAU"}, {nullptr, nullptr, nullptr},
-          {SmartPetscObj<AO>(), SmartPetscObj<AO>(), aoSchur},
-          {SmartPetscObj<Mat>(), SmartPetscObj<Mat>(), S},
-          {false, false, false}, false, block_data
+          {"SIGMA", "EP", "TAU"}, {nullptr, nullptr, nullptr}, aoSchur, S,
+          false, false
 
           ));
       // Domain
@@ -1415,10 +1408,8 @@ MoFEMErrorCode SetUpSchurImpl::setUp(TS solver) {
           createOpSchurAssembleBegin());
       pip_mng->getOpDomainLhsPipeline().push_back(createOpSchurAssembleEnd(
 
-          {"SIGMA", "EP", "TAU"}, {nullptr, nullptr, nullptr},
-          {SmartPetscObj<AO>(), SmartPetscObj<AO>(), aoSchur},
-          {SmartPetscObj<Mat>(), SmartPetscObj<Mat>(), S},
-          {false, false, false}, false, block_data
+          {"SIGMA", "EP", "TAU"}, {nullptr, nullptr, nullptr}, aoSchur, S,
+          false, false
 
           ));
 #endif // ADD_CONTACT
@@ -1487,10 +1478,10 @@ MoFEMErrorCode SetUpSchurImpl::setUp(TS solver) {
     pip_mng->getOpBoundaryLhsPipeline().push_front(
         createOpSchurAssembleBegin());
     pip_mng->getOpBoundaryLhsPipeline().push_back(
-        createOpSchurAssembleEnd({}, {}, {}, {}, {}, false));
+        createOpSchurAssembleEnd({}, {}));
     pip_mng->getOpDomainLhsPipeline().push_front(createOpSchurAssembleBegin());
     pip_mng->getOpDomainLhsPipeline().push_back(
-        createOpSchurAssembleEnd({}, {}, {}, {}, {}, false));
+        createOpSchurAssembleEnd({}, {}));
   }
 
   // fieldSplitIS.reset();

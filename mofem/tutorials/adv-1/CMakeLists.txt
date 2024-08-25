@@ -164,6 +164,7 @@ add_test(
   -eps_stab 1e-4
   -ts_type beuler
   -ts_max_time 1 
+  -ts_max_steps 10
   -ts_dt 1
   -sdf_file ./sdf_files/sdf_hertz_2d_plane.py
   -young_modulus 1e3
@@ -203,6 +204,7 @@ add_test(
   -eps_stab 1e-5
   -ts_type beuler
   -ts_max_time 1 
+  -ts_max_steps 10
   -ts_dt 1
   -sdf_file ./sdf_files/sdf_hertz_3d.py
   -young_modulus 1e3
