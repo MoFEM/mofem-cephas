@@ -14,7 +14,7 @@ target_link_libraries(mix_transport
 
 add_test(
   basic_mix_transport_atom
-  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/mix_transport
   -my_file ${CMAKE_CURRENT_SOURCE_DIR}/simple_thermal_problem.h5m
   -ksp_type fgmres -pc_type bjacobi -ksp_monitor -ksp_atol 0 -ksp_rtol 1e-12

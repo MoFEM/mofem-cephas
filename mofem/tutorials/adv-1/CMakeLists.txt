@@ -141,7 +141,7 @@ add_custom_target(
 
 add_test(
   hertz_2d_plane_stress
-  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4
   contact_2d
   -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/cyl_2d_4p.h5m
   -pc_type lu
@@ -155,7 +155,7 @@ add_test(
 
 add_test(
   hertz_2d_plane_stress_schur
-  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4
   contact_2d_schur
   -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/cyl_2d_4p.h5m
   -pc_type fieldsplit
@@ -173,7 +173,7 @@ add_test(
 
 add_test(
   hertz_3d
-  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4
   contact_3d
   -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/hertz_3d_4p.h5m
   -pc_type lu
@@ -188,7 +188,7 @@ add_test(
 
 add_test(
   hertz_3d_schur
-  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4
   contact_3d_schur
   -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/hertz_3d_4p.h5m
   -snes_max_it 40
@@ -212,7 +212,7 @@ add_test(
 
 add_test(
   wavy_3d
-  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4
   contact_3d
   -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/wavy_3d_4p.h5m
   -base demkowicz
@@ -244,7 +244,7 @@ if(IS_MFRONT_MOD)
 
     add_test(
       wavy_2d_mfront
-      ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
+      ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4
       contact_2d
       -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/wavy_2d_4p.h5m
       -pc_type lu
@@ -262,7 +262,7 @@ if(IS_MFRONT_MOD)
 
     add_test(
       hertz_mfront_2d_plane_strain
-      ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
+      ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4
       contact_2d
       -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/cyl_2d_4p.h5m
       -pc_type lu
@@ -280,7 +280,7 @@ if(IS_MFRONT_MOD)
 
     add_test(
       hertz_mfront_2d_axisymm_flat
-      ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
+      ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4
       contact_2d
       -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/hertz_2d_4p.h5m
       -pc_type lu
@@ -298,7 +298,7 @@ if(IS_MFRONT_MOD)
 
     add_test(
       hertz_mfront_2d_axisymm_sphere
-      ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
+      ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4
       contact_2d
       -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/cyl_2d_4p.h5m
       -pc_type lu
@@ -316,7 +316,7 @@ if(IS_MFRONT_MOD)
 
     add_test(
       hertz_mfront_3d
-      ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
+      ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4
       contact_3d
       -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/hertz_3d_4p.h5m
       -pc_type lu
@@ -333,7 +333,7 @@ if(IS_MFRONT_MOD)
 
     add_test(
       wavy_mfront_half_space_2d
-      ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
+      ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4
       contact_2d
       -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/half_space_2d_4p.h5m
       -pc_type lu
@@ -351,7 +351,7 @@ if(IS_MFRONT_MOD)
     
     add_test(
       hertz_mfront_3d_schur
-      ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
+      ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4
       contact_3d_schur
       -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/hertz_3d_4p.h5m
       -pc_type fieldsplit
@@ -369,7 +369,7 @@ if(IS_MFRONT_MOD)
 
     add_test(
       wavy_3d_mfront #hex
-      ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 4
+      ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4
       contact_3d
       -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/wavy_3d_4p.h5m
       -base demkowicz

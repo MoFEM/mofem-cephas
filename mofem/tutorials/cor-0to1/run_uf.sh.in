@@ -54,7 +54,7 @@ fi
 rm -f out_*.h5m 
 #make -j 4 unsaturated_transport 
 
-@MoFEM_MPI_RUN@ \
+@MPI_RUN@ \
 @MPI_RUN_FLAGS@ \
 -np $NBPROCS \
 ./unsaturated_transport \

@@ -31,7 +31,7 @@ set_target_properties(
 
 add_test(
   level_set
-  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 2
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2
   ${CMAKE_CURRENT_BINARY_DIR}/level_set_2d
   -file_name um_out_p2.h5m 
   -ksp_monitor 

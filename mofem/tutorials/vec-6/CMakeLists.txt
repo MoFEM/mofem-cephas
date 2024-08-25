@@ -26,7 +26,7 @@ tutorials_build_and_install(
 
 add_test(
   plate
-  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   plate
   -file_name mesh2d.cub 
   -order 4 

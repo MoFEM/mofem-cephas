@@ -26,6 +26,6 @@ tutorials_build_and_install(
 # FIXME Add test
 # add_test(
 #   heat_method
-#   ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 2
+#   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2
 #   ${CMAKE_CURRENT_BINARY_DIR}/heat_method
 #   -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh2d.h5m -log_no_color)

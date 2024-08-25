@@ -36,7 +36,7 @@ set_target_properties(
 
 add_test(
   contact_2d
-  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   seepage_2d
   -file_name ${CMAKE_CURRENT_BINARY_DIR}/test_seepage.cub
   -ts_type beuler

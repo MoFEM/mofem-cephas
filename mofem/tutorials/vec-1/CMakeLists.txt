@@ -39,7 +39,7 @@ if(SLEPC_FOUND)
 
   add_test(
     eigen_elastic_3d
-    ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 2
+    ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2
     ${CMAKE_CURRENT_BINARY_DIR}/eigen_elastic_3d
     -eps_ncv 300 
     -eps_krylovschur_restart 0.1

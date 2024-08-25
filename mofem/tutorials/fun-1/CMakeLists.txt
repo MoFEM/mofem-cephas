@@ -15,6 +15,6 @@ tutorials_copy_and_install("*.h5m" "${permissions_default}")
 
 add_test(
   integration
-  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/integration
   -file_name ${CMAKE_CURRENT_BINARY_DIR}/cube.h5m -test -log_no_color)

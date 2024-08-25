@@ -28,6 +28,6 @@ set_target_properties(
 
 add_test(
     plot_base_2d_h1_ainsworth
-    ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+    ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
     ${CMAKE_CURRENT_BINARY_DIR}/plot_base_2d
     -base ainsworth -space h1 -order 3 -log_no_color)

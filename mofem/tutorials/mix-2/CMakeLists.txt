@@ -53,7 +53,7 @@ set_target_properties(
 
 # add_test(
 #   incompressible_2d_schur
-#   ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+#   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
 #   incompressible_2d_schur
 #   -file_name ${CMAKE_CURRENT_BINARY_DIR}/sphere_2d.h5m
 #   -ts_type beuler

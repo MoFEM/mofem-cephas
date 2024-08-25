@@ -24,6 +24,6 @@ tutorials_build_and_install(
 
 add_test(
   approximaton
-  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 2
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2
   ${CMAKE_CURRENT_BINARY_DIR}/approximaton
   -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh2d_2parts.h5m -log_no_color)

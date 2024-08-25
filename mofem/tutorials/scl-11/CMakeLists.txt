@@ -25,7 +25,7 @@ tutorials_build_and_install(
 
 add_test(
   poisson_2d_dis_galerkin
-  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 3
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 3
   poisson_2d_dis_galerkin
   -file_name mesh_dense_p3.h5m
   -order 4 

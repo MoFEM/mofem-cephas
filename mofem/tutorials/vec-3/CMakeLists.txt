@@ -39,7 +39,7 @@ set_target_properties(
 
 add_test(
   nonlinear_dynamic_elastic
-  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 2
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2
   ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_dynamic_elastic_2d
   -file_name part.h5m -order 1 -ts_max_time 0.3 -ts_dt 0.1 
   -time_vector_file body_force.txt -log_no_color -test)
