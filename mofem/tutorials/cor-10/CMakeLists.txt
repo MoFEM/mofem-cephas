@@ -21,8 +21,8 @@ tutorials_copy_and_install("*.petsc" "${permissions_default}")
 tutorials_copy_and_install("*.sh" "${permissions_execute}")
 tutorials_copy_and_install("*.geo" "${permissions_execute}")
 
-tutorials_build_and_install(
-  navier_stokes ${CMAKE_CURRENT_SOURCE_DIR}/navier_stokes.cpp)
+# tutorials_build_and_install(
+#   navier_stokes ${CMAKE_CURRENT_SOURCE_DIR}/navier_stokes.cpp)
 
 # set_target_properties(
 #   navier_stokes PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=2")

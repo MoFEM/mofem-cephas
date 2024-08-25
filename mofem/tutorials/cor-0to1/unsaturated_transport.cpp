@@ -8,7 +8,14 @@
 
 
 
-#include <BasicFiniteElements.hpp>
+#include <MoFEM.hpp>
+using namespace MoFEM;
+#include <MethodForForceScaling.hpp>
+#include <TimeForceScale.hpp>
+
+#include <boost/program_options.hpp>
+namespace po = boost::program_options;
+
 #include <MixTransportElement.hpp>
 #include <UnsaturatedFlow.hpp>
 #include <MaterialUnsaturatedFlow.hpp>
@@ -17,7 +24,6 @@
 #error "MoFEM need to be compiled with ADOL-C"
 #endif
 
-using namespace MoFEM;
 using namespace MixTransport;
 static char help[] = "...\n\n";
 

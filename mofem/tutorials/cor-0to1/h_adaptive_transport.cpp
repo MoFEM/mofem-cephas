@@ -11,11 +11,14 @@ the Poisson equation." SIAM Journal on Numerical Analysis 49.5 (2011):
 
 
 
-#include <BasicFiniteElements.hpp>
-#include <MixTransportElement.hpp>
+#include <MoFEM.hpp>
 
 using namespace MoFEM;
+#include <MethodForForceScaling.hpp>
+#include <MixTransportElement.hpp>
+
 using namespace MixTransport;
+
 
 static char help[] = "-my_file input file"
                      "-my_order order of approximation"

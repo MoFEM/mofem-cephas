@@ -532,7 +532,7 @@ the main program.
 - The header files for spring element implementation are embedded in
 BasicFiniteElements.hpp (directly included) and \ref All.cpp (via CMake)
 \code
-    #include <BasicFiniteElements.hpp>
+    
 \endcode
 
 
@@ -606,7 +606,7 @@ lines of code are needed in the main program.
 - The header files for spring element implementation are embedded in
 BasicFiniteElements.hpp (directly included) and \ref All.cpp (via CMake)
 \code
-    #include <BasicFiniteElements.hpp>
+    
 \endcode
 
 

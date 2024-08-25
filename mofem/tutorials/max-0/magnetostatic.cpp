@@ -6,9 +6,10 @@
  *
  */
 
-#include <BasicFiniteElements.hpp>
-#include <MagneticElement.hpp>
+#include <MoFEM.hpp>
 using namespace MoFEM;
+
+#include <MagneticElement.hpp>
 
 static char help[] = "-my_file mesh file name\n"
                      "-my_order default approximation order\n"

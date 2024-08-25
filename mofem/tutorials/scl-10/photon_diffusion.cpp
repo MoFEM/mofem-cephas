@@ -6,7 +6,7 @@
 
 #include <stdlib.h>
 #include <cmath>
-#include <BasicFiniteElements.hpp>
+#include <MoFEM.hpp>
 
 using namespace MoFEM;
 
@@ -119,7 +119,7 @@ private:
       std::fill(&doEntities[MBVERTEX], &doEntities[MBMAXTYPE], false);
       doEntities[MBTRI] = doEntities[MBQUAD] = true;
     }
-    MoFEMErrorCode doWork(int side, EntityType type, EntData &data);
+    MoFEMErrorCode doWork(int side, EntityType type, EntitiesFieldData::EntData &data);
   };
 
   struct OpGetScalarFieldGradientValuesOnSkin : public BoundaryEleOp {
@@ -629,7 +629,7 @@ MoFEMErrorCode PhotonDiffusion::runProgram() {
 }
 
 MoFEMErrorCode PhotonDiffusion::OpCameraInteg::doWork(int side, EntityType type,
-                                                      EntData &data) {
+                                                      EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
   const int nb_integration_pts = getGaussPts().size2();
   const double area = getMeasure();

@@ -15,9 +15,10 @@ constexpr auto field_name = "U";
 constexpr int SPACE_DIM =
     EXECUTABLE_DIMENSION; //< Space dimension of problem, mesh
 
-#include <poisson_2d_homogeneous.hpp>
-
+#include <MoFEM.hpp>
 using namespace MoFEM;
+
+#include <poisson_2d_homogeneous.hpp>
 using namespace Poisson2DHomogeneousOperators;
 
 using PostProcFaceEle = PostProcBrokenMeshInMoab<DomainEle>;

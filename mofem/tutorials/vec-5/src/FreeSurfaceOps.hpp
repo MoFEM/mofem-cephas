@@ -12,7 +12,7 @@ struct OpCalculateLift : public BoundaryEleOp {
   }
 
   MoFEMErrorCode doWork(int row_side, EntityType row_type,
-                        HookeElement::EntData &data) {
+                        EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
 
     const auto fe_ent = getFEEntityHandle();

@@ -1,5 +1,33 @@
 #
 
+include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(${PROJECT_BINARY_DIR}/include)
+# include_directories(${PROJECT_SOURCE_DIR}/third_party/phg-quadrule)
+include_directories(${PROJECT_SOURCE_DIR}/third_party)
+include_directories(${PROJECT_SOURCE_DIR}/third_party/cblas)
+include_directories(${PROJECT_SOURCE_DIR}/src/ftensor/src)
+include_directories(${PROJECT_SOURCE_DIR}/src/approximation)
+include_directories(${PROJECT_SOURCE_DIR}/src/approximation/c)
+include_directories(${PROJECT_SOURCE_DIR}/src/multi_indices)
+include_directories(${PROJECT_SOURCE_DIR}/src/interfaces)
+include_directories(${PROJECT_SOURCE_DIR}/src/petsc)
+include_directories(${PROJECT_SOURCE_DIR}/src/finite_elements)
+include_directories(${PROJECT_SOURCE_DIR}/src/post_proc)
+include_directories(${PROJECT_SOURCE_DIR}/src/boundary_conditions)
+
+include_directories(${PROJECT_SOURCE_DIR}/tools)
+include_directories(${PROJECT_SOURCE_DIR}/tools/src)
+
+set(OPTIONAL_PROJECT_LIBS
+  ${TETGEN_LIBRARY}
+  ${ADOL-C_LIBRARY}
+  ${MED_LIBRARY}
+)
+
+set(MoFEM_PROJECT_LIBS 
+  ${OPTIONAL_PROJECT_LIBS} ${MoFEM_SYSTEM_PROJECT_LIBS}  ${PROJECT_LIBS})
+message(STATUS ${MoFEM_PROJECT_LIBS})
+
 if(MED_LIBRARY)
   add_executable(read_med ${CMAKE_CURRENT_SOURCE_DIR}/read_med.cpp)
   target_link_libraries(read_med
@@ -178,17 +206,18 @@ if(ADOL-C_LIBRARY)
     ${PROJECT_SOURCE_DIR}/basic_finite_elements/nonlinear_elastic_materials/src
   )
 
-  add_executable(mesh_smoothing ${CMAKE_CURRENT_SOURCE_DIR}/mesh_smoothing.cpp)
-  target_link_libraries(mesh_smoothing
-    users_modules
-    mofem_interfaces
-    mofem_finite_elements
-    mofem_multi_indices
-    mofem_petsc
-    mofem_approx
-    mofem_third_party
-    ${MoFEM_PROJECT_LIBS}
-  )
-  install(TARGETS mesh_smoothing DESTINATION bin)
+  # FIXME:  
+  # add_executable(mesh_smoothing ${CMAKE_CURRENT_SOURCE_DIR}/mesh_smoothing.cpp)
+  # target_link_libraries(mesh_smoothing
+  #   # users_modules
+  #   mofem_interfaces
+  #   mofem_finite_elements
+  #   mofem_multi_indices
+  #   mofem_petsc
+  #   mofem_approx
+  #   mofem_third_party
+  #   ${MoFEM_PROJECT_LIBS}
+  # )
+  # install(TARGETS mesh_smoothing DESTINATION bin)
 
 endif(ADOL-C_LIBRARY)

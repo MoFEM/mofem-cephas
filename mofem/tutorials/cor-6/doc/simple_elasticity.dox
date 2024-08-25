@@ -130,7 +130,7 @@ save as "Users/username/mofem_install/um/build/basic_finite_elements/simple_elas
 
 The header file included in the user module are presented below.
 \code
-#include <BasicFiniteElements.hpp>
+
 \endcode
 
 \subsection simple_elasticity_initialisation Initialisation

@@ -5,7 +5,8 @@
  * Example of implementation for discontinuous Galerkin.
  */
 
-#include <BasicFiniteElements.hpp>
+#include <MoFEM.hpp>
+using namespace MoFEM;
 
 constexpr int BASE_DIM = 1;
 constexpr int FIELD_DIM = 1;

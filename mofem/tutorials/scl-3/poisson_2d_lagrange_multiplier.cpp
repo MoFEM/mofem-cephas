@@ -1,8 +1,9 @@
 #include <stdlib.h>
-#include <BasicFiniteElements.hpp>
-#include <poisson_2d_lagrange_multiplier.hpp>
+#include <MoFEM.hpp>
 
 using namespace MoFEM;
+#include <poisson_2d_lagrange_multiplier.hpp>
+
 using namespace Poisson2DLagrangeMultiplierOperators;
 
 using PostProcFaceEle =

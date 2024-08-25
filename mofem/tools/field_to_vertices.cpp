@@ -7,7 +7,7 @@
 
 
 #include <MoFEM.hpp>
-#include <BasicFiniteElements.hpp>
+#include <SaveVertexDofOnTag.hpp>
 
 using namespace MoFEM;
 
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
     }
 
 
-    SaveVertexDofOnTag ent_method(m_field, field_name.c_str());
+    BasicFiniteElements::SaveVertexDofOnTag ent_method(m_field, field_name.c_str());
 
     CHKERR m_field.loop_dofs(field_name.c_str(),ent_method);
     PetscPrintf(PETSC_COMM_WORLD, "\nDone. Saving files... \n");

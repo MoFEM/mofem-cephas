@@ -13,7 +13,7 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
-#include <BasicFiniteElements.hpp>
+#include <MoFEM.hpp>
 
 constexpr char FIELD_NAME[] = "U";
 constexpr int FIELD_DIM = 1;

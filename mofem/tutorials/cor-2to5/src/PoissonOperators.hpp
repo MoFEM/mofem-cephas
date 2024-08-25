@@ -7,6 +7,9 @@
 #ifndef __POISSONOPERATORS_HPP__
 #define __POISSONOPERATORS_HPP__
 
+#include <MoFEM.hpp>
+using namespace MoFEM;
+
 namespace PoissonExample {
 
 using PostProcFE = PostProcBrokenMeshInMoab<VolumeElementForcesAndSourcesCore>;

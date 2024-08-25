@@ -21,6 +21,10 @@ to 3" */
 #include <MoFEM.hpp>
 #include <MatrixFunction.hpp>
 
+using namespace MoFEM;
+
+#include <GenericElementInterface.hpp>
+
 #ifdef PYTHON_SDF
 #include <boost/python.hpp>
 #include <boost/python/def.hpp>
@@ -28,8 +32,6 @@ to 3" */
 namespace bp = boost::python;
 namespace np = boost::python::numpy;
 #endif
-
-using namespace MoFEM;
 
 constexpr AssemblyType AT =
     (SCHUR_ASSEMBLE) ? AssemblyType::BLOCK_SCHUR

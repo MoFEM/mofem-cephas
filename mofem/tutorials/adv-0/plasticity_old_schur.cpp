@@ -1347,23 +1347,16 @@ MoFEMErrorCode SetUpSchurImpl::setUp(TS solver) {
       // Boundary
       pip_mng->getOpBoundaryLhsPipeline().push_front(
           createOpSchurAssembleBegin());
-      pip_mng->getOpBoundaryLhsPipeline().push_back(
-          new OpSchurAssembleEnd<SCHUR_DGESV>(
-
-              {"EP", "TAU"}, {nullptr, nullptr}, {SmartPetscObj<AO>(), aoUp},
-              {SmartPetscObj<Mat>(), S}, {false, false}
-
-              ));
+      pip_mng->getOpBoundaryLhsPipeline().push_back(createOpSchurAssembleEnd(
+          {"EP", "TAU"}, {nullptr, nullptr}, {SmartPetscObj<AO>(), aoUp},
+          {SmartPetscObj<Mat>(), S}, {false, false}, false));
       // Domain
       pip_mng->getOpDomainLhsPipeline().push_front(
           createOpSchurAssembleBegin());
-      pip_mng->getOpDomainLhsPipeline().push_back(
-          new OpSchurAssembleEnd<SCHUR_DGESV>(
+      pip_mng->getOpBoundaryLhsPipeline().push_back(createOpSchurAssembleEnd(
+          {"EP", "TAU"}, {nullptr, nullptr}, {SmartPetscObj<AO>(), aoUp},
+          {SmartPetscObj<Mat>(), S}, {false, false}, false));
 
-              {"EP", "TAU"}, {nullptr, nullptr}, {SmartPetscObj<AO>(), aoUp},
-              {SmartPetscObj<Mat>(), S}, {false, false}
-
-              ));
 #else
 
       double eps_stab = 1e-4;

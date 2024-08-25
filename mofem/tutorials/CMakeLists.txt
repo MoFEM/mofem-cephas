@@ -1,4 +1,39 @@
-#
+
+include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR}/tutorials/src)
+
+include_directories(${PROJECT_SOURCE_DIR}/third_party)
+include_directories(${PROJECT_SOURCE_DIR}/src/ftensor/src)
+include_directories(${PROJECT_SOURCE_DIR}/third_party/phg-quadrule)
+
+include_directories(${PROJECT_SOURCE_DIR}/src/approximation)
+include_directories(${PROJECT_SOURCE_DIR}/src/approximation/c)
+link_directories(${PROJECT_BINARY_DIR}/src/approximation)
+
+include_directories(${PROJECT_SOURCE_DIR}/src/multi_indices)
+link_directories(${PROJECT_BINARY_DIR}/src/multi_indices)
+
+include_directories(${PROJECT_SOURCE_DIR}/src/interfaces)
+link_directories(${PROJECT_BINARY_DIR}/src/interfaces)
+
+include_directories(${PROJECT_SOURCE_DIR}/src/petsc)
+link_directories(${PROJECT_BINARY_DIR}/src/petsc)
+
+include_directories(${PROJECT_SOURCE_DIR}/src/finite_elements)
+link_directories(${PROJECT_BINARY_DIR}/src/finite_elements)
+
+include_directories(${PROJECT_SOURCE_DIR}/src/post_proc)
+include_directories(${PROJECT_SOURCE_DIR}/src/boundary_conditions)
+
+set(OPTIONAL_PROJECT_LIBS
+  ${TETGEN_LIBRARY}
+  ${ADOL-C_LIBRARY}
+  ${MED_LIBRARY}
+)
+set(MoFEM_PROJECT_LIBS 
+  ${OPTIONAL_PROJECT_LIBS} ${MoFEM_SYSTEM_PROJECT_LIBS} ${PROJECT_LIBS})
+message(STATUS ${MoFEM_PROJECT_LIBS})
+
 
 set(TUTORIALS_INSTALL_DIR "tutorials") 
 
@@ -36,7 +71,7 @@ endfunction(tutorials_install)
 function(tutorials_build_and_install target source)
   tutorials_add_executable(${target} ${source})
   target_link_libraries(${target}
-    users_modules
+    # users_modules
     mofem_finite_elements
     mofem_interfaces
     mofem_multi_indices

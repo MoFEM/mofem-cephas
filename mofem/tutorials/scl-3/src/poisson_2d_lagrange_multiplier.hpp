@@ -2,7 +2,9 @@
 #define __POISSON2DLAGRANGEMULTIPLIER_HPP__
 
 #include <stdlib.h>
-#include <BasicFiniteElements.hpp>
+#include <MoFEM.hpp>
+
+using namespace MoFEM;
 
 using FaceEle = MoFEM::FaceElementForcesAndSourcesCore;
 using EdgeEle = MoFEM::EdgeElementForcesAndSourcesCore;

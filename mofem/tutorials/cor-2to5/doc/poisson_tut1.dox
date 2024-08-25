@@ -229,7 +229,7 @@ elements, second with the implementation of operators for finite elements and
 third with some auxiliary functions which will share tutorials about the Poisson
 equation.
 \code
-#include <BasicFiniteElements.hpp>
+
 #include <PoissonOperators.hpp>
 #include <AuxPoissonFunctions.hpp>
 \endcode

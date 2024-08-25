@@ -7,12 +7,13 @@
 
 
 
-#include <BasicFiniteElements.hpp>
-#include <ElasticityMixedFormulation.hpp>
+#include <MoFEM.hpp>
 
 using namespace boost::numeric;
 using namespace MoFEM;
 using namespace std;
+
+#include <ElasticityMixedFormulation.hpp>
 
 static char help[] = "-my_order_p approximation order_p \n"
                      "-my_order_u approximation order_u \n"

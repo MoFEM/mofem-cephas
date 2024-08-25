@@ -5,13 +5,13 @@
  *
  */
 
-#include <BasicFiniteElements.hpp>
+#include <MoFEM.hpp>
+using namespace MoFEM;
 
 using PostProcVol = PostProcBrokenMeshInMoab<VolumeElementForcesAndSourcesCore>;
 using PostProcFace = PostProcBrokenMeshInMoab<FaceElementForcesAndSourcesCore>;
 
 using namespace boost::numeric;
-using namespace MoFEM;
 using namespace std;
 
 static char help[] = "Navier-Stokes Example\n";

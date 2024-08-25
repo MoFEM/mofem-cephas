@@ -162,7 +162,7 @@ and the second one contains the implementation of operators for
 finite elements.
 
 \code
-    #include <BasicFiniteElements.hpp>
+    
     #include <ElasticityMixedFormulation.hpp>
 \endcode
 

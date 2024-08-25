@@ -8,6 +8,11 @@
 #ifndef _MIX_TRANPORT_ELEMENT_HPP_
 #define _MIX_TRANPORT_ELEMENT_HPP_
 
+#include <MoFEM.hpp>
+#include <cholesky.hpp>
+
+using namespace MoFEM;
+
 namespace MixTransport {
 
 /** \brief Mix transport problem

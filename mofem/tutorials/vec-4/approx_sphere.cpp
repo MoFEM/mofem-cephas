@@ -10,7 +10,7 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
-#include <BasicFiniteElements.hpp>
+#include <MoFEM.hpp>
 
 constexpr int FM_DIM = 2;
 

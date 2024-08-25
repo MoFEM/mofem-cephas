@@ -9,7 +9,6 @@
 #include <MoFEM.hpp>
 using namespace MoFEM;
 
-#include <BasicFiniteElements.hpp>
 
 #include <Smoother.hpp>
 #include <SurfaceSlidingConstrains.hpp>
@@ -511,3 +510,4 @@ int main(int argc, char *argv[]) {
 
   MoFEM::Core::Finalize();
 }
+

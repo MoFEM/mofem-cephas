@@ -4,7 +4,6 @@
 tutorials_add_executable(
   mix_transport ${CMAKE_CURRENT_SOURCE_DIR}/mix_transport.cpp)
 target_link_libraries(mix_transport
-  users_modules
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices

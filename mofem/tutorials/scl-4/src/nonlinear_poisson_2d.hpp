@@ -2,8 +2,9 @@
 #define __NONLINEARPOISSON2D_HPP__
 
 #include <stdlib.h>
-#include <BasicFiniteElements.hpp>
+#include <MoFEM.hpp>
 
+using namespace MoFEM;
 using FaceEle = MoFEM::FaceElementForcesAndSourcesCore;
 using EdgeEle = MoFEM::EdgeElementForcesAndSourcesCore;
 

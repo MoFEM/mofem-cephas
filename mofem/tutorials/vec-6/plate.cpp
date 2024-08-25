@@ -12,7 +12,6 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
-#include <BasicFiniteElements.hpp>
 
 constexpr int BASE_DIM = 1;  ///< dimension of base
 constexpr int SPACE_DIM = 2; ///< dimension of space
