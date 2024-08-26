@@ -44,7 +44,8 @@ install(DIRECTORY "${PROJECT_SOURCE_DIR}/${TUTORIALS_INSTALL_DIR}/"
 
 function(tutorials_add_executable target source)
   if(MoFEM_PRECOMPILED_HEADRES)
-    set_source_files_properties(${source} PROPERTIES COMPILE_FLAGS "-include ${PERCOMPILED_HEADER}")
+    set_source_files_properties(${source} 
+    PROPERTIES COMPILE_FLAGS "-include ${PERCOMPILED_HEADER}")
   endif(MoFEM_PRECOMPILED_HEADRES)
   add_executable(${target} ${source})
   if(MoFEM_PRECOMPILED_HEADRES)
@@ -57,7 +58,7 @@ function(tutorials_install tutorials_mod_dir)
     DIRECTORY
     ${TUTORIALS_INSTALL_DIR} 
     DESTINATION
-    ${CMAKE_INSTALL_PREFIX}/${TUTORIALS_MOD_DIR}
+    ${CMAKE_INSTALL_PREFIX}/tutorials/${TUTORIALS_MOD_DIR}
     FILES_MATCHING
     PATTERN "README"
     PATTERN "*.h5m"
@@ -70,8 +71,6 @@ function(tutorials_install tutorials_mod_dir)
     PATTERN "doc" EXCLUDE
     PATTERN "atom_tests" EXCLUDE)
 endfunction(tutorials_install)
-
-
 
 function(tutorials_build_and_install target source)
   tutorials_add_executable(${target} ${source})
@@ -87,7 +86,8 @@ function(tutorials_build_and_install target source)
     mofem_post_proc
     mofem_boundary_conditions
     ${MoFEM_PROJECT_LIBS})
-  install(TARGETS ${target} DESTINATION ${CMAKE_INSTALL_PREFIX}/${TUTORIALS_MOD_DIR})
+  install(TARGETS ${target} 
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/tutorials/${TUTORIALS_MOD_DIR})
 
 endfunction(tutorials_build_and_install)
 
