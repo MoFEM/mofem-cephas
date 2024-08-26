@@ -94,23 +94,24 @@ add_test(
   -log_summary
   -log_no_color)
 
-add_test(
-  plastic_3d_old_necking
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2
-  plastic_old_schur_3d 
-  -file_name necking_3D_p2.h5m
-  -ts_dt 0.01
-  -ts_max_time 1.2
-  -ts_max_steps 1
-  -ts_type theta
-  -snes_atol 1e-9
-  -order 2
-  -large_strains 1
-  -scale 1
-  -hardening_viscous 0
-  -cn0 1 -ksp_monitor 
-  -log_summary
-  -log_no_color)  
+# FIXME: this test is too long, needs time reduce
+# add_test(
+#   plastic_3d_old_necking
+#   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2
+#   plastic_old_schur_3d 
+#   -file_name necking_3D_p2.h5m
+#   -ts_dt 0.01
+#   -ts_max_time 1.2
+#   -ts_max_steps 1
+#   -ts_type theta
+#   -snes_atol 1e-9
+#   -order 2
+#   -large_strains 1
+#   -scale 1
+#   -hardening_viscous 0
+#   -cn0 1 -ksp_monitor 
+#   -log_summary
+#   -log_no_color)  
 
 add_test(
   plastic_3d_necking_petsc

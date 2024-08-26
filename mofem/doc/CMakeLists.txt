@@ -86,6 +86,11 @@ if(DOXYGEN_FOUND)
     FOLLOW_SYMLINKS
     ${PROJECT_SOURCE_DIR}/users_modules/*AddDocumentation.cmake
   )
+  file(
+    GLOB_RECURSE INSTLLED_DOC_MODULES
+    FOLLOW_SYMLINKS
+    ${PROJECT_SOURCE_DIR}/tutorials/*AddDocumentation.cmake
+  )
   if(EXTERNAL_MODULE_SOURCE_DIRS)
     foreach(LOOP_DIR ${EXTERNAL_MODULE_SOURCE_DIRS})
       message(STATUS "Search module directory: " ${LOOP_DIR})

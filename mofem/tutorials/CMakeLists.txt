@@ -37,6 +37,11 @@ message(STATUS ${MoFEM_PROJECT_LIBS})
 
 set(TUTORIALS_INSTALL_DIR "tutorials") 
 
+# Install the headers
+install(DIRECTORY "${PROJECT_SOURCE_DIR}/${TUTORIALS_INSTALL_DIR}/"
+        DESTINATION "${CMAKE_INSTALL_PREFIX}/include/${TUTORIALS_INSTALL_DIR}"
+        FILES_MATCHING PATTERN "*.hpp")
+
 function(tutorials_add_executable target source)
   if(MoFEM_PRECOMPILED_HEADRES)
     set_source_files_properties(${source} PROPERTIES COMPILE_FLAGS "-include ${PERCOMPILED_HEADER}")
@@ -82,7 +87,8 @@ function(tutorials_build_and_install target source)
     mofem_post_proc
     mofem_boundary_conditions
     ${MoFEM_PROJECT_LIBS})
-  install(TARGETS ${target} DESTINATION ${TUTORIALS_INSTALL_DIR}/${TUTORIALS_MOD_DIR})
+  install(TARGETS ${target} DESTINATION ${CMAKE_INSTALL_PREFIX}/${TUTORIALS_MOD_DIR})
+
 endfunction(tutorials_build_and_install)
 
 function(tutorials_copy_and_install extension file_permissions)
