@@ -124,10 +124,10 @@ we get
 \f]
 where
 \f[
-\mathbf{K}_t = \int_\Omega (\nabla \boldsymbol\phi)^\textrm{T} (1+(u^i)^2)\boldsymbol\phi + (\nabla \boldsymbol\phi)^\textrm{T} (2(u^i))\boldsymbol u^i \boldsymbol\phi \textrm{d}\Omega,\\
+\mathbf{K}_t = \int_\Omega (\nabla \boldsymbol\phi)^\textrm{T} (1+(u^i)^2)\nabla \boldsymbol\phi + (\nabla \boldsymbol\phi)^\textrm{T} (2(u^i))\boldsymbol u^i \boldsymbol\phi \textrm{d}\Omega,\\
 \mathbf{C} = \int_{\partial\Omega} \boldsymbol\psi^\textrm{T} \boldsymbol\phi \textrm{d}\partial\Omega,\\
 \mathbf{r}_F = \mathbf{r}_{F_\Omega} + \mathbf{r}_{F_{\partial\Omega}} =
-\int_\Omega (\nabla \boldsymbol\phi)^\textrm{T} (1+(u^i)^2)\boldsymbol u^i - \boldsymbol\phi^\textrm{T}f \textrm{d}\Omega+
+\int_\Omega (\nabla \boldsymbol\phi)^\textrm{T} (1+(u^i)^2)\nabla \boldsymbol u^i - \boldsymbol\phi^\textrm{T}f \textrm{d}\Omega+
 \int_{\partial\Omega} \boldsymbol\phi^\textrm{T} \lambda^i \textrm{d}\partial\Omega\\
 \mathbf{r}_g = \int_{\partial\Omega} \boldsymbol\psi^\textrm{T} (u^i-\overline{u}) \textrm{d}\partial\Omega
 \f]
