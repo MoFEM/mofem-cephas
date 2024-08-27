@@ -5,6 +5,7 @@
  * \example ContactOps.hpp
  */
 
+#include <sdf.hpp>
 #ifndef __CONTACTOPS_HPP__
 #define __CONTACTOPS_HPP__
 
@@ -208,6 +209,11 @@ inline np::ndarray convert_to_numpy(VectorDouble &data, int nb_gauss_pts,
 #endif
 //! [Surface distance function from python]
 
+//! [Surface distance object from sdf.hpp]
+
+Wavy_2D C_SDF_2D; // 2D wavy SDF object
+Wavy_3D C_SDF_3D; // 3D wavy SDF object
+//! [Surface distance object from sdf.hpp]
 using SurfaceDistanceFunction = boost::function<VectorDouble(
     double delta_t, double t, int nb_gauss_pts, MatrixDouble &spatial_coords,
     MatrixDouble &normals_at_pts, int block_id)>;
@@ -270,8 +276,23 @@ inline VectorDouble surface_distance_function(double delta_t, double t,
   auto t_coords = getFTensor1FromPtr<3>(&m_spatial_coords(0, 0));
 
   for (size_t gg = 0; gg < nb_gauss_pts; ++gg) {
-    v_sdf[gg] = -t_coords(2) - 0.1;
+
+    double x = t_coords(0);
+    double y = t_coords(1);
+    double z = t_coords(2);
+    // v_sdf[gg] = -t_coords(2) - 0.1;
+    #ifdef CPP_SDF
+    if (SPACE_DIM == 2) {
+      v_sdf[gg] = C_SDF_2D.sDF(x, y, z, t);
+    }
+    if (SPACE_DIM == 3) {
+      cout << "Start sDF for gp" << gg << endl;
+      v_sdf[gg] = C_SDF_3D.sDF(x, y, z, t);
+      cout << "End sDF" << endl;
+    }
+
     ++t_coords;
+        #endif
   }
 
   return v_sdf;
@@ -323,12 +344,38 @@ grad_surface_distance_function(double delta_t, double t, int nb_gauss_pts,
   MatrixDouble m_grad_sdf;
   m_grad_sdf.resize(3, nb_gauss_pts, false);
   FTensor::Index<'i', 3> i;
-  FTensor::Tensor1<double, 3> t_grad_sdf_set{0.0, 0.0, -1.0};
+  // FTensor::Tensor1<double, 3> t_grad_sdf_set{0.0, 0.0, -1.0};
   auto t_grad_sdf = getFTensor1FromMat<3>(m_grad_sdf);
+  auto t_coords = getFTensor1FromPtr<3>(&m_spatial_coords(0, 0));
+  FTensor::Tensor1<double, 3> t_grad_sdf_set;
 
   for (size_t gg = 0; gg < nb_gauss_pts; ++gg) {
+    double x = t_coords(0);
+    double y = t_coords(1);
+    double z = t_coords(2);
+    #ifdef CPP_SDF
+    std::array<double, 3> grad_sdf;
+    if (SPACE_DIM == 2) {
+
+      grad_sdf = C_SDF_2D.gradSDF(x, y, z, t);
+    } 
+    else if (SPACE_DIM == 3) {
+            cout << "Start gradSDF" << gg << endl;
+    grad_sdf = C_SDF_3D.gradSDF(x, y, z, t);
+    cout << "End gradSDF" << endl;
+    }
+
+
+    double df_dx = grad_sdf[0];
+    double df_dy = grad_sdf[1];
+    double df_dz = grad_sdf[2];
+    t_grad_sdf_set = {df_dx, df_dy, df_dz};
+
     t_grad_sdf(i) = t_grad_sdf_set(i);
+
     ++t_grad_sdf;
+    ++t_coords;
+        #endif
   }
 
   return m_grad_sdf;
@@ -382,12 +429,37 @@ hess_surface_distance_function(double delta_t, double t, int nb_gauss_pts,
   m_hess_sdf.resize(6, nb_gauss_pts, false);
   FTensor::Index<'i', 3> i;
   FTensor::Index<'j', 3> j;
-  FTensor::Tensor2_symmetric<double, 3> t_hess_sdf_set{0., 0., 0., 0., 0., 0.};
+  // FTensor::Tensor2_symmetric<double, 3> t_hess_sdf_set{0., 0., 0., 0., 0.,
+  // 0.};
+  FTensor::Tensor2_symmetric<double, 3> t_hess_sdf_set;
   auto t_hess_sdf = getFTensor2SymmetricFromMat<3>(m_hess_sdf);
-
+  auto t_coords = getFTensor1FromPtr<3>(&m_spatial_coords(0, 0));
   for (size_t gg = 0; gg < nb_gauss_pts; ++gg) {
+    double x = t_coords(0);
+    double y = t_coords(1);
+    double z = t_coords(2);
+    #ifdef CPP_SDF
+    std::array<double, 6> hess_sdf;
+    if (SPACE_DIM == 2) {
+    hess_sdf = C_SDF_2D.hessSDF(x, y, z, t);
+    } else if (SPACE_DIM == 3) {
+      cout << "Start hessSDF" << gg << endl;
+    hess_sdf = C_SDF_3D.hessSDF(x, y, z, t);
+    cout << "End hessSDF" << endl;
+    }
+    double d2f_dx2 = hess_sdf[0];
+    double d2f_dxdy = hess_sdf[1];
+    double d2f_dxdz = hess_sdf[2];
+    double d2f_dy2 = hess_sdf[3];
+    double d2f_dydz = hess_sdf[4];
+    double d2f_dz2 = hess_sdf[5];
+    t_hess_sdf_set = {d2f_dx2, d2f_dxdy, d2f_dxdz, d2f_dy2, d2f_dydz, d2f_dz2};
+
     t_hess_sdf(i, j) = t_hess_sdf_set(i, j);
+
     ++t_hess_sdf;
+    ++t_coords;
+    #endif
   }
   return m_hess_sdf;
 }

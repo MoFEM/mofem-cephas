@@ -335,6 +335,8 @@ MoFEMErrorCode Contact::createCommonData() {
                                &vis_spring_stiffness, PETSC_NULL);
   CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-alpha_damping", &alpha_damping,
                                PETSC_NULL);
+  CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-wave_amplitude", &amplitude, PETSC_NULL);
+  CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-wave_indentation", &indentation, PETSC_NULL);
 
   if (!mfrontInterface) {
     MOFEM_LOG("CONTACT", Sev::inform) << "Young modulus " << young_modulus;
@@ -804,6 +806,8 @@ MoFEMErrorCode Contact::tsSolve() {
   // boundary conditions
   CHKERR set_essential_bc();
 
+  C_SDF_3D.init();
+
   if (is_quasi_static == PETSC_TRUE) {
     auto solver = pip_mng->createTSIM();
     CHKERR TSSetFromOptions(solver);
@@ -830,6 +834,8 @@ MoFEMErrorCode Contact::tsSolve() {
     CHKERR TSSetUp(solver);
     CHKERR TSSolve(solver, NULL);
   }
+
+  C_SDF_3D.destroy();
 
   MoFEMFunctionReturn(0);
 }

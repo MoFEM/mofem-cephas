@@ -44,6 +44,11 @@ if(Boost_NUMPY_LIBRARY_RELEASE)
     contact_3d ${CMAKE_CURRENT_SOURCE_DIR}/contact.cpp)
 
   tutorials_build_and_install(
+    contact_2d_sdf_cpp ${CMAKE_CURRENT_SOURCE_DIR}/contact.cpp)
+  tutorials_build_and_install(
+    contact_3d_sdf_cpp ${CMAKE_CURRENT_SOURCE_DIR}/contact.cpp)
+
+  tutorials_build_and_install(
     contact_2d_schur ${CMAKE_CURRENT_SOURCE_DIR}/contact.cpp)
   tutorials_build_and_install(
     contact_3d_schur ${CMAKE_CURRENT_SOURCE_DIR}/contact.cpp)
@@ -51,7 +56,17 @@ if(Boost_NUMPY_LIBRARY_RELEASE)
   set_target_properties(
     contact_2d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=2 -DPYTHON_SDF") 
   set_target_properties(
-    contact_3d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=3 -DPYTHON_SDF") 
+    contact_3d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=3 -DPYTHON_SDF")
+  
+  set_target_properties(
+    contact_2d_sdf_cpp PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=2 -DCPP_SDF") 
+  set_target_properties(
+    contact_3d_sdf_cpp PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=3 -DCPP_SDF")
+
+  # set_target_properties(
+  #   contact_2d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=2") 
+  # set_target_properties(
+  #   contact_3d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=3") 
 
   set_target_properties(
     contact_2d_schur PROPERTIES COMPILE_FLAGS 
@@ -62,6 +77,9 @@ if(Boost_NUMPY_LIBRARY_RELEASE)
 
   target_link_libraries(contact_2d ${Boost_LIBRARIES})
   target_link_libraries(contact_3d ${Boost_LIBRARIES})
+
+  target_link_libraries(contact_2d_sdf_cpp ${Boost_LIBRARIES})
+  target_link_libraries(contact_3d_sdf_cpp ${Boost_LIBRARIES})
 
   target_link_libraries(contact_2d_schur ${Boost_LIBRARIES})
   target_link_libraries(contact_3d_schur ${Boost_LIBRARIES})
@@ -92,7 +110,7 @@ else (Boost_NUMPY_LIBRARY_RELEASE)
 
 endif(Boost_NUMPY_LIBRARY_RELEASE)
 
-# set(IS_MFRONT_MOD false)  
+set(IS_MFRONT_MOD false)  
 
 # Add mfront interface
 # if(MFRONT_INTERFACE_INSTALL_PREFIX)

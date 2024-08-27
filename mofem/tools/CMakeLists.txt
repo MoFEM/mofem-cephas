@@ -221,3 +221,17 @@ if(ADOL-C_LIBRARY)
   # install(TARGETS mesh_smoothing DESTINATION bin)
 
 endif(ADOL-C_LIBRARY)
+
+# if(sdfCC)
+  add_executable(snes_example ${CMAKE_CURRENT_SOURCE_DIR}/snes_example.cpp)
+  target_link_libraries(snes_example
+    mofem_interfaces
+    mofem_finite_elements
+    mofem_multi_indices
+    mofem_petsc
+    mofem_approx
+    mofem_third_party
+    ${MoFEM_PROJECT_LIBS}
+  )
+  install(TARGETS snes_example DESTINATION bin)
+# endif(sdfCC)
