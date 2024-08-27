@@ -759,16 +759,16 @@ MoFEMErrorCode Example::tsSolve() {
       CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(pip, {H1, HDIV},
                                                             "GEOMETRY");
 
-      auto [common_plastic_ptr, common_henky_ptr] =
+      auto [common_plastic_ptr, common_hencky_ptr] =
           PlasticOps::createCommonPlasticOps<SPACE_DIM, IT, DomainEleOp>(
               mField, "MAT_PLASTIC", pip, "U", "EP", "TAU", 1., Sev::inform);
 
-      if (common_henky_ptr) {
-        if (common_plastic_ptr->mGradPtr != common_henky_ptr->matGradPtr)
+      if (common_hencky_ptr) {
+        if (common_plastic_ptr->mGradPtr != common_hencky_ptr->matGradPtr)
           CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Wrong pointer for grad");
       }
 
-      return std::make_pair(common_plastic_ptr, common_henky_ptr);
+      return std::make_pair(common_plastic_ptr, common_hencky_ptr);
     };
 
     auto push_vol_post_proc_ops = [this](auto &pp_fe, auto &&p) {
@@ -776,7 +776,7 @@ MoFEMErrorCode Example::tsSolve() {
 
       auto &pip = pp_fe->getOpPtrVector();
 
-      auto [common_plastic_ptr, common_henky_ptr] = p;
+      auto [common_plastic_ptr, common_hencky_ptr] = p;
 
       using OpPPMap = OpPostProcMapInMoab<SPACE_DIM, SPACE_DIM>;
 
@@ -801,8 +801,8 @@ MoFEMErrorCode Example::tsSolve() {
 
                 {{"U", u_ptr}, {"GEOMETRY", x_ptr}},
 
-                {{"GRAD", common_henky_ptr->matGradPtr},
-                 {"FIRST_PIOLA", common_henky_ptr->getMatFirstPiolaStress()}},
+                {{"GRAD", common_hencky_ptr->matGradPtr},
+                 {"FIRST_PIOLA", common_hencky_ptr->getMatFirstPiolaStress()}},
 
                 {{"PLASTIC_STRAIN", common_plastic_ptr->getPlasticStrainPtr()},
                  {"PLASTIC_FLOW", common_plastic_ptr->getPlasticFlowPtr()}}

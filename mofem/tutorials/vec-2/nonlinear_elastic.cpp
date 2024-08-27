@@ -49,9 +49,6 @@ using PostProcEleBdy = PostProcEleByDim<SPACE_DIM>::PostProcEleBdy;
 using PostProcEdges =
     PostProcBrokenMeshInMoabBase<EdgeElementForcesAndSourcesCore>;
 
-constexpr double young_modulus = 100;
-constexpr double poisson_ratio = 0.3;
-
 #include <HenckyOps.hpp>
 using namespace HenckyOps;
 

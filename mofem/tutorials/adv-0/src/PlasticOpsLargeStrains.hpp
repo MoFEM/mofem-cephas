@@ -11,7 +11,7 @@ struct OpCalculatePlasticInternalForceLhs_LogStrain_dEPImpl<DIM, GAUSS,
   OpCalculatePlasticInternalForceLhs_LogStrain_dEPImpl(
       const std::string row_field_name, const std::string col_field_name,
       boost::shared_ptr<CommonData> common_data_ptr,
-      boost::shared_ptr<HenckyOps::CommonData> common_henky_data_ptr,
+      boost::shared_ptr<HenckyOps::CommonData> common_hencky_data_ptr,
       boost::shared_ptr<MatrixDouble> m_D_ptr);
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data);
@@ -30,12 +30,12 @@ OpCalculatePlasticInternalForceLhs_LogStrain_dEPImpl<DIM, GAUSS,
     OpCalculatePlasticInternalForceLhs_LogStrain_dEPImpl(
         const std::string row_field_name, const std::string col_field_name,
         boost::shared_ptr<CommonData> common_data_ptr,
-        boost::shared_ptr<HenckyOps::CommonData> common_henky_data_ptr,
+        boost::shared_ptr<HenckyOps::CommonData> common_hencky_data_ptr,
         boost::shared_ptr<MatrixDouble> m_D_ptr)
     : AssemblyDomainEleOp(row_field_name, col_field_name,
                           AssemblyDomainEleOp::OPROWCOL),
       commonDataPtr(common_data_ptr),
-      commonHenckyDataPtr(common_henky_data_ptr), mDPtr(m_D_ptr) {
+      commonHenckyDataPtr(common_hencky_data_ptr), mDPtr(m_D_ptr) {
   AssemblyDomainEleOp::sYmm = false;
 }
 
@@ -132,7 +132,7 @@ struct OpCalculatePlasticFlowLhs_LogStrain_dUImpl<DIM, GAUSS,
   OpCalculatePlasticFlowLhs_LogStrain_dUImpl(
       const std::string row_field_name, const std::string col_field_name,
       boost::shared_ptr<CommonData> common_data_ptr,
-      boost::shared_ptr<HenckyOps::CommonData> comman_henky_data_ptr,
+      boost::shared_ptr<HenckyOps::CommonData> common_hencky_data_ptr,
       boost::shared_ptr<MatrixDouble> m_D_ptr);
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data);
@@ -149,12 +149,12 @@ OpCalculatePlasticFlowLhs_LogStrain_dUImpl<DIM, GAUSS, AssemblyDomainEleOp>::
     OpCalculatePlasticFlowLhs_LogStrain_dUImpl(
         const std::string row_field_name, const std::string col_field_name,
         boost::shared_ptr<CommonData> common_data_ptr,
-        boost::shared_ptr<HenckyOps::CommonData> comman_henky_data_ptr,
+        boost::shared_ptr<HenckyOps::CommonData> common_hencky_data_ptr,
         boost::shared_ptr<MatrixDouble> m_D_ptr)
     : AssemblyDomainEleOp(row_field_name, col_field_name,
                           AssemblyDomainEleOp::OPROWCOL),
       commonDataPtr(common_data_ptr),
-      commonHenckyDataPtr(comman_henky_data_ptr), mDPtr(m_D_ptr) {
+      commonHenckyDataPtr(common_hencky_data_ptr), mDPtr(m_D_ptr) {
   AssemblyDomainEleOp::sYmm = false;
 }
 
@@ -258,7 +258,7 @@ struct OpCalculateConstraintsLhs_LogStrain_dUImpl<DIM, GAUSS, AssemblyDomainEleO
   OpCalculateConstraintsLhs_LogStrain_dUImpl(
       const std::string row_field_name, const std::string col_field_name,
       boost::shared_ptr<CommonData> common_data_ptr,
-      boost::shared_ptr<HenckyOps::CommonData> comman_henky_data_ptr,
+      boost::shared_ptr<HenckyOps::CommonData> common_hencky_data_ptr,
       boost::shared_ptr<MatrixDouble> m_D_ptr);
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data);
@@ -275,12 +275,12 @@ OpCalculateConstraintsLhs_LogStrain_dUImpl<DIM, GAUSS, AssemblyDomainEleOp>::
     OpCalculateConstraintsLhs_LogStrain_dUImpl(
         const std::string row_field_name, const std::string col_field_name,
         boost::shared_ptr<CommonData> common_data_ptr,
-        boost::shared_ptr<HenckyOps::CommonData> comman_henky_data_ptr,
+        boost::shared_ptr<HenckyOps::CommonData> common_hencky_data_ptr,
         boost::shared_ptr<MatrixDouble> m_D_ptr)
     : AssemblyDomainEleOp(row_field_name, col_field_name,
                           DomainEleOp::OPROWCOL),
       commonDataPtr(common_data_ptr),
-      commonHenckyDataPtr(comman_henky_data_ptr), mDPtr(m_D_ptr) {
+      commonHenckyDataPtr(common_hencky_data_ptr), mDPtr(m_D_ptr) {
   AssemblyDomainEleOp::sYmm = false;
 }
 
