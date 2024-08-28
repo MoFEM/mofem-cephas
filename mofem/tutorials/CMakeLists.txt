@@ -101,7 +101,87 @@ function(tutorials_copy_and_install extension file_permissions)
   endforeach(file)
 endfunction()
 
-set(TUTORIALS_DIRS 
+
+
+# FIND JUPYTEXT
+execute_process(
+  COMMAND which jupytext
+  RESULT_VARIABLE JUPYTEXT_NOT_FOUND
+  OUTPUT_VARIABLE JUPYTEXT_PATH
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+# Check the jupytext_found
+if(JUPYTEXT_NOT_FOUND EQUAL 0)
+  message(STATUS "Jupytext path: ${JUPYTEXT_PATH}")
+else()
+  message(WARNING "Jupytext not found")
+endif()
+
+  add_custom_target(notebook
+  COMMENT "Making jupyter notebooks" VERBATIM
+)
+
+
+# Function to copy and convert markdown files to Jupyter notebooks
+function(copy_and_convert_md_to_ipynb source_dir build_dir)
+  get_filename_component(TUTORIAL_DIR_NAME ${build_dir} NAME)
+
+  # Define a custom target for the sub-directory
+  add_custom_target(notebook_${TUTORIAL_DIR_NAME}
+    COMMENT "Building Jupyter notebooks for ${TUTORIAL_DIR_NAME}"
+    VERBATIM
+  )
+
+  # Initialize the list of IPYNB outputs
+  # set(IPYNB_OUTPUTS "")
+
+  file(GLOB MD_FILES "${source_dir}/*.md")
+
+  foreach(MD_FILE ${MD_FILES})
+  # WE mean without extension.
+    get_filename_component(FILENAME_WE ${MD_FILE} NAME_WE)
+    if(FILENAME_WE STREQUAL "README")
+      # Skip README.md files
+      continue()
+    endif()
+
+    set(SOURCE_MD_PATH ${MD_FILE})
+    set(DESTINATION_MD_PATH ${build_dir}/${FILENAME_WE}.md)
+    set(DESTINATION_IPYNB_PATH ${build_dir}/${FILENAME_WE}.ipynb)
+
+    # Add a custom command to copy the markdown file
+    add_custom_command(
+      OUTPUT ${DESTINATION_MD_PATH}
+      COMMAND ${CMAKE_COMMAND} -E copy ${SOURCE_MD_PATH} ${DESTINATION_MD_PATH}
+      DEPENDS ${SOURCE_MD_PATH}
+      COMMENT "Copying ${SOURCE_MD_PATH} to build directory"
+    )
+
+    # Add a custom command to convert the markdown file to a Jupyter notebook
+    if(JUPYTEXT_NOT_FOUND EQUAL 0)
+    add_custom_command(
+      OUTPUT ${DESTINATION_IPYNB_PATH}
+      COMMAND ${JUPYTEXT_PATH} --to notebook ${DESTINATION_MD_PATH}
+      DEPENDS ${DESTINATION_MD_PATH}
+      COMMENT "Converting ${DESTINATION_MD_PATH} to ${DESTINATION_IPYNB_PATH}"
+    )
+    else()
+    message(WARNING "Jupytext not found. Unable to convert ${DESTINATION_MD_PATH} to a Jupyter notebook.")
+  endif()
+
+    # Add a custom target
+    add_custom_target(notebook_${FILENAME_WE} ALL
+      DEPENDS ${DESTINATION_IPYNB_PATH}
+    )
+    add_dependencies(notebook notebook_${FILENAME_WE})
+    # Make the sub-directory custom target depend on all notebook targets
+    add_dependencies(notebook_${TUTORIAL_DIR_NAME} notebook_${FILENAME_WE})
+  endforeach()
+
+endfunction(copy_and_convert_md_to_ipynb)
+
+set(TUTORIALS_DIRS
   fun-0
   fun-1
   fun-2
@@ -155,10 +235,10 @@ foreach(LOOP_DIR ${TUTORIALS_DIRS})
 
   string(REGEX REPLACE "-" "" OP_NAME ${LOOP_DIR})
   string(TOUPPER ${OP_NAME} OP_NAME)
-  set(VAR_OP_NAME "BUILD_TUT_${OP_NAME}") 
+  set(VAR_OP_NAME "BUILD_TUT_${OP_NAME}")
 
   option("${VAR_OP_NAME}" "Build tutorial {OP_NAME}" ${BUILD_TUTORIALS})
-  set(VAR_OP_NAME "${${VAR_OP_NAME}}")   
+  set(VAR_OP_NAME "${${VAR_OP_NAME}}")
 
   message(STATUS "Build status ${OP_NAME} ${VAR_OP_NAME}")
 
