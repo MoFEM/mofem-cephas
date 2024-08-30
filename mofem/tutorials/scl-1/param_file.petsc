@@ -9,5 +9,5 @@
 -mat_mumps_icntl_24 1 
 -mat_mumps_icntl_13 1
 -ksp_monitor
-
+-atom_test 0
 # ---

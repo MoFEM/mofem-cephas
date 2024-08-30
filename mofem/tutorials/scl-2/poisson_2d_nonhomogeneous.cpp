@@ -1,5 +1,3 @@
-#include <stdlib.h>
-#include <MoFEM.hpp>
 #include <poisson_2d_nonhomogeneous.hpp>
 
 using namespace MoFEM;
@@ -25,17 +23,17 @@ private:
   MoFEMErrorCode setIntegrationRules();
   MoFEMErrorCode solveSystem();
   MoFEMErrorCode outputResults();
+  MoFEMErrorCode checkResults();
 
   // Function to calculate the Source term
   static double sourceTermFunction(const double x, const double y,
                                    const double z) {
-    return 200 * sin(x * 10.) * cos(y * 10.);
-    // return 1;
+    return 2. * M_PI * M_PI * cos(x * M_PI) * cos(y * M_PI);
   }
   // Function to calculate the Boundary term
   static double boundaryFunction(const double x, const double y,
                                  const double z) {
-    return sin(x * 10.) * cos(y * 10.);
+    return cos(x * M_PI) * cos(y * M_PI);
     // return 0;
   }
 
@@ -52,6 +50,8 @@ private:
 
   // Boundary entities marked for fieldsplit (block) solver - optional
   Range boundaryEntitiesForFieldsplit;
+  int atom_test = 0;
+  enum NORMS { NORM = 0, LAST_NORM };
 };
 
 Poisson2DNonhomogeneous::Poisson2DNonhomogeneous(MoFEM::Interface &m_field)
@@ -71,12 +71,47 @@ MoFEMErrorCode Poisson2DNonhomogeneous::readMesh() {
 //! [Setup problem]
 MoFEMErrorCode Poisson2DNonhomogeneous::setupProblem() {
   MoFEMFunctionBegin;
-
-  CHKERR simpleInterface->addDomainField(domainField, H1,
-                                         AINSWORTH_BERNSTEIN_BEZIER_BASE, 1);
-  CHKERR simpleInterface->addBoundaryField(domainField, H1,
-                                           AINSWORTH_BERNSTEIN_BEZIER_BASE, 1);
+  Range domain_ents;
+  CHKERR mField.get_moab().get_entities_by_dimension(0, SPACE_DIM, domain_ents,
+                                                     true);
+  auto get_ents_by_dim = [&](const auto dim) {
+    if (dim == SPACE_DIM) {
+      return domain_ents;
+    } else {
+      Range ents;
+      if (dim == 0)
+        CHKERR mField.get_moab().get_connectivity(domain_ents, ents, true);
+      else
+        CHKERR mField.get_moab().get_entities_by_dimension(0, dim, ents, true);
+      return ents;
+    }
+  };
+  // Select base
+  auto get_base = [&]() {
+    auto domain_ents = get_ents_by_dim(SPACE_DIM);
+    if (domain_ents.empty())
+      CHK_THROW_MESSAGE(MOFEM_NOT_FOUND, "Empty mesh");
+    const auto type = type_from_handle(domain_ents[0]);
+    switch (type) {
+    case MBQUAD:
+      return DEMKOWICZ_JACOBI_BASE;
+    case MBHEX:
+      return DEMKOWICZ_JACOBI_BASE;
+    case MBTRI:
+      return AINSWORTH_LEGENDRE_BASE;
+    case MBTET:
+      return AINSWORTH_LEGENDRE_BASE;
+    default:
+      CHK_THROW_MESSAGE(MOFEM_NOT_FOUND, "Element type not handled");
+    }
+    return NOBASE;
+  };
+  auto base = get_base();
+  CHKERR simpleInterface->addDomainField(domainField, H1, base, 1);
+  CHKERR simpleInterface->addBoundaryField(domainField, H1, base, 1);
   int oRder = 3;
+  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-atom_test", &atom_test,
+                            PETSC_NULL);
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &oRder, PETSC_NULL);
   CHKERR simpleInterface->setFieldOrder(domainField, oRder);
 
@@ -256,20 +291,90 @@ MoFEMErrorCode Poisson2DNonhomogeneous::outputResults() {
 
   MoFEMFunctionReturn(0);
 }
+//! [Output results]
 
+//! [Check]
+MoFEMErrorCode Poisson2DNonhomogeneous::checkResults() {
+  MoFEMFunctionBegin;
+
+  auto check_result_fe_ptr = boost::make_shared<FaceEle>(mField);
+  auto petscVec =
+      createVectorMPI(mField.get_comm(),
+                      (mField.get_comm_rank() == 0) ? LAST_NORM : 0, LAST_NORM);
+
+  CHK_THROW_MESSAGE((AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+                        check_result_fe_ptr->getOpPtrVector(), {H1})),
+                    "Apply transform");
+
+  check_result_fe_ptr->getRuleHook = [](int, int, int p) { return 2 * p; };
+  auto analyticalFunction = [&](double x, double y, double z) {
+    return cos(x * M_PI) * cos(y * M_PI);
+  };
+
+  auto u_ptr = boost::make_shared<VectorDouble>();
+
+  check_result_fe_ptr->getOpPtrVector().push_back(
+      new OpCalculateScalarFieldValues(domainField, u_ptr));
+  auto mValFuncPtr = boost::make_shared<VectorDouble>();
+  check_result_fe_ptr->getOpPtrVector().push_back(
+      new OpGetTensor0fromFunc(mValFuncPtr, analyticalFunction));
+  check_result_fe_ptr->getOpPtrVector().push_back(
+      new OpCalcNormL2Tensor0(u_ptr, petscVec, NORM, mValFuncPtr));
+  CHKERR VecZeroEntries(petscVec);
+  CHKERR DMoFEMLoopFiniteElements(simpleInterface->getDM(),
+                                  simpleInterface->getDomainFEName(),
+                                  check_result_fe_ptr);
+  CHKERR VecAssemblyBegin(petscVec);
+  CHKERR VecAssemblyEnd(petscVec);
+  MOFEM_LOG_CHANNEL("SELF"); // Clear channel from old tags
+  if (mField.get_comm_rank() == 0) {
+    const double *norms;
+    CHKERR VecGetArrayRead(petscVec, &norms);
+    MOFEM_TAG_AND_LOG("SELF", Sev::inform, "Errors")
+        << "NORM: " << std::sqrt(norms[NORM]);
+    CHKERR VecRestoreArrayRead(petscVec, &norms);
+  }
+  if (atom_test && !mField.get_comm_rank()) {
+    const double *t_ptr;
+    CHKERR VecGetArrayRead(petscVec, &t_ptr);
+    double ref_norm = 1.4e-04;
+    double cal_norm;
+    switch (atom_test) {
+    case 1: // 2D
+      cal_norm = sqrt(t_ptr[0]);
+      break;
+    default:
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
+               "atom test %d does not exist", atom_test);
+    }
+    if (cal_norm > ref_norm) {
+      SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+               "atom test %d failed! Calculated Norm %3.16e is greater than "
+               "reference Norm %3.16e",
+               atom_test, cal_norm, ref_norm);
+    }
+    CHKERR VecRestoreArrayRead(petscVec, &t_ptr);
+  }
+  MoFEMFunctionReturn(0);
+}
+//! [Check]
+
+//! [Run program]
 MoFEMErrorCode Poisson2DNonhomogeneous::runProgram() {
   MoFEMFunctionBegin;
 
-  readMesh();
-  setupProblem();
-  boundaryCondition();
-  assembleSystem();
-  setIntegrationRules();
-  solveSystem();
-  outputResults();
+  CHKERR readMesh();
+  CHKERR setupProblem();
+  CHKERR boundaryCondition();
+  CHKERR assembleSystem();
+  CHKERR setIntegrationRules();
+  CHKERR solveSystem();
+  CHKERR outputResults();
+  CHKERR checkResults();
 
   MoFEMFunctionReturn(0);
 }
+//! [Run program]
 
 int main(int argc, char *argv[]) {
 

@@ -1,9 +1,6 @@
 #ifndef __POISSON2DNONHOMOGENEOUS_HPP__
 #define __POISSON2DNONHOMOGENEOUS_HPP__
-
-#include <stdlib.h>
 #include <MoFEM.hpp>
-
 using namespace MoFEM;
 
 using FaceEle = MoFEM::FaceElementForcesAndSourcesCore;
