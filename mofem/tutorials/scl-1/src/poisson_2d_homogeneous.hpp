@@ -13,7 +13,8 @@
 // Define name if it has not been defined yet
 #ifndef __POISSON_2D_HOMOGENEOUS_HPP__
 #define __POISSON_2D_HOMOGENEOUS_HPP__
-
+#include <MoFEM.hpp>
+using namespace MoFEM;
 // Use of alias for some specific functions
 // We are solving Poisson's equation in 2D so Face element is used
 using EntData = EntitiesFieldData::EntData;
@@ -32,8 +33,9 @@ namespace Poisson2DHomogeneousOperators {
 // Declare FTensor index for 2D problem
 FTensor::Index<'i', SPACE_DIM> i;
 
-// For simplicity, source term f will be constant throughout the domain
-const double body_source = 5.;
+//function type
+typedef boost::function<double(const double, const double, const double)>
+    ScalarFunc;
 
 struct OpDomainLhsMatrixK : public AssemblyDomainEleOp {
 public:
@@ -91,8 +93,9 @@ public:
 
 struct OpDomainRhsVectorF : public AssemblyDomainEleOp {
 public:
-  OpDomainRhsVectorF(std::string field_name)
-      : AssemblyDomainEleOp(field_name, field_name, DomainEleOp::OPROW) {}
+  OpDomainRhsVectorF(std::string field_name, ScalarFunc source_term_function)
+      : AssemblyDomainEleOp(field_name, field_name, DomainEleOp::OPROW),
+        sourceTermFunc(source_term_function) {}
 
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
@@ -109,6 +112,7 @@ public:
     const int nb_integration_points = getGaussPts().size2();
     // get integration weights
     auto t_w = getFTensor0IntegrationWeight();
+    auto t_coords = getFTensor1CoordsAtGaussPts();
 
     // get base function
     auto t_base = data.getFTensor0N();
@@ -117,6 +121,9 @@ public:
     for (int gg = 0; gg != nb_integration_points; gg++) {
       const double a = t_w * area;
 
+      // get source term at the integration point coordinates
+      double body_source =
+          sourceTermFunc(t_coords(0), t_coords(1), t_coords(2));
       for (int rr = 0; rr != nb_dofs; rr++) {
         this->locF[rr] += t_base * body_source * a;
 
@@ -126,11 +133,15 @@ public:
 
       // move to the weight of the next integration point
       ++t_w;
+      // move to the coordinates of the next integration point
+      ++t_coords;
     }
 
     MoFEMFunctionReturn(0);
   }
 
+private:
+  ScalarFunc sourceTermFunc;
 };
 
 }; // namespace Poisson2DHomogeneousOperators
