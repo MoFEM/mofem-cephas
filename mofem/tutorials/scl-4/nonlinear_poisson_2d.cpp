@@ -7,6 +7,10 @@ using namespace NonlinearPoissonOps;
 
 static char help[] = "...\n\n";
 
+inline double sqr(const double x) { return x * x; }
+
+inline double cube(const double x) { return x * x * x; }
+
 struct NonlinearPoisson {
 public:
   NonlinearPoisson(MoFEM::Interface &m_field);
@@ -27,49 +31,38 @@ private:
   // Function to calculate the Source term
   static double sourceTermFunction(const double x, const double y,
                                    const double z) {
-    return 200 * sin(x * 10.) * cos(y * 10.);
-    // return 1;
+
+    return 2 * M_PI * M_PI *
+           (cos(M_PI * x) * cos(M_PI * y) +
+            cube(cos(M_PI * x)) * cube(cos(M_PI * y)) -
+            cos(M_PI * x) * cos(M_PI * y) *
+                (sqr(sin(M_PI * x)) * sqr(cos(M_PI * y)) +
+                 sqr(sin(M_PI * y)) * sqr(cos(M_PI * x))));
   }
 
   // Function to calculate the Boundary term
   static double boundaryFunction(const double x, const double y,
                                  const double z) {
-    return sin(x * 10.) * cos(y * 10.);
-    // return 0;
+    return -cos(M_PI * x) *
+           cos(M_PI * y); // here should put the negative of the proper formula
   }
 
   // Main interfaces
   MoFEM::Interface &mField;
   Simple *simpleInterface;
 
-  // mpi parallel communicator
-  MPI_Comm mpiComm;
-  // Number of processors
-  const int mpiRank;
-
   // Discrete Manager and nonliner SNES solver using SmartPetscObj
   SmartPetscObj<DM> dM;
   SmartPetscObj<SNES> snesSolver;
 
   // Field name and approximation order
-  std::string domainField;
+  std::string domainField = "POTENTIAL";
   int order;
 
   // Object to mark boundary entities for the assembling of domain elements
   boost::shared_ptr<std::vector<unsigned char>> boundaryMarker;
 
-  // MoFEM working Pipelines for LHS and RHS of domain and boundary
-  boost::shared_ptr<FaceEle> domainTangentMatrixPipeline;
-  boost::shared_ptr<FaceEle> domainResidualVectorPipeline;
-  boost::shared_ptr<EdgeEle> boundaryTangentMatrixPipeline;
-  boost::shared_ptr<EdgeEle> boundaryResidualVectorPipeline;
-
-  // Objects needed for solution updates in Newton's method
-  boost::shared_ptr<DataAtGaussPoints> previousUpdate;
-  boost::shared_ptr<VectorDouble> fieldValuePtr;
-  boost::shared_ptr<MatrixDouble> fieldGradPtr;
-
-  using PostProcEle = PostProcBrokenMeshInMoab<FaceEle>;
+  using PostProcEle = PostProcBrokenMeshInMoab<DomainEle>;
 
   // Object needed for postprocessing
   boost::shared_ptr<PostProcEle> postProc;
@@ -79,23 +72,7 @@ private:
 };
 
 NonlinearPoisson::NonlinearPoisson(MoFEM::Interface &m_field)
-    : domainField("U"), mField(m_field), mpiComm(mField.get_comm()),
-      mpiRank(mField.get_comm_rank()) {
-  domainTangentMatrixPipeline = boost::shared_ptr<FaceEle>(new FaceEle(mField));
-  domainResidualVectorPipeline =
-      boost::shared_ptr<FaceEle>(new FaceEle(mField));
-  boundaryTangentMatrixPipeline =
-      boost::shared_ptr<EdgeEle>(new EdgeEle(mField));
-  boundaryResidualVectorPipeline =
-      boost::shared_ptr<EdgeEle>(new EdgeEle(mField));
-
-  previousUpdate =
-      boost::shared_ptr<DataAtGaussPoints>(new DataAtGaussPoints());
-  fieldValuePtr = boost::shared_ptr<VectorDouble>(previousUpdate,
-                                                  &previousUpdate->fieldValue);
-  fieldGradPtr = boost::shared_ptr<MatrixDouble>(previousUpdate,
-                                                 &previousUpdate->fieldGrad);
-}
+    : mField(m_field) {}
 
 MoFEMErrorCode NonlinearPoisson::runProgram() {
   MoFEMFunctionBegin;
@@ -129,7 +106,8 @@ MoFEMErrorCode NonlinearPoisson::setupProblem() {
   CHKERR simpleInterface->addBoundaryField(domainField, H1,
                                            AINSWORTH_BERNSTEIN_BEZIER_BASE, 1);
 
-  int order = 3;
+  order = 4;
+
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order, PETSC_NULL);
   CHKERR simpleInterface->setFieldOrder(domainField, order);
 
@@ -141,15 +119,17 @@ MoFEMErrorCode NonlinearPoisson::setupProblem() {
 MoFEMErrorCode NonlinearPoisson::setIntegrationRules() {
   MoFEMFunctionBegin;
 
-  auto domain_rule_lhs = [](int, int, int p) -> int { return 2 * (p + 1); };
-  auto domain_rule_rhs = [](int, int, int p) -> int { return 2 * (p + 1); };
-  domainTangentMatrixPipeline->getRuleHook = domain_rule_lhs;
-  domainResidualVectorPipeline->getRuleHook = domain_rule_rhs;
+  auto domain_rule_lhs = [](int, int, int p) -> int { return 2 * (p - 1); };
+  auto domain_rule_rhs = [](int, int, int p) -> int { return 2 * (p - 1); };
 
-  auto boundary_rule_lhs = [](int, int, int p) -> int { return 2 * p + 1; };
-  auto boundary_rule_rhs = [](int, int, int p) -> int { return 2 * p + 1; };
-  boundaryTangentMatrixPipeline->getRuleHook = boundary_rule_lhs;
-  boundaryResidualVectorPipeline->getRuleHook = boundary_rule_rhs;
+  auto boundary_rule_lhs = [](int, int, int p) -> int { return 2 * p; };
+  auto boundary_rule_rhs = [](int, int, int p) -> int { return 2 * p; };
+
+  auto pipeline_mng = mField.getInterface<PipelineManager>();
+  CHKERR pipeline_mng->setDomainRhsIntegrationRule(domain_rule_lhs);
+  CHKERR pipeline_mng->setDomainLhsIntegrationRule(domain_rule_rhs);
+  CHKERR pipeline_mng->setBoundaryLhsIntegrationRule(boundary_rule_lhs);
+  CHKERR pipeline_mng->setBoundaryRhsIntegrationRule(boundary_rule_rhs);
 
   MoFEMFunctionReturn(0);
 }
@@ -183,7 +163,7 @@ MoFEMErrorCode NonlinearPoisson::boundaryCondition() {
     auto problem_manager = mField.getInterface<ProblemsManager>();
     auto marker_ptr = boost::make_shared<std::vector<unsigned char>>();
     problem_manager->markDofs(simpleInterface->getProblemName(), ROW,
-                              skin_edges, *marker_ptr);
+                              ProblemsManager::OR, skin_edges, *marker_ptr);
     return marker_ptr;
   };
 
@@ -198,106 +178,62 @@ MoFEMErrorCode NonlinearPoisson::boundaryCondition() {
 MoFEMErrorCode NonlinearPoisson::assembleSystem() {
   MoFEMFunctionBegin;
 
-  auto det_ptr = boost::make_shared<VectorDouble>();
-  auto jac_ptr = boost::make_shared<MatrixDouble>();
-  auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
+  auto pipeline_mng = mField.getInterface<PipelineManager>();
+  CHKERR AddHOOps<2, 2, 2>::add(pipeline_mng->getOpDomainLhsPipeline(), {H1});
+  CHKERR AddHOOps<2, 2, 2>::add(pipeline_mng->getOpDomainRhsPipeline(), {H1});
 
-  { // Push operators to the Pipeline that is responsible for calculating the
-    // domain tangent matrix (LHS)
+  auto add_domain_lhs_ops = [&](auto &pipeline) {
+    pipeline.push_back(new OpSetBc(domainField, true, boundaryMarker));
+    auto data_u_at_gauss_pts = boost::make_shared<VectorDouble>();
+    auto grad_u_at_gauss_pts = boost::make_shared<MatrixDouble>();
+    pipeline.push_back(
+        new OpCalculateScalarFieldValues(domainField, data_u_at_gauss_pts));
+    pipeline.push_back(new OpCalculateScalarFieldGradient<2>(
+        domainField, grad_u_at_gauss_pts));
+    pipeline.push_back(new OpDomainLhs(
+        domainField, domainField, data_u_at_gauss_pts, grad_u_at_gauss_pts));
+    pipeline.push_back(new OpUnSetBc(domainField));
+  };
 
-    // Add default operators to calculate inverse of Jacobian (needed for
-    // implementation of 2D problem but not 3D ones)
+  auto add_domain_rhs_ops = [&](auto &pipeline) {
+    pipeline.push_back(new OpSetBc(domainField, true, boundaryMarker));
+    auto data_u_at_gauss_pts = boost::make_shared<VectorDouble>();
+    auto grad_u_at_gauss_pts = boost::make_shared<MatrixDouble>();
+    pipeline.push_back(
+        new OpCalculateScalarFieldValues(domainField, data_u_at_gauss_pts));
+    pipeline.push_back(new OpCalculateScalarFieldGradient<2>(
+        domainField, grad_u_at_gauss_pts));
+    pipeline.push_back(new OpDomainRhs(domainField, sourceTermFunction,
+                                       data_u_at_gauss_pts,
+                                       grad_u_at_gauss_pts));
+    pipeline.push_back(new OpUnSetBc(domainField));
+  };
 
-    domainTangentMatrixPipeline->getOpPtrVector().push_back(
-        new OpCalculateHOJac<2>(jac_ptr));
-    domainTangentMatrixPipeline->getOpPtrVector().push_back(
-        new OpInvertMatrix<2>(jac_ptr, det_ptr, inv_jac_ptr));
-    domainTangentMatrixPipeline->getOpPtrVector().push_back(
-        new OpSetHOInvJacToScalarBases<2>(H1, inv_jac_ptr));
-    domainTangentMatrixPipeline->getOpPtrVector().push_back(
-        new OpSetHOWeightsOnFace());
+  auto add_boundary_lhs_ops = [&](auto &pipeline) {
+    pipeline.push_back(new OpSetBc(domainField, false, boundaryMarker));
+    pipeline.push_back(new OpBoundaryLhs(
+        domainField, domainField,
+        [](const double, const double, const double) { return 1; }));
+    pipeline.push_back(new OpUnSetBc(domainField));
+  };
 
-    // Add default operator to calculate field values at integration points
-    domainTangentMatrixPipeline->getOpPtrVector().push_back(
-        new OpCalculateScalarFieldValues(domainField, fieldValuePtr));
-    // Add default operator to calculate field gradient at integration points
-    domainTangentMatrixPipeline->getOpPtrVector().push_back(
-        new OpCalculateScalarFieldGradient<2>(domainField, fieldGradPtr));
+  auto add_boundary_rhs_ops = [&](auto &pipeline) {
+    pipeline.push_back(new OpSetBc(domainField, false, boundaryMarker));
+    auto u_at_gauss_pts = boost::make_shared<VectorDouble>();
+    pipeline.push_back(
+        new OpCalculateScalarFieldValues(domainField, u_at_gauss_pts));
+    pipeline.push_back(new OpBoundaryRhs(
+        domainField, u_at_gauss_pts,
+        [](const double, const double, const double) { return 1; }));
+    pipeline.push_back(new OpBoundaryRhsSource(domainField, boundaryFunction));
+    pipeline.push_back(new OpUnSetBc(domainField));
+  };
 
-    // Push operators for domain tangent matrix (LHS)
-    domainTangentMatrixPipeline->getOpPtrVector().push_back(
-        new OpDomainTangentMatrix(domainField, domainField, previousUpdate,
-                                  boundaryMarker));
-  }
+  add_domain_lhs_ops(pipeline_mng->getOpDomainLhsPipeline());
+  add_domain_rhs_ops(pipeline_mng->getOpDomainRhsPipeline());
 
-  { // Push operators to the Pipeline that is responsible for calculating the
-    // domain residual vector (RHS)
-
-    // Add default operators to calculate inverse of Jacobian (needed for
-    // implementation of 2D problem but not 3D ones)
-    domainResidualVectorPipeline->getOpPtrVector().push_back(
-        new OpCalculateHOJac<2>(jac_ptr));
-    domainResidualVectorPipeline->getOpPtrVector().push_back(
-        new OpInvertMatrix<2>(jac_ptr, det_ptr, inv_jac_ptr));
-    domainResidualVectorPipeline->getOpPtrVector().push_back(
-        new OpSetHOInvJacToScalarBases<2>(H1, inv_jac_ptr));
-    domainResidualVectorPipeline->getOpPtrVector().push_back(
-        new OpSetHOWeightsOnFace());
-
-    // Add default operator to calculate field values at integration points
-    domainResidualVectorPipeline->getOpPtrVector().push_back(
-        new OpCalculateScalarFieldValues(domainField, fieldValuePtr));
-    // Add default operator to calculate field gradient at integration points
-    domainResidualVectorPipeline->getOpPtrVector().push_back(
-        new OpCalculateScalarFieldGradient<2>(domainField, fieldGradPtr));
-
-    domainResidualVectorPipeline->getOpPtrVector().push_back(
-        new OpDomainResidualVector(domainField, sourceTermFunction,
-                                   previousUpdate, boundaryMarker));
-  }
-
-  { // Push operators to the Pipeline that is responsible for calculating the
-    // boundary tangent matrix (LHS)
-
-    boundaryTangentMatrixPipeline->getOpPtrVector().push_back(
-        new OpBoundaryTangentMatrix(domainField, domainField));
-  }
-
-  { // Push operators to the Pipeline that is responsible for calculating
-    // boundary residual vector (RHS)
-
-    // Add default operator to calculate field values at integration points
-    boundaryResidualVectorPipeline->getOpPtrVector().push_back(
-        new OpCalculateScalarFieldValues(domainField, fieldValuePtr));
-
-    boundaryResidualVectorPipeline->getOpPtrVector().push_back(
-        new OpBoundaryResidualVector(domainField, boundaryFunction,
-                                     previousUpdate));
-  }
-
-  // get Discrete Manager (SmartPetscObj)
-  dM = simpleInterface->getDM();
-
-  { // Set operators for nonlinear equations solver (SNES) from MoFEM Pipelines
-
-    // Set operators for calculation of LHS and RHS of domain elements
-    boost::shared_ptr<FaceEle> null_face;
-    CHKERR DMMoFEMSNESSetJacobian(dM, simpleInterface->getDomainFEName(),
-                                  domainTangentMatrixPipeline, null_face,
-                                  null_face);
-    CHKERR DMMoFEMSNESSetFunction(dM, simpleInterface->getDomainFEName(),
-                                  domainResidualVectorPipeline, null_face,
-                                  null_face);
-
-    // Set operators for calculation of LHS and RHS of boundary elements
-    boost::shared_ptr<EdgeEle> null_edge;
-    CHKERR DMMoFEMSNESSetJacobian(dM, simpleInterface->getBoundaryFEName(),
-                                  boundaryTangentMatrixPipeline, null_edge,
-                                  null_edge);
-    CHKERR DMMoFEMSNESSetFunction(dM, simpleInterface->getBoundaryFEName(),
-                                  boundaryResidualVectorPipeline, null_edge,
-                                  null_edge);
-  }
+  add_boundary_lhs_ops(pipeline_mng->getOpBoundaryLhsPipeline());
+  add_boundary_rhs_ops(pipeline_mng->getOpBoundaryRhsPipeline());
 
   MoFEMFunctionReturn(0);
 }
@@ -305,50 +241,52 @@ MoFEMErrorCode NonlinearPoisson::assembleSystem() {
 MoFEMErrorCode NonlinearPoisson::solveSystem() {
   MoFEMFunctionBegin;
 
-  // Create RHS and solution vectors
-  SmartPetscObj<Vec> global_rhs, global_solution;
-  CHKERR DMCreateGlobalVector_MoFEM(dM, global_rhs);
-  global_solution = vectorDuplicate(global_rhs);
+  auto *simple = mField.getInterface<Simple>();
 
-  // Create nonlinear solver (SNES)
-  snesSolver = createSNES(mField.get_comm());
-  CHKERR SNESSetFromOptions(snesSolver);
-
-  // Fieldsplit block solver: yes/no
-  if (1) {
-    KSP ksp_solver;
-    CHKERR SNESGetKSP(snesSolver, &ksp_solver);
+  auto set_fieldsplit_preconditioner = [&](auto snes) {
+    MoFEMFunctionBeginHot;
+    KSP ksp;
+    CHKERR SNESGetKSP(snes, &ksp);
     PC pc;
-    CHKERR KSPGetPC(ksp_solver, &pc);
-
+    CHKERR KSPGetPC(ksp, &pc);
     PetscBool is_pcfs = PETSC_FALSE;
     PetscObjectTypeCompare((PetscObject)pc, PCFIELDSPLIT, &is_pcfs);
 
     // Set up FIELDSPLIT, only when option used -pc_type fieldsplit
     if (is_pcfs == PETSC_TRUE) {
-      IS is_boundary;
-      const MoFEM::Problem *problem_ptr;
-      CHKERR DMMoFEMGetProblemPtr(dM, &problem_ptr);
+      auto name_prb = simple->getProblemName();
+      SmartPetscObj<IS> is_all_bc;
       CHKERR mField.getInterface<ISManager>()->isCreateProblemFieldAndRank(
-          problem_ptr->getName(), ROW, domainField, 0, 1, &is_boundary,
+          name_prb, ROW, domainField, 0, 1, is_all_bc,
           &boundaryEntitiesForFieldsplit);
-      // CHKERR ISView(is_boundary, PETSC_VIEWER_STDOUT_SELF);
-
-      CHKERR PCFieldSplitSetIS(pc, NULL, is_boundary);
-
-      CHKERR ISDestroy(&is_boundary);
+      int is_all_bc_size;
+      CHKERR ISGetSize(is_all_bc, &is_all_bc_size);
+      MOFEM_LOG("EXAMPLE", Sev::inform)
+          << "Field split block size " << is_all_bc_size;
+      CHKERR PCFieldSplitSetIS(pc, PETSC_NULL,
+                               is_all_bc); // boundary block
     }
-  }
+    MoFEMFunctionReturnHot(0);
+  };
 
-  CHKERR SNESSetDM(snesSolver, dM);
-  CHKERR SNESSetUp(snesSolver);
+  // Create global RHS and solution vectors
+  auto dm = simple->getDM();
+  SmartPetscObj<Vec> global_rhs, global_solution;
+  CHKERR DMCreateGlobalVector_MoFEM(dm, global_rhs);
+  global_solution = vectorDuplicate(global_rhs);
+
+  // Create nonlinear solver (SNES)
+  auto pipeline_mng = mField.getInterface<PipelineManager>();
+  auto solver = pipeline_mng->createSNES();
+  CHKERR SNESSetFromOptions(solver);
+  CHKERR set_fieldsplit_preconditioner(solver);
+  CHKERR SNESSetUp(solver);
 
   // Solve the system
-  CHKERR SNESSolve(snesSolver, global_rhs, global_solution);
-  // VecView(global_rhs, PETSC_VIEWER_STDOUT_SELF);
+  CHKERR SNESSolve(solver, global_rhs, global_solution);
 
   // Scatter result data on the mesh
-  CHKERR DMoFEMMeshToGlobalVector(dM, global_solution, INSERT_VALUES,
+  CHKERR DMoFEMMeshToGlobalVector(dm, global_solution, INSERT_VALUES,
                                   SCATTER_REVERSE);
 
   MoFEMFunctionReturn(0);
@@ -357,19 +295,19 @@ MoFEMErrorCode NonlinearPoisson::solveSystem() {
 MoFEMErrorCode NonlinearPoisson::outputResults() {
   MoFEMFunctionBegin;
 
-  postProc = boost::make_shared<PostProcEle>(mField);
+  auto post_proc = boost::make_shared<PostProcEle>(mField);
 
   auto u_ptr = boost::make_shared<VectorDouble>();
-  postProc->getOpPtrVector().push_back(
+  post_proc->getOpPtrVector().push_back(
       new OpCalculateScalarFieldValues(domainField, u_ptr));
 
   using OpPPMap = OpPostProcMapInMoab<2, 2>;
 
-  postProc->getOpPtrVector().push_back(
+  post_proc->getOpPtrVector().push_back(
 
-      new OpPPMap(postProc->getPostProcMesh(), postProc->getMapGaussPts(),
+      new OpPPMap(post_proc->getPostProcMesh(), post_proc->getMapGaussPts(),
 
-                  {{"U", u_ptr}},
+                  {{domainField, u_ptr}},
 
                   {}, {}, {}
 
@@ -377,11 +315,11 @@ MoFEMErrorCode NonlinearPoisson::outputResults() {
 
   );
 
-  CHKERR DMoFEMLoopFiniteElements(
-      dM, simpleInterface->getDomainFEName(),
-      boost::dynamic_pointer_cast<FEMethod>(postProc));
+  auto *simple = mField.getInterface<Simple>();
+  auto dm = simple->getDM();
+  CHKERR DMoFEMLoopFiniteElements(dm, simple->getDomainFEName(), post_proc);
 
-  CHKERR postProc->writeFile("out_result.h5m");
+  CHKERR post_proc->writeFile("out_result.h5m");
 
   MoFEMFunctionReturn(0);
 }
@@ -391,6 +329,12 @@ int main(int argc, char *argv[]) {
   // Initialisation of MoFEM/PETSc and MOAB data structures
   const char param_file[] = "param_file.petsc";
   MoFEM::Core::Initialize(&argc, &argv, param_file, help);
+
+  auto core_log = logging::core::get();
+  core_log->add_sink(
+      LogManager::createSink(LogManager::getStrmWorld(), "EXAMPLE"));
+  LogManager::setLog("EXAMPLE");
+  MOFEM_LOG_TAG("EXAMPLE", "example")
 
   // Error handling
   try {
