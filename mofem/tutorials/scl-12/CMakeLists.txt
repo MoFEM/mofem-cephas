@@ -35,6 +35,10 @@ tutorials_build_and_install(
   set_target_properties(
     electrostatics_2d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=2")
 
+#################
+##### TESTS #####
+#################
+
 # sigma=+-10.0 on the electrode; ep_air: 1,ep1: 2, ep2: 3;
   add_test(electro_2d
       ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4

@@ -130,8 +130,8 @@ MoFEMErrorCode Electrostatics::setupProblem() {
       auto &block_data = (*perm_block_sets_ptr)[id];
 
       CHKERR mField.get_moab().get_entities_by_dimension(
-          bit->getMeshset(), SPACE_DIM, block_data.blockDomains, true);
-      electrIcs.merge(block_data.blockDomains);
+          bit->getMeshset(), SPACE_DIM, block_data.domainEnts, true);
+      electrIcs.merge(block_data.domainEnts);
 
       std::vector<double> attributes;
       bit->getAttributes(attributes);
@@ -155,8 +155,8 @@ MoFEMErrorCode Electrostatics::setupProblem() {
       auto &block_data = (*int_block_sets_ptr)[id];
 
       CHKERR mField.get_moab().get_entities_by_dimension(
-          bit->getMeshset(), SPACE_DIM - 1, block_data.blockInterfaces, true);
-      interfIcs.merge(block_data.blockInterfaces);
+          bit->getMeshset(), SPACE_DIM - 1, block_data.interfaceEnts, true);
+      interfIcs.merge(block_data.interfaceEnts);
 
       std::vector<double> attributes;
       bit->getAttributes(attributes);
@@ -167,7 +167,7 @@ MoFEMErrorCode Electrostatics::setupProblem() {
       }
 
       block_data.iD = id;               // id of the block
-      block_data.sigma = attributes[0]; // charge value of the block
+      block_data.chargeDensity = attributes[0]; // charge value of the block
     }
   }
   // gets the map of the electrode entity range in the  block sets
@@ -179,14 +179,14 @@ MoFEMErrorCode Electrostatics::setupProblem() {
       auto &block_data = (*electrode_block_sets_ptr)[id];
 
       CHKERR mField.get_moab().get_entities_by_dimension(
-          bit->getMeshset(), SPACE_DIM - 1, block_data.blockElectrod, true);
-      ElectrodIcs.merge(block_data.blockElectrod);
+          bit->getMeshset(), SPACE_DIM - 1, block_data.electrodeEnts, true);
+      ElectrodIcs.merge(block_data.electrodeEnts);
       block_data.iD = id;
       auto print_range_on_procs = [&](const std::string &name, int meshsetId,
                                       const Range &range) {
         MOFEM_LOG("SYNC", Sev::inform)
             << name << " in meshID: " << id << " with range "
-            << block_data.blockElectrod << " on proc ["
+            << block_data.electrodeEnts << " on proc ["
             << mField.get_comm_rank() << "] \n";
         MOFEM_LOG_SYNCHRONISE(mField.get_comm());
       };
@@ -204,8 +204,8 @@ MoFEMErrorCode Electrostatics::setupProblem() {
       auto &block_data = (*internal_domain_block_sets_ptr)[id];
 
       CHKERR mField.get_moab().get_entities_by_dimension(
-          bit->getMeshset(), SPACE_DIM, block_data.blockIntDomain, true);
-      internal_domain.merge(block_data.blockIntDomain);
+          bit->getMeshset(), SPACE_DIM, block_data.internalDomainEnts, true);
+      internal_domain.merge(block_data.internalDomainEnts);
       block_data.iD = id;
       auto print_range_on_procs = [&](const std::string &name, int meshsetId,
                                       const Range &range) {
@@ -302,9 +302,9 @@ MoFEMErrorCode Electrostatics::setupProblem() {
     // other processors (e.g. 1, 2, 3, etc.)
     local_size = 0; // local size of vector is zero on other processors
 
-  petscVec = createSmartVectorMPI(mField.get_comm(), local_size, LAST_ELEMENT);
+  petscVec = createVectorMPI(mField.get_comm(), local_size, LAST_ELEMENT);
   petscVec_energy =
-      createSmartVectorMPI(mField.get_comm(), local_size, LAST_ELEMENT);
+      createVectorMPI(mField.get_comm(), local_size, LAST_ELEMENT);
   // LAST_ELEMENT);
   MoFEMFunctionReturn(0);
 }
@@ -463,8 +463,6 @@ MoFEMErrorCode Electrostatics::solveSystem() {
   CHKERR PetscPrintf(PETSC_COMM_WORLD, "D norm  = %9.8e\n", dnorm);
 
   CHKERR DMoFEMMeshToLocalVector(dm, D, INSERT_VALUES, SCATTER_REVERSE);
-
-  auto bc_mng = mField.getInterface<BcManager>();
 
   MoFEMFunctionReturn(0);
 }
@@ -737,7 +735,6 @@ MoFEMErrorCode Electrostatics::runProgram() {
   CHKERR outputResults();
   CHKERR getTotalEnergy();
   CHKERR getElectrodeCharge();
-  // CHKERR checkResults();
   MoFEMFunctionReturn(0);
 }
 //! [Run program]

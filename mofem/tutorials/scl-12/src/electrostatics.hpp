@@ -1,6 +1,7 @@
 
-// #ifndef __ELECTROSTATICS_HPP__
-// #define __ELECTROSTATICS_HPP__
+#ifndef __ELECTROSTATICS_HPP__
+#define __ELECTROSTATICS_HPP__
+
 #include <MoFEM.hpp>
 
 constexpr auto domainField = "POTENTIAL";
@@ -49,12 +50,12 @@ static char help[] = "...\n\n";
 
 struct BlockData {
   int iD;
-  double sigma;
+  double chargeDensity;
   double epsPermit;
-  Range blockInterfaces;
-  Range blockDomains;
-  Range blockElectrod;
-  Range blockIntDomain;
+  Range interfaceEnts;
+  Range domainEnts;
+  Range electrodeEnts;
+  Range internalDomainEnts;
 };
 struct DataAtIntegrationPts {
   SmartPetscObj<Vec> petscVec;
@@ -76,12 +77,12 @@ struct OpTotalEnergyDensity : public DomainEleOp {
       boost::shared_ptr<MatrixDouble> grad_u_negative,
       boost::shared_ptr<std::map<int, BlockData>> perm_block_sets_ptr,
       boost::shared_ptr<std::map<int, BlockData>>
-          internal_domain_block_sets_ptr,
+          int_domain_block_sets_ptr,
       boost::shared_ptr<DataAtIntegrationPts> common_data_ptr,
       SmartPetscObj<Vec> petscVec_Energy)
       : DomainEleOp(field_name, DomainEleOp::OPROW),
         gradUNegative(grad_u_negative), permBlockSetsPtr(perm_block_sets_ptr),
-        internaldomainblocksets(internal_domain_block_sets_ptr),
+        intDomainBlocksetsPtr(int_domain_block_sets_ptr),
         commonDataPtr(common_data_ptr), PetsctotalEnergy(petscVec_Energy) {
     std::fill(&doEntities[MBVERTEX], &doEntities[MBMAXTYPE], false);
     doEntities[MBVERTEX] = true;
@@ -100,16 +101,16 @@ struct OpTotalEnergyDensity : public DomainEleOp {
     double totalEnergy = 0.0;
     int indexx = 0;
     // Total Energy Density = 0.5 * (E * E) * Perm * Area
-    for (const auto &m : *internaldomainblocksets) {
+    for (const auto &m : *intDomainBlocksetsPtr) {
 
       double blockPermittivity = 0.0;
       domainArea += area;
 
-      if (m.second.blockIntDomain.find(getFEEntityHandle()) !=
-          m.second.blockIntDomain.end()) {
+      if (m.second.internalDomainEnts.find(getFEEntityHandle()) !=
+          m.second.internalDomainEnts.end()) {
         for (const auto &n : *permBlockSetsPtr) {
-          if (n.second.blockDomains.find(getFEEntityHandle()) !=
-              n.second.blockDomains.end()) {
+          if (n.second.domainEnts.find(getFEEntityHandle()) !=
+              n.second.domainEnts.end()) {
             blockPermittivity = n.second.epsPermit;
           }
         }
@@ -131,7 +132,7 @@ struct OpTotalEnergyDensity : public DomainEleOp {
 private:
   boost::shared_ptr<MatrixDouble> gradUNegative;
   boost::shared_ptr<std::map<int, BlockData>> permBlockSetsPtr;
-  boost::shared_ptr<std::map<int, BlockData>> internaldomainblocksets;
+  boost::shared_ptr<std::map<int, BlockData>> intDomainBlocksetsPtr;
   boost::shared_ptr<DataAtIntegrationPts> commonDataPtr;
   SmartPetscObj<Vec> PetsctotalEnergy;
 };
@@ -165,8 +166,8 @@ struct OpEnergyDensity : public DomainEleOp {
     FTensor::Index<'I', SPACE_DIM> I;
     double blockPermittivity = 0.0;
     for (const auto &n : *permBlockSetsPtr) {
-      if (n.second.blockDomains.find(getFEEntityHandle()) !=
-          n.second.blockDomains.end()) {
+      if (n.second.domainEnts.find(getFEEntityHandle()) !=
+          n.second.domainEnts.end()) {
         blockPermittivity = n.second.epsPermit;
       }
     }
@@ -218,8 +219,8 @@ struct OpGradTimesperm : public DomainEleOp {
     FTensor::Index<'I', SPACE_DIM> I;
     double blockPermittivity = 0.0;
     for (const auto &n : *permBlockSetsPtr) {
-      if (n.second.blockDomains.find(getFEEntityHandle()) !=
-          n.second.blockDomains.end()) {
+      if (n.second.domainEnts.find(getFEEntityHandle()) !=
+          n.second.domainEnts.end()) {
         blockPermittivity = n.second.epsPermit;
       }
     }
@@ -261,12 +262,11 @@ template <int SPACE_DIM> struct OpELectricJump : public SideEleOp {
     FTensor::Index<'i', SPACE_DIM> i;
     auto t_field_grad = getFTensor1FromMat<SPACE_DIM>(*gradPtr);
 
-    auto side_fe_entity = getSidePtrFE()->getFEEntityHandle();
     double blockPermittivity = 0.0;
 
     for (const auto &n : *permBlockSetsPtr) {
-      if (n.second.blockDomains.find(getFEEntityHandle()) !=
-          n.second.blockDomains.end()) {
+      if (n.second.domainEnts.find(getFEEntityHandle()) !=
+          n.second.domainEnts.end()) {
         blockPermittivity = n.second.epsPermit;
       }
     }
@@ -313,12 +313,11 @@ template <int SPACE_DIM> struct OpAlpha : public IntEleOp {
     auto t_jump = getFTensor1FromMat<SPACE_DIM>(*djumpptr);
     auto t_normal = getFTensor1NormalsAtGaussPts();
     const auto nb_gauss_pts = getGaussPts().size2();
-    double blockPermittivity = 0.0;
     const double area = getMeasure();
     auto t_w = getFTensor0IntegrationWeight();
     for (const auto &m : *elecBlockSetsPtr) {
       double alphaPart = 0.0;
-      if (m.second.blockElectrod.find(fe_ent) != m.second.blockElectrod.end()) {
+      if (m.second.electrodeEnts.find(fe_ent) != m.second.electrodeEnts.end()) {
 
         for (int gg = 0; gg != nb_gauss_pts; gg++) {
           FTensor::Tensor1<double, SPACE_DIM> t_r;
@@ -390,9 +389,9 @@ struct OpBlockChargeDensity : public IntEleOp {
                         EntData &col_data) {
     MoFEMFunctionBegin;
     for (const auto &m : *intBlockSetsPtr) {
-      if (m.second.blockInterfaces.find(getFEEntityHandle()) !=
-          m.second.blockInterfaces.end()) {
-        commonDataPtr->chrgDens = m.second.sigma;
+      if (m.second.interfaceEnts.find(getFEEntityHandle()) !=
+          m.second.interfaceEnts.end()) {
+        commonDataPtr->chrgDens = m.second.chargeDensity;
       }
     }
     MoFEMFunctionReturn(0);
@@ -421,8 +420,8 @@ struct OpBlockPermittivity : public DomainEleOp {
                         EntitiesFieldData::EntData &col_data) {
     MoFEMFunctionBegin;
     for (auto &m : (*permBlockSetsPtr)) {
-      if (m.second.blockDomains.find(getFEEntityHandle()) !=
-          m.second.blockDomains.end()) {
+      if (m.second.domainEnts.find(getFEEntityHandle()) !=
+          m.second.domainEnts.end()) {
         commonDataPtr->blockPermittivity = m.second.epsPermit;
       }
     }
@@ -433,3 +432,6 @@ protected:
   boost::shared_ptr<map<int, BlockData>> permBlockSetsPtr;
   boost::shared_ptr<DataAtIntegrationPts> commonDataPtr;
 };
+
+
+#endif // __ELECTROSTATICS_HPP__
