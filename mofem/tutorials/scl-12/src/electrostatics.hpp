@@ -3,14 +3,14 @@
 #define __ELECTROSTATICS_HPP__
 
 #include <MoFEM.hpp>
-
+using namespace MoFEM;
 constexpr auto domainField = "POTENTIAL";
 constexpr int BASE_DIM = 1;
 constexpr int FIELD_DIM = 1;
 constexpr int SPACE_DIM = EXECUTABLE_DIMENSION;
 const double bodySource = 0.0;
-using namespace MoFEM;
 
+// aliases for elements types from the pipeline
 using DomainEle = PipelineManager::ElementsAndOpsByDim<SPACE_DIM>::DomainEle;
 using IntEle = PipelineManager::ElementsAndOpsByDim<SPACE_DIM>::BoundaryEle;
 using DomainEleOp = DomainEle::UserDataOperator;
@@ -22,32 +22,31 @@ using SideEleOp = SideEle::UserDataOperator;
 using PostProcFaceEle =
     PostProcBrokenMeshInMoab<FaceElementForcesAndSourcesCore>;
 
-using VolSideFe = VolumeElementForcesAndSourcesCoreOnSide;
-using FaceEle = MoFEM::FaceElementForcesAndSourcesCore;
-using OpFaceEle = FaceEle::UserDataOperator;
+template <int SPACE_DIM> struct intPostProc {};
 
-template <int SPACE_DIM> struct intPostproc {};
-
-template <> struct intPostproc<2> {
+template <> struct intPostProc<2> {
   using intEle = MoFEM::EdgeElementForcesAndSourcesCore;
 };
 
-template <> struct intPostproc<3> {
+template <> struct intPostProc<3> {
   using intEle = MoFEM::FaceElementForcesAndSourcesCore;
 };
 
-using intElementForcesAndSourcesCore = intPostproc<SPACE_DIM>::intEle;
+using intElementForcesAndSourcesCore = intPostProc<SPACE_DIM>::intEle;
 
-using OpDomainLhsMatrixK = FormsIntegrators<DomainEleOp>::Assembly<
-    PETSC>::BiLinearForm<GAUSS>::OpGradGrad<BASE_DIM, FIELD_DIM, SPACE_DIM>;
+// forms integrators to calculate the LHS and RHS
+using OpDomainLhsMatrixK =
+    FormsIntegrators<DomainEleOp>::Assembly<PETSC>::BiLinearForm<
+        GAUSS>::OpGradGrad<BASE_DIM, FIELD_DIM, SPACE_DIM>; // lhs: K Matrix
 
 using OpInterfaceRhsVectorF = FormsIntegrators<IntEleOp>::Assembly<
-    PETSC>::LinearForm<GAUSS>::OpSource<BASE_DIM, FIELD_DIM>;
+    PETSC>::LinearForm<GAUSS>::OpSource<BASE_DIM, FIELD_DIM>; // rhs: F Vector
 using OpBodySourceVectorb = FormsIntegrators<DomainEleOp>::Assembly<
-    PETSC>::LinearForm<GAUSS>::OpSource<BASE_DIM, FIELD_DIM>;
+    PETSC>::LinearForm<GAUSS>::OpSource<BASE_DIM, FIELD_DIM>; // rhs: b Vector
 
 static char help[] = "...\n\n";
 
+// Common data structure for blocks
 struct BlockData {
   int iD;
   double chargeDensity;
@@ -57,27 +56,90 @@ struct BlockData {
   Range electrodeEnts;
   Range internalDomainEnts;
 };
+
 struct DataAtIntegrationPts {
   SmartPetscObj<Vec> petscVec;
   double blockPermittivity;
-  double chrgDens;
+  double blockChrgDens;
   DataAtIntegrationPts(MoFEM::Interface &m_field) {
     blockPermittivity = 0.0;
-    chrgDens = 0.0;
+    blockChrgDens = 0.0;
     PetscInt ghosts[2] = {0, 1};
     if (!m_field.get_comm_rank())
-      petscVec = createSmartGhostVector(m_field.get_comm(), 2, 2, 0, ghosts);
+      petscVec = createGhostVector(m_field.get_comm(), 2, 2, 0, ghosts);
     else
-      petscVec = createSmartGhostVector(m_field.get_comm(), 0, 2, 2, ghosts);
+      petscVec = createGhostVector(m_field.get_comm(), 0, 2, 2, ghosts);
   }
 };
+
+// Operator to get the charge density on the interface
+struct OpBlockChargeDensity : public IntEleOp {
+  OpBlockChargeDensity(
+      boost::shared_ptr<DataAtIntegrationPts> common_data_ptr,
+      boost::shared_ptr<std::map<int, BlockData>> int_block_sets_ptr,
+      const std::string &field_name)
+      : IntEleOp(field_name, field_name, OPROWCOL, false),
+        commonDataPtr(common_data_ptr), intBlockSetsPtr(int_block_sets_ptr) {
+    std::fill(&doEntities[MBVERTEX], &doEntities[MBMAXTYPE], false);
+    doEntities[MBVERTEX] = true;
+  }
+
+  MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
+                        EntityType col_type, EntData &row_data,
+                        EntData &col_data) {
+    MoFEMFunctionBegin;
+    for (const auto &m : *intBlockSetsPtr) {
+      if (m.second.interfaceEnts.find(getFEEntityHandle()) !=
+          m.second.interfaceEnts.end()) {
+        commonDataPtr->blockChrgDens = m.second.chargeDensity;
+      }
+    }
+    MoFEMFunctionReturn(0);
+  }
+
+protected:
+  boost::shared_ptr<DataAtIntegrationPts> commonDataPtr;
+  boost::shared_ptr<std::map<int, BlockData>> intBlockSetsPtr;
+};
+// Operator to get the permittivity of the domain/block
+struct OpBlockPermittivity : public DomainEleOp {
+
+  OpBlockPermittivity(
+      boost::shared_ptr<DataAtIntegrationPts> common_data_ptr,
+      boost::shared_ptr<map<int, BlockData>> perm_block_sets_ptr,
+      const std::string &field_name)
+      : DomainEleOp(field_name, field_name, OPROWCOL, false),
+        commonDataPtr(common_data_ptr), permBlockSetsPtr(perm_block_sets_ptr) {
+    std::fill(&doEntities[MBVERTEX], &doEntities[MBMAXTYPE], false);
+    doEntities[MBVERTEX] = true;
+  }
+
+  MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
+                        EntityType col_type,
+                        EntitiesFieldData::EntData &row_data,
+                        EntitiesFieldData::EntData &col_data) {
+    MoFEMFunctionBegin;
+    for (auto &m : (*permBlockSetsPtr)) {
+      if (m.second.domainEnts.find(getFEEntityHandle()) !=
+          m.second.domainEnts.end()) {
+        commonDataPtr->blockPermittivity = m.second.epsPermit;
+      }
+    }
+    MoFEMFunctionReturn(0);
+  }
+
+protected:
+  boost::shared_ptr<map<int, BlockData>> permBlockSetsPtr;
+  boost::shared_ptr<DataAtIntegrationPts> commonDataPtr;
+};
+
+// Operator to calculate Total Electrgy density in Post Porocessing
 struct OpTotalEnergyDensity : public DomainEleOp {
   OpTotalEnergyDensity(
       const std::string &field_name,
       boost::shared_ptr<MatrixDouble> grad_u_negative,
       boost::shared_ptr<std::map<int, BlockData>> perm_block_sets_ptr,
-      boost::shared_ptr<std::map<int, BlockData>>
-          int_domain_block_sets_ptr,
+      boost::shared_ptr<std::map<int, BlockData>> int_domain_block_sets_ptr,
       boost::shared_ptr<DataAtIntegrationPts> common_data_ptr,
       SmartPetscObj<Vec> petscVec_Energy)
       : DomainEleOp(field_name, DomainEleOp::OPROW),
@@ -92,8 +154,6 @@ struct OpTotalEnergyDensity : public DomainEleOp {
 
     auto t_negative_grad_u = getFTensor1FromMat<SPACE_DIM>(*gradUNegative);
     FTensor::Index<'I', SPACE_DIM> I;
-
-    const auto fe_ent = getFEEntityHandle();
     const double area = getMeasure();
     auto t_w = getFTensor0IntegrationWeight();
     const auto nb_gauss_pts = getGaussPts().size2();
@@ -171,7 +231,6 @@ struct OpEnergyDensity : public DomainEleOp {
         blockPermittivity = n.second.epsPermit;
       }
     }
-    // const double area = getMeasure();
     // E = 0.5 * (E * E) * Permittivity
     for (int gg = 0; gg != nb_gauss_pts; gg++) {
       t_energy_densiity(I) =
@@ -190,6 +249,7 @@ private:
   boost::shared_ptr<std::map<int, BlockData>> permBlockSetsPtr;
   boost::shared_ptr<DataAtIntegrationPts> commonDataPtr;
 };
+
 struct OpGradTimesperm : public DomainEleOp {
 
   OpGradTimesperm(
@@ -241,6 +301,8 @@ private:
   boost::shared_ptr<DataAtIntegrationPts> commonDataPtr;
 };
 
+// operator to get the electric jump on the all side elecment of the domain: 
+// d = E1 * perm1 - E2 * perm1
 template <int SPACE_DIM> struct OpELectricJump : public SideEleOp {
   OpELectricJump(
       const std::string field_name, boost::shared_ptr<MatrixDouble> grad_ptr,
@@ -296,6 +358,8 @@ protected:
   boost::shared_ptr<DataAtIntegrationPts> commonDataPtr;
 };
 
+// operator to get the alpha value on the inerface: Alpha = d * n
+
 template <int SPACE_DIM> struct OpAlpha : public IntEleOp {
   OpAlpha(const std::string field_name, boost::shared_ptr<MatrixDouble> d_jump,
           SmartPetscObj<Vec> alpha_vec,
@@ -308,7 +372,7 @@ template <int SPACE_DIM> struct OpAlpha : public IntEleOp {
   MoFEMErrorCode doWork(int side, EntityType type, EntData &data) {
     MoFEMFunctionBegin;
     FTensor::Index<'i', SPACE_DIM> i;
-    int index = 0;
+    int index = 0; // electrode index no.
     const auto fe_ent = getFEEntityHandle();
     auto t_jump = getFTensor1FromMat<SPACE_DIM>(*djumpptr);
     auto t_normal = getFTensor1NormalsAtGaussPts();
@@ -328,7 +392,8 @@ template <int SPACE_DIM> struct OpAlpha : public IntEleOp {
           ++t_normal;
           ++t_w;
         }
-        CHKERR ::VecSetValues(petscVec, 1, &index, &alphaPart, ADD_VALUES);
+        CHKERR ::VecSetValues(petscVec, 1, &index, &alphaPart, ADD_VALUES); // add the alpha value to the vector
+
       }
       ++index;
     }
@@ -372,66 +437,5 @@ private:
   boost::shared_ptr<MatrixDouble> gradUNegative;
   boost::shared_ptr<MatrixDouble> gradU;
 };
-
-struct OpBlockChargeDensity : public IntEleOp {
-  OpBlockChargeDensity(
-      boost::shared_ptr<DataAtIntegrationPts> common_data_ptr,
-      boost::shared_ptr<std::map<int, BlockData>> int_block_sets_ptr,
-      const std::string &field_name)
-      : IntEleOp(field_name, field_name, OPROWCOL, false),
-        commonDataPtr(common_data_ptr), intBlockSetsPtr(int_block_sets_ptr) {
-    std::fill(&doEntities[MBVERTEX], &doEntities[MBMAXTYPE], false);
-    doEntities[MBVERTEX] = true;
-  }
-
-  MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
-                        EntityType col_type, EntData &row_data,
-                        EntData &col_data) {
-    MoFEMFunctionBegin;
-    for (const auto &m : *intBlockSetsPtr) {
-      if (m.second.interfaceEnts.find(getFEEntityHandle()) !=
-          m.second.interfaceEnts.end()) {
-        commonDataPtr->chrgDens = m.second.chargeDensity;
-      }
-    }
-    MoFEMFunctionReturn(0);
-  }
-
-protected:
-  boost::shared_ptr<DataAtIntegrationPts> commonDataPtr;
-  boost::shared_ptr<std::map<int, BlockData>> intBlockSetsPtr;
-};
-
-struct OpBlockPermittivity : public DomainEleOp {
-
-  OpBlockPermittivity(
-      boost::shared_ptr<DataAtIntegrationPts> common_data_ptr,
-      boost::shared_ptr<map<int, BlockData>> perm_block_sets_ptr,
-      const std::string &field_name)
-      : DomainEleOp(field_name, field_name, OPROWCOL, false),
-        commonDataPtr(common_data_ptr), permBlockSetsPtr(perm_block_sets_ptr) {
-    std::fill(&doEntities[MBVERTEX], &doEntities[MBMAXTYPE], false);
-    doEntities[MBVERTEX] = true;
-  }
-
-  MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
-                        EntityType col_type,
-                        EntitiesFieldData::EntData &row_data,
-                        EntitiesFieldData::EntData &col_data) {
-    MoFEMFunctionBegin;
-    for (auto &m : (*permBlockSetsPtr)) {
-      if (m.second.domainEnts.find(getFEEntityHandle()) !=
-          m.second.domainEnts.end()) {
-        commonDataPtr->blockPermittivity = m.second.epsPermit;
-      }
-    }
-    MoFEMFunctionReturn(0);
-  }
-
-protected:
-  boost::shared_ptr<map<int, BlockData>> permBlockSetsPtr;
-  boost::shared_ptr<DataAtIntegrationPts> commonDataPtr;
-};
-
 
 #endif // __ELECTROSTATICS_HPP__

@@ -4,7 +4,7 @@
  *  */
 
 #ifndef EXECUTABLE_DIMENSION
-#define EXECUTABLE_DIMENSION 3
+  #define EXECUTABLE_DIMENSION 3
 #endif
 
 #include <electrostatics.hpp>
@@ -40,12 +40,12 @@ private:
   boost::shared_ptr<DataAtIntegrationPts> common_data_ptr;
   std::string domainField;
   int oRder;
-  double ALPHA = 0.0;
-  double BETA = 0.0;
-  double totalEnergy = 0.0;
+  double ALPHA = 0.0;       // declaration for total charge on first electrode
+  double BETA = 0.0;        // declaration for total charge on second electrode
+  double totalEnergy = 0.0; // declaration for total energy
   SmartPetscObj<Vec> petscVec;        // petsc vector for the charge solution
   SmartPetscObj<Vec> petscVec_energy; // petsc vector for the energy solution
-  PetscBool out_skin = PETSC_FALSE;
+  PetscBool out_skin = PETSC_FALSE;   //
   PetscBool out_volume = PETSC_FALSE;
   PetscBool is_partitioned = PETSC_FALSE;
   enum VecElements { ZERO = 0, ONE = 1, LAST_ELEMENT };
@@ -62,8 +62,8 @@ MoFEMErrorCode Electrostatics::readMesh() {
   CHKERR simpleInterface->getOptions();
 
   simpleInterface->getAddSkeletonFE() =
-      true; // creates lower-dimensional elements to integration possible across
-            // partitioned entities
+      true; // creates lower-dimensional elements to make integration possible
+            // across partitioned entities
   CHKERR simpleInterface->loadFile();
   MoFEMFunctionReturn(0);
 }
@@ -89,7 +89,7 @@ MoFEMErrorCode Electrostatics::setupProblem() {
     }
   };
 
-  // Select base
+  // Select base for the field based on the element type
   auto get_base = [&]() {
     auto domain_ents = get_ents_by_dim(SPACE_DIM);
     if (domain_ents.empty())
@@ -109,11 +109,12 @@ MoFEMErrorCode Electrostatics::setupProblem() {
     }
     return NOBASE;
   };
+
   auto base = get_base();
   CHKERR simpleInterface->addDomainField(domainField, H1, base, 1);
   CHKERR simpleInterface->addBoundaryField(domainField, H1, base, 1);
 
-  int oRder = 2;
+  int oRder = 2; // default order
 
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &oRder, PETSC_NULL);
   CHKERR simpleInterface->setFieldOrder(domainField, oRder);
@@ -123,7 +124,7 @@ MoFEMErrorCode Electrostatics::setupProblem() {
 
   // gets the map of the permittivity attributes and the block sets
   perm_block_sets_ptr = boost::make_shared<std::map<int, BlockData>>();
-  Range electrIcs; // range of entities
+  Range electrIcs; // range of entities with the permittivity
   for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField, BLOCKSET, bit)) {
     if (bit->getName().compare(0, 12, "MAT_ELECTRIC") == 0) {
       const int id = bit->getMeshsetId();
@@ -148,7 +149,7 @@ MoFEMErrorCode Electrostatics::setupProblem() {
 
   // gets the map of the charge attributes and the block sets
   int_block_sets_ptr = boost::make_shared<std::map<int, BlockData>>();
-  Range interfIcs;
+  Range interfIcs; // range of entities with the charge
   for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField, BLOCKSET, bit)) {
     if (bit->getName().compare(0, 12, "INT_ELECTRIC") == 0) {
       const int id = bit->getMeshsetId();
@@ -166,13 +167,13 @@ MoFEMErrorCode Electrostatics::setupProblem() {
                  attributes.size());
       }
 
-      block_data.iD = id;               // id of the block
+      block_data.iD = id;                       // id of the block
       block_data.chargeDensity = attributes[0]; // charge value of the block
     }
   }
   // gets the map of the electrode entity range in the  block sets
   electrode_block_sets_ptr = boost::make_shared<std::map<int, BlockData>>();
-  Range ElectrodIcs;
+  Range ElectrodIcs; // range of entities with the electrode
   for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField, BLOCKSET, bit)) {
     if (bit->getName().compare(0, 9, "ELECTRODE") == 0) {
       const int id = bit->getMeshsetId();
@@ -195,7 +196,7 @@ MoFEMErrorCode Electrostatics::setupProblem() {
   }
 
   // gets the map of the internal domain entity range to get the total energy
-  Range internal_domain;
+  Range internal_domain; // range of entities marked the internal domain
   internal_domain_block_sets_ptr =
       boost::make_shared<std::map<int, BlockData>>();
   for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField, BLOCKSET, bit)) {
@@ -230,7 +231,7 @@ MoFEMErrorCode Electrostatics::setupProblem() {
                              PETSC_NULL);
   CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-is_partitioned", &is_partitioned,
                              PETSC_NULL);
-
+  // get the skin entities
   Skinner skinner(&mField.get_moab());
   Range skin_tris;
   CHKERR skinner.find_skin(0, electrIcs, false, skin_tris);
@@ -244,20 +245,21 @@ MoFEMErrorCode Electrostatics::setupProblem() {
   } else {
     proc_skin = skin_tris;
   }
-
+  // add the skin entities to the field
   CHKERR mField.add_finite_element("SKIN", MF_ZERO);
   CHKERR mField.add_ents_to_finite_element_by_dim(proc_skin, SPACE_DIM - 1,
                                                   "SKIN");
   CHKERR mField.modify_finite_element_add_field_row("SKIN", domainField);
   CHKERR mField.modify_finite_element_add_field_col("SKIN", domainField);
   CHKERR mField.modify_finite_element_add_field_data("SKIN", domainField);
-
+  // add the interface entities to the field
   CHKERR mField.add_finite_element("INTERFACE");
   CHKERR mField.modify_finite_element_add_field_row("INTERFACE", domainField);
   CHKERR mField.modify_finite_element_add_field_col("INTERFACE", domainField);
   CHKERR mField.modify_finite_element_add_field_data("INTERFACE", domainField);
   CHKERR mField.add_ents_to_finite_element_by_dim(interfIcs, SPACE_DIM - 1,
                                                   "INTERFACE");
+  // add the electrode entities to the field
   CHKERR mField.add_finite_element("ELECTRODE");
   CHKERR mField.modify_finite_element_add_field_row("ELECTRODE", domainField);
   CHKERR mField.modify_finite_element_add_field_col("ELECTRODE", domainField);
@@ -265,14 +267,13 @@ MoFEMErrorCode Electrostatics::setupProblem() {
   CHKERR mField.add_ents_to_finite_element_by_dim(ElectrodIcs, SPACE_DIM - 1,
                                                   "ELECTRODE");
 
-  // sync field here
+  // sync field entities
   mField.getInterface<CommInterface>()->synchroniseFieldEntities(domainField);
   CHKERR simpleInterface->defineFiniteElements();
   CHKERR simpleInterface->defineProblem(PETSC_TRUE);
   CHKERR simpleInterface->buildFields();
   CHKERR simpleInterface->buildFiniteElements();
   CHKERR simpleInterface->buildProblem();
-
   CHKERR mField.build_finite_elements("SKIN");
   CHKERR mField.build_finite_elements("INTERFACE");
   CHKERR mField.build_finite_elements("ELECTRODE");
@@ -285,7 +286,7 @@ MoFEMErrorCode Electrostatics::setupProblem() {
   CHKERR DMRegister_MoFEM(dm_name);
 
   SmartPetscObj<DM> dm;
-  dm = createSmartDM(mField.get_comm(), dm_name);
+  dm = createDM(mField.get_comm(), dm_name);
 
   // create dm instance
   CHKERR DMSetType(dm, dm_name);
@@ -399,7 +400,7 @@ MoFEMErrorCode Electrostatics::assembleSystem() {
         common_data_ptr, int_block_sets_ptr, domainField));
 
     auto sIgma = [&](const double, const double, const double) {
-      return common_data_ptr->chrgDens;
+      return common_data_ptr->blockChrgDens;
     };
 
     interface_rhs_fe->getOpPtrVector().push_back(
@@ -442,8 +443,8 @@ MoFEMErrorCode Electrostatics::solveSystem() {
 
   // Create RHS and solution vectors
   auto dm = simpleInterface->getDM();
-  auto F = smartCreateDMVector(dm);
-  auto D = smartVectorDuplicate(F);
+  auto F = createDMVector(dm);
+  auto D = vectorDuplicate(F);
   // Solve the system
   CHKERR KSPSolve(ksp_solver, F, D);
 

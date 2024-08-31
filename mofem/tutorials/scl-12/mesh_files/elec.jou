@@ -1,0 +1,62 @@
+reset
+set duplicate block elements on
+
+brick x 5 y 5 z 1.0
+
+
+webcut volume 1 with plane yplane offset 1
+webcut volume 1 with plane yplane offset -1
+webcut volume 1 with plane yplane offset -1.5
+webcut volume 2 with plane yplane offset 1.5
+imprint all 
+merge all
+
+#BOUNDARY_CONDITION
+block 1 surface 3
+block 1 name 'BOUNDARY_CONDITION_1'
+block 1 attribute count 1
+block 1 attribute index 1 0.0
+
+
+
+#CONSTANT_BOUNDARY
+
+block 4 surface 7
+block 4 name "ELECTRODE_1"
+
+block 5 surface 17
+block 5 name "ELECTRODE_2"
+
+
+block 11 surface  7
+block 11 name "INT_ELECTRIC_1"
+block 11 attribute count 1
+block 11 attribute index 1 -5
+
+block 12 surface  17
+block 12 name "INT_ELECTRIC_2"
+block 12 attribute count 1
+block 12 attribute index 1 5
+#
+block 100 volume  1 3 5
+block 100 name "MAT_ELECTRIC_1"
+block 100 attribute count 1
+block 100 attribute index 1 1
+
+block 101 volume  2
+block 101 name "MAT_ELECTRIC_2"
+block 101 attribute count 1
+block 101 attribute index 1 2
+
+block 102 volume  4
+block 102 name "MAT_ELECTRIC_3"
+block 102 attribute count 1
+block 102 attribute index 1 3
+
+block 103 volume  3
+block 103 name "DOMAIN_INT"
+
+volume all scheme tetmesh
+volume all size auto factor 10
+mesh volume all
+save as "/Users/'dir'/elec_3D.cub" overwrite

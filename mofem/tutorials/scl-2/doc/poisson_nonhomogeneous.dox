@@ -14,9 +14,9 @@
 \tableofcontents
 \section basic_tutorials_poisson_nonhomogeneous_introduction Introduction
 
-The focus of our current tutorial is on solving Laplace-type partial differential equations (PDEs) Poisson Problem with non-homogenous Dirichlet boundary conditions. While the \ref basic_tutorials_poisson_homogeneous was designed for solving Dirichlet problems with homogeneous boundary conditions, this tutorial guides the methods to extend this to non-homogeneous cases and plot the solution.
+The focus of our current tutorial is on solving Laplace-type partial differential equations (PDEs) Poisson Problem with non-homogenous Dirichlet boundary conditions. While the \ref basic_tutorials_poisson_nonhomogeneous has designed for solving Dirichlet problems with homogeneous boundary conditions, this tutorial guides the methods to extend this to non-homogeneous cases and plot the solution.
 
-We are also aiming to present MoFEM approaches for handling Dirichlet problems in addition to the least square approximation while establishing your necessary foundation in MoFEM as well. Prior to that, we would like to suggest understanding the operators(i.e. OpDomainLhsMatrixK and OpDomainRhsVectorF) in \ref basic_tutorials_poisson_homogeneous before proceeding to this tutorial.
+We are also aiming to present MoFEM approaches for handling Dirichlet problems in addition to the least square approximation while establishing your necessary foundation in MoFEM as well. Prior to that, we would like to suggest understanding the operators(i.e. OpDomainLhsMatrixK and OpDomainRhsVectorF) in \ref basic_tutorials_poisson_homogeneous before proceeding to this tutorial. 
 
 \subsection basic_tutorials_poisson_nonhomogeneous_problem_Statement Problem Statement
 
@@ -56,7 +56,7 @@ Remember, previously we derived a weak form for homogeneous BC in \ref basic_tut
 \f]
 \f[
   \begin{align}
-   \int_{\Gamma} \delta u \cdot u\,d\Gamma =  \int_{\Gamma} \delta u \,g(\mathbf{x})\,d\Gamma
+   \int_{\Gamma} \delta u \, \,d\Gamma =  \int_{\Gamma} \delta u \,g(\mathbf{x})\,d\Gamma
    \end{align}
 \f]
 \subsection basic_tutorials_poisson_nonhomogeneous_approximation Approximation
@@ -86,14 +86,14 @@ For a better understanding the implementation of the aboves in MoFEM, we are exp
 \f[
 \mathbf{A_k} =
 \int_{\Omega} \nabla \mathbf{N}_{\alpha} \cdot \nabla \mathbf{N}_{\beta} \,d\Omega, \quad
-\mathbf{B_f} = \int_{\Omega} f(\mathbf{x})\,\,\mathbf{N}_{\beta} \,d\Omega\,\,\ \text{ || For Domain},
+\mathbf{B_f} = \int_{\Omega} f(\mathbf{x})\,\,\mathbf{N}_{\beta} \,d\Omega\,\,\ \text{ |\,For Domain},
 \f]
 
 and
 
 \f[
 \mathbf{C_k} = \int_{\Gamma} \mathbf{N}_{\alpha} \cdot \mathbf{N}_{\beta} \,d\Gamma, \quad
-\mathbf{D_f} = \int_{\Gamma} g(\mathbf{x})\,\, \mathbf{N}_{\beta} \,d\Gamma \,\,\text{ || For Boundary}.
+\mathbf{D_f} = \int_{\Gamma} g(\mathbf{x})\,\, \mathbf{N}_{\beta} \,d\Gamma \,\,\text{ |\,For Boundary}.
 \f]
 
 
@@ -138,9 +138,6 @@ Before we explore the implementation details of the User-Defined Operators (UDOs
 // Include standard library and Header file for basic finite elements
 // implementation
 #include <stdlib.h>
-#include <MoFEM.hpp>
-
-using namespace MoFEM;
 
 
 // Use of alias for some specific functions
@@ -337,7 +334,7 @@ The `OpSetBc()` object is responsible for assembling only for the boundary entit
 For example, when we assemble for the boundary, first we use `OpSetBc()`, then add `OpBoundaryLhs` and `OpUnSetBc` to the `getOpBoundaryLhsPipeline()` and `getOpBoundaryLhsPipeline`. To be noted that it's important to set the flag as `false` here.
 
 <BLOCKQUOTE>
-To recapitulate, when we assemble for the domain, `OpSetBc()` works for skipping(marked'true') the boundary entities. On the other hand, it considers only the boundaries (marked 'false' to consider) when assembling only for boundary. And then push the UDO. Then OpUnSetBc() is used to set the index to the entities as it was initially.
+To recapitulate, when we are assembling for the domain, `OpSetBc()` works for skipping(marked'true' to skip boundary) the boundary entities. On the other hand, it considers only the boundaries (marked 'false' to consider) when assembling only for boundary. And then push the UDO. Then OpUnSetBc() is used to set the index to the entities as it was initially.
 </BLOCKQUOTE>
 
 \subsubsection setIntegrationRules setIntegrationRules()
@@ -345,44 +342,11 @@ Afterwards, the computation of LHS and RHS is defined in the setIntegrationRules
  \snippet users_modules/tutorials/scl-2/poisson_2d_nonhomogeneous.cpp Set integration rules 
 \subsubsection solveSystem solveSystem()
 
-We can consider the the solving syetem as follows where the subscripts 'D' is for domain and 'B' denote the boundary. However, recall that we prepared our assembling systems separately using the set/unset process in assembleSystem(). This allows us to consider the solving system as follows when we partition the global stiffness matrix \f$\mathbf{K}\f$ and the force vector \f$\mathbf{F}\f$ into submatrices.: 
+To solve the problem, we remember that we made our assembling systems ready using the set/unseting process in boundaryCondition() for domain and boundaries as shown in Figure: 2 where we can consider the subscripts 'D' is for domain and 'B' for boundary.
+\anchor figure_poisson_nonhomogeneous_problem
+\image html non-homogenous_poission_Matrix.png "Figure 2: Solving approach" width = 400px
 
-\f[
-\left[
-\begin{array}{cc}
-\mathbf{K}_{DD} & \mathbf{K}_{BD} \\
-\mathbf{0} & \mathbf{K}_{BB}
-\end{array}
-\right]
-\left\{
-\begin{array}{c}
-\mathbf{U}_{D}\\
-\mathbf{U}_{B}
-\end{array}
-\right\}
-=
-\left[
-\begin{array}{c}
-\mathbf{f}_d\\
-\mathbf{f}_b
-\end{array}
-\right]
-\f]
-
-Thus, the system equations are solved for \f$\mathbf{U}_B\f$ and \f$\mathbf{U}_D\f$ such that
-
-\f[
-\mathbf{U}_B = \mathbf{K}_{BB}^{-1} \mathbf{f}_b
-\f]
-and 
-
-\f[
-\mathbf{U}_D = \mathbf{K}_{DD}^{-1} (\mathbf{f}_d - \mathbf{K}_{BD} \mathbf{U}_B)
-\f]
-
-
-
-Additionally, it's important to note that we are not solving the system of equations directly using the KSP direct solver, as done in \ref basic_tutorials_poisson_homogeneous. Instead, we are proceeding to deploy a preconditioner named `FIELDSPLIT` which splits the fields for domain and boundary with options - (yes/no). The part of the code is as follows: 
+At this stage, we are not solving the system of equations directly using KSP solver as we did in \ref basic_tutorials_poisson_homogeneous. Instead of that, we are proceeding to deploy a preconditioner to the solver named `FIELDSPLIT`. It splits the fields for domain and boundary as an option - yes/no if needed. The part of the code is as follows: 
 \code
   // Setup fieldsplit (block) solver - optional: yes/no
   if (1) {
