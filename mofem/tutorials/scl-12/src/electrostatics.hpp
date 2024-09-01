@@ -44,8 +44,6 @@ using OpInterfaceRhsVectorF = FormsIntegrators<IntEleOp>::Assembly<
 using OpBodySourceVectorb = FormsIntegrators<DomainEleOp>::Assembly<
     PETSC>::LinearForm<GAUSS>::OpSource<BASE_DIM, FIELD_DIM>; // rhs: b Vector
 
-static char help[] = "...\n\n";
-
 // Common data structure for blocks
 struct BlockData {
   int iD;
@@ -134,18 +132,18 @@ protected:
 };
 
 // Operator to calculate Total Electrgy density in Post Porocessing
-struct OpTotalEnergyDensity : public DomainEleOp {
-  OpTotalEnergyDensity(
+struct OpTotalEnergy : public DomainEleOp {
+  OpTotalEnergy(
       const std::string &field_name,
       boost::shared_ptr<MatrixDouble> grad_u_negative,
       boost::shared_ptr<std::map<int, BlockData>> perm_block_sets_ptr,
       boost::shared_ptr<std::map<int, BlockData>> int_domain_block_sets_ptr,
       boost::shared_ptr<DataAtIntegrationPts> common_data_ptr,
-      SmartPetscObj<Vec> petscVec_Energy)
+      SmartPetscObj<Vec> petsc_vec_energy)
       : DomainEleOp(field_name, DomainEleOp::OPROW),
         gradUNegative(grad_u_negative), permBlockSetsPtr(perm_block_sets_ptr),
         intDomainBlocksetsPtr(int_domain_block_sets_ptr),
-        commonDataPtr(common_data_ptr), PetsctotalEnergy(petscVec_Energy) {
+        commonDataPtr(common_data_ptr), petscTotalEnergy(petsc_vec_energy) {
     std::fill(&doEntities[MBVERTEX], &doEntities[MBMAXTYPE], false);
     doEntities[MBVERTEX] = true;
   }
@@ -154,17 +152,15 @@ struct OpTotalEnergyDensity : public DomainEleOp {
 
     auto t_negative_grad_u = getFTensor1FromMat<SPACE_DIM>(*gradUNegative);
     FTensor::Index<'I', SPACE_DIM> I;
-    const double area = getMeasure();
+    double area = getMeasure();
     auto t_w = getFTensor0IntegrationWeight();
-    const auto nb_gauss_pts = getGaussPts().size2();
-    double domainArea = 0.0;
+    auto nb_gauss_pts = getGaussPts().size2();
     double totalEnergy = 0.0;
-    int indexx = 0;
-    // Total Energy Density = 0.5 * (E * E) * Perm * Area
+    int index = 0;
+    // Total Energy Density = 0.5 * E^2 * Perm * Area
     for (const auto &m : *intDomainBlocksetsPtr) {
 
       double blockPermittivity = 0.0;
-      domainArea += area;
 
       if (m.second.internalDomainEnts.find(getFEEntityHandle()) !=
           m.second.internalDomainEnts.end()) {
@@ -176,15 +172,14 @@ struct OpTotalEnergyDensity : public DomainEleOp {
         }
 
         for (int gg = 0; gg != nb_gauss_pts; gg++) {
-          totalEnergy += 0.5 *
-                         std::abs(t_negative_grad_u(I) * t_negative_grad_u(I)) *
+          totalEnergy += 0.5 * t_negative_grad_u(I) * t_negative_grad_u(I) *
                          blockPermittivity * t_w * area;
           ++t_negative_grad_u;
           ++t_w;
         }
       }
     }
-    CHKERR VecSetValues(PetsctotalEnergy, 1, &indexx, &totalEnergy, ADD_VALUES);
+    CHKERR VecSetValues(petscTotalEnergy, 1, &index, &totalEnergy, ADD_VALUES);
 
     MoFEMFunctionReturn(0);
   }
@@ -194,7 +189,7 @@ private:
   boost::shared_ptr<std::map<int, BlockData>> permBlockSetsPtr;
   boost::shared_ptr<std::map<int, BlockData>> intDomainBlocksetsPtr;
   boost::shared_ptr<DataAtIntegrationPts> commonDataPtr;
-  SmartPetscObj<Vec> PetsctotalEnergy;
+  SmartPetscObj<Vec> petscTotalEnergy;
 };
 
 struct OpEnergyDensity : public DomainEleOp {
@@ -202,11 +197,11 @@ struct OpEnergyDensity : public DomainEleOp {
   OpEnergyDensity(
       const std::string &field_name,
       boost::shared_ptr<MatrixDouble> grad_u_negative,
-      boost::shared_ptr<MatrixDouble> energy_densiity_ptr,
+      boost::shared_ptr<VectorDouble> energy_densiity_ptr,
       boost::shared_ptr<std::map<int, BlockData>> perm_block_sets_ptr,
       boost::shared_ptr<DataAtIntegrationPts> common_data_ptr)
       : DomainEleOp(field_name, field_name, OPROWCOL, false),
-        energyDensiity(energy_densiity_ptr), gradUNegative(grad_u_negative),
+        energyDensity(energy_densiity_ptr), gradUNegative(grad_u_negative),
         permBlockSetsPtr(perm_block_sets_ptr), commonDataPtr(common_data_ptr) {
     std::fill(&doEntities[MBVERTEX], &doEntities[MBMAXTYPE], false);
     doEntities[MBVERTEX] = true;
@@ -218,10 +213,10 @@ struct OpEnergyDensity : public DomainEleOp {
                         EntitiesFieldData::EntData &col_data) {
     MoFEMFunctionBegin;
 
-    const size_t nb_gauss_pts = getGaussPts().size2();
-    energyDensiity->resize(SPACE_DIM, nb_gauss_pts, false);
-    energyDensiity->clear();
-    auto t_energy_densiity = getFTensor1FromMat<SPACE_DIM>(*energyDensiity);
+    size_t nb_gauss_pts = getGaussPts().size2();
+    energyDensity->resize(nb_gauss_pts, false);
+    energyDensity->clear();
+    auto t_energy_density = getFTensor0FromVec(*energyDensity);
     auto t_negative_grad_u = getFTensor1FromMat<SPACE_DIM>(*gradUNegative);
     FTensor::Index<'I', SPACE_DIM> I;
     double blockPermittivity = 0.0;
@@ -231,13 +226,12 @@ struct OpEnergyDensity : public DomainEleOp {
         blockPermittivity = n.second.epsPermit;
       }
     }
-    // E = 0.5 * (E * E) * Permittivity
+    // E = 0.5 * E^2 * Perm
     for (int gg = 0; gg != nb_gauss_pts; gg++) {
-      t_energy_densiity(I) =
-          0.5 * std::abs(t_negative_grad_u(I) * t_negative_grad_u(I)) *
-          blockPermittivity;
+      t_energy_density =
+          0.5 * t_negative_grad_u(I) * t_negative_grad_u(I) * blockPermittivity;
       ++t_negative_grad_u;
-      ++t_energy_densiity;
+      ++t_energy_density;
     }
 
     MoFEMFunctionReturn(0);
@@ -245,21 +239,21 @@ struct OpEnergyDensity : public DomainEleOp {
 
 private:
   boost::shared_ptr<MatrixDouble> gradUNegative;
-  boost::shared_ptr<MatrixDouble> energyDensiity;
+  boost::shared_ptr<VectorDouble> energyDensity;
   boost::shared_ptr<std::map<int, BlockData>> permBlockSetsPtr;
   boost::shared_ptr<DataAtIntegrationPts> commonDataPtr;
 };
 
-struct OpGradTimesperm : public DomainEleOp {
+struct OpGradTimesPerm : public DomainEleOp {
 
-  OpGradTimesperm(
+  OpGradTimesPerm(
       const std::string &field_name,
       boost::shared_ptr<MatrixDouble> grad_u_negative,
       boost::shared_ptr<MatrixDouble> grad_times_perm,
       boost::shared_ptr<std::map<int, BlockData>> perm_block_sets_ptr,
       boost::shared_ptr<DataAtIntegrationPts> common_data_ptr)
       : DomainEleOp(field_name, field_name, OPROWCOL, false),
-        gradtimesperm(grad_times_perm), gradUNegative(grad_u_negative),
+        gradTimesPerm(grad_times_perm), gradUNegative(grad_u_negative),
         permBlockSetsPtr(perm_block_sets_ptr), commonDataPtr(common_data_ptr) {
     std::fill(&doEntities[MBVERTEX], &doEntities[MBMAXTYPE], false);
     doEntities[MBVERTEX] = true;
@@ -271,10 +265,10 @@ struct OpGradTimesperm : public DomainEleOp {
                         EntitiesFieldData::EntData &col_data) {
     MoFEMFunctionBegin;
 
-    const size_t nb_gauss_pts = getGaussPts().size2();
-    gradtimesperm->resize(SPACE_DIM, nb_gauss_pts, false);
-    gradtimesperm->clear();
-    auto t_grad_times_perm = getFTensor1FromMat<SPACE_DIM>(*gradtimesperm);
+    size_t nb_gauss_pts = getGaussPts().size2();
+    gradTimesPerm->resize(SPACE_DIM, nb_gauss_pts, false);
+    gradTimesPerm->clear();
+    auto t_grad_times_perm = getFTensor1FromMat<SPACE_DIM>(*gradTimesPerm);
     auto t_negative_grad_u = getFTensor1FromMat<SPACE_DIM>(*gradUNegative);
     FTensor::Index<'I', SPACE_DIM> I;
     double blockPermittivity = 0.0;
@@ -296,15 +290,15 @@ struct OpGradTimesperm : public DomainEleOp {
 
 private:
   boost::shared_ptr<MatrixDouble> gradUNegative;
-  boost::shared_ptr<MatrixDouble> gradtimesperm;
+  boost::shared_ptr<MatrixDouble> gradTimesPerm;
   boost::shared_ptr<std::map<int, BlockData>> permBlockSetsPtr;
   boost::shared_ptr<DataAtIntegrationPts> commonDataPtr;
 };
 
-// operator to get the electric jump on the all side elecment of the domain: 
+// operator to get the electric jump on the all side elecment of the domain:
 // d = E1 * perm1 - E2 * perm1
-template <int SPACE_DIM> struct OpELectricJump : public SideEleOp {
-  OpELectricJump(
+template <int SPACE_DIM> struct OpElectricDispJump : public SideEleOp {
+  OpElectricDispJump(
       const std::string field_name, boost::shared_ptr<MatrixDouble> grad_ptr,
       boost::shared_ptr<MatrixDouble> d_jump,
       boost::shared_ptr<DataAtIntegrationPts> common_data_ptr,
@@ -358,13 +352,14 @@ protected:
   boost::shared_ptr<DataAtIntegrationPts> commonDataPtr;
 };
 
-// operator to get the alpha value on the inerface: Alpha = d * n
+// operator to get the charge value on the inerface: Alpha = d * n
 
-template <int SPACE_DIM> struct OpAlpha : public IntEleOp {
-  OpAlpha(const std::string field_name, boost::shared_ptr<MatrixDouble> d_jump,
-          SmartPetscObj<Vec> alpha_vec,
-          boost::shared_ptr<std::map<int, BlockData>> electrode_block_sets_ptr)
-      : IntEleOp(field_name, IntEleOp::OPROW, false), djumpptr(d_jump),
+template <int SPACE_DIM> struct OpElectrodeCharge : public IntEleOp {
+  OpElectrodeCharge(
+      const std::string field_name, boost::shared_ptr<MatrixDouble> d_jump,
+      SmartPetscObj<Vec> alpha_vec,
+      boost::shared_ptr<std::map<int, BlockData>> electrode_block_sets_ptr)
+      : IntEleOp(field_name, IntEleOp::OPROW, false), dJumpPtr(d_jump),
         petscVec(alpha_vec), elecBlockSetsPtr(electrode_block_sets_ptr) {
     std::fill(&doEntities[MBVERTEX], &doEntities[MBMAXTYPE], false);
     doEntities[MBVERTEX] = true;
@@ -372,14 +367,15 @@ template <int SPACE_DIM> struct OpAlpha : public IntEleOp {
   MoFEMErrorCode doWork(int side, EntityType type, EntData &data) {
     MoFEMFunctionBegin;
     FTensor::Index<'i', SPACE_DIM> i;
-    int index = 0; // electrode index no.
-    const auto fe_ent = getFEEntityHandle();
-    auto t_jump = getFTensor1FromMat<SPACE_DIM>(*djumpptr);
+    int index = 0;
+    auto fe_ent = getFEEntityHandle();
+    auto nb_gauss_pts = getGaussPts().size2();
+    double area = getMeasure();
+    dJumpPtr->resize(SPACE_DIM, nb_gauss_pts, false);
+    auto t_jump = getFTensor1FromMat<SPACE_DIM>(*dJumpPtr);
     auto t_normal = getFTensor1NormalsAtGaussPts();
-    const auto nb_gauss_pts = getGaussPts().size2();
-    const double area = getMeasure();
     auto t_w = getFTensor0IntegrationWeight();
-    for (const auto &m : *elecBlockSetsPtr) {
+    for (auto &m : *elecBlockSetsPtr) {
       double alphaPart = 0.0;
       if (m.second.electrodeEnts.find(fe_ent) != m.second.electrodeEnts.end()) {
 
@@ -392,8 +388,8 @@ template <int SPACE_DIM> struct OpAlpha : public IntEleOp {
           ++t_normal;
           ++t_w;
         }
-        CHKERR ::VecSetValues(petscVec, 1, &index, &alphaPart, ADD_VALUES); // add the alpha value to the vector
-
+        CHKERR ::VecSetValues(petscVec, 1, &index, &alphaPart,
+                              ADD_VALUES); // add the alpha value to the vector
       }
       ++index;
     }
@@ -402,7 +398,7 @@ template <int SPACE_DIM> struct OpAlpha : public IntEleOp {
   }
 
 protected:
-  boost::shared_ptr<MatrixDouble> djumpptr;
+  boost::shared_ptr<MatrixDouble> dJumpPtr;
   boost::shared_ptr<std::map<int, BlockData>> elecBlockSetsPtr;
   SmartPetscObj<Vec> petscVec;
 };
