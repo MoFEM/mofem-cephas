@@ -59,6 +59,7 @@ using BoundaryEleOp = BoundaryEle::UserDataOperator;
 using PostProcEle = PostProcBrokenMeshInMoab<DomainEle>;
 using SkinPostProcEle = PostProcBrokenMeshInMoab<BoundaryEle>;
 using SideEle = ElementsAndOps<SPACE_DIM>::SideEle;
+using SetPtsData = FieldEvaluatorInterface::SetPtsData;
 
 #ifdef ADD_CONTACT
 //! [Specialisation for assembly]
@@ -166,6 +167,7 @@ inline auto kinematic_hardening_dplastic_strain(double C1_k) {
 
 PetscBool is_large_strains = PETSC_TRUE; ///< Large strains
 PetscBool set_timer = PETSC_FALSE;       ///< Set timer
+PetscBool doEvalField = PETSC_FALSE;     ///< Evaluate field
 
 double scale = 1.;
 
@@ -940,11 +942,79 @@ MoFEMErrorCode Example::tsSolve() {
                            SmartPetscObj<VecScatter>(scatter));
   };
 
+  boost::shared_ptr<SetPtsData> field_eval_data;
+  boost::shared_ptr<MatrixDouble> u_field_ptr;
+
+  std::array<double, SPACE_DIM> field_eval_coords;
+  int coords_dim = SPACE_DIM;
+  CHKERR PetscOptionsGetRealArray(NULL, NULL, "-field_eval_coords",
+                                  field_eval_coords.data(), &coords_dim,
+                                  &doEvalField);
+
+  boost::shared_ptr<std::map<std::string, boost::shared_ptr<VectorDouble>>> scalar_field_ptrs;
+  boost::shared_ptr<std::map<std::string, boost::shared_ptr<MatrixDouble>>> vector_field_ptrs;
+  boost::shared_ptr<std::map<std::string, boost::shared_ptr<MatrixDouble>>> sym_tensor_field_ptrs;
+  boost::shared_ptr<std::map<std::string, boost::shared_ptr<MatrixDouble>>> tensor_field_ptrs;
+
+  if (doEvalField) {
+    auto u_field_ptr = boost::make_shared<MatrixDouble>();
+    field_eval_data =
+        mField.getInterface<FieldEvaluatorInterface>()->getData<DomainEle>();
+    if constexpr (SPACE_DIM == 3) {
+      CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree3D(
+          field_eval_data, simple->getDomainFEName());
+    } else {
+      CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree2D(
+          field_eval_data, simple->getDomainFEName());
+    }
+
+    field_eval_data->setEvalPoints(field_eval_coords.data(), 1);
+    auto no_rule = [](int, int, int) { return -1; };
+    auto field_eval_fe_ptr = field_eval_data->feMethodPtr.lock();
+    field_eval_fe_ptr->getRuleHook = no_rule;
+
+    auto [common_plastic_ptr, common_henky_ptr] =
+        PlasticOps::createCommonPlasticOps<SPACE_DIM, IT, DomainEleOp>(
+            mField, "MAT_PLASTIC", field_eval_fe_ptr->getOpPtrVector(), "U",
+            "EP", "TAU", 1., Sev::inform);
+
+    field_eval_fe_ptr->getOpPtrVector().push_back(
+        new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_field_ptr));
+
+    if (is_large_strains) {
+      scalar_field_ptrs->insert(
+          {"PLASTIC_SURFACE", common_plastic_ptr->getPlasticSurfacePtr()});
+      scalar_field_ptrs->insert(
+          {"PLASTIC_MULTIPLIER", common_plastic_ptr->getPlasticTauPtr()});
+      vector_field_ptrs->insert({"U", u_field_ptr});
+      sym_tensor_field_ptrs->insert(
+          {"PLASTIC_STRAIN", common_plastic_ptr->getPlasticStrainPtr()});
+      sym_tensor_field_ptrs->insert(
+          {"PLASTIC_FLOW", common_plastic_ptr->getPlasticFlowPtr()});
+      tensor_field_ptrs->insert({"GRAD", common_henky_ptr->matGradPtr});
+      tensor_field_ptrs->insert(
+          {"FIRST_PIOLA", common_henky_ptr->getMatFirstPiolaStress()});
+    } else {
+      scalar_field_ptrs->insert(
+          {"PLASTIC_SURFACE", common_plastic_ptr->getPlasticSurfacePtr()});
+      scalar_field_ptrs->insert(
+          {"PLASTIC_MULTIPLIER", common_plastic_ptr->getPlasticTauPtr()});
+      vector_field_ptrs->insert({"U", u_field_ptr});
+      sym_tensor_field_ptrs->insert({"STRAIN", common_plastic_ptr->mStrainPtr});
+      sym_tensor_field_ptrs->insert({"STRESS", common_plastic_ptr->mStressPtr});
+      sym_tensor_field_ptrs->insert(
+          {"PLASTIC_STRAIN", common_plastic_ptr->getPlasticStrainPtr()});
+      sym_tensor_field_ptrs->insert(
+          {"PLASTIC_FLOW", common_plastic_ptr->getPlasticFlowPtr()});
+    }
+  }
+
   auto set_time_monitor = [&](auto dm, auto solver) {
     MoFEMFunctionBegin;
-    boost::shared_ptr<Monitor> monitor_ptr(
-        new Monitor(dm, create_post_process_elements(), reactionFe, uXScatter,
-                    uYScatter, uZScatter));
+    boost::shared_ptr<Monitor<SPACE_DIM>> monitor_ptr(new Monitor<SPACE_DIM>(
+        dm, create_post_process_elements(), reactionFe, uXScatter, uYScatter,
+        uZScatter, field_eval_coords, field_eval_data, scalar_field_ptrs,
+        vector_field_ptrs, sym_tensor_field_ptrs, tensor_field_ptrs));
     boost::shared_ptr<ForcesAndSourcesCore> null;
     CHKERR DMMoFEMTSSetMonitor(dm, solver, simple->getDomainFEName(),
                                monitor_ptr, null, null);
@@ -1086,7 +1156,7 @@ MoFEMErrorCode Example::tsSolve() {
               100 * static_cast<double>(avtive_full_elems) / avtive_elems;
 
         MOFEM_LOG_C("PLASTICITY", Sev::inform,
-                    "Iter %d nb pts %d nb avtive pts %d (%3.3f\%) nb active "
+                    "Iter %d nb pts %d nb active pts %d (%3.3f\%) nb active "
                     "elements %d "
                     "(%3.3f\%) nb full active elems %d (%3.3f\%)",
                     iter, nb_points, active_points, proc_nb_points,
@@ -1347,16 +1417,23 @@ MoFEMErrorCode SetUpSchurImpl::setUp(TS solver) {
       // Boundary
       pip_mng->getOpBoundaryLhsPipeline().push_front(
           createOpSchurAssembleBegin());
-      pip_mng->getOpBoundaryLhsPipeline().push_back(createOpSchurAssembleEnd(
-          {"EP", "TAU"}, {nullptr, nullptr}, {SmartPetscObj<AO>(), aoUp},
-          {SmartPetscObj<Mat>(), S}, {false, false}, false));
+      pip_mng->getOpBoundaryLhsPipeline().push_back(
+          new OpSchurAssembleEnd<SCHUR_DGESV>(
+
+              {"EP", "TAU"}, {nullptr, nullptr}, {SmartPetscObj<AO>(), aoUp},
+              {SmartPetscObj<Mat>(), S}, {false, false}
+
+              ));
       // Domain
       pip_mng->getOpDomainLhsPipeline().push_front(
           createOpSchurAssembleBegin());
-      pip_mng->getOpBoundaryLhsPipeline().push_back(createOpSchurAssembleEnd(
-          {"EP", "TAU"}, {nullptr, nullptr}, {SmartPetscObj<AO>(), aoUp},
-          {SmartPetscObj<Mat>(), S}, {false, false}, false));
+      pip_mng->getOpDomainLhsPipeline().push_back(
+          new OpSchurAssembleEnd<SCHUR_DGESV>(
 
+              {"EP", "TAU"}, {nullptr, nullptr}, {SmartPetscObj<AO>(), aoUp},
+              {SmartPetscObj<Mat>(), S}, {false, false}
+
+              ));
 #else
 
       double eps_stab = 1e-4;

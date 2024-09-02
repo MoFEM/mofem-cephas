@@ -111,7 +111,6 @@ std::array<int, 5> CommonData::activityData = {0, 0, 0, 0, 0};
 
 //! [Common data]
 
-
 FTensor::Index<'I', 3> I;
 FTensor::Index<'J', 3> J;
 FTensor::Index<'M', 3> M;
@@ -226,7 +225,6 @@ template <typename DomainEleOp> struct PlasticityIntegrators {
     template <IntegrationType I>
     using OpCalculateConstraintsLhs_dTAU =
         OpCalculateConstraintsLhs_dTAUImpl<I, AssemblyDomainEleOp>;
-
   };
 };
 

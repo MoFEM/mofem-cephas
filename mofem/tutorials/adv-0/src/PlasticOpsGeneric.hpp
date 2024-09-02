@@ -4,6 +4,10 @@
  * \example PlasticOpsGeneric.hpp
  */
 
+namespace ThermoPlasticOps {
+struct ThermoPlasticBlockedParameters;
+}
+
 namespace PlasticOps {
 
 //! [Lambda functions]
@@ -311,6 +315,10 @@ inline auto diff_constrain_df(double sign) { return (-1 - sign) / 2; };
 
 inline auto diff_constrain_dsigma_y(double sign) { return (1 + sign) / 2; }
 
+inline auto diff_constrain_dtemp(double dc_dsigmay, double dsigma_y_dtemp) {
+  return dc_dsigmay * dsigma_y_dtemp;
+}
+
 template <typename T, int DIM>
 inline auto
 diff_constrain_dstress(double diff_constrain_df,
@@ -455,22 +463,30 @@ MoFEMErrorCode OpCalculatePlasticSurfaceImpl<DIM, GAUSS, DomainEleOp>::doWork(
 
 template <int DIM, typename DomainEleOp>
 struct OpCalculatePlasticityImpl<DIM, GAUSS, DomainEleOp> : public DomainEleOp {
-  OpCalculatePlasticityImpl(const std::string field_name,
-                            boost::shared_ptr<CommonData> common_data_ptr,
-                            boost::shared_ptr<MatrixDouble> m_D_ptr);
+  OpCalculatePlasticityImpl(
+      const std::string field_name,
+      boost::shared_ptr<CommonData> common_data_ptr,
+      boost::shared_ptr<MatrixDouble> m_D_ptr,
+      boost::shared_ptr<ThermoPlasticOps::ThermoPlasticBlockedParameters>
+          tp_common_data_ptr = nullptr);
   MoFEMErrorCode doWork(int side, EntityType type, EntData &data);
 
 protected:
   boost::shared_ptr<CommonData> commonDataPtr;
+  boost::shared_ptr<ThermoPlasticOps::ThermoPlasticBlockedParameters>
+      TPCommonDataPtr;
   boost::shared_ptr<MatrixDouble> mDPtr;
 };
 
 template <int DIM, typename DomainEleOp>
 OpCalculatePlasticityImpl<DIM, GAUSS, DomainEleOp>::OpCalculatePlasticityImpl(
     const std::string field_name, boost::shared_ptr<CommonData> common_data_ptr,
-    boost::shared_ptr<MatrixDouble> m_D_ptr)
+    boost::shared_ptr<MatrixDouble> m_D_ptr,
+    boost::shared_ptr<ThermoPlasticOps::ThermoPlasticBlockedParameters>
+        tp_common_data_ptr)
     : DomainEleOp(field_name, DomainEleOp::OPROW),
-      commonDataPtr(common_data_ptr), mDPtr(m_D_ptr) {
+      commonDataPtr(common_data_ptr), mDPtr(m_D_ptr),
+      TPCommonDataPtr(tp_common_data_ptr) {
   // Opetor is only executed for vertices
   std::fill(&DomainEleOp::doEntities[MBEDGE],
             &DomainEleOp::doEntities[MBMAXTYPE], false);
@@ -487,7 +503,7 @@ MoFEMErrorCode OpCalculatePlasticityImpl<DIM, GAUSS, DomainEleOp>::doWork(
   FTensor::Index<'l', DIM> l;
   FTensor::Index<'m', DIM> m;
   FTensor::Index<'n', DIM> n;
-  
+
   auto &params = commonDataPtr->blockParams; ///< material parameters
 
   const size_t nb_gauss_pts = DomainEleOp::getGaussPts().size2();
@@ -506,6 +522,8 @@ MoFEMErrorCode OpCalculatePlasticityImpl<DIM, GAUSS, DomainEleOp>::doWork(
   auto t_D = getFTensor4DdgFromMat<DIM, DIM, 0>(*commonDataPtr->mDPtr);
   auto t_D_Op = getFTensor4DdgFromMat<DIM, DIM, 0>(*mDPtr);
 
+  auto t_temp = getFTensor0FromVec(TPCommonDataPtr->temperature);
+
   auto t_diff_plastic_strain = diff_tensor(FTensor::Number<DIM>());
   auto t_diff_deviator = diff_deviator(diff_tensor(FTensor::Number<DIM>()));
 
@@ -516,7 +534,6 @@ MoFEMErrorCode OpCalculatePlasticityImpl<DIM, GAUSS, DomainEleOp>::doWork(
   t_flow_dir_dstrain(i, j, k, l) =
       t_flow_dir_dstress(i, j, m, n) * t_D_Op(m, n, k, l);
 
-
   auto t_alpha_dir =
       kinematic_hardening_dplastic_strain<DIM>(params[CommonData::C1_k]);
 
@@ -524,21 +541,25 @@ MoFEMErrorCode OpCalculatePlasticityImpl<DIM, GAUSS, DomainEleOp>::doWork(
   commonDataPtr->resCdTau.resize(nb_gauss_pts, false);
   commonDataPtr->resCdStrain.resize(size_symm, nb_gauss_pts, false);
   commonDataPtr->resCdPlasticStrain.resize(size_symm, nb_gauss_pts, false);
+  TPCommonDataPtr->resCdTemperature.resize(nb_gauss_pts, false);
   commonDataPtr->resFlow.resize(size_symm, nb_gauss_pts, false);
   commonDataPtr->resFlowDtau.resize(size_symm, nb_gauss_pts, false);
   commonDataPtr->resFlowDstrain.resize(size_symm * size_symm, nb_gauss_pts,
                                        false);
   commonDataPtr->resFlowDstrainDot.resize(size_symm * size_symm, nb_gauss_pts,
                                           false);
+  TPCommonDataPtr->resFlowDtemp.resize(size_symm, nb_gauss_pts, false);
 
   commonDataPtr->resC.clear();
   commonDataPtr->resCdTau.clear();
   commonDataPtr->resCdStrain.clear();
   commonDataPtr->resCdPlasticStrain.clear();
+  TPCommonDataPtr->resCdTemperature.clear();
   commonDataPtr->resFlow.clear();
   commonDataPtr->resFlowDtau.clear();
   commonDataPtr->resFlowDstrain.clear();
   commonDataPtr->resFlowDstrainDot.clear();
+  TPCommonDataPtr->resFlowDtemp.clear();
 
   auto t_res_c = getFTensor0FromVec(commonDataPtr->resC);
   auto t_res_c_dtau = getFTensor0FromVec(commonDataPtr->resCdTau);
@@ -546,6 +567,8 @@ MoFEMErrorCode OpCalculatePlasticityImpl<DIM, GAUSS, DomainEleOp>::doWork(
       getFTensor2SymmetricFromMat<DIM>(commonDataPtr->resCdStrain);
   auto t_res_c_plastic_strain =
       getFTensor2SymmetricFromMat<DIM>(commonDataPtr->resCdPlasticStrain);
+  auto t_res_c_temperature =
+      getFTensor0FromVec(TPCommonDataPtr->resCdTemperature);
   auto t_res_flow = getFTensor2SymmetricFromMat<DIM>(commonDataPtr->resFlow);
   auto t_res_flow_dtau =
       getFTensor2SymmetricFromMat<DIM>(commonDataPtr->resFlowDtau);
@@ -553,6 +576,8 @@ MoFEMErrorCode OpCalculatePlasticityImpl<DIM, GAUSS, DomainEleOp>::doWork(
       getFTensor4DdgFromMat<DIM, DIM>(commonDataPtr->resFlowDstrain);
   auto t_res_flow_dplastic_strain =
       getFTensor4DdgFromMat<DIM, DIM>(commonDataPtr->resFlowDstrainDot);
+  auto t_res_flow_dtemp =
+      getFTensor2SymmetricFromMat<DIM>(TPCommonDataPtr->resFlowDtemp);
 
   auto next = [&]() {
     ++t_tau;
@@ -566,11 +591,14 @@ MoFEMErrorCode OpCalculatePlasticityImpl<DIM, GAUSS, DomainEleOp>::doWork(
     ++t_res_c_dtau;
     ++t_res_c_dstrain;
     ++t_res_c_plastic_strain;
+    ++t_res_c_temperature;
     ++t_res_flow;
     ++t_res_flow_dtau;
     ++t_res_flow_dstrain;
     ++t_res_flow_dplastic_strain;
+    ++t_res_flow_dtemp;
     ++t_w;
+    ++t_temp;
   };
 
   auto get_avtive_pts = [&]() {
@@ -582,14 +610,17 @@ MoFEMErrorCode OpCalculatePlasticityImpl<DIM, GAUSS, DomainEleOp>::doWork(
     auto t_f = getFTensor0FromVec(commonDataPtr->plasticSurface);
     auto t_plastic_strain_dot =
         getFTensor2SymmetricFromMat<SPACE_DIM>(commonDataPtr->plasticStrainDot);
+    auto t_temp = getFTensor0FromVec(TPCommonDataPtr->temperature);
 
     for (auto &f : commonDataPtr->plasticSurface) {
       auto eqiv = equivalent_strain_dot(t_plastic_strain_dot);
-      const auto ww = w(
-          eqiv, t_tau_dot, t_f,
-          iso_hardening(t_tau, params[CommonData::H], params[CommonData::QINF],
-                        params[CommonData::BISO], params[CommonData::SIGMA_Y]),
-          params[CommonData::SIGMA_Y]);
+      const auto ww =
+          w(eqiv, t_tau_dot, t_f,
+            iso_hardening(t_tau, params[CommonData::H], TPCommonDataPtr->omega0,
+                          params[CommonData::QINF], TPCommonDataPtr->omegaH,
+                          params[CommonData::BISO], params[CommonData::SIGMA_Y],
+                          TPCommonDataPtr->temp0, t_temp),
+            params[CommonData::SIGMA_Y]);
       const auto sign_ww = constrian_sign(ww);
 
       ++nb_points_on_elem;
@@ -601,6 +632,7 @@ MoFEMErrorCode OpCalculatePlasticityImpl<DIM, GAUSS, DomainEleOp>::doWork(
       ++t_tau_dot;
       ++t_f;
       ++t_plastic_strain_dot;
+      ++t_temp;
     }
 
     int &active_points = PlasticOps::CommonData::activityData[0];
@@ -637,11 +669,15 @@ MoFEMErrorCode OpCalculatePlasticityImpl<DIM, GAUSS, DomainEleOp>::doWork(
                                                   FTensor::Number<DIM>());
 
     const auto sigma_y =
-        iso_hardening(t_tau, params[CommonData::H], params[CommonData::QINF],
-                  params[CommonData::BISO], params[CommonData::SIGMA_Y]);
-    const auto d_sigma_y =
-        iso_hardening_dtau(t_tau, params[CommonData::H],
-                           params[CommonData::QINF], params[CommonData::BISO]);
+        iso_hardening(t_tau, params[CommonData::H], TPCommonDataPtr->omega0,
+                      params[CommonData::QINF], TPCommonDataPtr->omegaH,
+                      params[CommonData::BISO], params[CommonData::SIGMA_Y],
+                      TPCommonDataPtr->temp0, t_temp);
+    const auto d_sigma_y = iso_hardening_dtau(
+        t_tau, params[CommonData::H], TPCommonDataPtr->omega0,
+        params[CommonData::QINF], TPCommonDataPtr->omegaH,
+        params[CommonData::BISO], params[CommonData::SIGMA_Y],
+        TPCommonDataPtr->temp0, t_temp);
 
     auto ww = w(eqiv, t_tau_dot, t_f, sigma_y, params[CommonData::SIGMA_Y]);
     auto abs_ww = constrain_abs(ww);
@@ -656,6 +692,12 @@ MoFEMErrorCode OpCalculatePlasticityImpl<DIM, GAUSS, DomainEleOp>::doWork(
                                         params[CommonData::SIGMA_Y]);
     auto c_sigma_y = diff_constrain_dsigma_y(sign_ww);
     auto c_f = diff_constrain_df(sign_ww);
+    auto d_sigma_y_dtemp = iso_hardening_dtemp(
+        t_tau, params[CommonData::H], TPCommonDataPtr->omega0,
+        params[CommonData::QINF], TPCommonDataPtr->omegaH,
+        params[CommonData::BISO], params[CommonData::SIGMA_Y],
+        TPCommonDataPtr->temp0, t_temp);
+    auto c_temperature = diff_constrain_dtemp(c_sigma_y, d_sigma_y_dtemp);
 
     auto t_dev_stress = deviator(
 
@@ -689,6 +731,8 @@ MoFEMErrorCode OpCalculatePlasticityImpl<DIM, GAUSS, DomainEleOp>::doWork(
       t_diff_res(k, l) = -c_f * t_flow(i, j) * t_alpha_dir(i, j, k, l);
     };
 
+    auto get_res_c_dtemperature = [&]() { return c_temperature; };
+
     auto get_res_flow = [&](auto &t_res_flow) {
       const auto a = sigma_y;
       const auto b = t_tau_dot;
@@ -716,6 +760,11 @@ MoFEMErrorCode OpCalculatePlasticityImpl<DIM, GAUSS, DomainEleOp>::doWork(
           (t_flow_dir_dstrain(m, n, k, l) * t_alpha_dir(k, l, i, j)) * b;
     };
 
+    auto get_res_flow_dtemp = [&](auto &t_res_flow_dtemp) {
+      const auto da = d_sigma_y_dtemp;
+      t_res_flow_dtemp(k, l) = da * t_plastic_strain_dot(k, l);
+    };
+
     t_res_c = get_res_c();
     get_res_flow(t_res_flow);
 
@@ -723,9 +772,11 @@ MoFEMErrorCode OpCalculatePlasticityImpl<DIM, GAUSS, DomainEleOp>::doWork(
       t_res_c_dtau = get_res_c_dtau();
       get_res_c_dstrain(t_res_c_dstrain);
       get_res_c_dplastic_strain(t_res_c_plastic_strain);
+      t_res_c_temperature = get_res_c_dtemperature();
       get_res_flow_dtau(t_res_flow_dtau);
       get_res_flow_dstrain(t_res_flow_dstrain);
       get_res_flow_dplastic_strain(t_res_flow_dplastic_strain);
+      get_res_flow_dtemp(t_res_flow_dtemp);
     }
 
     next();
@@ -739,10 +790,10 @@ struct OpPlasticStressImpl<DIM, GAUSS, DomainEleOp> : public DomainEleOp {
 
   /**
    * @deprecated do not use this constructor
-  */
+   */
   DEPRECATED OpPlasticStressImpl(const std::string field_name,
-                      boost::shared_ptr<CommonData> common_data_ptr,
-                      boost::shared_ptr<MatrixDouble> mDPtr);
+                                 boost::shared_ptr<CommonData> common_data_ptr,
+                                 boost::shared_ptr<MatrixDouble> mDPtr);
   OpPlasticStressImpl(boost::shared_ptr<CommonData> common_data_ptr,
                       boost::shared_ptr<MatrixDouble> mDPtr);
 
