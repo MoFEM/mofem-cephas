@@ -25,3 +25,10 @@ tutorials_copy_and_install("*.geo" "${permissions_execute}")
 
 tutorials_build_and_install(
   nonlinear_poisson_2d ${CMAKE_CURRENT_SOURCE_DIR}/nonlinear_poisson_2d.cpp)
+
+  add_test(
+    nonlinear_poisson_2D ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_poisson_2d
+      -file_name ${CMAKE_CURRENT_SOURCE_DIR}/mesh2d_part.h5m
+      -order 2
+      -atom_test 1
+    )

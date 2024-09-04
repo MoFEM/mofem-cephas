@@ -5,6 +5,7 @@
 using namespace MoFEM;
 using namespace NonlinearPoissonOps;
 
+constexpr int SPACE_DIM = 2;
 static char help[] = "...\n\n";
 
 inline double sqr(const double x) { return x * x; }
@@ -27,6 +28,7 @@ private:
   MoFEMErrorCode assembleSystem();
   MoFEMErrorCode solveSystem();
   MoFEMErrorCode outputResults();
+  MoFEMErrorCode checkResults();
 
   // Function to calculate the Source term
   static double sourceTermFunction(const double x, const double y,
@@ -51,13 +53,15 @@ private:
   MoFEM::Interface &mField;
   Simple *simpleInterface;
 
-  // Discrete Manager and nonliner SNES solver using SmartPetscObj
-  SmartPetscObj<DM> dM;
-  SmartPetscObj<SNES> snesSolver;
-
   // Field name and approximation order
   std::string domainField = "POTENTIAL";
   int order;
+
+  // PETSc vector for storing norms
+  SmartPetscObj<Vec> errorVec, exactVec;
+  int atomTest = 0;
+  enum NORMS { NORM = 0, LAST_NORM };
+  enum EX_NORMS { EX_NORM = 0, LAST_EX_NORM };
 
   // Object to mark boundary entities for the assembling of domain elements
   boost::shared_ptr<std::vector<unsigned char>> boundaryMarker;
@@ -77,13 +81,14 @@ NonlinearPoisson::NonlinearPoisson(MoFEM::Interface &m_field)
 MoFEMErrorCode NonlinearPoisson::runProgram() {
   MoFEMFunctionBegin;
 
-  readMesh();
-  setupProblem();
-  setIntegrationRules();
-  boundaryCondition();
-  assembleSystem();
-  solveSystem();
-  outputResults();
+  CHKERR readMesh();
+  CHKERR setupProblem();
+  CHKERR setIntegrationRules();
+  CHKERR boundaryCondition();
+  CHKERR assembleSystem();
+  CHKERR solveSystem();
+  CHKERR outputResults();
+  CHKERR checkResults();
 
   MoFEMFunctionReturn(0);
 }
@@ -101,14 +106,50 @@ MoFEMErrorCode NonlinearPoisson::readMesh() {
 MoFEMErrorCode NonlinearPoisson::setupProblem() {
   MoFEMFunctionBegin;
 
-  CHKERR simpleInterface->addDomainField(domainField, H1,
-                                         AINSWORTH_BERNSTEIN_BEZIER_BASE, 1);
-  CHKERR simpleInterface->addBoundaryField(domainField, H1,
-                                           AINSWORTH_BERNSTEIN_BEZIER_BASE, 1);
+  Range domain_ents;
+  CHKERR mField.get_moab().get_entities_by_dimension(0, SPACE_DIM, domain_ents,
+                                                     true);
+  auto get_ents_by_dim = [&](const auto dim) {
+    if (dim == SPACE_DIM) {
+      return domain_ents;
+    } else {
+      Range ents;
+      if (dim == 0)
+        CHKERR mField.get_moab().get_connectivity(domain_ents, ents, true);
+      else
+        CHKERR mField.get_moab().get_entities_by_dimension(0, dim, ents, true);
+      return ents;
+    }
+  };
+  // Select base
+  auto get_base = [&]() {
+    auto domain_ents = get_ents_by_dim(SPACE_DIM);
+    if (domain_ents.empty())
+      CHK_THROW_MESSAGE(MOFEM_NOT_FOUND, "Empty mesh");
+    const auto type = type_from_handle(domain_ents[0]);
+    switch (type) {
+    case MBQUAD:
+      return DEMKOWICZ_JACOBI_BASE;
+    case MBHEX:
+      return DEMKOWICZ_JACOBI_BASE;
+    case MBTRI:
+      return AINSWORTH_LEGENDRE_BASE;
+    case MBTET:
+      return AINSWORTH_LEGENDRE_BASE;
+    default:
+      CHK_THROW_MESSAGE(MOFEM_NOT_FOUND, "Element type not handled");
+    }
+    return NOBASE;
+  };
+  auto base = get_base();
+  CHKERR simpleInterface->addDomainField(domainField, H1, base, 1);
+  CHKERR simpleInterface->addBoundaryField(domainField, H1, base, 1);
 
-  order = 4;
+  order = 2;
 
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order, PETSC_NULL);
+  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-atom_test", &atomTest,
+                            PETSC_NULL);
   CHKERR simpleInterface->setFieldOrder(domainField, order);
 
   CHKERR simpleInterface->setUp();
@@ -119,8 +160,8 @@ MoFEMErrorCode NonlinearPoisson::setupProblem() {
 MoFEMErrorCode NonlinearPoisson::setIntegrationRules() {
   MoFEMFunctionBegin;
 
-  auto domain_rule_lhs = [](int, int, int p) -> int { return 2 * (p - 1); };
-  auto domain_rule_rhs = [](int, int, int p) -> int { return 2 * (p - 1); };
+  auto domain_rule_lhs = [](int, int, int p) -> int { return 2 * p - 1; };
+  auto domain_rule_rhs = [](int, int, int p) -> int { return 2 * p - 1; };
 
   auto boundary_rule_lhs = [](int, int, int p) -> int { return 2 * p; };
   auto boundary_rule_rhs = [](int, int, int p) -> int { return 2 * p; };
@@ -323,6 +364,86 @@ MoFEMErrorCode NonlinearPoisson::outputResults() {
 
   MoFEMFunctionReturn(0);
 }
+
+//! [Check]
+MoFEMErrorCode NonlinearPoisson::checkResults() {
+  MoFEMFunctionBegin;
+  auto check_result_fe_ptr = boost::make_shared<DomainEle>(mField);
+  auto errorVec =
+      createVectorMPI(mField.get_comm(),
+                      (mField.get_comm_rank() == 0) ? LAST_NORM : 0, LAST_NORM);
+  auto exactVec = createVectorMPI(
+      mField.get_comm(), (mField.get_comm_rank() == 0) ? LAST_EX_NORM : 0,
+      LAST_EX_NORM);
+  CHK_THROW_MESSAGE((AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+                        check_result_fe_ptr->getOpPtrVector(), {H1})),
+                    "Apply transform");
+  check_result_fe_ptr->getRuleHook = [](int, int, int p) { return p; };
+  auto analyticalFunction = [&](double x, double y, double z) {
+    return cos(M_PI * x) * cos(M_PI * y);
+  };
+  auto u_ptr = boost::make_shared<VectorDouble>();
+  check_result_fe_ptr->getOpPtrVector().push_back(
+      new OpCalculateScalarFieldValues(domainField, u_ptr));
+  auto mValFuncPtr = boost::make_shared<VectorDouble>();
+  check_result_fe_ptr->getOpPtrVector().push_back(
+      new OpGetTensor0fromFunc(mValFuncPtr, analyticalFunction));
+  check_result_fe_ptr->getOpPtrVector().push_back(
+      new OpCalcNormL2Tensor0(u_ptr, errorVec, NORM, mValFuncPtr));
+  check_result_fe_ptr->getOpPtrVector().push_back(
+      new OpCalcNormL2Tensor0(u_ptr, exactVec, EX_NORM));
+  CHKERR VecZeroEntries(errorVec);
+  CHKERR VecZeroEntries(exactVec);
+  CHKERR DMoFEMLoopFiniteElements(simpleInterface->getDM(),
+                                  simpleInterface->getDomainFEName(),
+                                  check_result_fe_ptr);
+  CHKERR VecAssemblyBegin(errorVec);
+  CHKERR VecAssemblyEnd(errorVec);
+  CHKERR VecAssemblyBegin(exactVec);
+  CHKERR VecAssemblyEnd(exactVec);
+  MOFEM_LOG_CHANNEL("SELF"); // Clear channel from old tags
+  // print norm in general log
+  if (mField.get_comm_rank() == 0) {
+    const double *L2_norms;
+    const double *Ex_norms;
+    CHKERR VecGetArrayRead(errorVec, &L2_norms);
+    CHKERR VecGetArrayRead(exactVec, &Ex_norms);
+    MOFEM_TAG_AND_LOG("SELF", Sev::inform, "Errors")
+        << "L2_NORM: " << std::sqrt(L2_norms[NORM]);
+    MOFEM_TAG_AND_LOG("SELF", Sev::inform, "Errors")
+        << "NORMALISED_ERROR: "
+        << (std::sqrt(L2_norms[NORM]) / std::sqrt(Ex_norms[EX_NORM]));
+    CHKERR VecRestoreArrayRead(errorVec, &L2_norms);
+    CHKERR VecRestoreArrayRead(exactVec, &Ex_norms);
+  }
+  // compare norm for ctest
+  if (atomTest && !mField.get_comm_rank()) {
+    const double *L2_norms;
+    const double *Ex_norms;
+    CHKERR VecGetArrayRead(errorVec, &L2_norms);
+    CHKERR VecGetArrayRead(exactVec, &Ex_norms);
+    double ref_percentage = 4.4e-04;
+    double normalised_error;
+    switch (atomTest) {
+    case 1: // 2D
+      normalised_error = std::sqrt(L2_norms[0]) / std::sqrt(Ex_norms[0]);
+      break;
+    default:
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
+               "atom test %d does not exist", atomTest);
+    }
+    if (normalised_error > ref_percentage) {
+      SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+               "atom test %d failed! Calculated Norm %3.16e is greater than "
+               "reference Norm %3.16e",
+               atomTest, normalised_error, ref_percentage);
+    }
+    CHKERR VecRestoreArrayRead(errorVec, &L2_norms);
+    CHKERR VecRestoreArrayRead(exactVec, &Ex_norms);
+  }
+  MoFEMFunctionReturn(0);
+}
+//! [Check]
 
 int main(int argc, char *argv[]) {
 
