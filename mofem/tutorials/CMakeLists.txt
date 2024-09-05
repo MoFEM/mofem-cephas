@@ -133,6 +133,7 @@ set(TUTORIALS_DIRS
   mix-0
   mix-1
   mix-2
+  mix-5
   max-0
   max-1
   adv-0

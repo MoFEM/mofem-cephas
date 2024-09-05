@@ -1,5 +1,5 @@
 # copy dox/figures to html directory created by doxygen
-add_custom_target(basic_tutorials_mix_0
+add_custom_target(basic_tutorials_mix_5
   ${CMAKE_COMMAND} -E copy_directory
   ${ADD_DOC_DIRECTORY}/figures ${PROJECT_BINARY_DIR}/html)
-add_dependencies(doc basic_tutorials_mix_0)
+add_dependencies(doc basic_tutorials_mix_5)
