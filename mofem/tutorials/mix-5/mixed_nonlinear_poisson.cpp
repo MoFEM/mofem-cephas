@@ -1,6 +1,6 @@
 /**
- * \file mixed_poisson.cpp
- * \example mixed_poisson.cpp
+ * \file mixed_nonlinear_poisson.cpp
+ * \example mixed_nonlinear_poisson.cpp
  *
  * MixedPoisson intended to show how to solve mixed formulation of the Dirichlet
  * problem for the Poisson equation using error indicators and p-adaptivity
@@ -166,6 +166,7 @@ MoFEMErrorCode MixedPoisson::setupProblem() {
   MoFEMFunctionBegin;
 
   CHKERR simpleInterface->addDomainField("U", L2, AINSWORTH_LEGENDRE_BASE, 1);
+  CHKERR simpleInterface->addBoundaryField("U", L2, AINSWORTH_LEGENDRE_BASE, 1);
 
   int nb_quads = 0;
   CHKERR mField.get_moab().get_number_entities_by_type(0, MBQUAD, nb_quads);
@@ -179,6 +180,7 @@ MoFEMErrorCode MixedPoisson::setupProblem() {
   // only base for HCURL has been implemented in 2D. Base vectors for HDIV space
   // are be obtained after rotation of HCURL base vectors by a right angle
   CHKERR simpleInterface->addDomainField("Q", HCURL, base, 1);
+  CHKERR simpleInterface->addBoundaryField("Q", HCURL, base, 1);
 
   thetaParam = 0.5;
   CHKERR PetscOptionsGetReal(PETSC_NULL, "", "-theta", &thetaParam, PETSC_NULL);
@@ -212,6 +214,8 @@ MoFEMErrorCode MixedPoisson::setIntegrationRules() {
   PipelineManager *pipeline_mng = mField.getInterface<PipelineManager>();
   CHKERR pipeline_mng->setDomainLhsIntegrationRule(rule);
   CHKERR pipeline_mng->setDomainRhsIntegrationRule(rule);
+  CHKERR pipeline_mng->setBoundaryLhsIntegrationRule(rule);
+  CHKERR pipeline_mng->setBoundaryRhsIntegrationRule(rule);
 
   MoFEMFunctionReturn(0);
 }

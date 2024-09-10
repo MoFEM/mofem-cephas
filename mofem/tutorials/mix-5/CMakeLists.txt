@@ -20,7 +20,7 @@ tutorials_copy_and_install("*.sh" "${permissions_execute}")
 tutorials_copy_and_install("*.geo" "${permissions_execute}")
 
 tutorials_build_and_install(
-  mixed_nonlinear_poisson ${CMAKE_CURRENT_SOURCE_DIR}/mixed_poisson.cpp)
+  mixed_nonlinear_poisson ${CMAKE_CURRENT_SOURCE_DIR}/mixed_nonlinear_poisson.cpp)
 
 tutorials_build_and_install(
   standard_nonlinear_poisson ${CMAKE_CURRENT_SOURCE_DIR}/standard_poisson.cpp)
