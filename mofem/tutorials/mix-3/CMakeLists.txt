@@ -26,7 +26,7 @@ tutorials_build_and_install(
   standard_nonlinear_poisson ${CMAKE_CURRENT_SOURCE_DIR}/standard_poisson.cpp)
 
 add_test(
-  mixed_poisson
+  mixed_nonlinear_poisson
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2
   ${CMAKE_CURRENT_BINARY_DIR}/mixed_nonlinear_poisson
   -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh2d.h5m -log_no_color)
