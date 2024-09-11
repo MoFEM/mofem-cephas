@@ -2,35 +2,24 @@
  * \file mixed_nonlinear_poisson.cpp
  * \example mixed_nonlinear_poisson.cpp
  *
- * MixedPoisson intended to show how to solve mixed formulation of the Dirichlet
+ * MixedNonlinearPoisson intended to show how to solve mixed formulation of the Dirichlet
  * problem for the Poisson equation using error indicators and p-adaptivity
  *
  */
-
+#include <stdlib.h>
 #include <MoFEM.hpp>
+#include <mixed_nonlinear_poisson.hpp>
 
 using namespace MoFEM;
+using namespace MixedNonlinearPoissonOps;
 
 static char help[] = "...\n\n";
 
-#include <MoFEM.hpp>
-
-using DomainEle = PipelineManager::FaceEle;
-using DomainEleOp = DomainEle::UserDataOperator;
-using EntData = EntitiesFieldData::EntData;
-
-using OpHdivHdiv = FormsIntegrators<DomainEleOp>::Assembly<PETSC>::BiLinearForm<
-    GAUSS>::OpMass<3, 2>;
-using OpHdivU = FormsIntegrators<DomainEleOp>::Assembly<PETSC>::BiLinearForm<
-    GAUSS>::OpMixDivTimesScalar<2>;
-using OpDomainSource = FormsIntegrators<DomainEleOp>::Assembly<
-    PETSC>::LinearForm<GAUSS>::OpSource<1, 1>;
-
 inline double sqr(double x) { return x * x; }
 
-struct MixedPoisson {
+struct MixedNonlinearPoisson {
 
-  MixedPoisson(MoFEM::Interface &m_field) : mField(m_field) {}
+  MixedNonlinearPoisson(MoFEM::Interface &m_field) : mField(m_field) {}
   MoFEMErrorCode runProblem();
 
 private:
@@ -141,7 +130,7 @@ private:
 };
 
 //! [Run programme]
-MoFEMErrorCode MixedPoisson::runProblem() {
+MoFEMErrorCode MixedNonlinearPoisson::runProblem() {
   MoFEMFunctionBegin;
   CHKERR readMesh();
   CHKERR setupProblem();
@@ -152,7 +141,7 @@ MoFEMErrorCode MixedPoisson::runProblem() {
 //! [Run programme]
 
 //! [Read mesh]
-MoFEMErrorCode MixedPoisson::readMesh() {
+MoFEMErrorCode MixedNonlinearPoisson::readMesh() {
   MoFEMFunctionBegin;
   CHKERR mField.getInterface(simpleInterface);
   CHKERR simpleInterface->getOptions();
@@ -162,7 +151,7 @@ MoFEMErrorCode MixedPoisson::readMesh() {
 //! [Read mesh]
 
 //! [Set up problem]
-MoFEMErrorCode MixedPoisson::setupProblem() {
+MoFEMErrorCode MixedNonlinearPoisson::setupProblem() {
   MoFEMFunctionBegin;
 
   CHKERR simpleInterface->addDomainField("U", L2, AINSWORTH_LEGENDRE_BASE, 1);
@@ -206,7 +195,7 @@ MoFEMErrorCode MixedPoisson::setupProblem() {
 //! [Set up problem]
 
 //! [Set integration rule]
-MoFEMErrorCode MixedPoisson::setIntegrationRules() {
+MoFEMErrorCode MixedNonlinearPoisson::setIntegrationRules() {
   MoFEMFunctionBegin;
 
   auto rule = [](int, int, int p) -> int { return 2 * p; };
@@ -222,7 +211,7 @@ MoFEMErrorCode MixedPoisson::setIntegrationRules() {
 //! [Set integration rule]
 
 //! [Create common data]
-MoFEMErrorCode MixedPoisson::createCommonData() {
+MoFEMErrorCode MixedNonlinearPoisson::createCommonData() {
   MoFEMFunctionBegin;
   commonDataPtr = boost::make_shared<CommonData>();
   PetscInt ghosts[3] = {0, 1, 2};
@@ -240,7 +229,7 @@ MoFEMErrorCode MixedPoisson::createCommonData() {
 //! [Create common data]
 
 //! [Assemble system]
-MoFEMErrorCode MixedPoisson::assembleSystem() {
+MoFEMErrorCode MixedNonlinearPoisson::assembleSystem() {
   MoFEMFunctionBegin;
   PipelineManager *pipeline_mng = mField.getInterface<PipelineManager>();
   pipeline_mng->getDomainLhsFE().reset();
@@ -266,7 +255,7 @@ MoFEMErrorCode MixedPoisson::assembleSystem() {
 //! [Assemble system]
 
 //! [Solve]
-MoFEMErrorCode MixedPoisson::solveSystem() {
+MoFEMErrorCode MixedNonlinearPoisson::solveSystem() {
   MoFEMFunctionBegin;
   PipelineManager *pipeline_mng = mField.getInterface<PipelineManager>();
   auto solver = pipeline_mng->createKSP();
@@ -287,7 +276,7 @@ MoFEMErrorCode MixedPoisson::solveSystem() {
 //! [Solve]
 
 //! [Refine]
-MoFEMErrorCode MixedPoisson::refineOrder(int iter_num) {
+MoFEMErrorCode MixedNonlinearPoisson::refineOrder(int iter_num) {
   MoFEMFunctionBegin;
   Tag th_error_ind, th_order;
   CHKERR getTagHandle(mField, "ERROR_INDICATOR", MB_TYPE_DOUBLE, th_error_ind);
@@ -342,7 +331,7 @@ MoFEMErrorCode MixedPoisson::refineOrder(int iter_num) {
 //! [Refine]
 
 //! [Solve and refine loop]
-MoFEMErrorCode MixedPoisson::solveRefineLoop() {
+MoFEMErrorCode MixedNonlinearPoisson::solveRefineLoop() {
   MoFEMFunctionBegin;
   CHKERR assembleSystem();
   CHKERR setIntegrationRules();
@@ -372,7 +361,7 @@ MoFEMErrorCode MixedPoisson::solveRefineLoop() {
 //! [Solve and refine loop]
 
 //! [Check error]
-MoFEMErrorCode MixedPoisson::checkError(int iter_num) {
+MoFEMErrorCode MixedNonlinearPoisson::checkError(int iter_num) {
   MoFEMFunctionBegin;
   PipelineManager *pipeline_mng = mField.getInterface<PipelineManager>();
   pipeline_mng->getDomainLhsFE().reset();
@@ -447,12 +436,10 @@ MoFEMErrorCode MixedPoisson::checkError(int iter_num) {
 //! [Check error]
 
 //! [Output results]
-MoFEMErrorCode MixedPoisson::outputResults(int iter_num) {
+MoFEMErrorCode MixedNonlinearPoisson::outputResults(int iter_num) {
   MoFEMFunctionBegin;
   PipelineManager *pipeline_mng = mField.getInterface<PipelineManager>();
   pipeline_mng->getDomainLhsFE().reset();
-
-  using PostProcEle = PostProcBrokenMeshInMoab<DomainEle>;
 
   auto post_proc_fe = boost::make_shared<PostProcEle>(mField);
 
@@ -495,7 +482,7 @@ MoFEMErrorCode MixedPoisson::outputResults(int iter_num) {
 //! [Output results]
 
 //! [OpError]
-MoFEMErrorCode MixedPoisson::OpError::doWork(int side, EntityType type,
+MoFEMErrorCode MixedNonlinearPoisson::OpError::doWork(int side, EntityType type,
                                              EntData &data) {
   MoFEMFunctionBegin;
   const int nb_integration_pts = getGaussPts().size2();
@@ -514,11 +501,11 @@ MoFEMErrorCode MixedPoisson::OpError::doWork(int side, EntityType type,
   for (int gg = 0; gg != nb_integration_pts; ++gg) {
     const double alpha = t_w * area;
 
-    double diff = t_val - MixedPoisson::analyticalFunction(
+    double diff = t_val - MixedNonlinearPoisson::analyticalFunction(
                               t_coords(0), t_coords(1), t_coords(2));
     error_l2 += alpha * sqr(diff);
 
-    VectorDouble vec = MixedPoisson::analyticalFunctionGrad(
+    VectorDouble vec = MixedNonlinearPoisson::analyticalFunctionGrad(
         t_coords(0), t_coords(1), t_coords(2));
     auto t_fun_grad = getFTensor1FromArray<2, 2>(vec);
     t_diff(i) = t_val_grad(i) - t_fun_grad(i);
@@ -536,11 +523,11 @@ MoFEMErrorCode MixedPoisson::OpError::doWork(int side, EntityType type,
 
   const EntityHandle ent = getFEEntityHandle();
   Tag th_error_l2, th_error_h1, th_error_ind;
-  CHKERR MixedPoisson::getTagHandle(mField, "ERROR_L2_NORM", MB_TYPE_DOUBLE,
+  CHKERR MixedNonlinearPoisson::getTagHandle(mField, "ERROR_L2_NORM", MB_TYPE_DOUBLE,
                                     th_error_l2);
-  CHKERR MixedPoisson::getTagHandle(mField, "ERROR_H1_SEMINORM", MB_TYPE_DOUBLE,
+  CHKERR MixedNonlinearPoisson::getTagHandle(mField, "ERROR_H1_SEMINORM", MB_TYPE_DOUBLE,
                                     th_error_h1);
-  CHKERR MixedPoisson::getTagHandle(mField, "ERROR_INDICATOR", MB_TYPE_DOUBLE,
+  CHKERR MixedNonlinearPoisson::getTagHandle(mField, "ERROR_INDICATOR", MB_TYPE_DOUBLE,
                                     th_error_ind);
 
   double error_l2_norm = sqrt(error_l2);
@@ -579,7 +566,7 @@ int main(int argc, char *argv[]) {
   core_log->add_sink(
       LogManager::createSink(LogManager::getStrmWorld(), "EXAMPLE"));
   LogManager::setLog("EXAMPLE");
-  MOFEM_LOG_TAG("EXAMPLE", "MixedPoisson");
+  MOFEM_LOG_TAG("EXAMPLE", "MixedNonlinearPoisson");
 
   try {
     //! [Register MoFEM discrete manager in PETSc]
@@ -597,10 +584,10 @@ int main(int argc, char *argv[]) {
     MoFEM::Interface &m_field = core; ///< finite element database interface
     //! [Create MoFEM]
 
-    //! [MixedPoisson]
-    MixedPoisson ex(m_field);
+    //! [MixedNonlinearPoisson]
+    MixedNonlinearPoisson ex(m_field);
     CHKERR ex.runProblem();
-    //! [MixedPoisson]
+    //! [MixedNonlinearPoisson]
   }
   CATCH_ERRORS;
 
