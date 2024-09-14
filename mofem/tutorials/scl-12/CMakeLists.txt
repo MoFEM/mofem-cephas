@@ -48,14 +48,14 @@ tutorials_build_and_install(
 
 # sigma=+-10.0 on the electrode; ep_air:1, ep1: 2, ep2: 3;
   add_test(
-    electro_2d
+    electrostatic_2d
     ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4
     electrostatics_2d
     -file_name ${CMAKE_CURRENT_SOURCE_DIR}/mesh_files/elec_2D_4p.h5m
     -atom_test 1)
 
   add_test(
-    electro_3d
+    electrostatic_3d
     ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4
     electrostatics_3d
     -file_name ${CMAKE_CURRENT_SOURCE_DIR}/mesh_files/elec_3D_4p.h5m

@@ -32,7 +32,7 @@ template <> struct intPostProc<3> {
   using intEle = MoFEM::FaceElementForcesAndSourcesCore;
 };
 
-using intElementForcesAndSourcesCore = intPostProc<SPACE_DIM>::intEle;
+using IntElementForcesAndSourcesCore = intPostProc<SPACE_DIM>::intEle;
 
 // forms integrators to calculate the LHS and RHS
 using OpDomainLhsMatrixK =

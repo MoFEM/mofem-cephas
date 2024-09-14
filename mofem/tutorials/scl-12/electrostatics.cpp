@@ -4,7 +4,7 @@
  *  */
 
 #ifndef EXECUTABLE_DIMENSION
-  #define EXECUTABLE_DIMENSION 3
+#define EXECUTABLE_DIMENSION 3
 #endif
 
 #include <electrostatics.hpp>
@@ -35,22 +35,20 @@ private:
   boost::shared_ptr<std::map<int, BlockData>> permBlockSetsPtr;
   boost::shared_ptr<std::map<int, BlockData>> intBlockSetsPtr;
   boost::shared_ptr<std::map<int, BlockData>> electrodeBlockSetsPtr;
-  boost::shared_ptr<std::map<int, BlockData>> intrnlDomainBlockSetsPtr;
   boost::shared_ptr<DataAtIntegrationPts> commonDataPtr;
 
-  boost::shared_ptr<ForcesAndSourcesCore> interface_rhs_fe;
-  boost::shared_ptr<ForcesAndSourcesCore> electrode_rhs_fe;
+  boost::shared_ptr<ForcesAndSourcesCore> interFaceRhsFe;
+  boost::shared_ptr<ForcesAndSourcesCore> electrodeRhsFe;
 
-  double ALPHA = 0.0;       // declaration for total charge on first electrode
-  double BETA = 0.0;        // declaration for total charge on second electrode
-  double totalEnergy = 0.0; // declaration for total energy
+
+  double aLpha = 0.0; // declaration for total charge on first electrode
+  double bEta = 0.0;  // declaration for total charge on second electrode
   SmartPetscObj<Vec> petscVec;       // petsc vector for the charge solution
   SmartPetscObj<Vec> petscVecEnergy; // petsc vector for the energy solution
   PetscBool out_skin = PETSC_FALSE;  //
-  PetscBool out_volume = PETSC_FALSE;
   PetscBool is_partitioned = PETSC_FALSE;
   enum VecElements { ZERO = 0, ONE = 1, LAST_ELEMENT };
-  int atom_test = 0;
+  int atomTest = 0;
 };
 
 Electrostatics::Electrostatics(MoFEM::Interface &m_field)
@@ -119,8 +117,7 @@ MoFEMErrorCode Electrostatics::setupProblem() {
 
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &oRder, PETSC_NULL);
   CHKERR simpleInterface->setFieldOrder(domainField, oRder);
-  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-atom_test", &atom_test,
-                            PETSC_NULL);
+  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-atomTest", &atomTest, PETSC_NULL);
   commonDataPtr = boost::make_shared<DataAtIntegrationPts>(mField);
 
   // gets the map of the permittivity attributes and the block sets
@@ -203,20 +200,6 @@ MoFEMErrorCode Electrostatics::setupProblem() {
     }
   }
 
-  // gets the map of the internal domain entity range to get the total energy
-  intrnlDomainBlockSetsPtr = boost::make_shared<std::map<int, BlockData>>();
-  Range internal_domain; // range of entities marked the internal domain
-  for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField, BLOCKSET, bit)) {
-    if (bit->getName().compare(0, 10, "DOMAIN_INT") == 0) {
-      const int id = bit->getMeshsetId();
-      auto &block_data = (*intrnlDomainBlockSetsPtr)[id];
-
-      CHKERR mField.get_moab().get_entities_by_dimension(
-          bit->getMeshset(), SPACE_DIM, block_data.internalDomainEnts, true);
-      internal_domain.merge(block_data.internalDomainEnts);
-      block_data.iD = id;
-    }
-  }
   // sync entities
   CHKERR mField.getInterface<CommInterface>()->synchroniseEntities(
       mat_electr_ents);
@@ -224,12 +207,8 @@ MoFEMErrorCode Electrostatics::setupProblem() {
       int_electr_ents);
   CHKERR mField.getInterface<CommInterface>()->synchroniseEntities(
       electrode_ents);
-  CHKERR mField.getInterface<CommInterface>()->synchroniseEntities(
-      internal_domain);
 
   CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-out_skin", &out_skin,
-                             PETSC_NULL);
-  CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-out_volume", &out_volume,
                              PETSC_NULL);
   CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-is_partitioned", &is_partitioned,
                              PETSC_NULL);
@@ -379,10 +358,10 @@ MoFEMErrorCode Electrostatics::assembleSystem() {
           FormsIntegrators<DomainEleOp>::Assembly<PETSC>::LinearForm<
               GAUSS>::OpGradTimesTensor<BASE_DIM, FIELD_DIM, SPACE_DIM>;
 
-      auto gradUValsPtr = boost::make_shared<MatrixDouble>();
+      auto grad_u_ptr = boost::make_shared<MatrixDouble>();
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpCalculateScalarFieldGradient<SPACE_DIM>(domainField,
-                                                        gradUValsPtr));
+                                                        grad_u_ptr));
 
       add_base_ops(pipeline_mng->getOpDomainRhsPipeline());
 
@@ -390,7 +369,7 @@ MoFEMErrorCode Electrostatics::assembleSystem() {
         return -commonDataPtr->blockPermittivity;
       };
       pipeline_mng->getOpDomainRhsPipeline().push_back(
-          new OpInternal(domainField, gradUValsPtr, minus_epsilon));
+          new OpInternal(domainField, grad_u_ptr, minus_epsilon));
     };
 
     set_values_to_bc_dofs(pipeline_mng->getDomainRhsFE());
@@ -403,19 +382,19 @@ MoFEMErrorCode Electrostatics::assembleSystem() {
         new OpBodySourceVectorb(domainField, bodySourceTerm));
   }
 
-  interface_rhs_fe = boost::shared_ptr<ForcesAndSourcesCore>(
-      new intElementForcesAndSourcesCore(mField));
-  interface_rhs_fe->getRuleHook = [](int, int, int p) { return p; };
+  interFaceRhsFe = boost::shared_ptr<ForcesAndSourcesCore>(
+      new IntElementForcesAndSourcesCore(mField));
+  interFaceRhsFe->getRuleHook = [](int, int, int p) { return p; };
 
   {
-    interface_rhs_fe->getOpPtrVector().push_back(
+    interFaceRhsFe->getOpPtrVector().push_back(
         new OpBlockChargeDensity(commonDataPtr, intBlockSetsPtr, domainField));
 
     auto sIgma = [&](const double, const double, const double) {
       return commonDataPtr->blockChrgDens;
     };
 
-    interface_rhs_fe->getOpPtrVector().push_back(
+    interFaceRhsFe->getOpPtrVector().push_back(
         new OpInterfaceRhsVectorF(domainField, sIgma));
   }
 
@@ -433,7 +412,7 @@ MoFEMErrorCode Electrostatics::solveSystem() {
 
   boost::shared_ptr<ForcesAndSourcesCore> null; ///< Null element does
   CHKERR DMMoFEMKSPSetComputeRHS(simpleInterface->getDM(), "INTERFACE",
-                                 interface_rhs_fe, null, null);
+                                 interFaceRhsFe, null, null);
 
   CHKERR KSPSetFromOptions(ksp_solver);
   CHKERR KSPSetUp(ksp_solver);
@@ -475,47 +454,47 @@ MoFEMErrorCode Electrostatics::outputResults() {
   pipeline_mng->getBoundaryRhsFE().reset(); //
   pipeline_mng->getDomainLhsFE().reset();
   auto post_proc_fe = boost::make_shared<PostProcEle>(mField);
-  // add higher order operator
-  CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
-      post_proc_fe->getOpPtrVector(), {H1});
+  auto u_ptr = boost::make_shared<VectorDouble>();
+  auto grad_u_ptr = boost::make_shared<MatrixDouble>();
+  auto e_field_ptr = boost::make_shared<MatrixDouble>();
+  // lamda function to calculate electric field
+  auto add_efield_ops = [&](auto &pipeline) {
+    // add higher order operator
+    CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(pipeline, {H1});
+    // calculate field values
+    pipeline.push_back(new OpCalculateScalarFieldValues(domainField, u_ptr));
+    // calculate gradient
+    pipeline.push_back(
+        new OpCalculateScalarFieldGradient<SPACE_DIM>(domainField, grad_u_ptr));
+    // calculate electric field
+    pipeline.push_back(new OpElectricField(e_field_ptr, grad_u_ptr));
+  };
 
-  auto uPtr = boost::make_shared<VectorDouble>();
-  auto gradUPtr = boost::make_shared<MatrixDouble>();
-  post_proc_fe->getOpPtrVector().push_back(
-      new OpCalculateScalarFieldValues(domainField, uPtr));
+  add_efield_ops(post_proc_fe->getOpPtrVector());
+
+  auto e_field_times_perm_ptr = boost::make_shared<MatrixDouble>();
+  auto energy_density_ptr = boost::make_shared<VectorDouble>();
 
   post_proc_fe->getOpPtrVector().push_back(
-      new OpCalculateScalarFieldGradient<SPACE_DIM>(domainField, gradUPtr));
+      new OpGradTimesPerm(domainField, e_field_ptr, e_field_times_perm_ptr,
+                          permBlockSetsPtr, commonDataPtr));
+  post_proc_fe->getOpPtrVector().push_back(
+      new OpEnergyDensity(domainField, e_field_ptr, energy_density_ptr,
+                          permBlockSetsPtr, commonDataPtr));
 
   using OpPPMap = OpPostProcMapInMoab<SPACE_DIM, SPACE_DIM>;
+  post_proc_fe->getOpPtrVector().push_back(new OpPPMap(
+      post_proc_fe->getPostProcMesh(), post_proc_fe->getMapGaussPts(),
 
-  auto negGradUPtr = boost::make_shared<MatrixDouble>();
-  auto negGradUPtrTimesPerm = boost::make_shared<MatrixDouble>();
-  auto energyDensityPtr = boost::make_shared<VectorDouble>();
-  post_proc_fe->getOpPtrVector().push_back(
-      new OpElectricField(negGradUPtr, gradUPtr));
+      OpPPMap::DataMapVec{{"POTENTIAL", u_ptr},
+                          {"ENERGY_DENSITY", energy_density_ptr}},
+      OpPPMap::DataMapMat{
+          {"ELECTRIC_FIELD", e_field_ptr},
+          {"ELECTRIC_DISPLACEMENT", e_field_times_perm_ptr},
+      },
+      OpPPMap::DataMapMat{},
 
-  post_proc_fe->getOpPtrVector().push_back(
-      new OpGradTimesPerm(domainField, negGradUPtr, negGradUPtrTimesPerm,
-                          permBlockSetsPtr, commonDataPtr));
-  post_proc_fe->getOpPtrVector().push_back(
-      new OpEnergyDensity(domainField, negGradUPtr, energyDensityPtr,
-                          permBlockSetsPtr, commonDataPtr));
-
-  post_proc_fe->getOpPtrVector().push_back(
-
-      new OpPPMap(post_proc_fe->getPostProcMesh(),
-                  post_proc_fe->getMapGaussPts(),
-
-                  OpPPMap::DataMapVec{{"POTENTIAL", uPtr},
-                                      {"ENERGY_DENSITY", energyDensityPtr}},
-                  OpPPMap::DataMapMat{
-                      {"ELECTRIC_FIELD", negGradUPtr},
-                      {"ELECTRIC_DISPLACEMENT", negGradUPtrTimesPerm},
-                  },
-                  OpPPMap::DataMapMat{},
-
-                  OpPPMap::DataMapMat{})
+      OpPPMap::DataMapMat{})
 
   );
 
@@ -525,40 +504,27 @@ MoFEMErrorCode Electrostatics::outputResults() {
 
   if (out_skin && SPACE_DIM == 3) {
     auto post_proc_skin = boost::make_shared<PostProcFaceEle>(mField);
-    auto op_loop_side = new OpLoopSide<SideEle>(
+    auto op_loop_skin = new OpLoopSide<SideEle>(
         mField, simpleInterface->getDomainFEName(), SPACE_DIM);
-    CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
-        op_loop_side->getOpPtrVector(), {H1});
 
-    auto uPtrSkin = boost::make_shared<VectorDouble>();
-    auto gradUPtrSkin = boost::make_shared<MatrixDouble>();
-    auto negGradUSkinPtrSkin = boost::make_shared<MatrixDouble>();
-    auto elecDisplacementSkin = boost::make_shared<MatrixDouble>();
-    auto energyDensityPtrSkin = boost::make_shared<VectorDouble>();
+    add_efield_ops(op_loop_skin->getOpPtrVector());
 
-    op_loop_side->getOpPtrVector().push_back(
-        new OpCalculateScalarFieldValues(domainField, uPtrSkin));
-    op_loop_side->getOpPtrVector().push_back(
-        new OpCalculateScalarFieldGradient<SPACE_DIM>(domainField,
-                                                      gradUPtrSkin));
-    op_loop_side->getOpPtrVector().push_back(
-        new OpElectricField(negGradUSkinPtrSkin, gradUPtrSkin));
-    op_loop_side->getOpPtrVector().push_back(new OpGradTimesPerm(
-        domainField, negGradUSkinPtrSkin, elecDisplacementSkin,
-        permBlockSetsPtr, commonDataPtr));
-    op_loop_side->getOpPtrVector().push_back(new OpEnergyDensity(
-        domainField, negGradUSkinPtrSkin, energyDensityPtrSkin,
-        permBlockSetsPtr, commonDataPtr));
+    op_loop_skin->getOpPtrVector().push_back(
+        new OpGradTimesPerm(domainField, e_field_ptr, e_field_times_perm_ptr,
+                            permBlockSetsPtr, commonDataPtr));
+    op_loop_skin->getOpPtrVector().push_back(
+        new OpEnergyDensity(domainField, e_field_ptr, energy_density_ptr,
+                            permBlockSetsPtr, commonDataPtr));
 
     // push op to boundary element
-    post_proc_skin->getOpPtrVector().push_back(op_loop_side);
+    post_proc_skin->getOpPtrVector().push_back(op_loop_skin);
 
     post_proc_skin->getOpPtrVector().push_back(new OpPPMap(
         post_proc_skin->getPostProcMesh(), post_proc_skin->getMapGaussPts(),
-        OpPPMap::DataMapVec{{"POTENTIAL", uPtrSkin},
-                            {"ENERGY_DENSITY", energyDensityPtrSkin}},
-        OpPPMap::DataMapMat{{"ELECTRIC_FIELD", negGradUSkinPtrSkin},
-                            {"ELECTRIC_DISPLACEMENT", elecDisplacementSkin}},
+        OpPPMap::DataMapVec{{"POTENTIAL", u_ptr},
+                            {"ENERGY_DENSITY", energy_density_ptr}},
+        OpPPMap::DataMapMat{{"ELECTRIC_FIELD", e_field_ptr},
+                            {"ELECTRIC_DISPLACEMENT", e_field_times_perm_ptr}},
         OpPPMap::DataMapMat{}, OpPPMap::DataMapMat{}));
 
     CHKERR DMoFEMLoopFiniteElements(simpleInterface->getDM(), "SKIN",
@@ -572,45 +538,63 @@ MoFEMErrorCode Electrostatics::outputResults() {
 //! [Get Total Energy]
 MoFEMErrorCode Electrostatics::getTotalEnergy() {
   MoFEMFunctionBegin;
-  auto pipeline_energy = mField.getInterface<PipelineManager>();
-  pipeline_energy->getDomainRhsFE().reset();
-  pipeline_energy->getDomainLhsFE().reset();
-  pipeline_energy->getBoundaryLhsFE().reset();
-  pipeline_energy->getBoundaryRhsFE().reset();
-  pipeline_energy->getOpDomainRhsPipeline().clear();
-  pipeline_energy->getOpDomainLhsPipeline().clear();
+  auto pip_energy = mField.getInterface<PipelineManager>();
+  pip_energy->getDomainRhsFE().reset();
+  pip_energy->getDomainLhsFE().reset();
+  pip_energy->getBoundaryLhsFE().reset();
+  pip_energy->getBoundaryRhsFE().reset();
+  pip_energy->getOpDomainRhsPipeline().clear();
+  pip_energy->getOpDomainLhsPipeline().clear();
+
+  // gets the map of the internal domain entity range to get the total energy
+
+  boost::shared_ptr<std::map<int, BlockData>> intrnlDomnBlckSetPtr =
+      boost::make_shared<std::map<int, BlockData>>();
+  Range internal_domain; // range of entities marked the internal domain
+  for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField, BLOCKSET, bit)) {
+    if (bit->getName().compare(0, 10, "DOMAIN_INT") == 0) {
+      const int id = bit->getMeshsetId();
+      auto &block_data = (*intrnlDomnBlckSetPtr)[id];
+
+      CHKERR mField.get_moab().get_entities_by_dimension(
+          bit->getMeshset(), SPACE_DIM, block_data.internalDomainEnts, true);
+      internal_domain.merge(block_data.internalDomainEnts);
+      block_data.iD = id;
+    }
+  }
+  CHKERR mField.getInterface<CommInterface>()->synchroniseEntities(
+      internal_domain);
 
   CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
-      pipeline_energy->getOpDomainRhsPipeline(), {H1});
+  pip_energy->getOpDomainRhsPipeline(), {H1});
 
-  auto uPtr = boost::make_shared<VectorDouble>();
-  auto gradUValsPtr = boost::make_shared<MatrixDouble>();
-  auto negGradUPtr = boost::make_shared<MatrixDouble>();
 
-  pipeline_energy->getOpDomainRhsPipeline().push_back(
-      new OpCalculateScalarFieldValues(domainField, uPtr));
-  pipeline_energy->getOpDomainRhsPipeline().push_back(
-      new OpCalculateScalarFieldGradient<SPACE_DIM>(domainField, gradUValsPtr));
-  pipeline_energy->getOpDomainRhsPipeline().push_back(
-      new OpElectricField(negGradUPtr, gradUValsPtr));
+  auto grad_u_ptr = boost::make_shared<MatrixDouble>();
+  auto e_field_ptr = boost::make_shared<MatrixDouble>();
+
+  pip_energy->getOpDomainRhsPipeline().push_back(
+      new OpCalculateScalarFieldGradient<SPACE_DIM>(domainField, grad_u_ptr));
+  pip_energy->getOpDomainRhsPipeline().push_back(
+      new OpElectricField(e_field_ptr, grad_u_ptr));
 
   commonDataPtr = boost::make_shared<DataAtIntegrationPts>(mField);
 
-  pipeline_energy->getOpDomainRhsPipeline().push_back(new OpTotalEnergy(
-      domainField, gradUValsPtr, permBlockSetsPtr, intrnlDomainBlockSetsPtr,
-      commonDataPtr, petscVecEnergy));
+  pip_energy->getOpDomainRhsPipeline().push_back(
+      new OpTotalEnergy(domainField, grad_u_ptr, permBlockSetsPtr,
+                        intrnlDomnBlckSetPtr, commonDataPtr, petscVecEnergy));
 
-  pipeline_energy->loopFiniteElements();
+  pip_energy->loopFiniteElements();
   CHKERR VecAssemblyBegin(petscVecEnergy);
   CHKERR VecAssemblyEnd(petscVecEnergy);
 
+  double total_energy = 0.0; // declaration for total energy
   if (!mField.get_comm_rank()) {
     const double *array;
 
     CHKERR VecGetArrayRead(petscVecEnergy, &array);
-    totalEnergy = array[ZERO];
+    total_energy = array[ZERO];
     MOFEM_LOG_CHANNEL("SELF");
-    MOFEM_LOG_C("SELF", Sev::inform, "Total Energy: %6.15f", totalEnergy);
+    MOFEM_LOG_C("SELF", Sev::inform, "Total Energy: %6.15f", total_energy);
     CHKERR VecRestoreArrayRead(petscVecEnergy, &array);
   }
 
@@ -627,31 +611,31 @@ MoFEMErrorCode Electrostatics::getElectrodeCharge() {
   CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
       op_loop_side->getOpPtrVector(), {H1});
 
-  auto gradPtrCharge = boost::make_shared<MatrixDouble>();
-  auto negGradUPtrCharge = boost::make_shared<MatrixDouble>();
+  auto grad_u_ptr_charge = boost::make_shared<MatrixDouble>();
+  auto e_ptr_charge = boost::make_shared<MatrixDouble>();
 
   op_loop_side->getOpPtrVector().push_back(
       new OpCalculateScalarFieldGradient<SPACE_DIM>(domainField,
-                                                    gradPtrCharge));
+                                                    grad_u_ptr_charge));
 
   op_loop_side->getOpPtrVector().push_back(
-      new OpElectricField(negGradUPtrCharge, gradPtrCharge));
-  auto dJump = boost::make_shared<MatrixDouble>();
+      new OpElectricField(e_ptr_charge, grad_u_ptr_charge));
+  auto d_jump = boost::make_shared<MatrixDouble>();
   op_loop_side->getOpPtrVector().push_back(new OpElectricDispJump<SPACE_DIM>(
-      domainField, negGradUPtrCharge, dJump, commonDataPtr, permBlockSetsPtr));
+      domainField, e_ptr_charge, d_jump, commonDataPtr, permBlockSetsPtr));
 
-  electrode_rhs_fe = boost::shared_ptr<ForcesAndSourcesCore>(
-      new intElementForcesAndSourcesCore(mField));
-  electrode_rhs_fe->getRuleHook = [](int, int, int p) { return p; };
+  electrodeRhsFe = boost::shared_ptr<ForcesAndSourcesCore>(
+      new IntElementForcesAndSourcesCore(mField));
+  electrodeRhsFe->getRuleHook = [](int, int, int p) { return p; };
 
-  // push all the operators in on the side to the electrode_rhs_fe
-  electrode_rhs_fe->getOpPtrVector().push_back(op_loop_side);
+  // push all the operators in on the side to the electrodeRhsFe
+  electrodeRhsFe->getOpPtrVector().push_back(op_loop_side);
 
-  electrode_rhs_fe->getOpPtrVector().push_back(new OpElectrodeCharge<SPACE_DIM>(
-      domainField, dJump, petscVec, electrodeBlockSetsPtr));
+  electrodeRhsFe->getOpPtrVector().push_back(new OpElectrodeCharge<SPACE_DIM>(
+      domainField, d_jump, petscVec, electrodeBlockSetsPtr));
   CHKERR VecZeroEntries(petscVec);
   CHKERR DMoFEMLoopFiniteElementsUpAndLowRank(
-      simpleInterface->getDM(), "ELECTRODE", electrode_rhs_fe,
+      simpleInterface->getDM(), "ELECTRODE", electrodeRhsFe,
       mField.get_comm_rank(), mField.get_comm_rank());
   CHKERR VecAssemblyBegin(petscVec);
   CHKERR VecAssemblyEnd(petscVec);
@@ -660,55 +644,55 @@ MoFEMErrorCode Electrostatics::getElectrodeCharge() {
     const double *array;
 
     CHKERR(VecGetArrayRead(petscVec, &array));
-    double ALPHA = array[0]; // Use explicit index instead of ZERO
-    double BETA = array[1];  // Use explicit index instead of ONE
+    double aLpha = array[0]; // Use explicit index instead of ZERO
+    double bEta = array[1];  // Use explicit index instead of ONE
     MOFEM_LOG_CHANNEL("SELF");
     MOFEM_LOG_C("SELF", Sev::inform,
-                "CHARGE_ELEC_1: %6.15f , CHARGE_ELEC_2: %6.15f", ALPHA, BETA);
+                "CHARGE_ELEC_1: %6.15f , CHARGE_ELEC_2: %6.15f", aLpha, bEta);
 
     CHKERR(VecRestoreArrayRead(petscVec, &array));
   }
 
-  if (atom_test && !mField.get_comm_rank()) {
+  if (atomTest && !mField.get_comm_rank()) {
     double cal_charge_elec1;
     double cal_charge_elec2;
     double cal_total_energy;
-    const double *c_ptr, *e_ptr;
+    const double *c_ptr, *te_ptr;
 
     // Get a pointer to the PETSc vector data
     CHKERR(VecGetArrayRead(petscVec, &c_ptr));
-    CHKERR(VecGetArrayRead(petscVecEnergy, &e_ptr));
+    CHKERR(VecGetArrayRead(petscVecEnergy, &te_ptr));
 
     // Expected charges at the electrodes
-    double charge_elec1 = 50.0;
-    double charge_elec2 = -50.0;
+    double ref_charge_elec1 = 50.0;
+    double ref_charge_elec2 = -50.0;
     // Expected total energy of the system
-    double total_energy = 500.0;
+    double ref_tot_energy = 500.0;
 
-    switch (atom_test) {
+    switch (atomTest) {
     case 1:                        // 2D & 3D test
       cal_charge_elec1 = c_ptr[0]; // Read the  charge at the first electrode
       cal_charge_elec2 = c_ptr[1]; // Read the charge at the second electrode
-      cal_total_energy = e_ptr[0]; // Read the total energy of the system
+      cal_total_energy = te_ptr[0]; // Read the total energy of the system
       break;
     default:
       SETERRQ1(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
-               "atom test %d does not exist", atom_test);
+               "atom test %d does not exist", atomTest);
     }
 
     // Validate the results
-    if (std::abs(charge_elec1 - cal_charge_elec1) > 1e-10 ||
-        std::abs(charge_elec2 - cal_charge_elec2) > 1e-10 ||
-        std::abs(total_energy - cal_total_energy) > 1e-10) {
+    if (std::abs(ref_charge_elec1 - cal_charge_elec1) > 1e-10 ||
+        std::abs(ref_charge_elec2 - cal_charge_elec2) > 1e-10 ||
+        std::abs(ref_tot_energy - cal_total_energy) > 1e-10) {
       SETERRQ1(
           PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
           "atom test %d failed! Calculated values do not match expected values",
-          atom_test);
+          atomTest);
     }
 
     CHKERR(VecRestoreArrayRead(petscVec,
                                &c_ptr)); // Restore the PETSc vector array
-    CHKERR(VecRestoreArrayRead(petscVecEnergy, &e_ptr));
+    CHKERR(VecRestoreArrayRead(petscVecEnergy, &te_ptr));
   }
 
   MoFEMFunctionReturn(0);

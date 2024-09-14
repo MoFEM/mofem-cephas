@@ -9,6 +9,6 @@
 -mat_mumps_icntl_24 1
 -mat_mumps_icntl_13 1
 -ksp_monitor
--out_skin 0
+-out_skin 1
 -atom_test 0
 # ---
