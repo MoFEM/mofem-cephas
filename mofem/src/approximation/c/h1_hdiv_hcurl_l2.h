@@ -50,7 +50,7 @@ extern "C" {
 // H1
 
 /**
- * @brief Numer of base function on edge for H1 space
+ * @brief Number of base function on edge for H1 space
  */
 #define NBEDGE_H1(P) (((P) > 1) ? (P - 1) : 0)
 
@@ -140,16 +140,14 @@ extern "C" {
 #define NBVOLUMETET_DEMKOWICZ_HDIV(P)                                          \
   (((P) > 1) ? (P) * (P - 1) * (P + 1) / 2 : 0)
 
-#define NBFACEQUAD_DEMKOWICZ_QUAD_HDIV_GEMERAL(P, Q)                           \
+#define NBFACEQUAD_DEMKOWICZ_QUAD_HDIV_GENERAL(P, Q)                           \
   (((P) > 0 && (Q) > 0) ? ((P) * (Q)) : 0)
 #define NBFACEQUAD_DEMKOWICZ_HDIV(P)                                           \
-  (NBFACEQUAD_DEMKOWICZ_QUAD_HDIV_GEMERAL(P, P))
+  (NBFACEQUAD_DEMKOWICZ_QUAD_HDIV_GENERAL(P, P))
 #define NBVOLUMEHEX_DEMKOWICZ_FAMILY_HDIV(P, Q, R)                             \
   ((((P) > 0) && ((Q) > 0) && ((R) > 0)) ? ((P - 1) * Q * R) : 0)
 #define NBVOLUMEHEX_DEMKOWICZ_HDIV(P)                                          \
   (3 * NBVOLUMEHEX_DEMKOWICZ_FAMILY_HDIV(P, P, P))
-
-// Bubbles for H div space
 
 /**
  * @brief Get base functions on triangle for L2 space

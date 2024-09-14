@@ -427,6 +427,27 @@ static inline auto getFTensor4DdgFromMat(MatrixDouble &data) {
                                    DoubleAllocator>::get(data);
 }
 
+template <int Tensor_Dim01, int Tensor_Dim23, int S, class T>
+struct GetFTensor4DdgFromPtrImpl;
+
+template <int S, class T> struct GetFTensor4DdgFromPtrImpl<3, 3, S, T> {
+  static inline auto get(T *ptr) {
+    return FTensor::Ddg<FTensor::PackPtr<T *, S>, 3, 3>{
+
+        ptr + 0,  ptr + 1,  ptr + 2,  ptr + 3,  ptr + 4,  ptr + 5,
+        ptr + 6,  ptr + 7,  ptr + 8,  ptr + 9,  ptr + 10, ptr + 11,
+        ptr + 12, ptr + 13, ptr + 14, ptr + 15, ptr + 16, ptr + 17,
+        ptr + 18, ptr + 19, ptr + 20, ptr + 21, ptr + 22, ptr + 23,
+        ptr + 24, ptr + 25, ptr + 26, ptr + 27, ptr + 28, ptr + 29,
+        ptr + 30, ptr + 31, ptr + 32, ptr + 33, ptr + 34, ptr + 35};
+  }
+};
+
+template <int Tensor_Dim01, int Tensor_Dim23, int S = 1, class T = double>
+static inline auto getFTensor4DdgFromPtr(T *ptr) {
+  return GetFTensor4DdgFromPtrImpl<Tensor_Dim01, Tensor_Dim23, S, T>::get(ptr);
+}
+
 template <int Tensor_Dim01, int Tensor_Dim2, int S, class T, class L, class A>
 struct GetFTensor3DgFromMatImpl {};
 
@@ -1362,7 +1383,7 @@ inline MoFEMErrorCode computeMatrixInverse(MatrixDouble &mat) {
              "lapack error info = %d", info);
   info = lapack_dgetri(N, &*mat.data().begin(), N, ipv, work, lwork);
   if (info != 0)
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
              "lapack error info = %d", info);
 
   delete[] ipv;
@@ -1394,10 +1415,10 @@ inline MoFEMErrorCode solveLinearSystem(MatrixDouble &mat, VectorDouble &f) {
   int info;
   int *ipiv = new int[M];
   info = lapack_dgesv(M, nrhs, &*mat.data().begin(), M, ipiv,
-                      &*f.data().begin(), nrhs);
-
+                      &*f.data().begin(), M);
   if (info != 0) {
-    SETERRQ1(PETSC_COMM_SELF, 1, "error lapack solve dgesv info = %d", info);
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+             "error lapack solve dgesv info = %d", info);
   }
 
   delete[] ipiv;
@@ -1982,6 +2003,10 @@ template <int DIM> using m_FTIndex = FTensor::Index<'m', DIM>;
 template <int DIM> using n_FTIndex = FTensor::Index<'n', DIM>;
 template <int DIM> using I_FTIndex = FTensor::Index<'I', DIM>;
 template <int DIM> using J_FTIndex = FTensor::Index<'J', DIM>;
+template <int DIM> using K_FTIndex = FTensor::Index<'K', DIM>;
+template <int DIM> using L_FTIndex = FTensor::Index<'L', DIM>;
+template <int DIM> using M_FTIndex = FTensor::Index<'M', DIM>;
+template <int DIM> using N_FTIndex = FTensor::Index<'N', DIM>;
 
 #define FTENSOR_INDEX(DIM, I) I##_FTIndex<DIM> I;
 

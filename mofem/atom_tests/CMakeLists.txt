@@ -774,6 +774,27 @@ add_test(tensor_divergence_operator_3d_cartesian_hex
   -base ainsworth -order 3 -base demkowicz
   -log_no_color)
 
+# check approximation hdiv space in 3d
+
+build_test(hdiv_check_approx_in_3d hdiv_check_approx_in_3d.cpp)
+
+list(INSERT test_base_hdiv_check_approx_in_3d_list
+  0
+  ainsworth
+  demkowicz
+)
+foreach(test_base ${test_base_hdiv_check_approx_in_3d_list})
+  add_test(hdiv_check_approx_in_3d_${test_base}
+    ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+    ${CMAKE_CURRENT_BINARY_DIR}/hdiv_check_approx_in_3d
+    -file_name disp01.h5m 
+    -ksp_type fgmres
+    -ksp_monitor 
+    -pc_type lu 
+    -base ${test_base}
+    -log_no_color)
+endforeach(test_base IN test_base_hdiv_check_approx_in_3d_list)
+
 # add test for recording series
 build_test(record_series_atom record_series_atom.cpp)
 

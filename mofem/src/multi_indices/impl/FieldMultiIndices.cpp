@@ -209,10 +209,18 @@ Field::Field(moab::Interface &moab, const EntityHandle meshset)
           return NBEDGE_HDIV(P);
         };
         forderTable[MBTRI] = [](int P) -> int {
-          return NBFACETRI_AINSWORTH_HDIV(P);
+          return 3 * NBFACETRI_AINSWORTH_EDGE_HDIV(
+                         AinsworthOrderHooks::broken_nbfacetri_edge_hdiv(P)) +
+                 NBFACETRI_AINSWORTH_FACE_HDIV(
+                     AinsworthOrderHooks::broken_nbfacetri_face_hdiv(P));
         };
         forderTable[MBTET] = [](int P) -> int {
-          return NBVOLUMETET_AINSWORTH_HDIV(P);
+          return 6 * NBVOLUMETET_AINSWORTH_EDGE_HDIV(
+                         AinsworthOrderHooks::broken_nbvolumetet_edge_hdiv(P)) +
+                 4 * NBVOLUMETET_AINSWORTH_FACE_HDIV(
+                         AinsworthOrderHooks::broken_nbvolumetet_face_hdiv(P)) +
+                 NBVOLUMETET_AINSWORTH_VOLUME_HDIV(
+                     AinsworthOrderHooks::broken_nbvolumetet_volume_hdiv(P));
         };
         break;
       case L2:
@@ -382,8 +390,23 @@ Field::Field(moab::Interface &moab, const EntityHandle meshset)
           return 0;
         };
         forderTable[MBTET] = [](int P) -> int {
-          return 4 * NBFACETRI_AINSWORTH_HDIV(P) +
-                 NBVOLUMETET_AINSWORTH_HDIV(P);
+          return
+
+              4 * (
+
+                      3 * NBFACETRI_AINSWORTH_EDGE_HDIV(
+                              AinsworthOrderHooks::broken_nbfacetri_edge_hdiv(P)) +
+                      NBFACETRI_AINSWORTH_FACE_HDIV(
+                          AinsworthOrderHooks::broken_nbfacetri_face_hdiv(P))
+
+                          ) +
+
+              6 * NBVOLUMETET_AINSWORTH_EDGE_HDIV(
+                      AinsworthOrderHooks::broken_nbvolumetet_edge_hdiv(P)) +
+              4 * NBVOLUMETET_AINSWORTH_FACE_HDIV(
+                      AinsworthOrderHooks::broken_nbvolumetet_face_hdiv(P)) +
+              NBVOLUMETET_AINSWORTH_VOLUME_HDIV(
+                  AinsworthOrderHooks::broken_nbvolumetet_volume_hdiv(P));
         };
         break;
       default:
