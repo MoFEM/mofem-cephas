@@ -1497,10 +1497,10 @@ struct MixTransportElement {
         MoFEMFunctionBegin;
         if (data.getFieldData().size() == 0)
           MoFEMFunctionReturnHot(0);
-        int nb_gauss_pts = data.getN().size1();
-        valMap[getFaceSense()].resize(nb_gauss_pts);
-        for (int gg = 0; gg < nb_gauss_pts; gg++) {
-          valMap[getFaceSense()][gg] =
+        const auto nb_gauss_pts = data.getN().size1();
+        valMap[getSkeletonSense()].resize(nb_gauss_pts);
+        for (auto gg = 0; gg != nb_gauss_pts; gg++) {
+          valMap[getSkeletonSense()][gg] =
               inner_prod(trans(data.getN(gg)), data.getFieldData());
         }
         MoFEMFunctionReturn(0);

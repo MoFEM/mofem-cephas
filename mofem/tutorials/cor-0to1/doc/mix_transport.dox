@@ -1532,9 +1532,9 @@ struct MixTransport::MixTransportElement::OpSkeleton::OpVolSide: public MoFEM::V
     MoFEMFunctionBegin;
     if(data.getFieldData().size() == 0)  MoFEMFunctionReturnHot(0);
     int nb_gauss_pts = data.getN().size1();
-    valMap[getFaceSense()].resize(nb_gauss_pts);
+    valMap[getSkeletonSense()].resize(nb_gauss_pts);
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
-      valMap[getFaceSense()][gg] = inner_prod(trans(data.getN(gg)),data.getFieldData());
+      valMap[getSkeletonSense()][gg] = inner_prod(trans(data.getN(gg)),data.getFieldData());
     }
     MoFEMFunctionReturn(0);
   }
@@ -1545,7 +1545,7 @@ points and computes function values using base functions and DOF values.
 Results are stored in the map \b valMap. Note that internal face has two
 adjacent volume elements, whereas face on boundary has only one. Each face has a
 unique orientation (sense) in respect to face, information about that sense is
-accessed by \b getFaceSense().
+accessed by \b getSkeletonSense().
 
 Once we evaluated approximation function values at each face, we can calculate
 error \f$\eta_{e,R}\f$, using face operator
