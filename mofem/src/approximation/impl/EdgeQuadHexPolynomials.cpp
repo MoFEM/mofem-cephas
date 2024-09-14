@@ -1429,7 +1429,7 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hdiv_FaceShapeFunctions_ONHEX(
   for (int face = 0; face != 6; face++) {
 
     const int nb_dofs =
-        NBFACEQUAD_DEMKOWICZ_QUAD_HDIV_GEMERAL(p[face], p[face]);
+        NBFACEQUAD_DEMKOWICZ_QUAD_HDIV_GENERAL(p[face], p[face]);
 
     if (nb_dofs > 0) {
 

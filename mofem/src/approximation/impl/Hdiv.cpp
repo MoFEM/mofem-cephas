@@ -10,6 +10,17 @@
 
 using namespace MoFEM;
 
+boost::function<int(int)> AinsworthOrderHooks::broken_nbfacetri_edge_hdiv =
+    [](int p) { return p; };
+boost::function<int(int)> AinsworthOrderHooks::broken_nbfacetri_face_hdiv =
+    [](int p) { return p; };
+boost::function<int(int)> AinsworthOrderHooks::broken_nbvolumetet_edge_hdiv =
+    [](int p) { return p; };
+boost::function<int(int)> AinsworthOrderHooks::broken_nbvolumetet_face_hdiv =
+    [](int p) { return p; };
+boost::function<int(int)> AinsworthOrderHooks::broken_nbvolumetet_volume_hdiv =
+    [](int p) { return p; };
+
 MoFEMErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET(
     int *faces_nodes, int *p, double *N, double *diffN, double *phi_f_e[4][3],
     double *diff_phi_f_e[4][3], int gdim,
@@ -18,19 +29,18 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET(
                                        const int dim)) {
 
   MoFEMFunctionBeginHot;
+#ifdef NDEBUG
+  if (!diff_phi_f_e)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "expected to return derivatives");
+#endif
+
   for (int ff = 0; ff < 4; ff++) {
-    if (diff_phi_f_e != NULL) {
-      ierr = Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
-          &faces_nodes[3 * ff], p[ff], N, diffN, phi_f_e[ff], diff_phi_f_e[ff],
-          gdim, 4, base_polynomials);
-      CHKERRG(ierr);
-    } else {
-      ierr = Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
-          &faces_nodes[3 * ff], p[ff], N, diffN, phi_f_e[ff], NULL, gdim, 4,
-          base_polynomials);
-      CHKERRG(ierr);
-    }
+    CHKERR Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
+        &faces_nodes[3 * ff], p[ff], N, diffN, phi_f_e[ff], diff_phi_f_e[ff],
+        gdim, 4, base_polynomials);
   }
+
   MoFEMFunctionReturnHot(0);
 }
 
@@ -41,10 +51,11 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
                                        double *L, double *diffL,
                                        const int dim)) {
 
-  const int face_edges_nodes[3][2] = {{0, 1}, {1, 2}, {2, 0}};
-  const int face_opposite_edges_node[] = {2, 0, 1};
-  FTensor::Index<'i', 3> i;
-  FTensor::Index<'j', 3> j;
+  constexpr int face_edges_nodes[3][2] = {{0, 1}, {1, 2}, {2, 0}};
+  constexpr int face_opposite_edges_node[] = {2, 0, 1};
+  FTENSOR_INDEX(3, i);
+  FTENSOR_INDEX(3, j);
+  FTENSOR_INDEX(3, k);
 
   MoFEMFunctionBeginHot;
   if (p < 1)
@@ -52,8 +63,8 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
 
   FTensor::Tensor1<double, 3> t_edge_cross[3];
   FTensor::Tensor1<double, 3> t_node_diff_ksi[4];
-  FTensor::Tensor1<double, 3> t_diff_ksi0i[3];
-  if (diffN != NULL) {
+  FTensor::Tensor1<double, 3> t_diff_ksi[3];
+  if (diffN) {
     t_node_diff_ksi[0] =
         FTensor::Tensor1<double, 3>(diffN[0], diffN[1], diffN[2]);
     t_node_diff_ksi[1] =
@@ -65,13 +76,9 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
     for (int ee = 0; ee < 3; ee++) {
       const int n0 = faces_nodes[face_edges_nodes[ee][0]];
       const int n1 = faces_nodes[face_edges_nodes[ee][1]];
-      t_diff_ksi0i[ee](i) = t_node_diff_ksi[n1](i) - t_node_diff_ksi[n0](i);
-      t_edge_cross[ee](0) = t_node_diff_ksi[n0](1) * t_node_diff_ksi[n1](2) -
-                            t_node_diff_ksi[n0](2) * t_node_diff_ksi[n1](1);
-      t_edge_cross[ee](1) = t_node_diff_ksi[n0](2) * t_node_diff_ksi[n1](0) -
-                            t_node_diff_ksi[n0](0) * t_node_diff_ksi[n1](2);
-      t_edge_cross[ee](2) = t_node_diff_ksi[n0](0) * t_node_diff_ksi[n1](1) -
-                            t_node_diff_ksi[n0](1) * t_node_diff_ksi[n1](0);
+      t_diff_ksi[ee](i) = t_node_diff_ksi[n1](i) - t_node_diff_ksi[n0](i);
+      t_edge_cross[ee](i) = levi_civita(i, j, k) * t_node_diff_ksi[n0](j) *
+                            t_node_diff_ksi[n1](k);
     }
   } else {
     for (int ee = 0; ee < 3; ee++) {
@@ -80,57 +87,64 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
       t_edge_cross[ee](2) = 0;
     }
   }
-  double psi_l[p + 1], diff_psi_l[3 * (p + 1)];
-  boost::shared_ptr<FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>>
-      t_diff_phi_f_e_ptr;
+  double psi_l[p + 1];
 
   for (int ee = 0; ee != 3; ee++) {
     const int i0 = faces_nodes[face_edges_nodes[ee][0]];
     const int i1 = faces_nodes[face_edges_nodes[ee][1]];
     const int iO = faces_nodes[face_opposite_edges_node[ee]];
-    FTensor::Tensor1<double *, 3> t_psi_f_e(&phi_f_e[ee][0], &phi_f_e[ee][1],
-                                            &phi_f_e[ee][2], 3);
-    if (diff_phi_f_e) {
-      t_diff_phi_f_e_ptr = boost::shared_ptr<
-          FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>>(
-          new FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>(
-              &diff_phi_f_e[ee][HVEC0_0], &diff_phi_f_e[ee][HVEC0_1],
-              &diff_phi_f_e[ee][HVEC0_2], &diff_phi_f_e[ee][HVEC1_0],
-              &diff_phi_f_e[ee][HVEC1_1], &diff_phi_f_e[ee][HVEC1_2],
-              &diff_phi_f_e[ee][HVEC2_0], &diff_phi_f_e[ee][HVEC2_1],
-              &diff_phi_f_e[ee][HVEC2_2]));
-    }
-    for (int ii = 0; ii != gdim; ii++) {
-      const int node_shift = ii * nb;
-      const double n0 = N[node_shift + i0];
-      const double n1 = N[node_shift + i1];
-      const double lambda = N[node_shift + iO];
-      const double ksi0i = n1 - n0;
-      if (diff_phi_f_e) {
-        ierr = base_polynomials(p, ksi0i, &t_diff_ksi0i[ee](0), psi_l,
-                                diff_psi_l, 3);
-        CHKERRG(ierr);
-      } else {
-        ierr = base_polynomials(p, ksi0i, NULL, psi_l, NULL, 3);
-        CHKERRG(ierr);
-      }
-      FTensor::Tensor0<FTensor::PackPtr<double *, 1>> t_psi_l(&psi_l[0]);
-      FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3> t_diff_psi_l(
-          &diff_psi_l[0], &diff_psi_l[p + 1], &diff_psi_l[2 * p + 2]);
+    auto t_psi_f_e = getFTensor1FromPtr<3>(phi_f_e[ee]);
+    for (int ii = 0; ii != nb * gdim; ii += nb) {
+      const double n0 = N[ii + i0];
+      const double n1 = N[ii + i1];
+      const double lambda = N[ii + iO];
+      const double ksi = n1 - n0;
+      base_polynomials(p, ksi, NULL, psi_l, NULL, 3);
+      auto t_psi_l = FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(psi_l);
+      int jj = 0;
       for (int l = 0; l <= p - 1; l++) {
-        t_psi_f_e(i) = lambda * t_psi_l * t_edge_cross[ee](i);
-        if (t_diff_phi_f_e_ptr) {
-          (*t_diff_phi_f_e_ptr)(i, j) =
+        t_psi_f_e(i) = (lambda * t_psi_l) * t_edge_cross[ee](i);
+        ++t_psi_f_e;
+        ++t_psi_l;
+        ++jj;
+      }
+#ifdef NDEBUG
+      if (jj != NBFACETRI_AINSWORTH_EDGE_HDIV(p)) {
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "wrong order %d != %d", jj, NBFACETRI_AINSWORTH_EDGE_HDIV(p));
+      }
+#endif
+    }
+  }
+
+  if (diff_phi_f_e) {
+    double diff_psi_l[3 * (p + 1)];
+    for (int ee = 0; ee != 3; ee++) {
+      const int i0 = faces_nodes[face_edges_nodes[ee][0]];
+      const int i1 = faces_nodes[face_edges_nodes[ee][1]];
+      const int iO = faces_nodes[face_opposite_edges_node[ee]];
+      auto t_diff_phi_f_e = getFTensor2HVecFromPtr<3, 3>(diff_phi_f_e[ee]);
+      for (int ii = 0; ii != nb * gdim; ii += nb) {
+        const double n0 = N[ii + i0];
+        const double n1 = N[ii + i1];
+        const double lambda = N[ii + iO];
+        const double ksi = n1 - n0;
+        base_polynomials(p, ksi, &t_diff_ksi[ee](0), psi_l, diff_psi_l, 3);
+        auto t_psi_l = FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(psi_l);
+        auto t_diff_psi_l = FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3>{
+            &diff_psi_l[0], &diff_psi_l[p + 1], &diff_psi_l[2 * p + 2]};
+        for (int l = 0; l <= p - 1; l++) {
+          t_diff_phi_f_e(i, j) =
               (t_node_diff_ksi[iO](j) * t_psi_l + lambda * t_diff_psi_l(j)) *
               t_edge_cross[ee](i);
           ++t_diff_psi_l;
-          ++(*t_diff_phi_f_e_ptr);
+          ++t_diff_phi_f_e;
+          ++t_psi_l;
         }
-        ++t_psi_f_e;
-        ++t_psi_l;
       }
     }
   }
+
   MoFEMFunctionReturnHot(0);
 }
 
@@ -142,17 +156,17 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_FaceBubbleShapeFunctions(
                                        const int dim)) {
 
   MoFEMFunctionBeginHot;
+
+#ifdef NDEBUG
+  if (!diff_phi_f)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "expected to return derivatives");
+#endif
+
   for (int ff = 0; ff < 4; ff++) {
-    double *diff;
-    if (diff_phi_f != NULL) {
-      diff = diff_phi_f[ff];
-    } else {
-      diff = NULL;
-    }
-    ierr = Hdiv_Ainsworth_FaceBubbleShapeFunctions_ON_FACE(
-        &faces_nodes[3 * ff], p[ff], N, diffN, phi_f[ff], diff, gdim, 4,
-        base_polynomials);
-    CHKERRG(ierr);
+    CHKERR Hdiv_Ainsworth_FaceBubbleShapeFunctions_ON_FACE(
+        &faces_nodes[3 * ff], p[ff], N, diffN, phi_f[ff], diff_phi_f[ff], gdim,
+        4, base_polynomials);
   }
   MoFEMFunctionReturnHot(0);
 }
@@ -163,8 +177,9 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_FaceBubbleShapeFunctions_ON_FACE(
     PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
                                        double *L, double *diffL,
                                        const int dim)) {
-  FTensor::Index<'i', 3> i;
-  FTensor::Index<'j', 3> j;
+  FTENSOR_INDEX(3, i);
+  FTENSOR_INDEX(3, j);
+  FTENSOR_INDEX(3, k);
 
   MoFEMFunctionBeginHot;
   if (p < 3)
@@ -189,12 +204,8 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_FaceBubbleShapeFunctions_ON_FACE(
         FTensor::Tensor1<double, 3>(diffN[9], diffN[10], diffN[11]);
     t_diff_ksi0i(i) = t_node_diff_ksi[vert_i](i) - t_node_diff_ksi[i0](i);
     t_diff_ksi0j(i) = t_node_diff_ksi[vert_j](i) - t_node_diff_ksi[i0](i);
-    t_cross(0) = t_node_diff_ksi[vert_i](1) * t_node_diff_ksi[vert_j](2) -
-                 t_node_diff_ksi[vert_i](2) * t_node_diff_ksi[vert_j](1);
-    t_cross(1) = t_node_diff_ksi[vert_i](2) * t_node_diff_ksi[vert_j](0) -
-                 t_node_diff_ksi[vert_i](0) * t_node_diff_ksi[vert_j](2);
-    t_cross(2) = t_node_diff_ksi[vert_i](0) * t_node_diff_ksi[vert_j](1) -
-                 t_node_diff_ksi[vert_i](1) * t_node_diff_ksi[vert_j](0);
+    t_cross(i) = levi_civita(i, j, k) * t_node_diff_ksi[vert_i](j) *
+                 t_node_diff_ksi[vert_j](k);
   } else {
     t_cross(0) = 1;
     t_cross(1) = 0;
@@ -203,75 +214,91 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_FaceBubbleShapeFunctions_ON_FACE(
 
   double psi_l[p + 1], diff_psi_l[3 * (p + 1)];
   double psi_m[p + 1], diff_psi_m[3 * (p + 1)];
-  FTensor::Tensor1<double, 3> t_diff_beta_0ij(0.,0.,0.);
-
-  FTensor::Tensor1<double *, 3> t_psi_f(&phi_f[HVEC0], &phi_f[HVEC1],
-                                        &phi_f[HVEC2], 3);
-
-  boost::shared_ptr<FTensor::Tensor2<double *, 3, 3> > t_diff_phi_f_ptr;
-  if (diff_phi_f) {
-    t_diff_phi_f_ptr = boost::shared_ptr<FTensor::Tensor2<double *, 3, 3> >(
-        new FTensor::Tensor2<double *, 3, 3>(
-            &diff_phi_f[HVEC0_0], &diff_phi_f[HVEC0_1], &diff_phi_f[HVEC0_2],
-            &diff_phi_f[HVEC1_0], &diff_phi_f[HVEC1_1], &diff_phi_f[HVEC1_2],
-            &diff_phi_f[HVEC2_0], &diff_phi_f[HVEC2_1], &diff_phi_f[HVEC2_2],
-            9));
-  }
+  auto t_psi_f = getFTensor1FromPtr<3>(phi_f);
 
   for (int ii = 0; ii < gdim; ii++) {
 
-    int node_shift = ii * nb;
+    const int node_shift = ii * nb;
     const double ni = N[node_shift + vert_i];
     const double nj = N[node_shift + vert_j];
     const double n0 = N[node_shift + i0];
     const double ksi0i = ni - n0;
     const double ksi0j = nj - n0;
     double beta_0ij = n0 * ni * nj;
-    if (diff_phi_f) {
-      t_diff_beta_0ij(i) = (ni * nj) * t_node_diff_ksi[i0](i) +
-                           (n0 * nj) * t_node_diff_ksi[vert_i](i) +
-                           (n0 * ni) * t_node_diff_ksi[vert_j](i);
-      ierr = base_polynomials(p, ksi0i, &t_diff_ksi0i(0), psi_l, diff_psi_l, 3);
-      CHKERRG(ierr);
-      ierr = base_polynomials(p, ksi0j, &t_diff_ksi0j(0), psi_m, diff_psi_m, 3);
-      CHKERRG(ierr);
-    } else {
-      ierr = base_polynomials(p, ksi0i, NULL, psi_l, NULL, 3);
-      CHKERRG(ierr);
-      ierr = base_polynomials(p, ksi0j, NULL, psi_m, NULL, 3);
-      CHKERRG(ierr);
-    }
+    base_polynomials(p, ksi0i, NULL, psi_l, NULL, 3);
+    base_polynomials(p, ksi0j, NULL, psi_m, NULL, 3);
 
     int jj = 0;
     int oo = 0;
     for (; oo <= p - 3; oo++) {
-      FTensor::Tensor0<double *> t_psi_l(&psi_l[0]);
-      FTensor::Tensor1<double *, 3> t_diff_psi_l(diff_psi_l, &diff_psi_l[p + 1],
-                                                 &diff_psi_l[2 * p + 2], 1);
+      auto t_psi_l = FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(psi_l);
       for (int l = 0; l <= oo; l++) {
         int m = oo - l;
         if (m >= 0) {
-          FTensor::Tensor1<double, 3> t_diff_psi_m(
-              diff_psi_m[m], diff_psi_m[p + 1 + m], diff_psi_m[2 * p + 2 + m]);
           t_psi_f(i) = (beta_0ij * t_psi_l * psi_m[m]) * t_cross(i);
           ++t_psi_f;
-          if (diff_phi_f) {
-            (*t_diff_phi_f_ptr)(i, j) =
-                ((t_psi_l * psi_m[m]) * t_diff_beta_0ij(j) +
-                 (beta_0ij * psi_m[m]) * t_diff_psi_l(j) +
-                 (beta_0ij * t_psi_l) * t_diff_psi_m(j)) *
-                t_cross(i);
-            ++(*t_diff_phi_f_ptr);
-          }
         }
         ++t_psi_l;
-        ++t_diff_psi_l;
         ++jj;
       }
     }
+#ifdef NDEBUG
     if (jj != NBFACETRI_AINSWORTH_FACE_HDIV(p)) {
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "wrong order %d != %d", jj, NBFACETRI_AINSWORTH_FACE_HDIV(p));
+    }
+#endif
+  }
+
+  if (diff_phi_f) {
+    auto t_diff_phi_f = getFTensor2HVecFromPtr<3, 3>(diff_phi_f);
+
+    for (int ii = 0; ii < gdim; ii++) {
+
+      const int node_shift = ii * nb;
+      const double ni = N[node_shift + vert_i];
+      const double nj = N[node_shift + vert_j];
+      const double n0 = N[node_shift + i0];
+      const double ksi0i = ni - n0;
+      const double ksi0j = nj - n0;
+      double beta_0ij = n0 * ni * nj;
+      FTensor::Tensor1<double, 3> t_diff_beta_0ij;
+      t_diff_beta_0ij(i) = (ni * nj) * t_node_diff_ksi[i0](i) +
+                           (n0 * nj) * t_node_diff_ksi[vert_i](i) +
+                           (n0 * ni) * t_node_diff_ksi[vert_j](i);
+      base_polynomials(p, ksi0i, &t_diff_ksi0i(0), psi_l, diff_psi_l, 3);
+      base_polynomials(p, ksi0j, &t_diff_ksi0j(0), psi_m, diff_psi_m, 3);
+
+      int jj = 0;
+      int oo = 0;
+      for (; oo <= p - 3; oo++) {
+        auto t_psi_l = FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(psi_l);
+        auto t_diff_psi_l = FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3>{
+            &diff_psi_l[0], &diff_psi_l[p + 1], &diff_psi_l[2 * p + 2]};
+        for (int l = 0; l <= oo; l++) {
+          int m = oo - l;
+          if (m >= 0) {
+            auto t_diff_psi_m =
+                FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3>{
+                    &diff_psi_m[m], &diff_psi_m[p + 1 + m],
+                    &diff_psi_m[2 * p + 2 + m]};
+            t_diff_phi_f(i, j) = ((t_psi_l * psi_m[m]) * t_diff_beta_0ij(j) +
+                                  (beta_0ij * psi_m[m]) * t_diff_psi_l(j) +
+                                  (beta_0ij * t_psi_l) * t_diff_psi_m(j)) *
+                                 t_cross(i);
+            ++t_diff_phi_f;
+          }
+          ++t_psi_l;
+          ++t_diff_psi_l;
+          ++jj;
+        }
+      }
+#ifndef NDEBUG
+      if (jj != NBFACETRI_AINSWORTH_FACE_HDIV(p)) {
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "wrong order %d != %d", jj, NBFACETRI_AINSWORTH_FACE_HDIV(p));
+      }
+#endif
     }
   }
   MoFEMFunctionReturnHot(0);
@@ -284,8 +311,8 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_EdgeBasedVolumeShapeFunctions_MBTET(
                                        double *L, double *diffL,
                                        const int dim)) {
 
-  const int edges_nodes[6][2] = {{0, 1}, {1, 2}, {2, 0},
-                                 {0, 3}, {1, 3}, {2, 3}};
+  constexpr int edges_nodes[6][2] = {{0, 1}, {1, 2}, {2, 0},
+                                     {0, 3}, {1, 3}, {2, 3}};
 
   MoFEMFunctionBeginHot;
   if (p < 2)
@@ -305,8 +332,8 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_EdgeBasedVolumeShapeFunctions_MBTET(
       FTensor::Tensor1<double *, 3>(&diffN[6], &diffN[7], &diffN[8]),
       FTensor::Tensor1<double *, 3>(&diffN[9], &diffN[10], &diffN[11])};
 
-  FTensor::Index<'i', 3> i;
-  FTensor::Index<'j', 3> j;
+  FTENSOR_INDEX(3, i);
+  FTENSOR_INDEX(3, j);
 
   FTensor::Tensor1<double, 3> t_tou_e;
   FTensor::Tensor1<double, 3> t_diff_ksi0i;
@@ -320,44 +347,50 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_EdgeBasedVolumeShapeFunctions_MBTET(
         t_coords[edges_nodes[ee][1]](i) - t_coords[edges_nodes[ee][0]](i);
     t_diff_ksi0i(i) = t_node_diff_ksi[edges_nodes[ee][1]](i) -
                       t_node_diff_ksi[edges_nodes[ee][0]](i);
-    FTensor::Tensor1<double *, 3> t_psi_v_e(&phi_v_e[ee][0], &phi_v_e[ee][1],
-                                            &phi_v_e[ee][2], 3);
-    FTensor::Tensor2<double *, 3, 3> t_diff_phi_v_e(
-        &diff_phi_v_e[ee][HVEC0_0], &diff_phi_v_e[ee][HVEC0_1],
-        &diff_phi_v_e[ee][HVEC0_2], &diff_phi_v_e[ee][HVEC1_0],
-        &diff_phi_v_e[ee][HVEC1_1], &diff_phi_v_e[ee][HVEC1_2],
-        &diff_phi_v_e[ee][HVEC2_0], &diff_phi_v_e[ee][HVEC2_1],
-        &diff_phi_v_e[ee][HVEC2_2], 9);
+    auto t_phi_v_e = getFTensor1FromPtr<3>(phi_v_e[ee]);
     for (int ii = 0; ii != gdim; ii++) {
       const int node_shift = ii * 4;
       const double ni = N[node_shift + edges_nodes[ee][1]];
       const double n0 = N[node_shift + edges_nodes[ee][0]];
       const double beta_e = ni * n0;
       const double ksi0i = ni - n0;
-      if (diff_phi_v_e) {
+      base_polynomials(p, ksi0i, NULL, psi_l, NULL, 3);
+      auto t_psi_l = FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(psi_l);
+      for (int l = 0; l <= p - 2; l++) {
+        t_phi_v_e(i) = (beta_e * t_psi_l) * t_tou_e(i);
+        ++t_phi_v_e;
+        ++t_psi_l;
+      }
+    }
+  }
+
+  if (diff_phi_v_e) {
+    for (int ee = 0; ee != 6; ee++) {
+      t_tou_e(i) =
+          t_coords[edges_nodes[ee][1]](i) - t_coords[edges_nodes[ee][0]](i);
+      t_diff_ksi0i(i) = t_node_diff_ksi[edges_nodes[ee][1]](i) -
+                        t_node_diff_ksi[edges_nodes[ee][0]](i);
+      auto t_diff_phi_v_e = getFTensor2HVecFromPtr<3, 3>(diff_phi_v_e[ee]);
+      for (int ii = 0; ii != gdim; ii++) {
+        const int node_shift = ii * 4;
+        const double ni = N[node_shift + edges_nodes[ee][1]];
+        const double n0 = N[node_shift + edges_nodes[ee][0]];
+        const double beta_e = ni * n0;
+        const double ksi0i = ni - n0;
         t_diff_beta_e(i) = ni * t_node_diff_ksi[edges_nodes[ee][0]](i) +
                            t_node_diff_ksi[edges_nodes[ee][1]](i) * n0;
-        ierr =
-            base_polynomials(p, ksi0i, &t_diff_ksi0i(0), psi_l, diff_psi_l, 3);
-        CHKERRG(ierr);
-      } else {
-        ierr = base_polynomials(p, ksi0i, NULL, psi_l, NULL, 3);
-        CHKERRG(ierr);
-      }
-      FTensor::Tensor0<double *> t_psi_l(&psi_l[0]);
-      FTensor::Tensor1<double *, 3> t_diff_psi_l(
-          &diff_psi_l[0], &diff_psi_l[p + 1], &diff_psi_l[2 * p + 2], 1);
-      for (int l = 0; l <= p - 2; l++) {
-        t_psi_v_e(i) = (beta_e * t_psi_l) * t_tou_e(i);
-        ++t_psi_v_e;
-        if (diff_phi_v_e) {
+        base_polynomials(p, ksi0i, &t_diff_ksi0i(0), psi_l, diff_psi_l, 3);
+        auto t_psi_l = FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(psi_l);
+        auto t_diff_psi_l = FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3>(
+            diff_psi_l, &diff_psi_l[p + 1], &diff_psi_l[2 * p + 2]);
+        for (int l = 0; l <= p - 2; l++) {
           t_diff_phi_v_e(i, j) =
               (t_diff_beta_e(j) * t_psi_l + beta_e * t_diff_psi_l(j)) *
               t_tou_e(i);
           ++t_diff_phi_v_e;
           ++t_diff_psi_l;
+          ++t_psi_l;
         }
-        ++t_psi_l;
       }
     }
   }
@@ -372,7 +405,8 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_FaceBasedVolumeShapeFunctions_MBTET(
                                        double *L, double *diffL,
                                        const int dim)) {
 
-  const int faces_nodes[4][3] = {{0, 1, 3}, {1, 2, 3}, {0, 2, 3}, {0, 1, 2}};
+  constexpr int faces_nodes[4][3] = {
+      {0, 1, 3}, {1, 2, 3}, {0, 3, 2}, {0, 2, 1}};
 
   MoFEMFunctionBeginHot;
   if (p < 3)
@@ -390,8 +424,8 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_FaceBasedVolumeShapeFunctions_MBTET(
       FTensor::Tensor1<double *, 3>(&diffN[6], &diffN[7], &diffN[8]),
       FTensor::Tensor1<double *, 3>(&diffN[9], &diffN[10], &diffN[11])};
 
-  FTensor::Index<'i', 3> i;
-  FTensor::Index<'j', 3> j;
+  FTENSOR_INDEX(3, i);
+  FTENSOR_INDEX(3, j);
 
   FTensor::Tensor1<double, 3> t_tau0i[4], t_tau0j[4];
   FTensor::Tensor1<double, 3> t_diff_ksi0i[4], t_diff_ksi0j[4];
@@ -411,14 +445,8 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_FaceBasedVolumeShapeFunctions_MBTET(
     const int v0 = faces_nodes[ff][0];
     const int vi = faces_nodes[ff][1];
     const int vj = faces_nodes[ff][2];
-    FTensor::Tensor1<double *, 3> t_phi_v_f(
-        &phi_v_f[ff][HVEC0], &phi_v_f[ff][HVEC1], &phi_v_f[ff][HVEC2], 3);
-    FTensor::Tensor2<double *, 3, 3> t_diff_phi_v_f(
-        &diff_phi_v_f[ff][HVEC0_0], &diff_phi_v_f[ff][HVEC0_1],
-        &diff_phi_v_f[ff][HVEC0_2], &diff_phi_v_f[ff][HVEC1_0],
-        &diff_phi_v_f[ff][HVEC1_1], &diff_phi_v_f[ff][HVEC1_2],
-        &diff_phi_v_f[ff][HVEC2_0], &diff_phi_v_f[ff][HVEC2_1],
-        &diff_phi_v_f[ff][HVEC2_2], 9);
+    auto t_phi_v_f = getFTensor1FromPtr<3>(phi_v_f[ff]);
+    auto t_diff_phi_v_f = getFTensor2HVecFromPtr<3, 3>(diff_phi_v_f[ff]);
     for (int ii = 0; ii < gdim; ii++) {
       const int node_shift = 4 * ii;
       const double n0 = N[node_shift + v0];
@@ -431,25 +459,20 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_FaceBasedVolumeShapeFunctions_MBTET(
                          (n0 * ni) * t_node_diff_ksi[vj](i);
       const double ksi0i = ni - n0;
       const double ksi0j = nj - n0;
-      ierr = base_polynomials(p, ksi0i, &t_diff_ksi0i[ff](0), psi_l, diff_psi_l,
-                              3);
-      CHKERRG(ierr);
-      ierr = base_polynomials(p, ksi0j, &t_diff_ksi0j[ff](0), psi_m, diff_psi_m,
-                              3);
-      CHKERRG(ierr);
+      base_polynomials(p, ksi0i, &t_diff_ksi0i[ff](0), psi_l, diff_psi_l, 3);
+      base_polynomials(p, ksi0j, &t_diff_ksi0j[ff](0), psi_m, diff_psi_m, 3);
       FTensor::Tensor1<double, 3> t_diff_a;
       int jj = 0;
       for (int oo = 0; oo <= p - 3; oo++) {
-        FTensor::Tensor0<double *> t_psi_l(&psi_l[0], 1);
-        FTensor::Tensor1<double *, 3> t_diff_psi_l(
-            diff_psi_l, &diff_psi_l[p + 1], &diff_psi_l[2 * p + 2], 1);
+        auto t_psi_l = FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(psi_l);
+        auto t_diff_psi_l = FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3>(
+            diff_psi_l, &diff_psi_l[p + 1], &diff_psi_l[2 * p + 2]);
         for (int l = 0; l <= oo; l++) {
           int m = oo - l;
           if (m >= 0) {
-
-            FTensor::Tensor1<double *, 3> t_diff_psi_m(
-                &diff_psi_m[m], &diff_psi_m[p + 1 + m],
-                &diff_psi_m[2 * p + 2 + m], 1);
+            auto t_diff_psi_m = FTensor::Tensor1<double, 3>{
+                diff_psi_m[m], diff_psi_m[p + 1 + m],
+                diff_psi_m[2 * p + 2 + m]};
             const double a = beta_f * t_psi_l * psi_m[m];
             t_phi_v_f(i) = a * t_tau0i[ff](i);
             ++t_phi_v_f;
@@ -519,11 +542,8 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_VolumeBubbleShapeFunctions_MBTET(
   double psi_n[p + 1];
   double diff_psi_n[3 * (p + 1)];
 
-  FTensor::Tensor1<double *, 3> t_phi_v(phi_v, &phi_v[HVEC1], &phi_v[HVEC2], 3);
-  FTensor::Tensor2<double *, 3, 3> t_diff_phi_v(
-      diff_phi_v, &diff_phi_v[HVEC0_1], &diff_phi_v[HVEC0_2],
-      &diff_phi_v[HVEC1_0], &diff_phi_v[HVEC1_1], &diff_phi_v[HVEC1_2],
-      &diff_phi_v[HVEC2_0], &diff_phi_v[HVEC2_1], &diff_phi_v[HVEC2_2], 9);
+  auto t_phi_v = getFTensor1FromPtr<3>(phi_v);
+  auto t_diff_phi_v = getFTensor2HVecFromPtr<3, 3>(diff_phi_v);
 
   FTensor::Tensor1<double, 3> t_diff_beta_v;
   for (int ii = 0; ii < gdim; ii++) {
@@ -540,24 +560,21 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_VolumeBubbleShapeFunctions_MBTET(
                        (n0 * nj * nk) * t_node_diff_ksi[1](i) +
                        (n0 * ni * nk) * t_node_diff_ksi[2](i) +
                        (n0 * ni * nj) * t_node_diff_ksi[3](i);
-    ierr = base_polynomials(p, ksi0i, &t_diff_ksi0i(0), psi_l, diff_psi_l, 3);
-    CHKERRG(ierr);
-    ierr = base_polynomials(p, ksi0j, &t_diff_ksi0j(0), psi_m, diff_psi_m, 3);
-    CHKERRG(ierr);
-    ierr = base_polynomials(p, ksi0k, &t_diff_ksi0k(0), psi_n, diff_psi_n, 3);
-    CHKERRG(ierr);
+    base_polynomials(p, ksi0i, &t_diff_ksi0i(0), psi_l, diff_psi_l, 3);
+    base_polynomials(p, ksi0j, &t_diff_ksi0j(0), psi_m, diff_psi_m, 3);
+    base_polynomials(p, ksi0k, &t_diff_ksi0k(0), psi_n, diff_psi_n, 3);
 
     FTensor::Tensor1<double, 3> t_diff_a;
 
     int jj = 0;
     for (int oo = 0; oo <= p - 4; oo++) {
-      FTensor::Tensor0<double *> t_psi_l(&psi_l[0]);
-      FTensor::Tensor1<double *, 3> t_diff_psi_l(diff_psi_l, &diff_psi_l[p + 1],
-                                                 &diff_psi_l[2 * p + 2], 1);
+      auto t_psi_l = FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(psi_l);
+      auto t_diff_psi_l = FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3>(
+          diff_psi_l, &diff_psi_l[p + 1], &diff_psi_l[2 * p + 2]);
       for (int l = 0; l <= oo; l++) {
-        FTensor::Tensor0<double *> t_psi_m(&psi_m[0]);
-        FTensor::Tensor1<double *, 3> t_diff_psi_m(
-            diff_psi_m, &diff_psi_m[p + 1], &diff_psi_m[2 * p + 2], 1);
+        auto t_psi_m = FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(psi_m);
+        auto t_diff_psi_m = FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3>(
+            diff_psi_m, &diff_psi_m[p + 1], &diff_psi_m[2 * p + 2]);
         for (int m = 0; (l + m) <= oo; m++) {
           int n = oo - l - m;
           if (n >= 0) {
@@ -626,7 +643,8 @@ MoFEM::Hdiv_Demkowicz_Face_MBTET_ON_FACE(int *faces_nodes, int p, double *N,
   FTensor::Index<'j', 3> j;
 
   FTensor::Tensor1<double, 3> t_cross[3];
-  FTensor::Tensor2<double, 3, 3> t_diff_cross(0.,0.,0., 0.,0.,0., 0.,0.,0.);
+  FTensor::Tensor2<double, 3, 3> t_diff_cross(0., 0., 0., 0., 0., 0., 0., 0.,
+                                              0.);
   FTensor::Tensor1<double, 3> t_node_diff_ksi[4];
   FTensor::Tensor1<double, 3> t_node_diff_sum_n0_n1;
 
@@ -678,9 +696,9 @@ MoFEM::Hdiv_Demkowicz_Face_MBTET_ON_FACE(int *faces_nodes, int p, double *N,
 
   FTensor::Tensor1<double *, 3> t_phi(&phi_f[HVEC0], &phi_f[HVEC1],
                                       &phi_f[HVEC2], 3);
-  boost::shared_ptr<FTensor::Tensor2<double *, 3, 3> > t_diff_phi_ptr;
+  boost::shared_ptr<FTensor::Tensor2<double *, 3, 3>> t_diff_phi_ptr;
   if (diff_phi_f) {
-    t_diff_phi_ptr = boost::shared_ptr<FTensor::Tensor2<double *, 3, 3> >(
+    t_diff_phi_ptr = boost::shared_ptr<FTensor::Tensor2<double *, 3, 3>>(
         new FTensor::Tensor2<double *, 3, 3>(
             &diff_phi_f[HVEC0_0], &diff_phi_f[HVEC0_1], &diff_phi_f[HVEC0_2],
             &diff_phi_f[HVEC1_0], &diff_phi_f[HVEC1_1], &diff_phi_f[HVEC1_2],
@@ -784,7 +802,6 @@ MoFEMErrorCode MoFEM::Hdiv_Demkowicz_Interior_MBTET(
   for (int ff = 0; ff != 4; ++ff) {
     t_m_node_diff_ksi[ff](i) = -t_node_diff_ksi[ff](i);
   }
-
 
   FTensor::Tensor1<double *, 3> t_phi_v(&phi_v[HVEC0], &phi_v[HVEC1],
                                         &phi_v[HVEC2], 3);

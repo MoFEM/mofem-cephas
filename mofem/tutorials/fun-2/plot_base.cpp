@@ -201,6 +201,12 @@ MoFEMErrorCode Example::setupProblem() {
   else if (choice_space_value == HDIVSPACE)
     space = HDIV;
 
+  AinsworthOrderHooks::broken_nbfacetri_edge_hdiv = [](int p) { return p; };
+  AinsworthOrderHooks::broken_nbfacetri_face_hdiv = [](int p) { return p; };
+  AinsworthOrderHooks::broken_nbvolumetet_edge_hdiv = [](int p) { return p; };
+  AinsworthOrderHooks::broken_nbvolumetet_face_hdiv = [](int p) { return p; };
+  AinsworthOrderHooks::broken_nbvolumetet_volume_hdiv = [](int p) { return p; };
+
   if(continuity == CONTINUOUS)
     CHKERR simpleInterface->addDomainField("U", space, base, 1);
   else

@@ -141,9 +141,16 @@ private:
       MatrixDouble &shape_functions, MatrixDouble &diff_shape_functions,
 
       int volume_order, std::array<int, 4> &faces_order,
-      std::array<int, 3 * 4> &faces_nodes
+      std::array<int, 3 * 4> &faces_nodes,
+
+      boost::function<int(int)> broken_nbfacetri_edge_hdiv,
+      boost::function<int(int)> broken_nbfacetri_face_hdiv,
+      boost::function<int(int)> broken_nbvolumetet_edge_hdiv,
+      boost::function<int(int)> broken_nbvolumetet_face_hdiv,
+      boost::function<int(int)> broken_nbvolumetet_volume_hdiv
 
   );
+
   MoFEMErrorCode getValueHdivAinsworthBase(MatrixDouble &pts);
   MoFEMErrorCode getValueHdivAinsworthBrokenBase(MatrixDouble &pts);
   MoFEMErrorCode getValueHcurlAinsworthBase(MatrixDouble &pts);

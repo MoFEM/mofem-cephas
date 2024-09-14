@@ -167,6 +167,9 @@ MoFEMErrorCode Core::addField(const std::string &name, const FieldSpace space,
     CHK_THROW_MESSAGE(ierr, "Not known file version");
     if (file_ver.majorVersion >= 0 && file_ver.minorVersion >= 12 &&
         file_ver.buildVersion >= 1) {
+
+      // Change tag names comparing to older versions
+
       const std::string name_data_prefix("_App_Data_");
       void const *tag_prefix_data[] = {name_data_prefix.c_str()};
       int tag_prefix_sizes[1];

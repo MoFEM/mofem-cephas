@@ -1766,6 +1766,9 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopSide(
 
     auto adj = get_adj((*fe_miit)->getFEUId());
 
+    if (verb >= VERBOSE && !adj.empty())
+      MOFEM_LOG("SELF", sev) << "Number of side finite elements " << adj.size();
+
     int nn = 0;
     side_fe->loopSize = adj.size();
     for (auto fe_weak_ptr : adj) {

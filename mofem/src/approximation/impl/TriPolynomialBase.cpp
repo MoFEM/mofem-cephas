@@ -543,26 +543,37 @@ MoFEMErrorCode TriPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
   N_face_edge.resize(1, 3, false);
   N_face_bubble.resize(1, false);
   int face_order = data.dataOnEntities[MBTRI][0].getOrder();
-  if (face_order > 0) {
+  auto nb_dofs_on_face =
+      3 * NBFACETRI_AINSWORTH_EDGE_HDIV(
+              AinsworthOrderHooks::broken_nbfacetri_edge_hdiv(face_order)) +
+      NBFACETRI_AINSWORTH_FACE_HDIV(
+          AinsworthOrderHooks::broken_nbfacetri_face_hdiv(face_order));
+  if (nb_dofs_on_face) {
+    auto face_edge_dofs = NBFACETRI_AINSWORTH_EDGE_HDIV(
+        AinsworthOrderHooks::broken_nbfacetri_edge_hdiv(face_order));
     // three edges on face
     for (int ee = 0; ee < 3; ee++) {
-      N_face_edge(0, ee).resize(
-          nb_gauss_pts, 3 * NBFACETRI_AINSWORTH_EDGE_HDIV(face_order), false);
+      N_face_edge(0, ee).resize(nb_gauss_pts, 3 * face_edge_dofs, false);
       phi_f_e[ee] = &((N_face_edge(0, ee))(0, 0));
     }
-    N_face_bubble[0].resize(
-        nb_gauss_pts, 3 * NBFACETRI_AINSWORTH_FACE_HDIV(face_order), false);
+    auto face_bubble_dofs = NBFACETRI_AINSWORTH_FACE_HDIV(
+        AinsworthOrderHooks::broken_nbfacetri_face_hdiv(face_order));
+    N_face_bubble[0].resize(nb_gauss_pts, 3 * face_bubble_dofs, false);
     phi_f = &*(N_face_bubble[0].data().begin());
 
     int face_nodes[3] = {0, 1, 2};
-    CHKERR Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
-        face_nodes, face_order,
-        &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0), NULL, phi_f_e, NULL,
-        nb_gauss_pts, 3, base_polynomials);
-    CHKERR Hdiv_Ainsworth_FaceBubbleShapeFunctions_ON_FACE(
-        face_nodes, face_order,
-        &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0), NULL, phi_f, NULL,
-        nb_gauss_pts, 3, base_polynomials);
+    if (face_edge_dofs)
+      CHKERR Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
+          face_nodes,
+          AinsworthOrderHooks::broken_nbfacetri_edge_hdiv(face_order),
+          &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0), NULL, phi_f_e,
+          NULL, nb_gauss_pts, 3, base_polynomials);
+    if (face_bubble_dofs)
+      CHKERR Hdiv_Ainsworth_FaceBubbleShapeFunctions_ON_FACE(
+          face_nodes,
+          AinsworthOrderHooks::broken_nbfacetri_face_hdiv(face_order),
+          &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0), NULL, phi_f, NULL,
+          nb_gauss_pts, 3, base_polynomials);
 
     // set shape functions into data structure
     if (data.dataOnEntities[MBTRI].size() != 1) {
@@ -573,16 +584,26 @@ MoFEMErrorCode TriPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
     int col = 0;
     for (int oo = 0; oo < face_order; oo++) {
       for (int ee = 0; ee < 3; ee++) {
-        for (int dd = 3 * NBFACETRI_AINSWORTH_EDGE_HDIV(oo);
-             dd < 3 * NBFACETRI_AINSWORTH_EDGE_HDIV(oo + 1); dd++, col++) {
+        for (int dd =
+                 3 * NBFACETRI_AINSWORTH_EDGE_HDIV(
+                         AinsworthOrderHooks::broken_nbfacetri_edge_hdiv(oo));
+             dd <
+             3 * NBFACETRI_AINSWORTH_EDGE_HDIV(
+                     AinsworthOrderHooks::broken_nbfacetri_edge_hdiv(oo + 1));
+             dd++, col++) {
           for (int gg = 0; gg < nb_gauss_pts; gg++) {
             data.dataOnEntities[MBTRI][0].getN(base)(gg, col) =
                 N_face_edge(0, ee)(gg, dd);
           }
         }
       }
-      for (int dd = 3 * NBFACETRI_AINSWORTH_FACE_HDIV(oo);
-           dd < 3 * NBFACETRI_AINSWORTH_FACE_HDIV(oo + 1); dd++, col++) {
+      for (int dd =
+               3 * NBFACETRI_AINSWORTH_FACE_HDIV(
+                       AinsworthOrderHooks::broken_nbfacetri_face_hdiv(oo));
+           dd <
+           3 * NBFACETRI_AINSWORTH_FACE_HDIV(
+                   AinsworthOrderHooks::broken_nbfacetri_face_hdiv(oo + 1));
+           dd++, col++) {
         for (int gg = 0; gg < nb_gauss_pts; gg++) {
           data.dataOnEntities[MBTRI][0].getN(base)(gg, col) =
               N_face_bubble[0](gg, dd);
