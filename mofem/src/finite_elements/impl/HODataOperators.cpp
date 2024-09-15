@@ -315,7 +315,7 @@ OpSetHOContravariantPiolaTransform::doWork(int side, EntityType type,
       for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
         for (unsigned int bb = 0; bb != nb_diff_base_functions; ++bb) {
           const double a = 1. / t_det;
-          t_transformed_diff_n(i, k) = a * (t_jac(i, j) * t_diff_n(j, k));
+          t_transformed_diff_n(i, k) = a * t_diff_n(i, k);
           ++t_diff_n;
           ++t_transformed_diff_n;
         }
@@ -1045,7 +1045,6 @@ MoFEMErrorCode AddHOOps<3, 3, 3>::add(
     case HDIV:
       pipeline.push_back(
           new OpSetHOContravariantPiolaTransform(HDIV, det, jac));
-      pipeline.push_back(new OpSetHOInvJacVectorBase(HDIV, inv_jac));
       break;
     case L2:
       pipeline.push_back(new OpSetHOInvJacToScalarBases<3>(L2, inv_jac));
