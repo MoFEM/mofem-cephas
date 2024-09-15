@@ -310,8 +310,6 @@ OpSetHOContravariantPiolaTransform::doWork(int side, EntityType type,
                                &t_transformed_diff_n_ptr[HVEC2_2]);
 
       auto t_det = getFTensor0FromVec(*detPtr);
-      auto t_jac = getFTensor2FromMat<3, 3>(*jacPtr);
-
       for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
         for (unsigned int bb = 0; bb != nb_diff_base_functions; ++bb) {
           const double a = 1. / t_det;
@@ -320,7 +318,6 @@ OpSetHOContravariantPiolaTransform::doWork(int side, EntityType type,
           ++t_transformed_diff_n;
         }
         ++t_det;
-        ++t_jac;
       }
 
       data.getDiffN(base).swap(piolaDiffN);
