@@ -66,7 +66,7 @@ struct TetPolynomialBase : public BaseFunction {
                  const FieldApproximationBase base,
                  DofsSideMap &);
 
-private:
+protected:
   const void *vPtr;
   EntPolynomialBaseCtx *cTx;
 
