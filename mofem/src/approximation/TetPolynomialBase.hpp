@@ -127,7 +127,7 @@ private:
                                            const FieldApproximationBase base,
                                            DofsSideMap &dofs_side_map);
 
-private:
+protected:
   MoFEMErrorCode getValueH1AinsworthBase(MatrixDouble &pts);
   MoFEMErrorCode getValueH1BernsteinBezierBase(MatrixDouble &pts);
 
