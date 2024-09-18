@@ -7,6 +7,10 @@
  * p-adaptivity
  *
  */
+#ifndef EXECUTABLE_DIMENSION
+  #define EXECUTABLE_DIMENSION 2
+#endif
+
 #include <stdlib.h>
 #include <MoFEM.hpp>
 #include <mixed_nonlinear_poisson.hpp>
@@ -29,33 +33,7 @@ private:
   MoFEM::Interface &mField;
   Simple *simpleInterface;
 
-  Range domainEntities;
-  double totErrorIndicator;
-  double maxErrorIndicator;
-
-  double thetaParam;
-  double indicTolerance;
   int initOrder;
-
-  //! [Analytical function]
-  static double analyticalFunction(const double x, const double y,
-                                   const double z) {
-    return -cos(M_PI * x) * cos(M_PI * y);
-  }
-  //! [Analytical function]
-
-  //! [Analytical function gradient]
-  static VectorDouble analyticalFunctionGrad(const double x, const double y,
-                                             const double z) {
-    VectorDouble res;
-    res.resize(2);
-    res[0] = -exp(-100. * (sqr(x) + sqr(y))) *
-             (200. * x * cos(M_PI * x) + M_PI * sin(M_PI * x)) * cos(M_PI * y);
-    res[1] = -exp(-100. * (sqr(x) + sqr(y))) *
-             (200. * y * cos(M_PI * y) + M_PI * sin(M_PI * y)) * cos(M_PI * x);
-    return res;
-  }
-  //! [Analytical function gradient]
 
   //! [Source function]
   static double sourceFunction(const double x, const double y, const double z) {
@@ -126,15 +104,8 @@ MoFEMErrorCode MixedNonlinearPoisson::setupProblem() {
   // Note that in 2D case HDIV and HCURL spaces are isomorphic, and therefore
   // only base for HCURL has been implemented in 2D. Base vectors for HDIV space
   // are be obtained after rotation of HCURL base vectors by a right angle
-  CHKERR simpleInterface->addDomainField("Q", HCURL, base, 2);
-  CHKERR simpleInterface->addBoundaryField("Q", HCURL, base, 2);
-
-  thetaParam = 0.5;
-  CHKERR PetscOptionsGetReal(PETSC_NULL, "", "-theta", &thetaParam, PETSC_NULL);
-
-  indicTolerance = 1e-3;
-  CHKERR PetscOptionsGetReal(PETSC_NULL, "", "-indic_tol", &indicTolerance,
-                             PETSC_NULL);
+  CHKERR simpleInterface->addDomainField("Q", HCURL, base, 1);
+  CHKERR simpleInterface->addBoundaryField("Q", HCURL, base, 1);
 
   initOrder = 2;
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &initOrder, PETSC_NULL);
@@ -171,9 +142,10 @@ MoFEMErrorCode MixedNonlinearPoisson::assembleSystem() {
   pipeline_mng->getOpDomainRhsPipeline().clear();
   pipeline_mng->getOpDomainLhsPipeline().clear();
 
-  CHKERR AddHOOps<2, 2, 2>::add(pipeline_mng->getOpDomainLhsPipeline(), {HDIV});
-  // CHKERR AddHOOps<2, 2, 2>::add(pipeline_mng->getOpDomainRhsPipeline(),
-  // {HDIV});
+  CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+      pipeline_mng->getOpDomainLhsPipeline(), {HDIV});
+  CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+      pipeline_mng->getOpDomainRhsPipeline(), {HDIV});
 
   auto add_domain_lhs_ops = [&](auto &pipeline) {
     auto data_u_at_gauss_pts = boost::make_shared<VectorDouble>();
@@ -182,7 +154,7 @@ MoFEMErrorCode MixedNonlinearPoisson::assembleSystem() {
     pipeline.push_back(
         new OpCalculateScalarFieldValues("U", data_u_at_gauss_pts));
     pipeline.push_back(
-        new OpCalculateVectorFieldValues<2>("Q", data_q_at_gauss_pts));
+        new OpCalculateHVecVectorField<3>("Q", data_q_at_gauss_pts));
 
     auto unity = []() { return 1; };
     pipeline.push_back(new OpHdivU("Q", "U", unity, true));
@@ -198,28 +170,33 @@ MoFEMErrorCode MixedNonlinearPoisson::assembleSystem() {
     auto source = [&](const double x, const double y, const double z) {
       return sourceFunction(x, y, z);
     };
+    auto unity = [](const double, const double, const double) constexpr {
+      return 1.;
+    };
 
     pipeline.push_back(
         new OpCalculateScalarFieldValues("U", data_u_at_gauss_pts));
-    pipeline.push_back(new OpCalculateDivergenceVectorFieldValues<2>(
+    pipeline.push_back(new OpCalculateHdivVectorDivergence<3, SPACE_DIM>(
         "Q", data_divq_at_gauss_pts));
     pipeline.push_back(
-        new OpCalculateVectorFieldValues<2>("Q", data_q_at_gauss_pts));
+        new OpCalculateHVecVectorField<3>("Q", data_q_at_gauss_pts));
 
-    pipeline.push_back(new OpBaseTimeScalarRhs("U", data_divq_at_gauss_pts));
+    pipeline.push_back(new OpBaseTimesScalarRhs("U", data_divq_at_gauss_pts, unity));
     pipeline.push_back(new OpDomainSource("U", source));
     pipeline.push_back(
-        new OpHdivUHdivRHS("Q", data_u_at_gauss_pts, data_q_at_gauss_pts));
-    pipeline.push_back(new OpHDivTimesScalarRhs("Q", data_u_at_gauss_pts));
+        new OpHdivUHdivRhs("Q", data_u_at_gauss_pts, data_q_at_gauss_pts));
+    pipeline.push_back(new OpHDivTimesScalarRhs("Q", data_u_at_gauss_pts, unity));
   };
 
   auto add_boundary_rhs_ops = [&](auto &pipeline) {
+    // pipeline.push_back(new OpSetBc("Q", false, boundaryMarker));
     pipeline.push_back(new OpBoundaryRhsSource("Q", boundaryFunction));
+    // pipeline.push_back(new OpUnSetBc("Q"));
   };
 
   add_domain_lhs_ops(pipeline_mng->getOpDomainLhsPipeline());
   add_domain_rhs_ops(pipeline_mng->getOpDomainRhsPipeline());
-  // add_boundary_rhs_ops(pipeline_mng->getOpBoundaryRhsPipeline());
+  add_boundary_rhs_ops(pipeline_mng->getOpBoundaryRhsPipeline());
 
   MoFEMFunctionReturn(0);
 }
@@ -228,15 +205,6 @@ MoFEMErrorCode MixedNonlinearPoisson::assembleSystem() {
 //! [Solve]
 MoFEMErrorCode MixedNonlinearPoisson::solveSystem() {
   MoFEMFunctionBegin;
-  // PipelineManager *pipeline_mng = mField.getInterface<PipelineManager>();
-  // auto solver = pipeline_mng->createKSP();
-  // CHKERR KSPSetFromOptions(solver);
-  // CHKERR KSPSetUp(solver);
-
-  // auto dm = simpleInterface->getDM();
-  // auto D = createDMVector(dm);
-  // auto F = vectorDuplicate(D);
-  // CHKERR VecZeroEntries(D);
   auto dm = simpleInterface->getDM();
   SmartPetscObj<Vec> global_rhs, global_solution;
   CHKERR DMCreateGlobalVector_MoFEM(dm, global_rhs);
@@ -254,11 +222,6 @@ MoFEMErrorCode MixedNonlinearPoisson::solveSystem() {
   // Scatter result data on the mesh
   CHKERR DMoFEMMeshToGlobalVector(dm, global_solution, INSERT_VALUES,
                                   SCATTER_REVERSE);
-
-  // CHKERR KSPSolve(solver, F, D);
-  // CHKERR VecGhostUpdateBegin(D, INSERT_VALUES, SCATTER_FORWARD);
-  // CHKERR VecGhostUpdateEnd(D, INSERT_VALUES, SCATTER_FORWARD);
-  // CHKERR DMoFEMMeshToLocalVector(dm, D, INSERT_VALUES, SCATTER_REVERSE);
   MoFEMFunctionReturn(0);
 }
 //! [Solve]
@@ -271,16 +234,17 @@ MoFEMErrorCode MixedNonlinearPoisson::outputResults(int iter_num) {
 
   auto post_proc_fe = boost::make_shared<PostProcEle>(mField);
 
-  CHKERR AddHOOps<2, 2, 2>::add(post_proc_fe->getOpPtrVector(), {HDIV});
+  CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+      post_proc_fe->getOpPtrVector(), {HDIV});
 
   auto u_ptr = boost::make_shared<VectorDouble>();
   auto flux_ptr = boost::make_shared<MatrixDouble>();
   post_proc_fe->getOpPtrVector().push_back(
       new OpCalculateScalarFieldValues("U", u_ptr));
   post_proc_fe->getOpPtrVector().push_back(
-      new OpCalculateVectorFieldValues<2>("Q", flux_ptr));
+      new OpCalculateHVecVectorField<3,SPACE_DIM>("Q", flux_ptr));
 
-  using OpPPMap = OpPostProcMapInMoab<2, 2>;
+  using OpPPMap = OpPostProcMapInMoab<SPACE_DIM, SPACE_DIM>;
 
   post_proc_fe->getOpPtrVector().push_back(
 

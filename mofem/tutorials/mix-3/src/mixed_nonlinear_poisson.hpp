@@ -4,25 +4,26 @@
 #include <stdlib.h>
 #include <MoFEM.hpp>
 using namespace MoFEM;
+constexpr int SPACE_DIM = EXECUTABLE_DIMENSION;
 
-using DomainEle = PipelineManager::FaceEle;
+using DomainEle = PipelineManager::ElementsAndOpsByDim<SPACE_DIM>::DomainEle;
 using DomainEleOp = DomainEle::UserDataOperator;
-using BoundaryEle = PipelineManager::EdgeEle;
+using BoundaryEle = PipelineManager::ElementsAndOpsByDim<SPACE_DIM>::BoundaryEle;
 using BoundaryEleOp = BoundaryEle::UserDataOperator;
 using PostProcEle = PostProcBrokenMeshInMoab<DomainEle>;
 using EntData = EntitiesFieldData::EntData;
 
 using OpHdivU = FormsIntegrators<DomainEleOp>::Assembly<PETSC>::BiLinearForm<
-    GAUSS>::OpMixDivTimesScalar<2>;
+    GAUSS>::OpMixDivTimesScalar<SPACE_DIM>;
 
-using OpBaseTimeScalarRhs = FormsIntegrators<DomainEleOp>::Assembly<
-    PETSC>::LinearForm<GAUSS>::OpBaseTimesScalarField<1>;
+using OpBaseTimesScalarRhs = FormsIntegrators<DomainEleOp>::Assembly<
+    PETSC>::LinearForm<GAUSS>::OpBaseTimesScalar<1>;
 using OpDomainSource = FormsIntegrators<DomainEleOp>::Assembly<
     PETSC>::LinearForm<GAUSS>::OpSource<1, 1>;
 using OpHDivTimesScalarRhs = FormsIntegrators<DomainEleOp>::Assembly<
-    PETSC>::LinearForm<GAUSS>::OpMixDivTimesU<3, 1, 2>;
+    PETSC>::LinearForm<GAUSS>::OpMixDivTimesU<3, 1, SPACE_DIM>;
 using OpBoundaryRhsSource = FormsIntegrators<BoundaryEleOp>::Assembly<
-    PETSC>::LinearForm<GAUSS>::OpNormalMixVecTimesScalar<2>;
+    PETSC>::LinearForm<GAUSS>::OpNormalMixVecTimesScalar<3>;
 
 using AssemblyDomainEleOp =
     FormsIntegrators<DomainEleOp>::Assembly<PETSC>::OpBase;
@@ -38,9 +39,9 @@ FTensor::Index<'i', 2> i;
 typedef boost::function<double(const double, const double, const double)>
     ScalarFunc;
 
-struct OpHdivUHdivRHS : public AssemblyDomainEleOp {
+struct OpHdivUHdivRhs : public AssemblyDomainEleOp {
 public:
-  OpHdivUHdivRHS(std::string field_name,
+  OpHdivUHdivRhs(std::string field_name,
                  boost::shared_ptr<VectorDouble> ufield_vec,
                  boost::shared_ptr<MatrixDouble> qfield_vec)
       : AssemblyDomainEleOp(field_name, field_name, AssemblyDomainEleOp::OPROW),
@@ -61,7 +62,7 @@ public:
     // get solution (ufield value) at integration point
     auto u_field = getFTensor0FromVec(*ufieldVec);
     // get solution (ufield value) at integration point
-    auto q_field = getFTensor1FromMat<2>(*qfieldVec);
+    auto q_field = getFTensor1FromMat<3>(*qfieldVec);
 
     // get base function
     auto q_base = data.getFTensor1N<3>();
@@ -119,7 +120,7 @@ public:
     // get solution (ufield value) at integration points
     auto u_field = getFTensor0FromVec(*ufieldVec);
     // get solution (ufield value) at integration points
-    auto q_field = getFTensor1FromMat<2>(*qfieldVec);
+    auto q_field = getFTensor1FromMat<3>(*qfieldVec);
 
     // get base functions on row
     auto q_row_base = row_data.getFTensor1N<3>();
@@ -133,8 +134,8 @@ public:
         auto u_col_base = col_data.getFTensor0N(gg, 0);
 
         for (int cc = 0; cc != nb_col_dofs; cc++) {
-          locLhs(rr, cc) += -q_row_base(i) *
-                            ((2 * u_field) / ((1 + u_field * u_field) *
+          locLhs(rr, cc) += q_row_base(i) *
+                            ((-2 * u_field) / ((1 + u_field * u_field) *
                                               (1 + u_field * u_field))) *
                             u_col_base * q_field(i) * a;
           // move to the next base functions on column
@@ -198,7 +199,7 @@ public:
         auto q_col_base = col_data.getFTensor1N<3>(gg, 0);
 
         for (int cc = 0; cc != nb_col_dofs; cc++) {
-          locLhs(rr, cc) += q_row_base(i) * (1 / ((1 + u_field * u_field))) *
+          locLhs(rr, cc) += q_row_base(i) * (1 / (1 + u_field * u_field)) *
                             q_col_base(i) * a;
           // move to the next base functions on column
           ++q_col_base;
