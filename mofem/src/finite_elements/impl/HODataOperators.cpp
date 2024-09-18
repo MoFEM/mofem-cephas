@@ -688,9 +688,10 @@ MoFEMErrorCode OpHOSetContravariantPiolaTransformOnEdge3D::doWork(
 }
 
 OpScaleBaseBySpaceInverseOfMeasure::OpScaleBaseBySpaceInverseOfMeasure(
-    const FieldSpace space, boost::shared_ptr<VectorDouble> det_jac_ptr,
+    const FieldSpace space, const FieldApproximationBase base,
+    boost::shared_ptr<VectorDouble> det_jac_ptr,
     boost::shared_ptr<double> scale_det_ptr)
-    : OP(space), fieldSpace(space), detJacPtr(det_jac_ptr),
+    : OP(space), fieldSpace(space), fieldBase(base), detJacPtr(det_jac_ptr),
       scaleDetPtr(scale_det_ptr) {
   if (!detJacPtr) {
     CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "detJacPtr not set");
@@ -706,20 +707,18 @@ OpScaleBaseBySpaceInverseOfMeasure::doWork(int side, EntityType type,
   if (scaleDetPtr)
     scale_det = *scaleDetPtr;
 
-  auto scale = [&]() {
+  auto scale = [&](auto base) {
     MoFEMFunctionBegin;
-    for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
-      auto base = static_cast<FieldApproximationBase>(b);
-      auto &base_fun = data.getN(base);
-      if (base_fun.size2()) {
+    auto &base_fun = data.getN(base);
+    if (base_fun.size2()) {
 
-        auto &det_vec = *detJacPtr;
-        const auto nb_int_pts = base_fun.size1();
+      auto &det_vec = *detJacPtr;
+      const auto nb_int_pts = base_fun.size1();
 
-        if (nb_int_pts != det_vec.size())
-          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                  "Number of integration pts in detJacPtr does not mush "
-                  "number of integration pts in base function");
+      if (nb_int_pts != det_vec.size())
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Number of integration pts in detJacPtr does not mush "
+                "number of integration pts in base function");
 
         for (auto gg = 0; gg != nb_int_pts; ++gg) {
           auto row = ublas::matrix_row<MatrixDouble>(base_fun, gg);
@@ -733,6 +732,7 @@ OpScaleBaseBySpaceInverseOfMeasure::doWork(int side, EntityType type,
             row *= scale_det / det_vec[gg];
           }
         }
+
       }
     }
     MoFEMFunctionReturn(0);
@@ -740,50 +740,27 @@ OpScaleBaseBySpaceInverseOfMeasure::doWork(int side, EntityType type,
 
   if (this->getFEDim() == 3) {
     switch (fieldSpace) {
-    case H1:
-      CHKERR scale();
-      break;
-    case HCURL:
-      if (type >= MBEDGE)
-        CHKERR scale();
-      break;
-    case HDIV:
-      if (type >= MBTRI)
-        CHKERR scale();
-      break;
     case L2:
       if (type >= MBTET)
-        CHKERR scale();
+        CHKERR scale(fieldBase);
       break;
     default:
       SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "impossible case");
     }
   } else if (this->getFEDim() == 2) {
     switch (fieldSpace) {
-    case H1:
-      CHKERR scale();
-      break;
-    case HCURL:
-      if (type >= MBEDGE)
-        CHKERR scale();
-      break;
-    case HDIV:
     case L2:
       if (type >= MBTRI)
-        CHKERR scale();
+        CHKERR scale(fieldBase);
       break;
     default:
       SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "impossible case");
     }
   } else if (this->getFEDim() == 1) {
     switch (fieldSpace) {
-    case H1:
-      CHKERR scale();
-      break;
-    case HCURL:
-    case L2:
+   case L2:
       if (type >= MBEDGE)
-        CHKERR scale();
+        CHKERR scale(fieldBase);
       break;
     default:
       SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "impossible case");
