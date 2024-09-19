@@ -23,7 +23,7 @@ using OpDomainSource = FormsIntegrators<DomainEleOp>::Assembly<
 using OpHDivTimesScalarRhs = FormsIntegrators<DomainEleOp>::Assembly<
     PETSC>::LinearForm<GAUSS>::OpMixDivTimesU<3, 1, SPACE_DIM>;
 using OpBoundaryRhsSource = FormsIntegrators<BoundaryEleOp>::Assembly<
-    PETSC>::LinearForm<GAUSS>::OpNormalMixVecTimesScalar<3>;
+    PETSC>::LinearForm<GAUSS>::OpNormalMixVecTimesScalar<SPACE_DIM>;
 
 using AssemblyDomainEleOp =
     FormsIntegrators<DomainEleOp>::Assembly<PETSC>::OpBase;

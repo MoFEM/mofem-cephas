@@ -157,6 +157,8 @@ MoFEMErrorCode MixedNonlinearPoisson::assembleSystem() {
       pipeline_mng->getOpDomainLhsPipeline(), {HDIV});
   CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
       pipeline_mng->getOpDomainRhsPipeline(), {HDIV});
+  CHKERR AddHOOps<SPACE_DIM-1, SPACE_DIM, SPACE_DIM>::add(
+      pipeline_mng->getOpBoundaryRhsPipeline(), {HDIV});
 
   auto add_domain_lhs_ops = [&](auto &pipeline) {
     auto data_u_at_gauss_pts = boost::make_shared<VectorDouble>();
@@ -192,11 +194,13 @@ MoFEMErrorCode MixedNonlinearPoisson::assembleSystem() {
     pipeline.push_back(
         new OpCalculateHVecVectorField<3>("Q", data_q_at_gauss_pts));
 
-    pipeline.push_back(new OpBaseTimesScalarRhs("U", data_divq_at_gauss_pts, unity));
+    pipeline.push_back(
+        new OpBaseTimesScalarRhs("U", data_divq_at_gauss_pts, unity));
     pipeline.push_back(new OpDomainSource("U", source));
     pipeline.push_back(
         new OpHdivUHdivRhs("Q", data_u_at_gauss_pts, data_q_at_gauss_pts));
-    pipeline.push_back(new OpHDivTimesScalarRhs("Q", data_u_at_gauss_pts, unity));
+    pipeline.push_back(
+        new OpHDivTimesScalarRhs("Q", data_u_at_gauss_pts, unity));
   };
 
   auto add_boundary_rhs_ops = [&](auto &pipeline) {
@@ -251,7 +255,7 @@ MoFEMErrorCode MixedNonlinearPoisson::outputResults(int iter_num) {
   post_proc_fe->getOpPtrVector().push_back(
       new OpCalculateScalarFieldValues("U", u_ptr));
   post_proc_fe->getOpPtrVector().push_back(
-      new OpCalculateHVecVectorField<3,SPACE_DIM>("Q", flux_ptr));
+      new OpCalculateHVecVectorField<3, SPACE_DIM>("Q", flux_ptr));
 
   using OpPPMap = OpPostProcMapInMoab<SPACE_DIM, SPACE_DIM>;
 
@@ -272,12 +276,6 @@ MoFEMErrorCode MixedNonlinearPoisson::outputResults(int iter_num) {
 
   );
 
-  // pipeline_mng->getDomainRhsFE() = post_proc_fe;
-  // CHKERR pipeline_mng->loopFiniteElements();
-
-  // std::ostringstream strm;
-  // strm << "out_" << iter_num << ".h5m";
-  // CHKERR post_proc_fe->writeFile(strm.str().c_str());
   auto *simple = mField.getInterface<Simple>();
   auto dm = simple->getDM();
   CHKERR DMoFEMLoopFiniteElements(dm, simple->getDomainFEName(), post_proc_fe);
@@ -319,7 +317,7 @@ MoFEMErrorCode MixedNonlinearPoisson::checkResults() {
   CHKERR DMoFEMLoopFiniteElements(simpleInterface->getDM(),
                                   simpleInterface->getDomainFEName(),
                                   check_result_fe_ptr);
-                                  CHKERR VecAssemblyBegin(errorVec);
+  CHKERR VecAssemblyBegin(errorVec);
   CHKERR VecAssemblyEnd(errorVec);
   CHKERR VecAssemblyBegin(exactVec);
   CHKERR VecAssemblyEnd(exactVec);
