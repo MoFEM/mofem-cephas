@@ -35,6 +35,12 @@ private:
 
   int initOrder;
 
+  // PETSc vector for storing norms
+  SmartPetscObj<Vec> errorVec, exactVec;
+  int atomTest = 0;
+  enum NORMS { NORM = 0, LAST_NORM };
+  enum EX_NORMS { EX_NORM = 0, LAST_EX_NORM };
+
   //! [Source function]
   static double sourceFunction(const double x, const double y, const double z) {
     return 2 * M_PI * M_PI *
@@ -61,6 +67,7 @@ private:
   MoFEMErrorCode assembleSystem();
   MoFEMErrorCode solveSystem();
   MoFEMErrorCode outputResults(int iter_num = 0);
+  MoFEMErrorCode checkResults();
 };
 
 //! [Run programme]
@@ -72,6 +79,7 @@ MoFEMErrorCode MixedNonlinearPoisson::runProblem() {
   CHKERR assembleSystem();
   CHKERR solveSystem();
   CHKERR outputResults();
+  CHKERR checkResults();
   MoFEMFunctionReturn(0);
 }
 //! [Run programme]
@@ -112,6 +120,9 @@ MoFEMErrorCode MixedNonlinearPoisson::setupProblem() {
   CHKERR simpleInterface->setFieldOrder("U", initOrder);
   CHKERR simpleInterface->setFieldOrder("Q", initOrder + 1);
   CHKERR simpleInterface->setUp();
+
+  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-atom_test", &atomTest,
+                            PETSC_NULL);
 
   MoFEMFunctionReturn(0);
 }
@@ -189,9 +200,7 @@ MoFEMErrorCode MixedNonlinearPoisson::assembleSystem() {
   };
 
   auto add_boundary_rhs_ops = [&](auto &pipeline) {
-    // pipeline.push_back(new OpSetBc("Q", false, boundaryMarker));
     pipeline.push_back(new OpBoundaryRhsSource("Q", boundaryFunction));
-    // pipeline.push_back(new OpUnSetBc("Q"));
   };
 
   add_domain_lhs_ops(pipeline_mng->getOpDomainLhsPipeline());
@@ -277,6 +286,86 @@ MoFEMErrorCode MixedNonlinearPoisson::outputResults(int iter_num) {
   MoFEMFunctionReturn(0);
 }
 //! [Output results]
+
+//! [Check]
+MoFEMErrorCode MixedNonlinearPoisson::checkResults() {
+  MoFEMFunctionBegin;
+  auto check_result_fe_ptr = boost::make_shared<DomainEle>(mField);
+  auto errorVec =
+      createVectorMPI(mField.get_comm(),
+                      (mField.get_comm_rank() == 0) ? LAST_NORM : 0, LAST_NORM);
+  auto exactVec = createVectorMPI(
+      mField.get_comm(), (mField.get_comm_rank() == 0) ? LAST_EX_NORM : 0,
+      LAST_EX_NORM);
+  CHK_THROW_MESSAGE((AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+                        check_result_fe_ptr->getOpPtrVector(), {H1})),
+                    "Apply transform");
+  check_result_fe_ptr->getRuleHook = [](int, int, int p) { return p; };
+  auto analyticalFunction = [&](double x, double y, double z) {
+    return cos(M_PI * x) * cos(M_PI * y);
+  };
+  auto u_ptr = boost::make_shared<VectorDouble>();
+  check_result_fe_ptr->getOpPtrVector().push_back(
+      new OpCalculateScalarFieldValues("U", u_ptr));
+  auto mValFuncPtr = boost::make_shared<VectorDouble>();
+  check_result_fe_ptr->getOpPtrVector().push_back(
+      new OpGetTensor0fromFunc(mValFuncPtr, analyticalFunction));
+  check_result_fe_ptr->getOpPtrVector().push_back(
+      new OpCalcNormL2Tensor0(u_ptr, errorVec, NORM, mValFuncPtr));
+  check_result_fe_ptr->getOpPtrVector().push_back(
+      new OpCalcNormL2Tensor0(u_ptr, exactVec, EX_NORM));
+  CHKERR VecZeroEntries(errorVec);
+  CHKERR VecZeroEntries(exactVec);
+  CHKERR DMoFEMLoopFiniteElements(simpleInterface->getDM(),
+                                  simpleInterface->getDomainFEName(),
+                                  check_result_fe_ptr);
+                                  CHKERR VecAssemblyBegin(errorVec);
+  CHKERR VecAssemblyEnd(errorVec);
+  CHKERR VecAssemblyBegin(exactVec);
+  CHKERR VecAssemblyEnd(exactVec);
+  MOFEM_LOG_CHANNEL("SELF"); // Clear channel from old tags
+  // print norm in general log
+  if (mField.get_comm_rank() == 0) {
+    const double *L2_norms;
+    const double *Ex_norms;
+    CHKERR VecGetArrayRead(errorVec, &L2_norms);
+    CHKERR VecGetArrayRead(exactVec, &Ex_norms);
+    MOFEM_TAG_AND_LOG("SELF", Sev::inform, "Errors")
+        << "L2_NORM: " << std::sqrt(L2_norms[NORM]);
+    MOFEM_TAG_AND_LOG("SELF", Sev::inform, "Errors")
+        << "NORMALISED_ERROR: "
+        << (std::sqrt(L2_norms[NORM]) / std::sqrt(Ex_norms[EX_NORM]));
+    CHKERR VecRestoreArrayRead(errorVec, &L2_norms);
+    CHKERR VecRestoreArrayRead(exactVec, &Ex_norms);
+  }
+  // compare norm for ctest
+  if (atomTest && !mField.get_comm_rank()) {
+    const double *L2_norms;
+    const double *Ex_norms;
+    CHKERR VecGetArrayRead(errorVec, &L2_norms);
+    CHKERR VecGetArrayRead(exactVec, &Ex_norms);
+    double ref_percentage = 4.4e-04;
+    double normalised_error;
+    switch (atomTest) {
+    case 1: // 2D
+      normalised_error = std::sqrt(L2_norms[0]) / std::sqrt(Ex_norms[0]);
+      break;
+    default:
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
+               "atom test %d does not exist", atomTest);
+    }
+    if (normalised_error > ref_percentage) {
+      SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+               "atom test %d failed! Calculated Norm %3.16e is greater than "
+               "reference Norm %3.16e",
+               atomTest, normalised_error, ref_percentage);
+    }
+    CHKERR VecRestoreArrayRead(errorVec, &L2_norms);
+    CHKERR VecRestoreArrayRead(exactVec, &Ex_norms);
+  }
+  MoFEMFunctionReturn(0);
+}
+//! [Check]
 
 int main(int argc, char *argv[]) {
   // Initialisation of MoFEM/PETSc and MOAB data structures
