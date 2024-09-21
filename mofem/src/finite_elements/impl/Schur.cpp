@@ -535,8 +535,6 @@ OpSchurZeroRowsAndCols::doWork(int side, EntityType type,
   auto prb_ptr = fe_ptr->problemPtr;
   auto &dof = prb_ptr->getNumeredRowDofsPtr()->get<PetscGlobalIdx_mi_tag>();
 
-
-
   auto find_loc_dof_index = [&](auto glob) {
     auto it = dof.find(glob);
     if (it != dof.end()) {
@@ -551,15 +549,18 @@ OpSchurZeroRowsAndCols::doWork(int side, EntityType type,
 
   for (auto &s : SchurElemMats::schurL2Storage) {
 
-    auto &row_ind = s->getRowInd();
-
-    for (auto i = 0; i < row_ind.size(); ++i) {
-      if (row_ind[i] >= 0) {
-        if ((*markerPtr)[find_loc_dof_index(row_ind[i])]) {
-          row_ind[i] = -1;
+    auto zero_ind = [&](auto &ind) {
+      for (auto i = 0; i < ind.size(); ++i) {
+        if (ind[i] >= 0) {
+          if ((*markerPtr)[find_loc_dof_index(ind[i])]) {
+            ind[i] = -1;
+          }
         }
       }
-    }
+    };
+
+    zero_ind(s->getRowInd());
+    zero_ind(s->getColInd());
 
   }
 
