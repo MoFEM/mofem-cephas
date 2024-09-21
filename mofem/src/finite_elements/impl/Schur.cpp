@@ -66,6 +66,20 @@ struct OpSchurAssembleBegin : public OpSchurAssembleBaseImpl {
                         EntitiesFieldData::EntData &data);
 };
 
+struct OpSchurZeroRowsAndCols : public OpSchurAssembleBaseImpl {
+
+  OpSchurZeroRowsAndCols(
+      boost::shared_ptr<std::vector<unsigned char>> marker_ptr,
+      double diag_val);
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        EntitiesFieldData::EntData &data);
+
+private:
+  boost::shared_ptr<std::vector<unsigned char>> markerPtr;
+  double diagVal;
+};
+
 /**
  * @brief Assemble Schur complement (Implementation)
  *
@@ -169,6 +183,7 @@ protected:
                   const MatrixDouble &mat, InsertMode iora);
 
   friend struct OpSchurAssembleBegin;
+  friend struct OpSchurZeroRowsAndCols;
   template <typename OP_SCHUR_ASSEMBLE_BASE>
   friend struct OpSchurAssembleEndImpl;
 
@@ -506,6 +521,51 @@ MoFEMErrorCode OpSchurAssembleBegin::doWork(int side, EntityType type,
   MoFEMFunctionReturn(0);
 }
 
+OpSchurZeroRowsAndCols::OpSchurZeroRowsAndCols(
+    boost::shared_ptr<std::vector<unsigned char>> marker_ptr, double diag_val)
+    : OpSchurAssembleBaseImpl(NOSPACE, OPSPACE), markerPtr(marker_ptr),
+      diagVal(diag_val) {}
+
+MoFEMErrorCode
+OpSchurZeroRowsAndCols::doWork(int side, EntityType type,
+                               EntitiesFieldData::EntData &data) {
+  MoFEMFunctionBegin;
+
+  auto fe_ptr = getFEMethod();
+  auto prb_ptr = fe_ptr->problemPtr;
+  auto &dof = prb_ptr->getNumeredRowDofsPtr()->get<PetscGlobalIdx_mi_tag>();
+
+
+
+  auto find_loc_dof_index = [&](auto glob) {
+    auto it = dof.find(glob);
+    if (it != dof.end()) {
+      return (*it)->getPetscLocalDofIdx();
+    }
+    MOFEM_LOG("SELF", Sev::error) << "Global dof " << glob;
+    CHK_THROW_MESSAGE(
+        MOFEM_DATA_INCONSISTENCY,
+        "Global dof index not found in local numered dofs storage");
+    return -1;
+  };
+
+  for (auto &s : SchurElemMats::schurL2Storage) {
+
+    auto &row_ind = s->getRowInd();
+
+    for (auto i = 0; i < row_ind.size(); ++i) {
+      if (row_ind[i] >= 0) {
+        if ((*markerPtr)[find_loc_dof_index(row_ind[i])]) {
+          row_ind[i] = -1;
+        }
+      }
+    }
+
+  }
+
+  MoFEMFunctionReturn(0);
+};
+
 template <typename OP_SCHUR_ASSEMBLE_BASE>
 OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::OpSchurAssembleEndImpl(
     std::vector<std::string> fields_name,
@@ -794,7 +854,7 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
     }
 
     auto schur_block_list = get_schur_block_list(block_indexing);
-    for(auto &s : schur_block_list) {
+    for (auto &s : schur_block_list) {
       auto &m = s->getMat();
       CHKERR assemble_schur(m, s->uidRow, s->uidCol, &(s->getRowInd()),
                             &(s->getColInd()));
@@ -2193,6 +2253,11 @@ createOpSchurAssembleEnd(std::vector<std::string> fields_name,
   else
     return new OpSchurAssembleEnd<SchurDGESV>(fields_name, field_ents, ao,
                                               schur, sym_schur, symm_op);
+}
+
+OpSchurAssembleBase *createOpSchurZeroRowsAndCols(
+    boost::shared_ptr<std::vector<unsigned char>> marker_ptr, double diag_val) {
+  return new OpSchurZeroRowsAndCols(marker_ptr, diag_val);
 }
 
 OpSchurAssembleBase *
