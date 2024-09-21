@@ -166,6 +166,28 @@ struct ISManager : public UnknownInterface {
                               Range *ents = nullptr) const;
 
   /**
+   * \copybrief create IS for given problem, field and rank range (collective)
+   * \ingroup mofem_is_managers
+   * 
+   * \param problem name
+   * \param rc ROW or COL
+   * \param field name
+   * \param bridge_dim bridge dimension
+   * \param ents side entities
+   * \param min_coeff_idx
+   * \param max_coeff_idx
+   * \param min_order
+   * \param max_order
+   * \retval is out value
+   *
+   * \retval is out value
+   */
+  MoFEMErrorCode isCreateProblemBrokenFieldAndRank(
+      const std::string problem_name, RowColData rc, const std::string field,
+      int bridge_dim, Range ents, int min_coeff_idx, int max_coeff_idx,
+      int min_order, int max_order, SmartPetscObj<IS> &smart_is) const;
+
+  /**
     * \brief create IS for given problem, field and rank range (collective)
     * \ingroup mofem_is_managers
 
