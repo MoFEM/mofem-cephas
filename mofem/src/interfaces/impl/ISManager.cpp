@@ -354,6 +354,38 @@ MoFEMErrorCode ISManager::isCreateProblemFieldAndRank(
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode ISManager::isCreateProblemBrokenFieldAndRank(
+    const std::string problem_name, RowColData rc, const std::string field,
+    int bridge_dim, Range ents, int min_coeff_idx, int max_coeff_idx,
+    int min_order, int max_order, SmartPetscObj<IS> &smart_is) const {
+  const MoFEM::Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+
+  std::vector<boost::weak_ptr<NumeredDofEntity>> dofs_vec;
+  CHKERR m_field.getInterface<ProblemsManager>()
+      ->getSideDofsOnBrokenSpaceEntities(dofs_vec, problem_name, rc,
+                                         field, ents, bridge_dim, min_coeff_idx,
+                                         max_coeff_idx, min_order, max_order);
+
+
+  std::vector<int> idx_vec;
+  idx_vec.reserve(dofs_vec.size());
+  for (auto &dof : dofs_vec) {
+    idx_vec.emplace_back(dof.lock()->getPetscGlobalDofIdx());
+  }
+
+  IS is_raw;
+  int *id;
+  CHKERR PetscMalloc(idx_vec.size() * sizeof(int), &id);
+  std::copy(idx_vec.begin(), idx_vec.end(), id);
+  CHKERR ISCreateGeneral(m_field.get_comm(), idx_vec.size(), id,
+                         PETSC_OWN_POINTER, &is_raw);
+
+  smart_is = SmartPetscObj<IS>(is_raw);
+
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode ISManager::isCreateProblemFieldAndRankLocal(
     const std::string problem_name, RowColData rc, const std::string field,
     int min_coeff_idx, int max_coeff_idx, IS *is, Range *ents_ptr) const {
