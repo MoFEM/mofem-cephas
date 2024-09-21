@@ -183,9 +183,8 @@ struct ISManager : public UnknownInterface {
    * \retval is out value
    */
   MoFEMErrorCode isCreateProblemBrokenFieldAndRank(
-      const std::string problem_name, RowColData rc, const std::string field,
-      int bridge_dim, Range ents, int min_coeff_idx, int max_coeff_idx,
-      int min_order, int max_order, SmartPetscObj<IS> &smart_is) const;
+      const std::vector<boost::weak_ptr<NumeredDofEntity>> &dofs_vec,
+      SmartPetscObj<IS> &smart_is) const;
 
   /**
     * \brief create IS for given problem, field and rank range (collective)

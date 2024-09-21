@@ -64,6 +64,15 @@ createOpSchurAssembleEnd(std::vector<std::string> fields_name,
                          SmartPetscObj<Mat> schur = SmartPetscObj<Mat>(),
                          bool sym_schur = false, bool symm_op = false);
 
+/**
+ * @brief Create a Op Schur Zero Rows And Cols object
+ * 
+ * @param marker_ptr 
+ * @return OpSchurAssembleBase* 
+ */
+OpSchurAssembleBase *createOpSchurZeroRowsAndCols(
+    boost::shared_ptr<std::vector<unsigned char>> marker_ptr, double diag_val);
+
 using SchurFieldPair = std::pair<std::string, std::string>;
 
 using SchurFEOpsFEandFields = std::vector<
