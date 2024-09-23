@@ -445,9 +445,6 @@ int main(int argc, char *argv[]) {
     auto dm = simple->getDM();
 
     VectorDouble vals;
-    auto jac_ptr = boost::make_shared<MatrixDouble>();
-    auto inv_jac_ptr = boost::make_shared<MatrixDouble>();
-    auto det_ptr = boost::make_shared<VectorDouble>();
     MatrixDouble diff_vals;
 
     auto assemble_matrices_and_vectors = [&]() {
@@ -457,9 +454,9 @@ int main(int argc, char *argv[]) {
           PETSC>::LinearForm<GAUSS>::OpSource<1, 1>;
 
       CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
-          pipeline_mng->getOpDomainLhsPipeline(), {NOSPACE});
+          pipeline_mng->getOpDomainLhsPipeline(), {space});
       CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
-          pipeline_mng->getOpDomainRhsPipeline(), {NOSPACE});
+          pipeline_mng->getOpDomainRhsPipeline(), {space});
 
       using OpMass = FormsIntegrators<DomainEleOp>::Assembly<
           SCHUR>::BiLinearForm<GAUSS>::OpMass<1, 1>;

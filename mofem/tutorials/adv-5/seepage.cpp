@@ -74,7 +74,6 @@ using OpBoundaryVec = FormsIntegrators<BoundaryEleOp>::Assembly<
 using OpBoundaryInternal = FormsIntegrators<BoundaryEleOp>::Assembly<
     PETSC>::LinearForm<GAUSS>::OpBaseTimesVector<1, SPACE_DIM, 1>;
 //! [Essential boundary conditions]
-using OpScaleL2 = MoFEM::OpScaleBaseBySpaceInverseOfMeasure<DomainEleOp>;
 
 using OpBaseDivU = FormsIntegrators<DomainEleOp>::Assembly<PETSC>::BiLinearForm<
     GAUSS>::OpMixScalarTimesDiv<SPACE_DIM>;
