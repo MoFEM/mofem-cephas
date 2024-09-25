@@ -544,7 +544,6 @@ struct Monitor : public FEMethod {
 
       auto post_proc_norm_fe = boost::make_shared<BoundaryEle>(*m_field_ptr);
       auto common_data_ptr = boost::make_shared<ContactOps::CommonData>();
-      auto simple = m_field_ptr->getInterface<Simple>();
       Range contact_range;
       for (auto m :
            m_field_ptr->getInterface<MeshsetsManager>()->getCubitMeshsetPtr(
