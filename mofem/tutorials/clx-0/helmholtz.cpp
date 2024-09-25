@@ -287,7 +287,6 @@ MoFEMErrorCode Example::outputResults() {
 //! [Check results]
 MoFEMErrorCode Example::checkResults() {
   MoFEMFunctionBegin;
-  PipelineManager *pipeline_mng = mField.getInterface<PipelineManager>();
 
   auto dm = simpleInterface->getDM();
   auto D = createDMVector(dm);
