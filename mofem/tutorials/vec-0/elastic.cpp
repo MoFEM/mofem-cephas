@@ -346,7 +346,6 @@ MoFEMErrorCode Example::setupProblem() {
 //! [Boundary condition]
 MoFEMErrorCode Example::boundaryCondition() {
   MoFEMFunctionBegin;
-  auto pip = mField.getInterface<PipelineManager>();
   auto simple = mField.getInterface<Simple>();
   auto bc_mng = mField.getInterface<BcManager>();
 
@@ -372,8 +371,6 @@ MoFEMErrorCode Example::boundaryCondition() {
 MoFEMErrorCode Example::assembleSystem() {
   MoFEMFunctionBegin;
   auto pip = mField.getInterface<PipelineManager>();
-  auto simple = mField.getInterface<Simple>();
-  auto bc_mng = mField.getInterface<BcManager>();
 
   //! [Integration rule]
   auto integration_rule = [](int, int, int approx_order) {
@@ -955,7 +952,6 @@ private:
 
 MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> solver) {
   MoFEMFunctionBegin;
-  auto simple = mField.getInterface<Simple>();
   auto pip = mField.getInterface<PipelineManager>();
   PC pc;
   CHKERR KSPGetPC(solver, &pc);
