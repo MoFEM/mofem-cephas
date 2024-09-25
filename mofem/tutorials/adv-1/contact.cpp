@@ -473,7 +473,6 @@ MoFEMErrorCode Contact::OPs() {
   MoFEMFunctionBegin;
   auto simple = mField.getInterface<Simple>();
   auto *pip_mng = mField.getInterface<PipelineManager>();
-  auto bc_mng = mField.getInterface<BcManager>();
   auto time_scale = boost::make_shared<ScaledTimeScale>();
   auto body_force_time_scale =
       boost::make_shared<ScaledTimeScale>("body_force_hist.txt");
@@ -1225,7 +1224,6 @@ MoFEMErrorCode SetUpSchurImpl::setOperator() {
 
 MoFEMErrorCode SetUpSchurImpl::setPC(PC pc) {
   MoFEMFunctionBegin;
-  auto simple = mField.getInterface<Simple>();
   auto block_is = getDMSubData(blockDM)->getSmartRowIs();
   CHKERR PCFieldSplitSetIS(pc, NULL, block_is);
   CHKERR PCFieldSplitSetSchurPre(pc, PC_FIELDSPLIT_SCHUR_PRE_USER, S);
