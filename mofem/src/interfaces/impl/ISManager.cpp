@@ -356,8 +356,7 @@ MoFEMErrorCode ISManager::isCreateProblemFieldAndRank(
 
 MoFEMErrorCode ISManager::isCreateProblemBrokenFieldAndRank(
     const std::vector<boost::weak_ptr<NumeredDofEntity>> &dofs_vec,
-    SmartPetscObj<IS> &smart_is) const {
-  const MoFEM::Interface &m_field = cOre;
+    SmartPetscObj<IS> &smart_is, MPI_Comm comm) const {
   MoFEMFunctionBegin;
 
   std::vector<int> idx_vec;
@@ -372,8 +371,32 @@ MoFEMErrorCode ISManager::isCreateProblemBrokenFieldAndRank(
   int *id;
   CHKERR PetscMalloc(idx_vec.size() * sizeof(int), &id);
   std::copy(idx_vec.begin(), idx_vec.end(), id);
-  CHKERR ISCreateGeneral(m_field.get_comm(), idx_vec.size(), id,
-                         PETSC_OWN_POINTER, &is_raw);
+  CHKERR ISCreateGeneral(comm, idx_vec.size(), id, PETSC_OWN_POINTER, &is_raw);
+
+  smart_is = SmartPetscObj<IS>(is_raw);
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode ISManager::isCreateProblemBrokenFieldAndRankLocal(
+    const std::vector<boost::weak_ptr<NumeredDofEntity>> &dofs_vec,
+    SmartPetscObj<IS> &smart_is) const {
+  MoFEMFunctionBegin;
+
+  std::vector<int> idx_vec;
+  idx_vec.reserve(dofs_vec.size());
+  for (auto &dof : dofs_vec) {
+    if (auto d = dof.lock()) {
+      idx_vec.emplace_back(d->getPetscLocalDofIdx());
+    }
+  }
+
+  IS is_raw;
+  int *id;
+  CHKERR PetscMalloc(idx_vec.size() * sizeof(int), &id);
+  std::copy(idx_vec.begin(), idx_vec.end(), id);
+  CHKERR ISCreateGeneral(PETSC_COMM_SELF, idx_vec.size(), id, PETSC_OWN_POINTER,
+                         &is_raw);
 
   smart_is = SmartPetscObj<IS>(is_raw);
 
