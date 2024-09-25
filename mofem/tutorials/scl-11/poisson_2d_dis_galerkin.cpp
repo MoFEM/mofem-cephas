@@ -391,8 +391,6 @@ MoFEMErrorCode Poisson2DiscontGalerkin::checkResults() {
     const double s = o->getMeasure() / (area_map[0] + area_map[1]);
     const double p = penalty * s;
 
-    constexpr std::array<int, 2> sign_array{1, -1};
-
     std::array<double, LAST_NORM> error;
     std::fill(error.begin(), error.end(), 0);
 
