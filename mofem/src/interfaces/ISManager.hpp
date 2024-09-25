@@ -184,6 +184,27 @@ struct ISManager : public UnknownInterface {
    */
   MoFEMErrorCode isCreateProblemBrokenFieldAndRank(
       const std::vector<boost::weak_ptr<NumeredDofEntity>> &dofs_vec,
+      SmartPetscObj<IS> &smart_is, MPI_Comm comm = PETSC_COMM_SELF) const;
+
+  /**
+   * \copybrief create IS for given problem, field and rank range (collective)
+   * \ingroup mofem_is_managers
+   * 
+   * \param problem name
+   * \param rc ROW or COL
+   * \param field name
+   * \param bridge_dim bridge dimension
+   * \param ents side entities
+   * \param min_coeff_idx
+   * \param max_coeff_idx
+   * \param min_order
+   * \param max_order
+   * \retval is out value
+   *
+   * \retval is out value
+   */
+  MoFEMErrorCode isCreateProblemBrokenFieldAndRankLocal(
+      const std::vector<boost::weak_ptr<NumeredDofEntity>> &dofs_vec,
       SmartPetscObj<IS> &smart_is) const;
 
   /**
