@@ -482,7 +482,7 @@ struct Tools : public UnknownInterface {
    *
    * @param coords
    * @param normal
-   * @param d_normal derbiative, if pointer is null, derbiative is not
+   * @param d_normal derivative, if pointer is null, derivative is not
    * calculated
    * @return MoFEMErrorCode
    */
