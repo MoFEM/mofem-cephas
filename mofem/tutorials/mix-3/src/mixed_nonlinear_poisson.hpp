@@ -36,6 +36,7 @@ using EntData = EntitiesFieldData::EntData;
 namespace MixedNonlinearPoissonOps {
 
 FTensor::Index<'i', 2> i;
+const double nonlinearConstant = 1;
 
 typedef boost::function<double(const double, const double, const double)>
     ScalarFunc;
@@ -52,6 +53,7 @@ public:
     MoFEMFunctionBegin;
 
     auto &nf = AssemblyDomainEleOp::locF;
+    const size_t nb_base_functions = data.getN().size2() / 3;
 
     // get element area
     const double area = getMeasure();
@@ -71,14 +73,18 @@ public:
     // START THE LOOP OVER INTEGRATION POINTS TO CALCULATE LOCAL VECTOR
     for (int gg = 0; gg != nb_integration_points; gg++) {
       const double a = t_w * area;
-
+      int rr = 0;
       // calculate the local vector
-      for (int rr = 0; rr != AssemblyDomainEleOp::nbRows; rr++) {
+      for (; rr != AssemblyDomainEleOp::nbRows; rr++) {
         // nf[rr] += q_base * (1 / (1 + u_field * u_field)) * q_field(i) * a;
-        nf[rr] += q_base(i) * (1 / (1 + u_field * u_field)) * q_field(i) * a;
+        nf[rr] += q_base(i) *
+                  (1 / (1 + nonlinearConstant * u_field * u_field)) *
+                  q_field(i) * a;
         // move to the next base function
         ++q_base;
       }
+      for (; rr < nb_base_functions; ++rr)
+        ++q_base;
       // move to the weight of the next integration point
       ++t_w;
       // move to the solution (field value) at the next integration point
@@ -109,6 +115,8 @@ public:
 
     auto &locLhs = AssemblyDomainEleOp::locMat;
 
+    const size_t nb_base_functions = row_data.getN().size2() / 3;
+
     const int nb_row_dofs = row_data.getIndices().size();
     const int nb_col_dofs = col_data.getIndices().size();
     // get element area
@@ -130,14 +138,16 @@ public:
     for (int gg = 0; gg != nb_integration_points; gg++) {
       const double a = t_w * area;
 
-      for (int rr = 0; rr != nb_row_dofs; ++rr) {
+      int rr = 0;
+      for (; rr != nb_row_dofs; ++rr) {
         // get base functions on column
         auto u_col_base = col_data.getFTensor0N(gg, 0);
 
         for (int cc = 0; cc != nb_col_dofs; cc++) {
           locLhs(rr, cc) += q_row_base(i) *
-                            ((-2 * u_field) / ((1 + u_field * u_field) *
-                                               (1 + u_field * u_field))) *
+                            ((-2 * nonlinearConstant * u_field) /
+                             ((1 + nonlinearConstant * u_field * u_field) *
+                              (1 + nonlinearConstant * u_field * u_field))) *
                             u_col_base * q_field(i) * a;
           // move to the next base functions on column
           ++u_col_base;
@@ -146,6 +156,8 @@ public:
         // move to the next base function on row
         ++q_row_base;
       }
+      for (; rr < nb_base_functions; ++rr)
+        ++q_row_base;
 
       // move to the weight of the next integration point
       ++t_w;
@@ -175,6 +187,7 @@ public:
     MoFEMFunctionBegin;
 
     auto &locLhs = AssemblyDomainEleOp::locMat;
+    const size_t nb_base_functions = row_data.getN().size2() / 3;
 
     const int nb_row_dofs = row_data.getIndices().size();
     const int nb_col_dofs = col_data.getIndices().size();
@@ -194,14 +207,15 @@ public:
     // START THE LOOP OVER INTEGRATION POINTS TO CALCULATE LOCAL MATRIX
     for (int gg = 0; gg != nb_integration_points; gg++) {
       const double a = t_w * area;
-
-      for (int rr = 0; rr != nb_row_dofs; ++rr) {
+      int rr = 0;
+      for (; rr != nb_row_dofs; ++rr) {
         // get base functions on column
         auto q_col_base = col_data.getFTensor1N<3>(gg, 0);
 
         for (int cc = 0; cc != nb_col_dofs; cc++) {
-          locLhs(rr, cc) +=
-              q_row_base(i) * (1 / (1 + u_field * u_field)) * q_col_base(i) * a;
+          locLhs(rr, cc) += q_row_base(i) *
+                            (1 / (1 + nonlinearConstant * u_field * u_field)) *
+                            q_col_base(i) * a;
           // move to the next base functions on column
           ++q_col_base;
         }
@@ -209,6 +223,8 @@ public:
         // move to the next base function on row
         ++q_row_base;
       }
+      for (; rr < nb_base_functions; ++rr)
+        ++q_row_base;
 
       // move to the weight of the next integration point
       ++t_w;
@@ -249,7 +265,8 @@ public:
     for (int gg = 0; gg != nb_integration_pts; ++gg) {
       const double alpha = t_w * area;
 
-      t_diff(i) = t_val_grad(i) * (1 + t_val * t_val) - t_flux(i);
+      t_diff(i) =
+          t_val_grad(i) * (1 + nonlinearConstant * t_val * t_val) - t_flux(i);
       error_ind += alpha * t_diff(i) * t_diff(i);
 
       ++t_w;

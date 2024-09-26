@@ -36,12 +36,9 @@ private:
   int initOrder;
 
   // PETSc vector for storing norms
-  SmartPetscObj<Vec> errorVec, exactVec, fluxVec, indVec;
+  SmartPetscObj<Vec> errorVec;
   int atomTest = 0;
-  enum NORMS { NORM = 0, LAST_NORM };
-  enum EX_NORMS { EX_NORM = 0, LAST_EX_NORM };
-  enum FLUX_NORMS { FLUX_NORM = 0, LAST_FLUX_NORM };
-  enum IND_NORMS { IND_NORM = 0, LAST_IND_NORM };
+  enum NORMS { NORM = 0, EX_NORM, FLUX_NORM, IND_NORM, LAST_NORM };
 
   //! [Analytical function]
   static double analyticalFunction(const double x, const double y,
@@ -63,8 +60,9 @@ private:
   };
   //! [Analytical flux function]
 
-  //! [Source function]
-  static double sourceFunction(const double x, const double y, const double z) {
+    //! [Source function]
+  static double sourceFunction(const double x, const double y, const double
+  z) {
     return 2 * M_PI * M_PI *
            (cos(M_PI * x) * cos(M_PI * y) +
             cube(cos(M_PI * x)) * cube(cos(M_PI * y)) -
@@ -73,6 +71,23 @@ private:
                  sqr(sin(M_PI * y)) * sqr(cos(M_PI * x))));
   }
   //! [Source function]
+
+  // //! [Analytical flux function]
+  // static VectorDouble analyticalFlux(const double x, const double y,
+  //                                    const double z) {
+  //   VectorDouble res;
+  //   res.resize(2);
+  //   res[0] = -(M_PI * sin(M_PI * x) * cos(M_PI * y));
+  //   res[1] = -(M_PI * cos(M_PI * x) * sin(M_PI * y));
+  //   return res;
+  // };
+  // //! [Analytical flux function]
+
+  // //! [Source function]
+  // static double sourceFunction(const double x, const double y, const double z) {
+  //   return 2 * M_PI * M_PI * cos(M_PI * x) * cos(M_PI * y);
+  // }
+  // //! [Source function]
 
   //! [Boundary function]
   // Function to calculate the Boundary term
@@ -154,7 +169,7 @@ MoFEMErrorCode MixedNonlinearPoisson::setupProblem() {
 MoFEMErrorCode MixedNonlinearPoisson::setIntegrationRules() {
   MoFEMFunctionBegin;
 
-  auto rule = [](int, int, int p) -> int { return 2 * p; };
+  auto rule = [](int, int, int p) -> int { return 4 * p; };
 
   PipelineManager *pipeline_mng = mField.getInterface<PipelineManager>();
   CHKERR pipeline_mng->setDomainLhsIntegrationRule(rule);
@@ -310,23 +325,19 @@ MoFEMErrorCode MixedNonlinearPoisson::outputResults(int iter_num) {
 //! [Check]
 MoFEMErrorCode MixedNonlinearPoisson::checkResults() {
   MoFEMFunctionBegin;
+
+  auto simple = mField.getInterface<Simple>();
+  auto dm = simple->getDM();
+
   auto check_result_fe_ptr = boost::make_shared<DomainEle>(mField);
+  check_result_fe_ptr->getRuleHook = [](int, int, int p) { return 4 * p; };
+  CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+      check_result_fe_ptr->getOpPtrVector(), {HDIV, L2});
+
   auto errorVec =
       createVectorMPI(mField.get_comm(),
                       (mField.get_comm_rank() == 0) ? LAST_NORM : 0, LAST_NORM);
-  auto exactVec = createVectorMPI(
-      mField.get_comm(), (mField.get_comm_rank() == 0) ? LAST_EX_NORM : 0,
-      LAST_EX_NORM);
-  auto fluxVec = createVectorMPI(
-      mField.get_comm(), (mField.get_comm_rank() == 0) ? LAST_FLUX_NORM : 0,
-      LAST_FLUX_NORM);
-  auto indVec = createVectorMPI(
-      mField.get_comm(), (mField.get_comm_rank() == 0) ? LAST_IND_NORM : 0,
-      LAST_IND_NORM);
-  CHK_THROW_MESSAGE((AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
-                        check_result_fe_ptr->getOpPtrVector(), {HDIV, L2})),
-                    "Apply transform");
-  check_result_fe_ptr->getRuleHook = [](int, int, int p) { return  2 * p; };
+  CHKERR VecZeroEntries(errorVec);
 
   auto u_ptr = boost::make_shared<VectorDouble>();
   auto u_grad_ptr = boost::make_shared<MatrixDouble>();
@@ -344,70 +355,50 @@ MoFEMErrorCode MixedNonlinearPoisson::checkResults() {
   check_result_fe_ptr->getOpPtrVector().push_back(
       new OpGetTensor0fromFunc(mValFuncPtr, analyticalFunction));
   check_result_fe_ptr->getOpPtrVector().push_back(
-      new OpGetTensor1fromFunc<3, 3>(mFluxValFuncPtr, analyticalFlux));
+      new OpGetTensor1fromFunc<2, 3>(mFluxValFuncPtr, analyticalFlux));
 
   check_result_fe_ptr->getOpPtrVector().push_back(
       new OpCalcNormL2Tensor0(u_ptr, errorVec, NORM, mValFuncPtr));
   check_result_fe_ptr->getOpPtrVector().push_back(
-      new OpCalcNormL2Tensor0(u_ptr, exactVec, EX_NORM));
+      new OpCalcNormL2Tensor0(u_ptr, errorVec, EX_NORM));
 
   check_result_fe_ptr->getOpPtrVector().push_back(
-      new OpCalcNormL2Tensor1<3>(q_ptr, fluxVec, FLUX_NORM, mFluxValFuncPtr));
+      new OpCalcNormL2Tensor1<3>(q_ptr, errorVec, FLUX_NORM, mFluxValFuncPtr));
   check_result_fe_ptr->getOpPtrVector().push_back(
-      new OpErrorIndicator(u_ptr, q_ptr, u_grad_ptr, indVec, IND_NORM));
+      new OpErrorIndicator(u_ptr, q_ptr, u_grad_ptr, errorVec, IND_NORM));
 
-  CHKERR VecZeroEntries(errorVec);
-  CHKERR VecZeroEntries(exactVec);
-  CHKERR VecZeroEntries(fluxVec);
-  CHKERR VecZeroEntries(indVec);
-  CHKERR DMoFEMLoopFiniteElements(simpleInterface->getDM(),
-                                  simpleInterface->getDomainFEName(),
+  CHKERR DMoFEMLoopFiniteElements(dm, simpleInterface->getDomainFEName(),
                                   check_result_fe_ptr);
   CHKERR VecAssemblyBegin(errorVec);
   CHKERR VecAssemblyEnd(errorVec);
-  CHKERR VecAssemblyBegin(exactVec);
-  CHKERR VecAssemblyEnd(exactVec);
-  CHKERR VecAssemblyBegin(fluxVec);
-  CHKERR VecAssemblyEnd(fluxVec);
-  CHKERR VecAssemblyBegin(indVec);
-  CHKERR VecAssemblyEnd(indVec);
 
   MOFEM_LOG_CHANNEL("SELF"); // Clear channel from old tags
   // print norm in general log
   if (mField.get_comm_rank() == 0) {
-    const double *L2_norms;
-    const double *Ex_norms;
-    const double *Flux_norms;
-    const double *Ind_norms;
-    CHKERR VecGetArrayRead(errorVec, &L2_norms);
-    CHKERR VecGetArrayRead(exactVec, &Ex_norms);
-    CHKERR VecGetArrayRead(fluxVec, &Flux_norms);
-    CHKERR VecGetArrayRead(indVec, &Ind_norms);
+    const double *norms;
+
+    CHKERR VecGetArrayRead(errorVec, &norms);
     MOFEM_TAG_AND_LOG("SELF", Sev::inform, "Errors")
-        << "L2_NORM: " << std::sqrt(L2_norms[NORM]);
+        << "L2_NORM: " << std::sqrt(norms[NORM]);
     MOFEM_TAG_AND_LOG("SELF", Sev::inform, "Errors")
         << "NORMALISED_ERROR: "
-        << (std::sqrt(L2_norms[NORM]) / std::sqrt(Ex_norms[EX_NORM]));
+        << (std::sqrt(norms[NORM]) / std::sqrt(norms[EX_NORM]));
     MOFEM_TAG_AND_LOG("SELF", Sev::inform, "Errors")
-        << "FLUX_ERROR: " << (std::sqrt(Flux_norms[FLUX_NORM]));
+        << "FLUX_ERROR: " << (std::sqrt(norms[FLUX_NORM]));
     MOFEM_TAG_AND_LOG("SELF", Sev::inform, "Errors")
-        << "ERROR_INDICATOR: " << (std::sqrt(Ind_norms[IND_NORM]));
-    CHKERR VecRestoreArrayRead(errorVec, &L2_norms);
-    CHKERR VecRestoreArrayRead(exactVec, &Ex_norms);
-    CHKERR VecRestoreArrayRead(fluxVec, &Flux_norms);
-    CHKERR VecRestoreArrayRead(indVec, &Ind_norms);
+        << "ERROR_INDICATOR: " << (std::sqrt(norms[IND_NORM]));
+    CHKERR VecRestoreArrayRead(errorVec, &norms);
   }
+
   // compare norm for ctest
   if (atomTest && !mField.get_comm_rank()) {
-    const double *L2_norms;
-    const double *Ex_norms;
-    CHKERR VecGetArrayRead(errorVec, &L2_norms);
-    CHKERR VecGetArrayRead(exactVec, &Ex_norms);
+    const double *norms;
+    CHKERR VecGetArrayRead(errorVec, &norms);
     double ref_percentage = 4.4e-04;
     double normalised_error;
     switch (atomTest) {
     case 1: // 2D
-      normalised_error = std::sqrt(L2_norms[0]) / std::sqrt(Ex_norms[0]);
+      normalised_error = std::sqrt(norms[NORM]) / std::sqrt(norms[EX_NORM]);
       break;
     default:
       SETERRQ1(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
@@ -419,8 +410,7 @@ MoFEMErrorCode MixedNonlinearPoisson::checkResults() {
                "reference Norm %3.16e",
                atomTest, normalised_error, ref_percentage);
     }
-    CHKERR VecRestoreArrayRead(errorVec, &L2_norms);
-    CHKERR VecRestoreArrayRead(exactVec, &Ex_norms);
+    CHKERR VecRestoreArrayRead(errorVec, &norms);
   }
   MoFEMFunctionReturn(0);
 }
