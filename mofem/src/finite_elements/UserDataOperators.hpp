@@ -429,13 +429,16 @@ MoFEMErrorCode OpCalculateVectorFieldValues_General<
 
         size_t bb = 0;
         for (; bb != size; ++bb) {
+          
 
+#ifndef SINGULARITY
 #ifndef NDEBUG
           if (base_function != base_function) {
             MOFEM_LOG("SELF", Sev::error) << "base finction: " << base_function;
             SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                     "Wrong number number in base functions");
           }
+#endif
 #endif
 
           values_at_gauss_pts(I) += field_data(I) * base_function;
