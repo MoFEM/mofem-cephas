@@ -60,9 +60,8 @@ private:
   };
   //! [Analytical flux function]
 
-    //! [Source function]
-  static double sourceFunction(const double x, const double y, const double
-  z) {
+  //! [Source function]
+  static double sourceFunction(const double x, const double y, const double z) {
     return 2 * M_PI * M_PI *
            (cos(M_PI * x) * cos(M_PI * y) +
             cube(cos(M_PI * x)) * cube(cos(M_PI * y)) -
@@ -84,7 +83,8 @@ private:
   // //! [Analytical flux function]
 
   // //! [Source function]
-  // static double sourceFunction(const double x, const double y, const double z) {
+  // static double sourceFunction(const double x, const double y, const double
+  // z) {
   //   return 2 * M_PI * M_PI * cos(M_PI * x) * cos(M_PI * y);
   // }
   // //! [Source function]
@@ -181,6 +181,35 @@ MoFEMErrorCode MixedNonlinearPoisson::setIntegrationRules() {
 }
 //! [Set integration rule]
 
+//! [Set Dirichlet Boundary Conditions]
+MoFEMErrorCode MixedNonlinearPoisson::boundaryCondition() {
+  MoFEMFunctionBegin;
+
+  // Get boundary edges marked in block named "BOUNDARY_CONDITION"
+  auto get_bc_on_mesh = [&]() {
+    Range boundary_entities;
+    for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField, BLOCKSET, it)) {
+      std::string entity_name = it->getName();
+      if (entity_name.compare(0, 18, "BOUNDARY_CONDITION") == 0) {
+        CHKERR it->getMeshsetIdEntitiesByDimension(mField.get_moab(), 1,
+                                                   boundary_entities, true);
+      }
+    }
+    // Add vertices to boundary entities
+    Range boundary_vertices;
+    CHKERR mField.get_moab().get_connectivity(boundary_entities,
+                                              boundary_vertices, true);
+    boundary_entities.merge(boundary_vertices);
+
+    return boundary_entities;
+  };
+
+  boundaryRange = get_bc_on_mesh();
+
+  MoFEMFunctionReturn(0);
+}
+//! [Set Dirichlet Boundary Conditions]
+
 //! [Assemble system]
 MoFEMErrorCode MixedNonlinearPoisson::assembleSystem() {
   MoFEMFunctionBegin;
@@ -241,7 +270,8 @@ MoFEMErrorCode MixedNonlinearPoisson::assembleSystem() {
   };
 
   auto add_boundary_rhs_ops = [&](auto &pipeline) {
-    pipeline.push_back(new OpBoundaryRhsSource("Q", boundaryFunction));
+    pipeline.push_back(new OpBoundaryRhsSource(
+        "Q", boundaryFunction, boost::make_shared<Range>(boundaryRange)));
   };
 
   add_domain_lhs_ops(pipeline_mng->getOpDomainLhsPipeline());
