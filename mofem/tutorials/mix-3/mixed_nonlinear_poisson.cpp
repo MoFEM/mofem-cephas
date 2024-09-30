@@ -34,6 +34,7 @@ private:
   Simple *simpleInterface;
 
   int initOrder;
+  Range boundaryRange;
 
   // PETSc vector for storing norms
   SmartPetscObj<Vec> errorVec;
@@ -101,6 +102,7 @@ private:
   MoFEMErrorCode readMesh();
   MoFEMErrorCode setupProblem();
   MoFEMErrorCode setIntegrationRules();
+  MoFEMErrorCode boundaryCondition();
   MoFEMErrorCode assembleSystem();
   MoFEMErrorCode solveSystem();
   MoFEMErrorCode outputResults(int iter_num = 0);
@@ -113,6 +115,7 @@ MoFEMErrorCode MixedNonlinearPoisson::runProblem() {
   CHKERR readMesh();
   CHKERR setupProblem();
   CHKERR setIntegrationRules();
+  CHKERR boundaryCondition();
   CHKERR assembleSystem();
   CHKERR solveSystem();
   CHKERR outputResults();
