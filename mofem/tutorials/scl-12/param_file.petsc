@@ -1,0 +1,14 @@
+# --- Problem: electrostatics_2d, electrostatics_3d
+
+## Linear solver
+-ksp_type fgmres
+-pc_type lu
+-pc_factor_mat_solver_type mumps
+-mat_mumps_icntl_20 0
+-mat_mumps_icntl_14 800
+-mat_mumps_icntl_24 1
+-mat_mumps_icntl_13 1
+-ksp_monitor
+-out_skin 1
+-atom_test 0
+# ---

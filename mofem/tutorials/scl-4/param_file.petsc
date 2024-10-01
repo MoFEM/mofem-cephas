@@ -25,6 +25,7 @@
 -snes_rtol 1e-12
 -snes_monitor
 -snes_lag_jacobian 1 
+-atom_test 0
 #-order 2
 
 # ---
