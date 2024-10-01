@@ -1,18 +1,144 @@
-/*! \page basic_tutorials_electrostatics SCL-12: Electrostatics
+/*! \page tutorials_electrostatics_doc SCL-12: Electrostatics
 
-\note Prerequisites of this tutorial include \ref basic_tutorials_poisson_nonhomogeneous
-and \ref basic_tutorials_mesh_generation_3d (for the 3D extension
+\note Prerequisites of this tutorial include \ref basic_tutorials_poisson_homogeneous , \ref basic_tutorials_poisson_nonhomogeneous and \ref basic_tutorials_mesh_generation_3d (for the 3D extension
 implementation) 
 
 <br>
+\note Intended learning outcome:
+- basic concepts of electrostatics
+- commondata structures of a program developed using MoFEM
+- postprocessing of the solution
+- integartion skeleton and how to use it
+
+\tableofcontents
+\section introduction Introduction
+<br>
+The fundamentals of electrostatics are based on the Coulomb's law, especially for the effect and properties of stationary or slow-moving electric charges. or time-independent problems with no volumetric charges and magnetic field, Gauss’s law and Faradays equations can be expressed as:
+\f[
+\nabla \cdot \mathbf{D} = 0 \quad \text{and}\quad \nabla \times \mathbf{D} = 0 .
+\f]
+The constitutive relation for dielectric material, \f$\mathbf{D}\f$ represents by the electric displacement field, which is a function of the permittivity, \f$\varepsilon\f$ of the material and \f$\mathbf{E}\f$, the electric field vector. such that:
+\f[
+    \mathbf{D}=\varepsilon\, \mathbf{E} \,\,; \text{ where } \varepsilon = \varepsilon_r\, \varepsilon_0.
+    \label{eq: Electric Displacement}
+\f]
+In the above, \f$\varepsilon_r\f$ consdiers the relative permittivity and \f$\varepsilon_0\f$ is the vacuum permittivity. There also exists a scaler field potential $\phi$  for the the electric field vector \f$\mathbf{E}\f$ given by,
+\f[
+   \mathbf{E}= -{\nabla\phi}.
+\f]
+
+Thus, the Gauss's Law can be rewritten as
+\f[
+    {\nabla}\cdot(\varepsilon{\nabla}\phi)= 0.
+\f]
+For two different mediums with different dielectric materials, the interface conditions for the electric displacement field are written as
+\f[
+    \sigma_s = (\mathbf{D}_2 - \mathbf{D}_1)\cdot\mathbf{n_{21}},
+\f]
+
+where, \f$\mathbf{n}_{21}\f$ is the unit normal vector from medium 2 to medium 1 and \f$\sigma _{s} \f$ is the surface charge density.Thus to calculate the charge presence on the  area \f$A\f$ considering the electric displacement jump \f$\mathbf{[[D]]}\f$ on the suuface we can do the following integartion on the surface:
+\f[
+\sigma_s\, A =\int_{ S} \mathbf{[[D]]} \cdot \mathbf{n} \,\, dS.  
+\f]
+<br>
+
+Further, the total electric field energy, \f$ U_e\f$ stored over the volume, \f$v\f$ of the device is expressed as: 
+\f[
+U_e = \frac{1}{2} \int_{v} |\varepsilon_0\, \varepsilon_r \mathbf{E}|^2 d v
+\f]
+
+\section problem_formulation Problem Formulation
+Before developing the FE model, we consider a general problem setup, where two domains \f$\Omega_1\f$ and \f$\Omega_2\f$ with different material properties are separated by an interface \f$\Gamma_\text{int}\f$ where distributed surface charges lie at the interface. Furthermore, the boundary normal to the domain is \f$\Gamma_n\f$ where the boundary for the electrode is, \f$\Gamma_e\in\Gamma_n\f$ as shown in figure. Here, We will solve for the unknown potential, \f$\mathbf{\phi}\f$ fitting it to the Sobolev space, \f$\mathbf{H}^1_0(\Omega)\f$. It is a vector space consisting of the square-integrable scalar functions with square integrable gradient for solving the partial differential equations (PDEs) using finite element methods.
+<br>
+\anchor figure_electrostatics_problem
+\image html electrostatics_potato.png "Figure 1: Sketch of the boundary value problem considering charges between two domain. " width = 450px
+<br>
+\subsubsection governing_equations Governing Equations
+This problem can be represented as a boundary value problem associated with Poisson's equation as follows:
+\f[
+  \nabla \cdot (\varepsilon {\nabla}\phi) = 0 \quad \text{in } \Omega_1\cup \Omega_2   
+  \label{eq:strong form}
+\f]
+\subsubsection boundary_conditions Boundary Conditions
+
+Dirchilet Boundary Condition: 
+\f[
+\mathbf{\phi}(x, y, z) = \phi_0 \quad on \quad \Gamma_\phi\f]
+Naumann Boundary Condition: 
+\f[
+    \nabla\mathbf{\phi} \cdot {\mathbf{n}} = 0\quad on \quad\Gamma_n
+\f]
+
+Interface Condition: 
+\f[
+    \sigma_s = (\mathbf{D}_1 -  \mathbf{D}_2) \cdot \mathbf{n} \quad on \quad\Gamma_\text{int}
+\f]
+<br>
+\section Weak_Formulation Weak Formulation
+Let's consider the solution \f$\mathbf{\phi}\f$ and the test function \f$\delta \omega\f$ are regular \f$\forall \delta \omega\f$ in domains and boundaries, exceptionally, the space for \f$\delta \omega\f$ is such that, \f$H^1_0(\Omega) = \{\delta \omega \in H^1(\Omega) \mid \delta \omega=0 \text{ on } \partial\Gamma_{\phi}\}\f$. For the domains \f$\Omega_i \f$ where i = 1,2 the intergral form of the strong form can be written as:
+\f[
+\sum_{i=1,2}\int_{\Omega_{i}} \nabla \cdot (\varepsilon_i \nabla \phi) \, \delta \omega\, d\Omega_i = 0\quad;\forall\mathbf{\delta \omega} \in \mathbf{H}^1_0(\Omega) 
+\f]
+
+Applying, Green's theorem andintegrating by parts the above equation becomes,
+
+\f[
+ \sum_{i=1,2}\left(-\int_{\Omega_i} \varepsilon_i \nabla\phi \cdot \nabla \delta\omega \, d\Omega_i + {\int_{\Gamma_{\text{n}}} \varepsilon_{i} \nabla\phi \cdot\mathbf{n} \, \delta\omega \, d\Gamma_{\text{n}}} + \int_{\Gamma_{\text{int}}} \varepsilon_i \nabla\phi \cdot\mathbf{n}  \, \delta\omega \, d\Gamma_{\text{int}} \right)= 0
+\f]
+
+After incorporating the boundary conditions, the aforementioned expression can be rewritten as follows:
+\f[
+\sum_{i=1,2}\int_{\Omega_i} \varepsilon_{i} \nabla\phi \cdot \nabla\delta \omega \, d\Omega_i - \int_{\Gamma_{\text{int}}} (\varepsilon_1 \mathbf{E}_1 - \varepsilon_2 \mathbf{E}_2) \cdot \mathbf{n} \, \delta \omega \, d\Gamma_{\text{int}} = 0 \forall \delta\omega
+\f]
+Then, applying the interface condition,
+\f[
+\sum_{i=1,2}\int_{\Omega_i} \varepsilon_{i}\,\nabla\phi\cdot\nabla {\delta \omega}\, d\Omega_i  = \int_{\Gamma_{\text{int}}} \mathbf\,\sigma_s\,{\delta \omega}\, d\Gamma_{\text{int}} ; \forall \delta\omega
+\label{eq: Weak form}
+\f]
+\section discretization Discretization
+The geometric approximation of the continuous domain is represented by conforming the discrete counterparts associated with the FE mesh of the computational domain, such as triangles or quadrilaterals in 2D, or tetrahedral or hexahedral in 3D cases.
+In this regard, to solve the weak form including the boundary conditions on the mesh, we consider (i) the shape function functions  \f$N_\alpha\f$ and \f$N_\beta\f$  and (ii) degrees of freedoms of \f${\bar{\phi_{\alpha}}}\f$  and \f${\bar{\delta\phi_{\beta}}}\f$ corresponding the represent for `P' number of DoF to get \f$\phi\f$ where, \f$\phi = {{[\phi_1, \phi_2, \phi_3... ....\phi_P]}}^T\f$ is the vector of unknowns. So, \f$\phi\f$ and \f$\delta w\f$ are approximated as follows: 
+
+\f[
+\mathbf{\phi} \approx \phi^{\text{apx}} = \sum_{\alpha=0}^{P-1} N_\alpha \bar{\phi}_\alpha \quad \text{and,}
+\f]
+
+\f[
+\delta \omega = \sum_{\beta=0}^{P-1} N_\beta \bar{\delta \phi}_\beta
+\f]
+In this case, the appromixmation to consdier the  \f$K^e\f$ matrix and \f$F^e\f$ vector, the elemental discretized formulation can be written as:
+\f[
+\sum_{i=1,2}\sum_{\alpha=0}^{P-1} \sum_{\beta=0}^{P-1}\delta\bar{\phi}_\beta\left[\int_{\Omega_{i}} \varepsilon_i\,\nabla N_\alpha\cdot\nabla N_\beta \, d\Omega_{i} \right] \bar{\phi}_\alpha =  \bar{\delta\phi}_\beta \left[\sum_{\beta=0}^{P-1}\int_{\Gamma_{\text{int}}} \mathbf{\sigma_s} N_\beta d\Gamma_{\text{int}}\right].
+\label{eq:Dicritized_form2}
+\f]
+
+
+Where, \f$\alpha\f$ and \f$\beta\f$ represent the matrix component at the row and column when assemble. Thus considering spatial coordinates of the quadrature point, corresponding weights and  the Jacobian Matrix to capture the transformation from physical coordinates to parent coordinates for the elements the weak form can be approximated consdiering the the LHS and RHS and get the elemental stiffness matrix and force vector. 
+<br>
+\section implementation Implementation of UDOs
+<br>
+To get the scalar charge density \f$\sigma_s\f$ at the interface and the permittivity of the dommains from the blocksets(in the mesh), we formed the UDO `OpBlockChargeDensity` and `OpBlockPermittivity` respectively. To  assemble and get the solution vector \f$\phi\f$, the two UDOs  `OpDomainLhsMatrixK` and ` OpInterfaceRhsVectorF` has been consdered get the elemental stiffness matrix and force vector utilising the `FormsIntegrators`. They are also incorporated with the values of the `epsilon` and `sIgma` as the permittyvity and surface charge density respectively. Here this values are considered for each blocks pointing to the common data structure `DataAtIntegrationPts`. Additionally, `OpBodySourceVectorb` has been also added in case, users want to consder the volumetric source term by changing the constant `bodySource`. 
+
+To compute the energy and charges during post-processing, we created two functions in the main program: `getTotalEnergy()` and `getElectrodeCharge()`. We also added the relevant operators to the respctive pipelines separately. For example: consdier the total energy of the electric field, calculated using the UDO operator OpTotalEnergy and pushed to the pipline `pip_energy`.
+
+To calculate the charge on a surface, we developed two additional operators: OpElectricDispJump and OpElectrodeCharge. The OpElectricDispJump calculates the jump in electric displacement \f$(D_1 - D_2)\f$ across the elements. To determine \f$D_1\f$ and \f$D_2\f$, we need to use the gradient of the potential field \f$(\nabla\phi)\f$ from the volume at each point in 3D. This is made possible thanks to the built-in MoFEM element type `FaceSideEle`, which allows calculations on the surface using approximations from the volumetric element. Finally, the `OpElectrodeCharge` operator integrates these jump values at Gauss points across the surface to calculate the total charge.
+<br>
+\section Postprocessing Postprocessing
+To know how to create mesh and run the program please refer to the prerequisites. After running the program, the output files will be generated in the same directory.
+\anchor figure_Potential_result
+\image html Potential.png "Figure 1: Potential and Electric field distribution due to the presence of Charge. " width = 650px
+
 
 The plain program for both the implementation of the UDOs (\c *.hpp) and the
 main program (\c *.cpp) are as follows:
 
-\subsection Implementation of the User Data Operators (*.hpp)
-
-\include electrostatics.hpp
-
-\subsection Implementation of the main program (*.cpp) 
+<br>
+\section implementation_main Implementation of the main program (*.cpp) 
 
 \include electrostatics.cpp
+
+\section implementation_UDO Implementation of the User Data Operators (*.hpp)
+\include electrostatics.hpp
+
+<br>
+*/

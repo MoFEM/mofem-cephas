@@ -221,6 +221,15 @@ continuing with the one you are most excited about.
        </td>
   </tr>
 
+  <tr valign="top">
+       <td width="20px"><img src="GreenTickBoxed.png" alt="Source code" width="18px"/> </td>
+       <td>\ref tutorials_electrostatics_doc</td>
+       <td>  problem solving electrostatics with charge distribution
+       <br/> *Keywords:*  Poisson's equation, Interface charge, dielectricity, [KSP](https://petsc.org/release/manualpages/KSP/KSP/) solver
+       </td>
+  </tr>
+  
+
 </table>
 
 \section tutorials_complex_field_problems Problems with complex variable fields
