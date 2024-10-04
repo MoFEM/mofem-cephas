@@ -188,6 +188,18 @@ target_link_libraries(fix_file
 )
 install(TARGETS fix_file DESTINATION bin)
 
+add_executable(approx_surface ${CMAKE_CURRENT_SOURCE_DIR}/approx_surface.cpp)
+target_link_libraries(approx_surface
+  mofem_interfaces
+  mofem_finite_elements
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_third_party
+  ${MoFEM_PROJECT_LIBS}
+)
+install(TARGETS fix_file DESTINATION bin)
+
 cm_export_file("convert.py" export_tools)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/convert.py
   DESTINATION bin
