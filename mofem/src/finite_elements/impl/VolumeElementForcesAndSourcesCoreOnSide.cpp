@@ -4,16 +4,11 @@
 
 */
 
-
-
 namespace MoFEM {
 
-int VolumeElementForcesAndSourcesCoreOnSide::getRule(int order) {
-  return -1;
-};
+int VolumeElementForcesAndSourcesCoreOnSide::getRule(int order) { return -1; };
 
-MoFEMErrorCode
-VolumeElementForcesAndSourcesCoreOnSide::setGaussPts(int order) {
+MoFEMErrorCode VolumeElementForcesAndSourcesCoreOnSide::setGaussPts(int order) {
   MoFEMFunctionBegin;
 
   if (!sidePtrFE)
@@ -21,34 +16,8 @@ VolumeElementForcesAndSourcesCoreOnSide::setGaussPts(int order) {
 
   const auto type = numeredEntFiniteElementPtr->getEntType();
   const auto nb_nodes_on_ele = CN::VerticesPerEntity(type);
-
   auto face_ptr_fe =
       static_cast<FaceElementForcesAndSourcesCore *>(sidePtrFE);
-
-  const auto face_entity = sidePtrFE->numeredEntFiniteElementPtr->getEnt();
-  auto &side_table = const_cast<SideNumber_multiIndex &>(
-      numeredEntFiniteElementPtr->getSideNumberTable());
-  auto sit = side_table.get<0>().find(face_entity);
-  if (sit == side_table.get<0>().end())
-    SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
-            "Face can not be found on volume element");
-
-  const auto nb_nodes_on_face = CN::VerticesPerEntity((*sit)->getEntType());
-
-  faceSense = (*sit)->sense;
-  faceSideNumber = (*sit)->side_number;
-  fill(&tetConnMap[0], &tetConnMap[nb_nodes_on_ele], -1);
-  for (int nn = 0; nn != nb_nodes_on_face; ++nn) {
-    faceConnMap[nn] = std::distance(
-        conn, find(conn, &conn[nb_nodes_on_ele], face_ptr_fe->conn[nn]));
-    tetConnMap[faceConnMap[nn]] = nn;
-    if (faceConnMap[nn] >= nb_nodes_on_ele)
-      SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
-              "No common node on face and element can not be found");
-  }
-
-  oppositeNode = std::distance(
-      &tetConnMap[0], find(&tetConnMap[0], &tetConnMap[nb_nodes_on_ele], -1));
 
   const int nb_gauss_pts = face_ptr_fe->gaussPts.size2();
   gaussPts.resize(4, nb_gauss_pts, false);
@@ -66,7 +35,7 @@ VolumeElementForcesAndSourcesCoreOnSide::setGaussPts(int order) {
     FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3> t_gauss_coords{
         &gaussPts(0, 0), &gaussPts(1, 0), &gaussPts(2, 0)};
     for (int gg = 0; gg != nb_gauss_pts; ++gg) {
-      for (int bb = 0; bb != nb_nodes_on_face; ++bb) {
+      for (int bb = 0; bb != nbNodesOnFace; ++bb) {
         const int shift = 3 * faceConnMap[bb];
         FTensor::Tensor1<const double, 3> t_coords{
             coords[shift + 0], coords[shift + 1], coords[shift + 2]};
@@ -98,11 +67,53 @@ MoFEMErrorCode
 VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::setPtrFE(
     ForcesAndSourcesCore *ptr) {
   MoFEMFunctionBeginHot;
-  if (!(ptrFE =
-            dynamic_cast<VolumeElementForcesAndSourcesCoreOnSide *>(ptr)))
+  if (!(ptrFE = dynamic_cast<VolumeElementForcesAndSourcesCoreOnSide *>(ptr)))
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "User operator and finite element do not work together");
   MoFEMFunctionReturnHot(0);
 }
+
+MoFEMErrorCode VolumeElementForcesAndSourcesCoreOnSide::operator()() {
+  MoFEMFunctionBegin;
+  if (!sidePtrFE)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Side element not set");
+
+  const auto type = numeredEntFiniteElementPtr->getEntType();
+  const auto nb_nodes_on_ele = CN::VerticesPerEntity(type);
+
+  auto face_ptr_fe = static_cast<FaceElementForcesAndSourcesCore *>(sidePtrFE);
+
+  const auto face_entity = sidePtrFE->numeredEntFiniteElementPtr->getEnt();
+  auto &side_table = const_cast<SideNumber_multiIndex &>(
+      numeredEntFiniteElementPtr->getSideNumberTable());
+  auto sit = side_table.get<0>().find(face_entity);
+  if (sit == side_table.get<0>().end())
+    SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+            "Face can not be found on volume element");
+
+  nbNodesOnFace = CN::VerticesPerEntity((*sit)->getEntType());
+
+  const auto ent = numeredEntFiniteElementPtr->getEnt();
+  CHKERR mField.get_moab().get_connectivity(ent, conn, num_nodes, true);
+
+  faceSense = (*sit)->sense;
+  faceSideNumber = (*sit)->side_number;
+  fill(&tetConnMap[0], &tetConnMap[nb_nodes_on_ele], -1);
+  for (int nn = 0; nn != nbNodesOnFace; ++nn) {
+    faceConnMap[nn] = std::distance(
+        conn, find(conn, &conn[nb_nodes_on_ele], face_ptr_fe->conn[nn]));
+    tetConnMap[faceConnMap[nn]] = nn;
+    if (faceConnMap[nn] >= nb_nodes_on_ele)
+      SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+              "No common node on face and element can not be found");
+  }
+
+  oppositeNode = std::distance(
+      &tetConnMap[0], find(&tetConnMap[0], &tetConnMap[nb_nodes_on_ele], -1));
+
+  CHKERR VolumeElementForcesAndSourcesCore::operator()();
+
+  MoFEMFunctionReturn(0);
+};
 
 } // namespace MoFEM
