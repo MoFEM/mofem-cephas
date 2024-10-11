@@ -284,9 +284,19 @@ MoFEMErrorCode Contact::setupProblem() {
 
   if (contact_order > order) {
     Range ho_ents;
-
-    CHKERR mField.get_moab().get_adjacencies(boundary_ents, 1, false, ho_ents,
+    Range hexes;
+    // CHKERR mField.get_moab().get_adjacencies(boundary_ents, 1, false, ho_ents,
+    //                                          moab::Interface::UNION);
+      CHKERR mField.get_moab().get_adjacencies(boundary_ents, 3, false, hexes,
                                              moab::Interface::UNION);
+    //quads -> hexes (1 hex if 1 quad)                                  
+    for (int adj_dim : {1, 2}) {
+      CHKERR mField.get_moab().get_adjacencies(hexes, adj_dim, false,
+                                               ho_ents, moab::Interface::UNION);
+        //hexes -> edges (12 edges for 1 hex) (d = 1)
+        //hexes -> quads (6 quads for 1 hex) (d = 2)                                      
+    }
+    ho_ents.merge(hexes);
 
     CHKERR mField.getInterface<CommInterface>()->synchroniseEntities(ho_ents);
     CHKERR simple->setFieldOrder("U", contact_order, &ho_ents);

@@ -244,7 +244,47 @@ add_test(
   -poisson_ratio 0.4
   -atom_test 7
 )
-
+add_test(
+  wavy_half_space_3d_CPP
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 12
+  contact_3d_sdf_cpp
+  -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/half_space_3d.h5m
+  -order 2
+  -base demkowicz
+  -pc_type lu
+  -ts_type beuler
+  -ts_max_time 1 -ts_dt 0.1
+  -young_modulus 1000
+  -poisson_ratio 0.4
+  -wave_amplitude 0.04
+  -wave_indentation 0.45
+  -use_scale 1
+  -snes_atol 1e-9
+  -snes_rtol 0.0
+  -snes_stol 0.0
+  -atom_test 7
+  )
+    # add_test(
+    #   wavy_july_test_3d
+    #   ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+    #   contact_3d_sdf_cpp
+    #   -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/half_space_3d_sm.cub
+    #   # -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/wavy_test_pres_12p.h5m
+    #   -base demkowicz
+    #   -pc_type lu
+    #   -ts_type beuler
+    #   -ts_max_time 1 -ts_dt 1
+    #   -use_mfront 1
+    #   -is_axisymmetric 0
+    #   -mi_lib_path_10 ${CMAKE_CURRENT_BINARY_DIR}/src/libBehaviour.${DEFAULT_LIB_EXTENSION}
+    #   -mi_block_10 LinearElasticity
+    #   -mi_param_10_0 1e3
+    #   -mi_param_10_1 0.4
+    #   # -wave_amplitude 0.02
+    #   # -wave_indentation 0.2
+    #   # -wavy_options_left 0
+    #   # -spring_stiffness 1e-3
+    # )
 # if(IS_MFRONT_MOD)
 #   if(TFEL_DIR)
 #     message("TFEL DIR FOUND")

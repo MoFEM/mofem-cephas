@@ -1,8 +1,10 @@
 // File: sdf.hpp
 #include <petscsnes.h>
 #include <boost/math/tools/toms748_solve.hpp>
+// double amplitude = 0.0002;
+// double indentation = 0.0021745;
 double amplitude = 0.0002;
-double indentation = 0.0021745;
+double indentation = 0.002;
 const double wave_len = 2.0;
 const double w = 2.0 * M_PI / wave_len;
 
@@ -40,20 +42,23 @@ public:
     KSP ksp;
     PC pc;
 
-    // CHKERR SNESSetType(sNes, SNESNEWTONLS);
-
     CHKERR SNESGetKSP(sNes, &ksp);
     CHKERR KSPGetPC(ksp, &pc);
     CHKERR KSPSetType(ksp, KSPPREONLY);
     CHKERR PCSetType(pc, PCLU);
 
-    double tol = 1e-12; //1e-10, 1e-12
-    CHKERR SNESSetTolerances(sNes, tol, tol, 0, 20, 1000);
+
+    // CHKERR SNESSetFromOptions(sNes);
+    // CHKERR SNESSetType(sNes, SNESNEWTONTR);
+
+    double tol = 1e-10; //1e-10, 1e-12
+    CHKERR SNESSetTolerances(sNes, tol, tol, 0, 50, 5000);
     CHKERR SNESGetLineSearch(sNes, &line_search);
     CHKERR SNESLineSearchSetType(line_search, SNESLINESEARCHBT);
-    // CHKERR SNESLineSearchSetOrder(line_search, 2);
+
     // CHKERR SNESAppendOptionsPrefix(sNes, "wavy_");
-    // CHKERR SNESSetFromOptions(sNes);
+
+
   }
 
   double sDF(double x, double y, double z, double t);
@@ -101,44 +106,31 @@ PetscErrorCode Wavy_3D::FormFunction(SNES snes, Vec chi, Vec F, void *ctx) {
   MoFEMFunctionReturn(0);
 }
 
-PetscErrorCode Wavy_3D::FormJacobian(SNES snes, Vec chi, Mat A, Mat P,
-                                     void *ctx) {
-  MoFEMFunctionBegin;
-  // Wavy_3D *self;
-  // self = (Wavy_3D *)ctx;
-  Wavy_3D *self = static_cast<Wavy_3D *>(ctx);
-  const PetscScalar *array;
-  CHKERR VecGetArrayRead(chi, &array);
 
-  double p = array[0];
-  double q = array[1];
+PetscErrorCode Wavy_3D::FormJacobian(SNES snes, Vec chi, Mat A, Mat P, void *ctx) {
+    MoFEMFunctionBegin;
+    Wavy_3D *self = static_cast<Wavy_3D *>(ctx);
+    const PetscScalar *array;
+    CHKERR VecGetArrayRead(chi, &array);
 
-  CHKERR VecRestoreArrayRead(chi, &array);
+    double p = array[0];
+    double q = array[1];
 
-  double df1_dp = 2.0 -
-                  2.0 * amplitude * w * w * std::cos(p * w) * std::cos(q * w) *
-                      (indentation * self->t + self->z -
-                       amplitude * (1.0 - std::cos(p * w) * std::cos(q * w))) +
-                  2.0 * amplitude * amplitude * w * w * std::cos(q * w) *
-                      std::cos(q * w) * std::sin(p * w) * std::sin(p * w);
-  double df1_dq = 2.0 * amplitude * amplitude * w * w * std::cos(p * w) *
-                      std::cos(q * w) * std::sin(p * w) * std::sin(q * w) +
-                  2.0 * amplitude * w * w *
-                      (indentation * self->t + self->z -
-                       amplitude * (1.0 - std::cos(p * w) * std::cos(q * w))) *
-                      std::sin(p * w) * std::sin(q * w);
-  double df2_dp = df1_dq; // Symmetry
-  double df2_dq = 2.0 -
-                  2.0 * amplitude * w * w * std::cos(p * w) * std::cos(q * w) *
-                      (indentation * self->t + self->z -
-                       amplitude * (1.0 - std::cos(p * w) * std::cos(q * w))) +
-                  2.0 * amplitude * amplitude * w * w * std::cos(p * w) *
-                      std::cos(p * w) * std::sin(q * w) * std::sin(q * w);
+    CHKERR VecRestoreArrayRead(chi, &array);
 
-  // self->dataA(0, 0) = df1_dp;
-  // self->dataA(0, 1) = df1_dq;
-  // self->dataA(1, 0) = df2_dp;
-  // self->dataA(1, 1) = df2_dq;
+    double df1_dp = 2.0 - 2.0 * amplitude * w * w * std::cos(p * w) * std::cos(q * w) *
+                    (indentation * self->t + self->z - amplitude * (1.0 - std::cos(p * w) * std::cos(q * w))) +
+                    2.0 * amplitude * amplitude * w * w * std::cos(q * w) * std::cos(q * w) * std::sin(p * w) * std::sin(p * w);
+    double df1_dq = 2.0 * amplitude * amplitude * w * w * std::cos(p * w) * std::cos(q * w) *
+                    std::sin(p * w) * std::sin(q * w) + 2.0 * amplitude * w * w *
+                    (indentation * self->t + self->z - amplitude * (1.0 - std::cos(p * w) * std::cos(q * w))) *
+                    std::sin(p * w) * std::sin(q * w);
+    double df2_dp = df1_dq;
+    double df2_dq = 2.0 - 2.0 * amplitude * w * w * std::cos(p * w) * std::cos(q * w) *
+                    (indentation * self->t + self->z - amplitude * (1.0 - std::cos(p * w) * std::cos(q * w))) +
+                    2.0 * amplitude * amplitude * w * w * std::cos(p * w) * std::cos(p * w) *
+                    std::sin(q * w) * std::sin(q * w);
+
     PetscInt row[2] = {0, 1};
     PetscInt col[2] = {0, 1};
     PetscScalar values[4] = {df1_dp, df1_dq, df2_dp, df2_dq};
@@ -147,7 +139,7 @@ PetscErrorCode Wavy_3D::FormJacobian(SNES snes, Vec chi, Mat A, Mat P,
     CHKERR MatAssemblyBegin(self->A, MAT_FINAL_ASSEMBLY);
     CHKERR MatAssemblyEnd(self->A, MAT_FINAL_ASSEMBLY);
 
-  MoFEMFunctionReturn(0);
+    MoFEMFunctionReturn(0);
 }
 
 double Wavy_3D::sDF(double x, double y, double z, double t) {
@@ -162,7 +154,7 @@ double Wavy_3D::sDF(double x, double y, double z, double t) {
     this->z = z;
     this->t = t;
     double r = amplitude * (1.0 - std::cos(w * x) * std::cos(w * y)) - indentation * t;
-    if(std::abs(r - z) < 1e-12) {
+    if(std::abs(r - z) < 1e-10) {
         return 0.0;
     }
     // else{

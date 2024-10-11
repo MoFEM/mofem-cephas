@@ -4,8 +4,8 @@
  * \file ContactOps.hpp
  * \example ContactOps.hpp
  */
-
 #include <sdf.hpp>
+// #include <sdfcopy.hpp>
 #ifndef __CONTACTOPS_HPP__
 #define __CONTACTOPS_HPP__
 
@@ -286,9 +286,7 @@ inline VectorDouble surface_distance_function(double delta_t, double t,
       v_sdf[gg] = C_SDF_2D.sDF(x, y, z, t);
     }
     if (SPACE_DIM == 3) {
-      cout << "Start sDF for gp" << gg << endl;
       v_sdf[gg] = C_SDF_3D.sDF(x, y, z, t);
-      cout << "End sDF" << endl;
     }
 
     ++t_coords;
@@ -360,9 +358,8 @@ grad_surface_distance_function(double delta_t, double t, int nb_gauss_pts,
       grad_sdf = C_SDF_2D.gradSDF(x, y, z, t);
     } 
     else if (SPACE_DIM == 3) {
-            cout << "Start gradSDF" << gg << endl;
     grad_sdf = C_SDF_3D.gradSDF(x, y, z, t);
-    cout << "End gradSDF" << endl;
+
     }
 
 
@@ -443,9 +440,7 @@ hess_surface_distance_function(double delta_t, double t, int nb_gauss_pts,
     if (SPACE_DIM == 2) {
     hess_sdf = C_SDF_2D.hessSDF(x, y, z, t);
     } else if (SPACE_DIM == 3) {
-      cout << "Start hessSDF" << gg << endl;
     hess_sdf = C_SDF_3D.hessSDF(x, y, z, t);
-    cout << "End hessSDF" << endl;
     }
     double d2f_dx2 = hess_sdf[0];
     double d2f_dxdy = hess_sdf[1];
