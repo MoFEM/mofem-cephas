@@ -369,7 +369,7 @@ MoFEMErrorCode Tools::getTriNormal(const double *coords, double *normal,
   t_tangent(i, J) = t_coords(n, i) * t_diff_tensor(n, J);
   auto t_normal = getFTensor1FromPtr<3>(normal);
   t_normal(j) =
-      FTensor::levi_civita(i, j, k) * t_tangent(k, N0) * t_tangent(i, N1);
+      (FTensor::levi_civita(i, j, k) * t_tangent(k, N0)) * t_tangent(i, N1);
   if (d_normal) {
     constexpr auto t_kd = FTensor::Kronecker_Delta<int>();
     FTensor::Tensor4<int, 3, 3, 3, 3> t_d_coords;
