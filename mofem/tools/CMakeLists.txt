@@ -200,6 +200,18 @@ target_link_libraries(fix_file
 )
 install(TARGETS fix_file DESTINATION bin)
 
+add_executable(read_vtk ${CMAKE_CURRENT_SOURCE_DIR}/read_vtk.cpp)
+target_link_libraries(read_vtk
+  mofem_interfaces
+  mofem_finite_elements
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_third_party
+  ${MoFEM_PROJECT_LIBS}
+)
+install(TARGETS read_vtk DESTINATION bin)
+
 cm_export_file("convert.py" export_tools)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/convert.py
   DESTINATION bin
