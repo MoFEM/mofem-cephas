@@ -5,6 +5,7 @@ double amplitude = 0.0002;
 double indentation = 0.0021745;
 const double wave_len = 2.0;
 const double w = 2.0 * M_PI / wave_len;
+double pamp = 1.05 * indentation; // should be amplitude
 
 class Wavy_3D {
 public:
@@ -60,8 +61,8 @@ public:
   std::array<double, 3> gradSDF(double x, double y, double z, double t);
   std::array<double, 6> hessSDF(double x, double y, double z, double t);
 
-  static PetscErrorCode FormFunction(SNES snes, Vec X, Vec F, void *ctx);
-  static PetscErrorCode FormJacobian(SNES snes, Vec X, Mat J, Mat P, void *ctx);
+  static MoFEMErrorCode FormFunction(SNES snes, Vec X, Vec F, void *ctx);
+  static MoFEMErrorCode FormJacobian(SNES snes, Vec X, Mat J, Mat P, void *ctx);
 
 void destroy() {
     _p_Vec* chi_ptr = Chi.get();
@@ -76,7 +77,7 @@ void destroy() {
 };
 
 // Definitions of static member functions
-PetscErrorCode Wavy_3D::FormFunction(SNES snes, Vec chi, Vec F, void *ctx) {
+MoFEMErrorCode Wavy_3D::FormFunction(SNES snes, Vec chi, Vec F, void *ctx) {
     MoFEMFunctionBegin;
     // Wavy_3D *self;
     // self = (Wavy_3D *)ctx;
@@ -101,7 +102,7 @@ PetscErrorCode Wavy_3D::FormFunction(SNES snes, Vec chi, Vec F, void *ctx) {
   MoFEMFunctionReturn(0);
 }
 
-PetscErrorCode Wavy_3D::FormJacobian(SNES snes, Vec chi, Mat A, Mat P,
+MoFEMErrorCode Wavy_3D::FormJacobian(SNES snes, Vec chi, Mat A, Mat P,
                                      void *ctx) {
   MoFEMFunctionBegin;
   // Wavy_3D *self;
@@ -151,9 +152,10 @@ PetscErrorCode Wavy_3D::FormJacobian(SNES snes, Vec chi, Mat A, Mat P,
 }
 
 double Wavy_3D::sDF(double x, double y, double z, double t) {
+    MoFEMFunctionBegin;
+
     x = fmod(fabs(x), wave_len);
     if (x > wave_len / 2) x = wave_len - x;
-
     y = fmod(fabs(y), wave_len);
     if (y > wave_len / 2) y = wave_len - y;
 
@@ -161,11 +163,15 @@ double Wavy_3D::sDF(double x, double y, double z, double t) {
     this->y = y;
     this->z = z;
     this->t = t;
+    double distance_z = amplitude * (1.0 - std::cos(w * x) * std::cos(w * y)) - indentation * t;
+    if(distance_z -z > pamp) {
+      return distance_z - z;}
+    else{
     double r = amplitude * (1.0 - std::cos(w * x) * std::cos(w * y)) - indentation * t;
     if(std::abs(r - z) < 1e-12) {
         return 0.0;
     }
-    // else{
+    else{
     std::vector<std::pair<double, double>> initial_guesses = {
         {0.0, wave_len / 4.0},
         {wave_len / 2.0, wave_len / 4.0},
@@ -200,35 +206,84 @@ double Wavy_3D::sDF(double x, double y, double z, double t) {
         }
     }
     return min_sdf_with_sign;
+        }}
+      MoFEMFunctionReturn(0);
+  
 }
 
 std::array<double, 3> Wavy_3D::gradSDF(double x, double y, double z, double t) {
-    const double delta = 1e-6; //1e-10
-    double df_dx = (sDF(x + delta, y, z, t) - sDF(x - delta, y, z, t)) / (2. * delta);
-    double df_dy = (sDF(x, y + delta, z, t) - sDF(x, y - delta, z, t)) / (2. * delta);
-    double df_dz = (sDF(x, y, z + delta, t) - sDF(x, y, z - delta, t)) / (2. * delta);
-    return {df_dx, df_dy, df_dz};
+    double distance_z = amplitude * (1.0 - std::cos(w * x) * std::cos(w * y)) - indentation * t;
+    double df_dx = 0.0;
+    double df_dy = 0.0;
+    double df_dz = 0.0;
+    if (distance_z - z > pamp) {
+       df_dx = amplitude * w * std::sin(w * x) * std::cos(w * y);
+       df_dy = amplitude * w * std::cos(w * x) * std::sin(w * y);
+       df_dz = -1.0;
+    }
+ 
+   else{
+    const double delta = 1e-6; 
+    df_dx = (sDF(x + delta, y, z, t) - sDF(x - delta, y, z, t)) / (2. * delta);
+    df_dy = (sDF(x, y + delta, z, t) - sDF(x, y - delta, z, t)) / (2. * delta);
+    df_dz = (sDF(x, y, z + delta, t) - sDF(x, y, z - delta, t)) / (2. * delta);
+    }
+    double magnitude = std::sqrt(df_dx * df_dx + df_dy * df_dy + df_dz * df_dz);
+
+    double normal_x = 0.0;
+    double normal_y = 0.0;
+    double normal_z = 0.0;
+    // Avoid division by zero by checking the magnitude
+    if (magnitude > 0) {
+     normal_x = df_dx / magnitude;
+     normal_y = df_dy / magnitude;
+     normal_z = df_dz / magnitude;
+    }
+
+    return {normal_x, normal_y, normal_z};
 }
 
+
 std::array<double, 6> Wavy_3D::hessSDF(double x, double y, double z, double t) {
+      // MoFEMFunctionBegin;
+    double distance_z = amplitude * (1.0 - std::cos(w * x) * std::cos(w * y)) - indentation * t;
+    double d2f_dx2 = 0.0;
+    double d2f_dxdy = 0.0;
+    double d2f_dxdz = 0.0;
+    double d2f_dy2 = 0.0;
+    double d2f_dydz = 0.0;
+    double d2f_dz2 = 0.0;
+    if (distance_z - z > pamp) {
+        d2f_dx2 = amplitude * (w*w) * std::cos(w * x ) * std::cos(w * y);
+        d2f_dxdy = - amplitude * (w*w) * std::sin(w * x) * std::sin(w * y);
+
+        d2f_dy2 =  amplitude * (w*w) * std::cos(w * x) * std::cos(w * y);
+        d2f_dxdz = 0.0;
+        d2f_dydz = 0.0;
+        d2f_dz2 = 0.0;
+    }
+
+    else{
     const double delta = 1e-4;  
     const double inv_delta2 = 1.0 / (delta * delta);  
     // Second pd
-    double d2f_dx2 = (sDF(x + delta, y, z, t) - 2.0 * sDF(x, y, z, t) + sDF(x - delta, y, z, t)) * inv_delta2;
-    double d2f_dy2 = (sDF(x, y + delta, z, t) - 2.0 * sDF(x, y, z, t) + sDF(x, y - delta, z, t)) * inv_delta2;
-    double d2f_dz2 = (sDF(x, y, z + delta, t) - 2.0 * sDF(x, y, z, t) + sDF(x, y, z - delta, t)) * inv_delta2;
+    d2f_dx2 = (sDF(x + delta, y, z, t) - 2.0 * sDF(x, y, z, t) + sDF(x - delta, y, z, t)) * inv_delta2;
+    d2f_dy2 = (sDF(x, y + delta, z, t) - 2.0 * sDF(x, y, z, t) + sDF(x, y - delta, z, t)) * inv_delta2;
+    d2f_dz2 = (sDF(x, y, z + delta, t) - 2.0 * sDF(x, y, z, t) + sDF(x, y, z - delta, t)) * inv_delta2;
 
     // Mixed pd
-    double d2f_dxdy = (sDF(x + delta, y + delta, z, t) - sDF(x + delta, y - delta, z, t) 
+    d2f_dxdy = (sDF(x + delta, y + delta, z, t) - sDF(x + delta, y - delta, z, t) 
                     - sDF(x - delta, y + delta, z, t) + sDF(x - delta, y - delta, z, t)) / (4.0 * delta * delta);
 
-    double d2f_dxdz = (sDF(x + delta, y, z + delta, t) - sDF(x + delta, y, z - delta, t) 
+    d2f_dxdz = (sDF(x + delta, y, z + delta, t) - sDF(x + delta, y, z - delta, t) 
                     - sDF(x - delta, y, z + delta, t) + sDF(x - delta, y, z - delta, t)) / (4.0 * delta * delta);
 
-    double d2f_dydz = (sDF(x, y + delta, z + delta, t) - sDF(x, y + delta, z - delta, t) 
+    d2f_dydz = (sDF(x, y + delta, z + delta, t) - sDF(x, y + delta, z - delta, t) 
                     - sDF(x, y - delta, z + delta, t) + sDF(x, y - delta, z - delta, t)) / (4.0 * delta * delta);
-
+    }
     return {d2f_dx2, d2f_dxdy, d2f_dxdz, d2f_dy2, d2f_dydz, d2f_dz2};
+          // MoFEMFunctionReturn(0);
+
 }
 
 // std::array<double, 6> Wavy_3D::hessSDF(double x, double y, double z, double t) {

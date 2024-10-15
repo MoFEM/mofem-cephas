@@ -469,10 +469,10 @@ struct Monitor : public FEMethod {
       if (!m_field_ptr->get_comm_rank()) {
         const double *t_ptr;
         CHKERR VecGetArrayRead(CommonData::totalTraction, &t_ptr);
-        MOFEM_LOG_C("CONTACT", Sev::inform,
+        MOFEM_LOG_C("CONTACT", Sev::error,
                     "Contact force: time %6.3e Fx: %6.6e Fy: %6.6e Fz: %6.6e",
                     ts_t, t_ptr[0], t_ptr[1], t_ptr[2]);
-        MOFEM_LOG_C("CONTACT", Sev::inform,
+        MOFEM_LOG_C("CONTACT", Sev::error,
                     "Contact area: time %6.3e Active: %6.6e Potential: %6.6e",
                     ts_t, t_ptr[3], t_ptr[4]);
         CHKERR VecRestoreArrayRead(CommonData::totalTraction, &t_ptr);

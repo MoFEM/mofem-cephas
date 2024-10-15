@@ -110,7 +110,7 @@ else (Boost_NUMPY_LIBRARY_RELEASE)
 
 endif(Boost_NUMPY_LIBRARY_RELEASE)
 
-set(IS_MFRONT_MOD false)  
+# set(IS_MFRONT_MOD false)  
 
 # Add mfront interface
 # if(MFRONT_INTERFACE_INSTALL_PREFIX)
@@ -245,21 +245,40 @@ add_test(
   -atom_test 7
 )
 add_test(
+      wavy_half_space_2d
+      ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4
+      contact_2d
+      -order 2
+      -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/half_space_2d_4p.h5m
+      -pc_type lu
+      -ts_type beuler
+      -ts_max_time 1 -ts_dt 1
+      -sdf_file ./sdf_files/sdf_wavy_2d.py
+      -use_mfront 0
+      -use_scale 1
+      -young_modulus 1000
+      -poisson_ratio 0.4
+      -atom_test 6
+)
+add_test(
   wavy_half_space_3d_CPP
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 12
   contact_3d_sdf_cpp
   -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/half_space_3d.h5m
   -order 2
+  -contact_order 2
+  -geom_order 2
   -base demkowicz
   -pc_type lu
   -ts_type beuler
   -ts_max_time 1 -ts_dt 0.1
+  -ts_exact_final_time matchstep
   -young_modulus 1000
   -poisson_ratio 0.4
-  -wave_amplitude 0.04
-  -wave_indentation 0.45
+  -wave_amplitude 0.2
+  -wave_indentation 2.4
   -use_scale 1
-  -snes_atol 1e-9
+  -snes_atol 1e-8
   -snes_rtol 0.0
   -snes_stol 0.0
   -atom_test 7

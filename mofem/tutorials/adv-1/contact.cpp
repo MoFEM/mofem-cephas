@@ -296,8 +296,23 @@ MoFEMErrorCode Contact::setupProblem() {
         //hexes -> edges (12 edges for 1 hex) (d = 1)
         //hexes -> quads (6 quads for 1 hex) (d = 2)                                      
     }
+//     auto save_range = [](moab::Interface &moab, const std::string name,
+//                      const Range r) {
+//   MoFEMFunctionBegin;
+//   auto out_meshset = get_temp_meshset_ptr(moab);
+//   CHKERR moab.add_entities(*out_meshset, r);
+//   CHKERR moab.write_file(name.c_str(), "VTK", "", out_meshset->get_ptr(), 1);
+//   MoFEMFunctionReturn(0);
+// };
+    // CHKERR save_range(
+    //   mField.get_moab(),
+    //   (boost::format("hex_%d.vtk") % mField.get_comm_rank()).str(),
+    //   hexes);çç
     ho_ents.merge(hexes);
-
+    // CHKERR save_range(
+    //   mField.get_moab(),
+    //   (boost::format("hoent%d.vtk") % mField.get_comm_rank()).str(),
+    //   ho_ents);
     CHKERR mField.getInterface<CommInterface>()->synchroniseEntities(ho_ents);
     CHKERR simple->setFieldOrder("U", contact_order, &ho_ents);
     CHKERR mField.getInterface<CommInterface>()->synchroniseFieldEntities("U");
