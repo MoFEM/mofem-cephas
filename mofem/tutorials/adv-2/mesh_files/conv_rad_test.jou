@@ -1,0 +1,65 @@
+reset
+set duplicate block elements on
+
+brick x 1 y 1 z 0.25
+move vol 1 x  0.5 y 0.5 z 0.125
+
+block 10 volume 1
+block 10 name "MAT_ELASTIC_STEEL" attribute count 3
+block 10 attribute index 1 200e3
+block 10 attribute index 2 0.3
+
+block 1 volume 1
+block 1 name "MAT_THERMAL_STEEL"
+block 1 attribute count 3
+block 1 attribute index 1 1e-5 # thermal expansion
+block 1 attribute index 2 500 # heat conductivity 
+block 1 attribute index 3 3000 # heat capacity 
+
+block 2 surface 4
+block 2 name "CONVECTION_1"
+block 2 attribute count 2
+block 2 attribute index 1 10 #  heat transfer coefficient 
+block 2 attribute index 2 873 # ambient temperature 
+
+block 3 surface 6
+block 3 name "CONVECTION_2"
+block 3 attribute count 2
+block 3 attribute index 1 100 # heat transfer coefficient 
+block 3 attribute index 2 873 # ambient temperature 
+
+block 4 surface 3
+block 4 name "RADIATION_1"
+block 4 attribute count 3
+block 4 attribute index 1 5.670374419e-8 # S-B constant
+block 4 attribute index 2 0.2 # emissivity [0, 1] (assuming not perfect black body) Because the emissivity change as the temperature increase and at 1273.15 K the plasterboard surface emissivity is taken as 0.8).
+block 4 attribute index 3 873 # temperature of the fire in K ( The average peak temperature of a residential building can reach up to 982C-1000C according to Ntional Fire Protection Association)
+
+block 5 surface 5
+block 5 name "RADIATION_2"
+block 5 attribute count 3
+block 5 attribute index 1 5.670374419e-8 # S-B constant
+block 5 attribute index 2 0.8 # emissivity [0, 1] (assuming not perfect black body) Because the emissivity change as the temperature increase and at 1273.15 K the plasterboard surface emissivity is taken as 0.8).
+block 5 attribute index 3 873 # temperature of the fire in K ( The average peak temperature of a residential building can reach up to 982C-1000C according to Ntional Fire Protection Association)
+
+block 100 surface 1 2
+block 100 name "FIX_Z" 
+block 100 attribute count 1
+block 100 attribute index 1 0
+
+block 101 surface 3
+block 101 name "FIX_Y"
+block 101 attribute count 1
+block 101 attribute index 1 0
+
+block 102 surface 4
+block 102 name "FIX_X"
+block 102 attribute count 1
+block 102 attribute index 1 0
+
+volume all scheme map
+volume all size 0.25
+mesh volume all
+htet volume all
+
+save as "/Users/ashvarts/mofem_install/testing/bar_test_new.cub" overwrite

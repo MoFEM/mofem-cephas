@@ -15,6 +15,14 @@ set(permissions_execute
   OWNER_EXECUTE 
   GROUP_EXECUTE)
 
+add_custom_target(
+  adv_2_copy_mesh_files_directory
+  ALL
+  COMMAND ${CMAKE_COMMAND} -E copy_directory 
+  ${CMAKE_CURRENT_SOURCE_DIR}/mesh_files ${CMAKE_CURRENT_BINARY_DIR}/mesh_files
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  COMMENT "Copying mesh_files directory" VERBATIM)
+
 tutorials_copy_and_install("*.msh" "${permissions_default}")
 tutorials_copy_and_install("*.cfg" "${permissions_default}")
 # tutorials_copy_and_install("*.jou" "${permissions_default}")
@@ -38,3 +46,24 @@ tutorials_build_and_install(
   thermo_elastic_3d ${CMAKE_CURRENT_SOURCE_DIR}/thermo_elastic.cpp)
 set_target_properties(
   thermo_elastic_3d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=3")
+
+#################
+##### TESTS #####
+#################
+
+add_test(
+  convection_and_radiation_3d
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4
+  thermo_elastic_3d
+  -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/conv_rad_test.h5m
+  -order 2
+  -pc_type lu
+  -pc_factor_mat_solver_type mumps  
+  -ts_type beuler
+  -ts_max_time 10 
+  -ts_dt 1
+  -init_temp 293 
+  -ref_temp 293
+  -field_eval_coords 0.5,0.5,0.25
+  -atom_test 1
+)

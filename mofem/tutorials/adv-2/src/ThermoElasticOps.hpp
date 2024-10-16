@@ -7,10 +7,10 @@
 namespace ThermoElasticOps {
 
 struct OpKCauchyThermoElasticity : public AssemblyDomainEleOp {
-  OpKCauchyThermoElasticity(
-    const std::string row_field_name, const std::string col_field_name,
-    boost::shared_ptr<MatrixDouble> mDptr,
-    boost::shared_ptr<double> coeff_expansion_ptr);
+  OpKCauchyThermoElasticity(const std::string row_field_name,
+                            const std::string col_field_name,
+                            boost::shared_ptr<MatrixDouble> mDptr,
+                            boost::shared_ptr<double> coeff_expansion_ptr);
 
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data);
@@ -23,7 +23,7 @@ private:
 struct OpStressThermal : public DomainEleOp {
   /**
    * @deprecated do not use this constructor
-  */
+   */
   DEPRECATED OpStressThermal(const std::string field_name,
                              boost::shared_ptr<MatrixDouble> strain_ptr,
                              boost::shared_ptr<VectorDouble> temp_ptr,
@@ -130,7 +130,7 @@ OpStressThermal::OpStressThermal(boost::shared_ptr<MatrixDouble> strain_ptr,
 
 //! [Calculate stress]
 MoFEMErrorCode OpStressThermal::doWork(int side, EntityType type,
-                                              EntData &data) {
+                                       EntData &data) {
   MoFEMFunctionBegin;
   const auto nb_gauss_pts = getGaussPts().size2();
   stressPtr->resize((SPACE_DIM * (SPACE_DIM + 1)) / 2, nb_gauss_pts);
@@ -200,7 +200,7 @@ struct MoFEM::AddFluxToRhsPipelineImpl<
       for (auto m : meshset_vec_ptr) {
         std::vector<double> block_data;
         m->getAttributes(block_data);
-        if (block_data.size() != 2) {
+        if (block_data.size() < 2) {
           SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
                   "Expected two parameters");
         }
@@ -308,4 +308,3 @@ struct AddFluxToLhsPipelineImpl<
 };
 
 //! [Target temperature]
-
