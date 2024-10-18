@@ -241,7 +241,7 @@ namespace PlasticOps {
 
 using Pip = boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator>;
 using CommonPlasticPtr = boost::shared_ptr<PlasticOps::CommonData>;
-using CommonHenkyPtr = boost::shared_ptr<HenckyOps::CommonData>;
+using CommonHenckyPtr = boost::shared_ptr<HenckyOps::CommonData>;
 
 template <int DIM>
 MoFEMErrorCode
@@ -457,30 +457,30 @@ auto createCommonPlasticOps(
   pip.push_back(new OpCalculateVectorFieldGradient<DIM, DIM>(
       u, common_plastic_ptr->mGradPtr));
 
-  CommonHenkyPtr common_henky_ptr;
+  CommonHenckyPtr common_hencky_ptr;
 
   if (is_large_strains) {
-    common_henky_ptr = boost::make_shared<HenckyOps::CommonData>();
-    common_henky_ptr->matGradPtr = common_plastic_ptr->mGradPtr;
-    common_henky_ptr->matDPtr = common_plastic_ptr->mDPtr;
-    common_henky_ptr->matLogCPlastic =
+    common_hencky_ptr = boost::make_shared<HenckyOps::CommonData>();
+    common_hencky_ptr->matGradPtr = common_plastic_ptr->mGradPtr;
+    common_hencky_ptr->matDPtr = common_plastic_ptr->mDPtr;
+    common_hencky_ptr->matLogCPlastic =
         common_plastic_ptr->getPlasticStrainPtr();
-    common_plastic_ptr->mStrainPtr = common_henky_ptr->getMatLogC();
-    common_plastic_ptr->mStressPtr = common_henky_ptr->getMatHenckyStress();
+    common_plastic_ptr->mStrainPtr = common_hencky_ptr->getMatLogC();
+    common_plastic_ptr->mStressPtr = common_hencky_ptr->getMatHenckyStress();
 
-    using H = HenckyOps::HenkyIntegrators<DomainEleOp>;
+    using H = HenckyOps::HenckyIntegrators<DomainEleOp>;
 
     pip.push_back(new typename H::template OpCalculateEigenVals<DIM, I>(
-        u, common_henky_ptr));
+        u, common_hencky_ptr));
     pip.push_back(
-        new typename H::template OpCalculateLogC<DIM, I>(u, common_henky_ptr));
+        new typename H::template OpCalculateLogC<DIM, I>(u, common_hencky_ptr));
     pip.push_back(new typename H::template OpCalculateLogC_dC<DIM, I>(
-        u, common_henky_ptr));
+        u, common_hencky_ptr));
     pip.push_back(
         new typename H::template OpCalculateHenckyPlasticStress<DIM, I, 0>(
-            u, common_henky_ptr, m_D_ptr));
+            u, common_hencky_ptr, m_D_ptr));
     pip.push_back(new typename H::template OpCalculatePiolaStress<DIM, I, 0>(
-        u, common_henky_ptr));
+        u, common_hencky_ptr));
   } else {
 
     pip.push_back(new OpSymmetrizeTensor<SPACE_DIM>(
@@ -492,7 +492,7 @@ auto createCommonPlasticOps(
   pip.push_back(new typename P::template OpCalculatePlasticSurface<DIM, I>(
       u, common_plastic_ptr));
 
-  return std::make_tuple(common_plastic_ptr, common_henky_ptr);
+  return std::make_tuple(common_plastic_ptr, common_hencky_ptr);
 }
 
 template <int DIM, AssemblyType A, IntegrationType I, typename DomainEleOp>
@@ -510,7 +510,7 @@ opFactoryDomainRhs(MoFEM::Interface &m_field, std::string block_name, Pip &pip,
 
   using P = PlasticityIntegrators<DomainEleOp>;
 
-  auto [common_plastic_ptr, common_henky_ptr] =
+  auto [common_plastic_ptr, common_hencky_ptr] =
       createCommonPlasticOps<DIM, I, DomainEleOp>(m_field, block_name, pip, u,
                                                   ep, tau, scale, Sev::inform);
 
@@ -524,9 +524,9 @@ opFactoryDomainRhs(MoFEM::Interface &m_field, std::string block_name, Pip &pip,
       u, common_plastic_ptr, m_D_ptr));
 
   // Calculate internal forces
-  if (common_henky_ptr) {
+  if (common_hencky_ptr) {
     pip.push_back(new OpInternalForcePiola(
-        u, common_henky_ptr->getMatFirstPiolaStress()));
+        u, common_hencky_ptr->getMatFirstPiolaStress()));
   } else {
     pip.push_back(new OpInternalForceCauchy(u, common_plastic_ptr->mStressPtr));
   }
@@ -557,7 +557,7 @@ opFactoryDomainLhs(MoFEM::Interface &m_field, std::string block_name, Pip &pip,
 
   using P = PlasticityIntegrators<DomainEleOp>;
 
-  auto [common_plastic_ptr, common_henky_ptr] =
+  auto [common_plastic_ptr, common_hencky_ptr] =
       createCommonPlasticOps<DIM, I, DomainEleOp>(m_field, block_name, pip, u,
                                                   ep, tau, scale, Sev::verbose);
 
@@ -570,15 +570,15 @@ opFactoryDomainLhs(MoFEM::Interface &m_field, std::string block_name, Pip &pip,
   pip.push_back(new typename P::template OpCalculatePlasticity<DIM, I>(
       u, common_plastic_ptr, m_D_ptr));
 
-  if (common_henky_ptr) {
-    using H = HenckyOps::HenkyIntegrators<DomainEleOp>;
+  if (common_hencky_ptr) {
+    using H = HenckyOps::HenckyIntegrators<DomainEleOp>;
     pip.push_back(new typename H::template OpHenckyTangent<DIM, I, 0>(
-        u, common_henky_ptr, m_D_ptr));
-    pip.push_back(new OpKPiola(u, u, common_henky_ptr->getMatTangent()));
+        u, common_hencky_ptr, m_D_ptr));
+    pip.push_back(new OpKPiola(u, u, common_hencky_ptr->getMatTangent()));
     pip.push_back(
         new typename P::template Assembly<A>::
             template OpCalculatePlasticInternalForceLhs_LogStrain_dEP<DIM, I>(
-                u, ep, common_plastic_ptr, common_henky_ptr, m_D_ptr));
+                u, ep, common_plastic_ptr, common_hencky_ptr, m_D_ptr));
   } else {
     pip.push_back(new OpKCauchy(u, u, m_D_ptr));
     pip.push_back(new typename P::template Assembly<A>::
@@ -586,15 +586,15 @@ opFactoryDomainLhs(MoFEM::Interface &m_field, std::string block_name, Pip &pip,
                           u, ep, common_plastic_ptr, m_D_ptr));
   }
 
-  if (common_henky_ptr) {
+  if (common_hencky_ptr) {
     pip.push_back(
         new typename P::template Assembly<A>::
             template OpCalculateConstraintsLhs_LogStrain_dU<DIM, I>(
-                tau, u, common_plastic_ptr, common_henky_ptr, m_D_ptr));
+                tau, u, common_plastic_ptr, common_hencky_ptr, m_D_ptr));
     pip.push_back(
         new typename P::template Assembly<A>::
             template OpCalculatePlasticFlowLhs_LogStrain_dU<DIM, I>(
-                ep, u, common_plastic_ptr, common_henky_ptr, m_D_ptr));
+                ep, u, common_plastic_ptr, common_hencky_ptr, m_D_ptr));
   } else {
     pip.push_back(
         new
@@ -640,14 +640,14 @@ MoFEMErrorCode opFactoryDomainReactions(MoFEM::Interface &m_field,
   using OpInternalForcePiola =
       typename B::template OpGradTimesTensor<1, DIM, DIM>;
 
-  auto [common_plastic_ptr, common_henky_ptr] =
+  auto [common_plastic_ptr, common_hencky_ptr] =
       createCommonPlasticOps<DIM, I, DomainEleOp>(m_field, block_name, pip, u,
                                                   ep, tau, 1., Sev::inform);
 
   // Calculate internal forces
-  if (common_henky_ptr) {
+  if (common_hencky_ptr) {
     pip.push_back(new OpInternalForcePiola(
-        u, common_henky_ptr->getMatFirstPiolaStress()));
+        u, common_hencky_ptr->getMatFirstPiolaStress()));
   } else {
     pip.push_back(new OpInternalForceCauchy(u, common_plastic_ptr->mStressPtr));
   }

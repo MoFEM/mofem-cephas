@@ -7,12 +7,14 @@
  */
 
 #ifndef EXECUTABLE_DIMENSION
-#define EXECUTABLE_DIMENSION 3
+  #define EXECUTABLE_DIMENSION 3
 #endif
 
 #include <MoFEM.hpp>
-
 using namespace MoFEM;
+
+#include <ThermalConvection.hpp>
+#include <ThermalRadiation.hpp>
 
 constexpr int SPACE_DIM =
     EXECUTABLE_DIMENSION; //< Space dimension of problem, mesh
@@ -106,8 +108,7 @@ using DomainNaturalBCLhs =
 using BoundaryNaturalBC =
     NaturalBC<BoundaryEleOp>::Assembly<PETSC>::LinearForm<GAUSS>;
 using OpForce = BoundaryNaturalBC::OpFlux<NaturalForceMeshsets, 1, SPACE_DIM>;
-using OpTemperatureBC =
-    BoundaryNaturalBC::OpFlux<NaturalTemperatureMeshsets, 3, SPACE_DIM>;
+
 //! [Natural boundary conditions]
 
 //! [Essential boundary conditions (Least square approach)]
@@ -131,7 +132,11 @@ double default_heat_conductivity =
 double default_heat_capacity = 1; // length^2/(time^2 temperature) // length is
                                   // millimeter time is hour
 
-int order = 2; //< default approximation order
+int order_temp = 2; //< default approximation order for the temperature field
+int order_flux = 3; //< default approximation order for heat flux field
+int order_disp = 3; //< default approximation order for the displacement field
+
+int atom_test = 0;
 
 #include <ThermoElasticOps.hpp>   //< additional coupling opearyors
 using namespace ThermoElasticOps; //< name space of coupling operators
@@ -389,7 +394,7 @@ MoFEMErrorCode ThermoElasticProblem::addMatBlockOps(
         CHKERR m->getAttributes(block_data);
         if (block_data.size() < 3) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                  "Expected that block has two attributes");
+                  "Expected that block has three attributes");
         }
         auto get_block_ents = [&]() {
           Range ents;
@@ -449,20 +454,34 @@ MoFEMErrorCode ThermoElasticProblem::setupProblem() {
   MoFEMFunctionBegin;
   Simple *simple = mField.getInterface<Simple>();
   // Add field
-  constexpr FieldApproximationBase base = AINSWORTH_LEGENDRE_BASE;
+  constexpr FieldApproximationBase base = DEMKOWICZ_JACOBI_BASE;
   // Mechanical fields
-  CHKERR simple->addDomainField("U", H1, base, SPACE_DIM);
-  CHKERR simple->addBoundaryField("U", H1, base, SPACE_DIM);
+  CHKERR simple->addDomainField("U", H1, AINSWORTH_LEGENDRE_BASE, SPACE_DIM);
+  CHKERR simple->addBoundaryField("U", H1, AINSWORTH_LEGENDRE_BASE, SPACE_DIM);
   // Temperature
   constexpr auto flux_space = (SPACE_DIM == 2) ? HCURL : HDIV;
-  CHKERR simple->addDomainField("T", L2, AINSWORTH_LEGENDRE_BASE, 1);
-  CHKERR simple->addDomainField("FLUX", flux_space, DEMKOWICZ_JACOBI_BASE, 1);
-  CHKERR simple->addBoundaryField("FLUX", flux_space, DEMKOWICZ_JACOBI_BASE, 1);
+  CHKERR simple->addDomainField("T", L2, base, 1);
+  CHKERR simple->addDomainField("FLUX", flux_space, base, 1);
+  CHKERR simple->addBoundaryField("FLUX", flux_space, base, 1);
+  CHKERR simple->addBoundaryField("TBC", L2, base, 1);
 
-  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order, PETSC_NULL);
-  CHKERR simple->setFieldOrder("U", order + 1);
-  CHKERR simple->setFieldOrder("FLUX", order + 1);
-  CHKERR simple->setFieldOrder("T", order);
+  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order_temp, PETSC_NULL);
+  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order_temp", &order_temp,
+                            PETSC_NULL);
+  order_flux = order_temp + 1;
+  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order_flux", &order_flux,
+                            PETSC_NULL);
+  order_disp = order_temp + 1;
+  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order_disp", &order_disp,
+                            PETSC_NULL);
+  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-atom_test", &atom_test,
+                            PETSC_NULL);
+
+  CHKERR simple->setFieldOrder("U", order_disp);
+  CHKERR simple->setFieldOrder("FLUX", order_flux);
+  CHKERR simple->setFieldOrder("T", order_temp);
+  CHKERR simple->setFieldOrder("TBC", order_temp);
+
   CHKERR simple->setUp();
 
   int coords_dim = SPACE_DIM;
@@ -528,15 +547,15 @@ MoFEMErrorCode ThermoElasticProblem::createCommonData() {
                                  &default_heat_conductivity, PETSC_NULL);
 
     MOFEM_LOG("ThermoElastic", Sev::inform)
-        << "Young modulus " << default_young_modulus;
+        << "Default Young's modulus " << default_young_modulus;
     MOFEM_LOG("ThermoElastic", Sev::inform)
-        << "Poisson ratio " << default_poisson_ratio;
+        << "DefaultPoisson ratio " << default_poisson_ratio;
     MOFEM_LOG("ThermoElastic", Sev::inform)
-        << "Coeff of expansion " << default_coeff_expansion;
+        << "Default coeff of expansion " << default_coeff_expansion;
     MOFEM_LOG("ThermoElastic", Sev::inform)
-        << "Capacity " << default_heat_capacity;
+        << "Default heat capacity " << default_heat_capacity;
     MOFEM_LOG("ThermoElastic", Sev::inform)
-        << "Heat conductivity " << default_heat_conductivity;
+        << "Default heat conductivity " << default_heat_conductivity;
 
     MOFEM_LOG("ThermoElastic", Sev::inform)
         << "Reference temperature  " << ref_temp;
@@ -561,8 +580,6 @@ MoFEMErrorCode ThermoElasticProblem::bC() {
 
   auto simple = mField.getInterface<Simple>();
   auto bc_mng = mField.getInterface<BcManager>();
-
-
 
   auto get_skin = [&]() {
     Range body_ents;
@@ -614,7 +631,8 @@ MoFEMErrorCode ThermoElasticProblem::bC() {
     CHK_THROW_MESSAGE(remove_named_blocks("TEMPERATURE"),
                       "remove_named_blocks");
     CHK_THROW_MESSAGE(remove_named_blocks("HEATFLUX"), "remove_named_blocks");
-
+    CHK_THROW_MESSAGE(remove_named_blocks("CONVECTION"), "remove_named_blocks");
+    CHK_THROW_MESSAGE(remove_named_blocks("RADIATION"), "remove_named_blocks");
     return skin;
   };
 
@@ -646,6 +664,8 @@ MoFEMErrorCode ThermoElasticProblem::bC() {
 
   CHKERR mField.getInterface<ProblemsManager>()->removeDofsOnEntities(
       simple->getProblemName(), "FLUX", remove_flux_ents);
+  CHKERR mField.getInterface<ProblemsManager>()->removeDofsOnEntities(
+      simple->getProblemName(), "TBC", remove_flux_ents);
 
   auto set_init_temp = [](boost::shared_ptr<FieldEntity> field_entity_ptr) {
     field_entity_ptr->getEntFieldData()[0] = init_temp;
@@ -704,8 +724,7 @@ MoFEMErrorCode ThermoElasticProblem::OPs() {
   auto time_displacement_scaling =
       boost::make_shared<TimeScale>("displacement_bc_scale.txt");
   auto time_flux_scaling = boost::make_shared<TimeScale>("flux_bc_scale.txt");
-  auto time_force_scaling =
-      boost::make_shared<TimeScale>("force_bc_scale.txt");
+  auto time_force_scaling = boost::make_shared<TimeScale>("force_bc_scale.txt");
 
   auto add_domain_rhs_ops = [&](auto &pipeline) {
     MoFEMFunctionBegin;
@@ -738,8 +757,6 @@ MoFEMErrorCode ThermoElasticProblem::OPs() {
                                            coeff_expansion_ptr,
                                            mat_stress_ptr));
 
-    pipeline.push_back(new OpSetBc("FLUX", true, boundary_marker));
-
     pipeline.push_back(new OpInternalForceCauchy(
         "U", mat_stress_ptr,
         [](double, double, double) constexpr { return 1; }));
@@ -761,8 +778,6 @@ MoFEMErrorCode ThermoElasticProblem::OPs() {
     pipeline.push_back(new OpBaseDivFlux("T", vec_temp_div_ptr, unity));
     pipeline.push_back(new OpBaseDotT("T", vec_temp_dot_ptr, capacity));
 
-    pipeline.push_back(new OpUnSetBc("FLUX"));
-
     // Set source terms
     CHKERR DomainNaturalBCRhs::AddFluxToPipeline<OpHeatSource>::add(
         pipeline, mField, "T", {time_scale, time_heatsource_scaling},
@@ -782,8 +797,6 @@ MoFEMErrorCode ThermoElasticProblem::OPs() {
                           Sev::verbose);
     CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(pipeline, {H1, HDIV});
 
-    pipeline.push_back(new OpSetBc("FLUX", true, boundary_marker));
-
     pipeline.push_back(new OpKCauchy("U", "U", mDPtr));
     pipeline.push_back(new ThermoElasticOps::OpKCauchyThermoElasticity(
         "U", "T", mDPtr, coeff_expansion_ptr));
@@ -797,16 +810,14 @@ MoFEMErrorCode ThermoElasticProblem::OPs() {
       return -(*heat_capacity_ptr);
     };
     pipeline.push_back(new OpHdivHdiv("FLUX", "FLUX", resistance));
-    pipeline.push_back(new OpHdivT(
-        "FLUX", "T", []() constexpr { return -1; }, true));
+    pipeline.push_back(
+        new OpHdivT("FLUX", "T", []() constexpr { return -1; }, true));
 
     auto op_capacity = new OpCapacity("T", "T", capacity);
     op_capacity->feScalingFun = [](const FEMethod *fe_ptr) {
       return fe_ptr->ts_a;
     };
     pipeline.push_back(op_capacity);
-
-    pipeline.push_back(new OpUnSetBc("FLUX"));
 
     auto vec_temp_ptr = boost::make_shared<VectorDouble>();
     pipeline.push_back(new OpCalculateScalarFieldValues("T", vec_temp_ptr));
@@ -821,26 +832,148 @@ MoFEMErrorCode ThermoElasticProblem::OPs() {
 
     CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(pipeline, {HDIV});
 
-    pipeline.push_back(new OpSetBc("FLUX", true, boundary_marker));
-
-    // Set BCs using the least squares imposition
     CHKERR BoundaryNaturalBC::AddFluxToPipeline<OpForce>::add(
-        pipeline_mng->getOpBoundaryRhsPipeline(), mField, "U",
-        {time_scale, time_force_scaling}, "FORCE", Sev::inform);
+        pipeline, mField, "U", {time_scale, time_force_scaling}, "FORCE",
+        Sev::inform);
 
+    // Temperature BC
+
+    using OpTemperatureBC =
+        BoundaryNaturalBC::OpFlux<NaturalTemperatureMeshsets, 3, SPACE_DIM>;
     CHKERR BoundaryNaturalBC::AddFluxToPipeline<OpTemperatureBC>::add(
-        pipeline_mng->getOpBoundaryRhsPipeline(), mField, "FLUX",
-        {time_scale, time_temperature_scaling}, "TEMPERATURE", Sev::inform);
+        pipeline, mField, "FLUX", {time_scale, time_temperature_scaling},
+        "TEMPERATURE", Sev::inform);
 
-    pipeline.push_back(new OpUnSetBc("FLUX"));
+    // Note: fluxes for temperature should be aggregated. Here separate is
+    // NaturalMeshsetType<HEATFLUXSET>, we should add version with BLOCKSET,
+    // convection, see example tutorials/vec-0/src/NaturalBoundaryBC.hpp.
+    // and vec-0/elastic.cpp
+
+    using OpFluxBC =
+        BoundaryNaturalBC::OpFlux<NaturalMeshsetType<HEATFLUXSET>, 1, 1>;
+    CHKERR BoundaryNaturalBC::AddFluxToPipeline<OpFluxBC>::add(
+        pipeline, mField, "TBC", {time_scale, time_flux_scaling}, "FLUX",
+        Sev::inform);
+
+    using T = NaturalBC<BoundaryEleOp>::Assembly<PETSC>::LinearForm<GAUSS>;
+    using OpConvectionRhsBC =
+        T::OpFlux<ThermoElasticOps::ConvectionBcType<BLOCKSET>, 1, 1>;
+    using OpRadiationRhsBC =
+        T::OpFlux<ThermoElasticOps::RadiationBcType<BLOCKSET>, 1, 1>;
+    auto temp_bc_ptr = boost::make_shared<VectorDouble>();
+    pipeline.push_back(new OpCalculateScalarFieldValues("TBC", temp_bc_ptr));
+    T::AddFluxToPipeline<OpConvectionRhsBC>::add(
+        pipeline, mField, "TBC", temp_bc_ptr, "CONVECTION", Sev::inform);
+    T::AddFluxToPipeline<OpRadiationRhsBC>::add(
+        pipeline, mField, "TBC", temp_bc_ptr, "RADIATION", Sev::inform);
 
     auto mat_flux_ptr = boost::make_shared<MatrixDouble>();
     pipeline.push_back(
         new OpCalculateHVecVectorField<3, SPACE_DIM>("FLUX", mat_flux_ptr));
-    CHKERR EssentialBC<BoundaryEleOp>::Assembly<PETSC>::LinearForm<GAUSS>::
-        AddEssentialToPipeline<OpEssentialFluxRhs>::add(
-            mField, pipeline, simple->getProblemName(), "FLUX", mat_flux_ptr,
-            {time_scale, time_flux_scaling});
+
+    // This is temporary implementation. It be moved to LinearFormsIntegrators,
+    // however for hybridised case, what is goal of this changes, such function
+    // is implemented for fluxes in broken space. Thus ultimately this operator
+    // would be not needed.
+
+    struct OpTBCTimesNormalFlux
+        : public FormsIntegrators<BoundaryEleOp>::Assembly<PETSC>::OpBase {
+
+      using OP = FormsIntegrators<BoundaryEleOp>::Assembly<PETSC>::OpBase;
+
+      OpTBCTimesNormalFlux(const std::string field_name,
+                           boost::shared_ptr<MatrixDouble> vec,
+                           boost::shared_ptr<Range> ents_ptr = nullptr)
+          : OP(field_name, field_name, OP::OPROW, ents_ptr), sourceVec(vec) {}
+
+      MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data) {
+        MoFEMFunctionBegin;
+        FTENSOR_INDEX(SPACE_DIM, i);
+        // get integration weights
+        auto t_w = OP::getFTensor0IntegrationWeight();
+        // get base function values on rows
+        auto t_row_base = row_data.getFTensor0N();
+        // get normal vector
+        auto t_normal = OP::getFTensor1NormalsAtGaussPts();
+        // get vector values
+        auto t_vec = getFTensor1FromMat<SPACE_DIM, 1>(*sourceVec);
+        // loop over integration points
+        for (int gg = 0; gg != OP::nbIntegrationPts; gg++) {
+          // take into account Jacobian
+          const double alpha = t_w * (t_vec(i) * t_normal(i));
+          // loop over rows base functions
+          int rr = 0;
+          for (; rr != OP::nbRows; ++rr) {
+            OP::locF[rr] += alpha * t_row_base;
+            ++t_row_base;
+          }
+          for (; rr < OP::nbRowBaseFunctions; ++rr)
+            ++t_row_base;
+          ++t_w; // move to another integration weight
+          ++t_vec;
+          ++t_normal;
+        }
+        EntityType fe_type = OP::getNumeredEntFiniteElementPtr()->getEntType();
+        if (fe_type == MBTRI) {
+          OP::locF /= 2;
+        }
+        MoFEMFunctionReturn(0);
+      }
+
+    protected:
+      boost::shared_ptr<MatrixDouble> sourceVec;
+    };
+    pipeline.push_back(new OpTBCTimesNormalFlux("TBC", mat_flux_ptr));
+
+    struct OpBaseNormalTimesTBC
+        : public FormsIntegrators<BoundaryEleOp>::Assembly<PETSC>::OpBase {
+
+      using OP = FormsIntegrators<BoundaryEleOp>::Assembly<PETSC>::OpBase;
+
+      OpBaseNormalTimesTBC(const std::string field_name,
+                           boost::shared_ptr<VectorDouble> vec,
+                           boost::shared_ptr<Range> ents_ptr = nullptr)
+          : OP(field_name, field_name, OP::OPROW, ents_ptr), sourceVec(vec) {}
+
+      MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data) {
+        MoFEMFunctionBegin;
+        FTENSOR_INDEX(SPACE_DIM, i);
+        // get integration weights
+        auto t_w = OP::getFTensor0IntegrationWeight();
+        // get base function values on rows
+        auto t_row_base = row_data.getFTensor1N<3>();
+        // get normal vector
+        auto t_normal = OP::getFTensor1NormalsAtGaussPts();
+        // get vector values
+        auto t_vec = getFTensor0FromVec(*sourceVec);
+        // loop over integration points
+        for (int gg = 0; gg != OP::nbIntegrationPts; gg++) {
+          // take into account Jacobian
+          const double alpha = t_w * t_vec;
+          // loop over rows base functions
+          int rr = 0;
+          for (; rr != OP::nbRows; ++rr) {
+            OP::locF[rr] += alpha * (t_row_base(i) * t_normal(i));
+            ++t_row_base;
+          }
+          for (; rr < OP::nbRowBaseFunctions; ++rr)
+            ++t_row_base;
+          ++t_w; // move to another integration weight
+          ++t_vec;
+          ++t_normal;
+        }
+        EntityType fe_type = OP::getNumeredEntFiniteElementPtr()->getEntType();
+        if (fe_type == MBTRI) {
+          OP::locF /= 2;
+        }
+        MoFEMFunctionReturn(0);
+      }
+
+    protected:
+      boost::shared_ptr<VectorDouble> sourceVec;
+    };
+
+    pipeline.push_back(new OpBaseNormalTimesTBC("FLUX", temp_bc_ptr));
 
     MoFEMFunctionReturn(0);
   };
@@ -850,9 +983,85 @@ MoFEMErrorCode ThermoElasticProblem::OPs() {
 
     CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(pipeline, {HDIV});
 
-    CHKERR EssentialBC<BoundaryEleOp>::Assembly<PETSC>::BiLinearForm<GAUSS>::
-        AddEssentialToPipeline<OpEssentialFluxLhs>::add(
-            mField, pipeline, simple->getProblemName(), "FLUX");
+    using T =
+        NaturalBC<BoundaryEleOp>::template Assembly<PETSC>::BiLinearForm<GAUSS>;
+    using OpConvectionLhsBC =
+        T::OpFlux<ThermoElasticOps::ConvectionBcType<BLOCKSET>, 1, 1>;
+    using OpRadiationLhsBC =
+        T::OpFlux<ThermoElasticOps::RadiationBcType<BLOCKSET>, 1, 1>;
+    auto temp_bc_ptr = boost::make_shared<VectorDouble>();
+    pipeline.push_back(new OpCalculateScalarFieldValues("TBC", temp_bc_ptr));
+    T::AddFluxToPipeline<OpConvectionLhsBC>::add(pipeline, mField, "TBC", "TBC",
+                                                 "CONVECTION", Sev::verbose);
+    T::AddFluxToPipeline<OpRadiationLhsBC>::add(
+        pipeline, mField, "TBC", "TBC", temp_bc_ptr, "RADIATION", Sev::verbose);
+
+    // This is temporary implementation. It be moved to LinearFormsIntegrators,
+    // however for hybridised case, what is goal of this changes, such function
+    // is implemented for fluxes in broken space. Thus ultimately this operator
+    // would be not needed.
+
+    struct OpTBCTimesNormalFlux
+        : public FormsIntegrators<BoundaryEleOp>::Assembly<PETSC>::OpBase {
+
+      using OP = FormsIntegrators<BoundaryEleOp>::Assembly<PETSC>::OpBase;
+
+      OpTBCTimesNormalFlux(const std::string row_field_name,
+                           const std::string col_field_name,
+                           boost::shared_ptr<Range> ents_ptr = nullptr)
+          : OP(row_field_name, col_field_name, OP::OPROWCOL, ents_ptr) {
+        this->sYmm = false;
+        this->assembleTranspose = true;
+        this->onlyTranspose = false;
+      }
+
+      MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
+                               EntitiesFieldData::EntData &col_data) {
+        MoFEMFunctionBegin;
+
+        FTENSOR_INDEX(SPACE_DIM, i);
+
+        // get integration weights
+        auto t_w = OP::getFTensor0IntegrationWeight();
+        // get base function values on rows
+        auto t_row_base = row_data.getFTensor0N();
+        // get normal vector
+        auto t_normal = OP::getFTensor1NormalsAtGaussPts();
+        // loop over integration points
+        for (int gg = 0; gg != OP::nbIntegrationPts; gg++) {
+          // loop over rows base functions
+          auto a_mat_ptr = &*OP::locMat.data().begin();
+          int rr = 0;
+          for (; rr != OP::nbRows; rr++) {
+            // take into account Jacobian
+            const double alpha = t_w * t_row_base;
+            // get column base functions values at gauss point gg
+            auto t_col_base = col_data.getFTensor1N<3>(gg, 0);
+            // loop over columns
+            for (int cc = 0; cc != OP::nbCols; cc++) {
+              // calculate element of local matrix
+              // using L2 norm of normal vector for convenient area calculation
+              // for quads, tris etc.
+              *a_mat_ptr += alpha * (t_col_base(i) * t_normal(i));
+              ++t_col_base;
+              ++a_mat_ptr;
+            }
+            ++t_row_base;
+          }
+          for (; rr < OP::nbRowBaseFunctions; ++rr)
+            ++t_row_base;
+          ++t_normal;
+          ++t_w; // move to another integration weight
+        }
+        EntityType fe_type = OP::getNumeredEntFiniteElementPtr()->getEntType();
+        if (fe_type == MBTRI) {
+          OP::locMat /= 2;
+        }
+        MoFEMFunctionReturn(0);
+      }
+    };
+
+    pipeline.push_back(new OpTBCTimesNormalFlux("TBC", "FLUX"));
 
     MoFEMFunctionReturn(0);
   };
@@ -998,23 +1207,68 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
                   MF_EXIST, QUIET);
         }
 
+        if (atom_test == 1) {
+          auto eval_num_vec =
+              createVectorMPI(mField.get_comm(), PETSC_DECIDE, 1);
+          CHKERR VecZeroEntries(eval_num_vec);
+          if (scalarFieldPtr->size()) {
+            CHKERR VecSetValue(eval_num_vec, 0, 1, ADD_VALUES);
+          }
+          CHKERR VecAssemblyBegin(eval_num_vec);
+          CHKERR VecAssemblyEnd(eval_num_vec);
+
+          double eval_num;
+          CHKERR VecSum(eval_num_vec, &eval_num);
+          if (!(int)eval_num) {
+            SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                     "atom test %d failed: did not find elements to evaluate "
+                     "the field, check the coordinates",
+                     atom_test);
+          }
+        }
+
         if (scalarFieldPtr->size()) {
           auto t_temp = getFTensor0FromVec(*scalarFieldPtr);
           MOFEM_LOG("ThermoElasticSync", Sev::inform)
               << "Eval point T: " << t_temp;
+          if (atom_test == 1 && fabs(monitor_ptr->ts_t - 10) < 1e-12) {
+            if (fabs(t_temp - 539.46) > 1e-2) {
+              SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                       "atom test %d failed: wrong temperature value",
+                       atom_test);
+            }
+          }
         }
         if (vectorFieldPtr->size1()) {
           FTensor::Index<'i', SPACE_DIM> i;
           auto t_disp = getFTensor1FromMat<SPACE_DIM>(*vectorFieldPtr);
+          auto disp_mag = sqrt(t_disp(i) * t_disp(i));
           MOFEM_LOG("ThermoElasticSync", Sev::inform)
-              << "Eval point U magnitude: " << sqrt(t_disp(i) * t_disp(i));
+              << "Eval point U magnitude: " << disp_mag;
+          if (atom_test == 1 && fabs(monitor_ptr->ts_t - 10) < 1e-12) {
+            if (fabs(disp_mag - 0.002254) > 1e-6) {
+              SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                       "atom test %d failed: wrong displacement value",
+                       atom_test);
+            }
+          }
         }
         if (tensorFieldPtr->size1()) {
           FTensor::Index<'i', SPACE_DIM> i;
           auto t_disp_grad =
               getFTensor2FromMat<SPACE_DIM, SPACE_DIM>(*tensorFieldPtr);
+          auto t_disp_grad_trace = t_disp_grad(i, i);
           MOFEM_LOG("ThermoElasticSync", Sev::inform)
-              << "Eval point U_GRAD trace: " << t_disp_grad(i, i);
+              << "Eval point U_GRAD trace: " << t_disp_grad_trace;
+          if (atom_test == 1 && fabs(monitor_ptr->ts_t - 10) < 1e-12) {
+            if (SPACE_DIM == 3) {
+              t_disp_grad_trace -= t_disp_grad(2, 2);
+            }
+            if (fabs(t_disp_grad_trace - 0.00644) > 1e-5) {
+              SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                       "atom test %d failed: wrong strain value", atom_test);
+            }
+          }
         }
 
         MOFEM_LOG_SYNCHRONISE(mField.get_comm());
@@ -1055,22 +1309,14 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
       SmartPetscObj<IS> is_T;
       CHKERR is_mng->isCreateProblemFieldAndRank(name_prb, ROW, "T", 0, 0,
                                                  is_T);
-      IS is_tmp;
+      SmartPetscObj<IS> is_TBC;
+      CHKERR is_mng->isCreateProblemFieldAndRank(name_prb, ROW, "TBC", 0, 0,
+                                                 is_TBC);
+      IS is_tmp, is_tmp2;
       CHKERR ISExpand(is_T, is_flux, &is_tmp);
-      auto is_TFlux = SmartPetscObj<IS>(is_tmp);
-
-      auto is_all_bc = bc_mng->getBlockIS(name_prb, "HEATFLUX", "FLUX", 0, 0);
-      int is_all_bc_size;
-      CHKERR ISGetSize(is_all_bc, &is_all_bc_size);
-      MOFEM_LOG("ThermoElastic", Sev::inform)
-          << "Field split block size " << is_all_bc_size;
-      if (is_all_bc_size) {
-        IS is_tmp2;
-        CHKERR ISDifference(is_TFlux, is_all_bc, &is_tmp2);
-        is_TFlux = SmartPetscObj<IS>(is_tmp2);
-        CHKERR PCFieldSplitSetIS(pc, PETSC_NULL,
-                                 is_all_bc); // boundary block
-      }
+      CHKERR ISExpand(is_TBC, is_tmp, &is_tmp2);
+      CHKERR ISDestroy(&is_tmp);
+      auto is_TFlux = SmartPetscObj<IS>(is_tmp2);
 
       CHKERR ISSort(is_u);
       CHKERR ISSort(is_TFlux);

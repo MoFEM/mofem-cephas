@@ -56,14 +56,14 @@ struct Monitor : public FEMethod {
       CHK_THROW_MESSAGE((AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
                             pip, {H1, HDIV}, "GEOMETRY")),
                         "Apply base transform");
-      auto henky_common_data_ptr =
+      auto hencky_common_data_ptr =
           commonDataFactory<SPACE_DIM, GAUSS, DomainEleOp>(
               *m_field_ptr, pip, "U", "MAT_ELASTIC", Sev::inform, scale);
       auto contact_stress_ptr = boost::make_shared<MatrixDouble>();
       pip.push_back(new OpCalculateHVecTensorField<SPACE_DIM, SPACE_DIM>(
           "SIGMA", contact_stress_ptr));
       pip.push_back(new OpScale(contact_stress_ptr, scale));
-      return std::make_tuple(henky_common_data_ptr, contact_stress_ptr);
+      return std::make_tuple(hencky_common_data_ptr, contact_stress_ptr);
     };
 
     auto push_bdy_ops = [&](auto &pip) {
@@ -99,7 +99,7 @@ struct Monitor : public FEMethod {
           boost::make_shared<PostProcEleDomain>(*m_field_ptr, postProcMesh);
       auto &pip = post_proc_fe->getOpPtrVector();
 
-      auto [henky_common_data_ptr, contact_stress_ptr] =
+      auto [hencky_common_data_ptr, contact_stress_ptr] =
           push_domain_ops(get_domain_pip(pip));
 
       auto u_ptr = boost::make_shared<MatrixDouble>();
@@ -126,9 +126,9 @@ struct Monitor : public FEMethod {
 
                   {"SIGMA", contact_stress_ptr},
 
-                  {"G", henky_common_data_ptr->matGradPtr},
+                  {"G", hencky_common_data_ptr->matGradPtr},
 
-                  {"PK1", henky_common_data_ptr->getMatFirstPiolaStress()}
+                  {"PK1", hencky_common_data_ptr->getMatFirstPiolaStress()}
 
               },
               {}
@@ -189,7 +189,7 @@ struct Monitor : public FEMethod {
               ForcesAndSourcesCore::UserDataOperator::AdjCache>());
       pip.push_back(op_loop_side);
 
-      auto [henky_common_data_ptr, contact_stress_ptr] =
+      auto [hencky_common_data_ptr, contact_stress_ptr] =
           push_domain_ops(op_loop_side->getOpPtrVector());
 
       auto X_ptr = boost::make_shared<MatrixDouble>();
