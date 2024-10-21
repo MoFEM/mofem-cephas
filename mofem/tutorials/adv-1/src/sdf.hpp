@@ -105,8 +105,6 @@ MoFEMErrorCode Wavy_3D::FormFunction(SNES snes, Vec chi, Vec F, void *ctx) {
 MoFEMErrorCode Wavy_3D::FormJacobian(SNES snes, Vec chi, Mat A, Mat P,
                                      void *ctx) {
   MoFEMFunctionBegin;
-  // Wavy_3D *self;
-  // self = (Wavy_3D *)ctx;
   Wavy_3D *self = static_cast<Wavy_3D *>(ctx);
   const PetscScalar *array;
   CHKERR VecGetArrayRead(chi, &array);
@@ -152,23 +150,21 @@ MoFEMErrorCode Wavy_3D::FormJacobian(SNES snes, Vec chi, Mat A, Mat P,
 }
 
 double Wavy_3D::sDF(double x, double y, double z, double t) {
-    MoFEMFunctionBegin;
 
     x = fmod(fabs(x), wave_len);
     if (x > wave_len / 2) x = wave_len - x;
     y = fmod(fabs(y), wave_len);
     if (y > wave_len / 2) y = wave_len - y;
-
     this->x = x;
     this->y = y;
     this->z = z;
     this->t = t;
+
     double distance_z = amplitude * (1.0 - std::cos(w * x) * std::cos(w * y)) - indentation * t;
     if(distance_z -z > pamp) {
       return distance_z - z;}
-    else{
-    double r = amplitude * (1.0 - std::cos(w * x) * std::cos(w * y)) - indentation * t;
-    if(std::abs(r - z) < 1e-12) {
+    else {
+    if(std::abs(distance_z - z) < 1e-12) {
         return 0.0;
     }
     else{
@@ -207,7 +203,6 @@ double Wavy_3D::sDF(double x, double y, double z, double t) {
     }
     return min_sdf_with_sign;
         }}
-      MoFEMFunctionReturn(0);
   
 }
 
