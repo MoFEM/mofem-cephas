@@ -264,19 +264,19 @@ add_test(
   wavy_half_space_3d_CPP
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 12
   contact_3d_sdf_cpp
-  -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/half_space_3d.h5m
-  -order 2
+  -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/half_space_3d_12p.h5m
+  -order 1
   -contact_order 2
   -geom_order 2
   -base demkowicz
   -pc_type lu
   -ts_type beuler
-  -ts_max_time 1 -ts_dt 0.1
+  -ts_max_time 1 -ts_dt 0.025
   -ts_exact_final_time matchstep
   -young_modulus 1000
   -poisson_ratio 0.4
-  -wave_amplitude 0.2
-  -wave_indentation 2.4
+  -wave_amplitude 0.1
+  -wave_indentation 1.2
   -use_scale 1
   -snes_atol 1e-8
   -snes_rtol 0.0

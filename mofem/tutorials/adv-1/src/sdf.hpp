@@ -161,13 +161,13 @@ double Wavy_3D::sDF(double x, double y, double z, double t) {
     this->t = t;
 
     double distance_z = amplitude * (1.0 - std::cos(w * x) * std::cos(w * y)) - indentation * t;
-    if(distance_z -z > pamp) {
+    if(std::abs(distance_z -z) > pamp) {
       return distance_z - z;}
-    else {
+
     if(std::abs(distance_z - z) < 1e-12) {
         return 0.0;
     }
-    else{
+
     std::vector<std::pair<double, double>> initial_guesses = {
         {0.0, wave_len / 4.0},
         {wave_len / 2.0, wave_len / 4.0},
@@ -202,16 +202,14 @@ double Wavy_3D::sDF(double x, double y, double z, double t) {
         }
     }
     return min_sdf_with_sign;
-        }}
-  
-}
+        }
 
 std::array<double, 3> Wavy_3D::gradSDF(double x, double y, double z, double t) {
     double distance_z = amplitude * (1.0 - std::cos(w * x) * std::cos(w * y)) - indentation * t;
     double df_dx = 0.0;
     double df_dy = 0.0;
     double df_dz = 0.0;
-    if (distance_z - z > pamp) {
+    if (std::abs(distance_z - z > pamp)) {
        df_dx = amplitude * w * std::sin(w * x) * std::cos(w * y);
        df_dy = amplitude * w * std::cos(w * x) * std::sin(w * y);
        df_dz = -1.0;
@@ -228,7 +226,6 @@ std::array<double, 3> Wavy_3D::gradSDF(double x, double y, double z, double t) {
     double normal_x = 0.0;
     double normal_y = 0.0;
     double normal_z = 0.0;
-    // Avoid division by zero by checking the magnitude
     if (magnitude > 0) {
      normal_x = df_dx / magnitude;
      normal_y = df_dy / magnitude;
@@ -248,10 +245,9 @@ std::array<double, 6> Wavy_3D::hessSDF(double x, double y, double z, double t) {
     double d2f_dy2 = 0.0;
     double d2f_dydz = 0.0;
     double d2f_dz2 = 0.0;
-    if (distance_z - z > pamp) {
+    if (std::abs(distance_z - z > pamp)) {
         d2f_dx2 = amplitude * (w*w) * std::cos(w * x ) * std::cos(w * y);
         d2f_dxdy = - amplitude * (w*w) * std::sin(w * x) * std::sin(w * y);
-
         d2f_dy2 =  amplitude * (w*w) * std::cos(w * x) * std::cos(w * y);
         d2f_dxdz = 0.0;
         d2f_dydz = 0.0;
@@ -259,7 +255,7 @@ std::array<double, 6> Wavy_3D::hessSDF(double x, double y, double z, double t) {
     }
 
     else{
-    const double delta = 1e-4;  
+    const double delta = 1e-6;  
     const double inv_delta2 = 1.0 / (delta * delta);  
     // Second pd
     d2f_dx2 = (sDF(x + delta, y, z, t) - 2.0 * sDF(x, y, z, t) + sDF(x - delta, y, z, t)) * inv_delta2;

@@ -154,7 +154,7 @@ double Wavy_3D::sDF(double x, double y, double z, double t) {
     this->z = z;
     this->t = t;
     double r = amplitude * (1.0 - std::cos(w * x) * std::cos(w * y)) - indentation * t;
-    if(std::abs(r - z) < 1e-10) {
+    if(std::abs(r - z) < 1e-12) {
         return 0.0;
     }
     // else{
