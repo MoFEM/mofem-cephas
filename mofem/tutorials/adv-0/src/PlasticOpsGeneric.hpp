@@ -490,7 +490,7 @@ MoFEMErrorCode OpCalculatePlasticityImpl<DIM, GAUSS, DomainEleOp>::doWork(
   
   auto &params = commonDataPtr->blockParams; ///< material parameters
 
-  const size_t nb_gauss_pts = DomainEleOp::getGaussPts().size2();
+  auto nb_gauss_pts = DomainEleOp::getGaussPts().size2();
   auto t_w = DomainEleOp::getFTensor0IntegrationWeight();
   auto t_tau = getFTensor0FromVec(commonDataPtr->plasticTau);
   auto t_tau_dot = getFTensor0FromVec(commonDataPtr->plasticTauDot);
@@ -583,7 +583,7 @@ MoFEMErrorCode OpCalculatePlasticityImpl<DIM, GAUSS, DomainEleOp>::doWork(
     auto t_plastic_strain_dot =
         getFTensor2SymmetricFromMat<SPACE_DIM>(commonDataPtr->plasticStrainDot);
 
-    for (auto &f : commonDataPtr->plasticSurface) {
+    for (auto gg = 0; gg != nb_gauss_pts; ++gg) {
       auto eqiv = equivalent_strain_dot(t_plastic_strain_dot);
       const auto ww = w(
           eqiv, t_tau_dot, t_f,
@@ -629,7 +629,7 @@ MoFEMErrorCode OpCalculatePlasticityImpl<DIM, GAUSS, DomainEleOp>::doWork(
     get_avtive_pts();
   }
 
-  for (auto &f : commonDataPtr->plasticSurface) {
+  for (auto gg = 0; gg != nb_gauss_pts; ++gg) {
 
     auto eqiv = equivalent_strain_dot(t_plastic_strain_dot);
     auto t_diff_eqiv = diff_equivalent_strain_dot(eqiv, t_plastic_strain_dot,
@@ -1115,9 +1115,6 @@ OpCalculatePlasticFlowLhs_dTAUImpl<DIM, GAUSS, AssemblyDomainEleOp>::iNtegrate(
   const auto nb_integration_pts = AssemblyDomainEleOp::getGaussPts().size2();
   const size_t nb_row_base_functions = row_data.getN().size2();
   auto &locMat = AssemblyDomainEleOp::locMat;
-
-  const auto type = AssemblyDomainEleOp::getFEType();
-  const auto nb_nodes = moab::CN::VerticesPerEntity(type);
 
   auto t_res_flow_dtau =
       getFTensor2SymmetricFromMat<DIM>(commonDataPtr->resFlowDtau);

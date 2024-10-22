@@ -188,6 +188,7 @@ private:
   MoFEMErrorCode bC();
   MoFEMErrorCode OPs();
   MoFEMErrorCode tsSolve();
+  MoFEMErrorCode testOperators();
 
   boost::shared_ptr<DomainEle> reactionFe;
 
@@ -216,7 +217,14 @@ MoFEMErrorCode Example::runProblem() {
   CHKERR setupProblem();
   CHKERR bC();
   CHKERR OPs();
-  CHKERR tsSolve();
+  PetscBool test_ops = PETSC_FALSE;
+  CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-test_operators", &test_ops,
+                             PETSC_NULL);
+  if (test_ops == PETSC_FALSE) {
+    CHKERR tsSolve();
+  } else {
+    CHKERR testOperators();
+  }
   MoFEMFunctionReturn(0);
 }
 //! [Run problem]
@@ -327,7 +335,7 @@ MoFEMErrorCode Example::setupProblem() {
   };
 
   auto filter_blocks = [&](auto skin) {
-    bool is_contact_block = false;
+    bool is_contact_block = true;
     Range contact_range;
     for (auto m :
          mField.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(std::regex(
@@ -506,7 +514,6 @@ MoFEMErrorCode Example::bC() {
 
   auto simple = mField.getInterface<Simple>();
   auto bc_mng = mField.getInterface<BcManager>();
-  auto prb_mng = mField.getInterface<ProblemsManager>();
 
   CHKERR bc_mng->removeBlockDOFsOnEntities(simple->getProblemName(), "REMOVE_X",
                                            "U", 0, 0);
@@ -549,8 +556,6 @@ MoFEMErrorCode Example::bC() {
 MoFEMErrorCode Example::OPs() {
   MoFEMFunctionBegin;
   auto pip_mng = mField.getInterface<PipelineManager>();
-  auto simple = mField.getInterface<Simple>();
-  auto bc_mng = mField.getInterface<BcManager>();
 
   auto integration_rule_bc = [](int, int, int ao) { return 2 * ao; };
 
@@ -568,6 +573,7 @@ MoFEMErrorCode Example::OPs() {
         pip, mField, "U", Sev::inform);
 
 #ifdef ADD_CONTACT
+    auto simple = mField.getInterface<Simple>();
     CHKERR
     ContactOps::opFactoryBoundaryLhs<SPACE_DIM, AT, GAUSS, BoundaryEleOp>(
         pip, "SIGMA", "U");
@@ -753,7 +759,6 @@ MoFEMErrorCode Example::tsSolve() {
 
   auto create_post_process_elements = [&]() {
     auto pp_fe = boost::make_shared<PostProcEle>(mField);
-    auto &pip = pp_fe->getOpPtrVector();
 
     auto push_vol_ops = [this](auto &pip) {
       CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(pip, {H1, HDIV},
@@ -904,7 +909,6 @@ MoFEMErrorCode Example::tsSolve() {
                           boost::shared_ptr<SetUpSchur> &schur_ptr) {
     MoFEMFunctionBeginHot;
 
-    auto bc_mng = mField.getInterface<BcManager>();
     auto name_prb = simple->getProblemName();
 
     // create sub dm for Schur complement
@@ -1109,7 +1113,7 @@ MoFEMErrorCode Example::tsSolve() {
               100 * static_cast<double>(avtive_full_elems) / avtive_elems;
 
         MOFEM_LOG_C("PLASTICITY", Sev::inform,
-                    "Iter %d nb pts %d nb avtive pts %d (%3.3f\%) nb active "
+                    "Iter %d nb pts %d nb active pts %d (%3.3f\%) nb active "
                     "elements %d "
                     "(%3.3f\%) nb full active elems %d (%3.3f\%)",
                     iter, nb_points, active_points, proc_nb_points,
@@ -1206,6 +1210,110 @@ MoFEMErrorCode Example::tsSolve() {
 }
 //! [Solve]
 
+//! [TestOperators]
+MoFEMErrorCode Example::testOperators() {
+  MoFEMFunctionBegin;
+
+  // get operators tester
+  auto simple = mField.getInterface<Simple>();
+  auto opt = mField.getInterface<OperatorsTester>(); // get interface to
+                                                     // OperatorsTester
+  auto pip = mField.getInterface<PipelineManager>(); // get interface to
+                                                     // pipeline manager
+
+  constexpr double eps = 1e-9;
+
+  auto x = opt->setRandomFields(simple->getDM(), {
+
+                                                     {"U", {-1e-6, 1e-6}},
+
+                                                     {"EP", {-1e-6, 1e-6}},
+
+                                                     {"TAU", {0, 1e-4}}
+
+                                                 });
+
+  auto dot_x_plastic_active =
+      opt->setRandomFields(simple->getDM(), {
+
+                                                {"U", {-1, 1}},
+
+                                                {"EP", {-1, 1}},
+
+                                                {"TAU", {0.1, 1}}
+
+                                            });
+  auto diff_x_plastic_active =
+      opt->setRandomFields(simple->getDM(), {
+
+                                                {"U", {-1, 1}},
+
+                                                {"EP", {-1, 1}},
+
+                                                {"TAU", {-1, 1}}
+
+                                            });
+
+  auto dot_x_elastic =
+      opt->setRandomFields(simple->getDM(), {
+
+                                                {"U", {-1, 1}},
+
+                                                {"EP", {-1, 1}},
+
+                                                {"TAU", {-1, -0.1}}
+
+                                            });
+  auto diff_x_elastic =
+      opt->setRandomFields(simple->getDM(), {
+
+                                                {"U", {-1, 1}},
+
+                                                {"EP", {-1, 1}},
+
+                                                {"TAU", {-1, 1}}
+
+                                            });
+
+  auto test_domain_ops = [&](auto fe_name, auto lhs_pipeline, auto rhs_pipeline,
+                             auto dot_x, auto diff_x) {
+    MoFEMFunctionBegin;
+
+    auto diff_res = opt->checkCentralFiniteDifference(
+        simple->getDM(), fe_name, rhs_pipeline, lhs_pipeline, x, dot_x,
+        SmartPetscObj<Vec>(), diff_x, 0, 0.5, eps);
+
+    // Calculate norm of difference between directional derivative calculated 
+    // from finite difference, and tangent matrix.
+    double fnorm;
+    CHKERR VecNorm(diff_res, NORM_2, &fnorm);
+    MOFEM_LOG_C("PLASTICITY", Sev::inform,
+                "Test consistency of tangent matrix %3.4e", fnorm);
+
+    constexpr double err = 1e-5;
+    if (fnorm > err)
+      SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+               "Norm of directional derivative too large err = %3.4e", fnorm);
+
+    MoFEMFunctionReturn(0);
+  };
+
+  MOFEM_LOG("PLASTICITY", Sev::inform) << "Elastic active";
+  CHKERR test_domain_ops(simple->getDomainFEName(), pip->getDomainLhsFE(),
+                         pip->getDomainRhsFE(), dot_x_elastic, diff_x_elastic);
+
+  MOFEM_LOG("PLASTICITY", Sev::inform) << "Plastic active";
+  CHKERR test_domain_ops(simple->getDomainFEName(), pip->getDomainLhsFE(),
+                         pip->getDomainRhsFE(), dot_x_plastic_active,
+                         diff_x_plastic_active);
+
+
+
+  MoFEMFunctionReturn(0);
+};
+
+//! [TestOperators]
+
 static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
@@ -1287,10 +1395,10 @@ struct SetUpSchurImpl : public SetUpSchur {
       : SetUpSchur(), mField(m_field), subDM(sub_dm),
         fieldSplitIS(field_split_is), aoSchur(ao_up) {
     if (S) {
-      CHK_THROW_MESSAGE(
-          MOFEM_DATA_INCONSISTENCY,
-          "Is expected that schur matrix is not allocated. This is "
-          "possible only is PC is set up twice");
+      CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY,
+                        "Is expected that schur matrix is not "
+                        "allocated. This is "
+                        "possible only is PC is set up twice");
     }
   }
   virtual ~SetUpSchurImpl() { S.reset(); }
@@ -1325,10 +1433,10 @@ MoFEMErrorCode SetUpSchurImpl::setUp(TS solver) {
   PetscObjectTypeCompare((PetscObject)pc, PCFIELDSPLIT, &is_pcfs);
   if (is_pcfs) {
     if (S) {
-      CHK_THROW_MESSAGE(
-          MOFEM_DATA_INCONSISTENCY,
-          "Is expected that schur matrix is not allocated. This is "
-          "possible only is PC is set up twice");
+      CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY,
+                        "Is expected that schur matrix is not "
+                        "allocated. This is "
+                        "possible only is PC is set up twice");
     }
 
     S = createDMMatrix(subDM);
@@ -1459,7 +1567,8 @@ MoFEMErrorCode SetUpSchurImpl::setUp(TS solver) {
       auto get_pc = [](auto ksp) {
         PC pc_raw;
         CHKERR KSPGetPC(ksp, &pc_raw);
-        return SmartPetscObj<PC>(pc_raw, true); // bump reference
+        return SmartPetscObj<PC>(pc_raw,
+                                 true); // bump reference
       };
       CHKERR setSchurA00MatSolvePC(get_pc(subksp[0]));
       CHKERR PetscFree(subksp);
