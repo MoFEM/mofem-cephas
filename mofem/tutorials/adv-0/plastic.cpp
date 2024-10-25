@@ -1731,7 +1731,6 @@ MoFEMErrorCode AddHOOps<3, 3, 3>::add(
     boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
     std::vector<FieldSpace> spaces, std::string geom_field_name) {
   MoFEMFunctionBegin;
-
   constexpr bool scale_l2 = false;
   if (scale_l2) {
     CHKERR scaleL2<3, 3, 3>(pipeline, geom_field_name);
