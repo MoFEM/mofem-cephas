@@ -1721,8 +1721,11 @@ scaleL2(boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
   };
   pipeline.push_back(op_scale);
 
-  pipeline.push_back(
-      new OpScaleBaseBySpaceInverseOfMeasure(L2, det_ptr, scale_ptr));
+  for (auto base : {AINSWORTH_LEGENDRE_BASE, AINSWORTH_LOBATTO_BASE,
+                    DEMKOWICZ_JACOBI_BASE}) {
+    pipeline.push_back(
+        new OpScaleBaseBySpaceInverseOfMeasure(L2, base, det_ptr, scale_ptr));
+  }
 
   MoFEMFunctionReturn(0);
 }
