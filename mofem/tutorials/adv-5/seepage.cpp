@@ -162,9 +162,10 @@ double scale = 1.;
 double default_young_modulus = 0.0009;
 double default_poisson_ratio = 0.2; // Zero for verification
 double default_conductivity = 0.00012;
-double fluid_density = 10;  // Is this used anywhere?
 double biot_constant = 1;
 double storage_coefficient = 1;  // Not yet implemented 
+
+PetscBool is_plane_strain = PETSC_FALSE;
 
 // #include <OpPostProcElastic.hpp>
 #include <SeepageOps.hpp>
@@ -319,10 +320,11 @@ MoFEMErrorCode Seepage::addMatBlockOps(
         FTensor::Index<'k', SPACE_DIM> k;
         FTensor::Index<'l', SPACE_DIM> l;
         constexpr auto t_kd = FTensor::Kronecker_Delta_symmetric<int>();
-        double A = (SPACE_DIM == 2)
-                       ? 2 * shear_modulus_G /
-                             (bulk_modulus_K + (4. / 3.) * shear_modulus_G)
-                       : 1;
+        double A = 1.;
+        if (SPACE_DIM == 2 && !is_plane_strain) {
+          A = 2 * shear_modulus_G /
+              (bulk_modulus_K + (4. / 3.) * shear_modulus_G);
+        }
         auto t_D = getFTensor4DdgFromMat<SPACE_DIM, SPACE_DIM, 0>(*mat_D_ptr);
         t_D(i, j, k, l) =
             2 * shear_modulus_G * ((t_kd(i, k) ^ t_kd(j, l)) / 4.) +
@@ -467,6 +469,9 @@ MoFEMErrorCode Seepage::setupProblem() {
   CHKERR simple->addDomainField("FLUX", flux_space, DEMKOWICZ_JACOBI_BASE, 1);
   CHKERR simple->addBoundaryField("FLUX", flux_space, DEMKOWICZ_JACOBI_BASE, 1);
 
+  CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-plane_strain", &is_plane_strain,
+                             PETSC_NULL);
+
   int order = 2.;
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order, PETSC_NULL);
   CHKERR simple->setFieldOrder("U", order);
@@ -491,8 +496,6 @@ MoFEMErrorCode Seepage::createCommonData() {
                                  &default_poisson_ratio, PETSC_NULL);
     CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-conductivity",
                                  &default_conductivity, PETSC_NULL);
-    CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-fluid_density",
-                                 &fluid_density, PETSC_NULL);
     CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-biot_constant",
                                  &biot_constant, PETSC_NULL);
 
@@ -502,7 +505,6 @@ MoFEMErrorCode Seepage::createCommonData() {
         << "Default Poisson ratio " << default_poisson_ratio;
     MOFEM_LOG("Seepage", Sev::inform)
         << "Default conductivity " << default_conductivity;
-    MOFEM_LOG("Seepage", Sev::inform) << "Fluid density " << fluid_density;
     MOFEM_LOG("Seepage", Sev::inform) << "Biot constant " << biot_constant;
 
     int coords_dim = SPACE_DIM;
@@ -723,7 +725,7 @@ MoFEMErrorCode Seepage::OPs() {
     pip.push_back(new OpHdivHdiv("FLUX", "FLUX", resistance));
     pip.push_back(new OpHdivQ("FLUX", "P", minus_one, true));
     auto op_base_div_u = new OpBaseDivU(
-        "H", "U", biot_constant);
+        "P", "U", biot_constant, false, false);
     op_base_div_u->feScalingFun = [](const FEMethod *fe_ptr) {
       return fe_ptr->ts_a;
     };
@@ -1008,9 +1010,9 @@ MoFEMErrorCode Seepage::tsSolve() {
         }
 
         MOFEM_LOG("SeepageSync", Sev::inform)
-            << "Eval point hydrostatic height: " << *p_ptr;  //this is pressure?
+            << "Eval point pore pressure: " << *p_ptr;  //this is pressure?
         MOFEM_LOG("SeepageSync", Sev::inform)
-            << "Eval point skeleton stress pressure: " << *stress_ptr;     //this is stress?
+            << "Eval point symmetric stress tensor: " << *stress_ptr;     //this is stress?
         MOFEM_LOG_SEVERITY_SYNC(mField.get_comm(), Sev::inform);
       }
 

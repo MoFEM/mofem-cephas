@@ -6,5 +6,5 @@
 ~~~~
 
 ~~~~
-mpirun -np 1 ./seepage_2d -file_name mesh.h5m -ksp_monitor -density 0.0509684 -order 2 -ts_max_steps 10 -ts_dt 0.1 -log_sl inform -field_eval_coords 0 0 
+mpirun -np 1 ./seepage_2d -file_name mesh.h5m -ksp_monitor -order 2 -ts_max_steps 10 -ts_dt 0.1 -log_sl inform -field_eval_coords 0 0 
 ~~~~
