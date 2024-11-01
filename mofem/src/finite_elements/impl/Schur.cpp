@@ -1448,14 +1448,14 @@ SchurShellMatData createBlockMat(DM dm,
   if (nb_local != problem_ptr->nbLocDofsCol) {
     MOFEM_LOG("SELF", Sev::error)
         << "Wrong size " << nb_local << " != " << problem_ptr->nbLocDofsCol;
-    CHK_MOAB_THROW(MOFEM_DATA_INCONSISTENCY,
-                   "nb. cols is inconsistent with nb. rows");
+    CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY,
+                      "nb. cols is inconsistent with nb. rows");
   }
   if (nb_global != problem_ptr->nbDofsCol) {
     MOFEM_LOG("SELF", Sev::error)
         << "Wrong size " << nb_global << " != " << problem_ptr->nbDofsCol;
-    CHK_MOAB_THROW(MOFEM_DATA_INCONSISTENCY,
-                   "nb. cols is inconsistent with nb. rows");
+    CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY,
+                      "nb. cols is inconsistent with nb. rows");
   }
 
   // get comm from DM
@@ -1618,7 +1618,7 @@ static MoFEMErrorCode mult_schur_block_shell(
     CHKERR VecAXPY(y, 1., ghost_y);
     break;
   default:
-    CHK_MOAB_THROW(MOFEM_NOT_IMPLEMENTED, "Wrong InsertMode");
+    CHK_THROW_MESSAGE(MOFEM_NOT_IMPLEMENTED, "Wrong InsertMode");
   }
 
 #ifndef NDEBUG
@@ -1646,7 +1646,7 @@ static MoFEMErrorCode mult_schur_block_shell(
     print_norm("mult_schur_block_shell add y", y);
     break;
   default:
-    CHK_MOAB_THROW(MOFEM_NOT_IMPLEMENTED, "Wrong InsertMode");
+    CHK_THROW_MESSAGE(MOFEM_NOT_IMPLEMENTED, "Wrong InsertMode");
   }
 
 #endif // NDEBUG
@@ -2055,7 +2055,7 @@ boost::shared_ptr<NestSchurData> createSchurNestedMatrixStruture(
       dofs = prb->getNumeredColDofsPtr();
       break;
     default:
-      CHK_MOAB_THROW(MOFEM_NOT_IMPLEMENTED, "Wrong RowCol");
+      CHK_THROW_MESSAGE(MOFEM_NOT_IMPLEMENTED, "Wrong RowCol");
       break;
     }
 
