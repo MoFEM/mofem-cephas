@@ -231,9 +231,6 @@ struct OpCalculateLogCImpl<DIM, GAUSS, DomainEleOp> : public DomainEleOp {
 
     for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
 
-      // rare case when two eigen values are equal
-      auto nb_uniq = get_uniq_nb<DIM>(&(t_eig_val(0)));
-
       FTensor::Tensor1<double, DIM> eig;
       FTensor::Tensor2<double, DIM, DIM> eigen_vec;
       eig(i) = t_eig_val(i);
@@ -500,7 +497,6 @@ struct OpHenckyTangentImpl<DIM, GAUSS, DomainEleOp, S> : public DomainEleOp {
     constexpr auto t_kd = FTensor::Kronecker_Delta<int>();
     // const size_t nb_gauss_pts = matGradPtr->size2();
     const size_t nb_gauss_pts = DomainEleOp::getGaussPts().size2();
-    constexpr auto size_symm = (DIM * (DIM + 1)) / 2;
     commonDataPtr->matTangent.resize(DIM * DIM * DIM * DIM, nb_gauss_pts);
     auto dP_dF =
         getFTensor4FromMat<DIM, DIM, DIM, DIM, 1>(commonDataPtr->matTangent);

@@ -38,6 +38,9 @@ OperatorsTester::setRandomFields(SmartPetscObj<DM> dm,
   double *array;
   CHKERR VecGetArray(v, &array);
 
+  int size;
+  VecGetLocalSize(v, &size);
+
   MOFEM_LOG_CHANNEL("WORLD");
 
   for (auto &rf : random_fields) {
@@ -52,7 +55,9 @@ OperatorsTester::setRandomFields(SmartPetscObj<DM> dm,
           FieldEntity::getHiBitNumberUId(field_id));
       for (; lo != hi; ++lo) {
         const auto idx = (*lo)->getPetscLocalDofIdx();
-        array[idx] = get_random_number(rf.second);
+        if (idx >= 0 && idx < size) {
+          array[idx] = get_random_number(rf.second);
+        }
       }
     } else {
       for (auto pit = ents_ptr->const_pair_begin();
@@ -65,7 +70,9 @@ OperatorsTester::setRandomFields(SmartPetscObj<DM> dm,
                 DofEntity::getHiFieldEntityUId(field_id, pit->second));
         for (; lo != hi; ++lo) {
           const auto idx = (*lo)->getPetscLocalDofIdx();
-          array[idx] = get_random_number(rf.second);
+          if (idx >= 0 && idx < size) {
+            array[idx] = get_random_number(rf.second);
+          }
         }
       }
     }
@@ -92,6 +99,10 @@ OperatorsTester::assembleVec(SmartPetscObj<DM> dm, std::string fe_name,
   pipeline->ts_t = time;
   pipeline->ts_dt = delta_t;
 
+  pipeline->ksp_ctx = KspMethod::KSPContext::CTX_SETFUNCTION;
+  pipeline->snes_ctx = SnesMethod::SNESContext::CTX_SNESSETFUNCTION;
+  pipeline->ts_ctx = TSMethod::TSContext::CTX_TSSETIFUNCTION;
+
   auto [v, a] = setPipelineX(pipeline, x, delta_x, delta2_x, delta_t);
   std::ignore = a;
   std::ignore = v;
@@ -112,6 +123,15 @@ OperatorsTester::assembleVec(SmartPetscObj<DM> dm, std::string fe_name,
                     "Update vec");
   CHK_THROW_MESSAGE(VecGhostUpdateEnd(f, INSERT_VALUES, SCATTER_FORWARD),
                     "Update vec");
+
+  auto get_norm = [](auto f) {
+    double fnorm;
+    VecNorm(f, NORM_2, &fnorm);
+    return fnorm;
+  };
+  MOFEM_LOG_CHANNEL("WORLD");
+  MOFEM_TAG_AND_LOG_C("WORLD", Sev::noisy, "OpTester", "Vec norm %3.4e",
+                      get_norm(f));
 
   return f;
 }
@@ -135,6 +155,10 @@ OperatorsTester::assembleMat(SmartPetscObj<DM> dm, std::string fe_name,
   pipeline->ts_a = 1. / delta_t;
   pipeline->ts_aa = 1. / pow(delta_t, 2);
 
+  pipeline->ksp_ctx = KspMethod::KSPContext::CTX_OPERATORS;
+  pipeline->snes_ctx = SnesMethod::SNESContext::CTX_SNESSETJACOBIAN;
+  pipeline->ts_ctx = TSMethod::TSContext::CTX_TSSETIJACOBIAN;
+
   auto [v, a] = setPipelineX(pipeline, x, delta_x, delta2_x, delta_t);
   std::ignore = a;
   std::ignore = v;
@@ -146,6 +170,15 @@ OperatorsTester::assembleMat(SmartPetscObj<DM> dm, std::string fe_name,
                     "Run assemble pipeline");
   CHK_THROW_MESSAGE(MatAssemblyBegin(m, MAT_FINAL_ASSEMBLY), "Asmb mat");
   CHK_THROW_MESSAGE(MatAssemblyEnd(m, MAT_FINAL_ASSEMBLY), "Asmb mat");
+
+  auto get_norm = [](auto m) {
+    double fnorm;
+    MatNorm(m, NORM_1, &fnorm);
+    return fnorm;
+  };
+  MOFEM_LOG_CHANNEL("WORLD");
+  MOFEM_TAG_AND_LOG_C("WORLD", Sev::noisy, "OpTester", "Matrix norm %3.4e",
+                      get_norm(m));
 
   return m;
 }
@@ -235,7 +268,6 @@ OperatorsTester::setPipelineX(boost::shared_ptr<FEMethod> pipeline,
                               SmartPetscObj<Vec> delta2_x, double delta_t) {
 
   // Set dofs vector to finite element instance
-
   pipeline->x = x;
   pipeline->data_ctx |= PetscData::CTX_SET_X;
 

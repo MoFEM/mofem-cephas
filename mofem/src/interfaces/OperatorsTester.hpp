@@ -29,7 +29,7 @@ struct OperatorsTester : public UnknownInterface {
   using RandomFieldData = std::pair<std::string, std::array<double, 2>>;
 
   /**
-   * @brief Generate random fileds
+   * @brief Generate random fields
    *
    * Example: generate random vector for DM (problem) from simple interface,
    where FIELD random values of DOFs are in range from -1 to 1, and FIELD2
