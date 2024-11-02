@@ -1296,8 +1296,6 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
           auto t_strain =
               getFTensor2SymmetricFromMat<SPACE_DIM>(*strainFieldPtr);
           auto t_strain_trace = t_strain(i, i);
-          MOFEM_LOG("ThermoElasticSync", Sev::inform)
-              << "Eval point STRAIN trace: " << t_strain_trace;
           if (atom_test == 1 && fabs(monitor_ptr->ts_t - 10) < 1e-12) {
             if (SPACE_DIM == 3) {
               t_strain_trace -= t_strain(2, 2);
@@ -1312,9 +1310,18 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
           FTensor::Index<'i', SPACE_DIM> i;
           auto t_stress =
               getFTensor2SymmetricFromMat<SPACE_DIM>(*stressFieldPtr);
-          auto t_stress_trace = t_stress(i, i);
+          auto von_mises_stress =
+              std::sqrt(0.5 * ((t_stress(0, 0) - t_stress(1, 1)) *
+                                   (t_stress(0, 0) - t_stress(1, 1)) +
+                               (t_stress(1, 1) - t_stress(2, 2)) *
+                                   (t_stress(1, 1) - t_stress(2, 2)) +
+                               (t_stress(2, 2) - t_stress(0, 0)) *
+                                   (t_stress(2, 2) - t_stress(0, 0)) +
+                               6 * (t_stress(0, 1) * t_stress(0, 1) +
+                                    t_stress(1, 2) * t_stress(1, 2) +
+                                    t_stress(2, 0) * t_stress(2, 0))));
           MOFEM_LOG("ThermoElasticSync", Sev::inform)
-              << "Eval point STRESS trace: " << t_stress_trace;
+              << "Eval point von Mises Stress: " << von_mises_stress;
         }
 
         MOFEM_LOG_SYNCHRONISE(mField.get_comm());
