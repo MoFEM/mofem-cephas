@@ -28,6 +28,30 @@ set(MoFEM_PROJECT_LIBS
   ${OPTIONAL_PROJECT_LIBS} ${MoFEM_SYSTEM_PROJECT_LIBS}  ${PROJECT_LIBS})
 message(STATUS ${MoFEM_PROJECT_LIBS})
 
+
+function(tools_copy_and_install extension file_permissions)
+  file(GLOB files ${CMAKE_CURRENT_SOURCE_DIR}/${extension})
+  foreach(file ${files})
+    file(
+      COPY ${file}
+      DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+      FILE_PERMISSIONS ${file_permissions})     
+    install(FILES ${file}
+      DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+      PERMISSIONS ${file_permissions})
+  endforeach(file)
+endfunction()
+
+set(permissions_default 
+  OWNER_WRITE 
+  OWNER_READ
+  GROUP_READ)
+
+file(
+  COPY meshes DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+install(
+  DIRECTORY meshes DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
 if(MED_LIBRARY)
   add_executable(read_med ${CMAKE_CURRENT_SOURCE_DIR}/read_med.cpp)
   target_link_libraries(read_med
@@ -245,3 +269,12 @@ if(ADOL-C_LIBRARY)
   # install(TARGETS mesh_smoothing DESTINATION bin)
 
 endif(ADOL-C_LIBRARY)
+
+
+add_test(read_vtk
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/read_vtk
+  -file_name ${CMAKE_CURRENT_BINARY_DIR}/Box_layer_heter.vtk
+  -log_no_color
+  -atom_test 1
+)
