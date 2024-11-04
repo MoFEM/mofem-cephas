@@ -58,6 +58,7 @@ add_test(
   -poisson_ratio 0.2
   -conductivity 0.00012
   -biot_constant 1
+  -storage 1
   -plane strain
   -order 2 
   -field_eval_coords 0 0 

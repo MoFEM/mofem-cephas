@@ -132,6 +132,10 @@ using OpBaseDivFlux = OpBaseDotH;
 //! [Body and heat source]
 using DomainNaturalBCRhs =
     NaturalBC<DomainEleOp>::Assembly<PETSC>::LinearForm<GAUSS>;
+using OpDomainMass = FormsIntegrators<DomainEleOp>::Assembly<
+    PETSC>::BiLinearForm<GAUSS>::OpMass<1, 1>;
+using OpDomainTimesScalarField = FormsIntegrators<DomainEleOp>::Assembly<
+    PETSC>::LinearForm<GAUSS>::OpBaseTimesScalar<1>;
 using OpBodyForce =
     DomainNaturalBCRhs::OpFlux<NaturalMeshsetType<BLOCKSET>, 1, SPACE_DIM>;
 using OpHeatSource =
@@ -163,7 +167,7 @@ double default_young_modulus = 0.0009;
 double default_poisson_ratio = 0.2; // Zero for verification
 double default_conductivity = 0.00012;
 double default_biot = 1;
-double storage_coefficient = 1;  // Not yet implemented 
+double default_storage = 1;   
 
 PetscBool is_plane_strain = PETSC_FALSE;
 
@@ -205,7 +209,8 @@ private:
       : public boost::enable_shared_from_this<BlockedParameters> {
     MatrixDouble mD;
     double fluidConductivity;
-    double biotNewConstant;
+    double biotConstant;
+    double storageConstant;
 
     inline auto getDPtr() {
       return boost::shared_ptr<MatrixDouble>(shared_from_this(), &mD);
@@ -216,7 +221,11 @@ private:
     }
 
     inline auto getBiotConstantPtr() {
-      return boost::shared_ptr<double>(shared_from_this(), &biotNewConstant);
+      return boost::shared_ptr<double>(shared_from_this(), &biotConstant);
+    }
+    
+    inline auto getStorageConstantPtr() {
+      return boost::shared_ptr<double>(shared_from_this(), &storageConstant);
     }
   };
 
@@ -283,9 +292,9 @@ MoFEMErrorCode Seepage::addMatBlockOps(
         MOFEM_TAG_AND_LOG("WORLD", sev, "Mat Elastic Block") << *m;
         std::vector<double> block_data;
         CHKERR m->getAttributes(block_data);
-        if (block_data.size() < 2) {
+        if (block_data.size() < 3) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                  "Expected that block has two attributes");
+                  "Expected that block has three attributes");
         }
         auto get_block_ents = [&]() {
           Range ents;
@@ -360,11 +369,13 @@ MoFEMErrorCode Seepage::addMatBlockOps(
   struct OpMatFluidBlocks : public DomainEleOp {
     OpMatFluidBlocks(boost::shared_ptr<double> conductivity_ptr,
                      boost::shared_ptr<double> biot_constant_ptr,
+                     boost::shared_ptr<double> storage_constant_ptr,
                      MoFEM::Interface &m_field, Sev sev,
                      std::vector<const CubitMeshSets *> meshset_vec_ptr)
         : DomainEleOp(NOSPACE, DomainEleOp::OPSPACE),
           conductivityPtr(conductivity_ptr),
-          biotconstantPtr(biot_constant_ptr) 
+          biotConstantPtr(biot_constant_ptr),
+          storageConstantPtr(storage_constant_ptr) 
     {
       CHK_THROW_MESSAGE(extractThermalBlockData(m_field, meshset_vec_ptr, sev),
                         "Can not get data from block");
@@ -378,13 +389,15 @@ MoFEMErrorCode Seepage::addMatBlockOps(
 
         if (b.blockEnts.find(getFEEntityHandle()) != b.blockEnts.end()) {
           *conductivityPtr = b.conductivity;
-          *biotconstantPtr = b.biot_constant;
+          *biotConstantPtr = b.biot_constant;
+          *storageConstantPtr = b.storage;
           MoFEMFunctionReturnHot(0);
         }
       }
 
       *conductivityPtr = default_conductivity;
-      *biotconstantPtr = default_biot;
+      *biotConstantPtr = default_biot;
+      *storageConstantPtr = default_storage;
 
       MoFEMFunctionReturn(0);
     }
@@ -393,6 +406,7 @@ MoFEMErrorCode Seepage::addMatBlockOps(
     struct BlockData {
       double conductivity;
       double biot_constant;
+      double storage;
       Range blockEnts;
     };
 
@@ -421,9 +435,10 @@ MoFEMErrorCode Seepage::addMatBlockOps(
 
         MOFEM_TAG_AND_LOG("WORLD", sev, "Mat Thermal Block")
             << m->getName() << ": conductivity = " << block_data[0]
-            << ", biot_constant = " << block_data[1];
+            << ", biot_constant = " << block_data[1]
+            << ", storage = " << block_data[2];
 
-        blockData.push_back({block_data[0], block_data[1], get_block_ents()});
+        blockData.push_back({block_data[0], block_data[1], block_data[2], get_block_ents()});
       }
       MOFEM_LOG_CHANNEL("WORLD");
       MoFEMFunctionReturn(0);
@@ -431,13 +446,15 @@ MoFEMErrorCode Seepage::addMatBlockOps(
 
     boost::shared_ptr<double> expansionPtr;
     boost::shared_ptr<double> conductivityPtr;
-    boost::shared_ptr<double> biotconstantPtr;
+    boost::shared_ptr<double> biotConstantPtr;
+    boost::shared_ptr<double> storageConstantPtr;
     boost::shared_ptr<double> capacityPtr;
   };
 
   pipeline.push_back(new OpMatFluidBlocks(
       blockedParamsPtr->getConductivityPtr(),
-      blockedParamsPtr->getBiotConstantPtr(), mField, sev,
+      blockedParamsPtr->getBiotConstantPtr(), 
+      blockedParamsPtr->getStorageConstantPtr(), mField, sev,
 
       // Get blockset using regular expression
       mField.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(std::regex(
@@ -507,6 +524,8 @@ MoFEMErrorCode Seepage::createCommonData() {
                                  &default_conductivity, PETSC_NULL);
     CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-biot_constant",
                                  &default_biot, PETSC_NULL);
+    CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-storage",
+                                 &default_storage, PETSC_NULL);
 
     MOFEM_LOG("Seepage", Sev::inform)
         << "Default Young modulus " << default_young_modulus;
@@ -516,6 +535,8 @@ MoFEMErrorCode Seepage::createCommonData() {
         << "Default conductivity " << default_conductivity;
     MOFEM_LOG("Seepage", Sev::inform) 
         << "Default biot " << default_biot;
+    MOFEM_LOG("Seepage", Sev::inform) 
+        << "Default storage constant " << default_storage;
 
     int coords_dim = SPACE_DIM;
     CHKERR PetscOptionsGetRealArray(NULL, NULL, "-field_eval_coords",
@@ -658,6 +679,7 @@ MoFEMErrorCode Seepage::OPs() {
   auto mDPtr = block_params->getDPtr();
   auto conductivity_ptr = block_params->getConductivityPtr();
   auto biot_constant_ptr = block_params->getBiotConstantPtr();
+  auto storage_constant_ptr = block_params->getStorageConstantPtr();
 
   auto integration_rule = [](int, int, int approx_order) {
     return 2 * approx_order;
@@ -730,7 +752,10 @@ MoFEMErrorCode Seepage::OPs() {
                                          const double) {
       return *biot_constant_ptr;
     };
-
+    auto storage = [storage_constant_ptr, &fe](const double, const double,
+                                               const double) {
+      return -(*storage_constant_ptr * fe->ts_a);
+    };
     auto minus_one = []() constexpr { return -1; };
 
     pip.push_back(new OpHdivHdiv("FLUX", "FLUX", resistance));
@@ -740,6 +765,7 @@ MoFEMErrorCode Seepage::OPs() {
     op_base_div_u->feScalingFun = [](const FEMethod *fe_ptr) {
       return fe_ptr->ts_a;
     };
+    pip.push_back(new OpDomainMass("P", "P", storage));
     pip.push_back(op_base_div_u);
 
     MoFEMFunctionReturn(0);
@@ -755,9 +781,17 @@ MoFEMErrorCode Seepage::OPs() {
                                          const double) {
       return *biot_constant_ptr;
     };
+    auto storage = [storage_constant_ptr](const double, const double,
+                                         const double) {
+      return *storage_constant_ptr;
+    };
+    auto dot_p_at_gauss_pts = boost::make_shared<VectorDouble>();
+    pip.push_back(
+        new OpCalculateScalarFieldValuesDot("P", dot_p_at_gauss_pts));
 
     pip.push_back(new OpHdivFlux("FLUX", flux_ptr, resistance));
     pip.push_back(new OpHDivH("FLUX", p_ptr, minus_one));
+    pip.push_back(new OpDomainTimesScalarField("P", dot_p_at_gauss_pts, storage));
     pip.push_back(new OpBaseDotH("P", trace_dot_u_grad_ptr, minus_one));
     pip.push_back(new OpBaseDivFlux("P", div_flux_ptr, biot));
 
