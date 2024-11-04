@@ -69,7 +69,8 @@ MoFEMErrorCode VtkInterface::getBoundaryConditions() {
       {13, "VEL_Z", "VEL_Z"},         {14, "ACCL_X", "ACCL_X"},
       {15, "ACCL_Y", "ACCL_Y"},       {16, "ACCL_Z", "ACCL_Z"},
       {17, "TEMP", "TEMP"},           {18, "PRESSURE", "PRESSURE"},
-      {19, "HEAT_FLUX", "HEAT_FLUX"}, {20, "CONTACT", "CONTACT"}};
+      {19, "HEAT_FLUX", "HEAT_FLUX"}, {20, "CONTACT", "CONTACT"}
+      {50, "TIE_MATRIX", "TIE_MATRIX"}};
 
   for (auto &condition : conditions) {
     int desired_val = std::get<0>(condition);
@@ -146,9 +147,15 @@ MoFEMErrorCode VtkInterface::getMaterialProperties() {
   CHKERR mField.getInterface(meshsets_manager_ptr);
 
   Range ents;
-  CHKERR mOab.get_entities_by_type(0, MBHEX, ents, true);
+  rval = mOab.get_entities_by_type(0, MBHEX, ents, true);
+  if (rval != MB_SUCCESS) {
+    MOFEM_LOG("WORLD", Sev::warning) << "No hexes in the mesh, no material block set. Not Implemented";
+    MoFEMFunctionReturn(0);
+  }
   CHKERR meshsets_manager_ptr->addMeshset(BLOCKSET, 100, "ADOLCMAT");
   CHKERR meshsets_manager_ptr->addEntitiesToMeshset(BLOCKSET, 100, ents);
+  MOFEM_LOG("WORLD", Sev::inform) << "Material block ADOLCMAT set added";
+  MOFEM_LOG("WORLD", Sev::warning) << "Other material block sets not implemented";
   MoFEMFunctionReturn(0);
 }
 
