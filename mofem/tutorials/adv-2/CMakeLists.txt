@@ -52,10 +52,10 @@ set_target_properties(
 #################
 
 add_test(
-  convection_and_radiation_3d
+  convection_and_radiation_3d_iso
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4
   thermo_elastic_3d
-  -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/conv_rad_test.h5m
+  -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/conv_rad_3d_exp_iso_4p.h5m
   -order 2
   -pc_type lu
   -pc_factor_mat_solver_type mumps  
@@ -64,6 +64,6 @@ add_test(
   -ts_dt 1
   -init_temp 293 
   -ref_temp 293
-  -field_eval_coords 0.5,0.5,0.25
+  -field_eval_coords 0.75,0.75,0.25
   -atom_test 1
 )
