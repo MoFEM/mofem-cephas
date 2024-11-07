@@ -52,7 +52,7 @@ public:
 
       auto t_p = getFTensor0FromVec(*pPtr);
       for (int gg = 0; gg != nb_integration_points; gg++) {
-        cout<<t_p<<" "; //loop over Gauss integration points
+        
         auto t_nf = getFTensor1FromPtr<DIM>(&nf[0]);
 
         const double a = t_w * measure * t_p;
@@ -69,8 +69,7 @@ public:
         ++t_w;
         ++t_p;
       }
-      cout<<"\n";
-
+   
     }
 
     MoFEMFunctionReturn(0);
