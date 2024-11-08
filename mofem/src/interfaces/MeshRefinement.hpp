@@ -177,7 +177,6 @@ struct MeshRefinement : public UnknownInterface {
                                         int verb = QUIET,
                                         const bool debug = false);
 
-private:
   struct SetParent {
     map<EntityHandle, EntityHandle> parentsToChange;
     MoFEMErrorCode operator()(const EntityHandle ent, const EntityHandle parent,
@@ -202,6 +201,7 @@ private:
 
                      )>;
 
+private:
   /**\brief refine TET in the meshset
    *
    * \param Range of tets to refine

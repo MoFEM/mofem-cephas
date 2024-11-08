@@ -1474,7 +1474,7 @@ inline MoFEMErrorCode computeEigenValuesSymmetric(const MatrixDouble &mat,
 
   if (lapack_dsyev('V', 'U', n, &*eigen_vec.data().begin(), lda,
                    &*eig.data().begin(), work, lwork) > 0)
-    SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
+    PetscPrintf(PETSC_COMM_SELF,
             "The algorithm failed to compute eigenvalues.");
 
   delete[] work;
@@ -1501,7 +1501,7 @@ computeEigenValuesSymmetric(FTensor::Tensor2<T1, DIM, DIM> &eigen_vec,
 
   if (lapack_dsyev('V', 'U', n, &eigen_vec(0, 0), lda, &eig(0), work.data(),
                    lwork) > 0)
-    SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
+    PetscPrintf(PETSC_COMM_SELF,
             "The algorithm failed to compute eigenvalues.");
   MoFEMFunctionReturn(0);
 }

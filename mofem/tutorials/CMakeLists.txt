@@ -200,6 +200,7 @@ set(TUTORIALS_DIRS
   scl-10
   scl-11
   scl-12
+  scl-13
   clx-0
   vec-0
   vec-1

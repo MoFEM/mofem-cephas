@@ -1093,6 +1093,70 @@ int tet_type_2(const EntityHandle *conn, const int *split_edges,
   }
   return -1;
 }
+
+void hex_to_tet_type_1(const EntityHandle *conn, EntityHandle *new_tets_conn) {
+/* 
+   v7 ------ v6
+    |\        |\
+    | \       | \
+    |  v4 ------ v5
+    |  |      |  |
+   v3 -|----- v2 |
+     \ |       \ |
+      v0 ------ v1
+*/
+
+// TET0
+new_tets_conn[0 * 4 + 0] = conn[0];
+new_tets_conn[0 * 4 + 1] = conn[5];
+new_tets_conn[0 * 4 + 2] = conn[6];
+new_tets_conn[0 * 4 + 3] = conn[7];
+
+// TET1
+new_tets_conn[1 * 4 + 0] = conn[0];
+new_tets_conn[1 * 4 + 1] = conn[5];
+new_tets_conn[1 * 4 + 2] = conn[7];
+new_tets_conn[1 * 4 + 3] = conn[4];
+
+// TET2
+new_tets_conn[2 * 4 + 0] = conn[0];
+new_tets_conn[2 * 4 + 1] = conn[3];
+new_tets_conn[2 * 4 + 2] = conn[7];
+new_tets_conn[2 * 4 + 3] = conn[6];
+
+// TET3
+new_tets_conn[3 * 4 + 0] = conn[0];
+new_tets_conn[3 * 4 + 1] = conn[3];
+new_tets_conn[3 * 4 + 2] = conn[6];
+new_tets_conn[3 * 4 + 3] = conn[2];
+
+// TET4
+new_tets_conn[4 * 4 + 0] = conn[0];
+new_tets_conn[4 * 4 + 1] = conn[1];
+new_tets_conn[4 * 4 + 2] = conn[2];
+new_tets_conn[4 * 4 + 3] = conn[6];
+
+// TET5
+new_tets_conn[5 * 4 + 0] = conn[0];
+new_tets_conn[5 * 4 + 1] = conn[1];
+new_tets_conn[5 * 4 + 2] = conn[6];
+new_tets_conn[5 * 4 + 3] = conn[5];
+}
+
+void hex_to_tet_type_2(const EntityHandle *conn,
+                       const EntityHandle *edge_new_nodes,
+                       EntityHandle *new_tets_conn) {
+  // FIXME: to implement: 24 new edges
+  // FIXME: to implement: 7 new nodes
+  // auto fill_tet = [&](int tet_index, int a, int b, int c, int d) {
+  //   new_tets_conn[tet_index * 4 + 0] = conn[a - 1];
+  //   new_tets_conn[tet_index * 4 + 1] = conn[b - 1];
+  //   new_tets_conn[tet_index * 4 + 2] = conn[c - 1];
+  //   new_tets_conn[tet_index * 4 + 3] = conn[d - 1];
+  // };
+  // fill_tet(0, 6, 8, 10, 11);
+}
+
 void tet_type_1(const EntityHandle *conn, const int split_edge,
                 const EntityHandle edge_new_node, EntityHandle *new_tets_conn) {
   // TET0

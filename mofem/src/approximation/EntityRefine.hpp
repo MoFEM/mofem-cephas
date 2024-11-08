@@ -28,6 +28,13 @@ int tet_type_2(const EntityHandle *conn, const int *split_edges,
 void tet_type_1(const EntityHandle *conn, const int split_edge,
                 const EntityHandle edge_new_node, EntityHandle *new_tets_conn);
 
+// unstructured 6 tets
+void hex_to_tet_type_1(const EntityHandle *conn, EntityHandle *new_tets_conn);
+// structured 28 tets
+void hex_to_tet_type_2(const EntityHandle *conn,
+                      const EntityHandle *edge_new_nodes,
+                      EntityHandle *new_tets_conn);
+
 // TRIS
 
 MoFEMErrorCode tri_type_1(const EntityHandle *conn, const int split_edge,
