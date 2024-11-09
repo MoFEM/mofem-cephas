@@ -216,6 +216,9 @@ struct Example {
 
   MoFEMErrorCode runProblem();
 
+  enum { VOL, COUNT };
+  static inline std::array<double, 2> meshVolumeAndCount = {0, 0};
+
 private:
   MoFEM::Interface &mField;
 
@@ -431,6 +434,39 @@ MoFEMErrorCode Example::setupProblem() {
   if (project_geometry) {
     CHKERR project_ho_geometry();
   }
+
+  auto get_volume = [&]() {
+    using VolOp = VolumeElementForcesAndSourcesCore::UserDataOperator;
+    auto *op_ptr = new VolOp(NOSPACE, VolOp::OPSPACE);
+    std::array<double, 2> volume_and_count;
+    op_ptr->doWorkRhsHook = [&](DataOperator *base_op_ptr, int side, EntityType type,
+                                EntitiesFieldData::EntData &data) {
+      MoFEMFunctionBegin;
+      auto op_ptr = static_cast<VolOp *>(base_op_ptr);
+      volume_and_count[VOL] += op_ptr->getMeasure();
+      volume_and_count[COUNT] += 1;
+      // in necessary at integration over Gauss points.
+      MoFEMFunctionReturn(0);
+    };
+    volume_and_count = {0, 0};
+    auto fe = boost::make_shared<VolumeElementForcesAndSourcesCore>(mField);
+    fe->getOpPtrVector().push_back(op_ptr);
+
+    auto dm = simple->getDM();
+    CHK_THROW_MESSAGE(
+        DMoFEMLoopFiniteElements(dm, simple->getDomainFEName(), fe),
+        "cac volume");
+    std::array<double, 2> tot_volume_and_count;
+    MPI_Allreduce(volume_and_count.data(), tot_volume_and_count.data(),
+                  volume_and_count.size(), MPI_DOUBLE, MPI_SUM,
+                  mField.get_comm());
+    return tot_volume_and_count;
+  };
+
+  meshVolumeAndCount = get_volume();
+  MOFEM_LOG("PLASTICITY", Sev::inform)
+      << "Mesh volume " << meshVolumeAndCount[VOL] << " nb. of elements "
+      << meshVolumeAndCount[COUNT];
 
   MoFEMFunctionReturn(0);
 }
@@ -1671,7 +1707,9 @@ MoFEMErrorCode AddHOOps<3, 3, 3>::add(
     pipeline.push_back(
         new OpCalculateVectorFieldGradient<3, 3>(geom_field_name, jac));
     pipeline.push_back(new OpInvertMatrix<3>(jac, det, nullptr));
-    pipeline.push_back(new OpScaleBaseBySpaceInverseOfMeasure(L2, det));
+    auto scale =
+        Example::meshVolumeAndCount[0] / Example::meshVolumeAndCount[1];
+    pipeline.push_back(new OpScaleBaseBySpaceInverseOfMeasure(L2, det, scale));
   }
   CHKERR MoFEM::AddHOOps<3, 3, 3>::add(pipeline, spaces, geom_field_name,
                                        nullptr, nullptr, nullptr);
@@ -1689,7 +1727,9 @@ MoFEMErrorCode AddHOOps<2, 2, 2>::add(
     pipeline.push_back(
         new OpCalculateVectorFieldGradient<2, 2>(geom_field_name, jac));
     pipeline.push_back(new OpInvertMatrix<2>(jac, det, nullptr));
-    pipeline.push_back(new OpScaleBaseBySpaceInverseOfMeasure(L2, det));
+    auto scale =
+        Example::meshVolumeAndCount[0] / Example::meshVolumeAndCount[1];
+    pipeline.push_back(new OpScaleBaseBySpaceInverseOfMeasure(L2, det, scale));
   }
   CHKERR MoFEM::AddHOOps<2, 2, 2>::add(pipeline, spaces, geom_field_name,
                                        nullptr, nullptr, nullptr);

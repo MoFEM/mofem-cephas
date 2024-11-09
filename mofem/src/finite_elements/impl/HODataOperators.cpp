@@ -691,8 +691,9 @@ MoFEMErrorCode OpHOSetContravariantPiolaTransformOnEdge3D::doWork(
 }
 
 OpScaleBaseBySpaceInverseOfMeasure::OpScaleBaseBySpaceInverseOfMeasure(
-    const FieldSpace space, boost::shared_ptr<VectorDouble> det_jac_ptr)
-    : OP(space), fieldSpace(space), detJacPtr(det_jac_ptr) {
+    const FieldSpace space, boost::shared_ptr<VectorDouble> det_jac_ptr,
+    double scale)
+    : OP(space), fieldSpace(space), detJacPtr(det_jac_ptr), scaleDet(scale) {
   if (!detJacPtr) {
     CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "detJacPtr not set");
   }
@@ -720,14 +721,14 @@ OpScaleBaseBySpaceInverseOfMeasure::doWork(int side, EntityType type,
 
         for (auto gg = 0; gg != nb_int_pts; ++gg) {
           auto row = ublas::matrix_row<MatrixDouble>(base_fun, gg);
-          row /= det_vec[gg];
+          row *= scaleDet / det_vec[gg];
         }
 
         auto &diff_base_fun = data.getDiffN(base);
         if (diff_base_fun.size2()) {
           for (auto gg = 0; gg != nb_int_pts; ++gg) {
             auto row = ublas::matrix_row<MatrixDouble>(diff_base_fun, gg);
-            row /= det_vec[gg];
+            row *= scaleDet / det_vec[gg];
           }
         }
       }
