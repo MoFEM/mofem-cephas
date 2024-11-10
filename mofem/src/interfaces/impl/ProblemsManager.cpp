@@ -833,8 +833,10 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
       for (int dd = 0; dd < len; dd += data_block_size) {
         uid = IdxDataTypePtr(&data_from_proc[dd]).getUId();
         auto ddit = dofs_glob_uid_view.find(uid);
+        const auto owner_proc = FieldEntity::getOwnerFromUniqueId(uid);
 
-        if (PetscUnlikely(ddit == dofs_glob_uid_view.end())) {
+        if (owner_proc == m_field.get_comm_rank() &&
+            PetscUnlikely(ddit == dofs_glob_uid_view.end())) {
 
 #ifndef NDEBUG
           auto ents_field_ptr = m_field.get_field_ents();
@@ -845,7 +847,6 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
                  "triggered";
 
           MOFEM_LOG("SELF", Sev::error) << "UId " << uid << " is not found";
-          const auto owner_proc = FieldEntity::getOwnerFromUniqueId(uid);
           MOFEM_LOG("SELF", Sev::error)
               << "Problematic UId owner proc is " << owner_proc;
           const auto uid_handle = FieldEntity::getHandleFromUniqueId(uid);
@@ -892,6 +893,10 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
           SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                   "DOF with global UId not found (Compile code in Debug to "
                   "learn more about problem");
+        }
+
+        if (PetscUnlikely(ddit == dofs_glob_uid_view.end())) {
+          continue;
         }
 
         auto dit = numered_dofs_ptr[ss]->find((*ddit)->getLocalUniqueId());
