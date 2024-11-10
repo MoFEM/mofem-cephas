@@ -436,7 +436,7 @@ MoFEMErrorCode Example::setupProblem() {
   }
 
   auto get_volume = [&]() {
-    using VolOp = VolumeElementForcesAndSourcesCore::UserDataOperator;
+    using VolOp = DomainEle::UserDataOperator;
     auto *op_ptr = new VolOp(NOSPACE, VolOp::OPSPACE);
     std::array<double, 2> volume_and_count;
     op_ptr->doWorkRhsHook = [&](DataOperator *base_op_ptr, int side, EntityType type,
@@ -449,7 +449,7 @@ MoFEMErrorCode Example::setupProblem() {
       MoFEMFunctionReturn(0);
     };
     volume_and_count = {0, 0};
-    auto fe = boost::make_shared<VolumeElementForcesAndSourcesCore>(mField);
+    auto fe = boost::make_shared<DomainEle>(mField);
     fe->getOpPtrVector().push_back(op_ptr);
 
     auto dm = simple->getDM();
