@@ -1767,6 +1767,12 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
     }
     block_mat = trans(block_mat);
 
+    auto norm_it = std::max_element(
+        block_mat.data().begin(), block_mat.data().end(),
+        [](auto a, auto b) { return std::abs(a) < std::abs(b); });
+    if (*norm_it < std::numeric_limits<double>::epsilon())
+      continue;
+
     block_y.resize(mat_block_size, false);
     block_y.clear();
 
@@ -1783,6 +1789,9 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
                              mat_block_size, &*ipiv.data().begin(),
                              &*block_y.data().begin(), mat_block_size);
     if (info != 0) {
+      MOFEM_LOG("SELF", Sev::error)
+          << "error lapack solve dgesv info = " << info;
+      MOFEM_LOG("SELF", Sev::error) << block_mat;
       SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                "error lapack solve dgesv info = %d", info);
     }
