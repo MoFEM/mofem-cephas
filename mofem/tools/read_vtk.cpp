@@ -172,7 +172,17 @@ MoFEMErrorCode VtkInterface::getMaterialProperties() {
 
 MoFEMErrorCode VtkInterface::writeOutput() {
   MoFEMFunctionBegin;
-  CHKERR mOab.write_file("out_vtk.h5m");
+
+  char mesh_out_file[255] = "out_vtk.h5m";
+
+  CHKERR PetscOptionsBegin(mField.get_comm(), "", "Read vtk tool", "none");
+  CHKERR PetscOptionsString("-output_file", "output mesh file name", "",
+                            "out.h5m", mesh_out_file, 255, PETSC_NULL);
+  ierr = PetscOptionsEnd();
+  CHKERRQ(ierr);
+
+  CHKERR mOab.write_file(mesh_out_file);
+
   MoFEMFunctionReturn(0);
 }
 
@@ -253,14 +263,6 @@ int main(int argc, char *argv[]) {
     // Create MoFEM database
     MoFEM::Core core(moab);
     MoFEM::Interface &m_field = core;
-
-    char mesh_out_file[255] = "out.h5m";
-
-    CHKERR PetscOptionsBegin(m_field.get_comm(), "", "Read vtk tool", "none");
-    CHKERR PetscOptionsString("-output_file", "output mesh file name", "",
-                              "out.h5m", mesh_out_file, 255, PETSC_NULL);
-    ierr = PetscOptionsEnd();
-    CHKERRQ(ierr);
 
     VtkInterface read_vtk(m_field, moab);
     CHKERR read_vtk.readVtk();

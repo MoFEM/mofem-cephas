@@ -272,9 +272,10 @@ endif(ADOL-C_LIBRARY)
 
 
 add_test(read_vtk
-  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/read_vtk
   -file_name ${CMAKE_CURRENT_BINARY_DIR}/meshes/box_layer_heter.vtk
   -log_no_color
+  -output_file out_test_read_vtk.h5m
   -atom_test 1
 )
