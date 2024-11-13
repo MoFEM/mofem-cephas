@@ -1,13 +1,10 @@
 /** \file ConstrainMatrixCtx.cpp
  * \brief Implementation of projection matrix
  *
- * FIXME: DESCRIPTION
+ * 
  */
 
-
-
-
-//#include <ConstrainMatrixCtx.hpp>
+#include <ConstrainMatrixCtx.hpp>
 namespace MoFEM {
 const static bool debug = false;
 
@@ -307,4 +304,4 @@ MoFEMErrorCode ConstrainMatrixDestroyOpQTKQ(Mat QTKQ) {
   MoFEMFunctionReturn(0);
 }
 
-}
+} // namespace MoFEM
