@@ -137,7 +137,7 @@ using FTensor::operator>>;
 #include <NormsOperators.hpp>
 #include <Schur.hpp>
 #include <OperatorsTester.hpp>
-
+#include <ConstrainMatrixCtx.hpp>
 
 // More interfaces
 
