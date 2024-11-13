@@ -254,12 +254,11 @@ MoFEMErrorCode ConstrainMatrixDestroyOpPorQ(Mat Q);
   */
 MoFEMErrorCode ConstrainMatrixDestroyOpQTKQ(Mat QTKQ);
 
-
 } // namespace MoFEM
 
 #endif // __PROJECTION_MATRIX_CTX_HPP__
 
 /**
  \defgroup projection_matrix Constrain Projection Matrix
- \ingroup user_modules
+ \ingroup mofem_basic_finite_elements
 **/
