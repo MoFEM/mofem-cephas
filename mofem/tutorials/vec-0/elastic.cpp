@@ -75,6 +75,7 @@ using PostProcEleBdy = PostProcEleByDim<SPACE_DIM>::PostProcEleBdy;
 #include <CalculateTraction.hpp>
 #include <NaturalDomainBC.hpp>
 #include <NaturalBoundaryBC.hpp>
+#include <TieConstraint.hpp>
 
 constexpr double young_modulus = 1;
 constexpr double poisson_ratio = 0.3;
@@ -109,6 +110,14 @@ private:
       boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
       std::string field_name, std::string block_name,
       boost::shared_ptr<MatrixDouble> mat_D_Ptr, Sev sev);
+
+  struct TieBlock {
+    Range tieFaces; // tie faces
+    FTensor::Tensor1<double, 3> tieCoord;
+    FTensor::Tensor1<double, 3> tieDirection;
+  };
+
+  std::vector<TieBlock> tieBlocks; //< Store infomation about tie blocks
 };
 
 MoFEMErrorCode Example::addMatBlockOps(
@@ -259,6 +268,33 @@ MoFEMErrorCode Example::readMesh() {
   auto simple = mField.getInterface<Simple>();
   CHKERR simple->getOptions();
   CHKERR simple->loadFile();
+
+  // Range tie_ents;
+  // for (auto m :
+  //      mField.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(std::regex(
+
+  //          (boost::format("%s(.*)") % "TIE_MATRIX").str()
+
+  //              ))
+
+  // ) {
+  //   auto meshset = m->getMeshset();
+  //   Range tie_meshset_range;
+  //   CHKERR mField.get_moab().get_entities_by_dimension(meshset, SPACE_DIM - 1,
+  //                                                      tie_meshset_range, true);
+  //   std::vector<double> attributes;
+  //   CHKERR m->getAttributes(attributes);
+  //   if (attributes.size() != 6) {
+  //     SETERRQ1(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
+  //              "Wrong number of head parameters %d", attributes.size());
+  //   }
+  //   tieBlocks.push_back({tie_meshset_range,
+  //                        FTensor::Tensor1<double, 3>(
+  //                            attributes[0], attributes[1], attributes[2]),
+  //                        FTensor::Tensor1<double, 3>(
+  //                            attributes[3], attributes[4], attributes[5])});
+  // }
+
   MoFEMFunctionReturn(0);
 }
 //! [Read mesh]
@@ -301,6 +337,19 @@ MoFEMErrorCode Example::setupProblem() {
 
   CHKERR simple->setFieldOrder("U", order);
   CHKERR simple->setFieldOrder("GEOMETRY", 2);
+
+  auto add_tie_lagrange_multiplier = [&]() {
+    MoFEMFunctionBegin;
+    CHKERR simple->addBoundaryField("LAMBDA", H1, base, 1);
+    CHKERR simple->setFieldOrder("LAMBDA", 0);
+    for (auto &t : tieBlocks) {
+      CHKERR simple->setFieldOrder("LAMBDA", order, &t.tieFaces);
+    }
+    MoFEMFunctionReturn(0);
+  };
+
+  CHKERR add_tie_lagrange_multiplier();
+  
   CHKERR simple->setUp();
 
   auto project_ho_geometry = [&]() {
@@ -346,7 +395,6 @@ MoFEMErrorCode Example::setupProblem() {
 //! [Boundary condition]
 MoFEMErrorCode Example::boundaryCondition() {
   MoFEMFunctionBegin;
-  auto pip = mField.getInterface<PipelineManager>();
   auto simple = mField.getInterface<Simple>();
   auto bc_mng = mField.getInterface<BcManager>();
 
@@ -372,8 +420,6 @@ MoFEMErrorCode Example::boundaryCondition() {
 MoFEMErrorCode Example::assembleSystem() {
   MoFEMFunctionBegin;
   auto pip = mField.getInterface<PipelineManager>();
-  auto simple = mField.getInterface<Simple>();
-  auto bc_mng = mField.getInterface<BcManager>();
 
   //! [Integration rule]
   auto integration_rule = [](int, int, int approx_order) {
@@ -427,6 +473,35 @@ MoFEMErrorCode Example::assembleSystem() {
       new OpInternalForce("U", mat_stress_ptr,
                           [](double, double, double) constexpr { return -1; }));
   //! [Push Internal forces]
+
+  //! [Constraint matrix]
+  auto add_constrain_lhs = [&](auto &pip) {
+    MoFEMFunctionBegin;
+    auto u_ptr = boost::make_shared<MatrixDouble>();
+    pip.push_back(new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_ptr));
+    for(auto &t : tieBlocks) {
+      pip.push_back(new OpTieTermConstraintLhs<SPACE_DIM>(
+          "LAMBDA", "U", u_ptr, t.tieCoord, t.tieDirection,
+          boost::make_shared<Range>(t.tieFaces)));
+    }
+    MoFEMFunctionReturn(0);
+  };
+
+  auto add_constrain_rhs = [&](auto &pip) {
+    MoFEMFunctionBegin;
+    auto u_ptr = boost::make_shared<MatrixDouble>();
+    pip.push_back(new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_ptr));
+    for(auto &t : tieBlocks) {
+      pip.push_back(new OpTieTermConstraintRhs<SPACE_DIM>(
+          "LAMBDA", u_ptr, t.tieCoord, t.tieDirection,
+          boost::make_shared<Range>(t.tieFaces)));
+    }
+    MoFEMFunctionReturn(0);
+  };
+
+  CHKERR add_constrain_lhs(pip->getOpBoundaryLhsPipeline());
+  CHKERR add_constrain_rhs(pip->getOpBoundaryRhsPipeline());
+  //! [Constraint matrix]
 
   //! [Push Body forces]
   CHKERR DomainRhsBCs::AddFluxToPipeline<OpDomainRhsBCs>::add(
@@ -914,7 +989,6 @@ private:
 
 MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> solver) {
   MoFEMFunctionBegin;
-  auto simple = mField.getInterface<Simple>();
   auto pip = mField.getInterface<PipelineManager>();
   PC pc;
   CHKERR KSPGetPC(solver, &pc);
