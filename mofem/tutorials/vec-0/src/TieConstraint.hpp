@@ -46,9 +46,9 @@ struct OpTieTermConstraintRhs
       t_delta_current(i) =
           t_coords(i) + t_u(i) - (tieCoord(i) + tieDirection(i));
       ++t_u;
-      ++t_coords;
       FTensor::Tensor1<double, SPACE_DIM> t_delta_initial;
       t_delta_initial(i) = t_coords(i) - tieCoord(i);
+      ++t_coords;
       auto g = alpha * (t_delta_current.l2() - t_delta_initial.l2());
       int rr = 0;
       for (; rr != OpBase::nbRows; ++rr) {
@@ -117,7 +117,7 @@ struct OpTieTermConstraintLhs
       for (; rr != OpBase::nbRows; ++rr) {
         auto t_col_base = col_data.getFTensor0N(gg, 0);
         auto t_mat = getFTensor1FromPtr<SPACE_DIM>(&OpBase::locMat(rr, 0));
-        for (int cc = 0; cc != OpBase::nbCols; cc++) {
+        for (int cc = 0; cc != OpBase::nbCols/SPACE_DIM; cc++) {
           t_mat(i) = (t_row_base * t_col_base) * t_tangent(i);
           ++t_mat;
 					++t_col_base;	
