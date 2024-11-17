@@ -15,7 +15,6 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreOnSide::setGaussPts(int order) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Side element not set");
 
   const auto type = numeredEntFiniteElementPtr->getEntType();
-  const auto nb_nodes_on_ele = CN::VerticesPerEntity(type);
   auto face_ptr_fe =
       static_cast<FaceElementForcesAndSourcesCore *>(sidePtrFE);
 
