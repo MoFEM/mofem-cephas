@@ -1767,12 +1767,6 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
     }
     block_mat = trans(block_mat);
 
-    auto norm_it = std::max_element(
-        block_mat.data().begin(), block_mat.data().end(),
-        [](auto a, auto b) { return std::abs(a) < std::abs(b); });
-    if (*norm_it < std::numeric_limits<double>::epsilon())
-      continue;
-
     block_y.resize(mat_block_size, false);
     block_y.clear();
 
