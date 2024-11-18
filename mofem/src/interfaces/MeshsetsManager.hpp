@@ -123,6 +123,10 @@ struct MeshsetsManager : public UnknownInterface {
    */
   MoFEMErrorCode getTags(int verb = -1);
 
+  static MoFEMErrorCode getTags(moab::Interface &moab, Tag &nsTag, Tag &ssTag,
+                                Tag &nsTag_data, Tag &ssTag_data, Tag &bhTag,
+                                Tag &bhTag_header, int verb = -1);
+
   /**
    * \brief get tag handle used to store "id" of NODESET
    */
@@ -881,6 +885,8 @@ struct MeshsetsManager : public UnknownInterface {
   static bool brodcastMeshsets; ///< if true meshsets are synchrinised between
                                 ///< processors
 
+  static void sortMeshsets(std::vector<const CubitMeshSets *> &vec_ptr);
+
 protected:
   Tag nsTag;
   Tag ssTag;
@@ -894,7 +900,6 @@ protected:
   boost::shared_ptr<boost::program_options::options_description>
       configFileOptionsPtr; ///< config file options
 
-  static void sortMeshsets(std::vector<const CubitMeshSets *> &vec_ptr);
 };
 
 template <class CUBIT_BC_DATA_TYPE>
