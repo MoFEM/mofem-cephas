@@ -380,7 +380,7 @@ MoFEMErrorCode CommInterface::resolveParentEntities(const Range &ents,
                 << "On " << ent << " "
                 << moab::CN::EntityTypeName(type_from_handle(ent));
             MOFEM_LOG("SELF", Sev::warning) << "For bit ref " << bit;
-          }          
+          }
           if (verb >= NOISY)
             MOFEM_LOG_C("SYNC", Sev::noisy, "send %lu (%lu) to %d at %d\n", ent,
                         handle_on_sharing_proc, sharing_procs[proc],
@@ -1187,7 +1187,6 @@ CommInterface::partitionMesh(const Range &ents, const int dim,
 
       CHKERR set_part();
       CHKERR set_gid();
-
     }
 
     if (debug) {
@@ -1215,6 +1214,231 @@ CommInterface::partitionMesh(const Range &ents, const int dim,
     CHKERR MatPartitioningDestroy(&part);
     CHKERR MatDestroy(&Adj);
   }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode CommInterface::loadFileRootProcAllRestDistributed(
+    moab::Interface &moab, const char *file_name, int dim,
+    LoadFileFun proc_skin_fun, const char *options) {
+  MoFEMFunctionBegin;
+
+  CHKERR moab.load_file(file_name, 0, options);
+  ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
+  if (pcomm == NULL)
+    pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
+  if (pcomm->size() == 1)
+    MoFEMFunctionReturnHot(0);
+
+  constexpr bool is_debug = true;
+  constexpr auto sev = Sev::inform;
+  Skinner skin(&moab);
+  MOFEM_LOG_CHANNEL("WORLD");
+  MOFEM_LOG_CHANNEL("SYNC");
+
+  auto print_range_on_procs = [&](const Range &range, std::string name) {
+    if (!is_debug)
+      return;
+    MOFEM_LOG("SYNC", sev) << name << " on proc [" << pcomm->rank()
+                           << "] : " << range.size();
+    MOFEM_LOG_SEVERITY_SYNC(PETSC_COMM_WORLD, sev);
+  };
+
+  auto save_range_to_file = [&](const Range range, std::string name = "part") {
+    if (!is_debug)
+      return;
+    int rr = pcomm->rank();
+    ostringstream ss;
+    ss << "out_" << name << "_" << rr << ".vtk";
+    MOFEM_LOG("SYNC", sev) << "Save debug part mesh " << ss.str();
+    EntityHandle meshset;
+    CHKERR moab.create_meshset(MESHSET_SET, meshset);
+    CHKERR moab.add_entities(meshset, range);
+    if (!range.empty())
+      CHKERR moab.write_file(ss.str().c_str(), "VTK", "", &meshset, 1);
+    else
+      MOFEM_LOG("SYNC", sev) << "Empty range";
+    CHKERR moab.delete_entities(&meshset, 1);
+    MOFEM_LOG_SEVERITY_SYNC(PETSC_COMM_WORLD, sev);
+  };
+
+  auto get_skin = [&](auto e) {
+    Range s;
+    CHKERR skin.find_skin(0, e.subset_by_dimension(dim), false, s);
+    return s;
+  };
+
+  auto get_adj = [&](auto ents, auto dim) {
+    Range adj;
+    CHKERR moab.get_adjacencies(ents, dim, false, adj, moab::Interface::UNION);
+    return adj;
+  };
+
+  Range all_ents;
+  CHKERR moab.get_entities_by_handle(0, all_ents, false);
+  save_range_to_file(all_ents, "all_ents");
+
+  Tag part_tag = pcomm->part_tag();
+  Range tagged_sets, proc_ents, off_proc_ents;
+
+  CHKERR moab.get_entities_by_type_and_tag(0, MBENTITYSET, &part_tag, NULL, 1,
+                                           tagged_sets, moab::Interface::UNION);
+  print_range_on_procs(tagged_sets, "tagged_sets");
+  for (auto &mit : tagged_sets) {
+    int part;
+    CHKERR moab.tag_get_data(part_tag, &mit, 1, &part);
+    if (part == pcomm->rank()) {
+      CHKERR moab.get_entities_by_handle(mit, proc_ents, true);
+    } else {
+      CHKERR moab.get_entities_by_handle(mit, off_proc_ents, true);
+    }
+  }
+
+  print_range_on_procs(proc_ents, "proc_ents");
+  save_range_to_file(proc_ents, "proc_ents");
+
+  auto number_ents = [&]() {
+    auto gid_tag = moab.globalId_tag();
+    void *ptr;
+    int count;
+
+    for (auto d = 1; d != dim - 1; ++d) {
+      int gid = 1;
+      Range ents;
+      CHKERR moab.get_entities_by_dimension(0, d, ents, true);
+      auto eit = ents.begin();
+      for (; eit != ents.end();) {
+        CHKERR moab.tag_iterate(gid_tag, eit, ents.end(), count, ptr);
+        auto gid_tag_ptr = static_cast<int *>(ptr);
+        for (; count > 0; --count) {
+          *gid_tag_ptr = gid;
+          ++eit;
+          ++gid;
+          ++gid_tag_ptr;
+        }
+      }
+    }
+  };
+
+  auto get_proc_ents_skin = [&]() {
+    std::array<Range, 4>
+        proc_ents_skin; // stores only entities shared with other processors
+    auto all_skin = get_skin(all_ents.subset_by_dimension(dim));
+    auto proc_skin = get_skin(proc_ents.subset_by_dimension(dim));
+    if (dim == 3) {
+      proc_ents_skin[2] = subtract(proc_skin, all_skin);       // faces
+      proc_ents_skin[1] = get_adj(proc_ents_skin[dim - 1], 1); // edges
+    }
+    if (dim == 2) {
+      proc_ents_skin[1] = subtract(proc_skin, all_skin); // edges
+    }
+    CHKERR moab.get_connectivity(proc_ents_skin[dim - 1], proc_ents_skin[0],
+                                 false); // vertices
+    return proc_ents_skin;
+  };
+
+  auto add_post_proc_skin = [&](auto &&proc_ents_skin) {
+    CubitMeshSet_multiIndex cubit_meshsets_index; ///< cubit meshsets
+
+    Tag nsTag, ssTag, nsTag_data, ssTag_data, bhTag, bhTag_header;
+    CHKERR MeshsetsManager::getTags(moab, nsTag, ssTag, nsTag_data, ssTag_data,
+                                    bhTag, bhTag_header, QUIET);
+
+    Range meshsets;
+    CHKERR moab.get_entities_by_type(0, MBENTITYSET, meshsets, false);
+    for (auto m : meshsets) {
+      // check if meshset is cubit meshset
+      CubitMeshSets block(moab, m);
+      if ((block.cubitBcType & CubitBCType(NODESET | SIDESET | BLOCKSET))
+              .any()) {
+        auto p = cubit_meshsets_index.insert(block);
+        if (!p.second) {
+          // blockset/nodeset/sideset set exist, could be created on other
+          // processor.
+          Range ents;
+          CHKERR moab.get_entities_by_handle(m, ents, true);
+          CHKERR moab.add_entities(p.first->getMeshset(), ents);
+          CHKERR moab.delete_entities(&m, 1);
+        }
+      }
+    }
+
+    for (auto &m : cubit_meshsets_index) {
+      MOFEM_LOG("WORLD", sev) << "LoadFile read " << m;
+    }
+    MOFEM_LOG_SEVERITY_SYNC(PETSC_COMM_WORLD, sev);
+
+    std::vector<const CubitMeshSets *> vec_ptr;
+    for (auto &m : cubit_meshsets_index) {
+      vec_ptr.push_back(&m);
+    }
+    MeshsetsManager::sortMeshsets(vec_ptr);
+
+    return proc_skin_fun(std::move(proc_ents_skin), std::move(vec_ptr));
+  };
+
+  auto remove_off_proc_ents = [&](auto &all_ents, auto &off_proc_ents,
+                                  auto &proc_ents_skin) {
+    auto to_remove = off_proc_ents;
+    for (auto d = dim - 1; d >= 0; --d) {
+      to_remove = subtract(to_remove, proc_ents_skin[d]);
+    }
+
+    Range meshsets;
+    CHKERR moab.get_entities_by_type(0, MBENTITYSET, meshsets, true);
+    for (auto m : meshsets) {
+      CHKERR moab.remove_entities(m, to_remove);
+    }
+    for (int dd = dim; dd > 0; --dd) {
+      CHKERR moab.delete_entities(to_remove.subset_by_dimension(dd));
+    }
+  };
+
+  number_ents(); // number higher order entities
+  auto proc_ents_skin = add_post_proc_skin(get_proc_ents_skin());
+  for (auto d = dim - 1; d >= 0; --d) {
+    save_range_to_file(proc_ents_skin[d], "proc_ents_skin" + std::to_string(d));
+  }
+
+  if (pcomm->rank()) {
+    remove_off_proc_ents(all_ents, off_proc_ents, proc_ents_skin);
+  }
+
+  CHKERR pcomm->resolve_shared_ents(0, proc_ents, dim, -1,
+                                    proc_ents_skin.data());
+
+  if (is_debug) {
+
+    auto filter_owners = [&](auto &&skin) {
+      Range owner_ents;
+      CHKERR pcomm->filter_pstatus(skin, PSTATUS_NOT_OWNED, PSTATUS_NOT, -1,
+                                   &owner_ents);
+      return owner_ents;
+    };
+
+    // Create a tag
+    int def_val = -1;
+    Tag tag_handle;
+    CHKERR moab.tag_get_handle("TestGather", 1, MB_TYPE_INTEGER, tag_handle,
+                               MB_TAG_DENSE | MB_TAG_CREAT, &def_val);
+    Range gather_ents;
+    if (pcomm->rank() > 0) {
+      gather_ents = proc_ents.subset_by_dimension(3);
+      int r = pcomm->rank();
+      std::vector<int> vals(gather_ents.size());
+      std::for_each(vals.begin(), vals.end(), [](auto &v) { v = std::rand(); });
+      CHKERR moab.tag_set_data(tag_handle, gather_ents, vals.data());
+    } else {
+      gather_ents = off_proc_ents.subset_by_dimension(3);
+    }
+    auto gid_tag = moab.globalId_tag();
+    CHKERR pcomm->gather_data(gather_ents, tag_handle, gid_tag);
+  }
+
+  Range all_ents_after;
+  CHKERR moab.get_entities_by_handle(0, all_ents_after);
+  save_range_to_file(all_ents_after.subset_by_dimension(3),
+                     "all_ents_part_after");
 
   MoFEMFunctionReturn(0);
 }
