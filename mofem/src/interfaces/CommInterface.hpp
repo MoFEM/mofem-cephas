@@ -33,7 +33,7 @@ struct CommInterface : public UnknownInterface {
    */
   ~CommInterface() = default;
 
-  /** \name Make elemnts multishared */
+  /** \name Make elemets multishared */
 
   /**@{*/
 
@@ -248,6 +248,33 @@ struct CommInterface : public UnknownInterface {
                                Tag *th_part_weights = nullptr,
                                int verb = VERBOSE, const bool debug = false);
 
+
+  /**@}*/
+
+  /**@{*/
+
+  /** \name Load file */
+
+  using LoadFileFun = std::function<std::array<Range, 4>(
+      std::array<Range, 4> &&, std::vector<const CubitMeshSets *> &&)>;
+
+  /**
+   * @brief Root proc has whole mesh, other procs only part of it
+   * 
+   * @param moab 
+   * @param file_name 
+   * @param dim 
+   * @param proc_skin_fun 
+   * @param options 
+   * @return MoFEMErrorCode 
+   */
+  static MoFEMErrorCode loadFileRootProcAllRestDistributed(
+      moab::Interface &moab, const char *file_name, int dim,
+      LoadFileFun proc_skin_fun =
+          [](std::array<Range, 4> &&proc_ents_skin,
+             std::vector<const CubitMeshSets *> &&vec_ptr)
+          -> std::array<Range, 4> { return proc_ents_skin; },
+      const char *options = "PARALLEL=BCAST;PARTITION=");
 
   /**@}*/
 
