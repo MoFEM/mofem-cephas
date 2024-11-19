@@ -829,6 +829,22 @@ MoFEMErrorCode Example::checkResults() {
   CHKERR BoundaryRhsBCs::AddFluxToPipeline<OpBoundaryRhsBCs>::add(
       pip->getOpBoundaryRhsPipeline(), mField, "U", -1, Sev::verbose);
 
+  auto lambda_ptr = boost::make_shared<VectorDouble>();
+  auto u_ptr = boost::make_shared<MatrixDouble>();
+
+  pip->getOpBoundaryRhsPipeline().push_back(
+      new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_ptr));
+
+  pip->getOpBoundaryRhsPipeline().push_back(
+      new OpCalculateScalarFieldValues("LAMBDA", lambda_ptr));
+
+  for (auto &t : tieBlocks) {
+  pip->getOpBoundaryRhsPipeline().push_back(
+        new OpTieTermConstraintRhs_du<SPACE_DIM>(
+            "U", "LAMBDA", u_ptr, lambda_ptr, t.tieCoord, t.tieDirection,
+            boost::make_shared<Range>(t.tieFaces)));
+  }
+
   auto dm = simple->getDM();
   auto res = createDMVector(dm);
   CHKERR VecSetDM(res, PETSC_NULL);
