@@ -120,7 +120,7 @@ struct OpTieTermConstraintLhs
         auto t_col_base = col_data.getFTensor0N(gg, 0);
         auto t_mat = getFTensor1FromPtr<SPACE_DIM>(&OpBase::locMat(rr, 0));
         for (int cc = 0; cc != OpBase::nbCols/SPACE_DIM; cc++) {
-          t_mat(i) = (t_row_base * t_col_base) * t_tangent(i);
+          t_mat(i) += (t_row_base * t_col_base) * t_tangent(i);
           ++t_mat;
 					++t_col_base;	
         }
