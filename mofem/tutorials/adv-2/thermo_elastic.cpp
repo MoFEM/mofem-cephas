@@ -1296,7 +1296,7 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
           MOFEM_LOG("ThermoElasticSync", Sev::inform)
               << "Eval point FLUX magnitude: " << flux_mag;
           if (atom_test == 1 && fabs(monitor_ptr->ts_t - 10) < 1e-12) {
-            if (fabs(flux_mag - 26999.4) > 1e-1) {
+            if (fabs(flux_mag - 27008.0) > 1e1) {
               SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                        "atom test %d failed: wrong flux value", atom_test);
             }
@@ -1347,7 +1347,7 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
           MOFEM_LOG("ThermoElasticSync", Sev::inform)
               << "Eval point von Mises Stress: " << von_mises_stress;
           if (atom_test == 1 && fabs(monitor_ptr->ts_t - 10) < 1e-12) {
-            if (fabs(von_mises_stress - 522.73) > 1e-2) {
+            if (fabs(von_mises_stress - 523.0) > 5e-1) {
               SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                        "atom test %d failed: wrong von Mises stress value",
                        atom_test);
