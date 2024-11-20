@@ -29,6 +29,9 @@ struct OpTieTermConstraintRhs
   MoFEMErrorCode iNtegrate(EntData &data) {
     MoFEMFunctionBegin;
     FTENSOR_INDEX(SPACE_DIM, i);
+
+    double time = getTStime();
+
     auto nb_integration_pts = getGaussPts().size2();
     // get element volume
     const double vol = OpBase::getMeasure();
@@ -45,7 +48,7 @@ struct OpTieTermConstraintRhs
       ++t_w;
       FTensor::Tensor1<double, SPACE_DIM> t_delta_current;
       t_delta_current(i) =
-          (t_coords(i) + t_u(i)) - (tieCoord(i) + tieDirection(i));
+          (t_coords(i) + t_u(i)) - (tieCoord(i) + (tieDirection(i) * time));
       ++t_u;
       FTensor::Tensor1<double, SPACE_DIM> t_delta_initial;
       t_delta_initial(i) = t_coords(i) - tieCoord(i);
@@ -87,12 +90,15 @@ struct OpTieTermConstraintLhs
     doEntities[MBQUAD] = true;
     this->assembleTranspose = true;
     this->sYmm = false;
+    tsTime = 0.0;
   }
 
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data) {
     MoFEMFunctionBegin;
     FTENSOR_INDEX(SPACE_DIM, i);
+
+    double time = getTStime();
 
     auto nb_integration_pts = getGaussPts().size2();
     // get element volume
@@ -110,7 +116,7 @@ struct OpTieTermConstraintLhs
       ++t_w;
       FTensor::Tensor1<double, SPACE_DIM> t_delta_current;
       t_delta_current(i) =
-          (t_coords(i) + t_u(i)) - (tieCoord(i) + tieDirection(i));
+          (t_coords(i) + t_u(i)) - (tieCoord(i) + (tieDirection(i) * time));
       ++t_u;
       ++t_coords;
       FTensor::Tensor1<double, SPACE_DIM> t_tangent;
@@ -136,6 +142,7 @@ private:
   boost::shared_ptr<MatrixDouble> uPtr;
   FTensor::Tensor1<double, 3> tieCoord;
   FTensor::Tensor1<double, 3> tieDirection;
+  double tsTime;
 };
 
 
@@ -163,6 +170,9 @@ struct OpTieTermConstraintRhs_du
   MoFEMErrorCode iNtegrate(EntData &data) {
     MoFEMFunctionBegin;
     FTENSOR_INDEX(SPACE_DIM, i);
+
+    double time = getTStime();
+
     auto nb_integration_pts = getGaussPts().size2();
     // get element volume
     const double vol = OpBase::getMeasure();
@@ -183,7 +193,7 @@ struct OpTieTermConstraintRhs_du
       const auto alpha = t_w * vol;
       ++t_w;
       FTensor::Tensor1<double, SPACE_DIM> t_du;
-      t_du(i) = t_u(i) + (t_coords(i) - tieCoord(i) - tieDirection(i));
+      t_du(i) = t_u(i) + (t_coords(i) - tieCoord(i) - (tieDirection(i) * time));
       ++t_u;
       ++t_coords;
       
