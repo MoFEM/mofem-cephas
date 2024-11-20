@@ -40,7 +40,7 @@ nonlinear_elastic
 ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
 ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elastic
 -file_name ${CMAKE_CURRENT_SOURCE_DIR}/beam_3D.cub -order 2
--ts_max_time 0.3 -ts_dt 0.1 -log_no_color -test 1)
+-ts_max_time 0.3 -ts_dt 0.1 -log_no_color -test 1 -pc_type lu)
 
 add_test(
   test_rotation_0_2d
@@ -48,14 +48,14 @@ add_test(
   ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elastic_2d
   -file_name ${CMAKE_CURRENT_SOURCE_DIR}/meshes/LShape_Rot_D0_2D.cub 
   -order 2 -ts_max_time 1.0 -ts_dt 0.05
-  -log_no_color -test 2)
+  -log_no_color -test 2  -pc_type lu)
 
 add_test(
   test_rotation_1_2d
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elastic_2d
   -file_name ${CMAKE_CURRENT_SOURCE_DIR}/meshes/LShape_Rot_D1_2D.cub -order 2 -ts_max_time 1.0 -ts_dt 0.05
-  -log_no_color -test 3)
+  -log_no_color -test 3 -pc_type lu)
 
 add_test(
   test_nelastic_mpc_links

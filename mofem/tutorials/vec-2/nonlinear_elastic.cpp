@@ -282,7 +282,6 @@ MoFEMErrorCode Example::boundaryCondition() {
 //! [Push operators to pipeline]
 MoFEMErrorCode Example::assembleSystem() {
   MoFEMFunctionBegin;
-  auto *simple = mField.getInterface<Simple>();
   auto *pipeline_mng = mField.getInterface<PipelineManager>();
 
   auto add_domain_ops_lhs = [&](auto &pip) {
@@ -449,7 +448,6 @@ MoFEMErrorCode Example::solveSystem() {
 
   // Set time solver
   double ftime = 1;
-  CHKERR TSSetDuration(ts, PETSC_DEFAULT, ftime);
   CHKERR TSSetExactFinalTime(ts, TS_EXACTFINALTIME_MATCHSTEP);
 
   auto D = createDMVector(simple->getDM());
