@@ -680,19 +680,19 @@ protected:
                                       const std::string name_col);
   MoFEMErrorCode add_ents_to_finite_element_by_type(
       const EntityHandle meshset, const EntityType type,
-      const std::string &name, const bool recursive = true);
+      const std::string name, const bool recursive = true);
   MoFEMErrorCode add_ents_to_finite_element_by_dim(const EntityHandle meshset,
                                                    const int dim,
-                                                   const std::string &name,
+                                                   const std::string name,
                                                    const bool recursive = true);
-  MoFEMErrorCode add_ents_to_finite_element_by_type(const Range &ents,
+  MoFEMErrorCode add_ents_to_finite_element_by_type(const Range ents,
                                                     const EntityType type,
-                                                    const std::string &name);
-  MoFEMErrorCode add_ents_to_finite_element_by_dim(const Range &ents,
+                                                    const std::string name);
+  MoFEMErrorCode add_ents_to_finite_element_by_dim(const Range ents,
                                                    const int dim,
-                                                   const std::string &name);
+                                                   const std::string name);
   MoFEMErrorCode add_ents_to_finite_element_by_bit_ref(
-      const BitRefLevel &bit, const BitRefLevel &mask, const std::string &name,
+      const BitRefLevel bit, const BitRefLevel mask, const std::string name,
       EntityType type, int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode
   add_ents_to_finite_element_by_MESHSET(const EntityHandle meshset,
