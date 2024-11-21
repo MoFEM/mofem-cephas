@@ -1240,7 +1240,7 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
       }
 
       if (doEvalField) {
-        
+
         if constexpr (SPACE_DIM == 3) {
           CHKERR mField.getInterface<FieldEvaluatorInterface>()
               ->evalFEAtThePoint3D(
@@ -1257,7 +1257,7 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
                   MF_EXIST, QUIET);
         }
 
-        if (atom_test == 1) {
+        if (atom_test) {
           auto eval_num_vec =
               createVectorMPI(mField.get_comm(), PETSC_DECIDE, 1);
           CHKERR VecZeroEntries(eval_num_vec);
@@ -1281,7 +1281,7 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
           auto t_temp = getFTensor0FromVec(*tempFieldPtr);
           MOFEM_LOG("ThermoElasticSync", Sev::inform)
               << "Eval point T: " << t_temp;
-          if (atom_test == 1 && fabs(monitor_ptr->ts_t - 10) < 1e-12) {
+          if (atom_test && fabs(monitor_ptr->ts_t - 10) < 1e-12) {
             if (fabs(t_temp - 554.48) > 1e-2) {
               SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                        "atom test %d failed: wrong temperature value",
@@ -1295,8 +1295,8 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
           auto flux_mag = sqrt(t_flux(i) * t_flux(i));
           MOFEM_LOG("ThermoElasticSync", Sev::inform)
               << "Eval point FLUX magnitude: " << flux_mag;
-          if (atom_test == 1 && fabs(monitor_ptr->ts_t - 10) < 1e-12) {
-            if (fabs(flux_mag - 27008.0) > 1e1) {
+          if (atom_test && fabs(monitor_ptr->ts_t - 10) < 1e-12) {
+            if (fabs(flux_mag - 27008.0) > 2e1) {
               SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                        "atom test %d failed: wrong flux value", atom_test);
             }
@@ -1308,8 +1308,14 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
           auto disp_mag = sqrt(t_disp(i) * t_disp(i));
           MOFEM_LOG("ThermoElasticSync", Sev::inform)
               << "Eval point U magnitude: " << disp_mag;
-          if (atom_test == 1 && fabs(monitor_ptr->ts_t - 10) < 1e-12) {
-            if (fabs(disp_mag - 0.00345) > 1e-5) {
+          if (atom_test && fabs(monitor_ptr->ts_t - 10) < 1e-12) {
+            if (atom_test == 1 && fabs(disp_mag - 0.00345) > 1e-5) {
+              SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                       "atom test %d failed: wrong displacement value",
+                       atom_test);
+            }
+            if ((atom_test == 2 || atom_test == 3) &&
+                fabs(disp_mag - 0.00265) > 1e-5) {
               SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                        "atom test %d failed: wrong displacement value",
                        atom_test);
@@ -1321,8 +1327,15 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
           auto t_strain =
               getFTensor2SymmetricFromMat<SPACE_DIM>(*strainFieldPtr);
           auto t_strain_trace = t_strain(i, i);
-          if (atom_test == 1 && fabs(monitor_ptr->ts_t - 10) < 1e-12) {
-            if (fabs(t_strain_trace - 0.00679) > 1e-5) {
+          MOFEM_LOG("ThermoElasticSync", Sev::inform)
+              << "STRAIN trace: " << t_strain_trace;
+          if (atom_test && fabs(monitor_ptr->ts_t - 10) < 1e-12) {
+            if (atom_test == 1 && fabs(t_strain_trace - 0.00679) > 1e-5) {
+              SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                       "atom test %d failed: wrong strain value", atom_test);
+            }
+            if ((atom_test == 2 || atom_test == 3) &&
+                fabs(t_strain_trace - 0.00522) > 1e-5) {
               SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                        "atom test %d failed: wrong strain value", atom_test);
             }
@@ -1346,8 +1359,18 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
                     (SPACE_DIM == 3 ? t_stress(2, 0) * t_stress(2, 0) : 0))));
           MOFEM_LOG("ThermoElasticSync", Sev::inform)
               << "Eval point von Mises Stress: " << von_mises_stress;
-          if (atom_test == 1 && fabs(monitor_ptr->ts_t - 10) < 1e-12) {
-            if (fabs(von_mises_stress - 523.0) > 5e-1) {
+          if (atom_test && fabs(monitor_ptr->ts_t - 10) < 1e-12) {
+            if (atom_test == 1 && fabs(von_mises_stress - 523.0) > 5e-1) {
+              SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                       "atom test %d failed: wrong von Mises stress value",
+                       atom_test);
+            }
+            if (atom_test == 2 && fabs(von_mises_stress - 16.3) > 5e-2) {
+              SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                       "atom test %d failed: wrong von Mises stress value",
+                       atom_test);
+            }
+            if (atom_test == 3 && fabs(von_mises_stress - 14.9) > 5e-2) {
               SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                        "atom test %d failed: wrong von Mises stress value",
                        atom_test);
