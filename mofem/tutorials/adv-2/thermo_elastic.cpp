@@ -336,7 +336,7 @@ MoFEMErrorCode ThermoElasticProblem::addMatBlockOps(
 
   pipeline.push_back(new OpMatElasticBlocks(
       blockedParamsPtr->getDPtr(), default_bulk_modulus_K,
-      default_bulk_modulus_K, mField, sev,
+      default_shear_modulus_G, mField, sev,
 
       // Get blockset using regular expression
       mField.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(std::regex(
@@ -1327,8 +1327,6 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
           auto t_strain =
               getFTensor2SymmetricFromMat<SPACE_DIM>(*strainFieldPtr);
           auto t_strain_trace = t_strain(i, i);
-          MOFEM_LOG("ThermoElasticSync", Sev::inform)
-              << "STRAIN trace: " << t_strain_trace;
           if (atom_test && fabs(monitor_ptr->ts_t - 10) < 1e-12) {
             if (atom_test == 1 && fabs(t_strain_trace - 0.00679) > 1e-5) {
               SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
