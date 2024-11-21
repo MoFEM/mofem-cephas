@@ -179,11 +179,12 @@ private:
   boost::shared_ptr<MatrixDouble> strainFieldPtr;
   boost::shared_ptr<MatrixDouble> stressFieldPtr;
 
-  MoFEMErrorCode setupProblem();     ///< add fields
-  MoFEMErrorCode createCommonData(); //< read global data from command line
-  MoFEMErrorCode bC();               //< read boundary conditions
-  MoFEMErrorCode OPs();              //< add operators to pipeline
-  MoFEMErrorCode tsSolve();          //< time solver
+  MoFEMErrorCode setupProblem(); ///< add fields
+  MoFEMErrorCode
+  getCommandLineParameters(); //< read parameters from command line
+  MoFEMErrorCode bC();        //< read boundary conditions
+  MoFEMErrorCode OPs();       //< add operators to pipeline
+  MoFEMErrorCode tsSolve();   //< time solver
 
   struct BlockedParameters
       : public boost::enable_shared_from_this<BlockedParameters> {
@@ -462,14 +463,79 @@ MoFEMErrorCode ThermoElasticProblem::addMatBlockOps(
 //! [Run problem]
 MoFEMErrorCode ThermoElasticProblem::runProblem() {
   MoFEMFunctionBegin;
+  CHKERR getCommandLineParameters();
   CHKERR setupProblem();
-  CHKERR createCommonData();
   CHKERR bC();
   CHKERR OPs();
   CHKERR tsSolve();
   MoFEMFunctionReturn(0);
 }
 //! [Run problem]
+
+//! [Get command line parameters]
+MoFEMErrorCode ThermoElasticProblem::getCommandLineParameters() {
+  MoFEMFunctionBegin;
+
+  auto get_command_line_parameters = [&]() {
+    MoFEMFunctionBegin;
+
+    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order_temp,
+                              PETSC_NULL);
+    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order_temp", &order_temp,
+                              PETSC_NULL);
+    order_flux = order_temp + 1;
+    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order_flux", &order_flux,
+                              PETSC_NULL);
+    order_disp = order_temp + 1;
+    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order_disp", &order_disp,
+                              PETSC_NULL);
+    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-atom_test", &atom_test,
+                              PETSC_NULL);
+    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-save_every", &save_every,
+                              PETSC_NULL);
+
+    CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-young_modulus",
+                                 &default_young_modulus, PETSC_NULL);
+    CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-poisson_ratio",
+                                 &default_poisson_ratio, PETSC_NULL);
+    CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-plane_strain",
+                               &is_plane_strain, PETSC_NULL);
+    CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-coeff_expansion",
+                                 &default_coeff_expansion, PETSC_NULL);
+    CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-ref_temp", &ref_temp,
+                                 PETSC_NULL);
+    CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-init_temp", &init_temp,
+                                 PETSC_NULL);
+
+    CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-capacity",
+                                 &default_heat_capacity, PETSC_NULL);
+    CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-conductivity",
+                                 &default_heat_conductivity, PETSC_NULL);
+
+    MOFEM_LOG("ThermoElastic", Sev::inform)
+        << "Default Young's modulus " << default_young_modulus;
+    MOFEM_LOG("ThermoElastic", Sev::inform)
+        << "DefaultPoisson ratio " << default_poisson_ratio;
+    MOFEM_LOG("ThermoElastic", Sev::inform)
+        << "Default coeff of expansion " << default_coeff_expansion;
+    MOFEM_LOG("ThermoElastic", Sev::inform)
+        << "Default heat capacity " << default_heat_capacity;
+    MOFEM_LOG("ThermoElastic", Sev::inform)
+        << "Default heat conductivity " << default_heat_conductivity;
+
+    MOFEM_LOG("ThermoElastic", Sev::inform)
+        << "Reference temperature  " << ref_temp;
+    MOFEM_LOG("ThermoElastic", Sev::inform)
+        << "Initial temperature  " << init_temp;
+
+    MoFEMFunctionReturn(0);
+  };
+
+  CHKERR get_command_line_parameters();
+
+  MoFEMFunctionReturn(0);
+}
+//! [Get command line parameters]
 
 //! [Set up problem]
 MoFEMErrorCode ThermoElasticProblem::setupProblem() {
@@ -486,20 +552,6 @@ MoFEMErrorCode ThermoElasticProblem::setupProblem() {
   CHKERR simple->addDomainField("FLUX", flux_space, base, 1);
   CHKERR simple->addBoundaryField("FLUX", flux_space, base, 1);
   CHKERR simple->addBoundaryField("TBC", L2, base, 1);
-
-  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order_temp, PETSC_NULL);
-  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order_temp", &order_temp,
-                            PETSC_NULL);
-  order_flux = order_temp + 1;
-  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order_flux", &order_flux,
-                            PETSC_NULL);
-  order_disp = order_temp + 1;
-  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order_disp", &order_disp,
-                            PETSC_NULL);
-  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-atom_test", &atom_test,
-                            PETSC_NULL);
-  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-save_every", &save_every,
-                            PETSC_NULL);
 
   CHKERR simple->setFieldOrder("U", order_disp);
   CHKERR simple->setFieldOrder("FLUX", order_flux);
@@ -567,55 +619,6 @@ MoFEMErrorCode ThermoElasticProblem::setupProblem() {
   MoFEMFunctionReturn(0);
 }
 //! [Set up problem]
-
-//! [Create common data]
-MoFEMErrorCode ThermoElasticProblem::createCommonData() {
-  MoFEMFunctionBegin;
-
-  auto get_command_line_parameters = [&]() {
-    MoFEMFunctionBegin;
-    CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-young_modulus",
-                                 &default_young_modulus, PETSC_NULL);
-    CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-poisson_ratio",
-                                 &default_poisson_ratio, PETSC_NULL);
-    CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-plane_strain",
-                               &is_plane_strain, PETSC_NULL);
-    CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-coeff_expansion",
-                                 &default_coeff_expansion, PETSC_NULL);
-    CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-ref_temp", &ref_temp,
-                                 PETSC_NULL);
-    CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-init_temp", &init_temp,
-                                 PETSC_NULL);
-
-    CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-capacity",
-                                 &default_heat_capacity, PETSC_NULL);
-    CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-conductivity",
-                                 &default_heat_conductivity, PETSC_NULL);
-
-    MOFEM_LOG("ThermoElastic", Sev::inform)
-        << "Default Young's modulus " << default_young_modulus;
-    MOFEM_LOG("ThermoElastic", Sev::inform)
-        << "DefaultPoisson ratio " << default_poisson_ratio;
-    MOFEM_LOG("ThermoElastic", Sev::inform)
-        << "Default coeff of expansion " << default_coeff_expansion;
-    MOFEM_LOG("ThermoElastic", Sev::inform)
-        << "Default heat capacity " << default_heat_capacity;
-    MOFEM_LOG("ThermoElastic", Sev::inform)
-        << "Default heat conductivity " << default_heat_conductivity;
-
-    MOFEM_LOG("ThermoElastic", Sev::inform)
-        << "Reference temperature  " << ref_temp;
-    MOFEM_LOG("ThermoElastic", Sev::inform)
-        << "Initial temperature  " << init_temp;
-
-    MoFEMFunctionReturn(0);
-  };
-
-  CHKERR get_command_line_parameters();
-
-  MoFEMFunctionReturn(0);
-}
-//! [Create common data]
 
 //! [Boundary condition]
 MoFEMErrorCode ThermoElasticProblem::bC() {

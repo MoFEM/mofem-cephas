@@ -123,3 +123,25 @@ add_test(
   -field_eval_coords 0.75,0.75
   -atom_test 3
 )
+
+add_test(
+  convection_and_radiation_2d_plane_stress_no_mat_blocks
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4
+  thermo_elastic_2d
+  -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/conv_rad_2d_4p.h5m
+  -order 2
+  -pc_type lu
+  -pc_factor_mat_solver_type mumps  
+  -ts_type beuler
+  -ts_max_time 10 
+  -ts_dt 1
+  -young_modulus 200e3 
+  -poisson_ratio 0.3 
+  -coeff_expansion 1e-5 
+  -capacity 3000 
+  -conductivity 500 
+  -init_temp 293 
+  -ref_temp 293
+  -field_eval_coords 0.75,0.75
+  -atom_test 3
+)
