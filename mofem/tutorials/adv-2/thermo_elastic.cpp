@@ -1298,7 +1298,12 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
           MOFEM_LOG("ThermoElasticSync", Sev::inform)
               << "Eval point T: " << t_temp;
           if (atom_test && fabs(monitor_ptr->ts_t - 10) < 1e-12) {
-            if (fabs(t_temp - 554.48) > 1e-2) {
+            if (atom_test <= 3 && fabs(t_temp - 554.48) > 1e-2) {
+              SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                       "atom test %d failed: wrong temperature value",
+                       atom_test);
+            }
+            if (atom_test == 4 && fabs(t_temp - 250) > 1e-2) {
               SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                        "atom test %d failed: wrong temperature value",
                        atom_test);
@@ -1312,7 +1317,11 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
           MOFEM_LOG("ThermoElasticSync", Sev::inform)
               << "Eval point FLUX magnitude: " << flux_mag;
           if (atom_test && fabs(monitor_ptr->ts_t - 10) < 1e-12) {
-            if (fabs(flux_mag - 27008.0) > 2e1) {
+            if (atom_test <= 3 && fabs(flux_mag - 27008.0) > 2e1) {
+              SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                       "atom test %d failed: wrong flux value", atom_test);
+            }
+            if (atom_test == 4 && fabs(flux_mag - 150e3) > 1e-1) {
               SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                        "atom test %d failed: wrong flux value", atom_test);
             }
