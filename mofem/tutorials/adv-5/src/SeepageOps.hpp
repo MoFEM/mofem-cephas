@@ -23,10 +23,9 @@ struct OpDomainRhsHydrostaticStress
     : public AssemblyDomainEleOp { // changed opfaceele to AssemblyDomainEleOp
 public:
   OpDomainRhsHydrostaticStress(std::string field_name1,
-                               boost::shared_ptr<VectorDouble> h_ptr,
-                               double specific_weight_water = 9.81)
+                               boost::shared_ptr<VectorDouble> p_ptr)
       : AssemblyDomainEleOp(field_name1, field_name1, DomainEleOp::OPROW),
-        hPtr(h_ptr), specificWeightWater(specific_weight_water) {}
+        pPtr(p_ptr) {}
 
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data) {
     MoFEMFunctionBegin;
@@ -34,11 +33,10 @@ public:
     const int nb_dofs = data.getIndices().size();
 
     if (nb_dofs) {
-      // locRhs.resize(nb_dofs, false);
-      // locRhs.clear();
-      auto &nf = AssemblyDomainEleOp::locF;
-      // get element area
-      const double area = getMeasure();
+      
+      auto &nf = AssemblyDomainEleOp::locF; //access to local vector
+      // get element measure
+      const double measure = getMeasure();
 
       // get number of integration points
       const int nb_integration_points = getGaussPts().size2();
@@ -48,18 +46,18 @@ public:
       // get base function
       auto t_base_diff = data.getFTensor1DiffN<DIM>();
 
-      constexpr double g_acceleration = 9.81;
+      //constexpr double g_acceleration = 9.81;
 
       FTensor::Index<'i', DIM> i;
 
-      auto t_h = getFTensor0FromVec(*hPtr);
-      for (int gg = 0; gg != nb_integration_points; gg++) {
+      auto t_p = getFTensor0FromVec(*pPtr);
+      for (int gg = 0; gg != nb_integration_points; gg++) { //loop over Gauss integration points
         auto t_nf = getFTensor1FromPtr<DIM>(&nf[0]);
 
-        const double a = t_w * area * specificWeightWater * t_h;
+        const double a = t_w * measure * t_p;
 
-        for (int rr = 0; rr != nb_dofs / DIM; rr++) {
-          t_nf(i) -= t_base_diff(i) * a;
+        for (int rr = 0; rr != nb_dofs / DIM; rr++) {  //loop over dofs (rr = alpha)
+          t_nf(i) -= t_base_diff(i) * a;  //loop over dimensions
 
           // move to the next base function
           ++t_base_diff; // moves the pointer to the next shape function
@@ -68,7 +66,7 @@ public:
 
         // move to the weight of the next integration point
         ++t_w;
-        ++t_h;
+        ++t_p;
       }
 
     }
@@ -77,9 +75,7 @@ public:
   }
 
 private:
-  // VectorDouble locRhs;
-  double specificWeightWater;
-  boost::shared_ptr<VectorDouble> hPtr;
+  boost::shared_ptr<VectorDouble> pPtr;
 };
 
 } // namespace SeepageOps

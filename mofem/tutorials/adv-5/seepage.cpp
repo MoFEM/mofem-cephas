@@ -113,7 +113,7 @@ using OpHdivFlux = FormsIntegrators<DomainEleOp>::Assembly<PETSC>::LinearForm<
  *
  */
 using OpHDivH = FormsIntegrators<DomainEleOp>::Assembly<PETSC>::LinearForm<
-    GAUSS>::OpMixDivTimesU<3, 1, 2>;
+    GAUSS>::OpMixDivTimesU<3, 1, SPACE_DIM>;
 
 /**
  * @brief Integrate Rhs base of temperature time heat capacity times heat rate
@@ -159,10 +159,12 @@ using OpEssentialFluxLhs =
 
 double scale = 1.;
 
-double default_young_modulus = 1;
-double default_poisson_ratio = 0.25; // zero for verification
-double default_conductivity = 1;
-double fluid_density = 10;
+double default_young_modulus = 0.0009;
+double default_poisson_ratio = 0.2; // Zero for verification
+double default_conductivity = 0.00012;
+double fluid_density = 10;  // Is this used anywhere?
+double biot_constant = 1;
+double storage_coefficient = 1;  // Not yet implemented 
 
 // #include <OpPostProcElastic.hpp>
 #include <SeepageOps.hpp>
@@ -202,6 +204,7 @@ private:
       : public boost::enable_shared_from_this<BlockedParameters> {
     MatrixDouble mD;
     double fluidConductivity;
+    double biotConstant;
 
     inline auto getDPtr() {
       return boost::shared_ptr<MatrixDouble>(shared_from_this(), &mD);
@@ -209,6 +212,10 @@ private:
 
     inline auto getConductivityPtr() {
       return boost::shared_ptr<double>(shared_from_this(), &fluidConductivity);
+    }
+
+    inline auto getBiotConstantPtr() {
+      return boost::shared_ptr<double>(shared_from_this(), &biotConstant);
     }
   };
 
@@ -333,7 +340,7 @@ MoFEMErrorCode Seepage::addMatBlockOps(
   double default_bulk_modulus_K =
       default_young_modulus / (3 * (1 - 2 * default_poisson_ratio));
   double default_shear_modulus_G =
-      default_young_modulus / (2 * (1 + default_poisson_ratio));
+      default_young_modulus / (2 * (1 + default_poisson_ratio)); 
 
   pipeline.push_back(new OpMatElasticBlocks(
       blockedParamsPtr->getDPtr(), default_bulk_modulus_K,
@@ -454,16 +461,16 @@ MoFEMErrorCode Seepage::setupProblem() {
   // Mechanical fields
   CHKERR simple->addDomainField("U", H1, base, SPACE_DIM);
   CHKERR simple->addBoundaryField("U", H1, base, SPACE_DIM);
-  // Temerature
+  // Fluid
   const auto flux_space = (SPACE_DIM == 2) ? HCURL : HDIV;
-  CHKERR simple->addDomainField("H", L2, AINSWORTH_LEGENDRE_BASE, 1);
+  CHKERR simple->addDomainField("P", L2, AINSWORTH_LEGENDRE_BASE, 1);
   CHKERR simple->addDomainField("FLUX", flux_space, DEMKOWICZ_JACOBI_BASE, 1);
   CHKERR simple->addBoundaryField("FLUX", flux_space, DEMKOWICZ_JACOBI_BASE, 1);
 
   int order = 2.;
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order, PETSC_NULL);
   CHKERR simple->setFieldOrder("U", order);
-  CHKERR simple->setFieldOrder("H", order - 1);
+  CHKERR simple->setFieldOrder("P", order - 1);
   CHKERR simple->setFieldOrder("FLUX", order);
 
   CHKERR simple->setUp();
@@ -486,6 +493,8 @@ MoFEMErrorCode Seepage::createCommonData() {
                                  &default_conductivity, PETSC_NULL);
     CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-fluid_density",
                                  &fluid_density, PETSC_NULL);
+    CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-biot_constant",
+                                 &biot_constant, PETSC_NULL);
 
     MOFEM_LOG("Seepage", Sev::inform)
         << "Default Young modulus " << default_young_modulus;
@@ -493,7 +502,8 @@ MoFEMErrorCode Seepage::createCommonData() {
         << "Default Poisson ratio " << default_poisson_ratio;
     MOFEM_LOG("Seepage", Sev::inform)
         << "Default conductivity " << default_conductivity;
-    MOFEM_LOG("Seepage", Sev::inform) << "Fluid denisty " << fluid_density;
+    MOFEM_LOG("Seepage", Sev::inform) << "Fluid density " << fluid_density;
+    MOFEM_LOG("Seepage", Sev::inform) << "Biot constant " << biot_constant;
 
     int coords_dim = SPACE_DIM;
     CHKERR PetscOptionsGetRealArray(NULL, NULL, "-field_eval_coords",
@@ -623,8 +633,8 @@ MoFEMErrorCode Seepage::OPs() {
   auto u_grad_ptr = boost::make_shared<MatrixDouble>();
   auto dot_u_grad_ptr = boost::make_shared<MatrixDouble>();
   auto trace_dot_u_grad_ptr = boost::make_shared<VectorDouble>();
-  auto h_ptr = boost::make_shared<VectorDouble>();
-  auto dot_h_ptr = boost::make_shared<VectorDouble>();
+  auto p_ptr = boost::make_shared<VectorDouble>();
+  auto dot_p_ptr = boost::make_shared<VectorDouble>();
   auto flux_ptr = boost::make_shared<MatrixDouble>();
   auto div_flux_ptr = boost::make_shared<VectorDouble>();
   auto strain_ptr = boost::make_shared<MatrixDouble>();
@@ -635,6 +645,7 @@ MoFEMErrorCode Seepage::OPs() {
   auto block_params = boost::make_shared<BlockedParameters>();
   auto mDPtr = block_params->getDPtr();
   auto conductivity_ptr = block_params->getConductivityPtr();
+  auto biot_constant_ptr = block_params->getBiotConstantPtr();
 
   auto integration_rule = [](int, int, int approx_order) {
     return 2 * approx_order;
@@ -660,8 +671,8 @@ MoFEMErrorCode Seepage::OPs() {
     pip.push_back(new OpCalculateTraceFromMat<SPACE_DIM>(dot_u_grad_ptr,
                                                          trace_dot_u_grad_ptr));
 
-    pip.push_back(new OpCalculateScalarFieldValues("H", h_ptr));
-    pip.push_back(new OpCalculateScalarFieldValuesDot("H", dot_h_ptr));
+    pip.push_back(new OpCalculateScalarFieldValues("P", p_ptr));
+    pip.push_back(new OpCalculateScalarFieldValuesDot("P", dot_p_ptr));
     pip.push_back(new OpCalculateHVecVectorField<3>("FLUX", flux_ptr));
     pip.push_back(new OpCalculateHdivVectorDivergence<3, SPACE_DIM>(
         "FLUX", div_flux_ptr));
@@ -671,10 +682,12 @@ MoFEMErrorCode Seepage::OPs() {
 
   auto add_domain_ops_lhs_mechanical = [&](auto &pip) {
     MoFEMFunctionBegin;
+    
+    auto minus_one = [](double, double, double) constexpr { return -1; };
+    
     pip.push_back(new OpKCauchy("U", "U", mDPtr));
     pip.push_back(new OpBaseDivU(
-        "H", "U",
-        [](const double, const double, const double) { return -9.81; }, true,
+        "P", "U", minus_one, true,
         true));
     MoFEMFunctionReturn(0);
   };
@@ -685,12 +698,12 @@ MoFEMErrorCode Seepage::OPs() {
     CHKERR DomainNaturalBCRhs::AddFluxToPipeline<OpBodyForce>::add(
         pip, mField, "U", {time_scale}, "BODY_FORCE", Sev::inform);
 
-    // Calculate internal forece
+    // Calculate internal force
     pip.push_back(new OpTensorTimesSymmetricTensor<SPACE_DIM, SPACE_DIM>(
         "U", strain_ptr, stress_ptr, mDPtr));
     pip.push_back(new OpInternalForceCauchy("U", stress_ptr));
     pip.push_back(
-        new SeepageOps::OpDomainRhsHydrostaticStress<SPACE_DIM>("U", h_ptr));
+        new SeepageOps::OpDomainRhsHydrostaticStress<SPACE_DIM>("U", p_ptr));
 
     MoFEMFunctionReturn(0);
   };
@@ -701,13 +714,16 @@ MoFEMErrorCode Seepage::OPs() {
                                          const double) {
       return (1. / *(conductivity_ptr));
     };
+    auto biot_constant = [biot_constant_ptr](double, double, double) {
+      return *biot_constant_ptr;
+    };
 
-    auto unity = []() constexpr { return -1; };
+    auto minus_one = []() constexpr { return -1; };
+
     pip.push_back(new OpHdivHdiv("FLUX", "FLUX", resistance));
-    pip.push_back(new OpHdivQ("FLUX", "H", unity, true));
+    pip.push_back(new OpHdivQ("FLUX", "P", minus_one, true));
     auto op_base_div_u = new OpBaseDivU(
-        "H", "U", [](double, double, double) constexpr { return -1; }, false,
-        false);
+        "H", "U", biot_constant);
     op_base_div_u->feScalingFun = [](const FEMethod *fe_ptr) {
       return fe_ptr->ts_a;
     };
@@ -722,11 +738,14 @@ MoFEMErrorCode Seepage::OPs() {
       return (1. / (*conductivity_ptr));
     };
     auto minus_one = [](double, double, double) constexpr { return -1; };
+    auto biot_constant = [biot_constant_ptr](double, double, double) {
+      return *biot_constant_ptr;
+    };
 
     pip.push_back(new OpHdivFlux("FLUX", flux_ptr, resistance));
-    pip.push_back(new OpHDivH("FLUX", h_ptr, minus_one));
-    pip.push_back(new OpBaseDotH("H", trace_dot_u_grad_ptr, minus_one));
-    pip.push_back(new OpBaseDivFlux("H", div_flux_ptr, minus_one));
+    pip.push_back(new OpHDivH("FLUX", p_ptr, minus_one));
+    pip.push_back(new OpBaseDotH("P", trace_dot_u_grad_ptr, biot_constant));
+    pip.push_back(new OpBaseDivFlux("P", div_flux_ptr, minus_one));
 
     MoFEMFunctionReturn(0);
   };
@@ -825,11 +844,11 @@ MoFEMErrorCode Seepage::tsSolve() {
     auto mat_strain_ptr = boost::make_shared<MatrixDouble>();
     auto mat_stress_ptr = boost::make_shared<MatrixDouble>();
 
-    auto h_ptr = boost::make_shared<VectorDouble>();
+    auto p_ptr = boost::make_shared<VectorDouble>();
     auto mat_flux_ptr = boost::make_shared<MatrixDouble>();
 
     post_proc_fe->getOpPtrVector().push_back(
-        new OpCalculateScalarFieldValues("H", h_ptr));
+        new OpCalculateScalarFieldValues("P", p_ptr));
     post_proc_fe->getOpPtrVector().push_back(
         new OpCalculateHVecVectorField<3, SPACE_DIM>("FLUX", mat_flux_ptr));
 
@@ -853,7 +872,7 @@ MoFEMErrorCode Seepage::tsSolve() {
 
             post_proc_fe->getPostProcMesh(), post_proc_fe->getMapGaussPts(),
 
-            {{"H", h_ptr}},
+            {{"P", p_ptr}},
 
             {{"U", u_ptr}, {"FLUX", mat_flux_ptr}},
 
@@ -888,7 +907,7 @@ MoFEMErrorCode Seepage::tsSolve() {
         "U", u_grad_ptr));
     pip.push_back(new OpSymmetrizeTensor<SPACE_DIM>(u_grad_ptr, strain_ptr));
 
-    // Calculate internal forece
+    // Calculate internal force
     pip.push_back(new OpTensorTimesSymmetricTensor<SPACE_DIM, SPACE_DIM>(
         "U", strain_ptr, stress_ptr, mDPtr));
     pip.push_back(new OpInternalForceCauchy("U", stress_ptr));
@@ -953,7 +972,7 @@ MoFEMErrorCode Seepage::tsSolve() {
         auto u_grad_ptr = boost::make_shared<MatrixDouble>();
         auto strain_ptr = boost::make_shared<MatrixDouble>();
         auto stress_ptr = boost::make_shared<MatrixDouble>();
-        auto h_ptr = boost::make_shared<VectorDouble>();
+        auto p_ptr = boost::make_shared<VectorDouble>();
 
         auto block_params = boost::make_shared<BlockedParameters>();
         auto mDPtr = block_params->getDPtr();
@@ -967,7 +986,7 @@ MoFEMErrorCode Seepage::tsSolve() {
         field_eval_ptr->getOpPtrVector().push_back(
             new OpSymmetrizeTensor<SPACE_DIM>(u_grad_ptr, strain_ptr));
         field_eval_ptr->getOpPtrVector().push_back(
-            new OpCalculateScalarFieldValues("H", h_ptr));
+            new OpCalculateScalarFieldValues("P", p_ptr));
         field_eval_ptr->getOpPtrVector().push_back(
             new OpTensorTimesSymmetricTensor<SPACE_DIM, SPACE_DIM>(
                 "U", strain_ptr, stress_ptr, mDPtr));
@@ -989,9 +1008,9 @@ MoFEMErrorCode Seepage::tsSolve() {
         }
 
         MOFEM_LOG("SeepageSync", Sev::inform)
-            << "Eval point hydrostatic hight: " << *h_ptr;
+            << "Eval point hydrostatic height: " << *p_ptr;  //this is pressure?
         MOFEM_LOG("SeepageSync", Sev::inform)
-            << "Eval point skeleton stress pressure: " << *stress_ptr;
+            << "Eval point skeleton stress pressure: " << *stress_ptr;     //this is stress?
         MOFEM_LOG_SEVERITY_SYNC(mField.get_comm(), Sev::inform);
       }
 
@@ -1028,7 +1047,7 @@ MoFEMErrorCode Seepage::tsSolve() {
       CHKERR is_mng->isCreateProblemFieldAndRank(name_prb, ROW, "FLUX", 0, 0,
                                                  is_flux);
       SmartPetscObj<IS> is_H;
-      CHKERR is_mng->isCreateProblemFieldAndRank(name_prb, ROW, "H", 0, 0,
+      CHKERR is_mng->isCreateProblemFieldAndRank(name_prb, ROW, "P", 0, 0,
                                                  is_H);
       IS is_tmp;
       CHKERR ISExpand(is_H, is_flux, &is_tmp);
