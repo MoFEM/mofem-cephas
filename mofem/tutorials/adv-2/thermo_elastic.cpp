@@ -639,7 +639,7 @@ MoFEMErrorCode ThermoElasticProblem::bC() {
     return skin_ents;
   };
 
-  auto filter_flux_blocks = [&](auto skin) {
+  auto filter_flux_blocks = [&](auto skin, bool temp_bc = false) {
     auto remove_cubit_blocks = [&](auto c) {
       MoFEMFunctionBegin;
       for (auto m :
@@ -672,13 +672,14 @@ MoFEMErrorCode ThermoElasticProblem::bC() {
       }
       MoFEMFunctionReturn(0);
     };
-
-    CHK_THROW_MESSAGE(remove_cubit_blocks(NODESET | TEMPERATURESET),
-                      "remove_cubit_blocks");
+    if (!temp_bc) {
+      CHK_THROW_MESSAGE(remove_cubit_blocks(NODESET | TEMPERATURESET),
+                        "remove_cubit_blocks");
+      CHK_THROW_MESSAGE(remove_named_blocks("TEMPERATURE"),
+                        "remove_named_blocks");
+    }
     CHK_THROW_MESSAGE(remove_cubit_blocks(SIDESET | HEATFLUXSET),
                       "remove_cubit_blocks");
-    CHK_THROW_MESSAGE(remove_named_blocks("TEMPERATURE"),
-                      "remove_named_blocks");
     CHK_THROW_MESSAGE(remove_named_blocks("HEATFLUX"), "remove_named_blocks");
     CHK_THROW_MESSAGE(remove_named_blocks("CONVECTION"), "remove_named_blocks");
     CHK_THROW_MESSAGE(remove_named_blocks("RADIATION"), "remove_named_blocks");
@@ -695,11 +696,18 @@ MoFEMErrorCode ThermoElasticProblem::bC() {
   };
 
   auto remove_flux_ents = filter_true_skin(filter_flux_blocks(get_skin()));
+  auto remove_temp_bc_ents =
+      filter_true_skin(filter_flux_blocks(get_skin(), true));
 
   CHKERR mField.getInterface<CommInterface>()->synchroniseEntities(
       remove_flux_ents);
+  CHKERR mField.getInterface<CommInterface>()->synchroniseEntities(
+      remove_temp_bc_ents);
 
   MOFEM_LOG("SYNC", Sev::noisy) << remove_flux_ents << endl;
+  MOFEM_LOG_SEVERITY_SYNC(mField.get_comm(), Sev::noisy);
+
+  MOFEM_LOG("SYNC", Sev::noisy) << remove_temp_bc_ents << endl;
   MOFEM_LOG_SEVERITY_SYNC(mField.get_comm(), Sev::noisy);
 
 #ifndef NDEBUG
@@ -709,12 +717,17 @@ MoFEMErrorCode ThermoElasticProblem::bC() {
       (boost::format("flux_remove_%d.vtk") % mField.get_comm_rank()).str(),
       remove_flux_ents);
 
+  CHKERR save_range(
+      mField.get_moab(),
+      (boost::format("temp_bc_remove_%d.vtk") % mField.get_comm_rank()).str(),
+      remove_temp_bc_ents);
+
 #endif
 
   CHKERR mField.getInterface<ProblemsManager>()->removeDofsOnEntities(
       simple->getProblemName(), "FLUX", remove_flux_ents);
   CHKERR mField.getInterface<ProblemsManager>()->removeDofsOnEntities(
-      simple->getProblemName(), "TBC", remove_flux_ents);
+      simple->getProblemName(), "TBC", remove_temp_bc_ents);
 
   auto set_init_temp = [](boost::shared_ptr<FieldEntity> field_entity_ptr) {
     field_entity_ptr->getEntFieldData()[0] = init_temp;
