@@ -758,15 +758,19 @@ MoFEMErrorCode Seepage::OPs() {
     };
     auto minus_one = []() constexpr { return -1; };
 
+    pip.push_back(new OpSetBc("FLUX", true, boundary_marker));
+
     pip.push_back(new OpHdivHdiv("FLUX", "FLUX", resistance));
     pip.push_back(new OpHdivQ("FLUX", "P", minus_one, true));
-    auto op_base_div_u = new OpBaseDivU(
-        "P", "U", biot, false, false);
+    pip.push_back(new OpDomainMass("P", "P", storage));
+
+    auto op_base_div_u = new OpBaseDivU("P", "U", biot, false, false);
     op_base_div_u->feScalingFun = [](const FEMethod *fe_ptr) {
       return fe_ptr->ts_a;
     };
-    pip.push_back(new OpDomainMass("P", "P", storage));
     pip.push_back(op_base_div_u);
+
+    pip.push_back(new OpUnSetBc("FLUX"));
 
     MoFEMFunctionReturn(0);
   };
@@ -789,11 +793,16 @@ MoFEMErrorCode Seepage::OPs() {
     pip.push_back(
         new OpCalculateScalarFieldValuesDot("P", dot_p_at_gauss_pts));
 
+    pip.push_back(new OpSetBc("FLUX", true, boundary_marker));
+
     pip.push_back(new OpHdivFlux("FLUX", flux_ptr, resistance));
     pip.push_back(new OpHDivH("FLUX", p_ptr, minus_one));
-    pip.push_back(new OpDomainTimesScalarField("P", dot_p_at_gauss_pts, storage));
-    pip.push_back(new OpBaseDotH("P", trace_dot_u_grad_ptr, minus_one));
-    pip.push_back(new OpBaseDivFlux("P", div_flux_ptr, biot));
+    pip.push_back(
+        new OpDomainTimesScalarField("P", dot_p_at_gauss_pts, storage));
+    pip.push_back(new OpBaseDotH("P", trace_dot_u_grad_ptr, biot));
+    pip.push_back(new OpBaseDivFlux("P", div_flux_ptr, minus_one));
+
+    pip.push_back(new OpUnSetBc("FLUX"));
 
     MoFEMFunctionReturn(0);
   };
