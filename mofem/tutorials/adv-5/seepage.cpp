@@ -32,7 +32,8 @@
 using namespace MoFEM;
 
 constexpr int SPACE_DIM =
-    EXECUTABLE_DIMENSION; //< Space dimension of problem, mesh
+    EXECUTABLE_DIMENSION;
+// constexpr int FIELD_DIM = SPACE_DIM -1; //< Space dimension of problem, mesh
 
 using EntData = EntitiesFieldData::EntData;
 using DomainEle = PipelineManager::ElementsAndOpsByDim<SPACE_DIM>::DomainEle;
@@ -752,9 +753,9 @@ MoFEMErrorCode Seepage::OPs() {
                                          const double) {
       return *biot_constant_ptr;
     };
-    auto storage = [storage_constant_ptr, &fe](const double, const double,
-                                               const double) {
-      return -(*storage_constant_ptr * fe->ts_a);
+    auto storage = [storage_constant_ptr](const double, const double,
+                                         const double) {
+      return -*storage_constant_ptr;
     };
     auto minus_one = []() constexpr { return -1; };
 
@@ -762,7 +763,12 @@ MoFEMErrorCode Seepage::OPs() {
 
     pip.push_back(new OpHdivHdiv("FLUX", "FLUX", resistance));
     pip.push_back(new OpHdivQ("FLUX", "P", minus_one, true));
-    pip.push_back(new OpDomainMass("P", "P", storage));
+    
+    auto op_domain_mass = new OpDomainMass("P", "P", storage);
+    op_domain_mass->feScalingFun = [](const FEMethod *fe_ptr) {
+      return fe_ptr->ts_a;
+    };
+    pip.push_back(op_domain_mass);
 
     auto op_base_div_u = new OpBaseDivU("P", "U", biot, false, false);
     op_base_div_u->feScalingFun = [](const FEMethod *fe_ptr) {
@@ -787,7 +793,7 @@ MoFEMErrorCode Seepage::OPs() {
     };
     auto storage = [storage_constant_ptr](const double, const double,
                                          const double) {
-      return *storage_constant_ptr;
+      return -*storage_constant_ptr;
     };
     auto dot_p_at_gauss_pts = boost::make_shared<VectorDouble>();
     pip.push_back(
@@ -1068,6 +1074,10 @@ MoFEMErrorCode Seepage::tsSolve() {
             << "Eval point pore pressure: " << *p_ptr;  //this is pressure?
         MOFEM_LOG("SeepageSync", Sev::inform)
             << "Eval point symmetric stress tensor: " << *stress_ptr;     //this is stress?
+        // MOFEM_LOG("SeepageSync", Sev::inform)
+        //     << "Eval point flux: " << *flux_ptr;
+        // MOFEM_LOG("SeepageSync", Sev::inform)
+        //     << "Eval point displacement: " << *u_ptr;
         MOFEM_LOG_SEVERITY_SYNC(mField.get_comm(), Sev::inform);
       }
 
