@@ -1,5 +1,5 @@
 options:
-  max-time: 120
+  max-time: 240
   docker: true
   size: 2x
 
