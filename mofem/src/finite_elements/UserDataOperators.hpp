@@ -2577,14 +2577,23 @@ struct OpCalculateHVecTensorField
 
   OpCalculateHVecTensorField(const std::string field_name,
                              boost::shared_ptr<MatrixDouble> data_ptr,
+                             boost::shared_ptr<double> scale_ptr,
                              const EntityType zero_type = MBEDGE,
                              const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
-        dataPtr(data_ptr), zeroType(zero_type), zeroSide(zero_side) {
+        dataPtr(data_ptr), scalePtr(scale_ptr), zeroType(zero_type),
+        zeroSide(zero_side) {
     if (!dataPtr)
       THROW_MESSAGE("Pointer is not set");
   }
+
+  OpCalculateHVecTensorField(const std::string field_name,
+                             boost::shared_ptr<MatrixDouble> data_ptr,
+                             const EntityType zero_type = MBEDGE,
+                             const int zero_side = 0)
+      : OpCalculateHVecTensorField(field_name, data_ptr, nullptr, zero_type,
+                                   zero_side) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data) {
@@ -2596,6 +2605,7 @@ struct OpCalculateHVecTensorField
     }
     const size_t nb_dofs = data.getFieldData().size();
     if (nb_dofs) {
+      double scale = (scalePtr) ? *scalePtr : 1.0;
       const size_t nb_base_functions = data.getN().size2() / 3;
       FTensor::Index<'i', Tensor_Dim0> i;
       FTensor::Index<'j', Tensor_Dim1> j;
@@ -2605,7 +2615,7 @@ struct OpCalculateHVecTensorField
         auto t_dof = data.getFTensor1FieldData<Tensor_Dim0>();
         size_t bb = 0;
         for (; bb != nb_dofs / Tensor_Dim0; ++bb) {
-          t_data(i, j) += t_dof(i) * t_n_hvec(j);
+          t_data(i, j) += (scale*t_dof(i)) * t_n_hvec(j);
           ++t_n_hvec;
           ++t_dof;
         }
@@ -2619,6 +2629,7 @@ struct OpCalculateHVecTensorField
 
 private:
   boost::shared_ptr<MatrixDouble> dataPtr;
+  boost::shared_ptr<double> scalePtr;
   const EntityHandle zeroType;
   const int zeroSide;
 };
@@ -2636,14 +2647,23 @@ struct OpCalculateHTensorTensorField
 
   OpCalculateHTensorTensorField(const std::string field_name,
                                 boost::shared_ptr<MatrixDouble> data_ptr,
+                                boost::shared_ptr<double> scale_ptr,
                                 const EntityType zero_type = MBEDGE,
                                 const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
-        dataPtr(data_ptr), zeroType(zero_type), zeroSide(zero_side) {
+        dataPtr(data_ptr), scalePtr(scale_ptr), zeroType(zero_type),
+        zeroSide(zero_side) {
     if (!dataPtr)
       THROW_MESSAGE("Pointer is not set");
   }
+
+  OpCalculateHTensorTensorField(const std::string field_name,
+                                boost::shared_ptr<MatrixDouble> data_ptr,
+                                const EntityType zero_type = MBEDGE,
+                                const int zero_side = 0)
+      : OpCalculateHTensorTensorField(field_name, data_ptr, nullptr, zero_type,
+                                      zero_side) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data) {
@@ -2656,6 +2676,7 @@ struct OpCalculateHTensorTensorField
     const size_t nb_dofs = data.getFieldData().size();
     if (!nb_dofs)
       MoFEMFunctionReturnHot(0);
+    double scale = (scalePtr) ? *scalePtr : 1.0;
     const size_t nb_base_functions =
         data.getN().size2() / (Tensor_Dim0 * Tensor_Dim1);
     FTensor::Index<'i', Tensor_Dim0> i;
@@ -2666,7 +2687,7 @@ struct OpCalculateHTensorTensorField
       auto t_dof = data.getFTensor0FieldData();
       size_t bb = 0;
       for (; bb != nb_dofs; ++bb) {
-        t_data(i, j) += t_dof * t_n_hten(i, j);
+        t_data(i, j) += (scale * t_dof) * t_n_hten(i, j);
         ++t_n_hten;
         ++t_dof;
       }
@@ -2679,6 +2700,7 @@ struct OpCalculateHTensorTensorField
 
 private:
   boost::shared_ptr<MatrixDouble> dataPtr;
+  boost::shared_ptr<double> scalePtr;
   const EntityHandle zeroType;
   const int zeroSide;
 };
@@ -2764,13 +2786,21 @@ struct OpCalculateHVecTensorTrace : public OpBase {
 
   OpCalculateHVecTensorTrace(const std::string field_name,
                              boost::shared_ptr<MatrixDouble> data_ptr,
+                             boost::shared_ptr<double> scale_ptr,
                              const EntityType zero_type = MBEDGE,
                              const int zero_side = 0)
       : OpBase(field_name, OpBase::OPROW), dataPtr(data_ptr),
-        zeroType(zero_type), zeroSide(zero_side) {
+        scalePtr(scale_ptr), zeroType(zero_type), zeroSide(zero_side) {
     if (!dataPtr)
       THROW_MESSAGE("Pointer is not set");
   }
+
+  OpCalculateHVecTensorTrace(const std::string field_name,
+                             boost::shared_ptr<MatrixDouble> data_ptr,
+                             const EntityType zero_type = MBEDGE,
+                             const int zero_side = 0)
+      : OpCalculateHVecTensorTrace(field_name, data_ptr, nullptr, zero_type,
+                                   zero_side) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data) {
@@ -2782,6 +2812,7 @@ struct OpCalculateHVecTensorTrace : public OpBase {
     }
     const size_t nb_dofs = data.getFieldData().size();
     if (nb_dofs) {
+      double scale_val = (scalePtr) ? *scalePtr : 1.0;
       auto t_normal = OpBase::getFTensor1NormalsAtGaussPts();
       const size_t nb_base_functions = data.getN().size2() / 3;
       auto t_base = data.getFTensor1N<3>();
@@ -2793,7 +2824,8 @@ struct OpCalculateHVecTensorTrace : public OpBase {
         auto t_dof = data.getFTensor1FieldData<Tensor_Dim>();
         size_t bb = 0;
         for (; bb != nb_dofs / Tensor_Dim; ++bb) {
-          t_data(i) += t_dof(i) * (t_base(j) * t_normalized_normal(j));
+          t_data(i) +=
+              (scale_val * t_dof(i)) * (t_base(j) * t_normalized_normal(j));
           ++t_base;
           ++t_dof;
         }
@@ -2809,6 +2841,7 @@ struct OpCalculateHVecTensorTrace : public OpBase {
 
 private:
   boost::shared_ptr<MatrixDouble> dataPtr;
+  boost::shared_ptr<double> scalePtr;
   const EntityHandle zeroType;
   const int zeroSide;
   FTensor::Index<'i', Tensor_Dim> i;
