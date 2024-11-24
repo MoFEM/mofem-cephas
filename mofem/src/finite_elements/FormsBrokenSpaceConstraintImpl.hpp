@@ -342,14 +342,23 @@ struct OpBrokenSpaceConstrainImpl<FIELD_DIM, GAUSS, OpBrokenBase>
   OpBrokenSpaceConstrainImpl(
       const std::string row_field,
       boost::shared_ptr<std::vector<BrokenBaseSideData>> broken_base_side_data,
-      const double beta, const bool assmb_transpose, const bool only_transpose,
-      boost::shared_ptr<Range> ents_ptr = nullptr)
+      boost::shared_ptr<double> beta_ptr, const bool assmb_transpose,
+      const bool only_transpose, boost::shared_ptr<Range> ents_ptr = nullptr)
       : OP(row_field, broken_base_side_data, assmb_transpose, only_transpose,
            ents_ptr),
-        scalarBeta(beta) {}
+        scalarBetaPtr(beta_ptr) {}
+
+  OpBrokenSpaceConstrainImpl(
+      const std::string row_field,
+      boost::shared_ptr<std::vector<BrokenBaseSideData>> broken_base_side_data,
+      double beta, const bool assmb_transpose, const bool only_transpose,
+      boost::shared_ptr<Range> ents_ptr = nullptr)
+      : OpBrokenSpaceConstrainImpl(row_field, broken_base_side_data,
+                                   boost::make_shared<double>(beta),
+                                   assmb_transpose, only_transpose, ents_ptr) {}
 
 protected:
-  double scalarBeta;
+  boost::shared_ptr<double> scalarBetaPtr;
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data);
 };
@@ -416,7 +425,8 @@ MoFEMErrorCode OpBrokenSpaceConstrainImpl<FIELD_DIM, GAUSS, OpBase>::iNtegrate(
     }
   }
 
-  OP::locMat *= scalarBeta;
+  if (scalarBetaPtr)
+    OP::locMat *= *scalarBetaPtr;
 
   MoFEMFunctionReturn(0);
 }
@@ -435,15 +445,24 @@ struct OpBrokenSpaceConstrainDFluxImpl<FIELD_DIM, GAUSS, OpBrokenBase>
 
   OpBrokenSpaceConstrainDFluxImpl(
       boost::shared_ptr<std::vector<BrokenBaseSideData>> broken_base_side_data,
-      boost::shared_ptr<MatrixDouble> lagrange_ptr, const double beta,
+      boost::shared_ptr<MatrixDouble> lagrange_ptr,
+      boost::shared_ptr<double> beta_ptr,
       boost::shared_ptr<Range> ents_ptr = nullptr)
-      : OP(broken_base_side_data, ents_ptr), scalarBeta(beta),
+      : OP(broken_base_side_data, ents_ptr), scalarBetaPtr(beta_ptr),
         lagrangePtr(lagrange_ptr) {}
+
+  OpBrokenSpaceConstrainDFluxImpl(
+      boost::shared_ptr<std::vector<BrokenBaseSideData>> broken_base_side_data,
+      boost::shared_ptr<MatrixDouble> lagrange_ptr, double beta,
+      boost::shared_ptr<Range> ents_ptr = nullptr)
+      : OpBrokenSpaceConstrainDFluxImpl(broken_base_side_data, lagrange_ptr,
+                                        boost::make_shared<double>(beta),
+                                        ents_ptr) {}
 
 private:
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data);
 
-  double scalarBeta;
+  boost::shared_ptr<double> scalarBetaPtr;
   boost::shared_ptr<MatrixDouble> lagrangePtr;
 };
 
@@ -478,7 +497,8 @@ OpBrokenSpaceConstrainDFluxImpl<FIELD_DIM, GAUSS, OpBase>::iNtegrate(
     ++t_lagrange;
   }
 
-  OP::locF *= scalarBeta;
+  if(scalarBetaPtr)
+    OP::locF *= *scalarBetaPtr;
 
   MoFEMFunctionReturn(0);
 }
@@ -492,12 +512,21 @@ struct OpBrokenSpaceConstrainDHybridImpl<FIELD_DIM, GAUSS, OpBase>
   OpBrokenSpaceConstrainDHybridImpl(
       const std::string row_field,
       boost::shared_ptr<std::vector<BrokenBaseSideData>> broken_side_data_ptr,
-      const double beta, boost::shared_ptr<Range> ents_ptr = nullptr)
+      boost::shared_ptr<double> beta_ptr,
+      boost::shared_ptr<Range> ents_ptr = nullptr)
       : OpBase(row_field, row_field, OpBase::OPROW, ents_ptr),
-        brokenSideDataPtr(broken_side_data_ptr), scalarBeta(beta) {}
+        brokenSideDataPtr(broken_side_data_ptr), scalarBetaPtr(beta_ptr) {}
+
+  OpBrokenSpaceConstrainDHybridImpl(
+      const std::string row_field,
+      boost::shared_ptr<std::vector<BrokenBaseSideData>> broken_side_data_ptr,
+      double beta, boost::shared_ptr<Range> ents_ptr = nullptr)
+      : OpBrokenSpaceConstrainDHybridImpl(row_field, broken_side_data_ptr,
+                                          boost::make_shared<double>(beta),
+                                          ents_ptr) {}
 
 private:
-  double scalarBeta;
+  boost::shared_ptr<double> scalarBetaPtr;
   boost::shared_ptr<std::vector<BrokenBaseSideData>> brokenSideDataPtr;
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data);
 };
@@ -537,7 +566,8 @@ OpBrokenSpaceConstrainDHybridImpl<FIELD_DIM, GAUSS, OpBase>::iNtegrate(
     }
   }
 
-  OP::locF *= scalarBeta;
+  if(scalarBetaPtr)
+    OP::locF *= *scalarBetaPtr;
 
   MoFEMFunctionReturn(0);
 }
