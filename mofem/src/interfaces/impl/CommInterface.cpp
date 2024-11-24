@@ -1230,22 +1230,18 @@ MoFEMErrorCode CommInterface::loadFileRootProcAllRestDistributed(
   if (pcomm->size() == 1)
     MoFEMFunctionReturnHot(0);
 
-  constexpr bool is_debug = true;
-  constexpr auto sev = Sev::inform;
   Skinner skin(&moab);
   MOFEM_LOG_CHANNEL("WORLD");
   MOFEM_LOG_CHANNEL("SYNC");
 
   auto print_range_on_procs = [&](const Range &range, std::string name) {
-    if (!is_debug)
-      return;
     MOFEM_LOG("SYNC", sev) << name << " on proc [" << pcomm->rank()
                            << "] : " << range.size();
     MOFEM_LOG_SEVERITY_SYNC(PETSC_COMM_WORLD, sev);
   };
 
   auto save_range_to_file = [&](const Range range, std::string name = "part") {
-    if (!is_debug)
+    if (!debug)
       return;
     int rr = pcomm->rank();
     ostringstream ss;
@@ -1256,8 +1252,7 @@ MoFEMErrorCode CommInterface::loadFileRootProcAllRestDistributed(
     CHKERR moab.add_entities(meshset, range);
     if (!range.empty())
       CHKERR moab.write_file(ss.str().c_str(), "VTK", "", &meshset, 1);
-    else
-      MOFEM_LOG("SYNC", sev) << "Empty range";
+    MOFEM_LOG("SYNC", sev) << "Empty range";
     CHKERR moab.delete_entities(&meshset, 1);
     MOFEM_LOG_SEVERITY_SYNC(PETSC_COMM_WORLD, sev);
   };
@@ -1404,10 +1399,15 @@ MoFEMErrorCode CommInterface::loadFileRootProcAllRestDistributed(
     remove_off_proc_ents(all_ents, off_proc_ents, proc_ents_skin);
   }
 
+  for (auto d = dim - 1; d >= 0; --d) {
+    print_range_on_procs(proc_ents_skin[d],
+                         "proc_ents_skin by dim" + std::to_string(d));
+  }
+
   CHKERR pcomm->resolve_shared_ents(0, proc_ents, dim, -1,
                                     proc_ents_skin.data());
 
-  if (is_debug) {
+  if (debug) {
 
     auto filter_owners = [&](auto &&skin) {
       Range owner_ents;
@@ -1424,7 +1424,6 @@ MoFEMErrorCode CommInterface::loadFileRootProcAllRestDistributed(
     Range gather_ents;
     if (pcomm->rank() > 0) {
       gather_ents = proc_ents.subset_by_dimension(3);
-      int r = pcomm->rank();
       std::vector<int> vals(gather_ents.size());
       std::for_each(vals.begin(), vals.end(), [](auto &v) { v = std::rand(); });
       CHKERR moab.tag_set_data(tag_handle, gather_ents, vals.data());
@@ -1441,6 +1440,47 @@ MoFEMErrorCode CommInterface::loadFileRootProcAllRestDistributed(
                      "all_ents_part_after");
 
   MoFEMFunctionReturn(0);
+}
+
+Range CommInterface::getPartEntities(moab::Interface &moab, int part) {
+
+  ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
+  if (pcomm == NULL)
+    pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
+  if (pcomm->size() == 1) {
+    Range ents;
+    CHK_THROW_MESSAGE(moab.get_entities_by_handle(0, ents, false),
+                      "get_entities_by_handle failed");
+    return subtract(ents, ents.subset_by_type(MBENTITYSET));
+  }
+
+  Range proc_ents;
+
+  auto get_proc_ents = [&]() {
+    MoFEMFunctionBegin;
+
+    Tag part_tag = pcomm->part_tag();
+
+    Range tagged_sets;
+    CHKERR moab.get_entities_by_type_and_tag(0, MBENTITYSET, &part_tag, NULL, 1,
+                                             tagged_sets,
+                                             moab::Interface::UNION);
+    for (auto &mit : tagged_sets) {
+      int part;
+      CHKERR moab.tag_get_data(part_tag, &mit, 1, &part);
+      if (part == pcomm->rank()) {
+        CHKERR moab.get_entities_by_handle(mit, proc_ents, true);
+        MoFEMFunctionReturnHot(0);
+      }
+    }
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Part not found in partitioned mesh");
+    MoFEMFunctionReturn(0);
+  };
+
+  CHK_THROW_MESSAGE(get_proc_ents(), "get_proc_ents failed");
+
+  return proc_ents;
 }
 
 } // namespace MoFEM

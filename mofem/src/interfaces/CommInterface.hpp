@@ -20,6 +20,9 @@ namespace MoFEM {
  */
 struct CommInterface : public UnknownInterface {
 
+  inline static bool debug = false;
+  inline static Sev sev = Sev::verbose;
+
   MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
@@ -275,6 +278,8 @@ struct CommInterface : public UnknownInterface {
              std::vector<const CubitMeshSets *> &&vec_ptr)
           -> std::array<Range, 4> { return proc_ents_skin; },
       const char *options = "PARALLEL=BCAST;PARTITION=");
+
+  static Range getPartEntities(moab::Interface &moab, int part);
 
   /**@}*/
 
