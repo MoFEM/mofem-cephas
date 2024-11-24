@@ -636,7 +636,7 @@ MoFEMErrorCode Electrostatics::getElectrodeCharge() {
   CHKERR VecZeroEntries(petscVec);
   CHKERR DMoFEMLoopFiniteElementsUpAndLowRank(
       simpleInterface->getDM(), "ELECTRODE", electrodeRhsFe,
-      mField.get_comm_rank(), mField.get_comm_rank());
+      0, mField.get_comm_size());
   CHKERR VecAssemblyBegin(petscVec);
   CHKERR VecAssemblyEnd(petscVec);
 

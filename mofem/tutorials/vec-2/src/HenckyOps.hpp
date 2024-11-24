@@ -1,12 +1,12 @@
 /**
- * \file HenkyOps.hpp
- * \example HenkyOps.hpp
+ * \file HenckyOps.hpp
+ * \example HenckyOps.hpp
  *
  * @copyright Copyright (c) 2023
  */
 
-#ifndef __HENKY_OPS_HPP__
-#define __HENKY_OPS_HPP__
+#ifndef __HENCKY_OPS_HPP__
+#define __HENCKY_OPS_HPP__
 
 namespace HenckyOps {
 
@@ -230,9 +230,6 @@ struct OpCalculateLogCImpl<DIM, GAUSS, DomainEleOp> : public DomainEleOp {
     auto t_logC = getFTensor2SymmetricFromMat<DIM>(commonDataPtr->matLogC);
 
     for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
-
-      // rare case when two eigen values are equal
-      auto nb_uniq = get_uniq_nb<DIM>(&(t_eig_val(0)));
 
       FTensor::Tensor1<double, DIM> eig;
       FTensor::Tensor2<double, DIM, DIM> eigen_vec;
@@ -500,7 +497,6 @@ struct OpHenckyTangentImpl<DIM, GAUSS, DomainEleOp, S> : public DomainEleOp {
     constexpr auto t_kd = FTensor::Kronecker_Delta<int>();
     // const size_t nb_gauss_pts = matGradPtr->size2();
     const size_t nb_gauss_pts = DomainEleOp::getGaussPts().size2();
-    constexpr auto size_symm = (DIM * (DIM + 1)) / 2;
     commonDataPtr->matTangent.resize(DIM * DIM * DIM * DIM, nb_gauss_pts);
     auto dP_dF =
         getFTensor4FromMat<DIM, DIM, DIM, DIM, 1>(commonDataPtr->matTangent);
@@ -570,7 +566,7 @@ private:
   boost::shared_ptr<MatrixDouble> matDPtr;
 };
 
-template <typename DomainEleOp> struct HenkyIntegrators {
+template <typename DomainEleOp> struct HenckyIntegrators {
   template <int DIM, IntegrationType I>
   using OpCalculateEigenVals = OpCalculateEigenValsImpl<DIM, I, DomainEleOp>;
 
@@ -713,10 +709,10 @@ addMatBlockOps(MoFEM::Interface &m_field,
     }
   };
 
-  double E = young_modulus;
-  double nu = poisson_ratio;
+  double E = 1.0;
+  double nu = 0.3;
 
-  CHKERR PetscOptionsBegin(PETSC_COMM_WORLD, "hencky_", "", "none");
+  CHKERR PetscOptionsBegin(PETSC_COMM_WORLD, "", "", "none");
   CHKERR PetscOptionsScalar("-young_modulus", "Young modulus", "", E, &E,
                             PETSC_NULL);
   CHKERR PetscOptionsScalar("-poisson_ratio", "poisson ratio", "", nu, &nu,
@@ -755,7 +751,7 @@ auto commonDataFactory(
                                         common_ptr->matDPtr, sev, scale),
                     "addMatBlockOps");
 
-  using H = HenkyIntegrators<DomainEleOp>;
+  using H = HenckyIntegrators<DomainEleOp>;
 
   pip.push_back(new OpCalculateVectorFieldGradient<DIM, DIM>(
       field_name, common_ptr->matGradPtr));
@@ -819,7 +815,7 @@ MoFEMErrorCode opFactoryDomainLhs(
       A>::template BiLinearForm<I>;
   using OpKPiola = typename B::template OpGradTensorGrad<1, DIM, DIM, 1>;
 
-  using H = HenkyIntegrators<DomainEleOp>;
+  using H = HenckyIntegrators<DomainEleOp>;
   // Assumes constant D matrix per entity
   pip.push_back(
       new typename H::template OpHenckyTangent<DIM, I, 0>(field_name, common_ptr));
@@ -845,4 +841,4 @@ MoFEMErrorCode opFactoryDomainLhs(
 }
 } // namespace HenckyOps
 
-#endif // __HENKY_OPS_HPP__
+#endif // __HENCKY_OPS_HPP__

@@ -492,9 +492,9 @@ MoFEMErrorCode Contact::OPs() {
     MoFEMFunctionReturn(0);
   };
 
-  auto henky_common_data_ptr = boost::make_shared<HenckyOps::CommonData>();
-  henky_common_data_ptr->matDPtr = boost::make_shared<MatrixDouble>();
-  henky_common_data_ptr->matGradPtr = boost::make_shared<MatrixDouble>();
+  auto hencky_common_data_ptr = boost::make_shared<HenckyOps::CommonData>();
+  hencky_common_data_ptr->matDPtr = boost::make_shared<MatrixDouble>();
+  hencky_common_data_ptr->matGradPtr = boost::make_shared<MatrixDouble>();
 
   auto add_domain_ops_lhs = [&](auto &pip) {
     MoFEMFunctionBegin;

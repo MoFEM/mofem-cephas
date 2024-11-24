@@ -356,7 +356,7 @@ MoFEMErrorCode Seepage::addMatBlockOps(
 
   pipeline.push_back(new OpMatElasticBlocks(
       blockedParamsPtr->getDPtr(), default_bulk_modulus_K,
-      default_bulk_modulus_K, mField, sev,
+      default_shear_modulus_G, mField, sev,
 
       // Get blockset using regular expression
       mField.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(std::regex(
