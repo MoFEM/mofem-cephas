@@ -719,7 +719,11 @@ MoFEMErrorCode Seepage::OPs() {
     MoFEMFunctionBegin;
     
     auto minus_one = [](double, double, double) constexpr { return -1; };
-    
+    auto biot = [biot_constant_ptr](const double, const double,
+                                         const double) {
+      return *biot_constant_ptr;
+    };
+
     pip.push_back(new OpKCauchy("U", "U", mDPtr));
     pip.push_back(new OpBaseDivU(
         "P", "U", minus_one, true,
