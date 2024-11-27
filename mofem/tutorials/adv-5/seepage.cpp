@@ -718,7 +718,6 @@ MoFEMErrorCode Seepage::OPs() {
   auto add_domain_ops_lhs_mechanical = [&](auto &pip) {
     MoFEMFunctionBegin;
     
-    auto minus_one = [](double, double, double) constexpr { return -1; };
     auto biot = [biot_constant_ptr](const double, const double,
                                          const double) {
       return *biot_constant_ptr;
@@ -726,7 +725,7 @@ MoFEMErrorCode Seepage::OPs() {
 
     pip.push_back(new OpKCauchy("U", "U", mDPtr));
     pip.push_back(new OpBaseDivU(
-        "P", "U", minus_one, true,
+        "P", "U", biot, true,
         true));
     MoFEMFunctionReturn(0);
   };
@@ -736,13 +735,16 @@ MoFEMErrorCode Seepage::OPs() {
 
     CHKERR DomainNaturalBCRhs::AddFluxToPipeline<OpBodyForce>::add(
         pip, mField, "U", {time_scale}, "BODY_FORCE", Sev::inform);
-
+    auto biot = [biot_constant_ptr](const double, const double,
+                                         const double) {
+      return *biot_constant_ptr;
+    };
     // Calculate internal force
     pip.push_back(new OpTensorTimesSymmetricTensor<SPACE_DIM, SPACE_DIM>(
         "U", strain_ptr, stress_ptr, mDPtr));
     pip.push_back(new OpInternalForceCauchy("U", stress_ptr));
     pip.push_back(
-        new SeepageOps::OpDomainRhsHydrostaticStress<SPACE_DIM>("U", p_ptr));
+        new SeepageOps::OpDomainRhsHydrostaticStress<SPACE_DIM>("U", p_ptr, biot));
 
     MoFEMFunctionReturn(0);
   };

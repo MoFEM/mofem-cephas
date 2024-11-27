@@ -23,9 +23,10 @@ struct OpDomainRhsHydrostaticStress
     : public AssemblyDomainEleOp { // changed opfaceele to AssemblyDomainEleOp
 public:
   OpDomainRhsHydrostaticStress(std::string field_name1,
-                               boost::shared_ptr<VectorDouble> p_ptr)
+                               boost::shared_ptr<VectorDouble> p_ptr, 
+                               std::function<double(const double, const double, const double)> multiplier_func)
       : AssemblyDomainEleOp(field_name1, field_name1, DomainEleOp::OPROW),
-        pPtr(p_ptr) {}
+        pPtr(p_ptr), multiplier_func(multiplier_func) {}
 
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data) {
     MoFEMFunctionBegin;
@@ -55,7 +56,8 @@ public:
         
         auto t_nf = getFTensor1FromPtr<DIM>(&nf[0]);
 
-        const double a = t_w * measure * t_p;
+        const double multiplier = multiplier_func(0.0, 0.0, 0.0);
+        const double a = t_w * measure * t_p * multiplier;
 
         for (int rr = 0; rr != nb_dofs / DIM; rr++) {  //loop over dofs (rr = alpha)
           t_nf(i) -= t_base_diff(i) * a;  //loop over dimensions
@@ -77,6 +79,7 @@ public:
 
 private:
   boost::shared_ptr<VectorDouble> pPtr;
+  std::function<double(const double, const double, const double)> multiplier_func;
 };
 
 } // namespace SeepageOps
