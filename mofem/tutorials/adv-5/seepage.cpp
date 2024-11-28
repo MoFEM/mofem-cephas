@@ -675,6 +675,13 @@ MoFEMErrorCode Seepage::OPs() {
   auto stress_ptr = boost::make_shared<MatrixDouble>();
 
   auto time_scale = boost::make_shared<TimeScale>();
+  auto time_displacement_scaling =
+      boost::make_shared<TimeScale>("displacement_bc_scale.txt");
+  auto time_pressure_scaling =
+      boost::make_shared<TimeScale>("pressure_bc_scale.txt");
+  auto time_flux_scaling = boost::make_shared<TimeScale>("flux_bc_scale.txt");
+  auto time_force_scaling = boost::make_shared<TimeScale>("force_bc_scale.txt");
+
 
   auto block_params = boost::make_shared<BlockedParameters>();
   auto mDPtr = block_params->getDPtr();
@@ -734,10 +741,9 @@ MoFEMErrorCode Seepage::OPs() {
     MoFEMFunctionBegin;
 
     CHKERR DomainNaturalBCRhs::AddFluxToPipeline<OpBodyForce>::add(
-        pip, mField, "U", {time_scale}, "BODY_FORCE", Sev::inform);
-    auto biot = [biot_constant_ptr](const double, const double,
-                                         const double) {
-      return *biot_constant_ptr;
+        pip, mField, "U", {time_scale, time_force_scaling}, "BODY_FORCE", Sev::inform);
+    auto biot = [biot_constant_ptr](const double, const double, const double) {
+    return *biot_constant_ptr;
     };
     // Calculate internal force
     pip.push_back(new OpTensorTimesSymmetricTensor<SPACE_DIM, SPACE_DIM>(
@@ -827,11 +833,11 @@ MoFEMErrorCode Seepage::OPs() {
     pip.push_back(new OpSetBc("FLUX", true, boundary_marker));
 
     CHKERR BoundaryNaturalBC::AddFluxToPipeline<OpForce>::add(
-        pipeline_mng->getOpBoundaryRhsPipeline(), mField, "U", {time_scale},
+        pipeline_mng->getOpBoundaryRhsPipeline(), mField, "U", {time_scale, time_force_scaling},
         "FORCE", Sev::inform);
 
     CHKERR BoundaryNaturalBC::AddFluxToPipeline<OpTemperatureBC>::add(
-        pipeline_mng->getOpBoundaryRhsPipeline(), mField, "FLUX", {time_scale},
+        pipeline_mng->getOpBoundaryRhsPipeline(), mField, "FLUX", {time_scale, time_pressure_scaling},
         "PRESSURE", Sev::inform);
 
     pip.push_back(new OpUnSetBc("FLUX"));
@@ -842,7 +848,7 @@ MoFEMErrorCode Seepage::OPs() {
     CHKERR EssentialBC<BoundaryEleOp>::Assembly<PETSC>::LinearForm<GAUSS>::
         AddEssentialToPipeline<OpEssentialFluxRhs>::add(
             mField, pip, simple->getProblemName(), "FLUX", mat_flux_ptr,
-            {time_scale});
+            {time_scale, time_flux_scaling});
 
     MoFEMFunctionReturn(0);
   };
@@ -1042,6 +1048,8 @@ MoFEMErrorCode Seepage::tsSolve() {
         auto strain_ptr = boost::make_shared<MatrixDouble>();
         auto stress_ptr = boost::make_shared<MatrixDouble>();
         auto p_ptr = boost::make_shared<VectorDouble>();
+        auto flux_ptr = boost::make_shared<MatrixDouble>();
+        auto u_ptr = boost::make_shared<MatrixDouble>();
 
         auto block_params = boost::make_shared<BlockedParameters>();
         auto mDPtr = block_params->getDPtr();
@@ -1059,6 +1067,10 @@ MoFEMErrorCode Seepage::tsSolve() {
         field_eval_ptr->getOpPtrVector().push_back(
             new OpTensorTimesSymmetricTensor<SPACE_DIM, SPACE_DIM>(
                 "U", strain_ptr, stress_ptr, mDPtr));
+        field_eval_ptr->getOpPtrVector().push_back(
+            new OpCalculateHVecVectorField<3, SPACE_DIM>("FLUX", flux_ptr));
+        field_eval_ptr->getOpPtrVector().push_back(
+            new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_ptr));
 
         if constexpr (SPACE_DIM == 3) {
           CHKERR mField.getInterface<FieldEvaluatorInterface>()
@@ -1075,11 +1087,31 @@ MoFEMErrorCode Seepage::tsSolve() {
                   mField.get_comm_rank(), mField.get_comm_rank(), nullptr,
                   MF_EXIST, QUIET);
         }
+        
+        std::ofstream results_file("log_results.txt", std::ios::out | std::ios::app);
 
-        MOFEM_LOG("SeepageSync", Sev::inform)
-            << "Eval point pore pressure: " << *p_ptr;  //this is pressure?
-        MOFEM_LOG("SeepageSync", Sev::inform)
-            << "Eval point symmetric stress tensor: " << *stress_ptr;     //this is stress?
+        if (!results_file.is_open()) {
+        throw std::runtime_error("Failed to open log_results.txt for writing.");
+        }
+
+        auto current_time_step = monitor_ptr->ts_step; // Time step
+        PetscReal current_time;
+        CHKERR TSGetTime(solver, &current_time);
+
+        
+        results_file << "Time Step: " << current_time_step << "\n";
+        results_file << "Time: " << current_time << "\n";
+        results_file << "Pressure (P): " << *p_ptr << "\n";
+        results_file << "Flux (FLUX): " << *flux_ptr << "\n"; // Add flux calculation if needed
+        results_file << "Displacement (U): " << *u_ptr << "\n"; // Add displacement calculation
+        results_file << "Symmetric Stress Tensor: " << *stress_ptr << "\n";
+        
+        results_file.close();
+        
+        // MOFEM_LOG("SeepageSync", Sev::inform)
+        //     << "Eval point pore pressure: " << *p_ptr;  //this is pressure?
+        // MOFEM_LOG("SeepageSync", Sev::inform)
+        //     << "Eval point symmetric stress tensor: " << *stress_ptr;  
         // MOFEM_LOG("SeepageSync", Sev::inform)
         //     << "Eval point flux: " << *flux_ptr;
         // MOFEM_LOG("SeepageSync", Sev::inform)
@@ -1119,11 +1151,11 @@ MoFEMErrorCode Seepage::tsSolve() {
       SmartPetscObj<IS> is_flux;
       CHKERR is_mng->isCreateProblemFieldAndRank(name_prb, ROW, "FLUX", 0, 0,
                                                  is_flux);
-      SmartPetscObj<IS> is_H;
+      SmartPetscObj<IS> is_P;
       CHKERR is_mng->isCreateProblemFieldAndRank(name_prb, ROW, "P", 0, 0,
-                                                 is_H);
+                                                 is_P);
       IS is_tmp;
-      CHKERR ISExpand(is_H, is_flux, &is_tmp);
+      CHKERR ISExpand(is_P, is_flux, &is_tmp);
       auto is_Flux = SmartPetscObj<IS>(is_tmp);
 
       auto is_all_bc = bc_mng->getBlockIS(name_prb, "FLUIDFLUX", "FLUX", 0, 0);
@@ -1152,10 +1184,11 @@ MoFEMErrorCode Seepage::tsSolve() {
   auto post_proc_rhs_ptr = boost::make_shared<FEMethod>();
   auto post_proc_lhs_ptr = boost::make_shared<FEMethod>();
   auto time_scale = boost::make_shared<TimeScale>();
+  auto time_displacement_scaling = boost::make_shared<TimeScale>("displacement_bc_scale.txt");
 
-  auto get_bc_hook_rhs = [this, pre_proc_ptr, time_scale]() {
+  auto get_bc_hook_rhs = [this, pre_proc_ptr, time_scale, time_displacement_scaling]() {
     EssentialPreProc<DisplacementCubitBcData> hook(mField, pre_proc_ptr,
-                                                   {time_scale}, false);
+                                                   {time_scale, time_displacement_scaling}, false);
     return hook;
   };
 

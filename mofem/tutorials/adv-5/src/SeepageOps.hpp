@@ -56,8 +56,8 @@ public:
         
         auto t_nf = getFTensor1FromPtr<DIM>(&nf[0]);
 
-        const double multiplier = multiplier_func(0.0, 0.0, 0.0);
-        const double a = t_w * measure * t_p * multiplier;
+        const double biot = multiplier_func(0.0, 0.0, 0.0);
+        const double a = t_w * measure * t_p * biot;
 
         for (int rr = 0; rr != nb_dofs / DIM; rr++) {  //loop over dofs (rr = alpha)
           t_nf(i) -= t_base_diff(i) * a;  //loop over dimensions
