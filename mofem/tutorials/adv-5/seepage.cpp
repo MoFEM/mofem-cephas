@@ -505,8 +505,62 @@ MoFEMErrorCode Seepage::setupProblem() {
   CHKERR simple->setFieldOrder("P", order - 1);
   CHKERR simple->setFieldOrder("FLUX", order);
 
+  int coords_dim = SPACE_DIM;
+    CHKERR PetscOptionsGetRealArray(NULL, NULL, "-field_eval_coords",
+                                    fieldEvalCoords.data(), &coords_dim,
+                                    &doEvalField);
+
   CHKERR simple->setUp();
 
+
+  auto p_ptr = boost::make_shared<VectorDouble>();
+  auto flux_ptr = boost::make_shared<MatrixDouble>();
+  auto u_ptr = boost::make_shared<MatrixDouble>();
+  auto u_grad_ptr = boost::make_shared<MatrixDouble>();
+  auto strain_ptr = boost::make_shared<MatrixDouble>();
+  auto stress_ptr = boost::make_shared<MatrixDouble>();
+
+  if (doEvalField) {
+    auto fieldEvalData = mField.getInterface<FieldEvaluatorInterface>()->getData<DomainEle>();
+
+    if constexpr (SPACE_DIM == 3) {
+      CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree3D(
+          fieldEvalData, simple->getDomainFEName());
+    } else {
+      CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree2D(
+          fieldEvalData, simple->getDomainFEName());
+    }
+
+    fieldEvalData->setEvalPoints(fieldEvalCoords.data(), 1);
+    auto no_rule = [](int, int, int) { return -1; };
+
+    auto field_eval_fe_ptr = fieldEvalData->feMethodPtr.lock();
+    field_eval_fe_ptr->getRuleHook = no_rule;
+
+    auto block_params = boost::make_shared<BlockedParameters>();
+    auto mDPtr = block_params->getDPtr();
+
+    CHKERR addMatBlockOps(field_eval_fe_ptr->getOpPtrVector(), "MAT_ELASTIC",
+                          "MAT_FLUID", block_params, Sev::verbose);
+
+    CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+        field_eval_fe_ptr->getOpPtrVector(), {H1, HDIV});
+
+    field_eval_fe_ptr->getOpPtrVector().push_back(
+        new OpCalculateScalarFieldValues("P", p_ptr));
+    field_eval_fe_ptr->getOpPtrVector().push_back(
+        new OpCalculateHVecVectorField<3, SPACE_DIM>("FLUX", flux_ptr));
+    field_eval_fe_ptr->getOpPtrVector().push_back(
+        new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_ptr));
+    field_eval_fe_ptr->getOpPtrVector().push_back(
+        new OpCalculateVectorFieldGradient<SPACE_DIM, SPACE_DIM>("U", u_grad_ptr));
+    field_eval_fe_ptr->getOpPtrVector().push_back(
+        new OpSymmetrizeTensor<SPACE_DIM>(u_grad_ptr, strain_ptr));
+    field_eval_fe_ptr->getOpPtrVector().push_back(
+        new OpTensorTimesSymmetricTensor<SPACE_DIM, SPACE_DIM>(
+            "U", strain_ptr, stress_ptr, mDPtr));
+  }
+  
   MoFEMFunctionReturn(0);
 }
 //! [Set up problem]
@@ -538,11 +592,6 @@ MoFEMErrorCode Seepage::createCommonData() {
         << "Default biot " << default_biot;
     MOFEM_LOG("Seepage", Sev::inform) 
         << "Default storage constant " << default_storage;
-
-    int coords_dim = SPACE_DIM;
-    CHKERR PetscOptionsGetRealArray(NULL, NULL, "-field_eval_coords",
-                                    fieldEvalCoords.data(), &coords_dim,
-                                    &doEvalField);
 
     MoFEMFunctionReturn(0);
   };
