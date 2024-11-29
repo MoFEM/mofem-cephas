@@ -28,6 +28,30 @@ set(MoFEM_PROJECT_LIBS
   ${OPTIONAL_PROJECT_LIBS} ${MoFEM_SYSTEM_PROJECT_LIBS}  ${PROJECT_LIBS})
 message(STATUS ${MoFEM_PROJECT_LIBS})
 
+
+function(tools_copy_and_install extension file_permissions)
+  file(GLOB files ${CMAKE_CURRENT_SOURCE_DIR}/${extension})
+  foreach(file ${files})
+    file(
+      COPY ${file}
+      DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+      FILE_PERMISSIONS ${file_permissions})     
+    install(FILES ${file}
+      DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+      PERMISSIONS ${file_permissions})
+  endforeach(file)
+endfunction()
+
+set(permissions_default 
+  OWNER_WRITE 
+  OWNER_READ
+  GROUP_READ)
+
+file(
+  COPY meshes DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+install(
+  DIRECTORY meshes DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
 if(MED_LIBRARY)
   add_executable(read_med ${CMAKE_CURRENT_SOURCE_DIR}/read_med.cpp)
   target_link_libraries(read_med
@@ -200,6 +224,18 @@ target_link_libraries(fix_file
 )
 install(TARGETS fix_file DESTINATION bin)
 
+add_executable(read_vtk ${CMAKE_CURRENT_SOURCE_DIR}/read_vtk.cpp)
+target_link_libraries(read_vtk
+  mofem_interfaces
+  mofem_finite_elements
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_third_party
+  ${MoFEM_PROJECT_LIBS}
+)
+install(TARGETS read_vtk DESTINATION bin)
+
 cm_export_file("convert.py" export_tools)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/convert.py
   DESTINATION bin
@@ -233,3 +269,13 @@ if(ADOL-C_LIBRARY)
   # install(TARGETS mesh_smoothing DESTINATION bin)
 
 endif(ADOL-C_LIBRARY)
+
+
+add_test(read_vtk
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/read_vtk
+  -file_name ${CMAKE_CURRENT_BINARY_DIR}/meshes/box_layer_heter.vtk
+  -log_no_color
+  -output_file out_test_read_vtk.h5m
+  -atom_test 1
+)
