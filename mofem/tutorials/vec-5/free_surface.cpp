@@ -567,7 +567,6 @@ MoFEMErrorCode FreeSurface::setupProblem() {
   nb_levels += 1;
 
   auto simple = mField.getInterface<Simple>();
-  auto bit_mng = mField.getInterface<BitRefManager>();
 
   CHKERR PetscOptionsGetScalar(PETSC_NULL, "Acceleration", "-a0", &a0, PETSC_NULL);
   CHKERR PetscOptionsGetScalar(PETSC_NULL, "\"Minus\" phase density rho_m",
@@ -958,7 +957,6 @@ MoFEMErrorCode FreeSurface::projectData() {
 
   auto simple = mField.getInterface<Simple>();
   auto pip_mng = mField.getInterface<PipelineManager>();
-  auto bc_mng = mField.getInterface<BcManager>();
   auto bit_mng = mField.getInterface<BitRefManager>();
   auto field_blas = mField.getInterface<FieldBlas>();
 
@@ -1456,7 +1454,6 @@ MoFEMErrorCode FreeSurface::projectData() {
 
       if (ts_solver_vecs.size()) {
 
-        int ii = 0;
         for (auto v : ts_solver_vecs) {
           MOFEM_LOG("FS", Sev::inform) << "Solve projection vector";
 
@@ -2255,7 +2252,6 @@ MoFEMErrorCode FreeSurface::solveSystem() {
                                 EntityType type,
                                 EntitiesFieldData::EntData &data) {
       MoFEMFunctionBegin;
-      auto op_ptr = static_cast<BoundaryEleOp *>(base_op_ptr);
       MoFEMFunctionReturn(0);
     };
 
@@ -2375,7 +2371,6 @@ MoFEMErrorCode FreeSurface::solveSystem() {
     CHKERR set_post_proc_monitor(sub_ts);
 
     // Add monitor to time solver
-    double ftime = 1;
     CHKERR TSSetFromOptions(ts);
     CHKERR ptr->tsSetUp(ts);
     CHKERR TSSetUp(ts);
@@ -2578,9 +2573,7 @@ FreeSurface::findEntitiesCrossedByPhaseInterface(size_t overlap) {
 MoFEMErrorCode FreeSurface::refineMesh(size_t overlap) {
   MoFEMFunctionBegin;
 
-  auto simple = mField.getInterface<Simple>();
   auto bit_mng = mField.getInterface<BitRefManager>();
-  auto prb_mng = mField.getInterface<ProblemsManager>();
 
   BitRefLevel start_mask;
   for (auto s = 0; s != get_start_bit(); ++s)
@@ -2915,12 +2908,6 @@ MoFEMErrorCode TSPrePostProc::tsPreProc(TS ts) {
 
     auto &m_field = ptr->fsRawPtr->mField;
     auto simple = m_field.getInterface<Simple>();
-    auto bit_mng = m_field.getInterface<BitRefManager>();
-    auto bc_mng = m_field.getInterface<BcManager>();
-    auto field_blas = m_field.getInterface<FieldBlas>();
-    auto opt = m_field.getInterface<OperatorsTester>();
-    auto pip_mng = m_field.getInterface<PipelineManager>();
-    auto prb_mng = m_field.getInterface<ProblemsManager>();
 
     // get vector norm
     auto get_norm = [&](auto x) {
