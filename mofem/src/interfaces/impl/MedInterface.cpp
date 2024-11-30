@@ -846,9 +846,6 @@ MoFEMErrorCode MedInterface::writeMed(
       if (other_entities.empty())
         continue;
 
-      //   get entity type
-      EntityType ent_type = moab.type_from_handle(entity);
-
       bool is_in_meshset = moab.contains_entities(other_set, &entity, 1);
       if (is_in_meshset) {
         // add shared meshset id to list
