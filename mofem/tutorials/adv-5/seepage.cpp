@@ -1157,19 +1157,25 @@ MoFEMErrorCode Seepage::tsSolve() {
         PetscReal current_time;
         CHKERR TSGetTime(solver, &current_time);
 
-
-        auto p_temp = getFTensor0FromVec(*pressureFieldPtr);
-        auto flux_temp = getFTensor1FromMat<SPACE_DIM>(*fluxFieldPtr);
-        auto disp_temp = getFTensor1FromMat<SPACE_DIM>(*dispFieldPtr);
-        auto stress_temp = getFTensor2SymmetricFromMat<SPACE_DIM>(*stressFieldPtr);
-
-        
         results_file << "Time Step: " << current_time_step << "\n";
         results_file << "Time: " << current_time << "\n";
-        results_file << "Pressure (P): " << p_temp << "\n";
-        results_file << "Flux (FLUX): " << flux_temp << "\n"; // Add flux calculation if needed
-        results_file << "Displacement (U): " << disp_temp << "\n"; // Add displacement calculation
-        results_file << "Symmetric Stress Tensor: " << stressFieldPtr << "\n";
+
+        if (pressureFieldPtr->size()) {
+          auto p_temp = getFTensor0FromVec(*pressureFieldPtr);
+          results_file << "Pressure (P): " << p_temp << "\n";
+        }
+        if (fluxFieldPtr->size1()) {
+          auto flux_temp = getFTensor1FromMat<SPACE_DIM>(*fluxFieldPtr);
+          results_file << "Flux (FLUX): " << flux_temp << "\n";
+        }
+        if (dispFieldPtr->size1()) {
+          auto disp_temp = getFTensor1FromMat<SPACE_DIM>(*dispFieldPtr);
+          results_file << "Displacement (U): " << disp_temp << "\n";
+        }
+        if (stressFieldPtr->size1()) {
+          auto stress_temp = getFTensor2SymmetricFromMat<SPACE_DIM>(*stressFieldPtr);
+          results_file << "Symmetric Stress Tensor: " << stressFieldPtr << "\n";
+        }
         
         results_file.close();
         
