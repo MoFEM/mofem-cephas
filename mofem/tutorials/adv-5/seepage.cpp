@@ -200,11 +200,19 @@ private:
   MoFEMErrorCode tsSolve();
 
   PetscBool doEvalField;
-  std::array<double, SPACE_DIM> fieldEvalCoords;
+  std::array<double, 3> fieldEvalCoords = {0., 0., 0.};
+  boost::shared_ptr<FieldEvaluatorInterface::SetPtsData> fieldEvalData;
 
   std::tuple<SmartPetscObj<Vec>, SmartPetscObj<VecScatter>> uXScatter;
   std::tuple<SmartPetscObj<Vec>, SmartPetscObj<VecScatter>> uYScatter;
   std::tuple<SmartPetscObj<Vec>, SmartPetscObj<VecScatter>> uZScatter;
+
+  boost::shared_ptr<VectorDouble> pressureFieldPtr;
+  boost::shared_ptr<MatrixDouble> fluxFieldPtr;
+  boost::shared_ptr<MatrixDouble> dispFieldPtr;
+  boost::shared_ptr<MatrixDouble> dispGradPtr;
+  boost::shared_ptr<MatrixDouble> strainFieldPtr;
+  boost::shared_ptr<MatrixDouble> stressFieldPtr;
 
   struct BlockedParameters
       : public boost::enable_shared_from_this<BlockedParameters> {
@@ -513,15 +521,15 @@ MoFEMErrorCode Seepage::setupProblem() {
   CHKERR simple->setUp();
 
 
-  auto p_ptr = boost::make_shared<VectorDouble>();
-  auto flux_ptr = boost::make_shared<MatrixDouble>();
-  auto u_ptr = boost::make_shared<MatrixDouble>();
-  auto u_grad_ptr = boost::make_shared<MatrixDouble>();
-  auto strain_ptr = boost::make_shared<MatrixDouble>();
-  auto stress_ptr = boost::make_shared<MatrixDouble>();
+  pressureFieldPtr = boost::make_shared<VectorDouble>();
+  fluxFieldPtr = boost::make_shared<MatrixDouble>();
+  dispFieldPtr = boost::make_shared<MatrixDouble>();
+  dispGradPtr = boost::make_shared<MatrixDouble>();
+  strainFieldPtr = boost::make_shared<MatrixDouble>();
+  stressFieldPtr = boost::make_shared<MatrixDouble>();
 
   if (doEvalField) {
-    auto fieldEvalData = mField.getInterface<FieldEvaluatorInterface>()->getData<DomainEle>();
+    fieldEvalData = mField.getInterface<FieldEvaluatorInterface>()->getData<DomainEle>();
 
     if constexpr (SPACE_DIM == 3) {
       CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree3D(
@@ -533,6 +541,8 @@ MoFEMErrorCode Seepage::setupProblem() {
 
     fieldEvalData->setEvalPoints(fieldEvalCoords.data(), 1);
     auto no_rule = [](int, int, int) { return -1; };
+
+    //std::cout<<fieldEvalCoords[0]<< "!!! " << fieldEvalCoords[1]<< " " << fieldEvalCoords[2]<<std::endl;
 
     auto field_eval_fe_ptr = fieldEvalData->feMethodPtr.lock();
     field_eval_fe_ptr->getRuleHook = no_rule;
@@ -547,18 +557,18 @@ MoFEMErrorCode Seepage::setupProblem() {
         field_eval_fe_ptr->getOpPtrVector(), {H1, HDIV});
 
     field_eval_fe_ptr->getOpPtrVector().push_back(
-        new OpCalculateScalarFieldValues("P", p_ptr));
+        new OpCalculateScalarFieldValues("P", pressureFieldPtr));
     field_eval_fe_ptr->getOpPtrVector().push_back(
-        new OpCalculateHVecVectorField<3, SPACE_DIM>("FLUX", flux_ptr));
+        new OpCalculateHVecVectorField<3, SPACE_DIM>("FLUX", fluxFieldPtr));
     field_eval_fe_ptr->getOpPtrVector().push_back(
-        new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_ptr));
+        new OpCalculateVectorFieldValues<SPACE_DIM>("U", dispFieldPtr));
     field_eval_fe_ptr->getOpPtrVector().push_back(
-        new OpCalculateVectorFieldGradient<SPACE_DIM, SPACE_DIM>("U", u_grad_ptr));
+        new OpCalculateVectorFieldGradient<SPACE_DIM, SPACE_DIM>("U", dispGradPtr));
     field_eval_fe_ptr->getOpPtrVector().push_back(
-        new OpSymmetrizeTensor<SPACE_DIM>(u_grad_ptr, strain_ptr));
+        new OpSymmetrizeTensor<SPACE_DIM>(dispGradPtr, strainFieldPtr));
     field_eval_fe_ptr->getOpPtrVector().push_back(
         new OpTensorTimesSymmetricTensor<SPACE_DIM, SPACE_DIM>(
-            "U", strain_ptr, stress_ptr, mDPtr));
+            "U", strainFieldPtr, stressFieldPtr, mDPtr));
   }
   
   MoFEMFunctionReturn(0);
@@ -1072,67 +1082,67 @@ MoFEMErrorCode Seepage::tsSolve() {
 
       if (doEvalField) {
 
-        auto scalar_field_ptr = boost::make_shared<VectorDouble>();
-        auto vector_field_ptr = boost::make_shared<MatrixDouble>();
-        auto tensor_field_ptr = boost::make_shared<MatrixDouble>();
+        // auto scalar_field_ptr = boost::make_shared<VectorDouble>();
+        // auto vector_field_ptr = boost::make_shared<MatrixDouble>();
+        // auto tensor_field_ptr = boost::make_shared<MatrixDouble>();
 
-        auto field_eval_data = mField.getInterface<FieldEvaluatorInterface>()
-                                   ->getData<DomainEle>();
+        // auto field_eval_data = mField.getInterface<FieldEvaluatorInterface>()
+        //                            ->getData<DomainEle>();
 
-        if constexpr (SPACE_DIM == 3) {
-          CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree3D(
-              field_eval_data, simple->getDomainFEName());
-        } else {
-          CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree2D(
-              field_eval_data, simple->getDomainFEName());
-        }
+        // if constexpr (SPACE_DIM == 3) {
+        //   CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree3D(
+        //       field_eval_data, simple->getDomainFEName());
+        // } else {
+        //   CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree2D(
+        //       field_eval_data, simple->getDomainFEName());
+        // }
 
-        field_eval_data->setEvalPoints(fieldEvalCoords.data(), 1);
-        auto no_rule = [](int, int, int) { return -1; };
+        // field_eval_data->setEvalPoints(fieldEvalCoords.data(), 1);
+        // auto no_rule = [](int, int, int) { return -1; };
 
-        auto field_eval_ptr = field_eval_data->feMethodPtr.lock();
-        field_eval_ptr->getRuleHook = no_rule;
+        // auto field_eval_ptr = field_eval_data->feMethodPtr.lock();
+        // field_eval_ptr->getRuleHook = no_rule;
 
-        auto u_grad_ptr = boost::make_shared<MatrixDouble>();
-        auto strain_ptr = boost::make_shared<MatrixDouble>();
-        auto stress_ptr = boost::make_shared<MatrixDouble>();
-        auto p_ptr = boost::make_shared<VectorDouble>();
-        auto flux_ptr = boost::make_shared<MatrixDouble>();
-        auto u_ptr = boost::make_shared<MatrixDouble>();
+        // auto u_grad_ptr = boost::make_shared<MatrixDouble>();
+        // auto strain_ptr = boost::make_shared<MatrixDouble>();
+        // auto stress_ptr = boost::make_shared<MatrixDouble>();
+        // auto p_ptr = boost::make_shared<VectorDouble>();
+        // auto flux_ptr = boost::make_shared<MatrixDouble>();
+        // auto u_ptr = boost::make_shared<MatrixDouble>();
 
-        auto block_params = boost::make_shared<BlockedParameters>();
-        auto mDPtr = block_params->getDPtr();
-        CHKERR addMatBlockOps(field_eval_ptr->getOpPtrVector(), "MAT_ELASTIC",
-                              "MAT_FLUID", block_params, Sev::noisy);
-        CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
-            field_eval_ptr->getOpPtrVector(), {H1, HDIV});
-        field_eval_ptr->getOpPtrVector().push_back(
-            new OpCalculateVectorFieldGradient<SPACE_DIM, SPACE_DIM>(
-                "U", u_grad_ptr));
-        field_eval_ptr->getOpPtrVector().push_back(
-            new OpSymmetrizeTensor<SPACE_DIM>(u_grad_ptr, strain_ptr));
-        field_eval_ptr->getOpPtrVector().push_back(
-            new OpCalculateScalarFieldValues("P", p_ptr));
-        field_eval_ptr->getOpPtrVector().push_back(
-            new OpTensorTimesSymmetricTensor<SPACE_DIM, SPACE_DIM>(
-                "U", strain_ptr, stress_ptr, mDPtr));
-        field_eval_ptr->getOpPtrVector().push_back(
-            new OpCalculateHVecVectorField<3, SPACE_DIM>("FLUX", flux_ptr));
-        field_eval_ptr->getOpPtrVector().push_back(
-            new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_ptr));
+        // auto block_params = boost::make_shared<BlockedParameters>();
+        // auto mDPtr = block_params->getDPtr();
+        // CHKERR addMatBlockOps(field_eval_ptr->getOpPtrVector(), "MAT_ELASTIC",
+        //                       "MAT_FLUID", block_params, Sev::noisy);
+        // CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+        //     field_eval_ptr->getOpPtrVector(), {H1, HDIV});
+        // field_eval_ptr->getOpPtrVector().push_back(
+        //     new OpCalculateVectorFieldGradient<SPACE_DIM, SPACE_DIM>(
+        //         "U", u_grad_ptr));
+        // field_eval_ptr->getOpPtrVector().push_back(
+        //     new OpSymmetrizeTensor<SPACE_DIM>(u_grad_ptr, strain_ptr));
+        // field_eval_ptr->getOpPtrVector().push_back(
+        //     new OpCalculateScalarFieldValues("P", p_ptr));
+        // field_eval_ptr->getOpPtrVector().push_back(
+        //     new OpTensorTimesSymmetricTensor<SPACE_DIM, SPACE_DIM>(
+        //         "U", strain_ptr, stress_ptr, mDPtr));
+        // field_eval_ptr->getOpPtrVector().push_back(
+        //     new OpCalculateHVecVectorField<3, SPACE_DIM>("FLUX", flux_ptr));
+        // field_eval_ptr->getOpPtrVector().push_back(
+        //     new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_ptr));
 
         if constexpr (SPACE_DIM == 3) {
           CHKERR mField.getInterface<FieldEvaluatorInterface>()
               ->evalFEAtThePoint3D(
                   fieldEvalCoords.data(), 1e-12, simple->getProblemName(),
-                  simple->getDomainFEName(), field_eval_data,
+                  simple->getDomainFEName(), fieldEvalData,
                   mField.get_comm_rank(), mField.get_comm_rank(), nullptr,
                   MF_EXIST, QUIET);
         } else {
           CHKERR mField.getInterface<FieldEvaluatorInterface>()
               ->evalFEAtThePoint2D(
                   fieldEvalCoords.data(), 1e-12, simple->getProblemName(),
-                  simple->getDomainFEName(), field_eval_data,
+                  simple->getDomainFEName(), fieldEvalData,
                   mField.get_comm_rank(), mField.get_comm_rank(), nullptr,
                   MF_EXIST, QUIET);
         }
@@ -1147,13 +1157,19 @@ MoFEMErrorCode Seepage::tsSolve() {
         PetscReal current_time;
         CHKERR TSGetTime(solver, &current_time);
 
+
+        auto p_temp = getFTensor0FromVec(*pressureFieldPtr);
+        auto flux_temp = getFTensor1FromMat<SPACE_DIM>(*fluxFieldPtr);
+        auto disp_temp = getFTensor1FromMat<SPACE_DIM>(*dispFieldPtr);
+        auto stress_temp = getFTensor2SymmetricFromMat<SPACE_DIM>(*stressFieldPtr);
+
         
         results_file << "Time Step: " << current_time_step << "\n";
         results_file << "Time: " << current_time << "\n";
-        results_file << "Pressure (P): " << *p_ptr << "\n";
-        results_file << "Flux (FLUX): " << *flux_ptr << "\n"; // Add flux calculation if needed
-        results_file << "Displacement (U): " << *u_ptr << "\n"; // Add displacement calculation
-        results_file << "Symmetric Stress Tensor: " << *stress_ptr << "\n";
+        results_file << "Pressure (P): " << p_temp << "\n";
+        results_file << "Flux (FLUX): " << flux_temp << "\n"; // Add flux calculation if needed
+        results_file << "Displacement (U): " << disp_temp << "\n"; // Add displacement calculation
+        results_file << "Symmetric Stress Tensor: " << stressFieldPtr << "\n";
         
         results_file.close();
         
