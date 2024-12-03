@@ -200,7 +200,7 @@ private:
   MoFEMErrorCode tsSolve();
 
   PetscBool doEvalField;
-  std::array<double, 3> fieldEvalCoords = {0., 0., 0.};
+  std::array<double, SPACE_DIM> fieldEvalCoords;
   boost::shared_ptr<FieldEvaluatorInterface::SetPtsData> fieldEvalData;
 
   std::tuple<SmartPetscObj<Vec>, SmartPetscObj<VecScatter>> uXScatter;
@@ -1082,55 +1082,6 @@ MoFEMErrorCode Seepage::tsSolve() {
 
       if (doEvalField) {
 
-        // auto scalar_field_ptr = boost::make_shared<VectorDouble>();
-        // auto vector_field_ptr = boost::make_shared<MatrixDouble>();
-        // auto tensor_field_ptr = boost::make_shared<MatrixDouble>();
-
-        // auto field_eval_data = mField.getInterface<FieldEvaluatorInterface>()
-        //                            ->getData<DomainEle>();
-
-        // if constexpr (SPACE_DIM == 3) {
-        //   CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree3D(
-        //       field_eval_data, simple->getDomainFEName());
-        // } else {
-        //   CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree2D(
-        //       field_eval_data, simple->getDomainFEName());
-        // }
-
-        // field_eval_data->setEvalPoints(fieldEvalCoords.data(), 1);
-        // auto no_rule = [](int, int, int) { return -1; };
-
-        // auto field_eval_ptr = field_eval_data->feMethodPtr.lock();
-        // field_eval_ptr->getRuleHook = no_rule;
-
-        // auto u_grad_ptr = boost::make_shared<MatrixDouble>();
-        // auto strain_ptr = boost::make_shared<MatrixDouble>();
-        // auto stress_ptr = boost::make_shared<MatrixDouble>();
-        // auto p_ptr = boost::make_shared<VectorDouble>();
-        // auto flux_ptr = boost::make_shared<MatrixDouble>();
-        // auto u_ptr = boost::make_shared<MatrixDouble>();
-
-        // auto block_params = boost::make_shared<BlockedParameters>();
-        // auto mDPtr = block_params->getDPtr();
-        // CHKERR addMatBlockOps(field_eval_ptr->getOpPtrVector(), "MAT_ELASTIC",
-        //                       "MAT_FLUID", block_params, Sev::noisy);
-        // CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
-        //     field_eval_ptr->getOpPtrVector(), {H1, HDIV});
-        // field_eval_ptr->getOpPtrVector().push_back(
-        //     new OpCalculateVectorFieldGradient<SPACE_DIM, SPACE_DIM>(
-        //         "U", u_grad_ptr));
-        // field_eval_ptr->getOpPtrVector().push_back(
-        //     new OpSymmetrizeTensor<SPACE_DIM>(u_grad_ptr, strain_ptr));
-        // field_eval_ptr->getOpPtrVector().push_back(
-        //     new OpCalculateScalarFieldValues("P", p_ptr));
-        // field_eval_ptr->getOpPtrVector().push_back(
-        //     new OpTensorTimesSymmetricTensor<SPACE_DIM, SPACE_DIM>(
-        //         "U", strain_ptr, stress_ptr, mDPtr));
-        // field_eval_ptr->getOpPtrVector().push_back(
-        //     new OpCalculateHVecVectorField<3, SPACE_DIM>("FLUX", flux_ptr));
-        // field_eval_ptr->getOpPtrVector().push_back(
-        //     new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_ptr));
-
         if constexpr (SPACE_DIM == 3) {
           CHKERR mField.getInterface<FieldEvaluatorInterface>()
               ->evalFEAtThePoint3D(
@@ -1147,7 +1098,7 @@ MoFEMErrorCode Seepage::tsSolve() {
                   MF_EXIST, QUIET);
         }
         
-        std::ofstream results_file("log_results.txt", std::ios::out | std::ios::app);
+        std::ofstream results_file("log_results.txt", std::ios::out | std::ios::trunc);
 
         if (!results_file.is_open()) {
         throw std::runtime_error("Failed to open log_results.txt for writing.");
@@ -1157,25 +1108,69 @@ MoFEMErrorCode Seepage::tsSolve() {
         PetscReal current_time;
         CHKERR TSGetTime(solver, &current_time);
 
-        results_file << "Time Step: " << current_time_step << "\n";
-        results_file << "Time: " << current_time << "\n";
+
+        // add headers
+        results_file << "Time Step, Time, ";
+        results_file << "Pressure, ";
+        for (int i = 0; i < SPACE_DIM; ++i) {
+            results_file << "Flux (FLUX_" << i << "), ";
+        }
+        for (int i = 0; i < SPACE_DIM; ++i) {
+            results_file << "Displacement (U_" << i << "), ";
+        }
+        for (int i = 0; i < SPACE_DIM; ++i) {
+            for (int j = 0; j < SPACE_DIM; ++j) {
+               results_file << "Stress (S_" << i << j << "), ";
+            }
+        }
+        results_file << "\n";
+        
+        // print results
+        results_file << current_time_step << ",";
+        results_file << current_time << ",";
 
         if (pressureFieldPtr->size()) {
           auto p_temp = getFTensor0FromVec(*pressureFieldPtr);
-          results_file << "Pressure (P): " << p_temp << "\n";
+          results_file << p_temp << ",";
         }
+
         if (fluxFieldPtr->size1()) {
           auto flux_temp = getFTensor1FromMat<SPACE_DIM>(*fluxFieldPtr);
-          results_file << "Flux (FLUX): " << flux_temp << "\n";
+          for (int i = 0; i < SPACE_DIM; ++i) {
+              results_file << flux_temp(i) << ", ";
+          }
+        } else {
+          for (int i = 0; i < SPACE_DIM; ++i) {
+              results_file << "N/A, ";
+          }
         }
+
         if (dispFieldPtr->size1()) {
-          auto disp_temp = getFTensor1FromMat<SPACE_DIM>(*dispFieldPtr);
-          results_file << "Displacement (U): " << disp_temp << "\n";
+            auto disp_temp = getFTensor1FromMat<SPACE_DIM>(*dispFieldPtr);
+            for (int i = 0; i < SPACE_DIM; ++i) {
+                results_file << disp_temp(i) << ", ";
+            }
+        } else {
+            for (int i = 0; i < SPACE_DIM; ++i) {
+                results_file << "N/A, ";
+            }
         }
+
         if (stressFieldPtr->size1()) {
-          auto stress_temp = getFTensor2SymmetricFromMat<SPACE_DIM>(*stressFieldPtr);
-          results_file << "Symmetric Stress Tensor: " << stressFieldPtr << "\n";
+            auto stress_temp = getFTensor2SymmetricFromMat<SPACE_DIM>(*stressFieldPtr);
+            for (int i = 0; i < SPACE_DIM; ++i) {
+              for (int j = 0; j < SPACE_DIM; ++j) {
+                  results_file << stress_temp(i, j) << ", ";
+              }
+            }
+        } else {
+            for (int i = 0; i < SPACE_DIM; ++i) {
+                for (int j = 0; j < SPACE_DIM; ++j) {
+                    results_file << "N/A, ";
+                }
+            }
         }
+        results_file << "\n";
         
         results_file.close();
         
