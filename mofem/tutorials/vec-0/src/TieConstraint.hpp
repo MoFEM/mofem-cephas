@@ -22,8 +22,8 @@ struct OpTieTermConstraintRhs
         uPtr(u_ptr), tieCoord(tie_coord), tieDirection(tie_direction) {
     std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
     //doEntities[MBEDGE] = true;
-    doEntities[MBTRI] = true;
-    doEntities[MBQUAD] = true;
+    //doEntities[MBTRI] = true;
+    //doEntities[MBQUAD] = true;
   }
 
   MoFEMErrorCode iNtegrate(EntData &data) {
@@ -44,10 +44,13 @@ struct OpTieTermConstraintRhs
     // get displacement
     auto t_u = getFTensor1FromMat<SPACE_DIM>(*uPtr);
     // get normal
-    FTensor::Tensor1<double, SPACE_DIM> t_Normal;
-    t_Normal(0) = -1.0;
-    t_Normal(1) = 0.0;
-    t_Normal(2) = 0.0;
+    auto t_Normal = OpBase::getFTensor1NormalsAtGaussPts();
+
+
+    // FTensor::Tensor1<double, SPACE_DIM> t_Normal;
+    // t_Normal(0) = -1.0;
+    // t_Normal(1) = 0.0;
+    // t_Normal(2) = 0.0;
     
 
     for (int gg = 0; gg != nb_integration_pts; gg++) {
@@ -64,7 +67,7 @@ struct OpTieTermConstraintRhs
       // auto g = alpha * (t_delta_current.l2() - t_delta_initial.l2());
       double tieDistance = 10.0;
 
-      auto g = alpha * (t_Normal(i) * t_u(i) - tieDistance * time);
+      auto g = alpha * ((t_Normal(i) / t_Normal.l2()) * t_u(i) - tieDistance * time);
       ++t_u;
       ++t_coords;
 //      ++t_Normal;
@@ -101,8 +104,8 @@ struct OpTieTermConstraintLhs
         uPtr(u_ptr), tieCoord(tie_coord), tieDirection(tie_direction) {
     std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
     //doEntities[MBEDGE] = true;
-    doEntities[MBTRI] = true;
-    doEntities[MBQUAD] = true;
+   // doEntities[MBTRI] = true;
+   // doEntities[MBQUAD] = true;
     this->assembleTranspose = true;
     this->sYmm = false;
     tsTime = 0.0;
@@ -127,10 +130,11 @@ struct OpTieTermConstraintLhs
     // get displacement
     auto t_u = getFTensor1FromMat<SPACE_DIM>(*uPtr);
     // get normal
-    FTensor::Tensor1<double, SPACE_DIM> t_Normal;
-    t_Normal(0) = -1.0;
-    t_Normal(1) = 0.0;
-    t_Normal(2) = 0.0;
+    auto t_Normal = OpBase::getFTensor1NormalsAtGaussPts();
+    // FTensor::Tensor1<double, SPACE_DIM> t_Normal;
+    // t_Normal(0) = -1.0;
+    // t_Normal(1) = 0.0;
+    // t_Normal(2) = 0.0;
 
     for (int gg = 0; gg != nb_integration_pts; gg++) {
       const auto alpha = t_w * vol;
@@ -143,7 +147,7 @@ struct OpTieTermConstraintLhs
       // FTensor::Tensor1<double, SPACE_DIM> t_tangent;
       // t_tangent(i) = alpha * (t_delta_current(i) / t_delta_current.l2());
       FTensor::Tensor1<double, SPACE_DIM> t_tangent;
-      t_tangent(i) = alpha * (t_Normal(i));
+      t_tangent(i) = alpha * (t_Normal(i)/t_Normal.l2());
       //++t_Normal;
 
       int rr = 0;
@@ -188,8 +192,8 @@ struct OpTieTermConstraintRhs_du
         tieDirection(tie_direction) {
     std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
     //doEntities[MBEDGE] = true;
-    doEntities[MBTRI] = true;
-    doEntities[MBQUAD] = true;
+    //doEntities[MBTRI] = true;
+    //doEntities[MBQUAD] = true;
   }
 
   MoFEMErrorCode iNtegrate(EntData &data) {
@@ -214,10 +218,12 @@ struct OpTieTermConstraintRhs_du
 
     auto &nf = OpBase::locF;
 
-    FTensor::Tensor1<double, SPACE_DIM> t_Normal;
-    t_Normal(0) = -1.0;
-    t_Normal(1) = 0.0;
-    t_Normal(2) = 0.0;
+    auto t_Normal = OpBase::getFTensor1NormalsAtGaussPts();
+
+    // FTensor::Tensor1<double, SPACE_DIM> t_Normal;
+    // t_Normal(0) = -1.0;
+    // t_Normal(1) = 0.0;
+    // t_Normal(2) = 0.0;
     //std::cout << "t_Normal: " << t_Normal(0) << " " << t_Normal(1) << " " << t_Normal(2) << std::endl;
     double tieDistance = 10.0;
 
@@ -225,7 +231,7 @@ struct OpTieTermConstraintRhs_du
       const auto alpha = t_w * vol;
       ++t_w;
       FTensor::Tensor1<double, SPACE_DIM> t_du;
-      t_du(i) = (t_Normal(i));
+      t_du(i) = (t_Normal(i)/t_Normal.l2());
       ++t_u;
       ++t_coords;
       
@@ -299,7 +305,7 @@ template <int DIM> struct OpCalculateTotalTieReactionForce : public FormsIntegra
     // get stress
     //auto t_stress = getFTensor2FromMat<SPACE_DIM, SPACE_DIM>(*stressPtr);
     // get normal
-    //auto t_normal = OpBase::getFTensor1NormalsAtGaussPts();
+    auto t_normal = OpBase::getFTensor1NormalsAtGaussPts();
 
     for (int gg = 0; gg != nb_integration_pts; gg++) {
       const auto alpha = t_w * vol;
@@ -309,7 +315,8 @@ template <int DIM> struct OpCalculateTotalTieReactionForce : public FormsIntegra
       auto g = alpha * t_lambda;
       ++t_lambda;
 
-      //t_sum_reaction(i) += alpha * t_stress(i, j) * t_normal(i);
+      t_sum_reaction(i) += g * (t_normal(i)/t_normal.l2());
+      ++t_normal;
 
 
       //int rr = 0;
