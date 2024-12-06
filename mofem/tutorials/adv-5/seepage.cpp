@@ -172,6 +172,8 @@ double default_storage = 1;
 
 PetscBool is_plane_strain = PETSC_FALSE;
 
+int save_every = 1;
+
 // #include <OpPostProcElastic.hpp>
 #include <SeepageOps.hpp>
 
@@ -506,6 +508,9 @@ MoFEMErrorCode Seepage::setupProblem() {
 
   CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-plane_strain", &is_plane_strain,
                              PETSC_NULL);
+
+  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-save_every", &save_every,
+                              PETSC_NULL);
 
   int order = 2.;
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order, PETSC_NULL);
@@ -1061,12 +1066,15 @@ MoFEMErrorCode Seepage::tsSolve() {
     monitor_ptr->preProcessHook = [&]() {
       MoFEMFunctionBegin;
 
-      CHKERR DMoFEMLoopFiniteElements(dm, simple->getDomainFEName(),
+      if (save_every && (monitor_ptr->ts_step % save_every == 0)) {
+
+        CHKERR DMoFEMLoopFiniteElements(dm, simple->getDomainFEName(),
                                       post_proc_fe,
                                       monitor_ptr->getCacheWeakPtr());
-      CHKERR post_proc_fe->writeFile(
-          "out_" + boost::lexical_cast<std::string>(monitor_ptr->ts_step) +
-          ".h5m");
+        CHKERR post_proc_fe->writeFile(
+            "out_" + boost::lexical_cast<std::string>(monitor_ptr->ts_step) +
+            ".h5m");
+      }
 
       rections_fe->f = res;
       CHKERR DMoFEMLoopFiniteElements(dm, simple->getDomainFEName(),
