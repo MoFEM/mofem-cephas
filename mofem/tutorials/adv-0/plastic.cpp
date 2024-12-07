@@ -758,7 +758,7 @@ MoFEMErrorCode Example::tsSolve() {
   };
 
   auto create_post_process_elements = [&]() {
-    auto pp_fe = boost::make_shared<PostProcEle>(mField);
+    // auto pp_fe = boost::make_shared<PostProcEle>(mField);
 
     auto push_vol_ops = [this](auto &pip) {
       CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(pip, {H1, HDIV},

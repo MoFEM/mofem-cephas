@@ -26,6 +26,8 @@ using BoundaryEle =
     PipelineManager::ElementsAndOpsByDim<SPACE_DIM>::BoundaryEle;
 using BoundaryEleOp = BoundaryEle::UserDataOperator;
 using PostProcEle = PostProcBrokenMeshInMoab<DomainEle>;
+using SkinPostProcEle = PostProcBrokenMeshInMoab<BoundaryEle>;
+using SideEle = PipelineManager::ElementsAndOpsByDim<SPACE_DIM>::FaceSideEle;
 
 using AssemblyDomainEleOp =
     FormsIntegrators<DomainEleOp>::Assembly<PETSC>::OpBase;
@@ -141,6 +143,8 @@ int order_disp = 3; //< default approximation order for the displacement field
 int atom_test = 0;
 
 int save_every = 1; //< Save every n-th step
+PetscBool do_output_domain;
+PetscBool do_output_skin;
 
 #include <ThermoElasticOps.hpp>   //< additional coupling operators
 using namespace ThermoElasticOps; //< name space of coupling operators
@@ -511,6 +515,19 @@ MoFEMErrorCode ThermoElasticProblem::getCommandLineParameters() {
                                  &default_heat_capacity, PETSC_NULL);
     CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-conductivity",
                                  &default_heat_conductivity, PETSC_NULL);
+
+    if constexpr (SPACE_DIM == 2) {
+      do_output_domain = PETSC_TRUE;
+      do_output_skin = PETSC_FALSE;
+    } else {
+      do_output_domain = PETSC_FALSE;
+      do_output_skin = PETSC_TRUE;
+    }
+
+    CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-output_domain",
+                               &do_output_domain, PETSC_NULL);
+    CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-output_skin", &do_output_skin,
+                               PETSC_NULL);
 
     MOFEM_LOG("ThermoElastic", Sev::inform)
         << "Default Young's modulus " << default_young_modulus;
@@ -1177,68 +1194,98 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
     MoFEMFunctionReturn(0);
   };
 
-  auto create_post_process_element = [&]() {
-    auto post_proc_fe = boost::make_shared<PostProcEle>(mField);
-
+  auto create_post_process_elements = [&]() {
     auto block_params = boost::make_shared<BlockedParameters>();
     auto mDPtr = block_params->getDPtr();
     auto coeff_expansion_ptr = block_params->getCoeffExpansionPtr();
-
-    CHKERR addMatBlockOps(post_proc_fe->getOpPtrVector(), "MAT_ELASTIC",
-                          "MAT_THERMAL", block_params, Sev::verbose);
-
-    CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
-        post_proc_fe->getOpPtrVector(), {H1, HDIV});
-
+    auto u_ptr = boost::make_shared<MatrixDouble>();
     auto mat_grad_ptr = boost::make_shared<MatrixDouble>();
     auto mat_strain_ptr = boost::make_shared<MatrixDouble>();
     auto mat_stress_ptr = boost::make_shared<MatrixDouble>();
-
     auto vec_temp_ptr = boost::make_shared<VectorDouble>();
     auto mat_flux_ptr = boost::make_shared<MatrixDouble>();
 
-    post_proc_fe->getOpPtrVector().push_back(
-        new OpCalculateScalarFieldValues("T", vec_temp_ptr));
-    post_proc_fe->getOpPtrVector().push_back(
-        new OpCalculateHVecVectorField<3, SPACE_DIM>("FLUX", mat_flux_ptr));
+    auto push_domain_ops = [&](auto &pp_fe) {
+      MoFEMFunctionBegin;
+      auto &pip = pp_fe->getOpPtrVector();
 
-    auto u_ptr = boost::make_shared<MatrixDouble>();
-    post_proc_fe->getOpPtrVector().push_back(
-        new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_ptr));
-    post_proc_fe->getOpPtrVector().push_back(
-        new OpCalculateVectorFieldGradient<SPACE_DIM, SPACE_DIM>("U",
-                                                                 mat_grad_ptr));
-    post_proc_fe->getOpPtrVector().push_back(
-        new OpSymmetrizeTensor<SPACE_DIM>(mat_grad_ptr, mat_strain_ptr));
-    post_proc_fe->getOpPtrVector().push_back(
-        new OpStressThermal(mat_strain_ptr, vec_temp_ptr, mDPtr,
-                            coeff_expansion_ptr, mat_stress_ptr));
+      CHKERR addMatBlockOps(pip, "MAT_ELASTIC", "MAT_THERMAL", block_params,
+                            Sev::verbose);
 
-    using OpPPMap = OpPostProcMapInMoab<SPACE_DIM, SPACE_DIM>;
+      CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(pip, {H1, HDIV});
 
-    post_proc_fe->getOpPtrVector().push_back(
+      pip.push_back(new OpCalculateScalarFieldValues("T", vec_temp_ptr));
+      pip.push_back(
+          new OpCalculateHVecVectorField<3, SPACE_DIM>("FLUX", mat_flux_ptr));
 
-        new OpPPMap(
+      pip.push_back(new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_ptr));
+      pip.push_back(new OpCalculateVectorFieldGradient<SPACE_DIM, SPACE_DIM>(
+          "U", mat_grad_ptr));
+      pip.push_back(
+          new OpSymmetrizeTensor<SPACE_DIM>(mat_grad_ptr, mat_strain_ptr));
+      pip.push_back(new OpStressThermal(mat_strain_ptr, vec_temp_ptr, mDPtr,
+                                        coeff_expansion_ptr, mat_stress_ptr));
+      MoFEMFunctionReturn(0);
+    };
 
-            post_proc_fe->getPostProcMesh(), post_proc_fe->getMapGaussPts(),
+    auto push_post_proc_ops = [&](auto &pp_fe) {
+      MoFEMFunctionBegin;
+      auto &pip = pp_fe->getOpPtrVector();
+      using OpPPMap = OpPostProcMapInMoab<SPACE_DIM, SPACE_DIM>;
 
-            {{"T", vec_temp_ptr}},
+      pip.push_back(
 
-            {{"U", u_ptr}, {"FLUX", mat_flux_ptr}},
+          new OpPPMap(
 
-            {},
+              pp_fe->getPostProcMesh(), pp_fe->getMapGaussPts(),
 
-            {{"STRAIN", mat_strain_ptr}, {"STRESS", mat_stress_ptr}}
+              {{"T", vec_temp_ptr}},
 
-            )
+              {{"U", u_ptr}, {"FLUX", mat_flux_ptr}},
 
-    );
+              {},
 
-    return post_proc_fe;
+              {{"STRAIN", mat_strain_ptr}, {"STRESS", mat_stress_ptr}}
+
+              )
+
+      );
+      MoFEMFunctionReturn(0);
+    };
+
+    auto domain_post_proc = [&]() {
+      if (do_output_domain == PETSC_FALSE)
+        return boost::shared_ptr<PostProcEle>();
+      auto pp_fe = boost::make_shared<PostProcEle>(mField);
+      CHK_MOAB_THROW(push_domain_ops(pp_fe),
+                     "push domain ops to domain element");
+      CHK_MOAB_THROW(push_post_proc_ops(pp_fe),
+                     "push post proc ops to domain element");
+      return pp_fe;
+    };
+
+    auto skin_post_proc = [&]() {
+      if (do_output_skin == PETSC_FALSE)
+        return boost::shared_ptr<SkinPostProcEle>();
+      auto pp_fe = boost::make_shared<SkinPostProcEle>(mField);
+      auto simple = mField.getInterface<Simple>();
+      auto op_side = new OpLoopSide<SideEle>(mField, simple->getDomainFEName(),
+                                             SPACE_DIM, Sev::verbose);
+      CHK_MOAB_THROW(push_domain_ops(op_side),
+                     "push domain ops to side element");
+      pp_fe->getOpPtrVector().push_back(op_side);
+      CHK_MOAB_THROW(push_post_proc_ops(pp_fe),
+                     "push post proc ops to skin element");
+      return pp_fe;
+    };
+
+    return std::make_pair(domain_post_proc(), skin_post_proc());
   };
 
   auto monitor_ptr = boost::make_shared<FEMethod>();
-  auto post_proc_fe = create_post_process_element();
+
+  auto [domain_post_proc_fe, skin_post_proc_fe] =
+      create_post_process_elements();
 
   auto set_time_monitor = [&](auto dm, auto solver) {
     MoFEMFunctionBegin;
@@ -1246,13 +1293,22 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
       MoFEMFunctionBegin;
 
       if (save_every && (monitor_ptr->ts_step % save_every == 0)) {
-
-        CHKERR DMoFEMLoopFiniteElements(dm, simple->getDomainFEName(),
-                                        post_proc_fe,
-                                        monitor_ptr->getCacheWeakPtr());
-        CHKERR post_proc_fe->writeFile(
-            "out_" + boost::lexical_cast<std::string>(monitor_ptr->ts_step) +
-            ".h5m");
+        if (do_output_domain) {
+          CHKERR DMoFEMLoopFiniteElements(dm, simple->getDomainFEName(),
+                                          domain_post_proc_fe,
+                                          monitor_ptr->getCacheWeakPtr());
+          CHKERR domain_post_proc_fe->writeFile(
+              "out_" + boost::lexical_cast<std::string>(monitor_ptr->ts_step) +
+              ".h5m");
+        }
+        if (do_output_skin) {
+          CHKERR DMoFEMLoopFiniteElements(dm, simple->getBoundaryFEName(),
+                                          skin_post_proc_fe,
+                                          monitor_ptr->getCacheWeakPtr());
+          CHKERR skin_post_proc_fe->writeFile(
+              "out_skin_" +
+              boost::lexical_cast<std::string>(monitor_ptr->ts_step) + ".h5m");
+        }
       }
 
       if (doEvalField) {
