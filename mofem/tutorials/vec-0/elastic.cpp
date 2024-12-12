@@ -317,28 +317,6 @@ MoFEMErrorCode Example::setupProblem() {
                                   fieldEvalCoords.data(), &coords_dim,
                                   &doEvalField);
 
-  if (doEvalField) {
-    vectorFieldPtr = boost::make_shared<MatrixDouble>();
-    fieldEvalData =
-        mField.getInterface<FieldEvaluatorInterface>()->getData<DomainEle>();
-
-    if constexpr (SPACE_DIM == 3) {
-      CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree3D(
-          fieldEvalData, simple->getDomainFEName());
-    } else {
-      CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree2D(
-          fieldEvalData, simple->getDomainFEName());
-    }
-
-    fieldEvalData->setEvalPoints(fieldEvalCoords.data(), 1);
-    auto no_rule = [](int, int, int) { return -1; };
-    auto field_eval_fe_ptr = fieldEvalData->feMethodPtr.lock();
-    field_eval_fe_ptr->getRuleHook = no_rule;
-
-    field_eval_fe_ptr->getOpPtrVector().push_back(
-        new OpCalculateVectorFieldValues<SPACE_DIM>("U", vectorFieldPtr));
-  }
-
   MoFEMFunctionReturn(0);
 }
 //! [Set up problem]
@@ -537,33 +515,6 @@ MoFEMErrorCode Example::solveSystem() {
   CHKERR VecGhostUpdateEnd(D, INSERT_VALUES, SCATTER_FORWARD);
   CHKERR DMoFEMMeshToLocalVector(dm, D, INSERT_VALUES, SCATTER_REVERSE);
 
-  if (doEvalField) {
-    if constexpr (SPACE_DIM == 3) {
-      CHKERR mField.getInterface<FieldEvaluatorInterface>()->evalFEAtThePoint3D(
-          fieldEvalCoords.data(), 1e-12, simple->getProblemName(),
-          simple->getDomainFEName(), fieldEvalData, mField.get_comm_rank(),
-          mField.get_comm_rank(), nullptr, MF_EXIST, QUIET);
-    } else {
-      CHKERR mField.getInterface<FieldEvaluatorInterface>()->evalFEAtThePoint2D(
-          fieldEvalCoords.data(), 1e-12, simple->getProblemName(),
-          simple->getDomainFEName(), fieldEvalData, mField.get_comm_rank(),
-          mField.get_comm_rank(), nullptr, MF_EXIST, QUIET);
-    }
-
-    if (vectorFieldPtr->size1()) {
-      auto t_disp = getFTensor1FromMat<SPACE_DIM>(*vectorFieldPtr);
-      if constexpr (SPACE_DIM == 2)
-        MOFEM_LOG("FieldEvaluator", Sev::inform)
-            << "U_X: " << t_disp(0) << " U_Y: " << t_disp(1);
-      else
-        MOFEM_LOG("FieldEvaluator", Sev::inform)
-            << "U_X: " << t_disp(0) << " U_Y: " << t_disp(1)
-            << " U_Z: " << t_disp(2);
-    }
-
-    MOFEM_LOG_SYNCHRONISE(mField.get_comm());
-  }
-
   MoFEMFunctionReturn(0);
 }
 //! [Solve]
@@ -611,6 +562,81 @@ MoFEMErrorCode Example::outputResults() {
         new OpCalculateVectorFieldValues<SPACE_DIM>("GEOMETRY", x_ptr));
     return boost::make_tuple(u_ptr, x_ptr, mat_strain_ptr, mat_stress_ptr);
   };
+
+  if (doEvalField) {
+    vectorFieldPtr = boost::make_shared<MatrixDouble>();
+    fieldEvalData =
+        mField.getInterface<FieldEvaluatorInterface>()->getData<DomainEle>();
+
+    if constexpr (SPACE_DIM == 3) {
+      CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree3D(
+          fieldEvalData, simple->getDomainFEName());
+    } else {
+      CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree2D(
+          fieldEvalData, simple->getDomainFEName());
+    }
+
+    fieldEvalData->setEvalPoints(fieldEvalCoords.data(), 1);
+    auto no_rule = [](int, int, int) { return -1; };
+    auto field_eval_fe_ptr = fieldEvalData->feMethodPtr.lock();
+    field_eval_fe_ptr->getRuleHook = no_rule;
+
+    auto [u_ptr, x_ptr, mat_strain_ptr, mat_stress_ptr] =
+        calculate_stress_ops(field_eval_fe_ptr->getOpPtrVector());
+
+    if constexpr (SPACE_DIM == 3) {
+      CHKERR mField.getInterface<FieldEvaluatorInterface>()->evalFEAtThePoint3D(
+          fieldEvalCoords.data(), 1e-12, simple->getProblemName(),
+          simple->getDomainFEName(), fieldEvalData, mField.get_comm_rank(),
+          mField.get_comm_rank(), nullptr, MF_EXIST, QUIET);
+    } else {
+      CHKERR mField.getInterface<FieldEvaluatorInterface>()->evalFEAtThePoint2D(
+          fieldEvalCoords.data(), 1e-12, simple->getProblemName(),
+          simple->getDomainFEName(), fieldEvalData, mField.get_comm_rank(),
+          mField.get_comm_rank(), nullptr, MF_EXIST, QUIET);
+    }
+
+    if (x_ptr->size1()) {
+      auto t_coords = getFTensor1FromMat<SPACE_DIM>(*x_ptr);
+      MOFEM_LOG("FieldEvaluator", Sev::inform)
+          << "Coordinates: " << t_coords(0) << " " << t_coords(1)
+          << (SPACE_DIM == 3 ? " " + std::to_string(t_coords(2)) : "");
+    }
+
+    if (u_ptr->size1()) {
+      auto t_disp = getFTensor1FromMat<SPACE_DIM>(*u_ptr);
+      MOFEM_LOG("FieldEvaluator", Sev::inform)
+          << "Displacement components: " << t_disp(0) << " " << t_disp(1)
+          << (SPACE_DIM == 3 ? " " + std::to_string(t_disp(2)) : "");
+    }
+
+    if (mat_stress_ptr->size1()) {
+      auto t_stress = getFTensor2SymmetricFromMat<SPACE_DIM>(*mat_stress_ptr);
+      MOFEM_LOG("FieldEvaluator", Sev::inform)
+          << "Stress components: " << t_stress(0, 0) << " " << t_stress(1, 1)
+          << (SPACE_DIM == 2 ? " " + std::to_string(t_stress(0, 1))
+                             : " " + std::to_string(t_stress(2, 2)) + " " +
+                                   std::to_string(t_stress(0, 1)) + " " +
+                                   std::to_string(t_stress(0, 2)) + " " +
+                                   std::to_string(t_stress(1, 2)));
+      auto von_mises_stress = std::sqrt(
+          0.5 * ((t_stress(0, 0) - t_stress(1, 1)) *
+                     (t_stress(0, 0) - t_stress(1, 1)) +
+                 (SPACE_DIM == 3 ? (t_stress(1, 1) - t_stress(2, 2)) *
+                                       (t_stress(1, 1) - t_stress(2, 2))
+                                 : 0) +
+                 (SPACE_DIM == 3 ? (t_stress(2, 2) - t_stress(0, 0)) *
+                                       (t_stress(2, 2) - t_stress(0, 0))
+                                 : 0) +
+                 6 * (t_stress(0, 1) * t_stress(0, 1) +
+                      (SPACE_DIM == 3 ? t_stress(1, 2) * t_stress(1, 2) : 0) +
+                      (SPACE_DIM == 3 ? t_stress(2, 0) * t_stress(2, 0) : 0))));
+      MOFEM_LOG("FieldEvaluator", Sev::inform)
+          << "Von Mises Stress: " << von_mises_stress;
+    }
+
+    MOFEM_LOG_SYNCHRONISE(mField.get_comm());
+  }
 
   auto post_proc_domain = [&](auto post_proc_mesh) {
     auto post_proc_fe =
@@ -985,9 +1011,10 @@ MoFEMErrorCode SetUpSchurImpl::createSubDM() {
       CHKERR DMSetUp(dm);
       MoFEMFunctionReturn(0);
     };
-    CHK_THROW_MESSAGE(create_dm_imp(),
-                      "Error in creating schurDM. It is possible that schurDM is "
-                      "already created");
+    CHK_THROW_MESSAGE(
+        create_dm_imp(),
+        "Error in creating schurDM. It is possible that schurDM is "
+        "already created");
     return dm;
   };
 
