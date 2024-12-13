@@ -139,7 +139,7 @@ MoFEMErrorCode MixedNonlinearPoisson::setupProblem() {
   MoFEMFunctionBegin;
 
   CHKERR simpleInterface->addDomainField("U", L2, AINSWORTH_LEGENDRE_BASE, 1);
-  CHKERR simpleInterface->addBoundaryField("U", L2, AINSWORTH_LEGENDRE_BASE, 1);
+  // CHKERR simpleInterface->addBoundaryField("U", L2, AINSWORTH_LEGENDRE_BASE, 1);
 
   int nb_quads = 0;
   CHKERR mField.get_moab().get_number_entities_by_type(0, MBQUAD, nb_quads);
@@ -221,6 +221,7 @@ MoFEMErrorCode MixedNonlinearPoisson::assembleSystem() {
   pipeline_mng->getDomainRhsFE().reset();
   pipeline_mng->getOpDomainRhsPipeline().clear();
   pipeline_mng->getOpDomainLhsPipeline().clear();
+  pipeline_mng->getOpBoundaryRhsPipeline().clear();
 
   CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
       pipeline_mng->getOpDomainLhsPipeline(), {HDIV});
