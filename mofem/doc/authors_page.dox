@@ -3,26 +3,29 @@
 \tableofcontents
 
 \htmlonly
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
-  integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w=="
-  crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <script src="https://use.fontawesome.com/releases/v6.5.2/js/all.js"
+  integrity="sha384-QvGJBgkqeVjFCXW39Q3psy0yEymI5WTMC5V+6LnvmNIeDfvGo1AI/j0AlTrID9lQ"
+  crossorigin="anonymous"></script>  
 \endhtmlonly
-
+  
 \section mofem_principal_authors Scientific Management
   - <a href="https://www.gla.ac.uk/schools/engineering/staff/lukaszkaczmarczyk/">Łukasz Kaczmarczyk</a>, The University of Glasgow, Scotland, UK, 
-    <a rel="me" href="https://fosstodon.org/@likask"><i class="fab fa-mastodon"></i></a> <a href="https://bsky.app/profile/likask.bsky.social"><i class="fab fa-bluesky"></i></a> <a href="https://www.linkedin.com/in/lukasz-kaczmarczyk-21a1455/"><i class="fab fa-linkedin-in"></i></a>
+    <a rel="me" href="https://fosstodon.org/@likask"><i class="fab fa-mastodon"></i></a> 
+    <a href="https://bsky.app/profile/likask.bsky.social"><i class="fab fab fa-bluesky"></i></a> 
+    <a href="https://www.linkedin.com/in/lukasz-kaczmarczyk-21a1455/"><i class="fab fa-linkedin-in"></i></a>
   - <a href="https://www.gla.ac.uk/schools/engineering/staff/chrispearce/">Chris Pearce</a>, The University of Glasgow, Scotland, UK 
   - <a href="https://www.gla.ac.uk/schools/engineering/staff/andreishvarts/">Andrei Shvarts</a>, The University of Glasgow, Scotland, UK,
   <a href="https://www.linkedin.com/in/andrei-shvarts/"><i class="fab fa-linkedin-in"></i></a>
   - <a href="https://www.gla.ac.uk/schools/engineering/staff/andrewmcbride/">Andrew McBride</a>, The University of Glasgow, Scotland, UK,
   - <a href="https://www.gla.ac.uk/schools/engineering/staff/vihargeorgiev/">Vihar Georgiev</a>, The University of Glasgow, Scotland, UK,
-    <a href="https://twitter.com/vihardabest"><i class="fab fa-twitter"></i></a> <a href="https://www.linkedin.com/in/dr-vihar-georgiev/"><i class="fab fa-linkedin-in"></i></a> 
+    <a href="https://bsky.app/profile/vihar.bsky.social"><i class="fab fab fa-bluesky"></i></a> 
+    <a href="https://www.linkedin.com/in/dr-vihar-georgiev/"><i class="fab fa-linkedin-in"></i></a> 
     
 \section mofem_core_developers Core Developers
   - <a href="https://www.gla.ac.uk/schools/engineering/staff/lukaszkaczmarczyk/">Łukasz Kaczmarczyk</a>, The University of Glasgow, Scotland, UK, 
-  <a rel="me" href="https://fosstodon.org/@likask"><i class="fab fa-mastodon"></i></a>
-  <a href="https://twitter.com/LukaszKaczmarcz"><i class="fab fa-twitter"></i></a>
-  <a href="https://www.linkedin.com/in/lukasz-kaczmarczyk-21a1455/"><i class="fab fa-linkedin-in"></i></a>
+    <a rel="me" href="https://fosstodon.org/@likask"><i class="fab fa-mastodon"></i></a> 
+    <a href="https://bsky.app/profile/likask.bsky.social"><i class="fab fab fa-bluesky"></i></a> 
+    <a href="https://www.linkedin.com/in/lukasz-kaczmarczyk-21a1455/"><i class="fab fa-linkedin-in"></i></a>
   - <a href="https://www.gla.ac.uk/schools/engineering/staff/karollewandowski/">Karol Lewandowski</a>, The University of Glasgow, Scotland, UK,
   <a href="https://twitter.com/inz_KaroleL"><i class="fab fa-twitter"></i></a>
   <a href="https://www.linkedin.com/in/karol-lewandowski-b07080b1/"><i class="fab fa-linkedin-in"></i></a>
