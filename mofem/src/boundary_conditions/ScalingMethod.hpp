@@ -31,6 +31,8 @@ struct ScalingMethod {
  */
 struct TimeScale : public ScalingMethod {
 
+  using ScalingFun = std::function<double(double)>;
+
   /**
    * @brief TimeScale constructor
    *
@@ -39,7 +41,9 @@ struct TimeScale : public ScalingMethod {
    * constructor will throw an error if this flag is set to true or throw a
    * warning and use linear scaling if this flag is set to false
    */
-  TimeScale(std::string file_name = "", bool error_if_file_not_given = false);
+  TimeScale(
+      std::string file_name = "", bool error_if_file_not_given = false,
+      ScalingFun def_scaling_fun = [](double time) { return time; });
 
   /**
    * @brief TimeScale constructor
@@ -51,8 +55,10 @@ struct TimeScale : public ScalingMethod {
    * constructor will throw an error if this flag is set to true or throw a
    * warning and use linear scaling if this flag is set to false
    */
-  TimeScale(std::string file_name, std::string delimiter,
-            bool error_if_file_not_given = false);
+  TimeScale(
+      std::string file_name, std::string delimiter,
+        bool error_if_file_not_given = false,
+      ScalingFun def_scaling_fun = [](double time) { return time; });
 
   /**
    * @brief Get scaling at a given time
@@ -61,6 +67,9 @@ struct TimeScale : public ScalingMethod {
    * @return double
    */
   double getScale(const double time);
+
+  std::string fileName = "";            //< file CSV data file
+  PetscBool argFileScale = PETSC_FALSE; //< get file name from command line
 
 private:
   MoFEMErrorCode timeData(std::string fileName, std::string delimiter);
@@ -80,16 +89,14 @@ private:
   double getLinearScale(const double time);
 
   std::map<double, double> tSeries;
-  std::string fileName = "";
   std::string fileNameFlag = "-time_scalar_file";
 
   static const std::string
       defaultDelimiter; // "(\\s*,\\s*|\\s+)"; 
 
   bool errorIfFileNotGiven;
-  std::function<double(double)> scalingMethod = [](double time) {
-    return time;
-  };
+  ScalingFun defScalingMethod = [](double time) { return time; };
+  ScalingFun scalingMethod = defScalingMethod;
 };
 
 /** \brief Force scale operator for reading four columns (time and vector)
