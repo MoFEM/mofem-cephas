@@ -342,7 +342,7 @@ MoFEMErrorCode Example::setupProblem() {
   auto add_tie_lagrange_multiplier = [&]() {
     MoFEMFunctionBegin;
     CHKERR simple->addBoundaryField("LAMBDA", H1, base, 1);
-    CHKERR simple->addBoundaryField("LAMBDA_ROT", H1, base, SPACE_DIM);
+    CHKERR simple->addBoundaryField("LAMBDA_ROT", H1, base, 1);
     CHKERR simple->setFieldOrder("LAMBDA", 0);
     CHKERR simple->setFieldOrder("LAMBDA_ROT", 0);
     for (auto &t : tieBlocks) {
@@ -490,9 +490,9 @@ MoFEMErrorCode Example::assembleSystem() {
         pip.push_back(new OpTieTermConstrainDistanceLhs<SPACE_DIM>(
             "LAMBDA", "U", u_ptr, t.tieCoord, t.tieDirection,
             boost::make_shared<Range>(t.tieFaces)));
-        pip.push_back(new OpTieTermConstrainRotationLhs<SPACE_DIM>(
+        pip.push_back(new OpTieTermConstrainRotationNormalLhs<SPACE_DIM>(
             "LAMBDA_ROT", "U", u_ptr, t.tieCoord, t.tieDirection,
-            boost::make_shared<Range>(t.tieFaces)));
+            boost::make_shared<Range>(t.tieFaces), "y"));
       }
       MoFEMFunctionReturn(0);
     };
@@ -505,9 +505,9 @@ MoFEMErrorCode Example::assembleSystem() {
         pip.push_back(new OpTieTermConstrainDistanceRhs<SPACE_DIM>(
             "LAMBDA", u_ptr, t.tieCoord, t.tieDirection,
             boost::make_shared<Range>(t.tieFaces)));
-        pip.push_back(new OpTieTermConstrainRotationRhs<SPACE_DIM>(
+        pip.push_back(new OpTieTermConstrainRotationNormalRhs<SPACE_DIM>(
             "LAMBDA_ROT", u_ptr, t.tieCoord, t.tieDirection,
-            boost::make_shared<Range>(t.tieFaces)));
+            boost::make_shared<Range>(t.tieFaces), "y"));
       }
       MoFEMFunctionReturn(0);
     };
@@ -841,7 +841,7 @@ MoFEMErrorCode Example::checkResults() {
   if (A == AssemblyType::PETSC) {
 
     auto lambda_ptr = boost::make_shared<VectorDouble>();
-    auto lambda_rotation_ptr = boost::make_shared<MatrixDouble>();
+    auto lambda_rotation_ptr = boost::make_shared<VectorDouble>();
     auto u_ptr = boost::make_shared<MatrixDouble>();
 
     pip->getOpBoundaryRhsPipeline().push_back(
@@ -850,7 +850,7 @@ MoFEMErrorCode Example::checkResults() {
     pip->getOpBoundaryRhsPipeline().push_back(
         new OpCalculateScalarFieldValues("LAMBDA", lambda_ptr));
     pip->getOpBoundaryRhsPipeline().push_back(
-        new OpCalculateVectorFieldValues<SPACE_DIM>("LAMBDA_ROT", lambda_rotation_ptr));
+        new OpCalculateScalarFieldValues("LAMBDA_ROT", lambda_rotation_ptr));
 
     for (auto &t : tieBlocks) {
       pip->getOpBoundaryRhsPipeline().push_back(
@@ -858,9 +858,9 @@ MoFEMErrorCode Example::checkResults() {
               "U", "LAMBDA", u_ptr, lambda_ptr, t.tieCoord, t.tieDirection,
               boost::make_shared<Range>(t.tieFaces)));
       pip->getOpBoundaryRhsPipeline().push_back(
-          new OpTieTermConstrainRotationRhs_du<SPACE_DIM>(
+          new OpTieTermConstrainRotationNormalRhs_du<SPACE_DIM>(
               "U", "LAMBDA_ROT", u_ptr, lambda_rotation_ptr, t.tieCoord, t.tieDirection,
-              boost::make_shared<Range>(t.tieFaces)));
+              boost::make_shared<Range>(t.tieFaces), "y"));
     }
   }
   auto dm = simple->getDM();
