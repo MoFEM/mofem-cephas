@@ -8,8 +8,10 @@
 -mat_mumps_icntl_14 800
 -mat_mumps_icntl_24 1
 -mat_mumps_icntl_13 1
+-order 2
+-geom_order 2
 -ksp_monitor
 -out_skin 1
--atom_test 1
--geom_order 2
+-atom_test 0
+
 # ---
