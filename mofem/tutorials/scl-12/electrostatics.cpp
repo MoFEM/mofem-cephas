@@ -4,7 +4,7 @@
  *  */
 
 #ifndef EXECUTABLE_DIMENSION
-  #define EXECUTABLE_DIMENSION 3
+#define EXECUTABLE_DIMENSION 3
 #endif
 
 #include <electrostatics.hpp>
@@ -28,7 +28,7 @@ private:
   MoFEMErrorCode getTotalEnergy();
   MoFEMErrorCode getElectrodeCharge();
 
-  int oRder = 2; // default order
+  int oRder = 2;      // default order
   int geom_order = 1; // default gemoetric order
   MoFEM::Interface &mField;
   Simple *simpleInterface;
@@ -48,7 +48,7 @@ private:
   PetscBool out_skin = PETSC_FALSE;  //
   PetscBool is_partitioned = PETSC_FALSE;
   enum VecElements { ZERO = 0, ONE = 1, LAST_ELEMENT };
-  int atomTest=0;
+  int atomTest = 0;
 };
 
 Electrostatics::Electrostatics(MoFEM::Interface &m_field)
@@ -112,15 +112,16 @@ MoFEMErrorCode Electrostatics::setupProblem() {
   auto base = get_base();
   CHKERR simpleInterface->addDomainField(domainField, H1, base, 1);
   CHKERR simpleInterface->addBoundaryField(domainField, H1, base, 1);
-  CHKERR simpleInterface->addDataField("GEOMETRY", H1, base, SPACE_DIM);
 
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &oRder, PETSC_NULL);
 
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-geom_order", &geom_order,
                             PETSC_NULL);
 
-  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-atom_test", &atomTest, PETSC_NULL);
+  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-atom_test", &atomTest,
+                            PETSC_NULL);
   CHKERR simpleInterface->setFieldOrder(domainField, oRder);
+  CHKERR simpleInterface->addDataField("GEOMETRY", H1, base, SPACE_DIM);
   CHKERR simpleInterface->setFieldOrder("GEOMETRY", geom_order);
 
   auto project_ho_geometry = [&]() {
@@ -251,6 +252,8 @@ MoFEMErrorCode Electrostatics::setupProblem() {
   CHKERR mField.modify_finite_element_add_field_row("INTERFACE", domainField);
   CHKERR mField.modify_finite_element_add_field_col("INTERFACE", domainField);
   CHKERR mField.modify_finite_element_add_field_data("INTERFACE", domainField);
+  CHKERR mField.modify_finite_element_add_field_data("INTERFACE", "GEOMETRY");
+
   CHKERR mField.add_ents_to_finite_element_by_dim(int_electr_ents,
                                                   SPACE_DIM - 1, "INTERFACE");
   // add the electrode entities to the field
@@ -258,11 +261,14 @@ MoFEMErrorCode Electrostatics::setupProblem() {
   CHKERR mField.modify_finite_element_add_field_row("ELECTRODE", domainField);
   CHKERR mField.modify_finite_element_add_field_col("ELECTRODE", domainField);
   CHKERR mField.modify_finite_element_add_field_data("ELECTRODE", domainField);
+  CHKERR mField.modify_finite_element_add_field_data("ELECTRODE", "GEOMETRY");
+
   CHKERR mField.add_ents_to_finite_element_by_dim(electrode_ents, SPACE_DIM - 1,
                                                   "ELECTRODE");
 
   // sync field entities
   mField.getInterface<CommInterface>()->synchroniseFieldEntities(domainField);
+  mField.getInterface<CommInterface>()->synchroniseFieldEntities("GEOMETRY");
   CHKERR simpleInterface->defineFiniteElements();
   CHKERR simpleInterface->defineProblem(PETSC_TRUE);
   CHKERR simpleInterface->buildFields();
@@ -431,13 +437,14 @@ MoFEMErrorCode Electrostatics::solveSystem() {
   auto ksp_solver = pipeline_mng->createKSP();
 
   boost::shared_ptr<ForcesAndSourcesCore> null; ///< Null element does
-  CHKERR DMMoFEMKSPSetComputeRHS(simpleInterface->getDM(), "INTERFACE",
-                                 interFaceRhsFe, null, null);
+  DM dm;
+  CHKERR simpleInterface->getDM(&dm);
+
+  CHKERR DMMoFEMKSPSetComputeRHS(dm, "INTERFACE", interFaceRhsFe, null, null);
 
   CHKERR KSPSetFromOptions(ksp_solver);
 
   // Create RHS and solution vectors
-  auto dm = simpleInterface->getDM();
   auto F = createDMVector(dm);
   auto D = vectorDuplicate(F);
   // Solve the system
@@ -704,32 +711,35 @@ MoFEMErrorCode Electrostatics::getElectrodeCharge() {
     cal_charge_elec1 = c_ptr[0];  // Read charge at the first electrode
     cal_charge_elec2 = c_ptr[1];  // Read charge at the second electrode
     cal_total_energy = te_ptr[0]; // Read total energy of the system
-
+    if (std::isnan(cal_charge_elec1) || std::isnan(cal_charge_elec2) ||
+        std::isnan(cal_total_energy)) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+              "Atom test failed! NaN detected in calculated values.");
+    }
     switch (atomTest) {
-    case 1:                         // 2D & 3D test
-    // Expected charges at the electrodes
-    ref_charge_elec1 = 50.0;
-    ref_charge_elec2 = -50.0;
-    // Expected total energy of the system
-    ref_tot_energy = 500.0;
-    tol = 1e-10;
+    case 1: // 2D & 3D test
+      // Expected charges at the electrodes
+      ref_charge_elec1 = 50.0;
+      ref_charge_elec2 = -50.0;
+      // Expected total energy of the system
+      ref_tot_energy = 500.0;
+      tol = 1e-10;
       break;
-    case 2:                         // wavy 3D test
-    ref_charge_elec1 =  10.00968352472943;
-    ref_charge_elec2 =  0.0; // no electrode
-    ref_tot_energy = 50.597;
-    tol = 1e-3;
+    case 2: // wavy 3D test
+      ref_charge_elec1 = 10.00968352472943;
+      ref_charge_elec2 = 0.0; // no electrode
+      ref_tot_energy = 50.5978;
+      tol = 1e-4;
       break;
     default:
       SETERRQ1(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
                "atom test %d does not exist", atomTest);
     }
-  
 
     // Validate the results
-    if (fabs(ref_charge_elec1 - cal_charge_elec1) > tol ||
-        fabs(ref_charge_elec2 - cal_charge_elec2) > tol ||
-        fabs(ref_tot_energy - cal_total_energy) > tol) {
+    if (std::abs(ref_charge_elec1 - cal_charge_elec1) > tol ||
+        std::abs(ref_charge_elec2 - cal_charge_elec2) > tol ||
+        std::abs(ref_tot_energy - cal_total_energy) > tol) {
       SETERRQ1(
           PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
           "atom test %d failed! Calculated values do not match expected values",
