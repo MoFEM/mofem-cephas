@@ -3,53 +3,57 @@
 \tableofcontents
 
 \htmlonly
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
-  integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w=="
-  crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <script src="https://use.fontawesome.com/releases/v6.5.2/js/all.js"
+  integrity="sha384-QvGJBgkqeVjFCXW39Q3psy0yEymI5WTMC5V+6LnvmNIeDfvGo1AI/j0AlTrID9lQ"
+  crossorigin="anonymous"></script>  
 \endhtmlonly
-
+  
 \section mofem_principal_authors Scientific Management
   - <a href="https://www.gla.ac.uk/schools/engineering/staff/lukaszkaczmarczyk/">Łukasz Kaczmarczyk</a>, The University of Glasgow, Scotland, UK, 
-    <a rel="me" href="https://fosstodon.org/@likask"><i class="fab fa-mastodon"></i></a> <a href="https://twitter.com/LukaszKaczmarcz"><i class="fab fa-twitter"></i></a> <a href="https://www.linkedin.com/feed/"><i class="fab fa-linkedin-in"></i></a>
+    <a rel="me" href="https://fosstodon.org/@likask"><i class="fab fa-mastodon"></i></a> 
+    <a href="https://bsky.app/profile/likask.bsky.social"><i class="fab fab fa-bluesky"></i></a> 
+    <a href="https://www.linkedin.com/in/lukasz-kaczmarczyk-21a1455/"><i class="fab fa-linkedin-in"></i></a>
   - <a href="https://www.gla.ac.uk/schools/engineering/staff/chrispearce/">Chris Pearce</a>, The University of Glasgow, Scotland, UK 
   - <a href="https://www.gla.ac.uk/schools/engineering/staff/andreishvarts/">Andrei Shvarts</a>, The University of Glasgow, Scotland, UK,
   <a href="https://www.linkedin.com/in/andrei-shvarts/"><i class="fab fa-linkedin-in"></i></a>
   - <a href="https://www.gla.ac.uk/schools/engineering/staff/andrewmcbride/">Andrew McBride</a>, The University of Glasgow, Scotland, UK,
   - <a href="https://www.gla.ac.uk/schools/engineering/staff/vihargeorgiev/">Vihar Georgiev</a>, The University of Glasgow, Scotland, UK,
-    <a href="https://twitter.com/vihardabest"><i class="fab fa-twitter"></i></a> <a href="https://www.linkedin.com/in/dr-vihar-georgiev/"><i class="fab fa-linkedin-in"></i></a> 
+    <a href="https://bsky.app/profile/vihar.bsky.social"><i class="fab fab fa-bluesky"></i></a> 
+    <a href="https://www.linkedin.com/in/dr-vihar-georgiev/"><i class="fab fa-linkedin-in"></i></a> 
     
 \section mofem_core_developers Core Developers
   - <a href="https://www.gla.ac.uk/schools/engineering/staff/lukaszkaczmarczyk/">Łukasz Kaczmarczyk</a>, The University of Glasgow, Scotland, UK, 
-  <a rel="me" href="https://fosstodon.org/@likask"><i class="fab fa-mastodon"></i></a>
-  <a href="https://twitter.com/LukaszKaczmarcz"><i class="fab fa-twitter"></i></a>
-  <a href="https://www.linkedin.com/in/lukasz-kaczmarczyk-21a1455/"><i class="fab fa-linkedin-in"></i></a>
-  - <a href="https://www.gla.ac.uk/schools/engineering/staff/karollewandowski/">Karol Lewandowski</a>, The University of Glasgow, Scotland, UK,
+    <a rel="me" href="https://fosstodon.org/@likask"><i class="fab fa-mastodon"></i></a> 
+    <a href="https://bsky.app/profile/likask.bsky.social"><i class="fab fab fa-bluesky"></i></a> 
+    <a href="https://www.linkedin.com/in/lukasz-kaczmarczyk-21a1455/"><i class="fab fa-linkedin-in"></i></a>
+  - <a href="https://www.gla.ac.uk/schools/engineering/staff/index.html/staffcontact/person/4edce6e1849f">Karol Lewandowski</a>, The University of Glasgow, Scotland, UK,
   <a href="https://twitter.com/inz_KaroleL"><i class="fab fa-twitter"></i></a>
   <a href="https://www.linkedin.com/in/karol-lewandowski-b07080b1/"><i class="fab fa-linkedin-in"></i></a>
-  - <a href="https://www.gla.ac.uk/schools/engineering/staff/ignatiosathanasiadis/">Ignatios Athanasiadis</a>, The University of Glasgow, Scotland, UK, 
-  <a href="https://twitter.com/Ignatios_Ath"><i class="fab fa-twitter"></i></a>
-  <a href="https://www.linkedin.com/in/ignatios-athanasiadis-923937b7/"><i class="fab fa-linkedin-in"></i></a>
   - <a href="https://www.gla.ac.uk/schools/engineering/staff/andreishvarts/">Andrei Shvarts</a>, The University of Glasgow, Scotland, UK,
   <a href="https://www.linkedin.com/in/andrei-shvarts/"><i class="fab fa-linkedin-in"></i></a>
   - Adriana Kuliková, The University of Glasgow, Scotland, UK
+  - <a href="https://www.gla.ac.uk/schools/engineering/staff/callumruncie/">Callum Runcie</a>, The University of Glasgow, Scotland, UK, <a href="https://www.linkedin.com/in/callum-runcie-14b2b514b/"><i class="fab fa-linkedin-in"></i></a>
+  - <a href="https://www.gla.ac.uk/schools/engineering/staff/rosswilliams/">Ross Williams</a>, The University of Glasgow, Scotland, UK, <a href="https://www.linkedin.com/in/ross-williams-3b38a9a1/"><i class="fab fa-linkedin-in"></i></a>
 
 \section mofem_users_modules_developers Users Modules Contributors
 
   - Richard Olley, The University of Glasgow, Scotland, UK
-  - Callum Runcie, The University of Glasgow, Scotland, UK
-  - Ross Williams, The University of Glasgow, Scotland, UK
   - Joshua Gorham, The University of Glasgow, Scotland, UK
-  - MD Tanzib Ehsan Sanglap, The University of Glasgow, Scotland, UK
-  - Yingjia (Leo) Gao, The University of Glasgow, Scotland, UK
-  - <a href="https://www.gla.ac.uk/schools/engineering/staff/danielebarbera/">Daniele Barbera</a>, Advanced Forming Research Centre, Scotland, UK
+  - MD Tanzib Ehsan Sanglap, The University of Glasgow, Scotland, UK, <a href="https://www.linkedin.com/in/shonglap/"><i class="fab fa-linkedin-in"></i></a>
+  - Yingjia (Leo) Gao, The University of Glasgow, Scotland, UK, <a href="https://www.linkedin.com/in/yingjia-gao-064742295/"><i class="fab fa-linkedin-in"></i></a>
   - Ananya Bijaya, The University of Glasgow, Scotland, UK
+  - Lily Sierra Fisher, The University of Glasgow, Scotland, UK, <a href="https://www.linkedin.com/in/lily-sierra/"><i class="fab fa-linkedin-in"></i></a>
 
 \section mofem_users_modules_past_contributors Past Contributors
 
+- <a href="https://www.gla.ac.uk/schools/engineering/staff/ignatiosathanasiadis/">Ignatios Athanasiadis</a>, 
+  <a href="https://twitter.com/Ignatios_Ath"><i class="fab fa-twitter"></i></a>
+  <a href="https://www.linkedin.com/in/ignatios-athanasiadis-923937b7/"><i class="fab fa-linkedin-in"></i></a>
+- <a href="https://www.gla.ac.uk/schools/engineering/staff/danielebarbera/">Daniele Barbera</a>, Advanced Forming Research Centre, Scotland, UK
 - <a href="https://pure.qub.ac.uk/en/persons/zahur-ullah">Zahur Ullah</a>, Queen's University, Northern Ireland, UK
 - <a href="https://www.northumbria.ac.uk/about-us/our-staff/n/hoang-nguyen/">Hoang Nguyen</a>, Northumbria University, England, UK
 - Christophe-Alexandre Chalons-Mouriesse
-- Preslav Alexandrov
+- Preslav Alexandrov, Department of Computer Science and Technology, University of Cambridge, England, UK
 - Mebratu Wakeni
 - Ross Mackenzie
 - Euan Muir
