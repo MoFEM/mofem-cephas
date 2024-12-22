@@ -8,10 +8,9 @@
 -mat_mumps_icntl_14 800
 -mat_mumps_icntl_24 1
 -mat_mumps_icntl_13 1
--order 2
--geom_order 2
+-ksp_rtol 1e-13
 -ksp_monitor
--out_skin 1
+-ksp_converged_reason
+-out_skin 0
 -atom_test 0
-
 # ---
