@@ -491,6 +491,11 @@ MoFEMErrorCode Core::registerSubInterfaces() {
 #ifdef WITH_MED
   CHKERR regSubInterface<MedInterface>();
 #endif
+#ifdef WITH_MGIS
+  CHKERR regSubInterface<MFrontInterface<ModelHypothesis::TRIDIMENSIONAL>>();
+  CHKERR regSubInterface<MFrontInterface<ModelHypothesis::PLANESTRAIN>>();
+  CHKERR regSubInterface<MFrontInterface<ModelHypothesis::AXISYMMETRICAL>>();
+#endif
   CHKERR regSubInterface<FieldEvaluatorInterface>();
   CHKERR regSubInterface<BcManager>();
 

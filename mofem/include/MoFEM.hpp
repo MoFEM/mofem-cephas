@@ -158,4 +158,8 @@ using FTensor::operator>>;
 #include <EssentialHeatFluxCubitBcData.hpp>
 #include <EssentialMPCsData.hpp>
 
+#ifdef WITH_MGIS
+#include <MFrontInterface.hpp>
+#endif // WITH_MGIS
+
 #endif // MOFEM_HPP__

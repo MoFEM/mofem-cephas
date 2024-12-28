@@ -24,4 +24,8 @@ const static int debug = 0;
   #include "impl/MedInterface.cpp"
 #endif
 
+#ifdef WITH_MGIS
+  #include "impl/MFrontInterface.cpp"
+#endif
+
 #include "impl/CutMeshInterface.cpp"
