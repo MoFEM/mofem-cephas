@@ -186,6 +186,7 @@ include(cmake/FindADOL-C.cmake)
 include(cmake/FindTetGen.cmake)
 include(cmake/FindTriangle.cmake)
 include(cmake/FindMed.cmake)
+include(cmake/FindMFront.cmake)
 
 # Other
 include(cmake/ExportFile.cmake)

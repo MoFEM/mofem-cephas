@@ -3,6 +3,7 @@ install(
     FindADOL-C.cmake
     FindMed.cmake
     FindTetGen.cmake
+    FindMFront.cmake
     RunAndComp.cmake
     GetGitRevisionSimple.cmake
     DESTINATION 
