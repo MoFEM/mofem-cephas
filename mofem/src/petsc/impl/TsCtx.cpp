@@ -158,6 +158,10 @@ PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
     CHKERR VecAssemblyEnd(F);
   }
 
+  if(ts_ctx->tsDebugHook) {
+    CHKERR ts_ctx->tsDebugHook(ts, t, u, u_t, PETSC_NULL, F, ctx);
+  }
+
   PetscLogEventEnd(ts_ctx->MOFEM_EVENT_TsCtxIFunction, 0, 0, 0, 0);
   MoFEMFunctionReturn(0);
 }
@@ -413,6 +417,10 @@ PetscErrorCode TsSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx) {
     CHKERR VecGhostUpdateEnd(F, ADD_VALUES, SCATTER_REVERSE);
     CHKERR VecAssemblyBegin(F);
     CHKERR VecAssemblyEnd(F);
+  }
+
+  if (ts_ctx->tsDebugHook) {
+    CHKERR ts_ctx->tsDebugHook(ts, t, u, PETSC_NULL, PETSC_NULL, F, ctx);
   }
 
   PetscLogEventEnd(ts_ctx->MOFEM_EVENT_TsCtxRHSFunction, 0, 0, 0, 0);
@@ -715,6 +723,10 @@ PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
     CHKERR VecGhostUpdateEnd(F, ADD_VALUES, SCATTER_REVERSE);
     CHKERR VecAssemblyBegin(F);
     CHKERR VecAssemblyEnd(F);
+  }
+
+  if (ts_ctx->tsDebugHook) {
+    CHKERR ts_ctx->tsDebugHook(ts, t, u, u_t, u_tt, F, ctx);
   }
 
   PetscLogEventEnd(ts_ctx->MOFEM_EVENT_TsCtxIFunction, 0, 0, 0, 0);

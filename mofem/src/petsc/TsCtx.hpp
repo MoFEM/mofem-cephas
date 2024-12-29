@@ -42,6 +42,10 @@ struct TsCtx {
   BasicMethodsSequence postProcessRHSJacobian;
   BasicMethodsSequence postProcessRHSFunction;
 
+  boost::function<MoFEMErrorCode(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
+                                 Vec F, void *ctx)>
+      tsDebugHook;
+
   bool zeroMatrix;
 
   TsCtx(MoFEM::Interface &m_field, const std::string &problem_name);
