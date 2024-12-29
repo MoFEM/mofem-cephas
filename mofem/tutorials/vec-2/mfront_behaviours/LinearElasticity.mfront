@@ -1,0 +1,28 @@
+@DSL       DefaultDSL;
+@Behaviour LinearElasticity;
+@Author    Andrei Shvarts;
+@Date      30/03/2023; 
+
+@Description{
+  "Linear Elasticity"
+}
+
+@MaterialProperty stress young_modulus;
+young_modulus.setGlossaryName("YoungModulus");
+@MaterialProperty real poisson_ratio;
+poisson_ratio.setGlossaryName("PoissonRatio");
+
+@StateVariable StrainStensor eel;
+eel.setGlossaryName("ElasticStrain");
+
+@ProvidesSymmetricTangentOperator;
+
+@Integrator{
+  const auto lambda = computeLambda(young_modulus,poisson_ratio);
+  const auto mu     = computeMu(young_modulus,poisson_ratio);
+  eel += deto;
+  sig = lambda*trace(eel)*Stensor::Id()+2*mu*eel;
+  if(computeTangentOperator_){
+      Dt = lambda*Stensor4::IxI()+2*mu*Stensor4::Id();
+  }
+}

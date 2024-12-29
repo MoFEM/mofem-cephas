@@ -15,10 +15,27 @@ set(permissions_execute
   OWNER_EXECUTE 
   GROUP_EXECUTE)
 
+  add_custom_target(
+    vec_2_copy_mesh_files_directory
+    ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory 
+    ${CMAKE_CURRENT_SOURCE_DIR}/mesh_files ${CMAKE_CURRENT_BINARY_DIR}/mesh_files
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Copying mesh_files directory" VERBATIM)
+
+  add_custom_target(
+    vec_2_copy_mfront_behaviours_directory
+    ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory 
+    ${CMAKE_CURRENT_SOURCE_DIR}/mfront_behaviours ${CMAKE_CURRENT_BINARY_DIR}/mfront_behaviours
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Copying mfront_behaviours directory" VERBATIM)
+  
+
 tutorials_copy_and_install("*.msh" "${permissions_default}")
 tutorials_copy_and_install("*.cfg" "${permissions_default}")
 # tutorials_copy_and_install("*.jou" "${permissions_default}")
-tutorials_copy_and_install("meshes/*.cub" "${permissions_default}")
+# tutorials_copy_and_install("meshes/*.cub" "${permissions_default}")
 tutorials_copy_and_install("*.cub" "${permissions_default}")
 tutorials_copy_and_install("*.h5m" "${permissions_default}")
 tutorials_copy_and_install("*.petsc" "${permissions_default}")
@@ -26,9 +43,9 @@ tutorials_copy_and_install("*.sh" "${permissions_execute}")
 tutorials_copy_and_install("*.geo" "${permissions_execute}")
 
 tutorials_build_and_install(
-  nonlinear_elastic ${CMAKE_CURRENT_SOURCE_DIR}/nonlinear_elastic.cpp)
+  nonlinear_elastic_3d ${CMAKE_CURRENT_SOURCE_DIR}/nonlinear_elastic.cpp)
 set_target_properties(
-  nonlinear_elastic PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=3")
+  nonlinear_elastic_3d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=3")
 
 tutorials_build_and_install(
   nonlinear_elastic_2d ${CMAKE_CURRENT_SOURCE_DIR}/nonlinear_elastic.cpp)
@@ -38,15 +55,15 @@ set_target_properties(
 add_test(
 nonlinear_elastic
 ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elastic
--file_name ${CMAKE_CURRENT_SOURCE_DIR}/beam_3D.cub -order 2
+${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elastic_3d
+-file_name ${CMAKE_CURRENT_BINARY_DIR}/beam_3D.cub -order 2
 -ts_max_time 0.3 -ts_dt 0.1 -log_no_color -test 1)
 
 add_test(
   test_rotation_0_2d
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elastic_2d
-  -file_name ${CMAKE_CURRENT_SOURCE_DIR}/meshes/LShape_Rot_D0_2D.cub 
+  -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/LShape_Rot_D0_2D.cub 
   -order 2 -ts_max_time 1.0 -ts_dt 0.05
   -log_no_color -test 2)
 
@@ -54,14 +71,14 @@ add_test(
   test_rotation_1_2d
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elastic_2d
-  -file_name ${CMAKE_CURRENT_SOURCE_DIR}/meshes/LShape_Rot_D1_2D.cub -order 2 -ts_max_time 1.0 -ts_dt 0.05
+  -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/LShape_Rot_D1_2D.cub -order 2 -ts_max_time 1.0 -ts_dt 0.05
   -log_no_color -test 3)
 
 add_test(
   test_nelastic_mpc_links
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elastic_2d -ts_max_steps 25
-  -file_name ${CMAKE_CURRENT_SOURCE_DIR}/meshes/LShape_Rot_MPC_link.cub
+  -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/LShape_Rot_MPC_link.cub
   -order 2 -ts_max_time 1.0 -ts_dt 0.05 
   -log_no_color -test 4 -pc_type lu -young_modulus 100 -poisson_ratio 0.3)
 
@@ -69,14 +86,14 @@ add_test(
     test_nelastic_mpc_3_part
     ${MPI_RUN} ${MPI_RUN_FLAGS} -np 3
     ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elastic_2d -ts_max_steps 25
-    -file_name ${CMAKE_CURRENT_SOURCE_DIR}/meshes/LShape_Rot_MPC_link_3_part.h5m -order 2 -ts_max_time 1.0 -ts_dt 0.05 
+    -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/LShape_Rot_MPC_link_3_part.h5m -order 2 -ts_max_time 1.0 -ts_dt 0.05 
     -log_no_color -test 4 -pc_type lu -young_modulus 100 -poisson_ratio 0.3)
   
   add_test(
   test_nelastic_mpc_master
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elastic_2d -ts_max_steps 25
-  -file_name ${CMAKE_CURRENT_SOURCE_DIR}/meshes/LShape_Rot_MPC_link_master.cub
+  -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/LShape_Rot_MPC_link_master.cub
   -order 2 -ts_max_time 1.0 -ts_dt 0.05 
   -log_no_color -test 5 -pc_type lu -young_modulus 100 -poisson_ratio 0.3)
 
@@ -85,20 +102,20 @@ add_test(
   test_nelastic_mpc_master_swap
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elastic_2d -ts_max_steps 25
-  -file_name ${CMAKE_CURRENT_SOURCE_DIR}/meshes/LShape_Rot_MPC_link_master_swap.cub -order 2 -ts_max_time 1.0 -ts_dt 0.05
+  -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/LShape_Rot_MPC_link_master_swap.cub -order 2 -ts_max_time 1.0 -ts_dt 0.05
   -log_no_color -test 6 -pc_type lu -young_modulus 100 -poisson_ratio 0.3)
 
 add_test(
   test_nelastic_mpc_link_Y
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elastic_2d -ts_max_steps 25
-  -file_name ${CMAKE_CURRENT_SOURCE_DIR}/meshes/LShape_Rot_MPC_link_Y.cub -order 2 -ts_max_time 1.0 -ts_dt 0.05
+  -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/LShape_Rot_MPC_link_Y.cub -order 2 -ts_max_time 1.0 -ts_dt 0.05
   -log_no_color -test 7 -pc_type lu -young_modulus 100 -poisson_ratio 0.3)
 
 add_test(
   test_nelastic_mpc_link_3D_repr
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elastic -ts_max_steps 25
-  -file_name ${CMAKE_CURRENT_SOURCE_DIR}/meshes/beam3D_MPCs.cub -order 1 -ts_dt 0.1 -ts_max_time 1.0 
+  ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elastic_3d -ts_max_steps 25
+  -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/beam3D_MPCs.cub -order 1 -ts_dt 0.1 -ts_max_time 1.0 
   -pc_type lu -log_no_color -test 8 -pc_type lu -young_modulus 100 -poisson_ratio 0.3)
 

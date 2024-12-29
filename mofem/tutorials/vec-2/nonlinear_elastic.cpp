@@ -135,6 +135,18 @@ MoFEMErrorCode Example::setupProblem() {
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order, PETSC_NULL);
   CHKERR simple->setFieldOrder("U", order);
   CHKERR simple->setUp();
+
+  ModelHypothesis model = TRIDIMENSIONAL;
+
+  cout << "HAHAHA" << endl;
+
+  MFrontInterfaceBase *mfront_interface_ptr;
+  mfront_interface_ptr = mField.getInterface<MFrontInterface<TRIDIMENSIONAL>>();
+  CHKERR mfront_interface_ptr->getCommandLineParameters();
+
+
+
+
   MoFEMFunctionReturn(0);
 }
 //! [Set up problem]
