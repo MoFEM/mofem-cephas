@@ -45,4 +45,12 @@ if(PRECOMPILED_HEADRES)
   add_dependencies(mofem_interfaces Includes.hpp.pch_copy)
 endif(PRECOMPILED_HEADRES)
 
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    target_compile_definitions(mofem_interfaces PUBLIC DEFAULT_LIB_EXTENSION="dylib")
+    set(DEFAULT_LIB_EXTENSION "dylib")
+  else()
+    target_compile_definitions(mofem_interfaces PUBLIC DEFAULT_LIB_EXTENSION="so")
+    set(DEFAULT_LIB_EXTENSION "so")
+endif()
+
 install(TARGETS mofem_interfaces DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
