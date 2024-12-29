@@ -56,15 +56,42 @@
  *
  */
 
-
-
 #pragma once
 
 namespace EigenMatrix {
 
 template <typename T, int Dim> using Val = const FTensor::Tensor1<T, Dim>;
 template <typename T, int Dim> using Vec = const FTensor::Tensor2<T, Dim, Dim>;
+template <typename T, int Dim>
+using VecSymm = const FTensor::Tensor2_symmetric<T, Dim>;
+
 template <typename T> using Fun = boost::function<T(const T)>;
+
+/**
+ * @copydoc EigenMatrix::getMat
+ */
+FTensor::Tensor2_symmetric<double, 3>
+getMatSpecial(Val<double, 3> &t_val, Vec<double, 3> &t_vec, Fun<double> f);
+
+/**
+ * @copydoc EigenMatrix::getMat
+ */
+FTensor::Tensor2_symmetric<double, 3>
+getMatSpecial(Val<FTensor::PackPtr<double *, 1>, 3> &t_val,
+              Vec<FTensor::PackPtr<double *, 1>, 3> &t_vec, Fun<double> f);
+
+/**
+ * @copydoc EigenMatrix::getMat
+ */
+FTensor::Tensor2_symmetric<double, 2>
+getMatSpecial(Val<double, 2> &t_val, Vec<double, 2> &t_vec, Fun<double> f);
+
+/**
+ * @copydoc EigenMatrix::getMat
+ */
+FTensor::Tensor2_symmetric<double, 2>
+getMatSpecial(Val<FTensor::PackPtr<double *, 1>, 2> &t_val,
+              Vec<FTensor::PackPtr<double *, 1>, 2> &t_vec, Fun<double> f);
 
 /**
  * @brief Get the Mat object
@@ -83,15 +110,41 @@ template <typename T> using Fun = boost::function<T(const T)>;
  * @param f function
  * @return FTensor::Tensor2_symmetric<double, 3>
  */
-FTensor::Tensor2_symmetric<double, 3>
-getMat(Val<double, 3> &t_val, Vec<double, 3> &t_vec, Fun<double> f);
+template <typename A, typename B>
+auto inline getMat(A &&t_val, B &&t_vec, Fun<double> f) {
+  return getMatSpecial(std::forward<A>(t_val), std::forward<B>(t_vec), f);
+}
 
 /**
- * @copydoc EigenMatrix::getMat
+ * @copydoc EigenMatrix::getDiffMat
  */
-FTensor::Tensor2_symmetric<double, 3>
-getMat(Val<FTensor::PackPtr<double *, 1>, 3> &t_val,
-       Vec<FTensor::PackPtr<double *, 1>, 3> &t_vec, Fun<double> f);
+FTensor::Ddg<double, 3, 3> getDiffMatSpecial(Val<double, 3> &t_val,
+                                             Vec<double, 3> &t_vec,
+                                             Fun<double> f, Fun<double> d_f,
+                                             const int nb);
+/**
+ * @copydoc EigenMatrix::getDiffMat
+ */
+FTensor::Ddg<double, 3, 3>
+getDiffMatSpecial(Val<FTensor::PackPtr<double *, 1>, 3> &t_val,
+                  Vec<FTensor::PackPtr<double *, 1>, 3> &t_vec, Fun<double> f,
+                  Fun<double> d_f, const int nb);
+
+/**
+ * @copydoc EigenMatrix::getDiffMat
+ */
+FTensor::Ddg<double, 2, 2> getDiffMatSpecial(Val<double, 2> &t_val,
+                                             Vec<double, 2> &t_vec,
+                                             Fun<double> f, Fun<double> d_f,
+                                             const int nb);
+
+/**
+ * @copydoc EigenMatrix::getDiffMat
+ */
+FTensor::Ddg<double, 2, 2>
+getDiffMatSpecial(Val<FTensor::PackPtr<double *, 1>, 2> &t_val,
+                  Vec<FTensor::PackPtr<double *, 1>, 2> &t_vec, Fun<double> f,
+                  Fun<double> d_f, const int nb);
 
 /**
  * @brief Get the Diff Mat object
@@ -100,7 +153,7 @@ getMat(Val<FTensor::PackPtr<double *, 1>, 3> &t_val,
  * P_{ijkl} = \frac{\partial B_{ij}}{\partial A_{kl}}
  * \f]
  *
- * \note Eiegn vetore are in rows.
+ * \note Eigen vector are in rows.
  *
  * @param t_val eigen values
  * @param t_vec eigen vector
@@ -109,16 +162,99 @@ getMat(Val<FTensor::PackPtr<double *, 1>, 3> &t_val,
  * @param nb number of nonequal eigen valuse
  * @return FTensor::Ddg<double, 3, 3>
  */
-FTensor::Ddg<double, 3, 3> getDiffMat(Val<double, 3> &t_val,
-                                      Vec<double, 3> &t_vec, Fun<double> f,
-                                      Fun<double> d_f, const int nb);
+template <typename A, typename B>
+inline auto getDiffMat(A &&t_val, B &&t_vec, Fun<double> f, Fun<double> d_f,
+                       const int nb) {
+  return getDiffMatSpecial(std::forward<A>(t_val), std::forward<B>(t_vec), f,
+                           d_f, nb);
+}
+
 /**
- * @copydoc EigenMatrix::getDiffMat
+ * @copydoc EigenMatrix::getDiffDiffMat
  */
 FTensor::Ddg<double, 3, 3>
-getDiffMat(Val<FTensor::PackPtr<double *, 1>, 3> &t_val,
-           Vec<FTensor::PackPtr<double *, 1>, 3> &t_vec, Fun<double> f,
-           Fun<double> d_f, const int nb);
+getDiffDiffMatSpecial(Val<double, 3> &t_val, Vec<double, 3> &t_vec,
+                      Fun<double> f, Fun<double> d_f, Fun<double> dd_f,
+                      FTensor::Tensor2_symmetric<double, 3> &t_S, const int nb);
+
+/**
+ * @copydoc EigenMatrix::getDiffDiffMat
+ */
+FTensor::Ddg<double, 3, 3>
+getDiffDiffMatSpecial(Val<FTensor::PackPtr<double *, 1>, 3> &t_val,
+                      Vec<FTensor::PackPtr<double *, 1>, 3> &t_vec,
+                      Fun<double> f, Fun<double> d_f, Fun<double> dd_f,
+                      FTensor::Tensor2_symmetric<double, 3> &t_S, const int nb);
+
+/**
+ * @copydoc EigenMatrix::getDiffDiffMat
+ */
+FTensor::Ddg<double, 3, 3>
+getDiffDiffMatSpecial(Val<double, 3> &t_val, Vec<double, 3> &t_vec,
+                      Fun<double> f, Fun<double> d_f, Fun<double> dd_f,
+                      FTensor::Tensor2<double, 3, 3> &t_S, const int nb);
+/**
+ * @copydoc EigenMatrix::getDiffDiffMat
+ */
+FTensor::Ddg<double, 3, 3>
+getDiffDiffMatSpecial(Val<FTensor::PackPtr<double *, 1>, 3> &t_val,
+                      Vec<FTensor::PackPtr<double *, 1>, 3> &t_vec,
+                      Fun<double> f, Fun<double> d_f, Fun<double> dd_f,
+                      FTensor::Tensor2<double, 3, 3> &t_S, const int nb);
+
+/**
+ * @copydoc EigenMatrix::getDiffDiffMat
+ */
+FTensor::Ddg<double, 3, 3> getDiffDiffMatSpecial(
+    Val<FTensor::PackPtr<double *, 1>, 3> &t_val,
+    Vec<FTensor::PackPtr<double *, 1>, 3> &t_vec, Fun<double> f,
+    Fun<double> d_f, Fun<double> dd_f,
+    FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, 3> &t_S,
+    const int nb);
+
+/**
+ * @copydoc EigenMatrix::getDiffDiffMat
+ */
+FTensor::Ddg<double, 2, 2>
+getDiffDiffMatSpecial(Val<double, 2> &t_val, Vec<double, 2> &t_vec,
+                      Fun<double> f, Fun<double> d_f, Fun<double> dd_f,
+                      FTensor::Tensor2<double, 2, 2> &t_S, const int nb);
+
+/**
+ * @copydoc EigenMatrix::getDiffDiffMat
+ */
+FTensor::Ddg<double, 2, 2>
+getDiffDiffMatSpecial(Val<double, 2> &t_val, Vec<double, 2> &t_vec,
+                      Fun<double> f, Fun<double> d_f, Fun<double> dd_f,
+                      FTensor::Tensor2_symmetric<double, 2> &t_S, const int nb);
+
+/**
+ * @copydoc EigenMatrix::getDiffDiffMat
+ */
+FTensor::Ddg<double, 2, 2>
+getDiffDiffMatSpecial(Val<FTensor::PackPtr<double *, 1>, 2> &t_val,
+                      Vec<FTensor::PackPtr<double *, 1>, 2> &t_vec,
+                      Fun<double> f, Fun<double> d_f, Fun<double> dd_f,
+                      FTensor::Tensor2<double, 2, 2> &t_S, const int nb);
+
+/**
+ * @copydoc EigenMatrix::getDiffDiffMat
+ */
+FTensor::Ddg<double, 2, 2>
+getDiffDiffMatSpecial(Val<FTensor::PackPtr<double *, 1>, 2> &t_val,
+                      Vec<FTensor::PackPtr<double *, 1>, 2> &t_vec,
+                      Fun<double> f, Fun<double> d_f, Fun<double> dd_f,
+                      FTensor::Tensor2_symmetric<double, 2> &t_S, const int nb);
+
+/**
+ * @copydoc EigenMatrix::getDiffDiffMat
+ */
+FTensor::Ddg<double, 2, 2> getDiffDiffMatSpecial(
+    Val<FTensor::PackPtr<double *, 1>, 2> &t_val,
+    Vec<FTensor::PackPtr<double *, 1>, 2> &t_vec, Fun<double> f,
+    Fun<double> d_f, Fun<double> dd_f,
+    FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, 2> &t_S,
+    const int nb);
 
 /**
  * @brief Get the Diff Diff Mat object
@@ -139,65 +275,11 @@ getDiffMat(Val<FTensor::PackPtr<double *, 1>, 3> &t_val,
  * @param nb number of nonzero eigen values
  * @return FTensor::Ddg<double, 3, 3>
  */
-FTensor::Ddg<double, 3, 3>
-getDiffDiffMat(Val<double, 3> &t_val, Vec<double, 3> &t_vec, Fun<double> f,
-               Fun<double> d_f, Fun<double> dd_f,
-               FTensor::Tensor2_symmetric<double, 3> &t_S, const int nb);
-
-/**
- * @copydoc EigenMatrix::getDiffDiffMat
- */
-FTensor::Ddg<double, 3, 3>
-getDiffDiffMat(Val<FTensor::PackPtr<double *, 1>, 3> &t_val,
-               Vec<FTensor::PackPtr<double *, 1>, 3> &t_vec, Fun<double> f,
-               Fun<double> d_f, Fun<double> dd_f,
-               FTensor::Tensor2_symmetric<double, 3> &t_S, const int nb);
-
-/**
- * @copydoc EigenMatrix::getDiffDiffMat
- */
-FTensor::Ddg<double, 3, 3> getDiffDiffMat(Val<double, 3> &t_val,
-                                          Vec<double, 3> &t_vec, Fun<double> f,
-                                          Fun<double> d_f, Fun<double> dd_f,
-                                          FTensor::Tensor2<double, 3, 3> &t_S,
-                                          const int nb);
-/**
- * @copydoc EigenMatrix::getDiffDiffMat
- */
-FTensor::Ddg<double, 3, 3>
-getDiffDiffMat(Val<FTensor::PackPtr<double *, 1>, 3> &t_val,
-               Vec<FTensor::PackPtr<double *, 1>, 3> &t_vec, Fun<double> f,
-               Fun<double> d_f, Fun<double> dd_f,
-               FTensor::Tensor2<double, 3, 3> &t_S, const int nb);
-
-/**
- * @copydoc EigenMatrix::getMat
- */
-FTensor::Tensor2_symmetric<double, 2>
-getMat(Val<double, 2> &t_val, Vec<double, 2> &t_vec, Fun<double> f);
-
-/**
- * @copydoc EigenMatrix::getDiffMat
- */
-FTensor::Ddg<double, 2, 2> getDiffMat(Val<double, 2> &t_val,
-                                      Vec<double, 2> &t_vec, Fun<double> f,
-                                      Fun<double> d_f, const int nb);
-
-/**
- * @copydoc EigenMatrix::getDiffDiffMat
- */
-FTensor::Ddg<double, 2, 2> getDiffDiffMat(Val<double, 2> &t_val,
-                                          Vec<double, 2> &t_vec, Fun<double> f,
-                                          Fun<double> d_f, Fun<double> dd_f,
-                                          FTensor::Tensor2<double, 2, 2> &t_S,
-                                          const int nb);
-
-/**
- * @copydoc EigenMatrix::getDiffDiffMat
- */
-FTensor::Ddg<double, 2, 2>
-getDiffDiffMat(Val<double, 2> &t_val, Vec<double, 2> &t_vec, Fun<double> f,
-               Fun<double> d_f, Fun<double> dd_f,
-               FTensor::Tensor2_symmetric<double, 2> &t_S, const int nb);
+template <typename A, typename B, typename C>
+inline auto getDiffDiffMat(A &&t_val, B &&t_vec, Fun<double> f, Fun<double> d_f,
+                           Fun<double> dd_f, C &&t_S, const int nb) {
+  return getDiffDiffMatSpecial(std::forward<A>(t_val), std::forward<B>(t_vec),
+                               f, d_f, dd_f, std::forward<C>(t_S), nb);
+}
 
 } // namespace EigenMatrix

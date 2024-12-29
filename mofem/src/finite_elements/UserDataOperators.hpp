@@ -600,10 +600,10 @@ struct OpCalculateVectorFieldValuesFromPetscVecImpl
 
   OpCalculateVectorFieldValuesFromPetscVecImpl(
       const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
-      const EntityType zero_at_type = MBVERTEX)
+      const EntityType zero_at_type = MBVERTEX, bool throw_error = true)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
-        dataPtr(data_ptr), zeroAtType(zero_at_type) {
+        dataPtr(data_ptr), zeroAtType(zero_at_type), throwError(throw_error) {
     if (!dataPtr)
       THROW_MESSAGE("Pointer is not set");
   }
@@ -611,6 +611,7 @@ struct OpCalculateVectorFieldValuesFromPetscVecImpl
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
+
     auto &local_indices = data.getLocalIndices();
     const size_t nb_dofs = local_indices.size();
     const size_t nb_gauss_pts = getGaussPts().size2();
@@ -623,6 +624,12 @@ struct OpCalculateVectorFieldValuesFromPetscVecImpl
     if (!nb_dofs)
       MoFEMFunctionReturnHot(0);
 
+    if (!throwError) {
+      if ((getFEMethod()->data_ctx & PetscData::Switches(CTX)).none()) {
+        MoFEMFunctionReturnHot(0);
+      }
+    }
+
     const double *array;
 
     auto get_array = [&](const auto ctx, auto vec) {
@@ -632,11 +639,11 @@ struct OpCalculateVectorFieldValuesFromPetscVecImpl
         MOFEM_LOG_CHANNEL("SELF");
         MOFEM_LOG("SELF", Sev::error)
             << "In this case filed degrees of freedom are read from vector.  "
-               "That usually happens when time solver is used, and acces to "
+               "That usually happens when time solver is used, and access to "
                "first or second rates is needed. You probably not set ts_u, "
                "ts_u_t, or ts_u_tt and associated data structure, i.e. "
-               "data_ctx to CTX_SET_X, CTX_SET_X_T, or CTX_SET_X_TT "
-               "respectively";
+               "data_ctx to CTX_SET_X, CTX_SET_DX, CTX_SET_X_T, or "
+               "CTX_SET_X_TT respectively";
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Vector not set");
       }
 #endif
@@ -651,6 +658,9 @@ struct OpCalculateVectorFieldValuesFromPetscVecImpl
     switch (CTX) {
     case PetscData::CTX_SET_X:
       CHKERR get_array(PetscData::CtxSetX, getFEMethod()->ts_u);
+      break;
+    case PetscData::CTX_SET_DX:
+      CHKERR get_array(PetscData::CtxSetX, getFEMethod()->dx);
       break;
     case PetscData::CTX_SET_X_T:
       CHKERR get_array(PetscData::CtxSetX_T, getFEMethod()->ts_u_t);
@@ -673,6 +683,9 @@ struct OpCalculateVectorFieldValuesFromPetscVecImpl
     switch (CTX) {
     case PetscData::CTX_SET_X:
       CHKERR restore_array(getFEMethod()->ts_u);
+      break;
+    case PetscData::CTX_SET_DX:
+      CHKERR restore_array(getFEMethod()->dx);
       break;
     case PetscData::CTX_SET_X_T:
       CHKERR restore_array(getFEMethod()->ts_u_t);
@@ -715,9 +728,10 @@ protected:
   boost::shared_ptr<MatrixDouble> dataPtr;
   const EntityHandle zeroAtType;
   VectorDouble dotVector;
+  bool throwError;
 };
 
-/** \brief Get time derivatives of values at integration pts for tensor filed
+/** \brief Get rate of values at integration pts for tensor filed
  * rank 1, i.e. vector field
  *
  * \ingroup mofem_forces_and_sources_user_data_operators
@@ -727,7 +741,7 @@ using OpCalculateVectorFieldValuesDot =
     OpCalculateVectorFieldValuesFromPetscVecImpl<Tensor_Dim,
                                                  PetscData::CTX_SET_X_T>;
 
-/** \brief Get second time derivatives of values at integration pts for tensor
+/** \brief Get second rate of values at integration pts for tensor
  * filed rank 1, i.e. vector field
  *
  * \ingroup mofem_forces_and_sources_user_data_operators
@@ -736,6 +750,16 @@ template <int Tensor_Dim>
 using OpCalculateVectorFieldValuesDotDot =
     OpCalculateVectorFieldValuesFromPetscVecImpl<Tensor_Dim,
                                                  PetscData::CTX_SET_X_TT>;
+
+/** \brief Get second time second update vector at integration pts for tensor
+ * filed rank 1, i.e. vector field
+ *
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ */
+template <int Tensor_Dim>
+using OpCalculateVectorFieldSNESUpdateValues =
+    OpCalculateVectorFieldValuesFromPetscVecImpl<Tensor_Dim,
+                                                 PetscData::CTX_SET_DX>;
 
 /**@}*/
 
