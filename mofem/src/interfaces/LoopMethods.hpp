@@ -25,7 +25,8 @@ struct PetscData : public UnknownInterface {
     CTX_SET_A = 1 << 1,
     CTX_SET_B = 1 << 2,
     CTX_SET_X = 1 << 3,
-    CTX_SET_X_T = 1 << 4,
+    CTX_SET_DX = 1 << 4,
+    CTX_SET_X_T = 1 << 5,
     CTX_SET_X_TT = 1 << 6,
     CTX_SET_TIME = 1 << 7
   };
@@ -37,6 +38,7 @@ struct PetscData : public UnknownInterface {
   static constexpr Switches CtxSetA = PetscData::Switches(CTX_SET_A);
   static constexpr Switches CtxSetB = PetscData::Switches(CTX_SET_B);
   static constexpr Switches CtxSetX = PetscData::Switches(CTX_SET_X);
+  static constexpr Switches CtxSetDX = PetscData::Switches(CTX_SET_DX);
   static constexpr Switches CtxSetX_T = PetscData::Switches(CTX_SET_X_T);
   static constexpr Switches CtxSetX_TT = PetscData::Switches(CTX_SET_X_TT);
   static constexpr Switches CtxSetTime = PetscData::Switches(CTX_SET_TIME);
@@ -49,6 +51,7 @@ struct PetscData : public UnknownInterface {
   Mat A;
   Mat B;
   Vec x;
+  Vec dx;
   Vec x_t;
   Vec x_tt;
 };
@@ -117,11 +120,12 @@ struct SnesMethod : virtual protected PetscData {
 
   SNESContext snes_ctx;
 
-  SNES snes;   ///< snes solver
-  Vec &snes_x; ///< state vector
-  Vec &snes_f; ///< residual
-  Mat &snes_A; ///< jacobian matrix
-  Mat &snes_B; ///< preconditioner of jacobian matrix
+  SNES snes;    ///< snes solver
+  Vec &snes_x;  ///< state vector
+  Vec &snes_dx; ///< solution update
+  Vec &snes_f;  ///< residual
+  Mat &snes_A;  ///< jacobian matrix
+  Mat &snes_B;  ///< preconditioner of jacobian matrix
 };
 
 /**
