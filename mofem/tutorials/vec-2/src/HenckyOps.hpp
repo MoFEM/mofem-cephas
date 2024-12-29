@@ -230,14 +230,7 @@ struct OpCalculateLogCImpl<DIM, GAUSS, DomainEleOp> : public DomainEleOp {
     auto t_logC = getFTensor2SymmetricFromMat<DIM>(commonDataPtr->matLogC);
 
     for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
-
-      FTensor::Tensor1<double, DIM> eig;
-      FTensor::Tensor2<double, DIM, DIM> eigen_vec;
-      eig(i) = t_eig_val(i);
-      eigen_vec(i, j) = t_eig_vec(i, j);
-      auto logC = EigenMatrix::getMat(eig, eigen_vec, f);
-      t_logC(i, j) = logC(i, j);
-
+      t_logC(i, j) = EigenMatrix::getMat(t_eig_val, t_eig_vec, f)(i, j);
       ++t_eig_val;
       ++t_eig_vec;
       ++t_logC;
@@ -277,18 +270,11 @@ struct OpCalculateLogC_dCImpl<DIM, GAUSS, DomainEleOp> : public DomainEleOp {
     auto t_eig_vec = getFTensor2FromMat<DIM, DIM>(commonDataPtr->matEigVec);
 
     for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
-
-      FTensor::Tensor1<double, DIM> eig;
-      FTensor::Tensor2<double, DIM, DIM> eigen_vec;
-      eig(i) = t_eig_val(i);
-      eigen_vec(i, j) = t_eig_vec(i, j);
-
       // rare case when two eigen values are equal
-      auto nb_uniq = get_uniq_nb<DIM>(&eig(0));
-      auto dlogC_dC = EigenMatrix::getDiffMat(eig, eigen_vec, f, d_f, nb_uniq);
-      dlogC_dC(i, j, k, l) *= 2;
-
-      t_logC_dC(i, j, k, l) = dlogC_dC(i, j, k, l);
+      auto nb_uniq = get_uniq_nb<DIM>(&t_eig_val(0));
+      t_logC_dC(i, j, k, l) =
+          2 * EigenMatrix::getDiffMat(t_eig_val, t_eig_vec, f, d_f,
+                                      nb_uniq)(i, j, k, l);
 
       ++t_logC_dC;
       ++t_eig_val;
@@ -519,22 +505,13 @@ struct OpHenckyTangentImpl<DIM, GAUSS, DomainEleOp, S> : public DomainEleOp {
       FTensor::Tensor2<double, DIM, DIM> t_F;
       t_F(i, j) = t_grad(i, j) + t_kd(i, j);
 
-      FTensor::Tensor1<double, DIM> eig;
-      FTensor::Tensor2<double, DIM, DIM> eigen_vec;
-      FTensor::Tensor2_symmetric<double, DIM> T;
-      eig(i) = t_eig_val(i);
-      eigen_vec(i, j) = t_eig_vec(i, j);
-      T(i, j) = t_T(i, j);
-
       // rare case when two eigen values are equal
-      auto nb_uniq = get_uniq_nb<DIM>(&eig(0));
-
+      auto nb_uniq = get_uniq_nb<DIM>(&t_eig_val(0));
       FTensor::Tensor4<double, DIM, DIM, DIM, DIM> dC_dF;
       dC_dF(i, j, k, l) = (t_kd(i, l) * t_F(k, j)) + (t_kd(j, l) * t_F(k, i));
 
-      auto TL =
-          EigenMatrix::getDiffDiffMat(eig, eigen_vec, f, d_f, dd_f, T, nb_uniq);
-
+      auto TL = EigenMatrix::getDiffDiffMat(t_eig_val, t_eig_vec, f, d_f, dd_f,
+                                            t_T, nb_uniq);
       TL(i, j, k, l) *= 4;
       FTensor::Ddg<double, DIM, DIM> P_D_P_plus_TL;
       P_D_P_plus_TL(i, j, k, l) =
