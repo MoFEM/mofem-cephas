@@ -394,7 +394,7 @@ struct OpScaleBaseBySpaceInverseOfMeasure
 
   OpScaleBaseBySpaceInverseOfMeasure(
       const FieldSpace space, boost::shared_ptr<VectorDouble> det_jac_ptr,
-      double scale = 1);
+      boost::shared_ptr<double> scale_det_ptr = nullptr);
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data);
@@ -402,7 +402,7 @@ struct OpScaleBaseBySpaceInverseOfMeasure
 private:
   FieldSpace fieldSpace;
   boost::shared_ptr<VectorDouble> detJacPtr;
-  double scaleDet = 1;
+  boost::shared_ptr<double> scaleDetPtr = nullptr;
 };
 
 /**

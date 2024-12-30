@@ -1696,20 +1696,46 @@ MoFEMErrorCode AddHOOps<1, 2, 2>::add(
   MoFEMFunctionReturn(0);
 }
 
+template <int FE_DIM, int PROBLEM_DIM, int SPACE_DIM>
+MoFEMErrorCode
+scaleL2(boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+        std::string geom_field_name) {
+  MoFEMFunctionBegin;
+
+  auto jac_ptr = boost::make_shared<MatrixDouble>();
+  auto det_ptr = boost::make_shared<VectorDouble>();
+  pipeline.push_back(new OpCalculateVectorFieldGradient<SPACE_DIM, SPACE_DIM>(
+      geom_field_name, jac_ptr));
+  pipeline.push_back(new OpInvertMatrix<SPACE_DIM>(jac_ptr, det_ptr, nullptr));
+
+  auto scale_ptr = boost::make_shared<double>(1.);
+  auto scale = Example::meshVolumeAndCount[0] /
+               Example::meshVolumeAndCount[1]; // average volume of elements
+  using OP = ForcesAndSourcesCore::UserDataOperator;
+  auto op_scale = new OP(NOSPACE, OP::OPSPACE);
+  op_scale->doWorkRhsHook = [scale_ptr, det_ptr,
+                             scale](DataOperator *base_op_ptr, int, EntityType,
+                                    EntitiesFieldData::EntData &) {
+    *scale_ptr = scale / det_ptr->size(); // distribute average element size
+                                         // over integrartion points
+    return 0;
+  };
+  pipeline.push_back(op_scale);
+
+  pipeline.push_back(
+      new OpScaleBaseBySpaceInverseOfMeasure(L2, det_ptr, scale_ptr));
+
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode AddHOOps<3, 3, 3>::add(
     boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
     std::vector<FieldSpace> spaces, std::string geom_field_name) {
   MoFEMFunctionBegin;
-  constexpr bool scale_l2 = true;
+
+  constexpr bool scale_l2 = false;
   if (scale_l2) {
-    auto jac = boost::make_shared<MatrixDouble>();
-    auto det = boost::make_shared<VectorDouble>();
-    pipeline.push_back(
-        new OpCalculateVectorFieldGradient<3, 3>(geom_field_name, jac));
-    pipeline.push_back(new OpInvertMatrix<3>(jac, det, nullptr));
-    auto scale =
-        Example::meshVolumeAndCount[0] / Example::meshVolumeAndCount[1];
-    pipeline.push_back(new OpScaleBaseBySpaceInverseOfMeasure(L2, det, scale));
+    CHKERR scaleL2<3, 3, 3>(pipeline, geom_field_name);
   }
   CHKERR MoFEM::AddHOOps<3, 3, 3>::add(pipeline, spaces, geom_field_name,
                                        nullptr, nullptr, nullptr);
@@ -1720,16 +1746,9 @@ MoFEMErrorCode AddHOOps<2, 2, 2>::add(
     boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
     std::vector<FieldSpace> spaces, std::string geom_field_name) {
   MoFEMFunctionBegin;
-  constexpr bool scale_l2 = true;
+  constexpr bool scale_l2 = false;
   if (scale_l2) {
-    auto jac = boost::make_shared<MatrixDouble>();
-    auto det = boost::make_shared<VectorDouble>();
-    pipeline.push_back(
-        new OpCalculateVectorFieldGradient<2, 2>(geom_field_name, jac));
-    pipeline.push_back(new OpInvertMatrix<2>(jac, det, nullptr));
-    auto scale =
-        Example::meshVolumeAndCount[0] / Example::meshVolumeAndCount[1];
-    pipeline.push_back(new OpScaleBaseBySpaceInverseOfMeasure(L2, det, scale));
+    CHKERR scaleL2<2, 2, 2>(pipeline, geom_field_name);
   }
   CHKERR MoFEM::AddHOOps<2, 2, 2>::add(pipeline, spaces, geom_field_name,
                                        nullptr, nullptr, nullptr);
