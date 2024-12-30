@@ -248,8 +248,8 @@ inline auto diff_plastic_flow_dstrain(
 //   }
 // };
 
-inline double constrian_sign(double x) {
-  const auto y = x / zeta;
+inline double constrian_sign(double x, double dt) {
+  const auto y = x / (zeta / dt);
   if (y > std::numeric_limits<float>::max_exponent10 ||
       y < std::numeric_limits<float>::min_exponent10) {
     if (x > 0)
@@ -262,49 +262,61 @@ inline double constrian_sign(double x) {
   }
 };
 
-inline double constrain_abs(double x) {
-  const auto y = -x / zeta;
+inline double constrain_abs(double x, double dt) {
+  const auto y = -x / (zeta / dt);
   if (y > std::numeric_limits<float>::max_exponent10 ||
       y < std::numeric_limits<float>::min_exponent10) {
     return std::abs(x);
   } else {
     const double e = std::exp(y);
-    return x + 2 * zeta * std::log1p(e);
+    return x + 2 * (zeta / dt) * std::log1p(e);
   }
 };
 
 inline double w(double eqiv, double dot_tau, double f, double sigma_y,
                 double sigma_Y) {
-  return (f - sigma_y) / sigma_Y + cn1 * (dot_tau);
+  return (1. / cn1) * ((f - sigma_y) / sigma_Y) + dot_tau;
 };
 
 /**
 
 \f[
-\dot{\tau} - \frac{1}{2}\left\{\dot{\tau} + (f(\pmb\sigma) - \sigma_y) +
-\| \dot{\tau} + (f(\pmb\sigma) - \sigma_y) \|\right\} = 0 \\
-c_n \sigma_y \dot{\tau} - \frac{1}{2}\left\{c_n\sigma_y \dot{\tau} +
-(f(\pmb\sigma) - \sigma_y) +
-\| c_n \sigma_y \dot{\tau} + (f(\pmb\sigma) - \sigma_y) \|\right\} = 0
+v^H \cdot \dot{\tau} +
+\left(\frac{\sigma_Y}{2}\right) \cdot
+\left(
+    \left(
+        c_{\textrm{n0}} \cdot c_{\textrm{n1}} \cdot \left(\dot{\tau} - \dot{e_{\textrm{p}}}\right)
+    \right) +
+    \left(
+        c_{\textrm{n1}} \cdot \left(\dot{\tau} - \frac{1}{c_{\textrm{n1}}} \cdot \frac{f - \sigma_y}{\sigma_Y} - \text{abs\_w}\right)
+    \right)
+\right)
 \f]
-
  */
 inline double constraint(double eqiv, double dot_tau, double f, double sigma_y,
                          double abs_w, double vis_H, double sigma_Y) {
-  return vis_H * dot_tau +
-         (sigma_Y / 2) * ((cn0 * (dot_tau - eqiv) + cn1 * (dot_tau) -
-                           (f - sigma_y) / sigma_Y) -
-                          abs_w);
+
+  return
+
+      vis_H * dot_tau +
+      (sigma_Y / 2) *
+          (
+
+              (cn0 * cn1 * ((dot_tau - eqiv)) +
+
+               cn1 * ((dot_tau) - (1. / cn1) * (f - sigma_y) / sigma_Y - abs_w))
+
+          );
 };
 
 inline double diff_constrain_ddot_tau(double sign, double eqiv, double dot_tau,
                                       double vis_H, double sigma_Y) {
-  return vis_H + (sigma_Y / 2) * (cn0 + cn1 * (1 - sign));
+  return vis_H + (sigma_Y / 2) * (cn0 * cn1 + cn1 * (1 - sign));
 };
 
 inline double diff_constrain_deqiv(double sign, double eqiv, double dot_tau,
                                    double sigma_Y) {
-  return (sigma_Y / 2) * (-cn0);
+  return (sigma_Y / 2) * (-cn0 * cn1);
 };
 
 inline auto diff_constrain_df(double sign) { return (-1 - sign) / 2; };
@@ -583,6 +595,8 @@ MoFEMErrorCode OpCalculatePlasticityImpl<DIM, GAUSS, DomainEleOp>::doWork(
     auto t_plastic_strain_dot =
         getFTensor2SymmetricFromMat<SPACE_DIM>(commonDataPtr->plasticStrainDot);
 
+    auto dt = this->getTStimeStep();
+
     for (auto gg = 0; gg != nb_gauss_pts; ++gg) {
       auto eqiv = equivalent_strain_dot(t_plastic_strain_dot);
       const auto ww = w(
@@ -590,7 +604,7 @@ MoFEMErrorCode OpCalculatePlasticityImpl<DIM, GAUSS, DomainEleOp>::doWork(
           iso_hardening(t_tau, params[CommonData::H], params[CommonData::QINF],
                         params[CommonData::BISO], params[CommonData::SIGMA_Y]),
           params[CommonData::SIGMA_Y]);
-      const auto sign_ww = constrian_sign(ww);
+      const auto sign_ww = constrian_sign(ww, dt);
 
       ++nb_points_on_elem;
       if (sign_ww > 0) {
@@ -629,6 +643,7 @@ MoFEMErrorCode OpCalculatePlasticityImpl<DIM, GAUSS, DomainEleOp>::doWork(
     get_avtive_pts();
   }
 
+  auto dt = this->getTStimeStep();
   for (auto gg = 0; gg != nb_gauss_pts; ++gg) {
 
     auto eqiv = equivalent_strain_dot(t_plastic_strain_dot);
@@ -644,8 +659,8 @@ MoFEMErrorCode OpCalculatePlasticityImpl<DIM, GAUSS, DomainEleOp>::doWork(
                            params[CommonData::QINF], params[CommonData::BISO]);
 
     auto ww = w(eqiv, t_tau_dot, t_f, sigma_y, params[CommonData::SIGMA_Y]);
-    auto abs_ww = constrain_abs(ww);
-    auto sign_ww = constrian_sign(ww);
+    auto abs_ww = constrain_abs(ww, dt);
+    auto sign_ww = constrian_sign(ww, dt);
 
     auto c = constraint(eqiv, t_tau_dot, t_f, sigma_y, abs_ww,
                         params[CommonData::VIS_H], params[CommonData::SIGMA_Y]);
