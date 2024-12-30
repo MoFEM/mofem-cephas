@@ -791,19 +791,28 @@ MoFEMErrorCode ThermoElasticProblem::OPs() {
   auto heat_capacity_ptr = block_params->getHeatCapacityPtr();
 
   // Default time scaling of BCs and sources, from command line arguments
-  auto time_scale = boost::make_shared<TimeScale>();
+  auto time_scale =
+      boost::make_shared<TimeScale>("", false, [](const double) { return 1; });
+  auto def_time_scale = [time_scale](const double time) {
+    return (!time_scale->argFileScale) ? time : 1;
+  };
+  auto def_file_name = [time_scale](const std::string &&name) {
+    return (!time_scale->argFileScale) ? name : "";
+  };
 
   // Files which define scaling for separate variables, if provided
-  auto time_bodyforce_scaling =
-      boost::make_shared<TimeScale>("bodyforce_scale.txt");
-  auto time_heatsource_scaling =
-      boost::make_shared<TimeScale>("heatsource_scale.txt");
-  auto time_temperature_scaling =
-      boost::make_shared<TimeScale>("temperature_bc_scale.txt");
-  auto time_displacement_scaling =
-      boost::make_shared<TimeScale>("displacement_bc_scale.txt");
-  auto time_flux_scaling = boost::make_shared<TimeScale>("flux_bc_scale.txt");
-  auto time_force_scaling = boost::make_shared<TimeScale>("force_bc_scale.txt");
+  auto time_bodyforce_scaling = boost::make_shared<TimeScale>(
+      def_file_name("bodyforce_scale.txt"), false, def_time_scale);
+  auto time_heatsource_scaling = boost::make_shared<TimeScale>(
+      def_file_name("heatsource_scale.txt"), false, def_time_scale);
+  auto time_temperature_scaling = boost::make_shared<TimeScale>(
+      def_file_name("temperature_bc_scale.txt"), false, def_time_scale);
+  auto time_displacement_scaling = boost::make_shared<TimeScale>(
+      def_file_name("displacement_bc_scale.txt"), false, def_time_scale);
+  auto time_flux_scaling = boost::make_shared<TimeScale>(
+      def_file_name("flux_bc_scale.txt"), false, def_time_scale);
+  auto time_force_scaling = boost::make_shared<TimeScale>(
+      def_file_name("force_bc_scale.txt"), false, def_time_scale);
 
   auto add_domain_rhs_ops = [&](auto &pipeline) {
     MoFEMFunctionBegin;

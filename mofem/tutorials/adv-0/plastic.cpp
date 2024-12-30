@@ -174,11 +174,50 @@ using OpBoundaryLhsBCs =
 
 using namespace PlasticOps;
 using namespace HenckyOps;
+
+namespace PlasticOps {
+
+template <int FE_DIM, int PROBLEM_DIM, int SPACE_DIM> struct AddHOOps;
+
+template <> struct AddHOOps<2, 3, 3> {
+  AddHOOps() = delete;
+  static MoFEMErrorCode
+  add(boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+      std::vector<FieldSpace> space, std::string geom_field_name);
+};
+
+template <> struct AddHOOps<1, 2, 2> {
+  AddHOOps() = delete;
+  static MoFEMErrorCode
+  add(boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+      std::vector<FieldSpace> space, std::string geom_field_name);
+};
+
+template <> struct AddHOOps<3, 3, 3> {
+  AddHOOps() = delete;
+  static MoFEMErrorCode
+  add(boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+      std::vector<FieldSpace> space, std::string geom_field_name);
+};
+
+template <> struct AddHOOps<2, 2, 2> {
+  AddHOOps() = delete;
+  static MoFEMErrorCode
+  add(boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+      std::vector<FieldSpace> space, std::string geom_field_name);
+};
+
+} // namespace PlasticOps
+
+
 struct Example {
 
   Example(MoFEM::Interface &m_field) : mField(m_field) {}
 
   MoFEMErrorCode runProblem();
+
+  enum { VOL, COUNT };
+  static inline std::array<double, 2> meshVolumeAndCount = {0, 0};
 
 private:
   MoFEM::Interface &mField;
@@ -396,6 +435,39 @@ MoFEMErrorCode Example::setupProblem() {
     CHKERR project_ho_geometry();
   }
 
+  auto get_volume = [&]() {
+    using VolOp = DomainEle::UserDataOperator;
+    auto *op_ptr = new VolOp(NOSPACE, VolOp::OPSPACE);
+    std::array<double, 2> volume_and_count;
+    op_ptr->doWorkRhsHook = [&](DataOperator *base_op_ptr, int side, EntityType type,
+                                EntitiesFieldData::EntData &data) {
+      MoFEMFunctionBegin;
+      auto op_ptr = static_cast<VolOp *>(base_op_ptr);
+      volume_and_count[VOL] += op_ptr->getMeasure();
+      volume_and_count[COUNT] += 1;
+      // in necessary at integration over Gauss points.
+      MoFEMFunctionReturn(0);
+    };
+    volume_and_count = {0, 0};
+    auto fe = boost::make_shared<DomainEle>(mField);
+    fe->getOpPtrVector().push_back(op_ptr);
+
+    auto dm = simple->getDM();
+    CHK_THROW_MESSAGE(
+        DMoFEMLoopFiniteElements(dm, simple->getDomainFEName(), fe),
+        "cac volume");
+    std::array<double, 2> tot_volume_and_count;
+    MPI_Allreduce(volume_and_count.data(), tot_volume_and_count.data(),
+                  volume_and_count.size(), MPI_DOUBLE, MPI_SUM,
+                  mField.get_comm());
+    return tot_volume_and_count;
+  };
+
+  meshVolumeAndCount = get_volume();
+  MOFEM_LOG("PLASTICITY", Sev::inform)
+      << "Mesh volume " << meshVolumeAndCount[VOL] << " nb. of elements "
+      << meshVolumeAndCount[COUNT];
+
   MoFEMFunctionReturn(0);
 }
 //! [Set up problem]
@@ -564,8 +636,8 @@ MoFEMErrorCode Example::OPs() {
   auto add_boundary_ops_lhs_mechanical = [&](auto &pip) {
     MoFEMFunctionBegin;
 
-    CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(pip, {HDIV},
-                                                              "GEOMETRY");
+    CHKERR PlasticOps::AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
+        pip, {HDIV}, "GEOMETRY");
     pip.push_back(new OpSetHOWeightsOnSubDim<SPACE_DIM>());
 
     // Add Natural BCs to LHS
@@ -589,8 +661,8 @@ MoFEMErrorCode Example::OPs() {
   auto add_boundary_ops_rhs_mechanical = [&](auto &pip) {
     MoFEMFunctionBegin;
 
-    CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(pip, {HDIV},
-                                                              "GEOMETRY");
+    CHKERR PlasticOps::AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
+        pip, {HDIV}, "GEOMETRY");
     pip.push_back(new OpSetHOWeightsOnSubDim<SPACE_DIM>());
 
     // Add Natural BCs to RHS
@@ -607,8 +679,8 @@ MoFEMErrorCode Example::OPs() {
 
   auto add_domain_ops_lhs = [this](auto &pip) {
     MoFEMFunctionBegin;
-    CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(pip, {H1, HDIV},
-                                                          "GEOMETRY");
+    CHKERR PlasticOps::AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+        pip, {H1, HDIV}, "GEOMETRY");
 
     if (is_quasi_static == PETSC_FALSE) {
 
@@ -636,8 +708,8 @@ MoFEMErrorCode Example::OPs() {
   auto add_domain_ops_rhs = [this](auto &pip) {
     MoFEMFunctionBegin;
 
-    CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(pip, {H1, HDIV},
-                                                          "GEOMETRY");
+    CHKERR PlasticOps::AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+        pip, {H1, HDIV}, "GEOMETRY");
 
     CHKERR DomainRhsBCs::AddFluxToPipeline<OpDomainRhsBCs>::add(
         pip, mField, "U",
@@ -696,8 +768,8 @@ MoFEMErrorCode Example::OPs() {
 
   auto create_reaction_pipeline = [&](auto &pip) {
     MoFEMFunctionBegin;
-    CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(pip, {H1},
-                                                          "GEOMETRY");
+    CHKERR PlasticOps::AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+        pip, {H1}, "GEOMETRY");
     CHKERR PlasticOps::opFactoryDomainReactions<SPACE_DIM, AT, IT, DomainEleOp>(
         mField, "MAT_PLASTIC", pip, "U", "EP", "TAU");
     MoFEMFunctionReturn(0);
@@ -760,8 +832,8 @@ MoFEMErrorCode Example::tsSolve() {
   auto create_post_process_elements = [&]() {
     
     auto push_vol_ops = [this](auto &pip) {
-      CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(pip, {H1, HDIV},
-                                                            "GEOMETRY");
+      CHKERR PlasticOps::AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+          pip, {H1, HDIV}, "GEOMETRY");
 
       auto [common_plastic_ptr, common_hencky_ptr] =
           PlasticOps::createCommonPlasticOps<SPACE_DIM, IT, DomainEleOp>(
@@ -1604,3 +1676,82 @@ SetUpSchur::createSetUpSchur(MoFEM::Interface &m_field,
   return boost::shared_ptr<SetUpSchur>(
       new SetUpSchurImpl(m_field, sub_dm, is_sub, ao_up));
 }
+
+namespace PlasticOps {
+
+MoFEMErrorCode AddHOOps<2, 3, 3>::add(
+    boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+    std::vector<FieldSpace> spaces, std::string geom_field_name) {
+  MoFEMFunctionBegin;
+  CHKERR MoFEM::AddHOOps<2, 3, 3>::add(pipeline, spaces, geom_field_name);
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode AddHOOps<1, 2, 2>::add(
+    boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+    std::vector<FieldSpace> spaces, std::string geom_field_name) {
+  MoFEMFunctionBegin;
+  CHKERR MoFEM::AddHOOps<1, 2, 2>::add(pipeline, spaces, geom_field_name);
+  MoFEMFunctionReturn(0);
+}
+
+template <int FE_DIM, int PROBLEM_DIM, int SPACE_DIM>
+MoFEMErrorCode
+scaleL2(boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+        std::string geom_field_name) {
+  MoFEMFunctionBegin;
+
+  auto jac_ptr = boost::make_shared<MatrixDouble>();
+  auto det_ptr = boost::make_shared<VectorDouble>();
+  pipeline.push_back(new OpCalculateVectorFieldGradient<SPACE_DIM, SPACE_DIM>(
+      geom_field_name, jac_ptr));
+  pipeline.push_back(new OpInvertMatrix<SPACE_DIM>(jac_ptr, det_ptr, nullptr));
+
+  auto scale_ptr = boost::make_shared<double>(1.);
+  auto scale = Example::meshVolumeAndCount[0] /
+               Example::meshVolumeAndCount[1]; // average volume of elements
+  using OP = ForcesAndSourcesCore::UserDataOperator;
+  auto op_scale = new OP(NOSPACE, OP::OPSPACE);
+  op_scale->doWorkRhsHook = [scale_ptr, det_ptr,
+                             scale](DataOperator *base_op_ptr, int, EntityType,
+                                    EntitiesFieldData::EntData &) {
+    *scale_ptr = scale / det_ptr->size(); // distribute average element size
+                                         // over integrartion points
+    return 0;
+  };
+  pipeline.push_back(op_scale);
+
+  pipeline.push_back(
+      new OpScaleBaseBySpaceInverseOfMeasure(L2, det_ptr, scale_ptr));
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode AddHOOps<3, 3, 3>::add(
+    boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+    std::vector<FieldSpace> spaces, std::string geom_field_name) {
+  MoFEMFunctionBegin;
+
+  constexpr bool scale_l2 = false;
+  if (scale_l2) {
+    CHKERR scaleL2<3, 3, 3>(pipeline, geom_field_name);
+  }
+  CHKERR MoFEM::AddHOOps<3, 3, 3>::add(pipeline, spaces, geom_field_name,
+                                       nullptr, nullptr, nullptr);
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode AddHOOps<2, 2, 2>::add(
+    boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
+    std::vector<FieldSpace> spaces, std::string geom_field_name) {
+  MoFEMFunctionBegin;
+  constexpr bool scale_l2 = false;
+  if (scale_l2) {
+    CHKERR scaleL2<2, 2, 2>(pipeline, geom_field_name);
+  }
+  CHKERR MoFEM::AddHOOps<2, 2, 2>::add(pipeline, spaces, geom_field_name,
+                                       nullptr, nullptr, nullptr);
+  MoFEMFunctionReturn(0);
+}
+
+} // namespace PlasticOps
