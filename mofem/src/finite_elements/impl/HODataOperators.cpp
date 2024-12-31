@@ -720,19 +720,17 @@ OpScaleBaseBySpaceInverseOfMeasure::doWork(int side, EntityType type,
                 "Number of integration pts in detJacPtr does not mush "
                 "number of integration pts in base function");
 
+      for (auto gg = 0; gg != nb_int_pts; ++gg) {
+        auto row = ublas::matrix_row<MatrixDouble>(base_fun, gg);
+        row *= scale_det / det_vec[gg];
+      }
+
+      auto &diff_base_fun = data.getDiffN(base);
+      if (diff_base_fun.size2()) {
         for (auto gg = 0; gg != nb_int_pts; ++gg) {
-          auto row = ublas::matrix_row<MatrixDouble>(base_fun, gg);
+          auto row = ublas::matrix_row<MatrixDouble>(diff_base_fun, gg);
           row *= scale_det / det_vec[gg];
         }
-
-        auto &diff_base_fun = data.getDiffN(base);
-        if (diff_base_fun.size2()) {
-          for (auto gg = 0; gg != nb_int_pts; ++gg) {
-            auto row = ublas::matrix_row<MatrixDouble>(diff_base_fun, gg);
-            row *= scale_det / det_vec[gg];
-          }
-        }
-
       }
     }
     MoFEMFunctionReturn(0);
@@ -745,7 +743,7 @@ OpScaleBaseBySpaceInverseOfMeasure::doWork(int side, EntityType type,
         CHKERR scale(fieldBase);
       break;
     default:
-      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "impossible case");
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "space not handled");
     }
   } else if (this->getFEDim() == 2) {
     switch (fieldSpace) {
@@ -754,7 +752,7 @@ OpScaleBaseBySpaceInverseOfMeasure::doWork(int side, EntityType type,
         CHKERR scale(fieldBase);
       break;
     default:
-      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "impossible case");
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "space not handled");
     }
   } else if (this->getFEDim() == 1) {
     switch (fieldSpace) {
@@ -763,10 +761,10 @@ OpScaleBaseBySpaceInverseOfMeasure::doWork(int side, EntityType type,
         CHKERR scale(fieldBase);
       break;
     default:
-      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "impossible case");
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "space not handled");
     }
   } else {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "impossible case");
+    SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "dimension not handled");
   }
 
   MoFEMFunctionReturn(0);
