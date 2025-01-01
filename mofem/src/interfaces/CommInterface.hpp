@@ -261,6 +261,12 @@ struct CommInterface : public UnknownInterface {
   using LoadFileFun = std::function<std::array<Range, 4>(
       std::array<Range, 4> &&, std::vector<const CubitMeshSets *> &&)>;
 
+  static std::array<Range, 4>
+  defaultProcSkinFun(std::array<Range, 4> &&proc_ents_skin,
+                     std::vector<const CubitMeshSets *> &&vec_ptr) {
+    return proc_ents_skin;
+  }
+
   /**
    * @brief Root proc has whole mesh, other procs only part of it
    * 
@@ -273,10 +279,7 @@ struct CommInterface : public UnknownInterface {
    */
   static MoFEMErrorCode loadFileRootProcAllRestDistributed(
       moab::Interface &moab, const char *file_name, int dim,
-      LoadFileFun proc_skin_fun =
-          [](std::array<Range, 4> &&proc_ents_skin,
-             std::vector<const CubitMeshSets *> &&vec_ptr)
-          -> std::array<Range, 4> { return proc_ents_skin; },
+      LoadFileFun proc_skin_fun = defaultProcSkinFun,
       const char *options = "PARALLEL=BCAST;PARTITION=");
 
   static Range getPartEntities(moab::Interface &moab, int part);
