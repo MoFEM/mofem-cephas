@@ -1466,9 +1466,9 @@ Range CommInterface::getPartEntities(moab::Interface &moab, int part) {
                                              tagged_sets,
                                              moab::Interface::UNION);
     for (auto &mit : tagged_sets) {
-      int part;
-      CHKERR moab.tag_get_data(part_tag, &mit, 1, &part);
-      if (part == pcomm->rank()) {
+      int part_set;
+      CHKERR moab.tag_get_data(part_tag, &mit, 1, &part_set);
+      if (part_set == part) {
         CHKERR moab.get_entities_by_handle(mit, proc_ents, true);
         MoFEMFunctionReturnHot(0);
       }
