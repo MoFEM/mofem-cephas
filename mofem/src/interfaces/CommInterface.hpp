@@ -284,6 +284,26 @@ struct CommInterface : public UnknownInterface {
 
   static Range getPartEntities(moab::Interface &moab, int part);
 
+  /**
+   * @brief Create a ghost vector for exhanging data
+   *
+   * @note Onlu works if loadFileRootProcAllRestDistributed function is used.
+   * 
+   * @param comm 
+   * @param moab
+   * @param dim  dimension of parrition entities 
+   * @param adj_dim dimension of adjacent entities
+   * @param nb_coeffs number of coefficients
+   * @param sev
+   * @param root_rank
+   *
+   * @return std::pair<Range, SmartPetscObj<Vec>>
+   */
+  static std::pair<Range, SmartPetscObj<Vec>>
+  createZeroProcEntVecMapByDim(MPI_Comm comm, moab::Interface &moab, int dim,
+                               int adj_dim, const int nb_coeffs,
+                               Sev sev = Sev::verbose, int root_rank = 0);
+
   /**@}*/
 
 };
