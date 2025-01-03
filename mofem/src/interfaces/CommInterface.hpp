@@ -284,10 +284,18 @@ struct CommInterface : public UnknownInterface {
 
   static Range getPartEntities(moab::Interface &moab, int part);
 
+  /**@}*/
+  /**@*/
+
+  /** \name Functions when rooot proc have all entities */
+
+  using EntitiesPetscVector =
+      std::pair<std::pair<Range, Range>, SmartPetscObj<Vec>>;
+
   /**
    * @brief Create a ghost vector for exhanging data
    *
-   * @note Onlu works if loadFileRootProcAllRestDistributed function is used.
+   * @note Only works if loadFileRootProcAllRestDistributed function is used.
    * 
    * @param comm 
    * @param moab
@@ -299,10 +307,19 @@ struct CommInterface : public UnknownInterface {
    *
    * @return std::pair<Range, SmartPetscObj<Vec>>
    */
-  static std::pair<Range, SmartPetscObj<Vec>>
-  createZeroProcEntVecMapByDim(MPI_Comm comm, moab::Interface &moab, int dim,
-                               int adj_dim, const int nb_coeffs,
-                               Sev sev = Sev::verbose, int root_rank = 0);
+  static EntitiesPetscVector
+  createEntitiesPetscVector(MPI_Comm comm, moab::Interface &moab, int dim,
+                            const int nb_coeffs, Sev sev = Sev::verbose,
+                            int root_rank = 0);
+
+  /**
+   * @brief Exchange data between vector and data
+   * 
+   * @param tag 
+   * @return MoFEMErrorCode 
+   */
+  static MoFEMErrorCode updatEntitiesPetscVector(moab::Interface &moab,
+                                                 EntitiesPetscVector vec, Tag tag);
 
   /**@}*/
 
