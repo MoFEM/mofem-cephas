@@ -1158,14 +1158,14 @@ CommInterface::partitionMesh(const Range &ents, const int dim,
 
       auto set_gid = [&]() {
         MoFEMFunctionBegin;
-        for (EntityType t = MBVERTEX; t != MBENTITYSET; ++t) {
+        for (int d = 0; d != 4; ++d) {
 
           void *ptr;
           int count;
 
-          int gid = 1; // moab indexing from 1a
+          int gid = 1; // moab indexing from 1
           for (int pp = 0; pp != n_parts; pp++) {
-            Range type_ents = parts_ents[pp].subset_by_type(t);
+            Range type_ents = parts_ents[pp].subset_by_dimension(d);
 
             auto eit = type_ents.begin();
             for (; eit != type_ents.end();) {
@@ -1292,29 +1292,6 @@ MoFEMErrorCode CommInterface::loadFileRootProcAllRestDistributed(
   print_range_on_procs(proc_ents, "proc_ents");
   save_range_to_file(proc_ents, "proc_ents");
 
-  auto number_ents = [&]() {
-    auto gid_tag = moab.globalId_tag();
-    void *ptr;
-    int count;
-
-    for (auto d = 1; d != dim - 1; ++d) {
-      int gid = 1;
-      Range ents;
-      CHKERR moab.get_entities_by_dimension(0, d, ents, true);
-      auto eit = ents.begin();
-      for (; eit != ents.end();) {
-        CHKERR moab.tag_iterate(gid_tag, eit, ents.end(), count, ptr);
-        auto gid_tag_ptr = static_cast<int *>(ptr);
-        for (; count > 0; --count) {
-          *gid_tag_ptr = gid;
-          ++eit;
-          ++gid;
-          ++gid_tag_ptr;
-        }
-      }
-    }
-  };
-
   auto get_proc_ents_skin = [&]() {
     std::array<Range, 4>
         proc_ents_skin; // stores only entities shared with other processors
@@ -1389,7 +1366,6 @@ MoFEMErrorCode CommInterface::loadFileRootProcAllRestDistributed(
     }
   };
 
-  number_ents(); // number higher order entities
   auto proc_ents_skin = add_post_proc_skin(get_proc_ents_skin());
   for (auto d = dim - 1; d >= 0; --d) {
     save_range_to_file(proc_ents_skin[d], "proc_ents_skin" + std::to_string(d));
@@ -1409,14 +1385,9 @@ MoFEMErrorCode CommInterface::loadFileRootProcAllRestDistributed(
 
   if (debug) {
 
-    auto filter_owners = [&](auto &&skin) {
-      Range owner_ents;
-      CHKERR pcomm->filter_pstatus(skin, PSTATUS_NOT_OWNED, PSTATUS_NOT, -1,
-                                   &owner_ents);
-      return owner_ents;
-    };
-
     // Create a tag
+    auto gid_tag = moab.globalId_tag();
+
     int def_val = -1;
     Tag tag_handle;
     CHKERR moab.tag_get_handle("TestGather", 1, MB_TYPE_INTEGER, tag_handle,
@@ -1427,11 +1398,11 @@ MoFEMErrorCode CommInterface::loadFileRootProcAllRestDistributed(
       std::vector<int> vals(gather_ents.size());
       std::for_each(vals.begin(), vals.end(), [](auto &v) { v = std::rand(); });
       CHKERR moab.tag_set_data(tag_handle, gather_ents, vals.data());
+      CHKERR pcomm->gather_data(gather_ents, tag_handle, gid_tag, 0, 0);
     } else {
-      gather_ents = off_proc_ents.subset_by_dimension(3);
+      gather_ents = proc_ents.subset_by_dimension(3);
+      CHKERR pcomm->gather_data(gather_ents, tag_handle, gid_tag, 0, 0);
     }
-    auto gid_tag = moab.globalId_tag();
-    CHKERR pcomm->gather_data(gather_ents, tag_handle, gid_tag);
   }
 
   Range all_ents_after;
@@ -1483,82 +1454,123 @@ Range CommInterface::getPartEntities(moab::Interface &moab, int part) {
   return proc_ents;
 }
 
-std::pair<Range, SmartPetscObj<Vec>>
-CommInterface::createZeroProcEntVecMapByDim(MPI_Comm comm,
-                                            moab::Interface &moab, int dim,
-                                            int adj_dim, const int nb_coeffs,
-                                            Sev sev, int root_rank) {
-
-  auto pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
-
-  auto filter_owners = [&](auto &&skin) {
-    Range owner_ents;
-    CHKERR pcomm->filter_pstatus(skin, PSTATUS_NOT_OWNED, PSTATUS_NOT, -1,
-                                 &owner_ents);
-    return owner_ents;
-  };
-
-  Tag part_tag = pcomm->part_tag();
-  Range tagged_sets, proc_ents, off_proc_ents;
-  CHKERR moab.get_entities_by_type_and_tag(0, MBENTITYSET, &part_tag, NULL, 1,
-                                           tagged_sets, moab::Interface::UNION);
-  for (auto &mit : tagged_sets) {
-    int part;
-    CHKERR moab.tag_get_data(part_tag, &mit, 1, &part);
-    if (part == pcomm->rank()) {
-      CHKERR moab.get_entities_by_handle(mit, proc_ents, true);
-    } else {
-      CHKERR moab.get_entities_by_handle(mit, off_proc_ents, true);
-    }
-  }
-
-  auto get_adj = [&](auto ents, auto dim) {
-    Range adj;
-    CHKERR moab.get_adjacencies(ents, dim, false, adj, moab::Interface::UNION);
-    return adj;
-  };
-
-  auto r = filter_owners(
-
-      (dim != adj_dim) ? get_adj(proc_ents.subset_by_dimension(dim), adj_dim)
-                       : proc_ents.subset_by_dimension(dim)
-
-  );
-
-  std::vector<int> ghosts;
-
-  int glob_size;
-  if (pcomm->rank() == root_rank) {
-    auto o = filter_owners(
-
-        (dim != adj_dim)
-            ? get_adj(off_proc_ents.subset_by_dimension(dim), adj_dim)
-            : off_proc_ents.subset_by_dimension(dim)
-
-    );
-    auto size = o.size();
-    glob_size = nb_coeffs * size;
-    ghosts.reserve(glob_size);
-    int i = nb_coeffs * r.size();
-    for (auto &g : ghosts) {
-      g = i;
-      ++i;
-    }
-    r.merge(o);
-    glob_size = r.size();
-  }
-  MPI_Bcast(&glob_size, 1, MPI_INT, root_rank, comm);
+CommInterface::EntitiesPetscVector
+CommInterface::createEntitiesPetscVector(MPI_Comm comm, moab::Interface &moab,
+                                         int dim, const int nb_coeffs, Sev sev,
+                                         int root_rank) {
 
   SmartPetscObj<Vec> vec;
-  auto create_vec = [&]() {
+  Range r, ghost_ents;
+
+  auto fun = [&]() {
     MoFEMFunctionBegin;
-    vec = createGhostVector(comm, nb_coeffs * r.size(), glob_size,
-                            ghosts.size(), ghosts.data());
+    auto pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
+
+    auto filter_owners = [&](auto &&skin) {
+      Range owner_ents;
+      CHKERR pcomm->filter_pstatus(skin, PSTATUS_NOT_OWNED, PSTATUS_NOT, -1,
+                                   &owner_ents);
+      return owner_ents;
+    };
+
+    Tag part_tag = pcomm->part_tag();
+    Range tagged_sets, proc_ents, off_proc_ents;
+    CHKERR moab.get_entities_by_type_and_tag(0, MBENTITYSET, &part_tag, NULL, 1,
+                                             tagged_sets,
+                                             moab::Interface::UNION);
+    for (auto &mit : tagged_sets) {
+      int part;
+      CHKERR moab.tag_get_data(part_tag, &mit, 1, &part);
+      if (part == pcomm->rank()) {
+        CHKERR moab.get_entities_by_handle(mit, proc_ents, true);
+      } else {
+        CHKERR moab.get_entities_by_handle(mit, off_proc_ents, true);
+      }
+    }
+
+    r = proc_ents.subset_by_dimension(dim);
+    auto o = off_proc_ents.subset_by_dimension(dim);
+
+    auto set_ghosts = [&](Range &ents) {
+      auto gid_tag = moab.globalId_tag();
+      std::vector<int> ghosts(ents.size());
+      CHKERR moab.tag_get_data(gid_tag, ents, ghosts.data());
+      std::vector<int> ghosts_nb(nb_coeffs * ents.size());
+      for (int i = 0; i < ents.size(); ++i)
+        for (int j = 0; j < nb_coeffs; ++j)
+          ghosts_nb[i * nb_coeffs + j] = nb_coeffs * (ghosts[i] - 1) + j;
+      ghosts.swap(ghosts_nb);
+      return ghosts;
+    };
+
+    std::vector<int> ghosts;
+    if (pcomm->rank() == root_rank) {
+      ghosts = set_ghosts(o);
+      ghost_ents = o;
+    } else {
+      Range ents;
+      CHKERR moab.get_entities_by_dimension(0, dim, ents);
+      ghosts = set_ghosts(ents);
+      ghost_ents = ents;
+    }
+
+    auto create_vec = [&]() {
+      MoFEMFunctionBegin;
+      vec = createGhostVector(comm, nb_coeffs * r.size(), PETSC_DETERMINE,
+                              ghosts.size(), ghosts.data());
+      MoFEMFunctionReturn(0);
+    };
+    CHKERR create_vec();
+
     MoFEMFunctionReturn(0);
   };
-  create_vec();
 
-  return std::make_pair(r, vec);
+  CHKERR fun();
+
+  return std::make_pair(std::make_pair(r, ghost_ents), vec);
+}
+
+MoFEMErrorCode CommInterface::updatEntitiesPetscVector(moab::Interface &moab,
+                                                       EntitiesPetscVector vec,
+                                                       Tag tag) {
+  MoFEMFunctionBegin;
+
+  auto set_vec_from_tags = [&]() {
+    MoFEMFunctionBegin;
+    double *v_array;
+    // set vector
+    CHKERR VecGetArray(vec.second, &v_array);
+    CHKERR moab.tag_get_data(tag, vec.first.first, v_array);
+    CHKERR moab.tag_get_data(tag, vec.first.second, v_array);
+    CHKERR VecRestoreArray(vec.second, &v_array);
+    MoFEMFunctionReturn(0);
+  };
+
+  auto set_tags_from_vec = [&]() {
+    MoFEMFunctionBegin;
+    double *v_array;
+    CHKERR VecGetArray(vec.second, &v_array);
+    CHKERR moab.tag_set_data(tag, vec.first.first, v_array);
+    CHKERR moab.tag_set_data(tag, vec.first.second,
+                             &v_array[vec.first.first.size()]);
+    CHKERR VecRestoreArray(vec.second, &v_array);
+    MoFEMFunctionReturn(0);
+  };
+
+  CHKERR set_vec_from_tags();
+
+  // update vector
+  CHKERR VecAssemblyBegin(vec.second);
+  CHKERR VecAssemblyEnd(vec.second);
+  CHKERR VecGhostUpdateBegin(vec.second, ADD_VALUES, SCATTER_REVERSE);
+  CHKERR VecGhostUpdateEnd(vec.second, ADD_VALUES, SCATTER_REVERSE);
+  CHKERR VecGhostUpdateBegin(vec.second, INSERT_VALUES,
+                             SCATTER_FORWARD);
+  CHKERR VecGhostUpdateEnd(vec.second, INSERT_VALUES, SCATTER_FORWARD);
+
+  CHKERR set_tags_from_vec();
+
+  MoFEMFunctionReturn(0);
 }
 
 } // namespace MoFEM
