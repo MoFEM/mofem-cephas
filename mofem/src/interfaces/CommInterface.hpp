@@ -312,15 +312,29 @@ struct CommInterface : public UnknownInterface {
                             const int nb_coeffs, Sev sev = Sev::verbose,
                             int root_rank = 0);
 
+  using UpdateGhosts = std::function<MoFEMErrorCode(Vec vec)>;
+
+  static MoFEMErrorCode defaultUpdateGhosts(Vec v) {
+    MoFEMFunctionBegin;
+    CHKERR VecAssemblyBegin(v);
+    CHKERR VecAssemblyEnd(v);
+    CHKERR VecGhostUpdateBegin(v, ADD_VALUES, SCATTER_REVERSE);
+    CHKERR VecGhostUpdateEnd(v, ADD_VALUES, SCATTER_REVERSE);
+    CHKERR VecGhostUpdateBegin(v, INSERT_VALUES, SCATTER_FORWARD);
+    CHKERR VecGhostUpdateEnd(v, INSERT_VALUES, SCATTER_FORWARD);
+    MoFEMFunctionReturn(0);
+  };
+
   /**
    * @brief Exchange data between vector and data
    * 
    * @param tag 
    * @return MoFEMErrorCode 
    */
-  static MoFEMErrorCode updatEntitiesPetscVector(moab::Interface &moab,
-                                                 EntitiesPetscVector &vec,
-                                                 Tag tag);
+  static MoFEMErrorCode
+  updatEntitiesPetscVector(moab::Interface &moab, EntitiesPetscVector &vec,
+                           Tag tag,
+                           UpdateGhosts update_gosts = defaultUpdateGhosts);
 
   /**@}*/
 

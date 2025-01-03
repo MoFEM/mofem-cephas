@@ -1539,9 +1539,10 @@ CommInterface::createEntitiesPetscVector(MPI_Comm comm, moab::Interface &moab,
   return std::make_pair(std::make_pair(r, ghost_ents), vec);
 }
 
-MoFEMErrorCode CommInterface::updatEntitiesPetscVector(moab::Interface &moab,
-                                                       EntitiesPetscVector &vec,
-                                                       Tag tag) {
+MoFEMErrorCode
+CommInterface::updatEntitiesPetscVector(moab::Interface &moab,
+                                        EntitiesPetscVector &vec, Tag tag,
+                                        UpdateGhosts update_gosts) {
   MoFEMFunctionBegin;
 
   auto set_vec_from_tags = [&]() {
@@ -1568,16 +1569,7 @@ MoFEMErrorCode CommInterface::updatEntitiesPetscVector(moab::Interface &moab,
   };
 
   CHKERR set_vec_from_tags();
-
-  // update vector
-  CHKERR VecAssemblyBegin(vec.second);
-  CHKERR VecAssemblyEnd(vec.second);
-  CHKERR VecGhostUpdateBegin(vec.second, ADD_VALUES, SCATTER_REVERSE);
-  CHKERR VecGhostUpdateEnd(vec.second, ADD_VALUES, SCATTER_REVERSE);
-  CHKERR VecGhostUpdateBegin(vec.second, INSERT_VALUES,
-                             SCATTER_FORWARD);
-  CHKERR VecGhostUpdateEnd(vec.second, INSERT_VALUES, SCATTER_FORWARD);
-
+  CHKERR update_gosts(vec.second);
   CHKERR set_tags_from_vec();
 
   MoFEMFunctionReturn(0);
