@@ -1486,6 +1486,14 @@ CommInterface::createEntitiesPetscVector(MPI_Comm comm, moab::Interface &moab,
       } else {
         CHKERR moab.get_entities_by_handle(mit, off_proc_ents, true);
       }
+      if (dim == 0) {
+        Range verts;
+        CHKERR moab.get_connectivity(proc_ents, verts);
+        proc_ents.merge(verts);
+        verts.clear();
+        CHKERR moab.get_connectivity(off_proc_ents, verts);
+        off_proc_ents.merge(verts);
+      }
     }
 
     r = proc_ents.subset_by_dimension(dim);
@@ -1510,6 +1518,7 @@ CommInterface::createEntitiesPetscVector(MPI_Comm comm, moab::Interface &moab,
     } else {
       Range ents;
       CHKERR moab.get_entities_by_dimension(0, dim, ents);
+      ents = subtract(ents, r);
       ghosts = set_ghosts(ents);
       ghost_ents = ents;
     }
@@ -1531,7 +1540,7 @@ CommInterface::createEntitiesPetscVector(MPI_Comm comm, moab::Interface &moab,
 }
 
 MoFEMErrorCode CommInterface::updatEntitiesPetscVector(moab::Interface &moab,
-                                                       EntitiesPetscVector vec,
+                                                       EntitiesPetscVector &vec,
                                                        Tag tag) {
   MoFEMFunctionBegin;
 
@@ -1541,7 +1550,8 @@ MoFEMErrorCode CommInterface::updatEntitiesPetscVector(moab::Interface &moab,
     // set vector
     CHKERR VecGetArray(vec.second, &v_array);
     CHKERR moab.tag_get_data(tag, vec.first.first, v_array);
-    CHKERR moab.tag_get_data(tag, vec.first.second, v_array);
+    CHKERR moab.tag_get_data(tag, vec.first.second,
+                             &v_array[vec.first.first.size()]);
     CHKERR VecRestoreArray(vec.second, &v_array);
     MoFEMFunctionReturn(0);
   };
