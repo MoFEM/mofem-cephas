@@ -319,7 +319,8 @@ struct CommInterface : public UnknownInterface {
    * @return MoFEMErrorCode 
    */
   static MoFEMErrorCode updatEntitiesPetscVector(moab::Interface &moab,
-                                                 EntitiesPetscVector vec, Tag tag);
+                                                 EntitiesPetscVector &vec,
+                                                 Tag tag);
 
   /**@}*/
 
