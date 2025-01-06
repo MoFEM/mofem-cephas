@@ -959,11 +959,11 @@ MoFEMErrorCode Seepage::OPs() {
     pip.push_back(new OpUnSetBc("FLUX"));
 
     auto gravity_vector_ptr = boost::make_shared<MatrixDouble>();
-    gravity_vector_ptr->resize(SPACE_DIM, 1);
+    gravity_vector_ptr->resize(3, 1);
     auto set_body_force = [&]() {
       FTensor::Index<'i', SPACE_DIM> i;
       MoFEMFunctionBegin;
-      auto t_force = getFTensor1FromMat<SPACE_DIM>(*gravity_vector_ptr);
+      auto t_force = getFTensor1FromMat<3>(*gravity_vector_ptr);
       double fluid_density = 0.;
       CHKERR PetscOptionsGetReal(PETSC_NULL, "", "-fluid_density", &fluid_density,
                                  PETSC_NULL);
