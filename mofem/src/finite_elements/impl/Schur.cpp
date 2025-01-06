@@ -1721,11 +1721,6 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
       mat_block_size += size;
     }
 
-    auto get_range = [](auto &b) {
-      auto [index, size, loc] = b;
-      return range(index, index + size);
-    };
-
     std::vector<std::tuple<int, int, int, int, int>> block_data;
     block_data.reserve(blocks.size());
     for (auto s : blocks) {
