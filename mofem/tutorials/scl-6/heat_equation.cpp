@@ -258,7 +258,7 @@ MoFEMErrorCode HeatEquation::assembleSystem() {
                                  const double z) {
       auto pipeline_mng = mField.getInterface<PipelineManager>();
       auto &fe_rhs = pipeline_mng->getBoundaryRhsFE();
-      const auto t = fe_rhs->ts_t;
+      // const auto t = fe_rhs->ts_t;
       return 0;
       // abs(0.1 * pow(M_E, -M_PI * M_PI * t) * sin(2. * M_PI * x) *
       //     sin(3. * M_PI * y));
