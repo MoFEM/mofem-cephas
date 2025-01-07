@@ -29,6 +29,7 @@ struct SchurEvents {
   static PetscLogEvent MOFEM_EVENT_BlockStructureSetValues;
   static PetscLogEvent MOFEM_EVENT_BlockStructureMult;
   static PetscLogEvent MOFEM_EVENT_BlockStructureSolve;
+  static PetscLogEvent MOFEM_EVENT_AssembleSchurMat;
   static PetscLogEvent MOFEM_EVENT_zeroRowsAndCols;
   SchurEvents();
 };
@@ -133,6 +134,22 @@ boost::shared_ptr<NestSchurData> createSchurNestedMatrixStruture(
     bool add_preconditioner_block = false
 
 );
+
+/**
+ * @brief Assemble Schur matrix
+ * 
+ * @param m_field 
+ * @param B 
+ * @param S 
+ * @param fields_name 
+ * @param field_ents 
+ * @param ao 
+ * @return MoFEMErrorCode 
+ */
+MoFEMErrorCode assembleSchur(MoFEM::Interface &m_field, Mat B, Mat S,
+                             std::vector<std::string> fields_name,
+                             std::vector<boost::shared_ptr<Range>> field_ents,
+                             SmartPetscObj<AO> ao);
 
 /**
  * @brief Switch preconditioner
