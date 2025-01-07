@@ -1870,6 +1870,7 @@ MoFEMErrorCode assembleSchur(MoFEM::Interface &m_field, Mat B, Mat S,
   MatrixDouble block_mat_a10;
   MatrixDouble block_mat_a11;
   VectorInt ipiv;
+  std::vector<int> glob_idx;
   std::vector<int> row_glob_idx, col_glob_idx;
 
   auto &block_index = ctx->blockIndex.get<1>();
@@ -1911,21 +1912,27 @@ MoFEMErrorCode assembleSchur(MoFEM::Interface &m_field, Mat B, Mat S,
     }
 
     for (auto b : a11_blocks) {
+
       row_glob_idx.resize(b->getNbRows());
-      std::iota(row_glob_idx.begin(), row_glob_idx.end(), b->getRow());
       col_glob_idx.resize(b->getNbCols());
+
+      std::iota(row_glob_idx.begin(), row_glob_idx.end(), b->getRow());
       std::iota(col_glob_idx.begin(), col_glob_idx.end(), b->getCol());
-      auto ptr = &(*(ctx->dataBlocksPtr))[b->getMatShift()];
-      CHKERR AOApplicationToPetsc(ao, row_glob_idx.size(), row_glob_idx.data());
       CHKERR AOApplicationToPetsc(ao, col_glob_idx.size(), col_glob_idx.data());
-      CHKERR MatSetValuesBlocked(S, row_glob_idx.size(), row_glob_idx.data(),
-                                 col_glob_idx.size(), col_glob_idx.data(), ptr,
-                                 INSERT_VALUES);
-      if (ctx->multiplyByPreconditioner) {
-        auto ptr = &(*(ctx->preconditionerBlocksPtr))[b->getMatShift()];
-        CHKERR MatSetValuesBlocked(S, row_glob_idx.size(), row_glob_idx.data(),
-                                   col_glob_idx.size(), col_glob_idx.data(),
-                                   ptr, INSERT_VALUES);
+      CHKERR AOApplicationToPetsc(ao, row_glob_idx.size(), row_glob_idx.data());
+
+      auto shift = b->getMatShift();
+      if (shift != -1) {
+        auto ptr = &(*(ctx->dataBlocksPtr))[shift];
+        CHKERR MatSetValues(S, row_glob_idx.size(), row_glob_idx.data(),
+                            col_glob_idx.size(), col_glob_idx.data(), ptr,
+                            ADD_VALUES);
+        if (ctx->multiplyByPreconditioner) {
+          auto ptr = &(*(ctx->preconditionerBlocksPtr))[shift];
+          CHKERR MatSetValues(S, row_glob_idx.size(), row_glob_idx.data(),
+                              col_glob_idx.size(), col_glob_idx.data(), ptr,
+                              ADD_VALUES);
+        }
       }
     }
 
@@ -2087,12 +2094,19 @@ MoFEMErrorCode assembleSchur(MoFEM::Interface &m_field, Mat B, Mat S,
       if (info)
         SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "lapack error info = %d", info);
+
+      // block_mat_a01 = trans(block_mat_a01);
       cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
                   block_mat_a11.size1(), block_mat_a11.size2(),
-                  block_mat_a00.size1(), -1., block_mat_a01.data().data(),
-                  block_mat_a01.size2(), block_mat_a10.data().data(),
-                  block_mat_a10.size2(), 0., block_mat_a11.data().data(),
-                  block_mat_a11.size2());
+                  block_mat_a00.size1(), -1.,
+
+                  block_mat_a10.data().data(), block_mat_a10.size2(),
+
+                  block_mat_a01.data().data(), block_mat_a01.size2(),
+
+                  0., block_mat_a11.data().data(), block_mat_a11.size2()
+
+      );
 
       int idx = 0;
       std::vector<int> glob_idx(block_mat_a11.size1());
