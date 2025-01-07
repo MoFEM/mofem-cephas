@@ -19,12 +19,15 @@ double ScalingMethod::getScale(const double time) {
 const std::string TimeScale::defaultDelimiter =
     "(\\s*,\\s*|\\s+)"; ///< comma or space
 
-TimeScale::TimeScale(std::string file_name, bool error_if_file_not_given)
-    : TimeScale(file_name, defaultDelimiter, error_if_file_not_given) {}
+TimeScale::TimeScale(std::string file_name, bool error_if_file_not_given,
+                     ScalingFun def_scaling_fun)
+    : TimeScale(file_name, defaultDelimiter, error_if_file_not_given,
+                def_scaling_fun) {}
 
 TimeScale::TimeScale(std::string file_name, std::string delimiter,
-                     bool error_if_file_not_given)
-    : fileName(file_name), errorIfFileNotGiven(error_if_file_not_given) {
+                     bool error_if_file_not_given, ScalingFun def_scaling_fun)
+    : fileName(file_name), errorIfFileNotGiven(error_if_file_not_given),
+      defScalingMethod(def_scaling_fun) {
   CHK_THROW_MESSAGE(timeData(file_name, delimiter),
                     "Error in reading time data");
 }
@@ -34,29 +37,30 @@ MoFEMErrorCode TimeScale::timeData(std::string fileName,
   MoFEMFunctionBegin;
   MOFEM_LOG_CHANNEL("WORLD");
   // Set the argument found flag to false as default
-  PetscBool arg_found = PETSC_FALSE;
   char time_file_name[255] = {'\0'};
   // Check to see if a filename has been provided
   if (fileName.empty()) {
     // If no filename, look for command line argument
     CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, fileNameFlag.c_str(),
-                                 time_file_name, 255, &arg_found);
-    if (arg_found) {
+                                 time_file_name, 255, &argFileScale);
+    if (argFileScale) {
       fileName = std::string(time_file_name);
     }
   } else {
     // Set the command line flag to true for correct flow control using provided
     // filename
-    arg_found = PETSC_TRUE;
+    argFileScale = PETSC_TRUE;
   }
-  if (!arg_found && fileName.empty() && errorIfFileNotGiven) {
+  if (!argFileScale && fileName.empty() && errorIfFileNotGiven) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "*** ERROR %s (time_data FILE NEEDED)", fileName.c_str());
-  } else if (!arg_found && fileName.empty() && !errorIfFileNotGiven) {
+  } else if (!argFileScale && fileName.empty() && !errorIfFileNotGiven) {
     MOFEM_LOG_C("WORLD", Sev::warning,
                 "The %s file not provided. Loading scaled with time.",
                 fileName.c_str());
-    scalingMethod = [this](double time) { return this->getLinearScale(time); };
+    scalingMethod = [this](double time) {
+      return this->defScalingMethod(time);
+    };
     MoFEMFunctionReturnHot(0);
   }
 
@@ -67,8 +71,10 @@ MoFEMErrorCode TimeScale::timeData(std::string fileName,
   } else if (!in_file_stream.is_open() && !errorIfFileNotGiven) {
     MOFEM_LOG("WORLD", Sev::warning)
         << "*** Warning data file " << fileName
-        << " open unsuccessful. Using linear time scaling.";
-    scalingMethod = [this](double time) { return this->getLinearScale(time); };
+        << " open unsuccessful. Using default time scaling.";
+    scalingMethod = [this](double time) {
+      return this->defScalingMethod(time);
+    };
     MoFEMFunctionReturnHot(0);
   }
 
@@ -99,8 +105,6 @@ MoFEMErrorCode TimeScale::timeData(std::string fileName,
   }
   MoFEMFunctionReturn(0);
 }
-
-double TimeScale::getLinearScale(const double time) { return time; }
 
 double TimeScale::getScaleFromData(const double time) {
   if (tSeries.empty())

@@ -70,6 +70,7 @@ add_test(
   -ts_dt 1
   -init_temp 293 
   -ref_temp 293
+  -output_domain
   -field_eval_coords 0.75,0.75,0.25
   -atom_test 1
 )
@@ -87,6 +88,7 @@ add_test(
   -ts_dt 1
   -init_temp 293 
   -ref_temp 293
+  -output_domain
   -field_eval_coords 0.75,0.75,0.25
   -atom_test 2
 )
