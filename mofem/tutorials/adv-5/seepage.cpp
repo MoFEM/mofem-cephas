@@ -221,6 +221,7 @@ private:
   boost::shared_ptr<MatrixDouble> dispGradPtr;
   boost::shared_ptr<MatrixDouble> strainFieldPtr;
   boost::shared_ptr<MatrixDouble> stressFieldPtr;
+  boost::shared_ptr<MatrixDouble> mDPtr;
 
   struct BlockedParameters
       : public boost::enable_shared_from_this<BlockedParameters> {
@@ -564,6 +565,7 @@ MoFEMErrorCode Seepage::setupProblem() {
   dispGradPtr = boost::make_shared<MatrixDouble>();
   strainFieldPtr = boost::make_shared<MatrixDouble>();
   stressFieldPtr = boost::make_shared<MatrixDouble>();
+  mDPtr = boost::make_shared<MatrixDouble>();
 
   if (doEvalField) {
     fieldEvalData = mField.getInterface<FieldEvaluatorInterface>()->getData<DomainEle>();
@@ -1211,80 +1213,90 @@ MoFEMErrorCode Seepage::tsSolve() {
         CHKERR TSGetTime(solver, &current_time);
 
 
-        // add headers
-        results_file << "Time Step, Time, ";
-        results_file << "Pressure, ";
-        for (int i = 0; i < SPACE_DIM; ++i) {
-            results_file << "Flux (FLUX_" << i << "), ";
-        }
-        for (int i = 0; i < SPACE_DIM; ++i) {
-            results_file << "Displacement (U_" << i << "), ";
-        }
-        for (int i = 0; i < SPACE_DIM; ++i) {
-            for (int j = 0; j < SPACE_DIM; ++j) {
-               results_file << "Stress (S_" << i << j << "), ";
-            }
-        }
-        results_file << "\n";
+        // // add headers
+        // results_file << "Time Step, Time, ";
+        // results_file << "Pressure, ";
+        // for (int i = 0; i < SPACE_DIM; ++i) {
+        //     results_file << "Flux (FLUX_" << i << "), ";
+        // }
+        // for (int i = 0; i < SPACE_DIM; ++i) {
+        //     results_file << "Displacement (U_" << i << "), ";
+        // }
+        // for (int i = 0; i < SPACE_DIM; ++i) {
+        //     for (int j = 0; j < SPACE_DIM; ++j) {
+        //        results_file << "Stress (S_" << i << j << "), ";
+        //     }
+        // }
+        // results_file << "\n";
         
         // print results
-        results_file << current_time_step << ",";
-        results_file << current_time << ",";
+        // results_file << current_time_step << ",";
+        // results_file << current_time << ",";
 
-        if (pressureFieldPtr->size()) {
-          auto p_temp = getFTensor0FromVec(*pressureFieldPtr);
-          results_file << p_temp << ",";
-        }
+        // if (pressureFieldPtr->size()) {
+        //   auto p_temp = getFTensor0FromVec(*pressureFieldPtr);
+        //   results_file << p_temp << ",";
+        // }
 
-        if (fluxFieldPtr->size1()) {
-          auto flux_temp = getFTensor1FromMat<SPACE_DIM>(*fluxFieldPtr);
-          for (int i = 0; i < SPACE_DIM; ++i) {
-              results_file << flux_temp(i) << ", ";
-          }
-        } else {
-          for (int i = 0; i < SPACE_DIM; ++i) {
-              results_file << "N/A, ";
-          }
-        }
+        // if (fluxFieldPtr->size1()) {
+        //   auto flux_temp = getFTensor1FromMat<SPACE_DIM>(*fluxFieldPtr);
+        //   for (int i = 0; i < SPACE_DIM; ++i) {
+        //       results_file << flux_temp(i) << ", ";
+        //   }
+        // } else {
+        //   for (int i = 0; i < SPACE_DIM; ++i) {
+        //       results_file << "N/A, ";
+        //   }
+        // }
 
-        if (dispFieldPtr->size1()) {
-            auto disp_temp = getFTensor1FromMat<SPACE_DIM>(*dispFieldPtr);
-            for (int i = 0; i < SPACE_DIM; ++i) {
-                results_file << disp_temp(i) << ", ";
-            }
-        } else {
-            for (int i = 0; i < SPACE_DIM; ++i) {
-                results_file << "N/A, ";
-            }
-        }
+        // if (dispFieldPtr->size1()) {
+        //     auto disp_temp = getFTensor1FromMat<SPACE_DIM>(*dispFieldPtr);
+        //     for (int i = 0; i < SPACE_DIM; ++i) {
+        //         results_file << disp_temp(i) << ", ";
+        //     }
+        // } else {
+        //     for (int i = 0; i < SPACE_DIM; ++i) {
+        //         results_file << "N/A, ";
+        //     }
+        // }
 
-        if (stressFieldPtr->size1()) {
-            auto stress_temp = getFTensor2SymmetricFromMat<SPACE_DIM>(*stressFieldPtr);
-            for (int i = 0; i < SPACE_DIM; ++i) {
-              for (int j = 0; j < SPACE_DIM; ++j) {
-                  results_file << stress_temp(i, j) << ", ";
-              }
-            }
-        } else {
-            for (int i = 0; i < SPACE_DIM; ++i) {
-                for (int j = 0; j < SPACE_DIM; ++j) {
-                    results_file << "N/A, ";
-                }
-            }
-        }
-        results_file << "\n";
+        // if (stressFieldPtr->size1()) {
+        //     auto stress_temp = getFTensor2SymmetricFromMat<SPACE_DIM>(*stressFieldPtr);
+        //     for (int i = 0; i < SPACE_DIM; ++i) {
+        //       for (int j = 0; j < SPACE_DIM; ++j) {
+        //           results_file << stress_temp(i, j) << ", ";
+        //       }
+        //     }
+        // } else {
+        //     for (int i = 0; i < SPACE_DIM; ++i) {
+        //         for (int j = 0; j < SPACE_DIM; ++j) {
+        //             results_file << "N/A, ";
+        //         }
+        //     }
+        // }
+        // results_file << "\n";
         
-        results_file.close();
+        // results_file.close();
         
-        MOFEM_LOG("SeepageSync", Sev::inform)
-            << "Eval point pore pressure: " << *pressureFieldPtr;  //this is pressure?
-        MOFEM_LOG("SeepageSync", Sev::inform)
-            << "Eval point symmetric stress tensor: " << *stressFieldPtr;  
-        MOFEM_LOG("SeepageSync", Sev::inform)
-            << "Eval point flux: " << *fluxFieldPtr;
-        MOFEM_LOG("SeepageSync", Sev::inform)
-            << "Eval point displacement: " << *dispFieldPtr;
+        if (pressureFieldPtr && !pressureFieldPtr->empty()) {
+            MOFEM_LOG("SeepageSync", Sev::inform)
+                << "Eval point pore pressure: " << *pressureFieldPtr;  
+            MOFEM_LOG("SeepageSync", Sev::inform)
+                << "Eval point symmetric stress tensor: " << *stressFieldPtr;  
+            MOFEM_LOG("SeepageSync", Sev::inform)
+                << "Eval point flux: " << *fluxFieldPtr;
+            MOFEM_LOG("SeepageSync", Sev::inform)
+                << "Eval point displacement: " << *dispFieldPtr;
+            MOFEM_LOG("SeepageSync", Sev::inform)
+                << "Eval point displacement gradient: " << *dispGradPtr;
+            MOFEM_LOG("SeepageSync", Sev::inform)
+                << "Eval point strain: " << *strainFieldPtr;
+            MOFEM_LOG("SeepageSync", Sev::inform)
+                << "Eval point elasticity matrix: " << *mDPtr;
+
+        }
         MOFEM_LOG_SEVERITY_SYNC(mField.get_comm(), Sev::inform);
+        
       }
 
       MoFEMFunctionReturn(0);
