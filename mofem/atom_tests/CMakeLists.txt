@@ -1690,7 +1690,7 @@ build_test(
 )
 set_target_properties(
   test_broken_space_2d PROPERTIES COMPILE_FLAGS 
-  "-DEXECUTABLE_DIMENSION=2 -DSCHUR_ASSEMBLE=0")
+  "-DEXECUTABLE_DIMENSION=2 -DSCHUR_ASSEMBLE=0 -DBLOCK_ASSEMBLE_SELECTION=0")
 
 list(INSERT test_broken_base_list_2d
   0
@@ -1722,7 +1722,7 @@ build_test(
 )
 set_target_properties(
   test_broken_space_3d PROPERTIES COMPILE_FLAGS 
-  "-DEXECUTABLE_DIMENSION=3 -DSCHUR_ASSEMBLE=0")
+  "-DEXECUTABLE_DIMENSION=3 -DSCHUR_ASSEMBLE=0 -DBLOCK_ASSEMBLE_SELECTION=0")
 
 list(INSERT test_broken_base_list_3d
   0
@@ -1754,7 +1754,7 @@ build_test(
 )
 set_target_properties(
   test_broken_space_2d_schur PROPERTIES COMPILE_FLAGS 
-  "-DEXECUTABLE_DIMENSION=2 -DSCHUR_ASSEMBLE=1")
+  "-DEXECUTABLE_DIMENSION=2 -DSCHUR_ASSEMBLE=1 -DBLOCK_ASSEMBLE_SELECTION=0")
 
 add_test(
   test_broken_space_2d_demkowicz_schur
@@ -1792,11 +1792,85 @@ build_test(
   test_broken_space.cpp)
 set_target_properties(
   test_broken_space_3d_schur PROPERTIES COMPILE_FLAGS 
-  "-DEXECUTABLE_DIMENSION=3 -DSCHUR_ASSEMBLE=1")  
+  "-DEXECUTABLE_DIMENSION=3 -DSCHUR_ASSEMBLE=1 -DBLOCK_ASSEMBLE_SELECTION=0")  
 
 add_test(test_broken_space_3d_demkowicz_schur
   ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 3
   ${CMAKE_CURRENT_BINARY_DIR}/test_broken_space_3d_schur
+  -file_name disp01_3parts.h5m
+  -log_sl inform 
+  -ksp_type gmres 
+  -ksp_monitor 
+  -ksp_atol 1e-12 
+  -ksp_rtol 1e-12 
+  -base demkowicz
+  -space hdiv
+  -pc_type fieldsplit
+  -pc_fieldsplit_type schur
+  -fieldsplit_0_ksp_type preonly
+  -fieldsplit_1_ksp_type gmres
+  -fieldsplit_1_pc_type mg
+  -fieldsplit_1_mg_levels_ksp_max_it 6
+  -fieldsplit_1_pc_mg_type multiplicative
+  -fieldsplit_1_mg_coarse_ksp_type preonly 
+  -fieldsplit_1_mg_coarse_pc_type hypre
+  -fieldsplit_1_ksp_monitor
+  -mofem_mg_coarse_order 0
+  -mofem_mg_levels 4
+  -order 4
+  -max_post_proc_ref_level 4
+  -log_no_color)
+
+
+  build_test(
+  test_broken_space_2d_schur_block
+  test_broken_space.cpp
+)
+set_target_properties(
+  test_broken_space_2d_schur_block PROPERTIES COMPILE_FLAGS 
+  "-DEXECUTABLE_DIMENSION=2 -DSCHUR_ASSEMBLE=1 -DBLOCK_ASSEMBLE_SELECTION=1")
+
+add_test(
+  test_broken_space_2d_demkowicz_schur_block
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/test_broken_space_2d_schur_block
+  -file_name rectangle_tri.h5m
+  -log_sl inform 
+  -ksp_type fgmres 
+  -ksp_monitor 
+  -ksp_converged_reason
+  -ksp_atol 1e-12 
+  -ksp_rtol 1e-12 
+  -base ${test_base}
+  -space hcurl
+  -order 4
+  -max_post_proc_ref_level 4
+  -pc_type fieldsplit
+  -pc_fieldsplit_type schur
+  -fieldsplit_0_ksp_type preonly
+  -fieldsplit_1_ksp_type gmres
+  -fieldsplit_1_pc_type mg
+  -fieldsplit_1_mg_levels_ksp_max_it 6
+  -fieldsplit_1_pc_mg_type multiplicative
+  -fieldsplit_1_mg_coarse_ksp_type preonly 
+  -fieldsplit_1_mg_coarse_pc_type lu
+  -fieldsplit_1_mg_coarse_pc_factor_mat_solver_type mumps
+  -fieldsplit_1_ksp_monitor
+  -mofem_mg_coarse_order 0
+  -mofem_mg_levels 4
+  -mg_levels_ksp_max_it 6
+  -log_no_color)
+
+build_test(
+  test_broken_space_3d_schur_block
+  test_broken_space.cpp)
+set_target_properties(
+  test_broken_space_3d_schur_block PROPERTIES COMPILE_FLAGS 
+  "-DEXECUTABLE_DIMENSION=3 -DSCHUR_ASSEMBLE=1 -DBLOCK_ASSEMBLE_SELECTION=1")  
+
+add_test(test_broken_space_3d_demkowicz_schur_block
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 3
+  ${CMAKE_CURRENT_BINARY_DIR}/test_broken_space_3d_schur_block
   -file_name disp01_3parts.h5m
   -log_sl inform 
   -ksp_type gmres 
