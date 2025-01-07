@@ -285,9 +285,19 @@ struct DiagBlockIndex {
 
               const_mem_fun<Indexes, UId, &Indexes::getFEUId>
 
-              >
+              >,
 
-          >>;
+          ordered_non_unique<
+
+              const_mem_fun<Indexes, UId, &Indexes::getRowUId>
+
+              >,
+
+          ordered_non_unique<
+
+              const_mem_fun<Indexes, UId, &Indexes::getColUId>
+
+              >>>;
 
   BlockIndex blockIndex; ///< blocks indexes storage
 };
@@ -310,6 +320,7 @@ PetscLogEvent SchurEvents::MOFEM_EVENT_BlockStructureSetValues;
 PetscLogEvent SchurEvents::MOFEM_EVENT_BlockStructureMult;
 PetscLogEvent SchurEvents::MOFEM_EVENT_BlockStructureSolve;
 PetscLogEvent SchurEvents::MOFEM_EVENT_zeroRowsAndCols;
+PetscLogEvent SchurEvents::MOFEM_EVENT_AssembleSchurMat;
 
 SchurEvents::SchurEvents() {
   PetscLogEventRegister("schurMatSetVal", 0, &MOFEM_EVENT_schurMatSetValues);
@@ -318,6 +329,7 @@ SchurEvents::SchurEvents() {
   PetscLogEventRegister("blockMult", 0, &MOFEM_EVENT_BlockStructureMult);
   PetscLogEventRegister("blockSolve", 0, &MOFEM_EVENT_BlockStructureSolve);
   PetscLogEventRegister("schurZeroRandC", 0, &MOFEM_EVENT_zeroRowsAndCols);
+  PetscLogEventRegister("assembleSchurMat", 0, &MOFEM_EVENT_AssembleSchurMat);
 }
 
 SchurElemMats::SchurElemStorage SchurElemMats::schurL2Storage;
@@ -1797,6 +1809,307 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
 
   // PetscLogFlops(xxx)
   PetscLogEventEnd(SchurEvents::MOFEM_EVENT_BlockStructureSolve, 0, 0, 0, 0);
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode assembleSchur(MoFEM::Interface &m_field, Mat B, Mat S,
+                             std::vector<std::string> fields_name,
+                             std::vector<boost::shared_ptr<Range>> field_ents,
+                             SmartPetscObj<AO> ao) {
+  using matrix_range = ublas::matrix_range<MatrixDouble>;
+  using range = ublas::range;
+  MoFEMFunctionBegin;
+  BlockStructure *ctx;
+  CHKERR MatShellGetContext(B, (void **)&ctx);
+
+  constexpr bool debug = false;
+
+  PetscLogEventBegin(SchurEvents::MOFEM_EVENT_AssembleSchurMat, 0, 0, 0, 0);
+
+  if (ao.use_count() == 0) {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "No AO set");
+  }
+
+  if (ctx->multiplyByPreconditioner) {
+    if (!ctx->preconditionerBlocksPtr)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "No preconditionerBlocksPtr");
+  }
+
+  std::vector<std::pair<UId, UId>> a00_fields_uids;
+  a00_fields_uids.reserve(fields_name.size());
+  auto it_field_ents = field_ents.begin();
+  if (fields_name.size() != field_ents.size()) {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "fields_name.size() != field_ents.size()");
+  }
+  for (auto &f : fields_name) {
+    int bn = m_field.get_field_bit_number(f);
+    if (*it_field_ents) {
+      for (auto p = (*it_field_ents)->pair_begin();
+           p != (*it_field_ents)->pair_end(); ++p) {
+        a00_fields_uids.emplace_back(
+            DofEntity::getLoFieldEntityUId(bn, p->first),
+            DofEntity::getHiFieldEntityUId(bn, p->second));
+      }
+    } else {
+      a00_fields_uids.emplace_back(FieldEntity::getLoBitNumberUId(bn),
+                                   FieldEntity::getHiBitNumberUId(bn));
+    }
+    ++it_field_ents;
+  }
+
+  std::vector<const DiagBlockIndex::Indexes *> fe_blocks;
+  std::vector<const DiagBlockIndex::Indexes *> a00_blocks;
+  std::vector<const DiagBlockIndex::Indexes *> a01_blocks;
+  std::vector<const DiagBlockIndex::Indexes *> a10_blocks;
+  std::vector<const DiagBlockIndex::Indexes *> a11_blocks;
+  MatrixDouble block_mat_a00;
+  MatrixDouble block_mat_a01;
+  MatrixDouble block_mat_a10;
+  MatrixDouble block_mat_a11;
+  VectorInt ipiv;
+  std::vector<int> row_glob_idx, col_glob_idx;
+
+  auto &block_index = ctx->blockIndex.get<1>();
+  for (auto it = block_index.begin(); it != block_index.end();) {
+
+    // get blocks on finit element
+    fe_blocks.clear();
+    a00_blocks.clear();
+    a01_blocks.clear();
+    a10_blocks.clear();
+    a11_blocks.clear();
+
+    auto last_uid = it->getFEUId();
+    while (it != block_index.end() && it->getFEUId() == last_uid) {
+      fe_blocks.push_back(&*it);
+      ++it;
+    }
+
+    for (auto b_ptr : fe_blocks) {
+      auto check_id = [&](auto uid) {
+        for (auto &uid_pair : a00_fields_uids) {
+          if (uid >= uid_pair.first && uid < uid_pair.second) {
+            return true;
+          }
+        }
+        return false;
+      };
+      auto r00 = check_id(b_ptr->getRowUId());
+      auto c00 = check_id(b_ptr->getColUId());
+      if (r00 && c00) {
+        a00_blocks.push_back(b_ptr);
+      } else if (r00 && !c00) {
+        a01_blocks.push_back(b_ptr);
+      } else if (!r00 && c00) {
+        a10_blocks.push_back(b_ptr);
+      } else {
+        a11_blocks.push_back(b_ptr);
+      }
+    }
+
+    for (auto b : a11_blocks) {
+      row_glob_idx.resize(b->getNbRows());
+      std::iota(row_glob_idx.begin(), row_glob_idx.end(), b->getRow());
+      col_glob_idx.resize(b->getNbCols());
+      std::iota(col_glob_idx.begin(), col_glob_idx.end(), b->getCol());
+      auto ptr = &(*(ctx->dataBlocksPtr))[b->getMatShift()];
+      CHKERR AOApplicationToPetsc(ao, row_glob_idx.size(), row_glob_idx.data());
+      CHKERR AOApplicationToPetsc(ao, col_glob_idx.size(), col_glob_idx.data());
+      CHKERR MatSetValuesBlocked(S, row_glob_idx.size(), row_glob_idx.data(),
+                                 col_glob_idx.size(), col_glob_idx.data(), ptr,
+                                 INSERT_VALUES);
+      if (ctx->multiplyByPreconditioner) {
+        auto ptr = &(*(ctx->preconditionerBlocksPtr))[b->getMatShift()];
+        CHKERR MatSetValuesBlocked(S, row_glob_idx.size(), row_glob_idx.data(),
+                                   col_glob_idx.size(), col_glob_idx.data(),
+                                   ptr, INSERT_VALUES);
+      }
+    }
+
+    if (debug) {
+      MOFEM_LOG("WORLD", Sev::warning)
+          << "a00_blocks.size() " << a00_blocks.size();
+      MOFEM_LOG("WORLD", Sev::warning)
+          << "a01_blocks.size() " << a01_blocks.size();
+      MOFEM_LOG("WORLD", Sev::warning)
+          << "a10_blocks.size() " << a10_blocks.size();
+      MOFEM_LOG("WORLD", Sev::warning)
+          << "a11_blocks.size() " << a11_blocks.size();
+    }
+
+    if(a00_blocks.size()) {
+
+      for (auto r : a00_blocks) {
+        auto r_uid = r->getRowUId();
+        auto range = ctx->blockIndex.get<2>().equal_range(r_uid);
+        for (auto it = range.first; it != range.second; ++it) {
+          if (it->getFEUId() != last_uid && it->getColUId() != r_uid) {
+            a01_blocks.push_back(&*it);
+          }
+        }
+      }
+
+      for (auto c : a00_blocks) {
+        auto c_uid = c->getColUId();
+        auto range = ctx->blockIndex.get<3>().equal_range(c_uid);
+        for (auto it = range.first; it != range.second; ++it) {
+          if (it->getFEUId() != last_uid && it->getRowUId() != c_uid) {
+            a10_blocks.push_back(&*it);
+          }
+        }
+      }
+
+      auto sort = [](auto &blocks) {
+        std::sort(blocks.begin(), blocks.end(), [](auto a, auto b) {
+          if (a->getRowUId() == b->getRowUId())
+            return a->getColUId() < b->getColUId();
+          else
+            return a->getRowUId() < b->getRowUId();
+        });
+      };
+
+      sort(a00_blocks);
+      sort(a01_blocks);
+      sort(a10_blocks);
+
+      if (debug) {
+        MOFEM_LOG("WORLD", Sev::warning)
+            << "a01_blocks.size() " << a01_blocks.size();
+        MOFEM_LOG("WORLD", Sev::warning)
+            << "a10_blocks.size() " << a10_blocks.size();
+      }
+
+      // set local indices
+      auto set_local_indices = [](auto &row_blocks, auto &col_blocks) {
+        // index, size, global index
+        std::map<UId, std::tuple<int, int, int>>
+            block_indexing; // uid block map
+        for (auto b : row_blocks) {
+          if (block_indexing.find(b->getRowUId()) == block_indexing.end()) {
+            block_indexing[b->getRowUId()] =
+                std::make_tuple(b->getNbRows(), b->getNbRows(), b->getRow());
+          }
+        }
+        for (auto b : col_blocks) {
+          if (block_indexing.find(b->getColUId()) == block_indexing.end()) {
+            block_indexing[b->getColUId()] =
+                std::make_tuple(b->getNbCols(), b->getNbCols(), b->getCol());
+          }
+        }
+        // set indexes to block
+        int mat_block_size = 0; // size of block matrix
+        for (auto &b : block_indexing) {
+          // index, size, global index
+          auto &[index, size, glob] = b.second;
+          index = mat_block_size;
+          mat_block_size += size;
+        }
+        return std::make_pair(block_indexing, mat_block_size);
+      };
+
+      auto set_block = [&](auto &blocks, auto &row_indexing, auto &col_indexing,
+                           auto &block_mat, int row_block_size,
+                           int col_block_size) {
+        std::vector<std::tuple<int, int, int, int, int>> block_data;
+        block_data.reserve(blocks.size());
+        for (auto s : blocks) {
+          auto ruid = s->getRowUId();
+          auto cuid = s->getColUId();
+          auto &rbi = row_indexing.at(ruid);
+          auto &cbi = col_indexing.at(cuid);
+          if (auto shift = s->getMatShift(); shift != -1) {
+            block_data.push_back(std::make_tuple(
+
+                shift,
+
+                s->getNbRows(), s->getNbCols(),
+
+                get<0>(rbi), get<0>(cbi))
+
+            );
+          }
+        }
+        block_mat.resize(row_block_size, col_block_size, false);
+        block_mat.clear();
+        for (auto &bd : block_data) {
+          auto &[shift, nb_rows, nb_cols, ridx, cidx] = bd;
+          auto ptr = &(*(ctx->dataBlocksPtr))[shift];
+          for (auto i = 0; i != nb_rows; ++i, ptr += nb_cols) {
+            auto sub_ptr = &block_mat(ridx + i, cidx);
+            cblas_dcopy(nb_cols, ptr, 1, sub_ptr, 1);
+          }
+        }
+        if (ctx->multiplyByPreconditioner) {
+          for (auto &bd : block_data) {
+            auto &[shift, nb_rows, nb_cols, ridx, cidx] = bd;
+            auto ptr = &(*(ctx->preconditionerBlocksPtr))[shift];
+            for (auto i = 0; i != nb_rows; ++i, ptr += nb_cols) {
+              auto sub_ptr = &block_mat(ridx + i, cidx);
+              cblas_daxpy(nb_cols, 1., ptr, 1, sub_ptr, 1);
+            }
+          }
+        }
+      };
+
+      auto [a00_indexing, a00_size] = set_local_indices(a00_blocks, a00_blocks);
+      auto [a11_indexing, a11_size] = set_local_indices(a10_blocks, a01_blocks);
+
+      if (debug) {
+        MOFEM_LOG("WORLD", Sev::warning)
+            << "a00_indexing.size() " << a00_indexing.size() << " a00_size "
+            << a00_size;
+        MOFEM_LOG("WORLD", Sev::warning)
+            << "a11_indexing.size() " << a11_indexing.size() << " a11_size "
+            << a11_size;
+      }
+
+      set_block(a00_blocks, a00_indexing, a00_indexing, block_mat_a00, a00_size,
+                a00_size);
+      set_block(a01_blocks, a00_indexing, a11_indexing, block_mat_a01, a00_size,
+                a11_size);
+      set_block(a10_blocks, a11_indexing, a00_indexing, block_mat_a10, a11_size,
+                a00_size);
+      block_mat_a11.resize(a11_size, a11_size, false);
+      block_mat_a11.clear();
+
+      block_mat_a00 = trans(block_mat_a00);
+      block_mat_a01 = trans(block_mat_a01);
+
+      ipiv.resize(block_mat_a00.size1(), false);
+      auto info =
+          lapack_dgesv(block_mat_a00.size1(), block_mat_a01.size1(),
+                       block_mat_a00.data().data(), block_mat_a00.size2(),
+                       &*ipiv.data().begin(), block_mat_a01.data().data(),
+                       block_mat_a01.size2());
+      if (info)
+        SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "lapack error info = %d", info);
+      cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
+                  block_mat_a11.size1(), block_mat_a11.size2(),
+                  block_mat_a00.size1(), -1., block_mat_a01.data().data(),
+                  block_mat_a01.size2(), block_mat_a10.data().data(),
+                  block_mat_a10.size2(), 0., block_mat_a11.data().data(),
+                  block_mat_a11.size2());
+
+      int idx = 0;
+      std::vector<int> glob_idx(block_mat_a11.size1());
+      for (auto &r : a11_indexing) {
+        auto [r_index, r_size, r_glob] = r.second;
+        std::iota(&glob_idx[idx], &glob_idx[idx + r_size], r_glob);
+        idx += r_size;
+      }
+      CHKERR AOApplicationToPetsc(ao, glob_idx.size(), glob_idx.data());
+      CHKERR MatSetValues(S, glob_idx.size(), glob_idx.data(), glob_idx.size(),
+                          glob_idx.data(), block_mat_a11.data().data(),
+                          ADD_VALUES);
+    }
+  }
+
+  // PetscLogFlops(xxx)
+  PetscLogEventEnd(SchurEvents::MOFEM_EVENT_AssembleSchurMat, 0, 0, 0, 0);
 
   MoFEMFunctionReturn(0);
 }
