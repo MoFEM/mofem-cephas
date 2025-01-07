@@ -169,15 +169,8 @@ struct ISManager : public UnknownInterface {
    * \copybrief create IS for given problem, field and rank range (collective)
    * \ingroup mofem_is_managers
    * 
-   * \param problem name
-   * \param rc ROW or COL
-   * \param field name
-   * \param bridge_dim bridge dimension
-   * \param ents side entities
-   * \param min_coeff_idx
-   * \param max_coeff_idx
-   * \param min_order
-   * \param max_order
+   * \param dofs_vec vector of dofs
+   * \param smart_is IS
    * \retval is out value
    *
    * \retval is out value
@@ -190,15 +183,8 @@ struct ISManager : public UnknownInterface {
    * \copybrief create IS for given problem, field and rank range (collective)
    * \ingroup mofem_is_managers
    * 
-   * \param problem name
-   * \param rc ROW or COL
-   * \param field name
-   * \param bridge_dim bridge dimension
-   * \param ents side entities
-   * \param min_coeff_idx
-   * \param max_coeff_idx
-   * \param min_order
-   * \param max_order
+   * \param dofs_vec vector of dofs
+   * \param smart_is IS
    * \retval is out value
    *
    * \retval is out value
