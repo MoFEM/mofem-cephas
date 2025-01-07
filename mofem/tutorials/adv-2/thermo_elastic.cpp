@@ -1302,8 +1302,6 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
       MoFEMFunctionBegin;
 
       if (save_every && (monitor_ptr->ts_step % save_every == 0)) {
-
-      if (save_every && (monitor_ptr->ts_step % save_every == 0)) {
         if (do_output_domain) {
           CHKERR DMoFEMLoopFiniteElements(dm, simple->getDomainFEName(),
                                           domain_post_proc_fe,
