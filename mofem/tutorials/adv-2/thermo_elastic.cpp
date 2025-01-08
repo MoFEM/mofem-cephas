@@ -1381,6 +1381,8 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
           auto flux_mag = sqrt(t_flux(i) * t_flux(i));
           MOFEM_LOG("ThermoElasticSync", Sev::inform)
               << "Eval point FLUX magnitude: " << flux_mag;
+          MOFEM_LOG("ThermoElasticSync", Sev::inform)
+              << "Eval point FLUX: " << t_flux;
           if (atom_test && fabs(monitor_ptr->ts_t - 10) < 1e-12) {
             if (atom_test <= 3 && fabs(flux_mag - 27008.0) > 2e1) {
               SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
@@ -1417,6 +1419,8 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
           auto t_strain =
               getFTensor2SymmetricFromMat<SPACE_DIM>(*strainFieldPtr);
           auto t_strain_trace = t_strain(i, i);
+          MOFEM_LOG("ThermoElasticSync", Sev::inform)
+              << "Eval point strain: " << t_strain;
           if (atom_test && fabs(monitor_ptr->ts_t - 10) < 1e-12) {
             if (atom_test == 1 && fabs(t_strain_trace - 0.00679) > 1e-5) {
               SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
@@ -1447,6 +1451,8 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
                     (SPACE_DIM == 3 ? t_stress(2, 0) * t_stress(2, 0) : 0))));
           MOFEM_LOG("ThermoElasticSync", Sev::inform)
               << "Eval point von Mises Stress: " << von_mises_stress;
+          MOFEM_LOG("ThermoElasticSync", Sev::inform)
+              << "Eval point Stress: " << t_stress;
           if (atom_test && fabs(monitor_ptr->ts_t - 10) < 1e-12) {
             if (atom_test == 1 && fabs(von_mises_stress - 523.0) > 5e-1) {
               SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,

@@ -515,8 +515,8 @@ MoFEMErrorCode Seepage::addMatBlockOps(
 //! [Run problem]
 MoFEMErrorCode Seepage::runProblem() {
   MoFEMFunctionBegin;
-  CHKERR setupProblem();
   CHKERR createCommonData();
+  CHKERR setupProblem();
   CHKERR bC();
   CHKERR OPs();
   CHKERR tsSolve();
@@ -587,7 +587,7 @@ MoFEMErrorCode Seepage::setupProblem() {
     field_eval_fe_ptr->getRuleHook = no_rule;
 
     auto block_params = boost::make_shared<BlockedParameters>();
-    auto mDPtr = block_params->getDPtr();
+    mDPtr = block_params->getDPtr();
 
     CHKERR addMatBlockOps(field_eval_fe_ptr->getOpPtrVector(), "MAT_ELASTIC",
                           "MAT_FLUID", block_params, Sev::verbose);
@@ -1069,7 +1069,7 @@ MoFEMErrorCode Seepage::tsSolve() {
     auto post_proc_fe = boost::make_shared<PostProcEle>(mField);
 
     auto block_params = boost::make_shared<BlockedParameters>();
-    auto mDPtr = block_params->getDPtr();
+    auto mD_ptr = block_params->getDPtr();
     CHKERR addMatBlockOps(post_proc_fe->getOpPtrVector(), "MAT_ELASTIC",
                           "MAT_FLUID", block_params, Sev::verbose);
     CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
@@ -1097,7 +1097,7 @@ MoFEMErrorCode Seepage::tsSolve() {
         new OpSymmetrizeTensor<SPACE_DIM>(mat_grad_ptr, mat_strain_ptr));
     post_proc_fe->getOpPtrVector().push_back(
         new OpTensorTimesSymmetricTensor<SPACE_DIM, SPACE_DIM>(
-            "U", mat_strain_ptr, mat_stress_ptr, mDPtr));
+            "U", mat_strain_ptr, mat_stress_ptr, mD_ptr));
 
     using OpPPMap = OpPostProcMapInMoab<SPACE_DIM, SPACE_DIM>;
 
@@ -1129,7 +1129,7 @@ MoFEMErrorCode Seepage::tsSolve() {
     auto &pip = fe_ptr->getOpPtrVector();
 
     auto block_params = boost::make_shared<BlockedParameters>();
-    auto mDPtr = block_params->getDPtr();
+    auto mD_ptr = block_params->getDPtr();
     CHKERR addMatBlockOps(pip, "MAT_ELASTIC", "MAT_FLUID", block_params,
                           Sev::verbose);
     CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(pip, {H1, HDIV});
@@ -1144,7 +1144,7 @@ MoFEMErrorCode Seepage::tsSolve() {
 
     // Calculate internal force
     pip.push_back(new OpTensorTimesSymmetricTensor<SPACE_DIM, SPACE_DIM>(
-        "U", strain_ptr, stress_ptr, mDPtr));
+        "U", strain_ptr, stress_ptr, mD_ptr));
     pip.push_back(new OpInternalForceCauchy("U", stress_ptr));
 
     fe_ptr->postProcessHook =
@@ -1279,18 +1279,17 @@ MoFEMErrorCode Seepage::tsSolve() {
         // results_file.close();
         
         if (pressureFieldPtr && !pressureFieldPtr->empty()) {
-            MOFEM_LOG("SeepageSync", Sev::inform)
-                << "Eval point pore pressure: " << *pressureFieldPtr;  
-            MOFEM_LOG("SeepageSync", Sev::inform)
-                << "Eval point symmetric stress tensor: " << *stressFieldPtr;  
-            MOFEM_LOG("SeepageSync", Sev::inform)
-                << "Eval point flux: " << *fluxFieldPtr;
+
             MOFEM_LOG("SeepageSync", Sev::inform)
                 << "Eval point displacement: " << *dispFieldPtr;
             MOFEM_LOG("SeepageSync", Sev::inform)
-                << "Eval point displacement gradient: " << *dispGradPtr;
-            MOFEM_LOG("SeepageSync", Sev::inform)
                 << "Eval point strain: " << *strainFieldPtr;
+            MOFEM_LOG("SeepageSync", Sev::inform)
+                << "Eval point symmetric stress tensor: " << *stressFieldPtr;
+            MOFEM_LOG("SeepageSync", Sev::inform)
+                << "Eval point pore pressure: " << *pressureFieldPtr; 
+            MOFEM_LOG("SeepageSync", Sev::inform)
+                << "Eval point flux: " << *fluxFieldPtr;
             MOFEM_LOG("SeepageSync", Sev::inform)
                 << "Eval point elasticity matrix: " << *mDPtr;
 
