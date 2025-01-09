@@ -1813,10 +1813,11 @@ static MoFEMErrorCode solve_schur_block_shell(Mat mat, Vec y, Vec x,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode assembleSchur(MoFEM::Interface &m_field, Mat B, Mat S,
-                             std::vector<std::string> fields_name,
-                             std::vector<boost::shared_ptr<Range>> field_ents,
-                             SmartPetscObj<AO> ao) {
+MoFEMErrorCode
+assembleBlockMatSchur(MoFEM::Interface &m_field, Mat B, Mat S,
+                      std::vector<std::string> fields_name,
+                      std::vector<boost::shared_ptr<Range>> field_ents,
+                      SmartPetscObj<AO> ao) {
   using matrix_range = ublas::matrix_range<MatrixDouble>;
   using range = ublas::range;
   MoFEMFunctionBegin;
@@ -2126,6 +2127,19 @@ MoFEMErrorCode assembleSchur(MoFEM::Interface &m_field, Mat B, Mat S,
   PetscLogEventEnd(SchurEvents::MOFEM_EVENT_AssembleSchurMat, 0, 0, 0, 0);
 
   MoFEMFunctionReturn(0);
+}
+
+boost::shared_ptr<std::vector<double>> getBlockMatStorageMat(Mat B) {
+  BlockStructure *ctx;
+  CHKERR MatShellGetContext(B, (void **)&ctx);
+  return ctx->dataBlocksPtr;
+}
+
+boost::shared_ptr<std::vector<double>>
+getBlockMatPrconditionerStorageMat(Mat B) {
+  BlockStructure *ctx;
+  CHKERR MatShellGetContext(B, (void **)&ctx);
+  return ctx->dataBlocksPtr;
 }
 
 inline MoFEMErrorCode shell_block_mat_asmb_wrap_impl(
