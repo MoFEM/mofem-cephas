@@ -688,7 +688,7 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
           if (1) {
             auto S_from_block = matDuplicate(S, MAT_SHARE_NONZERO_PATTERN);
             // Create matrix from block mat
-            CHKERR assembleSchur(mField, post_proc_schur_lhs_ptr->B,
+            CHKERR assembleBlockMatSchur(mField, post_proc_schur_lhs_ptr->B,
                                  S_from_block, {"BROKEN", "U"},
                                  {nullptr, nullptr}, ao_up);
             CHKERR MatAssemblyBegin(S_from_block, MAT_FINAL_ASSEMBLY);
@@ -704,7 +704,7 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
                   "than accepted");
           }
         } else {
-          CHKERR assembleSchur(mField, post_proc_schur_lhs_ptr->B, S,
+          CHKERR assembleBlockMatSchur(mField, post_proc_schur_lhs_ptr->B, S,
                                {"BROKEN", "U"}, {nullptr, nullptr}, ao_up);
           CHKERR MatAssemblyBegin(S, MAT_FINAL_ASSEMBLY);
           CHKERR MatAssemblyEnd(S, MAT_FINAL_ASSEMBLY);
