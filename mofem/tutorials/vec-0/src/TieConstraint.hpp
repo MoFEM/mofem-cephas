@@ -1111,17 +1111,13 @@ struct OpTieTermConstrainDisplacementRhs
 
   OpTieTermConstrainDisplacementRhs(std::string lambda_name,
                                     boost::shared_ptr<MatrixDouble> u_ptr,
-                                    boost::shared_ptr<VectorDouble> u_ref_ptr,
                                     FTensor::Tensor1<double, 3> tie_coord,
                                     FTensor::Tensor1<double, 3> tie_direction,
-                                    boost::shared_ptr<Range> tie_faces_ptr,
-                                    boost::shared_ptr<MatrixDouble> vel_ptr,
-                                    boost::shared_ptr<VectorDouble> vel_ref_ptr)
+                                    boost::shared_ptr<Range> tie_faces_ptr)
       : OpBase(lambda_name, lambda_name, OpBase::OPROW, tie_faces_ptr),
-        uPtr(u_ptr), tieCoord(tie_coord), tieDirection(tie_direction),
-        velPtr(vel_ptr), velRefPtr(vel_ref_ptr), uRefPtr(u_ref_ptr) {
+        uPtr(u_ptr), tieCoord(tie_coord), tieDirection(tie_direction) {
     std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
-    //doEntities[MBEDGE] = true;
+    doEntities[MBEDGE] = true;
     doEntities[MBTRI] = true;
     doEntities[MBQUAD] = true;
   }
@@ -1131,6 +1127,8 @@ struct OpTieTermConstrainDisplacementRhs
     FTENSOR_INDEX(SPACE_DIM, i);
     FTENSOR_INDEX(SPACE_DIM, j);
     FTENSOR_INDEX(SPACE_DIM, k);
+    FTENSOR_INDEX(SPACE_DIM, l);
+    FTENSOR_INDEX(SPACE_DIM, m);
 
     double time = getTStime();
     // double time = 1.0;
@@ -1146,48 +1144,33 @@ struct OpTieTermConstrainDisplacementRhs
     auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
     // get displacement
     auto t_u = getFTensor1FromMat<SPACE_DIM>(*uPtr);
-    // get velocity
-    auto t_vel = getFTensor1FromMat<SPACE_DIM>(*velPtr);  
-
 
     for (int gg = 0; gg != nb_integration_pts; gg++) {
       const auto alpha = t_w * vol;
       ++t_w;
 
-      FTensor::Tensor1<double, 3> t_delta_initial;
-      t_delta_initial(i) = (t_coords(i) - tieCoord(i));
-
-      FTensor::Tensor1<double, 3> t_disp_ref;
-      t_disp_ref(1) = (*uRefPtr)(1);
-      t_disp_ref(2) = (*uRefPtr)(2);
-      t_disp_ref(0) = tieDirection(0) * time;
-
-      FTensor::Tensor1<double, 3> t_delta_disp;
-      t_delta_disp(i) = t_u(i) - t_disp_ref(i);
+      
+      double t_rotation = pow(pow(t_coords(1) - tieCoord(1), 2.0) + pow(t_coords(2) - tieCoord(2),2.0), 0.5);
 
 
+      FTensor::Tensor1<double, 3> t_delta_current;
+      t_delta_current(i) =
+          ((t_u(i)) - ((tieDirection(i) * time)));
 
-      FTensor::Tensor1<double, 3> t_delta_vel;
-      t_delta_vel(0) = t_vel(0) - (*velRefPtr)(0);
-      t_delta_vel(1) = t_vel(1) - (*velRefPtr)(1);
-      t_delta_vel(2) = t_vel(2) - (*velRefPtr)(2);
-
-      FTensor::Tensor1<double, 3> t_theta;
-      t_theta(i) = t_delta_vel(i) / t_delta_initial.l2();
-
+      FTensor::Tensor1<double, SPACE_DIM> g;
+      g(0) = alpha * (t_u(0) - ((tieDirection(0) * time) - t_rotation * t_delta_current(2) + t_rotation * t_delta_current(1)));
+      g(1) = alpha * (t_u(1) - ((tieDirection(1) * time) - t_rotation * t_delta_current(0) + t_rotation * t_delta_current(2)));
+      g(2) = alpha * (t_u(2) - ((tieDirection(2) * time) - t_rotation * t_delta_current(1) + t_rotation * t_delta_current(0)));
+                               
 
       ++t_coords;
       ++t_u;
-
-      FTensor::Tensor1<double, SPACE_DIM> g;
-      g(i) = alpha * (t_delta_disp(i) + levi_civita(i, j, k) * t_theta(j) * t_delta_initial(k));
-      
 
       auto t_nf = getFTensor1FromArray<DIM, DIM>(OpBase::locF);
 
       int rr = 0;
       for (; rr != OpBase::nbRows / DIM; ++rr) {
-        t_nf(i) += t_row_base * g(i);
+        t_nf(0) += t_row_base * g(0);
         ++t_row_base;
         ++t_nf;
       }
@@ -1201,9 +1184,6 @@ private:
   boost::shared_ptr<MatrixDouble> uPtr;
   FTensor::Tensor1<double, 3> tieCoord;
   FTensor::Tensor1<double, 3> tieDirection;
-  boost::shared_ptr<MatrixDouble> velPtr;
-  boost::shared_ptr<VectorDouble> velRefPtr;
-  boost::shared_ptr<VectorDouble> uRefPtr;
 };
 
 template <int DIM>
@@ -1220,7 +1200,7 @@ struct OpTieTermConstrainDisplacementLhs
       : OpBase(lambda_name, col_field_name, OpBase::OPROWCOL, tie_faces_ptr),
         uPtr(u_ptr), tieCoord(tie_coord), tieDirection(tie_direction) {
     std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
-    //doEntities[MBEDGE] = true;
+    doEntities[MBEDGE] = true;
     doEntities[MBTRI] = true;
     doEntities[MBQUAD] = true;
     this->assembleTranspose = true;
@@ -1254,8 +1234,25 @@ struct OpTieTermConstrainDisplacementLhs
       const auto alpha = t_w * vol;
       ++t_w;
 
+      double t_rotation = pow(pow(t_coords(1) - tieCoord(1),2.0) + pow(t_coords(2) - tieCoord(2),2.0), 0.5);
+
+      ++t_coords;
+
       FTensor::Tensor2<double, SPACE_DIM, SPACE_DIM> t_tangent;
-      t_tangent(i, j) = alpha * (t_kd(i, j));
+      t_tangent(0, 0) = 1.0;
+      t_tangent(0, 1) = -1.0 * t_rotation;
+      t_tangent(0, 2) = 1.0 * t_rotation;
+
+      t_tangent(1, 0) = 1.0 * t_rotation;
+      t_tangent(1, 1) = 1.0;
+      t_tangent(1, 2) = -1.0 * t_rotation;
+
+      t_tangent(2, 0) = -1.0 * t_rotation;
+      t_tangent(2, 1) = 1.0 * t_rotation;
+      t_tangent(2, 2) = 1.0;
+
+      t_tangent(i, j) = alpha * t_tangent(i,j);
+
 
 
       int rr = 0;
@@ -1263,7 +1260,7 @@ struct OpTieTermConstrainDisplacementLhs
         auto t_col_base = col_data.getFTensor0N(gg, 0);
         auto t_mat = getFTensor2FromArray<DIM, DIM, DIM>(OpBase::locMat, DIM * rr);
         for (int cc = 0; cc != OpBase::nbCols/SPACE_DIM; cc++) {
-          t_mat(0, 0) += (t_row_base * t_col_base) * t_tangent(0, 0);
+          t_mat(i, j) += (t_row_base * t_col_base) * t_tangent(i, j);
           ++t_mat;
 					++t_col_base;	
         }
@@ -1299,7 +1296,7 @@ struct OpTieTermConstrainDisplacementRhs_du
         uPtr(u_ptr), lambdaPtr(lambda_ptr), tieCoord(tie_coord),
         tieDirection(tie_direction) {
     std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
-    //doEntities[MBEDGE] = true;
+    doEntities[MBEDGE] = true;
     doEntities[MBTRI] = true;
     doEntities[MBQUAD] = true;
   }
@@ -1334,14 +1331,29 @@ struct OpTieTermConstrainDisplacementRhs_du
       const auto alpha = t_w * vol;
       ++t_w;
 
-      FTensor::Tensor2<double, SPACE_DIM, SPACE_DIM> t_du;
-      t_du(i,j) = (t_kd(i,j));
+      double t_rotation = pow(pow(t_coords(1) - tieCoord(1),2.0) + pow(t_coords(2) - tieCoord(2),2.0), 0.5);
+      ++t_coords;
 
-      //std::cout << "t_lambda: " << t_lambda << std::endl;
-  
+      FTensor::Tensor2<double, SPACE_DIM, SPACE_DIM> t_tangent;
+      t_tangent(0, 0) = 1.0;
+      t_tangent(0, 1) = -1.0 * t_rotation;
+      t_tangent(0, 2) = 1.0 * t_rotation;
+
+      t_tangent(1, 0) = 1.0 * t_rotation;
+      t_tangent(1, 1) = 1.0;
+      t_tangent(1, 2) = -1.0 * t_rotation;
+
+      t_tangent(2, 0) = -1.0 * t_rotation;
+      t_tangent(2, 1) = 1.0 * t_rotation;
+      t_tangent(2, 2) = 1.0;
+
+      //t_tangent(i, j) = t_tangent(i, j);
+
+
       auto t_nf = getFTensor1FromPtr<DIM>(&nf[0]);
       FTensor::Tensor1<double, SPACE_DIM> g;
-      g(j) = alpha * t_lambda(i) * (t_du(i, j));
+      //g(i) = alpha * (t_tangent(j, i) * t_lambda(j));
+      g(i) = alpha * (t_tangent(j, i) * t_lambda(j));
       ++t_lambda;
       int rr = 0;
       for (; rr != OpBase::nbRows / DIM; ++rr) {
@@ -1363,6 +1375,742 @@ private:
   FTensor::Tensor1<double, 3> tieDirection;
 };
 
+
+// template <int DIM>
+// struct OpTieTermConstrainDisplacementRhs
+//     : public FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase {
+
+//   using OpBase = FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase;
+
+//   OpTieTermConstrainDisplacementRhs(std::string lambda_name,
+//                                     boost::shared_ptr<MatrixDouble> u_ptr,
+//                                     FTensor::Tensor1<double, 3> tie_coord,
+//                                     FTensor::Tensor1<double, 3> tie_direction,
+//                                     boost::shared_ptr<Range> tie_faces_ptr)
+//       : OpBase(lambda_name, lambda_name, OpBase::OPROW, tie_faces_ptr),
+//         uPtr(u_ptr), tieCoord(tie_coord), tieDirection(tie_direction) {
+//     std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
+//     doEntities[MBEDGE] = true;
+//     doEntities[MBTRI] = true;
+//     doEntities[MBQUAD] = true;
+//   }
+
+//   MoFEMErrorCode iNtegrate(EntData &data) {
+//     MoFEMFunctionBegin;
+//     FTENSOR_INDEX(SPACE_DIM, i);
+//     FTENSOR_INDEX(SPACE_DIM, j);
+//     FTENSOR_INDEX(SPACE_DIM, k);
+//     FTENSOR_INDEX(SPACE_DIM, l);
+//     FTENSOR_INDEX(SPACE_DIM, m);
+
+//     //double time = getTStime();
+//     double time = 1.0;
+
+//     auto nb_integration_pts = getGaussPts().size2();
+//     // get element volume
+//     const double vol = OpBase::getMeasure();
+//     // get base function gradient on rows
+//     auto t_row_base = data.getFTensor0N();
+//     // get integration weights
+//     auto t_w = OpBase::getFTensor0IntegrationWeight();
+//     // get coordinate at integration points
+//     auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
+//     // get displacement
+//     auto t_u = getFTensor1FromMat<SPACE_DIM>(*uPtr);
+//     // get gradient of displacement
+//     //auto t_grad_u = getFTensor2FromMat<SPACE_DIM, SPACE_DIM>(*gradUPtr);
+
+//     for (int gg = 0; gg != nb_integration_pts; gg++) {
+//       const auto alpha = t_w * vol;
+//       ++t_w;
+
+      
+//       FTensor::Tensor1<double, 3> t_rotation;
+//       t_rotation(i) = (t_coords(i) - tieCoord(i));
+
+
+//       FTensor::Tensor1<double, SPACE_DIM> g;
+//       g(i) = alpha * (t_u(i) - (tieDirection(i) * time));
+                               
+
+//       ++t_coords;
+//       ++t_u;
+
+//       auto t_nf = getFTensor1FromArray<DIM, DIM>(OpBase::locF);
+
+//       int rr = 0;
+//       for (; rr != OpBase::nbRows / DIM; ++rr) {
+//         t_nf(i) += t_row_base * g(i);
+//         ++t_row_base;
+//         ++t_nf;
+//       }
+//       for (; rr < OpBase::nbRowBaseFunctions; ++rr)
+//         ++t_row_base;
+//     }
+//     MoFEMFunctionReturn(0);
+//   }
+
+// private:
+//   boost::shared_ptr<MatrixDouble> uPtr;
+//   FTensor::Tensor1<double, 3> tieCoord;
+//   FTensor::Tensor1<double, 3> tieDirection;
+// };
+
+// template <int DIM>
+// struct OpTieTermConstrainDisplacementLhs
+//     : public FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase {
+//   using OpBase = FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase;
+
+//   OpTieTermConstrainDisplacementLhs(std::string lambda_name,
+//                                 std::string col_field_name,
+//                                 boost::shared_ptr<MatrixDouble> u_ptr,
+//                                 FTensor::Tensor1<double, 3> tie_coord,
+//                                 FTensor::Tensor1<double, 3> tie_direction,
+//                                 boost::shared_ptr<Range> tie_faces_ptr)
+//       : OpBase(lambda_name, col_field_name, OpBase::OPROWCOL, tie_faces_ptr),
+//         uPtr(u_ptr), tieCoord(tie_coord), tieDirection(tie_direction) {
+//     std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
+//     doEntities[MBEDGE] = true;
+//     doEntities[MBTRI] = true;
+//     doEntities[MBQUAD] = true;
+//     this->assembleTranspose = true;
+//     this->sYmm = false;
+//   }
+
+//   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
+//                            EntitiesFieldData::EntData &col_data) {
+//     MoFEMFunctionBegin;
+//     FTENSOR_INDEX(SPACE_DIM, i);
+//     FTENSOR_INDEX(SPACE_DIM, j);
+
+//     constexpr auto t_kd = FTensor::Kronecker_Delta<double>();
+
+//     //double time = getTStime();
+//     double time = 1.0;
+
+//     auto nb_integration_pts = getGaussPts().size2();
+//     // get element volume
+//     const double vol = OpBase::getMeasure();
+//     // get base function gradient on rows
+//     auto t_row_base = row_data.getFTensor0N();
+//     // get integration weights
+//     auto t_w = OpBase::getFTensor0IntegrationWeight();
+//     // get coordinate at integration points
+//     auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
+//     // get displacement
+//     auto t_u = getFTensor1FromMat<SPACE_DIM>(*uPtr);
+
+//     for (int gg = 0; gg != nb_integration_pts; gg++) {
+//       const auto alpha = t_w * vol;
+//       ++t_w;
+
+//       FTensor::Tensor2<double, SPACE_DIM, SPACE_DIM> t_tangent;
+//       t_tangent(i, j) = alpha * t_kd(i , j);
+
+
+
+//       int rr = 0;
+//       for (; rr != OpBase::nbRows/SPACE_DIM; ++rr) {
+//         auto t_col_base = col_data.getFTensor0N(gg, 0);
+//         auto t_mat = getFTensor2FromArray<DIM, DIM, DIM>(OpBase::locMat, DIM * rr);
+//         for (int cc = 0; cc != OpBase::nbCols/SPACE_DIM; cc++) {
+//           t_mat(i, j) += (t_row_base * t_col_base) * t_tangent(i, j);
+//           ++t_mat;
+// 					++t_col_base;	
+//         }
+//         ++t_row_base;
+//       }
+//       for (; rr < OpBase::nbRowBaseFunctions; ++rr)
+//         ++t_row_base;
+//     }
+//     MoFEMFunctionReturn(0);
+//   }
+
+// private:
+//   boost::shared_ptr<MatrixDouble> uPtr;
+//   FTensor::Tensor1<double, 3> tieCoord;
+//   FTensor::Tensor1<double, 3> tieDirection;
+//   double tsTime;
+// };
+
+// template <int DIM>
+// struct OpTieTermConstrainDisplacementRhs_du
+//     : public FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase {
+
+//   using OpBase = FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase;
+
+//   OpTieTermConstrainDisplacementRhs_du(std::string field_name,
+//                                    std::string lambda_name,
+//                                    boost::shared_ptr<MatrixDouble> u_ptr,
+//                                    boost::shared_ptr<MatrixDouble> lambda_ptr,
+//                                    FTensor::Tensor1<double, 3> tie_coord,
+//                                    FTensor::Tensor1<double, 3> tie_direction,
+//                                    boost::shared_ptr<Range> tie_faces_ptr)
+//       : OpBase(field_name, field_name, OpBase::OPROW, tie_faces_ptr),
+//         uPtr(u_ptr), lambdaPtr(lambda_ptr), tieCoord(tie_coord),
+//         tieDirection(tie_direction) {
+//     std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
+//     doEntities[MBEDGE] = true;
+//     doEntities[MBTRI] = true;
+//     doEntities[MBQUAD] = true;
+//   }
+
+//   MoFEMErrorCode iNtegrate(EntData &data) {
+//     MoFEMFunctionBegin;
+//     FTENSOR_INDEX(SPACE_DIM, i);
+//     FTENSOR_INDEX(SPACE_DIM, j);
+
+//     constexpr auto t_kd = FTensor::Kronecker_Delta<double>();
+
+//     //double time = getTStime();
+//     double time = 1.0;
+
+//     auto nb_integration_pts = getGaussPts().size2();
+//     // get element volume
+//     const double vol = OpBase::getMeasure();
+//     // get base function on rows
+//     auto t_row_base = data.getFTensor0N();
+//     // get integration weights
+//     auto t_w = OpBase::getFTensor0IntegrationWeight();
+//     // get coordinate at integration points
+//     auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
+//     // get displacement
+//     auto t_u = getFTensor1FromMat<SPACE_DIM>(*uPtr);
+//     // get lambda
+//     auto t_lambda = getFTensor1FromMat<SPACE_DIM>(*lambdaPtr);
+
+//     auto &nf = OpBase::locF;
+
+//     for (int gg = 0; gg != nb_integration_pts; gg++) {
+//       const auto alpha = t_w * vol;
+//       ++t_w;
+
+//       FTensor::Tensor2<double, SPACE_DIM, SPACE_DIM> t_tangent;
+//       t_tangent(i, j) = t_kd(i , j);
+
+
+//       auto t_nf = getFTensor1FromPtr<DIM>(&nf[0]);
+//       FTensor::Tensor1<double, SPACE_DIM> g;
+//       g(j) = alpha * (t_lambda(i) * t_tangent(i, j) );
+//       ++t_lambda;
+//       int rr = 0;
+//       for (; rr != OpBase::nbRows / DIM; ++rr) {
+//         t_nf(i) += t_row_base * g(i);
+//         ++t_row_base;
+//         ++t_nf;
+//       }
+
+//       for (; rr < OpBase::nbRowBaseFunctions; ++rr)
+//         ++t_row_base;
+//     }
+//     MoFEMFunctionReturn(0);
+//   }
+
+// private:
+//   boost::shared_ptr<MatrixDouble> uPtr;
+//   boost::shared_ptr<MatrixDouble> lambdaPtr;
+//   FTensor::Tensor1<double, 3> tieCoord;
+//   FTensor::Tensor1<double, 3> tieDirection;
+// };
+
+
+template <int DIM>
+struct OpTieTermConstrainDisplacementXRhs
+    : public FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase {
+
+  using OpBase = FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase;
+
+  OpTieTermConstrainDisplacementXRhs(std::string lambda_name,
+                                     boost::shared_ptr<MatrixDouble> u_ptr,
+                                     FTensor::Tensor1<double, 3> tie_coord,
+                                     FTensor::Tensor1<double, 3> tie_direction,
+                                     boost::shared_ptr<Range> tie_faces_ptr)
+      : OpBase(lambda_name, lambda_name, OpBase::OPROW, tie_faces_ptr),
+        uPtr(u_ptr), tieCoord(tie_coord), tieDirection(tie_direction) {
+    std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
+    doEntities[MBEDGE] = true;
+    doEntities[MBTRI] = true;
+    doEntities[MBQUAD] = true;
+  }
+
+  MoFEMErrorCode iNtegrate(EntData &data) {
+    MoFEMFunctionBegin;
+    FTENSOR_INDEX(SPACE_DIM, i);
+    FTENSOR_INDEX(SPACE_DIM, j);
+    FTENSOR_INDEX(SPACE_DIM, k);
+    FTENSOR_INDEX(SPACE_DIM, l);
+    FTENSOR_INDEX(SPACE_DIM, m);
+
+    double time = getTStime();
+    // double time = 1.0;
+
+    auto nb_integration_pts = getGaussPts().size2();
+    // get element volume
+    const double vol = OpBase::getMeasure();
+    // get base function gradient on rows
+    auto t_row_base = data.getFTensor0N();
+    // get integration weights
+    auto t_w = OpBase::getFTensor0IntegrationWeight();
+    // get coordinate at integration points
+    auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
+    // get displacement
+    auto t_u = getFTensor1FromMat<SPACE_DIM>(*uPtr);
+
+    for (int gg = 0; gg != nb_integration_pts; gg++) {
+      const auto alpha = t_w * vol;
+      ++t_w;
+
+      
+      double t_rotation = pow(pow(t_coords(1) - tieCoord(1),2.0) + pow(t_coords(2) - tieCoord(2),2.0), 0.5);
+
+
+      FTensor::Tensor1<double, 3> t_delta_current;
+      t_delta_current(i) =
+          ((t_u(i)) - ((tieDirection(i) * time)));
+
+      
+      double g = alpha * (t_u(0) - ((tieDirection(0) * time) - t_rotation * t_delta_current(2) + t_rotation * t_delta_current(1)));
+      //double g = alpha * (t_u(0) - ((tieDirection(0) * time) - t_delta_current(2) + t_delta_current(1)));
+
+      ++t_coords;
+      ++t_u;
+
+      int rr = 0;
+      for (; rr != OpBase::nbRows; ++rr) {
+        OpBase::locF[rr] += t_row_base * g;
+        ++t_row_base;
+      }
+      for (; rr < OpBase::nbRowBaseFunctions; ++rr)
+        ++t_row_base;
+
+    }
+    MoFEMFunctionReturn(0);
+  }
+
+private:
+  boost::shared_ptr<MatrixDouble> uPtr;
+  FTensor::Tensor1<double, 3> tieCoord;
+  FTensor::Tensor1<double, 3> tieDirection;
+};
+
+template <int DIM>
+struct OpTieTermConstrainDisplacementXLhs
+    : public FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase {
+  using OpBase = FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase;
+
+  OpTieTermConstrainDisplacementXLhs(std::string lambda_name,
+                                std::string col_field_name,
+                                boost::shared_ptr<MatrixDouble> u_ptr,
+                                FTensor::Tensor1<double, 3> tie_coord,
+                                FTensor::Tensor1<double, 3> tie_direction,
+                                boost::shared_ptr<Range> tie_faces_ptr)
+      : OpBase(lambda_name, col_field_name, OpBase::OPROWCOL, tie_faces_ptr),
+        uPtr(u_ptr), tieCoord(tie_coord), tieDirection(tie_direction) {
+    std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
+    doEntities[MBEDGE] = true;
+    doEntities[MBTRI] = true;
+    doEntities[MBQUAD] = true;
+    this->assembleTranspose = true;
+    this->sYmm = false;
+  }
+
+  MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
+                           EntitiesFieldData::EntData &col_data) {
+    MoFEMFunctionBegin;
+    FTENSOR_INDEX(SPACE_DIM, i);
+    FTENSOR_INDEX(SPACE_DIM, j);
+
+    constexpr auto t_kd = FTensor::Kronecker_Delta<double>();
+
+    double time = getTStime();
+    // double time = 1.0;
+
+    auto nb_integration_pts = getGaussPts().size2();
+    // get element volume
+    const double vol = OpBase::getMeasure();
+    // get base function gradient on rows
+    auto t_row_base = row_data.getFTensor0N();
+    // get integration weights
+    auto t_w = OpBase::getFTensor0IntegrationWeight();
+    // get coordinate at integration points
+    auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
+    // get displacement
+    auto t_u = getFTensor1FromMat<SPACE_DIM>(*uPtr);
+
+    for (int gg = 0; gg != nb_integration_pts; gg++) {
+      const auto alpha = t_w * vol;
+      ++t_w;
+
+      double t_rotation = pow(pow(t_coords(1) - tieCoord(1),2.0) + pow(t_coords(2) - tieCoord(2),2.0), 0.5);
+      ++t_coords; 
+
+      FTensor::Tensor1<double, SPACE_DIM> t_tangent;
+      t_tangent(0) = alpha;
+      t_tangent(1) = -alpha * t_rotation;
+      t_tangent(2) = alpha * t_rotation;
+
+      int rr = 0;
+      for (; rr != OpBase::nbRows; ++rr) {
+        auto t_col_base = col_data.getFTensor0N(gg, 0);
+        auto t_mat = getFTensor1FromPtr<SPACE_DIM>(&OpBase::locMat(rr, 0));
+        for (int cc = 0; cc != OpBase::nbCols / SPACE_DIM; cc++) {
+          t_mat(i) += (t_row_base * t_col_base) * t_tangent(i);
+          ++t_mat;
+          ++t_col_base;
+        }
+        ++t_row_base;
+      }
+      for (; rr < OpBase::nbRowBaseFunctions; ++rr)
+        ++t_row_base;
+    }
+    MoFEMFunctionReturn(0);
+  }
+
+private:
+  boost::shared_ptr<MatrixDouble> uPtr;
+  FTensor::Tensor1<double, 3> tieCoord;
+  FTensor::Tensor1<double, 3> tieDirection;
+  double tsTime;
+};
+
+template <int DIM>
+struct OpTieTermConstrainDisplacementXRhs_du
+    : public FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase {
+
+  using OpBase = FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase;
+
+  OpTieTermConstrainDisplacementXRhs_du(std::string field_name,
+                                   std::string lambda_name,
+                                   boost::shared_ptr<MatrixDouble> u_ptr,
+                                   boost::shared_ptr<VectorDouble> lambda_ptr,
+                                   FTensor::Tensor1<double, 3> tie_coord,
+                                   FTensor::Tensor1<double, 3> tie_direction,
+                                   boost::shared_ptr<Range> tie_faces_ptr)
+      : OpBase(field_name, field_name, OpBase::OPROW, tie_faces_ptr),
+        uPtr(u_ptr), lambdaPtr(lambda_ptr), tieCoord(tie_coord),
+        tieDirection(tie_direction) {
+    std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
+    doEntities[MBEDGE] = true;
+    doEntities[MBTRI] = true;
+    doEntities[MBQUAD] = true;
+  }
+
+  MoFEMErrorCode iNtegrate(EntData &data) {
+    MoFEMFunctionBegin;
+    FTENSOR_INDEX(SPACE_DIM, i);
+    FTENSOR_INDEX(SPACE_DIM, j);
+
+    constexpr auto t_kd = FTensor::Kronecker_Delta<double>();
+
+    double time = getTStime();
+    // double time = 1.0;
+
+    auto nb_integration_pts = getGaussPts().size2();
+    // get element volume
+    const double vol = OpBase::getMeasure();
+    // get base function on rows
+    auto t_row_base = data.getFTensor0N();
+    // get integration weights
+    auto t_w = OpBase::getFTensor0IntegrationWeight();
+    // get coordinate at integration points
+    auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
+    // get displacement
+    auto t_u = getFTensor1FromMat<SPACE_DIM>(*uPtr);
+    // get lambda
+    auto t_lambda = getFTensor0FromVec(*lambdaPtr);
+
+    auto &nf = OpBase::locF;
+
+    for (int gg = 0; gg != nb_integration_pts; gg++) {
+      const auto alpha = t_w * vol;
+      ++t_w;
+
+      double t_rotation = pow(pow(t_coords(1) - tieCoord(1),2.0) + pow(t_coords(2) - tieCoord(2),2.0), 0.5);
+      ++t_coords;
+
+      FTensor::Tensor1<double, SPACE_DIM> t_tangent;
+      t_tangent(0) = 1;
+      t_tangent(1) = -1 * t_rotation;
+      t_tangent(2) = 1 * t_rotation;
+
+      auto t_nf = getFTensor1FromPtr<DIM>(&nf[0]);
+      FTensor::Tensor1<double, SPACE_DIM> g;
+      g(i) = alpha * t_lambda * (t_tangent(i));
+      ++t_lambda;
+      int rr = 0;
+      for (; rr != OpBase::nbRows / DIM; ++rr) {
+        t_nf(i) += t_row_base * g(i);
+        ++t_row_base;
+        ++t_nf;
+      }
+
+      for (; rr < OpBase::nbRowBaseFunctions; ++rr)
+        ++t_row_base;
+    }
+    MoFEMFunctionReturn(0);
+  }
+
+private:
+  boost::shared_ptr<MatrixDouble> uPtr;
+  boost::shared_ptr<VectorDouble> lambdaPtr;
+  FTensor::Tensor1<double, 3> tieCoord;
+  FTensor::Tensor1<double, 3> tieDirection;
+};
+
+// template <int DIM>
+// struct OpTieTermConstrainDisplacementGradXRhs
+//     : public FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase {
+
+//   using OpBase = FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase;
+
+//   OpTieTermConstrainDisplacementGradXRhs(std::string lambda_name,
+//                                      boost::shared_ptr<MatrixDouble> u_ptr,
+//                                      FTensor::Tensor1<double, 3> tie_coord,
+//                                      FTensor::Tensor1<double, 3> tie_direction,
+//                                      boost::shared_ptr<Range> tie_faces_ptr,
+//                                      boost::shared_ptr<MatrixDouble> grad_u_ptr)
+//       : OpBase(lambda_name, lambda_name, OpBase::OPROW, tie_faces_ptr),
+//         uPtr(u_ptr), tieCoord(tie_coord), tieDirection(tie_direction), gradUPtr(grad_u_ptr) {
+//     std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
+//     //doEntities[MBEDGE] = true;
+//     doEntities[MBTRI] = true;
+//     doEntities[MBQUAD] = true;
+//   }
+
+//   MoFEMErrorCode iNtegrate(EntData &data) {
+//     MoFEMFunctionBegin;
+//     FTENSOR_INDEX(SPACE_DIM, i);
+//     FTENSOR_INDEX(SPACE_DIM, j);
+//     FTENSOR_INDEX(SPACE_DIM, k);
+//     FTENSOR_INDEX(SPACE_DIM, l);
+//     FTENSOR_INDEX(SPACE_DIM, m);
+
+//     double time = getTStime();
+//     // double time = 1.0;
+
+//     auto nb_integration_pts = getGaussPts().size2();
+//     // get element volume
+//     const double vol = OpBase::getMeasure();
+//     // get base function gradient on rows
+//     auto t_row_base = data.getFTensor0N();
+//     // get integration weights
+//     auto t_w = OpBase::getFTensor0IntegrationWeight();
+//     // get coordinate at integration points
+//     auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
+//     // get displacement
+//     auto t_u = getFTensor1FromMat<SPACE_DIM>(*uPtr);
+//     // get gradient of displacement
+//     auto t_grad_u = getFTensor2FromMat<SPACE_DIM, SPACE_DIM>(*gradUPtr);
+
+//     for (int gg = 0; gg != nb_integration_pts; gg++) {
+//       const auto alpha = t_w * vol;
+//       ++t_w;
+
+//       FTensor::Tensor1<double, 3> t_r;
+//       t_r(i) = (t_coords(i) - tieCoord(i));
+
+//       FTensor::Tensor1<double, SPACE_DIM> t_theta;
+//       //t_theta(0) = 0.5 * (t_grad_u(2, 1) - t_grad_u(1, 2));
+//       //t_theta(1) = 0.5 * (t_grad_u(0, 2) - t_grad_u(2, 0));
+//       //t_theta(2) = 0.5 * (t_grad_u(1, 0) - t_grad_u(0, 1));
+//       t_theta(k) = 0.25 * levi_civita(i , j, k) * (t_grad_u(i , j) - t_grad_u(j, i));
+
+//       FTensor::Tensor1<double, SPACE_DIM> g;
+//       g(i) = alpha * (t_u(i) - ((tieDirection(i) * time) + (levi_civita(i,j,k) * t_r(j) * t_theta(k))));
+
+//       ++t_coords;
+//       ++t_u;
+//       ++t_grad_u;
+
+//       int rr = 0;
+//       for (; rr != OpBase::nbRows; ++rr) {
+//         OpBase::locF[rr] += t_row_base * g(0);
+//         ++t_row_base;
+//       }
+//       for (; rr < OpBase::nbRowBaseFunctions; ++rr)
+//         ++t_row_base;
+
+//     }
+//     MoFEMFunctionReturn(0);
+//   }
+
+// private:
+//   boost::shared_ptr<MatrixDouble> uPtr;
+//   FTensor::Tensor1<double, 3> tieCoord;
+//   FTensor::Tensor1<double, 3> tieDirection;
+//   boost::shared_ptr<MatrixDouble> gradUPtr;
+// };
+
+// template <int DIM>
+// struct OpTieTermConstrainDisplacementGradXLhs
+//     : public FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase {
+//   using OpBase = FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase;
+
+//   OpTieTermConstrainDisplacementGradXLhs(std::string lambda_name,
+//                                 std::string col_field_name,
+//                                 boost::shared_ptr<MatrixDouble> u_ptr,
+//                                 FTensor::Tensor1<double, 3> tie_coord,
+//                                 FTensor::Tensor1<double, 3> tie_direction,
+//                                 boost::shared_ptr<Range> tie_faces_ptr)
+//       : OpBase(lambda_name, col_field_name, OpBase::OPROWCOL, tie_faces_ptr),
+//         uPtr(u_ptr), tieCoord(tie_coord), tieDirection(tie_direction) {
+//     std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
+//     //doEntities[MBEDGE] = true;
+//     doEntities[MBTRI] = true;
+//     doEntities[MBQUAD] = true;
+//     this->assembleTranspose = true;
+//     this->sYmm = false;
+//   }
+
+//   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
+//                            EntitiesFieldData::EntData &col_data) {
+//     MoFEMFunctionBegin;
+//     FTENSOR_INDEX(SPACE_DIM, i);
+//     FTENSOR_INDEX(SPACE_DIM, j);
+//     FTENSOR_INDEX(SPACE_DIM, k);
+
+//     constexpr auto t_kd = FTensor::Kronecker_Delta<double>();
+
+//     double time = getTStime();
+//     // double time = 1.0;
+
+//     auto nb_integration_pts = getGaussPts().size2();
+//     // get element volume
+//     const double vol = OpBase::getMeasure();
+//     // get base function gradient on rows
+//     auto t_row_base = row_data.getFTensor0N();
+//     // get integration weights
+//     auto t_w = OpBase::getFTensor0IntegrationWeight();
+//     // get coordinate at integration points
+//     auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
+//     // get displacement
+//     auto t_u = getFTensor1FromMat<SPACE_DIM>(*uPtr);
+
+//     for (int gg = 0; gg != nb_integration_pts; gg++) {
+//       const auto alpha = t_w * vol;
+//       ++t_w;
+
+//       FTensor::Tensor1<double, 3> t_r;
+//       t_r(i) = (t_coords(i) - tieCoord(i));
+//       ++t_coords;
+     
+//       int rr = 0;
+//       for (; rr != OpBase::nbRows; ++rr) {
+//         auto t_col_base = col_data.getFTensor0N(gg, 0);
+//         auto t_col_diff_base = col_data.getFTensor1DiffN<SPACE_DIM>(gg, 0);
+//         auto t_mat = getFTensor1FromPtr<SPACE_DIM>(&OpBase::locMat(rr, 0));
+//         for (int cc = 0; cc != OpBase::nbCols / SPACE_DIM; cc++) {
+//           FTensor::Tensor1<double, SPACE_DIM> t_theta;
+//           t_theta(i) = 0.25 * levi_civita(i, j, k) * (t_col_diff_base(j) - t_col_diff_base(i));
+//           t_mat(i) += (t_row_base * t_col_base) * (alpha * (t_kd(0,1) - (levi_civita(i, j, k) * t_r(j) * t_theta(k))));
+//           ++t_mat;
+//           ++t_col_base;
+//           ++t_col_diff_base;
+//         }
+//         ++t_row_base;
+//       }
+//       for (; rr < OpBase::nbRowBaseFunctions; ++rr)
+//         ++t_row_base;
+
+//     }
+//     MoFEMFunctionReturn(0);
+//   }
+
+// private:
+//   boost::shared_ptr<MatrixDouble> uPtr;
+//   FTensor::Tensor1<double, 3> tieCoord;
+//   FTensor::Tensor1<double, 3> tieDirection;
+//   double tsTime;
+// };
+
+// template <int DIM>
+// struct OpTieTermConstrainDisplacementGradXRhs_du
+//     : public FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase {
+
+//   using OpBase = FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase;
+
+//   OpTieTermConstrainDisplacementGradXRhs_du(std::string field_name,
+//                                    std::string lambda_name,
+//                                    boost::shared_ptr<MatrixDouble> u_ptr,
+//                                    boost::shared_ptr<VectorDouble> lambda_ptr,
+//                                    FTensor::Tensor1<double, 3> tie_coord,
+//                                    FTensor::Tensor1<double, 3> tie_direction,
+//                                    boost::shared_ptr<Range> tie_faces_ptr)
+//       : OpBase(field_name, field_name, OpBase::OPROW, tie_faces_ptr),
+//         uPtr(u_ptr), lambdaPtr(lambda_ptr), tieCoord(tie_coord),
+//         tieDirection(tie_direction) {
+//     std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
+//     //doEntities[MBEDGE] = true;
+//     doEntities[MBTRI] = true;
+//     doEntities[MBQUAD] = true;
+//   }
+
+//   MoFEMErrorCode iNtegrate(EntData &data) {
+//     MoFEMFunctionBegin;
+//     FTENSOR_INDEX(SPACE_DIM, i);
+//     FTENSOR_INDEX(SPACE_DIM, j);
+//     FTENSOR_INDEX(SPACE_DIM, k);
+
+//     constexpr auto t_kd = FTensor::Kronecker_Delta<double>();
+
+//     double time = getTStime();
+//     // double time = 1.0;
+
+//     auto nb_integration_pts = getGaussPts().size2();
+//     // get element volume
+//     const double vol = OpBase::getMeasure();
+//     // get base function on rows
+//     auto t_row_base = data.getFTensor0N();
+//     // get integration weights
+//     auto t_w = OpBase::getFTensor0IntegrationWeight();
+//     // get coordinate at integration points
+//     auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
+//     // get displacement
+//     auto t_u = getFTensor1FromMat<SPACE_DIM>(*uPtr);
+//     // get lambda
+//     auto t_lambda = getFTensor0FromVec(*lambdaPtr);
+
+    
+
+//     auto &nf = OpBase::locF;
+
+//     for (int gg = 0; gg != nb_integration_pts; gg++) {
+//       const auto alpha = t_w * vol;
+//       ++t_w;
+
+//       FTensor::Tensor1<double, SPACE_DIM, SPACE_DIM> t_rot;
+//       t_r(i) = (t_coords(i) - tieCoord(i));
+
+
+
+
+//       auto t_nf = getFTensor1FromPtr<DIM>(&nf[0]);
+//       auto t_row_diff_base = data.getFTensor1DiffN<SPACE_DIM>(gg, 0);
+
+//       int rr = 0;
+//       for (; rr != OpBase::nbRows / DIM; ++rr) {
+//         FTensor::Tensor1<double, SPACE_DIM> t_theta;
+//         t_theta(i) = 0.25 * levi_civita(i, j, k) * (t_row_diff_base(j) - t_row_diff_base(i));
+//         t_nf(i) += t_row_base * (alpha * (t_kd(0, i) - (levi_civita(i, j, k) * t_r(j) * t_theta(k))));
+//         ++t_row_base;
+//         ++t_nf;
+//         ++t_row_diff_base;
+//       }
+
+//       for (; rr < OpBase::nbRowBaseFunctions; ++rr) {
+//         ++t_row_base;
+//         ++t_row_diff_base;
+//       }
+//     }
+//     MoFEMFunctionReturn(0);
+//   }
+
+// private:
+//   boost::shared_ptr<MatrixDouble> uPtr;
+//   boost::shared_ptr<VectorDouble> lambdaPtr;
+//   FTensor::Tensor1<double, 3> tieCoord;
+//   FTensor::Tensor1<double, 3> tieDirection;
+// };
 
 
 
