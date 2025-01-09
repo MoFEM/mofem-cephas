@@ -146,10 +146,26 @@ boost::shared_ptr<NestSchurData> createSchurNestedMatrixStruture(
  * @param ao 
  * @return MoFEMErrorCode 
  */
-MoFEMErrorCode assembleSchur(MoFEM::Interface &m_field, Mat B, Mat S,
-                             std::vector<std::string> fields_name,
-                             std::vector<boost::shared_ptr<Range>> field_ents,
-                             SmartPetscObj<AO> ao);
+MoFEMErrorCode
+assembleBlockMatSchur(MoFEM::Interface &m_field, Mat B, Mat S,
+                      std::vector<std::string> fields_name,
+                      std::vector<boost::shared_ptr<Range>> field_ents,
+                      SmartPetscObj<AO> ao);
+
+/**
+ * @brief Get the Block Storage object
+ * 
+ * @return std::vector<double>& 
+ */
+boost::shared_ptr<std::vector<double>> getBlockMatStorageMat(Mat B);
+
+/**
+ * @brief Get the Block Storage object
+ * 
+ * @return std::vector<double>& 
+ */
+boost::shared_ptr<std::vector<double>>
+getBlockMatPrconditionerStorageMat(Mat B);
 
 /**
  * @brief Switch preconditioner
