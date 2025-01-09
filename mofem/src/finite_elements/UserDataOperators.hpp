@@ -2076,14 +2076,23 @@ struct OpCalculateHVecVectorField_General<3, Field_Dim, double,
 
   OpCalculateHVecVectorField_General(const std::string field_name,
                                      boost::shared_ptr<MatrixDouble> data_ptr,
+                                     SmartPetscObj<Vec> data_vec,
                                      const EntityType zero_type = MBEDGE,
                                      const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
-        dataPtr(data_ptr), zeroType(zero_type), zeroSide(zero_side) {
+        dataPtr(data_ptr), dataVec(data_vec), zeroType(zero_type),
+        zeroSide(zero_side) {
     if (!dataPtr)
       THROW_MESSAGE("Pointer is not set");
   }
+
+  OpCalculateHVecVectorField_General(const std::string field_name,
+                                     boost::shared_ptr<MatrixDouble> data_ptr,
+                                     const EntityType zero_type = MBEDGE,
+                                     const int zero_side = 0)
+      : OpCalculateHVecVectorField_General(
+            field_name, data_ptr, SmartPetscObj<Vec>(), zero_type, zero_side) {}
 
   /**
    * \brief Calculate values of vector field at integration points
@@ -2097,8 +2106,10 @@ struct OpCalculateHVecVectorField_General<3, Field_Dim, double,
 
 private:
   boost::shared_ptr<MatrixDouble> dataPtr;
+  SmartPetscObj<Vec> dataVec;
   const EntityHandle zeroType;
   const int zeroSide;
+  VectorDouble dotVector;
 };
 
 template <int Field_Dim>
@@ -2115,6 +2126,21 @@ MoFEMErrorCode OpCalculateHVecVectorField_General<
   const size_t nb_dofs = data.getFieldData().size();
   if (!nb_dofs)
     MoFEMFunctionReturnHot(0);
+    
+  if (dataVec.use_count()) {
+    dotVector.resize(nb_dofs, false);
+    const double *array;
+    CHKERR VecGetArrayRead(dataVec, &array);
+    const auto &local_indices = data.getLocalIndices();
+    for (int i = 0; i != local_indices.size(); ++i)
+      if (local_indices[i] != -1)
+        dotVector[i] = array[local_indices[i]];
+      else
+        dotVector[i] = 0;
+    CHKERR VecRestoreArrayRead(dataVec, &array);
+    data.getFieldData().swap(dotVector);
+  }
+
   const size_t nb_base_functions = data.getN().size2() / 3;
   FTensor::Index<'i', Field_Dim> i;
   auto t_n_hdiv = data.getFTensor1N<3>();
@@ -2130,6 +2156,10 @@ MoFEMErrorCode OpCalculateHVecVectorField_General<
     for (; bb != nb_base_functions; ++bb)
       ++t_n_hdiv;
     ++t_data;
+  }
+
+  if (dataVec.use_count()) {
+    data.getFieldData().swap(dotVector);
   }
   MoFEMFunctionReturn(0);
 }
