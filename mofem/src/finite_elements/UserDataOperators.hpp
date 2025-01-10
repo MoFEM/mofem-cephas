@@ -2639,7 +2639,7 @@ struct OpCalculateHVecTensorField
         dataPtr(data_ptr), scalePtr(scale_ptr), zeroType(zero_type),
         zeroSide(zero_side) {
     if (!dataPtr)
-      THROW_MESSAGE("Pointer is not set");
+      CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Pointer is not set");
   }
 
   OpCalculateHVecTensorField(const std::string field_name,
@@ -2687,6 +2687,141 @@ private:
   const EntityHandle zeroType;
   const int zeroSide;
 };
+
+/** \brief Get tensor field for H-div approximation
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ * 
+ * \warning This operator is not tested
+ */
+template <int Tensor_Dim0, int Tensor_Dim1>
+struct OpCalculateBrokenHVecTensorField
+    : public ForcesAndSourcesCore::UserDataOperator {
+
+  using OP = ForcesAndSourcesCore::UserDataOperator;
+
+  OpCalculateBrokenHVecTensorField(
+      const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
+      SmartPetscObj<Vec> data_vec, EntityType broken_type,
+      boost::shared_ptr<Range> broken_range_ptr = nullptr,
+      boost::shared_ptr<double> scale_ptr = nullptr,
+      const EntityType zero_type = MBEDGE, const int zero_side = 0)
+      : OP(field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
+        dataPtr(data_ptr), dataVec(data_vec), brokenType(broken_type),
+        brokenRangePtr(broken_range_ptr), zeroType(zero_type) {
+    if (!dataPtr)
+      CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Pointer is not set");
+  }
+
+  /**
+   * \brief Calculate values of vector field at integration points
+   * @param  side side entity number
+   * @param  type side entity type
+   * @param  data entity data
+   * @return      error code
+   */
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        EntitiesFieldData::EntData &data);
+
+private:
+  boost::shared_ptr<MatrixDouble> dataPtr;
+  SmartPetscObj<Vec> dataVec;
+  EntityType brokenType;
+  boost::shared_ptr<Range> brokenRangePtr;
+  boost::shared_ptr<double> scalePtr;
+  const EntityHandle zeroType;
+  VectorDouble dotVector;
+};
+
+template <int Tensor_Dim0, int Tensor_Dim1>
+MoFEMErrorCode
+OpCalculateBrokenHVecTensorField<Tensor_Dim0, Tensor_Dim1>::doWork(
+    int side, EntityType type, EntitiesFieldData::EntData &data) {
+  MoFEMFunctionBegin;
+  const size_t nb_integration_points = OP::getGaussPts().size2();
+  if (type == zeroType) {
+    dataPtr->resize(Tensor_Dim0 * Tensor_Dim1, nb_integration_points, false);
+    dataPtr->clear();
+  }
+  const size_t nb_dofs = data.getFieldData().size();
+  if (!nb_dofs)
+    MoFEMFunctionReturnHot(0);
+
+  if (dataVec.use_count()) {
+    dotVector.resize(nb_dofs, false);
+    const double *array;
+    CHKERR VecGetArrayRead(dataVec, &array);
+    const auto &local_indices = data.getLocalIndices();
+    for (int i = 0; i != local_indices.size(); ++i)
+      if (local_indices[i] != -1)
+        dotVector[i] = array[local_indices[i]];
+      else
+        dotVector[i] = 0;
+    CHKERR VecRestoreArrayRead(dataVec, &array);
+    data.getFieldData().swap(dotVector);
+  }
+
+  /**
+   * @brief Get side face dofs
+   *
+   * Find which base functions on borken space have adjacent given entity type
+   * and are in the range ptr if given.
+   *
+   */
+  auto get_get_side_face_dofs = [&]() {
+    auto fe_type = OP::getFEType();
+
+    BaseFunction::DofsSideMap &side_dof_map =
+        data.getFieldEntities()[0]->getDofSideMap().at(fe_type);
+    std::vector<int> side_face_dofs;
+    side_face_dofs.reserve(data.getIndices().size() / Tensor_Dim0);
+
+    for (
+
+        auto it = side_dof_map.get<1>().begin();
+        it != side_dof_map.get<1>().end(); ++it
+
+    ) {
+      if ((Tensor_Dim0 * it->dof) >= data.getIndices().size()) {
+        break;
+      }
+      if (it->type == brokenType) {
+        if (brokenRangePtr) {
+          auto ent = OP::getSideEntity(it->side, brokenType);
+          if (brokenRangePtr->find(ent) != brokenRangePtr->end()) {
+            side_face_dofs.push_back(it->dof);
+          }
+        } else {
+          side_face_dofs.push_back(it->dof);
+        }
+      }
+    }
+
+    return side_face_dofs;
+  };
+
+  auto side_face_dofs = get_get_side_face_dofs();
+
+  double scale = (scalePtr) ? *scalePtr : 1.0;
+  const size_t nb_base_functions = data.getN().size2() / 3;
+  FTensor::Index<'i', Tensor_Dim0> i;
+  FTensor::Index<'j', Tensor_Dim1> j;
+  auto t_data = getFTensor2FromMat<Tensor_Dim0, Tensor_Dim1>(*dataPtr);
+  for (size_t gg = 0; gg != nb_integration_points; ++gg) {
+    for (auto b : side_face_dofs) {
+      auto t_row_base = data.getFTensor1N<3>(gg, b);
+      auto t_dof = getFTensor1FromPtr<Tensor_Dim0>(
+          data.getFieldData().data() + b*Tensor_Dim0);
+      t_data(i, j) += t_dof(i) * t_row_base(j);
+    }
+    ++t_data;
+  }
+
+  if (dataVec.use_count()) {
+    data.getFieldData().swap(dotVector);
+  }
+
+  MoFEMFunctionReturn(0);
+}
 
 /**
  * @brief Calculate tenor field using tensor base, i.e. Hdiv/Hcurl
@@ -2779,14 +2914,14 @@ struct OpCalculateHVecTensorDivergence
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
         dataPtr(data_ptr), zeroType(zero_type), zeroSide(zero_side) {
     if (!dataPtr)
-      THROW_MESSAGE("Pointer is not set");
+      CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Pointer is not set");
   }
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
     const size_t nb_integration_points = getGaussPts().size2();
-    if (type == zeroType && side == 0) {
+    if (type == zeroType && side == zeroSide) {
       dataPtr->resize(Tensor_Dim0, nb_integration_points, false);
       dataPtr->clear();
     }
@@ -2827,6 +2962,142 @@ private:
   boost::shared_ptr<MatrixDouble> dataPtr;
   const EntityHandle zeroType;
   const int zeroSide;
+};
+
+/**
+ * @brief Calculate divergence of tonsorial field using vectorial base
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ * 
+ * \warning This operator is not tested
+ *
+ * @tparam Tensor_Dim0 rank of the field
+ * @tparam Tensor_Dim1 dimension of space
+ */
+template <int Tensor_Dim0, int Tensor_Dim1,
+          CoordinateTypes CoordSys = CARTESIAN>
+struct OpCalculateBrokenHVecTensorDivergence
+    : public ForcesAndSourcesCore::UserDataOperator {
+
+  using OP = ForcesAndSourcesCore::UserDataOperator;
+
+  OpCalculateBrokenHVecTensorDivergence(
+      const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
+      SmartPetscObj<Vec> data_vec, EntityType broken_type,
+      boost::shared_ptr<Range> broken_range_ptr = nullptr,
+      boost::shared_ptr<double> scale_ptr = nullptr,
+      const EntityType zero_type = MBEDGE)
+      : OP(field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
+        dataPtr(data_ptr), dataVec(data_vec), brokenType(broken_type),
+        brokenRangePtr(broken_range_ptr), scalePtr(scale_ptr),
+        zeroType(zero_type) {
+    if (!dataPtr)
+      CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Pointer is not set");
+  }
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        EntitiesFieldData::EntData &data) {
+    MoFEMFunctionBegin;
+    const size_t nb_integration_points = getGaussPts().size2();
+    if (type == zeroType && side == 0) {
+      dataPtr->resize(Tensor_Dim0, nb_integration_points, false);
+      dataPtr->clear();
+    }
+
+    const size_t nb_dofs = data.getFieldData().size();
+    if (nb_dofs) {
+
+      if (dataVec.use_count()) {
+        dotVector.resize(nb_dofs, false);
+        const double *array;
+        CHKERR VecGetArrayRead(dataVec, &array);
+        const auto &local_indices = data.getLocalIndices();
+        for (int i = 0; i != local_indices.size(); ++i)
+          if (local_indices[i] != -1)
+            dotVector[i] = array[local_indices[i]];
+          else
+            dotVector[i] = 0;
+        CHKERR VecRestoreArrayRead(dataVec, &array);
+        data.getFieldData().swap(dotVector);
+      }
+
+      /**
+       * @brief Get side face dofs
+       *
+       * Find which base functions on borken space have adjacent given entity
+       * type and are in the range ptr if given.
+       *
+       */
+      auto get_get_side_face_dofs = [&]() {
+        auto fe_type = OP::getFEType();
+
+        BaseFunction::DofsSideMap &side_dof_map =
+            data.getFieldEntities()[0]->getDofSideMap().at(fe_type);
+        std::vector<int> side_face_dofs;
+        side_face_dofs.reserve(data.getIndices().size() / Tensor_Dim0);
+
+        for (
+
+            auto it = side_dof_map.get<1>().begin();
+            it != side_dof_map.get<1>().end(); ++it
+
+        ) {
+          if ((Tensor_Dim0 * it->dof) >= data.getIndices().size()) {
+            break;
+          }
+          if (it->type == brokenType) {
+            if (brokenRangePtr) {
+              auto ent = OP::getSideEntity(it->side, brokenType);
+              if (brokenRangePtr->find(ent) != brokenRangePtr->end()) {
+                side_face_dofs.push_back(it->dof);
+              }
+            } else {
+              side_face_dofs.push_back(it->dof);
+            }
+          }
+        }
+
+        return side_face_dofs;
+      };
+
+      auto side_face_dofs = get_get_side_face_dofs();
+
+      const size_t nb_base_functions = data.getN().size2() / 3;
+      FTensor::Index<'i', Tensor_Dim0> i;
+      FTensor::Index<'j', Tensor_Dim1> j;
+      auto t_data = getFTensor1FromMat<Tensor_Dim0>(*dataPtr);
+      auto t_coords = getFTensor1CoordsAtGaussPts();
+      for (size_t gg = 0; gg != nb_integration_points; ++gg) {
+        for (auto b : side_face_dofs) {
+          auto t_dof = getFTensor1FromPtr<Tensor_Dim0>(
+              data.getFieldData().data() + b * Tensor_Dim0);
+          auto t_base = data.getFTensor1N<3>(gg, b);
+          auto t_diff_base = data.getFTensor2DiffN<3, Tensor_Dim1>(gg, b);
+          double div = t_diff_base(j, j);
+          t_data(i) += t_dof(i) * div;
+          if constexpr (CoordSys == CYLINDRICAL) {
+            t_data(i) += t_base(0) * (t_dof(i) / t_coords(0));
+          }
+        }
+        ++t_data;
+        ++t_coords;
+      }
+    }
+
+    if (dataVec.use_count()) {
+      data.getFieldData().swap(dotVector);
+    }
+
+    MoFEMFunctionReturn(0);
+  }
+
+private:
+  boost::shared_ptr<MatrixDouble> dataPtr;
+  SmartPetscObj<Vec> dataVec;
+  EntityType brokenType;
+  boost::shared_ptr<Range> brokenRangePtr;
+  boost::shared_ptr<double> scalePtr;
+  const EntityHandle zeroType;
+  VectorDouble dotVector;
 };
 
 /**
