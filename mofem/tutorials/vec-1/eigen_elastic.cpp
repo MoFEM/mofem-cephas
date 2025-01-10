@@ -416,7 +416,7 @@ MoFEMErrorCode Example::outputResults() {
   post_proc_fe->getOpPtrVector().push_back(
       new OpCalculateVectorFieldGradient<SPACE_DIM, SPACE_DIM>("U", grad_ptr));
   post_proc_fe->getOpPtrVector().push_back(
-      new OpSymmetrizeTensor<SPACE_DIM>("U", grad_ptr, strain_ptr));
+      new OpSymmetrizeTensor<SPACE_DIM>(grad_ptr, strain_ptr));
   post_proc_fe->getOpPtrVector().push_back(
       new OpTensorTimesSymmetricTensor<SPACE_DIM, SPACE_DIM>(
           "U", strain_ptr, stress_ptr, matDPtr));
