@@ -12,6 +12,12 @@
   .aligncenter {
     text-align: center;
   }
+
+  .block-align-left {
+    display: inline-block;
+    text-align: left;
+    margin-top: 30px;
+  }
 </style>
 
 <p class="aligncenter">
@@ -20,6 +26,22 @@
 <h1 style="font-weight:200;font-size:150%">
   <center>An open source, parallel finite element library</center>
 </h1>
+<h1 style="font-weight:200;font-size:180%;">
+  <center>Welcome to JWSoE Teaching Server</center>
+</h1>
+
+<div class="aligncenter">
+  <div class="block-align-left">
+    <h4>
+      Sign-in instructions:
+    </h4>
+    <ul>
+      <li><b>Username:</b> provided by your project supervisor </li>
+      <li><b>Password:</b> set by you during your first sign-in (minimum of 7 characters) </li>
+      <li>If you forget your password, please contact your project supervisor to have it reset
+    </ul>
+  </div>
+</div>
 
 {% block login %}
 <div id="login-main" class="container">
@@ -79,10 +101,6 @@
   {% endblock login_container %}
 </div>
 {% endblock login %}
-
-<!-- Include iframe -->
-<iframe src="https://mofem.github.io/Workshop2023/" 
-  width="100%" height="1600" title="Workshop 2023" frameborder="0" style="border:none;"></iframe>
 
 {% endblock %}
 

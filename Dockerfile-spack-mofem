@@ -5,23 +5,25 @@ LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk,Andrei.Shvarts@glasgow.ac.uk"
 ENV MOFEM_BRANCH=develop
 
 RUN cd $MOFEM_INSTALL_DIR/ && \
-  git clone -b lukasz/nested_schur https://bitbucket.org/mofem/mofem-cephas.git && \
-  git clone -b andrei/cantilever https://bitbucket.org/mofem/users-modules-cephas.git mofem-cephas/mofem/users_modules && \
-  git clone -b lukasz/nested_schur https://bitbucket.org/mofem/um_eshelbian_plasticity.git mofem-cephas/mofem/users_modules/eshelbian_plasticity && \
-  git clone -b develop https://bitbucket.org/mofem/mfront_interface.git mofem-cephas/mofem/users_modules/mfront_interface
+  git clone -b lukasz/flight_vancouver https://bitbucket.org/mofem/mofem-cephas.git && \
+  git clone -b lukasz/flight_vancouver https://bitbucket.org/mofem/users-modules-cephas.git mofem-cephas/mofem/users_modules && \
+  git clone -b lukasz/hybridisation https://bitbucket.org/mofem/um_eshelbian_plasticity.git mofem-cephas/mofem/users_modules/eshelbian_plasticity && \
+  git clone -b develop https://bitbucket.org/mofem/mfront_interface.git mofem-cephas/mofem/users_modules/mfront_interface && \
+  git clone -b develop https://bitbucket.org/mofem/adolc-plasticity.git mofem-cephas/mofem/users_modules/adolc_plasticity
 
 ENV MOFEM_ENV_FILE=/etc/profile.d/mofem.sh
 
 # Install core library
 RUN . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
-  spack dev-build -j6 \
+  spack dev-build -j12 \
   --source-path $MOFEM_SRC_DIR \
   --keep-prefix \
-  --test root \
+  # --test root \
   mofem-cephas@lukasz~copy_user_modules+docker+mgis \
   target=$TARGET build_type=Release ^petsc+X ^boost+python+numpy && \
   export MOFEM_CEPHAS_HASH=`spack find -lv mofem-cephas | awk '/mofem-cephas/ {print $1}' | head -n 1` && \
-  cd $MOFEM_INSTALL_DIR/core-build-Release-$MOFEM_CEPHAS_HASH && make clean && \
+  cd $MOFEM_INSTALL_DIR/core-build-Release-$MOFEM_CEPHAS_HASH && \
+  # make clean && \
   touch $MOFEM_ENV_FILE && \
   echo ". $SPACK_ROOT_DIR/share/spack/setup-env.sh" >> $MOFEM_ENV_FILE && \
   echo "export MOFEM_CEPHAS_HASH=$MOFEM_CEPHAS_HASH" >> $MOFEM_ENV_FILE 
@@ -37,14 +39,15 @@ RUN . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
 # Install users modules
 RUN . $MOFEM_ENV_FILE && \
   spack load mgis tfel python py-numpy py-scipy && \
-  spack dev-build -j6 \
+  spack dev-build -j12 \
   --source-path $MOFEM_UM_SRC_DIR \
   # --test root \
   mofem-users-modules@lukasz+docker build_type=Release \
   ^mofem-cephas@lukasz+adol-c~copy_user_modules+docker~ipo+med~shared+slepc+tetgen build_system=cmake build_type=Release dev_path=/mofem_install/mofem-cephas install_id=0 \
   ^petsc+X ^boost+python+numpy && \
   export MOFEM_UM_HASH=`spack find -lv mofem-users-modules | awk '/mofem-users-modules/ {print $1}' | head -n 1` && \
-  cd $MOFEM_INSTALL_DIR/um-build-Release-$MOFEM_UM_HASH && make clean && \
+  cd $MOFEM_INSTALL_DIR/um-build-Release-$MOFEM_UM_HASH && \
+  # make clean && \
   spack view symlink -i $MOFEM_INSTALL_DIR/um_view /$MOFEM_UM_HASH && \
   echo "export MOFEM_UM_HASH=$MOFEM_UM_HASH" >> $MOFEM_ENV_FILE && \
   echo "export PATH=$MOFEM_INSTALL_DIR/um_view/bin:$PATH" >> $MOFEM_ENV_FILE && \
