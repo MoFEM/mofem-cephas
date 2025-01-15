@@ -1,0 +1,43 @@
+reset
+
+create surface rectangle width 5 height 10 zplane
+create surface rectangle width 0.5 height 8 zplane
+move surface 2 x 1.75 include_merged
+subtract surface 2 from surface 1
+
+move surface 3 x -2.5 include_merged
+
+surface 3 scheme trimesh
+mesh surface 3
+refine surface 3 numsplit 1 bias 1 depth 1 smooth
+
+set duplicate block elements on
+undo group begin
+block 1 add curve 10
+block 1 name "WETTING_ANGLE"
+block 1 attribute count 1
+block 1 attribute index 1 160 name "Attribute 1"
+undo group end
+
+
+set duplicate block elements on
+undo group begin
+block 2 add curve 4
+block 2 name "SYM_X"
+undo group end
+
+
+set duplicate block elements on
+undo group begin
+block 3 add curve 2
+block 3 name "FIX_X"
+undo group end
+
+
+set duplicate block elements on
+undo group begin
+block 4 add curve 3
+block 4 name "FIX_Y"
+undo group end
+
+save as "/Users/joshgorham/Documents/PhD/coding/Cubit/capillary suction/capillary_suction_intial_setup.cub" overwrite
