@@ -16,6 +16,8 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
+#undef PYTHON_INIT_SURFACE
+
 #ifdef PYTHON_INIT_SURFACE
 #include <boost/python.hpp>
 #include <boost/python/def.hpp>
@@ -166,7 +168,7 @@ double lambda = 73; ///< surface tension
 double W = 0.25;
 
 // Model parameters
-double h = 0.01 / 8; // mesh size
+double h = 0.03; // mesh size
 double eta = h;
 double eta2 = eta * eta;
 
@@ -301,8 +303,8 @@ auto init_h = [](double r, double y, double theta) {
   }
   return s;
 #else
-  return bubble_device(r, y, theta);
-  // return capillary_tube(r, y, theta);
+  // return bubble_device(r, y, theta);
+  return capillary_tube(r, y, theta);
   // return kernel_eye(r, y, theta);
 #endif
 };
