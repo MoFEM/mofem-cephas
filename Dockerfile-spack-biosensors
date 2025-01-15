@@ -1,0 +1,56 @@
+FROM likask/mofem-spack-env:latest
+
+LABEL maintainer="adriana.kulikova@glasgow.ac.uk"
+
+ENV MOFEM_BRANCH=adriana/Biosensors2025
+
+RUN cd $MOFEM_INSTALL_DIR/ && \
+  git clone -b $MOFEM_BRANCH https://bitbucket.org/mofem/mofem-cephas.git && \
+  git clone -b $MOFEM_BRANCH https://bitbucket.org/mofem/users-modules-cephas.git mofem-cephas/mofem/users_modules && \
+  git clone -b $MOFEM_BRANCH https://bitbucket.org/AdrianaKul/um_softmech.git mofem-cephas/mofem/users_modules/softmech
+
+ENV MOFEM_ENV_FILE=/etc/profile.d/mofem.sh
+
+# Install core library
+RUN . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
+  spack dev-build -j6 \
+  --source-path $MOFEM_SRC_DIR \
+  --keep-prefix \
+  --test root \
+  mofem-cephas@lukasz~copy_user_modules+docker+mgis \
+  target=$TARGET build_type=Release ^petsc+X ^boost+python+numpy && \
+  export MOFEM_CEPHAS_HASH=`spack find -lv mofem-cephas | awk '/mofem-cephas/ {print $1}' | head -n 1` && \
+  cd $MOFEM_INSTALL_DIR/core-build-Release-$MOFEM_CEPHAS_HASH && make clean && \
+  touch $MOFEM_ENV_FILE && \
+  echo ". $SPACK_ROOT_DIR/share/spack/setup-env.sh" >> $MOFEM_ENV_FILE && \
+  echo "export MOFEM_CEPHAS_HASH=$MOFEM_CEPHAS_HASH" >> $MOFEM_ENV_FILE && \
+  export TFEL_LIB=$(spack find -p tfel | grep tfel | awk '{print $2 "/lib"}') && \
+  echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$TFEL_LIB" >> $MOFEM_ENV_FILE
+
+# Install users mdoules
+RUN . $MOFEM_ENV_FILE && \
+  spack dev-build -j6 \
+  --test root  \
+  --source-path $MOFEM_UM_SRC_DIR \
+  mofem-users-modules@lukasz+docker build_type=Release \
+  ^mofem-cephas@lukasz+adol-c~copy_user_modules+docker~ipo+med~shared+slepc+tetgen build_system=cmake build_type=Release dev_path=/mofem_install/mofem-cephas install_id=0 \
+  ^petsc+X ^boost+python+numpy && \
+  export MOFEM_UM_HASH=`spack find -lv mofem-users-modules | awk '/mofem-users-modules/ {print $1}' | head -n 1` && \
+  cd $MOFEM_INSTALL_DIR/um-build-Release-$MOFEM_UM_HASH && make clean && \
+  spack view symlink -i $MOFEM_INSTALL_DIR/um_view /$MOFEM_UM_HASH && \
+  echo "export MOFEM_UM_HASH=$MOFEM_UM_HASH" >> $MOFEM_ENV_FILE && \
+  echo "export PATH=$MOFEM_INSTALL_DIR/um_view/bin:$PATH" >> $MOFEM_ENV_FILE && \
+  chmod -R aug+rX `spack find -p mofem-users-modules | grep mofem-users-modules@lukasz | awk '{print $2}'`
+  
+# Add MGIS to the ENV
+RUN . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
+    echo "#Load MGIS ENV" >> etc/bash.bashrc \
+    spack load -sh mgis >> etc/bash.bashrc
+
+WORKDIR $MOFEM_INSTALL_DIR
+
+# image run hook: the -l will make sure /etc/profile environments are loaded
+CMD        /bin/bash -l
+
+
+
