@@ -1223,6 +1223,8 @@ MoFEMErrorCode CommInterface::loadFileRootProcAllRestDistributed(
     LoadFileFun proc_skin_fun, const char *options) {
   MoFEMFunctionBegin;
 
+  constexpr bool debug = true;
+
   CHKERR moab.load_file(file_name, 0, options);
   ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
   if (pcomm == NULL)
@@ -1287,6 +1289,15 @@ MoFEMErrorCode CommInterface::loadFileRootProcAllRestDistributed(
     } else {
       CHKERR moab.get_entities_by_handle(mit, off_proc_ents, true);
     }
+  }
+
+  // set part tags to entities, they might be not set
+  for (auto &mit : tagged_sets) {
+    int part;
+    CHKERR moab.tag_get_data(part_tag, &mit, 1, &part);
+    Range ents;
+    CHKERR moab.get_entities_by_handle(mit, ents, true);
+    CHKERR moab.tag_clear_data(part_tag, ents, &part);
   }
 
   print_range_on_procs(proc_ents, "proc_ents");
