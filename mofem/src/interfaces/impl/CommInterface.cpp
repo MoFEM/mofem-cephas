@@ -1540,7 +1540,7 @@ CommInterface::createEntitiesPetscVector(MPI_Comm comm, moab::Interface &moab,
 }
 
 MoFEMErrorCode
-CommInterface::updatEntitiesPetscVector(moab::Interface &moab,
+CommInterface::updateEntitiesPetscVector(moab::Interface &moab,
                                         EntitiesPetscVector &vec, Tag tag,
                                         UpdateGhosts update_gosts) {
   MoFEMFunctionBegin;
