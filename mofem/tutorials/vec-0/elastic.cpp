@@ -339,24 +339,155 @@ MoFEMErrorCode Example::setupProblem() {
   CHKERR simple->setFieldOrder("U", order);
   CHKERR simple->setFieldOrder("GEOMETRY", 2);
 
+  Range rigid_body_ents;
+  EntityHandle rigid_body_meshset;   
+
   auto add_tie_lagrange_multiplier = [&]() {
     MoFEMFunctionBegin;
     CHKERR simple->addBoundaryField("LAMBDA", H1, base, SPACE_DIM);
-    //CHKERR simple->addBoundaryField("LAMBDA_ROT", H1, base, 1);
-    CHKERR simple->setFieldOrder("LAMBDA", 0);
-    //CHKERR simple->setFieldOrder("LAMBDA_ROT", 0);
+
+    // Create global fields for rigid body motion
+    CHKERR simple->addDataField("RIGID_BODY_LAMBDA", NOFIELD, NOBASE, 3);
+    CHKERR simple->addDataField("RIGID_BODY_THETA", NOFIELD, NOBASE, 3);
+
+    CHKERR mField.add_finite_element("RIGID_BODY");
+
+    auto add_rigid_body_fe_meshset = [&]() {
+      MoFEMFunctionBegin;
+
+      // Define row/cols and element data
+      CHKERR mField.modify_finite_element_add_field_row("RIGID_BODY",
+                                                        "RIGID_BODY_LAMBDA");
+      CHKERR mField.modify_finite_element_add_field_col("RIGID_BODY",
+                                                        "RIGID_BODY_LAMBDA");
+
+      CHKERR mField.modify_finite_element_add_field_row("RIGID_BODY",
+                                                        "RIGID_BODY_THETA");
+      CHKERR mField.modify_finite_element_add_field_col("RIGID_BODY",
+                                                        "RIGID_BODY_THETA");
+
+      CHKERR mField.modify_finite_element_add_field_row("RIGID_BODY", "U");
+      CHKERR mField.modify_finite_element_add_field_col("RIGID_BODY", "U");
+
+      CHKERR mField.modify_finite_element_add_field_row("RIGID_BODY", "U");
+      CHKERR mField.modify_finite_element_add_field_col("RIGID_BODY", "U");
+
+      CHKERR mField.modify_finite_element_add_field_row("RIGID_BODY",
+                                                         "LAMBDA");
+      CHKERR mField.modify_finite_element_add_field_col("RIGID_BODY",
+                                                         "LAMBDA");
+
+      CHKERR mField.modify_finite_element_add_field_data("RIGID_BODY", "RIGID_BODY_LAMBDA");
+      CHKERR mField.modify_finite_element_add_field_data("RIGID_BODY", "RIGID_BODY_THETA");
+      CHKERR mField.modify_finite_element_add_field_data("RIGID_BODY", "U");
+      CHKERR mField.modify_finite_element_add_field_data("RIGID_BODY", "LAMBDA");
+
+      auto translation_meshset = mField.get_field_meshset("RIGID_BODY_LAMBDA");
+      auto rotation_meshset = mField.get_field_meshset("RIGID_BODY_THETA");
+
+      CHKERR mField.get_moab().get_entities_by_handle(translation_meshset,
+                                                      rigid_body_ents, true);
+      CHKERR mField.get_moab().get_entities_by_handle(rotation_meshset,
+                                                      rigid_body_ents, true);
+
+      {
+        CHKERR mField.get_moab().create_meshset(MESHSET_SET,
+                                                rigid_body_meshset);
+        CHKERR mField.get_moab().add_entities(rigid_body_meshset, rigid_body_ents);
+
+        // This implementation assumes only one rigid body
+        // add tie faces to rigid body meshset
+        for (auto &t : tieBlocks) {
+          CHKERR mField.get_moab().add_entities(rigid_body_meshset, t.tieFaces);
+          // add tie nodes to rigid body meshset
+          Range tie_nodes;
+          CHKERR mField.get_moab().get_adjacencies(t.tieFaces, 0, false, tie_nodes,
+                                                  moab::Interface::UNION);
+          CHKERR mField.get_moab().add_entities(rigid_body_meshset, tie_nodes);
+          // add tie edges to rigid body meshset
+          Range tie_edges;
+          CHKERR mField.get_moab().get_adjacencies(t.tieFaces, 1, false, tie_edges,
+                                                  moab::Interface::UNION);
+          CHKERR mField.get_moab().add_entities(rigid_body_meshset, tie_edges);
+          // add to range of rigid body entities
+          rigid_body_ents.merge(tie_nodes);
+          rigid_body_ents.merge(tie_edges);
+          rigid_body_ents.merge(t.tieFaces);
+
+        }
+
+        CHKERR mField.getInterface<BitRefManager>()->setBitLevelToMeshset(
+            rigid_body_meshset, BitRefLevel().set());
+      }
+      //CHKERR mField.add_ents_to_finite_element_by_MESHSET(rigid_body_meshset,
+      //                                                    "RIGID_BODY", false);
+
+      MoFEMFunctionReturn(0);
+    };
+
+
+    CHKERR add_rigid_body_fe_meshset();
+
+    simple->getOtherFiniteElements().push_back("RIGID_BODY");
+
+     CHKERR simple->setFieldOrder("LAMBDA", 0);
+    // CHKERR simple->setFieldOrder("LAMBDA_ROT", 0);
     for (auto &t : tieBlocks) {
       CHKERR simple->setFieldOrder("LAMBDA", order, &t.tieFaces);
-      //CHKERR simple->setFieldOrder("LAMBDA_ROT", order, &t.tieFaces);
+      // CHKERR simple->setFieldOrder("LAMBDA_ROT", order, &t.tieFaces);
     }
     MoFEMFunctionReturn(0);
   };
 
+ 
   if (A == PETSC) {
     CHKERR add_tie_lagrange_multiplier();
   }
+  CHKERR simple->defineFiniteElements();
 
-  CHKERR simple->setUp();
+  auto add_no_field = [&](auto fe_name, auto field) {
+    MoFEMFunctionBegin;
+    CHKERR mField.modify_finite_element_add_field_row(fe_name, field);
+    CHKERR mField.modify_finite_element_add_field_col(fe_name, field);
+    CHKERR mField.modify_finite_element_add_field_data(fe_name, field);
+    MoFEMFunctionReturn(0);
+  };
+  CHKERR add_no_field("bFE", "RIGID_BODY_LAMBDA");
+  CHKERR add_no_field("bFE", "RIGID_BODY_THETA");
+  CHKERR simple->defineProblem(PETSC_TRUE);
+  CHKERR simple->buildFields();
+  // add vertex to fe here from meshsets
+  auto translation_meshset = mField.get_field_meshset("RIGID_BODY_LAMBDA");
+  auto rotation_meshset = mField.get_field_meshset("RIGID_BODY_THETA");
+  CHKERR mField.get_moab().get_entities_by_handle(translation_meshset,
+                                                  rigid_body_ents, true);
+  CHKERR mField.get_moab().get_entities_by_handle(rotation_meshset,
+                                                  rigid_body_ents, true);
+
+  CHKERR mField.add_ents_to_finite_element_by_MESHSET(rigid_body_meshset,
+                                                      "RIGID_BODY", false);
+
+  CHKERR simple->buildFiniteElements();
+  CHKERR simple->buildProblem();
+
+  // Remove prescirbed dofs from rigid body assuming just x translation
+  CHKERR mField.getInterface<ProblemsManager>()->removeDofsOnEntities(
+      simple->getProblemName(), "RIGID_BODY_LAMBDA", rigid_body_ents, 0, 0);
+
+  // auto set_translation = [this](boost::shared_ptr<FieldEntity>
+  // field_entity_ptr) {
+  //   for(auto &t : tieBlocks) {
+  //     // Scale with time?
+  //     field_entity_ptr->getEntFieldData()[0] = t.tieDirection(0);
+  //   }
+
+  //   return 0;
+  // };
+  // CHKERR
+  // mField.getInterface<FieldBlas>()->fieldLambdaOnEntities(set_translation,
+  //                                                                "RIGID_BODY_LAMBDA");
+
+  // CHKERR simple->setUp();
 
   auto project_ho_geometry = [&]() {
     Projection10NodeCoordsOnField ent_method(mField, "GEOMETRY");
@@ -485,14 +616,43 @@ MoFEMErrorCode Example::assembleSystem() {
     auto add_constrain_lhs = [&](auto &pip) {
       MoFEMFunctionBegin;
       auto u_ptr = boost::make_shared<MatrixDouble>();
+      auto lambda_ptr = boost::make_shared<MatrixDouble>();
+      auto translation_ptr = boost::make_shared<VectorDouble>();
+      auto theta_ptr = boost::make_shared<VectorDouble>();
+
       pip.push_back(new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_ptr));
+      pip.push_back(
+          new OpCalculateVectorFieldValues<SPACE_DIM>("LAMBDA", lambda_ptr));
+      pip.push_back(new OpCalculateNoFieldVectorValues("RIGID_BODY_LAMBDA",
+                                                       translation_ptr));
+      pip.push_back(
+          new OpCalculateNoFieldVectorValues("RIGID_BODY_THETA", theta_ptr));
+
       for (auto &t : tieBlocks) {
-        pip.push_back(new OpTieTermConstrainDisplacementLhs<SPACE_DIM>(
+        pip.push_back(new OpTieSetDofs(
+            "RIGID_BODY_LAMBDA", translation_ptr, t.tieDirection));
+        pip.push_back(new OpTieTermConstrainRigidBodyLhs_dU<SPACE_DIM>(
             "LAMBDA", "U", u_ptr, t.tieCoord, t.tieDirection,
+            boost::make_shared<Range>(t.tieFaces), translation_ptr, theta_ptr));
+        pip.push_back(
+            new OpTieTermConstrainRigidBodyLhs_dTranslation<SPACE_DIM>(
+                "LAMBDA", "RIGID_BODY_LAMBDA", u_ptr, t.tieCoord,
+                t.tieDirection, boost::make_shared<Range>(t.tieFaces)));
+        pip.push_back(new OpTieTermConstrainRigidBodyLhs_dRotation<SPACE_DIM>(
+            "LAMBDA", "RIGID_BODY_THETA", u_ptr, t.tieCoord, t.tieDirection,
             boost::make_shared<Range>(t.tieFaces)));
-        // pip.push_back(new OpTieTermConstrainRotationNormalLhs<SPACE_DIM>(
-        //     "LAMBDA_ROT", "U", u_ptr, t.tieCoord, t.tieDirection,
-        //     boost::make_shared<Range>(t.tieFaces), "y"));
+
+        pip.push_back(
+            new OpTieTermConstrainRigidBodyGlobalTranslationLhs_dLambda<
+                SPACE_DIM>("RIGID_BODY_LAMBDA", "LAMBDA", u_ptr, t.tieCoord,
+                           t.tieDirection,
+                           boost::make_shared<Range>(t.tieFaces)));
+
+        pip.push_back(
+            new OpTieTermConstrainRigidBodyGlobalRotationLhs_dLambda<SPACE_DIM>(
+                "RIGID_BODY_THETA", "LAMBDA", u_ptr, t.tieCoord, t.tieDirection,
+                boost::make_shared<Range>(t.tieFaces), lambda_ptr,
+                translation_ptr, theta_ptr));
       }
       MoFEMFunctionReturn(0);
     };
@@ -500,14 +660,34 @@ MoFEMErrorCode Example::assembleSystem() {
     auto add_constrain_rhs = [&](auto &pip) {
       MoFEMFunctionBegin;
       auto u_ptr = boost::make_shared<MatrixDouble>();
+      auto lambda_ptr = boost::make_shared<MatrixDouble>();
+      auto translation_ptr = boost::make_shared<VectorDouble>();
+      auto theta_ptr = boost::make_shared<VectorDouble>();
+
       pip.push_back(new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_ptr));
+      pip.push_back(
+          new OpCalculateVectorFieldValues<SPACE_DIM>("LAMBDA", lambda_ptr));
+
+      pip.push_back(new OpCalculateNoFieldVectorValues("RIGID_BODY_LAMBDA",
+                                                       translation_ptr));
+      pip.push_back(
+          new OpCalculateNoFieldVectorValues("RIGID_BODY_THETA", theta_ptr));
+
       for (auto &t : tieBlocks) {
-        pip.push_back(new OpTieTermConstrainDisplacementRhs<SPACE_DIM>(
+        pip.push_back(new OpTieSetDofs("RIGID_BODY_LAMBDA", translation_ptr,
+                                       t.tieDirection));
+        pip.push_back(new OpTieTermConstrainRigidBodyRhs<SPACE_DIM>(
             "LAMBDA", u_ptr, t.tieCoord, t.tieDirection,
-            boost::make_shared<Range>(t.tieFaces)));
-        // pip.push_back(new OpTieTermConstrainRotationNormalRhs<SPACE_DIM>(
-        //     "LAMBDA_ROT", u_ptr, t.tieCoord, t.tieDirection,
-        //     boost::make_shared<Range>(t.tieFaces), "y"));
+            boost::make_shared<Range>(t.tieFaces), translation_ptr, theta_ptr));
+        pip.push_back(
+            new OpTieTermConstrainRigidBodyGlobalTranslationRhs<SPACE_DIM>(
+                "RIGID_BODY_LAMBDA", u_ptr, t.tieCoord, t.tieDirection,
+                boost::make_shared<Range>(t.tieFaces), lambda_ptr));
+        pip.push_back(
+            new OpTieTermConstrainRigidBodyGlobalRotationRhs<SPACE_DIM>(
+                "RIGID_BODY_THETA", u_ptr, t.tieCoord, t.tieDirection,
+                boost::make_shared<Range>(t.tieFaces), lambda_ptr,
+                translation_ptr, theta_ptr));
       }
       MoFEMFunctionReturn(0);
     };
@@ -843,18 +1023,23 @@ MoFEMErrorCode Example::checkResults() {
     auto lambda_ptr = boost::make_shared<MatrixDouble>();
     //auto lambda_rotation_ptr = boost::make_shared<VectorDouble>();
     auto u_ptr = boost::make_shared<MatrixDouble>();
+    auto translation_ptr = boost::make_shared<VectorDouble>();
 
     pip->getOpBoundaryRhsPipeline().push_back(
         new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_ptr));
 
     pip->getOpBoundaryRhsPipeline().push_back(
         new OpCalculateVectorFieldValues<SPACE_DIM>("LAMBDA", lambda_ptr));
+    pip->getOpBoundaryRhsPipeline().push_back(
+        new OpCalculateNoFieldVectorValues("RIGID_BODY_LAMBDA", translation_ptr));    
     //pip->getOpBoundaryRhsPipeline().push_back(
         //new OpCalculateScalarFieldValues("LAMBDA_ROT", lambda_rotation_ptr));
 
     for (auto &t : tieBlocks) {
+      pip->getOpBoundaryRhsPipeline().push_back(new OpTieSetDofs("RIGID_BODY_LAMBDA", translation_ptr,
+                                     t.tieDirection));
       pip->getOpBoundaryRhsPipeline().push_back(
-          new OpTieTermConstrainDisplacementRhs_du<SPACE_DIM>(
+          new OpTieTermConstrainRigidBodyRhs_du<SPACE_DIM>(
               "U", "LAMBDA", u_ptr, lambda_ptr, t.tieCoord, t.tieDirection,
               boost::make_shared<Range>(t.tieFaces)));
       // pip->getOpBoundaryRhsPipeline().push_back(
