@@ -7,7 +7,7 @@
 namespace MoFEM {
 
 VolumeElementForcesAndSourcesCore::VolumeElementForcesAndSourcesCore(
-    Interface &m_field, const EntityType type)
+    Interface &m_field)
     : ForcesAndSourcesCore(m_field), vOlume(elementMeasure),
       meshPositionsFieldName("MESH_NODE_POSITIONS"), coords(24), jAc(3, 3),
       invJac(3, 3), opSetInvJacH1(invJac),
@@ -18,6 +18,10 @@ VolumeElementForcesAndSourcesCore::VolumeElementForcesAndSourcesCore(
       tInvJac(&invJac(0, 0), &invJac(0, 1), &invJac(0, 2), &invJac(1, 0),
               &invJac(1, 1), &invJac(1, 2), &invJac(2, 0), &invJac(2, 1),
               &invJac(2, 2)) {}
+
+VolumeElementForcesAndSourcesCore::VolumeElementForcesAndSourcesCore(
+    Interface &m_field, const EntityType type)
+    : VolumeElementForcesAndSourcesCore(m_field) {}
 
 MoFEMErrorCode VolumeElementForcesAndSourcesCore::setIntegrationPts() {
   MoFEMFunctionBegin;
