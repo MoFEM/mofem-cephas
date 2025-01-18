@@ -1223,8 +1223,6 @@ MoFEMErrorCode CommInterface::loadFileRootProcAllRestDistributed(
     LoadFileFun proc_skin_fun, const char *options) {
   MoFEMFunctionBegin;
 
-  constexpr bool debug = true;
-
   CHKERR moab.load_file(file_name, 0, options);
   ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
   if (pcomm == NULL)
