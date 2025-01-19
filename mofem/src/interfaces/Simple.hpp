@@ -95,7 +95,7 @@ struct Simple : public UnknownInterface {
    * @return                   error code
    */
   MoFEMErrorCode
-  addDomainField(const std::string &name, const FieldSpace space,
+  addDomainField(const std::string name, const FieldSpace space,
                  const FieldApproximationBase base,
                  const FieldCoefficientsNumber nb_of_coefficients,
                  const TagType tag_type = MB_TAG_SPARSE,
@@ -116,7 +116,7 @@ struct Simple : public UnknownInterface {
    * @return                   error code
    */
   MoFEMErrorCode
-  addDomainBrokenField(const std::string &name, const FieldSpace space,
+  addDomainBrokenField(const std::string name, const FieldSpace space,
                        const FieldApproximationBase base,
                        const FieldCoefficientsNumber nb_of_coefficients,
                        const TagType tag_type = MB_TAG_SPARSE,
@@ -137,7 +137,7 @@ struct Simple : public UnknownInterface {
    * @return                   error code
    */
   MoFEMErrorCode
-  addBoundaryField(const std::string &name, const FieldSpace space,
+  addBoundaryField(const std::string name, const FieldSpace space,
                    const FieldApproximationBase base,
                    const FieldCoefficientsNumber nb_of_coefficients,
                    const TagType tag_type = MB_TAG_SPARSE,
@@ -158,7 +158,7 @@ struct Simple : public UnknownInterface {
    * @return                   error code
    */
   MoFEMErrorCode
-  addSkeletonField(const std::string &name, const FieldSpace space,
+  addSkeletonField(const std::string name, const FieldSpace space,
                    const FieldApproximationBase base,
                    const FieldCoefficientsNumber nb_of_coefficients,
                    const TagType tag_type = MB_TAG_SPARSE,
@@ -178,7 +178,7 @@ struct Simple : public UnknownInterface {
    * @param  verb              verbosity level
    * @return                   error code
    */
-  MoFEMErrorCode addDataField(const std::string &name, const FieldSpace space,
+  MoFEMErrorCode addDataField(const std::string name, const FieldSpace space,
                               const FieldApproximationBase base,
                               const FieldCoefficientsNumber nb_of_coefficients,
                               const TagType tag_type = MB_TAG_SPARSE,
@@ -186,12 +186,31 @@ struct Simple : public UnknownInterface {
                               int verb = -1);
 
   /**
+   * @brief Add meshset field
+   *
+   * @param name
+   * @param space
+   * @param base
+   * @param nb_of_coefficients
+   * @param tag_type
+   * @param bh
+   * @param verb
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode
+  addMeshsetField(const std::string name, const FieldSpace space,
+                  const FieldApproximationBase base,
+                  const FieldCoefficientsNumber nb_of_coefficients,
+                  const TagType tag_type = MB_TAG_SPARSE,
+                  const enum MoFEMTypes bh = MF_ZERO, int verb = -1);
+
+  /**
    * @brief Remove field form domain
    *
    * @param name
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode removeDomainField(const std::string &name);
+  MoFEMErrorCode removeDomainField(const std::string name);
 
   /**
    * @brief Remove field form boundary
@@ -199,7 +218,7 @@ struct Simple : public UnknownInterface {
    * @param name
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode removeBoundaryField(const std::string &name);
+  MoFEMErrorCode removeBoundaryField(const std::string name);
 
   /**
    * @brief Remove field form skeleton
@@ -207,7 +226,7 @@ struct Simple : public UnknownInterface {
    * @param name
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode removeSkeletonField(const std::string &name);
+  MoFEMErrorCode removeSkeletonField(const std::string name);
 
   /**
    * \brief Define finite elements
@@ -410,6 +429,22 @@ struct Simple : public UnknownInterface {
   inline std::string &getSkeletonFEName() { return skeletonFE; }
 
   /**
+   * @brief Get the Skeleton FE Name
+   *
+   * @return std::string&
+   */
+  inline std::string &getMeshsetFEName() { return meshsetFE; }
+
+  /**
+   * @brief Get the Domain Fields
+   *
+   * @return std::vector<std::string>&
+   */
+  inline auto &getMeshsetFiniteElementEntities() {
+    return meshsetFiniteElementEntities;
+  }
+
+  /**
    * @brief Get the Problem Name
    *
    * @return std::string&
@@ -544,6 +579,7 @@ private:
   std::vector<std::string> boundaryFields;    ///< boundary fields
   std::vector<std::string> skeletonFields;    ///< fields on the skeleton
   std::vector<std::string> dataFields;        ///< Data fields
+  std::vector<std::string> meshsetFields;     ///< meshset fields
   std::vector<std::string> noFieldFields;     ///< NOFIELD field name
   std::vector<std::string> noFieldDataFields; ///< NOFIELD field name
 
@@ -551,12 +587,15 @@ private:
       fieldsOrder; ///< fields order. 1: field name, order, range, set by range
                    ///< if true
 
-  std::string nameOfProblem; ///< problem name
-  std::string domainFE;      ///< domain finite element
-  std::string boundaryFE;    ///< boundary finite element
-  std::string skeletonFE;    ///< skeleton finite element
+  std::string nameOfProblem = "SimpleProblem"; ///< problem name
+  std::string domainFE = "dFE";                ///< domain finite element
+  std::string boundaryFE = "bFE";              ///< boundary finite element
+  std::string skeletonFE = "sFE";              ///< skeleton finite element
+  std::string meshsetFE = "mFE";               ///< meshset finite element
 
   std::vector<std::string> otherFEs; ///< Other finite elements
+
+  std::vector<Range> meshsetFiniteElementEntities; ///< Meshset element entities
 
   char meshFileName[255]; ///< mesh file name
   int dIm;                ///< dimension of problem

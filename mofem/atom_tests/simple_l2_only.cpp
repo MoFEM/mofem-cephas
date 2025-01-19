@@ -64,6 +64,10 @@ int main(int argc, char *argv[]) {
       CHKERR simple_interface->addDomainField("FIELD", L2,
                                               AINSWORTH_LEGENDRE_BASE, 1);
 
+      CHKERR simple_interface->addMeshsetField("GLOBAL", NOFIELD, NOBASE, 1);
+      simple_interface->getMeshsetFiniteElementEntities().push_back(
+          Range()); // create one meshset element
+
       simple_interface->getAddBoundaryFE() = true;
       simple_interface->getAddSkeletonFE() = true;
 
@@ -74,6 +78,7 @@ int main(int argc, char *argv[]) {
 
       int count_fe;
       int count_side_fe;
+      int count_meshset_fe;
 
       PipelineManager *pipeline_mng = m_field.getInterface<PipelineManager>();
 
@@ -122,22 +127,42 @@ int main(int argc, char *argv[]) {
       auto op_skeleton_fe = new BoundaryEleOp(NOSPACE, DomainEleOp::OPSPACE);
       op_skeleton_fe->doWorkRhsHook = do_work_rhs;
 
+      // create meshset fe
+      auto op_meshset_fe = new ForcesAndSourcesCore::UserDataOperator(
+          "GLOBAL", ForcesAndSourcesCore::UserDataOperator::OPROW);
+      op_meshset_fe->doWorkRhsHook = [&](DataOperator *op_ptr, int side,
+                                         EntityType type,
+                                         EntitiesFieldData::EntData &data) {
+        MoFEMFunctionBegin;
+        MOFEM_LOG("SELF", Sev::inform)
+            << "Meshset element name " << data.getIndices();
+        ++count_meshset_fe;
+        MoFEMFunctionReturn(0);
+      };
+
       // Count boundary
       count_fe = 0;
       count_side_fe = 0;
+      count_meshset_fe = 0;
 
       pipeline_mng->getOpBoundaryRhsPipeline().push_back(op_bdy_fe);
       pipeline_mng->getOpSkeletonRhsPipeline().push_back(op_skeleton_fe);
+      pipeline_mng->getOpMeshsetRhsPipeline().push_back(op_meshset_fe);
       pipeline_mng->loopFiniteElements();
 
       MOFEM_LOG("SELF", Sev::inform) << "Number of elements " << count_fe;
       MOFEM_LOG("SELF", Sev::inform)
           << "Number of side elements " << count_side_fe;
+      MOFEM_LOG("SELF", Sev::inform)
+          << "Number of meshset elements " << count_meshset_fe;
 
       if (count_fe != 16)
         SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                 "Wrong numbers of FEs");
       if (count_side_fe != 24)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                "Wrong numbers of side FEs");
+      if (count_meshset_fe != 1)
         SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                 "Wrong numbers of side FEs");
     }

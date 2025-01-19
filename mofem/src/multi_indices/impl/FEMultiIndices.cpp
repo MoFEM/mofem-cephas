@@ -307,7 +307,6 @@ MoFEMErrorCode DefaultElementAdjacency::defaultMeshset(
     CHKERR moab.get_entities_by_dimension(fe_ent, 2, adjacency, true);
   case L2:
     CHKERR moab.get_entities_by_dimension(fe_ent, 3, adjacency, true);
-    break;
   case NOFIELD: {
     CHKERR moab.get_entities_by_handle(field.getMeshset(), adjacency, false);
     for (auto ent : adjacency) {
