@@ -2724,7 +2724,7 @@ struct OpTieTermConstrainRigidBodyRhs_du
       ++t_lambda;
       int rr = 0;
       for (; rr != OpBase::nbRows / DIM; ++rr) {
-        t_nf(i) += t_row_base * g(i);
+        t_nf(i) -= t_row_base * g(i);
         ++t_row_base;
         ++t_nf;
       }
@@ -2744,28 +2744,27 @@ private:
 
 template <int DIM>
 struct OpTieTermConstrainRigidBodyGlobalTranslationRhs
-    : public FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase {
+    : public ForcesAndSourcesCore::UserDataOperator{
 
-  using OpBase = FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase;
+      using OpUserDataOp = ForcesAndSourcesCore::UserDataOperator;
 
-  OpTieTermConstrainRigidBodyGlobalTranslationRhs(
-      std::string lambda_name, boost::shared_ptr<MatrixDouble> u_ptr,
-      FTensor::Tensor1<double, 3> tie_coord,
-      FTensor::Tensor1<double, 3> tie_direction,
-      boost::shared_ptr<Range> tie_faces_ptr,
-      boost::shared_ptr<MatrixDouble> lambda_ptr)
-      : OpBase(lambda_name, lambda_name, OpBase::OPROW, tie_faces_ptr),
-        uPtr(u_ptr), tieCoord(tie_coord), tieDirection(tie_direction),
-        lambdaPtr(lambda_ptr) {
-    std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
-    doEntities[MBEDGE] = true;
-    doEntities[MBTRI] = true;
-    doEntities[MBQUAD] = true;
-    doEntities[MBENTITYSET] = true;
-  }
-  // MoFEMErrorCode doWork(int side, EntityType type,
-  //                        EntitiesFieldData::EntData &data) {
-  MoFEMErrorCode iNtegrate(EntData &data) {
+      OpTieTermConstrainRigidBodyGlobalTranslationRhs(
+          std::string lambda_name, FTensor::Tensor1<double, 3> tie_coord,
+          FTensor::Tensor1<double, 3> tie_direction,
+          boost::shared_ptr<Range> tie_faces_ptr,
+          boost::shared_ptr<MatrixDouble> lambda_ptr)
+          : OpUserDataOp(lambda_name, OpUserDataOp::OPROW),
+            tieCoord(tie_coord), tieDirection(tie_direction),
+            lambdaPtr(lambda_ptr) {
+        std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
+        // doEntities[MBEDGE] = true;
+        // doEntities[MBTRI] = true;
+        // doEntities[MBQUAD] = true;
+        doEntities[MBENTITYSET] = true;
+      }
+  MoFEMErrorCode doWork(int side, EntityType type,
+                         EntitiesFieldData::EntData &data) {
+  // MoFEMErrorCode iNtegrate(EntData &data) {
     MoFEMFunctionBegin;
 
     //std::cout << "getNumberedEntities: " << *getNumeredEntFiniteElementPtr() << std::endl;
@@ -2780,11 +2779,13 @@ struct OpTieTermConstrainRigidBodyGlobalTranslationRhs
 
     auto nb_integration_pts = getGaussPts().size2();
 
-    auto t_w = OpBase::getFTensor0IntegrationWeight();
+    auto t_w = OpUserDataOp::getFTensor0IntegrationWeight();
 
-    const double vol = OpBase::getMeasure();
+    const double vol = OpUserDataOp::getMeasure();
     
     auto t_lambda = getFTensor1FromMat<SPACE_DIM>(*lambdaPtr);
+
+    auto t_dofs = data.getFieldData();
 
 
     // create a "dummy" base function
@@ -2800,24 +2801,23 @@ struct OpTieTermConstrainRigidBodyGlobalTranslationRhs
     m_kd(2, 2) = 1.0;
 
     
-
     for (int gg = 0; gg != nb_integration_pts; gg++) {
       const auto alpha = t_w * vol;
       ++t_w;
 
       FTensor::Tensor1<double, SPACE_DIM> g;
-      g(i) = alpha * t_lambda(i);
+      g(i) = t_lambda(i);
 
       ++t_lambda;
 
-      auto t_nf = getFTensor1FromArray<3, 0>(OpBase::locF);
+      //auto t_nf = getFTensor1FromArray<3, 0>(OpUserDataOp::locF);
       auto t_dummy_base = getFTensor1FromMat<3>(m_kd);
       int rr = 0;
       for (; rr != 3; ++rr) {
-        std::cout << "t_nf: " << t_nf(0) << " " << t_nf(1) << " " << t_nf(2) << std::endl;
-        std::cout << "g: " << g(0) << " " << g(1) << " " << g(2) << std::endl;
-        std::cout << "t_dummy_base: " << t_dummy_base(0) << " " << t_dummy_base(1) << " " << t_dummy_base(2) << std::endl;
-        t_nf(i) -= t_dummy_base(i) * g(i);
+        // t_dofs(0) -= t_dummy_base(0) * g(0);
+        // t_dofs(1) -= t_dummy_base(1) * g(1);
+        // t_dofs(2) -= t_dummy_base(2) * g(2);
+        //t_nf(i) -= t_dummy_base(i) * g(i);
         ++t_dummy_base;
         //++t_nf;
       }    
@@ -2826,7 +2826,6 @@ struct OpTieTermConstrainRigidBodyGlobalTranslationRhs
   }
 
 private:
-  boost::shared_ptr<MatrixDouble> uPtr;
   FTensor::Tensor1<double, 3> tieCoord;
   FTensor::Tensor1<double, 3> tieDirection;
   boost::shared_ptr<MatrixDouble> lambdaPtr;
@@ -2847,10 +2846,10 @@ struct OpTieTermConstrainRigidBodyGlobalTranslationLhs_dLambda
       : OpBase(lambda_name, field_name, OpBase::OPROWCOL, tie_faces_ptr),
         uPtr(u_ptr), tieCoord(tie_coord), tieDirection(tie_direction){
     std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
-    // doEntities[MBEDGE] = true;
-    // doEntities[MBTRI] = true;
-    // doEntities[MBQUAD] = true;
-    // doEntities[MBENTITYSET] = true;
+    doEntities[MBEDGE] = true;
+    doEntities[MBTRI] = true;
+    doEntities[MBQUAD] = true;
+    //doEntities[MBENTITYSET] = true;
     this->assembleTranspose = true;
     this->sYmm = false;
   }
@@ -2923,34 +2922,28 @@ private:
 
 template <int DIM>
 struct OpTieTermConstrainRigidBodyGlobalRotationRhs
-    : public FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase {
+    : public ForcesAndSourcesCore::UserDataOperator{
 
-  using OpBase = FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase;
+      using OpUserDataOp = ForcesAndSourcesCore::UserDataOperator;
 
-  OpTieTermConstrainRigidBodyGlobalRotationRhs(
-      std::string lambda_name, boost::shared_ptr<MatrixDouble> u_ptr,
-      FTensor::Tensor1<double, 3> tie_coord,
-      FTensor::Tensor1<double, 3> tie_direction,
-      boost::shared_ptr<Range> tie_faces_ptr,
-      boost::shared_ptr<MatrixDouble> lambda_ptr,
-      boost::shared_ptr<VectorDouble> translation_ptr,
-      boost::shared_ptr<VectorDouble> theta_ptr)
-      : OpBase(lambda_name, lambda_name, OpBase::OPROW, tie_faces_ptr),
-        uPtr(u_ptr), tieCoord(tie_coord), tieDirection(tie_direction),
-        lambdaPtr(lambda_ptr), translationPtr(translation_ptr),
-        thetaPtr(theta_ptr) {
-    std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
-    doEntities[MBEDGE] = true;
-    doEntities[MBTRI] = true;
-    doEntities[MBQUAD] = true;
-    doEntities[MBENTITYSET] = true;
-    this->assembleTranspose = true;
-    this->sYmm = false;
-  }
+      OpTieTermConstrainRigidBodyGlobalRotationRhs(
+          std::string lambda_name, FTensor::Tensor1<double, 3> tie_coord,
+          FTensor::Tensor1<double, 3> tie_direction,
+          boost::shared_ptr<Range> tie_faces_ptr,
+          boost::shared_ptr<MatrixDouble> lambda_ptr)
+          : OpUserDataOp(lambda_name, OpUserDataOp::OPROW),
+            tieCoord(tie_coord), tieDirection(tie_direction),
+            lambdaPtr(lambda_ptr) {
+        std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
+        // doEntities[MBEDGE] = true;
+        // doEntities[MBTRI] = true;
+        // doEntities[MBQUAD] = true;
+        doEntities[MBENTITYSET] = true;
+      }
 
-  // MoFEMErrorCode doWork(int side, EntityType type,
-  //                       EntitiesFieldData::EntData &data) {
-    MoFEMErrorCode iNtegrate(EntData &data) {
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        EntitiesFieldData::EntData &data) {
+    // MoFEMErrorCode iNtegrate(EntData &data) {
 
     // check if entity is first in the range
     //std::cout << "getNumberedEntities: " << getNumeredEntFiniteElementPtr() << std::endl;
@@ -2967,27 +2960,17 @@ struct OpTieTermConstrainRigidBodyGlobalRotationRhs
 
     auto nb_integration_pts = getGaussPts().size2();
     // get element volume
-    const double vol = OpBase::getMeasure();
+    const double vol = OpUserDataOp::getMeasure();
     // get base function gradient on rows
     auto t_row_base = data.getFTensor0N();
     // get integration weights
-    auto t_w = OpBase::getFTensor0IntegrationWeight();
+    auto t_w = OpUserDataOp::getFTensor0IntegrationWeight();
     // get coordinate at integration points
-    auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
-    // get displacement
-    auto t_u = getFTensor1FromMat<SPACE_DIM>(*uPtr);
+    auto t_coords = OpUserDataOp::getFTensor1CoordsAtGaussPts();
     // get lambda
     auto t_lambda = getFTensor1FromMat<SPACE_DIM>(*lambdaPtr);
 
-    FTensor::Tensor1<double, 3> t_translation;
-    t_translation(0) = (*translationPtr)(0);
-    t_translation(1) = (*translationPtr)(1);
-    t_translation(2) = (*translationPtr)(2);
-
-    FTensor::Tensor1<double, 3> t_theta;
-    t_theta(0) = (*thetaPtr)(0);
-    t_theta(1) = (*thetaPtr)(1);
-    t_theta(2) = (*thetaPtr)(2);
+    auto t_dofs = data.getFieldData();
 
     // create a "dummy" base function
     MatrixDouble m_kd(3, 3);
@@ -3012,12 +2995,14 @@ struct OpTieTermConstrainRigidBodyGlobalRotationRhs
                 (t_coords(j) - tieCoord(j));
 
       ++ t_lambda;
-      ++t_u;
+      ++t_coords;
 
-      auto t_nf = getFTensor1FromArray<DIM, DIM>(OpBase::locF);
+      //auto t_nf = getFTensor1FromArray<DIM, DIM>(OpUserDataOp::locF);
       int rr = 0;
       for (; rr != 3; ++rr) {
-        t_nf(k) -= t_dummy_base(k) * levi_civita(i, j, k) * g(i, j);
+        // t_dofs(k) += t_dummy_base(k) * levi_civita(i, j, k) * g(i, j);
+
+        //t_nf(k) += t_dummy_base(k) * levi_civita(i, j, k) * g(i, j);
         ++t_dummy_base;
         //++t_nf;
       }
@@ -3026,12 +3011,9 @@ struct OpTieTermConstrainRigidBodyGlobalRotationRhs
   }
 
 private:
-  boost::shared_ptr<MatrixDouble> uPtr;
   FTensor::Tensor1<double, 3> tieCoord;
   FTensor::Tensor1<double, 3> tieDirection;
   boost::shared_ptr<MatrixDouble> lambdaPtr;
-  boost::shared_ptr<VectorDouble> translationPtr;
-  boost::shared_ptr<VectorDouble> thetaPtr;
 };
 
 template <int DIM>
@@ -3054,10 +3036,10 @@ struct OpTieTermConstrainRigidBodyGlobalRotationLhs_dLambda
         lambdaPtr(lambda_ptr), translationPtr(translation_ptr),
         thetaPtr(theta_ptr) {
     std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
-    // doEntities[MBEDGE] = true;
-    // doEntities[MBTRI] = true;
-    // doEntities[MBQUAD] = true;
-    // doEntities[MBENTITYSET] = true;
+    doEntities[MBEDGE] = true;
+    doEntities[MBTRI] = true;
+    doEntities[MBQUAD] = true;
+    //doEntities[MBENTITYSET] = true;
     this->assembleTranspose = true;
     this->sYmm = false;
   }
@@ -3122,6 +3104,7 @@ struct OpTieTermConstrainRigidBodyGlobalRotationLhs_dLambda
 
       ++ t_lambda;
       ++t_u;
+      ++t_coords;
 
       int rr = 0;
       for (; rr != 3; ++rr) {
@@ -3244,9 +3227,9 @@ struct OpTieSetDofs : public ForcesAndSourcesCore::UserDataOperator {
     }
 
     vec(0) = tieDirection(0);
-    std::cout << "vec(0): " << vec(0) << std::endl;
-    std::cout << "vec(1): " << vec(1) << std::endl;
-    std::cout << "vec(2): " << vec(2) << std::endl;
+    // std::cout << "vec(0): " << vec(0) << std::endl;
+    // std::cout << "vec(1): " << vec(1) << std::endl;
+    // std::cout << "vec(2): " << vec(2) << std::endl;
 
     MoFEMFunctionReturn(0);
   }
