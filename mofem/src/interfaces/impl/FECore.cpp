@@ -48,7 +48,7 @@ MoFEMErrorCode Core::add_finite_element(const std::string &fe_name,
     verb = verbose;
   }
 
-  // Add finite element meshset to partion meshset. In case of no elements
+  // Add finite element meshset to partition meshset. In case of no elements
   // on processor part, when mesh file is read, finite element meshset is
   // prevented from deletion by moab reader.
   auto add_meshset_to_partition = [&](auto meshset) {
