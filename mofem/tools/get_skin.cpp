@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
 
     // Create MoFEM database
     MoFEM::Core core(moab);
-    MoFEM::Interface &m_field = core;
+    NOT_USED(core);
 
     // global variables
     char mesh_file_name[255] = "mesh.h5m";
