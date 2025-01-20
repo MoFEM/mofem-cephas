@@ -2502,6 +2502,7 @@ struct OpTieTermConstrainRigidBodyLhs_dTranslation
     doEntities[MBEDGE] = true;
     doEntities[MBTRI] = true;
     doEntities[MBQUAD] = true;
+    //doEntities[MBENTITYSET] = true;
     this->assembleTranspose = true;
     this->sYmm = false;
   }
@@ -2555,10 +2556,10 @@ struct OpTieTermConstrainRigidBodyLhs_dTranslation
         auto t_dummy_base = getFTensor1FromMat<3>(m_kd);
 
         auto t_mat = getFTensor1FromPtr<SPACE_DIM>(&OpBase::locMat(rr, 0));
-        for (int cc = 0; cc != 1; cc++) {
-          t_mat(j) -= (t_row_base * t_dummy_base(i) * t_tangent(i, j));
-          ++t_mat;
+        for (int cc = 0; cc != 3; cc++) {
+          t_mat(j) += (t_row_base * t_dummy_base(i) * t_tangent(i, j));
 					++t_dummy_base;	
+          ++t_mat;
         }
         ++t_row_base;
       }
@@ -2588,9 +2589,9 @@ struct OpTieTermConstrainRigidBodyLhs_dRotation
       : OpBase(lambda_name, col_field_name, OpBase::OPROWCOL, tie_faces_ptr),
         uPtr(u_ptr), tieCoord(tie_coord), tieDirection(tie_direction) {
     std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
-    doEntities[MBEDGE] = true;
-    doEntities[MBTRI] = true;
-    doEntities[MBQUAD] = true;
+    // doEntities[MBEDGE] = true;
+    // doEntities[MBTRI] = true;
+    // doEntities[MBQUAD] = true;
     this->assembleTranspose = true;
     this->sYmm = false;
   }
@@ -2722,9 +2723,10 @@ struct OpTieTermConstrainRigidBodyRhs_du
       FTensor::Tensor1<double, SPACE_DIM> g;
       g(i) = alpha * (t_tangent(j, i) * t_lambda(j));
       ++t_lambda;
+      std::cout << "g: " << g(0) << " " << g(1) << " " << g(2) << std::endl;
       int rr = 0;
       for (; rr != OpBase::nbRows / DIM; ++rr) {
-        t_nf(i) -= t_row_base * g(i);
+        t_nf(i) += t_row_base * g(i);
         ++t_row_base;
         ++t_nf;
       }
@@ -2752,10 +2754,11 @@ struct OpTieTermConstrainRigidBodyGlobalTranslationRhs
           std::string lambda_name, FTensor::Tensor1<double, 3> tie_coord,
           FTensor::Tensor1<double, 3> tie_direction,
           boost::shared_ptr<Range> tie_faces_ptr,
-          boost::shared_ptr<MatrixDouble> lambda_ptr)
+          boost::shared_ptr<MatrixDouble> lambda_ptr,
+          boost::shared_ptr<VectorDouble> int_translation_ptr)
           : OpUserDataOp(lambda_name, OpUserDataOp::OPROW),
             tieCoord(tie_coord), tieDirection(tie_direction),
-            lambdaPtr(lambda_ptr) {
+            lambdaPtr(lambda_ptr), intTranslationPtr(int_translation_ptr) {
         std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
         // doEntities[MBEDGE] = true;
         // doEntities[MBTRI] = true;
@@ -2779,14 +2782,20 @@ struct OpTieTermConstrainRigidBodyGlobalTranslationRhs
 
     auto nb_integration_pts = getGaussPts().size2();
 
-    auto t_w = OpUserDataOp::getFTensor0IntegrationWeight();
+    //auto t_w = OpUserDataOp::getFTensor0IntegrationWeight();
 
-    const double vol = OpUserDataOp::getMeasure();
+    //const double vol = OpUserDataOp::getMeasure();
     
-    auto t_lambda = getFTensor1FromMat<SPACE_DIM>(*lambdaPtr);
+    //auto t_lambda = getFTensor1FromMat<SPACE_DIM>(*lambdaPtr);
 
-    auto t_dofs = data.getFieldData();
+    auto v_dofs = data.getFieldData();
+    auto ind = data.getIndices(); 
+    auto local_ind = data.getLocalIndices();
+    auto t_dofs = data.getFTensor1FieldData<3>();
 
+    double* intTranslationRawPtr = &(*intTranslationPtr->data().begin());
+
+    auto t_int_translation = getFTensor1FromPtr<SPACE_DIM>(intTranslationRawPtr);
 
     // create a "dummy" base function
     MatrixDouble m_kd(3, 3);
@@ -2801,34 +2810,198 @@ struct OpTieTermConstrainRigidBodyGlobalTranslationRhs
     m_kd(2, 2) = 1.0;
 
     
-    for (int gg = 0; gg != nb_integration_pts; gg++) {
-      const auto alpha = t_w * vol;
-      ++t_w;
+    //for (int gg = 0; gg != nb_integration_pts; gg++) {
+      //const auto alpha = t_w * vol;
+      //++t_w;
 
       FTensor::Tensor1<double, SPACE_DIM> g;
-      g(i) = t_lambda(i);
+      //g(i) = t_lambda(i);
+      //g(i) = 1.0;
 
-      ++t_lambda;
+      //++t_lambda;
 
       //auto t_nf = getFTensor1FromArray<3, 0>(OpUserDataOp::locF);
       auto t_dummy_base = getFTensor1FromMat<3>(m_kd);
       int rr = 0;
       for (; rr != 3; ++rr) {
-        // t_dofs(0) -= t_dummy_base(0) * g(0);
-        // t_dofs(1) -= t_dummy_base(1) * g(1);
-        // t_dofs(2) -= t_dummy_base(2) * g(2);
-        //t_nf(i) -= t_dummy_base(i) * g(i);
+        t_dofs(i) -= t_dummy_base(i) * t_int_translation(i);
         ++t_dummy_base;
         //++t_nf;
-      }    
+      }
+      t_dofs(0) = tieDirection(0);
+      std::cout << "Translation: " << t_dofs(0) << " " << t_dofs(1) << " " << t_dofs(2) << std::endl;    
+    //}
+    MoFEMFunctionReturn(0);
+  }
+
+private:
+  boost::shared_ptr<MatrixDouble> uPtr;
+  FTensor::Tensor1<double, 3> tieCoord;
+  FTensor::Tensor1<double, 3> tieDirection;
+  boost::shared_ptr<MatrixDouble> lambdaPtr;
+  boost::shared_ptr<VectorDouble> intTranslationPtr;
+};
+
+template <int DIM>
+struct OpTieTermConstrainRigidBodyGlobalTranslationIntegralRhs
+    : public FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase {
+
+  using OpBase = FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase;
+
+  OpTieTermConstrainRigidBodyGlobalTranslationIntegralRhs(
+      std::string lambda_name, boost::shared_ptr<MatrixDouble> u_ptr,
+      FTensor::Tensor1<double, 3> tie_coord,
+      FTensor::Tensor1<double, 3> tie_direction,
+      boost::shared_ptr<Range> tie_faces_ptr,
+      boost::shared_ptr<MatrixDouble> lambda_ptr,
+      boost::shared_ptr<VectorDouble> int_translation_ptr)
+      : OpBase(lambda_name, lambda_name, OpBase::OPROW, tie_faces_ptr),
+        uPtr(u_ptr), tieCoord(tie_coord), tieDirection(tie_direction), lambdaPtr(lambda_ptr),
+        intTranslationPtr(int_translation_ptr){
+    std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
+    doEntities[MBEDGE] = true;
+    doEntities[MBTRI] = true;
+    doEntities[MBQUAD] = true;
+  }
+
+  MoFEMErrorCode iNtegrate(EntData &data) {
+    MoFEMFunctionBegin;
+
+    //std::cout << "getNumberedEntities: " << *getNumeredEntFiniteElementPtr() << std::endl;
+    FTENSOR_INDEX(SPACE_DIM, i);
+    FTENSOR_INDEX(SPACE_DIM, j);
+    FTENSOR_INDEX(SPACE_DIM, k);
+    FTENSOR_INDEX(SPACE_DIM, l);
+    FTENSOR_INDEX(SPACE_DIM, m);
+
+    //double time = getTStime();
+    double time = 1.0;
+
+    auto nb_integration_pts = getGaussPts().size2();
+    // get element volume
+    const double vol = OpBase::getMeasure();
+    // get base function gradient on rows
+    auto t_row_base = data.getFTensor0N();
+    // get integration weights
+    auto t_w = OpBase::getFTensor0IntegrationWeight();
+    // get coordinate at integration points
+    auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
+    // get lambda
+    auto t_lambda = getFTensor1FromMat<SPACE_DIM>(*lambdaPtr);
+
+    double* intTranslationRawPtr = &(*intTranslationPtr->data().begin());
+
+    auto t_int_translation = getFTensor1FromPtr<3>(intTranslationRawPtr);
+
+
+    for (int gg = 0; gg != nb_integration_pts; gg++) {
+      const auto alpha = t_w * vol;
+      ++t_w;
+
+      FTensor::Tensor1<double, 3> g;
+      g(i) = alpha * t_lambda(i);
+                               
+      ++t_lambda;
+
+      int rr = 0;
+      for (; rr != OpBase::nbRows / DIM; ++rr) {
+        t_int_translation(i) += t_row_base * g(i);
+        ++t_row_base;
+      }
+      for (; rr < OpBase::nbRowBaseFunctions; ++rr)
+        ++t_row_base;
     }
     MoFEMFunctionReturn(0);
   }
 
 private:
+  boost::shared_ptr<MatrixDouble> uPtr;
+  FTensor::Tensor1<double, 3> tieCoord;
+  FTensor::Tensor1<double, 3> tieDirection;
+  boost::shared_ptr<VectorDouble> intTranslationPtr;
+  boost::shared_ptr<MatrixDouble> lambdaPtr;
+  boost::shared_ptr<VectorDouble> thetaPtr;
+};
+
+template <int DIM>
+struct OpTieTermConstrainRigidBodyGlobalRotationIntegralRhs
+    : public FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase {
+
+  using OpBase = FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase;
+
+  OpTieTermConstrainRigidBodyGlobalRotationIntegralRhs(
+      std::string lambda_name, boost::shared_ptr<MatrixDouble> u_ptr,
+      FTensor::Tensor1<double, 3> tie_coord,
+      FTensor::Tensor1<double, 3> tie_direction,
+      boost::shared_ptr<Range> tie_faces_ptr,
+      boost::shared_ptr<MatrixDouble> lambda_ptr,
+      boost::shared_ptr<MatrixDouble> int_rotation_ptr)
+      : OpBase(lambda_name, lambda_name, OpBase::OPROW, tie_faces_ptr),
+        uPtr(u_ptr), tieCoord(tie_coord), tieDirection(tie_direction), lambdaPtr(lambda_ptr),
+        intRotationPtr(int_rotation_ptr){
+    std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
+    doEntities[MBEDGE] = true;
+    doEntities[MBTRI] = true;
+    doEntities[MBQUAD] = true;
+  }
+
+  MoFEMErrorCode iNtegrate(EntData &data) {
+    MoFEMFunctionBegin;
+
+    //std::cout << "getNumberedEntities: " << *getNumeredEntFiniteElementPtr() << std::endl;
+    FTENSOR_INDEX(SPACE_DIM, i);
+    FTENSOR_INDEX(SPACE_DIM, j);
+    FTENSOR_INDEX(SPACE_DIM, k);
+    FTENSOR_INDEX(SPACE_DIM, l);
+    FTENSOR_INDEX(SPACE_DIM, m);
+
+    //double time = getTStime();
+    double time = 1.0;
+
+    auto nb_integration_pts = getGaussPts().size2();
+    // get element volume
+    const double vol = OpBase::getMeasure();
+    // get base function gradient on rows
+    auto t_row_base = data.getFTensor0N();
+    // get integration weights
+    auto t_w = OpBase::getFTensor0IntegrationWeight();
+    // get coordinate at integration points
+    auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
+    // get lambda
+    auto t_lambda = getFTensor1FromMat<SPACE_DIM>(*lambdaPtr);
+    double* intRotationRawPtr = &(*intRotationPtr->data().begin());
+
+    auto t_int_rotation = getFTensor2FromPtr<SPACE_DIM, SPACE_DIM>(intRotationRawPtr);
+
+
+    for (int gg = 0; gg != nb_integration_pts; gg++) {
+      const auto alpha = t_w * vol;
+      ++t_w;
+
+      FTensor::Tensor2<double, SPACE_DIM, SPACE_DIM> g;
+      g(i, j) = alpha * t_lambda(i) * (t_coords(j) - tieCoord(j));
+
+      ++t_lambda;
+      ++t_coords;
+
+      int rr = 0;
+      for (; rr != OpBase::nbRows / DIM; ++rr) {
+        t_int_rotation(i, j) += t_row_base * g(i, j);
+        ++t_row_base;
+      }
+      for (; rr < OpBase::nbRowBaseFunctions; ++rr)
+        ++t_row_base;
+    }
+    MoFEMFunctionReturn(0);
+  }
+
+private:
+  boost::shared_ptr<MatrixDouble> uPtr;
   FTensor::Tensor1<double, 3> tieCoord;
   FTensor::Tensor1<double, 3> tieDirection;
   boost::shared_ptr<MatrixDouble> lambdaPtr;
+  boost::shared_ptr<VectorDouble> translationPtr;
+  boost::shared_ptr<MatrixDouble> intRotationPtr;
 };
 
 template <int DIM>
@@ -2846,10 +3019,10 @@ struct OpTieTermConstrainRigidBodyGlobalTranslationLhs_dLambda
       : OpBase(lambda_name, field_name, OpBase::OPROWCOL, tie_faces_ptr),
         uPtr(u_ptr), tieCoord(tie_coord), tieDirection(tie_direction){
     std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
-    doEntities[MBEDGE] = true;
-    doEntities[MBTRI] = true;
-    doEntities[MBQUAD] = true;
-    //doEntities[MBENTITYSET] = true;
+    // doEntities[MBEDGE] = true;
+    // doEntities[MBTRI] = true;
+    // doEntities[MBQUAD] = true;
+    // doEntities[MBENTITYSET] = true;
     this->assembleTranspose = true;
     this->sYmm = false;
   }
@@ -2919,27 +3092,27 @@ private:
   boost::shared_ptr<MatrixDouble> lambdaPtr;
 };
 
-
 template <int DIM>
 struct OpTieTermConstrainRigidBodyGlobalRotationRhs
-    : public ForcesAndSourcesCore::UserDataOperator{
+    : public ForcesAndSourcesCore::UserDataOperator {
 
-      using OpUserDataOp = ForcesAndSourcesCore::UserDataOperator;
+  using OpUserDataOp = ForcesAndSourcesCore::UserDataOperator;
 
-      OpTieTermConstrainRigidBodyGlobalRotationRhs(
-          std::string lambda_name, FTensor::Tensor1<double, 3> tie_coord,
-          FTensor::Tensor1<double, 3> tie_direction,
-          boost::shared_ptr<Range> tie_faces_ptr,
-          boost::shared_ptr<MatrixDouble> lambda_ptr)
-          : OpUserDataOp(lambda_name, OpUserDataOp::OPROW),
-            tieCoord(tie_coord), tieDirection(tie_direction),
-            lambdaPtr(lambda_ptr) {
-        std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
-        // doEntities[MBEDGE] = true;
-        // doEntities[MBTRI] = true;
-        // doEntities[MBQUAD] = true;
-        doEntities[MBENTITYSET] = true;
-      }
+  OpTieTermConstrainRigidBodyGlobalRotationRhs(
+      std::string lambda_name, FTensor::Tensor1<double, 3> tie_coord,
+      FTensor::Tensor1<double, 3> tie_direction,
+      boost::shared_ptr<Range> tie_faces_ptr,
+      boost::shared_ptr<MatrixDouble> lambda_ptr,
+      boost::shared_ptr<MatrixDouble> int_rotation_ptr)
+      : OpUserDataOp(lambda_name, OpUserDataOp::OPROW),
+        tieCoord(tie_coord), tieDirection(tie_direction),
+        lambdaPtr(lambda_ptr), intRotationPtr(int_rotation_ptr) {
+    std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
+    // doEntities[MBEDGE] = true;
+    // doEntities[MBTRI] = true;
+    // doEntities[MBQUAD] = true;
+    doEntities[MBENTITYSET] = true;
+  }
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data) {
@@ -2960,17 +3133,26 @@ struct OpTieTermConstrainRigidBodyGlobalRotationRhs
 
     auto nb_integration_pts = getGaussPts().size2();
     // get element volume
-    const double vol = OpUserDataOp::getMeasure();
-    // get base function gradient on rows
-    auto t_row_base = data.getFTensor0N();
-    // get integration weights
-    auto t_w = OpUserDataOp::getFTensor0IntegrationWeight();
+    // const double vol = OpUserDataOp::getMeasure();
+    // // get base function gradient on rows
+    // auto t_row_base = data.getFTensor0N();
+    // // get integration weights
+    // auto t_w = OpUserDataOp::getFTensor0IntegrationWeight();
     // get coordinate at integration points
-    auto t_coords = OpUserDataOp::getFTensor1CoordsAtGaussPts();
-    // get lambda
-    auto t_lambda = getFTensor1FromMat<SPACE_DIM>(*lambdaPtr);
+    //auto t_coords = OpUserDataOp::getFTensor1CoordsAtGaussPts();
+    //auto t_coords = OpUserDataOp::getFTensor1Coords();
+    // get displacement
+    // auto t_u = getFTensor1FromMat<SPACE_DIM>(*uPtr);
+    // // get lambda
+    // auto t_lambda = getFTensor1FromMat<SPACE_DIM>(*lambdaPtr);
 
-    auto t_dofs = data.getFieldData();
+    auto t_dofs = data.getFTensor1FieldData<3>();
+
+    double* intRotationRawPtr = &(*intRotationPtr->data().begin());
+    auto t_int_rotation = getFTensor2FromPtr<SPACE_DIM, SPACE_DIM>(intRotationRawPtr);
+  
+
+    //data_ptr = &*data.getFieldData().data().begin();
 
     // create a "dummy" base function
     MatrixDouble m_kd(3, 3);
@@ -2986,34 +3168,41 @@ struct OpTieTermConstrainRigidBodyGlobalRotationRhs
 
     auto t_dummy_base = getFTensor1FromMat<3>(m_kd);
 
-    for (int gg = 0; gg != nb_integration_pts; gg++) {
-      const auto alpha = t_w * vol;
-      ++t_w;
+    // for (int gg = 0; gg != nb_integration_pts; gg++) {
+    //   const auto alpha = t_w * vol;
+    //   ++t_w;
 
       FTensor::Tensor2<double, SPACE_DIM, SPACE_DIM> g;
-      g(i, j) = alpha * t_lambda(i) *
-                (t_coords(j) - tieCoord(j));
+      // g(i, j) = alpha * t_lambda(i) *
+      //           (t_coords(j) - tieCoord(j));
+      g(i, j) = 1.0;
 
-      ++ t_lambda;
-      ++t_coords;
+      //++ t_lambda;
+      //++t_coords;
+      //++t_u;
 
       //auto t_nf = getFTensor1FromArray<DIM, DIM>(OpUserDataOp::locF);
       int rr = 0;
       for (; rr != 3; ++rr) {
-        // t_dofs(k) += t_dummy_base(k) * levi_civita(i, j, k) * g(i, j);
+        t_dofs(k) -= t_dummy_base(k) * levi_civita(i, j, k) * t_int_rotation(i, j);
 
         //t_nf(k) += t_dummy_base(k) * levi_civita(i, j, k) * g(i, j);
         ++t_dummy_base;
         //++t_nf;
       }
-    }
+      std::cout << "Rotation: " << t_dofs(0) << " " << t_dofs(1) << " " << t_dofs(2) << std::endl;    
+    // }
     MoFEMFunctionReturn(0);
   }
 
 private:
+  boost::shared_ptr<MatrixDouble> uPtr;
   FTensor::Tensor1<double, 3> tieCoord;
   FTensor::Tensor1<double, 3> tieDirection;
   boost::shared_ptr<MatrixDouble> lambdaPtr;
+  boost::shared_ptr<VectorDouble> translationPtr;
+  boost::shared_ptr<VectorDouble> thetaPtr;
+  boost::shared_ptr<MatrixDouble> intRotationPtr;
 };
 
 template <int DIM>
@@ -3036,10 +3225,10 @@ struct OpTieTermConstrainRigidBodyGlobalRotationLhs_dLambda
         lambdaPtr(lambda_ptr), translationPtr(translation_ptr),
         thetaPtr(theta_ptr) {
     std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
-    doEntities[MBEDGE] = true;
-    doEntities[MBTRI] = true;
-    doEntities[MBQUAD] = true;
-    //doEntities[MBENTITYSET] = true;
+    // doEntities[MBEDGE] = true;
+    // doEntities[MBTRI] = true;
+    // doEntities[MBQUAD] = true;
+    // doEntities[MBENTITYSET] = true;
     this->assembleTranspose = true;
     this->sYmm = false;
   }
@@ -3171,9 +3360,8 @@ struct OpCalculateNoFieldVectorValues : public ForcesAndSourcesCore::UserDataOpe
         data.getFieldData().swap(dotVector);
       }
 
-      vec(0) = data.getFieldData()(0);
-      vec(1) = data.getFieldData()(1);
-      vec(2) = data.getFieldData()(2);
+      vec = data.getFieldData();
+
       //auto values_at_gauss_pts = getFTensor0FromVec(vec);
       
       // for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
@@ -3226,6 +3414,11 @@ struct OpTieSetDofs : public ForcesAndSourcesCore::UserDataOperator {
       vec.resize(nb_gauss_pts, false);
     }
 
+    VectorDouble &FieldData = data.getFieldData();
+
+    FieldData(0) = tieDirection(0);
+    
+
     vec(0) = tieDirection(0);
     // std::cout << "vec(0): " << vec(0) << std::endl;
     // std::cout << "vec(1): " << vec(1) << std::endl;
@@ -3238,4 +3431,55 @@ protected:
   boost::shared_ptr<ublas::vector<double, DoubleAllocator>> dataPtr;
   const EntityHandle zeroType;
   FTensor::Tensor1<double, 3> tieDirection;
+};
+
+template <int DIM>
+struct OpTieTermSetBc : public ForcesAndSourcesCore::UserDataOperator {
+
+  OpTieTermSetBc(std::string lambda_name, std::string field_name,
+                 boost::shared_ptr<Range> tie_faces_ptr)
+      : ForcesAndSourcesCore::UserDataOperator(
+            lambda_name, field_name,
+            ForcesAndSourcesCore::UserDataOperator::OPROWCOL) {
+    std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
+    // doEntities[MBEDGE] = true;
+    // doEntities[MBTRI] = true;
+    // doEntities[MBQUAD] = true;
+    doEntities[MBENTITYSET] = true;
+    this->sYmm = false;
+  }
+
+  MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
+                        EntityType col_type,
+                        EntitiesFieldData::EntData &row_data,
+                        EntitiesFieldData::EntData &col_data) {
+    // MoFEMErrorCode iNtegrate(EntData &data) {
+    MoFEMFunctionBegin;
+    FTENSOR_INDEX(SPACE_DIM, i);
+    FTENSOR_INDEX(SPACE_DIM, j);
+    FTENSOR_INDEX(SPACE_DIM, k);
+    FTENSOR_INDEX(SPACE_DIM, l);
+    FTENSOR_INDEX(SPACE_DIM, m);
+
+    // double time = getTStime();
+    double time = 1.0;
+
+    auto nb_integration_pts = getGaussPts().size2();
+
+    VectorDouble &vec = row_data.getFieldData();
+
+
+      FTensor::Tensor1<double, 3> t_set_bc;
+      t_set_bc(0) = 1.0;
+      t_set_bc(1) = 0.0;
+      t_set_bc(2) = 0.0;
+
+      vec(0) = t_set_bc(0);
+      vec(1) = t_set_bc(1);
+      vec(2) = t_set_bc(2);
+
+
+
+    MoFEMFunctionReturn(0);
+  }
 };
