@@ -579,7 +579,7 @@ MoFEMErrorCode TetPolynomialBase::getValueL2AinsworthBase(MatrixDouble &pts) {
     if (it != interior_cache_ptr->end()) {
       noalias(data.dataOnEntities[MBTET][0].getN(base)) = it->N;
       noalias(data.dataOnEntities[MBTET][0].getDiffN(base)) = it->diffN;
-      MoFEMFunctionBeginHot(0);
+      MoFEMFunctionReturnHot(0);
     }
   }
 
@@ -1217,7 +1217,7 @@ TetPolynomialBase::getValueHdivAinsworthBrokenBase(MatrixDouble &pts) {
     if (it != interior_cache_ptr->end()) {
       noalias(data.dataOnEntities[MBTET][0].getN(base)) = it->N;
       noalias(data.dataOnEntities[MBTET][0].getDiffN(base)) = it->diffN;
-      MoFEMFunctionBeginHot(0);
+      MoFEMFunctionReturnHot(0);
     }
   }
 
@@ -1608,7 +1608,7 @@ TetPolynomialBase::getValueHdivDemkowiczBrokenBase(MatrixDouble &pts) {
     if (it != interior_cache_ptr->end()) {
       noalias(data.dataOnEntities[MBTET][0].getN(base)) = it->N;
       noalias(data.dataOnEntities[MBTET][0].getDiffN(base)) = it->diffN;
-      MoFEMFunctionBeginHot(0);
+      MoFEMFunctionReturnHot(0);
     }
   }
 

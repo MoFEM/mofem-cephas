@@ -2823,8 +2823,6 @@ OpCalculateBrokenHVecTensorField<Tensor_Dim0, Tensor_Dim1>::doWork(
 
   auto side_face_dofs = get_get_side_face_dofs();
 
-  double scale = (scalePtr) ? *scalePtr : 1.0;
-  const size_t nb_base_functions = data.getN().size2() / 3;
   FTensor::Index<'i', Tensor_Dim0> i;
   FTensor::Index<'j', Tensor_Dim1> j;
   auto t_data = getFTensor2FromMat<Tensor_Dim0, Tensor_Dim1>(*dataPtr);
@@ -2837,6 +2835,7 @@ OpCalculateBrokenHVecTensorField<Tensor_Dim0, Tensor_Dim1>::doWork(
     }
     ++t_data;
   }
+  *dataPtr *= (scalePtr) ? *scalePtr : 1.0;
 
   if (dataVec.use_count()) {
     data.getFieldData().swap(dotVector);
@@ -3106,7 +3105,6 @@ struct OpCalculateBrokenHVecTensorDivergence
 
       auto side_face_dofs = get_get_side_face_dofs();
 
-      const size_t nb_base_functions = data.getN().size2() / 3;
       FTensor::Index<'i', Tensor_Dim0> i;
       FTensor::Index<'j', Tensor_Dim1> j;
       auto t_data = getFTensor1FromMat<Tensor_Dim0>(*dataPtr);

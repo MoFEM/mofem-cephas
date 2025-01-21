@@ -221,7 +221,7 @@ MoFEMErrorCode MeshsetsManager::broadcastMeshsets(int verb) {
               CHKERR moab.create_meshset(MESHSET_SET, m);
               CHKERR set_tags_dummy_node(m, dummy_node);
               auto hint = cubitMeshsets.end();
-              auto p = cubitMeshsets.emplace_hint(hint, moab, m);
+              /*auto p = */ cubitMeshsets.emplace_hint(hint, moab, m);
             }
           } else {
             MOFEM_LOG("MeshsetMngSync", Sev::warning)

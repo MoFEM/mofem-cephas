@@ -172,8 +172,6 @@ MoFEM::OpFluxLhsImpl<ThermoElasticOps::ConvectionBcType<BLOCKSET>, 1, 1, A,
                                        EntitiesFieldData::EntData &col_data) {
 
   MoFEMFunctionBegin;
-  // get element volume
-  const double vol = OpBase::getMeasure();
   // get integration weights
   auto t_w = OpBase::getFTensor0IntegrationWeight();
   // get base function values on rows
