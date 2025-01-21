@@ -605,11 +605,6 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
     MOFEM_LOG("SELF", Sev::noisy) << "Schur assemble begin -> end";
 #endif
 
-  auto get_field_name = [&](auto uid) {
-    return OP::getPtrFE()->mField.get_field_name(field_bit_from_bit_number(
-        FieldEntity::getFieldBitNumberFromUniqueId(uid)));
-  };
-
   auto get_a00_uids = [&]() {
     auto get_field_bit = [&](auto &name) {
       return OP::getPtrFE()->mField.get_field_bit_number(name);
@@ -640,6 +635,10 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
   };
 
 #ifndef NDEBUG
+  auto get_field_name = [&](auto uid) {
+    return OP::getPtrFE()->mField.get_field_name(field_bit_from_bit_number(
+        FieldEntity::getFieldBitNumberFromUniqueId(uid)));
+  };
   auto list_storage = [&](auto &storage) {
     MoFEMFunctionBegin;
     int i = 0;
@@ -759,8 +758,8 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
       return block_list;
     };
 
-    auto [block_list, block_indexing, block_mat_size] =
-        get_block_indexing(a00_uids);
+    auto bi = get_block_indexing(a00_uids);
+    auto &[block_list, block_indexing, block_mat_size] = bi;
 
     if (block_mat_size == 0) {
 
@@ -805,6 +804,7 @@ MoFEMErrorCode OpSchurAssembleEndImpl<OP_SCHUR_ASSEMBLE_BASE>::doWorkImpl(
     }
 
     auto get_zeroed_indices = [&](auto extractor_uid, auto extractor_ind) {
+      auto &[block_list, block_indexing, block_mat_size] = bi;
       std::vector<int> zeroed_indices;
       zeroed_indices.reserve(block_mat_size);
       for (auto &s : block_list) {
@@ -2261,7 +2261,6 @@ inline MoFEMErrorCode shell_block_mat_asmb_wrap_impl(
 
                 auto ci = col_ind.begin();
                 auto cie = col_ind.end();
-                auto ce = c_cache->loHi[0];
 
                 int col = 0;
                 for (auto ce : ent_col_indices) {

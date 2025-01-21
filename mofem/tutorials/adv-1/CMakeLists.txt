@@ -139,6 +139,8 @@ add_custom_target(
 ##### TESTS #####
 #################
 
+if(Boost_NUMPY_LIBRARY_RELEASE) 
+
 add_test(
   hertz_2d_plane_stress
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4
@@ -226,6 +228,8 @@ add_test(
   -poisson_ratio 0.4
   -atom_test 7
 )
+
+endif(Boost_NUMPY_LIBRARY_RELEASE)
 
 # if(IS_MFRONT_MOD)
 #   if(TFEL_DIR)

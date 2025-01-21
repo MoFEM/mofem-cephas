@@ -55,7 +55,6 @@ int main(int argc, char *argv[]) {
     PetscBool flg_file;
     char mesh_file_name[255];
     PetscInt order = 2;
-    PetscBool is_partitioned = PETSC_FALSE;
     PetscBool regression_test = PETSC_FALSE;
 
     CHKERR PetscOptionsBegin(PETSC_COMM_WORLD, "", "Magnetostatics options",

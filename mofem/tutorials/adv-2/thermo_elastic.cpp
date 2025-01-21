@@ -1293,10 +1293,8 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
 
   auto monitor_ptr = boost::make_shared<FEMethod>();
 
-  auto [domain_post_proc_fe, skin_post_proc_fe] =
-      create_post_process_elements();
-
-  auto set_time_monitor = [&](auto dm, auto solver) {
+  auto set_time_monitor = [&](auto dm, auto solver, auto domain_post_proc_fe,
+                              auto skin_post_proc_fe) {
     MoFEMFunctionBegin;
     monitor_ptr->preProcessHook = [&]() {
       MoFEMFunctionBegin;
@@ -1529,7 +1527,10 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
 
   CHKERR set_section_monitor(solver);
   CHKERR set_fieldsplit_preconditioner(solver);
-  CHKERR set_time_monitor(dm, solver);
+
+  auto [domain_post_proc_fe, skin_post_proc_fe] =
+      create_post_process_elements();
+  CHKERR set_time_monitor(dm, solver, domain_post_proc_fe, skin_post_proc_fe);
 
   CHKERR TSSetUp(solver);
   CHKERR TSSolve(solver, NULL);

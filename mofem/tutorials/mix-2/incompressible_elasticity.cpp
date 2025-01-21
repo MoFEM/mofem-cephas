@@ -438,9 +438,7 @@ MoFEMErrorCode Incompressible::bC() {
 //! [Push operators to pip]
 MoFEMErrorCode Incompressible::OPs() {
   MoFEMFunctionBegin;
-  auto simple = mField.getInterface<Simple>();
   auto pip_mng = mField.getInterface<PipelineManager>();
-  auto bc_mng = mField.getInterface<BcManager>();
 
   auto integration_rule_vol = [](int, int, int approx_order) {
     return 2 * approx_order + geom_order - 1;
@@ -618,7 +616,6 @@ MoFEMErrorCode Incompressible::tsSolve() {
 
   auto create_post_process_elements = [&]() {
     auto pp_fe = boost::make_shared<PostProcEle>(mField);
-    auto &pip = pp_fe->getOpPtrVector();
 
     auto push_vol_ops = [this](auto &pip) {
       MoFEMFunctionBegin;
@@ -832,7 +829,6 @@ MoFEMErrorCode Incompressible::tsSolve() {
       } else {
         auto set_pcfieldsplit_preconditioned_ts = [&](auto solver) {
           MoFEMFunctionBegin;
-          auto bc_mng = mField.getInterface<BcManager>();
           auto name_prb = simple->getProblemName();
           SmartPetscObj<IS> is_p;
           CHKERR mField.getInterface<ISManager>()->isCreateProblemFieldAndRank(
@@ -1009,6 +1005,12 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<TS> solver) {
                                               post_proc_schur_lhs_ptr]() {
     MoFEMFunctionBegin;
 
+    CHKERR MatAssemblyBegin(S, MAT_FINAL_ASSEMBLY);
+    CHKERR MatAssemblyEnd(S, MAT_FINAL_ASSEMBLY);
+    CHKERR EssentialPostProcLhs<DisplacementCubitBcData>(
+        mField, post_proc_schur_lhs_ptr, 1, S, ao_up)();
+
+#ifndef NDEBUG
     auto print_mat_norm = [this](auto a, std::string prefix) {
       MoFEMFunctionBegin;
       double nrm;
@@ -1017,13 +1019,6 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<TS> solver) {
           << prefix << " norm = " << nrm;
       MoFEMFunctionReturn(0);
     };
-
-    CHKERR MatAssemblyBegin(S, MAT_FINAL_ASSEMBLY);
-    CHKERR MatAssemblyEnd(S, MAT_FINAL_ASSEMBLY);
-    CHKERR EssentialPostProcLhs<DisplacementCubitBcData>(
-        mField, post_proc_schur_lhs_ptr, 1, S, ao_up)();
-
-#ifndef NDEBUG
     CHKERR print_mat_norm(S, "S");
 #endif // NDEBUG
     MoFEMFunctionReturn(0);
