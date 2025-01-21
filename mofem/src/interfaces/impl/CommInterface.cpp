@@ -1429,8 +1429,8 @@ Range CommInterface::getPartEntities(moab::Interface &moab, int part) {
     pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
   if (pcomm->size() == 1) {
     Range ents;
-    CHK_THROW_MESSAGE(moab.get_entities_by_handle(0, ents, false),
-                      "get_entities_by_handle failed");
+    CHK_MOAB_THROW(moab.get_entities_by_handle(0, ents, false),
+                   "get_entities_by_handle failed");
     return subtract(ents, ents.subset_by_type(MBENTITYSET));
   }
 
@@ -1474,13 +1474,6 @@ CommInterface::createEntitiesPetscVector(MPI_Comm comm, moab::Interface &moab,
   auto fun = [&]() {
     MoFEMFunctionBegin;
     auto pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
-
-    auto filter_owners = [&](auto &&skin) {
-      Range owner_ents;
-      CHKERR pcomm->filter_pstatus(skin, PSTATUS_NOT_OWNED, PSTATUS_NOT, -1,
-                                   &owner_ents);
-      return owner_ents;
-    };
 
     Tag part_tag = pcomm->part_tag();
     Range tagged_sets, proc_ents, off_proc_ents;

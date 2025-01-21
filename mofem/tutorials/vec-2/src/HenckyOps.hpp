@@ -218,7 +218,6 @@ struct OpCalculateLogCImpl<DIM, GAUSS, DomainEleOp> : public DomainEleOp {
     FTensor::Index<'i', DIM> i;
     FTensor::Index<'j', DIM> j;
 
-    constexpr auto t_kd = FTensor::Kronecker_Delta<int>();
     // const size_t nb_gauss_pts = matGradPtr->size2();
     const size_t nb_gauss_pts = DomainEleOp::getGaussPts().size2();
     constexpr auto size_symm = (DIM * (DIM + 1)) / 2;
@@ -308,8 +307,6 @@ struct OpCalculateHenckyStressImpl<DIM, GAUSS, DomainEleOp, S>
     FTensor::Index<'k', DIM> k;
     FTensor::Index<'l', DIM> l;
 
-    constexpr auto t_kd = FTensor::Kronecker_Delta<int>();
-
     // const size_t nb_gauss_pts = matGradPtr->size2();
     const size_t nb_gauss_pts = DomainEleOp::getGaussPts().size2();
     auto t_D = getFTensor4DdgFromMat<DIM, DIM, S>(*commonDataPtr->matDPtr);
@@ -355,8 +352,6 @@ struct OpCalculateHenckyPlasticStressImpl<DIM, GAUSS, DomainEleOp, S>
     FTensor::Index<'j', DIM> j;
     FTensor::Index<'k', DIM> k;
     FTensor::Index<'l', DIM> l;
-
-    constexpr auto t_kd = FTensor::Kronecker_Delta<int>();
 
     // const size_t nb_gauss_pts = matGradPtr->size2();
     const size_t nb_gauss_pts = DomainEleOp::getGaussPts().size2();

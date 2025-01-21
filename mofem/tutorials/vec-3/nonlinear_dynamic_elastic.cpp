@@ -47,9 +47,6 @@ constexpr double poisson_ratio = 0.25;
 #include <HenckyOps.hpp>
 using namespace HenckyOps;
 
-static double *ts_time_ptr;
-static double *ts_aa_ptr;
-
 struct Example {
 
   Example(MoFEM::Interface &m_field) : mField(m_field) {}
