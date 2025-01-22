@@ -5,7 +5,9 @@
  * Example of implementation for cutfem
  */
 
-
+extern "C" {
+#include <phg-quadrule/quad.h>
+}
 
 // Define name if it has not been defined yet
 #ifndef __POISSONCUTFEM_HPP__
@@ -83,7 +85,7 @@ struct HexMeshRefinement : public MeshRefinement {
       const EntityHandle *conn;
       int num_nodes;
       CHKERR moab.get_connectivity(hit, conn, num_nodes, true);
-      std::cout << " We are at a probn um_nodes: " << num_nodes << "\n"; 
+      // std::cout << " The num nodes are.. " << num_nodes << "\n"; 
       // Initialize variables for hexahedron refinement
       BitRefEdges parent_edges_bit(0);
       // EntityHandle edge_new_nodes[12] = {0}; // 12 edges in a hexahedron
@@ -115,7 +117,7 @@ struct HexMeshRefinement : public MeshRefinement {
         default:
           SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSSIBLE_CASE, "Impossible case");
         }
-        std::cout << " We are at a problem at line: " << __LINE__ << "\n"; 
+        // std::cout << " We are at a problem at line: " << __LINE__ << "\n"; 
 
         // If this element was not refined or was refined with different
         // patterns of split edges
@@ -128,7 +130,7 @@ struct HexMeshRefinement : public MeshRefinement {
         nb_new_tets_vec.emplace_back(nb_new_tets);
         sub_type_vec.emplace_back(sub_type);
         
-        std::cout << " We are at a problem at line: " << __LINE__ << "\n"; 
+        // std::cout << " We are at a problem at line: " << __LINE__ << "\n"; 
       } else {
         if (debug) {
           RefEntity_multiIndex::iterator hit_miit;
@@ -140,7 +142,7 @@ struct HexMeshRefinement : public MeshRefinement {
         ents_to_set_bit.insert(hit);
       }
     }
-     std::cout << " We are at a problem at line: " << __LINE__ << "\n"; 
+    //  std::cout << " We are at a problem at line: " << __LINE__ << "\n"; 
     // Create tetrahedrons
     EntityHandle start_e = 0;
     EntityHandle *conn_moab;
@@ -158,7 +160,7 @@ struct HexMeshRefinement : public MeshRefinement {
       CHKERR moab.get_adjacencies(ents_to_set_bit, d, true, ents,
                                   moab::Interface::UNION);
     }
-    std::cout << " We are at a problem at line: " << __LINE__ << "\n"; 
+    // std::cout << " We are at a problem at line: " << __LINE__ << "\n"; 
     SetParent set_parent;
 
     // Set parents and adjacencies for the new tets
@@ -182,7 +184,7 @@ struct HexMeshRefinement : public MeshRefinement {
         // hash map of nodes (RefEntity) by edges (EntityHandle)
         std::map<EntityHandle /*edge*/, EntityHandle /*node*/>
             map_ref_nodes_by_edges;
-        std::cout << " We are at a problem at line: " << __LINE__ << "\n"; 
+        // std::cout << " We are at a problem at line: " << __LINE__ << "\n"; 
         Range tit_edges;
         CHKERR moab.get_adjacencies(&hit, 1, 1, false, tit_edges);
         for (auto edge : tit_edges) {
@@ -193,18 +195,18 @@ struct HexMeshRefinement : public MeshRefinement {
           }
         }
 
-        std::cout << " We are at a problem at line: " << __LINE__ << "\n"; 
-        std::cout << " We ar tit_edges.size() " << tit_edges.size() << "\n"; 
+        // std::cout << " We are at a problem at line: " << __LINE__ << "\n"; 
+        // std::cout << " We ar tit_edges.size() " << tit_edges.size() << "\n"; 
         // find parents for new edges and faces
         // get tet edges and faces
         Range tit_faces;
         CHKERR moab.get_adjacencies(&hit, 1, 2, false, tit_faces);
-        std::cout << " We ar tit_faces.size() " << tit_faces.size() << "\n"; 
+        // std::cout << " We ar tit_faces.size() " << tit_faces.size() << "\n"; 
         Range edges_nodes[12], faces_nodes[6];
         // for edges - add ref nodes
         // edges_nodes[ee] - contains all nodes on edge ee including mid nodes
         // if exist
-        std::cout << " We are at a problem at line: " << __LINE__ << "\n"; 
+        // std::cout << " We are at a problem at line: " << __LINE__ << "\n"; 
         Range::iterator eit = tit_edges.begin();
         for (int ee = 0; eit != tit_edges.end(); eit++, ee++) {
           CHKERR moab.get_connectivity(&*eit, 1, edges_nodes[ee], true);
@@ -213,7 +215,7 @@ struct HexMeshRefinement : public MeshRefinement {
             edges_nodes[ee].insert(map_miit->second);
           }
         }
-        std::cout << " We are at a problem at line: " << __LINE__ << "\n"; 
+        // std::cout << " We are at a problem at line: " << __LINE__ << "\n"; 
         // for faces - add ref nodes
         // faces_nodes[ff] - contains all nodes on face ff including mid nodes
         // if exist
@@ -331,11 +333,11 @@ struct HexMeshRefinement : public MeshRefinement {
         }
       }
     }
-    std::cout << " We are at a problem at line: " << __LINE__ << "\n"; 
+    // std::cout << " We are at a problem at line: " << __LINE__ << "\n"; 
     CHKERR set_parent(refined_ents_ptr);
     CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevel(
         ents_to_set_bit, bit, true, verb, &ents);
-    std::cout << " We are at a problem at line: " << __LINE__ << "\n"; 
+    // std::cout << " We are at a problem at line: " << __LINE__ << "\n"; 
     MoFEMFunctionReturn(0);
   }
 
@@ -373,8 +375,8 @@ struct HexMeshRefinement : public MeshRefinement {
 
 struct SetIntegrationOnActiveCells : public VolumeElementForcesAndSourcesCore {
 
-  SetIntegrationOnActiveCells(MoFEM::Interface &m_field, const Range &active_cells)
-       : VolumeElementForcesAndSourcesCore(m_field), activeCells(active_cells) {}
+  SetIntegrationOnActiveCells(MoFEM::Interface &m_field, const Range &active_cells, const Range &inside_cells)
+       : VolumeElementForcesAndSourcesCore(m_field), activeCells(active_cells), insideCells(inside_cells) {}
 
   MoFEMErrorCode operator()(ForcesAndSourcesCore *fe_raw_ptr, int order_row,
                             int order_col, int order_data) {
@@ -398,61 +400,85 @@ struct SetIntegrationOnActiveCells : public VolumeElementForcesAndSourcesCore {
       const size_t nb_gauss_pts = fe_ptr->gaussPts.size2();
       auto &data = fe_ptr->getDataOnElementBySpaceArray()[H1];
       data->dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 4);
+      data->dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(nb_gauss_pts, 12);
+
       double *shape_ptr =
           &*data->dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
-      double *diff_shape_fun =
-          &*data->dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin();
-
       CHKERR ShapeMBTET(shape_ptr, &fe_ptr->gaussPts(0, 0),
                         &fe_ptr->gaussPts(1, 0), &fe_ptr->gaussPts(2, 0),
                         nb_gauss_pts);
+      double diff_shape_fun[12];
       CHKERR ShapeDiffMBTET(diff_shape_fun);
+
+      MoFEMFunctionReturnHot(0);
+      // double *shape_ptr =
+      //     &*data->dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
+      // double *diff_shape_fun =
+      //     &*data->dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin();
+      std::cout << " Setting shape funcs pts... \n";
+
+      // auto base = data->dataOnEntities[MBVERTEX][0].getBase();
+      auto base = DEMKOWICZ_JACOBI_BASE;
+      CHKERR HexPolynomialBase().getValue(
+          fe_ptr->gaussPts,
+          boost::shared_ptr<EntPolynomialBaseCtx>(new EntPolynomialBaseCtx(
+              *data, "U", H1, CONTINUOUS, base, base)));
+
+      // CHKERR HexPolynomialBase().getValueH1(fe_ptr->gaussPts);
+      // CHKERR ShapeMBTET(shape_ptr, &fe_ptr->gaussPts(0, 0),
+      //                   &fe_ptr->gaussPts(1, 0), &fe_ptr->gaussPts(2, 0),
+      //                   nb_gauss_pts);
+      // std::cout << " Setting shape funcs pts2... \n";
+      // double diff_shape_fun[12];
+      // CHKERR ShapeDiffMBTET(diff_shape_fun);
+      std::cout << " Setting shape funcs pts3... \n";
 
       MoFEMFunctionReturn(0);
     };
 
-    // auto set_base_quadrature = [&]() {
-    //   MoFEMFunctionBegin;
-    //   int rule = 2 * order_data + 1;
-    //   if (rule < QUAD_3D_TABLE_SIZE) {
-    //     if (QUAD_3D_TABLE[rule]->dim != 3) {
-    //       SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-    //               "wrong dimension");
-    //     }
-    //     if (QUAD_3D_TABLE[rule]->order < rule) {
-    //       SETERRQ2(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-    //                "wrong order %d != %d", QUAD_3D_TABLE[rule]->order, rule);
-    //     }
-    //     const size_t nb_gauss_pts = QUAD_3D_TABLE[rule]->npoints;
-    //     auto &gauss_pts = fe_raw_ptr->gaussPts;
-    //     gauss_pts.resize(4, nb_gauss_pts, false);
-    //     cblas_dcopy(nb_gauss_pts, &QUAD_3D_TABLE[rule]->points[1], 4,
-    //                 &gauss_pts(0, 0), 1);
-    //     cblas_dcopy(nb_gauss_pts, &QUAD_3D_TABLE[rule]->points[2], 4,
-    //                 &gauss_pts(1, 0), 1);
-    //     cblas_dcopy(nb_gauss_pts, &QUAD_3D_TABLE[rule]->points[3], 4,
-    //                 &gauss_pts(2, 0), 1);
-    //     cblas_dcopy(nb_gauss_pts, QUAD_3D_TABLE[rule]->weights, 1,
-    //                 &gauss_pts(3, 0), 1);
-    //     auto &data = fe_raw_ptr->dataOnElement[H1];
-    //     data->dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,
-    //     4,
-    //                                                           false);
-    //     double *shape_ptr =
-    //         &*data->dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
-    //     cblas_dcopy(4 * nb_gauss_pts, QUAD_3D_TABLE[rule]->points, 1,
-    //     shape_ptr,
-    //                 1);
-    //   } else {
-    //     SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-    //              "rule > quadrature order %d < %d", rule,
-    //              QUAD_3D_TABLE_SIZE);
-    //   }
-    //   MoFEMFunctionReturn(0);
-    // };
+
+    auto set_base_quadrature = [&]() {
+      MoFEMFunctionBegin;
+      int rule = 2 * order_data + 1;
+      if (rule < QUAD_3D_TABLE_SIZE) {
+        if (QUAD_3D_TABLE[rule]->dim != 3) {
+          SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                  "wrong dimension");
+        }
+        if (QUAD_3D_TABLE[rule]->order < rule) {
+          SETERRQ2(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                   "wrong order %d != %d", QUAD_3D_TABLE[rule]->order, rule);
+        }
+        const size_t nb_gauss_pts = QUAD_3D_TABLE[rule]->npoints;
+        auto &gauss_pts = fe_ptr->gaussPts;
+        gauss_pts.resize(4, nb_gauss_pts, false);
+        cblas_dcopy(nb_gauss_pts, &QUAD_3D_TABLE[rule]->points[1], 4,
+                    &gauss_pts(0, 0), 1);
+        cblas_dcopy(nb_gauss_pts, &QUAD_3D_TABLE[rule]->points[2], 4,
+                    &gauss_pts(1, 0), 1);
+        cblas_dcopy(nb_gauss_pts, &QUAD_3D_TABLE[rule]->points[3], 4,
+                    &gauss_pts(2, 0), 1);
+        cblas_dcopy(nb_gauss_pts, QUAD_3D_TABLE[rule]->weights, 1,
+                    &gauss_pts(3, 0), 1);
+        // auto &data = fe_ptr->dataOnElement[H1];
+        auto &data = fe_ptr->getDataOnElementBySpaceArray()[H1];
+        data->dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 4,
+                                                              false);
+        double *shape_ptr =
+            &*data->dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
+        cblas_dcopy(4 * nb_gauss_pts, QUAD_3D_TABLE[rule]->points, 1, shape_ptr,
+                    1);
+      } else {
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "rule > quadrature order %d < %d", rule, QUAD_3D_TABLE_SIZE);
+      }
+      MoFEMFunctionReturn(0);
+    };
+
+    // CHKERR set_base_quadrature();
 
     if (activeCells.find(fe_handle) != activeCells.end()) {
-
+      std::cout << " Setting integration points for this element: " << fe_handle << "\n";
       auto refine_quadrature = [&]() {
         MoFEMFunctionBegin;
 
@@ -465,7 +491,7 @@ struct SetIntegrationOnActiveCells : public VolumeElementForcesAndSourcesCore {
           // }
 
           Range children_level;
-          for (auto &ent : all_children) {
+          for (auto &ent : all_children.subset_by_dimension(3)) {
             Range parent(ent, ent);
             children_level.merge(get_all_children(parent));
           }
@@ -476,25 +502,28 @@ struct SetIntegrationOnActiveCells : public VolumeElementForcesAndSourcesCore {
         Range single_ent(fe_handle, fe_handle);
 
         auto all_refined_tets = get_all_children(single_ent);
-
+        all_refined_tets = all_refined_tets.subset_by_dimension(3);
         // if (debug) {
         //   CHKERR save_range(moab, "ref_tets.vtk", tets);
         // }
 
         MatrixDouble ref_coords(all_refined_tets.size(), 12, false);
+        std::cout << " Number of tets: " << all_refined_tets.size() << "\n";
+        std::cout << " all refined tets: " << all_refined_tets << "\n";
         int tt = 0;
         for (Range::iterator tit = all_refined_tets.begin();
              tit != all_refined_tets.end(); tit++, tt++) {
           int num_nodes;
           const EntityHandle *conn;
-          CHKERR moab.get_connectivity(*tit, conn, num_nodes, false);
+          CHKERR moab.get_connectivity(*tit, conn, num_nodes, true); // false
           CHKERR moab.get_coords(conn, num_nodes, &ref_coords(tt, 0));
         }
-
+        std::cout << " We have the coords... \n";
         auto &data = fe_ptr->getDataOnElementBySpaceArray()[H1];
         const size_t nb_gauss_pts = fe_ptr->gaussPts.size2();
         MatrixDouble ref_gauss_pts(4, nb_gauss_pts * ref_coords.size1());
         MatrixDouble &shape_n = data->dataOnEntities[MBVERTEX][0].getN(NOBASE);
+        std::cout << " Calculating shape funcs... \n";
         int gg = 0;
         for (size_t tt = 0; tt != ref_coords.size1(); tt++) {
           double *tet_coords = &ref_coords(tt, 0);
@@ -511,15 +540,77 @@ struct SetIntegrationOnActiveCells : public VolumeElementForcesAndSourcesCore {
           }
         }
 
+        std::cout << " Setting gauss pts... \n";
         CHKERR set_gauss_pts(ref_gauss_pts);
 
+        std::cout << " Setting gauss pts2... \n";
         MoFEMFunctionReturn(0);
       };
 
       CHKERR refine_quadrature();
-    } else {
+    } else if (insideCells.find(fe_handle) != insideCells.end()) {
+      std::cout << " Setting STANDARD integration points for this element: " << fe_handle << "\n";
+
       // CHKERR set_base_quadrature();
-      CHKERR setIntegrationPts();
+      // CHKERR setIntegrationPts();
+
+      auto calc_base_for_hex = [&]() {
+        MoFEMFunctionBegin;
+        gaussPts = fe_ptr->gaussPts;
+        const size_t nb_gauss_pts = gaussPts.size2();
+        auto &data = fe_ptr->getDataOnElementBySpaceArray()[H1];
+        auto &base = data->dataOnEntities[MBVERTEX][0].getN(NOBASE);
+        auto &diff_base = data->dataOnEntities[MBVERTEX][0].getDiffN(NOBASE);
+        base.resize(nb_gauss_pts, 8, false);
+        diff_base.resize(nb_gauss_pts, 24, false);
+        for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+          const double ksi = gaussPts(0, gg);
+          const double zeta = gaussPts(1, gg);
+          const double eta = gaussPts(2, gg);
+          base(gg, 0) = N_MBHEX0(ksi, zeta, eta);
+          base(gg, 1) = N_MBHEX1(ksi, zeta, eta);
+          base(gg, 2) = N_MBHEX2(ksi, zeta, eta);
+          base(gg, 3) = N_MBHEX3(ksi, zeta, eta);
+          base(gg, 4) = N_MBHEX4(ksi, zeta, eta);
+          base(gg, 5) = N_MBHEX5(ksi, zeta, eta);
+          base(gg, 6) = N_MBHEX6(ksi, zeta, eta);
+          base(gg, 7) = N_MBHEX7(ksi, zeta, eta);
+          diff_base(gg, 0 * 3 + 0) = diffN_MBHEX0x(zeta, eta);
+          diff_base(gg, 1 * 3 + 0) = diffN_MBHEX1x(zeta, eta);
+          diff_base(gg, 2 * 3 + 0) = diffN_MBHEX2x(zeta, eta);
+          diff_base(gg, 3 * 3 + 0) = diffN_MBHEX3x(zeta, eta);
+          diff_base(gg, 4 * 3 + 0) = diffN_MBHEX4x(zeta, eta);
+          diff_base(gg, 5 * 3 + 0) = diffN_MBHEX5x(zeta, eta);
+          diff_base(gg, 6 * 3 + 0) = diffN_MBHEX6x(zeta, eta);
+          diff_base(gg, 7 * 3 + 0) = diffN_MBHEX7x(zeta, eta);
+          diff_base(gg, 0 * 3 + 1) = diffN_MBHEX0y(ksi, eta);
+          diff_base(gg, 1 * 3 + 1) = diffN_MBHEX1y(ksi, eta);
+          diff_base(gg, 2 * 3 + 1) = diffN_MBHEX2y(ksi, eta);
+          diff_base(gg, 3 * 3 + 1) = diffN_MBHEX3y(ksi, eta);
+          diff_base(gg, 4 * 3 + 1) = diffN_MBHEX4y(ksi, eta);
+          diff_base(gg, 5 * 3 + 1) = diffN_MBHEX5y(ksi, eta);
+          diff_base(gg, 6 * 3 + 1) = diffN_MBHEX6y(ksi, eta);
+          diff_base(gg, 7 * 3 + 1) = diffN_MBHEX7y(ksi, eta);
+          diff_base(gg, 0 * 3 + 2) = diffN_MBHEX0z(ksi, zeta);
+          diff_base(gg, 1 * 3 + 2) = diffN_MBHEX1z(ksi, zeta);
+          diff_base(gg, 2 * 3 + 2) = diffN_MBHEX2z(ksi, zeta);
+          diff_base(gg, 3 * 3 + 2) = diffN_MBHEX3z(ksi, zeta);
+          diff_base(gg, 4 * 3 + 2) = diffN_MBHEX4z(ksi, zeta);
+          diff_base(gg, 5 * 3 + 2) = diffN_MBHEX5z(ksi, zeta);
+          diff_base(gg, 6 * 3 + 2) = diffN_MBHEX6z(ksi, zeta);
+          diff_base(gg, 7 * 3 + 2) = diffN_MBHEX7z(ksi, zeta);
+        }
+        MoFEMFunctionReturn(0);
+      };
+
+      const int rule = 2 * order_data + 1;
+      CHKERR Tools::outerProductOfEdgeIntegrationPtsForHex(fe_ptr->gaussPts,
+                                                           rule, rule, rule);
+      std::cout << " Calculating base for hex... \n";
+      CHKERR calc_base_for_hex();
+      std::cout << " Calculating base for hex2... \n";
+    } else {
+      std::cout << " No integration points are set for this element: " << fe_handle << "\n";
     }
 
     MoFEMFunctionReturn(0);
@@ -535,6 +626,7 @@ private:
   };
 
   const Range &activeCells;
+  const Range &insideCells;
 
   static inline std::map<long int, MatrixDouble> mapRefCoords;
 };
@@ -554,6 +646,7 @@ std::array<int, 2> senseMap; // orientaton of local element edge/face in respect
                              // to global orientation of edge/face
 
 Range activeCells;
+Range insideCells;
 Range activeSides;
 
 struct SurfaceKDTree {
@@ -680,6 +773,26 @@ struct SurfaceKDTree {
     }
   }
 
+  MoFEMErrorCode getInsideCells(const Range &volume, Range &inside_cells) {
+    MoFEMFunctionBegin;
+    
+    for (const auto &ent : volume) {
+      const EntityHandle *conn;
+      int num_nodes;
+      CHKERR mField.get_moab().get_connectivity(ent, conn, num_nodes, true);
+      int point_outside = 0;
+      for (int nn = 0; nn != num_nodes; nn++) {
+        double coords[3];
+        CHKERR mField.get_moab().get_coords(&conn[nn], 1, coords);
+        point_outside += isPointOutside(coords);
+      }
+      if (point_outside == num_nodes) 
+        continue;
+      inside_cells.insert(ent);
+    }
+
+    MoFEMFunctionReturn(0);
+  }
   /**
    * \brief Set distance to vertices on mesh
    *
@@ -698,7 +811,7 @@ struct SurfaceKDTree {
     std::cout << " The field_bit_number is " << field_name << " "
               << field_bit_number << std::endl;
     for (; it != hi_it; it++) {
-      std::cout << "We enter the entities " << std::endl;
+      // std::cout << "We enter the entities " << std::endl;
       EntityType type = it->get()->getEntType();
       if (type != MBVERTEX) {
         continue;
@@ -711,14 +824,13 @@ struct SurfaceKDTree {
       double delta[3];
       CHKERR findClosestPointToTheSurface(coords[0], coords[1], coords[2],
                                           delta[0], delta[1], delta[2]);
-      std::cout << "the distance is " << delta[0] << " " << delta[1] << " "
-                << delta[2] << std::endl;
+      // std::cout << "the distance is " << delta[0] << " " << delta[1] << " " << delta[2] << std::endl;
       // Get vector of DOFs on vertex
       VectorAdaptor dofs = it->get()->getEntFieldData();
       // Set values
       dofs[0] = cblas_dnrm2(3, delta, 1) * point_outside;
     }
-    std::cout << "saved data on vertices at least" << std::endl;
+    // std::cout << "saved data on vertices at least" << std::endl;
     // Get values at edges and project those values on approximation base
     it = field_ents->lower_bound(
         FieldEntity::getLoBitNumberUId(field_bit_number));
@@ -775,6 +887,245 @@ struct SurfaceKDTree {
     }
     PetscFunctionReturn(0);
   }
+};
+
+/**
+ * @brief Operator tp collect data from elements on the side of Edge/Face
+ * 
+ */
+struct OpCalculateSideData : public FaceSideOp {
+
+  OpCalculateSideData(std::string field_name, std::string col_field_name)
+      : FaceSideOp(field_name, col_field_name, FaceSideOp::OPROWCOL) {
+
+    std::fill(&doEntities[MBVERTEX], &doEntities[MBMAXTYPE], false);
+
+    for (auto t = moab::CN::TypeDimensionMap[SPACE_DIM].first;
+         t <= moab::CN::TypeDimensionMap[SPACE_DIM].second; ++t)
+      doEntities[t] = true;
+  }
+
+  MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
+                        EntityType col_type, EntData &row_data,
+                        EntData &col_data) {
+    MoFEMFunctionBeginHot;
+
+    // Note: THat for L2 base data rows, and columns are the same, so operator
+    // above can be simpler operator for the right hand side, and data can be
+    // stored only for rows, since for columns data are the same. However for
+    // complex multi-physics problems that not necessary would be a case. For
+    // generality, we keep generic case.
+
+    if ((CN::Dimension(row_type) == SPACE_DIM) &&
+        (CN::Dimension(col_type) == SPACE_DIM)) {
+      const auto nb_in_loop = getFEMethod()->nInTheLoop;
+      indicesRowSideMap[nb_in_loop] = row_data.getIndices();
+      indicesColSideMap[nb_in_loop] = col_data.getIndices();
+      rowBaseSideMap[nb_in_loop] = row_data.getN();
+      colBaseSideMap[nb_in_loop] = col_data.getN();
+      rowDiffBaseSideMap[nb_in_loop] = row_data.getDiffN();
+      colDiffBaseSideMap[nb_in_loop] = col_data.getDiffN();
+      areaMap[nb_in_loop] = getMeasure();
+      senseMap[nb_in_loop] = getSkeletonSense();
+      if (!nb_in_loop) {
+        indicesRowSideMap[1].clear();
+        indicesColSideMap[1].clear();
+        rowBaseSideMap[1].clear();
+        colBaseSideMap[1].clear();
+        rowDiffBaseSideMap[1].clear();
+        colDiffBaseSideMap[1].clear();
+        areaMap[1] = 0;
+        senseMap[1] = 0;
+      }
+    } else {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Should not happen");
+    }
+
+    MoFEMFunctionReturnHot(0);
+  }
+};
+
+template <typename T> inline auto get_ntensor(T &base_mat) {
+  return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(
+      &*base_mat.data().begin());
+};
+
+template <typename T> inline auto get_ntensor(T &base_mat, int gg, int bb) {
+  double *ptr = &base_mat(gg, bb);
+  return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(ptr);
+};
+
+template <typename T> inline auto get_diff_ntensor(T &base_mat) {
+  double *ptr = &*base_mat.data().begin();
+  return getFTensor1FromPtr<3>(ptr);
+};
+
+template <typename T>
+inline auto get_diff_ntensor(T &base_mat, int gg, int bb) {
+  double *ptr = &base_mat(gg, 3 * bb);
+  return getFTensor1FromPtr<3>(ptr);
+};
+
+
+/**
+ * @brief Operator the left hand side matrix 
+ * 
+ */
+struct OpL2LhsGhostPenalty : public BoundaryEleOp {
+public:
+
+  /**
+   * @brief Construct a new OpL2LhsGhostPenalty 
+   * 
+   * @param side_fe_ptr pointer to FE to evaluate side elements
+   */
+  OpL2LhsGhostPenalty(boost::shared_ptr<FaceSideEle> side_fe_ptr)
+      : BoundaryEleOp(NOSPACE, BoundaryEleOp::OPSPACE), sideFEPtr(side_fe_ptr) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        EntitiesFieldData::EntData &data) {
+    MoFEMFunctionBegin;
+
+    // Collect data from side domian elements
+    CHKERR loopSideVolumes("dFE", *sideFEPtr);
+    const auto in_the_loop =
+        sideFEPtr->nInTheLoop; // return number of elements on the side
+
+#ifndef NDEBUG
+    const std::array<std::string, 2> ele_type_name = {"BOUNDARY", "SKELETON"};
+    MOFEM_LOG("SELF", Sev::noisy)
+        << "OpL2LhsPenalty inTheLoop " << ele_type_name[in_the_loop];
+    MOFEM_LOG("SELF", Sev::noisy)
+        << "OpL2LhsPenalty sense " << senseMap[0] << " " << senseMap[1];
+#endif
+
+    // calculate  penalty
+    const double s = getMeasure() / (areaMap[0] + areaMap[1]);
+    const double p = penalty * s;
+
+    // get normal of the face or edge
+    auto t_normal = getFTensor1Normal();
+    auto inv_nrm = 1.0 / t_normal.l2();
+    t_normal(i) *= inv_nrm;
+    // t_normal.normalize();
+
+    // get number of integration points on face
+    const size_t nb_integration_pts = getGaussPts().size2();
+
+    // beta paramter is zero, when penalty method is used, also, takes value 1,
+    // when boundary edge/face is evaluated, and 2 when is skeleton edge/face.
+    const double beta = static_cast<double>(nitsche) / (in_the_loop + 1);
+
+    // iterate the sides rows
+    for (auto s0 : {LEFT_SIDE, RIGHT_SIDE}) {
+
+      // gent number of DOFs on the right side. 
+      const auto nb_rows = indicesRowSideMap[s0].size();
+
+      if (nb_rows) {
+
+        // get orientation of the local element edge
+        const auto sense_row = senseMap[s0];
+
+        // iterate the side cols
+        const auto nb_row_base_functions = rowBaseSideMap[s0].size2();
+        for (auto s1 : {LEFT_SIDE, RIGHT_SIDE}) {
+
+          // get orientation of the edge
+          const auto sense_col = senseMap[s1];
+
+          // number of dofs, for homogenous approximation this value is
+          // constant.
+          const auto nb_cols = indicesColSideMap[s1].size();
+
+          // resize local element matrix
+          locMat.resize(nb_rows, nb_cols, false);
+          locMat.clear();
+
+          // get base functions, and integration weights
+          auto t_row_base = get_ntensor(rowBaseSideMap[s0]);
+          auto t_diff_row_base = get_diff_ntensor(rowDiffBaseSideMap[s0]);
+          auto t_w = getFTensor0IntegrationWeight();
+
+          // iterate integration points on face/edge
+          for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
+
+            // t_w is integration weight, and measure is element area, or
+            // volume, depending if problem is in 2d/3d.
+            const double alpha = getMeasure() * t_w;
+            auto t_mat = locMat.data().begin();
+            
+            // iterate rows
+            size_t rr = 0;
+            for (; rr != nb_rows; ++rr) {
+
+              // calculate tetting function 
+              FTensor::Tensor1<double, SPACE_DIM> t_vn_plus;
+              t_vn_plus(i) = beta * (phi * t_diff_row_base(i) / p);
+              FTensor::Tensor1<double, SPACE_DIM> t_vn;
+              t_vn(i) = t_row_base * t_normal(i) * sense_row - t_vn_plus(i);
+
+              // get base functions on columns
+              auto t_col_base = get_ntensor(colBaseSideMap[s1], gg, 0);
+              auto t_diff_col_base =
+                  get_diff_ntensor(colDiffBaseSideMap[s1], gg, 0);
+
+              // iterate columns
+              for (size_t cc = 0; cc != nb_cols; ++cc) {
+
+                // calculate variance of tested function 
+                FTensor::Tensor1<double, SPACE_DIM> t_un;
+                t_un(i) = -p * (t_col_base * t_normal(i) * sense_col -
+                                beta * t_diff_col_base(i) / p);
+
+                // assemble matrix
+                *t_mat -= alpha * (t_vn(i) * t_un(i));
+                *t_mat -= alpha * (t_vn_plus(i) * (beta * t_diff_col_base(i)));
+
+                // move to next column base and element of matrix
+                ++t_col_base;
+                ++t_diff_col_base;
+                ++t_mat;
+              }
+
+              // move to next row base
+              ++t_row_base;
+              ++t_diff_row_base;
+            }
+
+            // this is obsolete for this particular example, we keep it for
+            // generality. in case of multi-physics problems different fields can
+            // chare hierarchical base but use different approx. order, so is
+            // possible to have more base functions than DOFs on element.
+            for (; rr < nb_row_base_functions; ++rr) {
+              ++t_row_base;
+              ++t_diff_row_base;
+            }
+
+            ++t_w;
+          }
+
+          // assemble system
+          CHKERR ::MatSetValues(getKSPB(), indicesRowSideMap[s0].size(),
+                                &*indicesRowSideMap[s0].begin(),
+                                indicesColSideMap[s1].size(),
+                                &*indicesColSideMap[s1].begin(),
+                                &*locMat.data().begin(), ADD_VALUES);
+
+          // stop of boundary element
+          if (!in_the_loop)
+            MoFEMFunctionReturnHot(0);
+        }
+      }
+    }
+
+    MoFEMFunctionReturn(0);
+  }
+
+private:
+  boost::shared_ptr<FaceSideEle>
+      sideFEPtr; ///< pointer to element to get data on edge/face sides
+  MatrixDouble locMat; ///< local operator matrix
 };
 
 }; // namespace Poisson3DCutFEMOperators

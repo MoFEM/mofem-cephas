@@ -4,6 +4,7 @@
  *
  * Example of implementation for discontinuous Galerkin.
  * ccache make && ./poisson_cutfem -file_name /home/karol/mofem_install/mofem-cephas/mofem/tutorials/scl-13/meshes/hex_mesh.cub -immersed_mesh elipse2.stl  && vtkmake
+ * ccache make && ./poisson_cutfem -file_name /mofem_install/mofem-cephas/mofem/tutorials//scl-13/meshes/hex_mesh.cub -immersed_mesh femur_bone_small.stl 
  */
 
 #include <MoFEM.hpp>
@@ -107,7 +108,7 @@ private:
 };
 
 Poisson3DCutFEM::Poisson3DCutFEM(MoFEM::Interface &m_field)
-    : domainField("U"), mField(m_field), moabIm(coreIm), oRder(4) {}
+    : domainField("U"), mField(m_field), moabIm(coreIm), oRder(2) {}
 
 //! [Read mesh]
 MoFEMErrorCode Poisson3DCutFEM::readMesh() {
@@ -172,10 +173,10 @@ MoFEMErrorCode Poisson3DCutFEM::setupProblem() {
   SurfaceKDTree surface_distance(mField, moabIm);
   {
     CHKERR moabIm.get_entities_by_dimension(0, 2, immersed_mesh_ents, false);
-    std::cout << " We are at a problem at line: " << immersed_mesh_ents << "\n";
+    // std::cout << " We are at a problem at line: " << immersed_mesh_ents << "\n";
     CHKERR surface_distance.takeASkin(immersed_mesh_ents);
     CHKERR surface_distance.buildTree(immersed_mesh_ents);
-    std::cout << " We are at a problem at line: 2" << immersed_mesh_ents << "\n";
+    // std::cout << " We are at a problem at line: 2" << immersed_mesh_ents << "\n";
     CHKERR surface_distance.setDistanceFromSurface("DISTANCE_FROM_SURFACE");
     CHKERR surface_distance.copySurface(immersed_mesh_ents, mField.get_moab());
 
@@ -185,7 +186,7 @@ MoFEMErrorCode Poisson3DCutFEM::setupProblem() {
       EntityHandle ent = ent_ptr->getEnt();
       double coords[3];
       CHKERR mField.get_moab().get_coords(&ent, 1, coords);
-      std::cout << " We are at a problem at line: " << __LINE__ << "\n";
+      // std::cout << " We are at a problem at line: " << __LINE__ << "\n";
       double delta[3];
       CHKERR surface_distance.findClosestPointToTheSurface(
           coords[0], coords[1], coords[2], delta[0], delta[1], delta[2]);
@@ -248,6 +249,16 @@ MoFEMErrorCode Poisson3DCutFEM::setupProblem() {
       intersect_edges, 3, false, intersect_vols, moab::Interface::UNION);
   CHKERR mField.get_moab().get_adjacencies(
       intersect_edges, 2, false, intersect_faces, moab::Interface::UNION);
+
+  CHKERR CutMeshInterface::SaveData(mField.get_moab())(
+      "intersect_hexes_only.vtk", intersect_vols);
+  activeCells = intersect_vols;
+
+  CHKERR surface_distance.getInsideCells(hexes, insideCells);
+  insideCells = subtract(insideCells, activeCells);
+
+  CHKERR CutMeshInterface::SaveData(mField.get_moab())(
+      "inside_hexes_only.vtk", insideCells);
 
   auto bit = [](auto l) { return BitRefLevel().set(l); };
 
@@ -363,7 +374,7 @@ MoFEMErrorCode Poisson3DCutFEM::setupProblem() {
     // }
 
     Range children_level;
-    for (auto &ent : all_children) {
+    for (auto &ent : all_children.subset_by_dimension(3)) {
       Range parent(ent, ent);
       children_level.merge(get_all_children(parent));
     }
@@ -371,15 +382,15 @@ MoFEMErrorCode Poisson3DCutFEM::setupProblem() {
     return children_level.empty() ? ents : children_level;
   };
 
-  std::function<Range(const EntityHandle &)> get_all_children_from_ent =
-      [&](const EntityHandle &ent) -> Range {
-    Range all_children(ent, ent);
-    CHKERR(bit_mng->updateRangeByChildren(all_children, all_children));
-    for (auto &enit : all_children)
-      all_children.merge(get_all_children_from_ent(enit));
+  // std::function<Range(const EntityHandle &)> get_all_children_from_ent =
+  //     [&](const EntityHandle &ent) -> Range {
+  //   Range all_children(ent, ent);
+  //   CHKERR(bit_mng->updateRangeByChildren(all_children, all_children));
+  //   for (auto &enit : all_children)
+  //     all_children.merge(get_all_children_from_ent(enit));
 
-    return all_children.empty() ? Range(ent, ent) : all_children;
-  };
+  //   return all_children.empty() ? Range(ent, ent) : all_children;
+  // };
 
   for (auto &ent : intersect_vols) {
     Range single_ent(ent, ent);
@@ -389,6 +400,8 @@ MoFEMErrorCode Poisson3DCutFEM::setupProblem() {
     // {
     //   CHKERR bit_mng->updateRangeByChildren(single_ent, single_ent);
     // }
+    std::cout << "All refined ents: " << all_refined_ents.size() << "\n";
+
     CHKERR CutMeshInterface::SaveData(mField.get_moab())(
         "refined_tet" + std::to_string(1) + ".vtk", all_refined_ents);
     
@@ -430,12 +443,22 @@ MoFEMErrorCode Poisson3DCutFEM::assembleSystem() {
     pipeline.push_back(new OpSetInvJacL2ForFace(inv_jac_ptr));
   };
 
-  add_base_ops(pipeline_mng->getOpDomainLhsPipeline());
+  // add_base_ops(pipeline_mng->getOpDomainLhsPipeline());
   pipeline_mng->getOpDomainLhsPipeline().push_back(new OpDomainGradGrad(
       domainField, domainField,
       [](const double, const double, const double) { return 1; }));
   pipeline_mng->getOpDomainRhsPipeline().push_back(
       new OpDomainSource(domainField, source));
+
+  // Push operators to the Pipeline for Skeleton
+  auto side_fe_ptr = boost::make_shared<FaceSideEle>(mField);
+  // add_base_ops(side_fe_ptr->getOpPtrVector());
+  side_fe_ptr->getOpPtrVector().push_back(
+      new OpCalculateSideData(domainField, domainField));
+
+    // Push operators to the Pipeline for Skeleton
+  // pipeline_mng->getOpSkeletonLhsPipeline().push_back(
+  //     new OpL2LhsGhostPenalty(side_fe_ptr));
 
   MoFEMFunctionReturn(0);
 }
@@ -447,11 +470,29 @@ MoFEMErrorCode Poisson3DCutFEM::setIntegrationRules() {
 
   auto rule_lhs = [](int, int, int p) -> int { return 2 * p; };
   auto rule_rhs = [](int, int, int p) -> int { return 2 * p; };
-  // auto rule_2 = [this](int, int, int) { return 2 * oRder; };
+  auto rule_2 = [this](int, int, int) { return 2 * oRder + 1; };
 
   auto pipeline_mng = mField.getInterface<PipelineManager>();
   CHKERR pipeline_mng->setDomainLhsIntegrationRule(rule_lhs);
   CHKERR pipeline_mng->setDomainRhsIntegrationRule(rule_rhs);
+    
+  SetIntegrationOnActiveCells setIntegrationOnActiveCells(mField, activeCells, insideCells);
+  auto rule_active_cells = [&setIntegrationOnActiveCells](MoFEM::ForcesAndSourcesCore* fe_ptr, int a, int b, int c) {
+    return setIntegrationOnActiveCells(fe_ptr, a, b, c);
+  };
+  // auto fe_lhs = boost::make_shared<VolumeElementForcesAndSourcesCore>(mField);
+  // auto fe_rhs = boost::make_shared<VolumeElementForcesAndSourcesCore>(mField);
+  // dynamic cast to shared_ptr<VolumeElementForcesAndSourcesCore>
+  
+  auto rule0 = [](int, int, int p) -> int { return -1; };
+  CHKERR pipeline_mng->setDomainRhsIntegrationRule(rule0);
+  CHKERR pipeline_mng->setDomainLhsIntegrationRule(rule0);
+
+  static_cast<ForcesAndSourcesCore *>(pipeline_mng->getDomainRhsFE().get())->setRuleHook = rule_active_cells;
+  static_cast<ForcesAndSourcesCore *>(pipeline_mng->getDomainLhsFE().get())->setRuleHook = rule_active_cells;
+
+  // CHKERR pipeline_mng->setDomainRhsIntegrationRule(rule_rhs_cf);
+  // CHKERR pipeline_mng->setDomainRhsIntegrationRule();
 
   // CHKERR pipeline_mng->setSkeletonLhsIntegrationRule(rule_2);
   // CHKERR pipeline_mng->setSkeletonRhsIntegrationRule(rule_2);
@@ -461,8 +502,13 @@ MoFEMErrorCode Poisson3DCutFEM::setIntegrationRules() {
   // pipeline_mng->getDomainRhsFE()->getRuleHook = [](int, int, int) { return -1; };
   // pipeline_mng->getDomainRhsFE()->setRuleHook = [](int, int, int) { return -1; };
   // pipeline_mng->getSkeletonRhsFE()->getRuleHook = [](int, int, int) { return -1; };
-  // pipeline_mng->getSkeletonRhsFE()->setRuleHook = [](int, int, int) { return -1; };
+  // pipeline_mng->getDomainRhsFE()->setRuleHook = SetIntegrationOnActiveCells(mField, activeCells);
+  // pipeline_mng->getDomainLhsFE()->setRuleHook = SetIntegrationOnActiveCells(mField, activeCells);
+  //  MoFEM::VolumeElementForcesAndSourcesCore *fe = pipeline_mng->getDomainRhsFE();
+
+
   // fe->getRuleHook = [](int, int, int) { return -1; }; // VolRule();
+  // fe->getRuleHook = SetIntegrationOnActiveCells(mField, activeCells);
   // fe->setRuleHook = SetIntegrationAtFrontVolume(frontVertices,
   // frontAdjEdges);
 
@@ -478,14 +524,14 @@ MoFEMErrorCode Poisson3DCutFEM::solveSystem() {
 
   auto ksp_solver = pipeline_mng->createKSP();
   CHKERR KSPSetFromOptions(ksp_solver);
-  // CHKERR KSPSetUp(ksp_solver);
+  CHKERR KSPSetUp(ksp_solver);
 
   // Create RHS and solution vectors
   auto dm = simpleInterface->getDM();
   auto F = createDMVector(dm);
   auto D = vectorDuplicate(F);
 
-  // CHKERR KSPSolve(ksp_solver, F, D);
+  CHKERR KSPSolve(ksp_solver, F, D);
 
   // Scatter result data on the mesh
   CHKERR VecGhostUpdateBegin(D, INSERT_VALUES, SCATTER_FORWARD);
@@ -519,7 +565,7 @@ MoFEMErrorCode Poisson3DCutFEM::outputResults() {
       new OpCalculateScalarFieldValues("DISTANCE_FROM_SURFACE", md_ptr));
 
   using OpPPMap = OpPostProcMapInMoab<SPACE_DIM, SPACE_DIM>;
-  std::cout << "We are at a POSTPROCESSING at line: " << __LINE__ << "\n";
+  // std::cout << "We are at a POSTPROCESSING at line: " << __LINE__ << "\n";
 
   auto grad_ptr = boost::make_shared<MatrixDouble>();
   post_proc_fe->getOpPtrVector().push_back(new OpCalculateScalarFieldGradient<3>("DISTANCE_FROM_SURFACE", grad_ptr));
