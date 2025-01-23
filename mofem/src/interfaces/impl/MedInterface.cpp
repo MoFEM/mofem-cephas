@@ -240,7 +240,9 @@ moab2med_element_type(const EntityType type) {
     types.push_back(MED_PYRA5);
     break;
   case MBVERTEX:
-    types.push_back(MED_POINT1);
+    // Not Currently Used
+    //types.push_back(MED_POINT1);
+    break;
   default:
     break;
   }
@@ -782,7 +784,7 @@ MoFEMErrorCode MedInterface::writeMed(
 
       bc_type_name = iit->getName();
       if (bc_type_name == "NoNameSet") {
-        bc_type_name = "BLOCKSET_NoNameSet_";
+        bc_type_name = "BLOCKSET_";
         bc_type_name += std::to_string(iit->getMeshsetId());
       }
       return bc_type_name;
@@ -796,7 +798,11 @@ MoFEMErrorCode MedInterface::writeMed(
         const CubitBCType jj_bc_type = 1 << jj;
         if ((iit->getBcType() & jj_bc_type).any()) {
 
-          bc_type_name += string(CubitBCNames[jj + 1]);
+          std::string temp_bc_type_name = string(CubitBCNames[jj + 1]);
+          if (temp_bc_type_name.length() > 10) {
+            temp_bc_type_name = temp_bc_type_name.substr(0, 4);
+          }
+          bc_type_name += temp_bc_type_name;
           bc_type_name += "_";
         }
         ++jj;
@@ -836,35 +842,17 @@ MoFEMErrorCode MedInterface::writeMed(
 
       Range other_entities;
       EntityHandle other_set = other_meshset->getMeshset();
-      CHKERR moab.get_entities_by_handle(other_set, other_entities);
+      moab.get_entities_by_handle(other_set, other_entities);
+      if (other_entities.empty())
+        continue;
 
       //   get entity type
       EntityType ent_type = moab.type_from_handle(entity);
 
       bool is_in_meshset = moab.contains_entities(other_set, &entity, 1);
       if (is_in_meshset) {
-        if (ent_type == MBVERTEX) {
-          // add shared meshset id to list
-          // check if higher dimension entity is in meshset i.e not a nodeset
-          bool is_in_higher_dim = false;
-          Range entities_in_higher_dim;
-          for (int i = 1; i < 4; i++) {
-            CHKERR moab.get_entities_by_dimension(other_set, i,
-                                                  entities_in_higher_dim);
-            if (!entities_in_higher_dim.empty()) {
-              is_in_higher_dim = true;
-              break;
-            }
-          }
-          if (is_in_higher_dim) {
-            continue;
-          }
-          // check if name is already added to shared_names
-          add_shared_meshset(other_meshset);
-        } else {
-          // add shared meshset id to list
-          add_shared_meshset(other_meshset);
-        }
+        // add shared meshset id to list
+        add_shared_meshset(other_meshset);
       }
     }
 
@@ -908,13 +896,16 @@ MoFEMErrorCode MedInterface::writeMed(
         << " and " << shared_meshset_names.size() << " groups " << std::endl;
   }
 
-  // write nodes
+  // write nodes from range
   Range verts;
-  moab.get_entities_by_type(0, MBVERTEX, verts);
+  verts = write_range_ptr->subset_by_type(MBVERTEX);
+
   // Prepare arrays to hold the coordinates
   std::vector<med_float> coord_med(3 * verts.size());
   std::vector<med_int> fam;
   std::vector<med_int> tags;
+  std::map<EntityHandle, med_int> entityHandle_tag_map;
+  med_int med_node_num = 1;
 
   // For each vertex, get its coordinates
   for (Range::iterator it = verts.begin(); it != verts.end(); ++it) {
@@ -925,6 +916,9 @@ MoFEMErrorCode MedInterface::writeMed(
     coord_med[3 * (it - verts.begin()) + 2] = coords[2];
     fam.push_back(entityHandle_family_map[*it]);
     tags.push_back(*it);
+    // map entityHandle to new tag (node) number
+    entityHandle_tag_map[*it] = med_node_num;
+    med_node_num++;
   }
   // Write the coordinates to the MED file
   CHKERR MEDmeshNodeWr(fid, mesh_name.c_str(), MED_NO_DT, MED_NO_IT,
@@ -932,6 +926,8 @@ MoFEMErrorCode MedInterface::writeMed(
                        &coord_med[0], MED_FALSE, "", MED_TRUE, &tags[0],
                        MED_TRUE, &fam[0]);
 
+  // get last vertex id
+  double last_tag = tags.back();
   // loop to write elements to families
   for (EntityType ent_type = MBVERTEX; ent_type < MBMAXTYPE; ent_type++) {
     // get all entities of type ent_type
@@ -951,15 +947,17 @@ MoFEMErrorCode MedInterface::writeMed(
     // loop over all entities
     for (auto &entity : ents_to_write) {
       if (ent_type != MBVERTEX) {
+        last_tag++;
         // get family id for entity
         family_number.push_back(entityHandle_family_map[entity]);
         // get tag number for entity
-        tag_number.push_back(entity);
+        tag_number.push_back(last_tag);
         // get connectivity for entity
         std::vector<EntityHandle> conn;
         moab.get_connectivity(&entity, 1, conn);
+        // add connectivity to vector from map of entityHandle to new tag number
         for (auto &c : conn) {
-          connectivity.push_back(c);
+          connectivity.push_back(entityHandle_tag_map[c]);
         }
       } else {
         continue;

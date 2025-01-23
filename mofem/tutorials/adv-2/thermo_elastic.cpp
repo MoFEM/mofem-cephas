@@ -26,6 +26,8 @@ using BoundaryEle =
     PipelineManager::ElementsAndOpsByDim<SPACE_DIM>::BoundaryEle;
 using BoundaryEleOp = BoundaryEle::UserDataOperator;
 using PostProcEle = PostProcBrokenMeshInMoab<DomainEle>;
+using SkinPostProcEle = PostProcBrokenMeshInMoab<BoundaryEle>;
+using SideEle = PipelineManager::ElementsAndOpsByDim<SPACE_DIM>::FaceSideEle;
 
 using AssemblyDomainEleOp =
     FormsIntegrators<DomainEleOp>::Assembly<PETSC>::OpBase;
@@ -125,6 +127,8 @@ double default_poisson_ratio = 0.25;
 double ref_temp = 0.0;
 double init_temp = 0.0;
 
+PetscBool is_plane_strain = PETSC_FALSE;
+
 double default_coeff_expansion = 1;
 double default_heat_conductivity =
     1; // Force / (time temperature )  or Power /
@@ -138,7 +142,11 @@ int order_disp = 3; //< default approximation order for the displacement field
 
 int atom_test = 0;
 
-#include <ThermoElasticOps.hpp>   //< additional coupling opearyors
+int save_every = 1; //< Save every n-th step
+PetscBool do_output_domain;
+PetscBool do_output_skin;
+
+#include <ThermoElasticOps.hpp>   //< additional coupling operators
 using namespace ThermoElasticOps; //< name space of coupling operators
 
 using OpSetTemperatureRhs =
@@ -168,20 +176,24 @@ private:
   std::array<double, SPACE_DIM> fieldEvalCoords;
   boost::shared_ptr<FieldEvaluatorInterface::SetPtsData> fieldEvalData;
 
-  boost::shared_ptr<VectorDouble> scalarFieldPtr;
-  boost::shared_ptr<MatrixDouble> vectorFieldPtr;
-  boost::shared_ptr<MatrixDouble> tensorFieldPtr;
+  boost::shared_ptr<VectorDouble> tempFieldPtr;
+  boost::shared_ptr<MatrixDouble> fluxFieldPtr;
+  boost::shared_ptr<MatrixDouble> dispFieldPtr;
+  boost::shared_ptr<MatrixDouble> dispGradPtr;
+  boost::shared_ptr<MatrixDouble> strainFieldPtr;
+  boost::shared_ptr<MatrixDouble> stressFieldPtr;
 
-  MoFEMErrorCode setupProblem();     ///< add fields
-  MoFEMErrorCode createCommonData(); //< read global data from command line
-  MoFEMErrorCode bC();               //< read boundary conditions
-  MoFEMErrorCode OPs();              //< add operators to pipeline
-  MoFEMErrorCode tsSolve();          //< time solver
+  MoFEMErrorCode setupProblem(); ///< add fields
+  MoFEMErrorCode
+  getCommandLineParameters(); //< read parameters from command line
+  MoFEMErrorCode bC();        //< read boundary conditions
+  MoFEMErrorCode OPs();       //< add operators to pipeline
+  MoFEMErrorCode tsSolve();   //< time solver
 
   struct BlockedParameters
       : public boost::enable_shared_from_this<BlockedParameters> {
     MatrixDouble mD;
-    double coeffExpansion;
+    VectorDouble coeffExpansion;
     double heatConductivity;
     double heatCapacity;
 
@@ -190,7 +202,8 @@ private:
     }
 
     inline auto getCoeffExpansionPtr() {
-      return boost::shared_ptr<double>(shared_from_this(), &coeffExpansion);
+      return boost::shared_ptr<VectorDouble>(shared_from_this(),
+                                             &coeffExpansion);
     }
 
     inline auto getHeatConductivityPtr() {
@@ -302,10 +315,11 @@ MoFEMErrorCode ThermoElasticProblem::addMatBlockOps(
         FTensor::Index<'k', SPACE_DIM> k;
         FTensor::Index<'l', SPACE_DIM> l;
         constexpr auto t_kd = FTensor::Kronecker_Delta_symmetric<int>();
-        double A = (SPACE_DIM == 2)
-                       ? 2 * shear_modulus_G /
-                             (bulk_modulus_K + (4. / 3.) * shear_modulus_G)
-                       : 1;
+        double A = 1;
+        if (SPACE_DIM == 2 && !is_plane_strain) {
+          A = 2 * shear_modulus_G /
+              (bulk_modulus_K + (4. / 3.) * shear_modulus_G);
+        }
         auto t_D = getFTensor4DdgFromMat<SPACE_DIM, SPACE_DIM, 0>(*mat_D_ptr);
         t_D(i, j, k, l) =
             2 * shear_modulus_G * ((t_kd(i, k) ^ t_kd(j, l)) / 4.) +
@@ -327,7 +341,7 @@ MoFEMErrorCode ThermoElasticProblem::addMatBlockOps(
 
   pipeline.push_back(new OpMatElasticBlocks(
       blockedParamsPtr->getDPtr(), default_bulk_modulus_K,
-      default_bulk_modulus_K, mField, sev,
+      default_shear_modulus_G, mField, sev,
 
       // Get blockset using regular expression
       mField.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(std::regex(
@@ -339,7 +353,7 @@ MoFEMErrorCode ThermoElasticProblem::addMatBlockOps(
           ));
 
   struct OpMatThermalBlocks : public DomainEleOp {
-    OpMatThermalBlocks(boost::shared_ptr<double> expansion_ptr,
+    OpMatThermalBlocks(boost::shared_ptr<VectorDouble> expansion_ptr,
                        boost::shared_ptr<double> conductivity_ptr,
                        boost::shared_ptr<double> capacity_ptr,
                        MoFEM::Interface &m_field, Sev sev,
@@ -365,7 +379,7 @@ MoFEMErrorCode ThermoElasticProblem::addMatBlockOps(
         }
       }
 
-      *expansionPtr = default_coeff_expansion;
+      *expansionPtr = VectorDouble(SPACE_DIM, default_coeff_expansion);
       *conductivityPtr = default_heat_conductivity;
       *capacityPtr = default_heat_capacity;
 
@@ -374,9 +388,9 @@ MoFEMErrorCode ThermoElasticProblem::addMatBlockOps(
 
   private:
     struct BlockData {
-      double expansion;
       double conductivity;
       double capacity;
+      VectorDouble expansion;
       Range blockEnts;
     };
 
@@ -394,7 +408,7 @@ MoFEMErrorCode ThermoElasticProblem::addMatBlockOps(
         CHKERR m->getAttributes(block_data);
         if (block_data.size() < 3) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                  "Expected that block has three attributes");
+                  "Expected that block has at least three attributes");
         }
         auto get_block_ents = [&]() {
           Range ents;
@@ -403,19 +417,32 @@ MoFEMErrorCode ThermoElasticProblem::addMatBlockOps(
           return ents;
         };
 
+        auto get_expansion = [&]() {
+          VectorDouble expansion(SPACE_DIM, block_data[2]);
+          if (block_data.size() > 3) {
+            expansion[1] = block_data[3];
+          }
+          if (SPACE_DIM == 3 && block_data.size() > 4) {
+            expansion[2] = block_data[4];
+          }
+          return expansion;
+        };
+
+        auto coeff_exp_vec = get_expansion();
+
         MOFEM_TAG_AND_LOG("WORLD", sev, "Mat Thermal Block")
-            << m->getName() << ": expansion = " << block_data[0]
-            << " conductivity = " << block_data[1] << " capacity "
-            << block_data[2];
+            << m->getName() << ": conductivity = " << block_data[0]
+            << " capacity  = " << block_data[1]
+            << " expansion = " << coeff_exp_vec;
 
         blockData.push_back(
-            {block_data[0], block_data[1], block_data[2], get_block_ents()});
+            {block_data[0], block_data[1], coeff_exp_vec, get_block_ents()});
       }
       MOFEM_LOG_CHANNEL("WORLD");
       MoFEMFunctionReturn(0);
     }
 
-    boost::shared_ptr<double> expansionPtr;
+    boost::shared_ptr<VectorDouble> expansionPtr;
     boost::shared_ptr<double> conductivityPtr;
     boost::shared_ptr<double> capacityPtr;
   };
@@ -440,8 +467,8 @@ MoFEMErrorCode ThermoElasticProblem::addMatBlockOps(
 //! [Run problem]
 MoFEMErrorCode ThermoElasticProblem::runProblem() {
   MoFEMFunctionBegin;
+  CHKERR getCommandLineParameters();
   CHKERR setupProblem();
-  CHKERR createCommonData();
   CHKERR bC();
   CHKERR OPs();
   CHKERR tsSolve();
@@ -449,91 +476,34 @@ MoFEMErrorCode ThermoElasticProblem::runProblem() {
 }
 //! [Run problem]
 
-//! [Set up problem]
-MoFEMErrorCode ThermoElasticProblem::setupProblem() {
-  MoFEMFunctionBegin;
-  Simple *simple = mField.getInterface<Simple>();
-  // Add field
-  constexpr FieldApproximationBase base = DEMKOWICZ_JACOBI_BASE;
-  // Mechanical fields
-  CHKERR simple->addDomainField("U", H1, AINSWORTH_LEGENDRE_BASE, SPACE_DIM);
-  CHKERR simple->addBoundaryField("U", H1, AINSWORTH_LEGENDRE_BASE, SPACE_DIM);
-  // Temperature
-  constexpr auto flux_space = (SPACE_DIM == 2) ? HCURL : HDIV;
-  CHKERR simple->addDomainField("T", L2, base, 1);
-  CHKERR simple->addDomainField("FLUX", flux_space, base, 1);
-  CHKERR simple->addBoundaryField("FLUX", flux_space, base, 1);
-  CHKERR simple->addBoundaryField("TBC", L2, base, 1);
-
-  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order_temp, PETSC_NULL);
-  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order_temp", &order_temp,
-                            PETSC_NULL);
-  order_flux = order_temp + 1;
-  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order_flux", &order_flux,
-                            PETSC_NULL);
-  order_disp = order_temp + 1;
-  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order_disp", &order_disp,
-                            PETSC_NULL);
-  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-atom_test", &atom_test,
-                            PETSC_NULL);
-
-  CHKERR simple->setFieldOrder("U", order_disp);
-  CHKERR simple->setFieldOrder("FLUX", order_flux);
-  CHKERR simple->setFieldOrder("T", order_temp);
-  CHKERR simple->setFieldOrder("TBC", order_temp);
-
-  CHKERR simple->setUp();
-
-  int coords_dim = SPACE_DIM;
-  CHKERR PetscOptionsGetRealArray(NULL, NULL, "-field_eval_coords",
-                                  fieldEvalCoords.data(), &coords_dim,
-                                  &doEvalField);
-
-  scalarFieldPtr = boost::make_shared<VectorDouble>();
-  vectorFieldPtr = boost::make_shared<MatrixDouble>();
-  tensorFieldPtr = boost::make_shared<MatrixDouble>();
-
-  if (doEvalField) {
-    fieldEvalData =
-        mField.getInterface<FieldEvaluatorInterface>()->getData<DomainEle>();
-
-    if constexpr (SPACE_DIM == 3) {
-      CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree3D(
-          fieldEvalData, simple->getDomainFEName());
-    } else {
-      CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree2D(
-          fieldEvalData, simple->getDomainFEName());
-    }
-
-    fieldEvalData->setEvalPoints(fieldEvalCoords.data(), 1);
-    auto no_rule = [](int, int, int) { return -1; };
-
-    auto field_eval_fe_ptr = fieldEvalData->feMethodPtr.lock();
-    field_eval_fe_ptr->getRuleHook = no_rule;
-
-    field_eval_fe_ptr->getOpPtrVector().push_back(
-        new OpCalculateScalarFieldValues("T", scalarFieldPtr));
-    field_eval_fe_ptr->getOpPtrVector().push_back(
-        new OpCalculateVectorFieldValues<SPACE_DIM>("U", vectorFieldPtr));
-    field_eval_fe_ptr->getOpPtrVector().push_back(
-        new OpCalculateVectorFieldGradient<SPACE_DIM, SPACE_DIM>(
-            "U", tensorFieldPtr));
-  }
-
-  MoFEMFunctionReturn(0);
-}
-//! [Set up problem]
-
-//! [Create common data]
-MoFEMErrorCode ThermoElasticProblem::createCommonData() {
+//! [Get command line parameters]
+MoFEMErrorCode ThermoElasticProblem::getCommandLineParameters() {
   MoFEMFunctionBegin;
 
   auto get_command_line_parameters = [&]() {
     MoFEMFunctionBegin;
+
+    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order_temp,
+                              PETSC_NULL);
+    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order_temp", &order_temp,
+                              PETSC_NULL);
+    order_flux = order_temp + 1;
+    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order_flux", &order_flux,
+                              PETSC_NULL);
+    order_disp = order_temp + 1;
+    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order_disp", &order_disp,
+                              PETSC_NULL);
+    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-atom_test", &atom_test,
+                              PETSC_NULL);
+    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-save_every", &save_every,
+                              PETSC_NULL);
+
     CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-young_modulus",
                                  &default_young_modulus, PETSC_NULL);
     CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-poisson_ratio",
                                  &default_poisson_ratio, PETSC_NULL);
+    CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-plane_strain",
+                               &is_plane_strain, PETSC_NULL);
     CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-coeff_expansion",
                                  &default_coeff_expansion, PETSC_NULL);
     CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-ref_temp", &ref_temp,
@@ -545,6 +515,19 @@ MoFEMErrorCode ThermoElasticProblem::createCommonData() {
                                  &default_heat_capacity, PETSC_NULL);
     CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-conductivity",
                                  &default_heat_conductivity, PETSC_NULL);
+
+    if constexpr (SPACE_DIM == 2) {
+      do_output_domain = PETSC_TRUE;
+      do_output_skin = PETSC_FALSE;
+    } else {
+      do_output_domain = PETSC_FALSE;
+      do_output_skin = PETSC_TRUE;
+    }
+
+    CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-output_domain",
+                               &do_output_domain, PETSC_NULL);
+    CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-output_skin", &do_output_skin,
+                               PETSC_NULL);
 
     MOFEM_LOG("ThermoElastic", Sev::inform)
         << "Default Young's modulus " << default_young_modulus;
@@ -569,7 +552,90 @@ MoFEMErrorCode ThermoElasticProblem::createCommonData() {
 
   MoFEMFunctionReturn(0);
 }
-//! [Create common data]
+//! [Get command line parameters]
+
+//! [Set up problem]
+MoFEMErrorCode ThermoElasticProblem::setupProblem() {
+  MoFEMFunctionBegin;
+  Simple *simple = mField.getInterface<Simple>();
+  // Add field
+  constexpr FieldApproximationBase base = DEMKOWICZ_JACOBI_BASE;
+  // Mechanical fields
+  CHKERR simple->addDomainField("U", H1, AINSWORTH_LEGENDRE_BASE, SPACE_DIM);
+  CHKERR simple->addBoundaryField("U", H1, AINSWORTH_LEGENDRE_BASE, SPACE_DIM);
+  // Temperature
+  constexpr auto flux_space = (SPACE_DIM == 2) ? HCURL : HDIV;
+  CHKERR simple->addDomainField("T", L2, base, 1);
+  CHKERR simple->addDomainField("FLUX", flux_space, base, 1);
+  CHKERR simple->addBoundaryField("FLUX", flux_space, base, 1);
+  CHKERR simple->addBoundaryField("TBC", L2, base, 1);
+
+  CHKERR simple->setFieldOrder("U", order_disp);
+  CHKERR simple->setFieldOrder("FLUX", order_flux);
+  CHKERR simple->setFieldOrder("T", order_temp);
+  CHKERR simple->setFieldOrder("TBC", order_temp);
+
+  CHKERR simple->setUp();
+
+  int coords_dim = SPACE_DIM;
+  CHKERR PetscOptionsGetRealArray(NULL, NULL, "-field_eval_coords",
+                                  fieldEvalCoords.data(), &coords_dim,
+                                  &doEvalField);
+
+  tempFieldPtr = boost::make_shared<VectorDouble>();
+  fluxFieldPtr = boost::make_shared<MatrixDouble>();
+  dispFieldPtr = boost::make_shared<MatrixDouble>();
+  dispGradPtr = boost::make_shared<MatrixDouble>();
+  strainFieldPtr = boost::make_shared<MatrixDouble>();
+  stressFieldPtr = boost::make_shared<MatrixDouble>();
+
+  if (doEvalField) {
+    fieldEvalData =
+        mField.getInterface<FieldEvaluatorInterface>()->getData<DomainEle>();
+
+    if constexpr (SPACE_DIM == 3) {
+      CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree3D(
+          fieldEvalData, simple->getDomainFEName());
+    } else {
+      CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree2D(
+          fieldEvalData, simple->getDomainFEName());
+    }
+
+    fieldEvalData->setEvalPoints(fieldEvalCoords.data(), 1);
+    auto no_rule = [](int, int, int) { return -1; };
+
+    auto field_eval_fe_ptr = fieldEvalData->feMethodPtr.lock();
+    field_eval_fe_ptr->getRuleHook = no_rule;
+
+    auto block_params = boost::make_shared<BlockedParameters>();
+    auto mDPtr = block_params->getDPtr();
+    auto coeff_expansion_ptr = block_params->getCoeffExpansionPtr();
+
+    CHKERR addMatBlockOps(field_eval_fe_ptr->getOpPtrVector(), "MAT_ELASTIC",
+                          "MAT_THERMAL", block_params, Sev::verbose);
+
+    CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
+        field_eval_fe_ptr->getOpPtrVector(), {H1, HDIV});
+
+    field_eval_fe_ptr->getOpPtrVector().push_back(
+        new OpCalculateScalarFieldValues("T", tempFieldPtr));
+    field_eval_fe_ptr->getOpPtrVector().push_back(
+        new OpCalculateHVecVectorField<3, SPACE_DIM>("FLUX", fluxFieldPtr));
+    field_eval_fe_ptr->getOpPtrVector().push_back(
+        new OpCalculateVectorFieldValues<SPACE_DIM>("U", dispFieldPtr));
+    field_eval_fe_ptr->getOpPtrVector().push_back(
+        new OpCalculateVectorFieldGradient<SPACE_DIM, SPACE_DIM>("U",
+                                                                 dispGradPtr));
+    field_eval_fe_ptr->getOpPtrVector().push_back(
+        new OpSymmetrizeTensor<SPACE_DIM>(dispGradPtr, strainFieldPtr));
+    field_eval_fe_ptr->getOpPtrVector().push_back(
+        new OpStressThermal(strainFieldPtr, tempFieldPtr, mDPtr,
+                            coeff_expansion_ptr, stressFieldPtr));
+  }
+
+  MoFEMFunctionReturn(0);
+}
+//! [Set up problem]
 
 //! [Boundary condition]
 MoFEMErrorCode ThermoElasticProblem::bC() {
@@ -590,7 +656,7 @@ MoFEMErrorCode ThermoElasticProblem::bC() {
     return skin_ents;
   };
 
-  auto filter_flux_blocks = [&](auto skin) {
+  auto filter_flux_blocks = [&](auto skin, bool temp_bc = false) {
     auto remove_cubit_blocks = [&](auto c) {
       MoFEMFunctionBegin;
       for (auto m :
@@ -623,13 +689,14 @@ MoFEMErrorCode ThermoElasticProblem::bC() {
       }
       MoFEMFunctionReturn(0);
     };
-
-    CHK_THROW_MESSAGE(remove_cubit_blocks(NODESET | TEMPERATURESET),
-                      "remove_cubit_blocks");
+    if (!temp_bc) {
+      CHK_THROW_MESSAGE(remove_cubit_blocks(NODESET | TEMPERATURESET),
+                        "remove_cubit_blocks");
+      CHK_THROW_MESSAGE(remove_named_blocks("TEMPERATURE"),
+                        "remove_named_blocks");
+    }
     CHK_THROW_MESSAGE(remove_cubit_blocks(SIDESET | HEATFLUXSET),
                       "remove_cubit_blocks");
-    CHK_THROW_MESSAGE(remove_named_blocks("TEMPERATURE"),
-                      "remove_named_blocks");
     CHK_THROW_MESSAGE(remove_named_blocks("HEATFLUX"), "remove_named_blocks");
     CHK_THROW_MESSAGE(remove_named_blocks("CONVECTION"), "remove_named_blocks");
     CHK_THROW_MESSAGE(remove_named_blocks("RADIATION"), "remove_named_blocks");
@@ -646,11 +713,18 @@ MoFEMErrorCode ThermoElasticProblem::bC() {
   };
 
   auto remove_flux_ents = filter_true_skin(filter_flux_blocks(get_skin()));
+  auto remove_temp_bc_ents =
+      filter_true_skin(filter_flux_blocks(get_skin(), true));
 
   CHKERR mField.getInterface<CommInterface>()->synchroniseEntities(
       remove_flux_ents);
+  CHKERR mField.getInterface<CommInterface>()->synchroniseEntities(
+      remove_temp_bc_ents);
 
   MOFEM_LOG("SYNC", Sev::noisy) << remove_flux_ents << endl;
+  MOFEM_LOG_SEVERITY_SYNC(mField.get_comm(), Sev::noisy);
+
+  MOFEM_LOG("SYNC", Sev::noisy) << remove_temp_bc_ents << endl;
   MOFEM_LOG_SEVERITY_SYNC(mField.get_comm(), Sev::noisy);
 
 #ifndef NDEBUG
@@ -660,12 +734,17 @@ MoFEMErrorCode ThermoElasticProblem::bC() {
       (boost::format("flux_remove_%d.vtk") % mField.get_comm_rank()).str(),
       remove_flux_ents);
 
+  CHKERR save_range(
+      mField.get_moab(),
+      (boost::format("temp_bc_remove_%d.vtk") % mField.get_comm_rank()).str(),
+      remove_temp_bc_ents);
+
 #endif
 
   CHKERR mField.getInterface<ProblemsManager>()->removeDofsOnEntities(
       simple->getProblemName(), "FLUX", remove_flux_ents);
   CHKERR mField.getInterface<ProblemsManager>()->removeDofsOnEntities(
-      simple->getProblemName(), "TBC", remove_flux_ents);
+      simple->getProblemName(), "TBC", remove_temp_bc_ents);
 
   auto set_init_temp = [](boost::shared_ptr<FieldEntity> field_entity_ptr) {
     field_entity_ptr->getEntFieldData()[0] = init_temp;
@@ -712,19 +791,28 @@ MoFEMErrorCode ThermoElasticProblem::OPs() {
   auto heat_capacity_ptr = block_params->getHeatCapacityPtr();
 
   // Default time scaling of BCs and sources, from command line arguments
-  auto time_scale = boost::make_shared<TimeScale>();
+  auto time_scale =
+      boost::make_shared<TimeScale>("", false, [](const double) { return 1; });
+  auto def_time_scale = [time_scale](const double time) {
+    return (!time_scale->argFileScale) ? time : 1;
+  };
+  auto def_file_name = [time_scale](const std::string &&name) {
+    return (!time_scale->argFileScale) ? name : "";
+  };
 
   // Files which define scaling for separate variables, if provided
-  auto time_bodyforce_scaling =
-      boost::make_shared<TimeScale>("bodyforce_scale.txt");
-  auto time_heatsource_scaling =
-      boost::make_shared<TimeScale>("heatsource_scale.txt");
-  auto time_temperature_scaling =
-      boost::make_shared<TimeScale>("temperature_bc_scale.txt");
-  auto time_displacement_scaling =
-      boost::make_shared<TimeScale>("displacement_bc_scale.txt");
-  auto time_flux_scaling = boost::make_shared<TimeScale>("flux_bc_scale.txt");
-  auto time_force_scaling = boost::make_shared<TimeScale>("force_bc_scale.txt");
+  auto time_bodyforce_scaling = boost::make_shared<TimeScale>(
+      def_file_name("bodyforce_scale.txt"), false, def_time_scale);
+  auto time_heatsource_scaling = boost::make_shared<TimeScale>(
+      def_file_name("heatsource_scale.txt"), false, def_time_scale);
+  auto time_temperature_scaling = boost::make_shared<TimeScale>(
+      def_file_name("temperature_bc_scale.txt"), false, def_time_scale);
+  auto time_displacement_scaling = boost::make_shared<TimeScale>(
+      def_file_name("displacement_bc_scale.txt"), false, def_time_scale);
+  auto time_flux_scaling = boost::make_shared<TimeScale>(
+      def_file_name("flux_bc_scale.txt"), false, def_time_scale);
+  auto time_force_scaling = boost::make_shared<TimeScale>(
+      def_file_name("force_bc_scale.txt"), false, def_time_scale);
 
   auto add_domain_rhs_ops = [&](auto &pipeline) {
     MoFEMFunctionBegin;
@@ -1115,82 +1203,125 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
     MoFEMFunctionReturn(0);
   };
 
-  auto create_post_process_element = [&]() {
-    auto post_proc_fe = boost::make_shared<PostProcEle>(mField);
-
+  auto create_post_process_elements = [&]() {
     auto block_params = boost::make_shared<BlockedParameters>();
     auto mDPtr = block_params->getDPtr();
     auto coeff_expansion_ptr = block_params->getCoeffExpansionPtr();
-
-    CHKERR addMatBlockOps(post_proc_fe->getOpPtrVector(), "MAT_ELASTIC",
-                          "MAT_THERMAL", block_params, Sev::verbose);
-
-    CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
-        post_proc_fe->getOpPtrVector(), {H1, HDIV});
-
+    auto u_ptr = boost::make_shared<MatrixDouble>();
     auto mat_grad_ptr = boost::make_shared<MatrixDouble>();
     auto mat_strain_ptr = boost::make_shared<MatrixDouble>();
     auto mat_stress_ptr = boost::make_shared<MatrixDouble>();
-
     auto vec_temp_ptr = boost::make_shared<VectorDouble>();
     auto mat_flux_ptr = boost::make_shared<MatrixDouble>();
 
-    post_proc_fe->getOpPtrVector().push_back(
-        new OpCalculateScalarFieldValues("T", vec_temp_ptr));
-    post_proc_fe->getOpPtrVector().push_back(
-        new OpCalculateHVecVectorField<3, SPACE_DIM>("FLUX", mat_flux_ptr));
+    auto push_domain_ops = [&](auto &pp_fe) {
+      MoFEMFunctionBegin;
+      auto &pip = pp_fe->getOpPtrVector();
 
-    auto u_ptr = boost::make_shared<MatrixDouble>();
-    post_proc_fe->getOpPtrVector().push_back(
-        new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_ptr));
-    post_proc_fe->getOpPtrVector().push_back(
-        new OpCalculateVectorFieldGradient<SPACE_DIM, SPACE_DIM>("U",
-                                                                 mat_grad_ptr));
-    post_proc_fe->getOpPtrVector().push_back(
-        new OpSymmetrizeTensor<SPACE_DIM>(mat_grad_ptr, mat_strain_ptr));
-    post_proc_fe->getOpPtrVector().push_back(
-        new OpStressThermal(mat_strain_ptr, vec_temp_ptr, mDPtr,
-                            coeff_expansion_ptr, mat_stress_ptr));
+      CHKERR addMatBlockOps(pip, "MAT_ELASTIC", "MAT_THERMAL", block_params,
+                            Sev::verbose);
 
-    using OpPPMap = OpPostProcMapInMoab<SPACE_DIM, SPACE_DIM>;
+      CHKERR AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(pip, {H1, HDIV});
 
-    post_proc_fe->getOpPtrVector().push_back(
+      pip.push_back(new OpCalculateScalarFieldValues("T", vec_temp_ptr));
+      pip.push_back(
+          new OpCalculateHVecVectorField<3, SPACE_DIM>("FLUX", mat_flux_ptr));
 
-        new OpPPMap(
+      pip.push_back(new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_ptr));
+      pip.push_back(new OpCalculateVectorFieldGradient<SPACE_DIM, SPACE_DIM>(
+          "U", mat_grad_ptr));
+      pip.push_back(
+          new OpSymmetrizeTensor<SPACE_DIM>(mat_grad_ptr, mat_strain_ptr));
+      pip.push_back(new OpStressThermal(mat_strain_ptr, vec_temp_ptr, mDPtr,
+                                        coeff_expansion_ptr, mat_stress_ptr));
+      MoFEMFunctionReturn(0);
+    };
 
-            post_proc_fe->getPostProcMesh(), post_proc_fe->getMapGaussPts(),
+    auto push_post_proc_ops = [&](auto &pp_fe) {
+      MoFEMFunctionBegin;
+      auto &pip = pp_fe->getOpPtrVector();
+      using OpPPMap = OpPostProcMapInMoab<SPACE_DIM, SPACE_DIM>;
 
-            {{"T", vec_temp_ptr}},
+      pip.push_back(
 
-            {{"U", u_ptr}, {"FLUX", mat_flux_ptr}},
+          new OpPPMap(
 
-            {},
+              pp_fe->getPostProcMesh(), pp_fe->getMapGaussPts(),
 
-            {{"STRAIN", mat_strain_ptr}, {"STRESS", mat_stress_ptr}}
+              {{"T", vec_temp_ptr}},
 
-            )
+              {{"U", u_ptr}, {"FLUX", mat_flux_ptr}},
 
-    );
+              {},
 
-    return post_proc_fe;
+              {{"STRAIN", mat_strain_ptr}, {"STRESS", mat_stress_ptr}}
+
+              )
+
+      );
+      MoFEMFunctionReturn(0);
+    };
+
+    auto domain_post_proc = [&]() {
+      if (do_output_domain == PETSC_FALSE)
+        return boost::shared_ptr<PostProcEle>();
+      auto pp_fe = boost::make_shared<PostProcEle>(mField);
+      CHK_MOAB_THROW(push_domain_ops(pp_fe),
+                     "push domain ops to domain element");
+      CHK_MOAB_THROW(push_post_proc_ops(pp_fe),
+                     "push post proc ops to domain element");
+      return pp_fe;
+    };
+
+    auto skin_post_proc = [&]() {
+      if (do_output_skin == PETSC_FALSE)
+        return boost::shared_ptr<SkinPostProcEle>();
+      auto pp_fe = boost::make_shared<SkinPostProcEle>(mField);
+      auto simple = mField.getInterface<Simple>();
+      auto op_side = new OpLoopSide<SideEle>(mField, simple->getDomainFEName(),
+                                             SPACE_DIM, Sev::verbose);
+      CHK_MOAB_THROW(push_domain_ops(op_side),
+                     "push domain ops to side element");
+      pp_fe->getOpPtrVector().push_back(op_side);
+      CHK_MOAB_THROW(push_post_proc_ops(pp_fe),
+                     "push post proc ops to skin element");
+      return pp_fe;
+    };
+
+    return std::make_pair(domain_post_proc(), skin_post_proc());
   };
 
   auto monitor_ptr = boost::make_shared<FEMethod>();
-  auto post_proc_fe = create_post_process_element();
+
+  auto [domain_post_proc_fe, skin_post_proc_fe] =
+      create_post_process_elements();
 
   auto set_time_monitor = [&](auto dm, auto solver) {
     MoFEMFunctionBegin;
     monitor_ptr->preProcessHook = [&]() {
       MoFEMFunctionBegin;
 
-      CHKERR DMoFEMLoopFiniteElements(dm, simple->getDomainFEName(),
-                                      post_proc_fe,
-                                      monitor_ptr->getCacheWeakPtr());
-      CHKERR post_proc_fe->writeFile(
-          "out_" + boost::lexical_cast<std::string>(monitor_ptr->ts_step) +
-          ".h5m");
+      if (save_every && (monitor_ptr->ts_step % save_every == 0)) {
+        if (do_output_domain) {
+          CHKERR DMoFEMLoopFiniteElements(dm, simple->getDomainFEName(),
+                                          domain_post_proc_fe,
+                                          monitor_ptr->getCacheWeakPtr());
+          CHKERR domain_post_proc_fe->writeFile(
+              "out_" + boost::lexical_cast<std::string>(monitor_ptr->ts_step) +
+              ".h5m");
+        }
+        if (do_output_skin) {
+          CHKERR DMoFEMLoopFiniteElements(dm, simple->getBoundaryFEName(),
+                                          skin_post_proc_fe,
+                                          monitor_ptr->getCacheWeakPtr());
+          CHKERR skin_post_proc_fe->writeFile(
+              "out_skin_" +
+              boost::lexical_cast<std::string>(monitor_ptr->ts_step) + ".h5m");
+        }
+      }
 
       if (doEvalField) {
+
         if constexpr (SPACE_DIM == 3) {
           CHKERR mField.getInterface<FieldEvaluatorInterface>()
               ->evalFEAtThePoint3D(
@@ -1207,11 +1338,11 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
                   MF_EXIST, QUIET);
         }
 
-        if (atom_test == 1) {
+        if (atom_test) {
           auto eval_num_vec =
               createVectorMPI(mField.get_comm(), PETSC_DECIDE, 1);
           CHKERR VecZeroEntries(eval_num_vec);
-          if (scalarFieldPtr->size()) {
+          if (tempFieldPtr->size()) {
             CHKERR VecSetValue(eval_num_vec, 0, 1, ADD_VALUES);
           }
           CHKERR VecAssemblyBegin(eval_num_vec);
@@ -1227,46 +1358,110 @@ MoFEMErrorCode ThermoElasticProblem::tsSolve() {
           }
         }
 
-        if (scalarFieldPtr->size()) {
-          auto t_temp = getFTensor0FromVec(*scalarFieldPtr);
+        if (tempFieldPtr->size()) {
+          auto t_temp = getFTensor0FromVec(*tempFieldPtr);
           MOFEM_LOG("ThermoElasticSync", Sev::inform)
               << "Eval point T: " << t_temp;
-          if (atom_test == 1 && fabs(monitor_ptr->ts_t - 10) < 1e-12) {
-            if (fabs(t_temp - 539.46) > 1e-2) {
+          if (atom_test && fabs(monitor_ptr->ts_t - 10) < 1e-12) {
+            if (atom_test <= 3 && fabs(t_temp - 554.48) > 1e-2) {
+              SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                       "atom test %d failed: wrong temperature value",
+                       atom_test);
+            }
+            if (atom_test == 4 && fabs(t_temp - 250) > 1e-2) {
               SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                        "atom test %d failed: wrong temperature value",
                        atom_test);
             }
           }
         }
-        if (vectorFieldPtr->size1()) {
+        if (fluxFieldPtr->size1()) {
           FTensor::Index<'i', SPACE_DIM> i;
-          auto t_disp = getFTensor1FromMat<SPACE_DIM>(*vectorFieldPtr);
+          auto t_flux = getFTensor1FromMat<SPACE_DIM>(*fluxFieldPtr);
+          auto flux_mag = sqrt(t_flux(i) * t_flux(i));
+          MOFEM_LOG("ThermoElasticSync", Sev::inform)
+              << "Eval point FLUX magnitude: " << flux_mag;
+          if (atom_test && fabs(monitor_ptr->ts_t - 10) < 1e-12) {
+            if (atom_test <= 3 && fabs(flux_mag - 27008.0) > 2e1) {
+              SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                       "atom test %d failed: wrong flux value", atom_test);
+            }
+            if (atom_test == 4 && fabs(flux_mag - 150e3) > 1e-1) {
+              SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                       "atom test %d failed: wrong flux value", atom_test);
+            }
+          }
+        }
+        if (dispFieldPtr->size1()) {
+          FTensor::Index<'i', SPACE_DIM> i;
+          auto t_disp = getFTensor1FromMat<SPACE_DIM>(*dispFieldPtr);
           auto disp_mag = sqrt(t_disp(i) * t_disp(i));
           MOFEM_LOG("ThermoElasticSync", Sev::inform)
               << "Eval point U magnitude: " << disp_mag;
-          if (atom_test == 1 && fabs(monitor_ptr->ts_t - 10) < 1e-12) {
-            if (fabs(disp_mag - 0.002254) > 1e-6) {
+          if (atom_test && fabs(monitor_ptr->ts_t - 10) < 1e-12) {
+            if (atom_test == 1 && fabs(disp_mag - 0.00345) > 1e-5) {
+              SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                       "atom test %d failed: wrong displacement value",
+                       atom_test);
+            }
+            if ((atom_test == 2 || atom_test == 3) &&
+                fabs(disp_mag - 0.00265) > 1e-5) {
               SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                        "atom test %d failed: wrong displacement value",
                        atom_test);
             }
           }
         }
-        if (tensorFieldPtr->size1()) {
+        if (strainFieldPtr->size1()) {
           FTensor::Index<'i', SPACE_DIM> i;
-          auto t_disp_grad =
-              getFTensor2FromMat<SPACE_DIM, SPACE_DIM>(*tensorFieldPtr);
-          auto t_disp_grad_trace = t_disp_grad(i, i);
-          MOFEM_LOG("ThermoElasticSync", Sev::inform)
-              << "Eval point U_GRAD trace: " << t_disp_grad_trace;
-          if (atom_test == 1 && fabs(monitor_ptr->ts_t - 10) < 1e-12) {
-            if (SPACE_DIM == 3) {
-              t_disp_grad_trace -= t_disp_grad(2, 2);
-            }
-            if (fabs(t_disp_grad_trace - 0.00644) > 1e-5) {
+          auto t_strain =
+              getFTensor2SymmetricFromMat<SPACE_DIM>(*strainFieldPtr);
+          auto t_strain_trace = t_strain(i, i);
+          if (atom_test && fabs(monitor_ptr->ts_t - 10) < 1e-12) {
+            if (atom_test == 1 && fabs(t_strain_trace - 0.00679) > 1e-5) {
               SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                        "atom test %d failed: wrong strain value", atom_test);
+            }
+            if ((atom_test == 2 || atom_test == 3) &&
+                fabs(t_strain_trace - 0.00522) > 1e-5) {
+              SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                       "atom test %d failed: wrong strain value", atom_test);
+            }
+          }
+        }
+        if (stressFieldPtr->size1()) {
+          auto t_stress =
+              getFTensor2SymmetricFromMat<SPACE_DIM>(*stressFieldPtr);
+          auto von_mises_stress = std::sqrt(
+              0.5 *
+              ((t_stress(0, 0) - t_stress(1, 1)) *
+                   (t_stress(0, 0) - t_stress(1, 1)) +
+               (SPACE_DIM == 3 ? (t_stress(1, 1) - t_stress(2, 2)) *
+                                     (t_stress(1, 1) - t_stress(2, 2))
+                               : 0) +
+               (SPACE_DIM == 3 ? (t_stress(2, 2) - t_stress(0, 0)) *
+                                     (t_stress(2, 2) - t_stress(0, 0))
+                               : 0) +
+               6 * (t_stress(0, 1) * t_stress(0, 1) +
+                    (SPACE_DIM == 3 ? t_stress(1, 2) * t_stress(1, 2) : 0) +
+                    (SPACE_DIM == 3 ? t_stress(2, 0) * t_stress(2, 0) : 0))));
+          MOFEM_LOG("ThermoElasticSync", Sev::inform)
+              << "Eval point von Mises Stress: " << von_mises_stress;
+          if (atom_test && fabs(monitor_ptr->ts_t - 10) < 1e-12) {
+            if (atom_test == 1 && fabs(von_mises_stress - 523.0) > 5e-1) {
+              SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                       "atom test %d failed: wrong von Mises stress value",
+                       atom_test);
+            }
+            if (atom_test == 2 && fabs(von_mises_stress - 16.3) > 5e-2) {
+              SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                       "atom test %d failed: wrong von Mises stress value",
+                       atom_test);
+            }
+            if (atom_test == 3 && fabs(von_mises_stress - 14.9) > 5e-2) {
+              SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                       "atom test %d failed: wrong von Mises stress value",
+                       atom_test);
             }
           }
         }
