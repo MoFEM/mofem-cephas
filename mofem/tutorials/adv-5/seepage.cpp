@@ -862,27 +862,27 @@ MoFEMErrorCode Seepage::OPs() {
     pip.push_back(
         new SeepageOps::OpDomainRhsHydrostaticStress<SPACE_DIM>("U", p_ptr, biot));
     
-    auto gravity_vector_ptr = boost::make_shared<MatrixDouble>();
-    gravity_vector_ptr->resize(SPACE_DIM, 1);
-    auto set_body_force = [&]() {
-      FTensor::Index<'i', SPACE_DIM> i;
-      MoFEMFunctionBegin;
-      auto t_force = getFTensor1FromMat<SPACE_DIM>(*gravity_vector_ptr);
-      double mat_density = 0.;
-      CHKERR PetscOptionsGetReal(PETSC_NULL, "", "-mat_density", &mat_density,
-                                 PETSC_NULL);
-      t_force(i) = 0;
-      if (SPACE_DIM == 2) {
-        t_force(1) = mat_density;
-      } else if (SPACE_DIM == 3) {
-        t_force(2) = mat_density;
-      }
-      MoFEMFunctionReturn(0);
-    };
+    // auto gravity_vector_ptr = boost::make_shared<MatrixDouble>();
+    // gravity_vector_ptr->resize(SPACE_DIM, 1);
+    // auto set_body_force = [&]() {
+    //   FTensor::Index<'i', SPACE_DIM> i;
+    //   MoFEMFunctionBegin;
+    //   auto t_force = getFTensor1FromMat<SPACE_DIM>(*gravity_vector_ptr);
+    //   double mat_density = 0.;
+    //   CHKERR PetscOptionsGetReal(PETSC_NULL, "", "-mat_density", &mat_density,
+    //                              PETSC_NULL);
+    //   t_force(i) = 0;
+    //   if (SPACE_DIM == 2) {
+    //     t_force(1) = mat_density;
+    //   } else if (SPACE_DIM == 3) {
+    //     t_force(2) = mat_density;
+    //   }
+    //   MoFEMFunctionReturn(0);
+    // };
 
-    CHKERR set_body_force();
-    pip.push_back(new OpBaseFlux("U", gravity_vector_ptr,
-                                  [](double, double, double) { return 9.81; }));
+    // CHKERR set_body_force();
+    // pip.push_back(new OpBaseFlux("U", gravity_vector_ptr,
+    //                               [](double, double, double) { return 9.81; }));
 
     MoFEMFunctionReturn(0);
   };
@@ -960,27 +960,27 @@ MoFEMErrorCode Seepage::OPs() {
 
     pip.push_back(new OpUnSetBc("FLUX"));
 
-    auto gravity_vector_ptr = boost::make_shared<MatrixDouble>();
-    gravity_vector_ptr->resize(3, 1);
-    auto set_body_force = [&]() {
-      FTensor::Index<'i', SPACE_DIM> i;
-      MoFEMFunctionBegin;
-      auto t_force = getFTensor1FromMat<3>(*gravity_vector_ptr);
-      double fluid_density = 0.;
-      CHKERR PetscOptionsGetReal(PETSC_NULL, "", "-fluid_density", &fluid_density,
-                                 PETSC_NULL);
-      t_force(i) = 0;
-      if (SPACE_DIM == 2) {
-        t_force(1) = fluid_density;
-      } else if (SPACE_DIM == 3) {
-        t_force(2) = fluid_density;
-      }
-      MoFEMFunctionReturn(0);
-    };
+    // auto gravity_vector_ptr = boost::make_shared<MatrixDouble>();
+    // gravity_vector_ptr->resize(3, 1);
+    // auto set_body_force = [&]() {
+    //   FTensor::Index<'i', SPACE_DIM> i;
+    //   MoFEMFunctionBegin;
+    //   auto t_force = getFTensor1FromMat<3>(*gravity_vector_ptr);
+    //   double fluid_density = 0.;
+    //   CHKERR PetscOptionsGetReal(PETSC_NULL, "", "-fluid_density", &fluid_density,
+    //                              PETSC_NULL);
+    //   t_force(i) = 0;
+    //   if (SPACE_DIM == 2) {
+    //     t_force(1) = fluid_density;
+    //   } else if (SPACE_DIM == 3) {
+    //     t_force(2) = fluid_density;
+    //   }
+    //   MoFEMFunctionReturn(0);
+    // };
 
-    CHKERR set_body_force();
-    pip.push_back(new OpHdivFlux("FLUX", gravity_vector_ptr,
-                                  [](double, double, double) { return 9.81; }));
+    // CHKERR set_body_force();
+    // pip.push_back(new OpHdivFlux("FLUX", gravity_vector_ptr,
+    //                               [](double, double, double) { return 9.81; }));
 
     MoFEMFunctionReturn(0);
   };
