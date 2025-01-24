@@ -51,6 +51,7 @@ using BoundaryRhsBCs = NaturalBC<BoundaryEleOp>::Assembly<A>::LinearForm<I>;
 using OpBoundaryRhsBCs = BoundaryRhsBCs::OpFlux<BoundaryBCs, 1, SPACE_DIM>;
 using BoundaryLhsBCs = NaturalBC<BoundaryEleOp>::Assembly<A>::BiLinearForm<I>;
 using OpBoundaryLhsBCs = BoundaryLhsBCs::OpFlux<BoundaryBCs, 1, SPACE_DIM>;
+using MeshsetSideEle = PipelineManager::ElementsAndOpsByDim<2>::FaceSideEle;
 
 template <int DIM> struct PostProcEleByDim;
 
@@ -58,6 +59,7 @@ template <> struct PostProcEleByDim<2> {
   using PostProcEleDomain = PostProcBrokenMeshInMoabBaseCont<DomainEle>;
   using PostProcEleBdy = PostProcBrokenMeshInMoabBaseCont<BoundaryEle>;
   using SideEle = PipelineManager::ElementsAndOpsByDim<2>::FaceSideEle;
+  using MeshsetSideEle = PipelineManager::ElementsAndOpsByDim<2>::FaceSideEle;
 };
 
 template <> struct PostProcEleByDim<3> {
@@ -69,6 +71,7 @@ template <> struct PostProcEleByDim<3> {
 using PostProcEleDomain = PostProcEleByDim<SPACE_DIM>::PostProcEleDomain;
 using SideEle = PostProcEleByDim<SPACE_DIM>::SideEle;
 using PostProcEleBdy = PostProcEleByDim<SPACE_DIM>::PostProcEleBdy;
+using MeshsetSideEleOp = MeshsetSideEle::UserDataOperator;
 
 #include <ElasticSpring.hpp>
 #include <FluidLevel.hpp>
@@ -599,6 +602,7 @@ MoFEMErrorCode Example::boundaryCondition() {
 MoFEMErrorCode Example::assembleSystem() {
   MoFEMFunctionBegin;
   auto pip = mField.getInterface<PipelineManager>();
+  auto simple = mField.getInterface<Simple>();
 
   //! [Integration rule]
   auto integration_rule = [](int, int, int approx_order) {
@@ -653,8 +657,7 @@ MoFEMErrorCode Example::assembleSystem() {
                           [](double, double, double) constexpr { return -1; }));
   //! [Push Internal forces]
 
-  auto int_translation_ptr = boost::make_shared<VectorDouble>(VectorDouble(3));
-  auto int_rotation_ptr = boost::make_shared<MatrixDouble>(MatrixDouble(3,3));
+
 
   //! [Constraint matrix]
   if (A == PETSC) {
@@ -674,8 +677,8 @@ MoFEMErrorCode Example::assembleSystem() {
           new OpCalculateNoFieldVectorValues("RIGID_BODY_THETA", theta_ptr));
 
       for (auto &t : tieBlocks) {
-        pip.push_back(new OpTieSetDofs("RIGID_BODY_LAMBDA", translation_ptr,
-                                       t.tieDirection));
+        // pip.push_back(new OpTieSetDofs("RIGID_BODY_LAMBDA", translation_ptr,
+        //                                t.tieDirection));
         pip.push_back(new OpTieTermConstrainRigidBodyLhs_dU<SPACE_DIM>(
             "LAMBDA", "U", u_ptr, t.tieCoord, t.tieDirection,
             boost::make_shared<Range>(t.tieFaces), translation_ptr, theta_ptr));
@@ -719,17 +722,22 @@ MoFEMErrorCode Example::assembleSystem() {
           new OpCalculateNoFieldVectorValues("RIGID_BODY_THETA", theta_ptr));
 
       for (auto &t : tieBlocks) {
-        pip.push_back(new OpTieSetDofs("RIGID_BODY_LAMBDA", translation_ptr,
-                                       t.tieDirection));
+        // pip.push_back(new OpTieSetDofs("RIGID_BODY_LAMBDA", translation_ptr,
+        //                                t.tieDirection));
         pip.push_back(new OpTieTermConstrainRigidBodyRhs<SPACE_DIM>(
             "LAMBDA", u_ptr, t.tieCoord, t.tieDirection,
             boost::make_shared<Range>(t.tieFaces), translation_ptr, theta_ptr));
-        pip.push_back(new OpTieTermConstrainRigidBodyGlobalTranslationIntegralRhs<SPACE_DIM>(
-            "LAMBDA", u_ptr, t.tieCoord, t.tieDirection,
-            boost::make_shared<Range>(t.tieFaces), lambda_ptr, int_translation_ptr));
-                pip.push_back(new OpTieTermConstrainRigidBodyGlobalRotationIntegralRhs<SPACE_DIM>(
-            "LAMBDA", u_ptr, t.tieCoord, t.tieDirection,
-            boost::make_shared<Range>(t.tieFaces), lambda_ptr, int_rotation_ptr));
+
+        // pip.push_back(new
+        // OpTieTermConstrainRigidBodyGlobalTranslationIntegralRhs<SPACE_DIM>(
+        //     "LAMBDA", u_ptr, t.tieCoord, t.tieDirection,
+        //     boost::make_shared<Range>(t.tieFaces), lambda_ptr,
+        //     int_translation_ptr));
+        //         pip.push_back(new
+        //         OpTieTermConstrainRigidBodyGlobalRotationIntegralRhs<SPACE_DIM>(
+        //     "LAMBDA", u_ptr, t.tieCoord, t.tieDirection,
+        //     boost::make_shared<Range>(t.tieFaces), lambda_ptr,
+        //     int_rotation_ptr));
         // pip.push_back(
         //     new OpTieTermConstrainRigidBodyGlobalTranslationRhs<SPACE_DIM>(
         //         "RIGID_BODY_LAMBDA", u_ptr, t.tieCoord, t.tieDirection,
@@ -747,41 +755,70 @@ MoFEMErrorCode Example::assembleSystem() {
     CHKERR add_constrain_lhs(pip->getOpBoundaryLhsPipeline());
     CHKERR add_constrain_rhs(pip->getOpBoundaryRhsPipeline());
 
+
     // Add Rigid body element to pipeline
     auto add_rigid_body_rhs = [&](auto &pip) {
       MoFEMFunctionBegin;
 
-      // struct RigidBodyFE : public ForcesAndSourcesCore {
-      //   using ForcesAndSourcesCore::ForcesAndSourcesCore;
-      //   MoFEMErrorCode operator()() {
-      //     MoFEMFunctionBegin;
-      //     CHKERR loopOverOperators();
-      //     MoFEMFunctionReturn(0);
-      //   }
-      //   MoFEMErrorCode preProcess() { return 0; }
-      //   MoFEMErrorCode postProcess() { return 0; }
-      // };
-
-      // auto rigid_body_fe_ptr = boost::make_shared<RigidBodyFE>(mField);
-
-      // auto add_rigid_body_ops = [this](auto fe_ptr) {
-      // MoFEMFunctionBegin;
       // add ops
       auto lambda_ptr = boost::make_shared<MatrixDouble>();
       auto translation_ptr = boost::make_shared<VectorDouble>();
+      auto u_ptr = boost::make_shared<MatrixDouble>();
+      auto int_translation_ptr =
+          boost::make_shared<VectorDouble>(VectorDouble(3));
+      auto int_rotation_ptr =
+          boost::make_shared<MatrixDouble>(MatrixDouble(3, 3));
+
+      Range rigid_body_ents;
+      auto v_rigid_body_ents = simple->getMeshsetFiniteElementEntities();
+      std::cout << "rigid_body_ents = " << rigid_body_ents << std::endl;
+
+      // get range
+      // CHKERR mField.get_moab().get_entities_by_handle(translation_meshset,
+      //                                                 rigid_body_ents, true);
+      // loop over all rigid body entities
+      for(auto ents : v_rigid_body_ents) {
+        std::cout << "ents = " << ents << std::endl;
+        rigid_body_ents.merge(ents);
+      }
+
+
+
+      auto rigid_body_ents_ptr = boost::make_shared<Range>(rigid_body_ents);
+      std::cout << "rigid_body_ents = " << rigid_body_ents << std::endl;
 
 
       for (auto &t : tieBlocks) {
+        // pip.push_back(new OpTieSetDofs("RIGID_BODY_LAMBDA", translation_ptr,
+        //                                t.tieDirection));
+        auto op_loop_side = new OpLoopSide<BoundaryEle>(
+            mField, "bFE", SPACE_DIM - 1, rigid_body_ents_ptr);
+        CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
+            op_loop_side->getOpPtrVector(), {});
+        op_loop_side->getOpPtrVector().push_back(
+            new OpCalculateVectorFieldValues<SPACE_DIM>("LAMBDA", lambda_ptr));
+        op_loop_side->getOpPtrVector().push_back(
+            new OpTieTermConstrainRigidBodyGlobalTranslationIntegralRhs<
+                SPACE_DIM>("LAMBDA", u_ptr, t.tieCoord, t.tieDirection,
+                           boost::make_shared<Range>(t.tieFaces), lambda_ptr,
+                           int_translation_ptr));
+        op_loop_side->getOpPtrVector().push_back(
+            new OpTieTermConstrainRigidBodyGlobalRotationIntegralRhs<SPACE_DIM>(
+                "LAMBDA", u_ptr, t.tieCoord, t.tieDirection,
+                boost::make_shared<Range>(t.tieFaces), lambda_ptr,
+                int_rotation_ptr));
+        pip.push_back(op_loop_side);
+
         pip.push_back(
             new OpTieTermConstrainRigidBodyGlobalTranslationRhs<SPACE_DIM>(
                 "RIGID_BODY_LAMBDA", t.tieCoord, t.tieDirection,
-                boost::make_shared<Range>(t.tieFaces), lambda_ptr, int_translation_ptr));
+                boost::make_shared<Range>(t.tieFaces), lambda_ptr,
+                int_translation_ptr));
         pip.push_back(
             new OpTieTermConstrainRigidBodyGlobalRotationRhs<SPACE_DIM>(
                 "RIGID_BODY_THETA", t.tieCoord, t.tieDirection,
-                boost::make_shared<Range>(t.tieFaces), lambda_ptr, int_rotation_ptr));
-        // pip.push_back(new OpTieSetDofs("RIGID_BODY_LAMBDA", translation_ptr,
-        //                                t.tieDirection));
+                boost::make_shared<Range>(t.tieFaces), lambda_ptr,
+                int_rotation_ptr));
       }
       // MoFEMFunctionReturn(0);
       //};
@@ -790,19 +827,19 @@ MoFEMErrorCode Example::assembleSystem() {
       MoFEMFunctionReturn(0);
     };
 
-    auto add_rigid_body_lhs = [&](auto &pip) {
-      MoFEMFunctionBegin;
-      auto lambda_ptr = boost::make_shared<MatrixDouble>();
-      auto translation_ptr = boost::make_shared<VectorDouble>();
+    // auto add_rigid_body_lhs = [&](auto &pip) {
+    //   MoFEMFunctionBegin;
+    //   auto lambda_ptr = boost::make_shared<MatrixDouble>();
+    //   auto translation_ptr = boost::make_shared<VectorDouble>();
 
-      for (auto &t : tieBlocks) {
-        pip.push_back(new OpTieTermSetBc<SPACE_DIM>(
-            "RIGID_BODY_LAMBDA", "RIGID_BODY_LAMBDA", boost::make_shared<Range>(t.tieFaces)));
-      }
-      MoFEMFunctionReturn(0);
-    };
+    //   for (auto &t : tieBlocks) {
+    //     pip.push_back(new OpTieTermSetBc<SPACE_DIM>(
+    //         "RIGID_BODY_LAMBDA", "RIGID_BODY_LAMBDA", boost::make_shared<Range>(t.tieFaces)));
+    //   }
+    //   MoFEMFunctionReturn(0);
+    // };
 
-    CHKERR add_rigid_body_lhs(pip->getOpMeshsetLhsPipeline());
+    // CHKERR add_rigid_body_lhs(pip->getOpMeshsetLhsPipeline());
 
     CHKERR add_rigid_body_rhs(pip->getOpMeshsetRhsPipeline());
   }
@@ -859,7 +896,17 @@ MoFEMErrorCode Example::solveSystem() {
       return EssentialPreProc<DisplacementCubitBcData>(mField, pre_proc_rhs,
                                                        {});
     };
+
+
+    auto get_pre_proc_tie_hook = [&](auto &tie_direction) {
+      return SetTieBcPreProc(mField, pre_proc_rhs, tie_direction);
+    };
+
     pre_proc_rhs->preProcessHook = get_pre_proc_hook();
+    for (auto &t : tieBlocks) {
+      pre_proc_rhs->preProcessHook = get_pre_proc_tie_hook(t.tieDirection);
+    }
+    //pre_proc_rhs->preProcessHook = get_pre_proc_tie_hook();
 
     auto get_post_proc_hook_rhs = [this, post_proc_rhs]() {
       MoFEMFunctionBeginHot;
@@ -1147,8 +1194,8 @@ MoFEMErrorCode Example::checkResults() {
         //new OpCalculateScalarFieldValues("LAMBDA_ROT", lambda_rotation_ptr));
 
     for (auto &t : tieBlocks) {
-      pip->getOpBoundaryRhsPipeline().push_back(new OpTieSetDofs("RIGID_BODY_LAMBDA", translation_ptr,
-                                     t.tieDirection));
+      // pip->getOpBoundaryRhsPipeline().push_back(new OpTieSetDofs("RIGID_BODY_LAMBDA", translation_ptr,
+      //                                t.tieDirection));
       pip->getOpBoundaryRhsPipeline().push_back(
           new OpTieTermConstrainRigidBodyRhs_du<SPACE_DIM>(
               "U", "LAMBDA", u_ptr, lambda_ptr, t.tieCoord, t.tieDirection,
