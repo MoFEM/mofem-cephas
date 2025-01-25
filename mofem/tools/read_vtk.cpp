@@ -24,6 +24,7 @@ private:
   MoFEMErrorCode getBoundaryConditions();
   MoFEMErrorCode setBoundaryConditions();
   MoFEMErrorCode getMaterialProperties();
+  MoFEMErrorCode getBlockSetBCFromMesh(std::string);
   MoFEMErrorCode writeOutput();
   MoFEMErrorCode checkResults();
 };
@@ -45,6 +46,45 @@ MoFEMErrorCode VtkInterface::readMesh() {
   CHKERR mField.getInterface(simpleInterface);
   CHKERR simpleInterface->getOptions();
   CHKERR simpleInterface->loadFile();
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode VtkInterface::getBlockSetBCFromMesh(std::string block_name) {
+  MoFEMFunctionBegin;
+
+  MeshsetsManager *meshsets_mng;
+  CHKERR mField.getInterface(meshsets_mng);
+
+  Tag mat_tag;
+  rval = mOab.tag_get_handle(block_name.c_str(), 1, MB_TYPE_INTEGER, mat_tag,
+                             MB_TAG_EXCL | MB_TAG_SPARSE);
+  if (rval != MB_ALREADY_ALLOCATED) {
+    // std::cerr << "Error creating tag " << block_name << std::endl;
+    MoFEMFunctionReturnHot(0);
+  }
+  Range block_ents;
+  for (auto mbtype : {MBTET, MBTRI, MBHEX, MBQUAD, MBEDGE, MBVERTEX}) {
+    CHKERR mOab.get_entities_by_type_and_tag(0, mbtype, &mat_tag, NULL, 1,
+                                            block_ents, moab::Interface::UNION);
+  }
+
+  if (!block_ents.empty()) {
+    std::map<int, Range> mat_map;
+    for (auto &ent : block_ents) {
+      int mat_id;
+      CHKERR mOab.tag_get_data(mat_tag, &ent, 1, &mat_id);
+      mat_map[mat_id].insert(ent);
+    }
+
+    for (auto &[mat_id, mat_ents] : mat_map) {
+      std::string meshset_name = block_name + "_" + std::to_string(mat_id);
+      CHKERR meshsets_mng->addMeshset(BLOCKSET, mat_id, meshset_name);
+      CHKERR meshsets_mng->addEntitiesToMeshset(BLOCKSET, mat_id, mat_ents);
+      MOFEM_LOG("WORLD", Sev::inform)
+          << "Blockset " << meshset_name << " set added.";
+    }
+  } 
 
   MoFEMFunctionReturn(0);
 }
@@ -79,6 +119,12 @@ MoFEMErrorCode VtkInterface::getBoundaryConditions() {
       {18, "PRESSURE", "PRESSURE"},
       {19, "HEAT_FLUX", "HEAT_FLUX"},
       {20, "CONTACT", "CONTACT"},
+      {21, "DISPLACEMENT", "DISPLACEMENT"},
+      {22, "ROTATE_ALL", "ROTATE_ALL"},
+      {23, "ROTATE_X", "ROTATE_X"},
+      {24, "ROTATE_Y", "ROTATE_Y"},
+      {25, "ROTATE_Z", "ROTATE_Z"},
+      {26, "TEMPERATURE", "TEMPERATURE"},
       {50, "TIE_MATRIX", "TIE_MATRIX"}};
 
   for (auto &condition : conditions) {
@@ -125,6 +171,8 @@ MoFEMErrorCode VtkInterface::getBoundaryConditions() {
                                                         edges);
       CHKERR meshsets_manager_ptr->addEntitiesToMeshset(BLOCKSET, desired_val,
                                                         faces);
+    } else {
+      CHKERR getBlockSetBCFromMesh(std::get<1>(condition));
     }
   }
 
@@ -161,35 +209,8 @@ MoFEMErrorCode VtkInterface::getMaterialProperties() {
     MOFEM_LOG("WORLD", Sev::warning)
         << "No hexes/tets in the mesh, no material block set. Not Implemented";
   } else {
-
-    Tag mat_tag;
-    CHKERR mOab.tag_get_handle("MAT_ELASTIC", 1, MB_TYPE_INTEGER, mat_tag,
-                               MB_TAG_CREAT | MB_TAG_SPARSE);
-    Range material_ents;
-    CHKERR mOab.get_entities_by_type_and_tag(0, MBTET, &mat_tag,
-                                             NULL, 1, material_ents, moab::Interface::UNION);
-    CHKERR mOab.get_entities_by_type_and_tag(0, MBHEX, &mat_tag,
-                                             NULL, 1, material_ents, moab::Interface::UNION);
-
-    if (!material_ents.empty()) {
-      std::map<int, Range> mat_map;
-      for (auto &ent : material_ents) {
-        int mat_id;
-        CHKERR mOab.tag_get_data(mat_tag, &ent, 1, &mat_id);
-        mat_map[mat_id].insert(ent);
-      }
-
-      for (auto &[mat_id, mat_ents] : mat_map) {
-        std::string meshset_name =
-            "MAT_ELASTIC_" + std::to_string(mat_id + 1000);
-        CHKERR meshsets_manager_ptr->addMeshset(BLOCKSET, mat_id + 1000,
-                                                meshset_name);
-        CHKERR meshsets_manager_ptr->addEntitiesToMeshset(
-            BLOCKSET, mat_id + 1000, mat_ents);
-        MOFEM_LOG("WORLD", Sev::inform)
-            << "Material block " << meshset_name << " set added.";
-      }
-    }
+    CHKERR getBlockSetBCFromMesh("MAT_ELASTIC");
+    // for backward compatibility
     CHKERR meshsets_manager_ptr->addMeshset(BLOCKSET, 100, "ADOLCMAT");
     CHKERR meshsets_manager_ptr->addEntitiesToMeshset(BLOCKSET, 100, ents);
     MOFEM_LOG("WORLD", Sev::inform) << "Material block ADOLCMAT set added.";
