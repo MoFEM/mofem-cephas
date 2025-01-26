@@ -76,6 +76,11 @@ struct SO3 {
     return dActionJrImpl(std::forward<A>(t_w_vee), std::forward<B>(t_A));
   }
 
+  template <typename A, typename B>
+  inline static auto diffExp(A &&t_w_vee, B &&theta) {
+    return diffExpImpl(std::forward<A>(t_w_vee), std::forward<B>(theta));
+  }
+
 private:
   inline static constexpr int dim = 3;
   inline static FTENSOR_INDEX(dim, i);
@@ -115,7 +120,7 @@ private:
   template <typename T1, typename T2>
   inline static auto expImpl(FTensor::Tensor1<T1, dim> &t_w_vee,
                              const T2 theta) {
-    if (theta < std::numeric_limits<double>::epsilon()) {
+    if (std::fabs(theta) < std::numeric_limits<T2>::epsilon()) {
       return genericFormImpl(t_w_vee, 1, 0.5);
     }
     const auto s = sin(theta);
@@ -126,9 +131,62 @@ private:
   }
 
   template <typename T1, typename T2>
+  inline static auto diffExpImpl(FTensor::Tensor1<T1, dim> &t_w_vee,
+                                 const T2 theta) {
+
+    auto get_tensor = [&t_w_vee](auto a, auto diff_a, auto b, auto diff_b) {
+      FTENSOR_INDEX(3, i);
+      FTENSOR_INDEX(3, j);
+      FTENSOR_INDEX(3, k);
+      FTENSOR_INDEX(3, l);
+
+      using D = typename TensorTypeExtractor<T1>::Type;
+      FTensor::Tensor3<D, 3, 3, 3> t_diff_exp;
+      auto t_hat = getHat(t_w_vee);
+      t_diff_exp(i, j, k) =
+
+          a * FTensor::levi_civita<int>(i, j, k)
+
+          +
+
+          diff_a * t_hat(i, j) * t_w_vee(k)
+
+          +
+
+          b * (t_hat(i, l) * FTensor::levi_civita<int>(l, j, k) +
+               FTensor::levi_civita<int>(i, l, k) * t_hat(l, j))
+
+          +
+
+          diff_b * t_hat(i, l) * t_hat(l, j) * t_w_vee(k);
+
+      return t_diff_exp;
+    };
+
+    if(std::fabs(theta) < std::numeric_limits<T2>::epsilon()){
+      return get_tensor(1., -1./3., 0., 2);
+    }
+
+    const auto ss = sin(theta);
+    const auto a = ss / theta;
+
+    const auto theta2 = theta * theta;
+    const auto cc = cos(theta);
+    const auto diff_a = (theta * cc - ss) / (theta2 * theta);
+
+    const auto ss_2 = sin(theta / 2.);
+    const auto cc_2 = cos(theta / 2.);
+    const auto b = 2. * ss_2 * ss_2 / theta2;
+    const auto diff_b =
+        (2. * theta * ss_2 * cc_2 - 4. * ss_2 * ss_2) / (theta2 * theta);
+
+    return get_tensor(a, diff_a, b, diff_b);
+  }
+
+  template <typename T1, typename T2>
   inline static auto JlImpl(FTensor::Tensor1<T1, dim> &t_w_vee,
                             const T2 &theta) {
-    if (theta < std::numeric_limits<double>::epsilon()) {
+    if (std::fabs(theta) < std::numeric_limits<T2>::epsilon()) {
       return genericFormImpl(t_w_vee, 0.5, 1. / 6.);
     }
     const auto s = sin(theta);
@@ -141,7 +199,7 @@ private:
   template <typename T1, typename T2>
   inline static auto JrImpl(FTensor::Tensor1<T1, dim> &t_w_vee,
                             const T2 theta) {
-    if (theta < std::numeric_limits<double>::epsilon()) {
+    if (std::fabs(theta) < std::numeric_limits<T2>::epsilon()) {
       return genericFormImpl(t_w_vee, -0.5, 1. / 6.);
     }
     const auto s = sin(theta);
