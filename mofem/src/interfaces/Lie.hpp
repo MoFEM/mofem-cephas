@@ -164,7 +164,7 @@ private:
     };
 
     if(std::fabs(theta) < std::numeric_limits<T2>::epsilon()){
-      return get_tensor(1., -1./3., 0., 2);
+      return get_tensor(1., -1. / 3., 0., 1. / 1.2);
     }
 
     const auto ss = sin(theta);
@@ -178,7 +178,7 @@ private:
     const auto cc_2 = cos(theta / 2.);
     const auto b = 2. * ss_2 * ss_2 / theta2;
     const auto diff_b =
-        (2. * theta * ss_2 * cc_2 - 4. * ss_2 * ss_2) / (theta2 * theta);
+        (2. * theta * ss_2 * cc_2 - 4. * ss_2 * ss_2) / (theta2 * theta2);
 
     return get_tensor(a, diff_a, b, diff_b);
   }
