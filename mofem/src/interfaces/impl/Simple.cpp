@@ -261,7 +261,7 @@ MoFEMErrorCode Simple::loadFile(const std::string mesh_file_name) {
 }
 
 MoFEMErrorCode
-Simple::addDomainField(const std::string &name, const FieldSpace space,
+Simple::addDomainField(const std::string name, const FieldSpace space,
                        const FieldApproximationBase base,
                        const FieldCoefficientsNumber nb_of_coefficients,
                        const TagType tag_type, const enum MoFEMTypes bh,
@@ -271,15 +271,18 @@ Simple::addDomainField(const std::string &name, const FieldSpace space,
   MoFEMFunctionBegin;
   CHKERR m_field.add_field(name, space, base, nb_of_coefficients, tag_type, bh,
                            verb);
+  domainFields.push_back(name);
   if (space == NOFIELD)
-    noFieldFields.push_back(name);
-  else
-    domainFields.push_back(name);
+    SETERRQ(
+        PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+        "NOFIELD space for boundary filed not implemented in Simple interface");
+ 
+
   MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
-Simple::addDomainBrokenField(const std::string &name, const FieldSpace space,
+Simple::addDomainBrokenField(const std::string name, const FieldSpace space,
                              const FieldApproximationBase base,
                              const FieldCoefficientsNumber nb_of_coefficients,
                              const TagType tag_type, const enum MoFEMTypes bh,
@@ -343,15 +346,16 @@ Simple::addDomainBrokenField(const std::string &name, const FieldSpace space,
 
   CHKERR m_field.add_broken_field(name, space, base, nb_of_coefficients,
                                   get_side_map(space), tag_type, bh, verb);
+  domainFields.push_back(name);
   if (space == NOFIELD)
-    noFieldFields.push_back(name);
-  else
-    domainFields.push_back(name);
+    SETERRQ(
+        PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+        "NOFIELD space for boundary filed not implemented in Simple interface");
   MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
-Simple::addBoundaryField(const std::string &name, const FieldSpace space,
+Simple::addBoundaryField(const std::string name, const FieldSpace space,
                          const FieldApproximationBase base,
                          const FieldCoefficientsNumber nb_of_coefficients,
                          const TagType tag_type, const enum MoFEMTypes bh,
@@ -369,7 +373,7 @@ Simple::addBoundaryField(const std::string &name, const FieldSpace space,
 }
 
 MoFEMErrorCode
-Simple::addSkeletonField(const std::string &name, const FieldSpace space,
+Simple::addSkeletonField(const std::string name, const FieldSpace space,
                          const FieldApproximationBase base,
                          const FieldCoefficientsNumber nb_of_coefficients,
                          const TagType tag_type, const enum MoFEMTypes bh,
@@ -389,7 +393,7 @@ Simple::addSkeletonField(const std::string &name, const FieldSpace space,
 }
 
 MoFEMErrorCode
-Simple::addDataField(const std::string &name, const FieldSpace space,
+Simple::addDataField(const std::string name, const FieldSpace space,
                      const FieldApproximationBase base,
                      const FieldCoefficientsNumber nb_of_coefficients,
                      const TagType tag_type, const enum MoFEMTypes bh,
@@ -406,7 +410,26 @@ Simple::addDataField(const std::string &name, const FieldSpace space,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Simple::removeDomainField(const std::string &name) {
+MoFEMErrorCode
+Simple::addMeshsetField(const std::string name, const FieldSpace space,
+                        const FieldApproximationBase base,
+                        const FieldCoefficientsNumber nb_of_coefficients,
+                        const TagType tag_type, const enum MoFEMTypes bh,
+                        int verb) {
+
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+  CHKERR m_field.add_field(name, space, base, nb_of_coefficients, tag_type, bh,
+                           verb);
+  if (space != NOFIELD) {
+    meshsetFields.push_back(name);
+  } else {
+    noFieldFields.push_back(name);
+  }
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode Simple::removeDomainField(const std::string name) {
   MoFEMFunctionBegin;
 
   auto remove_field_from_list = [&](auto &vec) {
@@ -415,13 +438,12 @@ MoFEMErrorCode Simple::removeDomainField(const std::string &name) {
       vec.erase(it);
   };
 
-  remove_field_from_list(noFieldFields);
   remove_field_from_list(domainFields);
 
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Simple::removeBoundaryField(const std::string &name) {
+MoFEMErrorCode Simple::removeBoundaryField(const std::string name) {
   MoFEMFunctionBegin;
 
   auto remove_field_from_list = [&](auto &vec) {
@@ -435,7 +457,7 @@ MoFEMErrorCode Simple::removeBoundaryField(const std::string &name) {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Simple::removeSkeletonField(const std::string &name) {
+MoFEMErrorCode Simple::removeSkeletonField(const std::string name) {
   MoFEMFunctionBegin;
 
   auto remove_field_from_list = [&](auto &vec) {
@@ -518,6 +540,35 @@ MoFEMErrorCode Simple::defineFiniteElements() {
     CHKERR add_data_fields(skeletonFE, noFieldDataFields);
     CHKERR add_fields(skeletonFE, noFieldFields);
   }
+
+  if (noFieldFields.size() || meshsetFields.size()) {
+    CHKERR m_field.add_finite_element(meshsetFE, MF_ZERO);
+
+    auto create_meshset = [&]() {
+      EntityHandle fe_meshset;
+      auto create = [&]() {
+        MoFEMFunctionBegin;
+        CHKERR m_field.get_moab().create_meshset(MESHSET_SET, fe_meshset);
+        {
+          EntityHandle meshset;
+          CHKERR m_field.get_moab().create_meshset(MESHSET_SET, meshset);
+          CHKERR m_field.getInterface<BitRefManager>()->setBitLevelToMeshset(
+              meshset, BitRefLevel().set());
+        }
+        MoFEMFunctionReturn(0);
+      };
+      CHK_THROW_MESSAGE(create(), "Failed to create meshset");
+      return fe_meshset;
+    };
+
+    CHKERR m_field.add_ents_to_finite_element_by_MESHSET(create_meshset(),
+                                                         meshsetFE, false);
+
+    CHKERR add_fields(meshsetFE, meshsetFields);
+    CHKERR add_fields(meshsetFE, noFieldFields);
+    CHKERR add_data_fields(meshsetFE, noFieldDataFields);
+  }
+
   MoFEMFunctionReturnHot(0);
 }
 
@@ -536,6 +587,9 @@ MoFEMErrorCode Simple::defineProblem(const PetscBool is_partitioned) {
   }
   if (addSkeletonFE || !skeletonFields.empty()) {
     CHKERR DMMoFEMAddElement(dM, skeletonFE);
+  }
+  if (noFieldFields.size() || meshsetFields.size()) {
+    CHKERR DMMoFEMAddElement(dM, meshsetFE);
   }
   CHKERR DMMoFEMAddElement(dM, otherFEs);
   CHKERR DMMoFEMSetIsPartitioned(dM, is_partitioned);
@@ -658,6 +712,34 @@ MoFEMErrorCode Simple::buildFiniteElements() {
                                                      skeletonFE, true);
     CHKERR m_field.build_finite_elements(skeletonFE);
   }
+
+  if (noFieldFields.size() || meshsetFields.size()) {
+    auto add_fields_ents = [&](auto list) {
+      MoFEMFunctionBegin;
+      auto fe_meshset = m_field.get_finite_element_meshset(meshsetFE);
+      for (auto &fe_ents : meshsetFiniteElementEntities) {
+        EntityHandle meshset_entity_fe;
+        CHKERR m_field.get_moab().create_meshset(MESHSET_SET,
+                                                 meshset_entity_fe);
+        CHKERR m_field.getInterface<BitRefManager>()->setBitLevelToMeshset(
+            meshset_entity_fe, BitRefLevel().set());
+        for (auto f : list) {
+          auto field_meshset = m_field.get_field_meshset(f);
+          Range ents;
+          CHKERR m_field.get_moab().get_entities_by_handle(field_meshset, ents,
+                                                           true);
+          CHKERR m_field.get_moab().add_entities(meshset_entity_fe, ents);
+        }
+        CHKERR m_field.get_moab().add_entities(meshset_entity_fe, fe_ents);
+        CHKERR m_field.get_moab().add_entities(fe_meshset, &meshset_entity_fe,
+                                               1);
+      }
+      MoFEMFunctionReturn(0);
+    };
+    CHKERR add_fields_ents(noFieldFields);
+    CHKERR m_field.build_finite_elements(meshsetFE);
+  }
+
   for (std::vector<std::string>::iterator fit = otherFEs.begin();
        fit != otherFEs.end(); ++fit) {
     CHKERR m_field.build_finite_elements(*fit);
