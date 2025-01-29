@@ -2347,6 +2347,8 @@ struct OpTieTermConstrainRigidBodyRhs
     t_theta(1) = (*thetaPtr)(1);
     t_theta(2) = (*thetaPtr)(2);
 
+    //std::cout << "t_theta: " << t_theta(0) << " " << t_theta(1) << " " << t_theta(2) << std::endl;
+
     for (int gg = 0; gg != nb_integration_pts; gg++) {
       const auto alpha = t_w * vol;
       ++t_w;
@@ -2515,8 +2517,11 @@ struct OpTieTermConstrainRigidBodyLhs_dTranslation
     FTENSOR_INDEX(SPACE_DIM, k);
 
     constexpr auto t_kd = FTensor::Kronecker_Delta<double>();
+    //std::cout << "type in dTrans: = " << getNumeredEntFiniteElementPtr()->getEntType() << std::endl;
 
-    //double time = getTStime();
+    auto &locMat = OpBase::locMat;
+
+    // double time = getTStime();
     double time = 1.0;
 
     auto nb_integration_pts = getGaussPts().size2();
@@ -2543,7 +2548,6 @@ struct OpTieTermConstrainRigidBodyLhs_dTranslation
     m_kd(2, 1) = 0.0;
     m_kd(2, 2) = 1.0;
 
-
     for (int gg = 0; gg != nb_integration_pts; gg++) {
       const auto alpha = t_w * vol;
       ++t_w;
@@ -2551,16 +2555,13 @@ struct OpTieTermConstrainRigidBodyLhs_dTranslation
       FTensor::Tensor2<double, SPACE_DIM, SPACE_DIM> t_tangent;
       t_tangent(i, j) = alpha * t_kd(i, j);
 
-      int rr = 0;
-      for (; rr != OpBase::nbRows/SPACE_DIM; ++rr) {
-        auto t_dummy_base = getFTensor1FromMat<3>(m_kd);
 
-        auto t_mat = getFTensor1FromPtr<SPACE_DIM>(&OpBase::locMat(rr, 0));
-        for (int cc = 0; cc != 3; cc++) {
-          t_mat(j) += (t_row_base * t_dummy_base(i) * t_tangent(i, j));
-					++t_dummy_base;	
-          ++t_mat;
-        }
+      int rr = 0;
+      for (; rr != OpBase::nbRows / SPACE_DIM; ++rr) {
+        auto t_mat = getFTensor2FromPtr<SPACE_DIM, SPACE_DIM>(
+            &OpBase::locMat(SPACE_DIM * rr, 0));
+        t_mat(i, j) -= (t_row_base * t_tangent(i, j));
+        //++t_mat;
         ++t_row_base;
       }
       for (; rr < OpBase::nbRowBaseFunctions; ++rr)
@@ -2589,9 +2590,10 @@ struct OpTieTermConstrainRigidBodyLhs_dRotation
       : OpBase(lambda_name, col_field_name, OpBase::OPROWCOL, tie_faces_ptr),
         uPtr(u_ptr), tieCoord(tie_coord), tieDirection(tie_direction) {
     std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
-    // doEntities[MBEDGE] = true;
-    // doEntities[MBTRI] = true;
-    // doEntities[MBQUAD] = true;
+    doEntities[MBEDGE] = true;
+    doEntities[MBTRI] = true;
+    doEntities[MBQUAD] = true;
+    doEntities[MBENTITYSET] = true;
     this->assembleTranspose = true;
     this->sYmm = false;
   }
@@ -2607,6 +2609,7 @@ struct OpTieTermConstrainRigidBodyLhs_dRotation
 
     //double time = getTStime();
     double time = 1.0;
+    //std::cout << "type: = " << getNumeredEntFiniteElementPtr()->getEntType() << std::endl;
 
     auto nb_integration_pts = getGaussPts().size2();
     // get element volume
@@ -2637,19 +2640,16 @@ struct OpTieTermConstrainRigidBodyLhs_dRotation
       ++t_w;
 
       FTensor::Tensor2<double, SPACE_DIM, SPACE_DIM> t_tangent;
-      t_tangent(i, k) = alpha * levi_civita(i,j,k) * (t_coords(j) - tieCoord(j));;
+      t_tangent(i, k) = alpha * levi_civita(i,j,k) * (t_coords(j) - tieCoord(j));
       ++t_coords;
+
+      
       int rr = 0;
-      for (; rr != OpBase::nbRows/SPACE_DIM; ++rr) {
-        auto t_mat = getFTensor1FromPtr<SPACE_DIM>(&OpBase::locMat(rr, 0));
-
-        auto t_dummy_base = getFTensor1FromMat<3>(m_kd);
-
-        for (int cc = 0; cc != 3; cc++) {
-          t_mat(j) -= (t_row_base * t_dummy_base(i) * t_tangent(i, j));
-          ++t_mat;
-					++t_dummy_base;	
-        }
+      for (; rr != OpBase::nbRows / SPACE_DIM; ++rr) {
+        auto t_mat = getFTensor2FromPtr<SPACE_DIM, SPACE_DIM>(
+            &OpBase::locMat(SPACE_DIM * rr, 0));
+        t_mat(i, j) -= (t_row_base * t_tangent(i, j));
+        //++t_mat;
         ++t_row_base;
       }
       for (; rr < OpBase::nbRowBaseFunctions; ++rr)
@@ -2792,10 +2792,12 @@ struct OpTieTermConstrainRigidBodyGlobalTranslationRhs
     //auto t_lambda = getFTensor1FromMat<SPACE_DIM>(*lambdaPtr);
 
     auto v_dofs = data.getFieldData();
-    std::cout << "v_dofs: " << v_dofs(0) << " " << v_dofs(1) << " " << v_dofs(2) << std::endl;
+    auto &vec = data.getFieldData();
+    //std::cout << "v_dofs: " << v_dofs(0) << " " << v_dofs(1) << " " << v_dofs(2) << std::endl;
     auto ind = data.getIndices(); 
     auto local_ind = data.getLocalIndices();
-    auto t_dofs = data.getFTensor1FieldData<3>();
+    //auto t_dofs = data.getFTensor1FieldData<3>();
+    auto t_dofs = getFTensor1FromPtr<SPACE_DIM>(&data.getFieldEntities()[0]->getEntFieldData()[0]);
 
     double* intTranslationRawPtr = &(*intTranslationPtr->data().begin());
 
@@ -2818,25 +2820,25 @@ struct OpTieTermConstrainRigidBodyGlobalTranslationRhs
       //const auto alpha = t_w * vol;
       //++t_w;
 
-      FTensor::Tensor1<double, SPACE_DIM> g;
+      //FTensor::Tensor1<double, SPACE_DIM> t_dofs;
       //g(i) = t_lambda(i);
       //g(i) = 1.0;
 
       //++t_lambda;
 
       //auto t_nf = getFTensor1FromArray<3, 0>(OpUserDataOp::locF);
+
       auto t_dummy_base = getFTensor1FromMat<3>(m_kd);
       int rr = 0;
       for (; rr != 3; ++rr) {
-        std::cout << "t_dofs: " << t_dofs(0) << " " << t_dofs(1) << " " << t_dofs(2) << std::endl;
-        std::cout << "t_dummy_base: " << t_dummy_base(0) << " " << t_dummy_base(1) << " " << t_dummy_base(2) << std::endl;
-        std::cout << "t_int_translation: " << t_int_translation(0) << " " << t_int_translation(1) << " " << t_int_translation(2) << std::endl;
+        // std::cout << "t_dofs: " << t_dofs(0) << " " << t_dofs(1) << " " << t_dofs(2) << std::endl;
+        // std::cout << "t_dummy_base: " << t_dummy_base(0) << " " << t_dummy_base(1) << " " << t_dummy_base(2) << std::endl;
+        // std::cout << "t_int_translation: " << t_int_translation(0) << " " << t_int_translation(1) << " " << t_int_translation(2) << std::endl;
         t_dofs(j) -= (t_dummy_base(i) * t_int_translation(i)) * t_dummy_base(j);
         ++t_dummy_base;
         //++t_nf;
-      }
-      //t_dofs(0) = tieDirection(0);
-      std::cout << "Translation: " << t_dofs(0) << " " << t_dofs(1) << " " << t_dofs(2) << std::endl;    
+      }      
+      //std::cout << "Translation: " << t_dofs(0) << " " << t_dofs(1) << " " << t_dofs(2) << std::endl;    
     //}
     MoFEMFunctionReturn(0);
   }
@@ -3173,7 +3175,9 @@ struct OpTieTermConstrainRigidBodyGlobalRotationRhs
     // // get lambda
     // auto t_lambda = getFTensor1FromMat<SPACE_DIM>(*lambdaPtr);
 
-    auto t_dofs = data.getFTensor1FieldData<3>();
+    //auto t_dofs = data.getFTensor1FieldData<3>();
+    //auto &vec = data.get();
+    auto t_dofs = getFTensor1FromPtr<SPACE_DIM>(&data.getFieldEntities()[0]->getEntFieldData()[0]);
 
     double* intRotationRawPtr = &(*intRotationPtr->data().begin());
     auto t_int_rotation = getFTensor2FromPtr<SPACE_DIM, SPACE_DIM>(intRotationRawPtr);
@@ -3193,6 +3197,8 @@ struct OpTieTermConstrainRigidBodyGlobalRotationRhs
     m_kd(2, 1) = 0.0;
     m_kd(2, 2) = 1.0;
 
+    //FTensor::Tensor1<double, 3> t_dofs;
+
     auto t_dummy_base = getFTensor1FromMat<3>(m_kd);
 
     // for (int gg = 0; gg != nb_integration_pts; gg++) {
@@ -3207,6 +3213,7 @@ struct OpTieTermConstrainRigidBodyGlobalRotationRhs
       //++ t_lambda;
       //++t_coords;
       //++t_u;
+      
 
       //auto t_nf = getFTensor1FromArray<DIM, DIM>(OpUserDataOp::locF);
       int rr = 0;
@@ -3217,7 +3224,10 @@ struct OpTieTermConstrainRigidBodyGlobalRotationRhs
         ++t_dummy_base;
         //++t_nf;
       }
-      std::cout << "Rotation: " << t_dofs(0) << " " << t_dofs(1) << " " << t_dofs(2) << std::endl;    
+      // vec(0) = t_dofs(0);
+      // vec(1) = t_dofs(1);
+      // vec(2) = t_dofs(2);
+      //std::cout << "Rotation: " << t_dofs(0) << " " << t_dofs(1) << " " << t_dofs(2) << std::endl;    
     // }
     MoFEMFunctionReturn(0);
   }

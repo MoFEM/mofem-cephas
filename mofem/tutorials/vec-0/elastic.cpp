@@ -492,15 +492,15 @@ MoFEMErrorCode Example::setupProblem() {
   CHKERR simple->defineProblem(PETSC_TRUE);
   CHKERR simple->buildFields();
   // add vertex to fe here from meshsets
-  Range rigid_body_ents;
-  auto translation_meshset = mField.get_field_meshset("RIGID_BODY_LAMBDA");
-  auto rotation_meshset = mField.get_field_meshset("RIGID_BODY_THETA");
-  CHKERR mField.get_moab().get_entities_by_handle(translation_meshset,
-                                                  rigid_body_ents, true);
-  CHKERR mField.get_moab().get_entities_by_handle(rotation_meshset,
-                                                  rigid_body_ents, true);
+  // Range rigid_body_ents;
+  // auto translation_meshset = mField.get_field_meshset("RIGID_BODY_LAMBDA");
+  // auto rotation_meshset = mField.get_field_meshset("RIGID_BODY_THETA");
+  // CHKERR mField.get_moab().get_entities_by_handle(translation_meshset,
+  //                                                 rigid_body_ents, true);
+  // CHKERR mField.get_moab().get_entities_by_handle(rotation_meshset,
+  //                                                 rigid_body_ents, true);
 
-  std::cout << "rigid_body_ents = " << rigid_body_ents << std::endl;
+  // std::cout << "rigid_body_ents = " << rigid_body_ents << std::endl;
 
   // CHKERR mField.getInterface<BitRefManager>()->setBitLevelToMeshset(
   //     rigid_body_meshset, BitRefLevel().set());
@@ -512,10 +512,10 @@ MoFEMErrorCode Example::setupProblem() {
   CHKERR simple->buildFiniteElements();
   CHKERR simple->buildProblem();
 
-  std::cout<< "Rigid body surface ents = " << rigid_body_surface_ents << std::endl;
-  // Remove prescirbed dofs from rigid body assuming just x translation
-  CHKERR mField.getInterface<ProblemsManager>()->removeDofsOnEntities(
-      simple->getProblemName(), "RIGID_BODY_LAMBDA", rigid_body_surface_ents, 0, 0);
+  // std::cout<< "Rigid body surface ents = " << rigid_body_surface_ents << std::endl;
+  // // Remove prescirbed dofs from rigid body assuming just x translation
+  // CHKERR mField.getInterface<ProblemsManager>()->removeDofsOnEntities(
+  //     simple->getProblemName(), "RIGID_BODY_LAMBDA", rigid_body_surface_ents, 0, 0);
   // CHKERR mField.getInterface<ProblemsManager>()->removeDofsOnEntities(
   //     simple->getProblemName(), "RIGID_BODY_LAMBDA", rigid_body_ents, 0, 0);
 
@@ -903,10 +903,6 @@ MoFEMErrorCode Example::solveSystem() {
     };
 
     pre_proc_rhs->preProcessHook = get_pre_proc_hook();
-    for (auto &t : tieBlocks) {
-      pre_proc_rhs->preProcessHook = get_pre_proc_tie_hook(t.tieDirection);
-    }
-    //pre_proc_rhs->preProcessHook = get_pre_proc_tie_hook();
 
     auto get_post_proc_hook_rhs = [this, post_proc_rhs]() {
       MoFEMFunctionBeginHot;
@@ -935,6 +931,115 @@ MoFEMErrorCode Example::solveSystem() {
     MoFEMFunctionReturn(0);
   };
 
+  auto set_global_bc = [&]() {
+    MoFEMFunctionBegin; 
+    auto ksp_ctx_ptr = getDMKspCtx(dm);
+    auto fe_pre_proc_rhs = boost::make_shared<FEMethod>();
+    auto fe_post_proc_rhs = boost::make_shared<FEMethod>();
+    auto fe_post_proc_lhs = boost::make_shared<FEMethod>();
+    
+
+    auto set_pre_rhs = [this, fe_pre_proc_rhs, &dm]() {
+      MoFEMFunctionBeginHot;
+      auto is_mng = mField.getInterface<ISManager>();
+      auto simple = mField.getInterface<Simple>();
+      SmartPetscObj<IS> is;
+      CHKERR is_mng->isCreateProblemFieldAndRankLocal(
+          simple->getProblemName(), ROW, "RIGID_BODY_LAMBDA", 0,
+          MAX_DOFS_ON_ENTITY, is, nullptr);
+      const int *i_ptr;
+      CHKERR ISGetIndices(is, &i_ptr);
+      int size;
+      CHKERR ISGetLocalSize(is, &size);
+      std::cout << "size = " << size << std::endl;
+      // if (size != SPACE_DIM)
+      //   SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Expected
+      //   SPACE_DIM");
+      double *x_ptr;
+
+      if (fe_pre_proc_rhs->x == NULL) {
+        fprintf(stderr, "Error: fe_pre_proc_rhs is NULL\n");
+      }
+      CHKERR VecGetArray(fe_pre_proc_rhs->x, &x_ptr);
+      for (auto i = 0; i != size; ++i) {
+        if (i % SPACE_DIM == 0) { // set x
+          x_ptr[i_ptr[i]] = 0.01; // times (fe_pre_proc_rhs->ts_t);
+        }
+      }
+      CHKERR VecRestoreArray(fe_pre_proc_rhs->x, &x_ptr);
+      CHKERR ISRestoreIndices(is, &i_ptr);
+      CHKERR DMoFEMMeshToGlobalVector(dm, fe_pre_proc_rhs->x, INSERT_VALUES,
+                                      SCATTER_REVERSE);
+      MoFEMFunctionReturnHot(0);
+    };
+
+    auto get_pre_proc_tie_hook = [&](auto &tie_direction) {
+      return SetTieBcPreProc(mField, fe_pre_proc_rhs, tie_direction);
+    };
+
+    auto set_post_rhs = [this, fe_post_proc_rhs]() {
+      MoFEMFunctionBeginHot;
+      auto is_mng = mField.getInterface<ISManager>();
+      auto simple = mField.getInterface<Simple>();
+      SmartPetscObj<IS> is;
+      CHKERR is_mng->isCreateProblemFieldAndRankLocal(
+          simple->getProblemName(), ROW, "RIGID_BODY_LAMBDA", 0,
+          MAX_DOFS_ON_ENTITY, is, nullptr);
+          
+      const int *i_ptr;
+      CHKERR ISGetIndices(is, &i_ptr);
+      int size;
+      CHKERR ISGetLocalSize(is, &size);
+      std::cout << "size = " << size << std::endl;
+      double *f_ptr;
+      CHKERR VecGetArray(fe_post_proc_rhs->f, &f_ptr);
+      for (auto i = 0; i != size; ++i) {
+        if (i % SPACE_DIM == 0) {
+          //f_ptr[i_ptr[i]] = x_ptr[i_ptr[i]] - f_ptr[i_ptr[i]]
+          f_ptr[i_ptr[i]] = 0.1;
+        }
+      }
+      CHKERR VecRestoreArray(fe_post_proc_rhs->f, &f_ptr);
+      CHKERR ISRestoreIndices(is, &i_ptr);
+      MoFEMFunctionReturnHot(0);
+    };
+
+
+
+    auto set_post_lhs = [this, fe_post_proc_lhs]() {
+      MoFEMFunctionBeginHot;
+      auto is_mng = mField.getInterface<ISManager>();
+      auto simple = mField.getInterface<Simple>();
+      SmartPetscObj<IS> is;
+      CHKERR is_mng->isCreateProblemFieldAndRankLocal(
+          simple->getProblemName(), ROW, "RIGID_BODY_LAMBDA", 0, SPACE_DIM, is,
+          nullptr);
+      *(fe_post_proc_lhs->matAssembleSwitch) = PETSC_TRUE;
+      CHKERR MatAssemblyBegin(fe_post_proc_lhs->B, MAT_FINAL_ASSEMBLY);
+      CHKERR MatAssemblyEnd(fe_post_proc_lhs->B, MAT_FINAL_ASSEMBLY);
+      const int *i_ptr;
+      CHKERR ISGetIndices(is, &i_ptr);
+      const int idx = 0;
+      // CHKERR MatZeroRowsColumns(fe_post_proc_lhs->B, 1, &i_ptr[idx], 1, PETSC_NULL,
+      //                           PETSC_NULL);
+      CHKERR MatZeroRows(fe_post_proc_lhs->B, 1, &i_ptr[idx], 1, PETSC_NULL,
+                         PETSC_NULL);
+      CHKERR ISRestoreIndices(is, &i_ptr);
+
+      MoFEMFunctionReturnHot(0);
+    };
+
+    // for (auto &t : tieBlocks) {
+    //   fe_post_proc_rhs->preProcessHook = get_pre_proc_tie_hook(t.tieDirection);
+    // }
+    fe_post_proc_rhs->postProcessHook = set_post_rhs;
+    //ksp_ctx_ptr->getPreProcComputeRhs().push_back(fe_pre_proc_rhs);
+    ksp_ctx_ptr->getPostProcComputeRhs().push_back(fe_post_proc_rhs);
+    fe_post_proc_lhs->postProcessHook = set_post_lhs;
+    ksp_ctx_ptr->getPostProcSetOperators().push_back(fe_post_proc_lhs);
+    MoFEMFunctionReturn(0);
+  };
+
   auto setup_and_solve = [&]() {
     MoFEMFunctionBegin;
     BOOST_LOG_SCOPED_THREAD_ATTR("Timeline", attrs::timer());
@@ -951,6 +1056,7 @@ MoFEMErrorCode Example::solveSystem() {
   MOFEM_LOG_TAG("TIMER", "timer");
 
   CHKERR set_essential_bc();
+  CHKERR set_global_bc();
 
   if (A == AssemblyType::BLOCK_SCHUR || A == AssemblyType::SCHUR) {
     auto schur_ptr = SetUpSchur::createSetUpSchur(mField);
