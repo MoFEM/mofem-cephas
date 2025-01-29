@@ -611,7 +611,7 @@ MoFEMErrorCode Example::solveSystem() {
         MoFEMFunctionReturnHot(0);
       };
 
-      auto set_post_rhs = [this, fe_post_proc_rhs]() {
+      auto set_post_rhs = [this, fe_post_proc_rhs, ts_ctx_ptr]() {
         MoFEMFunctionBeginHot;
         auto is_mng = mField.getInterface<ISManager>();
         auto simple = mField.getInterface<Simple>();
@@ -631,7 +631,8 @@ MoFEMErrorCode Example::solveSystem() {
         CHKERR VecGetArray(fe_post_proc_rhs->x, &x_ptr);
         for (auto i = 0; i != size; ++i) {
           if (i % SPACE_DIM == 0) {
-            f_ptr[i_ptr[i]] = x_ptr[i_ptr[i]] - 0.1;
+            std::cout<< "time = " <<fe_post_proc_rhs->ts_t  << std::endl;
+            f_ptr[i_ptr[i]] = x_ptr[i_ptr[i]] - (tieBlocks[0].tieDirection(0) * fe_post_proc_rhs->ts_t);
             //f_ptr[i_ptr[i]] = 0.1;
           }
         }
