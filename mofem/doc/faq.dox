@@ -373,6 +373,26 @@ If you have packages installed, follow instruction from <http://kcachegrind.sour
 
 \section faq_programing Programming
 
+\subsection compile_with_ccache How to Compile MoFEM faster?
+To speed up MoFEM compilation, consider using ccache. ccache is a caching system for C and C++ compilers that speeds up recompilation by avoiding redundant work. Instead of compiling source code from scratch every time, ccache stores the results of previous compilations and reuses them when the same compilation is requested again. To install ccache on Ubuntu, you can use spack: 
+\code
+spack install ccache
+spack load ccache
+\endcode
+
+Consider adding ccache to your PATH or spack view. 
+Next, you need to set the compiler to use ccache. Simply reconfigure your build by running: 
+\code
+make rebuild_cache 
+\endcode
+
+You should see in the output the following line, confirming the the compiler is now using ccache:
+\code
+-- CCache found:/home/karol/spack_view/bin/ccache
+\endcode
+
+From now on, ccache will be used to compile MoFEM, speeding up the process.
+
 \subsection stop_at_first_error How to stop at first error?
 
 When you compile code and programming, you make errors which produce long error
