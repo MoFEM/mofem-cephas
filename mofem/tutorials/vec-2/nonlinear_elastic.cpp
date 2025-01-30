@@ -53,7 +53,7 @@ using PostProcEdges =
 
 #include <HenckyOps.hpp>
 using namespace HenckyOps;
-#include <TieConstraint.hpp>
+#include <RigidBodyTieConstraint.hpp>
 
 struct Example {
 
@@ -193,8 +193,6 @@ MoFEMErrorCode Example::setupProblem() {
       rigid_body_surface_ents.merge(tie_edges);
       rigid_body_surface_ents.merge(t.tieFaces);
     }
-    std::cout << "rigid_body_surface_ents = " << rigid_body_surface_ents
-              << std::endl;
     simple->getMeshsetFiniteElementEntities().push_back(
         rigid_body_surface_ents);
 
@@ -362,9 +360,7 @@ MoFEMErrorCode Example::boundaryCondition() {
                          int_translation_ptr));
       op_loop_side->getOpPtrVector().push_back(
           new OpTieTermConstrainRigidBodyGlobalRotationIntegralRhs<SPACE_DIM>(
-              "LAMBDA", u_ptr, t.tieCoord, t.tieDirection,
-              boost::make_shared<Range>(t.tieFaces), lambda_ptr,
-              int_rotation_ptr));
+              "LAMBDA", t.tieCoord, lambda_ptr, int_rotation_ptr));
       pip.push_back(op_loop_side);
 
       pip.push_back(
@@ -373,8 +369,7 @@ MoFEMErrorCode Example::boundaryCondition() {
               boost::make_shared<Range>(t.tieFaces), lambda_ptr,
               int_translation_ptr));
       pip.push_back(new OpTieTermConstrainRigidBodyGlobalRotationRhs<SPACE_DIM>(
-          "RIGID_BODY_THETA", t.tieCoord, t.tieDirection,
-          boost::make_shared<Range>(t.tieFaces), lambda_ptr, int_rotation_ptr));
+          "RIGID_BODY_THETA", int_rotation_ptr));
     }
     MoFEMFunctionReturn(0);
   };
@@ -573,43 +568,8 @@ MoFEMErrorCode Example::solveSystem() {
       MoFEMFunctionBegin;
       auto ksp_ctx_ptr = getDMKspCtx(dm);
       auto ts_ctx_ptr = getDMTsCtx(dm);
-      auto fe_pre_proc_rhs = boost::make_shared<FEMethod>();
       auto fe_post_proc_rhs = boost::make_shared<FEMethod>();
       auto fe_post_proc_lhs = boost::make_shared<FEMethod>();
-
-      auto set_pre_rhs = [this, fe_pre_proc_rhs, &dm]() {
-        MoFEMFunctionBeginHot;
-        auto is_mng = mField.getInterface<ISManager>();
-        auto simple = mField.getInterface<Simple>();
-        SmartPetscObj<IS> is;
-        CHKERR is_mng->isCreateProblemFieldAndRankLocal(
-            simple->getProblemName(), ROW, "RIGID_BODY_LAMBDA", 0,
-            MAX_DOFS_ON_ENTITY, is, nullptr);
-        const int *i_ptr;
-        CHKERR ISGetIndices(is, &i_ptr);
-        int size;
-        CHKERR ISGetLocalSize(is, &size);
-        //std::cout << "size = " << size << std::endl;
-        // if (size != SPACE_DIM)
-        //   SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Expected
-        //   SPACE_DIM");
-        double *x_ptr;
-
-        if (fe_pre_proc_rhs->x == NULL) {
-          fprintf(stderr, "Error: fe_pre_proc_rhs is NULL\n");
-        }
-        CHKERR VecGetArray(fe_pre_proc_rhs->x, &x_ptr);
-        for (auto i = 0; i != size; ++i) {
-          if (i % SPACE_DIM == 0) { // set x
-            x_ptr[i_ptr[i]] = 0.001; // times (fe_pre_proc_rhs->ts_t);
-          }
-        }
-        CHKERR VecRestoreArray(fe_pre_proc_rhs->x, &x_ptr);
-        CHKERR ISRestoreIndices(is, &i_ptr);
-        CHKERR DMoFEMMeshToGlobalVector(dm, fe_pre_proc_rhs->x, INSERT_VALUES,
-                                        SCATTER_REVERSE);
-        MoFEMFunctionReturnHot(0);
-      };
 
       auto set_post_rhs = [this, fe_post_proc_rhs, ts_ctx_ptr]() {
         MoFEMFunctionBeginHot;
@@ -624,16 +584,14 @@ MoFEMErrorCode Example::solveSystem() {
         CHKERR ISGetIndices(is, &i_ptr);
         int size;
         CHKERR ISGetLocalSize(is, &size);
-        //std::cout << "size = " << size << std::endl;
         double *f_ptr;
         double *x_ptr;
         CHKERR VecGetArray(fe_post_proc_rhs->f, &f_ptr);
         CHKERR VecGetArray(fe_post_proc_rhs->x, &x_ptr);
         for (auto i = 0; i != size; ++i) {
           if (i % SPACE_DIM == 0) {
-            std::cout<< "time = " <<fe_post_proc_rhs->ts_t  << std::endl;
+            // FIXME: this is a hack, we should use a proper way to set the tieBlock
             f_ptr[i_ptr[i]] = x_ptr[i_ptr[i]] - (tieBlocks[0].tieDirection(0) * fe_post_proc_rhs->ts_t);
-            //f_ptr[i_ptr[i]] = 0.1;
           }
         }
         CHKERR VecRestoreArray(fe_post_proc_rhs->f, &f_ptr);
@@ -660,9 +618,6 @@ MoFEMErrorCode Example::solveSystem() {
         const int *i_ptr;
         CHKERR ISGetIndices(is, &i_ptr);
         const int idx = 0;
-        // CHKERR MatZeroRowsColumns(fe_post_proc_lhs->B, 1, &i_ptr[idx], 1,
-        // PETSC_NULL,
-        //                           PETSC_NULL);
         CHKERR MatSetOption(fe_post_proc_lhs->B,MAT_KEEP_NONZERO_PATTERN,PETSC_TRUE);
         CHKERR MatZeroRows(fe_post_proc_lhs->B, 1, &i_ptr[idx], 1, PETSC_NULL,
                            PETSC_NULL);
@@ -671,12 +626,7 @@ MoFEMErrorCode Example::solveSystem() {
         MoFEMFunctionReturnHot(0);
       };
 
-      // for (auto &t : tieBlocks) {
-      //   fe_post_proc_rhs->preProcessHook =
-      //   get_pre_proc_tie_hook(t.tieDirection);
-      // }
       fe_post_proc_rhs->postProcessHook = set_post_rhs;
-      // ksp_ctx_ptr->getPreProcComputeRhs().push_back(fe_pre_proc_rhs);
       ts_ctx_ptr->getPostProcessIFunction().push_back(fe_post_proc_rhs);
       fe_post_proc_lhs->postProcessHook = set_post_lhs;
       ts_ctx_ptr->getPostProcessIJacobian().push_back(fe_post_proc_lhs);
