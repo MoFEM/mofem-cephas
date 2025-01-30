@@ -504,7 +504,10 @@ Field::Field(moab::Interface &moab, const EntityHandle meshset)
     set_discontinuous_entity_order_table();
     break;
   default:
-    THROW_MESSAGE("unknown field continuity");
+    *tagFieldContinuityData = CONTINUOUS;
+    set_continuous_entity_order_table();
+    MOFEM_LOG("SELF", Sev::warning)
+        << "unknown field continuity, set CONTINUOUS";
     break;
   }
   ierr = rebuildDofsOrderMap();
