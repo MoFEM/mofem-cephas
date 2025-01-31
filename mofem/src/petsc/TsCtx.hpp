@@ -7,7 +7,7 @@
 
 #include <petsc/private/tsimpl.h>
 
-#define TSADAPTMOFEM "TSMoFEMAdapt"
+#define TSADAPTMOFEM "mofem"
 
 namespace MoFEM {
 
@@ -352,26 +352,6 @@ PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
  */
 PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
                                Vec F, void *ctx);
-
-/** \brief Custom TSAdaptivity in MoFEM
- * 
- * \code
- * CHKERR TSAdaptRegister(TSADAPTMOFEM, TSAdaptCreateMoFEM);
- * TSAdapt adapt;
- * CHKERR TSGetAdapt(solver, &adapt);
- * CHKERR TSAdaptSetType(adapt, TSADAPTMOFEM);
- * \endcode
- *
- */
-struct TSAdaptMoFEM {
-
-  TSAdaptMoFEM();
-
-  double alpha; //< step reduction if divergence
-  double gamma; //< adaptivity exponent
-  int desiredIt; //< desired number of iterations
-  PetscBool offApat; //< off adaptivity
-};
 
 static PetscErrorCode TSAdaptChooseMoFEM(TSAdapt adapt, TS ts, PetscReal h,
                                          PetscInt *next_sc, PetscReal *next_h,
