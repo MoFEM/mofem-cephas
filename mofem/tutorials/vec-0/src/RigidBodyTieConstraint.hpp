@@ -6,6 +6,59 @@
  * @copyright Copyright (c) 2024
  *
  */
+
+//template <int DIM> 
+struct RigidBodyTieConstraintData {
+
+  RigidBodyTieConstraintData(MoFEM::Interface &m_field) : mField(m_field) {}
+
+  struct TieBlock {
+    Range tieFaces;                                //< Range of faces in block
+    FTensor::Tensor1<double, 3> tieCoord;          //< Reference coordinate
+    FTensor::Tensor1<double, 3> tieDirection;      //< Translation values
+    FTensor::Tensor1<double, 3> tieRotation;       //< Rotation values
+    FTensor::Tensor1<double, 3> tieTranslationFlag; //
+    FTensor::Tensor1<double, 3> tieRotationFlag;    //
+  };
+
+  MoFEMErrorCode getTieBlocks(std::vector<TieBlock> &tieBlocks);
+
+  MoFEM::Interface &mField;
+  //std::vector<TieBlock> tieBlocks; //< Store all tie blocks
+};
+
+MoFEMErrorCode
+RigidBodyTieConstraintData::getTieBlocks(std::vector<TieBlock> &tieBlocks) {
+    // current
+    MoFEMFunctionBegin;
+    Range tie_ents;
+    for (auto m :
+         mField.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(std::regex(
+
+             (boost::format("%s(.*)") % "TIE_MATRIX").str()
+
+                 ))
+
+    ) {
+      auto meshset = m->getMeshset();
+      Range tie_meshset_range;
+      CHKERR mField.get_moab().get_entities_by_dimension(
+          meshset, SPACE_DIM - 1, tie_meshset_range, true);
+      std::vector<double> attributes;
+      CHKERR m->getAttributes(attributes);
+      if (attributes.size() != 6) {
+        SETERRQ1(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
+                 "Wrong number of tie parameters %d", attributes.size());
+      }
+      tieBlocks.push_back({tie_meshset_range,
+                           FTensor::Tensor1<double, 3>(
+                               attributes[0], attributes[1], attributes[2]),
+                           FTensor::Tensor1<double, 3>(
+                               attributes[3], attributes[4], attributes[5])});
+    }
+    MoFEMFunctionReturn(0);
+  }
+
 template <int DIM>
 struct OpTieTermConstrainRigidBodyRhs
     : public FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase {
@@ -19,8 +72,8 @@ struct OpTieTermConstrainRigidBodyRhs
       boost::shared_ptr<VectorDouble> translation_ptr,
       boost::shared_ptr<VectorDouble> theta_ptr)
       : OpBase(lambda_name, lambda_name, OpBase::OPROW, tie_faces_ptr),
-        uPtr(u_ptr), tieCoord(tie_coord),
-        translationPtr(translation_ptr), thetaPtr(theta_ptr) {
+        uPtr(u_ptr), tieCoord(tie_coord), translationPtr(translation_ptr),
+        thetaPtr(theta_ptr) {
     std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
     doEntities[MBEDGE] = true;
     doEntities[MBTRI] = true;
@@ -66,11 +119,11 @@ struct OpTieTermConstrainRigidBodyRhs
 
       // define reference position
       FTensor::Tensor1<double, 3> t_x_ref;
-      t_x_ref(i) = t_u(i) - t_translation(i) - t_omega(i, j) * (t_coords(j) - tieCoord(j));
+      t_x_ref(i) = t_u(i) - t_translation(i) -
+                   t_omega(i, j) * (t_coords(j) - tieCoord(j));
 
       FTensor::Tensor1<double, SPACE_DIM> g;
       g(i) = alpha * (t_x_ref(i));
-                               
 
       ++t_coords;
       ++t_u;
@@ -441,8 +494,7 @@ struct OpTieTermConstrainRigidBodyGlobalTranslationIntegralRhs
   using OpBase = FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase;
 
   OpTieTermConstrainRigidBodyGlobalTranslationIntegralRhs(
-      std::string lambda_name,
-      boost::shared_ptr<Range> tie_faces_ptr,
+      std::string lambda_name, boost::shared_ptr<Range> tie_faces_ptr,
       boost::shared_ptr<MatrixDouble> lambda_ptr,
       boost::shared_ptr<VectorDouble> int_translation_ptr)
       : OpBase(lambda_name, lambda_name, OpBase::OPROW, tie_faces_ptr),
@@ -457,7 +509,7 @@ struct OpTieTermConstrainRigidBodyGlobalTranslationIntegralRhs
                         EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
 
-    if(intTranslationPtr->size() == 0)
+    if (intTranslationPtr->size() == 0)
       intTranslationPtr->resize(DIM);
 
     FTENSOR_INDEX(SPACE_DIM, i);
@@ -515,7 +567,7 @@ struct OpTieTermConstrainRigidBodyGlobalRotationIntegralRhs
                         EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
 
-    if(intRotationPtr->size1() == 0 || intRotationPtr->size2() == 0)
+    if (intRotationPtr->size1() == 0 || intRotationPtr->size2() == 0)
       intRotationPtr->resize(DIM, DIM);
 
     FTENSOR_INDEX(SPACE_DIM, i);
@@ -600,7 +652,7 @@ private:
 //     auto t_w = OpBase::getFTensor0IntegrationWeight();
 
 //     const double vol = OpBase::getMeasure();
-    
+
 //     auto t_lambda = getFTensor1FromMat<SPACE_DIM>(*lambdaPtr);
 
 //     // create a "dummy" base function
@@ -788,7 +840,8 @@ private:
 //       ++t_w;
 
 //       FTensor::Tensor2<double, SPACE_DIM, SPACE_DIM> t_tangent;
-//       t_tangent(i, k) = alpha * levi_civita(i,j,k) * (t_coords(j) - tieCoord(j));
+//       t_tangent(i, k) = alpha * levi_civita(i,j,k) * (t_coords(j) -
+//       tieCoord(j));
 
 //       ++ t_lambda;
 //       ++t_u;
@@ -819,8 +872,9 @@ private:
 // };
 
 // template <int Tensor_Dim>
-struct OpCalculateNoFieldVectorValues : public ForcesAndSourcesCore::UserDataOperator{
-  
+struct OpCalculateNoFieldVectorValues
+    : public ForcesAndSourcesCore::UserDataOperator {
+
   OpCalculateNoFieldVectorValues(const std::string field_name,
                                  boost::shared_ptr<VectorDouble> data_ptr,
                                  const EntityType zero_type = MBVERTEX)
@@ -840,7 +894,7 @@ struct OpCalculateNoFieldVectorValues : public ForcesAndSourcesCore::UserDataOpe
       vec.resize(nb_gauss_pts, false);
       vec.clear();
     }
-    
+
     const size_t nb_dofs = data.getFieldData().size();
 
     if (nb_dofs) {
@@ -861,8 +915,8 @@ struct OpCalculateNoFieldVectorValues : public ForcesAndSourcesCore::UserDataOpe
 
       vec = data.getFieldData();
 
-      //auto values_at_gauss_pts = getFTensor0FromVec(vec);
-      
+      // auto values_at_gauss_pts = getFTensor0FromVec(vec);
+
       // for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
       //   auto field_data = data.getFTensor1FieldData<SPACE_DIM>();
       //   size_t bb = 0;
@@ -884,13 +938,13 @@ struct OpCalculateNoFieldVectorValues : public ForcesAndSourcesCore::UserDataOpe
 
     MoFEMFunctionReturn(0);
   }
+
 protected:
   boost::shared_ptr<ublas::vector<double, DoubleAllocator>> dataPtr;
   const EntityHandle zeroType;
   SmartPetscObj<Vec> dataVec;
   VectorDouble dotVector;
 };
-
 
 template <int DIM>
 struct OpCalculateTieDisplacementReactionForce
@@ -944,13 +998,13 @@ struct OpCalculateTieDisplacementReactionForce
 
     for (int gg = 0; gg != nb_integration_pts; gg++) {
       const auto alpha = t_w * vol;
-      ++t_w;  
+      ++t_w;
 
       t_sum_reaction(i) += alpha * t_lambda(i);
       ++t_lambda;
       // int rr = 0;
       // for (; rr != OpBase::nbRows / DIM; ++rr) {
-      //sum_reaction += g;
+      // sum_reaction += g;
       //++t_row_base;
       //}
 
@@ -978,3 +1032,122 @@ struct OpCalculateTieDisplacementReactionForce
   boost::shared_ptr<MatrixDouble> stressPtr;
   boost::shared_ptr<Range> tieFacesPtr;
 };
+
+template <int DIM, AssemblyType AT>
+MoFEMErrorCode OpFactoryCalculateTieConstraintForceTermRhs(
+    MoFEM::Interface &m_field,
+    boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pip,
+    std::string field_name,
+    boost::shared_ptr<std::vector<RigidBodyTieConstraintData::TieBlock>>
+        tie_blocks_ptr,
+    Sev sev) {
+  MoFEMFunctionBegin;
+  auto lambda_ptr = boost::make_shared<MatrixDouble>();
+  auto u_ptr = boost::make_shared<MatrixDouble>();
+  pip.push_back(new OpCalculateVectorFieldValues<DIM>("U", u_ptr));
+  pip.push_back(
+      new OpCalculateVectorFieldValues<DIM>(field_name, lambda_ptr));
+
+  for (auto &t : *tie_blocks_ptr) {
+    pip.push_back(new OpTieTermConstrainRigidBodyRhs_du<DIM>(
+        "U", lambda_ptr, boost::make_shared<Range>(t.tieFaces)));
+  }
+  MoFEMFunctionReturn(0);
+}
+
+template <int DIM, AssemblyType AT>
+MoFEMErrorCode OpFactoryCalculateRigidBodyConstraintRhs(
+    MoFEM::Interface &m_field,
+    boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pip,
+    std::string field_name,
+    boost::shared_ptr<std::vector<RigidBodyTieConstraintData::TieBlock>> tie_blocks_ptr, Sev sev) {
+  MoFEMFunctionBegin;
+
+  auto simple = m_field.getInterface<Simple>();
+
+  auto lambda_ptr = boost::make_shared<MatrixDouble>();
+  auto translation_ptr = boost::make_shared<VectorDouble>();
+  auto u_ptr = boost::make_shared<MatrixDouble>();
+  auto int_translation_ptr = boost::make_shared<VectorDouble>();
+  auto int_rotation_ptr = boost::make_shared<MatrixDouble>();
+
+  Range rigid_body_ents;
+  auto v_rigid_body_ents = simple->getMeshsetFiniteElementEntities();
+
+  // loop over all rigid body entities
+  for (auto ents : v_rigid_body_ents) {
+    rigid_body_ents.merge(ents);
+  }
+
+  auto rigid_body_ents_ptr = boost::make_shared<Range>(rigid_body_ents);
+
+  for (auto &t : *tie_blocks_ptr) {
+    auto op_loop_side = new OpLoopSide<BoundaryEle>(m_field, "bFE", DIM - 1,
+                                                    rigid_body_ents_ptr);
+    CHKERR AddHOOps<DIM - 1, DIM, DIM>::add(op_loop_side->getOpPtrVector(), {});
+    op_loop_side->getOpPtrVector().push_back(
+        new OpCalculateVectorFieldValues<DIM>(field_name, lambda_ptr));
+    op_loop_side->getOpPtrVector().push_back(
+        new OpTieTermConstrainRigidBodyGlobalTranslationIntegralRhs<DIM>(
+            field_name, boost::make_shared<Range>(t.tieFaces), lambda_ptr,
+            int_translation_ptr));
+    op_loop_side->getOpPtrVector().push_back(
+        new OpTieTermConstrainRigidBodyGlobalRotationIntegralRhs<DIM>(
+            field_name, t.tieCoord, lambda_ptr, int_rotation_ptr));
+    pip.push_back(op_loop_side);
+
+    pip.push_back(new OpTieTermConstrainRigidBodyGlobalTranslationRhs<DIM>(
+        "RIGID_BODY_LAMBDA", int_translation_ptr));
+    pip.push_back(new OpTieTermConstrainRigidBodyGlobalRotationRhs<DIM>(
+        "RIGID_BODY_THETA", int_rotation_ptr));
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+template <int DIM, AssemblyType AT>
+MoFEMErrorCode OpFactoryCalculateRigidBodyConstraintLhs(
+    MoFEM::Interface &m_field,
+    boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pip,
+    std::string field_name,
+    boost::shared_ptr<std::vector<RigidBodyTieConstraintData::TieBlock>>
+        tie_blocks_ptr,
+    Sev sev) {
+  MoFEMFunctionBegin;
+
+  auto simple = m_field.getInterface<Simple>();
+  auto lambda_ptr = boost::make_shared<MatrixDouble>();
+  auto translation_ptr = boost::make_shared<VectorDouble>();
+  auto u_ptr = boost::make_shared<MatrixDouble>();
+
+  Range rigid_body_ents;
+  auto v_rigid_body_ents = simple->getMeshsetFiniteElementEntities();
+
+  // loop over all rigid body entities
+  for (auto ents : v_rigid_body_ents) {
+    rigid_body_ents.merge(ents);
+  }
+
+  auto rigid_body_ents_ptr = boost::make_shared<Range>(rigid_body_ents);
+
+  for (auto &t : *tie_blocks_ptr) {
+    auto op_loop_side = new OpLoopSide<BoundaryEle>(
+        m_field, "bFE", DIM - 1, rigid_body_ents_ptr);
+    CHKERR AddHOOps<DIM - 1, DIM, DIM>::add(
+        op_loop_side->getOpPtrVector(), {});
+    op_loop_side->getOpPtrVector().push_back(
+        new OpCalculateVectorFieldValues<DIM>(field_name, lambda_ptr));
+    op_loop_side->getOpPtrVector().push_back(
+        new OpTieTermConstrainRigidBodyLhs_dTranslation<DIM>(
+            field_name, "RIGID_BODY_LAMBDA",
+            boost::make_shared<Range>(t.tieFaces)));
+    op_loop_side->getOpPtrVector().push_back(
+        new OpTieTermConstrainRigidBodyLhs_dRotation<DIM>(
+            field_name, "RIGID_BODY_THETA", t.tieCoord,
+            boost::make_shared<Range>(t.tieFaces)));
+
+    pip.push_back(op_loop_side);
+  }
+
+  MoFEMFunctionReturn(0);
+}

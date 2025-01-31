@@ -121,6 +121,7 @@ private:
   };
 
   std::vector<TieBlock> tieBlocks; //< Store infomation about tie blocks
+  //RigidBodyTieConstraintData<SPACE_DIM> tieBlocks;
 };
 
 MoFEMErrorCode Example::addMatBlockOps(
