@@ -733,6 +733,26 @@ PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
   MoFEMFunctionReturn(0);
 }
 
+/** \brief Custom TSAdaptivity in MoFEM
+ * 
+ * \code
+ * CHKERR TSAdaptRegister(TSADAPTMOFEM, TSAdaptCreateMoFEM);
+ * TSAdapt adapt;
+ * CHKERR TSGetAdapt(solver, &adapt);
+ * CHKERR TSAdaptSetType(adapt, TSADAPTMOFEM);
+ * \endcode
+ *
+ */
+struct TSAdaptMoFEM {
+
+  TSAdaptMoFEM();
+
+  double alpha; //< step reduction if divergence
+  double gamma; //< adaptivity exponent
+  int desiredIt; //< desired number of iterations
+  PetscBool offApat; //< off adaptivity
+};
+
 TSAdaptMoFEM::TSAdaptMoFEM()
     : alpha(0.75), gamma(0.5), desiredIt(6), offApat(PETSC_FALSE) {
   CHKERR PetscOptionsGetScalar("", "-ts_mofem_adapt_alpha", &alpha, PETSC_NULL);
