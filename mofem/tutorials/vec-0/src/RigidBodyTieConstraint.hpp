@@ -1151,3 +1151,63 @@ MoFEMErrorCode OpFactoryCalculateRigidBodyConstraintLhs(
 
   MoFEMFunctionReturn(0);
 }
+
+template <int DIM, AssemblyType AT>
+MoFEMErrorCode OpFactoryCalculateTieConstraintRhs(
+    MoFEM::Interface &m_field,
+    boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pip,
+    std::string field_name,
+    boost::shared_ptr<std::vector<RigidBodyTieConstraintData::TieBlock>>
+        tie_blocks_ptr,
+    Sev sev) {
+  MoFEMFunctionBegin;
+  auto u_ptr = boost::make_shared<MatrixDouble>();
+  auto lambda_ptr = boost::make_shared<MatrixDouble>();
+  auto translation_ptr = boost::make_shared<VectorDouble>();
+  auto theta_ptr = boost::make_shared<VectorDouble>();
+
+  pip.push_back(new OpCalculateVectorFieldValues<DIM>("U", u_ptr));
+  pip.push_back(new OpCalculateVectorFieldValues<DIM>(field_name, lambda_ptr));
+
+  pip.push_back(
+      new OpCalculateNoFieldVectorValues("RIGID_BODY_LAMBDA", translation_ptr));
+  pip.push_back(
+      new OpCalculateNoFieldVectorValues("RIGID_BODY_THETA", theta_ptr));
+
+  for (auto &t : *tie_blocks_ptr) {
+    pip.push_back(new OpTieTermConstrainRigidBodyRhs<DIM>(
+        field_name, u_ptr, t.tieCoord, boost::make_shared<Range>(t.tieFaces),
+        translation_ptr, theta_ptr));
+  }
+  MoFEMFunctionReturn(0);
+}
+
+template <int DIM, AssemblyType AT>
+MoFEMErrorCode OpFactoryCalculateTieConstraintLhs(
+    MoFEM::Interface &m_field,
+    boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pip,
+    std::string field_name,
+    boost::shared_ptr<std::vector<RigidBodyTieConstraintData::TieBlock>>
+        tie_blocks_ptr,
+    Sev sev) {
+  MoFEMFunctionBegin;
+
+  auto u_ptr = boost::make_shared<MatrixDouble>();
+  auto lambda_ptr = boost::make_shared<MatrixDouble>();
+  auto translation_ptr = boost::make_shared<VectorDouble>();
+  auto theta_ptr = boost::make_shared<VectorDouble>();
+
+  pip.push_back(new OpCalculateVectorFieldValues<DIM>("U", u_ptr));
+  pip.push_back(new OpCalculateVectorFieldValues<DIM>(field_name, lambda_ptr));
+  pip.push_back(
+      new OpCalculateNoFieldVectorValues("RIGID_BODY_LAMBDA", translation_ptr));
+  pip.push_back(
+      new OpCalculateNoFieldVectorValues("RIGID_BODY_THETA", theta_ptr));
+
+  for (auto &t : *tie_blocks_ptr) {
+    pip.push_back(new OpTieTermConstrainRigidBodyLhs_dU<DIM>(
+        field_name, "U", u_ptr, t.tieCoord,
+        boost::make_shared<Range>(t.tieFaces), translation_ptr, theta_ptr));
+  }
+  MoFEMFunctionReturn(0);
+}

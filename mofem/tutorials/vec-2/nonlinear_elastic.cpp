@@ -220,95 +220,29 @@ MoFEMErrorCode Example::boundaryCondition() {
   // Essential MPCs BC
   CHKERR bc_mng->addBlockDOFsToMPCs(simple->getProblemName(), "U");
 
-  auto add_constrain_lhs = [&](auto &pip) {
-    MoFEMFunctionBegin;
-    //CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(pip, {NOSPACE});
-    auto u_ptr = boost::make_shared<MatrixDouble>();
-    auto lambda_ptr = boost::make_shared<MatrixDouble>();
-    auto translation_ptr = boost::make_shared<VectorDouble>();
-    auto theta_ptr = boost::make_shared<VectorDouble>();
+  auto tie_block_ptr =
+      boost::make_shared<std::vector<RigidBodyTieConstraintData::TieBlock>>(
+          tieBlocks);
 
-    pip.push_back(new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_ptr));
-    pip.push_back(
-        new OpCalculateVectorFieldValues<SPACE_DIM>("LAMBDA", lambda_ptr));
-    pip.push_back(new OpCalculateNoFieldVectorValues("RIGID_BODY_LAMBDA",
-                                                     translation_ptr));
-    pip.push_back(
-        new OpCalculateNoFieldVectorValues("RIGID_BODY_THETA", theta_ptr));
+  CHKERR OpFactoryCalculateTieConstraintLhs<SPACE_DIM, A>(
+      mField, pipeline_mng->getOpBoundaryLhsPipeline(), "LAMBDA", tie_block_ptr,
+      Sev::inform);
 
-    for (auto &t : tieBlocks) {
-      pip.push_back(new OpTieTermConstrainRigidBodyLhs_dU<SPACE_DIM>(
-          "LAMBDA", "U", u_ptr, t.tieCoord,
-          boost::make_shared<Range>(t.tieFaces), translation_ptr, theta_ptr));
-    }
-    MoFEMFunctionReturn(0);
-  };
+  CHKERR OpFactoryCalculateTieConstraintRhs<SPACE_DIM, A>(
+      mField, pipeline_mng->getOpBoundaryRhsPipeline(), "LAMBDA", tie_block_ptr,
+      Sev::inform);
 
-  auto add_constrain_rhs = [&](auto &pip) {
-    MoFEMFunctionBegin;
-    auto u_ptr = boost::make_shared<MatrixDouble>();
-    auto lambda_ptr = boost::make_shared<MatrixDouble>();
-    auto translation_ptr = boost::make_shared<VectorDouble>();
-    auto theta_ptr = boost::make_shared<VectorDouble>();
+  CHKERR OpFactoryCalculateTieConstraintForceTermRhs<SPACE_DIM, A>(
+      mField, pipeline_mng->getOpBoundaryRhsPipeline(), "LAMBDA", tie_block_ptr,
+      Sev::inform);
 
-    pip.push_back(new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_ptr));
-    pip.push_back(
-        new OpCalculateVectorFieldValues<SPACE_DIM>("LAMBDA", lambda_ptr));
+  CHKERR OpFactoryCalculateRigidBodyConstraintRhs<SPACE_DIM, A>(
+      mField, pipeline_mng->getOpMeshsetRhsPipeline(), "LAMBDA", tie_block_ptr,
+      Sev::inform);
 
-    pip.push_back(new OpCalculateNoFieldVectorValues("RIGID_BODY_LAMBDA",
-                                                     translation_ptr));
-    pip.push_back(
-        new OpCalculateNoFieldVectorValues("RIGID_BODY_THETA", theta_ptr));
-
-    for (auto &t : tieBlocks) {
-      pip.push_back(new OpTieTermConstrainRigidBodyRhs<SPACE_DIM>(
-          "LAMBDA", u_ptr, t.tieCoord,
-          boost::make_shared<Range>(t.tieFaces), translation_ptr, theta_ptr));
-    }
-    MoFEMFunctionReturn(0);
-  };
-  
-
-  CHKERR add_constrain_lhs(pipeline_mng->getOpBoundaryLhsPipeline());
-  CHKERR add_constrain_rhs(pipeline_mng->getOpBoundaryRhsPipeline());
-
-  auto add_constrain_force_term = [&](auto &pip) {
-    MoFEMFunctionBegin;
-
-    auto tie_block_ptr =
-        boost::make_shared<std::vector<RigidBodyTieConstraintData::TieBlock>>(
-            tieBlocks);
-    CHKERR OpFactoryCalculateTieConstraintForceTermRhs<SPACE_DIM, A>(
-        mField, pip, "LAMBDA", tie_block_ptr, Sev::inform);
-    MoFEMFunctionReturn(0);
-  };
-
-  CHKERR add_constrain_force_term(pipeline_mng->getOpBoundaryRhsPipeline());
-
-  auto add_rigid_body_rhs = [&](auto &pip) {
-    MoFEMFunctionBegin;
-
-    auto tie_block_ptr =
-        boost::make_shared<std::vector<RigidBodyTieConstraintData::TieBlock>>(
-            tieBlocks);
-    CHKERR OpFactoryCalculateRigidBodyConstraintRhs<SPACE_DIM, A>(
-        mField, pip, "LAMBDA", tie_block_ptr, Sev::inform);
-    MoFEMFunctionReturn(0);
-  };
-
-  auto add_rigid_body_lhs = [&](auto &pip) {
-    MoFEMFunctionBegin;
-
-    auto tie_block_ptr =
-        boost::make_shared<std::vector<RigidBodyTieConstraintData::TieBlock>>(
-            tieBlocks);
-    CHKERR OpFactoryCalculateRigidBodyConstraintLhs<SPACE_DIM, A>(
-        mField, pip, "LAMBDA", tie_block_ptr, Sev::inform);
-    MoFEMFunctionReturn(0);
-  };
-
-  CHKERR add_rigid_body_lhs(pipeline_mng->getOpMeshsetLhsPipeline());
-  CHKERR add_rigid_body_rhs(pipeline_mng->getOpMeshsetRhsPipeline());
+  CHKERR OpFactoryCalculateRigidBodyConstraintLhs<SPACE_DIM, A>(
+      mField, pipeline_mng->getOpMeshsetLhsPipeline(), "LAMBDA", tie_block_ptr,
+      Sev::inform);
 
   MoFEMFunctionReturn(0);
 }
