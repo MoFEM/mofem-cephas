@@ -1211,3 +1211,36 @@ MoFEMErrorCode OpFactoryCalculateTieConstraintLhs(
   }
   MoFEMFunctionReturn(0);
 }
+
+template <int DIM, AssemblyType AT>
+MoFEMErrorCode OpFactoryPipelineTieConstraint(
+    MoFEM::Interface &m_field,
+    std::string field_name,
+    boost::shared_ptr<std::vector<RigidBodyTieConstraintData::TieBlock>>
+        tie_block_ptr,
+    Sev sev) {
+  MoFEMFunctionBegin;
+  auto *pipeline_mng = m_field.getInterface<PipelineManager>();
+
+  CHKERR OpFactoryCalculateTieConstraintLhs<SPACE_DIM, A>(
+      m_field, pipeline_mng->getOpBoundaryLhsPipeline(), "LAMBDA", tie_block_ptr,
+      Sev::inform);
+
+  CHKERR OpFactoryCalculateTieConstraintRhs<SPACE_DIM, A>(
+      m_field, pipeline_mng->getOpBoundaryRhsPipeline(), "LAMBDA", tie_block_ptr,
+      Sev::inform);
+
+  CHKERR OpFactoryCalculateTieConstraintForceTermRhs<SPACE_DIM, A>(
+      m_field, pipeline_mng->getOpBoundaryRhsPipeline(), "LAMBDA", tie_block_ptr,
+      Sev::inform);
+
+  CHKERR OpFactoryCalculateRigidBodyConstraintRhs<SPACE_DIM, A>(
+      m_field, pipeline_mng->getOpMeshsetRhsPipeline(), "LAMBDA", tie_block_ptr,
+      Sev::inform);
+
+  CHKERR OpFactoryCalculateRigidBodyConstraintLhs<SPACE_DIM, A>(
+      m_field, pipeline_mng->getOpMeshsetLhsPipeline(), "LAMBDA", tie_block_ptr,
+      Sev::inform);
+
+  MoFEMFunctionReturn(0);
+}

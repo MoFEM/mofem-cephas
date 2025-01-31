@@ -224,26 +224,9 @@ MoFEMErrorCode Example::boundaryCondition() {
       boost::make_shared<std::vector<RigidBodyTieConstraintData::TieBlock>>(
           tieBlocks);
 
-  CHKERR OpFactoryCalculateTieConstraintLhs<SPACE_DIM, A>(
-      mField, pipeline_mng->getOpBoundaryLhsPipeline(), "LAMBDA", tie_block_ptr,
-      Sev::inform);
-
-  CHKERR OpFactoryCalculateTieConstraintRhs<SPACE_DIM, A>(
-      mField, pipeline_mng->getOpBoundaryRhsPipeline(), "LAMBDA", tie_block_ptr,
-      Sev::inform);
-
-  CHKERR OpFactoryCalculateTieConstraintForceTermRhs<SPACE_DIM, A>(
-      mField, pipeline_mng->getOpBoundaryRhsPipeline(), "LAMBDA", tie_block_ptr,
-      Sev::inform);
-
-  CHKERR OpFactoryCalculateRigidBodyConstraintRhs<SPACE_DIM, A>(
-      mField, pipeline_mng->getOpMeshsetRhsPipeline(), "LAMBDA", tie_block_ptr,
-      Sev::inform);
-
-  CHKERR OpFactoryCalculateRigidBodyConstraintLhs<SPACE_DIM, A>(
-      mField, pipeline_mng->getOpMeshsetLhsPipeline(), "LAMBDA", tie_block_ptr,
-      Sev::inform);
-
+  CHKERR OpFactoryPipelineTieConstraint<SPACE_DIM, A>(
+      mField,"LAMBDA", tie_block_ptr, Sev::inform);
+ 
   MoFEMFunctionReturn(0);
 }
 //! [Boundary condition]
