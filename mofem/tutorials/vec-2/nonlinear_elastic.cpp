@@ -381,60 +381,21 @@ MoFEMErrorCode Example::solveSystem() {
       auto ts_ctx_ptr = getDMTsCtx(dm);
       auto fe_post_proc_rhs = boost::make_shared<FEMethod>();
       auto fe_post_proc_lhs = boost::make_shared<FEMethod>();
+      auto tie_block_ptr =
+          boost::make_shared<std::vector<RigidBodyTieConstraintData::TieBlock>>(
+              tieBlocks); 
 
-      auto set_post_rhs = [this, fe_post_proc_rhs, ts_ctx_ptr]() {
+      auto set_post_rhs = [this, fe_post_proc_rhs, ts_ctx_ptr, tie_block_ptr]() {
         MoFEMFunctionBeginHot;
-        auto is_mng = mField.getInterface<ISManager>();
-        auto simple = mField.getInterface<Simple>();
-        SmartPetscObj<IS> is;
-        CHKERR is_mng->isCreateProblemFieldAndRankLocal(
-            simple->getProblemName(), ROW, "RIGID_BODY_LAMBDA", 0,
-            MAX_DOFS_ON_ENTITY, is, nullptr);
-
-        const int *i_ptr;
-        CHKERR ISGetIndices(is, &i_ptr);
-        int size;
-        CHKERR ISGetLocalSize(is, &size);
-        double *f_ptr;
-        double *x_ptr;
-        CHKERR VecGetArray(fe_post_proc_rhs->f, &f_ptr);
-        CHKERR VecGetArray(fe_post_proc_rhs->x, &x_ptr);
-        for (auto i = 0; i != size; ++i) {
-          if (i % SPACE_DIM == 0) {
-            // FIXME: this is a hack, we should use a proper way to set the tieBlock
-            //std::cout << "tieBlocks[0].tieDirection(0) = " << tieBlocks[0].tieDirection(0) << std::endl;
-            f_ptr[i_ptr[i]] = x_ptr[i_ptr[i]] - (tieBlocks[0].tieDirection(0) * fe_post_proc_rhs->ts_t);
-          }
-        }
-        CHKERR VecRestoreArray(fe_post_proc_rhs->f, &f_ptr);
-        CHKERR VecRestoreArray(fe_post_proc_rhs->x, &x_ptr);
-        CHKERR ISRestoreIndices(is, &i_ptr);
+        CHKERR EssentialPostProcRigidBodyTieRhs(mField, fe_post_proc_rhs,tie_block_ptr)();
         MoFEMFunctionReturnHot(0);
       };
 
-      auto set_post_lhs = [this, fe_post_proc_lhs]() {
+      auto set_post_lhs = [this, fe_post_proc_lhs, tie_block_ptr]() {
         MoFEMFunctionBeginHot;
-        auto is_mng = mField.getInterface<ISManager>();
-        auto simple = mField.getInterface<Simple>();
-        SmartPetscObj<IS> is;
-        CHKERR is_mng->isCreateProblemFieldAndRankLocal(
-            simple->getProblemName(), ROW, "RIGID_BODY_LAMBDA", 0, SPACE_DIM,
-            is, nullptr);
-        *(fe_post_proc_lhs->matAssembleSwitch) = PETSC_TRUE;
-        CHKERR MatAssemblyBegin(fe_post_proc_lhs->B, MAT_FINAL_ASSEMBLY);
-        CHKERR MatAssemblyEnd(fe_post_proc_lhs->B, MAT_FINAL_ASSEMBLY);
-        int is_size;
-        CHKERR ISGetSize(is, &is_size);
-        if(is_size != SPACE_DIM)
-          SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY, "Wrong size of rigid translation dofs");
-        const int *i_ptr;
-        CHKERR ISGetIndices(is, &i_ptr);
-        const int idx = 0;
-        CHKERR MatSetOption(fe_post_proc_lhs->B,MAT_KEEP_NONZERO_PATTERN,PETSC_TRUE);
-        CHKERR MatZeroRows(fe_post_proc_lhs->B, 1, &i_ptr[idx], 1, PETSC_NULL,
-                           PETSC_NULL);
-        CHKERR ISRestoreIndices(is, &i_ptr);
 
+        CHKERR EssentialPostProcRigidBodyTieLhs(mField, fe_post_proc_lhs,
+                                                tie_block_ptr)();
         MoFEMFunctionReturnHot(0);
       };
 
