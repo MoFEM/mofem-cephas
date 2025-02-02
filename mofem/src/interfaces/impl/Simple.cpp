@@ -937,7 +937,7 @@ MoFEMErrorCode Simple::createSkeletonMeshset() {
     CHKERR m_field.get_moab().get_entities_by_dimension(meshset, dIm,
                                                         domain_ents, true);
     CHKERR m_field.get_moab().get_adjacencies(
-        domain_ents, dIm - 1, false, skeleton_ents, moab::Interface::UNION);
+        domain_ents, dIm - 1, true, skeleton_ents, moab::Interface::UNION);
     skeleton_ents = subtract(skeleton_ents, boundary_ents);
     CHKERR pcomm->filter_pstatus(skeleton_ents, PSTATUS_NOT_OWNED, PSTATUS_NOT,
                                  -1, nullptr);
