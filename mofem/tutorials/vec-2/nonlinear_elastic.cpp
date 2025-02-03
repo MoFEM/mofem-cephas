@@ -266,10 +266,43 @@ MoFEMErrorCode Example::assembleSystem() {
  * to output results to the hard drive.
  */
 struct Monitor : public FEMethod {
-  Monitor(SmartPetscObj<DM> dm, boost::shared_ptr<PostProcEleBdy> post_proc)
-      : dM(dm), postProc(post_proc){};
+  Monitor(SmartPetscObj<DM> dm, boost::shared_ptr<PostProcEleBdy> post_proc,
+          boost::shared_ptr<std::vector<RigidBodyTieConstraintData::TieBlock>>
+              tie_block_ptr)
+      : dM(dm), postProc(post_proc), tieBlocksPtr(tie_block_ptr) {
+
+    MoFEM::Interface *m_field_ptr;
+    CHKERR DMoFEMGetInterfacePtr(dM, &m_field_ptr);
+    totalReaction =
+        createVectorMPI(m_field_ptr->get_comm(),
+                        (m_field_ptr->get_comm_rank() == 0) ? 6 : 0, 6);
+
+    auto get_reaction = [&]() {
+      auto integrate_reaction = boost::make_shared<BoundaryEle>(*m_field_ptr);
+      integrate_reaction->getRuleHook = [](int, int, int approx_order) {
+        return 2 * approx_order;
+      };
+      auto lambda_ptr = boost::make_shared<MatrixDouble>();
+      CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
+          integrate_reaction->getOpPtrVector(), {NOSPACE});
+      integrate_reaction->getOpPtrVector().push_back(
+          new OpCalculateVectorFieldValues<SPACE_DIM>("LAMBDA", lambda_ptr));
+      for (auto &t : *tieBlocksPtr) {
+        integrate_reaction->getOpPtrVector().push_back(
+            new OpCalculateRigidBodyTieReaction<SPACE_DIM>(
+                "LAMBDA", lambda_ptr, totalReaction,
+                boost::make_shared<Range>(t.tieFaces), t.tieCoord));
+      }
+
+      return integrate_reaction;
+    };
+
+    integrateReaction = get_reaction();
+  };
   MoFEMErrorCode postProcess() {
     MoFEMFunctionBegin;
+    MoFEM::Interface *m_field_ptr;
+    CHKERR DMoFEMGetInterfacePtr(dM, &m_field_ptr);
     constexpr int save_every_nth_step = 1;
     if (ts_step % save_every_nth_step == 0) {
       CHKERR DMoFEMLoopFiniteElements(dM, "bFE", postProc);
@@ -279,12 +312,45 @@ struct Monitor : public FEMethod {
       CHKERR postProc->writeFile(
           "out_step_" + boost::lexical_cast<std::string>(ts_step) + ".h5m");
     }
+
+    auto calculate_tie_force = [&] {
+      MoFEMFunctionBegin;
+      CHKERR VecZeroEntries(totalReaction);
+      CHKERR DMoFEMLoopFiniteElements(dM, "bFE", integrateReaction);
+      CHKERR VecAssemblyBegin(totalReaction);
+      CHKERR VecAssemblyEnd(totalReaction);
+      MoFEMFunctionReturn(0);
+    };
+
+    auto print_tie_force = [&] {
+      MoFEMFunctionBegin;
+      if (!m_field_ptr->get_comm_rank()) {
+        const double *total_reaction;
+        CHKERR VecGetArrayRead(totalReaction, &total_reaction);
+        MOFEM_LOG_C("WORLD", Sev::inform,
+                    "Tie Reaction Force: %6.4e %6.4e %6.4e", total_reaction[0],
+                    total_reaction[1], total_reaction[2]);
+        MOFEM_LOG_C("WORLD", Sev::inform,
+                    "Tie Reaction Moment: %6.4e %6.4e %6.4e", total_reaction[3],
+                    total_reaction[4], total_reaction[5]);
+        CHKERR VecRestoreArrayRead(totalReaction, &total_reaction);
+      }
+      MoFEMFunctionReturn(0);
+    };
+
+    CHKERR calculate_tie_force();
+    CHKERR print_tie_force();
+
     MoFEMFunctionReturn(0);
   }
 
 private:
   SmartPetscObj<DM> dM;
   boost::shared_ptr<PostProcEleBdy> postProc;
+  boost::shared_ptr<BoundaryEle> integrateReaction;
+  SmartPetscObj<Vec> totalReaction;
+  boost::shared_ptr<std::vector<RigidBodyTieConstraintData::TieBlock>>
+      tieBlocksPtr;
 };
 
 //! [Solve]
@@ -387,7 +453,8 @@ MoFEMErrorCode Example::solveSystem() {
 
       auto set_post_rhs = [this, fe_post_proc_rhs, ts_ctx_ptr, tie_block_ptr]() {
         MoFEMFunctionBeginHot;
-        CHKERR EssentialPostProcRigidBodyTieRhs(mField, fe_post_proc_rhs,tie_block_ptr)();
+        CHKERR EssentialPostProcRigidBodyTieRhs(mField, fe_post_proc_rhs,
+                                                tie_block_ptr)();
         MoFEMFunctionReturnHot(0);
       };
 
@@ -421,8 +488,11 @@ MoFEMErrorCode Example::solveSystem() {
   // boundary conditions
   CHKERR add_extra_finite_elements_to_ksp_solver_pipelines();
 
-  auto create_monitor_fe = [dm](auto &&post_proc_fe) {
-    return boost::make_shared<Monitor>(dm, post_proc_fe);
+  auto create_monitor_fe = [dm, this](auto &&post_proc_fe) {
+    auto tie_block_ptr =
+        boost::make_shared<std::vector<RigidBodyTieConstraintData::TieBlock>>(
+            tieBlocks);
+    return boost::make_shared<Monitor>(dm, post_proc_fe, tie_block_ptr);
   };
 
   // Set monitor which postprocessing results and saves them to the hard drive
