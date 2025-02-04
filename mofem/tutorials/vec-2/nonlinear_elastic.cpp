@@ -338,10 +338,10 @@ struct Monitor : public FEMethod {
       MoFEMFunctionReturn(0);
     };
 
-    if (tieBlocksPtr->empty()) {
+    //if (tieBlocksPtr->empty()) {
       CHKERR calculate_tie_force();
       CHKERR print_tie_force();
-    }
+    //}
 
     MoFEMFunctionReturn(0);
   }
