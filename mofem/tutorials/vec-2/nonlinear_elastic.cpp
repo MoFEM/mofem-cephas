@@ -338,8 +338,10 @@ struct Monitor : public FEMethod {
       MoFEMFunctionReturn(0);
     };
 
-    CHKERR calculate_tie_force();
-    CHKERR print_tie_force();
+    if (tieBlocksPtr->empty()) {
+      CHKERR calculate_tie_force();
+      CHKERR print_tie_force();
+    }
 
     MoFEMFunctionReturn(0);
   }
@@ -473,6 +475,7 @@ MoFEMErrorCode Example::solveSystem() {
       MoFEMFunctionReturn(0);
     };
 
+  if (tieBlocks.size() > 0)
     CHKERR set_global_bc();
 
     // This is low level pushing finite elements (pipelines) to solver
