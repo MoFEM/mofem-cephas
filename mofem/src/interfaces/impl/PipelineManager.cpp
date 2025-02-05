@@ -6,6 +6,50 @@
 
 namespace MoFEM {
 
+struct PipelineManager::MeshsetFE : public ForcesAndSourcesCore {
+  using ForcesAndSourcesCore::ForcesAndSourcesCore;
+  MoFEMErrorCode operator()() {
+    MoFEMFunctionBegin;
+    const auto type = numeredEntFiniteElementPtr->getEntType();
+    if (type != MBENTITYSET) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Expected entity set as a finite element");
+    }
+    CHKERR loopOverOperators();
+    MoFEMFunctionReturn(0);
+  }
+  MoFEMErrorCode preProcess() { return 0; }
+  MoFEMErrorCode postProcess() { return 0; }
+};
+
+boost::shared_ptr<FEMethod> &
+PipelineManager::createMeshsetFEPipeline(boost::shared_ptr<FEMethod> &fe) {
+  if (!fe)
+    fe = boost::make_shared<MeshsetFE>(cOre);
+  return fe;
+}
+
+boost::ptr_deque<PipelineManager::UserDataOperator> &
+PipelineManager::getOpMeshsetRhsPipeline() {
+  return boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
+             createMeshsetFEPipeline(feMeshsetRhs))
+      ->getOpPtrVector();
+}
+
+boost::ptr_deque<PipelineManager::UserDataOperator> &
+PipelineManager::getOpMeshsetLhsPipeline() {
+  return boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
+             createMeshsetFEPipeline(feMeshsetLhs))
+      ->getOpPtrVector();
+}
+
+boost::ptr_deque<PipelineManager::UserDataOperator> &
+PipelineManager::getOpMeshsetExplicitRhsPipeline() {
+  return boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
+             createMeshsetFEPipeline(feMeshsetExplicitRhs))
+      ->getOpPtrVector();
+}
+
 MoFEMErrorCode
 PipelineManager::query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const {
@@ -32,6 +76,9 @@ MoFEMErrorCode PipelineManager::loopFiniteElements(SmartPetscObj<DM> dm) {
   if (feSkeletonLhs)
     CHKERR DMoFEMLoopFiniteElements(dm, simple->getSkeletonFEName(),
                                     feSkeletonLhs);
+  if (feMeshsetLhs)
+    CHKERR DMoFEMLoopFiniteElements(dm, simple->getMeshsetFEName(),
+                                    feMeshsetLhs);
 
   // Add element to calculate rhs of stiff part
   if (feDomainRhs)
@@ -42,6 +89,9 @@ MoFEMErrorCode PipelineManager::loopFiniteElements(SmartPetscObj<DM> dm) {
   if (feSkeletonRhs)
     CHKERR DMoFEMLoopFiniteElements(dm, simple->getSkeletonFEName(),
                                     feSkeletonRhs);
+  if (feMeshsetRhs)
+    CHKERR DMoFEMLoopFiniteElements(dm, simple->getMeshsetFEName(),
+                                    feMeshsetRhs);
 
   MoFEMFunctionReturn(0);
 }
@@ -89,6 +139,9 @@ SmartPetscObj<KSP> PipelineManager::createKSP(SmartPetscObj<DM> dm) {
   if (feSkeletonLhs)
     CHKERR DMMoFEMKSPSetComputeOperators(dm, simple->getSkeletonFEName(),
                                          feSkeletonLhs, null, null);
+  if (feMeshsetLhs)
+    CHKERR DMMoFEMKSPSetComputeOperators(dm, simple->getMeshsetFEName(),
+                                         feMeshsetLhs, null, null);
 
   // Add element to calculate rhs of stiff part
   if (feDomainRhs)
@@ -100,6 +153,9 @@ SmartPetscObj<KSP> PipelineManager::createKSP(SmartPetscObj<DM> dm) {
   if (feSkeletonRhs)
     CHKERR DMMoFEMKSPSetComputeRHS(dm, simple->getSkeletonFEName(),
                                    feSkeletonRhs, null, null);
+  if (feMeshsetRhs)
+    CHKERR DMMoFEMKSPSetComputeRHS(dm, simple->getMeshsetFEName(), feMeshsetRhs,
+                                   null, null);
 
   auto ksp = MoFEM::createKSP(m_field.get_comm());
   CHKERR KSPSetDM(ksp, dm);
@@ -149,6 +205,9 @@ SmartPetscObj<SNES> PipelineManager::createSNES(SmartPetscObj<DM> dm) {
   if (feSkeletonLhs)
     CHKERR DMMoFEMSNESSetJacobian(dm, simple->getSkeletonFEName(),
                                   feSkeletonLhs, null, null);
+  if (feMeshsetLhs)
+    CHKERR DMMoFEMSNESSetJacobian(dm, simple->getMeshsetFEName(), feMeshsetLhs,
+                                  null, null);
 
   // Add element to calculate rhs of stiff part
   if (feDomainRhs)
@@ -160,6 +219,9 @@ SmartPetscObj<SNES> PipelineManager::createSNES(SmartPetscObj<DM> dm) {
   if (feSkeletonRhs)
     CHKERR DMMoFEMSNESSetFunction(dm, simple->getSkeletonFEName(),
                                   feSkeletonRhs, null, null);
+  if (feMeshsetRhs)
+    CHKERR DMMoFEMSNESSetFunction(dm, simple->getMeshsetFEName(), feMeshsetRhs,
+                                  null, null);
 
   auto snes = MoFEM::createSNES(m_field.get_comm());
   CHKERR SNESSetDM(snes, dm);
@@ -232,6 +294,9 @@ SmartPetscObj<TS> PipelineManager::createTSEX(SmartPetscObj<DM> dm) {
   if (feSkeletonExplicitRhs)
     CHKERR DMMoFEMTSSetRHSFunction(dm, simple->getSkeletonFEName(),
                                    feSkeletonExplicitRhs, null, null);
+  if (feMeshsetRhs)
+    CHKERR DMMoFEMTSSetRHSFunction(dm, simple->getMeshsetFEName(),
+                                   feMeshsetExplicitRhs, null, null);
 
   // Note: More cases for explict, and implicit time interation cases can be
   // implemented here.
@@ -282,6 +347,9 @@ SmartPetscObj<TS> PipelineManager::createTSIM(SmartPetscObj<DM> dm) {
   if (feSkeletonLhs)
     CHKERR DMMoFEMTSSetIJacobian(dm, simple->getSkeletonFEName(), feSkeletonLhs,
                                  null, null);
+  if (feMeshsetLhs)
+    CHKERR DMMoFEMTSSetIJacobian(dm, simple->getMeshsetFEName(), feMeshsetLhs,
+                                 null, null);
 
   // Add element to calculate rhs of stiff part
   if (feDomainRhs)
@@ -292,6 +360,9 @@ SmartPetscObj<TS> PipelineManager::createTSIM(SmartPetscObj<DM> dm) {
                                  null, null);
   if (feSkeletonRhs)
     CHKERR DMMoFEMTSSetIFunction(dm, simple->getSkeletonFEName(), feSkeletonRhs,
+                                 null, null);
+  if (feMeshsetRhs)
+    CHKERR DMMoFEMTSSetIFunction(dm, simple->getMeshsetFEName(), feMeshsetRhs,
                                  null, null);
 
   // Note: More cases for explict, and implicit time interation cases can be
@@ -343,6 +414,9 @@ SmartPetscObj<TS> PipelineManager::createTSIM2(SmartPetscObj<DM> dm) {
   if (feSkeletonLhs)
     CHKERR DMMoFEMTSSetI2Jacobian(dm, simple->getSkeletonFEName(),
                                   feSkeletonLhs, null, null);
+  if (feMeshsetLhs)
+    CHKERR DMMoFEMTSSetI2Jacobian(dm, simple->getMeshsetFEName(), feMeshsetLhs,
+                                  null, null);
 
   // Add element to calculate rhs of stiff part
   if (feDomainRhs)
@@ -354,6 +428,9 @@ SmartPetscObj<TS> PipelineManager::createTSIM2(SmartPetscObj<DM> dm) {
   if (feSkeletonRhs)
     CHKERR DMMoFEMTSSetI2Function(dm, simple->getSkeletonFEName(),
                                   feSkeletonRhs, null, null);
+  if (feMeshsetRhs)
+    CHKERR DMMoFEMTSSetI2Function(dm, simple->getMeshsetFEName(), feMeshsetRhs,
+                                  null, null);
 
   // Note: More cases for explict, and implicit time interation cases can be
   // implemented here.
@@ -404,6 +481,9 @@ SmartPetscObj<TS> PipelineManager::createTSIMEX(SmartPetscObj<DM> dm) {
   if (feSkeletonLhs)
     CHKERR DMMoFEMTSSetIJacobian(dm, simple->getSkeletonFEName(), feSkeletonLhs,
                                  null, null);
+  if (feMeshsetLhs)
+    CHKERR DMMoFEMTSSetIJacobian(dm, simple->getMeshsetFEName(), feMeshsetLhs,
+                                 null, null);
 
   // Add element to calculate rhs of stiff part
   if (feDomainRhs)
@@ -414,6 +494,9 @@ SmartPetscObj<TS> PipelineManager::createTSIMEX(SmartPetscObj<DM> dm) {
                                  null, null);
   if (feSkeletonRhs)
     CHKERR DMMoFEMTSSetIFunction(dm, simple->getSkeletonFEName(), feSkeletonRhs,
+                                 null, null);
+  if (feMeshsetRhs)
+    CHKERR DMMoFEMTSSetIFunction(dm, simple->getMeshsetFEName(), feMeshsetRhs,
                                  null, null);
 
   // Add element to calculate rhs of stiff part
@@ -426,6 +509,9 @@ SmartPetscObj<TS> PipelineManager::createTSIMEX(SmartPetscObj<DM> dm) {
   if (feSkeletonExplicitRhs)
     CHKERR DMMoFEMTSSetRHSFunction(dm, simple->getSkeletonFEName(),
                                    feSkeletonExplicitRhs, null, null);
+  if (feMeshsetExplicitRhs)
+    CHKERR DMMoFEMTSSetRHSFunction(dm, simple->getMeshsetFEName(),
+                                   feMeshsetExplicitRhs, null, null);
 
   // Note: More cases for explict, and implicit time interation cases can be
   // implemented here.
