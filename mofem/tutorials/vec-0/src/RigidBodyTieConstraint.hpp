@@ -89,7 +89,7 @@ struct OpTieTermConstrainRigidBodyRhs
 
   MoFEMErrorCode iNtegrate(EntData &data) {
     MoFEMFunctionBegin;
-
+    MOFEM_LOG("SYNC", Sev::inform) << "OpTieTermConstrainRigidBodyRhs";
     FTENSOR_INDEX(SPACE_DIM, i);
     FTENSOR_INDEX(SPACE_DIM, j);
     FTENSOR_INDEX(SPACE_DIM, k);
@@ -181,6 +181,10 @@ struct OpTieTermConstrainRigidBodyLhs_dU
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data) {
     MoFEMFunctionBegin;
+    MOFEM_LOG("SYNC", Sev::inform) << "OpTieTermConstrainRigidBodyLhs_dU";
+    MOFEM_LOG("SYNC", Sev::inform) << "OpTieTermConstrainRigidBodyLhs_dU = "
+                                   << tieCoord(0) << " " << tieCoord(1) << " "
+                                   << tieCoord(2);
     FTENSOR_INDEX(SPACE_DIM, i);
     FTENSOR_INDEX(SPACE_DIM, j);
     FTENSOR_INDEX(SPACE_DIM, k);
@@ -214,13 +218,13 @@ struct OpTieTermConstrainRigidBodyLhs_dU
       ++t_w;
 
       // define rotation matrix
-      FTensor::Tensor2<double, 3, 3> t_omega;
-      t_omega(i, j) = levi_civita(i, j, k) * t_theta(k);
+      // FTensor::Tensor2<double, 3, 3> t_omega;
+      // t_omega(i, j) = levi_civita(i, j, k) * t_theta(k);
 
-      // define reference position
-      FTensor::Tensor1<double, 3> t_x_ref;
-      t_x_ref(i) = t_u(i) - t_translation(i) -
-                   t_omega(i, j) * (t_coords(j) - tieCoord(j));
+      // // define reference position
+      // FTensor::Tensor1<double, 3> t_x_ref;
+      // t_x_ref(i) = t_u(i) - t_translation(i) -
+      //              t_omega(i, j) * (t_coords(j) - tieCoord(j));
 
       FTensor::Tensor2<double, SPACE_DIM, SPACE_DIM> t_tangent;
       t_tangent(i, j) = alpha * t_kd(i, j);
@@ -270,6 +274,8 @@ struct OpTieTermConstrainRigidBodyLhs_dTranslation
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data) {
     MoFEMFunctionBegin;
+    MOFEM_LOG("SYNC", Sev::inform) << "OpTieTermConstrainRigidBodyLhs_dTranslation";
+
     FTENSOR_INDEX(SPACE_DIM, i);
     FTENSOR_INDEX(SPACE_DIM, j);
     FTENSOR_INDEX(SPACE_DIM, k);
@@ -334,6 +340,12 @@ struct OpTieTermConstrainRigidBodyLhs_dRotation
     FTENSOR_INDEX(SPACE_DIM, j);
     FTENSOR_INDEX(SPACE_DIM, k);
 
+    MOFEM_LOG("SYNC", Sev::inform) << "OpTieTermConstrainRigidBodyLhs_dRotation";
+    MOFEM_LOG("SYNC", Sev::inform) << "OpTieTermConstrainRigidBodyLhs_dRotation = "
+                                   << tieCoord(0) << " " << tieCoord(1) << " "
+                                   << tieCoord(2);
+
+
     constexpr auto t_kd = FTensor::Kronecker_Delta<double>();
 
     auto nb_integration_pts = getGaussPts().size2();
@@ -391,6 +403,7 @@ struct OpTieTermConstrainRigidBodyRhs_du
 
   MoFEMErrorCode iNtegrate(EntData &data) {
     MoFEMFunctionBegin;
+    MOFEM_LOG("SYNC", Sev::inform) << "OpTieTermConstrainRigidBodyRhs_dU";
     FTENSOR_INDEX(SPACE_DIM, i);
     FTENSOR_INDEX(SPACE_DIM, j);
 
@@ -445,17 +458,18 @@ struct OpTieTermConstrainRigidBodyGlobalTranslationRhs
 
   OpTieTermConstrainRigidBodyGlobalTranslationRhs(
       std::string lambda_name,
-      boost::shared_ptr<VectorDouble> int_translation_ptr)
+      boost::shared_ptr<VectorDouble> int_translation_ptr, boost::shared_ptr<Range> rigid_body_ents_ptr)
       : OpUserDataOp(lambda_name, OpUserDataOp::OPROW),
-        intTranslationPtr(int_translation_ptr) {
+        intTranslationPtr(int_translation_ptr), rigidBodyEntsPtr(rigid_body_ents_ptr) {
     std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
     doEntities[MBENTITYSET] = true;
   }
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
+    MOFEM_LOG("SYNC", Sev::inform) << "OpTieTermConstrainRigidBodyGlobalTranslationRhs on " << getPtrFE()->mField.get_comm_rank();
 
-    if (data.getIndices().empty())
+    if (data.getIndices().empty() || rigidBodyEntsPtr->empty())
       MoFEMFunctionReturnHot(0);
 
     FTENSOR_INDEX(SPACE_DIM, i);
@@ -463,11 +477,21 @@ struct OpTieTermConstrainRigidBodyGlobalTranslationRhs
 
     auto t_dofs = getFTensor1FromPtr<SPACE_DIM>(
         &data.getFieldEntities()[0]->getEntFieldData()[0]);
+    std::cout << "t_dofs = " << t_dofs(0) << " " << t_dofs(1) << " "
+              << t_dofs(2) << std::endl;
 
     double *intTranslationRawPtr = &(*intTranslationPtr->data().begin());
+    std::cout << "intTranslationRawPtr = " << intTranslationRawPtr << std::endl;
 
+    if (intTranslationPtr->size() == 0)
+      intTranslationPtr->resize(DIM);
+    
     auto t_int_translation =
         getFTensor1FromPtr<SPACE_DIM>(intTranslationRawPtr);
+
+    std::cout << "t_int_translation = " << t_int_translation(0) << " "
+              << t_int_translation(1) << " " << t_int_translation(2)
+              << std::endl;
 
     // create a "dummy" base function
     MatrixDouble m_kd(3, 3);
@@ -492,6 +516,7 @@ struct OpTieTermConstrainRigidBodyGlobalTranslationRhs
 
 private:
   boost::shared_ptr<VectorDouble> intTranslationPtr;
+  boost::shared_ptr<Range> rigidBodyEntsPtr;
 };
 
 template <int DIM>
@@ -515,6 +540,7 @@ struct OpTieTermConstrainRigidBodyGlobalTranslationIntegralRhs
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
+        MOFEM_LOG("SYNC", Sev::inform) << "OpTieTermConstrainRigidBodyGlobalTranslationIntegralRhs";
 
     if (intTranslationPtr->size() == 0)
       intTranslationPtr->resize(DIM);
@@ -573,6 +599,7 @@ struct OpTieTermConstrainRigidBodyGlobalRotationIntegralRhs
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
+        MOFEM_LOG("SYNC", Sev::inform) << "OpTieTermConstrainRigidBodyGlobalRotationIntegralRhs";
 
     if (intRotationPtr->size1() == 0 || intRotationPtr->size2() == 0)
       intRotationPtr->resize(DIM, DIM);
@@ -712,9 +739,9 @@ struct OpTieTermConstrainRigidBodyGlobalRotationRhs
   using OpUserDataOp = ForcesAndSourcesCore::UserDataOperator;
 
   OpTieTermConstrainRigidBodyGlobalRotationRhs(
-      std::string lambda_name, boost::shared_ptr<MatrixDouble> int_rotation_ptr)
+      std::string lambda_name, boost::shared_ptr<MatrixDouble> int_rotation_ptr, boost::shared_ptr<Range> rigid_body_ents_ptr)
       : OpUserDataOp(lambda_name, OpUserDataOp::OPROW),
-        intRotationPtr(int_rotation_ptr) {
+        intRotationPtr(int_rotation_ptr), rigidBodyEntsPtr(rigid_body_ents_ptr) {
     std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
     doEntities[MBENTITYSET] = true;
   }
@@ -723,6 +750,11 @@ struct OpTieTermConstrainRigidBodyGlobalRotationRhs
                         EntitiesFieldData::EntData &data) {
 
     MoFEMFunctionBegin;
+
+    if (rigidBodyEntsPtr->empty())
+      MoFEMFunctionReturnHot(0);
+
+    MOFEM_LOG("SYNC", Sev::inform) << "OpTieTermConstrainRigidBodyGlobalRotationRhs";
     FTENSOR_INDEX(SPACE_DIM, i);
     FTENSOR_INDEX(SPACE_DIM, j);
     FTENSOR_INDEX(SPACE_DIM, k);
@@ -761,6 +793,7 @@ struct OpTieTermConstrainRigidBodyGlobalRotationRhs
 
 private:
   boost::shared_ptr<MatrixDouble> intRotationPtr;
+  boost::shared_ptr<Range> rigidBodyEntsPtr;
 };
 
 // template <int DIM>
@@ -1073,6 +1106,7 @@ MoFEMErrorCode OpFactoryCalculateRigidBodyConstraintRhs(
   }
 
   auto rigid_body_ents_ptr = boost::make_shared<Range>(rigid_body_ents);
+  std::cout << "rigid_body_ents = " << rigid_body_ents << std::endl;
 
   for (auto &t : *tie_blocks_ptr) {
     auto op_loop_side = new OpLoopSide<BoundaryEle>(m_field, "bFE", DIM - 1,
@@ -1090,9 +1124,9 @@ MoFEMErrorCode OpFactoryCalculateRigidBodyConstraintRhs(
     pip.push_back(op_loop_side);
 
     pip.push_back(new OpTieTermConstrainRigidBodyGlobalTranslationRhs<DIM>(
-        "RIGID_BODY_LAMBDA", int_translation_ptr));
+        "RIGID_BODY_LAMBDA", int_translation_ptr, rigid_body_ents_ptr));
     pip.push_back(new OpTieTermConstrainRigidBodyGlobalRotationRhs<DIM>(
-        "RIGID_BODY_THETA", int_rotation_ptr));
+        "RIGID_BODY_THETA", int_rotation_ptr, rigid_body_ents_ptr));
   }
 
   MoFEMFunctionReturn(0);
@@ -1263,6 +1297,12 @@ MoFEMErrorCode EssentialPostProcRigidBodyTieRhs::operator()() {
   MoFEMFunctionBegin;
   auto is_mng = mField.getInterface<ISManager>();
   auto simple = mField.getInterface<Simple>();
+  auto vec_mng = mField.getInterface<VecManager>();
+
+  // if (mField.get_comm_rank() != 0) {
+  //   MoFEMFunctionReturnHot(0);
+  // }
+  MOFEM_LOG_SYNCHRONISE(mField.get_comm());
 
   auto set_rhs = [&](auto index, auto field_name) {
     MoFEMFunctionBegin;
@@ -1270,6 +1310,17 @@ MoFEMErrorCode EssentialPostProcRigidBodyTieRhs::operator()() {
     CHKERR is_mng->isCreateProblemFieldAndRankLocal(
         simple->getProblemName(), ROW, field_name, 0, MAX_DOFS_ON_ENTITY, is,
         nullptr);
+
+    if (*(fePtr.lock()->vecAssembleSwitch)) {
+      CHKERR VecAssemblyBegin(fePtr.lock()->f);
+      CHKERR VecAssemblyEnd(fePtr.lock()->f);
+      CHKERR VecGhostUpdateBegin(fePtr.lock()->f, ADD_VALUES, SCATTER_REVERSE);
+      CHKERR VecGhostUpdateEnd(fePtr.lock()->f, ADD_VALUES, SCATTER_REVERSE);
+      *(fePtr.lock()->vecAssembleSwitch) = false;
+    }
+
+    CHKERR VecGhostUpdateBegin(fePtr.lock()->x, INSERT_VALUES, SCATTER_FORWARD);
+    CHKERR VecGhostUpdateEnd(fePtr.lock()->x, INSERT_VALUES, SCATTER_FORWARD);
 
     const int *i_ptr;
     CHKERR ISGetIndices(is, &i_ptr);
@@ -1283,40 +1334,36 @@ MoFEMErrorCode EssentialPostProcRigidBodyTieRhs::operator()() {
     auto fePtrLocked = fePtr.lock();
     CHKERR VecGetArray(fePtrLocked->f, &f_ptr);
     CHKERR VecGetArray(fePtrLocked->x, &x_ptr);
-    // for (auto i = 0; i != size; ++i) {
-    //   if (i % SPACE_DIM == 0) {
-    // FIXME: this is a hack, we should use a proper way to set the tieBlock
-    // std::cout << "tieBlocks[0].tieDirection(0) = " <<
-    // tieBlocks[0].tieDirection(0) << std::endl;
-    if (field_name == "RIGID_BODY_LAMBDA")
-      f_ptr[i_ptr[index]] =
-          x_ptr[i_ptr[index]] -
-          (tieBlocksPtr->at(0).tieDirection(index) * fePtrLocked->ts_t);
-    else if (field_name == "RIGID_BODY_THETA")
-      f_ptr[i_ptr[index]] =
-          x_ptr[i_ptr[index]] -
-          (tieBlocksPtr->at(0).tieRotation(index) * fePtrLocked->ts_t);
-    else
-      SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY, "Wrong field name");
+    //std::cout << "f_ptr (before) = " << f_ptr[i_ptr[index]] << " on processor "<< mField.get_comm_rank() << std::endl;
+    if (mField.get_comm_rank() == 0) {
+      if (field_name == "RIGID_BODY_LAMBDA")
+        f_ptr[i_ptr[index]] =
+            x_ptr[i_ptr[index]] -
+            (tieBlocksPtr->at(0).tieDirection(index) * fePtrLocked->ts_t);
+      else if (field_name == "RIGID_BODY_THETA")
+        f_ptr[i_ptr[index]] =
+            x_ptr[i_ptr[index]] -
+            (tieBlocksPtr->at(0).tieRotation(index) * fePtrLocked->ts_t);
+      else
+        SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                "Wrong field name");
+      
+    }
+        CHKERR VecRestoreArray(fePtrLocked->f, &f_ptr);
+        CHKERR VecRestoreArray(fePtrLocked->x, &x_ptr);
+        CHKERR ISRestoreIndices(is, &i_ptr);
+        MoFEMFunctionReturn(0);
+      };
 
-    //   }
-    // }
-    CHKERR VecRestoreArray(fePtrLocked->f, &f_ptr);
-    CHKERR VecRestoreArray(fePtrLocked->x, &x_ptr);
-    CHKERR ISRestoreIndices(is, &i_ptr);
-    MoFEMFunctionReturn(0);
-  };
-
-  // set block bcs
-  for (int i = 0; i < 3; ++i) {
-    if (tieBlocksPtr->at(0).tieTranslationFlag(i))
-      set_rhs(i, "RIGID_BODY_LAMBDA");
-    if (tieBlocksPtr->at(0).tieRotationFlag(i))
-      set_rhs(i, "RIGID_BODY_THETA");
-  }
-
-  MoFEMFunctionReturn(0);
-}
+      // set block bcs
+      for (int i = 0; i < 3; ++i) {
+        if (tieBlocksPtr->at(0).tieTranslationFlag(i))
+          set_rhs(i, "RIGID_BODY_LAMBDA");
+        if (tieBlocksPtr->at(0).tieRotationFlag(i))
+          set_rhs(i, "RIGID_BODY_THETA");
+      }
+      MoFEMFunctionReturn(0);
+    }
 
 struct EssentialPostProcRigidBodyTieLhs {
   EssentialPostProcRigidBodyTieLhs(
@@ -1350,23 +1397,41 @@ MoFEMErrorCode EssentialPostProcRigidBodyTieLhs::operator()() {
     MoFEMFunctionBegin;
     auto fePtrLocked = fePtr.lock();
     SmartPetscObj<IS> is;
-    CHKERR is_mng->isCreateProblemFieldAndRankLocal(
+    CHKERR is_mng->isCreateProblemFieldAndRank(
         simple->getProblemName(), ROW, field_name, 0, SPACE_DIM, is, nullptr);
-    *(fePtrLocked->matAssembleSwitch) = PETSC_TRUE;
-    CHKERR MatAssemblyBegin(fePtrLocked->B, MAT_FINAL_ASSEMBLY);
-    CHKERR MatAssemblyEnd(fePtrLocked->B, MAT_FINAL_ASSEMBLY);
-    int is_size;
-    CHKERR ISGetSize(is, &is_size);
-    if (is_size != SPACE_DIM)
-      SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
-              "Wrong size of rigid dofs");
-    const int *i_ptr;
-    CHKERR ISGetIndices(is, &i_ptr);
-    const int idx = index;
+    //*(fePtrLocked->matAssembleSwitch) = PETSC_TRUE;
+
+    if (*(fePtr.lock()->matAssembleSwitch)) {
+      CHKERR MatAssemblyBegin(fePtrLocked->B, MAT_FINAL_ASSEMBLY);
+      CHKERR MatAssemblyEnd(fePtrLocked->B, MAT_FINAL_ASSEMBLY);
+      *(fePtr.lock()->matAssembleSwitch) = false;
+    }
+    double norm;
+    CHKERR MatNorm(fePtrLocked->B, NORM_FROBENIUS, &norm);
+    MOFEM_LOG("SYNC", Sev::inform) << "norm before = " << norm;
     CHKERR MatSetOption(fePtrLocked->B, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
-    CHKERR MatZeroRows(fePtrLocked->B, 1, &i_ptr[idx], 1, PETSC_NULL,
-                       PETSC_NULL);
-    CHKERR ISRestoreIndices(is, &i_ptr);
+
+    if (mField.get_comm_rank() == 0) {
+      int is_size;
+      CHKERR ISGetSize(is, &is_size);
+      if (is_size != SPACE_DIM)
+        SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                "Wrong size of rigid dofs");
+      const int *i_ptr;
+      CHKERR ISGetIndices(is, &i_ptr);
+      const int idx = index;
+
+      CHKERR MatZeroRows(fePtrLocked->B, 1, &i_ptr[idx], 1, PETSC_NULL,
+                         PETSC_NULL);
+
+      CHKERR ISRestoreIndices(is, &i_ptr);
+    } else {
+      CHKERR MatZeroRows(fePtrLocked->B, 0, PETSC_NULL, 1, PETSC_NULL,
+                         PETSC_NULL);
+    }
+    double norm2;
+    CHKERR MatNorm(fePtrLocked->B, NORM_FROBENIUS, &norm2);
+    MOFEM_LOG("SYNC", Sev::inform) << "norm after = " << norm2;
     MoFEMFunctionReturn(0);
   };
 

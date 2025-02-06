@@ -763,10 +763,10 @@ MoFEMErrorCode Example::assembleSystem() {
 
         pip.push_back(
             new OpTieTermConstrainRigidBodyGlobalTranslationRhs<SPACE_DIM>(
-                "RIGID_BODY_LAMBDA", int_translation_ptr));
+                "RIGID_BODY_LAMBDA", int_translation_ptr, rigid_body_ents_ptr));
         pip.push_back(
             new OpTieTermConstrainRigidBodyGlobalRotationRhs<SPACE_DIM>(
-                "RIGID_BODY_THETA", int_rotation_ptr));
+                "RIGID_BODY_THETA", int_rotation_ptr, rigid_body_ents_ptr));
       }
       // MoFEMFunctionReturn(0);
       //};
