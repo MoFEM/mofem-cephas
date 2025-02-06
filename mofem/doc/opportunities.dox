@@ -2,9 +2,9 @@
 
 \tableofcontents
 
-Please find below a list of all current open research opportunities with the MoFEM team.
-Of course, we are always looking for talented, driven individuals to join our team.
-If you are a prospective PhD student and you do not see a position which is a good fit for you, please feel free to contact us at ADDRESS with a short two-page research proposal.
+Please find below a list of all current open vacancies with the MoFEM team at the University of Glasgow.
+We are always looking for talented, driven individuals to join our team. 
+If you are a prospective PhD student and you do not see a position which is a good fit for you, feel free to contact us at ADDRESS with a CV and a short research proposal.
 
 \section research_associate Research Associate vacancies
 
@@ -22,7 +22,7 @@ There are currently no Research Assistant openings.
 
 \subsection glacier_sliding GPU-accelerated multiscale modelling for glacier sliding
 
-Principal investigator: 
+Principal supervisor: 
 \htmlonly
 <a href="https://www.gla.ac.uk/schools/engineering/staff/andreishvarts/">Dr Andrei Shvarts</a>
 \endhtmlonly
@@ -42,9 +42,9 @@ Application deadline: 17/02/25
 
 \subsection volcanoes Multi-scale modelling of volcanoes and their deep magmatic roots: phase-field modelling of fluid exsolution during magma solidification
 
-Principal investigator: 
+Principal supervisor: 
 \htmlonly
-<a href="https://www.gla.ac.uk/schools/engineering/staff/andrewmcbride/">Prof. Andrew McBride</a>
+<a href="https://www.gla.ac.uk/schools/engineering/staff/andrewmcbride/">Prof Andrew McBride</a>
 \endhtmlonly
 
 Application deadline: 17/02/25
@@ -62,9 +62,9 @@ Application deadline: 17/02/25
 
 \subsection landscape_evolution Earth system twin for landscape evolution processes
 
-Principal investigator: 
+Principal supervisor: 
 \htmlonly
-<a href="https://www.gla.ac.uk/schools/ges/staff/toddehlers/">Prof. Todd Ehlers</a>
+<a href="https://www.gla.ac.uk/schools/ges/staff/toddehlers/">Prof Todd Ehlers</a>
 \endhtmlonly
 
 Application deadline: 17/02/25
@@ -82,7 +82,7 @@ Application deadline: 17/02/25
 
 \subsection landslides Earth system twin for landslides along UK coasts with soil-rock mixtures
 
-Principal investigator: 
+Principal supervisor: 
 \htmlonly
 <a href="https://www.gla.ac.uk/schools/engineering/staff/zhiweigao/">Dr Zhiwei Gao</a>
 \endhtmlonly
@@ -102,7 +102,7 @@ Application deadline: 17/02/25
 
 \subsection Freudenberg_stent_deployment Advanced Simulation Capabilities for Reinforced Tubular Structures Under Complex Loading Conditions
 
-Principal investigator: 
+Principal supervisor: 
 \htmlonly
 <a href="https://www.gla.ac.uk/schools/engineering/staff/andreishvarts/">Dr Andrei Shvarts</a>
 \endhtmlonly
@@ -122,9 +122,9 @@ Application deadline: 28/02/25
 
 \subsection Freudenberg_seals GPU-accelerated simulation capabilities for lifetime estimation of large connector seals
 
-Principal investigator: 
+Principal supervisor: 
 \htmlonly
-<a href="https://www.gla.ac.uk/schools/engineering/staff/lukaszkaczmarczyk/">Prof. ≈Åukasz Kaczmarczyk</a>
+<a href="https://www.gla.ac.uk/schools/engineering/staff/lukaszkaczmarczyk/">Prof £ukasz Kaczmarczyk</a>
 \endhtmlonly
 
 Application deadline: 28/02/25
@@ -140,11 +140,31 @@ Application deadline: 28/02/25
 </a>
 \endhtmlonly
 
+\subsection EDF_data_driven Data-driven computational modelling for assessing structural integrity of civil nuclear reactors
+
+Principal supervisor: 
+\htmlonly
+<a href="https://www.gla.ac.uk/schools/engineering/staff/chrispearce/">Prof Chris Pearce</a>
+\endhtmlonly
+
+Application deadline: 28/02/2025
+
+\htmlonly
+<a href="https://www.findaphd.com/phds/project/phd-in-civil-engineering-data-driven-computational-modelling-for-assessing-structural-integrity-of-civil-nuclear-reactors/?p168259">
+    <button type="button">Information</button>
+</a>
+\endhtmlonly
+\htmlonly
+<a href="https://www.gla.ac.uk/postgraduate/research/infrastructureenvironment/">
+    <button type="button">Apply</button>
+</a>
+\endhtmlonly
+
 \subsection Siemens_GPU Scalable solvers for solid mechanics problems for GPGPUs
 
-Principal investigator: 
+Principal supervisor: 
 \htmlonly
-<a href="https://www.gla.ac.uk/schools/engineering/staff/andrewmcbride/">Prof. Andrew McBride</a>
+<a href="https://www.gla.ac.uk/schools/engineering/staff/andrewmcbride/">Prof Andrew McBride</a>
 \endhtmlonly
 
 Application deadline: 31/03/25
@@ -160,49 +180,12 @@ Application deadline: 31/03/25
 </a>
 \endhtmlonly
 
-\subsection EDF_data_driven Data-driven computational modelling for assessing structural integrity of civil nuclear reactors
-
-Principal investigator: 
-\htmlonly
-<a href="https://www.gla.ac.uk/schools/engineering/staff/chrispearce/">Prof. Chris Pearce</a>
-\endhtmlonly
-
-Application deadline: N/A
-
-\htmlonly
-<a href="https://www.findaphd.com/phds/project/phd-in-civil-engineering-data-driven-computational-modelling-for-assessing-structural-integrity-of-civil-nuclear-reactors/?p168259">
-    <button type="button">Information</button>
-</a>
-\endhtmlonly
-\htmlonly
-<a href="https://www.gla.ac.uk/postgraduate/research/infrastructureenvironment/">
-    <button type="button">Apply</button>
-</a>
-\endhtmlonly
-
-\subsection RR_LFW GPU-accelerated mean field models for friction welding
-
-Principal investigator: 
-\htmlonly
-<a href="https://www.gla.ac.uk/schools/engineering/staff/andrewmcbride/">Prof. Andrew McBride</a>
-\endhtmlonly
-
-Application deadline: N/A
-
-\htmlonly
-<a href="https://www.gla.ac.uk/postgraduate/research/infrastructureenvironment/">
-    <button type="button">Apply</button>
-</a>
-\endhtmlonly
-
-<hr>
-
 \section mos_jobs Mesh-Oriented Solutions vacancies
 
 \htmlonly
 <a href="https://mesh-oriented-solutions.com">Mesh-Oriented Solutions</a>
 \endhtmlonly
-is a spin-out company focused on applying MoFEM to problems relevant to industry. 
+is a Glasgow-based startup focusing on applying MoFEM to address emerging industrial challanges.
 
 \subsection MOS_internship Software Developer Intern
 
