@@ -89,7 +89,6 @@ struct OpTieTermConstrainRigidBodyRhs
 
   MoFEMErrorCode iNtegrate(EntData &data) {
     MoFEMFunctionBegin;
-    MOFEM_LOG("SYNC", Sev::inform) << "OpTieTermConstrainRigidBodyRhs";
     FTENSOR_INDEX(SPACE_DIM, i);
     FTENSOR_INDEX(SPACE_DIM, j);
     FTENSOR_INDEX(SPACE_DIM, k);
@@ -181,10 +180,6 @@ struct OpTieTermConstrainRigidBodyLhs_dU
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data) {
     MoFEMFunctionBegin;
-    MOFEM_LOG("SYNC", Sev::inform) << "OpTieTermConstrainRigidBodyLhs_dU";
-    MOFEM_LOG("SYNC", Sev::inform) << "OpTieTermConstrainRigidBodyLhs_dU = "
-                                   << tieCoord(0) << " " << tieCoord(1) << " "
-                                   << tieCoord(2);
     FTENSOR_INDEX(SPACE_DIM, i);
     FTENSOR_INDEX(SPACE_DIM, j);
     FTENSOR_INDEX(SPACE_DIM, k);
@@ -216,15 +211,6 @@ struct OpTieTermConstrainRigidBodyLhs_dU
     for (int gg = 0; gg != nb_integration_pts; gg++) {
       const auto alpha = t_w * vol;
       ++t_w;
-
-      // define rotation matrix
-      // FTensor::Tensor2<double, 3, 3> t_omega;
-      // t_omega(i, j) = levi_civita(i, j, k) * t_theta(k);
-
-      // // define reference position
-      // FTensor::Tensor1<double, 3> t_x_ref;
-      // t_x_ref(i) = t_u(i) - t_translation(i) -
-      //              t_omega(i, j) * (t_coords(j) - tieCoord(j));
 
       FTensor::Tensor2<double, SPACE_DIM, SPACE_DIM> t_tangent;
       t_tangent(i, j) = alpha * t_kd(i, j);
@@ -274,7 +260,6 @@ struct OpTieTermConstrainRigidBodyLhs_dTranslation
   MoFEMErrorCode iNtegrate(EntitiesFieldData::EntData &row_data,
                            EntitiesFieldData::EntData &col_data) {
     MoFEMFunctionBegin;
-    MOFEM_LOG("SYNC", Sev::inform) << "OpTieTermConstrainRigidBodyLhs_dTranslation";
 
     FTENSOR_INDEX(SPACE_DIM, i);
     FTENSOR_INDEX(SPACE_DIM, j);
@@ -403,7 +388,7 @@ struct OpTieTermConstrainRigidBodyRhs_du
 
   MoFEMErrorCode iNtegrate(EntData &data) {
     MoFEMFunctionBegin;
-    MOFEM_LOG("SYNC", Sev::inform) << "OpTieTermConstrainRigidBodyRhs_dU";
+
     FTENSOR_INDEX(SPACE_DIM, i);
     FTENSOR_INDEX(SPACE_DIM, j);
 
@@ -467,7 +452,6 @@ struct OpTieTermConstrainRigidBodyGlobalTranslationRhs
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
-    MOFEM_LOG("SYNC", Sev::inform) << "OpTieTermConstrainRigidBodyGlobalTranslationRhs on " << getPtrFE()->mField.get_comm_rank();
 
     if (data.getIndices().empty() || rigidBodyEntsPtr->empty())
       MoFEMFunctionReturnHot(0);
@@ -540,7 +524,6 @@ struct OpTieTermConstrainRigidBodyGlobalTranslationIntegralRhs
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
-        MOFEM_LOG("SYNC", Sev::inform) << "OpTieTermConstrainRigidBodyGlobalTranslationIntegralRhs";
 
     if (intTranslationPtr->size() == 0)
       intTranslationPtr->resize(DIM);
@@ -599,7 +582,6 @@ struct OpTieTermConstrainRigidBodyGlobalRotationIntegralRhs
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
-        MOFEM_LOG("SYNC", Sev::inform) << "OpTieTermConstrainRigidBodyGlobalRotationIntegralRhs";
 
     if (intRotationPtr->size1() == 0 || intRotationPtr->size2() == 0)
       intRotationPtr->resize(DIM, DIM);
@@ -1297,12 +1279,6 @@ MoFEMErrorCode EssentialPostProcRigidBodyTieRhs::operator()() {
   MoFEMFunctionBegin;
   auto is_mng = mField.getInterface<ISManager>();
   auto simple = mField.getInterface<Simple>();
-  auto vec_mng = mField.getInterface<VecManager>();
-
-  // if (mField.get_comm_rank() != 0) {
-  //   MoFEMFunctionReturnHot(0);
-  // }
-  MOFEM_LOG_SYNCHRONISE(mField.get_comm());
 
   auto set_rhs = [&](auto index, auto field_name) {
     MoFEMFunctionBegin;
@@ -1334,7 +1310,7 @@ MoFEMErrorCode EssentialPostProcRigidBodyTieRhs::operator()() {
     auto fePtrLocked = fePtr.lock();
     CHKERR VecGetArray(fePtrLocked->f, &f_ptr);
     CHKERR VecGetArray(fePtrLocked->x, &x_ptr);
-    //std::cout << "f_ptr (before) = " << f_ptr[i_ptr[index]] << " on processor "<< mField.get_comm_rank() << std::endl;
+
     if (mField.get_comm_rank() == 0) {
       if (field_name == "RIGID_BODY_LAMBDA")
         f_ptr[i_ptr[index]] =
@@ -1406,9 +1382,9 @@ MoFEMErrorCode EssentialPostProcRigidBodyTieLhs::operator()() {
       CHKERR MatAssemblyEnd(fePtrLocked->B, MAT_FINAL_ASSEMBLY);
       *(fePtr.lock()->matAssembleSwitch) = false;
     }
-    double norm;
-    CHKERR MatNorm(fePtrLocked->B, NORM_FROBENIUS, &norm);
-    MOFEM_LOG("SYNC", Sev::inform) << "norm before = " << norm;
+    // double norm;
+    // CHKERR MatNorm(fePtrLocked->B, NORM_FROBENIUS, &norm);
+    // MOFEM_LOG("SYNC", Sev::inform) << "norm before = " << norm;
     CHKERR MatSetOption(fePtrLocked->B, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
 
     if (mField.get_comm_rank() == 0) {
@@ -1429,9 +1405,9 @@ MoFEMErrorCode EssentialPostProcRigidBodyTieLhs::operator()() {
       CHKERR MatZeroRows(fePtrLocked->B, 0, PETSC_NULL, 1, PETSC_NULL,
                          PETSC_NULL);
     }
-    double norm2;
-    CHKERR MatNorm(fePtrLocked->B, NORM_FROBENIUS, &norm2);
-    MOFEM_LOG("SYNC", Sev::inform) << "norm after = " << norm2;
+    // double norm2;
+    // CHKERR MatNorm(fePtrLocked->B, NORM_FROBENIUS, &norm2);
+    // MOFEM_LOG("SYNC", Sev::inform) << "norm after = " << norm2;
     MoFEMFunctionReturn(0);
   };
 
