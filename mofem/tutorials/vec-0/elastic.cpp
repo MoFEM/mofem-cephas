@@ -89,7 +89,7 @@ PetscBool is_plane_strain = PETSC_FALSE;
 
 struct Example {
 
-  Example(MoFEM::Interface &m_field) : mField(m_field) {}
+  Example(MoFEM::Interface &m_field) : mField(m_field), tieData(mField) {}
 
   MoFEMErrorCode runProblem();
 
@@ -114,14 +114,8 @@ private:
       std::string field_name, std::string block_name,
       boost::shared_ptr<MatrixDouble> mat_D_Ptr, Sev sev);
 
-  struct TieBlock {
-    Range tieFaces; // tie faces
-    FTensor::Tensor1<double, 3> tieCoord;
-    FTensor::Tensor1<double, 3> tieDirection;
-  };
-
-  std::vector<TieBlock> tieBlocks; //< Store infomation about tie blocks
-  //RigidBodyTieConstraintData<SPACE_DIM> tieBlocks;
+  RigidBodyTieConstraintData tieData;
+  std::vector<RigidBodyTieConstraintData::TieBlock> tieBlocks;
 };
 
 MoFEMErrorCode Example::addMatBlockOps(
@@ -274,31 +268,7 @@ MoFEMErrorCode Example::readMesh() {
   CHKERR simple->loadFile();
 
   if (A == PETSC) {
-    Range tie_ents;
-    for (auto m :
-         mField.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(std::regex(
-
-             (boost::format("%s(.*)") % "TIE_MATRIX").str()
-
-                 ))
-
-    ) {
-      auto meshset = m->getMeshset();
-      Range tie_meshset_range;
-      CHKERR mField.get_moab().get_entities_by_dimension(
-          meshset, SPACE_DIM - 1, tie_meshset_range, true);
-      std::vector<double> attributes;
-      CHKERR m->getAttributes(attributes);
-      if (attributes.size() != 6) {
-        SETERRQ1(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
-                 "Wrong number of head parameters %d", attributes.size());
-      }
-      tieBlocks.push_back({tie_meshset_range,
-                           FTensor::Tensor1<double, 3>(
-                               attributes[0], attributes[1], attributes[2]),
-                           FTensor::Tensor1<double, 3>(
-                               attributes[3], attributes[4], attributes[5])});
-    }
+    CHKERR tieData.getTieBlocks(tieBlocks);
   }
   MoFEMFunctionReturn(0);
 }
@@ -343,18 +313,13 @@ MoFEMErrorCode Example::setupProblem() {
   CHKERR simple->setFieldOrder("U", order);
   CHKERR simple->setFieldOrder("GEOMETRY", 2);
 
-  //Range rigid_body_ents;
-  //EntityHandle rigid_body_meshset;
   Range rigid_body_surface_ents;
   auto add_tie_lagrange_multiplier = [&]() {
     MoFEMFunctionBegin;
     CHKERR simple->addBoundaryField("LAMBDA", H1, base, SPACE_DIM);
-
     CHKERR simple->addMeshsetField("RIGID_BODY_LAMBDA", NOFIELD, NOBASE, 3);
     CHKERR simple->addMeshsetField("RIGID_BODY_THETA", NOFIELD, NOBASE, 3);
     CHKERR simple->addMeshsetField("LAMBDA", H1, base, SPACE_DIM);
-
-    
     for (auto &t : tieBlocks) {
       // add tie nodes to rigid body meshset
       Range tie_nodes;
@@ -369,100 +334,12 @@ MoFEMErrorCode Example::setupProblem() {
       rigid_body_surface_ents.merge(tie_edges);
       rigid_body_surface_ents.merge(t.tieFaces);
     }
-    std::cout << "rigid_body_surface_ents = "
-              << rigid_body_surface_ents << std::endl;
     simple->getMeshsetFiniteElementEntities().push_back(
         rigid_body_surface_ents);
 
-    // // Create global fields for rigid body motion
-    // CHKERR simple->addDataField("RIGID_BODY_LAMBDA", NOFIELD, NOBASE, 3);
-    // CHKERR simple->addDataField("RIGID_BODY_THETA", NOFIELD, NOBASE, 3);
-
-    // CHKERR mField.add_finite_element("RIGID_BODY");
-
-    // auto add_rigid_body_fe_meshset = [&]() {
-    //   MoFEMFunctionBegin;
-
-    //   // Define row/cols and element data
-    //   CHKERR mField.modify_finite_element_add_field_row("RIGID_BODY",
-    //                                                     "RIGID_BODY_LAMBDA");
-    //   CHKERR mField.modify_finite_element_add_field_col("RIGID_BODY",
-    //                                                     "RIGID_BODY_LAMBDA");
-
-    //   CHKERR mField.modify_finite_element_add_field_row("RIGID_BODY",
-    //                                                     "RIGID_BODY_THETA");
-    //   CHKERR mField.modify_finite_element_add_field_col("RIGID_BODY",
-    //                                                     "RIGID_BODY_THETA");
-
-    //   CHKERR mField.modify_finite_element_add_field_row("RIGID_BODY", "U");
-    //   CHKERR mField.modify_finite_element_add_field_col("RIGID_BODY", "U");
-
-    //   CHKERR mField.modify_finite_element_add_field_row("RIGID_BODY", "U");
-    //   CHKERR mField.modify_finite_element_add_field_col("RIGID_BODY", "U");
-
-    //   CHKERR mField.modify_finite_element_add_field_row("RIGID_BODY",
-    //                                                      "LAMBDA");
-    //   CHKERR mField.modify_finite_element_add_field_col("RIGID_BODY",
-    //                                                      "LAMBDA");
-
-    //   CHKERR mField.modify_finite_element_add_field_data("RIGID_BODY", "RIGID_BODY_LAMBDA");
-    //   CHKERR mField.modify_finite_element_add_field_data("RIGID_BODY", "RIGID_BODY_THETA");
-    //   CHKERR mField.modify_finite_element_add_field_data("RIGID_BODY", "U");
-    //   CHKERR mField.modify_finite_element_add_field_data("RIGID_BODY", "LAMBDA");
-
-    //   auto translation_meshset = mField.get_field_meshset("RIGID_BODY_LAMBDA");
-    //   auto rotation_meshset = mField.get_field_meshset("RIGID_BODY_THETA");
-
-    //   CHKERR mField.get_moab().get_entities_by_handle(translation_meshset,
-    //                                                   rigid_body_ents, true);
-    //   CHKERR mField.get_moab().get_entities_by_handle(rotation_meshset,
-    //                                                   rigid_body_ents, true);
-
-    //   {
-    //     CHKERR mField.get_moab().create_meshset(MESHSET_SET,
-    //                                             rigid_body_meshset);
-    //     CHKERR mField.get_moab().add_entities(rigid_body_meshset, rigid_body_ents);
-
-    //     // This implementation assumes only one rigid body
-    //     // add tie faces to rigid body meshset
-    //     for (auto &t : tieBlocks) {
-    //       CHKERR mField.get_moab().add_entities(rigid_body_meshset, t.tieFaces);
-    //       // add tie nodes to rigid body meshset
-    //       Range tie_nodes;
-    //       CHKERR mField.get_moab().get_adjacencies(t.tieFaces, 0, false, tie_nodes,
-    //                                               moab::Interface::UNION);
-    //       CHKERR mField.get_moab().add_entities(rigid_body_meshset, tie_nodes);
-    //       // add tie edges to rigid body meshset
-    //       Range tie_edges;
-    //       CHKERR mField.get_moab().get_adjacencies(t.tieFaces, 1, false, tie_edges,
-    //                                               moab::Interface::UNION);
-    //       CHKERR mField.get_moab().add_entities(rigid_body_meshset, tie_edges);
-    //       // add to range of rigid body entities
-    //       rigid_body_ents.merge(tie_nodes);
-    //       rigid_body_ents.merge(tie_edges);
-    //       rigid_body_ents.merge(t.tieFaces);
-
-    //     }
-
-    //     CHKERR mField.getInterface<BitRefManager>()->setBitLevelToMeshset(
-    //         rigid_body_meshset, BitRefLevel().set());
-    //   }
-    //   //CHKERR mField.add_ents_to_finite_element_by_MESHSET(rigid_body_meshset,
-    //   //                                                    "RIGID_BODY", false);
-
-    //   MoFEMFunctionReturn(0);
-    // };
-
-
-    // CHKERR add_rigid_body_fe_meshset();
-
-    // simple->getOtherFiniteElements().push_back("RIGID_BODY");
-
     CHKERR simple->setFieldOrder("LAMBDA", 0);
-    // CHKERR simple->setFieldOrder("LAMBDA_ROT", 0);
     for (auto &t : tieBlocks) {
       CHKERR simple->setFieldOrder("LAMBDA", order, &t.tieFaces);
-      // CHKERR simple->setFieldOrder("LAMBDA_ROT", order, &t.tieFaces);
     }
     MoFEMFunctionReturn(0);
   };
@@ -470,70 +347,7 @@ MoFEMErrorCode Example::setupProblem() {
   if (A == PETSC) {
     CHKERR add_tie_lagrange_multiplier();
   }
-  CHKERR simple->defineFiniteElements();
-
-  // auto add_no_field = [&](auto fe_name, auto field) {
-  //   MoFEMFunctionBegin;
-  //   CHKERR mField.modify_finite_element_add_field_row(fe_name, field);
-  //   CHKERR mField.modify_finite_element_add_field_col(fe_name, field);
-  //   CHKERR mField.modify_finite_element_add_field_data(fe_name, field);
-  //   MoFEMFunctionReturn(0);
-  // };
-  // CHKERR add_no_field("bFE", "RIGID_BODY_LAMBDA");
-  // CHKERR add_no_field("bFE", "RIGID_BODY_THETA");
-  //   auto add_no_field = [&](auto fe_name, auto field) {
-  //   MoFEMFunctionBegin;
-  //   CHKERR mField.modify_finite_element_add_field_row(fe_name, field);
-  //   CHKERR mField.modify_finite_element_add_field_col(fe_name, field);
-  //   CHKERR mField.modify_finite_element_add_field_data(fe_name, field);
-  //   MoFEMFunctionReturn(0);
-  // };
-  // CHKERR add_no_field("mFE", "LAMBDA");
-
-  CHKERR simple->defineProblem(PETSC_TRUE);
-  CHKERR simple->buildFields();
-  // add vertex to fe here from meshsets
-  // Range rigid_body_ents;
-  // auto translation_meshset = mField.get_field_meshset("RIGID_BODY_LAMBDA");
-  // auto rotation_meshset = mField.get_field_meshset("RIGID_BODY_THETA");
-  // CHKERR mField.get_moab().get_entities_by_handle(translation_meshset,
-  //                                                 rigid_body_ents, true);
-  // CHKERR mField.get_moab().get_entities_by_handle(rotation_meshset,
-  //                                                 rigid_body_ents, true);
-
-  // std::cout << "rigid_body_ents = " << rigid_body_ents << std::endl;
-
-  // CHKERR mField.getInterface<BitRefManager>()->setBitLevelToMeshset(
-  //     rigid_body_meshset, BitRefLevel().set());
-
-  // CHKERR mField.add_ents_to_finite_element_by_MESHSET(rigid_body_meshset,
-  //                                                     "RIGID_BODY", false);
-
-
-  CHKERR simple->buildFiniteElements();
-  CHKERR simple->buildProblem();
-
-  // std::cout<< "Rigid body surface ents = " << rigid_body_surface_ents << std::endl;
-  // // Remove prescirbed dofs from rigid body assuming just x translation
-  // CHKERR mField.getInterface<ProblemsManager>()->removeDofsOnEntities(
-  //     simple->getProblemName(), "RIGID_BODY_LAMBDA", rigid_body_surface_ents, 0, 0);
-  // CHKERR mField.getInterface<ProblemsManager>()->removeDofsOnEntities(
-  //     simple->getProblemName(), "RIGID_BODY_LAMBDA", rigid_body_ents, 0, 0);
-
-  // auto set_translation = [this](boost::shared_ptr<FieldEntity>
-  // field_entity_ptr) {
-  //   for(auto &t : tieBlocks) {
-  //     // Scale with time?
-  //     field_entity_ptr->getEntFieldData()[0] = t.tieDirection(0);
-  //   }
-
-  //   return 0;
-  // };
-  // CHKERR
-  // mField.getInterface<FieldBlas>()->fieldLambdaOnEntities(set_translation,
-  //                                                                "RIGID_BODY_LAMBDA");
-
-  // CHKERR simple->setUp();
+  CHKERR simple->setUp();
 
   auto project_ho_geometry = [&]() {
     Projection10NodeCoordsOnField ent_method(mField, "GEOMETRY");
@@ -594,6 +408,16 @@ MoFEMErrorCode Example::boundaryCondition() {
 
   // adding MPCs
   CHKERR bc_mng->addBlockDOFsToMPCs(simple->getProblemName(), "U");
+
+  if (A == PETSC) {
+    // adding Tie constraints
+    auto tie_block_ptr =
+        boost::make_shared<std::vector<RigidBodyTieConstraintData::TieBlock>>(
+            tieBlocks);
+
+    CHKERR OpFactoryPipelineTieConstraint<SPACE_DIM, A>(
+        mField, "LAMBDA", tie_block_ptr, Sev::inform);
+  }
 
   MoFEMFunctionReturn(0);
 }
@@ -657,141 +481,6 @@ MoFEMErrorCode Example::assembleSystem() {
       new OpInternalForce("U", mat_stress_ptr,
                           [](double, double, double) constexpr { return -1; }));
   //! [Push Internal forces]
-
-
-
-  //! [Constraint matrix]
-  if (A == PETSC) {
-    auto add_constrain_lhs = [&](auto &pip) {
-      MoFEMFunctionBegin;
-      auto u_ptr = boost::make_shared<MatrixDouble>();
-      auto lambda_ptr = boost::make_shared<MatrixDouble>();
-      auto translation_ptr = boost::make_shared<VectorDouble>();
-      auto theta_ptr = boost::make_shared<VectorDouble>();
-
-      pip.push_back(new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_ptr));
-      pip.push_back(
-          new OpCalculateVectorFieldValues<SPACE_DIM>("LAMBDA", lambda_ptr));
-      pip.push_back(new OpCalculateNoFieldVectorValues("RIGID_BODY_LAMBDA",
-                                                       translation_ptr));
-      pip.push_back(
-          new OpCalculateNoFieldVectorValues("RIGID_BODY_THETA", theta_ptr));
-
-      for (auto &t : tieBlocks) {
-        pip.push_back(new OpTieTermConstrainRigidBodyLhs_dU<SPACE_DIM>(
-            "LAMBDA", "U", u_ptr, t.tieCoord,
-            boost::make_shared<Range>(t.tieFaces), translation_ptr, theta_ptr));
-        pip.push_back(
-            new OpTieTermConstrainRigidBodyLhs_dTranslation<SPACE_DIM>(
-                "LAMBDA", "RIGID_BODY_LAMBDA", boost::make_shared<Range>(t.tieFaces)));
-        pip.push_back(new OpTieTermConstrainRigidBodyLhs_dRotation<SPACE_DIM>(
-            "LAMBDA", "RIGID_BODY_THETA", t.tieCoord,
-            boost::make_shared<Range>(t.tieFaces)));
-      }
-      MoFEMFunctionReturn(0);
-    };
-
-    auto add_constrain_rhs = [&](auto &pip) {
-      MoFEMFunctionBegin;
-      auto u_ptr = boost::make_shared<MatrixDouble>();
-      auto lambda_ptr = boost::make_shared<MatrixDouble>();
-      auto translation_ptr = boost::make_shared<VectorDouble>();
-      auto theta_ptr = boost::make_shared<VectorDouble>();
-
-      pip.push_back(new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_ptr));
-      pip.push_back(
-          new OpCalculateVectorFieldValues<SPACE_DIM>("LAMBDA", lambda_ptr));
-
-      pip.push_back(new OpCalculateNoFieldVectorValues("RIGID_BODY_LAMBDA",
-                                                       translation_ptr));
-      pip.push_back(
-          new OpCalculateNoFieldVectorValues("RIGID_BODY_THETA", theta_ptr));
-
-      for (auto &t : tieBlocks) {
-        pip.push_back(new OpTieTermConstrainRigidBodyRhs<SPACE_DIM>(
-            "LAMBDA", u_ptr, t.tieCoord,
-            boost::make_shared<Range>(t.tieFaces), translation_ptr, theta_ptr));
-      }
-      MoFEMFunctionReturn(0);
-    };
-
-
-    CHKERR add_constrain_lhs(pip->getOpBoundaryLhsPipeline());
-    CHKERR add_constrain_rhs(pip->getOpBoundaryRhsPipeline());
-
-
-    // Add Rigid body element to pipeline
-    auto add_rigid_body_rhs = [&](auto &pip) {
-      MoFEMFunctionBegin;
-
-      // add ops
-      auto lambda_ptr = boost::make_shared<MatrixDouble>();
-      auto translation_ptr = boost::make_shared<VectorDouble>();
-      auto u_ptr = boost::make_shared<MatrixDouble>();
-      auto int_translation_ptr =
-          boost::make_shared<VectorDouble>(VectorDouble(3));
-      auto int_rotation_ptr =
-          boost::make_shared<MatrixDouble>(MatrixDouble(3, 3));
-
-      Range rigid_body_ents;
-      auto v_rigid_body_ents = simple->getMeshsetFiniteElementEntities();
-
-      // loop over all rigid body entities
-      for(auto ents : v_rigid_body_ents) {
-        rigid_body_ents.merge(ents);
-      }
-
-
-
-      auto rigid_body_ents_ptr = boost::make_shared<Range>(rigid_body_ents);
-
-      for (auto &t : tieBlocks) {
-        auto op_loop_side = new OpLoopSide<BoundaryEle>(
-            mField, "bFE", SPACE_DIM - 1, rigid_body_ents_ptr);
-        CHKERR AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
-            op_loop_side->getOpPtrVector(), {});
-        op_loop_side->getOpPtrVector().push_back(
-            new OpCalculateVectorFieldValues<SPACE_DIM>("LAMBDA", lambda_ptr));
-        op_loop_side->getOpPtrVector().push_back(
-            new OpTieTermConstrainRigidBodyGlobalTranslationIntegralRhs<
-                SPACE_DIM>("LAMBDA", boost::make_shared<Range>(t.tieFaces),
-                           lambda_ptr, int_translation_ptr));
-        op_loop_side->getOpPtrVector().push_back(
-            new OpTieTermConstrainRigidBodyGlobalRotationIntegralRhs<SPACE_DIM>(
-                "LAMBDA", t.tieCoord, lambda_ptr, int_rotation_ptr));
-        pip.push_back(op_loop_side);
-
-        pip.push_back(
-            new OpTieTermConstrainRigidBodyGlobalTranslationRhs<SPACE_DIM>(
-                "RIGID_BODY_LAMBDA", int_translation_ptr, rigid_body_ents_ptr));
-        pip.push_back(
-            new OpTieTermConstrainRigidBodyGlobalRotationRhs<SPACE_DIM>(
-                "RIGID_BODY_THETA", int_rotation_ptr, rigid_body_ents_ptr));
-      }
-      // MoFEMFunctionReturn(0);
-      //};
-
-      // CHKERR add_rigid_body_ops(fe_ptr);
-      MoFEMFunctionReturn(0);
-    };
-
-    // auto add_rigid_body_lhs = [&](auto &pip) {
-    //   MoFEMFunctionBegin;
-    //   auto lambda_ptr = boost::make_shared<MatrixDouble>();
-    //   auto translation_ptr = boost::make_shared<VectorDouble>();
-
-    //   for (auto &t : tieBlocks) {
-    //     pip.push_back(new OpTieTermSetBc<SPACE_DIM>(
-    //         "RIGID_BODY_LAMBDA", "RIGID_BODY_LAMBDA", boost::make_shared<Range>(t.tieFaces)));
-    //   }
-    //   MoFEMFunctionReturn(0);
-    // };
-
-    // CHKERR add_rigid_body_lhs(pip->getOpMeshsetLhsPipeline());
-
-    CHKERR add_rigid_body_rhs(pip->getOpMeshsetRhsPipeline());
-  }
-  //! [Constraint matrix]
 
   //! [Push Body forces]
   CHKERR DomainRhsBCs::AddFluxToPipeline<OpDomainRhsBCs>::add(
@@ -880,108 +569,31 @@ MoFEMErrorCode Example::solveSystem() {
   };
 
   auto set_global_bc = [&]() {
-    MoFEMFunctionBegin; 
+    MoFEMFunctionBegin;
     auto ksp_ctx_ptr = getDMKspCtx(dm);
-    auto fe_pre_proc_rhs = boost::make_shared<FEMethod>();
+    auto ts_ctx_ptr = getDMTsCtx(dm);
     auto fe_post_proc_rhs = boost::make_shared<FEMethod>();
     auto fe_post_proc_lhs = boost::make_shared<FEMethod>();
-    
+    auto tie_block_ptr =
+        boost::make_shared<std::vector<RigidBodyTieConstraintData::TieBlock>>(
+            tieBlocks);
 
-    auto set_pre_rhs = [this, fe_pre_proc_rhs, &dm]() {
+    auto set_post_rhs = [this, fe_post_proc_rhs, ts_ctx_ptr, tie_block_ptr]() {
       MoFEMFunctionBeginHot;
-      auto is_mng = mField.getInterface<ISManager>();
-      auto simple = mField.getInterface<Simple>();
-      SmartPetscObj<IS> is;
-      CHKERR is_mng->isCreateProblemFieldAndRankLocal(
-          simple->getProblemName(), ROW, "RIGID_BODY_LAMBDA", 0,
-          MAX_DOFS_ON_ENTITY, is, nullptr);
-      const int *i_ptr;
-      CHKERR ISGetIndices(is, &i_ptr);
-      int size;
-      CHKERR ISGetLocalSize(is, &size);
-      std::cout << "size = " << size << std::endl;
-      // if (size != SPACE_DIM)
-      //   SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Expected
-      //   SPACE_DIM");
-      double *x_ptr;
-
-      if (fe_pre_proc_rhs->x == NULL) {
-        fprintf(stderr, "Error: fe_pre_proc_rhs is NULL\n");
-      }
-      CHKERR VecGetArray(fe_pre_proc_rhs->x, &x_ptr);
-      for (auto i = 0; i != size; ++i) {
-        if (i % SPACE_DIM == 0) { // set x
-          x_ptr[i_ptr[i]] = 0.01; // times (fe_pre_proc_rhs->ts_t);
-        }
-      }
-      CHKERR VecRestoreArray(fe_pre_proc_rhs->x, &x_ptr);
-      CHKERR ISRestoreIndices(is, &i_ptr);
-      CHKERR DMoFEMMeshToGlobalVector(dm, fe_pre_proc_rhs->x, INSERT_VALUES,
-                                      SCATTER_REVERSE);
+      CHKERR EssentialPostProcRigidBodyTieRhs(mField, fe_post_proc_rhs,
+                                              tie_block_ptr)();
       MoFEMFunctionReturnHot(0);
     };
 
-    auto get_pre_proc_tie_hook = [&](auto &tie_direction) {
-      return SetTieBcPreProc(mField, fe_pre_proc_rhs, tie_direction);
-    };
-
-    auto set_post_rhs = [this, fe_post_proc_rhs]() {
+    auto set_post_lhs = [this, fe_post_proc_lhs, tie_block_ptr]() {
       MoFEMFunctionBeginHot;
-      auto is_mng = mField.getInterface<ISManager>();
-      auto simple = mField.getInterface<Simple>();
-      SmartPetscObj<IS> is;
-      CHKERR is_mng->isCreateProblemFieldAndRankLocal(
-          simple->getProblemName(), ROW, "RIGID_BODY_LAMBDA", 0,
-          MAX_DOFS_ON_ENTITY, is, nullptr);
-          
-      const int *i_ptr;
-      CHKERR ISGetIndices(is, &i_ptr);
-      int size;
-      CHKERR ISGetLocalSize(is, &size);
-      std::cout << "size = " << size << std::endl;
-      double *f_ptr;
-      CHKERR VecGetArray(fe_post_proc_rhs->f, &f_ptr);
-      for (auto i = 0; i != size; ++i) {
-        if (i % SPACE_DIM == 0) {
-          //f_ptr[i_ptr[i]] = x_ptr[i_ptr[i]] - f_ptr[i_ptr[i]]
-          f_ptr[i_ptr[i]] = 0.1;
-        }
-      }
-      CHKERR VecRestoreArray(fe_post_proc_rhs->f, &f_ptr);
-      CHKERR ISRestoreIndices(is, &i_ptr);
+
+      CHKERR EssentialPostProcRigidBodyTieLhs(mField, fe_post_proc_lhs,
+                                              tie_block_ptr)();
       MoFEMFunctionReturnHot(0);
     };
 
-
-
-    auto set_post_lhs = [this, fe_post_proc_lhs]() {
-      MoFEMFunctionBeginHot;
-      auto is_mng = mField.getInterface<ISManager>();
-      auto simple = mField.getInterface<Simple>();
-      SmartPetscObj<IS> is;
-      CHKERR is_mng->isCreateProblemFieldAndRankLocal(
-          simple->getProblemName(), ROW, "RIGID_BODY_LAMBDA", 0, SPACE_DIM, is,
-          nullptr);
-      *(fe_post_proc_lhs->matAssembleSwitch) = PETSC_TRUE;
-      CHKERR MatAssemblyBegin(fe_post_proc_lhs->B, MAT_FINAL_ASSEMBLY);
-      CHKERR MatAssemblyEnd(fe_post_proc_lhs->B, MAT_FINAL_ASSEMBLY);
-      const int *i_ptr;
-      CHKERR ISGetIndices(is, &i_ptr);
-      const int idx = 0;
-      // CHKERR MatZeroRowsColumns(fe_post_proc_lhs->B, 1, &i_ptr[idx], 1, PETSC_NULL,
-      //                           PETSC_NULL);
-      CHKERR MatZeroRows(fe_post_proc_lhs->B, 1, &i_ptr[idx], 1, PETSC_NULL,
-                         PETSC_NULL);
-      CHKERR ISRestoreIndices(is, &i_ptr);
-
-      MoFEMFunctionReturnHot(0);
-    };
-
-    // for (auto &t : tieBlocks) {
-    //   fe_post_proc_rhs->preProcessHook = get_pre_proc_tie_hook(t.tieDirection);
-    // }
     fe_post_proc_rhs->postProcessHook = set_post_rhs;
-    //ksp_ctx_ptr->getPreProcComputeRhs().push_back(fe_pre_proc_rhs);
     ksp_ctx_ptr->getPostProcComputeRhs().push_back(fe_post_proc_rhs);
     fe_post_proc_lhs->postProcessHook = set_post_lhs;
     ksp_ctx_ptr->getPostProcSetOperators().push_back(fe_post_proc_lhs);
@@ -1004,7 +616,9 @@ MoFEMErrorCode Example::solveSystem() {
   MOFEM_LOG_TAG("TIMER", "timer");
 
   CHKERR set_essential_bc();
-  CHKERR set_global_bc();
+  if (tieBlocks.size() > 0 && A == PETSC) {
+    CHKERR set_global_bc();
+  }
 
   if (A == AssemblyType::BLOCK_SCHUR || A == AssemblyType::SCHUR) {
     auto schur_ptr = SetUpSchur::createSetUpSchur(mField);
@@ -1231,23 +845,13 @@ MoFEMErrorCode Example::checkResults() {
       pip->getOpBoundaryRhsPipeline(), mField, "U", -1, Sev::verbose);
 
   if (A == AssemblyType::PETSC) {
-
-    auto lambda_ptr = boost::make_shared<MatrixDouble>();
-    auto u_ptr = boost::make_shared<MatrixDouble>();
-    auto translation_ptr = boost::make_shared<VectorDouble>();
-
-    pip->getOpBoundaryRhsPipeline().push_back(
-        new OpCalculateVectorFieldValues<SPACE_DIM>("U", u_ptr));
-
-    pip->getOpBoundaryRhsPipeline().push_back(
-        new OpCalculateVectorFieldValues<SPACE_DIM>("LAMBDA", lambda_ptr));
-    pip->getOpBoundaryRhsPipeline().push_back(
-        new OpCalculateNoFieldVectorValues("RIGID_BODY_LAMBDA", translation_ptr));
-
-    for (auto &t : tieBlocks) {
-      pip->getOpBoundaryRhsPipeline().push_back(
-          new OpTieTermConstrainRigidBodyRhs_du<SPACE_DIM>(
-              "U", lambda_ptr, boost::make_shared<Range>(t.tieFaces)));
+    if (tieBlocks.size() > 0) {
+      auto tie_block_ptr =
+          boost::make_shared<std::vector<RigidBodyTieConstraintData::TieBlock>>(
+              tieBlocks);
+      CHKERR OpFactoryCalculateTieConstraintForceTermRhs<SPACE_DIM, A>(
+          mField, pip->getOpBoundaryRhsPipeline(), "LAMBDA", tie_block_ptr,
+          Sev::inform);
     }
   }
   auto dm = simple->getDM();
