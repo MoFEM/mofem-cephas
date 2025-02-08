@@ -28,4 +28,7 @@ tutorials_build_and_install(
   radiation ${CMAKE_CURRENT_SOURCE_DIR}/radiation.cpp)
 
 # Convert markdown files to Jupyter notebooks
-copy_and_convert_md_to_ipynb(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+if (JUPYTEXT)
+  copy_and_convert_md_to_ipynb(
+    ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+endif()
