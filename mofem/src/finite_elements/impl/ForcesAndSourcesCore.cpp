@@ -1699,8 +1699,8 @@ MoFEMErrorCode ForcesAndSourcesCore::setRefineFEPtr(
 
 MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopSide(
     const string &fe_name, ForcesAndSourcesCore *side_fe, const size_t side_dim,
-    const EntityHandle ent_for_side, const int verb,
-    const LogManager::SeverityLevel sev, AdjCache *adj_cache) {
+    const EntityHandle ent_for_side, boost::shared_ptr<Range> fe_range,
+    const int verb, const LogManager::SeverityLevel sev, AdjCache *adj_cache) {
   MoFEMFunctionBegin;
 
   const auto *problem_ptr = getFEMethod()->problemPtr;
@@ -1745,26 +1745,44 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopSide(
 
     auto get_bit_entity_adjacency = [&]() {
       Range adjacent_ents;
-      CHKERR ptrFE->mField.getInterface<BitRefManager>()->getAdjacenciesAny(
-          ent, side_dim, adjacent_ents);
+      CHK_THROW_MESSAGE(
+          ptrFE->mField.getInterface<BitRefManager>()->getAdjacenciesAny(
+              ent, side_dim, adjacent_ents),
+          "getAdjacenciesAny failed");
       return adjacent_ents;
     };
 
-    auto get_adj = [&](auto &fe_uid)
+    auto get_bit_meshset_entities = [&]() {
+      auto &bit = getFEMethod()->numeredEntFiniteElementPtr->getBitRefLevel();
+      Range ents = *fe_range;
+      CHK_THROW_MESSAGE(
+          ptrFE->mField.getInterface<BitRefManager>()->filterEntitiesByRefLevel(
+              bit, BitRefLevel().set(), ents),
+          "filterEntitiesByRefLevel failed");
+      return ents;
+    };
+
+    auto get_adj = [&](auto &fe_uid, auto get_adj_fun)
         -> std::vector<boost::weak_ptr<NumeredEntFiniteElement>> & {
       if (adj_cache) {
         try {
           return (*adj_cache).at(ent);
         } catch (const std::out_of_range &) {
-          return (*adj_cache)[ent] =
-                     get_numered_fe_ptr(fe_uid, get_bit_entity_adjacency());
+          return (*adj_cache)[ent] = get_numered_fe_ptr(fe_uid, get_adj_fun());
         }
       } else {
-        return get_numered_fe_ptr(fe_uid, get_bit_entity_adjacency());
+        return get_numered_fe_ptr(fe_uid, get_adj_fun());
       }
     };
 
-    auto adj = get_adj((*fe_miit)->getFEUId());
+    if (type_from_handle(ent) == MBENTITYSET) {
+      if (!fe_range)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "No range of finite elements");
+    }
+    auto adj = (!fe_range)
+                   ? get_adj((*fe_miit)->getFEUId(), get_bit_entity_adjacency)
+                   : get_adj((*fe_miit)->getFEUId(), get_bit_meshset_entities);
 
     if (verb >= VERBOSE && !adj.empty())
       MOFEM_LOG("SELF", sev) << "Number of side finite elements " << adj.size();

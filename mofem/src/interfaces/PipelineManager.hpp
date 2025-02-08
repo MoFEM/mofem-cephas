@@ -55,6 +55,12 @@ struct PipelineManager : public UnknownInterface {
 
   inline boost::shared_ptr<FEMethod> &getSkeletonExplicitRhsFE();
 
+  inline boost::shared_ptr<FEMethod> &getMeshsetRhsFE();
+
+  inline boost::shared_ptr<FEMethod> &getMeshsetLhsFE();
+
+  inline boost::shared_ptr<FEMethod> &getMeshsetExplicitRhsFE();
+
   template <typename T = ForcesAndSourcesCore, int DIM = -1>
   inline auto getCastDomainLhsFE();
 
@@ -81,6 +87,15 @@ struct PipelineManager : public UnknownInterface {
 
   template <typename T = ForcesAndSourcesCore, int DIM = -1>
   inline auto getCastSkeletonExplicitRhsFE();
+
+  template <typename T = ForcesAndSourcesCore>
+  inline auto getCastMeshsetRhsFE();
+
+  template <typename T = ForcesAndSourcesCore>
+  inline auto getCastMeshsetLhsFE();
+
+  template <typename T = ForcesAndSourcesCore>
+  inline auto getCastMeshsetExplicitRhsFE();
 
   template <int DIM = -1>
   inline MoFEMErrorCode setDomainLhsIntegrationRule(RuleHookFun rule);
@@ -199,6 +214,27 @@ struct PipelineManager : public UnknownInterface {
   inline boost::ptr_deque<UserDataOperator> &getOpSkeletonExplicitRhsPipeline();
 
   /**
+   * @brief Get the Op Meshset Rhs Pipeline object
+   * 
+   * @return boost::ptr_deque<UserDataOperator>& 
+   */
+  boost::ptr_deque<UserDataOperator> &getOpMeshsetRhsPipeline();
+
+  /**
+   * @brief Get the Op Meshset Lhs Pipeline object
+   * 
+   * @return boost::ptr_deque<UserDataOperator>& 
+   */
+  boost::ptr_deque<UserDataOperator> &getOpMeshsetLhsPipeline();
+  
+  /**
+   * @brief Get the Op Meshset Explicit Rhs Pipeline object
+   * 
+   * @return boost::ptr_deque<UserDataOperator>& 
+   */
+  boost::ptr_deque<UserDataOperator> &getOpMeshsetExplicitRhsPipeline();
+
+  /**
    * @brief Iterate finite elements
    * @ingroup mofem_basic_interface
    *
@@ -310,6 +346,14 @@ private:
       feSkeletonExplicitRhs; ///< Element to assemble explict Rhs for IMEX
                              ///< solver
 
+  boost::shared_ptr<FEMethod> feMeshsetRhs; ///< Element to assemble RHS side by
+                                            ///< integrating meshset
+  boost::shared_ptr<FEMethod> feMeshsetLhs; ///< Element to assemble LHS side by
+                                            ///< integrating meshset
+  boost::shared_ptr<FEMethod> feMeshsetExplicitRhs; ///< Element to assemble
+                                                    ///< explicit RHS side by
+                                                    ///< integrating meshset
+
   template <int DIM>
   inline boost::shared_ptr<FEMethod> &
   createDomainFEPipeline(boost::shared_ptr<FEMethod> &fe);
@@ -317,6 +361,12 @@ private:
   template <int DIM>
   inline boost::shared_ptr<FEMethod> &
   createBoundaryFEPipeline(boost::shared_ptr<FEMethod> &fe);
+
+  inline boost::shared_ptr<FEMethod> &
+  createMeshsetFEPipeline(boost::shared_ptr<FEMethod> &fe);
+
+private:
+  struct MeshsetFE;
 };
 
 template <int DIM>
@@ -434,6 +484,18 @@ boost::shared_ptr<FEMethod> &PipelineManager::getSkeletonExplicitRhsFE() {
   return feSkeletonExplicitRhs;
 }
 
+boost::shared_ptr<FEMethod> &PipelineManager::getMeshsetRhsFE() {
+  return feMeshsetRhs;
+}
+
+boost::shared_ptr<FEMethod> &PipelineManager::getMeshsetLhsFE() {
+  return feMeshsetLhs;
+}
+
+boost::shared_ptr<FEMethod> &PipelineManager::getMeshsetExplicitRhsFE() {
+  return feMeshsetExplicitRhs;
+}
+
 template <>
 inline boost::shared_ptr<FEMethod> &
 PipelineManager::createBoundaryFEPipeline<-1>(boost::shared_ptr<FEMethod> &fe) {
@@ -497,6 +559,19 @@ template <typename T, int DIM>
 auto PipelineManager::getCastSkeletonExplicitRhsFE() {
   return boost::dynamic_pointer_cast<T>(
       createBoundaryFEPipeline<DIM>(feSkeletonExplicitRhs));
+}
+
+template <typename T> auto PipelineManager::getCastMeshsetRhsFE() {
+  return boost::dynamic_pointer_cast<T>(createMeshsetFEPipeline(feMeshsetRhs));
+}
+
+template <typename T> auto PipelineManager::getCastMeshsetLhsFE() {
+  return boost::dynamic_pointer_cast<T>(createMeshsetFEPipeline(feMeshsetLhs));
+}
+
+template <typename T> auto PipelineManager::getCastMeshsetExplicitRhsFE() {
+  return boost::dynamic_pointer_cast<T>(
+      createMeshsetFEPipeline(feMeshsetExplicitRhs));
 }
 
 template <int DIM>

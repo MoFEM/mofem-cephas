@@ -996,7 +996,7 @@ MoFEMErrorCode SetUpSchurImpl::createSubDM() {
 
   if constexpr (A == AssemblyType::BLOCK_SCHUR) {
 
-    auto get_nested_mat_data = [&]() {
+    auto get_nested_mat_data = [&]() -> boost::shared_ptr<NestSchurData> {
       auto block_mat_data =
           createBlockMatStructure(simple->getDM(),
 
