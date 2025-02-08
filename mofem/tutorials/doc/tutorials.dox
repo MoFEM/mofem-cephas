@@ -18,7 +18,11 @@ the source code and corresponding binary files of the tutorials are located in t
 - Binary files (build directory):
   `$HOME/mofem_install/mofem-cephas/mofem/users_modules/um-build-Release-5sehreo/tutorials/`
 
-In the build directory described above, `5sehreo` is the `hash` of the particular build, and it may be different on your machine.
+In the build directory described above, `5sehreo` is the `hash` of the particular build, and it may be different on your machine. 
+
+Tutorials labeled with the "Jupyter Notebook" symbol will have Jupyter Notebook files in the build directory. Initially, Jupyter Notebooks are stored as markdown files in the source directory. To convert these markdown files to Jupyter Notebook format in the build directory for tutorials, you can use the `make notebook` command. This conversion process is automatically initiated when you run the `make` command in the build directory.
+
+For further details about the `make notebook` command and its variations, please refer to the `README.md` file in the tutorials source directory.
 
 Each tutorial in this page includes code name and keywords for quick reference
 and search within the browser. 
