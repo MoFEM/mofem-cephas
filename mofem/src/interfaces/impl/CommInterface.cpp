@@ -665,7 +665,14 @@ CommInterface::makeEntitiesMultishared(const EntityHandle *entities,
     Range all_ents_range;
     all_ents_range.insert_list(entities, entities + num_entities);
 
-    auto get_tag = [&]() { return m_field.get_moab().globalId_tag(); };
+    auto get_tag = [&]() {
+      const int negone = -1;
+      Tag th;
+      m_field.get_moab().tag_get_handle("TMP_GLOBAL_ID_TAG_NAME", 1,
+                                        MB_TYPE_INTEGER, th,
+                                        MB_TAG_CREAT | MB_TAG_SPARSE, &negone);
+      return th;
+    };
 
     auto delete_tag = [&](auto &&th_gid) {
       MoFEMFunctionBegin;
