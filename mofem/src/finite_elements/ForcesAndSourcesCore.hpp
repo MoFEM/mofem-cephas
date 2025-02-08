@@ -920,6 +920,7 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
    */
   MoFEMErrorCode loopSide(const string &fe_name, ForcesAndSourcesCore *side_fe,
                           const size_t dim, const EntityHandle ent_for_side = 0,
+                          boost::shared_ptr<Range> fe_range = nullptr,
                           const int verb = QUIET,
                           const LogManager::SeverityLevel sev = Sev::noisy,
                           AdjCache *adj_cache = nullptr
@@ -1291,6 +1292,14 @@ struct OpLoopSide : public ForcesAndSourcesCore::UserDataOperator {
 
   using UserDataOperator = ForcesAndSourcesCore::UserDataOperator;
 
+  OpLoopSide(MoFEM::Interface &m_field, const std::string fe_name,
+             const int side_dim, boost::shared_ptr<Range> fe_range,
+             const LogManager::SeverityLevel sev = Sev::noisy,
+             boost::shared_ptr<AdjCache> adj_cache = nullptr)
+      : UserDataOperator(NOSPACE, OPSPACE), sideFEPtr(new E(m_field)),
+        sideFEName(fe_name), sideDim(side_dim), sevLevel(sev),
+        adjCache(adj_cache), feRange(fe_range) {}
+
   /**
    * @brief Construct a new Op Loop Side object
    * 
@@ -1304,14 +1313,12 @@ struct OpLoopSide : public ForcesAndSourcesCore::UserDataOperator {
              const int side_dim,
              const LogManager::SeverityLevel sev = Sev::noisy,
              boost::shared_ptr<AdjCache> adj_cache = nullptr)
-      : UserDataOperator(NOSPACE, OPSPACE), sideFEPtr(new E(m_field)),
-        sideFEName(fe_name), sideDim(side_dim), sevLevel(sev),
-        adjCache(adj_cache) {}
+      : OpLoopSide(m_field, fe_name, side_dim, nullptr, sev, adj_cache) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data) {
-    return loopSide(sideFEName, sideFEPtr.get(), sideDim, 0, VERBOSE, sevLevel,
-                    adjCache.get());
+    return loopSide(sideFEName, sideFEPtr.get(), sideDim, 0, feRange, VERBOSE,
+                    sevLevel, adjCache.get());
   };
 
   boost::ptr_deque<UserDataOperator> &getOpPtrVector() {
@@ -1326,6 +1333,7 @@ protected:
   boost::shared_ptr<E> sideFEPtr;
   const LogManager::SeverityLevel sevLevel;
   boost::shared_ptr<AdjCache> adjCache;
+  boost::shared_ptr<Range> feRange;
 };
 
 /**

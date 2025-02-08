@@ -612,6 +612,43 @@ MoFEMErrorCode Example::outputResults() {
     return boost::make_tuple(u_ptr, x_ptr, mat_strain_ptr, mat_stress_ptr);
   };
 
+  auto get_tag_id_on_pmesh = [&](bool post_proc_skin)
+  {
+    int def_val_int = 0;
+    Tag tag_mat;
+    CHKERR mField.get_moab().tag_get_handle(
+        "MAT_ELASTIC", 1, MB_TYPE_INTEGER, tag_mat,
+        MB_TAG_CREAT | MB_TAG_SPARSE, &def_val_int);
+    auto meshset_vec_ptr =
+        mField.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(
+            std::regex((boost::format("%s(.*)") % "MAT_ELASTIC").str()));
+
+    Range skin_ents;
+    std::unique_ptr<Skinner> skin_ptr;
+    if (post_proc_skin) {
+      skin_ptr = std::make_unique<Skinner>(&mField.get_moab());
+      auto boundary_meshset = simple->getBoundaryMeshSet();
+      CHKERR mField.get_moab().get_entities_by_handle(boundary_meshset,
+                                                      skin_ents, true);
+    }
+
+    for (auto m : meshset_vec_ptr) {
+      Range ents_3d;
+      CHKERR mField.get_moab().get_entities_by_handle(m->getMeshset(), ents_3d,
+                                                      true);
+      int const id = m->getMeshsetId();
+      ents_3d = ents_3d.subset_by_dimension(SPACE_DIM);
+      if (post_proc_skin) {
+        Range skin_faces;
+        CHKERR skin_ptr->find_skin(0, ents_3d, false, skin_faces);
+        ents_3d = intersect(skin_ents, skin_faces);
+      }
+      CHKERR mField.get_moab().tag_clear_data(tag_mat, ents_3d, &id);
+    }
+
+    return tag_mat;
+  };
+
   auto post_proc_domain = [&](auto post_proc_mesh) {
     auto post_proc_fe =
         boost::make_shared<PostProcEleDomain>(mField, post_proc_mesh);
@@ -637,6 +674,8 @@ MoFEMErrorCode Example::outputResults() {
             )
 
     );
+
+    post_proc_fe->setTagsToTransfer({get_tag_id_on_pmesh(false)});
     return post_proc_fe;
   };
 
@@ -675,6 +714,8 @@ MoFEMErrorCode Example::outputResults() {
             )
 
     );
+
+    post_proc_fe->setTagsToTransfer({get_tag_id_on_pmesh(true)});
     return post_proc_fe;
   };
 
@@ -996,7 +1037,7 @@ MoFEMErrorCode SetUpSchurImpl::createSubDM() {
 
   if constexpr (A == AssemblyType::BLOCK_SCHUR) {
 
-    auto get_nested_mat_data = [&]() {
+    auto get_nested_mat_data = [&]() -> boost::shared_ptr<NestSchurData> {
       auto block_mat_data =
           createBlockMatStructure(simple->getDM(),
 

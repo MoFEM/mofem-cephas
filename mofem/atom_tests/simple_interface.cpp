@@ -97,6 +97,16 @@ int main(int argc, char *argv[]) {
   // initialize petsc
   MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
 
+  auto core_log = logging::core::get();
+  core_log->add_sink(
+      LogManager::createSink(LogManager::getStrmWorld(), "TEST"));
+  LogManager::setLog("TEST");
+  MOFEM_LOG_TAG("TEST", "atom_test");
+  core_log->add_sink(
+      LogManager::createSink(LogManager::getStrmSync(), "TESTSYNC"));
+  LogManager::setLog("TESTSYNC");
+  MOFEM_LOG_TAG("TESTSYNC", "atom_test");
+
   try {
 
     // Create MoAB database
@@ -127,6 +137,22 @@ int main(int argc, char *argv[]) {
       CHKERR simple_interface->addSkeletonField("MESH_NODE_POSITIONS", H1,
                                                 AINSWORTH_LEGENDRE_BASE, 3);
 
+      CHKERR simple_interface->addMeshsetField("GLOBAL", NOFIELD, NOBASE, 3);
+      CHKERR simple_interface->addMeshsetField("MESH_NODE_POSITIONS", H1,
+                                               AINSWORTH_LEGENDRE_BASE, 3);
+
+      // Note:: two "meshset" elements are created, one with GOLOBAL field and
+      // vertices with "MESH_NODE_POSITIONS" field, and other with "GLOABL"
+      // field and edges with "MESH_NODE_POSITIONS" field.
+      // That us only to test API, and data structures, potential application is
+      // here not known.
+      Range verts;
+      CHKERR m_field.get_moab().get_entities_by_type(0, MBVERTEX, verts);
+      simple_interface->getMeshsetFiniteElementEntities().push_back(verts);
+      Range edge;
+      CHKERR m_field.get_moab().get_entities_by_type(0, MBEDGE, edge);
+      simple_interface->getMeshsetFiniteElementEntities().push_back(edge);
+
       // set fields order
       CHKERR simple_interface->setFieldOrder("MESH_NODE_POSITIONS", 1);
       // setup problem
@@ -147,7 +173,7 @@ int main(int argc, char *argv[]) {
       boundary_fe->getRuleHook = FaceRule();
       // create distributed vector to accumulate values from processors.
       int ghosts[] = {0};
-      
+
       auto vol = createGhostVector(
           PETSC_COMM_WORLD, m_field.get_comm_rank() == 0 ? 1 : 0, 1,
           m_field.get_comm_rank() == 0 ? 0 : 1, ghosts);
@@ -160,8 +186,8 @@ int main(int argc, char *argv[]) {
       domain_fe->getOpPtrVector().push_back(
           new OpCalculateVectorFieldGradient<3, 3>("MESH_NODE_POSITIONS",
                                                    material_grad_mat));
-      domain_fe->getOpPtrVector().push_back(new OpInvertMatrix<3>(
-          material_grad_mat, material_det_vec, nullptr));
+      domain_fe->getOpPtrVector().push_back(
+          new OpInvertMatrix<3>(material_grad_mat, material_det_vec, nullptr));
       domain_fe->getOpPtrVector().push_back(
           new OpSetHOWeights(material_det_vec));
       domain_fe->getOpPtrVector().push_back(
@@ -231,8 +257,8 @@ int main(int argc, char *argv[]) {
         CHKERR VecGetArray(vol, &a_vol);
         double *a_surf_vol;
         CHKERR VecGetArray(surf_vol, &a_surf_vol);
-        cout << "Volume = " << a_vol[0] << endl;
-        cout << "Surf Volume = " << a_surf_vol[0] << endl;
+        MOFEM_LOG("TEST", Sev::inform) << "Volume = " << a_vol[0];
+        MOFEM_LOG("TEST", Sev::inform) << "Surf Volume = " << a_surf_vol[0];
         if (fabs(a_vol[0] - a_surf_vol[0]) > 1e-12) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "Should be zero");
         }
@@ -240,6 +266,55 @@ int main(int argc, char *argv[]) {
         CHKERR VecRestoreArray(vol, &a_surf_vol);
       }
 
+      struct MeshsetFE : public ForcesAndSourcesCore {
+        using ForcesAndSourcesCore::ForcesAndSourcesCore;
+        MoFEMErrorCode operator()() {
+          MoFEMFunctionBegin;
+          const auto type = numeredEntFiniteElementPtr->getEntType();
+          if (type != MBENTITYSET) {
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                    "Expected entity set as a finite element");
+          }
+          CHKERR loopOverOperators();
+          MoFEMFunctionReturn(0);
+        }
+        MoFEMErrorCode preProcess() { return 0; }
+        MoFEMErrorCode postProcess() { return 0; }
+      };
+
+      auto fe_ptr = boost::make_shared<MeshsetFE>(m_field);
+
+      struct OpMeshset : ForcesAndSourcesCore::UserDataOperator {
+        using OP = ForcesAndSourcesCore::UserDataOperator;
+        using OP::OP;
+
+        MoFEMErrorCode doWork(int side, EntityType type,
+                              EntitiesFieldData::EntData &data) {
+          MoFEMFunctionBegin;
+          MOFEM_LOG("TESTSYNC", Sev::inform) << data.getIndices();
+          MoFEMFunctionReturn(0);
+        }
+
+        MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
+                              EntityType col_type,
+                              EntitiesFieldData::EntData &row_data,
+                              EntitiesFieldData::EntData &col_data) {
+          MoFEMFunctionBegin;
+          MOFEM_LOG("TESTSYNC", Sev::inform)
+              << row_data.getIndices() << " " << col_data.getIndices() << endl;
+          MoFEMFunctionReturn(0);
+        }
+      };
+
+      fe_ptr->getOpPtrVector().push_back(
+          new OpMeshset("GLOBAL", OpMeshset::OPROW));
+      fe_ptr->getOpPtrVector().push_back(
+          new OpMeshset("GLOBAL", "GLOBAL", OpMeshset::OPROWCOL));
+
+      CHKERR DMoFEMLoopFiniteElementsUpAndLowRank(
+          dm, simple_interface->getMeshsetFEName(), fe_ptr, 0,
+          m_field.get_comm_size());
+      MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::inform);
     }
   }
   CATCH_ERRORS;
