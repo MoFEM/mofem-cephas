@@ -534,26 +534,34 @@ MoFEMErrorCode OpCalculatePlasticityImpl<DIM, GAUSS, DomainEleOp>::doWork(
 
   commonDataPtr->resC.resize(nb_gauss_pts, false);
   commonDataPtr->resCdTau.resize(nb_gauss_pts, false);
+  commonDataPtr->resCdTauAle.resize(nb_gauss_pts, false);
   commonDataPtr->resCdStrain.resize(size_symm, nb_gauss_pts, false);
   commonDataPtr->resCdPlasticStrain.resize(size_symm, nb_gauss_pts, false);
   commonDataPtr->resFlow.resize(size_symm, nb_gauss_pts, false);
   commonDataPtr->resFlowDtau.resize(size_symm, nb_gauss_pts, false);
+  commonDataPtr->resFlowDtauAle.resize(size_symm, nb_gauss_pts, false);
   commonDataPtr->resFlowDstrain.resize(size_symm * size_symm, nb_gauss_pts,
                                        false);
+  commonDataPtr->resFlowDstrainAle.resize(size_symm * size_symm, nb_gauss_pts,
+                                          false);
   commonDataPtr->resFlowDstrainDot.resize(size_symm * size_symm, nb_gauss_pts,
                                           false);
 
   commonDataPtr->resC.clear();
   commonDataPtr->resCdTau.clear();
+  commonDataPtr->resCdTauAle.clear();
   commonDataPtr->resCdStrain.clear();
   commonDataPtr->resCdPlasticStrain.clear();
   commonDataPtr->resFlow.clear();
   commonDataPtr->resFlowDtau.clear();
+  commonDataPtr->resFlowDtauAle.clear();
   commonDataPtr->resFlowDstrain.clear();
+  commonDataPtr->resFlowDstrainAle.clear();
   commonDataPtr->resFlowDstrainDot.clear();
 
   auto t_res_c = getFTensor0FromVec(commonDataPtr->resC);
   auto t_res_c_dtau = getFTensor0FromVec(commonDataPtr->resCdTau);
+  auto t_res_c_dtau_ale = getFTensor0FromVec(commonDataPtr->resCdTauAle);
   auto t_res_c_dstrain =
       getFTensor2SymmetricFromMat<DIM>(commonDataPtr->resCdStrain);
   auto t_res_c_plastic_strain =
@@ -561,8 +569,12 @@ MoFEMErrorCode OpCalculatePlasticityImpl<DIM, GAUSS, DomainEleOp>::doWork(
   auto t_res_flow = getFTensor2SymmetricFromMat<DIM>(commonDataPtr->resFlow);
   auto t_res_flow_dtau =
       getFTensor2SymmetricFromMat<DIM>(commonDataPtr->resFlowDtau);
+  auto t_res_flow_dtau_ale =
+      getFTensor2SymmetricFromMat<DIM>(commonDataPtr->resFlowDtauAle);
   auto t_res_flow_dstrain =
       getFTensor4DdgFromMat<DIM, DIM>(commonDataPtr->resFlowDstrain);
+  auto t_res_flow_dstrain_ale =
+      getFTensor4DdgFromMat<DIM, DIM>(commonDataPtr->resFlowDstrainAle);      
   auto t_res_flow_dplastic_strain =
       getFTensor4DdgFromMat<DIM, DIM>(commonDataPtr->resFlowDstrainDot);
 
@@ -576,11 +588,14 @@ MoFEMErrorCode OpCalculatePlasticityImpl<DIM, GAUSS, DomainEleOp>::doWork(
     ++t_stress;
     ++t_res_c;
     ++t_res_c_dtau;
+    ++t_res_c_dtau_ale;
     ++t_res_c_dstrain;
     ++t_res_c_plastic_strain;
     ++t_res_flow;
     ++t_res_flow_dtau;
+    ++t_res_flow_dtau_ale;
     ++t_res_flow_dstrain;
+    ++t_res_flow_dstrain_ale;
     ++t_res_flow_dplastic_strain;
     ++t_w;
   };
@@ -700,6 +715,8 @@ MoFEMErrorCode OpCalculatePlasticityImpl<DIM, GAUSS, DomainEleOp>::doWork(
       return this->getTSa() * c_dot_tau + c_sigma_y * d_sigma_y;
     };
 
+    auto get_res_c_dtau_ale = [&]() { return this->getTSa() * c_dot_tau; };
+
     auto get_res_c_plastic_strain = [&](auto &t_diff_res) {
       t_diff_res(k, l) = -c_f * t_flow(i, j) * t_alpha_dir(i, j, k, l);
     };
@@ -717,9 +734,18 @@ MoFEMErrorCode OpCalculatePlasticityImpl<DIM, GAUSS, DomainEleOp>::doWork(
           da * t_plastic_strain_dot(k, l) - db * t_flow_dir(k, l);
     };
 
+    auto get_res_flow_dtau_ale = [&](auto &t_res_flow_dtau_ale) {
+      const auto db = this->getTSa();
+      t_res_flow_dtau_ale(k, l) = -db * t_flow_dir(k, l);
+    };
+
     auto get_res_flow_dstrain = [&](auto &t_res_flow_dstrain) {
       const auto b = t_tau_dot;
       t_res_flow_dstrain(m, n, k, l) = -t_flow_dir_dstrain(m, n, k, l) * b;
+    };
+
+    auto get_res_flow_dstrain_ale = [&](auto &t_res_flow_dstrain_ale) {
+      t_res_flow_dstrain_ale(m, n, k, l) = t_diff_plastic_strain(m, n, k, l);
     };
 
     auto get_res_flow_dplastic_strain = [&](auto &t_res_flow_dplastic_strain) {
@@ -736,10 +762,13 @@ MoFEMErrorCode OpCalculatePlasticityImpl<DIM, GAUSS, DomainEleOp>::doWork(
 
     if (this->getTSCtx() == TSMethod::TSContext::CTX_TSSETIJACOBIAN) {
       t_res_c_dtau = get_res_c_dtau();
+      t_res_c_dtau_ale = get_res_c_dtau_ale();
       get_res_c_dstrain(t_res_c_dstrain);
       get_res_c_dplastic_strain(t_res_c_plastic_strain);
       get_res_flow_dtau(t_res_flow_dtau);
+      get_res_flow_dtau_ale(t_res_flow_dtau_ale);
       get_res_flow_dstrain(t_res_flow_dstrain);
+      get_res_flow_dstrain_ale(t_res_flow_dstrain_ale);
       get_res_flow_dplastic_strain(t_res_flow_dplastic_strain);
     }
 
@@ -858,13 +887,20 @@ OpCalculatePlasticFlowRhsImpl<DIM, GAUSS, AssemblyDomainEleOp>::iNtegrate(
   const auto nb_base_functions = data.getN().size2();
 
   auto t_res_flow = getFTensor2SymmetricFromMat<DIM>(commonDataPtr->resFlow);
-
+  auto t_ep = getFTensor2SymmetricFromMat<DIM>(commonDataPtr->plasticStrain);
+  // commonDataPtr->guidingVelocityPtr->resize(DIM, nb_integration_pts, false);
+  // t_omega(I) = (levi_civita(I,J,K) * t1_omega(J))(I,K) * t_coords(K);
+  auto t_omega =
+      getFTensor1FromMat<SPACE_DIM>(*commonDataPtr->guidingVelocityPtr);
+  // FTensor::Tensor1<double, 3> t_omega(0,0,0);
   auto t_L = symm_L_tensor(FTensor::Number<DIM>());
 
   auto next = [&]() { ++t_res_flow; };
 
   auto t_w = AssemblyDomainEleOp::getFTensor0IntegrationWeight();
   auto t_base = data.getFTensor0N();
+  auto t_diff_base = data.getFTensor1DiffN<DIM>();
+
   auto &nf = AssemblyDomainEleOp::locF;
   for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
     double alpha = AssemblyDomainEleOp::getMeasure() * t_w;
@@ -873,16 +909,24 @@ OpCalculatePlasticFlowRhsImpl<DIM, GAUSS, AssemblyDomainEleOp>::iNtegrate(
     FTensor::Tensor1<double, size_symm> t_rhs;
     t_rhs(L) = alpha * (t_res_flow(i, j) * t_L(i, j, L));
     next();
+    FTensor::Tensor1<double, size_symm> t_rhs_ale;
 
     auto t_nf = getFTensor1FromArray<size_symm, size_symm>(nf);
     size_t bb = 0;
     for (; bb != AssemblyDomainEleOp::nbRows / size_symm; ++bb) {
-      t_nf(L) += t_base * t_rhs(L);
+      t_rhs_ale(L) =
+          alpha * ((t_diff_base(i) * t_omega(i)) * t_ep(j, k)) * t_L(j, k, L);
+      t_nf(L) += (t_base * t_rhs(L)) - t_rhs_ale(L);
       ++t_base;
+      ++t_diff_base;
       ++t_nf;
     }
-    for (; bb < nb_base_functions; ++bb)
+    for (; bb < nb_base_functions; ++bb) {
       ++t_base;
+      ++t_diff_base;
+    }
+    ++t_ep;
+    ++t_omega;
   }
 
   MoFEMFunctionReturn(0);
@@ -914,6 +958,7 @@ MoFEMErrorCode
 OpCalculateConstraintsRhsImpl<GAUSS, AssemblyDomainEleOp>::iNtegrate(
     EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
+  FTensor::Index<'i', SPACE_DIM> i;
 
   const size_t nb_integration_pts = AssemblyDomainEleOp::getGaussPts().size2();
   const size_t nb_base_functions = data.getN().size2();
@@ -925,6 +970,13 @@ OpCalculateConstraintsRhsImpl<GAUSS, AssemblyDomainEleOp>::iNtegrate(
   auto t_w = AssemblyDomainEleOp::getFTensor0IntegrationWeight();
   auto &nf = AssemblyDomainEleOp::locF;
   auto t_base = data.getFTensor0N();
+  auto t_diff_base = data.getFTensor1DiffN<SPACE_DIM>();
+  // commonDataPtr->guidingVelocityPtr->resize(SPACE_DIM, nb_integration_pts,
+  // false);
+  auto t_omega =
+      getFTensor1FromMat<SPACE_DIM>(*commonDataPtr->guidingVelocityPtr);
+  auto t_tau = getFTensor0FromVec(commonDataPtr->plasticTau);
+
   for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
     const double alpha = AssemblyDomainEleOp::getMeasure() * t_w;
     ++t_w;
@@ -933,11 +985,17 @@ OpCalculateConstraintsRhsImpl<GAUSS, AssemblyDomainEleOp>::iNtegrate(
 
     size_t bb = 0;
     for (; bb != AssemblyDomainEleOp::nbRows; ++bb) {
-      nf[bb] += t_base * res;
+      nf[bb] +=
+          (t_base * res) - (alpha * (t_diff_base(i) * t_omega(i)) * t_tau);
       ++t_base;
+      ++t_diff_base;
     }
-    for (; bb < nb_base_functions; ++bb)
+    for (; bb < nb_base_functions; ++bb) {
       ++t_base;
+      ++t_diff_base;
+    }
+    ++t_tau;
+    ++t_omega;
   }
 
   MoFEMFunctionReturn(0);
@@ -1015,8 +1073,18 @@ OpCalculatePlasticFlowLhs_dEPImpl<DIM, GAUSS, AssemblyDomainEleOp>::iNtegrate(
   const auto nb_integration_pts = AssemblyDomainEleOp::getGaussPts().size2();
   const auto nb_row_base_functions = row_data.getN().size2();
 
+  // commonDataPtr->guidingVelocityPtr->resize(SPACE_DIM, nb_integration_pts,
+  //                                             false);
+  // commonDataPtr->guidingVelocityPtr->clear();
+
+  // t_omega(I) = (levi_civita(I,J,K) * t1_omega(J))(I,K) * t_coords(K);
+  auto t_omega =
+      getFTensor1FromMat<SPACE_DIM>(*commonDataPtr->guidingVelocityPtr);
+
   auto t_res_flow_dstrain =
       getFTensor4DdgFromMat<DIM, DIM>(commonDataPtr->resFlowDstrain);
+  auto t_res_flow_dstrain_ale =
+      getFTensor4DdgFromMat<DIM, DIM>(commonDataPtr->resFlowDstrainAle);
   auto t_res_flow_dplastic_strain =
       getFTensor4DdgFromMat<DIM, DIM>(commonDataPtr->resFlowDstrainDot);
   auto t_L = symm_L_tensor(FTensor::Number<DIM>());
@@ -1024,6 +1092,7 @@ OpCalculatePlasticFlowLhs_dEPImpl<DIM, GAUSS, AssemblyDomainEleOp>::iNtegrate(
   auto next = [&]() {
     ++t_res_flow_dstrain;
     ++t_res_flow_dplastic_strain;
+    ++t_res_flow_dstrain_ale;
   };
 
   auto t_w = AssemblyDomainEleOp::getFTensor0IntegrationWeight();
@@ -1033,10 +1102,14 @@ OpCalculatePlasticFlowLhs_dEPImpl<DIM, GAUSS, AssemblyDomainEleOp>::iNtegrate(
     ++t_w;
 
     FTensor::Tensor2<double, size_symm, size_symm> t_res_mat;
+    FTensor::Tensor2<double, size_symm, size_symm> t_res_mat_ale;
     t_res_mat(O, L) =
         alpha * (t_L(i, j, O) * ((t_res_flow_dplastic_strain(i, j, k, l) -
                                   t_res_flow_dstrain(i, j, k, l)) *
                                  t_L(k, l, L)));
+    t_res_mat_ale(O, L) =
+        alpha *
+        (t_L(i, j, O) * ((t_res_flow_dstrain_ale(i, j, k, l))*t_L(k, l, L)));
     next();
 
     size_t rr = 0;
@@ -1044,10 +1117,18 @@ OpCalculatePlasticFlowLhs_dEPImpl<DIM, GAUSS, AssemblyDomainEleOp>::iNtegrate(
       auto t_mat = get_mat_tensor_sym_dtensor_sym(rr, locMat,
                                                   FTensor::Number<SPACE_DIM>());
       auto t_col_base = col_data.getFTensor0N(gg, 0);
+      auto t_col_diff_base = col_data.getFTensor1DiffN<SPACE_DIM>(gg, 0);
       for (size_t cc = 0; cc != AssemblyDomainEleOp::nbCols / size_symm; ++cc) {
-        t_mat(O, L) += ((t_row_base * t_col_base) * t_res_mat(O, L));
+
+        t_mat(O, L) += ((t_row_base * t_col_base) * t_res_mat(O, L)) +
+                       t_row_base * ((t_col_diff_base(i) * t_omega(i)) *
+                                     t_res_mat_ale(O, L));
+        // t_mat(O, L) += ((t_row_base * t_col_base) * t_res_mat(O, L)) +
+        // t_row_base * (t_D(i,j,m,n) *
+        // (alpha*diff_tensor(m,n,k,L)*(t_col_diff_base(i)*t_omega(i))));
         ++t_mat;
         ++t_col_base;
+        ++t_col_diff_base;
       }
 
       ++t_row_base;
@@ -1055,6 +1136,8 @@ OpCalculatePlasticFlowLhs_dEPImpl<DIM, GAUSS, AssemblyDomainEleOp>::iNtegrate(
 
     for (; rr < nb_row_base_functions; ++rr)
       ++t_row_base;
+
+    ++t_omega;
   }
 
   MoFEMFunctionReturn(0);
@@ -1134,9 +1217,16 @@ OpCalculatePlasticFlowLhs_dTAUImpl<DIM, GAUSS, AssemblyDomainEleOp>::iNtegrate(
   auto t_res_flow_dtau =
       getFTensor2SymmetricFromMat<DIM>(commonDataPtr->resFlowDtau);
 
+      auto t_res_flow_dtau_ale =
+      getFTensor2SymmetricFromMat<DIM>(commonDataPtr->resFlowDtauAle);
+
   auto t_L = symm_L_tensor(FTensor::Number<DIM>());
 
-  auto next = [&]() { ++t_res_flow_dtau; };
+  // t_omega(I) = (levi_civita(I,J,K) * t1_omega(J))(I,K) * t_coords(K);
+  auto t_omega =
+        getFTensor1FromMat<SPACE_DIM>(*commonDataPtr->guidingVelocityPtr);
+
+  auto next = [&]() { ++t_res_flow_dtau; ++t_res_flow_dtau_ale;};
 
   auto t_w = AssemblyDomainEleOp::getFTensor0IntegrationWeight();
   auto t_row_base = row_data.getFTensor0N();
@@ -1144,7 +1234,9 @@ OpCalculatePlasticFlowLhs_dTAUImpl<DIM, GAUSS, AssemblyDomainEleOp>::iNtegrate(
     double alpha = AssemblyDomainEleOp::getMeasure() * t_w;
     ++t_w;
     FTensor::Tensor1<double, size_symm> t_res_vec;
+    FTensor::Tensor1<double, size_symm> t_res_vec_ale;
     t_res_vec(L) = alpha * (t_res_flow_dtau(i, j) * t_L(i, j, L));
+    t_res_vec_ale(L) = alpha * (t_res_flow_dtau_ale(i, j) * t_L(i, j, L));
     next();
 
     size_t rr = 0;
@@ -1152,15 +1244,24 @@ OpCalculatePlasticFlowLhs_dTAUImpl<DIM, GAUSS, AssemblyDomainEleOp>::iNtegrate(
       auto t_mat =
           get_mat_tensor_sym_dscalar(rr, locMat, FTensor::Number<DIM>());
       auto t_col_base = col_data.getFTensor0N(gg, 0);
+      auto t_col_diff_base = col_data.getFTensor1DiffN<SPACE_DIM>(gg, 0);
       for (size_t cc = 0; cc != AssemblyDomainEleOp::nbCols; cc++) {
-        t_mat(L) += t_row_base * t_col_base * t_res_vec(L);
+        //
+        t_mat(L) +=
+            t_row_base * t_col_base * t_res_vec(L) +
+            t_col_base * ((t_col_diff_base(i) * t_omega(i)) * t_res_vec_ale(L));
+        // t_mat(L) += t_row_base * t_col_base * t_res_vec(L) - t_col_base *
+        // (alpha * t_flow_dir(?, ?) * (t_col_diff_base(L) * (t_omega(L))));
         ++t_mat;
         ++t_col_base;
+        ++t_col_diff_base;
       }
       ++t_row_base;
     }
     for (; rr != nb_row_base_functions; ++rr)
       ++t_row_base;
+
+    ++t_omega;
   }
 
   MoFEMFunctionReturn(0);
@@ -1291,12 +1392,20 @@ OpCalculateConstraintsLhs_dTAUImpl<GAUSS, AssemblyDomainEleOp>::iNtegrate(
     EntitiesFieldData::EntData &row_data,
     EntitiesFieldData::EntData &col_data) {
   MoFEMFunctionBegin;
-
+  FTensor::Index<'i', SPACE_DIM> i;
   const auto nb_integration_pts = AssemblyDomainEleOp::getGaussPts().size2();
   const auto nb_row_base_functions = row_data.getN().size2();
 
+  // t_omega(I) = (levi_civita(I,J,K) * t1_omega(J))(I,K) * t_coords(K);
+  auto t_omega =
+      getFTensor1FromMat<SPACE_DIM>(*commonDataPtr->guidingVelocityPtr);
+
   auto t_res_c_dtau = getFTensor0FromVec(commonDataPtr->resCdTau);
-  auto next = [&]() { ++t_res_c_dtau; };
+  auto t_res_c_dtau_ale = getFTensor0FromVec(commonDataPtr->resCdTauAle);
+  auto next = [&]() {
+    ++t_res_c_dtau;
+    ++t_res_c_dtau_ale;
+  };
 
   auto t_w = AssemblyDomainEleOp::getFTensor0IntegrationWeight();
   auto t_row_base = row_data.getFTensor0N();
@@ -1305,21 +1414,29 @@ OpCalculateConstraintsLhs_dTAUImpl<GAUSS, AssemblyDomainEleOp>::iNtegrate(
     ++t_w;
 
     const auto res = alpha * (t_res_c_dtau);
+    const auto res_ale = alpha * (t_res_c_dtau_ale);
     next();
 
     auto mat_ptr = AssemblyDomainEleOp::locMat.data().begin();
     size_t rr = 0;
     for (; rr != AssemblyDomainEleOp::nbRows; ++rr) {
       auto t_col_base = col_data.getFTensor0N(gg, 0);
+      auto t_col_diff_base = col_data.getFTensor1DiffN<SPACE_DIM>(gg, 0);
       for (size_t cc = 0; cc != AssemblyDomainEleOp::nbCols; ++cc) {
-        *mat_ptr += t_row_base * t_col_base * res;
+        *mat_ptr += t_row_base * t_col_base * res +
+                    t_row_base * (t_col_diff_base(i) * t_omega(i)) * res_ale;
+        //*mat_ptr += t_row_base * t_col_base * res + t_row_base * alpha *
+        //diff_constrain_ddot_tau * (t_col_diff_base(i)* t_omega(i));
         ++t_col_base;
         ++mat_ptr;
+        ++t_col_diff_base;
       }
       ++t_row_base;
     }
     for (; rr < nb_row_base_functions; ++rr)
       ++t_row_base;
+
+    ++t_omega;
   }
 
   MoFEMFunctionReturn(0);

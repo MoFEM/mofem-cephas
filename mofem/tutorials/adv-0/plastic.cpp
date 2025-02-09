@@ -59,6 +59,9 @@ using BoundaryEleOp = BoundaryEle::UserDataOperator;
 using PostProcEle = PostProcBrokenMeshInMoab<DomainEle>;
 using SkinPostProcEle = PostProcBrokenMeshInMoab<BoundaryEle>;
 using SideEle = ElementsAndOps<SPACE_DIM>::SideEle;
+using SideEleOp = SideEle::UserDataOperator;
+
+enum ElementSide { LEFT_SIDE = 0, RIGHT_SIDE = 1 };
 
 inline double iso_hardening_exp(double tau, double b_iso) {
   return std::exp(
@@ -139,6 +142,9 @@ int geom_order = 2;        ///< Order if fixed.
 PetscBool is_quasi_static = PETSC_TRUE;
 double rho = 0.0;
 double alpha_damping = 0;
+
+// for advection
+static array<double, 3> angular_velocity{0, 0, 0.0};
 
 #include <HenckyOps.hpp>
 #include <PlasticOps.hpp>
@@ -513,6 +519,9 @@ MoFEMErrorCode Example::createCommonData() {
     CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-rho", &rho, PETSC_NULL);
     CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-alpha_damping",
                                  &alpha_damping, PETSC_NULL);
+    // assuming rotation about z-axis
+    CHKERR PetscOptionsGetScalar(PETSC_NULL, "", "-angular_velocity",
+                                 &angular_velocity[2], PETSC_NULL);
 
     MOFEM_LOG("PLASTICITY", Sev::inform) << "Young modulus " << young_modulus;
     MOFEM_LOG("PLASTICITY", Sev::inform) << "Poisson ratio " << poisson_ratio;
@@ -633,6 +642,8 @@ MoFEMErrorCode Example::OPs() {
 
   auto vol_rule = [](int, int, int ao) { return 2 * ao + geom_order - 1; };
 
+  auto skel_rule = [](int, int, int ao) { return 2 * ao + geom_order - 1; };
+
   auto add_boundary_ops_lhs_mechanical = [&](auto &pip) {
     MoFEMFunctionBegin;
 
@@ -709,7 +720,7 @@ MoFEMErrorCode Example::OPs() {
     MoFEMFunctionBegin;
 
     CHKERR PlasticOps::AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
-        pip, {H1, HDIV}, "GEOMETRY");
+        pip, {H1, L2, HDIV}, "GEOMETRY");
 
     CHKERR DomainRhsBCs::AddFluxToPipeline<OpDomainRhsBCs>::add(
         pip, mField, "U",
@@ -756,6 +767,48 @@ MoFEMErrorCode Example::OPs() {
   CHKERR add_domain_ops_lhs(pip_mng->getOpDomainLhsPipeline());
   CHKERR add_domain_ops_rhs(pip_mng->getOpDomainRhsPipeline());
 
+  auto add_skeleton_ops_lhs = [this](auto &pip) {
+    MoFEMFunctionBegin;
+    pip.clear();
+    auto simple = mField.getInterface<Simple>();
+    auto side_data_ptr = boost::make_shared<SideData>();
+    CHKERR PlasticOps::AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(pip, {},
+                                                              "GEOMETRY");
+    auto op_side = new OpLoopSide<SideEle>(
+        mField, simple->getDomainFEName(), SPACE_DIM, Sev::verbose);
+    pip.push_back(op_side);
+    auto side_fe_ptr = op_side->getSideFEPtr();
+    CHKERR getSideFE(mField, side_data_ptr, side_fe_ptr);
+    pip.push_back(new OpLhsSkeleton(side_data_ptr, side_fe_ptr));
+    pip.push_back(new OpLhsSkeletonEp(side_data_ptr, side_fe_ptr));
+
+    MoFEMFunctionReturn(0);
+  };
+
+  auto add_skeleton_ops_rhs = [this](auto &pip) {
+    MoFEMFunctionBegin;
+    pip.clear();
+    auto simple = mField.getInterface<Simple>();
+    auto side_data_ptr = boost::make_shared<SideData>();
+    CHKERR PlasticOps::AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(pip, {},
+                                                              "GEOMETRY");
+    // auto side_fe_ptr = getSideFE(mField, side_data_ptr);
+    auto op_side = new OpLoopSide<SideEle>(
+        mField, simple->getDomainFEName(), SPACE_DIM, Sev::verbose);
+    pip.push_back(op_side);
+    auto side_fe_ptr = op_side->getSideFEPtr();
+    CHKERR getSideFE(mField, side_data_ptr, side_fe_ptr);
+    pip.push_back(new OpRhsSkeleton(side_data_ptr, side_fe_ptr));
+    pip.push_back(new OpRhsSkeletonEp(side_data_ptr, side_fe_ptr));
+
+    MoFEMFunctionReturn(0);
+  };
+
+  // if (angular_velocity[2] != 0.0) {
+  CHKERR add_skeleton_ops_lhs(pip_mng->getOpSkeletonLhsPipeline());
+  CHKERR add_skeleton_ops_rhs(pip_mng->getOpSkeletonRhsPipeline());
+  //}
+
   // Boundary
   CHKERR add_boundary_ops_lhs_mechanical(pip_mng->getOpBoundaryLhsPipeline());
   CHKERR add_boundary_ops_rhs_mechanical(pip_mng->getOpBoundaryRhsPipeline());
@@ -765,6 +818,10 @@ MoFEMErrorCode Example::OPs() {
 
   CHKERR pip_mng->setBoundaryLhsIntegrationRule(integration_rule_bc);
   CHKERR pip_mng->setBoundaryRhsIntegrationRule(integration_rule_bc);
+
+  CHKERR pip_mng->setSkeletonLhsIntegrationRule(skel_rule);
+  CHKERR pip_mng->setSkeletonRhsIntegrationRule(skel_rule);
+
 
   auto create_reaction_pipeline = [&](auto &pip) {
     MoFEMFunctionBegin;
@@ -1436,6 +1493,7 @@ int main(int argc, char *argv[]) {
     //! [Load mesh]
     Simple *simple = m_field.getInterface<Simple>();
     CHKERR simple->getOptions();
+    simple->getAddSkeletonFE() = true;
     CHKERR simple->loadFile();
     //! [Load mesh]
 
