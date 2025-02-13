@@ -35,3 +35,4 @@ extern "C" {
 #include "impl/VolumeElementForcesAndSourcesCoreOnContactPrismSide.cpp"
 #include "impl/Schur.cpp"
 #include "impl/FormsBrokenSpaceConstraintImpl.cpp"
+#include "impl/ConstrainMatrixCtx.cpp"
