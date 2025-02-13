@@ -50,13 +50,22 @@ tutorials_build_and_install(
   add_test(
     electrostatic_2d
     ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4
-    electrostatics_2d
+    electrostatics_2d -order 2 -geom_order 1
     -file_name ${CMAKE_CURRENT_SOURCE_DIR}/mesh_files/elec_2D_4p.h5m
     -atom_test 1)
 
   add_test(
     electrostatic_3d
     ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4
-    electrostatics_3d
+    electrostatics_3d -order 2 -geom_order 1
     -file_name ${CMAKE_CURRENT_SOURCE_DIR}/mesh_files/elec_3D_4p.h5m
     -atom_test 1)
+
+  # sigma=+10.0 on the electrode 1; ep 1; 
+  # roughness on electrode 1, Amplitude= 0.01; lamda=1.
+  add_test(
+    electrostatic_wavy_3d
+    ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4 
+    electrostatics_3d -order 2 -geom_order 2
+    -file_name ${CMAKE_CURRENT_SOURCE_DIR}/mesh_files/elec_wavy_4p.h5m 
+    -atom_test 2)
