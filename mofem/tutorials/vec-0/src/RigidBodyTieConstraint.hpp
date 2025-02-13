@@ -455,21 +455,14 @@ struct OpTieTermConstrainRigidBodyGlobalTranslationRhs
 
     auto t_dofs = getFTensor1FromPtr<SPACE_DIM>(
         &data.getFieldEntities()[0]->getEntFieldData()[0]);
-    std::cout << "t_dofs = " << t_dofs(0) << " " << t_dofs(1) << " "
-              << t_dofs(2) << std::endl;
 
     double *intTranslationRawPtr = &(*intTranslationPtr->data().begin());
-    std::cout << "intTranslationRawPtr = " << intTranslationRawPtr << std::endl;
 
     if (intTranslationPtr->size() == 0)
       intTranslationPtr->resize(DIM);
     
     auto t_int_translation =
         getFTensor1FromPtr<SPACE_DIM>(intTranslationRawPtr);
-
-    std::cout << "t_int_translation = " << t_int_translation(0) << " "
-              << t_int_translation(1) << " " << t_int_translation(2)
-              << std::endl;
 
     // create a "dummy" base function
     MatrixDouble m_kd(3, 3);
