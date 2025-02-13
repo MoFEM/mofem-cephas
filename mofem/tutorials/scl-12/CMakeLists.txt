@@ -66,6 +66,6 @@ tutorials_build_and_install(
   add_test(
     electrostatic_wavy_3d
     ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4 
-    electrostatics_3d -order 1 -geom_order 2
+    electrostatics_3d -order 2 -geom_order 2
     -file_name ${CMAKE_CURRENT_SOURCE_DIR}/mesh_files/elec_wavy_4p.h5m 
     -atom_test 2)

@@ -29,7 +29,7 @@ private:
   MoFEMErrorCode getElectrodeCharge();
 
   int oRder = 2;      // default order
-  int geom_order = 1; // default gemoetric order
+  int geomOrder = 1; // default gemoetric order
   MoFEM::Interface &mField;
   Simple *simpleInterface;
   std::string domainField;
@@ -115,14 +115,14 @@ MoFEMErrorCode Electrostatics::setupProblem() {
 
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &oRder, PETSC_NULL);
 
-  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-geom_order", &geom_order,
+  CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-geom_order", &geomOrder,
                             PETSC_NULL);
 
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-atom_test", &atomTest,
                             PETSC_NULL);
   CHKERR simpleInterface->setFieldOrder(domainField, oRder);
   CHKERR simpleInterface->addDataField("GEOMETRY", H1, base, SPACE_DIM);
-  CHKERR simpleInterface->setFieldOrder("GEOMETRY", geom_order);
+  CHKERR simpleInterface->setFieldOrder("GEOMETRY", geomOrder);
 
   auto project_ho_geometry = [&]() {
     Projection10NodeCoordsOnField ent_method(mField, "GEOMETRY");
@@ -196,16 +196,8 @@ MoFEMErrorCode Electrostatics::setupProblem() {
       CHKERR mField.get_moab().get_entities_by_dimension(
           bit->getMeshset(), SPACE_DIM - 1, block_data.electrodeEnts, true);
       electrode_ents.merge(block_data.electrodeEnts);
-      block_data.iD = id;
-      auto print_range_on_procs = [&](const std::string &name, int meshsetId,
-                                      const Range &range) {
-        MOFEM_LOG("SYNC", Sev::inform)
-            << name << " in meshID: " << id << " with range "
-            << block_data.electrodeEnts << " on proc ["
-            << mField.get_comm_rank() << "] \n";
-        MOFEM_LOG_SYNCHRONISE(mField.get_comm());
-      };
-      print_range_on_procs(bit->getName(), id, electrode_ents);
+     
+
       if (electrodeCount > 2) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
                 "Three or more electrode blocksets found");
@@ -328,8 +320,8 @@ MoFEMErrorCode Electrostatics::boundaryCondition() {
 MoFEMErrorCode Electrostatics::setIntegrationRules() {
   MoFEMFunctionBegin;
 
-  auto rule_lhs = [this](int, int, int p) -> int { return 2 * p + geom_order; };
-  auto rule_rhs = [this](int, int, int p) -> int { return 2 * p + geom_order; };
+  auto rule_lhs = [this](int, int, int p) -> int { return 2 * p + geomOrder -1; };
+  auto rule_rhs = [this](int, int, int p) -> int { return 2 * p + geomOrder -1; };
 
   auto pipeline_mng = mField.getInterface<PipelineManager>();
   CHKERR pipeline_mng->setDomainLhsIntegrationRule(rule_lhs);
@@ -405,7 +397,7 @@ MoFEMErrorCode Electrostatics::assembleSystem() {
   interFaceRhsFe = boost::shared_ptr<ForcesAndSourcesCore>(
       new IntElementForcesAndSourcesCore(mField));
   interFaceRhsFe->getRuleHook = [this](int, int, int p) {
-    return 2 * p + geom_order;
+    return 2 * p + geomOrder -1;
   };
 
   {
@@ -665,7 +657,7 @@ MoFEMErrorCode Electrostatics::getElectrodeCharge() {
   electrodeRhsFe = boost::shared_ptr<ForcesAndSourcesCore>(
       new IntElementForcesAndSourcesCore(mField));
   electrodeRhsFe->getRuleHook = [this](int, int, int p) {
-    return 2 * p + geom_order;
+    return 2 * p + geomOrder -1;
   };
 
   // push all the operators in on the side to the electrodeRhsFe
