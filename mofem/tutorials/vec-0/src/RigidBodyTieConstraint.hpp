@@ -325,12 +325,6 @@ struct OpTieTermConstrainRigidBodyLhs_dRotation
     FTENSOR_INDEX(SPACE_DIM, j);
     FTENSOR_INDEX(SPACE_DIM, k);
 
-    MOFEM_LOG("SYNC", Sev::inform) << "OpTieTermConstrainRigidBodyLhs_dRotation";
-    MOFEM_LOG("SYNC", Sev::inform) << "OpTieTermConstrainRigidBodyLhs_dRotation = "
-                                   << tieCoord(0) << " " << tieCoord(1) << " "
-                                   << tieCoord(2);
-
-
     constexpr auto t_kd = FTensor::Kronecker_Delta<double>();
 
     auto nb_integration_pts = getGaussPts().size2();
@@ -736,7 +730,6 @@ struct OpTieTermConstrainRigidBodyGlobalRotationRhs
     if (rigidBodyEntsPtr->empty())
       MoFEMFunctionReturnHot(0);
 
-    MOFEM_LOG("SYNC", Sev::inform) << "OpTieTermConstrainRigidBodyGlobalRotationRhs";
     FTENSOR_INDEX(SPACE_DIM, i);
     FTENSOR_INDEX(SPACE_DIM, j);
     FTENSOR_INDEX(SPACE_DIM, k);
