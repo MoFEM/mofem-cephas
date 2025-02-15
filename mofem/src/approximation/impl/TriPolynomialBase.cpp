@@ -581,34 +581,35 @@ MoFEMErrorCode TriPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
     }
     data.dataOnEntities[MBTRI][0].getN(base).resize(
         nb_gauss_pts, 3 * NBFACETRI_AINSWORTH_HDIV(face_order), false);
+
+    auto max_face_order =
+        std::max(face_order,
+                 AinsworthOrderHooks::broken_nbfacetri_edge_hdiv(face_order));
+    auto max_face_oder =
+        std::max(max_face_order,
+                 AinsworthOrderHooks::broken_nbfacetri_face_hdiv(face_order));
+
     int col = 0;
-    for (int oo = 0; oo < face_order; oo++) {
-      for (int ee = 0; ee < 3; ee++) {
-        for (int dd =
-                 3 * NBFACETRI_AINSWORTH_EDGE_HDIV(
-                         AinsworthOrderHooks::broken_nbfacetri_edge_hdiv(oo));
-             dd <
-             3 * NBFACETRI_AINSWORTH_EDGE_HDIV(
-                     AinsworthOrderHooks::broken_nbfacetri_edge_hdiv(oo + 1));
-             dd++, col++) {
-          for (int gg = 0; gg < nb_gauss_pts; gg++) {
-            data.dataOnEntities[MBTRI][0].getN(base)(gg, col) =
-                N_face_edge(0, ee)(gg, dd);
+    for (int oo = 0; oo < max_face_order; oo++) {
+      if (oo < AinsworthOrderHooks::broken_nbfacetri_edge_hdiv(face_order))
+        for (int ee = 0; ee < 3; ee++) {
+          for (int dd = 3 * NBFACETRI_AINSWORTH_EDGE_HDIV(oo);
+               dd < 3 * NBFACETRI_AINSWORTH_EDGE_HDIV(oo + 1); dd++, col++) {
+            for (int gg = 0; gg < nb_gauss_pts; gg++) {
+              data.dataOnEntities[MBTRI][0].getN(base)(gg, col) =
+                  N_face_edge(0, ee)(gg, dd);
+            }
           }
         }
-      }
-      for (int dd =
-               3 * NBFACETRI_AINSWORTH_FACE_HDIV(
-                       AinsworthOrderHooks::broken_nbfacetri_face_hdiv(oo));
-           dd <
-           3 * NBFACETRI_AINSWORTH_FACE_HDIV(
-                   AinsworthOrderHooks::broken_nbfacetri_face_hdiv(oo + 1));
-           dd++, col++) {
-        for (int gg = 0; gg < nb_gauss_pts; gg++) {
-          data.dataOnEntities[MBTRI][0].getN(base)(gg, col) =
-              N_face_bubble[0](gg, dd);
+
+      if (oo < AinsworthOrderHooks::broken_nbfacetri_face_hdiv(face_order))
+        for (int dd = 3 * NBFACETRI_AINSWORTH_FACE_HDIV(oo);
+             dd < 3 * NBFACETRI_AINSWORTH_FACE_HDIV(oo + 1); dd++, col++) {
+          for (int gg = 0; gg < nb_gauss_pts; gg++) {
+            data.dataOnEntities[MBTRI][0].getN(base)(gg, col) =
+                N_face_bubble[0](gg, dd);
+          }
         }
-      }
     }
   }
 
