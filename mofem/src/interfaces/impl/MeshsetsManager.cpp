@@ -778,7 +778,7 @@ struct BlockData {
   int numberOfAttributes;
   std::vector<double> aTtr;
 
-  BlockData() : numberOfAttributes(-1), aTtr(10, 0) {
+  BlockData() : numberOfAttributes(-1), aTtr(15, 0) {
     std::memcpy(dispBc.data.name, "Displacement", 12);
     std::memcpy(forceBc.data.name, "Force", 5);
     std::memcpy(pressureBc.data.name, "Pressure", 8);
@@ -807,7 +807,7 @@ MoFEMErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name,
         po::value<int>(&block_lists[it->getMeshsetId()].numberOfAttributes)
             ->default_value(-1),
         "Number of blockset attribute");
-    for (int ii = 1; ii <= 10; ii++) {
+    for (int ii = 1; ii <= 15; ii++) {
       std::string surfix = ".user" + boost::lexical_cast<std::string>(ii);
       configFileOptionsPtr->add_options()(
           (prefix + surfix).c_str(),
