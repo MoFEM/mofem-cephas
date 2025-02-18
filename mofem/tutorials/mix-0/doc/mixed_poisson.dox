@@ -88,10 +88,10 @@ As was mentioned above, one of the main benefits of the mixed formulation is ass
 \section mix_poisson_code Implementation
 
 Note that function MixedPoisson::runProblem() is shorter than in previous tutorials, e.g. \ref basic_tutorials_poisson_homogeneous since several functions are nested in MixedPoisson::solveRefineLoop():
-\snippet users_modules/tutorials/mix-0/mixed_poisson.cpp Run programme
+\snippet tutorials/mix-0/mixed_poisson.cpp Run programme
 
 Furthermore, function MixedPoisson::readMesh() is similar to the one in \ref basic_tutorials_poisson_homogeneous and will not be discussed here. However, the function MixedPoisson::setupProblem() has features unique to the considered problem:
-\snippet users_modules/tutorials/mix-0/mixed_poisson.cpp Set up problem
+\snippet tutorials/mix-0/mixed_poisson.cpp Set up problem
 
 First, we add domain fields for the flux \f$\mathbf{q}\f$ (choosing space `HCURL`) and for \f$u\f$ (space `L2`). Space H(curl) in 2D is defined as: 
 \f[
@@ -102,15 +102,15 @@ It is important to note that choosing the H(curl) space for fluxes is not a mist
 Next, user-defined orders are set for the fields: if \f$p\f$ is the order for the flux \f$\mathbf{q}\in H(\textrm{div};\Omega)\f$, then order for the field \f$u\in L^2(\Omega)\f$ is \f$(p-1)\f$ which is required to satisfy the inf-sup (LBB) stability conditions  \cite boffi2013mixed. Finally, since in this tutorial we will discuss the implementation of adaptive p-refinement, the user-defined approximation order \f$p\f$ is stored in the MOAB database on <em>tags</em> of each domain element.
 
 Setting the integration rule in function MixedPoisson::setIntegrationRules() is similar to other tutorials:
-\snippet  users_modules/tutorials/mix-0/mixed_poisson.cpp Set integration rule
+\snippet tutorials/mix-0/mixed_poisson.cpp Set integration rule
 The highest order of the integrand is found in the diagonal term in Eq. \eqref{eq:weak_1}, and therefore the rule is set to \f$(2 p + 1)\f$, where \f$p\f$ is order of base functions for fluxes. Note that the order is increased by 1 to accommodate for the case of the higher order geometry.
 
 As was mentioned above, functions MixedPoisson::assembleSystem(), MixedPoisson::solveSystem(), MixedPoisson::checkError() and MixedPoisson::outputResults() are nested in MixedPoisson::solveRefineLoop(). Note that first, these functions are called outside the loop:
-\snippet users_modules/tutorials/mix-0/mixed_poisson.cpp Solve and refine loop 
+\snippet tutorials/mix-0/mixed_poisson.cpp Solve and refine loop 
 If user-defined number of p-refinement iterations is greater or equal to 1, then the loop starts from the refinement procedure and, subsequently, calls to MixedPoisson::assembleSystem(), MixedPoisson::solveSystem(), MixedPoisson::checkError() and MixedPoisson::outputResults() are repeated. We will now consider these functions in more detail. 
 
 \subsection mix_poisson_assemble Assembling the system
-\snippet users_modules/tutorials/mix-0/mixed_poisson.cpp Assemble system
+\snippet tutorials/mix-0/mixed_poisson.cpp Assemble system
 Assembly of the system requires first computation of the Jacobian matrix, its inverse and the determinant. Furthermore, as the H(curl) space was chosen for approximation of the flux field, the transformation of the base to H(div) space (rotation by the right angle of the base vectors) is obtained by pushing the corresponding operator. Moreover, as the base for H(div) space is vectorial, the contravariant Piola transform is required, see \cite boffi2013mixed for more details, and the associated operator is also pushed to the pipeline. Upon these preliminary steps, only three additional operators are needed to assemble the discretized version of the system \eqref{eq:weak_1}- \eqref{eq:weak_2}:
 - Operator OpHdivHdiv() is used to compute the diagonal term in \eqref{eq:weak_1};
 - Operator OpHdivU() computes off-diagonal (symmetric) terms in \eqref{eq:weak_1} and \eqref{eq:weak_2}
@@ -119,9 +119,9 @@ Assembly of the system requires first computation of the Jacobian matrix, its in
 \subsection mix_poisson_error_op Operators for computing error indicators 
 
 The solution of the system is implemented in MixedPoisson::solveSystem() and is similar to other tutorials. However, function MixedPoisson::checkError() deserves discussion here:
-\snippet  users_modules/tutorials/mix-0/mixed_poisson.cpp Check error
+\snippet tutorials/mix-0/mixed_poisson.cpp Check error
 First, computation of the error and error indicators requires the same operators for Jacobian (inverse and determinant), transformation of the base for the space H(div) and contravariant Piola transform as were discussed above. Upon pushing those, we add operators for evaluating values of the field \f$u\f$, its gradient, and the values of the flux \f$\mathbf{q}\f$ at gauss points of the domain elements. Finally, before the loop over all finite elements is performed, the operator MixedPoisson::OpError() is pushed to the pipeline:
-\snippet users_modules/tutorials/mix-0/mixed_poisson.cpp OpError
+\snippet tutorials/mix-0/mixed_poisson.cpp OpError
 
 In particular, operator MixedPoisson::OpError integrates over the domain elements following values:
 - L2 norm of the error \f$||u^h - u^*||_{\Omega_e}^2\f$
@@ -134,7 +134,7 @@ These values are then stored as tags on the corresponding elements in the MOAB d
 
 What remains to be discussed is probably the most important part of this tutorial: how the computed values of the error indicator are used to drive adaptive p-refinement. The corresponding algorithm is implemented in MixedPoisson::refineOrder():
 
-\snippet users_modules/tutorials/mix-0/mixed_poisson.cpp Refine
+\snippet tutorials/mix-0/mixed_poisson.cpp Refine
 
 The algorithm starts by looping over all domain elements and reading the current approximation order and the value of the error indicator from <em>tags</em> of the MOAB database. If for a given element the local indicator is greater than the mean value over the whole domain, i.e.
 \f[

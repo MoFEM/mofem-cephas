@@ -211,14 +211,14 @@ determining boundary conditions, using boundary and domain elements accessed thr
 The focus of this section is on the points highlighted in the Notes in the beginning of the tutorial.
 The problem is run by execution of a series of functions when invoking the function Example::runProblem():
 
-\snippet users_modules/tutorials/clx-0/helmholtz.cpp run problem
+\snippet tutorials/clx-0/helmholtz.cpp run problem
 
 
 
 where Example::readMesh() executes the mesh reading procedure, then Example::setupProblem() involves adding the two unknown fields on the entities of the mesh and determine 
 the base function space, base, field rank and base order
 
-\snippet users_modules/tutorials/clx-0/helmholtz.cpp Set up problem
+\snippet tutorials/clx-0/helmholtz.cpp Set up problem
 
 where the fields \f$p^{\rm{Re}}\f$ and \f$p^{\rm{Im}}\f$ are marked as P_REAL and P_IMAG, respectively.
 Furthermore, the space chosen is H1, the base is AINSWORTH_BERNSTEIN_BEZIER_BASE and dimension is 1 that corresponds to a scalar field.
@@ -245,7 +245,7 @@ Finally, the fields are set up via `simpleInterface->setUp()`.
 \subsection tutorial_hemholtz_treatment_of_boundaries Boundary treatment
 Thereafter, the boundary entities are marked based on the input in Example::boundaryCondition() as shown in the snippet below
 
-\snippet users_modules/tutorials/clx-0/helmholtz.cpp Applying essential BC
+\snippet tutorials/clx-0/helmholtz.cpp Applying essential BC
 
 The present code is designated for 2D problems. 
 Hence, all vertices and edges located on the \f$\Gamma_2\f$ boundary, marked with BLOCK_SET with name "BC" in the input file, are added to the
@@ -256,7 +256,7 @@ via the lambda function `remove_dofs_from_problem`.
 \subsection tutorial_hemholtz_assembly Pushing UDOs to domain and boundary pipelines
 Function Example::assembleSystem() is responsible for evaluating linear and bilinear forms for the problem and assembling the system to be solved
 
-\snippet users_modules/tutorials/clx-0/helmholtz.cpp Push operators to pipeline
+\snippet tutorials/clx-0/helmholtz.cpp Push operators to pipeline
 
 where the wave-number \f$k\f$ has a default value of 90 and can be determined by the user via command line option -k as dictated by the lines below
 \code
