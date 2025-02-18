@@ -682,7 +682,7 @@ The constructor specifies
 Now the first function that actually does some finite element task is the
 function responsible for reading input mesh
 
-\snippet users_modules/tutorials/scl-1/poisson_2d_homogeneous.cpp Read mesh
+\snippet tutorials/scl-1/poisson_2d_homogeneous.cpp Read mesh
 
 Apart from the codes for error handling, the main three lines of code
 is a standard way to read an input mesh using Simple interface. Interface in
@@ -696,7 +696,7 @@ presented in later tutorials.
 Next is the function that is responsible for setting up the finite element
 problem 
 
-\snippet users_modules/tutorials/scl-1/poisson_2d_homogeneous.cpp Setup problem
+\snippet tutorials/scl-1/poisson_2d_homogeneous.cpp Setup problem
 
 This function has
 - `simpleInterface->addDomainField`: It is important to understand that we need to add the domain field through the `simpleInterface` only as the field at
@@ -725,7 +725,7 @@ This function has
 This function deals the boundary condition and its
 implementation for the current problem is as follows
 
-\snippet users_modules/tutorials/scl-1/poisson_2d_homogeneous.cpp Boundary condition
+\snippet tutorials/scl-1/poisson_2d_homogeneous.cpp Boundary condition
 
 To ensure the code reads the boundary conditions, it's essential to generate the mesh that includes the required attributes or values. Specifically, blocks in the mesh must be labelled with the name "BOUNDARY_CONDITION". In other cases where multiple boundary conditions are involved, you should assign distinct names using numbers, such as "BOUNDARY_CONDITION_1", "BOUNDARY_CONDITION_2", "BOUNDARY_CONDITION_3", and so on. This naming scheme helps in distinguishing and applying different boundary conditions to their respective blocks within the mesh.
 
@@ -775,7 +775,7 @@ UDOs are *pushed* to the **Pipeline**.
 
 Apart from pushing UDOs to the main program,  \ref basic_tutorials_poisson_homogeneous_assemble ()function is mainly responsible for setting operators implementing to the pipelines for KSP solver (iterative linear solver provided by PETSc). The full source code for the function is as follows:
 
-\snippet users_modules/tutorials/scl-1/poisson_2d_homogeneous.cpp Assemble system
+\snippet tutorials/scl-1/poisson_2d_homogeneous.cpp Assemble system
 
 - First, the pipeline manager (`pipeline_mng`) that manages two main pipelines which are:
   - `getOpDomainLhsPipeline`: responsible for calculations of the left hand side matrix
@@ -867,7 +867,7 @@ We do not need derivative of the approximation function to calculate force vecto
 This function is responsible for setting the Gauss integration rules and it
 looks like this
 
-\snippet users_modules/tutorials/scl-1/poisson_2d_homogeneous.cpp Set integration rules
+\snippet tutorials/scl-1/poisson_2d_homogeneous.cpp Set integration rules
 
 Here \f$ p \f$ is the polynomial order of the approximation function. For
 the LHS matrix, we are calculating the integral of function \f$\nabla \phi_i
@@ -888,7 +888,7 @@ now can actually solve the system of equations using iterative KSP solver from
 The codes for the function that is responsible for solving the systems of
 equations look like this
 
-\snippet users_modules/tutorials/scl-1/poisson_2d_homogeneous.cpp Solve system
+\snippet tutorials/scl-1/poisson_2d_homogeneous.cpp Solve system
 
 It starts first with getting the pipeline manager
 \code
@@ -942,7 +942,7 @@ mesh in the next step
 This function is solely responsible for the postprocessing of the results
 writing the calculated field values to the output mesh.
 
-\snippet users_modules/tutorials/scl-1/poisson_2d_homogeneous.cpp Output results
+\snippet tutorials/scl-1/poisson_2d_homogeneous.cpp Output results
 
 \subsubsection basic_tutorials_poisson_homogeneous_run_analysis runProgram() 
 
@@ -951,14 +951,14 @@ functions, we can now put them together in the last function of the main class.
 This function is responsible for the calling sequence which is similar to most
 of other finite element programs
 
-\snippet users_modules/tutorials/scl-1/poisson_2d_homogeneous.cpp Run program
+\snippet tutorials/scl-1/poisson_2d_homogeneous.cpp Run program
 
 \subsection basic_tutorials_poisson_homogeneous_main_function The main() function
 
 This `main()` function does not do much job apart from creating the top-level
 class and call the function to trigger the analysis 
 
-\snippet users_modules/tutorials/scl-1/poisson_2d_homogeneous.cpp Main
+\snippet tutorials/scl-1/poisson_2d_homogeneous.cpp Main
 
 So you can see, at the beginning, it creates the Discrete Managers that enable
 information flows between MoFEM (finite element implementation), MOAB (element
