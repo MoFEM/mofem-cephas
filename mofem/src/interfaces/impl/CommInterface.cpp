@@ -1480,22 +1480,40 @@ CommInterface::createEntitiesPetscVector(MPI_Comm comm, moab::Interface &moab,
     CHKERR moab.get_entities_by_type_and_tag(0, MBENTITYSET, &part_tag, NULL, 1,
                                              tagged_sets,
                                              moab::Interface::UNION);
-    for (auto &mit : tagged_sets) {
-      int part;
-      CHKERR moab.tag_get_data(part_tag, &mit, 1, &part);
-      if (part == pcomm->rank()) {
-        CHKERR moab.get_entities_by_handle(mit, proc_ents, true);
-      } else {
-        CHKERR moab.get_entities_by_handle(mit, off_proc_ents, true);
+
+    if (dim > 0) {
+      for (auto &mit : tagged_sets) {
+        int part;
+        CHKERR moab.tag_get_data(part_tag, &mit, 1, &part);
+        if (part == pcomm->rank()) {
+          CHKERR moab.get_entities_by_handle(mit, proc_ents, true);
+        } else {
+          CHKERR moab.get_entities_by_handle(mit, off_proc_ents, true);
+        }
       }
-      if (dim == 0) {
-        Range verts;
-        CHKERR moab.get_connectivity(proc_ents, verts);
-        proc_ents.merge(verts);
-        verts.clear();
-        CHKERR moab.get_connectivity(off_proc_ents, verts);
-        off_proc_ents.merge(verts);
+    } else {
+      std::map<int, Range> parts_ents;
+      for (auto &mit : tagged_sets) {
+        int part;
+        CHKERR moab.tag_get_data(part_tag, &mit, 1, &part);
+        CHKERR moab.get_entities_by_handle(mit, parts_ents[part], true);
       }
+      Range v;
+      CHKERR moab.get_connectivity(parts_ents[pcomm->rank()], v);
+      int p = 0;
+      for (; p != pcomm->rank(); ++p) {
+        Range vv;
+        CHKERR moab.get_connectivity(parts_ents[p], vv);
+        v = subtract(v, vv);
+        off_proc_ents.merge(vv);
+      }
+      for (; p != pcomm->size(); ++p) {
+        Range vv;
+        CHKERR moab.get_connectivity(parts_ents[p], vv);
+        vv = subtract(vv, v);
+        off_proc_ents.merge(vv);
+      }
+      proc_ents = v;
     }
 
     r = proc_ents.subset_by_dimension(dim);
@@ -1509,8 +1527,7 @@ CommInterface::createEntitiesPetscVector(MPI_Comm comm, moab::Interface &moab,
       for (int i = 0; i < ents.size(); ++i)
         for (int j = 0; j < nb_coeffs; ++j)
           ghosts_nb[i * nb_coeffs + j] = nb_coeffs * (ghosts[i] - 1) + j;
-      ghosts.swap(ghosts_nb);
-      return ghosts;
+      return ghosts_nb;
     };
 
     std::vector<int> ghosts;
@@ -1538,7 +1555,57 @@ CommInterface::createEntitiesPetscVector(MPI_Comm comm, moab::Interface &moab,
 
   CHKERR fun();
 
-  return std::make_pair(std::make_pair(r, ghost_ents), vec);
+  auto out = std::make_pair(std::make_pair(r, ghost_ents), vec);
+
+// #ifndef NDEBUG
+  {
+
+    auto check = [&](auto &ents, auto &id, auto &idx) {
+      MoFEMFunctionBegin;
+      bool error = false;
+      for (int i = 0; i < ents.size(); ++i) {
+        for (int j = 0; j < nb_coeffs; ++j) {
+          if (idx[i * nb_coeffs + j] != nb_coeffs * (id[i] - 1) + j) {
+            error = true;
+            MOFEM_LOG("SYNC", Sev::error)
+                << "indexes not equal: " << idx[i * nb_coeffs + j]
+                << " != " << nb_coeffs * (idx[i] - 1) + j;
+          }
+        }
+      }
+      MOFEM_LOG_SEVERITY_SYNC(PETSC_COMM_WORLD, Sev::error);
+      if (error)
+        CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "indexes do not match");
+      MoFEMFunctionReturn(0);
+    };
+
+    Tag tag;
+    CHKERR moab.tag_get_handle("TestGather", nb_coeffs, MB_TYPE_DOUBLE, tag,
+                               MB_TAG_DENSE | MB_TAG_CREAT);
+    auto gid_tag = moab.globalId_tag();
+    std::vector<int> id(r.size());
+    CHKERR moab.tag_get_data(gid_tag, r, id.data());
+    std::vector<double> idx(nb_coeffs * r.size());
+    for (int i = 0; i < r.size(); ++i) {
+      for (int j = 0; j < nb_coeffs; ++j) {
+        idx[i * nb_coeffs + j] = nb_coeffs * (id[i] - 1) + j;
+      }
+    }
+    CHKERR moab.tag_set_data(tag, r, idx.data());
+    CHKERR updateEntitiesPetscVector(moab, out, tag);
+    idx.resize(nb_coeffs * r.size());
+    CHKERR moab.tag_get_data(tag, r, idx.data());
+    CHK_THROW_MESSAGE(check(r, id, idx), "indexes do not match")
+    id.resize(ghost_ents.size());
+    CHKERR moab.tag_get_data(gid_tag, ghost_ents, id.data()); 
+    idx.resize(nb_coeffs * ghost_ents.size());
+    CHKERR moab.tag_get_data(tag, ghost_ents, idx.data());
+    CHK_THROW_MESSAGE(check(ghost_ents, id, idx), "ghost indexes do not match")
+    CHKERR moab.tag_delete(tag);
+  }
+// #endif // NDEBUG
+
+  return out;
 }
 
 MoFEMErrorCode
@@ -1547,14 +1614,22 @@ CommInterface::updateEntitiesPetscVector(moab::Interface &moab,
                                         UpdateGhosts update_gosts) {
   MoFEMFunctionBegin;
 
+  int local_size;
+  CHKERR VecGetLocalSize(vec.second, &local_size);
+  int nb_coeffs;
+  CHKERR moab.tag_get_length(tag, nb_coeffs);
+  if (vec.first.first.size() * nb_coeffs != local_size) {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Local size of vector does not match number of entities");
+  }
+
   auto set_vec_from_tags = [&]() {
     MoFEMFunctionBegin;
     double *v_array;
     // set vector
     CHKERR VecGetArray(vec.second, &v_array);
     CHKERR moab.tag_get_data(tag, vec.first.first, v_array);
-    CHKERR moab.tag_get_data(tag, vec.first.second,
-                             &v_array[vec.first.first.size()]);
+    CHKERR moab.tag_get_data(tag, vec.first.second, &v_array[local_size]);
     CHKERR VecRestoreArray(vec.second, &v_array);
     MoFEMFunctionReturn(0);
   };
@@ -1564,8 +1639,7 @@ CommInterface::updateEntitiesPetscVector(moab::Interface &moab,
     double *v_array;
     CHKERR VecGetArray(vec.second, &v_array);
     CHKERR moab.tag_set_data(tag, vec.first.first, v_array);
-    CHKERR moab.tag_set_data(tag, vec.first.second,
-                             &v_array[vec.first.first.size()]);
+    CHKERR moab.tag_set_data(tag, vec.first.second, &v_array[local_size]);
     CHKERR VecRestoreArray(vec.second, &v_array);
     MoFEMFunctionReturn(0);
   };
