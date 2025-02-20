@@ -2268,11 +2268,15 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
 
   if (part_from_moab) {
     for (auto &fe : *numbered_good_elems_ptr) {
-      // if partition is taken from moab partition
-      int proc = fe.getPartProc();
-      if (proc == -1 && fe.getEntType() == MBVERTEX)
-        proc = fe.getOwnerProc();
-      fe.part = proc;
+      if (fe.getEntType() == MBENTITYSET) {
+        fe.part = m_field.get_comm_rank();
+      } else {
+        // if partition is taken from moab partition
+        int proc = fe.getPartProc();
+        if (proc == -1 && fe.getEntType() == MBVERTEX)
+          proc = fe.getOwnerProc();
+        fe.part = proc;
+      }
     }
   }
 
@@ -2282,12 +2286,17 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
     CHKERR fe.sPtr->getRowDofView(*(p_miit->numeredRowDofsPtr), rows_view);
 
     if (!part_from_moab) {
-      std::vector<int> parts(m_field.get_comm_size(), 0);
-      for (auto &dof_ptr : rows_view)
-        parts[dof_ptr->pArt]++;
-      std::vector<int>::iterator pos = max_element(parts.begin(), parts.end());
-      const auto max_part = std::distance(parts.begin(), pos);
-      fe.part = max_part;
+      if (fe.getEntType() == MBENTITYSET) {
+        fe.part = m_field.get_comm_rank();
+      } else {
+        std::vector<int> parts(m_field.get_comm_size(), 0);
+        for (auto &dof_ptr : rows_view)
+          parts[dof_ptr->pArt]++;
+        std::vector<int>::iterator pos =
+            max_element(parts.begin(), parts.end());
+        const auto max_part = std::distance(parts.begin(), pos);
+        fe.part = max_part;
+      }
     }
   }
 
