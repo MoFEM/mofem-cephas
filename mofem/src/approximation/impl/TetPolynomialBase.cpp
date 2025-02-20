@@ -1430,7 +1430,7 @@ TetPolynomialBase::getValueHdivAinsworthBrokenBase(MatrixDouble &pts) {
     }
   }
 
-#ifdef NDEBUG
+#ifndef NDEBUG
   if (nb_dofs != count_dofs / nb_gauss_pts) {
     MOFEM_LOG_CHANNEL("SELF");
     MOFEM_LOG("SELF", Sev::error) << "Nb dofs face: " << 4 * nb_dofs_face
