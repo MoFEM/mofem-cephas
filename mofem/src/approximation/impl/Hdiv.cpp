@@ -29,7 +29,7 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET(
                                        const int dim)) {
 
   MoFEMFunctionBeginHot;
-#ifdef NDEBUG
+#ifndef NDEBUG
   if (!diff_phi_f_e)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "expected to return derivatives");
@@ -108,7 +108,7 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
         ++t_psi_l;
         ++jj;
       }
-#ifdef NDEBUG
+#ifndef NDEBUG
       if (jj != NBFACETRI_AINSWORTH_EDGE_HDIV(p)) {
         SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "wrong order %d != %d", jj, NBFACETRI_AINSWORTH_EDGE_HDIV(p));
@@ -157,7 +157,7 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_FaceBubbleShapeFunctions(
 
   MoFEMFunctionBeginHot;
 
-#ifdef NDEBUG
+#ifndef NDEBUG
   if (!diff_phi_f)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "expected to return derivatives");
@@ -242,7 +242,7 @@ MoFEMErrorCode MoFEM::Hdiv_Ainsworth_FaceBubbleShapeFunctions_ON_FACE(
         ++jj;
       }
     }
-#ifdef NDEBUG
+#ifndef NDEBUG
     if (jj != NBFACETRI_AINSWORTH_FACE_HDIV(p)) {
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "wrong order %d != %d", jj, NBFACETRI_AINSWORTH_FACE_HDIV(p));
