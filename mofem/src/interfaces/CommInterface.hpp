@@ -293,13 +293,13 @@ struct CommInterface : public UnknownInterface {
       std::pair<std::pair<Range, Range>, SmartPetscObj<Vec>>;
 
   /**
-   * @brief Create a ghost vector for exhanging data
+   * @brief Create a ghost vector for exchanging data
    *
    * @note Only works if loadFileRootProcAllRestDistributed function is used.
    * 
    * @param comm 
    * @param moab
-   * @param dim  dimension of parrition entities 
+   * @param dim  dimension of partition entities 
    * @param adj_dim dimension of adjacent entities
    * @param nb_coeffs number of coefficients
    * @param sev
