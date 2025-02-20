@@ -554,6 +554,11 @@ MoFEMErrorCode Simple::defineFiniteElements() {
           CHKERR m_field.get_moab().create_meshset(MESHSET_SET, meshset);
           CHKERR m_field.getInterface<BitRefManager>()->setBitLevelToMeshset(
               meshset, BitRefLevel().set());
+          ParallelComm *pcomm =
+              ParallelComm::get_pcomm(&m_field.get_moab(), MYPCOMM_INDEX);
+          Tag part_tag = pcomm->part_tag();
+          int rank = pcomm->rank();
+          CHKERR m_field.get_moab().tag_set_data(part_tag, &meshset, 1, &rank);
         }
         MoFEMFunctionReturn(0);
       };
