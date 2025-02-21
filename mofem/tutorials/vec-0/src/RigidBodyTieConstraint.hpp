@@ -78,6 +78,7 @@ RigidBodyTieConstraintData::getTieBlocks(std::vector<TieBlock> &tieBlocks) {
     MOFEM_LOG("SYNC", Sev::inform)
         << "Tie rotation flag " << attributes[12] << " " << attributes[13]
         << " " << attributes[14];
+    MOFEM_LOG("SYNC", Sev::inform) << "Tie meshset added";
     MOFEM_LOG_SYNCHRONISE(mField.get_comm());
   }
   MoFEMFunctionReturn(0);
