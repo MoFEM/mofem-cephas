@@ -62,6 +62,23 @@ RigidBodyTieConstraintData::getTieBlocks(std::vector<TieBlock> &tieBlocks) {
                                      attributes[11]),
          FTensor::Tensor1<double, 3>(attributes[12], attributes[13],
                                      attributes[14])});
+    MOFEM_LOG("SYNC", Sev::inform) << "Nb tie blocks " << tieBlocks.size();
+    MOFEM_LOG("SYNC", Sev::inform) << "Nb tie faces " << tie_meshset_range.size();
+    MOFEM_LOG("SYNC", Sev::inform)
+        << "Tie reference position " << attributes[0] << " " << attributes[1]
+        << " " << attributes[2];
+    MOFEM_LOG("SYNC", Sev::inform)
+        << "Tie translation " << attributes[3] << " " << attributes[4] << " "
+        << attributes[5];
+    MOFEM_LOG("SYNC", Sev::inform) << "Tie rotation " << attributes[6] << " "
+                                    << attributes[7] << " " << attributes[8];
+    MOFEM_LOG("SYNC", Sev::inform)
+        << "Tie translation flag " << attributes[9] << " " << attributes[10]
+        << " " << attributes[11];
+    MOFEM_LOG("SYNC", Sev::inform)
+        << "Tie rotation flag " << attributes[12] << " " << attributes[13]
+        << " " << attributes[14];
+    MOFEM_LOG_SYNCHRONISE(mField.get_comm());
   }
   MoFEMFunctionReturn(0);
 }
@@ -1074,7 +1091,6 @@ MoFEMErrorCode OpFactoryCalculateRigidBodyConstraintRhs(
   }
 
   auto rigid_body_ents_ptr = boost::make_shared<Range>(rigid_body_ents);
-  std::cout << "rigid_body_ents = " << rigid_body_ents << std::endl;
 
   for (auto &t : *tie_blocks_ptr) {
     auto op_loop_side = new OpLoopSide<BoundaryEle>(m_field, "bFE", DIM - 1,
@@ -1298,34 +1314,36 @@ MoFEMErrorCode EssentialPostProcRigidBodyTieRhs::operator()() {
     CHKERR VecGetArray(fePtrLocked->x, &x_ptr);
 
     if (mField.get_comm_rank() == 0) {
-      if (field_name == "RIGID_BODY_LAMBDA")
+      if (field_name == "RIGID_BODY_LAMBDA") {
         f_ptr[i_ptr[index]] =
             x_ptr[i_ptr[index]] -
             (tieBlocksPtr->at(0).tieDirection(index) * fePtrLocked->ts_t);
-      else if (field_name == "RIGID_BODY_THETA")
+      } else if (field_name == "RIGID_BODY_THETA") {
         f_ptr[i_ptr[index]] =
             x_ptr[i_ptr[index]] -
             (tieBlocksPtr->at(0).tieRotation(index) * fePtrLocked->ts_t);
-      else
+      } else {
         SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
                 "Wrong field name");
-      
-    }
-        CHKERR VecRestoreArray(fePtrLocked->f, &f_ptr);
-        CHKERR VecRestoreArray(fePtrLocked->x, &x_ptr);
-        CHKERR ISRestoreIndices(is, &i_ptr);
-        MoFEMFunctionReturn(0);
-      };
-
-      // set block bcs
-      for (int i = 0; i < 3; ++i) {
-        if (tieBlocksPtr->at(0).tieTranslationFlag(i))
-          set_rhs(i, "RIGID_BODY_LAMBDA");
-        if (tieBlocksPtr->at(0).tieRotationFlag(i))
-          set_rhs(i, "RIGID_BODY_THETA");
       }
-      MoFEMFunctionReturn(0);
     }
+    CHKERR VecRestoreArray(fePtrLocked->f, &f_ptr);
+    CHKERR VecRestoreArray(fePtrLocked->x, &x_ptr);
+    CHKERR ISRestoreIndices(is, &i_ptr);
+    MoFEMFunctionReturn(0);
+  };
+
+  // set block bcs
+  for (int i = 0; i < 3; ++i) {
+    if (tieBlocksPtr->at(0).tieTranslationFlag(i)) {
+      set_rhs(i, "RIGID_BODY_LAMBDA");
+    }
+    if (tieBlocksPtr->at(0).tieRotationFlag(i)) {
+      set_rhs(i, "RIGID_BODY_THETA");
+    }
+  }
+  MoFEMFunctionReturn(0);
+}
 
 struct EssentialPostProcRigidBodyTieLhs {
   EssentialPostProcRigidBodyTieLhs(
@@ -1399,10 +1417,12 @@ MoFEMErrorCode EssentialPostProcRigidBodyTieLhs::operator()() {
 
   // set block bcs
   for (int i = 0; i < 3; ++i) {
-    if (tieBlocksPtr->at(0).tieTranslationFlag(i))
+    if (tieBlocksPtr->at(0).tieTranslationFlag(i)) {
       set_lhs(i, "RIGID_BODY_LAMBDA");
-    if (tieBlocksPtr->at(0).tieRotationFlag(i))
+    }
+    if (tieBlocksPtr->at(0).tieRotationFlag(i)) {
       set_lhs(i, "RIGID_BODY_THETA");
+    }
   }
 
   MoFEMFunctionReturn(0);
