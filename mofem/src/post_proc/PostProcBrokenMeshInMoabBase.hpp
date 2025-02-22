@@ -243,11 +243,21 @@ MoFEMErrorCode PostProcBrokenMeshInMoabBase<E>::transferTags() {
     return def_val;
   };
 
+  std::vector<double> tag_data_vec;
   auto data_ptr = [&](auto tag) {
     const void *tag_data;
     auto core_ent = this->getFEEntityHandle();
     CHK_MOAB_THROW(calc_mesh.tag_get_by_ptr(tag, &core_ent, 1, &tag_data),
                    "get tag data");
+    if (data_type(tag) == MB_TYPE_DOUBLE) {
+      tag_data_vec.resize(length(tag));
+      std::copy(static_cast<const double *>(tag_data),
+                static_cast<const double *>(tag_data) + length(tag),
+                tag_data_vec.begin());
+      for (auto &v : tag_data_vec)
+        v = std::abs(v) < std::numeric_limits<float>::epsilon() ? 0. : v;
+      return static_cast<const void *>(tag_data_vec.data());
+    }
     return tag_data;
   };
 
