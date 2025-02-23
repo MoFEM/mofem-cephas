@@ -289,7 +289,7 @@ struct Monitor : public FEMethod {
           new OpCalculateVectorFieldValues<SPACE_DIM>("LAMBDA", lambda_ptr));
       for (auto &t : *tieBlocksPtr) {
         integrate_reaction->getOpPtrVector().push_back(
-            new OpCalculateRigidBodyTieReaction<SPACE_DIM>(
+            new OpCalculateRigidBodyTieReaction<SPACE_DIM, PETSC>(
                 "LAMBDA", lambda_ptr, totalReaction,
                 boost::make_shared<Range>(t.tieFaces), t.tieCoord));
       }

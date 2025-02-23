@@ -84,11 +84,11 @@ RigidBodyTieConstraintData::getTieBlocks(std::vector<TieBlock> &tieBlocks) {
   MoFEMFunctionReturn(0);
 }
 
-template <int DIM>
+template <int DIM, AssemblyType AT>
 struct OpTieTermConstrainRigidBodyRhs
-    : public FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase {
+    : public FormsIntegrators<BoundaryEleOp>::Assembly<AT>::OpBase {
 
-  using OpBase = FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase;
+  using OpBase = typename FormsIntegrators<BoundaryEleOp>::Assembly<AT>::OpBase;
 
   OpTieTermConstrainRigidBodyRhs(
       std::string lambda_name, boost::shared_ptr<MatrixDouble> u_ptr,
@@ -99,10 +99,10 @@ struct OpTieTermConstrainRigidBodyRhs
       : OpBase(lambda_name, lambda_name, OpBase::OPROW, tie_faces_ptr),
         uPtr(u_ptr), tieCoord(tie_coord), translationPtr(translation_ptr),
         thetaPtr(theta_ptr) {
-    std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
-    doEntities[MBEDGE] = true;
-    doEntities[MBTRI] = true;
-    doEntities[MBQUAD] = true;
+    std::fill(&(OpBase::doEntities[MBEDGE]), &(OpBase::doEntities[MBMAXTYPE]), false);
+    OpBase::doEntities[MBEDGE] = true;
+    OpBase::doEntities[MBTRI] = true;
+    OpBase::doEntities[MBQUAD] = true;
   }
 
   MoFEMErrorCode iNtegrate(EntData &data) {
@@ -111,7 +111,7 @@ struct OpTieTermConstrainRigidBodyRhs
     FTENSOR_INDEX(SPACE_DIM, j);
     FTENSOR_INDEX(SPACE_DIM, k);
 
-    auto nb_integration_pts = getGaussPts().size2();
+    auto nb_integration_pts = OpBase::getGaussPts().size2();
     // get element volume
     const double vol = OpBase::getMeasure();
     // get base function gradient on rows
@@ -172,10 +172,10 @@ private:
   boost::shared_ptr<VectorDouble> translationPtr;
   boost::shared_ptr<VectorDouble> thetaPtr;
 };
-template <int DIM>
+template <int DIM, AssemblyType AT>
 struct OpTieTermConstrainRigidBodyLhs_dU
-    : public FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase {
-  using OpBase = FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase;
+    : public FormsIntegrators<BoundaryEleOp>::Assembly<AT>::OpBase {
+  using OpBase = typename FormsIntegrators<BoundaryEleOp>::Assembly<AT>::OpBase;
 
   OpTieTermConstrainRigidBodyLhs_dU(
       std::string lambda_name, std::string col_field_name,
@@ -187,10 +187,10 @@ struct OpTieTermConstrainRigidBodyLhs_dU
       : OpBase(lambda_name, col_field_name, OpBase::OPROWCOL, tie_faces_ptr),
         uPtr(u_ptr), tieCoord(tie_coord), translationPtr(translation_ptr),
         thetaPtr(theta_ptr) {
-    std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
-    doEntities[MBEDGE] = true;
-    doEntities[MBTRI] = true;
-    doEntities[MBQUAD] = true;
+    std::fill(&(OpBase::doEntities[MBEDGE]), &(OpBase::doEntities[MBMAXTYPE]), false);
+    OpBase::doEntities[MBEDGE] = true;
+    OpBase::doEntities[MBTRI] = true;
+    OpBase::doEntities[MBQUAD] = true;
     this->assembleTranspose = true;
     this->sYmm = false;
   }
@@ -204,7 +204,7 @@ struct OpTieTermConstrainRigidBodyLhs_dU
 
     constexpr auto t_kd = FTensor::Kronecker_Delta<double>();
 
-    auto nb_integration_pts = getGaussPts().size2();
+    auto nb_integration_pts = OpBase::getGaussPts().size2();
     // get element volume
     const double vol = OpBase::getMeasure();
     // get base function gradient on rows
@@ -258,19 +258,19 @@ private:
   boost::shared_ptr<VectorDouble> thetaPtr;
 };
 
-template <int DIM>
+template <int DIM, AssemblyType AT>
 struct OpTieTermConstrainRigidBodyLhs_dTranslation
-    : public FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase {
-  using OpBase = FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase;
+    : public FormsIntegrators<BoundaryEleOp>::Assembly<AT>::OpBase {
+  using OpBase = typename FormsIntegrators<BoundaryEleOp>::Assembly<AT>::OpBase;
 
   OpTieTermConstrainRigidBodyLhs_dTranslation(
       std::string lambda_name, std::string col_field_name,
       boost::shared_ptr<Range> tie_faces_ptr)
       : OpBase(lambda_name, col_field_name, OpBase::OPROWCOL, tie_faces_ptr) {
-    std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
-    doEntities[MBEDGE] = true;
-    doEntities[MBTRI] = true;
-    doEntities[MBQUAD] = true;
+    std::fill(&(OpBase::doEntities[MBEDGE]), &(OpBase::doEntities[MBMAXTYPE]), false);
+    OpBase::doEntities[MBEDGE] = true;
+    OpBase::doEntities[MBTRI] = true;
+    OpBase::doEntities[MBQUAD] = true;
     this->assembleTranspose = true;
     this->sYmm = false;
   }
@@ -285,7 +285,7 @@ struct OpTieTermConstrainRigidBodyLhs_dTranslation
 
     constexpr auto t_kd = FTensor::Kronecker_Delta<double>();
 
-    auto nb_integration_pts = getGaussPts().size2();
+    auto nb_integration_pts = OpBase::getGaussPts().size2();
     // get element volume
     const double vol = OpBase::getMeasure();
     // get base function gradient on rows
@@ -316,10 +316,10 @@ struct OpTieTermConstrainRigidBodyLhs_dTranslation
 private:
 };
 
-template <int DIM>
+template <int DIM, AssemblyType AT>
 struct OpTieTermConstrainRigidBodyLhs_dRotation
-    : public FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase {
-  using OpBase = FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase;
+    : public FormsIntegrators<BoundaryEleOp>::Assembly<AT>::OpBase {
+  using OpBase = typename FormsIntegrators<BoundaryEleOp>::Assembly<AT>::OpBase;
 
   OpTieTermConstrainRigidBodyLhs_dRotation(
       std::string lambda_name, std::string col_field_name,
@@ -327,10 +327,10 @@ struct OpTieTermConstrainRigidBodyLhs_dRotation
       boost::shared_ptr<Range> tie_faces_ptr)
       : OpBase(lambda_name, col_field_name, OpBase::OPROWCOL, tie_faces_ptr),
         tieCoord(tie_coord) {
-    std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
-    doEntities[MBEDGE] = true;
-    doEntities[MBTRI] = true;
-    doEntities[MBQUAD] = true;
+    std::fill(&(OpBase::doEntities[MBEDGE]), &(OpBase::doEntities[MBMAXTYPE]), false);
+    OpBase::doEntities[MBEDGE] = true;
+    OpBase::doEntities[MBTRI] = true;
+    OpBase::doEntities[MBQUAD] = true;
     // doEntities[MBENTITYSET] = true;
     this->assembleTranspose = true;
     this->sYmm = false;
@@ -345,7 +345,7 @@ struct OpTieTermConstrainRigidBodyLhs_dRotation
 
     constexpr auto t_kd = FTensor::Kronecker_Delta<double>();
 
-    auto nb_integration_pts = getGaussPts().size2();
+    auto nb_integration_pts = OpBase::getGaussPts().size2();
     // get element volume
     const double vol = OpBase::getMeasure();
     // get base function gradient on rows
@@ -381,21 +381,21 @@ private:
   FTensor::Tensor1<double, 3> tieCoord;
 };
 
-template <int DIM>
+template <int DIM, AssemblyType AT>
 struct OpTieTermConstrainRigidBodyRhs_du
-    : public FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase {
+    : public FormsIntegrators<BoundaryEleOp>::Assembly<AT>::OpBase {
 
-  using OpBase = FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase;
+  using OpBase = typename FormsIntegrators<BoundaryEleOp>::Assembly<AT>::OpBase;
 
   OpTieTermConstrainRigidBodyRhs_du(std::string field_name,
                                     boost::shared_ptr<MatrixDouble> lambda_ptr,
                                     boost::shared_ptr<Range> tie_faces_ptr)
       : OpBase(field_name, field_name, OpBase::OPROW, tie_faces_ptr),
         lambdaPtr(lambda_ptr) {
-    std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
-    doEntities[MBEDGE] = true;
-    doEntities[MBTRI] = true;
-    doEntities[MBQUAD] = true;
+    std::fill(&(OpBase::doEntities[MBEDGE]), &(OpBase::doEntities[MBMAXTYPE]), false);
+    OpBase::doEntities[MBEDGE] = true;
+    OpBase::doEntities[MBTRI] = true;
+    OpBase::doEntities[MBQUAD] = true;
   }
 
   MoFEMErrorCode iNtegrate(EntData &data) {
@@ -406,7 +406,7 @@ struct OpTieTermConstrainRigidBodyRhs_du
 
     constexpr auto t_kd = FTensor::Kronecker_Delta<double>();
 
-    auto nb_integration_pts = getGaussPts().size2();
+    auto nb_integration_pts = OpBase::getGaussPts().size2();
     // get element volume
     const double vol = OpBase::getMeasure();
     // get base function on rows
@@ -508,11 +508,11 @@ private:
   boost::shared_ptr<Range> rigidBodyEntsPtr;
 };
 
-template <int DIM>
+template <int DIM, AssemblyType AT>
 struct OpTieTermConstrainRigidBodyGlobalTranslationIntegralRhs
-    : public FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase {
+    : public FormsIntegrators<BoundaryEleOp>::Assembly<AT>::OpBase {
 
-  using OpBase = FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase;
+  using OpBase = typename FormsIntegrators<BoundaryEleOp>::Assembly<AT>::OpBase;
 
   OpTieTermConstrainRigidBodyGlobalTranslationIntegralRhs(
       std::string lambda_name, boost::shared_ptr<Range> tie_faces_ptr,
@@ -520,10 +520,10 @@ struct OpTieTermConstrainRigidBodyGlobalTranslationIntegralRhs
       boost::shared_ptr<VectorDouble> int_translation_ptr)
       : OpBase(lambda_name, lambda_name, OpBase::OPROW, tie_faces_ptr),
         lambdaPtr(lambda_ptr), intTranslationPtr(int_translation_ptr) {
-    std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
-    doEntities[MBEDGE] = true;
-    doEntities[MBTRI] = true;
-    doEntities[MBQUAD] = true;
+    std::fill(&(OpBase::doEntities[MBEDGE]), &(OpBase::doEntities[MBMAXTYPE]), false);
+    OpBase::doEntities[MBEDGE] = true;
+    OpBase::doEntities[MBTRI] = true;
+    OpBase::doEntities[MBQUAD] = true;
   }
 
   MoFEMErrorCode doWork(int side, EntityType type,
@@ -535,7 +535,7 @@ struct OpTieTermConstrainRigidBodyGlobalTranslationIntegralRhs
 
     FTENSOR_INDEX(SPACE_DIM, i);
 
-    auto nb_integration_pts = getGaussPts().size2();
+    auto nb_integration_pts = OpBase::getGaussPts().size2();
 
     // get element volume
     const double vol = OpBase::getMeasure();
@@ -566,11 +566,11 @@ private:
   boost::shared_ptr<MatrixDouble> lambdaPtr;
 };
 
-template <int DIM>
+template <int DIM, AssemblyType AT>
 struct OpTieTermConstrainRigidBodyGlobalRotationIntegralRhs
-    : public FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase {
+    : public FormsIntegrators<BoundaryEleOp>::Assembly<AT>::OpBase {
 
-  using OpBase = FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase;
+  using OpBase = typename FormsIntegrators<BoundaryEleOp>::Assembly<AT>::OpBase;
 
   OpTieTermConstrainRigidBodyGlobalRotationIntegralRhs(
       std::string lambda_name, FTensor::Tensor1<double, 3> tie_coord,
@@ -578,10 +578,10 @@ struct OpTieTermConstrainRigidBodyGlobalRotationIntegralRhs
       boost::shared_ptr<MatrixDouble> int_rotation_ptr)
       : OpBase(lambda_name, lambda_name, OpBase::OPROW), tieCoord(tie_coord),
         lambdaPtr(lambda_ptr), intRotationPtr(int_rotation_ptr) {
-    std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
-    doEntities[MBEDGE] = true;
-    doEntities[MBTRI] = true;
-    doEntities[MBQUAD] = true;
+    std::fill(&(OpBase::doEntities[MBEDGE]), &(OpBase::doEntities[MBMAXTYPE]), false);
+    OpBase::doEntities[MBEDGE] = true;
+    OpBase::doEntities[MBTRI] = true;
+    OpBase::doEntities[MBQUAD] = true;
   }
 
   MoFEMErrorCode doWork(int side, EntityType type,
@@ -594,7 +594,7 @@ struct OpTieTermConstrainRigidBodyGlobalRotationIntegralRhs
     FTENSOR_INDEX(SPACE_DIM, i);
     FTENSOR_INDEX(SPACE_DIM, j);
 
-    auto nb_integration_pts = getGaussPts().size2();
+    auto nb_integration_pts = OpBase::getGaussPts().size2();
     // get element volume
     const double vol = OpBase::getMeasure();
     // get base function gradient on rows
@@ -972,11 +972,11 @@ protected:
   VectorDouble dotVector;
 };
 
-template <int DIM>
+template <int DIM, AssemblyType AT>
 struct OpCalculateRigidBodyTieReaction
-    : public FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase {
+    : public FormsIntegrators<BoundaryEleOp>::Assembly<AT>::OpBase {
 
-  using OpBase = FormsIntegrators<BoundaryEleOp>::Assembly<A>::OpBase;
+  using OpBase = typename FormsIntegrators<BoundaryEleOp>::Assembly<AT>::OpBase;
 
   OpCalculateRigidBodyTieReaction(std::string lambda_name,
                                   boost::shared_ptr<MatrixDouble> lambda_ptr,
@@ -986,13 +986,13 @@ struct OpCalculateRigidBodyTieReaction
       : OpBase(lambda_name, lambda_name, OpBase::OPROW, tie_faces_ptr),
         lambdaPtr(lambda_ptr), totalReaction(total_reaction),
         tieFacesPtr(tie_faces_ptr), tieCoord(tie_coord) {
-    std::fill(&(doEntities[MBEDGE]), &(doEntities[MBMAXTYPE]), false);
+    std::fill(&(OpBase::doEntities[MBEDGE]), &(OpBase::doEntities[MBMAXTYPE]), false);
   }
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
-    if (tieFacesPtr->find(getNumeredEntFiniteElementPtr()->getEnt()) ==
+    if (tieFacesPtr->find(OpBase::getNumeredEntFiniteElementPtr()->getEnt()) ==
         tieFacesPtr->end()) {
       MoFEMFunctionReturnHot(0);
     }
@@ -1059,7 +1059,7 @@ MoFEMErrorCode OpFactoryCalculateTieConstraintForceTermRhs(
   pip.push_back(new OpCalculateVectorFieldValues<DIM>(field_name, lambda_ptr));
 
   for (auto &t : *tie_blocks_ptr) {
-    pip.push_back(new OpTieTermConstrainRigidBodyRhs_du<DIM>(
+    pip.push_back(new OpTieTermConstrainRigidBodyRhs_du<DIM, AT>(
         "U", lambda_ptr, boost::make_shared<Range>(t.tieFaces)));
   }
   MoFEMFunctionReturn(0);
@@ -1100,11 +1100,11 @@ MoFEMErrorCode OpFactoryCalculateRigidBodyConstraintRhs(
     op_loop_side->getOpPtrVector().push_back(
         new OpCalculateVectorFieldValues<DIM>(field_name, lambda_ptr));
     op_loop_side->getOpPtrVector().push_back(
-        new OpTieTermConstrainRigidBodyGlobalTranslationIntegralRhs<DIM>(
+        new OpTieTermConstrainRigidBodyGlobalTranslationIntegralRhs<DIM, AT>(
             field_name, boost::make_shared<Range>(t.tieFaces), lambda_ptr,
             int_translation_ptr));
     op_loop_side->getOpPtrVector().push_back(
-        new OpTieTermConstrainRigidBodyGlobalRotationIntegralRhs<DIM>(
+        new OpTieTermConstrainRigidBodyGlobalRotationIntegralRhs<DIM, AT>(
             field_name, t.tieCoord, lambda_ptr, int_rotation_ptr));
     pip.push_back(op_loop_side);
 
@@ -1149,11 +1149,11 @@ MoFEMErrorCode OpFactoryCalculateRigidBodyConstraintLhs(
     op_loop_side->getOpPtrVector().push_back(
         new OpCalculateVectorFieldValues<DIM>(field_name, lambda_ptr));
     op_loop_side->getOpPtrVector().push_back(
-        new OpTieTermConstrainRigidBodyLhs_dTranslation<DIM>(
+        new OpTieTermConstrainRigidBodyLhs_dTranslation<DIM, AT>(
             field_name, "RIGID_BODY_LAMBDA",
             boost::make_shared<Range>(t.tieFaces)));
     op_loop_side->getOpPtrVector().push_back(
-        new OpTieTermConstrainRigidBodyLhs_dRotation<DIM>(
+        new OpTieTermConstrainRigidBodyLhs_dRotation<DIM, AT>(
             field_name, "RIGID_BODY_THETA", t.tieCoord,
             boost::make_shared<Range>(t.tieFaces)));
 
@@ -1186,7 +1186,7 @@ MoFEMErrorCode OpFactoryCalculateTieConstraintRhs(
       new OpCalculateNoFieldVectorValues("RIGID_BODY_THETA", theta_ptr));
 
   for (auto &t : *tie_blocks_ptr) {
-    pip.push_back(new OpTieTermConstrainRigidBodyRhs<DIM>(
+    pip.push_back(new OpTieTermConstrainRigidBodyRhs<DIM, AT>(
         field_name, u_ptr, t.tieCoord, boost::make_shared<Range>(t.tieFaces),
         translation_ptr, theta_ptr));
   }
@@ -1216,7 +1216,7 @@ MoFEMErrorCode OpFactoryCalculateTieConstraintLhs(
       new OpCalculateNoFieldVectorValues("RIGID_BODY_THETA", theta_ptr));
 
   for (auto &t : *tie_blocks_ptr) {
-    pip.push_back(new OpTieTermConstrainRigidBodyLhs_dU<DIM>(
+    pip.push_back(new OpTieTermConstrainRigidBodyLhs_dU<DIM, AT>(
         field_name, "U", u_ptr, t.tieCoord,
         boost::make_shared<Range>(t.tieFaces), translation_ptr, theta_ptr));
   }
@@ -1232,23 +1232,23 @@ MoFEMErrorCode OpFactoryPipelineTieConstraint(
   MoFEMFunctionBegin;
   auto *pipeline_mng = m_field.getInterface<PipelineManager>();
 
-  CHKERR OpFactoryCalculateTieConstraintLhs<SPACE_DIM, A>(
+  CHKERR OpFactoryCalculateTieConstraintLhs<SPACE_DIM, AT>(
       m_field, pipeline_mng->getOpBoundaryLhsPipeline(), field_name,
       tie_block_ptr, Sev::inform);
 
-  CHKERR OpFactoryCalculateTieConstraintRhs<SPACE_DIM, A>(
+  CHKERR OpFactoryCalculateTieConstraintRhs<SPACE_DIM, AT>(
       m_field, pipeline_mng->getOpBoundaryRhsPipeline(), field_name,
       tie_block_ptr, Sev::inform);
 
-  CHKERR OpFactoryCalculateTieConstraintForceTermRhs<SPACE_DIM, A>(
+  CHKERR OpFactoryCalculateTieConstraintForceTermRhs<SPACE_DIM, AT>(
       m_field, pipeline_mng->getOpBoundaryRhsPipeline(), field_name,
       tie_block_ptr, Sev::inform);
 
-  CHKERR OpFactoryCalculateRigidBodyConstraintRhs<SPACE_DIM, A>(
+  CHKERR OpFactoryCalculateRigidBodyConstraintRhs<SPACE_DIM, AT>(
       m_field, pipeline_mng->getOpMeshsetRhsPipeline(), field_name,
       tie_block_ptr, Sev::inform);
 
-  CHKERR OpFactoryCalculateRigidBodyConstraintLhs<SPACE_DIM, A>(
+  CHKERR OpFactoryCalculateRigidBodyConstraintLhs<SPACE_DIM, AT>(
       m_field, pipeline_mng->getOpMeshsetLhsPipeline(), field_name,
       tie_block_ptr, Sev::inform);
 
