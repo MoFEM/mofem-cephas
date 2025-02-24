@@ -2,7 +2,7 @@
 
 mkdir -p empty
 
-export VERSION=Workshop2023
+export VERSION=MoFEM_develop
 
 # Create environment
 docker build -t likask/mofem-spack-env -f Dockerfile-spack-env empty/

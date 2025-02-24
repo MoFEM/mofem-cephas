@@ -54,6 +54,7 @@ libxi-dev \
 libssl-dev \
 gawk \
 libopenmpi-dev \
+vim \
 && rm -rf /var/lib/apt/lists/*
 
 ENV MOFEM_INSTALL_DIR=/mofem_install
