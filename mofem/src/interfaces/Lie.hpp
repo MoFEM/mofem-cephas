@@ -113,7 +113,7 @@ private:
     FTensor::Tensor2<D, dim, dim> t_X;
     auto t_hat = getHat(t_w_vee);
     t_X(i, j) = FTensor::Kronecker_Delta<int>()(i, j) + alpha * t_hat(i, j) +
-                beta * t_hat(i, k) * t_hat(k, j);
+                beta * (t_hat(i, k) * t_hat(k, j));
     return t_X;
   }
 
