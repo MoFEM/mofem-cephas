@@ -2952,14 +2952,23 @@ struct OpCalculateHVecTensorDivergence
 
   OpCalculateHVecTensorDivergence(const std::string field_name,
                                   boost::shared_ptr<MatrixDouble> data_ptr,
+                                  SmartPetscObj<Vec> data_vec,
                                   const EntityType zero_type = MBEDGE,
                                   const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
-        dataPtr(data_ptr), zeroType(zero_type), zeroSide(zero_side) {
+        dataPtr(data_ptr), dataVec(data_vec), zeroType(zero_type),
+        zeroSide(zero_side) {
     if (!dataPtr)
       CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Pointer is not set");
   }
+
+  OpCalculateHVecTensorDivergence(const std::string field_name,
+                                  boost::shared_ptr<MatrixDouble> data_ptr,
+                                  const EntityType zero_type = MBEDGE,
+                                  const int zero_side = 0)
+      : OpCalculateHVecTensorDivergence(
+            field_name, data_ptr, SmartPetscObj<Vec>(), zero_type, zero_side) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data) {
@@ -2971,6 +2980,21 @@ struct OpCalculateHVecTensorDivergence
     }
     const size_t nb_dofs = data.getFieldData().size();
     if (nb_dofs) {
+
+      if (dataVec.use_count()) {
+        dotVector.resize(nb_dofs, false);
+        const double *array;
+        CHKERR VecGetArrayRead(dataVec, &array);
+        const auto &local_indices = data.getLocalIndices();
+        for (int i = 0; i != local_indices.size(); ++i)
+          if (local_indices[i] != -1)
+            dotVector[i] = array[local_indices[i]];
+          else
+            dotVector[i] = 0;
+        CHKERR VecRestoreArrayRead(dataVec, &array);
+        data.getFieldData().swap(dotVector);
+      }
+
       const size_t nb_base_functions = data.getN().size2() / 3;
       FTensor::Index<'i', Tensor_Dim0> i;
       FTensor::Index<'j', Tensor_Dim1> j;
@@ -2998,14 +3022,21 @@ struct OpCalculateHVecTensorDivergence
         ++t_data;
         ++t_coords;
       }
+
+      if (dataVec.use_count()) {
+        data.getFieldData().swap(dotVector);
+      }
     }
     MoFEMFunctionReturn(0);
   }
 
 private:
   boost::shared_ptr<MatrixDouble> dataPtr;
+  SmartPetscObj<Vec> dataVec;
   const EntityHandle zeroType;
   const int zeroSide;
+
+  VectorDouble dotVector; ///< Keeps temporary values of time derivatives
 };
 
 /**
