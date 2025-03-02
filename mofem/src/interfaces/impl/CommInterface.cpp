@@ -1557,7 +1557,7 @@ CommInterface::createEntitiesPetscVector(MPI_Comm comm, moab::Interface &moab,
 
   auto out = std::make_pair(std::make_pair(r, ghost_ents), vec);
 
-// #ifndef NDEBUG
+#ifndef NDEBUG
   {
 
     auto check = [&](auto &ents, auto &id, auto &idx) {
@@ -1581,7 +1581,7 @@ CommInterface::createEntitiesPetscVector(MPI_Comm comm, moab::Interface &moab,
 
     Tag tag;
     CHKERR moab.tag_get_handle("TestGather", nb_coeffs, MB_TYPE_DOUBLE, tag,
-                               MB_TAG_DENSE | MB_TAG_CREAT);
+                               MB_TAG_SPARSE | MB_TAG_CREAT);
     auto gid_tag = moab.globalId_tag();
     std::vector<int> id(r.size());
     CHKERR moab.tag_get_data(gid_tag, r, id.data());
@@ -1603,7 +1603,7 @@ CommInterface::createEntitiesPetscVector(MPI_Comm comm, moab::Interface &moab,
     CHK_THROW_MESSAGE(check(ghost_ents, id, idx), "ghost indexes do not match")
     CHKERR moab.tag_delete(tag);
   }
-// #endif // NDEBUG
+#endif // NDEBUG
 
   return out;
 }
