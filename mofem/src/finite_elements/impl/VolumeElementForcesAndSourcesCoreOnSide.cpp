@@ -14,6 +14,10 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreOnSide::setGaussPts(int order) {
   if (!sidePtrFE)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Side element not set");
 
+  if (!operatorImplCalled) {
+    CHKERR operatorImpl();
+  }
+
   const auto type = numeredEntFiniteElementPtr->getEntType();
   auto face_ptr_fe =
       static_cast<FaceElementForcesAndSourcesCore *>(sidePtrFE);
@@ -74,6 +78,17 @@ VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::setPtrFE(
 
 MoFEMErrorCode VolumeElementForcesAndSourcesCoreOnSide::operator()() {
   MoFEMFunctionBegin;
+
+  CHKERR operatorImpl();
+  operatorImplCalled = true;
+  CHKERR VolumeElementForcesAndSourcesCore::operator()();
+
+  MoFEMFunctionReturn(0);
+};
+
+MoFEMErrorCode VolumeElementForcesAndSourcesCoreOnSide::operatorImpl() {
+  MoFEMFunctionBegin;
+
   if (!sidePtrFE)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Side element not set");
 
@@ -110,9 +125,8 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreOnSide::operator()() {
   oppositeNode = std::distance(
       &tetConnMap[0], find(&tetConnMap[0], &tetConnMap[nb_nodes_on_ele], -1));
 
-  CHKERR VolumeElementForcesAndSourcesCore::operator()();
 
   MoFEMFunctionReturn(0);
-};
+}
 
 } // namespace MoFEM
