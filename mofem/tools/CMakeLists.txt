@@ -75,7 +75,7 @@ if(MED_LIBRARY)
     mofem_third_party
     ${MoFEM_PROJECT_LIBS}
   )
-  install(TARGETS read_med DESTINATION bin)
+  install(TARGETS write_med DESTINATION bin)
 endif(MED_LIBRARY)
 
 add_executable(add_meshsets ${CMAKE_CURRENT_SOURCE_DIR}/add_meshsets.cpp)
