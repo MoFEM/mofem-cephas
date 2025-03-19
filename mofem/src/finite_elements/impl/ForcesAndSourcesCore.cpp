@@ -1714,7 +1714,7 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopSide(
                      ->get<FiniteElement_name_mi_tag>()
                      .end()) {
 
-    const auto ent = ent_for_side ? ent_for_side : getFEEntityHandle();
+    const auto ent = ent_for_side ? ent_for_sie : getFEEntityHandle();
 
     side_fe->feName = fe_name;
 
