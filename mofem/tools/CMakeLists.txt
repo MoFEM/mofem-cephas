@@ -236,6 +236,24 @@ target_link_libraries(read_vtk
 )
 install(TARGETS read_vtk DESTINATION bin)
 
+find_library(MBCOUPLER_LIBRARY NAMES mbcoupler PATHS "${MOAB_DIR}/lib")
+message(STATUS "MBCoupler library: ${MBCOUPLER_LIBRARY}")
+
+if (MBCOUPLER_LIBRARY)
+  add_executable(mesh_data_transfer ${CMAKE_CURRENT_SOURCE_DIR}/mesh_data_transfer.cpp)
+  target_link_libraries(mesh_data_transfer
+    mofem_interfaces
+    mofem_finite_elements
+    mofem_multi_indices
+    mofem_petsc
+    mofem_approx
+    mofem_third_party
+    ${MBCOUPLER_LIBRARY}
+    ${MoFEM_PROJECT_LIBS}
+  )
+  install(TARGETS mesh_data_transfer DESTINATION bin)
+endif(MBCOUPLER_LIBRARY)
+
 cm_export_file("convert.py" export_tools)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/convert.py
   DESTINATION bin

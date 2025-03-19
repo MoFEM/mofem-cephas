@@ -150,7 +150,9 @@
 #include <moab/ReadUtilIface.hpp>
 #include <moab/GeomUtil.hpp>
 #include <moab/Util.hpp>
-#include "moab/ReorderTool.hpp"
+#include <moab/ReorderTool.hpp>
+#include <mbcoupler/Coupler.hpp>
+#include <mbcoupler/DataCoupler.hpp>
 
 //LAPACK
 #ifdef __cplusplus
