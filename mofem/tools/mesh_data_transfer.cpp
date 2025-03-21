@@ -29,6 +29,7 @@ int main(int argc, char *argv[]) {
     int interp_order = 0;
 
     PetscBool set_source_tag = PETSC_FALSE;
+    PetscBool use_target_verts = PETSC_FALSE;
 
     double toler = 5.e-10;
 
@@ -44,6 +45,9 @@ int main(int argc, char *argv[]) {
                               PETSC_NULL);
     CHKERR PetscOptionsBool("-set_source_tag", "Set source tag", "",
                             set_source_tag, &set_source_tag, PETSC_NULL);
+    CHKERR PetscOptionsBool("-use_target_verts",
+                            "use target vertices for interpolation", "",
+                            use_target_verts, &use_target_verts, PETSC_NULL);
     CHKERR PetscOptionsInt("-interp_order", "interpolation order", "", 0,
                            &interp_order, PETSC_NULL);
 
@@ -103,6 +107,7 @@ int main(int argc, char *argv[]) {
     Range src_elems, targ_elems, targ_verts;
     CHKERR pcs[0]->get_part_entities(src_elems, 3);
 
+    // Set source tag to create sslv116 test mesh
     if (set_source_tag) {
       Tag new_tag;
       double def_val[9];
@@ -154,21 +159,16 @@ int main(int argc, char *argv[]) {
       CHKERR mbImpl->tag_set_data(new_tag, src_elems, &stress[0]);
     }
 
-    Coupler mbc(mbImpl, pcs[0], src_elems, 0,
-                false);    // do not initialize tree yet
-    mbc.initialize_tree(); // it is expensive, but do something different for
-                           // spherical
+    Coupler mbc(mbImpl, pcs[0], src_elems, 0, true);
 
-    std::vector<double>
-        vpos; // This will have the positions we are interested in
+    std::vector<double> vpos; // the positions we are interested in
     int numPointsOfInterest = 0;
 
     Range tmp_verts;
 
     // First get all vertices adj to partition entities in target mesh
     CHKERR pcs[1]->get_part_entities(targ_elems, 3);
-
-    if (Coupler::CONSTANT == method) {
+    if (!use_target_verts) {
       targ_verts = targ_elems;
     } else {
       CHKERR mbImpl->get_adjacencies(targ_elems, 0, false, targ_verts,
@@ -177,8 +177,8 @@ int main(int argc, char *argv[]) {
 
     // Then get non-owned verts and subtract
     CHKERR pcs[1]->get_pstatus_entities(0, PSTATUS_NOT_OWNED, tmp_verts);
-
     targ_verts = subtract(targ_verts, tmp_verts);
+
     // get position of these entities; these are the target points
     numPointsOfInterest = (int)targ_verts.size();
     vpos.resize(3 * targ_verts.size());
@@ -197,52 +197,89 @@ int main(int argc, char *argv[]) {
     CHKERR mbImpl->tag_get_handle(iterp_tag_name, interp_tag_len,
                                   MB_TYPE_DOUBLE, source_tag);
     CHKERR mbImpl->tag_get_data(source_tag, src_elems, &source_data[0]);
+
     std::vector<double> source_data_scalar(src_elems.size());
+    Tag scalar_tag, scalar_tag_vert, adj_count_tag;
 
     for (int itag = 0; itag < interp_tag_len; itag++) {
-      Tag scalar_tag;
-      double def_val = 0;
-      string scalar_tag_name =
-          string(iterp_tag_name) + "_" + std::to_string(itag);
-          
-      source_data_scalar.clear();
+
       for (int ielem = 0; ielem < src_elems.size(); ielem++) {
         source_data_scalar[ielem] = source_data[itag + ielem * interp_tag_len];
       }
 
+      double def_scl = 0;
+      string scalar_tag_name = string(iterp_tag_name) + "_COMP";
+
       CHKERR mbImpl->tag_get_handle(scalar_tag_name.c_str(), 1, MB_TYPE_DOUBLE,
                                     scalar_tag, MB_TAG_CREAT | MB_TAG_DENSE,
-                                    &def_val);
+                                    &def_scl);
       CHKERR mbImpl->tag_set_data(scalar_tag, src_elems,
                                   &source_data_scalar[0]);
 
-      if (interp_order == 1) {
+      if (interp_order) {
 
-        scalar_tag_name += "_VERTEX";
-        Tag scalar_tag_vert;
+        scalar_tag_name += "_VERT_DATA";
         double def_val = 0;
         CHKERR mbImpl->tag_get_handle(scalar_tag_name.c_str(), 1,
                                       MB_TYPE_DOUBLE, scalar_tag_vert,
                                       MB_TAG_CREAT | MB_TAG_DENSE, &def_val);
 
+        string adj_count_tag_name = "ADJ_COUNT";
+        double def_adj = 0;
+        CHKERR mbImpl->tag_get_handle(adj_count_tag_name.c_str(), 1,
+                                      MB_TYPE_DOUBLE, adj_count_tag,
+                                      MB_TAG_CREAT | MB_TAG_DENSE, &def_adj);
+
         Range src_verts;
         CHKERR mbImpl->get_connectivity(src_elems, src_verts, true);
 
-        for (auto &vert : src_verts) {
-          Range adj_vert_tets;
-          CHKERR mbImpl->get_adjacencies(&vert, 1, 3, false, adj_vert_tets);
-          std::vector<double> adj_vert_data(adj_vert_tets.size(), 0.0);
+        CHKERR mbImpl->tag_clear_data(scalar_tag_vert, src_verts, &def_val);
+        CHKERR mbImpl->tag_clear_data(adj_count_tag, src_verts, &def_adj);
 
-          CHKERR mbImpl->tag_get_data(scalar_tag, adj_vert_tets,
+        for (auto &tet : src_elems) {
+          double tet_data = 0;
+          CHKERR mbImpl->tag_get_data(scalar_tag, &tet, 1, &tet_data);
+
+          Range adj_verts;
+          CHKERR mbImpl->get_connectivity(&tet, 1, adj_verts, true);
+
+          std::vector<double> adj_vert_data(adj_verts.size(), 0.0);
+          std::vector<double> adj_vert_count(adj_verts.size(), 0.0);
+
+          CHKERR mbImpl->tag_get_data(scalar_tag_vert, adj_verts,
                                       &adj_vert_data[0]);
-          double mean = 0;
-          for (auto &value : adj_vert_data) {
-            mean += value;
-          }
-          mean /= adj_vert_data.size();
+          CHKERR mbImpl->tag_get_data(adj_count_tag, adj_verts,
+                                      &adj_vert_count[0]);
 
-          CHKERR mbImpl->tag_set_data(scalar_tag_vert, &vert, 1, &mean);
+          for (int ivert = 0; ivert < adj_verts.size(); ivert++) {
+            adj_vert_data[ivert] += tet_data;
+            adj_vert_count[ivert] += 1;
+          }
+
+          CHKERR mbImpl->tag_set_data(scalar_tag_vert, adj_verts,
+                                      &adj_vert_data[0]);
+          CHKERR mbImpl->tag_set_data(adj_count_tag, adj_verts,
+                                      &adj_vert_count[0]);
         }
+
+        std::vector<Tag> tags;
+        tags.push_back(scalar_tag_vert);
+        tags.push_back(adj_count_tag);
+        pcs[0]->reduce_tags(tags, tags, MPI_SUM, src_verts);
+
+        std::vector<double> src_vert_data(src_verts.size(), 0.0);
+        std::vector<double> src_vert_adj_count(src_verts.size(), 0.0);
+
+        CHKERR mbImpl->tag_get_data(scalar_tag_vert, src_verts,
+                                    &src_vert_data[0]);
+        CHKERR mbImpl->tag_get_data(adj_count_tag, src_verts,
+                                    &src_vert_adj_count[0]);
+
+        for (int ivert = 0; ivert < src_verts.size(); ivert++) {
+          src_vert_data[ivert] /= src_vert_adj_count[ivert];
+        }
+        CHKERR mbImpl->tag_set_data(scalar_tag_vert, src_verts,
+                                    &src_vert_data[0]);
       }
 
       std::vector<double> target_data_scalar(numPointsOfInterest, 0.0);
@@ -253,27 +290,32 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    //  for (const auto &value : field) {
-    //   //  std::cout << value << std::endl;
-    //    if (value < 80) {
-    //      SETERRQ(PETSC_COMM_SELF, 1, "WRONG PROJECTION");
-    //    }
-    //  }
+    CHKERR mbImpl->tag_delete(scalar_tag);
+
+    if (interp_order) {
+      CHKERR mbImpl->tag_delete(scalar_tag_vert);
+      CHKERR mbImpl->tag_delete(adj_count_tag);
+    }
 
     // Use original tag
     Tag target_tag;
     double def_val[9];
     bzero(def_val, 9 * sizeof(double));
     string target_tag_name = string(iterp_tag_name);
-    if (interp_order == 1) {
-      target_tag_name += "_VERTEX";
+    if (use_target_verts) {
+      target_tag_name += "_VERT";
     }
     CHKERR mbImpl->tag_get_handle(target_tag_name.c_str(), interp_tag_len,
                                   MB_TYPE_DOUBLE, target_tag,
                                   MB_TAG_CREAT | MB_TAG_DENSE, &def_val);
     CHKERR mbImpl->tag_set_data(target_tag, targ_verts, &target_data[0]);
 
-    if (interp_order == 1) {
+    if (use_target_verts) {
+
+      std::vector<Tag> tags;
+      tags.push_back(target_tag);
+      pcs[1]->reduce_tags(tags, tags, MPI_SUM, targ_verts);
+
       Tag interp_tag_tet;
       double def_val[9];
       bzero(def_val, 9 * sizeof(double));
@@ -284,9 +326,11 @@ int main(int argc, char *argv[]) {
       for (auto &tet : targ_elems) {
         Range adj_verts;
         CHKERR mbImpl->get_connectivity(&tet, 1, adj_verts, true);
+
         std::vector<double> adj_vert_data(adj_verts.size() * interp_tag_len,
                                           0.0);
         CHKERR mbImpl->tag_get_data(target_tag, adj_verts, &adj_vert_data[0]);
+
         std::vector<double> tet_data(interp_tag_len, 0.0);
         for (int itag = 0; itag < interp_tag_len; itag++) {
           for (int i = 0; i < adj_verts.size(); i++) {
