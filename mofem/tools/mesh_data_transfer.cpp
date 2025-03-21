@@ -26,10 +26,12 @@ int main(int argc, char *argv[]) {
     char mesh_out_file[255] = "out.h5m";
     char iterp_tag_name[255] = "INTERNAL_STRESS";
 
-    int interp_order = 0;
+    int interp_order = 1;
+    int interp_tag_len = 9;
 
-    PetscBool set_source_tag = PETSC_FALSE;
-    PetscBool use_target_verts = PETSC_FALSE;
+    PetscBool set_source_data = PETSC_FALSE;
+    PetscBool use_target_verts = PETSC_TRUE;
+    PetscBool save_tag_verts = PETSC_FALSE;
 
     double toler = 5.e-10;
 
@@ -43,13 +45,18 @@ int main(int argc, char *argv[]) {
     CHKERR PetscOptionsString("-interp_tag", "Interpolation tag name", "",
                               "INTERNAL_STRESS", iterp_tag_name, 255,
                               PETSC_NULL);
-    CHKERR PetscOptionsBool("-set_source_tag", "Set source tag", "",
-                            set_source_tag, &set_source_tag, PETSC_NULL);
+    CHKERR PetscOptionsBool("-set_source_data", "Set source data", "",
+                            set_source_data, &set_source_data, PETSC_NULL);
     CHKERR PetscOptionsBool("-use_target_verts",
                             "use target vertices for interpolation", "",
                             use_target_verts, &use_target_verts, PETSC_NULL);
+    CHKERR PetscOptionsBool("-save_tag_verts",
+                            "save tag on vertices", "",
+                            save_tag_verts, &save_tag_verts, PETSC_NULL);                        
     CHKERR PetscOptionsInt("-interp_order", "interpolation order", "", 0,
                            &interp_order, PETSC_NULL);
+    CHKERR PetscOptionsInt("-interp_tag_length", "interpolation tag length", "", 9,
+                           &interp_tag_len, PETSC_NULL);
 
     ierr = PetscOptionsEnd();
     CHKERRQ(ierr);
@@ -108,7 +115,7 @@ int main(int argc, char *argv[]) {
     CHKERR pcs[0]->get_part_entities(src_elems, 3);
 
     // Set source tag to create sslv116 test mesh
-    if (set_source_tag) {
+    if (set_source_data) {
       Tag new_tag;
       double def_val[9];
       bzero(def_val, 9 * sizeof(double));
@@ -189,7 +196,6 @@ int main(int argc, char *argv[]) {
               << " points of interest: " << numPointsOfInterest << "\n";
     CHKERR mbc.locate_points(&vpos[0], numPointsOfInterest, 0, toler);
 
-    int interp_tag_len = 9;
     std::vector<double> source_data(interp_tag_len * src_elems.size(), 0.0);
     std::vector<double> target_data(interp_tag_len * numPointsOfInterest, 0.0);
 
@@ -301,11 +307,8 @@ int main(int argc, char *argv[]) {
     Tag target_tag;
     double def_val[9];
     bzero(def_val, 9 * sizeof(double));
-    string target_tag_name = string(iterp_tag_name);
-    if (use_target_verts) {
-      target_tag_name += "_VERT";
-    }
-    CHKERR mbImpl->tag_get_handle(target_tag_name.c_str(), interp_tag_len,
+
+    CHKERR mbImpl->tag_get_handle(iterp_tag_name, interp_tag_len,
                                   MB_TYPE_DOUBLE, target_tag,
                                   MB_TAG_CREAT | MB_TAG_DENSE, &def_val);
     CHKERR mbImpl->tag_set_data(target_tag, targ_verts, &target_data[0]);
@@ -339,6 +342,10 @@ int main(int argc, char *argv[]) {
           tet_data[itag] /= adj_verts.size();
         }
         CHKERR mbImpl->tag_set_data(interp_tag_tet, &tet, 1, &tet_data[0]);
+      }
+
+      if (!save_tag_verts) {
+        CHKERR mbImpl->tag_delete_data(target_tag, targ_verts);
       }
     }
 
