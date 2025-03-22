@@ -36,14 +36,15 @@ int main(int argc, char *argv[]) {
 
     int interp_order = 1;
     int interp_tag_len = 9;
-        
+
     PetscBool use_target_verts = PETSC_TRUE;
     PetscBool set_source_data = PETSC_FALSE;
     PetscBool atom_test = PETSC_FALSE;
 
     double toler = 5.e-10;
 
-    CHKERR PetscOptionsBegin(m_field.get_comm(), "", "Read MED tool", "none");
+    CHKERR PetscOptionsBegin(m_field.get_comm(), "", "mesh data transfer tool",
+                             "none");
     CHKERR PetscOptionsString("-source_file", "source mesh file name", "",
                               "source.h5m", mesh_source_file, 255, PETSC_NULL);
     CHKERR PetscOptionsString("-target_file", "target mesh file name", "",
@@ -82,12 +83,12 @@ int main(int argc, char *argv[]) {
     }
 
     if (atom_test && atom_test != 1) {
-      SETERRQ1(PETSC_COMM_WORLD, MOFEM_NOT_IMPLEMENTED, "Unknown test number: %d",
-               atom_test);
+      SETERRQ1(PETSC_COMM_WORLD, MOFEM_NOT_IMPLEMENTED,
+               "Unknown test number: %d", atom_test);
     }
     if (interp_tag_len != 1 && interp_tag_len != 3 && interp_tag_len != 9) {
       SETERRQ1(PETSC_COMM_WORLD, MOFEM_NOT_IMPLEMENTED,
-              "Unsupported interpolation tag length: %d", interp_tag_len);
+               "Unsupported interpolation tag length: %d", interp_tag_len);
     }
 
     std::vector<std::string> mesh_files(2);
@@ -122,11 +123,11 @@ int main(int argc, char *argv[]) {
       std::ostringstream extra_opt;
       extra_opt << ";PARALLEL_COMM=" << index;
       newread_opts = read_opts + extra_opt.str();
-  
+
       CHKERR moab.create_meshset(MESHSET_SET, roots[i]);
 
       CHKERR moab.load_file(mesh_files[i].c_str(), &roots[i],
-                               newread_opts.c_str());
+                            newread_opts.c_str());
     }
 
     Range src_elems, targ_elems, targ_verts;
@@ -135,11 +136,11 @@ int main(int argc, char *argv[]) {
     Tag interp_tag;
     double def_val[9];
     bzero(def_val, 9 * sizeof(double));
-    CHKERR moab.tag_get_handle(iterp_tag_name, interp_tag_len,
-                                  MB_TYPE_DOUBLE, interp_tag,
-                                  MB_TAG_CREAT | MB_TAG_DENSE, &def_val);
+    CHKERR moab.tag_get_handle(iterp_tag_name, interp_tag_len, MB_TYPE_DOUBLE,
+                               interp_tag, MB_TAG_CREAT | MB_TAG_DENSE,
+                               &def_val);
 
-    // Set data on the source mesh for SSLV116 test 
+    // Set data on the source mesh for SSLV116 test
     if (set_source_data) {
       std::vector<double> spos;
       spos.resize(3 * src_elems.size());
@@ -156,7 +157,7 @@ int main(int argc, char *argv[]) {
                           : (170.0 / 8.0) * (z - 2) + 80;
       };
 
-      // material properties for SSLV116 test 
+      // material properties for SSLV116 test
       double young_modulus = 2e11;
       double poisson_ratio = 0.3;
       double alpha = 1e-5;
@@ -204,7 +205,7 @@ int main(int argc, char *argv[]) {
       targ_verts = targ_elems;
     } else {
       CHKERR moab.get_adjacencies(targ_elems, 0, false, targ_verts,
-                                     moab::Interface::UNION);
+                                  moab::Interface::UNION);
     }
 
     // Then get non-owned verts and subtract
@@ -228,14 +229,14 @@ int main(int argc, char *argv[]) {
     double def_scl = 0;
     string scalar_tag_name = string(iterp_tag_name) + "_COMP";
     CHKERR moab.tag_get_handle(scalar_tag_name.c_str(), 1, MB_TYPE_DOUBLE,
-                                  scalar_tag, MB_TAG_CREAT | MB_TAG_DENSE,
-                                  &def_scl);
+                               scalar_tag, MB_TAG_CREAT | MB_TAG_DENSE,
+                               &def_scl);
 
     string adj_count_tag_name = "ADJ_COUNT";
     double def_adj = 0;
     CHKERR moab.tag_get_handle(adj_count_tag_name.c_str(), 1, MB_TYPE_DOUBLE,
-                                  adj_count_tag, MB_TAG_CREAT | MB_TAG_DENSE,
-                                  &def_adj);
+                               adj_count_tag, MB_TAG_CREAT | MB_TAG_DENSE,
+                               &def_adj);
 
     std::vector<double> source_data_scalar(src_elems.size());
 
@@ -247,8 +248,7 @@ int main(int argc, char *argv[]) {
         source_data_scalar[ielem] = source_data[itag + ielem * interp_tag_len];
       }
 
-      CHKERR moab.tag_set_data(scalar_tag, src_elems,
-                                  &source_data_scalar[0]);
+      CHKERR moab.tag_set_data(scalar_tag, src_elems, &source_data_scalar[0]);
 
       if (interp_order == 1) {
         // In case of linear interpolation, data needs to be saved on source
@@ -273,7 +273,7 @@ int main(int argc, char *argv[]) {
 
           CHKERR moab.tag_get_data(scalar_tag, adj_verts, &adj_vert_data[0]);
           CHKERR moab.tag_get_data(adj_count_tag, adj_verts,
-                                      &adj_vert_count[0]);
+                                   &adj_vert_count[0]);
 
           for (int ivert = 0; ivert < adj_verts.size(); ivert++) {
             adj_vert_data[ivert] += tet_data;
@@ -282,7 +282,7 @@ int main(int argc, char *argv[]) {
 
           CHKERR moab.tag_set_data(scalar_tag, adj_verts, &adj_vert_data[0]);
           CHKERR moab.tag_set_data(adj_count_tag, adj_verts,
-                                      &adj_vert_count[0]);
+                                   &adj_vert_count[0]);
         }
 
         // We need to reduce tags for the parallel case
@@ -296,7 +296,7 @@ int main(int argc, char *argv[]) {
 
         CHKERR moab.tag_get_data(scalar_tag, src_verts, &src_vert_data[0]);
         CHKERR moab.tag_get_data(adj_count_tag, src_verts,
-                                    &src_vert_adj_count[0]);
+                                 &src_vert_adj_count[0]);
 
         for (int ivert = 0; ivert < src_verts.size(); ivert++) {
           src_vert_data[ivert] /= src_vert_adj_count[ivert];
@@ -434,7 +434,7 @@ int main(int argc, char *argv[]) {
     }
     new_write_opts = write_opts + extra_opt.str();
     CHKERR moab.write_file(mesh_out_file, NULL, new_write_opts.c_str(),
-                              part_sets);
+                           part_sets);
     if (0 == rank) {
       std::cout << "Wrote file " << mesh_out_file << std::endl;
     }
