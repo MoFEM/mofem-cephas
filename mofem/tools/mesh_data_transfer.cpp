@@ -349,30 +349,6 @@ int main(int argc, char *argv[]) {
     if (atom_test) {
       // Check the integrated stress for the SSLV116 test
 
-      auto compute_tet_volume = [](const std::vector<double> &vpos) -> double {
-        // Extract vertices
-        double x0 = vpos[0], y0 = vpos[1], z0 = vpos[2];
-        double x1 = vpos[3], y1 = vpos[4], z1 = vpos[5];
-        double x2 = vpos[6], y2 = vpos[7], z2 = vpos[8];
-        double x3 = vpos[9], y3 = vpos[10], z3 = vpos[11];
-
-        // Compute vectors
-        double ax = x1 - x0, ay = y1 - y0, az = z1 - z0;
-        double bx = x2 - x0, by = y2 - y0, bz = z2 - z0;
-        double cx = x3 - x0, cy = y3 - y0, cz = z3 - z0;
-
-        // Compute cross product b x c
-        double cross_x = by * cz - bz * cy;
-        double cross_y = bz * cx - bx * cz;
-        double cross_z = bx * cy - by * cx;
-
-        // Compute dot product a . (b x c)
-        double dot = ax * cross_x + ay * cross_y + az * cross_z;
-
-        // Compute volume
-        return std::abs(dot) / 6.0;
-      };
-
       std::vector<double> data_integ(interp_tag_len, 0.0);
       for (auto &tet : targ_elems) {
 
@@ -383,7 +359,7 @@ int main(int argc, char *argv[]) {
         CHKERR moab.get_connectivity(&tet, 1, tmp_verts);
         std::vector<double> vpos(3 * tmp_verts.size());
         CHKERR moab.get_coords(tmp_verts, &vpos[0]);
-        double vol = compute_tet_volume(vpos);
+        double vol = abs(Tools::tetVolume(vpos.data()));
 
         for (int itag = 0; itag < interp_tag_len; itag++) {
           data_integ[itag] += tet_data[itag] * vol;
