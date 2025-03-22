@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
 
     PetscBool set_source_data = PETSC_FALSE;
     PetscBool use_target_verts = PETSC_TRUE;
-    PetscBool save_tag_verts = PETSC_FALSE;
+    PetscBool atom_test = PETSC_FALSE;
 
     double toler = 5.e-10;
 
@@ -50,13 +50,12 @@ int main(int argc, char *argv[]) {
     CHKERR PetscOptionsBool("-use_target_verts",
                             "use target vertices for interpolation", "",
                             use_target_verts, &use_target_verts, PETSC_NULL);
-    CHKERR PetscOptionsBool("-save_tag_verts",
-                            "save tag on vertices", "",
-                            save_tag_verts, &save_tag_verts, PETSC_NULL);                        
+    CHKERR PetscOptionsBool("-atom_test", "is atom test", "", atom_test,
+                            &atom_test, PETSC_NULL);
     CHKERR PetscOptionsInt("-interp_order", "interpolation order", "", 0,
                            &interp_order, PETSC_NULL);
-    CHKERR PetscOptionsInt("-interp_tag_length", "interpolation tag length", "", 9,
-                           &interp_tag_len, PETSC_NULL);
+    CHKERR PetscOptionsInt("-interp_tag_length", "interpolation tag length", "",
+                           9, &interp_tag_len, PETSC_NULL);
 
     ierr = PetscOptionsEnd();
     CHKERRQ(ierr);
@@ -114,14 +113,15 @@ int main(int argc, char *argv[]) {
     Range src_elems, targ_elems, targ_verts;
     CHKERR pcs[0]->get_part_entities(src_elems, 3);
 
+    Tag interp_tag;
+    double def_val[9];
+    bzero(def_val, 9 * sizeof(double));
+    CHKERR mbImpl->tag_get_handle(iterp_tag_name, interp_tag_len,
+                                  MB_TYPE_DOUBLE, interp_tag,
+                                  MB_TAG_CREAT | MB_TAG_DENSE, &def_val);
+
     // Set source tag to create sslv116 test mesh
     if (set_source_data) {
-      Tag new_tag;
-      double def_val[9];
-      bzero(def_val, 9 * sizeof(double));
-      CHKERR mbImpl->tag_get_handle(iterp_tag_name, 9, MB_TYPE_DOUBLE, new_tag,
-                                    MB_TAG_CREAT | MB_TAG_DENSE, &def_val);
-
       std::vector<double> spos;
       spos.resize(3 * src_elems.size());
       CHKERR mbImpl->get_coords(src_elems, &spos[0]);
@@ -163,7 +163,7 @@ int main(int argc, char *argv[]) {
         ++t_stress;
       }
 
-      CHKERR mbImpl->tag_set_data(new_tag, src_elems, &stress[0]);
+      CHKERR mbImpl->tag_set_data(interp_tag, src_elems, &stress[0]);
     }
 
     Coupler mbc(mbImpl, pcs[0], src_elems, 0, true);
@@ -199,13 +199,22 @@ int main(int argc, char *argv[]) {
     std::vector<double> source_data(interp_tag_len * src_elems.size(), 0.0);
     std::vector<double> target_data(interp_tag_len * numPointsOfInterest, 0.0);
 
-    Tag source_tag;
-    CHKERR mbImpl->tag_get_handle(iterp_tag_name, interp_tag_len,
-                                  MB_TYPE_DOUBLE, source_tag);
-    CHKERR mbImpl->tag_get_data(source_tag, src_elems, &source_data[0]);
+    CHKERR mbImpl->tag_get_data(interp_tag, src_elems, &source_data[0]);
+
+    Tag scalar_tag, adj_count_tag;
+    double def_scl = 0;
+    string scalar_tag_name = string(iterp_tag_name) + "_COMP";
+    CHKERR mbImpl->tag_get_handle(scalar_tag_name.c_str(), 1, MB_TYPE_DOUBLE,
+                                  scalar_tag, MB_TAG_CREAT | MB_TAG_DENSE,
+                                  &def_scl);
+
+    string adj_count_tag_name = "ADJ_COUNT";
+    double def_adj = 0;
+    CHKERR mbImpl->tag_get_handle(adj_count_tag_name.c_str(), 1, MB_TYPE_DOUBLE,
+                                  adj_count_tag, MB_TAG_CREAT | MB_TAG_DENSE,
+                                  &def_adj);
 
     std::vector<double> source_data_scalar(src_elems.size());
-    Tag scalar_tag, scalar_tag_vert, adj_count_tag;
 
     for (int itag = 0; itag < interp_tag_len; itag++) {
 
@@ -213,33 +222,15 @@ int main(int argc, char *argv[]) {
         source_data_scalar[ielem] = source_data[itag + ielem * interp_tag_len];
       }
 
-      double def_scl = 0;
-      string scalar_tag_name = string(iterp_tag_name) + "_COMP";
-
-      CHKERR mbImpl->tag_get_handle(scalar_tag_name.c_str(), 1, MB_TYPE_DOUBLE,
-                                    scalar_tag, MB_TAG_CREAT | MB_TAG_DENSE,
-                                    &def_scl);
       CHKERR mbImpl->tag_set_data(scalar_tag, src_elems,
                                   &source_data_scalar[0]);
 
       if (interp_order) {
 
-        scalar_tag_name += "_VERT_DATA";
-        double def_val = 0;
-        CHKERR mbImpl->tag_get_handle(scalar_tag_name.c_str(), 1,
-                                      MB_TYPE_DOUBLE, scalar_tag_vert,
-                                      MB_TAG_CREAT | MB_TAG_DENSE, &def_val);
-
-        string adj_count_tag_name = "ADJ_COUNT";
-        double def_adj = 0;
-        CHKERR mbImpl->tag_get_handle(adj_count_tag_name.c_str(), 1,
-                                      MB_TYPE_DOUBLE, adj_count_tag,
-                                      MB_TAG_CREAT | MB_TAG_DENSE, &def_adj);
-
         Range src_verts;
         CHKERR mbImpl->get_connectivity(src_elems, src_verts, true);
 
-        CHKERR mbImpl->tag_clear_data(scalar_tag_vert, src_verts, &def_val);
+        CHKERR mbImpl->tag_clear_data(scalar_tag, src_verts, &def_val);
         CHKERR mbImpl->tag_clear_data(adj_count_tag, src_verts, &def_adj);
 
         for (auto &tet : src_elems) {
@@ -252,8 +243,7 @@ int main(int argc, char *argv[]) {
           std::vector<double> adj_vert_data(adj_verts.size(), 0.0);
           std::vector<double> adj_vert_count(adj_verts.size(), 0.0);
 
-          CHKERR mbImpl->tag_get_data(scalar_tag_vert, adj_verts,
-                                      &adj_vert_data[0]);
+          CHKERR mbImpl->tag_get_data(scalar_tag, adj_verts, &adj_vert_data[0]);
           CHKERR mbImpl->tag_get_data(adj_count_tag, adj_verts,
                                       &adj_vert_count[0]);
 
@@ -262,30 +252,27 @@ int main(int argc, char *argv[]) {
             adj_vert_count[ivert] += 1;
           }
 
-          CHKERR mbImpl->tag_set_data(scalar_tag_vert, adj_verts,
-                                      &adj_vert_data[0]);
+          CHKERR mbImpl->tag_set_data(scalar_tag, adj_verts, &adj_vert_data[0]);
           CHKERR mbImpl->tag_set_data(adj_count_tag, adj_verts,
                                       &adj_vert_count[0]);
         }
 
         std::vector<Tag> tags;
-        tags.push_back(scalar_tag_vert);
+        tags.push_back(scalar_tag);
         tags.push_back(adj_count_tag);
         pcs[0]->reduce_tags(tags, tags, MPI_SUM, src_verts);
 
         std::vector<double> src_vert_data(src_verts.size(), 0.0);
         std::vector<double> src_vert_adj_count(src_verts.size(), 0.0);
 
-        CHKERR mbImpl->tag_get_data(scalar_tag_vert, src_verts,
-                                    &src_vert_data[0]);
+        CHKERR mbImpl->tag_get_data(scalar_tag, src_verts, &src_vert_data[0]);
         CHKERR mbImpl->tag_get_data(adj_count_tag, src_verts,
                                     &src_vert_adj_count[0]);
 
         for (int ivert = 0; ivert < src_verts.size(); ivert++) {
           src_vert_data[ivert] /= src_vert_adj_count[ivert];
         }
-        CHKERR mbImpl->tag_set_data(scalar_tag_vert, src_verts,
-                                    &src_vert_data[0]);
+        CHKERR mbImpl->tag_set_data(scalar_tag, src_verts, &src_vert_data[0]);
       }
 
       std::vector<double> target_data_scalar(numPointsOfInterest, 0.0);
@@ -297,34 +284,16 @@ int main(int argc, char *argv[]) {
     }
 
     CHKERR mbImpl->tag_delete(scalar_tag);
-
-    if (interp_order) {
-      CHKERR mbImpl->tag_delete(scalar_tag_vert);
-      CHKERR mbImpl->tag_delete(adj_count_tag);
-    }
+    CHKERR mbImpl->tag_delete(adj_count_tag);
 
     // Use original tag
-    Tag target_tag;
-    double def_val[9];
-    bzero(def_val, 9 * sizeof(double));
-
-    CHKERR mbImpl->tag_get_handle(iterp_tag_name, interp_tag_len,
-                                  MB_TYPE_DOUBLE, target_tag,
-                                  MB_TAG_CREAT | MB_TAG_DENSE, &def_val);
-    CHKERR mbImpl->tag_set_data(target_tag, targ_verts, &target_data[0]);
+    CHKERR mbImpl->tag_set_data(interp_tag, targ_verts, &target_data[0]);
 
     if (use_target_verts) {
 
       std::vector<Tag> tags;
-      tags.push_back(target_tag);
+      tags.push_back(interp_tag);
       pcs[1]->reduce_tags(tags, tags, MPI_SUM, targ_verts);
-
-      Tag interp_tag_tet;
-      double def_val[9];
-      bzero(def_val, 9 * sizeof(double));
-      CHKERR mbImpl->tag_get_handle(iterp_tag_name, interp_tag_len,
-                                    MB_TYPE_DOUBLE, interp_tag_tet,
-                                    MB_TAG_CREAT | MB_TAG_DENSE, &def_val);
 
       for (auto &tet : targ_elems) {
         Range adj_verts;
@@ -332,7 +301,7 @@ int main(int argc, char *argv[]) {
 
         std::vector<double> adj_vert_data(adj_verts.size() * interp_tag_len,
                                           0.0);
-        CHKERR mbImpl->tag_get_data(target_tag, adj_verts, &adj_vert_data[0]);
+        CHKERR mbImpl->tag_get_data(interp_tag, adj_verts, &adj_vert_data[0]);
 
         std::vector<double> tet_data(interp_tag_len, 0.0);
         for (int itag = 0; itag < interp_tag_len; itag++) {
@@ -341,11 +310,83 @@ int main(int argc, char *argv[]) {
           }
           tet_data[itag] /= adj_verts.size();
         }
-        CHKERR mbImpl->tag_set_data(interp_tag_tet, &tet, 1, &tet_data[0]);
+        CHKERR mbImpl->tag_set_data(interp_tag, &tet, 1, &tet_data[0]);
+      }
+    }
+
+    if (atom_test) {
+
+      auto compute_tet_volume = [](const std::vector<double> &vpos) -> double {
+        // Extract vertices
+        double x0 = vpos[0], y0 = vpos[1], z0 = vpos[2];
+        double x1 = vpos[3], y1 = vpos[4], z1 = vpos[5];
+        double x2 = vpos[6], y2 = vpos[7], z2 = vpos[8];
+        double x3 = vpos[9], y3 = vpos[10], z3 = vpos[11];
+
+        // Compute vectors
+        double ax = x1 - x0, ay = y1 - y0, az = z1 - z0;
+        double bx = x2 - x0, by = y2 - y0, bz = z2 - z0;
+        double cx = x3 - x0, cy = y3 - y0, cz = z3 - z0;
+
+        // Compute cross product b x c
+        double cross_x = by * cz - bz * cy;
+        double cross_y = bz * cx - bx * cz;
+        double cross_z = bx * cy - by * cx;
+
+        // Compute dot product a . (b x c)
+        double dot = ax * cross_x + ay * cross_y + az * cross_z;
+
+        // Compute volume
+        return std::abs(dot) / 6.0;
+      };
+
+      std::vector<double> data_integ(interp_tag_len, 0.0);
+      for (auto &tet : targ_elems) {
+
+        std::vector<double> tet_data(interp_tag_len, 0.0);
+        CHKERR mbImpl->tag_get_data(interp_tag, &tet, 1, &tet_data[0]);
+
+        Range tmp_verts;
+        CHKERR mbImpl->get_connectivity(&tet, 1, tmp_verts);
+        std::vector<double> vpos(3 * tmp_verts.size());
+        CHKERR mbImpl->get_coords(tmp_verts, &vpos[0]);
+        double vol = compute_tet_volume(vpos);
+
+        for (int itag = 0; itag < interp_tag_len; itag++) {
+          data_integ[itag] += tet_data[itag] * vol;
+        }
       }
 
-      if (!save_tag_verts) {
-        CHKERR mbImpl->tag_delete_data(target_tag, targ_verts);
+      std::vector<double> global_data_integ(interp_tag_len, 0.0);
+      MPI_Allreduce(&data_integ[0], &global_data_integ[0], interp_tag_len,
+                    MPI_DOUBLE, MPI_SUM, m_field.get_comm());
+
+      if (0 == rank) {
+        std::cout << "Integrated stress for sslv116 test: ";
+        for (auto &val : global_data_integ) {
+          std::cout << val << " ";
+        }
+        std::cout << "\n";
+      }
+
+      double non_zero_val = 1.655e12;
+      double non_zero_tol = 4e-3;
+      if (interp_order || use_target_verts) {
+        non_zero_tol = 2e-3;
+      }
+      int non_zero_inds[] = {0, 4, 8};
+      bool non_zero_check =
+          all_of(begin(non_zero_inds), end(non_zero_inds), [&](int i) {
+            return abs(global_data_integ[i] - non_zero_val) / non_zero_val <
+                   non_zero_tol;
+          });
+      int zero_inds[] = {1, 2, 3, 5, 6, 7};
+      bool zero_check = all_of(begin(zero_inds), end(zero_inds), [&](int i) {
+        return abs(global_data_integ[i]) < 1e-12;
+      });
+      if (!non_zero_check || !zero_check) {
+        SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                "Wrong value of the integrated stress");
       }
     }
 
@@ -362,7 +403,7 @@ int main(int argc, char *argv[]) {
     CHKERR mbImpl->write_file(mesh_out_file, NULL, newwriteOpts.c_str(),
                               partSets);
     if (0 == rank) {
-      std::cout << "Wrote " << mesh_out_file << std::endl;
+      std::cout << "Wrote file " << mesh_out_file << std::endl;
     }
 
     free(roots);

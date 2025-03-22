@@ -297,3 +297,43 @@ add_test(read_vtk
   -output_file out_test_read_vtk.h5m
   -atom_test 1
 )
+
+add_test(mesh_data_transfer_order_0
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4
+  ${CMAKE_CURRENT_BINARY_DIR}/mesh_data_transfer
+  -source_file ${CMAKE_CURRENT_BINARY_DIR}/meshes/sslv116_hex_4mp.h5m
+  -target_file ${CMAKE_CURRENT_BINARY_DIR}/meshes/sslv116_tet_4mp.h5m
+  -interp_order 0
+  -use_target_verts 0
+  -atom_test 1
+)
+
+add_test(mesh_data_transfer_order_0_use_verts
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4
+  ${CMAKE_CURRENT_BINARY_DIR}/mesh_data_transfer
+  -source_file ${CMAKE_CURRENT_BINARY_DIR}/meshes/sslv116_hex_4mp.h5m
+  -target_file ${CMAKE_CURRENT_BINARY_DIR}/meshes/sslv116_tet_4mp.h5m
+  -interp_order 0
+  -use_target_verts 1
+  -atom_test 1
+)
+
+add_test(mesh_data_transfer_order_1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4
+  ${CMAKE_CURRENT_BINARY_DIR}/mesh_data_transfer
+  -source_file ${CMAKE_CURRENT_BINARY_DIR}/meshes/sslv116_hex_4mp.h5m
+  -target_file ${CMAKE_CURRENT_BINARY_DIR}/meshes/sslv116_tet_4mp.h5m
+  -interp_order 1
+  -use_target_verts 0
+  -atom_test 1
+)
+
+add_test(mesh_data_transfer_order_1_use_verts
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4
+  ${CMAKE_CURRENT_BINARY_DIR}/mesh_data_transfer
+  -source_file ${CMAKE_CURRENT_BINARY_DIR}/meshes/sslv116_hex_4mp.h5m
+  -target_file ${CMAKE_CURRENT_BINARY_DIR}/meshes/sslv116_tet_4mp.h5m
+  -interp_order 1
+  -use_target_verts 1
+  -atom_test 1
+)
