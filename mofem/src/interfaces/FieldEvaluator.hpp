@@ -8,9 +8,9 @@
  */
 
 #ifndef __FIELD_EVALUATOR_HPP__
-#define __FIELD_EVALUATOR_HPP__
+  #define __FIELD_EVALUATOR_HPP__
 
-#include "UnknownInterface.hpp"
+  #include "UnknownInterface.hpp"
 
 namespace MoFEM {
 
@@ -114,7 +114,7 @@ struct FieldEvaluatorInterface : public UnknownInterface {
     boost::shared_ptr<PackData> pack_data(new PackData());
     MoFEM::Interface &m_field = cOre;
     pack_data->elePtr.reset(new VE(m_field));
- 
+
     pack_data->setPtsDataPtr.reset(
         new SPD(boost::shared_ptr<VE>(pack_data, pack_data->elePtr.get()), ptr,
                 nb_eval_points, eps, verb));
@@ -125,20 +125,41 @@ struct FieldEvaluatorInterface : public UnknownInterface {
     return data;
   }
 
+  /** @deprecated use buildTree<SPACE_DIM> */
+  DEPRECATED
+  MoFEMErrorCode buildTree3D(boost::shared_ptr<SetPtsData> spd_ptr,
+                             const std::string finite_element);
+
+  /** @deprecated use buildTree<SPACE_DIM> */
+  DEPRECATED
+  MoFEMErrorCode buildTree2D(boost::shared_ptr<SetPtsData> spd_ptr,
+                             const std::string finite_element);
+
+  /** @deprecated use evalFEAtThePoint<SPACE_DIM> */
+  DEPRECATED MoFEMErrorCode evalFEAtThePoint3D(
+      const double *const point, const double distance,
+      const std::string problem, const std::string finite_element,
+      boost::shared_ptr<SetPtsData> data_ptr, int lower_rank, int upper_rank,
+      boost::shared_ptr<CacheTuple> cache_ptr, MoFEMTypes bh = MF_EXIST,
+      VERBOSITY_LEVELS verb = QUIET);
+
+  /** @deprecated use evalFEAtThePoint<SPACE_DIM> */
+  DEPRECATED MoFEMErrorCode evalFEAtThePoint2D(
+      const double *const point, const double distance,
+      const std::string problem, const std::string finite_element,
+      boost::shared_ptr<SetPtsData> data_ptr, int lower_rank, int upper_rank,
+      boost::shared_ptr<CacheTuple> cache_ptr, MoFEMTypes bh = MF_EXIST,
+      VERBOSITY_LEVELS verb = QUIET);
+
   /**
    * @brief Build spatial tree
    *
    * @param finite_element finite element name
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode buildTree3D(boost::shared_ptr<SetPtsData> spd_ptr,
-                             const std::string finite_element);
-
-  /**
-   * @copydoc buildTree3D
-   */
-  MoFEMErrorCode buildTree2D(boost::shared_ptr<SetPtsData> spd_ptr,
-                             const std::string finite_element);
+  template <int D>
+  MoFEMErrorCode buildTree(boost::shared_ptr<SetPtsData> spd_ptr,
+                           const std::string finite_element);
 
   /**
    * @brief Evaluate field at artbitray position
@@ -160,8 +181,9 @@ struct FieldEvaluatorInterface : public UnknownInterface {
       // iterate over elemnts with evaluated points
       auto cache_ptr = boost::make_shared<CacheTuple>();
       CHKERR m_field.cache_problem_entities(prb_ptr->getName(), cache_ptr);
+      // SPACE_DIM is 3 in this example
       CHKERR m_field.getInterface<FieldEvaluatorInterface>()
-        ->evalFEAtThePoint3D(point.data(), dist, prb_ptr->getName(),
+        ->evalFEAtThePoint<3>(point.data(), dist, prb_ptr->getName(),
                              "FINITE_ELEMENT_NAME",
                              data_ptr, m_field.get_comm_rank(),
                              m_field.get_comm_rank(), cache_ptr);
@@ -182,45 +204,13 @@ struct FieldEvaluatorInterface : public UnknownInterface {
    * @param verb verbosity level
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode
-  evalFEAtThePoint3D(const double *const point, const double distance,
-                     const std::string problem,
-                     const std::string finite_element,
-                     boost::shared_ptr<SetPtsData> data_ptr, int lower_rank,
-                     int upper_rank, boost::shared_ptr<CacheTuple> cache_ptr,
-                     MoFEMTypes bh = MF_EXIST, VERBOSITY_LEVELS verb = QUIET);
-
-  /**
-     * @copydoc evalFEAtThePoint3D
-     */
-  MoFEMErrorCode
-  evalFEAtThePoint2D(const double *const point, const double distance,
-                     const std::string problem,
-                     const std::string finite_element,
-                     boost::shared_ptr<SetPtsData> data_ptr, int lower_rank,
-                     int upper_rank, boost::shared_ptr<CacheTuple> cache_ptr,
-                     MoFEMTypes bh = MF_EXIST, VERBOSITY_LEVELS verb = QUIET);
-
-private:
-  /**
-   * @copydoc buildTree3D
-   */
-  template <int D>
-  MoFEMErrorCode buildTree(boost::shared_ptr<SetPtsData> spd_ptr,
-                           const std::string finite_element);
-
-  /**
-     * @copydoc evalFEAtThePoint3D
-     */
   template <int D>
   MoFEMErrorCode
   evalFEAtThePoint(const double *const point, const double distance,
-                     const std::string problem,
-                     const std::string finite_element,
-                     boost::shared_ptr<SetPtsData> data_ptr, int lower_rank,
-                     int upper_rank, boost::shared_ptr<CacheTuple> cache_ptr,
-                     MoFEMTypes bh = MF_EXIST, VERBOSITY_LEVELS verb = QUIET);
-
+                   const std::string problem, const std::string finite_element,
+                   boost::shared_ptr<SetPtsData> data_ptr, int lower_rank,
+                   int upper_rank, boost::shared_ptr<CacheTuple> cache_ptr,
+                   MoFEMTypes bh = MF_EXIST, VERBOSITY_LEVELS verb = QUIET);
 };
 
 } // namespace MoFEM

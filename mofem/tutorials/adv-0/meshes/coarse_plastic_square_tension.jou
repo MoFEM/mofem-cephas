@@ -1,0 +1,34 @@
+reset
+set duplicate block elements on
+
+create surface rectangle width 1 height 1 zplane
+
+surface 1  size 0.2
+
+block 101 curve 3
+block 101 name "FIX_Y"
+block 101 attribute count 1
+block 101 attribute index 1 0
+
+block 102 curve 2
+block 102 name "FIX_X"
+block 102 attribute count 1
+block 102 attribute index 1 0
+
+block 103 curve 4
+block 103 name "FIX_X1"
+block 103 attribute count 1
+block 103 attribute index 1 -0.5
+
+imprint surface all
+merge surface all 
+
+surface all scheme map
+surface all size 0.25
+mesh surface all
+qtri surface all
+
+save as "$MOFEM_INSTALL_DIR/mofem-cephas/mofem/tutorials/adv-0/meshes/coarse_plastic_square_tension.cub" overwrite
+
+
+
