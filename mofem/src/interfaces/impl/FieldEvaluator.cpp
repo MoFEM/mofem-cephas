@@ -39,8 +39,8 @@ MoFEMErrorCode FieldEvaluatorInterface::query_interface(
 
 template <int D>
 MoFEMErrorCode
-FieldEvaluatorInterface::buildTree(boost::shared_ptr<SetPtsData> spd_ptr,
-                                   const std::string finite_element) {
+FieldEvaluatorInterface::buildTreeImpl(boost::shared_ptr<SetPtsData> spd_ptr,
+                                       const std::string finite_element) {
   CoreInterface &m_field = cOre;
   MoFEMFunctionBegin;
   EntityHandle fe_meshset;
@@ -51,6 +51,20 @@ FieldEvaluatorInterface::buildTree(boost::shared_ptr<SetPtsData> spd_ptr,
   spd_ptr->treePtr.reset(new AdaptiveKDTree(&m_field.get_moab()));
   CHKERR spd_ptr->treePtr->build_tree(entities, &spd_ptr->rooTreeSet);
   MoFEMFunctionReturn(0);
+}
+
+template <>
+MoFEMErrorCode
+FieldEvaluatorInterface::buildTree<2>(boost::shared_ptr<SetPtsData> spd_ptr,
+                                      const std::string finite_element) {
+  return buildTreeImpl<2>(spd_ptr, finite_element);
+}
+
+template <>
+MoFEMErrorCode
+FieldEvaluatorInterface::buildTree<3>(boost::shared_ptr<SetPtsData> spd_ptr,
+                                      const std::string finite_element) {
+  return buildTree<2>(spd_ptr, finite_element);
 }
 
 MoFEMErrorCode
@@ -158,7 +172,7 @@ FieldEvaluatorInterface::SetPts::operator()(ForcesAndSourcesCore *fe_raw_ptr,
 }
 
 template <int D>
-MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint(
+MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePointImpl(
     const double *const point, const double distance, const std::string problem,
     const std::string finite_element, boost::shared_ptr<SetPtsData> data_ptr,
     int lower_rank, int upper_rank, boost::shared_ptr<CacheTuple> cache_ptr,
@@ -359,6 +373,28 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint(
   }
 
   MoFEMFunctionReturn(0);
+}
+
+template <>
+MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint<2>(
+    const double *const point, const double distance, const std::string problem,
+    const std::string finite_element, boost::shared_ptr<SetPtsData> data_ptr,
+    int lower_rank, int upper_rank, boost::shared_ptr<CacheTuple> cache_ptr,
+    MoFEMTypes bh, VERBOSITY_LEVELS verb) {
+  return evalFEAtThePointImpl<2>(point, distance, problem, finite_element,
+                                 data_ptr, lower_rank, upper_rank, cache_ptr,
+                                 bh, verb);
+}
+
+template <>
+MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint<3>(
+    const double *const point, const double distance, const std::string problem,
+    const std::string finite_element, boost::shared_ptr<SetPtsData> data_ptr,
+    int lower_rank, int upper_rank, boost::shared_ptr<CacheTuple> cache_ptr,
+    MoFEMTypes bh, VERBOSITY_LEVELS verb) {
+  return evalFEAtThePointImpl<3>(point, distance, problem, finite_element,
+                                 data_ptr, lower_rank, upper_rank, cache_ptr,
+                                 bh, verb);
 }
 
 MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint3D(
