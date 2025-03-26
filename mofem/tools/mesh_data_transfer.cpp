@@ -39,7 +39,8 @@ int main(int argc, char *argv[]) {
 
     PetscBool use_target_verts = PETSC_TRUE;
     PetscBool set_source_data = PETSC_FALSE;
-    PetscBool atom_test = PETSC_FALSE;
+    
+    int atom_test = PETSC_FALSE;
 
     double toler = 5.e-10;
 
@@ -59,8 +60,8 @@ int main(int argc, char *argv[]) {
     CHKERR PetscOptionsBool("-use_target_verts",
                             "use target vertices for interpolation", "",
                             use_target_verts, &use_target_verts, PETSC_NULL);
-    CHKERR PetscOptionsBool("-atom_test", "is atom test", "", atom_test,
-                            &atom_test, PETSC_NULL);
+    CHKERR PetscOptionsInt("-atom_test", "atom test number", "", 0,
+                           &atom_test, PETSC_NULL);                        
     CHKERR PetscOptionsInt("-interp_order", "interpolation order", "", 0,
                            &interp_order, PETSC_NULL);
     CHKERR PetscOptionsInt("-interp_tag_length", "interpolation tag length", "",
@@ -346,7 +347,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    if (atom_test) {
+    if (atom_test == 1) {
       // Check the integrated stress for the SSLV116 test
 
       std::vector<double> data_integ(interp_tag_len, 0.0);
