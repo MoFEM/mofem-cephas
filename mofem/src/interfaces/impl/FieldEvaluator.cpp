@@ -64,7 +64,7 @@ template <>
 MoFEMErrorCode
 FieldEvaluatorInterface::buildTree<3>(boost::shared_ptr<SetPtsData> spd_ptr,
                                       const std::string finite_element) {
-  return buildTree<2>(spd_ptr, finite_element);
+  return buildTreeImpl<3>(spd_ptr, finite_element);
 }
 
 MoFEMErrorCode
