@@ -70,6 +70,9 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsEnd();
     CHKERRQ(ierr);
 
+    MOFEM_LOG_CHANNEL("WORLD");
+    MOFEM_LOG_TAG("WORLD", "mesh_data_transfer");
+
     Coupler::Method method;
     switch (interp_order) {
     case 0:
@@ -371,13 +374,12 @@ int main(int argc, char *argv[]) {
       MPI_Allreduce(&data_integ[0], &global_data_integ[0], interp_tag_len,
                     MPI_DOUBLE, MPI_SUM, m_field.get_comm());
 
-      if (0 == rank) {
-        std::cout << "Integrated stress for sslv116 test: ";
-        for (auto &val : global_data_integ) {
-          std::cout << val << " ";
-        }
-        std::cout << "\n";
-      }
+      MOFEM_LOG("WORLD", Sev::inform)
+          << "Integrated stress for sslv116 test: " << global_data_integ[0]
+          << " " << global_data_integ[1] << " " << global_data_integ[2] << " "
+          << global_data_integ[3] << " " << global_data_integ[4] << " "
+          << global_data_integ[5] << " " << global_data_integ[6] << " "
+          << global_data_integ[7] << " " << global_data_integ[8];
 
       double non_zero_val = 1.655e12;
       double non_zero_tol = 4e-3;
@@ -413,7 +415,7 @@ int main(int argc, char *argv[]) {
     CHKERR moab.write_file(mesh_out_file, NULL, new_write_opts.c_str(),
                            part_sets);
     if (0 == rank) {
-      std::cout << "Wrote file " << mesh_out_file << std::endl;
+      MOFEM_LOG("WORLD", Sev::inform) << "Wrote file " << mesh_out_file;
     }
 
     for (unsigned int i = 0; i < mesh_files.size(); i++)

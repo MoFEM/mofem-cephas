@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
       } else {
         CHKERR moab.write_file(mesh_out_file, "MOAB", "");
       }
-      MOFEM_LOG("WORLD", Sev::inform) << "Wrote output file " << mesh_out_file;
+      MOFEM_LOG("WORLD", Sev::inform) << "Wrote file " << mesh_out_file;
     }
   }
   CATCH_ERRORS;
