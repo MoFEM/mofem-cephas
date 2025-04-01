@@ -1970,6 +1970,66 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopChildren(
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopRange(
+    const string &fe_name, ForcesAndSourcesCore *range_fe,
+    boost::shared_ptr<Range> fe_range, const int verb,
+    const LogManager::SeverityLevel sev) {
+  MoFEMFunctionBegin;
+
+  auto &fes =
+      ptrFE->mField.get_finite_elements()->get<FiniteElement_name_mi_tag>();
+  auto fe_miit = fes.find(fe_name);
+  if (fe_miit != fes.end()) {
+
+    const auto *problem_ptr = getFEMethod()->problemPtr;
+    auto &numered_fe =
+        problem_ptr->numeredFiniteElementsPtr->get<Unique_mi_tag>();
+
+    range_fe->feName = fe_name;
+    CHKERR range_fe->setRefineFEPtr(ptrFE);
+    CHKERR range_fe->copyBasicMethod(*getFEMethod());
+    CHKERR range_fe->copyPetscData(*getFEMethod());
+    CHKERR range_fe->copyKsp(*getFEMethod());
+    CHKERR range_fe->copySnes(*getFEMethod());
+    CHKERR range_fe->copyTs(*getFEMethod());
+
+    range_fe->cacheWeakPtr = getFEMethod()->cacheWeakPtr;
+
+    auto get_numered_fe_ptr = [&](auto &fe_uid, auto fe_range, auto execute) {
+      MoFEMFunctionBegin;
+      if (fe_range) {
+        int nn = 0;
+        for (auto p = fe_range->pair_begin(); p != fe_range->pair_end(); ++p) {
+          auto first = p->first;
+          auto second = p->second;
+          auto lo = numered_fe.lower_bound(
+              EntFiniteElement::getLocalUniqueIdCalculate(first, fe_uid));
+          auto hi = numered_fe.upper_bound(
+              EntFiniteElement::getLocalUniqueIdCalculate(second, fe_uid));
+          for (; lo != hi; ++lo) {
+            execute(lo, nn++);
+          }
+        }
+      }
+      MoFEMFunctionReturn(0);
+    };
+
+    auto execute = [&](auto lo, auto nn) {
+      if (verb >= VERBOSE)
+        MOFEM_LOG("SELF", sev) << "Range finite element: " << **lo;
+      range_fe->nInTheLoop = nn;
+      range_fe->numeredEntFiniteElementPtr = *lo;
+      CHKERR range_fe->preProcess();
+      CHKERR (*range_fe)();
+      CHKERR range_fe->postProcess();
+    };
+
+    CHKERR get_numered_fe_ptr((*fe_miit)->getFEUId(), fe_range, execute);
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
 int ForcesAndSourcesCore::getRule(int order_row, int order_col,
                                   int order_data) {
   return getRuleHook ? getRuleHook(order_row, order_col, order_data)
