@@ -12,6 +12,19 @@ MoFEMErrorCode Tools::query_interface(boost::typeindex::type_index type_index,
   return 0;
 }
 
+double Tools::areaLengthQuality(const double *coords) {
+  double lrms = 0;
+  for (int dd = 0; dd != 3; dd++) {
+    // 2 is SPACE_DIM
+    lrms += pow(coords[0 * 3 + dd] - coords[1 * 3 + dd], 2) +
+            pow(coords[0 * 3 + dd] - coords[2 * 3 + dd], 2) +
+            pow(coords[1 * 3 + dd] - coords[2 * 3 + dd], 2);
+  }
+  lrms = sqrt((1. / 3.) * lrms);
+  double area = triArea(coords);
+  return (4. / sqrt(3.)) * area / pow(lrms, 2);
+}
+
 double Tools::volumeLengthQuality(const double *coords) {
   double lrms = 0;
   for (int dd = 0; dd != 3; dd++) {
@@ -25,6 +38,40 @@ double Tools::volumeLengthQuality(const double *coords) {
   lrms = sqrt((1. / 6.) * lrms);
   double volume = tetVolume(coords);
   return 6. * sqrt(2.) * volume / pow(lrms, 3);
+}
+
+std::tuple<double, FTensor::Tensor1<double, 3>>
+Tools::triAreaAndNormal(const double *coords) {
+  double diff_n[6];
+  ShapeDiffMBTRI(diff_n);
+  FTensor::Tensor1<double *, 2> t_diff_n(&diff_n[0], &diff_n[1], 2);
+  FTensor::Tensor1<const double *, 3> t_coords(&coords[0], &coords[1],
+                                               &coords[2], 3);
+  FTensor::Index<'i', 3> i;
+  FTensor::Index<'j', 3> j;
+  FTensor::Index<'k', 3> k;
+  FTensor::Number<0> N0;
+  FTensor::Number<1> N1;
+  auto t_t1 = FTensor::Tensor1<double, 3>();
+  auto t_t2 = FTensor::Tensor1<double, 3>();
+  t_t1(i) = 0;
+  t_t2(i) = 0;
+  auto t_normal = FTensor::Tensor1<double, 3>();
+  for (int nn = 0; nn != 3; nn++) {
+    t_t1(i) += t_coords(i) * t_diff_n(N0);
+    t_t2(i) += t_coords(i) * t_diff_n(N1);
+    ++t_coords;
+    ++t_diff_n;
+  }
+  t_normal(k) = FTensor::levi_civita(i, j, k) * t_t1(i) * t_t2(j);
+  double two_area = std::sqrt(t_normal(i) * t_normal(i));
+  t_normal(k) /= two_area;
+  return std::make_tuple(two_area / 2., t_normal);
+}
+
+double Tools::triArea(const double *coords) {
+  auto [area, normal] = triAreaAndNormal(coords);
+  return area;
 }
 
 double Tools::tetVolume(const double *coords) {
@@ -66,6 +113,51 @@ Tools::minTetsQuality(const Range &tets, double &min_quality, Tag th,
       q = -2;
     min_quality = f(q, min_quality);
   }
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+Tools::minTrisQuality(const Range &tris, double &min_quality, Tag th,
+                      boost::function<double(double, double)> f) {
+  MoFEM::Interface &m_field = cOre;
+  moab::Interface &moab(m_field.get_moab());
+  MoFEMFunctionBegin;
+  const EntityHandle *conn;
+  int num_nodes;
+  double coords[9];
+  for (auto tri : tris) {
+    CHKERR m_field.get_moab().get_connectivity(tri, conn, num_nodes, true);
+    if (th) {
+      CHKERR moab.tag_get_data(th, conn, num_nodes, coords);
+    } else {
+      CHKERR moab.get_coords(conn, num_nodes, coords);
+    }
+
+    double q = Tools::areaLengthQuality(coords);
+    if (!std::isnormal(q))
+      q = -2;
+    min_quality = f(q, min_quality);
+  }
+  MoFEMFunctionReturn(0);
+}
+
+template <>
+MoFEMErrorCode Tools::minElQuality<3>(const Range &elements,
+                                      double &min_quality, Tag th) {
+  MoFEMFunctionBegin;
+  MoFEM::Interface &m_field = cOre;
+  CHKERR m_field.getInterface<Tools>()->minTetsQuality(elements, min_quality,
+                                                       th);
+  MoFEMFunctionReturn(0);
+}
+
+template <>
+MoFEMErrorCode Tools::minElQuality<2>(const Range &elements,
+                                      double &min_quality, Tag th) {
+  MoFEMFunctionBegin;
+  MoFEM::Interface &m_field = cOre;
+  CHKERR m_field.getInterface<Tools>()->minTrisQuality(elements, min_quality,
+                                                       th);
   MoFEMFunctionReturn(0);
 }
 

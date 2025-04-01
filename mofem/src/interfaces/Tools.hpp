@@ -27,11 +27,28 @@ struct Tools : public UnknownInterface {
   /** \name Computational */
 
   /**
+   * \brief Calculate triangle area length quality
+   * @param  coords tri coordinates
+   * @return        Area-length quality
+   */
+
+  static double areaLengthQuality(const double *coords);
+
+  /**
    * \brief Calculate tetrahedron volume length quality
    * @param  coords tet coordinates
    * @return        Volume-length quality
    */
   static double volumeLengthQuality(const double *coords);
+
+  /**
+   * @brief Calculate area of triangle
+   *
+   * @param coords
+   * @return double area
+   */
+  static double triArea(const double *coords);
+  static std::tuple<double, FTensor::Tensor1<double, 3>> triAreaAndNormal(const double *coords);
 
   /**
    * @brief Calculate volume of tetrahedron
@@ -47,10 +64,25 @@ struct Tools : public UnknownInterface {
    * @param  min_quality minimal quality
    * @return             error code
    */
+  MoFEMErrorCode minTrisQuality(
+      const Range &tris, double &min_quality, Tag th = nullptr,
+      boost::function<double(double, double)> f =
+          [](double a, double b) -> double { return std::min(a, b); });
+
+  /**
+   * \brief calculate minimal quality of tetrahedra in range
+   * @param  tets        range
+   * @param  min_quality minimal quality
+   * @return             error code
+   */
   MoFEMErrorCode minTetsQuality(
       const Range &tets, double &min_quality, Tag th = nullptr,
       boost::function<double(double, double)> f =
           [](double a, double b) -> double { return std::min(a, b); });
+
+  template <int DIM>
+  MoFEMErrorCode minElQuality(const Range &elements, double &min_quality,
+                               Tag th);
 
   static constexpr double shapeFunMBEDGE0At00 = N_MBEDGE0(0);
   static constexpr double shapeFunMBEDGE1At00 = N_MBEDGE1(0);
