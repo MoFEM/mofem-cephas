@@ -315,8 +315,11 @@ MoFEMErrorCode Contact::createCommonData() {
   MoFEMFunctionBegin;
 
   PetscBool use_mfront = PETSC_FALSE;
-  CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-use_mfront", &use_mfront,
-                             PETSC_NULL);
+
+  PetscBool use_henckyOps = PETSC_FALSE;
+  CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-use_mfront", &≈ƒ,
+  CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-use_henckyOps", &use_henckyOps,
+                              PETSC_NULL);
   CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-is_axisymmetric",
                              &is_axisymmetric, PETSC_NULL);
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-atom_test", &atom_test,
