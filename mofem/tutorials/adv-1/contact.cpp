@@ -366,13 +366,25 @@ MoFEMErrorCode Contact::createCommonData() {
       << "Is quasi-static: " << (is_quasi_static ? "true" : "false");
 
 #ifdef PYTHON_SDF
-  char sdf_file_name[255];
+  auto file_exists = [](std::string myfile) {
+    std::ifstream file(myfile.c_str());
+    if (file) {
+      return true;
+    }
+    return false;
+  };
+  char sdf_file_name[255] = "sdf.py";
   CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-sdf_file",
                                sdf_file_name, 255, PETSC_NULL);
 
-  sdfPythonPtr = boost::make_shared<SDFPython>();
-  CHKERR sdfPythonPtr->sdfInit(sdf_file_name);
-  sdfPythonWeakPtr = sdfPythonPtr;
+  if (file_exists(sdf_file_name)) {
+    MOFEM_LOG("CONTACT", Sev::inform) << sdf_file_name << " file found";
+    sdfPythonPtr = boost::make_shared<SDFPython>();
+    CHKERR sdfPythonPtr->sdfInit(sdf_file_name);
+    sdfPythonWeakPtr = sdfPythonPtr;
+  } else {
+    MOFEM_LOG("CONTACT", Sev::warning) << sdf_file_name << " file NOT found";
+  }
 #endif
 
   if (is_axisymmetric) {
