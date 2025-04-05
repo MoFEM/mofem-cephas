@@ -1,6 +1,6 @@
 FROM       ubuntu:focal
 
-LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk"
+LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk,Andrei.Shvarts@glasgow.ac.uk"
 
 # general environment for docker
 ENV        DEBIAN_FRONTEND=noninteractive \
@@ -69,7 +69,7 @@ RUN mkdir -p $SPACK_ROOT_DIR && \
     . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
     echo ". $SPACK_ROOT_DIR/share/spack/setup-env.sh" >> ~/.bashrc && \
     spack external find && \
-    spack install --only dependencies mofem-cephas@lukasz+mgis \
+    spack install --only dependencies mofem-cephas@develop \
     target=$TARGET build_type=Release ^petsc+X ^boost+python+numpy
 
 # image run hook: the -l will make sure /etc/profile environments are loaded
