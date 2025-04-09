@@ -322,13 +322,8 @@ MoFEMErrorCode Example::setupProblem() {
     fieldEvalData =
         mField.getInterface<FieldEvaluatorInterface>()->getData<DomainEle>();
 
-    if constexpr (SPACE_DIM == 3) {
-      CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree3D(
-          fieldEvalData, simple->getDomainFEName());
-    } else {
-      CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree2D(
-          fieldEvalData, simple->getDomainFEName());
-    }
+    CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree<SPACE_DIM>(
+        fieldEvalData, simple->getDomainFEName());
 
     fieldEvalData->setEvalPoints(fieldEvalCoords.data(), 1);
     auto no_rule = [](int, int, int) { return -1; };
@@ -538,17 +533,11 @@ MoFEMErrorCode Example::solveSystem() {
   CHKERR DMoFEMMeshToLocalVector(dm, D, INSERT_VALUES, SCATTER_REVERSE);
 
   if (doEvalField) {
-    if constexpr (SPACE_DIM == 3) {
-      CHKERR mField.getInterface<FieldEvaluatorInterface>()->evalFEAtThePoint3D(
-          fieldEvalCoords.data(), 1e-12, simple->getProblemName(),
-          simple->getDomainFEName(), fieldEvalData, mField.get_comm_rank(),
-          mField.get_comm_rank(), nullptr, MF_EXIST, QUIET);
-    } else {
-      CHKERR mField.getInterface<FieldEvaluatorInterface>()->evalFEAtThePoint2D(
-          fieldEvalCoords.data(), 1e-12, simple->getProblemName(),
-          simple->getDomainFEName(), fieldEvalData, mField.get_comm_rank(),
-          mField.get_comm_rank(), nullptr, MF_EXIST, QUIET);
-    }
+    CHKERR mField.getInterface<FieldEvaluatorInterface>()
+        ->evalFEAtThePoint<SPACE_DIM>(
+            fieldEvalCoords.data(), 1e-12, simple->getProblemName(),
+            simple->getDomainFEName(), fieldEvalData, mField.get_comm_rank(),
+            mField.get_comm_rank(), nullptr, MF_EXIST, QUIET);
 
     if (vectorFieldPtr->size1()) {
       auto t_disp = getFTensor1FromMat<SPACE_DIM>(*vectorFieldPtr);
