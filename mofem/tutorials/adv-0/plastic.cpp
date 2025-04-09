@@ -576,9 +576,25 @@ MoFEMErrorCode Example::createCommonData() {
 
 #ifdef ADD_CONTACT
   #ifdef PYTHON_SDF
-  sdfPythonPtr = boost::make_shared<ContactOps::SDFPython>();
-  CHKERR sdfPythonPtr->sdfInit("sdf.py");
-  ContactOps::sdfPythonWeakPtr = sdfPythonPtr;
+  auto file_exists = [](std::string myfile) {
+    std::ifstream file(myfile.c_str());
+    if (file) {
+      return true;
+    }
+    return false;
+  };
+  char sdf_file_name[255] = "sdf.py";
+  CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-sdf_file",
+                               sdf_file_name, 255, PETSC_NULL);
+
+  if (file_exists(sdf_file_name)) {
+    MOFEM_LOG("CONTACT", Sev::inform) << sdf_file_name << " file found";
+    sdfPythonPtr = boost::make_shared<ContactOps::SDFPython>();
+    CHKERR sdfPythonPtr->sdfInit(sdf_file_name);
+    ContactOps::sdfPythonWeakPtr = sdfPythonPtr;
+  } else {
+    MOFEM_LOG("CONTACT", Sev::warning) << sdf_file_name << " file NOT found";
+  }
   #endif
 #endif // ADD_CONTACT
 
