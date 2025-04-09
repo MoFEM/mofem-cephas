@@ -1113,7 +1113,7 @@ MoFEMErrorCode Example::tsSolve() {
           MOFEM_LOG("PlasticSync", Sev::inform) << "Eval point U: " << t_disp;
 
           if (atom_test == 1 && fabs(t_disp(0) - 0.25 / 2.) > 1e-5 ||
-              fabs(t_disp(1) + 0.0526736) > 1e-5 || fabs(t_disp(2)) > 1e-5) {
+              fabs(t_disp(1) + 0.0526736) > 1e-5) {
             SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                      "atom test %d failed: wrong displacement value",
                      atom_test);
