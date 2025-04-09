@@ -48,7 +48,7 @@ MoFEMErrorCode Core::add_finite_element(const std::string &fe_name,
     verb = verbose;
   }
 
-  // Add finite element meshset to partion meshset. In case of no elements
+  // Add finite element meshset to partition meshset. In case of no elements
   // on processor part, when mesh file is read, finite element meshset is
   // prevented from deletion by moab reader.
   auto add_meshset_to_partition = [&](auto meshset) {
@@ -327,7 +327,7 @@ MoFEMErrorCode Core::list_finite_elements() const {
 }
 
 MoFEMErrorCode Core::add_ents_to_finite_element_by_type(
-    const EntityHandle meshset, const EntityType type, const std::string &name,
+    const EntityHandle meshset, const EntityType type, const std::string name,
     const bool recursive) {
   *buildMoFEM &= 1 << 0;
   EntityHandle idm = no_handle;
@@ -344,7 +344,7 @@ MoFEMErrorCode Core::add_ents_to_finite_element_by_type(
 
 MoFEMErrorCode
 Core::add_ents_to_finite_element_by_dim(const EntityHandle meshset,
-                                        const int dim, const std::string &name,
+                                        const int dim, const std::string name,
                                         const bool recursive) {
   EntityHandle idm = no_handle;
   *buildMoFEM &= 1 << 0;
@@ -358,7 +358,7 @@ Core::add_ents_to_finite_element_by_dim(const EntityHandle meshset,
 }
 
 MoFEMErrorCode Core::add_ents_to_finite_element_by_type(
-    const Range &ents, const EntityType type, const std::string &name) {
+    const Range ents, const EntityType type, const std::string name) {
   EntityHandle idm = no_handle;
   *buildMoFEM &= 1 << 0;
   MoFEMFunctionBegin;
@@ -370,8 +370,8 @@ MoFEMErrorCode Core::add_ents_to_finite_element_by_type(
 } // namespace MoFEM
 
 MoFEMErrorCode
-Core::add_ents_to_finite_element_by_dim(const Range &ents, const int dim,
-                                        const std::string &name) {
+Core::add_ents_to_finite_element_by_dim(const Range ents, const int dim,
+                                        const std::string name) {
   EntityHandle idm = no_handle;
   *buildMoFEM &= 1 << 0;
   MoFEMFunctionBegin;
@@ -403,7 +403,7 @@ MoFEMErrorCode Core::add_ents_to_finite_element_EntType_by_bit_ref(
 }
 
 MoFEMErrorCode Core::add_ents_to_finite_element_by_bit_ref(
-    const BitRefLevel &bit, const BitRefLevel &mask, const std::string &name,
+    const BitRefLevel bit, const BitRefLevel mask, const std::string name,
     EntityType type, int verb) {
   FECoreFunctionBegin;
 

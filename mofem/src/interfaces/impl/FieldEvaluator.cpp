@@ -183,7 +183,7 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePointImpl(
   std::vector<EntityHandle> leafs_out;
   CHKERR data_ptr->treePtr->distance_search(point, distance, leafs_out);
   Range tree_ents;
-  for (auto lit : leafs_out)//{
+  for (auto lit : leafs_out) //{
     CHKERR m_field.get_moab().get_entities_by_dimension(lit, D, tree_ents,
                                                         true);
 
@@ -205,7 +205,7 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePointImpl(
     CHKERR m_field.get_moab().get_connectivity(tet, conn, num_nodes, true);
 
     if constexpr (D == 3) {
-      
+
       local_coords.resize(3 * nb_eval_points);
       shape.resize(4 * nb_eval_points);
 

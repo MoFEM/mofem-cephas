@@ -13,10 +13,13 @@
 -pc_fieldsplit_type multiplicative
 -fieldsplit_0_ksp_type preonly 
 -fieldsplit_0_pc_type lu 
--fieldsplit_0_ksp_reuse_preconditioner 1
 -fieldsplit_0_pc_factor_mat_solver_type mumps
 -fieldsplit_1_ksp_type preonly 
 -fieldsplit_1_pc_type lu 
 -fieldsplit_1_pc_factor_mat_solver_type mumps 
+
+-fieldsplit_0_mat_mumps_icntl_20 0
+-fieldsplit_1_mat_mumps_icntl_20 0
+
 -atom_test 0
 # ---

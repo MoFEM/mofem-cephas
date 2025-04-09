@@ -17,7 +17,6 @@ template <typename T> inline double trace(FTensor::Tensor2<T, 2, 2> &t_stress) {
 };
 
 template <typename T> inline double trace(FTensor::Tensor2<T, 3, 3> &t_stress) {
-  constexpr double third = boost::math::constants::third<double>();
   return (t_stress(0, 0) + t_stress(1, 1) + t_stress(2, 2));
 };
 
@@ -584,8 +583,6 @@ MoFEMErrorCode TSPrePostProc::tsPostStage(TS ts, PetscReal stagetime,
   // cerr << "tsPostStage " <<"\n";
   if (auto ptr = tsPrePostProc.lock()) {
     auto &m_field = ptr->fsRawPtr->mField;
-    auto *simple = m_field.getInterface<Simple>();
-    auto *pipeline_mng = m_field.getInterface<PipelineManager>();
 
     auto fb = m_field.getInterface<FieldBlas>();
     double dt;
@@ -616,7 +613,6 @@ MoFEMErrorCode TSPrePostProc::tsPostStep(TS ts) {
 
   if (auto ptr = tsPrePostProc.lock()) {
     auto &m_field = ptr->fsRawPtr->mField;
-    auto fb = m_field.getInterface<FieldBlas>();
     double dt;
     CHKERR TSGetTimeStep(ts, &dt);
     double time;
@@ -630,9 +626,6 @@ MoFEMErrorCode TSPrePostProc::tsPreStep(TS ts) {
 
   if (auto ptr = tsPrePostProc.lock()) {
     auto &m_field = ptr->fsRawPtr->mField;
-    auto *simple = m_field.getInterface<Simple>();
-    auto *pipeline_mng = m_field.getInterface<PipelineManager>();
-
     double dt;
     CHKERR TSGetTimeStep(ts, &dt);
     double time;
@@ -646,9 +639,6 @@ MoFEMErrorCode TSPrePostProc::tsPreStep(TS ts) {
 //! [Push operators to pipeline]
 MoFEMErrorCode Example::assembleSystem() {
   MoFEMFunctionBegin;
-  auto *simple = mField.getInterface<Simple>();
-  auto *pipeline_mng = mField.getInterface<PipelineManager>();
-
   auto get_body_force = [this](const double, const double, const double) {
     FTensor::Index<'i', SPACE_DIM> i;
     FTensor::Tensor1<double, SPACE_DIM> t_source;
@@ -762,6 +752,7 @@ MoFEMErrorCode Example::assembleSystem() {
     MoFEMFunctionReturn(0);
   };
 
+  auto *pipeline_mng = mField.getInterface<PipelineManager>();
   CHKERR apply_rhs(pipeline_mng->getOpDomainExplicitRhsPipeline());
 
   auto integration_rule = [](int, int, int approx_order) {
@@ -798,20 +789,13 @@ struct Monitor : public FEMethod {
   MoFEMErrorCode postProcess() {
     MoFEMFunctionBegin;
 
-    // cerr << "wagawaga\n";
     auto *simple = mField.getInterface<Simple>();
 
-    if (SPACE_DIM == 3) {
-      CHKERR mField.getInterface<FieldEvaluatorInterface>()->evalFEAtThePoint3D(
-          fieldEvalCoords.data(), 1e-12, simple->getProblemName(),
-          simple->getDomainFEName(), fieldEvalData, mField.get_comm_rank(),
-          mField.get_comm_rank(), getCacheWeakPtr().lock(), MF_EXIST, QUIET);
-    } else {
-      CHKERR mField.getInterface<FieldEvaluatorInterface>()->evalFEAtThePoint2D(
-          fieldEvalCoords.data(), 1e-12, simple->getProblemName(),
-          simple->getDomainFEName(), fieldEvalData, mField.get_comm_rank(),
-          mField.get_comm_rank(), getCacheWeakPtr().lock(), MF_EXIST, QUIET);
-    }
+    CHKERR mField.getInterface<FieldEvaluatorInterface>()
+        ->evalFEAtThePoint<SPACE_DIM>(
+            fieldEvalCoords.data(), 1e-12, simple->getProblemName(),
+            simple->getDomainFEName(), fieldEvalData, mField.get_comm_rank(),
+            mField.get_comm_rank(), getCacheWeakPtr().lock(), MF_EXIST, QUIET);
 
     if (velocityFieldPtr->size1()) {
       auto t_vel = getFTensor1FromMat<SPACE_DIM>(*velocityFieldPtr);
@@ -1081,13 +1065,8 @@ MoFEMErrorCode Example::solveSystem() {
   if (field_eval_flag) {
     field_eval_data =
         mField.getInterface<FieldEvaluatorInterface>()->getData<DomainEle>();
-    if (SPACE_DIM == 3) {
-      CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree3D(
-          field_eval_data, simple->getDomainFEName());
-    } else {
-      CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree2D(
-          field_eval_data, simple->getDomainFEName());
-    }
+    CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree<SPACE_DIM>(
+        field_eval_data, simple->getDomainFEName());
 
     field_eval_data->setEvalPoints(field_eval_coords.data(), 1);
 
@@ -1159,8 +1138,6 @@ MoFEMErrorCode Example::solveSystem() {
                                  SCATTER_FORWARD);
   CHKERR TSSetSolution(ts, T);
   CHKERR TSSetFromOptions(ts);
-
-  auto fb = mField.getInterface<FieldBlas>();
 
   CHKERR TSSetPostStage(ts, TSPrePostProc::tsPostStage);
   CHKERR TSSetPostStep(ts, TSPrePostProc::tsPostStep);

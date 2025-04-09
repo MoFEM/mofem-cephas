@@ -83,12 +83,22 @@ struct VolumeElementForcesAndSourcesCoreOnSide
   int getRule(int order);
   MoFEMErrorCode setGaussPts(int order);
 
+  /** 
+   * \brief Get side and sense and call operator from derived class
+   */
+  MoFEMErrorCode operator()();
+
 private:
+
+  MoFEMErrorCode operatorImpl();
+
   int faceSense;      ///< Sense of face, could be 1 or -1
   int faceSideNumber; ///< Face side number
+  int nbNodesOnFace;  ///< Number of nodes on face
   std::array<int, 4> faceConnMap;
   std::array<int, 8> tetConnMap;
   int oppositeNode;
+  bool operatorImplCalled = false; ///< flag to check if operatorImpl was called
 };
 
 /** \brief default operator for TET element

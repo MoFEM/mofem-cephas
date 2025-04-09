@@ -979,8 +979,6 @@ OpConstrainBoundaryLhs_dUImpl<DIM, GAUSS, AssemblyBoundaryEleOp>::iNtegrate(
   auto t_row_base = row_data.getFTensor1N<3>();
   size_t nb_face_functions = row_data.getN().size2() / 3;
 
-  constexpr auto t_kd = FTensor::Kronecker_Delta<int>();
-
   auto m_spatial_coords = get_spatial_coords(
       BoundaryEleOp::getFTensor1CoordsAtGaussPts(),
       getFTensor1FromMat<DIM>(commonDataPtr->contactDisp), nb_gauss_pts);

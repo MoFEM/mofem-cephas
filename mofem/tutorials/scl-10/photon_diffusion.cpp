@@ -282,7 +282,6 @@ MoFEMErrorCode PhotonDiffusion::setupProblem() {
 
   auto set_camera_skin_fe = [&]() {
     MoFEMFunctionBegin;
-    auto meshset_mng = mField.getInterface<MeshsetsManager>();
 
     Range camera_surface;
     const std::string block_name = "CAM";

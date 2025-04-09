@@ -70,21 +70,12 @@ struct MonitorIncompressible : public FEMethod {
     auto *simple = m_field_ptr->getInterface<Simple>();
 
     if (doEvalField) {
-      if (SPACE_DIM == 3) {
-        CHKERR m_field_ptr->getInterface<FieldEvaluatorInterface>()
-            ->evalFEAtThePoint3D(
-                fieldEvalCoords.data(), 1e-12, simple->getProblemName(),
-                simple->getDomainFEName(), fieldEvalData,
-                m_field_ptr->get_comm_rank(), m_field_ptr->get_comm_rank(),
-                getCacheWeakPtr().lock(), MF_EXIST, QUIET);
-      } else {
-        CHKERR m_field_ptr->getInterface<FieldEvaluatorInterface>()
-            ->evalFEAtThePoint2D(
-                fieldEvalCoords.data(), 1e-12, simple->getProblemName(),
-                simple->getDomainFEName(), fieldEvalData,
-                m_field_ptr->get_comm_rank(), m_field_ptr->get_comm_rank(),
-                getCacheWeakPtr().lock(), MF_EXIST, QUIET);
-      }
+      CHKERR m_field_ptr->getInterface<FieldEvaluatorInterface>()
+          ->evalFEAtThePoint<SPACE_DIM>(
+              fieldEvalCoords.data(), 1e-12, simple->getProblemName(),
+              simple->getDomainFEName(), fieldEvalData,
+              m_field_ptr->get_comm_rank(), m_field_ptr->get_comm_rank(),
+              getCacheWeakPtr().lock(), MF_EXIST, QUIET);
 
       if (vecFieldPtr->size1()) {
         auto t_disp = getFTensor1FromMat<SPACE_DIM>(*vecFieldPtr);
@@ -438,9 +429,7 @@ MoFEMErrorCode Incompressible::bC() {
 //! [Push operators to pip]
 MoFEMErrorCode Incompressible::OPs() {
   MoFEMFunctionBegin;
-  auto simple = mField.getInterface<Simple>();
   auto pip_mng = mField.getInterface<PipelineManager>();
-  auto bc_mng = mField.getInterface<BcManager>();
 
   auto integration_rule_vol = [](int, int, int approx_order) {
     return 2 * approx_order + geom_order - 1;
@@ -618,7 +607,6 @@ MoFEMErrorCode Incompressible::tsSolve() {
 
   auto create_post_process_elements = [&]() {
     auto pp_fe = boost::make_shared<PostProcEle>(mField);
-    auto &pip = pp_fe->getOpPtrVector();
 
     auto push_vol_ops = [this](auto &pip) {
       MoFEMFunctionBegin;
@@ -727,13 +715,8 @@ MoFEMErrorCode Incompressible::tsSolve() {
     vector_field_ptr = boost::make_shared<MatrixDouble>();
     field_eval_data =
         mField.getInterface<FieldEvaluatorInterface>()->getData<DomainEle>();
-    if constexpr (SPACE_DIM == 3) {
-      CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree3D(
-          field_eval_data, simple->getDomainFEName());
-    } else {
-      CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree2D(
-          field_eval_data, simple->getDomainFEName());
-    }
+    CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree<SPACE_DIM>(
+        field_eval_data, simple->getDomainFEName());
 
     field_eval_data->setEvalPoints(field_eval_coords.data(), 1);
     auto no_rule = [](int, int, int) { return -1; };
@@ -832,7 +815,6 @@ MoFEMErrorCode Incompressible::tsSolve() {
       } else {
         auto set_pcfieldsplit_preconditioned_ts = [&](auto solver) {
           MoFEMFunctionBegin;
-          auto bc_mng = mField.getInterface<BcManager>();
           auto name_prb = simple->getProblemName();
           SmartPetscObj<IS> is_p;
           CHKERR mField.getInterface<ISManager>()->isCreateProblemFieldAndRank(
@@ -1009,6 +991,12 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<TS> solver) {
                                               post_proc_schur_lhs_ptr]() {
     MoFEMFunctionBegin;
 
+    CHKERR MatAssemblyBegin(S, MAT_FINAL_ASSEMBLY);
+    CHKERR MatAssemblyEnd(S, MAT_FINAL_ASSEMBLY);
+    CHKERR EssentialPostProcLhs<DisplacementCubitBcData>(
+        mField, post_proc_schur_lhs_ptr, 1, S, ao_up)();
+
+#ifndef NDEBUG
     auto print_mat_norm = [this](auto a, std::string prefix) {
       MoFEMFunctionBegin;
       double nrm;
@@ -1017,13 +1005,6 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<TS> solver) {
           << prefix << " norm = " << nrm;
       MoFEMFunctionReturn(0);
     };
-
-    CHKERR MatAssemblyBegin(S, MAT_FINAL_ASSEMBLY);
-    CHKERR MatAssemblyEnd(S, MAT_FINAL_ASSEMBLY);
-    CHKERR EssentialPostProcLhs<DisplacementCubitBcData>(
-        mField, post_proc_schur_lhs_ptr, 1, S, ao_up)();
-
-#ifndef NDEBUG
     CHKERR print_mat_norm(S, "S");
 #endif // NDEBUG
     MoFEMFunctionReturn(0);

@@ -20,6 +20,9 @@ namespace MoFEM {
  */
 struct CommInterface : public UnknownInterface {
 
+  inline static bool debug = false;
+  inline static Sev sev = Sev::verbose;
+
   MoFEMErrorCode query_interface(boost::typeindex::type_index type_index,
                                  UnknownInterface **iface) const;
 
@@ -33,7 +36,7 @@ struct CommInterface : public UnknownInterface {
    */
   ~CommInterface() = default;
 
-  /** \name Make elemnts multishared */
+  /** \name Make elemets multishared */
 
   /**@{*/
 
@@ -248,6 +251,90 @@ struct CommInterface : public UnknownInterface {
                                Tag *th_part_weights = nullptr,
                                int verb = VERBOSE, const bool debug = false);
 
+
+  /**@}*/
+
+  /**@{*/
+
+  /** \name Load file */
+
+  using LoadFileFun = std::function<std::array<Range, 4>(
+      std::array<Range, 4> &&, std::vector<const CubitMeshSets *> &&)>;
+
+  static std::array<Range, 4>
+  defaultProcSkinFun(std::array<Range, 4> &&proc_ents_skin,
+                     std::vector<const CubitMeshSets *> &&vec_ptr) {
+    return proc_ents_skin;
+  }
+
+  /**
+   * @brief Root proc has whole mesh, other procs only part of it
+   * 
+   * @param moab 
+   * @param file_name 
+   * @param dim 
+   * @param proc_skin_fun 
+   * @param options 
+   * @return MoFEMErrorCode 
+   */
+  static MoFEMErrorCode loadFileRootProcAllRestDistributed(
+      moab::Interface &moab, const char *file_name, int dim,
+      LoadFileFun proc_skin_fun = defaultProcSkinFun,
+      const char *options = "PARALLEL=BCAST;PARTITION=");
+
+  static Range getPartEntities(moab::Interface &moab, int part);
+
+  /**@}*/
+  /**@*/
+
+  /** \name Functions when rooot proc have all entities */
+
+  using EntitiesPetscVector =
+      std::pair<std::pair<Range, Range>, SmartPetscObj<Vec>>;
+
+  /**
+   * @brief Create a ghost vector for exchanging data
+   *
+   * @note Only works if loadFileRootProcAllRestDistributed function is used.
+   * 
+   * @param comm 
+   * @param moab
+   * @param dim  dimension of partition entities 
+   * @param adj_dim dimension of adjacent entities
+   * @param nb_coeffs number of coefficients
+   * @param sev
+   * @param root_rank
+   *
+   * @return std::pair<Range, SmartPetscObj<Vec>>
+   */
+  static EntitiesPetscVector
+  createEntitiesPetscVector(MPI_Comm comm, moab::Interface &moab, int dim,
+                            const int nb_coeffs, Sev sev = Sev::verbose,
+                            int root_rank = 0);
+
+  using UpdateGhosts = std::function<MoFEMErrorCode(Vec vec)>;
+
+  static MoFEMErrorCode defaultUpdateGhosts(Vec v) {
+    MoFEMFunctionBegin;
+    CHKERR VecAssemblyBegin(v);
+    CHKERR VecAssemblyEnd(v);
+    CHKERR VecGhostUpdateBegin(v, ADD_VALUES, SCATTER_REVERSE);
+    CHKERR VecGhostUpdateEnd(v, ADD_VALUES, SCATTER_REVERSE);
+    CHKERR VecGhostUpdateBegin(v, INSERT_VALUES, SCATTER_FORWARD);
+    CHKERR VecGhostUpdateEnd(v, INSERT_VALUES, SCATTER_FORWARD);
+    MoFEMFunctionReturn(0);
+  };
+
+  /**
+   * @brief Exchange data between vector and data
+   * 
+   * @param tag 
+   * @return MoFEMErrorCode 
+   */
+  static MoFEMErrorCode
+  updateEntitiesPetscVector(moab::Interface &moab, EntitiesPetscVector &vec,
+                           Tag tag,
+                           UpdateGhosts update_gosts = defaultUpdateGhosts);
 
   /**@}*/
 

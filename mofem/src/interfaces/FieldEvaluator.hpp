@@ -212,24 +212,25 @@ struct FieldEvaluatorInterface : public UnknownInterface {
                    int upper_rank, boost::shared_ptr<CacheTuple> cache_ptr,
                    MoFEMTypes bh = MF_EXIST, VERBOSITY_LEVELS verb = QUIET);
 
-  private:
-    template <int D>
-    MoFEMErrorCode buildTreeImpl(boost::shared_ptr<SetPtsData> spd_ptr,
-                             const std::string finite_element);
+private:
+  template <int D>
+  MoFEMErrorCode buildTreeImpl(boost::shared_ptr<SetPtsData> spd_ptr,
+                               const std::string finite_element);
 
-    template <int D>
-    MoFEMErrorCode evalFEAtThePointImpl(
-        const double *const point, const double distance,
-        const std::string problem, const std::string finite_element,
-        boost::shared_ptr<SetPtsData> data_ptr, int lower_rank, int upper_rank,
-        boost::shared_ptr<CacheTuple> cache_ptr, MoFEMTypes bh = MF_EXIST,
-        VERBOSITY_LEVELS verb = QUIET);
+  template <int D>
+  MoFEMErrorCode
+  evalFEAtThePointImpl(const double *const point, const double distance,
+                       const std::string problem,
+                       const std::string finite_element,
+                       boost::shared_ptr<SetPtsData> data_ptr, int lower_rank,
+                       int upper_rank, boost::shared_ptr<CacheTuple> cache_ptr,
+                       MoFEMTypes bh = MF_EXIST, VERBOSITY_LEVELS verb = QUIET);
 };
 
 template <>
 MoFEMErrorCode
 FieldEvaluatorInterface::buildTree<2>(boost::shared_ptr<SetPtsData> spd_ptr,
-                                   const std::string finite_element);
+                                      const std::string finite_element);
 
 template <>
 MoFEMErrorCode

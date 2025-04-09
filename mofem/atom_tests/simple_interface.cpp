@@ -315,6 +315,15 @@ int main(int argc, char *argv[]) {
           dm, simple_interface->getMeshsetFEName(), fe_ptr, 0,
           m_field.get_comm_size());
       MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::inform);
+
+      MOFEM_LOG("TESTSYNC", Sev::inform) << "PipelineManager";
+      auto pip_mng = m_field.getInterface<PipelineManager>();
+      pip_mng->getOpMeshsetRhsPipeline().push_back(
+          new OpMeshset("GLOBAL", OpMeshset::OPROW));
+      pip_mng->getOpMeshsetLhsPipeline().push_back(
+          new OpMeshset("GLOBAL", "GLOBAL", OpMeshset::OPROWCOL));
+      pip_mng->loopFiniteElements();
+      MOFEM_LOG_SEVERITY_SYNC(m_field.get_comm(), Sev::inform);
     }
   }
   CATCH_ERRORS;

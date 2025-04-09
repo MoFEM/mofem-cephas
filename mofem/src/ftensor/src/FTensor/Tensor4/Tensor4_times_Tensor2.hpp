@@ -6,7 +6,7 @@
 
 namespace FTensor
 {
-  /* A(i,j,k,l)*B(k,l) */
+  /* A(i,j,k,l)*B(k,l) -> Tensor2 */
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             int Dim3, char i, char j, char k, char l>
@@ -67,7 +67,7 @@ namespace FTensor
                         j>(TensorExpr(a, b));
   }
 
-  /* B(k,l)*A(i,j,k,l) */
+  /* B(k,l)*A(i,j,k,l) -> Tensor2 */
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             int Dim3, char i, char j, char k, char l>
@@ -84,7 +84,7 @@ namespace FTensor
                         j>(TensorExpr(a, b));
   }
 
-  /* A(i,j,k,l)*B(l,k) */
+  /* A(i,j,k,l)*B(l,k) -> Tensor2 */
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             int Dim3, char i, char j, char k, char l>
@@ -145,7 +145,7 @@ namespace FTensor
                         j>(TensorExpr(a, b));
   }
 
-  /* B(l,k)*A(i,j,k,l) */
+  /* B(l,k)*A(i,j,k,l) -> Tensor2 */
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             int Dim3, char i, char j, char k, char l>
@@ -162,7 +162,7 @@ namespace FTensor
                         j>(TensorExpr(a, b));
   }
 
-  /* A(i,j,k,l)*B(i,l) */
+  /* A(i,j,k,l)*B(i,l) -> Tensor2 */
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             int Dim3, char i, char j, char k, char l>
@@ -223,7 +223,7 @@ namespace FTensor
                         k>(TensorExpr(a, b));
   }
 
-  /* B(i,l)*A(i,j,k,l) */
+  /* B(i,l)*A(i,j,k,l) -> Tensor2 */
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             int Dim3, char i, char j, char k, char l>
@@ -240,7 +240,7 @@ namespace FTensor
                         k>(TensorExpr(a, b));
   }
 
-  /* A(i,j,k,l)*B(l,i) */
+  /* A(i,j,k,l)*B(l,i) -> Tensor2 */
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             int Dim3, char i, char j, char k, char l>
@@ -301,7 +301,7 @@ namespace FTensor
                         k>(TensorExpr(a, b));
   }
 
-  /* B(l,i)*A(i,j,k,l) */
+  /* B(l,i)*A(i,j,k,l) -> Tensor2 */
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             int Dim3, char i, char j, char k, char l>
@@ -318,7 +318,7 @@ namespace FTensor
                         k>(TensorExpr(a, b));
   }
 
-  /* A(i,j,k,l)*B(j,l) */
+  /* A(i,j,k,l)*B(j,l) -> Tensor2 */
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             int Dim3, char i, char j, char k, char l>
@@ -364,7 +364,7 @@ namespace FTensor
     {}
   };
 
-  /* B(j,l)*A(i,j,k,l) */
+  /* B(j,l)*A(i,j,k,l) -> Tensor2 */
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             int Dim3, char i, char j, char k, char l>
@@ -387,7 +387,7 @@ namespace FTensor
 
   // TODO: Check dimensions could be errors
 
-  /* A(i,j,k,l)*B(l,m) */
+  /* A(i,j,k,l)*B(l,m) -> Tensor4 */
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             int Dim3, int Dim4, char i, char j, char k, char l, char m>
@@ -439,7 +439,7 @@ namespace FTensor
                         Dim2, Dim4, i, j, k, m>(TensorExpr(a, b));
   }
 
-  /* B(l,m)*A(i,j,k,l) */
+  /* B(l,m)*A(i,j,k,l) -> Tensor4 */
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             int Dim3, int Dim4, char i, char j, char k, char l, char m>
@@ -457,7 +457,7 @@ namespace FTensor
                         Dim2, Dim4, i, j, k, m>(TensorExpr(a, b));
   }
 
-  /* A(i,j,k,l)*B(m,l) */
+  /* A(i,j,k,l)*B(m,l) -> Tensor4 */
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             int Dim3, int Dim4, char i, char j, char k, char l, char m>
@@ -509,7 +509,7 @@ namespace FTensor
                         Dim2, Dim4, i, j, k, m>(TensorExpr(a, b));
   }
 
-  /* B(m,l)*A(i,j,k,l) */
+  /* B(m,l)*A(i,j,k,l) -> Tensor4 */
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             int Dim3, int Dim4, char i, char j, char k, char l, char m>
@@ -527,7 +527,7 @@ namespace FTensor
                         Dim2, Dim4, i, j, k, m>(TensorExpr(a, b));
   }
 
-  /* A(i,j,k,l)*B(j,m) */
+  /* A(i,j,k,l)*B(j,m) -> Tensor4 */
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             int Dim3, int Dim4, char i, char j, char k, char l, char m>
@@ -579,7 +579,7 @@ namespace FTensor
                         Dim4, Dim3, i, m, k, l>(TensorExpr(a, b));
   }
 
-  /* B(j,m)*A(i,j,k,l) */
+  /* B(j,m)*A(i,j,k,l) -> Tensor4 */
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             int Dim3, int Dim4, char i, char j, char k, char l, char m>
@@ -597,7 +597,7 @@ namespace FTensor
                         Dim4, Dim3, i, m, k, l>(TensorExpr(a, b));
   }
 
-  /* A(i,j,k,l)*B(m,j) */
+  /* A(i,j,k,l)*B(m,j) -> Tensor4 */
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             int Dim3, int Dim4, char i, char j, char k, char l, char m>
@@ -649,7 +649,7 @@ namespace FTensor
                         Dim2, Dim3, i, m, k, l>(TensorExpr(a, b));
   }
 
-  /* B(m,j)*A(i,j,k,l) */
+  /* B(m,j)*A(i,j,k,l) -> Tensor4 */
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             int Dim3, int Dim4, char i, char j, char k, char l, char m>
@@ -667,7 +667,7 @@ namespace FTensor
                         Dim2, Dim3, i, m, k, l>(TensorExpr(a, b));
   }
 
-  /* A(i,j,k,l)*B(i,m) */
+  /* A(i,j,k,l)*B(i,m) -> Tensor4 */
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             int Dim3, int Dim4, char i, char j, char k, char l, char m>
@@ -719,7 +719,7 @@ namespace FTensor
                         Dim2, Dim3, m, j, k, l>(TensorExpr(a, b));
   }
 
-  /* B(i,m)*A(i,j,k,l) */
+  /* B(i,m)*A(i,j,k,l) -> Tensor4 */
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             int Dim3, int Dim4, char i, char j, char k, char l, char m>
@@ -737,7 +737,7 @@ namespace FTensor
                         Dim2, Dim3, m, j, k, l>(TensorExpr(a, b));
   }
 
-  /* A(i,j,k,l)*B(m,i) */
+  /* A(i,j,k,l)*B(m,i) -> Tensor4 */
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             int Dim3, int Dim4, char i, char j, char k, char l, char m>
@@ -789,7 +789,7 @@ namespace FTensor
   //   promote<T,U>::V,Dim4,Dim1,Dim2,Dim3,m,j,k,l> (TensorExpr(a,b));
   // }
 
-  /* B(i,m)*A(i,j,k,l) */
+  /* B(i,m)*A(i,j,k,l) -> Tensor4 */
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             int Dim3, int Dim4, char i, char j, char k, char l, char m>
@@ -807,7 +807,7 @@ namespace FTensor
                         Dim2, Dim3, m, j, k, l>(TensorExpr(a, b));
   }
 
-  /* A(i,j,k,l)*B(k,m) */
+  /* A(i,j,k,l)*B(k,m) -> Tensor4 */
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             int Dim3, int Dim4, char i, char j, char k, char l, char m>
@@ -859,7 +859,7 @@ namespace FTensor
                         Dim4, Dim3, i, j, m, l>(TensorExpr(a, b));
   }
 
-  /* B(k,m)*A(i,j,k,l) */
+  /* B(k,m)*A(i,j,k,l) -> Tensor4 */
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             int Dim3, int Dim4, char i, char j, char k, char l, char m>
@@ -877,7 +877,7 @@ namespace FTensor
                         Dim4, Dim3, i, j, m, l>(TensorExpr(a, b));
   }
 
-  /* A(i,j,k,l)*B(m,k) */
+  /* A(i,j,k,l)*B(m,k) -> Tensor4 */
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             int Dim3, int Dim4, char i, char j, char k, char l, char m>
@@ -929,7 +929,7 @@ namespace FTensor
                         Dim4, Dim3, i, j, m, l>(TensorExpr(a, b));
   }
 
-  /* B(m,k)*A(i,j,k,l) */
+  /* B(m,k)*A(i,j,k,l) -> Tensor4 */
 
   template <class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
             int Dim3, int Dim4, char i, char j, char k, char l, char m>

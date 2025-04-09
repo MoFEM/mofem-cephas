@@ -26,7 +26,8 @@ PetscData::query_interface(boost::typeindex::type_index type_index,
 
 PetscData::PetscData()
     : data_ctx(PetscData::CtxSetNone), f(PETSC_NULL), A(PETSC_NULL),
-      B(PETSC_NULL), x(PETSC_NULL), x_t(PETSC_NULL), x_tt(PETSC_NULL) {}
+      B(PETSC_NULL), x(PETSC_NULL), dx(PETSC_NULL), x_t(PETSC_NULL),
+      x_tt(PETSC_NULL) {}
 
 MoFEMErrorCode PetscData::copyPetscData(const PetscData &petsc_data) {
   this->data_ctx = petsc_data.data_ctx;
@@ -34,7 +35,7 @@ MoFEMErrorCode PetscData::copyPetscData(const PetscData &petsc_data) {
   this->A = petsc_data.A;
   this->B = petsc_data.B;
   this->x = petsc_data.x;
-  this->x = petsc_data.x;
+  this->dx = petsc_data.dx;
   this->x_t = petsc_data.x_t;
   this->x_tt = petsc_data.x_tt;
   return 0;
@@ -69,8 +70,8 @@ SnesMethod::query_interface(boost::typeindex::type_index type_index,
 }
 
 SnesMethod::SnesMethod()
-    : snes_ctx(CTX_SNESNONE), snes_x(PetscData::x), snes_f(PetscData::f),
-      snes_A(PetscData::A), snes_B(PetscData::B) {}
+    : snes_ctx(CTX_SNESNONE), snes_x(PetscData::x), snes_dx(PetscData::dx),
+      snes_f(PetscData::f), snes_A(PetscData::A), snes_B(PetscData::B) {}
 
 MoFEMErrorCode SnesMethod::copySnes(const SnesMethod &snes) {
   MoFEMFunctionBeginHot;

@@ -140,13 +140,13 @@ int main(int argc, char *argv[]) {
                   "Pointer to element does not exists");
 
         // Build tree for particular element
-        CHKERR field_eval_ptr->buildTree3D(data,
+        CHKERR field_eval_ptr->buildTree<3>(data,
                                            simple_interface->getDomainFEName());
         // Set points to set on finite elements
         data->setEvalPoints(eval_points.data(), eval_points.size() / 3);
 
         // Evaluate points on finite elements
-        CHKERR field_eval_ptr->evalFEAtThePoint3D(
+        CHKERR field_eval_ptr->evalFEAtThePoint<3>(
             &point[0], dist, prb_ptr->getName(),
             simple_interface->getDomainFEName(), data, m_field.get_comm_rank(),
             m_field.get_comm_rank(), nullptr, MF_EXIST, VERY_NOISY);
@@ -179,13 +179,13 @@ int main(int argc, char *argv[]) {
                   "Pointer to element does not exists");
 
         // Build tree for particular element
-        CHKERR field_eval_ptr->buildTree2D(data,
+        CHKERR field_eval_ptr->buildTree<2>(data,
                                            simple_interface->getDomainFEName());
         // Set points to set on finite elements
         data->setEvalPoints(eval_points.data(), eval_points.size() / 3);
 
         // Evaluate points on finite elements
-        CHKERR field_eval_ptr->evalFEAtThePoint2D(
+        CHKERR field_eval_ptr->evalFEAtThePoint<2>(
             &point[0], dist, prb_ptr->getName(),
             simple_interface->getDomainFEName(), data, m_field.get_comm_rank(),
             m_field.get_comm_rank(), nullptr, MF_EXIST, VERY_NOISY);

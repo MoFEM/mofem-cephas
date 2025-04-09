@@ -14,7 +14,6 @@ int main(int argc, char *argv[]) {
   try {
     char mesh_file_name[255] = "in.h5m";
     char out_file_name[255] = "out.h5m";
-    PetscBool in_flg_file = PETSC_FALSE;
     PetscBool out_flg_file = PETSC_FALSE;
     CHKERR PetscOptionsBegin(PETSC_COMM_WORLD, "", "Fix file options", "none");
     CHKERR PetscOptionsString("-file_name", "mesh file name", "", "mesh.h5m",
@@ -26,7 +25,6 @@ int main(int argc, char *argv[]) {
 
     moab::Core mb_instance;
     moab::Interface &moab = mb_instance;
-    ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
     const char *option;
     option = "";
 

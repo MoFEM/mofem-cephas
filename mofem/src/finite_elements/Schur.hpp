@@ -29,6 +29,7 @@ struct SchurEvents {
   static PetscLogEvent MOFEM_EVENT_BlockStructureSetValues;
   static PetscLogEvent MOFEM_EVENT_BlockStructureMult;
   static PetscLogEvent MOFEM_EVENT_BlockStructureSolve;
+  static PetscLogEvent MOFEM_EVENT_AssembleSchurMat;
   static PetscLogEvent MOFEM_EVENT_zeroRowsAndCols;
   SchurEvents();
 };
@@ -63,6 +64,15 @@ createOpSchurAssembleEnd(std::vector<std::string> fields_name,
                          SmartPetscObj<AO> ao = SmartPetscObj<AO>(),
                          SmartPetscObj<Mat> schur = SmartPetscObj<Mat>(),
                          bool sym_schur = false, bool symm_op = false);
+
+/**
+ * @brief Create a Op Schur Zero Rows And Cols object
+ * 
+ * @param marker_ptr 
+ * @return OpSchurAssembleBase* 
+ */
+OpSchurAssembleBase *createOpSchurZeroRowsAndCols(
+    boost::shared_ptr<std::vector<unsigned char>> marker_ptr, double diag_val);
 
 using SchurFieldPair = std::pair<std::string, std::string>;
 
@@ -124,6 +134,38 @@ boost::shared_ptr<NestSchurData> createSchurNestedMatrixStruture(
     bool add_preconditioner_block = false
 
 );
+
+/**
+ * @brief Assemble Schur matrix
+ * 
+ * @param m_field 
+ * @param B 
+ * @param S 
+ * @param fields_name 
+ * @param field_ents 
+ * @param ao 
+ * @return MoFEMErrorCode 
+ */
+MoFEMErrorCode
+assembleBlockMatSchur(MoFEM::Interface &m_field, Mat B, Mat S,
+                      std::vector<std::string> fields_name,
+                      std::vector<boost::shared_ptr<Range>> field_ents,
+                      SmartPetscObj<AO> ao);
+
+/**
+ * @brief Get the Block Storage object
+ * 
+ * @return std::vector<double>& 
+ */
+boost::shared_ptr<std::vector<double>> getBlockMatStorageMat(Mat B);
+
+/**
+ * @brief Get the Block Storage object
+ * 
+ * @return std::vector<double>& 
+ */
+boost::shared_ptr<std::vector<double>>
+getBlockMatPrconditionerStorageMat(Mat B);
 
 /**
  * @brief Switch preconditioner

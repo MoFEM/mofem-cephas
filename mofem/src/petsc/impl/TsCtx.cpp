@@ -158,6 +158,10 @@ PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
     CHKERR VecAssemblyEnd(F);
   }
 
+  if(ts_ctx->tsDebugHook) {
+    CHKERR ts_ctx->tsDebugHook(ts, t, u, u_t, PETSC_NULL, F, ctx);
+  }
+
   PetscLogEventEnd(ts_ctx->MOFEM_EVENT_TsCtxIFunction, 0, 0, 0, 0);
   MoFEMFunctionReturn(0);
 }
@@ -413,6 +417,10 @@ PetscErrorCode TsSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx) {
     CHKERR VecGhostUpdateEnd(F, ADD_VALUES, SCATTER_REVERSE);
     CHKERR VecAssemblyBegin(F);
     CHKERR VecAssemblyEnd(F);
+  }
+
+  if (ts_ctx->tsDebugHook) {
+    CHKERR ts_ctx->tsDebugHook(ts, t, u, PETSC_NULL, PETSC_NULL, F, ctx);
   }
 
   PetscLogEventEnd(ts_ctx->MOFEM_EVENT_TsCtxRHSFunction, 0, 0, 0, 0);
@@ -717,9 +725,33 @@ PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
     CHKERR VecAssemblyEnd(F);
   }
 
+  if (ts_ctx->tsDebugHook) {
+    CHKERR ts_ctx->tsDebugHook(ts, t, u, u_t, u_tt, F, ctx);
+  }
+
   PetscLogEventEnd(ts_ctx->MOFEM_EVENT_TsCtxIFunction, 0, 0, 0, 0);
   MoFEMFunctionReturn(0);
 }
+
+/** \brief Custom TSAdaptivity in MoFEM
+ * 
+ * \code
+ * CHKERR TSAdaptRegister(TSADAPTMOFEM, TSAdaptCreateMoFEM);
+ * TSAdapt adapt;
+ * CHKERR TSGetAdapt(solver, &adapt);
+ * CHKERR TSAdaptSetType(adapt, TSADAPTMOFEM);
+ * \endcode
+ *
+ */
+struct TSAdaptMoFEM {
+
+  TSAdaptMoFEM();
+
+  double alpha; //< step reduction if divergence
+  double gamma; //< adaptivity exponent
+  int desiredIt; //< desired number of iterations
+  PetscBool offApat; //< off adaptivity
+};
 
 TSAdaptMoFEM::TSAdaptMoFEM()
     : alpha(0.75), gamma(0.5), desiredIt(6), offApat(PETSC_FALSE) {

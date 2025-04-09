@@ -1,10 +1,8 @@
 /** \file split_sideset.cpp
-  \brief Split sidesets
+  \brief Split sidesets/blockset and add internal surface
   \example split_sideset.cpp
 
 */
-
-
 
 #include <MoFEM.hpp>
 using namespace MoFEM;
@@ -24,32 +22,36 @@ int main(int argc, char *argv[]) {
   try {
 
     // global variables
-    char mesh_file_name[255];
+    char mesh_file_name[255] = "mesh.h5m";
     PetscBool flg_file = PETSC_FALSE;
     PetscBool squash_bit_levels = PETSC_TRUE;
-    PetscBool flg_list_of_sidesets = PETSC_FALSE;
     PetscBool output_vtk = PETSC_TRUE;
     PetscBool add_prisms = PETSC_FALSE;
     PetscBool split_corner_edges = PETSC_FALSE;
+    char block_name[255] = "CRACK";
+    PetscBool flg_block = PETSC_FALSE;
     int nb_sidesets = 10;
     int sidesets[nb_sidesets];
+    PetscBool flg_list_of_sidesets = PETSC_FALSE;
 
     CHKERR PetscOptionsBegin(PETSC_COMM_WORLD, "", "Split sides options",
                              "none");
     CHKERR PetscOptionsString("-my_file", "mesh file name", "", "mesh.h5m",
                               mesh_file_name, 255, &flg_file);
+    CHKERR PetscOptionsString("-file_name", "mesh file name", "", "mesh.h5m",
+                              mesh_file_name, 255, &flg_file);
     CHKERR PetscOptionsBool("-squash_bit_levels", "squash bit levels", "",
                             squash_bit_levels, &squash_bit_levels, NULL);
     CHKERR PetscOptionsIntArray("-side_sets", "get list of sidesets", "",
                                 sidesets, &nb_sidesets, &flg_list_of_sidesets);
-    CHKERR PetscOptionsBool("-output_vtk", "if true outout vtk file", "",
-                            output_vtk, &output_vtk, PETSC_NULL);
-    CHKERR PetscOptionsBool("-add_prisms", "if true outout vtk file", "",
-                            add_prisms, &add_prisms, PETSC_NULL);
-    CHKERR PetscOptionsBool("-split_corner_edges", "if true outout vtk file",
+    CHKERR PetscOptionsString("-block_name", "block_name", "", "mesh.h5m",
+                              block_name, 255, &flg_block);
+    CHKERR PetscOptionsBool("-add_prisms", "add prisms", "", add_prisms,
+                            &add_prisms, PETSC_NULL);
+    CHKERR PetscOptionsBool("-split_corner_edges", "if true output vtk file",
                             "", split_corner_edges, &split_corner_edges,
                             PETSC_NULL);
-    CHKERR PetscOptionsBool("-output_vtk", "if true outout vtk file", "",
+    CHKERR PetscOptionsBool("-output_vtk", "if true output vtk file", "",
                             output_vtk, &output_vtk, PETSC_NULL);
     ierr = PetscOptionsEnd();
     CHKERRG(ierr);
@@ -69,9 +71,9 @@ int main(int argc, char *argv[]) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
               "*** ERROR -my_file (mesh file needed)");
     }
-    if (flg_list_of_sidesets != PETSC_TRUE) {
+    if (flg_list_of_sidesets != PETSC_TRUE && flg_block != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
-              "List of sidesets not given -my_side_sets ...");
+              "Block name or kist of sidesets not given ...");
     }
 
     // Get interface to meshsets manager
@@ -83,15 +85,9 @@ int main(int argc, char *argv[]) {
     // Refine mesh
     auto refine_mng = m_field.getInterface<MeshRefinement>();
 
-    auto &meshsets_index = m_mng->getMeshsetsMultindex();
-    auto &m_by_type = meshsets_index.get<CubitMeshsetMaskedType_mi_tag>();
-    auto &m_by_id_and_type =
-        meshsets_index.get<Composite_Cubit_msId_And_MeshsetType_mi_tag>();
-
-    for (auto mit = m_by_type.lower_bound(SIDESET);
-         mit != m_by_type.upper_bound(SIDESET); mit++) {
+    for (auto m : m_mng->getCubitMeshsetPtr(SIDESET)) {
       MOFEM_LOG("SPLIT", Sev::verbose)
-          << "Sideset on the mesh id = " << mit->getMeshsetId();
+          << "Sideset on the mesh id = " << m->getMeshsetId();
     }
 
     CHKERR bit_mng->setBitRefLevelByDim(0, 3, BitRefLevel().set(0));
@@ -113,15 +109,8 @@ int main(int argc, char *argv[]) {
       Skinner skin(&m_field.get_moab());
       auto meshset_of_edges_to_refine_ptr = get_temp_meshset_ptr(moab);
 
-      for (int mm = 0; mm != nb_sidesets; mm++) {
-
-        // find side set
-        auto mit =
-            m_by_id_and_type.find(boost::make_tuple(sidesets[mm], SIDESET));
-        if (mit == m_by_id_and_type.end())
-          SETERRQ1(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
-                   "No sideset in database id = %d", sidesets[mm]);
-
+      auto refine = [&](auto mit, auto meshset_of_edges_to_refine_ptr) {
+        MoFEMFunctionBegin;
         Range faces;
         CHKERR moab.get_entities_by_type(mit->getMeshset(), MBTRI, faces, true);
         Range faces_edges;
@@ -146,6 +135,22 @@ int main(int argc, char *argv[]) {
         vertex_edges = subtract(vertex_edges, skin_edges);
         vertex_edges = intersect(vertex_edges, faces_edges);
         CHKERR moab.add_entities(*meshset_of_edges_to_refine_ptr, vertex_edges);
+        MoFEMFunctionReturn(0);
+      };
+
+      for (int mm = 0; mm != nb_sidesets; mm++) {
+        CHKERR refine(m_mng->getCubitMeshsetPtr(sidesets[mm], SIDESET),
+                      meshset_of_edges_to_refine_ptr);
+      }
+
+      for (auto m : m_mng->getCubitMeshsetPtr(std::regex(
+
+               (boost::format("%s(.*)") % block_name).str()
+
+                   ))
+
+      ) {
+        CHKERR refine(m, meshset_of_edges_to_refine_ptr);
       }
 
       int nb_tris;
@@ -164,19 +169,8 @@ int main(int argc, char *argv[]) {
       CHKERR update_meshsets();
     }
 
-    // iterate sideset and split
-    for (int mm = 0; mm != nb_sidesets; mm++) {
-
-      // find side set
-      auto mit =
-          m_by_id_and_type.find(boost::make_tuple(sidesets[mm], SIDESET));
-      if (mit == m_by_id_and_type.end())
-        SETERRQ1(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
-                 "No sideset in database id = %d", sidesets[mm]);
-
-      MOFEM_LOG("SPLIT", Sev::inform)
-          << "Split sideset " << mit->getMeshsetId();
-
+    auto split = [&](auto mit) {
+      MoFEMFunctionBegin;
       const auto cubit_meshset = mit->getMeshset();
       {
         // get tet entities form back bit_level
@@ -205,6 +199,21 @@ int main(int argc, char *argv[]) {
       }
       // Update cubit meshsets
       CHKERR update_meshsets();
+      MoFEMFunctionReturn(0);
+    };
+
+    for (int mm = 0; mm != nb_sidesets; mm++) {
+      CHKERR split(m_mng->getCubitMeshsetPtr(sidesets[mm], SIDESET));
+    }
+
+    for (auto m : m_mng->getCubitMeshsetPtr(std::regex(
+
+             (boost::format("%s(.*)") % block_name).str()
+
+                 ))
+
+    ) {
+      CHKERR split(m);
     }
 
     if (squash_bit_levels == PETSC_TRUE) {

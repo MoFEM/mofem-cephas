@@ -243,11 +243,21 @@ MoFEMErrorCode PostProcBrokenMeshInMoabBase<E>::transferTags() {
     return def_val;
   };
 
+  std::vector<double> tag_data_vec;
   auto data_ptr = [&](auto tag) {
     const void *tag_data;
     auto core_ent = this->getFEEntityHandle();
     CHK_MOAB_THROW(calc_mesh.tag_get_by_ptr(tag, &core_ent, 1, &tag_data),
                    "get tag data");
+    if (data_type(tag) == MB_TYPE_DOUBLE) {
+      tag_data_vec.resize(length(tag));
+      std::copy(static_cast<const double *>(tag_data),
+                static_cast<const double *>(tag_data) + length(tag),
+                tag_data_vec.begin());
+      for (auto &v : tag_data_vec)
+        v = std::abs(v) < std::numeric_limits<float>::epsilon() ? 0. : v;
+      return static_cast<const void *>(tag_data_vec.data());
+    }
     return tag_data;
   };
 
@@ -694,8 +704,9 @@ struct PostProcBrokenMeshInMoab<EdgeElementForcesAndSourcesCore>
  * data_map_may
  * @tparam DIM2 dimension of second column in data_map_mat
  */
-template <int DIM1, int DIM2>
-struct OpPostProcMapInMoab : public ForcesAndSourcesCore::UserDataOperator {
+template <int DIM1, int DIM2,
+          typename O = ForcesAndSourcesCore::UserDataOperator>
+struct OpPostProcMapInMoab : public O {
 
   using DataMapVec = std::map<std::string, boost::shared_ptr<VectorDouble>>;
   using DataMapMat = std::map<std::string, boost::shared_ptr<MatrixDouble>>;
@@ -715,13 +726,12 @@ struct OpPostProcMapInMoab : public ForcesAndSourcesCore::UserDataOperator {
                       std::vector<EntityHandle> &map_gauss_pts,
                       DataMapVec data_map_scalar, DataMapMat data_map_vec,
                       DataMapMat data_map_mat, DataMapMat data_symm_map_mat)
-      : ForcesAndSourcesCore::UserDataOperator(
-            NOSPACE, ForcesAndSourcesCore::UserDataOperator::OPSPACE),
-        postProcMesh(post_proc_mesh), mapGaussPts(map_gauss_pts),
-        dataMapScalar(data_map_scalar), dataMapVec(data_map_vec),
-        dataMapMat(data_map_mat), dataMapSymmMat(data_symm_map_mat) {
+      : O(NOSPACE, O::OPSPACE), postProcMesh(post_proc_mesh),
+        mapGaussPts(map_gauss_pts), dataMapScalar(data_map_scalar),
+        dataMapVec(data_map_vec), dataMapMat(data_map_mat),
+        dataMapSymmMat(data_symm_map_mat) {
     // Operator is only executed for vertices
-    std::fill(&doEntities[MBEDGE], &doEntities[MBMAXTYPE], false);
+    std::fill(&O::doEntities[MBEDGE], &O::doEntities[MBMAXTYPE], false);
   }
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data);
@@ -735,10 +745,10 @@ private:
   DataMapMat dataMapSymmMat;
 };
 
-template <int DIM1, int DIM2>
+template <int DIM1, int DIM2, typename O>
 MoFEMErrorCode
-OpPostProcMapInMoab<DIM1, DIM2>::doWork(int side, EntityType type,
-                                        EntitiesFieldData::EntData &data) {
+OpPostProcMapInMoab<DIM1, DIM2, O>::doWork(int side, EntityType type,
+                                           EntitiesFieldData::EntData &data) {
   MoFEMFunctionBegin;
 
   std::array<double, 9> def;
@@ -801,7 +811,7 @@ OpPostProcMapInMoab<DIM1, DIM2>::doWork(int side, EntityType type,
     if (m.second) {
       auto th = get_tag(m.first, 1);
       auto t_scl = getFTensor0FromVec(*m.second);
-      auto nb_integration_pts = getGaussPts().size2();
+      auto nb_integration_pts = O::getGaussPts().size2();
       for (int gg = 0; gg != nb_integration_pts; ++gg) {
         CHKERR set_tag(th, gg, set_scalar(t_scl));
         ++t_scl;
@@ -813,7 +823,7 @@ OpPostProcMapInMoab<DIM1, DIM2>::doWork(int side, EntityType type,
     if (m.second) {
       auto th = get_tag(m.first, 3);
       auto t_vec = getFTensor1FromMat<DIM1>(*m.second);
-      auto nb_integration_pts = getGaussPts().size2();
+      auto nb_integration_pts = O::getGaussPts().size2();
       for (int gg = 0; gg != nb_integration_pts; ++gg) {
         CHKERR set_tag(th, gg, set_vector_3d(t_vec));
         ++t_vec;
@@ -825,7 +835,7 @@ OpPostProcMapInMoab<DIM1, DIM2>::doWork(int side, EntityType type,
     if (m.second) {
       auto th = get_tag(m.first, 9);
       auto t_mat = getFTensor2FromMat<DIM1, DIM2>(*m.second);
-      auto nb_integration_pts = getGaussPts().size2();
+      auto nb_integration_pts = O::getGaussPts().size2();
       for (int gg = 0; gg != nb_integration_pts; ++gg) {
         CHKERR set_tag(th, gg, set_matrix_3d(t_mat));
         ++t_mat;
@@ -837,7 +847,7 @@ OpPostProcMapInMoab<DIM1, DIM2>::doWork(int side, EntityType type,
     if (m.second) {
       auto th = get_tag(m.first, 9);
       auto t_mat = getFTensor2SymmetricFromMat<DIM1>(*m.second);
-      auto nb_integration_pts = getGaussPts().size2();
+      auto nb_integration_pts = O::getGaussPts().size2();
       for (int gg = 0; gg != nb_integration_pts; ++gg) {
         CHKERR set_tag(th, gg, set_matrix_symm_3d(t_mat));
         ++t_mat;

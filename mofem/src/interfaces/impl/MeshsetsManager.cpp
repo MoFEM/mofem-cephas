@@ -221,7 +221,7 @@ MoFEMErrorCode MeshsetsManager::broadcastMeshsets(int verb) {
               CHKERR moab.create_meshset(MESHSET_SET, m);
               CHKERR set_tags_dummy_node(m, dummy_node);
               auto hint = cubitMeshsets.end();
-              auto p = cubitMeshsets.emplace_hint(hint, moab, m);
+              /*auto p = */ cubitMeshsets.emplace_hint(hint, moab, m);
             }
           } else {
             MOFEM_LOG("MeshsetMngSync", Sev::warning)
@@ -248,6 +248,17 @@ MoFEMErrorCode MeshsetsManager::getTags(int verb) {
   MoFEMFunctionBegin;
   Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
+  CHKERR getTags(moab, nsTag, ssTag, nsTag_data, ssTag_data, bhTag,
+                 bhTag_header, verb);
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode MeshsetsManager::getTags(moab::Interface &moab, Tag &nsTag,
+                                        Tag &ssTag, Tag &nsTag_data,
+                                        Tag &ssTag_data, Tag &bhTag,
+                                        Tag &bhTag_header, int verb) {
+  MoFEMFunctionBegin;
+
   int default_val = -1;
   CHKERR moab.tag_get_handle(DIRICHLET_SET_TAG_NAME, 1, MB_TYPE_INTEGER, nsTag,
                              MB_TAG_SPARSE | MB_TAG_CREAT, &default_val);

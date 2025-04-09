@@ -10,8 +10,8 @@ namespace MoFEM {
 
 FatPrismElementForcesAndSourcesCore::FatPrismElementForcesAndSourcesCore(
     Interface &m_field)
-    : VolumeElementForcesAndSourcesCore(m_field, MBPRISM),
-      dataH1TrianglesOnly(MBPRISM), dataH1TroughThickness(MBPRISM),
+    : VolumeElementForcesAndSourcesCore(m_field), dataH1TrianglesOnly(MBPRISM),
+      dataH1TroughThickness(MBPRISM),
       opHOCoordsAndNormals(hoCoordsAtGaussPtsF3, nOrmals_at_GaussPtF3,
                            tAngent1_at_GaussPtF3, tAngent2_at_GaussPtF3,
                            hoCoordsAtGaussPtsF4, nOrmals_at_GaussPtF4,

@@ -775,7 +775,7 @@ struct CoreInterface : public UnknownInterface {
    */
   virtual MoFEMErrorCode add_ents_to_finite_element_by_type(
       const EntityHandle entities, const EntityType type,
-      const std::string &name, const bool recursive = true) = 0;
+      const std::string name, const bool recursive = true) = 0;
 
   /**
    * \brief add entities to finite element
@@ -791,7 +791,7 @@ struct CoreInterface : public UnknownInterface {
    */
   virtual MoFEMErrorCode
   add_ents_to_finite_element_by_dim(const EntityHandle entities, const int dim,
-                                    const std::string &name,
+                                    const std::string name,
                                     const bool recursive = true) = 0;
 
   /**
@@ -806,8 +806,8 @@ struct CoreInterface : public UnknownInterface {
    * @return      error code
    */
   virtual MoFEMErrorCode
-  add_ents_to_finite_element_by_type(const Range &ents, const EntityType type,
-                                     const std::string &name) = 0;
+  add_ents_to_finite_element_by_type(const Range ents, const EntityType type,
+                                     const std::string name) = 0;
 
   /**
    * \brief add entities to finite elements
@@ -821,8 +821,8 @@ struct CoreInterface : public UnknownInterface {
    * @return      error code
    */
   virtual MoFEMErrorCode
-  add_ents_to_finite_element_by_dim(const Range &ents, const int dim,
-                                    const std::string &name) = 0;
+  add_ents_to_finite_element_by_dim(const Range ents, const int dim,
+                                    const std::string name) = 0;
 
   /** \brief add TET entities from given refinement level to finite element
    * database given by name
@@ -837,7 +837,7 @@ struct CoreInterface : public UnknownInterface {
    * \param verbose level
    */
   virtual MoFEMErrorCode add_ents_to_finite_element_by_bit_ref(
-      const BitRefLevel &bit, const BitRefLevel &mask, const std::string &name,
+      const BitRefLevel bit, const BitRefLevel mask, const std::string name,
       EntityType type, int verb = DEFAULT_VERBOSITY) = 0;
 
   /** get finite element meshset

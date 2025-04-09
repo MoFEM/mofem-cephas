@@ -21,13 +21,12 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #ifndef EXECUTABLE_DIMENSION
-#define EXECUTABLE_DIMENSION 2
+  #define EXECUTABLE_DIMENSION 2
 #endif
 
 #include <MoFEM.hpp>
 #include <MatrixFunction.hpp>
 #include <IntegrationRules.hpp>
-
 
 using namespace MoFEM;
 
@@ -337,7 +336,7 @@ MoFEMErrorCode Seepage::addMatBlockOps(
 
   pipeline.push_back(new OpMatElasticBlocks(
       blockedParamsPtr->getDPtr(), default_bulk_modulus_K,
-      default_bulk_modulus_K, mField, sev,
+      default_shear_modulus_G, mField, sev,
 
       // Get blockset using regular expression
       mField.getInterface<MeshsetsManager>()->getCubitMeshsetPtr(std::regex(
@@ -385,8 +384,8 @@ MoFEMErrorCode Seepage::addMatBlockOps(
 
     MoFEMErrorCode
     extractThermalBlockData(MoFEM::Interface &m_field,
-                           std::vector<const CubitMeshSets *> meshset_vec_ptr,
-                           Sev sev) {
+                            std::vector<const CubitMeshSets *> meshset_vec_ptr,
+                            Sev sev) {
       MoFEMFunctionBegin;
 
       for (auto m : meshset_vec_ptr) {
@@ -687,7 +686,7 @@ MoFEMErrorCode Seepage::OPs() {
 
     // Calculate internal forece
     pip.push_back(new OpTensorTimesSymmetricTensor<SPACE_DIM, SPACE_DIM>(
-        "U", strain_ptr, stress_ptr, mDPtr));
+        strain_ptr, stress_ptr, mDPtr));
     pip.push_back(new OpInternalForceCauchy("U", stress_ptr));
     pip.push_back(
         new SeepageOps::OpDomainRhsHydrostaticStress<SPACE_DIM>("U", h_ptr));
@@ -794,7 +793,6 @@ MoFEMErrorCode Seepage::tsSolve() {
   MoFEMFunctionBegin;
   auto simple = mField.getInterface<Simple>();
   PipelineManager *pipeline_mng = mField.getInterface<PipelineManager>();
-  ISManager *is_manager = mField.getInterface<ISManager>();
 
   auto dm = simple->getDM();
   auto solver = pipeline_mng->createTSIM();
@@ -843,7 +841,7 @@ MoFEMErrorCode Seepage::tsSolve() {
         new OpSymmetrizeTensor<SPACE_DIM>(mat_grad_ptr, mat_strain_ptr));
     post_proc_fe->getOpPtrVector().push_back(
         new OpTensorTimesSymmetricTensor<SPACE_DIM, SPACE_DIM>(
-            "U", mat_strain_ptr, mat_stress_ptr, mDPtr));
+            mat_strain_ptr, mat_stress_ptr, mDPtr));
 
     using OpPPMap = OpPostProcMapInMoab<SPACE_DIM, SPACE_DIM>;
 
@@ -890,7 +888,7 @@ MoFEMErrorCode Seepage::tsSolve() {
 
     // Calculate internal forece
     pip.push_back(new OpTensorTimesSymmetricTensor<SPACE_DIM, SPACE_DIM>(
-        "U", strain_ptr, stress_ptr, mDPtr));
+        strain_ptr, stress_ptr, mDPtr));
     pip.push_back(new OpInternalForceCauchy("U", stress_ptr));
 
     fe_ptr->postProcessHook =
@@ -936,13 +934,8 @@ MoFEMErrorCode Seepage::tsSolve() {
         auto field_eval_data = mField.getInterface<FieldEvaluatorInterface>()
                                    ->getData<DomainEle>();
 
-        if constexpr (SPACE_DIM == 3) {
-          CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree3D(
-              field_eval_data, simple->getDomainFEName());
-        } else {
-          CHKERR mField.getInterface<FieldEvaluatorInterface>()->buildTree2D(
-              field_eval_data, simple->getDomainFEName());
-        }
+        CHKERR mField.getInterface<FieldEvaluatorInterface>()
+            ->buildTree<SPACE_DIM>(field_eval_data, simple->getDomainFEName());
 
         field_eval_data->setEvalPoints(fieldEvalCoords.data(), 1);
         auto no_rule = [](int, int, int) { return -1; };
@@ -970,23 +963,14 @@ MoFEMErrorCode Seepage::tsSolve() {
             new OpCalculateScalarFieldValues("H", h_ptr));
         field_eval_ptr->getOpPtrVector().push_back(
             new OpTensorTimesSymmetricTensor<SPACE_DIM, SPACE_DIM>(
-                "U", strain_ptr, stress_ptr, mDPtr));
+                strain_ptr, stress_ptr, mDPtr));
 
-        if constexpr (SPACE_DIM == 3) {
-          CHKERR mField.getInterface<FieldEvaluatorInterface>()
-              ->evalFEAtThePoint3D(
-                  fieldEvalCoords.data(), 1e-12, simple->getProblemName(),
-                  simple->getDomainFEName(), field_eval_data,
-                  mField.get_comm_rank(), mField.get_comm_rank(), nullptr,
-                  MF_EXIST, QUIET);
-        } else {
-          CHKERR mField.getInterface<FieldEvaluatorInterface>()
-              ->evalFEAtThePoint2D(
-                  fieldEvalCoords.data(), 1e-12, simple->getProblemName(),
-                  simple->getDomainFEName(), field_eval_data,
-                  mField.get_comm_rank(), mField.get_comm_rank(), nullptr,
-                  MF_EXIST, QUIET);
-        }
+        CHKERR mField.getInterface<FieldEvaluatorInterface>()
+            ->evalFEAtThePoint<SPACE_DIM>(
+                fieldEvalCoords.data(), 1e-12, simple->getProblemName(),
+                simple->getDomainFEName(), field_eval_data,
+                mField.get_comm_rank(), mField.get_comm_rank(), nullptr,
+                MF_EXIST, QUIET);
 
         MOFEM_LOG("SeepageSync", Sev::inform)
             << "Eval point hydrostatic hight: " << *h_ptr;
