@@ -4,7 +4,7 @@
 */
 
 #ifndef __USER_DATA_OPERATORS_HPP__
-#define __USER_DATA_OPERATORS_HPP__
+  #define __USER_DATA_OPERATORS_HPP__
 
 namespace MoFEM {
 
@@ -186,7 +186,7 @@ struct OpCalculateScalarFieldValuesFromPetscVecImpl
 
       auto get_array = [&](const auto ctx, auto vec) {
         MoFEMFunctionBegin;
-#ifndef NDEBUG
+  #ifndef NDEBUG
         if ((getFEMethod()->data_ctx & ctx).none()) {
           MOFEM_LOG_CHANNEL("SELF");
           MOFEM_LOG("SELF", Sev::error)
@@ -198,7 +198,7 @@ struct OpCalculateScalarFieldValuesFromPetscVecImpl
                  "respectively";
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Vector not set!");
         }
-#endif
+  #endif
         CHKERR VecGetArrayRead(vec, &array);
         MoFEMFunctionReturn(0);
       };
@@ -419,24 +419,26 @@ MoFEMErrorCode OpCalculateVectorFieldValues_General<
       for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
         auto field_data = data.getFTensor1FieldData<Tensor_Dim>();
 
-#ifndef NDEBUG
+  #ifndef NDEBUG
         if (field_data.l2() != field_data.l2()) {
           MOFEM_LOG("SELF", Sev::error) << "field data: " << field_data;
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "Wrong number in coefficients");
         }
-#endif
+  #endif
 
         size_t bb = 0;
         for (; bb != size; ++bb) {
 
-#ifndef NDEBUG
+  #ifndef SINGULARITY
+    #ifndef NDEBUG
           if (base_function != base_function) {
             MOFEM_LOG("SELF", Sev::error) << "base finction: " << base_function;
             SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                     "Wrong number number in base functions");
           }
-#endif
+    #endif
+  #endif
 
           values_at_gauss_pts(I) += field_data(I) * base_function;
           ++field_data;
@@ -521,12 +523,12 @@ struct OpCalculateDivergenceVectorFieldValues
         auto values_at_gauss_pts = getFTensor0FromVec(vec);
         FTensor::Index<'I', Tensor_Dim> I;
         const size_t size = nb_dofs / Tensor_Dim;
-#ifndef NDEBUG
+  #ifndef NDEBUG
         if (nb_dofs % Tensor_Dim) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "Number of dofs should multiple of dimensions");
         }
-#endif
+  #endif
 
         // When we move to C++17 add if constexpr()
         if constexpr (COORDINATE_SYSTEM == CARTESIAN) {
@@ -597,10 +599,10 @@ struct OpCalculateVectorFieldValuesFromPetscVecImpl
 
   OpCalculateVectorFieldValuesFromPetscVecImpl(
       const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
-      const EntityType zero_at_type = MBVERTEX)
+      const EntityType zero_at_type = MBVERTEX, bool throw_error = true)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
-        dataPtr(data_ptr), zeroAtType(zero_at_type) {
+        dataPtr(data_ptr), zeroAtType(zero_at_type), throwError(throw_error) {
     if (!dataPtr)
       THROW_MESSAGE("Pointer is not set");
   }
@@ -608,6 +610,7 @@ struct OpCalculateVectorFieldValuesFromPetscVecImpl
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
+
     auto &local_indices = data.getLocalIndices();
     const size_t nb_dofs = local_indices.size();
     const size_t nb_gauss_pts = getGaussPts().size2();
@@ -620,23 +623,29 @@ struct OpCalculateVectorFieldValuesFromPetscVecImpl
     if (!nb_dofs)
       MoFEMFunctionReturnHot(0);
 
+    if (!throwError) {
+      if ((getFEMethod()->data_ctx & PetscData::Switches(CTX)).none()) {
+        MoFEMFunctionReturnHot(0);
+      }
+    }
+
     const double *array;
 
     auto get_array = [&](const auto ctx, auto vec) {
       MoFEMFunctionBegin;
-#ifndef NDEBUG
+  #ifndef NDEBUG
       if ((getFEMethod()->data_ctx & ctx).none()) {
         MOFEM_LOG_CHANNEL("SELF");
         MOFEM_LOG("SELF", Sev::error)
             << "In this case filed degrees of freedom are read from vector.  "
-               "That usually happens when time solver is used, and acces to "
+               "That usually happens when time solver is used, and access to "
                "first or second rates is needed. You probably not set ts_u, "
                "ts_u_t, or ts_u_tt and associated data structure, i.e. "
-               "data_ctx to CTX_SET_X, CTX_SET_X_T, or CTX_SET_X_TT "
-               "respectively";
+               "data_ctx to CTX_SET_X, CTX_SET_DX, CTX_SET_X_T, or "
+               "CTX_SET_X_TT respectively";
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Vector not set");
       }
-#endif
+  #endif
       CHKERR VecGetArrayRead(vec, &array);
       MoFEMFunctionReturn(0);
     };
@@ -648,6 +657,9 @@ struct OpCalculateVectorFieldValuesFromPetscVecImpl
     switch (CTX) {
     case PetscData::CTX_SET_X:
       CHKERR get_array(PetscData::CtxSetX, getFEMethod()->ts_u);
+      break;
+    case PetscData::CTX_SET_DX:
+      CHKERR get_array(PetscData::CtxSetX, getFEMethod()->dx);
       break;
     case PetscData::CTX_SET_X_T:
       CHKERR get_array(PetscData::CtxSetX_T, getFEMethod()->ts_u_t);
@@ -670,6 +682,9 @@ struct OpCalculateVectorFieldValuesFromPetscVecImpl
     switch (CTX) {
     case PetscData::CTX_SET_X:
       CHKERR restore_array(getFEMethod()->ts_u);
+      break;
+    case PetscData::CTX_SET_DX:
+      CHKERR restore_array(getFEMethod()->dx);
       break;
     case PetscData::CTX_SET_X_T:
       CHKERR restore_array(getFEMethod()->ts_u_t);
@@ -712,9 +727,10 @@ protected:
   boost::shared_ptr<MatrixDouble> dataPtr;
   const EntityHandle zeroAtType;
   VectorDouble dotVector;
+  bool throwError;
 };
 
-/** \brief Get time derivatives of values at integration pts for tensor filed
+/** \brief Get rate of values at integration pts for tensor filed
  * rank 1, i.e. vector field
  *
  * \ingroup mofem_forces_and_sources_user_data_operators
@@ -724,7 +740,7 @@ using OpCalculateVectorFieldValuesDot =
     OpCalculateVectorFieldValuesFromPetscVecImpl<Tensor_Dim,
                                                  PetscData::CTX_SET_X_T>;
 
-/** \brief Get second time derivatives of values at integration pts for tensor
+/** \brief Get second rate of values at integration pts for tensor
  * filed rank 1, i.e. vector field
  *
  * \ingroup mofem_forces_and_sources_user_data_operators
@@ -733,6 +749,16 @@ template <int Tensor_Dim>
 using OpCalculateVectorFieldValuesDotDot =
     OpCalculateVectorFieldValuesFromPetscVecImpl<Tensor_Dim,
                                                  PetscData::CTX_SET_X_TT>;
+
+/** \brief Get second time second update vector at integration pts for tensor
+ * filed rank 1, i.e. vector field
+ *
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ */
+template <int Tensor_Dim>
+using OpCalculateVectorFieldSNESUpdateValues =
+    OpCalculateVectorFieldValuesFromPetscVecImpl<Tensor_Dim,
+                                                 PetscData::CTX_SET_DX>;
 
 /**@}*/
 
@@ -1096,7 +1122,7 @@ struct OpCalculateTensor2SymmetricFieldValuesDot
     if (!nb_dofs)
       MoFEMFunctionReturnHot(0);
 
-#ifndef NDEBUG
+  #ifndef NDEBUG
     if ((getFEMethod()->data_ctx & PetscData::CtxSetX_T).none()) {
       MOFEM_LOG_CHANNEL("SELF");
       MOFEM_LOG("SELF", Sev::error)
@@ -1107,7 +1133,7 @@ struct OpCalculateTensor2SymmetricFieldValuesDot
              "respectively";
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Vector not set!");
     }
-#endif
+  #endif
 
     dotVector.resize(nb_dofs, false);
     const double *array;
@@ -1241,7 +1267,7 @@ MoFEMErrorCode OpCalculateScalarFieldGradient_General<
       auto diff_base_function = data.getFTensor1DiffN<Tensor_Dim>();
       auto gradients_at_gauss_pts = getFTensor1FromMat<Tensor_Dim>(mat);
 
-#ifndef NDEBUG
+  #ifndef NDEBUG
       if (nb_dofs > nb_base_functions)
         SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Number of base functions inconsistent with number of DOFs "
@@ -1262,7 +1288,7 @@ MoFEMErrorCode OpCalculateScalarFieldGradient_General<
             "pts (%d != %d)",
             data.getDiffN().size2(), nb_gauss_pts);
 
-#endif
+  #endif
 
       FTensor::Index<'I', Tensor_Dim> I;
       for (int gg = 0; gg < nb_gauss_pts; ++gg) {
@@ -1341,7 +1367,7 @@ MoFEMErrorCode OpCalculateScalarFieldHessian<Tensor_Dim>::doWork(
       const int nb_base_functions = data.getN().size2();
 
       auto &hessian_base = data.getN(BaseDerivatives::SecondDerivative);
-#ifndef NDEBUG
+  #ifndef NDEBUG
       if (hessian_base.size1() != nb_gauss_pts) {
         SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Wrong number of integration pts (%d != %d)",
@@ -1358,7 +1384,7 @@ MoFEMErrorCode OpCalculateScalarFieldHessian<Tensor_Dim>::doWork(
                  "Wrong number of base functions (%d < %d)",
                  hessian_base.size2(), nb_dofs * Tensor_Dim * Tensor_Dim);
       }
-#endif
+  #endif
 
       auto t_diff2_base_function = getFTensor2FromPtr<Tensor_Dim, Tensor_Dim>(
           &*hessian_base.data().begin());
@@ -1486,26 +1512,26 @@ MoFEMErrorCode OpCalculateVectorFieldGradient_General<
       for (int gg = 0; gg < nb_gauss_pts; ++gg) {
         auto field_data = data.getFTensor1FieldData<Tensor_Dim0>();
 
-#ifndef NDEBUG
+  #ifndef NDEBUG
         if (field_data.l2() != field_data.l2()) {
           MOFEM_LOG("SELF", Sev::error) << "field data " << field_data;
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "Wrong number in coefficients");
         }
-#endif
+  #endif
 
         int bb = 0;
         for (; bb < size; ++bb) {
-#ifndef SINGULARITY
-#ifndef NDEBUG
+  #ifndef SINGULARITY
+    #ifndef NDEBUG
           if (diff_base_function.l2() != diff_base_function.l2()) {
             MOFEM_LOG("SELF", Sev::error)
                 << "diff_base_function: " << diff_base_function;
             SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                     "Wrong number number in base functions");
           }
-#endif
-#endif
+    #endif
+  #endif
 
           gradients_at_gauss_pts(I, J) += field_data(I) * diff_base_function(J);
           ++field_data;
@@ -1803,7 +1829,7 @@ MoFEMErrorCode OpCalculateVectorFieldHessian<Tensor_Dim0, Tensor_Dim1>::doWork(
       const int nb_base_functions = data.getN().size2();
 
       auto &hessian_base = data.getN(BaseDerivatives::SecondDerivative);
-#ifndef NDEBUG
+  #ifndef NDEBUG
       if (hessian_base.size1() != nb_gauss_pts) {
         SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "Wrong number of integration pts (%d != %d)",
@@ -1821,7 +1847,7 @@ MoFEMErrorCode OpCalculateVectorFieldHessian<Tensor_Dim0, Tensor_Dim1>::doWork(
                  "Wrong number of base functions (%d < %d)",
                  hessian_base.size2(), nb_dofs * Tensor_Dim1 * Tensor_Dim1);
       }
-#endif
+  #endif
 
       auto t_diff2_base_function = getFTensor2FromPtr<Tensor_Dim1, Tensor_Dim1>(
           &*hessian_base.data().begin());
@@ -1834,12 +1860,12 @@ MoFEMErrorCode OpCalculateVectorFieldHessian<Tensor_Dim0, Tensor_Dim1>::doWork(
       FTensor::Index<'K', Tensor_Dim1> K;
 
       int size = nb_dofs / Tensor_Dim0;
-#ifndef NDEBUG
+  #ifndef NDEBUG
       if (nb_dofs % Tensor_Dim0) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Data inconsistency");
       }
-#endif
+  #endif
 
       for (int gg = 0; gg < nb_gauss_pts; ++gg) {
         auto field_data = data.getFTensor1FieldData<Tensor_Dim0>();
@@ -2049,14 +2075,23 @@ struct OpCalculateHVecVectorField_General<3, Field_Dim, double,
 
   OpCalculateHVecVectorField_General(const std::string field_name,
                                      boost::shared_ptr<MatrixDouble> data_ptr,
+                                     SmartPetscObj<Vec> data_vec,
                                      const EntityType zero_type = MBEDGE,
                                      const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
-        dataPtr(data_ptr), zeroType(zero_type), zeroSide(zero_side) {
+        dataPtr(data_ptr), dataVec(data_vec), zeroType(zero_type),
+        zeroSide(zero_side) {
     if (!dataPtr)
       THROW_MESSAGE("Pointer is not set");
   }
+
+  OpCalculateHVecVectorField_General(const std::string field_name,
+                                     boost::shared_ptr<MatrixDouble> data_ptr,
+                                     const EntityType zero_type = MBEDGE,
+                                     const int zero_side = 0)
+      : OpCalculateHVecVectorField_General(
+            field_name, data_ptr, SmartPetscObj<Vec>(), zero_type, zero_side) {}
 
   /**
    * \brief Calculate values of vector field at integration points
@@ -2070,8 +2105,10 @@ struct OpCalculateHVecVectorField_General<3, Field_Dim, double,
 
 private:
   boost::shared_ptr<MatrixDouble> dataPtr;
+  SmartPetscObj<Vec> dataVec;
   const EntityHandle zeroType;
   const int zeroSide;
+  VectorDouble dotVector;
 };
 
 template <int Field_Dim>
@@ -2088,6 +2125,21 @@ MoFEMErrorCode OpCalculateHVecVectorField_General<
   const size_t nb_dofs = data.getFieldData().size();
   if (!nb_dofs)
     MoFEMFunctionReturnHot(0);
+
+  if (dataVec.use_count()) {
+    dotVector.resize(nb_dofs, false);
+    const double *array;
+    CHKERR VecGetArrayRead(dataVec, &array);
+    const auto &local_indices = data.getLocalIndices();
+    for (int i = 0; i != local_indices.size(); ++i)
+      if (local_indices[i] != -1)
+        dotVector[i] = array[local_indices[i]];
+      else
+        dotVector[i] = 0;
+    CHKERR VecRestoreArrayRead(dataVec, &array);
+    data.getFieldData().swap(dotVector);
+  }
+
   const size_t nb_base_functions = data.getN().size2() / 3;
   FTensor::Index<'i', Field_Dim> i;
   auto t_n_hdiv = data.getFTensor1N<3>();
@@ -2103,6 +2155,10 @@ MoFEMErrorCode OpCalculateHVecVectorField_General<
     for (; bb != nb_base_functions; ++bb)
       ++t_n_hdiv;
     ++t_data;
+  }
+
+  if (dataVec.use_count()) {
+    data.getFieldData().swap(dotVector);
   }
   MoFEMFunctionReturn(0);
 }
@@ -2356,7 +2412,7 @@ struct OpCalculateHVecVectorHessian
 
     const int nb_base_functions = data.getN().size2() / BASE_DIM;
 
-#ifndef NDEBUG
+  #ifndef NDEBUG
     auto &hessian_base = data.getN(BaseDerivatives::SecondDerivative);
     if (hessian_base.size1() != nb_integration_points) {
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -2375,7 +2431,7 @@ struct OpCalculateHVecVectorHessian
                "Wrong number of base functions (%d < %d)", hessian_base.size2(),
                BASE_DIM * nb_dofs * SPACE_DIM * SPACE_DIM);
     }
-#endif
+  #endif
 
     FTensor::Index<'i', BASE_DIM> i;
     FTensor::Index<'j', SPACE_DIM> j;
@@ -2574,13 +2630,24 @@ struct OpCalculateHVecTensorField
 
   OpCalculateHVecTensorField(const std::string field_name,
                              boost::shared_ptr<MatrixDouble> data_ptr,
+                             boost::shared_ptr<double> scale_ptr,
+                             SmartPetscObj<Vec> data_vec = SmartPetscObj<Vec>(),
                              const EntityType zero_type = MBEDGE,
                              const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
-        dataPtr(data_ptr), zeroType(zero_type), zeroSide(zero_side) {
+        dataPtr(data_ptr), scalePtr(scale_ptr), dataVec(data_vec),
+        zeroType(zero_type), zeroSide(zero_side) {
     if (!dataPtr)
-      THROW_MESSAGE("Pointer is not set");
+      CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Pointer is not set");
+  }
+
+  OpCalculateHVecTensorField(const std::string field_name,
+                             boost::shared_ptr<MatrixDouble> data_ptr,
+                             const EntityType zero_type = MBEDGE,
+                             const int zero_side = 0)
+      : OpCalculateHVecTensorField(field_name, data_ptr, nullptr,
+                                   SmartPetscObj<Vec>(), zero_type, zero_side) {
   }
 
   MoFEMErrorCode doWork(int side, EntityType type,
@@ -2593,6 +2660,22 @@ struct OpCalculateHVecTensorField
     }
     const size_t nb_dofs = data.getFieldData().size();
     if (nb_dofs) {
+
+      if (dataVec.use_count()) {
+        dotVector.resize(nb_dofs, false);
+        const double *array;
+        CHKERR VecGetArrayRead(dataVec, &array);
+        const auto &local_indices = data.getLocalIndices();
+        for (int i = 0; i != local_indices.size(); ++i)
+          if (local_indices[i] != -1)
+            dotVector[i] = array[local_indices[i]];
+          else
+            dotVector[i] = 0;
+        CHKERR VecRestoreArrayRead(dataVec, &array);
+        data.getFieldData().swap(dotVector);
+      }
+
+      double scale = (scalePtr) ? *scalePtr : 1.0;
       const size_t nb_base_functions = data.getN().size2() / 3;
       FTensor::Index<'i', Tensor_Dim0> i;
       FTensor::Index<'j', Tensor_Dim1> j;
@@ -2602,7 +2685,7 @@ struct OpCalculateHVecTensorField
         auto t_dof = data.getFTensor1FieldData<Tensor_Dim0>();
         size_t bb = 0;
         for (; bb != nb_dofs / Tensor_Dim0; ++bb) {
-          t_data(i, j) += t_dof(i) * t_n_hvec(j);
+          t_data(i, j) += (scale * t_dof(i)) * t_n_hvec(j);
           ++t_n_hvec;
           ++t_dof;
         }
@@ -2610,15 +2693,156 @@ struct OpCalculateHVecTensorField
           ++t_n_hvec;
         ++t_data;
       }
+
+      if (dataVec.use_count()) {
+        data.getFieldData().swap(dotVector);
+      }
     }
     MoFEMFunctionReturn(0);
   }
 
 private:
   boost::shared_ptr<MatrixDouble> dataPtr;
+  boost::shared_ptr<double> scalePtr;
+  SmartPetscObj<Vec> dataVec;
   const EntityHandle zeroType;
   const int zeroSide;
+  VectorDouble dotVector; ///< Keeps temporary values of time derivatives
 };
+
+/** \brief Get tensor field for H-div approximation
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ *
+ * \warning This operator is not tested
+ */
+template <int Tensor_Dim0, int Tensor_Dim1>
+struct OpCalculateBrokenHVecTensorField
+    : public ForcesAndSourcesCore::UserDataOperator {
+
+  using OP = ForcesAndSourcesCore::UserDataOperator;
+
+  OpCalculateBrokenHVecTensorField(
+      const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
+      SmartPetscObj<Vec> data_vec, EntityType broken_type,
+      boost::shared_ptr<Range> broken_range_ptr = nullptr,
+      boost::shared_ptr<double> scale_ptr = nullptr,
+      const EntityType zero_type = MBEDGE, const int zero_side = 0)
+      : OP(field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
+        dataPtr(data_ptr), dataVec(data_vec), brokenType(broken_type),
+        brokenRangePtr(broken_range_ptr), zeroType(zero_type) {
+    if (!dataPtr)
+      CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Pointer is not set");
+  }
+
+  /**
+   * \brief Calculate values of vector field at integration points
+   * @param  side side entity number
+   * @param  type side entity type
+   * @param  data entity data
+   * @return      error code
+   */
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        EntitiesFieldData::EntData &data);
+
+private:
+  boost::shared_ptr<MatrixDouble> dataPtr;
+  SmartPetscObj<Vec> dataVec;
+  EntityType brokenType;
+  boost::shared_ptr<Range> brokenRangePtr;
+  boost::shared_ptr<double> scalePtr;
+  const EntityHandle zeroType;
+  VectorDouble dotVector;
+};
+
+template <int Tensor_Dim0, int Tensor_Dim1>
+MoFEMErrorCode
+OpCalculateBrokenHVecTensorField<Tensor_Dim0, Tensor_Dim1>::doWork(
+    int side, EntityType type, EntitiesFieldData::EntData &data) {
+  MoFEMFunctionBegin;
+  const size_t nb_integration_points = OP::getGaussPts().size2();
+  if (type == zeroType) {
+    dataPtr->resize(Tensor_Dim0 * Tensor_Dim1, nb_integration_points, false);
+    dataPtr->clear();
+  }
+  const size_t nb_dofs = data.getFieldData().size();
+  if (!nb_dofs)
+    MoFEMFunctionReturnHot(0);
+
+  if (dataVec.use_count()) {
+    dotVector.resize(nb_dofs, false);
+    const double *array;
+    CHKERR VecGetArrayRead(dataVec, &array);
+    const auto &local_indices = data.getLocalIndices();
+    for (int i = 0; i != local_indices.size(); ++i)
+      if (local_indices[i] != -1)
+        dotVector[i] = array[local_indices[i]];
+      else
+        dotVector[i] = 0;
+    CHKERR VecRestoreArrayRead(dataVec, &array);
+    data.getFieldData().swap(dotVector);
+  }
+
+  /**
+   * @brief Get side face dofs
+   *
+   * Find which base functions on borken space have adjacent given entity type
+   * and are in the range ptr if given.
+   *
+   */
+  auto get_get_side_face_dofs = [&]() {
+    auto fe_type = OP::getFEType();
+
+    BaseFunction::DofsSideMap &side_dof_map =
+        data.getFieldEntities()[0]->getDofSideMap().at(fe_type);
+    std::vector<int> side_face_dofs;
+    side_face_dofs.reserve(data.getIndices().size() / Tensor_Dim0);
+
+    for (
+
+        auto it = side_dof_map.get<1>().begin();
+        it != side_dof_map.get<1>().end(); ++it
+
+    ) {
+      if ((Tensor_Dim0 * it->dof) >= data.getIndices().size()) {
+        break;
+      }
+      if (it->type == brokenType) {
+        if (brokenRangePtr) {
+          auto ent = OP::getSideEntity(it->side, brokenType);
+          if (brokenRangePtr->find(ent) != brokenRangePtr->end()) {
+            side_face_dofs.push_back(it->dof);
+          }
+        } else {
+          side_face_dofs.push_back(it->dof);
+        }
+      }
+    }
+
+    return side_face_dofs;
+  };
+
+  auto side_face_dofs = get_get_side_face_dofs();
+
+  FTensor::Index<'i', Tensor_Dim0> i;
+  FTensor::Index<'j', Tensor_Dim1> j;
+  auto t_data = getFTensor2FromMat<Tensor_Dim0, Tensor_Dim1>(*dataPtr);
+  for (size_t gg = 0; gg != nb_integration_points; ++gg) {
+    for (auto b : side_face_dofs) {
+      auto t_row_base = data.getFTensor1N<3>(gg, b);
+      auto t_dof = getFTensor1FromPtr<Tensor_Dim0>(data.getFieldData().data() +
+                                                   b * Tensor_Dim0);
+      t_data(i, j) += t_dof(i) * t_row_base(j);
+    }
+    ++t_data;
+  }
+  *dataPtr *= (scalePtr) ? *scalePtr : 1.0;
+
+  if (dataVec.use_count()) {
+    data.getFieldData().swap(dotVector);
+  }
+
+  MoFEMFunctionReturn(0);
+}
 
 /**
  * @brief Calculate tenor field using tensor base, i.e. Hdiv/Hcurl
@@ -2631,16 +2855,26 @@ template <int Tensor_Dim0, int Tensor_Dim1>
 struct OpCalculateHTensorTensorField
     : public ForcesAndSourcesCore::UserDataOperator {
 
+  OpCalculateHTensorTensorField(
+      const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
+      boost::shared_ptr<double> scale_ptr,
+      SmartPetscObj<Vec> data_vec = SmartPetscObj<Vec>(),
+      const EntityType zero_type = MBEDGE, const int zero_side = 0)
+      : ForcesAndSourcesCore::UserDataOperator(
+            field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
+        dataPtr(data_ptr), scalePtr(scale_ptr), dataVec(data_vec),
+        zeroType(zero_type), zeroSide(zero_side) {
+    if (!dataPtr)
+      THROW_MESSAGE("Pointer is not set");
+  }
+
   OpCalculateHTensorTensorField(const std::string field_name,
                                 boost::shared_ptr<MatrixDouble> data_ptr,
                                 const EntityType zero_type = MBEDGE,
                                 const int zero_side = 0)
-      : ForcesAndSourcesCore::UserDataOperator(
-            field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
-        dataPtr(data_ptr), zeroType(zero_type), zeroSide(zero_side) {
-    if (!dataPtr)
-      THROW_MESSAGE("Pointer is not set");
-  }
+      : OpCalculateHTensorTensorField(field_name, data_ptr, nullptr,
+                                      SmartPetscObj<Vec>(), zero_type,
+                                      zero_side) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data) {
@@ -2653,6 +2887,22 @@ struct OpCalculateHTensorTensorField
     const size_t nb_dofs = data.getFieldData().size();
     if (!nb_dofs)
       MoFEMFunctionReturnHot(0);
+
+    if (dataVec.use_count()) {
+      dotVector.resize(nb_dofs, false);
+      const double *array;
+      CHKERR VecGetArrayRead(dataVec, &array);
+      const auto &local_indices = data.getLocalIndices();
+      for (int i = 0; i != local_indices.size(); ++i)
+        if (local_indices[i] != -1)
+          dotVector[i] = array[local_indices[i]];
+        else
+          dotVector[i] = 0;
+      CHKERR VecRestoreArrayRead(dataVec, &array);
+      data.getFieldData().swap(dotVector);
+    }
+
+    double scale = (scalePtr) ? *scalePtr : 1.0;
     const size_t nb_base_functions =
         data.getN().size2() / (Tensor_Dim0 * Tensor_Dim1);
     FTensor::Index<'i', Tensor_Dim0> i;
@@ -2663,7 +2913,7 @@ struct OpCalculateHTensorTensorField
       auto t_dof = data.getFTensor0FieldData();
       size_t bb = 0;
       for (; bb != nb_dofs; ++bb) {
-        t_data(i, j) += t_dof * t_n_hten(i, j);
+        t_data(i, j) += (scale * t_dof) * t_n_hten(i, j);
         ++t_n_hten;
         ++t_dof;
       }
@@ -2671,13 +2921,21 @@ struct OpCalculateHTensorTensorField
         ++t_n_hten;
       ++t_data;
     }
+
+    if (dataVec.use_count()) {
+      data.getFieldData().swap(dotVector);
+    }
+
     MoFEMFunctionReturn(0);
   }
 
 private:
   boost::shared_ptr<MatrixDouble> dataPtr;
+  boost::shared_ptr<double> scalePtr;
+  SmartPetscObj<Vec> dataVec;
   const EntityHandle zeroType;
   const int zeroSide;
+  VectorDouble dotVector; ///< Keeps temporary values of time derivatives
 };
 
 /**
@@ -2694,25 +2952,49 @@ struct OpCalculateHVecTensorDivergence
 
   OpCalculateHVecTensorDivergence(const std::string field_name,
                                   boost::shared_ptr<MatrixDouble> data_ptr,
+                                  SmartPetscObj<Vec> data_vec,
                                   const EntityType zero_type = MBEDGE,
                                   const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
-        dataPtr(data_ptr), zeroType(zero_type), zeroSide(zero_side) {
+        dataPtr(data_ptr), dataVec(data_vec), zeroType(zero_type),
+        zeroSide(zero_side) {
     if (!dataPtr)
-      THROW_MESSAGE("Pointer is not set");
+      CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Pointer is not set");
   }
+
+  OpCalculateHVecTensorDivergence(const std::string field_name,
+                                  boost::shared_ptr<MatrixDouble> data_ptr,
+                                  const EntityType zero_type = MBEDGE,
+                                  const int zero_side = 0)
+      : OpCalculateHVecTensorDivergence(
+            field_name, data_ptr, SmartPetscObj<Vec>(), zero_type, zero_side) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data) {
     MoFEMFunctionBegin;
     const size_t nb_integration_points = getGaussPts().size2();
-    if (type == zeroType && side == 0) {
+    if (type == zeroType && side == zeroSide) {
       dataPtr->resize(Tensor_Dim0, nb_integration_points, false);
       dataPtr->clear();
     }
     const size_t nb_dofs = data.getFieldData().size();
     if (nb_dofs) {
+
+      if (dataVec.use_count()) {
+        dotVector.resize(nb_dofs, false);
+        const double *array;
+        CHKERR VecGetArrayRead(dataVec, &array);
+        const auto &local_indices = data.getLocalIndices();
+        for (int i = 0; i != local_indices.size(); ++i)
+          if (local_indices[i] != -1)
+            dotVector[i] = array[local_indices[i]];
+          else
+            dotVector[i] = 0;
+        CHKERR VecRestoreArrayRead(dataVec, &array);
+        data.getFieldData().swap(dotVector);
+      }
+
       const size_t nb_base_functions = data.getN().size2() / 3;
       FTensor::Index<'i', Tensor_Dim0> i;
       FTensor::Index<'j', Tensor_Dim1> j;
@@ -2740,14 +3022,156 @@ struct OpCalculateHVecTensorDivergence
         ++t_data;
         ++t_coords;
       }
+
+      if (dataVec.use_count()) {
+        data.getFieldData().swap(dotVector);
+      }
     }
     MoFEMFunctionReturn(0);
   }
 
 private:
   boost::shared_ptr<MatrixDouble> dataPtr;
+  SmartPetscObj<Vec> dataVec;
   const EntityHandle zeroType;
   const int zeroSide;
+
+  VectorDouble dotVector; ///< Keeps temporary values of time derivatives
+};
+
+/**
+ * @brief Calculate divergence of tonsorial field using vectorial base
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ *
+ * \warning This operator is not tested
+ *
+ * @tparam Tensor_Dim0 rank of the field
+ * @tparam Tensor_Dim1 dimension of space
+ */
+template <int Tensor_Dim0, int Tensor_Dim1,
+          CoordinateTypes CoordSys = CARTESIAN>
+struct OpCalculateBrokenHVecTensorDivergence
+    : public ForcesAndSourcesCore::UserDataOperator {
+
+  using OP = ForcesAndSourcesCore::UserDataOperator;
+
+  OpCalculateBrokenHVecTensorDivergence(
+      const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
+      SmartPetscObj<Vec> data_vec, EntityType broken_type,
+      boost::shared_ptr<Range> broken_range_ptr = nullptr,
+      boost::shared_ptr<double> scale_ptr = nullptr,
+      const EntityType zero_type = MBEDGE)
+      : OP(field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
+        dataPtr(data_ptr), dataVec(data_vec), brokenType(broken_type),
+        brokenRangePtr(broken_range_ptr), scalePtr(scale_ptr),
+        zeroType(zero_type) {
+    if (!dataPtr)
+      CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY, "Pointer is not set");
+  }
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        EntitiesFieldData::EntData &data) {
+    MoFEMFunctionBegin;
+    const size_t nb_integration_points = getGaussPts().size2();
+    if (type == zeroType && side == 0) {
+      dataPtr->resize(Tensor_Dim0, nb_integration_points, false);
+      dataPtr->clear();
+    }
+
+    const size_t nb_dofs = data.getFieldData().size();
+    if (nb_dofs) {
+
+      if (dataVec.use_count()) {
+        dotVector.resize(nb_dofs, false);
+        const double *array;
+        CHKERR VecGetArrayRead(dataVec, &array);
+        const auto &local_indices = data.getLocalIndices();
+        for (int i = 0; i != local_indices.size(); ++i)
+          if (local_indices[i] != -1)
+            dotVector[i] = array[local_indices[i]];
+          else
+            dotVector[i] = 0;
+        CHKERR VecRestoreArrayRead(dataVec, &array);
+        data.getFieldData().swap(dotVector);
+      }
+
+      /**
+       * @brief Get side face dofs
+       *
+       * Find which base functions on borken space have adjacent given entity
+       * type and are in the range ptr if given.
+       *
+       */
+      auto get_get_side_face_dofs = [&]() {
+        auto fe_type = OP::getFEType();
+
+        BaseFunction::DofsSideMap &side_dof_map =
+            data.getFieldEntities()[0]->getDofSideMap().at(fe_type);
+        std::vector<int> side_face_dofs;
+        side_face_dofs.reserve(data.getIndices().size() / Tensor_Dim0);
+
+        for (
+
+            auto it = side_dof_map.get<1>().begin();
+            it != side_dof_map.get<1>().end(); ++it
+
+        ) {
+          if ((Tensor_Dim0 * it->dof) >= data.getIndices().size()) {
+            break;
+          }
+          if (it->type == brokenType) {
+            if (brokenRangePtr) {
+              auto ent = OP::getSideEntity(it->side, brokenType);
+              if (brokenRangePtr->find(ent) != brokenRangePtr->end()) {
+                side_face_dofs.push_back(it->dof);
+              }
+            } else {
+              side_face_dofs.push_back(it->dof);
+            }
+          }
+        }
+
+        return side_face_dofs;
+      };
+
+      auto side_face_dofs = get_get_side_face_dofs();
+
+      FTensor::Index<'i', Tensor_Dim0> i;
+      FTensor::Index<'j', Tensor_Dim1> j;
+      auto t_data = getFTensor1FromMat<Tensor_Dim0>(*dataPtr);
+      auto t_coords = getFTensor1CoordsAtGaussPts();
+      for (size_t gg = 0; gg != nb_integration_points; ++gg) {
+        for (auto b : side_face_dofs) {
+          auto t_dof = getFTensor1FromPtr<Tensor_Dim0>(
+              data.getFieldData().data() + b * Tensor_Dim0);
+          auto t_base = data.getFTensor1N<3>(gg, b);
+          auto t_diff_base = data.getFTensor2DiffN<3, Tensor_Dim1>(gg, b);
+          double div = t_diff_base(j, j);
+          t_data(i) += t_dof(i) * div;
+          if constexpr (CoordSys == CYLINDRICAL) {
+            t_data(i) += t_base(0) * (t_dof(i) / t_coords(0));
+          }
+        }
+        ++t_data;
+        ++t_coords;
+      }
+    }
+
+    if (dataVec.use_count()) {
+      data.getFieldData().swap(dotVector);
+    }
+
+    MoFEMFunctionReturn(0);
+  }
+
+private:
+  boost::shared_ptr<MatrixDouble> dataPtr;
+  SmartPetscObj<Vec> dataVec;
+  EntityType brokenType;
+  boost::shared_ptr<Range> brokenRangePtr;
+  boost::shared_ptr<double> scalePtr;
+  const EntityHandle zeroType;
+  VectorDouble dotVector;
 };
 
 /**
@@ -2761,13 +3185,21 @@ struct OpCalculateHVecTensorTrace : public OpBase {
 
   OpCalculateHVecTensorTrace(const std::string field_name,
                              boost::shared_ptr<MatrixDouble> data_ptr,
+                             boost::shared_ptr<double> scale_ptr,
                              const EntityType zero_type = MBEDGE,
                              const int zero_side = 0)
       : OpBase(field_name, OpBase::OPROW), dataPtr(data_ptr),
-        zeroType(zero_type), zeroSide(zero_side) {
+        scalePtr(scale_ptr), zeroType(zero_type), zeroSide(zero_side) {
     if (!dataPtr)
       THROW_MESSAGE("Pointer is not set");
   }
+
+  OpCalculateHVecTensorTrace(const std::string field_name,
+                             boost::shared_ptr<MatrixDouble> data_ptr,
+                             const EntityType zero_type = MBEDGE,
+                             const int zero_side = 0)
+      : OpCalculateHVecTensorTrace(field_name, data_ptr, nullptr, zero_type,
+                                   zero_side) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         EntitiesFieldData::EntData &data) {
@@ -2779,6 +3211,7 @@ struct OpCalculateHVecTensorTrace : public OpBase {
     }
     const size_t nb_dofs = data.getFieldData().size();
     if (nb_dofs) {
+      double scale_val = (scalePtr) ? *scalePtr : 1.0;
       auto t_normal = OpBase::getFTensor1NormalsAtGaussPts();
       const size_t nb_base_functions = data.getN().size2() / 3;
       auto t_base = data.getFTensor1N<3>();
@@ -2790,7 +3223,8 @@ struct OpCalculateHVecTensorTrace : public OpBase {
         auto t_dof = data.getFTensor1FieldData<Tensor_Dim>();
         size_t bb = 0;
         for (; bb != nb_dofs / Tensor_Dim; ++bb) {
-          t_data(i) += t_dof(i) * (t_base(j) * t_normalized_normal(j));
+          t_data(i) +=
+              (scale_val * t_dof(i)) * (t_base(j) * t_normalized_normal(j));
           ++t_base;
           ++t_dof;
         }
@@ -2806,6 +3240,7 @@ struct OpCalculateHVecTensorTrace : public OpBase {
 
 private:
   boost::shared_ptr<MatrixDouble> dataPtr;
+  boost::shared_ptr<double> scalePtr;
   const EntityHandle zeroType;
   const int zeroSide;
   FTensor::Index<'i', Tensor_Dim> i;
@@ -2850,15 +3285,15 @@ protected:
     if (nb_functions) {
       size_t nb_gauss_pts = diff_n.size1();
 
-#ifndef NDEBUG
+  #ifndef NDEBUG
       if (nb_gauss_pts != getGaussPts().size2())
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Wrong number of Gauss Pts");
       if (diff_n.size2() % D1)
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "Number of direvatives of base functions and D1 dimension does "
+                "Number of directives of base functions and D1 dimension does "
                 "not match");
-#endif
+  #endif
 
       diffNinvJac.resize(diff_n.size1(), D2 * nb_functions, false);
 

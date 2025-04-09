@@ -579,7 +579,7 @@ MoFEMErrorCode TetPolynomialBase::getValueL2AinsworthBase(MatrixDouble &pts) {
     if (it != interior_cache_ptr->end()) {
       noalias(data.dataOnEntities[MBTET][0].getN(base)) = it->N;
       noalias(data.dataOnEntities[MBTET][0].getDiffN(base)) = it->diffN;
-      MoFEMFunctionBeginHot(0);
+      MoFEMFunctionReturnHot(0);
     }
   }
 
@@ -1008,42 +1008,43 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
       auto t_base = getFTensor1FromPtr<3>(base_ptr);
       auto t_diff_base = getFTensor2HVecFromPtr<3, 3>(diff_base_ptr);
 
+      auto max_face_order =
+          std::max(face_order,
+                   AinsworthOrderHooks::broken_nbfacetri_edge_hdiv(face_order));
+      max_face_order =
+          std::max(max_face_order,
+                   AinsworthOrderHooks::broken_nbfacetri_face_hdiv(face_order));
+
       for (int gg = 0; gg != nb_gauss_pts; gg++) {
-        for (int oo = 0; oo != face_order; oo++) {
+        for (int oo = 0; oo != max_face_order; oo++) {
 
           // face-edge
-          for (int dd = NBFACETRI_AINSWORTH_EDGE_HDIV(
-                   AinsworthOrderHooks::broken_nbfacetri_edge_hdiv(oo));
-               dd !=
-               NBFACETRI_AINSWORTH_EDGE_HDIV(
-                   AinsworthOrderHooks::broken_nbfacetri_edge_hdiv(oo + 1));
-               dd++) {
-            for (int ee = 0; ee != 3; ++ee) {
-              t_base(i) = t_base_f_e[ff * 3 + ee](i);
-              ++t_base;
-              ++t_base_f_e[ff * 3 + ee];
+          if (oo < AinsworthOrderHooks::broken_nbfacetri_edge_hdiv(face_order))
+            for (int dd = NBFACETRI_AINSWORTH_EDGE_HDIV(oo);
+                 dd != NBFACETRI_AINSWORTH_EDGE_HDIV(oo + 1); dd++) {
+              for (int ee = 0; ee != 3; ++ee) {
+                t_base(i) = t_base_f_e[ff * 3 + ee](i);
+                ++t_base;
+                ++t_base_f_e[ff * 3 + ee];
+              }
+              for (int ee = 0; ee != 3; ++ee) {
+                t_diff_base(i, j) = t_diff_base_f_e[ff * 3 + ee](i, j);
+                ++t_diff_base;
+                ++t_diff_base_f_e[ff * 3 + ee];
+              }
             }
-            for (int ee = 0; ee != 3; ++ee) {
-              t_diff_base(i, j) = t_diff_base_f_e[ff * 3 + ee](i, j);
-              ++t_diff_base;
-              ++t_diff_base_f_e[ff * 3 + ee];
-            }
-          }
 
           // face-face
-          for (int dd = NBFACETRI_AINSWORTH_FACE_HDIV(
-                   AinsworthOrderHooks::broken_nbfacetri_face_hdiv(oo));
-               dd !=
-               NBFACETRI_AINSWORTH_FACE_HDIV(
-                   AinsworthOrderHooks::broken_nbfacetri_face_hdiv(oo + 1));
-               dd++) {
-            t_base(i) = t_base_f_f[ff](i);
-            ++t_base;
-            ++t_base_f_f[ff];
-            t_diff_base(i, j) = t_diff_base_f_f[ff](i, j);
-            ++t_diff_base;
-            ++t_diff_base_f_f[ff];
-          }
+          if (oo < AinsworthOrderHooks::broken_nbfacetri_face_hdiv(face_order))
+            for (int dd = NBFACETRI_AINSWORTH_FACE_HDIV(oo);
+                 dd != NBFACETRI_AINSWORTH_FACE_HDIV(oo + 1); dd++) {
+              t_base(i) = t_base_f_f[ff](i);
+              ++t_base;
+              ++t_base_f_f[ff];
+              t_diff_base(i, j) = t_diff_base_f_f[ff](i, j);
+              ++t_diff_base;
+              ++t_diff_base_f_f[ff];
+            }
         }
       }
     }
@@ -1103,57 +1104,61 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
     auto t_base_v = getFTensor1FromPtr<3>(base_ptr);
     auto t_diff_base_v = getFTensor2HVecFromPtr<3, 3>(diff_base_ptr);
 
+    auto max_volume_order = std::max(
+        volume_order,
+        AinsworthOrderHooks::broken_nbvolumetet_edge_hdiv(volume_order));
+    max_volume_order = std::max(
+        max_volume_order,
+        AinsworthOrderHooks::broken_nbvolumetet_face_hdiv(volume_order));
+    max_volume_order = std::max(
+        max_volume_order,
+        AinsworthOrderHooks::broken_nbvolumetet_volume_hdiv(volume_order));
+
     for (int gg = 0; gg != nb_gauss_pts; gg++) {
-      for (int oo = 0; oo < volume_order; oo++) {
+      for (int oo = 0; oo < max_volume_order; oo++) {
 
         // volume-edge
-        for (int dd = NBVOLUMETET_AINSWORTH_EDGE_HDIV(
-                 AinsworthOrderHooks::broken_nbvolumetet_edge_hdiv(oo));
-             dd !=
-             NBVOLUMETET_AINSWORTH_EDGE_HDIV(
-                 AinsworthOrderHooks::broken_nbvolumetet_edge_hdiv(oo + 1));
-             dd++) {
-          for (int ee = 0; ee < 6; ee++) {
-            t_base(i) = t_base_v_e[ee](i);
-            ++t_base;
-            ++t_base_v_e[ee];
-            t_diff_base(i, j) = t_diff_base_v_e[ee](i, j);
-            ++t_diff_base;
-            ++t_diff_base_v_e[ee];
+        if (oo <
+            AinsworthOrderHooks::broken_nbvolumetet_edge_hdiv(volume_order))
+          for (int dd = NBVOLUMETET_AINSWORTH_EDGE_HDIV(oo);
+               dd != NBVOLUMETET_AINSWORTH_EDGE_HDIV(oo + 1); dd++) {
+            for (int ee = 0; ee < 6; ee++) {
+              t_base(i) = t_base_v_e[ee](i);
+              ++t_base;
+              ++t_base_v_e[ee];
+              t_diff_base(i, j) = t_diff_base_v_e[ee](i, j);
+              ++t_diff_base;
+              ++t_diff_base_v_e[ee];
+            }
           }
-        }
 
         // volume-face
-        for (int dd = NBVOLUMETET_AINSWORTH_FACE_HDIV(
-                 AinsworthOrderHooks::broken_nbvolumetet_face_hdiv(oo));
-             dd <
-             NBVOLUMETET_AINSWORTH_FACE_HDIV(
-                 AinsworthOrderHooks::broken_nbvolumetet_face_hdiv(oo + 1));
-             dd++) {
-          for (int ff = 0; ff < 4; ff++) {
-            t_base(i) = t_base_v_f[ff](i);
-            ++t_base;
-            ++t_base_v_f[ff];
-            t_diff_base(i, j) = t_diff_base_v_f[ff](i, j);
-            ++t_diff_base;
-            ++t_diff_base_v_f[ff];
+        if (oo <
+            AinsworthOrderHooks::broken_nbvolumetet_face_hdiv(volume_order))
+          for (int dd = NBVOLUMETET_AINSWORTH_FACE_HDIV(oo);
+               dd < NBVOLUMETET_AINSWORTH_FACE_HDIV(oo + 1); dd++) {
+            for (int ff = 0; ff < 4; ff++) {
+              t_base(i) = t_base_v_f[ff](i);
+              ++t_base;
+              ++t_base_v_f[ff];
+              t_diff_base(i, j) = t_diff_base_v_f[ff](i, j);
+              ++t_diff_base;
+              ++t_diff_base_v_f[ff];
+            }
           }
-        }
 
         // volume-bubble
-        for (int dd = NBVOLUMETET_AINSWORTH_VOLUME_HDIV(
-                 AinsworthOrderHooks::broken_nbvolumetet_volume_hdiv(oo));
-             dd <
-             NBVOLUMETET_AINSWORTH_VOLUME_HDIV(
-                 AinsworthOrderHooks::broken_nbvolumetet_volume_hdiv(oo + 1));
-             dd++) {
-          t_base(i) = t_base_v(i);
-          ++t_base;
-          ++t_base_v;
-          t_diff_base(i, j) = t_diff_base_v(i, j);
-          ++t_diff_base;
-          ++t_diff_base_v;
-        }
+        if (oo <
+            AinsworthOrderHooks::broken_nbvolumetet_volume_hdiv(volume_order))
+          for (int dd = NBVOLUMETET_AINSWORTH_VOLUME_HDIV(oo);
+               dd < NBVOLUMETET_AINSWORTH_VOLUME_HDIV(oo + 1); dd++) {
+            t_base(i) = t_base_v(i);
+            ++t_base;
+            ++t_base_v;
+            t_diff_base(i, j) = t_diff_base_v(i, j);
+            ++t_diff_base;
+            ++t_diff_base_v;
+          }
       }
     }
   }
@@ -1217,7 +1222,7 @@ TetPolynomialBase::getValueHdivAinsworthBrokenBase(MatrixDouble &pts) {
     if (it != interior_cache_ptr->end()) {
       noalias(data.dataOnEntities[MBTET][0].getN(base)) = it->N;
       noalias(data.dataOnEntities[MBTET][0].getDiffN(base)) = it->diffN;
-      MoFEMFunctionBeginHot(0);
+      MoFEMFunctionReturnHot(0);
     }
   }
 
@@ -1318,102 +1323,124 @@ TetPolynomialBase::getValueHdivAinsworthBrokenBase(MatrixDouble &pts) {
   auto t_diff_base_v = getFTensor2HVecFromPtr<3, 3>(diff_base_vol_ptr);
 
   int count_dofs = 0;
+  int count_dofs_face = 0;
+  int count_dofs_volume = 0;
+
+  auto max_volume_order =
+      std::max(volume_order,
+               AinsworthOrderHooks::broken_nbfacetri_edge_hdiv(volume_order));
+  max_volume_order =
+      std::max(max_volume_order,
+               AinsworthOrderHooks::broken_nbfacetri_face_hdiv(volume_order));
+  max_volume_order =
+      std::max(max_volume_order,
+               AinsworthOrderHooks::broken_nbvolumetet_edge_hdiv(volume_order));
+  max_volume_order =
+      std::max(max_volume_order,
+               AinsworthOrderHooks::broken_nbvolumetet_face_hdiv(volume_order));
+  max_volume_order = std::max(
+      max_volume_order,
+      AinsworthOrderHooks::broken_nbvolumetet_volume_hdiv(volume_order));
 
   for (int gg = 0; gg != nb_gauss_pts; gg++) {
-    for (int oo = 0; oo < volume_order; oo++) {
+    for (int oo = 0; oo < max_volume_order; oo++) {
 
       // faces-edge (((P) > 0) ? (P) : 0)
-      for (int dd = NBFACETRI_AINSWORTH_EDGE_HDIV(
-               AinsworthOrderHooks::broken_nbfacetri_edge_hdiv(oo));
-           dd != NBFACETRI_AINSWORTH_EDGE_HDIV(
-                     AinsworthOrderHooks::broken_nbfacetri_edge_hdiv(oo + 1));
-           dd++) {
-        for (auto ff = 0; ff != 4; ++ff) {
-          for (int ee = 0; ee != 3; ++ee) {
-            t_base(i) = t_base_f_e[ff * 3 + ee](i);
-            ++t_base;
-            ++t_base_f_e[ff * 3 + ee];
-            ++count_dofs;
-          }
-          for (int ee = 0; ee != 3; ++ee) {
-            t_diff_base(i, j) = t_diff_base_f_e[ff * 3 + ee](i, j);
-            ++t_diff_base;
-            ++t_diff_base_f_e[ff * 3 + ee];
+      if (oo < AinsworthOrderHooks::broken_nbfacetri_edge_hdiv(volume_order))
+        for (int dd = NBFACETRI_AINSWORTH_EDGE_HDIV(oo);
+             dd != NBFACETRI_AINSWORTH_EDGE_HDIV(oo + 1); dd++) {
+          for (auto ff = 0; ff != 4; ++ff) {
+            for (int ee = 0; ee != 3; ++ee) {
+              t_base(i) = t_base_f_e[ff * 3 + ee](i);
+              ++t_base;
+              ++t_base_f_e[ff * 3 + ee];
+              ++count_dofs;
+              ++count_dofs_face;
+            }
+            for (int ee = 0; ee != 3; ++ee) {
+              t_diff_base(i, j) = t_diff_base_f_e[ff * 3 + ee](i, j);
+              ++t_diff_base;
+              ++t_diff_base_f_e[ff * 3 + ee];
+            }
           }
         }
-      }
 
       // face-face (P - 1) * (P - 2) / 2
-      for (int dd = NBFACETRI_AINSWORTH_FACE_HDIV(
-               AinsworthOrderHooks::broken_nbfacetri_face_hdiv(oo));
-           dd != NBFACETRI_AINSWORTH_FACE_HDIV(
-                     AinsworthOrderHooks::broken_nbfacetri_face_hdiv(oo + 1));
-           dd++) {
-        for (auto ff = 0; ff != 4; ++ff) {
-          t_base(i) = t_base_f_f[ff](i);
-          ++t_base;
-          ++t_base_f_f[ff];
-          t_diff_base(i, j) = t_diff_base_f_f[ff](i, j);
-          ++t_diff_base;
-          ++t_diff_base_f_f[ff];
-          ++count_dofs;
+      if (oo < AinsworthOrderHooks::broken_nbfacetri_face_hdiv(volume_order))
+        for (int dd = NBFACETRI_AINSWORTH_FACE_HDIV(oo);
+             dd != NBFACETRI_AINSWORTH_FACE_HDIV(oo + 1); dd++) {
+          for (auto ff = 0; ff != 4; ++ff) {
+            t_base(i) = t_base_f_f[ff](i);
+            ++t_base;
+            ++t_base_f_f[ff];
+            t_diff_base(i, j) = t_diff_base_f_f[ff](i, j);
+            ++t_diff_base;
+            ++t_diff_base_f_f[ff];
+            ++count_dofs;
+            ++count_dofs_face;
+          }
         }
-      }
 
       // volume-edge (P - 1)
-      for (int dd = NBVOLUMETET_AINSWORTH_EDGE_HDIV(
-               AinsworthOrderHooks::broken_nbvolumetet_edge_hdiv(oo));
-           dd != NBVOLUMETET_AINSWORTH_EDGE_HDIV(
-                     AinsworthOrderHooks::broken_nbvolumetet_edge_hdiv(oo + 1));
-           dd++) {
-        for (int ee = 0; ee < 6; ee++) {
-          t_base(i) = t_base_v_e[ee](i);
-          ++t_base;
-          ++t_base_v_e[ee];
-          t_diff_base(i, j) = t_diff_base_v_e[ee](i, j);
-          ++t_diff_base;
-          ++t_diff_base_v_e[ee];
-          ++count_dofs;
+      if (oo < AinsworthOrderHooks::broken_nbvolumetet_edge_hdiv(volume_order))
+        for (int dd = NBVOLUMETET_AINSWORTH_EDGE_HDIV(oo);
+             dd != NBVOLUMETET_AINSWORTH_EDGE_HDIV(oo + 1); dd++) {
+          for (int ee = 0; ee < 6; ++ee) {
+            t_base(i) = t_base_v_e[ee](i);
+            ++t_base;
+            ++t_base_v_e[ee];
+            t_diff_base(i, j) = t_diff_base_v_e[ee](i, j);
+            ++t_diff_base;
+            ++t_diff_base_v_e[ee];
+            ++count_dofs;
+            ++count_dofs_volume;
+          }
         }
-      }
+
       // volume-face (P - 1) * (P - 2)
-      for (int dd = NBVOLUMETET_AINSWORTH_FACE_HDIV(
-               AinsworthOrderHooks::broken_nbvolumetet_face_hdiv(oo));
-           dd < NBVOLUMETET_AINSWORTH_FACE_HDIV(
-                    AinsworthOrderHooks::broken_nbvolumetet_face_hdiv(oo + 1));
-           dd++) {
-        for (int ff = 0; ff < 4; ff++) {
-          t_base(i) = t_base_v_f[ff](i);
-          ++t_base;
-          ++t_base_v_f[ff];
-          t_diff_base(i, j) = t_diff_base_v_f[ff](i, j);
-          ++t_diff_base;
-          ++t_diff_base_v_f[ff];
-          ++count_dofs;
+      if (oo < AinsworthOrderHooks::broken_nbvolumetet_face_hdiv(volume_order))
+        for (int dd = NBVOLUMETET_AINSWORTH_FACE_HDIV(oo);
+             dd != NBVOLUMETET_AINSWORTH_FACE_HDIV(oo + 1); dd++) {
+          for (int ff = 0; ff < 4; ff++) {
+            t_base(i) = t_base_v_f[ff](i);
+            ++t_base;
+            ++t_base_v_f[ff];
+            t_diff_base(i, j) = t_diff_base_v_f[ff](i, j);
+            ++t_diff_base;
+            ++t_diff_base_v_f[ff];
+            ++count_dofs;
+            ++count_dofs_volume;
+          }
         }
-      }
+
       // volume-bubble (P - 3) * (P - 2) * (P - 1) / 2
-      for (int dd = NBVOLUMETET_AINSWORTH_VOLUME_HDIV(
-               AinsworthOrderHooks::broken_nbvolumetet_volume_hdiv(oo));
-           dd < NBVOLUMETET_AINSWORTH_VOLUME_HDIV(
-                    AinsworthOrderHooks::broken_nbvolumetet_volume_hdiv(oo + 1));
-           dd++) {
-        t_base(i) = t_base_v(i);
-        ++t_base;
-        ++t_base_v;
-        t_diff_base(i, j) = t_diff_base_v(i, j);
-        ++t_diff_base;
-        ++t_diff_base_v;
-        ++count_dofs;
-      }
+      if (oo <
+          AinsworthOrderHooks::broken_nbvolumetet_volume_hdiv(volume_order))
+        for (int dd = NBVOLUMETET_AINSWORTH_VOLUME_HDIV(oo);
+             dd != NBVOLUMETET_AINSWORTH_VOLUME_HDIV(oo + 1); dd++) {
+          t_base(i) = t_base_v(i);
+          ++t_base;
+          ++t_base_v;
+          t_diff_base(i, j) = t_diff_base_v(i, j);
+          ++t_diff_base;
+          ++t_diff_base_v;
+          ++count_dofs;
+          ++count_dofs_volume;
+        }
     }
   }
 
-#ifdef NDEBUG
-  if (nb_dofs != count_dofs / nb_gauss_pts)
+#ifndef NDEBUG
+  if (nb_dofs != count_dofs / nb_gauss_pts) {
+    MOFEM_LOG_CHANNEL("SELF");
+    MOFEM_LOG("SELF", Sev::error) << "Nb dofs face: " << 4 * nb_dofs_face
+                                  << " -> " << count_dofs_face / nb_gauss_pts;
+    MOFEM_LOG("SELF", Sev::error) << "Nb dofs volume: " << nb_dofs_volume
+                                  << " -> " << count_dofs_volume / nb_gauss_pts;
     SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-             "Number of dofs %d is different than expected %d", count_dofs,
-             nb_dofs);
+             "Number of dofs %d is different than expected %d",
+             count_dofs / nb_gauss_pts, nb_dofs);
+    }
 #endif // NDEBUG
 
   if (interior_cache_ptr) {
@@ -1608,7 +1635,7 @@ TetPolynomialBase::getValueHdivDemkowiczBrokenBase(MatrixDouble &pts) {
     if (it != interior_cache_ptr->end()) {
       noalias(data.dataOnEntities[MBTET][0].getN(base)) = it->N;
       noalias(data.dataOnEntities[MBTET][0].getDiffN(base)) = it->diffN;
-      MoFEMFunctionBeginHot(0);
+      MoFEMFunctionReturnHot(0);
     }
   }
 
@@ -2146,11 +2173,8 @@ TetPolynomialBase::setDofsSideMapHdiv(const FieldContinuity continuity,
     for (int oo = 0; oo < Field::maxBrokenDofsOrder; oo++) {
 
       // faces-edge (((P) > 0) ? (P) : 0)
-      for (int dd = NBFACETRI_AINSWORTH_EDGE_HDIV(
-               AinsworthOrderHooks::broken_nbfacetri_edge_hdiv(oo));
-           dd != NBFACETRI_AINSWORTH_EDGE_HDIV(
-                     AinsworthOrderHooks::broken_nbfacetri_edge_hdiv(oo + 1));
-           dd++) {
+      for (int dd = NBFACETRI_AINSWORTH_EDGE_HDIV(oo);
+           dd != NBFACETRI_AINSWORTH_EDGE_HDIV(oo + 1); dd++) {
         for (auto ff = 0; ff != 4; ++ff) {
           for (int ee = 0; ee != 3; ++ee) {
             dofs_side_map.insert(DofsSideMapData{MBTRI, ff, dof});
@@ -2160,11 +2184,8 @@ TetPolynomialBase::setDofsSideMapHdiv(const FieldContinuity continuity,
       }
 
       // face-face (P - 1) * (P - 2) / 2
-      for (int dd = NBFACETRI_AINSWORTH_FACE_HDIV(
-               AinsworthOrderHooks::broken_nbfacetri_face_hdiv(oo));
-           dd != NBFACETRI_AINSWORTH_FACE_HDIV(
-                     AinsworthOrderHooks::broken_nbfacetri_face_hdiv(oo + 1));
-           dd++) {
+      for (int dd = NBFACETRI_AINSWORTH_FACE_HDIV(oo);
+           dd != NBFACETRI_AINSWORTH_FACE_HDIV(oo + 1); dd++) {
         for (auto ff = 0; ff != 4; ++ff) {
           dofs_side_map.insert(DofsSideMapData{MBTRI, ff, dof});
           ++dof;
@@ -2172,33 +2193,24 @@ TetPolynomialBase::setDofsSideMapHdiv(const FieldContinuity continuity,
       }
 
       // volume-edge (P - 1)
-      for (int dd = NBVOLUMETET_AINSWORTH_EDGE_HDIV(
-               AinsworthOrderHooks::broken_nbvolumetet_edge_hdiv(oo));
-           dd != NBVOLUMETET_AINSWORTH_EDGE_HDIV(
-                     AinsworthOrderHooks::broken_nbvolumetet_edge_hdiv(oo + 1));
-           dd++) {
+      for (int dd = NBVOLUMETET_AINSWORTH_EDGE_HDIV(oo);
+           dd != NBVOLUMETET_AINSWORTH_EDGE_HDIV(oo + 1); dd++) {
         for (int ee = 0; ee < 6; ee++) {
           dofs_side_map.insert(DofsSideMapData{MBTET, 0, dof});
           ++dof;
         }
       }
       // volume-face (P - 1) * (P - 2)
-      for (int dd = NBVOLUMETET_AINSWORTH_FACE_HDIV(
-               AinsworthOrderHooks::broken_nbvolumetet_face_hdiv(oo));
-           dd < NBVOLUMETET_AINSWORTH_FACE_HDIV(
-                    AinsworthOrderHooks::broken_nbvolumetet_face_hdiv(oo + 1));
-           dd++) {
+      for (int dd = NBVOLUMETET_AINSWORTH_FACE_HDIV(oo);
+           dd < NBVOLUMETET_AINSWORTH_FACE_HDIV(oo + 1); dd++) {
         for (int ff = 0; ff < 4; ff++) {
           dofs_side_map.insert(DofsSideMapData{MBTET, 0, dof});
           ++dof;
         }
       }
       // volume-bubble (P - 3) * (P - 2) * (P - 1) / 2
-      for (int dd = NBVOLUMETET_AINSWORTH_VOLUME_HDIV(
-               AinsworthOrderHooks::broken_nbvolumetet_volume_hdiv(oo));
-           dd < NBVOLUMETET_AINSWORTH_VOLUME_HDIV(
-                    AinsworthOrderHooks::broken_nbvolumetet_volume_hdiv(oo + 1));
-           dd++) {
+      for (int dd = NBVOLUMETET_AINSWORTH_VOLUME_HDIV(oo);
+           dd < NBVOLUMETET_AINSWORTH_VOLUME_HDIV(oo + 1); dd++) {
         dofs_side_map.insert(DofsSideMapData{MBTET, 0, dof});
         ++dof;
       }

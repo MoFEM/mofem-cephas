@@ -657,7 +657,6 @@ struct OpLhsU_dH : public AssemblyDomainEleOp {
       const double r = t_coords(0);
       const double alpha = t_w * vol * cylindrical(r);
 
-      const double rho = phase_function(t_h, rho_diff, rho_ave);
       const double rho_dh = d_phase_function_h(t_h, rho_diff);
       const double mu_dh = d_phase_function_h(t_h, mu_diff);
 

@@ -341,7 +341,6 @@ MoFEMErrorCode Example::setupProblem() {
 //! [Boundary condition]
 MoFEMErrorCode Example::boundaryCondition() {
   MoFEMFunctionBegin;
-  auto pip = mField.getInterface<PipelineManager>();
   auto simple = mField.getInterface<Simple>();
   auto bc_mng = mField.getInterface<BcManager>();
 
@@ -367,8 +366,6 @@ MoFEMErrorCode Example::boundaryCondition() {
 MoFEMErrorCode Example::assembleSystem() {
   MoFEMFunctionBegin;
   auto pip = mField.getInterface<PipelineManager>();
-  auto simple = mField.getInterface<Simple>();
-  auto bc_mng = mField.getInterface<BcManager>();
 
   //! [Integration rule]
   auto integration_rule = [](int, int, int approx_order) {
@@ -944,7 +941,6 @@ private:
 
 MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> solver) {
   MoFEMFunctionBegin;
-  auto simple = mField.getInterface<Simple>();
   auto pip = mField.getInterface<PipelineManager>();
   PC pc;
   CHKERR KSPGetPC(solver, &pc);
@@ -1139,6 +1135,7 @@ MoFEMErrorCode SetUpSchurImpl::setDiagonalPC(PC pc) {
       PetscBool same = PETSC_FALSE;
       PetscObjectTypeCompare((PetscObject)pc, PCMG, &same);
       if (same) {
+        MOFEM_LOG("TIMER", Sev::inform) << "Set up MG";
         CHKERR PCMGSetUpViaApproxOrders(
             pc, createPCMGSetUpViaApproxOrdersCtx(dm, S, true));
         CHKERR PCSetFromOptions(pc);
@@ -1146,6 +1143,24 @@ MoFEMErrorCode SetUpSchurImpl::setDiagonalPC(PC pc) {
       MoFEMFunctionReturn(0);
     };
 
+    auto set_pc_ksp = [&](auto dm, auto pc, auto S) {
+      MoFEMFunctionBegin;
+      PetscBool same = PETSC_FALSE;
+      PetscObjectTypeCompare((PetscObject)pc, PCKSP, &same);
+      if (same) {
+        MOFEM_LOG("TIMER", Sev::inform) << "Set up inner KSP for PCKSP";
+        CHKERR PCSetFromOptions(pc);
+        KSP inner_ksp;
+        CHKERR PCKSPGetKSP(pc, &inner_ksp);
+        PC inner_pc;
+        CHKERR KSPGetPC(inner_ksp, &inner_pc);
+        CHKERR PCSetFromOptions(inner_pc);
+        CHKERR set_pc_p_mg(dm, inner_pc, S);
+      }
+      MoFEMFunctionReturn(0);
+    };
+
+    CHKERR set_pc_ksp(schurDM, get_pc(subksp[1]), S);
     CHKERR set_pc_p_mg(schurDM, get_pc(subksp[1]), S);
 
     CHKERR PetscFree(subksp);

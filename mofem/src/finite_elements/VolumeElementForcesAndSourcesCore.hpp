@@ -25,9 +25,10 @@ namespace MoFEM {
  */
 struct VolumeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
-  VolumeElementForcesAndSourcesCore(Interface &m_field,
-                                        const EntityType type = MBTET);
+  VolumeElementForcesAndSourcesCore(Interface &m_field);
 
+  DEPRECATED VolumeElementForcesAndSourcesCore(Interface &m_field,
+                                               const EntityType type);
 
   std::string meshPositionsFieldName; ///< \deprecated DO NOT USE!
 

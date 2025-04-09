@@ -66,7 +66,7 @@ struct TetPolynomialBase : public BaseFunction {
                  const FieldApproximationBase base,
                  DofsSideMap &);
 
-private:
+protected:
   const void *vPtr;
   EntPolynomialBaseCtx *cTx;
 
@@ -127,7 +127,7 @@ private:
                                            const FieldApproximationBase base,
                                            DofsSideMap &dofs_side_map);
 
-private:
+protected:
   MoFEMErrorCode getValueH1AinsworthBase(MatrixDouble &pts);
   MoFEMErrorCode getValueH1BernsteinBezierBase(MatrixDouble &pts);
 

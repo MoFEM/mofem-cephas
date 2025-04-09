@@ -236,9 +236,9 @@ MoFEMErrorCode Poisson2DNonhomogeneous::solveSystem() {
     // Identify the index for boundary entities, remaining will be for domain
     // Then split the fields for boundary and domain for solving
     if (is_pcfs == PETSC_TRUE) {
-      IS is_domain, is_boundary;
       const MoFEM::Problem *problem_ptr;
       CHKERR DMMoFEMGetProblemPtr(dm, &problem_ptr);
+      IS is_boundary;
       CHKERR mField.getInterface<ISManager>()->isCreateProblemFieldAndRank(
           problem_ptr->getName(), ROW, domainField, 0, 1, &is_boundary,
           &boundaryEntitiesForFieldsplit);

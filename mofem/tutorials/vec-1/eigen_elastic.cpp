@@ -168,11 +168,8 @@ MoFEMErrorCode Example::boundaryCondition() {
   auto dofs = problem_ptr->getNumeredRowDofsPtr();
 
   // Get all vertices
-  const auto bit_number = mField.get_field_bit_number("U");
   auto lo_uid =
       DofEntity::getUniqueIdCalculate(0, get_id_for_min_type<MBVERTEX>());
-  auto hi_uid =
-      DofEntity::getUniqueIdCalculate(2, get_id_for_max_type<MBVERTEX>());
 
   auto hi = dofs->upper_bound(lo_uid);
   std::array<double, 3> coords;
@@ -307,8 +304,6 @@ MoFEMErrorCode Example::assembleSystem() {
 
 //! [Solve]
 MoFEMErrorCode Example::solveSystem() {
-  auto simple = mField.getInterface<Simple>();
-  auto is_manager = mField.getInterface<ISManager>();
   MoFEMFunctionBegin;
 
   auto create_eps = [](MPI_Comm comm) {

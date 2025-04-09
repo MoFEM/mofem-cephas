@@ -107,8 +107,6 @@ MoFEM::OpFluxRhsImpl<ElasticExample::FluidLevelType<BLOCKSET>, 1, FIELD_DIM, A,
   FTensor::Index<'i', FIELD_DIM> i;
   FTensor::Index<'j', FIELD_DIM> j;
   MoFEMFunctionBegin;
-  // get element volume
-  const double vol = OpBase::getMeasure();
   // get integration weights
   auto t_w = OpBase::getFTensor0IntegrationWeight();
   // get base function gradient on rows

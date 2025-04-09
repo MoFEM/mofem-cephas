@@ -29,6 +29,8 @@ PetscErrorCode SnesRhs(SNES snes, Vec x, Vec f, void *ctx) {
   // PetscValidHeaderSpecific(snes,SNES_CLASSID,1);
   MoFEMFunctionBegin;
   PetscLogEventBegin(snes_ctx->MOFEM_EVENT_SnesRhs, 0, 0, 0, 0);
+  Vec dx;
+  CHKERR SNESGetSolutionUpdate(snes, &dx);
   CHKERR VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
   CHKERR VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
   if (snes_ctx->vErify) {
@@ -69,10 +71,11 @@ PetscErrorCode SnesRhs(SNES snes, Vec x, Vec f, void *ctx) {
   auto set = [&](auto &fe) {
     fe.snes = snes;
     fe.snes_x = x;
+    fe.snes_dx = dx;
     fe.snes_f = f;
     fe.snes_ctx = SnesMethod::CTX_SNESSETFUNCTION;
     fe.ksp_ctx = KspMethod::CTX_SETFUNCTION;
-    fe.data_ctx = PetscData::CtxSetF | PetscData::CtxSetX;
+    fe.data_ctx = PetscData::CtxSetF | PetscData::CtxSetX | PetscData::CtxSetDX;
 
     CHKERR SNESGetKSP(snes, &fe.ksp);
 
@@ -148,15 +151,19 @@ PetscErrorCode SnesMat(SNES snes, Vec x, Mat A, Mat B, void *ctx) {
   auto cache_ptr = boost::make_shared<CacheTuple>();
   CHKERR snes_ctx->mField.cache_problem_entities(snes_ctx->problemName,
                                                  cache_ptr);
+  Vec dx;
+  CHKERR SNESGetSolutionUpdate(snes, &dx);
 
   auto set = [&](auto &fe) {
     fe.snes = snes;
     fe.snes_x = x;
+    fe.snes_dx = dx;
     fe.snes_A = A;
     fe.snes_B = B;
     fe.snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
     fe.ksp_ctx = KspMethod::CTX_OPERATORS;
-    fe.data_ctx = PetscData::CtxSetA | PetscData::CtxSetB | PetscData::CtxSetX;
+    fe.data_ctx = PetscData::CtxSetA | PetscData::CtxSetB | PetscData::CtxSetX |
+                   PetscData::CtxSetDX;
 
     CHKERR SNESGetKSP(snes, &fe.ksp);
     

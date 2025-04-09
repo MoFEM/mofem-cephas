@@ -482,8 +482,17 @@ struct Tools : public UnknownInterface {
    *
    * @param coords
    * @param normal
-   * @param d_normal derbiative, if pointer is null, derbiative is not
+   * @param d_normal derivative, if pointer is null, derivative is not
    * calculated
+   *
+   * In d_normal, format is 3rd rank tensor, first index is normal direction,
+   * second is node number, third is coordinate.
+   * 
+   * This is relation between tensor and pointer 
+   * \code {.cpp}
+   * auto t_d_normal = getFTensor3FromPtr<3, 3, 3>(d_normal);
+   * \endcode
+   * 
    * @return MoFEMErrorCode
    */
   static MoFEMErrorCode getTriNormal(const double *coords, double *normal,

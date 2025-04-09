@@ -17,8 +17,12 @@ static char help[] = "...\n\n";
 
 constexpr bool debug = false;
 
+constexpr AssemblyType BlockAssemblyType = (BLOCK_ASSEMBLE_SELECTION)
+                                               ? AssemblyType::BLOCK_MAT
+                                               : AssemblyType::BLOCK_SCHUR;
+
 constexpr AssemblyType AT =
-    (SCHUR_ASSEMBLE) ? AssemblyType::BLOCK_SCHUR
+    (SCHUR_ASSEMBLE) ? BlockAssemblyType
                      : AssemblyType::PETSC; //< selected assembly type
 
 constexpr IntegrationType IT =
@@ -523,7 +527,7 @@ struct SetUpSchurImpl : public SetUpSchur {
 private:
   MoFEM::Interface &mField;
   SmartPetscObj<Mat> S;
-};
+ };
 
 MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
   MoFEMFunctionBegin;
@@ -652,14 +656,16 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
       boost::shared_ptr<BlockStructure> block_data;
       CHKERR DMMoFEMGetBlocMatData(simple->getDM(), block_data);
 
-      pip_mng->getOpDomainLhsPipeline().push_front(
-          createOpSchurAssembleBegin());
-      pip_mng->getOpDomainLhsPipeline().push_back(
+      if (AT == BLOCK_SCHUR) {
+        pip_mng->getOpDomainLhsPipeline().push_front(
+            createOpSchurAssembleBegin());
+        pip_mng->getOpDomainLhsPipeline().push_back(
 
-          createOpSchurAssembleEnd({"BROKEN", "U"}, {nullptr, nullptr}, ao_up,
-                                   S, true, true)
+            createOpSchurAssembleEnd({"BROKEN", "U"}, {nullptr, nullptr}, ao_up,
+                                     S, true, true)
 
-      );
+        );
+      }
 
       auto pre_proc_schur_lhs_ptr = boost::make_shared<FEMethod>();
       auto post_proc_schur_lhs_ptr = boost::make_shared<FEMethod>();
@@ -675,8 +681,35 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
                                                   post_proc_schur_lhs_ptr]() {
         MoFEMFunctionBegin;
         MOFEM_LOG("AT", Sev::verbose) << "Lhs Assemble End";
-        CHKERR MatAssemblyBegin(S, MAT_FINAL_ASSEMBLY);
-        CHKERR MatAssemblyEnd(S, MAT_FINAL_ASSEMBLY);
+
+        if (AT == BLOCK_SCHUR) {
+          CHKERR MatAssemblyBegin(S, MAT_FINAL_ASSEMBLY);
+          CHKERR MatAssemblyEnd(S, MAT_FINAL_ASSEMBLY);
+          if (1) {
+            auto S_from_block = matDuplicate(S, MAT_SHARE_NONZERO_PATTERN);
+            // Create matrix from block mat
+            CHKERR assembleBlockMatSchur(mField, post_proc_schur_lhs_ptr->B,
+                                 S_from_block, {"BROKEN", "U"},
+                                 {nullptr, nullptr}, ao_up);
+            CHKERR MatAssemblyBegin(S_from_block, MAT_FINAL_ASSEMBLY);
+            CHKERR MatAssemblyEnd(S_from_block, MAT_FINAL_ASSEMBLY);
+            CHKERR MatAYPX(S_from_block, -1, S, DIFFERENT_NONZERO_PATTERN);
+            double norm;
+            CHKERR MatNorm(S_from_block, NORM_FROBENIUS, &norm);
+            MOFEM_LOG("AT", Sev::inform) << "Norm of difference: " << norm;
+            if (norm > 1e-6)
+              SETERRQ(
+                  PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                  "Norm of difference between Schur and block matrix is larger "
+                  "than accepted");
+          }
+        } else {
+          CHKERR assembleBlockMatSchur(mField, post_proc_schur_lhs_ptr->B, S,
+                               {"BROKEN", "U"}, {nullptr, nullptr}, ao_up);
+          CHKERR MatAssemblyBegin(S, MAT_FINAL_ASSEMBLY);
+          CHKERR MatAssemblyEnd(S, MAT_FINAL_ASSEMBLY);
+        }
+
         MOFEM_LOG("AT", Sev::verbose) << "Lhs Assemble Finish";
         MoFEMFunctionReturn(0);
       };
@@ -699,11 +732,11 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
     auto set_diagonal_pc = [&](auto pc, auto schur_dm) {
       MoFEMFunctionBegin;
 
-      if (AT == BLOCK_SCHUR) {
+      if (AT == BLOCK_SCHUR || AT == BLOCK_MAT) {
         auto A = createDMBlockMat(simple->getDM());
         auto P = createDMNestSchurMat(simple->getDM());
         CHKERR PCSetOperators(pc, A, P);
-      } 
+      }
 
       KSP *subksp;
       CHKERR PCFieldSplitSchurGetSubKSP(pc, PETSC_NULL, &subksp);
@@ -736,12 +769,13 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
     };
 
     auto [schur_dm, block_dm] = create_sub_dm();
-    if (AT == BLOCK_SCHUR) {
+    if (AT == BLOCK_SCHUR || AT == BLOCK_MAT) {
       auto nested_mat_data = get_nested_mat_data(schur_dm, block_dm);
       CHKERR DMMoFEMSetNestSchurData(simple->getDM(), nested_mat_data);
     }
     S = createDMHybridisedL2Matrix(schur_dm);
     CHKERR MatSetDM(S, PETSC_NULL);
+
     int bs = (SPACE_DIM == 2) ? NBEDGE_L2(approx_order - 1)
                               : NBFACETRI_L2(approx_order - 1);
     CHKERR MatSetBlockSize(S, bs);
@@ -750,11 +784,11 @@ MoFEMErrorCode SetUpSchurImpl::setUp(SmartPetscObj<KSP> ksp) {
     CHKERR set_pc(pc, block_dm);
     DM solver_dm;
     CHKERR KSPGetDM(ksp, &solver_dm);
-    if (AT == BLOCK_SCHUR)
+    if (AT == BLOCK_SCHUR || AT == BLOCK_MAT)
       CHKERR DMSetMatType(solver_dm, MATSHELL);
 
     CHKERR KSPSetUp(ksp);
-    if (AT == BLOCK_SCHUR)
+    if (AT == BLOCK_SCHUR || AT == BLOCK_MAT)
       CHKERR set_diagonal_pc(pc, schur_dm);
 
   } else {

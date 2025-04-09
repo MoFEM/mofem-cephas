@@ -261,7 +261,7 @@ MoFEMErrorCode VtkInterface::checkResults() {
           SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                    "atom test %d failed: Wrong name of meshset %d, should be "
                    "FIX_ALL is %s",
-                   atom_test, it->getMeshsetId(), it->getName());
+                   atom_test, it->getMeshsetId(), it->getName().c_str());
         }
         if (ents.size() != 25) {
           SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
@@ -274,7 +274,7 @@ MoFEMErrorCode VtkInterface::checkResults() {
           SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                    "atom test %d failed: Wrong name of meshset %d, should be "
                    "FIX_X is %s",
-                   atom_test, it->getMeshsetId(), it->getName());
+                   atom_test, it->getMeshsetId(), it->getName().c_str());
         }
         if (ents.size() != 25) {
           SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
@@ -287,7 +287,7 @@ MoFEMErrorCode VtkInterface::checkResults() {
           SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                    "atom test %d failed: Wrong name of meshset %d, should be "
                    "ADOLCMAT is %s",
-                   atom_test, it->getMeshsetId(), it->getName());
+                   atom_test, it->getMeshsetId(), it->getName().c_str());
         }
       }
     }

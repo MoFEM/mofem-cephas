@@ -1896,8 +1896,11 @@ scaleL2(boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
   };
   pipeline.push_back(op_scale);
 
-  pipeline.push_back(
-      new OpScaleBaseBySpaceInverseOfMeasure(L2, det_ptr, scale_ptr));
+  for (auto base : {AINSWORTH_LEGENDRE_BASE, AINSWORTH_LOBATTO_BASE,
+                    DEMKOWICZ_JACOBI_BASE}) {
+    pipeline.push_back(
+        new OpScaleBaseBySpaceInverseOfMeasure(L2, base, det_ptr, scale_ptr));
+  }
 
   MoFEMFunctionReturn(0);
 }
@@ -1906,7 +1909,6 @@ MoFEMErrorCode AddHOOps<3, 3, 3>::add(
     boost::ptr_deque<ForcesAndSourcesCore::UserDataOperator> &pipeline,
     std::vector<FieldSpace> spaces, std::string geom_field_name) {
   MoFEMFunctionBegin;
-
   constexpr bool scale_l2 = false;
   if (scale_l2) {
     CHKERR scaleL2<3, 3, 3>(pipeline, geom_field_name);

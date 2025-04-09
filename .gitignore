@@ -14,7 +14,7 @@ debug-build
 core-build*
 spack-build*
 um-build*
-build_*
+build-*
 .DS_Store
 spack-configure-args.txt
 compile_commands.json

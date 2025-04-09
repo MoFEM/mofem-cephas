@@ -166,6 +166,34 @@ struct ISManager : public UnknownInterface {
                               Range *ents = nullptr) const;
 
   /**
+   * \copybrief create IS for given problem, field and rank range (collective)
+   * \ingroup mofem_is_managers
+   * 
+   * \param dofs_vec vector of dofs
+   * \param smart_is IS
+   * \retval is out value
+   *
+   * \retval is out value
+   */
+  MoFEMErrorCode isCreateProblemBrokenFieldAndRank(
+      const std::vector<boost::weak_ptr<NumeredDofEntity>> &dofs_vec,
+      SmartPetscObj<IS> &smart_is, MPI_Comm comm = PETSC_COMM_SELF) const;
+
+  /**
+   * \copybrief create IS for given problem, field and rank range (collective)
+   * \ingroup mofem_is_managers
+   * 
+   * \param dofs_vec vector of dofs
+   * \param smart_is IS
+   * \retval is out value
+   *
+   * \retval is out value
+   */
+  MoFEMErrorCode isCreateProblemBrokenFieldAndRankLocal(
+      const std::vector<boost::weak_ptr<NumeredDofEntity>> &dofs_vec,
+      SmartPetscObj<IS> &smart_is) const;
+
+  /**
     * \brief create IS for given problem, field and rank range (collective)
     * \ingroup mofem_is_managers
 
