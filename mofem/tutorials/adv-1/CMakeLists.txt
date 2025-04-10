@@ -176,7 +176,7 @@ add_test(
 )
 
 add_test(
-  hertz_2d_plane_stress_schur_hookes ## Tests for HookeOps without is_large_strain
+  hertz_2d_plane_stress_schur_hookes ## Tests for hookeOps with is_large_strain = 0
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 4
   contact_2d_schur
   -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh_files/cyl_2d_4p.h5m

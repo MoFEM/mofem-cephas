@@ -11,11 +11,11 @@
 "EXECUTABLE_DIMENSION" has been defined. If it has not been defined, it is set
 to 3" */
 #ifndef EXECUTABLE_DIMENSION
-  #define EXECUTABLE_DIMENSION 3
+#define EXECUTABLE_DIMENSION 3
 #endif
 
 #ifndef SCHUR_ASSEMBLE
-  #define SCHUR_ASSEMBLE 0
+#define SCHUR_ASSEMBLE 0
 #endif
 
 #include <MoFEM.hpp>
@@ -26,9 +26,9 @@ using namespace MoFEM;
 #include <GenericElementInterface.hpp>
 
 #ifdef PYTHON_SDF
-  #include <boost/python.hpp>
-  #include <boost/python/def.hpp>
-  #include <boost/python/numpy.hpp>
+#include <boost/python.hpp>
+#include <boost/python/def.hpp>
+#include <boost/python/numpy.hpp>
 namespace bp = boost::python;
 namespace np = boost::python::numpy;
 #endif
@@ -90,8 +90,8 @@ double alpha_damping = 0;
 
 double scale = 1.;
 
-PetscBool is_axisymmetric = PETSC_FALSE; //< Axisymmetric model
-PetscBool is_large_strain = PETSC_FALSE;
+PetscBool is_axisymmetric = PETSC_FALSE; //< tag for Axisymmetric model
+PetscBool is_large_strain = PETSC_FALSE;//< tag for large strain 
 
 // #define HENCKY_SMALL_STRAIN
 
@@ -110,7 +110,7 @@ using namespace HookeOps;
 #include <ContactNaturalBC.hpp>
 
 #ifdef WITH_MODULE_MFRONT_INTERFACE
-  #include <MFrontMoFEMInterface.hpp>
+#include <MFrontMoFEMInterface.hpp>
 #endif
 
 using DomainRhsBCs = NaturalBC<DomainEleOp>::Assembly<AT>::LinearForm<IT>;
@@ -177,6 +177,7 @@ MoFEMErrorCode Contact::runProblem() {
 MoFEMErrorCode Contact::setupProblem() {
   MoFEMFunctionBegin;
   Simple *simple = mField.getInterface<Simple>();
+
   CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-is_large_strain", &is_large_strain,
                              PETSC_NULL);
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order, PETSC_NULL);
@@ -189,10 +190,10 @@ MoFEMErrorCode Contact::setupProblem() {
                             PETSC_NULL);
   if (!is_large_strain) {
     MOFEM_LOG("CONTACT", Sev::inform)
-        << "Problem scheme choosen for small strain";
+        << "Problem scheme choosen small strain with HookeOps";
   } else {
     MOFEM_LOG("CONTACT", Sev::inform)
-        << "Problem scheme choosen for large strain";
+        << "Problem scheme choosen large strain by default";
   }
   MOFEM_LOG("CONTACT", Sev::inform) << "Order " << order;
   MOFEM_LOG("CONTACT", Sev::inform) << "Contact order " << contact_order;
@@ -325,10 +326,8 @@ MoFEMErrorCode Contact::createCommonData() {
   MoFEMFunctionBegin;
 
   PetscBool use_mfront = PETSC_FALSE;
-
   CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-use_mfront", &use_mfront,
                              PETSC_NULL);
-
   CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-is_axisymmetric",
                              &is_axisymmetric, PETSC_NULL);
   CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-atom_test", &atom_test,
@@ -744,8 +743,7 @@ MoFEMErrorCode Contact::tsSolve() {
                                       PETSC_VIEWER_DEFAULT, &vf);
     CHKERR SNESMonitorSet(
         snes,
-        (MoFEMErrorCode (*)(SNES, PetscInt, PetscReal,
-                            void *))SNESMonitorFields,
+        (MoFEMErrorCode (*)(SNES, PetscInt, PetscReal, void *))SNESMonitorFields,
         vf, (MoFEMErrorCode (*)(void **))PetscViewerAndFormatDestroy);
     MoFEMFunctionReturn(0);
   };

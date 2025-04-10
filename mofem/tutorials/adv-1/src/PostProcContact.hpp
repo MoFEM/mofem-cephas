@@ -43,7 +43,7 @@ struct Monitor : public FEMethod {
           : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPSPACE),
             mPtr(m_ptr), scale(s) {}
       MoFEMErrorCode doWork(int, EntityType, EntitiesFieldData::EntData &) {
-        *mPtr *= 1. / scale;
+        *mPtr *= 1./scale;
         return 0;
       }
 
@@ -257,8 +257,7 @@ struct Monitor : public FEMethod {
           (AddHOOps<SPACE_DIM - 1, SPACE_DIM, SPACE_DIM>::add(
               integrate_traction->getOpPtrVector(), {HDIV}, "GEOMETRY")),
           "Apply transform");
-      // We have to integrate on curved face geometry, thus integration weight
-      // have to adjusted.
+      // We have to integrate on curved face geometry, thus integration weight have to adjusted.
       integrate_traction->getOpPtrVector().push_back(
           new OpSetHOWeightsOnSubDim<SPACE_DIM>());
       integrate_traction->getRuleHook = [](int, int, int approx_order) {
