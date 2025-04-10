@@ -92,9 +92,6 @@ double scale = 1.;
 
 PetscBool is_axisymmetric = PETSC_FALSE; //< tag for Axisymmetric model
 PetscBool is_large_strain = PETSC_FALSE;//< tag for large strain 
-
-// #define HENCKY_SMALL_STRAIN
-
 int atom_test = 0;
 
 namespace ContactOps {
