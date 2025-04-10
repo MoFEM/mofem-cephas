@@ -56,7 +56,7 @@ struct Monitor : public FEMethod {
       CHK_THROW_MESSAGE((AddHOOps<SPACE_DIM, SPACE_DIM, SPACE_DIM>::add(
                             pip, {H1, HDIV}, "GEOMETRY")),
                         "Apply base transform");
-      // Define a variant type that can hold either HookeOps or HenckyOps
+      // Define variant type that holds either HookeOps or HenckyOps
       // CommonData.
       using CommonDataVariant =
           std::variant<boost::shared_ptr<HookeOps::CommonData>,
@@ -750,8 +750,6 @@ struct Monitor : public FEMethod {
     double E_star = young_modulus / (1 - poisson_ratio * poisson_ratio);
     // Radius
     double R = 100.;
-    // Indentation
-    double d = 0.02745732273553991;
     // Contact area radius
     double a = 1;
     // current radius
@@ -769,8 +767,6 @@ struct Monitor : public FEMethod {
     double E_star = young_modulus;
     // Radius
     double R = 100.;
-    // Indentation
-    double d = 0.02745732273553991;
     // Contact area radius
     double a = 1;
     // current radius

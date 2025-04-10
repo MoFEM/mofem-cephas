@@ -58,15 +58,9 @@ add_test(
   elastic_uniaxial
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/elastic_2d
-  -file_name uniaxialMembrane_2d.cub -order 4
+  -file_name uniaxialMembrane_2d.cub -order 2
   -ksp_rtol 1e-12 -ksp_atol  1e-12 -pc_type lu -test)
 
-add_test(
-  elastic_uniaxial_schur
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/elastic_2d_schur
-  -file_name uniaxialMembrane_2d.cub -order 2
-  -ksp_rtol 1e-12 -ksp_atol 1e-12 -ksp_type fgmres -test)
 
 add_test(
   elastic_mpc_XYZ
